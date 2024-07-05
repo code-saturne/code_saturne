@@ -1029,19 +1029,18 @@ cs_ctwr_bulk_mass_source_term(void)
 
   BFT_FREE(imp_st);
 
-  int *itypsm = NULL;
   cs_lnum_t ncesmp = 0, *icetsm = NULL;
-  cs_real_t *smacel= NULL, *gamma = NULL;
+  cs_real_t *smacel= NULL;
 
   cs_volume_mass_injection_get_arrays(CS_F_(p),
                                       &ncesmp,
                                       &icetsm,
-                                      &itypsm,
+                                      NULL,
                                       &smacel,
-                                      &gamma);
+                                      NULL);
 
   for (cs_lnum_t ii = 0; ii < ncesmp; ii++) {
-    const cs_lnum_t c_id = icetsm[ii] - 1;
+    const cs_lnum_t c_id = icetsm[ii];
     smacel[ii] += mass_source[c_id];
   }
 

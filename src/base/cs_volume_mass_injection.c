@@ -59,17 +59,6 @@
 
 #include "cs_volume_mass_injection.h"
 
-/*----------------------------------------------------------------------------
- * Prototypes for Fortran-defined function
- *----------------------------------------------------------------------------*/
-
-void
-cs_f_volume_mass_injection_get_arrays(int         var_id,
-                                      cs_lnum_t  *ncesmp,
-                                      cs_lnum_t  **icetsm,
-                                      int        **itpsmp,
-                                      cs_real_t  **smcelp);
-
 /*----------------------------------------------------------------------------*/
 
 BEGIN_C_DECLS
@@ -94,21 +83,15 @@ BEGIN_C_DECLS
 
 typedef struct {
 
-  cs_lnum_t   n_elts;    /*!< local number of associated elements */
-  cs_lnum_t  *elt_num;   /*!< local cell ids, (1-based for Fortran
-                           compatibilty, as it may appear in Fortran
-                           use code, but not C user code) */
+  int field_id_ub;         /*!< associated field id upper bound */
+
+  cs_lnum_t    n_elts;     /*!< local number of associated elements */
+  cs_lnum_t   *elt_id;     /*!< local cell ids */
+
+  int        **mst_type;   /*!< mass source term type, by field */
+  cs_real_t  **mst_val;    /*!< mass source value, by field */
 
 } cs_volume_mass_injection_t;
-
-/*============================================================================
- * Prototypes for functions intended for use only by Fortran wrappers.
- * (descriptions follow, with function bodies).
- *============================================================================*/
-
-void
-cs_f_mass_source_terms_get_pointers(cs_lnum_t   *ncesmp,
-                                    cs_lnum_t  **icetsm);
 
 /*============================================================================
  * Global variables
@@ -119,6 +102,71 @@ cs_volume_mass_injection_t  *_mass_injection = NULL;
 /*============================================================================
  * Private function definitions
  *============================================================================*/
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Finalize list and zone ids of cells with volume mass injection.
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_volume_mass_injection_finalize(void)
+{
+  if (_mass_injection != NULL) {
+    cs_volume_mass_injection_t *mi = _mass_injection;
+
+    for (int field_id = 0; field_id < mi->field_id_ub; field_id++) {
+      BFT_FREE(mi->mst_type[field_id]);
+      BFT_FREE(mi->mst_val[field_id]);
+    }
+
+    BFT_FREE(mi->mst_type);
+    BFT_FREE(mi->mst_val);
+    BFT_FREE(mi->elt_id);
+    BFT_FREE(_mass_injection);
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Finalize list and zone ids of cells with volume mass injection.
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_volume_mass_injection_get_field_arrays(int          field_id,
+                                        int        **mst_type,
+                                        cs_real_t  **mst_val)
+
+{
+  cs_volume_mass_injection_t *mi = _mass_injection;
+
+  if (field_id >= mi->field_id_ub) {
+    int s_id = mi->field_id_ub, e_id = field_id+1;
+    mi->field_id_ub = e_id;
+    BFT_REALLOC(mi->mst_type, mi->field_id_ub, int *);
+    BFT_REALLOC(mi->mst_val, mi->field_id_ub, cs_real_t *);
+    for (int i = s_id; i< e_id; i++) {
+      mi->mst_type[i] = NULL;
+      mi->mst_val[i] = NULL;
+    }
+  }
+
+  if (mst_type != NULL) {
+    if (mi->mst_type[field_id] == NULL)
+      CS_MALLOC_HD(mi->mst_type[field_id], mi->n_elts, int, cs_alloc_mode);
+    *mst_type = mi->mst_type[field_id];
+  }
+
+  if (mst_val != NULL) {
+    if (mi->mst_val[field_id] == NULL) {
+      cs_lnum_t dim = cs_field_by_id(field_id)->dim;
+      CS_MALLOC_HD(mi->mst_val[field_id], mi->n_elts*dim, cs_real_t,
+                   cs_alloc_mode);
+    }
+    *mst_val = mi->mst_val[field_id];
+  }
+}
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -445,32 +493,6 @@ _volume_mass_injection_eval(cs_xdef_t  *def,
   }
 }
 
-/*============================================================================
- * Fortran wrapper function definitions
- *============================================================================*/
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Get pointer to mass source terms cell count and list.
- *
- * \param[out]  ncesmp  number of cells with mass source terms
- * \param[out]  icetsm  list of cells with mass source terms (1-based numbers)
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_f_mass_source_terms_get_pointers(cs_lnum_t   *ncesmp,
-                                    cs_lnum_t  **icetsm)
-{
-  *ncesmp = 0;
-  *icetsm = NULL;
-
-  if (_mass_injection != NULL) {
-    *ncesmp = _mass_injection->n_elts;
-    *icetsm = _mass_injection->elt_num;
-  }
-}
-
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
@@ -525,21 +547,42 @@ cs_volume_mass_injection_flag_zones(void)
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Build the list and zone ids of cells with volume mass injection.
- *
- * \param[in]   n_cells       number of cells in mass source term zones
- * \param[out]  cell_num      numbers (1-based) cells in mass source term zones
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_volume_mass_injection_build_lists(cs_lnum_t   n_cells,
-                                     cs_lnum_t   cell_num[])
+cs_volume_mass_injection_build_lists(void)
 {
-  CS_UNUSED(n_cells); /* Avoid a warning when compiling with optimization */
+  if (_mass_injection == NULL) {
+    BFT_MALLOC(_mass_injection, 1, cs_volume_mass_injection_t);
+
+    _mass_injection->field_id_ub = 0;
+    _mass_injection->n_elts = 0;
+    _mass_injection->elt_id = NULL;
+    _mass_injection->mst_type = NULL;
+    _mass_injection->mst_val = NULL;
+
+    cs_base_at_finalize(_volume_mass_injection_finalize);
+  }
 
   /* First, flag all volume zones with injection definitions */
 
+  cs_lnum_t n_elts = 0;
+  for (int z_id = 0; z_id < cs_volume_zone_n_zones(); z_id++) {
+    const cs_zone_t *z = cs_volume_zone_by_id(z_id);
+    if (z->type & CS_VOLUME_ZONE_MASS_SOURCE_TERM)
+      n_elts += z->n_elts;
+  }
+
+  _mass_injection->n_elts = n_elts;
+
+  /* Then build list */
+
+  BFT_FREE(_mass_injection->elt_id);
+  CS_MALLOC_HD(_mass_injection->elt_id, n_elts, cs_lnum_t, cs_alloc_mode);
+
   cs_lnum_t l = 0;
+  cs_lnum_t *elt_id = _mass_injection->elt_id;
 
   for (int z_id = 0; z_id < cs_volume_zone_n_zones(); z_id++) {
 
@@ -549,19 +592,18 @@ cs_volume_mass_injection_build_lists(cs_lnum_t   n_cells,
       continue;
 
     for (cs_lnum_t j = 0; j < z->n_elts; j++) {
-      cell_num[l] = z->elt_ids[j] + 1;
+      elt_id[l] = z->elt_ids[j];
       l++;
     }
 
   }
 
-  assert(l == n_cells);
+  assert(l == n_elts);
 }
 
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Evaluate contributions to volume mass injection.
- *
  */
 /*----------------------------------------------------------------------------*/
 
@@ -575,8 +617,9 @@ cs_volume_mass_injection_eval(void)
   /* Initialize arrays */
 
   int *itypsm = NULL;
-  cs_lnum_t ncesmp = 0, *icetsm = NULL;
-  cs_real_t *smacel= NULL, *gamma = NULL;
+  cs_lnum_t ncesmp = 0;
+  const cs_lnum_t *icetsm = NULL;
+  cs_real_t *smacel= NULL;
 
   for (int f_id = 0; f_id < n_fields; f_id++) {
 
@@ -589,12 +632,12 @@ cs_volume_mass_injection_eval(void)
                                         &icetsm,
                                         &itypsm,
                                         &smacel,
-                                        &gamma);
+                                        NULL);
 
     for (cs_lnum_t i = 0; i < ncesmp; i++) {
-      for (int j = 0; j < f->dim; j++) {
-        itypsm[j*ncesmp + i] = 0;
-        smacel[j*ncesmp + i] = 0.0;
+      itypsm[i] = 0;
+      for (cs_lnum_t j = 0; j < f->dim; j++) {
+        smacel[i*f->dim + j] = 0.0;
       }
     }
 
@@ -655,7 +698,7 @@ cs_volume_mass_injection_eval(void)
                                           &icetsm,
                                           &itypsm,
                                           &smacel,
-                                          &gamma);
+                                          NULL);
       if (f->dim == 1) {
         for (cs_lnum_t i = 0; i < z->n_elts; i++) {
           cs_lnum_t j = c_shift + i;
@@ -669,7 +712,7 @@ cs_volume_mass_injection_eval(void)
           cs_lnum_t j = c_shift + i;
           itypsm[j] = 1;
           for (cs_lnum_t k = 0; k < dim; k++)
-            smacel[k*ncesmp + j] += st_loc[i*dim + k];
+            smacel[j*dim + k] += st_loc[i*dim + k];
         }
       }
 
@@ -697,35 +740,39 @@ cs_volume_mass_injection_eval(void)
 /*----------------------------------------------------------------------------*/
 
 void
-cs_volume_mass_injection_get_arrays(const cs_field_t  *f,
-                                    cs_lnum_t         *ncesmp,
-                                    cs_lnum_t         **icetsm,
+cs_volume_mass_injection_get_arrays(const cs_field_t   *f,
+                                    cs_lnum_t          *ncesmp,
+                                    const cs_lnum_t   **icetsm,
                                     int               **itpsmp,
                                     cs_real_t         **smcelp,
                                     cs_real_t         **gamma)
 {
-  *ncesmp = 0;
-  *icetsm = NULL;
-  *itpsmp = NULL;
-  *smcelp = NULL;
-  *gamma = NULL;
+  cs_lnum_t  _ncesmp = 0;
+  cs_lnum_t  *_icetsm = NULL;
+  int        *_itpsmp = NULL;
+  cs_real_t  *_smcelp = NULL;
+  cs_real_t  *_gamma = NULL;
 
-  const int k_variable_id = cs_field_key_id("variable_id");
+  cs_volume_mass_injection_t *mi = _mass_injection;
 
-  const int var_id = cs_field_get_key_int(f, k_variable_id);
+  if (mi != NULL) {
 
-  cs_f_volume_mass_injection_get_arrays(var_id,
-                                        ncesmp, icetsm, itpsmp, smcelp);
+    _ncesmp = mi->n_elts;
+    _icetsm = mi->elt_id;
 
-  if (*ncesmp > 0) {
-    cs_lnum_t _ncesmp;
-    cs_lnum_t *_icetsm;
-    int *_itpsmp;
-    const int p_var_id = cs_field_get_key_int(CS_F_(p), k_variable_id);
-    cs_f_volume_mass_injection_get_arrays(p_var_id,
-                                          &_ncesmp, &_icetsm, &_itpsmp,
-                                          gamma);
   }
+
+  _volume_mass_injection_get_field_arrays(f->id, &_itpsmp, &_smcelp);
+
+  if (_ncesmp > 0) {
+    _volume_mass_injection_get_field_arrays(CS_F_(p)->id, NULL, &_gamma);
+  }
+
+  if (ncesmp != NULL) *ncesmp = _ncesmp;
+  if (icetsm != NULL) *icetsm = _icetsm;
+  if (itpsmp != NULL) *itpsmp = _itpsmp;
+  if (smcelp != NULL) *smcelp = _smcelp;
+  if (gamma != NULL) *gamma = _gamma;
 }
 
 /*----------------------------------------------------------------------------*/

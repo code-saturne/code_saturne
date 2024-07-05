@@ -76,7 +76,6 @@
 #include "cs_turbulence_v2f.h"
 #include "cs_velocity_pressure.h"
 #include "cs_vof.h"
-#include "cs_volume_mass_injection.h"
 #include "cs_wall_condensation.h"
 #include "cs_wall_condensation_1d_thermal.h"
 #include "cs_1d_wall_thermal.h"
@@ -449,7 +448,8 @@ _clip_rho_mu_cp(const bool                  pass,
 {
   int iscacp = 0;
   int n_fields = 3; // number of fields for log
-  char *f_names[] = {CS_F_(rho)->name, CS_F_(mu)->name, CS_F_(mu_t)->name, ""};
+  const char *f_names[]
+    = {CS_F_(rho)->name, CS_F_(mu)->name, CS_F_(mu_t)->name, ""};
 
   if (CS_F_(cp) != NULL) {
     f_names[n_fields] = CS_F_(cp)->name;

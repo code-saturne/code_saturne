@@ -1865,16 +1865,15 @@ _pressure_correction_fv(int                   iterns,
   /* Mass source terms adding for volumic flow rate */
 
   cs_lnum_t ncesmp = 0;
-  cs_lnum_t *icetsm = NULL;
-  int *itpsmp = NULL;
-  cs_real_t *smcelp, *gamma = NULL;
+  const cs_lnum_t *icetsm = nullptr;
+  cs_real_t *smcelp = nullptr;
 
-  cs_volume_mass_injection_get_arrays(f_p, &ncesmp, &icetsm, &itpsmp,
-                                      &smcelp, &gamma);
+  cs_volume_mass_injection_get_arrays(f_p, &ncesmp, &icetsm, nullptr,
+                                      &smcelp, nullptr);
 
   if (ncesmp > 0) {
     ctx.parallel_for(ncesmp, [=] CS_F_HOST_DEVICE (cs_lnum_t c_idx) {
-      cs_lnum_t c_id = icetsm[c_idx] - 1;
+      cs_lnum_t c_id = icetsm[c_idx];
       cpro_divu[c_id] -= cell_f_vol[c_id] * smcelp[c_idx];
     });
   }

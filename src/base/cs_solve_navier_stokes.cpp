@@ -245,20 +245,19 @@ _cs_mass_flux_prediction(const cs_mesh_t       *m,
   /* Mass source terms */
 
   cs_lnum_t  ncesmp;
-  cs_lnum_t  *icetsm;
-  int  *itpsmp;
-  cs_real_t *smacel_p, *gamma;
+  const cs_lnum_t  *icetsm;
+  cs_real_t *smacel_p;
 
   cs_volume_mass_injection_get_arrays(CS_F_(p),
                                       &ncesmp,
                                       &icetsm,
-                                      &itpsmp,
+                                      NULL,
                                       &smacel_p,
-                                      &gamma);
+                                      NULL);
 
   if (ncesmp > 0) {
     for (cs_lnum_t cidx = 0; cidx < ncesmp; cidx++) {
-      const cs_lnum_t cell_id = icetsm[cidx] - 1;
+      const cs_lnum_t cell_id = icetsm[cidx];
       /* FIXME It should be scmacel at time n-1 */
       divu[cell_id] -= volume[cell_id] * smacel_p[cidx];
     }
@@ -2934,7 +2933,7 @@ _velocity_prediction(const cs_mesh_t             *m,
 
     int *itypsm = NULL;
     cs_lnum_t _ncetsm = 0;
-    cs_lnum_t *_icetsm = NULL;
+    const cs_lnum_t *_icetsm = NULL;
     cs_real_t *_smacel_p = NULL;
     cs_real_t *_smacel_vel = NULL;
 
@@ -4549,17 +4548,16 @@ cs_solve_navier_stokes(const int   iterns,
       cs_real_t *c_estim = iescor->val;
       cs_divergence(m, 1, esflum, esflub, c_estim);
 
-      int *itpsmp = NULL;
       cs_lnum_t ncetsm = 0;
-      cs_lnum_t *icetsm = NULL;
-      cs_real_t *smacel, *gamma = NULL;
-      cs_volume_mass_injection_get_arrays(CS_F_(p), &ncetsm, &icetsm, &itpsmp,
-                                          &smacel, &gamma);
+      const cs_lnum_t *icetsm = NULL;
+      cs_real_t *smacel = NULL;
+      cs_volume_mass_injection_get_arrays(CS_F_(p), &ncetsm, &icetsm, NULL,
+                                          &smacel, NULL);
 
       if (ncetsm > 0) {
 #       pragma omp parallel for if (ncetsm > CS_THR_MIN)
         for (cs_lnum_t c_idx = 0; c_idx < ncetsm; c_idx++) {
-          cs_lnum_t c_id = icetsm[c_idx] - 1;
+          cs_lnum_t c_id = icetsm[c_idx];
           c_estim[c_id] -= cell_f_vol[c_id] * smacel[c_idx];
         }
       }

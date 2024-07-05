@@ -3432,26 +3432,6 @@ module cs_c_bindings
 
     !---------------------------------------------------------------------------
 
-    ! Interface to C function to implicit and explicit sources terms
-    ! from sources mass computation.
-
-    subroutine catsma(ncesmp, iterns, icetsm, itpsmp,          &
-                      volume, pvara, smcelp, gamma,            &
-                      tsexp, tsimp, gapinj)                    &
-      bind(C, name='cs_f_mass_source_terms_s')
-      use, intrinsic :: iso_c_binding
-      implicit none
-      integer(c_int), intent(in), value :: ncesmp, iterns
-      integer(kind=c_int), dimension(*), intent(in) :: icetsm, itpsmp
-      real(kind=c_double), dimension(*), intent(in) :: volume
-      real(kind=c_double), dimension(*), intent(in) :: pvara
-      real(kind=c_double), dimension(*), intent(in) :: gamma, smcelp
-      real(kind=c_double), dimension(*), intent(inout) :: tsexp, tsimp
-      real(kind=c_double), dimension(*), intent(out) :: gapinj
-    end subroutine catsma
-
-    !---------------------------------------------------------------------------
-
     ! Interface to C function solving the quadratic k-epsilon model.
 
     subroutine cs_turbulence_ke_q(phase_id, rij) &

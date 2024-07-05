@@ -273,12 +273,10 @@ interface
 
   !=============================================================================
 
-  subroutine cs_volume_mass_injection_build_lists(ncetsm, icetsm) &
+  subroutine cs_volume_mass_injection_build_lists() &
     bind(C, name='cs_volume_mass_injection_build_lists')
     use, intrinsic :: iso_c_binding
     implicit none
-    integer(kind=c_int), value :: ncetsm
-    integer(kind=c_int), dimension(*), intent(out) :: icetsm
   end subroutine cs_volume_mass_injection_build_lists
 
   !=============================================================================
@@ -342,8 +340,7 @@ iappel = 1
 ! -----------------
 
 ! Total number of cells with mass source term
-ncetsm = volume_zone_n_type_cells(VOLUME_ZONE_MASS_SOURCE_TERM)
-nctsmt = ncetsm
+nctsmt = volume_zone_n_type_cells(VOLUME_ZONE_MASS_SOURCE_TERM)
 if (irangp.ge.0) then
   call parcpt(nctsmt)
 endif
@@ -438,10 +435,6 @@ if (ncpdct.gt.0) then
   else
     call volume_zone_select_type_cells(VOLUME_ZONE_HEAD_LOSS, icepdc)
   endif
-endif
-
-if (nctsmt.gt.0) then
-  call init_tsma (nvar)
 endif
 
 if (icondb.eq.0 .or. icondv.eq.0) then
@@ -730,7 +723,7 @@ call cs_boundary_conditions_set_coeffs_init()
 ! This is a collective call for consistency and in case the user requires it.
 
 if (nctsmt.gt.0) then
-  call cs_volume_mass_injection_build_lists(ncetsm, icetsm)
+  call cs_volume_mass_injection_build_lists()
 endif
 
 ! ALE mobile structures
@@ -1144,10 +1137,6 @@ endif
 
 if (ncpdct.gt.0) then
   call finalize_kpdc
-endif
-
-if (nctsmt.gt.0) then
-  call finalize_tsma
 endif
 
 if (icondb.gt.0 .or.icondv.eq.0) then

@@ -1281,7 +1281,7 @@ cs_balance_by_zone_compute(const char      *scalar_name,
      In case of a mass source term, add contribution from Gamma*Tn+1 */
 
   cs_lnum_t ncesmp = 0;
-  cs_lnum_t *icetsm = NULL;
+  const cs_lnum_t *icetsm = NULL;
   int *itpsmp = NULL;
   cs_real_t *smcelp, *gamma = NULL;
 
@@ -1294,7 +1294,7 @@ cs_balance_by_zone_compute(const char      *scalar_name,
     const double cp0 = cs_glob_fluid_properties->cp0;
 
     for (cs_lnum_t c_idx = 0; c_idx < ncesmp; c_idx++) {
-      cs_lnum_t c_id_sel = icetsm[c_idx] - 1;
+      cs_lnum_t c_id_sel = icetsm[c_idx];
 
       if (cells_tag_ids[c_id_sel]) {
 

@@ -301,8 +301,6 @@ cs_turbulence_ke(int              phase_id,
   const cs_real_t uref = cs_glob_turb_ref_values->uref;
   const cs_real_t *grav = cs_glob_physical_constants->gravity;
 
-  const int var_key_id = cs_field_key_id("variable_id");
-
   cs_field_t *f_k = CS_F_(k);
   cs_field_t *f_eps = CS_F_(eps);
   cs_field_t *f_phi = CS_F_(phi);
@@ -1622,7 +1620,7 @@ cs_turbulence_ke(int              phase_id,
 
     int *itypsm = NULL;
     cs_lnum_t ncesmp = 0;
-    cs_lnum_t *icetsm = NULL;
+    const cs_lnum_t *icetsm = NULL;
     cs_real_t *smacel = NULL, *gamma = NULL;
 
     /* We increment smbrs with -Gamma.var_prev and rovsdt with Gamma */

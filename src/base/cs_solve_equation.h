@@ -63,17 +63,11 @@ BEGIN_C_DECLS
  *        terms and/or drift) for a scalar quantity over a time step.
  *
  * \param[in]     f          pointer to field structure
- * \param[in]     ncesmp     number of cells with mass source term
  * \param[in]     iterns     Navier-Stokes iteration number
  * \param[in]     itspdv     indicator to compute production/dissipation
  *                           terms for a variance:
  *                           - 0: no
  *                           - 1: yes
- * \param[in]     icetsm     index of cells with mass source term
- * \param[in]     itypsm     type of mass source term for the variables
- * \param[in]     smacel     variable value associated to the mass source
- *                           term (for ivar=ipr, smacel is the mass flux
- *                           \f$ \Gamma^n \f$)
  * \param         viscf      visc*surface/dist at internal faces (work array)
  * \param         viscb      visc*surface/dist at boundary faces (work array)
  */
@@ -81,12 +75,8 @@ BEGIN_C_DECLS
 
 void
 cs_solve_equation_scalar(cs_field_t        *f,
-                         cs_lnum_t          ncesmp,
                          int                iterns,
                          int                itspdv,
-                         const cs_lnum_t    icetsm[],
-                         int                itypsm[],
-                         cs_real_t          smacel[],
                          cs_real_t          viscf[],
                          cs_real_t          viscb[]);
 
@@ -96,13 +86,7 @@ cs_solve_equation_scalar(cs_field_t        *f,
  *        terms and/or drift) for a vectorial quantity over a time step..
  *
  * \param[in]     f          pointer to field structure
- * \param[in]     ncesmp     number of cells with mass source term
  * \param[in]     iterns     Navier-Stokes iteration number
- * \param[in]     icetsm     index of cells with mass source term
- * \param[in]     itypsm     type of mass source term for the variables
- * \param[in]     smacel     variable value associated to the mass source
- *                           term (for ivar=ipr, smacel is the mass flux
- *                           \f$ \Gamma^n \f$)
  * \param         viscf      visc*surface/dist at internal faces (work array)
  * \param         viscb      visc*surface/dist at boundary faces (work array)
  */
@@ -110,11 +94,7 @@ cs_solve_equation_scalar(cs_field_t        *f,
 
 void
 cs_solve_equation_vector(cs_field_t       *f,
-                         const cs_lnum_t   ncesmp,
                          int               iterns,
-                         const cs_lnum_t   icetsm[],
-                         int               itypsm[],
-                         cs_real_t         smacel[],
                          cs_real_t         viscf[],
                          cs_real_t         viscb[]);
 

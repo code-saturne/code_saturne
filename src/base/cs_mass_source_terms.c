@@ -68,137 +68,12 @@ BEGIN_C_DECLS
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
 
 /*============================================================================
- * Prototypes for functions intended for use only by Fortran wrappers.
- * (descriptions follow, with function bodies).
- *============================================================================*/
-
-void
-cs_f_mass_source_terms_s(cs_lnum_t             ncesmp,
-                         int                   iterns,
-                         const int             icetsm[],
-                         int                   itpsmp[],
-                         const cs_real_t       volume[],
-                         const cs_real_t       pvara[],
-                         const cs_real_t       smcelp[],
-                         const cs_real_t       gamma[],
-                         cs_real_t             st_exp[],
-                         cs_real_t             st_imp[],
-                         cs_real_t             gapinj[]);
-
-void
-cs_f_mass_source_terms_v(cs_lnum_t             ncesmp,
-                         int                   iterns,
-                         const int             icetsm[],
-                         int                   itpsmp[],
-                         const cs_real_t       volume[],
-                         const cs_real_t       pvara[],
-                         const cs_real_t       smcelp[],
-                         const cs_real_t       gamma[],
-                         cs_real_t             st_exp[],
-                         cs_real_t             st_imp[],
-                         cs_real_t             gapinj[]);
-
-/*============================================================================
  * Private function definitions
  *============================================================================*/
 
 /*============================================================================
  * Fortran wrapper function definitions
  *============================================================================*/
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Implicit and explicit scalar mass source terms computation.
- *
- * \param[in]     ncesmp        number of cells with mass source term
- * \param[in]     iterns        iteration number on Navier-Stoke
- * \param[in]     icetsm        source mass cells pointer (1-based numbering)
- * \param[in]     itpsmp        mass source type for the working variable
- * \param[in]     volume        cells volume
- * \param[in]     pvara         variable value at time step beginning
- * \param[in]     smcelp        value of the variable associated with mass source
- * \param[in]     gamma         flow mass value
- * \param[in,out] tsexp         explicit source term part linear in the variable
- * \param[in,out] tsimp         associated value with \c tsexp
- *                              to be stored in the matrix
- * \param[out]    gapinj        explicit source term part independant
- *                              of the variable
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_f_mass_source_terms_s(cs_lnum_t             ncesmp,
-                         int                   iterns,
-                         const int             icetsm[],
-                         int                   itpsmp[],
-                         const cs_real_t       volume[],
-                         const cs_real_t       pvara[],
-                         const cs_real_t       smcelp[],
-                         const cs_real_t       gamma[],
-                         cs_real_t             st_exp[],
-                         cs_real_t             st_imp[],
-                         cs_real_t             gapinj[])
-{
-  cs_mass_source_terms(iterns,
-                       1,
-                       ncesmp,
-                       icetsm,
-                       itpsmp,
-                       volume,
-                       pvara,
-                       smcelp,
-                       gamma,
-                       st_exp,
-                       st_imp,
-                       gapinj);
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Implicit and explicit vector mass source terms computation.
- *
- * \param[in]     ncesmp        number of cells with mass source term
- * \param[in]     iterns        iteration number on Navier-Stoke
- * \param[in]     icetsm        source mass cells pointer (1-based numbering)
- * \param[in]     itpsmp        mass source type for the working variable
- * \param[in]     volume        cells volume
- * \param[in]     pvara         variable value at time step beginning
- * \param[in]     smcelp        value of the variable associated with mass source
- * \param[in]     gamma         flow mass value
- * \param[in,out] tsexp         explicit source term part linear in the variable
- * \param[in,out] tsimp         associated value with \c tsexp
- *                              to be stored in the matrix
- * \param[out]    gapinj        explicit source term part independant
- *                              of the variable
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_f_mass_source_terms_v(cs_lnum_t             ncesmp,
-                         int                   iterns,
-                         const int             icetsm[],
-                         int                   itpsmp[],
-                         const cs_real_t       volume[],
-                         const cs_real_t       pvara[],
-                         const cs_real_t       smcelp[],
-                         const cs_real_t       gamma[],
-                         cs_real_t             st_exp[],
-                         cs_real_t             st_imp[],
-                         cs_real_t             gapinj[])
-{
-  cs_mass_source_terms(iterns,
-                       3,
-                       ncesmp,
-                       icetsm,
-                       itpsmp,
-                       volume,
-                       pvara,
-                       smcelp,
-                       gamma,
-                       st_exp,
-                       st_imp,
-                       gapinj);
-}
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
@@ -265,7 +140,7 @@ cs_mass_source_terms(int                   iterns,
 
     if (dim == 1) {
       for (cs_lnum_t i = 0; i < ncesmp; i++) {
-        cs_lnum_t c_id = icetsm[i] - 1;
+        cs_lnum_t c_id = icetsm[i];
         if (gamma[i] > 0. && itpsmp[i] == 1) {
           st_exp[c_id] -= volume[c_id]*gamma[i] * pvara[c_id];
           gapinj[c_id] = volume[c_id]*gamma[i] * smcelp[i];
@@ -275,12 +150,12 @@ cs_mass_source_terms(int                   iterns,
     else {
       cs_lnum_t _dim = dim;
       for (cs_lnum_t i = 0; i < ncesmp; i++) {
-        cs_lnum_t c_id = icetsm[i] - 1;
+        cs_lnum_t c_id = icetsm[i];
         if (gamma[i] > 0. && itpsmp[i] == 1) {
           for (cs_lnum_t j = 0; j < _dim; j++) {
             cs_lnum_t k = c_id*_dim + j;
             st_exp[k] -= volume[c_id]*gamma[i] * pvara[k];
-            gapinj[k] = volume[c_id]*gamma[i] * smcelp[j*ncesmp + i];
+            gapinj[k] = volume[c_id]*gamma[i] * smcelp[i*_dim + j];
           }
         }
       }
@@ -291,7 +166,7 @@ cs_mass_source_terms(int                   iterns,
 
   if (dim == 1) {
     for (cs_lnum_t i = 0; i < ncesmp; i++) {
-      cs_lnum_t c_id = icetsm[i] - 1;
+      cs_lnum_t c_id = icetsm[i];
       if (gamma[i] > 0. && itpsmp[i] == 1) {
         st_imp[c_id] += volume[c_id]*gamma[i];
       }
@@ -300,7 +175,7 @@ cs_mass_source_terms(int                   iterns,
   else {
     cs_lnum_t _dim = dim, _dim2 = dim*dim;
     for (cs_lnum_t i = 0; i < ncesmp; i++) {
-      cs_lnum_t c_id = icetsm[i] - 1;
+      cs_lnum_t c_id = icetsm[i];
       if (gamma[i] > 0. && itpsmp[i] == 1) {
         for (cs_lnum_t j = 0; j < _dim; j++) {
           cs_lnum_t k = c_id*_dim2 + j*_dim + j;

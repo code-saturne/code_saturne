@@ -814,11 +814,6 @@ _diffusion_terms_vector(const cs_field_t            *f,
  *                           terms for a variance:
  *                           - 0: no
  *                           - 1: yes
- * \param[in]     icetsm     index of cells with mass source term
- * \param[in]     itypsm     type of mass source term for the variables
- * \param[in]     smacel     variable value associated to the mass source
- *                           term (for ivar=ipr, smacel is the mass flux
- *                           \f$ \Gamma^n \f$)
  * \param         viscf      visc*surface/dist at internal faces (work array)
  * \param         viscb      visc*surface/dist at boundary faces (work array)
  */
@@ -826,12 +821,8 @@ _diffusion_terms_vector(const cs_field_t            *f,
 
 void
 cs_solve_equation_scalar(cs_field_t        *f,
-                         cs_lnum_t          ncesmp,
                          int                iterns,
                          int                itspdv,
-                         const cs_lnum_t    icetsm[],
-                         int                itypsm_sc[],
-                         cs_real_t          smacel_sc[],
                          cs_real_t          viscf[],
                          cs_real_t          viscb[])
 {
@@ -1356,41 +1347,43 @@ cs_solve_equation_scalar(cs_field_t        *f,
 
   cs_real_t *w1;
   CS_MALLOC_HD(w1, n_cells_ext, cs_real_t, cs_alloc_mode);
-  //BFT_MALLOC(w1, n_cells_ext, cs_real_t);
 
-  if (ncesmp > 0) {
+  cs_lnum_t ncetsm = 0;
+  const cs_lnum_t *icetsm = NULL;
+  int *itypsm_sc = NULL;
+  cs_real_t *smacel_sc = NULL;
+
+  cs_volume_mass_injection_get_arrays(f,
+                                      &ncetsm,
+                                      &icetsm,
+                                      &itypsm_sc,
+                                      &smacel_sc,
+                                      NULL);
+
+  if (ncetsm > 0) {
     cs_real_t *srcmas;
-
-    int *_itypsm_ipr = NULL;
-    cs_lnum_t _ncetsm = 0;
-    cs_lnum_t *_icetsm = NULL;
     cs_real_t *_smacel_ipr = NULL;
-    cs_real_t *_gamma_ipr = NULL;
 
-    cs_volume_mass_injection_get_arrays(CS_F_(p),
-                                        &_ncetsm,
-                                        &_icetsm,
-                                        &_itypsm_ipr,
-                                        &_smacel_ipr,
-                                        &_gamma_ipr);
+    cs_volume_mass_injection_get_arrays(CS_F_(p), NULL, NULL, NULL,
+                                        &_smacel_ipr, NULL);
 
-    BFT_MALLOC(srcmas, ncesmp, cs_real_t);
+    BFT_MALLOC(srcmas, ncetsm, cs_real_t);
 
     /* When treating the Temperature, the equation is multiplied by Cp */
-    for (cs_lnum_t c_id = 0; c_id < ncesmp; c_id++) {
-      if ((_smacel_ipr[c_id] > 0.0) && (itypsm_sc[c_id] == 1)) {
-        const cs_lnum_t id = icetsm[c_id] - 1;
-        srcmas[c_id] = _smacel_ipr[c_id] * xcpp[id];
+    for (cs_lnum_t c_idx = 0; c_idx < ncetsm; c_idx++) {
+      if ((_smacel_ipr[c_idx] > 0.0) && (itypsm_sc[c_idx] == 1)) {
+        const cs_lnum_t id = icetsm[c_idx];
+        srcmas[c_idx] = _smacel_ipr[c_idx] * xcpp[id];
       }
       else {
-       srcmas[c_id] = 0.;
+       srcmas[c_idx] = 0.;
       }
     }
 
     /* Increment rhs by -Gamma.cvara_var and fimp by Gamma */
     cs_mass_source_terms(1,
                          1,
-                         ncesmp,
+                         ncetsm,
                          icetsm,
                          itypsm_sc,
                          cell_f_vol,
@@ -1825,13 +1818,7 @@ cs_solve_equation_scalar(cs_field_t        *f,
  *        terms and/or drift) for a vectorial quantity over a time step..
  *
  * \param[in]     f          pointer to field structure
- * \param[in]     ncesmp     number of cells with mass source term
  * \param[in]     iterns     Navier-Stokes iteration number
- * \param[in]     icetsm     index of cells with mass source term
- * \param[in]     itypsm     type of mass source term for the variables
- * \param[in]     smacel     variable value associated to the mass source
- *                           term (for ivar=ipr, smacel is the mass flux
- *                           \f$ \Gamma^n \f$)
  * \param         viscf      visc*surface/dist at internal faces (work array)
  * \param         viscb      visc*surface/dist at boundary faces (work array)
  */
@@ -1839,11 +1826,7 @@ cs_solve_equation_scalar(cs_field_t        *f,
 
 void
 cs_solve_equation_vector(cs_field_t       *f,
-                         const cs_lnum_t   ncesmp,
                          int               iterns,
-                         const cs_lnum_t   icetsm[],
-                         int               itypsm_v[],
-                         cs_real_t         smacel_v[],
                          cs_real_t         viscf[],
                          cs_real_t         viscb[])
 {
@@ -2010,27 +1993,31 @@ cs_solve_equation_vector(cs_field_t       *f,
 
   /* Mass source term */
 
-  if (ncesmp > 0) {
+  cs_lnum_t ncetsm = 0;
+  const cs_lnum_t *icetsm = NULL;
+  int *itypsm_v = NULL;
+  cs_real_t *smacel_v = NULL;
+
+  cs_volume_mass_injection_get_arrays(f,
+                                      &ncetsm,
+                                      &icetsm,
+                                      &itypsm_v,
+                                      &smacel_v,
+                                      NULL);
+
+  if (ncetsm > 0) {
     cs_real_3_t *gavinj;
     BFT_MALLOC(gavinj, n_cells_ext, cs_real_3_t);
 
-    int *_itypsm_ipr = NULL;
-    cs_lnum_t _ncetsm = 0;
-    cs_lnum_t *_icetsm = NULL;
     cs_real_t *_smacel_ipr = NULL;
-    cs_real_t *_gamma_ipr = NULL;
 
-    cs_volume_mass_injection_get_arrays(CS_F_(p),
-                                        &_ncetsm,
-                                        &_icetsm,
-                                        &_itypsm_ipr,
-                                        &_smacel_ipr,
-                                        &_gamma_ipr);
+    cs_volume_mass_injection_get_arrays(CS_F_(p), NULL, NULL, NULL,
+                                        &_smacel_ipr, NULL);
 
     /* We increment SMBRV by -Gamma RTPA and FIMP by Gamma */
     cs_mass_source_terms(1,
                          3,
-                         ncesmp,
+                         ncetsm,
                          icetsm,
                          itypsm_v,
                          cell_f_vol,

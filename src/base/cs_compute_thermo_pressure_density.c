@@ -137,17 +137,6 @@ _compute_thermodynamic_pressure_perfect_gas(const cs_lnum_t n_cells,
   int iflmab =  cs_field_get_key_int(CS_F_(p), kbmasf);
   const cs_real_t *bmasfl = cs_field_by_id(iflmab)->val;
 
-  int *itpsmp = NULL;
-  cs_lnum_t ncetsm = 0;
-  cs_lnum_t *icetsm = NULL;
-  cs_real_t *smacel, *gamma = NULL;
-  cs_volume_mass_injection_get_arrays(CS_F_(p),
-                                      &ncetsm,
-                                      &icetsm,
-                                      &itpsmp,
-                                      &smacel,
-                                      &gamma);
-
   cs_real_t _new_pther = 0.0;
 
   cs_real_t *cromo = CS_F_(rho)->val;
@@ -159,6 +148,7 @@ _compute_thermodynamic_pressure_perfect_gas(const cs_lnum_t n_cells,
   cs_real_t debtot = 0.0;
 
   // Computation of mass flux imposed on the boundary faces
+
 # pragma omp parallel for reduction(-:debin, debout) if (n_b_faces > CS_THR_MIN)
   for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++) {
     if (   (bc_type[face_id] == CS_INLET)
@@ -173,8 +163,19 @@ _compute_thermodynamic_pressure_perfect_gas(const cs_lnum_t n_cells,
   debtot = debin + debout;
 
   // Computation of the inlet mass flux imposed on the cells volume
+
+  cs_lnum_t ncetsm = 0;
+  const cs_lnum_t *icetsm = NULL;
+  cs_real_t *smacel;
+  cs_volume_mass_injection_get_arrays(CS_F_(p),
+                                      &ncetsm,
+                                      &icetsm,
+                                      NULL,
+                                      &smacel,
+                                      NULL);
+
   for (cs_lnum_t ii = 0; ii < ncetsm; ii++) {
-    const cs_lnum_t c_id = icetsm[ii] - 1;
+    const cs_lnum_t c_id = icetsm[ii];
     debtot += smacel[ii] * cell_vol[c_id];
   }
 

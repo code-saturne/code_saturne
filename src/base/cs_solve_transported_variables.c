@@ -63,7 +63,6 @@
 #include "cs_restart.h"
 #include "cs_solve_equation.h"
 #include "cs_time_step.h"
-#include "cs_volume_mass_injection.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file
@@ -388,37 +387,16 @@ cs_solve_transported_variables(int iterns)
 
         } /* End CS_COMBUSTION_SLFM >= 0 */
 
-        int *itypsm = NULL;
-        cs_lnum_t ncetsm = 0;
-        cs_lnum_t *icetsm = NULL;
-        cs_real_t *smacel_sc = NULL;
-        cs_real_t *gamma = NULL;
-
-        cs_volume_mass_injection_get_arrays(f_scal,
-                                            &ncetsm,
-                                            &icetsm,
-                                            &itypsm,
-                                            &smacel_sc,
-                                            &gamma);
-
         if (f_scal->dim == 1) {
           cs_solve_equation_scalar(f_scal,
-                                   ncetsm,
                                    iterns,
                                    itspdv,
-                                   icetsm,
-                                   itypsm,
-                                   smacel_sc,
                                    i_visc,
                                    b_visc);
         }
         else
           cs_solve_equation_vector(f_scal,
-                                   ncetsm,
                                    iterns,
-                                   icetsm,
-                                   itypsm,
-                                   smacel_sc,
                                    i_visc,
                                    b_visc);
 
@@ -560,36 +538,15 @@ cs_solve_transported_variables(int iterns)
             f_scal->name, f_scal->id, iscavr);
     }
 
-    int *itypsm = NULL;
-    cs_lnum_t ncetsm = 0;
-    cs_lnum_t *icetsm = NULL;
-    cs_real_t *smacel_sc = NULL;
-    cs_real_t *gamma = NULL;
-
-    cs_volume_mass_injection_get_arrays(f_scal,
-                                        &ncetsm,
-                                        &icetsm,
-                                        &itypsm,
-                                        &smacel_sc,
-                                        &gamma);
-
     if (f_scal->dim == 1)
       cs_solve_equation_scalar(f_scal,
-                               ncetsm,
                                iterns,
                                itspdv,
-                               icetsm,
-                               itypsm,
-                               smacel_sc,
                                i_visc,
                                b_visc);
     else
       cs_solve_equation_vector(f_scal,
-                               ncetsm,
-                                iterns,
-                               icetsm,
-                               itypsm,
-                               smacel_sc,
+                               iterns,
                                i_visc,
                                b_visc);
 

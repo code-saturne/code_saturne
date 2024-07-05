@@ -152,8 +152,6 @@ cs_turbulence_kw(int phase_id)
   cs_real_t ro0 = phys_pro->ro0; /* reference density */
   const cs_real_t uref = cs_glob_turb_ref_values->uref;
 
-  const int var_key_id = cs_field_key_id("variable_id");
-
   cs_field_t *f_k = CS_F_(k);
   cs_field_t *f_omg = CS_F_(omg);
   cs_field_t *f_vel = CS_F_(vel);
@@ -1075,7 +1073,7 @@ cs_turbulence_kw(int phase_id)
 
     int *itypsm = NULL;
     cs_lnum_t ncesmp = 0;
-    cs_lnum_t *icetsm = NULL;
+    const cs_lnum_t *icetsm = NULL;
     cs_real_t *smacel = NULL, *gamma = NULL;
 
     /* We increment SMBRS by -Gamma.var_prev and ROVSDT by Gamma */

@@ -770,7 +770,7 @@ _solve_eq_phi(const int           istprv,
     /* We increment rhs by -Gamma.var_prev and rovsdt by Gamma */
     int *itypsm = NULL;
     cs_lnum_t ncesmp = 0;
-    cs_lnum_t *icetsm = NULL;
+    const cs_lnum_t *icetsm = NULL;
     cs_real_t *smacel = NULL, *gamma = NULL;
 
     cs_volume_mass_injection_get_arrays(f_phi,

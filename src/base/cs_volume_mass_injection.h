@@ -61,15 +61,11 @@ cs_volume_mass_injection_flag_zones(void);
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Build the list and zone ids of cells with volume mass injection.
- *
- * \param[in]   n_cells       number of cells in mass source term zones
- * \param[out]  cell_num      numbers (1-based) cells in mass source term zones
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_volume_mass_injection_build_lists(cs_lnum_t   n_cells,
-                                     cs_lnum_t   cell_num[]);
+cs_volume_mass_injection_build_lists(void);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -96,9 +92,9 @@ cs_volume_mass_injection_eval(void);
 /*----------------------------------------------------------------------------*/
 
 void
-cs_volume_mass_injection_get_arrays(const cs_field_t  *f,
-                                    cs_lnum_t         *ncesmp,
-                                    cs_lnum_t         **icetsm,
+cs_volume_mass_injection_get_arrays(const cs_field_t   *f,
+                                    cs_lnum_t          *ncesmp,
+                                    const cs_lnum_t   **icetsm,
                                     int               **itpsmp,
                                     cs_real_t         **smcelp,
                                     cs_real_t         **gamma);
