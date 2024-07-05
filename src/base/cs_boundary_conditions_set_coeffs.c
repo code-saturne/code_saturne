@@ -718,7 +718,6 @@ cs_boundary_conditions_set_coeffs(int        nvar,
   const int kscacp  = cs_field_key_id("is_temperature");
   const int kbfid   = cs_field_key_id("boundary_value_id");
   const int ksigmas = cs_field_key_id("turbulent_schmidt");
-  const int kbmasf  = cs_field_key_id("boundary_mass_flux_id");
 
   const cs_lnum_t nt_cur = cs_glob_time_step->nt_cur;
 
@@ -885,12 +884,6 @@ cs_boundary_conditions_set_coeffs(int        nvar,
 
   /* velipb stores the velocity in i' of boundary cells */
 
-  /* initialize variables to avoid compiler warnings */
-
-  cs_real_t rinfiv[3] = {cs_math_infinite_r,
-                         cs_math_infinite_r,
-                         cs_math_infinite_r};
-
   /* Pointers to y+, t+ and t* if saved */
   cs_real_t *tplusp = NULL, *tstarp = NULL, *yplbr = NULL;
 
@@ -920,10 +913,6 @@ cs_boundary_conditions_set_coeffs(int        nvar,
   int *icodcl_vel = vel->bc_coeffs->icodcl;
   const cs_real_3_t *var_vela = (const cs_real_3_t *)vel->val_pre;
   cs_equation_param_t *eqp_vel = cs_field_get_equation_param(vel);
-
-  /* Pointers to the mass fluxes */
-  const cs_real_t *b_massflux
-    = cs_field_by_id(cs_field_get_key_int(CS_F_(vel), kbmasf))->val;
 
   cs_real_t   *bfconv  = NULL, *bhconv = NULL;
   cs_real_3_t *forbr   = NULL;
