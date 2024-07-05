@@ -939,7 +939,7 @@ cs_parameters_check(void)
   if (f_cp != NULL)
     cp_extrap = cs_field_get_key_int(f_cp, key_t_ext_id);
 
-  if (   fabs(eqp_u->theta - 1.) < 0
+  if (   fabs(eqp_u->theta - 1.) < cs_math_epzero
       && (   time_scheme->istmpf == 2
           || time_scheme->isno2t != 0
           || time_scheme->isto2t != 0
@@ -956,7 +956,7 @@ cs_parameters_check(void)
        time_scheme->istmpf, time_scheme->isno2t,
        time_scheme->isto2t, rho_extrap, mu_extrap, cp_extrap);
 
-  if (   fabs(eqp_u->theta - 0.5) < 0
+  if (   fabs(eqp_u->theta - 0.5) < cs_math_epzero
       && (   time_scheme->istmpf != 2
           || time_scheme->isno2t != 1
           || time_scheme->isto2t != 1
@@ -1034,10 +1034,10 @@ cs_parameters_check(void)
 
     if (   time_scheme->thetst > 0.
         || time_scheme->isto2t > 0
-        || fabs(eqp_k->theta - 1.) > 0
-        || fabs(eqp_eps->theta - 1.) > 0
-        || fabs(eqp_phi->theta - 1.) > 0
-        || fabs(eqp_fb->theta - 1.) > 0)
+        || fabs(eqp_k->theta - 1.) > cs_math_epzero
+        || fabs(eqp_eps->theta - 1.) > cs_math_epzero
+        || fabs(eqp_phi->theta - 1.) > cs_math_epzero
+        || fabs(eqp_fb->theta - 1.) > cs_math_epzero)
       _raise_turb_error("in the v2f-phi turbulence model");
   }
 
@@ -1050,10 +1050,10 @@ cs_parameters_check(void)
 
     if (   time_scheme->thetst > 0.
         || time_scheme->isto2t > 0
-        || fabs(eqp_k->theta - 1.) > 0
-        || fabs(eqp_eps->theta - 1.) > 0
-        || fabs(eqp_phi->theta - 1.) > 0
-        || fabs(eqp_alp_bl->theta - 1.) > 0)
+        || fabs(eqp_k->theta - 1.) > cs_math_epzero
+        || fabs(eqp_eps->theta - 1.) > cs_math_epzero
+        || fabs(eqp_phi->theta - 1.) > cs_math_epzero
+        || fabs(eqp_alp_bl->theta - 1.) > cs_math_epzero)
       _raise_turb_error("in the v2f-v2k turbulence model");
   }
 
@@ -1064,8 +1064,8 @@ cs_parameters_check(void)
 
     if (   time_scheme->thetst > 0.
         || time_scheme->isto2t > 0
-        || fabs(eqp_k->theta - 1.) > 0
-        || fabs(eqp_omg->theta - 1.) > 0)
+        || fabs(eqp_k->theta - 1.) > cs_math_epzero
+        || fabs(eqp_omg->theta - 1.) > cs_math_epzero)
       _raise_turb_error("in the k-omega turbulence model");
   }
 
@@ -1075,7 +1075,7 @@ cs_parameters_check(void)
 
     if (   time_scheme->thetst > 0.
         || time_scheme->isto2t > 0
-        || fabs(eqp_nusa->theta - 1.) > 0)
+        || fabs(eqp_nusa->theta - 1.) > cs_math_epzero)
       _raise_turb_error("in the Spalart-Allmaras turbulence model");
   }
 
@@ -1234,7 +1234,7 @@ cs_parameters_check(void)
     const int id_var = cs_field_get_key_int(f, keyvar);
     if (id_var >= 1) {
       const double dt_var = cs_field_get_key_double(f, key_dt_var);
-      if (dt_var < 0.)
+      if (dt_var <= 0.)
         cs_parameters_error
           (CS_ABORT_DELAYED,
            _("Time step computation"),
@@ -1305,7 +1305,7 @@ cs_parameters_check(void)
 
         const int ksigmas = cs_field_key_id("turbulent_schmidt");
         const cs_real_t turb_schmidt = cs_field_get_key_double(f, ksigmas);
-        if (turb_schmidt < 0)
+        if (turb_schmidt <= 0)
           cs_parameters_error
             (CS_ABORT_DELAYED,
              _("in thermal scalar model"),
@@ -1392,7 +1392,7 @@ cs_parameters_check(void)
    * Verification in the ALE method
    *--------------------------------------------------------------------------*/
 
-  if (cs_glob_ale) {
+  if (cs_glob_ale >= 1) {
     if (cs_glob_ale_n_ini_f < 0)
       cs_parameters_error
         (CS_ABORT_DELAYED,
@@ -1401,7 +1401,7 @@ cs_parameters_check(void)
            "must be a positive integer but it has value %d\n"),
          cs_glob_ale_n_ini_f);
 
-    if (cs_glob_mobile_structures_i_max < 0)
+    if (cs_glob_mobile_structures_i_max <= 0)
       cs_parameters_error
         (CS_ABORT_DELAYED,
          _("in ALE module"),
@@ -1409,7 +1409,7 @@ cs_parameters_check(void)
            "must be a positive integer but it has value %d\n"),
          cs_glob_mobile_structures_i_max);
 
-    if (cs_glob_mobile_structures_i_eps < 0)
+    if (cs_glob_mobile_structures_i_eps <= 0)
       cs_parameters_error
         (CS_ABORT_DELAYED,
          _("in ALE module"),
@@ -1429,12 +1429,12 @@ cs_parameters_check(void)
   }
 
   /*--------------------------------------------------------------------------
-   * TODO Verifications for the compressible module
+   * Verifications for the compressible module
    *--------------------------------------------------------------------------*/
 
   if (cs_glob_physical_model_flag[CS_COMPRESSIBLE] > 0) {
-    if (   cs_glob_fluid_properties->p0 < 0
-        || cs_glob_fluid_properties->t0 < 0)
+    if (   cs_glob_fluid_properties->p0 <= 0
+        || cs_glob_fluid_properties->t0 <= 0)
       cs_parameters_error
         (CS_ABORT_DELAYED,
          _("in the compressible module"),
@@ -1445,7 +1445,7 @@ cs_parameters_check(void)
 
     cs_field_t *fth = cs_thermal_model_field();
     const cs_real_t visls_0 = cs_field_get_key_double(fth, kvisl0);
-    if (visls_0 < 0)
+    if (visls_0 <= 0)
       cs_parameters_error
         (CS_ABORT_DELAYED,
          _("in the compressible module"),
