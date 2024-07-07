@@ -54,11 +54,6 @@ module pointe
     double precision, dimension(:),  pointer :: p !< rank 1 array pointer
   end type pmapper_double_r1
 
-  !> container for rank 2 double precision array pointer.
-  type pmapper_double_r2
-    double precision, dimension(:,:),  pointer :: p !< rank 2 array pointer
-  end type pmapper_double_r2
-
   !> \}
 
   !=============================================================================
