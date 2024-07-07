@@ -714,8 +714,9 @@ cs_log_warning(const char *format,
   cs_log_printf(CS_LOG_WARNINGS, "\n");
 
   /* Print copy to main log */
-  cs_log_printf(CS_LOG_DEFAULT, "\nWarning message :\n");
-  cs_log_printf(CS_LOG_DEFAULT, "-----------------\n\n");
+  cs_log_printf(CS_LOG_DEFAULT, _("\n"
+                                  "Warning:\n"
+                                  "--------\n\n"));
   cs_log_vprintf(CS_LOG_DEFAULT, format, arg_ptr);
 
   va_end(arg_ptr);
