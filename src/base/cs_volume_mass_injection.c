@@ -46,6 +46,7 @@
 #include "cs_base.h"
 #include "cs_equation_param.h"
 #include "cs_field.h"
+#include "cs_field_default.h"
 #include "cs_field_pointer.h"
 #include "cs_math.h"
 #include "cs_mesh.h"
@@ -610,9 +611,10 @@ cs_volume_mass_injection_build_lists(void)
 void
 cs_volume_mass_injection_eval(void)
 {
+  if (_mass_injection == NULL)
+    return;
 
   int n_fields = cs_field_n_fields();
-  const int key_eqp_id = cs_field_key_id("var_cal_opt");
 
   /* Initialize arrays */
 
@@ -620,28 +622,6 @@ cs_volume_mass_injection_eval(void)
   cs_lnum_t ncesmp = 0;
   const cs_lnum_t *icetsm = NULL;
   cs_real_t *smacel= NULL;
-
-  for (int f_id = 0; f_id < n_fields; f_id++) {
-
-    cs_field_t  *f = cs_field_by_id(f_id);
-    if (! (f->type & CS_FIELD_VARIABLE))
-      continue;
-
-    cs_volume_mass_injection_get_arrays(f,
-                                        &ncesmp,
-                                        &icetsm,
-                                        &itypsm,
-                                        &smacel,
-                                        NULL);
-
-    for (cs_lnum_t i = 0; i < ncesmp; i++) {
-      itypsm[i] = 0;
-      for (cs_lnum_t j = 0; j < f->dim; j++) {
-        smacel[i*f->dim + j] = 0.0;
-      }
-    }
-
-  }
 
   /* Compute shift for zones in case they do not appear in order */
 
@@ -670,7 +650,10 @@ cs_volume_mass_injection_eval(void)
 
     /* Retrieve the equation param to set */
 
-    cs_equation_param_t *eqp = cs_field_get_key_struct_ptr(f, key_eqp_id);
+    cs_equation_param_t *eqp = cs_field_get_equation_param(f);
+
+    if (eqp->n_volume_mass_injections < 1)
+      continue;
 
     /* xdef-based method */
 
@@ -699,20 +682,42 @@ cs_volume_mass_injection_eval(void)
                                           &itypsm,
                                           &smacel,
                                           NULL);
-      if (f->dim == 1) {
-        for (cs_lnum_t i = 0; i < z->n_elts; i++) {
-          cs_lnum_t j = c_shift + i;
-          itypsm[j] = 1;
-          smacel[j] += st_loc[i];
+
+      if (inj_idx == 0) {
+        if (f->dim == 1) {
+          for (cs_lnum_t i = 0; i < z->n_elts; i++) {
+            cs_lnum_t j = c_shift + i;
+            itypsm[j] = 1;
+            smacel[j] = st_loc[i];
+          }
+        }
+        else {
+          const cs_lnum_t dim = f->dim;
+          for (cs_lnum_t i = 0; i < z->n_elts; i++) {
+            cs_lnum_t j = c_shift + i;
+            itypsm[j] = 1;
+            for (cs_lnum_t k = 0; k < dim; k++)
+              smacel[j*dim + k] = st_loc[i*dim + k];
+          }
         }
       }
+
       else {
-        const cs_lnum_t dim = f->dim;
-        for (cs_lnum_t i = 0; i < z->n_elts; i++) {
-          cs_lnum_t j = c_shift + i;
-          itypsm[j] = 1;
-          for (cs_lnum_t k = 0; k < dim; k++)
-            smacel[j*dim + k] += st_loc[i*dim + k];
+        if (f->dim == 1) {
+          for (cs_lnum_t i = 0; i < z->n_elts; i++) {
+            cs_lnum_t j = c_shift + i;
+            itypsm[j] = 1;
+            smacel[j] += st_loc[i];
+          }
+        }
+        else {
+          const cs_lnum_t dim = f->dim;
+          for (cs_lnum_t i = 0; i < z->n_elts; i++) {
+            cs_lnum_t j = c_shift + i;
+            itypsm[j] = 1;
+            for (cs_lnum_t k = 0; k < dim; k++)
+              smacel[j*dim + k] += st_loc[i*dim + k];
+          }
         }
       }
 
@@ -758,11 +763,10 @@ cs_volume_mass_injection_get_arrays(const cs_field_t   *f,
   if (mi != NULL) {
     _ncesmp = mi->n_elts;
     _icetsm = mi->elt_id;
-
-    _volume_mass_injection_get_field_arrays(f->id, &_itpsmp, &_smcelp);
-
-    if (_ncesmp > 0)
-      _volume_mass_injection_get_field_arrays(CS_F_(p)->id, NULL, &_gamma);
+    _volume_mass_injection_get_field_arrays(CS_F_(p)->id, NULL, &_gamma);
+    const cs_equation_param_t *eqp = cs_field_get_equation_param_const(f);
+    if (eqp->n_volume_mass_injections > 0)
+      _volume_mass_injection_get_field_arrays(f->id, &_itpsmp, &_smcelp);
   }
 
   if (ncesmp != NULL) *ncesmp = _ncesmp;
@@ -770,6 +774,18 @@ cs_volume_mass_injection_get_arrays(const cs_field_t   *f,
   if (itpsmp != NULL) *itpsmp = _itpsmp;
   if (smcelp != NULL) *smcelp = _smcelp;
   if (gamma != NULL) *gamma = _gamma;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Return true if volume mass injection is active, false otherwise.
+ */
+/*----------------------------------------------------------------------------*/
+
+bool
+cs_volume_mass_injection_is_active(void)
+{
+  return (_mass_injection != NULL) ? true : false;
 }
 
 /*----------------------------------------------------------------------------*/

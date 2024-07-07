@@ -43,6 +43,8 @@ BEGIN_C_DECLS
 /*
  * \brief Implicit and explicit mass source terms computation.
  *
+ * Arrays st_exp, st_imp, and gapinj are incremented, so should be initialized.
+ *
  * \param[in]     iterns        iteration number on Navier-Stoke
  * \param[in]     dim           associated field dimension
  * \param[in]     ncesmp        number of cells with mass source term

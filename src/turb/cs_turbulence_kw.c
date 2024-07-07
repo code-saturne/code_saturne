@@ -1061,20 +1061,25 @@ cs_turbulence_kw(int phase_id)
 
   /* Mass source terms (Implicit and explicit parts)
      =============================================== */
-  const cs_lnum_t ncetsm
-    = cs_volume_zone_n_type_cells(CS_VOLUME_ZONE_MASS_SOURCE_TERM);
 
-  if (ncetsm > 0) {
-
-    cs_real_t *gamk;
-    cs_real_t *gamw;
-    BFT_MALLOC(gamk, n_cells_ext, cs_real_t);
-    BFT_MALLOC(gamw, n_cells_ext, cs_real_t);
+  if (cs_volume_mass_injection_is_active()) {
 
     int *itypsm = NULL;
     cs_lnum_t ncesmp = 0;
     const cs_lnum_t *icetsm = NULL;
     cs_real_t *smacel = NULL, *gamma = NULL;
+    cs_real_t *gapinj_k = NULL, *gapinj_omg = NULL;
+
+    /* If we extrapolate the source terms we put Gamma Pinj in c_st */
+    if (istprv >= 0) {
+      gapinj_k = c_st_k_p;
+      gapinj_omg = c_st_omg_p;
+    }
+    /* Otherwise we put it directly in smbr */
+    else {
+      gapinj_k = smbrk;
+      gapinj_omg = smbrw;
+    }
 
     /* We increment SMBRS by -Gamma.var_prev and ROVSDT by Gamma */
 
@@ -1096,7 +1101,7 @@ cs_turbulence_kw(int phase_id)
                          gamma,
                          smbrk,
                          tinstk,
-                         gamk);
+                         gapinj_k);
 
     /* For omg */
      cs_volume_mass_injection_get_arrays(f_omg,
@@ -1116,26 +1121,8 @@ cs_turbulence_kw(int phase_id)
                          gamma,
                          smbrw,
                          tinstw,
-                         gamw);
+                         gapinj_omg);
 
-    /* If we extrapolate the ST we put Gamma Pinj in c_st_k_p, c_st_omg_p */
-    if (istprv >= 0) {
-      for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-        c_st_k_p[c_id] += gamk[c_id];
-        c_st_omg_p[c_id] += gamw[c_id];
-      }
-    }
-    /*  Otherwise we place it directly in SMBR */
-    else {
-      for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-        smbrk[c_id] += gamk[c_id];
-        smbrw[c_id] += gamw[c_id];
-      }
-    }
-
-    /*Free memory */
-    BFT_FREE(gamk);
-    BFT_FREE(gamw);
   }
 
   /* Finalize source terms */

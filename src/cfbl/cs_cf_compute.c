@@ -150,11 +150,10 @@ _compressible_pressure_mass_flux(int iterns, // cfmsfp en fortran
 
   /* Allocate work arrays */
   cs_real_t *w1;
-  cs_real_3_t *tsexp, *gavinj, *vel0;
+  cs_real_3_t *tsexp, *vel0;
   cs_real_33_t *tsimp;
   CS_MALLOC_HD(w1, n_cells_ext, cs_real_t, cs_alloc_mode);
   CS_MALLOC_HD(tsexp, n_cells_ext, cs_real_3_t, cs_alloc_mode);
-  CS_MALLOC_HD(gavinj, n_cells_ext, cs_real_3_t, cs_alloc_mode);
   CS_MALLOC_HD(vel0, n_cells_ext, cs_real_3_t, cs_alloc_mode);
   CS_MALLOC_HD(tsimp, n_cells_ext, cs_real_33_t, cs_alloc_mode);
 
@@ -349,12 +348,9 @@ _compressible_pressure_mass_flux(int iterns, // cfmsfp en fortran
 
   /* End of the test on momentum source terms */
 
-  cs_lnum_t ncetsm
-    = cs_volume_zone_n_type_cells(CS_VOLUME_ZONE_MASS_SOURCE_TERM);
-
   /* Mass source term */
-  if (ncetsm > 0) {
 
+  if (cs_volume_mass_injection_is_active()) {
     /* The momentum balance is used in its conservative form here
        so the mass source term is only composed of gamma*uinj
        => array of previous velocity has to be set to zero */
@@ -362,12 +358,12 @@ _compressible_pressure_mass_flux(int iterns, // cfmsfp en fortran
     cs_array_real_set_scalar(3*n_cells, 0.0, (cs_real_t *)vel0);
 
     int *itypsm = NULL;
-    cs_lnum_t ncesmp = 0;
-    cs_lnum_t *icetsm = NULL;
+    cs_lnum_t ncetsm = 0;
+    const cs_lnum_t *icetsm = NULL;
     cs_real_t *smacel_vel, *smacel_p = NULL;
 
     cs_volume_mass_injection_get_arrays(vel,
-                                        &ncesmp,
+                                        &ncetsm,
                                         &icetsm,
                                         &itypsm,
                                         &smacel_vel,
@@ -384,15 +380,8 @@ _compressible_pressure_mass_flux(int iterns, // cfmsfp en fortran
                          smacel_p,
                          (cs_real_t *)tsexp,
                          (cs_real_t *)tsimp,
-                         (cs_real_t *)gavinj);
-
-    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-      for (cs_lnum_t i = 0; i < 3; i++)
-        tsexp[c_id][i] += gavinj[c_id][i];
-    }
-
+                         (cs_real_t *)tsexp);
   }
-
 
 # pragma omp parallel if(n_cells > CS_THR_MIN)
   for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
@@ -466,7 +455,6 @@ _compressible_pressure_mass_flux(int iterns, // cfmsfp en fortran
   /* Free memory */
   CS_FREE_HD(w1);
   CS_FREE_HD(tsexp);
-  CS_FREE_HD(gavinj);
   CS_FREE_HD(tsimp);
   CS_FREE_HD(i_visc);
   CS_FREE_HD(b_visc);
@@ -633,24 +621,20 @@ cs_cf_convective_mass_flux(int  iterns)
   /* Mass source term
      ---------------- */
 
-  cs_lnum_t ncetsm
-    = cs_volume_zone_n_type_cells(CS_VOLUME_ZONE_MASS_SOURCE_TERM);
-
-  if (ncetsm > 0) {
-
-    cs_lnum_t ncesmp = 0;
-    cs_lnum_t *icetsm = NULL;
+  if (cs_volume_mass_injection_is_active()) {
+    cs_lnum_t ncetsm = 0;
+    const cs_lnum_t *icetsm = NULL;
     int *itpsm_p = NULL;
     cs_real_t *smcel_p = NULL; //, *gamma = NULL;
 
     cs_volume_mass_injection_get_arrays(f_p,
-                                        &ncesmp,
+                                        &ncetsm,
                                         &icetsm,
                                         &itpsm_p,
                                         &smcel_p,
                                         NULL);
 
-    for (cs_lnum_t ii = 0; ii < ncesmp; ii++) {
+    for (cs_lnum_t ii = 0; ii < ncetsm; ii++) {
       const cs_lnum_t c_id = icetsm[ii];
       smbrs[c_id] = smbrs[c_id] + smcel_p[ii]*cell_f_vol[c_id];
     }

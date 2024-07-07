@@ -1607,25 +1607,29 @@ cs_turbulence_ke(int              phase_id,
    * Going out of the step we keep divu,  smbrk, smbre
    * ================================================= */
 
-  const cs_lnum_t ncetsm
-    = cs_volume_zone_n_type_cells(CS_VOLUME_ZONE_MASS_SOURCE_TERM);
-
-  if (ncetsm > 0) {
-
-#   pragma omp parallel for if(n_cells_ext > CS_THR_MIN)
-    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-      w2[c_id] = 0.;
-      w3[c_id] = 0.;
-    }
+  if (cs_volume_mass_injection_is_active()) {
 
     int *itypsm = NULL;
     cs_lnum_t ncesmp = 0;
     const cs_lnum_t *icetsm = NULL;
     cs_real_t *smacel = NULL, *gamma = NULL;
+    cs_real_t *gapinj_k = NULL, *gapinj_eps = NULL;
+
+    /* If we extrapolate the source terms we put Gamma Pinj in c_st */
+    if (istprv >= 0) {
+      gapinj_k = c_st_k_p;
+      gapinj_eps = c_st_eps_p;
+    }
+    /* Otherwise we put it directly in smbr */
+    else {
+      gapinj_k = smbrk;
+      gapinj_eps = smbre;
+    }
 
     /* We increment smbrs with -Gamma.var_prev and rovsdt with Gamma */
 
     /* For k */
+
     cs_volume_mass_injection_get_arrays(f_k,
                                         &ncesmp,
                                         &icetsm,
@@ -1642,8 +1646,8 @@ cs_turbulence_ke(int              phase_id,
                          smacel,
                          gamma,
                          smbrk,
-                         w2,
-                         w4);
+                         tinstk,
+                         gapinj_k);
 
     /* For eps */
     cs_volume_mass_injection_get_arrays(f_eps,
@@ -1663,33 +1667,8 @@ cs_turbulence_ke(int              phase_id,
                          smacel,
                          gamma,
                          smbre,
-                         w3,
-                         w5);
-
-    /* If we extrapolate the source terms we put Gamma Pinj in c_st */
-    if (istprv >= 0) {
-#     pragma omp parallel for if(n_cells_ext > CS_THR_MIN)
-      for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-        c_st_k_p[c_id]   += w4[c_id];
-        c_st_eps_p[c_id] += w5[c_id];
-      }
-    }
-
-    /* Otherwise we put it directly in smbr */
-    else {
-#     pragma omp parallel for if(n_cells_ext > CS_THR_MIN)
-      for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-        smbrk[c_id] += w4[c_id];
-        smbre[c_id] += w5[c_id];
-      }
-    }
-
-    /* Implicit part */
-#   pragma omp parallel for if(n_cells_ext > CS_THR_MIN)
-    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-      tinstk[c_id] += w2[c_id];
-      tinste[c_id] += w3[c_id];
-    }
+                         tinste,
+                         gapinj_eps);
 
   }
 

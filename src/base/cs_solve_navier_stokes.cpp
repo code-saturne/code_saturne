@@ -2923,65 +2923,48 @@ _velocity_prediction(const cs_mesh_t             *m,
   /* Mass source terms
      ----------------- */
 
-  cs_lnum_t ncetsm
-    = cs_volume_zone_n_type_cells(CS_VOLUME_ZONE_MASS_SOURCE_TERM);
+  if (cs_volume_mass_injection_is_active()) {
 
-  if (ncetsm > 0) {
-
-    cs_real_3_t *gavinj = NULL;
-    BFT_MALLOC(gavinj, n_cells_ext, cs_real_3_t);
-
+    cs_lnum_t ncetsm = 0;
     int *itypsm = NULL;
-    cs_lnum_t _ncetsm = 0;
-    const cs_lnum_t *_icetsm = NULL;
-    cs_real_t *_smacel_p = NULL;
-    cs_real_t *_smacel_vel = NULL;
+    const cs_lnum_t *icetsm = NULL;
+    cs_real_t *smacel_p = NULL;
+    cs_real_t *smacel_vel = NULL;
 
     cs_volume_mass_injection_get_arrays(CS_F_(vel),
-                                        &_ncetsm,
-                                        &_icetsm,
+                                        &ncetsm,
+                                        &icetsm,
                                         &itypsm,
-                                        &_smacel_vel,
-                                        &_smacel_p);
+                                        &smacel_vel,
+                                        &smacel_p);
+
+    cs_real_3_t *gavinj = NULL;
+    if (iterns == 1) {
+      if (cs_glob_time_scheme->isno2t > 0)
+        /* If source terms are extrapolated, stored in fields */
+        gavinj = c_st_vel;
+      else {
+        if (vp_param->nterup == 1) /* If no inner iteration: in trav */
+          gavinj = trav;
+        else  /* Otherwise, in trava */
+          gavinj = trava;
+      }
+    }
 
     cs_real_3_t *trav_p = (vp_param->nterup == 1) ? trav : trava;
 
     cs_mass_source_terms(iterns,
                          3,
                          ncetsm,
-                         _icetsm,
+                         icetsm,
                          itypsm,
                          cell_f_vol,
                          (cs_real_t*)vela,
-                         _smacel_vel,
-                         _smacel_p,
+                         smacel_vel,
+                         smacel_p,
                          (cs_real_t*)trav_p,
                          (cs_real_t*)fimp,
                          (cs_real_t*)gavinj);
-
-    if (iterns == 1) {
-
-      /* If source terms are extrapolated, stored in fields */
-      if (cs_glob_time_scheme->isno2t > 0)
-        cs_axpy(n_cells*3, 1,
-                (const cs_real_t *)gavinj, (cs_real_t *)c_st_vel);
-
-      else {
-        /* If no inner iteration: in trav */
-        if (vp_param->nterup == 1)
-          cs_axpy(n_cells*3, 1,
-                  (const cs_real_t *)gavinj, (cs_real_t *)trav);
-
-        /* Otherwise, in trava */
-        else
-          cs_axpy(n_cells*3, 1,
-                  (const cs_real_t *)gavinj, (cs_real_t *)trava);
-
-      }
-
-    }
-
-    BFT_FREE(gavinj);
 
   }
 

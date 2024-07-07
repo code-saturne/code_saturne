@@ -761,17 +761,19 @@ _solve_eq_phi(const int           istprv,
     }
   }
 
-  /* Mass source term
-     ---------------- */
-  const cs_lnum_t ncetsm
-    = cs_volume_zone_n_type_cells(CS_VOLUME_ZONE_MASS_SOURCE_TERM);
+  /* Mass source terms
+     ----------------- */
 
-  if (ncetsm > 0) {
+  if (cs_volume_mass_injection_is_active()) {
+
     /* We increment rhs by -Gamma.var_prev and rovsdt by Gamma */
     int *itypsm = NULL;
     cs_lnum_t ncesmp = 0;
     const cs_lnum_t *icetsm = NULL;
     cs_real_t *smacel = NULL, *gamma = NULL;
+
+    /* If we extrapolate the source term we put Gamma Pinj in the prev. TS */
+    cs_real_t *gapinj = (istprv >= 0) ? c_st_phi_p : rhs;
 
     cs_volume_mass_injection_get_arrays(f_phi,
                                         &ncesmp,
@@ -790,19 +792,8 @@ _solve_eq_phi(const int           istprv,
                          gamma,
                          rhs,
                          rovsdt,
-                         w2);
+                         gapinj);
 
-    /* If we extrapolate the source term we put Gamma Pinj in the prev. TS */
-    if (istprv >= 0) {
-      for (cs_lnum_t i = 0; i < n_cells; i++) {
-        c_st_phi_p[i] += w2[i];
-      }
-    }
-    else{
-      for (cs_lnum_t i = 0; i < n_cells; i++) {
-        rhs[i] += w2[i];
-      }
-    }
   }
 
   /* Mass accumulation term \f$ -\dfrad{dRO}{dt}VOLUME \f$

@@ -462,13 +462,7 @@ cs_cf_energy(int f_sc_id)
                                          inj
   */
 
-  cs_lnum_t ncetsm
-    = cs_volume_zone_n_type_cells(CS_VOLUME_ZONE_MASS_SOURCE_TERM);
-
-  if (ncetsm > 0) {
-    cs_real_t *gapinj;
-    BFT_MALLOC(gapinj, n_cells_ext, cs_real_t);
-
+  if (cs_volume_mass_injection_is_active()) {
     cs_lnum_t ncesmp = 0;
     cs_lnum_t *icetsm = NULL;
     int *itpsm = NULL;
@@ -492,9 +486,7 @@ cs_cf_energy(int f_sc_id)
                          smcel_p,
                          smbrs,
                          rovsdt,
-                         gapinj);
-
-    BFT_FREE(gapinj);
+                         NULL);
   }
 
   /*                         rho*volume

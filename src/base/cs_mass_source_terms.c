@@ -85,6 +85,8 @@ BEGIN_C_DECLS
 /*!
  * \brief Implicit and explicit mass source terms computation.
  *
+ * Arrays st_exp, st_imp, and gapinj are incremented, so should be initialized.
+ *
  * \param[in]     iterns        iteration number on Navier-Stoke
  * \param[in]     dim           associated field dimension
  * \param[in]     ncesmp        number of cells with mass source term
@@ -97,7 +99,7 @@ BEGIN_C_DECLS
  * \param[in,out] st_exp        explicit source term part linear in the variable
  * \param[in,out] st_imp        associated value with \c tsexp
  *                              to be stored in the matrix
- * \param[out]    gapinj        explicit source term part independent
+ * \param[in,out] gapinj        explicit source term part independent
  *                              of the variable
  */
 /*----------------------------------------------------------------------------*/
@@ -119,6 +121,9 @@ cs_mass_source_terms(int                   iterns,
   const cs_mesh_t *m = cs_glob_mesh;
   const cs_lnum_t n_cells = m->n_cells;
 
+  if (gamma == NULL) /* No mass source term here; should not occur */
+    return;
+
   /* Remark for tests on gamma[i] > O && itpsmp[i] == 1 :
      *
      * If we remove matter or enter with the cell value
@@ -132,34 +137,58 @@ cs_mass_source_terms(int                   iterns,
      *
      * In gapinj, we place the term Gamma Pinj which will go to the right-hand side.
      *
-     * The distinction between st_exp and W1 (which both go finally to the
+     * The distinction between st_exp and w1 (which both go finally to the
      * right-hand side) is used for the 2nd-order time scheme. */
 
   if (iterns == 1) {
-    cs_array_real_fill_zero(n_cells*dim, gapinj);
 
-    if (dim == 1) {
-      for (cs_lnum_t i = 0; i < ncesmp; i++) {
-        cs_lnum_t c_id = icetsm[i];
-        if (gamma[i] > 0. && itpsmp[i] == 1) {
-          st_exp[c_id] -= volume[c_id]*gamma[i] * pvara[c_id];
-          gapinj[c_id] = volume[c_id]*gamma[i] * smcelp[i];
+    if (smcelp != NULL && gapinj != NULL) {
+      if (dim == 1) {
+        for (cs_lnum_t i = 0; i < ncesmp; i++) {
+          cs_lnum_t c_id = icetsm[i];
+          if (gamma[i] > 0. && itpsmp[i] == 1) {
+            st_exp[c_id] -= volume[c_id]*gamma[i] * pvara[c_id];
+            gapinj[c_id] += volume[c_id]*gamma[i] * smcelp[i];
+          }
         }
       }
-    }
-    else {
-      cs_lnum_t _dim = dim;
-      for (cs_lnum_t i = 0; i < ncesmp; i++) {
-        cs_lnum_t c_id = icetsm[i];
-        if (gamma[i] > 0. && itpsmp[i] == 1) {
-          for (cs_lnum_t j = 0; j < _dim; j++) {
-            cs_lnum_t k = c_id*_dim + j;
-            st_exp[k] -= volume[c_id]*gamma[i] * pvara[k];
-            gapinj[k] = volume[c_id]*gamma[i] * smcelp[i*_dim + j];
+      else {
+        cs_lnum_t _dim = dim;
+        for (cs_lnum_t i = 0; i < ncesmp; i++) {
+          cs_lnum_t c_id = icetsm[i];
+          if (gamma[i] > 0. && itpsmp[i] == 1) {
+            for (cs_lnum_t j = 0; j < _dim; j++) {
+              cs_lnum_t k = c_id*_dim + j;
+              st_exp[k] -= volume[c_id]*gamma[i] * pvara[k];
+              gapinj[k] += volume[c_id]*gamma[i] * smcelp[i*_dim + j];
+            }
           }
         }
       }
     }
+
+    else { /* smcelp == NULL && gapinj == NULL */
+      if (dim == 1) {
+        for (cs_lnum_t i = 0; i < ncesmp; i++) {
+          cs_lnum_t c_id = icetsm[i];
+          if (gamma[i] > 0. && itpsmp[i] == 1)
+            st_exp[c_id] -= volume[c_id]*gamma[i] * pvara[c_id];
+        }
+      }
+      else {
+        cs_lnum_t _dim = dim;
+        for (cs_lnum_t i = 0; i < ncesmp; i++) {
+          cs_lnum_t c_id = icetsm[i];
+          if (gamma[i] > 0. && itpsmp[i] == 1) {
+            for (cs_lnum_t j = 0; j < _dim; j++) {
+              cs_lnum_t k = c_id*_dim + j;
+              st_exp[k] -= volume[c_id]*gamma[i] * pvara[k];
+            }
+          }
+        }
+      }
+    }
+
   }
 
   /* On the diagonal */

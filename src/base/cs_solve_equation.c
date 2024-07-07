@@ -454,7 +454,6 @@ _diffusion_terms_scalar(const cs_field_t           *f,
                         const cs_real_t             xcpp[],
                         const cs_real_t             sgdh_diff[],
                         const cs_real_t            *cpro_viscls,
-                        cs_real_t                   w1[],
                         cs_real_t                   viscf[],
                         cs_real_t                   viscb[],
                         cs_real_t                   rhs[],
@@ -512,6 +511,9 @@ _diffusion_terms_scalar(const cs_field_t           *f,
   }
 
   if (eqp->idften & CS_ISOTROPIC_DIFFUSION) {
+    cs_real_t *w1;
+    CS_MALLOC_HD(w1, n_cells_ext, cs_real_t, cs_alloc_mode);
+
     int idifftp = eqp->idifft;
     if (scalar_turb_flux_model_type == 3)
       idifftp = 0;
@@ -539,6 +541,9 @@ _diffusion_terms_scalar(const cs_field_t           *f,
                       w1,
                       viscf,
                       viscb);
+
+
+    BFT_FREE(w1);
   }
 
   /* Symmetric tensor diffusivity (GGDH) */
@@ -1345,40 +1350,36 @@ cs_solve_equation_scalar(cs_field_t        *f,
      This would allow removing the itypsm and smacel arrays and
      associated dimensions. */
 
-  cs_real_t *w1;
-  CS_MALLOC_HD(w1, n_cells_ext, cs_real_t, cs_alloc_mode);
+  if (cs_volume_mass_injection_is_active()) {
+    cs_lnum_t ncetsm = 0;
+    const cs_lnum_t *icetsm = NULL;
+    int *itypsm_sc = NULL;
+    cs_real_t *smacel_sc = NULL, *smacel_ipr = NULL;
 
-  cs_lnum_t ncetsm = 0;
-  const cs_lnum_t *icetsm = NULL;
-  int *itypsm_sc = NULL;
-  cs_real_t *smacel_sc = NULL;
+    cs_volume_mass_injection_get_arrays(f,
+                                        &ncetsm,
+                                        &icetsm,
+                                        &itypsm_sc,
+                                        &smacel_sc,
+                                        &smacel_ipr);
 
-  cs_volume_mass_injection_get_arrays(f,
-                                      &ncetsm,
-                                      &icetsm,
-                                      &itypsm_sc,
-                                      &smacel_sc,
-                                      NULL);
-
-  if (ncetsm > 0) {
     cs_real_t *srcmas;
-    cs_real_t *_smacel_ipr = NULL;
-
-    cs_volume_mass_injection_get_arrays(CS_F_(p), NULL, NULL, NULL,
-                                        &_smacel_ipr, NULL);
-
     BFT_MALLOC(srcmas, ncetsm, cs_real_t);
 
     /* When treating the Temperature, the equation is multiplied by Cp */
     for (cs_lnum_t c_idx = 0; c_idx < ncetsm; c_idx++) {
-      if ((_smacel_ipr[c_idx] > 0.0) && (itypsm_sc[c_idx] == 1)) {
+      if ((smacel_ipr[c_idx] > 0.0) && (itypsm_sc[c_idx] == 1)) {
         const cs_lnum_t id = icetsm[c_idx];
-        srcmas[c_idx] = _smacel_ipr[c_idx] * xcpp[id];
+        srcmas[c_idx] = smacel_ipr[c_idx] * xcpp[id];
       }
       else {
        srcmas[c_idx] = 0.;
       }
     }
+
+    /* If we extrapolate STs we put Gamma Pinj in cpro_st;
+       Otherwise, we put it directly in rhs */
+    cs_real_t *gapinj = (st_prv_id >= 0) ? cpro_st : rhs;
 
     /* Increment rhs by -Gamma.cvara_var and fimp by Gamma */
     cs_mass_source_terms(1,
@@ -1392,17 +1393,9 @@ cs_solve_equation_scalar(cs_field_t        *f,
                          srcmas,
                          rhs,
                          fimp,
-                         w1);
-    BFT_FREE(srcmas);
+                         gapinj);
 
-    /* If we extrapolate STs we put Gamma Pinj in cpro_st */
-    if (st_prv_id >= 0)
-      for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
-        cpro_st[c_id] += w1[c_id];
-    /* Otherwise, we put it directly in rhs */
-    else
-      for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
-        rhs[c_id] += w1[c_id];
+    BFT_FREE(srcmas);
   }
 
   /* Condensation source terms for the scalars
@@ -1510,7 +1503,6 @@ cs_solve_equation_scalar(cs_field_t        *f,
                             xcpp,
                             sgdh_diff,
                             cpro_viscls,
-                            w1,
                             viscf,
                             viscb,
                             rhs,
@@ -1532,7 +1524,6 @@ cs_solve_equation_scalar(cs_field_t        *f,
     //TODO add boundary terms?
   }
 
-  BFT_FREE(w1);
   BFT_FREE(sgdh_diff);
 
   if (eqp->istat == 1) {
@@ -1993,26 +1984,22 @@ cs_solve_equation_vector(cs_field_t       *f,
 
   /* Mass source term */
 
-  cs_lnum_t ncetsm = 0;
-  const cs_lnum_t *icetsm = NULL;
-  int *itypsm_v = NULL;
-  cs_real_t *smacel_v = NULL;
+  if (cs_volume_mass_injection_is_active()) {
+    cs_lnum_t ncetsm = 0;
+    const cs_lnum_t *icetsm = NULL;
+    int *itypsm_v = NULL;
+    cs_real_t *smacel_v = NULL, *smacel_ipr = NULL;
 
-  cs_volume_mass_injection_get_arrays(f,
-                                      &ncetsm,
-                                      &icetsm,
-                                      &itypsm_v,
-                                      &smacel_v,
-                                      NULL);
+    cs_volume_mass_injection_get_arrays(f,
+                                        &ncetsm,
+                                        &icetsm,
+                                        &itypsm_v,
+                                        &smacel_v,
+                                        &smacel_ipr);
 
-  if (ncetsm > 0) {
-    cs_real_3_t *gavinj;
-    BFT_MALLOC(gavinj, n_cells_ext, cs_real_3_t);
-
-    cs_real_t *_smacel_ipr = NULL;
-
-    cs_volume_mass_injection_get_arrays(CS_F_(p), NULL, NULL, NULL,
-                                        &_smacel_ipr, NULL);
+    /* If we extrapolate source terms we put -Gamma Pinj in cproa_vect_st;
+       if we do not extrapolate we put directly in SMBRV */
+    cs_real_3_t *gavinj = (st_prv_id > -1) ? cproa_vect_st : rhs;
 
     /* We increment SMBRV by -Gamma RTPA and FIMP by Gamma */
     cs_mass_source_terms(1,
@@ -2023,26 +2010,10 @@ cs_solve_equation_vector(cs_field_t       *f,
                          cell_f_vol,
                          (const cs_real_t *)cvara_var,
                          smacel_v,
-                         _smacel_ipr,
+                         smacel_ipr,
                          (cs_real_t *)rhs,
                          (cs_real_t *)fimp,
                          (cs_real_t *)gavinj);
-
-    /* If we extrapolate source terms we put -Gamma Pinj in cproa_vect_st */
-    if (st_prv_id > -1) {
-      for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-        for (cs_lnum_t j = 0; j < 3; j++)
-          cproa_vect_st[c_id][j] += gavinj[c_id][j];
-      }
-    }
-    /* If we do not extrapolate we put directly in SMBRV */
-    else {
-      for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-        for (cs_lnum_t j = 0; j < 3; j++)
-          rhs[c_id][j] += gavinj[c_id][j];
-      }
-    }
-    BFT_FREE(gavinj);
   }
 
   if (st_prv_id > -1) {

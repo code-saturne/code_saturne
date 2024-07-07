@@ -2422,15 +2422,16 @@ _solve_epsilon(int              phase_id,
   /* Mass source term
    * ---------------- */
 
-  const cs_lnum_t ncetsm
-    = cs_volume_zone_n_type_cells(CS_VOLUME_ZONE_MASS_SOURCE_TERM);
-
-  if (ncetsm > 0) {
+  if (cs_volume_mass_injection_is_active()) {
 
     int *itypsm = NULL;
     cs_lnum_t ncesmp = 0;
-    cs_lnum_t *icetsm = NULL;
+    const cs_lnum_t *icetsm = NULL;
     cs_real_t *smacel = NULL, *gamma = NULL;
+
+    /* If we extrapolate the source terms, we put Gamma Pinj in c_st_prv;
+        Otherwise we put it directly in rhs */
+    cs_real_t *gapinj = (st_prv_id > -1) ? c_st_prv : rhs;
 
     /* We increment rhs with -Gamma.var_prev. and rovsdt with Gamma */
 
@@ -2451,21 +2452,8 @@ _solve_epsilon(int              phase_id,
                          gamma,
                          rhs,
                          rovsdt,
-                         w1);
+                         gapinj);
 
-    /* If we extrapolate the source terms, we put Gamma Pinj in c_st_prv */
-    if (st_prv_id > -1) {
-#     pragma omp parallel for if(n_cells_ext > CS_THR_MIN)
-      for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
-        c_st_prv[c_id] += w1[c_id];
-    }
-
-    /* Otherwise we put it directly in rhs */
-    else {
-#     pragma omp parallel for if(n_cells_ext > CS_THR_MIN)
-      for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
-        rhs[c_id] += w1[c_id];
-    }
   }
 
   /* Unsteady term
@@ -3136,26 +3124,26 @@ cs_turbulence_rij(int phase_id)
   /* Mass source terms
    *------------------ */
 
-  const cs_lnum_t ncetsm
-    = cs_volume_zone_n_type_cells(CS_VOLUME_ZONE_MASS_SOURCE_TERM);
-
-  if (ncetsm > 0) {
-
-    cs_real_6_t *gatinj;
-    BFT_MALLOC(gatinj, n_cells_ext, cs_real_6_t);
+  if (cs_volume_mass_injection_is_active()) {
 
     int *itypsm = NULL;
     cs_lnum_t ncesmp = 0;
-    cs_lnum_t *icetsm = NULL;
+    const cs_lnum_t *icetsm = NULL;
     cs_real_t *smacel = NULL, *gamma = NULL;
 
-    /* We increment smbrts with -Gamma.var_prev. and rovsdr with Gamma */
     cs_volume_mass_injection_get_arrays(f_rij,
                                         &ncesmp,
                                         &icetsm,
                                         &itypsm,
                                         &smacel,
                                         &gamma);
+
+    /* If we extrapolate the source terms, we put Gamma Pinj in c_st_prv;
+        Otherwise we put it directly in smbrts */
+    cs_real_6_t *gatinj = (st_prv_id > -1) ? c_st_prv : smbrts;
+
+    /* We increment smbrts with -Gamma.var_prev. and rovsdr with Gamma */
+
     cs_mass_source_terms(1, /* iterns*/
                          6, /* dim */
                          ncesmp,
@@ -3168,23 +3156,6 @@ cs_turbulence_rij(int phase_id)
                          (cs_real_t*)smbrts,
                          (cs_real_t*)rovsdtts,
                          (cs_real_t*)gatinj);
-
-    /* If we extrapolate the source terms, we put Gamma Pinj in c_st_prv */
-    if (st_prv_id > -1) {
-#     pragma omp parallel for if(n_cells > CS_THR_MIN)
-      for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
-        for (cs_lnum_t ii = 0; ii < 6; ii++)
-          c_st_prv[c_id][ii] += gatinj[c_id][ii];
-    }
-    /* Otherwise we put it directly in smbrts */
-    else {
-#     pragma omp parallel for if(n_cells > CS_THR_MIN)
-      for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
-        for (cs_lnum_t ii = 0; ii < 6; ii++)
-          smbrts[c_id][ii] += gatinj[c_id][ii];
-    }
-
-    BFT_FREE(gatinj);
   }
 
   /* Unsteady term

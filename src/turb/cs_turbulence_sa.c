@@ -548,18 +548,15 @@ cs_turbulence_sa(void)
 
   /* Explicit mass source terms */
 
-  /* Gamma.var_prev is stored in w_1 */
-  cs_real_t *w_1;
-  BFT_MALLOC(w_1, n_cells_ext, cs_real_t);
+  if (cs_volume_mass_injection_is_active()) {
 
-  const cs_lnum_t ncetsm
-    = cs_volume_zone_n_type_cells(CS_VOLUME_ZONE_MASS_SOURCE_TERM);
-
-  if (ncetsm > 0) {
+    /* Explicit part: Gamma Pinj
+       (if we extrapolate source terms, Gamma.var_prev is stored in prev. TS) */
+    cs_real_t *gapinj = (istprv >= 0) ? c_st_nusa_p : rhs_sa;
 
     int *itypsm = NULL;
     cs_lnum_t ncesmp = 0;
-    cs_lnum_t *icetsm = NULL;
+    const cs_lnum_t *icetsm = NULL;
     cs_real_t *smacel = NULL, *gamma = NULL;
 
     cs_volume_mass_injection_get_arrays(CS_F_(nusa),
@@ -579,20 +576,7 @@ cs_turbulence_sa(void)
                          gamma,
                          rhs_sa,
                          imp_sa,
-                         w_1);
-
-    /* Explicit part: Gamma Pinj
-       (if we extrapolate source terms, Gamma.var_prev is stored in prev. TS) */
-    if (istprv >= 0) {
-      for (cs_lnum_t i = 0; i < n_cells; i++) {
-        c_st_nusa_p[i] +=  w_1[i];
-      }
-    }
-    else {
-      for (cs_lnum_t i = 0; i < n_cells; i++) {
-        rhs_sa[i] += w_1[i];
-      }
-    }
+                         gapinj);
 
   }
 
@@ -618,7 +602,10 @@ cs_turbulence_sa(void)
     const cs_real_t dsigma = 1.0 / cs_turb_csasig;
     const int idifft = eqp_nusa->idifft;
 
-    /* diffusibility: 1/sigma*(mu_laminar + rho*nusa) */
+    cs_real_t *w_1;
+    CS_MALLOC_HD(w_1, n_cells_ext, cs_real_t, cs_alloc_mode);
+
+    /* diffusivity: 1/sigma*(mu_laminar + rho*nusa) */
     for (cs_lnum_t i = 0; i < n_cells; i++) {
       w_1[i] = dsigma *(cpro_viscl[i] + idifft*cvara_nusa[i]*cpro_rho[i]);
     }
@@ -629,6 +616,8 @@ cs_turbulence_sa(void)
                       w_1,
                       viscf,
                       viscb);
+
+    CS_FREE_HD(w_1);
   }
   else {
     for (cs_lnum_t f_id = 0; f_id < n_i_faces; f_id++)
@@ -636,8 +625,6 @@ cs_turbulence_sa(void)
     for (cs_lnum_t f_id = 0; f_id < n_b_faces; f_id++)
       viscb[f_id] = 0.0;
   }
-
-  BFT_FREE(w_1);
 
   /* Solving */
 

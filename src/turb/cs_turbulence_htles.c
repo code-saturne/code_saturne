@@ -61,7 +61,6 @@
 #include "cs_lagr.h"
 #include "cs_log.h"
 #include "cs_log_iteration.h"
-#include "cs_mass_source_terms.h"
 #include "cs_math.h"
 #include "cs_mesh.h"
 #include "cs_mesh_quantities.h"
