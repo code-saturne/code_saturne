@@ -510,7 +510,8 @@ cs_parameters_is_equal_int(cs_parameter_error_behavior_t   err_behavior,
                     _("Parameter: %s = %d\n"
                       "while its value must be equal to %d.\n"),
                     param_name, param_value, std_value);
-    } else {
+    }
+    else {
       cs_log_printf(log_id,
                     _("Parameter: %s = %d\n"
                       "while its recommended value is equal to %d.\n"),
@@ -751,7 +752,8 @@ cs_parameters_is_equal_double(cs_parameter_error_behavior_t   err_behavior,
                     _("Parameter: %s = %-5.3g\n"
                       "while its value must be equal to %-5.3g.\n"),
                     param_name, param_value, std_value);
-    } else {
+    }
+    else {
       cs_log_printf(log_id,
                     _("Parameter: %s = %-5.3g\n"
                       "while its recommended value is equal to %-5.3g.\n"),
@@ -2388,8 +2390,8 @@ cs_parameters_check(void)
      we warn the user that relaxv settings won't have any effect,
      otherwise check that relaxv is in range [O,1] (already done in steady) */
 
-  /* relaxv takes the value 1. in modini if not modified by the user
-     if idtvar >= 0 */
+  /* relaxv takes the value 1. in cs_parameters_*_complete if not modified by
+   * the user if idtvar >= 0 */
 
   if (   (   turb_model->itytur == 2
           || turb_model->iturb == CS_TURB_K_OMEGA)
@@ -2414,7 +2416,8 @@ cs_parameters_check(void)
                                       eqp->relaxv,
                                       1.);
         BFT_FREE(f_desc);
-      } else { /* ikecou = 0 */
+      }
+      else { /* ikecou = 0 */
         f_desc = _field_section_desc(f, "while reading numerical "
                                         "parameters for variable");
 

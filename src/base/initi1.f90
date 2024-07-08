@@ -173,7 +173,6 @@ endif
 ! are not defined anymore)
 if (icdo.lt.2) then
   call cs_parameters_global_complete
-  call modini
   call fldini
 endif
 

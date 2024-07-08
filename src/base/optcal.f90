@@ -171,7 +171,7 @@ module optcal
   !> of the reading of the mesh and of the wall temperature
   !> from the restart file
   !> Useful if nfpt1d > 0
-  integer, save :: isuit1 = -1
+  integer, save :: isuit1
 
   !----------------------------------------------------------------------------
   ! Time stepping options

@@ -164,7 +164,8 @@ call field_get_key_id("restart_n_values", key_n_restart_id)
 
 call add_property_field_1d('density', 'Density', irom)
 icrom = irom
-! Postprocessed and in the log file by default, hidden in modini if not variable
+! Postprocessed and in the log file by default, hidden in
+! cs_parameters_*_complete if not variable
 call field_set_key_int(icrom, keylog, 1)
 call field_set_key_int(icrom, keyvis, 1)
 

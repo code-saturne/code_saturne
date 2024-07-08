@@ -1167,7 +1167,7 @@ type(var_cal_opt) :: vcopt
 
 call field_get_key_struct_var_cal_opt(id, vcopt)
 
-! Undefined values, may be modified by modini
+! Undefined values, may be modified by cs_parameters_*_complete
 vcopt%isstpc = -999
 vcopt%nswrsm = -1
 vcopt%thetav = -1.d0

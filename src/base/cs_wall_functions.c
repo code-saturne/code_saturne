@@ -154,8 +154,8 @@ BEGIN_C_DECLS
 /* Wall functions structure and associated pointers
 
    ypluli is set to -grand*10. If the user has not changed this value,
-   its value is modified in  modini (10.88 with invariant wall laws,
-   1/kappa otherwise). */
+   its value is modified in cs_parameters_*_complete (10.88 with invariant wall
+   laws, 1/kappa otherwise). */
 
 static cs_wall_functions_t  _wall_functions =
 {

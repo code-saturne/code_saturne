@@ -47,23 +47,33 @@
 #include "bft_printf.h"
 
 #include "cs_at_opt_interp.h"
+#include "cs_ale.h"
 #include "cs_field.h"
 #include "cs_field_default.h"
+#include "cs_field_pointer.h"
 #include "cs_gradient.h"
 #include "cs_log.h"
 #include "cs_map.h"
 #include "cs_mesh_location.h"
 #include "cs_post.h"
 #include "cs_parall.h"
+#include "cs_parameters_check.h"
+#include "cs_physical_constants.h"
 #include "cs_physical_model.h"
 #include "cs_restart.h"
 #include "cs_restart_default.h"
 #include "cs_rad_transfer_fields.h"
+#include "cs_syr_coupling.h"
 #include "cs_turbulence_model.h"
 #include "cs_time_moment.h"
 #include "cs_thermal_model.h"
 #include "cs_cf_model.h"
+#include "cs_sat_coupling.h"
 #include "cs_tree.h"
+#include "cs_turbomachinery.h"
+#include "cs_velocity_pressure.h"
+#include "cs_vof.h"
+#include "cs_wall_functions.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file
@@ -1873,6 +1883,177 @@ cs_parameters_global_complete(void)
 {
   /* Set restart_file key for various fields */
   cs_restart_set_auxiliary_field_options();
+
+  const int key_t_ext_id = cs_field_key_id("time_extrapolated");
+  const int kthetss = cs_field_key_id("st_exp_extrapolated");
+  const int kthetvs = cs_field_key_id("diffusivity_extrapolated");
+  const int kisso2t = cs_field_key_id("scalar_time_scheme");
+  const int kscal = cs_field_key_id("scalar_id");
+  const int kivisl = cs_field_key_id("diffusivity_id");
+
+  cs_field_t *f_rho = CS_F_(rho);
+  cs_field_t *f_rho_b = CS_F_(rho_b);
+  cs_field_t *f_mu = CS_F_(mu);
+  cs_field_t *f_cp = CS_F_(cp);
+
+  /* Logging and postprocessing output */
+  if (cs_glob_fluid_properties->irovar < 1) {
+    cs_field_set_key_int(f_rho, cs_field_key_id("post_vis"), 0);
+    cs_field_set_key_int(f_rho, cs_field_key_id("log"), 0);
+    cs_field_set_key_int(f_rho_b, cs_field_key_id("post_vis"), 0);
+    cs_field_set_key_int(f_rho_b, cs_field_key_id("log"), 0);
+  }
+  if (cs_glob_fluid_properties->ivivar < 1) {
+    cs_field_set_key_int(f_mu, cs_field_key_id("post_vis"), 0);
+    cs_field_set_key_int(f_mu, cs_field_key_id("log"), 0);
+  }
+
+  /* Time scheme and time stepping */
+
+  cs_time_step_t *ts = cs_get_glob_time_step();
+  cs_time_scheme_t *time_scheme = cs_get_glob_time_scheme();
+
+  if (ts->nt_max == -1 && ts->t_max < -0.5) {
+    cs_time_step_define_nt_max(10);
+  }
+
+  /* Physical properties */
+  int iviext = cs_field_get_key_int(f_mu, key_t_ext_id);
+  if (fabs(time_scheme->thetvi+999.) > cs_math_epzero) {
+    cs_parameters_error
+      (CS_ABORT_DELAYED,
+       _("in the data specification"),
+       _("iviext = %d\n"
+         "thetvi will be initialized automatically.\n"
+         "Do not modify it.\n"),
+       iviext);
+  }
+  else if (iviext == 0)
+    time_scheme->thetvi = 0.;
+  else if (iviext == 1)
+    time_scheme->thetvi = 0.5;
+  else if (iviext == 2)
+    time_scheme->thetvi = 1.;
+
+  if (cs_glob_fluid_properties->icp >= 0) {
+    int icpext = cs_field_get_key_int(f_cp, key_t_ext_id);
+    if (fabs(time_scheme->thetcp+999.) > cs_math_epzero) {
+      cs_parameters_error
+        (CS_ABORT_DELAYED,
+         _("in the data specification"),
+         _("icpext = %d\n"
+           "thetcp will be initialized automatically.\n"
+           "Do not modify it.\n"),
+         icpext);
+    }
+    else if (icpext == 0)
+      time_scheme->thetcp = 0.;
+    else if (icpext == 1)
+      time_scheme->thetcp = 0.5;
+    else if (icpext == 2)
+      time_scheme->thetcp = 1.;
+  }
+
+  /* NS source terms */
+  int isno2t = cs_glob_time_scheme->isno2t;
+  if (fabs(time_scheme->thetsn+999.) > cs_math_epzero) {
+    cs_parameters_error
+      (CS_ABORT_DELAYED,
+       _("in the data specification"),
+       _("isno2t = %d\n"
+         "thetsn will be initialized automatically.\n"
+         "Do not modify it.\n"),
+       isno2t);
+  }
+  else if (isno2t == 1)
+    time_scheme->thetsn = 0.5;
+  else if (isno2t == 2)
+    time_scheme->thetsn = 1.;
+  else if (isno2t == 0)
+    time_scheme->thetsn = 0.;
+
+  /* Turbulent variables source terms */
+  int isto2t = cs_glob_time_scheme->isto2t;
+  if (fabs(time_scheme->thetst+999.) > cs_math_epzero) {
+    cs_parameters_error
+      (CS_ABORT_DELAYED,
+       _("in the data specification"),
+       _("isto2t = %d\n"
+         "thetst will be initialized automatically.\n"
+         "Do not modify it.\n"),
+       isto2t);
+  }
+  else if (isto2t == 1)
+    time_scheme->thetst = 0.5;
+  else if (isto2t == 2)
+    time_scheme->thetst = 1.;
+  else if (isto2t == 0)
+    time_scheme->thetst = 0.;
+
+  const int n_fields = cs_field_n_fields();
+
+  for (int f_id = 0; f_id < n_fields; f_id++) {
+    cs_field_t *f = cs_field_by_id(f_id);
+
+    int scalar_id = cs_field_get_key_int(f, kscal);
+    if (scalar_id > -1) {
+      /* Scalar source terms */
+      int isso2t = cs_field_get_key_int(f, kisso2t);
+      cs_real_t thetss = cs_field_get_key_double(f, kthetss);
+
+      if (fabs(thetss+1.) > cs_math_epzero) {
+        cs_parameters_error
+          (CS_ABORT_DELAYED,
+           _("in the data specification"),
+           _("Scalar (%s) isso2t = %d\n"
+             "thetss will be initialized automatically.\n"
+             "Do not modify it.\n"),
+           f->name, isso2t);
+      }
+      else if (isso2t == 1) {
+        thetss = 0.5;
+        cs_field_set_key_double(f, kthetss, thetss);
+      }
+      else if (isso2t == 2) {
+        thetss = 1.;
+        cs_field_set_key_double(f, kthetss, thetss);
+      }
+      else if (isso2t == 0) {
+        thetss = 0.;
+        cs_field_set_key_double(f, kthetss, thetss);
+      }
+      /* Scalar diffusivity */
+      int f_id_d = cs_field_get_key_int(f, kivisl);
+      if (f_id_d >= 0.)
+        iviext = cs_field_get_key_int(cs_field_by_id(f_id_d), key_t_ext_id);
+      else
+        iviext = 0;
+
+      cs_real_t thetvs = cs_field_get_key_double(f, kthetvs);
+      if (fabs(thetvs+1.) > cs_math_epzero) {
+        cs_parameters_error
+          (CS_ABORT_DELAYED,
+           _("in the data specification"),
+           _("Scalar (%s) iviext = %d\n"
+             "thetvs will be initialized automatically.\n"
+             "Do not modify it.\n"),
+           f->name, iviext);
+      }
+      else if (iviext == 0) {
+        thetvs = 0.;
+        cs_field_set_key_double(f, kthetvs, thetvs);
+      }
+      else if (iviext == 1) {
+        thetvs = 0.5;
+        cs_field_set_key_double(f, kthetvs, thetvs);
+      }
+      else if (iviext == 2) {
+        thetvs = 1.;
+        cs_field_set_key_double(f, kthetvs, thetvs);
+      }
+
+    }
+  }
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1890,8 +2071,35 @@ cs_parameters_eqp_complete(void)
   /* Complete settings for variable fields. */
 
   const int ks = cs_field_key_id_try("scalar_id");
+  const int kscavr = cs_field_key_id("first_moment_id");
   const int kturt = cs_field_key_id_try("turbulent_flux_model");
   const int kctheta = cs_field_key_id_try("turbulent_flux_ctheta");
+  const int kvisl0 = cs_field_key_id("diffusivity_ref");
+  const int kscacp  = cs_field_key_id("is_temperature");
+
+  const int kcdtvar = cs_field_key_id("time_step_factor");
+  const int kcpsyr = cs_field_key_id("syrthes_coupling");
+  const int kclvfl = cs_field_key_id("variance_clipping");
+  const int kscmin = cs_field_key_id("min_scalar_clipping");
+  const int kscmax = cs_field_key_id("max_scalar_clipping");
+
+  cs_field_t *f_vel = CS_F_(vel);
+  cs_field_t *f_p = CS_F_(p);
+  cs_field_t *f_t = cs_thermal_model_field();
+  cs_equation_param_t *eqp_vel = cs_field_get_equation_param(f_vel);
+  cs_equation_param_t *eqp_p = cs_field_get_equation_param(f_p);
+  cs_time_step_t *ts = cs_get_glob_time_step();
+  cs_time_step_options_t *time_opt = cs_get_glob_time_step_options();
+  cs_velocity_pressure_param_t *vp_param
+    = cs_get_glob_velocity_pressure_param();
+  cs_velocity_pressure_model_t *vp_model
+    = cs_get_glob_velocity_pressure_model();
+  cs_turb_rans_model_t *rans_mdl = cs_get_glob_turb_rans_model();
+  cs_vof_parameters_t *vof_param = cs_get_glob_vof_parameters();
+  cs_fluid_properties_t *fluid_props = cs_get_glob_fluid_properties();
+  cs_turbomachinery_model_t iturbo = cs_turbomachinery_get_model();
+
+  cs_real_t *xyzp0 = fluid_props->xyzp0;
 
   const int n_fields = cs_field_n_fields();
   for (int f_id = 0; f_id < n_fields; f_id++) {
@@ -1965,7 +2173,600 @@ cs_parameters_eqp_complete(void)
       if (eqp->ibdtso > 1)
         cs_field_set_n_time_vals(f, eqp->ibdtso + 1);
 
+      if (fabs(eqp->theta+1.) > cs_math_epzero) {
+        cs_parameters_error
+          (CS_WARNING,
+           _("advanced modification for"),
+           _("(%s) of the variable theta.\n"),
+           f->name);
+      }
+      else {
+        int time_order = cs_glob_time_scheme->time_order;
+        /* For the pressure, no theta-scheme */
+        if (f->id == CS_F_(p)->id)
+          eqp->theta = 1.;
+        else if (eqp->istat == 0)
+          eqp->theta = 1.;
+        else if (time_order == 1)
+          eqp->theta = 1.;
+        else if (time_order == 2)
+          eqp->theta = 0.5;
+      }
+
     }  /* end if (f->type & CS_FIELD_VARIABLE) */
+  }
+
+  /* Diffusivity model */
+  if (cs_glob_turb_model->itytur == 3) {
+    cs_field_t *f_rij = CS_F_(rij);
+    cs_field_t *f_eps = CS_F_(eps);
+    cs_equation_param_t *eqp_rij = cs_field_get_equation_param(f_rij);
+    cs_equation_param_t *eqp_eps = cs_field_get_equation_param(f_eps);
+    /* Daly harlow (GGDH) on Rij and epsilon by default */
+    if (cs_glob_turb_rans_model->idirsm != 0) {
+      eqp_rij->idften = CS_ANISOTROPIC_RIGHT_DIFFUSION;
+      eqp_eps->idften = CS_ANISOTROPIC_RIGHT_DIFFUSION;
+      /* Scalar diffusivity (Shir model) elsewhere (idirsm = 0) */
+    }
+    else {
+      eqp_rij->idften = CS_ISOTROPIC_DIFFUSION;
+      eqp_eps->idften = CS_ISOTROPIC_DIFFUSION;
+    }
+  }
+
+  /* ISSTPC
+   * If the user has not specified anything for the slope test (=-1),
+   * We impose 1 (i.e. without) for the velocity for LES
+   *           0 (i.e. with) otherwise */
+
+  if (cs_glob_turb_model->itytur == 4) {
+    if (eqp_vel->isstpc == -999) eqp_vel->isstpc = 1;
+    for (int f_id = 0; f_id < n_fields; f_id++) {
+      cs_field_t *f = cs_field_by_id(f_id);
+      int scalar_id = cs_field_get_key_int(f, ks);
+      if (scalar_id > -1) {
+        cs_equation_param_t *eqp = cs_field_get_equation_param(f);
+        if (eqp->isstpc == -999) eqp->isstpc = 0;
+      }
+    }
+  }
+
+  for (int f_id = 0; f_id < n_fields; f_id++) {
+    cs_field_t *f = cs_field_by_id(f_id);
+    if (f->type & CS_FIELD_VARIABLE) {
+      cs_equation_param_t *eqp = cs_field_get_equation_param(f);
+      if (eqp->isstpc == -999) eqp->isstpc = 0;
+    }
+  }
+
+  /* BLENCV
+   * If the user has not specified anything for the convective scheme
+   * We impose 1 (i.e. centered) for the velocities
+   *                                 the user scalars
+   *                                 the thermal scalar
+   *           0 (i.e. pure upwind) for the rest
+   * (especially, in LES, all the variables are centered)
+   *
+   * For the cavitation model, we force in all cases the void fraction in upwind
+   * and e display a message if the user has specified something else. */
+
+  if (fabs(eqp_vel->blencv + 1.) < cs_math_epzero) eqp_vel->blencv =1.;
+  if (cs_glob_vof_parameters->vof_model & CS_VOF_MERKLE_MASS_TRANSFER) {
+    cs_field_t *f_void_f = CS_F_(void_f);
+    cs_equation_param_t *eqp_void_f = cs_field_get_equation_param(f_void_f);
+    if (fabs(eqp_void_f->blencv + 1.) < cs_math_epzero) {
+      if (fabs(eqp_void_f->blencv + 1.) > cs_math_epzero) {
+        cs_parameters_error
+          (CS_WARNING,
+           _("in the data specification"),
+           _("The cavitation model requires an upwind convection scheme"
+             "for the void fraction (blencv(void_f) = %g\n"
+             "The user has set blencv(void_f) = %g.\n"
+             "The upwind scheme for the void fraction is forced.\n"),
+           0., eqp_void_f->blencv);
+      }
+      eqp_void_f->blencv = 0.;
+    }
+  }
+  else if (cs_glob_vof_parameters->vof_model > 0) {
+    cs_field_t *f_void_f = CS_F_(void_f);
+    cs_equation_param_t *eqp_void_f = cs_field_get_equation_param(f_void_f);
+    if (fabs(eqp_void_f->blencv + 1.) < cs_math_epzero) {
+      eqp_void_f->blencv = 1.;
+    }
+  }
+
+  for (int f_id = 0; f_id < n_fields; f_id++) {
+    cs_field_t *f = cs_field_by_id(f_id);
+    int scalar_id = (f->type & CS_FIELD_USER) ?
+      cs_field_get_key_int(f, ks) : -1;
+    if (scalar_id > -1) {
+      cs_equation_param_t *eqp_sca = cs_field_get_equation_param(f);
+      if (fabs(eqp_sca->blencv + 1.) < cs_math_epzero) {
+        eqp_sca->blencv = 1.;
+      }
+    }
+    if (f->type & CS_FIELD_VARIABLE) {
+      cs_equation_param_t *eqp = cs_field_get_equation_param(f);
+      if (fabs(eqp->blencv + 1.) < cs_math_epzero) {
+        eqp->blencv = 0.;
+      }
+    }
+  }
+
+  if (f_t != NULL) {
+    cs_equation_param_t *eqp_t = cs_field_get_equation_param(f_t);
+    if (fabs(eqp_t->blencv + 1.) < cs_math_epzero) eqp_t->blencv =1.;
+  }
+
+  /* nswrsm, epsrsm and epsilo:
+   *
+   * If the user has not specified anything (nswrsm=-1),
+   * We impose
+   *  at order 1:
+   *        2 for the pressure
+   *        1 for the other variables
+   *        We initialize epsilo to 1.e-8 for the pressure
+   *                                1.e-5 for the other variables
+   *                      epsrsm to 10*epsilo
+   *  at order 2:
+   *        5 for the pressure
+   *        10 for the other variables
+   *        We initialize epsilo to 1.e-5
+   *                      epsrsm to 10*epsilo
+   */
+
+  if (cs_glob_time_scheme->time_order == 2) {
+    if (eqp_p->nswrsm == -1) eqp_p->nswrsm = 5;
+    if (fabs(eqp_p->epsilo + 1.) < cs_math_epzero)
+      eqp_p->epsilo = 1.e-5;
+    if (fabs(eqp_p->epsrsm + 1.) < cs_math_epzero)
+      eqp_p->epsrsm = 10.*eqp_p->epsilo;
+    if (eqp_vel->nswrsm == -1) eqp_vel->nswrsm = 10;
+    if (fabs(eqp_vel->epsilo + 1.) < cs_math_epzero)
+      eqp_vel->epsilo = 1.e-5;
+    if (fabs(eqp_vel->epsrsm + 1.) < cs_math_epzero)
+      eqp_vel->epsrsm = 10.*eqp_vel->epsilo;
+    for (int f_id = 0; f_id < n_fields; f_id++) {
+      cs_field_t *f = cs_field_by_id(f_id);
+      int scalar_id = cs_field_get_key_int(f, ks);
+      if (scalar_id > -1) {
+        cs_equation_param_t *eqp_sca = cs_field_get_equation_param(f);
+        if (eqp_sca->nswrsm == -1) eqp_sca->nswrsm = 10;
+        if (fabs(eqp_sca->epsilo + 1.) < cs_math_epzero)
+          eqp_sca->epsilo = 1.e-5;
+        if (fabs(eqp_sca->epsrsm + 1.) < cs_math_epzero)
+          eqp_sca->epsrsm = 10.*eqp_sca->epsilo;
+      }
+    }
+  }
+
+  /* For the pressure, default solver precision 1e-8
+   * because the mass conservation is up to this precision. */
+  if (eqp_p->nswrsm == -1) eqp_p->nswrsm = 2;
+  if (fabs(eqp_p->epsilo + 1.) < cs_math_epzero) eqp_p->epsilo = 1.e-8;
+  for (int f_id = 0; f_id < n_fields; f_id++) {
+    cs_field_t *f = cs_field_by_id(f_id);
+    if (f->type & CS_FIELD_VARIABLE) {
+      cs_equation_param_t *eqp = cs_field_get_equation_param(f);
+      if (eqp->nswrsm == -1) eqp->nswrsm = 1;
+      if (fabs(eqp->epsilo + 1.) < cs_math_epzero) eqp->epsilo = 1.e-5;
+      if (fabs(eqp->epsrsm + 1.) < cs_math_epzero)
+        eqp->epsrsm = 10.*eqp->epsilo;
+    }
+  }
+
+  /* dtmin dtmax cdtvar */
+  if (time_opt->dtmin <= -cs_math_big_r) time_opt->dtmin = 0.1*ts->dt_ref;
+  if (time_opt->dtmax <= -cs_math_big_r) time_opt->dtmax = 1000.*ts->dt_ref;
+
+  /* Initialization of the time step factor for velocity, pressure and
+   * turbulent variables.
+   * FIXME time step factor is used ONLY for additional variables
+   * (user or model) */
+
+  cs_real_t cdtvar = cs_field_get_key_double(CS_F_(vel), kcdtvar);
+  cs_field_set_key_double(CS_F_(p), kcdtvar, cdtvar);
+  if (cs_glob_turb_model->itytur == 2) {
+    cdtvar = cs_field_get_key_double(CS_F_(k), kcdtvar);
+    cs_field_set_key_double(CS_F_(eps), kcdtvar, cdtvar);
+  }
+  else if (cs_glob_turb_model->itytur == 3) {
+    cdtvar = cs_field_get_key_double(CS_F_(rij), kcdtvar);
+    cs_field_set_key_double(CS_F_(eps), kcdtvar, cdtvar);
+
+    /* cdtvar for alp_bl is useless because there is no time dependency
+       in the equation of alpha. */
+    if (cs_glob_turb_model->iturb == CS_TURB_RIJ_EPSILON_EBRSM) {
+      cdtvar = cs_field_get_key_double(CS_F_(rij), kcdtvar);
+      cs_field_set_key_double(CS_F_(alp_bl), kcdtvar, cdtvar);
+    }
+  }
+  else if (cs_glob_turb_model->itytur == 5) {
+    cdtvar = cs_field_get_key_double(CS_F_(k), kcdtvar);
+    cs_field_set_key_double(CS_F_(eps), kcdtvar, cdtvar);
+    cs_field_set_key_double(CS_F_(phi), kcdtvar, cdtvar);
+
+    /* CDTVAR for f_bar/alp_bl is in fact useless
+     * as the time step is in the equation of f_bar/alpha */
+    if (cs_glob_turb_model->iturb == CS_TURB_V2F_PHI) {
+      cdtvar = cs_field_get_key_double(CS_F_(k), kcdtvar);
+      cs_field_set_key_double(CS_F_(f_bar), kcdtvar, cdtvar);
+    }
+    else if (cs_glob_turb_model->iturb == CS_TURB_V2F_BL_V2K) {
+      cdtvar = cs_field_get_key_double(CS_F_(k), kcdtvar);
+      cs_field_set_key_double(CS_F_(alp_bl), kcdtvar, cdtvar);
+    }
+  }
+  else if (cs_glob_turb_model->iturb == CS_TURB_K_OMEGA) {
+    cdtvar = cs_field_get_key_double(CS_F_(k), kcdtvar);
+    cs_field_set_key_double(CS_F_(omg), kcdtvar, cdtvar);
+  }
+  else if (cs_glob_turb_model->iturb == CS_TURB_SPALART_ALLMARAS) {
+    /* cdtvar is equal to 1. by default in cs_parameters.c */
+    cdtvar = cs_field_get_key_double(CS_F_(k), kcdtvar);
+    cs_field_set_key_double(CS_F_(nusa), kcdtvar, cdtvar);
+  }
+
+  /* For laminar cases or when using low Reynolds model: no wall function.
+   * When using mixing length, Spalart-Allmaras or LES: one scale log law.
+   * When using EB-RSM : all y+ wall functions
+   * In all other cases: 2 scales log law.
+   * Here iwallf is set automatically only if it was not set in the gui or
+   * in a user subroutine. */
+
+  cs_wall_functions_t *wall_fns = cs_get_glob_wall_functions();
+  if (wall_fns->iwallf == CS_WALL_F_UNSET) {
+    if (   cs_glob_turb_model->iturb == CS_TURB_MIXING_LENGTH
+        || cs_glob_turb_model->iturb == CS_TURB_SPALART_ALLMARAS
+        || cs_glob_turb_model->itytur == 4) {
+      wall_fns->iwallf = CS_WALL_F_1SCALE_LOG;
+    }
+    else if (   cs_glob_turb_model->iturb == CS_TURB_NONE
+             || cs_glob_turb_model->itytur == 5) {
+      wall_fns->iwallf = CS_WALL_F_DISABLED;
+    }
+    else if (cs_glob_turb_model->iturb == CS_TURB_RIJ_EPSILON_EBRSM) {
+      wall_fns->iwallf = CS_WALL_F_2SCALES_CONTINUOUS;
+    }
+    else {
+      wall_fns->iwallf = CS_WALL_F_2SCALES_LOG;
+    }
+  }
+
+  /* If the wall function for the velocity is the two scales wall function using
+   * Van Driest mixing length (iwallf = CS_WALL_F_2SCALES_VDRIEST), then the
+   * corresponding wall function for scalar should be used
+   * (iwalfs = CS_WALL_F_S_VDRIEST).
+   * For atmospheric flows, it is by default Louis, or Monin-Obukhov
+   * Here iwalfs is set automatically only if it was not set in a user
+   * subroutine. */
+
+  if (wall_fns->iwalfs == CS_WALL_F_S_UNSET) {
+    if (cs_glob_physical_model_flag[CS_ATMOSPHERIC] >= 0)
+      wall_fns->iwalfs = CS_WALL_F_S_LOUIS;
+    else if (wall_fns->iwallf == CS_WALL_F_2SCALES_VDRIEST)
+      wall_fns->iwalfs = CS_WALL_F_S_VDRIEST;
+    else
+      wall_fns->iwalfs = CS_WALL_F_S_ARPACI_LARSEN;
+  }
+
+  /* ypluli
+   * 1/xkappa is the value that guarantees the continuity of the derivative
+   * between the linear and logarithmic zones.
+   *
+   * In the case of invariant wall functions, we use the value of continuity
+   * of the velocity profile, 10.88.
+   *
+   * For LES, we put back 10.88 so as to avoid checkerboard effect when we are
+   * at the limit (for one scale mode indeed, ypluli=1/xkappa does not allow
+   * one to compute u* in a completely satisfying manner.
+   * Idem with Spalart-Allmaras.*/
+
+  if (wall_fns->ypluli < -cs_math_big_r) {
+    if (   wall_fns->iwallf == CS_WALL_F_SCALABLE_2SCALES_LOG
+        || cs_glob_turb_model->itytur == 4
+        || cs_glob_turb_model->iturb == CS_TURB_SPALART_ALLMARAS
+        || wall_fns->iwallf == CS_WALL_F_2SCALES_SMOOTH_ROUGH
+        || cs_glob_turb_model->iturb == CS_TURB_K_OMEGA
+        || cs_glob_turb_model->iturb == CS_TURB_K_EPSILON_LS) {
+      wall_fns->ypluli = 10.88;
+    }
+    else {
+      wall_fns->ypluli = 1./cs_turb_xkappa;
+    }
+  }
+
+  /* If the user did not modify icpsyr, we take by default:
+   *  if there is not coupling
+   *    0 for all the scalars
+   *  otherwise
+   *    1 for the thermal scalar if it exists
+   *    0 for the others
+   * The convenient modifications shall be added for the particular physics.
+   * The consistency tests will be done in verini. */
+
+  /* Count the number of scalars nscal */
+  int nscal = 0;
+  for (int f_id = 0; f_id < n_fields; f_id ++) {
+    cs_field_t *f_sca = cs_field_by_id(f_id);
+    int isca = cs_field_get_key_int(f_sca, ks);
+    if (isca > 0) nscal++;
+  }
+
+  if (nscal > 0) {
+
+    /* We check if there is coupling */
+    int nbccou = cs_syr_coupling_n_couplings();
+
+    /* If there is coupling */
+    if (nbccou != 0) {
+
+      /* We count the number of coupled scalars */
+      int nscacp = 0;
+      for (int f_id = 0; f_id < n_fields; f_id ++) {
+        cs_field_t *f_sca = cs_field_by_id(f_id);
+        int isca = cs_field_get_key_int(f_sca, ks);
+        if (isca > 0) {
+          int icpsyr = cs_field_get_key_int(f_sca, kcpsyr);
+          if (icpsyr == 1) nscacp++;
+        }
+      }
+
+      /* If the user has not coupled any scalar */
+      if (nscacp == 0) {
+        /* We couple the temperature scalar of the phase */
+        if (f_t != NULL)
+          cs_field_set_key_int(f_t, kcpsyr, 1);
+      }
+    }
+  }
+
+  /* is_temperature
+   * If the user has not modified "is_temperature", we take by default:
+   *  passive scalar of scalars other than the temperature scalar
+   *      = 0 : passive, enthalpy, or energy
+   *      = 1 : temperature */
+
+  if (nscal > 0) {
+    for (int f_id = 0; f_id < n_fields; f_id ++) {
+      cs_field_t *f_sca = cs_field_by_id(f_id);
+      int isca = cs_field_get_key_int(f_sca, ks);
+      if (isca > 0) {
+        int iscacp = cs_field_get_key_int(f_sca, kscacp);
+        if (iscacp == -1) {
+          if (f_sca == f_t && cs_glob_thermal_model->itherm == 1) {
+            iscacp = 1;
+          }
+          else {
+            iscacp = 0;
+          }
+          cs_field_set_key_int(f_sca, kscacp, iscacp);
+        }
+      }
+    }
+  }
+
+  /* Compute the hydrostatic pressure at outlet for the Dirichlet conditions
+   * on pressure. It is deduced from iphydr and the gravity value (arbitrary
+   * test on the norm).
+   * icalhy is initialized at -1 (the user may have forced 0 or 1 and in this
+   * case, we do not change it. */
+
+  if (vp_param->icalhy != -1 && vp_param->icalhy != 0
+                             && vp_param->icalhy != 1 ) {
+    cs_parameters_is_in_range_int(CS_ABORT_DELAYED,
+                                  _("while reading input data"),
+                                  "cs_glob_velocity_pressure_param->icalhy",
+                                  vp_param->icalhy,
+                                  0, 1);
+  }
+
+  /* If the fluid_solid option is enabled, we force ikecou to 0. */
+  if (vp_model->fluid_solid) {
+    if (rans_mdl->ikecou == 1) {
+      rans_mdl->ikecou = 0;
+      cs_parameters_error
+        (CS_WARNING,
+         _("in the data specification"),
+         _("The pseudo coupling of turbulent dissipation and turbulent kinetic"
+           "energy (ikecou = 1) is not compatible with the use of fluid/solid"
+           "option to disable the dynamic in the solid cells"
+           "(fluid_solid = 1).\n"
+           "The parameter ikecou is forced to 0 (no coupling).\n"
+           "The calculation will be run.\n"));
+    }
+  }
+
+  /* relaxv */
+
+  if (time_opt->idtvar < 0) {
+    cs_real_t relxsp = 1.-time_opt->relxst;
+    if (relxsp <= cs_math_epzero) relxsp = time_opt->relxst;
+    if (fabs(eqp_p->relaxv+1.) <= cs_math_epzero) {
+      eqp_p->relaxv = relxsp;
+    }
+    for (int f_id = 0; f_id < n_fields; f_id ++) {
+      cs_field_t *f = cs_field_by_id(f_id);
+      if (f->type & CS_FIELD_VARIABLE) {
+        cs_equation_param_t *eqp = cs_field_get_equation_param(f);
+        if (fabs(eqp->relaxv+1.) <= cs_math_epzero)
+          eqp->relaxv = time_opt->relxst;
+      }
+    }
+  }
+  else {
+    for (int f_id = 0; f_id < n_fields; f_id ++) {
+      cs_field_t *f = cs_field_by_id(f_id);
+      if (f->type & CS_FIELD_VARIABLE) {
+        cs_equation_param_t *eqp = cs_field_get_equation_param(f);
+        if (fabs(eqp->relaxv+1.) <= cs_math_epzero) eqp->relaxv = 1.;
+      }
+    }
+  }
+
+  /* Options specific to steady case */
+
+  if (time_opt->idtvar < 0) {
+    vp_param->ipucou = 0;
+    ts->dt_ref = 1.;
+    time_opt->dtmin = 1.;
+    time_opt->dtmax = 1.;
+    for (int f_id = 0; f_id < n_fields; f_id ++) {
+      cs_field_t *f = cs_field_by_id(f_id);
+      if (f->type & CS_FIELD_VARIABLE) {
+        cs_equation_param_t *eqp = cs_field_get_equation_param(f);
+        eqp->istat = 0;
+      }
+    }
+    vp_param->arak = vp_param->arak/CS_MAX(eqp_vel->relaxv, cs_math_epzero);
+  }
+
+  /* With a staggered approach, no Rhie and Chow correction is needed. */
+  if (vp_param->staggered == 1) vp_param->arak = 0.;
+
+  /* Physical constant tables */
+
+  /* iclvfl
+   * If the user has not modified iclvfl, we take by default:
+   *  0 for the variances
+   * The convenient modifications shall be added for the particular physics.
+   * If the user gives a value, we put iclvfl to 2. */
+
+  for (int f_id = 0; f_id < n_fields; f_id ++) {
+    cs_field_t *f_sca = cs_field_by_id(f_id);
+    int isca = cs_field_get_key_int(f_sca, ks);
+    if (isca > 0) {
+      int iscavr = cs_field_get_key_int(f_sca, kscavr);
+      if (iscavr > 0) {
+        int iclvfl = cs_field_get_key_int(f_sca, kclvfl);
+        /* Get the min clipping */
+        cs_real_t scminp = cs_field_get_key_double(f_sca, kscmin);
+        /* If modified put 2 */
+        if (   iclvfl == -1
+            && fabs(scminp+cs_math_big_r) >= cs_math_epzero) {
+          cs_field_set_key_int(f_sca, kclvfl, 2);
+        }
+        else if (iclvfl == -1) {
+          cs_field_set_key_int(f_sca, kclvfl, 0);
+        }
+        /* Minimum for variances is 0 or greater */
+        /* Set min clipping to 0 */
+        scminp = CS_MAX(0., scminp);
+        cs_field_set_key_double(f_sca, kscmin, scminp);
+      }
+    }
+  }
+
+  for (int f_id = 0; f_id < n_fields; f_id ++) {
+    cs_field_t *f_sca = cs_field_by_id(f_id);
+    int isca = cs_field_get_key_int(f_sca, ks);
+    if (isca > 0) {
+      cs_real_t visls_0 = cs_field_get_key_double(f_sca, kvisl0);
+      /* For scalars which are not variances, define the reference
+       * diffusivity */
+      int iscavr = cs_field_get_key_int(f_sca, kscavr);
+      if (iscavr <= 0 && visls_0 < -cs_math_big_r) {
+        int iscacp = cs_field_get_key_int(f_sca, kscacp);
+        if (iscacp > 0) {
+          /* For temperature, the diffusivity factor is directly the thermal
+           * conductivity lambda = Cp * mu / Pr
+           * where Pr is the (molecular) Prandtl number */
+          visls_0 = fluid_props->viscl0 * fluid_props->cp0;
+        }
+        else {
+          visls_0 = fluid_props->viscl0;
+        }
+        cs_field_set_key_double(f_sca, kvisl0, visls_0);
+      }
+
+      /* For fluctuation variances, the diffusivity is that of the associated
+       * scalar. */
+      if (iscavr >= 0) {
+        cs_field_t *f_ref = cs_field_by_id(iscavr);
+        visls_0 = cs_field_get_key_double(f_ref, kvisl0);
+        cs_real_t visls_cmp = cs_field_get_key_double(f_sca, kvisl0);
+        cs_field_set_key_double(f_sca, kvisl0, visls_0);
+        if (visls_cmp > -cs_math_big_r) {
+          cs_parameters_error
+            (CS_WARNING,
+             _("in the data specification"),
+             _("The scalar %s is the fluctuation variance of the scalar  %d\n"
+               "The diffusivity_ref value of the scalar %s must not be set:\n"
+               "it is automatically set equal to the scalar diffusivity %d"
+               "i.e. %g\n"),
+             f_sca->name, iscavr, f_sca->name, iscavr, visls_0);
+        }
+      }
+    }
+  }
+
+  /* xyzp0 : reference point for hydrostatic pressure
+   * The user should specify the 3 coordinates, otherwise
+   * it is set to (0.,0.,0.). */
+
+  if (   xyzp0[0] > -0.5*cs_math_infinite_r
+      && xyzp0[1] > -0.5*cs_math_infinite_r
+      && xyzp0[2] > -0.5*cs_math_infinite_r) {
+    fluid_props->ixyzp0 = 1;
+  }
+  else {
+    for (int ii = 0; ii < 3; ii++) {
+      xyzp0[ii] = 0.;
+    }
+  }
+
+  /* VoF model enabled */
+  if (cs_glob_vof_parameters->vof_model > 0) {
+    if (vof_param->rho2 > vof_param->rho1) {
+      fluid_props->ro0    = vof_param->rho2;
+      fluid_props->viscl0 = vof_param->mu2;
+    }
+    else {
+      fluid_props->ro0    = vof_param->rho1;
+      fluid_props->viscl0 = vof_param->mu1;
+    }
+
+    /* VOF algorithm: continuity of the flux across internal faces */
+    eqp_p->imvisf = 1;
+  }
+
+  /* Elements of albase */
+  if (cs_glob_ale > CS_ALE_NONE) {
+    if (!cs_restart_present() && cs_glob_ale_need_init == -999)
+      cs_glob_ale_need_init = 1;
+  }
+  else {
+    cs_glob_ale_need_init = 0;
+  }
+
+  /* Parameters of cplsat */
+
+  const int nbrcpl = cs_sat_coupling_n_couplings();
+  if (nbrcpl >= 1 && iturbo != 0) {
+    cs_glob_sat_coupling_face_interpolation_type = 1;
+  }
+
+  /* Define min/max clipping values of void fraction of VoF model */
+  if (cs_glob_vof_parameters->vof_model > 0) {
+    cs_real_t clvfmn = cs_field_get_key_double(CS_F_(void_f), kscmin);
+    cs_real_t clvfmx = cs_field_get_key_double(CS_F_(void_f), kscmax);
+
+    if (clvfmn < -0.5*cs_math_big_r) {
+      clvfmn = 0.;
+      if (cs_glob_vof_parameters->vof_model & CS_VOF_MERKLE_MASS_TRANSFER) {
+        clvfmn = cs_math_epzero;
+      }
+    }
+    if (clvfmx > 0.5*cs_math_big_r) {
+      clvfmx = 1.;
+      if (cs_glob_vof_parameters->vof_model & CS_VOF_MERKLE_MASS_TRANSFER) {
+        clvfmx = 1.-cs_math_epzero;
+      }
+    }
+
+    cs_field_set_key_double(CS_F_(void_f), kscmin, clvfmn);
+    cs_field_set_key_double(CS_F_(void_f), kscmax, clvfmx);
   }
 }
 
@@ -2130,7 +2931,7 @@ cs_time_scheme_log_setup(void)
     if (icpext > 0)
       cs_log_printf
         (CS_LOG_SETUP,
-         _("    thetvi:      %g (theta for specific heat)\n"),
+         _("    thetcp:      %g (theta for specific heat)\n"),
          cs_glob_time_scheme->thetcp);
   }
 }
