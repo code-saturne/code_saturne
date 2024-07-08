@@ -1782,65 +1782,6 @@ _restart_multiwriter_increment(_restart_multiwriter_t  *mw,
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
- * Check if checkpointing is recommended at a given time.
- *
- * Fortran interface
- *
- * subroutine reqsui (iisuit)
- * *****************
- *
- * integer          iisuit      : --> : 0 if no restart required, 1 otherwise
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF (reqsui, REQSUI)
-(
- int  *iisuit
-)
-{
-  if (cs_restart_checkpoint_required(cs_glob_time_step))
-    *iisuit = 1;
-  else
-    *iisuit = 0;
-}
-
-/*----------------------------------------------------------------------------
- * Indicate checkpointing has been done at a given time.
- *
- * This updates the status for future checks to determine
- * if checkpointing is recommended at a given time.
- *
- * Fortran interface
- *
- * subroutine stusui
- * *****************
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF (stusui, STUSUI)
-(
- void
-)
-{
-  cs_restart_checkpoint_done(cs_glob_time_step);
-}
-
-/*----------------------------------------------------------------------------
- * Save output mesh for turbomachinery if needed
- *
- * Fortran interface
- *
- * subroutine trbsui
- * *****************
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF (trbsui, TRBSUI)
-(
- void
-)
-{
-  cs_mesh_save(cs_glob_mesh, NULL, "checkpoint", "mesh.csm");
-}
-
-/*----------------------------------------------------------------------------
  * Indicate if a restart directory is present.
  *
  * Fortran interface

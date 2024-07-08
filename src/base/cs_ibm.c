@@ -134,20 +134,11 @@ const char *_ibm_obj_init_vals_names[] = {"Equilibrium Center of gravity",
  *============================================================================*/
 
 void
-cs_f_immersed_boundaries(void);
-
-void
 cs_f_porosity_ibm_get_pointer(int **ibm_porosity_mode);
 
 /*----------------------------------------------------------------------------
  * Wrapper immersed boundary function, intended for use by Fortran wrapper only.
  *----------------------------------------------------------------------------*/
-
-void
-cs_f_immersed_boundaries(void)
-{
-  cs_immersed_boundaries(cs_glob_mesh, cs_glob_mesh_quantities);
-}
 
 /*----------------------------------------------------------------------------
  * Get pointer

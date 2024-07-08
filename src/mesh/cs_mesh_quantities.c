@@ -119,9 +119,6 @@ static int _n_computations = 0;
  * (descriptions follow, with function bodies).
  *============================================================================*/
 
-void
-cs_f_mesh_quantities_fluid_vol_reductions(void);
-
 /*=============================================================================
  * Private function definitions
  *============================================================================*/
@@ -2869,19 +2866,6 @@ _post_plane_ib(const cs_lnum_t      n_ib_cells,
  *============================================================================*/
 
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
-
-/*----------------------------------------------------------------------------
- * Compute the total, min, and max fluid volumes of cells
- *----------------------------------------------------------------------------*/
-
-void
-cs_f_mesh_quantities_fluid_vol_reductions(void)
-{
-  const cs_mesh_t *m = cs_glob_mesh;
-  cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
-
-  cs_mesh_quantities_fluid_vol_reductions(m, mq);
-}
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 

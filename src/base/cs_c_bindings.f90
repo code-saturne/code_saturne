@@ -320,41 +320,6 @@ module cs_c_bindings
 
     !---------------------------------------------------------------------------
 
-    ! Interface to C function logging field and other array statistics
-    ! at relevant time steps.
-
-    ! \brief Log field and other array statistics for a given time step.
-
-    subroutine log_iteration()  &
-      bind(C, name='cs_log_iteration')
-      use, intrinsic :: iso_c_binding
-      implicit none
-    end subroutine log_iteration
-
-    !---------------------------------------------------------------------------
-
-    ! Interface to C function preparing per time step logging
-
-    subroutine cs_log_iteration_prepare()  &
-      bind(C, name='cs_log_iteration_prepare')
-      use, intrinsic :: iso_c_binding
-      implicit none
-    end subroutine cs_log_iteration_prepare
-
-    !---------------------------------------------------------------------------
-
-    ! Interface to C function logging L2 time residual at relevant time steps.
-
-    ! \brief Log field and other array statistics for a given time step.
-
-    subroutine log_l2residual()  &
-      bind(C, name='cs_log_iteration_l2residual')
-      use, intrinsic :: iso_c_binding
-      implicit none
-    end subroutine log_l2residual
-
-    !---------------------------------------------------------------------------
-
     ! Initialize turbulence model structures
 
     subroutine cs_turb_model_init()  &
@@ -435,69 +400,6 @@ module cs_c_bindings
 
     !---------------------------------------------------------------------------
 
-    !> \brief Create the LES balance structure.
-
-    subroutine les_balance_create()  &
-      bind(C, name='cs_les_balance_create')
-      use, intrinsic :: iso_c_binding
-      implicit none
-    end subroutine les_balance_create
-
-    !---------------------------------------------------------------------------
-
-    !> \brief Destroy the LES balance structure.
-
-    subroutine les_balance_finalize()  &
-      bind(C, name='cs_les_balance_finalize')
-      use, intrinsic :: iso_c_binding
-      implicit none
-    end subroutine les_balance_finalize
-
-    !---------------------------------------------------------------------------
-
-    !> \brief Write the LES balance restart file.
-
-    subroutine les_balance_write_restart()  &
-      bind(C, name='cs_les_balance_write_restart')
-      use, intrinsic :: iso_c_binding
-      implicit none
-    end subroutine les_balance_write_restart
-
-    !---------------------------------------------------------------------------
-
-    !> \brief Compute additional time averages for LES balance.
-
-    subroutine les_balance_update_gradients()  &
-      bind(C, name='cs_les_balance_update_gradients')
-      use, intrinsic :: iso_c_binding
-      implicit none
-    end subroutine les_balance_update_gradients
-
-    !---------------------------------------------------------------------------
-
-    !> \brief Compute the LES balance.
-
-    subroutine les_balance_compute()  &
-      bind(C, name='cs_les_balance_compute')
-      use, intrinsic :: iso_c_binding
-      implicit none
-    end subroutine les_balance_compute
-
-    !---------------------------------------------------------------------------
-
-    !> \brief  Destroy name to id map structure.
-
-    !> \param[in, out] m pointer to map structure
-
-    subroutine cs_map_name_to_id_destroy(m)  &
-      bind(C, name='cs_map_name_to_id_destroy')
-      use, intrinsic :: iso_c_binding
-      implicit none
-      type(c_ptr), intent(inout) :: m
-    end subroutine cs_map_name_to_id_destroy
-
-    !---------------------------------------------------------------------------
-
     !> \brief  Read restart metadata.
 
     subroutine parameters_read_restart_info()  &
@@ -505,41 +407,6 @@ module cs_c_bindings
       use, intrinsic :: iso_c_binding
       implicit none
     end subroutine parameters_read_restart_info
-
-    !---------------------------------------------------------------------------
-
-    !> \brief Remove all previous dumps of checkpoint files which
-    !>        are not to be saved.
-
-    subroutine restart_clean_multiwriters_history() &
-        bind(C, name='cs_restart_clean_multiwriters_history')
-        use, intrinsic :: iso_c_binding
-        implicit none
-    end subroutine restart_clean_multiwriters_history
-
-    !---------------------------------------------------------------------------
-
-    ! Interface to C function which writes the main checkpoint file (main.csc)
-
-    ! \brief Writes main.csc checkpoint file
-
-    subroutine restart_main_and_aux_write() &
-      bind(C, name='cs_restart_main_and_aux_write')
-      use, intrinsic :: iso_c_binding
-      implicit none
-    end subroutine restart_main_and_aux_write
-
-    !---------------------------------------------------------------------------
-
-    ! Interface to C function which reads the main checkpoint file (main.csc)
-
-    ! \brief Reads main.csc checkpoint file
-
-    subroutine restart_main_and_aux_read() &
-      bind(C, name='cs_restart_main_and_aux_read')
-      use, intrinsic :: iso_c_binding
-      implicit none
-    end subroutine restart_main_and_aux_read
 
     !---------------------------------------------------------------------------
 
@@ -554,26 +421,6 @@ module cs_c_bindings
 
     !---------------------------------------------------------------------------
 
-    ! Interface to C function.
-    ! Initialize main variables for code_saturne/code_saturne coupling.
-    subroutine cs_sat_coupling_initialize(nvars) &
-      bind(C, name='cs_sat_coupling_initialize')
-      use, intrinsic :: iso_c_binding
-      implicit none
-      integer(c_int), value :: nvars
-    end subroutine
-
-    !---------------------------------------------------------------------------
-    !> \brief Set the list of cells and boundary faces associated to a coupling
-
-    ! Interface to C function
-    subroutine cs_sat_coupling_locate_all() &
-      bind(C, name='cs_sat_coupling_locate_all')
-      use, intrinsic :: iso_c_binding
-      implicit none
-    end subroutine
-
-    !---------------------------------------------------------------------------
     !> \brief  Return the number of temporal moments.
 
     !> \return number of defined moments
@@ -598,16 +445,6 @@ module cs_c_bindings
       integer(c_int), value :: m_id
       integer(c_int) :: is_active
     end function cs_time_moment_is_active
-
-    !---------------------------------------------------------------------------
-
-    !> \brief  Update temporal moments.
-
-    subroutine time_moment_update_all()  &
-      bind(C, name='cs_time_moment_update_all')
-      use, intrinsic :: iso_c_binding
-      implicit none
-    end subroutine time_moment_update_all
 
     !---------------------------------------------------------------------------
 
@@ -706,19 +543,6 @@ module cs_c_bindings
       implicit none
       integer(c_int), value :: id
     end subroutine timer_stats_start
-
-    !---------------------------------------------------------------------------
-
-    !> \brief  Stop a timer for a given statistic.
-
-    !> \param[in]   id    id of statistic
-
-    subroutine timer_stats_stop(id)  &
-      bind(C, name='cs_timer_stats_stop')
-      use, intrinsic :: iso_c_binding
-      implicit none
-      integer(c_int), value :: id
-    end subroutine timer_stats_stop
 
     !---------------------------------------------------------------------------
 
@@ -1049,16 +873,6 @@ module cs_c_bindings
       use, intrinsic :: iso_c_binding
       implicit none
     end subroutine cs_f_boundary_conditions_create
-
-    !---------------------------------------------------------------------------
-
-    ! Interface to C function freeing the bc type and face zone arrays
-
-    subroutine cs_f_boundary_conditions_free() &
-      bind(C, name='cs_boundary_conditions_free')
-      use, intrinsic :: iso_c_binding
-      implicit none
-    end subroutine cs_f_boundary_conditions_free
 
     !---------------------------------------------------------------------------
 
@@ -1482,19 +1296,6 @@ module cs_c_bindings
 
     !---------------------------------------------------------------------------
 
-    ! Interface to C function defining statistic based on its name.
-
-    function cs_timer_stats_create(parent_name, name, label) result(id) &
-      bind(C, name='cs_timer_stats_create')
-      use, intrinsic :: iso_c_binding
-      implicit none
-      character(kind=c_char, len=1), dimension(*), intent(in)  :: parent_name
-      character(kind=c_char, len=1), dimension(*), intent(in)  :: name, label
-      integer(c_int)        :: id
-    end function cs_timer_stats_create
-
-    !---------------------------------------------------------------------------
-
     ! Interface to C function obtaining a defined statistic based on its name.
 
     function cs_timer_stats_id_by_name(name) result(id) &
@@ -1668,11 +1469,11 @@ module cs_c_bindings
 
     ! Interface to C user function for boundary mass source terms (condensation)
 
-    subroutine cs_user_wall_condensation(nvar, nscal, iappel)  &
+    subroutine cs_user_wall_condensation(iappel)  &
       bind(C, name='cs_user_wall_condensation')
       use, intrinsic :: iso_c_binding
       implicit none
-      integer(kind=c_int), intent(in), value :: nvar, nscal, iappel
+      integer(kind=c_int), intent(in), value :: iappel
     end subroutine cs_user_wall_condensation
 
     !---------------------------------------------------------------------------
@@ -1684,12 +1485,6 @@ module cs_c_bindings
       use, intrinsic :: iso_c_binding
       implicit none
     end subroutine user_extra_operations_initialize
-
-    subroutine user_extra_operations()  &
-      bind(C, name='cs_user_extra_operations_wrapper')
-      use, intrinsic :: iso_c_binding
-      implicit none
-    end subroutine user_extra_operations
 
     !---------------------------------------------------------------------------
 
@@ -2091,6 +1886,18 @@ module cs_c_bindings
     end subroutine cs_wall_condensation_set_onoff_state
 
     !---------------------------------------------------------------------------
+    !> \brief Compute wall condensation mass and energy source terms
+    !
+    !> \param[in]   total_htc Total heat transfer coefficient
+    !---------------------------------------------------------------------------
+    subroutine cs_wall_condensation_compute(total_htc)   &
+      bind(C, name='cs_wall_condensation_compute')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      real(kind=c_double), dimension(*), intent(out) :: total_htc
+    end subroutine cs_wall_condensation_compute
+
+    !---------------------------------------------------------------------------
 
     !> \brief Create global 1d wall thermal model structure.
 
@@ -2381,6 +2188,17 @@ module cs_c_bindings
 
     !---------------------------------------------------------------------------
 
+    !> \brief Compute the relative ground elevation (mainly for the atmospheric
+    !>  module).
+
+    subroutine cs_atmo_z_ground_compute() &
+      bind(C, name='cs_atmo_z_ground_compute')
+      use, intrinsic :: iso_c_binding
+      implicit none
+    end subroutine cs_atmo_z_ground_compute
+
+    !---------------------------------------------------------------------------
+
     !> \brief Return pointers to atmo chemistry arrays
 
     subroutine cs_f_atmo_chem_arrays_get_pointers(isca_chem, dmmk, &
@@ -2640,16 +2458,6 @@ module cs_c_bindings
 
     !---------------------------------------------------------------------------
 
-    ! Interface to C function for data assimilation (atmospheric module)
-
-    subroutine cs_at_data_assim_finalize()                        &
-      bind(C, name='cs_at_data_assim_finalize')
-      use, intrinsic :: iso_c_binding
-      implicit none
-    end subroutine cs_at_data_assim_finalize
-
-    !---------------------------------------------------------------------------
-
     ! Interface to C function for data assimilation (atmospheric module).
 
     subroutine cs_at_data_assim_source_term(f_id, exp_st, imp_st)   &
@@ -2729,16 +2537,6 @@ module cs_c_bindings
 
     !---------------------------------------------------------------------------
 
-    !> \brief Compute the porosity from immersed boundary module.
-
-    subroutine cs_compute_porosity_ibm() &
-      bind(C, name='cs_f_immersed_boundaries')
-      use, intrinsic :: iso_c_binding
-      implicit none
-    end subroutine cs_compute_porosity_ibm
-
-    !---------------------------------------------------------------------------
-
     !> \brief Return pointers
 
     !> \param[out]   ibm_porosity_mode  Pointer to ibm_porosity_mode
@@ -2751,17 +2549,6 @@ module cs_c_bindings
     end subroutine cs_f_porosity_ibm_get_pointer
 
    !---------------------------------------------------------------------------
-
-    !> \brief Compute the porosity from scan
-    !>  module).
-
-    subroutine cs_compute_porosity_from_scan() &
-      bind(C, name='cs_compute_porosity_from_scan')
-      use, intrinsic :: iso_c_binding
-      implicit none
-    end subroutine cs_compute_porosity_from_scan
-
-    !---------------------------------------------------------------------------
 
     !> \brief Return pointers
 
@@ -2866,16 +2653,6 @@ module cs_c_bindings
       real(kind=c_double), dimension(*), intent(inout) :: pvar
       real(kind=c_double), dimension(*), intent(inout) :: grad
     end subroutine cs_f_gradient_hn_s
-
-    !---------------------------------------------------------------------------
-
-    ! Interface to C function computing total, min, and max cell fluid volumes
-
-    subroutine cs_f_mesh_quantities_fluid_vol_reductions()  &
-      bind(C, name='cs_f_mesh_quantities_fluid_vol_reductions')
-      use, intrinsic :: iso_c_binding
-      implicit none
-    end subroutine cs_f_mesh_quantities_fluid_vol_reductions
 
     !---------------------------------------------------------------------------
 
@@ -3688,42 +3465,6 @@ contains
     retval = c_retval
 
   end subroutine restart_get_field_read_status
-
-  !=============================================================================
-
-  !> \brief Create a timer statistics structure.
-
-  !> If no timer with the given name exists, -1 is returned.
-
-  !> \param[in]  parent_name  name of parent statistic (may be empty)
-  !> \param[in]  name         associated canonical name
-  !> \param[in]  label        associated label (may be empty)
-
-  function timer_stats_create (parent_name, name, label) result(id)
-
-    use, intrinsic :: iso_c_binding
-    implicit none
-
-    ! Arguments
-
-    character(len=*), intent(in) :: parent_name, name, label
-    integer :: id
-
-    ! Local variables
-
-    character(len=len_trim(parent_name)+1, kind=c_char) :: c_p_name
-    character(len=len_trim(name)+1, kind=c_char) :: c_name
-    character(len=len_trim(label)+1, kind=c_char) :: c_label
-    integer(c_int) :: c_id
-
-    c_p_name = trim(parent_name)//c_null_char
-    c_name = trim(name)//c_null_char
-    c_label = trim(label)//c_null_char
-
-    c_id = cs_timer_stats_create(c_p_name, c_name, c_label)
-    id = c_id
-
-  end function timer_stats_create
 
   !=============================================================================
 

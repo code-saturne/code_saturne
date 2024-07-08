@@ -36,8 +36,8 @@
 !> \param[in]     nscal         total number of scalars
 !______________________________________________________________________________
 
-subroutine inivar &
- ( nvar   , nscal )
+subroutine inivar() &
+  bind(C, name='cs_f_initialization_variables')
 
 !===============================================================================
 ! Module files
@@ -61,6 +61,7 @@ use cfpoin, only:ithvar
 use cs_c_bindings
 use cs_cf_bindings
 use vof
+use dimens, only: nvar, nscal
 
 use, intrinsic :: iso_c_binding
 
@@ -69,8 +70,6 @@ use, intrinsic :: iso_c_binding
 implicit none
 
 ! Arguments
-
-integer          nvar   , nscal
 
 ! Local variables
 

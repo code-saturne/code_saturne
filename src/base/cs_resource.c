@@ -203,32 +203,6 @@ _init_wt_limit(void)
  *  Public function definitions for Fortran API
  *============================================================================*/
 
-/*----------------------------------------------------------------------------
- * Limit number of remaining time steps if the remaining allocated time is
- * too small to attain the requested number of steps.
- *
- * Fortran interface:
- *
- * subroutine armtsp (ntcabs, ntmabs)
- * *****************
- *
- * integer          ntcabs      : <-- : current time step number
- * integer          ntmabs      : <-> : maximum time step number
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF (armtps, ARMTPS)
-(
- const int  *ntcabs,
- int        *ntmabs
-)
-{
-  int ts_max = *ntmabs;
-
-  cs_resource_get_max_timestep(*ntcabs, &ts_max);
-
-  *ntmabs = ts_max;
-}
-
 /*============================================================================
  * Public function definitions
  *============================================================================*/

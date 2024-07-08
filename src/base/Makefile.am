@@ -202,6 +202,7 @@ cs_time_moment.h \
 cs_time_control.h \
 cs_time_plot.h \
 cs_time_step.h \
+cs_time_stepping.h \
 cs_time_table.h \
 cs_timer.h \
 cs_timer_stats.h \
@@ -291,7 +292,6 @@ endif
 
 libcsbase_a_SOURCES = \
 addfld.f90 \
-caltri.f90 \
 cs_mass_source_terms.c \
 condli.f90 \
 cou1di.f90 \
@@ -395,6 +395,7 @@ cs_time_control.c \
 cs_time_moment.c \
 cs_time_plot.c \
 cs_time_step.c \
+cs_time_stepping.c \
 cs_timer_stats.c \
 cs_turbomachinery.c \
 cs_utilities.c \

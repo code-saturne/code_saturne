@@ -232,7 +232,8 @@ static cs_atmo_option_t  _atmo_option = {
   .soil_model = 0, /* off or user defined */
   .soil_cat = 0, /* CS_ATMO_SOIL_5_CAT */
   .soil_zone_id = -1,
-  .soil_meb_model = 0
+  .soil_meb_model = 0,
+  .ifilechemistry = 0
 };
 
 static const char *_univ_fn_name[] = {N_("Cheng 2005"),
@@ -373,7 +374,8 @@ cs_f_atmo_get_pointers(cs_real_t              **ps,
                        int                    **soil_model,
                        int                    **nvert,
                        int                    **kvert,
-                       int                    **kmx);
+                       int                    **kmx,
+                       int                    **ifilechemistry);
 
 void
 cs_f_atmo_arrays_get_pointers(cs_real_t **z_dyn_met,
@@ -1827,7 +1829,8 @@ cs_f_atmo_get_pointers(cs_real_t              **ps,
                        int                    **soil_model,
                        int                    **nvert,
                        int                    **kvert,
-                       int                    **kmx)
+                       int                    **kmx,
+                       int                    **ifilechemistry)
 {
   *ps        = &(_atmo_constants.ps);
   *syear     = &(_atmo_option.syear);
@@ -1869,6 +1872,7 @@ cs_f_atmo_get_pointers(cs_real_t              **ps,
   *nvert = &(_atmo_option.rad_1d_nvert);
   *kvert = &(_atmo_option.rad_1d_nlevels);
   *kmx = &(_atmo_option.rad_1d_nlevels_max);
+  *ifilechemistry = &(_atmo_option.ifilechemistry);
 }
 
 void

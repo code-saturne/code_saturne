@@ -657,6 +657,10 @@ cs_f_cdo_solve_steady_state_domain(void)
   _solve_steady_state_domain(cs_glob_domain);
 }
 
+/*============================================================================
+ * Public function prototypes
+ *============================================================================*/
+
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Solve all the equations of a computational domain for one time step
@@ -664,14 +668,10 @@ cs_f_cdo_solve_steady_state_domain(void)
 /*----------------------------------------------------------------------------*/
 
 void
-cs_f_cdo_solve_unsteady_state_domain(void)
+cs_cdo_solve_unsteady_state_domain(void)
 {
   _solve_domain(cs_glob_domain);
 }
-
-/*============================================================================
- * Public function prototypes
- *============================================================================*/
 
 /*----------------------------------------------------------------------------*/
 /*!

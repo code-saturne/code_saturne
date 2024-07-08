@@ -288,12 +288,12 @@ contains
 
   !=============================================================================
 
-  subroutine init_nz_pcond(nvar)
+  subroutine init_nz_pcond() &
+    bind(C, name='cs_f_init_nz_pcond')
 
     use, intrinsic :: iso_c_binding
+    use dimens, only: nvar
     implicit none
-
-    integer, intent(in) :: nvar
 
     ! Local variables
 

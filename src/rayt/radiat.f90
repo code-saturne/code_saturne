@@ -67,15 +67,6 @@ module radiat
 
     !---------------------------------------------------------------------------
 
-    ! Interface to C function finalizing quadrature
-    subroutine cs_rad_transfer_finalize() &
-      bind(C, name='cs_rad_transfer_finalize')
-      use, intrinsic :: iso_c_binding
-      implicit none
-    end subroutine cs_rad_transfer_finalize
-
-    !---------------------------------------------------------------------------
-
     ! Interface to C function to retrieve pointers
     subroutine cs_rad_transfer_get_pointers(p_iirayo,     p_nwsgg,             &
                                             p_nt_rad_prp, p_rad_atmo_model)    &
@@ -180,16 +171,6 @@ contains
     call c_f_pointer(p_rad_atmo_model, rad_atmo_model)
 
   end subroutine radiat_init
-
-  !=============================================================================
-
-  ! Free related arrays
-
-  subroutine radiat_finalize
-
-    call cs_rad_transfer_finalize
-
-  end subroutine radiat_finalize
 
   !=============================================================================
 

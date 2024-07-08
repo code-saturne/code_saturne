@@ -331,19 +331,6 @@ cs_f_domain_setup_init_model_context(void)
     cs_gwf_init_model_context();
 }
 
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Initialize CDO systems
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_f_domain_initialize_cdo_systems(void)
-{
-  assert(cs_glob_domain != nullptr);
-  cs_domain_initialize_systems(cs_glob_domain);
-}
-
 /*============================================================================
  * Public function prototypes
  *============================================================================*/

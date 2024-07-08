@@ -75,7 +75,7 @@ implicit none
 ! Local variables
 
 integer          ii, ivar
-integer          iflid, kcvlim, ifctsl, clip_id
+integer          iflid, kcvlim, ifctsl
 integer          kdflim
 integer          kturt, kfturt, kislts, keyvar, kfturt_alpha
 integer          turb_flux_model, turb_flux_model_type

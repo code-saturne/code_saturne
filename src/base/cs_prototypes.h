@@ -57,11 +57,6 @@ BEGIN_C_DECLS
  * Main Fortran subroutine
  *----------------------------------------------------------------------------*/
 
-extern void CS_PROCF (caltri, CALTRI)
-(
- void
-);
-
 /*----------------------------------------------------------------------------
  * Initialize Fortran base common block values
  *----------------------------------------------------------------------------*/
@@ -396,9 +391,7 @@ cs_user_1d_wall_thermal(int iappel,
  *----------------------------------------------------------------------------*/
 
 void
-cs_user_wall_condensation(int nvar,
-                          int nscal,
-                          int iappel);
+cs_user_wall_condensation(int iappel);
 
 /*----------------------------------------------------------------------------
  * Setup boundary conditions to be applied.

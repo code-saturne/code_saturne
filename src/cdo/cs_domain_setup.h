@@ -60,9 +60,6 @@ BEGIN_C_DECLS
 void
 cs_f_domain_setup_init_model_context(void);
 
-void
-cs_f_domain_initialize_cdo_systems(void);
-
 /*============================================================================
  * Public function prototypes
  *============================================================================*/

@@ -155,24 +155,10 @@ void CS_PROCF (cstini, CSTINI) (void);
 
 /*----------------------------------------------------------------------------
  * Define porosity.
- *
- * Fortran Interface:
- *
- * SUBROUTINE UIPORO
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF (uiporo, UIPORO) (void);
-
-/*----------------------------------------------------------------------------
- * extra operations
- *
- * Fortran Interface:
- *
- * subroutine uiexop
- * *****************
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF (uiexop, UIEXOP)(void);
+void
+cs_gui_porosity(void);
 
 /*=============================================================================
  * Public function prototypes

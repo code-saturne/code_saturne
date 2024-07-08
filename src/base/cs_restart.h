@@ -192,53 +192,6 @@ typedef void
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
- * Check if checkpointing is recommended at a given time.
- *
- * Fortran interface
- *
- * subroutine reqsui (iisuit)
- * *****************
- *
- * integer          iisuit      : --> : 0 if no restart required, 1 otherwise
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF (reqsui, REQSUI)
-(
- int  *iisuit
-);
-
-/*----------------------------------------------------------------------------
- * Indicate checkpointing has been done at a given time.
- *
- * This updates the status for future checks to determine
- * if checkpointing is recommended at a given time.
- *
- * Fortran interface
- *
- * subroutine stusui
- * *****************
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF (stusui, STUSUI)
-(
- void
-);
-
-/*----------------------------------------------------------------------------
- * Save output mesh for turbomachinery if needed
- *
- * Fortran interface
- *
- * subroutine trbsui
- * *****************
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF (trbsui, TRBSUI)
-(
- void
-);
-
-/*----------------------------------------------------------------------------
  * Indicate if a restart directory is present.
  *
  * Fortran interface

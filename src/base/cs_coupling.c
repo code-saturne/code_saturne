@@ -138,29 +138,6 @@ void CS_PROCF(cplsyn, CPLSYN)
   *dtref = ts;
 }
 
-/*----------------------------------------------------------------------------
- * Indicate if there are synchronized applications in the same
- * PLE coupling group.
- *
- * Fortran Interface:
- *
- * subroutine cplact (isync)
- * *****************
- *
- * integer          isync       : <-- : 1 if synchronized, 0 otherwise
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF(cplact, CPLACT)
-(
- int         *isync
-)
-{
-  if (cs_coupling_is_sync_active())
-    *isync = 1;
-  else
-    *isync = 0;
-}
-
 /*============================================================================
  * Public function definitions
  *============================================================================*/

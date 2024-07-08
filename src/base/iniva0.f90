@@ -36,8 +36,8 @@
 !> \param[in]     nscal         total number of scalars
 !______________________________________________________________________________
 
-subroutine iniva0 &
- ( nscal  )
+subroutine iniva0() &
+bind(C, name='cs_f_iniva0')
 
 !===============================================================================
 ! Module files
@@ -49,6 +49,7 @@ use optcal
 use cstphy
 use cstnum
 use pointe
+use dimens, only: nscal
 use entsor
 use albase
 use parall
@@ -69,8 +70,6 @@ use cs_c_bindings
 implicit none
 
 ! Arguments
-
-integer          nscal
 
 ! Local variables
 

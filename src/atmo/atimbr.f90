@@ -270,7 +270,9 @@ end subroutine allocate_all
 ! ----------------------------------------------------------------
 !> \brief  Final step for deallocation
 ! ----------------------------------------------------------------
-subroutine finalize_imbrication()
+subroutine finalize_imbrication() &
+  bind(C, name='cs_f_finalize_imbrication')
+
 implicit none
 ! --- section of explicit deallocations -----------------
 deallocate(imbrication_files)

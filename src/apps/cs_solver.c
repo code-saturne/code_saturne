@@ -118,6 +118,7 @@
 #include "cs_sys_coupling.h"
 #include "cs_system_info.h"
 #include "cs_time_moment.h"
+#include "cs_time_stepping.h"
 #include "cs_time_table.h"
 #include "cs_timer.h"
 #include "cs_timer_stats.h"
@@ -504,7 +505,7 @@ _run(void)
           /* Maybe should be allocate in caltri.c */
           cs_ale_allocate();
 
-          CS_PROCF(caltri, CALTRI)();
+          cs_time_stepping();
 
         }
 

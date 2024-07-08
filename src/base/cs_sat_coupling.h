@@ -273,7 +273,7 @@ cs_sat_coupling_bnd_initialize
 void
 cs_sat_coupling_initialize
 (
-  const int nvar
+  void
 );
 
 /*----------------------------------------------------------------------------*/

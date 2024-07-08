@@ -58,23 +58,6 @@ module field
 
   interface
 
-    ! Interface to C function allocating field values
-
-    !> \brief Allocate arrays for all defined fields based on their location.
-
-    !> Location sized must thus be known.
-
-    !> Fields that do not own their data should all have been mapped at this
-    !> stage, and are checked.
-
-    subroutine field_allocate_or_map_all()  &
-      bind(C, name='cs_field_allocate_or_map_all')
-      use, intrinsic :: iso_c_binding
-      implicit none
-    end subroutine field_allocate_or_map_all
-
-    !---------------------------------------------------------------------------
-
     ! Interface to C function assigning integer value to a key
 
     !> \brief Assign a floating point value for a given key to a field.

@@ -70,22 +70,6 @@ void CS_PROCF (csexit, CSEXIT)
 );
 
 /*----------------------------------------------------------------------------
- * Elapsed time since execution start
- *
- * Fortran interface:
- *
- * subroutine dmtmps (tw)
- * *****************
- *
- * double precision tw          : <-- : elapsed time
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF (dmtmps, DMTMPS)
-(
-  cs_real_t  *tw
-);
-
-/*----------------------------------------------------------------------------
  * Get log name file information.
  *
  * When log file output is suppressed, it returns the name of the
@@ -178,9 +162,6 @@ cs_user_parameters_wrapper(void);
 
 void
 cs_user_finalize_setup_wrapper(void);
-
-void
-cs_user_porosity_wrapper(void);
 
 /*----------------------------------------------------------------------------*/
 

@@ -170,6 +170,7 @@ static cs_1d_wall_thermal_t _1d_wall_thermal =
   .nfpt1d = 0,
   .nfpt1t = 0,
   .nmxt1d = 0,
+  .use_restart = true,
   .izft1d = NULL,
   .ifpt1d = NULL,
   .tppt1d = NULL,

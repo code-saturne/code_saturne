@@ -58,21 +58,6 @@ module pointe
 
   !=============================================================================
 
-  !> \defgroup dummy_arrays Dummy target arrays for null pointers
-
-  !> \addtogroup dummy_arrays
-  !> \{
-
-  integer, dimension(1),   target :: ivoid1
-  integer, dimension(1,1), target :: ivoid2
-
-  double precision, dimension(1),     target :: rvoid1
-  double precision, dimension(1,1),   target :: rvoid2
-
-  !> \}
-
-  !=============================================================================
-
   !> \defgroup coupled_case Specific arrays for the coupled case
 
   !> \addtogroup coupled_case
@@ -160,8 +145,10 @@ contains
 
   ! Initialize auxiliary arrays
 
-  subroutine init_aux_arrays(ncelet, nfabor)
+  subroutine init_aux_arrays() &
+    bind(C, name='cs_f_init_aux_arrays')
 
+    use mesh, only: ncelet, nfabor
     use paramx
     use optcal
     use cs_c_bindings
@@ -169,8 +156,6 @@ contains
     implicit none
 
     ! Arguments
-
-    integer, intent(in) :: ncelet, nfabor
 
     ! Local variables
 
@@ -243,7 +228,8 @@ contains
 
   ! Free auxiliary arrays
 
-  subroutine finalize_aux_arrays
+  subroutine finalize_aux_arrays() &
+    bind(C, name='cs_f_finalize_aux_arrays')
 
     deallocate(itrifb)
     if (allocated(gamcav)) deallocate(gamcav, dgdpca)
@@ -252,7 +238,8 @@ contains
 
   !=============================================================================
 
-  subroutine boundary_conditions_init
+  subroutine boundary_conditions_init() &
+    bind(C, name='cs_f_boundary_conditions_init')
 
     use, intrinsic :: iso_c_binding
     use mesh
@@ -276,21 +263,10 @@ contains
 
   !=============================================================================
 
-  subroutine boundary_conditions_finalize
-
-    use cs_c_bindings
-
-    implicit none
-
-    call cs_f_boundary_conditions_free
-
-  end subroutine boundary_conditions_finalize
-
-  !=============================================================================
-
   !> \brief Allocate the cs_glob_1d_wall_thermal structure.
 
-  subroutine init_1d_wall_thermal
+  subroutine init_1d_wall_thermal() &
+    bind(C, name='cs_f_init_1d_wall_thermal')
 
     use, intrinsic :: iso_c_binding
     use cs_c_bindings

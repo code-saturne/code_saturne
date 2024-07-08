@@ -158,20 +158,13 @@ BEGIN_C_DECLS
  *        Examples are available
  *        \ref condens_h_boundary "here".
  *
- * \param[in]     nvar          total number of variables
- * \param[in]     nscal         total number of scalars
  * \param[in]     iappel        indicates which at which stage the routine is
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_user_wall_condensation(int  nvar,
-                          int  nscal,
-                          int  iappel)
+cs_user_wall_condensation(int  iappel)
 {
-  CS_UNUSED(nvar);
-  CS_UNUSED(nscal);
-
   cs_lnum_t *ifabor = cs_glob_mesh->b_face_cells;
 
   cs_wall_condensation_t     *wall_cond    = cs_get_glob_wall_condensation();

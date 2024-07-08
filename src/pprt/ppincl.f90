@@ -483,7 +483,8 @@ contains
   !> \brief Map Fortran physical models boundary condition info.
   !> This maps Fortran pointers to global C variables.
 
-  subroutine pp_models_bc_map
+  subroutine pp_models_bc_map() &
+    bind(C, name='cs_f_pp_models_bc_map')
 
     use, intrinsic :: iso_c_binding
     implicit none

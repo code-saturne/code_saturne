@@ -55,6 +55,7 @@
 #include "fvm_writer.h"
 
 #include "cs_ale.h"
+#include "cs_assert.h"
 #include "cs_array.h"
 #include "cs_atmo.h"
 #include "cs_base.h"
@@ -2362,9 +2363,23 @@ cs_sat_coupling_all_init(void)
 void
 cs_sat_coupling_initialize
 (
-  const int nvar
+  void
 )
 {
+  int nvar = 0;
+  for (int field_id = 0; field_id < cs_field_n_fields(); field_id++) {
+    cs_field_t *f = cs_field_by_id(field_id);
+    /* Only couple field variables */
+    if (!(f->type & CS_FIELD_VARIABLE))
+      continue;
+    if (f->type & CS_FIELD_CDO)
+      continue;
+    /* No coupling for mesh velocity */
+    if (strcmp(f->name, "mesh_velocity") == 0)
+      continue;
+    nvar += f->dim;
+  }
+
   for (int cpl_id = 0; cpl_id < cs_glob_sat_n_couplings; cpl_id++) {
     cs_sat_coupling_t *cpl = cs_glob_sat_couplings[cpl_id];
 

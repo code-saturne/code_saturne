@@ -239,7 +239,8 @@ contains
 
   !=============================================================================
 
-  subroutine init_nz_tagmr
+  subroutine init_nz_tagmr() &
+    bind(C, name='cs_f_init_nz_tagmr')
 
     use, intrinsic :: iso_c_binding
     use cs_nz_condensation
@@ -292,7 +293,8 @@ contains
 
   !=============================================================================
 
-  subroutine init_nz_mesh_tagmr
+  subroutine init_nz_mesh_tagmr() &
+    bind(C, name='cs_f_init_nz_mesh_tagmr')
 
     use, intrinsic :: iso_c_binding
     use optcal
@@ -348,12 +350,6 @@ contains
     endif
 
   end subroutine init_nz_mesh_tagmr
-
-  !=============================================================================
-
-  subroutine finalize_nz_mesh_tagmr
-    return
-  end subroutine finalize_nz_mesh_tagmr
 
   !=============================================================================
 

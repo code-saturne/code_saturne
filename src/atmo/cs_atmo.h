@@ -421,6 +421,7 @@ typedef struct {
    * - CS_ATMO_SOIL_PHOTOVOLTAICS
    * - CS_ATMO_SOIL_VEGETATION */
   cs_atmo_soil_meb_model_t soil_meb_model;
+  int ifilechemistry;
 
 } cs_atmo_option_t;
 

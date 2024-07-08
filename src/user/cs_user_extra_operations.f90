@@ -97,3 +97,22 @@ double precision dt(ncelet)
 
 return
 end subroutine cs_f_user_extra_operations
+
+!===============================================================================
+
+subroutine cs_f_user_extra_operations_wrapper(dt) &
+  bind(C, name='cs_f_user_extra_operations_wrapper')
+
+use dimens, only: nvar, nscal
+use mesh, only: ncelet
+use cs_c_bindings
+
+implicit none
+
+! Arguments
+
+real(c_double) :: dt(ncelet)
+
+call cs_f_user_extra_operations(nvar, nscal, dt)
+
+end subroutine cs_f_user_extra_operations_wrapper

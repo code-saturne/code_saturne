@@ -110,6 +110,8 @@ typedef struct {
 
   int nmxt1d;        /* Maximum number of discretization cells in 1d wall */
 
+  bool use_restart;
+
   cs_lnum_t *izft1d; /* Zones of t1d, dimensioned with nfabor */
 
   cs_lnum_t *ifpt1d; /* Array allowing to mark out the numbers of

@@ -754,7 +754,7 @@ _solve_turbulence(const cs_lnum_t           n_cells,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_solve_all(const int   itrale)
+cs_solve_all(int  itrale)
 {
   const cs_mesh_t *m = cs_glob_mesh;
   const cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
@@ -1000,7 +1000,7 @@ cs_solve_all(const int   itrale)
       }
     }
 
-    cs_user_wall_condensation(n_var, n_scal, 3);
+    cs_user_wall_condensation(3);
 
     // Use empiric correlations to compute heat
     // and mass transfer due to wall condensation

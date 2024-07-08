@@ -410,7 +410,8 @@ contains
   !> \brief Map Fortran physical models boundary condition info.
   !> This maps Fortran pointers to global C variables.
 
-  subroutine co_models_bc_map
+  subroutine co_models_bc_map() &
+    bind(C, name='cs_f_combustion_models_boundary_conditions_map')
 
     use, intrinsic :: iso_c_binding
     implicit none
@@ -464,7 +465,8 @@ contains
   !=============================================================================
 
   ! Free related arrays
-  subroutine finalize_steady_laminar_flamelet_library
+  subroutine finalize_steady_laminar_flamelet_library() &
+    bind(C, name='cs_f_finalize_steady_laminar_flamelet_library')
 
     implicit none
 

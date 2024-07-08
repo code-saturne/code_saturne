@@ -250,7 +250,7 @@ endif
 
 ! Head losses weighting field in case of Lagrangian deposition and
 ! reentrainment model (general case in varpos, but the Lagrangian
-! options are not know yet at the call site, so we have a similar
+! options are not known yet at the call site, so we have a similar
 ! code block here for this special case.
 
 if (iflow .gt. 0 .and. idtten .lt. 0) then

@@ -153,11 +153,12 @@ contains
 
   !> \brief Allocate boundary flux indicators array
 
-  subroutine init_compf (nfabor)
+  subroutine init_compf() &
+    bind(C, name='cs_f_init_compf')
+
+    use mesh, only: nfabor
 
     implicit none
-
-    integer nfabor
 
     allocate(ifbet(nfabor))
     allocate(icvfli(nfabor))
@@ -167,16 +168,6 @@ contains
     p_ifbet = c_loc(ifbet)
 
   end subroutine init_compf
-
-  !> \brief Deallocate boundary flux indicators array
-
-  subroutine finalize_compf
-
-    implicit none
-
-    deallocate(ifbet, icvfli)
-
-  end subroutine finalize_compf
 
   !=============================================================================
 

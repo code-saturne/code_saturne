@@ -55,7 +55,7 @@ module atchem
 
   !> ifilechemistry: choice to read (=1,2,3,4, according to the scheme) or not (0)
   !> a concentration profile file
-  integer, save :: ifilechemistry
+  integer(c_int), pointer, save :: ifilechemistry
   !> isepchemistry: splitted (=1) or semi-coupled (=2, pu-sun) resolution
   !> of chemistry
   integer(c_int), pointer, save :: isepchemistry
@@ -271,7 +271,8 @@ contains
 
   !> \brief Allocate memory relative to mesh size
 
-  subroutine init_chemistry_reacnum
+  subroutine init_chemistry_reacnum() &
+    bind(C, name='cs_f_init_chemistry_reacnum')
 
     use mesh, only: ncel
     use, intrinsic :: iso_c_binding
@@ -339,7 +340,8 @@ contains
 
   !> \brief deallocate the space
 
-  subroutine finalize_chemistry
+  subroutine finalize_chemistry() &
+    bind(C, name='cs_f_finalize_chemistry')
 
     use cs_c_bindings
 

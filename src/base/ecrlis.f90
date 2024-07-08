@@ -42,11 +42,8 @@
 !_______________________________________________________________________________
 
 
-subroutine ecrlis &
-!================
-
- ( ncelet , ncel   ,                                     &
-   dt     , cell_f_vol )
+subroutine ecrlis(dt) &
+  bind(C, name='cs_f_equation_convergence_info_write')
 
 !===============================================================================
 ! Module files
@@ -64,14 +61,14 @@ use ppppar
 use ppthch
 use ppincl
 use field
+use mesh, only: ncelet, ncel, cell_f_vol
 use cs_c_bindings
 
 !===============================================================================
 
 implicit none
 
-integer          ncelet, ncel
-double precision dt(ncelet), cell_f_vol(ncelet)
+real(c_double) :: dt(ncelet)
 
 ! Local variables
 

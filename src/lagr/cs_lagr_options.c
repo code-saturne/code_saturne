@@ -54,6 +54,7 @@
 #include "cs_parameters_check.h"
 #include "cs_physical_model.h"
 #include "cs_turbulence_model.h"
+#include "cs_volume_zone.h"
 
 #include "cs_lagr.h"
 #include "cs_lagr_event.h"

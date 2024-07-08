@@ -2019,13 +2019,10 @@ void CS_PROCF (cstime, CSTIME) (void)
 
 /*----------------------------------------------------------------------------
  * Define porosity.
- *
- * Fortran Interface:
- *
- * SUBROUTINE UIPORO
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF(uiporo, UIPORO)(void)
+void
+cs_gui_porosity(void)
 {
   const cs_lnum_t n_cells_ext = cs_glob_mesh->n_cells_with_ghosts;
 
@@ -2094,21 +2091,6 @@ void CS_PROCF(uiporo, UIPORO)(void)
   }
 
   cs_porous_model_auto_face_porosity();
-}
-
-/*----------------------------------------------------------------------------
- * extra operations
- *
- * Fortran Interface:
- *
- * subroutine uiexop
- * *****************
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF (uiexop, UIEXOP)(void)
-{
-  cs_gui_balance_by_zone();
-  cs_gui_pressure_drop_by_zone();
 }
 
 /*============================================================================

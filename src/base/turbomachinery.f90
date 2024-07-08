@@ -96,7 +96,8 @@ contains
 
   ! Initialization of turbomachinery module variables
 
-  subroutine turbomachinery_init
+  subroutine turbomachinery_init() &
+    bind(C, name='cs_f_turbomachinery_init')
 
     use, intrinsic :: iso_c_binding
     use mesh
