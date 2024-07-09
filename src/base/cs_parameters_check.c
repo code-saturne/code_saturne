@@ -1351,8 +1351,8 @@ cs_parameters_check(void)
    * Verification related to periodic buondaries
    *--------------------------------------------------------------------------*/
 
-  if (cs_glob_mesh->have_rotation_perio &&
-      (vp_param->ipucou != 0 || cs_glob_ale))
+  if (   cs_glob_mesh->have_rotation_perio
+      && (vp_param->ipucou != 0 || cs_glob_ale != 0))
     cs_parameters_error
       (CS_ABORT_DELAYED,
        _("in periodic boundary condition definitions"),
@@ -1360,7 +1360,8 @@ cs_parameters_check(void)
          "enhanced pressure-velocity coupling or ALE method in the current\n"
          "version."));
 
-  if (cs_glob_mesh->n_init_perio > 0 && cs_glob_wall_distance_options->need_compute
+  if (   cs_glob_mesh->n_init_perio > 0
+      && cs_glob_wall_distance_options->need_compute
       && cs_glob_wall_distance_options->method == 2)
     cs_parameters_error
       (CS_ABORT_DELAYED,
@@ -1368,7 +1369,8 @@ cs_parameters_check(void)
        _("Periodicity is incompatible with this method for computing\n"
          "the distance to the wall in the current version."));
 
-  if (cs_glob_mesh->have_rotation_perio && cs_glob_rad_transfer_params->type == 0)
+  if (   cs_glob_mesh->have_rotation_perio
+      && cs_glob_rad_transfer_params->type > 0)
     cs_parameters_error
       (CS_ABORT_DELAYED,
        _("in periodic boundary condition definitions"),
@@ -1520,11 +1522,12 @@ cs_parameters_check(void)
    * Verification for the VOF modelling
    *--------------------------------------------------------------------------*/
 
-  if (cs_glob_vof_parameters->vof_model > 0 && vp_model->idilat)
+  if (cs_glob_vof_parameters->vof_model > 0 && vp_model->idilat > 1)
     cs_parameters_error
       (CS_ABORT_DELAYED,
        _("in the VOF method"),
-       _("The VOF method is not compatible with the dilatable or low-mach flows\n"));
+       _("The VOF method is not compatible "
+         "with the dilatable or low-mach flows\n"));
 
   /*--------------------------------------------------------------------------
    * checkpoint options
