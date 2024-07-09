@@ -1364,6 +1364,59 @@ _control_checkpoint(const char   *cur_line,
     bft_printf(_("   ignored: \"%s\"\n"), cur_line);
 }
 
+#if defined(HAVE_SOCKET)
+
+/*----------------------------------------------------------------------------
+ * Handle command file line relative to snapshot
+ *
+ * parameters:
+ *   cur_line     <-> pointer to the current line
+ *   s            <-> pointer to current position in line
+ *   control_comm <-- control communicator, or NULL
+ *   queue        <-- pointer to queue, or NULL
+ *----------------------------------------------------------------------------*/
+
+static void
+_control_snapshot(const char             *cur_line,
+                  const char            **s,
+                  cs_control_comm_t      *control_comm,
+                  cs_control_queue_t     *queue)
+{
+  *s += 9; /* shift in string by length of "snapshot_" part */
+
+  if (strncmp(*s, "load_serialized ", 16) == 0) {
+    int s_size;
+    if (_read_next_int(cur_line, s, &s_size) > 0) {
+      bft_printf("  %-32s %12d\n",
+                 "load_serialized", s_size);
+      if (control_comm != NULL && s_size > 0) {
+        char *buffer;
+        BFT_MALLOC(buffer, s_size, char);
+        _comm_read_sock(control_comm, queue, buffer,
+                        1, s_size);
+        cs_restart_set_from_memory_serialized(s_size, buffer);
+      }
+    }
+  }
+  else if (strncmp(*s, "get_serialized", 14) == 0) {
+    size_t nb;
+    void *data;
+    cs_restart_get_from_memory_serialized(&nb, &data);
+    if (control_comm != NULL) {
+      char ack[] = "serialized_snapshot";
+      _comm_write_sock(control_comm, ack, 1, sizeof(ack));
+      size_t reply[1] = {nb};
+      _comm_write_sock(control_comm, reply, sizeof(reply), 1);
+      if (nb > 0)
+        _comm_write_sock(control_comm, data, 1, nb);
+    }
+  }
+  else
+    bft_printf(_("   ignored: \"%s\"\n"), cur_line);
+}
+
+#endif
+
 /*----------------------------------------------------------------------------
  * Handle command file line relative to notebook
  *
@@ -1686,6 +1739,15 @@ _parse_control_buffer(const char          *name,
 
     else if (strncmp(s, "checkpoint_", 11) == 0)
       _control_checkpoint(cur_line, (const char **)&s);
+
+    /* Snapshot options */
+
+#if defined(HAVE_SOCKET)
+
+    else if (strncmp(s, "snapshot_", 9) == 0)
+      _control_snapshot(cur_line, (const char **)&s, control_comm, queue);
+
+#endif
 
     /* Postprocessing options */
 

@@ -222,6 +222,9 @@ static std::map<int, int> _integer_variable_reference_map;
 static std::map<int, int> _bool_variable_reference_map;
 static std::map<int, int> _string_variable_reference_map;
 
+int *_state_p = NULL;
+static std::map<fmi2FMUstate, fmi2FMUstate> _states;
+
 static double *_real_variable_values = NULL;
 static int *_integer_variable_values = NULL;
 static bool *_bool_variable_values = NULL;
@@ -277,6 +280,11 @@ cs_control_queue_t *_cs_glob_control_queue = NULL;
 /* Structure for grouped notebook value settings */
 
 cs_variables_t *_cs_variables = NULL;
+
+/* Serialization (state) data */
+
+size_t _serialized_size = 0;
+char  *_serialized_data = nullptr;
 
 /* Variables from generated template */
 
@@ -1348,6 +1356,76 @@ _get_notebook_variable(int         sock,
 
 /*----------------------------------------------------------------------------*/
 
+/* Query serialized snapshot from the server */
+
+static void
+_get_serialized_snapshot(int     sock)
+{
+  string buffer = "snapshot_get_serialized";
+
+  string s_log = string(__func__) + ": send query for " + buffer;
+  _cs_log(fmi2OK, CS_LOG_TRACE, s_log);
+
+  size_t restart_size[1] = {0};
+
+  /* Add input and output variables to end of snapshot */
+
+  cs_variables_t *v = _cs_variables;
+  size_t n_add = (v->n_input + v->n_output) * sizeof(double);
+
+  if (_serialized_data != nullptr)
+    free(_serialized_data);
+
+#if CS_DRY_RUN == 1
+
+  _serialized_size = n_add;
+  _serialized_data = malloc(n_add);
+
+#else
+
+  _send_sock_str(sock, buffer.c_str());
+
+  s_log = string(__func__) + ": waiting for " + buffer;
+  _cs_log(fmi2OK, CS_LOG_TRACE, s_log);
+
+  /* Received get: val */
+  char *buf_rcv = _recv_sock_with_queue(_cs_socket, _cs_glob_control_queue, 0);
+
+  if (strncmp(buf_rcv, "serialized_snapshot", 19) != 0) {
+    s_log =   string(__func__) + ": unexpected reply; " + string(buf_rcv);
+    _cs_log(fmi2Error, CS_LOG_ERROR, s_log);
+  }
+
+  /* Data size */
+  _recv_sock(_cs_socket, (char *)restart_size, _cs_glob_control_queue,
+             sizeof(size_t), 1);
+
+  _serialized_data = (char *)malloc(restart_size[0] + n_add);
+
+  if (restart_size[0] > 0)
+    _recv_sock(_cs_socket, _serialized_data, _cs_glob_control_queue,
+               1, restart_size[0]);
+
+  s_log = string(__func__) + ": received snapshot";
+  _cs_log(fmi2OK, CS_LOG_TRACE, s_log);
+
+  /* receive 0 */
+  buf_rcv = _recv_sock_with_queue(_cs_socket, _cs_glob_control_queue, 0);
+  if (strcmp(buf_rcv, "0") != 0) {
+    string s = string(__func__) + ": unexpected return code: " + string(buf_rcv);
+    _cs_log(fmi2Warning, CS_LOG_WARNING, s);
+  }
+
+#endif
+
+  char *p = _serialized_data + restart_size[0];
+  memcpy(p, v->input_vals, v->n_input*sizeof(double));
+  p += v->n_input*sizeof(double);
+  memcpy(p, v->output_vals, v->n_output*sizeof(double));
+}
+
+/*----------------------------------------------------------------------------*/
+
 /* Send 'disconnect ' to the server */
 
 static void
@@ -1793,11 +1871,25 @@ fmi2Status fmi2GetFMUstate(fmi2Component  c,
   CS_UNUSED(c);
 
   char s[128];
-  snprintf(s, 127, "%s: called for %p; not handled yet\n",
-           __func__, (void *)state);
-  _cs_log(fmi2Warning, CS_LOG_WARNING, s);
+  if (state != 0) {
+    snprintf(s, 127, "%s: called for %p; not handled for state != 0\n",
+             __func__, (void *)state);
+    _cs_log(fmi2Error, CS_LOG_ERROR, s);
+    return fmi2Error;
+  }
+  else {
+    snprintf(s, 127, "%s: called for %p; only handed for serialized case\n",
+             __func__, (void *)state);
+    _cs_log(fmi2Warning, CS_LOG_WARNING, s);
+    return fmi2Warning;
+  }
 
-  return fmi2Warning;
+  /* Not a valid pointer to actual data here,
+     just a distinct pointer per state... */
+  fmi2FMUstate fs = (fmi2FMUstate)(_state_p++);
+  _states[fs] = fs;
+
+  *state = fs;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1822,10 +1914,23 @@ fmi2Status fmi2FreeFMUstate(fmi2Component  c,
 {
   CS_UNUSED(c);
 
+  if (*state == NULL)
+    return fmi2OK;
+
   char s[128];
-  snprintf(s, 127, "%s: called for %p; not handled yet\n",
-           __func__, (void *)state);
-  _cs_log(fmi2Warning, CS_LOG_WARNING, s);
+
+  if (_states.count(*state) > 0) {
+    _states.erase(*state);
+    snprintf(s, 127, "%s: called for %p; not fully handled yet\n",
+             __func__, (void *)*state);
+    _cs_log(fmi2Warning, CS_LOG_WARNING, s);
+    *state = NULL;
+  }
+  else {
+    snprintf(s, 127, "%s: called for %p, which is not present\n",
+           __func__, (void *)*state);
+    _cs_log(fmi2Warning, CS_LOG_WARNING, s);
+  }
 
   return fmi2Warning;
 }
@@ -1838,12 +1943,14 @@ fmi2Status fmi2SerializedFMUstateSize(fmi2Component  c,
 {
   CS_UNUSED(c);
 
-  *stateSize = 0;
+  _get_serialized_snapshot(_cs_socket);
+
+  *stateSize = _serialized_size;
   char s[128];
   snprintf(s, 127, "%s: called for %p\n", __func__, (void *)state);
-  _cs_log(fmi2Error, CS_LOG_ERROR, s);
+  _cs_log(fmi2OK, CS_LOG_TRACE, s);
 
-  return fmi2Error;
+  return fmi2OK;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1855,33 +1962,68 @@ fmi2SerializeFMUstate(fmi2Component  c,
                       size_t         serializedStateSize)
 {
   CS_UNUSED(c);
-  CS_UNUSED(serializedState);
-  CS_UNUSED(serializedStateSize);
 
   char s[128];
-  snprintf(s, 127, "%s: called for %p\n", __func__, (void *)state);
-  _cs_log(fmi2Error, CS_LOG_ERROR, s);
 
-  return fmi2Error;
+  if (serializedStateSize != _serialized_size) {
+    snprintf(s, 127,
+             "%s: called for %p\n"
+             "with size %d (%d expected)\n",
+             __func__, (void *)state,
+             (int)serializedStateSize, (int)_serialized_size);
+    _cs_log(fmi2Error, CS_LOG_TRACE, s);
+    return fmi2Error;
+  }
+
+  memcpy(serializedState, _serialized_data, _serialized_size);
+
+  _serialized_size = 0;
+  free(_serialized_data);
+
+  snprintf(s, 127, "%s: called for %p\n", __func__, (void *)state);
+  _cs_log(fmi2Error, CS_LOG_TRACE, s);
+  return fmi2OK;
 }
 
 /*----------------------------------------------------------------------------*/
 
 fmi2Status
 fmi2DeSerializeFMUstate(fmi2Component   c,
-                        const fmi2Byte  serializedState,
+                        const fmi2Byte  serializedState[],
                         size_t          size,
                         fmi2FMUstate*   state)
 {
   CS_UNUSED(c);
-  CS_UNUSED(serializedState);
-  CS_UNUSED(size);
+  CS_UNUSED(state);  // Assumed to be handled by caller only.
 
   char s[128];
   snprintf(s, 127, "%s: called for %p\n", __func__, (void *)state);
-  _cs_log(fmi2Error, CS_LOG_ERROR, s);
+  _cs_log(fmi2OK, CS_LOG_ERROR, s);
 
-  return fmi2Error;
+  /* Add input and output variables to end of snapshot */
+
+  cs_variables_t *v = _cs_variables;
+
+  char *p = (char *)serializedState;
+  p += size - v->n_output*sizeof(double);
+  memcpy(v->output_vals, p, v->n_output*sizeof(double));
+  p -= v->n_input*sizeof(double);
+  memcpy(v->input_vals, p, v->n_input*sizeof(double));
+
+  size_t restart_size = size - (v->n_output + v->n_input)*sizeof(double);
+
+  /* Now send rest of snapshot to server */
+
+  string buffer = "snapshot_load_serialized " + to_string(restart_size);
+
+  string s_log = string(__func__) + ": send command : " + buffer;
+  _cs_log(fmi2OK, CS_LOG_TRACE, s_log);
+
+  _send_sock_str(_cs_socket, buffer.c_str());
+
+  _send_sock(_cs_socket, (char *)serializedState, 1, restart_size);
+
+  return fmi2OK;
 }
 
 /*============================================================================

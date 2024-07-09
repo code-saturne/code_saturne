@@ -43,7 +43,7 @@ extern "C" {
 
 	EXPORT fmi2Status fmi2SerializedFMUstateSize(fmi2Component component, fmi2FMUstate state, size_t* size);
 	EXPORT fmi2Status fmi2SerializeFMUstate(fmi2Component component, fmi2FMUstate state, fmi2Byte serializedState[], size_t size);
-	EXPORT fmi2Status fmi2DeSerializeFMUstate(fmi2Component component, const fmi2Byte serializedState, size_t size, fmi2FMUstate* state);
+	EXPORT fmi2Status fmi2DeSerializeFMUstate(fmi2Component component, const fmi2Byte serializedState[], size_t size, fmi2FMUstate* state);
 
 	EXPORT fmi2Status fmi2GetDirectionalDerivative(fmi2Component component, const fmi2ValueReference unknownValueReferences[], size_t numberOfUnknowns, const fmi2ValueReference knownValueReferences[], fmi2Integer numberOfKnowns, fmi2Real knownDifferential[], fmi2Real unknownDifferential[]);
 

@@ -2251,7 +2251,8 @@ cs_restart_present(void)
 {
   if (_restart_present < 0) {
     if (cs_glob_rank_id < 1) {
-      if (cs_file_isdir("restart"))
+      if (  _restart_serialized_memory != NULL
+          || cs_file_isdir("restart"))
         _restart_present = 1;
       else
         _restart_present = 0;

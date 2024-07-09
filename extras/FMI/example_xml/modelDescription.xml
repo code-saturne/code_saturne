@@ -3,7 +3,7 @@
                      generationDateAndTime="2024-02-15T16:23:10Z"
                      variableNamingConvention="structured" numberOfEventIndicators="0">
     <CoSimulation modelIdentifier="FMU_CS" needsExecutionTool="false" canHandleVariableCommunicationStepSize="true" canInterpolateInputs="true" maxOutputDerivativeOrder="0"
-                  canRunAsynchronuously="false" canBeInstantiatedOnlyOncePerProcess="true" canNotUseMemoryManagementFunctions="false"  canGetAndSetFMUstate="true" canSerializeFMUstate="false"
+                  canRunAsynchronuously="false" canBeInstantiatedOnlyOncePerProcess="true" canNotUseMemoryManagementFunctions="false"  canGetAndSetFMUstate="true" canSerializeFMUstate="true"
                   providesDirectionalDerivative="false"/>
     <LogCategories>
         <Category name="logEvents" description="Log all events (during initialization and simulation)"/>
