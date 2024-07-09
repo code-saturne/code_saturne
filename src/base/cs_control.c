@@ -1402,7 +1402,7 @@ _control_snapshot(const char             *cur_line,
     size_t nb;
     void *data;
     cs_restart_get_from_memory_serialized(&nb, &data);
-    if (control_comm != NULL) {
+    if (control_comm != NULL && cs_glob_rank_id <= 0) {
       char ack[] = "serialized_snapshot";
       _comm_write_sock(control_comm, ack, 1, sizeof(ack));
       size_t reply[1] = {nb};
