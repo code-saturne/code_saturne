@@ -2168,18 +2168,15 @@ cs_restart_set_from_memory_serialized(size_t   nb,
                                              echo,
                                              nb, data,
                                              block_comm, comm);
-
-#else
-
-    _restart_serialized_memory
-      = cs_io_initialize_with_index_from_mem("restart",
-                                             magic_string,
-                                             CS_FILE_IN_MEMORY_SERIAL,
-                                             echo,
-                                             nb, data);
-
-#endif
   }
+#else
+  _restart_serialized_memory
+    = cs_io_initialize_with_index_from_mem("restart",
+                                           magic_string,
+                                           CS_FILE_IN_MEMORY_SERIAL,
+                                           echo,
+                                           nb, data);
+#endif
 
   if (_need_finalize == false) {
     _need_finalize = true;
@@ -2225,7 +2222,7 @@ cs_checkpoint_set_to_memory_serialized(bool  status)
                                                      comm);
 #else
 
-    _checkpoint_serialized_memory = cs_io_initialize(r->name,
+    _checkpoint_serialized_memory = cs_io_initialize("checkpoint",
                                                      magic_string,
                                                      CS_IO_MODE_WRITE,
                                                      CS_FILE_IN_MEMORY_SERIAL,

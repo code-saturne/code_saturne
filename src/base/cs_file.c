@@ -3315,6 +3315,7 @@ cs_file_read_block(cs_file_t  *f,
   switch(f->method) {
 
   case CS_FILE_STDIO_SERIAL:
+  case CS_FILE_IN_MEMORY_SERIAL:
     retval = _file_read_block_s(f,
                                 _buf,
                                 size,
@@ -3569,6 +3570,7 @@ cs_file_write_block_buffer(cs_file_t  *f,
   switch(f->method) {
 
   case CS_FILE_STDIO_SERIAL:
+  case CS_FILE_IN_MEMORY_SERIAL:
     retval = _file_write_block_s(f,
                                  _buf,
                                  size,

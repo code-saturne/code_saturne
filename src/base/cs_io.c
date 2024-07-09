@@ -825,7 +825,7 @@ _file_open_read_from_mem(cs_io_t           *cs_io,
                          const char        *magic_string,
                          cs_file_access_t   method,
                          size_t             nb,
-                         void              *data);
+                         void              *data)
 #endif
 {
   assert(method == CS_FILE_IN_MEMORY_SERIAL);
@@ -2153,7 +2153,7 @@ cs_io_initialize_with_index_from_mem(const char        *file_name,
 #else
 
   _cs_io_initialize_with_index_from_mem(inp, file_name, magic_string, method,
-                                        nb_data);
+                                        nb, data);
 
 #endif
 
