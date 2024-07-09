@@ -213,7 +213,7 @@ backspace(impmet)
 if (imode.eq.0) then
   read(impmet, *, err=999, end=999)
 else
-  read(impmet, *, err=999, end=999) xmet(itp), ymet(itp)
+  read(impmet, *, err=999, end=999) xyp_met(1, itp), xyp_met(2, itp)
 endif
 
 !===============================================================================
@@ -228,7 +228,7 @@ backspace(impmet)
 if (imode.eq.0) then
   read(impmet, *, err=999, end=999)
 else
-  read(impmet, *, err=999, end=999) pmer(itp)
+  read(impmet, *, err=999, end=999) xyp_met(3, itp) ! pmer
 endif
 
 !===============================================================================
@@ -329,7 +329,7 @@ endif
 
 ! For Boussinesq approximation, initialize p0, rho0 and theta0 at the first level
 if (imode.eq.1.and.idilat.eq.0.and.itp.eq.1) then
-  p0 = pmer(itp)
+  p0 = xyp_met(3, itp)
   t0 = (ttmet(1,itp)+tkelvi)*(ps/p0)**rscp ! theta0
   ! Humid atmosphere
   if (ippmod(iatmos).eq.2) then
@@ -350,11 +350,11 @@ endif
 
 if (imode.eq.1) then
 
-  phmet(1, itp) = pmer(itp)
+  phmet(1, itp) = xyp_met(3, itp)
   rscp = rair/cp0
 
   if (ihpm.eq.0) then
-    phmet(1,itp) = pmer(itp)
+    phmet(1,itp) = xyp_met(3, itp)
     do k = 2, nbmaxt
       tmoy = 0.5d0*(ttmet(k-1,itp) + ttmet(k,itp)) + tkelvi
 

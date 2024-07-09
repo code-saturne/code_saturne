@@ -369,6 +369,8 @@ typedef struct {
   /*! Universal function Phi_h for unstable condition */
   int meteo_phih_u;
 
+  /*! meteo x, y, p at sea levels */
+  cs_real_t *xyp_met;
   /*! meteo u profiles */
   cs_real_t *u_met;
   /*! meteo v profiles */
@@ -379,6 +381,14 @@ typedef struct {
   cs_real_t *ek_met;
   /*! meteo turbulent dissipation profile */
   cs_real_t *ep_met;
+  /*! meteo temperature profile */
+  cs_real_t *temp_met;
+  /*! meteo density profile */
+  cs_real_t *rho_met;
+  /*! meteo water mass fraction profile */
+  cs_real_t *qw_met;
+  /*! meteo number of droplets profile */
+  cs_real_t *ndrop_met;
 
   /*! Altitudes of the dynamic profiles */
   cs_real_t *z_dyn_met;
@@ -390,6 +400,13 @@ typedef struct {
   cs_real_t *hyd_p_met;
   /*! potential temperature profile */
   cs_real_t *pot_t_met;
+  /*! Pressure drop integrated over a time step
+     (used for automatic open boundaries) profile */
+  cs_real_t *dpdt_met;
+  /*! Momentum for each level (used for automatic open boundaries) */
+  cs_real_t *mom_met;
+  /*! code_saturne momentum for each level */
+  cs_real_t *mom_cs;
   /*! Soil model (1: on, 0: off) */
   int soil_model;
   /*! Soil categories:

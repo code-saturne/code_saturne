@@ -52,11 +52,11 @@ double precision, dimension(:), pointer :: tmmet
 double precision, dimension(:), pointer :: zdmet
 
 !> Pressure drop integrated over a time step (used for automatic open boundaries)
-double precision, allocatable, dimension(:) :: dpdt_met
+double precision, dimension(:), pointer :: dpdt_met
 
 !> Momentum for each level (used for automatic open boundaries)
-double precision, allocatable, dimension(:,:) :: mom_met
-double precision, allocatable, dimension(:,:) :: mom
+double precision, dimension(:,:), pointer :: mom_met
+double precision, dimension(:,:), pointer :: mom
 
 !> altitudes of the temperature profile (read in the input meteo file)
 double precision, dimension(:), pointer :: ztmet
@@ -77,27 +77,22 @@ double precision, dimension(:,:), pointer :: ekmet
 double precision, dimension(:,:), pointer :: epmet
 
 !> meteo temperature (Celsius) profile (read in the input meteo file)
-double precision, allocatable, dimension(:,:) :: ttmet
+double precision, dimension(:,:), pointer :: ttmet
 
 !> meteo specific humidity profile (read in the input meteo file)
-double precision, allocatable, dimension(:,:) :: qvmet
+double precision, dimension(:,:), pointer :: qvmet
 
 !> meteo specific droplet number profile (read in the input meteo file)
-double precision, allocatable, dimension(:,:) :: ncmet
+double precision, dimension(:,:), pointer :: ncmet
 
-!> Sea level pressure (read in the input meteo file)
-double precision, allocatable, dimension(:) :: pmer
-
-!> X axis coordinates of the meteo profile (read in the input meteo file)
-double precision, allocatable, dimension(:) :: xmet
-
-!> Y axis coordinates of the meteo profile (read in the input meteo file)
-double precision, allocatable, dimension(:) :: ymet
+!> X, Y coordinates and sea level pressure of the meteo profile
+!> (read in the input meteo file)
+double precision, dimension(:,:), pointer :: xyp_met
 
 ! Arrays specific to values calculated from the meteo file (cf atlecm.f90):
 
 !> density profile
-double precision, allocatable, dimension(:,:) :: rmet
+double precision, dimension(:,:), pointer :: rmet
 
 !> potential temperature profile
 double precision, dimension(:,:), pointer :: tpmet
@@ -468,8 +463,13 @@ double precision, save:: zaero
 
     !> \brief Return pointers to atmo arrays
 
-    subroutine cs_f_atmo_arrays_get_pointers(p_zdmet, p_ztmet, p_umet, p_vmet, &
+    subroutine cs_f_atmo_arrays_get_pointers(p_zdmet, p_ztmet, p_xyp_met,      &
+         p_umet, p_vmet,                                                       &
          p_wmet  , p_tmmet, p_phmet, p_tpmet, p_ekmet, p_epmet,                &
+         p_ttmet , p_rmet , p_qvmet, p_ncmet,                                  &
+         p_dpdt_met,                                                           &
+         p_mom_met ,                                                           &
+         p_mom_cs  ,                                                           &
          p_xyvert, p_zvert, p_acinfe,                                          &
          p_dacinfe, p_aco2, p_aco2s,                                           &
          p_daco2, p_daco2s,                                                    &
@@ -485,18 +485,19 @@ double precision, save:: zaero
          p_soil_totwat,                                                        &
          p_soil_pressure,                                                      &
          p_soil_density,                                                       &
-         dim_pumet, dim_phmet,                                                 &
-         dim_tpmet, dim_ekmet, dim_epmet,                                      &
+         dim_nd_nt, dim_ntx_nt,                                                &
+         dim_nd_3, dim_nt_3,                                                   &
          dim_xyvert, dim_kmx2, dim_kmx_nvert )                                 &
          bind(C, name='cs_f_atmo_arrays_get_pointers')
       use, intrinsic :: iso_c_binding
       implicit none
-      integer(c_int), dimension(2) :: dim_phmet, dim_pumet, dim_tpmet
-      integer(c_int), dimension(2) ::  dim_ekmet,  dim_epmet
+      integer(c_int), dimension(2) :: dim_nd_nt, dim_ntx_nt, dim_nd_3, dim_nt_3
       integer(c_int), dimension(2) ::  dim_xyvert, dim_kmx2, dim_kmx_nvert
-      type(c_ptr), intent(out) :: p_zdmet, p_ztmet, p_umet, p_vmet, p_tmmet
-      type(c_ptr), intent(out) :: p_wmet
+      type(c_ptr), intent(out) :: p_zdmet, p_ztmet, p_xyp_met
+      type(c_ptr), intent(out) :: p_umet, p_vmet, p_tmmet, p_wmet
       type(c_ptr), intent(out) :: p_phmet, p_tpmet, p_ekmet, p_epmet
+      type(c_ptr), intent(out) :: p_ttmet, p_rmet, p_qvmet, p_ncmet
+      type(c_ptr), intent(out) :: p_dpdt_met, p_mom_met, p_mom_cs
       type(c_ptr), intent(out) :: p_xyvert, p_zvert, p_acinfe
       type(c_ptr), intent(out) :: p_dacinfe, p_aco2, p_aco2s
       type(c_ptr), intent(out) :: p_daco2, p_daco2s
@@ -902,11 +903,12 @@ implicit none
 procedure() :: atlecm
 
 ! Local variables
-integer :: n_level, n_times, n_level_t
-
-type(c_ptr) :: c_z_dyn_met, c_z_temp_met, c_u_met, c_v_met, c_time_met
+type(c_ptr) :: c_z_dyn_met, c_z_temp_met, c_xyp_met
+type(c_ptr) :: c_u_met, c_v_met, c_time_met
 type(c_ptr) :: c_w_met
 type(c_ptr) :: c_hyd_p_met, c_pot_t_met, c_ek_met, c_ep_met
+type(c_ptr) :: c_temp_met, c_rho_met, c_qw_met, c_ndrop_met
+type(c_ptr) :: c_dpdt_met, c_mom_met, c_mom_cs
 type(c_ptr) :: c_xyvert, c_zvert, c_acinfe
 type(c_ptr) :: c_dacinfe, c_aco2, c_aco2s
 type(c_ptr) :: c_daco2, c_daco2s
@@ -923,8 +925,8 @@ type(c_ptr) :: c_soil_totwat
 type(c_ptr) :: c_soil_pressure
 type(c_ptr) :: c_soil_density
 
-integer(c_int), dimension(2) :: dim_hyd_p_met, dim_u_met, dim_pot_t_met
-integer(c_int), dimension(2) :: dim_ek_met, dim_ep_met
+integer(c_int), dimension(2) :: dim_ntx_nt, dim_nd_nt
+integer(c_int), dimension(2) :: dim_nd_3, dim_nt_3
 integer(c_int), dimension(2) :: dim_xyvert, dim_kmx2, dim_kmx_nvert
 
 if (imeteo.eq.1) then
@@ -935,10 +937,18 @@ if (imeteo.eq.2) then
 endif
 
 call cs_f_atmo_arrays_get_pointers(c_z_dyn_met, c_z_temp_met,     &
+                                   c_xyp_met,                     &
                                    c_u_met, c_v_met, c_w_met,     &
                                    c_time_met,                    &
                                    c_hyd_p_met, c_pot_t_met,      &
                                    c_ek_met, c_ep_met,            &
+                                   c_temp_met,                    &
+                                   c_rho_met,                     &
+                                   c_qw_met,                      &
+                                   c_ndrop_met,                   &
+                                   c_dpdt_met,                    &
+                                   c_mom_met ,                    &
+                                   c_mom_cs  ,                    &
                                    c_xyvert, c_zvert, c_acinfe,   &
                                    c_dacinfe, c_aco2, c_aco2s,    &
                                    c_daco2, c_daco2s,             &
@@ -954,21 +964,28 @@ call cs_f_atmo_arrays_get_pointers(c_z_dyn_met, c_z_temp_met,     &
                                    c_soil_totwat,                 &
                                    c_soil_pressure,               &
                                    c_soil_density,                &
-                                   dim_u_met, dim_hyd_p_met,      &
-                                   dim_pot_t_met, dim_ek_met,     &
-                                   dim_ep_met,                    &
+                                   dim_nd_nt, dim_ntx_nt,         &
+                                   dim_nd_3, dim_nt_3,            &
                                    dim_xyvert, dim_kmx2, dim_kmx_nvert)
 
 call c_f_pointer(c_z_dyn_met, zdmet, [nbmetd])
 call c_f_pointer(c_z_temp_met, ztmet, [nbmaxt])
-call c_f_pointer(c_u_met, umet, [dim_u_met])
-call c_f_pointer(c_v_met, vmet, [dim_u_met])
-call c_f_pointer(c_w_met, wmet, [dim_u_met])
+call c_f_pointer(c_xyp_met, xyp_met, [dim_nt_3])
+call c_f_pointer(c_u_met, umet, [dim_nd_nt])
+call c_f_pointer(c_v_met, vmet, [dim_nd_nt])
+call c_f_pointer(c_w_met, wmet, [dim_nd_nt])
 call c_f_pointer(c_time_met, tmmet, [nbmetm])
-call c_f_pointer(c_hyd_p_met, phmet, [dim_hyd_p_met])
-call c_f_pointer(c_pot_t_met, tpmet, [dim_pot_t_met])
-call c_f_pointer(c_ek_met, ekmet, [dim_ek_met])
-call c_f_pointer(c_ep_met, epmet, [dim_ep_met])
+call c_f_pointer(c_hyd_p_met, phmet, [dim_ntx_nt])
+call c_f_pointer(c_pot_t_met, tpmet, [dim_ntx_nt])
+call c_f_pointer(c_ek_met, ekmet, [dim_nd_nt])
+call c_f_pointer(c_ep_met, epmet, [dim_nd_nt])
+call c_f_pointer(c_temp_met, ttmet, [dim_ntx_nt])
+call c_f_pointer(c_rho_met, rmet, [dim_ntx_nt])
+call c_f_pointer(c_qw_met, qvmet, [dim_ntx_nt])
+call c_f_pointer(c_ndrop_met, ncmet, [dim_ntx_nt])
+call c_f_pointer(c_dpdt_met, dpdt_met, [nbmetd])
+call c_f_pointer(c_mom_met, mom_met, [dim_nd_3])
+call c_f_pointer(c_mom_cs, mom, [dim_nd_3])
 
 call c_f_pointer(c_xyvert , xyvert , [dim_xyvert])
 call c_f_pointer(c_zvert  , zvert  , [kmx])
@@ -1000,31 +1017,6 @@ call c_f_pointer(c_soil_tpsoil   , soil_tpsoil  , [nvert])
 call c_f_pointer(c_soil_totwat   , soil_totwat  , [nvert])
 call c_f_pointer(c_soil_pressure , soil_pressure, [nvert])
 call c_f_pointer(c_soil_density  , soil_density , [nvert])
-
-! Allocate additional arrays for Water Microphysics
-
-if (imeteo.gt.0) then
-
-  ! NB : only ztmet,ttmet,qvmet,ncmet are extended to 11000m if iatra1=1
-  !           rmet,tpmet,phmet
-  n_level = max(1, nbmetd)
-  n_times = max(1, nbmetm)
-  n_level_t = max(1, nbmaxt)
-
-  if (iatmst.ge.1) then
-    allocate(dpdt_met(n_level))
-    allocate(mom(3, n_level))
-    allocate(mom_met(3, n_level))
-  endif
-
-  allocate(ttmet(n_level_t,n_times), qvmet(n_level_t,n_times),  &
-           ncmet(n_level_t,n_times))
-  allocate(pmer(n_times))
-  allocate(xmet(n_times), ymet(n_times))
-  allocate(rmet(n_level_t,n_times))
-
-endif
-
 end subroutine allocate_map_atmo
 
 !==============================================================================
@@ -1064,15 +1056,6 @@ implicit none
 procedure() :: mestcr, grides, mestde
 
 if (imeteo.gt.0) then
-
-  if (allocated(mom)) then
-    deallocate(mom, mom_met, dpdt_met)
-  endif
-  deallocate(ttmet, qvmet, ncmet)
-  deallocate(pmer)
-  deallocate(xmet, ymet)
-  deallocate(rmet)
-
   if (iatra1.eq.1) then
 
     call mestde ()

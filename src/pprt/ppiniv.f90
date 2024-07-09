@@ -199,11 +199,6 @@ end interface
 
 !===============================================================================
 
-! Atmospheric flows, second stage
-if (ippmod(iatmos).ge.0) then
-  call atiniv1
-endif
-
 ! ---> Cooling towers
 if (ippmod(iaeros).ge.0) then
   call cs_ctwr_fields_init1
