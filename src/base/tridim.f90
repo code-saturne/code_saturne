@@ -328,11 +328,6 @@ interface
     use, intrinsic :: iso_c_binding
   end subroutine cou1di
 
-  subroutine cscloc()  &
-    bind(C, name='cs_f_cscloc')
-    use, intrinsic :: iso_c_binding
-  end subroutine cscloc
-
   subroutine cs_wall_condensation_1d_thermal_compute_temperature() &
     bind(C, name='cs_wall_condensation_1d_thermal_compute_temperature')
     use, intrinsic :: iso_c_binding
@@ -555,7 +550,7 @@ endif
 !   - soit a la methode ALE (en fin de pas de temps precedent)
 !   - soit a un deplacement impose (cf ci-dessus)
 
-if (nbrcpl.gt.0) call cscloc
+if (nbrcpl.gt.0) call cs_sat_coupling_localize_all
 
 !===============================================================================
 ! 7.  CALCUL DES PROPRIETES PHYSIQUES VARIABLES

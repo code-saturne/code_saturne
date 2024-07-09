@@ -103,7 +103,7 @@ double precision, pointer, dimension(:) :: porosi => null()
 ! Interfaces
 !===============================================================================
 
-procedure() :: armtps, atmsol, cplact, cplsyn, cscini
+procedure() :: armtps, atmsol, cplact, cplsyn
 procedure() :: cs_f_user_extra_operations, ecrlis, iniva0, inivar
 procedure() :: reqsui, stusui, trbsui, uiexop, uiporo
 
@@ -707,7 +707,7 @@ nvarcl = nvar
 
 ! First pass for initialization BC types
 ! -- Couplage code_saturne/code_saturne
-call cscini(nvar)
+call cs_sat_coupling_initialize(nvar)
 
 call cs_boundary_conditions_set_coeffs_init()
 

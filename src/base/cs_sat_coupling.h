@@ -104,213 +104,6 @@ void CS_PROCF (nbccpl, NBCCPL)
 );
 
 /*----------------------------------------------------------------------------
- * Set the list of cells and boundary faces associated to a coupling
- * and a cloud of point.
- *
- * The local "support" cells and boundary faces are used to localize
- * the values in the distant "coupled" cells and faces.
- * Depending on the role of sender and/or receiver of the current process
- * in the coupling, some of these sets can be empty or not.
- *
- * The cell values are always localized and interpolated on the distant
- * "cells" support. The face values are localized and interpolated on
- * the distant "face" support if present, or on the distant "cell" support
- * if not.
- *
- * If the input arrays LCESUP and LFBSUP are not ordered, they will be
- * orderd in output.
- *
- * Fortran interface:
- *
- * SUBROUTINE DEFLOC
- * *****************
- *
- * INTEGER          NUMCPL         : --> : coupling number
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF (defloc, DEFLOC)
-(
- const int  *numcpl
-);
-
-/*----------------------------------------------------------------------------
- * Get the number of cells and boundary faces, "support", coupled and not
- * localized associated to a given coupling
- *
- * Fortran interface:
- *
- * SUBROUTINE NBECPL
- * *****************
- *
- * INTEGER          NUMCPL         : --> : coupling number
- * INTEGER          reverse        : <-- : reverse mode if 1
- * INTEGER          NCESUP         : <-- : number of "support" cells
- * INTEGER          NFBSUP         : <-- : number of "support" boundary faces
- * INTEGER          NCECPL         : <-- : number of coupled cells
- * INTEGER          NFBCPL         : <-- : number of coupled boundary faces
- * INTEGER          NCENCP         : <-- : number of not coupled cells
- *                                 :     : (since not localized)
- * INTEGER          NFBNCP         : <-- : number of not coupled boundary faces
- *                                 :     : (since not localized)
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF (nbecpl, NBECPL)
-(
- const int        *numcpl,
-       int        *reverse,
-       cs_lnum_t  *ncesup,
-       cs_lnum_t  *nfbsup,
-       cs_lnum_t  *ncecpl,
-       cs_lnum_t  *nfbcpl,
-       cs_lnum_t  *ncencp,
-       cs_lnum_t  *nfbncp
-);
-
-/*----------------------------------------------------------------------------
- * Get the lists of coupled cells and boundary faces (i.e. receiving)
- * associated to a given coupling
- *
- * The number of cells and boundary faces, got with NBECPL(), are used
- * for arguments coherency checks.
- *
- * Fortran interface:
- *
- * SUBROUTINE LELCPL
- * *****************
- *
- * INTEGER          NUMCPL         : --> : coupling number
- * INTEGER          NCECPL         : --> : number of coupled cells
- * INTEGER          NFBCPL         : --> : number of coupled boundary faces
- * INTEGER          LCECPL(*)      : <-- : list of coupled cells
- * INTEGER          LFBCPL(*)      : <-- : list of coupled boundary faces
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF (lelcpl, LELCPL)
-(
- const int        *numcpl,
- const cs_lnum_t  *ncecpl,
- const cs_lnum_t  *nfbcpl,
-       cs_lnum_t  *lcecpl,
-       cs_lnum_t  *lfbcpl
-);
-
-/*----------------------------------------------------------------------------
- * Get the lists of not coupled cells and boundary faces (i.e. receiving but
- * not localized) associated to a given coupling
- *
- * The number of cells and boundary faces, got with NBECPL(), are used
- * for arguments coherency checks.
- *
- * Fortran interface:
- *
- * SUBROUTINE LENCPL
- * *****************
- *
- * INTEGER          NUMCPL         : --> : coupling number
- * INTEGER          NCENCP         : --> : number of not coupled cells
- * INTEGER          NFBNCP         : --> : number of not coupled boundary faces
- * INTEGER          LCENCP(*)      : <-- : list of not coupled cells
- * INTEGER          LFBNCP(*)      : <-- : list of not coupled boundary faces
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF (lencpl, LENCPL)
-(
- const int        *numcpl,
- const cs_lnum_t  *ncencp,
- const cs_lnum_t  *nfbncp,
-       cs_lnum_t  *lcencp,
-       cs_lnum_t  *lfbncp
-);
-
-/*----------------------------------------------------------------------------
- * Get the number of distant point associated to a given coupling
- * and localized on the local domain
- *
- * Fortran interface:
- *
- * SUBROUTINE NPDCPL
- * *****************
- *
- * INTEGER          NUMCPL         : --> : coupling number
- * INTEGER          NCEDIS         : <-- : number of distant cells
- * INTEGER          NFBDIS         : <-- : numbre de distant boundary faces
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF (npdcpl, NPDCPL)
-(
- const int        *numcpl,
-       cs_lnum_t  *ncedis,
-       cs_lnum_t  *nfbdis
-);
-
-/*----------------------------------------------------------------------------
- * Get the distant points coordinates associated to a given coupling
- * and a list of points, and the elements number and type (cell or face)
- * "containing" this points.
- *
- * The number of distant points NBRPTS must be equal to one the arguments
- * NCEDIS or NFBDIS given by NPDCPL(), and is given here for coherency checks
- * between the arguments NUMCPL and ITYSUP.
- *
- * Fortran interface:
- *
- * SUBROUTINE COOCPL
- * *****************
- *
- * INTEGER          NUMCPL         : --> : coupling number
- * INTEGER          NBRPTS         : --> : number of distant points
- * INTEGER          ITYDIS         : --> : 1 : access to the points associated
- *                                 :     :     to the distant cells
- *                                 :     : 2 : access to the points associated
- *                                 :     :     to the distant boundary faces
- * INTEGER          ITYLOC         : <-- : 1 : localization on the local cells
- *                                 :     : 2 : localization on the local faces
- * INTEGER          LOCPTS(*)      : <-- : "containing" number associated to
- *                                 :     :   each point
- * DOUBLE PRECISION COOPTS(3,*)    : <-- : distant point coordinates
- * DOUBLE PRECISION DJPPTS(3,*)    : <-- : distant vectors to the coupled face
- * DOUBLE PRECISION PNDPTS(*)      : <-- : distant weighting coefficients
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF (coocpl, COOCPL)
-(
- const int        *numcpl,
- const cs_lnum_t  *nbrpts,
- const int        *itydis,
-       int        *ityloc,
-       cs_lnum_t  *locpts,
-       cs_real_t  *coopts,
-       cs_real_t  *djppts,
-       cs_real_t  *dofpts,
-       cs_real_t  *pndpts
-);
-
-/*----------------------------------------------------------------------------
- * Get the weighting coefficient needed for a centered-like interpolation
- * in the case of a coupling on boundary faces.
- *
- * Fortran interface:
- *
- * SUBROUTINE PONDCP
- * *****************
- *
- * INTEGER          NUMCPL         : --> : coupling number
- * INTEGER          NBRPTS         : --> : number of distant points
- * INTEGER          ITYLOC         : <-- : 1 : localization on the local cells
- *                                 :     : 2 : localization on the local faces
- * DOUBLE PRECISION PNDCPL(*)      : <-- : weighting coefficients
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF (pondcp, PONDCP)
-(
- const int        *numcpl,
- const cs_lnum_t  *nbrpts,
-       int        *ityloc,
-       cs_real_t  *pndcpl,
-       cs_real_t  *distof
-);
-
-/*----------------------------------------------------------------------------
  * Exchange a variable associated to a set of point and a coupling.
  *
  * Fortran interface:
@@ -526,6 +319,83 @@ cs_sat_coupling_array_exchange(int         numcpl,
                                cs_lnum_t   nbrloc,
                                cs_real_t  *vardis,
                                cs_real_t  *varloc);
+
+/*----------------------------------------------------------------------------*/
+/*
+ * code_saturne/code_saturne coupling using volumic source terms.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_sat_coupling_exchange_at_cells
+(
+  cs_field_t *f,    /*!<[in] pointer to cs_field_t */
+  cs_real_t  *rhs,  /*!<[out] Explicit terms (RHS) */
+  cs_real_t  *fimp  /*!<[out] Implicit source terms */
+);
+
+/*----------------------------------------------------------------------------*/
+/*
+ * code_saturne/code_saturne boundary coupling initialization call
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_sat_coupling_bnd_initialize
+(
+  int *bc_type /*!<[in] boundary face types */
+);
+
+/*----------------------------------------------------------------------------*/
+/*
+ * Initialization of main variables for code_saturne/code_saturne coupling
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_sat_coupling_initialize
+(
+  const int nvar
+);
+
+/*----------------------------------------------------------------------------*/
+/*
+ * Set the list of cells and boundary faces associated to a coupling
+ * and a cloud of point.
+ *
+ * The local "support" cells and boundary faces are used to localize
+ * the values in the distant "coupled" cells and faces.
+ * Depending on the role of sender and/or receiver of the current process
+ * in the coupling, some of these sets can be empty or not.
+ *
+ * The cell values are always localized and interpolated on the distant
+ * "cells" support. The face values are localized and interpolated on
+ * the distant "face" support if present, or on the distant "cell" support
+ * if not.
+ *
+ * If the input arrays LCESUP and LFBSUP are not ordered, they will be
+ * orderd in output.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_sat_coupling_localize_all
+(
+ void
+);
+
+/*----------------------------------------------------------------------------*/
+/*
+ * code_saturne/code_saturne coupling using boundary conditions
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_sat_coupling_exchange_at_bnd_faces
+(
+  int       *bc_type, /*!<[in] boundary face types */
+  cs_real_t *dt       /*!<[in] time step (per cell) */
+);
 
 /*----------------------------------------------------------------------------
  * Destroy all couplings

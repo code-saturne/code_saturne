@@ -942,7 +942,7 @@ cs_solve_equation_scalar(cs_field_t        *f,
   /* Coupling between multiple code_saturne instances */
   const int nbrcpl = cs_sat_coupling_n_couplings();
   if (nbrcpl > 0)
-    cs_sat_coupling_exchange_at_cells(f->id, rhs, fimp);
+    cs_sat_coupling_exchange_at_cells(f, rhs, fimp);
 
   /* Store the source terms for convective limiter
      or time extrapolation for buoyant scalar */
@@ -1901,7 +1901,7 @@ cs_solve_equation_vector(cs_field_t       *f,
   /* Coupling between multiple code_saturne instances */
   const int nbrcpl = cs_sat_coupling_n_couplings();
   if (nbrcpl > 0)
-    cs_sat_coupling_exchange_at_cells(f->id,
+    cs_sat_coupling_exchange_at_cells(f,
                                       (cs_real_t *)rhs,
                                       (cs_real_t *)fimp);
 

@@ -358,16 +358,6 @@ cs_prediction_mass_flux(cs_lnum_t  ncesmp,
 void
 cs_fortran_resize_aux_arrays(void);
 
-/*----------------------------------------------------------------------------
- * Exchange of coupling variables between tow instances
- * of code_saturne thanks to cells.
- *----------------------------------------------------------------------------*/
-
-void
-cs_sat_coupling_exchange_at_cells(int         f_id,
-                                  cs_real_t   st_exp[],
-                                  cs_real_t   st_imp[]);
-
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Sync turbomachinery module components to

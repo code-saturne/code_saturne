@@ -2227,7 +2227,7 @@ _velocity_prediction(const cs_mesh_t             *m,
 
   /* Coupling between two code_saturne instances */
   if (cs_sat_coupling_n_couplings() > 0)
-    cs_sat_coupling_exchange_at_cells(CS_F_(vel)->id,
+    cs_sat_coupling_exchange_at_cells(CS_F_(vel),
                                       (cs_real_t*)tsexp,
                                       (cs_real_t*)tsimp);
 

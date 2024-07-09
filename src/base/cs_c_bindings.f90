@@ -673,21 +673,6 @@ module cs_c_bindings
     !---------------------------------------------------------------------------
 
     ! Interface to C function.
-    ! Exchange of coupling variables between
-    ! tow instances of code_saturne thanks to cells.
-
-    subroutine csccel(f_id, st_exp, st_imp) &
-     bind(C, name='cs_sat_coupling_exchange_at_cells')
-     use, intrinsic :: iso_c_binding
-     implicit none
-     integer(c_int), value :: f_id
-     real(kind=c_double), dimension(*), intent(inout) :: st_exp
-     real(kind=c_double), dimension(*), intent(inout) :: st_imp
-    end subroutine
-
-    !---------------------------------------------------------------------------
-
-    ! Interface to C function.
     ! Exchange of array of reals exchange, associated to a given coupling.
     subroutine cs_sat_coupling_array_exchange(numcpl, nbrdis, nbrloc,   &
                                               vardis, varloc)           &
@@ -696,6 +681,27 @@ module cs_c_bindings
      implicit none
      integer(c_int), value :: numcpl, nbrdis, nbrloc
      real(kind=c_double), dimension(*), intent(inout) :: vardis, varloc
+    end subroutine
+
+    !---------------------------------------------------------------------------
+
+    ! Interface to C function.
+    ! Initialize main variables for code_saturne/code_saturne coupling.
+    subroutine cs_sat_coupling_initialize(nvars) &
+      bind(C, name='cs_sat_coupling_initialize')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      integer(c_int), value :: nvars
+    end subroutine
+
+    !---------------------------------------------------------------------------
+    !> \brief Set the list of cells and boundary faces associated to a coupling
+
+    ! Interface to C function
+    subroutine cs_sat_coupling_localize_all() &
+      bind(C, name='cs_sat_coupling_localize_all')
+      use, intrinsic :: iso_c_binding
+      implicit none
     end subroutine
 
     !---------------------------------------------------------------------------

@@ -136,16 +136,6 @@ cs_f_pptycl(bool        init,
             cs_real_t   dt[]);
 
 void
-cs_f_cscloc(void);
-
-void
-cs_f_cscfbr(int        *itypfb,
-            cs_real_t  *dt);
-
-void
-cs_f_cscfbr_init(int *itypfb);
-
-void
 cs_f_user_boundary_conditions_wrapper(const cs_lnum_t  itrifb[],
                                       int              itypfb[],
                                       const int        izfppp[],
@@ -765,7 +755,7 @@ cs_boundary_conditions_set_coeffs(int        nvar,
   /* BC'based coupling with other code_saturne instances. */
 
   if (cs_sat_coupling_n_couplings() > 0)
-    cs_f_cscfbr(bc_type, dt);
+    cs_sat_coupling_exchange_at_bnd_faces(bc_type, dt);
 
   /* Synthetic Eddy Method for L.E.S. */
   cs_les_inflow_compute();
@@ -3616,8 +3606,8 @@ cs_boundary_conditions_set_coeffs_init(void)
 
   // Locate internal BC-based coupling
   if (cs_sat_coupling_n_couplings() > 0) {
-    cs_f_cscloc();
-    cs_f_cscfbr_init(bc_type);
+    cs_sat_coupling_localize_all();
+    cs_sat_coupling_bnd_initialize(bc_type);
   }
 
   if (   (   cs_glob_physical_model_flag[CS_PHYSICAL_MODEL_FLAG] >=  1

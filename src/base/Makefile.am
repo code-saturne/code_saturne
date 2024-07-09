@@ -314,15 +314,7 @@ cs_boundary_conditions_type.c \
 cs_boundary_zone.c \
 cs_calcium.c \
 cs_compute_thermo_pressure_density.c \
-csc2cl.f90 \
-csc2ts.f90 \
-csccel.f90 \
-cscfbr.f90 \
-cscini.f90 \
 csclli.f90 \
-cscloc.f90 \
-cscpce.f90 \
-cscpfb.f90 \
 csinit.f90 \
 csopli.f90 \
 csprnt.f90 \
