@@ -309,13 +309,13 @@ _equation_iterative_solve_strided(int                   idtvar,
 
     i_vf = cs_field_by_name_try("inner_face_velocity");
     if (i_vf != nullptr) {
-      cs_array_real_fill_zero(3*n_i_faces, i_vf->val);
+      cs_arrays_set_value<cs_real_t, 1>(3*n_i_faces, 0., i_vf->val);
       i_pvar = (var_t *)i_vf->val;
     }
 
     b_vf = cs_field_by_name_try("boundary_face_velocity");
     if (b_vf != nullptr) {
-      cs_array_real_fill_zero(3*n_b_faces, b_vf->val);
+      cs_arrays_set_value<cs_real_t, 1>(3*n_b_faces, 0., b_vf->val);
       b_pvar = (var_t *)b_vf->val;
     }
 
