@@ -6212,7 +6212,7 @@ cs_grid_prolong_row_var(const cs_grid_t  *c,
   assert(c != NULL);
   assert(c->coarse_row != NULL || f_n_rows == 0);
   assert(f_var != NULL);
-  assert(c_var != NULL);
+  assert(c_var != NULL || c->n_cols_ext == 0);
 
 #if defined(HAVE_MPI)
 
