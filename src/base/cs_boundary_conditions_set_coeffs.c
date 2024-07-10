@@ -3606,7 +3606,7 @@ cs_boundary_conditions_set_coeffs_init(void)
 
   // Locate internal BC-based coupling
   if (cs_sat_coupling_n_couplings() > 0) {
-    cs_sat_coupling_localize_all();
+    cs_sat_coupling_locate_all();
     cs_sat_coupling_bnd_initialize(bc_type);
   }
 

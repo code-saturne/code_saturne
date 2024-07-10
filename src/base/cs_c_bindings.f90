@@ -698,8 +698,8 @@ module cs_c_bindings
     !> \brief Set the list of cells and boundary faces associated to a coupling
 
     ! Interface to C function
-    subroutine cs_sat_coupling_localize_all() &
-      bind(C, name='cs_sat_coupling_localize_all')
+    subroutine cs_sat_coupling_locate_all() &
+      bind(C, name='cs_sat_coupling_locate_all')
       use, intrinsic :: iso_c_binding
       implicit none
     end subroutine

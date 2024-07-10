@@ -550,7 +550,7 @@ endif
 !   - soit a la methode ALE (en fin de pas de temps precedent)
 !   - soit a un deplacement impose (cf ci-dessus)
 
-if (nbrcpl.gt.0) call cs_sat_coupling_localize_all
+if (nbrcpl.gt.0) call cs_sat_coupling_locate_all
 
 !===============================================================================
 ! 7.  CALCUL DES PROPRIETES PHYSIQUES VARIABLES

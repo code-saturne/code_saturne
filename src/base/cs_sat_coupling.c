@@ -172,6 +172,7 @@ static int                  cs_glob_sat_n_couplings = 0;
 static cs_sat_coupling_t  **cs_glob_sat_couplings = NULL;
 
 static int _cs_sat_coupling_initialized = 0;
+
 /*============================================================================
  * Global variables
  *============================================================================*/
@@ -736,7 +737,6 @@ _sat_coupling_interpolate(cs_sat_coupling_t  *couplage)
   }
 
   BFT_FREE(distant_surf);
-
 
   /* Calculation of the local weighting coefficient */
   /*------------------------------------------------*/
@@ -1719,7 +1719,8 @@ _sat_interpolate_bc_from_b_face_data
     break;
   default:
     bft_error(__FILE__, __LINE__, 0,
-              _("Field '%s' dimension is %d and not compatible if code_saturne/code_saturne coupling.\n"),
+              _("Field '%s' has dimension %d, which is not compatible\n"
+                "with code_saturne/code_saturne coupling.\n"),
               f->name, f->dim);
   }
 
@@ -1928,13 +1929,13 @@ void CS_PROCF (nbccpl, NBCCPL)
  * \brief Set the list of cells and boundary faces associated to a coupling
  * and a cloud of point.
  *
- * The local "support" cells and boundary faces are used to localize
+ * The local "support" cells and boundary faces are used to locate
  * the values in the distant "coupled" cells and faces.
  * Depending on the role of sender and/or receiver of the current process
  * in the coupling, some of these sets can be empty or not.
  *
- * The cell values are always localized and interpolated on the distant
- * "cells" support. The face values are localized and interpolated on
+ * The cell values are always located and interpolated on the distant
+ * "cells" support. The face values are located and interpolated on
  * the distant "face" support if present, or on the distant "cell" support
  * if not.
  *
@@ -1944,7 +1945,7 @@ void CS_PROCF (nbccpl, NBCCPL)
 /*----------------------------------------------------------------------------*/
 
 void
-cs_sat_coupling_localize_all
+cs_sat_coupling_locate_all
 (
  void
 )
@@ -2196,98 +2197,6 @@ cs_sat_coupling_localize_all
     }
 
   _cs_sat_coupling_initialized = 1;
-}
-
-/*----------------------------------------------------------------------------
- * Exchange a variable associated to a set of point and a coupling.
- *
- * Fortran interface:
- *
- * SUBROUTINE VARCPL
- * *****************
- *
- * INTEGER          NUMCPL         : --> : coupling number
- * INTEGER          NBRDIS         : --> : number of values to send
- * INTEGER          NBRLOC         : --> : number of values to receive
- * INTEGER          ITYVAR         : --> : 1 : variables defined at cells
- *                                 :     : 2 : variables defined at faces
- * INTEGER          STRIDE         : --> : 1 : for scalars
- *                                 :     : 3 : for vectors
- * DOUBLE PRECISION vardis         : --> : distant variable(to send)
- * DOUBLE PRECISION varloc         : <-- : local variable (to receive)
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF (varcpl, VARCPL)
-(
- const int        *numcpl,
- const cs_lnum_t  *nbrdis,
- const cs_lnum_t  *nbrloc,
- const int        *ityvar,
- const cs_lnum_t  *stride,
- const int        *reverse,
-       cs_real_t  *vardis,
-       cs_real_t  *varloc
-
-)
-{
-  cs_lnum_t  n_val_dist_ref = 0;
-  cs_lnum_t  n_val_loc_ref = 0;
-  cs_real_t  *val_dist = NULL;
-  cs_real_t  *val_loc = NULL;
-  cs_sat_coupling_t  *coupl = NULL;
-  ple_locator_t  *localis = NULL;
-
-  /* Initializations and verifications */
-
-  if (*numcpl < 1 || *numcpl > cs_glob_sat_n_couplings)
-    bft_error(__FILE__, __LINE__, 0,
-              _("Impossible coupling number %d; there are %d couplings"),
-              *numcpl, cs_glob_sat_n_couplings);
-  else
-    coupl = cs_glob_sat_couplings[*numcpl - 1];
-
-  if (*ityvar == 1)
-    localis = coupl->localis_cel;
-  else if (*ityvar == 2)
-    localis = coupl->localis_fbr;
-
-  if (localis != NULL) {
-    n_val_dist_ref = ple_locator_get_n_dist_points(localis);
-    n_val_loc_ref  = ple_locator_get_n_interior(localis);
-  }
-
-  if (*nbrdis > 0 && *nbrdis != n_val_dist_ref)
-    bft_error(__FILE__, __LINE__, 0,
-              _("Coupling %d: inconsistent arguments for VARCPL()\n"
-                "ITYVAR = %d and NBRDIS = %d are indicated.\n"
-                "NBRDIS should be 0 or %d."),
-              *numcpl, (int)(*ityvar), (int)(*nbrdis), (int)n_val_dist_ref);
-
-  if (*nbrloc > 0 && *nbrloc != n_val_loc_ref)
-    bft_error(__FILE__, __LINE__, 0,
-              _("Coupling %d: inconsistent arguments for VARCPL()\n"
-                "ITYVAR = %d and NBRLOC = %d are indicated.\n"
-                "NBRLOC should be 0 or %d."),
-              *numcpl, (int)(*ityvar), (int)(*nbrloc), (int)n_val_loc_ref);
-
-  /* Create the local lists */
-
-  if (localis != NULL) {
-
-    if (*nbrdis > 0)
-      val_dist = vardis;
-    if (*nbrloc > 0)
-      val_loc = varloc;
-
-    ple_locator_exchange_point_var(localis,
-                                   val_dist,
-                                   val_loc,
-                                   NULL,
-                                   sizeof(cs_real_t),
-                                   *stride,
-                                   *reverse);
-  }
-
 }
 
 /*============================================================================

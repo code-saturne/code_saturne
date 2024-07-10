@@ -103,88 +103,6 @@ void CS_PROCF (nbccpl, NBCCPL)
  int  *nbrcpl
 );
 
-/*----------------------------------------------------------------------------
- * Exchange a variable associated to a set of point and a coupling.
- *
- * Fortran interface:
- *
- * SUBROUTINE VARCPL
- * *****************
- *
- * INTEGER          NUMCPL         : --> : coupling number
- * INTEGER          NBRDIS         : --> : number of values to send
- * INTEGER          NBRLOC         : --> : number of values to receive
- * INTEGER          ITYVAR         : --> : 1 : variables defined at cells
- *                                 :     : 2 : variables defined at faces
- * INTEGER          STRIDE         : --> : 1 : for scalars
- *                                 :     : 3 : for vectors
- * DOUBLE PRECISION VARDIS(*)      : --> : distant variable(to send)
- * DOUBLE PRECISION VARLOC(*)      : <-- : local variable (to receive)
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF (varcpl, VARCPL)
-(
- const int        *numcpl,
- const cs_lnum_t  *nbrdis,
- const cs_lnum_t  *nbrloc,
- const int        *ityvar,
- const cs_lnum_t  *stride,
- const int        *reverse,
-
-       cs_real_t  *vardis,
-       cs_real_t  *varloc
-);
-
-/*----------------------------------------------------------------------------
- * Array of integers exchange, associated to a given coupling.
- *
- * It is assumed that the arrays have the same size and the same values on
- * each group of processus (local and distant).
- *
- * Fortran interface:
- *
- * SUBROUTINE TBICPL
- * *****************
- *
- * INTEGER          NUMCPL         : --> : coupling number
- * INTEGER          NBRDIS         : --> : number of values to send
- * INTEGER          NBRLOC         : --> : number of values to receive
- * INTEGER          TABDIS(*)      : --> : distant values (to send)
- * INTEGER          TABLOC(*)      : <-- : local values (to receive)
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF (tbicpl, TBICPL)
-(
- const int        *numcpl,
- const cs_lnum_t  *nbrdis,
- const cs_lnum_t  *nbrloc,
-       cs_lnum_t  *vardis,
-       cs_lnum_t  *varloc
-);
-
-/*----------------------------------------------------------------------------
- * Compute the maximum value of an integer variable associated to a coupling.
- *
- * It is assumed that the integer value is the same for each group of
- * processus (local and distant).
- *
- * Fortran interface:
- *
- * SUBROUTINE MXICPL
- * *****************
- *
- * INTEGER          NUMCPL         : --> : coupling number
- * INTEGER          VALDIS         : --> : distant value (to send)
- * INTEGER          VALMAX         : <-- : local maximum (to receive)
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF (mxicpl, MXICPL)
-(
- const int        *const numcpl,
-       cs_lnum_t  *const vardis,
-       cs_lnum_t  *const varmax
-);
-
 /*============================================================================
  * Public function prototypes
  *============================================================================*/
@@ -363,13 +281,13 @@ cs_sat_coupling_initialize
  * Set the list of cells and boundary faces associated to a coupling
  * and a cloud of point.
  *
- * The local "support" cells and boundary faces are used to localize
+ * The local "support" cells and boundary faces are used to locate
  * the values in the distant "coupled" cells and faces.
  * Depending on the role of sender and/or receiver of the current process
  * in the coupling, some of these sets can be empty or not.
  *
- * The cell values are always localized and interpolated on the distant
- * "cells" support. The face values are localized and interpolated on
+ * The cell values are always located and interpolated on the distant
+ * "cells" support. The face values are located and interpolated on
  * the distant "face" support if present, or on the distant "cell" support
  * if not.
  *
@@ -379,7 +297,7 @@ cs_sat_coupling_initialize
 /*----------------------------------------------------------------------------*/
 
 void
-cs_sat_coupling_localize_all
+cs_sat_coupling_locate_all
 (
  void
 );
