@@ -633,6 +633,9 @@ cs_param_get_precond_name(cs_param_precond_type_t  precond)
   case CS_PARAM_PRECOND_SSOR:
     return  "SSOR";
     break;
+  case CS_PARAM_PRECOND_HPDDM:
+    return "HPDDM";
+    break;
 
   default:
     bft_error(__FILE__, __LINE__, 0,

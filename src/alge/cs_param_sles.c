@@ -947,7 +947,35 @@ cs_param_sles_set_precond(const char       *keyval,
                 " PETSc is not available with your installation.\n"
                 " Please check your installation settings.\n",
                 __func__, sles_name, "CS_EQKEY_PRECOND");
+  }
+  else if (strcmp(keyval, "hpddm") == 0) {
 
+    slesp->precond            = CS_PARAM_PRECOND_HPDDM;
+    slesp->amg_type           = CS_PARAM_AMG_NONE;
+    slesp->precond_block_type = CS_PARAM_PRECOND_BLOCK_NONE;
+
+    if (cs_param_sles_check_class(CS_PARAM_SOLVER_CLASS_PETSC)
+        != CS_PARAM_SOLVER_CLASS_PETSC)
+      bft_error(__FILE__,
+                __LINE__,
+                0,
+                " %s(): SLES \"%s\" Error detected while setting \"%s\" key.\n"
+                " PETSc is not available with your installation.\n"
+                " Please check your installation settings.\n",
+                __func__,
+                sles_name,
+                "CS_EQKEY_PRECOND");
+
+    if (slesp->solver_class != CS_PARAM_SOLVER_CLASS_PETSC)
+      bft_error(__FILE__,
+                __LINE__,
+                0,
+                " %s(): SLES \"%s\" Error detected while setting \"%s\" key.\n"
+                " HPDDM is only available through PETSc \n"
+                " Please check your installation settings.\n",
+                __func__,
+                sles_name,
+                "CS_EQKEY_PRECOND");
   }
   else
     ierr = EXIT_FAILURE;

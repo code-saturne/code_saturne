@@ -211,7 +211,7 @@ _petsc_cmd(bool         use_prefix,
   char cmd_line[128];
 
   if (use_prefix)
-    sprintf(cmd_line, "-%s%s", prefix, keyword);
+    sprintf(cmd_line, "-%s_%s", prefix, keyword);
   else
     sprintf(cmd_line, "-%s", keyword);
 
@@ -665,6 +665,74 @@ _petsc_pchypre_hook(const char             *prefix,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Predefined settings for HPDMM as a preconditioner even if another
+ *        settings have been defined. One assumes that one really wants to use
+ *        HPDDM
+ *
+ * \param[in]      prefix        prefix name associated to the current SLES
+ * \param[in]      slesp         pointer to a set of SLES parameters
+ * \param[in]      is_symm       the linear system to solve is symmetric
+ * \param[in, out] pc            pointer to a PETSc preconditioner
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_petsc_pchpddm_hook(const char            *prefix,
+                    const cs_param_sles_t *slesp,
+                    const bool             is_symm,
+                    PC                     pc)
+{
+  assert(prefix != NULL);
+  assert(slesp != NULL);
+  assert(slesp->precond == CS_PARAM_PRECOND_HPDDM);
+
+  char factor[20], n_p_agg[20], prefix_pc[128];
+
+  if (is_symm) {
+    sprintf(factor, "%s", "cholesky");
+  }
+  else {
+    sprintf(factor, "%s", "lu");
+  }
+
+  sprintf(n_p_agg, "%d", cs_glob_n_ranks / 2);
+
+  /* Define option for first level */
+  sprintf(prefix_pc, "%s_%s", prefix, "pc_hpddm_levels_1");
+
+  _petsc_cmd(true, prefix_pc, "pc_type", "asm");
+  _petsc_cmd(true, prefix_pc, "sub_mat_mumps_icntl_14", "5000");
+  _petsc_cmd(true, prefix_pc, "sub_mat_mumps_icntl_24", "1");
+  _petsc_cmd(true, prefix_pc, "sub_mat_mumps_icntl_25", "0");
+  _petsc_cmd(true, prefix_pc, "sub_mat_mumps_cntl_3", "1.e-50");
+  _petsc_cmd(true, prefix_pc, "sub_mat_mumps_cntl_5", "0.");
+  // _petsc_cmd(true, prefix_pc, "eps_nev", "30");
+  _petsc_cmd(true, prefix_pc, "sub_pc_type", factor);
+  _petsc_cmd(true, prefix_pc, "sub_pc_factor_mat_solver_type", "mumps");
+  _petsc_cmd(true, prefix_pc, "st_pc_factor_mat_solver_type", "mumps");
+  _petsc_cmd(true, prefix_pc, "st_share_sub_ksp", "");
+
+  /* Define option for coarse solver */
+  sprintf(prefix_pc, "%s_%s", prefix, "pc_hpddm_coarse");
+
+  _petsc_cmd(true, prefix_pc, "pc_factor_mat_solver_type", "mumps");
+  _petsc_cmd(true, prefix_pc, "sub_pc_type", factor);
+  _petsc_cmd(true, prefix_pc, "mat_mumps_icntl_14", "5000");
+  _petsc_cmd(true, prefix_pc, "mat_mumps_icntl_24", "1");
+  _petsc_cmd(true, prefix_pc, "mat_mumps_icntl_25", "0");
+  _petsc_cmd(true, prefix_pc, "mat_mumps_cntl_3", "1.e-50");
+  _petsc_cmd(true, prefix_pc, "mat_mumps_cntl_5", "0.");
+  _petsc_cmd(true, prefix_pc, "p", n_p_agg);
+
+  /* Define generic options */
+  sprintf(prefix_pc, "%s_%s", prefix, "pc_hpddm_");
+
+  // _petsc_cmd(true, prefix_pc, "define_subdomains", "");
+  // _petsc_cmd(true, prefix_pc, "has_neumann", "");
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Set the command line options for PC according to the kind of
  *        preconditioner to apply
  *
@@ -808,6 +876,23 @@ _petsc_set_pc_type(cs_param_sles_t  *slesp,
       _petsc_cmd(true, prefix, "sub_ksp_type", "preonly");
       _petsc_cmd(true, prefix, "sub_pc_type", "lu");
     }
+#endif
+    break;
+
+  case CS_PARAM_PRECOND_HPDDM:
+#if defined(PETSC_HAVE_HPDDM)
+    PCSetType(pc, PCHPDDM);
+
+    _petsc_pchpddm_hook(slesp->name, slesp, false, pc);
+
+#else
+    bft_error(
+      __FILE__,
+      __LINE__,
+      0,
+      " %s: Eq. %s: Preconditioner HPDDM is not available inside PETSc.",
+      __func__,
+      slesp->name);
 #endif
     break;
 
@@ -1974,31 +2059,41 @@ _set_saturne_sles(bool                 use_field_id,
     }
     break;
 
-  default: /* Nothing else to do */
-    break;
+    case CS_PARAM_PRECOND_HPDDM:
 
-  } /* Switch on the preconditioner */
+      bft_error(
+        __FILE__,
+        __LINE__,
+        0,
+        " %s: Eq. %s: Preconditioner HPDDM is not available outside PETSc.",
+        __func__,
+        slesp->name);
+      break;
 
-  /* Last step */
+    default: /* Nothing else to do */
+      break;
 
-  cs_sles_set_allow_no_op(sles, slesp->allow_no_op);
+    } /* Switch on the preconditioner */
 
-  /* In case of high verbosity, additional outputs are generated */
+    /* Last step */
 
-  if (slesp->verbosity > 3) {
+    cs_sles_set_allow_no_op(sles, slesp->allow_no_op);
 
-    /* 3rd parameter --> true = use_iteration instead of wall clock time */
+    /* In case of high verbosity, additional outputs are generated */
 
-    if (multigrid_as_solver) {
-      assert(mg != NULL);
-      cs_multigrid_set_plot_options(mg, slesp->name, true);
+    if (slesp->verbosity > 3) {
+
+      /* 3rd parameter --> true = use_iteration instead of wall clock time */
+
+      if (multigrid_as_solver) {
+        assert(mg != NULL);
+        cs_multigrid_set_plot_options(mg, slesp->name, true);
+      }
+      else {
+        assert(itsol != NULL);
+        cs_sles_it_set_plot_options(itsol, slesp->name, true);
+      }
     }
-    else {
-      assert(itsol!= NULL);
-      cs_sles_it_set_plot_options(itsol, slesp->name, true);
-    }
-
-  }
 }
 
 /*----------------------------------------------------------------------------*/

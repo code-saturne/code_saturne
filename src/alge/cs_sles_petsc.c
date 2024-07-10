@@ -51,6 +51,22 @@
 #include <petscvec.h>
 
 /*----------------------------------------------------------------------------
+ * HPDDM headers
+ *----------------------------------------------------------------------------*/
+
+#if defined(PETSC_HAVE_HPDDM)
+#include <HPDDM.hpp>
+#endif
+
+/*----------------------------------------------------------------------------
+ * SLEPs headers
+ *----------------------------------------------------------------------------*/
+
+#if defined(PETSC_HAVE_SLEPC)
+#include <slepcversion.h>
+#endif
+
+/*----------------------------------------------------------------------------
  * Local headers
  *----------------------------------------------------------------------------*/
 
@@ -1618,6 +1634,46 @@ cs_sles_petsc_library_info(cs_log_t  log_type)
                 PETSC_VERSION_MAJOR,
                 PETSC_VERSION_MINOR,
                 PETSC_VERSION_SUBMINOR);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Print information on HPDDM library.
+ *
+ * \param[in]  log_type  log type
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_sles_hpddm_library_info(cs_log_t log_type)
+{
+#if defined(HAVE_HPDDM)
+  cs_log_printf(log_type, "    HPDDM %s\n", HPDDM_VERSION);
+#else
+  cs_log_printf(log_type, "    HPDDM is not available\n");
+#endif
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Print information on SLEPc library.
+ *
+ * \param[in]  log_type  log type
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_sles_slepc_library_info(cs_log_t log_type)
+{
+#if defined(HAVE_SLEPC)
+  cs_log_printf(log_type,
+                "    SLEPc %d.%d.%d\n",
+                SLEPC_VERSION_MAJOR,
+                SLEPC_VERSION_MINOR,
+                SLEPC_VERSION_SUBMINOR);
+#else
+  cs_log_printf(log_type, "    SLEPc is not available\n");
+#endif
 }
 
 /*----------------------------------------------------------------------------*/

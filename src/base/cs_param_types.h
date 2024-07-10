@@ -742,6 +742,9 @@ typedef enum {
  * \var CS_PARAM_PRECOND_SSOR
  * Symmetric Successive OverRelaxations (can be seen as a symmetric
  * Gauss-Seidel preconditioner)
+ *
+ * \var CS_PARAM_PRECOND_HPDDM
+ * Use HPDDM and Geneo approach for coarse space with PETSc
  */
 
 typedef enum {
@@ -749,15 +752,16 @@ typedef enum {
   CS_PARAM_PRECOND_NONE,
 
   CS_PARAM_PRECOND_AMG,
-  CS_PARAM_PRECOND_BJACOB_ILU0,        /*!< Only with PETSc */
-  CS_PARAM_PRECOND_BJACOB_SGS,         /*!< Only with PETSc */
+  CS_PARAM_PRECOND_BJACOB_ILU0, /*!< Only with PETSc */
+  CS_PARAM_PRECOND_BJACOB_SGS,  /*!< Only with PETSc */
   CS_PARAM_PRECOND_DIAG,
-  CS_PARAM_PRECOND_GKB_CG,             /*!< Only with PETSc */
-  CS_PARAM_PRECOND_GKB_GMRES,          /*!< Only with PETSc */
-  CS_PARAM_PRECOND_LU,                 /*!< Only with PETSc */
-  CS_PARAM_PRECOND_ILU0,               /*!< Only with PETSc */
-  CS_PARAM_PRECOND_ICC0,               /*!< Only with PETSc */
-  CS_PARAM_PRECOND_MUMPS,              /*!< Only with MUMPS */
+  CS_PARAM_PRECOND_GKB_CG,    /*!< Only with PETSc */
+  CS_PARAM_PRECOND_GKB_GMRES, /*!< Only with PETSc */
+  CS_PARAM_PRECOND_LU,        /*!< Only with PETSc */
+  CS_PARAM_PRECOND_ILU0,      /*!< Only with PETSc */
+  CS_PARAM_PRECOND_ICC0,      /*!< Only with PETSc */
+  CS_PARAM_PRECOND_MUMPS,     /*!< Only with MUMPS */
+  CS_PARAM_PRECOND_HPDDM,     /*!< Only with PETSc */
   CS_PARAM_PRECOND_POLY1,
   CS_PARAM_PRECOND_POLY2,
   CS_PARAM_PRECOND_SSOR,
