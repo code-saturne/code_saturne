@@ -1368,7 +1368,7 @@ cs_solve_equation_scalar(cs_field_t        *f,
 
     /* When treating the Temperature, the equation is multiplied by Cp */
     for (cs_lnum_t c_idx = 0; c_idx < ncetsm; c_idx++) {
-      if ((smacel_ipr[c_idx] > 0.0) && (itypsm_sc[c_idx] == 1)) {
+      if (smacel_ipr[c_idx] > 0.0) {
         const cs_lnum_t id = icetsm[c_idx];
         srcmas[c_idx] = smacel_ipr[c_idx] * xcpp[id];
       }

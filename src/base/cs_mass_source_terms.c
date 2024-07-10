@@ -121,10 +121,10 @@ cs_mass_source_terms(int                   iterns,
   const cs_mesh_t *m = cs_glob_mesh;
   const cs_lnum_t n_cells = m->n_cells;
 
-  if (gamma == NULL) /* No mass source term here; should not occur */
+  if (gamma == NULL || itpsmp == NULL)
     return;
 
-  /* Remark for tests on gamma[i] > O && itpsmp[i] == 1 :
+  /* Remark for tests on gamma[i] > O && itpsmp[i] == 1:
      *
      * If we remove matter or enter with the cell value
      * then the equation on the variable has not been modified.
