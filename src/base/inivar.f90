@@ -60,7 +60,6 @@ use field
 use cfpoin, only:ithvar
 use cs_c_bindings
 use cs_cf_bindings
-use cs_f_interfaces
 use vof
 
 use, intrinsic :: iso_c_binding

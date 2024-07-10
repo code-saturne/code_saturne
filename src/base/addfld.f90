@@ -65,7 +65,6 @@ use cplsat
 use mesh
 use field
 use turbomachinery
-use cs_f_interfaces
 use cs_c_bindings
 
 !===============================================================================

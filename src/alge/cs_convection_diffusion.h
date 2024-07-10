@@ -881,7 +881,7 @@ cs_diffusion_potential(const int                   f_id,
 /*----------------------------------------------------------------------------*/
 /*
  * \brief Add the explicit part of the divergence of the mass flux due to the
- * pressure gradient (routine analog to diften).
+ * pressure gradient (analog to cs_anisotropic_diffusion_scalar).
  *
  * More precisely, the divergence of the mass flux side
  * \f$ \sum_{\fij \in \Facei{\celli}} \dot{m}_\fij \f$ is updated as follows:

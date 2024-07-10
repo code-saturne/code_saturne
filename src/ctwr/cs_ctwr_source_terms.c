@@ -1029,7 +1029,8 @@ cs_ctwr_bulk_mass_source_term(void)
 
   BFT_FREE(imp_st);
 
-  cs_lnum_t ncesmp = 0, *icetsm = NULL;
+  cs_lnum_t ncesmp = 0;
+  const cs_lnum_t *icetsm = NULL;
   cs_real_t *smacel= NULL;
 
   cs_volume_mass_injection_get_arrays(CS_F_(p),

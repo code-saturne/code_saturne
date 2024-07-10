@@ -64,7 +64,6 @@ use ppppar
 use ppthch
 use ppincl
 use field
-use cs_f_interfaces
 use cs_c_bindings
 
 !===============================================================================

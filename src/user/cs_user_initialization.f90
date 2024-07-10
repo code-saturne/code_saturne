@@ -111,7 +111,6 @@ use field
 use turbomachinery
 
 use cs_c_bindings
-use cs_f_interfaces
 
 !===============================================================================
 

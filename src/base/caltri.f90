@@ -65,7 +65,6 @@ use atchem
 use atimbr
 use turbomachinery
 use cs_c_bindings
-use cs_f_interfaces
 use cdomod
 use cs_nz_condensation
 use cs_nz_tagmr

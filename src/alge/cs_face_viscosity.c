@@ -102,60 +102,6 @@ BEGIN_C_DECLS
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
- * Public function definitions for Fortran API
- *============================================================================*/
-
-/*----------------------------------------------------------------------------
- * Wrapper to cs_face_anisotropic_viscosity_vector
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF (vistnv, VISTNV)
-(
- const int  *const   visc_mean_type,
- cs_real_6_t         c_visc[],
- cs_real_33_t        i_visc[],
- cs_real_t           b_visc[]
-)
-{
-  const cs_mesh_t  *m = cs_glob_mesh;
-  cs_mesh_quantities_t  *fvq = cs_glob_mesh_quantities;
-
-  cs_face_anisotropic_viscosity_vector(m,
-                                       fvq,
-                                       *visc_mean_type,
-                                       c_visc,
-                                       i_visc,
-                                       b_visc);
-}
-
-/*----------------------------------------------------------------------------
- * Wrapper to cs_face_anisotropic_viscosity_scalar
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF (vitens, VITENS)
-(
- cs_real_6_t         c_visc[],
- const int    *const iwarnp,
- cs_real_2_t         weighf[],
- cs_real_t           weighb[],
- cs_real_t           i_visc[],
- cs_real_t           b_visc[]
-)
-{
-  const cs_mesh_t  *m = cs_glob_mesh;
-  cs_mesh_quantities_t  *fvq = cs_glob_mesh_quantities;
-
-  cs_face_anisotropic_viscosity_scalar(m,
-                                       fvq,
-                                       c_visc,
-                                       *iwarnp,
-                                       weighf,
-                                       weighb,
-                                       i_visc,
-                                       b_visc);
-}
-
-/*============================================================================
  * Public function definitions
  *============================================================================*/
 

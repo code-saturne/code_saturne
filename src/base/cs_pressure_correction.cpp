@@ -976,7 +976,8 @@ _pressure_correction_fv(int                   iterns,
                  + cs_math_3_dot_product(dist, visci[2]) * n[2]);
 
             /* Take I" so that I"F= eps*||FI||*Ki.n when J" is in cell rji
-               NB: eps =1.d-1 must be consistent with vitens.f90 */
+               NB: eps =1.d-1 must be consistent
+               with `cs_face_anisotropic_viscosity_scalar`. */
 
             fikis = cs_math_fmax(fikis, 1.e-1*sqrt(viscis)*b_dist[f_id]);
 

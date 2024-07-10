@@ -68,7 +68,6 @@ base/parall.f90 \
 base/period.f90 \
 base/pointe.f90 \
 base/cs_c_bindings.f90 \
-base/cs_f_interfaces.f90 \
 base/rotation.f90 \
 atmo/atincl.f90 \
 atmo/atsoil.f90 \

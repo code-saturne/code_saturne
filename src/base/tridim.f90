@@ -71,7 +71,6 @@ use mesh
 use field
 use rotation
 use turbomachinery
-use cs_f_interfaces
 use cs_c_bindings
 use cs_nz_tagmr
 use cs_nz_condensation
