@@ -40,6 +40,8 @@ module cs_c_bindings
   integer :: MESH_LOCATION_VERTICES, MESH_LOCATION_PARTICLES
   integer :: MESH_LOCATION_OTHER
 
+  integer :: POST_ON_LOCATION, POST_BOUNDARY_NR, POST_MONITOR
+
   integer :: RESTART_VAL_TYPE_INT_T, RESTART_VAL_TYPE_REAL_T
 
   integer :: RESTART_DISABLED, RESTART_MAIN, RESTART_AUXILIARY
@@ -57,6 +59,10 @@ module cs_c_bindings
   parameter (MESH_LOCATION_VERTICES=4)
   parameter (MESH_LOCATION_PARTICLES=5)
   parameter (MESH_LOCATION_OTHER=6)
+
+  parameter (POST_ON_LOCATION=1)
+  parameter (POST_BOUNDARY_NR=2)
+  parameter (POST_MONITOR=4)
 
   parameter (RESTART_VAL_TYPE_INT_T=1)
   parameter (RESTART_VAL_TYPE_REAL_T=3)

@@ -55,7 +55,6 @@ use cpincl
 use ppincl
 use radiat
 use mesh
-use post
 use field
 use cs_c_bindings
 
@@ -487,7 +486,6 @@ use paramx
 use dimens
 use entsor
 use numvar
-use post
 use field
 use cs_c_bindings
 

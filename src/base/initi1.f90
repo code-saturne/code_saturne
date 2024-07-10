@@ -35,7 +35,6 @@ use paramx
 use optcal
 use entsor
 use ppincl, only: ippmod, nmodmx, iatmos
-use post
 use cs_c_bindings
 use field
 use lagran

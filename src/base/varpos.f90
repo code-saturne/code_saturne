@@ -55,7 +55,6 @@ use cpincl
 use ppincl
 use radiat
 use mesh
-use post
 use field
 use pointe, only:compute_porosity_from_scan, ibm_porosity_mode
 use cs_c_bindings

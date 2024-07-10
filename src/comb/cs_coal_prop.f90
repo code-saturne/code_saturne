@@ -54,8 +54,8 @@ use coincl
 use cpincl
 use ppincl
 use cs_coal_incl
+use cs_c_bindings
 use field
-use post
 
 !===============================================================================
 

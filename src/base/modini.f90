@@ -41,7 +41,6 @@ use cstphy
 use entsor
 use albase
 use cplsat
-use post
 use ppincl
 use rotation
 use turbomachinery

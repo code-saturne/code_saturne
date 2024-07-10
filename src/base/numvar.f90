@@ -326,29 +326,6 @@ contains
 
   !=============================================================================
 
-  !> \addtogroup field_map
-  !> \{
-
-  !> \anchor iprpfl
-  !> Identity function for compatibility with deprecated iprpfl array
-
-  elemental pure function iprpfl(f_id) result(r_f_id)
-
-    implicit none
-
-    ! Parameters
-
-    integer, intent(in) :: f_id
-    integer             :: r_f_id
-
-    ! Function body
-
-    r_f_id = f_id
-
-  end function iprpfl
-
-  !> \}
-
   !> \brief Initialize Fortran gas mix API.
   !> This maps Fortran pointers to global C variables.
 
