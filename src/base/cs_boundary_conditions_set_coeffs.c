@@ -121,8 +121,7 @@ int *
 cs_f_boundary_conditions_get_bc_type(void);
 
 void
-cs_f_ppprcl(int        itypfb[],
-            cs_real_t  dt[]);
+cs_f_ppprcl(void);
 
 void
 cs_f_cou1di(void);
@@ -740,11 +739,11 @@ cs_boundary_conditions_set_coeffs(int        nvar,
 
   cs_boundary_conditions_reset();
 
-  if (cs_glob_physical_model_flag[CS_COMPRESSIBLE] >=  0)
+  if (cs_glob_physical_model_flag[CS_COMPRESSIBLE] >= 0)
     cs_cf_boundary_conditions_reset();
 
-  if (cs_glob_physical_model_flag[CS_PHYSICAL_MODEL_FLAG] >=  1)
-    cs_f_ppprcl(bc_type, dt);
+  if (cs_glob_physical_model_flag[CS_PHYSICAL_MODEL_FLAG] >= 1)
+    cs_f_ppprcl();
 
   /* Base definitions from the GUI
      ----------------------------- */
@@ -3543,8 +3542,8 @@ cs_boundary_conditions_set_coeffs_init(void)
   /* User calls
      ---------- */
 
-  if (cs_glob_physical_model_flag[CS_PHYSICAL_MODEL_FLAG] >=  1)
-    cs_f_ppprcl(bc_type, dt);
+  if (cs_glob_physical_model_flag[CS_PHYSICAL_MODEL_FLAG] >= 1)
+    cs_f_ppprcl();
 
   /* NB. BC zones: we temporarily use specific physical model zones, even without
      the associated models.
