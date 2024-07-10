@@ -100,15 +100,6 @@ cs_volume_mass_injection_get_arrays(const cs_field_t   *f,
                                     cs_real_t         **gamma);
 
 /*----------------------------------------------------------------------------*/
-/*
- * \brief Return true if volume mass injection is active, false otherwise.
- */
-/*----------------------------------------------------------------------------*/
-
-bool
-cs_volume_mass_injection_is_active(void);
-
-/*----------------------------------------------------------------------------*/
 
 END_C_DECLS
 

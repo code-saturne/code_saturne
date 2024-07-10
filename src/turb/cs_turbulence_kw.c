@@ -1062,7 +1062,8 @@ cs_turbulence_kw(int phase_id)
   /* Mass source terms (Implicit and explicit parts)
      =============================================== */
 
-  if (cs_volume_mass_injection_is_active()) {
+  if (   eqp_k->n_volume_mass_injections > 0
+      || eqp_w->n_volume_mass_injections > 0) {
 
     int *itypsm = NULL;
     cs_lnum_t ncesmp = 0;

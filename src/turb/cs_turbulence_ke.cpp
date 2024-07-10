@@ -1607,7 +1607,8 @@ cs_turbulence_ke(int              phase_id,
    * Going out of the step we keep divu,  smbrk, smbre
    * ================================================= */
 
-  if (cs_volume_mass_injection_is_active()) {
+  if (   eqp_k->n_volume_mass_injections > 0
+      || eqp_eps->n_volume_mass_injections > 0) {
 
     int *itypsm = NULL;
     cs_lnum_t ncesmp = 0;

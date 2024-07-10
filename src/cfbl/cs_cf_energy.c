@@ -462,7 +462,7 @@ cs_cf_energy(int f_sc_id)
                                          inj
   */
 
-  if (cs_volume_mass_injection_is_active()) {
+  if (eqp_e->n_volume_mass_injections > 0) {
     cs_lnum_t ncesmp = 0;
     cs_lnum_t *icetsm = NULL;
     int *itpsm = NULL;

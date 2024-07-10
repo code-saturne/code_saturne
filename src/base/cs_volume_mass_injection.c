@@ -777,17 +777,5 @@ cs_volume_mass_injection_get_arrays(const cs_field_t   *f,
 }
 
 /*----------------------------------------------------------------------------*/
-/*!
- * \brief Return true if volume mass injection is active, false otherwise.
- */
-/*----------------------------------------------------------------------------*/
-
-bool
-cs_volume_mass_injection_is_active(void)
-{
-  return (_mass_injection != NULL) ? true : false;
-}
-
-/*----------------------------------------------------------------------------*/
 
 END_C_DECLS

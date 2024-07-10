@@ -2422,7 +2422,7 @@ _solve_epsilon(int              phase_id,
   /* Mass source term
    * ---------------- */
 
-  if (cs_volume_mass_injection_is_active()) {
+  if (eqp->n_volume_mass_injections > 0) {
 
     int *itypsm = NULL;
     cs_lnum_t ncesmp = 0;
@@ -3124,8 +3124,7 @@ cs_turbulence_rij(int phase_id)
   /* Mass source terms
    *------------------ */
 
-  if (cs_volume_mass_injection_is_active()) {
-
+  if (eqp->n_volume_mass_injections > 0) {
     int *itypsm = NULL;
     cs_lnum_t ncesmp = 0;
     const cs_lnum_t *icetsm = NULL;

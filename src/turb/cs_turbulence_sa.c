@@ -548,7 +548,7 @@ cs_turbulence_sa(void)
 
   /* Explicit mass source terms */
 
-  if (cs_volume_mass_injection_is_active()) {
+  if (eqp_nusa->n_volume_mass_injections > 0) {
 
     /* Explicit part: Gamma Pinj
        (if we extrapolate source terms, Gamma.var_prev is stored in prev. TS) */

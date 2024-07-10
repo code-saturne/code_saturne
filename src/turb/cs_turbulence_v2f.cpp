@@ -764,7 +764,7 @@ _solve_eq_phi(const int           istprv,
   /* Mass source terms
      ----------------- */
 
-  if (cs_volume_mass_injection_is_active()) {
+  if (eqp->n_volume_mass_injections > 0) {
 
     /* We increment rhs by -Gamma.var_prev and rovsdt by Gamma */
     int *itypsm = NULL;

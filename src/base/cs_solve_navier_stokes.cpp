@@ -2923,7 +2923,7 @@ _velocity_prediction(const cs_mesh_t             *m,
   /* Mass source terms
      ----------------- */
 
-  if (cs_volume_mass_injection_is_active()) {
+  if (eqp_u->n_volume_mass_injections > 0) {
 
     cs_lnum_t ncetsm = 0;
     int *itypsm = NULL;

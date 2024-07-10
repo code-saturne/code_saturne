@@ -1350,7 +1350,7 @@ cs_solve_equation_scalar(cs_field_t        *f,
      This would allow removing the itypsm and smacel arrays and
      associated dimensions. */
 
-  if (cs_volume_mass_injection_is_active()) {
+  if (eqp->n_volume_mass_injections > 0) {
     cs_lnum_t ncetsm = 0;
     const cs_lnum_t *icetsm = NULL;
     int *itypsm_sc = NULL;
@@ -1984,7 +1984,7 @@ cs_solve_equation_vector(cs_field_t       *f,
 
   /* Mass source term */
 
-  if (cs_volume_mass_injection_is_active()) {
+  if (eqp->n_volume_mass_injections > 0) {
     cs_lnum_t ncetsm = 0;
     const cs_lnum_t *icetsm = NULL;
     int *itypsm_v = NULL;

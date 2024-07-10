@@ -350,7 +350,7 @@ _compressible_pressure_mass_flux(int iterns, // cfmsfp en fortran
 
   /* Mass source term */
 
-  if (cs_volume_mass_injection_is_active()) {
+  if (eqp_vel->n_volume_mass_injections > 0) {
     /* The momentum balance is used in its conservative form here
        so the mass source term is only composed of gamma*uinj
        => array of previous velocity has to be set to zero */
@@ -621,7 +621,7 @@ cs_cf_convective_mass_flux(int  iterns)
   /* Mass source term
      ---------------- */
 
-  if (cs_volume_mass_injection_is_active()) {
+  if (eqp_p->n_volume_mass_injections > 0) {
     cs_lnum_t ncetsm = 0;
     const cs_lnum_t *icetsm = NULL;
     int *itpsm_p = NULL;
