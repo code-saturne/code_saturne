@@ -689,6 +689,58 @@ cs_mo_psih(cs_real_t              z,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Compute LMO, friction velocity ustar, friction temperature
+ *        tstar from a thermal difference using Monin Obukhov
+ *
+ * \param[in]  z             altitude
+ * \param[in]  z0
+ * \param[in]  du            velocity difference
+ * \param[in]  dt            thermal difference
+ * \param[in]  tm
+ * \param[in]  gredu
+ * \param[out] dlmo          Inverse Monin Obukhov length
+ * \param[out] ustar         friction velocity
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_mo_compute_from_thermal_diff(cs_real_t   z,
+                                cs_real_t   z0,
+                                cs_real_t   du,
+                                cs_real_t   dt,
+                                cs_real_t   tm,
+                                cs_real_t   gredu,
+                                cs_real_t   *dlmo,
+                                cs_real_t   *ustar);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Compute LMO, friction velocity ustar, friction temperature
+ *        tstar from a thermal flux using Monin Obukhov
+ *
+ * \param[in]  z             altitude
+ * \param[in]  z0
+ * \param[in]  du            velocity difference
+ * \param[in]  flux          thermal flux
+ * \param[in]  tm
+ * \param[in]  gredu
+ * \param[out] dlmo          Inverse Monin Obukhov length
+ * \param[out] ustar         friction velocity
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_mo_compute_from_thermal_flux(cs_real_t   z,
+                                cs_real_t   z0,
+                                cs_real_t   du,
+                                cs_real_t   flux,
+                                cs_real_t   tm,
+                                cs_real_t   gredu,
+                                cs_real_t   *dlmo,
+                                cs_real_t   *ustar);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief This function set the file name of the meteo file.
  *
  * \param[in] file_name  name of the file.

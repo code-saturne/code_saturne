@@ -95,28 +95,6 @@ static const cs_lnum_t _jv2t[6] = {0, 1, 2, 1, 2, 2};
  * External function prototypes
  *============================================================================*/
 
-/* Bindings to Fortran routines */
-
-void
-cs_f_mo_compute_from_thermal_diff(const cs_real_t  *z,
-                                  const cs_real_t  *z0,
-                                  const cs_real_t  *du,
-                                  const cs_real_t  *dt,
-                                  const cs_real_t  *tm,
-                                  const cs_real_t  *gredu,
-                                  cs_real_t        *dlmo,
-                                  cs_real_t        *ustar);
-
-void
-cs_f_mo_compute_from_thermal_flux(const cs_real_t  *z,
-                                  const cs_real_t  *z0,
-                                  const cs_real_t  *du,
-                                  const cs_real_t  *flux,
-                                  const cs_real_t  *tm,
-                                  const cs_real_t  *gredu,
-                                  cs_real_t        *dlmo,
-                                  cs_real_t        *ustar);
-
 /*============================================================================
  * Private function definitions
  *============================================================================*/
@@ -2459,14 +2437,14 @@ cs_boundary_conditions_set_coeffs_turb(int        isvhb,
           const cs_real_t *rcodcl1_th = f_th->bc_coeffs->rcodcl1;
           const cs_real_t dt = theipb[f_id]-rcodcl1_th[f_id];
 
-          cs_f_mo_compute_from_thermal_diff(&distbf,
-                                            &rough_d,
-                                            &utau,
-                                            &dt,
-                                            &theta0,
-                                            &gredu,
-                                            &dlmo,
-                                            &uet);
+          cs_mo_compute_from_thermal_diff(distbf,
+                                          rough_d,
+                                          utau,
+                                          dt,
+                                          theta0,
+                                          gredu,
+                                          &dlmo,
+                                          &uet);
 
         }
         else if (icodcl_th[f_id] == 3) {
@@ -2475,14 +2453,14 @@ cs_boundary_conditions_set_coeffs_turb(int        isvhb,
           const cs_real_t cpp = (icp >= 0) ? cpro_cp[c_id] : cp0;
           const cs_real_t flux = rcodcl3_th[f_id] / romc / cpp;
 
-          cs_f_mo_compute_from_thermal_flux(&distbf,
-                                            &rough_d,
-                                            &utau,
-                                            &flux,
-                                            &theta0,
-                                            &gredu,
-                                            &dlmo,
-                                            &uet);
+          cs_mo_compute_from_thermal_flux(distbf,
+                                          rough_d,
+                                          utau,
+                                          flux,
+                                          theta0,
+                                          gredu,
+                                          &dlmo,
+                                          &uet);
         }
 
       }
@@ -2491,14 +2469,14 @@ cs_boundary_conditions_set_coeffs_turb(int        isvhb,
         /* No temperature delta: neutral */
         const cs_real_t dt = 0., _theta0 = 0., gredu = 0.;
 
-        cs_f_mo_compute_from_thermal_diff(&distbf,
-                                          &rough_d,
-                                          &utau,
-                                          &dt,
-                                          &_theta0,
-                                          &gredu,
-                                          &dlmo,
-                                          &uet);
+        cs_mo_compute_from_thermal_diff(distbf,
+                                        rough_d,
+                                        utau,
+                                        dt,
+                                        _theta0,
+                                        gredu,
+                                        &dlmo,
+                                        &uet);
 
       }
 

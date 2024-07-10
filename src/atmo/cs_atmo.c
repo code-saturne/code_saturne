@@ -1517,6 +1517,185 @@ cs_mo_psih(cs_real_t              z,
   return coef;
 }
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Compute LMO, friction velocity ustar, friction temperature
+ *        tstar from a thermal difference using Monin Obukhov
+ *
+ * \param[in]  z             altitude
+ * \param[in]  z0
+ * \param[in]  du            velocity difference
+ * \param[in]  dt            thermal difference
+ * \param[in]  tm
+ * \param[in]  gredu
+ * \param[out] dlmo          Inverse Monin Obukhov length
+ * \param[out] ustar         friction velocity
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_mo_compute_from_thermal_diff(cs_real_t   z,
+                                cs_real_t   z0,
+                                cs_real_t   du,
+                                cs_real_t   dt,
+                                cs_real_t   tm,
+                                cs_real_t   gredu,
+                                cs_real_t   *dlmo,
+                                cs_real_t   *ustar)
+{
+  /* Local variables */
+  cs_real_t kappa = cs_turb_xkappa;
+  cs_real_t coef_mom_old = 0.;
+  cs_real_t coef_moh_old = 0.;
+  cs_real_t dlmoclip = 1.0;
+
+  /* Precision initialisation */
+  cs_real_t prec_ustar = 1.e-2;
+  cs_real_t prec_tstar = 1.e-2;
+
+  /* Initial LMO */
+  *dlmo = 0.;
+
+  /* Call universal functions */
+  cs_real_t zref = z+z0;
+  cs_real_t coef_mom = cs_mo_psim(zref,z0, *dlmo);
+  cs_real_t coef_moh = cs_mo_psih(zref,z0, *dlmo);
+
+  /* Initial ustar and tstar */
+  *ustar = kappa * du / coef_mom;
+  cs_real_t tstar = 0.;
+  if (abs(coef_moh) > cs_math_epzero)
+    tstar = kappa*dt/coef_moh;
+
+  for (int icompt = 0;
+      icompt < 1000 &&
+      /* Convergence test */
+      (   fabs(coef_mom-coef_mom_old) >= prec_ustar
+       || fabs(coef_moh-coef_moh_old) >= prec_tstar
+       || icompt == 0);
+      icompt++) {
+
+    /* Storage previous values */
+    coef_mom_old = coef_mom;
+    coef_moh_old = coef_moh;
+
+    /* Update LMO */
+    cs_real_t num = cs_math_pow2(coef_mom) * gredu * dt;
+    cs_real_t denom = cs_math_pow2(du) * tm * coef_moh;
+    if (abs(denom) > (cs_math_epzero * fabs(num)))
+      *dlmo = num / denom;
+    else
+      *dlmo = 0.; //FIXME
+
+    /* Clipping dlmo (we want |LMO| > 1 m  ie 1/|LMO| < 1 m^-1) */
+    if (fabs(*dlmo) >= dlmoclip) {
+      if (*dlmo >= 0.)
+        *dlmo =   dlmoclip;
+      if (*dlmo <= 0.)
+        *dlmo = - dlmoclip;
+    }
+
+    /* Evaluate universal functions */
+    coef_mom = cs_mo_psim((z+z0),z0, *dlmo);
+    coef_moh = cs_mo_psih(z+z0,z0, *dlmo);
+
+    /* Update ustar, tstar */
+    *ustar = kappa*du/coef_mom;
+    if (fabs(coef_moh) > cs_math_epzero)
+      tstar = kappa*dt/coef_moh;
+    else
+      tstar = 0.;
+  }
+
+  return;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Compute LMO, friction velocity ustar, friction temperature
+ *        tstar from a thermal flux using Monin Obukhov
+ *
+ * \param[in]  z             altitude
+ * \param[in]  z0
+ * \param[in]  du            velocity difference
+ * \param[in]  flux          thermal flux
+ * \param[in]  tm
+ * \param[in]  gredu
+ * \param[out] dlmo          Inverse Monin Obukhov length
+ * \param[out] ustar         friction velocity
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_mo_compute_from_thermal_flux(cs_real_t   z,
+                                cs_real_t   z0,
+                                cs_real_t   du,
+                                cs_real_t   flux,
+                                cs_real_t   tm,
+                                cs_real_t   gredu,
+                                cs_real_t   *dlmo,
+                                cs_real_t   *ustar)
+{
+  /* Local variables */
+  cs_real_t kappa = cs_turb_xkappa;
+  cs_real_t coef_mom_old = 0.;
+  cs_real_t dlmoclip = 1.0;
+
+  /* Precision initialisation */
+  cs_real_t prec_ustar = 1.e-2;
+
+  /* Initial LMO */
+  *dlmo = 0.;
+
+  /* Call universal functions */
+  cs_real_t zref = z+z0;
+  cs_real_t coef_mom = cs_mo_psim(zref,z0, *dlmo);
+
+  /* Initial ustar and tstar */
+  *ustar = kappa * du / coef_mom;
+  cs_real_t tstar = flux / *ustar;
+
+  for (int icompt = 0;
+      icompt < 1000 &&
+      /* Convergence test */
+      (   fabs(coef_mom-coef_mom_old) >= prec_ustar
+       || icompt == 0);
+      icompt++) {
+
+    /* Storage previous values */
+    coef_mom_old = coef_mom;
+
+    /* Update LMO */
+    cs_real_t num = cs_math_pow3(coef_mom) * gredu * flux;
+    cs_real_t denom = cs_math_pow3(du) * cs_math_pow2(kappa) * tm;
+
+    if (abs(denom) > (cs_math_epzero * fabs(num)))
+      *dlmo = num / denom;
+    else
+      *dlmo = 0.; //FIXME other clipping ?
+
+    /* Clipping dlmo (we want |LMO| > 1 m  ie 1/|LMO| < 1 m^-1) */
+    if (fabs(*dlmo) >= dlmoclip) {
+      if (*dlmo >= 0.)
+        *dlmo =   dlmoclip;
+      if (*dlmo <= 0.)
+        *dlmo = - dlmoclip;
+    }
+
+    /* Evaluate universal functions */
+    coef_mom = cs_mo_psim((z+z0),z0, *dlmo);
+
+    /* Update ustar, tstar */
+    *ustar = kappa*du/coef_mom;
+    if (fabs(*ustar) > cs_math_epzero)
+      tstar = flux / *ustar;
+    else
+      tstar = 0.;
+  }
+
+  return;
+}
+
 /*----------------------------------------------------------------------------
  * Return the name of the meteo file
  *
