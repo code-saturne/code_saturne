@@ -46,19 +46,6 @@ module cplsat
   !> indicator coupling face / face only
   !integer, save :: ifaccp = 0
   integer(c_int), pointer, save :: ifaccp
-  !> maximum permissible number of coupling
-  integer   nbcpmx
-  parameter(nbcpmx=10)
-  !> turbulence model of the remote instance
-  integer, save :: iturcp(nbcpmx)
-  !> indicator to update location of the coupling
-  integer, save :: imajcp(nbcpmx)
-  !> indicator of calulation in relative reference frame
-  integer, save :: icormx(nbcpmx)
-  !> number of variables to send/receive
-  integer, save :: nvarcp(nbcpmx)
-  !> size of exchange tables
-  integer, save :: nvarto(nbcpmx)
   !> \}
 
   !=============================================================================
