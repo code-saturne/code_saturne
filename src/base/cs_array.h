@@ -281,6 +281,41 @@ cs_arrays_set_value_on_subset(const cs_lnum_t  n_elts,
       set_value(elt_ids[i]);
   }
 }
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Copy values from an array to another of the same dimensions.
+ *
+ * Template parmeters.
+ *                 T       type name
+ *
+ * \param[in]   size    number of elements * dimension
+ * \param[in]   src     source array values
+ * \param[out]  dest    destination array values
+ */
+/*----------------------------------------------------------------------------*/
+
+template <typename T>
+void
+cs_array_copy(const cs_lnum_t  size,
+              const T*         src,
+              T*               dest)
+{
+#if defined (__NVCC__)
+  bool is_available_on_device =  cs_check_device_ptr(src)
+                              && cs_check_device_ptr(dest);
+
+  if (is_available_on_device) {
+    cudaStream_t stream_ = cs_cuda_get_stream(0);
+    cs_array_copy<T>(stream_, size, src, dest);
+    return;
+  }
+#endif
+
+# pragma omp parallel for if (size > CS_THR_MIN)
+  for (cs_lnum_t ii = 0; ii < size; ii++)
+    dest[ii] = src[ii];
+}
 #endif // __cplusplus
 
 BEGIN_C_DECLS

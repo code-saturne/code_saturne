@@ -190,3 +190,29 @@ cs_arrays_set_value(cudaStream_t     stream,
 
   CS_FREE_HD(array_ptrs);
 }
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Copy values from an array to another of the same dimensions.
+ *
+ * Template parmeters.
+ *                 T       type name
+ *
+ * \param[in]   stream  cuda stream used for the operation
+ * \param[in]   size    number of elements * dimension
+ * \param[in]   src     source array values
+ * \param[out]  dest    destination array values
+ */
+/*----------------------------------------------------------------------------*/
+
+template <typename T>
+void
+cs_array_copy(cudaStream_t     stream,
+              const cs_lnum_t  size,
+              const T*         src,
+              T*               dest)
+{
+  cudaMemcpyAsync(dest, src, size*sizeof(T),
+                  cudaMemcpyDeviceToDevice, stream);
+}
+
