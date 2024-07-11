@@ -58,7 +58,7 @@ use cs_c_bindings
 
 implicit none
 
-procedure() :: atr1vf, mscrss
+procedure() :: mscrss
 
 ! Arguments
 
@@ -88,6 +88,16 @@ double precision, dimension(:), pointer :: cpro_liqwt
 double precision, dimension(:), pointer :: cpro_rad_cool
 double precision, dimension(:), pointer :: cpro_met_p
 double precision, dimension(:), pointer :: r3
+
+interface
+
+  subroutine atr1vf () &
+    bind(C, name="cs_f_atr1vf")
+    use, intrinsic :: iso_c_binding
+    implicit none
+  end subroutine atr1vf
+
+end interface
 
 !===============================================================================
 ! 1. Initialization

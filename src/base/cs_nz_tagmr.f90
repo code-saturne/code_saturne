@@ -226,12 +226,6 @@ interface
     type(c_ptr), intent(out) :: m_metal, s_metal, v_metal, tmet0
   end subroutine cs_f_wall_condensation_0d_thermal_get_pointers
 
-  subroutine cs_f_wall_condensation_0d_thermal_solve() &
-    bind(C, name='cs_wall_condensation_0d_thermal_solve')
-    use, intrinsic :: iso_c_binding
-    implicit none
-  end subroutine cs_f_wall_condensation_0d_thermal_solve
-
   subroutine cs_wall_condensation_1d_thermal_mesh_initialize() &
     bind(C, name="cs_wall_condensation_1d_thermal_mesh_initialize")
     use, intrinsic :: iso_c_binding

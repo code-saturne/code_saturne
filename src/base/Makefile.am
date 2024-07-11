@@ -188,6 +188,7 @@ cs_scalar_clipping.h \
 cs_search.h \
 cs_selector.h \
 cs_solid_zone.h \
+cs_solve_all.h \
 cs_solve_equation.h \
 cs_solve_navier_stokes.h \
 cs_solve_transported_variables.h \
@@ -380,6 +381,7 @@ cs_search.c \
 cs_selector.c \
 cs_selector_f2c.f90 \
 cs_solid_zone.c \
+cs_solve_all.c \
 cs_solve_equation.c \
 cs_solve_navier_stokes.cpp \
 cs_solve_transported_variables.c \
@@ -420,7 +422,6 @@ modini.f90 \
 mmtycl.f90 \
 schtmp.f90 \
 tdesi1.f90 \
-tridim.f90 \
 varpos.f90
 
 libcsbase_a_LIBADD =

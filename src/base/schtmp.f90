@@ -44,8 +44,8 @@
 !>                            after cs_physical_properties_update
 !______________________________________________________________________________
 
-subroutine schtmp &
- ( nscal  , iappel )
+subroutine schtmp (nscal, iappel) &
+  bind(C, name='cs_f_schtmp')
 
 !===============================================================================
 ! Module files
@@ -62,6 +62,7 @@ use parall
 use period
 use mesh
 use field
+use, intrinsic :: iso_c_binding
 
 !===============================================================================
 
@@ -69,7 +70,7 @@ implicit none
 
 ! Arguments
 
-integer          nscal  , iappel
+integer(kind=c_int), value :: nscal, iappel
 
 ! Local variables
 

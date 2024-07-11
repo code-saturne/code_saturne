@@ -26,7 +26,8 @@
 !> (UV and IR radiative fluxes) with a 1D scheme.
 !-------------------------------------------------------------------------------
 
-subroutine atr1vf
+subroutine atr1vf () &
+  bind(C, name="cs_f_atr1vf")
 
 !===============================================================================
 ! Module files
@@ -48,6 +49,7 @@ use field
 use atincl
 use atsoil
 use cs_c_bindings
+use, intrinsic :: iso_c_binding
 
 !===============================================================================
 

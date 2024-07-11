@@ -1677,17 +1677,6 @@ module cs_c_bindings
 
     !---------------------------------------------------------------------------
 
-    ! Interface to C user function for custom uniform thermodynamic pressure
-
-    subroutine cs_user_physical_properties_td_pressure(new_pther)  &
-      bind(C, name='cs_user_physical_properties_td_pressure')
-      use, intrinsic :: iso_c_binding
-      implicit none
-      real(kind=c_double), intent(out) :: new_pther
-    end subroutine cs_user_physical_properties_td_pressure
-
-    !---------------------------------------------------------------------------
-
     ! Interface to C user function for extra operations
 
     subroutine user_extra_operations_initialize()  &
@@ -2102,18 +2091,6 @@ module cs_c_bindings
     end subroutine cs_wall_condensation_set_onoff_state
 
     !---------------------------------------------------------------------------
-    !> \brief Compute wall condensation mass and energy source terms
-    !
-    !> \param[in]   total_htc Total heat transfer coefficient
-    !---------------------------------------------------------------------------
-    subroutine cs_wall_condensation_compute(total_htc)   &
-      bind(C, name='cs_wall_condensation_compute')
-      use, intrinsic :: iso_c_binding
-      implicit none
-      real(kind=c_double), dimension(*), intent(out) :: total_htc
-    end subroutine cs_wall_condensation_compute
-
-    !---------------------------------------------------------------------------
 
     !> \brief Create global 1d wall thermal model structure.
 
@@ -2404,17 +2381,6 @@ module cs_c_bindings
 
     !---------------------------------------------------------------------------
 
-    !> \brief Compute the relative ground elevation (mainly for the atmospheric
-    !>  module).
-
-    subroutine cs_atmo_z_ground_compute() &
-      bind(C, name='cs_atmo_z_ground_compute')
-      use, intrinsic :: iso_c_binding
-      implicit none
-    end subroutine cs_atmo_z_ground_compute
-
-    !---------------------------------------------------------------------------
-
     !> \brief Return pointers to atmo chemistry arrays
 
     subroutine cs_f_atmo_chem_arrays_get_pointers(isca_chem, dmmk, &
@@ -2591,18 +2557,6 @@ module cs_c_bindings
       implicit none
       real(kind=c_double), dimension(*) :: ckupdc
     end subroutine cs_head_losses_compute
-
-    !---------------------------------------------------------------------------
-
-    ! Interface to C function cs_f_math_sym_33_inv_cramer
-
-    subroutine symmetric_matrix_inverse(s, sout)                    &
-      bind(C, name='cs_f_math_sym_33_inv_cramer')
-      use, intrinsic :: iso_c_binding
-      implicit none
-      real(kind=c_double), dimension(*), intent(in) :: s
-      real(kind=c_double), dimension(*), intent(out) :: sout
-    end subroutine symmetric_matrix_inverse
 
     !---------------------------------------------------------------------------
 
@@ -3009,18 +2963,6 @@ module cs_c_bindings
       integer(c_int), value :: phase_id
       real(kind=c_double), dimension(6,*), intent(out) :: rij
     end subroutine cs_turbulence_ke_q
-
-    !---------------------------------------------------------------------------
-
-    ! Interface to C function solving the equation on alpha for Rij-EBRSM.
-
-    subroutine cs_turbulence_rij_solve_alpha(f_id, phase_id, c_durbin_l ) &
-      bind(C, name='cs_turbulence_rij_solve_alpha')
-      use, intrinsic :: iso_c_binding
-      implicit none
-      integer(c_int), intent(in), value :: f_id, phase_id
-      real(c_double), intent(in), value :: c_durbin_l
-    end subroutine cs_turbulence_rij_solve_alpha
 
     !---------------------------------------------------------------------------
     ! Interface to C function initializing turbulence variables based

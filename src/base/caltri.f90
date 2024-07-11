@@ -157,14 +157,6 @@ interface
 
   !=============================================================================
 
-  subroutine tridim(itrale, nvar, nscal, dt)
-    implicit none
-    integer                                   :: itrale, nvar, nscal
-    double precision, pointer, dimension(:)   :: dt
-  end subroutine tridim
-
-  !=============================================================================
-
   subroutine turbulence_bc_free_pointers()  &
     bind(C, name='cs_turbulence_bc_free_pointers')
     use, intrinsic :: iso_c_binding
@@ -287,6 +279,14 @@ interface
   end function cs_runaway_check
 
   !=============================================================================
+
+  subroutine cs_solve_all(itrale) &
+   bind(C, name='cs_solve_all')
+   use, intrinsic :: iso_c_binding
+   implicit none
+   integer(kind=c_int), value :: itrale
+
+ end subroutine cs_solve_all
 
 end interface
 
@@ -865,8 +865,7 @@ call dmtmps(titer1)
 
 call cs_log_iteration_prepare
 
-call tridim(itrale, nvar, nscal, dt)
-
+call cs_solve_all(itrale)
 call cs_1d_wall_thermal_log()
 
 if (ntmabs.gt.ntpabs .and. itrale.gt.0) then

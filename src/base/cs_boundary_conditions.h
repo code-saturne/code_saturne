@@ -338,6 +338,15 @@ void
 cs_boundary_conditions_reset(void);
 
 /*----------------------------------------------------------------------------*/
+/*
+ * \brief Return pointer to boundary conditions BC type array.
+ */
+/*----------------------------------------------------------------------------*/
+
+int *
+cs_boundary_conditions_get_bc_type(void);
+
+/*----------------------------------------------------------------------------*/
 /*!
  * \brief Update per variable boundary condition codes.
  *

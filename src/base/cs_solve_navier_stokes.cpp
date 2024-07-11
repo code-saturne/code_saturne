@@ -148,12 +148,6 @@ extern cs_real_t *cs_glob_ckupdc;
 void
 cs_f_navier_stokes_total_pressure(void);
 
-void
-cs_f_solve_navier_stokes(const int      iterns,
-                         int           *icvrge,
-                         const int      itrale,
-                         int            isostd[]);
-
 /*============================================================================
  * Prototypes for functions intended for use only by Fortran wrappers.
  * (descriptions follow, with function bodies).

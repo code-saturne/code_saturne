@@ -1,9 +1,9 @@
-#ifndef __CS_DILATABLE_SCALAR_DIFF_ST_H__
-#define __CS_DILATABLE_SCALAR_DIFF_ST_H__
+#ifndef __CS_SOLVE_ALL_H__
+#define __CS_SOLVE_ALL_H__
 
 /*============================================================================
- * Weakly compressible algorithm (semi-analytic):
-   Computation of scalar diffusion terms.
+ * Solve the Navier-Stokes equations, source term convection
+ * diffusion equations for scalars ... .
  *============================================================================*/
 
 /*
@@ -42,29 +42,35 @@
 
 BEGIN_C_DECLS
 
-/*=============================================================================
- * Public function prototypes
+/*============================================================================
+ * Macro definitions
  *============================================================================*/
 
-/*----------------------------------------------------------------------------*/
-/*! \file cs_dilatable_scalar_diff_st.h
- *
- * \brief Weakly compressible algorithm (semi-analytic):
-                 Computation of scalar diffusion terms.
- */
-/*----------------------------------------------------------------------------*/
+/*============================================================================
+ * Local type definitions
+ *============================================================================*/
 
+/*=============================================================================
+ * Global variables
+ *============================================================================*/
+
+/*============================================================================
+ * Public function prototypes
+ *============================================================================*/
 /*----------------------------------------------------------------------------*/
-/*
- * \param[in]  iterns      Navier-Stokes iteration number
+/*!
+ * \brief Resolution of incompressible Navier Stokes, scalar transport
+ *        equations... for a time step.
+ *
+ * \param[in]     itrale        ALE iteration number
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_dilatable_scalar_diff_st(int iterns);
+cs_solve_all(const int   itrale);
 
 /*----------------------------------------------------------------------------*/
 
 END_C_DECLS
 
-#endif /* __CS_DILATABLE_SCALAR_DIFF_ST_H__ */
+#endif /* __CS_SOLVE_ALL_H__ */

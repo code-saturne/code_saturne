@@ -20,8 +20,8 @@
 
 !-------------------------------------------------------------------------------
 
-subroutine cou1do &
- ( hbord  , tbord  )
+subroutine cou1do (hbord, tbord) &
+  bind(C, name = "cs_f_syrtes_coupling_temperature")
 
 !===============================================================================
 ! FONCTION :
@@ -47,6 +47,7 @@ subroutine cou1do &
 ! Module files
 !===============================================================================
 
+use, intrinsic :: iso_c_binding
 use paramx
 use numvar
 use entsor
@@ -68,7 +69,7 @@ implicit none
 
 ! Arguments
 
-double precision hbord(nfabor),tbord(nfabor)
+real(kind=c_double), dimension(*) :: hbord, tbord
 
 !     VARIABLES LOCALES
 
