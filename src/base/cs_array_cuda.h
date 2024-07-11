@@ -81,7 +81,7 @@ cuda_kernel_set_value(cs_lnum_t   n,
   } // end loop arrays
 }
 
-template <typename T, size_t stride, typename...Arrays>
+template <typename T, size_t stride>
 __global__ void
 cuda_kernel_set_value(cs_lnum_t   n,
                       const T    *ref_val,
@@ -108,6 +108,7 @@ cuda_kernel_set_value(cs_lnum_t   n,
  *                 Arrays  varadiac parameters pack
  *
  * Function parameters:
+ * \param[in]      stream  cuda stream used for the operation
  * \param[in]      n_elts  total number of elements to set
  * \param[in]      ref_val value to assign
  * \param[out]     arrays  arrays to set
@@ -155,6 +156,7 @@ cs_arrays_set_value(cudaStream_t     stream,
  *                 Arrays  varadiac parameters pack
  *
  * Function parameters:
+ * \param[in]      stream  cuda stream used for the operation
  * \param[in]      n_elts  total number of elements to set
  * \param[in]      ref_val value to assign
  * \param[out]     arrays  arrays to set
