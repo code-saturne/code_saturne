@@ -1242,6 +1242,16 @@ module cs_c_bindings
 
     !---------------------------------------------------------------------------
 
+    ! Interface to C function which returns if the restart is from NEPTUNE_CFD
+    function cs_restart_present() result(flag) &
+      bind(C, name='cs_restart_present')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      integer(c_int) :: flag
+    end function cs_restart_present
+
+    !---------------------------------------------------------------------------
+
     ! Interface to C function that initializes read status
 
     subroutine cs_restart_initialize_fields_read_status() &
@@ -3530,6 +3540,73 @@ contains
           (nvar, nscal, icodcl, itrifb, itypfb, izfppp, dt, rcodcl)
 
   end subroutine user_f_boundary_conditions
+
+  !=============================================================================
+
+  !> \brief  Wrapper to Fortran user parameters, model choice
+
+  subroutine cs_f_usppmo()  &
+    bind(C, name='cs_f_usppmo')
+
+    use dimens
+    use, intrinsic :: iso_c_binding
+    implicit none
+
+    ! Arguments
+
+    procedure() :: usppmo
+
+    ! Local variables
+
+    call usppmo(1)
+
+  end subroutine cs_f_usppmo
+
+  !=============================================================================
+
+  !> \brief  Wrapper to Fortran user parameters
+
+  subroutine cs_f_usipsu(nmodpp)  &
+    bind(C, name='cs_f_usipsu')
+
+    use dimens
+    use, intrinsic :: iso_c_binding
+    implicit none
+
+    procedure() :: usipsu
+
+    ! Arguments
+
+    integer(c_int) :: nmodpp
+
+    ! Local variables
+
+    call usipsu(nmodpp)
+
+  end subroutine cs_f_usipsu
+
+  !=============================================================================
+
+  !> \brief  Wrapper to Fortran user parameters, additional parameters
+
+  subroutine cs_f_usipes(nmodpp)  &
+    bind(C, name='cs_f_usipes')
+
+    use dimens
+    use, intrinsic :: iso_c_binding
+    implicit none
+
+    procedure() :: usipes
+
+    ! Arguments
+
+    integer(c_int) :: nmodpp
+
+    ! Local variables
+
+    call usipes(nmodpp)
+
+  end subroutine cs_f_usipes
 
   !=============================================================================
 

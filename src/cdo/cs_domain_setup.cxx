@@ -310,28 +310,6 @@ _set_scheme_flags(cs_domain_t    *domain)
 }
 
 /*============================================================================
- * Fortran wrapper function definitions
- *============================================================================*/
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  When the models have been activated, continue to allocate, add and
- *         define structures related to those models
- *         This function is called after the user function cs_user_model and
- *         before the user function cs_user_parameters
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_f_domain_setup_init_model_context(void)
-{
-  /* Groundwater flow module */
-
-  if (cs_gwf_is_activated())
-    cs_gwf_init_model_context();
-}
-
-/*============================================================================
  * Public function prototypes
  *============================================================================*/
 

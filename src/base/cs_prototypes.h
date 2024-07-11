@@ -84,15 +84,6 @@ extern void CS_PROCF (findpt, FINDPT)
 );
 
 /*----------------------------------------------------------------------------
- * Main Fortran options initialization
- *----------------------------------------------------------------------------*/
-
-extern void CS_PROCF (initi1, INITI1)
-(
- void
-);
-
-/*----------------------------------------------------------------------------
  * Add field indexes associated with a new non-user solved variable,
  * with default options
  *
@@ -383,8 +374,7 @@ cs_wall_condensation_volume_exchange_surf_at_cells(cs_real_t    *surf);
  *----------------------------------------------------------------------------*/
 
 void
-cs_user_1d_wall_thermal(int iappel,
-                        int isuit1);
+cs_user_1d_wall_thermal(int iappel);
 
 /*----------------------------------------------------------------------------
  * Data Entry of the wall condensation module

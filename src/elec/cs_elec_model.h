@@ -138,7 +138,7 @@ void
 CS_PROCF (elini1, ELINI1) (void);
 
 void
-CS_PROCF (ellecd, ELLECD) (void);
+cs_electrical_model_param(void);
 
 void
 CS_PROCF (elphyv, ELPHYV) (void);
@@ -148,7 +148,7 @@ CS_PROCF (eltssc, ELTSSC) (const int       *isca,
                            cs_real_t       *smbrs);
 
 void
-CS_PROCF (eliniv, ELINIV) (int      *isuite);
+CS_PROCF (eliniv, ELINIV) (void);
 
 /*=============================================================================
  * Public function prototypes
@@ -250,8 +250,7 @@ cs_elec_add_property_fields(void);
  *----------------------------------------------------------------------------*/
 
 void
-cs_elec_fields_initialize(const cs_mesh_t  *mesh,
-                          int               isuite);
+cs_elec_fields_initialize(const cs_mesh_t  *mesh);
 
 /*----------------------------------------------------------------------------
  * scaling electric quantities

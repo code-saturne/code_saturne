@@ -1778,29 +1778,6 @@ _restart_multiwriter_increment(_restart_multiwriter_t  *mw,
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
- * Public Fortran function definitions
- *============================================================================*/
-
-/*----------------------------------------------------------------------------
- * Indicate if a restart directory is present.
- *
- * Fortran interface
- *
- * subroutine indsui (isuite)
- * *****************
- *
- * integer          isuite      : --> : 1 for restart, 0 otherwise
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF (indsui, INDSUI)
-(
- int   *isuite
-)
-{
-  *isuite = cs_restart_present();
-}
-
-/*============================================================================
  * Public function definitions
  *============================================================================*/
 

@@ -55,7 +55,8 @@
 !> \param[in]     iappel        first pass to set default values,
 !>                              second pass to perform some checks and log
 !-------------------------------------------------------------------------------
-subroutine solcat ( iappel )
+subroutine solcat ( iappel ) &
+ bind(C, name='cs_f_solcat')
 
 !==============================================================================
 ! Module files
@@ -63,6 +64,7 @@ subroutine solcat ( iappel )
 
 use paramx
 use entsor
+use atincl
 use atsoil
 
 implicit none
@@ -71,13 +73,15 @@ procedure() :: csexit
 
 ! Arguments
 
-integer iappel
+integer(c_int), value :: iappel
 
 ! Local variables
 
 integer ierreu
 integer eau,foret,divers,minral,diffus,mixte,dense,bati
 integer n
+integer error, n_elts
+integer, dimension(:), pointer :: elt_ids
 double precision codinv
 integer inityp
 character(len=50) :: raison
@@ -88,6 +92,21 @@ character(len=10) :: inicat
 inicat = 'xxxxxxxx'
 inityp = -9
 codinv = -999.d0
+
+! Get the number of soil zones and their category
+! Then allocate the table values
+! Only when not called from atmsol.f90 (called from cs_setup.c)
+if (iappel.eq.1) then
+  call atmo_get_soil_zone(n_elts, nbrsol, elt_ids)
+
+  ! Allocation of table values
+  allocate(tab_sol(nbrsol), stat=error)
+
+  if (error /= 0) then
+    write(nfecra,*) "Allocation error of atmodsol::tab_sol"
+    call csexit(1)
+  endif
+endif
 
 ! First pass, default values according to the choice of number of soils
 !----------------------------------------------------------------------

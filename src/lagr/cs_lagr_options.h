@@ -58,7 +58,7 @@ BEGIN_C_DECLS
  * - check settings coherency
  * - initialize some structures relative to Lagrangian module
  *
- * \param[in]       isuite
+ * \param[in]       is_restart
  * \param[in]       have_thermal_model
  * \param[in]       dtref
  * \param[in, out]  iccvfg
@@ -66,7 +66,7 @@ BEGIN_C_DECLS
 /*----------------------------------------------------------------------------*/
 
 void
-cs_lagr_options_definition(int         isuite,
+cs_lagr_options_definition(int         is_restart,
                            int         have_thermal_model,
                            cs_real_t   dtref,
                            int        *iccvfg);

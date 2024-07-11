@@ -42,33 +42,16 @@ BEGIN_C_DECLS
  * Type definitions
  *============================================================================*/
 
-/*============================================================================
- * Public function prototypes for Fortran API
+/*=============================================================================
+ * Public function prototypes
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
  * ALE method.
- *
- * Fortran Interface:
- *
- * subroutine uialin()
- * *****************
- *
- * nalinf  <->   number of subiterations of initialization of fluid
- * nalimx  <->   max number of iterations of implicitation of
- *               the displacement of the structures
- * epalim  <->   relative precision of implicitation of
- *               the displacement of the structures
- *
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF (uialin, UIALIN) (int    *nalinf,
-                                int    *nalimx,
-                                double *epalim);
-
-/*=============================================================================
- * Public function prototypes
- *============================================================================*/
+void
+cs_gui_ale_params(void);
 
 /*-----------------------------------------------------------------------------
  * Return the viscosity's type of ALE method

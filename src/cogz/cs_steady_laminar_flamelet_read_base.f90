@@ -32,7 +32,8 @@
 !-------------------------------------------------------------------------------
 
 !-------------------------------------------------------------------------------
-subroutine cs_steady_laminar_flamelet_read_base
+subroutine cs_steady_laminar_flamelet_read_base () &
+  bind(C, name='cs_f_steady_laminar_flamelet_read_base')
 
 !===============================================================================
 

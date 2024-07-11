@@ -187,6 +187,7 @@ cs_sat_coupling.h \
 cs_scalar_clipping.h \
 cs_search.h \
 cs_selector.h \
+cs_setup.h \
 cs_solid_zone.h \
 cs_solve_all.h \
 cs_solve_equation.h \
@@ -380,6 +381,7 @@ cs_scalar_clipping.c\
 cs_search.c \
 cs_selector.c \
 cs_selector_f2c.f90 \
+cs_setup.c \
 cs_solid_zone.c \
 cs_solve_all.c \
 cs_solve_equation.c \
@@ -413,8 +415,6 @@ fldvar.f90 \
 fldprp.f90 \
 impini.f90 \
 iniini.f90 \
-initi1.f90 \
-iniusi.f90 \
 iniva0.f90 \
 inivar.f90 \
 iprbla.f90 \

@@ -87,7 +87,6 @@ ppini1.f90 \
 ppinii.f90 \
 ppiniv.f90 \
 ppinv2.f90 \
-pplecd.f90 \
 pppdfr.f90 \
 ppphyv.f90 \
 ppprcl.f90 \

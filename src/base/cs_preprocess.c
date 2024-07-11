@@ -186,7 +186,7 @@ cs_preprocess_mesh_define(void)
   cs_mesh_cartesian_finalize_definition();
 
   /* Define joining and periodicity parameters if requested
-     Must be done before initi1 for the sake of verification */
+     Must be done before cs_setup() for the sake of verification */
 
   cs_gui_mesh_define_joinings();
   cs_user_join();

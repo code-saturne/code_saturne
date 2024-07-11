@@ -57,90 +57,9 @@ module lagran
   !> automatically implies \ref iccvfg = 1
   integer(c_int), pointer, save :: iilagr
 
-  !> \}
-
-  !=============================================================================
-
-  !> \defgroup lag_st_pointers Lagrangian source term pointers
-
-  !> \addtogroup lag_st_pointers
-  !> \{
-
-  !> \anchor ntersl
-  integer(c_int), pointer, save :: ntersl
-
-  !> \anchor ptsvar
-  double precision, dimension(:,:), pointer, save :: ptsvar
-
-  !> \}
-
-  !> \}
-
-  !=============================================================================
-
-  !> \defgroup specific_physic Specific physics
-
-  !> \addtogroup specific_physic
-  !> \{
-
-  !> - 0: no deposition submodel activated,
-  !> - 1: deposition submodel used
-  integer(c_int), pointer, save :: idepst
-
   !> - 0: no head losses calculation for influence of the deposit on the flow
   !> - 1: head losses calculation for influence of the deposit on the flow
   integer(c_int), pointer, save :: iflow
-
-  !> - 0: no precipitation/dissolution model
-  !> - 1: precipitation/dissolution model
-  integer(c_int), pointer, save :: ipreci
-
-  !> \}
-
-  !=============================================================================
-
-  !> \defgroup source_terms Source terms
-
-  !> \addtogroup source_terms
-  !> \{
-
-  !> activation (=1) or not (=0) of the two-way coupling on the dynamics
-  !> of the continuous phase.
-  !> Useful if \ref iilagr = 2 and \ref iccvfg = 0
-  integer(c_int), pointer, save ::  ltsdyn
-
-  !> activation (=1) or not (=0) of the two-way coupling on the mass.
-  !> Useful if \ref iilagr = 2, \ref cs_lagr_model_t::physical_model = 1
-  !>and \ref cs_lagr_specific_physics_t::impvar = 1
-  integer(c_int), pointer, save ::  ltsmas
-
-  !> if \ref cs_lagr_model_t::physical_model = 1 and
-  !> \ref cs_lagr_specific_physics_t::itpvar = 1,
-  !> \ref ltsthe !> activates (=1) or not (=0) the two-way coupling on
-  !> temperature.
-  !> if \ref cs_lagr_model_t::physical_model = 2, \ref ltsthe
-  !> activates (=1) or not (=0) the two-way coupling on the eulerian
-  !> variables related to pulverized coal combustion.
-  !> Useful if \ref iilagr = 2
-  integer(c_int), pointer, save ::  ltsthe
-
-  !> implicit source term for the continuous phase velocity and
-  !> for the turbulent energy if the \f$k-\varepsilon\f$ model is used
-  integer(c_int), pointer, save ::  itsli
-
-  !> explicit source term for the turbulent dissipation and the
-  !> turbulent energy if the \f$k-\varepsilon\f$ turbulence model is used
-  !> for the continuous phase
-  integer(c_int), pointer, save ::  itske
-
-  !> explicit thermal source term for the thermal scalar of the continuous phase
-  integer(c_int), pointer, save ::  itste
-
-  !> implicit thermal source term for the thermal scalar of the continuous phase
-  integer(c_int), pointer, save ::  itsti
-
-  !> mass source term
-  integer(c_int), pointer, save ::  itsmas
 
   !> \}
 
@@ -151,124 +70,13 @@ module lagran
     !---------------------------------------------------------------------------
 
     ! Interface to C function returning particle attribute pointers
-    subroutine cs_f_lagr_dim_pointers(p_ntersl) &
-      bind(C, name='cs_f_lagr_dim_pointers')
-      use, intrinsic :: iso_c_binding
-      implicit none
-      type(c_ptr), intent(out)     :: p_ntersl
-    end subroutine cs_f_lagr_dim_pointers
 
-    !---------------------------------------------------------------------------
-
-    ! Interface to C function returning particle attribute pointers
-
-    subroutine cs_f_lagr_params_pointers(p_iilagr, p_idepst, p_iflow, p_ipreci) &
+    subroutine cs_f_lagr_params_pointers(p_iilagr, p_iflow) &
       bind(C, name='cs_f_lagr_params_pointers')
       use, intrinsic :: iso_c_binding
       implicit none
-      type(c_ptr), intent(out) :: p_iilagr, p_idepst, p_iflow, p_ipreci
+      type(c_ptr), intent(out) :: p_iilagr, p_iflow
     end subroutine cs_f_lagr_params_pointers
-
-    subroutine cs_f_lagr_source_terms_pointers(p_ltsdyn, p_ltsmas,             &
-                                               p_ltsthe, p_itsli,              &
-                                               p_itske, p_itste, p_itsti,      &
-                                               p_itsmas)                       &
-      bind(C, name='cs_f_lagr_source_terms_pointers')
-      use, intrinsic :: iso_c_binding
-      implicit none
-      type(c_ptr), intent(out) :: p_ltsdyn, p_ltsmas, p_ltsthe, p_itsli,       &
-                                  p_itske, p_itste, p_itsti, p_itsmas
-    end subroutine cs_f_lagr_source_terms_pointers
-
-    !---------------------------------------------------------------------------
-
-    ! Interface to C function passing specific physics options
-
-    subroutine  cs_lagr_map_specific_physics()             &
-      bind(C, name='cs_lagr_map_specific_physics')
-      use, intrinsic :: iso_c_binding
-      implicit none
-    end subroutine cs_lagr_map_specific_physics
-
-    !---------------------------------------------------------------------------
-
-    !> Execute one time step of the Lagrangian model.
-
-    subroutine cs_lagr_options_definition(isuite, have_thermal_model,  &
-                                          dtref, iccvfg)               &
-      bind(C, name='cs_lagr_options_definition')
-      use, intrinsic :: iso_c_binding
-      implicit none
-      integer(c_int), value :: isuite, have_thermal_model
-      real(kind=c_double), value :: dtref
-      integer(c_int), intent(inout) :: iccvfg
-    end subroutine cs_lagr_options_definition
-
-    !---------------------------------------------------------------------------
-
-    !> Mass source term due to precipitation.
-
-    subroutine cs_lagr_precipitation_mass_st(dtref, crom, cvar_scal, crvexp)  &
-      bind(C, name='cs_lagr_precipitation_mass_st')
-      use, intrinsic :: iso_c_binding
-      implicit none
-      real(kind=c_double), value :: dtref
-      real(kind=c_double), dimension(*), intent(in) :: crom, cvar_scal
-      real(kind=c_double), dimension(*), intent(out) :: crvexp
-    end subroutine cs_lagr_precipitation_mass_st
-
-    !---------------------------------------------------------------------------
-
-    !> Prepare for execution of the Lagrangian model.
-
-    subroutine cs_lagr_solve_initialize(dt)  &
-      bind(C, name='cs_lagr_solve_initialize')
-      use, intrinsic :: iso_c_binding
-      implicit none
-      real(kind=c_double), dimension(*), intent(in) :: dt
-    end subroutine cs_lagr_solve_initialize
-
-    !---------------------------------------------------------------------------
-
-    !> Execute one time step of the Lagrangian model.
-
-    subroutine cs_lagr_solve_time_step(itypfb, dt)  &
-      bind(C, name='cs_lagr_solve_time_step')
-      use, intrinsic :: iso_c_binding
-      implicit none
-      integer(c_int), dimension(*), intent(in) :: itypfb
-      real(kind=c_double), dimension(*), intent(in) :: dt
-    end subroutine cs_lagr_solve_time_step
-
-    !---------------------------------------------------------------------------
-
-    !> \brief Allocate source term arrays
-
-    subroutine cs_lagr_init_arrays()  &
-      bind(C, name='cs_lagr_init_arrays')
-      use, intrinsic ::  iso_c_binding
-    end subroutine cs_lagr_init_arrays
-
-    !---------------------------------------------------------------------------
-
-    subroutine cs_lagr_init_par ()  &
-      bind(C, name='cs_lagr_init_par')
-      use, intrinsic :: iso_c_binding
-    end subroutine cs_lagr_init_par
-
-    !---------------------------------------------------------------------------
-
-    !> \brief Write particle data to checkpoint.
-
-    !> \param[in, out]  r  pointer to restart structure
-
-    function lagr_restart_write_particle_data(r) result(n) &
-      bind(C, name='cs_lagr_restart_write_particle_data')
-      use, intrinsic :: iso_c_binding
-      implicit none
-      type(c_ptr), value :: r
-      integer(c_int) :: n
-    end function lagr_restart_write_particle_data
 
   !=============================================================================
 
@@ -278,7 +86,8 @@ contains
 
   !=============================================================================
 
-  subroutine lagran_pointers()
+  subroutine cs_f_lagran_init_map () &
+    bind(C, name='cs_f_lagran_init_map')
 
     implicit none
 
@@ -286,63 +95,15 @@ contains
     type(c_ptr) :: p_iilagr
 
     ! lagr_params
-    type(c_ptr) :: p_idepst, p_iflow, p_ipreci
+    type(c_ptr) :: p_iflow
 
-    ! lagr_option_source_terms
-    type(c_ptr) :: p_ltsdyn, p_ltsmas, p_ltsthe, p_itsli, p_itske,     &
-                   p_itste, p_itsti,                                   &
-                   p_itsmas
-
-    call cs_f_lagr_params_pointers(p_iilagr, p_idepst, p_iflow, p_ipreci)
+    call cs_f_lagr_params_pointers(p_iilagr, p_iflow)
     call c_f_pointer(p_iilagr, iilagr)
-    call c_f_pointer(p_idepst, idepst)
     call c_f_pointer(p_iflow , iflow)
-    call c_f_pointer(p_ipreci, ipreci)
-
-    call cs_f_lagr_source_terms_pointers(p_ltsdyn, p_ltsmas,           &
-                                         p_ltsthe, p_itsli,            &
-                                         p_itske,  p_itste, p_itsti,   &
-                                         p_itsmas)
-    call c_f_pointer(p_ltsdyn, ltsdyn)
-    call c_f_pointer(p_ltsmas, ltsmas)
-    call c_f_pointer(p_ltsthe, ltsthe)
-    call c_f_pointer(p_itsli , itsli )
-    call c_f_pointer(p_itske , itske )
-    call c_f_pointer(p_itste , itste )
-    call c_f_pointer(p_itsti , itsti )
-    call c_f_pointer(p_itsmas, itsmas)
 
     return
 
-  end subroutine lagran_pointers
-
-  !=============================================================================
-
-  subroutine init_lagr_dim_pointers()
-
-    implicit none
-
-    type(c_ptr) :: p_ntersl
-
-    call cs_f_lagr_dim_pointers(p_ntersl)
-
-    call c_f_pointer(p_ntersl, ntersl)
-
-    return
-
-  end subroutine init_lagr_dim_pointers
-
-  !=============================================================================
-
-  subroutine lagran_init_map
-
-    call init_lagr_dim_pointers
-
-    call lagran_pointers
-
-    call cs_lagr_map_specific_physics
-
-  end subroutine lagran_init_map
+  end subroutine cs_f_lagran_init_map
 
   !=============================================================================
 

@@ -47,24 +47,16 @@ BEGIN_C_DECLS
  *
  * \param[in]   iappel   Call number:
  *                       - 1: first call during the initialization (called once)
- *                       Checking the number of cells nfpt1d and isuit1.
+ *                       Checking the number of cells nfpt1d.
  *                       - 2: second call during the initialization (called once)
  *                       Checking ifpt1d, nppt1d, eppt1d and rgpt1d arrays.
  *                       - 3: called at each time step
  *                       Checking iclt1d, xlmbt1, rcpt1d and dtpt1d arrays.
- * \param[in]   isuit1   Rereading of the restart file:
- *                       - 0: No rereading
- *                            (meshing and wall temperature reinitialization)
- *                       - 1: Rereading of the restart file for the 1-Dimension
- *                            thermal module
- *                       - isuite: Rereading only if the computational fluid
- *                            dynamic is a continuation of the computation.
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_1d_wall_thermal_check(int iappel,
-                         int isuit1);
+cs_1d_wall_thermal_check(int  iappel);
 
 /*----------------------------------------------------------------------------*/
 

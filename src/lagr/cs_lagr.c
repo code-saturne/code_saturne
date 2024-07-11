@@ -415,43 +415,7 @@ cs_real_33_t  *cs_glob_lagr_b_face_proj = NULL;
 
 void
 cs_f_lagr_params_pointers(int  **p_iilagr,
-                          int  **p_idepst,
-                          int  **p_iflow,
-                          int  **p_ipreci);
-
-void
-cs_f_lagr_dim_pointers(int  **p_ntersl);
-
-void
-cs_f_lagr_clogging_model_pointers(cs_real_t  **jamlim,
-                                  cs_real_t  **mporos,
-                                  cs_real_t  **csthpp);
-
-void
-cs_f_lagr_shape_model_pointers(cs_real_t **param_chmb);
-
-void
-cs_f_lagr_agglomeration_model_pointers( cs_lnum_t  **n_max_classes,
-                                        cs_real_t  **min_stat_weight,
-                                        cs_real_t  **max_stat_weight,
-                                        cs_real_t  **scalar_kernel,
-                                        cs_real_t  **base_diameter );
-
-void
-cs_f_lagr_consolidation_model_pointers(cs_lnum_t  **iconsol,
-                                       cs_real_t  **rate_consol,
-                                       cs_real_t  **slope_consol,
-                                       cs_real_t  **force_consol);
-
-void
-cs_f_lagr_source_terms_pointers(int  **p_ltsdyn,
-                                int  **p_ltsmas,
-                                int  **p_ltsthe,
-                                int  **p_itsli,
-                                int  **p_itske,
-                                int  **p_itste,
-                                int  **p_itsti,
-                                int  **p_itsmas);
+                          int  **p_iflow);
 
 /*============================================================================
  * Fortran wrapper function definitions
@@ -466,98 +430,14 @@ cs_f_lagr_source_terms_pointers(int  **p_ltsdyn,
  *   p_iilagr --> lagrangian model type
  *   p_idepo  --> deposition option flag
  *   p_iflow  -->
- *   p_ipreci --> precipitation option flag
  *----------------------------------------------------------------------------*/
 
 void
 cs_f_lagr_params_pointers(int  **p_iilagr,
-                          int  **p_idepst,
-                          int  **p_iflow,
-                          int  **p_ipreci)
+                          int  **p_iflow)
 {
   *p_iilagr = &_lagr_time_scheme.iilagr;
-  *p_idepst = &_lagr_model.deposition;
   *p_iflow= &_lagr_reentrained_model.iflow;
-  *p_ipreci  = &_lagr_model.precipitation;
-}
-
-/*----------------------------------------------------------------------------
- * Get pointers to members of the global lagr dim structure.
- *
- * This function is intended for use by Fortran wrappers, and
- * enables mapping to Fortran global pointers.
- *
- * parameters:
- *   ntersl  --> pointer to cs_glob_lagr_dim->ntersl
- *----------------------------------------------------------------------------*/
-
-void
-cs_f_lagr_dim_pointers(int  **p_ntersl)
-{
-  *p_ntersl = &(_lagr_dim.ntersl);
-}
-
-void
-cs_f_lagr_clogging_model_pointers(cs_real_t **jamlim,
-                                  cs_real_t **mporos,
-                                  cs_real_t **csthpp)
-{
-  *jamlim = &cs_glob_lagr_clogging_model->jamlim;
-  *mporos = &cs_glob_lagr_clogging_model->mporos;
-  *csthpp = &cs_glob_lagr_clogging_model->csthpp;
-}
-
-void
-cs_f_lagr_shape_model_pointers(cs_real_t **param_chmb)
-{
-  *param_chmb = &cs_glob_lagr_shape_model->param_chmb;
-}
-
-void
-cs_f_lagr_agglomeration_model_pointers(cs_lnum_t **n_max_classes,
-                                       cs_real_t **min_stat_weight,
-                                       cs_real_t **max_stat_weight,
-                                       cs_real_t **scalar_kernel,
-                                       cs_real_t **base_diameter )
-{
-  *n_max_classes    = &cs_glob_lagr_agglomeration_model->n_max_classes;
-  *min_stat_weight = &cs_glob_lagr_agglomeration_model->min_stat_weight;
-  *max_stat_weight = &cs_glob_lagr_agglomeration_model->max_stat_weight;
-  *scalar_kernel   = &cs_glob_lagr_agglomeration_model->scalar_kernel;
-  *base_diameter   = &cs_glob_lagr_agglomeration_model->base_diameter;
-}
-
-
-void
-cs_f_lagr_consolidation_model_pointers(cs_lnum_t **iconsol,
-                                       cs_real_t **rate_consol,
-                                       cs_real_t **slope_consol,
-                                       cs_real_t **force_consol)
-{
-  *iconsol      = &cs_glob_lagr_consolidation_model->iconsol;
-  *rate_consol  = &cs_glob_lagr_consolidation_model->rate_consol;
-  *slope_consol = &cs_glob_lagr_consolidation_model->slope_consol;
-  *force_consol = &cs_glob_lagr_consolidation_model->force_consol;
-}
-
-void
-cs_f_lagr_source_terms_pointers(int  **p_ltsdyn,
-                                int  **p_ltsmas,
-                                int  **p_ltsthe,
-                                int  **p_itsli,
-                                int  **p_itske,
-                                int  **p_itste,
-                                int  **p_itsti,
-                                int  **p_itsmas)
-{
-  *p_ltsdyn = &cs_glob_lagr_source_terms->ltsdyn;
-  *p_ltsmas = &cs_glob_lagr_source_terms->ltsmas;
-  *p_ltsthe = &cs_glob_lagr_source_terms->ltsthe;
-  *p_itsli  = &cs_glob_lagr_source_terms->itsli;
-  *p_itske  = &cs_glob_lagr_source_terms->itske;
-  *p_itste  = &cs_glob_lagr_source_terms->itste;
-  *p_itsti  = &cs_glob_lagr_source_terms->itsti;
-  *p_itsmas = &cs_glob_lagr_source_terms->itsmas;
 }
 
 /*=============================================================================
@@ -1645,6 +1525,8 @@ void
 cs_lagr_solve_initialize(const cs_real_t  *dt)
 {
   CS_UNUSED(dt);
+
+  cs_lagr_map_specific_physics();
 
   /* Allocate pressure and velocity gradients */
   cs_lagr_extra_module_t *extra = cs_glob_lagr_extra_module;

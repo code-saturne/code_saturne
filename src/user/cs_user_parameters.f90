@@ -74,8 +74,7 @@
 !> \param[in]     ixmlpu        indicates if an XML file from the GUI is used  !
 !______________________________________________________________________________!
 
-subroutine usppmo &
- ( ixmlpu )
+subroutine usppmo ( ixmlpu )
 
 !===============================================================================
 ! Module files
@@ -122,8 +121,7 @@ end subroutine usppmo
 !> \param[in]     nmodpp         number of active specific physical models     !
 !______________________________________________________________________________!
 
-subroutine usipsu &
- ( nmodpp )
+subroutine usipsu ( nmodpp )
 
 !===============================================================================
 ! Module files
@@ -184,8 +182,7 @@ end subroutine usipsu
 !> \param[in]     nmodpp       number of active specific physics models
 !______________________________________________________________________________!
 
-subroutine usipes &
- ( nmodpp )
+subroutine usipes ( nmodpp )
 
 !===============================================================================
 ! Module files

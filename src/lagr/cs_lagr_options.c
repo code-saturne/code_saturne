@@ -208,7 +208,7 @@ _free_lagr_encrustation_pointers(void)
  * - check settings coherency
  * - initialize some structures relative to Lagrangian module
  *
- * \param[in]       isuite
+ * \param[in]       is_restart
  * \param[in]       have_thermal_model
  * \param[in]       dtref
  * \param[in, out]  iccvfg
@@ -216,7 +216,7 @@ _free_lagr_encrustation_pointers(void)
 /*----------------------------------------------------------------------------*/
 
 void
-cs_lagr_options_definition(int         isuite,
+cs_lagr_options_definition(int         is_restart,
                            int         have_thermal_model,
                            cs_real_t   dtref,
                            int        *iccvfg)
@@ -300,7 +300,8 @@ cs_lagr_options_definition(int         isuite,
   /* Restart needed if computation on frozen field.
      Note that for the Lagrangian module, frozen field also includes scalars. */
 
-  if (lagr_time_scheme->iilagr == CS_LAGR_FROZEN_CONTINUOUS_PHASE && isuite != 1)
+  if (   lagr_time_scheme->iilagr == CS_LAGR_FROZEN_CONTINUOUS_PHASE
+      && is_restart != 1)
     cs_parameters_error
       (CS_ABORT_DELAYED,
        _("in Lagrangian module"),
@@ -325,7 +326,7 @@ cs_lagr_options_definition(int         isuite,
   else if (lagr_time_scheme->isuila > 1)
     lagr_time_scheme->isuila = 1;
 
-  if (lagr_time_scheme->isuila == 1 && isuite == 0)
+  if (lagr_time_scheme->isuila == 1 && is_restart == 0)
     lagr_time_scheme->isuila = 0;
 
   if (cs_glob_lagr_stat_options->isuist < 0)

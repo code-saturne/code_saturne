@@ -32,8 +32,8 @@
 !> \param[out]    nmodpp        number of activated particle physic models
 !______________________________________________________________________________
 
-subroutine fldvar &
-( nmodpp )
+subroutine fldvar ( nmodpp ) &
+ bind(C, name='cs_f_fldvar')
 
 !===============================================================================
 ! Module files
@@ -66,7 +66,7 @@ implicit none
 
 ! Arguments
 
-integer       nmodpp
+integer(c_int), value ::  nmodpp
 
 ! Local variables
 
@@ -81,7 +81,7 @@ type(var_cal_opt) :: vcopt
 !===============================================================================
 
 procedure() :: add_variable_field, add_cdo_variable_field
-procedure() :: pplecd, ppvarp, add_model_scalar_field
+procedure() :: ppvarp, add_model_scalar_field
 procedure() :: add_user_scalar_fields, fldvar_check_nvar
 procedure() :: init_var_cal_opt
 

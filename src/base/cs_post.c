@@ -3489,7 +3489,7 @@ _cs_post_output_attached_fields(cs_post_mesh_t        *post_mesh,
     int f_id = post_mesh->a_field_info[i*3+1];
     int comp_id = post_mesh->a_field_info[i*3+2];
 
-    const cs_field_t  *f = cs_field_by_id(f_id);
+    cs_field_t  *f = cs_field_by_id(f_id);
 
     const cs_mesh_location_type_t field_loc_type
       = cs_mesh_location_get_type(f->location_id);

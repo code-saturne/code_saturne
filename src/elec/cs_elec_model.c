@@ -686,7 +686,7 @@ CS_PROCF (elini1, ELINI1) (void)
 }
 
 void
-CS_PROCF (ellecd, ELLECD) (void)
+cs_electrical_model_param(void)
 {
   cs_electrical_model_initialize();
   cs_electrical_properties_read();
@@ -699,9 +699,9 @@ CS_PROCF (elphyv, ELPHYV) (void)
 }
 
 void
-CS_PROCF (eliniv, ELINIV) (int       *isuite)
+CS_PROCF (eliniv, ELINIV) (void)
 {
-  cs_elec_fields_initialize(cs_glob_mesh,  *isuite);
+  cs_elec_fields_initialize(cs_glob_mesh);
 }
 
 /*=============================================================================
@@ -2008,8 +2008,7 @@ cs_elec_add_property_fields(void)
  *----------------------------------------------------------------------------*/
 
 void
-cs_elec_fields_initialize(const cs_mesh_t   *mesh,
-                          int                isuite)
+cs_elec_fields_initialize(const cs_mesh_t   *mesh)
 {
   BFT_MALLOC(_elec_option.izreca, mesh->n_i_faces, int);
   for (cs_lnum_t i = 0; i < mesh->n_i_faces; i++)
@@ -2022,7 +2021,7 @@ cs_elec_fields_initialize(const cs_mesh_t   *mesh,
 
   int ielarc = cs_glob_physical_model_flag[CS_ELECTRIC_ARCS];
 
-  if (isuite == 0 && ipass == 1) {
+  if (cs_glob_time_step->nt_prev == 0 && ipass == 1) {
     /* enthalpy */
     cs_real_t hinit = 0.;
     if (ielarc > 0) {

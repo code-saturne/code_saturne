@@ -432,28 +432,15 @@ _get_uistr2_data(const char   *label,
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
- * Public Fortran function definitions
+ * Public function definitions
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
  * ALE related keywords
- *
- * Fortran Interface:
- *
- * subroutine uialin
- * *****************
- *
- * nalinf  <->  number of sub iteration of initialization of fluid
- * nalimx  <->  max number of iterations of implicitation of
- *              the displacement of the structures
- * epalim  <->  relative precision of implicitation of
- *              the displacement of the structures
- *
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF (uialin, UIALIN) (int     *nalinf,
-                                int     *nalimx,
-                                double  *epalim)
+void
+cs_gui_ale_params(void)
 {
   cs_tree_node_t *tn
     = cs_tree_get_node(cs_glob_tree, "thermophysical_models/ale_method");
@@ -464,11 +451,11 @@ void CS_PROCF (uialin, UIALIN) (int     *nalinf,
 
   if (cs_glob_ale > CS_ALE_NONE) {
     cs_gui_node_get_child_int(tn, "fluid_initialization_sub_iterations",
-                              nalinf);
+                              &cs_glob_ale_n_ini_f);
     cs_gui_node_get_child_int(tn, "max_iterations_implicitation",
-                              nalimx);
+                              &cs_glob_mobile_structures_i_max);
     cs_gui_node_get_child_real(tn, "implicitation_precision",
-                               epalim);
+                               &cs_glob_mobile_structures_i_eps);
 
     /* code_aster coupling */
 
@@ -493,10 +480,6 @@ void CS_PROCF (uialin, UIALIN) (int     *nalinf,
   }
 #endif
 }
-
-/*============================================================================
- * Public function definitions
- *============================================================================*/
 
 /*-----------------------------------------------------------------------------
  * Return the viscosity's type of ALE method

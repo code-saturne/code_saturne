@@ -111,6 +111,7 @@
 #include "cs_restart.h"
 #include "cs_restart_map.h"
 #include "cs_runaway_check.h"
+#include "cs_setup.h"
 #include "cs_sles.h"
 #include "cs_sles_default.h"
 #include "cs_sat_coupling.h"
@@ -305,7 +306,7 @@ _run(void)
 
     CS_PROCF(csinit, CSINIT)(&_rank_id, &_n_ranks);
 
-    CS_PROCF(initi1, INITI1)();
+    cs_setup();
 
     if (cs_parameters_need_extended_neighborhood())
       halo_type = CS_HALO_EXTENDED;

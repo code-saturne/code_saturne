@@ -1756,19 +1756,15 @@ _cs_mesh_location_type_from_str(const char *location_name)
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
- * Public Fortran function definitions
+ * Public function definitions
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
  * Specific heat variable or constant indicator.
- *
- * Fortran Interface:
- *
- * SUBROUTINE CFPPVA
- * *****************
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF (csfpva, CSFPVA) (void)
+void
+cs_gui_cp_params(void)
 {
   int choice;
   cs_fluid_properties_t *phys_pp = cs_get_glob_fluid_properties();
@@ -1788,14 +1784,10 @@ void CS_PROCF (csfpva, CSFPVA) (void)
 
 /*----------------------------------------------------------------------------
  * Constant or variable indicator for the user scalar molecular diffusivity
- *
- * Fortran Interface:
- *
- * subroutine csivis
- * *****************
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF (csivis, CSIVIS) (void)
+void
+cs_gui_laminar_viscosity(void)
 {
   int choice1, choice2;
   int test1, test2;
@@ -1861,14 +1853,10 @@ void CS_PROCF (csivis, CSIVIS) (void)
 
 /*----------------------------------------------------------------------------
  * Time passing parameter.
- *
- * Fortran Interface:
- *
- * SUBROUTINE CSIDTV ()
- * *****************
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF (csidtv, CSIDTV) (void)
+void
+cs_gui_dt(void)
 {
   cs_time_step_options_t *time_opt = cs_get_glob_time_step_options();
 
@@ -1884,15 +1872,10 @@ void CS_PROCF (csidtv, CSIDTV) (void)
 
 /*----------------------------------------------------------------------------
  * Hydrostatic pressure parameter.
- *
- * Fortran Interface:
- *
- * SUBROUTINE CSIPHY ()
- * *****************
- *
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF (csiphy, CSIPHY) (void)
+void
+cs_gui_hydrostatic_pressure(void)
 {
   cs_velocity_pressure_param_t *vp_param
     = cs_get_glob_velocity_pressure_param();
@@ -1911,14 +1894,10 @@ void CS_PROCF (csiphy, CSIPHY) (void)
 
 /*----------------------------------------------------------------------------
  * Hydrostatic equilibrium parameter.
- *
- * Fortran Interface:
- *
- * subroutine cscfgp
- * *****************
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF (cscfgp, CSCFGP) (void)
+void
+cs_gui_hydrostatic_equ_param(void)
 {
   cs_cf_model_t *cf_model = cs_get_glob_cf_model();
 
@@ -1938,14 +1917,10 @@ void CS_PROCF (cscfgp, CSCFGP) (void)
 
 /*----------------------------------------------------------------------------
  * Time passing parameters.
- *
- * Fortran Interface:
- *
- * SUBROUTINE CSTIME ()
- *
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF (cstime, CSTIME) (void)
+void
+cs_gui_dt_param(void)
 {
   /* Default, forbidden values for time step factor */
   double cdtmin = -1., cdtmax = -1.;
@@ -2092,10 +2067,6 @@ cs_gui_porosity(void)
 
   cs_porous_model_auto_face_porosity();
 }
-
-/*============================================================================
- * Public function definitions
- *============================================================================*/
 
 /*----------------------------------------------------------------------------*/
 /*!

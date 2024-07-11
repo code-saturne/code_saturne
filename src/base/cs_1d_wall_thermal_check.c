@@ -69,24 +69,16 @@ BEGIN_C_DECLS
  *
  * \param[in]   iappel   Call number:
  *                       - 1: first call during the initialization (called once)
- *                       Checking the number of cells nfpt1d and isuit1.
+ *                       Checking the number of cells nfpt1d.
  *                       - 2: second call during the initialization (called once)
  *                       Checking ifpt1d, nppt1d, eppt1d and rgpt1d arrays.
  *                       - 3: called at each time step
  *                       Checking iclt1d, xlmbt1, rcpt1d and dtpt1d arrays.
- * \param[in]   isuit1   Rereading of the restart file:
- *                       - 0: No rereading
- *                            (meshing and wall temperature reinitialization)
- *                       - 1: Rereading of the restart file for the 1-Dimension
- *                            thermal module
- *                       - isuite: Rereading only if the computational fluid
- *                            dynamic is a continuation of the computation.
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_1d_wall_thermal_check(int iappel,
-                         int isuit1)
+cs_1d_wall_thermal_check(int  iappel)
 {
   cs_lnum_t ii, ifac;
   cs_lnum_t n_b_faces = cs_glob_mesh->n_b_faces;
@@ -112,25 +104,6 @@ cs_1d_wall_thermal_check(int iappel,
                  "@\n"
                  "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
                  "@\n", (long)n_b_faces, (long)nfpt1d);
-      cs_exit(EXIT_FAILURE);
-    }
-    if (isuit1 != 0 && isuit1 != 1) {
-      bft_printf("@\n"
-                 "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-                 "@\n"
-                 "@ @@ WARNING: ABORT DURING THE DATA SPECIFICATION\n"
-                 "@    ========\n"
-                 "@    1D-WALL THERMAL MODULE\n"
-                 "@\n"
-                 "@    ISUIT1 MUST BE AN INTEGER EQUAL TO 0 OR 1\n"
-                 "@    ITS VALUE IS %d\n"
-                 "@\n"
-                 "@  The calculation will not run.\n"
-                 "@\n"
-                 "@  Verify uspt1d.\n"
-                 "@\n"
-                 "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-                 "@\n", isuit1);
       cs_exit(EXIT_FAILURE);
     }
 

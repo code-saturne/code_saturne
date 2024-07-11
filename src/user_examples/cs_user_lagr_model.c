@@ -160,7 +160,7 @@ cs_user_lagr_model(void)
    *        = CS_LAGR_ONEWAY_COUPLING: particle-tracking one-way coupling
    *        = CS_LAGR_TWOWAY_COUPLING: particle-tracking two-way coupling
    *        = CS_LAGR_FROZEN_CONTINUOUS_PHASE: particle tracking on frozen field
-   *     (this option requires a calculation restart isuite=1,
+   *     (this option requires a calculation restart,
    *     all Eulerian fields are frozen (pressure, velocities,
    *     scalars). This option is stronger than iccvfg)     */
 
@@ -173,14 +173,14 @@ cs_user_lagr_model(void)
   /* Particle-tracking calculation restart
    * ===================================== */
 
-  /* isuila = 0 : no restart (default)
-     = 1 : restart (this value requires a restart on the continuous
-     phase too, i.e. isuite = 1)    */
+  /* isuila:
+     0: no restart (default)
+     1: restart (requires a restart on the continuous phase too) */
 
   cs_glob_lagr_time_scheme->isuila = 0;
 
   /* Restart on volume and boundary statistics, and two-way coupling terms; */
-  /* useful if isuila = 1 (defaul off: 0 ; on: 1)  */
+  /* useful if isuila = 1 (defaul off: 0; on: 1)  */
 
   if (cs_glob_lagr_time_scheme->isuila == 1)
     cs_glob_lagr_stat_options->isuist = 0;

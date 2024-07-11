@@ -1257,6 +1257,19 @@ contains
 
   end function visls0
 
+  !> \brief Initialize isuite
+
+  subroutine indsui () &
+    bind(C, name='cs_f_indsui')
+
+    use, intrinsic :: iso_c_binding
+    use cs_c_bindings
+    implicit none
+
+    isuite = cs_restart_present()
+
+  end subroutine indsui
+
   !> \brief Initialize Fortran time step API.
   !> This maps Fortran pointers to global C structure members.
 
@@ -1615,7 +1628,8 @@ contains
   !> \brief Initialize Fortran ELEC options API.
   !> This maps Fortran pointers to global C structure members.
 
-  subroutine elec_option_init
+  subroutine elec_option_init () &
+    bind(C, name='cs_f_elec_option_init')
 
     use, intrinsic :: iso_c_binding
     implicit none

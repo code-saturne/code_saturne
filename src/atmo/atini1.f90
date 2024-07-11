@@ -24,7 +24,8 @@
 !>        before what is done in usipsu/cs_user_parameters functions
 !>
 
-subroutine atini1
+subroutine atini1 () &
+ bind(C, name='cs_f_atini1')
 
 !===============================================================================
 ! Module files

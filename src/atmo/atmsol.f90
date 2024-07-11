@@ -56,7 +56,7 @@ use mesh
 
 implicit none
 
-procedure() :: csexit, solcat, solmoy, soliva
+procedure() :: csexit, solmoy, soliva
 
 ! Arguments
 
@@ -64,6 +64,17 @@ procedure() :: csexit, solcat, solmoy, soliva
 
 integer          error, n_g_soil_elts
 integer, dimension(:), pointer :: elt_ids
+
+interface
+
+  subroutine solcat(iappel) &
+    bind(C, name='cs_f_solcat')
+    use, intrinsic :: iso_c_binding
+    implicit none
+    integer(c_int), value :: iappel
+  end subroutine solcat
+
+end interface
 
 !===============================================================================
 

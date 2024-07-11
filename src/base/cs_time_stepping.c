@@ -266,15 +266,15 @@ cs_time_stepping(void)
 
   /* Define timer stats based on options */
 
-  int lagr_stats_id = -1, stats_id = -1;
+  int lagr_stats_id = -1;
 
   if (cs_glob_lagr_time_scheme->iilagr > 0) {
     lagr_stats_id = cs_timer_stats_create("stages",
                                           "lagrangian_stage",
                                           "Lagrangian Module");
-    stats_id = cs_timer_stats_create("lagrangian_stage",
-                                     "particle_displacement_stage",
-                                     "particle displacement");
+    cs_timer_stats_create("lagrangian_stage",
+                          "particle_displacement_stage",
+                          "particle displacement");
   }
 
   /* End of modules initialization
@@ -351,7 +351,7 @@ cs_time_stepping(void)
 
   cs_f_init_1d_wall_thermal();
 
-  cs_user_1d_wall_thermal(iappel, isuit1);
+  cs_user_1d_wall_thermal(iappel);
 
   cs_get_glob_1d_wall_thermal()->nfpt1t = cs_glob_1d_wall_thermal->nfpt1d;
   if (cs_glob_rank_id > -1)
@@ -370,7 +370,7 @@ cs_time_stepping(void)
 
   }
 
-  cs_1d_wall_thermal_check(iappel, isuit1);
+  cs_1d_wall_thermal_check(iappel);
 
   /* Memory management
      ----------------- */
@@ -627,9 +627,9 @@ cs_time_stepping(void)
     /* Second call: filling in the geometry definition and
        initialization arrays."(IFPT1D,NPPT1D,EPPT1D,RGPT1D,TPPT1D)
     */
-    cs_user_1d_wall_thermal(2, isuit1);
+    cs_user_1d_wall_thermal(2);
 
-    cs_1d_wall_thermal_check(2, isuit1);
+    cs_1d_wall_thermal_check(2);
 
     if (isuit1 == 1)
       cs_1d_wall_thermal_read();

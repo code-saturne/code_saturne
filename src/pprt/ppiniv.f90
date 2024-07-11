@@ -119,7 +119,7 @@ endif
 ! Electric arcs, Joule effect or ionic conduction
 
 if (ippmod(ieljou).ge.1 .or. ippmod(ielarc).ge.1) then
-  call eliniv(isuite)
+  call eliniv
 endif
 
 !----

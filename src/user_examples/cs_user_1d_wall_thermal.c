@@ -62,14 +62,6 @@ BEGIN_C_DECLS
  *                       Filling ifpt1d, nppt1d, eppt1d and rgpt1d arrays.
  *                       - 3: called at each time step
  *                       Filling iclt1d, xlmbt1, rcpt1d and dtpt1d arrays.
-
- * \param[in]   isuit1   Rereading of the restart file:
- *                       - 0: No rereading
- *                            (meshing and wall temperature reinitialization)
- *                       - 1: Rereading of the restart file for the 1-Dimension
- *                            thermal module
- *                       - isuite: Rereading only if the computational fluid
- *                            dynamic is a continuation of the computation.
  */
 /*----------------------------------------------------------------------------*/
 
@@ -78,50 +70,34 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 void
-cs_user_1d_wall_thermal(int iappel,
-                        int isuit1)
+cs_user_1d_wall_thermal(int iappel)
 {
   /*! [loc_var_dec] */
-  int izone, ifbt1d;
-  cs_lnum_t nlelt;
-  cs_lnum_t *lstelt;
-  cs_lnum_t *b_face_cells = cs_glob_mesh->b_face_cells;
-  cs_lnum_t n_b_faces = cs_glob_mesh->n_b_faces;
-  cs_real_3_t *cdgfbo = (cs_real_3_t *)cs_glob_mesh_quantities->b_face_cog;
+  int izone = 0, ifbt1d = 0;
+  cs_lnum_t nlelt = 0;
+  cs_lnum_t *lstelt = NULL;
+
   cs_1d_wall_thermal_t *wall_thermal = cs_get_glob_1d_wall_thermal();
 
 /*! [loc_var_dec] */
 
 /*! [allocate] */
 
-  BFT_MALLOC(lstelt, n_b_faces, cs_lnum_t);
+  if (iappel > 0)
+    BFT_MALLOC(lstelt, cs_glob_mesh->n_b_faces, cs_lnum_t);
 
 /*! [allocate] */
 
 /*! [restart] */
 
-  /*----------------------------------------------------------------------------*
-   * Rereading of the restart file:
-   *----------------------------------
-
-   *    isuit1 = 0        --> No rereading
-   *                          (meshing and wall temperature reinitialization)
-   *    isuit1 = 1        --> Rereading of the restart file for the 1-Dimension
-   *                          thermal module
-   *    isuit1 = isuite   --> Rereading only if the computational fluid dynamic is
-   *                           a continuation of the computation.
-   *    The initialization of isuit1 is mandatory.
-   *----------------------------------------------------------------------------*/
-
-  isuit1 = cs_restart_present();
-  izone = 0;
-  ifbt1d = 0;
+  wall_thermal->use_restart = cs_restart_present() ? true : false;
 
 /*! [restart] */
 
 /*! [iappel_12] */
 
   if (iappel == 1 || iappel == 2) {
+
     /*----------------------------------------------------------------------------*
      * Faces determining with the 1-D thermal module:
      *----------------------------------------------
@@ -227,6 +203,11 @@ cs_user_1d_wall_thermal(int iappel,
    *----------------------------------------------------------------------------*/
 
   if (iappel == 3) {
+
+    const cs_lnum_t *b_face_cells = cs_glob_mesh->b_face_cells;
+    const cs_real_3_t *cdgfbo
+      = (const cs_real_3_t *)cs_glob_mesh_quantities->b_face_cog;
+
     for (cs_lnum_t ii = 0 ; ii < wall_thermal->nfpt1d ; ii++) {
       wall_thermal->local_models[ii].iclt1d = 1;
       wall_thermal->local_models[ii].tept1d = cs_glob_fluid_properties->t0;
@@ -237,13 +218,15 @@ cs_user_1d_wall_thermal(int iappel,
         wall_thermal->local_models[ii].xlmbt1 = 0.16;
         wall_thermal->local_models[ii].rcpt1d = 790.*900.;
       /* Wall and ceiling: marinite */
-      } else {
+      }
+      else {
         wall_thermal->local_models[ii].xlmbt1 = 0.11;
         wall_thermal->local_models[ii].rcpt1d = 670.*778.;
       }
       cs_lnum_t c_id = b_face_cells[face_id];
       wall_thermal->local_models[ii].dtpt1d = CS_F_(dt)->val[c_id];
     }
+
   }
 
 /*! [iappel_3] */
