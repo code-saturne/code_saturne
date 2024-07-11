@@ -285,8 +285,8 @@ cs_navsto_param_create(const cs_boundary_t            *boundaries,
   case CS_NAVSTO_COUPLING_PROJECTION_POTENTIAL_FB:
     nsp->velocity_ic_is_owner = false;
     nsp->velocity_bc_is_owner = false;
-    nsp->pressure_ic_is_owner = false;
-    nsp->pressure_bc_is_owner = false;
+    nsp->pressure_ic_is_owner = true;
+    nsp->pressure_bc_is_owner = true;
     break;
 
   default:
@@ -1387,16 +1387,6 @@ cs_navsto_set_pressure_bc_by_value(cs_navsto_param_t    *nsp,
   nsp->n_pressure_bc_defs += 1;
   BFT_REALLOC(nsp->pressure_bc_defs, nsp->n_pressure_bc_defs, cs_xdef_t *);
   nsp->pressure_bc_defs[pnew_id] = dp;
-
-  if (!nsp->pressure_bc_is_owner) {
-    bft_error(__FILE__, __LINE__, 0, "%s: Not implemented yet", __func__);
-
-#if 0 /* TODO */
-    /* Retrieve the equation related to the pressure */
-    cs_equation_param_t  *p_eqp = nullptr;
-    assert(p_eqp != nullptr);
-#endif
-  }
 
   /* Add a new cs_xdef_t structure. For the momentum equation, this is a
    * homogeneous Neumann BC for the velocity */

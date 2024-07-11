@@ -781,22 +781,19 @@ cs_navsto_projection_last_setup(const cs_cdo_quantities_t  *quant,
   BFT_MALLOC(nsc->bdy_pressure_incr, quant->n_b_faces, cs_real_t);
   cs_array_real_fill_zero(quant->n_b_faces, nsc->bdy_pressure_incr);
 
-  bool  full_length = (nsp->n_pressure_bc_defs > 1) ? true : false;
-
-  for (int i = 0; i < nsp->n_pressure_bc_defs; i++) {
-
-    const cs_xdef_t  *pdef = nsp->pressure_bc_defs[i];
-    const cs_zone_t  *z = cs_boundary_zone_by_id(pdef->z_id);
-
-    cs_equation_add_bc_by_array(corr_eqp,
-                                CS_PARAM_BC_DIRICHLET,
-                                z->name,
-                                cs_flag_primal_face,
-                                nsc->bdy_pressure_incr,
-                                false,         /* xdef is not owner */
-                                full_length);  /* full length */
-
-  } /* Loop on pressure definitions */
+  for (int id = 0; id < nsp->n_pressure_bc_defs; id++) {
+    cs_xdef_t *pdef = nsp->pressure_bc_defs[id];
+    if (pdef->meta & CS_CDO_BC_DIRICHLET) {
+      const cs_zone_t *z = cs_boundary_zone_by_id(pdef->z_id);
+      cs_equation_add_bc_by_array(corr_eqp,
+                                  CS_PARAM_BC_DIRICHLET,
+                                  z->name,
+                                  cs_flag_primal_face,
+                                  nsc->bdy_pressure_incr,
+                                  false, /* is not owner */
+                                  true); /* full list */
+    }
+  }
 }
 
 /*----------------------------------------------------------------------------*/

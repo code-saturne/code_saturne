@@ -475,7 +475,6 @@ _solve_pressure_correction(const cs_mesh_t              *mesh,
   const cs_cdo_connect_t  *connect = cs_shared_connect;
   const cs_cdo_quantities_t  *quant = cs_shared_quant;
   const cs_real_t *velp_f = sc->predicted_velocity_f;
-  const cs_real_t  *const pressure_f = sc->pressure_f;
 
   /* Boundary conditions are always evaluated at t + dt */
 
@@ -493,77 +492,7 @@ _solve_pressure_correction(const cs_mesh_t              *mesh,
       = cs_cdofb_navsto_cell_divergence(c_id, quant, connect->c2f, velp_f);
 
     cc->div_st[c_id] = - div_c * quant->cell_vol[c_id];
-
   }
-
-  /* Set the boundary conditions on the pressure increment if needed */
-
-  for (int id = 0; id < nsp->n_pressure_bc_defs; id++) {
-
-    const cs_xdef_t  *pdef = nsp->pressure_bc_defs[id];
-    const cs_zone_t  *z = cs_boundary_zone_by_id(pdef->z_id);
-
-    if (pdef->meta & CS_CDO_BC_DIRICHLET) {
-
-      switch (pdef->type) {
-
-      case CS_XDEF_BY_ANALYTIC_FUNCTION:
-        /* Evaluate the boundary condition at each boundary face */
-        switch(pre_eqp->dof_reduction) {
-
-        case CS_PARAM_REDUCTION_DERHAM:
-          cs_xdef_eval_at_b_faces_by_analytic(z->n_elts,
-                                              z->elt_ids,
-                                              false, /* dense output */
-                                              mesh,
-                                              connect,
-                                              quant,
-                                              time_eval,
-                                              pdef->context,
-                                              cc->bdy_pressure_incr);
-          break;
-
-        case CS_PARAM_REDUCTION_AVERAGE:
-          cs_xdef_eval_avg_at_b_faces_by_analytic(z->n_elts,
-                                                  z->elt_ids,
-                                                  false, /* dense output */
-                                                  mesh,
-                                                  connect,
-                                                  quant,
-                                                  time_eval,
-                                                  pdef->context,
-                                                  pdef->qtype,
-                                                  pdef->dim,
-                                                  cc->bdy_pressure_incr);
-          break;
-
-        default:
-          bft_error(__FILE__, __LINE__, 0,
-                    _(" %s: Invalid type of reduction.\n"
-                      " Stop computing the Dirichlet value.\n"), __func__);
-
-        } /* switch on reduction */
-
-        for (cs_lnum_t i = 0; i < z->n_elts; i++) {
-          const cs_lnum_t  f_id = z->elt_ids[i];
-          cc->bdy_pressure_incr[f_id] -= pressure_f[f_id + quant->n_i_faces];
-        }
-        break;
-
-      case CS_XDEF_BY_VALUE:
-        /* This corresponds to a homogeneous Dirichlet BC */
-        break;
-
-      default:
-        bft_error(__FILE__, __LINE__, 0, "%s: Not implemented yet.", __func__);
-        break;
-      }
-
-    }
-    else
-      bft_error(__FILE__, __LINE__, 0, "%s: Not implemented yet.", __func__);
-
-  } /* Loop on pressure definitions */
 
   cs_timer_t  t_tmp = cs_timer_time();
   cs_timer_counter_add_diff(&(pre_eqb->tcb), &t_bld, &t_tmp);
@@ -602,16 +531,18 @@ _update_variables(const cs_navsto_param_t           *nsp,
   const cs_cdo_quantities_t  *quant = cs_shared_quant;
   const cs_lnum_t  n_faces = quant->n_faces;
   const cs_real_t *const  velp_f = sc->predicted_velocity_f;
+  cs_real_t *velp_c = mom_eq->get_cell_values(mom_eqc, false);
 
   const cs_real_t *const dp_c = pre_eq->get_cell_values(pre_eqc,
                                                         false);
   cs_real_t *dp_f = pre_eq->get_face_values(pre_eqc,
-                                                        false);
+                                            false);
   const cs_adjacency_t  *c2f = connect->c2f;
 
   /* Variables to update */
 
   cs_real_t  *pr_f = sc->pressure_f;
+
   cs_real_t  *pr_c = sc->pressure->val; /* cell DoFs for the pressure */
   cs_real_t  *vel_c = sc->velocity->val;
   cs_real_t  *vel_f = mom_eqc->face_values;
@@ -679,7 +610,7 @@ _update_variables(const cs_navsto_param_t           *nsp,
            ----------------------------- */
 
         const cs_lnum_t  s = c2f->idx[c_id],
-        e = c2f->idx[c_id+1];
+                         e = c2f->idx[c_id+1];
         const cs_lnum_t  *c2f_ids = c2f->ids + s;
         const short int  *c2f_sgn = c2f->sgn + s;
 
@@ -782,6 +713,8 @@ _update_variables(const cs_navsto_param_t           *nsp,
                                         mom_eqc->rc_tilda,
                                         mom_eqc->acf_tilda,
                                         vel_f, vel_c);
+
+  cs_array_real_copy(3*quant->n_cells, vel_c, velp_c);
 
 # pragma omp parallel for if (quant->n_cells > CS_THR_MIN)
   for (cs_lnum_t c_id = 0; c_id < quant->n_cells; c_id++) {
@@ -929,15 +862,13 @@ cs_cdofb_predco_init_scheme_context(const cs_navsto_param_t   *nsp,
   /* Boundary treatment */
 
   sc->bf_type = fb_type;
-
-  /* Processing of the pressure boundary condition */
-
-  sc->pressure_bc = cs_cdo_bc_face_define(CS_PARAM_BC_HMG_NEUMANN, /* Default */
-                                          true, /* Steady BC up to now */
-                                          1,    /* Dimension */
-                                          nsp->n_pressure_bc_defs,
-                                          nsp->pressure_bc_defs,
-                                          cs_shared_quant->n_b_faces);
+  sc->pressure_bc =
+    cs_cdo_bc_face_define(CS_PARAM_BC_HMG_NEUMANN, /* Default */
+                          true,                    /* Steady BC up to now */
+                          1,                       /* Dimension */
+                          nsp->n_pressure_bc_defs,
+                          nsp->pressure_bc_defs,
+                          quant->n_b_faces);
 
   sc->pressure_rescaling =
     cs_boundary_need_pressure_rescaling(quant->n_b_faces, fb_type);
@@ -985,6 +916,44 @@ cs_cdofb_predco_init_scheme_context(const cs_navsto_param_t   *nsp,
 
   }
 
+  for (int id = 0; id < nsp->n_pressure_bc_defs; id++) {
+    const cs_xdef_t *def =  nsp->pressure_bc_defs[id];
+    if (def->meta & CS_CDO_BC_DIRICHLET) {
+      const cs_zone_t  *bz = cs_boundary_zone_by_id(def->z_id);
+      const cs_lnum_t  *elt_ids = (def->z_id == 0) ? nullptr : bz->elt_ids;
+
+      switch(def->type) {
+
+      case CS_XDEF_BY_VALUE:
+        {
+          const cs_real_t  *constant_val = (cs_real_t *)def->context;
+
+            cs_array_real_set_scalar_on_subset(bz->n_elts, elt_ids,
+                                               constant_val[0],
+                                               sc->pressure_f
+                                             + quant->n_i_faces);
+        }
+        break;
+      default:
+        bft_error(__FILE__, __LINE__, 0,
+                  _(" %s: Invalid type of definition.\n"
+                    " Stop computing the Dirichlet value.\n"),
+                  __func__);
+
+      } /* switch on def_type */
+
+    } /* Definition based on Dirichlet BC */
+    else if(def->meta & CS_CDO_BC_HMG_DIRICHLET) {
+      const cs_zone_t  *bz = cs_boundary_zone_by_id(def->z_id);
+      const cs_lnum_t  *elt_ids = (def->z_id == 0) ? nullptr : bz->elt_ids;
+
+      cs_array_real_set_scalar_on_subset(bz->n_elts, elt_ids,
+                                         0.,
+                                         sc->pressure_f
+                                       + quant->n_i_faces);
+
+    }
+  } /* Loop on definitions */
   /* Monitoring */
 
   CS_TIMER_COUNTER_INIT(sc->timer);
@@ -1066,6 +1035,7 @@ cs_cdofb_predco_compute_implicit(const cs_mesh_t              *mesh,
   cs_real_t  *pr_c = sc->pressure->val; /* cell DoFs for the pressure */
   cs_real_t  *vel_c = mom_eq->get_cell_values(mom_eqc, false);
 
+//  cs_array_real_fill_zero(quant->n_cells, pr_c);
   /*--------------------------------------------------------------------------
    *                      BUILD: START
    *--------------------------------------------------------------------------*/
@@ -1097,10 +1067,10 @@ cs_cdofb_predco_compute_implicit(const cs_mesh_t              *mesh,
     cs_cdofb_navsto_builder_t  nsb = cs_cdofb_navsto_create_builder(nsp,
                                                                     connect);
     cs_cdo_assembly_t  *asb = cs_cdo_assembly_get(t_id);
-    cs_hodge_t *diff_hodge         = (mom_eqc->diffusion_hodge == nullptr)
-                                       ? nullptr
-                                       : mom_eqc->diffusion_hodge[t_id];
-    cs_hodge_t                *mass_hodge
+    cs_hodge_t *diff_hodge = (mom_eqc->diffusion_hodge == nullptr)
+                            ? nullptr
+                            : mom_eqc->diffusion_hodge[t_id];
+    cs_hodge_t *mass_hodge
       = (mom_eqc->mass_hodge == nullptr) ? nullptr : mom_eqc->mass_hodge[t_id];
 
     cs_cell_sys_t     *csys = nullptr;
@@ -1175,6 +1145,7 @@ cs_cdofb_predco_compute_implicit(const cs_mesh_t              *mesh,
       cs_cdofb_navsto_define_builder(cb->t_bc_eval, nsp, cm, csys,
                                      sc->pressure_bc, sc->bf_type, &nsb);
 
+
       /* 2- VELOCITY (VECTORIAL) EQUATION */
       /* ================================ */
 
@@ -1203,7 +1174,18 @@ cs_cdofb_predco_compute_implicit(const cs_mesh_t              *mesh,
 
       const short int  n_fc = cm->n_fc, nf_dofs = 3*n_fc;
 
+      /* Pressure flux at the interior faces */
       cs_sdm_add_scalvect(nf_dofs, -pr_c[c_id], nsb.div_op, csys->rhs);
+
+      /* Pressure flux at the boundary faces */
+      for (short int i = 0; i < csys->n_bc_faces; i++) {
+        if (nsb.bf_type[i] & CS_BOUNDARY_IMPOSED_P) {
+          const short int  f = csys->_f_ids[i];
+          assert(nsb.bf_type[i] & (CS_BOUNDARY_INLET | CS_BOUNDARY_OUTLET));
+          for (short int k = 0; k < 3; k++)
+            csys->rhs[3*f + k] += nsb.pressure_bc_val[i]*nsb.div_op[3*f + k];
+        }
+      }
 
       /* First part of the BOUNDARY CONDITIONS
        *                   ===================
@@ -1298,7 +1280,6 @@ cs_cdofb_predco_compute_implicit(const cs_mesh_t              *mesh,
 
   cs_field_current_to_previous(velp_fld);
 
-  cs_real_t  *velp_c = velp_fld->val;
   cs_real_t  *velp_f = sc->predicted_velocity_f;
 
   /* Solve the linear system (treated as a scalar-valued system
@@ -1318,14 +1299,6 @@ cs_cdofb_predco_compute_implicit(const cs_mesh_t              *mesh,
                              sles,
                              velp_f,
                              rhs);
-
-  /* Update pressure, velocity and divergence fields */
-
-  cs_static_condensation_recover_vector(connect->c2f,
-                                        mom_eqc->rc_tilda,
-                                        mom_eqc->acf_tilda,
-                                        velp_f, velp_c);
-
 
   cs_timer_t  t_upd = cs_timer_time();
 
