@@ -397,7 +397,7 @@ _solve_most(const int        n_var,
   cs_real_t *theipb = NULL;
   cs_real_t *visvdr = NULL;
 
-  BFT_MALLOC(isostd, n_b_faces+1, int);
+  CS_MALLOC_HD(isostd, n_b_faces+1, int, cs_alloc_mode);
 
   /* Loop on cs_solve_navier_stokes for speed/pressure coupling
    * we stop at ntrup  or when we have converged itrfup equal zero
@@ -546,7 +546,7 @@ _solve_most(const int        n_var,
       BFT_FREE(hbord);
       BFT_FREE(theipb);
       BFT_FREE(visvdr);
-      BFT_FREE(isostd);
+      CS_FREE_HD(isostd);
       cs_field_free_bc_codes_all();
       *must_return = _must_return;
       return;
@@ -621,7 +621,7 @@ _solve_most(const int        n_var,
   BFT_FREE(hbord);
   BFT_FREE(theipb);
   BFT_FREE(visvdr);
-  BFT_FREE(isostd);
+  CS_FREE_HD(isostd);
 }
 
 /*----------------------------------------------------------------------------*/
