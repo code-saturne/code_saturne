@@ -305,7 +305,7 @@ _equation_iterative_solve_strided(int                   idtvar,
   cs_field_t *b_vf = nullptr;
 
   /* Storing face values for kinetic energy balance and initialize them */
-  if (CS_F_(vel)->id == f_id) {
+  if (CS_F_(vel) != NULL && CS_F_(vel)->id == f_id) {
 
     i_vf = cs_field_by_name_try("inner_face_velocity");
     if (i_vf != nullptr) {
@@ -572,7 +572,7 @@ _equation_iterative_solve_strided(int                   idtvar,
                       icvfli,
                       (cs_real_6_t *)smbrp);
 
-  if (CS_F_(vel)->id == f_id) {
+  if (CS_F_(vel) != NULL && CS_F_(vel)->id == f_id) {
     f = cs_field_by_name_try("velocity_explicit_balance");
 
     if (f != nullptr) {
