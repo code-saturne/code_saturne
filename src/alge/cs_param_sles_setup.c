@@ -697,7 +697,13 @@ _petsc_pchpddm_hook(const char            *prefix,
 
   sprintf(n_p_agg, "%d", cs_glob_n_ranks / 2);
 
-  /* Define option for first level */
+  /* Define generic options */
+  sprintf(prefix_pc, "%s_%s", prefix, "pc_hpddm");
+
+  _petsc_cmd(true, prefix_pc, "define_subdomains", "");
+  _petsc_cmd(true, prefix_pc, "has_neumann", "");
+
+  // /* Define option for first level */
   sprintf(prefix_pc, "%s_%s", prefix, "pc_hpddm_levels_1");
 
   _petsc_cmd(true, prefix_pc, "pc_type", "asm");
@@ -706,13 +712,13 @@ _petsc_pchpddm_hook(const char            *prefix,
   _petsc_cmd(true, prefix_pc, "sub_mat_mumps_icntl_25", "0");
   _petsc_cmd(true, prefix_pc, "sub_mat_mumps_cntl_3", "1.e-50");
   _petsc_cmd(true, prefix_pc, "sub_mat_mumps_cntl_5", "0.");
-  // _petsc_cmd(true, prefix_pc, "eps_nev", "30");
+  _petsc_cmd(true, prefix_pc, "eps_nev", "30");
   _petsc_cmd(true, prefix_pc, "sub_pc_type", factor);
   _petsc_cmd(true, prefix_pc, "sub_pc_factor_mat_solver_type", "mumps");
   _petsc_cmd(true, prefix_pc, "st_pc_factor_mat_solver_type", "mumps");
   _petsc_cmd(true, prefix_pc, "st_share_sub_ksp", "");
 
-  /* Define option for coarse solver */
+  // /* Define option for coarse solver */
   sprintf(prefix_pc, "%s_%s", prefix, "pc_hpddm_coarse");
 
   _petsc_cmd(true, prefix_pc, "pc_factor_mat_solver_type", "mumps");
@@ -723,12 +729,6 @@ _petsc_pchpddm_hook(const char            *prefix,
   _petsc_cmd(true, prefix_pc, "mat_mumps_cntl_3", "1.e-50");
   _petsc_cmd(true, prefix_pc, "mat_mumps_cntl_5", "0.");
   _petsc_cmd(true, prefix_pc, "p", n_p_agg);
-
-  /* Define generic options */
-  sprintf(prefix_pc, "%s_%s", prefix, "pc_hpddm_");
-
-  // _petsc_cmd(true, prefix_pc, "define_subdomains", "");
-  // _petsc_cmd(true, prefix_pc, "has_neumann", "");
 }
 
 /*----------------------------------------------------------------------------*/
