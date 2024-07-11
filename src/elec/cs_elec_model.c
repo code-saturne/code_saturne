@@ -686,23 +686,6 @@ CS_PROCF (elini1, ELINI1) (void)
 }
 
 void
-CS_PROCF (elthht, ELTHHT) (int       *mode,
-                           cs_real_t *ym,
-                           cs_real_t *enthal,
-                           cs_real_t *temp)
-{
-  if (*mode == -1)
-    *enthal = cs_elec_convert_t_to_h(ym, *temp);
-  else if (*mode == 1)
-    *temp = cs_elec_convert_h_to_t(ym, *enthal);
-  else
-    bft_error(__FILE__, __LINE__, 0,
-              _("electric module:\n"
-                "bad value for mode (integer equal to -1 or 1: %i here.\n"),
-              *mode);
-}
-
-void
 CS_PROCF (ellecd, ELLECD) (void)
 {
   cs_electrical_model_initialize();

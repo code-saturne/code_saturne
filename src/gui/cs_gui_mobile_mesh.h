@@ -66,17 +66,6 @@ void CS_PROCF (uialin, UIALIN) (int    *nalinf,
                                 int    *nalimx,
                                 double *epalim);
 
-/*-----------------------------------------------------------------------------
- * Retrieve data for external coupling
- *
- * parameters:
- *   nfabor    <-- Number of boundary faces
- *   idfstr    <-- Structure definition
- *----------------------------------------------------------------------------*/
-
-void
-CS_PROCF(uiaste, UIASTE)(int  *idfstr);
-
 /*=============================================================================
  * Public function prototypes
  *============================================================================*/

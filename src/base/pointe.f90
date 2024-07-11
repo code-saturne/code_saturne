@@ -181,12 +181,7 @@ contains
   subroutine init_aux_arrays(ncelet, nfabor)
 
     use paramx
-    use parall
-    use period
     use optcal
-    use entsor
-    use ppincl
-    use field
     use cs_c_bindings
 
     implicit none
@@ -216,6 +211,7 @@ contains
   subroutine resize_aux_arrays() &
    bind(C, name='cs_fortran_resize_aux_arrays')
    use, intrinsic :: iso_c_binding
+   use cs_c_bindings
 
     use mesh, only: ncel, ncelet
 
@@ -227,8 +223,6 @@ contains
 
     integer iel
     double precision, allocatable, dimension(:) :: buffer
-
-    procedure() :: synsca
 
     ! Resize/copy arrays
 

@@ -3077,6 +3077,72 @@ module cs_c_bindings
       integer(c_int), value :: iterns
     end subroutine cs_physical_properties_update
 
+    !---------------------------------------------------------------------------
+
+    ! Interface to C function updating scalar array ghost values.
+
+    subroutine synsca(var)  &
+      bind(C, name='cs_mesh_sync_var_scal')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      real(c_double), dimension(*) :: var
+    end subroutine synsca
+
+    !---------------------------------------------------------------------------
+
+    ! Interface to C function updating scalar array extended ghost values.
+
+    subroutine synsce(var)  &
+      bind(C, name='cs_mesh_sync_var_scal_ext')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      real(c_double), dimension(*) :: var
+    end subroutine synsce
+
+    !---------------------------------------------------------------------------
+
+    ! Interface to C function updating vector array ghost values.
+
+    subroutine synvin(var)  &
+      bind(C, name='cs_mesh_sync_var_vect')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      real(c_double), dimension(3, *) :: var
+    end subroutine synvin
+
+    !---------------------------------------------------------------------------
+
+    ! Interface to C function updating vector array extended ghost values.
+
+    subroutine synvie(var)  &
+      bind(C, name='cs_mesh_sync_var_vect_ext')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      real(c_double), dimension(3, *) :: var
+    end subroutine synvie
+
+    !---------------------------------------------------------------------------
+
+    ! Interface to C function updating tensor array ghost values.
+
+    subroutine syntin(var)  &
+      bind(C, name='cs_mesh_sync_var_tens')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      real(c_double), dimension(3, 3, *) :: var
+    end subroutine syntin
+
+    !---------------------------------------------------------------------------
+
+    ! Interface to C function updating symmetric tensor array ghost values.
+
+    subroutine syntis(var)  &
+      bind(C, name='cs_mesh_sync_var_sym_tens')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      real(c_double), dimension(6, *) :: var
+    end subroutine syntis
+
     !> (DOXYGEN_SHOULD_SKIP_THIS) \endcond
 
     !---------------------------------------------------------------------------

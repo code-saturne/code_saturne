@@ -138,12 +138,6 @@ void
 CS_PROCF (elini1, ELINI1) (void);
 
 void
-CS_PROCF (elthht, ELTHHT) (int       *mode,
-                           cs_real_t *ym,
-                           cs_real_t *enthal,
-                           cs_real_t *temp);
-
-void
 CS_PROCF (ellecd, ELLECD) (void);
 
 void

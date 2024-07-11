@@ -65,6 +65,7 @@ use cpincl
 use ppincl
 use ppcpfu
 use field
+use cs_c_bindings
 
 !===============================================================================
 

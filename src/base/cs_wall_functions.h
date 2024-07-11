@@ -1228,50 +1228,6 @@ cs_wall_functions_s_smooth_rough(cs_real_t  l_visc,
  * Public function definitions for Fortran API
  *============================================================================*/
 
-/*----------------------------------------------------------------------------
- * Wrapper to cs_wall_functions_velocity.
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF (wallfunctions, WALLFUNCTIONS)
-(
- const int        *const iwallf,
- const cs_lnum_t  *const ifac,
- const cs_real_t  *const viscosity,
- const cs_real_t  *const t_visc,
- const cs_real_t  *const vel,
- const cs_real_t  *const y,
- const cs_real_t  *const rough_d,
- const cs_real_t  *const rnnb,
- const cs_real_t  *const kinetic_en,
-       int              *iuntur,
-       cs_lnum_t        *nsubla,
-       cs_lnum_t        *nlogla,
-       cs_real_t        *ustar,
-       cs_real_t        *uk,
-       cs_real_t        *yplus,
-       cs_real_t        *ypup,
-       cs_real_t        *cofimp,
-       cs_real_t        *dplus
-);
-
-/*----------------------------------------------------------------------------
- * Wrapper to cs_wall_functions_scalar.
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF (hturbp, HTURBP)
-(
- const int        *const iwalfs,
- const cs_real_t  *const l_visc,
- const cs_real_t  *const prl,
- const cs_real_t  *const prt,
- const cs_real_t  *const rough_t,
- const cs_real_t  *const uk,
- const cs_real_t  *const yplus,
- const cs_real_t  *const dplus,
-       cs_real_t        *htur,
-       cs_real_t        *yplim
-);
-
 /*=============================================================================
  * Public function prototypes
  *============================================================================*/

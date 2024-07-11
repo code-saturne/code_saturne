@@ -114,10 +114,6 @@ base/cs_c_bindings.$(OBJEXT): base/paramx.$(OBJEXT) base/entsor.$(OBJEXT) \
  base/mesh.$(OBJEXT) base/period.$(OBJEXT) base/field.$(OBJEXT) \
  base/cplsat.$(OBJEXT)
 
-base/cs_f_interfaces.$(OBJEXT): base/cs_c_bindings.$(OBJEXT) \
- base/paramx.$(OBJEXT) base/dimens.$(OBJEXT) base/mesh.$(OBJEXT) \
- base/optcal.$(OBJEXT) base/field.$(OBJEXT) lagr/lagran.$(OBJEXT)
-
 base/cs_nz_condensation.$(OBJEXT): base/mesh.$(OBJEXT)
 
 base/cs_nz_tagmr.$(OBJEXT): base/optcal.$(OBJEXT) base/pointe.$(OBJEXT) \
@@ -136,11 +132,8 @@ base/optcal.$(OBJEXT): base/paramx.$(OBJEXT) base/field.$(OBJEXT) \
  base/numvar.$(OBJEXT) base/cstphy.$(OBJEXT) base/cs_c_bindings.$(OBJEXT) \
  base/cdomod.$(OBJEXT)
 
-base/pointe.$(OBJEXT): base/paramx.$(OBJEXT) base/numvar.$(OBJEXT) \
- base/mesh.$(OBJEXT) base/parall.$(OBJEXT) base/period.$(OBJEXT) \
- base/optcal.$(OBJEXT) base/entsor.$(OBJEXT) lagr/lagran.$(OBJEXT) \
- rayt/radiat.$(OBJEXT) pprt/ppincl.$(OBJEXT) base/albase.$(OBJEXT) \
- base/cstnum.$(OBJEXT) base/cs_c_bindings.$(OBJEXT)
+base/pointe.$(OBJEXT): base/paramx.$(OBJEXT) base/mesh.$(OBJEXT) \
+ base/optcal.$(OBJEXT) base/cs_c_bindings.$(OBJEXT)
 
 base/rotation.$(OBJEXT): base/paramx.$(OBJEXT)
 
