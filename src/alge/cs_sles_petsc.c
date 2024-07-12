@@ -1972,10 +1972,10 @@ cs_sles_petsc_library_info(cs_log_t  log_type)
 void
 cs_sles_hpddm_library_info(cs_log_t log_type)
 {
-#if defined(HAVE_HPDDM)
+#if defined(PETSC_HAVE_HPDDM)
   cs_log_printf(log_type, "    HPDDM %s\n", HPDDM_VERSION);
 #else
-  cs_log_printf(log_type, "    HPDDM is not available\n");
+  cs_log_printf(log_type, "    HPDDM is not available inside PETSc\n");
 #endif
 }
 
@@ -1990,14 +1990,14 @@ cs_sles_hpddm_library_info(cs_log_t log_type)
 void
 cs_sles_slepc_library_info(cs_log_t log_type)
 {
-#if defined(HAVE_SLEPC)
+#if defined(PETSC_HAVE_SLEPC)
   cs_log_printf(log_type,
                 "    SLEPc %d.%d.%d\n",
                 SLEPC_VERSION_MAJOR,
                 SLEPC_VERSION_MINOR,
                 SLEPC_VERSION_SUBMINOR);
 #else
-  cs_log_printf(log_type, "    SLEPc is not available\n");
+  cs_log_printf(log_type, "    SLEPc is not available inside PETSc\n");
 #endif
 }
 

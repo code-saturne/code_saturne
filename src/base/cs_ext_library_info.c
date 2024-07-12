@@ -170,10 +170,10 @@ _ext_library_version_info(bool  log)
 
 #if defined(HAVE_PETSC)
     cs_sles_petsc_library_info(logs[log_id]);
-#if defined(HAVE_SLEPC)
+#if defined(PETSC_HAVE_SLEPC)
     cs_sles_slepc_library_info(logs[log_id]);
 #endif
-#if defined(HAVE_HPDDM)
+#if defined(PETSC_HAVE_HPDDM)
     cs_sles_hpddm_library_info(logs[log_id]);
 #endif
 #endif
