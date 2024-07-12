@@ -636,8 +636,8 @@ _boundary_condition_wall_condensation_1d_thermal(void)
  *
  * \param[in]     nvar          total number of variables
  * \param[in]     iterns        iteration number on Navier-Stokes equations
- * \param[in]     isvhb         indicator to save exchange coeffient
- *                               at the walls
+ * \param[in]     isvhb         id of field whose exchange coeffient should be
+ *                               saved at the walls, or -1.
  * \param[in]     itrale        ALE iteration number
  * \param[in]     italim        for ALE
  * \param[in]     itrfin        for ALE
@@ -2570,8 +2570,8 @@ cs_boundary_conditions_set_coeffs(int        nvar,
       if (cs_field_get_key_int(f_scal, keysca) <= 0)
         continue;
 
-      cs_lnum_t isvhbl = 0;
-      if (ii == isvhb)
+      cs_lnum_t isvhbl = -1;
+      if (f_scal->id == isvhb)
         isvhbl = isvhb;
 
       const int ifcvsl = cs_field_get_key_int(f_scal, kivisl);
@@ -2859,8 +2859,8 @@ cs_boundary_conditions_set_coeffs(int        nvar,
 
           if (icodcl_sc[f_id] == 1 || icodcl_sc[f_id] == 3) {
             cs_real_t exchange_coef = 0.;
-            if ((cs_glob_rad_transfer_params->type >= 1 &&
-                 f_th == f_scal) || isvhbl > 0) {
+            if (   (cs_glob_rad_transfer_params->type >= 1 && f_th == f_scal)
+                || isvhbl > -1) {
 
               /* Enthalpy */
               if (thermal_variable == CS_THERMAL_MODEL_ENTHALPY) {
@@ -2886,7 +2886,7 @@ cs_boundary_conditions_set_coeffs(int        nvar,
             }
 
             /* ---> Thermal coupling, store hint = lambda/d */
-            if (isvhbl > 0)
+            if (isvhbl > -1)
               hbord[f_id] = exchange_coef;
 
             /* ---> Radiative transfer */

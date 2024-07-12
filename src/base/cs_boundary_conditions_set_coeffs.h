@@ -101,8 +101,8 @@ BEGIN_C_DECLS
  *
  * \param[in]     nvar          total number of variables
  * \param[in]     iterns        iteration number on Navier-Stokes equations
- * \param[in]     isvhb         indicator to save exchange coeffient
- *                               at the walls
+ * \param[in]     isvhb         id of field whose exchange coeffient should be
+ *                               saved at the walls, or -1.
  * \param[in]     itrale        ALE iteration number
  * \param[in]     italim        for ALE
  * \param[in]     itrfin        for ALE

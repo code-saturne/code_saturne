@@ -90,7 +90,8 @@ BEGIN_C_DECLS
  * section of the theory guide for more informations, as well as the
  * <a href="../../theory.pdf#clptur"><b>clptur</b></a> section.
 
- * \param[in]     isvhb         indicator to save exchange coeffient
+ * \param[in]     isvhb         id of field whose exchange coeffient should be
+ *                               saved at the walls, or -1.
  * \param[in]     velipb        value of the velocity at \f$ \centip \f$
  *                              of boundary cells
  * \param[in]     rijipb        value of \f$ R_{ij} \f$ at \f$ \centip \f$

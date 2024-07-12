@@ -421,7 +421,7 @@ _solve_most(const int  n_var,
   if (_italim == 1)
     cs_field_build_bc_codes_all();
 
-  if (isvhb > 0)
+  if (isvhb > -1)
     BFT_MALLOC(hbord, n_b_faces, cs_real_t);
 
   if (th_f != NULL)
@@ -487,7 +487,7 @@ _solve_most(const int  n_var,
     /* After coefficient are computed, we can easily deduce the terms
        to send for boundaries coupling (such as with Syrthes) */
     if (_itrfin == 1 && _itrfup == 1) {
-      if (isvhb > 0)
+      if (isvhb > -1)
         cs_syr_coupling_send_boundary(hbord, theipb);
 
       if (th_f != NULL && cs_glob_1d_wall_thermal->nfpt1t > 0) {
@@ -770,6 +770,11 @@ cs_solve_all(const int   itrale)
 
   const cs_fluid_properties_t *fp = cs_glob_fluid_properties;
 
+  /* Storage indicator of a scalar and its associated exchange coefficiento.
+   * For the moment, we only store in the SYRTHES coupling case, or with the
+   * 1D wall thermal module, and assume a single thermal scalar is coupled. */
+  int isvhb = -1;
+
   /* storage id of scalar fields */
   int n_var = 0;
   int n_scal = 0;
@@ -777,40 +782,32 @@ cs_solve_all(const int   itrale)
 
   int scalar_idx[n_fields];
   const int keysca = cs_field_key_id("scalar_id");
-  for (int f_id = 0; f_id < n_fields; f_id++) {
-    cs_field_t *f = cs_field_by_id(f_id);
-    if ((f->type & CS_FIELD_VARIABLE))
+
+  {
+    const cs_field_t *f_th = cs_thermal_model_field();
+    const int kcpsyr = cs_field_key_id("syrthes_coupling");
+    const int n_syr_couplings = cs_syr_coupling_n_couplings();
+    const int nfpt1d = cs_get_glob_1d_wall_thermal()->nfpt1t;
+
+    for (int f_id = 0; f_id < n_fields; f_id++) {
+      cs_field_t *f = cs_field_by_id(f_id);
+      if (!(f->type & CS_FIELD_VARIABLE))
+        continue;
+      if (f->type & CS_FIELD_CDO)
+        continue;
       n_var++;
-    const int sc_id = cs_field_get_key_int(f, keysca) - 1;
-    if (sc_id < 0)
-      continue;
-    scalar_idx[n_scal] = f_id;
-    n_scal++;
-  }
-
-  /* Storage indicator of a scalar and its coef
-   * associated exchange.
-   * For the moment, we only store in the SYRTHES coupling case.
-   * ISVHB gives the number of the scalar (we assume that there is only one).
-   * In the case where there is a coupling with the 1D thermal module on the wall,
-   * we use the same scalar as that used in Syrthes (if there is
-   * Syrthes coupling), otherwise we store the thermal scalar. */
-
-  int isvhb = 0;
-  const int kcpsyr = cs_field_key_id("syrthes_coupling");
-
-  if (cs_syr_coupling_n_couplings() > 0) {
-    for (int ii = 0; ii < n_scal; ii++) {
-      const cs_field_t *f = cs_field_by_id(scalar_idx[ii]);
-      const int icpsyr = cs_field_get_key_int(f, kcpsyr);
-      if (icpsyr == 1)
-        isvhb = ii + 1; // fortran idx
-
-      if (   (cs_syr_coupling_n_couplings() < 1)
-          && (cs_get_glob_1d_wall_thermal()->nfpt1t > 0)) {
-        if (f == cs_thermal_model_field()) {
-          isvhb = ii + 1; //iscalt
-          break;
+      const int sc_id = cs_field_get_key_int(f, keysca) - 1;
+      if (sc_id < 0)
+        continue;
+      scalar_idx[n_scal] = f_id;
+      n_scal++;
+      if (n_syr_couplings > 0) {
+        if (cs_field_get_key_int(f, kcpsyr) == 1)
+          isvhb = f_id;
+      }
+      else if (nfpt1d > 0) {
+        if (f == f_th) {
+          isvhb = f_id;
         }
       }
     }

@@ -104,7 +104,8 @@ static const cs_lnum_t _jv2t[6] = {0, 1, 2, 1, 2, 2};
  * \brief Compute boundary coefficients for smooth/rough walls for scalar.
  *
  * \param[in]     f_sc          scalar field
- * \param[in]     isvhb         indicator to save exchange coeffient
+ * \param[in]     isvhb         id of field whose exchange coeffient should be
+ *                               saved at the walls, or -1.
  * \param[in]     byplus        dimensionless distance to the wall
  * \param[in]     bdplus        dimensionless shift to the wall
  *                              for scalable wall functions
@@ -235,8 +236,8 @@ _cs_boundary_conditions_set_coeffs_turb_scalar(cs_field_t  *f_sc,
   const int keysca = cs_field_key_id("scalar_id");
   int scal_id = cs_field_get_key_int(f_sc, keysca);
 
-  int isvhbl = 0;
-  if (scal_id == isvhb)
+  int isvhbl = -1;
+  if (f_sc->id == isvhb)
     isvhbl = isvhb;
 
   if (f_sc == f_th) {
@@ -722,7 +723,7 @@ _cs_boundary_conditions_set_coeffs_turb_scalar(cs_field_t  *f_sc,
 
       cs_real_t exchange_coef = 0.0;
       if (   (cs_glob_rad_transfer_params->type >= 1 && f_sc == f_th)
-          || isvhbl > 0) {
+          || isvhbl > -1) {
 
         /* Enthalpy */
         if (thermal_variable == CS_THERMAL_MODEL_ENTHALPY) {
@@ -742,7 +743,7 @@ _cs_boundary_conditions_set_coeffs_turb_scalar(cs_field_t  *f_sc,
       }
 
       /* Thermal coupling, store h = lambda/d */
-      if (isvhbl > 0)
+      if (isvhbl > -1)
         hbord[f_id] = exchange_coef;
 
       /* Radiative transfer */
@@ -1776,7 +1777,8 @@ _atmo_cls(const cs_lnum_t  f_id,
  * section of the theory guide for more informations, as well as the
  * <a href="../../theory.pdf#clptur"><b>clptur</b></a> section.
 
- * \param[in]     isvhb         indicator to save exchange coeffient
+ * \param[in]     isvhb         id of field whose exchange coeffient should be
+ *                               saved at the walls, or -1.
  * \param[in]     velipb        value of the velocity at \f$ \centip \f$
  *                              of boundary cells
  * \param[in]     rijipb        value of \f$ R_{ij} \f$ at \f$ \centip \f$
