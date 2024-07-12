@@ -854,6 +854,11 @@ cs_lagr_options_definition(int         isuite,
 
   }
 
+  /* With the reentrainment model, all cells (i.e. the root zone)
+     may involve head losses */
+  if (cs_glob_lagr_reentrained_model->iflow == 1)
+    cs_volume_zone_set_type(0, CS_VOLUME_ZONE_HEAD_LOSS);
+
   /* If there is any boundary stat, activate the number of particle impact */
   if (irf > -1)
     cs_glob_lagr_boundary_interactions->has_part_impact_nbr = 1;

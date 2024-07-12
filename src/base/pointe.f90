@@ -142,24 +142,6 @@ module pointe
   !> \addtogroup auxiliary
   !> \{
 
-  !> \anchor ncepdc
-  !> number of cells in which a pressure drop is imposed.
-  integer, save :: ncepdc
-
-  !> \anchor icepdc
-  !> number of the \c ncepdc cells in which a pressure drop is imposed.
-  !> See \c {iicepd}
-  integer, allocatable, dimension(:) :: icepdc
-
-  !> \anchor ckupdc
-  !> value of the coefficients of the pressure drop tensor of the
-  !> \c ncepdc cells in which a pressure drop is imposed.
-  !> Note the 6 values are interleaved as follows: (k11, k22, k33, k12, k23, k13).
-  !> See \c ickpdc
-  real(c_double), allocatable, dimension(:,:), target :: ckupdc
-  type(c_ptr) :: p_ckupdc = c_null_ptr
-  bind(C, name='cs_glob_ckupdc') :: p_ckupdc
-
   !> liquid-vapor mass transfer term for cavitating flows
   !> and its derivative with respect to pressure
   double precision, allocatable, target, dimension(:) :: gamcav, dgdpca
@@ -267,25 +249,6 @@ contains
     if (allocated(gamcav)) deallocate(gamcav, dgdpca)
 
   end subroutine finalize_aux_arrays
-
-  !=============================================================================
-
-  subroutine init_kpdc
-
-    allocate(icepdc(ncepdc))
-    allocate(ckupdc(6,ncepdc))
-    p_ckupdc = c_loc(ckupdc)
-
-  end subroutine init_kpdc
-
-  !=============================================================================
-
-  subroutine finalize_kpdc
-
-    deallocate(icepdc)
-    deallocate(ckupdc)
-
-  end subroutine finalize_kpdc
 
   !=============================================================================
 

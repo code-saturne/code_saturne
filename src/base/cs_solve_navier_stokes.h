@@ -68,14 +68,16 @@ BEGIN_C_DECLS
  * \param[in]     itrale        number of the current ALE iteration
  * \param[in]     isostd        indicator of standard outlet
  *                              + index of the reference face
+ * \param[in]     ckupdc        head loss coefficients, if present
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_solve_navier_stokes(const int   iterns,
-                       int        *icvrge,
-                       const int   itrale,
-                       const int   isostd[]);
+cs_solve_navier_stokes(const int        iterns,
+                       int             *icvrge,
+                       const int        itrale,
+                       const int        isostd[],
+                       const cs_real_t  ckupdc[][6]);
 
 /*----------------------------------------------------------------------------*/
 /*!

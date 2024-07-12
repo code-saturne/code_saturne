@@ -417,24 +417,6 @@ if (ippmod(icompf).ge.0) then
   call init_compf (nfabor)
 endif
 
-if (iflow.eq.1) ncpdct = ncpdct + 1
-
-if (ncpdct.gt.0) then
-  if (iflow .eq.1) then
-    ncepdc = ncel
-  else
-    ncepdc = volume_zone_n_type_cells(VOLUME_ZONE_HEAD_LOSS)
-  endif
-  call init_kpdc
-  if (iflow .eq.1) then
-    do iel = 1, ncepdc
-      icepdc(iel) = iel
-    enddo
-  else
-    call volume_zone_select_type_cells(VOLUME_ZONE_HEAD_LOSS, icepdc)
-  endif
-endif
-
 if (icondb.eq.0 .or. icondv.eq.0) then
   call init_nz_pcond(nvar)
 endif
@@ -1130,10 +1112,6 @@ endif
 
 if (iale.ge.1) then
   call cs_mobile_structures_finalize
-endif
-
-if (ncpdct.gt.0) then
-  call finalize_kpdc
 endif
 
 if (icondb.gt.0 .or.icondv.eq.0) then

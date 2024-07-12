@@ -1892,6 +1892,7 @@ _resize_non_interleaved_cell_arrays(const cs_mesh_t    *m,
   * \param[in]       velk          velocity at the previous sub iteration (or vela)
   * \param[in,out]   da_uu         velocity matrix
   * \param[in]       bc_coeffs_v   boundary condition structure for the variable
+  * \param[in]       ckupdc        head loss coefficients, if present
   * \param[in]       frcxt         external forces making hydrostatic pressure
   * \param[in]       trava         working array for the velocity-pressure coupling
   * \param[out]      dfrcxt        variation of the external forces
@@ -1923,6 +1924,7 @@ _velocity_prediction(const cs_mesh_t             *m,
                      cs_real_t                    velk[][3],
                      cs_real_t                    da_uu[][6],
                      cs_field_bc_coeffs_t        *bc_coeffs_v,
+                     const cs_real_t              ckupdc[][6],
                      cs_real_t                    frcxt[][3],
                      cs_real_t                    grdphd[][3],
                      cs_real_t                    trava[][3],
@@ -2600,10 +2602,7 @@ _velocity_prediction(const cs_mesh_t             *m,
    */
 
   cs_lnum_t *icepdc = NULL;
-  cs_real_6_t *ckupdc = (cs_real_6_t *)cs_glob_ckupdc;
   cs_lnum_t ncepdc = cs_volume_zone_n_type_cells(CS_VOLUME_ZONE_HEAD_LOSS);
-  if (cs_glob_lagr_reentrained_model->iflow == 1)
-    ncepdc = n_cells;
 
   BFT_MALLOC(icepdc, ncepdc, cs_lnum_t);
 
@@ -3557,18 +3556,6 @@ cs_f_navier_stokes_total_pressure(void)
                                                cs_glob_fluid_properties);
 }
 
-void
-cs_f_solve_navier_stokes(const int   iterns,
-                         int        *icvrge,
-                         const int   itrale,
-                         int         isostd[])
-{
-  cs_solve_navier_stokes(iterns,
-                         icvrge,
-                         itrale,
-                         isostd);
-}
-
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
@@ -3676,14 +3663,17 @@ cs_solve_navier_stokes_update_total_pressure(const cs_mesh_t              *m,
  * \param[in]     itrale        number of the current ALE iteration
  * \param[in]     isostd        indicator of standard outlet
  *                              + index of the reference face
+ * \param[in]     ckupdc        head loss coefficients, if present
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_solve_navier_stokes(const int   iterns,
-                       int        *icvrge,
-                       const int   itrale,
-                       const int   isostd[])
+cs_solve_navier_stokes(const int        iterns,
+                       int             *icvrge,
+                       const int        itrale,
+                       const int        isostd[],
+                       const cs_real_t  ckupdc[][6])
+
 {
   cs_mesh_t *m = cs_glob_mesh;
   cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
@@ -3959,6 +3949,7 @@ cs_solve_navier_stokes(const int   iterns,
                          velk,
                          da_uu,
                          bc_coeffs_vel,
+                         ckupdc,
                          frcxt,
                          grdphd,
                          trava,
@@ -4565,6 +4556,7 @@ cs_solve_navier_stokes(const int   iterns,
                              velk,
                              da_uu,
                              bc_coeffs_vel,
+                             ckupdc,
                              frcxt,
                              grdphd,
                              trava,

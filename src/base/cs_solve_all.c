@@ -368,23 +368,24 @@ _update_pressure_temperature(cs_lnum_t n_cells)
  * \param[out] italim        implicit coupling iteration number
  * \param[out] itrfin        indicator for last iteration of implicit couplin
  * \param[out] ineefl        for ALE
- * \param[out] itrfup        indication of itteration
+ * \param[out] itrfup        indication of iteration
  * \param[out] must_return   if it is done
  */
 /*----------------------------------------------------------------------------*/
 
 static void
-_solve_most(const int  n_var,
-            const int  n_scal,
-            const int  isvhb,
-            const int  itrale,
-            int        *italim,
-            int        *itrfin,
-            int        *ineefl,
-            int        *itrfup,
-            bool       *must_return,
-            const int  scalar_idx[],
-            cs_real_t  htot_cond[])
+_solve_most(const int        n_var,
+            const int        n_scal,
+            const int        isvhb,
+            const int        itrale,
+            int             *italim,
+            int             *itrfin,
+            int             *ineefl,
+            int             *itrfup,
+            bool            *must_return,
+            const int        scalar_idx[],
+            const cs_real_t  ckupdc[][6],
+            cs_real_t        htot_cond[])
 {
   const cs_mesh_t *m = cs_glob_mesh;
 
@@ -577,7 +578,8 @@ _solve_most(const int  n_var,
       cs_solve_navier_stokes(iterns,
                              &icvrge,
                              itrale,
-                             isostd);
+                             isostd,
+                             ckupdc);
 
       if (   cs_glob_time_scheme->istmpf == 2
           && cs_glob_velocity_pressure_param->itpcol == 1)
@@ -937,32 +939,30 @@ cs_solve_all(const int   itrale)
   if (itrale > 0)
     cs_f_schtmp(n_scal, 2);
 
-  /* Completing PDC coefs
-     we do it even if there is no PDC on the current proc in case
-     a use decide to have a PDC coef depending on the average or max speed */
+  /* Compute head loss coeffs.
+     we do it even if there is no head loss on the local rank in case
+     a user-defiend function requires collective operations such as
+     computing a min or max value of a variable. */
 
   const int ncpdct = cs_volume_zone_n_type_zones(CS_VOLUME_ZONE_HEAD_LOSS);
-  cs_lnum_t ncepdc = cs_volume_zone_n_type_cells(CS_VOLUME_ZONE_HEAD_LOSS);
-  if (cs_glob_lagr_reentrained_model->iflow == 1)
-    ncepdc = n_cells;
+  const cs_lnum_t ncepdc = cs_volume_zone_n_type_cells(CS_VOLUME_ZONE_HEAD_LOSS);
 
   cs_lnum_t *icepdc = NULL;
-  BFT_MALLOC(icepdc, ncepdc, cs_lnum_t);
-
-  cs_volume_zone_select_type_cells(CS_VOLUME_ZONE_HEAD_LOSS, icepdc);
-  if (cs_glob_lagr_reentrained_model->iflow == 1) {
-    for (cs_lnum_t c_id = 0; c_id < ncepdc; c_id++)
-      icepdc[c_id] = c_id;
-  }
+  cs_real_6_t *ckupdc = NULL;
 
   if (ncpdct > 0) {
-    cs_head_losses_compute((cs_real_6_t *)cs_glob_ckupdc);
+    BFT_MALLOC(icepdc, ncepdc, cs_lnum_t);
+    cs_volume_zone_select_type_cells(CS_VOLUME_ZONE_HEAD_LOSS, icepdc);
+
+    BFT_MALLOC(ckupdc, ncepdc, cs_real_6_t);
+
+    cs_head_losses_compute(ckupdc);
 
     if (cs_glob_lagr_reentrained_model->iflow == 1)
-      cs_lagr_head_losses(ncepdc,
+      cs_lagr_head_losses(n_cells,
                           icepdc,
                           cs_boundary_conditions_get_bc_type(),
-                          (cs_real_6_t *)cs_glob_ckupdc);
+                          ckupdc);
   }
 
   /* Evaluate mass source term coefficients
@@ -1031,7 +1031,7 @@ cs_solve_all(const int   itrale)
     _compute_tensorial_time_step(m,
                                  ncepdc,
                                  icepdc,
-                                 (cs_real_6_t *)cs_glob_ckupdc);
+                                 ckupdc);
 
   BFT_FREE(icepdc);
 
@@ -1081,10 +1081,12 @@ cs_solve_all(const int   itrale)
               &itrfup,
               &must_return,
               scalar_idx,
+              ckupdc,
               htot_cond);
 
   if (must_return) {
     BFT_FREE(htot_cond);
+    BFT_FREE(ckupdc);
     return;
   }
 
@@ -1112,6 +1114,7 @@ cs_solve_all(const int   itrale)
                       &itrfup,
                       &must_return,
                       scalar_idx,
+                      ckupdc,
                       htot_cond);
         }
       }
@@ -1161,6 +1164,7 @@ cs_solve_all(const int   itrale)
   }
 
   cs_field_free_bc_codes_all();
+  BFT_FREE(ckupdc);
 
   /* Handle mass flux, viscosity, density, and specific heat for theta-scheme
      ------------------------------------------------------------------------ */
