@@ -135,15 +135,15 @@ _volume_mass_injection_finalize(void)
 /*----------------------------------------------------------------------------*/
 
 static void
-_volume_mass_injection_get_field_arrays(int          field_id,
-                                        int        **mst_type,
-                                        cs_real_t  **mst_val)
+_volume_mass_injection_get_field_arrays(const cs_field_t  *f,
+                                        int              **mst_type,
+                                        cs_real_t        **mst_val)
 
 {
   cs_volume_mass_injection_t *mi = _mass_injection;
 
-  if (field_id >= mi->field_id_ub) {
-    int s_id = mi->field_id_ub, e_id = field_id+1;
+  if (f->id >= mi->field_id_ub) {
+    int s_id = mi->field_id_ub, e_id = f->id+1;
     mi->field_id_ub = e_id;
     BFT_REALLOC(mi->mst_type, mi->field_id_ub, int *);
     BFT_REALLOC(mi->mst_val, mi->field_id_ub, cs_real_t *);
@@ -154,18 +154,18 @@ _volume_mass_injection_get_field_arrays(int          field_id,
   }
 
   if (mst_type != NULL) {
-    if (mi->mst_type[field_id] == NULL)
-      CS_MALLOC_HD(mi->mst_type[field_id], mi->n_elts, int, cs_alloc_mode);
-    *mst_type = mi->mst_type[field_id];
+    if (mi->mst_type[f->id] == NULL)
+      CS_MALLOC_HD(mi->mst_type[f->id], mi->n_elts, int, cs_alloc_mode);
+    *mst_type = mi->mst_type[f->id];
   }
 
   if (mst_val != NULL) {
-    if (mi->mst_val[field_id] == NULL) {
-      cs_lnum_t dim = cs_field_by_id(field_id)->dim;
-      CS_MALLOC_HD(mi->mst_val[field_id], mi->n_elts*dim, cs_real_t,
+    if (mi->mst_val[f->id] == NULL) {
+      cs_lnum_t dim = f->dim;
+      CS_MALLOC_HD(mi->mst_val[f->id], mi->n_elts*dim, cs_real_t,
                    cs_alloc_mode);
     }
-    *mst_val = mi->mst_val[field_id];
+    *mst_val = mi->mst_val[f->id];
   }
 }
 
@@ -655,6 +655,17 @@ cs_volume_mass_injection_eval(void)
     if (eqp->n_volume_mass_injections < 1)
       continue;
 
+    cs_volume_mass_injection_get_arrays(f,
+                                        &ncesmp,
+                                        &icetsm,
+                                        &itypsm,
+                                        &smacel,
+                                        NULL);
+
+    const cs_lnum_t dim = f->dim;
+
+    cs_array_real_fill_zero(ncesmp*dim, smacel);
+
     /* xdef-based method */
 
     for (int inj_idx = 0; inj_idx < eqp->n_volume_mass_injections; inj_idx++) {
@@ -676,48 +687,19 @@ cs_volume_mass_injection_eval(void)
 
       _volume_mass_injection_eval(v_inj, st_loc);
 
-      cs_volume_mass_injection_get_arrays(f,
-                                          &ncesmp,
-                                          &icetsm,
-                                          &itypsm,
-                                          &smacel,
-                                          NULL);
-
-      if (inj_idx == 0) {
-        if (f->dim == 1) {
-          for (cs_lnum_t i = 0; i < z->n_elts; i++) {
-            cs_lnum_t j = c_shift + i;
-            itypsm[j] = 1;
-            smacel[j] = st_loc[i];
-          }
-        }
-        else {
-          const cs_lnum_t dim = f->dim;
-          for (cs_lnum_t i = 0; i < z->n_elts; i++) {
-            cs_lnum_t j = c_shift + i;
-            itypsm[j] = 1;
-            for (cs_lnum_t k = 0; k < dim; k++)
-              smacel[j*dim + k] = st_loc[i*dim + k];
-          }
+      if (f->dim == 1) {
+        for (cs_lnum_t i = 0; i < z->n_elts; i++) {
+          cs_lnum_t j = c_shift + i;
+          itypsm[j] = 1;
+          smacel[j] += st_loc[i];
         }
       }
-
       else {
-        if (f->dim == 1) {
-          for (cs_lnum_t i = 0; i < z->n_elts; i++) {
-            cs_lnum_t j = c_shift + i;
-            itypsm[j] = 1;
-            smacel[j] += st_loc[i];
-          }
-        }
-        else {
-          const cs_lnum_t dim = f->dim;
-          for (cs_lnum_t i = 0; i < z->n_elts; i++) {
-            cs_lnum_t j = c_shift + i;
-            itypsm[j] = 1;
-            for (cs_lnum_t k = 0; k < dim; k++)
-              smacel[j*dim + k] += st_loc[i*dim + k];
-          }
+        for (cs_lnum_t i = 0; i < z->n_elts; i++) {
+          cs_lnum_t j = c_shift + i;
+          itypsm[j] = 1;
+          for (cs_lnum_t k = 0; k < dim; k++)
+            smacel[j*dim + k] += st_loc[i*dim + k];
         }
       }
 
@@ -763,10 +745,11 @@ cs_volume_mass_injection_get_arrays(const cs_field_t   *f,
   if (mi != NULL) {
     _ncesmp = mi->n_elts;
     _icetsm = mi->elt_id;
-    _volume_mass_injection_get_field_arrays(CS_F_(p)->id, NULL, &_gamma);
+    const cs_field_t *f_p = CS_F_(p);
+    _volume_mass_injection_get_field_arrays(f_p, NULL, &_gamma);
     const cs_equation_param_t *eqp = cs_field_get_equation_param_const(f);
-    if (eqp->n_volume_mass_injections > 0)
-      _volume_mass_injection_get_field_arrays(f->id, &_itpsmp, &_smcelp);
+    if (eqp->n_volume_mass_injections > 0 || f->id == f_p->id)
+      _volume_mass_injection_get_field_arrays(f, &_itpsmp, &_smcelp);
   }
 
   if (ncesmp != NULL) *ncesmp = _ncesmp;
