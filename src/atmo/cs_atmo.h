@@ -404,9 +404,9 @@ typedef struct {
      (used for automatic open boundaries) profile */
   cs_real_t *dpdt_met;
   /*! Momentum for each level (used for automatic open boundaries) */
-  cs_real_t *mom_met;
+  cs_real_3_t *mom_met;
   /*! code_saturne momentum for each level */
-  cs_real_t *mom_cs;
+  cs_real_3_t *mom_cs;
   /*! Soil model (1: on, 0: off) */
   int soil_model;
   /*! Soil categories:

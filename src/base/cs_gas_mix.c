@@ -223,10 +223,13 @@ _compute_mu_lambda(const char                       *name,
     _mu     = spro.mu_a     * tk + spro.mu_b;
     _lambda = spro.lambda_a * tk + spro.lambda_b;
   }
-  else
+  else {
+    _mu = -1;
+    _lambda = -1;
     bft_error(__FILE__, __LINE__, 0,
               _("%s: no predefined properties for field %s."),
               __func__, name);
+  }
 
   *mu = _mu;
   *lambda = _lambda;

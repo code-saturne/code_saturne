@@ -119,7 +119,6 @@ cs_mass_source_terms(int                   iterns,
                      cs_real_t             gapinj[])
 {
   const cs_mesh_t *m = cs_glob_mesh;
-  const cs_lnum_t n_cells = m->n_cells;
 
   if (gamma == NULL || itpsmp == NULL)
     return;
