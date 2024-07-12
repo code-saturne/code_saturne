@@ -495,20 +495,16 @@ _cs_ksp_converged(KSP                  ksp,
  *                             (actual type: cs_sles_petsc_t  *)
  * \param[in]       name       pointer to system name
  * \param[in]       a          associated matrix
- * \param[in]       verbosity  associated verbosity
  */
 /*----------------------------------------------------------------------------*/
 
 static void
-_cs_sles_hpddm_setup(void              *context,
-                     const char        *name,
-                     const cs_matrix_t *a,
-                     int                verbosity)
+_cs_sles_hpddm_setup(void *context, const char *name, const cs_matrix_t *a)
 {
+#ifdef PETSC_HAVE_HPDDM
+
   cs_timer_t t0;
   t0 = cs_timer_time();
-
-#ifdef PETSC_HAVE_HPDDM
 
   PetscLogStagePush(_log_stage[0]);
 
@@ -519,9 +515,22 @@ _cs_sles_hpddm_setup(void              *context,
 
   const cs_matrix_type_t cs_mat_type = cs_matrix_get_type(a);
   const PetscInt         n_rows      = cs_matrix_get_n_rows(a);
+  const PetscInt         n_cols      = cs_matrix_get_n_columns(a);
   const PetscInt         db_size     = cs_matrix_get_diag_block_size(a);
   const PetscInt         eb_size     = cs_matrix_get_extra_diag_block_size(a);
   const cs_halo_t       *halo        = cs_matrix_get_halo(a);
+
+  // if (!cs_matrix_is_symmetric(a)) {
+  //   bft_error(__FILE__,
+  //             __LINE__,
+  //             0,
+  //             _("Matrix type %s with block size %d for system \"%s\"\n"
+  //               "is not symmetric so it is not possible to setup Neumann "
+  //               "matrix for HPDDM."),
+  //             cs_matrix_get_type_name(a),
+  //             (int)db_size,
+  //             name);
+  // }
 
   bool have_perio = false;
   if (halo != NULL) {
@@ -591,23 +600,24 @@ _cs_sles_hpddm_setup(void              *context,
     const cs_gnum_t *grow_id = cs_matrix_get_block_row_g_id(a);
 
     PetscInt *gnum = NULL;
-    BFT_MALLOC(gnum, n_rows, PetscInt);
+    assert(n_rows <= n_cols);
+    BFT_MALLOC(gnum, n_cols, PetscInt);
 
-    for (int i = 0; i < n_rows; i++) {
+    for (int i = 0; i < n_cols; i++) {
       gnum[i] = grow_id[i];
     }
 
-    ISCreateGeneral(PETSC_COMM_SELF, n_rows, gnum, PETSC_COPY_VALUES, &auxIS);
+    ISCreateGeneral(PETSC_COMM_SELF, n_cols, gnum, PETSC_COPY_VALUES, &auxIS);
 
     BFT_FREE(gnum);
 
-    /* Create local Neumann matrix */
+    /* Create local Neumann matrix with ghost */
 
     MatCreate(PETSC_COMM_SELF, &auxMat);
     MatSetType(auxMat, MATSEQAIJ);
     MatSetSizes(auxMat,
-                n_rows,        /* Number of local rows */
-                n_rows,        /* Number of local columns */
+                n_cols,        /* Number of local rows */
+                n_cols,        /* Number of local columns */
                 PETSC_DECIDE,  /* Number of global rows */
                 PETSC_DECIDE); /* Number of global columns */
     MatSetUp(auxMat);
@@ -615,7 +625,7 @@ _cs_sles_hpddm_setup(void              *context,
     /* Preallocate */
 
     PetscInt *d_nnz;
-    BFT_MALLOC(d_nnz, n_rows * db_size, PetscInt);
+    BFT_MALLOC(d_nnz, n_cols * db_size, PetscInt);
 
     if (cs_mat_type == CS_MATRIX_CSR || cs_mat_type == CS_MATRIX_MSR) {
 
@@ -647,9 +657,13 @@ _cs_sles_hpddm_setup(void              *context,
       for (cs_lnum_t row_id = 0; row_id < n_rows; row_id++) {
         for (cs_lnum_t i = a_row_index[row_id]; i < a_row_index[row_id + 1];
              i++) {
-          if (a_col_id[i] < n_rows) {
+          for (cs_lnum_t kk = 0; kk < db_size; kk++)
+            d_nnz[row_id * db_size + kk] += eb_size;
+
+          cs_lnum_t col_id = a_col_id[i];
+          if (col_id >= n_rows) {
             for (cs_lnum_t kk = 0; kk < db_size; kk++)
-              d_nnz[row_id * db_size + kk] += eb_size;
+              d_nnz[col_id * db_size + kk] += eb_size;
           }
         }
       }
@@ -707,17 +721,26 @@ _cs_sles_hpddm_setup(void              *context,
       const cs_lnum_t b_size_2 = b_size * b_size;
 
       /* TODONP: il n'y a pas le recouvrement pour le moment */
-      /* TODONP: voir return warning with PetscCall*/
+      /* TODONP: il manque le bloc diagonal du recouvrement */
       if (b_size == 1) {
 
         for (cs_lnum_t row_id = 0; row_id < n_rows; row_id++) {
           for (cs_lnum_t i = a_row_index[row_id]; i < a_row_index[row_id + 1];
                i++) {
-            cs_lnum_t c_id = a_col_id[i];
-            if (c_id < n_rows) {
+
+            cs_lnum_t col_id = a_col_id[i];
+
+            for (cs_lnum_t kk = 0; kk < db_size; kk++) {
+              PetscInt    idxm[] = { row_id * db_size + kk };
+              PetscInt    idxn[] = { col_id * db_size + kk };
+              PetscScalar v[]    = { a_val[i] };
+              MatSetValues(auxMat, m, idxm, n, idxn, v, INSERT_VALUES);
+            }
+
+            if (col_id >= n_rows) {
               for (cs_lnum_t kk = 0; kk < db_size; kk++) {
-                PetscInt    idxm[] = { row_id * db_size + kk };
-                PetscInt    idxn[] = { c_id * db_size + kk };
+                PetscInt    idxm[] = { col_id * db_size + kk };
+                PetscInt    idxn[] = { row_id * db_size + kk };
                 PetscScalar v[]    = { a_val[i] };
                 MatSetValues(auxMat, m, idxm, n, idxn, v, INSERT_VALUES);
               }
@@ -730,12 +753,22 @@ _cs_sles_hpddm_setup(void              *context,
         for (cs_lnum_t row_id = 0; row_id < n_rows; row_id++) {
           for (cs_lnum_t i = a_row_index[row_id]; i < a_row_index[row_id + 1];
                i++) {
-            cs_lnum_t c_id = a_col_id[i];
-            if (c_id < n_rows) {
+            cs_lnum_t col_id = a_col_id[i];
+
+            for (cs_lnum_t ii = 0; ii < db_size; ii++) {
+              PetscInt idxm[] = { row_id * db_size + ii };
+              for (cs_lnum_t jj = 0; jj < db_size; jj++) {
+                PetscInt    idxn[] = { col_id * db_size + jj };
+                PetscScalar v[]    = { d_val[i * b_size_2 + ii * b_size + jj] };
+                MatSetValues(auxMat, m, idxm, n, idxn, v, INSERT_VALUES);
+              }
+            }
+
+            if (col_id >= n_rows) {
               for (cs_lnum_t ii = 0; ii < db_size; ii++) {
-                PetscInt idxm[] = { row_id * db_size + ii };
+                PetscInt idxm[] = { col_id * db_size + ii };
                 for (cs_lnum_t jj = 0; jj < db_size; jj++) {
-                  PetscInt    idxn[] = { c_id * db_size + jj };
+                  PetscInt    idxn[] = { row_id * db_size + jj };
                   PetscScalar v[] = { d_val[i * b_size_2 + ii * b_size + jj] };
                   MatSetValues(auxMat, m, idxm, n, idxn, v, INSERT_VALUES);
                 }
@@ -758,23 +791,18 @@ _cs_sles_hpddm_setup(void              *context,
   PCSetType(pc, PCHPDDM);
   PCHPDDMSetAuxiliaryMat(pc, auxIS, auxMat, NULL, NULL);
 
-  /* Verbosity */
-  // if (verbosity > 0) {
-  //   PCView(pc, PETSC_VIEWER_STDOUT_WORLD);
-  // }
-
   /* Cleaning */
   ISDestroy(&auxIS);
   MatDestroy(&auxMat);
 
   PetscLogStagePop();
 
+  cs_timer_t t1 = cs_timer_time();
+  cs_timer_counter_add_diff(&(c->t_setup), &t0, &t1);
+
 #else
   bft_error(__FILE__, __LINE__, 0, _("HPDDM is not available inside PETSc.\n"));
 #endif
-
-  cs_timer_t t1 = cs_timer_time();
-  cs_timer_counter_add_diff(&(c->t_setup), &t0, &t1);
 }
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
@@ -802,8 +830,7 @@ _cs_sles_hpddm_setup(void              *context,
  *----------------------------------------------------------------------------*/
 
 void
-cs_user_sles_petsc_hook(void               *context,
-                        void               *ksp)
+cs_user_sles_petsc_hook(void *context, void *ksp)
 {
   CS_UNUSED(context);
   CS_UNUSED(ksp);
@@ -841,8 +868,8 @@ cs_sles_petsc_init(void)
  *
  * Note that this function returns a pointer directly to the iterative solver
  * management structure. This may be used to set further options.
- * If needed, \ref cs_sles_find may be used to obtain a pointer to the matching
- * \ref cs_sles_t container.
+ * If needed, \ref cs_sles_find may be used to obtain a pointer to the
+ * matching \ref cs_sles_t container.
  *
  * \param[in]      f_id          associated field id, or < 0
  * \param[in]      name          associated name if f_id < 0, or NULL
@@ -856,15 +883,13 @@ cs_sles_petsc_init(void)
 /*----------------------------------------------------------------------------*/
 
 cs_sles_petsc_t *
-cs_sles_petsc_define(int                          f_id,
-                     const char                  *name,
-                     const char                  *matrix_type,
-                     cs_sles_petsc_setup_hook_t  *setup_hook,
-                     void                        *context)
+cs_sles_petsc_define(int                         f_id,
+                     const char                 *name,
+                     const char                 *matrix_type,
+                     cs_sles_petsc_setup_hook_t *setup_hook,
+                     void                       *context)
 {
-  cs_sles_petsc_t * c = cs_sles_petsc_create(matrix_type,
-                                             setup_hook,
-                                             context);
+  cs_sles_petsc_t *c = cs_sles_petsc_create(matrix_type, setup_hook, context);
 
   cs_sles_t *sc = cs_sles_define(f_id,
                                  name,
@@ -877,8 +902,7 @@ cs_sles_petsc_define(int                          f_id,
                                  cs_sles_petsc_copy,
                                  cs_sles_petsc_destroy);
 
-  cs_sles_set_error_handler(sc,
-                            cs_sles_petsc_error_post_and_abort);
+  cs_sles_set_error_handler(sc, cs_sles_petsc_error_post_and_abort);
 
   return c;
 }
@@ -901,9 +925,9 @@ cs_sles_petsc_define(int                          f_id,
 /*----------------------------------------------------------------------------*/
 
 cs_sles_petsc_t *
-cs_sles_petsc_create(const char                  *matrix_type,
-                     cs_sles_petsc_setup_hook_t  *setup_hook,
-                     void                        *context)
+cs_sles_petsc_create(const char                 *matrix_type,
+                     cs_sles_petsc_setup_hook_t *setup_hook,
+                     void                       *context)
 
 {
   cs_sles_petsc_t *c;
@@ -922,16 +946,19 @@ cs_sles_petsc_create(const char                  *matrix_type,
     cs_base_signal_restore();
   }
 
-  if (_viewer == NULL) {
-    PetscLogStageRegister("Linear system setup", _log_stage);
-    PetscLogStageRegister("Linear system solve", _log_stage + 1);
-    PetscViewerASCIIOpen(PETSC_COMM_WORLD, "petsc.log", &_viewer);
+    PetscOptionsSetValue(NULL, "-log_view", "");
+    PetscOptionsSetValue(NULL, "-ksp_monitor_true_residual", "");
+
+    if (_viewer == NULL) {
+      PetscLogStageRegister("Linear system setup", _log_stage);
+      PetscLogStageRegister("Linear system solve", _log_stage + 1);
+      PetscViewerASCIIOpen(PETSC_COMM_WORLD, "petsc.log", &_viewer);
 #if PETSC_VERSION_GE(3,7,0)
     PetscLogDefaultBegin();
 #else
     PetscLogBegin();
 #endif
-  }
+    }
 
   _n_petsc_systems += 1;
 
@@ -1377,7 +1404,7 @@ cs_sles_petsc_setup(void               *context,
     cs_param_sles_t *slesp = (cs_param_sles_t *)c->hook_context;
 
     if (slesp->precond == CS_PARAM_PRECOND_HPDDM) {
-      _cs_sles_hpddm_setup(context, name, a, verbosity);
+      _cs_sles_hpddm_setup(context, name, a);
     }
     c->setup_hook(c->hook_context, sd->ksp);
   }

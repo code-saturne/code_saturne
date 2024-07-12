@@ -677,18 +677,15 @@ _petsc_pchypre_hook(const char             *prefix,
 /*----------------------------------------------------------------------------*/
 
 static void
-_petsc_pchpddm_hook(const char            *prefix,
-                    const cs_param_sles_t *slesp,
-                    const bool             is_symm,
-                    PC                     pc)
+_petsc_pchpddm_hook(const cs_param_sles_t *slesp, PC pc)
 {
-  assert(prefix != NULL);
   assert(slesp != NULL);
   assert(slesp->precond == CS_PARAM_PRECOND_HPDDM);
 
   char factor[20], n_p_agg[20], prefix_pc[128];
 
-  if (is_symm) {
+  /* Symmetric matrix ? */
+  if (_system_should_be_sym(slesp->solver)) {
     sprintf(factor, "%s", "cholesky");
   }
   else {
@@ -697,14 +694,17 @@ _petsc_pchpddm_hook(const char            *prefix,
 
   sprintf(n_p_agg, "%d", cs_glob_n_ranks / 2);
 
+  /* Set type */
+  PCSetType(pc, PCHPDDM);
+
   /* Define generic options */
-  sprintf(prefix_pc, "%s_%s", prefix, "pc_hpddm");
+  sprintf(prefix_pc, "%s_%s", slesp->name, "pc_hpddm");
 
   _petsc_cmd(true, prefix_pc, "define_subdomains", "");
   _petsc_cmd(true, prefix_pc, "has_neumann", "");
 
   // /* Define option for first level */
-  sprintf(prefix_pc, "%s_%s", prefix, "pc_hpddm_levels_1");
+  sprintf(prefix_pc, "%s_%s", slesp->name, "pc_hpddm_levels_1");
 
   _petsc_cmd(true, prefix_pc, "pc_type", "asm");
   _petsc_cmd(true, prefix_pc, "sub_mat_mumps_icntl_14", "5000");
@@ -719,7 +719,7 @@ _petsc_pchpddm_hook(const char            *prefix,
   _petsc_cmd(true, prefix_pc, "st_share_sub_ksp", "");
 
   // /* Define option for coarse solver */
-  sprintf(prefix_pc, "%s_%s", prefix, "pc_hpddm_coarse");
+  sprintf(prefix_pc, "%s_%s", slesp->name, "pc_hpddm_coarse");
 
   _petsc_cmd(true, prefix_pc, "pc_factor_mat_solver_type", "mumps");
   _petsc_cmd(true, prefix_pc, "sub_pc_type", factor);
@@ -881,10 +881,7 @@ _petsc_set_pc_type(cs_param_sles_t  *slesp,
 
   case CS_PARAM_PRECOND_HPDDM:
 #if defined(PETSC_HAVE_HPDDM)
-    PCSetType(pc, PCHPDDM);
-
-    _petsc_pchpddm_hook(slesp->name, slesp, false, pc);
-
+    _petsc_pchpddm_hook(slesp, pc);
 #else
     bft_error(
       __FILE__,
