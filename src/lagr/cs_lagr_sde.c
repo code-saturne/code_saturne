@@ -755,9 +755,6 @@ _lages2(cs_real_t           dtp,
 
   cs_lnum_t nor = cs_glob_lagr_time_step->nor;
 
-  cs_real_t *auxl;
-  BFT_MALLOC(auxl, p_set->n_particles*6, cs_real_t);
-
   /* Integration of the SDE on partilces
      ===========================================================================*/
 
@@ -768,8 +765,25 @@ _lages2(cs_real_t           dtp,
 
   cs_lnum_t n_particles_prev = p_set->n_particles - p_set->n_part_new;
 
-  for (cs_lnum_t ip = 0; ip < n_particles_prev; ip++) {
+  /* Size of auxl depends if the tracking step and particle  reindexation
+   * has already occured or not (nor = 1 or 2) */
+  cs_lnum_t n_particles_auxl;
+  if (nor == 1)
+    n_particles_auxl = n_particles_prev;
+  else
+    n_particles_auxl = p_set->n_particles;
 
+  cs_real_t *auxl;
+  BFT_MALLOC(auxl, n_particles_auxl*6, cs_real_t);
+
+
+  for (cs_lnum_t ip = 0; ip < n_particles_auxl; ip++) {
+
+      /* Treat only particle present at previous time step.
+         (particle index may have been modified in trajectory step) */
+      if (cs_lagr_particles_get_real(p_set, ip,
+                                     CS_LAGR_RESIDENCE_TIME) < 1e-12 * dtp)
+        continue;
     if (cs_lagr_particles_get_flag(p_set, ip, CS_LAGR_PART_FIXED))
         continue;
 
@@ -888,9 +902,15 @@ _lages2(cs_real_t           dtp,
 
     /* Compute Us */
 
-    for (cs_lnum_t ip = 0; ip < n_particles_prev; ip++) {
+    for (cs_lnum_t ip = 0; ip < p_set->n_particles; ip++) {
 
       unsigned char *particle = p_set->p_buffer + p_am->extents * ip;
+
+      /* Treat only particle present at previous time step.
+         (particle index may have been modified in trajectory step) */
+      if (cs_lagr_particle_get_real(particle, p_am,
+                                    CS_LAGR_RESIDENCE_TIME) < 1e-12 * dtp)
+        continue;
 
       if (   cs_lagr_particles_get_flag(p_set, ip, CS_LAGR_PART_FIXED)
           || cs_lagr_particle_get_lnum(particle, p_am, CS_LAGR_REBOUND_ID) != 0)
