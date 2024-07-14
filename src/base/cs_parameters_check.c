@@ -840,10 +840,10 @@ cs_parameters_check(void)
   const int kvisl0 = cs_field_key_id("diffusivity_ref");
   const int restart_file_key_id = cs_field_key_id("restart_file");
   const int key_limiter = cs_field_key_id("limiter_choice");
-  const int key_t_ext_id = cs_field_key_id("time_extrapolated");
-  const int key_scalar_diff = cs_field_key_id("diffusivity_id");
+  const int key_t_ext = cs_field_key_id("time_extrapolated");
+  const int key_diffusivity_id = cs_field_key_id("diffusivity_id");
   const int key_scalar_to = cs_field_key_id("scalar_time_scheme");
-  const int key_scalar_exp_extrap = cs_field_key_id("st_exp_extrapolated");
+  const int key_scalar_st_exp = cs_field_key_id("st_exp_extrapolated");
   const int key_scalar_diff_extrap = cs_field_key_id("diffusivity_extrapolated");
   const int key_dt_var = cs_field_key_id("time_step_factor");
   const int kturt = cs_field_key_id("turbulent_flux_model");
@@ -931,19 +931,21 @@ cs_parameters_check(void)
 
   cs_equation_param_t *eqp_u = cs_field_get_equation_param(CS_F_(vel));
 
-  int rho_extrap = cs_field_get_key_int(CS_F_(rho), key_t_ext_id);
-  int mu_extrap  = cs_field_get_key_int(CS_F_(mu), key_t_ext_id);
-  int cp_extrap = 0;
+  int rho_t_ext = 0, mu_t_ext = 0, cp_t_ext = 0;
+  if (CS_F_(rho) != NULL)
+    rho_t_ext = cs_field_get_key_int(CS_F_(rho), key_t_ext);
+  if (CS_F_(mu) != NULL)
+    mu_t_ext = cs_field_get_key_int(CS_F_(mu), key_t_ext);
 
   const cs_field_t *f_cp = cs_field_by_name_try("specific_heat");
   if (f_cp != NULL)
-    cp_extrap = cs_field_get_key_int(f_cp, key_t_ext_id);
+    cp_t_ext = cs_field_get_key_int(f_cp, key_t_ext);
 
   if (   fabs(eqp_u->theta - 1.) < cs_math_epzero
       && (   time_scheme->istmpf == 2
           || time_scheme->isno2t != 0
           || time_scheme->isto2t != 0
-          || rho_extrap != 0 || mu_extrap  != 0 || cp_extrap  != 0))
+          || rho_t_ext != 0 || mu_t_ext  != 0 || cp_t_ext  != 0))
     cs_log_warning
       (_("Time scheme selection:\n"
          "Time scheme for velocity is first order (theta = %d)\n"
@@ -954,24 +956,24 @@ cs_parameters_check(void)
          "time extrapolation for density %d, viscosity %d\n"
          "and cp %d\n"), eqp_u->theta,
        time_scheme->istmpf, time_scheme->isno2t,
-       time_scheme->isto2t, rho_extrap, mu_extrap, cp_extrap);
+       time_scheme->isto2t, rho_t_ext, mu_t_ext, cp_t_ext);
 
   if (   fabs(eqp_u->theta - 0.5) < cs_math_epzero
       && (   time_scheme->istmpf != 2
           || time_scheme->isno2t != 1
           || time_scheme->isto2t != 1
-          || rho_extrap != 1 || mu_extrap  != 1 || cp_extrap  != 1))
+          || rho_t_ext != 1 || mu_t_ext  != 1 || cp_t_ext  != 1))
     cs_log_warning
       (_("Time scheme selection\n\n"
          "Time scheme for velocity is second order (theta = %d)\n"
-         "but some terms are second order in time with the following seetings:\n"
+         "but some terms are second order in time with the following settings:\n"
          "istmpf = %d, isno2t = %d, isto2t = %d (time order of the mass flux,\n"
          "time scheme for the momentum source terms, time scheme for the\n"
          "turbulence source terms)\n"
          "time extrapolation for density %d, viscosity %d\n"
          "and cp %d\n"), eqp_u->theta,
        time_scheme->istmpf, time_scheme->isno2t,
-       time_scheme->isto2t, rho_extrap, mu_extrap, cp_extrap);
+       time_scheme->isto2t, rho_t_ext, mu_t_ext, cp_t_ext);
 
   for (int f_id = 0; f_id < n_fields; f_id++) {
     cs_field_t *f = cs_field_by_id(f_id);
@@ -990,12 +992,15 @@ cs_parameters_check(void)
            f->name, scalar_time_order, time_scheme->isno2t);
       }
 
-      cs_lnum_t scalar_diffusivity = cs_field_get_key_int(f, key_scalar_diff);
-      if (scalar_diffusivity != mu_extrap) {
-        cs_log_warning
-          (_("Non standard choice of time-scheme for \"%s\":\n"
-             " diffusivity extrap is %d while general extrap is %d.\n"),
-           f->name, scalar_diffusivity, mu_extrap);
+      const int iscavr = cs_field_get_key_int(f, kscavr);
+      int f_diff_id = cs_field_get_key_int(f, key_diffusivity_id);
+      if (f_diff_id >= 0 && iscavr <= 0) {
+        int scalar_diff_t_ext = cs_field_get_key_int(f_diff_id, key_t_ext);
+        if (scalar_diff_t_ext != mu_t_ext)
+          cs_log_warning
+            (_("Non standard choice of time-scheme for \"%s\":\n"
+               " diffusivity time_extrapolated is %d while viscosity one is %d.\n"),
+             f->name, scalar_diff_t_ext, mu_t_ext);
       }
     }
   }
@@ -1098,14 +1103,14 @@ cs_parameters_check(void)
           || time_scheme->isno2t > 0
           || time_scheme->thetvi > 0.
           || time_scheme->thetcp > 0.
-          || rho_extrap > 0 || mu_extrap > 0 || cp_extrap > 0)
+          || rho_t_ext > 0 || mu_t_ext > 0 || cp_t_ext > 0)
         stop_criteria = true;
 
       int scalar_id = (ks > -1) ? cs_field_get_key_int(f, ks) : -1;
       if (scalar_id > -1) {
         int scalar_time_order = cs_field_get_key_int(f, key_scalar_to);
         double scalar_exp_extrap
-          = cs_field_get_key_double(f, key_scalar_exp_extrap);
+          = cs_field_get_key_double(f, key_scalar_st_exp);
         double scalar_diff_extrap
           = cs_field_get_key_double(f, key_scalar_diff_extrap);
         if (   scalar_time_order > 0
@@ -1158,7 +1163,7 @@ cs_parameters_check(void)
         if (scalar_id > -1) {
           int scalar_time_order = cs_field_get_key_int(f, key_scalar_to);
           double scalar_exp_extrap
-            = cs_field_get_key_double(f, key_scalar_exp_extrap);
+            = cs_field_get_key_double(f, key_scalar_st_exp);
           if (scalar_exp_extrap > 0. || scalar_time_order > 0)
             cs_parameters_error
               (CS_ABORT_DELAYED,
@@ -1189,7 +1194,7 @@ cs_parameters_check(void)
       if (scalar_id > -1) {
         int scalar_time_order = cs_field_get_key_int(f, key_scalar_to);
         double scalar_exp_extrap
-          = cs_field_get_key_double(f, key_scalar_exp_extrap);
+          = cs_field_get_key_double(f, key_scalar_st_exp);
         if (scalar_exp_extrap > 0. || scalar_time_order > 0)
             cs_parameters_error
               (CS_ABORT_DELAYED,
@@ -1755,8 +1760,8 @@ cs_parameters_check(void)
            " Velocity:                    theta = %g\n"
            " Navier-Stokes source terms:  isno2t = %d\n"
            "                              thetsn = %g\n"
-           " Density:                     iroext = %d\n"
-           " Viscosity:                   iviext = %d\n"
+           " Density, key \"time_extrapolated\"  = %d\n"
+           " Viscosity, key \"time_extrapolated\"= %d\n"
            "                              thetvi = %d\n"
            "\n"
            "This is not compatible with:\n"
@@ -1764,20 +1769,14 @@ cs_parameters_check(void)
            "- reinforced U-P coupling (ipucou): %d\n"
            "- non-constant time step (idtvar): %d.");
 
-    int iroext = 0, iviext = 0;
-    if (CS_F_(rho) != NULL)
-      iroext = cs_field_get_key_int(CS_F_(rho), key_t_ext_id);
-    if (CS_F_(mu) != NULL)
-      iviext = cs_field_get_key_int(CS_F_(mu), key_t_ext_id);
-
     const cs_time_scheme_t *t_sch = time_scheme;
 
     if (   fabs(eqp->theta-1.0) > 1e-3
         || t_sch->thetvi > 0
         || t_sch->thetsn > 0
         || t_sch->isno2t > 0
-        || iroext > 0
-        || iviext > 0) {
+        || rho_t_ext > 0
+        || mu_t_ext > 0) {
 
       if (   n_ns_error_estimators > 0
           || vp_param->ipucou == 1
@@ -1789,8 +1788,8 @@ cs_parameters_check(void)
                             eqp->theta,
                             t_sch->isno2t,
                             t_sch->thetsn,
-                            iroext,
-                            iviext,
+                            rho_t_ext,
+                            mu_t_ext,
                             t_sch->thetvi,
                             n_ns_error_estimators,
                             vp_param->ipucou,
