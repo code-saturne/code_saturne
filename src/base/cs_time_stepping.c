@@ -1072,11 +1072,6 @@ cs_time_stepping(void)
 
   }
 
-  if (cs_glob_physical_model_flag[CS_COMPRESSIBLE] >= 0) {
-    BFT_FREE(cs_glob_cf_icvfli);
-    BFT_FREE(cs_glob_cf_ifbet);
-  }
-
   if (cs_glob_physical_model_flag[CS_COMBUSTION_SLFM] >= 0)
     cs_f_finalize_steady_laminar_flamelet_library();
 
