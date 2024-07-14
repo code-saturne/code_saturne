@@ -885,7 +885,7 @@ cs_parameters_check(void)
   const int nr_sweep_default = 10;
   const int nr_sweep_default_p = 5;
 
-  if (cs_glob_turb_model->itytur == 4 || time_scheme->time_order == 2) {
+  if (cs_glob_turb_model->type == CS_TURB_LES || time_scheme->time_order == 2) {
     for (int f_id = 0; f_id < n_fields; f_id++) {
 
       cs_field_t *f = cs_field_by_id(f_id);
@@ -1030,7 +1030,7 @@ cs_parameters_check(void)
       _raise_turb_error("in the k-epsilon turbulence model");
   }
 
-  if (   cs_glob_turb_model->iturb == 50
+  if (   cs_glob_turb_model->iturb == CS_TURB_V2F_PHI
       && cs_glob_turb_rans_model->ikecou == 1) {
     cs_equation_param_t *eqp_k = cs_field_get_equation_param(CS_F_(k));
     cs_equation_param_t *eqp_eps = cs_field_get_equation_param(CS_F_(eps));
@@ -1046,7 +1046,7 @@ cs_parameters_check(void)
       _raise_turb_error("in the v2f-phi turbulence model");
   }
 
-  if (   cs_glob_turb_model->iturb == 51
+  if (   cs_glob_turb_model->iturb == CS_TURB_V2F_BL_V2K
       && cs_glob_turb_rans_model->ikecou == 1) {
     cs_equation_param_t *eqp_k = cs_field_get_equation_param(CS_F_(k));
     cs_equation_param_t *eqp_eps = cs_field_get_equation_param(CS_F_(eps));
@@ -1059,10 +1059,10 @@ cs_parameters_check(void)
         || fabs(eqp_eps->theta - 1.) > cs_math_epzero
         || fabs(eqp_phi->theta - 1.) > cs_math_epzero
         || fabs(eqp_alp_bl->theta - 1.) > cs_math_epzero)
-      _raise_turb_error("in the v2f-v2k turbulence model");
+      _raise_turb_error("in the v2f-Blv2k turbulence model");
   }
 
-  if (   cs_glob_turb_model->iturb == 60
+  if (   cs_glob_turb_model->iturb == CS_TURB_K_OMEGA
       && cs_glob_turb_rans_model->ikecou == 1) {
     cs_equation_param_t *eqp_k = cs_field_get_equation_param(CS_F_(k));
     cs_equation_param_t *eqp_omg = cs_field_get_equation_param(CS_F_(omg));
@@ -1074,7 +1074,7 @@ cs_parameters_check(void)
       _raise_turb_error("in the k-omega turbulence model");
   }
 
-  if (   cs_glob_turb_model->iturb == 70
+  if (   cs_glob_turb_model->iturb == CS_TURB_SPALART_ALLMARAS
       && cs_glob_turb_rans_model->ikecou == 1) {
     cs_equation_param_t *eqp_nusa = cs_field_get_equation_param(CS_F_(nusa));
 
@@ -1262,9 +1262,7 @@ cs_parameters_check(void)
 
     int scalar_id = (ks > -1) ? cs_field_get_key_int(f, ks) : -1;
     if (scalar_id > -1) {
-      if (   (   cs_glob_turb_model->itytur == 2
-              || cs_glob_turb_model->iturb == 50
-              || cs_glob_turb_model->itytur == 3)
+      if (   cs_glob_turb_model->type == CS_TURB_RANS
           && cs_thermal_model_field() == NULL
           && cs_math_3_norm(cs_glob_physical_constants->gravity) > cs_math_epzero) {
         cs_log_warning
@@ -1353,7 +1351,7 @@ cs_parameters_check(void)
   }
 
   /*--------------------------------------------------------------------------
-   * Verification related to periodic buondaries
+   * Verification related to periodic boundaries
    *--------------------------------------------------------------------------*/
 
   if (   cs_glob_mesh->have_rotation_perio
@@ -1410,7 +1408,7 @@ cs_parameters_check(void)
       cs_parameters_error
         (CS_ABORT_DELAYED,
          _("in ALE module"),
-         _("Max number of interations for implicit ALE\n"
+         _("Max number of iterations for implicit ALE\n"
            "must be a positive integer but it has value %d\n"),
          cs_glob_mobile_structures_i_max);
 
@@ -2230,7 +2228,7 @@ cs_parameters_check(void)
                                  _("while reading input data,\n"
                                    "Hybrid RANS/LES model is only "
                                    "compatible with k-omega SST model "
-                                   "(iturb=60)"),
+                                   "(iturb=CS_TURB_K_OMEGA)"),
                                  "cs_glob_turb_model->iturb",
                                  turb_model->iturb,
                                  1,
@@ -2246,8 +2244,8 @@ cs_parameters_check(void)
     cs_parameters_is_in_list_int(CS_ABORT_DELAYED,
                                  _("while reading input data,\n"
                                    "HTLES model is only compatible"
-                                   "with k-omega SST model (iturb=60)"
-                                   "and BL-v2/k model (iturb=51)"),
+                                   "with k-omega SST model (iturb=CS_TURB_K_OMEGA)"
+                                   "and BL-v2/k model (iturb=CS_TURB_V2F_BL_V2K)"),
                                  "cs_glob_turb_model->iturb",
                                  turb_model->iturb,
                                  2,
@@ -2393,7 +2391,7 @@ cs_parameters_check(void)
      if idtvar >= 0 */
 
   if (   (   turb_model->itytur == 2
-          || turb_model->itytur == 6)
+          || turb_model->iturb == CS_TURB_K_OMEGA)
       && cs_glob_time_step_options->idtvar >= 0) {
     cs_field_t *f_eo = (turb_model->itytur == 2) ? CS_F_(eps) : CS_F_(omg);
     int f_ids[2] = {CS_F_(k)->id, f_eo->id};
