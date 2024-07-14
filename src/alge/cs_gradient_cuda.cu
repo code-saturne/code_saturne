@@ -591,14 +591,14 @@ _compute_rhs_lsq_strided_cells(cs_lnum_t             n_cells,
 
   }
 
-  /* Contribution from standard neighborhod */
+  /* Contribution from extended neighborhod */
 
   if (cell_cells_e_idx != NULL) {
     s_id = cell_cells_e_idx[c_id1];
     e_id = cell_cells_e_idx[c_id1 + 1];
 
     for (cs_lnum_t idx = s_id; idx < e_id; idx++) {
-      cs_lnum_t c_id2 = cell_cells[idx];
+      cs_lnum_t c_id2 = cell_cells_e[idx];
 
       auto cell_f_cen2 = cell_f_cen[c_id2];
 
@@ -762,7 +762,6 @@ _compute_gradient_lsq_strided(cs_lnum_t          n_cells,
   grad[c_id][i][j] =   rhs[c_id][i][0] * cocg_l[0]
                      + rhs[c_id][i][1] * cocg_l[1]
                      + rhs[c_id][i][2] * cocg_l[2];
-
 }
 
 /*----------------------------------------------------------------------------
