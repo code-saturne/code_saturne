@@ -283,7 +283,6 @@ init_at_chem = 1
 
 ! --> Initialisation for the gaseous chemistry model:
 
-ifilechemistry = 0
 nbchim = 0
 nbchmz = 0
 nespgi = 0

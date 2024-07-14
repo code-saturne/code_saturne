@@ -383,7 +383,7 @@ cs_time_stepping(void)
 
   if (cs_glob_physical_model_flag[CS_ATMOSPHERIC] >= 0) {
 
-    if (cs_glob_atmo_option->ifilechemistry >= 1) {
+    if (cs_glob_atmo_chemistry->model > 0) {
       cs_f_init_chemistry_reacnum();
     }
   }
@@ -1067,7 +1067,7 @@ cs_time_stepping(void)
 
     cs_at_data_assim_finalize();
 
-    if (cs_glob_atmo_option->ifilechemistry >= 1)
+    if (cs_glob_atmo_chemistry->model > 0)
       cs_f_finalize_chemistry();
 
   }

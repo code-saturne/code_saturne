@@ -55,7 +55,7 @@ module atchem
 
   !> ifilechemistry: choice to read (=1,2,3,4, according to the scheme) or not (0)
   !> a concentration profile file
-  integer(c_int), pointer, save :: ifilechemistry
+  integer, save :: ifilechemistry = 0
   !> isepchemistry: splitted (=1) or semi-coupled (=2, pu-sun) resolution
   !> of chemistry
   integer(c_int), pointer, save :: isepchemistry

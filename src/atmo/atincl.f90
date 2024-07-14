@@ -436,7 +436,7 @@ double precision, save:: zaero
         init_aero_with_lib, n_aero, n_sizebin, imeteo,                  &
         nbmetd, nbmett, nbmetm, iatra1, nbmaxt,                         &
         meteo_zi, iatsoil,                                              &
-        nvertv, kvert, kmx, ifilechemistry)                             &
+        nvertv, kvert, kmx)                             &
       bind(C, name='cs_f_atmo_get_pointers')
       use, intrinsic :: iso_c_binding
       implicit none
@@ -457,7 +457,6 @@ double precision, save:: zaero
       type(c_ptr), intent(out) :: meteo_zi
       type(c_ptr), intent(out) :: iatsoil
       type(c_ptr), intent(out) :: nvertv, kvert, kmx
-      type(c_ptr), intent(out) :: ifilechemistry
     end subroutine cs_f_atmo_get_pointers
 
     !---------------------------------------------------------------------------
@@ -754,7 +753,7 @@ contains
   subroutine atmo_init
 
     use, intrinsic :: iso_c_binding
-    use atchem, only: nrg, nespg, ichemistry, isepchemistry, photolysis, ifilechemistry
+    use atchem, only: nrg, nespg, ichemistry, isepchemistry, photolysis
     use sshaerosol
     use cs_c_bindings
 
@@ -776,7 +775,6 @@ contains
     type(c_ptr) :: c_meteo_zi
     type(c_ptr) :: c_iatsoil, c_isepchemistry
     type(c_ptr) :: c_nvert, c_kvert, c_kmx, c_theo_interp
-    type(c_ptr) :: c_ifilechemistry
 
     call cs_f_atmo_get_pointers(c_ps,               &
       c_syear, c_squant, c_shour, c_smin, c_ssec,   &
@@ -793,7 +791,7 @@ contains
       c_nsize, c_imeteo,                            &
       c_nbmetd, c_nbmett, c_nbmetm, c_iatra1, c_nbmaxt, &
       c_meteo_zi, c_iatsoil,                        &
-      c_nvert, c_kvert, c_kmx, c_ifilechemistry)
+      c_nvert, c_kvert, c_kmx)
 
     call c_f_pointer(c_ps, ps)
     call c_f_pointer(c_syear, syear)
@@ -840,7 +838,6 @@ contains
     call c_f_pointer(c_nvert, nvert)
     call c_f_pointer(c_kvert, kvert)
     call c_f_pointer(c_kmx, kmx)
-    call c_f_pointer(c_ifilechemistry, ifilechemistry)
 
     return
 
