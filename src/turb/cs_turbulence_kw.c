@@ -682,7 +682,7 @@ cs_turbulence_kw(int phase_id)
   cs_real_t *grad_dot_g = NULL;
   BFT_MALLOC(grad_dot_g, n_cells_ext, cs_real_t);
 
-  if (cs_glob_turb_rans_model->igrake == 1) {
+  if (cs_glob_turb_rans_model->has_buoyant_term == 1) {
 
     /* Allocate a temporary array for the gradient calculation */
 

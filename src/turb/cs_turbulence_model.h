@@ -198,12 +198,13 @@ typedef struct {
                                  equation
                                  - 1: true
                                  - 0: false (default) */
-  int           igrake;       /* buoyant term in k-epsilon
+  int           has_buoyant_term;
+                              /* take buoyant term in k-epsilon or Rij-epsilon
+                               * models
                                  - 1: true (default if rho is variable)
-                                 - 0: false */
-  int           igrari;       /* buoyant term in Rij-epsilon
-                                 - 1: true (default if rho is variable)
-                                 - 0: false */
+                                 - 0: false
+                                 Useful if and only if RANS models are activated
+                                 and gravity is non-zero. */
   int           ikecou;       /* partially coupled version of
                                  k-epsilon (only for iturb=20)
                                  - 1: true (default)

@@ -177,23 +177,14 @@ BEGIN_C_DECLS
         This term may generate non-physical velocities at the wall.
         When it is not explicitly taken into account, it is
         implicitly included into the pressure.
-  \var  cs_turb_rans_model_t::igrake
+  \var  cs_turb_rans_model_t::has_buoyant_term
         Indicates if the terms related to gravity are taken
         into account in the equations of \f$k-\epsilon\f$.\n
         - 1: true (default if \f$ \rho \f$ is variable)
         - 0: false
-        Useful if and only if \ref iturb = 20, 21, 50 or 60 and
+        Useful if and only if RANS models are activated and
         (\ref cs_physical_constants_t::gravity "gravity")
         \f$\ne\f$ (0,0,0) and the density is not uniform.
-  \var  cs_turb_rans_model_t::igrari
-        Indicates if the terms related to gravity are taken
-        into account in the equations of \f$R_{ij}-\epsilon\f$.\n
-        - 1: true (default if \f$ \rho \f$ is variable)
-        - 0: false
-        Useful if and only if \ref iturb = 30 or 31 and
-        (\ref cs_physical_constants_t::gravity "gravity") \f$\ne\f$
-        (0,0,0) (\f$R_{ij}-\epsilon\f$ model with gravity) and the
-        density is not uniform.
   \var  cs_turb_rans_model_t::ikecou
         Indicates if the coupling of the source terms of
         \f$k\f$ and \f$\epsilon\f$ or \f$k\f$ and \f$\omega\f$
@@ -392,8 +383,7 @@ _turb_rans_model =
   .idirsm     =    0,
   .iclkep     =    0,
   .igrhok     =    0,
-  .igrake     =    1,
-  .igrari     =    1,
+  .has_buoyant_term = 1,
   .ikecou     =    0,
   .reinit_turb=    1,
   .irijco     =    1, /* Coupled version of DRSM models */
@@ -1065,8 +1055,6 @@ cs_f_turb_rans_model_get_pointers(int     **irccor,
                                   int     **idirsm,
                                   int     **iclkep,
                                   int     **igrhok,
-                                  int     **igrake,
-                                  int     **igrari,
                                   int     **ikecou,
                                   int     **reinit_turb,
                                   int     **irijco,
@@ -1141,8 +1129,6 @@ cs_f_turb_model_get_pointers(int     **iturb,
  *   idirsm --> pointer to cs_glob_turb_rans_model->idirsm
  *   iclkep --> pointer to cs_glob_turb_rans_model->iclkep
  *   igrhok --> pointer to cs_glob_turb_rans_model->igrhok
- *   igrake --> pointer to cs_glob_turb_rans_model->igrake
- *   igrari --> pointer to cs_glob_turb_rans_model->igrari
  *   ikecou --> pointer to cs_glob_turb_rans_model->ikecou
  *   reinit_turb --> pointer to cs_glob_turb_rans_model->reinit_turb
  *   irijco --> pointer to cs_glob_turb_rans_model->irijco
@@ -1160,8 +1146,6 @@ cs_f_turb_rans_model_get_pointers(int     **irccor,
                                   int     **idirsm,
                                   int     **iclkep,
                                   int     **igrhok,
-                                  int     **igrake,
-                                  int     **igrari,
                                   int     **ikecou,
                                   int     **reinit_turb,
                                   int     **irijco,
@@ -1177,8 +1161,6 @@ cs_f_turb_rans_model_get_pointers(int     **irccor,
   *idirsm = &(_turb_rans_model.idirsm);
   *iclkep = &(_turb_rans_model.iclkep);
   *igrhok = &(_turb_rans_model.igrhok);
-  *igrake = &(_turb_rans_model.igrake);
-  *igrari = &(_turb_rans_model.igrari);
   *ikecou = &(_turb_rans_model.ikecou);
   *reinit_turb= &(_turb_rans_model.reinit_turb);
   *irijco = &(_turb_rans_model.irijco);
@@ -1769,14 +1751,14 @@ cs_turb_model_log_setup(void)
 
     cs_log_printf
       (CS_LOG_SETUP,
-       _("    uref:        %14.5e (Characteristic velocity)\n"
-         "    iclkep:      %14d (k-epsilon clipping model)\n"
-         "    ikecou:      %14d (k-epsilon coupling mode)\n"
-         "    igrake:      %14d (Account for gravity)\n"),
+       _("    uref:             %14.5e (Characteristic velocity)\n"
+         "    iclkep:           %14d (k-epsilon clipping model)\n"
+         "    ikecou:           %14d (k-epsilon coupling mode)\n"
+         "    has_buoyant_term: %14d (Account for gravity)\n"),
        cs_glob_turb_ref_values->uref,
        cs_glob_turb_rans_model->iclkep,
        cs_glob_turb_rans_model->ikecou,
-       cs_glob_turb_rans_model->igrake);
+       cs_glob_turb_rans_model->has_buoyant_term);
 
     if (   cs_glob_turb_rans_model->ikecou == 0
         && cs_glob_time_step_options->idtvar >= 0) {
@@ -1796,22 +1778,22 @@ cs_turb_model_log_setup(void)
            || turb_model->iturb == CS_TURB_RIJ_EPSILON_EBRSM) {
 
     cs_log_printf(CS_LOG_SETUP,
-                  _("    uref:        %14.5e (Characteristic velocity)\n"
-                    "    reinit_turb: %14d (Advanced re-init)\n"
-                    "    irijco:      %14d (Coupled resolution)\n"
-                    "    irijnu:      %14d (Matrix stabilization)\n"
-                    "    irijrb:      %14d (Reconstruct at boundaries)\n"
-                    "    igrari:      %14d (Account for gravity)\n"
-                    "    iclsyr:      %14d (Symmetry implicitation)\n"
-                    "    iclptr:      %14d (Wall implicitation)\n"
-                    "    ikwcln:      %14d (Wall boundary condition"
-                                           "on omega in k-omega SST)\n"),
+                  _("    uref:             %14.5e (Characteristic velocity)\n"
+                    "    reinit_turb:      %14d (Advanced re-init)\n"
+                    "    irijco:           %14d (Coupled resolution)\n"
+                    "    irijnu:           %14d (Matrix stabilization)\n"
+                    "    irijrb:           %14d (Reconstruct at boundaries)\n"
+                    "    has_buoyant_term: %14d (Account for gravity)\n"
+                    "    iclsyr:           %14d (Symmetry implicitation)\n"
+                    "    iclptr:           %14d (Wall implicitation)\n"
+                    "    ikwcln:           %14d (Wall boundary condition"
+                                                "on omega in k-omega SST)\n"),
                   cs_glob_turb_ref_values->uref,
                   cs_glob_turb_rans_model->reinit_turb,
                   cs_glob_turb_rans_model->irijco,
                   cs_glob_turb_rans_model->irijnu,
                   cs_glob_turb_rans_model->irijrb,
-                  cs_glob_turb_rans_model->igrari,
+                  cs_glob_turb_rans_model->has_buoyant_term,
                   cs_glob_turb_rans_model->iclsyr,
                   cs_glob_turb_rans_model->iclptr,
                   cs_glob_turb_rans_model->ikwcln);
@@ -1865,14 +1847,14 @@ cs_turb_model_log_setup(void)
   else if (turb_model->iturb == CS_TURB_V2F_PHI) {
 
     cs_log_printf(CS_LOG_SETUP,
-                  _("    uref:        %14.5e (Characteristic velocity)\n"
-                    "    iclkep:      %14d (k-epsilon clipping model)\n"
-                    "    ikecou:      %14d (k-epsilon coupling mode)\n"
-                    "    igrake:      %14d (Account for gravity)\n"),
+                  _("    uref:             %14.5e (Characteristic velocity)\n"
+                    "    iclkep:           %14d (k-epsilon clipping model)\n"
+                    "    ikecou:           %14d (k-epsilon coupling mode)\n"
+                    "    has_buoyant_term: %14d (Account for gravity)\n"),
                   cs_glob_turb_ref_values->uref,
                   cs_glob_turb_rans_model->iclkep,
                   cs_glob_turb_rans_model->ikecou,
-                  cs_glob_turb_rans_model->igrake);
+                  cs_glob_turb_rans_model->has_buoyant_term);
 
     if (   cs_glob_turb_rans_model->ikecou == 0
         && cs_glob_time_step_options->idtvar >= 0) {
@@ -1899,16 +1881,16 @@ cs_turb_model_log_setup(void)
          N_("CS_HYBRID_HTLES (Hybrid Temporal LES)")};
 
     cs_log_printf(CS_LOG_SETUP,
-                  _("    uref:        %14.5e (Characteristic velocity)\n"
-                    "    iclkep:      %14d (k-epsilon clipping model)\n"
-                    "    ikecou:      %14d (k-epsilon coupling mode)\n"
-                    "    hybrid_turb: %s\n"
-                    "    igrake:      %14d (Account for gravity)\n"),
+                  _("    uref:             %14.5e (Characteristic velocity)\n"
+                    "    iclkep:           %14d (k-epsilon clipping model)\n"
+                    "    ikecou:           %14d (k-epsilon coupling mode)\n"
+                    "    hybrid_turb:      %s\n"
+                    "    has_buoyant_term: %14d (Account for gravity)\n"),
                   cs_glob_turb_ref_values->uref,
                   cs_glob_turb_rans_model->iclkep,
                   cs_glob_turb_rans_model->ikecou,
                   hybrid_turb_value_str[turb_model->hybrid_turb],
-                  cs_glob_turb_rans_model->igrake);
+                  cs_glob_turb_rans_model->has_buoyant_term);
 
     if (   cs_glob_turb_rans_model->ikecou == 0
         && cs_glob_time_step_options->idtvar >= 0) {
@@ -1935,16 +1917,16 @@ cs_turb_model_log_setup(void)
          N_("CS_HYBRID_HTLES (Hybrid Temporal LES)")};
 
     cs_log_printf(CS_LOG_SETUP,
-                  _("    uref:        %14.5e (Characteristic velocity)\n"
-                    "    ikecou:      %14d (k-epsilon coupling mode)\n"
-                    "    reinit_turb: %14d (Advanced re-init)\n"
-                    "    hybrid_turb: %s\n"
-                    "    igrake:      %14d (Account for gravity)\n"),
+                  _("    uref:             %14.5e (Characteristic velocity)\n"
+                    "    ikecou:           %14d (k-epsilon coupling mode)\n"
+                    "    reinit_turb:      %14d (Advanced re-init)\n"
+                    "    hybrid_turb:      %s\n"
+                    "    has_buoyant_term: %14d (Account for gravity)\n"),
                   cs_glob_turb_ref_values->uref,
                   cs_glob_turb_rans_model->ikecou,
                   cs_glob_turb_rans_model->reinit_turb,
                   hybrid_turb_value_str[turb_model->hybrid_turb],
-                  cs_glob_turb_rans_model->igrake);
+                  cs_glob_turb_rans_model->has_buoyant_term);
 
     if (   cs_glob_turb_rans_model->ikecou == 0
         && cs_glob_time_step_options->idtvar >= 0) {

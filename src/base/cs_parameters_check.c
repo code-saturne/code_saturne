@@ -1272,13 +1272,12 @@ cs_parameters_check(void)
            cs_glob_physical_constants->gravity[0],
            cs_glob_physical_constants->gravity[1],
            cs_glob_physical_constants->gravity[2]);
-        if (  cs_glob_turb_rans_model->igrake == 1
-            || cs_glob_turb_rans_model->igrari == 1)
+        if (cs_glob_turb_rans_model->has_buoyant_term == 1)
           cs_log_warning
             (_("Turbulence model with gravity\n"
                "Gravity is taken into account in the turbulence source terms\n"
-               "(igrake = %d or igrari %d) without solving temperature or energy\n"),
-             cs_glob_turb_rans_model->igrake, cs_glob_turb_rans_model->igrari);
+               "(has_buoyant_term = %d) without solving temperature or energy\n"),
+             cs_glob_turb_rans_model->has_buoyant_term);
       }
     }
   }
@@ -2378,8 +2377,8 @@ cs_parameters_check(void)
 
     cs_parameters_is_in_range_int(CS_ABORT_DELAYED,
                                   _("while reading input data"),
-                                  "cs_glob_turb_rans_model->igrake",
-                                  cs_glob_turb_rans_model->igrake,
+                                  "cs_glob_turb_rans_model->has_buoyant_term",
+                                  cs_glob_turb_rans_model->has_buoyant_term,
                                   0, 2);
   }
 
@@ -2474,12 +2473,6 @@ cs_parameters_check(void)
                                     cs_glob_turb_rans_model->idifre,
                                     0, 2);
     }
-
-    cs_parameters_is_in_range_int(CS_ABORT_DELAYED,
-                                  _("while reading input data"),
-                                  "cs_glob_turb_rans_model->igrari",
-                                  cs_glob_turb_rans_model->igrari,
-                                  0, 2);
 
     cs_parameters_is_in_range_int(CS_ABORT_DELAYED,
                                   _("while reading input data"),

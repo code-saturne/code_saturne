@@ -1076,7 +1076,7 @@ _pre_solve_lrr(const cs_field_t  *f_rij,
   /* Buoyancy source term
    * -------------------- */
 
-  if (cs_glob_turb_rans_model->igrari == 1) {
+  if (cs_glob_turb_rans_model->has_buoyant_term == 1) {
 
     cs_real_6_t *_buoyancy = NULL, *cpro_buoyancy = NULL;
     cs_field_t *f_buo = cs_field_by_name_try("algo:rij_buoyancy");
@@ -1479,7 +1479,7 @@ _pre_solve_lrr_sg(const cs_field_t  *f_rij,
   /* Buoyancy source term
    * -------------------- */
 
-  if (cs_glob_turb_rans_model->igrari == 1) {
+  if (cs_glob_turb_rans_model->has_buoyant_term == 1) {
 
     cs_real_6_t *_buoyancy = NULL, *cpro_buoyancy = NULL;
     cs_field_t *f_buo = cs_field_by_name_try("algo:rij_buoyancy");
@@ -2084,7 +2084,7 @@ _pre_solve_ssg(const cs_field_t  *f_rij,
   /* Buoyancy source term
    * -------------------- */
 
-  if (cs_glob_turb_rans_model->igrari == 1) {
+  if (cs_glob_turb_rans_model->has_buoyant_term == 1) {
 
     cs_real_6_t *_buoyancy = NULL, *cpro_buoyancy = NULL;
     cs_field_t *f_buo = cs_field_by_name_try("algo:rij_buoyancy");
@@ -2580,7 +2580,7 @@ _solve_epsilon(int              phase_id,
    * ------------- */
 
   /* FIXME use beta ... WARNING */
-  if (cs_glob_turb_rans_model->igrari == 1) {
+  if (cs_glob_turb_rans_model->has_buoyant_term == 1) {
 
     /* Extrapolation of source terms (2nd order in time) */
     if (st_prv_id > -1)
@@ -3038,7 +3038,7 @@ cs_turbulence_rij(int phase_id)
   /* Compute the density gradient for buoyant terms
    * ---------------------------------------------- */
 
-  if (turb_rans_model->igrari == 1) {
+  if (turb_rans_model->has_buoyant_term == 1) {
     BFT_MALLOC(up_rhop, n_cells_ext, cs_real_3_t);
     _compute_up_rhop(phase_id, up_rhop);
   }

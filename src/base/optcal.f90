@@ -460,25 +460,6 @@ module optcal
   !> implicitly included into the pressure.
   integer(c_int), pointer, save :: igrhok
 
-  !> Indicates if the terms related to gravity are taken
-  !> into account in the equations of \f$k-\epsilon\f$.
-  !> - 1: true (default if \f$ \rho \f$ is variable)
-  !> - 0: false
-  !> Useful if and only if \ref iturb = 20, 21, 50 or 60 and
-  !> (\ref cstphy::gx "gx", \ref cstphy::gy "gy", \ref cstphy::gz "gz"})
-  !> \f$\ne\f$ (0,0,0) and the density is not uniform.
-  integer(c_int), pointer, save :: igrake
-
-  !> Indicates if the terms related to gravity are taken
-  !> into account in the equations of \f$R_{ij}-\varepsilon\f$.
-  !> - 1: true (default if \f$ \rho \f$ is variable)
-  !> - 0: false
-  !> Useful if and only if \ref iturb = 30 or 31 and (\ref cstphy::gx "gx",
-  !> \ref cstphy::gy "gy", \ref cstphy::gz "gz"}) \f$\ne\f$
-  !> (0,0,0) (\f$R_{ij}-\epsilon\f$ model with gravity) and the
-  !> density is not uniform.
-  integer(c_int), pointer, save :: igrari
-
   !> Indicates if the coupling of the source terms of
   !> \f$k\f$ and \f$\epsilon\f$ or \f$k\f$ and \f$\omega\f$
   !> is taken into account or not.
@@ -1072,8 +1053,8 @@ module optcal
     ! RANS turbulence model structure
 
     subroutine cs_f_turb_rans_model_get_pointers(irccor, itycor, idirsm, &
-                                                 iclkep, igrhok, igrake, &
-                                                 igrari, ikecou, reinit_turb, &
+                                                 iclkep, igrhok,  &
+                                                 ikecou, reinit_turb, &
                                                  irijco, irijnu,  &
                                                  irijrb, irijec, idifre, &
                                                  iclsyr, iclptr)         &
@@ -1081,7 +1062,7 @@ module optcal
       use, intrinsic :: iso_c_binding
       implicit none
       type(c_ptr), intent(out) :: irccor, itycor, idirsm, iclkep, igrhok
-      type(c_ptr), intent(out) :: igrake, igrari, ikecou, reinit_turb, irijco
+      type(c_ptr), intent(out) :: ikecou, reinit_turb, irijco
       type(c_ptr), intent(out) :: irijnu, irijrb
       type(c_ptr), intent(out) :: irijec, idifre, iclsyr, iclptr
     end subroutine cs_f_turb_rans_model_get_pointers
@@ -1413,14 +1394,14 @@ contains
 
     ! Local variables
 
-    type(c_ptr) :: c_irccor, c_itycor, c_idirsm, c_iclkep, c_igrhok, c_igrake
-    type(c_ptr) :: c_igrari, c_ikecou, c_reinit_turb, c_irijco, c_irijnu
+    type(c_ptr) :: c_irccor, c_itycor, c_idirsm, c_iclkep, c_igrhok
+    type(c_ptr) :: c_ikecou, c_reinit_turb, c_irijco, c_irijnu
     type(c_ptr) :: c_irijrb, c_irijec, c_idifre
     type(c_ptr) :: c_iclsyr, c_iclptr
 
     call cs_f_turb_rans_model_get_pointers( c_irccor, c_itycor, c_idirsm, &
-                                            c_iclkep, c_igrhok, c_igrake, &
-                                            c_igrari, c_ikecou, c_reinit_turb, &
+                                            c_iclkep, c_igrhok, &
+                                            c_ikecou, c_reinit_turb, &
                                             c_irijco, c_irijnu, &
                                             c_irijrb, c_irijec, c_idifre, &
                                             c_iclsyr, c_iclptr)
@@ -1430,8 +1411,6 @@ contains
     call c_f_pointer(c_idirsm, idirsm)
     call c_f_pointer(c_iclkep, iclkep)
     call c_f_pointer(c_igrhok, igrhok)
-    call c_f_pointer(c_igrake, igrake)
-    call c_f_pointer(c_igrari, igrari)
     call c_f_pointer(c_ikecou, ikecou)
     call c_f_pointer(c_reinit_turb, reinit_turb)
     call c_f_pointer(c_irijco, irijco)

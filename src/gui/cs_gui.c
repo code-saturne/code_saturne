@@ -4593,28 +4593,38 @@ cs_gui_turb_model(void)
   else if (cs_gui_strcmp(model, "k-epsilon")) {
     turb_mdl->iturb = CS_TURB_K_EPSILON;
     cs_gui_node_get_child_int(tn_t, "wall_function", &iwallf);
-    cs_gui_node_get_child_status_int(tn_t, "gravity_terms", &(rans_mdl->igrake));
+    cs_gui_node_get_child_status_int(tn_t,
+                                     "gravity_terms",
+                                     &(rans_mdl->has_buoyant_term));
   }
   else if (cs_gui_strcmp(model, "k-epsilon-PL")) {
     turb_mdl->iturb = CS_TURB_K_EPSILON_LIN_PROD;
     cs_gui_node_get_child_int(tn_t, "wall_function", &iwallf);
-    cs_gui_node_get_child_status_int(tn_t, "gravity_terms", &(rans_mdl->igrake));
+    cs_gui_node_get_child_status_int(tn_t,
+                                     "gravity_terms",
+                                     &(rans_mdl->has_buoyant_term));
   }
   else if (cs_gui_strcmp(model, "Rij-epsilon")) {
     turb_mdl->iturb = CS_TURB_RIJ_EPSILON_LRR;
     cs_gui_node_get_child_int(tn_t, "wall_function", &iwallf);
-    cs_gui_node_get_child_status_int(tn_t, "gravity_terms", &(rans_mdl->igrari));
+    cs_gui_node_get_child_status_int(tn_t,
+                                     "gravity_terms",
+                                     &(rans_mdl->has_buoyant_term));
   }
   else if (cs_gui_strcmp(model, "Rij-SSG")) {
     turb_mdl->iturb = CS_TURB_RIJ_EPSILON_SSG;
     cs_gui_node_get_child_int(tn_t, "wall_function", &iwallf);
-    cs_gui_node_get_child_status_int(tn_t, "gravity_terms", &(rans_mdl->igrari));
+    cs_gui_node_get_child_status_int(tn_t,
+                                     "gravity_terms",
+                                     &(rans_mdl->has_buoyant_term));
     cs_gui_node_get_child_status_int(tn_t, "coupled_rij", &(rans_mdl->irijco));
   }
   else if (cs_gui_strcmp(model, "Rij-EBRSM")) {
     turb_mdl->iturb = CS_TURB_RIJ_EPSILON_EBRSM;
     cs_gui_node_get_child_int(tn_t, "wall_function", &iwallf);
-    cs_gui_node_get_child_status_int(tn_t, "gravity_terms", &(rans_mdl->igrari));
+    cs_gui_node_get_child_status_int(tn_t,
+                                     "gravity_terms",
+                                     &(rans_mdl->has_buoyant_term));
     cs_gui_node_get_child_status_int(tn_t, "coupled_rij", &(rans_mdl->irijco));
   }
   else if (cs_gui_strcmp(model, "LES_Smagorinsky")) {
@@ -4629,17 +4639,23 @@ cs_gui_turb_model(void)
   else if (cs_gui_strcmp(model, "v2f-phi")) {
     turb_mdl->iturb = CS_TURB_V2F_PHI;
     cs_gui_node_get_child_int(tn_t, "wall_function", &iwallf);
-    cs_gui_node_get_child_status_int(tn_t, "gravity_terms", &(rans_mdl->igrake));
+    cs_gui_node_get_child_status_int(tn_t,
+                                     "gravity_terms",
+                                     &(rans_mdl->has_buoyant_term));
   }
   else if (cs_gui_strcmp(model, "v2f-BL-v2/k")) {
     turb_mdl->iturb = CS_TURB_V2F_BL_V2K;
     cs_gui_node_get_child_int(tn_t, "wall_function", &iwallf);
-    cs_gui_node_get_child_status_int(tn_t, "gravity_terms", &(rans_mdl->igrake));
+    cs_gui_node_get_child_status_int(tn_t,
+                                     "gravity_terms",
+                                     &(rans_mdl->has_buoyant_term));
   }
   else if (cs_gui_strcmp(model, "k-omega-SST")) {
     turb_mdl->iturb = CS_TURB_K_OMEGA;
     cs_gui_node_get_child_int(tn_t, "wall_function", &iwallf);
-    cs_gui_node_get_child_status_int(tn_t, "gravity_terms", &(rans_mdl->igrake));
+    cs_gui_node_get_child_status_int(tn_t,
+                                     "gravity_terms",
+                                     &(rans_mdl->has_buoyant_term));
   }
   else if (cs_gui_strcmp(model, "Spalart-Allmaras")) {
     turb_mdl->iturb = CS_TURB_SPALART_ALLMARAS;
@@ -4669,8 +4685,7 @@ cs_gui_turb_model(void)
   bft_printf("==> %s\n", __func__);
   bft_printf("--model: %s\n", model);
   bft_printf("--iturb = %i\n", turb_mdl->iturb);
-  bft_printf("--igrake = %i\n", rans_mdl->igrake);
-  bft_printf("--igrari = %i\n", rans_mdl->igrari);
+  bft_printf("--has_buoyant_term = %i\n", rans_mdl->has_buoyant_term);
   bft_printf("--iwallf = %i\n", wall_fnt->iwallf);
   bft_printf("--xlomlg = %f\n", rans_mdl->xlomlg);
   bft_printf("--idirsm = %f\n", rans_mdl->idirsm);

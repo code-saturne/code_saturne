@@ -922,7 +922,7 @@ cs_turbulence_ke(int              phase_id,
 
   /* Buoyant term for the Atmospheric module
      (function of the potential temperature) */
-  if (   cs_glob_turb_rans_model->igrake == 1
+  if (   cs_glob_turb_rans_model->has_buoyant_term == 1
       && cs_glob_physical_model_flag[CS_ATMOSPHERIC] >= 1) {
 
     cs_atmo_buoyancy_ke_prod(tinstk, smbrk, smbre);
@@ -930,7 +930,7 @@ cs_turbulence_ke(int              phase_id,
     /* --- Buoyancy term     G = Beta*g.Grad(scalar)/prdtur/rho
        Here is computed  G =-g.grad(rho)/prdtur/rho */
   }
-  else if (cs_glob_turb_rans_model->igrake == 1) {
+  else if (cs_glob_turb_rans_model->has_buoyant_term == 1) {
 
     /* Allocate a temporary for the gradient calculation */
     cs_real_3_t *grad;
