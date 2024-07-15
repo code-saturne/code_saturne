@@ -613,6 +613,7 @@ cs_navsto_projection_create_context(cs_param_bc_type_t    bc,
     const cs_navsto_param_coupling_t algo_coupling = nsp->coupling;
 
     if (algo_coupling == CS_NAVSTO_COUPLING_PROJECTION_POTENTIAL_FB) {
+
       cs_equation_param_set(eqp, CS_EQKEY_SPACE_SCHEME, "cdo_fb");
       cs_equation_param_set(eqp, CS_EQKEY_HODGE_DIFF_COEF, "sushi");
 
@@ -622,10 +623,14 @@ cs_navsto_projection_create_context(cs_param_bc_type_t    bc,
       cs_equation_param_set(eqp, CS_EQKEY_ITSOL, "cg");
 
     }
-    else
+    else {
+
       /* Default sles parameters are set following the CDO-Cb scheme setting */
+
       cs_equation_param_set(eqp, CS_EQKEY_SPACE_SCHEME, "cdo_cb");
       cs_equation_param_set(eqp, CS_EQKEY_HODGE_DIFF_COEF, "gcr");
+
+    }
   }
 
   nsc->div_st             = nullptr;
