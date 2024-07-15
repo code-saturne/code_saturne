@@ -1026,8 +1026,12 @@ _multigrid_add_level(cs_multigrid_t  *mg,
       MPI_Allreduce(loc_sizes, max_sizes, 3, CS_MPI_GNUM, MPI_MAX,
                     mg->caller_comm);
       for (ii = 0; ii < 3; ii++) {
-        lv_info->imbalance[ii][0] = (  max_sizes[ii]
-                                     / (tot_sizes[ii]*1.0/n_ranks)) - 1.0;
+        if (tot_sizes[ii] > 0)
+          lv_info->imbalance[ii][0] = (  max_sizes[ii]
+                                       / (tot_sizes[ii]*1.0/n_ranks)) - 1.0;
+        else
+          lv_info->imbalance[ii][0] = 0;
+
         if (lv_info->imbalance[ii][1] > lv_info->imbalance[ii][0])
           lv_info->imbalance[ii][1] = lv_info->imbalance[ii][0];
         else if (lv_info->imbalance[ii][2] < lv_info->imbalance[ii][0])
@@ -2499,7 +2503,10 @@ _setup_hierarchy(void             *context,
       for (j = 0; j < 3; j++) {
         cs_gnum_t tmp_max = n_g_ranks * _n_elts_m[i*3+j];
         mg_inf->n_elts[j][0] = (_n_elts_s[i*3+j] + n_g_ranks/2) / n_g_ranks;
-        mg_inf->imbalance[j][0] = (float)(tmp_max*1.0/_n_elts_s[i*3+j]);
+        if (_n_elts_s[i*3+j] > 0)
+          mg_inf->imbalance[j][0] = (float)(tmp_max*1.0/_n_elts_s[i*3+j]);
+        else
+          mg_inf->imbalance[j][0] = 0;
       }
     }
 
