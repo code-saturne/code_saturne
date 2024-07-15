@@ -3743,13 +3743,13 @@ cs_solve_navier_stokes(const int        iterns,
          This is required so that one instance does not stop earlier than
          the others (the numerical options should still be checked) */
       cs_real_t xnrdis[1] = {0}, xnr_mu[1] = {vp_param->xnrmu0};
-      for (int numcpl = 1; numcpl < nbrcpl+1; numcpl++) {
-        cs_sat_coupling_array_exchange(numcpl,
+      for (int cpl_id = 0; cpl_id < nbrcpl; cpl_id++) {
+        cs_sat_coupling_array_exchange(cpl_id,
                                        1, /* nbrdis */
                                        1, /* nbrloc */
                                        xnr_mu,
                                        xnrdis);
-         xnr_mu[0] += xnrdis[0];
+        xnr_mu[0] += xnrdis[0];
       }
       vp_param->xnrmu0 = sqrt(xnr_mu[0]);
     }
@@ -4599,14 +4599,14 @@ cs_solve_navier_stokes(const int        iterns,
     vp_param->xnrmu = xnrtmp;
 
     cs_real_t xnr_mu[] = {vp_param->xnrmu};
-    for (int numcpl = 1; numcpl < nbrcpl+1; numcpl++) {
-        cs_real_t xnrdis[1];
-        cs_sat_coupling_array_exchange(numcpl,
-                                       1, /* nbrdis */
-                                       1, /* nbrloc */
-                                       xnr_mu,
-                                       xnrdis);
-        xnr_mu[0] += xnrdis[0];
+    for (int cpl_id = 0; cpl_id < nbrcpl; cpl_id++) {
+      cs_real_t xnrdis[1];
+      cs_sat_coupling_array_exchange(cpl_id,
+                                     1, /* nbrdis */
+                                     1, /* nbrloc */
+                                     xnr_mu,
+                                     xnrdis);
+      xnr_mu[0] += xnrdis[0];
     }
     vp_param->xnrmu = sqrt(xnr_mu[0]);
 

@@ -224,7 +224,7 @@ cs_sat_coupling_all_init(void);
  * It is assumed that the arrays have the same size and the same values on
  * each group of processes (local and distant).
  *
- * int          numcpl      : --> : coupling number (1-based)
+ * int          cpl_id      : --> : coupling id (0-based)
  * int          nbrdis      : --> : number of values to send
  * int          nbrloc      : --> : number of values to receive
  * cs_real_t    vardis      : --> : distant values (to send)
@@ -232,7 +232,7 @@ cs_sat_coupling_all_init(void);
  *----------------------------------------------------------------------------*/
 
 void
-cs_sat_coupling_array_exchange(int         numcpl,
+cs_sat_coupling_array_exchange(int         cpl_id,
                                cs_lnum_t   nbrdis,
                                cs_lnum_t   nbrloc,
                                cs_real_t  *vardis,

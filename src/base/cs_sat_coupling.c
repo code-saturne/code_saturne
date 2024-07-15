@@ -255,13 +255,11 @@ _remove_matched_builder_entries(void)
 static void
 _print_all_unmatched_sat(void)
 {
-  int i;
-
   const char empty_string[] = "";
 
   /* Loop on defined code_saturne instances */
 
-  for (i = 0; i < _sat_coupling_builder_size; i++) {
+  for (int i = 0; i < _sat_coupling_builder_size; i++) {
 
     _cs_sat_coupling_builder_t *scb = _sat_coupling_builder + i;
 
@@ -379,14 +377,12 @@ _sat_add_mpi(int builder_id,
 static void
 _print_all_mpi_sat(void)
 {
-  int i;
-
   const ple_coupling_mpi_set_t *mpi_apps = cs_coupling_get_mpi_apps();
   const char empty_string[] = "";
 
   /* Loop on defined code_saturne instances */
 
-  for (i = 0; i < _sat_coupling_builder_size; i++) {
+  for (int i = 0; i < _sat_coupling_builder_size; i++) {
 
     _cs_sat_coupling_builder_t *scb = _sat_coupling_builder + i;
 
@@ -428,8 +424,6 @@ _print_all_mpi_sat(void)
 static void
 _init_all_mpi_sat(void)
 {
-  int i;
-
   int n_apps = 0;
   int n_sat_apps = 0;
 
@@ -442,7 +436,7 @@ _init_all_mpi_sat(void)
 
   /* First pass to count available code_saturne couplings */
 
-  for (i = 0; i < n_apps; i++) {
+  for (int i = 0; i < n_apps; i++) {
     const ple_coupling_mpi_set_info_t
       ai = ple_coupling_mpi_set_get_info(mpi_apps, i);
     if (   strncmp(ai.app_type, "code_saturne", 12) == 0
@@ -456,7 +450,7 @@ _init_all_mpi_sat(void)
 
     const int local_app_id = ple_coupling_mpi_set_get_app_id(mpi_apps);
 
-    for (i = 0; i < n_apps; i++) {
+    for (int i = 0; i < n_apps; i++) {
       const ple_coupling_mpi_set_info_t
         ai = ple_coupling_mpi_set_get_info(mpi_apps, i);
       if (   (   strncmp(ai.app_type, "code_saturne", 12) == 0
@@ -472,7 +466,6 @@ _init_all_mpi_sat(void)
 
   else {
 
-    int j;
     ple_coupling_mpi_set_info_t ai;
 
     int *sat_appinfo = NULL;
@@ -484,7 +477,7 @@ _init_all_mpi_sat(void)
 
     n_sat_apps = 0;
 
-    for (i = 0; i < n_apps; i++) {
+    for (int i = 0; i < n_apps; i++) {
       ai = ple_coupling_mpi_set_get_info(mpi_apps, i);
       if (   strncmp(ai.app_type, "code_saturne", 12) == 0
           || strncmp(ai.app_type, "Code_Saturne", 12) == 0) {
@@ -496,7 +489,7 @@ _init_all_mpi_sat(void)
 
     /* Loop on defined code_saturne instances */
 
-    for (i = 0; i < _sat_coupling_builder_size; i++) {
+    for (int i = 0; i < _sat_coupling_builder_size; i++) {
 
       _cs_sat_coupling_builder_t *scb = _sat_coupling_builder + i;
 
@@ -504,7 +497,7 @@ _init_all_mpi_sat(void)
 
       if (scb->app_name != NULL) {
 
-        for (j = 0; j < n_sat_apps; j++) {
+        for (int j = 0; j < n_sat_apps; j++) {
 
           if (sat_appinfo[j*2] != 0) /* Consider only unmatched applications */
             continue;
@@ -536,7 +529,7 @@ _init_all_mpi_sat(void)
   /* Now initialize matched couplings */
   /*----------------------------------*/
 
-  for (i = 0; i < _sat_coupling_builder_size; i++) {
+  for (int i = 0; i < _sat_coupling_builder_size; i++) {
 
     _cs_sat_coupling_builder_t *scb = _sat_coupling_builder + i;
 
@@ -562,43 +555,43 @@ _init_all_mpi_sat(void)
  * Destroy a coupling structure
  *
  * parameters:
- *   couplage <-> pointer to coupling structure to destroy
+ *   cpl <-> pointer to coupling structure to destroy
  *
  * returns:
  *   NULL pointer
  *----------------------------------------------------------------------------*/
 
 static cs_sat_coupling_t *
-_sat_coupling_destroy(cs_sat_coupling_t  *couplage)
+_sat_coupling_destroy(cs_sat_coupling_t  *cpl)
 {
-  BFT_FREE(couplage->sat_name);
+  BFT_FREE(cpl->sat_name);
 
-  BFT_FREE(couplage->face_cpl_sel);
-  BFT_FREE(couplage->cell_cpl_sel);
-  BFT_FREE(couplage->face_loc_sel);
-  BFT_FREE(couplage->cell_loc_sel);
+  BFT_FREE(cpl->face_cpl_sel);
+  BFT_FREE(cpl->cell_cpl_sel);
+  BFT_FREE(cpl->face_loc_sel);
+  BFT_FREE(cpl->cell_loc_sel);
 
-  ple_locator_destroy(couplage->localis_cel);
-  ple_locator_destroy(couplage->localis_fbr);
+  ple_locator_destroy(cpl->localis_cel);
+  ple_locator_destroy(cpl->localis_fbr);
 
-  if (couplage->cells_sup != NULL)
-    fvm_nodal_destroy(couplage->cells_sup);
-  if (couplage->faces_sup != NULL)
-    fvm_nodal_destroy(couplage->faces_sup);
+  if (cpl->cells_sup != NULL)
+    fvm_nodal_destroy(cpl->cells_sup);
+  if (cpl->faces_sup != NULL)
+    fvm_nodal_destroy(cpl->faces_sup);
 
-  BFT_FREE(couplage->distant_dist_fbr);
-  BFT_FREE(couplage->distant_of);
-  BFT_FREE(couplage->local_of);
-  BFT_FREE(couplage->distant_pond_fbr);
-  BFT_FREE(couplage->local_pond_fbr);
+  BFT_FREE(cpl->distant_dist_fbr);
+  BFT_FREE(cpl->distant_of);
+  BFT_FREE(cpl->local_of);
+  BFT_FREE(cpl->distant_pond_fbr);
+  BFT_FREE(cpl->local_pond_fbr);
 
 #if defined(HAVE_MPI)
-  if (   couplage->comm != MPI_COMM_WORLD
-      && couplage->comm != cs_glob_mpi_comm)
-    MPI_Comm_free(&(couplage->comm));
+  if (   cpl->comm != MPI_COMM_WORLD
+      && cpl->comm != cs_glob_mpi_comm)
+    MPI_Comm_free(&(cpl->comm));
 #endif
 
-  BFT_FREE(couplage);
+  BFT_FREE(cpl);
 
   return NULL;
 }
@@ -610,265 +603,204 @@ _sat_coupling_destroy(cs_sat_coupling_t  *couplage)
  *----------------------------------------------------------------------------*/
 
 static void
-_sat_coupling_interpolate(cs_sat_coupling_t  *couplage)
+_sat_coupling_interpolate(cs_sat_coupling_t  *cpl)
 {
-  int    icoo;
-  int    reverse;
-
-  cs_lnum_t    ind;
-  cs_lnum_t    iel;
-  cs_lnum_t    ifac;
-
-  cs_lnum_t    n_fbr_loc  = 0;
-  cs_lnum_t    n_fbr_dist = 0;
-
-  cs_real_t   pdt_scal;
-  cs_real_t   surface;
-
-  cs_real_t   distance_fbr_cel;
-  cs_real_t   distance_cel_cel;
-
-  cs_real_t   dist_cel_fbr[3];
-  cs_real_t   vect_surf_norm[3];
-
-  cs_real_t  *local_surf     = NULL;
-  cs_real_t  *local_xyzcen   = NULL;
-  cs_real_t  *distant_surf   = NULL;
-  cs_real_t  *distant_xyzcen = NULL;
-
-  const cs_lnum_t   *lstfbr        = NULL;
-  const cs_lnum_t   *element       = NULL;
-  const cs_coord_t  *distant_coord = NULL;
-
   const cs_mesh_t  *mesh = cs_glob_mesh;
-  const cs_mesh_quantities_t  *mesh_quantities = cs_glob_mesh_quantities;
+  const cs_mesh_quantities_t  *mq = cs_glob_mesh_quantities;
+  const cs_real_3_t *cell_cen = (const cs_real_3_t *)mq->cell_cen;
+  const cs_real_3_t *b_face_cog = (const cs_real_3_t *)mq->b_face_cog;
+  const cs_real_3_t *b_face_u_normal = (const cs_real_3_t *)mq->b_face_u_normal;
 
   /* Removing the connectivity and localization informations in case of
      coupling update */
 
-  if (couplage->distant_dist_fbr != NULL)
-    BFT_FREE(couplage->distant_dist_fbr);
-  if (couplage->distant_of != NULL)
-    BFT_FREE(couplage->distant_of);
-  if (couplage->local_of != NULL)
-    BFT_FREE(couplage->local_of);
-  if (couplage->distant_pond_fbr != NULL)
-    BFT_FREE(couplage->distant_pond_fbr);
-  if (couplage->local_pond_fbr != NULL)
-    BFT_FREE(couplage->local_pond_fbr);
+  if (cpl->distant_dist_fbr != NULL)
+    BFT_FREE(cpl->distant_dist_fbr);
+  if (cpl->distant_of != NULL)
+    BFT_FREE(cpl->distant_of);
+  if (cpl->local_of != NULL)
+    BFT_FREE(cpl->local_of);
+  if (cpl->distant_pond_fbr != NULL)
+    BFT_FREE(cpl->distant_pond_fbr);
+  if (cpl->local_pond_fbr != NULL)
+    BFT_FREE(cpl->local_pond_fbr);
 
   /* Interpolation structure */
 
-  n_fbr_loc  = ple_locator_get_n_interior(couplage->localis_fbr);
-  lstfbr     = ple_locator_get_interior_list(couplage->localis_fbr);
+  const cs_lnum_t n_fbr_loc = ple_locator_get_n_interior(cpl->localis_fbr);
+  const cs_lnum_t *lstfbr = ple_locator_get_interior_list(cpl->localis_fbr);
 
-  n_fbr_dist    = ple_locator_get_n_dist_points(couplage->localis_fbr);
-  element       = ple_locator_get_dist_locations(couplage->localis_fbr);
-  distant_coord = ple_locator_get_dist_coords(couplage->localis_fbr);
-
+  const cs_lnum_t n_fbr_dist
+    = ple_locator_get_n_dist_points(cpl->localis_fbr);
+  const cs_lnum_t *element
+    = ple_locator_get_dist_locations(cpl->localis_fbr);
+  const cs_coord_t *distant_coord
+    = ple_locator_get_dist_coords(cpl->localis_fbr);
 
   /* Calculation of the distance DJJPB defining the distance from */
   /* the local cell center to the distant boundary face norm      */
   /*--------------------------------------------------------------*/
 
-  BFT_MALLOC(couplage->distant_dist_fbr, 3*n_fbr_dist, cs_real_t);
+  BFT_MALLOC(cpl->distant_dist_fbr, 3*n_fbr_dist, cs_real_t);
 
   /* Store the local surface vector of the coupled boundary faces */
 
-  BFT_MALLOC(local_surf, 3*n_fbr_loc, cs_real_t);
+  cs_real_t *local_u_norm;
+  BFT_MALLOC(local_u_norm, 3*n_fbr_loc, cs_real_t);
 
-  for (ind = 0 ; ind < n_fbr_loc ; ind++) {
+  for (cs_lnum_t ind = 0; ind < n_fbr_loc; ind++) {
+    cs_lnum_t ifac = lstfbr[ind];
 
-    ifac = lstfbr[ind] - 1;
-
-    for (icoo = 0 ; icoo < 3 ; icoo++)
-      local_surf[ind*3 + icoo] = mesh_quantities->b_face_normal[ifac*3 + icoo];
-
- }
+    for (cs_lnum_t icoo = 0; icoo < 3; icoo++)
+      local_u_norm[ind*3 + icoo] = b_face_u_normal[ifac][icoo];
+  }
 
   /* Get the distant faces surface vector (reverse = 1) */
 
-  reverse = 1;
+  cs_real_t *distant_u_norm;
+  BFT_MALLOC(distant_u_norm, 3*n_fbr_dist, cs_real_t);
 
-  BFT_MALLOC(distant_surf, 3*n_fbr_dist, cs_real_t);
-
-  ple_locator_exchange_point_var(couplage->localis_fbr,
-                                 distant_surf,
-                                 local_surf,
+  ple_locator_exchange_point_var(cpl->localis_fbr,
+                                 distant_u_norm,
+                                 local_u_norm,
                                  NULL,
                                  sizeof(cs_real_t),
                                  3,
-                                 reverse);
+                                 1); /* reverse */
 
-  BFT_FREE(local_surf);
+  BFT_FREE(local_u_norm);
 
   /* Calculation of the JJ' vectors */
 
+  cs_real_t *distant_xyzcen;
   BFT_MALLOC(distant_xyzcen, 3*n_fbr_dist, cs_real_t);
 
-  for (ind = 0; ind < n_fbr_dist; ind++) {
+  for (cs_lnum_t ind = 0; ind < n_fbr_dist; ind++) {
 
-    iel = element[ind] - 1;
+    cs_lnum_t c_id = element[ind];
 
-    surface = 0.;
-    for (icoo = 0; icoo < 3; icoo++)
-      surface += distant_surf[ind*3 + icoo]*distant_surf[ind*3 + icoo];
-    surface = sqrt(surface);
+    cs_real_t pdt_scal = 0.;
+    cs_real_t dist_cel_fbr[3];
+    const cs_real_t *vect_surf_norm = distant_u_norm + ind*3;
 
-    pdt_scal = 0.;
-    for (icoo = 0; icoo < 3; icoo++) {
-
-      dist_cel_fbr[icoo] =
-        distant_coord[ind*3 + icoo] - mesh_quantities->cell_cen[iel*3 + icoo];
+    for (cs_lnum_t icoo = 0; icoo < 3; icoo++) {
+      dist_cel_fbr[icoo] = distant_coord[ind*3 + icoo] - cell_cen[c_id][icoo];
 
       /* Store the distant coordinates to compute the weighting coefficients */
-      distant_xyzcen[ind*3 + icoo] = mesh_quantities->cell_cen[iel*3 + icoo];
-
-      vect_surf_norm[icoo] =
-        distant_surf[ind*3 + icoo] / surface;
-
+      distant_xyzcen[ind*3 + icoo] = cell_cen[c_id][icoo];
       pdt_scal += dist_cel_fbr[icoo]*vect_surf_norm[icoo];
-
     }
 
-    for (icoo = 0; icoo < 3; icoo++)
-      couplage->distant_dist_fbr[ind*3 + icoo] =
-        dist_cel_fbr[icoo] - pdt_scal*vect_surf_norm[icoo];
+    for (cs_lnum_t icoo = 0; icoo < 3; icoo++)
+      cpl->distant_dist_fbr[ind*3 + icoo]
+        = dist_cel_fbr[icoo] - pdt_scal*vect_surf_norm[icoo];
 
   }
 
-  BFT_FREE(distant_surf);
+  BFT_FREE(distant_u_norm);
 
   /* Calculation of the local weighting coefficient */
   /*------------------------------------------------*/
 
-  BFT_MALLOC(couplage->distant_pond_fbr, n_fbr_dist, cs_real_t);
-  BFT_MALLOC(couplage->local_pond_fbr, n_fbr_loc, cs_real_t);
+  BFT_MALLOC(cpl->distant_pond_fbr, n_fbr_dist, cs_real_t);
+  BFT_MALLOC(cpl->local_pond_fbr, n_fbr_loc, cs_real_t);
 
   /* Get the cell center coordinates (reverse = 0) */
 
-  reverse = 0;
-
+  cs_real_t *local_xyzcen;
   BFT_MALLOC(local_xyzcen, 3*n_fbr_loc, cs_real_t);
 
-  ple_locator_exchange_point_var(couplage->localis_fbr,
+  ple_locator_exchange_point_var(cpl->localis_fbr,
                                  distant_xyzcen,
                                  local_xyzcen,
                                  NULL,
                                  sizeof(cs_real_t),
                                  3,
-                                 reverse);
+                                 0);
 
   BFT_FREE(distant_xyzcen);
 
   /* Calculation of the local weighting coefficients */
 
-  for (ind = 0 ; ind < n_fbr_loc ; ind++) {
+  for (cs_lnum_t ind = 0; ind < n_fbr_loc; ind++) {
 
-    ifac = lstfbr[ind] - 1;
-    iel  = mesh->b_face_cells[ifac];
+    cs_lnum_t ifac = lstfbr[ind];
+    cs_lnum_t c_id  = mesh->b_face_cells[ifac];
 
-    surface = 0.;
+    cs_real_t distance_fbr_cel = 0.;
+    cs_real_t distance_cel_cel = 0.;
 
-    distance_fbr_cel = 0.;
-    distance_cel_cel = 0.;
+    for (cs_lnum_t icoo = 0; icoo < 3; icoo++) {
+      distance_fbr_cel
+        +=   b_face_u_normal[ifac][icoo]
+           * (local_xyzcen[ind*3 + icoo] - b_face_cog[ifac][icoo]);
 
-    for (icoo = 0 ; icoo < 3 ; icoo++) {
-
-      surface += mesh_quantities->b_face_normal[ifac*3 + icoo]
-        * mesh_quantities->b_face_normal[ifac*3 + icoo];
-
-      distance_fbr_cel += mesh_quantities->b_face_normal[ifac*3 + icoo] *
-        (local_xyzcen[ind*3 + icoo] - mesh_quantities->b_face_cog[ifac*3 + icoo]);
-
-      distance_cel_cel += mesh_quantities->b_face_normal[ifac*3 + icoo] *
-        (local_xyzcen[ind*3 + icoo] - mesh_quantities->cell_cen[iel*3 + icoo]);
-
+      distance_cel_cel
+        +=   b_face_u_normal[ifac][icoo]
+           * (local_xyzcen[ind*3 + icoo] - cell_cen[c_id][icoo]);
     }
 
-    surface = sqrt(surface);
-
-    distance_fbr_cel /= surface;
-    distance_cel_cel /= surface;
-
     if (fabs(distance_cel_cel) > 1.e-12)
-      couplage->local_pond_fbr[ind] = distance_fbr_cel / distance_cel_cel;
+      cpl->local_pond_fbr[ind] = distance_fbr_cel / distance_cel_cel;
     else
-      couplage->local_pond_fbr[ind] = 0.5;
+      cpl->local_pond_fbr[ind] = 0.5;
 
   }
 
   /* Get the distant weighting coefficients (reverse = 1) */
 
-  reverse = 1;
-
-  ple_locator_exchange_point_var(couplage->localis_fbr,
-                                 couplage->distant_pond_fbr,
-                                 couplage->local_pond_fbr,
+  ple_locator_exchange_point_var(cpl->localis_fbr,
+                                 cpl->distant_pond_fbr,
+                                 cpl->local_pond_fbr,
                                  NULL,
                                  sizeof(cs_real_t),
                                  1,
-                                 reverse);
+                                 1); /* reverse */
 
   /* Calculation of the OF distance */
   /*--------------------------------*/
 
-  BFT_MALLOC(couplage->distant_of, 3*n_fbr_dist, cs_real_t);
-  BFT_MALLOC(couplage->local_of, 3*n_fbr_loc, cs_real_t);
+  BFT_MALLOC(cpl->distant_of, 3*n_fbr_dist, cs_real_t);
+  BFT_MALLOC(cpl->local_of, 3*n_fbr_loc, cs_real_t);
 
-  for (ind = 0 ; ind < n_fbr_loc ; ind++) {
+  for (cs_lnum_t ind = 0; ind < n_fbr_loc; ind++) {
 
-    ifac = lstfbr[ind] - 1;
-    iel  = mesh->b_face_cells[ifac];
+    cs_lnum_t ifac = lstfbr[ind];
+    cs_lnum_t c_id  = mesh->b_face_cells[ifac];
 
-    surface = 0.;
+    /* n/norm(n) . IF = FJ' */
+    cs_real_t distance_fbr_cel = 0.;
+    /* n/norm(n) . IJ = I'J'*/
+    cs_real_t distance_cel_cel = 0.;
 
-    distance_fbr_cel = 0.;
-    distance_cel_cel = 0.;
+    for (cs_lnum_t icoo = 0; icoo < 3; icoo++) {
 
-    for (icoo = 0 ; icoo < 3 ; icoo++) {
+      distance_fbr_cel +=   b_face_u_normal[ifac][icoo]
+                          * (local_xyzcen[ind*3+icoo] - b_face_cog[ifac][icoo]);
 
-      surface += mesh_quantities->b_face_normal[ifac*3 + icoo]
-        * mesh_quantities->b_face_normal[ifac*3 + icoo];
-
-      distance_fbr_cel += mesh_quantities->b_face_normal[ifac*3 + icoo] *
-        (local_xyzcen[ind*3+icoo] - mesh_quantities->b_face_cog[ifac*3+icoo]);
-
-      distance_cel_cel += mesh_quantities->b_face_normal[ifac*3 + icoo] *
-        (local_xyzcen[ind*3+icoo] - mesh_quantities->cell_cen[iel*3+icoo]);
+      distance_cel_cel +=   b_face_u_normal[ifac][icoo]
+                          * (local_xyzcen[ind*3+icoo] - cell_cen[c_id][icoo]);
 
     }
 
-    surface = sqrt(surface);
-
-    /* n/norm(n) . IF = FJ' */
-    distance_fbr_cel /= surface;
-    /* n/norm(n) . IJ = I'J'*/
-    distance_cel_cel /= surface;
-
-    const cs_real_3_t *restrict b_face_cog
-      = (const cs_real_3_t *restrict)mesh_quantities->b_face_cog;
-    const cs_real_3_t *restrict b_face_normal
-      = (const cs_real_3_t *restrict)mesh_quantities->b_face_normal;
-
-    for (icoo = 0 ; icoo < 3 ; icoo++) {
-      couplage->local_of[ind*3 + icoo]
+    for (cs_lnum_t icoo = 0; icoo < 3; icoo++) {
+      cpl->local_of[ind*3 + icoo]
         =     b_face_cog[ifac][icoo]
-          -  (      b_face_cog[ifac][icoo] /*  O'  */
-              +     b_face_normal[ifac][icoo] *distance_fbr_cel/surface    /*J'=F+n*FJ'*/
-              - 0.5*b_face_normal[ifac][icoo] *distance_cel_cel/surface);  /*-n*I'J'/2*/
+          -  (      b_face_cog[ifac][icoo]        /*  O'  */
+              +       b_face_u_normal[ifac][icoo]
+                    * distance_fbr_cel            /*J'=F+n*FJ'*/
+              - 0.5 * b_face_u_normal[ifac][icoo]
+                    * distance_cel_cel);          /*-n*I'J'/2*/
     }
   }
 
-  reverse = 1;
-
-  ple_locator_exchange_point_var(couplage->localis_fbr,
-                                 couplage->distant_of,
-                                 couplage->local_of,
+  ple_locator_exchange_point_var(cpl->localis_fbr,
+                                 cpl->distant_of,
+                                 cpl->local_of,
                                  NULL,
                                  sizeof(cs_real_t),
                                  3,
-                                 reverse);
+                                 1);  /* reverse */
 
   BFT_FREE(local_xyzcen);
 }
@@ -968,7 +900,8 @@ _sat_coupling_compute_data_at_cells
           /* implicit part */
           for (int j = 0; j < f->dim; j++) {
             if (i == j)
-              warray2[dim2 * e_id + 3 * i + j] = fluid_vol[c_id] * cvar_rho[c_id];
+              warray2[dim2 * e_id + 3 * i + j] =   fluid_vol[c_id]
+                                                 * cvar_rho[c_id];
             else
               warray2[dim2 * e_id + 3 * i + j] = 0.;
           }
@@ -984,7 +917,8 @@ _sat_coupling_compute_data_at_cells
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Compute the maximum value of an integer variable associated to a coupling.
+ * \brief Compute the maximum value of an integer variable associated
+ *        to a coupling.
  *
  * It is assumed that the integer value is the same for each group of
  * processus (local and distant).
@@ -1083,7 +1017,8 @@ _sat_coupling_check_turbulence_coherency
               _("V2F BL-V2/K can only be coupled with itself.\n"));
   }
   else if (  (iturb >= CS_TURB_LES_SMAGO_CONST && iturb <= CS_TURB_LES_WALE)
-          && !(coupl->iturb >= CS_TURB_LES_SMAGO_CONST && coupl->iturb <= CS_TURB_LES_WALE)) {
+           && !(   coupl->iturb >= CS_TURB_LES_SMAGO_CONST
+                && coupl->iturb <= CS_TURB_LES_WALE)) {
     bft_error(__FILE__, __LINE__, 0,
               _("LES/RANS coupling is not yet handled.\n"));
   }
@@ -1179,58 +1114,54 @@ _sat_coupling_send_bnd_data
   cs_real_t *trav8 = NULL;
   BFT_MALLOC(trav8, n_b_faces_dist, cs_real_t);
 
-
   int ipos = 0;
 
-  /* -------- */
-  /* Velocity */
-  /* -------- */
+  /* Velocity
+     -------- */
 
   cs_field_gradient_vector(CS_F_(vel), iprev, inc, gradv);
 
   if (cs_glob_sat_coupling_face_interpolation_type == 1) {
-    for (int i = 0; i < 3; i++) {
-      cs_real_t *_rvdis = rvdis[ipos];
 
-      /* Pour la vitesse on veut imposer un dirichlet de vitesse qui "imite"
-       * ce qui se passe pour une face interne. On se donne le choix entre
-       * UPWIND, SOLU et CENTRE (parties commentées selon le choix retenu).
-       * Pour l'instant seul le CENTRE respecte ce qui se passerait pour la
-       * diffusion si on avait un seul domaine
-       *
-       * -- UPWIND
-       *
-       *        xjjp = djppts(1,ipt)
-       *        yjjp = djppts(2,ipt)
-       *        zjjp = djppts(3,ipt)
-       *
-       *        rvdis(ipt,ipos) = vel(isou,iel)
-       *
-       * -- SOLU
-       *
-       *        xjf = coopts(1,ipt) - xyzcen(1,iel)
-       *        yjf = coopts(2,ipt) - xyzcen(2,iel)
-       *        zjf = coopts(3,ipt) - xyzcen(3,iel)
-       *
-       *        rvdis(ipt,ipos) = vel(isou,iel) &
-       *          + xjf*gradv(1,isou,iel) + yjf*gradv(2,isou,iel) &
-       *          + zjf*gradv(3,isou,iel)
-       *
-       * -- CENTRE
-       */
+    /* For the velocity we want to impose a velocity Dirichlet which mimics
+     * the behavior of an interior face. We can choose between
+     * UPWIND, SOLU et CENTERED (commentet parts based on choice).
+     * For now, only CENTERED behaves the same a a single domain with
+     * respecte to diffusion.
+     *
+     * -- UPWIND
+     *
+     *        xjjp = djppts[ipt][0]
+     *        yjjp = djppts[ipt][1]
+     *        zjjp = djppts[ipt][2]
+     *
+     *        rvdis[ipos][ipt] = vel[c_id][isou]
+     *
+     * -- SOLU
+     *
+     *        xjf = coopts[ipt][0] - xyzcen[c_id][0]
+     *        yjf = coopts[ipt][1] - xyzcen[c_id][1]
+     *        zjf = coopts[ipt][2] - xyzcen[c_id][2]
+     *
+     *        rvdis[ipos][ipt] =   vel[c_id][isou]
+     *                           + xjf*gradv[c_id][isou][0]
+     *                           + yjf*gradv[c_id][isou][1]
+     *                           + zjf*gradv[c_id][isou][2]
+     *
+     * -- CENTRE
+     */
 
-      for (cs_lnum_t e_id = 0; e_id < n_b_faces_dist; e_id++) {
-        cs_lnum_t c_id = b_faces_dist_ids[e_id];
-        _rvdis[e_id] = cvar_vel[3*c_id + i]
-                     + cs_math_3_dot_product(distant_dist_fbr + 3*e_id,
-                                             gradv[c_id][i]);
-      }
-      ipos += 1;
+    for (cs_lnum_t e_id = 0; e_id < n_b_faces_dist; e_id++) {
+      cs_lnum_t c_id = b_faces_dist_ids[e_id];
+      for (cs_lnum_t i = 0; i < 3; i++)
+        rvdis[ipos+i][e_id]
+          =   cvar_vel[3*c_id + i]
+            + cs_math_3_dot_product(distant_dist_fbr + 3*e_id,
+                                    gradv[c_id][i]);
     }
   }
   else {
-    for (int i = 0; i < 3; i++) {
-      cs_real_t *_rvdis = rvdis[ipos];
+    for (cs_lnum_t i = 0; i < 3; i++) {
       for (cs_lnum_t e_id = 0; e_id < n_b_faces_dist; e_id++) {
         cs_lnum_t c_id = b_faces_dist_ids[e_id];
 
@@ -1238,12 +1169,14 @@ _sat_coupling_send_bnd_data
         for (int j = 0; j < 3; j++)
           xyzjjp[j] = distant_of[3*e_id + j] + distant_dist_fbr[3*e_id + j];
 
-        _rvdis[e_id] = cvar_vel[3*c_id + i]
-                     + cs_math_3_dot_product(xyzjjp, gradv[c_id][i]);
+        rvdis[ipos+i][e_id]
+          =   cvar_vel[3*c_id + i]
+            + cs_math_3_dot_product(xyzjjp, gradv[c_id][i]);
       }
-      ipos += 1;
     }
   }
+
+  ipos += 3;
 
   /* -------- */
   /* Pressure */
@@ -1254,9 +1187,9 @@ _sat_coupling_send_bnd_data
     cs_real_t *_rvdis = rvdis[ipos];
 
     /*
-     * --- Pour la pression on veut imposer un dirichlet tel que le gradient
-     *     de pression se conserve entre les deux domaines couplés Pour cela
-     *     on impose une interpolation centrée
+     * For the pressure we want to impose a Dirichlet such that the
+     * pressure gradient is conserved between the 2 coupled domains.
+     * For this we use a centered interpolation.
      */
 
     _sat_coupling_interpolate_scalar_simple(cvar_p, grad,
@@ -1274,9 +1207,9 @@ _sat_coupling_send_bnd_data
 
       cs_real_t xyzjpf[3] = {0.};
       for (int i = 0; i < 3; i++)
-        xyzjpf[i] = coords[3 * e_id + i]
-                  - cell_cen[3 * c_id + i]
-                  - distant_dist_fbr[3 * e_id + i];
+        xyzjpf[i] =   coords[3 * e_id + i]
+                    - cell_cen[3 * c_id + i]
+                    - distant_dist_fbr[3 * e_id + i];
 
       cs_real_t one_ov_jpf = 1./cs_math_3_norm(xyzjpf);
 
@@ -1289,15 +1222,13 @@ _sat_coupling_send_bnd_data
 
   ipos += 1;
 
-  /* -------------------- */
-  /*      Turbulence      */
-  /* -------------------- */
+  /* Turbulence
+     ---------- */
 
   if (cs_glob_turb_model->itytur == 2) {
 
-    /* -------------------- */
-    /* k-epsilon turbulence */
-    /* -------------------- */
+    /* k-epsilon
+       --------- */
 
     /* Interpolate local values */
 
@@ -1365,8 +1296,8 @@ _sat_coupling_send_bnd_data
       cs_real_t *_r13 = rvdis[ipos + 1];
       cs_real_t *_r23 = rvdis[ipos + 2];
       for (cs_lnum_t e_id = 0; e_id < n_b_faces_dist; e_id++) {
-        cs_real_t r0 = -1.0 * trav1[e_id] * trav1[e_id] * cs_turb_cmu
-                    / cs_math_fmax(1.e-10, trav2[e_id]);
+        cs_real_t r0 =   -1.0 * trav1[e_id] * trav1[e_id] * cs_turb_cmu
+                       / cs_math_fmax(1.e-10, trav2[e_id]);
 
         _r12[e_id] = r0 * (trav3[e_id] + trav5[e_id]);
         _r13[e_id] = r0 * (trav4[e_id] + trav7[e_id]);
@@ -1384,6 +1315,7 @@ _sat_coupling_send_bnd_data
     }
     else if (coupl->iturb == CS_TURB_V2F_PHI) {
       /* Option is unavailable...*/
+      cs_assert(0);
     }
     else if (coupl->iturb == CS_TURB_K_OMEGA) {
       /* k-eps => k-omega */
@@ -1392,16 +1324,18 @@ _sat_coupling_send_bnd_data
 
       for (cs_lnum_t e_id = 0; e_id < n_b_faces_dist; e_id++) {
         _k[e_id] = trav1[e_id];
-        _om[e_id] = trav2[e_id] / (cs_turb_cmu * cs_math_fmax(1.e-10, trav1[e_id]));
+        _om[e_id] =   trav2[e_id]
+                    / (cs_turb_cmu * cs_math_fmax(1.e-10, trav1[e_id]));
       }
 
       ipos += 2;
     }
   }
+
+  /* Rij-epsilon
+     ----------- */
+
   else if (cs_glob_turb_model->itytur == 3) {
-    /* ---------------------- */
-    /* Rij-epsilon turbulence */
-    /* ---------------------- */
 
     cs_real_63_t *grad_rij = NULL;
     BFT_MALLOC(grad_rij, cs_glob_mesh->n_cells_with_ghosts, cs_real_63_t);
@@ -1410,11 +1344,15 @@ _sat_coupling_send_bnd_data
 
     cs_field_gradient_scalar(CS_F_(eps), iprev, inc, grad);
 
+    const cs_real_6_t *v_rij = (const cs_real_6_t *)CS_F_(rij)->val;
+    const cs_real_t *v_eps = CS_F_(eps)->val;
+
     for (cs_lnum_t e_id = 0; e_id < n_b_faces_dist; e_id++) {
       cs_lnum_t c_id = b_faces_dist_ids[e_id];
 
-      cs_real_t *_rij = CS_F_(rij)->val + 6 * c_id;
-      cs_real_3_t *_grad_rij = grad_rij[c_id];
+      const cs_real_3_t *_grad_rij = grad_rij[c_id];
+      const cs_real_t *_rij = v_rij[c_id];
+      const cs_real_t _eps = v_eps[c_id];
 
       const cs_real_t *xyzjjp = distant_dist_fbr + 3 * e_id;
 
@@ -1425,8 +1363,7 @@ _sat_coupling_send_bnd_data
       trav5[e_id] = _rij[4] + cs_math_3_dot_product(xyzjjp, _grad_rij[4]);
       trav6[e_id] = _rij[5] + cs_math_3_dot_product(xyzjjp, _grad_rij[5]);
 
-      trav7[e_id] = CS_F_(eps)->val[c_id]
-                  + cs_math_3_dot_product(xyzjjp, grad[3 * c_id]);
+      trav7[e_id] = _eps + cs_math_3_dot_product(xyzjjp, grad[3 * c_id]);
     }
 
     /* Free array */
@@ -1477,10 +1414,11 @@ _sat_coupling_send_bnd_data
       ipos += 2;
     }
   }
+
+  /* V2F-Phi
+     ------- */
+
   else if (cs_glob_turb_model->iturb == CS_TURB_V2F_PHI) {
-    /* ------- */
-    /* V2F-Phi */
-    /* ------- */
 
     /* Interpolate k */
     cs_field_gradient_scalar(CS_F_(k), iprev, inc, grad);
@@ -1506,9 +1444,7 @@ _sat_coupling_send_bnd_data
                                             distant_dist_fbr, trav4);
 
 
-    /* ---------------------------- */
     /* Translation to coupled model */
-    /* ---------------------------- */
 
     if (coupl->iturb == CS_TURB_V2F_PHI) {
       cs_real_t *_k    = rvdis[ipos];
@@ -1526,11 +1462,11 @@ _sat_coupling_send_bnd_data
       ipos += 4;
     }
   }
-  else if (cs_glob_turb_model->iturb == CS_TURB_K_OMEGA) {
 
-    /* ------- */
-    /* K-Omega */
-    /* ------- */
+  /* K-Omega
+     ------- */
+
+  else if (cs_glob_turb_model->iturb == CS_TURB_K_OMEGA) {
 
     /* Interpolate k */
     cs_field_gradient_scalar(CS_F_(k), iprev, inc, grad);
@@ -1544,9 +1480,7 @@ _sat_coupling_send_bnd_data
                                             n_b_faces_dist, b_faces_dist_ids,
                                             distant_dist_fbr, trav2);
 
-    /* ---------------------------- */
     /* Translation to coupled model */
-    /* ---------------------------- */
 
     if (coupl->iturb == CS_TURB_K_OMEGA) {
       cs_real_t *_k = rvdis[ipos];
@@ -1623,9 +1557,8 @@ _sat_coupling_send_bnd_data
     }
   }
 
-  /* ------- */
-  /* SCALARS */
-  /* ------- */
+  /* Scalars
+     ------- */
 
   const int keysca = cs_field_key_id("scalar_id");
   for (int f_id = 0; f_id < cs_field_n_fields(); f_id++) {
@@ -1665,16 +1598,16 @@ _sat_coupling_send_bnd_data
 static void
 _sat_interpolate_bc_from_b_face_data
 (
-  cs_field_t  *f,
-  cs_real_t   *dt,
-  int         *bc_type,
+  cs_field_t        *f,
+  cs_real_t         *dt,
+  int               *bc_type,
   const cs_lnum_t    n_b_faces_loc,
   const cs_lnum_t   *b_faces_loc_ids,
   const cs_lnum_t    n_b_faces_not_loc,
   const cs_lnum_t   *b_faces_not_loc_ids,
   const cs_real_t   *pond_fbr,
   const cs_real_t   *dofcpl,
-  cs_real_t  **rvfbr
+  cs_real_t        **rvfbr
 )
 {
   /* Variable id key */
@@ -1691,8 +1624,9 @@ _sat_interpolate_bc_from_b_face_data
 
   cs_lnum_t n_b_faces = cs_glob_mesh->n_b_faces;
 
-  const int _cpl_bc_type =
-    (cs_glob_sat_coupling_face_interpolation_type == 0) ? CS_COUPLED : CS_COUPLED_FD;
+  const int cpl_bc_type
+    = (cs_glob_sat_coupling_face_interpolation_type == 0) ?
+       CS_COUPLED : CS_COUPLED_FD;
 
   /* Allocate work arrays */
   cs_real_3_t *grad = NULL;
@@ -1705,18 +1639,16 @@ _sat_interpolate_bc_from_b_face_data
   BFT_MALLOC(gradt, cs_glob_mesh->n_cells_with_ghosts, cs_real_63_t);
 
   /* Default parameters for gradient computation */
-  const int iprev = 0;
-  const int inc = 1;
 
   switch (f->dim) {
   case 1:
-    cs_field_gradient_scalar(f, iprev, inc, grad);
+    cs_field_gradient_scalar(f, false, 1, grad);
     break;
   case 3:
-    cs_field_gradient_vector(f, iprev, inc, gradv);
+    cs_field_gradient_vector(f, false, 1, gradv);
     break;
   case 6:
-    cs_field_gradient_tensor(f, iprev, inc, gradt);
+    cs_field_gradient_tensor(f, false, 1, gradt);
     break;
   default:
     bft_error(__FILE__, __LINE__, 0,
@@ -1745,14 +1677,15 @@ _sat_interpolate_bc_from_b_face_data
          * with the resolution of the pressure gradient on an orthogonal mesh.
          */
         xip[0] = f->val[c_id]
-               + cs_math_3_dot_product(xyziip, grad[f_id]);
+               + cs_math_3_dot_product(xyziip, grad[c_id]);
       }
       else if (f->dim == 3) {
         /*
          * For all other variables, we want to prescribe a Dirichlet matching
          * the convective fluxes at the center. We resrve a choice between
-         * UPWIND, SOLU, and CENTERED. Only the centered case respects the diffusion
-         * at the domain's interior faces. For UPWIND and SOLU, the decentering
+         * UPWIND, SOLU, and CENTERED. Only the centered case respects
+         * the diffusion at the domain's interior faces.
+         * For UPWIND and SOLU, the decentering
          * is done here and in bilsc2.f90 for coupled faces.
          *
          * UPWIND
@@ -1774,19 +1707,20 @@ _sat_interpolate_bc_from_b_face_data
                  + cs_math_3_dot_product(xyziip, gradt[c_id][i]);
       }
 
-      /* We need alpha_ij for centered interpolation and flumab for decentering */
+      /* We need alpha_ij for centered interpolation
+         and flumab for decentering */
       cs_real_t pondj = pond_fbr[e_id];
 
-      cs_real_t xjp[6] = {0.};
+      cs_real_t xjp[6];
       for (int i = 0; i < f->dim; i++)
         xjp[i] = rvfbr[ivar + i][e_id];
 
-      bc_type[f_id] = _cpl_bc_type;
+      bc_type[f_id] = cpl_bc_type;
 
       f->bc_coeffs->icodcl[f_id] = fld_icodcl;
       for (int i = 0; i < f->dim; i++)
-        f->bc_coeffs->rcodcl1[n_b_faces * i + f_id] = (1. - pondj) * xjp[i]
-                                                    + pondj * xip[i];
+        f->bc_coeffs->rcodcl1[n_b_faces * i + f_id]
+          = (1. - pondj) * xjp[i] + pondj * xip[i];
     }
   }
   else {
@@ -1861,7 +1795,7 @@ _sat_interpolate_bc_from_b_face_data
       for (int i = 0; i < f->dim; i++)
         xjp[i] = rvfbr[ivar + i][e_id];
 
-      bc_type[f_id] = _cpl_bc_type;
+      bc_type[f_id] = cpl_bc_type;
 
       f->bc_coeffs->icodcl[f_id] = fld_icodcl;
 
@@ -1872,7 +1806,8 @@ _sat_interpolate_bc_from_b_face_data
       else {
         cs_real_t _coeff = -0.5 * dt[c_id];
         for (int i = 0; i < f->dim; i++)
-          f->bc_coeffs->rcodcl3[n_b_faces * i + f_id] = _coeff * (gradi[i] + xjp[i]);
+          f->bc_coeffs->rcodcl3[n_b_faces * i + f_id]
+            = _coeff * (gradi[i] + xjp[i]);
       }
     }
   }
@@ -1885,13 +1820,12 @@ _sat_interpolate_bc_from_b_face_data
   for (cs_lnum_t e_id = 0; e_id < n_b_faces_not_loc; e_id++) {
     cs_lnum_t f_id = b_faces_not_loc_ids[e_id];
 
-    bc_type[f_id] = _cpl_bc_type;
+    bc_type[f_id] = cpl_bc_type;
 
     f->bc_coeffs->icodcl[f_id] = 3;
     for (int i = 0; i < f->dim; i++)
       f->bc_coeffs->rcodcl3[n_b_faces * i + f_id] = 0.;
   }
-
 }
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
@@ -1974,7 +1908,7 @@ cs_sat_coupling_locate_all
     cs_mesh_quantities_t  *mesh_quantities = cs_glob_mesh_quantities;
 
     int locator_options[PLE_LOCATOR_N_OPTIONS];
-    locator_options[PLE_LOCATOR_NUMBERING] = 1;
+    locator_options[PLE_LOCATOR_NUMBERING] = 0;
 
     int *point_tag = NULL;
 
@@ -2015,7 +1949,7 @@ cs_sat_coupling_locate_all
     if (coupl->nbr_cel_sup > 0) indic_loc[0] = 1; /* have coupled cells */
     if (coupl->nbr_fbr_sup > 0) indic_loc[1] = 1; /* have coupled faces */
 
-    for (ind = 0 ; ind < 2 ; ind++)
+    for (ind = 0; ind < 2; ind++)
       indic_glob[ind] = indic_loc[ind];
 
   #if defined(HAVE_MPI)
@@ -2082,13 +2016,10 @@ cs_sat_coupling_locate_all
     /* Initialization of the distant point localization */
 
     if (coupl->cell_cpl_sel != NULL) {
-
       BFT_MALLOC(c_elt_list, cs_glob_mesh->n_cells, cs_lnum_t);
-
-      cs_selector_get_cell_num_list(coupl->cell_cpl_sel,
-                                    &nbr_cel_cpl,
-                                    c_elt_list);
-
+      cs_selector_get_cell_list(coupl->cell_cpl_sel,
+                                &nbr_cel_cpl,
+                                c_elt_list);
     }
 
     if (coupl->tag_func != NULL) {
@@ -2096,7 +2027,7 @@ cs_sat_coupling_locate_all
       coupl->tag_func(coupl->tag_context,
                       coupl->cells_sup,
                       nbr_cel_cpl,
-                      1,
+                      0,
                       c_elt_list,
                       point_tag);
     }
@@ -2115,18 +2046,19 @@ cs_sat_coupling_locate_all
                          cs_coupling_mesh_extents,
                          cs_coupling_point_in_mesh_p);
 
+    ple_locator_shift_locations(coupl->localis_cel, -1);
+
     BFT_FREE(point_tag);
 
-    if (coupl->cell_cpl_sel != NULL) BFT_FREE(c_elt_list);
+    if (coupl->cell_cpl_sel != NULL)
+      BFT_FREE(c_elt_list);
 
     if (coupl->face_cpl_sel != NULL) {
-
       BFT_MALLOC(f_elt_list, cs_glob_mesh->n_b_faces, cs_lnum_t);
 
-      cs_selector_get_b_face_num_list(coupl->face_cpl_sel,
-                                      &nbr_fbr_cpl,
-                                      f_elt_list);
-
+      cs_selector_get_b_face_list(coupl->face_cpl_sel,
+                                  &nbr_fbr_cpl,
+                                  f_elt_list);
     }
 
     if (indic_glob[1] > 0)
@@ -2139,7 +2071,7 @@ cs_sat_coupling_locate_all
       coupl->tag_func(coupl->tag_context,
                       support_fbr,
                       nbr_fbr_cpl,
-                      1,
+                      0,
                       f_elt_list,
                       point_tag);
     }
@@ -2158,9 +2090,12 @@ cs_sat_coupling_locate_all
                          cs_coupling_mesh_extents,
                          cs_coupling_point_in_mesh_p);
 
+    ple_locator_shift_locations(coupl->localis_fbr, -1);
+
     BFT_FREE(point_tag);
 
-    if (coupl->face_cpl_sel != NULL) BFT_FREE(f_elt_list);
+    if (coupl->face_cpl_sel != NULL)
+      BFT_FREE(f_elt_list);
 
     /* Computed some quantities needed for a centered-like interpolation */
 
@@ -2180,7 +2115,6 @@ cs_sat_coupling_locate_all
 
       fvm_writer_export_nodal(w, coupl->cells_sup);
       fvm_writer_finalize(w);
-
     }
   #endif
 
@@ -2405,9 +2339,10 @@ cs_sat_coupling_initialize
 
     /* Check coherency for reference frames of resolution. */
     if (cs_glob_physical_constants->icorio != cpl->icorio)
-      bft_error(__FILE__, __LINE__, 0,
-                _("%s: Coupling is not available for different reference frames.\n"),
-                __func__);
+      bft_error
+        (__FILE__, __LINE__, 0,
+         _("%s: Coupling is not available for different reference frames.\n"),
+         __func__);
 
     /* Check for ALE/deformable mesh */
     _sat_coupling_int_max(cpl,
@@ -2593,7 +2528,7 @@ cs_sat_coupling_add_internal(cs_sat_coupling_tag_t  *tag_func,
  * It is assumed that the arrays have the same size and the same values on
  * each group of processes (local and distant).
  *
- * int          numcpl      : --> : coupling number (1-based)
+ * int          cpl_id      : --> : coupling id (0-based)
  * int          nbrdis      : --> : number of values to send
  * int          nbrloc      : --> : number of values to receive
  * cs_real_t    vardis      : --> : distant values (to send)
@@ -2601,7 +2536,7 @@ cs_sat_coupling_add_internal(cs_sat_coupling_tag_t  *tag_func,
  *----------------------------------------------------------------------------*/
 
 void
-cs_sat_coupling_array_exchange(int         numcpl,
+cs_sat_coupling_array_exchange(int         cpl_id,
                                cs_lnum_t   nbrdis,
                                cs_lnum_t   nbrloc,
                                cs_real_t  *vardis,
@@ -2618,12 +2553,12 @@ cs_sat_coupling_array_exchange(int         numcpl,
 
   /* Initializations and verifications */
 
-  if (numcpl < 1 || numcpl > cs_glob_sat_n_couplings)
+  if (cpl_id < 0 || cpl_id >= cs_glob_sat_n_couplings)
     bft_error(__FILE__, __LINE__, 0,
-              _("Impossible coupling number %d; there are %d couplings"),
-              numcpl, cs_glob_sat_n_couplings);
+              _("Impossible coupling id %d; there are %d couplings"),
+              cpl_id, cs_glob_sat_n_couplings);
   else
-    coupl = cs_glob_sat_couplings[numcpl - 1];
+    coupl = cs_glob_sat_couplings[cpl_id];
 
   if (coupl->comm != MPI_COMM_NULL) {
 
@@ -2669,7 +2604,6 @@ cs_sat_coupling_exchange_at_cells
   cs_real_t  *fimp  /*!<[out] Implicit source terms */
 )
 {
-
   /* This function should only be called for a variable field */
   if (!(f->type & CS_FIELD_VARIABLE))
     bft_error(__FILE__, __LINE__, 0,
@@ -2688,11 +2622,14 @@ cs_sat_coupling_exchange_at_cells
 
       ple_locator_t *cells_locator = cpl->localis_cel;
 
-      const cs_lnum_t n_cells_loc = ple_locator_get_n_interior(cells_locator);
-      const cs_lnum_t *cpl_cells_ids = ple_locator_get_interior_list(cells_locator);
+      const cs_lnum_t n_cells_loc
+        = ple_locator_get_n_interior(cells_locator);
+      const cs_lnum_t *cpl_cells_ids
+        = ple_locator_get_interior_list(cells_locator);
 
       /* Prepare data for the send/recv operation */
-      const cs_lnum_t n_cells_dist = ple_locator_get_n_dist_points(cells_locator);
+      const cs_lnum_t n_cells_dist
+        = ple_locator_get_n_dist_points(cells_locator);
 
       /* Count global number of elements, to ensure that a coupling is needed */
       cs_lnum_t _n_g_cells[2] = {n_cells_loc, n_cells_dist};
@@ -2702,8 +2639,10 @@ cs_sat_coupling_exchange_at_cells
       cs_lnum_t n_g_cells_dist = _n_g_cells[1];
 
       /* Get coordinates and indexes */
-      const cs_lnum_t *dist_elt_ids = ple_locator_get_dist_locations(cells_locator);
-      const cs_coord_t *dist_coords = ple_locator_get_dist_coords(cells_locator);
+      const cs_lnum_t *dist_elt_ids
+        = ple_locator_get_dist_locations(cells_locator);
+      const cs_coord_t *dist_coords
+        = ple_locator_get_dist_coords(cells_locator);
 
       /* Allocate temporary arrays */
       cs_real_t *cw1_dis = NULL;
@@ -2850,8 +2789,9 @@ cs_sat_coupling_bnd_initialize
 )
 {
   /* Global value */
-  const int _cpl_bc_type =
-    (cs_glob_sat_coupling_face_interpolation_type == 0) ? CS_COUPLED : CS_COUPLED_FD;
+  const int cpl_bc_type
+    = (cs_glob_sat_coupling_face_interpolation_type == 0) ?
+      CS_COUPLED : CS_COUPLED_FD;
 
   /* Loop on the different couplings */
   for (int cpl_id = 0; cpl_id < _cs_glob_n_sat_cp; cpl_id++) {
@@ -2859,14 +2799,15 @@ cs_sat_coupling_bnd_initialize
 
     /* Check that this is a surface coupling */
     if (cpl->localis_fbr != NULL) {
-      ple_locator_t *_locator = cpl->localis_fbr;
+      ple_locator_t *locator = cpl->localis_fbr;
 
       /* Local coupled faces */
-      cs_lnum_t n_b_faces_loc = ple_locator_get_n_interior(_locator);
-      const cs_lnum_t *b_faces_loc_ids = ple_locator_get_interior_list(_locator);
+      cs_lnum_t n_b_faces_loc = ple_locator_get_n_interior(locator);
+      const cs_lnum_t *b_faces_loc_ids = ple_locator_get_interior_list(locator);
 
-      cs_lnum_t n_b_faces_not_loc = ple_locator_get_n_exterior(_locator);
-      const cs_lnum_t *b_faces_not_loc_ids = ple_locator_get_exterior_list(_locator);
+      cs_lnum_t n_b_faces_not_loc = ple_locator_get_n_exterior(locator);
+      const cs_lnum_t *b_faces_not_loc_ids
+        = ple_locator_get_exterior_list(locator);
 
       if (n_b_faces_loc > 0) {
         cs_field_build_bc_codes_all();
@@ -2891,14 +2832,14 @@ cs_sat_coupling_bnd_initialize
 
           for (cs_lnum_t e_id = 0; e_id < n_b_faces_loc; e_id++) {
             cs_lnum_t f_id = b_faces_loc_ids[e_id];
-            bc_type[f_id] = _cpl_bc_type;
+            bc_type[f_id] = cpl_bc_type;
             f->bc_coeffs->icodcl[f_id] = fld_icodcl;
           }
 
           /* Non-located boundary faces -> Homogeneous Neuman BC type */
           for (cs_lnum_t e_id = 0; e_id < n_b_faces_not_loc; e_id++) {
             cs_lnum_t f_id = b_faces_not_loc_ids[e_id];
-            bc_type[f_id] = _cpl_bc_type;
+            bc_type[f_id] = cpl_bc_type;
             f->bc_coeffs->icodcl[f_id] = 3;
           }
         }
@@ -2921,14 +2862,13 @@ cs_sat_coupling_exchange_at_bnd_faces
   cs_real_t *dt       /*!<[in] time step (per cell) */
 )
 {
-
   /* Loop on the different couplings */
   for (int cpl_id = 0; cpl_id < _cs_glob_n_sat_cp; cpl_id++) {
     cs_sat_coupling_t *cpl = cs_glob_sat_couplings[cpl_id];
 
     /* Check that this is a surface coupling */
     if (cpl->localis_fbr != NULL) {
-      ple_locator_t *_locator = cpl->localis_fbr;
+      ple_locator_t *locator = cpl->localis_fbr;
 
       /* Sanity check */
       if (cpl->nbr_fbr_sup > 0)
@@ -2938,33 +2878,37 @@ cs_sat_coupling_exchange_at_bnd_faces
                   __func__);
 
       /* Local coupled faces */
-      cs_lnum_t n_b_faces_loc = ple_locator_get_n_interior(_locator);
-      const cs_lnum_t *b_faces_loc_ids = ple_locator_get_interior_list(_locator);
+      cs_lnum_t n_b_faces_loc = ple_locator_get_n_interior(locator);
+      const cs_lnum_t *b_faces_loc_ids
+        = ple_locator_get_interior_list(locator);
 
       /* Local non-coupled faces */
-      cs_lnum_t n_b_faces_not_loc = ple_locator_get_n_exterior(_locator);
-      const cs_lnum_t *b_faces_not_loc_ids = ple_locator_get_exterior_list(_locator);
+      cs_lnum_t n_b_faces_not_loc = ple_locator_get_n_exterior(locator);
+      const cs_lnum_t *b_faces_not_loc_ids
+        = ple_locator_get_exterior_list(locator);
 
       /* Distant coupled faces */
-      cs_lnum_t n_b_faces_dist = ple_locator_get_n_dist_points(_locator);
-      const cs_lnum_t *b_faces_dist_ids = ple_locator_get_dist_locations(_locator);
+      cs_lnum_t n_b_faces_dist = ple_locator_get_n_dist_points(locator);
+      const cs_lnum_t *b_faces_dist_ids
+        = ple_locator_get_dist_locations(locator);
 
       /* Get coordinates */
-      const cs_coord_t *coords = ple_locator_get_dist_coords(_locator);
+      const cs_coord_t *coords = ple_locator_get_dist_coords(locator);
 
       /* Distance related pointers */
       cs_real_t *distant_dist_fbr = cpl->distant_dist_fbr; /* JJ' distance */
       cs_real_t *distant_of = cpl->distant_of;             /* OF distance */
-      cs_real_t *distant_pond_fbr = cpl->distant_pond_fbr; /* Weighting coefficient */
+      cs_real_t *distant_pond_fbr = cpl->distant_pond_fbr; /* Weighting
+                                                              coefficient */
 
       /* Count global number of elements, to ensure that a coupling is needed */
-      cs_lnum_t _n_g_b_faces[2] = {0.};
+      cs_gnum_t _n_g_b_faces[2] = {0, 0};
       _n_g_b_faces[0] = n_b_faces_loc;
       _n_g_b_faces[1] = n_b_faces_dist;
-      cs_parall_sum(2, CS_LNUM_TYPE, _n_g_b_faces);
+      cs_parall_sum(2, CS_GNUM_TYPE, _n_g_b_faces);
 
-      cs_lnum_t n_g_b_faces_loc  = _n_g_b_faces[0];
-      cs_lnum_t n_g_b_faces_dist = _n_g_b_faces[1];
+      cs_gnum_t n_g_b_faces_loc  = _n_g_b_faces[0];
+      cs_gnum_t n_g_b_faces_dist = _n_g_b_faces[1];
 
       /* Allocate work arrays */
       cs_lnum_t _size_dis = (n_b_faces_dist > 0) ? n_b_faces_dist : 1;
@@ -2982,7 +2926,8 @@ cs_sat_coupling_exchange_at_bnd_faces
 
       /* Exchange variables */
       if (n_g_b_faces_dist > 0)
-        _sat_coupling_send_bnd_data(cpl, coords, n_b_faces_dist, b_faces_dist_ids,
+        _sat_coupling_send_bnd_data(cpl, coords,
+                                    n_b_faces_dist, b_faces_dist_ids,
                                     distant_dist_fbr, distant_pond_fbr,
                                     distant_of, rvdis);
 
@@ -2990,7 +2935,7 @@ cs_sat_coupling_exchange_at_bnd_faces
         for (int i = 0; i < cpl->nvarto; i++) {
           cs_real_t *val_dist = (n_b_faces_dist > 0) ? rvdis[i] : NULL;
           cs_real_t *val_loc = (n_b_faces_loc > 0) ? rvfbr[i] : NULL;
-          ple_locator_exchange_point_var(_locator,
+          ple_locator_exchange_point_var(locator,
                                          val_dist,
                                          val_loc,
                                          NULL,
@@ -3000,6 +2945,8 @@ cs_sat_coupling_exchange_at_bnd_faces
         }
       }
 
+      for (int i = 0; i < cpl->nvarto; i++)
+        BFT_FREE(rvdis[i]);
       BFT_FREE(rvdis);
 
       /* ----------------------------------------------- */
@@ -3009,7 +2956,6 @@ cs_sat_coupling_exchange_at_bnd_faces
       if (n_g_b_faces_loc > 0) {
         cs_real_t *local_pond_fbr = cpl->local_pond_fbr;
         cs_real_t *dofcpl = cpl->local_of;
-
 
         /* Ensure boundary conditions arrays are allocated */
         cs_field_build_bc_codes_all();
@@ -3035,6 +2981,10 @@ cs_sat_coupling_exchange_at_bnd_faces
                                                rvfbr);
         }
       }
+
+      for (int i = 0; i < cpl->nvarto; i++)
+        BFT_FREE(rvfbr[i]);
+      BFT_FREE(rvfbr);
     }
   }
 }
@@ -3046,9 +2996,7 @@ cs_sat_coupling_exchange_at_bnd_faces
 void
 cs_sat_coupling_all_finalize(void)
 {
-  int  i;
-
-  for (i = 0 ; i < cs_glob_sat_n_couplings ; i++)
+  for (int i = 0; i < cs_glob_sat_n_couplings; i++)
     _sat_coupling_destroy(cs_glob_sat_couplings[i]);
 
   BFT_FREE(cs_glob_sat_couplings);
