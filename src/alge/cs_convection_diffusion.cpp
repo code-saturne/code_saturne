@@ -6582,9 +6582,9 @@ _convection_diffusion_unsteady_strided
      or current values are provided */
 
   if (pvar != NULL && halo != NULL) {
-    cs_halo_sync_var_strided(halo, halo_type, (cs_real_t *)pvar, 3);
+    cs_halo_sync_var_strided(halo, halo_type, (cs_real_t *)pvar, stride);
     if (cs_glob_mesh->n_init_perio > 0)
-      cs_halo_perio_sync_var_vect(halo, halo_type, (cs_real_t *)pvar, 3);
+      cs_halo_perio_sync_var_vect(halo, halo_type, (cs_real_t *)pvar, stride);
   }
   if (pvara == NULL)
     pvara = (const var_t *)pvar;
