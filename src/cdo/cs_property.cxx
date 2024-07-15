@@ -1602,14 +1602,16 @@ cs_property_data_define(bool                     need_tensor,
                         bool                     need_eigen,
                         const cs_property_t     *property)
 {
-  cs_property_data_t data = { /* Default initialization */
+  cs_property_data_t data;
 
-                              .property = property, .is_iso = false,
-                              .is_unity = false,    .need_tensor = need_tensor,
-                              .value = 0.,          .need_eigen = need_eigen,
-                              .eigen_max = 0,       .eigen_ratio = 1.0
+  // Default initialization for the first set of members
 
-  };
+  data.property = property;
+  data.is_iso = false;
+  data.is_unity = false;
+  data.need_tensor = need_tensor;
+  data.need_eigen = need_eigen;
+  data.eigen_ratio = 1.0; // Computed only if needed
 
   if (property == nullptr)
     data.is_iso = true, data.is_unity = true;
@@ -1629,9 +1631,11 @@ cs_property_data_define(bool                     need_tensor,
       }
     }
 
-  } /* property != nullptr */
+  } // property != nullptr
 
   const cs_real_t ref_val = (property == nullptr) ? 1. : property->ref_value;
+
+  // Second set of members
 
   data.eigen_max = ref_val;
   data.value = ref_val;
