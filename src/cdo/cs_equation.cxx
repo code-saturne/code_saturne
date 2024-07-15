@@ -218,7 +218,8 @@ _post_balance_at_vertices(const cs_equation_t  *eq,
 /*----------------------------------------------------------------------------*/
 
 static void
-_prepare_fb_solving(void *eq_to_cast, cs_real_t *p_x[])
+_prepare_fb_solving(void      *eq_to_cast,
+                    cs_real_t *p_x[])
 {
   cs_equation_t         *eq  = (cs_equation_t *)eq_to_cast;
   cs_equation_param_t   *eqp = eq->param;
@@ -368,7 +369,8 @@ _set_vect_hho_function_pointers(cs_equation_t *eq)
 /*----------------------------------------------------------------------------*/
 
 static void
-_add_field(int n_previous, cs_equation_t *eq)
+_add_field(int            n_previous,
+           cs_equation_t *eq)
 {
   if (eq == nullptr)
     return;
@@ -584,7 +586,8 @@ cs_equation_by_field_name(const char *field_name)
 /*----------------------------------------------------------------------------*/
 
 bool
-cs_equation_has_field_name(const cs_equation_t *eq, const char *fld_name)
+cs_equation_has_field_name(const cs_equation_t *eq,
+                           const char          *fld_name)
 {
   if (eq == nullptr)
     return false;
@@ -1281,7 +1284,7 @@ cs_equation_get_type(const cs_equation_t *eq)
 
 double
 cs_equation_get_time_eval(const cs_time_step_t *ts,
-                          const cs_equation_t *eq)
+                          const cs_equation_t  *eq)
 {
   assert(ts != nullptr);
   double time_eval = ts->t_cur; /* default value */
@@ -1356,7 +1359,7 @@ cs_equation_get_flag(const cs_equation_t *eq)
 
 void
 cs_equation_set_flag(cs_equation_t *eq,
-                     cs_flag_t flag)
+                     cs_flag_t      flag)
 {
   if (eq == nullptr)
     bft_error(__FILE__, __LINE__, 0, _err_empty_eq, __func__);
@@ -1486,11 +1489,11 @@ cs_equation_uses_new_mechanism(const cs_equation_t *eq)
 /*----------------------------------------------------------------------------*/
 
 cs_equation_t *
-cs_equation_add(const char        *eqname,
-                const char        *varname,
-                cs_equation_type_t eqtype,
-                int                dim,
-                cs_param_bc_type_t default_bc)
+cs_equation_add(const char         *eqname,
+                const char         *varname,
+                cs_equation_type_t  eqtype,
+                int                 dim,
+                cs_param_bc_type_t  default_bc)
 {
   if (varname == NULL)
     bft_error(__FILE__, __LINE__, 0,
@@ -1618,10 +1621,10 @@ cs_equation_add(const char        *eqname,
 /*----------------------------------------------------------------------------*/
 
 cs_equation_t *
-cs_equation_add_user(const char        *eqname,
-                     const char        *varname,
-                     int                dim,
-                     cs_param_bc_type_t default_bc)
+cs_equation_add_user(const char         *eqname,
+                     const char         *varname,
+                     int                 dim,
+                     cs_param_bc_type_t  default_bc)
 {
   if (eqname == nullptr)
     bft_error(__FILE__, __LINE__, 0, " %s: Empty equation name.", __func__);
@@ -1670,13 +1673,13 @@ cs_equation_add_user(const char        *eqname,
 /*----------------------------------------------------------------------------*/
 
 cs_equation_t *
-cs_equation_add_user_tracer(const char        *eqname,
-                            const char        *varname,
-                            int                dim,
-                            cs_param_bc_type_t default_bc,
-                            cs_property_t     *time_pty,
-                            cs_adv_field_t    *adv,
-                            cs_property_t     *diff_pty)
+cs_equation_add_user_tracer(const char         *eqname,
+                            const char         *varname,
+                            int                 dim,
+                            cs_param_bc_type_t  default_bc,
+                            cs_property_t      *time_pty,
+                            cs_adv_field_t     *adv,
+                            cs_property_t      *diff_pty)
 {
   cs_equation_t *eq = cs_equation_add_user(eqname, varname, dim, default_bc);
   assert(eq != nullptr);
@@ -2799,7 +2802,7 @@ cs_equation_lock_settings(void)
 /*!
  * \brief Create a field structure related to the predefined equation given as
  *        parameter. This includes an equation associated to all modules and
- *        also wall distance or mesh deformation for instance
+ *        also the wall distance or mesh deformation computations for instance
  *
  *        When an automatic behavior is asked then one checks the flag
  *        CS_EQUATION_UNSTEADY to decide. One can force the behavior when
@@ -2814,7 +2817,8 @@ cs_equation_lock_settings(void)
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_predefined_create_field(int n_previous, cs_equation_t *eq)
+cs_equation_predefined_create_field(int            n_previous,
+                                    cs_equation_t *eq)
 {
   if (eq == nullptr)
     return;
@@ -2950,8 +2954,8 @@ cs_equation_define_context_structures(void)
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_define_core_structure(const cs_equation_t *eq,
-                                  cs_equation_core_t **p_core)
+cs_equation_define_core_structure(const cs_equation_t  *eq,
+                                  cs_equation_core_t  **p_core)
 {
   cs_equation_core_t *core = (p_core == nullptr) ? nullptr : *p_core;
 
@@ -2979,7 +2983,7 @@ cs_equation_define_core_structure(const cs_equation_t *eq,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_init_field_values(const cs_mesh_t *mesh,
+cs_equation_init_field_values(const cs_mesh_t      *mesh,
                               const cs_time_step_t *ts)
 {
   /* Loop on all equations */
@@ -3038,7 +3042,7 @@ cs_equation_init_field_values(const cs_mesh_t *mesh,
 
 void
 cs_equation_build_system(const cs_mesh_t *mesh,
-                         cs_equation_t *eq)
+                         cs_equation_t   *eq)
 {
   assert(eq != nullptr);
 
@@ -3171,7 +3175,8 @@ cs_equation_solve_deprecated(cs_equation_t *eq)
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_solve_steady_state(const cs_mesh_t *mesh, cs_equation_t *eq)
+cs_equation_solve_steady_state(const cs_mesh_t *mesh,
+                               cs_equation_t   *eq)
 {
   if (eq == nullptr)
     bft_error(__FILE__, __LINE__, 0, "%s: Empty equation structure", __func__);
@@ -3206,7 +3211,9 @@ cs_equation_solve_steady_state(const cs_mesh_t *mesh, cs_equation_t *eq)
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_solve(bool cur2prev, const cs_mesh_t *mesh, cs_equation_t *eq)
+cs_equation_solve(bool             cur2prev,
+                  const cs_mesh_t *mesh,
+                  cs_equation_t   *eq)
 {
   if (eq == nullptr)
     bft_error(__FILE__, __LINE__, 0, "%s: Empty equation structure", __func__);
@@ -3275,7 +3282,8 @@ cs_equation_solve_steady_state_wrapper(const char *eqname)
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_solve_wrapper(bool cur2prev, const char *eqname)
+cs_equation_solve_wrapper(bool        cur2prev,
+                          const char *eqname)
 {
   cs_equation_t *eq = cs_equation_by_name(eqname);
 
@@ -3367,7 +3375,8 @@ cs_equation_get_cellwise_builders(const cs_equation_t *eq,
 /*----------------------------------------------------------------------------*/
 
 cs_real_t *
-cs_equation_get_cell_values(const cs_equation_t *eq, bool previous)
+cs_equation_get_cell_values(const cs_equation_t *eq,
+                            bool                 previous)
 {
   if (eq == nullptr)
     return nullptr;
@@ -3392,7 +3401,8 @@ cs_equation_get_cell_values(const cs_equation_t *eq, bool previous)
 /*----------------------------------------------------------------------------*/
 
 cs_real_t *
-cs_equation_get_face_values(const cs_equation_t *eq, bool previous)
+cs_equation_get_face_values(const cs_equation_t *eq,
+                            bool                 previous)
 {
   if (eq == nullptr)
     return nullptr;
@@ -3417,7 +3427,8 @@ cs_equation_get_face_values(const cs_equation_t *eq, bool previous)
 /*----------------------------------------------------------------------------*/
 
 cs_real_t *
-cs_equation_get_edge_values(const cs_equation_t *eq, bool previous)
+cs_equation_get_edge_values(const cs_equation_t *eq,
+                            bool                 previous)
 {
   if (eq == nullptr)
     return nullptr;
@@ -3442,7 +3453,8 @@ cs_equation_get_edge_values(const cs_equation_t *eq, bool previous)
 /*----------------------------------------------------------------------------*/
 
 cs_real_t *
-cs_equation_get_vertex_values(const cs_equation_t *eq, bool previous)
+cs_equation_get_vertex_values(const cs_equation_t *eq,
+                              bool                 previous)
 {
   if (eq == nullptr)
     return nullptr;
