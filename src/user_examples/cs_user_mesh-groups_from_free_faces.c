@@ -81,7 +81,6 @@ static void
 _mesh_groups_from_free_faces(cs_mesh_t  *mesh,
                              double      tolerance)
 {
-  cs_lnum_t  i, j;
   cs_lnum_t  n_free_faces = 0, n_b_faces = 0, n_no_group = 0;
   cs_lnum_t  *free_faces_list = NULL, *no_group_list = NULL;
   int *family_flag = NULL;
@@ -92,11 +91,11 @@ _mesh_groups_from_free_faces(cs_mesh_t  *mesh,
   /* Mark families matching "no groups" */
 
   BFT_MALLOC(family_flag, mesh->n_families, int);
-  for (i = 0; i < mesh->n_families; i++)
+  for (int i = 0; i < mesh->n_families; i++)
     family_flag[i] = 1;
 
-  for (i = 0; i < mesh->n_families; i++) {
-    for (j = 0; j <  mesh->n_max_family_items; j++) {
+  for (int i = 0; i < mesh->n_families; i++) {
+    for (int j = 0; j <  mesh->n_max_family_items; j++) {
       if (mesh->family_item[j * mesh->n_families + i] != 0)
         family_flag[i] = 0;
     }
@@ -104,7 +103,7 @@ _mesh_groups_from_free_faces(cs_mesh_t  *mesh,
 
   /* Count values to locate and number of free faces */
 
-  for (i = 0; i < mesh->n_b_faces; i++) {
+  for (cs_lnum_t i = 0; i < mesh->n_b_faces; i++) {
 
     if (mesh->b_face_cells[i] < 0)
       n_free_faces += 1;
@@ -125,7 +124,7 @@ _mesh_groups_from_free_faces(cs_mesh_t  *mesh,
   n_free_faces = 0;
   n_no_group = 0;
 
-  for (i = 0; i < mesh->n_b_faces; i++) {
+  for (cs_lnum_t i = 0; i < mesh->n_b_faces; i++) {
 
     if (mesh->b_face_cells[i] < 0)
       free_faces_list[n_free_faces++] = i;      /* 0-based */
@@ -202,6 +201,10 @@ _mesh_groups_from_free_faces(cs_mesh_t  *mesh,
        (unsigned long long)n_g_faces[4]);
   }
 
+  /* Shift from 1-base to 0-based locations */
+
+  ple_locator_shift_locations(locator, -1);
+
   /* Now transfer information */
 
   ple_lnum_t n_dist_points = ple_locator_get_n_dist_points(locator);
@@ -211,8 +214,8 @@ _mesh_groups_from_free_faces(cs_mesh_t  *mesh,
   int *dist_fm_id = NULL;
   BFT_MALLOC(dist_fm_id, n_dist_points, int);
 
-  for (i = 0; i < n_dist_points; i++)
-    dist_fm_id[i] = mesh->b_face_family[dist_loc[i] - 1];
+  for (cs_lnum_t i = 0; i < n_dist_points; i++)
+    dist_fm_id[i] = mesh->b_face_family[dist_loc[i]];
 
   ple_locator_exchange_point_var(locator,
                                  dist_fm_id,
