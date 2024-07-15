@@ -4248,14 +4248,6 @@ cs_mesh_quantities_solid_compute(const cs_mesh_t       *m,
                             (cs_real_3_t *)(mq->diipf),
                             (cs_real_3_t *)(mq->djjpf));
 
-  /* Compute solid normal from fluid normals */
-
-  cs_real_33_t *xpsn;
-  BFT_MALLOC(xpsn, m->n_cells_with_ghosts, cs_real_33_t);
-  cs_array_real_set_scalar(9*m->n_cells_with_ghosts,
-                           0.,
-                           (cs_real_t *)xpsn);
-
   /* Reinitializing the wall normal before correcting */
   cs_array_real_set_scalar(3*m->n_cells_with_ghosts,
                            0.,
@@ -4265,14 +4257,72 @@ cs_mesh_quantities_solid_compute(const cs_mesh_t       *m,
   cs_porosity_from_scan_opt_t *poro_from_scan = cs_glob_porosity_from_scan_opt;
   cs_real_t threshold = poro_from_scan->threshold;
 
-  /* Interior faces */
+  /* Update the cell porosity field value and penalize small fluid cells */
+  cs_field_t *f_poro = cs_field_by_name("porosity");
+  cs_real_t poro_threshold = poro_from_scan->porosity_threshold;
+
+  for (cs_lnum_t c_id = 0; c_id < m->n_cells; c_id++) {
+    cs_real_t porosity = mq->cell_f_vol[c_id]/mq->cell_vol[c_id];
+    if (porosity > 1.)
+      porosity = 1.;
+
+    f_poro->val[c_id] = porosity;
+    if (porosity > poro_threshold)
+      mq->c_disable_flag[c_id] = 0;
+
+    /* Penalize ibm cells with small porosity */
+    else if (porosity < poro_threshold && porosity > cs_math_epzero) {
+
+      mq->c_disable_flag[c_id] = 1;
+
+      f_poro->val[c_id] = 0.;
+      mq->cell_f_vol[c_id] = 0.0;
+      mq->c_w_face_surf[c_id] = 0.0;
+
+      for (cs_lnum_t i = 0; i < 3; i++)
+        c_w_face_normal[c_id][i] = 0.0;
+
+      /* Interior faces */
+      const cs_lnum_t s_id_i = c2c_idx[c_id];
+      const cs_lnum_t e_id_i = c2c_idx[c_id+1];
+
+      /* Loop on interior faces of cell c_id */
+      for (cs_lnum_t cidx = s_id_i; cidx < e_id_i; cidx++) {
+        const cs_lnum_t face_id = cell_i_faces[cidx];
+
+        i_f_face_normal[face_id][0] = 0.;
+        i_f_face_normal[face_id][1] = 0.;
+        i_f_face_normal[face_id][2] = 0.;
+        mq->i_f_face_surf[face_id] = 0.;
+      }
+
+      /* Boundary faces */
+      const cs_lnum_t s_id_b = cell_b_faces_idx[c_id];
+      const cs_lnum_t e_id_b = cell_b_faces_idx[c_id+1];
+
+      for (cs_lnum_t cidx = s_id_b; cidx < e_id_b; cidx++) {
+        const cs_lnum_t face_id = cell_b_faces[cidx];
+
+        b_f_face_normal[face_id][0] = 0.;
+        b_f_face_normal[face_id][1] = 0.;
+        b_f_face_normal[face_id][2] = 0.;
+      }
+    }
+  }
+
+  /* Compute solid normal from fluid normals */
+  cs_real_33_t *xpsn;
+  BFT_MALLOC(xpsn, m->n_cells_with_ghosts, cs_real_33_t);
+  cs_array_real_set_scalar(9*m->n_cells_with_ghosts,
+                           0.,
+                           (cs_real_t *)xpsn);
+
   for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-
-    bool is_active_cell = false;
-
     /* Interior faces */
     const cs_lnum_t s_id_i = c2c_idx[c_id];
     const cs_lnum_t e_id_i = c2c_idx[c_id+1];
+
+    bool is_active_cell = false;
 
     /* Loop on interior faces of cell c_id */
     for (cs_lnum_t cidx = s_id_i; cidx < e_id_i; cidx++) {
@@ -4302,6 +4352,11 @@ cs_mesh_quantities_solid_compute(const cs_mesh_t       *m,
 
       /* Forced porosity to 0 */
       mq->cell_f_vol[c_id] = 0.0;
+      f_poro->val[c_id] = 0.0;
+      mq->c_w_face_surf[c_id] = 0.0;
+
+      for (cs_lnum_t i = 0; i < 3; i++)
+        c_w_face_normal[c_id][i] = 0.0;
 
       /* If no internal contribution, the cell is isolated and we
          skip the boundary contribution */
