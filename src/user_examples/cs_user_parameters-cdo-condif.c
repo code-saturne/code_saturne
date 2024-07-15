@@ -384,6 +384,35 @@ cs_user_model(void)
     cs_advection_field_set_postprocess(adv, CS_ADVECTION_FIELD_POST_COURANT);
   }
   /*! [param_cdo_add_user_adv_field_post] */
+
+
+  /*! [param_cdo_add_user_tracer] */
+  {
+    /* Add the user-defined advection field  */
+
+    cs_adv_field_t  *adv_field = cs_advection_field_add_user("adv_field");
+
+    /* Add the user-defined diffusion property */
+
+    cs_property_t  *diff_pty = cs_property_add("diff_pty", CS_PROPERTY_ISO);
+
+    /* Add the user-defined time property */
+
+    cs_property_t  *time_pty = cs_property_add("time_pty", CS_PROPERTY_ISO);
+
+    /* Add a new user-defined equation and associate this equation with some
+       properties to get a scalar-valued unsteady convection/diffusion
+       equation */
+
+    cs_equation_add_user_tracer("MyTracerEq",  /* Eq. name */
+                                "MyTracerVar", /* Variable name */
+                                1,             /* Variable dim. */
+                                CS_PARAM_BC_HMG_NEUMANN,
+                                time_pty,
+                                adv_field,
+                                diff_pty);
+  }
+  /*! [param_cdo_add_user_tracer] */
 }
 
 /*----------------------------------------------------------------------------*/

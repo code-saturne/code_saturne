@@ -248,16 +248,6 @@ schemes (CDO vertex-based schemes are used) as follows:
 
 
 
-Add a user-defined equation
--------------------------
-
-User-defined equation with CDO/HHO schemes are added thanks to a call to the
-function \ref cs_equation_add_user in \ref cs_user_model Here are several
-examples:
-
-\snippet cs_user_parameters-cdo-condif.c param_cdo_add_user_equation
-
-
 Add a property
 ---------------
 
@@ -293,6 +283,23 @@ the **CFL number** proceed as follows:
 
 \snippet cs_user_parameters-cdo-condif.c param_cdo_add_user_adv_field_post
 
+
+Add a user-defined equation
+-------------------------
+
+User-defined equation with CDO/HHO schemes are added thanks to a call to the
+function \ref cs_equation_add_user in \ref cs_user_model Here are several
+examples:
+
+\snippet cs_user_parameters-cdo-condif.c param_cdo_add_user_equation
+
+There is an other way to add a user-defined equation relying on the
+function \ref cs_equation_add_user_tracer which combines (1) the add
+of a user-defined equation and (2) its association with properties for
+the unsteady and/or the diffusion term along with the association with
+an advection field.
+
+\snippet cs_user_parameters-cdo-condif.c param_cdo_add_user_tracer
 
 
 Settings done in cs_user_finalize_setup()
