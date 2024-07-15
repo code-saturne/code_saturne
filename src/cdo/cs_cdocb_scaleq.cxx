@@ -308,8 +308,7 @@ _scb_apply_bc(const cs_equation_param_t     *eqp,
      * An outward flux is a positive flux whereas an inward flux is negative
      * The minus just above implies the minus just below */
 
-    if (csys->has_nhmg_neumann)
-      eqc->enforce_neumann(eqp, cm, fm, nullptr, cb, csys);
+    eqc->enforce_neumann(eqp, cm, fm, nullptr, cb, csys);
 
     /* The enforcement of the Dirichlet has to be done after all
        other contributions */
@@ -591,7 +590,7 @@ _scb_init_cell_system(const cs_cell_mesh_t         *cm,
 
   /* Cell-wise view of the linear system to build */
 
-  const int  n_dofs = cm->n_fc + 1;
+  const int  n_dofs = cm->n_fc;
 
   csys->c_id = cm->c_id;
   csys->n_dofs = n_dofs;
@@ -611,6 +610,8 @@ _scb_init_cell_system(const cs_cell_mesh_t         *cm,
 
   cs_cell_sys_reset(cm->n_fc, csys);
   cs_sdm_square_init(cm->n_fc, csys->mat);
+
+  memset(csys->rhs, 0, (cm->n_fc + 1)*sizeof(cs_real_t));
 
   for (short int f = 0; f < cm->n_fc; f++) {
 
