@@ -63,7 +63,7 @@ integer k1
 integer ifac, isol
 integer ico2,imer1
 integer ideb, icompt
-integer kmray, ktamp
+integer ktamp
 
 double precision heuray, albedo, emis, foir, fos
 double precision xvert, yvert
@@ -186,7 +186,6 @@ if (mod(ntcabs,nfatr1).eq.0.or.ideb.eq.0) then
     qlray (k) = 0.d0
     ncray (k) = 0.d0
     fneray(k) = 0.d0
-    aeroso(k) = 0.d0
   enddo
 
   call field_get_val_s(icrom, crom)
@@ -339,7 +338,7 @@ if (mod(ntcabs,nfatr1).eq.0.or.ideb.eq.0) then
     qlray(1)  = 0.d0
     ncray(1)  = 0.d0
     fneray(1) = 0.d0
-    aeroso(1) = 0.d0
+    aeroso(1) = aevert(1, ii)
 
     ! Interpolation of temperature, humidity, density on the vertical
     ! The ref pressure profile is the one computed from the meteo profile
@@ -360,6 +359,7 @@ if (mod(ntcabs,nfatr1).eq.0.or.ideb.eq.0) then
       ncray(k) = 0.d0
       qlray(k) = 0.d0
       fneray(k) = 0.d0
+      aeroso(k) = aevert(k, ii)
 
       if (ippmod(iatmos).eq.2.and.moddis.eq.2) then
         ncray(k)  = ncvert(k, ii)
@@ -380,14 +380,11 @@ if (mod(ntcabs,nfatr1).eq.0.or.ideb.eq.0) then
     enddo
 
     ! --- Filling the additional levels
-    kmray = kmx
-
-    do k = kvert+1, kmray
+    do k = kvert+1, kmx
       zray(k) = zvert(k)
       qlray(k) = 0.d0
       qvray(k) = 0.d0
       fneray(k) = 0.d0
-      aeroso(k) = 0.d0
       ncray(k) = 0.d0
 
       ! initialize with standard atmosphere
@@ -404,7 +401,7 @@ if (mod(ntcabs,nfatr1).eq.0.or.ideb.eq.0) then
     ktamp = 0
     if (imeteo.eq.1) then
       ktamp = 6
-      do k = kvert - ktamp+1, kmray
+      do k = kvert - ktamp+1, kmx
         call intprf(nbmaxt, nbmetm, ztmet, tmmet,                              &
                     ttmet, zray(k), ttcabs, temray(k))
         call intprf(nbmaxt, nbmetm, ztmet, tmmet, qvmet,                       &
@@ -427,14 +424,14 @@ if (mod(ntcabs,nfatr1).eq.0.or.ideb.eq.0) then
 
     ! --- Clipping the humidity
 
-    do k = 1, kmray
+    do k = 1, kmx
       qvray(k) = max(5.d-4,qvray(k))
     enddo
 
     ! --- Computing pressure and density according to temperature
     !     and qv profiles
 
-    do k = kvert-ktamp+1, kmray
+    do k = kvert-ktamp+1, kmx
       tmoy = 0.5d0*(temray(k-1)+temray(k)) + tkelvi
       rhum = rair*(1.d0+(rvsra-1.d0)*qvray(k))
       rap = -abs(gz)*(zray(k)-zray(k-1))/rhum/tmoy
@@ -448,7 +445,7 @@ if (mod(ntcabs,nfatr1).eq.0.or.ideb.eq.0) then
     k1 = 1
 
     ! --- Long-wave: InfraRed
-    call rayir(ii, k1, kmray, ico2, emis,                         &
+    call rayir(ii, k1, kmx, ico2, emis,                           &
                tauzq, tauz, tausup, zq,                           &
                acinfe, dacinfe, aco2, daco2, aco2s, daco2s,       &
                acsup, dacsup, acsups, dacsups,                    &
@@ -457,7 +454,7 @@ if (mod(ntcabs,nfatr1).eq.0.or.ideb.eq.0) then
                foir, rayi(:,ii), ncray)
 
     ! --- Short-wave: Sun
-    call rayso(ii, k1, kmray, heuray, imer1, albedo,              &
+    call rayso(ii, k1, kmx, heuray, imer1, albedo,                &
                tauzq, tauz, tausup, zq,                           &
                zray,                                              &
                qvray, qlray, fneray, romray, preray, temray,      &
