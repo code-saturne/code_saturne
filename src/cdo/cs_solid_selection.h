@@ -61,8 +61,8 @@ typedef struct {
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Retrieve the information related to the list of solid cells
- *         If this structure does not exist, there is an initialization.
+ * \brief Retrieve the information related to the list of solid cells
+ *        If this structure does not exist, there is an initialization.
  *
  * \return a pointer to a cs_solid_selection_t structure
  */
@@ -73,19 +73,19 @@ cs_solid_selection_get(void);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Synchronize the solid selection
+ * \brief Synchronize the solid selection
  *
- * \param[in]  connect    pointer to a cs_cdo_connect_t structure
+ * \param[in] connect    pointer to a cs_cdo_connect_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_solid_selection_sync(const cs_cdo_connect_t   *connect);
+cs_solid_selection_sync(const cs_cdo_connect_t *connect);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Free the structure storing the information related to the list of
- *         solid cells.
+ * \brief Free the structure storing the information related to the list of
+ *        solid cells.
  */
 /*----------------------------------------------------------------------------*/
 

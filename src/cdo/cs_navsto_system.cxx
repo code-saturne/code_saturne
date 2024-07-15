@@ -1509,6 +1509,7 @@ cs_navsto_system_set_solid_cells(cs_lnum_t n_solid_cells,
 
   if (cs_navsto_system_solid_enforcement_id < 0)
     cs_navsto_system_solid_enforcement_id = mom_eqp->n_enforcements;
+
   cs_equation_add_or_replace_cell_enforcement(
     mom_eqp,
     cs_navsto_system_solid_enforcement_id,

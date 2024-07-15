@@ -39,6 +39,7 @@
 
 #include <bft_mem.h>
 
+#include "cs_array.h"
 #include "cs_parall.h"
 
 /*----------------------------------------------------------------------------
@@ -93,8 +94,8 @@ cs_solid_selection_t *_cs_solid = nullptr;
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Retrieve the information related to the list of solid cells
- *         If this structure does not exist, there is an initialization.
+ * \brief Retrieve the information related to the list of solid cells
+ *        If this structure does not exist, there is an initialization.
  *
  * \return a pointer to a cs_solid_selection_t structure
  */
@@ -120,17 +121,17 @@ cs_solid_selection_get(void)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Synchronize the solid selection
+ * \brief Synchronize the solid selection
  *
- * \param[in]  connect    pointer to a cs_cdo_connect_t structure
+ * \param[in] connect    pointer to a cs_cdo_connect_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_solid_selection_sync(const cs_cdo_connect_t   *connect)
+cs_solid_selection_sync(const cs_cdo_connect_t *connect)
 {
   if (_cs_solid == nullptr)
-    cs_solid_selection_get();
+    cs_solid_selection_get(); // Allocate a structure by default
 
   /* Parallel synchronization of the global number of solid cells */
 
@@ -139,38 +140,29 @@ cs_solid_selection_sync(const cs_cdo_connect_t   *connect)
 
   if (_cs_solid->n_g_cells > 0) {
 
-    /* Tag cells */
+    /* Tag cells and faces */
 
     if (_cs_solid->cell_is_solid == nullptr)
       BFT_MALLOC(_cs_solid->cell_is_solid, connect->n_cells, bool);
 
-    /* Set to false all cells */
-
-    for (cs_lnum_t i = 0; i < connect->n_cells; i++)
-      _cs_solid->cell_is_solid[i] = false;
-
-    /* Tag cells associated to a solid cell */
-
-    for (cs_lnum_t i = 0; i < _cs_solid->n_cells; i++)
-      _cs_solid->cell_is_solid[_cs_solid->cell_ids[i]] = true;
-
-    /* Tag faces */
-
     if (_cs_solid->face_is_solid == nullptr)
       BFT_MALLOC(_cs_solid->face_is_solid, connect->n_faces[0], bool);
 
-    /* Set to false all faces */
+    /* Set to false all cells and all faces */
 
-    for (cs_lnum_t i = 0; i < connect->n_faces[0]; i++)
-      _cs_solid->face_is_solid[i] = false;
+    cs_array_bool_fill_false(connect->n_cells, _cs_solid->cell_is_solid);
+    cs_array_bool_fill_false(connect->n_faces[0], _cs_solid->face_is_solid);
 
-    /* Tag faces associated to a solid cell */
+    /* Tag cells associated to a solid cell and its related faces */
 
     const cs_adjacency_t  *c2f = connect->c2f;
 
     for (cs_lnum_t i = 0; i < _cs_solid->n_cells; i++) {
 
       const cs_lnum_t  c_id = _cs_solid->cell_ids[i];
+
+      _cs_solid->cell_is_solid[c_id] = true;
+
       for (cs_lnum_t j = c2f->idx[c_id]; j < c2f->idx[c_id+1]; j++)
         _cs_solid->face_is_solid[c2f->ids[j]] = true;
 
@@ -187,6 +179,7 @@ cs_solid_selection_sync(const cs_cdo_connect_t   *connect)
                            false,   /* interlace (not useful here) */
                            CS_CHAR, /* boolean */
                            _cs_solid->face_is_solid);
+
     }
 
   } /* n_g_cells > 0 */
@@ -194,8 +187,8 @@ cs_solid_selection_sync(const cs_cdo_connect_t   *connect)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Free the structure storing the information related to the list of
- *         solid cells.
+ * \brief Free the structure storing the information related to the list of
+ *        solid cells.
  */
 /*----------------------------------------------------------------------------*/
 

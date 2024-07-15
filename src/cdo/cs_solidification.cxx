@@ -628,23 +628,25 @@ _enforce_solid_cells(const cs_cdo_connect_t      *connect,
 {
   cs_solidification_t  *solid = cs_solidification_structure;
 
+  // At the beginning this is a local number of solid cells
+
   cs_gnum_t  n_solid_cells = solid->n_g_cells[CS_SOLIDIFICATION_STATE_SOLID];
 
-  /* List of solid cells */
+  // List of solid cells stored inside the structure cs_solid_selection_t
 
-  cs_solid_selection_t  *scells = cs_solid_selection_get();
+  cs_solid_selection_t  *solid_sel = cs_solid_selection_get();
 
-  if (n_solid_cells > (cs_gnum_t)scells->n_cells)
-    BFT_REALLOC(scells->cell_ids, n_solid_cells, cs_lnum_t);
+  if (n_solid_cells > (cs_gnum_t)solid_sel->n_cells)
+    BFT_REALLOC(solid_sel->cell_ids, n_solid_cells, cs_lnum_t);
 
-  scells->n_cells = n_solid_cells;
+  solid_sel->n_cells = n_solid_cells;
 
   if (n_solid_cells > 0) {
 
     n_solid_cells = 0;
     for (cs_lnum_t c_id = 0; c_id < quant->n_cells; c_id++) {
       if (solid->cell_state[c_id] == CS_SOLIDIFICATION_STATE_SOLID)
-        scells->cell_ids[n_solid_cells++] = c_id;
+        solid_sel->cell_ids[n_solid_cells++] = c_id;
     }
 
     assert(n_solid_cells == solid->n_g_cells[CS_SOLIDIFICATION_STATE_SOLID]);
@@ -659,7 +661,7 @@ _enforce_solid_cells(const cs_cdo_connect_t      *connect,
   /* Enforce a zero velocity inside solid cells (enforcement of the momentum
      equation) */
 
-  cs_navsto_system_set_solid_cells(scells->n_cells, scells->cell_ids);
+  cs_navsto_system_set_solid_cells(solid_sel->n_cells, solid_sel->cell_ids);
 }
 
 /*----------------------------------------------------------------------------*/
