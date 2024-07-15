@@ -1107,14 +1107,13 @@ typedef struct {
  * "diag_inv" use the inverse of the (1,1)-block diagonal
  * "lumped_inv" use the inverse of the (1,1)-block after lumping
  * "mass" use a scaled mass matrix for the space related to the (2,2)-block
- * "mass+diag_inv" for a combination of "mass" and "diag_inv"
- * "mass+lumped_inv" for a combination of "mass" and "lumped_inv"
+ * "mass_scaled_diag_inv" for a combination of "mass_scaled" and "diag_inv"
+ * "mass_scaled_lumped_inv" for a combination of "mass_scaled" and "lumped_inv"
  *
  * \var CS_EQKEY_SADDLE_SOLVER
-
- * Set the strategy/solver used to solve a saddle-point system.\n Read the description
- * of the structure \ref cs_param_saddle_t for more details.
-
+ * Set the strategy/solver used to solve a saddle-point system.\n
+ * Read the description of the structure \ref cs_param_saddle_t for more
+ * details.
  * Specify the solver for the resolution of the linear system related to an
  * equation. Please refer to the section \ref cs_ug_cdo_sles_saddle of the
  * user guide for more details.
