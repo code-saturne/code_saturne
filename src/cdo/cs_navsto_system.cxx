@@ -945,7 +945,6 @@ cs_navsto_system_init_setup(void)
   case CS_NAVSTO_COUPLING_PROJECTION_POTENTIAL_FB:
     cs_navsto_projection_init_setup(nsp,
                                     ns->adv_field,
-                                    location_id,
                                     has_previous,
                                     ns->coupling_context);
     break;

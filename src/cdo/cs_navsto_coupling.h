@@ -334,13 +334,12 @@ cs_navsto_projection_free_context(void           *context);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Start setting-up the Navier-Stokes equations when a projection
- *         algorithm is used to coupled the system.
- *         No mesh information is available at this stage.
+ * \brief Start setting-up the Navier-Stokes equations when a projection
+ *        algorithm is used to coupled the system.
+ *        No mesh information is available at this stage.
  *
  * \param[in]      nsp           pointer to a \ref cs_navsto_param_t structure
  * \param[in]      adv_field     pointer to a cs_adv_field_t structure
- * \param[in]      loc_id        id related to a mesh location
  * \param[in]      has_previous  values at different time steps (true/false)
  * \param[in, out] context       pointer to a context structure cast on-the-fly
  */
@@ -349,7 +348,6 @@ cs_navsto_projection_free_context(void           *context);
 void
 cs_navsto_projection_init_setup(const cs_navsto_param_t    *nsp,
                                 cs_adv_field_t             *adv_field,
-                                int                         loc_id,
                                 bool                        has_previous,
                                 void                       *context);
 
