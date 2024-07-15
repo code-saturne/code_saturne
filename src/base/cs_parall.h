@@ -33,6 +33,10 @@
 
 #include "cs_defs.h"
 
+#if defined(__cplusplus)
+#include <typeinfo>
+#endif
+
 /*----------------------------------------------------------------------------*/
 
 BEGIN_C_DECLS
@@ -671,5 +675,167 @@ cs_parall_block_count(size_t  n,
 /*----------------------------------------------------------------------------*/
 
 END_C_DECLS
+
+/*=============================================================================
+ * Public C++ templates
+ *============================================================================*/
+
+#if defined(__cplusplus)
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Sum values of a given datatype on all default communicator processes.
+ *
+ * \tparam T : datatype
+ */
+/*----------------------------------------------------------------------------*/
+
+template <typename T, typename... Vals>
+static void
+cs_parall_sum_scalars
+(
+  Vals&...       values /*!<[in,out] Scalars to update */
+)
+{
+  /* Unpack values */
+  T *_values[] = {&values ...};
+
+  /* Count number of values */
+  constexpr size_t n_vals = sizeof...(Vals);
+
+  /* Set datatype for global communication */
+  cs_datatype_t datatype = CS_DATATYPE_NULL;
+
+  if (typeid(T) ==  typeid(int))
+    datatype = CS_INT_TYPE;
+  else if (typeid(T) ==  typeid(cs_lnum_t))
+    datatype = CS_LNUM_TYPE;
+  else if (typeid(T) ==  typeid(cs_gnum_t))
+    datatype = CS_GNUM_TYPE;
+  else if (typeid(T) == typeid(cs_flag_t))
+    datatype = CS_UINT16;
+  else if (typeid(T) ==  typeid(cs_real_t))
+    datatype = CS_REAL_TYPE;
+  else if (typeid(T) ==  typeid(double))
+    datatype = CS_DOUBLE;
+  else if (typeid(T) == typeid(cs_coord_t))
+    datatype = CS_COORD_TYPE;
+
+  /* Temporary work array and parallel sum */
+  T w[n_vals];
+  for (int i = 0; i < n_vals; i++)
+    w[i] = *(_values[i]);
+
+  cs_parall_sum(n_vals, datatype, w);
+
+  for (int i = 0; i < n_vals; i++)
+    *(_values[i]) = w[i];
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Maximum values of a given datatype on all default
+ *        communicator processes.
+ *
+ * \tparam T : datatype
+ */
+/*----------------------------------------------------------------------------*/
+
+template <typename T, typename... Vals>
+static void
+cs_parall_max_scalars
+(
+  Vals&...       values /*!<[in,out] Scalars to update */
+)
+{
+  /* Unpack values */
+  T *_values[] = {&values ...};
+
+  /* Count number of values */
+  constexpr size_t n_vals = sizeof...(Vals);
+
+  /* Set datatype for global communication */
+  cs_datatype_t datatype = CS_DATATYPE_NULL;
+
+  if (typeid(T) ==  typeid(int))
+    datatype = CS_INT_TYPE;
+  else if (typeid(T) ==  typeid(cs_lnum_t))
+    datatype = CS_LNUM_TYPE;
+  else if (typeid(T) ==  typeid(cs_gnum_t))
+    datatype = CS_GNUM_TYPE;
+  else if (typeid(T) == typeid(cs_flag_t))
+    datatype = CS_UINT16;
+  else if (typeid(T) ==  typeid(cs_real_t))
+    datatype = CS_REAL_TYPE;
+  else if (typeid(T) ==  typeid(double))
+    datatype = CS_DOUBLE;
+  else if (typeid(T) == typeid(cs_coord_t))
+    datatype = CS_COORD_TYPE;
+
+  /* Temporary work array and parallel sum */
+  T w[n_vals];
+  for (int i = 0; i < n_vals; i++)
+    w[i] = *(_values[i]);
+
+  cs_parall_max(n_vals, datatype, w);
+
+  for (int i = 0; i < n_vals; i++)
+    *(_values[i]) = w[i];
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Minimum values of a given datatype on all default
+ *        communicator processes.
+ *
+ * \tparam T : datatype
+ */
+/*----------------------------------------------------------------------------*/
+
+template <typename T, typename... Vals>
+static void
+cs_parall_min_scalars
+(
+  Vals&...       values /*!<[in,out] Scalars to update */
+)
+{
+  /* Unpack values */
+  T *_values[] = {&values ...};
+
+  /* Count number of values */
+  constexpr size_t n_vals = sizeof...(Vals);
+
+  /* Set datatype for global communication */
+  cs_datatype_t datatype = CS_DATATYPE_NULL;
+
+  if (typeid(T) ==  typeid(int))
+    datatype = CS_INT_TYPE;
+  else if (typeid(T) ==  typeid(cs_lnum_t))
+    datatype = CS_LNUM_TYPE;
+  else if (typeid(T) ==  typeid(cs_gnum_t))
+    datatype = CS_GNUM_TYPE;
+  else if (typeid(T) == typeid(cs_flag_t))
+    datatype = CS_UINT16;
+  else if (typeid(T) ==  typeid(cs_real_t))
+    datatype = CS_REAL_TYPE;
+  else if (typeid(T) ==  typeid(double))
+    datatype = CS_DOUBLE;
+  else if (typeid(T) == typeid(cs_coord_t))
+    datatype = CS_COORD_TYPE;
+
+  /* Temporary work array and parallel sum */
+  T w[n_vals];
+  for (int i = 0; i < n_vals; i++)
+    w[i] = *(_values[i]);
+
+  cs_parall_min(n_vals, datatype, w);
+
+  for (int i = 0; i < n_vals; i++)
+    *(_values[i]) = w[i];
+}
+
+#endif //__cplusplus
+
+/*----------------------------------------------------------------------------*/
 
 #endif /* __CS_PARALL_H__ */
