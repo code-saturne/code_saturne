@@ -936,32 +936,6 @@ module optcal
 
   !> \}
 
-  !----------------------------------------------------------------------------
-  ! electric model parameters
-  !----------------------------------------------------------------------------
-
-  !> \defgroup electric_model parameters
-
-  !> \addtogroup electric_model_params
-  !> \{
-
-  !> ielcor : 0 : electric arc scaling desactivate
-  !>          1 : electric arc scaling activate
-  integer(c_int), pointer, save :: ielcor
-
-  !> pot_diff : potential between electrods
-  real(c_double), pointer, save :: pot_diff
-
-  !> coejou : scaling coefficient
-  real(c_double), pointer, save :: coejou
-
-  !> elcou : current
-  real(c_double), pointer, save :: elcou
-
-  !> \}
-
-  !> \}
-
   !=============================================================================
 
   interface
@@ -1176,16 +1150,6 @@ module optcal
       implicit none
       type(c_ptr), intent(out) :: ileaux, iecaux
     end subroutine cs_f_restart_auxiliary_get_pointers
-
-    ! Interface to C function retrieving pointers to members of the
-    ! global electric model structure
-
-    subroutine cs_f_elec_model_get_pointers(ielcor, pot_diff, coejou, elcou)  &
-      bind(C, name='cs_f_elec_model_get_pointers')
-      use, intrinsic :: iso_c_binding
-      implicit none
-      type(c_ptr), intent(out) :: ielcor, pot_diff, coejou, elcou
-    end subroutine cs_f_elec_model_get_pointers
 
     !---------------------------------------------------------------------------
 
@@ -1624,29 +1588,6 @@ contains
     call c_f_pointer(c_iecaux, iecaux)
 
   end subroutine restart_auxiliary_options_init
-
-  !> \brief Initialize Fortran ELEC options API.
-  !> This maps Fortran pointers to global C structure members.
-
-  subroutine elec_option_init () &
-    bind(C, name='cs_f_elec_option_init')
-
-    use, intrinsic :: iso_c_binding
-    implicit none
-
-    ! Local variables
-
-    type(c_ptr) :: c_ielcor, c_pot_diff, c_coejou, c_elcou
-
-    call cs_f_elec_model_get_pointers(c_ielcor, c_pot_diff,  &
-                                      c_coejou, c_elcou)
-
-    call c_f_pointer(c_ielcor,           ielcor)
-    call c_f_pointer(c_pot_diff,         pot_diff)
-    call c_f_pointer(c_coejou,           coejou)
-    call c_f_pointer(c_elcou,            elcou)
-
-  end subroutine elec_option_init
 
   !=============================================================================
 

@@ -102,14 +102,20 @@ typedef struct {
   int         irestrike;
   cs_real_t   restrike_point[3];
   cs_real_t   crit_reca[5];
+
+  /*! 0 : electric arc scaling desactivate
+      1 : electric arc scaling activate */
   int         ielcor;
   int         modrec;
   int         idreca;
   int        *izreca;
   cs_real_t   couimp;
+  /*! potential between electrodes */
   cs_real_t   pot_diff;
   cs_real_t   puisim;
+  /*! scaling coefficient */
   cs_real_t   coejou;
+  /*! electrical current */
   cs_real_t   elcou;
   cs_real_t   srrom;
 

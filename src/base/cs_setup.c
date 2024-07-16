@@ -145,9 +145,6 @@ void
 cs_f_varpos(void);
 
 void
-cs_f_elec_option_init(void);
-
-void
 cs_f_lagran_init_map(void);
 
 void
@@ -462,8 +459,6 @@ cs_setup(void)
   /* Map Fortran pointers to C global data */
   if (cs_glob_physical_model_flag[CS_ATMOSPHERIC] != -1)
     cs_at_data_assim_initialize();
-
-  cs_f_elec_option_init();
 
   /* Initialize lagr structures */
   cs_f_lagran_init_map();
