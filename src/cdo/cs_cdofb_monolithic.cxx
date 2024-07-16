@@ -786,7 +786,7 @@ _full_system_assembly(const cs_cell_sys_t             *csys,
 /*----------------------------------------------------------------------------*/
 
 static void
-_solidification_full_system_assembly(const cs_cell_sys_t              *csys,
+_full_system_assembly_solidification(const cs_cell_sys_t              *csys,
                                      const cs_cell_mesh_t             *cm,
                                      const cs_cdofb_navsto_builder_t  *nsb,
                                      cs_cdofb_monolithic_t            *sc,
@@ -1933,7 +1933,7 @@ cs_cdofb_monolithic_init_scheme_context(const cs_navsto_param_t *nsp,
     /* CS_PARAM_SADDLE_SOLVER_FGMRES
      * CS_PARAM_SADDLE_SOLVER_MUMPS */
     if (nsp->model_flag & CS_NAVSTO_MODEL_WITH_SOLIDIFICATION)
-      sc->assemble = _solidification_full_system_assembly;
+      sc->assemble = _full_system_assembly_solidification;
     else
       sc->assemble = _full_system_assembly;
     break;
