@@ -694,11 +694,12 @@ template <typename T, typename... Vals>
 static void
 cs_parall_sum_scalars
 (
-  Vals&...       values /*!<[in,out] Scalars to update */
+  T&       First, /*!<[in,out] First scalar to update */
+  Vals&... values /*!<[in,out] Additional scalars to update */
 )
 {
-  /* Unpack values */
-  T *_values[] = {&values ...};
+  if (cs_glob_n_ranks == 1)
+    return;
 
   /* Count number of values */
   constexpr size_t n_vals = sizeof...(Vals);
@@ -722,14 +723,23 @@ cs_parall_sum_scalars
     datatype = CS_COORD_TYPE;
 
   /* Temporary work array and parallel sum */
-  T w[n_vals];
-  for (int i = 0; i < n_vals; i++)
-    w[i] = *(_values[i]);
+  if (n_vals == 0)
+    cs_parall_sum(1, datatype, &First);
+  else {
+    /* Unpack values */
+    T *_values[] = {&values ...};
 
-  cs_parall_sum(n_vals, datatype, w);
+    T w[n_vals + 1];
+    w[0] = First;
+    for (int i = 0; i < n_vals; i++)
+      w[i+1] = *(_values[i]);
 
-  for (int i = 0; i < n_vals; i++)
-    *(_values[i]) = w[i];
+    cs_parall_sum(n_vals + 1, datatype, w);
+
+    First = w[0];
+    for (int i = 0; i < n_vals; i++)
+      *(_values[i]) = w[i+1];
+  }
 }
 
 /*----------------------------------------------------------------------------*/
@@ -745,11 +755,12 @@ template <typename T, typename... Vals>
 static void
 cs_parall_max_scalars
 (
-  Vals&...       values /*!<[in,out] Scalars to update */
+  T&       First, /*!<[in,out] First scalar to update */
+  Vals&... values /*!<[in,out] Additional scalars to update */
 )
 {
-  /* Unpack values */
-  T *_values[] = {&values ...};
+  if (cs_glob_n_ranks == 1)
+    return;
 
   /* Count number of values */
   constexpr size_t n_vals = sizeof...(Vals);
@@ -773,14 +784,24 @@ cs_parall_max_scalars
     datatype = CS_COORD_TYPE;
 
   /* Temporary work array and parallel sum */
-  T w[n_vals];
-  for (int i = 0; i < n_vals; i++)
-    w[i] = *(_values[i]);
+  if (n_vals == 0)
+    cs_parall_max(1, datatype, &First);
+  else {
 
-  cs_parall_max(n_vals, datatype, w);
+    /* Unpack values */
+    T *_values[] = {&values ...};
 
-  for (int i = 0; i < n_vals; i++)
-    *(_values[i]) = w[i];
+    T w[n_vals + 1];
+    w[0] = First;
+    for (int i = 0; i < n_vals; i++)
+      w[i+1] = *(_values[i]);
+
+    cs_parall_max(n_vals + 1, datatype, w);
+
+    First = w[0];
+    for (int i = 0; i < n_vals; i++)
+      *(_values[i]) = w[i+1];
+  }
 }
 
 /*----------------------------------------------------------------------------*/
@@ -796,11 +817,12 @@ template <typename T, typename... Vals>
 static void
 cs_parall_min_scalars
 (
-  Vals&...       values /*!<[in,out] Scalars to update */
+  T&       First, /*!<[in,out] First scalar to update */
+  Vals&... values /*!<[in,out] Additional scalars to update */
 )
 {
-  /* Unpack values */
-  T *_values[] = {&values ...};
+  if (cs_glob_n_ranks == 1)
+    return;
 
   /* Count number of values */
   constexpr size_t n_vals = sizeof...(Vals);
@@ -823,15 +845,26 @@ cs_parall_min_scalars
   else if (typeid(T) == typeid(cs_coord_t))
     datatype = CS_COORD_TYPE;
 
-  /* Temporary work array and parallel sum */
-  T w[n_vals];
-  for (int i = 0; i < n_vals; i++)
-    w[i] = *(_values[i]);
+  if (n_vals == 0)
+    cs_parall_min(1, datatype, &First);
 
-  cs_parall_min(n_vals, datatype, w);
+  else {
+    /* Temporary work array and parallel sum */
 
-  for (int i = 0; i < n_vals; i++)
-    *(_values[i]) = w[i];
+    /* Unpack values */
+    T *_values[] = {&values ...};
+
+    T w[n_vals + 1];
+    w[0] = First;
+    for (int i = 0; i < n_vals; i++)
+      w[i + 1] = *(_values[i]);
+
+    cs_parall_min(n_vals + 1, datatype, w);
+
+    First = w[0];
+    for (int i = 0; i < n_vals; i++)
+      *(_values[i]) = w[i + 1];
+  }
 }
 
 #endif //__cplusplus
