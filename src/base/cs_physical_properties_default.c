@@ -290,12 +290,11 @@ _compute_turbulence_mu(const cs_lnum_t  n_cells)
 /*----------------------------------------------------------------------------*/
 
 static void
-_compute_anisotropic_turbulent_viscosity(const int                   n_scal,
+_compute_anisotropic_turbulent_viscosity(cs_lnum_t                   n_cells,
+                                         int                         n_scal,
                                          const int                   scalar_idx[],
-                                         const cs_mesh_quantities_t  *mq,
-                                         const cs_lnum_t             n_cells)
+                                         const cs_mesh_quantities_t  *mq)
 {
-
   bool idfm = false;
   bool iggafm = false;
   bool iebdfm = false;
@@ -323,7 +322,7 @@ _compute_anisotropic_turbulent_viscosity(const int                   n_scal,
 
   cs_real_6_t *visten
     = (cs_real_6_t *)cs_field_by_name
-                                     ("anisotropic_turbulent_viscosity")->val;
+                       ("anisotropic_turbulent_viscosity")->val;
 
   if (cs_glob_turb_model->itytur == 3) {
 
@@ -352,7 +351,7 @@ _compute_anisotropic_turbulent_viscosity(const int                   n_scal,
       if (iebdfm) {
         cs_real_6_t *vistes
           = (cs_real_6_t *)cs_field_by_name
-                                          ("anisotropic_turbulent_viscosity_scalar")->val;
+                             ("anisotropic_turbulent_viscosity_scalar")->val;
         if (cs_glob_turb_rans_model->irijco == 1)
 #         pragma omp parallel for if (n_cells > CS_THR_MIN)
           for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
@@ -386,7 +385,7 @@ _compute_anisotropic_turbulent_viscosity(const int                   n_scal,
       else if (iggafm) {
         cs_real_6_t *vistes
           = (cs_real_6_t *)cs_field_by_name
-                                          ("anisotropic_turbulent_viscosity_scalar")->val;
+                             ("anisotropic_turbulent_viscosity_scalar")->val;
 #       pragma omp parallel for if (n_cells > CS_THR_MIN)
         for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
           const cs_real_t trrij
@@ -427,24 +426,24 @@ _compute_anisotropic_turbulent_viscosity(const int                   n_scal,
 /*!
  * \brief  clipping of density, viscosity and specific heat
  *
- * \param[in]  pass        first time passing
+ * \param[in]  first_pass  first time passing
+ * \param[in]  n_cells     number of cells
+ * \param[in]  n_b_faces   number of boundary faces
  * \param[in]  n_scal      number of scalar field
  * \param[in]  scalar_idx  id of scalar field
  * \param[in]  mq          mesh quantities
- * \param[in]  n_cells     number of cells
- * \param[in]  n_b_faces   number of boundary faces
  * \param[in]  brom        boundary density
  */
 /*----------------------------------------------------------------------------*/
 
 static void
-_clip_rho_mu_cp(const bool                  pass,
-                const int                   n_scal,
-                const int                   scalar_idx[],
+_clip_rho_mu_cp(bool                         first_pass,
+                cs_lnum_t                    n_cells,
+                cs_lnum_t                    n_b_faces,
+                int                          n_scal,
+                int                          scalar_idx[],
                 const cs_mesh_quantities_t  *mq,
-                const cs_lnum_t             n_cells,
-                const cs_lnum_t             n_b_faces,
-                const cs_real_t             brom[])
+                const cs_real_t              brom[])
 {
   int iscacp = 0;
   int n_fields = 3; // number of fields for log
@@ -453,7 +452,7 @@ _clip_rho_mu_cp(const bool                  pass,
 
   char tmp_s[64] = "";
   if (CS_F_(cp) != NULL) {
-    f_names[n_fields] = CS_F_(cp)->name;
+    f_names[3] = CS_F_(cp)->name;
     n_fields = 4;
     const int kscacp  = cs_field_key_id("is_temperature");
     for (int f_id = 0; f_id < n_scal; f_id++) {
@@ -471,7 +470,7 @@ _clip_rho_mu_cp(const bool                  pass,
   }
 
   /* Min max */
-  cs_real_t varmx[n_fields], varmn[n_fields];
+  cs_real_t varmx[4], varmn[4];
 
   for (int ii = 0; ii < n_fields; ii++) {
     const cs_real_t *cpro_var = cs_field_by_name(f_names[ii])->val;
@@ -493,12 +492,12 @@ _clip_rho_mu_cp(const bool                  pass,
   cs_parall_min(n_fields, CS_REAL_TYPE, varmn);
 
   // Writings
-  if (pass) {
+  if (first_pass) {
     bft_printf(" -----------------------------------------\n"
                " Property           Min. value  Max. value\n"
                " -----------------------------------------\n");
     for (int ii = 0; ii < n_fields; ii++) {
-      if ( (ii != 2) || (cs_glob_turb_model->iturb != CS_TURB_NONE)) {
+      if (ii != 2 || cs_glob_turb_model->iturb != CS_TURB_NONE) {
         int width = 16;
         cs_log_strpad(tmp_s, f_names[ii], width, 64);
         bft_printf(" %s   %10.04e  %10.04e\n", tmp_s, varmn[ii], varmx[ii]);
@@ -535,14 +534,13 @@ _clip_rho_mu_cp(const bool                  pass,
                 " cs_user_physical_properties_turb_viscosity\n"),
               f_names[ii], varmn[ii]);
   }
-
 }
 
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Log and check scalar diffusivity min/max
  *
- *  \param[in]  pass        first time passing
+ *  \param[in]  first_pass  first time passing
  *  \param[in]  n_scal      number of scalar field
  *  \param[in]  scalar_idx  id of scalar field
  *  \param[in]  n_cells     number of cells
@@ -550,7 +548,7 @@ _clip_rho_mu_cp(const bool                  pass,
 /*----------------------------------------------------------------------------*/
 
 static void
-_check_log_scalar_diff(const bool        pass,
+_check_log_scalar_diff(const bool        first_pass,
                        const int         n_scal,
                        const int         scalar_idx[],
                        const cs_lnum_t   n_cells)
@@ -594,7 +592,7 @@ _check_log_scalar_diff(const bool        pass,
       vismin[s_id] = visls_0;
     }
 
-    if ( (eqp->verbosity > 0) || (pass) || (vismin[s_id] <= 0.0) ) {
+    if (eqp->verbosity > 0 || first_pass || vismin[s_id] <= 0.0) {
       if (!ok) {
         ok = true;
         bft_printf("\n --- Diffusivity:\n"
@@ -662,18 +660,18 @@ _check_log_scalar_diff(const bool        pass,
 /*!
  * \brief  check and log mesh velocity diffusivity
  *
- *  \param[in]  pass        first time passing
+ *  \param[in]  first_pass  first time passing
  *  \param[in]  n_cells     number of cells
  */
 /*----------------------------------------------------------------------------*/
 
 
 static void
-_check_log_mesh_diff(const bool       pass,
-                     const cs_lnum_t  n_cells)
+_check_log_mesh_diff(bool       first_pass,
+                     cs_lnum_t  n_cells)
 {
-  if (   (cs_glob_ale == CS_ALE_NONE)
-      || (cs_glob_time_step->nt_cur != cs_glob_time_step->nt_prev + 1))
+  if (   cs_glob_ale == CS_ALE_NONE
+      || cs_glob_time_step->nt_cur != cs_glob_time_step->nt_prev + 1)
     return;
 
   bool ok = false;
@@ -693,7 +691,7 @@ _check_log_mesh_diff(const bool       pass,
       cs_parall_max(1, CS_REAL_TYPE, &varmx);
       cs_parall_min(1, CS_REAL_TYPE, &varmn);
 
-      if ( (eqp->verbosity > 0) || (pass) || (varmn < 0.0)) {
+      if ( (eqp->verbosity > 0) || (first_pass) || (varmn < 0.0)) {
         if (!ok) {
           ok = true;
           bft_printf(" --- Mesh viscosity (ALE method)\n"
@@ -733,7 +731,7 @@ _check_log_mesh_diff(const bool       pass,
     cs_parall_max(1, CS_REAL_TYPE, &varmx);
     cs_parall_min(1, CS_REAL_TYPE, &varmn);
 
-    if ( (eqp->verbosity > 0) || (pass) || (varmn < 0.0)) {
+    if ( (eqp->verbosity > 0) || (first_pass) || (varmn < 0.0)) {
       if (!ok) {
         ok = true;
         bft_printf(" --- Mesh viscosity (ALE method)\n"
@@ -756,7 +754,6 @@ _check_log_mesh_diff(const bool       pass,
                   "Verify he definition of this property"), varmn);
 
   }
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -783,9 +780,10 @@ _init_boundary_temperature(void)
 
     const cs_real_t *field_s_v = fld->val;
 #   pragma omp parallel for if (n_b_faces > CS_THR_MIN)
-    for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++)
+    for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++) {
       if (field_s_b[face_id] <= -cs_math_big_r)
         field_s_b[face_id] = field_s_v[b_face_cells[face_id]];
+    }
 
   }
   else if (cs_glob_thermal_model->itherm == CS_THERMAL_MODEL_ENTHALPY) {
@@ -800,9 +798,10 @@ _init_boundary_temperature(void)
       cs_ht_convert_h_to_t_cells(field_s_v, ttmp);
 
 #     pragma omp parallel for if (n_b_faces > CS_THR_MIN)
-      for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++)
+      for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++) {
         if (field_s_b[face_id] <= -cs_math_big_r)
           field_s_b[face_id] = ttmp[b_face_cells[face_id]];
+      }
 
       BFT_FREE(ttmp);
 
@@ -811,11 +810,13 @@ _init_boundary_temperature(void)
   } /* Enthalpy */
 
   // Last resort
-  if (fld != NULL)
+  if (fld != NULL) {
 #   pragma omp parallel for if (n_b_faces > CS_THR_MIN)
-    for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++)
+    for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++) {
       if (field_s_b[face_id] <= -cs_math_big_r)
         field_s_b[face_id] = cs_glob_fluid_properties->t0;
+    }
+  }
 
   // For wall condensation, initialize to user-prescribed value
   if (cs_glob_wall_condensation->icondb < 0)
@@ -841,12 +842,12 @@ _init_boundary_temperature(void)
       field_s_b[face_id] = ztpar[iz];
     else if (iztag1d[iz] == 1)
      field_s_b[face_id] = ztpar0[iz];
-    else
+    else {
       for (cs_lnum_t jj = 0; jj < nfpt1d; jj++)
         if (ifpt1d[jj] == face_id)
           field_s_b[face_id] = tppt1d[jj];
+    }
   }
-
 }
 
 /*=============================================================================
@@ -857,7 +858,7 @@ _init_boundary_temperature(void)
 /*!
  * \brief Fills physical properties which are variable in time
  *
- *\param[in]     iterns      Navier-Stokes sub-iterations indicator:
+ * \param[in]     iterns     Navier-Stokes sub-iterations indicator:
  *                           - if strictly negative, indicate that this
  *                                function is called outside Navier-Stokes loop
  *                           - if positive, Navier-Stokes iteration number.
@@ -877,7 +878,7 @@ cs_physical_properties_update(int   iterns)
   cs_field_t *rho_b_f = CS_F_(rho_b);
 
   int mbrom = 0;
-  static bool pass = true;
+  static bool first_pass = true;
 
   // Densities at boundaries are computed in cs_vof_compute_linear_rho_mu for VoF
   if (cs_glob_vof_parameters->vof_model > 0)
@@ -886,7 +887,7 @@ cs_physical_properties_update(int   iterns)
   // First computation of physical properties for specific physics
   // BEFORE the user
   if (cs_glob_physical_model_flag[CS_PHYSICAL_MODEL_FLAG] > 0)
-   cs_f_physical_properties1(&mbrom);
+    cs_f_physical_properties1(&mbrom);
 
   /* Interface code_saturne
      ---------------------- */
@@ -900,9 +901,10 @@ cs_physical_properties_update(int   iterns)
 
   cs_user_physical_properties(cs_glob_domain);
 
-  if (mbrom == 0 && n_b_faces > 0 && rho_b_f != NULL)
+  if (mbrom == 0 && n_b_faces > 0 && rho_b_f != NULL) {
     if (rho_b_f->val[0] > -cs_math_big_r)
       mbrom = 1;
+  }
 
   // Finalization of physical properties for specific physics
   // AFTER the user
@@ -956,7 +958,11 @@ cs_physical_properties_update(int   iterns)
   /* storage id of scalar fields */
   const int keysca = cs_field_key_id("scalar_id");
   const int n_fields = cs_field_n_fields();
-  int n_scal = 0, scalar_idx[n_fields];
+
+  int n_scal = 0;
+  int *scalar_idx = NULL;
+  BFT_MALLOC(scalar_idx, n_fields, int);
+
   for (int f_id = 0; f_id < n_fields; f_id++) {
     cs_field_t *f = cs_field_by_id(f_id);
     const int sc_id = cs_field_get_key_int(f, keysca) - 1;
@@ -968,7 +974,7 @@ cs_physical_properties_update(int   iterns)
 
   /* Anisotropic turbulent viscosity (symmetric)
      ------------------------------------------- */
-  _compute_anisotropic_turbulent_viscosity(n_scal, scalar_idx, mq, n_cells);
+  _compute_anisotropic_turbulent_viscosity(n_cells, n_scal, scalar_idx, mq);
 
   /* Eddy viscosity correction for cavitating flows
      ---------------------------------------------- */
@@ -999,21 +1005,23 @@ cs_physical_properties_update(int   iterns)
 
   // Physical value checks
   if (rho_b_f != NULL)
-    _clip_rho_mu_cp(pass, n_scal, scalar_idx, mq, n_cells, n_b_faces,
+    _clip_rho_mu_cp(first_pass, n_cells, n_b_faces, n_scal, scalar_idx, mq,
                     rho_b_f->val);
 
   // Calculation of scalar limits and printing
-  _check_log_scalar_diff(pass, n_scal, scalar_idx, n_cells);
+  _check_log_scalar_diff(first_pass, n_scal, scalar_idx, n_cells);
+
+  BFT_FREE(scalar_idx);
 
   // Calculation of mesh viscosity bounds in ALE
-  _check_log_mesh_diff(pass, n_cells);
+  _check_log_mesh_diff(first_pass, n_cells);
 
   /* Initialize boundary temperature if present and not initialized yet
      ------------------------------------------------------------------ */
 
   _init_boundary_temperature();
 
-  pass = false;
+  first_pass = false;
 }
 
 /*----------------------------------------------------------------------------*/
