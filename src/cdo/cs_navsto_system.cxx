@@ -362,11 +362,11 @@ cs_navsto_system_update_model(bool with_thermal)
 /*----------------------------------------------------------------------------*/
 
 cs_navsto_system_t *
-cs_navsto_system_activate(const cs_boundary_t         *boundaries,
-                          cs_navsto_param_model_t      model,
-                          cs_navsto_param_model_flag_t model_flag,
-                          cs_navsto_param_coupling_t   algo_coupling,
-                          cs_navsto_param_post_flag_t  post_flag)
+cs_navsto_system_activate(const cs_boundary_t          *boundaries,
+                          cs_navsto_param_model_t       model,
+                          cs_navsto_param_model_flag_t  model_flag,
+                          cs_navsto_param_coupling_t    algo_coupling,
+                          cs_navsto_param_post_flag_t   post_flag)
 {
   if (model == CS_NAVSTO_N_MODELS)
     bft_error(__FILE__, __LINE__, 0,
@@ -460,6 +460,7 @@ cs_navsto_system_activate(const cs_boundary_t         *boundaries,
      * system */
 
     cs_equation_param_set(eqp, CS_EQKEY_SOLVER_RTOL, "1e-6");
+
   }
 
   /* Create the main structure to handle the turbulence modelling */

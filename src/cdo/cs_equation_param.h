@@ -1247,16 +1247,16 @@ typedef enum {
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Update the flag related to a cs_equation_param_t structure
+ * \brief Update the flag related to a cs_equation_param_t structure
  *
- * \param[in, out] eqp          pointer to a \ref cs_equation_param_t
- * \param[in]      flag         flag to add
+ * \param[in, out] eqp   pointer to a \ref cs_equation_param_t
+ * \param[in]      flag  flag to add
  */
 /*----------------------------------------------------------------------------*/
 
 static inline void
-cs_equation_param_set_flag(cs_equation_param_t     *eqp,
-                           cs_flag_t                flag)
+cs_equation_param_set_flag(cs_equation_param_t *eqp,
+                           cs_flag_t            flag)
 {
   assert(eqp != NULL);
   eqp->flag |= flag;
@@ -1264,16 +1264,16 @@ cs_equation_param_set_flag(cs_equation_param_t     *eqp,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Ask if the parameters of the equation needs a diffusion term
+ * \brief Ask if the parameters of the equation needs a diffusion term
  *
- * \param[in] eqp          pointer to a \ref cs_equation_param_t
+ * \param[in] eqp  pointer to a \ref cs_equation_param_t
  *
  * \return true or false
  */
 /*----------------------------------------------------------------------------*/
 
 static inline bool
-cs_equation_param_has_diffusion(const cs_equation_param_t     *eqp)
+cs_equation_param_has_diffusion(const cs_equation_param_t *eqp)
 {
   assert(eqp != NULL);
   if (eqp->flag & CS_EQUATION_DIFFUSION)
@@ -1284,16 +1284,16 @@ cs_equation_param_has_diffusion(const cs_equation_param_t     *eqp)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Ask if the parameters of the equation needs a curl-curl term
+ * \brief Ask if the parameters of the equation needs a curl-curl term
  *
- * \param[in] eqp          pointer to a \ref cs_equation_param_t
+ * \param[in] eqp  pointer to a \ref cs_equation_param_t
  *
  * \return true or false
  */
 /*----------------------------------------------------------------------------*/
 
 static inline bool
-cs_equation_param_has_curlcurl(const cs_equation_param_t     *eqp)
+cs_equation_param_has_curlcurl(const cs_equation_param_t *eqp)
 {
   assert(eqp != NULL);
   if (eqp->flag & CS_EQUATION_CURLCURL)
@@ -1304,16 +1304,16 @@ cs_equation_param_has_curlcurl(const cs_equation_param_t     *eqp)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Ask if the parameters of the equation needs a grad-div term
+ * \brief Ask if the parameters of the equation needs a grad-div term
  *
- * \param[in] eqp          pointer to a \ref cs_equation_param_t
+ * \param[in] eqp  pointer to a \ref cs_equation_param_t
  *
  * \return true or false
  */
 /*----------------------------------------------------------------------------*/
 
 static inline bool
-cs_equation_param_has_graddiv(const cs_equation_param_t     *eqp)
+cs_equation_param_has_graddiv(const cs_equation_param_t *eqp)
 {
   assert(eqp != NULL);
   if (eqp->flag & CS_EQUATION_GRADDIV)
@@ -1324,16 +1324,16 @@ cs_equation_param_has_graddiv(const cs_equation_param_t     *eqp)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Ask if the parameters of the equation needs a convection term
+ * \brief Ask if the parameters of the equation needs a convection term
  *
- * \param[in] eqp          pointer to a \ref cs_equation_param_t
+ * \param[in] eqp  pointer to a \ref cs_equation_param_t
  *
  * \return true or false
  */
 /*----------------------------------------------------------------------------*/
 
 static inline bool
-cs_equation_param_has_convection(const cs_equation_param_t     *eqp)
+cs_equation_param_has_convection(const cs_equation_param_t *eqp)
 {
   assert(eqp != NULL);
   if (eqp->flag & CS_EQUATION_CONVECTION)
@@ -1344,16 +1344,16 @@ cs_equation_param_has_convection(const cs_equation_param_t     *eqp)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Ask if the parameters of the equation needs a reaction term
+ * \brief Ask if the parameters of the equation needs a reaction term
  *
- * \param[in] eqp          pointer to a \ref cs_equation_param_t
+ * \param[in] eqp  pointer to a \ref cs_equation_param_t
  *
  * \return true or false
  */
 /*----------------------------------------------------------------------------*/
 
 static inline bool
-cs_equation_param_has_reaction(const cs_equation_param_t     *eqp)
+cs_equation_param_has_reaction(const cs_equation_param_t *eqp)
 {
   assert(eqp != NULL);
   if (eqp->flag & CS_EQUATION_REACTION)
@@ -1364,16 +1364,16 @@ cs_equation_param_has_reaction(const cs_equation_param_t     *eqp)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Ask if the parameters of the equation needs an unsteady term
+ * \brief Ask if the parameters of the equation needs an unsteady term
  *
- * \param[in] eqp          pointer to a \ref cs_equation_param_t
+ * \param[in] eqp  pointer to a \ref cs_equation_param_t
  *
  * \return true or false
  */
 /*----------------------------------------------------------------------------*/
 
 static inline bool
-cs_equation_param_has_time(const cs_equation_param_t     *eqp)
+cs_equation_param_has_time(const cs_equation_param_t *eqp)
 {
   assert(eqp != NULL);
   if (eqp->flag & CS_EQUATION_UNSTEADY)
@@ -1384,16 +1384,16 @@ cs_equation_param_has_time(const cs_equation_param_t     *eqp)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Ask if the parameters of the equation needs a source term
+ * \brief Ask if the parameters of the equation needs a source term
  *
- * \param[in] eqp          pointer to a \ref cs_equation_param_t
+ * \param[in] eqp  pointer to a \ref cs_equation_param_t
  *
  * \return true or false
  */
 /*----------------------------------------------------------------------------*/
 
 static inline bool
-cs_equation_param_has_sourceterm(const cs_equation_param_t     *eqp)
+cs_equation_param_has_sourceterm(const cs_equation_param_t *eqp)
 {
   assert(eqp != NULL);
   if (eqp->n_source_terms > 0)
@@ -1404,17 +1404,17 @@ cs_equation_param_has_sourceterm(const cs_equation_param_t     *eqp)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Ask if the parameters of the equation has an internal enforcement
- *         of the degrees of freedom
+ * \brief Ask if the parameters of the equation has an internal enforcement
+ *        of the degrees of freedom
  *
- * \param[in] eqp          pointer to a \ref cs_equation_param_t
+ * \param[in] eqp  pointer to a \ref cs_equation_param_t
  *
  * \return true or false
  */
 /*----------------------------------------------------------------------------*/
 
 static inline bool
-cs_equation_param_has_internal_enforcement(const cs_equation_param_t     *eqp)
+cs_equation_param_has_internal_enforcement(const cs_equation_param_t *eqp)
 {
   assert(eqp != NULL);
   if (eqp->flag & CS_EQUATION_FORCE_VALUES)
@@ -1425,17 +1425,17 @@ cs_equation_param_has_internal_enforcement(const cs_equation_param_t     *eqp)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Ask if the parameters of the equation induces an implicit treatment
- *         of the advection term
+ * \brief Ask if the parameters of the equation induces an implicit treatment
+ *        of the advection term
  *
- * \param[in] eqp          pointer to a \ref cs_equation_param_t
+ * \param[in] eqp  pointer to a \ref cs_equation_param_t
  *
  * \return true or false
  */
 /*----------------------------------------------------------------------------*/
 
 static inline bool
-cs_equation_param_has_implicit_advection(const cs_equation_param_t     *eqp)
+cs_equation_param_has_implicit_advection(const cs_equation_param_t *eqp)
 {
   assert(eqp != NULL);
   if (eqp->flag & CS_EQUATION_CONVECTION) {
@@ -1451,17 +1451,17 @@ cs_equation_param_has_implicit_advection(const cs_equation_param_t     *eqp)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Ask if the parameters of the equation has activated a user hook
- *         to get a fine tuning of the cellwise system building
+ * \brief Ask if the parameters of the equation has activated a user hook
+ *        to get a fine tuning of the cellwise system building
  *
- * \param[in] eqp          pointer to a \ref cs_equation_param_t
+ * \param[in] eqp  pointer to a \ref cs_equation_param_t
  *
  * \return true or false
  */
 /*----------------------------------------------------------------------------*/
 
 static inline bool
-cs_equation_param_has_user_hook(const cs_equation_param_t     *eqp)
+cs_equation_param_has_user_hook(const cs_equation_param_t *eqp)
 {
   assert(eqp != NULL);
   if (eqp->flag & CS_EQUATION_BUILD_HOOK)
@@ -1472,11 +1472,11 @@ cs_equation_param_has_user_hook(const cs_equation_param_t     *eqp)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Check if a \ref cs_equation_param_t structure has its name member
- *         equal to the given name
+ * \brief Check if a \ref cs_equation_param_t structure has its name member
+ *        equal to the given name
  *
- * \param[in] eqp        pointer to a \ref cs_equation_param_t structure
- * \param[in] name       name of the equation
+ * \param[in] eqp   pointer to a \ref cs_equation_param_t structure
+ * \param[in] name  name of the equation
  *
  * \return true if the given eqp has the same name the one given as parameter
  *         otherwise false
@@ -1484,8 +1484,8 @@ cs_equation_param_has_user_hook(const cs_equation_param_t     *eqp)
 /*----------------------------------------------------------------------------*/
 
 static inline bool
-cs_equation_param_has_name(cs_equation_param_t   *eqp,
-                           const char            *name)
+cs_equation_param_has_name(cs_equation_param_t *eqp,
+                           const char          *name)
 {
   if (eqp == NULL)
     return false;
@@ -1503,51 +1503,51 @@ cs_equation_param_has_name(cs_equation_param_t   *eqp,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Create a \ref cs_equation_param_t structure
+ * \brief Create a \ref cs_equation_param_t structure
  *
- * \param[in] name          name of the equation
- * \param[in] type          type of equation
- * \param[in] dim           dim of the variable associated to this equation
- * \param[in] default_bc    type of boundary condition set by default
+ * \param[in] name        name of the equation
+ * \param[in] type        type of equation
+ * \param[in] dim         dim of the variable associated to this equation
+ * \param[in] default_bc  type of boundary condition set by default
  *
  * \return a pointer to a new allocated \ref cs_equation_param_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 cs_equation_param_t *
-cs_equation_param_create(const char            *name,
-                         cs_equation_type_t     type,
-                         int                    dim,
-                         cs_param_bc_type_t     default_bc);
+cs_equation_param_create(const char         *name,
+                         cs_equation_type_t  type,
+                         int                 dim,
+                         cs_param_bc_type_t  default_bc);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Create a \ref cs_equation_param_t structure
+ * \brief Create a \ref cs_equation_param_t structure
  *
  * \deprecated Renamed to\ref cs_equation_param_create.
  *
- * \param[in] name          name of the equation
- * \param[in] type          type of equation
- * \param[in] dim           dim of the variable associated to this equation
- * \param[in] default_bc    type of boundary condition set by default
+ * \param[in] name        name of the equation
+ * \param[in] type        type of equation
+ * \param[in] dim         dim of the variable associated to this equation
+ * \param[in] default_bc  type of boundary condition set by default
  *
  * \return a pointer to a new allocated \ref cs_equation_param_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 inline static cs_equation_param_t *
-cs_equation_create_param(const char            *name,
-                         cs_equation_type_t     type,
-                         int                    dim,
-                         cs_param_bc_type_t     default_bc)
+cs_equation_create_param(const char         *name,
+                         cs_equation_type_t  type,
+                         int                 dim,
+                         cs_param_bc_type_t  default_bc)
 {
   return cs_equation_param_create(name, type, dim, default_bc);
 }
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Copy the settings from one \ref cs_equation_param_t structure to
- *         another one. The name is not copied.
+ * \brief Copy the settings from one \ref cs_equation_param_t structure to
+ *        another one. The name is not copied.
  *
  * \param[in]      ref          pointer to the reference cs_equation_param_t
  * \param[in, out] dst          pointer to the cs_equation_param_t to update
@@ -1556,9 +1556,9 @@ cs_equation_create_param(const char            *name,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_param_copy_from(const cs_equation_param_t   *ref,
-                            cs_equation_param_t         *dst,
-                            bool                         copy_fld_id);
+cs_equation_param_copy_from(const cs_equation_param_t *ref,
+                            cs_equation_param_t       *dst,
+                            bool                       copy_fld_id);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -1566,19 +1566,19 @@ cs_equation_param_copy_from(const cs_equation_param_t   *ref,
  *        (degrees of freedom) enforcement from one \ref cs_equation_param_t
  *        structure to another one.
  *
- * \param[in]      ref   pointer to the reference \ref cs_equation_param_t
- * \param[in, out] dst   pointer to the \ref cs_equation_param_t to update
+ * \param[in]      ref  pointer to the reference \ref cs_equation_param_t
+ * \param[in, out] dst  pointer to the \ref cs_equation_param_t to update
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_param_copy_bc(const cs_equation_param_t   *ref,
-                          cs_equation_param_t         *dst);
+cs_equation_param_copy_bc(const cs_equation_param_t *ref,
+                          cs_equation_param_t       *dst);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Copy the settings from one \ref cs_equation_param_t structure to
- *         another one. The name is not copied.
+ * \brief Copy the settings from one \ref cs_equation_param_t structure to
+ *        another one. The name is not copied.
  *
  * \deprecated Renamed to\ref cs_equation_param_copy_from.
  *
@@ -1589,16 +1589,16 @@ cs_equation_param_copy_bc(const cs_equation_param_t   *ref,
 /*----------------------------------------------------------------------------*/
 
 inline static void
-cs_equation_copy_param_from(const cs_equation_param_t   *ref,
-                            cs_equation_param_t         *dst,
-                            bool                         copy_fid)
+cs_equation_copy_param_from(const cs_equation_param_t *ref,
+                            cs_equation_param_t       *dst,
+                            bool                       copy_fid)
 {
   cs_equation_param_copy_from(ref, dst, copy_fid);
 }
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Free the contents of a \ref cs_equation_param_t
+ * \brief Free the contents of a \ref cs_equation_param_t
  *
  * The cs_equation_param_t structure itself is not freed, but all its
  * sub-structures are freed.
@@ -1606,59 +1606,59 @@ cs_equation_copy_param_from(const cs_equation_param_t   *ref,
  * This is useful for equation parameters which are accessed through
  * field keywords.
  *
- * \param[in, out]  eqp  pointer to a \ref cs_equation_param_t
+ * \param[in, out] eqp  pointer to a \ref cs_equation_param_t
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_param_clear(cs_equation_param_t   *eqp);
+cs_equation_param_clear(cs_equation_param_t *eqp);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Free a \ref cs_equation_param_t
+ * \brief Free a \ref cs_equation_param_t
  *
- * \param[in] eqp          pointer to a \ref cs_equation_param_t
+ * \param[in] eqp  pointer to a \ref cs_equation_param_t
  *
  * \return a NULL pointer
  */
 /*----------------------------------------------------------------------------*/
 
 cs_equation_param_t *
-cs_equation_param_free(cs_equation_param_t     *eqp);
+cs_equation_param_free(cs_equation_param_t *eqp);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Set a parameter attached to a keyname in a \ref cs_equation_param_t
- *         structure
+ * \brief Set a parameter attached to a keyname in a \ref cs_equation_param_t
+ *        structure
  *
- * \param[in, out]  eqp      pointer to a \ref cs_equation_param_t structure
- * \param[in]       key      key related to the member of eq to set
- * \param[in]       keyval   accessor to the value to set
+ * \param[in, out] eqp     pointer to a \ref cs_equation_param_t structure
+ * \param[in]      key     key related to the member of eq to set
+ * \param[in]      keyval  accessor to the value to set
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_param_set(cs_equation_param_t   *eqp,
-                      cs_equation_key_t      key,
-                      const char            *keyval);
+cs_equation_param_set(cs_equation_param_t *eqp,
+                      cs_equation_key_t    key,
+                      const char          *keyval);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Set a parameter attached to a keyname in a \ref cs_equation_param_t
- *         structure
+ * \brief Set a parameter attached to a keyname in a \ref cs_equation_param_t
+ *        structure
  *
  * \deprecated Renamed to\ref cs_equation_param_set.
  *
- * \param[in, out]  eqp      pointer to a \ref cs_equation_param_t structure
- * \param[in]       key      key related to the member of eq to set
- * \param[in]       keyval   accessor to the value to set
+ * \param[in, out] eqp     pointer to a \ref cs_equation_param_t structure
+ * \param[in]      key     key related to the member of eq to set
+ * \param[in]      keyval  accessor to the value to set
  */
 /*----------------------------------------------------------------------------*/
 
 inline static void
-cs_equation_set_param(cs_equation_param_t   *eqp,
-                      cs_equation_key_t      key,
-                      const char            *keyval)
+cs_equation_set_param(cs_equation_param_t *eqp,
+                      cs_equation_key_t    key,
+                      const char           *keyval)
 {
   cs_equation_param_set(eqp, key, keyval);
 }
@@ -1675,7 +1675,7 @@ cs_equation_set_param(cs_equation_param_t   *eqp,
 /*----------------------------------------------------------------------------*/
 
 cs_param_sles_t *
-cs_equation_param_get_sles_param(cs_equation_param_t  *eqp);
+cs_equation_param_get_sles_param(cs_equation_param_t *eqp);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -1689,7 +1689,7 @@ cs_equation_param_get_sles_param(cs_equation_param_t  *eqp);
 /*----------------------------------------------------------------------------*/
 
 cs_param_saddle_t *
-cs_equation_param_get_saddle_param(cs_equation_param_t  *eqp);
+cs_equation_param_get_saddle_param(cs_equation_param_t *eqp);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -1702,7 +1702,7 @@ cs_equation_param_get_saddle_param(cs_equation_param_t  *eqp);
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_param_set_sles(cs_equation_param_t  *eqp);
+cs_equation_param_set_sles(cs_equation_param_t *eqp);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -1711,37 +1711,37 @@ cs_equation_param_set_sles(cs_equation_param_t  *eqp);
  *        quadrature rule, please consider the function
  *        \ref cs_xdef_set_quadrature
  *
- * \param[in, out] eqp     pointer to a \ref cs_equation_param_t structure
- * \param[in]      qtype   type of quadrature to apply
+ * \param[in, out] eqp    pointer to a \ref cs_equation_param_t structure
+ * \param[in]      qtype  type of quadrature to apply
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_param_set_quadrature_to_all(cs_equation_param_t   *eqp,
-                                        cs_quadrature_type_t   qtype);
+cs_equation_param_set_quadrature_to_all(cs_equation_param_t  *eqp,
+                                        cs_quadrature_type_t  qtype);
 
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Lock settings to prevent from unwanted modifications.
  *
- * \param[in, out] eqp   pointer to a \ref cs_equation_param_t structure
+ * \param[in, out] eqp  pointer to a \ref cs_equation_param_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_param_lock_settings(cs_equation_param_t   *eqp);
+cs_equation_param_lock_settings(cs_equation_param_t *eqp);
 
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Unlock settings. Be sure that is really wanted (inconsistency between
  *        the setup logging and what is used may appear)
  *
- * \param[in, out] eqp   pointer to a \ref cs_equation_param_t structure
+ * \param[in, out] eqp  pointer to a \ref cs_equation_param_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_param_unlock_settings(cs_equation_param_t   *eqp);
+cs_equation_param_unlock_settings(cs_equation_param_t *eqp);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -1749,90 +1749,90 @@ cs_equation_param_unlock_settings(cs_equation_param_t   *eqp);
  *        by the user. One makes a last set of modifications if needed to
  *        ensure a consistent numerical settings.
  *
- * \param[in, out] eqp      pointer to a \ref cs_equation_param_t structure
+ * \param[in, out] eqp  pointer to a \ref cs_equation_param_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_param_ensure_consistent_settings(cs_equation_param_t   *eqp);
+cs_equation_param_ensure_consistent_settings(cs_equation_param_t *eqp);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Print the detail of a \ref cs_equation_param_t structure
+ * \brief Print the detail of a \ref cs_equation_param_t structure
  *
- * \param[in]  eqp      pointer to a \ref cs_equation_param_t structure
+ * \param[in] eqp  pointer to a \ref cs_equation_param_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_param_log(const cs_equation_param_t  *eqp);
+cs_equation_param_log(const cs_equation_param_t *eqp);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Ask if the parameter settings of the equation has requested the
- *         treatment of Robin boundary conditions
+ * \brief Ask if the parameter settings of the equation has requested the
+ *        treatment of Robin boundary conditions
  *
- * \param[in] eqp          pointer to a \ref cs_equation_param_t
+ * \param[in] eqp  pointer to a \ref cs_equation_param_t
  *
  * \return true or false
  */
 /*----------------------------------------------------------------------------*/
 
 bool
-cs_equation_param_has_robin_bc(const cs_equation_param_t     *eqp);
+cs_equation_param_has_robin_bc(const cs_equation_param_t *eqp);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Define the initial condition for the unknown related to this
- *         equation. This definition applies to a volume zone.
- *         By default, the unknown is set to zero everywhere.
- *         Here a constant value is set to all the unknows belonging to the
- *         given zone with name z_name
+ * \brief Define the initial condition for the unknown related to this
+ *        equation. This definition applies to a volume zone.
+ *        By default, the unknown is set to zero everywhere.
+ *        Here a constant value is set to all the unknows belonging to the
+ *        given zone with name z_name
  *
- * \param[in, out]  eqp       pointer to a cs_equation_param_t structure
- * \param[in]       z_name    name of the associated zone (if NULL or
- *                            "" all cells are considered)
- * \param[in]       val       pointer to the value
+ * \param[in, out] eqp     pointer to a cs_equation_param_t structure
+ * \param[in]      z_name  name of the associated zone (if nullptr or "" all
+ *                         cells are considered)
+ * \param[in]      val     pointer to the value
  *
  * \return a pointer to the new \ref cs_xdef_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 cs_xdef_t *
-cs_equation_add_ic_by_value(cs_equation_param_t    *eqp,
-                            const char             *z_name,
-                            cs_real_t              *val);
+cs_equation_add_ic_by_value(cs_equation_param_t *eqp,
+                            const char          *z_name,
+                            cs_real_t           *val);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Define the initial condition for the unknown related to this
- *         equation. This definition applies to a volume zone.
- *         By default, the unknown is set to zero everywhere.
- *         Here the value set to each unknown belonging to the given zone with
- *         name z_name is such that the integral over the cells of the zone
- *         returns the requested quantity
+ * \brief Define the initial condition for the unknown related to this
+ *        equation. This definition applies to a volume zone.
+ *        By default, the unknown is set to zero everywhere.
+ *        Here the value set to each unknown belonging to the given zone with
+ *        name z_name is such that the integral over the cells of the zone
+ *        returns the requested quantity
  *
- * \param[in, out]  eqp       pointer to a cs_equation_param_t structure
- * \param[in]       z_name    name of the associated zone (if NULL or
- *                            "" all cells are considered)
- * \param[in]       quantity  quantity to distribute over the mesh location
+ * \param[in, out] eqp       pointer to a cs_equation_param_t structure
+ * \param[in]      z_name    name of the associated zone (if NULL or "" all
+ *                           cells are considered)
+ * \param[in]      quantity  quantity to distribute over the mesh location
  *
  * \return a pointer to the new \ref cs_xdef_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 cs_xdef_t *
-cs_equation_add_ic_by_qov(cs_equation_param_t    *eqp,
-                          const char             *z_name,
-                          double                  quantity);
+cs_equation_add_ic_by_qov(cs_equation_param_t *eqp,
+                          const char          *z_name,
+                          double               quantity);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Define the initial condition for the unknown related to this
- *         equation. This definition applies to a volume zone.
- *         By default, the unknown is set to zero everywhere.
- *         Here the initial value for each unknown associated to the zone with
- *         name z_name is set according to an analytical function
+ * \brief Define the initial condition for the unknown related to this
+ *        equation. This definition applies to a volume zone.
+ *        By default, the unknown is set to zero everywhere.
+ *        Here the initial value for each unknown associated to the zone with
+ *        name z_name is set according to an analytical function
  *
  * \param[in, out] eqp       pointer to a cs_equation_param_t structure
  * \param[in]      z_name    name of the associated zone (if NULL or "" if
@@ -1845,17 +1845,17 @@ cs_equation_add_ic_by_qov(cs_equation_param_t    *eqp,
 /*----------------------------------------------------------------------------*/
 
 cs_xdef_t *
-cs_equation_add_ic_by_analytic(cs_equation_param_t    *eqp,
-                               const char             *z_name,
-                               cs_analytic_func_t     *analytic,
-                               void                   *input);
+cs_equation_add_ic_by_analytic(cs_equation_param_t *eqp,
+                               const char          *z_name,
+                               cs_analytic_func_t  *analytic,
+                               void                *input);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Define the initial condition for the unknown related to this
- *         equation. This definition applies to a volume zone.
- *         By default, the unknown is set to zero everywhere.
- *         Case of a definition by a DoF function.
+ * \brief Define the initial condition for the unknown related to this
+ *        equation. This definition applies to a volume zone.
+ *        By default, the unknown is set to zero everywhere.
+ *        Case of a definition by a DoF function.
  *
  * \param[in, out] eqp       pointer to a cs_equation_param_t structure
  * \param[in]      z_name    name of the associated zone (if NULL or "" if
@@ -1869,106 +1869,106 @@ cs_equation_add_ic_by_analytic(cs_equation_param_t    *eqp,
 /*----------------------------------------------------------------------------*/
 
 cs_xdef_t *
-cs_equation_add_ic_by_dof_func(cs_equation_param_t    *eqp,
-                               const char             *z_name,
-                               cs_flag_t               loc_flag,
-                               cs_dof_func_t          *func,
-                               void                   *input);
+cs_equation_add_ic_by_dof_func(cs_equation_param_t *eqp,
+                               const char          *z_name,
+                               cs_flag_t            loc_flag,
+                               cs_dof_func_t       *func,
+                               void                *input);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Set a boundary condition from an existing \ref cs_xdef_t structure
- *         The lifecycle of the cs_xdef_t structure is now managed by the
- *         current \ref cs_equation_param_t structure.
+ * \brief Set a boundary condition from an existing \ref cs_xdef_t structure
+ *        The lifecycle of the cs_xdef_t structure is now managed by the
+ *        current \ref cs_equation_param_t structure.
  *
- * \param[in, out] eqp    pointer to a cs_equation_param_t structure
- * \param[in]      xdef   pointer to the \ref cs_xdef_t structure to transfer
+ * \param[in, out] eqp   pointer to a cs_equation_param_t structure
+ * \param[in]      xdef  pointer to the \ref cs_xdef_t structure to transfer
 */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_add_xdef_bc(cs_equation_param_t        *eqp,
-                        cs_xdef_t                  *xdef);
+cs_equation_add_xdef_bc(cs_equation_param_t *eqp,
+                        cs_xdef_t           *xdef);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Define and initialize a new structure to set a boundary condition
- *         related to the given equation structure
- *         z_name corresponds to the name of a pre-existing cs_zone_t
+ * \brief Define and initialize a new structure to set a boundary condition
+ *        related to the given equation structure
+ *        z_name corresponds to the name of a pre-existing cs_zone_t
  *
- * \param[in, out]  eqp       pointer to a cs_equation_param_t structure
- * \param[in]       bc_type   type of boundary condition to add
- * \param[in]       z_name    name of the related boundary zone
- * \param[in]       values    pointer to a array storing the values
+ * \param[in, out] eqp      pointer to a cs_equation_param_t structure
+ * \param[in]      bc_type  type of boundary condition to add
+ * \param[in]      z_name   name of the related boundary zone
+ * \param[in]      values   pointer to a array storing the values
  *
  * \return a pointer to the new \ref cs_xdef_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 cs_xdef_t *
-cs_equation_add_bc_by_value(cs_equation_param_t         *eqp,
-                            const cs_param_bc_type_t     bc_type,
-                            const char                  *z_name,
-                            cs_real_t                   *values);
+cs_equation_add_bc_by_value(cs_equation_param_t      *eqp,
+                            const cs_param_bc_type_t  bc_type,
+                            const char               *z_name,
+                            cs_real_t                *values);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Define and initialize a new structure to set a boundary condition
- *         related to the given equation structure
- *         z_name corresponds to the name of a pre-existing cs_zone_t
+ * \brief Define and initialize a new structure to set a boundary condition
+ *        related to the given equation structure
+ *        z_name corresponds to the name of a pre-existing cs_zone_t
  *
- * \param[in, out] eqp           pointer to a cs_equation_param_t structure
- * \param[in]      bc_type       type of boundary condition to add
- * \param[in]      z_name        name of the related boundary zone
- * \param[in]      loc           information to know where are located values
- * \param[in]      array         pointer to an array
- * \param[in]      is_owner      transfer the lifecycle to the cs_xdef_t struct.
- *                               (true or false)
- * \param[in]      full_length   if true, size of "array" should be allocated
- *                               to the total numbers of entities related to the
- *                               given location. If false, a new list is
- *                               allocated and filled with the related subset
- *                               indirection.
+ * \param[in, out] eqp          pointer to a cs_equation_param_t structure
+ * \param[in]      bc_type      type of boundary condition to add
+ * \param[in]      z_name       name of the related boundary zone
+ * \param[in]      loc          information to know where are located values
+ * \param[in]      array        pointer to an array
+ * \param[in]      is_owner     transfer the lifecycle to the cs_xdef_t struct.
+ *                              (true or false)
+ * \param[in]      full_length  if true, size of "array" should be allocated
+ *                              to the total numbers of entities related to the
+ *                              given location. If false, a new list is
+ *                              allocated and filled with the related subset
+ *                              indirection.
  *
  * \return a pointer to the new allocated \ref cs_xdef_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 cs_xdef_t *
-cs_equation_add_bc_by_array(cs_equation_param_t        *eqp,
-                            const cs_param_bc_type_t    bc_type,
-                            const char                 *z_name,
-                            cs_flag_t                   loc,
-                            cs_real_t                  *array,
-                            bool                        is_owner,
-                            bool                        full_length);
+cs_equation_add_bc_by_array(cs_equation_param_t      *eqp,
+                            const cs_param_bc_type_t  bc_type,
+                            const char               *z_name,
+                            cs_flag_t                 loc,
+                            cs_real_t                *array,
+                            bool                      is_owner,
+                            bool                      full_length);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Define and initialize a new structure to set a boundary condition
- *         related to the given equation structure
- *         z_name corresponds to the name of a pre-existing cs_zone_t
+ * \brief Define and initialize a new structure to set a boundary condition
+ *        related to the given equation structure
+ *        z_name corresponds to the name of a pre-existing cs_zone_t
  *
- * \param[in, out]  eqp       pointer to a cs_equation_param_t structure
- * \param[in]       bc_type   type of boundary condition to add
- * \param[in]       z_name    name of the related boundary zone
- * \param[in]       field     pointer to a cs_field_t structure
+ * \param[in, out] eqp      pointer to a cs_equation_param_t structure
+ * \param[in]      bc_type  type of boundary condition to add
+ * \param[in]      z_name   name of the related boundary zone
+ * \param[in]      field    pointer to a cs_field_t structure
  *
  * \return a pointer to the new allocated \ref cs_xdef_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 cs_xdef_t *
-cs_equation_add_bc_by_field(cs_equation_param_t        *eqp,
-                            const cs_param_bc_type_t    bc_type,
-                            const char                 *z_name,
-                            cs_field_t                 *field);
+cs_equation_add_bc_by_field(cs_equation_param_t      *eqp,
+                            const cs_param_bc_type_t  bc_type,
+                            const char               *z_name,
+                            cs_field_t               *field);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Define and initialize a new structure to set a boundary condition
- *         related to the given equation param structure
- *         ml_name corresponds to the name of a pre-existing cs_mesh_location_t
+ * \brief Define and initialize a new structure to set a boundary condition
+ *        related to the given equation param structure
+ *        ml_name corresponds to the name of a pre-existing cs_mesh_location_t
  *
  * \param[in, out] eqp       pointer to a cs_equation_param_t structure
  * \param[in]      bc_type   type of boundary condition to add
@@ -1982,11 +1982,11 @@ cs_equation_add_bc_by_field(cs_equation_param_t        *eqp,
 /*----------------------------------------------------------------------------*/
 
 cs_xdef_t *
-cs_equation_add_bc_by_analytic(cs_equation_param_t        *eqp,
-                               const cs_param_bc_type_t    bc_type,
-                               const char                 *z_name,
-                               cs_analytic_func_t         *analytic,
-                               void                       *input);
+cs_equation_add_bc_by_analytic(cs_equation_param_t      *eqp,
+                               const cs_param_bc_type_t  bc_type,
+                               const char               *z_name,
+                               cs_analytic_func_t       *analytic,
+                               void                     *input);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -2007,17 +2007,17 @@ cs_equation_add_bc_by_analytic(cs_equation_param_t        *eqp,
 /*----------------------------------------------------------------------------*/
 
 cs_xdef_t *
-cs_equation_add_bc_by_time_func(cs_equation_param_t        *eqp,
-                                const cs_param_bc_type_t    bc_type,
-                                const char                 *z_name,
-                                cs_time_func_t             *t_func,
-                                void                       *input);
+cs_equation_add_bc_by_time_func(cs_equation_param_t      *eqp,
+                                const cs_param_bc_type_t  bc_type,
+                                const char               *z_name,
+                                cs_time_func_t           *t_func,
+                                void                     *input);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Define and initialize a new structure to set a boundary condition
- *         related to the given cs_equation_param_t structure
- *         ml_name corresponds to the name of a pre-existing cs_mesh_location_t
+ * \brief Define and initialize a new structure to set a boundary condition
+ *        related to the given cs_equation_param_t structure
+ *        ml_name corresponds to the name of a pre-existing cs_mesh_location_t
  *
  * \param[in, out] eqp       pointer to a cs_equation_param_t structure
  * \param[in]      bc_type   type of boundary condition to add
@@ -2032,101 +2032,101 @@ cs_equation_add_bc_by_time_func(cs_equation_param_t        *eqp,
 /*----------------------------------------------------------------------------*/
 
 cs_xdef_t *
-cs_equation_add_bc_by_dof_func(cs_equation_param_t        *eqp,
-                               const cs_param_bc_type_t    bc_type,
-                               const char                 *z_name,
-                               cs_flag_t                   loc_flag,
-                               cs_dof_func_t              *func,
-                               void                       *input);
+cs_equation_add_bc_by_dof_func(cs_equation_param_t      *eqp,
+                               const cs_param_bc_type_t  bc_type,
+                               const char               *z_name,
+                               cs_flag_t                 loc_flag,
+                               cs_dof_func_t            *func,
+                               void                     *input);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Return pointer to existing boundary condition definition structure
- *         for the given equation param structure and zone.
+ * \brief Return pointer to existing boundary condition definition structure
+ *        for the given equation param structure and zone.
  *
- * \param[in, out] eqp       pointer to a cs_equation_param_t structure
- * \param[in]      z_name    name of the associated zone (if NULL or "" if
- *                           all cells are considered)
+ * \param[in, out] eqp     pointer to a cs_equation_param_t structure
+ * \param[in]      z_name  name of the associated zone (if NULL or "" if
+ *                         all cells are considered)
  *
  * \return a pointer to the \ref cs_xdef_t structure if present, or NULL
 */
 /*----------------------------------------------------------------------------*/
 
 cs_xdef_t *
-cs_equation_find_bc(cs_equation_param_t   *eqp,
-                    const char            *z_name);
+cs_equation_find_bc(cs_equation_param_t *eqp,
+                    const char          *z_name);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Remove boundary condition from the given equation param structure
- *         for a given zone.
+ * \brief Remove boundary condition from the given equation param structure
+ *        for a given zone.
  *
  * If no matching boundary condition is found, the function returns
  * silently.
  *
- * \param[in, out] eqp       pointer to a cs_equation_param_t structure
- * \param[in]      z_name    name of the associated zone (if NULL or "" if
- *                           all cells are considered)
+ * \param[in, out] eqp     pointer to a cs_equation_param_t structure
+ * \param[in]      z_name  name of the associated zone (if NULL or "" if
+ *                         all cells are considered)
 */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_remove_bc(cs_equation_param_t   *eqp,
-                      const char            *z_name);
+cs_equation_remove_bc(cs_equation_param_t *eqp,
+                      const char          *z_name);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Remove initial condition from the given equation param structure
- *         for a given zone.
+ * \brief Remove initial condition from the given equation param structure
+ *        for a given zone.
  *
  * If no matching boundary condition is found, the function returns
  * silently.
  *
- * \param[in, out] eqp       pointer to a cs_equation_param_t structure
- * \param[in]      z_name    name of the associated zone (if NULL or "" if
- *                           all cells are considered)
+ * \param[in, out] eqp     pointer to a cs_equation_param_t structure
+ * \param[in]      z_name  name of the associated zone (if NULL or "" if
+ *                         all cells are considered)
 */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_remove_ic(cs_equation_param_t   *eqp,
-                      const char            *z_name);
+cs_equation_remove_ic(cs_equation_param_t *eqp,
+                      const char          *z_name);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Define and initialize a new structure to set a sliding boundary
- *         condition related to the given equation structure
- *         z_name corresponds to the name of a pre-existing cs_zone_t
+ * \brief Define and initialize a new structure to set a sliding boundary
+ *        condition related to the given equation structure
+ *        z_name corresponds to the name of a pre-existing cs_zone_t
+ *
+ * \param[in, out] eqp     pointer to a cs_equation_param_t structure
+ * \param[in]      z_name  name of the related boundary zone
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_equation_add_sliding_condition(cs_equation_param_t *eqp,
+                                  const char          *z_name);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Associate a new term related to the Laplacian operator for the
+ *        equation associated to the given \ref cs_equation_param_t structure
+ *        Laplacian means div-grad (either for vector-valued or scalar-valued
+ *        equations)
  *
  * \param[in, out] eqp       pointer to a cs_equation_param_t structure
- * \param[in]      z_name    name of the related boundary zone
+ * \param[in]      property  pointer to a cs_property_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_add_sliding_condition(cs_equation_param_t     *eqp,
-                                  const char              *z_name);
+cs_equation_add_diffusion(cs_equation_param_t *eqp,
+                          cs_property_t       *property);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Associate a new term related to the Laplacian operator for the
- *         equation associated to the given \ref cs_equation_param_t structure
- *         Laplacian means div-grad (either for vector-valued or scalar-valued
- *         equations)
- *
- * \param[in, out] eqp        pointer to a cs_equation_param_t structure
- * \param[in]      property   pointer to a cs_property_t structure
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_equation_add_diffusion(cs_equation_param_t   *eqp,
-                          cs_property_t         *property);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Associate a new term related to the curl-curl operator for the
- *         equation associated to the given \ref cs_equation_param_t structure
+ * \brief Associate a new term related to the curl-curl operator for the
+ *        equation associated to the given \ref cs_equation_param_t structure
  *
  * \param[in, out] eqp        pointer to a cs_equation_param_t structure
  * \param[in]      property   pointer to a cs_property_t structure
@@ -2135,23 +2135,23 @@ cs_equation_add_diffusion(cs_equation_param_t   *eqp,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_add_curlcurl(cs_equation_param_t   *eqp,
-                         cs_property_t         *property,
-                         int                    inversion);
+cs_equation_add_curlcurl(cs_equation_param_t *eqp,
+                         cs_property_t       *property,
+                         int                  inversion);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Associate a new term related to the grad-div operator for the
- *         equation associated to the given \ref cs_equation_param_t structure
+ * \brief Associate a new term related to the grad-div operator for the
+ *        equation associated to the given \ref cs_equation_param_t structure
  *
- * \param[in, out] eqp        pointer to a cs_equation_param_t structure
- * \param[in]      property   pointer to a cs_property_t structure
+ * \param[in, out] eqp       pointer to a cs_equation_param_t structure
+ * \param[in]      property  pointer to a cs_property_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_add_graddiv(cs_equation_param_t   *eqp,
-                        cs_property_t         *property);
+cs_equation_add_graddiv(cs_equation_param_t *eqp,
+                        cs_property_t       *property);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -2159,14 +2159,14 @@ cs_equation_add_graddiv(cs_equation_param_t   *eqp,
  *        the equation associated to the given \ref cs_equation_param_t
  *        structure
  *
- * \param[in, out] eqp        pointer to a cs_equation_param_t structure
- * \param[in]      property   pointer to a cs_property_t structure
+ * \param[in, out] eqp       pointer to a cs_equation_param_t structure
+ * \param[in]      property  pointer to a cs_property_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_add_time(cs_equation_param_t   *eqp,
-                     cs_property_t         *property);
+cs_equation_add_time(cs_equation_param_t *eqp,
+                     cs_property_t       *property);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -2179,82 +2179,82 @@ cs_equation_add_time(cs_equation_param_t   *eqp,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_add_advection(cs_equation_param_t   *eqp,
-                          cs_adv_field_t        *adv_field);
+cs_equation_add_advection(cs_equation_param_t *eqp,
+                          cs_adv_field_t      *adv_field);
 
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Associate a scaling property to the advection
  *
- * \param[in, out] eqp        pointer to a cs_equation_param_t structure
- * \param[in]      property   pointer to a cs_property_t structure
+ * \param[in, out] eqp       pointer to a cs_equation_param_t structure
+ * \param[in]      property  pointer to a cs_property_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_add_advection_scaling_property(cs_equation_param_t   *eqp,
-                                           cs_property_t         *property);
+cs_equation_add_advection_scaling_property(cs_equation_param_t *eqp,
+                                           cs_property_t       *property);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Associate a new term related to the reaction operator for the
- *         equation associated to the given \ref cs_equation_param_t structure
+ * \brief Associate a new term related to the reaction operator for the
+ *        equation associated to the given \ref cs_equation_param_t structure
  *
- * \param[in, out] eqp        pointer to a cs_equation_param_t structure
- * \param[in]      property   pointer to a cs_property_t structure
+ * \param[in, out] eqp       pointer to a cs_equation_param_t structure
+ * \param[in]      property  pointer to a cs_property_t structure
  *
  * \return the id related to the reaction term
  */
 /*----------------------------------------------------------------------------*/
 
 int
-cs_equation_add_reaction(cs_equation_param_t   *eqp,
-                         cs_property_t         *property);
+cs_equation_add_reaction(cs_equation_param_t *eqp,
+                         cs_property_t       *property);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Add a new source term by initializing a cs_xdef_t structure.
- *         Case of a definition by a constant value
+ * \brief Add a new source term by initializing a cs_xdef_t structure.
+ *        Case of a definition by a constant value
  *
- * \param[in, out] eqp       pointer to a cs_equation_param_t structure
- * \param[in]      z_name    name of the associated zone (if NULL or
- *                           "" all cells are considered)
- * \param[in]      val       pointer to the value
+ * \param[in, out] eqp     pointer to a cs_equation_param_t structure
+ * \param[in]      z_name  name of the associated zone (if NULL or
+ *                         "" all cells are considered)
+ * \param[in]      val     pointer to the value
  *
  * \return a pointer to the new \ref cs_xdef_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 cs_xdef_t *
-cs_equation_add_source_term_by_val(cs_equation_param_t    *eqp,
-                                   const char             *z_name,
-                                   cs_real_t              *val);
+cs_equation_add_source_term_by_val(cs_equation_param_t *eqp,
+                                   const char          *z_name,
+                                   cs_real_t           *val);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Add a new source term by initializing a cs_xdef_t structure.
- *         Case of a definition by an analytical function
+ * \brief Add a new source term by initializing a cs_xdef_t structure.
+ *        Case of a definition by an analytical function
  *
- * \param[in, out] eqp       pointer to a cs_equation_param_t structure
- * \param[in]      z_name    name of the associated zone (if NULL or "" if
- *                           all cells are considered)
- * \param[in]      func      pointer to an analytical function
- * \param[in]      input     NULL or pointer to a structure cast on-the-fly
+ * \param[in, out] eqp     pointer to a cs_equation_param_t structure
+ * \param[in]      z_name  name of the associated zone (if NULL or "" if
+ *                         all cells are considered)
+ * \param[in]      func    pointer to an analytical function
+ * \param[in]      input   NULL or pointer to a structure cast on-the-fly
  *
  * \return a pointer to the new \ref cs_xdef_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 cs_xdef_t *
-cs_equation_add_source_term_by_analytic(cs_equation_param_t    *eqp,
-                                        const char             *z_name,
-                                        cs_analytic_func_t     *func,
-                                        void                   *input);
+cs_equation_add_source_term_by_analytic(cs_equation_param_t *eqp,
+                                        const char          *z_name,
+                                        cs_analytic_func_t  *func,
+                                        void                *input);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Add a new source term by initializing a cs_xdef_t structure.
- *         Case of a definition by a DoF function
+ * \brief Add a new source term by initializing a cs_xdef_t structure.
+ *        Case of a definition by a DoF function
  *
  * \param[in, out] eqp       pointer to a cs_equation_param_t structure
  * \param[in]      z_name    name of the associated zone (if NULL or "" if
@@ -2268,16 +2268,16 @@ cs_equation_add_source_term_by_analytic(cs_equation_param_t    *eqp,
 /*----------------------------------------------------------------------------*/
 
 cs_xdef_t *
-cs_equation_add_source_term_by_dof_func(cs_equation_param_t    *eqp,
-                                        const char             *z_name,
-                                        cs_flag_t               loc_flag,
-                                        cs_dof_func_t          *func,
-                                        void                   *input);
+cs_equation_add_source_term_by_dof_func(cs_equation_param_t *eqp,
+                                        const char          *z_name,
+                                        cs_flag_t            loc_flag,
+                                        cs_dof_func_t       *func,
+                                        void                *input);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Add a new source term by initializing a cs_xdef_t structure.
- *         Case of a definition by an array.
+ * \brief Add a new source term by initializing a cs_xdef_t structure.
+ *        Case of a definition by an array.
  *
  * \param[in, out] eqp          pointer to a cs_equation_param_t structure
  * \param[in]      z_name       name of the associated zone (if NULL or "" if
@@ -2297,37 +2297,37 @@ cs_equation_add_source_term_by_dof_func(cs_equation_param_t    *eqp,
 /*----------------------------------------------------------------------------*/
 
 cs_xdef_t *
-cs_equation_add_source_term_by_array(cs_equation_param_t    *eqp,
-                                     const char             *z_name,
-                                     cs_flag_t               loc,
-                                     cs_real_t              *array,
-                                     bool                    is_owner,
-                                     bool                    full_length);
+cs_equation_add_source_term_by_array(cs_equation_param_t *eqp,
+                                     const char          *z_name,
+                                     cs_flag_t            loc,
+                                     cs_real_t           *array,
+                                     bool                 is_owner,
+                                     bool                 full_length);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Add a new volume mass injection definition source term by
- *         initializing a cs_xdef_t structure, using a constant value.
+ * \brief Add a new volume mass injection definition source term by
+ *        initializing a cs_xdef_t structure, using a constant value.
  *
- * \param[in, out] eqp       pointer to a cs_equation_param_t structure
- * \param[in]      z_name    name of the associated zone (if NULL or "" if
- *                           all cells are considered)
- * \param[in]      val       pointer to the value
+ * \param[in, out] eqp     pointer to a cs_equation_param_t structure
+ * \param[in]      z_name  name of the associated zone (if NULL or "" if
+ *                         all cells are considered)
+ * \param[in]      val     pointer to the value
  *
  * \return a pointer to the new \ref cs_xdef_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 cs_xdef_t *
-cs_equation_add_volume_mass_injection_by_value(cs_equation_param_t  *eqp,
-                                               const char           *z_name,
-                                               double               *val);
+cs_equation_add_volume_mass_injection_by_value(cs_equation_param_t *eqp,
+                                               const char          *z_name,
+                                               double              *val);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Add a new volume mass injection definition source term by
- *         initializing a cs_xdef_t structure, using a constant quantity
- *         distributed over the associated zone's volume.
+ * \brief Add a new volume mass injection definition source term by
+ *        initializing a cs_xdef_t structure, using a constant quantity
+ *        distributed over the associated zone's volume.
  *
  * \param[in, out] eqp       pointer to a cs_equation_param_t structure
  * \param[in]      z_name    name of the associated zone (if NULL or "" if
@@ -2339,35 +2339,35 @@ cs_equation_add_volume_mass_injection_by_value(cs_equation_param_t  *eqp,
 /*----------------------------------------------------------------------------*/
 
 cs_xdef_t *
-cs_equation_add_volume_mass_injection_by_qov(cs_equation_param_t  *eqp,
-                                             const char           *z_name,
-                                             double               *quantity);
+cs_equation_add_volume_mass_injection_by_qov(cs_equation_param_t *eqp,
+                                             const char          *z_name,
+                                             double              *quantity);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Add a new volume mass injection definition source term by
- *         initializing a cs_xdef_t structure, using an analytical function.
+ * \brief Add a new volume mass injection definition source term by
+ *        initializing a cs_xdef_t structure, using an analytical function.
  *
- * \param[in, out] eqp       pointer to a cs_equation_param_t structure
- * \param[in]      z_name    name of the associated zone (if NULL or "" if
- *                           all cells are considered)
- * \param[in]      func      pointer to an analytical function
- * \param[in]      input     NULL or pointer to a structure cast on-the-fly
+ * \param[in, out] eqp     pointer to a cs_equation_param_t structure
+ * \param[in]      z_name  name of the associated zone (if NULL or "" if
+ *                         all cells are considered)
+ * \param[in]      func    pointer to an analytical function
+ * \param[in]      input   NULL or pointer to a structure cast on-the-fly
  *
  * \return a pointer to the new \ref cs_xdef_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 cs_xdef_t *
-cs_equation_add_volume_mass_injection_by_analytic(cs_equation_param_t   *eqp,
-                                                  const char            *z_name,
-                                                  cs_analytic_func_t    *func,
-                                                  void                  *input);
+cs_equation_add_volume_mass_injection_by_analytic(cs_equation_param_t *eqp,
+                                                  const char          *z_name,
+                                                  cs_analytic_func_t  *func,
+                                                  void                *input);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Add a new volume mass injection definition source term by
- *         initializing a cs_xdef_t structure, using a DoF function.
+ * \brief Add a new volume mass injection definition source term by
+ *        initializing a cs_xdef_t structure, using a DoF function.
  *
  * \param[in, out] eqp       pointer to a cs_equation_param_t structure
  * \param[in]      z_name    name of the associated zone (if NULL or "" if
@@ -2381,104 +2381,104 @@ cs_equation_add_volume_mass_injection_by_analytic(cs_equation_param_t   *eqp,
 /*----------------------------------------------------------------------------*/
 
 cs_xdef_t *
-cs_equation_add_volume_mass_injection_by_dof_func(cs_equation_param_t  *eqp,
-                                                  const char           *z_name,
-                                                  cs_flag_t             loc_flag,
-                                                  cs_dof_func_t        *func,
-                                                  void                 *input);
+cs_equation_add_volume_mass_injection_by_dof_func(cs_equation_param_t *eqp,
+                                                  const char          *z_name,
+                                                  cs_flag_t            loc_flag,
+                                                  cs_dof_func_t       *func,
+                                                  void                *input);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Add an enforcement of the value of degrees of freedom located at
- *         the mesh vertices.
- *         The spatial discretization scheme for the given equation has to be
- *         CDO vertex-based or CDO vertex+cell-based schemes.
+ * \brief Add an enforcement of the value of degrees of freedom located at
+ *        the mesh vertices.
+ *        The spatial discretization scheme for the given equation has to be
+ *        CDO vertex-based or CDO vertex+cell-based schemes.
  *
- *         One assumes that values are interlaced if eqp->dim > 1
- *         ref_value or elt_values has to be defined. If both parameters are
- *         defined, one keeps the definition in elt_values
+ *        One assumes that values are interlaced if eqp->dim > 1
+ *        ref_value or elt_values has to be defined. If both parameters are
+ *        defined, one keeps the definition in elt_values
+ *
+ * \param[in, out] eqp         pointer to a cs_equation_param_t structure
+ * \param[in]      n_vertices  number of vertices to enforce
+ * \param[in]      vertex_ids  list of vertices
+ * \param[in]      ref_value   default values or ignored (may be NULL)
+ * \param[in]      vtx_values  list of associated values, ignored if NULL
+ *
+ * \return a pointer to a cs_enforcement_param_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_enforcement_param_t *
+cs_equation_add_vertex_dof_enforcement(cs_equation_param_t *eqp,
+                                       cs_lnum_t            n_vertices,
+                                       const cs_lnum_t      vertex_ids[],
+                                       const cs_real_t      ref_value[],
+                                       const cs_real_t      vtx_values[]);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Add an enforcement of the value of degrees of freedom located at
+ *        the mesh edges.
+ *        The spatial discretization scheme for the given equation has to be
+ *        CDO edge-based schemes.
+ *
+ *        One assumes that values are interlaced if eqp->dim > 1
+ *        ref_value or elt_values has to be defined. If both parameters are
+ *        defined, one keeps the definition in elt_values
  *
  * \param[in, out] eqp          pointer to a cs_equation_param_t structure
- * \param[in]      n_vertices   number of vertices to enforce
- * \param[in]      vertex_ids   list of vertices
+ * \param[in]      n_edges      number of edges to enforce
+ * \param[in]      edge_ids     list of edges
  * \param[in]      ref_value    default values or ignored (may be NULL)
- * \param[in]      vtx_values   list of associated values, ignored if NULL
+ * \param[in]      edge_values  list of associated values, ignored if NULL
  *
  * \return a pointer to a cs_enforcement_param_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 cs_enforcement_param_t *
-cs_equation_add_vertex_dof_enforcement(cs_equation_param_t    *eqp,
-                                       cs_lnum_t               n_vertices,
-                                       const cs_lnum_t         vertex_ids[],
-                                       const cs_real_t         ref_value[],
-                                       const cs_real_t         vtx_values[]);
+cs_equation_add_edge_dof_enforcement(cs_equation_param_t *eqp,
+                                     cs_lnum_t            n_edges,
+                                     const cs_lnum_t      edge_ids[],
+                                     const cs_real_t      ref_value[],
+                                     const cs_real_t      edge_values[]);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Add an enforcement of the value of degrees of freedom located at
- *         the mesh edges.
- *         The spatial discretization scheme for the given equation has to be
- *         CDO edge-based schemes.
+ * \brief Add an enforcement of the value of degrees of freedom located at
+ *        the mesh faces.
+ *        The spatial discretization scheme for the given equation has to be
+ *        CDO face-based schemes.
  *
- *         One assumes that values are interlaced if eqp->dim > 1
- *         ref_value or elt_values has to be defined. If both parameters are
- *         defined, one keeps the definition in elt_values
+ *        One assumes that values are interlaced if eqp->dim > 1
+ *        ref_value or elt_values has to be defined. If both parameters are
+ *        defined, one keeps the definition in elt_values
  *
- * \param[in, out] eqp           pointer to a cs_equation_param_t structure
- * \param[in]      n_edges       number of edges to enforce
- * \param[in]      edge_ids      list of edges
- * \param[in]      ref_value     default values or ignored (may be NULL)
- * \param[in]      edge_values   list of associated values, ignored if NULL
+ * \param[in, out] eqp          pointer to a cs_equation_param_t structure
+ * \param[in]      n_faces      number of faces to enforce
+ * \param[in]      face_ids     list of faces
+ * \param[in]      ref_value    default values or ignored (may be NULL)
+ * \param[in]      face_values  list of associated values, ignored if NULL
  *
  * \return a pointer to a cs_enforcement_param_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 cs_enforcement_param_t *
-cs_equation_add_edge_dof_enforcement(cs_equation_param_t    *eqp,
-                                     cs_lnum_t               n_edges,
-                                     const cs_lnum_t         edge_ids[],
-                                     const cs_real_t         ref_value[],
-                                     const cs_real_t         edge_values[]);
+cs_equation_add_face_dof_enforcement(cs_equation_param_t *eqp,
+                                     cs_lnum_t            n_faces,
+                                     const cs_lnum_t      face_ids[],
+                                     const cs_real_t      ref_value[],
+                                     const cs_real_t      face_values[]);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Add an enforcement of the value of degrees of freedom located at
- *         the mesh faces.
- *         The spatial discretization scheme for the given equation has to be
- *         CDO face-based schemes.
+ * \brief Add an enforcement of the value related to the degrees of freedom
+ *        associated to the list of selected cells.
  *
- *         One assumes that values are interlaced if eqp->dim > 1
- *         ref_value or elt_values has to be defined. If both parameters are
- *         defined, one keeps the definition in elt_values
- *
- * \param[in, out] eqp           pointer to a cs_equation_param_t structure
- * \param[in]      n_faces       number of faces to enforce
- * \param[in]      face_ids      list of faces
- * \param[in]      ref_value     default values or ignored (may be NULL)
- * \param[in]      face_values   list of associated values, ignored if NULL
- *
- * \return a pointer to a cs_enforcement_param_t structure
- */
-/*----------------------------------------------------------------------------*/
-
-cs_enforcement_param_t *
-cs_equation_add_face_dof_enforcement(cs_equation_param_t    *eqp,
-                                     cs_lnum_t               n_faces,
-                                     const cs_lnum_t         face_ids[],
-                                     const cs_real_t         ref_value[],
-                                     const cs_real_t         face_values[]);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Add an enforcement of the value related to the degrees of freedom
- *         associated to the list of selected cells.
- *
- *         One assumes that values are interlaced if eqp->dim > 1
- *         ref_value or elt_values has to be defined. If both parameters are
- *         defined, one keeps the definition in elt_values
+ *        One assumes that values are interlaced if eqp->dim > 1
+ *        ref_value or elt_values has to be defined. If both parameters are
+ *        defined, one keeps the definition in elt_values
  *
  * \param[in, out] eqp          pointer to a cs_equation_param_t structure
  * \param[in]      n_cells      number of selected cells
@@ -2491,21 +2491,21 @@ cs_equation_add_face_dof_enforcement(cs_equation_param_t    *eqp,
 /*----------------------------------------------------------------------------*/
 
 cs_enforcement_param_t *
-cs_equation_add_cell_enforcement(cs_equation_param_t   *eqp,
-                                 cs_lnum_t              n_cells,
-                                 const cs_lnum_t        elt_ids[],
-                                 const cs_real_t        ref_value[],
-                                 const cs_real_t        cell_values[]);
+cs_equation_add_cell_enforcement(cs_equation_param_t *eqp,
+                                 cs_lnum_t            n_cells,
+                                 const cs_lnum_t      elt_ids[],
+                                 const cs_real_t      ref_value[],
+                                 const cs_real_t      cell_values[]);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Add a new enforcement if enforcement_id does not exist or replace it
- *         otherwise. Enforcement of the value related to the degrees of freedom
- *         associated to the list of selected cells.
+ * \brief Add a new enforcement if enforcement_id does not exist or replace it
+ *        otherwise. Enforcement of the value related to the degrees of freedom
+ *        associated to the list of selected cells.
  *
- *         One assumes that values are interlaced if eqp->dim > 1
- *         ref_value or elt_values has to be defined. If both parameters are
- *         defined, one keeps the definition in elt_values
+ *        One assumes that values are interlaced if eqp->dim > 1
+ *        ref_value or elt_values has to be defined. If both parameters are
+ *        defined, one keeps the definition in elt_values
  *
  * \param[in, out] eqp             pointer to a cs_equation_param_t structure
  * \param[in]      enforcement_id  id of the enforcement to handle

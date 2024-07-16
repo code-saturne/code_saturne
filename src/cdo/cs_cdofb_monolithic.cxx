@@ -553,12 +553,12 @@ _assembly_by_blocks(const cs_cell_sys_t             *csys,
 /*----------------------------------------------------------------------------*/
 
 static void
-_velocity_full_assembly(const cs_cell_sys_t              *csys,
-                        const cs_cell_mesh_t             *cm,
-                        const cs_cdofb_navsto_builder_t  *nsb,
-                        cs_cdofb_monolithic_t            *sc,
-                        cs_cdofb_vecteq_t                *eqc,
-                        cs_cdo_assembly_t                *asb)
+_velocity_full_assembly(const cs_cell_sys_t             *csys,
+                        const cs_cell_mesh_t            *cm,
+                        const cs_cdofb_navsto_builder_t *nsb,
+                        cs_cdofb_monolithic_t           *sc,
+                        cs_cdofb_vecteq_t               *eqc,
+                        cs_cdo_assembly_t               *asb)
 {
   const short int  n_f = cm->n_fc;
   const cs_cdo_connect_t  *connect = cs_shared_connect;
@@ -606,22 +606,22 @@ _velocity_full_assembly(const cs_cell_sys_t              *csys,
  * \brief Perform the assembly stage for the full saddle-point system when
  *        CDO-Fb schemes are used to the Navier-Stokes equations.
  *
- * \param[in]      csys             pointer to a cs_cell_sys_t structure
- * \param[in]      cm               pointer to a cs_cell_mesh_t structure
- * \param[in]      nsb              pointer to a navsto builder structure
- * \param[in, out] sc               pointer to scheme context structure
- * \param[in, out] eqc              context structure for a vector-valued Fb
- * \param[in, out] asb              pointer to cs_cdo_assembly_t
+ * \param[in]      csys  pointer to a cs_cell_sys_t structure
+ * \param[in]      cm    pointer to a cs_cell_mesh_t structure
+ * \param[in]      nsb   pointer to a navsto builder structure
+ * \param[in, out] sc    pointer to scheme context structure
+ * \param[in, out] eqc   context structure for a vector-valued Fb
+ * \param[in, out] asb   pointer to cs_cdo_assembly_t
  */
 /*----------------------------------------------------------------------------*/
 
 static void
-_full_system_assembly(const cs_cell_sys_t              *csys,
-                      const cs_cell_mesh_t             *cm,
-                      const cs_cdofb_navsto_builder_t  *nsb,
-                      cs_cdofb_monolithic_t            *sc,
-                      cs_cdofb_vecteq_t                *eqc,
-                      cs_cdo_assembly_t                *asb)
+_full_system_assembly(const cs_cell_sys_t             *csys,
+                      const cs_cell_mesh_t            *cm,
+                      const cs_cdofb_navsto_builder_t *nsb,
+                      cs_cdofb_monolithic_t           *sc,
+                      cs_cdofb_vecteq_t               *eqc,
+                      cs_cdo_assembly_t               *asb)
 {
   CS_NO_WARN_IF_UNUSED(asb);
 
@@ -776,12 +776,12 @@ _full_system_assembly(const cs_cell_sys_t              *csys,
  *        treatment for the enforcement of pressure to zero inside the solid
  *        region(s).
  *
- * \param[in]      csys      pointer to a cs_cell_sys_t structure
- * \param[in]      cm        pointer to a cs_cell_mesh_t structure
- * \param[in]      nsb       pointer to a navsto builder structure
- * \param[in, out] sc        pointer to scheme context structure
- * \param[in, out] eqc       context structure for a vector-valued Fb
- * \param[in, out] asb       pointer to cs_cdo_assembly_t
+ * \param[in]      csys  pointer to a cs_cell_sys_t structure
+ * \param[in]      cm    pointer to a cs_cell_mesh_t structure
+ * \param[in]      nsb   pointer to a navsto builder structure
+ * \param[in, out] sc    pointer to scheme context structure
+ * \param[in, out] eqc   context structure for a vector-valued Fb
+ * \param[in, out] asb   pointer to cs_cdo_assembly_t
  */
 /*----------------------------------------------------------------------------*/
 
@@ -914,25 +914,25 @@ _notay_full_system_assembly(const cs_cell_sys_t              *csys,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Build a linear system for Stokes, Oseen or Navier-Stokes in the
- *         steady-state case
+ * \brief Build a linear system for Stokes, Oseen or Navier-Stokes in the
+ *        steady-state case
  *
- * \param[in]      nsp          pointer to a \ref cs_navsto_param_t structure
- * \param[in]      vel_f_pre    velocity face DoFs of the previous time step
- * \param[in]      vel_c_pre    velocity cell DoFs of the previous time step
- * \param[in]      vel_f_nm1    nullptr (for unsteady computations)
- * \param[in]      vel_c_nm1    nullptr (for unsteady computations)
- * \param[in, out] sc           pointer to the scheme context
+ * \param[in]      nsp        pointer to a \ref cs_navsto_param_t structure
+ * \param[in]      vel_f_pre  velocity face DoFs of the previous time step
+ * \param[in]      vel_c_pre  velocity cell DoFs of the previous time step
+ * \param[in]      vel_f_nm1  nullptr (for unsteady computations)
+ * \param[in]      vel_c_nm1  nullptr (for unsteady computations)
+ * \param[in, out] sc         pointer to the scheme context
  */
 /*----------------------------------------------------------------------------*/
 
 static void
-_steady_build(const cs_navsto_param_t      *nsp,
-              const cs_real_t               vel_f_pre[],
-              const cs_real_t               vel_c_pre[],
-              const cs_real_t               vel_f_nm1[],
-              const cs_real_t               vel_c_nm1[],
-              cs_cdofb_monolithic_t        *sc)
+_steady_build(const cs_navsto_param_t *nsp,
+              const cs_real_t          vel_f_pre[],
+              const cs_real_t          vel_c_pre[],
+              const cs_real_t          vel_f_nm1[],
+              const cs_real_t          vel_c_nm1[],
+              cs_cdofb_monolithic_t   *sc)
 {
   CS_NO_WARN_IF_UNUSED(vel_f_nm1);
   CS_NO_WARN_IF_UNUSED(vel_c_nm1);
@@ -967,11 +967,10 @@ _steady_build(const cs_navsto_param_t      *nsp,
                                                                     connect);
     cs_cell_mesh_t  *cm = cs_cdo_local_get_cell_mesh(t_id);
     cs_cdo_assembly_t  *asb = cs_cdo_assembly_get(t_id);
-    cs_hodge_t *diff_hodge         = (mom_eqc->diffusion_hodge == nullptr)
-                                       ? nullptr
-                                       : mom_eqc->diffusion_hodge[t_id];
-    cs_hodge_t                *mass_hodge
-      = (mom_eqc->mass_hodge == nullptr) ? nullptr : mom_eqc->mass_hodge[t_id];
+    cs_hodge_t  *diff_hodge = (mom_eqc->diffusion_hodge == nullptr) ?
+      nullptr : mom_eqc->diffusion_hodge[t_id];
+    cs_hodge_t  *mass_hodge =
+      (mom_eqc->mass_hodge == nullptr) ? nullptr : mom_eqc->mass_hodge[t_id];
 
     cs_cell_sys_t     *csys = nullptr;
     cs_cell_builder_t *cb   = nullptr;
@@ -1122,36 +1121,36 @@ _steady_build(const cs_navsto_param_t      *nsp,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Build a linear system for Stokes, Oseen or Navier-Stokes in the
- *         case of an implicit Euler time scheme
+ * \brief Build a linear system for Stokes, Oseen or Navier-Stokes in the case
+ *        of an implicit Euler time scheme
  *
- * \param[in]      nsp          pointer to a \ref cs_navsto_param_t structure
- * \param[in]      vel_f_n      velocity face DoFs at time step n
- * \param[in]      vel_c_n      velocity cell DoFs at time step n
- * \param[in]      vel_f_nm1    nullptr (not needed for this time scheme)
- * \param[in]      vel_c_nm1    nullptr (not needed for this time scheme)
- * \param[in, out] sc           pointer to the scheme context
+ * \param[in]      nsp        pointer to a \ref cs_navsto_param_t structure
+ * \param[in]      vel_f_n    velocity face DoFs at time step n
+ * \param[in]      vel_c_n    velocity cell DoFs at time step n
+ * \param[in]      vel_f_nm1  nullptr (not needed for this time scheme)
+ * \param[in]      vel_c_nm1  nullptr (not needed for this time scheme)
+ * \param[in, out] sc         pointer to the scheme context
  */
 /*----------------------------------------------------------------------------*/
 
 static void
-_implicit_euler_build(const cs_navsto_param_t  *nsp,
-                      const cs_real_t           vel_f_n[],
-                      const cs_real_t           vel_c_n[],
-                      const cs_real_t           vel_f_nm1[],
-                      const cs_real_t           vel_c_nm1[],
-                      cs_cdofb_monolithic_t    *sc)
+_implicit_euler_build(const cs_navsto_param_t *nsp,
+                      const cs_real_t          vel_f_n[],
+                      const cs_real_t          vel_c_n[],
+                      const cs_real_t          vel_f_nm1[],
+                      const cs_real_t          vel_c_nm1[],
+                      cs_cdofb_monolithic_t   *sc)
 {
   CS_NO_WARN_IF_UNUSED(vel_f_nm1);
   CS_NO_WARN_IF_UNUSED(vel_c_nm1);
 
   /* Retrieve high-level structures */
 
-  cs_navsto_monolithic_t *cc = (cs_navsto_monolithic_t *)sc->coupling_context;
+  cs_navsto_monolithic_t  *cc = (cs_navsto_monolithic_t *)sc->coupling_context;
   cs_equation_t  *mom_eq = cc->momentum;
   cs_cdofb_vecteq_t  *mom_eqc= (cs_cdofb_vecteq_t *)mom_eq->scheme_context;
-  cs_equation_param_t *mom_eqp = mom_eq->param;
-  cs_equation_builder_t *mom_eqb = mom_eq->builder;
+  cs_equation_param_t  *mom_eqp = mom_eq->param;
+  cs_equation_builder_t  *mom_eqb = mom_eq->builder;
 
   /* Retrieve shared structures */
 
@@ -1177,11 +1176,10 @@ _implicit_euler_build(const cs_navsto_param_t  *nsp,
                                                                     connect);
     cs_cell_mesh_t  *cm = cs_cdo_local_get_cell_mesh(t_id);
     cs_cdo_assembly_t  *asb = cs_cdo_assembly_get(t_id);
-    cs_hodge_t *diff_hodge         = (mom_eqc->diffusion_hodge == nullptr)
-                                       ? nullptr
-                                       : mom_eqc->diffusion_hodge[t_id];
-    cs_hodge_t                *mass_hodge
-      = (mom_eqc->mass_hodge == nullptr) ? nullptr : mom_eqc->mass_hodge[t_id];
+    cs_hodge_t  *diff_hodge = (mom_eqc->diffusion_hodge == nullptr) ?
+      nullptr : mom_eqc->diffusion_hodge[t_id];
+    cs_hodge_t  *mass_hodge =
+      (mom_eqc->mass_hodge == nullptr) ? nullptr : mom_eqc->mass_hodge[t_id];
 
     cs_cell_sys_t     *csys = nullptr;
     cs_cell_builder_t *cb   = nullptr;

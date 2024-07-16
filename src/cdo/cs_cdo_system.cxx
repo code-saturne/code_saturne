@@ -1850,17 +1850,17 @@ cs_cdo_system_helper_init_system(cs_cdo_system_helper_t    *sh,
 
     case CS_CDO_SYSTEM_BLOCK_DEFAULT:
       {
-      cs_cdo_system_dblock_t *db = (cs_cdo_system_dblock_t *)b->block_pointer;
+        cs_cdo_system_dblock_t *db = (cs_cdo_system_dblock_t *)b->block_pointer;
 
-      /* Matrix */
+        /* Matrix */
 
-      if (db->matrix != nullptr) {
-        cs_matrix_release_coefficients(db->matrix);
-        cs_matrix_destroy(&(db->matrix));
-      }
+        if (db->matrix != nullptr) {
+          cs_matrix_release_coefficients(db->matrix);
+          cs_matrix_destroy(&(db->matrix));
+        }
 
-      assert(db->matrix_structure != nullptr);
-      db->matrix = cs_matrix_create(db->matrix_structure);
+        assert(db->matrix_structure != nullptr);
+        db->matrix = cs_matrix_create(db->matrix_structure);
 
 #if defined(HAVE_HYPRE)
         if (b->info.matrix_class == CS_CDO_SYSTEM_MATRIX_HYPRE) {
@@ -1896,69 +1896,69 @@ cs_cdo_system_helper_init_system(cs_cdo_system_helper_t    *sh,
 
     case CS_CDO_SYSTEM_BLOCK_SPLIT:
       {
-      cs_cdo_system_sblock_t *sb = (cs_cdo_system_sblock_t *)b->block_pointer;
-      assert(sb->matrices != nullptr);
-      assert(sb->mav_array != nullptr);
+        cs_cdo_system_sblock_t *sb = (cs_cdo_system_sblock_t *)b->block_pointer;
+        assert(sb->matrices != nullptr);
+        assert(sb->mav_array != nullptr);
 
-      for (int k = 0; k < sb->n_matrices; k++) {
+        for (int k = 0; k < sb->n_matrices; k++) {
 
-        /* Matrices */
+          /* Matrices */
 
-        if (sb->matrices[k] != nullptr) {
-          cs_matrix_release_coefficients(sb->matrices[k]);
-          cs_matrix_destroy(&(sb->matrices[k]));
-        }
+          if (sb->matrices[k] != nullptr) {
+            cs_matrix_release_coefficients(sb->matrices[k]);
+            cs_matrix_destroy(&(sb->matrices[k]));
+          }
 
-        assert(sb->matrix_structure != nullptr);
-        sb->matrices[k] = cs_matrix_create(sb->matrix_structure);
+          assert(sb->matrix_structure != nullptr);
+          sb->matrices[k] = cs_matrix_create(sb->matrix_structure);
 
 #if defined(HAVE_HYPRE)
-        if (b->info.matrix_class == CS_CDO_SYSTEM_MATRIX_HYPRE) {
+          if (b->info.matrix_class == CS_CDO_SYSTEM_MATRIX_HYPRE) {
 
-          int device_id = cs_get_device_id();
-          int use_device = (device_id < 0) ? 0 : 1;
+            int device_id = cs_get_device_id();
+            int use_device = (device_id < 0) ? 0 : 1;
 
-          cs_matrix_set_type_hypre(sb->matrices[k], use_device);
+            cs_matrix_set_type_hypre(sb->matrices[k], use_device);
 
-        }
+          }
 #endif
           /* Matrix assembler values */
 
-        if (sb->mav_array[k] != nullptr)
-          bft_error(__FILE__, __LINE__, 0,
-                    "%s: Matrix assembler values has not been finalized.\n",
-                    __func__);
+          if (sb->mav_array[k] != nullptr)
+            bft_error(__FILE__, __LINE__, 0,
+                      "%s: Matrix assembler values has not been finalized.\n",
+                      __func__);
 
-        sb->mav_array[k]
-          = cs_matrix_assembler_values_init(sb->matrices[k], 1, 1);
+          sb->mav_array[k]
+            = cs_matrix_assembler_values_init(sb->matrices[k], 1, 1);
 
-      } /* Loop on each matrix */
+        } /* Loop on each matrix */
       }
       break;
 
     case CS_CDO_SYSTEM_BLOCK_EXT:
       {
-      cs_cdo_system_xblock_t *xb = (cs_cdo_system_xblock_t *)b->block_pointer;
-      assert(xb->matrix_structure != nullptr);
+        cs_cdo_system_xblock_t *xb = (cs_cdo_system_xblock_t *)b->block_pointer;
+        assert(xb->matrix_structure != nullptr);
 
-      /* Matrix */
+        /* Matrix */
 
-      if (xb->matrix != nullptr) {
-        cs_matrix_release_coefficients(xb->matrix);
-        cs_matrix_destroy(&(xb->matrix));
-      }
+        if (xb->matrix != nullptr) {
+          cs_matrix_release_coefficients(xb->matrix);
+          cs_matrix_destroy(&(xb->matrix));
+        }
 
-      assert(xb->matrix_structure != nullptr);
-      xb->matrix = cs_matrix_create(xb->matrix_structure);
+        assert(xb->matrix_structure != nullptr);
+        xb->matrix = cs_matrix_create(xb->matrix_structure);
 
-      /* Matrix assembler values */
+        /* Matrix assembler values */
 
-      if (xb->mav != nullptr)
-        bft_error(__FILE__, __LINE__, 0,
-                  "%s: Matrix assembler values has not been finalized.\n",
-                  __func__);
+        if (xb->mav != nullptr)
+          bft_error(__FILE__, __LINE__, 0,
+                    "%s: Matrix assembler values has not been finalized.\n",
+                    __func__);
 
-      xb->mav = cs_matrix_assembler_values_init(xb->matrix, 1, 1);
+        xb->mav = cs_matrix_assembler_values_init(xb->matrix, 1, 1);
       }
       break;
 

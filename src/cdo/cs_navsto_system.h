@@ -405,7 +405,7 @@ cs_navsto_system_update_model(bool   with_thermal);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Allocate and initialize the Navier-Stokes (NS) system
+ * \brief Allocate and initialize the Navier-Stokes (NS) system
  *
  * \param[in] boundaries     pointer to the domain boundaries
  * \param[in] model          type of model related to the NS system
@@ -418,11 +418,11 @@ cs_navsto_system_update_model(bool   with_thermal);
 /*----------------------------------------------------------------------------*/
 
 cs_navsto_system_t *
-cs_navsto_system_activate(const cs_boundary_t           *boundaries,
-                          cs_navsto_param_model_t        model,
-                          cs_navsto_param_model_flag_t   model_flag,
-                          cs_navsto_param_coupling_t     algo_coupling,
-                          cs_navsto_param_post_flag_t    post_flag);
+cs_navsto_system_activate(const cs_boundary_t          *boundaries,
+                          cs_navsto_param_model_t       model,
+                          cs_navsto_param_model_flag_t  model_flag,
+                          cs_navsto_param_coupling_t    algo_coupling,
+                          cs_navsto_param_post_flag_t   post_flag);
 
 /*----------------------------------------------------------------------------*/
 /*!

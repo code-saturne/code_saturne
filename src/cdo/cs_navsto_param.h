@@ -632,38 +632,38 @@ cs_navsto_param_is_steady(const cs_navsto_param_t       *nsp)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Create a new structure to store all numerical parameters related
- *         to the resolution of the Navier-Stokes (NS) system
+ * \brief Create a new structure to store all numerical parameters related
+ *        to the resolution of the Navier-Stokes (NS) system
  *
- * \param[in] boundaries      pointer to a cs_boundary_t structure
- * \param[in] model           type of model related to the NS system
- * \param[in] model_flag      additional high-level model options
- * \param[in] algo_coupling   algorithm used for solving the NS system
- * \param[in] post_flag       predefined post-processings options
+ * \param[in] boundaries     pointer to a cs_boundary_t structure
+ * \param[in] model          type of model related to the NS system
+ * \param[in] model_flag     additional high-level model options
+ * \param[in] algo_coupling  algorithm used for solving the NS system
+ * \param[in] post_flag      predefined post-processings options
  *
  * \return a pointer to a new allocated structure
  */
 /*----------------------------------------------------------------------------*/
 
 cs_navsto_param_t *
-cs_navsto_param_create(const cs_boundary_t            *boundaries,
-                       cs_navsto_param_model_t         model,
-                       cs_navsto_param_model_flag_t    model_flag,
-                       cs_navsto_param_coupling_t      algo_coupling,
-                       cs_navsto_param_post_flag_t     post_flag);
+cs_navsto_param_create(const cs_boundary_t          *boundaries,
+                       cs_navsto_param_model_t       model,
+                       cs_navsto_param_model_flag_t  model_flag,
+                       cs_navsto_param_coupling_t    algo_coupling,
+                       cs_navsto_param_post_flag_t   post_flag);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Free a \ref cs_navsto_param_t structure
+ * \brief Free a \ref cs_navsto_param_t structure
  *
- * \param[in, out]  param    pointer to a \ref cs_navsto_param_t structure
+ * \param[in, out] param  pointer to a \ref cs_navsto_param_t structure
  *
  * \return a NULL pointer
  */
 /*----------------------------------------------------------------------------*/
 
 cs_navsto_param_t *
-cs_navsto_param_free(cs_navsto_param_t    *param);
+cs_navsto_param_free(cs_navsto_param_t *param);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -897,29 +897,29 @@ cs_navsto_add_pressure_ic_by_analytic(cs_navsto_param_t      *nsp,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Add the definition of boundary conditions related to a fixed wall
- *         into the set of parameters for the management of the Navier-Stokes
- *         system of equations
+ * \brief Add the definition of boundary conditions related to a fixed wall
+ *        into the set of parameters for the management of the Navier-Stokes
+ *        system of equations
  *
- * \param[in]      nsp       pointer to a \ref cs_navsto_param_t structure
+ * \param[in] nsp  pointer to a \ref cs_navsto_param_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_navsto_set_fixed_walls(cs_navsto_param_t    *nsp);
+cs_navsto_set_fixed_walls(cs_navsto_param_t *nsp);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Add the definition of boundary conditions related to a symmetry
- *         into the set of parameters for the management of the Navier-Stokes
- *         system of equations
+ * \brief Add the definition of boundary conditions related to a symmetry
+ *        into the set of parameters for the management of the Navier-Stokes
+ *        system of equations
  *
- * \param[in]      nsp       pointer to a \ref cs_navsto_param_t structure
+ * \param[in] nsp  pointer to a \ref cs_navsto_param_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_navsto_set_symmetries(cs_navsto_param_t    *nsp);
+cs_navsto_set_symmetries(cs_navsto_param_t *nsp);
 
 /*----------------------------------------------------------------------------*/
 /*!

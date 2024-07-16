@@ -146,18 +146,19 @@ _add_f2e_entry(cs_lnum_t             shift,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Define the face -> edges connectivity which is stored in a
- *         cs_adjacency_t structure
+ * \brief Define the face -> edges connectivity which is stored in a
+ *        cs_adjacency_t structure
  *
- * \param[in]  m      pointer to a cs_mesh_t structure
- * \param[in]  v2v    pointer to the cs_adjacency_t structure
+ * \param[in] m    pointer to a cs_mesh_t structure
+ * \param[in] v2v  pointer to the cs_adjacency_t structure
  *
  * \return a pointer to a new allocated cs_adjacency_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 static cs_adjacency_t *
-_build_f2e_connect(const cs_mesh_t *m, const cs_adjacency_t *v2v)
+_build_f2e_connect(const cs_mesh_t      *m,
+                   const cs_adjacency_t *v2v)
 {
   assert(v2v != nullptr);
 
@@ -187,7 +188,7 @@ _build_f2e_connect(const cs_mesh_t *m, const cs_adjacency_t *v2v)
 
   /* Interior faces */
 
-#pragma omp parallel for if (n_i_faces > CS_THR_MIN)
+# pragma omp parallel for if (n_i_faces > CS_THR_MIN)
   for (cs_lnum_t i = 0; i < n_i_faces; i++) {
 
     const cs_lnum_t  s       = m->i_face_vtx_idx[i];
@@ -204,7 +205,7 @@ _build_f2e_connect(const cs_mesh_t *m, const cs_adjacency_t *v2v)
 
   /* Boundary faces */
 
-#pragma omp parallel for if (n_b_faces > CS_THR_MIN)
+# pragma omp parallel for if (n_b_faces > CS_THR_MIN)
   for (cs_lnum_t i = 0; i < n_b_faces; i++) {
 
     const cs_lnum_t  s       = m->b_face_vtx_idx[i];
@@ -225,10 +226,10 @@ _build_f2e_connect(const cs_mesh_t *m, const cs_adjacency_t *v2v)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Define the edge -> vertices connectivity which is stored in a
- *         cs_adjacency_t structure
+ * \brief Define the edge -> vertices connectivity which is stored in a
+ *        cs_adjacency_t structure
  *
- * \param[in]  v2v   pointer to a cs_adjacency_t structure
+ * \param[in] v2v  pointer to a cs_adjacency_t structure
  *
  * \return a pointer to a new allocated cs_adjacency_t structure
  */
@@ -247,7 +248,7 @@ _build_e2v_connect(const cs_adjacency_t *v2v)
 
   /* Fill arrays */
 
-#pragma omp parallel for if (n_edges > CS_THR_MIN)
+# pragma omp parallel for if (n_edges > CS_THR_MIN)
   for (cs_lnum_t v1_id = 0; v1_id < v2v->n_elts; v1_id++) {
     for (cs_lnum_t j = v2v->idx[v1_id]; j < v2v->idx[v1_id + 1]; j++) {
 
@@ -267,9 +268,9 @@ _build_e2v_connect(const cs_adjacency_t *v2v)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Build a connectivity vertex -> vertices through cells
+ * \brief Build a connectivity vertex -> vertices through cells
  *
- * \param[in]  connect       pointer to a cs_cdo_connect_t structure
+ * \param[in] connect  pointer to a cs_cdo_connect_t structure
  *
  * \return a pointer to a new allocated cs_adjacency_t structure
  */
@@ -303,9 +304,9 @@ _build_v2v_through_cell(const cs_cdo_connect_t *connect)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Build a connectivity face -> faces through cells
+ * \brief Build a connectivity face -> faces through cells
  *
- * \param[in]  connect       pointer to a cs_cdo_connect_t structure
+ * \param[in] connect  pointer to a cs_cdo_connect_t structure
  *
  * \return a pointer to a new allocated cs_adjacency_t structure
  */
@@ -333,10 +334,10 @@ _build_f2f_through_cell(const cs_cdo_connect_t *connect)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Build an exteded connectivity face -> faces through edges
- *         + same directions
+ * \brief Build an exteded connectivity face -> faces through edges
+ *        + same directions
  *
- * \param[in]  connect       pointer to a cs_cdo_connect_t structure
+ * \param[in] connect  pointer to a cs_cdo_connect_t structure
  *
  * \return a pointer to a new allocated cs_adjacency_t structure
  */
@@ -375,9 +376,9 @@ _build_f2f_ed_through_edges(const cs_cdo_connect_t *connect)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Build an exteded connectivity face -> faces through cells + edges
+ * \brief Build an exteded connectivity face -> faces through cells + edges
  *
- * \param[in]  connect       pointer to a cs_cdo_connect_t structure
+ * \param[in] connect  pointer to a cs_cdo_connect_t structure
  *
  * \return a pointer to a new allocated cs_adjacency_t structure
  */
@@ -412,9 +413,9 @@ _build_f2xf_through_cell(const cs_cdo_connect_t *connect)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Build a connectivity edge -> edges through cells
+ * \brief Build a connectivity edge -> edges through cells
  *
- * \param[in]  connect       pointer to a cs_cdo_connect_t structure
+ * \param[in] connect  pointer to a cs_cdo_connect_t structure
  *
  * \return a pointer to a new allocated cs_adjacency_t structure
  */
@@ -450,13 +451,14 @@ _build_e2e_through_cell(const cs_cdo_connect_t *connect)
  * \brief Compute max number of entities by cell and the max range between
  *        the min. id and the max.id for edges and vertices
  *
- * \param[in]       m         pointer to a cs_mesh_t structure
- * \param[in, out]  connect   pointer to the cs_cdo_connect_t struct.
+ * \param[in]      m        pointer to a cs_mesh_t structure
+ * \param[in, out] connect  pointer to the cs_cdo_connect_t struct.
  */
 /*----------------------------------------------------------------------------*/
 
 static void
-_compute_max_ent(const cs_mesh_t *m, cs_cdo_connect_t *connect)
+_compute_max_ent(const cs_mesh_t  *m,
+                 cs_cdo_connect_t *connect)
 {
   assert(connect != nullptr && m != nullptr);
   assert(connect->c2v != nullptr && connect->c2e != nullptr
@@ -467,7 +469,7 @@ _compute_max_ent(const cs_mesh_t *m, cs_cdo_connect_t *connect)
 
   short int *v_count = nullptr;
   BFT_MALLOC(v_count, n_vertices, short int);
-#pragma omp parallel for if (n_vertices > CS_THR_MIN)
+# pragma omp parallel for if (n_vertices > CS_THR_MIN)
   for (cs_lnum_t i = 0; i < n_vertices; i++)
     v_count[i] = 0;
 
@@ -607,17 +609,18 @@ _compute_max_ent(const cs_mesh_t *m, cs_cdo_connect_t *connect)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Associate to each cell a type of element (fvm_element_t)
+ * \brief Associate to each cell a type of element (fvm_element_t)
  *
- * \param[in]  c_id      cell id
- * \param[in]  connect   pointer to a cs_cdo_connect_t struct.
+ * \param[in] c_id     cell id
+ * \param[in] connect  pointer to a cs_cdo_connect_t struct.
  *
- * \return  type of element for this cell
+ * \return type of element for this cell
  */
 /*----------------------------------------------------------------------------*/
 
 static fvm_element_t
-_get_cell_type(cs_lnum_t c_id, const cs_cdo_connect_t *connect)
+_get_cell_type(cs_lnum_t               c_id,
+               const cs_cdo_connect_t *connect)
 {
   fvm_element_t ret_type = FVM_CELL_POLY; /* Default value */
 
@@ -686,12 +689,12 @@ _get_cell_type(cs_lnum_t c_id, const cs_cdo_connect_t *connect)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Associate a flag to each cell.
+ * \brief Associate a flag to each cell.
  *
- * \param[in, out]  connect           pointer to a cs_cdo_connect_t structure
- * \param[in]       eb_scheme_flag    metadata for Edge-based schemes
- * \param[in]       vb_scheme_flag    metadata for Vertex-based schemes
- * \param[in]       vcb_scheme_flag   metadata for Vertex+Cell-based schemes
+ * \param[in, out] connect          pointer to a cs_cdo_connect_t structure
+ * \param[in]      eb_scheme_flag   metadata for Edge-based schemes
+ * \param[in]      vb_scheme_flag   metadata for Vertex-based schemes
+ * \param[in]      vcb_scheme_flag  metadata for Vertex+Cell-based schemes
  */
 /*----------------------------------------------------------------------------*/
 
@@ -808,11 +811,11 @@ _build_cell_flag(cs_cdo_connect_t *connect,
  *        \ref cs_interface_set_t structure for schemes with DoFs at edges
  *        otherwise set the number of global edges
  *
- * \param[in]       mesh            pointer to a cs_mesh_t structure
- * \param[in]       connect         pointer to a cs_cdo_connect_t structure
- * \param[in]       eb_scheme_flag  metadata for edge-based schemes
- * \param[in, out]  p_ifs           pointer of pointer to a cs_interface_set_t
- * \param[in, out]  p_rs            pointer of pointer to a cs_range_set_t
+ * \param[in]      mesh            pointer to a cs_mesh_t structure
+ * \param[in]      connect         pointer to a cs_cdo_connect_t structure
+ * \param[in]      eb_scheme_flag  metadata for edge-based schemes
+ * \param[in, out] p_ifs           pointer of pointer to a cs_interface_set_t
+ * \param[in, out] p_rs            pointer of pointer to a cs_range_set_t
  */
 /*----------------------------------------------------------------------------*/
 
