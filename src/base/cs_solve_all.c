@@ -280,10 +280,6 @@ _solve_buoyancy_energy_scalar_equation(const int        n_scal,
                "  SOLVING ENERGY AND SCALARS EQUATIONS\n"
                "  ====================================\n");
 
-  // Enable solid cells in fluid_solid mode
-  if (cs_glob_velocity_pressure_model->fluid_solid)
-    cs_porous_model_set_has_disable_flag(0);
-
   // Update buoyant scalar(s)
   cs_solve_transported_variables(iterns);
 
@@ -394,10 +390,6 @@ _solve_most(const int        n_var,
   const cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
 
   cs_field_t *th_f = cs_thermal_model_field();
-  int  _italim = *italim;
-  int  _itrfin = *itrfin;
-  int  _ineefl = *ineefl;
-  int  _itrfup = *itrfup;
   bool _must_return = *must_return;
 
   int *isostd = NULL;
@@ -410,16 +402,16 @@ _solve_most(const int        n_var,
   /* Loop on cs_solve_navier_stokes for speed/pressure coupling
    * we stop at ntrup  or when we have converged itrfup equal zero
    * indicates that we need to redo an iteration for Syrthes, T1D or radiation. */
-  _itrfup = 1;
+  *itrfup = 1;
 
   if (   cs_glob_time_scheme->isno2t > 0
       || cs_glob_velocity_pressure_param->nterup > 1)
     if (   cs_syr_coupling_n_couplings() > 0
         || cs_get_glob_1d_wall_thermal()->nfpt1t > 0
         || cs_glob_rad_transfer_params->type > 0)
-      _itrfup = 0;
+      *itrfup = 0;
 
-  if (_italim == 1)
+  if (*italim == 1)
     cs_field_build_bc_codes_all();
 
   if (isvhb > -1)
@@ -445,10 +437,10 @@ _solve_most(const int        n_var,
                                       iterns,
                                       isvhb,
                                       itrale,
-                                      _italim,
-                                      _itrfin,
-                                      _ineefl,
-                                      _itrfup,
+                                      *italim,
+                                      *itrfin,
+                                      *ineefl,
+                                      *itrfup,
                                       isostd,
                                       visvdr,
                                       hbord,
@@ -487,7 +479,7 @@ _solve_most(const int        n_var,
 
     /* After coefficient are computed, we can easily deduce the terms
        to send for boundaries coupling (such as with Syrthes) */
-    if (_itrfin == 1 && _itrfup == 1) {
+    if (*itrfin == 1 && *itrfup == 1) {
       if (isvhb > -1)
         cs_syr_coupling_send_boundary(hbord, theipb);
 
@@ -499,7 +491,7 @@ _solve_most(const int        n_var,
           cs_f_cou1di();
       }
 
-      // 1-D thif ermal model coupling with condensation
+      // 1-D thermal model coupling with condensation
       if (nftcdt > 0 && wall_cond->nztag1d == 1)
         cs_wall_condensation_1d_thermal_compute_temperature();
 
@@ -515,7 +507,7 @@ _solve_most(const int        n_var,
      * (New algorithm. the old one is in cs_boundary_condition_set_coeffs)
      * In ALE, this computation is done only for the first step */
 
-    if (_italim == 1) {
+    if (*italim == 1) {
       /*  Wall distance is computed if:
        *   - it has to be updated
        *   - we need it
@@ -593,8 +585,8 @@ _solve_most(const int        n_var,
          * and that we are at the last iteration in ALE!
 
          *...then, we reset the convergence indicators to zero */
-        if (_itrfup == 0 && _itrfin == 1) {
-          _itrfup = 1;
+        if (*itrfup == 0 && *itrfin == 1) {
+          *itrfup = 1;
           icvrge = 0;
           iterns--;
         }
@@ -602,7 +594,7 @@ _solve_most(const int        n_var,
           inslst = 1;
 
         // For explicit mass flux
-        if ((cs_glob_time_scheme->istmpf == 0) && (inslst == 0))
+        if (cs_glob_time_scheme->istmpf == 0 && inslst == 0)
           cs_f_schtmp(n_scal, 3);
       }
 
@@ -624,10 +616,6 @@ _solve_most(const int        n_var,
 
   cs_courant_fourier_compute();
 
-  *italim = _italim;
-  *itrfin = _itrfin;
-  *ineefl = _ineefl;
-  *itrfup = _itrfup;
   *must_return = _must_return;
 
   BFT_FREE(hbord);
@@ -1058,7 +1046,7 @@ cs_solve_all(int  itrale)
 
   if (   cs_glob_ale >  CS_ALE_NONE
       && itrale > nalinf
-      && cs_glob_mobile_structures_i_max > 0) {
+      && cs_glob_mobile_structures_i_max > 1) {
     /* Indicate if we need to return to the initial state at the end
        of an  ALE iteration. */
     ineefl = 1;
@@ -1070,56 +1058,54 @@ cs_solve_all(int  itrale)
   }
 
   bool must_return = false;
+  bool need_new_solve = true;
 
-  _solve_most(n_var,
-              n_scal,
-              isvhb,
-              itrale,
-              &italim,
-              &itrfin,
-              &ineefl,
-              &itrfup,
-              &must_return,
-              scalar_idx,
-              ckupdc,
-              htot_cond);
+  while (need_new_solve) {
 
-  if (must_return) {
-    BFT_FREE(htot_cond);
-    BFT_FREE(ckupdc);
-    return;
-  }
+    _solve_most(n_var,
+                n_scal,
+                isvhb,
+                itrale,
+                &italim,
+                &itrfin,
+                &ineefl,
+                &itrfup,
+                &must_return,
+                scalar_idx,
+                ckupdc,
+                htot_cond);
 
-  /* Computation on non-frozen velocity field, continued */
+    need_new_solve = false;
 
-  if (cs_glob_time_scheme->iccvfg == 0) {
+    if (must_return) {
+      BFT_FREE(htot_cond);
+      BFT_FREE(ckupdc);
+      return;
+    }
 
-    /* Movement of structures in ALE and test implicit loop */
+    /* Computation on non-frozen velocity field, continued */
 
-    if (cs_glob_ale > CS_ALE_NONE) {
+    if (   cs_glob_time_scheme->iccvfg == 0
+        && cs_glob_ale > CS_ALE_NONE) {
+
+      /* Movement of structures in ALE and test implicit loop */
 
       const int n_structs = cs_mobile_structures_get_n_structures();
       if (n_structs > 0 || nbaste > 0) {
         cs_mobile_structures_displacement(itrale, italim, &itrfin);
-
-        while (itrfin != -1) {
+        if (itrfin != -1) {
           italim++;
-          _solve_most(n_var,
-                      n_scal,
-                      isvhb,
-                      itrale,
-                      &italim,
-                      &itrfin,
-                      &ineefl,
-                      &itrfup,
-                      &must_return,
-                      scalar_idx,
-                      ckupdc,
-                      htot_cond);
+          need_new_solve = true;
         }
       }
 
     }
+
+  } // End loop on need_new_solve (_solve_most)
+
+  /* Computation on non-frozen velocity field, continued */
+
+  if (cs_glob_time_scheme->iccvfg == 0) {
 
     // We pass in cs_f_schtmp only in explicit
     if (cs_glob_time_scheme->istmpf == 0)
@@ -1133,6 +1119,10 @@ cs_solve_all(int  itrale)
   } // end if iccvfg
 
   BFT_FREE(htot_cond);
+
+  // Re Enable solid cells in fluid_solid mode
+  if (cs_glob_velocity_pressure_model->fluid_solid)
+    cs_porous_model_set_has_disable_flag(0);
 
   /* Solve scalars
      ------------- */
