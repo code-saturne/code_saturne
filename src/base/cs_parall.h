@@ -744,6 +744,76 @@ cs_parall_sum_scalars
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Sum strided-values of a given datatype on all default communicator
+ *        processes.
+ *
+ * \tparam T      : datatype
+ * \tparam stride : stride/dimension of values
+ */
+/*----------------------------------------------------------------------------*/
+
+template <int Stride, typename T, typename... Vals>
+static void
+cs_parall_sum_strided
+(
+  T         First[], /*!<[in,out] First scalar to update */
+  Vals&&... values   /*!<[in,out] Additional scalars to update */
+)
+{
+  if (cs_glob_n_ranks == 1)
+    return;
+
+  /* Count number of values */
+  constexpr size_t n_vals = sizeof...(Vals);
+
+  /* Set datatype for global communication */
+  cs_datatype_t datatype = CS_DATATYPE_NULL;
+
+  if (typeid(T) ==  typeid(int))
+    datatype = CS_INT_TYPE;
+  else if (typeid(T) ==  typeid(cs_lnum_t))
+    datatype = CS_LNUM_TYPE;
+  else if (typeid(T) ==  typeid(cs_gnum_t))
+    datatype = CS_GNUM_TYPE;
+  else if (typeid(T) == typeid(cs_flag_t))
+    datatype = CS_UINT16;
+  else if (typeid(T) ==  typeid(cs_real_t))
+    datatype = CS_REAL_TYPE;
+  else if (typeid(T) ==  typeid(double))
+    datatype = CS_DOUBLE;
+  else if (typeid(T) == typeid(cs_coord_t))
+    datatype = CS_COORD_TYPE;
+
+  /* Temporary work array and parallel sum */
+  if (n_vals == 0)
+    cs_parall_sum(Stride, datatype, First);
+  else {
+    /* Unpack values */
+    T *_values[] = {values ...};
+
+    constexpr size_t work_size = (n_vals + 1) * Stride;
+
+    T w[work_size];
+    for (int i = 0; i < Stride; i++)
+      w[i] = First[i];
+
+    for (int i = 0; i < n_vals; i++)
+      for (int j = 0; j < Stride; j++)
+        w[(i+1)*Stride + j] = _values[i][j];
+
+    cs_parall_sum(work_size, datatype, w);
+
+    for (int i = 0; i < Stride; i++)
+      First[i] = w[i];
+
+    for (int i = 0; i < n_vals; i++)
+      for (int j = 0; j < Stride; j++)
+        _values[i][j] = w[(i+1)*Stride + j];
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Maximum values of a given datatype on all default
  *        communicator processes.
  *
@@ -801,6 +871,76 @@ cs_parall_max_scalars
     First = w[0];
     for (int i = 0; i < n_vals; i++)
       *(_values[i]) = w[i+1];
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Maximum values of a given datatype on all default
+ *        communicator processes.
+ *
+ * \tparam T      : datatype
+ * \tparam stride : stride/dimension of values
+ */
+/*----------------------------------------------------------------------------*/
+
+template <int Stride, typename T, typename... Vals>
+static void
+cs_parall_max_strided
+(
+  T         First[], /*!<[in,out] First scalar to update */
+  Vals&&... values   /*!<[in,out] Additional scalars to update */
+)
+{
+  if (cs_glob_n_ranks == 1)
+    return;
+
+  /* Count number of values */
+  constexpr size_t n_vals = sizeof...(Vals);
+
+  /* Set datatype for global communication */
+  cs_datatype_t datatype = CS_DATATYPE_NULL;
+
+  if (typeid(T) ==  typeid(int))
+    datatype = CS_INT_TYPE;
+  else if (typeid(T) ==  typeid(cs_lnum_t))
+    datatype = CS_LNUM_TYPE;
+  else if (typeid(T) ==  typeid(cs_gnum_t))
+    datatype = CS_GNUM_TYPE;
+  else if (typeid(T) == typeid(cs_flag_t))
+    datatype = CS_UINT16;
+  else if (typeid(T) ==  typeid(cs_real_t))
+    datatype = CS_REAL_TYPE;
+  else if (typeid(T) ==  typeid(double))
+    datatype = CS_DOUBLE;
+  else if (typeid(T) == typeid(cs_coord_t))
+    datatype = CS_COORD_TYPE;
+
+  /* Temporary work array and parallel sum */
+  if (n_vals == 0)
+    cs_parall_max(Stride, datatype, First);
+  else {
+    /* Unpack values */
+    T *_values[] = {values ...};
+
+    constexpr size_t work_size = (n_vals + 1) * Stride;
+
+    T w[work_size];
+    for (int i = 0; i < Stride; i++)
+      w[i] = First[i];
+
+    for (int i = 0; i < n_vals; i++)
+      for (int j = 0; j < Stride; j++)
+        w[(i+1)*Stride + j] = _values[i][j];
+
+    cs_parall_max(work_size, datatype, w);
+
+    for (int i = 0; i < Stride; i++)
+      First[i] = w[i];
+
+    for (int i = 0; i < n_vals; i++)
+      for (int j = 0; j < Stride; j++)
+        _values[i][j] = w[(i+1)*Stride + j];
   }
 }
 
@@ -864,6 +1004,76 @@ cs_parall_min_scalars
     First = w[0];
     for (int i = 0; i < n_vals; i++)
       *(_values[i]) = w[i + 1];
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Minimum values of a given datatype on all default
+ *        communicator processes.
+ *
+ * \tparam T      : datatype
+ * \tparam stride : stride/dimension of values
+ */
+/*----------------------------------------------------------------------------*/
+
+template <int Stride, typename T, typename... Vals>
+static void
+cs_parall_min_strided
+(
+  T         First[], /*!<[in,out] First scalar to update */
+  Vals&&... values   /*!<[in,out] Additional scalars to update */
+)
+{
+  if (cs_glob_n_ranks == 1)
+    return;
+
+  /* Count number of values */
+  constexpr size_t n_vals = sizeof...(Vals);
+
+  /* Set datatype for global communication */
+  cs_datatype_t datatype = CS_DATATYPE_NULL;
+
+  if (typeid(T) ==  typeid(int))
+    datatype = CS_INT_TYPE;
+  else if (typeid(T) ==  typeid(cs_lnum_t))
+    datatype = CS_LNUM_TYPE;
+  else if (typeid(T) ==  typeid(cs_gnum_t))
+    datatype = CS_GNUM_TYPE;
+  else if (typeid(T) == typeid(cs_flag_t))
+    datatype = CS_UINT16;
+  else if (typeid(T) ==  typeid(cs_real_t))
+    datatype = CS_REAL_TYPE;
+  else if (typeid(T) ==  typeid(double))
+    datatype = CS_DOUBLE;
+  else if (typeid(T) == typeid(cs_coord_t))
+    datatype = CS_COORD_TYPE;
+
+  /* Temporary work array and parallel sum */
+  if (n_vals == 0)
+    cs_parall_min(Stride, datatype, First);
+  else {
+    /* Unpack values */
+    T *_values[] = {values ...};
+
+    constexpr size_t work_size = (n_vals + 1) * Stride;
+
+    T w[work_size];
+    for (int i = 0; i < Stride; i++)
+      w[i] = First[i];
+
+    for (int i = 0; i < n_vals; i++)
+      for (int j = 0; j < Stride; j++)
+        w[(i+1)*Stride + j] = _values[i][j];
+
+    cs_parall_min(work_size, datatype, w);
+
+    for (int i = 0; i < Stride; i++)
+      First[i] = w[i];
+
+    for (int i = 0; i < n_vals; i++)
+      for (int j = 0; j < Stride; j++)
+        _values[i][j] = w[(i+1)*Stride + j];
   }
 }
 
