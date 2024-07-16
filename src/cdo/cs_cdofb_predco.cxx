@@ -547,15 +547,15 @@ _update_variables(const cs_navsto_param_t           *nsp,
   cs_real_t  *vel_c = sc->velocity->val;
   cs_real_t  *vel_f = mom_eqc->face_values;
 
-  cs_real_t  *div = NULL;
-  if (sc->divergence != NULL)
+  cs_real_t  *div = nullptr;
+  if (sc->divergence != nullptr)
     div = sc->divergence->val;
 
-  cs_real_3_t *grad_dp = NULL;
-  if (cc->pressure_incr_gradient != NULL)
+  cs_real_3_t *grad_dp = nullptr;
+  if (cc->pressure_incr_gradient != nullptr)
     grad_dp = (cs_real_3_t*) cc->pressure_incr_gradient->val;
 
-  cs_real_3_t  *grad_p = NULL;
+  cs_real_3_t  *grad_p = nullptr;
   if (nsp->post_flag & CS_NAVSTO_POST_PRESSURE_GRADIENT)
     grad_p = (cs_real_3_t*) cs_field_by_name_try("pressure_gradient")->val;
 
@@ -567,14 +567,14 @@ _update_variables(const cs_navsto_param_t           *nsp,
   cs_field_current_to_previous(sc->pressure);
   cs_field_current_to_previous(sc->divergence);
 
-  cs_real_t *diff_flux = NULL;
+  cs_real_t *diff_flux = nullptr;
   BFT_MALLOC(diff_flux, n_faces, cs_real_t);
 
   cs_equation_compute_diffusive_flux(pre_eq,
-                                     NULL,
-                                     NULL,
-                                     NULL,
-                                     NULL,
+                                     nullptr,
+                                     nullptr,
+                                     nullptr,
+                                     nullptr,
                                      cs_flag_primal_face,
                                      cs_glob_time_step->t_cur,
                                      diff_flux);
@@ -605,7 +605,7 @@ _update_variables(const cs_navsto_param_t           *nsp,
 
       pr_c[c_id] += dp_c[c_id];
 
-      if (grad_p != NULL || grad_dp != NULL) {
+      if (grad_p != nullptr || grad_dp != nullptr) {
         /* Reconstruct the cell gradient
            ----------------------------- */
 
@@ -632,11 +632,11 @@ _update_variables(const cs_navsto_param_t           *nsp,
                              *diff_flux[ff]*(face_center[k] - cell_center[k]);
         }
 
-        if (grad_p != NULL)
+        if (grad_p != nullptr)
           for (short int k = 0; k < 3; k++)
             grad_p[c_id][k] += grddp_reco[k];
 
-        if (grad_dp != NULL)
+        if (grad_dp != nullptr)
           for (short int k = 0; k < 3; k++)
             grad_dp[c_id][k] = grddp_reco[k];
       }
