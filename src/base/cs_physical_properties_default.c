@@ -451,6 +451,7 @@ _clip_rho_mu_cp(const bool                  pass,
   const char *f_names[]
     = {CS_F_(rho)->name, CS_F_(mu)->name, CS_F_(mu_t)->name, ""};
 
+  char tmp_s[64] = "";
   if (CS_F_(cp) != NULL) {
     f_names[n_fields] = CS_F_(cp)->name;
     n_fields = 4;
@@ -497,8 +498,11 @@ _clip_rho_mu_cp(const bool                  pass,
                " Property           Min. value  Max. value\n"
                " -----------------------------------------\n");
     for (int ii = 0; ii < n_fields; ii++) {
-      if ( (ii != 2) || (cs_glob_turb_model->iturb != CS_TURB_NONE))
-        bft_printf("  %s   %10.04e   %10.04e\n", f_names[ii], varmn[ii], varmx[ii]);
+      if ( (ii != 2) || (cs_glob_turb_model->iturb != CS_TURB_NONE)) {
+        int width = 16;
+        cs_log_strpad(tmp_s, f_names[ii], width, 64);
+        bft_printf(" %s   %10.04e  %10.04e\n", tmp_s, varmn[ii], varmx[ii]);
+      }
     }
     bft_printf(" -----------------------------------------\n");
   }
@@ -536,7 +540,7 @@ _clip_rho_mu_cp(const bool                  pass,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  clipping of scalar fields
+ * \brief  Log and check scalar diffusivity min/max
  *
  *  \param[in]  pass        first time passing
  *  \param[in]  n_scal      number of scalar field
@@ -546,82 +550,85 @@ _clip_rho_mu_cp(const bool                  pass,
 /*----------------------------------------------------------------------------*/
 
 static void
-_clip_scalar(const bool        pass,
-             const int         n_scal,
-             const int         scalar_idx[],
-             const cs_lnum_t   n_cells)
+_check_log_scalar_diff(const bool        pass,
+                       const int         n_scal,
+                       const int         scalar_idx[],
+                       const cs_lnum_t   n_cells)
 {
   if (n_scal < 1)
     return;
 
- bool ok = false;
- cs_real_t vismax[n_scal], vismin[n_scal];
+  bool ok = false;
+  cs_real_t vismax[n_scal], vismin[n_scal];
 
- const int kivisl = cs_field_key_id("diffusivity_id");
- const int kvisl0 = cs_field_key_id("diffusivity_ref");
+  const int kivisl = cs_field_key_id("diffusivity_id");
+  const int kvisl0 = cs_field_key_id("diffusivity_ref");
 
 
- for (int ii = 0; ii < n_scal; ii++) {
+  char tmp_s[64] = "";
+  for (int s_id = 0; s_id < n_scal; s_id++) {
 
-   const cs_real_t *cpro_vis = NULL;
-   const cs_field_t *f = cs_field_by_id(scalar_idx[ii]);
+    const cs_real_t *cpro_vis = NULL;
+    const cs_field_t *f = cs_field_by_id(scalar_idx[s_id]);
 
-   const int ifcvsl = cs_field_get_key_int(f, kivisl);
-   const cs_equation_param_t *eqp = cs_field_get_equation_param_const(f);
+    const int ifcvsl = cs_field_get_key_int(f, kivisl);
+    const cs_equation_param_t *eqp = cs_field_get_equation_param_const(f);
 
-   if (ifcvsl >= 0)
-     cpro_vis = cs_field_by_id(ifcvsl)->val;
+    if (ifcvsl >= 0)
+      cpro_vis = cs_field_by_id(ifcvsl)->val;
 
-   vismax[ii] = -cs_math_big_r;
-   vismin[ii] =  cs_math_big_r;
+    vismax[s_id] = -cs_math_big_r;
+    vismin[s_id] =  cs_math_big_r;
 
-   if (cpro_vis != NULL) {
-     for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-       vismax[ii] = cs_math_fmax(vismax[ii], cpro_vis[c_id]);
-       vismin[ii] = cs_math_fmin(vismin[ii], cpro_vis[c_id]);
-     }
-     cs_parall_max(1, CS_REAL_TYPE, &vismax[ii]);
-     cs_parall_min(1, CS_REAL_TYPE, &vismin[ii]);
-   }
-   else {
-     const cs_real_t visls_0 = cs_field_get_key_double(f, kvisl0);
-     vismax[ii] = visls_0;
-     vismin[ii] = visls_0;
-   }
+    if (cpro_vis != NULL) {
+      for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+        vismax[s_id] = cs_math_fmax(vismax[s_id], cpro_vis[c_id]);
+        vismin[s_id] = cs_math_fmin(vismin[s_id], cpro_vis[c_id]);
+      }
+      cs_parall_max(1, CS_REAL_TYPE, &vismax[s_id]);
+      cs_parall_min(1, CS_REAL_TYPE, &vismin[s_id]);
+    }
+    else {
+      const cs_real_t visls_0 = cs_field_get_key_double(f, kvisl0);
+      vismax[s_id] = visls_0;
+      vismin[s_id] = visls_0;
+    }
 
-   if ( (eqp->verbosity > 0) || (pass) || (vismin[ii] <= 0.0) ) {
-     if (!ok) {
-       ok = true;
-       bft_printf(" --- Diffusivity:\n"
-                 " -----------------------------------------------\n"
-                 " Scalar           Number  Min. value  Max. value\n"
-                 " -----------------------------------------------\n");
-     }
-     bft_printf("  %s           %d           %10.04e       %10.04e\n",
-                cs_field_get_label(f), ii, vismin[ii], vismax[ii]);
-   }
- } // loop on scalar
+    if ( (eqp->verbosity > 0) || (pass) || (vismin[s_id] <= 0.0) ) {
+      if (!ok) {
+        ok = true;
+        bft_printf("\n --- Diffusivity:\n"
+            " -----------------------------------------------\n"
+            " Scalar           Index   Min. value  Max. value\n"
+            " -----------------------------------------------\n");
+      }
+      int width = 16;
+      cs_log_strpad(tmp_s, cs_field_get_label(f), width, 64);
+      bft_printf(" %s     %d   %10.04e  %10.04e\n",
+          tmp_s, s_id, vismin[s_id], vismax[s_id]);
+    }
+  } // loop on scalar
 
- if (ok)
-   bft_printf(" -----------------------------------------------\n");
+  if (ok)
+    bft_printf(" -----------------------------------------------\n");
 
- // Physical value checks
-  for (int ii = 0; ii < n_scal; ii++) {
+  // Physical value checks
+  for (int s_id = 0; s_id < n_scal; s_id++) {
 
-   const cs_field_t *f = cs_field_by_id(scalar_idx[ii]);
+    const cs_field_t *f = cs_field_by_id(scalar_idx[s_id]);
 
-   if (vismin[ii] < 0.0) {
-         bft_error(__FILE__, __LINE__, 0,
-                  _("Warning: abort in the physical quantities computation\n"
-                    "========\n"
-                    "The diffusivity of the scalar %s, has not been correctly defined"
-                    "The calculation will not be run.\n"
-                    "The physical property identified is variable and the"
-                    "minimum reached is %10.12e\n"
-                    "Verify that this property has been defined and"
-                    "that the chosen law leads to correct values.\n\n"),
-                   cs_field_get_label(f), vismin[ii]);
-   }
+    if (vismin[s_id] < 0.0) {
+      bft_error(__FILE__, __LINE__, 0,
+          _("Warning: abort in the physical quantities computation\n"
+            "========\n"
+            "The diffusivity of the scalar %s, has not been correctly defined\n"
+            "The calculation will not be run.\n"
+            "The physical property identified is variable and the"
+            "minimum reached is %10.12e\n"
+            "Verify that this property has been defined and"
+            "that the chosen law leads to correct values.\n\n"),
+          f->name, vismin[s_id]);
+    }
 
   }
 
@@ -640,20 +647,20 @@ _clip_scalar(const bool        pass,
     bft_error(__FILE__, __LINE__, 0,
               _("Warning: abort in the physical quantities computation\n"
                 "========\n"
-                "The physical property %s, has not been correctly defined"
+                "The physical property %s, has not been correctly defined\n"
                 "The calculation will not be run.\n"
                 "The physical property identified is variable and the"
                 "minimum reached is %10.12e\n"
                 "Verify that this property has been defined and"
                 "that the chosen law leads to correct values.\n\n"),
-              cs_field_get_label(th_f), varmn);
+              th_f->name, varmn);
   }
 
 }
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  clipping mesh viscosity
+ * \brief  check and log mesh velocity diffusivity
  *
  *  \param[in]  pass        first time passing
  *  \param[in]  n_cells     number of cells
@@ -662,14 +669,15 @@ _clip_scalar(const bool        pass,
 
 
 static void
-_clip_visma(const bool       pass,
-            const cs_lnum_t  n_cells)
+_check_log_mesh_diff(const bool       pass,
+                     const cs_lnum_t  n_cells)
 {
   if (   (cs_glob_ale == CS_ALE_NONE)
       || (cs_glob_time_step->nt_cur != cs_glob_time_step->nt_prev + 1))
     return;
 
   bool ok = false;
+  char tmp_s[64] = "";
   cs_equation_param_t *eqp = cs_equation_param_by_name("mesh_velocity");
 
   if (eqp->idften & CS_ANISOTROPIC_LEFT_DIFFUSION) {
@@ -693,8 +701,10 @@ _clip_visma(const bool       pass,
                      " Property           Min. value  Max. value\n"
                      " -----------------------------------------\n");
         }
+        int width = 16;
+        cs_log_strpad(tmp_s, CS_F_(vism)->name, width, 64);
         bft_printf("  %s           %10.12e       %10.12e",
-                cs_field_get_label(CS_F_(vism)), varmn, varmx);
+                   tmp_s, varmn, varmx);
       }
 
       // Physical value checks
@@ -993,10 +1003,10 @@ cs_physical_properties_update(int   iterns)
                     rho_b_f->val);
 
   // Calculation of scalar limits and printing
-  _clip_scalar(pass, n_scal, scalar_idx, n_cells);
+  _check_log_scalar_diff(pass, n_scal, scalar_idx, n_cells);
 
   // Calculation of mesh viscosity bounds in ALE
-  _clip_visma(pass, n_cells);
+  _check_log_mesh_diff(pass, n_cells);
 
   /* Initialize boundary temperature if present and not initialized yet
      ------------------------------------------------------------------ */
