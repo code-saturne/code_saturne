@@ -300,8 +300,8 @@ _init_user
 
   /* Specific physics modules
    * Note: part of what is inside ppini1 could be moved here
-   * so that usipsu / cs_user_parameters can be used by the user to modify default
-   * settings */
+   * so that usipsu / cs_user_parameters can be used by the user
+   * to modify default settings */
 
   /* Atmospheric flows */
   if (cs_glob_physical_model_flag[CS_ATMOSPHERIC] != -1)
@@ -386,7 +386,7 @@ _init_user
 
   /* Default value of physical properties for the compressible model */
   if (cs_glob_physical_model_flag[CS_COMPRESSIBLE] != -1) {
-    /* EOS has been set above in uippmo with the GUI or in usppmo without the GUI.
+    /* EOS has been set above with the GUI or in cs_user_model.
      * The variability of the thermal conductivity
      * (diffusivity_id for itempk) and the volume viscosity (iviscv) has
      * been set in fldprp.
@@ -449,7 +449,11 @@ cs_setup(void)
   /* Initialize modules before user has access */
   cs_f_iniini();
 
-  int nmodpp = cs_glob_physical_model_flag[CS_N_PHYSICAL_MODEL_TYPES];
+  int nmodpp = 0;
+  for (int i = 1; i < CS_N_PHYSICAL_MODEL_TYPES; i++) {
+    if (cs_glob_physical_model_flag[i] > -1)
+      nmodpp ++;
+  }
 
   /* User input, variable definitions */
   _init_user(&nmodpp);
