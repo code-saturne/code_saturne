@@ -474,7 +474,7 @@ cs_setup(void)
                              &time_scheme->iccvfg);
   cs_lagr_add_fields();
 
-  if (cs_glob_param_cdo_mode < 2) {
+  if (cs_glob_param_cdo_mode != CS_PARAM_CDO_MODE_ONLY) {
     /* Additional fields if not in CDO mode only */
     cs_f_addfld();
 
@@ -483,8 +483,9 @@ cs_setup(void)
     cs_parameters_global_complete();
 
     cs_f_fldini();
-    cs_parameters_eqp_complete();
   }
+
+  cs_parameters_eqp_complete();
 
   /* Time moments called after additional creation */
   cs_gui_time_moments();

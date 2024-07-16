@@ -281,6 +281,7 @@ cs_variable_field_create(const char  *name,
 cs_equation_param_t *
 cs_field_get_equation_param(cs_field_t  *f)
 {
+  assert(f != NULL);
   cs_equation_param_t *eqp = NULL;
 
   static int k_id = -1;
@@ -313,6 +314,7 @@ cs_field_get_equation_param(cs_field_t  *f)
 const cs_equation_param_t *
 cs_field_get_equation_param_const(const cs_field_t  *f)
 {
+  assert(f != NULL);
   const cs_equation_param_t *eqp = NULL;
 
   static int k_id = -1;

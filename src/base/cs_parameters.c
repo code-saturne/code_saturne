@@ -2086,8 +2086,10 @@ cs_parameters_eqp_complete(void)
   cs_field_t *f_vel = CS_F_(vel);
   cs_field_t *f_p = CS_F_(p);
   cs_field_t *f_t = cs_thermal_model_field();
-  cs_equation_param_t *eqp_vel = cs_field_get_equation_param(f_vel);
-  cs_equation_param_t *eqp_p = cs_field_get_equation_param(f_p);
+  cs_equation_param_t *eqp_vel
+    = (f_vel != NULL) ? cs_field_get_equation_param(f_vel) : NULL;
+  cs_equation_param_t *eqp_p
+    = (f_p != NULL) ? cs_field_get_equation_param(f_p) : NULL;
   cs_time_step_t *ts = cs_get_glob_time_step();
   cs_time_step_options_t *time_opt = cs_get_glob_time_step_options();
   cs_velocity_pressure_param_t *vp_param
@@ -2220,7 +2222,10 @@ cs_parameters_eqp_complete(void)
    *           0 (i.e. with) otherwise */
 
   if (cs_glob_turb_model->itytur == 4) {
-    if (eqp_vel->isstpc == -999) eqp_vel->isstpc = 1;
+    if (eqp_vel != NULL) {
+      if (eqp_vel->isstpc == -999)
+        eqp_vel->isstpc = 1;
+    }
     for (int f_id = 0; f_id < n_fields; f_id++) {
       cs_field_t *f = cs_field_by_id(f_id);
       int scalar_id = cs_field_get_key_int(f, ks);
@@ -2250,7 +2255,11 @@ cs_parameters_eqp_complete(void)
    * For the cavitation model, we force in all cases the void fraction in upwind
    * and e display a message if the user has specified something else. */
 
-  if (fabs(eqp_vel->blencv + 1.) < cs_math_epzero) eqp_vel->blencv =1.;
+  if (eqp_vel != NULL) {
+    if (fabs(eqp_vel->blencv + 1.) < cs_math_epzero)
+      eqp_vel->blencv =1.;
+  }
+
   if (cs_glob_vof_parameters->vof_model & CS_VOF_MERKLE_MASS_TRANSFER) {
     cs_field_t *f_void_f = CS_F_(void_f);
     cs_equation_param_t *eqp_void_f = cs_field_get_equation_param(f_void_f);
@@ -2317,16 +2326,20 @@ cs_parameters_eqp_complete(void)
    */
 
   if (cs_glob_time_scheme->time_order == 2) {
-    if (eqp_p->nswrsm == -1) eqp_p->nswrsm = 5;
-    if (fabs(eqp_p->epsilo + 1.) < cs_math_epzero)
+    if (eqp_p != NULL) {
+      if (eqp_p->nswrsm == -1) eqp_p->nswrsm = 5;
+      if (fabs(eqp_p->epsilo + 1.) < cs_math_epzero)
       eqp_p->epsilo = 1.e-5;
-    if (fabs(eqp_p->epsrsm + 1.) < cs_math_epzero)
-      eqp_p->epsrsm = 10.*eqp_p->epsilo;
-    if (eqp_vel->nswrsm == -1) eqp_vel->nswrsm = 10;
-    if (fabs(eqp_vel->epsilo + 1.) < cs_math_epzero)
-      eqp_vel->epsilo = 1.e-5;
-    if (fabs(eqp_vel->epsrsm + 1.) < cs_math_epzero)
-      eqp_vel->epsrsm = 10.*eqp_vel->epsilo;
+      if (fabs(eqp_p->epsrsm + 1.) < cs_math_epzero)
+        eqp_p->epsrsm = 10.*eqp_p->epsilo;
+    }
+    if (eqp_vel != NULL) {
+      if (eqp_vel->nswrsm == -1) eqp_vel->nswrsm = 10;
+      if (fabs(eqp_vel->epsilo + 1.) < cs_math_epzero)
+        eqp_vel->epsilo = 1.e-5;
+      if (fabs(eqp_vel->epsrsm + 1.) < cs_math_epzero)
+        eqp_vel->epsrsm = 10.*eqp_vel->epsilo;
+    }
     for (int f_id = 0; f_id < n_fields; f_id++) {
       cs_field_t *f = cs_field_by_id(f_id);
       int scalar_id = cs_field_get_key_int(f, ks);
@@ -2343,8 +2356,12 @@ cs_parameters_eqp_complete(void)
 
   /* For the pressure, default solver precision 1e-8
    * because the mass conservation is up to this precision. */
-  if (eqp_p->nswrsm == -1) eqp_p->nswrsm = 2;
-  if (fabs(eqp_p->epsilo + 1.) < cs_math_epzero) eqp_p->epsilo = 1.e-8;
+  if (eqp_p != NULL) {
+    if (eqp_p->nswrsm == -1)
+      eqp_p->nswrsm = 2;
+    if (fabs(eqp_p->epsilo + 1.) < cs_math_epzero)
+      eqp_p->epsilo = 1.e-8;
+  }
   for (int f_id = 0; f_id < n_fields; f_id++) {
     cs_field_t *f = cs_field_by_id(f_id);
     if (f->type & CS_FIELD_VARIABLE) {
@@ -2365,47 +2382,51 @@ cs_parameters_eqp_complete(void)
    * FIXME time step factor is used ONLY for additional variables
    * (user or model) */
 
-  cs_real_t cdtvar = cs_field_get_key_double(CS_F_(vel), kcdtvar);
-  cs_field_set_key_double(CS_F_(p), kcdtvar, cdtvar);
-  if (cs_glob_turb_model->itytur == 2) {
-    cdtvar = cs_field_get_key_double(CS_F_(k), kcdtvar);
-    cs_field_set_key_double(CS_F_(eps), kcdtvar, cdtvar);
-  }
-  else if (cs_glob_turb_model->itytur == 3) {
-    cdtvar = cs_field_get_key_double(CS_F_(rij), kcdtvar);
-    cs_field_set_key_double(CS_F_(eps), kcdtvar, cdtvar);
+  if (cs_glob_param_cdo_mode != CS_PARAM_CDO_MODE_ONLY) {
 
-    /* cdtvar for alp_bl is useless because there is no time dependency
-       in the equation of alpha. */
-    if (cs_glob_turb_model->iturb == CS_TURB_RIJ_EPSILON_EBRSM) {
+    cs_real_t cdtvar = cs_field_get_key_double(CS_F_(vel), kcdtvar);
+    cs_field_set_key_double(CS_F_(p), kcdtvar, cdtvar);
+    if (cs_glob_turb_model->itytur == 2) {
+      cdtvar = cs_field_get_key_double(CS_F_(k), kcdtvar);
+      cs_field_set_key_double(CS_F_(eps), kcdtvar, cdtvar);
+    }
+    else if (cs_glob_turb_model->itytur == 3) {
       cdtvar = cs_field_get_key_double(CS_F_(rij), kcdtvar);
-      cs_field_set_key_double(CS_F_(alp_bl), kcdtvar, cdtvar);
-    }
-  }
-  else if (cs_glob_turb_model->itytur == 5) {
-    cdtvar = cs_field_get_key_double(CS_F_(k), kcdtvar);
-    cs_field_set_key_double(CS_F_(eps), kcdtvar, cdtvar);
-    cs_field_set_key_double(CS_F_(phi), kcdtvar, cdtvar);
+      cs_field_set_key_double(CS_F_(eps), kcdtvar, cdtvar);
 
-    /* CDTVAR for f_bar/alp_bl is in fact useless
-     * as the time step is in the equation of f_bar/alpha */
-    if (cs_glob_turb_model->iturb == CS_TURB_V2F_PHI) {
-      cdtvar = cs_field_get_key_double(CS_F_(k), kcdtvar);
-      cs_field_set_key_double(CS_F_(f_bar), kcdtvar, cdtvar);
+      /* cdtvar for alp_bl is useless because there is no time dependency
+         in the equation of alpha. */
+      if (cs_glob_turb_model->iturb == CS_TURB_RIJ_EPSILON_EBRSM) {
+        cdtvar = cs_field_get_key_double(CS_F_(rij), kcdtvar);
+        cs_field_set_key_double(CS_F_(alp_bl), kcdtvar, cdtvar);
+      }
     }
-    else if (cs_glob_turb_model->iturb == CS_TURB_V2F_BL_V2K) {
+    else if (cs_glob_turb_model->itytur == 5) {
       cdtvar = cs_field_get_key_double(CS_F_(k), kcdtvar);
-      cs_field_set_key_double(CS_F_(alp_bl), kcdtvar, cdtvar);
+      cs_field_set_key_double(CS_F_(eps), kcdtvar, cdtvar);
+      cs_field_set_key_double(CS_F_(phi), kcdtvar, cdtvar);
+
+      /* CDTVAR for f_bar/alp_bl is in fact useless
+       * as the time step is in the equation of f_bar/alpha */
+      if (cs_glob_turb_model->iturb == CS_TURB_V2F_PHI) {
+        cdtvar = cs_field_get_key_double(CS_F_(k), kcdtvar);
+        cs_field_set_key_double(CS_F_(f_bar), kcdtvar, cdtvar);
+      }
+      else if (cs_glob_turb_model->iturb == CS_TURB_V2F_BL_V2K) {
+        cdtvar = cs_field_get_key_double(CS_F_(k), kcdtvar);
+        cs_field_set_key_double(CS_F_(alp_bl), kcdtvar, cdtvar);
+      }
     }
-  }
-  else if (cs_glob_turb_model->iturb == CS_TURB_K_OMEGA) {
-    cdtvar = cs_field_get_key_double(CS_F_(k), kcdtvar);
-    cs_field_set_key_double(CS_F_(omg), kcdtvar, cdtvar);
-  }
-  else if (cs_glob_turb_model->iturb == CS_TURB_SPALART_ALLMARAS) {
-    /* cdtvar is equal to 1. by default in cs_parameters.c */
-    cdtvar = cs_field_get_key_double(CS_F_(k), kcdtvar);
-    cs_field_set_key_double(CS_F_(nusa), kcdtvar, cdtvar);
+    else if (cs_glob_turb_model->iturb == CS_TURB_K_OMEGA) {
+      cdtvar = cs_field_get_key_double(CS_F_(k), kcdtvar);
+      cs_field_set_key_double(CS_F_(omg), kcdtvar, cdtvar);
+    }
+    else if (cs_glob_turb_model->iturb == CS_TURB_SPALART_ALLMARAS) {
+      /* cdtvar is equal to 1. by default in cs_parameters.c */
+      cdtvar = cs_field_get_key_double(CS_F_(k), kcdtvar);
+      cs_field_set_key_double(CS_F_(nusa), kcdtvar, cdtvar);
+    }
+
   }
 
   /* For laminar cases or when using low Reynolds model: no wall function.
@@ -2583,8 +2604,9 @@ cs_parameters_eqp_complete(void)
   if (time_opt->idtvar < 0) {
     cs_real_t relxsp = 1.-time_opt->relxst;
     if (relxsp <= cs_math_epzero) relxsp = time_opt->relxst;
-    if (fabs(eqp_p->relaxv+1.) <= cs_math_epzero) {
-      eqp_p->relaxv = relxsp;
+    if (eqp_p != NULL) {
+      if (fabs(eqp_p->relaxv+1.) <= cs_math_epzero)
+        eqp_p->relaxv = relxsp;
     }
     for (int f_id = 0; f_id < n_fields; f_id ++) {
       cs_field_t *f = cs_field_by_id(f_id);
@@ -2619,7 +2641,8 @@ cs_parameters_eqp_complete(void)
         eqp->istat = 0;
       }
     }
-    vp_param->arak = vp_param->arak/CS_MAX(eqp_vel->relaxv, cs_math_epzero);
+    if (eqp_vel != NULL)
+      vp_param->arak = vp_param->arak/CS_MAX(eqp_vel->relaxv, cs_math_epzero);
   }
 
   /* With a staggered approach, no Rhie and Chow correction is needed. */
@@ -2728,7 +2751,8 @@ cs_parameters_eqp_complete(void)
     }
 
     /* VOF algorithm: continuity of the flux across internal faces */
-    eqp_p->imvisf = 1;
+    if (eqp_p != NULL)
+      eqp_p->imvisf = 1;
   }
 
   /* Elements of albase */
