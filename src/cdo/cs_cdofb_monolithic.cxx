@@ -2057,7 +2057,7 @@ cs_cdofb_monolithic_steady(const cs_mesh_t            *mesh,
   /* Initialize the matrix and all its related structures needed during
    * the assembly step as well as the rhs */
 
-  cs_real_t *rhs = nullptr; /* Since it is nullptr, sh get sthe ownership */
+  cs_real_t *rhs = nullptr; /* Since it is nullptr, sh gets the ownership */
 
   cs_cdo_system_helper_init_system(sh, &rhs);
 
@@ -2175,7 +2175,7 @@ cs_cdofb_monolithic_steady_nl(const cs_mesh_t           *mesh,
   /* Initialize the matrix and all its related structures needed during
    * the assembly step as well as the rhs */
 
-  cs_real_t *rhs = nullptr; /* Since it is nullptr, sh get sthe ownership */
+  cs_real_t *rhs = nullptr; /* Since it is nullptr, sh gets the ownership */
 
   cs_cdo_system_helper_init_system(sh, &rhs);
 
@@ -2372,7 +2372,7 @@ cs_cdofb_monolithic(const cs_mesh_t           *mesh,
   /* Initialize the matrix and all its related structures needed during
    * the assembly step as well as the rhs */
 
-  cs_real_t *rhs = nullptr; /* Since it is nullptr, sh get sthe ownership */
+  cs_real_t *rhs = nullptr; /* Since it is nullptr, sh gets the ownership */
 
   cs_cdo_system_helper_init_system(sh, &rhs);
 

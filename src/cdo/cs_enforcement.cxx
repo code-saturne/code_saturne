@@ -512,7 +512,7 @@ cs_enforcement_define_at_faces(const cs_cdo_connect_t     *connect,
   for (cs_lnum_t i = 0; i < stride*n_faces; i++)
     values[i] = FLT_MAX; /* By default, max value */
 
-  /* Define the enforcement value for each vertex related to an enforcement */
+  /* Define the enforcement value for each face related to an enforcement */
 
   for (int param_id = 0; param_id < n_params; param_id++) {
 
