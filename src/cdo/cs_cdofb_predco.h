@@ -66,19 +66,6 @@ BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Retrieve the values of the pressure at faces
- *
- * \param[in]  context     pointer to a scheme context structure
- *
- * \return a pointer to the pressure values
- */
-/*----------------------------------------------------------------------------*/
-
-cs_real_t *
-cs_cdofb_predco_get_face_pressure(void     *context);
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief  Set shared pointers from the main domain members
  *
  * \param[in]  quant       additional mesh quantities struct.

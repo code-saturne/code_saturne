@@ -153,11 +153,6 @@ typedef struct {
    */
   cs_real_t   *predicted_velocity_f;
 
-  /*! \var pressure_f
-   * Values of the pressure at faces.
-   */
-  cs_real_t   *pressure_f;
-
   /*!
    * @}
    * @name Advection quantities
@@ -533,15 +528,10 @@ _update_variables(const cs_navsto_param_t           *nsp,
   const cs_real_t *const  velp_f = sc->predicted_velocity_f;
   cs_real_t *velp_c = mom_eq->get_cell_values(mom_eqc, false);
 
-  const cs_real_t *const dp_c = pre_eq->get_cell_values(pre_eqc,
-                                                        false);
-  cs_real_t *dp_f = pre_eq->get_face_values(pre_eqc,
-                                            false);
+  const cs_real_t *const dp_c = pre_eq->get_cell_values(pre_eqc, false);
   const cs_adjacency_t  *c2f = connect->c2f;
 
   /* Variables to update */
-
-  cs_real_t  *pr_f = sc->pressure_f;
 
   cs_real_t  *pr_c = sc->pressure->val; /* cell DoFs for the pressure */
   cs_real_t  *vel_c = sc->velocity->val;
@@ -680,14 +670,8 @@ _update_variables(const cs_navsto_param_t           *nsp,
                          vel_f);
 
   /* Update face-related unknowns */
-
-  if (nsp->space_scheme == CS_SPACE_SCHEME_CDOCB)
-    cs_reco_scalar_c2f(connect, quant, dp_c, dp_f);
-
 # pragma omp parallel for if (n_faces > CS_THR_MIN)
   for (cs_lnum_t f = 0; f < n_faces; f++) {
-
-    pr_f[f] += dp_f[f];
 
     /* v_f^(n+1) = vp_f^(n+1) + dt*grd(incr_p) */
 
@@ -747,27 +731,6 @@ _update_variables(const cs_navsto_param_t           *nsp,
 /*============================================================================
  * Public function prototypes
  *============================================================================*/
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Retrieve the values of the pressure at faces
- *
- * \param[in]  context     pointer to a scheme context structure
- *
- * \return a pointer to the pressure values
- */
-/*----------------------------------------------------------------------------*/
-
-cs_real_t *
-cs_cdofb_predco_get_face_pressure(void     *context)
-{
-  cs_cdofb_predco_t  *sc = (cs_cdofb_predco_t  *)context;
-
-  if (sc == nullptr)
-    return nullptr;
-
-  return sc->pressure_f;
-}
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -853,12 +816,6 @@ cs_cdofb_predco_init_scheme_context(const cs_navsto_param_t   *nsp,
   BFT_MALLOC(sc->predicted_velocity_f, 3*quant->n_faces, cs_real_t);
   cs_array_real_fill_zero(3*quant->n_faces, sc->predicted_velocity_f);
 
-  /* Values of the pressure at faces */
-
-  BFT_MALLOC(sc->pressure_f, quant->n_faces, cs_real_t);
-
-  cs_array_real_fill_zero(quant->n_faces, sc->pressure_f);
-
   /* Boundary treatment */
 
   sc->bf_type = fb_type;
@@ -916,44 +873,6 @@ cs_cdofb_predco_init_scheme_context(const cs_navsto_param_t   *nsp,
 
   }
 
-  for (int id = 0; id < nsp->n_pressure_bc_defs; id++) {
-    const cs_xdef_t *def =  nsp->pressure_bc_defs[id];
-    if (def->meta & CS_CDO_BC_DIRICHLET) {
-      const cs_zone_t  *bz = cs_boundary_zone_by_id(def->z_id);
-      const cs_lnum_t  *elt_ids = (def->z_id == 0) ? nullptr : bz->elt_ids;
-
-      switch(def->type) {
-
-      case CS_XDEF_BY_VALUE:
-        {
-          const cs_real_t  *constant_val = (cs_real_t *)def->context;
-
-            cs_array_real_set_scalar_on_subset(bz->n_elts, elt_ids,
-                                               constant_val[0],
-                                               sc->pressure_f
-                                             + quant->n_i_faces);
-        }
-        break;
-      default:
-        bft_error(__FILE__, __LINE__, 0,
-                  _(" %s: Invalid type of definition.\n"
-                    " Stop computing the Dirichlet value.\n"),
-                  __func__);
-
-      } /* switch on def_type */
-
-    } /* Definition based on Dirichlet BC */
-    else if(def->meta & CS_CDO_BC_HMG_DIRICHLET) {
-      const cs_zone_t  *bz = cs_boundary_zone_by_id(def->z_id);
-      const cs_lnum_t  *elt_ids = (def->z_id == 0) ? nullptr : bz->elt_ids;
-
-      cs_array_real_set_scalar_on_subset(bz->n_elts, elt_ids,
-                                         0.,
-                                         sc->pressure_f
-                                       + quant->n_i_faces);
-
-    }
-  } /* Loop on definitions */
   /* Monitoring */
 
   CS_TIMER_COUNTER_INIT(sc->timer);
@@ -984,7 +903,6 @@ cs_cdofb_predco_free_scheme_context(void   *scheme_context)
   sc->pressure_bc = cs_cdo_bc_free(sc->pressure_bc);
 
   BFT_FREE(sc->predicted_velocity_f);
-  BFT_FREE(sc->pressure_f);
 
   /* Other pointers are only shared (i.e. not owner) */
 

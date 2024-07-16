@@ -294,7 +294,7 @@ cs_cdofb_navsto_define_builder(cs_real_t                    t_eval,
 
     case CS_NAVSTO_COUPLING_ARTIFICIAL_COMPRESSIBILITY:
     case CS_NAVSTO_COUPLING_MONOLITHIC:
-    case CS_NAVSTO_COUPLING_PROJECTION_POTENTIAL_FB:
+    case CS_NAVSTO_COUPLING_PROJECTION:
 
       /* Build the divergence operator:
        *        D(\hat{u}) = \frac{1}{|c|} \sum_{f_c} \iota_{fc} u_f.f
@@ -315,20 +315,6 @@ cs_cdofb_navsto_define_builder(cs_real_t                    t_eval,
 
       } /* Loop on cell faces */
 
-      break;
-    case CS_NAVSTO_COUPLING_PROJECTION_POTENTIAL_CB:
-
-      for (short int f = 0; f < n_fc; f++) {
-
-        const cs_quant_t  pfq = cm->face[f];
-        const cs_real_t  sgn_f = -cm->f_sgn[f] * pfq.meas;
-
-        cs_real_t  *_div_f = nsb->div_op + 3*f;
-        _div_f[0] = sgn_f * pfq.unitv[0];
-        _div_f[1] = sgn_f * pfq.unitv[1];
-        _div_f[2] = sgn_f * pfq.unitv[2];
-
-      } /* Loop on cell faces */
       break;
 
     default:

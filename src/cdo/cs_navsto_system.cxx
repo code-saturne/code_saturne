@@ -426,8 +426,7 @@ cs_navsto_system_activate(const cs_boundary_t         *boundaries,
     navsto->coupling_context
       = cs_navsto_monolithic_create_context(default_bc, navsto->param);
     break;
-  case CS_NAVSTO_COUPLING_PROJECTION_POTENTIAL_CB:
-  case CS_NAVSTO_COUPLING_PROJECTION_POTENTIAL_FB:
+  case CS_NAVSTO_COUPLING_PROJECTION:
     navsto->coupling_context
       = cs_navsto_projection_create_context(default_bc, navsto->param);
     break;
@@ -528,8 +527,7 @@ cs_navsto_system_destroy(void)
     }
     break;
 
-  case CS_NAVSTO_COUPLING_PROJECTION_POTENTIAL_CB:
-  case CS_NAVSTO_COUPLING_PROJECTION_POTENTIAL_FB:
+  case CS_NAVSTO_COUPLING_PROJECTION:
     navsto->coupling_context =
       cs_navsto_projection_free_context(navsto->coupling_context);
     break;
@@ -602,8 +600,7 @@ cs_navsto_system_get_momentum_eq(void)
   case CS_NAVSTO_COUPLING_MONOLITHIC:
     eq = cs_navsto_monolithic_get_momentum_eq(navsto->coupling_context);
     break;
-  case CS_NAVSTO_COUPLING_PROJECTION_POTENTIAL_CB:
-  case CS_NAVSTO_COUPLING_PROJECTION_POTENTIAL_FB:
+  case CS_NAVSTO_COUPLING_PROJECTION:
     eq = cs_navsto_projection_get_momentum_eq(navsto->coupling_context);
     break;
 
@@ -941,8 +938,7 @@ cs_navsto_system_init_setup(void)
   case CS_NAVSTO_COUPLING_MONOLITHIC:
     cs_navsto_monolithic_init_setup(nsp, ns->adv_field, ns->coupling_context);
     break;
-  case CS_NAVSTO_COUPLING_PROJECTION_POTENTIAL_CB:
-  case CS_NAVSTO_COUPLING_PROJECTION_POTENTIAL_FB:
+  case CS_NAVSTO_COUPLING_PROJECTION:
     cs_navsto_projection_init_setup(nsp,
                                     ns->adv_field,
                                     has_previous,
@@ -1064,8 +1060,7 @@ cs_navsto_system_finalize_setup(const cs_mesh_t           *mesh,
   case CS_NAVSTO_COUPLING_MONOLITHIC:
     cs_navsto_monolithic_last_setup(nsp, ns->coupling_context);
     break;
-  case CS_NAVSTO_COUPLING_PROJECTION_POTENTIAL_CB:
-  case CS_NAVSTO_COUPLING_PROJECTION_POTENTIAL_FB:
+  case CS_NAVSTO_COUPLING_PROJECTION:
     cs_navsto_projection_last_setup(quant, nsp, ns->coupling_context);
     break;
 
@@ -1193,8 +1188,7 @@ cs_navsto_system_finalize_setup(const cs_mesh_t           *mesh,
         mom_eqp, mesh, quant, connect, time_step);
       break;
 
-    case CS_NAVSTO_COUPLING_PROJECTION_POTENTIAL_CB:
-    case CS_NAVSTO_COUPLING_PROJECTION_POTENTIAL_FB:
+    case CS_NAVSTO_COUPLING_PROJECTION:
       /* ============================= */
 
       ns->init_scheme_context = cs_cdofb_predco_init_scheme_context;
@@ -1456,17 +1450,6 @@ cs_navsto_system_init_values(const cs_mesh_t           *mesh,
   }
 
   if (nsp->space_scheme == CS_SPACE_SCHEME_CDOFB) {
-
-    if (nsp->coupling == CS_NAVSTO_COUPLING_PROJECTION_POTENTIAL_FB) {
-
-      /* The call to the initialization of the cell pressure should be done
-         before */
-
-      cs_real_t *pr_f = cs_cdofb_predco_get_face_pressure(ns->scheme_context);
-
-      cs_cdofb_navsto_init_face_pressure(nsp, connect, time_step, pr_f);
-    }
-
     /* Initialize the mass flux values */
 
     const cs_equation_t *mom_eq   = cs_navsto_system_get_momentum_eq();
@@ -1475,8 +1458,7 @@ cs_navsto_system_init_values(const cs_mesh_t           *mesh,
   }
   else if (nsp->space_scheme == CS_SPACE_SCHEME_MACFB) {
 
-    if (   nsp->coupling == CS_NAVSTO_COUPLING_PROJECTION_POTENTIAL_FB
-        || nsp->coupling == CS_NAVSTO_COUPLING_PROJECTION_POTENTIAL_CB) {
+    if (   nsp->coupling == CS_NAVSTO_COUPLING_PROJECTION) {
 
       /* The call to the initialization of the cell pressure should be done
          before */
@@ -2052,8 +2034,7 @@ cs_navsto_system_extra_post(void                 *input,
       /* Nothing to do up to now */
       break;
 
-    case CS_NAVSTO_COUPLING_PROJECTION_POTENTIAL_CB:
-    case CS_NAVSTO_COUPLING_PROJECTION_POTENTIAL_FB:
+    case CS_NAVSTO_COUPLING_PROJECTION:
       {
         cs_navsto_projection_t  *cc
           = (cs_navsto_projection_t *)ns->coupling_context;

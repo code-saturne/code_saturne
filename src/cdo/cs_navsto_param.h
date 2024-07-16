@@ -221,21 +221,16 @@ typedef struct {
  * \var CS_NAVSTO_COUPLING_MONOLITHIC
  * The system is treated as a "monolithic" matrix
  *
- * \var CS_NAVSTO_COUPLING_PROJECTION_POTENTIAL_CB
+ * \var CS_NAVSTO_COUPLING_PROJECTION
  * The system is solved using an incremental projection algorithm.
  * The potential is based on cell-based scheme
- *
- * \var CS_NAVSTO_COUPLING_PROJECTION_POTENTIAL_FB
- * The system is solved using an incremental projection algorithm.
- * The potential is based on face-based scheme
  */
 
 typedef enum {
 
   CS_NAVSTO_COUPLING_ARTIFICIAL_COMPRESSIBILITY,
   CS_NAVSTO_COUPLING_MONOLITHIC,
-  CS_NAVSTO_COUPLING_PROJECTION_POTENTIAL_CB,
-  CS_NAVSTO_COUPLING_PROJECTION_POTENTIAL_FB,
+  CS_NAVSTO_COUPLING_PROJECTION,
 
   CS_NAVSTO_N_COUPLINGS
 

@@ -137,8 +137,7 @@ cs_navsto_coupling_get_momentum_eqp(const cs_navsto_param_t    *nsp,
     }
     break;
 
-  case CS_NAVSTO_COUPLING_PROJECTION_POTENTIAL_CB:
-  case CS_NAVSTO_COUPLING_PROJECTION_POTENTIAL_FB:
+  case CS_NAVSTO_COUPLING_PROJECTION:
     {
       cs_navsto_projection_t  *nsc = (cs_navsto_projection_t *)context;
       mom_eqp = cs_equation_get_param(nsc->prediction);
@@ -608,29 +607,11 @@ cs_navsto_projection_create_context(cs_param_bc_type_t    bc,
   {
     cs_equation_param_t  *eqp = cs_equation_get_param(nsc->correction);
 
-    /* Space scheme settings (default) */
+    /* Default sles parameters are set following the CDO-Cb scheme setting */
 
-    const cs_navsto_param_coupling_t algo_coupling = nsp->coupling;
+    cs_equation_param_set(eqp, CS_EQKEY_SPACE_SCHEME, "cdo_cb");
+    cs_equation_param_set(eqp, CS_EQKEY_HODGE_DIFF_COEF, "gcr");
 
-    if (algo_coupling == CS_NAVSTO_COUPLING_PROJECTION_POTENTIAL_FB) {
-
-      cs_equation_param_set(eqp, CS_EQKEY_SPACE_SCHEME, "cdo_fb");
-      cs_equation_param_set(eqp, CS_EQKEY_HODGE_DIFF_COEF, "sushi");
-
-      /* Solver settings */
-
-      cs_equation_param_set(eqp, CS_EQKEY_PRECOND, "amg");
-      cs_equation_param_set(eqp, CS_EQKEY_ITSOL, "cg");
-
-    }
-    else {
-
-      /* Default sles parameters are set following the CDO-Cb scheme setting */
-
-      cs_equation_param_set(eqp, CS_EQKEY_SPACE_SCHEME, "cdo_cb");
-      cs_equation_param_set(eqp, CS_EQKEY_HODGE_DIFF_COEF, "gcr");
-
-    }
   }
 
   nsc->div_st             = nullptr;
