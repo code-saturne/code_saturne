@@ -483,9 +483,8 @@ cs_setup(void)
     cs_parameters_global_complete();
 
     cs_f_fldini();
+    cs_parameters_eqp_complete();
   }
-
-  cs_parameters_eqp_complete();
 
   /* Time moments called after additional creation */
   cs_gui_time_moments();
