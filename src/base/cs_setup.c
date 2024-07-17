@@ -212,8 +212,11 @@ _init_user
   int   *nmodpp
 )
 {
+  cs_fluid_properties_t *fluid_props = cs_get_glob_fluid_properties();
+
   int icondb = cs_glob_wall_condensation->icondb;
   int condv = cs_glob_wall_condensation->icondv;
+
   /* Check for restart and read matching time steps and notebook values */
   cs_parameters_read_restart_info();
 
@@ -393,21 +396,15 @@ _init_user
      *
      * Compute cv0 according to chosen EOS */
 
-    cs_lnum_t l_size = 1;
-    cs_real_t *cpro_cp = CS_F_(cp)->val;
-    cs_real_t *cpro_cv = CS_F_(cv)->val;
-    cs_real_t *mix_mol_mas = cs_field_by_name("mix_mol_mas")->val;
-    cs_cf_thermo_cv(cpro_cp, mix_mol_mas, cpro_cv, l_size);
-
-    cs_fluid_properties_t *fluid_props = cs_get_glob_fluid_properties();
-    fluid_props->cv0 = cpro_cv[0];
+    cs_real_t l_cp[1] = {fluid_props->cp0};
+    cs_real_t l_xmasmr[1] = {fluid_props->xmasmr};
+    cs_real_t l_cv[1] = {-1};
+    cs_cf_thermo_cv(l_cp, l_xmasmr, l_cv, 1);
+    fluid_props->cv0 = l_cv[0];
   }
 
-  int iporos = 0;
   if (cs_glob_porosity_ibm_opt->porosity_mode > 0)
-    iporos = 3;
-
-  cs_porous_model_set_model(iporos);
+    cs_porous_model_set_model(3);
 
   /* Varpos
    * If CDO mode only, skip this stage */

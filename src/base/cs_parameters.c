@@ -2409,11 +2409,9 @@ cs_parameters_eqp_complete(void)
       /* CDTVAR for f_bar/alp_bl is in fact useless
        * as the time step is in the equation of f_bar/alpha */
       if (cs_glob_turb_model->iturb == CS_TURB_V2F_PHI) {
-        cdtvar = cs_field_get_key_double(CS_F_(k), kcdtvar);
         cs_field_set_key_double(CS_F_(f_bar), kcdtvar, cdtvar);
       }
       else if (cs_glob_turb_model->iturb == CS_TURB_V2F_BL_V2K) {
-        cdtvar = cs_field_get_key_double(CS_F_(k), kcdtvar);
         cs_field_set_key_double(CS_F_(alp_bl), kcdtvar, cdtvar);
       }
     }
@@ -2423,8 +2421,6 @@ cs_parameters_eqp_complete(void)
     }
     else if (cs_glob_turb_model->iturb == CS_TURB_SPALART_ALLMARAS) {
       /* cdtvar is equal to 1. by default in cs_parameters.c */
-      cdtvar = cs_field_get_key_double(CS_F_(k), kcdtvar);
-      cs_field_set_key_double(CS_F_(nusa), kcdtvar, cdtvar);
     }
 
   }
