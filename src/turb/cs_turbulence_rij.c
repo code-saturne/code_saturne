@@ -3485,9 +3485,9 @@ cs_turbulence_rij_solve_alpha(int        f_id,
 
   /* Calculation of viscf and viscb for cs_equation_iterative_solve_scalar. */
   cs_real_t *w1, *viscf, *viscb;
-  BFT_MALLOC(w1, n_cells_ext, cs_real_t);
-  BFT_MALLOC(viscf, n_i_faces, cs_real_t);
-  BFT_MALLOC(viscb, n_b_faces, cs_real_t);
+  CS_MALLOC_HD(w1, n_cells_ext, cs_real_t, cs_alloc_mode);
+  CS_MALLOC_HD(viscf, n_i_faces, cs_real_t, cs_alloc_mode);
+  CS_MALLOC_HD(viscb, n_b_faces, cs_real_t, cs_alloc_mode);
 
   cs_array_real_set_scalar(n_cells, 1., w1);
 
@@ -3498,7 +3498,7 @@ cs_turbulence_rij_solve_alpha(int        f_id,
                     viscf,
                     viscb);
 
-  BFT_FREE(w1);
+  CS_FREE_HD(w1);
 
   cs_solid_zone_set_zero_on_cells(1, rhs);
 
@@ -3586,8 +3586,8 @@ cs_turbulence_rij_solve_alpha(int        f_id,
 
   BFT_FREE(alpha_min);
   BFT_FREE(rovsdt);
-  BFT_FREE(viscf);
-  BFT_FREE(viscb);
+  CS_FREE_HD(viscf);
+  CS_FREE_HD(viscb);
 }
 
 /*----------------------------------------------------------------------------*/

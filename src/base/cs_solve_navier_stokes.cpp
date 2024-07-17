@@ -688,7 +688,7 @@ _face_diff_vel(const cs_mesh_t             *m,
     cs_real_t idifft = eqp_u->idifft;
 
     cs_real_t *w1;
-    BFT_MALLOC(w1, n_cells_ext, cs_real_t);
+    CS_MALLOC_HD(w1, n_cells_ext, cs_real_t, cs_alloc_mode);
 
     if (cs_glob_turb_model->itytur == 3)
       cs_array_real_copy(n_cells, viscl, w1);
@@ -759,7 +759,7 @@ _face_diff_vel(const cs_mesh_t             *m,
       }
     }
 
-    BFT_FREE(w1);
+    CS_FREE_HD(w1);
   }
 
   /* If no diffusion, viscosity is set to 0. */

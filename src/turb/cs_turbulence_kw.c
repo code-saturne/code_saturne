@@ -197,7 +197,7 @@ cs_turbulence_kw(int phase_id)
 
   cs_real_t *w1, *dpvar, *gdkgdw, *prodk, *prodw;
   CS_MALLOC_HD(dpvar, n_cells_ext, cs_real_t, cs_alloc_mode);
-  BFT_MALLOC(w1, n_cells_ext, cs_real_t);
+  CS_MALLOC_HD(w1, n_cells_ext, cs_real_t, cs_alloc_mode);
   BFT_MALLOC(gdkgdw, n_cells_ext, cs_real_t);
   BFT_MALLOC(prodk, n_cells_ext, cs_real_t);
   BFT_MALLOC(prodw, n_cells_ext, cs_real_t);
@@ -659,7 +659,7 @@ cs_turbulence_kw(int phase_id)
   if (cs_glob_turb_rans_model->irccor == 1) {
 
     /* Allocate an array for the rotation function */
-    BFT_MALLOC(rotfct, n_cells, cs_real_t);
+    CS_MALLOC_HD(rotfct, n_cells, cs_real_t, cs_alloc_mode);
 
     /* Compute the rotation function (gdkgdw array not used) */
     cs_turbulence_rotation_correction(dt, rotfct, gdkgdw);
@@ -1183,7 +1183,7 @@ cs_turbulence_kw(int phase_id)
 
     BFT_MALLOC(w5, n_cells_ext, cs_real_t);
     BFT_MALLOC(w6, n_cells_ext, cs_real_t);
-    BFT_MALLOC(w7, n_cells_ext, cs_real_t);
+    CS_MALLOC_HD(w7, n_cells_ext, cs_real_t, cs_alloc_mode);
 
 #   pragma omp parallel for if(n_cells_ext > CS_THR_MIN)
     for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
@@ -1371,7 +1371,7 @@ cs_turbulence_kw(int phase_id)
     /* Free memory */
     BFT_FREE(w5);
     BFT_FREE(w6);
-    BFT_FREE(w7);
+    CS_FREE_HD(w7);
   }
 
   /* Solve for turbulent kinetic energy (k)
@@ -1681,9 +1681,10 @@ cs_turbulence_kw(int phase_id)
   CS_FREE_HD(tinstk);
   CS_FREE_HD(tinstw);
   CS_FREE_HD(dpvar);
+  CS_FREE_HD(w1);
+  CS_FREE_HD(rotfct);
 
   BFT_FREE(xf1);
-  BFT_FREE(w1);
   BFT_FREE(grad_dot_g);
   BFT_FREE(usimpk);
   BFT_FREE(usimpw);
@@ -1694,7 +1695,6 @@ cs_turbulence_kw(int phase_id)
   BFT_FREE(s2pw2);
   BFT_FREE(maxgdsv);
   BFT_FREE(d2uidxi2);
-  BFT_FREE(rotfct);
 }
 
 /*----------------------------------------------------------------------------*/

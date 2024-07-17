@@ -181,9 +181,9 @@ cs_local_time_step_compute(int  itrale)
   /* Allocate temporary arrays for the time-step resolution */
 
   cs_real_t *i_visc, *b_visc, *dam;
-  BFT_MALLOC(i_visc, n_i_faces, cs_real_t);
+  CS_MALLOC_HD(i_visc, n_i_faces, cs_real_t, cs_alloc_mode);
   BFT_MALLOC(dam, n_cells_ext, cs_real_t);
-  BFT_MALLOC(b_visc, n_b_faces, cs_real_t);
+  CS_MALLOC_HD(b_visc, n_b_faces, cs_real_t, cs_alloc_mode);
 
   cs_field_bc_coeffs_t bc_coeffs_loc;
   cs_field_bc_coeffs_init(&bc_coeffs_loc);
@@ -200,7 +200,7 @@ cs_local_time_step_compute(int  itrale)
 
   /* Allocate work arrays */
   cs_real_t *w1, *w2, *w3;
-  BFT_MALLOC(w1, n_cells_ext, cs_real_t);
+  CS_MALLOC_HD(w1, n_cells_ext, cs_real_t, cs_alloc_mode);
   BFT_MALLOC(w2, n_cells_ext, cs_real_t);
   BFT_MALLOC(w3, n_cells_ext, cs_real_t);
 
@@ -832,11 +832,12 @@ cs_local_time_step_compute(int  itrale)
   }
 
   /* Free memory */
-  BFT_FREE(i_visc);
-  BFT_FREE(b_visc);
+  CS_FREE_HD(i_visc);
+  CS_FREE_HD(b_visc);
+  CS_FREE_HD(w1);
+
   BFT_FREE(dam);
   BFT_FREE(wcf);
-  BFT_FREE(w1);
   BFT_FREE(w2);
   BFT_FREE(w3);
 
@@ -921,8 +922,8 @@ cs_courant_fourier_compute(void)
 
   /* Allocate temporary arrays for the time-step resolution */
   cs_real_t *i_visc, *b_visc, *dam;
-  BFT_MALLOC(i_visc, n_i_faces, cs_real_t);
-  BFT_MALLOC(b_visc, n_b_faces, cs_real_t);
+  CS_MALLOC_HD(i_visc, n_i_faces, cs_real_t, cs_alloc_mode);
+  CS_MALLOC_HD(b_visc, n_b_faces, cs_real_t, cs_alloc_mode);
   BFT_MALLOC(dam, n_cells_ext, cs_real_t);
 
   cs_field_bc_coeffs_t bc_coeffs_loc;
@@ -935,7 +936,7 @@ cs_courant_fourier_compute(void)
 
   /* Allocate work arrays */
   cs_real_t *w1;
-  BFT_MALLOC(w1, n_cells_ext, cs_real_t);
+  CS_MALLOC_HD(w1, n_cells_ext, cs_real_t, cs_alloc_mode);
 
   const cs_real_t *viscl = CS_F_(mu)->val;
   const cs_real_t *visct = CS_F_(mu_t)->val;
@@ -1154,9 +1155,10 @@ cs_courant_fourier_compute(void)
   }
 
   /* Free memory */
-  BFT_FREE(w1);
-  BFT_FREE(i_visc);
-  BFT_FREE(b_visc);
+  CS_FREE_HD(w1);
+  CS_FREE_HD(i_visc);
+  CS_FREE_HD(b_visc);
+
   BFT_FREE(dam);
   BFT_FREE(bc_coeffs_loc.b);
   BFT_FREE(bc_coeffs_loc.bf);

@@ -2651,11 +2651,11 @@ cs_flux_through_surface(const char         *scalar_name,
   int imvisf = eqp->imvisf;
   cs_real_t *i_visc;
   cs_real_t *b_visc;
-  BFT_MALLOC(i_visc, n_i_faces, cs_real_t);
-  BFT_MALLOC(b_visc, n_b_faces, cs_real_t);
+  CS_MALLOC_HD(i_visc, n_i_faces, cs_real_t, cs_alloc_mode);
+  CS_MALLOC_HD(b_visc, n_b_faces, cs_real_t, cs_alloc_mode);
 
   cs_real_t *c_visc = NULL;
-  BFT_MALLOC(c_visc, n_cells_ext, cs_real_t);
+  CS_MALLOC_HD(c_visc, n_cells_ext, cs_real_t, cs_alloc_mode);
   const int kivisl
     = cs_field_get_key_int(f, cs_field_key_id("diffusivity_id"));
   if (kivisl != -1) {
@@ -3163,9 +3163,9 @@ cs_flux_through_surface(const char         *scalar_name,
 
   if (!itemperature || icp == -1)
     BFT_FREE(cpro_cp);
-  BFT_FREE(c_visc);
-  BFT_FREE(i_visc);
-  BFT_FREE(b_visc);
+  CS_FREE_HD(c_visc);
+  CS_FREE_HD(i_visc);
+  CS_FREE_HD(b_visc);
 }
 
 /*----------------------------------------------------------------------------*/

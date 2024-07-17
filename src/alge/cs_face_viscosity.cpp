@@ -48,18 +48,19 @@
 #include "bft_mem.h"
 #include "bft_printf.h"
 
-#include "cs_math.h"
 #include "cs_blas.h"
-#include "cs_halo.h"
-#include "cs_halo_perio.h"
-#include "cs_internal_coupling.h"
-#include "cs_log.h"
-#include "cs_mesh.h"
+#include "cs_dispatch.h"
+#include "cs_ext_neighborhood.h"
 #include "cs_field.h"
 #include "cs_field_default.h"
 #include "cs_field_pointer.h"
 #include "cs_gradient.h"
-#include "cs_ext_neighborhood.h"
+#include "cs_halo.h"
+#include "cs_halo_perio.h"
+#include "cs_internal_coupling.h"
+#include "cs_log.h"
+#include "cs_math.h"
+#include "cs_mesh.h"
 #include "cs_mesh_quantities.h"
 #include "cs_parall.h"
 #include "cs_parameters.h"
@@ -84,7 +85,7 @@ BEGIN_C_DECLS
  * Additional Doxygen documentation
  *============================================================================*/
 
-/*! \file  cs_face_viscosity.c
+/*! \file  cs_face_viscosity.cpp
  *
  *  \brief Face viscosity.
 */
@@ -155,6 +156,8 @@ cs_face_viscosity_secondary(cs_real_t  secvif[],
 
   const int itytur = cs_glob_turb_model->itytur;
 
+  cs_dispatch_context ctx;
+
   /* Initialization
      -------------- */
 
@@ -167,10 +170,10 @@ cs_face_viscosity_secondary(cs_real_t  secvif[],
   const cs_real_t *viscl = CS_F_(mu)->val;
   const cs_real_t *visct = CS_F_(mu_t)->val;
 
-  cs_real_t *cpro_viscv = NULL;
+  cs_real_t *cpro_viscv = nullptr;
   cs_field_t *f_viscv = cs_field_by_name_try("volume_viscosity");
 
-  if (f_viscv != NULL)
+  if (f_viscv != nullptr)
     cpro_viscv = cs_field_by_name_try("volume_viscosity")->val;
 
   /* Time extrapolation ? */
@@ -186,72 +189,73 @@ cs_face_viscosity_secondary(cs_real_t  secvif[],
   const int iviext = cs_field_get_key_int(CS_F_(mu), key_t_ext_id);
   const int iviext_t = cs_field_get_key_int(CS_F_(mu_t), key_t_ext_id);
 
-# pragma omp parallel
-  {
-    cs_lnum_t t_s_id, t_e_id;
-    cs_parall_thread_range(n_cells, sizeof(cs_real_t), &t_s_id, &t_e_id);
+  /* Laminar viscosity */
 
-    /* Laminar viscosity */
+  if (cs_glob_time_scheme->isno2t > 0 && iviext > 0) {
+    cs_real_t *cpro_viscl_pre = CS_F_(mu)->val_pre;
+    ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
+      secvis[c_id] = d2s3m * cpro_viscl_pre[c_id];
+    });
+  }
+  else {
+    ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
+      secvis[c_id] = d2s3m * viscl[c_id];
+    });
+  }
 
-    if (cs_glob_time_scheme->isno2t > 0 && iviext > 0) {
-      cs_real_t *cpro_viscl_pre = CS_F_(mu)->val_pre;
-      for (cs_lnum_t c_id = t_s_id; c_id < t_e_id; c_id++)
-        secvis[c_id] = d2s3m * cpro_viscl_pre[c_id];
+  /* Volume viscosity if present */
+  if (cs_glob_physical_model_flag[CS_COMPRESSIBLE] >= 0) {
+    if (f_viscv != nullptr) {
+      ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
+        secvis[c_id] += cpro_viscv[c_id];
+      });
     }
     else {
-      for (cs_lnum_t c_id = t_s_id; c_id < t_e_id; c_id++)
-        secvis[c_id] = d2s3m * viscl[c_id];
+      const cs_real_t viscv0 = cs_glob_fluid_properties->viscv0;
+      ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
+        secvis[c_id] += viscv0;
+      });
     }
+  }
 
-    /* Volume viscosity if present */
-    if (cs_glob_physical_model_flag[CS_COMPRESSIBLE] >= 0) {
-      if (f_viscv != NULL) {
-        for (cs_lnum_t c_id = t_s_id; c_id < t_e_id; c_id++)
-          secvis[c_id] += + cpro_viscv[c_id];
-      }
-      else {
-        const cs_real_t viscv0 = cs_glob_fluid_properties->viscv0;
-        for (cs_lnum_t c_id = t_s_id; c_id < t_e_id; c_id++)
-          secvis[c_id] += viscv0;
-      }
+  /* Turbulent viscosity (if not in Rij or LES) */
+
+  if (itytur != 3 && itytur != 4) {
+
+    if (cs_glob_time_scheme->isno2t > 0 && iviext_t > 0) {
+      cs_real_t *cpro_visct_pre = CS_F_(mu_t)->val_pre;
+      ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
+        secvis[c_id] += d2s3m * cpro_visct_pre[c_id];
+      });
     }
-
-    /* Turbulent viscosity (if not in Rij or LES) */
-
-    if (itytur != 3 && itytur != 4) {
-
-      if (cs_glob_time_scheme->isno2t > 0 && iviext_t > 0) {
-        cs_real_t *cpro_visct_pre = CS_F_(mu_t)->val_pre;
-        for (cs_lnum_t c_id = t_s_id; c_id < t_e_id; c_id++)
-          secvis[c_id] += d2s3m * cpro_visct_pre[c_id];
-      }
-      else {
-        for (cs_lnum_t c_id = t_s_id; c_id < t_e_id; c_id++)
-          secvis[c_id] += d2s3m * visct[c_id];
-      }
-
-    }
-
-    /* With porosity */
-    if (cs_glob_porous_model == 1 || cs_glob_porous_model == 2) {
-      cs_real_t *porosity = CS_F_(poro)->val;
-      for (cs_lnum_t c_id = t_s_id; c_id < t_e_id; c_id++)
-        secvis[c_id] *= porosity[c_id];
+    else {
+      ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
+        secvis[c_id] += d2s3m * visct[c_id];
+      });
     }
 
   }
 
+  /* With porosity */
+  if (cs_glob_porous_model == 1 || cs_glob_porous_model == 2) {
+    cs_real_t *porosity = CS_F_(poro)->val;
+    ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
+      secvis[c_id] *= porosity[c_id];
+    });
+  }
+
   /* Parallelism and periodicity process */
 
-  if (mesh->halo != NULL)
+  if (mesh->halo != nullptr) {
+    ctx.wait(); // needed for the next synchronization
     cs_halo_sync_var(mesh->halo, CS_HALO_STANDARD, secvis);
+  }
 
   /* Interior faces
      TODO we should (re)test the weight walue for imvisf=0 */
 
   if (eqp_vel->imvisf == 0) {
-#   pragma omp parallel for if (n_i_faces > CS_THR_MIN)
-    for (cs_lnum_t f_id = 0; f_id < n_i_faces; f_id++) {
+    ctx.parallel_for(n_i_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t f_id) {
 
       const cs_lnum_t c_id1 = i_face_cells[f_id][0];
       const cs_lnum_t c_id2 = i_face_cells[f_id][1];
@@ -260,11 +264,10 @@ cs_face_viscosity_secondary(cs_real_t  secvif[],
       const cs_real_t secvsj = secvis[c_id2];
 
       secvif[f_id] = 0.5 * (secvsi + secvsj);
-    }
+    });
   }
   else {
-#   pragma omp parallel for if (n_i_faces > CS_THR_MIN)
-    for (cs_lnum_t f_id = 0; f_id < n_i_faces; f_id++) {
+    ctx.parallel_for(n_i_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t f_id) {
 
       const cs_lnum_t c_id1 = i_face_cells[f_id][0];
       const cs_lnum_t c_id2 = i_face_cells[f_id][1];
@@ -274,17 +277,18 @@ cs_face_viscosity_secondary(cs_real_t  secvif[],
       const cs_real_t pnd = weight[f_id];
 
       secvif[f_id] = secvsi * secvsj / (pnd * secvsi + (1.0 - pnd) * secvsj);
-    }
+    });
   }
 
   /* Boundary faces
      TODO shall we extrapolate this value? */
 
-#  pragma omp parallel for if (n_b_faces > CS_THR_MIN)
-  for (cs_lnum_t f_id = 0; f_id < n_b_faces; f_id++) {
+  ctx.parallel_for(n_b_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t f_id) {
     const cs_lnum_t c_id = b_face_cells[f_id];
     secvib[f_id] = secvis[c_id];
-  }
+  });
+
+  ctx.wait(); // (temporary) needed for the CPU function cs_solve_navier_stokes
 
   /* TODO stresses at the wall? */
 
@@ -339,112 +343,116 @@ cs_face_viscosity(const cs_mesh_t               *m,
   const cs_real_t *restrict i_dist = fvq->i_dist;
   const cs_real_t *restrict i_f_face_surf = fvq->i_f_face_surf;
   const cs_real_t *restrict b_f_face_surf = fvq->b_f_face_surf;
+  const cs_lnum_t n_b_faces = m->n_b_faces;
+  const cs_lnum_t n_i_faces = m->n_i_faces;
+
+  cs_dispatch_context ctx, ctx_c;
+#if defined(HAVE_CUDA)
+  ctx_c.set_cuda_stream(cs_cuda_get_stream(1));
+#endif
 
   /* Porosity field */
   cs_field_t *fporo = cs_field_by_name_try("porosity");
 
-  cs_real_t *porosi = NULL;
+  cs_real_t *porosi = nullptr;
 
   if (cs_glob_porous_model == 1 || cs_glob_porous_model == 2) {
     porosi = fporo->val;
   }
 
   /* ---> Periodicity and parallelism treatment */
-  if (halo != NULL) {
+  if (halo != nullptr) {
     cs_halo_type_t halo_type = CS_HALO_STANDARD;
     cs_halo_sync_var(halo, halo_type, c_visc);
-    if (porosi != NULL) cs_halo_sync_var(halo, halo_type, porosi);
+    if (porosi != nullptr) cs_halo_sync_var(halo, halo_type, porosi);
   }
 
   /* Without porosity */
-  if (porosi == NULL) {
+  if (porosi == nullptr) {
 
     if (visc_mean_type == 0) {
 
-      for (cs_lnum_t face_id = 0; face_id < m->n_i_faces; face_id++) {
+      ctx_c.parallel_for(n_i_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t f_id) {
 
-        cs_lnum_t ii = i_face_cells[face_id][0];
-        cs_lnum_t jj = i_face_cells[face_id][1];
+        cs_lnum_t ii = i_face_cells[f_id][0];
+        cs_lnum_t jj = i_face_cells[f_id][1];
 
-        double visci = c_visc[ii];
-        double viscj = c_visc[jj];
+        cs_real_t visci = c_visc[ii];
+        cs_real_t viscj = c_visc[jj];
 
-        i_visc[face_id] = 0.5*(visci+viscj)
-                         *i_f_face_surf[face_id]/i_dist[face_id];
+        i_visc[f_id] = 0.5*(visci+viscj)
+                         *i_f_face_surf[f_id]/i_dist[f_id];
 
-      }
+      });
+    }
+    else {
 
-    } else {
+      ctx_c.parallel_for(n_i_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t f_id) {
 
-      for (cs_lnum_t face_id = 0; face_id < m->n_i_faces; face_id++) {
+        cs_lnum_t ii = i_face_cells[f_id][0];
+        cs_lnum_t jj = i_face_cells[f_id][1];
 
-        cs_lnum_t ii = i_face_cells[face_id][0];
-        cs_lnum_t jj = i_face_cells[face_id][1];
+        cs_real_t visci = c_visc[ii];
+        cs_real_t viscj = c_visc[jj];
+        cs_real_t pnd   = weight[f_id];
 
-        double visci = c_visc[ii];
-        double viscj = c_visc[jj];
-        double pnd   = weight[face_id];
-
-        i_visc[face_id] = visci*viscj/CS_MAX(pnd*visci+(1.-pnd)*viscj,
-                                             DBL_MIN)
-                         *i_f_face_surf[face_id]/i_dist[face_id];
-
-      }
-
+        i_visc[f_id] = visci*viscj/cs_math_fmax(pnd*visci+(1.-pnd)*viscj,
+                                                DBL_MIN)
+                         *i_f_face_surf[f_id]/i_dist[f_id];
+      });
     }
 
-    for (cs_lnum_t face_id = 0; face_id < m->n_b_faces; face_id++) {
-
-      b_visc[face_id] = b_f_face_surf[face_id];
-
-    }
+    ctx.parallel_for(n_b_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t f_id) {
+      b_visc[f_id] = b_f_face_surf[f_id];
+    });
 
   /* With porosity */
-  } else {
+  }
+  else {
 
     if (visc_mean_type == 0) {
 
-      for (cs_lnum_t face_id = 0; face_id < m->n_i_faces; face_id++) {
+      ctx_c.parallel_for(n_i_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t f_id) {
 
-        cs_lnum_t ii = i_face_cells[face_id][0];
-        cs_lnum_t jj = i_face_cells[face_id][1];
+        cs_lnum_t ii = i_face_cells[f_id][0];
+        cs_lnum_t jj = i_face_cells[f_id][1];
 
-        double visci = c_visc[ii] * porosi[ii];
-        double viscj = c_visc[jj] * porosi[jj];
+        cs_real_t visci = c_visc[ii] * porosi[ii];
+        cs_real_t viscj = c_visc[jj] * porosi[jj];
 
-        i_visc[face_id] = 0.5*(visci+viscj)
-                         *i_f_face_surf[face_id]/i_dist[face_id];
+        i_visc[f_id] = 0.5*(visci+viscj)
+                         *i_f_face_surf[f_id]/i_dist[f_id];
 
-      }
+      });
+    }
+    else {
 
-    } else {
+      ctx_c.parallel_for(n_i_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t f_id) {
 
-      for (cs_lnum_t face_id = 0; face_id <m->n_i_faces; face_id++) {
+        cs_lnum_t ii = i_face_cells[f_id][0];
+        cs_lnum_t jj = i_face_cells[f_id][1];
 
-        cs_lnum_t ii = i_face_cells[face_id][0];
-        cs_lnum_t jj = i_face_cells[face_id][1];
+        cs_real_t visci = c_visc[ii] * porosi[ii];
+        cs_real_t viscj = c_visc[jj] * porosi[jj];
+        cs_real_t pnd   = weight[f_id];
 
-        double visci = c_visc[ii] * porosi[ii];
-        double viscj = c_visc[jj] * porosi[jj];
-        double pnd   = weight[face_id];
+        i_visc[f_id] = visci*viscj/cs_math_fmax(pnd*visci+(1.-pnd)*viscj,
+                                                DBL_MIN)
+                         *i_f_face_surf[f_id]/i_dist[f_id];
 
-        i_visc[face_id] = visci*viscj/CS_MAX(pnd*visci+(1.-pnd)*viscj,
-                                             DBL_MIN)
-                         *i_f_face_surf[face_id]/i_dist[face_id];
-
-      }
-
+      });
     }
 
-    for (cs_lnum_t face_id = 0; face_id < m->n_b_faces; face_id++) {
-
-      cs_lnum_t ii = b_face_cells[face_id];
-
-      b_visc[face_id] = b_f_face_surf[face_id]*porosi[ii];
-
-    }
+    ctx.parallel_for(n_b_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t f_id) {
+      cs_lnum_t ii = b_face_cells[f_id];
+      b_visc[f_id] = b_f_face_surf[f_id]*porosi[ii];
+    });
 
   }
+
+  // guaranteed results for the CPU outside functions
+  ctx_c.wait();
+  ctx.wait();
 }
 
 /*----------------------------------------------------------------------------*/
@@ -486,57 +494,69 @@ cs_face_anisotropic_viscosity_vector(const cs_mesh_t             *m,
   const cs_real_t *restrict i_dist = fvq->i_dist;
   const cs_real_t *restrict i_f_face_surf = fvq->i_f_face_surf;
   const cs_real_t *restrict b_f_face_surf = fvq->b_f_face_surf;
+  const cs_lnum_t n_b_faces = m->n_b_faces;
+  const cs_lnum_t n_i_faces = m->n_i_faces;
 
-  double visci[3][3], viscj[3][3], s1[6], s2[6];
+  /* Parallel or device dispatch */
+  cs_dispatch_context ctx, ctx_c;
+#if defined(HAVE_CUDA)
+  ctx_c.set_cuda_stream(cs_cuda_get_stream(1));
+#endif
 
-  cs_real_6_t *c_poro_visc = NULL;
-  cs_real_6_t *w2 = NULL;
+  cs_real_6_t *c_poro_visc = nullptr;
+  cs_real_6_t *w2 = nullptr;
 
   /* Porosity fields */
   cs_field_t *fporo = cs_field_by_name_try("porosity");
   cs_field_t *ftporo = cs_field_by_name_try("tensorial_porosity");
 
-  cs_real_t *porosi = NULL;
-  cs_real_6_t *porosf = NULL;
+  cs_real_t *porosi = nullptr;
+  cs_real_6_t *porosf = nullptr;
 
   if (cs_glob_porous_model == 1 || cs_glob_porous_model == 2) {
     porosi = fporo->val;
-    if (ftporo != NULL) {
+    if (ftporo != nullptr) {
       porosf = (cs_real_6_t *)ftporo->val;
     }
   }
 
   /* Without porosity */
-  if (porosi == NULL) {
+  if (porosi == nullptr) {
 
     c_poro_visc = c_visc;
 
   /* With porosity */
-  } else if (porosi != NULL && porosf == NULL) {
+  }
+  else if (porosi != nullptr && porosf == nullptr) {
 
-    BFT_MALLOC(w2, n_cells_ext, cs_real_6_t);
-    for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
+    CS_MALLOC_HD(w2, n_cells_ext, cs_real_6_t, cs_alloc_mode);
+    ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
       for (int isou = 0; isou < 6; isou++) {
-        w2[cell_id][isou] = porosi[cell_id]*c_visc[cell_id][isou];
+        w2[c_id][isou] = porosi[c_id]*c_visc[c_id][isou];
       }
-    }
+    });
+    ctx.wait(); // needed before pointer egality
+
     c_poro_visc = w2;
 
   /* With tensorial porosity */
-  } else if (porosi != NULL && porosf != NULL) {
+  }
+  else if (porosi != nullptr && porosf != nullptr) {
 
-    BFT_MALLOC(w2, n_cells_ext, cs_real_6_t);
-    for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
-      cs_math_sym_33_product(porosf[cell_id],
-                             c_visc[cell_id],
-                             w2[cell_id]);
-    }
+    CS_MALLOC_HD(w2, n_cells_ext, cs_real_6_t, cs_alloc_mode);
+    ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
+      cs_math_sym_33_product(porosf[c_id],
+                             c_visc[c_id],
+                             w2[c_id]);
+    });
+    ctx.wait(); // needed before pointer egality
+
     c_poro_visc = w2;
 
   }
 
   /* ---> Periodicity and parallelism treatment */
-  if (halo != NULL) {
+  if (halo != nullptr) {
     cs_halo_type_t halo_type = CS_HALO_STANDARD;
     cs_halo_sync_var_strided(halo, halo_type, (cs_real_t *)c_poro_visc, 6);
     if (m->n_init_perio > 0)
@@ -548,11 +568,12 @@ cs_face_anisotropic_viscosity_vector(const cs_mesh_t             *m,
   /* Arithmetic mean */
   if (visc_mean_type == 0) {
 
-    for (cs_lnum_t face_id = 0; face_id < m->n_i_faces; face_id++) {
+    ctx_c.parallel_for(n_i_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t f_id) {
 
-      cs_lnum_t ii = i_face_cells[face_id][0];
-      cs_lnum_t jj = i_face_cells[face_id][1];
+      cs_lnum_t ii = i_face_cells[f_id][0];
+      cs_lnum_t jj = i_face_cells[f_id][1];
 
+      cs_real_t visci[3][3];
       visci[0][0] = c_poro_visc[ii][0];
       visci[1][1] = c_poro_visc[ii][1];
       visci[2][2] = c_poro_visc[ii][2];
@@ -563,6 +584,7 @@ cs_face_anisotropic_viscosity_vector(const cs_mesh_t             *m,
       visci[2][0] = c_poro_visc[ii][5];
       visci[0][2] = c_poro_visc[ii][5];
 
+      cs_real_t viscj[3][3];
       viscj[0][0] = c_poro_visc[jj][0];
       viscj[1][1] = c_poro_visc[jj][1];
       viscj[2][2] = c_poro_visc[jj][2];
@@ -575,24 +597,26 @@ cs_face_anisotropic_viscosity_vector(const cs_mesh_t             *m,
 
       for (int isou = 0; isou < 3; isou++) {
         for (int jsou = 0; jsou < 3; jsou++) {
-          i_visc[face_id][jsou][isou] =  0.5*(visci[jsou][isou]
+          i_visc[f_id][jsou][isou] =  0.5*(visci[jsou][isou]
                                              +viscj[jsou][isou])
-                                       * i_f_face_surf[face_id]/i_dist[face_id];
+                                       * i_f_face_surf[f_id]/i_dist[f_id];
         }
       }
 
-    }
+    });
 
     /* Harmonic mean: Kf = Ki . (pnd Ki +(1-pnd) Kj)^-1 . Kj */
-  } else {
+  }
+  else {
 
-    for (cs_lnum_t face_id = 0; face_id < m->n_i_faces; face_id++) {
+    ctx_c.parallel_for(n_i_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t f_id) {
 
-      cs_lnum_t ii = i_face_cells[face_id][0];
-      cs_lnum_t jj = i_face_cells[face_id][1];
+      cs_lnum_t ii = i_face_cells[f_id][0];
+      cs_lnum_t jj = i_face_cells[f_id][1];
 
-      double pnd = weight[face_id];
+      cs_real_t pnd = weight[f_id];
 
+      cs_real_t s1[6], s2[6];
       for (int isou = 0; isou < 6; isou++) {
         s1[isou] = pnd*c_poro_visc[ii][isou] + (1.-pnd)*c_poro_visc[jj][isou];
       }
@@ -603,56 +627,59 @@ cs_face_anisotropic_viscosity_vector(const cs_mesh_t             *m,
 
       cs_math_sym_33_product(c_poro_visc[ii], s1, s2);
 
-      double srfddi = i_f_face_surf[face_id]/i_dist[face_id];
+      cs_real_t srfddi = i_f_face_surf[f_id]/i_dist[f_id];
 
-      i_visc[face_id][0][0] = s2[0]*srfddi;
-      i_visc[face_id][1][1] = s2[1]*srfddi;
-      i_visc[face_id][2][2] = s2[2]*srfddi;
-      i_visc[face_id][1][0] = s2[3]*srfddi;
-      i_visc[face_id][0][1] = s2[3]*srfddi;
-      i_visc[face_id][2][1] = s2[4]*srfddi;
-      i_visc[face_id][1][2] = s2[4]*srfddi;
-      i_visc[face_id][2][0] = s2[5]*srfddi;
-      i_visc[face_id][0][2] = s2[5]*srfddi;
+      i_visc[f_id][0][0] = s2[0]*srfddi;
+      i_visc[f_id][1][1] = s2[1]*srfddi;
+      i_visc[f_id][2][2] = s2[2]*srfddi;
+      i_visc[f_id][1][0] = s2[3]*srfddi;
+      i_visc[f_id][0][1] = s2[3]*srfddi;
+      i_visc[f_id][2][1] = s2[4]*srfddi;
+      i_visc[f_id][1][2] = s2[4]*srfddi;
+      i_visc[f_id][2][0] = s2[5]*srfddi;
+      i_visc[f_id][0][2] = s2[5]*srfddi;
 
-    }
+    });
 
   }
 
   /* Without porosity */
-  if (porosi == NULL) {
+  if (porosi == nullptr) {
 
-    for (cs_lnum_t face_id = 0; face_id < m->n_b_faces; face_id++) {
-
-      b_visc[face_id] = b_f_face_surf[face_id];
-
-    }
+    ctx.parallel_for(n_b_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t f_id) {
+      b_visc[f_id] = b_f_face_surf[f_id];
+    });
 
   /* With porosity */
-  } else if (porosi != NULL && porosf == NULL) {
+  }
+  else if (porosi != nullptr && porosf == nullptr) {
 
-    for (cs_lnum_t face_id = 0; face_id < m->n_b_faces; face_id++) {
+    ctx.parallel_for(n_b_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t f_id) {
 
-      cs_lnum_t ii = b_face_cells[face_id];
+      cs_lnum_t ii = b_face_cells[f_id];
 
-      b_visc[face_id] = b_f_face_surf[face_id]*porosi[ii];
+      b_visc[f_id] = b_f_face_surf[f_id]*porosi[ii];
 
-    }
+    });
 
   /* With anisotropic porosity */
-  } else if (porosi != NULL && porosf != NULL) {
+  }
+  else if (porosi != nullptr && porosf != nullptr) {
 
-    for (cs_lnum_t face_id = 0; face_id < m->n_b_faces; face_id++) {
+    ctx.parallel_for(n_b_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t f_id) {
 
-      cs_lnum_t ii = b_face_cells[face_id];
+      cs_lnum_t ii = b_face_cells[f_id];
 
-      b_visc[face_id] = b_f_face_surf[face_id]*porosi[ii];
+      b_visc[f_id] = b_f_face_surf[f_id]*porosi[ii];
 
-    }
+    });
 
   }
 
-  BFT_FREE(w2);
+  ctx.wait();
+  ctx_c.wait();
+
+  CS_FREE_HD(w2);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -717,58 +744,88 @@ cs_face_anisotropic_viscosity_scalar(const cs_mesh_t               *m,
     = (const cs_real_3_t *restrict)fvq->i_face_cog;
   const cs_real_3_t *restrict b_face_cog
     = (const cs_real_3_t *restrict)fvq->b_face_cog;
+  const cs_lnum_t n_b_faces = m->n_b_faces;
+  const cs_lnum_t n_i_faces = m->n_i_faces;
 
-  cs_gnum_t nclipf = 0, nclipb = 0;
-  const double eps = 0.1;
+  /* Parallel or device dispatch */
+  cs_dispatch_context ctx, ctx_c;
+#if defined(HAVE_CUDA)
+  ctx_c.set_cuda_stream(cs_cuda_get_stream(1));
+#endif
 
-  cs_real_6_t *c_poro_visc = NULL;
-  cs_real_6_t *w2 = NULL;
+  short *i_clip = nullptr, *b_clip = nullptr;
+  if (iwarnp >= 3) {
+    CS_MALLOC_HD(i_clip, n_i_faces, short, cs_alloc_mode);
+    CS_MALLOC_HD(b_clip, n_b_faces, short, cs_alloc_mode);
+
+    ctx.parallel_for(n_i_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t f_id) {
+      i_clip[f_id] = 0;
+    });
+    ctx_c.parallel_for(n_b_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t f_id) {
+      b_clip[f_id] = 0;
+    });
+  }
+
+  const cs_real_t eps = 0.1;
+
+  cs_real_6_t *c_poro_visc = nullptr;
+  cs_real_6_t *w2 = nullptr;
 
   /* Porosity fields */
   cs_field_t *fporo = cs_field_by_name_try("porosity");
   cs_field_t *ftporo = cs_field_by_name_try("tensorial_porosity");
 
-  cs_real_t *porosi = NULL;
-  cs_real_6_t *porosf = NULL;
+  cs_real_t *porosi = nullptr;
+  cs_real_6_t *porosf = nullptr;
 
   if (cs_glob_porous_model == 1 || cs_glob_porous_model == 2) {
     porosi = fporo->val;
-    if (ftporo != NULL) {
+    if (ftporo != nullptr) {
       porosf = (cs_real_6_t *)ftporo->val;
     }
   }
 
   /* Without porosity */
-  if (porosi == NULL) {
+  if (porosi == nullptr) {
 
     c_poro_visc = c_visc;
 
   /* With porosity */
-  } else if (porosi != NULL && porosf == NULL) {
+  }
+  else if (porosi != nullptr && porosf == nullptr) {
 
-    BFT_MALLOC(w2, n_cells_ext, cs_real_6_t);
-    for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
+    CS_MALLOC_HD(w2, n_cells_ext, cs_real_6_t, cs_alloc_mode);
+
+    ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
       for (int isou = 0; isou < 6; isou++) {
-        w2[cell_id][isou] = porosi[cell_id]*c_visc[cell_id][isou];
+        w2[c_id][isou] = porosi[c_id]*c_visc[c_id][isou];
       }
-    }
+    });
+
+    ctx.wait();
+
     c_poro_visc = w2;
 
   /* With tensorial porosity */
-  } else if (porosi != NULL && porosf != NULL) {
+  }
+  else if (porosi != nullptr && porosf != nullptr) {
 
-    BFT_MALLOC(w2, n_cells_ext, cs_real_6_t);
-    for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
-      cs_math_sym_33_product(porosf[cell_id],
-                             c_visc[cell_id],
-                             w2[cell_id]);
-    }
+    CS_MALLOC_HD(w2, n_cells_ext, cs_real_6_t, cs_alloc_mode);
+
+    ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
+      cs_math_sym_33_product(porosf[c_id],
+                             c_visc[c_id],
+                             w2[c_id]);
+    });
+
+    ctx.wait();
+
     c_poro_visc = w2;
 
   }
 
   /* ---> Periodicity and parallelism treatment */
-  if (halo != NULL) {
+  if (halo != nullptr) {
     cs_halo_type_t halo_type = CS_HALO_STANDARD;
     cs_halo_sync_var_strided(halo, halo_type, (cs_real_t *)c_poro_visc, 6);
     if (m->n_init_perio > 0)
@@ -778,153 +835,171 @@ cs_face_anisotropic_viscosity_scalar(const cs_mesh_t               *m,
   }
 
   /* Always Harmonic mean */
-  for (cs_lnum_t face_id = 0; face_id < m->n_i_faces; face_id++) {
+  ctx.parallel_for(n_i_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t f_id) {
 
-    cs_lnum_t ii = i_face_cells[face_id][0];
-    cs_lnum_t jj = i_face_cells[face_id][1];
+    cs_lnum_t ii = i_face_cells[f_id][0];
+    cs_lnum_t jj = i_face_cells[f_id][1];
 
     /* ||Ki.S||^2 */
-    cs_real_3_t viscisv;
-    cs_math_sym_33_3_product(c_poro_visc[ii], i_face_normal[face_id], viscisv);
+    cs_real_t viscisv[3];
+    cs_math_sym_33_3_product(c_poro_visc[ii], i_face_normal[f_id], viscisv);
     cs_real_t viscis = cs_math_3_square_norm(viscisv);
 
     /* IF */
-    cs_real_3_t fi;
-    for (int kk = 0; kk < 3; kk++)
-      fi[kk] = i_face_cog[face_id][kk]-cell_cen[ii][kk];
+    cs_real_t fi[3];
+    for (cs_lnum_t kk = 0; kk < 3; kk++)
+      fi[kk] = i_face_cog[f_id][kk]-cell_cen[ii][kk];
 
     /* IF.Ki.S */
-    cs_real_3_t fiki;
+    cs_real_t fiki[3];
     cs_math_sym_33_3_product(c_poro_visc[ii], fi, fiki);
-    cs_real_t fikis = cs_math_3_dot_product(fiki, i_face_normal[face_id]);
+    cs_real_t fikis = cs_math_3_dot_product(fiki, i_face_normal[f_id]);
 
-    double distfi = (1. - weight[face_id])*i_dist[face_id];
+    cs_real_t distfi = (1. - weight[f_id])*i_dist[f_id];
 
     /* Take I" so that I"F= eps*||FI||*Ki.n when I" is in cell rji */
-    double temp = eps*sqrt(viscis)*distfi;
+    cs_real_t temp = eps*sqrt(viscis)*distfi;
     if (fikis < temp) {
       fikis = temp;
-      nclipf++;
+      if (i_clip != nullptr)
+        i_clip[f_id] = 1;
     }
 
     /* ||Kj.S||^2 */
-    cs_real_3_t viscjsv;
-    cs_math_sym_33_3_product(c_poro_visc[jj], i_face_normal[face_id], viscjsv);
+    cs_real_t viscjsv[3];
+    cs_math_sym_33_3_product(c_poro_visc[jj], i_face_normal[f_id], viscjsv);
     cs_real_t viscjs = cs_math_3_square_norm(viscjsv);
 
     /* FJ */
-    cs_real_3_t fj;
+    cs_real_t fj[3];
     for (int kk = 0; kk < 3; kk++)
-      fj[kk] = cell_cen[jj][kk]-i_face_cog[face_id][kk];
+      fj[kk] = cell_cen[jj][kk]-i_face_cog[f_id][kk];
 
     /* FJ.Kj.S */
-    cs_real_3_t fjkj;
+    cs_real_t fjkj[3];
     cs_math_sym_33_3_product(c_poro_visc[jj], fj, fjkj);
-    cs_real_t fjkjs = cs_math_3_dot_product(fjkj, i_face_normal[face_id]);
+    cs_real_t fjkjs = cs_math_3_dot_product(fjkj, i_face_normal[f_id]);
 
-    double distfj = weight[face_id]*i_dist[face_id];
+    cs_real_t distfj = weight[f_id]*i_dist[f_id];
 
     /* Take J" so that FJ"= eps*||FJ||*Kj.n when J" is in cell i */
     temp = eps*sqrt(viscjs)*distfj;
     if (fjkjs < temp) {
       fjkjs = temp;
-      nclipf++;
+      if (i_clip != nullptr)
+        i_clip[f_id] += 1;
     }
 
-    weighf[face_id][0] = fikis/viscis;
-    weighf[face_id][1] = fjkjs/viscjs;
+    weighf[f_id][0] = fikis/viscis;
+    weighf[f_id][1] = fjkjs/viscjs;
 
-    i_visc[face_id] = 1./(weighf[face_id][0] + weighf[face_id][1]);
+    i_visc[f_id] = 1./(weighf[f_id][0] + weighf[f_id][1]);
 
-  }
+  });
 
   /* For the porous modelling based on integral formulation Section and fluid
    * Section are different */
   if (cs_glob_porous_model == 3) {
-    for (cs_lnum_t face_id = 0; face_id < m->n_i_faces; face_id++)
-      i_visc[face_id] *= i_f_face_surf[face_id] / i_face_surf[face_id];
+     ctx.parallel_for(n_i_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t f_id) {
+      i_visc[f_id] *= i_f_face_surf[f_id] / i_face_surf[f_id];
+     });
   }
 
-  for (cs_lnum_t face_id = 0; face_id < m->n_b_faces; face_id++) {
+  ctx_c.parallel_for(n_b_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t f_id) {
 
-    cs_lnum_t ii = b_face_cells[face_id];
+    cs_lnum_t ii = b_face_cells[f_id];
 
     /* ||Ki.S||^2 */
-    cs_real_3_t viscisv;
-    cs_math_sym_33_3_product(c_poro_visc[ii], b_face_normal[face_id], viscisv);
+    cs_real_t viscisv[3];
+    cs_math_sym_33_3_product(c_poro_visc[ii], b_face_normal[f_id], viscisv);
     cs_real_t viscis = cs_math_3_square_norm(viscisv);
 
     /* IF */
-    cs_real_3_t fi;
+    cs_real_t fi[3];
     for (int kk = 0; kk < 3; kk++)
-      fi[kk] = b_face_cog[face_id][kk]-cell_cen[ii][kk];
+      fi[kk] = b_face_cog[f_id][kk]-cell_cen[ii][kk];
 
     /* IF.Ki.S */
-    cs_real_3_t fiki;
+    cs_real_t fiki[3];
     cs_math_sym_33_3_product(c_poro_visc[ii], fi, fiki);
-    cs_real_t fikis = cs_math_3_dot_product(fiki, b_face_normal[face_id]);
+    cs_real_t fikis = cs_math_3_dot_product(fiki, b_face_normal[f_id]);
 
-    double distfi = b_dist[face_id];
+    cs_real_t distfi = b_dist[f_id];
 
     /* Take I" so that I"F= eps*||FI||*Ki.n when J" is in cell rji */
-    double temp = eps*sqrt(viscis)*distfi;
+    cs_real_t temp = eps*sqrt(viscis)*distfi;
     if (fikis < temp) {
       fikis = temp;
-      nclipb++;
+      if (b_clip != nullptr)
+        b_clip[f_id] = 1;
     }
 
-    weighb[face_id] = fikis/viscis;
+    weighb[f_id] = fikis/viscis;
 
-  }
+  });
 
   /* Without porosity */
-  if (porosi == NULL) {
+  if (porosi == nullptr) {
 
-    for (cs_lnum_t face_id = 0; face_id < m->n_b_faces; face_id++) {
+    ctx_c.parallel_for(n_b_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t f_id) {
 
       /* Warning: hint must be ||Ki.n||/I"F */
-      b_visc[face_id] = b_f_face_surf[face_id];
-    }
+      b_visc[f_id] = b_f_face_surf[f_id];
+    });
 
   /* With porosity */
-  } else if (porosi != NULL && porosf == NULL) {
+  }
+  else if (porosi != nullptr && porosf == nullptr) {
 
-    for (cs_lnum_t face_id = 0; face_id < m->n_b_faces; face_id++) {
+    ctx_c.parallel_for(n_b_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t f_id) {
 
-      cs_lnum_t ii = b_face_cells[face_id];
+      cs_lnum_t ii = b_face_cells[f_id];
 
       /* Warning: hint must be ||Ki.n||/I"F */
-      b_visc[face_id] = b_f_face_surf[face_id]*porosi[ii];
+      b_visc[f_id] = b_f_face_surf[f_id]*porosi[ii];
 
-    }
+    });
 
   /* With tensorial porosity */
-  } else if (porosi != NULL && porosf != NULL) {
+  }
+  else if (porosi != nullptr && porosf != nullptr) {
 
-    for (cs_lnum_t face_id = 0; face_id < m->n_b_faces; face_id++) {
+    ctx_c.parallel_for(n_b_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t f_id) {
 
-      cs_lnum_t ii = b_face_cells[face_id];
+      cs_lnum_t ii = b_face_cells[f_id];
 
       /* Warning: hint must be ||Ki.n||/I"F */
-      b_visc[face_id] = b_f_face_surf[face_id]*porosi[ii];
+      b_visc[f_id] = b_f_face_surf[f_id]*porosi[ii];
 
-    }
+    });
 
   }
 
-  if (halo != NULL) {
-    cs_parall_counter(&nclipf, 1);
-    cs_parall_counter(&nclipb, 1);
-  }
+  ctx.wait();
+  ctx_c.wait();
 
   if (iwarnp >= 3) {
+    cs_gnum_t n_i_clip = 0, n_b_clip = 0;
+
+#     pragma omp parallel for reduction(+:n_i_clip)
+    for (cs_lnum_t i = 0; i < n_i_faces; i++) {
+      n_i_clip += i_clip[i];
+    }
+#     pragma omp parallel for reduction(+:n_b_clip)
+    for (cs_lnum_t i = 0; i < n_b_faces; i++) {
+      n_b_clip += b_clip[i];
+    }
+
+    cs_gnum_t count_clip[2] = {n_i_clip, n_b_clip};
+    cs_parall_counter(count_clip, 2);
+
     bft_printf("Computing the face viscosity from the tensorial viscosity:\n"
                "   Number of internal clippings: %lu\n"
                "   Number of boundary clippings: %lu\n",
-               (unsigned long)nclipf, (unsigned long)nclipb);
+               (unsigned long)count_clip[0], (unsigned long)count_clip[1]);
   }
 
-  BFT_FREE(w2);
+  CS_FREE_HD(w2);
 }
 
 /*----------------------------------------------------------------------------*/
