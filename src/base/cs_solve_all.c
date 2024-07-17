@@ -49,6 +49,7 @@
 #include "cs_array.h"
 #include "cs_assert.h"
 #include "cs_boundary_conditions.h"
+#include "cs_boundary_conditions_coupling.h"
 #include "cs_boundary_conditions_set_coeffs.h"
 #include "cs_compute_thermo_pressure_density.h"
 #include "cs_ctwr_source_terms.h"
@@ -141,15 +142,8 @@ void
 cs_f_atr1vf(void);
 
 void
-cs_f_cou1di(void);
-
-void
 cs_f_schtmp(const int n_scal,
             const int iappel);
-
-void
-cs_f_syrtes_coupling_temperature(cs_real_t hbord[],
-                                 cs_real_t theipb[]);
 
 /*============================================================================
  * Private function definitions
@@ -493,11 +487,11 @@ _solve_most(int              n_var,
         cs_syr_coupling_send_boundary(hbord, theipb);
 
       if (th_f != NULL && cs_glob_1d_wall_thermal->nfpt1t > 0) {
-        cs_f_syrtes_coupling_temperature(hbord, theipb);
+        cs_boundary_conditions_coupling_t_out(hbord, theipb);
 
         if (   wall_cond->icondb == 0
             || cs_glob_rad_transfer_params->type > 0)
-          cs_f_cou1di();
+          cs_boundary_conditions_coupling_t_in();
       }
 
       // 1-D thermal model coupling with condensation

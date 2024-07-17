@@ -57,6 +57,7 @@
 #include "cs_boundary.h"
 #include "cs_boundary_conditions.h"
 #include "cs_boundary_conditions_check.h"
+#include "cs_boundary_conditions_coupling.h"
 #include "cs_boundary_conditions_set_coeffs_symmetry.h"
 #include "cs_boundary_conditions_set_coeffs_turb.h"
 #include "cs_boundary_conditions_type.h"
@@ -122,9 +123,6 @@ cs_f_boundary_conditions_get_bc_type(void);
 
 void
 cs_f_ppprcl(void);
-
-void
-cs_f_cou1di(void);
 
 void
 cs_f_mmtycl(const int  *itypfb);
@@ -810,7 +808,7 @@ cs_boundary_conditions_set_coeffs(int        nvar,
     cs_syr_coupling_recv_boundary(nvar, bc_type);
 
     if (nfpt1t > 0)
-      cs_f_cou1di();
+      cs_boundary_conditions_coupling_t_in();
 
     /* Coupling 1D thermal model with condensation modelling
        to take into account the solid temperature evolution over time */

@@ -102,6 +102,7 @@ cs_block_to_part.h \
 cs_boundary.h \
 cs_boundary_conditions.h \
 cs_boundary_conditions_check.h \
+cs_boundary_conditions_coupling.h\
 cs_boundary_conditions_set_coeffs.h \
 cs_boundary_conditions_set_coeffs_symmetry.h \
 cs_boundary_conditions_set_coeffs_turb.h \
@@ -295,8 +296,6 @@ libcsbase_a_SOURCES = \
 addfld.f90 \
 cs_mass_source_terms.c \
 condli.f90 \
-cou1di.f90 \
-cou1do.f90 \
 cs_wall_condensation.c \
 cs_wall_condensation_1d_thermal.c \
 cs_1d_wall_thermal.c \
@@ -309,6 +308,7 @@ cs_base_fortran.c \
 cs_boundary.c \
 cs_boundary_conditions.c \
 cs_boundary_conditions_check.c \
+cs_boundary_conditions_coupling.c\
 cs_boundary_conditions_set_coeffs.c \
 cs_boundary_conditions_set_coeffs_symmetry.c \
 cs_boundary_conditions_set_coeffs_turb.c \

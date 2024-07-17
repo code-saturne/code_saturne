@@ -1835,22 +1835,6 @@ module cs_c_bindings
 
     !---------------------------------------------------------------------------
 
-    !> \brief Solve the 1D equation for a given face.
-
-    !> \param[in]   ii   face number
-    !> \param[in]   tf   fluid temperature at the boundarys
-    !> \param[in]   hf   exchange coefficient for the fluid
-
-    subroutine cs_1d_wall_thermal_solve(ii, tf, hf)  &
-      bind(C, name='cs_1d_wall_thermal_solve')
-      use, intrinsic :: iso_c_binding
-      implicit none
-      integer(c_int), value :: ii
-      real(kind=c_double), value :: tf, hf
-    end subroutine cs_1d_wall_thermal_solve
-
-    !---------------------------------------------------------------------------
-
     !> \brief Log information related to 1D wall thermal problem
 
     subroutine cs_1d_wall_thermal_log()  &
@@ -1901,20 +1885,6 @@ module cs_c_bindings
 
     !---------------------------------------------------------------------------
 
-    !> \brief Data Entry of the 1D wall thermal module.
-
-    !> \param[in]   iappel   Call number
-    !> \param[in]   isuit1   Restart caculation or not
-
-    subroutine cs_user_1d_wall_thermal(iappel, isuit1)  &
-      bind(C, name='cs_user_1d_wall_thermal')
-      use, intrinsic :: iso_c_binding
-      implicit none
-      integer(c_int), value :: iappel, isuit1
-    end subroutine cs_user_1d_wall_thermal
-
-    !---------------------------------------------------------------------------
-
     !> \brief Return pointers to nfpt1d and nfpt1t.
 
     !> \param[out]   nfpt1d   Pointer to nfpt1d
@@ -1940,32 +1910,6 @@ module cs_c_bindings
       implicit none
       integer(c_int), value :: iappel, isuit1
     end subroutine cs_1d_wall_thermal_check
-
-    !---------------------------------------------------------------------------
-
-    !> \brief Return a pointer to the ifpt1d array.
-
-    !> \param[out]   ifpt1d   Pointer to ifpt1d
-
-    subroutine cs_f_1d_wall_thermal_get_faces(ifpt1d)  &
-      bind(C, name='cs_f_1d_wall_thermal_get_faces')
-      use, intrinsic :: iso_c_binding
-      implicit none
-      type(c_ptr), intent(out) :: ifpt1d
-    end subroutine cs_f_1d_wall_thermal_get_faces
-
-    !---------------------------------------------------------------------------
-
-    !> \brief Return a pointer to the tppt1d array.
-
-    !> \param[out]   tppt1d   Pointer to tppt1d
-
-    subroutine cs_f_1d_wall_thermal_get_temp(tppt1d)  &
-      bind(C, name='cs_f_1d_wall_thermal_get_temp')
-      use, intrinsic :: iso_c_binding
-      implicit none
-      type(c_ptr), intent(out) :: tppt1d
-    end subroutine cs_f_1d_wall_thermal_get_temp
 
     !---------------------------------------------------------------------------
 
@@ -2583,18 +2527,6 @@ module cs_c_bindings
       integer(c_int), value :: cell_id
       integer(kind=c_int) :: is_active
     end function cs_f_porous_model_cell_is_active
-
-    !---------------------------------------------------------------------------
-
-    ! Interface to C function for enthalpy-temperature conversion at faces
-
-    subroutine cs_ht_convert_h_to_t_faces(h, t)                    &
-      bind(C, name='cs_ht_convert_h_to_t_faces')
-      use, intrinsic :: iso_c_binding
-      implicit none
-      real(kind=c_double), dimension(*), intent(in) :: h
-      real(kind=c_double), dimension(*), intent(inout) :: t
-    end subroutine cs_ht_convert_h_to_t_faces
 
     !---------------------------------------------------------------------------
 

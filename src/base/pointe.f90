@@ -329,54 +329,6 @@ contains
 
   !=============================================================================
 
-  !> \brief Return pointer to the ifpt1d array for the 1D wall thermal module.
-
-  !> \param[out]    ifpt1d         pointer to ifpt1d
-
-  subroutine cs_1d_wall_thermal_get_faces(ifpt1d)
-
-    use, intrinsic :: iso_c_binding
-    use cs_c_bindings
-
-    implicit none
-
-    integer, dimension(:), pointer, intent(out) :: ifpt1d
-
-    ! Local variables
-
-    type(c_ptr) :: c_ifpt1d
-
-    call cs_f_1d_wall_thermal_get_faces(c_ifpt1d)
-    call c_f_pointer(c_ifpt1d, ifpt1d, [nfpt1d])
-
-  end subroutine cs_1d_wall_thermal_get_faces
-
-  !=============================================================================
-
-  !> \brief Return pointer to the tppt1d array for the 1D wall thermal module.
-
-  !> \param[out]    tppt1d         pointer to tppt1d
-
-  subroutine cs_1d_wall_thermal_get_temp(tppt1d)
-
-    use, intrinsic :: iso_c_binding
-    use cs_c_bindings
-
-    implicit none
-
-    double precision, dimension(:), pointer, intent(out) :: tppt1d
-
-    ! Local variables
-
-    type(c_ptr) :: c_tppt1d
-
-    call cs_f_1d_wall_thermal_get_temp(c_tppt1d)
-    call c_f_pointer(c_tppt1d, tppt1d, [nfpt1d])
-
-  end subroutine cs_1d_wall_thermal_get_temp
-
-  !=============================================================================
-
   !> \brief Return C pointer to cavitation "dgdpca" array
 
   !> \return  cav_dgpd

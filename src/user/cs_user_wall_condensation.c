@@ -158,9 +158,7 @@ BEGIN_C_DECLS
  *        Examples are available
  *        \ref condens_h_boundary "here".
  *
- * \param[in]     nvar          total number of variables
- * \param[in]     nscal         total number of scalars
- * \param[in]     iappel        indicates which at which stage the routine is
+ * \param[in]  iappel     indicates which at which stage the routine is
  */
 /*----------------------------------------------------------------------------*/
 
@@ -169,7 +167,7 @@ void
 cs_user_wall_condensation(int  iappel)
 {
   CS_UNUSED(iappel);
-};
+}
 
 /*----------------------------------------------------------------------------*/
 

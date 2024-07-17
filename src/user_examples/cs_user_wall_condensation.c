@@ -158,7 +158,7 @@ BEGIN_C_DECLS
  *        Examples are available
  *        \ref condens_h_boundary "here".
  *
- * \param[in]     iappel        indicates which at which stage the routine is
+ * \param[in]  iappel     indicates which at which stage the routine is
  */
 /*----------------------------------------------------------------------------*/
 
