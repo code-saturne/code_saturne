@@ -575,6 +575,8 @@ cs_domain_read_restart(cs_domain_t  *domain)
   if (cs_restart_present() == false)
     return;
 
+  cs_restart_initialize_fields_read_status();
+
   cs_restart_t *restart = cs_restart_create("main.csc", /* restart file name */
                                             nullptr,    /* directory name */
                                             CS_RESTART_MODE_READ);
