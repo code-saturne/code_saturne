@@ -997,6 +997,9 @@ cs_face_anisotropic_viscosity_scalar(const cs_mesh_t               *m,
                "   Number of internal clippings: %lu\n"
                "   Number of boundary clippings: %lu\n",
                (unsigned long)count_clip[0], (unsigned long)count_clip[1]);
+
+    CS_FREE_HD(i_clip);
+    CS_FREE_HD(b_clip);
   }
 
   CS_FREE_HD(w2);
