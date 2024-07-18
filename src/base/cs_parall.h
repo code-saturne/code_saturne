@@ -731,13 +731,13 @@ cs_parall_sum_scalars
 
     T w[n_vals + 1];
     w[0] = First;
-    for (int i = 0; i < n_vals; i++)
+    for (cs_gnum_t i = 0; i < n_vals; i++)
       w[i+1] = *(_values[i]);
 
     cs_parall_sum(n_vals + 1, datatype, w);
 
     First = w[0];
-    for (int i = 0; i < n_vals; i++)
+    for (cs_gnum_t i = 0; i < n_vals; i++)
       *(_values[i]) = w[i+1];
   }
 }
@@ -797,7 +797,7 @@ cs_parall_sum_strided
     for (int i = 0; i < Stride; i++)
       w[i] = First[i];
 
-    for (int i = 0; i < n_vals; i++)
+    for (cs_gnum_t i = 0; i < n_vals; i++)
       for (int j = 0; j < Stride; j++)
         w[(i+1)*Stride + j] = _values[i][j];
 
@@ -806,7 +806,7 @@ cs_parall_sum_strided
     for (int i = 0; i < Stride; i++)
       First[i] = w[i];
 
-    for (int i = 0; i < n_vals; i++)
+    for (cs_gnum_t i = 0; i < n_vals; i++)
       for (int j = 0; j < Stride; j++)
         _values[i][j] = w[(i+1)*Stride + j];
   }
@@ -863,13 +863,13 @@ cs_parall_max_scalars
 
     T w[n_vals + 1];
     w[0] = First;
-    for (int i = 0; i < n_vals; i++)
+    for (cs_gnum_t i = 0; i < n_vals; i++)
       w[i+1] = *(_values[i]);
 
     cs_parall_max(n_vals + 1, datatype, w);
 
     First = w[0];
-    for (int i = 0; i < n_vals; i++)
+    for (cs_gnum_t i = 0; i < n_vals; i++)
       *(_values[i]) = w[i+1];
   }
 }
@@ -929,7 +929,7 @@ cs_parall_max_strided
     for (int i = 0; i < Stride; i++)
       w[i] = First[i];
 
-    for (int i = 0; i < n_vals; i++)
+    for (cs_gnum_t i = 0; i < n_vals; i++)
       for (int j = 0; j < Stride; j++)
         w[(i+1)*Stride + j] = _values[i][j];
 
@@ -938,7 +938,7 @@ cs_parall_max_strided
     for (int i = 0; i < Stride; i++)
       First[i] = w[i];
 
-    for (int i = 0; i < n_vals; i++)
+    for (cs_gnum_t i = 0; i < n_vals; i++)
       for (int j = 0; j < Stride; j++)
         _values[i][j] = w[(i+1)*Stride + j];
   }
@@ -996,13 +996,13 @@ cs_parall_min_scalars
 
     T w[n_vals + 1];
     w[0] = First;
-    for (int i = 0; i < n_vals; i++)
+    for (cs_gnum_t i = 0; i < n_vals; i++)
       w[i + 1] = *(_values[i]);
 
     cs_parall_min(n_vals + 1, datatype, w);
 
     First = w[0];
-    for (int i = 0; i < n_vals; i++)
+    for (cs_gnum_t i = 0; i < n_vals; i++)
       *(_values[i]) = w[i + 1];
   }
 }
@@ -1062,7 +1062,7 @@ cs_parall_min_strided
     for (int i = 0; i < Stride; i++)
       w[i] = First[i];
 
-    for (int i = 0; i < n_vals; i++)
+    for (cs_gnum_t i = 0; i < n_vals; i++)
       for (int j = 0; j < Stride; j++)
         w[(i+1)*Stride + j] = _values[i][j];
 
@@ -1071,7 +1071,7 @@ cs_parall_min_strided
     for (int i = 0; i < Stride; i++)
       First[i] = w[i];
 
-    for (int i = 0; i < n_vals; i++)
+    for (cs_gnum_t i = 0; i < n_vals; i++)
       for (int j = 0; j < Stride; j++)
         _values[i][j] = w[(i+1)*Stride + j];
   }
