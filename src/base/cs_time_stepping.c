@@ -229,11 +229,6 @@ cs_time_stepping(void)
   const cs_lnum_t n_b_faces = m->n_b_faces;
   const cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
   const cs_lnum_2_t *i_face_cells = (const cs_lnum_2_t *)m->i_face_cells;
-  cs_real_t *cell_f_vol = mq->cell_f_vol;
-  cs_real_3_t *i_f_face_normal = (cs_real_3_t *)mq->i_f_face_normal;
-  cs_real_3_t * b_f_face_normal = (cs_real_3_t *)mq->b_f_face_normal;
-  cs_real_t *i_f_face_surf = (cs_real_t *)mq->i_f_face_surf;
-  cs_real_t *b_f_face_surf = mq->b_f_face_surf;
   const cs_real_t *cell_vol = mq->cell_vol;
   const cs_lnum_t *b_face_cells = m->b_face_cells;
 
@@ -425,6 +420,12 @@ cs_time_stepping(void)
     cs_porous_model_set_has_disable_flag(1);
 
     cs_porous_model_init_fluid_quantities();
+
+    cs_real_t *cell_f_vol = mq->cell_f_vol;
+    cs_real_3_t *i_f_face_normal = (cs_real_3_t *)mq->i_f_face_normal;
+    cs_real_3_t * b_f_face_normal = (cs_real_3_t *)mq->b_f_face_normal;
+    cs_real_t *i_f_face_surf = (cs_real_t *)mq->i_f_face_surf;
+    cs_real_t *b_f_face_surf = mq->b_f_face_surf;
 
     /* Compute porosity from scan */
     if (cs_glob_porosity_from_scan_opt->compute_porosity_from_scan) {
@@ -861,7 +862,7 @@ cs_time_stepping(void)
     /* Update mesh (ALE)
        ----------------- */
 
-    if (cs_glob_ale >= 1 && ts->nt_max > ts->nt_prev) {
+    if (cs_glob_ale > CS_ALE_NONE && ts->nt_max > ts->nt_prev) {
 
       if (itrale == 0 || itrale > cs_glob_ale_n_ini_f)
         cs_ale_update_mesh(itrale);
