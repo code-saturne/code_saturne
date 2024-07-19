@@ -2285,6 +2285,11 @@ cs_parameters_eqp_complete(void)
     }
   }
 
+  if (f_t != NULL) {
+    cs_equation_param_t *eqp_t = cs_field_get_equation_param(f_t);
+    if (fabs(eqp_t->blencv + 1.) < cs_math_epzero) eqp_t->blencv = 1.;
+  }
+
   for (int f_id = 0; f_id < n_fields; f_id++) {
     cs_field_t *f = cs_field_by_id(f_id);
     int scalar_id = (f->type & CS_FIELD_USER) ?
@@ -2301,11 +2306,6 @@ cs_parameters_eqp_complete(void)
         eqp->blencv = 0.;
       }
     }
-  }
-
-  if (f_t != NULL) {
-    cs_equation_param_t *eqp_t = cs_field_get_equation_param(f_t);
-    if (fabs(eqp_t->blencv + 1.) < cs_math_epzero) eqp_t->blencv =1.;
   }
 
   /* nswrsm, epsrsm and epsilo:
