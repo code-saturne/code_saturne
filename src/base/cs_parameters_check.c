@@ -950,13 +950,13 @@ cs_parameters_check(void)
           || rho_t_ext != 0 || mu_t_ext  != 0 || cp_t_ext  != 0))
     cs_log_warning
       (_("Time scheme selection:\n"
-         "Time scheme for velocity is first order (theta = %d)\n"
+         "Time scheme for velocity is first order (theta = %f)\n"
          "but some terms are second order in time with the following settings:\n"
          "istmpf = %d, isno2t = %d, isto2t = %d (time order of the mass flux,\n"
          "time scheme for the momentum source terms, time scheme for the\n"
          "turbulence source terms)\n"
-         "time extrapolation for density %d, viscosity %d\n"
-         "and cp %d\n"), eqp_u->theta,
+         "time extrapolation for density (rho_t_ext) = %d,"
+         " viscosity (mu_t_ext) = %d\nand cp %d\n"), eqp_u->theta,
        time_scheme->istmpf, time_scheme->isno2t,
        time_scheme->isto2t, rho_t_ext, mu_t_ext, cp_t_ext);
 
@@ -967,13 +967,13 @@ cs_parameters_check(void)
           || rho_t_ext != 1 || mu_t_ext  != 1 || cp_t_ext  != 1))
     cs_log_warning
       (_("Time scheme selection\n\n"
-         "Time scheme for velocity is second order (theta = %d)\n"
+         "Time scheme for velocity is second order (theta = %f)\n"
          "but some terms are second order in time with the following settings:\n"
          "istmpf = %d, isno2t = %d, isto2t = %d (time order of the mass flux,\n"
          "time scheme for the momentum source terms, time scheme for the\n"
          "turbulence source terms)\n"
-         "time extrapolation for density %d, viscosity %d\n"
-         "and cp %d\n"), eqp_u->theta,
+         "time extrapolation for density (rho_t_ext) = %d,"
+         " viscosity (mu_t_ext) = %d\nand cp (cp_t_ext) = %d\n"), eqp_u->theta,
        time_scheme->istmpf, time_scheme->isno2t,
        time_scheme->isto2t, rho_t_ext, mu_t_ext, cp_t_ext);
 
