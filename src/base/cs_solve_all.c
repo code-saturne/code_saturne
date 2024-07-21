@@ -275,10 +275,12 @@ _solve_buoyancy_energy_scalar_equation(const int        n_scal,
   const cs_equation_param_t *eqp_vel
     = cs_field_get_equation_param_const(CS_F_(vel));
 
-  if (eqp_vel->verbosity > 0)
-    bft_printf(" ------------------------------------------------------------\n"
-               "  SOLVING ENERGY AND SCALARS EQUATIONS\n"
-               "  ====================================\n");
+  if (eqp_vel->verbosity > 0) {
+    bft_printf
+      (_(" ------------------------------------------------------------\n\n"
+         "  SOLVING ENERGY AND SCALARS EQUATIONS\n"
+         "  ====================================\n\n"));
+  }
 
   // Update buoyant scalar(s)
   cs_solve_transported_variables(iterns);
@@ -289,6 +291,13 @@ _solve_buoyancy_energy_scalar_equation(const int        n_scal,
 
   /* Update the density and turbulent viscosity
      ------------------------------------------ */
+
+  if (eqp_vel->verbosity > 0) {
+    bft_printf
+      (_(" ------------------------------------------------------------\n\n"
+         "  COMPUTATION OF PHYSICAL QUANTITIES\n"
+         "  ==================================\n\n"));
+  }
 
   // Disable solid cells in fluid_solid mode
   if (cs_glob_velocity_pressure_model->fluid_solid)
@@ -315,9 +324,6 @@ _solve_buoyancy_energy_scalar_equation(const int        n_scal,
         f->val[c_id] = f->val[c_id]*rho_mass->val[c_id]/crom[c_id];
     }
   }
-
-  if (eqp_vel->verbosity > 0)
-    bft_printf(" ------------------------------------------------------------\n");
 }
 
 /*----------------------------------------------------------------------------*/
@@ -361,19 +367,21 @@ _update_pressure_temperature(cs_lnum_t n_cells)
 /*!
  * \brief Loop on all solver equation except turbulence.
  *
- * \param[out] italim        implicit coupling iteration number
- * \param[out] itrfin        indicator for last iteration of implicit couplin
- * \param[out] ineefl        for ALE
- * \param[out] itrfup        indication of iteration
- * \param[out] must_return   if it is done
+ * \param[out] vel_verbosity  verbosity for velocity
+ * \param[out] italim         implicit coupling iteration number
+ * \param[out] itrfin         indicator for last iteration of implicit couplin
+ * \param[out] ineefl         for ALE
+ * \param[out] itrfup         indication of iteration
+ * \param[out] must_return    if it is done
  */
 /*----------------------------------------------------------------------------*/
 
 static void
-_solve_most(const int        n_var,
-            const int        n_scal,
-            const int        isvhb,
-            const int        itrale,
+_solve_most(int              n_var,
+            int              n_scal,
+            int              isvhb,
+            int              itrale,
+            int              vel_verbosity,
             int             *italim,
             int             *itrfin,
             int             *ineefl,
@@ -567,6 +575,15 @@ _solve_most(const int        n_var,
                                              iterns,
                                              n_cells,
                                              scalar_idx);
+
+      if (vel_verbosity > 0) {
+        bft_printf
+          (_(" ------------------------------------------------------------\n\n"
+             "  SOLVING NAVIER-STOKES EQUATIONS (sub iter: %d)\n"
+             "  ===============================\n\n"),
+           iterns);
+      }
+
       cs_solve_navier_stokes(iterns,
                              &icvrge,
                              itrale,
@@ -611,8 +628,13 @@ _solve_most(const int        n_var,
   const cs_equation_param_t *eqp_vel
     = cs_field_get_equation_param_const(CS_F_(vel));
 
-  if (eqp_vel->verbosity > 0)
-    bft_printf(" ------------------------------------------------------------");
+  if (eqp_vel->verbosity > 0) {
+    bft_printf
+      (_(" ------------------------------------------------------------\n\n"
+         "\n"
+         "  COMPUTATION OF CFL AND FOURIER\n"
+         "  ==============================\n\n"));
+  }
 
   cs_courant_fourier_compute();
 
@@ -635,19 +657,20 @@ _solve_most(const int        n_var,
 /*----------------------------------------------------------------------------*/
 
 static void
-_solve_turbulence(const cs_lnum_t           n_cells,
-                  const cs_lnum_t           n_cells_ext,
-                  const int                 verbosity)
+_solve_turbulence(cs_lnum_t   n_cells,
+                  cs_lnum_t   n_cells_ext,
+                  int         verbosity)
 {
-  if (verbosity > 0)
-    if (   cs_glob_turb_model->itytur == 2
-        || cs_glob_turb_model->itytur == 3
-        || cs_glob_turb_model->itytur == 5
-        || cs_glob_turb_model->iturb == CS_TURB_K_OMEGA)
-      bft_printf
-        (" ------------------------------------------------------------\n"
+  if (   verbosity > 0
+      && (   cs_glob_turb_model->itytur == 2
+          || cs_glob_turb_model->itytur == 3
+          || cs_glob_turb_model->itytur == 5
+          || cs_glob_turb_model->iturb == CS_TURB_K_OMEGA)) {
+    bft_printf
+      (_(" ------------------------------------------------------------\n\n"
          "  SOLVING TURBULENT VARIABLES EQUATIONS\n"
-         " ------------------------------------------------------------\n");
+         "  =====================================\n\n"));
+  }
 
   if (   cs_glob_turb_model->itytur == 2
       || cs_glob_turb_model->itytur == 5) {
@@ -805,6 +828,13 @@ cs_solve_all(int  itrale)
 
   cs_real_t *cvar_pr = CS_F_(p)->val;
 
+  if (eqp_vel->verbosity > 0) {
+    bft_printf
+      (_(" ------------------------------------------------------------\n\n"
+         "  INITIALIZATIONS\n"
+         "  ===============\n\n"));
+  }
+
   // Compute z ground
   if (cs_glob_physical_model_flag[CS_ATMOSPHERIC] != CS_ATMO_OFF)
     cs_atmo_z_ground_compute();
@@ -831,7 +861,7 @@ cs_solve_all(int  itrale)
       && (cs_glob_velocity_pressure_model->idilat < 2)) {
 
     if (eqp_p->verbosity > 1)
-      bft_printf("Reinitialization of pressure at iteration %d\n",
+      bft_printf("Reinitialization of pressure at iteration %d\n\n",
                  cs_glob_time_step->nt_cur);
     const cs_real_t *xyzp0 = fp->xyzp0;
     const cs_real_t *gxyz = cs_glob_physical_constants->gravity;
@@ -914,10 +944,12 @@ cs_solve_all(int  itrale)
      - They may change upon a compuitation restart
      --------------------------------------------- */
 
-  if (eqp_vel->verbosity > 0)
-    bft_printf(" ------------------------------------------------------------\n"
-               "  COMPUTATION OF PHYSICAL QUANTITIES\n"
-               "  ===========================================\n");
+  if (eqp_vel->verbosity > 0) {
+    bft_printf
+      (_(" ------------------------------------------------------------\n\n"
+         "  COMPUTATION OF PHYSICAL QUANTITIES\n"
+         "  ==================================\n\n"));
+  }
 
   if (cs_glob_velocity_pressure_model->fluid_solid)
     cs_porous_model_set_has_disable_flag(1);
@@ -1004,10 +1036,12 @@ cs_solve_all(int  itrale)
   /* Compute time step if variable
      ----------------------------- */
 
-  if (eqp_vel->verbosity > 0)
-    bft_printf(" ------------------------------------------------------------\n"
-               "  COMPUTATION OF PHYSICAL QUANTITIES\n"
-               "  ==================================\n");
+  if (eqp_vel->verbosity > 0) {
+    bft_printf
+      (_(" ------------------------------------------------------------\n\n"
+         "  COMPUTATION OF CFL, FOURIER AND VARIABLE DT\n"
+         "  ===========================================\n\n"));
+  }
 
   cs_local_time_step_compute(itrale);
   const int nalinf = cs_glob_ale_n_ini_f;
@@ -1033,8 +1067,12 @@ cs_solve_all(int  itrale)
   /* Setup boundary conditions
      ------------------------- */
 
-  if (eqp_vel->verbosity > 0)
-    bft_printf(" ------------------------------------------------------------\n");
+  if (eqp_vel->verbosity > 0) {
+    bft_printf
+      (_(" ------------------------------------------------------------\n\n"
+         "  SETTING UP THE BOUNDARY CONDITIONS\n"
+         "  ==================================\n\n"));
+  }
 
   /* ALE method: start of loop for implying the movement of structures.
                  itrfin=0 indicates that we need to redo an iteration
@@ -1066,6 +1104,7 @@ cs_solve_all(int  itrale)
                 n_scal,
                 isvhb,
                 itrale,
+                eqp_vel->verbosity,
                 &italim,
                 &itrfin,
                 &ineefl,
@@ -1128,10 +1167,12 @@ cs_solve_all(int  itrale)
      ------------- */
 
   if (n_scal > 0 && cs_glob_rad_transfer_params->type > 0) {
-    if (eqp_vel->verbosity > 0)
-      bft_printf("------------------------------------------------------------\n"
-                 "  SOLVING THERMAL RADIATIVE TRANSFER\n"
-                 "  ==================================\n");
+    if (eqp_vel->verbosity > 0) {
+      bft_printf
+        (_(" ------------------------------------------------------------\n\n"
+           "  SOLVING THERMAL RADIATIVE TRANSFER\n"
+           "  ==================================\n\n"));
+    }
 
     if (   cs_glob_atmo_option->radiative_model_1d == 1
         && cs_glob_physical_model_flag[CS_ATMOSPHERIC] > CS_ATMO_CONSTANT_DENSITY)
@@ -1141,10 +1182,13 @@ cs_solve_all(int  itrale)
   }
 
   if (n_scal > 0) {
-    if (eqp_vel->verbosity > 0)
-      bft_printf("------------------------------------------------------------\n"
-                 "  SOLVING ENERGY AND SCALARS EQUATIONS\n"
-                 "  ==================================\n");
+    if (eqp_vel->verbosity > 0) {
+      bft_printf
+        (_(" ------------------------------------------------------------\n\n"
+           "  SOLVING ENERGY AND SCALARS EQUATIONS\n"
+           "  ==================================\n\n"));
+    }
+
     // Update non-buoyant scalar(s)
     cs_solve_transported_variables(-1);
 

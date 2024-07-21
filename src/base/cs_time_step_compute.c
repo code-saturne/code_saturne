@@ -857,7 +857,6 @@ cs_local_time_step_compute(int  itrale)
 void
 cs_courant_fourier_compute(void)
 {
-
   const cs_mesh_t *mesh = cs_glob_mesh;
   const cs_mesh_quantities_t *fvq = cs_glob_mesh_quantities;
 

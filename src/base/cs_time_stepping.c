@@ -928,7 +928,7 @@ cs_time_stepping(void)
       cs_log_printf
         (CS_LOG_DEFAULT,
          _("\n\n Write %s restart files\n"
-           "  checkpoint at iteration. %10d, Physical time %15.5f\n\n"),
+           "   Checkpoint at iteration %d, physical time %15.5f\n\n"),
          info, ts->nt_cur, ts->t_cur);
 
       cs_restart_main_and_aux_write();
