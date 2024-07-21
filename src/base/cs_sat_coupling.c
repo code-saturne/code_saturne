@@ -164,8 +164,6 @@ struct _cs_sat_coupling_t {
 
 /* Array of couplings */
 
-static int _cs_glob_n_sat_cp = -1;
-
 static int                         _sat_coupling_builder_size = 0;
 static _cs_sat_coupling_builder_t *_sat_coupling_builder = NULL;
 
@@ -1831,32 +1829,242 @@ _sat_interpolate_bc_from_b_face_data
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
- * Public function definitions for Fortran API
+ * Public function definitions
  *============================================================================*/
 
-/*----------------------------------------------------------------------------
- * Get number of code couplings
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Define new code_saturne coupling.
  *
- * Fortran interface:
+ * The arguments to \ref cs_sat_coupling_define are:
+ * \param[in] saturne_name          matching code_saturne application name
+ * \param[in] boundary_cpl_criteria boundary face selection criteria for coupled
+ *                                  faces, or NULL
+ * \param[in] volume_cpl_criteria   cell selection criteria for coupled cells, or
+                                    NULL
+ * \param[in] boundary_loc_criteria boundary face selection criteria for location
+ *                                  (not functional)
+ * \param[in] volume_loc_criteria   cell selection criteria for location
+ * \param[in] reverse               reverse mode if 1
+ * \param[in] verbosity             verbosity level
  *
- * SUBROUTINE NBCCPL
- * *****************
+ * In the case of only 2 code_saturne instances, the 'saturne_name' argument
+ * is ignored, as there is only one matching possibility.
  *
- * INTEGER          NBRCPL         : <-- : number of code couplings
- *----------------------------------------------------------------------------*/
+ * In case of multiple couplings, a coupling will be matched with available
+ * code_saturne instances based on the 'saturne_name' argument.
+ */
+/*----------------------------------------------------------------------------*/
 
-void CS_PROCF (nbccpl, NBCCPL)
-(
- int   *n_couplings
-)
+void
+cs_sat_coupling_define(const char  *saturne_name,
+                       const char  *boundary_cpl_criteria,
+                       const char  *volume_cpl_criteria,
+                       const char  *boundary_loc_criteria,
+                       const char  *volume_loc_criteria,
+                       int          reverse,
+                       int          verbosity)
 {
-  if (_cs_glob_n_sat_cp < 0) {
-    _cs_glob_n_sat_cp = cs_sat_coupling_n_couplings();
-    if (_sat_coupling_builder_size > 0)
-      _cs_glob_n_sat_cp += _sat_coupling_builder_size;
+  _cs_sat_coupling_builder_t *scb = NULL;
+
+  /* Add corresponding coupling to temporary code_saturne couplings array */
+
+  BFT_REALLOC(_sat_coupling_builder,
+              _sat_coupling_builder_size + 1,
+              _cs_sat_coupling_builder_t);
+
+  scb = &(_sat_coupling_builder[_sat_coupling_builder_size]);
+
+  scb->match_id = -1;
+
+  scb->app_name = NULL;
+  if (saturne_name != NULL) {
+    BFT_MALLOC(scb->app_name, strlen(saturne_name) + 1, char);
+    strcpy(scb->app_name, saturne_name);
   }
 
-  *n_couplings = _cs_glob_n_sat_cp;
+  scb->face_cpl_sel_c = NULL;
+  if (boundary_cpl_criteria != NULL) {
+    BFT_MALLOC(scb->face_cpl_sel_c, strlen(boundary_cpl_criteria) + 1, char);
+    strcpy(scb->face_cpl_sel_c, boundary_cpl_criteria);
+  }
+
+  scb->cell_cpl_sel_c = NULL;
+  if (volume_cpl_criteria != NULL) {
+    BFT_MALLOC(scb->cell_cpl_sel_c, strlen(volume_cpl_criteria) + 1, char);
+    strcpy(scb->cell_cpl_sel_c, volume_cpl_criteria);
+  }
+
+  scb->face_loc_sel_c = NULL;
+  if (boundary_loc_criteria != NULL) {
+    BFT_MALLOC(scb->face_loc_sel_c, strlen(boundary_loc_criteria) + 1, char);
+    strcpy(scb->face_loc_sel_c, boundary_loc_criteria);
+  }
+
+  scb->cell_loc_sel_c = NULL;
+  if (volume_loc_criteria != NULL) {
+    BFT_MALLOC(scb->cell_loc_sel_c, strlen(volume_loc_criteria) + 1, char);
+    strcpy(scb->cell_loc_sel_c, volume_loc_criteria);
+  }
+
+  scb->reverse = reverse;
+  scb->verbosity = verbosity;
+
+  _sat_coupling_builder_size += 1;
+}
+
+/*----------------------------------------------------------------------------
+ * Get number of code_saturne couplings.
+ *
+ * returns:
+ *   number of code_saturne couplings
+ *----------------------------------------------------------------------------*/
+
+int
+cs_sat_coupling_n_couplings(void)
+{
+  return cs_glob_sat_n_couplings;
+}
+
+/*----------------------------------------------------------------------------
+ * Get pointer to code_saturne coupling.
+ *
+ * parameters:
+ *   coupling_id <-- Id (0 to n-1) of code_saturne coupling
+ *
+ * returns:
+ *   pointer to code_saturne coupling structure
+ *----------------------------------------------------------------------------*/
+
+cs_sat_coupling_t *
+cs_sat_coupling_by_id(int coupling_id)
+{
+  cs_sat_coupling_t  *retval = NULL;
+
+  if (   coupling_id > -1
+      && coupling_id < cs_glob_sat_n_couplings)
+    retval = cs_glob_sat_couplings[coupling_id];
+
+  return retval;
+}
+
+/*----------------------------------------------------------------------------
+ * Initialize code_saturne couplings.
+ *
+ * This function may be called once all couplings have been defined,
+ * and it will match defined couplings with available applications.
+ *----------------------------------------------------------------------------*/
+
+void
+cs_sat_coupling_all_init(void)
+{
+  /* First, try using other MPI communicators */
+
+#if defined(HAVE_MPI)
+
+  if (_sat_coupling_builder_size > 0)
+    _init_all_mpi_sat();
+
+#endif
+
+  /* Print unmatched instances */
+
+  if (_sat_coupling_builder_size > 0) {
+
+    bft_printf("Unmatched code_saturne couplings:\n"
+               "---------------------------------\n\n");
+
+    _print_all_unmatched_sat();
+
+    bft_error(__FILE__, __LINE__, 0,
+              _("At least 1 code_saturne coupling was defined for which\n"
+                "no communication with a code_saturne instance is possible."));
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*! \brief Initialization of main variables for code_saturne/code_saturne
+ * coupling
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_sat_coupling_initialize
+(
+  void
+)
+{
+  int nvar = 0;
+  for (int field_id = 0; field_id < cs_field_n_fields(); field_id++) {
+    cs_field_t *f = cs_field_by_id(field_id);
+    /* Only couple field variables */
+    if (!(f->type & CS_FIELD_VARIABLE))
+      continue;
+    if (f->type & CS_FIELD_CDO)
+      continue;
+    /* No coupling for mesh velocity */
+    if (strcmp(f->name, "mesh_velocity") == 0)
+      continue;
+    nvar += f->dim;
+  }
+
+  for (int cpl_id = 0; cpl_id < cs_glob_sat_n_couplings; cpl_id++) {
+    cs_sat_coupling_t *cpl = cs_glob_sat_couplings[cpl_id];
+
+    cpl->icorio = -1;
+    cpl->ale    = -1;
+    cpl->imajcp = -1;
+    cpl->nvarcp = -1;
+    cpl->nvarto = -1;
+
+    /* Face to face coupling should be defined for all couplings in the
+     * same manner
+     */
+    int _face_interpolation_type_max = 0;
+    _sat_coupling_int_max(cpl,
+                          &cs_glob_sat_coupling_face_interpolation_type,
+                          &_face_interpolation_type_max);
+    cs_glob_sat_coupling_face_interpolation_type = _face_interpolation_type_max;
+
+    /* Check if one of the instances is solved in a relative reference frame */
+    _sat_coupling_int_max(cpl,
+                          &(cs_glob_physical_constants->icorio),
+                          &(cpl->icorio));
+
+    /* Check coherency for reference frames of resolution. */
+    if (cs_glob_physical_constants->icorio != cpl->icorio)
+      bft_error
+        (__FILE__, __LINE__, 0,
+         _("%s: Coupling is not available for different reference frames.\n"),
+         __func__);
+
+    /* Check for ALE/deformable mesh */
+    _sat_coupling_int_max(cpl,
+                          (const cs_lnum_t *)&(cs_glob_ale),
+                          &(cpl->ale));
+
+    if (   cpl->ale == CS_ALE_LEGACY
+        || cs_turbomachinery_get_model() == CS_TURBOMACHINERY_TRANSIENT) {
+      cpl->imajcp = 1;
+    }
+    else
+      cpl->imajcp = 0;
+
+    /* Determine the number of coupled variables between instances of
+     * coupling. All variables of a given instance are coupled except
+     * for ALE, where the mesh velocity is not coupled.
+     * Something should be done for specific physics.
+     */
+    cpl->nvarcp = nvar;
+    if (cs_glob_ale != CS_ALE_NONE)
+      cpl->nvarcp -= 3;
+
+    /* Total number of sent variables */
+    _sat_coupling_int_max(cpl, &(cpl->nvarcp), &(cpl->nvarto));
+
+    /* Turbulence models */
+    _sat_coupling_check_turbulence_coherency(cpl, cs_glob_turb_model->iturb);
+  }
 }
 
 /*----------------------------------------------------------------------------*/
@@ -2134,245 +2342,6 @@ cs_sat_coupling_locate_all
   _cs_sat_coupling_initialized = 1;
 }
 
-/*============================================================================
- * Public function definitions
- *============================================================================*/
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Define new code_saturne coupling.
- *
- * The arguments to \ref cs_sat_coupling_define are:
- * \param[in] saturne_name          matching code_saturne application name
- * \param[in] boundary_cpl_criteria boundary face selection criteria for coupled
- *                                  faces, or NULL
- * \param[in] volume_cpl_criteria   cell selection criteria for coupled cells, or
-                                    NULL
- * \param[in] boundary_loc_criteria boundary face selection criteria for location
- *                                  (not functional)
- * \param[in] volume_loc_criteria   cell selection criteria for location
- * \param[in] reverse               reverse mode if 1
- * \param[in] verbosity             verbosity level
- *
- * In the case of only 2 code_saturne instances, the 'saturne_name' argument
- * is ignored, as there is only one matching possibility.
- *
- * In case of multiple couplings, a coupling will be matched with available
- * code_saturne instances based on the 'saturne_name' argument.
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_sat_coupling_define(const char  *saturne_name,
-                       const char  *boundary_cpl_criteria,
-                       const char  *volume_cpl_criteria,
-                       const char  *boundary_loc_criteria,
-                       const char  *volume_loc_criteria,
-                       int          reverse,
-                       int          verbosity)
-{
-  _cs_sat_coupling_builder_t *scb = NULL;
-
-  /* Add corresponding coupling to temporary code_saturne couplings array */
-
-  BFT_REALLOC(_sat_coupling_builder,
-              _sat_coupling_builder_size + 1,
-              _cs_sat_coupling_builder_t);
-
-  scb = &(_sat_coupling_builder[_sat_coupling_builder_size]);
-
-  scb->match_id = -1;
-
-  scb->app_name = NULL;
-  if (saturne_name != NULL) {
-    BFT_MALLOC(scb->app_name, strlen(saturne_name) + 1, char);
-    strcpy(scb->app_name, saturne_name);
-  }
-
-  scb->face_cpl_sel_c = NULL;
-  if (boundary_cpl_criteria != NULL) {
-    BFT_MALLOC(scb->face_cpl_sel_c, strlen(boundary_cpl_criteria) + 1, char);
-    strcpy(scb->face_cpl_sel_c, boundary_cpl_criteria);
-  }
-
-  scb->cell_cpl_sel_c = NULL;
-  if (volume_cpl_criteria != NULL) {
-    BFT_MALLOC(scb->cell_cpl_sel_c, strlen(volume_cpl_criteria) + 1, char);
-    strcpy(scb->cell_cpl_sel_c, volume_cpl_criteria);
-  }
-
-  scb->face_loc_sel_c = NULL;
-  if (boundary_loc_criteria != NULL) {
-    BFT_MALLOC(scb->face_loc_sel_c, strlen(boundary_loc_criteria) + 1, char);
-    strcpy(scb->face_loc_sel_c, boundary_loc_criteria);
-  }
-
-  scb->cell_loc_sel_c = NULL;
-  if (volume_loc_criteria != NULL) {
-    BFT_MALLOC(scb->cell_loc_sel_c, strlen(volume_loc_criteria) + 1, char);
-    strcpy(scb->cell_loc_sel_c, volume_loc_criteria);
-  }
-
-  scb->reverse = reverse;
-  scb->verbosity = verbosity;
-
-  _sat_coupling_builder_size += 1;
-}
-
-/*----------------------------------------------------------------------------
- * Get number of code_saturne couplings.
- *
- * returns:
- *   number of code_saturne couplings
- *----------------------------------------------------------------------------*/
-
-int
-cs_sat_coupling_n_couplings(void)
-{
-  return cs_glob_sat_n_couplings;
-}
-
-/*----------------------------------------------------------------------------
- * Get pointer to code_saturne coupling.
- *
- * parameters:
- *   coupling_id <-- Id (0 to n-1) of code_saturne coupling
- *
- * returns:
- *   pointer to code_saturne coupling structure
- *----------------------------------------------------------------------------*/
-
-cs_sat_coupling_t *
-cs_sat_coupling_by_id(int coupling_id)
-{
-  cs_sat_coupling_t  *retval = NULL;
-
-  if (   coupling_id > -1
-      && coupling_id < cs_glob_sat_n_couplings)
-    retval = cs_glob_sat_couplings[coupling_id];
-
-  return retval;
-}
-
-/*----------------------------------------------------------------------------
- * Initialize code_saturne couplings.
- *
- * This function may be called once all couplings have been defined,
- * and it will match defined couplings with available applications.
- *----------------------------------------------------------------------------*/
-
-void
-cs_sat_coupling_all_init(void)
-{
-  /* First, try using other MPI communicators */
-
-#if defined(HAVE_MPI)
-
-  if (_sat_coupling_builder_size > 0)
-    _init_all_mpi_sat();
-
-#endif
-
-  /* Print unmatched instances */
-
-  if (_sat_coupling_builder_size > 0) {
-
-    bft_printf("Unmatched code_saturne couplings:\n"
-               "---------------------------------\n\n");
-
-    _print_all_unmatched_sat();
-
-    bft_error(__FILE__, __LINE__, 0,
-              _("At least 1 code_saturne coupling was defined for which\n"
-                "no communication with a code_saturne instance is possible."));
-  }
-}
-
-/*----------------------------------------------------------------------------*/
-/*! \brief Initialization of main variables for code_saturne/code_saturne
- * coupling
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_sat_coupling_initialize
-(
-  void
-)
-{
-  int nvar = 0;
-  for (int field_id = 0; field_id < cs_field_n_fields(); field_id++) {
-    cs_field_t *f = cs_field_by_id(field_id);
-    /* Only couple field variables */
-    if (!(f->type & CS_FIELD_VARIABLE))
-      continue;
-    if (f->type & CS_FIELD_CDO)
-      continue;
-    /* No coupling for mesh velocity */
-    if (strcmp(f->name, "mesh_velocity") == 0)
-      continue;
-    nvar += f->dim;
-  }
-
-  for (int cpl_id = 0; cpl_id < cs_glob_sat_n_couplings; cpl_id++) {
-    cs_sat_coupling_t *cpl = cs_glob_sat_couplings[cpl_id];
-
-    cpl->icorio = -1;
-    cpl->ale    = -1;
-    cpl->imajcp = -1;
-    cpl->nvarcp = -1;
-    cpl->nvarto = -1;
-
-    /* Face to face coupling should be defined for all couplings in the
-     * same manner
-     */
-    int _face_interpolation_type_max = 0;
-    _sat_coupling_int_max(cpl,
-                          &cs_glob_sat_coupling_face_interpolation_type,
-                          &_face_interpolation_type_max);
-    cs_glob_sat_coupling_face_interpolation_type = _face_interpolation_type_max;
-
-    /* Check if one of the instances is solved in a relative reference frame */
-    _sat_coupling_int_max(cpl,
-                          &(cs_glob_physical_constants->icorio),
-                          &(cpl->icorio));
-
-    /* Check coherency for reference frames of resolution. */
-    if (cs_glob_physical_constants->icorio != cpl->icorio)
-      bft_error
-        (__FILE__, __LINE__, 0,
-         _("%s: Coupling is not available for different reference frames.\n"),
-         __func__);
-
-    /* Check for ALE/deformable mesh */
-    _sat_coupling_int_max(cpl,
-                          (const cs_lnum_t *)&(cs_glob_ale),
-                          &(cpl->ale));
-
-    if (   cpl->ale == CS_ALE_LEGACY
-        || cs_turbomachinery_get_model() == CS_TURBOMACHINERY_TRANSIENT) {
-      cpl->imajcp = 1;
-    }
-    else
-      cpl->imajcp = 0;
-
-    /* Determine the number of coupled variables between instances of
-     * coupling. All variables of a given instance are coupled except
-     * for ALE, where the mesh velocity is not coupled.
-     * Something should be done for specific physics.
-     */
-    cpl->nvarcp = nvar;
-    if (cs_glob_ale != CS_ALE_NONE)
-      cpl->nvarcp -= 3;
-
-    /* Total number of sent variables */
-    _sat_coupling_int_max(cpl, &(cpl->nvarcp), &(cpl->nvarto));
-
-    /* Turbulence models */
-    _sat_coupling_check_turbulence_coherency(cpl, cs_glob_turb_model->iturb);
-  }
-}
-
 /*----------------------------------------------------------------------------
  * Create a sat_coupling_t structure.
  *
@@ -2611,7 +2580,7 @@ cs_sat_coupling_exchange_at_cells
               __func__);
 
   /* Loop on the different couplings */
-  for (int cpl_id = 0; cpl_id < _cs_glob_n_sat_cp; cpl_id++) {
+  for (int cpl_id = 0; cpl_id < cs_glob_sat_n_couplings; cpl_id++) {
     cs_sat_coupling_t *cpl = cs_glob_sat_couplings[cpl_id];
 
     /* If the code_saturne/code_saturne coupling is a volumic one, handle
@@ -2794,7 +2763,7 @@ cs_sat_coupling_bnd_initialize
       CS_COUPLED : CS_COUPLED_FD;
 
   /* Loop on the different couplings */
-  for (int cpl_id = 0; cpl_id < _cs_glob_n_sat_cp; cpl_id++) {
+  for (int cpl_id = 0; cpl_id < cs_glob_sat_n_couplings; cpl_id++) {
     cs_sat_coupling_t *cpl = cs_glob_sat_couplings[cpl_id];
 
     /* Check that this is a surface coupling */
@@ -2863,7 +2832,7 @@ cs_sat_coupling_exchange_at_bnd_faces
 )
 {
   /* Loop on the different couplings */
-  for (int cpl_id = 0; cpl_id < _cs_glob_n_sat_cp; cpl_id++) {
+  for (int cpl_id = 0; cpl_id < cs_glob_sat_n_couplings; cpl_id++) {
     cs_sat_coupling_t *cpl = cs_glob_sat_couplings[cpl_id];
 
     /* Check that this is a surface coupling */
