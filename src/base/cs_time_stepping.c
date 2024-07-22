@@ -220,7 +220,6 @@ cs_f_pp_models_bc_map(void);
 
 void
 cs_time_stepping(void)
-
 {
   cs_mesh_t *m = cs_glob_mesh;
   cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
@@ -233,7 +232,6 @@ cs_time_stepping(void)
   const cs_lnum_t *b_face_cells = m->b_face_cells;
 
   cs_time_step_t *ts = cs_get_glob_time_step();
-  const int *bc_type = cs_glob_bc_type;
   const cs_halo_t *halo = cs_glob_mesh->halo;
   const cs_turb_model_t *turb_model = cs_get_glob_turb_model();
 
@@ -377,7 +375,6 @@ cs_time_stepping(void)
   cs_f_turbomachinery_init();
 
   if (cs_glob_physical_model_flag[CS_ATMOSPHERIC] >= 0) {
-
     if (cs_glob_atmo_chemistry->model > 0) {
       cs_f_init_chemistry_reacnum();
     }
@@ -403,6 +400,8 @@ cs_time_stepping(void)
 
   /* Default initializations
      ----------------------- */
+
+  const int *bc_type = cs_glob_bc_type;
 
   cs_field_map_and_init_bcs();
 
@@ -467,8 +466,9 @@ cs_time_stepping(void)
       /* For integral formulation, in case of 0 fluid volume, clip fluid faces */
       if (cs_glob_porous_model == 3) {
         for (cs_lnum_t f_id = 0; f_id < n_i_faces; f_id++) {
-          /*TODO compute i_f_face_factor with porosi AND fluid surface and surface:
-            epsilon_i*surface/f_surface */
+          /* TODO compute i_f_face_factor with porosi
+             AND fluid surface and surface:
+             epsilon_i*surface/f_surface */
           if (c_disable_flag[i_face_cells[f_id][0]] == 1) {
             i_f_face_normal[f_id][0] = 0.0;
             i_f_face_normal[f_id][1] = 0.0;
@@ -653,7 +653,7 @@ cs_time_stepping(void)
      -------------------------------------------- */
 
   /* Build volume mass injection cell lists when present on at least one rank.
-     This is a collective call for consistency and in case the user requires it. */
+     This is a collective call for consistency, in case the user requires it. */
 
   if (cs_volume_zone_n_type_zones(CS_VOLUME_ZONE_MASS_SOURCE_TERM) > 0)
     cs_volume_mass_injection_build_lists();
@@ -747,7 +747,7 @@ cs_time_stepping(void)
 
     if (ts->nt_max == ts->nt_cur && ts->nt_max > ts->nt_prev)
       bft_error(__FILE__, __LINE__, 0,
-                _("nt_max == nt_cur && nt_max > nt_prev")); // a voir
+                _("nt_max == nt_cur && nt_max > nt_prev"));
 
   }
 
@@ -797,7 +797,7 @@ cs_time_stepping(void)
     }
 
     /* Check for runaway (diverging) computation */
-    //bool ierr = cs_runaway_check(); // unused pourtant ce check semble important
+    cs_runaway_check();
 
     /* Set default logging */
     cs_log_iteration_set_active();
