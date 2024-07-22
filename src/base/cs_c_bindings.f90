@@ -1378,29 +1378,6 @@ module cs_c_bindings
     end subroutine gas_mix_add_species
 
     !---------------------------------------------------------------------------
-    !> \brief Set wall condensation model
-    !
-    !> \param[in]   model     Integer related to the choice of model
-    !---------------------------------------------------------------------------
-
-    subroutine cs_wall_condensation_set_model(model)   &
-      bind(C, name='cs_wall_condensation_set_model')
-      use, intrinsic :: iso_c_binding
-      implicit none
-      integer(c_int), intent(in), value :: model
-    end subroutine cs_wall_condensation_set_model
-
-    !---------------------------------------------------------------------------
-
-    !> \brief Compute gas chemistry + aerosol dynamic with external code
-
-    subroutine cs_atmo_aerosol_time_advance() &
-      bind(C, name='cs_atmo_aerosol_time_advance')
-      use, intrinsic :: iso_c_binding
-      implicit none
-    end subroutine cs_atmo_aerosol_time_advance
-
-    !---------------------------------------------------------------------------
 
     !> \brief Get the aerosols concentrations and numbers from aerosol code
 
@@ -1421,17 +1398,6 @@ module cs_c_bindings
       implicit none
       real(kind=c_double), dimension(*), intent(out) :: array
     end subroutine cs_atmo_aerosol_get_gas
-
-    !---------------------------------------------------------------------------
-
-    !> \brief Compute the relative ground elevation (mainly for the atmospheric
-    !>  module).
-
-    subroutine cs_atmo_z_ground_compute() &
-      bind(C, name='cs_atmo_z_ground_compute')
-      use, intrinsic :: iso_c_binding
-      implicit none
-    end subroutine cs_atmo_z_ground_compute
 
     !---------------------------------------------------------------------------
 

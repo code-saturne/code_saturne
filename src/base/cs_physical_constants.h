@@ -116,6 +116,19 @@ typedef struct {
 
 /* Physical constants */
 
+#if defined(__NVCC__) && defined(__CUDA_ARCH__)
+
+/* On GPU, global variables are usually not accessible. */
+
+#define cs_physical_constants_r 8.31446261815324
+#define cs_physical_constants_kb 1.380649e-23
+#define cs_physical_constants_celsius_to_kelvin 273.15
+#define cs_physical_constants_stephan 5.6703e-8
+
+#else
+
+/* General constants accessible on CPU */
+
 extern const double cs_physical_constants_r; /* Ideal gas constant (J/mol/K) */
 extern const double cs_physical_constants_kb; /* Boltzmann constant (J/K) */
 extern const double cs_physical_constants_celsius_to_kelvin; /* Celsius to
@@ -124,6 +137,7 @@ extern const double cs_physical_constants_stephan; /* Stephan constant
                                                      (W/m2/K4)*/
 extern const double cs_physical_constants_avogadro; /* Avogadro constant
                                                        (1/mol) */
+#endif
 
 /* Pointer to main physical constants structure */
 

@@ -52,7 +52,8 @@ BEGIN_C_DECLS
 
 typedef enum {
 
-  CS_THERMAL_MODEL_NONE,
+  CS_THERMAL_MODEL_INIT = -999,
+  CS_THERMAL_MODEL_NONE = 0,
   CS_THERMAL_MODEL_TEMPERATURE,
   CS_THERMAL_MODEL_ENTHALPY,
   CS_THERMAL_MODEL_TOTAL_ENERGY,
@@ -74,6 +75,10 @@ typedef enum {
 
 typedef struct {
 
+#if defined(__NVCC__)
+  cs_thermal_model_variable_t  thermal_variable;
+  cs_temperature_scale_t       temperature_scale;
+#else
   union {
     cs_thermal_model_variable_t  thermal_variable;   /* Thermal variable */
     int                          itherm;
@@ -83,6 +88,7 @@ typedef struct {
     cs_temperature_scale_t       temperature_scale;  /* Temperature scale */
     int                          itpscl;
   };
+#endif
 
   /* Has kinetic source terme correction */
   int           has_kinetic_st;
@@ -170,16 +176,28 @@ cs_thermal_model_c_square(const cs_real_t  cp[],
  * \brief Compute the derivative of the internal energy related to the
  *        temperature at constant pressure.
  *
- * \param[in]  pres  array of pressure values
- * \param[in]  temp  array of temperature values (in Kelvin)
- * \param[in]  yw    array of the total water mass fraction
+ * \param[in]  pres   array of pressure values
+ * \param[in]  temp   array of temperature values (in Kelvin)
+ * \param[in]  yw     array of the total water mass fraction
+ * \param[in]  rvsra  ratio gas constant h2o / dry air
+ * \param[in]  cva    difference between heat capacity of the dry air
+ *                    and r_pg_const
+ * \param[in]  cvv    difference beteween heat capacity of the water
+ *                    in its gaseous phase and r_v_cnst
+ * \param[in]  cpl    heat capacity of the water in its liquid phase
+ * \param[in]  l00    water latent heat
  */
 /*----------------------------------------------------------------------------*/
 
-cs_real_t
-cs_thermal_model_demdt(cs_real_t  pres,
-                       cs_real_t  temp,
-                       cs_real_t  yw);
+CS_F_HOST_DEVICE cs_real_t
+cs_thermal_model_demdt(const cs_real_t  pres,
+                       const cs_real_t  temp,
+                       const cs_real_t  yw,
+                       const cs_real_t  rvsra,
+                       const cs_real_t  cva,
+                       const cs_real_t  cvv,
+                       const cs_real_t  cpl,
+                       const cs_real_t  l00);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -189,21 +207,25 @@ cs_thermal_model_demdt(cs_real_t  pres,
  * \param[in]     pres    array of pressure values
  * \param[in]     temp    array of temperature values (in Kelvin)
  * \param[in]     yw      array of the total water mass fraction
- * \param[in]     cpa     heat capacity of the dry air
- * \param[in]     cpv     heat capacity of the water in its gaseous phase
+ * \param[in]     rvsra   ratio gas constant h2o / dry air
+ * \param[in]     cva     difference between heat capacity of the dry air
+ *                        and r_pg_const
+ * \param[in]     cvv     difference beteween heat capacity of the water
+ *                        in its gaseous phase and r_v_cnst
  * \param[in]     cpl     heat capacity of the water in its liquid phase
  * \param[in]     l00     water latent heat
  */
 /*----------------------------------------------------------------------------*/
 
-cs_real_t
-cs_thermal_model_demdt_ecsnt(cs_real_t  pres,
-                             cs_real_t  temp,
-                             cs_real_t  yw,
-                             cs_real_t  cpa,
-                             cs_real_t  cpv,
-                             cs_real_t  cpl,
-                             cs_real_t  l00);
+CS_F_HOST_DEVICE cs_real_t
+cs_thermal_model_demdt_ecsnt(const cs_real_t  pres,
+                             const cs_real_t  temp,
+                             const cs_real_t  yw,
+                             const cs_real_t  rvsra,
+                             const cs_real_t  cva,
+                             const cs_real_t  cvv,
+                             const cs_real_t  cpl,
+                             const cs_real_t  l00);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -270,13 +292,14 @@ cs_thermal_model_cflp(const cs_real_t  croma[],
 /*!
  * \brief Compute the CFL number related to the thermal equation
  *
- * \param[in]     croma     array of density values at the last time iteration
- * \param[in]     tempk     array of the temperature
- * \param[in]     tempka    array of the temperature at the previous time step
- * \param[in]     xcvv      array of the isochoric heat capacity
- * \param[in]     vel       array of the velocity
- * \param[in]     imasfl    array of the faces mass fluxes
- * \param[in]     cflt      CFL condition related to thermal equation
+ * \param[in]     croma       array of density values at the last time iteration
+ * \param[in]     tempk       array of the temperature
+ * \param[in]     tempka      array of the temperature at the previous time step
+ * \param[in]     xcvv        array of the isochoric heat capacity
+ * \param[in]     vel         array of the velocity
+ * \param[in]     i_massflux  array of the inner faces mass fluxes
+ * \param[in]     b_massflux  array of the boundary faces mass fluxes
+ * \param[in]     cflt        CFL condition related to thermal equation
  */
 /*----------------------------------------------------------------------------*/
 
@@ -286,7 +309,8 @@ cs_thermal_model_cflt(const cs_real_t  croma[],
                       const cs_real_t  tempka[],
                       const cs_real_t  xcvv[],
                       const cs_real_t  vel[][3],
-                      const cs_real_t  imasfl[],
+                      const cs_real_t  i_massflux[],
+                      const cs_real_t  b_massflux[],
                       cs_real_t        cflt[]);
 
 /*----------------------------------------------------------------------------*/

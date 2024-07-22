@@ -31,6 +31,8 @@
  * Standard C library headers
  *----------------------------------------------------------------------------*/
 
+#include <math.h>
+
 /*----------------------------------------------------------------------------
  * Local headers
  *----------------------------------------------------------------------------*/
@@ -195,6 +197,79 @@ cs_real_t
 cs_liq_t_to_h(cs_real_t  t_l);
 
 /*----------------------------------------------------------------------------*/
+/*!
+ * \brief Computes the saturation water vapor pressure function of the
+ *      temperature (in Celsius)
+ *
+ * \return the saturation water vapor pressure (=esatliq)
+ *
+ * \param[in]  t_c   temperature in Celsius degree
+ */
+/*----------------------------------------------------------------------------*/
+
+CS_F_HOST_DEVICE static inline cs_real_t
+cs_air_pwv_sat(cs_real_t  t_c)
+{
+  cs_real_t  a1, b1, c1, ps, pv;
+
+  /* T between -20 and 0 degrees C */
+
+  if (t_c <= 0.) {
+
+    a1  = 6.4147;
+    b1  = 22.376;
+    c1  = 271.68;
+
+    /* Warning if T less than -20 degrees C */
+
+    ps  = a1 + (b1 * t_c)/(c1 + t_c);
+    pv  = exp(ps);
+
+  }
+
+  /* T between 0 and 40 degrees C */
+
+  else if (t_c <= 40.) {
+
+    a1  = 6.4147;
+    b1  = 17.438;
+    c1  = 239.78;
+    ps  = a1 + (b1 * t_c)/(c1 + t_c);
+    pv  = exp(ps);
+  }
+
+  /* T between 40 and 80 degrees C */
+
+  else {
+
+    const cs_real_t  t0 = 273.16;
+    const cs_real_t  ax = 8.2969;
+    const cs_real_t  ay = 4.76955;
+    const cs_real_t  a0 = 0.78614;
+    const cs_real_t  a2 = 5.028;
+    const cs_real_t  a3 = 0.000150475;
+    const cs_real_t  a4 = 0.00042873;
+    cs_real_t  tt, px, py, g1, g2, g3, g4;
+
+    a1 = 10.7954;
+
+    tt = t_c/t0;
+    /* T greater than 80 degrees C, clipped at 80°C */
+    if (t_c > 80.)
+      tt = 80./t0;
+    px = ax * tt;
+    py = ay * tt/(1. + tt);
+    g1 = a1 * tt/(1. + tt);
+    g2 = -a2 * log10(1. + tt);
+    g3 = a3 * (1. - 1./pow(10.,px));
+    g4 = a4 * (pow(10., py) - 1.);
+    ps = a0 + g1 + g2 + g3 + g4;
+    pv = pow(10., ps) * 100.;
+
+  }
+
+  return pv;
+}
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -202,14 +277,38 @@ cs_liq_t_to_h(cs_real_t  t_l);
  *
  * \return absolute humidity of saturated air
  *
- * \param[in]     t_c            temperature in Celsius degree
+ * \param[in]     t_c          temperature in Celsius degree
  * \param[in]     p            reference pressure
  */
 /*----------------------------------------------------------------------------*/
 
-cs_real_t
+CS_F_HOST_DEVICE static inline cs_real_t
 cs_air_x_sat(cs_real_t  t_c,
-             cs_real_t  p);
+             cs_real_t  p)
+{
+  cs_real_t  pv;
+  cs_real_t  x_s = 0.;
+
+  /* Warning if T less than -20 degrees C */
+  /* T between -20 and 80 degrees C */
+
+  if ((t_c <= 80.)) {
+
+    pv = cs_air_pwv_sat(t_c);
+    x_s = 0.622 * pv/(p-pv);
+
+  }
+
+  /* T more than 80 degrees C */
+
+  else if (t_c > 80.) {
+
+    x_s = 0.5 + 0.001*t_c;
+
+  }
+
+  return x_s;
+}
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -226,20 +325,6 @@ cs_air_x_sat(cs_real_t  t_c,
 cs_real_t
 cs_air_yw_sat(cs_real_t  t_c,
               cs_real_t  p);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Computes the saturation water vapor pressure function of the
- *      temperature (in Celsius)
- *
- * \return the saturation water vapor pressure (=esatliq)
- *
- * \param[in]  t_c   temperature in Celsius degree
- */
-/*----------------------------------------------------------------------------*/
-
-cs_real_t
-cs_air_pwv_sat(cs_real_t  t_c);
 
 /*----------------------------------------------------------------------------*/
 /*!

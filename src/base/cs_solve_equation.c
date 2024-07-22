@@ -1150,8 +1150,8 @@ cs_solve_equation_scalar(cs_field_t        *f,
     cs_real_t *vistot;
     cs_real_33_t *gradv;
 
-    BFT_MALLOC(vistot, n_cells_ext, cs_real_t);
-    BFT_MALLOC(gradv, n_cells_ext, cs_real_33_t);
+    CS_MALLOC_HD(vistot, n_cells_ext, cs_real_t, cs_alloc_mode);
+    CS_MALLOC_HD(gradv, n_cells_ext, cs_real_33_t, cs_alloc_mode);
 
     /* Total viscosity */
 
@@ -1180,8 +1180,8 @@ cs_solve_equation_scalar(cs_field_t        *f,
 
     cs_thermal_model_dissipation(vistot, gradv, rhs);
 
-    BFT_FREE(vistot);
-    BFT_FREE(gradv);
+    CS_FREE_HD(vistot);
+    CS_FREE_HD(gradv);
   }
   if (is_thermal_model_field) {
 
@@ -1197,13 +1197,12 @@ cs_solve_equation_scalar(cs_field_t        *f,
 
     /* CFL related to the internal energy equation */
 
-    if (   th_model->thermal_variable == CS_THERMAL_MODEL_TEMPERATURE
-        || th_model->thermal_variable == CS_THERMAL_MODEL_INTERNAL_ENERGY) {
+    if (th_model->thermal_variable == CS_THERMAL_MODEL_TEMPERATURE) {
+        //|| th_model->thermal_variable == CS_THERMAL_MODEL_INTERNAL_ENERGY) { TODO
       cs_field_t *f_cflt = cs_field_by_name_try("cfl_t");
 
       if (f_cflt != NULL) {
         cs_real_t *cflt = f_cflt->val;
-        cs_array_set_value_real(n_cells, 1, 0.0, cflt);
 
         /* Only implemented for the ideal gas equation of state. */
 
@@ -1211,8 +1210,11 @@ cs_solve_equation_scalar(cs_field_t        *f,
           const cs_real_3_t *vel = (const cs_real_3_t *)CS_F_(vel)->val;
 
           const int kimasf = cs_field_key_id_try("inner_mass_flux_id");
-          const int iflmas = cs_field_get_key_int(f, kimasf);
-          cs_real_t *imasfl = cs_field_by_id(iflmas)->val;
+          const int kbmasf = cs_field_key_id("boundary_mass_flux_id");
+          const cs_real_t *i_massflux
+            = cs_field_by_id(cs_field_get_key_int(f, kimasf) )->val;
+          const cs_real_t *b_massflux
+            = cs_field_by_id(cs_field_get_key_int(f, kbmasf) )->val;
 
           /* precaution for croma */
           cs_halo_sync_var(m->halo, CS_HALO_STANDARD, CS_F_(rho)->val_pre);
@@ -1222,7 +1224,8 @@ cs_solve_equation_scalar(cs_field_t        *f,
                                 tempa,
                                 xcvv,
                                 vel,
-                                imasfl,
+                                i_massflux,
+                                b_massflux,
                                 cflt);
         }
       }

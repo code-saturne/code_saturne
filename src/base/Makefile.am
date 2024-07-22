@@ -391,7 +391,7 @@ cs_sort.c \
 cs_sort_partition.c \
 cs_syr_coupling.c \
 cs_sys_coupling.c \
-cs_thermal_model.c \
+cs_thermal_model.cpp \
 cs_theta_scheme.c \
 cs_time_table.c \
 cs_time_control.c \

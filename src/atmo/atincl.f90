@@ -554,22 +554,6 @@ double precision, save:: zaero
 
     !---------------------------------------------------------------------------
 
-    !> \brief Calculation of the absolute humidity at saturation
-    !>        for a given temperature.
-
-    !> \param[in]  t_c  temperature (in Celsius)
-    !> \param[in]  p    pressure
-
-    function cs_air_x_sat(t_c, p) result(x_s) &
-        bind(C, name='cs_air_x_sat')
-      use, intrinsic :: iso_c_binding
-      implicit none
-      real(c_double), value :: t_c, p
-      real(c_double) :: x_s
-    end function cs_air_x_sat
-
-    !---------------------------------------------------------------------------
-
     !> \brief Calculation of the air water mass fraction at saturation
     !>        for a given temperature.
 
@@ -583,21 +567,6 @@ double precision, save:: zaero
       real(c_double), value :: t_c, p
       real(c_double) :: x_s
     end function cs_air_yw_sat
-
-    !---------------------------------------------------------------------------
-
-    !> \brief Computes the saturation water vapor pressure function
-    !> of the temperature (C).
-
-    !> \param[in]  t_c  temperature (in Celsius)
-
-    function cs_air_pwv_sat(t_c) result(x_s) &
-        bind(C, name='cs_air_pwv_sat')
-      use, intrinsic :: iso_c_binding
-      implicit none
-      real(c_double), value :: t_c
-      real(c_double) :: x_s
-    end function cs_air_pwv_sat
 
     !---------------------------------------------------------------------------
 
