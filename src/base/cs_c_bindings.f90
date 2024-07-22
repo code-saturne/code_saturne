@@ -82,7 +82,7 @@ module cs_c_bindings
   parameter (VOLUME_ZONE_SOURCE_TERM=8)
   parameter (VOLUME_ZONE_MASS_SOURCE_TERM=16)
 
-  procedure() :: csexit, dmtmps
+  procedure() :: csexit
   procedure() :: cslogname
 
   !-----------------------------------------------------------------------------

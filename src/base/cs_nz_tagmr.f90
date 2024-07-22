@@ -305,8 +305,6 @@ contains
 
     implicit none
 
-    procedure() :: cs_mesh_tagmr
-
     ! Local variables
 
     integer  iiii, iz
