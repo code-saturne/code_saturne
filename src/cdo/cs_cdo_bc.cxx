@@ -131,28 +131,28 @@ _cdo_bc_face_create(bool       is_steady,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Define the structure which translates the BC definitions from the
- *         user viewpoint into a ready-to-use structure for setting the arrays
- *         keeping the values of the boundary condition to set.
+ * \brief Define the structure which translates the BC definitions from the
+ *        user viewpoint into a ready-to-use structure for setting the arrays
+ *        keeping the values of the boundary condition to set.
  *
- * \param[in] default_bc   type of boundary condition to set by default
- * \param[in] is_steady    modification or not of the BC selection in time
- * \param[in] dim          dimension of the related equation
- * \param[in] n_defs       number of boundary definitions
- * \param[in] defs         list of boundary condition definition
- * \param[in] n_b_faces    number of border faces
+ * \param[in] default_bc  type of boundary condition to set by default
+ * \param[in] is_steady   modification or not of the BC selection in time
+ * \param[in] dim         dimension of the related equation
+ * \param[in] n_defs      number of boundary definitions
+ * \param[in] defs        list of boundary condition definition
+ * \param[in] n_b_faces   number of border faces
  *
  * \return a pointer to a new allocated cs_cdo_bc_face_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 cs_cdo_bc_face_t *
-cs_cdo_bc_face_define(cs_param_bc_type_t    default_bc,
-                      bool                  is_steady,
-                      int                   dim,
-                      int                   n_defs,
-                      cs_xdef_t           **defs,
-                      cs_lnum_t             n_b_faces)
+cs_cdo_bc_face_define(cs_param_bc_type_t   default_bc,
+                      bool                 is_steady,
+                      int                  dim,
+                      int                  n_defs,
+                      cs_xdef_t          **defs,
+                      cs_lnum_t            n_b_faces)
 {
   CS_UNUSED(dim); /* Only in debug */
 
@@ -222,7 +222,14 @@ cs_cdo_bc_face_define(cs_param_bc_type_t    default_bc,
 
       const cs_lnum_t bf_id = z->elt_ids[i];
 
-      assert(bc->flag[bf_id] < 1);                         /* Not already set */
+#if defined(DEBUG) && !defined(NDEBUG)
+      if (bc->flag[bf_id] > 0) /* Already set */
+        bft_error(__FILE__, __LINE__, 0,
+                  "%s: Boundary already set. Please check your settings.\n"
+                  "%s: Definition %d (zone = \"%s\").",
+                  __func__, __func__, ii, z->name);
+#endif
+
       assert(bc->def_ids[bf_id] == CS_CDO_BC_DEFAULT_DEF); /* Not already set */
       bc->flag[bf_id] = d->meta;
       bc->def_ids[bf_id] = ii;  /* definition id */
