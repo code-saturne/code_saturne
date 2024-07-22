@@ -95,6 +95,7 @@
 #include "cs_vof.h"
 #include "cs_wall_condensation.h"
 #include "cs_wall_condensation_1d_thermal.h"
+#include "cs_rotation.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
@@ -125,9 +126,6 @@ void
 cs_f_ppprcl(void);
 
 void
-cs_f_mmtycl(const int  *itypfb);
-
-void
 cs_f_pptycl(bool        init,
             int        *itypfb,
             const int  *izfppp,
@@ -153,6 +151,151 @@ cs_f_user_boundary_conditions_wrapper(const cs_lnum_t  itrifb[],
 /*============================================================================
  * Private function definitions
  *============================================================================*/
+
+/*----------------------------------------------------------------------------
+ * Compute boundary condition code for mobile meshes in rotor/stator coupling
+ *----------------------------------------------------------------------------*/
+
+static void
+_boundary_condition_mobile_mesh_rotor_stator_type(void)
+{
+  const cs_mesh_t *mesh = cs_glob_mesh;
+  const cs_mesh_quantities_t *fvq = cs_glob_mesh_quantities;
+
+  const cs_lnum_t n_b_faces = mesh->n_b_faces;
+  const cs_lnum_t *b_face_cells = mesh->b_face_cells;
+  const cs_real_t *b_dist = fvq->b_dist;
+  const cs_real_3_t *b_face_u_normal
+    = (const cs_real_3_t *)fvq->b_face_u_normal;
+  const cs_real_3_t *b_face_cog = (const cs_real_3_t *)fvq->b_face_cog;
+
+  const int *bc_type = cs_glob_bc_type;
+  const int *irotce  = cs_turbomachinery_get_cell_rotor_num();
+  const int itytur = cs_glob_turb_model->itytur;
+
+  /* Initialization
+     -------------- */
+
+  /* Physical quantities */
+  const cs_real_t *viscl = CS_F_(mu)->val;
+  const cs_real_t *visct = CS_F_(mu_t)->val;
+
+  cs_real_t *rcodcl1_vel = CS_F_(vel)->bc_coeffs->rcodcl1;
+
+  /* Running velocity for fluid walls and symmetries
+     ----------------------------------------------- */
+
+  /* For symmetries: mesh velocity is always added as only the normal components
+     of the velocity is kept.
+
+     For walls: mesh velocity is taken if the user do not specify RCODCL,
+     otherwise RCODCL is kept for tangential velocity and mesh velocity is taken
+     for the normal component of the velocity.
+
+     One relies on BC_TYPE only, so the user must be aware of it when using non
+     standard boundary conditions. */
+
+#   pragma omp parallel for if (n_b_faces > CS_THR_MIN)
+  for (cs_lnum_t f_id = 0; f_id < n_b_faces; f_id++) {
+
+    cs_lnum_t c_id = b_face_cells[f_id];
+
+    if (irotce[c_id] != 0) {
+
+      const cs_rotation_t *r_num = cs_glob_rotation + irotce[c_id];
+
+      /* In turbomachinery the exact value of the mesh velocity is known */
+      cs_real_t vr[3];
+      cs_rotation_velocity(r_num, b_face_cog[f_id], vr);
+
+      if (bc_type[f_id] == CS_SYMMETRY) {
+        for (cs_lnum_t k = 0; k < 3; k++)
+          rcodcl1_vel[n_b_faces * k + f_id] = vr[k];
+      }
+
+      if (bc_type[f_id] == CS_SMOOTHWALL || bc_type[f_id] == CS_ROUGHWALL) {
+        /* If one slip velocity component was modified by the user, only the
+           normal component of the velocity is fixed */
+
+        if (   rcodcl1_vel[f_id] > cs_math_infinite_r * 0.5
+            && rcodcl1_vel[n_b_faces + f_id] > cs_math_infinite_r * 0.5
+            && rcodcl1_vel[2*n_b_faces + f_id] > cs_math_infinite_r * 0.5) {
+
+          for (cs_lnum_t k = 0; k < 3; k++)
+            rcodcl1_vel[n_b_faces * k + f_id] = vr[k];
+
+        }
+        else {
+          /* Unspecified RCODCL components are set to 0 */
+          for (cs_lnum_t k = 0; k < 3; k++) {
+            if (rcodcl1_vel[n_b_faces * k + f_id] > cs_math_infinite_r * 0.5)
+              rcodcl1_vel[n_b_faces * k + f_id] = 0.;
+          }
+
+          const cs_real_t *rnxyz = b_face_u_normal[f_id];
+          const cs_real_t rcodcl1[3] = {rcodcl1_vel[n_b_faces*0 + f_id],
+                                        rcodcl1_vel[n_b_faces*1 + f_id],
+                                        rcodcl1_vel[n_b_faces*2 + f_id]};
+
+          cs_real_t rcodsn =   (vr[0] - rcodcl1[0]) * rnxyz[0]
+                             + (vr[1] - rcodcl1[1]) * rnxyz[1]
+                             + (vr[2] - rcodcl1[2]) * rnxyz[2];
+
+          for (cs_lnum_t k = 0; k < 3; k++)
+            rcodcl1_vel[n_b_faces * k + f_id] = rcodcl1[k] + rcodsn * rnxyz[k];
+
+        }
+      }
+    }
+  }
+
+  /*
+    In case of transient turbomachinery computations, assign the default values
+    of coefficients associated to turbulent or rough wall velocity BC, in order
+    to update the wall velocity after the geometry update (between prediction
+    and correction step).
+    Note that the velocity BC update is made only if the user has not specified
+    any specific Dirichlet condition for velocity.
+  */
+
+  cs_real_t *coftur = NULL,  *hfltur = NULL;
+  cs_turbomachinery_get_wall_bc_coeffs(&coftur, &hfltur);
+
+  if (cs_turbomachinery_get_model() == CS_TURBOMACHINERY_TRANSIENT) {
+
+#   pragma omp parallel for if (n_b_faces > CS_THR_MIN)
+    for (cs_lnum_t f_id = 0; f_id < n_b_faces; f_id++) {
+
+      cs_lnum_t c_id = b_face_cells[f_id];
+
+      if (   rcodcl1_vel[f_id] > cs_math_infinite_r * 0.5
+          && rcodcl1_vel[n_b_faces + f_id] > cs_math_infinite_r * 0.5
+          && rcodcl1_vel[2*n_b_faces + f_id] > cs_math_infinite_r * 0.5
+          && irotce[c_id] != 0
+          && (bc_type[f_id] == CS_SMOOTHWALL || bc_type[f_id] == CS_ROUGHWALL)) {
+
+        /* Physical Properties */
+        const cs_real_t visctc = visct[c_id];
+        const cs_real_t visclc = viscl[c_id];
+
+        /* Geometric quantities */
+        const cs_real_t distbf = b_dist[f_id];
+
+        const cs_real_t hint = (itytur == 3) ?  visclc / distbf :
+                                               (visclc + visctc) / distbf;
+
+        /* Coefficients associated to laminar wall Dirichlet BC */
+        coftur[f_id] = 0.;
+        hfltur[f_id] = hint;
+      }
+      else {
+        /* Large coefficient in others cases (unused) */
+        coftur[f_id] = cs_math_infinite_r;
+        hfltur[f_id] = cs_math_infinite_r;
+      }
+    }
+  } /* End test on CS_TURBOMACHINERY_TRANSIENT */
+}
 
 /*----------------------------------------------------------------------------
  * Compute boundary condition code for radiative transfer
@@ -953,7 +1096,7 @@ cs_boundary_conditions_set_coeffs(int        nvar,
                                   bc_type);
 
     if (cs_turbomachinery_get_model() != CS_TURBOMACHINERY_NONE)
-      cs_f_mmtycl(bc_type);
+      _boundary_condition_mobile_mesh_rotor_stator_type();
 
     cs_boundary_conditions_type(false,
                                 bc_type,
@@ -3604,7 +3747,7 @@ cs_boundary_conditions_set_coeffs_init(void)
                                 bc_type);
 
   if (cs_turbomachinery_get_model() != CS_TURBOMACHINERY_NONE)
-    cs_f_mmtycl(bc_type);
+    _boundary_condition_mobile_mesh_rotor_stator_type();
 
   // Locate internal BC-based coupling
   if (cs_sat_coupling_n_couplings() > 0) {
