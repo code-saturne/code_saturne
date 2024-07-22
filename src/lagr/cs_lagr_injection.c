@@ -797,10 +797,10 @@ _update_init_particles(cs_lagr_particle_set_t         *p_set,
       if (cs_glob_lagr_model->physical_model == CS_LAGR_PHYS_CTWR) {
 
         cs_lagr_particle_set_real(particle, p_am, CS_LAGR_TEMPERATURE,
-                                  cval_t_l[face_id]);
+                                  cval_t_l[cell_id]);
 
         cs_lagr_particle_set_real(particle, p_am, CS_LAGR_FLUID_TEMPERATURE,
-                                  cval_t[face_id]+tscl_shift);
+                                  cval_t[cell_id]+tscl_shift);
       }
 
     }
@@ -1303,10 +1303,10 @@ _init_particles(cs_lagr_particle_set_t         *p_set,
                                     zis->cp);
 
         cs_lagr_particle_set_real(particle, p_am, CS_LAGR_TEMPERATURE,
-                                  cval_t_l[face_id]);
+                                  cval_t_l[cell_id]);
 
         cs_lagr_particle_set_real(particle, p_am, CS_LAGR_FLUID_TEMPERATURE,
-                                  cval_t[face_id]+tscl_shift);
+                                  cval_t[cell_id]+tscl_shift);
       }
 
       /* statistical weight */
