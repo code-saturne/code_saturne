@@ -516,7 +516,8 @@ cs_setup(void)
   if (cs_glob_param_cdo_mode < 2)
     cs_parameters_check();
 
-  cs_log_printf(CS_LOG_SETUP, "No error detected during the data verification");
+  cs_log_printf(CS_LOG_DEFAULT,
+                "No error detected during the data verification.");
 
   /* Print output */
   cs_f_impini();

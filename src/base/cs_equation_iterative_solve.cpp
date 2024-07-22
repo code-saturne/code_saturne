@@ -207,7 +207,7 @@ _equation_iterative_solve_strided(int                   idtvar,
                                   const cs_real_t       i_secvis[],
                                   const cs_real_t       b_secvis[],
                                   cs_real_t             viscel[][6],
-                                  const cs_real_2_t     weighf[],
+                                  const cs_real_t       weighf[][2],
                                   const cs_real_t       weighb[],
                                   int                   icvflb,
                                   const int             icvfli[],
@@ -708,7 +708,7 @@ _equation_iterative_solve_strided(int                   idtvar,
   sinfo.rhs_norm = rnorm;
 
   /* Warning: for Weight Matrix, one and only one sweep is done. */
-  int nswmod = cs_math_fmax(eqp->nswrsm, 1);
+  int nswmod = CS_MAX(eqp->nswrsm, 1);
 
   int isweep = 1;
 
@@ -885,18 +885,18 @@ _equation_iterative_solve_strided(int                   idtvar,
 
     if (iswdyp <= 0) {
       ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
-        for (cs_lnum_t isou = 0; isou < stride; isou++) {
+        for (cs_lnum_t isou = 0; isou < stride; isou++)
           pvar[c_id][isou] += dpvar[c_id][isou];
 
           /* smbini already contains unsteady terms and mass source terms
            * of the RHS updated at each sweep */
 
+        for (cs_lnum_t isou = 0; isou < stride; isou++) {
           cs_real_t diff = 0.;
           for (cs_lnum_t j = 0; j < stride; j++)
             diff += fimp[c_id][isou][j]*dpvar[c_id][j];
 
           smbini[c_id][isou] -= diff;
-
           smbrp[c_id][isou] = smbini[c_id][isou];
         }
 
@@ -904,18 +904,18 @@ _equation_iterative_solve_strided(int                   idtvar,
     }
     else if (iswdyp == 1) {
       ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
-        for (cs_lnum_t isou = 0; isou < stride; isou++) {
+        for (cs_lnum_t isou = 0; isou < stride; isou++)
           pvar[c_id][isou] += alph*dpvar[c_id][isou];
 
           /* smbini already contains unsteady terms and mass source terms
            * of the RHS updated at each sweep */
 
+        for (cs_lnum_t isou = 0; isou < stride; isou++) {
           cs_real_t diff = 0.;
           for (cs_lnum_t j = 0; j < stride; isou++)
             diff += fimp[c_id][isou][j]*alph*dpvar[c_id][j];
 
-          smbini[c_id][isou] = smbini[c_id][isou] - diff;
-
+          smbini[c_id][isou] -= diff;
           smbrp[c_id][isou] = smbini[c_id][isou];
         }
       });
@@ -923,15 +923,17 @@ _equation_iterative_solve_strided(int                   idtvar,
     else if (iswdyp >= 2) {
       ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
         for (cs_lnum_t isou = 0; isou < stride; isou++) {
-          pvar[c_id][isou] += alph*dpvar[c_id][isou] + beta*dpvarm1[c_id][isou];
+          pvar[c_id][isou] +=   alph*dpvar[c_id][isou]
+                              + beta*dpvarm1[c_id][isou];
+        }
 
+        for (cs_lnum_t isou = 0; isou < stride; isou++) {
           cs_real_t diff = 0.;
           for (cs_lnum_t j = 0; j < stride; j++)
             diff += fimp[c_id][isou][j]*(  alph*dpvar[c_id][j]
                                          + beta*dpvarm1[c_id][j]);
 
           smbini[c_id][isou] -= diff;
-
           smbrp[c_id][isou] = smbini[c_id][isou];
         }
       });
@@ -1007,7 +1009,9 @@ _equation_iterative_solve_strided(int                   idtvar,
                         (cs_real_6_t *)smbrp);
 
     /* --- Convergence test */
-    residu = sqrt(cs_gdot(stride*n_cells, (cs_real_t *)smbrp, (cs_real_t *)smbrp));
+    residu = sqrt(cs_gdot(stride*n_cells,
+                          (cs_real_t *)smbrp,
+                          (cs_real_t *)smbrp));
 
     /* Writing */
     sinfo.n_it = sinfo.n_it + niterf;
@@ -1061,13 +1065,11 @@ _equation_iterative_solve_strided(int                   idtvar,
 
     ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
       for (cs_lnum_t isou = 0; isou < stride; isou++) {
-
         cs_real_t diff = 0.;
         for (cs_lnum_t jsou = 0; jsou < stride; jsou++)
           diff += fimp[c_id][isou][jsou]*dpvar[c_id][jsou];
 
         smbrp[c_id][isou] = smbini[c_id][isou] - diff;
-
       }
     });
 
@@ -1612,7 +1614,7 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
   CS_FREE_HD(w1);
 
   /* Warning: for weight matrix, one and only one sweep is done. */
-  int nswmod = cs_math_fmax(eqp->nswrsm, 1);
+  int nswmod = CS_MAX(eqp->nswrsm, 1);
 
   /* Reconstruction loop (beginning) */
   if (iterns <= 1)
@@ -1872,7 +1874,6 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
                  "=========\n@  Maximum number of iterations %d reached\n",
                  var_name,nswmod);
   }
-
 
   /* Rebuild final flux at faces */
 
