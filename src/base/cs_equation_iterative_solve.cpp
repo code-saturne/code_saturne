@@ -592,10 +592,9 @@ _equation_iterative_solve_strided(int                   idtvar,
 
         cs_real_t diff = 0.;
         for (cs_lnum_t j = 0; j < stride; j++)
-          diff += fimp[c_id][isou][j]*(pvar[c_id][j] - pvara[c_id][j]),
+          diff += fimp[c_id][isou][j]*(pvar[c_id][j] - pvara[c_id][j]);
 
         smbini[c_id][isou] -= diff;
-
         smbrp[c_id][isou] += smbini[c_id][isou];
 
         adxkm1[c_id][isou] = 0.;
