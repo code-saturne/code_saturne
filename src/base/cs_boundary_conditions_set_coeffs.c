@@ -555,7 +555,7 @@ _boundary_condition_wall_condensation_1d_thermal(void)
   }
 
   // Possible conversion temperature -> enthalpy
-  if (cs_glob_thermal_model->itherm != CS_THERMAL_MODEL_ENTHALPY)
+  if (cs_glob_thermal_model->thermal_variable != CS_THERMAL_MODEL_ENTHALPY)
     return;
 
   if (cs_glob_fluid_properties->icp < 0)

@@ -854,7 +854,7 @@ cs_gui_output_boundary(void)
 
     /* Boundary T+/H+/E+ */
 
-    if (cs_glob_thermal_model->itherm != CS_THERMAL_MODEL_NONE) {
+    if (cs_glob_thermal_model->thermal_variable != CS_THERMAL_MODEL_NONE) {
       int post_vis = _surfacic_variable_post("tplus", true) ? 1 : 0;
       cs_field_t *bf = cs_field_by_name_try("tplus");
       if (bf != NULL)
@@ -866,7 +866,7 @@ cs_gui_output_boundary(void)
                              1,
                              false);
         cs_field_set_key_int(bf, k_vis, post_vis);
-        switch (cs_glob_thermal_model->itherm) {
+        switch (cs_glob_thermal_model->thermal_variable) {
         case CS_THERMAL_MODEL_ENTHALPY:
           cs_field_set_key_str(bf, cs_field_key_id("label"), "Hplus");
           break;
@@ -890,7 +890,8 @@ cs_gui_output_boundary(void)
        cannot determine easily whether enthalpy to temperature conversion is
        available */
 
-    if (cs_glob_thermal_model->itherm != CS_THERMAL_MODEL_TEMPERATURE) {
+    if (   cs_glob_thermal_model->thermal_variable
+        != CS_THERMAL_MODEL_TEMPERATURE) {
       if (   cs_tree_find_node_simple(cs_glob_tree, "property") == NULL
           || cs_gui_thermal_model_code() <= 0)
         post_b_temp = false;

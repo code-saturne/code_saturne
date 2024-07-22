@@ -186,7 +186,7 @@ cs_ctwr_add_variable_fields(void)
         thermal->thermal_variable = CS_THERMAL_MODEL_TEMPERATURE;
 
         /* Temperature treated in Celsius */
-        thermal->itpscl = CS_TEMPERATURE_SCALE_CELSIUS;
+        thermal->temperature_scale = CS_TEMPERATURE_SCALE_CELSIUS;
         /* The thermal transported scalar is the temperature of the bulk.
          * If the atmospheric module is switched off (i.e., iatmos!= 2)
          * , we create the field. */

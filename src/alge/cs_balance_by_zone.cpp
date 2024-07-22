@@ -2609,7 +2609,7 @@ cs_flux_through_surface(const char         *scalar_name,
      Will multiply by CP in order to have energy. */
   bool itemperature = false;
   if (f == cs_thermal_model_field()) {
-    if (cs_glob_thermal_model->itherm == CS_THERMAL_MODEL_TEMPERATURE)
+    if (cs_glob_thermal_model->thermal_variable == CS_THERMAL_MODEL_TEMPERATURE)
       itemperature = true;
   }
 

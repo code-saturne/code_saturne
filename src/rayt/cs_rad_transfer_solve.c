@@ -1206,7 +1206,7 @@ cs_rad_transfer_solve(int  bc_type[])
 
   /* Wall temperature */
   cs_real_t xptk;
-  if (cs_glob_thermal_model->itpscl == CS_TEMPERATURE_SCALE_CELSIUS)
+  if (cs_glob_thermal_model->temperature_scale == CS_TEMPERATURE_SCALE_CELSIUS)
     xptk = tkelvi;
   else
     xptk = 0.0;
@@ -1363,7 +1363,7 @@ cs_rad_transfer_solve(int  bc_type[])
 
   /* --> Temperature transport */
 
-  if (cs_glob_thermal_model->itherm == CS_THERMAL_MODEL_TEMPERATURE) {
+  if (cs_glob_thermal_model->thermal_variable == CS_THERMAL_MODEL_TEMPERATURE) {
 
     /* val index to access, necessary for compatibility with neptune */
     cs_field_t *temp_field = cs_field_by_name_try("temperature");
@@ -1380,7 +1380,8 @@ cs_rad_transfer_solve(int  bc_type[])
 
   /* Enthalpy transport (flurdb is a temporary array) */
 
-  else if (cs_glob_thermal_model->itherm == CS_THERMAL_MODEL_ENTHALPY) {
+  else if (   cs_glob_thermal_model->thermal_variable
+           == CS_THERMAL_MODEL_ENTHALPY) {
 
     const cs_real_t *cvara_scalt = CS_F_(h)->vals[1];
 
@@ -1403,8 +1404,8 @@ cs_rad_transfer_solve(int  bc_type[])
       (CS_ABORT_IMMEDIATE,
        _("Radiative transfer module"),
        _("Compatible thermal model should be temperature or enthaly-based,\n"
-         "but here, \"cs_glob_thermal_model->itherm\" = %d."),
-       cs_glob_thermal_model->itherm);
+         "but here, \"cs_glob_thermal_model->thermal_variable\" = %d."),
+       cs_glob_thermal_model->thermal_variable);
 
   /* Absorption coefficient for different modules;
      Warning: for the P-1 approximation, the absorption coefficient

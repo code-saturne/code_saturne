@@ -809,11 +809,14 @@ cs_atmo_aerosol_ssh_time_advance(void)
     /* Set the Temperature (K) */
     if (_update_ssh_thermo) {
       double temp;
-      if (cs_glob_thermal_model->itherm == CS_THERMAL_MODEL_TEMPERATURE) {
+      if (   cs_glob_thermal_model->thermal_variable
+          == CS_THERMAL_MODEL_TEMPERATURE) {
         temp = cs_field_by_name("temperature")->val[cell_id];
-        if (cs_glob_thermal_model->itpscl == CS_TEMPERATURE_SCALE_CELSIUS)
+        if (   cs_glob_thermal_model->temperature_scale
+            == CS_TEMPERATURE_SCALE_CELSIUS)
           temp -= cs_physical_constants_celsius_to_kelvin;
-      } else {
+      }
+      else {
         /* We have enthalpy, use reference temperature */
         temp = cs_glob_fluid_properties->t0;
       }

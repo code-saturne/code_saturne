@@ -527,7 +527,7 @@ _physical_property(cs_field_t          *c_prop,
      "thermal_diffusivity". */
 
   if (prop_choice == NULL) {
-    if (   cs_glob_thermal_model->itherm == CS_THERMAL_MODEL_ENTHALPY
+    if (   cs_glob_thermal_model->thermal_variable == CS_THERMAL_MODEL_ENTHALPY
         && cs_gui_strcmp(c_prop->name, "thermal_diffusivity")) {
       _physical_property_th_diffusivity(c_prop, z);
       return;
@@ -1647,11 +1647,11 @@ _read_diffusivity(void)
   const int kscavr = cs_field_key_id("first_moment_id");
   const int kvisls0 = cs_field_key_id("diffusivity_ref");
 
-  const int itherm = cs_glob_thermal_model->itherm;
+  const int thermal_variable = cs_glob_thermal_model->thermal_variable;
 
   cs_fluid_properties_t *fprops = cs_get_glob_fluid_properties();
 
-  if (itherm != CS_THERMAL_MODEL_NONE) {
+  if (thermal_variable != CS_THERMAL_MODEL_NONE) {
 
     if (_thermal_table_needed("thermal_conductivity") == 0)
       cs_gui_properties_value("thermal_conductivity", &(fprops->lambda0));
@@ -1668,7 +1668,7 @@ _read_diffusivity(void)
 
     /* for the Temperature, the diffusivity factor is not divided by Cp
      * i.e. it remains lambda */
-    if (itherm != CS_THERMAL_MODEL_TEMPERATURE)
+    if (thermal_variable != CS_THERMAL_MODEL_TEMPERATURE)
       visls_0 /= cs_glob_fluid_properties->cp0;
 
     cs_field_t *tf = cs_thermal_model_field();
@@ -3935,7 +3935,7 @@ cs_gui_physical_properties(void)
   int choice;
   const char *material = NULL;
 
-  const int itherm = cs_glob_thermal_model->itherm;
+  const int thermal_variable = cs_glob_thermal_model->thermal_variable;
 
   cs_fluid_properties_t *phys_pp = cs_get_glob_fluid_properties();
   cs_gui_fluid_properties_value("reference_pressure", &(phys_pp->p0));
@@ -3960,17 +3960,18 @@ cs_gui_physical_properties(void)
   if (material != NULL) {
     if (!(cs_gui_strcmp(material, "user_material"))) {
       cs_phys_prop_thermo_plane_type_t thermal_plane = CS_PHYS_PROP_PLANE_PH;
-      if (itherm <= CS_THERMAL_MODEL_TEMPERATURE)
+      if (thermal_variable <= CS_THERMAL_MODEL_TEMPERATURE)
         thermal_plane = CS_PHYS_PROP_PLANE_PT;
-      //else if (itherm == CS_THERMAL_MODEL_TOTAL_ENERGY)
+      //else if (thermal_variable == CS_THERMAL_MODEL_TOTAL_ENERGY)
       //  // TODO compressible
       //  thermal_plane = CS_PHYS_PROP_PLANE_PS;
 
-      const cs_temperature_scale_t itpscl = cs_glob_thermal_model->itpscl;
+      const cs_temperature_scale_t temperature_scale
+        = cs_glob_thermal_model->temperature_scale;
       const char *method = _thermal_table_choice("method");
 
       if (   strcmp(method, "CoolProp") == 0
-          && itherm > CS_THERMAL_MODEL_NONE) {
+          && thermal_variable > CS_THERMAL_MODEL_NONE) {
         if (cs_physical_properties_get_coolprop_backend() == NULL) {
           int n_th_laws = _count_thermal_laws();
           if (n_th_laws > 0)
@@ -3982,7 +3983,7 @@ cs_gui_physical_properties(void)
                            method,
                            _thermal_table_option("reference"),
                            thermal_plane,
-                           itpscl);
+                           temperature_scale);
     }
   }
 
@@ -4261,32 +4262,32 @@ cs_gui_thermal_model(void)
 
   switch(cs_gui_thermal_model_code()) {
   case 10:
-    thermal->itherm = CS_THERMAL_MODEL_TEMPERATURE;
-    thermal->itpscl = CS_TEMPERATURE_SCALE_CELSIUS;
+    thermal->thermal_variable = CS_THERMAL_MODEL_TEMPERATURE;
+    thermal->temperature_scale = CS_TEMPERATURE_SCALE_CELSIUS;
     break;
   case 11:
-    thermal->itherm = CS_THERMAL_MODEL_TEMPERATURE;
-    thermal->itpscl = CS_TEMPERATURE_SCALE_KELVIN;
+    thermal->thermal_variable = CS_THERMAL_MODEL_TEMPERATURE;
+    thermal->temperature_scale = CS_TEMPERATURE_SCALE_KELVIN;
     break;
   case 12:
-    thermal->itherm = CS_THERMAL_MODEL_TEMPERATURE;
-    thermal->itpscl = CS_TEMPERATURE_SCALE_CELSIUS;
+    thermal->thermal_variable = CS_THERMAL_MODEL_TEMPERATURE;
+    thermal->temperature_scale = CS_TEMPERATURE_SCALE_CELSIUS;
     break;
   case 13:
-    thermal->itherm = CS_THERMAL_MODEL_TEMPERATURE;
-    thermal->itpscl = CS_TEMPERATURE_SCALE_CELSIUS;
+    thermal->thermal_variable = CS_THERMAL_MODEL_TEMPERATURE;
+    thermal->temperature_scale = CS_TEMPERATURE_SCALE_CELSIUS;
     break;
   case 20:
-    thermal->itherm = CS_THERMAL_MODEL_ENTHALPY;
-    thermal->itpscl = CS_TEMPERATURE_SCALE_KELVIN;
+    thermal->thermal_variable = CS_THERMAL_MODEL_ENTHALPY;
+    thermal->temperature_scale = CS_TEMPERATURE_SCALE_KELVIN;
     break;
   case 30:
-    thermal->itherm = CS_THERMAL_MODEL_TOTAL_ENERGY;
-    thermal->itpscl = CS_TEMPERATURE_SCALE_KELVIN;
+    thermal->thermal_variable = CS_THERMAL_MODEL_TOTAL_ENERGY;
+    thermal->temperature_scale = CS_TEMPERATURE_SCALE_KELVIN;
     break;
   default:
-    thermal->itherm = CS_THERMAL_MODEL_NONE;
-    thermal->itpscl = CS_TEMPERATURE_SCALE_NONE;
+    thermal->thermal_variable = CS_THERMAL_MODEL_NONE;
+    thermal->temperature_scale = CS_TEMPERATURE_SCALE_NONE;
     break;
   }
 }
@@ -4295,7 +4296,8 @@ cs_gui_thermal_model(void)
  * Get thermal scalar model.
  *
  * return:
- *   value of itherm*10 + (temperature variant flag), or -1 if not defined
+ *   value of thermal_variable*10 + (temperature variant flag),
+ *   or -1 if not defined
  *----------------------------------------------------------------------------*/
 
 int
@@ -4749,7 +4751,8 @@ cs_gui_user_variables(void)
        tn != NULL;
        tn = cs_tree_node_get_next_of_name(tn), i++) {
 
-    if (i == 0 && cs_glob_thermal_model->itherm != CS_THERMAL_MODEL_NONE) {
+    if (   i == 0
+        && cs_glob_thermal_model->thermal_variable != CS_THERMAL_MODEL_NONE) {
       const char path_t[] = "thermophysical_models/thermal_scalar/variable";
       t_scalar_name = cs_tree_node_get_tag
                         (cs_tree_get_node(cs_glob_tree, path_t), "name");
@@ -5639,7 +5642,7 @@ cs_gui_physical_variable(void)
   }
 
   /* law for thermal conductivity */
-  if (cs_glob_thermal_model->itherm != CS_THERMAL_MODEL_NONE) {
+  if (cs_glob_thermal_model->thermal_variable != CS_THERMAL_MODEL_NONE) {
 
     cs_field_t  *cond_dif = NULL;
 

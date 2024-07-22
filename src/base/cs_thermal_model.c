@@ -107,7 +107,7 @@ BEGIN_C_DECLS
         - 0: none
         - 1: Kelvin
         - 2: Celsius
-  \var  cs_thermal_model_t::itpscl
+  \var  cs_thermal_model_t::temperature_scale
         \deprecated alias/old name for temperature_scale
   \var  cs_thermal_model_t::has_kinetic_st
         Take kinetic source term in energy equation into account
@@ -186,8 +186,8 @@ cs_f_thermal_model_get_pointers(int     **itherm,
  * enables mapping to Fortran global pointers.
  *
  * parameters:
- *   itherm              --> pointer to cs_glob_thermal_model->thermal_variable
- *   itpscl              --> pointer to cs_glob_thermal_model->temperature_scale
+ *   itherm  --> pointer to cs_glob_thermal_model->thermal_variable
+ *   itpscl  --> pointer to cs_glob_thermal_model->temperature_scale
  *----------------------------------------------------------------------------*/
 
 void
@@ -216,7 +216,7 @@ cs_field_t *
 cs_thermal_model_field(void)
 {
   cs_field_t *th_f;
-  switch (_thermal_model.itherm) {
+  switch (_thermal_model.thermal_variable) {
   case CS_THERMAL_MODEL_TEMPERATURE:
     th_f = CS_F_(t);
     break;
@@ -255,8 +255,8 @@ cs_get_glob_thermal_model(void)
 void
 cs_thermal_model_log_setup(void)
 {
-  int itherm = cs_glob_thermal_model->itherm;
-  int itpscl = cs_glob_thermal_model->itpscl;
+  int thermal_variable = cs_glob_thermal_model->thermal_variable;
+  int temperature_scale = cs_glob_thermal_model->temperature_scale;
 
   cs_log_printf(CS_LOG_SETUP,
                 ("\n"
@@ -264,13 +264,13 @@ cs_thermal_model_log_setup(void)
                  "---------------------\n\n"
                  "  Continuous phase:\n\n"));
 
-  const char *itherm_value_str[]
+  const char *thermal_variable_value_str[]
     = {N_("no thermal model"),
        N_("temperature)"),
        N_("enthalpy"),
        N_("total energy")};
 
-  const char *itpscl_value_str[]
+  const char *temperature_scale_value_str[]
     = {N_("none"),
        N_("temperature in Kelvin"),
        N_("temperature in Celsius")};
@@ -278,14 +278,14 @@ cs_thermal_model_log_setup(void)
   cs_log_printf(CS_LOG_SETUP,
                 ("    Thermal model\n"));
   cs_log_printf(CS_LOG_SETUP,
-                _("    itherm:    %d (%s)\n"),
-                itherm, _(itherm_value_str[itherm]));
+                _("    thermal_variable:   %d (%s)\n"),
+                thermal_variable, _(thermal_variable_value_str[thermal_variable]));
 
   cs_log_printf(CS_LOG_SETUP,
                 ("    Temperature scale\n"));
   cs_log_printf(CS_LOG_SETUP,
-                _("    itpscl:    %d (%s)\n"),
-                itpscl, _(itpscl_value_str[itpscl]));
+                _("    temperature_scale:  %d (%s)\n"),
+                temperature_scale, _(temperature_scale_value_str[temperature_scale]));
 
   cs_field_t *tf = cs_thermal_model_field();
   if (tf != NULL)
@@ -1131,7 +1131,7 @@ cs_thermal_model_pdivu(cs_real_t         smbrs[restrict])
   const int kbmasf = cs_field_key_id("boundary_mass_flux_id");
 
   /*  Local variables */
-  int itherm = cs_glob_thermal_model->thermal_variable;
+  int thermal_variable = cs_glob_thermal_model->thermal_variable;
   int has_pdivu = cs_glob_thermal_model->has_pdivu;
   cs_real_t rair = cs_glob_fluid_properties->r_pg_cnst;
   cs_real_t p0 = cs_glob_fluid_properties->p0;
@@ -1201,8 +1201,8 @@ cs_thermal_model_pdivu(cs_real_t         smbrs[restrict])
     /* General case */
     cs_real_t pres, presa;
     int method = 2;
-    if (itherm == CS_THERMAL_MODEL_TEMPERATURE ||
-        itherm == CS_THERMAL_MODEL_INTERNAL_ENERGY) {
+    if (thermal_variable == CS_THERMAL_MODEL_TEMPERATURE ||
+        thermal_variable == CS_THERMAL_MODEL_INTERNAL_ENERGY) {
       if (method == 1) {
          // Interior faces contribution
          for (cs_lnum_t f_id = 0; f_id < n_i_faces; f_id++) {
@@ -1335,7 +1335,7 @@ cs_thermal_model_cflt(const cs_real_t  croma[],
 
   cs_real_t thetv = eqp_u->theta;
 
-  if (cs_glob_thermal_model->itherm == CS_THERMAL_MODEL_TEMPERATURE) {
+  if (cs_glob_thermal_model->thermal_variable == CS_THERMAL_MODEL_TEMPERATURE) {
     cs_real_3_t *gradp
       = (cs_real_3_t *)cs_field_by_name("algo:gradient_pressure")-> val;
     cs_real_3_t *gradphi

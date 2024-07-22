@@ -198,7 +198,7 @@ _lages1(cs_real_t           dtp,
   cs_lnum_t nor = cs_glob_lagr_time_step->nor;
   const int _prev_id = (extra->vel->n_time_vals > 1) ? 1 : 0;
 
-  const cs_temperature_scale_t t_scl = cs_glob_thermal_model->itpscl;
+  const cs_temperature_scale_t t_scl = cs_glob_thermal_model->temperature_scale;
 
   const cs_real_3_t *cvar_vel
     = (const cs_real_3_t *)(extra->vel->vals[_prev_id]);
@@ -2379,7 +2379,7 @@ _lagdep(cs_real_t           dtp,
 
   cs_lnum_t nor = cs_glob_lagr_time_step->nor;
 
-  const cs_temperature_scale_t t_scl = cs_glob_thermal_model->itpscl;
+  const cs_temperature_scale_t t_scl = cs_glob_thermal_model->temperature_scale;
 
   const int _prev_id = (extra->vel->n_time_vals > 1) ? 1 : 0;
   const cs_real_3_t *cvar_vel

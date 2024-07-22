@@ -263,8 +263,8 @@ BEGIN_C_DECLS
   \var  cs_fluid_properties_t::cp0
         reference specific heat
 
-        Useful if \ref cs_thermal_model_t::itherm
-        "cs_glob_thermal_model->itherm" != CS_THERMAL_MODEL_NONE,
+        Useful if \ref cs_thermal_model_t::thermal_variable
+        "cs_glob_thermal_model->thermal_variable" != CS_THERMAL_MODEL_NONE,
         unless the user specifies the specific heat in the user subroutine
         \ref cs_user_physical_properties (\ref cstphy::icp "icp" > 0) with the
         compressible module or coal combustion, \ref cp0 is also needed even

@@ -545,8 +545,8 @@ cs_user_model(void)
    * CS_THERMAL_MODEL_ENTHALPY    : enthalpy
    * CS_THERMAL_MODEL_TOTAL_ENERGY: total energy (only for compressible module)
    *
-   *  For temperature, the temperature scale may be set later using itpscl
-   *  (1 for Kelvin, 2 for Celsius).
+   *  For temperature, the temperature scale may be set later using the
+   *  temperature_scale member.
    *
    *  Warning: When using specific physics, this value is
    *           set automatically by the physics model.
@@ -554,7 +554,7 @@ cs_user_model(void)
    */
 
   cs_thermal_model_t *thermal_model = cs_get_glob_thermal_model();
-  thermal_model->itherm = CS_THERMAL_MODEL_TEMPERATURE;
+  thermal_model->thermal_variable = CS_THERMAL_MODEL_TEMPERATURE;
 
   /*! [thermal_model_choice] */
 
@@ -1129,7 +1129,7 @@ cs_user_parameters(cs_domain_t *domain)
   {
     cs_thermal_model_t *thm = cs_get_glob_thermal_model();
 
-    thm->itpscl = CS_TEMPERATURE_SCALE_CELSIUS;
+    thm->temperature_scale = CS_TEMPERATURE_SCALE_CELSIUS;
   }
   /*! [param_itpscl] */
 

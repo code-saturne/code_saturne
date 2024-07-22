@@ -1153,9 +1153,12 @@ cs_parameters_check(void)
          time_scheme->thetsn, time_scheme->isno2t,
          time_scheme->thetst, time_scheme->isto2t);
 
-    if (   (   cs_glob_thermal_model->itherm == 1
-            && cs_glob_thermal_model->itpscl == 1)
-        || cs_glob_thermal_model->itherm == 2) {
+    if (   (      cs_glob_thermal_model->thermal_variable
+               == CS_THERMAL_MODEL_TEMPERATURE
+            &&    cs_glob_thermal_model->temperature_scale
+               == CS_TEMPERATURE_SCALE_KELVIN)
+        ||    cs_glob_thermal_model->thermal_variable
+           == CS_THERMAL_MODEL_ENTHALPY) {
       for (int f_id = 0; f_id < n_fields; f_id++) {
         cs_field_t *f = cs_field_by_id(f_id);
         if (!(f->type & CS_FIELD_VARIABLE))
@@ -1609,8 +1612,8 @@ cs_parameters_check(void)
   /* Thermal model */
   cs_parameters_is_in_range_int(CS_ABORT_DELAYED,
                                 _("while reading input data"),
-                                "cs_glob_thermal_model->itherm",
-                                cs_glob_thermal_model->itherm,
+                                "cs_glob_thermal_model->thermal_variable",
+                                cs_glob_thermal_model->thermal_variable,
                                 CS_THERMAL_MODEL_NONE, CS_THERMAL_MODEL_N_TYPES);
 
   /* Constant or variable rho and viscosity */

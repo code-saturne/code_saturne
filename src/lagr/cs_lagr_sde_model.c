@@ -900,14 +900,16 @@ _lagitf(cs_lagr_attribute_t  *iattr)
    * =================================== */
 
   if (   extra->temperature != NULL
-      && cs_glob_thermal_model->itpscl == CS_TEMPERATURE_SCALE_CELSIUS) {
+      &&    cs_glob_thermal_model->temperature_scale
+         == CS_TEMPERATURE_SCALE_CELSIUS) {
 
     for (cs_lnum_t cell_id = 0; cell_id < mesh->n_cells; cell_id++)
       tempf[cell_id] = extra->temperature->val[cell_id];
 
   }
   else if (   extra->temperature != NULL
-           && cs_glob_thermal_model->itpscl == CS_TEMPERATURE_SCALE_KELVIN) {
+           &&    cs_glob_thermal_model->temperature_scale
+              == CS_TEMPERATURE_SCALE_KELVIN) {
 
     for (cs_lnum_t cell_id = 0; cell_id < mesh->n_cells; cell_id++)
       tempf[cell_id] = extra->temperature->val[cell_id] - _tkelvi;

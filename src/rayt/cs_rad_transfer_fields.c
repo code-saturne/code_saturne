@@ -109,8 +109,8 @@ cs_rad_transfer_add_variable_fields(void)
     cs_parameters_is_in_range_int
       (CS_ABORT_DELAYED,
        _("in Radiative module"),
-       _("Thermal model option (cs_glob_thermal model->itherm)"),
-       cs_glob_thermal_model->itherm,
+       _("Thermal model option (cs_glob_thermal model->thermal_variable)"),
+       cs_glob_thermal_model->thermal_variable,
        CS_THERMAL_MODEL_TEMPERATURE, CS_THERMAL_MODEL_TOTAL_ENERGY);
 
   cs_parameters_error_barrier();

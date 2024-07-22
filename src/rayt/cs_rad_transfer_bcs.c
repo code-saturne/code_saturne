@@ -251,6 +251,9 @@ cs_rad_transfer_bcs(int bc_type[])
 
   cs_real_t tkelvi = cs_physical_constants_celsius_to_kelvin;
 
+  cs_thermal_model_variable_t thermal_variable
+    = cs_glob_thermal_model->thermal_variable;
+
   /* Allocate temporary arrays */
 
   int  *isothm;
@@ -293,7 +296,7 @@ cs_rad_transfer_bcs(int bc_type[])
 
   /* Temperature scale */
   cs_real_t xmtk = 0.;
-  if (cs_glob_thermal_model->itpscl == CS_TEMPERATURE_SCALE_CELSIUS)
+  if (cs_glob_thermal_model->temperature_scale == CS_TEMPERATURE_SCALE_CELSIUS)
     xmtk = tkelvi;
 
   /* Wall temperature */
@@ -904,7 +907,7 @@ cs_rad_transfer_bcs(int bc_type[])
 
   /* Save temperature (in Kelvin) in tempk */
 
-  if (cs_glob_thermal_model->itherm == CS_THERMAL_MODEL_TEMPERATURE) {
+  if (thermal_variable == CS_THERMAL_MODEL_TEMPERATURE) {
 
     cs_field_t *f_temp = CS_F_(t);
     if (f_temp == NULL)
@@ -914,13 +917,15 @@ cs_rad_transfer_bcs(int bc_type[])
     if (f_temp->n_time_vals > 1)
       cval_t = f_temp->vals[1];
 
-    if (cs_glob_thermal_model->itpscl == CS_TEMPERATURE_SCALE_CELSIUS) {
+    if (   cs_glob_thermal_model->temperature_scale
+        == CS_TEMPERATURE_SCALE_CELSIUS) {
 
       for (cs_lnum_t iel = 0; iel < cs_glob_mesh->n_cells; iel++)
         tempk[iel] = cval_t[iel] + tkelvi;
 
     }
-    else if (cs_glob_thermal_model->itpscl == CS_TEMPERATURE_SCALE_KELVIN) {
+    else if (   cs_glob_thermal_model->temperature_scale
+             == CS_TEMPERATURE_SCALE_KELVIN) {
 
       /* val index to access, necessary for compatibility with neptune_cfd */
       int tval_id = f_temp->n_time_vals - 1;
@@ -930,7 +935,7 @@ cs_rad_transfer_bcs(int bc_type[])
     }
 
   }
-  else if (cs_glob_thermal_model->itherm == CS_THERMAL_MODEL_ENTHALPY) {
+  else if (thermal_variable == CS_THERMAL_MODEL_ENTHALPY) {
 
     cs_field_t *f_enthalpy = CS_F_(h);
 
@@ -990,7 +995,7 @@ cs_rad_transfer_bcs(int bc_type[])
 
   /* Change user boundary conditions */
 
-  if (cs_glob_thermal_model->itherm == CS_THERMAL_MODEL_TEMPERATURE) {
+  if (thermal_variable == CS_THERMAL_MODEL_TEMPERATURE) {
 
     for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++) {
 
@@ -1014,7 +1019,7 @@ cs_rad_transfer_bcs(int bc_type[])
     }
 
   }
-  else if (cs_glob_thermal_model->itherm == CS_THERMAL_MODEL_ENTHALPY) {
+  else if (thermal_variable == CS_THERMAL_MODEL_ENTHALPY) {
 
     /* Read user data;
      * convert twall to enthalpy at boundary */
@@ -1208,7 +1213,7 @@ cs_rad_transfer_bc_coeffs(int                   bc_type[],
   /* Wall temperature */
   cs_field_t *f_tempb = CS_F_(t_b);
   cs_real_t xmtk = 0;
-  if (cs_glob_thermal_model->itpscl == CS_TEMPERATURE_SCALE_CELSIUS)
+  if (cs_glob_thermal_model->temperature_scale == CS_TEMPERATURE_SCALE_CELSIUS)
     xmtk = cs_physical_constants_celsius_to_kelvin;
 
   /* -> Initialization to a non-admissible value for testing after raycll   */

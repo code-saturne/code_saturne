@@ -659,10 +659,11 @@ _init_particles(cs_lagr_particle_set_t         *p_set,
     const cs_field_t *f = cs_field_by_name_try("temperature");
     if (f != NULL)
       cval_t = f->val;
-    else if (cs_glob_thermal_model->itherm == CS_THERMAL_MODEL_ENTHALPY)
+    else if (   cs_glob_thermal_model->thermal_variable
+             == CS_THERMAL_MODEL_ENTHALPY)
       cval_h = cs_field_by_name("enthalpy")->val;
 
-    if (cs_glob_thermal_model->itpscl == CS_TEMPERATURE_SCALE_KELVIN)
+    if (cs_glob_thermal_model->temperature_scale == CS_TEMPERATURE_SCALE_KELVIN)
       tscl_shift = - cs_physical_constants_celsius_to_kelvin;
   }
 

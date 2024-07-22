@@ -2633,7 +2633,7 @@ cs_syr_coupling_recv_boundary(const int  nvar,
 
       /* Require temperature -> enthalpy conversion */
 
-      if (cs_glob_thermal_model->itherm == CS_THERMAL_MODEL_ENTHALPY) {
+      if (cs_glob_thermal_model->thermal_variable == CS_THERMAL_MODEL_ENTHALPY) {
 
         if (f == cs_thermal_model_field()) {
           for (cs_lnum_t i = 0; i < n_cpl_faces; i++) {
@@ -2699,11 +2699,12 @@ cs_syr_coupling_send_boundary(const cs_real_t  h_wall[],
      exit earlier otherwise) */
 
   cs_real_t  *wa = NULL;
-  if (cs_glob_thermal_model->itherm == CS_THERMAL_MODEL_ENTHALPY) {
+  if (cs_glob_thermal_model->thermal_variable == CS_THERMAL_MODEL_ENTHALPY) {
     BFT_MALLOC(wa, n_b_faces, cs_real_t);
     cs_ht_convert_h_to_t_faces(v_fluid, wa);
   }
-  else if (cs_glob_thermal_model->itherm == CS_THERMAL_MODEL_TOTAL_ENERGY) {
+  else if (   cs_glob_thermal_model->thermal_variable
+           == CS_THERMAL_MODEL_TOTAL_ENERGY) {
     /* Epsilon sup for perfect gas at cells */
     BFT_MALLOC(wa, n_cells, cs_real_t);
     cs_cf_thermo_eps_sup(CS_F_(rho)->val, wa, n_cells);
@@ -2727,7 +2728,7 @@ cs_syr_coupling_send_boundary(const cs_real_t  h_wall[],
                             coupling_ent->elt_dim,
                             f_ids);
 
-    switch (cs_glob_thermal_model->itherm) {
+    switch (cs_glob_thermal_model->thermal_variable) {
 
     case CS_THERMAL_MODEL_TEMPERATURE:
       {

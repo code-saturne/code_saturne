@@ -350,7 +350,8 @@ _update_pressure_temperature(cs_lnum_t n_cells)
   // Saving pressure corrected in resopv as ancient pressure
   cs_field_current_to_previous(CS_F_(p));
 
-  if (cs_glob_thermal_model->itherm == CS_THERMAL_MODEL_INTERNAL_ENERGY) {
+  if (   cs_glob_thermal_model->thermal_variable
+      == CS_THERMAL_MODEL_INTERNAL_ENERGY) {
     cs_field_t *temp = cs_field_by_name_try("temperature");
     if (temp != NULL)
       cs_array_real_copy(n_cells, temp->val, temp->val_pre);
@@ -839,8 +840,10 @@ cs_solve_all(int  itrale)
   if (cs_glob_physical_model_flag[CS_ATMOSPHERIC] != CS_ATMO_OFF)
     cs_atmo_z_ground_compute();
 
-  if (   (cs_glob_thermal_model->itherm == CS_THERMAL_MODEL_TEMPERATURE)
-      || (cs_glob_thermal_model->itherm == CS_THERMAL_MODEL_INTERNAL_ENERGY))
+  if (   (   cs_glob_thermal_model->thermal_variable
+          == CS_THERMAL_MODEL_TEMPERATURE)
+      || (   cs_glob_thermal_model->thermal_variable
+          == CS_THERMAL_MODEL_INTERNAL_ENERGY))
     cs_thermal_model_init();
 
   /* At the beginning of computation we reset the pressure

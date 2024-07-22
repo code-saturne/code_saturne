@@ -198,7 +198,7 @@ cs_lagr_resuspension(void)
   cs_real_t adhesion_energ;
 
   cs_real_t xmtk = 0;
-  if (cs_glob_thermal_model->itpscl == CS_TEMPERATURE_SCALE_CELSIUS)
+  if (cs_glob_thermal_model->temperature_scale == CS_TEMPERATURE_SCALE_CELSIUS)
     xmtk = cs_physical_constants_celsius_to_kelvin;
 
   for (cs_lnum_t ip = 0; ip < p_set->n_particles; ip++) {

@@ -1763,7 +1763,8 @@ cs_lagr_solve_time_step(const int         itypfb[],
 
     if (extra->temperature != NULL) {
 
-      if (cs_glob_thermal_model->itpscl == CS_TEMPERATURE_SCALE_CELSIUS) {
+      if (   cs_glob_thermal_model->temperature_scale
+          == CS_TEMPERATURE_SCALE_CELSIUS) {
         for (cs_lnum_t iel = 0; iel < mesh->n_cells; iel++) {
           tempp[iel] =    extra->temperature->val[iel]
                         + cs_physical_constants_celsius_to_kelvin;
@@ -1777,7 +1778,8 @@ cs_lagr_solve_time_step(const int         itypfb[],
     }
 
     else {
-      if (cs_glob_thermal_model->itpscl == CS_TEMPERATURE_SCALE_CELSIUS) {
+      if (   cs_glob_thermal_model->temperature_scale
+          == CS_TEMPERATURE_SCALE_CELSIUS) {
         for (cs_lnum_t iel = 0; iel < mesh->n_cells; iel++) {
           tempp[iel] =    cs_glob_fluid_properties->t0
                         + cs_physical_constants_celsius_to_kelvin;

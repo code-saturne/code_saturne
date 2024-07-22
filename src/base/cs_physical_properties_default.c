@@ -786,7 +786,8 @@ _init_boundary_temperature(void)
     }
 
   }
-  else if (cs_glob_thermal_model->itherm == CS_THERMAL_MODEL_ENTHALPY) {
+  else if (   cs_glob_thermal_model->thermal_variable
+           == CS_THERMAL_MODEL_ENTHALPY) {
 
     fld = cs_field_by_name_try("enthalpy");
     if (fld != NULL) {
@@ -896,7 +897,7 @@ cs_physical_properties_update(int   iterns)
   if (mbrom == 0 && n_b_faces > 0 && rho_b_f != NULL)
     rho_b_f->val[0] = -cs_math_big_r;
 
-  if (cs_glob_thermal_model->itherm == CS_THERMAL_MODEL_ENTHALPY)
+  if (cs_glob_thermal_model->thermal_variable == CS_THERMAL_MODEL_ENTHALPY)
     cs_ht_convert_h_to_t_cells_solid();
 
   cs_user_physical_properties(cs_glob_domain);
