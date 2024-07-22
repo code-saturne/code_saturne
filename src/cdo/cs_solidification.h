@@ -325,10 +325,6 @@ typedef struct {
 
 typedef struct {
 
-  /* Secondary dendrite arm spacing */
-
-  cs_real_t                      s_das;
-
   /* Physical parameters to specify the law of variation of the liquid fraction
    * with respect to the temperature
    *
@@ -376,10 +372,6 @@ typedef struct {
 
   /* Phase diagram features for an alloy with the component A and B */
   /* -------------------------------------------------------------- */
-
-  /* Secondary dendrite arm spacing */
-
-  cs_real_t    s_das;
 
   /* Physical parameters */
 
@@ -603,15 +595,33 @@ typedef struct  {
                                          coefficient in each cell */
   cs_property_t   *forcing_mom;
 
-  /* Porous media like reaction term in the momentum equation:
+  /* Porous media model acting as a reaction term in the momentum equation:
    *
-   * forcing_coef = 180 * visco0 / s_das^2
-   * where visco0 is the laminar viscosity and s_das is the secondary
-   * dendrite arm spacing
+   * forcing_coef = visco0 / KC
+   * where visco0 is the laminar viscosity and K the permeability
+   *
+   * The Kozeny-Carman relation gives a value of the permeability coefficient
+   *
+   *     KC = gl^3 * s_das^2 / (PI^2 * Kozeny_const * tau^2 * (1 - gl)^2)
+   *
+   * where
+   * - gl is the liquid fraction
+   * - s_das is the secondary dendrite arm spacing [m]
+   * - Kozeny_const is the Kozeny constant
+   * - tau is the tortuosity coefficient
+   *
+   * One gathers all parameters which are constant during the simulation
+   * in the parameter "forcing_coef"
+   *
    * F(u) = forcing_coef * (1- gl)^2/(gl^3 + forcing_eps) * u
+   *
+   * There is slight modification in order to avoid a division by zero.
    */
 
-  cs_real_t        forcing_coef;
+  double           s_das;           /* default is 0.00085 m */
+  double           kozeny_constant; /* default value is 5.0 */
+  double           tortuosity;      /* default value is 2.0 */
+  double           forcing_coef;
 
   /* First cell associated to a fluid/solid area (i.e. not associated to
    * a permanent solid zone) */
@@ -697,6 +707,23 @@ cs_solidification_activate(cs_solidification_model_t      model,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Set the parameters involved in the computation of the permeability
+ *        coefficient of the Kozeny-Carman relation.
+ *
+ * \param[in] kozeny_constant  value of the Kozeny constant (default = 5.0)
+ * \param[in] tortuosity       value of the tortuosity (default = 2.0)
+ * \param[in] s_das            value of the secondary dendrite arm spacing
+ *                             (default = 0.00085 [m])
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_solidification_set_kozeny_carman_parameters(double kozeny_constant,
+                                               double tortuosity,
+                                               double s_das);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Get the structure defining the Stefan model
  *
  * \return a pointer to the structure
@@ -754,41 +781,39 @@ cs_solidification_check_voller_model(void);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Set the main physical parameters which describe the Voller and
- *         Prakash modelling
+ * \brief Set the main physical parameters which describe the Voller and
+ *        Prakash modelling
  *
- * \param[in]  beta           thermal dilatation coefficient
- * \param[in]  t_ref          reference temperature (for the Boussinesq approx)
- * \param[in]  t_solidus      solidus temperature (in K)
- * \param[in]  t_liquidus     liquidus temperature (in K)
- * \param[in]  latent_heat    latent heat
- * \param[in]  s_das          secondary dendrite space arms
+ * \param[in] beta         thermal dilatation coefficient
+ * \param[in] t_ref        reference temperature (for the Boussinesq approx)
+ * \param[in] t_solidus    solidus temperature (in K)
+ * \param[in] t_liquidus   liquidus temperature (in K)
+ * \param[in] latent_heat  latent heat
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_solidification_set_voller_model(cs_real_t    beta,
-                                   cs_real_t    t_ref,
-                                   cs_real_t    t_solidus,
-                                   cs_real_t    t_liquidus,
-                                   cs_real_t    latent_heat,
-                                   cs_real_t    s_das);
+cs_solidification_set_voller_model(cs_real_t beta,
+                                   cs_real_t t_ref,
+                                   cs_real_t t_solidus,
+                                   cs_real_t t_liquidus,
+                                   cs_real_t latent_heat);
 
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Set the main physical parameters which describe the Voller and
  *        Prakash modelling
  *
- * \param[in] t_solidus      solidus temperature (in K)
- * \param[in] t_liquidus     liquidus temperature (in K)
- * \param[in] latent_heat    latent heat
+ * \param[in] t_solidus    solidus temperature (in K)
+ * \param[in] t_liquidus   liquidus temperature (in K)
+ * \param[in] latent_heat  latent heat
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_solidification_set_voller_model_no_velocity(cs_real_t    t_solidus,
-                                               cs_real_t    t_liquidus,
-                                               cs_real_t    latent_heat);
+cs_solidification_set_voller_model_no_velocity(cs_real_t t_solidus,
+                                               cs_real_t t_liquidus,
+                                               cs_real_t latent_heat);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -815,42 +840,40 @@ cs_solidification_check_binary_alloy_model(void);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Set the main physical parameters which describe a solidification
- *         process with a binary alloy (with components A and B)
- *         Add a transport equation for the solute concentration to simulate
- *         the conv/diffusion of the alloy ratio between the two components of
- *         the alloy
+ * \brief Set the main physical parameters which describe a solidification
+ *        process with a binary alloy (with components A and B)
+ *        Add a transport equation for the solute concentration to simulate
+ *        the conv/diffusion of the alloy ratio between the two components of
+ *        the alloy
  *
- * \param[in]  name          name of the binary alloy
- * \param[in]  varname       name of the unknown related to the tracer eq.
- * \param[in]  beta_t        thermal dilatation coefficient
- * \param[in]  temp0         reference temperature (Boussinesq term)
- * \param[in]  beta_c        solutal dilatation coefficient
- * \param[in]  conc0         reference mixture concentration (Boussinesq term)
- * \param[in]  kp            value of the distribution coefficient
- * \param[in]  mliq          liquidus slope for the solute concentration
- * \param[in]  t_eutec       temperature at the eutectic point
- * \param[in]  t_melt        phase-change temperature for the pure material (A)
- * \param[in]  solute_diff   solutal diffusion coefficient in the liquid
- * \param[in]  latent_heat   latent heat
- * \param[in]  s_das         secondary dendrite arm spacing
+ * \param[in] name         name of the binary alloy
+ * \param[in] varname      name of the unknown related to the tracer eq.
+ * \param[in] beta_t       thermal dilatation coefficient
+ * \param[in] temp0        reference temperature (Boussinesq term)
+ * \param[in] beta_c       solutal dilatation coefficient
+ * \param[in] conc0        reference mixture concentration (Boussinesq term)
+ * \param[in] kp           value of the distribution coefficient
+ * \param[in] mliq         liquidus slope for the solute concentration
+ * \param[in] t_eutec      temperature at the eutectic point
+ * \param[in] t_melt       phase-change temperature for the pure material (A)
+ * \param[in] solute_diff  solutal diffusion coefficient in the liquid
+ * \param[in] latent_heat  latent heat
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_solidification_set_binary_alloy_model(const char     *name,
-                                         const char     *varname,
-                                         cs_real_t       beta_t,
-                                         cs_real_t       temp0,
-                                         cs_real_t       beta_c,
-                                         cs_real_t       conc0,
-                                         cs_real_t       kp,
-                                         cs_real_t       mliq,
-                                         cs_real_t       t_eutec,
-                                         cs_real_t       t_melt,
-                                         cs_real_t       solute_diff,
-                                         cs_real_t       latent_heat,
-                                         cs_real_t       s_das);
+cs_solidification_set_binary_alloy_model(const char *name,
+                                         const char *varname,
+                                         cs_real_t   beta_t,
+                                         cs_real_t   temp0,
+                                         cs_real_t   beta_c,
+                                         cs_real_t   conc0,
+                                         cs_real_t   kp,
+                                         cs_real_t   mliq,
+                                         cs_real_t   t_eutec,
+                                         cs_real_t   t_melt,
+                                         cs_real_t   solute_diff,
+                                         cs_real_t   latent_heat);
 
 /*----------------------------------------------------------------------------*/
 /*!

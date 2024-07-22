@@ -94,9 +94,9 @@ static const char _state_names[CS_SOLIDIFICATION_N_STATES][32] = {
  * Static variables
  *============================================================================*/
 
-static cs_solidification_t *cs_solidification_structure           = nullptr;
-static cs_real_t  cs_solidification_forcing_eps  = 1e-10;
-static cs_real_t  cs_solidification_eutectic_threshold  = 1e-4;
+static cs_solidification_t *cs_solidification_structure = nullptr;
+static cs_real_t  cs_solidification_forcing_eps = 1e-10;
+static cs_real_t  cs_solidification_eutectic_threshold = 1e-4;
 
 static const double  cs_solidification_diffusion_eps = 1e-16;
 static const char _err_empty_module[] =
@@ -417,7 +417,18 @@ _solidification_create(void)
 
   solid->forcing_mom       = nullptr;
   solid->forcing_mom_array = nullptr;
-  solid->forcing_coef = 0;
+
+  /* Parameters of the Kozeny-Carman relation */
+
+  solid->s_das = 0.00085;
+  solid->tortuosity = 2.0;
+  solid->kozeny_constant = 5.0;
+
+  const double  k = cs_math_pi * solid->tortuosity / solid->s_das;
+  solid->forcing_coef = k * k * solid->kozeny_constant;
+
+  /* Remaining parameters */
+
   solid->first_cell = -1;
 
   return solid;
@@ -3416,7 +3427,6 @@ cs_solidification_activate(cs_solidification_model_t       model,
 
     /* Default initialization of this model */
 
-    v_model->s_das      = 0.33541;
     v_model->t_solidus  = 0.;
     v_model->t_liquidus = 1.0;
 
@@ -3473,7 +3483,6 @@ cs_solidification_activate(cs_solidification_model_t       model,
     /* Set a default value to the model parameters */
 
     b_model->ref_concentration = 1.;
-    b_model->s_das             = 0.33541;
     b_model->kp                = 0.5;
     b_model->inv_kp            = 2.;
     b_model->inv_kpm1          = -2;
@@ -3557,6 +3566,50 @@ cs_solidification_activate(cs_solidification_model_t       model,
   cs_solidification_structure = solid;
 
   return solid;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Set the parameters involved in the computation of the permeability
+ *        coefficient of the Kozeny-Carman relation.
+ *
+ * \param[in] kozeny_constant  value of the Kozeny constant (default = 5.0)
+ * \param[in] tortuosity       value of the tortuosity (default = 2.0)
+ * \param[in] s_das            value of the secondary dendrite arm spacing
+ *                             (default = 0.00085 [m])
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_solidification_set_kozeny_carman_parameters(double kozeny_constant,
+                                               double tortuosity,
+                                               double s_das)
+{
+  cs_solidification_t  *solid = cs_solidification_structure;
+
+  if (solid == nullptr)
+    bft_error(__FILE__, __LINE__, 0, _(_err_empty_module));
+
+  /* The velocity damping arising from the development of a porous media
+   * is related to the Kozeny-Carman relation
+   *
+   * The permeability K is such that
+   *   K = g_liq^3 * s_das^2 / ( PI^2 * k_c * tau^2 * (1 - g_liq)^2 )
+   *
+   * So, one introduces two constants
+   *  1. k_c the Kozeny constant (usually between 3 and 10)
+   *  2. tau the tortuosity (usually close to 2)
+   */
+
+  solid->s_das = s_das;
+  solid->kozeny_constant = kozeny_constant;
+  solid->tortuosity = tortuosity;
+
+  // Update the value of the forcing coefficient
+
+  double  k =  cs_math_pi * tortuosity / s_das;
+
+  solid->forcing_coef = k * k * kozeny_constant;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -3676,6 +3729,9 @@ cs_solidification_get_voller_struct(void)
 cs_solidification_voller_t *
 cs_solidification_check_voller_model(void)
 {
+  cs_solidification_t  *solid = cs_solidification_structure;
+  assert(solid != NULL);
+
   cs_solidification_voller_t  *v_model = cs_solidification_get_voller_struct();
 
   if (v_model->t_liquidus - v_model->t_solidus < 0.)
@@ -3683,35 +3739,35 @@ cs_solidification_check_voller_model(void)
               " %s: The liquidus and solidus temperatures are not"
               " consistent.\n"
               " Please check your settings.", __func__);
-  if (v_model->s_das < FLT_MIN)
+
+  if (solid->forcing_coef < FLT_MIN)
     bft_error(__FILE__, __LINE__, 0,
-              " %s: Invalid value %g for the secondary dendrite arms spacing",
-              __func__, v_model->s_das);
+              " %s: Invalid value for the Kozeny-Carman parameters:\n"
+              " Forcing coef: %6.4e\n",
+              __func__, solid->forcing_coef);
 
   return v_model;
 }
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Set the main physical parameters which describe the Voller and
- *         Prakash modelling
+ * \brief Set the main physical parameters which describe the Voller and
+ *        Prakash modelling
  *
- * \param[in]  beta           thermal dilatation coefficient
- * \param[in]  t_ref          reference temperature (for the Boussinesq approx)
- * \param[in]  t_solidus      solidus temperature (in K)
- * \param[in]  t_liquidus     liquidus temperature (in K)
- * \param[in]  latent_heat    latent heat
- * \param[in]  s_das          secondary dendrite space arms
+ * \param[in] beta         thermal dilatation coefficient
+ * \param[in] t_ref        reference temperature (for the Boussinesq approx)
+ * \param[in] t_solidus    solidus temperature (in K)
+ * \param[in] t_liquidus   liquidus temperature (in K)
+ * \param[in] latent_heat  latent heat
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_solidification_set_voller_model(cs_real_t    beta,
-                                   cs_real_t    t_ref,
-                                   cs_real_t    t_solidus,
-                                   cs_real_t    t_liquidus,
-                                   cs_real_t    latent_heat,
-                                   cs_real_t    s_das)
+cs_solidification_set_voller_model(cs_real_t beta,
+                                   cs_real_t t_ref,
+                                   cs_real_t t_solidus,
+                                   cs_real_t t_liquidus,
+                                   cs_real_t latent_heat)
 {
   cs_solidification_t  *solid = cs_solidification_structure;
   cs_solidification_voller_t  *v_model = cs_solidification_get_voller_struct();
@@ -3720,7 +3776,6 @@ cs_solidification_set_voller_model(cs_real_t    beta,
 
   v_model->t_solidus = t_solidus;
   v_model->t_liquidus = t_liquidus;
-  v_model->s_das = s_das;
 
   solid->latent_heat = latent_heat;
 
@@ -3740,16 +3795,16 @@ cs_solidification_set_voller_model(cs_real_t    beta,
  * \brief Set the main physical parameters which describe the Voller and
  *        Prakash modelling
  *
- * \param[in] t_solidus      solidus temperature (in K)
- * \param[in] t_liquidus     liquidus temperature (in K)
- * \param[in] latent_heat    latent heat
+ * \param[in] t_solidus    solidus temperature (in K)
+ * \param[in] t_liquidus   liquidus temperature (in K)
+ * \param[in] latent_heat  latent heat
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_solidification_set_voller_model_no_velocity(cs_real_t    t_solidus,
-                                               cs_real_t    t_liquidus,
-                                               cs_real_t    latent_heat)
+cs_solidification_set_voller_model_no_velocity(cs_real_t t_solidus,
+                                               cs_real_t t_liquidus,
+                                               cs_real_t latent_heat)
 {
   cs_solidification_t  *solid = cs_solidification_structure;
   cs_solidification_voller_t  *v_model = cs_solidification_get_voller_struct();
@@ -3808,13 +3863,18 @@ cs_solidification_get_binary_alloy_struct(void)
 cs_solidification_binary_alloy_t *
 cs_solidification_check_binary_alloy_model(void)
 {
+  cs_solidification_t  *solid = cs_solidification_structure;
+  assert(solid != NULL);
+
   cs_solidification_binary_alloy_t
     *b_model = cs_solidification_get_binary_alloy_struct();
 
-  if (b_model->s_das < FLT_MIN)
+  if (solid->forcing_coef < FLT_MIN)
     bft_error(__FILE__, __LINE__, 0,
-              " %s: Invalid value %g for the secondary dendrite arms spacing",
-              __func__, b_model->s_das);
+              " %s: Invalid value %g for the Kozeny-Carman parameters:\n"
+              " Forcing coef: %5.3e\n",
+              __func__, solid->forcing_coef);
+
   if (b_model->kp < FLT_MIN || b_model->kp > 1 - FLT_MIN)
     bft_error(__FILE__, __LINE__, 0,
               " %s: Invalid value %g for partition coefficient",
@@ -3838,43 +3898,43 @@ cs_solidification_check_binary_alloy_model(void)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Set the main physical parameters which describe a solidification
- *         process with a binary alloy (with components A and B)
- *         Add a transport equation for the solute concentration to simulate
- *         the conv/diffusion of the alloy ratio between the two components of
- *         the alloy
+ * \brief Set the main physical parameters which describe a solidification
+ *        process with a binary alloy (with components A and B)
+ *        Add a transport equation for the solute concentration to simulate
+ *        the conv/diffusion of the alloy ratio between the two components of
+ *        the alloy
  *
- * \param[in]  name          name of the binary alloy
- * \param[in]  varname       name of the unknown related to the tracer eq.
- * \param[in]  beta_t        thermal dilatation coefficient
- * \param[in]  temp0         reference temperature (Boussinesq term)
- * \param[in]  beta_c        solutal dilatation coefficient
- * \param[in]  conc0         reference mixture concentration (Boussinesq term)
- * \param[in]  kp            value of the distribution coefficient
- * \param[in]  mliq          liquidus slope for the solute concentration
- * \param[in]  t_eutec       temperature at the eutectic point
- * \param[in]  t_melt        phase-change temperature for the pure material (A)
- * \param[in]  solute_diff   solutal diffusion coefficient in the liquid
- * \param[in]  latent_heat   latent heat
- * \param[in]  s_das         secondary dendrite arm spacing
+ * \param[in] name         name of the binary alloy
+ * \param[in] varname      name of the unknown related to the tracer eq.
+ * \param[in] beta_t       thermal dilatation coefficient
+ * \param[in] temp0        reference temperature (Boussinesq term)
+ * \param[in] beta_c       solutal dilatation coefficient
+ * \param[in] conc0        reference mixture concentration (Boussinesq term)
+ * \param[in] kp           value of the distribution coefficient
+ * \param[in] mliq         liquidus slope for the solute concentration
+ * \param[in] t_eutec      temperature at the eutectic point
+ * \param[in] t_melt       phase-change temperature for the pure material (A)
+ * \param[in] solute_diff  solutal diffusion coefficient in the liquid
+ * \param[in] latent_heat  latent heat
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_solidification_set_binary_alloy_model(const char     *name,
-                                         const char     *varname,
-                                         cs_real_t       beta_t,
-                                         cs_real_t       temp0,
-                                         cs_real_t       beta_c,
-                                         cs_real_t       conc0,
-                                         cs_real_t       kp,
-                                         cs_real_t       mliq,
-                                         cs_real_t       t_eutec,
-                                         cs_real_t       t_melt,
-                                         cs_real_t       solute_diff,
-                                         cs_real_t       latent_heat,
-                                         cs_real_t       s_das)
+cs_solidification_set_binary_alloy_model(const char *name,
+                                         const char *varname,
+                                         cs_real_t   beta_t,
+                                         cs_real_t   temp0,
+                                         cs_real_t   beta_c,
+                                         cs_real_t   conc0,
+                                         cs_real_t   kp,
+                                         cs_real_t   mliq,
+                                         cs_real_t   t_eutec,
+                                         cs_real_t   t_melt,
+                                         cs_real_t   solute_diff,
+                                         cs_real_t   latent_heat)
 {
+  cs_solidification_t  *solid = cs_solidification_structure;
+
   /* Check the validity of some parameters */
 
   if (kp < FLT_MIN || kp > 1 - FLT_MIN)
@@ -3883,14 +3943,9 @@ cs_solidification_set_binary_alloy_model(const char     *name,
   if (fabs(mliq) < FLT_MIN)
     bft_error(__FILE__, __LINE__, 0,
               " %s: Invalid value %g for the liquidus slope", __func__, mliq);
-  if (s_das < FLT_MIN)
-    bft_error(__FILE__, __LINE__, 0,
-              " %s: Invalid value %g for the secondary dendrite arms spacing",
-              __func__, s_das);
 
   /* Retrieve and set the binary alloy structures */
 
-  cs_solidification_t  *solid = cs_solidification_structure;
   cs_solidification_binary_alloy_t
     *alloy = cs_solidification_get_binary_alloy_struct();
 
@@ -3899,7 +3954,6 @@ cs_solidification_set_binary_alloy_model(const char     *name,
   /* Set the main physical parameters/constants */
 
   alloy->ref_concentration = conc0;
-  alloy->s_das = s_das;
 
   /* Phase diagram parameters and related quantities */
 
@@ -4314,18 +4368,6 @@ cs_solidification_init_setup(void)
 
   switch (solid->model) {
 
-  case CS_SOLIDIFICATION_MODEL_VOLLER_PRAKASH_87:
-  case CS_SOLIDIFICATION_MODEL_VOLLER_NL:
-    {
-      /* Check the sanity of the model parameters and retrieve the structure */
-
-      cs_solidification_voller_t
-        *v_model = cs_solidification_check_voller_model();
-
-      solid->forcing_coef = 180./(v_model->s_das*v_model->s_das);
-    }
-    break;
-
   case CS_SOLIDIFICATION_MODEL_BINARY_ALLOY:
     {
       /* Check the sanity of the model parameters and retrieve the structure */
@@ -4352,15 +4394,13 @@ cs_solidification_init_setup(void)
 
       }
 
-      solid->forcing_coef = 180./(alloy->s_das*alloy->s_das);
-
       /* Add the variable field (automatic) */
 
       cs_equation_predefined_create_field(-1, alloy->solute_equation);
     }
     break; /* Binary alloy model */
 
-  default: /* Stefan: There is nothing else to do */
+  default: /* Stefan, Voller: There is nothing else to do */
     break;
 
   } /* Switch on model */
@@ -4688,11 +4728,14 @@ cs_solidification_log_setup(void)
         cs_log_printf(CS_LOG_SETUP,
                       "  * %s | Tliq: %5.3e; Tsol: %5.3e\n"
                       "  * %s | Latent heat: %5.3e\n"
-                      "  * %s | Forcing coef: %5.3e s_das: %5.3e\n",
+                      "  * %s | Kozeny-Carman parameters: s_das: %5.3e,"
+                      " k: %5.3e, tortuosity: %5.3e\n"
+                      "  * %s | Resulting forcing coef: %5.3e\n",
                       module, v_model->t_liquidus, v_model->t_solidus,
                       module, solid->latent_heat,
-                      module, solid->forcing_coef, v_model->s_das);
-
+                      module, solid->s_das, solid->kozeny_constant,
+                      solid->tortuosity,
+                      module, solid->forcing_coef);
     }
     break;
 
@@ -4722,12 +4765,16 @@ cs_solidification_log_setup(void)
         cs_log_printf(CS_LOG_SETUP,
                       "  * %s | Tliq: %5.3e; Tsol: %5.3e\n"
                       "  * %s | Latent heat: %5.3e\n"
-                      "  * %s | Forcing coef: %5.3e s_das: %5.3e\n"
+                      "  * %s | Kozeny-Carman parameters: s_das: %5.3e,"
+                      " k: %5.3e, tortuosity: %5.3e\n"
+                      "  * %s | Resulting forcing coef: %5.3e\n"
                       "  * %s | NL Algo: max. iter: %d; rtol: %5.3e,"
                       " atol: %5.3e, dtol: %5.3e\n",
                       module, v_model->t_liquidus, v_model->t_solidus,
                       module, solid->latent_heat,
-                      module, solid->forcing_coef, v_model->s_das,
+                      module, solid->s_das, solid->kozeny_constant,
+                      solid->tortuosity,
+                      module, solid->forcing_coef,
                       module, algo->cvg_param.n_max_iter, algo->cvg_param.rtol,
                       algo->cvg_param.atol, algo->cvg_param.dtol);
     }
@@ -4753,8 +4800,12 @@ cs_solidification_log_setup(void)
                     module, alloy->c_eut,
                     module, solid->latent_heat);
       cs_log_printf(CS_LOG_SETUP,
-                    "  * %s | Forcing coef: %5.3e; s_das: %5.3e\n",
-                    module, solid->forcing_coef, alloy->s_das);
+                    "  * %s | Kozeny-Carman parameters: s_das: %5.3e,"
+                    " k: %5.3e, tortuosity: %5.3e\n",
+                    "  * %s | Resulting forcing coef: %5.3e\n",
+                    module, solid->s_das, solid->kozeny_constant,
+                    solid->tortuosity,
+                    module, solid->forcing_coef);
 
       cs_log_printf(CS_LOG_SETUP, "  * %s | Options:", module);
       if (solid->options & CS_SOLIDIFICATION_BINARY_ALLOY_C_FUNC)

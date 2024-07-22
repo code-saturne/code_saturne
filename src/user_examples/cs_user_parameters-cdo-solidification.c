@@ -176,7 +176,6 @@ cs_user_model(void)
     cs_real_t  t_eutec = -0.1, t_melt = 0.2;
     cs_real_t  diff_val = 0;
     cs_real_t  latent_heat = 5;
-    cs_real_t  s_das = 0.33541;
 
     /* Set the parameters for the binary alloy model */
 
@@ -195,9 +194,13 @@ cs_user_model(void)
                                              /* Solute transport equation */
                                              diff_val,
                                              /* Physical constants */
-                                             latent_heat,
-                                             s_das);
+                                             latent_heat);
 
+    /* Set the parameters related to the Kozeny-Carman relation */
+
+    cs_solidification_set_kozeny_carman_parameters(4.55945,  // Kozeny constant
+                                                   2.0,      // Tortuosity
+                                                   0.33541); // s_das
   }
   /*! [param_cdo_solidification_set_binary_alloy] */
 
@@ -235,7 +238,7 @@ cs_user_model(void)
 
     cs_real_t  T0 = 0.5, beta_t = 0.01;
     cs_real_t  t_solidus = -0.1, t_liquidus = 0.1;
-    cs_real_t  latent_heat = 5, s_das = 0.33541;
+    cs_real_t  latent_heat = 5;
 
     /* Set the parameters for the Voller & Prakash model */
 
@@ -246,8 +249,13 @@ cs_user_model(void)
                                        t_solidus,
                                        t_liquidus,
                                        /* Physical constants */
-                                       latent_heat,
-                                       s_das);
+                                       latent_heat);
+
+    /* Set the parameters related to the Kozeny-Carman relation */
+
+    cs_solidification_set_kozeny_carman_parameters(4.55945,  // Kozeny constant
+                                                   2.0,      // Tortuosity
+                                                   0.33541); // s_das
   }
   /*! [param_cdo_solidification_set_voller] */
 
