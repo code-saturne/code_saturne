@@ -51,50 +51,51 @@ BEGIN_C_DECLS
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Generic function pointer for computing a dot product. Parallel
- *        synchronization is performed.
+ *        synchronization is performed inside this function.
  *
- * \param[in] a   first array to analyze
- * \param[in] b   second array to analyze
+ * \param[in] a  first array to handle
+ * \param[in] b  second array to handle
  *
  * \return the value of the dot product
  */
 /*----------------------------------------------------------------------------*/
 
 typedef cs_real_t
-(cs_cdo_blas_dotprod_t) (const cs_real_t     *a,
-                         const cs_real_t     *b);
+(cs_cdo_blas_dotprod_t) (const cs_real_t *a,
+                         const cs_real_t *b);
 
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Generic function pointer for computing a square norm. Parallel
- *        synchronization is performed.
+ *        synchronization is performed inside this function.
  *
- * \param[in] array   array to analyze
+ * \param[in] array  array to handle
  *
  * \return the square weighted L2-norm
  */
 /*----------------------------------------------------------------------------*/
 
 typedef cs_real_t
-(cs_cdo_blas_square_norm_t) (const cs_real_t     *array);
+(cs_cdo_blas_square_norm_t) (const cs_real_t *array);
 
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Generic function pointer for computing a square norm of the
  *        difference between two arrays (defined at the same location and of
  *        the same dimension). The result may be normalized by the norm of the
- *        second array. Parallel synchronization is performed.
+ *        second array. Parallel synchronization is performed inside this
+ *        function.
  *
- * \param[in] a     first array
- * \param[in] b     second array
+ * \param[in] a  first array to handle
+ * \param[in] b  second array to handle
  *
  * \return the square weighted L2-norm of the difference
  */
 /*----------------------------------------------------------------------------*/
 
 typedef cs_real_t
-(cs_cdo_blas_square_norm_diff_t) (const cs_real_t     *a,
-                                  const cs_real_t     *b);
+(cs_cdo_blas_square_norm_diff_t) (const cs_real_t *a,
+                                  const cs_real_t *b);
 
 /*============================================================================
  * Public function prototypes
@@ -104,14 +105,14 @@ typedef cs_real_t
 /*!
  * \brief Set shared pointers to main domain members
  *
- * \param[in] quant       additional mesh quantities struct.
- * \param[in] connect     pointer to a cs_cdo_connect_t struct.
+ * \param[in] quant    additional mesh quantities struct.
+ * \param[in] connect  pointer to a cs_cdo_connect_t struct.
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdo_blas_init_sharing(const cs_cdo_quantities_t    *quant,
-                         const cs_cdo_connect_t       *connect);
+cs_cdo_blas_init_sharing(const cs_cdo_quantities_t *quant,
+                         const cs_cdo_connect_t    *connect);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -120,32 +121,32 @@ cs_cdo_blas_init_sharing(const cs_cdo_quantities_t    *quant,
  *        cells. Thus, the weigth is the cell volume. The computed quantities
  *        are synchronized in parallel.
  *
- * \param[in] array   array to analyze
+ * \param[in] array  array to handle
  *
  * \return the square weighted L2-norm
  */
 /*----------------------------------------------------------------------------*/
 
 cs_real_t
-cs_cdo_blas_square_norm_pcsp(const cs_real_t        *array);
+cs_cdo_blas_square_norm_pcsp(const cs_real_t *array);
 
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Compute the norm ||b - a||**2
  *        Case of two scalar-valued arrays a and b defined as a potential at
  *        primal cells. Thus, the weigth is the cell volume. The computed
- *        quantities are synchronized in parallel.
+ *        quantity is synchronized in case of parallel computation.
  *
- * \param[in] a   first array
- * \param[in] b   second array
+ * \param[in] a  first array to handle
+ * \param[in] b  second array to handle
  *
  * \return the value of ||b - a||**2
  */
 /*----------------------------------------------------------------------------*/
 
 cs_real_t
-cs_cdo_blas_square_norm_pcsp_diff(const cs_real_t        *a,
-                                  const cs_real_t        *b);
+cs_cdo_blas_square_norm_pcsp_diff(const cs_real_t *a,
+                                  const cs_real_t *b);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -155,8 +156,8 @@ cs_cdo_blas_square_norm_pcsp_diff(const cs_real_t        *a,
  *        quantities are synchronized in parallel. "ndiff" stands for
  *        "normalized difference"
  *
- * \param[in] a     array to analyze
- * \param[in] ref   array used for normalization and difference
+ * \param[in] a    array to handle
+ * \param[in] ref  array used for normalization and difference
  *
  * \return the normalized square weighted L2-norm of the difference between the
  *         two arrays
@@ -164,8 +165,8 @@ cs_cdo_blas_square_norm_pcsp_diff(const cs_real_t        *a,
 /*----------------------------------------------------------------------------*/
 
 cs_real_t
-cs_cdo_blas_square_norm_pcsp_ndiff(const cs_real_t        *a,
-                                   const cs_real_t        *ref);
+cs_cdo_blas_square_norm_pcsp_ndiff(const cs_real_t *a,
+                                   const cs_real_t *ref);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -174,16 +175,16 @@ cs_cdo_blas_square_norm_pcsp_ndiff(const cs_real_t        *a,
  *        Case of a scalar-valued arrays defined at primal vertices.
  *        The computed quantity is synchronized in parallel.
  *
- * \param[in] a   first array to analyze
- * \param[in] b   second array to analyze
+ * \param[in] a  first array to handle
+ * \param[in] b  second array to handle
  *
  * \return the value of the dot product
  */
 /*----------------------------------------------------------------------------*/
 
 double
-cs_cdo_blas_dotprod_vertex(const cs_real_t        *a,
-                           const cs_real_t        *b);
+cs_cdo_blas_dotprod_vertex(const cs_real_t *a,
+                           const cs_real_t *b);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -191,14 +192,14 @@ cs_cdo_blas_dotprod_vertex(const cs_real_t        *a,
  *        Case of a scalar-valued array defined at primal vertices.
  *        The computed quantities are synchronized in parallel.
  *
- * \param[in] array   array to analyze
+ * \param[in] array  array to handle
  *
  * \return the square weighted L2-norm
  */
 /*----------------------------------------------------------------------------*/
 
 double
-cs_cdo_blas_square_norm_vertex(const cs_real_t        *array);
+cs_cdo_blas_square_norm_vertex(const cs_real_t *array);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -209,8 +210,8 @@ cs_cdo_blas_square_norm_vertex(const cs_real_t        *array);
  *        a primal vertex) inside a primal cell.  The computed quantity is
  *        synchronized in parallel.
  *
- * \param[in] a   first array to analyze
- * \param[in] b   second array to analyze
+ * \param[in] a   first array to handle
+ * \param[in] b   second array to handle
  *
  * \return the value of the dot product
  */
@@ -227,7 +228,7 @@ cs_cdo_blas_dotprod_pvsp(const cs_real_t        *a,
  *        vertices. Thus, the weigth is the portion of dual cell inside each
  *        (primal cell). The computed quantities are synchronized in parallel.
  *
- * \param[in] array   array to analyze
+ * \param[in] array   array to handle
  *
  * \return the square weighted L2-norm
  */
@@ -243,16 +244,16 @@ cs_cdo_blas_square_norm_pvsp(const cs_real_t        *array);
  *        primal vertices. Thus, the weigth is the portion of dual cell in a
  *        primal cell. The computed quantities are synchronized in parallel.
  *
- * \param[in] a   first array
- * \param[in] b   second array
+ * \param[in] a  first array to handle
+ * \param[in] b  second array to handle
  *
  * \return the value  of ||b - a||**2
  */
 /*----------------------------------------------------------------------------*/
 
 cs_real_t
-cs_cdo_blas_square_norm_pvsp_diff(const cs_real_t        *a,
-                                  const cs_real_t        *b);
+cs_cdo_blas_square_norm_pvsp_diff(const cs_real_t *a,
+                                  const cs_real_t *b);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -262,14 +263,14 @@ cs_cdo_blas_square_norm_pvsp_diff(const cs_real_t        *a,
  *        dual cell (associated to a primal vertex) inside a primal cell. The
  *        computed quantity is synchronized in parallel.
  *
- * \param[in] array   array to analyze
+ * \param[in] array  array to handle
  *
  * \return the square weighted L2-norm
  */
 /*----------------------------------------------------------------------------*/
 
 double
-cs_cdo_blas_square_norm_2pvsp(const cs_real_t        *array);
+cs_cdo_blas_square_norm_2pvsp(const cs_real_t *array);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -280,16 +281,16 @@ cs_cdo_blas_square_norm_2pvsp(const cs_real_t        *array);
  *        dual cell (associated to a primal vertex) inside a primal cell. The
  *        computed quantity is synchronized in parallel.
  *
- * \param[in] a   first array to analyze
- * \param[in] b   second array to analyze
+ * \param[in] a  first array to handle
+ * \param[in] b  second array to handle
  *
  * \return the value of the dot product
  */
 /*----------------------------------------------------------------------------*/
 
 double
-cs_cdo_blas_dotprod_2pvsp(const cs_real_t        *a,
-                          const cs_real_t        *b);
+cs_cdo_blas_dotprod_2pvsp(const cs_real_t *a,
+                          const cs_real_t *b);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -298,16 +299,16 @@ cs_cdo_blas_dotprod_2pvsp(const cs_real_t        *a,
  *        Case of a scalar-valued arrays defined at primal faces.
  *        The computed quantity is synchronized in parallel.
  *
- * \param[in] a   first array to analyze
- * \param[in] b   second array to analyze
+ * \param[in] a  first array to handle
+ * \param[in] b  second array to handle
  *
  * \return the value of the dot product
  */
 /*----------------------------------------------------------------------------*/
 
 cs_real_t
-cs_cdo_blas_dotprod_face(const cs_real_t        *a,
-                         const cs_real_t        *b);
+cs_cdo_blas_dotprod_face(const cs_real_t *a,
+                         const cs_real_t *b);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -315,14 +316,14 @@ cs_cdo_blas_dotprod_face(const cs_real_t        *a,
  *        Case of a scalar-valued array defined at primal faces.
  *        The computed quantities are synchronized in parallel.
  *
- * \param[in] array   array to analyze
+ * \param[in] array  array to handle
  *
  * \return the square weighted L2-norm
  */
 /*----------------------------------------------------------------------------*/
 
 cs_real_t
-cs_cdo_blas_square_norm_face(const cs_real_t        *array);
+cs_cdo_blas_square_norm_face(const cs_real_t *array);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -331,14 +332,14 @@ cs_cdo_blas_square_norm_face(const cs_real_t        *array);
  *        faces. Thus, the weigth is the pyramid of apex the cell center and of
  *        basis the face. The computed quantities are synchronized in parallel.
  *
- * \param[in] array   array to analyze
+ * \param[in] array  array to handle
  *
  * \return the square weighted L2-norm
  */
 /*----------------------------------------------------------------------------*/
 
 cs_real_t
-cs_cdo_blas_square_norm_pfsp(const cs_real_t        *array);
+cs_cdo_blas_square_norm_pfsp(const cs_real_t *array);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -347,14 +348,14 @@ cs_cdo_blas_square_norm_pfsp(const cs_real_t        *array);
  *        faces. Thus, the weigth is the pyramid of apex the cell center and of
  *        basis the face. The computed quantities are synchronized in parallel.
  *
- * \param[in] array   array to analyze (vector-valued)
+ * \param[in] array  array to handle (vector-valued)
  *
  * \return the square weighted L2-norm
  */
 /*----------------------------------------------------------------------------*/
 
 cs_real_t
-cs_cdo_blas_square_norm_pfvp(const cs_real_t        *array);
+cs_cdo_blas_square_norm_pfvp(const cs_real_t *array);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -365,16 +366,16 @@ cs_cdo_blas_square_norm_pfvp(const cs_real_t        *array);
  *        basis the face. Each face quantity is normalized by the face
  *        surface. The computed quantity is synchronized in parallel.
  *
- * \param[in] a   first array to analyze
- * \param[in] b   second array to analyze
+ * \param[in] a  first array to handle
+ * \param[in] b  second array to handle
  *
  * \return the value of the dot product
  */
 /*----------------------------------------------------------------------------*/
 
 cs_real_t
-cs_cdo_blas_dotprod_pfsf(const cs_real_t        *a,
-                         const cs_real_t        *b);
+cs_cdo_blas_dotprod_pfsf(const cs_real_t *a,
+                         const cs_real_t *b);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -384,14 +385,14 @@ cs_cdo_blas_dotprod_pfsf(const cs_real_t        *a,
  *        basis the face. Each face quantity is normalized by the face
  *        surface. The computed quantities are synchronized in parallel.
  *
- * \param[in] array   array to analyze
+ * \param[in] array  array to handle
  *
  * \return the square weighted L2-norm
  */
 /*----------------------------------------------------------------------------*/
 
 cs_real_t
-cs_cdo_blas_square_norm_pfsf(const cs_real_t        *array);
+cs_cdo_blas_square_norm_pfsf(const cs_real_t *array);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -401,16 +402,16 @@ cs_cdo_blas_square_norm_pfsf(const cs_real_t        *array);
  *        basis the face. Each face quantity is normalized by the face
  *        surface. The computed quantities are synchronized in parallel.
  *
- * \param[in] a   first array
- * \param[in] b   second array
+ * \param[in] a  first array to handle
+ * \param[in] b  second array to handle
  *
  * \return the value of ||b - a||**2
  */
 /*----------------------------------------------------------------------------*/
 
 cs_real_t
-cs_cdo_blas_square_norm_pfsf_diff(const cs_real_t        *a,
-                                  const cs_real_t        *b);
+cs_cdo_blas_square_norm_pfsf_diff(const cs_real_t *a,
+                                  const cs_real_t *b);
 
 /*----------------------------------------------------------------------------*/
 

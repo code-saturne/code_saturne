@@ -142,25 +142,49 @@ _thread_range(cs_lnum_t    n,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Compute the weighted square norm of an array relying on a weight
- *         which is accessed by an index. Case of a scalar-valued array.
+ * \brief Compute blocks sizes for superblock algorithm.
  *
- * \param[in]  size      size of the weight array
- * \param[in]  c2x       pointer to the adjacency used to access the weights
- * \param[in]  w_c2x     weight array
- * \param[in]  array     array to analyze
- * \param[in]  do_redux  perform the parallel reduction ?
+ * \param[in]  n                  size of array
+ * \param[in]  block_size         start index for the current thread
+ * \param[out] n_sblocks          number of superblocks
+ * \param[out] blocks_in_sblocks  number of blocks per superblock
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline void
+_sbloc_sizes(cs_lnum_t  n,
+             cs_lnum_t  block_size,
+             cs_lnum_t *n_sblocks,
+             cs_lnum_t *blocks_in_sblocks)
+{
+  cs_lnum_t n_blocks = (n + block_size - 1) / block_size;
+  *n_sblocks = (n_blocks > 3) ? sqrt(n_blocks) : 1;
+
+  cs_lnum_t n_b = block_size * (*n_sblocks);
+  *blocks_in_sblocks = (n + n_b - 1) / n_b;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Compute the weighted square norm of an array relying on a weight
+ *        which is accessed by an index. Case of a scalar-valued array.
+ *
+ * \param[in] size      size of the weight array
+ * \param[in] c2x       pointer to the adjacency used to access the weights
+ * \param[in] w_c2x     weight array
+ * \param[in] array     array to handle
+ * \param[in] do_redux  perform the parallel reduction ?
  *
  * \return the square weighted L2-norm
  */
 /*----------------------------------------------------------------------------*/
 
 static double
-_c2x_scalar_sqnorm(const cs_lnum_t         size,
-                   const cs_adjacency_t   *c2x,
-                   const cs_real_t        *w_c2x,
-                   const cs_real_t        *array,
-                   bool                    do_redux)
+_c2x_scalar_sqnorm(const cs_lnum_t       size,
+                   const cs_adjacency_t *c2x,
+                   const cs_real_t      *w_c2x,
+                   const cs_real_t      *array,
+                   bool                  do_redux)
 {
  /*
   * The algorithm used is l3superblock60, based on the article:
@@ -180,11 +204,10 @@ _c2x_scalar_sqnorm(const cs_lnum_t         size,
     const cs_lnum_t  n = e_id - s_id;
     const cs_lnum_t  *_ids = c2x->ids + s_id;
     const cs_real_t  *_w = w_c2x + s_id;
-    const cs_lnum_t  block_size = CS_SBLOCK_BLOCK_SIZE;
-    const cs_lnum_t  n_blocks = (n + block_size - 1) / block_size;
-    const cs_lnum_t  n_sblocks = (n_blocks > 3) ? sqrt(n_blocks) : 1;
-    const cs_lnum_t  blocks_in_sblocks =
-      (n + block_size*n_sblocks - 1) / (block_size*n_sblocks);
+    const cs_lnum_t block_size = CS_SBLOCK_BLOCK_SIZE;
+    cs_lnum_t n_sblocks, blocks_in_sblocks;
+
+    _sbloc_sizes(n, block_size, &n_sblocks, &blocks_in_sblocks);
 
     cs_lnum_t  shift = 0;
 
@@ -229,23 +252,23 @@ _c2x_scalar_sqnorm(const cs_lnum_t         size,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Compute the weighted square norm of an array relying on a weight
- *         which is accessed by an index. Case of a vector-valued array.
+ * \brief Compute the weighted square norm of an array relying on a weight
+ *        which is accessed by an index. Case of a vector-valued array.
  *
- * \param[in]  size    size of the weight array
- * \param[in]  c2x     pointer to the adjacency used to access the weights
- * \param[in]  w_c2x   weight array
- * \param[in]  array   array to analyze (vector-valued)
+ * \param[in] size   size of the weight array
+ * \param[in] c2x    pointer to the adjacency used to access the weights
+ * \param[in] w_c2x  weight array
+ * \param[in] array  array to handle (vector-valued)
  *
  * \return the square weighted L2-norm
  */
 /*----------------------------------------------------------------------------*/
 
 static cs_real_t
-_c2x_vector_sqnorm(const cs_lnum_t         size,
-                   const cs_adjacency_t   *c2x,
-                   const cs_real_t        *w_c2x,
-                   const cs_real_t        *array)
+_c2x_vector_sqnorm(const cs_lnum_t       size,
+                   const cs_adjacency_t *c2x,
+                   const cs_real_t      *w_c2x,
+                   const cs_real_t      *array)
 {
  /*
   * The algorithm used is l3superblock60, based on the article:
@@ -265,11 +288,10 @@ _c2x_vector_sqnorm(const cs_lnum_t         size,
     const cs_lnum_t  n = e_id - s_id;
     const cs_lnum_t  *_ids = c2x->ids + s_id;
     const cs_real_t  *_w = w_c2x + s_id;
-    const cs_lnum_t  block_size = CS_SBLOCK_BLOCK_SIZE;
-    const cs_lnum_t  n_blocks = (n + block_size - 1) / block_size;
-    const cs_lnum_t  n_sblocks = (n_blocks > 3) ? sqrt(n_blocks) : 1;
-    const cs_lnum_t  blocks_in_sblocks =
-      (n + block_size*n_sblocks - 1) / (block_size*n_sblocks);
+    const cs_lnum_t block_size = CS_SBLOCK_BLOCK_SIZE;
+    cs_lnum_t n_sblocks, blocks_in_sblocks;
+
+    _sbloc_sizes(n, block_size, &n_sblocks, &blocks_in_sblocks);
 
     cs_lnum_t  shift = 0;
 
@@ -319,16 +341,16 @@ _c2x_vector_sqnorm(const cs_lnum_t         size,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Set shared pointers to main domain members
+ * \brief Set shared pointers to main domain members
  *
- * \param[in]  quant       additional mesh quantities struct.
- * \param[in]  connect     pointer to a cs_cdo_connect_t struct.
+ * \param[in] quant    additional mesh quantities struct.
+ * \param[in] connect  pointer to a cs_cdo_connect_t struct.
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdo_blas_init_sharing(const cs_cdo_quantities_t    *quant,
-                         const cs_cdo_connect_t       *connect)
+cs_cdo_blas_init_sharing(const cs_cdo_quantities_t *quant,
+                         const cs_cdo_connect_t    *connect)
 {
   /* Assign static const pointers */
 
@@ -338,19 +360,19 @@ cs_cdo_blas_init_sharing(const cs_cdo_quantities_t    *quant,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Compute the square norm of an array
- *         Case of a scalar-valued array defined as a potential at primal
- *         cells. Thus, the weigth is the cell volume. The computed quantities
- *         are synchronized in parallel.
+ * \brief Compute the square norm of an array
+ *        Case of a scalar-valued array defined as a potential at primal
+ *        cells. Thus, the weigth is the cell volume. The computed quantities
+ *        are synchronized in parallel.
  *
- * \param[in]  array   array to analyze
+ * \param[in] array  array to handle
  *
  * \return the square weighted L2-norm
  */
 /*----------------------------------------------------------------------------*/
 
 cs_real_t
-cs_cdo_blas_square_norm_pcsp(const cs_real_t        *array)
+cs_cdo_blas_square_norm_pcsp(const cs_real_t *array)
 {
   const cs_lnum_t  n_cells = cs_cdo_quant->n_cells;
 
@@ -372,12 +394,10 @@ cs_cdo_blas_square_norm_pcsp(const cs_real_t        *array)
     const cs_lnum_t  n = e_id - s_id;
     const cs_real_t  *_a = array + s_id;
     const cs_real_t  *_w = cs_cdo_quant->cell_vol + s_id;
+    const cs_lnum_t block_size = CS_SBLOCK_BLOCK_SIZE;
+    cs_lnum_t n_sblocks, blocks_in_sblocks;
 
-    const cs_lnum_t  block_size = CS_SBLOCK_BLOCK_SIZE;
-    const cs_lnum_t  n_blocks = (n + block_size - 1) / block_size;
-    const cs_lnum_t  n_sblocks = (n_blocks > 3) ? sqrt(n_blocks) : 1;
-    const cs_lnum_t  blocks_in_sblocks =
-      (n + block_size*n_sblocks - 1) / (block_size*n_sblocks);
+    _sbloc_sizes(n, block_size, &n_sblocks, &blocks_in_sblocks);
 
     cs_lnum_t  shift = 0;
 
@@ -422,21 +442,21 @@ cs_cdo_blas_square_norm_pcsp(const cs_real_t        *array)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Compute the norm ||b - a||**2
- *         Case of two scalar-valued arrays a and b defined as a potential at
- *         primal cells. Thus, the weigth is the cell volume. The computed
- *         quantities are synchronized in parallel.
+ * \brief Compute the norm ||b - a||**2
+ *        Case of two scalar-valued arrays a and b defined as a potential at
+ *        primal cells. Thus, the weigth is the cell volume. The computed
+ *        quantities are synchronized in parallel.
  *
- * \param[in]  a   first array
- * \param[in]  b   second array
+ * \param[in] a  first array to handle
+ * \param[in] b  second array to handle
  *
  * \return the value  of ||b - a||**2
  */
 /*----------------------------------------------------------------------------*/
 
 cs_real_t
-cs_cdo_blas_square_norm_pcsp_diff(const cs_real_t        *a,
-                                  const cs_real_t        *b)
+cs_cdo_blas_square_norm_pcsp_diff(const cs_real_t *a,
+                                  const cs_real_t *b)
 {
   const cs_lnum_t  n_cells = cs_cdo_quant->n_cells;
 
@@ -459,12 +479,10 @@ cs_cdo_blas_square_norm_pcsp_diff(const cs_real_t        *a,
     const cs_real_t  *_a = a + s_id;
     const cs_real_t  *_b = b + s_id;
     const cs_real_t  *_w = cs_cdo_quant->cell_vol + s_id;
+    const cs_lnum_t block_size = CS_SBLOCK_BLOCK_SIZE;
+    cs_lnum_t n_sblocks, blocks_in_sblocks;
 
-    const cs_lnum_t  block_size = CS_SBLOCK_BLOCK_SIZE;
-    const cs_lnum_t  n_blocks = (n + block_size - 1) / block_size;
-    const cs_lnum_t  n_sblocks = (n_blocks > 3) ? sqrt(n_blocks) : 1;
-    const cs_lnum_t  blocks_in_sblocks =
-      (n + block_size*n_sblocks - 1) / (block_size*n_sblocks);
+    _sbloc_sizes(n, block_size, &n_sblocks, &blocks_in_sblocks);
 
     cs_lnum_t  shift = 0;
 
@@ -509,14 +527,14 @@ cs_cdo_blas_square_norm_pcsp_diff(const cs_real_t        *a,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Compute the norm  ||a - ref||**2 / || ref||**2
- *         Case of two scalar-valued arrays a and ref defined as a potential at
- *         primal cells. Thus, the weigth is the cell volume. The computed
- *         quantities are synchronized in parallel. "ndiff" stands for
- *         "normalized difference"
+ * \brief Compute the norm  ||a - ref||**2 / || ref||**2
+ *        Case of two scalar-valued arrays a and ref defined as a potential at
+ *        primal cells. Thus, the weigth is the cell volume. The computed
+ *        quantities are synchronized in parallel. "ndiff" stands for
+ *        "normalized difference"
  *
- * \param[in]  a     array to analyze
- * \param[in]  ref   array used for normalization and difference
+ * \param[in] a    array to handle
+ * \param[in] ref  array used for normalization and difference
  *
  * \return the normalized square weighted L2-norm of the difference between the
  *         two arrays
@@ -524,8 +542,8 @@ cs_cdo_blas_square_norm_pcsp_diff(const cs_real_t        *a,
 /*----------------------------------------------------------------------------*/
 
 cs_real_t
-cs_cdo_blas_square_norm_pcsp_ndiff(const cs_real_t        *a,
-                                   const cs_real_t        *ref)
+cs_cdo_blas_square_norm_pcsp_ndiff(const cs_real_t *a,
+                                   const cs_real_t *ref)
 {
   const cs_lnum_t  n_cells = cs_cdo_quant->n_cells;
 
@@ -549,12 +567,10 @@ cs_cdo_blas_square_norm_pcsp_ndiff(const cs_real_t        *a,
     const cs_real_t  *_a = a + s_id;
     const cs_real_t  *_r = ref + s_id;
     const cs_real_t  *_w = cs_cdo_quant->cell_vol + s_id;
-
     const cs_lnum_t  block_size = CS_SBLOCK_BLOCK_SIZE;
-    const cs_lnum_t  n_blocks = (n + block_size - 1) / block_size;
-    const cs_lnum_t  n_sblocks = (n_blocks > 3) ? sqrt(n_blocks) : 1;
-    const cs_lnum_t  blocks_in_sblocks =
-      (n + block_size*n_sblocks - 1) / (block_size*n_sblocks);
+    cs_lnum_t n_sblocks, blocks_in_sblocks;
+
+    _sbloc_sizes(n, block_size, &n_sblocks, &blocks_in_sblocks);
 
     cs_lnum_t  shift = 0;
 
@@ -615,16 +631,16 @@ cs_cdo_blas_square_norm_pcsp_ndiff(const cs_real_t        *a,
  *        Case of a scalar-valued arrays defined at primal vertices.
  *        The computed quantity is synchronized in parallel.
  *
- * \param[in]  a   first array to analyze
- * \param[in]  b   second array to analyze
+ * \param[in] a  first array to handle
+ * \param[in] b  second array to handle
  *
  * \return the value of the dot product
  */
 /*----------------------------------------------------------------------------*/
 
 double
-cs_cdo_blas_dotprod_vertex(const cs_real_t        *a,
-                           const cs_real_t        *b)
+cs_cdo_blas_dotprod_vertex(const cs_real_t *a,
+                           const cs_real_t *b)
 {
   return cs_gdot(cs_cdo_quant->n_vertices, a, b);
 }
@@ -635,14 +651,14 @@ cs_cdo_blas_dotprod_vertex(const cs_real_t        *a,
  *        Case of a scalar-valued array defined at primal vertices.
  *        The computed quantities are synchronized in parallel.
  *
- * \param[in] array    array to analyze
+ * \param[in] array  array to handle
  *
  * \return the square weighted L2-norm
  */
 /*----------------------------------------------------------------------------*/
 
 double
-cs_cdo_blas_square_norm_vertex(const cs_real_t        *array)
+cs_cdo_blas_square_norm_vertex(const cs_real_t *array)
 {
   double  retval = cs_dot_xx(cs_cdo_quant->n_vertices, array);
 
@@ -660,16 +676,16 @@ cs_cdo_blas_square_norm_vertex(const cs_real_t        *array)
  *        to a primal vertex) inside a primal cell.  The computed quantity is
  *        synchronized in parallel.
  *
- * \param[in] a   first array to analyze
- * \param[in] b   second array to analyze
+ * \param[in] a  first array to handle
+ * \param[in] b  second array to handle
  *
  * \return the value of the dot product
  */
 /*----------------------------------------------------------------------------*/
 
 double
-cs_cdo_blas_dotprod_pvsp(const cs_real_t        *a,
-                         const cs_real_t        *b)
+cs_cdo_blas_dotprod_pvsp(const cs_real_t *a,
+                         const cs_real_t *b)
 {
   const cs_adjacency_t  *c2v = cs_cdo_connect->c2v;
   const cs_real_t  *w_c2v = cs_cdo_quant->pvol_vc;
@@ -697,10 +713,9 @@ cs_cdo_blas_dotprod_pvsp(const cs_real_t        *a,
     const cs_lnum_t  *_ids = c2v->ids + s_id;
     const cs_real_t  *_w = w_c2v + s_id;
     const cs_lnum_t  block_size = CS_SBLOCK_BLOCK_SIZE;
-    const cs_lnum_t  n_blocks = (n + block_size - 1) / block_size;
-    const cs_lnum_t  n_sblocks = (n_blocks > 3) ? sqrt(n_blocks) : 1;
-    const cs_lnum_t  blocks_in_sblocks =
-      (n + block_size*n_sblocks - 1) / (block_size*n_sblocks);
+    cs_lnum_t  n_sblocks, blocks_in_sblocks;
+
+    _sbloc_sizes(n, block_size, &n_sblocks, &blocks_in_sblocks);
 
     cs_lnum_t  shift = 0;
 
@@ -749,14 +764,14 @@ cs_cdo_blas_dotprod_pvsp(const cs_real_t        *a,
  *        vertices. Thus, the weigth is the portion of dual cell inside each
  *        (primal cell). The computed quantities are synchronized in parallel.
  *
- * \param[in] array   array to analyze
+ * \param[in] array  array to handle
  *
  * \return the square weighted L2-norm
  */
 /*----------------------------------------------------------------------------*/
 
 cs_real_t
-cs_cdo_blas_square_norm_pvsp(const cs_real_t        *array)
+cs_cdo_blas_square_norm_pvsp(const cs_real_t *array)
 {
   const cs_adjacency_t  *c2v = cs_cdo_connect->c2v;
   const cs_real_t  *w_c2v = cs_cdo_quant->pvol_vc;
@@ -774,16 +789,16 @@ cs_cdo_blas_square_norm_pvsp(const cs_real_t        *array)
  *        primal vertices. Thus, the weigth is the portion of dual cell in a
  *        primal cell. The computed quantities are synchronized in parallel.
  *
- * \param[in] a   first array
- * \param[in] b   second array
+ * \param[in] a  first array to handle
+ * \param[in] b  second array to handle
  *
  * \return the value  of ||b - a||**2
  */
 /*----------------------------------------------------------------------------*/
 
 cs_real_t
-cs_cdo_blas_square_norm_pvsp_diff(const cs_real_t        *a,
-                                  const cs_real_t        *b)
+cs_cdo_blas_square_norm_pvsp_diff(const cs_real_t *a,
+                                  const cs_real_t *b)
 {
   const cs_adjacency_t  *c2v = cs_cdo_connect->c2v;
   const cs_real_t  *w_c2v = cs_cdo_quant->pvol_vc;
@@ -865,14 +880,14 @@ cs_cdo_blas_square_norm_pvsp_diff(const cs_real_t        *a,
  *        dual cell (associated to a primal vertex) inside a primal cell. The
  *        computed quantity is synchronized in parallel.
  *
- * \param[in] array   array to analyze
+ * \param[in] array  array to handle
  *
  * \return the square weighted L2-norm
  */
 /*----------------------------------------------------------------------------*/
 
 double
-cs_cdo_blas_square_norm_2pvsp(const cs_real_t        *array)
+cs_cdo_blas_square_norm_2pvsp(const cs_real_t *array)
 {
   const cs_adjacency_t  *c2v = cs_cdo_connect->c2v;
   const cs_real_t  *w_c2v = cs_cdo_quant->pvol_vc;
@@ -903,16 +918,16 @@ cs_cdo_blas_square_norm_2pvsp(const cs_real_t        *array)
  *        dual cell (associated to a primal vertex) inside a primal cell. The
  *        computed quantity is synchronized in parallel.
  *
- * \param[in] a   first array to analyze
- * \param[in] b   second array to analyze
+ * \param[in] a  first array to handle
+ * \param[in] b  second array to handle
  *
  * \return the value of the dot product
  */
 /*----------------------------------------------------------------------------*/
 
 double
-cs_cdo_blas_dotprod_2pvsp(const cs_real_t        *a,
-                          const cs_real_t        *b)
+cs_cdo_blas_dotprod_2pvsp(const cs_real_t *a,
+                          const cs_real_t *b)
 {
   const cs_adjacency_t  *c2v = cs_cdo_connect->c2v;
   const cs_real_t  *w_c2v = cs_cdo_quant->pvol_vc;
@@ -944,10 +959,9 @@ cs_cdo_blas_dotprod_2pvsp(const cs_real_t        *a,
     const cs_lnum_t  *_ids = c2v->ids + s_id;
     const cs_real_t  *_w = w_c2v + s_id;
     const cs_lnum_t  block_size = CS_SBLOCK_BLOCK_SIZE;
-    const cs_lnum_t  n_blocks = (n + block_size - 1) / block_size;
-    const cs_lnum_t  n_sblocks = (n_blocks > 3) ? sqrt(n_blocks) : 1;
-    const cs_lnum_t  blocks_in_sblocks =
-      (n + block_size*n_sblocks - 1) / (block_size*n_sblocks);
+    cs_lnum_t  n_sblocks, blocks_in_sblocks;
+
+    _sbloc_sizes(n, block_size, &n_sblocks, &blocks_in_sblocks);
 
     cs_lnum_t  shift = 0;
 
@@ -996,16 +1010,16 @@ cs_cdo_blas_dotprod_2pvsp(const cs_real_t        *a,
  *        Case of a scalar-valued arrays defined at primal faces.
  *        The computed quantity is synchronized in parallel.
  *
- * \param[in] a   first array to analyze
- * \param[in] b   second array to analyze
+ * \param[in] a  first array to handle
+ * \param[in] b  second array to handle
  *
  * \return the value of the dot product
  */
 /*----------------------------------------------------------------------------*/
 
 cs_real_t
-cs_cdo_blas_dotprod_face(const cs_real_t        *a,
-                         const cs_real_t        *b)
+cs_cdo_blas_dotprod_face(const cs_real_t *a,
+                         const cs_real_t *b)
 {
   return cs_gdot(cs_cdo_quant->n_faces, a, b);
 }
@@ -1016,14 +1030,14 @@ cs_cdo_blas_dotprod_face(const cs_real_t        *a,
  *        Case of a scalar-valued array defined at primal faces.
  *        The computed quantities are synchronized in parallel.
  *
- * \param[in] array   array to analyze
+ * \param[in] array  array to handle
  *
  * \return the square weighted L2-norm
  */
 /*----------------------------------------------------------------------------*/
 
 cs_real_t
-cs_cdo_blas_square_norm_face(const cs_real_t        *array)
+cs_cdo_blas_square_norm_face(const cs_real_t *array)
 {
   cs_real_t  retval = cs_dot_xx(cs_cdo_quant->n_faces, array);
 
@@ -1040,14 +1054,14 @@ cs_cdo_blas_square_norm_face(const cs_real_t        *array)
  *        of basis the face. The computed quantities are synchronized in
  *        parallel.
  *
- * \param[in] array   array to analyze
+ * \param[in] array  array to handle
  *
  * \return the square weighted L2-norm
  */
 /*----------------------------------------------------------------------------*/
 
 cs_real_t
-cs_cdo_blas_square_norm_pfsp(const cs_real_t        *array)
+cs_cdo_blas_square_norm_pfsp(const cs_real_t *array)
 {
   const cs_adjacency_t  *c2f = cs_cdo_connect->c2f;
   const cs_real_t  *w_c2f = cs_cdo_quant->pvol_fc;
@@ -1065,14 +1079,14 @@ cs_cdo_blas_square_norm_pfsp(const cs_real_t        *array)
  *        faces. Thus, the weigth is the pyramid of apex the cell center and of
  *        basis the face. The computed quantities are synchronized in parallel.
  *
- * \param[in] array   array to analyze (vector-valued)
+ * \param[in] array  array to handle (vector-valued)
  *
  * \return the square weighted L2-norm
  */
 /*----------------------------------------------------------------------------*/
 
 cs_real_t
-cs_cdo_blas_square_norm_pfvp(const cs_real_t        *array)
+cs_cdo_blas_square_norm_pfvp(const cs_real_t *array)
 {
   const cs_adjacency_t  *c2f = cs_cdo_connect->c2f;
   const cs_real_t  *w_c2f = cs_cdo_quant->pvol_fc;
@@ -1092,16 +1106,16 @@ cs_cdo_blas_square_norm_pfvp(const cs_real_t        *array)
  *        basis the face. Each face quantity is normalized by the face
  *        surface. The computed quantity is synchronized in parallel.
  *
- * \param[in]  a   first array to analyze
- * \param[in]  b   second array to analyze
+ * \param[in] a  first array to handle
+ * \param[in] b  second array to handle
  *
  * \return the value of the dot product
  */
 /*----------------------------------------------------------------------------*/
 
 cs_real_t
-cs_cdo_blas_dotprod_pfsf(const cs_real_t        *a,
-                         const cs_real_t        *b)
+cs_cdo_blas_dotprod_pfsf(const cs_real_t *a,
+                         const cs_real_t *b)
 {
   const cs_adjacency_t  *c2f = cs_cdo_connect->c2f;
   const cs_real_t  *w_c2f = cs_cdo_quant->pvol_fc;
@@ -1131,10 +1145,9 @@ cs_cdo_blas_dotprod_pfsf(const cs_real_t        *a,
     const cs_lnum_t  *_ids = c2f->ids + s_id;
     const cs_real_t  *_w = w_c2f + s_id;
     const cs_lnum_t  block_size = CS_SBLOCK_BLOCK_SIZE;
-    const cs_lnum_t  n_blocks = (n + block_size - 1) / block_size;
-    const cs_lnum_t  n_sblocks = (n_blocks > 3) ? sqrt(n_blocks) : 1;
-    const cs_lnum_t  blocks_in_sblocks =
-      (n + block_size*n_sblocks - 1) / (block_size*n_sblocks);
+    cs_lnum_t  n_sblocks, blocks_in_sblocks;
+
+    _sbloc_sizes(n, block_size, &n_sblocks, &blocks_in_sblocks);
 
     cs_lnum_t  shift = 0;
 
@@ -1187,14 +1200,14 @@ cs_cdo_blas_dotprod_pfsf(const cs_real_t        *a,
  *        basis the face. Each face quantity is normalized by the face
  *        surface. The computed quantities are synchronized in parallel.
  *
- * \param[in] array   array to analyze
+ * \param[in] array  array to handle
  *
  * \return the square weighted L2-norm
  */
 /*----------------------------------------------------------------------------*/
 
 cs_real_t
-cs_cdo_blas_square_norm_pfsf(const cs_real_t        *array)
+cs_cdo_blas_square_norm_pfsf(const cs_real_t *array)
 {
   const cs_adjacency_t  *c2f = cs_cdo_connect->c2f;
   const cs_real_t  *w_c2f = cs_cdo_quant->pvol_fc;
@@ -1224,10 +1237,9 @@ cs_cdo_blas_square_norm_pfsf(const cs_real_t        *array)
     const cs_lnum_t  *_ids = c2f->ids + s_id;
     const cs_real_t  *_w = w_c2f + s_id;
     const cs_lnum_t  block_size = CS_SBLOCK_BLOCK_SIZE;
-    const cs_lnum_t  n_blocks = (n + block_size - 1) / block_size;
-    const cs_lnum_t  n_sblocks = (n_blocks > 3) ? sqrt(n_blocks) : 1;
-    const cs_lnum_t  blocks_in_sblocks =
-      (n + block_size*n_sblocks - 1) / (block_size*n_sblocks);
+    cs_lnum_t  n_sblocks, blocks_in_sblocks;
+
+    _sbloc_sizes(n, block_size, &n_sblocks, &blocks_in_sblocks);
 
     cs_lnum_t  shift = 0;
 
@@ -1280,16 +1292,16 @@ cs_cdo_blas_square_norm_pfsf(const cs_real_t        *array)
  *        basis the face. Each face quantity is normalized by the face
  *        surface. The computed quantities are synchronized in parallel.
  *
- * \param[in] a   first array
- * \param[in] b   second array
+ * \param[in] a  first array to handle
+ * \param[in] b  second array to handle
  *
  * \return the value of ||b - a||**2
  */
 /*----------------------------------------------------------------------------*/
 
 cs_real_t
-cs_cdo_blas_square_norm_pfsf_diff(const cs_real_t        *a,
-                                  const cs_real_t        *b)
+cs_cdo_blas_square_norm_pfsf_diff(const cs_real_t *a,
+                                  const cs_real_t *b)
 {
   const cs_adjacency_t  *c2f = cs_cdo_connect->c2f;
   const cs_real_t  *w_c2f = cs_cdo_quant->pvol_fc;
@@ -1319,10 +1331,9 @@ cs_cdo_blas_square_norm_pfsf_diff(const cs_real_t        *a,
     const cs_lnum_t  *_ids = c2f->ids + s_id;
     const cs_real_t  *_w = w_c2f + s_id;
     const cs_lnum_t  block_size = CS_SBLOCK_BLOCK_SIZE;
-    const cs_lnum_t  n_blocks = (n + block_size - 1) / block_size;
-    const cs_lnum_t  n_sblocks = (n_blocks > 3) ? sqrt(n_blocks) : 1;
-    const cs_lnum_t  blocks_in_sblocks =
-      (n + block_size*n_sblocks - 1) / (block_size*n_sblocks);
+    cs_lnum_t n_sblocks, blocks_in_sblocks;
+
+    _sbloc_sizes(n, block_size, &n_sblocks, &blocks_in_sblocks);
 
     cs_lnum_t  shift = 0;
 
