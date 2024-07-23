@@ -3,7 +3,9 @@ Release 8.2.1 (unreleased)
 
 ### Bug fixes:
 
-- Fix potential memory leak in multigrid
+- Fix for atmospheric model imbrication.
+
+- Fix potential memory leak in multigrid.
 
 - Fix incorrect computation Rij symmetry BC coeffs.
 

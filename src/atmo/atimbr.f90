@@ -2169,7 +2169,7 @@ if (cressman_theta.and.ippmod(iatmos).ge.1) then
   deallocate(ones)
 endif
 
-if (cressman_qw.and.ippmod(iatmos).ge.1)then
+if (cressman_qw.and.ippmod(iatmos).ge.2)then
   lb1 = lbound(ti_qw,1)
   lb2 = lbound(ti_qw,2)
   ub1 = ubound(ti_qw,1)
