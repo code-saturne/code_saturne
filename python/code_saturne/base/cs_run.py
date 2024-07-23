@@ -516,9 +516,10 @@ def read_run_config_file(i_c, r_c, s_c, pkg, run_conf=None):
     # Try to find specific configuration with run_id in the form
     # [<resource>/run_id=<run_id>] otherwise use classical resource
 
-    specific_resource_name = resource_name + "/run_id=" + r_c['run_id']
-    if specific_resource_name in run_conf.sections:
-        resource_name = specific_resource_name
+    if r_c['run_id']:
+        specific_resource_name = resource_name + "/run_id=" + r_c['run_id']
+        if specific_resource_name in run_conf.sections:
+            resource_name = specific_resource_name
 
     if resource_name in run_conf.sections:
         run_conf_r = run_conf.sections[resource_name]
