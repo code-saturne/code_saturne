@@ -464,7 +464,7 @@ cs_cf_energy(int f_sc_id)
 
   if (eqp_e->n_volume_mass_injections > 0) {
     cs_lnum_t ncesmp = 0;
-    cs_lnum_t *icetsm = NULL;
+    const cs_lnum_t *icetsm = NULL;
     int *itpsm = NULL;
     cs_real_t *smcel_p = NULL, *smcel_sc = NULL;
 

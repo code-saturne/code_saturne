@@ -1519,8 +1519,8 @@ cs_mo_psih(cs_real_t              z,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Compute LMO, friction velocity ustar, friction temperature
- *        tstar from a thermal difference using Monin Obukhov
+ * \brief Compute LMO, friction velocity ustar
+ *        from a thermal difference using Monin Obukhov
  *
  * \param[in]  z             altitude
  * \param[in]  z0
@@ -1563,9 +1563,6 @@ cs_mo_compute_from_thermal_diff(cs_real_t   z,
 
   /* Initial ustar and tstar */
   *ustar = kappa * du / coef_mom;
-  cs_real_t tstar = 0.;
-  if (abs(coef_moh) > cs_math_epzero)
-    tstar = kappa*dt/coef_moh;
 
   for (int icompt = 0;
       icompt < 1000 &&
@@ -1582,7 +1579,7 @@ cs_mo_compute_from_thermal_diff(cs_real_t   z,
     /* Update LMO */
     cs_real_t num = cs_math_pow2(coef_mom) * gredu * dt;
     cs_real_t denom = cs_math_pow2(du) * tm * coef_moh;
-    if (abs(denom) > (cs_math_epzero * fabs(num)))
+    if (fabs(denom) > (cs_math_epzero * fabs(num)))
       *dlmo = num / denom;
     else
       *dlmo = 0.; //FIXME
@@ -1599,21 +1596,15 @@ cs_mo_compute_from_thermal_diff(cs_real_t   z,
     coef_mom = cs_mo_psim((z+z0),z0, *dlmo);
     coef_moh = cs_mo_psih(z+z0,z0, *dlmo);
 
-    /* Update ustar, tstar */
+    /* Update ustarr */
     *ustar = kappa*du/coef_mom;
-    if (fabs(coef_moh) > cs_math_epzero)
-      tstar = kappa*dt/coef_moh;
-    else
-      tstar = 0.;
   }
-
-  return;
 }
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Compute LMO, friction velocity ustar, friction temperature
- *        tstar from a thermal flux using Monin Obukhov
+ * \brief Compute LMO, friction velocity ustar
+ *        from a thermal flux using Monin Obukhov
  *
  * \param[in]  z             altitude
  * \param[in]  z0
@@ -1653,7 +1644,6 @@ cs_mo_compute_from_thermal_flux(cs_real_t   z,
 
   /* Initial ustar and tstar */
   *ustar = kappa * du / coef_mom;
-  cs_real_t tstar = flux / *ustar;
 
   for (int icompt = 0;
       icompt < 1000 &&
@@ -1669,7 +1659,7 @@ cs_mo_compute_from_thermal_flux(cs_real_t   z,
     cs_real_t num = cs_math_pow3(coef_mom) * gredu * flux;
     cs_real_t denom = cs_math_pow3(du) * cs_math_pow2(kappa) * tm;
 
-    if (abs(denom) > (cs_math_epzero * fabs(num)))
+    if (fabs(denom) > (cs_math_epzero * fabs(num)))
       *dlmo = num / denom;
     else
       *dlmo = 0.; //FIXME other clipping ?
@@ -1685,15 +1675,9 @@ cs_mo_compute_from_thermal_flux(cs_real_t   z,
     /* Evaluate universal functions */
     coef_mom = cs_mo_psim((z+z0),z0, *dlmo);
 
-    /* Update ustar, tstar */
+    /* Update ustar */
     *ustar = kappa*du/coef_mom;
-    if (fabs(*ustar) > cs_math_epzero)
-      tstar = flux / *ustar;
-    else
-      tstar = 0.;
   }
-
-  return;
 }
 
 /*----------------------------------------------------------------------------
@@ -1993,7 +1977,7 @@ cs_f_atmo_arrays_get_pointers(cs_real_t **z_dyn_met,
   if (_atmo_option.z_temp_met == NULL)
     BFT_MALLOC(_atmo_option.z_temp_met, n_level_t, cs_real_t);
   if (_atmo_option.xyp_met == NULL)
-    BFT_MALLOC(_atmo_option.xyp_met, n_times, cs_real_3_t);
+    BFT_MALLOC(_atmo_option.xyp_met, n_times*3, cs_real_t);
   if (_atmo_option.u_met == NULL)
     BFT_MALLOC(_atmo_option.u_met, n_level*n_times, cs_real_t);
   if (_atmo_option.v_met == NULL)
@@ -2039,8 +2023,8 @@ cs_f_atmo_arrays_get_pointers(cs_real_t **z_dyn_met,
   *qvmet     = _atmo_option.qw_met;
   *ncmet     = _atmo_option.ndrop_met;
   *dpdt_met  = _atmo_option.dpdt_met;
-  *mom_met   = _atmo_option.mom_met;
-  *mom       = _atmo_option.mom_cs;
+  *mom_met   = (cs_real_t *)_atmo_option.mom_met;
+  *mom       = (cs_real_t *)_atmo_option.mom_cs;
 
   *z_dyn_met  = _atmo_option.z_dyn_met;
   *z_temp_met = _atmo_option.z_temp_met;
