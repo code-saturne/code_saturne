@@ -2257,7 +2257,7 @@ cs_parameters_eqp_complete(void)
 
   if (eqp_vel != NULL) {
     if (fabs(eqp_vel->blencv + 1.) < cs_math_epzero)
-      eqp_vel->blencv =1.;
+      eqp_vel->blencv = 1.;
   }
 
   if (cs_glob_vof_parameters->vof_model & CS_VOF_MERKLE_MASS_TRANSFER) {
