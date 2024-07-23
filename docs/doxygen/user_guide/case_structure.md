@@ -533,6 +533,11 @@ Optional (recommended) section relative to job defaults. Allowed keywords are:
   When running under a resource manager (batch system), the actual limit
   will usually be lower.
 
+* `expected_time`
+
+  Expected computation time in (HH:MM) format. Only required for the SLURM batch
+  mode of the studymanager (default: 3 hours).
+
 When a batch system is configured, associated batch settings may be given
 using one of several keywords:
 
