@@ -195,18 +195,18 @@ cs_user_wall_condensation(int  iappel)
 
     const cs_zone_t *zone = cs_boundary_zone_by_name_try("cold_wall");
 
-    for (ieltcd = 0; ieltcd < zone->n_elts; ieltcd++) {
-      if (iappel == 2) {
+    if (iappel == 1) {
+      wall_cond->nfbpcd = zone->n_elts;
+      wall_cond->nzones = izone;
+    }
+    else if (iappel == 2) {
+      for (ieltcd = 0; ieltcd < zone->n_elts; ieltcd++) {
         cs_lnum_t ifac             = zone->elt_ids[ieltcd];
         wall_cond->ifbpcd[ieltcd]  = ifac;
         wall_cond->izzftcd[ieltcd] = izone;
       }
     }
-  }
 
-  if (iappel == 1) {
-    wall_cond->nfbpcd = ieltcd + 1;
-    wall_cond->nzones = izone + 1;
   }
 
   /*! < [zones_definition] */
