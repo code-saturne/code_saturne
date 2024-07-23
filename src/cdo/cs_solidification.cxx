@@ -661,7 +661,8 @@ _enforce_solid_cells(const cs_cdo_connect_t      *connect,
   /* Enforce a zero velocity inside solid cells (enforcement of the momentum
      equation) */
 
-  cs_navsto_system_set_solid_cells(solid_sel->n_cells, solid_sel->cell_ids);
+  if (!(solid->options & CS_SOLIDIFICATION_NO_VELOCITY_FIELD))
+    cs_navsto_system_set_solid_cells(solid_sel->n_cells, solid_sel->cell_ids);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -3288,6 +3289,8 @@ cs_solidification_activate(cs_solidification_model_t       model,
 
   /* The Navier-Stokes is not solved when the frozen field is set */
 
+  cs_navsto_system_t  *ns = NULL;
+
   if (solid->options & CS_SOLIDIFICATION_NO_VELOCITY_FIELD) {
 
     solid->forcing_mom = nullptr;
@@ -3296,6 +3299,8 @@ cs_solidification_activate(cs_solidification_model_t       model,
                 "%s: Incompatible set of options: "
                 "no velocity and binary alloy model.\n"
                 "Please check your settings.\n", __func__);
+
+    solid->viscosity = nullptr;
 
   }
   else {
@@ -3314,16 +3319,20 @@ cs_solidification_activate(cs_solidification_model_t       model,
 
     cs_property_set_reference_value(solid->forcing_mom, 0);
 
+
+    /* Activate the Navier-Stokes module */
+    /* --------------------------------- */
+
+    ns = cs_navsto_system_activate(boundaries,
+                                   ns_model,
+                                   ns_model_flag,
+                                   algo_coupling,
+                                   ns_post_flag);
+
+    solid->viscosity = ns->param->tot_viscosity;
+    assert(solid->viscosity != nullptr);
+
   }
-
-  /* Activate the Navier-Stokes module */
-  /* --------------------------------- */
-
-  cs_navsto_system_t  *ns = cs_navsto_system_activate(boundaries,
-                                                      ns_model,
-                                                      ns_model_flag,
-                                                      algo_coupling,
-                                                      ns_post_flag);
 
   /* Activate and default settings for the thermal module */
   /* ---------------------------------------------------- */
@@ -3357,11 +3366,8 @@ cs_solidification_activate(cs_solidification_model_t       model,
 
   /* Retrieve or add properties related to this module */
 
-  solid->mass_density = ns->param->mass_density;
+  solid->mass_density = cs_property_by_name(CS_PROPERTY_MASS_DENSITY);
   assert(solid->mass_density != nullptr);
-
-  solid->viscosity = ns->param->tot_viscosity;
-  assert(solid->viscosity != nullptr);
 
   solid->cp = cs_property_by_name(CS_THERMAL_CP_NAME);
   assert(solid->cp != nullptr);
