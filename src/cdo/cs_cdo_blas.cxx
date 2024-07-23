@@ -370,6 +370,9 @@ cs_cdo_blas_square_norm_pcsp(const cs_real_t        *array)
     _thread_range(n_cells, &s_id, &e_id);
 
     const cs_lnum_t  n = e_id - s_id;
+    const cs_real_t  *_a = array + s_id;
+    const cs_real_t  *_w = cs_cdo_quant->cell_vol + s_id;
+
     const cs_lnum_t  block_size = CS_SBLOCK_BLOCK_SIZE;
     const cs_lnum_t  n_blocks = (n + block_size - 1) / block_size;
     const cs_lnum_t  n_sblocks = (n_blocks > 3) ? sqrt(n_blocks) : 1;
@@ -392,7 +395,7 @@ cs_cdo_blas_square_norm_pcsp(const cs_real_t        *array)
 
         double _num = 0.0;
         for (cs_lnum_t j = start_id; j < end_id; j++)
-          _num += cs_cdo_quant->cell_vol[j] * array[j]*array[j];
+          _num += _w[j] * _a[j]*_a[j];
 
         s_num += _num;
 
@@ -453,6 +456,10 @@ cs_cdo_blas_square_norm_pcsp_diff(const cs_real_t        *a,
     _thread_range(n_cells, &s_id, &e_id);
 
     const cs_lnum_t  n = e_id - s_id;
+    const cs_real_t  *_a = a + s_id;
+    const cs_real_t  *_b = b + s_id;
+    const cs_real_t  *_w = cs_cdo_quant->cell_vol + s_id;
+
     const cs_lnum_t  block_size = CS_SBLOCK_BLOCK_SIZE;
     const cs_lnum_t  n_blocks = (n + block_size - 1) / block_size;
     const cs_lnum_t  n_sblocks = (n_blocks > 3) ? sqrt(n_blocks) : 1;
@@ -475,7 +482,7 @@ cs_cdo_blas_square_norm_pcsp_diff(const cs_real_t        *a,
 
         double _num = 0.0;
         for (cs_lnum_t j = start_id; j < end_id; j++)
-          _num += cs_cdo_quant->cell_vol[j] * (b[j] - a[j])*(b[j] - a[j]);
+          _num += _w[j] * (_b[j] - _a[j])*(_b[j] - _a[j]);
 
         s_num += _num;
 
@@ -539,6 +546,10 @@ cs_cdo_blas_square_norm_pcsp_ndiff(const cs_real_t        *a,
     _thread_range(n_cells, &s_id, &e_id);
 
     const cs_lnum_t  n = e_id - s_id;
+    const cs_real_t  *_a = a + s_id;
+    const cs_real_t  *_r = ref + s_id;
+    const cs_real_t  *_w = cs_cdo_quant->cell_vol + s_id;
+
     const cs_lnum_t  block_size = CS_SBLOCK_BLOCK_SIZE;
     const cs_lnum_t  n_blocks = (n + block_size - 1) / block_size;
     const cs_lnum_t  n_sblocks = (n_blocks > 3) ? sqrt(n_blocks) : 1;
@@ -562,10 +573,10 @@ cs_cdo_blas_square_norm_pcsp_ndiff(const cs_real_t        *a,
         double _num = 0.0, _denum = 0.0;
         for (cs_lnum_t j = start_id; j < end_id; j++) {
 
-          const cs_real_t  vol_c = cs_cdo_quant->cell_vol[j];
+          const cs_real_t  vol_c = _w[j];
 
-          _num += vol_c * (a[j] - ref[j])*(a[j] - ref[j]);
-          _denum += vol_c * ref[j] * ref[j];
+          _num += vol_c * (_a[j] - _r[j])*(_a[j] - _r[j]);
+          _denum += vol_c * _r[j] * _r[j];
 
         } /* Loop on block_size */
 
