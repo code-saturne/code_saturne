@@ -434,11 +434,11 @@ typedef struct {
    * gliq_relax: idem but for the liquid fraction
    */
 
-  int                              iter;
-  int                              n_iter_max;
-  double                           delta_tolerance;
-  double                           eta_relax;
-  double                           gliq_relax;
+  int                           iter;
+  int                           n_iter_max;
+  double                        delta_tolerance;
+  double                        eta_relax;
+  double                        gliq_relax;
 
   /* During the non-linear iteration process one needs:
    *  temp_{n}         --> stored in field->val_pre
