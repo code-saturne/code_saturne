@@ -295,7 +295,7 @@ cs_boundary_conditions_type(bool  init,
 
   /* Write boundary type with corresponding code and faces number */
 
-  if (_initialized == false || eqp_vel->iwarni > 1) {
+  if (_initialized == false || eqp_vel->verbosity > 1) {
 
     _initialized = true;
 
@@ -1625,7 +1625,9 @@ cs_boundary_conditions_type(bool  init,
 
     /* Always print 2 first iterations and the last 2 iterations */
     cs_lnum_t modntl = 1;
-    if (nt_cur - nt_prev < 2 || (nt_cur >= nt_max - 1) || eqp_vel->iwarni >= 1)
+    if (   nt_cur - nt_prev < 2
+        || (nt_cur >= nt_max - 1)
+        || eqp_vel->verbosity >= 1)
       modntl = 0;
     else if (cs_log_default_is_active())
       modntl = 0;

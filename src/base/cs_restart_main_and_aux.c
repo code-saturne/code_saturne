@@ -123,7 +123,6 @@ BEGIN_C_DECLS
 static void
 _write_main_checkpoint(void)
 {
-
   cs_log_printf(CS_LOG_DEFAULT, "** Writing the main restart file\n");
   cs_log_printf(CS_LOG_DEFAULT, "   -----------------------------\n");
 
@@ -224,8 +223,7 @@ _read_main_checkpoint(void)
   if (retval != CS_RESTART_SUCCESS) {
     retval = cs_restart_check_if_restart_from_ncfd(r);
     if (retval == 0) {
-      cs_log_warning(_("WARNING : STOP AT THE MAIN RESTART FILE READING\n"
-                       "=========\n"
+      cs_log_warning(_("STOP WHILE READING THE MAIN RESTART FILE\n\n"
                        "  WRONG FILE TYPE\n\n"
                        "The file \"main.csc\" does not look like a proper\n"
                        "  main restart file.\n\n"
@@ -246,8 +244,7 @@ _read_main_checkpoint(void)
 
   /* For the moment only cell location is tested */
   if (match_cell == false) {
-    cs_log_warning(_("WARNING : STOP AT THE MAIN RESTART FILE READING\n"
-                     "=========\n"
+    cs_log_warning(_("STOP READING THE MAIN RESTART FILE\n\n"
                      "  INCONSISTANT RESTART AND CHECKPOINT DATA\n\n"
                      "The number of cells has changed\n\n"
                      "The calculation cannot be executed.\n\n"
@@ -292,9 +289,8 @@ _read_main_checkpoint(void)
 
   /* Exit if error */
   if (nb_errors != 0) {
-    cs_log_warning(_("WARNING : STOP AT THE MAIN RESTART FILE READING\n"
-                     "=========\n\n"
-                     "  ERROR AT READING THE TEMPORAL INFORMATION\n\n"
+    cs_log_warning(_("STOP WHILE READING THE MAIN RESTART FILE\n\n"
+                     "  ERROR READING THE TEMPORAL INFORMATION\n\n"
                      "The computation cannot be executed.\n\n"
                      "Please check the integrity of the file used as\n"
                      "    restart file\n"));
@@ -304,8 +300,7 @@ _read_main_checkpoint(void)
   /* Stop if requested time/iterations number is too small */
   if (cs_glob_time_step->t_max >= 0.) {
     if (cs_glob_time_step->t_prev > cs_glob_time_step->t_max) {
-      cs_log_warning(_("WARNING : STOP AT THE MAIN RESTART FILE READING\n"
-                       "=========\n"
+      cs_log_warning(_("STOP READING THE MAIN RESTART FILE\n\n"
                        "  PREVIOUS TIME t_prev = %12.4e\n"
                        "  TIME WANTED   t_max  = %12.4e\n\n"
                        "The requested time, t_max, has to be greater than\n"
@@ -320,8 +315,7 @@ _read_main_checkpoint(void)
     }
   }
   else if (cs_glob_time_step->nt_prev > cs_glob_time_step->nt_max) {
-    cs_log_warning(_("WARNING : STOP AT THE MAIN RESTART FILE READING\n"
-                     "=========\n"
+    cs_log_warning(_("STOP READING THE MAIN RESTART FILE\n\n"
                      "  NUMBER OF THE PREVIOUS TIME STEP nt_prev = %d\n"
                      "  NUMBER OF TIME STEPS WANTED      nt_max  = %d\n\n"
                      "The requested number of time steps (absolute),\n"
@@ -354,8 +348,7 @@ _read_main_checkpoint(void)
 
   if (retval != CS_RESTART_SUCCESS) {
     if (cs_glob_ale != CS_ALE_NONE) {
-      cs_log_warning(_("WARNING : ERROR AT THE MAIN RESTART FILE READING\n"
-                       "=========\n\n"
+      cs_log_warning(_("STOP READING THE MAIN RESTART FILE\n\n"
                        "  ERROR AT READING THE INDICATOR OF ALE METHOD\n\n"
                        "The read restart file might come from a previous\n"
                        "  version of Code Saturne, without ALE.\n"
@@ -374,8 +367,7 @@ _read_main_checkpoint(void)
   if (cs_glob_ale != CS_ALE_NONE &&
       ale_ != CS_ALE_NONE &&
       cs_glob_restart_auxiliary->read_auxiliary != 1) {
-    cs_log_warning(_("WARNING : STOP AT THE MAIN RESTART FILE READING\n"
-                     "=========\n"
+      cs_log_warning(_("STOP READING THE MAIN RESTART FILE\n\n"
                      "  IALE INDICATOR OF THE PREVIOUS CALCULATION = %d\n"
                      "  IALE INDICATOR OF THE CURRECT CALCULATION  = %d\n\n"
                      "The coordinates of the mesh nodes need to be read again.\n"
@@ -396,12 +388,11 @@ _read_main_checkpoint(void)
 
   if (retval != CS_RESTART_SUCCESS) {
     if (cs_glob_vof_parameters->vof_model & CS_VOF_ENABLED)
-      cs_log_warning(_("WARNING : ERROR AT THE MAIN RESTART FILE READING\n"
-                       "=========\n\n"
-                       "  ERROR AT READING THE INDICATOR OF THE \n"
+      cs_log_warning(_("ERROR WHILE READING THE MAIN RESTART FILE\n\n"
+                       "  ERROR READING THE INDICATOR OF THE\n"
                        "  VOLUME OF FLUID METHOD\n\n"
                        "The read restart file might come from a previous\n"
-                       "  version of Code Saturne, without VOF.\n"
+                       "  version of code_saturne, without VOF.\n"
                        "The calculation will be executed but\n"
                        "  Volume of Fluid method data will be reset.\n"
                        "Please check the integrity of the file used as\n"
@@ -411,7 +402,6 @@ _read_main_checkpoint(void)
   /* Instant de maillage mobile precedent (rotor/stator) */
   if (cs_turbomachinery_get_model() != CS_TURBOMACHINERY_NONE)
     cs_turbomachinery_restart_read(r);
-
 
   cs_log_printf(CS_LOG_DEFAULT, " Reading options complete\n");
 
@@ -452,7 +442,6 @@ _read_main_checkpoint(void)
       cs_atmo_chemistry_initialization_deactivate();
   }
 
-
   /* ---------- */
   /* Close file */
   /* ---------- */
@@ -469,7 +458,6 @@ _read_main_checkpoint(void)
 static void
 _write_auxiliary_checkpoint(void)
 {
-
   cs_log_printf(CS_LOG_DEFAULT, "** Writing the auxiliary restart file\n");
   cs_log_printf(CS_LOG_DEFAULT, "   ----------------------------------\n");
 
@@ -556,7 +544,6 @@ _write_auxiliary_checkpoint(void)
 
   /* Wall distance */
   // Currently not done
-  //
 
   /* Wall temperature associated to the condensation model
    * with or without the 1D thermal model tag1D
@@ -602,7 +589,6 @@ _write_auxiliary_checkpoint(void)
                                1,
                                CS_TYPE_cs_real_t,
                                tmp);
-
     }
 
     BFT_FREE(tmp);
@@ -875,7 +861,6 @@ _write_auxiliary_checkpoint(void)
   cs_restart_destroy(&r);
 
   cs_log_printf(CS_LOG_DEFAULT, " End writing\n");
-
 }
 
 /*----------------------------------------------------------------------------
@@ -905,8 +890,7 @@ _read_auxiliary_checkpoint(cs_map_name_to_id_t *old_field_map)
                                      &dummy_real);
 
   if (retval != CS_RESTART_SUCCESS) {
-    cs_log_warning(_("WARNING : STOP WHILE READING THE AUXILIARY RESTART FILE\n"
-                     "=========\n"
+    cs_log_warning(_("STOP READING THE AUXILIARY RESTART FILE\n\n"
                      "  WRONG FILE TYPE\n\n"
                      "The file \"auxiliary.csc\" does not look like a proper\n"
                      "  auxiliary restart file.\n\n"
@@ -927,8 +911,7 @@ _read_auxiliary_checkpoint(cs_map_name_to_id_t *old_field_map)
                                  &match_vertex);
 
   if (!match_cell) {
-    cs_log_warning(_("WARNING: STOP WHILE READING THE AUXILIARY RESTART FILE\n"
-                     "========\n"
+    cs_log_warning(_("STOP READING THE AUXILIARY RESTART FILE\n\n"
                      "  INCOHERENT PREVIOUS NAD ACTUAL DATA\n\n"
                      "The number of cells was modified\n\n"
                      "The run can not be executed.\n\n"
@@ -944,28 +927,28 @@ _read_auxiliary_checkpoint(cs_map_name_to_id_t *old_field_map)
 
   for (int i = 0; i < 2; i++) {
     if (!face_states_[i]) {
-      cs_log_warning(_("WARNING: WHEN READING THE AUXILIARY RESTART FILE\n"
-                       "=======\n"
-                       "  PREVIOUS and PRESENT INPUT DATA ARE DIFFERENT\n\n"
-                       "The number of %s faces has been modified\n\n"
-                       "The run can continue but the data on the\n"
-                       "  %s faces will not be reread in the suite file.\n"
-                       "They will be initialized by the default values.\n\n"
-                       " This situation can occur when the restart file\n"
-                       "  originates from a run using different options\n"
-                       "  to join the grids or when the periodicity boundary\n"
-                       "  conditions have been modified.\n"
-                       " This situation can also be generated when the\n"
-                       "  run is conducted on a different machine\n"
-                       "  in which case the precision of the machine modifies\n"
-                       "  the number of faces generated when joinning the grids.\n\n"
-                       " Finally, this situation can be due to the fact that\n"
-                       "  the auxiliary restart file does not correspond to\n"
-                       "  the present case.\n\n"
-                       "Verify that the auxiliary restart file being used\n"
-                       "  corresponds to the present case.\n\n"
-                       " The run will continue...\n"),
-                     face_names[i], face_names[i]);
+      cs_log_warning
+        (_("STOP READING THE AUXILIARY RESTART FILE\n\n"
+           "  PREVIOUS and PRESENT INPUT DATA ARE DIFFERENT\n\n"
+           "The number of %s faces has been modified\n\n"
+           "The run can continue but the data on the\n"
+           "  %s faces will not be reread in the suite file.\n"
+           "They will be initialized by the default values.\n\n"
+           " This situation can occur when the restart file\n"
+           "  originates from a run using different options\n"
+           "  to join the grids or when the periodicity boundary\n"
+           "  conditions have been modified.\n"
+           " This situation can also be generated when the\n"
+           "  run is conducted on a different machine\n"
+           "  in which case the precision of the machine modifies\n"
+           "  the number of faces generated when joinning the grids.\n\n"
+           " Finally, this situation can be due to the fact that\n"
+           "  the auxiliary restart file does not correspond to\n"
+           "  the present case.\n\n"
+           "Verify that the auxiliary restart file being used\n"
+           "  corresponds to the present case.\n\n"
+           " The run will continue...\n"),
+         face_names[i], face_names[i]);
     }
   }
 
@@ -977,13 +960,13 @@ _read_auxiliary_checkpoint(cs_map_name_to_id_t *old_field_map)
 
   if (retval != CS_RESTART_SUCCESS) {
     if (cs_glob_ale != CS_ALE_NONE)
-      cs_log_warning(_("WARNING: ERROR WHILE READING THE AUXILIARY RESTART FILE\n"
-                       "=======\n\n"
-                       "  ERROR WHEN READING THE INDICATOR OF THE ALE METHOD\n\n"
-                       "It is possible that the file read corresponds to an old\n"
-                       "  version of code_saturne, without the ALE method.\n"
-                       "The run will be executed with reinitialising all ALE data.\n\n"
-                       "Verify that the restart file used has not been damaged.\n"));
+      cs_log_warning
+        (_("ERROR WHILE READING THE AUXILIARY RESTART FILE\n\n"
+           "  ERROR WHEN READING THE INDICATOR OF THE ALE METHOD\n\n"
+           "It is possible that the file read corresponds to an old\n"
+           "  version of code_saturne, without the ALE method.\n"
+           "The run will be executed with reinitialising all ALE data.\n\n"
+           "Verify that the restart file used has not been damaged.\n"));
   }
 
   if (cs_glob_ale_need_init == -999) {
@@ -1003,15 +986,14 @@ _read_auxiliary_checkpoint(cs_map_name_to_id_t *old_field_map)
 
   if (retval != CS_RESTART_SUCCESS) {
     if (cs_glob_vof_parameters->vof_model & CS_VOF_ENABLED)
-      cs_log_warning(_("WARNING: ERROR WHILE READING THE AUXILIARY RESTART FILE\n"
-                       "=======\n\n"
-                       "  ERROR WHEN READING THE INDICATOR OF THE VOF MODEL\n\n"
-                       "It is possible that the file read corresponds to an old\n"
-                       "  version of code_saturne, without the VOF model.\n"
-                       "The run will be executed with reinitialising all\n"
-                       "  VOF model data.\n\n"
-                       "Verify that the restart file used has not been damaged.\n"));
-
+      cs_log_warning
+        (_("ERROR WHILE READING THE AUXILIARY RESTART FILE\n\n"
+           "  ERROR WHEN READING THE INDICATOR OF THE VOF MODEL\n\n"
+           "It is possible that the file read corresponds to an old\n"
+           "  version of code_saturne, without the VOF model.\n"
+           "The run will be executed with reinitialising all\n"
+           "  VOF model data.\n\n"
+           "Verify that the restart file used has not been damaged.\n"));
   }
 
   cs_log_printf(CS_LOG_DEFAULT, " Finished reading options.\n");
@@ -1105,7 +1087,6 @@ _read_auxiliary_checkpoint(cs_map_name_to_id_t *old_field_map)
 
   cs_log_printf(CS_LOG_DEFAULT, " Finished reading physical properties.\n");
 
-
   /* -------------------- */
   /* Time step quantities */
   /* -------------------- */
@@ -1172,10 +1153,10 @@ _read_auxiliary_checkpoint(cs_map_name_to_id_t *old_field_map)
       /* Boundary values */
       const int kbmasf = cs_field_key_id("boundary_mass_flux_id");
 
-      cs_field_t *b_mflux =
-        cs_field_by_id(cs_field_get_key_int(CS_F_(vel), kbmasf));
-      cs_field_t *b_vof_flux =
-        cs_field_by_id(cs_field_get_key_int(CS_F_(void_f), kbmasf));
+      cs_field_t *b_mflux
+        = cs_field_by_id(cs_field_get_key_int(CS_F_(vel), kbmasf));
+      cs_field_t *b_vof_flux
+        = cs_field_by_id(cs_field_get_key_int(CS_F_(void_f), kbmasf));
 
       cs_array_real_set_wscalar(cs_glob_mesh->n_b_faces, oo_rho1,
                                 b_mflux->val, b_vof_flux->val);
@@ -1185,7 +1166,6 @@ _read_auxiliary_checkpoint(cs_map_name_to_id_t *old_field_map)
                                   b_mflux->val_pre, b_vof_flux->val_pre);
     }
   }
-
 
   /* ------------------- */
   /* Boundary conditions */
@@ -1232,8 +1212,8 @@ _read_auxiliary_checkpoint(cs_map_name_to_id_t *old_field_map)
           cs_lnum_t f_id = wco->ifbpcd[e_id];
           cs_lnum_t z_id = wco->izzftcd[e_id];
           for (int i = 0; i < wco1d->znmur[z_id]; i++)
-            wco1d->ztmur[e_id * wco1d->znmurx + i] =
-              tmp[f_id * wco1d->znmurx + i];
+            wco1d->ztmur[e_id * wco1d->znmurx + i]
+              = tmp[f_id * wco1d->znmurx + i];
         }
       }
 
@@ -1573,7 +1553,6 @@ _read_auxiliary_checkpoint(cs_map_name_to_id_t *old_field_map)
   /* ---------- */
 
   cs_restart_destroy(&r);
-
 }
 
 /*=============================================================================

@@ -651,7 +651,7 @@ _thermal_flux_and_diff(cs_field_t         *f,
                eqp->imrgra,
                eqp->nswrgr,
                (cs_gradient_limit_t)(eqp->imligr),
-               eqp->iwarni,
+               eqp->verbosity,
                eqp->epsrgr,
                eqp->climgr,
                crom,
@@ -733,7 +733,7 @@ _solve_rit(const cs_field_t     *f,
   const cs_equation_param_t *eqp_ut
     = cs_field_get_equation_param_const(f_ut);
 
-  if (eqp->iwarni >= 1)
+  if (eqp->verbosity >= 1)
     bft_printf(" Solving variable %s\n", f_ut->name);
 
   int kstprv = cs_field_key_id("source_term_prev_id");
@@ -876,7 +876,7 @@ _solve_rit(const cs_field_t     *f,
       cs_face_anisotropic_viscosity_scalar(m,
                                            fvq,
                                            viscce,
-                                           eqp->iwarni,
+                                           eqp->verbosity,
                                            weighf,
                                            weighb,
                                            viscf,
@@ -1197,7 +1197,7 @@ cs_turbulence_rij_transport_div_tf(const int        field_id,
                  eqp->imrgra,
                  eqp->nswrgr,
                  eqp->imligr,
-                 eqp->iwarni,
+                 eqp->verbosity,
                  eqp->epsrgr,
                  eqp->climgr,
                  crom,

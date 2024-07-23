@@ -859,7 +859,7 @@ _div_rij(const cs_mesh_t     *m,
                         -1, 1, 0, 1, 1,
                         eqp->imrgra, eqp->nswrgr,
                         static_cast<cs_gradient_limit_t>(eqp->imligr),
-                        eqp->iwarni,
+                        eqp->verbosity,
                         eqp->epsrgr, eqp->climgr,
                         crom, brom,
                         (const cs_real_6_t *)f_rij->val,
@@ -905,7 +905,7 @@ _div_rij(const cs_mesh_t     *m,
                         -1, 1, 0, 1, 1,
                         eqp->imrgra, eqp->nswrgr,
                         static_cast<cs_gradient_limit_t>(eqp->imligr),
-                        eqp->iwarni,
+                        eqp->verbosity,
                         eqp->epsrgr, eqp->climgr,
                         crom, brom,
                         rij,
@@ -1027,7 +1027,7 @@ _mesh_velocity_mass_flux(const cs_mesh_t             *m,
                  eqp_mesh->imrgra,
                  eqp_mesh->nswrgr,
                  static_cast<cs_gradient_limit_t>(eqp_mesh->imligr),
-                 eqp_mesh->iwarni,
+                 eqp_mesh->verbosity,
                  eqp_mesh->epsrgr,
                  eqp_mesh->climgr,
                  crom, brom,
@@ -3363,7 +3363,7 @@ _velocity_prediction(const cs_mesh_t             *m,
     }
 
     /* Norm logging */
-    if (eqp_u->iwarni > 1) {
+    if (eqp_u->verbosity > 1) {
 
       cs_real_t rnormx = -1.0, rnormn = HUGE_VAL;
       for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
@@ -4454,7 +4454,7 @@ cs_solve_navier_stokes(const int        iterns,
   /* Pressure correction step
      ------------------------ */
 
-  if (eqp_u->iwarni > 0)
+  if (eqp_u->verbosity > 0)
     bft_printf("** SOLVING CONTINUITY PRESSURE\n");
 
   cs_real_t *coefa_dp = cs_field_by_name("pressure_increment")->bc_coeffs->a;

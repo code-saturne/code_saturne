@@ -806,7 +806,7 @@ _pre_solve_lrr(const cs_field_t  *f_rij,
   const cs_equation_param_t *eqp
     = cs_field_get_equation_param_const(f_rij);
 
-  if (eqp->iwarni >= 1) {
+  if (eqp->verbosity >= 1) {
     bft_printf(" Solving the variable %s\n",
                cs_field_get_label(f_rij));
   }
@@ -1132,7 +1132,7 @@ _pre_solve_lrr(const cs_field_t  *f_rij,
     cs_face_anisotropic_viscosity_scalar(m,
                                          fvq,
                                          viscce,
-                                         eqp->iwarni,
+                                         eqp->verbosity,
                                          weighf,
                                          weighb,
                                          viscf,
@@ -1230,7 +1230,7 @@ _pre_solve_lrr_sg(const cs_field_t  *f_rij,
   const cs_equation_param_t *eqp
     = cs_field_get_equation_param_const(f_rij);
 
-  if (eqp->iwarni >= 1) {
+  if (eqp->verbosity >= 1) {
     bft_printf(" Solving the variable %s\n",
                cs_field_get_label(f_rij));
   }
@@ -1535,7 +1535,7 @@ _pre_solve_lrr_sg(const cs_field_t  *f_rij,
     cs_face_anisotropic_viscosity_scalar(m,
                                          fvq,
                                          viscce,
-                                         eqp->iwarni,
+                                         eqp->verbosity,
                                          weighf,
                                          weighb,
                                          viscf,
@@ -1643,7 +1643,7 @@ _pre_solve_ssg(const cs_field_t  *f_rij,
   const cs_equation_param_t *eqp
     = cs_field_get_equation_param_const(f_rij);
 
-  if (eqp->iwarni >= 1) {
+  if (eqp->verbosity >= 1) {
     bft_printf(" Solving the variable %s\n ",
                cs_field_get_label(f_rij));
   }
@@ -2212,7 +2212,7 @@ _pre_solve_ssg(const cs_field_t  *f_rij,
     cs_face_anisotropic_viscosity_scalar(m,
                                          fvq,
                                          viscce,
-                                         eqp->iwarni,
+                                         eqp->verbosity,
                                          weighf,
                                          weighb,
                                          viscf,
@@ -2326,7 +2326,7 @@ _solve_epsilon(int              phase_id,
   const cs_equation_param_t *eqp
     = cs_field_get_equation_param(f_eps);
 
-  if (eqp->iwarni >= 1) {
+  if (eqp->verbosity >= 1) {
     bft_printf(" Solving the variable %s\n",
                cs_field_get_label(f_eps));
   }
@@ -2620,7 +2620,7 @@ _solve_epsilon(int              phase_id,
     cs_face_anisotropic_viscosity_scalar(m,
                                          fvq,
                                          viscce,
-                                         eqp->iwarni,
+                                         eqp->verbosity,
                                          weighf,
                                          weighb,
                                          viscf,
@@ -2796,7 +2796,7 @@ cs_turbulence_rij(int phase_id)
   const cs_real_t ro0 = cs_glob_fluid_properties->ro0;
   const cs_real_t viscl0 = cs_glob_fluid_properties->viscl0;
 
-  if (eqp->iwarni >= 1) {
+  if (eqp->verbosity >= 1) {
     const char *f_label = cs_field_get_label(f_rij);
     switch(turb_model->iturb) {
       case CS_TURB_RIJ_EPSILON_LRR:
@@ -3406,7 +3406,7 @@ cs_turbulence_rij_solve_alpha(int        f_id,
   const cs_equation_param_t *eqp
     = cs_field_get_equation_param(cs_field_by_id(f_id));
 
-  if (eqp->iwarni == 1) {
+  if (eqp->verbosity == 1) {
     cs_log_printf(CS_LOG_DEFAULT,
                   _(" Solving the variable %s\n"),
                   cs_field_get_label(cs_field_by_id(f_id)));

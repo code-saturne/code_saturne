@@ -488,7 +488,7 @@ cs_les_mu_t_smago_dyn(void)
     }
   }
 
-  if (eqp->iwarni >= 1) {
+  if (eqp->verbosity >= 1) {
     cs_parall_counter(&iclipc, 1);
     cs_log_printf(CS_LOG_DEFAULT,
                   _("N. clippings for turbulent viscosity (mu_t>0): %lu\n"),
@@ -575,7 +575,7 @@ cs_les_mu_t_smago_dyn(void)
                          eqp_fld->nswrgr,
                          0,
                          1,     /* w_stride */
-                         eqp_fld->iwarni,
+                         eqp_fld->verbosity,
                          eqp_fld->imligr,
                          eqp_fld->epsrgr,
                          eqp_fld->climgr,

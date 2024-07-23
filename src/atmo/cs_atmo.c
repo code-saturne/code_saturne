@@ -680,7 +680,7 @@ _hydrostatic_pressure_compute(cs_real_3_t  f_ext[],
                          eqp_p->imligr,
                          1, /* iphydp */
                          eqp_p->iwgrec,
-                         eqp_p->iwarni,
+                         eqp_p->verbosity,
                          eqp_p->epsrgr,
                          eqp_p->climgr,
                          next_fext,
@@ -736,7 +736,7 @@ _hydrostatic_pressure_compute(cs_real_3_t  f_ext[],
                            eqp_p->imligr,
                            1, /* iphydp */
                            eqp_p->iwgrec,
-                           eqp_p->iwarni,
+                           eqp_p->verbosity,
                            eqp_p->epsrgr,
                            eqp_p->climgr,
                            next_fext,
@@ -754,7 +754,7 @@ _hydrostatic_pressure_compute(cs_real_3_t  f_ext[],
     residu = sqrt(cs_gdot(m->n_cells, rhs, rhs));
 
     /* Writing */
-    if (eqp_p->iwarni >= 2) {
+    if (eqp_p->verbosity >= 2) {
       bft_printf("%s: CV_DIF_TS, IT: %d, Res: %12.5e, Norm: %12.5e\n",
                  name, sweep, residu, rnorm);
       bft_printf("%s: Current reconstruction sweep: %d, "
