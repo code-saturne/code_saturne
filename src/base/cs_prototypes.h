@@ -346,16 +346,6 @@ cs_fortran_resize_aux_arrays(void);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Sync turbomachinery module components to
- *        global c turbomachinery structure
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_turbomachinery_update(void);
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief Return condensing volume structures surface at each cell.
  *
  * \param[out]  surf  array of volume structures surface at each cell

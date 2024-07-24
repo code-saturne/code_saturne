@@ -36,21 +36,6 @@ module turbomachinery
 
   integer, save :: iturbo
 
-  !> Type of rotor/stator interface:
-  !>   joint internal faces (0), coupled boundary faces (1)
-
-  integer, save :: ityint
-
-  !> Rotor identifier list (1:ncel)
-
-  integer, dimension(:), pointer :: irotce
-
-  ! Elapsed time for logging
-
-  ! Arrays associated to wall BC update
-
-  double precision, dimension(:), pointer :: coftur, hfltur
-
   !> \}
 
   !=============================================================================
@@ -59,96 +44,14 @@ module turbomachinery
 
     ! Interface to C function mapping some data for turbomachinery
 
-    subroutine map_turbomachinery_model(iturbo2, ityint2) &
+    subroutine map_turbomachinery_model(iturbo2) &
       bind(C, name='cs_f_map_turbomachinery_model')
       use, intrinsic :: iso_c_binding
       implicit none
-      integer(c_int), intent(out) :: iturbo2, ityint2
+      integer(c_int), intent(out) :: iturbo2
     end subroutine map_turbomachinery_model
 
-    !---------------------------------------------------------------------------
-
-    ! Interface to C function mapping some data for turbomachinery
-
-    subroutine map_turbomachinery_rotor(irotce2) &
-      bind(C, name='cs_f_map_turbomachinery_rotor')
-      use, intrinsic :: iso_c_binding
-      implicit none
-      type(c_ptr), intent(out) :: irotce2
-    end subroutine map_turbomachinery_rotor
-
-    !---------------------------------------------------------------------------
-
-    ! Interface to C function mapping some data for turbomachinery
-
-    subroutine map_turbomachinery_arrays(coftur2, hfltur2) &
-      bind(C, name='cs_f_map_turbomachinery_arrays')
-      use, intrinsic :: iso_c_binding
-      implicit none
-      type(c_ptr), intent(out) :: coftur2, hfltur2
-    end subroutine map_turbomachinery_arrays
-
   end interface
-
-contains
-
-  !=============================================================================
-
-  ! Initialization of turbomachinery module variables
-
-  subroutine turbomachinery_init() &
-    bind(C, name='cs_f_turbomachinery_init')
-
-    use, intrinsic :: iso_c_binding
-    use mesh
-
-    implicit none
-
-    ! Local variables
-
-    type(c_ptr) :: c_p, c_coftur, c_hfltur
-
-    ! Map turbomachinery module components to global c turbomachinery structure
-
-    call map_turbomachinery_rotor(c_p)
-
-    call c_f_pointer(c_p, irotce, [ncelet])
-
-    ! map turbomachinery arrays for wall velocity BC update
-
-    if (iturbo.eq.2) then
-      call map_turbomachinery_arrays(c_coftur, c_hfltur)
-      call c_f_pointer(c_coftur, coftur, [nfabor])
-      call c_f_pointer(c_hfltur, hfltur, [nfabor])
-    end if
-
-    return
-
-  end subroutine turbomachinery_init
-
-  !=============================================================================
-
-  ! Sync turbomachinery module components to global c turbomachinery structure
-
-  subroutine turbomachinery_update () &
-    bind(C, name='cs_turbomachinery_update')
-
-    use, intrinsic :: iso_c_binding
-    use mesh
-
-    implicit none
-
-    ! Local variables
-
-    type(c_ptr) :: c_p
-
-    call map_turbomachinery_rotor(c_p)
-
-    call c_f_pointer(c_p, irotce, [ncelet])
-
-    return
-
-  end subroutine turbomachinery_update
 
   !=============================================================================
 

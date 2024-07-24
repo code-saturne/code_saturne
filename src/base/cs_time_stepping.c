@@ -131,9 +131,6 @@ void
 cs_f_init_chemistry_reacnum(void);
 
 void
-cs_f_turbomachinery_init(void);
-
-void
 cs_f_init_compf(void);
 
 void
@@ -371,8 +368,6 @@ cs_time_stepping(void)
   cs_f_boundary_conditions_init();
 
   cs_f_init_aux_arrays();
-
-  cs_f_turbomachinery_init();
 
   if (cs_glob_physical_model_flag[CS_ATMOSPHERIC] >= 0) {
     if (cs_glob_atmo_chemistry->model > 0) {

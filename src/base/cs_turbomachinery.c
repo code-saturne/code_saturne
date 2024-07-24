@@ -151,13 +151,7 @@ cs_turbomachinery_t  *_turbomachinery = NULL;
  * (descriptions follow, with function bodies).
  *============================================================================*/
 
-void cs_f_map_turbomachinery_model(int  *iturbo,
-                                   int  *ityint);
-
-void cs_f_map_turbomachinery_rotor(int  **irotce);
-
-void cs_f_map_turbomachinery_arrays(cs_real_t  **coftur,
-                                    cs_real_t  **hfltur);
+void cs_f_map_turbomachinery_model(int  *iturbo);
 
 /*============================================================================
  * Private function definitions
@@ -1346,58 +1340,20 @@ _relative_velocity_f(int               location_id,
  *
  * parameters:
  *   iturbo <-- turbomachinery type flag
- *   ityint <-- 0: joining; 1: internal coupling
  *----------------------------------------------------------------------------*/
 
 void
-cs_f_map_turbomachinery_model(int  *iturbo,
-                              int  *ityint)
+cs_f_map_turbomachinery_model(int  *iturbo)
 {
   if (_turbomachinery != NULL)
     *iturbo = _turbomachinery->model;
   else
     *iturbo = CS_TURBOMACHINERY_NONE;
-
-  if (_turbomachinery->n_couplings > 0)
-    *ityint = 1;
-  else
-    *ityint = 0;
-}
-
-/*----------------------------------------------------------------------------
- * Map turbomachinery rotor to fortran module
- *
- * parameters:
- *   irotce <-- pointer to cell flag for rotation
- *----------------------------------------------------------------------------*/
-
-void
-cs_f_map_turbomachinery_rotor(int  **irotce)
-{
-  if (_turbomachinery != NULL)
-    *irotce = _turbomachinery->cell_rotor_num;
-  else
-    *irotce = NULL;
 }
 
 /*----------------------------------------------------------------------------
  * Map turbomachinery arrays associated to wall BC update
  *----------------------------------------------------------------------------*/
-
-void
-cs_f_map_turbomachinery_arrays(cs_real_t  **coftur,
-                               cs_real_t  **hfltur)
-{
-  if (_turbomachinery != NULL) {
-    *coftur = _turbomachinery->coftur;
-    *hfltur = _turbomachinery->hfltur;
-  }
-  else {
-    *coftur = NULL;
-    *hfltur = NULL;
-  }
-
-}
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 

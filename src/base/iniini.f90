@@ -158,7 +158,7 @@ call cf_model_init
 call vof_model_init
 call cavitation_model_init
 
-call map_turbomachinery_model(iturbo, ityint)
+call map_turbomachinery_model(iturbo)
 call init_sizes_pcond()
 
 !===============================================================================

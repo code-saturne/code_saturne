@@ -1221,27 +1221,6 @@ module cs_c_bindings
 
     !---------------------------------------------------------------------------
 
-    ! Interface to C function which checks if the restart is from NEPTUNE_CFD
-    function cs_restart_check_if_restart_from_ncfd(r) result(flag) &
-      bind(C, name='cs_restart_check_if_restart_from_ncfd')
-      use, intrinsic :: iso_c_binding
-      implicit none
-      type(c_ptr), value :: r
-      integer(c_int) :: flag
-    end function cs_restart_check_if_restart_from_ncfd
-
-    !---------------------------------------------------------------------------
-
-    ! Interface to C function which returns if the restart is from NEPTUNE_CFD
-    function cs_restart_is_from_ncfd() result(flag) &
-      bind(C, name='cs_restart_is_from_ncfd')
-      use, intrinsic :: iso_c_binding
-      implicit none
-      integer(c_int) :: flag
-    end function cs_restart_is_from_ncfd
-
-    !---------------------------------------------------------------------------
-
     ! Interface to C function which returns if the restart is from NEPTUNE_CFD
     function cs_restart_present() result(flag) &
       bind(C, name='cs_restart_present')
@@ -1249,26 +1228,6 @@ module cs_c_bindings
       implicit none
       integer(c_int) :: flag
     end function cs_restart_present
-
-    !---------------------------------------------------------------------------
-
-    ! Interface to C function that initializes read status
-
-    subroutine cs_restart_initialize_fields_read_status() &
-      bind(C, name='cs_restart_initialize_fields_read_status')
-      use, intrinsic :: iso_c_binding
-      implicit none
-    end subroutine cs_restart_initialize_fields_read_status
-
-    !---------------------------------------------------------------------------
-
-    ! Interface to C function that finalizes read status
-
-    subroutine cs_restart_finalize_fields_read_status() &
-      bind(C, name='cs_restart_finalize_fields_read_status')
-      use, intrinsic :: iso_c_binding
-      implicit none
-    end subroutine cs_restart_finalize_fields_read_status
 
     !---------------------------------------------------------------------------
 
@@ -3255,30 +3214,6 @@ contains
   end subroutine locator_destroy
 
   !=============================================================================
-
-  !> \brief Initialize fields checkpoint read status array
-
-  subroutine restart_initialize_fields_read_status()
-    use, intrinsic :: iso_c_binding
-    implicit none
-
-    call cs_restart_initialize_fields_read_status()
-
-  end subroutine restart_initialize_fields_read_status
-
-  !---------------------------------------------------------------------------
-
-  !> \brief Finalize fields checkpoint read status array
-
-  subroutine restart_finalize_fields_read_status()
-    use, intrinsic :: iso_c_binding
-    implicit none
-
-    call cs_restart_finalize_fields_read_status()
-
-  end subroutine restart_finalize_fields_read_status
-
-  !---------------------------------------------------------------------------
 
   !> \brief Get field checkpoint read status. Returns 1 if field was read, 0
   !         otherwise.
