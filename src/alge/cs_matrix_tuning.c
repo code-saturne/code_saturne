@@ -167,63 +167,67 @@ _matrix_tune_test(const cs_matrix_t     *m,
 
     for (int op_type = 0; op_type < CS_MATRIX_SPMV_N_TYPES; op_type++) {
 
+      spmv_cost[v_id*CS_MATRIX_SPMV_N_TYPES + op_type] = -1;
+
       cs_matrix_vector_product_t
         *vector_multiply = v->vector_multiply[op_type];
 
-      if (vector_multiply != NULL) {
+      if (vector_multiply == NULL)
+        continue;
 
-        cs_matrix_t m_t;
-        memcpy(&m_t, m, sizeof(cs_matrix_t));
-
-        m_t.vector_multiply[m->fill_type][op_type] = vector_multiply;
 #if defined(HAVE_ACCEL)
-        if (v->vector_multiply_xy_hd[0] == 'd')
-          m_t.vector_multiply_d[m->fill_type][op_type] = vector_multiply;
-        else
-          m_t.vector_multiply_h[m->fill_type][op_type] = vector_multiply;
+      if (m->alloc_mode == CS_ALLOC_HOST && v->vector_multiply_xy_hd[0] == 'd')
+        continue;
 #endif
 
-        /* First, "untimed" run in case SpMV involves library initialization
-           time, which can weigh on measure */
+      cs_matrix_t m_t;
+      memcpy(&m_t, m, sizeof(cs_matrix_t));
+
+      m_t.vector_multiply[m->fill_type][op_type] = vector_multiply;
+#if defined(HAVE_ACCEL)
+      if (v->vector_multiply_xy_hd[0] == 'd')
+        m_t.vector_multiply_d[m->fill_type][op_type] = vector_multiply;
+      else
+        m_t.vector_multiply_h[m->fill_type][op_type] = vector_multiply;
+#endif
+
+      /* First, "untimed" run in case SpMV involves library initialization
+         time, which can weigh on measure */
+      if (op_type == 0)
+        cs_matrix_vector_multiply(&m_t, x, y);
+      else
+        cs_matrix_vector_multiply_partial(&m_t, op_type, x, y);
+
+      /* Now, time for a few runs */
+      cs_timer_t wt0 = cs_timer_time();
+      test_sum = 0;
+
+      for (int run_id = 0; run_id < n_runs; run_id++) {
         if (op_type == 0)
           cs_matrix_vector_multiply(&m_t, x, y);
         else
           cs_matrix_vector_multiply_partial(&m_t, op_type, x, y);
-
-        /* Now, time for a few runs */
-        cs_timer_t wt0 = cs_timer_time();
-        test_sum = 0;
-
-        for (int run_id = 0; run_id < n_runs; run_id++) {
-          if (op_type == 0)
-            cs_matrix_vector_multiply(&m_t, x, y);
-          else
-            cs_matrix_vector_multiply_partial(&m_t, op_type, x, y);
-          test_sum += y[n-1];
-        }
-        cs_timer_t wt1 = cs_timer_time();
-        cs_timer_counter_t wt_d = cs_timer_diff(&wt0, &wt1);
-        double wt_r0 = wt_d.nsec * 1e-9;
+        test_sum += y[n-1];
+      }
+      cs_timer_t wt1 = cs_timer_time();
+      cs_timer_counter_t wt_d = cs_timer_diff(&wt0, &wt1);
+      double wt_r0 = wt_d.nsec * 1e-9;
 
 #if defined(HAVE_MPI)
 
-        if (cs_glob_n_ranks > 1) {
-          double _wt_r0 = wt_r0;
-          MPI_Allreduce(&_wt_r0, &wt_r0, 1, MPI_DOUBLE, MPI_MAX,
-                        cs_glob_mpi_comm);
-        }
+      if (cs_glob_n_ranks > 1) {
+        double _wt_r0 = wt_r0;
+        MPI_Allreduce(&_wt_r0, &wt_r0, 1, MPI_DOUBLE, MPI_MAX,
+                      cs_glob_mpi_comm);
+      }
 
 #endif /* defined(HAVE_MPI) */
 
-        cs_real_t wtu = wt_r0 / n_runs;
-        spmv_cost[v_id*CS_MATRIX_SPMV_N_TYPES + op_type] = wtu;
+      cs_real_t wtu = wt_r0 / n_runs;
+      spmv_cost[v_id*CS_MATRIX_SPMV_N_TYPES + op_type] = wtu;
 
-        if (m_t.destroy_adaptor != NULL)
-          m_t.destroy_adaptor(&m_t);
-
-      }
-      else
-        spmv_cost[v_id*CS_MATRIX_SPMV_N_TYPES + op_type] = -1;
+      if (m_t.destroy_adaptor != NULL)
+        m_t.destroy_adaptor(&m_t);
 
     } /* end of loop on ed_flag */
 
