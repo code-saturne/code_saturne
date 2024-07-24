@@ -4004,6 +4004,13 @@ _multigrid_k_cycle(cs_multigrid_t       *mg,
     ? true : false;
   ctx_f.set_use_gpu(f_use_gpu);
   ctx_c.set_use_gpu(c_use_gpu);
+# if defined(HAVE_CUDA)
+  cudaStream_t stream = cs_matrix_spmv_cuda_get_stream();
+  if (stream != 0) {
+    ctx_f.set_cuda_stream(stream);
+    ctx_c.set_cuda_stream(stream);
+  }
+# endif
 #endif
 
   /* Descent
@@ -4053,9 +4060,6 @@ _multigrid_k_cycle(cs_multigrid_t       *mg,
 
 #if defined(HAVE_ACCEL)
   if (f_use_gpu) {
-#if defined(HAVE_CUDA)
-    cs_matrix_spmv_cuda_set_stream(0);
-#endif
     cs_matrix_vector_multiply_d(f_matrix, vx_lv, rt_lv);
   }
   else
@@ -4178,9 +4182,6 @@ _multigrid_k_cycle(cs_multigrid_t       *mg,
 
 #if defined(HAVE_ACCEL)
     if (c_use_gpu) {
-#if defined(HAVE_CUDA)
-      cs_matrix_spmv_cuda_set_stream(0);
-#endif
       cs_matrix_vector_multiply_d(c_matrix, vx_lv1, rt_lv1);
     }
     else
@@ -4245,9 +4246,6 @@ _multigrid_k_cycle(cs_multigrid_t       *mg,
 
 #if defined(HAVE_ACCEL)
       if (c_use_gpu) {
-#if defined(HAVE_CUDA)
-        cs_matrix_spmv_cuda_set_stream(0);
-#endif
         cs_matrix_vector_multiply_d(c_matrix, vx2_lv1, w_lv1);
       }
       else
@@ -4308,9 +4306,6 @@ _multigrid_k_cycle(cs_multigrid_t       *mg,
   /* New residual */
 #if defined(HAVE_ACCEL)
   if (f_use_gpu) {
-#if defined(HAVE_CUDA)
-    cs_matrix_spmv_cuda_set_stream(0);
-#endif
     cs_matrix_vector_multiply_d(f_matrix, z1_lv, rb_lv);
   }
   else
