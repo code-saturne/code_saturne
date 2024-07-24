@@ -116,9 +116,9 @@ Most command-line options are detailed here:
 - `--submit`: allow submission of cases per batch in SLURM batch mode (only on
   clusters)
 - `--slurm-batch-size=SIZE`: maximum number of cases per batch in SLURM batch
-  mode (50 by default)
+  mode (1 by default)
 - `--slurm-batch-wtime=TIME`: maximum computation time in hours per batch in
-  SLURM batch mode (12 hours by default)
+  SLURM batch mode (8 hours by default)
 - `--slurm-batch-arg=SLURM_BATCH_ARGS`: additional sbatch arguments (use
   --slurm-batch-arg=<arg> to handle -- in argument)
 - `--report` generate description report
