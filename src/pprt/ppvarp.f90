@@ -43,6 +43,7 @@ subroutine ppvarp
 ! Module files
 !===============================================================================
 
+use atchem
 use paramx
 use dimens
 use numvar
@@ -126,6 +127,12 @@ interface
     implicit none
   end subroutine cs_rad_transfer_add_variable_fields
 
+  subroutine cs_atmo_add_variable_fields() &
+    bind(C, name='cs_atmo_add_variable_fields')
+    use, intrinsic :: iso_c_binding
+    implicit none
+  end subroutine cs_atmo_add_variable_fields
+
 end interface
 
 !===============================================================================
@@ -184,7 +191,24 @@ endif
 !---------------------
 
 if (ippmod(iatmos).ge.0) then
-  call atvarp
+  call cs_atmo_add_variable_fields()
+
+  ! Update scalr id in Fortran no need in c version
+  call init_chemistry_pointers()
+  if (ippmod(iatmos).eq.1) then
+    call field_get_id('temperature', f_id)
+    call field_get_key_int_by_name(f_id, "scalar_id", iscalt)
+  end if
+  if (ippmod(iatmos).eq.2) then
+    call field_get_id('temperature', f_id)
+    call field_get_key_int_by_name(f_id, "scalar_id", iscalt)
+
+    call field_get_id('ym_water', f_id)
+    call field_get_key_int_by_name(f_id, "scalar_id", iymw)
+
+    call field_get_id('number_of_droplets', f_id)
+    call field_get_key_int_by_name(f_id, "scalar_id", intdrp)
+  end if
 endif
 
 ! 7. Cooling towers model

@@ -111,7 +111,7 @@ if (ippmod(iatmos).ge.0) then
 
   call allocate_map_atmo
 
-  if (ifilechemistry.ge.1) then
+  if (ichemistry.ge.1) then
     call init_chemistry
   endif
 

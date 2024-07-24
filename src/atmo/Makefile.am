@@ -66,6 +66,7 @@ cs_atmo_aerosol.h \
 cs_atmo_aerosol_ssh.h \
 cs_atmo_headers.h \
 cs_atmo_profile_std.h \
+cs_atmo_variables.h \
 cs_atprke.h \
 cs_intprf.h
 
@@ -85,7 +86,6 @@ atprop.f90 \
 atr1vf.f90 \
 attssc.f90 \
 attycl.f90 \
-atvarp.f90 \
 chem_luscheme1.f90 \
 chem_luscheme2.f90 \
 chem_luscheme3.f90 \
@@ -101,6 +101,7 @@ cs_atmo.c \
 cs_atmo_aerosol.c \
 cs_atmo_aerosol_ssh.c \
 cs_atmo_profile_std.c \
+cs_atmo_variables.c \
 cs_atprke.c \
 cs_intprf.c \
 kinrates.f90 \

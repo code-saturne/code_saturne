@@ -568,7 +568,7 @@ do ifac = 1, nfabor
 enddo
 
 ! Atmospheric gaseous chemistry
-if (ifilechemistry.ge.1) then
+if (ichemistry.ge.1) then
 
   do ifac = 1, nfabor
 

@@ -149,7 +149,7 @@ else if (imeteo.eq.2) then
 endif
 
 ! Atmospheric gaseous chemistry
-if (ifilechemistry.ge.1) then
+if (ichemistry.ge.1) then
 
   ! Second reading of chemical profiles file
   imode = 1
@@ -219,11 +219,11 @@ endif
 
 ! Check simulation times used by atmo
 ! radiative transfer or chemistry models
-if (     (iatra1.eq.1.or.ifilechemistry.ge.1)              &
+if (     (iatra1.eq.1.or.ichemistry.ge.1)              &
     .and.(syear.eq.-1.or.squant.eq.-1.or.shour.eq.-1 &
           .or.smin.eq.-1.or.ssec.le.-1.d0)) then
   if (iatra1.eq.1) write(nfecra,1000)
-  if (ifilechemistry.ge.1) write(nfecra,1001)
+  if (ichemistry.ge.1) write(nfecra,1001)
   call csexit (1)
 endif
 
@@ -242,7 +242,7 @@ if (imeteo.eq.1) then
 endif
 
 ! Check latitude / longitude from chemistry file
-if (ifilechemistry.ge.1) then
+if (ichemistry.ge.1) then
   if (maxval(xchem).ge.rinfin*0.5 .or. maxval(ychem).ge.rinfin*0.5) then
     write(nfecra,1004)
     call csexit (1)

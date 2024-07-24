@@ -263,7 +263,10 @@ end subroutine ssh_lu_solve
 !> \brief Rountine provided by SPACK. Return number of species / reactions
 !------------------------------------------------------------------------------
 
-subroutine ssh_dimensions(Ns, Nr, Nr_photolysis)
+subroutine ssh_dimensions(Ns, Nr, Nr_photolysis) &
+  bind(C, name='cs_f_ssh_dimensions')
+
+use, intrinsic :: iso_c_binding
 
 implicit none
 

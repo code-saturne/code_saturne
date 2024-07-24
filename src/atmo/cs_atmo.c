@@ -478,6 +478,12 @@ cs_f_atmo_get_pointers_imbrication(bool      **imbrication_flag,
                                    int       **id_eps,
                                    int       **id_theta);
 
+void
+cs_f_ssh_dimensions(int  *spack_n_species,
+                    int  *n_reactions,
+                    int  *n_photolysis);
+
+
 /*============================================================================
  * Private function definitions
  *============================================================================*/
@@ -1894,15 +1900,6 @@ cs_f_atmo_chem_arrays_get_pointers(int       **species_to_scalar_id,
                                    cs_real_t **molar_mass,
                                    int       **chempoint)
 {
-  if (_atmo_chem.species_to_scalar_id == NULL)
-    BFT_MALLOC(_atmo_chem.species_to_scalar_id, _atmo_chem.n_species, int);
-  if (_atmo_chem.species_to_field_id == NULL)
-    BFT_MALLOC(_atmo_chem.species_to_field_id, _atmo_chem.n_species, int);
-  if (_atmo_chem.molar_mass == NULL)
-    BFT_MALLOC(_atmo_chem.molar_mass, _atmo_chem.n_species, cs_real_t);
-  if (_atmo_chem.chempoint == NULL)
-    BFT_MALLOC(_atmo_chem.chempoint, _atmo_chem.n_species, int);
-
   *species_to_scalar_id = (_atmo_chem.species_to_scalar_id);
   *molar_mass = (_atmo_chem.molar_mass);
   *chempoint = (_atmo_chem.chempoint);
@@ -4013,6 +4010,265 @@ cs_atmo_set_aero_conc_file_name(const char *file_name)
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Initialize chemistry array.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_atmo_init_chemistry(void)
+{
+
+  /* Initialization of the chemical scheme
+     quasi steady equilibrium NOx scheme */
+  if (_atmo_chem.model == 1) {
+
+    _atmo_chem.n_species = 4;
+    _atmo_chem.n_reactions = 5;
+
+    if (_atmo_chem.chempoint == NULL)
+      BFT_MALLOC(_atmo_chem.chempoint, _atmo_chem.n_species, int);
+
+    if (_atmo_chem.molar_mass == NULL)
+      BFT_MALLOC(_atmo_chem.molar_mass, _atmo_chem.n_species, cs_real_t);
+
+    _atmo_chem.chempoint[0] = 4;
+    _atmo_chem.chempoint[1] = 3;
+    _atmo_chem.chempoint[2] = 2;
+    _atmo_chem.chempoint[3] = 1;
+    _atmo_chem.molar_mass[0] = 30.0;
+    _atmo_chem.molar_mass[1] = 46.0;
+    _atmo_chem.molar_mass[2] = 48.0;
+    _atmo_chem.molar_mass[3] = 16.0;
+
+    if (_atmo_chem.species_to_field_id == NULL)
+      BFT_MALLOC(_atmo_chem.species_to_field_id, _atmo_chem.n_species, int);
+
+    if (_atmo_chem.species_to_scalar_id == NULL)
+      BFT_MALLOC(_atmo_chem.species_to_scalar_id, _atmo_chem.n_species, int);
+
+    const char *label[] = {"NO", "NO2", "O3", "O3P"};
+
+    const char *name[]
+      = {"species_no", "species_no2", "species_o3", "species_o3p"};
+
+    const int kscal = cs_field_key_id_try("scalar_id");
+    for (int ii = 0; ii < _atmo_chem.n_species; ii++) {
+      int f_id = cs_variable_field_create(name[ii],
+                                          label[ii],
+                                          CS_MESH_LOCATION_CELLS,
+                                          1);
+      cs_field_t *f = cs_field_by_id(f_id);
+      cs_add_model_field_indexes(f->id);
+      _atmo_chem.species_to_field_id[ii] = f->id;
+      _atmo_chem.species_to_scalar_id[ii] = cs_field_get_key_int(f, kscal);
+    }
+
+  }
+  else if (_atmo_chem.model == 2) {
+
+    _atmo_chem.n_species = 20;
+    _atmo_chem.n_reactions = 34;
+
+    if (_atmo_chem.chempoint == NULL)
+      BFT_MALLOC(_atmo_chem.chempoint, _atmo_chem.n_species, int);
+    if (_atmo_chem.molar_mass == NULL)
+      BFT_MALLOC(_atmo_chem.molar_mass, _atmo_chem.n_species, cs_real_t);
+
+    _atmo_chem.chempoint[0]  = 20, _atmo_chem.chempoint[1]  = 19;
+    _atmo_chem.chempoint[2]  = 16, _atmo_chem.chempoint[3]  = 17;
+    _atmo_chem.chempoint[4]  = 2,  _atmo_chem.chempoint[5]  = 15;
+    _atmo_chem.chempoint[6]  = 14, _atmo_chem.chempoint[7]  = 3;
+    _atmo_chem.chempoint[8]  = 18, _atmo_chem.chempoint[9]  = 7;
+    _atmo_chem.chempoint[10] = 8,  _atmo_chem.chempoint[11] = 9;
+    _atmo_chem.chempoint[12] = 4,  _atmo_chem.chempoint[13] = 10;
+    _atmo_chem.chempoint[14] = 1,  _atmo_chem.chempoint[15] = 12;
+    _atmo_chem.chempoint[16] = 11, _atmo_chem.chempoint[17] = 13;
+    _atmo_chem.chempoint[18] = 5,  _atmo_chem.chempoint[19] = 6;
+
+    _atmo_chem.molar_mass[0]  = 30.000;  // Molar mass (g/mol) NO
+    _atmo_chem.molar_mass[1]  = 46.000;  // Molar mass (g/mol) NO2
+    _atmo_chem.molar_mass[2]  = 48.000;  // Molar mass (g/mol) O3
+    _atmo_chem.molar_mass[3]  = 16.000;  // Molar mass (g/mol) O3P
+    _atmo_chem.molar_mass[4]  = 16.000;  // Molar mass (g/mol) O1D
+    _atmo_chem.molar_mass[5]  = 17.010;  // Molar mass (g/mol) OH
+    _atmo_chem.molar_mass[6]  = 33.010;  // Molar mass (g/mol) HO2
+    _atmo_chem.molar_mass[7]  = 34.010;  // Molar mass (g/mol) H2O2
+    _atmo_chem.molar_mass[8]  = 62.010;  // Molar mass (g/mol) NO3
+    _atmo_chem.molar_mass[9]  = 108.01;  // Molar mass (g/mol) N2O5
+    _atmo_chem.molar_mass[10] = 47.010;  // Molar mass (g/mol) HONO
+    _atmo_chem.molar_mass[11] = 63.010;  // Molar mass (g/mol) HNO3
+    _atmo_chem.molar_mass[12] = 28.010;  // Molar mass (g/mol) CO
+    _atmo_chem.molar_mass[13] = 30.030;  // Molar mass (g/mol) HCHO
+    _atmo_chem.molar_mass[14] = 44.050;  // Molar mass (g/mol) ALD2
+    _atmo_chem.molar_mass[15] = 75.040;  // Molar mass (g/mol) C2O3
+    _atmo_chem.molar_mass[16] = 121.05;  // Molar mass (g/mol) PAN
+    _atmo_chem.molar_mass[17] = 47.030;  // Molar mass (g/mol) XO2
+    _atmo_chem.molar_mass[18] = 64.060;  // Molar mass (g/mol) SO2
+    _atmo_chem.molar_mass[19] = 98.080;  // Molar mass (g/mol) H2SO4
+
+    const char *label[] = {"NO",   "NO2",  "O3",   "O3P",  "O1D",
+                           "OH",   "HO2",  "H2O2", "NO3",  "N2O5",
+                           "HONO", "HNO3", "CO",   "HCHO", "ALD2",
+                           "C2O3", "PAN",  "XO2",  "SO2",  "H2SO4"};
+
+    const char *name[]
+      = {"species_no",  "species_no2",  "species_o3",  "species_o3p",
+         "species_o1d", "species_oh",   "species_ho2", "species_h2o2",
+         "species_no3", "species_n2o5", "species_hono", "species_hno3",
+         "species_co",  "species_hcho", "species_ald2","species_c2o3",
+         "species_pan", "species_xo2",  "species_so2", "species_h2so4"};
+
+    if (_atmo_chem.species_to_field_id == NULL)
+      BFT_MALLOC(_atmo_chem.species_to_field_id, _atmo_chem.n_species, int);
+    if (_atmo_chem.species_to_scalar_id == NULL)
+      BFT_MALLOC(_atmo_chem.species_to_scalar_id, _atmo_chem.n_species, int);
+
+    const int kscal = cs_field_key_id_try("scalar_id");
+    for (int ii = 0; ii < _atmo_chem.n_species; ii++) {
+      int f_id = cs_variable_field_create(name[ii],
+                                          label[ii],
+                                          CS_MESH_LOCATION_CELLS,
+                                          1);
+      cs_field_t *f = cs_field_by_id(f_id);
+      cs_add_model_field_indexes(f->id);
+      _atmo_chem.species_to_field_id[ii] = f->id;
+      _atmo_chem.species_to_scalar_id[ii] = cs_field_get_key_int(f, kscal);
+    }
+
+  }
+  else if (_atmo_chem.model == 3) {
+    _atmo_chem.n_species = 52;
+    _atmo_chem.n_reactions = 155;
+
+    if (_atmo_chem.chempoint == NULL)
+      BFT_MALLOC(_atmo_chem.chempoint, _atmo_chem.n_species, int);
+    if (_atmo_chem.molar_mass == NULL)
+      BFT_MALLOC(_atmo_chem.molar_mass, _atmo_chem.n_species, cs_real_t);
+
+    _atmo_chem.chempoint[0]  = 48, _atmo_chem.chempoint[1]  = 52;
+    _atmo_chem.chempoint[2]  = 47, _atmo_chem.chempoint[3]  = 43;
+    _atmo_chem.chempoint[4]  = 1,  _atmo_chem.chempoint[5]  = 42;
+    _atmo_chem.chempoint[6]  = 50, _atmo_chem.chempoint[7]  = 17;
+    _atmo_chem.chempoint[8]  = 44, _atmo_chem.chempoint[9]  = 9;
+    _atmo_chem.chempoint[10] = 15, _atmo_chem.chempoint[11] = 38;
+    _atmo_chem.chempoint[12] = 13, _atmo_chem.chempoint[13] = 37;
+    _atmo_chem.chempoint[14] = 41, _atmo_chem.chempoint[15] = 45;
+    _atmo_chem.chempoint[16] = 51, _atmo_chem.chempoint[17] = 10;
+    _atmo_chem.chempoint[18] = 35, _atmo_chem.chempoint[19] = 46;
+    _atmo_chem.chempoint[20] = 14, _atmo_chem.chempoint[21] = 49;
+    _atmo_chem.chempoint[22] = 39, _atmo_chem.chempoint[23] = 33;
+    _atmo_chem.chempoint[24] = 2,  _atmo_chem.chempoint[25] = 3;
+    _atmo_chem.chempoint[26] = 40, _atmo_chem.chempoint[27] = 11;
+    _atmo_chem.chempoint[28] = 19, _atmo_chem.chempoint[29] = 20;
+    _atmo_chem.chempoint[30] = 4,  _atmo_chem.chempoint[31] = 21;
+    _atmo_chem.chempoint[32] = 36, _atmo_chem.chempoint[33] = 22;
+    _atmo_chem.chempoint[34] = 34, _atmo_chem.chempoint[35] = 16;
+    _atmo_chem.chempoint[36] = 23, _atmo_chem.chempoint[37] = 24;
+    _atmo_chem.chempoint[38] = 25, _atmo_chem.chempoint[39] = 31;
+    _atmo_chem.chempoint[40] = 32, _atmo_chem.chempoint[41] = 26;
+    _atmo_chem.chempoint[42] = 5,  _atmo_chem.chempoint[43] = 6;
+    _atmo_chem.chempoint[44] = 27, _atmo_chem.chempoint[45] = 12;
+    _atmo_chem.chempoint[46] = 28, _atmo_chem.chempoint[47] = 30;
+    _atmo_chem.chempoint[48] = 29, _atmo_chem.chempoint[49] = 7;
+    _atmo_chem.chempoint[50] = 8,  _atmo_chem.chempoint[51] = 18;
+
+    _atmo_chem.molar_mass[0]  = 30.000, _atmo_chem.molar_mass[1]  = 46.000;
+    _atmo_chem.molar_mass[2]  = 48.000, _atmo_chem.molar_mass[3]  = 16.000;
+    _atmo_chem.molar_mass[4]  = 16.000, _atmo_chem.molar_mass[5]  = 17.010;
+    _atmo_chem.molar_mass[6]  = 33.010, _atmo_chem.molar_mass[7]  = 34.010;
+    _atmo_chem.molar_mass[8]  = 62.010, _atmo_chem.molar_mass[9]  = 108.01;
+    _atmo_chem.molar_mass[10] = 47.010, _atmo_chem.molar_mass[11] = 63.010;
+    _atmo_chem.molar_mass[12] = 79.010, _atmo_chem.molar_mass[13] = 28.010;
+    _atmo_chem.molar_mass[14] = 30.030, _atmo_chem.molar_mass[15] = 44.050;
+    _atmo_chem.molar_mass[16] = 75.040, _atmo_chem.molar_mass[17] = 121.05;
+    _atmo_chem.molar_mass[18] = 43.040, _atmo_chem.molar_mass[19] = 74.040;
+    _atmo_chem.molar_mass[20] = 120.04, _atmo_chem.molar_mass[21] = 47.030;
+    _atmo_chem.molar_mass[22] = 47.030, _atmo_chem.molar_mass[23] = 77.040;
+    _atmo_chem.molar_mass[24] = 46.070, _atmo_chem.molar_mass[25] = 16.040;
+    _atmo_chem.molar_mass[26] = 47.030, _atmo_chem.molar_mass[27] = 32.040;
+    _atmo_chem.molar_mass[28] = 48.040, _atmo_chem.molar_mass[29] = 46.030;
+    _atmo_chem.molar_mass[30] = 30.070, _atmo_chem.molar_mass[31] = 47.030;
+    _atmo_chem.molar_mass[32] = 60.050, _atmo_chem.molar_mass[33] = 76.050;
+    _atmo_chem.molar_mass[34] = 15.030, _atmo_chem.molar_mass[35] = 16.000;
+    _atmo_chem.molar_mass[36] = 28.050, _atmo_chem.molar_mass[37] = 27.050;
+    _atmo_chem.molar_mass[38] = 56.110, _atmo_chem.molar_mass[39] = 68.180;
+    _atmo_chem.molar_mass[40] = 70.090, _atmo_chem.molar_mass[41] = 136.24;
+    _atmo_chem.molar_mass[42] = 92.140, _atmo_chem.molar_mass[43] = 106.16;
+    _atmo_chem.molar_mass[44] = 108.14, _atmo_chem.molar_mass[45] = 141.15;
+    _atmo_chem.molar_mass[46] = 48.040, _atmo_chem.molar_mass[47] = 108.14;
+    _atmo_chem.molar_mass[48] = 72.060, _atmo_chem.molar_mass[49] = 64.060;
+    _atmo_chem.molar_mass[50] = 98.080, _atmo_chem.molar_mass[51] = 63.030;
+
+    const char *label[] = {"NO",   "NO2",  "O3",    "O3P",
+                           "O1D",  "OH",   "HO2",   "H2O2",
+                           "NO3",  "N2O5", "HONO",  "HNO3",
+                           "HNO4", "CO",   "HCHO" , "ALD2",
+                           "C2O3", "PAN",  "ALDX",  "CXO3",
+                           "PANX", "XO2",  "XO2N",  "NTR",
+                           "ETOH", "CH4",  "MEO2",  "MEOH",
+                           "MEPX", "FACD", "ETHA",  "ROOH",
+                           "AACD", "PACD", "PAR",   "ROR",
+                           "ETH",  "OLE",  "IOLE",  "ISOP",
+                           "ISPD", "TERP", "TOL",   "XYL",
+                           "CRES", "TO2",  "OPEN",   "CRO",
+                           "MGLY", "SO2",  "H2SO4", "HCO3"};
+    const char *name[]
+      = {"species_no",   "species_no2",  "species_o3",    "species_o3p",
+         "species_o1d",  "species_oh",   "species_ho2",   "species_h2o2",
+         "species_no3",  "species_n2o5", "species_hono",  "species_hno3",
+         "species_hno4", "species_co",   "species_hcho",  "species_ald2",
+         "species_c2o3", "species_pan",  "species_aldx",  "species_cxo3",
+         "species_panx", "species_xo2",  "species_xo2n",  "species_ntr",
+         "species_etoh", "species_ch4",  "species_meo2",  "species_meoh",
+         "species_mepx", "species_facd", "species_etha",  "species_rooh",
+         "species_aacd", "species_pacd", "species_par",   "species_ror",
+         "species_eth",  "species_ole",  "species_iole",  "species_isop",
+         "species_ispd", "species_terp", "species_tol",   "species_xyl",
+         "species_cres", "species_to2",  "species_open",  "species_cro",
+         "species_mgly", "species_so2",  "species_h2so4", "species_hco3"};
+
+    if (_atmo_chem.species_to_field_id == NULL)
+      BFT_MALLOC(_atmo_chem.species_to_field_id, _atmo_chem.n_species, int);
+    if (_atmo_chem.species_to_scalar_id == NULL)
+      BFT_MALLOC(_atmo_chem.species_to_scalar_id, _atmo_chem.n_species, int);
+
+    const int kscal = cs_field_key_id_try("scalar_id");
+    for (int ii = 0; ii < _atmo_chem.n_species; ii++) {
+      int f_id = cs_variable_field_create(name[ii],
+                                          label[ii],
+                                          CS_MESH_LOCATION_CELLS,
+                                          1);
+      cs_field_t *f = cs_field_by_id(f_id);
+      cs_add_model_field_indexes(f->id);
+      _atmo_chem.species_to_field_id[ii] = f->id;
+      _atmo_chem.species_to_scalar_id[ii] = cs_field_get_key_int(f, kscal);
+    }
+
+  }
+  //User defined chemistry using SPACK file and routines
+  else if (_atmo_chem.model == 4)  {
+
+    /* This function read the number of species, their molar mass
+     * and creates variables */
+    cs_atmo_declare_chem_from_spack();
+
+    int  spack_n_species, n_reactions, n_photolysis;
+    cs_f_ssh_dimensions(&spack_n_species,
+                        &_atmo_chem.n_reactions,
+                        &n_photolysis);
+
+    if (spack_n_species != _atmo_chem.n_species)
+      bft_error(__FILE__,__LINE__, 0,
+                "    WARNING:   STOP WHILE READING INPUT DATA\n"
+                "    =========\n"
+                "The number of gaseous species read from the SPACK file\n"
+                "is not equal to the one read in the SPACK source file\n");
+  }
+
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief This function set the file name of the SPACK file.
  *
  * \param[in] file_name  name of the file.
@@ -4272,7 +4528,7 @@ cs_atmo_compute_solar_angles(cs_real_t latitude,
     * approximation formula.
     *
     * Note: old formula (LH74)
-    * m = 35.d0/sqrt(1224.d0*muzero*muzero + 1.d0) */
+    * m = 35.0/sqrt(1224.0*muzero*muzero + 1.0) */
 #if 1
    if (*muzero > 0)
      *muzero += 0.50572 * pow(96.07995-180./cs_math_pi * *za, -1.6364);

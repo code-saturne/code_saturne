@@ -431,7 +431,8 @@ double precision, save:: zaero
         compute_z_ground, iatmst, theo_interp,                          &
         sedimentation_model, deposition_model, nucleation_model,        &
         subgrid_model, distribution_model,                              &
-        ichemistry, isepchemistry, nespg, nrg, chem_with_photo,         &
+        ichemistry, isepchemistry, nespg, nrg,                          &
+        chem_with_photo,                                                &
         iaerosol, frozen_gas_chem, init_gas_with_lib,                   &
         init_aero_with_lib, n_aero, n_sizebin, imeteo,                  &
         nbmetd, nbmett, nbmetm, iatra1, nbmaxt,                         &
@@ -753,7 +754,7 @@ contains
   subroutine atmo_init
 
     use, intrinsic :: iso_c_binding
-    use atchem, only: nrg, nespg, ichemistry, isepchemistry, photolysis
+    use atchem
     use sshaerosol
     use cs_c_bindings
 
@@ -784,13 +785,14 @@ contains
       c_sedimentation_model, c_deposition_model,    &
       c_nucleation_model, c_subgrid_model,          &
       c_distribution_model,                         &
-      c_model, c_isepchemistry, c_nespg, c_nrg,     &
-      c_chem_with_photo,  c_modelaero,              &
-      c_frozen_gas_chem, c_init_gas_with_lib,       &
+      c_model, c_isepchemistry,                     &
+      c_nespg, c_nrg, c_chem_with_photo,            &
+      c_modelaero, c_frozen_gas_chem,               &
+      c_init_gas_with_lib,                          &
       c_init_aero_with_lib, c_nlayer,               &
       c_nsize, c_imeteo,                            &
-      c_nbmetd, c_nbmett, c_nbmetm, c_iatra1, c_nbmaxt, &
-      c_meteo_zi, c_iatsoil,                        &
+      c_nbmetd, c_nbmett, c_nbmetm, c_iatra1,       &
+      c_nbmaxt, c_meteo_zi, c_iatsoil,              &
       c_nvert, c_kvert, c_kmx)
 
     call c_f_pointer(c_ps, ps)
