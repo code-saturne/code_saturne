@@ -345,6 +345,12 @@ do ifac = 1, nfabor
     if (ik.ge.1) then
       if (rcodcl(ifac,ik,1).lt.rinfin*0.5d0) then
         xkent = rcodcl(ifac,ik,1)
+      else if (imeteo.eq.1) then
+        call intprf &
+        (nbmetd, nbmetm,                                               &
+        zdmet, tmmet, ekmet, zent  , ttcabs, xkent )
+      else
+        xkent = cpro_met_k(iel)
       endif
     else if (imeteo.eq.1) then
       call intprf &
@@ -357,6 +363,12 @@ do ifac = 1, nfabor
     if (iep.ge.1) then
       if (rcodcl(ifac,iep,1).lt.rinfin*0.5d0) then
         xeent = rcodcl(ifac,iep,1)
+      else if (imeteo.eq.1) then
+        call intprf &
+        (nbmetd, nbmetm,                                               &
+        zdmet, tmmet, epmet, zent  , ttcabs, xeent )
+      else
+        xeent = cpro_met_eps(iel)
       endif
     else if (imeteo.eq.1) then
       call intprf &
