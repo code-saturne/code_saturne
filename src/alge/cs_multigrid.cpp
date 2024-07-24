@@ -1799,6 +1799,7 @@ _multigrid_setup_sles_work_arrays(cs_multigrid_t  *mg,
     for (unsigned i = 0; i < mgd->n_levels; i++) {
       size_t block_size
         = cs_grid_get_n_cols_max(mgd->grid_hierarchy[i])*stride;
+      block_size = CS_SIMD_SIZE(block_size);
       cs_lnum_t n = (i == 0) ? n0 : n1;
       for (int j = 0; j < n; j++) {
         mgd->rhs_vx[i*n1 + j] = mgd->rhs_vx_buf+ block_size_shift;
