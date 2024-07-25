@@ -2413,10 +2413,11 @@ cs_syr_coupling_log_setup(void)
 {
   /* Get the number of SYRTHES couplings */
   int n_coupl = _syr_n_couplings;
-  const int keysca = cs_field_key_id("scalar_id");
-  const int kcpsyr = cs_field_key_id("syrthes_coupling");
 
   if (n_coupl >= 1) {
+
+    const int keysca = cs_field_key_id("scalar_id");
+    const int kcpsyr = cs_field_key_id("syrthes_coupling");
 
     cs_log_printf
       (CS_LOG_SETUP,

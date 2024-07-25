@@ -89,6 +89,12 @@ cs_ale_type_t cs_glob_ale = 0;
 
 cs_ale_data_t  *cs_glob_ale_data = &_cs_glob_ale_data;
 
+/*! Number of iterations for fluid flow initialization */
+int cs_glob_ale_n_ini_f = 0;
+
+/*! Indicate whether an iteration to initialize ALE is required */
+int cs_glob_ale_need_init = -999;
+
 /*============================================================================
  * Prototypes for functions intended for use only by Fortran wrappers.
  * (descriptions follow, with function bodies).
@@ -1648,6 +1654,42 @@ cs_ale_init_setup(cs_domain_t   *domain)
   /* Add the variable field */
 
   cs_equation_predefined_create_field(1, eq); /* Always has_previous */
+}
+
+/*----------------------------------------------------------------------------
+ *!
+ * \brief Print the ALE options to setup.log.
+ *
+ *----------------------------------------------------------------------------*/
+
+void
+cs_ale_log_setup(void)
+{
+  if (cs_glob_ale < CS_ALE_NONE || cs_glob_ale > CS_ALE_CDO)
+    bft_error(__FILE__, __LINE__, 0,
+              _(" %s: invalid value for cs_glob_ale (%d)."),
+              __func__, (int)cs_glob_ale);
+
+  const char *ale_status_str[]
+    = {N_("Inactive (CS_ALE_NONE)"),
+       N_("Active (CS_ALE_LEGACY)"),
+       N_("Active (CS_ALE_CDO)")};
+
+  cs_log_printf(CS_LOG_SETUP,
+                ("\n"
+                 "ALE method (moving mesh)\n"
+                 "------------------------\n\n"
+                 "  %s\n"),
+                _(ale_status_str[cs_glob_ale]));
+
+  if (cs_glob_ale == CS_ALE_NONE) {
+    return;
+  }
+
+  cs_log_printf(CS_LOG_SETUP,
+                _("   cs_glob_ale_n_ini_f: %d "
+                  "(iterations for flow initialization)\n"),
+                cs_glob_ale_n_ini_f);
 }
 
 /*----------------------------------------------------------------------------*/

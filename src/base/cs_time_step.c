@@ -632,6 +632,8 @@ cs_time_step_log_setup(void)
      _("\nTime stepping options\n"
        "---------------------\n\n"));
 
+  const cs_time_step_t *ts = cs_glob_time_step;
+
   cs_time_step_type_t ts_type = cs_glob_time_step_options->idtvar;
   int ts_id = ts_type + 1; /* (this enum starts at -1) */
 
@@ -641,7 +643,7 @@ cs_time_step_log_setup(void)
     cs_log_printf
       (CS_LOG_SETUP,
        _("  Steady (SIMPLE) algorithm\n\n"
-         "    Global parameters\n\n"
+         "    Global parameters\n"
          "      idtvar: %21s (%s)\n"
          "      relxst:     %17.5g (Reference relaxation coefficient)\n\n"),
        cs_time_step_type_enum_name[ts_id],
@@ -655,12 +657,12 @@ cs_time_step_log_setup(void)
       cs_log_printf
         (CS_LOG_SETUP,
          _("  Unsteady algorithm\n\n"
-           "    Time step parameters\n\n"
+           "    Time step parameters\n"
            "      idtvar: %21s (%s)\n"
            "      dtref:      %17.5g (Reference time step)\n\n"),
          cs_time_step_type_enum_name[ts_id],
          cs_time_step_type_name[ts_id],
-         cs_glob_time_step->dt_ref);
+         ts->dt_ref);
     }
 
     else {
@@ -676,7 +678,7 @@ cs_time_step_log_setup(void)
 
       cs_log_printf
         (CS_LOG_SETUP,
-         _("  Time step parameters:\n\n"
+         _("  Time step parameters:\n"
            "    idtvar: %21s (%s)\n"
            "    iptlro:     %17d (1: rho-related DT clipping)\n"
            "    coumax:     %17.5g (Maximum target CFL)\n"
@@ -696,10 +698,35 @@ cs_time_step_log_setup(void)
          cs_glob_time_step_options->varrdt,
          cs_glob_time_step_options->dtmin,
          cs_glob_time_step_options->dtmax,
-         cs_glob_time_step->dt_ref);
+         ts->dt_ref);
 
     }
   }
+
+  /* Stopping criteria */
+  cs_log_printf
+    (CS_LOG_SETUP,
+     _("  Start and stop times\n\n"
+       "    Initial time (> 0 in case of restart)\n"
+       "      nt_prev: %d\n"
+       "      t_prev:  %g s\n\n"
+       "    Stop time\n"),
+     ts->nt_prev, ts->t_prev);
+  if (ts->t_max < 0)
+    cs_log_printf(CS_LOG_SETUP,
+                  _("      nt_max:  %d (final time step)\n\n"),
+                  ts->nt_max);
+  else
+    cs_log_printf(CS_LOG_SETUP,
+                  _("      t_max:   %g s (final physical time)\n\n"),
+                  ts->nt_max);
+
+  /* Other options */
+  cs_log_printf
+    (CS_LOG_SETUP,
+     _("    Number of (absolute) time steps for initialization\n"
+       "      nt_ini: %d\n\n"),
+     ts->nt_ini);
 }
 
 /*----------------------------------------------------------------------------*/

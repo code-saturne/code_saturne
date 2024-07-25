@@ -1432,7 +1432,7 @@ cs_parameters_check(void)
       cs_parameters_error
         (CS_ABORT_DELAYED,
          _("in ALE module"),
-         _("Initialization iteration for ALE italin must be 0 or 1\n"
+         _("Initialization iteration for cs_glob_ale_need_init must be 0 or 1\n"
            "but it has value %d\n"),
         cs_glob_ale_need_init);
   }

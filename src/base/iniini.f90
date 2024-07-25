@@ -44,7 +44,6 @@ use rotation
 use entsor
 use pointe
 use albase
-use alaste
 use parall
 use period
 use cplsat

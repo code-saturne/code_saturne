@@ -518,7 +518,7 @@ cs_setup(void)
 
   cs_log_printf(CS_LOG_DEFAULT,
                 "\n"
-                "No error detected during the data verification\n.");
+                "No error detected during the data verification.\n");
 
   /* Print output */
   cs_f_impini();

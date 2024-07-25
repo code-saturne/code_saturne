@@ -64,6 +64,7 @@
 #include "cs_restart.h"
 #include "cs_sles.h"
 #include "cs_sles_default.h"
+#include "cs_syr_coupling.h"
 #include "cs_thermal_model.h"
 #include "cs_time_moment.h"
 #include "cs_turbomachinery.h"
@@ -221,6 +222,8 @@ _log_global_model_options(void)
 
   /* ALE */
 
+  cs_ale_log_setup();
+
   if (cs_glob_ale > CS_ALE_NONE)
     cs_mobile_structures_log_setup();
 
@@ -242,6 +245,8 @@ _log_global_model_options(void)
                   r->omega);
 
   }
+
+  cs_syr_coupling_log_setup();
 
   /* Zone information */
 

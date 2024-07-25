@@ -51,7 +51,6 @@ base/paramx.f90 \
 base/mesh.f90 \
 base/field.f90 \
 base/field_operator.f90 \
-base/alaste.f90 \
 base/albase.f90 \
 base/cavitation.f90 \
 base/cdomod.f90 \

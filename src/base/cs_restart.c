@@ -4071,6 +4071,7 @@ void
 cs_restart_log_setup(void)
 {
   char cf_str[80]; cf_str[79] = '\0';
+  const char *cf_yn[] = {N_("no"), N_("yes")};
 
   if (_checkpoint_nt_interval <= CS_RESTART_INTERVAL_NONE)
     strncpy(cf_str, _("never"), 79);
@@ -4087,7 +4088,9 @@ cs_restart_log_setup(void)
                   "Checkpoint / restart:\n"
                   "--------------------\n"
                   "\n"
-                  "  Checkpoint frequency: %s\n"), cf_str);
+                  "  Run is a restart:     %s\n\n"
+                  "  Checkpoint frequency: %s\n"),
+                cf_yn[cs_restart_present()], cf_str);
 
   if (_checkpoint_t_interval > 0)
     cs_log_printf(CS_LOG_SETUP,

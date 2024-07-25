@@ -187,7 +187,14 @@ static int _post_out_stat_id = -1;
  * Global variables
  *============================================================================*/
 
-extern int cs_glob_ast_coupling_n_couplings;         /* n_ast_structs */
+/*! Number of code_aster couplings */
+int cs_glob_ast_coupling_n_couplings = 0;
+
+/*! Maximum number of implicitation iterations of the structure displacement */
+int cs_glob_mobile_structures_i_max = 1;
+
+/*! Relative precision of implicitation of the structure displacement */
+double cs_glob_mobile_structures_i_eps = 1e-5;
 
 /*============================================================================
  * Private function definitions

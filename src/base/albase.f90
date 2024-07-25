@@ -43,19 +43,7 @@ module albase
   !>  - 1: legacy solver
   !>  - 2: CDO solver
   integer(c_int), pointer, save :: iale
-  !> the number of sub-iterations of initialization of the fluid
-  integer(c_int), save :: nalinf = 0
-  !> maximum number of implicitation iterations of the structure displacement
-  integer(c_int), save :: nalimx = 1
-  !> relative precision of implicitation of the structure displacement
-  real(c_double), save :: epalim = 1.d-5
-  !> iteration (yes=1, no=0) to initialize ALE
-  integer(c_int), save :: italin = -999
 
-  bind(C, name='cs_glob_mobile_structures_i_max') :: nalimx
-  bind(C, name='cs_glob_mobile_structures_i_eps') :: epalim
-  bind(C, name='cs_glob_ale_n_ini_f') :: nalinf
-  bind(C, name='cs_glob_ale_need_init') :: italin
   !> \}
 
 contains

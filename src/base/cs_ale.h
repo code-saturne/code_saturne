@@ -78,13 +78,11 @@ extern cs_ale_type_t  cs_glob_ale;
 
 extern cs_ale_data_t  *cs_glob_ale_data;
 
-/* defined in albase.f90 (bind(C, name='') :: ...) */
+extern int cs_glob_ale_n_ini_f;  /* Number of sub-iterations for fluid
+                                    flow initialization */
 
-extern int cs_glob_ale_n_ini_f; /*!< Number of sub-iterations for fluid
-                                  flow initialization */
-
-extern int cs_glob_ale_need_init; /*!< Indicate whether an iteration to
-                                    initialize ALE is required */
+extern int cs_glob_ale_need_init;  /* Indicate whether an iteration to
+                                      initialize ALE is required */
 
 /*============================================================================
  * Public function prototypes
@@ -206,6 +204,15 @@ cs_ale_is_activated(void);
 
 void
 cs_ale_init_setup(cs_domain_t   *domain);
+
+/*----------------------------------------------------------------------------
+ *!
+ * \brief Print the ALE options to setup.log.
+ *
+ *----------------------------------------------------------------------------*/
+
+void
+cs_ale_log_setup(void);
 
 /*----------------------------------------------------------------------------*/
 /*!

@@ -86,18 +86,6 @@ character(len=3), dimension(3) :: nomext3
 character(len=4), dimension(3) :: nomext63
 
 !===============================================================================
-
-interface
-
-  subroutine syr_coupling_log_setup()  &
-      bind(C, name='cs_syr_coupling_log_setup')
-    use, intrinsic :: iso_c_binding
-    implicit none
-  end subroutine syr_coupling_log_setup
-
-end interface
-
-!===============================================================================
 ! 1. Introduction
 !===============================================================================
 
@@ -281,29 +269,20 @@ write(nfecra,9900)
 
 ! --- Marche en temps
 
-write(nfecra,3000)
-
-! Instationnaire
 if (idtvar.ge.0) then
 
-!   - Coefficient de relaxation de la masse volumique
+  ! Coefficient de relaxation de la masse volumique
 
   if (ippmod(icod3p).ge.0 .or. ippmod(islfm).ge.0 .or. &
       ippmod(icoebu).ge.0 .or. ippmod(icolwc).ge.0 .or. &
       ippmod(iccoal).ge.0) then
+    write(nfecra,3000)
     write(nfecra,3050) srrom
+    write(nfecra,9900)
+
   endif
 
-!   - Ordre du schema en temps
-
-  write(nfecra,3060)
-  write(nfecra,3061) ischtp
-  if (ischtp.eq.2)  write(nfecra,3062) itpcol
-  write(nfecra,3063)
-
 endif
-
-write(nfecra,9900)
 
  3000 format(                                                     &
                                                                 /,&
@@ -313,14 +292,6 @@ write(nfecra,9900)
 '--- Relaxation coefficient',                                   /,&
 '    RHO(n+1)=SRROM*RHO(n)+(1-SRROM)*RHO(n+1)',                 /,&
 '       SRROM  = ',e14.5,                                       /)
-
- 3060 format(                                                     &
-' --- Order of base time stepping scheme'                        )
- 3061 format(                                                     &
-'       ISCHTP = ',4x,i10,    ' (1: order 1; 2: order 2      )'  )
- 3062 format(                                                     &
-'       ITPCOL = ',4x,i10,    ' (0: staggered; 1: collocated )'  )
- 3063 format(/)
 
 ! --- Stokes
 write(nfecra,4114)istmpf,     &
@@ -432,73 +403,6 @@ endif
 '       SCAMAX =                (Max authorized value        )',/,&
 '        For variances, SCAMIN is ignored and SCAMAX is used',  /,&
 '          only if ICLVFL = 2',                                 /)
-
-!===============================================================================
-! 6. GESTION DU CALCUL
-!===============================================================================
-
-! --- Gestion du calcul
-
-write(nfecra,7000)
-
-!   - Suite de calcul
-
-write(nfecra,7010) isuite, ileaux, iecaux
-
-!   - Duree du calcul
-
-write(nfecra,7110) ntpabs, ntmabs
-
-write(nfecra,9900)
-
- 7000 format(                                                     &
-                                                                /,&
-' ** CALCULATION MANAGEMENT',                                   /,&
-'    ----------------------',                                   /)
- 7010 format(                                                     &
-' --- Restarted calculation',                                   /,&
-'       ISUITE = ',4x,i10,    ' (1: restarted calculation    )',/,&
-'       ILEAUX = ',4x,i10,    ' (1: read  restart/auxiliary  )',/,&
-'       IECAUX = ',4x,i10,    ' (1: write checkpoint/auxiliary)',/,&
-                                                                /)
- 7110 format(                                                     &
-' --- Calculation time',                                        /,&
-'     The numbering of time steps and the measure of simulated',/,&
-'       physical time are absolute values, and not values',     /,&
-'       relative to the current calculation.',                  /,&
-                                                                /,&
-'       NTPABS = ',4x,i10,    ' (Initial time step)',           /,&
-'       NTMABS = ',4x,i10,    ' (Final time step required)',    /)
-
-write(nfecra,9900)
-
-!===============================================================================
-! 7. COUPLAGES
-!===============================================================================
-
-call syr_coupling_log_setup
-
-!===============================================================================
-! 8. METHODE ALE
-!===============================================================================
-! --- Activation de la methode ALE
-
-write(nfecra,8210)
-write(nfecra,8220) iale, nalinf, iflxmw
-
-write(nfecra,9900)
-
- 8210 format(                                                     &
-                                                                /,&
-' ** ALE METHOD (MOVING MESH)',                                 /,&
-'    -----------',                                              /)
- 8220 format(                                                     &
-'       IALE   = ',4x,i10,    ' (1: activated,2: CDO         )',/ &
-'       NALINF = ',4x,i10,    ' (Fluid initialization',         / &
-'                                                  iterations)',/ &
-'       IFLXMW = ',4x,i10,    ' (ALE mass flux computation',    / &
-'                                0: thanks to vertices',        / &
-'                                1: thanks to mesh velocity)',/)
 
 return
 end subroutine
