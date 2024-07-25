@@ -400,16 +400,6 @@ module cs_c_bindings
 
     !---------------------------------------------------------------------------
 
-    !> \brief  Read restart metadata.
-
-    subroutine parameters_read_restart_info()  &
-      bind(C, name='cs_parameters_read_restart_info')
-      use, intrinsic :: iso_c_binding
-      implicit none
-    end subroutine parameters_read_restart_info
-
-    !---------------------------------------------------------------------------
-
     ! Interface to C function returning number of SYRTHES couplingsg.
 
     function cs_syr_coupling_n_couplings() result(n_couplings) &
@@ -448,16 +438,6 @@ module cs_c_bindings
 
     !---------------------------------------------------------------------------
 
-    !> \brief  Log temporal moments initialization
-
-    subroutine time_moment_log_iteration()  &
-      bind(C, name='cs_time_moment_log_iteration')
-      use, intrinsic :: iso_c_binding
-      implicit none
-    end subroutine time_moment_log_iteration
-
-    !---------------------------------------------------------------------------
-
     !> \brief  Get field id associated with a given moment.
 
     !> For moments not defined by the user, but defined automatically so as
@@ -476,40 +456,6 @@ module cs_c_bindings
       integer(c_int), value :: m_num
       integer(c_int)        :: f_id
     end function time_moment_field_id
-
-    !---------------------------------------------------------------------------
-
-    !> \brief  Read temporal moments checkpoint information.
-
-    subroutine time_moment_restart_read(r)  &
-      bind(C, name='cs_time_moment_restart_read')
-      use, intrinsic :: iso_c_binding
-      implicit none
-      type(c_ptr), value :: r
-    end subroutine time_moment_restart_read
-
-    !---------------------------------------------------------------------------
-
-    !> \brief  Checkpoint temporal moments.
-
-    subroutine time_moment_restart_write(r)  &
-      bind(C, name='cs_time_moment_restart_write')
-      use, intrinsic :: iso_c_binding
-      implicit none
-      type(c_ptr), value :: r
-    end subroutine time_moment_restart_write
-
-    !---------------------------------------------------------------------------
-
-    !> \brief  Increment time step for timer statistics.
-
-    !> \param[in]   id    id of statistic
-
-    subroutine timer_stats_increment_time_step()  &
-      bind(C, name='cs_timer_stats_increment_time_step')
-      use, intrinsic :: iso_c_binding
-      implicit none
-    end subroutine timer_stats_increment_time_step
 
     !---------------------------------------------------------------------------
 
@@ -781,18 +727,6 @@ module cs_c_bindings
 
     !---------------------------------------------------------------------------
 
-    !> \brief Compute boundary contributions for all immersed boundaries.
-
-    subroutine cs_immersed_boundary_wall_functions(f_id, st_exp, st_imp)  &
-      bind(C, name='cs_immersed_boundary_wall_functions')
-      use, intrinsic :: iso_c_binding
-      implicit none
-      integer(c_int), value :: f_id
-      real(kind=c_double), dimension(*), intent(inout) :: st_exp, st_imp
-    end subroutine cs_immersed_boundary_wall_functions
-
-    !---------------------------------------------------------------------------
-
     !> \brief Compute molar and mass fractions of elementary species Ye, Xe
     !>  (fuel, O2, CO2, H2O, N2) from global species Yg (fuel, oxidant, products)
 
@@ -887,17 +821,6 @@ module cs_c_bindings
 
     !---------------------------------------------------------------------------
 
-    ! Interface to C function checking the presence of a control file
-    ! and dealing with the interactive control.
-
-    subroutine cs_control_check_file()  &
-      bind(C, name='cs_control_check_file')
-      use, intrinsic :: iso_c_binding
-      implicit none
-    end subroutine cs_control_check_file
-
-    !---------------------------------------------------------------------------
-
     ! Interface to C function mapping field pointers
 
     subroutine cs_field_pointer_map_base()  &
@@ -952,57 +875,6 @@ module cs_c_bindings
       real(kind=c_double), dimension(*), intent(in) :: vol, x, y
       real(kind=c_double) :: gres
     end function cs_gres
-
-    !---------------------------------------------------------------------------
-
-    !> Interface to C function defining turbulence model through the GUI.
-
-    subroutine cs_gui_turb_model()  &
-      bind(C, name='cs_gui_turb_model')
-      use, intrinsic :: iso_c_binding
-      implicit none
-    end subroutine cs_gui_turb_model
-
-    !---------------------------------------------------------------------------
-
-    !> Interface to C function defining reference length and reference velocity
-    !> for the initialization of the turbulence variables through the GUI.
-
-    subroutine cs_gui_turb_ref_values()  &
-      bind(C, name='cs_gui_turb_ref_values')
-      use, intrinsic :: iso_c_binding
-      implicit none
-    end subroutine cs_gui_turb_ref_values
-
-    !---------------------------------------------------------------------------
-
-    !> Interface to C function defining user variables through the GUI.
-
-    subroutine cs_gui_user_variables()  &
-      bind(C, name='cs_gui_user_variables')
-      use, intrinsic :: iso_c_binding
-      implicit none
-    end subroutine cs_gui_user_variables
-
-    !---------------------------------------------------------------------------
-
-    ! Interface to C function selecting specific physical models.
-
-    subroutine cs_gui_physical_model_select()  &
-      bind(C, name='cs_gui_physical_model_select')
-      use, intrinsic :: iso_c_binding
-      implicit none
-    end subroutine cs_gui_physical_model_select
-
-    !---------------------------------------------------------------------------
-
-    !> Interface to C function defining time moments through the GUI.
-
-    subroutine cs_gui_time_moments()  &
-      bind(C, name='cs_gui_time_moments')
-      use, intrinsic :: iso_c_binding
-      implicit none
-    end subroutine cs_gui_time_moments
 
     !---------------------------------------------------------------------------
 
@@ -1414,17 +1286,6 @@ module cs_c_bindings
 
     !---------------------------------------------------------------------------
 
-    ! Interface to C function building boundary zones.
-
-    subroutine cs_boundary_zone_build_all(mesh_modified)  &
-      bind(C, name='cs_boundary_zone_build_all')
-      use, intrinsic :: iso_c_binding
-      implicit none
-      logical(kind=c_bool), value :: mesh_modified
-    end subroutine cs_boundary_zone_build_all
-
-    !---------------------------------------------------------------------------
-
     ! Interface to C user function for boundary conditions
 
     subroutine user_boundary_conditions(bc_type)  &
@@ -1433,17 +1294,6 @@ module cs_c_bindings
       implicit none
       integer(kind=c_int), dimension(*), intent(inout) :: bc_type
     end subroutine user_boundary_conditions
-
-    !---------------------------------------------------------------------------
-
-    ! Interface to C user function for boundary mass source terms (condensation)
-
-    subroutine cs_user_wall_condensation(iappel)  &
-      bind(C, name='cs_user_wall_condensation')
-      use, intrinsic :: iso_c_binding
-      implicit none
-      integer(kind=c_int), intent(in), value :: iappel
-    end subroutine cs_user_wall_condensation
 
     !---------------------------------------------------------------------------
 
@@ -1476,26 +1326,6 @@ module cs_c_bindings
       integer(c_int), value :: f_id
       real(kind=c_double), dimension(*), intent(inout) :: st_exp, st_imp
     end subroutine user_source_terms
-
-    !---------------------------------------------------------------------------
-
-    ! Interface to C user function for user arrays
-
-    subroutine cs_gui_user_arrays()  &
-      bind(C, name='cs_gui_user_arrays')
-      use, intrinsic :: iso_c_binding
-      implicit none
-    end subroutine cs_gui_user_arrays
-
-    !---------------------------------------------------------------------------
-
-    ! Interface to C user function for user calculator functions
-
-    subroutine cs_gui_calculator_functions()  &
-      bind(C, name='cs_gui_calculator_functions')
-      use, intrinsic :: iso_c_binding
-      implicit none
-    end subroutine cs_gui_calculator_functions
 
     !---------------------------------------------------------------------------
 
@@ -1568,32 +1398,6 @@ module cs_c_bindings
 
     !---------------------------------------------------------------------------
 
-    ! Interface to C function computing the sound velocity square
-
-    subroutine cs_thermal_model_c_square(cp, temp,                  &
-                                         fracv, fracm, frace,       &
-                                         dc2, l_size)               &
-      bind(C, name='cs_thermal_model_c_square')
-      use, intrinsic :: iso_c_binding
-      implicit none
-      integer(c_int), value :: l_size
-      real(kind=c_double), dimension(*) :: cp, temp, dc2
-      real(kind=c_double), dimension(*) :: fracv, fracm, frace
-    end subroutine cs_thermal_model_c_square
-
-    !---------------------------------------------------------------------------
-
-    ! Interface to C function that adds the kinetic source term into the RHS
-    ! of the thermal equation
-    subroutine cs_thermal_model_add_kst(smbrs) &
-      bind(C, name='cs_thermal_model_add_kst')
-      use, intrinsic :: iso_c_binding
-      implicit none
-      real(kind=c_double), dimension(*) :: smbrs
-    end subroutine cs_thermal_model_add_kst
-
-    !---------------------------------------------------------------------------
-
     ! Interface to C soot production function
     subroutine cs_soot_production(f_id, smbrs, rovsdt) &
       bind(C, name='cs_soot_production')
@@ -1602,104 +1406,6 @@ module cs_c_bindings
       integer(c_int), value :: f_id
       real(kind=c_double), dimension(*) :: smbrs, rovsdt
     end subroutine cs_soot_production
-
-
-   !---------------------------------------------------------------------------
-
-    ! Interface to C function that adds the kinetic source term into the RHS
-    ! of the thermal equation
-    subroutine cs_thermal_model_pdivu(smbrs)           &
-      bind(C, name='cs_thermal_model_pdivu')
-      use, intrinsic :: iso_c_binding
-      implicit none
-      real(kind=c_double), dimension(*)     :: smbrs
-    end subroutine cs_thermal_model_pdivu
-
-    !---------------------------------------------------------------------------
-
-    ! Interface to C function that computes the thermal equation related CFL
-    subroutine cs_thermal_model_cflt(croma, tempk, tempka,      &
-                                          xcvv, vel, imasfl, cflt)   &
-      bind(C, name='cs_thermal_model_cflt')
-      use, intrinsic :: iso_c_binding
-      implicit none
-      real(kind=c_double), dimension(3,*)   :: vel
-      real(kind=c_double), dimension(*)     :: tempk, tempka, croma, xcvv
-      real(kind=c_double), dimension(*)     :: imasfl, cflt
-    end subroutine cs_thermal_model_cflt
-
-
-    !---------------------------------------------------------------------------
-
-    ! Interface to C function that adds the kinetic source term into the RHS
-    ! of the thermal equation
-    subroutine cs_thermal_model_dissipation(vistot, gradv, smbrs) &
-      bind(C, name='cs_thermal_model_dissipation')
-      use, intrinsic :: iso_c_binding
-      implicit none
-      real(kind=c_double), dimension(3,3,*) :: gradv
-      real(kind=c_double), dimension(*)     :: vistot, smbrs
-    end subroutine cs_thermal_model_dissipation
-
-    !---------------------------------------------------------------------------
-
-    ! Interface to C function that computes the isobaric heat capacity
-    subroutine cs_thermal_model_cv(xcvv) &
-      bind(C, name='cs_thermal_model_cv')
-      use, intrinsic :: iso_c_binding
-      implicit none
-      real(kind=c_double), dimension(*)     :: xcvv
-    end subroutine cs_thermal_model_cv
-
-    !---------------------------------------------------------------------------
-
-    ! Interface to C function that computes the isobaric heat capacity
-    subroutine cs_thermal_model_init() &
-      bind(C, name='cs_thermal_model_init')
-      use, intrinsic :: iso_c_binding
-      implicit none
-    end subroutine cs_thermal_model_init
-
-    !---------------------------------------------------------------------------
-
-    ! Interface to C function computing the internal energy derivative related
-    ! to T
-
-    function cs_compute_demdt(pres, temp,                    &
-                              yw) result (demdt)  &
-      bind(C, name='cs_compute_demdt')
-      use, intrinsic :: iso_c_binding
-      implicit none
-      real(kind=c_double), value :: pres, temp, yw
-      real(kind=c_double) :: demdt
-    end function cs_compute_demdt
-
-    !---------------------------------------------------------------------------
-
-    ! Interface to C function computing the internal energy derivative related
-    ! to T
-
-    function cs_thermal_model_demdt_ecsnt(pres, temp,                   &
-                                          yw, cpa,                      &
-                                          cpv, cpl, l00) result (demdt) &
-      bind(C, name='cs_thermal_model_demdt_ecsnt')
-      use, intrinsic :: iso_c_binding
-      implicit none
-      real(kind=c_double), value :: pres, temp, yw
-      real(kind=c_double), value :: cpa, cpv, cpl, l00
-      real(kind=c_double) :: demdt
-    end function cs_thermal_model_demdt_ecsnt
-
-    !---------------------------------------------------------------------------
-
-    !> \brief Read lagrangian moments checkpoint information.
-
-    subroutine lagr_moment_restart_read(r)  &
-      bind(C, name='cs_lagr_moment_restart_read')
-      use, intrinsic :: iso_c_binding
-      implicit none
-      type(c_ptr), value :: r
-    end subroutine lagr_moment_restart_read
 
     !---------------------------------------------------------------------------
 
@@ -1713,245 +1419,17 @@ module cs_c_bindings
     end subroutine gas_mix_add_species
 
     !---------------------------------------------------------------------------
-
-    !> \brief  Free array mapping gas mix species ids to field ids.
-
-    subroutine finalize_gas_mix()  &
-      bind(C, name='cs_gas_mix_finalize')
-      use, intrinsic :: iso_c_binding
-      implicit none
-    end subroutine finalize_gas_mix
-
-    !---------------------------------------------------------------------------
     !> \brief Set wall condensation model
     !
     !> \param[in]   model     Integer related to the choice of model
     !---------------------------------------------------------------------------
+
     subroutine cs_wall_condensation_set_model(model)   &
       bind(C, name='cs_wall_condensation_set_model')
       use, intrinsic :: iso_c_binding
       implicit none
       integer(c_int), intent(in), value :: model
     end subroutine cs_wall_condensation_set_model
-
-    !---------------------------------------------------------------------------
-    !> \brief Set wall condensation on/off state
-    !
-    !> \param[in]   icondb     Integer related to the onoff state of wall
-    !                           condensation modeling (-1: off, O: on)
-    !> \param[in]   icondv     Integer related to the onoff state of wall
-    !                           condensation modeling with metal
-    !                           structures (-1: off, O: on)
-    !---------------------------------------------------------------------------
-    subroutine cs_wall_condensation_set_onoff_state(icondb, icondv)   &
-      bind(C, name='cs_wall_condensation_set_onoff_state')
-      use, intrinsic :: iso_c_binding
-      implicit none
-      integer(c_int), intent(in), value :: icondb, icondv
-    end subroutine cs_wall_condensation_set_onoff_state
-
-    !---------------------------------------------------------------------------
-    !> \brief Compute wall condensation mass and energy source terms
-    !
-    !> \param[in]   total_htc Total heat transfer coefficient
-    !---------------------------------------------------------------------------
-    subroutine cs_wall_condensation_compute(total_htc)   &
-      bind(C, name='cs_wall_condensation_compute')
-      use, intrinsic :: iso_c_binding
-      implicit none
-      real(kind=c_double), dimension(*), intent(out) :: total_htc
-    end subroutine cs_wall_condensation_compute
-
-    !---------------------------------------------------------------------------
-
-    !> \brief Create global 1d wall thermal model structure.
-
-    subroutine cs_1d_wall_thermal_create()  &
-      bind(C, name='cs_1d_wall_thermal_create')
-      use, intrinsic :: iso_c_binding
-      implicit none
-    end subroutine cs_1d_wall_thermal_create
-
-    !---------------------------------------------------------------------------
-
-    !> \brief Allocate the array of structures local_models.
-
-    subroutine init_1d_wall_thermal_local_models()  &
-      bind(C, name='cs_1d_wall_thermal_local_models_create')
-      use, intrinsic :: iso_c_binding
-      implicit none
-    end subroutine init_1d_wall_thermal_local_models
-
-    !---------------------------------------------------------------------------
-
-    !> \brief Create the 1D mesh for each face and initialize the temperature.
-
-    subroutine cs_1d_wall_thermal_mesh_create()  &
-      bind(C, name='cs_1d_wall_thermal_mesh_create')
-      use, intrinsic :: iso_c_binding
-      implicit none
-    end subroutine cs_1d_wall_thermal_mesh_create
-
-    !---------------------------------------------------------------------------
-
-    !> \brief Log information related to 1D wall thermal problem
-
-    subroutine cs_1d_wall_thermal_log()  &
-      bind(C, name='cs_1d_wall_thermal_log')
-      use, intrinsic :: iso_c_binding
-      implicit none
-    end subroutine cs_1d_wall_thermal_log
-
-    !---------------------------------------------------------------------------
-
-    !> \brief Read the restart file of the 1D-wall thermal module.
-
-    subroutine cs_1d_wall_thermal_read()  &
-      bind(C, name='cs_1d_wall_thermal_read')
-      use, intrinsic :: iso_c_binding
-      implicit none
-    end subroutine cs_1d_wall_thermal_read
-
-    !---------------------------------------------------------------------------
-
-    !> \brief Write the restart file of the 1D-wall thermal module.
-
-    subroutine cs_1d_wall_thermal_write()  &
-      bind(C, name='cs_1d_wall_thermal_write')
-      use, intrinsic :: iso_c_binding
-      implicit none
-    end subroutine cs_1d_wall_thermal_write
-
-    !---------------------------------------------------------------------------
-
-    !> \brief Free members of the global 1d wall thermal structure.
-
-    subroutine cs_1d_wall_thermal_free()  &
-      bind(C, name='cs_1d_wall_thermal_free')
-      use, intrinsic :: iso_c_binding
-      implicit none
-    end subroutine cs_1d_wall_thermal_free
-
-    !---------------------------------------------------------------------------
-
-    !> \brief Destroy the global 1d wall thermal structure.
-
-    subroutine cs_1d_wall_thermal_finalize()  &
-      bind(C, name='cs_1d_wall_thermal_finalize')
-      use, intrinsic :: iso_c_binding
-      implicit none
-    end subroutine cs_1d_wall_thermal_finalize
-
-    !---------------------------------------------------------------------------
-
-    !> \brief Return pointers to nfpt1d and nfpt1t.
-
-    !> \param[out]   nfpt1d   Pointer to nfpt1d
-    !> \param[out]   nfpt1t   Pointer to nfpt1t
-
-    subroutine cs_f_1d_wall_thermal_get_pointers(nfpt1d, nfpt1t) &
-      bind(C, name='cs_f_1d_wall_thermal_get_pointers')
-      use, intrinsic :: iso_c_binding
-      implicit none
-      type(c_ptr), intent(out) :: nfpt1d, nfpt1t
-    end subroutine cs_f_1d_wall_thermal_get_pointers
-
-    !---------------------------------------------------------------------------
-
-    !> \brief Data checking for the 1D thermal wall module.
-
-    !> \param[in]   iappel   Call number
-    !> \param[in]   isuit1   Restart caculation or not
-
-    subroutine cs_1d_wall_thermal_check(iappel, isuit1) &
-      bind(C, name='cs_1d_wall_thermal_check')
-      use, intrinsic :: iso_c_binding
-      implicit none
-      integer(c_int), value :: iappel, isuit1
-    end subroutine cs_1d_wall_thermal_check
-
-    !---------------------------------------------------------------------------
-
-    !> \brief  Binding to cs_gui_internal_coupling
-
-    subroutine cs_gui_internal_coupling()  &
-      bind(C, name='cs_gui_internal_coupling')
-      use, intrinsic :: iso_c_binding
-      implicit none
-    end subroutine cs_gui_internal_coupling
-
-    !---------------------------------------------------------------------------
-
-    !> \brief  Binding to cs_user_internal_coupling
-
-    subroutine cs_user_internal_coupling()  &
-      bind(C, name='cs_user_internal_coupling')
-      use, intrinsic :: iso_c_binding
-      implicit none
-    end subroutine cs_user_internal_coupling
-
-    !---------------------------------------------------------------------------
-
-    !> \brief  Binding to cs_user_internal_coupling
-
-    subroutine cs_internal_coupling_setup()  &
-      bind(C, name='cs_internal_coupling_setup')
-      use, intrinsic :: iso_c_binding
-      implicit none
-    end subroutine cs_internal_coupling_setup
-
-    !---------------------------------------------------------------------------
-
-    !> \brief Binding to cs_f_ic_field_coupled_faces
-
-    subroutine cs_f_ic_field_coupled_faces(f_id, c_p)  &
-      bind(C, name='cs_f_ic_field_coupled_faces')
-      use, intrinsic :: iso_c_binding
-      implicit none
-      integer(kind=c_int), value :: f_id
-      type(c_ptr), intent(out)   :: c_p
-    end subroutine cs_f_ic_field_coupled_faces
-
-    !---------------------------------------------------------------------------
-
-    !> \brief Binding to cs_ic_field_dist_data_by_face_id
-
-    !> \param[in]  field_id    field id
-    !> \param[in]  stride      number of values (interlaced) by entity
-    !> \param[in]  tab_distant exchanged data by face id
-    !> \param[out] tab_local   local data by face id
-
-    subroutine cs_ic_field_dist_data_by_face_id(field_id,    &
-                                                stride,      &
-                                                tab_distant, &
-                                                tab_local)   &
-      bind(C, name='cs_ic_field_dist_data_by_face_id')
-      use, intrinsic :: iso_c_binding
-      implicit none
-      integer(kind=c_int), value :: field_id, stride
-      real(kind=c_double), dimension(*), intent(in) :: tab_distant
-      real(kind=c_double), dimension(*), intent(out) :: tab_local
-    end subroutine cs_ic_field_dist_data_by_face_id
-
-    !---------------------------------------------------------------------------
-
-    !> \brief  Binding to cs_internal_coupling_dump
-
-    subroutine cs_internal_coupling_dump()  &
-      bind(C, name='cs_internal_coupling_dump')
-      use, intrinsic :: iso_c_binding
-      implicit none
-    end subroutine cs_internal_coupling_dump
-
-    !---------------------------------------------------------------------------
-
-    !> \brief  Check calculation parameters.
-
-    subroutine parameters_check() &
-      bind(C, name='cs_parameters_check')
-      use, intrinsic :: iso_c_binding
-      implicit none
-    end subroutine parameters_check
 
     !---------------------------------------------------------------------------
 
@@ -2373,28 +1851,6 @@ module cs_c_bindings
 
     !---------------------------------------------------------------------------
 
-    ! Read turbomachinery metadata from restart file.
-
-    subroutine turbomachinery_restart_read(r)  &
-      bind(C, name='cs_turbomachinery_restart_read')
-      use, intrinsic :: iso_c_binding
-      implicit none
-      type(c_ptr), value :: r
-    end subroutine turbomachinery_restart_read
-
-    !---------------------------------------------------------------------------
-
-    ! Write turbomachinery metadata from restart file.
-
-    subroutine turbomachinery_restart_write(r)  &
-      bind(C, name='cs_turbomachinery_restart_write')
-      use, intrinsic :: iso_c_binding
-      implicit none
-      type(c_ptr), value :: r
-    end subroutine turbomachinery_restart_write
-
-    !---------------------------------------------------------------------------
-
     ! Interface to C function to count number of buoyant scalars.
 
     subroutine cs_velocity_pressure_set_n_buoyant_scalars()   &
@@ -2402,49 +1858,6 @@ module cs_c_bindings
       use, intrinsic :: iso_c_binding
       implicit none
     end subroutine cs_velocity_pressure_set_n_buoyant_scalars
-
-    !---------------------------------------------------------------------------
-
-    ! Interface to C function updating mesh quantities in the ALE framework.
-
-    subroutine cs_ale_update_mesh_quantities(min_vol, max_vol, tot_vol)   &
-      bind(C, name='cs_ale_update_mesh_quantities')
-      use, intrinsic :: iso_c_binding
-      implicit none
-      real(kind=c_double), intent(inout) :: min_vol, max_vol, tot_vol
-    end subroutine cs_ale_update_mesh_quantities
-
-    !---------------------------------------------------------------------------
-
-    ! Interface to C function updating the mesh in the ALE framework.
-
-    subroutine cs_ale_update_mesh(itrale)   &
-      bind(C, name='cs_ale_update_mesh')
-      use, intrinsic :: iso_c_binding
-      implicit none
-      integer(c_int), value :: itrale
-    end subroutine cs_ale_update_mesh
-
-    !---------------------------------------------------------------------------
-
-    ! Interface to C function solving mesh velocity in ALE framework.
-
-    subroutine cs_ale_solve_mesh_velocity(iterns)   &
-      bind(C, name='cs_ale_solve_mesh_velocity')
-      use, intrinsic :: iso_c_binding
-      implicit none
-      integer(c_int), value :: iterns
-    end subroutine cs_ale_solve_mesh_velocity
-
-    !---------------------------------------------------------------------------
-
-    !> \brief  Binding to cs_ale_activate
-
-    subroutine cs_ale_activate()  &
-      bind(C, name='cs_ale_activate')
-      use, intrinsic :: iso_c_binding
-      implicit none
-    end subroutine cs_ale_activate
 
     !---------------------------------------------------------------------------
 
@@ -2537,16 +1950,6 @@ module cs_c_bindings
       integer(c_int), value :: phase_id
       real(kind=c_double), dimension(6,*), intent(out) :: rij
     end subroutine cs_turbulence_ke_q
-
-    !---------------------------------------------------------------------------
-    ! Interface to C function initializing turbulence variables based
-    ! on reference quantities.
-
-    subroutine cs_turbulence_init_by_ref_quantities() &
-      bind(C, name='cs_turbulence_init_by_ref_quantities')
-      use, intrinsic :: iso_c_binding
-      implicit none
-    end subroutine cs_turbulence_init_by_ref_quantities
 
     !---------------------------------------------------------------------------
     !> \brief Clipping of the turbulent Reynods stress tensor and the turbulent

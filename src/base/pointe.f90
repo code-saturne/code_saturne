@@ -81,24 +81,6 @@ module pointe
 
   !=============================================================================
 
-  !> \defgroup thermal_1D Thermal 1D module parameters
-
-  !> \addtogroup thermal_1D
-  !> \{
-
-  !> number of boundary faces which are coupled
-  !> with a wall 1D thermal module. See the user subroutine
-  !> \ref cs_user_1d_wall_thermal
-  integer(c_int), pointer, save :: nfpt1d
-
-  !> global number of boundary faces which are coupled with
-  !> a wall 1D thermal module. (ie sum over all ranks of nfpt1d)
-  integer(c_int), pointer, save :: nfpt1t
-
-  !> \}
-
-  !=============================================================================
-
   !> \defgroup porosity_ibm Porosity from immersed boundaries parameters
 
   !> \addtogroup porosity_ibm
@@ -260,30 +242,6 @@ contains
     call c_f_pointer(c_itrifb, itrifb, [nfabor])
 
   end subroutine boundary_conditions_init
-
-  !=============================================================================
-
-  !> \brief Allocate the cs_glob_1d_wall_thermal structure.
-
-  subroutine init_1d_wall_thermal() &
-    bind(C, name='cs_f_init_1d_wall_thermal')
-
-    use, intrinsic :: iso_c_binding
-    use cs_c_bindings
-
-    implicit none
-
-    ! Local variables
-    type(c_ptr) :: c_nfpt1d, c_nfpt1t
-
-    call cs_1d_wall_thermal_create
-
-    call cs_f_1d_wall_thermal_get_pointers(c_nfpt1d, c_nfpt1t)
-
-    call c_f_pointer(c_nfpt1d, nfpt1d)
-    call c_f_pointer(c_nfpt1t, nfpt1t)
-
-  end subroutine init_1d_wall_thermal
 
   !=============================================================================
 

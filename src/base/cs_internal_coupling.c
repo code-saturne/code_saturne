@@ -99,44 +99,6 @@ BEGIN_C_DECLS
 static cs_internal_coupling_t  *_internal_coupling = NULL;
 static int                      _n_internal_couplings = 0;
 
-/*============================================================================
- * Prototypes for functions intended for use only by Fortran wrappers.
- * (descriptions follow, with function bodies).
- *============================================================================*/
-
-void
-cs_f_ic_field_coupled_faces(const int   field_id,
-                            bool      **p);
-
-/*============================================================================
- * Fortran wrapper function definitions
- *============================================================================*/
-
-/*----------------------------------------------------------------------------
- * Return a pointer to coupling faces indicator array by face id for a given
- * field id.
- *
- * This function is intended for use by Fortran wrappers.
- *
- * parameters:
- *   field_id  <-- field id
- *   p         --> returned pointer
- *----------------------------------------------------------------------------*/
-
-void
-cs_f_ic_field_coupled_faces(const int   field_id,
-                            bool      **p)
-{
-  const cs_field_t* f = cs_field_by_id(field_id);
-  const int coupling_key_id = cs_field_key_id("coupling_entity");
-  int coupling_id = cs_field_get_key_int(f,
-                                         coupling_key_id);
-  const cs_internal_coupling_t  *cpl
-    = cs_internal_coupling_by_id(coupling_id);
-
-  *p = cpl->coupled_faces;
-}
-
 /*=============================================================================
  * Private function definitions
  *============================================================================*/

@@ -182,21 +182,6 @@ const cs_1d_wall_thermal_t *cs_glob_1d_wall_thermal = &_1d_wall_thermal;
 static cs_restart_t *cs_glob_tpar1d_suite = NULL;
 
 /*============================================================================
- * Prototypes for functions intended for use only by Fortran wrappers.
- * (descriptions follow, with function bodies).
- *============================================================================*/
-
-void
-cs_f_1d_wall_thermal_get_pointers(cs_lnum_t     **nfpt1d,
-                                  cs_gnum_t     **nfpt1t);
-
-void
-cs_f_1d_wall_thermal_get_faces(cs_lnum_t **ifpt1d);
-
-void
-cs_f_1d_wall_thermal_get_temp(cs_real_t **tppt1d);
-
-/*============================================================================
  * Private function definitions
  *============================================================================*/
 
@@ -245,54 +230,6 @@ _1d_wall_thermal_local_models_init(void)
       =   _1d_wall_thermal.local_models[ii-1].t
         + _1d_wall_thermal.local_models[ii-1].nppt1d;
   }
-}
-
-/*============================================================================
- * Fortran wrapper function definitions
- *============================================================================*/
-
-/*----------------------------------------------------------------------------*/
-/*! \brief Get pointers to members of the global 1d wall thermal structure.
- *
- * This function is intended for use by Fortran wrappers, and
- * enables mapping to Fortran global pointers.
- *
- * parameters:
- * \param[out]   nfpt1d   pointer to cs_glob_1d_wall_thermal->nfpt1d
- * \param[out]   nfpt1t   pointer to cs_glob_1d_wall_thermal->nfpt1t
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_f_1d_wall_thermal_get_pointers(cs_lnum_t     **nfpt1d,
-                                  cs_gnum_t     **nfpt1t)
-{
-  *nfpt1d = &(_1d_wall_thermal.nfpt1d);
-  *nfpt1t = &(_1d_wall_thermal.nfpt1t);
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Return the ifpt1d array for the 1D wall thermal module.
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_f_1d_wall_thermal_get_faces(cs_lnum_t **ifpt1d)
-{
-  *ifpt1d = _1d_wall_thermal.ifpt1d;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Return the tppt1d array for the 1D wall thermal module.
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_f_1d_wall_thermal_get_temp(cs_real_t **tppt1d)
-{
-  *tppt1d = _1d_wall_thermal.tppt1d;
 }
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */

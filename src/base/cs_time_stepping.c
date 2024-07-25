@@ -122,9 +122,6 @@ BEGIN_C_DECLS
 /* Bindings to Fortran routines */
 
 void
-cs_f_init_1d_wall_thermal(void);
-
-void
 cs_f_boundary_conditions_init(void);
 
 void
@@ -339,8 +336,7 @@ cs_time_stepping(void)
   else
     isuit1 = 0;
 
-  cs_f_init_1d_wall_thermal();
-
+  cs_1d_wall_thermal_create();
   cs_user_1d_wall_thermal(iappel);
 
   cs_get_glob_1d_wall_thermal()->nfpt1t = cs_glob_1d_wall_thermal->nfpt1d;
