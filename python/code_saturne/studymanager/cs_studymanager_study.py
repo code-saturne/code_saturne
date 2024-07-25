@@ -313,17 +313,25 @@ class Case(object):
             return [int(resource_config['resource_n_procs']),
                     int(resource_config['resource_exp_time'])]
 
+        # Try to find specific configuration with run_id in the form
+        # [<resource>/run_id=<run_id>] otherwise use classical resource
+
+        specific_resource_name = ""
         resource_name = resource_config['resource_name']
         if resource_name:
             resource_name = resource_name.lower()
+            specific_resource_name = resource_name + "/run_id=" + self.run_id
 
-        if not resource_name or not resource_name in run_conf.sections:
+        if not resource_name \
+           or (not resource_name in run_conf.sections
+               and not specific_resource_name in run_conf.sections):
             resource_name = resource_config['batch_name']
-            if not resource_name or not resource_name in run_conf.sections:
+            if resource_name:
+                specific_resource_name = resource_name + "/run_id=" + self.run_id
+            if not resource_name \
+               or (not resource_name in run_conf.sections
+                   and not specific_resource_name in run_conf.sections):
                 resource_name = 'job_defaults'
-
-        # Try to find specific configuration with run_id in the form
-        # [<resource>/run_id=<run_id>] otherwise use classical resource
 
         specific_resource_name = resource_name + "/run_id=" + self.run_id
         if specific_resource_name in run_conf.sections:
