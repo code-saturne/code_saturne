@@ -96,7 +96,6 @@ use coincl
 use cpincl
 use field
 use cavitation
-use rotation
 use atincl
 use atsoil
 use atchem

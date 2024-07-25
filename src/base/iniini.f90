@@ -40,7 +40,6 @@ use dimens
 use numvar
 use optcal
 use cstphy
-use rotation
 use entsor
 use pointe
 use albase
