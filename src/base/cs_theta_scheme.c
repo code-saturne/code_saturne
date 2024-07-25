@@ -123,8 +123,8 @@ cs_theta_scheme_update_var(const cs_lnum_t  iappel)
   cs_real_t *cpro_cp = NULL;
   cs_real_t *cproa_cp = NULL;
   if (f_cp != NULL) {
-    cpro_cp  = CS_F_(cp)->val;
-    cproa_cp = CS_F_(cp)->val_pre;
+    cpro_cp  = f_cp->val;
+    cproa_cp = f_cp->val_pre;
   }
 
   const int time_order = cs_glob_time_scheme->time_order;
@@ -204,8 +204,10 @@ cs_theta_scheme_update_var(const cs_lnum_t  iappel)
       cs_field_current_to_previous(CS_F_(mu));
     if (cs_field_get_key_int(CS_F_(mu_t), key_t_ext_id) > 0)
       cs_field_current_to_previous(CS_F_(mu_t));
-    if ((f_cp != NULL) && (cs_field_get_key_int(CS_F_(cp), key_t_ext_id) > 0))
-      cs_field_current_to_previous(CS_F_(cp));
+    if (f_cp != NULL) {
+      if (cs_field_get_key_int(f_cp, key_t_ext_id) > 0)
+        cs_field_current_to_previous(f_cp);
+    }
 
     /* Extrapolate scalars if required */
     for (int f_id = 0; f_id < cs_field_n_fields(); f_id ++) {
@@ -240,8 +242,10 @@ cs_theta_scheme_update_var(const cs_lnum_t  iappel)
         cs_field_current_to_previous(CS_F_(mu));
       if (cs_restart_get_field_read_status(CS_F_(mu_t)->id) == 0)
         cs_field_current_to_previous(CS_F_(mu_t));
-      if (cs_restart_get_field_read_status(CS_F_(cp)->id) == 0)
-        cs_field_current_to_previous(CS_F_(cp));
+      if (f_cp != NULL) {
+        if (cs_restart_get_field_read_status(f_cp->id) == 0)
+          cs_field_current_to_previous(f_cp);
+      }
 
       /* Update scalars diffusivity if required */
       for (int f_id = 0; f_id < cs_field_n_fields(); f_id ++) {
@@ -264,7 +268,7 @@ cs_theta_scheme_update_var(const cs_lnum_t  iappel)
     if (cs_field_get_key_int(CS_F_(mu), key_t_ext_id) > 0) {
       const cs_real_t theta = cs_glob_time_scheme->thetvi;
       for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-        cs_real_t _viscol = cpro_viscl[c_id]; 
+        cs_real_t _viscol = cpro_viscl[c_id];
         cpro_viscl[c_id] = (1. + theta) * cpro_viscl[c_id]
                            - theta * cproa_viscl[c_id];
         cproa_viscl[c_id] = _viscol;
@@ -273,19 +277,21 @@ cs_theta_scheme_update_var(const cs_lnum_t  iappel)
     if (cs_field_get_key_int(CS_F_(mu_t), key_t_ext_id) > 0) {
       const cs_real_t theta = cs_glob_time_scheme->thetvi;
       for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-        cs_real_t _viscot = cpro_visct[c_id]; 
+        cs_real_t _viscot = cpro_visct[c_id];
         cpro_visct[c_id] = (1. + theta) * cpro_visct[c_id]
                            - theta * cproa_visct[c_id];
         cproa_visct[c_id] = _viscot;
       }
     }
-    if ((f_cp != NULL) && (cs_field_get_key_int(CS_F_(cp), key_t_ext_id) > 0)) {
-      const cs_real_t theta = cs_glob_time_scheme->thetcp;
-      for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-        cs_real_t _cp = cpro_cp[c_id];
-        cpro_cp[c_id] = (1. + theta) * cpro_cp[c_id]
-                        - theta * cproa_cp[c_id];
-        cproa_cp[c_id] = _cp;
+    if (f_cp != NULL) {
+      if (cs_field_get_key_int(f_cp, key_t_ext_id) > 0) {
+        const cs_real_t theta = cs_glob_time_scheme->thetcp;
+        for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+          cs_real_t _cp = cpro_cp[c_id];
+          cpro_cp[c_id] = (1. + theta) * cpro_cp[c_id]
+                              - theta * cproa_cp[c_id];
+          cproa_cp[c_id] = _cp;
+        }
       }
     }
 
@@ -328,7 +334,7 @@ cs_theta_scheme_update_var(const cs_lnum_t  iappel)
      * previous one F(n) in the last iteration. Another modification will
      * be done in iappel = 4.
      * Nothing is done for standard schema (istmpf=1).
-     * In case of iterations in cs_solve_navier_stokes, the following process 
+     * In case of iterations in cs_solve_navier_stokes, the following process
      * is applied in all iterations except the last one if istmpf=0
      *----------------------------------------------------------------------*/
 
@@ -361,7 +367,7 @@ cs_theta_scheme_update_var(const cs_lnum_t  iappel)
      * Nothing is done for standard and second order schemes (istmpf=1 and 2)
      * For the explicit schema (istmpf=0), F(n+1) is saved in imasfl_pre but
      * computations are done with F(n) in imasfl
-     * In case of iterations in cs_solve_navier_stokes, the following process 
+     * In case of iterations in cs_solve_navier_stokes, the following process
      * is applied in all iterations if istmpf differs from 0 and only in the
      * last iteration if istmpf=0. By doing so, from the second sub-iteration
      * the computation will be done with F(n+1) and no longer with F(n).
@@ -411,9 +417,12 @@ cs_theta_scheme_update_var(const cs_lnum_t  iappel)
     if (cs_field_get_key_int(CS_F_(mu_t), key_t_ext_id) > 0)
       for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
         cpro_visct[c_id] = cproa_visct[c_id];
-    if ((f_cp != NULL) && (cs_field_get_key_int(CS_F_(cp), key_t_ext_id) > 0))
-      for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
-        cpro_cp[c_id] = cproa_cp[c_id];
+    if (f_cp != NULL) {
+      if (cs_field_get_key_int(f_cp, key_t_ext_id) > 0) {
+        for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
+          cpro_cp[c_id] = cproa_cp[c_id];
+      }
+    }
 
     /* Restore scalars diffusivity */
     for (int f_id = 0; f_id < cs_field_n_fields(); f_id ++) {
@@ -429,7 +438,7 @@ cs_theta_scheme_update_var(const cs_lnum_t  iappel)
         cs_real_t *cpro_visca = cs_field_by_id(k_f_id)->val;
         cs_real_t *cproa_visca = cs_field_by_id(k_f_id)->val_pre;
 
-        for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) 
+        for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
           cpro_visca[c_id] = cproa_visca[c_id];
 
       }
