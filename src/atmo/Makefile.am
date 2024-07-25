@@ -82,7 +82,6 @@ atlecm.f90 \
 atmcls.f90 \
 atmsol.f90 \
 atphyv.f90 \
-atprop.f90 \
 atr1vf.f90 \
 attssc.f90 \
 attycl.f90 \

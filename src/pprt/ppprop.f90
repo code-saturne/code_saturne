@@ -108,6 +108,12 @@ interface
     implicit none
   end subroutine cs_ctwr_add_property_fields
 
+  subroutine cs_atmo_add_prop_fields()  &
+    bind(C, name='cs_atmo_add_prop_fields')
+    use, intrinsic :: iso_c_binding
+    implicit none
+  end subroutine cs_atmo_add_prop_fields
+
 end interface
 
 !===============================================================================
@@ -149,10 +155,13 @@ if (ippmod(iatmos).ge.0) then
     call field_set_key_int(imomst, keyvis, 1)
   endif
 
-  call atprop
+  call cs_atmo_add_property_fields()
+  ! Update for C
+  call field_get_id_try("real_temperature", itempc)
+  if (ippmod(iatmos).eq.2) then
+    call field_get_id("liquid_water", iliqwt)
+  end if
 
-  ! C version
-  call cs_atmo_add_property_fields
 endif
 
 ! ---> Cooling towers model
