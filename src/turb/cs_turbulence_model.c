@@ -237,9 +237,7 @@ BEGIN_C_DECLS
         results.\n
         In addition, their use induces an increase in the calculation time.\n
         The wall echo terms imply the calculation of the distance to the wall
-        for every cell in the domain. See \ref optcal::icdpar "icdpar" for
-        potential
-        restrictions due to this.
+        for every cell in the domain.
   \var  cs_turb_rans_model_t::idifre
         whole treatment of the diagonal part of the diffusion tensor of \f$
         \tens{R} \f$ and \f$ \varepsilon \f$
@@ -300,10 +298,8 @@ BEGIN_C_DECLS
            - 0: false
         The default value is 1 for the Smagorinsky model
         and 0 for the dynamic model.\n The van Driest
-        wall-damping requires the knowledge of the
-        distance to the nearest wall for each cell
-        in the domain. Refer to keyword \ref optcal::icdpar "icdpar"
-        for potential limitations.\n
+        wall-damping requires the knowledge of the distance
+        to the nearest wall for each cell in the domain.
         Useful if and only if \ref iturb = CS_TURB_LES_SMAGO_CONST
         or CS_TURB_LES_SMAGO_DYN.
 */

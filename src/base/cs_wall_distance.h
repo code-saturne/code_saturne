@@ -46,11 +46,25 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 typedef struct {
-  int need_compute;  /* Is the wall distance needs to be computed */
 
-  int is_up_to_date; /* Is the wall distance up to date */
+  int need_compute;  /*!< Does the wall distance need to be computed ? */
 
-  int method;        /* Computation method for the wall distance */
+  int is_up_to_date; /*!< Is the wall distance up to date ? */
+
+  /*! Method used to calculate the distance to the wall y
+   * and the non-dimensional distance \f$ y+ \f$ for all the cells of
+   * the calculation domain (when needed):
+   * - 1: standard algorithm (based on a Poisson equation for y and
+   *      convection equation for \f$ y+ \f$).
+   * - 2: brute force algorithm (based on geometrical considerations),
+   *      for serial mode without periodicity only; useful only
+   *      as a reference for testing.
+   *
+   * Note that in the case of restarts, reading the distance from the
+   * restart file will avoid minor differences due to the fact that
+   * the iterative method will add at least an additional iteration, even
+   * if already converged. */
+  int method;
 
 } cs_wall_distance_options_t;
 
@@ -67,14 +81,9 @@ extern const cs_wall_distance_options_t *cs_glob_wall_distance_options;
  *============================================================================*/
 
 /*----------------------------------------------------------------------------*/
-/*! \file cs_wall_distance.c
- *
- * \brief Compute distance to wall.
- */
-/*----------------------------------------------------------------------------*/
-
-/*----------------------------------------------------------------------------*/
 /*
+ * \brief Compute distance to wall by solving a 3d diffusion equation.
+ *
  * \param[in]  iterns        iteration number on Navier-Stokes equations
  */
 /*----------------------------------------------------------------------------*/
@@ -94,7 +103,7 @@ cs_wall_distance_yplus(cs_real_t  visvdr[]);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Computes distance to wall by a brute force geometric approach
+ * \brief Compute distance to wall by a brute force geometric approach
  *        (serial only)
  */
 /*----------------------------------------------------------------------------*/

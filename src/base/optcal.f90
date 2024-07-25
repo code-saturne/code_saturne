@@ -519,8 +519,7 @@ module optcal
   !> the results.\n
   !> In addition, their use induces an increase in the calculation time.\n
   !> The wall echo terms imply the calculation of the distance to the wall
-  !> for every cell in the domain. See \ref icdpar for potential restrictions
-  !> due to this.
+  !> for every cell in the domain.
   integer(c_int), pointer, save :: irijec
 
   !> whole treatment of the diagonal part of the diffusion tensor of
@@ -551,8 +550,7 @@ module optcal
   !> and 0 for the dynamic model.\n The van Driest
   !> wall-damping requires the knowledge of the
   !> distance to the nearest wall for each cell
-  !> in the domain. Refer to keyword \ref icdpar
-  !> for potential limitations.\n
+  !> in the domain.
   !> Useful if and only if \ref iturb = 40 or 41
   integer(c_int), pointer, save :: idries
 
@@ -820,47 +818,6 @@ module optcal
   !> - 1, the wall distance is up to date,
   !> - 0, the wall distance has not been updated.
   integer(c_int), pointer, save :: imajdy
-
-  !> Specifies the method used to calculate the distance to the wall y
-  !> and the non-dimensional distance \f$ y+ \f$ for all the cells of
-  !> the calculation domain (when necessary):
-  !> - 1: standard algorithm (based on a Poisson equation for y and
-  !> convection equation for \f$ y+ \f$), with reading of the distance
-  !> to the wall from the restart file if possible
-  !> - -1: standard algorithm (based on a Poisson equation for y and
-  !> convection equation for \f$ y+ \f$ ), with systematic recalculation
-  !> of the distance to the wall in case of calculation restart
-  !> - 2: former algorithm (based on geometrical considerations), with
-  !> reading of the distance to the wall from the restart file if possible\n
-  !> - -2: former algorithm (based on geometrical considerations) with
-  !> systematic recalculation of the distance to the wall in case of
-  !> calculation restart.\n\n
-  !> In case of restart calculation, if the position of the walls haven’t
-  !> changed, reading the distance to the wall from the restart file can save
-  !> a fair amount of computational time.\n Useful in \f$ R_{ij}-\epsilon \f$
-  !> model with wall echo
-  !> (\ref iturb=30 and \ref irijec=1), in LES with van Driest damping
-  !> (\ref iturb=40 and \ref idries=1) and in \f$ k-\omega\f$ SST
-  !> (\ref iturb=60).
-  !> By default, \ref icdpar is initialised to -1, in case there has been a
-  !> change in the definition of the boundary conditions between two
-  !> computations (change in the number or the positions of the walls).
-  !> Yet, with the \f$k-\omega\f$
-  !> SST model, the distance to the wall is needed to calculate the turbulent
-  !> viscosity, which is done before the calculation of the distance to the wall.
-  !> Hence, when this model is used (and only in that case), \ref icdpar is set
-  !> to 1 by default, to ensure total continuity of the calculation at restart.
-  !> As a consequence, with the \f$k-\omega\f$ SST model, if the number and
-  !> positions of the walls are changed
-  !> at a calculation restart, it is mandatory for the user to set \ref icdpar
-  !> explicitly to -1, otherwise the distance to the wall used will not
-  !> correspond to the actual position of the walls.\n The former algorithm
-  !> is not compatible with parallelism nor periodicity. Also, whatever the
-  !> value chosen for \ref icdpar, the calculation of the distance to the wall
-  !> is made at the most> once for all at the beginning of the calculation; it
-  !> is therefore not compatible with moving walls. Please contact the
-  !> development team if you need to override this limitation.
-  integer(c_int), pointer, save :: icdpar
 
   !> \}
 
@@ -1134,11 +1091,11 @@ module optcal
     ! Interface to C function retrieving pointers wall distance computation
     ! indicators
 
-    subroutine cs_f_wall_distance_get_pointers(ineedy, imajdy, icdpar) &
+    subroutine cs_f_wall_distance_get_pointers(ineedy, imajdy) &
       bind(C, name='cs_f_wall_distance_get_pointers')
       use, intrinsic :: iso_c_binding
       implicit none
-      type(c_ptr), intent(out) :: ineedy, imajdy, icdpar
+      type(c_ptr), intent(out) :: ineedy, imajdy
     end subroutine cs_f_wall_distance_get_pointers
 
     ! Interface to C function retrieving pointers to members of the
@@ -1560,13 +1517,12 @@ contains
 
     ! Local variables
 
-    type(c_ptr) :: c_ineedy, c_imajdy, c_icdpar
+    type(c_ptr) :: c_ineedy, c_imajdy
 
-    call cs_f_wall_distance_get_pointers(c_ineedy, c_imajdy, c_icdpar)
+    call cs_f_wall_distance_get_pointers(c_ineedy, c_imajdy)
 
     call c_f_pointer(c_ineedy, ineedy)
     call c_f_pointer(c_imajdy, imajdy)
-    call c_f_pointer(c_icdpar, icdpar)
 
   end subroutine
 

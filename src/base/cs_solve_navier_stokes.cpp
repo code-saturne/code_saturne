@@ -954,8 +954,7 @@ _div_rij(const cs_mesh_t     *m,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief In the AL  ctx.wait();
-E framework, update mass flux by adding mesh velocity.
+ * \brief In the ALE framework, update mass flux by adding mesh velocity.
  *
  * \param[in]      m       pointer to associated mesh structure
  * \param[in]      mq      pointer to associated mesh quantities structure

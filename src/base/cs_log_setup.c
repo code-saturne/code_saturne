@@ -74,6 +74,7 @@
 #include "cs_lagr_log.h"
 #include "cs_velocity_pressure.h"
 #include "cs_volume_zone.h"
+#include "cs_wall_distance.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file
@@ -219,6 +220,27 @@ _log_global_model_options(void)
   /* Face viscosity */
 
   cs_space_disc_log_setup();
+
+  /* Wall distance computation mode */
+
+  if (cs_glob_wall_distance_options->need_compute) {
+    cs_log_printf(CS_LOG_SETUP, _("\nWall distance computation\n"
+                                  "---------------------------\n\n"));
+    int method = cs_glob_wall_distance_options->method;
+    cs_log_printf(CS_LOG_SETUP,
+                  _("  method: %d"), method);
+    switch(method) {
+    case 1:
+      cs_log_printf(CS_LOG_SETUP,
+                    _(" (based on diffusion equation)"));
+      break;
+    case 2:
+      cs_log_printf(CS_LOG_SETUP,
+                    _(" (brute force, serial only)"));
+      break;
+    }
+    cs_log_printf(CS_LOG_SETUP, "\n");
+  }
 
   /* ALE */
 

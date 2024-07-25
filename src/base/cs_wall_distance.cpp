@@ -78,7 +78,7 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*!
-  \file cs_wall_distance.c
+  \file cs_wall_distance.cpp
         Compute distance to wall.
 */
 
@@ -112,8 +112,7 @@ const cs_wall_distance_options_t *cs_glob_wall_distance_options
 
 void
 cs_f_wall_distance_get_pointers(int **ineedy,
-                                int **imajdy,
-                                int **icdpar);
+                                int **imajdy);
 
 /*============================================================================
  * Private function definitions
@@ -134,14 +133,11 @@ cs_f_wall_distance_get_pointers(int **ineedy,
 
 void
 cs_f_wall_distance_get_pointers(int **ineedy,
-                                int **imajdy,
-                                int **icdpar)
+                                int **imajdy)
 {
   *ineedy = &(_wall_distance_options.need_compute);
   *imajdy = &(_wall_distance_options.is_up_to_date);
-  *icdpar = &(_wall_distance_options.method);
 }
-
 
 /*============================================================================
  * Public function definitions
@@ -168,7 +164,6 @@ cs_f_wall_distance_get_pointers(int **ineedy,
 void
 cs_wall_distance(int iterns)
 {
-
   const cs_mesh_t  *mesh = cs_glob_mesh;
   cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
   const cs_lnum_t n_cells     = mesh->n_cells;
@@ -519,9 +514,9 @@ cs_wall_distance(int iterns)
         (CS_LOG_DEFAULT,
          _("@\n"
            "@ @@ WARNING: Wall distance calculation\n"
-           "@    =========\n"
+           "@    =======\n"
            "@  The laplacian solution does not respect the maximum\n"
-           "@  principle. (laplacian solution is negative : %14.6e)\n"),
+           "@  principle. (laplacian solution is negative: %14.6e)\n"),
          dismin);
     }
   }
@@ -615,12 +610,11 @@ cs_wall_distance(int iterns)
   CS_FREE_HD(b_mass_flux);
   CS_FREE_HD(rovsdt);
   CS_FREE_HD(w1);
-
 }
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief This subroutine computes the dimensionless distance to the wall
+ * \brief Compute the dimensionless distance to the wall
  *        solving a steady transport equation.
  *
  * This function solves the following steady pure convection equation on

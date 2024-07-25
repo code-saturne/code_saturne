@@ -3005,8 +3005,18 @@ cs_space_disc_log_setup(void)
                  "    Method to compute inner mass flux due to mesh"
                  " velocity in ALE\n"));
   cs_log_printf(CS_LOG_SETUP,
-                _("    iflxmw:    %s\n"),
+                _("      iflxmw:    %s\n"),
                 _(iflxmw_value_str[cs_glob_space_disc->iflxmw]));
+
+  const char *itbrrb_value_str[] = {N_("yes (with reconstruction)"),
+                                    N_("no (without reconstruction)")};
+  cs_log_printf(CS_LOG_SETUP,
+                ("\n"
+                 "    Accurate BCs for temperature/enthalpy or"
+                 " scalars with boundary field\n"));
+  cs_log_printf(CS_LOG_SETUP,
+                _("      itbrrb:    %s\n"),
+                _(itbrrb_value_str[cs_glob_space_disc->itbrrb]));
 }
 
 /*----------------------------------------------------------------------------*/

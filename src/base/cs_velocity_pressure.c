@@ -635,13 +635,19 @@ cs_velocity_pressure_param_log_setup(void)
     = cs_glob_velocity_pressure_param;
 
   cs_log_printf(CS_LOG_SETUP,
-                ("\n"
+                _("\n"
                  "Velocity-pressure parameters\n"
                  "----------------------------\n\n"));
 
   cs_log_printf(CS_LOG_SETUP,
-                ("    nterup:        %d (number of U-P sub iterations)\n"),
+                _("    nterup:        %d (number of U-P sub iterations)\n"),
                 vp_param->nterup);
+
+  if (vp_param->nterup > 1) {
+    cs_log_printf(CS_LOG_SETUP,
+                  _("    epsup:         %g (U-P convergence threshold)\n"),
+                  vp_param->epsup);
+  }
 
   const char *iphydr_value_str[]
     = {N_("0 (no treatment (default) for the improvement of\n"
@@ -728,7 +734,7 @@ cs_velocity_pressure_param_log_setup(void)
 
   cs_log_printf
     (CS_LOG_SETUP,
-     _("    irevmc:     %5d (Velocity reconstruction mode)\n"),
+     _("    irevmc:    %5d (Velocity reconstruction mode)\n"),
      vp_param->irevmc);
 
   const char *itpcol_type_str[] = {N_("staggered time scheme"),
@@ -745,8 +751,8 @@ cs_velocity_pressure_param_log_setup(void)
     eqp = cs_field_get_equation_param_const(f_p);
     cs_log_printf
       (CS_LOG_SETUP,
-       _("    relaxv:      %14.5e for %s (relaxation)\n"
-         "    arak:        %14.5e (Arakawa factor)\n"),
+       _("    relaxv:     %14.5e for %s (relaxation)\n"
+         "    arak:       %14.5e (Arakawa factor)\n"),
        eqp->relaxv, f_p_label, vp_param->arak);
   }
   else {
