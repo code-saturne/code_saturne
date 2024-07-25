@@ -3236,7 +3236,8 @@ cs_atmo_init_meteo_profiles(void)
 
   bft_printf("\n Meteo preprocessing values for computation:\n"
              " dlmo=%17.9e\n z0=%17.9e\n ustar=%17.9e\n tstar=%17.9e\n"
-             " qwstar=%17.9e\n t0=%17.9e\n qw0=%17.9e\n ql0=%17.9e\n",
+             " qwstar=%17.9e\n t0=%17.9e\n qw0=%17.9e\n ql0=%17.9e\n"
+             " zi=%17.9e\n",
              aopt->meteo_dlmo,
              aopt->meteo_z0,
              aopt->meteo_ustar0,
@@ -3244,7 +3245,8 @@ cs_atmo_init_meteo_profiles(void)
              aopt->meteo_qwstar,
              aopt->meteo_t0,
              aopt->meteo_qw0,
-             aopt->meteo_ql0);
+             aopt->meteo_ql0,
+             aopt->meteo_zi);
 }
 
 /*----------------------------------------------------------------------------*/
