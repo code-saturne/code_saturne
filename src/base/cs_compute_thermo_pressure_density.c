@@ -131,7 +131,7 @@ _compute_thermodynamic_pressure_perfect_gas(const cs_lnum_t n_cells,
   const int var_id_key = cs_field_key_id("variable_id");
   const int ipr = cs_field_get_key_int(CS_F_(p), var_id_key) - 1;
   const cs_real_t *spcond = cs_glob_wall_condensation->spcond + ipr*nfbpcd;
-  const cs_real_t *svcond = cs_glob_wall_condensation->svcond + ipr*nfbpcd;
+  const cs_real_t *svcond = cs_glob_wall_condensation->svcond + ipr*ncmast;
 
   const int kbmasf = cs_field_key_id("boundary_mass_flux_id");
   int iflmab =  cs_field_get_key_int(CS_F_(p), kbmasf);
@@ -229,9 +229,7 @@ _compute_thermodynamic_pressure_perfect_gas(const cs_lnum_t n_cells,
 
   // for the first time step : rho^(n-1) = rho^(n)
   if ((cs_restart_present() == 0) && (cs_glob_time_step->nt_cur == 1))
-#   pragma omp parallel for if (n_cells > CS_THR_MIN)
-    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
-      cromo[c_id] = crom[c_id];
+    cs_array_real_copy(n_cells, crom, cromo);
 
   // initialization
   cs_real_t romoy  = 0.0;
@@ -284,9 +282,11 @@ _compute_thermodynamic_pressure_perfect_gas(const cs_lnum_t n_cells,
 void
 cs_compute_thermo_pressure_density(void)
 {
-  const cs_lnum_t n_cells = cs_glob_mesh->n_cells;
-  const cs_lnum_t n_b_faces = cs_glob_mesh->n_b_faces;
-  const cs_lnum_t *b_face_cells = cs_glob_mesh->b_face_cells;
+  const cs_mesh_t *m = cs_glob_mesh;
+
+  const cs_lnum_t n_cells = m->n_cells;
+  const cs_lnum_t n_b_faces = m->n_b_faces;
+  const cs_lnum_t *b_face_cells = m->b_face_cells;
   const cs_real_t *cell_vol = cs_glob_mesh_quantities->cell_vol;
 
   cs_real_t *crom = CS_F_(rho)->val;
@@ -321,7 +321,8 @@ cs_compute_thermo_pressure_density(void)
   for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
     crom[c_id] = fp->pther/fp->pthera*crom[c_id];
 
-  cs_mesh_sync_var_scal(crom);
+  if (m->halo != NULL)
+    cs_halo_sync_var(m->halo, CS_HALO_STANDARD, crom);
 
   /* Update the density at the boundary face
    * with cell value for severe accident low-Mach algorithm */
