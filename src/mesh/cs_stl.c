@@ -74,6 +74,8 @@ BEGIN_C_DECLS
  * Static global variables
  *============================================================================*/
 
+static cs_real_t _tolerance_factor = 0.01; /* Should be settable */
+
 static cs_stl_mesh_info_t _stl_meshes = {NULL, 0, 0};
 
 cs_stl_mesh_info_t *cs_glob_stl_meshes = &_stl_meshes;
@@ -288,82 +290,95 @@ _is_point_inside_plane(cs_real_t plane[6],
 }
 
 /*----------------------------------------------------------------------------
- * Function that performs the intersection between a plane and a polygon.
+ * Performs the intersection between a plane and a polygon.
  * It returns the resulting polygon at the "inner" side of the plane
  * according to its normal.
  *
  * parameters:
- *   nb_vertex     <--> number of vertices of the polygon
- *   vertex_coords <--> coordinates of the vertices (size : 3*nb_vertex)
- *   plane         <--  plane definition (point + normal)
- *
+ *   nb_vertex    <--> number of vertices of the polygon
+ *   vertex_coord <--> coordinates of the vertices (size: 3*nb_vertex)
+ *   plane        <--  plane definition (point + unit normal)
  ----------------------------------------------------------------------------*/
 
 static void
-_polygon_plane_intersection(int           *nb_vertex,
-                            cs_real_3_t  **vertex_coord,
-                            cs_real_t      plane[6])
+_polygon_plane_intersection(int          *nb_vertex,
+                            cs_real_t     vertex_coord[][3],
+                            cs_real_t     plane[6])
 {
   /* Initial number of vertices in the polygon */
-  int n_vtx = *nb_vertex;
-  cs_real_3_t *vtx = *vertex_coord;
+  cs_lnum_t n_vtx = *nb_vertex;
+  cs_real_3_t *vtx = (cs_real_3_t *)vertex_coord;
 
-  cs_real_3_t *new_vtx = NULL;
-  BFT_MALLOC(new_vtx, n_vtx + 1, cs_real_3_t);
-  int j = 0;
+  cs_real_t _new_vtx[10][3];
+  cs_real_3_t *new_vtx = (cs_real_3_t *)_new_vtx;
+  if (n_vtx >= 10)
+    BFT_MALLOC(new_vtx, n_vtx + 1, cs_real_3_t);
+  cs_lnum_t j = 0;
+
+  cs_real_t tolerance_factor = _tolerance_factor;
 
   /* Now we check which edge is intersected by the plane */
-  for (int i = 0; i < n_vtx; i++) {
+  for (cs_lnum_t i = 0; i < n_vtx; i++) {
+    /* In each loop iteration we check if [v1, v2] intersects the plane
+       and if v2 belongs to the negative half space */
+    cs_lnum_t v0 = (i-1+n_vtx) % n_vtx;
     cs_lnum_t v1 = i;
     cs_lnum_t v2 = (i+1) % n_vtx;
+    cs_lnum_t v3 = (i+2) % n_vtx;
 
-    cs_real_t xn = cs_math_3_distance_dot_product(vtx[v1], plane, plane+3);
-    cs_real_t xd = cs_math_3_distance_dot_product(vtx[v1], vtx[v2], plane+3);
+    cs_real_t tolerance_v1
+      = tolerance_factor * cs_math_fmin(cs_math_3_distance(vtx[v0], vtx[v1]),
+                                        cs_math_3_distance(vtx[v1], vtx[v2]));
+    cs_real_t tolerance_v2
+      =  tolerance_factor * cs_math_fmin(cs_math_3_distance(vtx[v1], vtx[v2]),
+                                         cs_math_3_distance(vtx[v2], vtx[v3]));
 
-    // if the edge is //, we keep the vertex
-    if (cs_math_fabs(xd) < 1.0e-12) {
-      if (_is_point_inside_plane(plane, vtx[v2])) {
-        assert(j <= n_vtx);
-        for (cs_lnum_t dir = 0; dir < 3; dir ++)
-          new_vtx[j][dir] = vtx[v2][dir];
-        j++;
-      }
+    cs_real_t xn1 = cs_math_3_distance_dot_product(vtx[v1], plane, plane+3);
+    cs_real_t xn2 = cs_math_3_distance_dot_product(vtx[v2], plane, plane+3);
+
+    /* If [v1, v2] (almost) tangent then add v2 projected on the plane */
+    if (cs_math_fabs(xn1) <= tolerance_v1
+        && (cs_math_fabs(xn2) <= tolerance_v2)) {
+      assert(j <= n_vtx);
+      for (cs_lnum_t dir = 0; dir < 3; dir++)
+        new_vtx[j][dir] = vtx[v2][dir] + xn2 * plane[dir+3];
+      j++;
     }
 
-    // if the edge is not // to the plane
     else {
-      cs_real_t t = xn/xd;
+      /* If intersection and if its not close to v1 or v2 then new vertex */
+      if (xn1*xn2 < 0) {
 
-      // If intersection, new vertex
-      if (t > 0 && t < 1.0) {
-        assert(j <= n_vtx);
-        for (cs_lnum_t dir = 0; dir < 3; dir ++)
-          new_vtx[j][dir] = vtx[v1][dir] + t * (vtx[v2][dir] - vtx[v1][dir]);
-        j++;
+        /* Compute the parametric coordinate t (should always be well defined) */
+        cs_real_t xd = cs_math_3_distance_dot_product(vtx[v1], vtx[v2], plane+3);
+        cs_real_t t = xn1/xd;
+        cs_real_t edge_length = cs_math_3_distance(vtx[v1], vtx[v2]);
+        cs_real_t d1 = t * edge_length, d2 = (1 - t) * edge_length;
+
+        if (d1 > tolerance_v1 && d2 > tolerance_v2) {
+          assert(j <= n_vtx);
+          for (cs_lnum_t dir = 0; dir < 3; dir++)
+            new_vtx[j][dir] = vtx[v1][dir] + t * (vtx[v2][dir] - vtx[v1][dir]);
+          j++;
+        }
       }
 
-      // We check if the second point is "inside" inside the plane
-      // if yes, add the vertex to the new vertex list
-      if (_is_point_inside_plane(plane, vtx[v2])) {
+      /* If v2 inside the plane (with tolerance) then add v2,
+         if its close project it on to the plane */
+      if (xn2 >= -tolerance_v2) {
         assert(j <= n_vtx);
-        for (cs_lnum_t dir = 0; dir < 3; dir ++)
-          new_vtx[j][dir] = vtx[v2][dir];
+        bool v2_close = cs_math_fabs(xn2) < tolerance_v2;
+        for (cs_lnum_t dir = 0; dir < 3; dir++)
+          new_vtx[j][dir] = vtx[v2][dir] + v2_close * xn2 * plane[dir+3];
         j++;
       }
     }
   }
 
-  BFT_REALLOC(vtx, j, cs_real_3_t);
-
-  for (cs_lnum_t i = 0; i < j; i++) {
-    for (cs_lnum_t dir = 0; dir < 3; dir ++)
-      vtx[i][dir] = new_vtx[i][dir];
-  }
-
-  BFT_FREE(new_vtx);
+  if (new_vtx != _new_vtx)
+    BFT_FREE(new_vtx);
 
   *nb_vertex = j;
-  *vertex_coord = vtx;
 }
 
 /*----------------------------------------------------------------------------
@@ -515,8 +530,7 @@ _exact_triangle_box_surface_intersection(const cs_real_t  box_extents[6],
   /* Successively cut the triangle by the planes
    * defined byt the box faces */
   int nv = 3;
-  cs_real_3_t *coords = NULL ;
-  BFT_MALLOC(coords, nv, cs_real_3_t);
+  cs_real_t coords[3][3];
 
   /* Polygon init */
   for (int i = 0; i < nv; i ++){
@@ -542,9 +556,9 @@ _exact_triangle_box_surface_intersection(const cs_real_t  box_extents[6],
     }
   }
 
-  /* Recursively cut the tiangle by the planes */
+  /* Recursively cut the triangle by the planes */
   for (int f = 0; f < 6; f++)
-    _polygon_plane_intersection(&nv, &coords, plane[f]);
+    _polygon_plane_intersection(&nv, coords, plane[f]);
 
   /* If no intersection, surface is 0 */
   if (nv ==0) {
@@ -584,8 +598,6 @@ _exact_triangle_box_surface_intersection(const cs_real_t  box_extents[6],
   }
 
   surf = cs_math_3_norm(f_norm);
-
-  BFT_FREE(coords);
 
   return surf;
 }
