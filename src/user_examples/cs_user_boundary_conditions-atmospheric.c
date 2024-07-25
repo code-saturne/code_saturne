@@ -52,8 +52,6 @@ BEGIN_C_DECLS
  * \file cs_user_boundary_conditions-atmospheric.c
  *
  * \brief Atmospheric example of cs_user_boundary_conditions function.
- *
- * See \ref parameters for examples.
  */
 /*----------------------------------------------------------------------------*/
 
@@ -90,9 +88,9 @@ BEGIN_C_DECLS
  * so for a given face "face_id" and field component "comp_id", access
  * is as follows (where n_b_faces is domain->mesh->n_b_faces):
  *
- *   f->bc_coeffs->rcodcl1[n_b_faces*comp_id + face_id]
- *   f->bc_coeffs->rcodcl2[n_b_faces*comp_id + face_id]
- *   f->bc_coeffs->rcodcl3[n_b_faces*comp_id + face_id]
+ *   f->bc_coeffs->rcodcl1[n_b_faces*comp_id + face_id]\n
+ *   f->bc_coeffs->rcodcl2[n_b_faces*comp_id + face_id]\n
+ *   f->bc_coeffs->rcodcl3[n_b_faces*comp_id + face_id]\n\n
  *
  * Only the icodcl code values from the first component are used in the case
  * of vector or tensor fields, so the icodcl values can be defined as for
@@ -104,6 +102,25 @@ void
 cs_user_boundary_conditions(cs_domain_t  *domain,
                             int           bc_type[])
 {
+  /* For boundary faces of zone "open_11",
+   * assign an inlet boundary condition with automatic choice between
+   * inlet/ outlet according to the meteo profile. */
+
+  /*![example_1]*/
+  {
+    int *iautom = cs_glob_bc_pm_info->iautom;
+
+    const cs_zone_t *zn = cs_boundary_zone_by_name("open_11");
+
+    for (cs_lnum_t e_idx = 0; e_idx < zn->n_elts; e_idx++) {
+      const cs_lnum_t face_id = zn->elt_ids[e_idx];
+
+      bc_type[face_id] = CS_INLET;
+      iautom[face_id] = 1;
+    }
+  }
+  /*! [example_1] */
+
   /* For boundary faces of zone "inlet_3",
    * assign an inlet boundary condition.
    * Here, all other variables prescribed from the meteo profile

@@ -2530,27 +2530,22 @@ _init_zones(const cs_lnum_t   n_b_faces,
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
- * Public Fortran function definitions
+ * Public function definitions
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
  * Boundary conditions treatment
  *
- * Remember: rcodcl[k][j][i] = rcodcl[k*dim1*dim2 + j*dim1 + i]
- *
- * Fortran Interface:
- *
- * subroutine uiclim
- * *****************
- *
- * integer          itypfb   <-- type of boundary for each face
+ * \param[in, out] itypfb   <-- type of boundary for each face
  *----------------------------------------------------------------------------*/
 
-void cs_gui_boundary_conditions_processing(int *itypfb)
+void
+cs_gui_boundary_conditions_processing(int  *itypfb)
 {
   const cs_lnum_t n_b_faces = cs_glob_mesh->n_b_faces;
 
-  const cs_real_3_t *face_cen = (const cs_real_3_t *)cs_glob_mesh_quantities->b_face_cog;
+  const cs_real_3_t *face_cen
+    = (const cs_real_3_t *)cs_glob_mesh_quantities->b_face_cog;
 
   cs_boundary_condition_pm_info_t *bc_pm_info = cs_glob_bc_pm_info;
 
@@ -3127,14 +3122,8 @@ void cs_gui_boundary_conditions_processing(int *itypfb)
 
 /*----------------------------------------------------------------------------
  * Boundary conditions input verification
- *
- * Fortran Interface:
- *
- * SUBROUTINE UICLVE
- * *****************
  *----------------------------------------------------------------------------*/
 
-//void CS_PROCF (uiclve, UICLVE)(void)
 void
 cs_gui_boundary_conditions_verify(void)
 {
@@ -3184,10 +3173,6 @@ cs_gui_boundary_conditions_verify(void)
 
   } /*  for izone */
 }
-
-/*============================================================================
- * Public function definitions
- *============================================================================*/
 
 /*----------------------------------------------------------------------------*/
 /*!

@@ -60,37 +60,25 @@ typedef struct {
  * Static global variables
  *============================================================================*/
 
-/*============================================================================
- * Public function prototypes for Fortran API
+/*=============================================================================
+ * Public function prototypes
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
  * Boundary conditions treatment
  *
- * Fortran Interface:
- *
- * subroutine uiclim
- * *****************
+ * \param[in, out] itypfb   <-- type of boundary for each face
  *----------------------------------------------------------------------------*/
 
-void cs_gui_boundary_conditions_processing(int *itypfb);
+void
+cs_gui_boundary_conditions_processing(int  *itypfb);
 
 /*----------------------------------------------------------------------------
  * Boundary conditions input verification
- *
- * Fortran Interface:
- *
- * SUBROUTINE UICLVE
- * *****************
- *
- * integer          nozppm  <-- max number of boundary conditions zone
  *----------------------------------------------------------------------------*/
 
-void cs_gui_boundary_conditions_verify(void);
-
-/*=============================================================================
- * Public function prototypes
- *============================================================================*/
+void
+cs_gui_boundary_conditions_verify(void);
 
 /*----------------------------------------------------------------------------*/
 /*!

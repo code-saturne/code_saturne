@@ -51,9 +51,7 @@ BEGIN_C_DECLS
 /*!
  * \file cs_user_boundary_conditions-advanced..c
  *
- * \brief User functions for input of calculation parameters.
- *
- * See \ref parameters for examples.
+ * \brief User functions for advanced boundary condition definitions.
  */
 /*----------------------------------------------------------------------------*/
 
@@ -90,9 +88,9 @@ BEGIN_C_DECLS
  * so for a given face "face_id" and field component "comp_id", access
  * is as follows (where n_b_faces is domain->mesh->n_b_faces):
  *
- *   f->bc_coeffs->rcodcl1[n_b_faces*comp_id + face_id]
- *   f->bc_coeffs->rcodcl2[n_b_faces*comp_id + face_id]
- *   f->bc_coeffs->rcodcl3[n_b_faces*comp_id + face_id]
+ *   f->bc_coeffs->rcodcl1[n_b_faces*comp_id + face_id]\n
+ *   f->bc_coeffs->rcodcl2[n_b_faces*comp_id + face_id]\n
+ *   f->bc_coeffs->rcodcl3[n_b_faces*comp_id + face_id]\n\n
  *
  * Only the icodcl code values from the first component are used in the case
  * of vector or tensor fields, so the icodcl values can be defined as for

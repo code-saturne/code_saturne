@@ -114,8 +114,6 @@ integer nmodpp
 
 ! Local variables
 
-integer           iiv
-
 !===============================================================================
 ! Initialize non-standard calculation options for the atmospheric version.
 !===============================================================================

@@ -532,20 +532,12 @@
 
   \section atmospheric_ex_1 Example 1 (Fortran)
 
-  For boundary faces of color 11,
+  For boundary faces of zone "open_11",
   assign an inlet boundary condition prescribed from the
   meteo profile with automatic choice between inlet/ outlet according to
   the meteo profile.
 
-  \snippet cs_user_boundary_conditions-atmo.f90 example_1
-
-  \section atmospheric_ex_2 Example 2 (Fortran)
-
-  For boundary faces of color 21,
-  assign an inlet boundary condition prescribed from the
-  meteo profile.
-
-  \snippet cs_user_boundary_conditions-atmo.f90 example_2
+  \snippet cs_user_boundary_conditions-atmospheric.c example_1
 
   \section atmospheric_ex_3 Example 3
 

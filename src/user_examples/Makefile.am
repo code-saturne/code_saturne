@@ -190,7 +190,6 @@ cs_user_time_table.c \
 cs_user_turbomachinery.c \
 cs_user_zones.c \
 cs_user_atmospheric_model.f90 \
-cs_user_boundary_conditions-atmo.f90 \
 cs_user_boundary_conditions-gas_3ptchem.c \
 cs_user_parameters.f90 \
 cs_user_profile.cxx \
