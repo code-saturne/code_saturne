@@ -500,26 +500,34 @@ def read_run_config_file(i_c, r_c, s_c, pkg, run_conf=None):
     if not r_c['compute_build']:
         r_c['compute_build'] = run_conf.get_bool('run', 'compute_build')
 
+    specific_resource_name = ""
     resource_name = i_c['resource_name']
-    if not resource_name or not resource_name in run_conf.sections:
-        resource_name = i_c['batch']
-        if resource_name:
-            resource_name = os.path.basename(resource_name).lower()
-            i = resource_name.rfind(".")
-            if i > -1:
-                resource_name = resource_name[i+1:]
-    if not resource_name or not resource_name in run_conf.sections:
-        resource_name = 'job_defaults'
-
-    run_conf_r = None
 
     # Try to find specific configuration with run_id in the form
     # [<resource>/run_id=<run_id>] otherwise use classical resource
 
+    if resource_name:
+        resource_name = resource_name.lower()
+        if r_c['run_id']:
+            specific_resource_name = resource_name + "/run_id=" + r_c['run_id'].lower()
+
+    if not resource_name \
+       or (not resource_name in run_conf.sections
+           and not specific_resource_name in run_conf.sections):
+        resource_name = i_c['batch']
+        if resource_name and r_c['run_id']:
+            specific_resource_name = resource_name + "/run_id=" + r_c['run_id'].lower()
+        if not resource_name \
+           or (not resource_name in run_conf.sections
+               and not specific_resource_name in run_conf.sections):
+            resource_name = 'job_defaults'
+
     if r_c['run_id']:
-        specific_resource_name = resource_name + "/run_id=" + r_c['run_id']
+        specific_resource_name = resource_name + "/run_id=" + r_c['run_id'].lower()
         if specific_resource_name in run_conf.sections:
             resource_name = specific_resource_name
+
+    run_conf_r = None
 
     if resource_name in run_conf.sections:
         run_conf_r = run_conf.sections[resource_name]
