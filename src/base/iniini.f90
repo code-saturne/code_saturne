@@ -54,7 +54,6 @@ use vof
 use cavitation
 use radiat
 use turbomachinery
-use cs_nz_condensation, only: init_sizes_pcond
 use ctincl
 use cfpoin
 use vof
@@ -157,7 +156,6 @@ call vof_model_init
 call cavitation_model_init
 
 call map_turbomachinery_model(iturbo)
-call init_sizes_pcond()
 
 !===============================================================================
 ! I/O: entsor.f90

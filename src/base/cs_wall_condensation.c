@@ -88,6 +88,7 @@ BEGIN_C_DECLS
  * Static global variables
  *============================================================================*/
 
+
 //> Constants for the correlation of steam saturated pressure
 static const cs_real_t pr_c = 221.2e+5;
 static const cs_real_t t_c  = 647.3e0;
@@ -957,58 +958,51 @@ cs_wall_condensation_set_onoff_state(int  icondb,
 /*!
  * \brief  Create the context for wall condensation models.
  *
- * \param[in]  nfbpcd   number of faces with wall condensation
- * \param[in]  nzones   number of zones with wall condensation
- * \param[in]  ncmast   number of cells with wall condensation
- * \param[in]  nvolumes number of volumes with condensation
- * \param[in]  nvar     number of variables (?)
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_wall_condensation_create(cs_lnum_t  nfbpcd,
-                            cs_lnum_t  nzones,
-                            cs_lnum_t  ncmast,
-                            cs_lnum_t  nvolumes,
-                            cs_lnum_t  nvar)
+cs_wall_condensation_create(void)
 {
-  _wall_cond.nfbpcd = nfbpcd;
-  if (nzones < 1) {
-    _wall_cond.nzones = 1;
-  }
-  else {
-    _wall_cond.nzones = nzones;
+
+  int n_var = 0;
+  const int n_fields = cs_field_n_fields();
+
+  for (int f_id = 0; f_id < n_fields; f_id++) {
+    cs_field_t *f = cs_field_by_id(f_id);
+    if (!(f->type & CS_FIELD_VARIABLE))
+      continue;
+    n_var += f->dim;
   }
 
-  _wall_cond.ncmast = ncmast;
-  if (nvolumes < 1)
+  if (_wall_cond.nzones < 1)
+    _wall_cond.nzones = 1;
+  if (_wall_cond.nvolumes < 1)
     _wall_cond.nvolumes = 1;
-  else
-    _wall_cond.nvolumes = nvolumes;
 
   // Mesh related quantities
-  BFT_MALLOC(_wall_cond.ifbpcd, nfbpcd, cs_lnum_t);
-  BFT_MALLOC(_wall_cond.itypcd, nfbpcd * nvar, cs_lnum_t);
-  BFT_MALLOC(_wall_cond.izzftcd, nfbpcd, cs_lnum_t);
-  BFT_MALLOC(_wall_cond.spcond, nfbpcd * nvar, cs_real_t);
-  BFT_MALLOC(_wall_cond.hpcond, nfbpcd, cs_real_t);
-  BFT_MALLOC(_wall_cond.twall_cond, nfbpcd, cs_real_t);
-  BFT_MALLOC(_wall_cond.thermal_condensation_flux, nfbpcd, cs_real_t);
-  BFT_MALLOC(_wall_cond.convective_htc, nfbpcd, cs_real_t);
-  BFT_MALLOC(_wall_cond.condensation_htc, nfbpcd, cs_real_t);
-  BFT_MALLOC(_wall_cond.total_htc, nfbpcd, cs_real_t);
-  BFT_MALLOC(_wall_cond.flthr, nfbpcd, cs_real_t);
-  BFT_MALLOC(_wall_cond.dflthr, nfbpcd, cs_real_t);
+  BFT_MALLOC(_wall_cond.ifbpcd, _wall_cond.nfbpcd, cs_lnum_t);
+  BFT_MALLOC(_wall_cond.itypcd, _wall_cond.nfbpcd * n_var, cs_lnum_t);
+  BFT_MALLOC(_wall_cond.izzftcd, _wall_cond.nfbpcd, cs_lnum_t);
+  BFT_MALLOC(_wall_cond.spcond, _wall_cond.nfbpcd * n_var, cs_real_t);
+  BFT_MALLOC(_wall_cond.hpcond, _wall_cond.nfbpcd, cs_real_t);
+  BFT_MALLOC(_wall_cond.twall_cond, _wall_cond.nfbpcd, cs_real_t);
+  BFT_MALLOC(_wall_cond.thermal_condensation_flux, _wall_cond.nfbpcd, cs_real_t);
+  BFT_MALLOC(_wall_cond.convective_htc, _wall_cond.nfbpcd, cs_real_t);
+  BFT_MALLOC(_wall_cond.condensation_htc, _wall_cond.nfbpcd, cs_real_t);
+  BFT_MALLOC(_wall_cond.total_htc, _wall_cond.nfbpcd, cs_real_t);
+  BFT_MALLOC(_wall_cond.flthr, _wall_cond.nfbpcd, cs_real_t);
+  BFT_MALLOC(_wall_cond.dflthr, _wall_cond.nfbpcd, cs_real_t);
 
   // Zone related quantities
-  BFT_MALLOC(_wall_cond.izcophc, nzones, cs_lnum_t);
-  BFT_MALLOC(_wall_cond.izcophg, nzones, cs_lnum_t);
-  BFT_MALLOC(_wall_cond.iztag1d, nzones, cs_lnum_t);
-  BFT_MALLOC(_wall_cond.ztpar, nzones, cs_real_t);
-  BFT_MALLOC(_wall_cond.zxrefcond, 3 * nzones, cs_real_t);
-  BFT_MALLOC(_wall_cond.zprojcond, 3 * nzones, cs_real_t);
+  BFT_MALLOC(_wall_cond.izcophc, _wall_cond.nzones, cs_lnum_t);
+  BFT_MALLOC(_wall_cond.izcophg, _wall_cond.nzones, cs_lnum_t);
+  BFT_MALLOC(_wall_cond.iztag1d, _wall_cond.nzones, cs_lnum_t);
+  BFT_MALLOC(_wall_cond.ztpar, _wall_cond.nzones, cs_real_t);
+  BFT_MALLOC(_wall_cond.zxrefcond, 3 * _wall_cond.nzones, cs_real_t);
+  BFT_MALLOC(_wall_cond.zprojcond, 3 * _wall_cond.nzones, cs_real_t);
 
-  for (cs_lnum_t i = 0; i < nfbpcd; i++) {
+  for (cs_lnum_t i = 0; i < _wall_cond.nfbpcd; i++) {
     _wall_cond.ifbpcd[i]                    = 0;
     _wall_cond.hpcond[i]                    = 0.0;
     _wall_cond.twall_cond[i]                = 0.0;
@@ -1024,13 +1018,13 @@ cs_wall_condensation_create(cs_lnum_t  nfbpcd,
     else {
       _wall_cond.izzftcd[i] = -1;
     }
-    for (cs_lnum_t j = 0; j < nvar; j++) {
-      _wall_cond.itypcd[nvar * i + j] = 0;
-      _wall_cond.spcond[nvar * i + j] = 0.0;
+    for (cs_lnum_t j = 0; j < n_var; j++) {
+      _wall_cond.itypcd[n_var * i + j] = 0;
+      _wall_cond.spcond[n_var * i + j] = 0.0;
     }
   }
 
-  for (cs_lnum_t i = 0; i < nzones; i++) {
+  for (cs_lnum_t i = 0; i < _wall_cond.nzones; i++) {
     _wall_cond.izcophc[i]           = 0;
     _wall_cond.izcophg[i]           = 0;
     _wall_cond.iztag1d[i]           = 0;
@@ -1043,24 +1037,24 @@ cs_wall_condensation_create(cs_lnum_t  nfbpcd,
     _wall_cond.zprojcond[3 * i + 2] = 0.0;
   }
 
-  BFT_MALLOC(_wall_cond.ltmast, ncmast, cs_lnum_t);
-  BFT_MALLOC(_wall_cond.itypst, ncmast * nvar, cs_lnum_t);
-  BFT_MALLOC(_wall_cond.svcond, ncmast * nvar, cs_real_t);
-  BFT_MALLOC(_wall_cond.izmast, ncmast, cs_lnum_t);
-  BFT_MALLOC(_wall_cond.flxmst, ncmast, cs_real_t);
-  BFT_MALLOC(_wall_cond.itagms, nvolumes, cs_lnum_t);
+  BFT_MALLOC(_wall_cond.ltmast, _wall_cond.ncmast, cs_lnum_t);
+  BFT_MALLOC(_wall_cond.itypst, _wall_cond.ncmast * n_var, cs_lnum_t);
+  BFT_MALLOC(_wall_cond.svcond, _wall_cond.ncmast * n_var, cs_real_t);
+  BFT_MALLOC(_wall_cond.izmast, _wall_cond.ncmast, cs_lnum_t);
+  BFT_MALLOC(_wall_cond.flxmst, _wall_cond.ncmast, cs_real_t);
+  BFT_MALLOC(_wall_cond.itagms, _wall_cond.nvolumes, cs_lnum_t);
 
-  cs_array_lnum_fill_zero(ncmast, _wall_cond.ltmast);
+  cs_array_lnum_fill_zero(_wall_cond.ncmast, _wall_cond.ltmast);
 
   if (_wall_cond.nvolumes <= 1)
-    cs_array_lnum_set_value(ncmast, 0, _wall_cond.izmast);
+    cs_array_lnum_set_value(_wall_cond.ncmast, 0, _wall_cond.izmast);
   else
-    cs_array_lnum_set_value(ncmast, -1, _wall_cond.izmast);
+    cs_array_lnum_set_value(_wall_cond.ncmast, -1, _wall_cond.izmast);
 
-  cs_array_lnum_fill_zero(ncmast * nvar, _wall_cond.itypst);
-  cs_array_real_fill_zero(ncmast * nvar, _wall_cond.svcond);
-  cs_array_real_fill_zero(ncmast, _wall_cond.flxmst);
-  cs_array_lnum_set_value(nvolumes, 1, _wall_cond.itagms);
+  cs_array_lnum_fill_zero(_wall_cond.ncmast * n_var, _wall_cond.itypst);
+  cs_array_real_fill_zero(_wall_cond.ncmast * n_var, _wall_cond.svcond);
+  cs_array_real_fill_zero(_wall_cond.ncmast, _wall_cond.flxmst);
+  cs_array_lnum_set_value(_wall_cond.nvolumes, 1, _wall_cond.itagms);
 
   cs_base_at_finalize(cs_wall_condensation_free);
 }

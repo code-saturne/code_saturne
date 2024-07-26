@@ -129,9 +129,6 @@ void
 cs_f_init_chemistry_reacnum(void);
 
 void
-cs_f_init_nz_pcond(void);
-
-void
 cs_f_iniva0(void);
 
 void
@@ -368,7 +365,7 @@ cs_time_stepping(void)
 
   if (   cs_glob_wall_condensation->icondb == 0
       || cs_glob_wall_condensation->icondv == 0) {
-    cs_f_init_nz_pcond();
+    cs_wall_condensation_create();
   }
 
   if (cs_get_glob_1d_wall_thermal()->nfpt1t > 0)
