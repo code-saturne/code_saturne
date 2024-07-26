@@ -196,6 +196,8 @@ cs_turbulence_kw(int phase_id)
   /* Allocate work arrays */
 
   cs_real_t *w1, *dpvar, *gdkgdw, *prodk, *prodw;
+  cs_field_t *f_tke_prod = cs_field_by_name_try("algo:tke_production");
+  cs_field_t *f_tke_buoy = cs_field_by_name_try("algo:tke_buoyancy");
   CS_MALLOC_HD(dpvar, n_cells_ext, cs_real_t, cs_alloc_mode);
   CS_MALLOC_HD(w1, n_cells_ext, cs_real_t, cs_alloc_mode);
   BFT_MALLOC(gdkgdw, n_cells_ext, cs_real_t);
@@ -646,6 +648,11 @@ cs_turbulence_kw(int phase_id)
         prodk[c_id] = prodw[c_id];
         tinstk[c_id] += fmax(d2s3*cell_f_vol[c_id]*ro*cpro_divukw[c_id], 0.);
       }
+
+      /* Save production for post processing */
+      if (f_tke_prod != NULL)
+        f_tke_prod->val[c_id] = prodk[c_id] / ro;
+
     }
   }
 
@@ -782,6 +789,11 @@ cs_turbulence_kw(int phase_id)
       /* Implicit Buoyant terms when negative */
       tinstk[c_id]
         += CS_MAX(cell_f_vol[c_id]*visct/cvara_k[c_id]*grad_dot_g[c_id], 0.);
+
+      /* Save for post processing */
+      if (f_tke_buoy != NULL)
+        f_tke_buoy->val[c_id] = -visct*grad_dot_g[c_id]/rho;
+
     }
 
     /* Free memory */

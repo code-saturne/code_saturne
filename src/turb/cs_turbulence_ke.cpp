@@ -705,7 +705,7 @@ cs_turbulence_ke(int              phase_id,
    *============================================================
    *
    * For the Linear Production k-epsilon model,
-   * the production term is assumed to be asymptotiy in S and
+   * the production term is assumed to be asymptotic in S and
    * not in mu_TxS**2 */
 
   cs_field_t *f_tke_prod = cs_field_by_name_try("algo:tke_production");
