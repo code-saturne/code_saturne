@@ -1276,12 +1276,12 @@ cs_sles_it_cuda_jacobi(cs_sles_it_t              *c,
   assert(c->setup_data != NULL);
 
   cs_real_t *_aux_vectors = NULL;
-  {
+  if (n_cols > 0) {
     const size_t n_wa = 1;
     const size_t wa_size = CS_SIMD_SIZE(n_cols);
 
     if (   aux_vectors == NULL
-        || cs_check_device_ptr(aux_vectors) == CS_ALLOC_HOST
+        || cs_cuda_is_device_ptr(aux_vectors) == false
         || aux_size/sizeof(cs_real_t) < (wa_size * n_wa)) {
 #if defined(MPIX_CUDA_AWARE_SUPPORT) && MPIX_CUDA_AWARE_SUPPORT
       cudaMalloc(&_aux_vectors, wa_size * n_wa *sizeof(cs_real_t));
@@ -1508,12 +1508,12 @@ cs_sles_it_cuda_block_jacobi(cs_sles_it_t              *c,
   assert(c->setup_data != NULL);
 
   cs_real_t *_aux_vectors = NULL;
-  {
+  if (n_cols > 0) {
     const size_t n_wa = 1;
     const size_t wa_size = CS_SIMD_SIZE(n_cols);
 
     if (   aux_vectors == NULL
-        || cs_check_device_ptr(aux_vectors) == CS_ALLOC_HOST
+        || cs_cuda_is_device_ptr(aux_vectors) == false
         || aux_size/sizeof(cs_real_t) < (wa_size * n_wa)) {
 #if defined(MPIX_CUDA_AWARE_SUPPORT) && MPIX_CUDA_AWARE_SUPPORT
       cudaMalloc(&_aux_vectors, wa_size * n_wa *sizeof(cs_real_t));
@@ -1761,8 +1761,8 @@ cs_sles_it_cuda_fcg(cs_sles_it_t              *c,
     const size_t n_wa = 5;
     const size_t wa_size = CS_SIMD_SIZE(n_cols);
 
-    if (   aux_vectors == NULL
-        || cs_check_device_ptr(aux_vectors) != CS_ALLOC_HOST_DEVICE_SHARED
+    if (   aux_vectors == nullptr
+        || cs_cuda_is_device_ptr(aux_vectors) == false
         || aux_size/sizeof(cs_real_t) < (wa_size * n_wa))
        CS_MALLOC_HD(_aux_vectors, wa_size * n_wa, cs_real_t,
                     CS_ALLOC_HOST_DEVICE_SHARED);
@@ -1961,7 +1961,7 @@ cs_sles_it_cuda_gcr(cs_sles_it_t              *c,
     wa_size = CS_SIMD_SIZE(n_cols);
 
     if (   aux_vectors == nullptr
-        || cs_cuda_get_host_ptr(aux_vectors) == nullptr
+        || cs_cuda_is_device_ptr(aux_vectors) == false
         || aux_size/sizeof(cs_real_t) < (wa_size * n_wa))
       CS_MALLOC_HD(_aux_vectors, wa_size * n_wa, cs_real_t, CS_ALLOC_DEVICE);
     else
