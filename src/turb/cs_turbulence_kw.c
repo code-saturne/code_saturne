@@ -783,6 +783,7 @@ cs_turbulence_kw(int phase_id)
 #   pragma omp parallel for if(n_cells_ext > CS_THR_MIN)
     for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
       cs_real_t visct = cpro_pcvto[c_id];
+      cs_real_t rho = cromo[c_id];
       prodw[c_id] += visct*CS_MAX(-grad_dot_g[c_id], 0.);
       prodk[c_id] -= visct*grad_dot_g[c_id];
 
