@@ -321,12 +321,14 @@ cs_internal_coupling_initialize(void);
 /*----------------------------------------------------------------------------*/
 
 void
-cs_internal_coupling_iterative_scalar_gradient(
-    const cs_internal_coupling_t  *cpl,
-    const cs_real_t                c_weight[],
-    cs_real_3_t          *restrict grad,
-    const cs_real_t                pvar[],
-    cs_real_3_t                    rhs[]);
+cs_internal_coupling_iterative_scalar_gradient
+(
+ const cs_internal_coupling_t  *cpl,
+ const cs_real_t                c_weight[],
+ cs_real_3_t                   *grad,
+ const cs_real_t                pvar[],
+ cs_real_3_t                    rhs[]
+ );
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -342,12 +344,14 @@ cs_internal_coupling_iterative_scalar_gradient(
 /*----------------------------------------------------------------------------*/
 
 void
-cs_internal_coupling_iterative_vector_gradient(
-    const cs_internal_coupling_t  *cpl,
-    const cs_real_t                c_weight[],
-    cs_real_33_t         *restrict grad,
-    const cs_real_3_t              pvar[],
-    cs_real_33_t                   rhs[]);
+cs_internal_coupling_iterative_vector_gradient
+(
+ const cs_internal_coupling_t  *cpl,
+ const cs_real_t                c_weight[],
+ cs_real_33_t                  *grad,
+ const cs_real_3_t              pvar[],
+ cs_real_33_t                   rhs[]
+);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -363,12 +367,14 @@ cs_internal_coupling_iterative_vector_gradient(
 /*----------------------------------------------------------------------------*/
 
 void
-cs_internal_coupling_iterative_tensor_gradient(
-    const cs_internal_coupling_t  *cpl,
-    const cs_real_t                c_weight[],
-    cs_real_63_t         *restrict grad,
-    const cs_real_6_t              pvar[],
-    cs_real_63_t                   rhs[]);
+cs_internal_coupling_iterative_tensor_gradient
+(
+ const cs_internal_coupling_t  *cpl,
+ const cs_real_t                c_weight[],
+ cs_real_63_t                  *grad,
+ const cs_real_6_t              pvar[],
+ cs_real_63_t                   rhs[]
+);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -384,7 +390,7 @@ cs_internal_coupling_iterative_tensor_gradient(
 void
 cs_internal_coupling_reconstruct_scalar_gradient(
     const cs_internal_coupling_t  *cpl,
-    cs_real_3_t          *restrict r_grad,
+    cs_real_3_t                   *r_grad,
     cs_real_3_t                    grad[]);
 
 /*----------------------------------------------------------------------------*/
@@ -401,7 +407,7 @@ cs_internal_coupling_reconstruct_scalar_gradient(
 void
 cs_internal_coupling_reconstruct_vector_gradient(
     const cs_internal_coupling_t  *cpl,
-    cs_real_33_t         *restrict r_grad,
+    cs_real_33_t                  *r_grad,
     cs_real_33_t                   grad[]);
 
 /*----------------------------------------------------------------------------*/
@@ -418,7 +424,7 @@ cs_internal_coupling_reconstruct_vector_gradient(
 void
 cs_internal_coupling_reconstruct_tensor_gradient(
     const cs_internal_coupling_t  *cpl,
-    cs_real_63_t         *restrict r_grad,
+    cs_real_63_t                  *r_grad,
     cs_real_63_t                   grad[]);
 
 /*----------------------------------------------------------------------------*/
@@ -482,8 +488,8 @@ cs_internal_coupling_update_bc_coeff_v(const cs_field_bc_coeffs_t    *bc_coeffs_
 void
 cs_internal_coupling_spmv_contribution(bool               exclude_diag,
                                        const cs_field_t  *f,
-                                       const cs_real_t   *restrict x,
-                                       cs_real_t         *restrict y);
+                                       const cs_real_t            *x,
+                                       cs_real_t                  *y);
 
 /*----------------------------------------------------------------------------
  * Add coupling term coordinates to matrix assembler.
@@ -602,11 +608,13 @@ cs_internal_coupling_add_entity(int        f_id);
 /*----------------------------------------------------------------------------*/
 
 void
-cs_internal_coupling_initialize_scalar_gradient(
-    const cs_internal_coupling_t  *cpl,
-    const cs_real_t                c_weight[],
-    const cs_real_t                pvar[],
-    cs_real_3_t          *restrict grad);
+cs_internal_coupling_initialize_scalar_gradient
+(
+ const cs_internal_coupling_t  *cpl,
+ const cs_real_t                c_weight[],
+ const cs_real_t                pvar[],
+ cs_real_3_t                   *grad
+);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -621,12 +629,13 @@ cs_internal_coupling_initialize_scalar_gradient(
 /*----------------------------------------------------------------------------*/
 
 void
-cs_internal_coupling_initialize_vector_gradient(
-    const cs_internal_coupling_t  *cpl,
-    const cs_real_t                c_weight[],
-    const cs_real_3_t              pvar[],
-    cs_real_33_t         *restrict grad);
-
+cs_internal_coupling_initialize_vector_gradient
+(
+ const cs_internal_coupling_t  *cpl,
+ const cs_real_t                c_weight[],
+ const cs_real_3_t              pvar[],
+ cs_real_33_t                  *grad
+);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -641,11 +650,13 @@ cs_internal_coupling_initialize_vector_gradient(
 /*----------------------------------------------------------------------------*/
 
 void
-cs_internal_coupling_initialize_tensor_gradient(
-    const cs_internal_coupling_t  *cpl,
-    const cs_real_t                c_weight[],
-    const cs_real_6_t              pvar[],
-    cs_real_63_t         *restrict grad);
+cs_internal_coupling_initialize_tensor_gradient
+(
+ const cs_internal_coupling_t  *cpl,
+ const cs_real_t                c_weight[],
+ const cs_real_6_t              pvar[],
+ cs_real_63_t                  *grad
+);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -658,8 +669,8 @@ cs_internal_coupling_initialize_tensor_gradient(
 /*----------------------------------------------------------------------------*/
 
 void
-cs_ic_field_set_exchcoeff(const cs_field_t *f,
-                          const cs_real_t  *hbnd);
+cs_ic_field_set_exchcoeff(const cs_field_t  *f,
+                          const cs_real_t   *hbnd);
 
 /*----------------------------------------------------------------------------*/
 /*!

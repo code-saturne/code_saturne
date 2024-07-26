@@ -129,8 +129,8 @@ cs_mass_flux(const cs_mesh_t             *m,
              const cs_real_t              romb[],
              const cs_real_3_t            vel[],
              cs_field_bc_coeffs_t        *bc_coeffs_v,
-             cs_real_t          *restrict i_massflux,
-             cs_real_t          *restrict b_massflux);
+             cs_real_t                   *i_massflux,
+             cs_real_t                   *b_massflux);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -155,7 +155,7 @@ cs_divergence(const cs_mesh_t          *m,
               int                       init,
               const cs_real_t           i_massflux[],
               const cs_real_t           b_massflux[],
-              cs_real_t       *restrict diverg);
+              cs_real_t                *diverg);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -180,7 +180,7 @@ cs_tensor_divergence(const cs_mesh_t            *m,
                      int                         init,
                      const cs_real_3_t           i_massflux[],
                      const cs_real_3_t           b_massflux[],
-                     cs_real_3_t       *restrict diverg);
+                     cs_real_3_t                *diverg);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -217,8 +217,8 @@ cs_ext_force_flux(const cs_mesh_t          *m,
                   int                       nswrgu,
                   const cs_real_3_t         frcxt[],
                   const cs_real_t           cofbfp[],
-                  cs_real_t       *restrict i_massflux,
-                  cs_real_t       *restrict b_massflux,
+                  cs_real_t                *i_massflux,
+                  cs_real_t                *b_massflux,
                   const cs_real_t           i_visc[],
                   const cs_real_t           b_visc[],
                   const cs_real_t           viselx[],
@@ -268,8 +268,8 @@ cs_ext_force_anisotropic_flux(const cs_mesh_t          *m,
                               const cs_real_t           b_visc[],
                               cs_real_6_t               viscel[],
                               const cs_real_2_t         weighf[],
-                              cs_real_t       *restrict i_massflux,
-                              cs_real_t       *restrict b_massflux);
+                              cs_real_t                *i_massflux,
+                              cs_real_t                *b_massflux);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -328,8 +328,8 @@ cs_tensor_face_flux(const cs_mesh_t             *m,
                     const cs_real_t              b_rho[],
                     const cs_real_6_t            c_var[],
                     const cs_field_bc_coeffs_t  *bc_coeffs_ts,
-                    cs_real_3_t        *restrict i_massflux,
-                    cs_real_3_t        *restrict b_massflux);
+                    cs_real_3_t                 *i_massflux,
+                    cs_real_3_t                 *b_massflux);
 
 /*----------------------------------------------------------------------------*/
 

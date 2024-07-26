@@ -106,7 +106,7 @@ cs_gradient_boundary_iprime_lsq_s(const cs_mesh_t               *m,
                                   const cs_field_bc_coeffs_t    *bc_coeffs,
                                   const cs_real_t                c_weight[],
                                   const cs_real_t                var[],
-                                  cs_real_t           *restrict  var_iprime);
+                                  cs_real_t                     *var_iprime);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -144,7 +144,7 @@ cs_gradient_boundary_iprime_lsq_s_ani(const cs_mesh_t               *m,
                                       const cs_field_bc_coeffs_t *bc_coeffs,
                                       const cs_real_t             c_weight[][6],
                                       const cs_real_t             var[],
-                                      cs_real_t        *restrict  var_iprime);
+                                      cs_real_t                  *var_iprime);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -195,7 +195,7 @@ cs_gradient_boundary_iprime_lsq_v(const cs_mesh_t            *m,
                                   const cs_field_bc_coeffs_t *bc_coeffs_v,
                                   const cs_real_t             c_weight[],
                                   const cs_real_t             var[][3],
-                                  cs_real_t    var_iprime[restrict][3]);
+                                  cs_real_t                   var_iprime[][3]);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -246,7 +246,7 @@ cs_gradient_boundary_iprime_lsq_t(const cs_mesh_t            *m,
                                   const cs_field_bc_coeffs_t *bc_coeffs_ts,
                                   const cs_real_t             c_weight[],
                                   const cs_real_t             var[][6],
-                                  cs_real_t    var_iprime[restrict][6]);
+                                  cs_real_t                   var_iprime[][6]);
 
 /*----------------------------------------------------------------------------*/
 

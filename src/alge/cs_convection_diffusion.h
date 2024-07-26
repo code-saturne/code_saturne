@@ -174,15 +174,15 @@ cs_convection_diffusion_scalar(int                         idtvar,
                                int                         icvflb,
                                int                         inc,
                                int                         imasac,
-                               cs_real_t         *restrict pvar,
-                               const cs_real_t   *restrict pvara,
+                               cs_real_t                  *pvar,
+                               const cs_real_t            *pvara,
                                const int                   icvfli[],
                                const cs_field_bc_coeffs_t *bc_coeffs,
                                const cs_real_t             i_massflux[],
                                const cs_real_t             b_massflux[],
                                const cs_real_t             i_visc[],
                                const cs_real_t             b_visc[],
-                               cs_real_t         *restrict rhs);
+                               cs_real_t                  *rhs);
 
 /*----------------------------------------------------------------------------*/
 /*
@@ -223,8 +223,8 @@ cs_face_convection_scalar(int                         idtvar,
                           int                         icvflb,
                           int                         inc,
                           int                         imasac,
-                          cs_real_t         *restrict pvar,
-                          const cs_real_t   *restrict pvara,
+                          cs_real_t                  *pvar,
+                          const cs_real_t            *pvara,
                           const int                   icvfli[],
                           const cs_field_bc_coeffs_t *bc_coeffs,
                           const cs_real_t             i_massflux[],
@@ -297,8 +297,8 @@ cs_convection_diffusion_vector(int                         idtvar,
                                int                         inc,
                                int                         ivisep,
                                int                         imasac,
-                               cs_real_3_t       *restrict pvar,
-                               const cs_real_3_t *restrict pvara,
+                               cs_real_3_t                *pvar,
+                               const cs_real_3_t          *pvara,
                                const int                   icvfli[],
                                const cs_field_bc_coeffs_t *bc_coeffs_v,
                                const cs_real_t             i_massflux[],
@@ -307,9 +307,9 @@ cs_convection_diffusion_vector(int                         idtvar,
                                const cs_real_t             b_visc[],
                                const cs_real_t             i_secvis[],
                                const cs_real_t             b_secvis[],
-                               cs_real_3_t       *restrict i_pvar,
-                               cs_real_3_t       *restrict b_pvar,
-                               cs_real_3_t       *restrict rhs);
+                               cs_real_3_t                *i_pvar,
+                               cs_real_3_t                *b_pvar,
+                               cs_real_3_t                *rhs);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -358,14 +358,14 @@ cs_convection_diffusion_tensor(int                          idtvar,
                                int                          icvflb,
                                int                          inc,
                                int                          imasac,
-                               cs_real_6_t        *restrict pvar,
-                               const cs_real_6_t  *restrict pvara,
+                               cs_real_6_t                 *pvar,
+                               const cs_real_6_t           *pvara,
                                const cs_field_bc_coeffs_t  *bc_coeffs_ts,
                                const cs_real_t              i_massflux[],
                                const cs_real_t              b_massflux[],
                                const cs_real_t              i_visc[],
                                const cs_real_t              b_visc[],
-                               cs_real_6_t        *restrict rhs);
+                               cs_real_6_t                 *rhs);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -410,15 +410,15 @@ cs_convection_diffusion_thermal(int                         idtvar,
                                 const cs_equation_param_t   eqp,
                                 int                         inc,
                                 int                         imasac,
-                                cs_real_t        *restrict  pvar,
-                                const cs_real_t  *restrict  pvara,
+                                cs_real_t                 * pvar,
+                                const cs_real_t           * pvara,
                                 const cs_field_bc_coeffs_t *bc_coeffs,
                                 const cs_real_t             i_massflux[],
                                 const cs_real_t             b_massflux[],
                                 const cs_real_t             i_visc[],
                                 const cs_real_t             b_visc[],
                                 const cs_real_t             xcpp[],
-                                cs_real_t        *restrict  rhs);
+                                cs_real_t                 * rhs);
 
 /*----------------------------------------------------------------------------*/
 /*
@@ -464,15 +464,15 @@ cs_anisotropic_diffusion_scalar(int                         idtvar,
                                 int                         f_id,
                                 const cs_equation_param_t   eqp,
                                 int                         inc,
-                                cs_real_t        *restrict  pvar,
-                                const cs_real_t  *restrict  pvara,
+                                cs_real_t                 * pvar,
+                                const cs_real_t           * pvara,
                                 const cs_field_bc_coeffs_t *bc_coeffs,
                                 const cs_real_t             i_visc[],
                                 const cs_real_t             b_visc[],
-                                cs_real_6_t      *restrict  viscel,
+                                cs_real_6_t               * viscel,
                                 const cs_real_2_t           weighf[],
                                 const cs_real_t             weighb[],
-                                cs_real_t        *restrict  rhs);
+                                cs_real_t                 * rhs);
 
 /*-----------------------------------------------------------------------------*/
 /*
@@ -525,13 +525,13 @@ cs_anisotropic_left_diffusion_vector(int                         idtvar,
                                      const cs_equation_param_t   eqp,
                                      int                         inc,
                                      int                         ivisep,
-                                     cs_real_3_t       *restrict pvar,
-                                     const cs_real_3_t *restrict pvara,
+                                     cs_real_3_t                *pvar,
+                                     const cs_real_3_t          *pvara,
                                      const cs_field_bc_coeffs_t *bc_coeffs_v,
                                      const cs_real_33_t          i_visc[],
                                      const cs_real_t             b_visc[],
                                      const cs_real_t             i_secvis[],
-                                     cs_real_3_t       *restrict rhs);
+                                     cs_real_3_t                *rhs);
 
 /*-----------------------------------------------------------------------------*/
 /*
@@ -578,15 +578,15 @@ cs_anisotropic_right_diffusion_vector(int                          idtvar,
                                       int                          f_id,
                                       const cs_equation_param_t    eqp,
                                       int                          inc,
-                                      cs_real_3_t        *restrict pvar,
-                                      const cs_real_3_t  *restrict pvara,
+                                      cs_real_3_t                 *pvar,
+                                      const cs_real_3_t           *pvara,
                                       const cs_field_bc_coeffs_t  *bc_coeffs_v,
                                       const cs_real_t              i_visc[],
                                       const cs_real_t              b_visc[],
-                                      cs_real_6_t        *restrict viscel,
+                                      cs_real_6_t                 *viscel,
                                       const cs_real_2_t            weighf[],
                                       const cs_real_t              weighb[],
-                                      cs_real_3_t        *restrict rhs);
+                                      cs_real_3_t                 *rhs);
 
 /*----------------------------------------------------------------------------*/
 /*
@@ -632,15 +632,15 @@ cs_anisotropic_diffusion_tensor(int                          idtvar,
                                 int                          f_id,
                                 const cs_equation_param_t    eqp,
                                 int                          inc,
-                                cs_real_6_t        *restrict pvar,
-                                const cs_real_6_t  *restrict pvara,
+                                cs_real_6_t                 *pvar,
+                                const cs_real_6_t           *pvara,
                                 const cs_field_bc_coeffs_t  *bc_coeffs_ts,
                                 const cs_real_t              i_visc[],
                                 const cs_real_t              b_visc[],
-                                cs_real_6_t        *restrict viscel,
+                                cs_real_6_t                 *viscel,
                                 const cs_real_2_t            weighf[],
                                 const cs_real_t              weighb[],
-                                cs_real_6_t        *restrict rhs);
+                                cs_real_6_t                 *rhs);
 
 /*----------------------------------------------------------------------------*/
 /*
@@ -711,14 +711,14 @@ cs_face_diffusion_potential(const int                   f_id,
                             int                         iwarnp,
                             double                      epsrgp,
                             double                      climgp,
-                            cs_real_3_t       *restrict frcxt,
-                            cs_real_t         *restrict pvar,
+                            cs_real_3_t                *frcxt,
+                            cs_real_t                  *pvar,
                             const cs_field_bc_coeffs_t *bc_coeffs,
                             const cs_real_t             i_visc[],
                             const cs_real_t             b_visc[],
-                            cs_real_t         *restrict visel,
-                            cs_real_t         *restrict i_massflux,
-                            cs_real_t         *restrict b_massflux);
+                            cs_real_t                  *visel,
+                            cs_real_t                  *i_massflux,
+                            cs_real_t                  *b_massflux);
 
 /*----------------------------------------------------------------------------*/
 /*
@@ -796,16 +796,16 @@ cs_face_anisotropic_diffusion_potential(const int                   f_id,
                                         int                         iwarnp,
                                         double                      epsrgp,
                                         double                      climgp,
-                                        cs_real_3_t       *restrict frcxt,
-                                        cs_real_t         *restrict pvar,
+                                        cs_real_3_t                *frcxt,
+                                        cs_real_t                  *pvar,
                                         const cs_field_bc_coeffs_t *bc_coeffs,
                                         const cs_real_t             i_visc[],
                                         const cs_real_t             b_visc[],
-                                        cs_real_6_t       *restrict viscel,
+                                        cs_real_6_t                *viscel,
                                         const cs_real_2_t           weighf[],
                                         const cs_real_t             weighb[],
-                                        cs_real_t         *restrict i_massflux,
-                                        cs_real_t         *restrict b_massflux);
+                                        cs_real_t                  *i_massflux,
+                                        cs_real_t                  *b_massflux);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -870,13 +870,13 @@ cs_diffusion_potential(const int                   f_id,
                        int                         iwarnp,
                        double                      epsrgp,
                        double                      climgp,
-                       cs_real_3_t       *restrict frcxt,
-                       cs_real_t         *restrict pvar,
+                       cs_real_3_t                *frcxt,
+                       cs_real_t                  *pvar,
                        const cs_field_bc_coeffs_t *bc_coeffs,
                        const cs_real_t             i_visc[],
                        const cs_real_t             b_visc[],
                        cs_real_t                   visel[],
-                       cs_real_t         *restrict diverg);
+                       cs_real_t                  *diverg);
 
 /*----------------------------------------------------------------------------*/
 /*
@@ -955,15 +955,15 @@ cs_anisotropic_diffusion_potential(const int                   f_id,
                                    int                         iwarnp,
                                    double                      epsrgp,
                                    double                      climgp,
-                                   cs_real_3_t       *restrict frcxt,
-                                   cs_real_t         *restrict pvar,
+                                   cs_real_3_t                *frcxt,
+                                   cs_real_t                  *pvar,
                                    const cs_field_bc_coeffs_t *bc_coeffs,
                                    const cs_real_t             i_visc[],
                                    const cs_real_t             b_visc[],
-                                   cs_real_6_t       *restrict viscel,
+                                   cs_real_6_t                *viscel,
                                    const cs_real_2_t           weighf[],
                                    const cs_real_t             weighb[],
-                                   cs_real_t         *restrict diverg);
+                                   cs_real_t                  *diverg);
 
 /*----------------------------------------------------------------------------*/
 
@@ -1026,8 +1026,8 @@ cs_upwind_gradient(const int                     f_id,
                    const cs_field_bc_coeffs_t   *bc_coeffs,
                    const cs_real_t               i_massflux[],
                    const cs_real_t               b_massflux[],
-                   const cs_real_t     *restrict pvar,
-                   cs_real_3_t         *restrict grdpa);
+                   const cs_real_t              *pvar,
+                   cs_real_3_t                  *grdpa);
 
 /*----------------------------------------------------------------------------
  * Compute the local cell Courant number as the maximum of all cell face based

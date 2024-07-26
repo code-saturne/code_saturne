@@ -1283,6 +1283,8 @@ static cs_dot_t *_cs_glob_gmean = _cs_gmean_superblock;
 void
 cs_blas_library_info(cs_log_t  log_type)
 {
+  CS_NO_WARN_IF_UNUSED(log_type);
+
 #if defined(HAVE_MKL)
   MKLVersion v;
 

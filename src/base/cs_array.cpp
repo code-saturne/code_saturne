@@ -29,7 +29,7 @@
 /*----------------------------------------------------------------------------*/
 
 /*----------------------------------------------------------------------------
- * Standard C library headers
+ * Standard C and C++ library headers
  *----------------------------------------------------------------------------*/
 
 #include <assert.h>
@@ -86,7 +86,7 @@ static const size_t  size_of_flag = sizeof(cs_flag_t);
 
 void
 cs_array_bool_fill_true(cs_lnum_t  size,
-                        bool       a[restrict])
+                        bool       a[])
 {
 # pragma omp parallel for if (size > CS_THR_MIN)
   for (cs_lnum_t i = 0; i < size; i++)
@@ -104,7 +104,7 @@ cs_array_bool_fill_true(cs_lnum_t  size,
 
 void
 cs_array_bool_fill_false(cs_lnum_t  size,
-                         bool       a[restrict])
+                         bool       a[])
 {
 # pragma omp parallel for if (size > CS_THR_MIN)
   for (cs_lnum_t i = 0; i < size; i++)
@@ -122,7 +122,7 @@ cs_array_bool_fill_false(cs_lnum_t  size,
 
 void
 cs_array_flag_fill_zero(cs_lnum_t  size,
-                        cs_flag_t  a[restrict])
+                        cs_flag_t  a[])
 {
   if (cs_glob_n_threads > 1) {
 #   pragma omp parallel for if (size > CS_THR_MIN)
@@ -144,7 +144,7 @@ cs_array_flag_fill_zero(cs_lnum_t  size,
 
 void
 cs_array_lnum_fill_zero(cs_lnum_t  size,
-                        cs_lnum_t  a[restrict])
+                        cs_lnum_t  a[])
 {
   if (cs_glob_n_threads > 1) {
 #   pragma omp parallel for if (size > CS_THR_MIN)
@@ -169,7 +169,7 @@ cs_array_lnum_fill_zero(cs_lnum_t  size,
 void
 cs_array_lnum_set_value(cs_lnum_t  size,
                         cs_lnum_t  num,
-                        cs_lnum_t  a[restrict])
+                        cs_lnum_t  a[])
 {
 # pragma omp parallel for if (size > CS_THR_MIN)
   for (cs_lnum_t i = 0; i < size; i++)
@@ -193,7 +193,7 @@ void
 cs_array_lnum_set_value_on_subset(cs_lnum_t        n_elts,
                                   const cs_lnum_t  elt_ids[],
                                   cs_lnum_t        num,
-                                  cs_lnum_t        a[restrict])
+                                  cs_lnum_t        a[])
 {
   if (elt_ids == NULL)
     cs_array_lnum_set_value(n_elts, num, a);
@@ -216,7 +216,7 @@ cs_array_lnum_set_value_on_subset(cs_lnum_t        n_elts,
 
 void
 cs_array_int_fill_zero(cs_lnum_t  size,
-                       int        a[restrict])
+                       int        a[])
 {
   if (cs_glob_n_threads > 1) {
 #   pragma omp parallel for if (size > CS_THR_MIN)
@@ -241,7 +241,7 @@ cs_array_int_fill_zero(cs_lnum_t  size,
 void
 cs_array_int_set_value(cs_lnum_t  size,
                        int        num,
-                       int        a[restrict])
+                       int        a[])
 {
 # pragma omp parallel for if (size > CS_THR_MIN)
   for (cs_lnum_t i = 0; i < size; i++)
@@ -265,15 +265,16 @@ void
 cs_array_int_set_value_on_subset(cs_lnum_t        n_elts,
                                  const cs_lnum_t  elt_ids[],
                                  int              num,
-                                 int              a[restrict])
+                                 int              a[])
 {
   if (elt_ids == NULL)
     cs_array_int_set_value(n_elts, num, a);
 
   else {
+    int *restrict _a = a;
 #   pragma omp parallel for if (n_elts > CS_THR_MIN)
     for (cs_lnum_t ii = 0; ii < n_elts; ii++)
-      a[elt_ids[ii]] = num;
+      _a[elt_ids[ii]] = num;
   }
 }
 
@@ -326,9 +327,11 @@ cs_array_real_copy_subset(cs_lnum_t         n_elts,
     case CS_ARRAY_SUBSET_IN: /* Indirection is applied to ref */
       if (stride == 1) {
 
+        cs_real_t *restrict _dest = dest;
+
 #       pragma omp parallel for if (n_elts > CS_THR_MIN)
         for (cs_lnum_t i = 0; i < n_elts; i++)
-          dest[i] = ref[elt_ids[i]];
+          _dest[i] = ref[elt_ids[i]];
 
       }
       else {
@@ -337,7 +340,7 @@ cs_array_real_copy_subset(cs_lnum_t         n_elts,
         for (cs_lnum_t i = 0; i < n_elts; i++) {
 
           const cs_real_t  *_ref = ref + elt_ids[i]*stride;
-          cs_real_t  *_dest = dest + i*stride;
+          cs_real_t  *restrict _dest = dest + i*stride;
 
           for (int k = 0; k < stride; k++)
             _dest[k] = _ref[k];
@@ -350,9 +353,11 @@ cs_array_real_copy_subset(cs_lnum_t         n_elts,
     case CS_ARRAY_SUBSET_OUT: /* Indirection is applied to dest */
       if (stride == 1) {
 
+        cs_real_t *restrict _dest = dest;
+
 #       pragma omp parallel for if (n_elts > CS_THR_MIN)
         for (cs_lnum_t i = 0; i < n_elts; i++)
-          dest[elt_ids[i]] = ref[i];
+          _dest[elt_ids[i]] = ref[i];
 
       }
       else {
@@ -361,7 +366,7 @@ cs_array_real_copy_subset(cs_lnum_t         n_elts,
         for (cs_lnum_t i = 0; i < n_elts; i++) {
 
           const cs_real_t  *_ref = ref + i*stride;
-          cs_real_t  *_dest = dest + elt_ids[i]*stride;
+          cs_real_t  *restrict _dest = dest + elt_ids[i]*stride;
 
           for (int k = 0; k < stride; k++)
             _dest[k] = _ref[k];
@@ -374,10 +379,12 @@ cs_array_real_copy_subset(cs_lnum_t         n_elts,
     case CS_ARRAY_SUBSET_INOUT: /* Indirection is applied to ref/dest */
       if (stride == 1) {
 
+        cs_real_t *restrict _dest = dest;
+
 #       pragma omp parallel for if (n_elts > CS_THR_MIN)
         for (cs_lnum_t i = 0; i < n_elts; i++) {
           const cs_lnum_t  elt_id = elt_ids[i];
-          dest[elt_id] = ref[elt_id];
+          _dest[elt_id] = ref[elt_id];
         }
 
       }
@@ -388,7 +395,7 @@ cs_array_real_copy_subset(cs_lnum_t         n_elts,
 
           const cs_lnum_t  shift = elt_ids[i]*stride;
           const cs_real_t  *_ref = ref + shift;
-          cs_real_t  *_dest = dest + shift;
+          cs_real_t  *restrict _dest = dest + shift;
 
           for (int k = 0; k < stride; k++)
             _dest[k] = _ref[k];
@@ -418,15 +425,17 @@ cs_array_real_copy_subset(cs_lnum_t         n_elts,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_array_real_copy(cs_lnum_t        size,
-                   const cs_real_t  src[],
-                   cs_real_t        dest[restrict])
+cs_array_real_copy(cs_lnum_t         size,
+                   const cs_real_t   src[],
+                   cs_real_t         dest[])
 {
   if (cs_glob_n_threads > 1) {
 
+    cs_real_t *restrict _dest = dest;
+
 #   pragma omp parallel for if (size > CS_THR_MIN)
     for (cs_lnum_t ii = 0; ii < size; ii++)
-      dest[ii] = src[ii];
+      _dest[ii] = src[ii];
 
   }
   else
@@ -448,26 +457,30 @@ cs_array_real_copy(cs_lnum_t        size,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_array_real_scale(cs_lnum_t           n_elts,
-                    int                 stride,
-                    const cs_lnum_t    *elt_ids,
-                    cs_real_t           scaling_factor,
-                    cs_real_t           dest[restrict])
+cs_array_real_scale(cs_lnum_t         n_elts,
+                    int               stride,
+                    const cs_lnum_t  *elt_ids,
+                    cs_real_t         scaling_factor,
+                    cs_real_t         dest[])
 {
   if (elt_ids == NULL) {
 
+    cs_real_t *restrict _dest = dest;
+
 #   pragma omp parallel for if (n_elts*stride > CS_THR_MIN)
     for (cs_lnum_t ii = 0; ii < n_elts*stride; ii++)
-      dest[ii] *= scaling_factor;
+      _dest[ii] *= scaling_factor;
 
   }
   else {
 
     if (stride == 1) {
 
+      cs_real_t *restrict _dest = dest;
+
 #     pragma omp parallel for if (n_elts > CS_THR_MIN)
       for (cs_lnum_t ii = 0; ii < n_elts; ii++)
-        dest[elt_ids[ii]] *= scaling_factor;
+        _dest[elt_ids[ii]] *= scaling_factor;
 
     }
     else {
@@ -475,7 +488,7 @@ cs_array_real_scale(cs_lnum_t           n_elts,
       assert(stride > 0);
 #     pragma omp parallel for if (n_elts > CS_THR_MIN)
       for (cs_lnum_t ii = 0; ii < n_elts; ii++) {
-        cs_real_t  *_dest = dest + stride*elt_ids[ii];
+        cs_real_t  *restrict _dest = dest + stride*elt_ids[ii];
         for (int k = 0; k < stride; k++)
           _dest[k] *= scaling_factor;
       }
@@ -498,14 +511,15 @@ cs_array_real_scale(cs_lnum_t           n_elts,
 void
 cs_array_real_padd(cs_lnum_t       n_elts,
                    const cs_real_t l_add[],
-                   cs_real_t       r[restrict])
+                   cs_real_t       r[])
 {
   if (n_elts < 1)
     return;
 
+  cs_real_t *restrict _r = r;
 #pragma omp parallel for if (n_elts > CS_THR_MIN)
   for (cs_lnum_t ii = 0; ii < n_elts; ii++)
-    r[ii] += l_add[ii];
+    _r[ii] += l_add[ii];
 }
 
 /*----------------------------------------------------------------------------*/
@@ -521,10 +535,10 @@ cs_array_real_padd(cs_lnum_t       n_elts,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_array_real_set_value(cs_lnum_t          n_elts,
-                        int                stride,
-                        const cs_real_t    ref_val[],
-                        cs_real_t         *a)
+cs_array_real_set_value(cs_lnum_t        n_elts,
+                        int              stride,
+                        const cs_real_t  ref_val[],
+                        cs_real_t        a[])
 {
   if (n_elts < 1)
     return;
@@ -534,7 +548,7 @@ cs_array_real_set_value(cs_lnum_t          n_elts,
 # pragma omp parallel for if (n_elts > CS_THR_MIN)
   for (cs_lnum_t ii = 0; ii < n_elts; ii++) {
 
-    cs_real_t  *_a = a + stride*ii;
+    cs_real_t  *restrict _a = a + stride*ii;
     for (int k = 0; k < stride; k++)
       _a[k] = ref_val[k];
 
@@ -556,11 +570,11 @@ cs_array_real_set_value(cs_lnum_t          n_elts,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_array_real_set_wvalue(cs_lnum_t          n_elts,
-                         int                stride,
-                         const cs_real_t    ref_val[],
-                         const cs_real_t    weight[],
-                         cs_real_t         *a)
+cs_array_real_set_wvalue(cs_lnum_t        n_elts,
+                         int              stride,
+                         const cs_real_t  ref_val[],
+                         const cs_real_t  weight[],
+                         cs_real_t        a[])
 {
   if (n_elts < 1)
     return;
@@ -571,7 +585,7 @@ cs_array_real_set_wvalue(cs_lnum_t          n_elts,
   for (cs_lnum_t ii = 0; ii < n_elts; ii++) {
 
     const cs_real_t  w = weight[ii];
-    cs_real_t  *_a = a + stride*ii;
+    cs_real_t  *restrict _a = a + stride*ii;
 
     for (int k = 0; k < stride; k++)
       _a[k] = w*ref_val[k];
@@ -595,11 +609,11 @@ cs_array_real_set_wvalue(cs_lnum_t          n_elts,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_array_real_set_value_on_subset(cs_lnum_t          n_elts,
-                                  int                stride,
-                                  const cs_lnum_t    elt_ids[],
-                                  const cs_real_t    ref_val[],
-                                  cs_real_t         *a)
+cs_array_real_set_value_on_subset(cs_lnum_t        n_elts,
+                                  int              stride,
+                                  const cs_lnum_t  elt_ids[],
+                                  const cs_real_t  ref_val[],
+                                  cs_real_t        a[])
 {
   if (elt_ids == NULL)
     cs_array_real_set_value(n_elts, stride, ref_val, a);
@@ -609,7 +623,7 @@ cs_array_real_set_value_on_subset(cs_lnum_t          n_elts,
 #   pragma omp parallel for if (n_elts > CS_THR_MIN)
     for (cs_lnum_t ii = 0; ii < n_elts; ii++) {
 
-      cs_real_t  *_a = a + stride*elt_ids[ii];
+      cs_real_t  *restrict _a = a + stride*elt_ids[ii];
       for (int k = 0; k < stride; k++)
         _a[k] = ref_val[k];
 
@@ -636,12 +650,12 @@ cs_array_real_set_value_on_subset(cs_lnum_t          n_elts,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_array_real_set_wvalue_on_subset(cs_lnum_t          n_elts,
-                                   int                stride,
-                                   const cs_lnum_t    elt_ids[],
-                                   const cs_real_t    ref_val[],
-                                   const cs_real_t    weight[],
-                                   cs_real_t         *a)
+cs_array_real_set_wvalue_on_subset(cs_lnum_t        n_elts,
+                                   int              stride,
+                                   const cs_lnum_t  elt_ids[],
+                                   const cs_real_t  ref_val[],
+                                   const cs_real_t  weight[],
+                                   cs_real_t        a[])
 {
   if (elt_ids == NULL)
     cs_array_real_set_wvalue(n_elts, stride, ref_val, weight, a);
@@ -653,7 +667,7 @@ cs_array_real_set_wvalue_on_subset(cs_lnum_t          n_elts,
 
       const cs_lnum_t  elt_id = elt_ids[ii];
       const cs_real_t  w = weight[elt_id];
-      cs_real_t  *_a = a + stride*elt_id;
+      cs_real_t  *restrict _a = a + stride*elt_id;
 
       for (int k = 0; k < stride; k++)
         _a[k] = w*ref_val[k];
@@ -676,7 +690,7 @@ cs_array_real_set_wvalue_on_subset(cs_lnum_t          n_elts,
 void
 cs_array_real_set_scalar(cs_lnum_t  n_elts,
                          cs_real_t  ref_val,
-                         cs_real_t  a[restrict])
+                         cs_real_t  a[])
 {
 # pragma omp parallel for if (n_elts > CS_THR_MIN)
   for (cs_lnum_t ii = 0; ii < n_elts; ii++)
@@ -699,7 +713,7 @@ void
 cs_array_real_set_wscalar(cs_lnum_t        n_elts,
                           cs_real_t        ref_val,
                           const cs_real_t  weight[],
-                          cs_real_t        a[restrict])
+                          cs_real_t        a[])
 {
 # pragma omp parallel for if (n_elts > CS_THR_MIN)
   for (cs_lnum_t ii = 0; ii < n_elts; ii++)
@@ -723,16 +737,17 @@ void
 cs_array_real_set_scalar_on_subset(cs_lnum_t        n_elts,
                                    const cs_lnum_t  elt_ids[],
                                    cs_real_t        ref_val,
-                                   cs_real_t        a[restrict])
+                                   cs_real_t        a[])
 {
   if (elt_ids == NULL)
     cs_array_real_set_scalar(n_elts, ref_val, a);
 
   else {
 
+    cs_real_t *restrict _a = a;
 #   pragma omp parallel for if (n_elts > CS_THR_MIN)
     for (cs_lnum_t ii = 0; ii < n_elts; ii++)
-      a[elt_ids[ii]] = ref_val;
+      _a[elt_ids[ii]] = ref_val;
 
   }
 }
@@ -756,7 +771,7 @@ cs_array_real_set_wscalar_on_subset(cs_lnum_t        n_elts,
                                     const cs_lnum_t  elt_ids[],
                                     cs_real_t        ref_val,
                                     const cs_real_t  weight[],
-                                    cs_real_t        a[restrict])
+                                    cs_real_t        a[])
 {
   if (elt_ids == NULL)
     cs_array_real_set_wscalar(n_elts, ref_val, weight, a);
@@ -785,11 +800,11 @@ cs_array_real_set_wscalar_on_subset(cs_lnum_t        n_elts,
 void
 cs_array_real_set_vector(cs_lnum_t         n_elts,
                          const cs_real_t   ref_val[3],
-                         cs_real_t        *a)
+                         cs_real_t         a[])
 {
 # pragma omp parallel for if (n_elts > CS_THR_MIN)
   for (cs_lnum_t ii = 0; ii < n_elts; ii++) {
-    cs_real_t  *_a = a + 3*ii;
+    cs_real_t  *restrict _a = a + 3*ii;
     _a[0] = ref_val[0], _a[1] = ref_val[1], _a[2] = ref_val[2];
   }
 }
@@ -807,10 +822,10 @@ cs_array_real_set_vector(cs_lnum_t         n_elts,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_array_real_set_wvector(cs_lnum_t          n_elts,
-                          const cs_real_t    ref_val[3],
-                          const cs_real_t    weight[],
-                          cs_real_t         *a)
+cs_array_real_set_wvector(cs_lnum_t        n_elts,
+                          const cs_real_t  ref_val[3],
+                          const cs_real_t  weight[],
+                          cs_real_t        a[])
 {
 # pragma omp parallel for if (n_elts > CS_THR_MIN)
   for (cs_lnum_t ii = 0; ii < n_elts; ii++) {
@@ -834,10 +849,10 @@ cs_array_real_set_wvector(cs_lnum_t          n_elts,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_array_real_set_vector_on_subset(cs_lnum_t         n_elts,
-                                   const cs_lnum_t   elt_ids[],
-                                   const cs_real_t   ref_val[3],
-                                   cs_real_t         a[])
+cs_array_real_set_vector_on_subset(cs_lnum_t        n_elts,
+                                   const cs_lnum_t  elt_ids[],
+                                   const cs_real_t  ref_val[3],
+                                   cs_real_t        a[])
 {
   if (elt_ids == NULL)
     cs_array_real_set_vector(n_elts, ref_val, a);
@@ -869,11 +884,11 @@ cs_array_real_set_vector_on_subset(cs_lnum_t         n_elts,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_array_real_set_wvector_on_subset(cs_lnum_t          n_elts,
-                                    const cs_lnum_t    elt_ids[],
-                                    const cs_real_t    ref_val[3],
-                                    const cs_real_t    weight[],
-                                    cs_real_t         *a)
+cs_array_real_set_wvector_on_subset(cs_lnum_t        n_elts,
+                                    const cs_lnum_t  elt_ids[],
+                                    const cs_real_t  ref_val[3],
+                                    const cs_real_t  weight[],
+                                    cs_real_t        a[])
 {
   if (elt_ids == NULL)
     cs_array_real_set_wvector(n_elts, ref_val, weight, a);
@@ -884,7 +899,7 @@ cs_array_real_set_wvector_on_subset(cs_lnum_t          n_elts,
     for (cs_lnum_t ii = 0; ii < n_elts; ii++) {
       const cs_lnum_t  id = elt_ids[ii];
       const cs_real_t  w = weight[id];
-      cs_real_t  *_a = a + 3*id;
+      cs_real_t  *restrict _a = a + 3*id;
       _a[0] = w*ref_val[0], _a[1] = w*ref_val[1], _a[2] = w*ref_val[2];
     }
 
@@ -903,9 +918,9 @@ cs_array_real_set_wvector_on_subset(cs_lnum_t          n_elts,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_array_real_set_tensor(cs_lnum_t         n_elts,
-                         const cs_real_t   ref_tens[3][3],
-                         cs_real_t        *a)
+cs_array_real_set_tensor(cs_lnum_t        n_elts,
+                         const cs_real_t  ref_tens[3][3],
+                         cs_real_t        a[])
 {
   if (n_elts < 1)
     return;
@@ -915,7 +930,7 @@ cs_array_real_set_tensor(cs_lnum_t         n_elts,
 # pragma omp parallel for if (n_elts > CS_THR_MIN)
   for (cs_lnum_t ii = 0; ii < n_elts; ii++) {
 
-    cs_real_t  *_a = a + 9*ii;
+    cs_real_t  *restrict _a = a + 9*ii;
 
     _a[0] = ref_tens[0][0], _a[1] = ref_tens[0][1], _a[2] = ref_tens[0][2];
     _a[3] = ref_tens[1][0], _a[4] = ref_tens[1][1], _a[5] = ref_tens[1][2];
@@ -941,7 +956,7 @@ void
 cs_array_real_set_tensor_on_subset(cs_lnum_t         n_elts,
                                    const cs_lnum_t   elt_ids[],
                                    const cs_real_t   ref_tens[3][3],
-                                   cs_real_t        *a)
+                                   cs_real_t         a[])
 {
   if (elt_ids == NULL)
     cs_array_real_set_tensor(n_elts, ref_tens, a);
@@ -951,7 +966,7 @@ cs_array_real_set_tensor_on_subset(cs_lnum_t         n_elts,
 #   pragma omp parallel for if (n_elts > CS_THR_MIN)
     for (cs_lnum_t ii = 0; ii < n_elts; ii++) {
 
-      cs_real_t  *_a = a + 9*elt_ids[ii];
+      cs_real_t  *restrict _a = a + 9*elt_ids[ii];
 
       _a[0] = ref_tens[0][0], _a[1] = ref_tens[0][1], _a[2] = ref_tens[0][2];
       _a[3] = ref_tens[1][0], _a[4] = ref_tens[1][1], _a[5] = ref_tens[1][2];

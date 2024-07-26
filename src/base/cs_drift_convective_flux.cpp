@@ -121,9 +121,9 @@ cs_drift_convective_flux(cs_field_t  *f_sc,
   const cs_lnum_t n_b_faces   = mesh->n_b_faces;
 
   const cs_lnum_t *restrict b_face_cells
-    = (const cs_lnum_t *restrict)mesh->b_face_cells;
+    = (const cs_lnum_t *)mesh->b_face_cells;
   const cs_lnum_2_t *restrict i_face_cells
-    = (const cs_lnum_2_t *restrict)mesh->i_face_cells;
+    = (const cs_lnum_2_t *)mesh->i_face_cells;
   const cs_real_t *cell_vol = fvq->cell_f_vol;
 
   const int kivisl = cs_field_key_id("diffusivity_id");

@@ -211,7 +211,7 @@ cs_coal_bt2h(cs_lnum_t        n_faces,
 /*----------------------------------------------------------------------------*/
 
 cs_real_t
-cs_gas_combustion_h_to_t(const cs_real_t   x_sp[restrict],
+cs_gas_combustion_h_to_t(const cs_real_t   x_sp[],
                          cs_real_t         h);
 
 /*----------------------------------------------------------------------------*/
@@ -226,7 +226,7 @@ cs_gas_combustion_h_to_t(const cs_real_t   x_sp[restrict],
 /*----------------------------------------------------------------------------*/
 
 cs_real_t
-cs_gas_combustion_t_to_h(const cs_real_t   x_sp[restrict],
+cs_gas_combustion_t_to_h(const cs_real_t   x_sp[],
                          cs_real_t         t);
 
 /*----------------------------------------------------------------------------*/
@@ -645,8 +645,8 @@ void
 cs_user_physical_properties_h_to_t(cs_domain_t      *domain,
                                    const cs_zone_t  *z,
                                    bool              z_local,
-                                   const cs_real_t   h[restrict],
-                                   cs_real_t         t[restrict]);
+                                   const cs_real_t   h[],
+                                   cs_real_t         t[]);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -672,8 +672,8 @@ void
 cs_user_physical_properties_t_to_h(cs_domain_t      *domain,
                                    const cs_zone_t  *z,
                                    bool              z_local,
-                                   const cs_real_t   t[restrict],
-                                   cs_real_t         h[restrict]);
+                                   const cs_real_t   t[],
+                                   cs_real_t         h[]);
 
 /*----------------------------------------------------------------------------*/
 /*!

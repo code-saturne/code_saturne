@@ -110,10 +110,10 @@ BEGIN_C_DECLS
  *----------------------------------------------------------------------------*/
 
 __global__ static void
-_pc_jacobi(cs_lnum_t        n,
-           const cs_real_t  ad_inv[restrict],
-           const cs_real_t  x_in[restrict],
-           cs_real_t        x_out[restrict])
+_pc_jacobi(cs_lnum_t                      n,
+           const cs_real_t  *__restrict__ ad_inv,
+           const cs_real_t  *__restrict__ x_in,
+           cs_real_t        *__restrict__ x_out)
 {
   cs_lnum_t ii = blockIdx.x*blockDim.x + threadIdx.x;
   size_t grid_size = blockDim.x*gridDim.x;
@@ -134,9 +134,9 @@ _pc_jacobi(cs_lnum_t        n,
  *----------------------------------------------------------------------------*/
 
 __global__ static void
-_pc_jacobi_self(cs_lnum_t        n,
-                const cs_real_t  ad_inv[restrict],
-                cs_real_t        x[restrict])
+_pc_jacobi_self(cs_lnum_t                      n,
+                const cs_real_t  *__restrict__ ad_inv,
+                cs_real_t        *__restrict__ x)
 {
   cs_lnum_t ii = blockIdx.x*blockDim.x + threadIdx.x;
   size_t grid_size = blockDim.x*gridDim.x;
@@ -159,11 +159,11 @@ _pc_jacobi_self(cs_lnum_t        n,
  *----------------------------------------------------------------------------*/
 
 __global__ static void
-_pc_poly_finalize(cs_lnum_t        n,
-                  const cs_real_t  ad_inv[restrict],
-                  const cs_real_t  x_in[restrict],
-                  const cs_real_t  w[restrict],
-                  cs_real_t        x_out[restrict])
+_pc_poly_finalize(cs_lnum_t                      n,
+                  const cs_real_t  *__restrict__ ad_inv,
+                  const cs_real_t  *__restrict__ x_in,
+                  const cs_real_t  *__restrict__ w,
+                  cs_real_t        *__restrict__ x_out)
 {
   cs_lnum_t ii = blockIdx.x*blockDim.x + threadIdx.x;
   size_t grid_size = blockDim.x*gridDim.x;
@@ -245,6 +245,7 @@ cs_sles_pc_cuda_apply_jacobi(void                *context,
   unsigned int gridsize = cs_cuda_grid_size(n_rows, blocksize);
 
   if (x_in != NULL) {
+    assert(x_in != x_out);
     _pc_jacobi<<<gridsize, blocksize, 0, stream>>>
       (n_rows, ad_inv, x_in, x_out);
   }

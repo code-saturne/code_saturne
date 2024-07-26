@@ -148,8 +148,14 @@ extern "C" {
 
 #else /* C++ */
 
-#  ifndef HAVE_RESTRICT /* Must be provided by caller */
-#    define restrict
+#  if defined(__GNUC__) || defined(__clang__) || defined (__NVCC__)
+#    define restrict __restrict__
+#  elif defined(_MSC_VER)
+#    define restrict __restrict
+#  else
+#    ifndef HAVE_RESTRICT /* Must be provided by caller */
+#      define restrict
+#    endif
 #  endif
 
 #endif /* __cplusplus */

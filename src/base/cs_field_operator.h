@@ -74,10 +74,10 @@ typedef enum {
  *----------------------------------------------------------------------------*/
 
 void
-cs_field_gradient_scalar(const cs_field_t          *f,
-                         bool                       use_previous_t,
-                         int                        inc,
-                         cs_real_3_t      *restrict grad);
+cs_field_gradient_scalar(const cs_field_t  *f,
+                         bool               use_previous_t,
+                         int                inc,
+                         cs_real_3_t       *grad);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -113,12 +113,12 @@ cs_field_gradient_scalar_array(int                         f_id,
  *----------------------------------------------------------------------------*/
 
 void
-cs_field_gradient_potential(const cs_field_t          *f,
-                            bool                       use_previous_t,
-                            int                        inc,
-                            int                        hyd_p_flag,
-                            cs_real_3_t                f_ext[],
-                            cs_real_3_t      *restrict grad);
+cs_field_gradient_potential(const cs_field_t  *f,
+                            bool               use_previous_t,
+                            int                inc,
+                            int                hyd_p_flag,
+                            cs_real_3_t        f_ext[],
+                            cs_real_3_t       *grad);
 
 /*----------------------------------------------------------------------------
  * Compute cell gradient of scalar field or component of vector or
@@ -132,10 +132,10 @@ cs_field_gradient_potential(const cs_field_t          *f,
  *----------------------------------------------------------------------------*/
 
 void
-cs_field_gradient_vector(const cs_field_t          *f,
-                         bool                       use_previous_t,
-                         int                        inc,
-                         cs_real_33_t     *restrict grad);
+cs_field_gradient_vector(const cs_field_t  *f,
+                         bool               use_previous_t,
+                         int                inc,
+                         cs_real_33_t      *grad);
 
 /*----------------------------------------------------------------------------
  * Compute cell gradient of tensor field.
@@ -148,10 +148,10 @@ cs_field_gradient_vector(const cs_field_t          *f,
  *----------------------------------------------------------------------------*/
 
 void
-cs_field_gradient_tensor(const cs_field_t          *f,
-                         bool                       use_previous_t,
-                         int                        inc,
-                         cs_real_63_t     *restrict grad);
+cs_field_gradient_tensor(const cs_field_t  *f,
+                         bool               use_previous_t,
+                         int                inc,
+                         cs_real_63_t      *grad);
 
 /*----------------------------------------------------------------------------*/
 /*!

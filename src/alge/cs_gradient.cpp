@@ -768,12 +768,12 @@ _gradient_update_face_clip_factor(const cs_mesh_t              *m,
       const cs_lnum_t *restrict cell_cells;
 
       if (adj_id == 0) {
-        cell_cells_idx = (const cs_lnum_t *restrict)(ma->cell_cells_idx);
-        cell_cells = (const cs_lnum_t *restrict)(ma->cell_cells);
+        cell_cells_idx = (const cs_lnum_t *)(ma->cell_cells_idx);
+        cell_cells = (const cs_lnum_t *)(ma->cell_cells);
       }
       else if (ma->cell_cells_e_idx != nullptr) {
-        cell_cells_idx = (const cs_lnum_t *restrict)(ma->cell_cells_e_idx);
-        cell_cells = (const cs_lnum_t *restrict)(ma->cell_cells_e);
+        cell_cells_idx = (const cs_lnum_t *)(ma->cell_cells_e_idx);
+        cell_cells = (const cs_lnum_t *)(ma->cell_cells_e);
       }
       else
         break;
@@ -855,14 +855,14 @@ _scalar_gradient_clipping(const cs_mesh_t              *m,
                           int                           verbosity,
                           cs_real_t                     climgp,
                           const char                   *var_name,
-                          const cs_real_t               pvar[restrict],
-                          cs_real_t                     grad[restrict][3])
+                          const cs_real_t              *restrict  pvar,
+                          cs_real_t                   (*restrict grad)[3])
 {
   const cs_lnum_t n_cells = m->n_cells;
   const cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
 
   const cs_real_3_t *restrict cell_f_cen
-    = (const cs_real_3_t *restrict)fvq->cell_f_cen;
+    = (const cs_real_3_t *)fvq->cell_f_cen;
 
   const cs_halo_t *halo = m->halo;
 
@@ -915,12 +915,12 @@ _scalar_gradient_clipping(const cs_mesh_t              *m,
         const cs_lnum_t *restrict cell_cells;
 
         if (adj_id == 0) {
-          cell_cells_idx = (const cs_lnum_t *restrict)(ma->cell_cells_idx);
-          cell_cells = (const cs_lnum_t *restrict)(ma->cell_cells);
+          cell_cells_idx = (const cs_lnum_t *)(ma->cell_cells_idx);
+          cell_cells = (const cs_lnum_t *)(ma->cell_cells);
         }
         else if (ma->cell_cells_e_idx != nullptr) {
-          cell_cells_idx = (const cs_lnum_t *restrict)(ma->cell_cells_e_idx);
-          cell_cells = (const cs_lnum_t *restrict)(ma->cell_cells_e);
+          cell_cells_idx = (const cs_lnum_t *)(ma->cell_cells_e_idx);
+          cell_cells = (const cs_lnum_t *)(ma->cell_cells_e);
         }
         else
           break;
@@ -1002,12 +1002,12 @@ _scalar_gradient_clipping(const cs_mesh_t              *m,
         const cs_lnum_t *restrict cell_cells;
 
         if (adj_id == 0) {
-          cell_cells_idx = (const cs_lnum_t *restrict)(ma->cell_cells_idx);
-          cell_cells = (const cs_lnum_t *restrict)(ma->cell_cells);
+          cell_cells_idx = (const cs_lnum_t *)(ma->cell_cells_idx);
+          cell_cells = (const cs_lnum_t *)(ma->cell_cells);
         }
         else if (ma->cell_cells_e_idx != nullptr) {
-          cell_cells_idx = (const cs_lnum_t *restrict)(ma->cell_cells_e_idx);
-          cell_cells = (const cs_lnum_t *restrict)(ma->cell_cells_e);
+          cell_cells_idx = (const cs_lnum_t *)(ma->cell_cells_e_idx);
+          cell_cells = (const cs_lnum_t *)(ma->cell_cells_e);
         }
         else
           break;
@@ -1130,7 +1130,7 @@ _scalar_gradient_clipping(const cs_mesh_t              *m,
     if (cs_glob_mesh->have_rotation_perio)
       cs_halo_perio_sync_var_vect(halo,
                                   halo_type,
-                                  (cs_real_t *restrict)grad,
+                                  (cs_real_t *)grad,
                                   3);
   }
 
@@ -1185,9 +1185,9 @@ _initialize_scalar_gradient(const cs_mesh_t                *m,
   const cs_lnum_t *restrict b_group_index = m->b_face_numbering->group_index;
 
   const cs_lnum_2_t *restrict i_face_cells
-    = (const cs_lnum_2_t *restrict)m->i_face_cells;
+    = (const cs_lnum_2_t *)m->i_face_cells;
   const cs_lnum_t *restrict b_face_cells
-    = (const cs_lnum_t *restrict)m->b_face_cells;
+    = (const cs_lnum_t *)m->b_face_cells;
 
   const int *restrict c_disable_flag = fvq->c_disable_flag;
   cs_lnum_t has_dc = fvq->has_disable_flag; /* Has cells disabled? */
@@ -1197,16 +1197,16 @@ _initialize_scalar_gradient(const cs_mesh_t                *m,
   if (cs_glob_porous_model == 1 || cs_glob_porous_model == 2)
     cell_f_vol = fvq->cell_vol;
   const cs_real_3_t *restrict cell_f_cen
-    = (const cs_real_3_t *restrict)fvq->cell_f_cen;
+    = (const cs_real_3_t *)fvq->cell_f_cen;
   const cs_real_3_t *restrict i_f_face_normal
-    = (const cs_real_3_t *restrict)fvq->i_f_face_normal;
+    = (const cs_real_3_t *)fvq->i_f_face_normal;
   const cs_real_3_t *restrict b_f_face_normal
-    = (const cs_real_3_t *restrict)fvq->b_f_face_normal;
+    = (const cs_real_3_t *)fvq->b_f_face_normal;
   const cs_real_3_t *restrict i_f_face_cog
-    = (const cs_real_3_t *restrict)fvq->i_face_cog;
+    = (const cs_real_3_t *)fvq->i_face_cog;
   // TODO create global field i_f_face_cog
   const cs_real_3_t *restrict b_f_face_cog
-    = (const cs_real_3_t *restrict)fvq->b_f_face_cog;
+    = (const cs_real_3_t *)fvq->b_f_face_cog;
 
   cs_lnum_t   cpl_stride = 0;
   const bool _coupled_faces[1] = {false};
@@ -1530,9 +1530,9 @@ _renormalize_scalar_gradient(const cs_mesh_t                *m,
   const int *bc_type = cs_glob_bc_type;
 
   const cs_lnum_2_t *restrict i_face_cells
-    = (const cs_lnum_2_t *restrict)m->i_face_cells;
+    = (const cs_lnum_2_t *)m->i_face_cells;
   const cs_lnum_t *restrict b_face_cells
-    = (const cs_lnum_t *restrict)m->b_face_cells;
+    = (const cs_lnum_t *)m->b_face_cells;
 
   const int *restrict c_disable_flag = fvq->c_disable_flag;
   cs_lnum_t has_dc = fvq->has_disable_flag; /* Has cells disabled? */
@@ -1541,17 +1541,17 @@ _renormalize_scalar_gradient(const cs_mesh_t                *m,
   if (cs_glob_porous_model == 1 || cs_glob_porous_model == 2)
     cell_f_vol = fvq->cell_vol;
   const cs_real_3_t *restrict cell_cen
-    = (const cs_real_3_t *restrict)fvq->cell_cen;
+    = (const cs_real_3_t *)fvq->cell_cen;
   const cs_real_3_t *restrict cell_f_cen
-    = (const cs_real_3_t *restrict)fvq->cell_f_cen;
+    = (const cs_real_3_t *)fvq->cell_f_cen;
   const cs_real_3_t *restrict i_f_face_normal
-    = (const cs_real_3_t *restrict)fvq->i_f_face_normal;
+    = (const cs_real_3_t *)fvq->i_f_face_normal;
   const cs_real_3_t *restrict b_f_face_normal
-    = (const cs_real_3_t *restrict)fvq->b_f_face_normal;
+    = (const cs_real_3_t *)fvq->b_f_face_normal;
   const cs_real_3_t *restrict i_face_cog
-    = (const cs_real_3_t *restrict)fvq->i_face_cog;
+    = (const cs_real_3_t *)fvq->i_face_cog;
   const cs_real_3_t *restrict b_face_cog
-    = (const cs_real_3_t *restrict)fvq->b_face_cog;
+    = (const cs_real_3_t *)fvq->b_face_cog;
   const cs_real_3_t *b_face_normal
     = (const cs_real_3_t *)cs_glob_mesh_quantities->b_face_normal;
 
@@ -1692,13 +1692,13 @@ _compute_cell_cocg_it(const cs_mesh_t               *m,
   const int n_i_faces = m->n_i_faces;
 
   const cs_lnum_2_t *restrict i_face_cells
-    = (const cs_lnum_2_t *restrict)m->i_face_cells;
+    = (const cs_lnum_2_t *)m->i_face_cells;
 
   const cs_real_t *restrict cell_vol = fvq->cell_f_vol;
   const cs_real_3_t *restrict i_face_normal
-    = (const cs_real_3_t *restrict)fvq->i_f_face_normal;
+    = (const cs_real_3_t *)fvq->i_f_face_normal;
   const cs_real_3_t *restrict dofij
-    = (const cs_real_3_t *restrict)fvq->dofij;
+    = (const cs_real_3_t *)fvq->dofij;
 
   cs_real_33_t *restrict cocg = gq->cocg_it;
 
@@ -1823,9 +1823,9 @@ _iterative_scalar_gradient(const cs_mesh_t                *m,
   const cs_lnum_t *restrict b_group_index = m->b_face_numbering->group_index;
 
   const cs_lnum_2_t *restrict i_face_cells
-    = (const cs_lnum_2_t *restrict)m->i_face_cells;
+    = (const cs_lnum_2_t *)m->i_face_cells;
   const cs_lnum_t *restrict b_face_cells
-    = (const cs_lnum_t *restrict)m->b_face_cells;
+    = (const cs_lnum_t *)m->b_face_cells;
 
   const int *restrict c_disable_flag = fvq->c_disable_flag;
   cs_lnum_t has_dc = fvq->has_disable_flag; /* Has cells disabled? */
@@ -1835,19 +1835,19 @@ _iterative_scalar_gradient(const cs_mesh_t                *m,
   if (cs_glob_porous_model == 1 || cs_glob_porous_model == 2)
     cell_f_vol = fvq->cell_vol;
   const cs_real_3_t *restrict cell_f_cen
-    = (const cs_real_3_t *restrict)fvq->cell_f_cen;
+    = (const cs_real_3_t *)fvq->cell_f_cen;
   const cs_real_3_t *restrict i_f_face_normal
-    = (const cs_real_3_t *restrict)fvq->i_f_face_normal;
+    = (const cs_real_3_t *)fvq->i_f_face_normal;
   const cs_real_3_t *restrict b_f_face_normal
-    = (const cs_real_3_t *restrict)fvq->b_f_face_normal;
+    = (const cs_real_3_t *)fvq->b_f_face_normal;
   const cs_real_3_t *restrict i_face_cog
-    = (const cs_real_3_t *restrict)fvq->i_face_cog;
+    = (const cs_real_3_t *)fvq->i_face_cog;
   const cs_real_3_t *restrict b_f_face_cog
-    = (const cs_real_3_t *restrict)fvq->b_f_face_cog;
+    = (const cs_real_3_t *)fvq->b_f_face_cog;
   const cs_real_3_t *restrict diipb
-    = (const cs_real_3_t *restrict)fvq->diipb;
+    = (const cs_real_3_t *)fvq->diipb;
   const cs_real_3_t *restrict dofij
-    = (const cs_real_3_t *restrict)fvq->dofij;
+    = (const cs_real_3_t *)fvq->dofij;
 
   cs_real_3_t *rhs;
 
@@ -2339,14 +2339,14 @@ _add_hb_faces_cell_cocg_lsq(const cs_mesh_t              *m,
   const int n_cells = m->n_cells;
 
   const cs_real_t *restrict b_face_surf
-    = (const cs_real_t *restrict)fvq->b_face_surf;
+    = (const cs_real_t *)fvq->b_face_surf;
   const cs_real_3_t *restrict b_face_normal
-    = (const cs_real_3_t *restrict)fvq->b_face_normal;
+    = (const cs_real_3_t *)fvq->b_face_normal;
 
   const cs_lnum_t  *restrict cell_hb_faces_idx
-    = (const cs_lnum_t  *restrict)(ma->cell_hb_faces_idx);
+    = (const cs_lnum_t  *)(ma->cell_hb_faces_idx);
   const cs_lnum_t  *restrict cell_hb_faces
-    = (const cs_lnum_t  *restrict)(ma->cell_hb_faces);
+    = (const cs_lnum_t  *)(ma->cell_hb_faces);
 
 # pragma omp parallel for
   for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
@@ -2385,18 +2385,18 @@ _compute_cell_cocg_lsq(const cs_mesh_t               *m,
   const cs_lnum_t *restrict b_group_index = m->b_face_numbering->group_index;
 
   const cs_lnum_2_t *restrict i_face_cells
-    = (const cs_lnum_2_t *restrict)m->i_face_cells;
+    = (const cs_lnum_2_t *)m->i_face_cells;
   const cs_lnum_t *restrict b_face_cells
-    = (const cs_lnum_t *restrict)m->b_face_cells;
+    = (const cs_lnum_t *)m->b_face_cells;
   const cs_lnum_t *restrict cell_cells_idx
-    = (const cs_lnum_t *restrict)m->cell_cells_idx;
+    = (const cs_lnum_t *)m->cell_cells_idx;
   const cs_lnum_t *restrict cell_cells_lst
-    = (const cs_lnum_t *restrict)m->cell_cells_lst;
+    = (const cs_lnum_t *)m->cell_cells_lst;
 
   const cs_real_3_t *restrict cell_f_cen
-    = (const cs_real_3_t *restrict)fvq->cell_f_cen;
+    = (const cs_real_3_t *)fvq->cell_f_cen;
   const cs_real_3_t *restrict b_face_u_normal
-    = (const cs_real_3_t *restrict)fvq->b_face_u_normal;
+    = (const cs_real_3_t *)fvq->b_face_u_normal;
 
   cs_cocg_6_t  *restrict cocgb = nullptr, *restrict cocg = nullptr;
 
@@ -2670,22 +2670,22 @@ static void
 _recompute_lsq_scalar_cocg(const cs_mesh_t                *m,
                            const cs_mesh_quantities_t     *fvq,
                            const cs_field_bc_coeffs_t     *bc_coeffs,
-                           const cs_cocg_t                 cocgb[restrict][6],
-                           cs_cocg_t                       cocg[restrict][6])
+                           const cs_cocg_t               (*restrict cocgb)[6],
+                           cs_cocg_t                     (*restrict cocg)[6])
 {
   const cs_real_t *coefbp = bc_coeffs->b;
   const cs_mesh_adjacencies_t *ma = cs_glob_mesh_adjacencies;
   const cs_lnum_t *restrict cell_b_faces_idx
-    = (const cs_lnum_t *restrict) ma->cell_b_faces_idx;
+    = (const cs_lnum_t *) ma->cell_b_faces_idx;
   const cs_lnum_t *restrict cell_b_faces
-    = (const cs_lnum_t *restrict) ma->cell_b_faces;
+    = (const cs_lnum_t *) ma->cell_b_faces;
 
   const cs_real_3_t *restrict b_face_u_normal
-    = (const cs_real_3_t *restrict)fvq->b_face_u_normal;
+    = (const cs_real_3_t *)fvq->b_face_u_normal;
   const cs_real_t *restrict b_dist
-    = (const cs_real_t *restrict)fvq->b_dist;
+    = (const cs_real_t *)fvq->b_dist;
   const cs_real_3_t *restrict diipb
-    = (const cs_real_3_t *restrict)fvq->diipb;
+    = (const cs_real_3_t *)fvq->diipb;
 
   /* Recompute cocg at boundaries, using saved cocgb */
 
@@ -2763,24 +2763,24 @@ _lsq_scalar_gradient(const cs_mesh_t                *m,
   const cs_lnum_t *restrict b_group_index = m->b_face_numbering->group_index;
 
   const cs_lnum_2_t *restrict i_face_cells
-    = (const cs_lnum_2_t *restrict)m->i_face_cells;
+    = (const cs_lnum_2_t *)m->i_face_cells;
   const cs_lnum_t *restrict b_face_cells
-    = (const cs_lnum_t *restrict)m->b_face_cells;
+    = (const cs_lnum_t *)m->b_face_cells;
   const cs_lnum_t *restrict cell_cells_idx
-    = (const cs_lnum_t *restrict)m->cell_cells_idx;
+    = (const cs_lnum_t *)m->cell_cells_idx;
   const cs_lnum_t *restrict cell_cells_lst
-    = (const cs_lnum_t *restrict)m->cell_cells_lst;
+    = (const cs_lnum_t *)m->cell_cells_lst;
 
   const cs_real_3_t *restrict cell_f_cen
-    = (const cs_real_3_t *restrict)fvq->cell_f_cen;
+    = (const cs_real_3_t *)fvq->cell_f_cen;
   const cs_real_3_t *restrict b_face_normal
-    = (const cs_real_3_t *restrict)fvq->b_face_normal;
+    = (const cs_real_3_t *)fvq->b_face_normal;
   const cs_real_t *restrict b_face_surf
-    = (const cs_real_t *restrict)fvq->b_face_surf;
+    = (const cs_real_t *)fvq->b_face_surf;
   const cs_real_t *restrict b_dist
-    = (const cs_real_t *restrict)fvq->b_dist;
+    = (const cs_real_t *)fvq->b_dist;
   const cs_real_3_t *restrict diipb
-    = (const cs_real_3_t *restrict)fvq->diipb;
+    = (const cs_real_3_t *)fvq->diipb;
   const cs_real_t *restrict weight = fvq->weight;
 
   cs_cocg_6_t  *restrict cocgb = nullptr;
@@ -3029,28 +3029,28 @@ _lsq_scalar_gradient_hyd_p(const cs_mesh_t                *m,
   const cs_lnum_t *restrict b_group_index = m->b_face_numbering->group_index;
 
   const cs_lnum_2_t *restrict i_face_cells
-    = (const cs_lnum_2_t *restrict)m->i_face_cells;
+    = (const cs_lnum_2_t *)m->i_face_cells;
   const cs_lnum_t *restrict b_face_cells
-    = (const cs_lnum_t *restrict)m->b_face_cells;
+    = (const cs_lnum_t *)m->b_face_cells;
   const cs_lnum_t *restrict cell_cells_idx
-    = (const cs_lnum_t *restrict)m->cell_cells_idx;
+    = (const cs_lnum_t *)m->cell_cells_idx;
   const cs_lnum_t *restrict cell_cells_lst
-    = (const cs_lnum_t *restrict)m->cell_cells_lst;
+    = (const cs_lnum_t *)m->cell_cells_lst;
 
   const cs_real_3_t *restrict cell_f_cen
-    = (const cs_real_3_t *restrict)fvq->cell_f_cen;
+    = (const cs_real_3_t *)fvq->cell_f_cen;
   const cs_real_3_t *restrict b_face_normal
-    = (const cs_real_3_t *restrict)fvq->b_face_normal;
+    = (const cs_real_3_t *)fvq->b_face_normal;
   const cs_real_t *restrict b_face_surf
-    = (const cs_real_t *restrict)fvq->b_face_surf;
+    = (const cs_real_t *)fvq->b_face_surf;
   const cs_real_t *restrict b_dist
-    = (const cs_real_t *restrict)fvq->b_dist;
+    = (const cs_real_t *)fvq->b_dist;
   const cs_real_3_t *restrict i_face_cog
-    = (const cs_real_3_t *restrict)fvq->i_face_cog;
+    = (const cs_real_3_t *)fvq->i_face_cog;
   const cs_real_3_t *restrict b_f_face_cog
-    = (const cs_real_3_t *restrict)fvq->b_f_face_cog;
+    = (const cs_real_3_t *)fvq->b_f_face_cog;
   const cs_real_3_t *restrict diipb
-    = (const cs_real_3_t *restrict)fvq->diipb;
+    = (const cs_real_3_t *)fvq->diipb;
   const cs_real_t *restrict weight = fvq->weight;
 
   cs_cocg_6_t  *restrict cocgb = nullptr;
@@ -3496,8 +3496,8 @@ _lsq_scalar_gradient_ani(const cs_mesh_t               *m,
                          cs_real_t                      inc,
                          const cs_field_bc_coeffs_t    *bc_coeffs,
                          const cs_real_t                pvar[],
-                         const cs_real_t                c_weight_t[restrict][6],
-                         cs_real_t                      grad[restrict][3])
+                         const cs_real_t              (*restrict c_weight_t)[6],
+                         cs_real_t                    (*restrict grad)[3])
 {
   const cs_real_t *coefap = bc_coeffs->a;
   const cs_real_t *coefbp = bc_coeffs->b;
@@ -3511,20 +3511,20 @@ _lsq_scalar_gradient_ani(const cs_mesh_t               *m,
   const cs_lnum_t *restrict b_group_index = m->b_face_numbering->group_index;
 
   const cs_lnum_2_t *restrict i_face_cells
-    = (const cs_lnum_2_t *restrict)m->i_face_cells;
+    = (const cs_lnum_2_t *)m->i_face_cells;
   const cs_lnum_t *restrict b_face_cells
-    = (const cs_lnum_t *restrict)m->b_face_cells;
+    = (const cs_lnum_t *)m->b_face_cells;
 
   const cs_real_3_t *restrict cell_f_cen
-    = (const cs_real_3_t *restrict)fvq->cell_f_cen;
+    = (const cs_real_3_t *)fvq->cell_f_cen;
   const cs_real_3_t *restrict b_face_normal
-    = (const cs_real_3_t *restrict)fvq->b_face_normal;
+    = (const cs_real_3_t *)fvq->b_face_normal;
   const cs_real_t *restrict b_face_surf
-    = (const cs_real_t *restrict)fvq->b_face_surf;
+    = (const cs_real_t *)fvq->b_face_surf;
   const cs_real_t *restrict b_dist
-    = (const cs_real_t *restrict)fvq->b_dist;
+    = (const cs_real_t *)fvq->b_dist;
   const cs_real_3_t *restrict diipb
-    = (const cs_real_3_t *restrict)fvq->diipb;
+    = (const cs_real_3_t *)fvq->diipb;
   const cs_real_t *restrict weight = fvq->weight;
 
   cs_lnum_t   cpl_stride = 0;
@@ -3747,9 +3747,9 @@ _reconstruct_scalar_gradient(const cs_mesh_t                 *m,
   const cs_lnum_t *restrict b_group_index = m->b_face_numbering->group_index;
 
   const cs_lnum_2_t *restrict i_face_cells
-    = (const cs_lnum_2_t *restrict)m->i_face_cells;
+    = (const cs_lnum_2_t *)m->i_face_cells;
   const cs_lnum_t *restrict b_face_cells
-    = (const cs_lnum_t *restrict)m->b_face_cells;
+    = (const cs_lnum_t *)m->b_face_cells;
 
   const int *restrict c_disable_flag = fvq->c_disable_flag;
   cs_lnum_t has_dc = fvq->has_disable_flag; /* Has cells disabled? */
@@ -3759,23 +3759,23 @@ _reconstruct_scalar_gradient(const cs_mesh_t                 *m,
   if (cs_glob_porous_model == 1 || cs_glob_porous_model == 2)
     cell_f_vol = fvq->cell_vol;
   const cs_real_3_t *restrict cell_f_cen
-    = (const cs_real_3_t *restrict)fvq->cell_f_cen;
+    = (const cs_real_3_t *)fvq->cell_f_cen;
   const cs_real_3_t *restrict i_f_face_normal
-    = (const cs_real_3_t *restrict)fvq->i_f_face_normal;
+    = (const cs_real_3_t *)fvq->i_f_face_normal;
   const cs_real_3_t *restrict b_f_face_normal
-    = (const cs_real_3_t *restrict)fvq->b_f_face_normal;
+    = (const cs_real_3_t *)fvq->b_f_face_normal;
   const cs_real_3_t *restrict i_face_cog
-    = (const cs_real_3_t *restrict)fvq->i_face_cog;
+    = (const cs_real_3_t *)fvq->i_face_cog;
   const cs_real_3_t *restrict b_f_face_cog
-    = (const cs_real_3_t *restrict)fvq->b_f_face_cog;
+    = (const cs_real_3_t *)fvq->b_f_face_cog;
 
   const cs_real_3_t *restrict dofij
-    = (const cs_real_3_t *restrict)fvq->dofij;
+    = (const cs_real_3_t *)fvq->dofij;
   const cs_real_3_t *restrict diipb
-    = (const cs_real_3_t *restrict)fvq->diipb;
+    = (const cs_real_3_t *)fvq->diipb;
 
   const cs_real_33_t *restrict corr_grad_lin
-    = (const cs_real_33_t *restrict)fvq->corr_grad_lin;
+    = (const cs_real_33_t *)fvq->corr_grad_lin;
 
   const cs_real_t *c_weight_s = nullptr;
   const cs_real_6_t *c_weight_t = nullptr;
@@ -4159,18 +4159,18 @@ _lsq_scalar_b_face_val(const cs_mesh_t             *m,
                        const cs_field_bc_coeffs_t  *bc_coeffs,
                        const cs_real_t              c_var[],
                        const cs_real_t              c_weight[],
-                       cs_real_t                    b_f_var[restrict])
+                       cs_real_t          *restrict b_f_var)
 {
   const cs_lnum_t n_b_cells = m->n_b_cells;
 
   const cs_mesh_adjacencies_t *ma = cs_glob_mesh_adjacencies;
   const cs_lnum_t *restrict cell_b_faces_idx
-    = (const cs_lnum_t *restrict) ma->cell_b_faces_idx;
+    = (const cs_lnum_t *) ma->cell_b_faces_idx;
   const cs_lnum_t *restrict cell_b_faces
-    = (const cs_lnum_t *restrict) ma->cell_b_faces;
+    = (const cs_lnum_t *) ma->cell_b_faces;
 
   const cs_real_3_t *restrict diipb
-    = (const cs_real_3_t *restrict)fvq->diipb;
+    = (const cs_real_3_t *)fvq->diipb;
 
   cs_field_bc_coeffs_t *bc_coeffs_loc = nullptr;
 
@@ -4253,7 +4253,7 @@ _lsq_scalar_b_face_val_phyd(const cs_mesh_t             *m,
                             const cs_field_bc_coeffs_t  *bc_coeffs,
                             const cs_real_t              c_var[],
                             const cs_real_t              c_weight[],
-                            cs_real_t                    b_f_var[restrict])
+                            cs_real_t          *restrict b_f_var)
 {
   const cs_real_t *bc_coeff_a = bc_coeffs->a;
   const cs_real_t *bc_coeff_b = bc_coeffs->b;
@@ -4262,28 +4262,28 @@ _lsq_scalar_b_face_val_phyd(const cs_mesh_t             *m,
 
   const cs_mesh_adjacencies_t *ma = cs_glob_mesh_adjacencies;
   const cs_lnum_t *restrict cell_cells_idx
-    = (const cs_lnum_t *restrict) ma->cell_cells_idx;
+    = (const cs_lnum_t *) ma->cell_cells_idx;
   const cs_lnum_t *restrict cell_cells_e_idx
-    = (const cs_lnum_t *restrict) ma->cell_cells_e_idx;
+    = (const cs_lnum_t *) ma->cell_cells_e_idx;
   const cs_lnum_t *restrict cell_b_faces_idx
-    = (const cs_lnum_t *restrict) ma->cell_b_faces_idx;
+    = (const cs_lnum_t *) ma->cell_b_faces_idx;
   const cs_lnum_t *restrict cell_cells
-    = (const cs_lnum_t *restrict) ma->cell_cells;
+    = (const cs_lnum_t *) ma->cell_cells;
   const cs_lnum_t *restrict cell_cells_e
-    = (const cs_lnum_t *restrict) ma->cell_cells_e;
+    = (const cs_lnum_t *) ma->cell_cells_e;
   const cs_lnum_t *restrict cell_b_faces
-    = (const cs_lnum_t *restrict) ma->cell_b_faces;
+    = (const cs_lnum_t *) ma->cell_b_faces;
 
   const cs_real_3_t *restrict cell_f_cen
-    = (const cs_real_3_t *restrict)fvq->cell_f_cen;
+    = (const cs_real_3_t *)fvq->cell_f_cen;
   const cs_real_3_t *restrict b_f_face_cog
-    = (const cs_real_3_t *restrict)fvq->b_f_face_cog;
+    = (const cs_real_3_t *)fvq->b_f_face_cog;
   const cs_real_3_t *restrict b_face_normal
-    = (const cs_real_3_t *restrict)fvq->b_face_normal;
+    = (const cs_real_3_t *)fvq->b_face_normal;
   const cs_real_t *restrict b_dist
-    = (const cs_real_t *restrict)fvq->b_dist;
+    = (const cs_real_t *)fvq->b_dist;
   const cs_real_3_t *restrict diipb
-    = (const cs_real_3_t *restrict)fvq->diipb;
+    = (const cs_real_3_t *)fvq->diipb;
 
   /*Additional terms due to porosity */
 
@@ -4321,12 +4321,12 @@ _lsq_scalar_b_face_val_phyd(const cs_mesh_t             *m,
       if (adj_id == 0) {
         s_id = cell_cells_idx[c_id];
         e_id = cell_cells_idx[c_id+1];
-        cell_cells_p = (const cs_lnum_t *restrict)(cell_cells);
+        cell_cells_p = (const cs_lnum_t *)(cell_cells);
       }
       else if (cell_cells_e_idx != nullptr) {
         s_id = cell_cells_e_idx[c_id];
         e_id = cell_cells_e_idx[c_id+1];
-        cell_cells_p = (const cs_lnum_t *restrict)(cell_cells_e);
+        cell_cells_p = (const cs_lnum_t *)(cell_cells_e);
       }
       else
         break;
@@ -4532,9 +4532,9 @@ _fv_vtx_based_scalar_gradient(const cs_mesh_t                *m,
   const cs_lnum_t *restrict b_group_index = m->b_face_numbering->group_index;
 
   const cs_lnum_2_t *restrict i_face_cells
-    = (const cs_lnum_2_t *restrict)m->i_face_cells;
+    = (const cs_lnum_2_t *)m->i_face_cells;
   const cs_lnum_t *restrict b_face_cells
-    = (const cs_lnum_t *restrict)m->b_face_cells;
+    = (const cs_lnum_t *)m->b_face_cells;
 
   const int *restrict c_disable_flag = fvq->c_disable_flag;
   cs_lnum_t has_dc = fvq->has_disable_flag; /* Has cells disabled? */
@@ -4544,15 +4544,15 @@ _fv_vtx_based_scalar_gradient(const cs_mesh_t                *m,
   if (cs_glob_porous_model == 1 || cs_glob_porous_model == 2)
     cell_f_vol = fvq->cell_vol;
   const cs_real_3_t *restrict cell_f_cen
-    = (const cs_real_3_t *restrict)fvq->cell_f_cen;
+    = (const cs_real_3_t *)fvq->cell_f_cen;
   const cs_real_3_t *restrict i_f_face_normal
-    = (const cs_real_3_t *restrict)fvq->i_f_face_normal;
+    = (const cs_real_3_t *)fvq->i_f_face_normal;
   const cs_real_3_t *restrict b_f_face_normal
-    = (const cs_real_3_t *restrict)fvq->b_f_face_normal;
+    = (const cs_real_3_t *)fvq->b_f_face_normal;
   const cs_real_3_t *restrict i_f_face_cog
-    = (const cs_real_3_t *restrict)fvq->i_face_cog;
+    = (const cs_real_3_t *)fvq->i_face_cog;
   const cs_real_3_t *restrict b_f_face_cog
-    = (const cs_real_3_t *restrict)fvq->b_f_face_cog;
+    = (const cs_real_3_t *)fvq->b_f_face_cog;
 
   const cs_real_t *c_weight_s = nullptr;
   const cs_real_6_t *c_weight_t = nullptr;
@@ -4934,8 +4934,8 @@ _strided_gradient_clipping(const cs_mesh_t              *m,
                            int                           verbosity,
                            cs_real_t                     climgp,
                            const char                   *var_name,
-                           const cs_real_t     pvar[restrict][stride],
-                           cs_real_t           grad[restrict][stride][3])
+                           const cs_real_t    (*restrict pvar)[stride],
+                           cs_real_t          (*restrict grad)[stride][3])
 {
   const cs_real_t  clipp_coef_sq = climgp*climgp;
 
@@ -4943,7 +4943,7 @@ _strided_gradient_clipping(const cs_mesh_t              *m,
   const cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
 
   const cs_real_3_t *restrict cell_f_cen
-    = (const cs_real_3_t *restrict)fvq->cell_f_cen;
+    = (const cs_real_3_t *)fvq->cell_f_cen;
 
   const cs_halo_t *halo = m->halo;
 
@@ -4996,12 +4996,12 @@ _strided_gradient_clipping(const cs_mesh_t              *m,
         const cs_lnum_t *restrict cell_cells;
 
         if (adj_id == 0) {
-          cell_cells_idx = (const cs_lnum_t *restrict)(ma->cell_cells_idx);
-          cell_cells = (const cs_lnum_t *restrict)(ma->cell_cells);
+          cell_cells_idx = (const cs_lnum_t *)(ma->cell_cells_idx);
+          cell_cells = (const cs_lnum_t *)(ma->cell_cells);
         }
         else if (ma->cell_cells_e_idx != nullptr) {
-          cell_cells_idx = (const cs_lnum_t *restrict)(ma->cell_cells_e_idx);
-          cell_cells = (const cs_lnum_t *restrict)(ma->cell_cells_e);
+          cell_cells_idx = (const cs_lnum_t *)(ma->cell_cells_e_idx);
+          cell_cells = (const cs_lnum_t *)(ma->cell_cells_e);
         }
         else
           break;
@@ -5099,12 +5099,12 @@ _strided_gradient_clipping(const cs_mesh_t              *m,
         const cs_lnum_t *restrict cell_cells;
 
         if (adj_id == 0) {
-          cell_cells_idx = (const cs_lnum_t *restrict)(ma->cell_cells_idx);
-          cell_cells = (const cs_lnum_t *restrict)(ma->cell_cells);
+          cell_cells_idx = (const cs_lnum_t *)(ma->cell_cells_idx);
+          cell_cells = (const cs_lnum_t *)(ma->cell_cells);
         }
         else if (ma->cell_cells_e_idx != nullptr) {
-          cell_cells_idx = (const cs_lnum_t *restrict)(ma->cell_cells_e_idx);
-          cell_cells = (const cs_lnum_t *restrict)(ma->cell_cells_e);
+          cell_cells_idx = (const cs_lnum_t *)(ma->cell_cells_e_idx);
+          cell_cells = (const cs_lnum_t *)(ma->cell_cells_e);
         }
         else
           break;
@@ -5285,9 +5285,9 @@ _initialize_vector_gradient(const cs_mesh_t              *m,
                             cs_real_33_t        *restrict grad)
 {
   const cs_real_3_t  *restrict coefav
-    = (const cs_real_3_t *restrict)bc_coeffs_v->a;
+    = (const cs_real_3_t *)bc_coeffs_v->a;
   const cs_real_33_t *restrict coefbv
-    = (const cs_real_33_t *restrict)bc_coeffs_v->b;
+    = (const cs_real_33_t *)bc_coeffs_v->b;
 
   const cs_lnum_t n_cells = m->n_cells;
   const cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
@@ -5298,9 +5298,9 @@ _initialize_vector_gradient(const cs_mesh_t              *m,
   const cs_lnum_t *restrict b_group_index = m->b_face_numbering->group_index;
 
   const cs_lnum_2_t *restrict i_face_cells
-    = (const cs_lnum_2_t *restrict)m->i_face_cells;
+    = (const cs_lnum_2_t *)m->i_face_cells;
   const cs_lnum_t *restrict b_face_cells
-    = (const cs_lnum_t *restrict)m->b_face_cells;
+    = (const cs_lnum_t *)m->b_face_cells;
 
   const int *restrict c_disable_flag = fvq->c_disable_flag;
   cs_lnum_t has_dc = fvq->has_disable_flag; /* Has cells disabled? */
@@ -5311,9 +5311,9 @@ _initialize_vector_gradient(const cs_mesh_t              *m,
     cell_f_vol = fvq->cell_vol;
 
   const cs_real_3_t *restrict i_f_face_normal
-    = (const cs_real_3_t *restrict)fvq->i_f_face_normal;
+    = (const cs_real_3_t *)fvq->i_f_face_normal;
   const cs_real_3_t *restrict b_f_face_normal
-    = (const cs_real_3_t *restrict)fvq->b_f_face_normal;
+    = (const cs_real_3_t *)fvq->b_f_face_normal;
 
   cs_lnum_t   cpl_stride = 0;
   const bool _coupled_faces[1] = {false};
@@ -5476,8 +5476,8 @@ _reconstruct_strided_gradient(const cs_mesh_t              *m,
   using a_t = cs_real_t[stride];
   using b_t = cs_real_t[stride][stride];
 
-  const a_t *restrict coefav = (const a_t *restrict)bc_coeffs_v->a;
-  const b_t *restrict coefbv = (const b_t *restrict)bc_coeffs_v->b;
+  const a_t *restrict coefav = (const a_t *)bc_coeffs_v->a;
+  const b_t *restrict coefbv = (const b_t *)bc_coeffs_v->b;
 
   const cs_lnum_t n_cells = m->n_cells;
   const cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
@@ -5486,13 +5486,13 @@ _reconstruct_strided_gradient(const cs_mesh_t              *m,
                             & CS_BAD_CELLS_WARPED_CORRECTION) ? true : false;
 
   const cs_lnum_t *restrict cell_b_faces_idx
-    = (const cs_lnum_t *restrict) madj->cell_b_faces_idx;
+    = (const cs_lnum_t *) madj->cell_b_faces_idx;
   const cs_lnum_t *restrict cell_b_faces
-    = (const cs_lnum_t *restrict) madj->cell_b_faces;
+    = (const cs_lnum_t *) madj->cell_b_faces;
   const cs_lnum_t n_b_cells = m->n_b_cells;
 
   const cs_lnum_2_t *restrict i_face_cells
-    = (const cs_lnum_2_t *restrict)m->i_face_cells;
+    = (const cs_lnum_2_t *)m->i_face_cells;
 
   const int *restrict c_disable_flag = fvq->c_disable_flag;
   cs_lnum_t has_dc = fvq->has_disable_flag; /* Has cells disabled? */
@@ -5503,15 +5503,15 @@ _reconstruct_strided_gradient(const cs_mesh_t              *m,
     cell_f_vol = fvq->cell_vol;
 
   const cs_real_3_t *restrict i_f_face_normal
-    = (const cs_real_3_t *restrict)fvq->i_f_face_normal;
+    = (const cs_real_3_t *)fvq->i_f_face_normal;
   const cs_real_3_t *restrict b_f_face_normal
-    = (const cs_real_3_t *restrict)fvq->b_f_face_normal;
+    = (const cs_real_3_t *)fvq->b_f_face_normal;
   const cs_real_3_t *restrict diipb
-    = (const cs_real_3_t *restrict)fvq->diipb;
+    = (const cs_real_3_t *)fvq->diipb;
   const cs_real_3_t *restrict dofij
-    = (const cs_real_3_t *restrict)fvq->dofij;
+    = (const cs_real_3_t *)fvq->dofij;
   const cs_real_33_t *restrict corr_grad_lin
-    = (const cs_real_33_t *restrict)fvq->corr_grad_lin;
+    = (const cs_real_33_t *)fvq->corr_grad_lin;
 
 #if defined(HAVE_CUDA)
   bool accel = (cs_get_device_id() > -1) ? true : false;
@@ -5790,9 +5790,9 @@ _iterative_vector_gradient(const cs_mesh_t               *m,
                            cs_real_33_t         *restrict grad)
 {
   const cs_real_3_t  *restrict coefav
-    = (const cs_real_3_t *restrict)bc_coeffs_v->a;
+    = (const cs_real_3_t *)bc_coeffs_v->a;
   const cs_real_33_t *restrict coefbv
-    = (const cs_real_33_t *restrict)bc_coeffs_v->b;
+    = (const cs_real_33_t *)bc_coeffs_v->b;
 
   int isweep = 0;
 
@@ -5807,9 +5807,9 @@ _iterative_vector_gradient(const cs_mesh_t               *m,
   const cs_lnum_t *restrict b_group_index = m->b_face_numbering->group_index;
 
   const cs_lnum_2_t *restrict i_face_cells
-    = (const cs_lnum_2_t *restrict)m->i_face_cells;
+    = (const cs_lnum_2_t *)m->i_face_cells;
   const cs_lnum_t *restrict b_face_cells
-    = (const cs_lnum_t *restrict)m->b_face_cells;
+    = (const cs_lnum_t *)m->b_face_cells;
 
   const int *restrict c_disable_flag = fvq->c_disable_flag;
   cs_lnum_t has_dc = fvq->has_disable_flag; /* Has cells disabled? */
@@ -5819,13 +5819,13 @@ _iterative_vector_gradient(const cs_mesh_t               *m,
   if (cs_glob_porous_model == 1 || cs_glob_porous_model == 2)
     cell_f_vol = fvq->cell_vol;
   const cs_real_3_t *restrict i_f_face_normal
-    = (const cs_real_3_t *restrict)fvq->i_f_face_normal;
+    = (const cs_real_3_t *)fvq->i_f_face_normal;
   const cs_real_3_t *restrict b_f_face_normal
-    = (const cs_real_3_t *restrict)fvq->b_f_face_normal;
+    = (const cs_real_3_t *)fvq->b_f_face_normal;
   const cs_real_3_t *restrict diipb
-    = (const cs_real_3_t *restrict)fvq->diipb;
+    = (const cs_real_3_t *)fvq->diipb;
   const cs_real_3_t *restrict dofij
-    = (const cs_real_3_t *restrict)fvq->dofij;
+    = (const cs_real_3_t *)fvq->dofij;
 
   int gq_id = (cpl == nullptr) ? 0 : cpl->id+1;
   cs_gradient_quantities_t  *gq = _gradient_quantities_get(gq_id);
@@ -6080,9 +6080,9 @@ _iterative_tensor_gradient(const cs_mesh_t              *m,
                            cs_real_63_t        *restrict grad)
 {
   const cs_real_6_t  *restrict coefat
-    = (const cs_real_6_t *restrict)bc_coeffs_ts->a;
+    = (const cs_real_6_t *)bc_coeffs_ts->a;
   const cs_real_66_t *restrict coefbt
-    = (const cs_real_66_t *restrict)bc_coeffs_ts->b;
+    = (const cs_real_66_t *)bc_coeffs_ts->b;
 
   int isweep = 0;
 
@@ -6097,9 +6097,9 @@ _iterative_tensor_gradient(const cs_mesh_t              *m,
   const cs_lnum_t *restrict b_group_index = m->b_face_numbering->group_index;
 
   const cs_lnum_2_t *restrict i_face_cells
-    = (const cs_lnum_2_t *restrict)m->i_face_cells;
+    = (const cs_lnum_2_t *)m->i_face_cells;
   const cs_lnum_t *restrict b_face_cells
-    = (const cs_lnum_t *restrict)m->b_face_cells;
+    = (const cs_lnum_t *)m->b_face_cells;
 
   const int *restrict c_disable_flag = fvq->c_disable_flag;
   cs_lnum_t has_dc = fvq->has_disable_flag; /* Has cells disabled? */
@@ -6109,13 +6109,13 @@ _iterative_tensor_gradient(const cs_mesh_t              *m,
   if (cs_glob_porous_model == 1 || cs_glob_porous_model == 2)
     cell_f_vol = fvq->cell_vol;
   const cs_real_3_t *restrict i_f_face_normal
-    = (const cs_real_3_t *restrict)fvq->i_f_face_normal;
+    = (const cs_real_3_t *)fvq->i_f_face_normal;
   const cs_real_3_t *restrict b_f_face_normal
-    = (const cs_real_3_t *restrict)fvq->b_f_face_normal;
+    = (const cs_real_3_t *)fvq->b_f_face_normal;
   const cs_real_3_t *restrict diipb
-    = (const cs_real_3_t *restrict)fvq->diipb;
+    = (const cs_real_3_t *)fvq->diipb;
   const cs_real_3_t *restrict dofij
-    = (const cs_real_3_t *restrict)fvq->dofij;
+    = (const cs_real_3_t *)fvq->dofij;
 
   cs_gradient_quantities_t  *gq = _gradient_quantities_get(0);
 
@@ -6334,10 +6334,10 @@ _complete_cocg_lsq(cs_lnum_t                     c_id,
                    const cs_mesh_adjacencies_t  *madj,
                    const cs_mesh_quantities_t   *fvq,
                    const cs_cocg_t               cocg[6],
-                   cs_real_t                     cocgb[restrict 3][3])
+                   cs_real_t          (*restrict cocgb)[3])
 {
   const cs_real_3_t *restrict b_face_normal
-    = (const cs_real_3_t *restrict)fvq->b_face_normal;
+    = (const cs_real_3_t *)fvq->b_face_normal;
 
   /* initialize cocgb */
 
@@ -6358,7 +6358,7 @@ _complete_cocg_lsq(cs_lnum_t                     c_id,
      so things need to be handled a bit differently here. */
 
   const cs_lnum_t  *restrict cell_b_faces
-    = (const cs_lnum_t  *restrict)(madj->cell_b_faces);
+    = (const cs_lnum_t  *)(madj->cell_b_faces);
 
   cs_lnum_t s_id = madj->cell_b_faces_idx[c_id];
   cs_lnum_t e_id = madj->cell_b_faces_idx[c_id+1];
@@ -6406,8 +6406,8 @@ _compute_cocgb_rhsb_lsq_v(cs_lnum_t                     c_id,
                           const cs_field_bc_coeffs_t   *bc_coeffs_v,
                           const cs_real_t               cocg[3][3],
                           const cs_real_t               rhs[3][3],
-                          cs_real_t                     cocgb_v[restrict 45],
-                          cs_real_t                     rhsb_v[restrict 9])
+                          cs_real_t           *restrict cocgb_v, // [45]
+                          cs_real_t           *restrict rhsb_v)  // [9]
 {
   /* Short variable accesses */
 
@@ -6415,12 +6415,12 @@ _compute_cocgb_rhsb_lsq_v(cs_lnum_t                     c_id,
   const cs_real_33_t *coefbv = (const cs_real_33_t *)bc_coeffs_v->b;
 
   const cs_real_3_t *restrict diipb
-    = (const cs_real_3_t *restrict)fvq->diipb;
+    = (const cs_real_3_t *)fvq->diipb;
 
   const cs_real_3_t *restrict b_face_normal
-    = (const cs_real_3_t *restrict)fvq->b_face_normal;
+    = (const cs_real_3_t *)fvq->b_face_normal;
   const cs_real_t *restrict b_dist
-    = (const cs_real_t *restrict)fvq->b_dist;
+    = (const cs_real_t *)fvq->b_dist;
 
   cs_lnum_t s_id, e_id;
 
@@ -6456,7 +6456,7 @@ _compute_cocgb_rhsb_lsq_v(cs_lnum_t                     c_id,
   e_id = madj->cell_b_faces_idx[c_id+1];
 
   const cs_lnum_t   *restrict cell_b_faces
-    = (const cs_lnum_t *restrict)(madj->cell_b_faces);
+    = (const cs_lnum_t *)(madj->cell_b_faces);
 
   for (cs_lnum_t i = s_id; i < e_id; i++) {
 
@@ -6565,8 +6565,8 @@ _compute_cocgb_rhsb_lsq_t(cs_lnum_t                     c_id,
                           const cs_field_bc_coeffs_t   *bc_coeffs_ts,
                           const cs_real_t               cocg[3][3],
                           const cs_real_t               rhs[6][3],
-                          cs_real_t                     cocgb_t[restrict 171],
-                          cs_real_t                     rhsb_t[restrict 18])
+                          cs_real_t           *restrict cocgb_t, // [171]
+                          cs_real_t           *restrict rhsb_t)  // [18])
 {
   /* Short variable accesses */
 
@@ -6574,14 +6574,14 @@ _compute_cocgb_rhsb_lsq_t(cs_lnum_t                     c_id,
   const cs_real_66_t *coefbt = (const cs_real_66_t *)bc_coeffs_ts->b;
 
   const cs_real_3_t *restrict diipb
-    = (const cs_real_3_t *restrict)fvq->diipb;
+    = (const cs_real_3_t *)fvq->diipb;
 
   const cs_real_3_t *restrict b_face_normal
-    = (const cs_real_3_t *restrict)fvq->b_face_normal;
+    = (const cs_real_3_t *)fvq->b_face_normal;
   const cs_real_t *restrict b_face_surf
-    = (const cs_real_t *restrict)fvq->b_face_surf;
+    = (const cs_real_t *)fvq->b_face_surf;
   const cs_real_t *restrict b_dist
-    = (const cs_real_t *restrict)fvq->b_dist;
+    = (const cs_real_t *)fvq->b_dist;
 
   cs_lnum_t s_id, e_id;
 
@@ -6617,7 +6617,7 @@ _compute_cocgb_rhsb_lsq_t(cs_lnum_t                     c_id,
   e_id = madj->cell_b_faces_idx[c_id+1];
 
   const cs_lnum_t   *restrict cell_b_faces
-    = (const cs_lnum_t *restrict)(madj->cell_b_faces);
+    = (const cs_lnum_t *)(madj->cell_b_faces);
 
   for (cs_lnum_t i = s_id; i < e_id; i++) {
 
@@ -6729,9 +6729,9 @@ _lsq_vector_gradient(const cs_mesh_t               *m,
                      cs_real_33_t         *restrict gradv)
 {
   const cs_real_3_t  *restrict coefav
-    = (const cs_real_3_t *restrict)bc_coeffs_v->a;
+    = (const cs_real_3_t *)bc_coeffs_v->a;
   const cs_real_33_t *restrict coefbv
-    = (const cs_real_33_t *restrict)bc_coeffs_v->b;
+    = (const cs_real_33_t *)bc_coeffs_v->b;
 
   const cs_lnum_t n_cells = m->n_cells;
   const cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
@@ -6742,20 +6742,20 @@ _lsq_vector_gradient(const cs_mesh_t               *m,
   const cs_lnum_t *restrict b_group_index = m->b_face_numbering->group_index;
 
   const cs_lnum_2_t *restrict i_face_cells
-    = (const cs_lnum_2_t *restrict)m->i_face_cells;
+    = (const cs_lnum_2_t *)m->i_face_cells;
   const cs_lnum_t *restrict b_face_cells
-    = (const cs_lnum_t *restrict)m->b_face_cells;
+    = (const cs_lnum_t *)m->b_face_cells;
   const cs_lnum_t *restrict cell_cells_idx
-    = (const cs_lnum_t *restrict)m->cell_cells_idx;
+    = (const cs_lnum_t *)m->cell_cells_idx;
   const cs_lnum_t *restrict cell_cells_lst
-    = (const cs_lnum_t *restrict)m->cell_cells_lst;
+    = (const cs_lnum_t *)m->cell_cells_lst;
 
   const cs_real_3_t *restrict cell_f_cen
-    = (const cs_real_3_t *restrict)fvq->cell_f_cen;
+    = (const cs_real_3_t *)fvq->cell_f_cen;
   const cs_real_t *restrict weight = fvq->weight;
   const cs_real_t *restrict b_dist = fvq->b_dist;
   const cs_real_3_t *restrict b_face_normal
-    = (const cs_real_3_t *restrict)fvq->b_face_normal;
+    = (const cs_real_3_t *)fvq->b_face_normal;
 
   cs_cocg_6_t  *restrict cocgb_s = nullptr;
   cs_cocg_6_t *restrict cocg = nullptr;
@@ -7057,32 +7057,32 @@ _lsq_strided_gradient(const cs_mesh_t             *m,
   using a_t = cs_real_t[stride];
   using b_t = cs_real_t[stride][stride];
 
-  const a_t *restrict coefav = (const a_t *restrict)bc_coeffs_v->a;
-  const b_t *restrict coefbv = (const b_t *restrict)bc_coeffs_v->b;
+  const a_t *restrict coefav = (const a_t *)bc_coeffs_v->a;
+  const b_t *restrict coefbv = (const b_t *)bc_coeffs_v->b;
 
   const cs_lnum_t n_cells     = m->n_cells;
   const cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
   const cs_lnum_t n_b_cells = m->n_b_cells;
 
   const cs_lnum_2_t *restrict i_face_cells
-    = (const cs_lnum_2_t *restrict)m->i_face_cells;
+    = (const cs_lnum_2_t *)m->i_face_cells;
 
   const cs_lnum_t *restrict cell_cells_e_idx
-    = (const cs_lnum_t *restrict) madj->cell_cells_e_idx;
+    = (const cs_lnum_t *) madj->cell_cells_e_idx;
   const cs_lnum_t *restrict cell_b_faces_idx
-    = (const cs_lnum_t *restrict) madj->cell_b_faces_idx;
+    = (const cs_lnum_t *) madj->cell_b_faces_idx;
   const cs_lnum_t *restrict cell_cells_e
-    = (const cs_lnum_t *restrict) madj->cell_cells_e;
+    = (const cs_lnum_t *) madj->cell_cells_e;
   const cs_lnum_t *restrict cell_b_faces
-    = (const cs_lnum_t *restrict) madj->cell_b_faces;
+    = (const cs_lnum_t *) madj->cell_b_faces;
 
   const cs_real_3_t *restrict cell_cen
-    = (const cs_real_3_t *restrict)fvq->cell_f_cen;
+    = (const cs_real_3_t *)fvq->cell_f_cen;
   const cs_real_t *restrict weight = fvq->weight;
   const cs_real_3_t *restrict b_face_cog
-    = (const cs_real_3_t *restrict)fvq->b_f_face_cog;
+    = (const cs_real_3_t *)fvq->b_f_face_cog;
   const cs_real_3_t *restrict diipb
-    = (const cs_real_3_t *restrict)fvq->diipb;
+    = (const cs_real_3_t *)fvq->diipb;
 
   std::chrono::high_resolution_clock::time_point t_start, t_init, t_i_faces, \
     t_ext_n, t_b_faces, t_gradient, t_b_correction, t_halo, t_stop;
@@ -7694,10 +7694,10 @@ _lsq_strided_gradient(const cs_mesh_t             *m,
     n_c_iter_max,
     c_eps,
     bc_coeffs,
-    reinterpret_cast<const cs_real_t(*restrict)[1]>(pvar),
+    reinterpret_cast<const cs_real_t(*)[1]>(pvar),
     c_weight,
     b_iter_count,
-    reinterpret_cast<const cs_real_t(*restrict)[1][3]>(gradv)
+    reinterpret_cast<const cs_real_t(*)[1][3]>(gradv)
   );
 }
 
@@ -7710,10 +7710,10 @@ using lsq_strided_gradient_t = void(const cs_mesh_t *,
                                     int,
                                     cs_real_t,
                                     const cs_field_bc_coeffs_t *,
-                                    const cs_real_t (*restrict)[stride],
+                                    const cs_real_t (*)[stride],
                                     const cs_real_t *restrict,
                                     cs_real_t *restrict,
-                                    cs_real_t (*restrict)[stride][3]);
+                                    cs_real_t (*)[stride][3]);
 
 /*----------------------------------------------------------------------------
  * Compute boundary face vector values using least-squares reconstruction
@@ -7783,7 +7783,7 @@ _lsq_strided_b_face_val(const cs_mesh_t               *m,
        bc_coeffs_v,
        c_weight,
        reinterpret_cast<const cs_real_t(*)[3]>(c_var),
-       reinterpret_cast<cs_real_t(* restrict)[3]>(b_f_var));
+       reinterpret_cast<cs_real_t(*)[3]>(b_f_var));
 
   else if (stride == 6)
     cs_gradient_boundary_iprime_lsq_t
@@ -7796,7 +7796,7 @@ _lsq_strided_b_face_val(const cs_mesh_t               *m,
        bc_coeffs_v,
        c_weight,
        reinterpret_cast<const cs_real_t(*)[6]>(c_var),
-       reinterpret_cast<cs_real_t(* restrict)[6]>(b_f_var));
+       reinterpret_cast<cs_real_t(*)[6]>(b_f_var));
 
   #pragma omp parallel for if (n_b_faces > CS_THR_MIN)
   for (cs_lnum_t f_id = 0; f_id < n_b_faces; f_id++) {
@@ -7858,9 +7858,9 @@ _fv_vtx_based_strided_gradient(const cs_mesh_t               *m,
   const cs_lnum_t *restrict b_group_index = m->b_face_numbering->group_index;
 
   const cs_lnum_2_t *restrict i_face_cells
-    = (const cs_lnum_2_t *restrict)m->i_face_cells;
+    = (const cs_lnum_2_t *)m->i_face_cells;
   const cs_lnum_t *restrict b_face_cells
-    = (const cs_lnum_t *restrict)m->b_face_cells;
+    = (const cs_lnum_t *)m->b_face_cells;
 
   const int *restrict c_disable_flag = fvq->c_disable_flag;
   cs_lnum_t has_dc = fvq->has_disable_flag; /* Has cells disabled? */
@@ -7869,9 +7869,9 @@ _fv_vtx_based_strided_gradient(const cs_mesh_t               *m,
   if (cs_glob_porous_model == 1 || cs_glob_porous_model == 2)
     cell_f_vol = fvq->cell_vol;
   const cs_real_3_t *restrict i_f_face_normal
-    = (const cs_real_3_t *restrict)fvq->i_f_face_normal;
+    = (const cs_real_3_t *)fvq->i_f_face_normal;
   const cs_real_3_t *restrict b_f_face_normal
-    = (const cs_real_3_t *restrict)fvq->b_f_face_normal;
+    = (const cs_real_3_t *)fvq->b_f_face_normal;
 
   /* Initialize gradient
      ------------------- */
@@ -8072,9 +8072,9 @@ _lsq_tensor_gradient(const cs_mesh_t              *m,
                      cs_real_63_t        *restrict gradt)
 {
   const cs_real_6_t  *restrict coefat
-    = (const cs_real_6_t *restrict)bc_coeffs_ts->a;
+    = (const cs_real_6_t *)bc_coeffs_ts->a;
   const cs_real_66_t *restrict coefbt
-    = (const cs_real_66_t *restrict)bc_coeffs_ts->b;
+    = (const cs_real_66_t *)bc_coeffs_ts->b;
 
   const cs_lnum_t n_cells = m->n_cells;
   const cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
@@ -8085,20 +8085,20 @@ _lsq_tensor_gradient(const cs_mesh_t              *m,
   const cs_lnum_t *restrict b_group_index = m->b_face_numbering->group_index;
 
   const cs_lnum_2_t *restrict i_face_cells
-    = (const cs_lnum_2_t *restrict)m->i_face_cells;
+    = (const cs_lnum_2_t *)m->i_face_cells;
   const cs_lnum_t *restrict b_face_cells
-    = (const cs_lnum_t *restrict)m->b_face_cells;
+    = (const cs_lnum_t *)m->b_face_cells;
   const cs_lnum_t *restrict cell_cells_idx
-    = (const cs_lnum_t *restrict)m->cell_cells_idx;
+    = (const cs_lnum_t *)m->cell_cells_idx;
   const cs_lnum_t *restrict cell_cells_lst
-    = (const cs_lnum_t *restrict)m->cell_cells_lst;
+    = (const cs_lnum_t *)m->cell_cells_lst;
 
   const cs_real_3_t *restrict cell_f_cen
-    = (const cs_real_3_t *restrict)fvq->cell_f_cen;
+    = (const cs_real_3_t *)fvq->cell_f_cen;
   const cs_real_t *restrict weight = fvq->weight;
   const cs_real_t *restrict b_dist = fvq->b_dist;
   const cs_real_3_t *restrict b_face_normal
-    = (const cs_real_3_t *restrict)fvq->b_face_normal;
+    = (const cs_real_3_t *)fvq->b_face_normal;
 
   cs_cocg_6_t *restrict cocgb_s = nullptr;
   cs_cocg_6_t *restrict cocg = nullptr;
@@ -8361,9 +8361,9 @@ _initialize_tensor_gradient(const cs_mesh_t              *m,
                             cs_real_63_t        *restrict grad)
 {
   const cs_real_6_t  *restrict coefat
-    = (const cs_real_6_t *restrict)bc_coeffs_ts->a;
+    = (const cs_real_6_t *)bc_coeffs_ts->a;
   const cs_real_66_t *restrict coefbt
-    = (const cs_real_66_t *restrict)bc_coeffs_ts->b;
+    = (const cs_real_66_t *)bc_coeffs_ts->b;
 
   const cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
   const cs_lnum_t n_cells = m->n_cells;
@@ -8374,9 +8374,9 @@ _initialize_tensor_gradient(const cs_mesh_t              *m,
   const cs_lnum_t *restrict b_group_index = m->b_face_numbering->group_index;
 
   const cs_lnum_2_t *restrict i_face_cells
-    = (const cs_lnum_2_t *restrict)m->i_face_cells;
+    = (const cs_lnum_2_t *)m->i_face_cells;
   const cs_lnum_t *restrict b_face_cells
-    = (const cs_lnum_t *restrict)m->b_face_cells;
+    = (const cs_lnum_t *)m->b_face_cells;
 
   const int *restrict c_disable_flag = fvq->c_disable_flag;
   cs_lnum_t has_dc = fvq->has_disable_flag; /* Has cells disabled? */
@@ -8386,9 +8386,9 @@ _initialize_tensor_gradient(const cs_mesh_t              *m,
   if (cs_glob_porous_model == 1 || cs_glob_porous_model == 2)
     cell_f_vol = fvq->cell_vol;
   const cs_real_3_t *restrict i_f_face_normal
-    = (const cs_real_3_t *restrict)fvq->i_f_face_normal;
+    = (const cs_real_3_t *)fvq->i_f_face_normal;
   const cs_real_3_t *restrict b_f_face_normal
-    = (const cs_real_3_t *restrict)fvq->b_f_face_normal;
+    = (const cs_real_3_t *)fvq->b_f_face_normal;
 
   /* Computation without reconstruction */
   /*------------------------------------*/
@@ -8552,10 +8552,10 @@ _gradient_scalar(const char                    *var_name,
                  double                         clip_coeff,
                  const cs_real_3_t             *f_ext,
                  const cs_field_bc_coeffs_t    *bc_coeffs,
-                 const cs_real_t                var[restrict],
-                 const cs_real_t                c_weight[restrict],
+                 const cs_real_t                var[],
+                 const cs_real_t                c_weight[],
                  const cs_internal_coupling_t  *cpl,
-                 cs_real_t                      grad[restrict][3])
+                 cs_real_t           (*restrict grad)[3])
 {
   const cs_mesh_t  *mesh = cs_glob_mesh;
   cs_mesh_quantities_t  *fvq = cs_glob_mesh_quantities;
@@ -9357,7 +9357,7 @@ _gradient_strided_cell(const cs_mesh_t             *m,
                        cs_lnum_t                    c_id,
                        cs_halo_type_t               halo_type,
                        const cs_field_bc_coeffs_t  *bc_coeffs_v,
-                       const cs_real_t              var[restrict][stride],
+                       const cs_real_t              var[][stride],
                        const cs_real_t              c_weight[],
                        cs_real_t                    c_grad[stride][3])
 {
@@ -9369,24 +9369,24 @@ _gradient_strided_cell(const cs_mesh_t             *m,
   const cs_mesh_adjacencies_t *ma = cs_glob_mesh_adjacencies;
 
   const cs_lnum_t *restrict cell_cells_idx
-    = (const cs_lnum_t *restrict) ma->cell_cells_idx;
+    = (const cs_lnum_t *) ma->cell_cells_idx;
   const cs_lnum_t *restrict cell_cells_e_idx
-    = (const cs_lnum_t *restrict) ma->cell_cells_e_idx;
+    = (const cs_lnum_t *) ma->cell_cells_e_idx;
   const cs_lnum_t *restrict cell_b_faces_idx
-    = (const cs_lnum_t *restrict) ma->cell_b_faces_idx;
+    = (const cs_lnum_t *) ma->cell_b_faces_idx;
   const cs_lnum_t *restrict cell_cells
-    = (const cs_lnum_t *restrict) ma->cell_cells;
+    = (const cs_lnum_t *) ma->cell_cells;
   const cs_lnum_t *restrict cell_cells_e
-    = (const cs_lnum_t *restrict) ma->cell_cells_e;
+    = (const cs_lnum_t *) ma->cell_cells_e;
   const cs_lnum_t *restrict cell_b_faces
-    = (const cs_lnum_t *restrict) ma->cell_b_faces;
+    = (const cs_lnum_t *) ma->cell_b_faces;
 
   const cs_real_3_t *restrict cell_cen
-    = (const cs_real_3_t *restrict)fvq->cell_f_cen;
+    = (const cs_real_3_t *)fvq->cell_f_cen;
   const cs_real_3_t *restrict b_face_cog
-    = (const cs_real_3_t *restrict)fvq->b_f_face_cog;
+    = (const cs_real_3_t *)fvq->b_f_face_cog;
   const cs_real_3_t *restrict diipb
-    = (const cs_real_3_t *restrict)fvq->diipb;
+    = (const cs_real_3_t *)fvq->diipb;
 
   /* Compute covariance matrix and Right-Hand Side */
 
@@ -9410,12 +9410,12 @@ _gradient_strided_cell(const cs_mesh_t             *m,
     if (adj_id == 0) {
       s_id = cell_cells_idx[c_id];
       e_id = cell_cells_idx[c_id+1];
-      cell_cells_p = (const cs_lnum_t *restrict)(cell_cells);
+      cell_cells_p = (const cs_lnum_t *)(cell_cells);
     }
     else if (cell_cells_e_idx != nullptr) {
       s_id = cell_cells_e_idx[c_id];
       e_id = cell_cells_e_idx[c_id+1];
-      cell_cells_p = (const cs_lnum_t *restrict)(cell_cells_e);
+      cell_cells_p = (const cs_lnum_t *)(cell_cells_e);
     }
     else
       break;
@@ -9959,8 +9959,8 @@ cs_gradient_free_quantities(void)
  *                                 hydrostatic pressure
  * \param[in]       bc_coeffs      boundary condition structure
  * \param[in, out]  var            gradient's base variable
- * \param[in, out]  c_weight       cell variable weight, or NULL
- * \param[in]       cpl            associated internal coupling, or NULL
+ * \param[in, out]  c_weight       cell variable weight, or nullptr
+ * \param[in]       cpl            associated internal coupling, or nullptr
  * \param[out]      grad           gradient
  */
 /*----------------------------------------------------------------------------*/
@@ -9979,10 +9979,10 @@ cs_gradient_scalar(const char                    *var_name,
                    double                         clip_coeff,
                    cs_real_3_t                    f_ext[],
                    const cs_field_bc_coeffs_t    *bc_coeffs,
-                   cs_real_t                      var[restrict],
+                   cs_real_t                      var[],
                    cs_real_t            *restrict c_weight,
                    const cs_internal_coupling_t  *cpl,
-                   cs_real_t                      grad[restrict][3])
+                   cs_real_t           (*restrict grad)[3])
 {
   const cs_mesh_t  *mesh = cs_glob_mesh;
   cs_gradient_info_t *gradient_info = nullptr;
@@ -10066,8 +10066,8 @@ cs_gradient_scalar(const char                    *var_name,
  * \param[in]       clip_coeff      clipping coefficient
  * \param[in]       bc_coeffs_v     boundary condition structure
  * \param[in, out]  var             gradient's base variable
- * \param[in, out]  c_weight        cell variable weight, or NULL
- * \param[in]       cpl             associated internal coupling, or NULL
+ * \param[in, out]  c_weight        cell variable weight, or nullptr
+ * \param[in]       cpl             associated internal coupling, or nullptr
  * \param[out]      gradv           gradient
                                     (\f$ \der{u_i}{x_j} \f$ is gradv[][i][j])
  */
@@ -10084,10 +10084,10 @@ cs_gradient_vector(const char                    *var_name,
                    double                         epsilon,
                    double                         clip_coeff,
                    const cs_field_bc_coeffs_t    *bc_coeffs_v,
-                   cs_real_t                      var[restrict][3],
+                   cs_real_t                      var[][3],
                    cs_real_t        *restrict     c_weight,
                    const cs_internal_coupling_t  *cpl,
-                   cs_real_t                      gradv[restrict][3][3])
+                   cs_real_t                      gradv[][3][3])
 {
   const cs_mesh_t  *mesh = cs_glob_mesh;
 
@@ -10169,18 +10169,18 @@ cs_gradient_vector(const char                    *var_name,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_gradient_tensor(const char                 *var_name,
-                   cs_gradient_type_t          gradient_type,
-                   cs_halo_type_t              halo_type,
-                   int                         inc,
-                   int                         n_r_sweeps,
-                   int                         verbosity,
-                   cs_gradient_limit_t         clip_mode,
-                   double                      epsilon,
-                   double                      clip_coeff,
-                   const cs_field_bc_coeffs_t *bc_coeffs_ts,
-                   cs_real_6_t       *restrict var,
-                   cs_real_63_t      *restrict grad)
+cs_gradient_tensor(const char                  *var_name,
+                   cs_gradient_type_t           gradient_type,
+                   cs_halo_type_t               halo_type,
+                   int                          inc,
+                   int                          n_r_sweeps,
+                   int                          verbosity,
+                   cs_gradient_limit_t          clip_mode,
+                   double                       epsilon,
+                   double                       clip_coeff,
+                   const cs_field_bc_coeffs_t  *bc_coeffs_ts,
+                   cs_real_6_t        *restrict var,
+                   cs_real_63_t       *restrict grad)
 {
   const cs_mesh_t  *mesh = cs_glob_mesh;
 
@@ -10258,8 +10258,8 @@ cs_gradient_tensor(const char                 *var_name,
  *                              hydrostatic pressure
  * \param[in]   bc_coeffs       boundary condition structure
  * \param[in]   var             gradient's base variable
- * \param[in]   c_weight        cell variable weight, or NULL
- * \param[in]   cpl             associated internal coupling, or NULL
+ * \param[in]   c_weight        cell variable weight, or nullptr
+ * \param[in]   cpl             associated internal coupling, or nullptr
  * \param[out]  grad            gradient
  */
 /*----------------------------------------------------------------------------*/
@@ -10278,10 +10278,10 @@ cs_gradient_scalar_synced_input(const char                 *var_name,
                                 double                      clip_coeff,
                                 cs_real_t                   f_ext[][3],
                                 const cs_field_bc_coeffs_t *bc_coeffs,
-                                const cs_real_t             var[restrict],
-                                const cs_real_t             c_weight[restrict],
+                                const cs_real_t             var[],
+                                const cs_real_t             c_weight[],
                                 const cs_internal_coupling_t  *cpl,
-                                cs_real_t                   grad[restrict][3])
+                                cs_real_t                   grad[][3])
 {
   cs_gradient_info_t *gradient_info = nullptr;
   cs_timer_t t0, t1;
@@ -10359,8 +10359,8 @@ cs_gradient_scalar_synced_input(const char                 *var_name,
  * \param[in]   clip_coeff      clipping coefficient
  * \param[in]   bc_coeffs_v     boundary condition structure
  * \param[in]   var             gradient's base variable
- * \param[in]   c_weight        cell variable weight, or NULL
- * \param[in]   cpl             associated internal coupling, or NULL
+ * \param[in]   c_weight        cell variable weight, or nullptr
+ * \param[in]   cpl             associated internal coupling, or nullptr
  * \param[out]  grad            gradient
                                 (\f$ \der{u_i}{x_j} \f$ is gradv[][i][j])
  */
@@ -10377,10 +10377,10 @@ cs_gradient_vector_synced_input(const char                 *var_name,
                                 double                      epsilon,
                                 double                      clip_coeff,
                                 const cs_field_bc_coeffs_t *bc_coeffs_v,
-                                const cs_real_t             var[restrict][3],
-                                const cs_real_t             c_weight[restrict],
+                                const cs_real_t             var[][3],
+                                const cs_real_t             c_weight[],
                                 const cs_internal_coupling_t  *cpl,
-                                cs_real_t                   grad[restrict][3][3])
+                                cs_real_t                   grad[][3][3])
 {
   cs_gradient_info_t *gradient_info = nullptr;
   cs_timer_t t0, t1;
@@ -10449,18 +10449,18 @@ cs_gradient_vector_synced_input(const char                 *var_name,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_gradient_tensor_synced_input(const char                 *var_name,
-                                cs_gradient_type_t          gradient_type,
-                                cs_halo_type_t              halo_type,
-                                int                         inc,
-                                int                         n_r_sweeps,
-                                int                         verbosity,
-                                cs_gradient_limit_t         clip_mode,
-                                double                      epsilon,
-                                double                      clip_coeff,
-                                const cs_field_bc_coeffs_t *bc_coeffs_ts,
-                                const cs_real_t             var[restrict][6],
-                                cs_real_63_t      *restrict grad)
+cs_gradient_tensor_synced_input(const char                  *var_name,
+                                cs_gradient_type_t           gradient_type,
+                                cs_halo_type_t               halo_type,
+                                int                          inc,
+                                int                          n_r_sweeps,
+                                int                          verbosity,
+                                cs_gradient_limit_t          clip_mode,
+                                double                       epsilon,
+                                double                       clip_coeff,
+                                const cs_field_bc_coeffs_t  *bc_coeffs_ts,
+                                const cs_real_t              var[][6],
+                                cs_real_63_t                *grad)
 {
   cs_gradient_info_t *gradient_info = nullptr;
   cs_timer_t t0, t1;
@@ -10511,16 +10511,16 @@ cs_gradient_tensor_synced_input(const char                 *var_name,
  *
  * When boundary conditions are provided, both the bc_coeff_a and bc_coeff_b
  * arrays must be given. If boundary values are known, bc_coeff_a
- * can point to the boundary values array, and bc_coeff_b set to NULL.
+ * can point to the boundary values array, and bc_coeff_b set to nullptr.
  * If bc_coeff_a is nullptr, bc_coeff_b is ignored.
  *
  * \param[in]   m               pointer to associated mesh structure
  * \param[in]   fvq             pointer to associated finite volume quantities
  * \param[in]   c_id            cell id
  * \param[in]   halo_type       halo type
- * \param[in]   bc_coeffs       boundary condition structure, or NULL
+ * \param[in]   bc_coeffs       boundary condition structure
  * \param[in]   var             gradient's base variable
- * \param[in]   c_weight        cell variable weight, or NULL
+ * \param[in]   c_weight        cell variable weight, or nullptr
  * \param[out]  grad            gradient
  */
 /*----------------------------------------------------------------------------*/
@@ -10539,20 +10539,20 @@ cs_gradient_scalar_cell(const cs_mesh_t             *m,
 
   const cs_mesh_adjacencies_t *ma = cs_glob_mesh_adjacencies;
   const cs_lnum_t *restrict cell_cells_idx
-    = (const cs_lnum_t *restrict) ma->cell_cells_idx;
+    = (const cs_lnum_t *) ma->cell_cells_idx;
   const cs_lnum_t *restrict cell_cells_e_idx
-    = (const cs_lnum_t *restrict) ma->cell_cells_e_idx;
+    = (const cs_lnum_t *) ma->cell_cells_e_idx;
   const cs_lnum_t *restrict cell_b_faces_idx
-    = (const cs_lnum_t *restrict) ma->cell_b_faces_idx;
+    = (const cs_lnum_t *) ma->cell_b_faces_idx;
   const cs_lnum_t *restrict cell_cells
-    = (const cs_lnum_t *restrict) ma->cell_cells;
+    = (const cs_lnum_t *) ma->cell_cells;
   const cs_lnum_t *restrict cell_cells_e
-    = (const cs_lnum_t *restrict) ma->cell_cells_e;
+    = (const cs_lnum_t *) ma->cell_cells_e;
   const cs_lnum_t *restrict cell_b_faces
-    = (const cs_lnum_t *restrict) ma->cell_b_faces;
+    = (const cs_lnum_t *) ma->cell_b_faces;
 
   const cs_real_3_t *restrict cell_f_cen
-    = (const cs_real_3_t *restrict)fvq->cell_f_cen;
+    = (const cs_real_3_t *)fvq->cell_f_cen;
 
   /* Reconstruct gradients using least squares for non-orthogonal meshes */
 
@@ -10569,12 +10569,12 @@ cs_gradient_scalar_cell(const cs_mesh_t             *m,
     if (adj_id == 0) {
       s_id = cell_cells_idx[c_id];
       e_id = cell_cells_idx[c_id+1];
-      cell_cells_p = (const cs_lnum_t *restrict)(cell_cells);
+      cell_cells_p = (const cs_lnum_t *)(cell_cells);
     }
     else if (cell_cells_e_idx != nullptr) {
       s_id = cell_cells_e_idx[c_id];
       e_id = cell_cells_e_idx[c_id+1];
-      cell_cells_p = (const cs_lnum_t *restrict)(cell_cells_e);
+      cell_cells_p = (const cs_lnum_t *)(cell_cells_e);
     }
     else
       break;
@@ -10662,13 +10662,13 @@ cs_gradient_scalar_cell(const cs_mesh_t             *m,
   for (cs_lnum_t i = s_id; i < e_id; i++) {
 
     const cs_real_3_t *restrict b_face_normal
-      = (const cs_real_3_t *restrict)fvq->b_face_normal;
+      = (const cs_real_3_t *)fvq->b_face_normal;
     const cs_real_t *restrict b_face_surf
-      = (const cs_real_t *restrict)fvq->b_face_surf;
+      = (const cs_real_t *)fvq->b_face_surf;
     const cs_real_t *restrict b_dist
-      = (const cs_real_t *restrict)fvq->b_dist;
+      = (const cs_real_t *)fvq->b_dist;
     const cs_real_3_t *restrict diipb
-      = (const cs_real_3_t *restrict)fvq->diipb;
+      = (const cs_real_3_t *)fvq->diipb;
 
     cs_real_t  dsij[3];
 
@@ -10704,7 +10704,7 @@ cs_gradient_scalar_cell(const cs_mesh_t             *m,
     else if (bc_coeff_a != nullptr) { /* Known face values */
 
       const cs_real_3_t *restrict b_f_face_cog
-        = (const cs_real_3_t *restrict)fvq->b_f_face_cog;
+        = (const cs_real_3_t *)fvq->b_f_face_cog;
 
       cs_real_t dc[3];
       for (cs_lnum_t ii = 0; ii < 3; ii++)
@@ -10729,7 +10729,7 @@ cs_gradient_scalar_cell(const cs_mesh_t             *m,
               as above, pfac cancels out, so does contribution to RHS */
 
       const cs_real_3_t *restrict b_f_face_cog
-        = (const cs_real_3_t *restrict)fvq->b_f_face_cog;
+        = (const cs_real_3_t *)fvq->b_f_face_cog;
 
       cs_real_t dc[3];
       for (cs_lnum_t ii = 0; ii < 3; ii++)
@@ -10780,16 +10780,16 @@ cs_gradient_scalar_cell(const cs_mesh_t             *m,
  *
  * When boundary conditions are provided, both the bc_coeff_a and bc_coeff_b
  * arrays must be given. If boundary values are known, bc_coeff_a
- * can point to the boundary values array, and bc_coeff_b set to NULL.
+ * can point to the boundary values array, and bc_coeff_b set to nullptr.
  * If bc_coeff_a is nullptr, bc_coeff_b is ignored.
  *
  * \param[in]   m               pointer to associated mesh structure
  * \param[in]   fvq             pointer to associated finite volume quantities
  * \param[in]   c_id            cell id
  * \param[in]   halo_type       halo type
- * \param[in]   bc_coeffs       boundary condition structure, or NULL
+ * \param[in]   bc_coeffs       boundary condition structure
  * \param[in]   var             gradient's base variable
- * \param[in]   c_weight        cell variable weight, or NULL
+ * \param[in]   c_weight        cell variable weight, or nullptr
  * \param[out]  grad            gradient
  */
 /*----------------------------------------------------------------------------*/
@@ -10799,8 +10799,8 @@ cs_gradient_vector_cell(const cs_mesh_t             *m,
                         const cs_mesh_quantities_t  *fvq,
                         cs_lnum_t                    c_id,
                         cs_halo_type_t               halo_type,
-                        const cs_field_bc_coeffs_t  *bc_coeffs,
-                        const cs_real_t              var[restrict][3],
+                        const cs_field_bc_coeffs_t  *bc_coeffs_v,
+                        const cs_real_t              var[][3],
                         const cs_real_t              c_weight[],
                         cs_real_t                    grad[3][3])
 {
@@ -10808,7 +10808,7 @@ cs_gradient_vector_cell(const cs_mesh_t             *m,
                             fvq,
                             c_id,
                             halo_type,
-                            bc_coeffs,
+                            bc_coeffs_v,
                             var,
                             c_weight,
                             grad);
@@ -10824,16 +10824,16 @@ cs_gradient_vector_cell(const cs_mesh_t             *m,
  *
  * When boundary conditions are provided, both the bc_coeff_a and bc_coeff_b
  * arrays must be given. If boundary values are known, bc_coeff_a
- * can point to the boundary values array, and bc_coeff_b set to NULL.
+ * can point to the boundary values array, and bc_coeff_b set to nullptr.
  * If bc_coeff_a is nullptr, bc_coeff_b is ignored.
  *
  * \param[in]   m               pointer to associated mesh structure
  * \param[in]   fvq             pointer to associated finite volume quantities
  * \param[in]   c_id            cell id
  * \param[in]   halo_type       halo type
- * \param[in]   bc_coeffs_ts    boundary condition structure, or NULL
+ * \param[in]   bc_coeffs_ts    boundary condition structure
  * \param[in]   var             gradient's base variable
- * \param[in]   c_weight        cell variable weight, or NULL
+ * \param[in]   c_weight        cell variable weight, or nullptr
  * \param[out]  grad            gradient
  */
 /*----------------------------------------------------------------------------*/
@@ -10844,7 +10844,7 @@ cs_gradient_tensor_cell(const cs_mesh_t             *m,
                         cs_lnum_t                    c_id,
                         cs_halo_type_t               halo_type,
                         const cs_field_bc_coeffs_t  *bc_coeffs_ts,
-                        const cs_real_t              var[restrict][6],
+                        const cs_real_t              var[][6],
                         const cs_real_t              c_weight[],
                         cs_real_t                    grad[6][3])
 {
@@ -10929,17 +10929,17 @@ cs_gradient_porosity_balance(int inc)
   cs_real_t *i_massflux = cs_field_by_name("inner_mass_flux")->val;
   cs_real_t *b_massflux = cs_field_by_name("boundary_mass_flux")->val;
   const cs_real_3_t *restrict i_face_normal
-    = (const cs_real_3_t *restrict)mq->i_face_normal;
+    = (const cs_real_3_t *)mq->i_face_normal;
   const cs_real_3_t *restrict i_f_face_normal
-    = (const cs_real_3_t *restrict)mq->i_f_face_normal;
+    = (const cs_real_3_t *)mq->i_f_face_normal;
   const cs_real_3_t *restrict b_face_normal
-    = (const cs_real_3_t *restrict)mq->b_face_normal;
+    = (const cs_real_3_t *)mq->b_face_normal;
   const cs_real_3_t *restrict b_f_face_normal
-    = (const cs_real_3_t *restrict)mq->b_f_face_normal;
+    = (const cs_real_3_t *)mq->b_f_face_normal;
   const cs_lnum_2_t *restrict i_face_cells
-    = (const cs_lnum_2_t *restrict)m->i_face_cells;
+    = (const cs_lnum_2_t *)m->i_face_cells;
   const cs_lnum_t *restrict b_face_cells
-    = (const cs_lnum_t *restrict)m->b_face_cells;
+    = (const cs_lnum_t *)m->b_face_cells;
   const cs_real_t *restrict i_f_face_surf = mq->i_f_face_surf;
   const cs_real_t *restrict i_face_surf = mq->i_face_surf;
   const cs_real_t *restrict b_f_face_surf = mq->b_f_face_surf;
@@ -10967,7 +10967,7 @@ cs_gradient_porosity_balance(int inc)
   cs_real_t *i_poro_duq_1 = cs_field_by_name("i_poro_duq_1")->val;
   cs_real_t *b_poro_duq = cs_field_by_name("b_poro_duq")->val;
   cs_real_3_t *c_poro_div_duq
-    = (cs_real_3_t *restrict)cs_field_by_name("poro_div_duq")->val;
+    = (cs_real_3_t *)cs_field_by_name("poro_div_duq")->val;
 
 # pragma omp parallel for
   for (cs_lnum_t c_id = 0; c_id < n_cells_ext; c_id++) {

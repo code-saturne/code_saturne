@@ -104,7 +104,7 @@ void
 cs_axpy(cs_lnum_t         n,
         double            a,
         const cs_real_t  *x,
-        cs_real_t        *restrict y);
+        cs_real_t        *y);
 
 /*----------------------------------------------------------------------------
  * Return the sum of a vector. For better precision, a superblock algorithm
@@ -205,11 +205,11 @@ cs_dot_wxx(cs_lnum_t         n,
  *----------------------------------------------------------------------------*/
 
 void
-cs_dot_xx_xy(cs_lnum_t                    n,
-             const cs_real_t  *restrict   x,
-             const cs_real_t  *restrict   y,
-             double                      *xx,
-             double                      *xy);
+cs_dot_xx_xy(cs_lnum_t         n,
+             const cs_real_t  *x,
+             const cs_real_t  *y,
+             double           *xx,
+             double           *xy);
 
 /*----------------------------------------------------------------------------
  * Return the double dot product of 3 vectors: x.y, and y.z
@@ -228,12 +228,12 @@ cs_dot_xx_xy(cs_lnum_t                    n,
  *----------------------------------------------------------------------------*/
 
 void
-cs_dot_xy_yz(cs_lnum_t                    n,
-             const cs_real_t  *restrict   x,
-             const cs_real_t  *restrict   y,
-             const cs_real_t  *restrict   z,
-             double                      *xx,
-             double                      *xy);
+cs_dot_xy_yz(cs_lnum_t         n,
+             const cs_real_t  *x,
+             const cs_real_t  *y,
+             const cs_real_t  *z,
+             double           *xx,
+             double           *xy);
 
 /*----------------------------------------------------------------------------
  * Return 3 dot products of 3 vectors: x.x, x.y, and y.z
@@ -253,13 +253,13 @@ cs_dot_xy_yz(cs_lnum_t                    n,
  *----------------------------------------------------------------------------*/
 
 void
-cs_dot_xx_xy_yz(cs_lnum_t                    n,
-                const cs_real_t  *restrict   x,
-                const cs_real_t  *restrict   y,
-                const cs_real_t  *restrict   z,
-                double                      *xx,
-                double                      *xy,
-                double                      *yz);
+cs_dot_xx_xy_yz(cs_lnum_t         n,
+                const cs_real_t  *x,
+                const cs_real_t  *y,
+                const cs_real_t  *z,
+                double           *xx,
+                double           *xy,
+                double           *yz);
 
 /*----------------------------------------------------------------------------
  * Return 5 dot products of 3 vectors: x.x, y.y, x.y, x.z, and y.z
@@ -281,15 +281,15 @@ cs_dot_xx_xy_yz(cs_lnum_t                    n,
  *----------------------------------------------------------------------------*/
 
 void
-cs_dot_xx_yy_xy_xz_yz(cs_lnum_t                    n,
-                      const cs_real_t  *restrict   x,
-                      const cs_real_t  *restrict   y,
-                      const cs_real_t  *restrict   z,
-                      double                      *xx,
-                      double                      *yy,
-                      double                      *xy,
-                      double                      *xz,
-                      double                      *yz);
+cs_dot_xx_yy_xy_xz_yz(cs_lnum_t         n,
+                      const cs_real_t  *x,
+                      const cs_real_t  *y,
+                      const cs_real_t  *z,
+                      double           *xx,
+                      double           *yy,
+                      double           *xy,
+                      double           *xz,
+                      double           *yz);
 
 /*----------------------------------------------------------------------------
  * Return the global dot product of 2 vectors: x.y

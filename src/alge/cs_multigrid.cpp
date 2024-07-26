@@ -374,8 +374,8 @@ static int _k_cycle_hpc_recurse_threshold = 256; /* under this size, coarsest
                                                     level solver does not
                                                     use k-cycle preconditioning */
 
-static int _grid_max_level_for_device = 1; /* grids over this level are
-                                              solved on host only */
+static unsigned int _grid_max_level_for_device = 1; /* grids over this level are
+                                                       solved on host only */
 
 /*============================================================================
  * Private function prototypes for recursive
@@ -3555,7 +3555,7 @@ _multigrid_v_cycle_pc(cs_multigrid_t        *mg,
     }
     else {
       if (amode_p > CS_ALLOC_HOST)
-        cs_prefetch_d2h(vx_lv, _n_rows);
+        cs_prefetch_d2h(mgd->rhs_vx[level*2], _n_rows);
       assert(aux_size_h >= wr_size*sizeof(cs_real_t));
     }
 #else

@@ -719,7 +719,7 @@ cs_time_step_log_setup(void)
   else
     cs_log_printf(CS_LOG_SETUP,
                   _("      t_max:   %g s (final physical time)\n\n"),
-                  ts->nt_max);
+                  ts->t_max);
 
   /* Other options */
   cs_log_printf

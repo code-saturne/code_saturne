@@ -65,9 +65,9 @@ typedef void
                           bool                symmetric,
                           bool                copy,
                           cs_lnum_t           n_edges,
-                          const cs_lnum_2_t  *restrict edges,
-                          const cs_real_t    *restrict da,
-                          const cs_real_t    *restrict xa);
+                          const cs_lnum_2_t  *edges,
+                          const cs_real_t    *da,
+                          const cs_real_t    *xa);
 
 typedef void
 (cs_matrix_release_coeffs_t) (cs_matrix_t  *matrix);
@@ -83,7 +83,7 @@ typedef void
 
 typedef void
 (cs_matrix_copy_diagonal_t) (const cs_matrix_t  *matrix,
-                             cs_real_t          *restrict da);
+                             cs_real_t          *da);
 
 typedef const cs_real_t *
 (cs_matrix_get_diagonal_t)(const cs_matrix_t  *matrix);
@@ -108,8 +108,8 @@ typedef void
 (cs_matrix_vector_product_t) (cs_matrix_t  *matrix,
                               bool          exclude_diag,
                               bool          sync,
-                              cs_real_t    *restrict x,
-                              cs_real_t    *restrict y);
+                              cs_real_t    *x,
+                              cs_real_t    *y);
 
 /*----------------------------------------------------------------------------
  * Matrix types

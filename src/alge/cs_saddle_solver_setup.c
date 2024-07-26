@@ -643,7 +643,7 @@ _notay_hook(void  *context,
                                      SIGFPE detection */
 #else
   bft_error(__FILE__, __LINE__, 0,
-            "%s: PETSc is required for solving \"%s\"\n",
+            "%s: PETSc is required for solving \"%s\"\n"
             " Please modify your settings/build code_saturne with PETSc.",
             __func__, saddlep->name);
 #endif  /* HAVE_PETSC */

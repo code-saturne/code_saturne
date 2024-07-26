@@ -142,7 +142,7 @@ cs_cuda_mem_malloc_device(size_t        n,
                           const char   *file_name,
                           int           line_num)
 {
-  void *ptr = NULL;
+  void *ptr = nullptr;
 
   CS_CUDA_CHECK_CALL(cudaMalloc(&ptr, n), file_name, line_num);
 
@@ -175,7 +175,7 @@ cs_cuda_mem_malloc_host(size_t        n,
                         const char   *file_name,
                         int           line_num)
 {
-  void *ptr = NULL;
+  void *ptr = nullptr;
 
   CS_CUDA_CHECK_CALL(cudaMallocHost(&ptr, n), file_name, line_num);
 
@@ -208,7 +208,7 @@ cs_cuda_mem_malloc_managed(size_t        n,
                            const char   *file_name,
                            int           line_num)
 {
-  void *ptr = NULL;
+  void *ptr = nullptr;
 
   CS_CUDA_CHECK_CALL(cudaMallocManaged(&ptr, n), file_name, line_num);
 
@@ -473,7 +473,7 @@ cs_cuda_get_host_ptr(const void  *ptr)
 {
   cudaPointerAttributes attributes;
 
-  void *host_ptr = NULL;
+  void *host_ptr = nullptr;
   int retcode = cudaPointerGetAttributes(&attributes, ptr);
 
   if (retcode == cudaSuccess) {
@@ -749,7 +749,7 @@ cs_base_cuda_select_default_device(void)
   /* Finally, determine whether we may use graphs for some kernel launches. */
 
   const char s[] = "CS_CUDA_ALLOW_GRAPH";
-  if (getenv(s) != NULL) {
+  if (getenv(s) != nullptr) {
     int i = atoi(getenv(s));
     cs_glob_cuda_allow_graph = (i <= 0) ? false : true;
   }

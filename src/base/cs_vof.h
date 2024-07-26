@@ -311,15 +311,15 @@ cs_vof_deshpande_drift_flux(const cs_mesh_t             *m,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_vof_drift_term(int                        imrgra,
-                  int                        nswrgp,
-                  int                        imligp,
-                  int                        iwarnp,
-                  cs_real_t                  epsrgp,
-                  cs_real_t                  climgp,
-                  cs_real_t        *restrict pvar,
-                  const cs_real_t  *restrict pvara,
-                  cs_real_t        *restrict rhs);
+cs_vof_drift_term(int               imrgra,
+                  int               nswrgp,
+                  int               imligp,
+                  int               iwarnp,
+                  cs_real_t         epsrgp,
+                  cs_real_t         climgp,
+                  cs_real_t        *pvar,
+                  const cs_real_t  *pvara,
+                  cs_real_t        *rhs);
 
 /*----------------------------------------------------------------------------
  *!

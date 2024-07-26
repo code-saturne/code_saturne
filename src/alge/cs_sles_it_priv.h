@@ -117,8 +117,8 @@ typedef cs_sles_convergence_state_t
                       cs_lnum_t                  diag_block_size,
                       cs_sles_it_convergence_t  *convergence,
                       const cs_real_t           *rhs,
-                      cs_real_t                 *restrict vx_ini,
-                      cs_real_t                 *restrict vx,
+                      cs_real_t                 *vx_ini,
+                      cs_real_t                 *vx,
                       size_t                     aux_size,
                       void                      *aux_vectors);
 
@@ -458,11 +458,11 @@ _dot_products_xx_yy_xy_xz_yz(const cs_sles_it_t  *c,
                              const cs_real_t     *x,
                              const cs_real_t     *y,
                              const cs_real_t     *z,
-                             double              *xx,
-                             double              *yy,
-                             double              *xy,
-                             double              *xz,
-                             double              *yz)
+                             double              *restrict xx,
+                             double              *restrict yy,
+                             double              *restrict xy,
+                             double              *restrict xz,
+                             double              *restrict yz)
 {
   double s[5];
 
@@ -497,10 +497,10 @@ _dot_products_xx_yy_xy_xz_yz(const cs_sles_it_t  *c,
  *----------------------------------------------------------------------------*/
 
 inline static void
-_fw_and_bw_lu33(const cs_real_t  mat[],
-                cs_real_t        x[restrict],
-                const cs_real_t  b[restrict],
-                const cs_real_t  c[restrict])
+_fw_and_bw_lu33(const cs_real_t    mat[],
+                cs_real_t        *restrict x,
+                const cs_real_t  *restrict b,
+                const cs_real_t  *restrict c)
 {
   cs_real_t  aux[3];
 
@@ -526,11 +526,11 @@ _fw_and_bw_lu33(const cs_real_t  mat[],
  *----------------------------------------------------------------------------*/
 
 inline static void
-_fw_and_bw_lu(const cs_real_t  mat[],
-              int              db_size,
-              cs_real_t        x[restrict],
-              const cs_real_t  b[restrict],
-              const cs_real_t  c[restrict])
+_fw_and_bw_lu(const cs_real_t   mat[],
+              int               db_size,
+              cs_real_t        *restrict x,
+              const cs_real_t  *restrict b,
+              const cs_real_t  *restrict c)
 {
   assert(db_size <= DB_SIZE_MAX);
   cs_real_t aux[DB_SIZE_MAX];
@@ -565,10 +565,10 @@ _fw_and_bw_lu(const cs_real_t  mat[],
  *----------------------------------------------------------------------------*/
 
 inline static void
-_fw_and_bw_lu_gs(const cs_real_t  mat[],
-                 int              db_size,
-                 cs_real_t        x[restrict],
-                 const cs_real_t  b[restrict])
+_fw_and_bw_lu_gs(const cs_real_t   mat[],
+                 int               db_size,
+                 cs_real_t        *restrict x,
+                 const cs_real_t  *restrict b)
 {
   assert(db_size <= DB_SIZE_MAX);
 

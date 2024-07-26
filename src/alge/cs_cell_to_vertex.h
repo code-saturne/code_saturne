@@ -102,10 +102,10 @@ cs_cell_to_vertex(cs_cell_to_vertex_type_t   method,
                   int                        verbosity,
                   cs_lnum_t                  var_dim,
                   bool                       ignore_rot_perio,
-                  const cs_real_t            c_weight[restrict],
-                  const cs_real_t            c_var[restrict],
-                  const cs_real_t            b_var[restrict],
-                  cs_real_t                  v_var[restrict]);
+                  const cs_real_t            c_weight[],
+                  const cs_real_t            c_var[],
+                  const cs_real_t            b_var[],
+                  cs_real_t                  v_var[]);
 
 /*----------------------------------------------------------------------------*/
 

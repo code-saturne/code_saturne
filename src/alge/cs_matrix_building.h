@@ -163,7 +163,9 @@ cs_matrix_time_step(const cs_mesh_t            *m,
                     const cs_real_t             b_massflux[],
                     const cs_real_t             i_visc[],
                     const cs_real_t             b_visc[],
-                    cs_real_t         *restrict da);
+                    cs_real_t                  *da);
+
+/*----------------------------------------------------------------------------*/
 
 END_C_DECLS
 

@@ -156,8 +156,8 @@ cs_f_math_sym_33_product(const cs_real_t  s1[6],
                          cs_real_t        sout[6]);
 
 void
-cs_f_math_reduce_sym_prod_33_to_66(const cs_real_t  s[3][3],
-                                   cs_real_t        sout[6][6]);
+cs_f_math_reduce_sym_prod_33_to_66(const cs_real_t       s[3][3],
+                                   cs_real_t  (*restrict sout)[6]);
 
 void
 cs_f_math_3_normalize(const cs_real_t vin[3],
@@ -195,8 +195,8 @@ cs_f_math_sym_33_product(const cs_real_t  s1[6],
  *----------------------------------------------------------------------------*/
 
 void
-cs_f_math_reduce_sym_prod_33_to_66(const cs_real_t  s[3][3],
-                                   cs_real_t        sout[6][6])
+cs_f_math_reduce_sym_prod_33_to_66(const cs_real_t       s[3][3],
+                                   cs_real_t  (*restrict sout)[6])
 {
   cs_math_reduce_sym_prod_33_to_66(s, sout);
 }
@@ -507,10 +507,10 @@ cs_math_voltet(const cs_real_t   xv[3],
 /*----------------------------------------------------------------------------*/
 
 void
-cs_math_33_eig_val_vec(const cs_real_t  m_in[3][3],
-                       const cs_real_t  tol_err,
-                       cs_real_t        eig_val[restrict 3],
-                       cs_real_t        eig_vec[restrict 3][3])
+cs_math_33_eig_val_vec(const cs_real_t   m_in[3][3],
+                       const cs_real_t   tol_err,
+                       cs_real_t        *restrict eig_val,
+                       cs_real_t       (*restrict eig_vec)[3])
 {
   /* Declaration of local variables
    * vec1, vec2:  vectors of 3 real values (copies of diagonal values)

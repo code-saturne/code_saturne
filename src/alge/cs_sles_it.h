@@ -128,8 +128,8 @@ cs_user_sles_it_solver(cs_sles_it_t              *c,
                        cs_lnum_t                  diag_block_size,
                        cs_sles_it_convergence_t  *convergence,
                        const cs_real_t           *rhs,
-                       cs_real_t                 *restrict vx_ini,
-                       cs_real_t                 *restrict vx,
+                       cs_real_t                 *vx_ini,
+                       cs_real_t                 *vx,
                        size_t                     aux_size,
                        void                      *aux_vectors);
 

@@ -713,7 +713,7 @@ _b_mat_vect_p_l_msr_exdiag(cs_lnum_t        n_rows,
 
 static cs_halo_state_t *
 _pre_vector_multiply_sync_x_start(const cs_matrix_t   *matrix,
-                                  cs_real_t            d_x[restrict])
+                                  cs_real_t            d_x[])
 {
   cs_halo_state_t *hs = NULL;
 
@@ -959,7 +959,7 @@ _update_cusparse_map(cs_matrix_cusparse_map_t  *csm,
 
 #if defined(HAVE_CUSPARSE_GENERIC_API)
 
-#if CUSPARSE_VER_MAJOR >= 12
+#if CUSPARSE_VER_MAJOR >= 11
   cusparseSpMVAlg_t spmv_alg_type = CUSPARSE_SPMV_ALG_DEFAULT;
 #else
   cusparseSpMVAlg_t spmv_alg_type = CUSPARSE_MV_ALG_DEFAULT;
@@ -1201,8 +1201,8 @@ void
 cs_matrix_spmv_cuda_native(const cs_matrix_t  *matrix,
                            bool                exclude_diag,
                            bool                sync,
-                           cs_real_t           d_x[restrict],
-                           cs_real_t           d_y[restrict])
+                           cs_real_t           d_x[],
+                           cs_real_t           d_y[])
 {
   const cs_matrix_struct_native_t  *ms
     = (const cs_matrix_struct_native_t *)matrix->structure;
@@ -1304,8 +1304,8 @@ void
 cs_matrix_spmv_cuda_csr(cs_matrix_t  *matrix,
                         bool          exclude_diag,
                         bool          sync,
-                        cs_real_t     d_x[restrict],
-                        cs_real_t     d_y[restrict])
+                        cs_real_t     d_x[],
+                        cs_real_t     d_y[])
 {
   const cs_matrix_struct_csr_t *ms
     = (const cs_matrix_struct_csr_t *)matrix->structure;
@@ -1366,8 +1366,8 @@ void
 cs_matrix_spmv_cuda_csr_cusparse(cs_matrix_t  *matrix,
                                  bool          exclude_diag,
                                  bool          sync,
-                                 cs_real_t     d_x[restrict],
-                                 cs_real_t     d_y[restrict])
+                                 cs_real_t     d_x[],
+                                 cs_real_t     d_y[])
 {
   cs_matrix_cusparse_map_t *csm
     = (cs_matrix_cusparse_map_t *)matrix->ext_lib_map;
@@ -1396,7 +1396,7 @@ cs_matrix_spmv_cuda_csr_cusparse(cs_matrix_t  *matrix,
 
 #if defined(HAVE_CUSPARSE_GENERIC_API)
 
-#if CUSPARSE_VER_MAJOR >= 12
+#if CUSPARSE_VER_MAJOR >= 11
   cusparseSpMVAlg_t spmv_alg_type = CUSPARSE_SPMV_ALG_DEFAULT;
 #else
   cusparseSpMVAlg_t spmv_alg_type = CUSPARSE_MV_ALG_DEFAULT;
@@ -1517,8 +1517,8 @@ void
 cs_matrix_spmv_cuda_msr(cs_matrix_t  *matrix,
                         bool          exclude_diag,
                         bool          sync,
-                        cs_real_t     d_x[restrict],
-                        cs_real_t     d_y[restrict])
+                        cs_real_t     d_x[],
+                        cs_real_t     d_y[])
 {
   const cs_matrix_struct_dist_t *ms
     = (const cs_matrix_struct_dist_t *)matrix->structure;
@@ -1583,8 +1583,8 @@ void
 cs_matrix_spmv_cuda_msr_cusparse(cs_matrix_t  *matrix,
                                  bool          exclude_diag,
                                  bool          sync,
-                                 cs_real_t     d_x[restrict],
-                                 cs_real_t     d_y[restrict])
+                                 cs_real_t     d_x[],
+                                 cs_real_t     d_y[])
 {
   cs_matrix_cusparse_map_t *csm
     = (cs_matrix_cusparse_map_t *)matrix->ext_lib_map;
@@ -1634,7 +1634,7 @@ cs_matrix_spmv_cuda_msr_cusparse(cs_matrix_t  *matrix,
 
 #if defined(HAVE_CUSPARSE_GENERIC_API)
 
-#if CUSPARSE_VER_MAJOR >= 12
+#if CUSPARSE_VER_MAJOR >= 11
   cusparseSpMVAlg_t spmv_alg_type = CUSPARSE_SPMV_ALG_DEFAULT;
 #else
   cusparseSpMVAlg_t spmv_alg_type = CUSPARSE_MV_ALG_DEFAULT;
@@ -1728,8 +1728,8 @@ void
 cs_matrix_spmv_cuda_msr_b(cs_matrix_t  *matrix,
                           bool          exclude_diag,
                           bool          sync,
-                          cs_real_t     d_x[restrict],
-                          cs_real_t     d_y[restrict])
+                          cs_real_t     d_x[],
+                          cs_real_t     d_y[])
 {
   const cs_matrix_struct_dist_t *ms
     = (const cs_matrix_struct_dist_t *)matrix->structure;
@@ -1826,8 +1826,8 @@ void
 cs_matrix_spmv_cuda_msr_b_cusparse(cs_matrix_t  *matrix,
                                    bool          exclude_diag,
                                    bool          sync,
-                                   cs_real_t     d_x[restrict],
-                                   cs_real_t     d_y[restrict])
+                                   cs_real_t     d_x[],
+                                   cs_real_t     d_y[])
 {
   cs_matrix_cusparse_map_t *csm
     = (cs_matrix_cusparse_map_t *)matrix->ext_lib_map;
@@ -1936,8 +1936,8 @@ void
 cs_matrix_spmv_cuda_msr_bb_cusparse(cs_matrix_t  *matrix,
                                     bool          exclude_diag,
                                     bool          sync,
-                                    cs_real_t     d_x[restrict],
-                                    cs_real_t     d_y[restrict])
+                                    cs_real_t     d_x[],
+                                    cs_real_t     d_y[])
 {
   cs_matrix_cusparse_map_t *csm
     = (cs_matrix_cusparse_map_t *)matrix->ext_lib_map;

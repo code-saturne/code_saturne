@@ -467,8 +467,8 @@ cs_blas_cublas_dot(cs_lnum_t        n,
 void
 cs_blas_cuda_axpy(cs_lnum_t         n,
                   const cs_real_t  *alpha,
-                  const cs_real_t  *restrict x,
-                  cs_real_t        *restrict y);
+                  const cs_real_t  *x,
+                  cs_real_t        *y);
 
 /*----------------------------------------------------------------------------
  * Compute x <- alpha.x
@@ -484,7 +484,7 @@ cs_blas_cuda_axpy(cs_lnum_t         n,
 void
 cs_blas_cuda_scal(cs_lnum_t         n,
                   const cs_real_t  *alpha,
-                  cs_real_t        *restrict x);
+                  cs_real_t        *x);
 
 /*----------------------------------------------------------------------------*/
 

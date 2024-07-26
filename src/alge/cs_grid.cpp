@@ -2741,14 +2741,14 @@ _graph_m_ptr_insert_m(cs_graph_m_ptr_t  *s,
 /*----------------------------------------------------------------------------*/
 
 static cs_lnum_t
-_pairwise_msr(cs_lnum_t         f_n_rows,
-              const cs_real_t   beta,
-              const cs_real_t   dd_threshold,
-              const cs_lnum_t   row_index[restrict],
-              const cs_lnum_t   col_id[restrict],
-              const cs_real_t   d_val[restrict],
-              const cs_real_t   x_val[restrict],
-              cs_lnum_t        *f_c_row)
+_pairwise_msr(cs_lnum_t                  f_n_rows,
+              const cs_real_t            beta,
+              const cs_real_t            dd_threshold,
+              const cs_lnum_t  *restrict row_index,
+              const cs_lnum_t  *restrict col_id,
+              const cs_real_t  *restrict d_val,
+              const cs_real_t  *restrict x_val,
+              cs_lnum_t        *restrict f_c_row)
 {
   cs_lnum_t c_n_rows = 0;
 

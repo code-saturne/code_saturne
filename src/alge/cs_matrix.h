@@ -669,7 +669,7 @@ cs_matrix_release_coefficients(cs_matrix_t  *matrix);
 
 void
 cs_matrix_copy_diagonal(const cs_matrix_t  *matrix,
-                        cs_real_t          *restrict da);
+                        cs_real_t          *da);
 
 /*----------------------------------------------------------------------------
  * Query matrix coefficients symmetry
@@ -941,8 +941,8 @@ cs_matrix_apply_variant(cs_matrix_t                *m,
 
 void
 cs_matrix_vector_multiply(const cs_matrix_t   *matrix,
-                          cs_real_t           *restrict x,
-                          cs_real_t           *restrict y);
+                          cs_real_t           *x,
+                          cs_real_t           *y);
 
 #if defined(HAVE_ACCEL)
 
@@ -961,8 +961,8 @@ cs_matrix_vector_multiply(const cs_matrix_t   *matrix,
 
 void
 cs_matrix_vector_multiply_d(const cs_matrix_t   *matrix,
-                            cs_real_t           *restrict x,
-                            cs_real_t           *restrict y);
+                            cs_real_t           *x,
+                            cs_real_t           *y);
 
 #endif /* defined(HAVE_ACCEL) */
 
@@ -982,8 +982,8 @@ cs_matrix_vector_multiply_d(const cs_matrix_t   *matrix,
 
 void
 cs_matrix_vector_multiply_nosync(const cs_matrix_t  *matrix,
-                                 cs_real_t          *restrict x,
-                                 cs_real_t          *restrict y);
+                                 cs_real_t          *x,
+                                 cs_real_t          *y);
 
 /*----------------------------------------------------------------------------
  * Partial matrix.vector product.
@@ -1002,8 +1002,8 @@ cs_matrix_vector_multiply_nosync(const cs_matrix_t  *matrix,
 void
 cs_matrix_vector_multiply_partial(const cs_matrix_t      *matrix,
                                   cs_matrix_spmv_type_t   op_type,
-                                  cs_real_t              *restrict x,
-                                  cs_real_t              *restrict y);
+                                  cs_real_t              *x,
+                                  cs_real_t              *y);
 
 #if defined(HAVE_ACCEL)
 
@@ -1026,8 +1026,8 @@ cs_matrix_vector_multiply_partial(const cs_matrix_t      *matrix,
 void
 cs_matrix_vector_multiply_partial_d(const cs_matrix_t      *matrix,
                                     cs_matrix_spmv_type_t   op_type,
-                                    cs_real_t              *restrict x,
-                                    cs_real_t              *restrict y);
+                                    cs_real_t              *x,
+                                    cs_real_t              *y);
 
 #endif /* defined(HAVE_ACCEL) */
 

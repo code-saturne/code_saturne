@@ -243,9 +243,9 @@ cs_gui_linear_solvers(void);
  *----------------------------------------------------------------------------*/
 
 void
-cs_gui_momentum_source_terms(const cs_real_3_t  *restrict vel,
-                             cs_real_3_t        *restrict tsexp,
-                             cs_real_33_t       *restrict tsimp);
+cs_gui_momentum_source_terms(const cs_real_3_t  *vel,
+                             cs_real_3_t        *tsexp,
+                             cs_real_33_t       *tsimp);
 
 /*-----------------------------------------------------------------------------
  * Define global numerical options.
@@ -486,9 +486,9 @@ cs_gui_add_volume_meg_context(const  cs_zone_t   *zone,
 
 void
 cs_gui_scalar_source_terms(cs_field_t        *f,
-                           const cs_real_t   *restrict pvar,
-                           cs_real_t         *restrict tsexp,
-                           cs_real_t         *restrict tsimp);
+                           const cs_real_t   *pvar,
+                           cs_real_t         *tsexp,
+                           cs_real_t         *tsimp);
 
 /*----------------------------------------------------------------------------
  * Define user thermal scalar source terms
@@ -496,9 +496,9 @@ cs_gui_scalar_source_terms(cs_field_t        *f,
 
 void
 cs_gui_thermal_source_terms(cs_field_t        *f,
-                            const cs_real_t   *restrict pvar,
-                            cs_real_t         *restrict tsexp,
-                            cs_real_t         *restrict tsimp);
+                            const cs_real_t   *pvar,
+                            cs_real_t         *tsexp,
+                            cs_real_t         *tsimp);
 
 /*----------------------------------------------------------------------------*/
 /*!

@@ -331,7 +331,7 @@ BEGIN_C_DECLS
 
 void
 cs_array_bool_fill_true(cs_lnum_t  size,
-                        bool       a[restrict]);
+                        bool       a[]);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -344,7 +344,7 @@ cs_array_bool_fill_true(cs_lnum_t  size,
 
 void
 cs_array_bool_fill_false(cs_lnum_t  size,
-                         bool       a[restrict]);
+                         bool       a[]);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -357,7 +357,7 @@ cs_array_bool_fill_false(cs_lnum_t  size,
 
 void
 cs_array_flag_fill_zero(cs_lnum_t  size,
-                        cs_flag_t  a[restrict]);
+                        cs_flag_t  a[]);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -370,7 +370,7 @@ cs_array_flag_fill_zero(cs_lnum_t  size,
 
 void
 cs_array_lnum_fill_zero(cs_lnum_t  size,
-                        cs_lnum_t  a[restrict]);
+                        cs_lnum_t  a[]);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -386,7 +386,7 @@ cs_array_lnum_fill_zero(cs_lnum_t  size,
 void
 cs_array_lnum_set_value(cs_lnum_t  size,
                         cs_lnum_t  num,
-                        cs_lnum_t  a[restrict]);
+                        cs_lnum_t  a[]);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -405,7 +405,7 @@ void
 cs_array_lnum_set_value_on_subset(cs_lnum_t        n_elts,
                                   const cs_lnum_t  elt_ids[],
                                   cs_lnum_t        num,
-                                  cs_lnum_t        a[restrict]);
+                                  cs_lnum_t        a[]);
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Assign zero to all elements of an array. Case of a int array.
@@ -417,7 +417,7 @@ cs_array_lnum_set_value_on_subset(cs_lnum_t        n_elts,
 
 void
 cs_array_int_fill_zero(cs_lnum_t  size,
-                       int        a[restrict]);
+                       int        a[]);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -433,7 +433,7 @@ cs_array_int_fill_zero(cs_lnum_t  size,
 void
 cs_array_int_set_value(cs_lnum_t  size,
                        int        num,
-                       int        a[restrict]);
+                       int        a[]);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -452,7 +452,7 @@ void
 cs_array_int_set_value_on_subset(cs_lnum_t        n_elts,
                                  const cs_lnum_t  elt_ids[],
                                  int              num,
-                                 int              a[restrict]);
+                                 int              a[]);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -498,9 +498,9 @@ cs_array_real_copy_subset(cs_lnum_t         n_elts,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_array_real_copy(cs_lnum_t        size,
-                   const cs_real_t  src[],
-                   cs_real_t        dest[restrict]);
+cs_array_real_copy(cs_lnum_t         size,
+                   const cs_real_t   src[],
+                   cs_real_t         dest[]);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -517,11 +517,11 @@ cs_array_real_copy(cs_lnum_t        size,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_array_real_scale(cs_lnum_t           n_elts,
-                    int                 stride,
-                    const cs_lnum_t    *elt_ids,
-                    cs_real_t           scaling_factor,
-                    cs_real_t           dest[restrict]);
+cs_array_real_scale(cs_lnum_t         n_elts,
+                    int               stride,
+                    const cs_lnum_t  *elt_ids,
+                    cs_real_t         scaling_factor,
+                    cs_real_t         dest[]);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -533,9 +533,10 @@ cs_array_real_scale(cs_lnum_t           n_elts,
  */
 /*----------------------------------------------------------------------------*/
 
-void cs_array_real_padd(cs_lnum_t       n_elts,
-                        const cs_real_t l_add[],
-                        cs_real_t       r[restrict]);
+void
+cs_array_real_padd(cs_lnum_t       n_elts,
+                   const cs_real_t l_add[],
+                   cs_real_t       r[]);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -550,10 +551,10 @@ void cs_array_real_padd(cs_lnum_t       n_elts,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_array_real_set_value(cs_lnum_t          n_elts,
-                        int                stride,
-                        const cs_real_t    ref_val[],
-                        cs_real_t         *a);
+cs_array_real_set_value(cs_lnum_t        n_elts,
+                        int              stride,
+                        const cs_real_t  ref_val[],
+                        cs_real_t        a[]);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -570,11 +571,11 @@ cs_array_real_set_value(cs_lnum_t          n_elts,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_array_real_set_wvalue(cs_lnum_t          n_elts,
-                         int                stride,
-                         const cs_real_t    ref_val[],
-                         const cs_real_t    weight[],
-                         cs_real_t         *a);
+cs_array_real_set_wvalue(cs_lnum_t        n_elts,
+                         int              stride,
+                         const cs_real_t  ref_val[],
+                         const cs_real_t  weight[],
+                         cs_real_t        a[]);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -592,11 +593,11 @@ cs_array_real_set_wvalue(cs_lnum_t          n_elts,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_array_real_set_value_on_subset(cs_lnum_t          n_elts,
-                                  int                stride,
-                                  const cs_lnum_t    elt_ids[],
-                                  const cs_real_t    ref_val[],
-                                  cs_real_t         *a);
+cs_array_real_set_value_on_subset(cs_lnum_t        n_elts,
+                                  int              stride,
+                                  const cs_lnum_t  elt_ids[],
+                                  const cs_real_t  ref_val[],
+                                  cs_real_t        a[]);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -616,12 +617,12 @@ cs_array_real_set_value_on_subset(cs_lnum_t          n_elts,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_array_real_set_wvalue_on_subset(cs_lnum_t          n_elts,
-                                   int                stride,
-                                   const cs_lnum_t    elt_ids[],
-                                   const cs_real_t    ref_val[],
-                                   const cs_real_t    weight[],
-                                   cs_real_t         *a);
+cs_array_real_set_wvalue_on_subset(cs_lnum_t        n_elts,
+                                   int              stride,
+                                   const cs_lnum_t  elt_ids[],
+                                   const cs_real_t  ref_val[],
+                                   const cs_real_t  weight[],
+                                   cs_real_t        a[]);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -636,7 +637,7 @@ cs_array_real_set_wvalue_on_subset(cs_lnum_t          n_elts,
 void
 cs_array_real_set_scalar(cs_lnum_t  n_elts,
                          cs_real_t  ref_val,
-                         cs_real_t  a[restrict]);
+                         cs_real_t  a[]);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -654,7 +655,7 @@ void
 cs_array_real_set_wscalar(cs_lnum_t        n_elts,
                           cs_real_t        ref_val,
                           const cs_real_t  weight[],
-                          cs_real_t        a[restrict]);
+                          cs_real_t        a[]);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -673,7 +674,7 @@ void
 cs_array_real_set_scalar_on_subset(cs_lnum_t        n_elts,
                                    const cs_lnum_t  elt_ids[],
                                    cs_real_t        ref_val,
-                                   cs_real_t        a[restrict]);
+                                   cs_real_t        a[]);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -694,7 +695,7 @@ cs_array_real_set_wscalar_on_subset(cs_lnum_t        n_elts,
                                     const cs_lnum_t  elt_ids[],
                                     cs_real_t        ref_val,
                                     const cs_real_t  weight[],
-                                    cs_real_t        a[restrict]);
+                                    cs_real_t        a[]);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -709,7 +710,7 @@ cs_array_real_set_wscalar_on_subset(cs_lnum_t        n_elts,
 void
 cs_array_real_set_vector(cs_lnum_t         n_elts,
                          const cs_real_t   ref_val[3],
-                         cs_real_t        *a);
+                         cs_real_t         a[]);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -724,10 +725,10 @@ cs_array_real_set_vector(cs_lnum_t         n_elts,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_array_real_set_wvector(cs_lnum_t          n_elts,
-                          const cs_real_t    ref_val[3],
-                          const cs_real_t    weight[],
-                          cs_real_t         *a);
+cs_array_real_set_wvector(cs_lnum_t        n_elts,
+                          const cs_real_t  ref_val[3],
+                          const cs_real_t  weight[],
+                          cs_real_t        a[]);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -743,10 +744,10 @@ cs_array_real_set_wvector(cs_lnum_t          n_elts,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_array_real_set_vector_on_subset(cs_lnum_t         n_elts,
-                                   const cs_lnum_t   elt_ids[],
-                                   const cs_real_t   ref_val[3],
-                                   cs_real_t         a[]);
+cs_array_real_set_vector_on_subset(cs_lnum_t        n_elts,
+                                   const cs_lnum_t  elt_ids[],
+                                   const cs_real_t  ref_val[3],
+                                   cs_real_t        a[]);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -764,11 +765,11 @@ cs_array_real_set_vector_on_subset(cs_lnum_t         n_elts,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_array_real_set_wvector_on_subset(cs_lnum_t          n_elts,
-                                    const cs_lnum_t    elt_ids[],
-                                    const cs_real_t    ref_val[3],
-                                    const cs_real_t    weight[],
-                                    cs_real_t         *a);
+cs_array_real_set_wvector_on_subset(cs_lnum_t        n_elts,
+                                    const cs_lnum_t  elt_ids[],
+                                    const cs_real_t  ref_val[3],
+                                    const cs_real_t  weight[],
+                                    cs_real_t        a[]);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -782,9 +783,9 @@ cs_array_real_set_wvector_on_subset(cs_lnum_t          n_elts,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_array_real_set_tensor(cs_lnum_t         n_elts,
-                         const cs_real_t   ref_tens[3][3],
-                         cs_real_t        *a);
+cs_array_real_set_tensor(cs_lnum_t        n_elts,
+                         const cs_real_t  ref_tens[3][3],
+                         cs_real_t        a[]);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -803,7 +804,7 @@ void
 cs_array_real_set_tensor_on_subset(cs_lnum_t         n_elts,
                                    const cs_lnum_t   elt_ids[],
                                    const cs_real_t   ref_tens[3][3],
-                                   cs_real_t        *a);
+                                   cs_real_t         a[]);
 
 /*----------------------------------------------------------------------------*/
 /*!

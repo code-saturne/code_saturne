@@ -70,12 +70,12 @@ BEGIN_C_DECLS
 /*----------------------------------------------------------------------------*/
 
 void
-cs_rad_transfer_fsck(const cs_real_t  *restrict pco2,
-                     const cs_real_t  *restrict ph2o,
-                     const cs_real_t  *restrict teloc,
-                     cs_real_t        *restrict kloc,
-                     cs_real_t        *restrict aloc,
-                     cs_real_t        *restrict alocb);
+cs_rad_transfer_fsck(const cs_real_t  *pco2,
+                     const cs_real_t  *ph2o,
+                     const cs_real_t  *teloc,
+                     cs_real_t        *kloc,
+                     cs_real_t        *aloc,
+                     cs_real_t        *alocb);
 
 /*----------------------------------------------------------------------------*/
 

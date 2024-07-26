@@ -287,7 +287,7 @@ cs_thermal_model_cflt(const cs_real_t  croma[],
                       const cs_real_t  xcvv[],
                       const cs_real_t  vel[][3],
                       const cs_real_t  imasfl[],
-                      cs_real_t        cflt[restrict]);
+                      cs_real_t        cflt[]);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -351,7 +351,7 @@ cs_thermal_model_newton_t(int               method,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_thermal_model_pdivu(cs_real_t         smbrs[restrict]);
+cs_thermal_model_pdivu(cs_real_t  smbrs[]);
 
 /*----------------------------------------------------------------------------*/
 

@@ -99,9 +99,9 @@ void
 cs_vertex_to_cell(cs_vertex_to_cell_type_t   method,
                   int                        verbosity,
                   cs_lnum_t                  var_dim,
-                  const cs_real_t            v_weight[restrict],
-                  const cs_real_t            v_var[restrict],
-                  cs_real_t                  c_var[restrict]);
+                  const cs_real_t            v_weight[],
+                  const cs_real_t            v_var[],
+                  cs_real_t                  c_var[]);
 
 /*----------------------------------------------------------------------------*/
 

@@ -75,15 +75,15 @@ namespace cg = cooperative_groups;
 
 static cudaStream_t _stream = 0;
 
-static double  *_r_reduce = NULL;
-static double  *_r_grid = NULL;
+static double  *_r_reduce = nullptr;
+static double  *_r_grid = nullptr;
 static unsigned int  _r_grid_size = 0;
 static unsigned int  _r_tuple_size = 0;
 
 #if defined(HAVE_CUBLAS)
 
 static bool            _prefer_cublas = false;
-static cublasHandle_t  _handle = NULL;
+static cublasHandle_t  _handle = nullptr;
 
 #endif
 
@@ -302,7 +302,7 @@ _grid_size(cs_lnum_t     n,
 {
   unsigned int grid_size = cs_cuda_grid_size(n, block_size);
 
-  if (_r_reduce == NULL) {
+  if (_r_reduce == nullptr) {
     // large enough for 4-way combined dot product.
     _r_tuple_size = 4;
     CS_REALLOC_HD(_r_reduce, _r_tuple_size, double, CS_ALLOC_HOST_DEVICE_SHARED);
@@ -341,9 +341,9 @@ cs_blas_cuda_finalize(void)
 
 #if defined(HAVE_CUBLAS)
 
-  if (_handle != NULL) {
+  if (_handle != nullptr) {
     cublasDestroy(_handle);
-    _handle = NULL;
+    _handle = nullptr;
   }
 
 #endif
@@ -369,7 +369,7 @@ cs_blas_cuda_set_stream(cudaStream_t  stream)
 
 #if defined(HAVE_CUBLAS)
 
-  if (_handle != NULL) {
+  if (_handle != nullptr) {
     cublasSetStream(_handle, stream);
   }
 
@@ -507,7 +507,7 @@ cs_blas_cublas_asum(cs_lnum_t        n,
 
   cublasStatus_t status = CUBLAS_STATUS_SUCCESS;
 
-  if (_handle == NULL)
+  if (_handle == nullptr)
     _handle = _init_cublas();
 
   if (sizeof(cs_real_t) == 8)
@@ -552,7 +552,7 @@ cs_blas_cublas_dot(cs_lnum_t        n,
 
   cublasStatus_t status = CUBLAS_STATUS_SUCCESS;
 
-  if (_handle == NULL)
+  if (_handle == nullptr)
     _handle = _init_cublas();
 
   if (sizeof(cs_real_t) == 8)
@@ -598,7 +598,7 @@ cs_blas_cuda_axpy(cs_lnum_t         n,
 {
 #if defined(HAVE_CUBLAS)
 
-  if (_prefer_cublas && _handle != NULL) {
+  if (_prefer_cublas && _handle != nullptr) {
     _handle = _init_cublas();
 
     cublasStatus_t status = CUBLAS_STATUS_SUCCESS;
@@ -657,7 +657,7 @@ cs_blas_cuda_scal(cs_lnum_t         n,
 {
 #if defined(HAVE_CUBLAS)
 
-  if (_prefer_cublas && _handle != NULL) {
+  if (_prefer_cublas && _handle != nullptr) {
     _handle = _init_cublas();
 
     cublasStatus_t status = CUBLAS_STATUS_SUCCESS;

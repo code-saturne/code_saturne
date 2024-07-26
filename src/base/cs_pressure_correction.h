@@ -227,16 +227,16 @@ cs_pressure_correction(int                   iterns,
                        cs_lnum_t             ifbpcd[],
                        cs_lnum_t             ltmast[],
                        const int             isostd[],
-                       cs_real_t             vel[restrict][3],
-                       cs_real_t             da_uu[restrict][6],
+                       cs_real_t             vel[][3],
+                       cs_real_t             da_uu[][6],
                        cs_field_bc_coeffs_t *bc_coeffs_v,
                        cs_field_bc_coeffs_t *bc_coeffs_dp,
-                       cs_real_t             spcond[restrict],
-                       cs_real_t             svcond[restrict],
-                       cs_real_t             frcxt[restrict][3],
-                       cs_real_t             dfrcxt[restrict][3],
-                       cs_real_t             i_visc[restrict],
-                       cs_real_t             b_visc[restrict]);
+                       cs_real_t             spcond[],
+                       cs_real_t             svcond[],
+                       cs_real_t             frcxt[][3],
+                       cs_real_t             dfrcxt[][3],
+                       cs_real_t             i_visc[],
+                       cs_real_t             b_visc[]);
 
 /*----------------------------------------------------------------------------*/
 

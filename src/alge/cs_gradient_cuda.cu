@@ -90,13 +90,13 @@
    int                            inc,                             \
    int                            n_c_iter_max,                    \
    cs_real_t                      c_eps,                           \
-   const cs_real_t     (*restrict coefav)[stride],                 \
-   const cs_real_t     (*restrict coefbv)[stride][stride],         \
-   const cs_real_t     (*restrict pvar)[stride],                   \
-   const cs_real_t      *restrict c_weight,                        \
-   const cs_cocg_6_t    *restrict cocgb,                           \
-   cs_cocg_6_t          *restrict cocg,                            \
-   cs_real_t           (*restrict gradv)[stride][3])
+   const cs_real_t                coefav[][stride],                \
+   const cs_real_t                coefbv[][stride][stride],        \
+   const cs_real_t                pvar[][stride],                  \
+   const cs_real_t               *c_weight,                        \
+   const cs_cocg_6_t             *cocgb,                           \
+   cs_cocg_6_t                   *restrict cocg,                   \
+   cs_real_t                      gradv[][stride][3])
 
 #define INSTANTIATE_GG_R(name, stride) template void name <stride> \
   (const cs_mesh_t               *m,                               \
@@ -106,12 +106,12 @@
    int                           inc,                              \
    int                           porous_model,                     \
    bool                          warped_correction,                \
-   const cs_real_t    (*restrict coefav)[stride],                  \
-   const cs_real_t    (*restrict coefbv)[stride][stride],          \
-   const cs_real_t    (*restrict pvar)[stride],                    \
-   const cs_real_t     *restrict c_weight,                         \
-   const cs_real_t    (*restrict r_grad)[stride][3],               \
-   cs_real_t          (*restrict grad)[stride][3])
+   const cs_real_t               coefav[][stride],                 \
+   const cs_real_t               coefbv[][stride][stride],         \
+   const cs_real_t               pvar[][stride],                   \
+   const cs_real_t              *c_weight,                         \
+   const cs_real_t               r_grad[][stride][3],              \
+   cs_real_t                     grad[][stride][3])
 
 /*=============================================================================
  * Local definitions
@@ -241,7 +241,7 @@ _compute_cocg_inv(cs_lnum_t         n_cells,
   if (c_idx >= n_cells)
     return;
 
-  cs_lnum_t c_id = (cell_ids != NULL) ? cell_ids[c_idx] : c_idx;
+  cs_lnum_t c_id = (cell_ids != nullptr) ? cell_ids[c_idx] : c_idx;
 
   auto a = cocg[c_id];
 
@@ -329,7 +329,7 @@ _compute_cocg_rhsv_lsq_s_i_face(cs_lnum_t           size,
       dc[2] = cell_cen[c_id1][2] - cell_cen[c_id][2];
 
       ddc = 1. / (dc[0] * dc[0] + dc[1] * dc[1] + dc[2] * dc[2]);
-      if (c_weight == NULL)
+      if (c_weight == nullptr)
         _weight = 1;
       else
         _weight = 2. * c_weight[c_id1] / (c_weight[c_id] + c_weight[c_id1]);
@@ -366,8 +366,8 @@ _compute_cocg_rhsv_lsq_s_b_face(cs_lnum_t         n_b_cells,
                                 const cs_real_t   diipb[][3],
                                 const cs_real_t   coefap[],
                                 const cs_real_t   coefbp[],
-                                T                *restrict cocg,
-                                cs_real_4_t      *restrict rhsv)
+                                T                *cocg,
+                                cs_real_4_t      *rhsv)
 {
   cs_lnum_t b_c_idx = blockIdx.x * blockDim.x + threadIdx.x;
 
@@ -424,7 +424,7 @@ _compute_rhsv_lsq_s_i_face(cs_lnum_t          size,
     cs_lnum_t c_id1;
     for (cs_lnum_t i = s_id; i < e_id; i++) {
       c_id1 = cell_cells[i];
-      if (c_weight == NULL)
+      if (c_weight == nullptr)
         _weight = 1;
       else
         _weight = 2. * c_weight[c_id1] / (c_weight[c_id] + c_weight[c_id1]);
@@ -458,7 +458,7 @@ _compute_rhsv_lsq_s_b_face(cs_lnum_t         n_b_cells,
                            const cs_real_t   diipb[][3],
                            const cs_real_t   coefap[],
                            const cs_real_t   coefbp[],
-                           cs_real_4_t      *restrict rhsv)
+                           cs_real_4_t      *rhsv)
 {
   cs_lnum_t b_c_idx = blockIdx.x * blockDim.x + threadIdx.x;
 
@@ -567,7 +567,7 @@ _compute_rhs_lsq_strided_cells(cs_lnum_t             n_cells,
 
     ddc = 1./(dc[0]*dc[0] + dc[1]*dc[1] + dc[2]*dc[2]);
 
-    if (c_weight == NULL) {
+    if (c_weight == nullptr) {
       lweight = 1.;
     }
     else {
@@ -593,7 +593,7 @@ _compute_rhs_lsq_strided_cells(cs_lnum_t             n_cells,
 
   /* Contribution from extended neighborhod */
 
-  if (cell_cells_e_idx != NULL) {
+  if (cell_cells_e_idx != nullptr) {
     s_id = cell_cells_e_idx[c_id1];
     e_id = cell_cells_e_idx[c_id1 + 1];
 
@@ -930,7 +930,7 @@ _gg_with_r_gradient_i_faces(cs_lnum_t                    n_i_faces,
   cs_lnum_t c_id2 = i_face_cells[f_id][1];
 
   cs_real_t pond = weight[f_id];
-  cs_real_t ktpond = (c_weight == NULL) ?
+  cs_real_t ktpond = (c_weight == nullptr) ?
     pond :                    // no cell weighting
     pond * c_weight[c_id1]    // cell weighting active
           / (       pond * c_weight[c_id1]
@@ -1024,7 +1024,7 @@ _gg_with_r_gradient_cell_cells(cs_lnum_t           n_cells,
     auto _i_f_face_normal =  i_f_face_normal[f_id];
 
     cs_real_t pond = (f_sgn > 0) ? weight[f_id] : 1. - weight[f_id];
-    cs_real_t ktpond = (c_weight == NULL) ?
+    cs_real_t ktpond = (c_weight == nullptr) ?
       pond :                    // no cell weighting
       pond * c_weight[c_id1] // cell weighting active
             / (       pond * c_weight[c_id1]
@@ -1144,7 +1144,7 @@ _gg_gradient_rescale(cs_lnum_t                       n_cells,
 
   cs_real_t dvol;
   /* Is the cell disabled (for solid or porous)? Not the case if coupled */
-  if (c_disable_flag == NULL)
+  if (c_disable_flag == nullptr)
     dvol = 1. / cell_f_vol[c_id];
   else if (c_disable_flag[c_id] == 0)
     dvol = 1. / cell_f_vol[c_id];
@@ -1236,8 +1236,8 @@ cs_gradient_scalar_lsq_cuda(const cs_mesh_t              *m,
   cs_real_4_t *rhsv;
   CS_CUDA_CHECK(cudaMalloc(&rhsv, n_cells_ext * sizeof(cs_real_4_t)));
 
-  void *_pvar_d = NULL, *_coefa_d = NULL, *_coefb_d = NULL;
-  const cs_real_t *pvar_d = NULL, *coefa_d = NULL, *coefb_d = NULL;
+  void *_pvar_d = nullptr, *_coefa_d = nullptr, *_coefb_d = nullptr;
+  const cs_real_t *pvar_d = nullptr, *coefa_d = nullptr, *coefb_d = nullptr;
 
   cs_sync_or_copy_h2d(pvar, n_cells_ext, device_id, stream1,
                       &pvar_d, &_pvar_d);
@@ -1257,34 +1257,34 @@ cs_gradient_scalar_lsq_cuda(const cs_mesh_t              *m,
     = (unsigned int)ceil((double)n_cells_ext / blocksize);
 
   const cs_lnum_t *restrict b_face_cells
-    = (const cs_lnum_t *restrict)cs_get_device_ptr_const_pf(m->b_face_cells);
+    = (const cs_lnum_t *)cs_get_device_ptr_const_pf(m->b_face_cells);
   const cs_lnum_t *restrict cell_cells_idx
-    = (const cs_lnum_t *restrict)cs_get_device_ptr_const_pf(ma->cell_cells_idx);
+    = (const cs_lnum_t *)cs_get_device_ptr_const_pf(ma->cell_cells_idx);
   const cs_lnum_t *restrict cell_cells
-    = (const cs_lnum_t *restrict)cs_get_device_ptr_const_pf(ma->cell_cells);
+    = (const cs_lnum_t *)cs_get_device_ptr_const_pf(ma->cell_cells);
   const cs_lnum_t *restrict cell_cells_e_idx
-    = (const cs_lnum_t *restrict)cs_get_device_ptr_const_pf(ma->cell_cells_e_idx);
+    = (const cs_lnum_t *)cs_get_device_ptr_const_pf(ma->cell_cells_e_idx);
   const cs_lnum_t *restrict cell_cells_e
-    = (const cs_lnum_t *restrict)cs_get_device_ptr_const_pf(ma->cell_cells_e);
+    = (const cs_lnum_t *)cs_get_device_ptr_const_pf(ma->cell_cells_e);
 
   const cs_lnum_t *restrict b_cells
-    = (const cs_lnum_t *restrict)cs_get_device_ptr_const_pf(m->b_cells);
+    = (const cs_lnum_t *)cs_get_device_ptr_const_pf(m->b_cells);
   const cs_lnum_t *restrict cell_b_faces_idx
-    = (const cs_lnum_t *restrict)cs_get_device_ptr_const_pf(ma->cell_b_faces_idx);
+    = (const cs_lnum_t *)cs_get_device_ptr_const_pf(ma->cell_b_faces_idx);
   const cs_lnum_t *restrict cell_b_faces
-    = (const cs_lnum_t *restrict)cs_get_device_ptr_const_pf(ma->cell_b_faces);
+    = (const cs_lnum_t *)cs_get_device_ptr_const_pf(ma->cell_b_faces);
 
   const cs_real_3_t *restrict cell_cen
-    = (const cs_real_3_t *restrict)cs_get_device_ptr_const_pf(fvq->cell_cen);
+    = (const cs_real_3_t *)cs_get_device_ptr_const_pf(fvq->cell_cen);
   const cs_real_3_t *restrict b_face_u_normal
-    = (const cs_real_3_t *restrict)cs_get_device_ptr_const_pf
-                                     (fvq->b_face_u_normal);
+    = (const cs_real_3_t *)cs_get_device_ptr_const_pf
+                             (fvq->b_face_u_normal);
   const cs_real_t *restrict b_face_surf
     = cs_get_device_ptr_const_pf(fvq->b_face_surf);
   const cs_real_t *restrict b_dist
     = cs_get_device_ptr_const_pf(fvq->b_dist);
   const cs_real_3_t *restrict diipb
-    = (const cs_real_3_t *restrict)cs_get_device_ptr_const_pf(fvq->diipb);
+    = (const cs_real_3_t *)cs_get_device_ptr_const_pf(fvq->diipb);
   const cs_real_t *restrict weight
     = cs_get_device_ptr_const_pf(fvq->weight);
 
@@ -1304,7 +1304,7 @@ cs_gradient_scalar_lsq_cuda(const cs_mesh_t              *m,
       (n_cells, cocg, cell_cells_idx, cell_cells, cell_cen, rhsv, c_weight);
 
     /* Contribution from extended neighborhood */
-    if (halo_type == CS_HALO_EXTENDED && cell_cells_e_idx != NULL)
+    if (halo_type == CS_HALO_EXTENDED && cell_cells_e_idx != nullptr)
       _compute_cocg_rhsv_lsq_s_i_face<<<gridsize, blocksize, 0, stream>>>
         (n_cells,
          cocg,
@@ -1333,7 +1333,7 @@ cs_gradient_scalar_lsq_cuda(const cs_mesh_t              *m,
 
     /* Invert COCG at all cells */
     _compute_cocg_inv<<<gridsize, blocksize, 0, stream>>>
-      (m->n_cells, NULL, cocg);
+      (m->n_cells, nullptr, cocg);
 
     init_cocg = false;
 
@@ -1383,7 +1383,7 @@ cs_gradient_scalar_lsq_cuda(const cs_mesh_t              *m,
       (n_cells, cell_cells_idx, cell_cells, cell_cen, c_weight, rhsv);
 
     /* Contribution from extended neighborhood */
-    if (halo_type == CS_HALO_EXTENDED && cell_cells_e_idx != NULL)
+    if (halo_type == CS_HALO_EXTENDED && cell_cells_e_idx != nullptr)
       _compute_rhsv_lsq_s_i_face<<<gridsize, blocksize, 0, stream>>>
         (n_cells,
          cell_cells_e_idx,
@@ -1396,8 +1396,8 @@ cs_gradient_scalar_lsq_cuda(const cs_mesh_t              *m,
   /* Compute gradient */
   /*------------------*/
 
-  void *_grad_d = NULL;
-  cs_real_3_t *grad_d = NULL;
+  void *_grad_d = nullptr;
+  cs_real_3_t *grad_d = nullptr;
 
   if (cs_check_device_ptr(grad) == CS_ALLOC_HOST) {
     size_t size = n_cells_ext * sizeof(cs_real_t) * 3;
@@ -1416,21 +1416,21 @@ cs_gradient_scalar_lsq_cuda(const cs_mesh_t              *m,
   cudaStreamSynchronize(stream);
 
   /* Sync to host */
-  if (_grad_d != NULL) {
+  if (_grad_d != nullptr) {
     size_t size = n_cells_ext * sizeof(cs_real_t) * 3;
     cs_cuda_copy_d2h(grad, grad_d, size);
   }
   else
     cs_sync_d2h_if_needed(grad);
 
-  if (_grad_d != NULL)
+  if (_grad_d != nullptr)
     CS_CUDA_CHECK(cudaFree(_grad_d));
 
-  if (_pvar_d != NULL)
+  if (_pvar_d != nullptr)
     CS_CUDA_CHECK(cudaFree(_pvar_d));
-  if (_coefa_d != NULL)
+  if (_coefa_d != nullptr)
     CS_CUDA_CHECK(cudaFree(_coefa_d));
-  if (_coefb_d != NULL)
+  if (_coefb_d != nullptr)
     CS_CUDA_CHECK(cudaFree(_coefb_d));
 
   CS_CUDA_CHECK(cudaFree(rhsv));
@@ -1463,20 +1463,23 @@ cs_gradient_scalar_lsq_cuda(const cs_mesh_t              *m,
 
 template <cs_lnum_t stride>
 void
-cs_gradient_strided_lsq_cuda(const cs_mesh_t               *m,
-                             const cs_mesh_adjacencies_t   *madj,
-                             const cs_mesh_quantities_t    *fvq,
-                             const cs_halo_type_t           halo_type,
-                             int                            inc,
-                             int                            n_c_iter_max,
-                             cs_real_t                      c_eps,
-                             const cs_real_t (*restrict coefav)[stride],
-                             const cs_real_t (*restrict coefbv)[stride][stride],
-                             const cs_real_t (*restrict pvar)[stride],
-                             const cs_real_t      *restrict c_weight,
-                             const cs_cocg_6_t    *restrict cocgb,
-                             cs_cocg_6_t          *restrict cocg,
-                             cs_real_t (*restrict grad)[stride][3])
+cs_gradient_strided_lsq_cuda
+(
+ const cs_mesh_t               *m,
+ const cs_mesh_adjacencies_t   *madj,
+ const cs_mesh_quantities_t    *fvq,
+ const cs_halo_type_t           halo_type,
+ int                            inc,
+ int                            n_c_iter_max,
+ cs_real_t                      c_eps,
+ const cs_real_t                coefav[][stride],
+ const cs_real_t                coefbv[][stride][stride],
+ const cs_real_t                pvar[][stride],
+ const cs_real_t               *c_weight,
+ const cs_cocg_6_t             *cocgb,
+ cs_cocg_6_t                   *cocg,
+ cs_real_t                      grad[][stride][3]
+)
 {
   using grad_t = cs_real_t[stride][3];
 
@@ -1508,7 +1511,7 @@ cs_gradient_strided_lsq_cuda(const cs_mesh_t               *m,
     CS_CUDA_CHECK(cudaEventRecord(e_start, stream));
   }
 
-  grad_t *grad_d = NULL, *_grad_d = NULL;
+  grad_t *grad_d = nullptr, *_grad_d = nullptr;
   if (cs_check_device_ptr(grad) == CS_ALLOC_HOST) {
     size_t size = n_cells_ext * sizeof(cs_real_t) * stride * 3;
     CS_CUDA_CHECK(cudaMalloc(&_grad_d, size));
@@ -1518,10 +1521,11 @@ cs_gradient_strided_lsq_cuda(const cs_mesh_t               *m,
     grad_d = (grad_t *)cs_get_device_ptr((void *)grad);
   }
 
-  void *_pvar_d = NULL, *_coefa_d = NULL, *_coefb_d = NULL, *_c_weight_d = NULL;
-  decltype(pvar) pvar_d = NULL, coefa_d = NULL;
-  decltype(coefbv) coefb_d = NULL;
-  const cs_real_t *c_weight_d = NULL;
+  void *_pvar_d = nullptr, *_coefa_d = nullptr, *_coefb_d = nullptr;
+  void *_c_weight_d = nullptr;
+  decltype(pvar) pvar_d = nullptr, coefa_d = nullptr;
+  decltype(coefbv) coefb_d = nullptr;
+  const cs_real_t *c_weight_d = nullptr;
 
   cs_sync_or_copy_h2d(pvar, n_cells_ext, device_id, stream,
                       &pvar_d, &_pvar_d);
@@ -1543,8 +1547,8 @@ cs_gradient_strided_lsq_cuda(const cs_mesh_t               *m,
   const cs_lnum_t *restrict cell_cells
     = cs_get_device_ptr_const_pf(madj->cell_cells);
 
-  const cs_lnum_t *restrict cell_cells_e_idx = NULL;
-  const cs_lnum_t *restrict cell_cells_e = NULL;
+  const cs_lnum_t *restrict cell_cells_e_idx = nullptr;
+  const cs_lnum_t *restrict cell_cells_e = nullptr;
   if (halo_type == CS_HALO_EXTENDED) {
     cell_cells_e_idx = cs_get_device_ptr_const_pf(madj->cell_cells_e_idx);
     cell_cells_e = cs_get_device_ptr_const_pf(madj->cell_cells_e);
@@ -1656,7 +1660,7 @@ cs_gradient_strided_lsq_cuda(const cs_mesh_t               *m,
     CS_CUDA_CHECK(cudaEventRecord(e_halo, stream));
 
   /* Sync to host */
-  if (_grad_d != NULL) {
+  if (_grad_d != nullptr) {
     size_t size = n_cells_ext * sizeof(cs_real_t) * stride * 3;
     cs_cuda_copy_d2h(grad, grad_d, size);
   }
@@ -1721,16 +1725,16 @@ cs_gradient_strided_lsq_cuda(const cs_mesh_t               *m,
 
   CS_CUDA_CHECK(cudaFree(rhs_d));
 
-  if (_pvar_d != NULL)
+  if (_pvar_d != nullptr)
     CS_CUDA_CHECK(cudaFree(_pvar_d));
-  if (_coefa_d != NULL)
+  if (_coefa_d != nullptr)
     CS_CUDA_CHECK(cudaFree(_coefa_d));
-  if (_coefb_d != NULL)
+  if (_coefb_d != nullptr)
     CS_CUDA_CHECK(cudaFree(_coefb_d));
-  if (_c_weight_d != NULL)
+  if (_c_weight_d != nullptr)
     CS_CUDA_CHECK(cudaFree(_c_weight_d));
 
-  if (_grad_d != NULL)
+  if (_grad_d != nullptr)
     CS_CUDA_CHECK(cudaFree(_grad_d));
 }
 
@@ -1758,19 +1762,22 @@ INSTANTIATE_LSQ(cs_gradient_strided_lsq_cuda, 6);
 
 template <cs_lnum_t stride>
 void
-cs_gradient_strided_gg_r_cuda(const cs_mesh_t              *m,
-                              const cs_mesh_adjacencies_t  *madj,
-                              const cs_mesh_quantities_t   *fvq,
-                              cs_halo_type_t                halo_type,
-                              int                           inc,
-                              int                           porous_model,
-                              bool                          warped_correction,
-                              const cs_real_t (*restrict coefav)[stride],
-                              const cs_real_t (*restrict coefbv)[stride][stride],
-                              const cs_real_t (*restrict pvar)[stride],
-                              const cs_real_t     *restrict c_weight,
-                              const cs_real_t    (*restrict r_grad)[stride][3],
-                              cs_real_t          (*restrict grad)[stride][3])
+cs_gradient_strided_gg_r_cuda
+(
+ const cs_mesh_t              *m,
+ const cs_mesh_adjacencies_t  *madj,
+ const cs_mesh_quantities_t   *fvq,
+ cs_halo_type_t                halo_type,
+ int                           inc,
+ int                           porous_model,
+ bool                          warped_correction,
+ const cs_real_t               coefav[][stride],
+ const cs_real_t               coefbv[][stride][stride],
+ const cs_real_t               pvar[][stride],
+ const cs_real_t              *c_weight,
+ const cs_real_t               r_grad[][stride][3],
+ cs_real_t                     grad[][stride][3]
+)
 {
   //const cs_e2n_sum_t e2n_sum_type = CS_E2N_SUM_SCATTER_ATOMIC;
   const cs_e2n_sum_t e2n_sum_type = CS_E2N_SUM_GATHER;
@@ -1804,7 +1811,7 @@ cs_gradient_strided_gg_r_cuda(const cs_mesh_t              *m,
     CS_CUDA_CHECK(cudaEventRecord(e_start, stream));
   }
 
-  grad_t *grad_d = NULL, *_grad_d = NULL;
+  grad_t *grad_d = nullptr, *_grad_d = nullptr;
   if (cs_check_device_ptr(grad) == CS_ALLOC_HOST) {
     size_t size = n_cells_ext * sizeof(cs_real_t) * stride * 3;
     CS_CUDA_CHECK(cudaMalloc(&_grad_d, size));
@@ -1814,10 +1821,11 @@ cs_gradient_strided_gg_r_cuda(const cs_mesh_t              *m,
     grad_d = (grad_t *)cs_get_device_ptr((void *)grad);
   }
 
-  void *_pvar_d = NULL, *_coefa_d = NULL, *_coefb_d = NULL, *_c_weight_d = NULL;
-  decltype(pvar) pvar_d = NULL, coefa_d = NULL;
-  decltype(coefbv) coefb_d = NULL;
-  const cs_real_t *c_weight_d = NULL;
+  void *_pvar_d = nullptr, *_coefa_d = nullptr, *_coefb_d = nullptr;
+  void *_c_weight_d = nullptr;
+  decltype(pvar) pvar_d = nullptr, coefa_d = nullptr;
+  decltype(coefbv) coefb_d = nullptr;
+  const cs_real_t *c_weight_d = nullptr;
 
   cs_sync_or_copy_h2d(pvar, n_cells_ext, device_id, stream,
                       &pvar_d, &_pvar_d);
@@ -1832,12 +1840,12 @@ cs_gradient_strided_gg_r_cuda(const cs_mesh_t              *m,
 
   grad_t *r_grad_d = (grad_t *)cs_get_device_ptr_const((const void *)r_grad);
 
-  const cs_lnum_2_t *restrict i_face_cells = NULL;
-  const cs_lnum_t *restrict b_face_cells = NULL;
-  const cs_lnum_t *restrict cell_cells_idx = NULL;
-  const cs_lnum_t *restrict cell_cells = NULL;
-  const cs_lnum_t *restrict cell_i_faces = NULL;
-  const short int *restrict cell_i_faces_sgn = NULL;
+  const cs_lnum_2_t *restrict i_face_cells = nullptr;
+  const cs_lnum_t *restrict b_face_cells = nullptr;
+  const cs_lnum_t *restrict cell_cells_idx = nullptr;
+  const cs_lnum_t *restrict cell_cells = nullptr;
+  const cs_lnum_t *restrict cell_i_faces = nullptr;
+  const short int *restrict cell_i_faces_sgn = nullptr;
 
   if (e2n_sum_type == CS_E2N_SUM_SCATTER_ATOMIC) {
     i_face_cells = cs_get_device_ptr_const_pf(m->i_face_cells);
@@ -1867,7 +1875,7 @@ cs_gradient_strided_gg_r_cuda(const cs_mesh_t              *m,
     = cs_get_device_ptr_const_pf((cs_real_3_t *)fvq->dofij);
   const cs_real_33_t *restrict corr_grad_lin
     = cs_get_device_ptr_const_pf((cs_real_33_t *)fvq->corr_grad_lin);
-  const int *restrict c_disable_flag = NULL;
+  const int *restrict c_disable_flag = nullptr;
 
   if (fvq->has_disable_flag)
     c_disable_flag = cs_get_device_ptr_const_pf(fvq->c_disable_flag);
@@ -1957,7 +1965,7 @@ cs_gradient_strided_gg_r_cuda(const cs_mesh_t              *m,
     CS_CUDA_CHECK(cudaEventRecord(e_halo, stream));
 
   /* Sync to host */
-  if (_grad_d != NULL) {
+  if (_grad_d != nullptr) {
     size_t size = n_cells_ext * sizeof(cs_real_t) * stride * 3;
     cs_cuda_copy_d2h(grad, grad_d, size);
   }
@@ -2015,16 +2023,16 @@ cs_gradient_strided_gg_r_cuda(const cs_mesh_t              *m,
     CS_CUDA_CHECK(cudaEventDestroy(e_stop));
   }
 
-  if (_pvar_d != NULL)
+  if (_pvar_d != nullptr)
     CS_CUDA_CHECK(cudaFree(_pvar_d));
-  if (_coefa_d != NULL)
+  if (_coefa_d != nullptr)
     CS_CUDA_CHECK(cudaFree(_coefa_d));
-  if (_coefb_d != NULL)
+  if (_coefb_d != nullptr)
     CS_CUDA_CHECK(cudaFree(_coefb_d));
-  if (_c_weight_d != NULL)
+  if (_c_weight_d != nullptr)
     CS_CUDA_CHECK(cudaFree(_c_weight_d));
 
-  if (_grad_d != NULL)
+  if (_grad_d != nullptr)
     CS_CUDA_CHECK(cudaFree(_grad_d));
 }
 

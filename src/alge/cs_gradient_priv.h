@@ -205,20 +205,23 @@ cs_gradient_scalar_lsq_cuda(const cs_mesh_t              *m,
 
 template <cs_lnum_t stride>
 void
-cs_gradient_strided_lsq_cuda(const cs_mesh_t               *m,
-                             const cs_mesh_adjacencies_t   *madj,
-                             const cs_mesh_quantities_t    *fvq,
-                             const cs_halo_type_t           halo_type,
-                             int                            inc,
-                             int                            n_c_iter_max,
-                             cs_real_t                      c_eps,
-                             const cs_real_t (*restrict coefav)[stride],
-                             const cs_real_t (*restrict coefbv)[stride][stride],
-                             const cs_real_t (*restrict pvar)[stride],
-                             const cs_real_t      *restrict c_weight,
-                             const cs_cocg_6_t    *restrict cocgb,
-                             cs_cocg_6_t          *restrict cocg,
-                             cs_real_t (*restrict gradv)[stride][3]);
+cs_gradient_strided_lsq_cuda
+(
+ const cs_mesh_t               *m,
+ const cs_mesh_adjacencies_t   *madj,
+ const cs_mesh_quantities_t    *fvq,
+ const cs_halo_type_t           halo_type,
+ int                            inc,
+ int                            n_c_iter_max,
+ cs_real_t                      c_eps,
+ const cs_real_t                coefav[][stride],
+ const cs_real_t                coefbv[][stride][stride],
+ const cs_real_t                pvar[][stride],
+ const cs_real_t               *c_weight,
+ const cs_cocg_6_t             *cocgb,
+ cs_cocg_6_t                   *cocg,
+ cs_real_t                      grad[][stride][3]
+);
 
 /*----------------------------------------------------------------------------
  * Green-Gauss reconstruction of the gradient of a vector or tensor using
@@ -241,19 +244,22 @@ cs_gradient_strided_lsq_cuda(const cs_mesh_t               *m,
 
 template <cs_lnum_t stride>
 void
-cs_gradient_strided_gg_r_cuda(const cs_mesh_t              *m,
-                              const cs_mesh_adjacencies_t  *madj,
-                              const cs_mesh_quantities_t   *fvq,
-                              cs_halo_type_t                halo_type,
-                              int                           inc,
-                              int                           porous_model,
-                              bool                          warped_correction,
-                              const cs_real_t (*restrict coefav)[stride],
-                              const cs_real_t (*restrict coefbv)[stride][stride],
-                              const cs_real_t (*restrict pvar)[stride],
-                              const cs_real_t     *restrict c_weight,
-                              const cs_real_t    (*restrict r_grad)[stride][3],
-                              cs_real_t          (*restrict grad)[stride][3]);
+cs_gradient_strided_gg_r_cuda
+(
+ const cs_mesh_t              *m,
+ const cs_mesh_adjacencies_t  *madj,
+ const cs_mesh_quantities_t   *fvq,
+ cs_halo_type_t                halo_type,
+ int                           inc,
+ int                           porous_model,
+ bool                          warped_correction,
+ const cs_real_t               coefav[][stride],
+ const cs_real_t               coefbv[][stride][stride],
+ const cs_real_t               pvar[][stride],
+ const cs_real_t              *c_weight,
+ const cs_real_t               r_grad[][stride][3],
+ cs_real_t                     grad[][stride][3]
+);
 
 #endif /* defined(HAVE_CUDA) */
 

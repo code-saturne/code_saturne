@@ -233,9 +233,6 @@ _cs_boundary_conditions_set_coeffs_turb_scalar(cs_field_t  *f_sc,
   if (cs_glob_physical_model_flag[CS_COMPRESSIBLE] >= 0 && icv >= 0)
     cpro_cv = cs_field_by_id(icv)->val;
 
-  const int keysca = cs_field_key_id("scalar_id");
-  int scal_id = cs_field_get_key_int(f_sc, keysca);
-
   int isvhbl = -1;
   if (f_sc->id == isvhb)
     isvhbl = isvhb;

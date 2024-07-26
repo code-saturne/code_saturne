@@ -188,7 +188,7 @@ static const char  *_cs_mkl_strings[] = {
 static const char *
 _cs_mkl_status_get_string(sparse_status_t  s)
 {
-  const char *ss = NULL;
+  const char *ss = nullptr;
   switch(s) {
   case SPARSE_STATUS_SUCCESS:
     ss = _cs_mkl_strings[0];
@@ -231,7 +231,7 @@ _unset_mkl_sparse_map(cs_matrix_t   *matrix)
   cs_matrix_mkl_sparse_map_t *csm
     = (cs_matrix_mkl_sparse_map_t *)matrix->ext_lib_map;
 
-  if (csm == NULL)
+  if (csm == nullptr)
     return;
 
   sparse_status_t status = SPARSE_STATUS_SUCCESS;
@@ -244,7 +244,7 @@ _unset_mkl_sparse_map(cs_matrix_t   *matrix)
               __func__, (int)status, _cs_mkl_status_get_string(status));
 
   BFT_FREE(matrix->ext_lib_map);
-  matrix->destroy_adaptor = NULL;
+  matrix->destroy_adaptor = nullptr;
 }
 
 /*----------------------------------------------------------------------------
@@ -260,7 +260,7 @@ _set_mkl_sparse_map(cs_matrix_t   *matrix)
   cs_matrix_mkl_sparse_map_t *csm
     = (cs_matrix_mkl_sparse_map_t *)matrix->ext_lib_map;
 
-  if (csm != NULL) {
+  if (csm != nullptr) {
     _unset_mkl_sparse_map(matrix);
   }
   else {
@@ -413,7 +413,7 @@ _unset_mkl_sparse_sycl_map(cs_matrix_t   *matrix)
   cs_matrix_mkl_sparse_sycl_map_t *csm
     = (cs_matrix_mkl_sparse_sycl_map_t *)matrix->ext_lib_map;
 
-  if (csm == NULL)
+  if (csm == nullptr)
     return;
 
   sparse_status_t status = SPARSE_STATUS_SUCCESS;
@@ -431,7 +431,7 @@ _unset_mkl_sparse_sycl_map(cs_matrix_t   *matrix)
               __func__, (int)status, _cs_mkl_status_get_string(status));
 
   BFT_FREE(matrix->ext_lib_map);
-  matrix->destroy_adaptor = NULL;
+  matrix->destroy_adaptor = nullptr;
 }
 
 /*----------------------------------------------------------------------------
@@ -447,7 +447,7 @@ _set_mkl_sparse_sycl_map(cs_matrix_t   *matrix)
   cs_matrix_mkl_sparse_sycl_map_t *csm
     = (cs_matrix_mkl_sparse_sycl_map_t *)matrix->ext_lib_map;
 
-  if (csm != NULL) {
+  if (csm != nullptr) {
     _unset_mkl_sparse_sycl_map(matrix);
   }
   else {
@@ -560,9 +560,9 @@ static inline void
 _dense_b_ax(cs_lnum_t         b_id,
             cs_lnum_t         b_size,
             cs_lnum_t         b_size_2,
-            const cs_real_t   a[restrict],
-            const cs_real_t   x[restrict],
-            cs_real_t         y[restrict])
+            const cs_real_t  *restrict a,
+            const cs_real_t  *restrict x,
+            cs_real_t        *restrict y)
 {
   cs_lnum_t   ii, jj;
 
@@ -589,9 +589,9 @@ _dense_b_ax(cs_lnum_t         b_id,
 
 static inline void
 _dense_3_3_ax(cs_lnum_t         b_id,
-              const cs_real_t   a[restrict],
-              const cs_real_t   x[restrict],
-              cs_real_t         y[restrict])
+              const cs_real_t  *restrict a,
+              const cs_real_t  *restrict x,
+              cs_real_t        *restrict y)
 {
   y[b_id*3]     =   a[b_id*9]         * x[b_id*3]
                   + a[b_id*9 + 1]     * x[b_id*3 + 1]
@@ -620,9 +620,9 @@ _dense_3_3_ax(cs_lnum_t         b_id,
 
 static inline void
 _dense_6_6_ax(cs_lnum_t        b_id,
-              const cs_real_t  a[restrict],
-              const cs_real_t  x[restrict],
-              cs_real_t        y[restrict])
+              const cs_real_t  *restrict a,
+              const cs_real_t  *restrict x,
+              cs_real_t        *restrict y)
 {
   const cs_lnum_t b_id_6 = b_id*6, b_id_36 = b_id*36;
 
@@ -689,14 +689,14 @@ _dense_6_6_ax(cs_lnum_t        b_id,
  *----------------------------------------------------------------------------*/
 
 static inline void
-_dense_eb_ax_add(cs_lnum_t        b_i,
-                 cs_lnum_t        b_j,
-                 cs_lnum_t        b_ij,
-                 cs_lnum_t        b_size,
-                 cs_lnum_t        b_size_2,
-                 const cs_real_t  a[restrict],
-                 const cs_real_t  x[restrict],
-                 cs_real_t        y[restrict])
+_dense_eb_ax_add(cs_lnum_t         b_i,
+                 cs_lnum_t         b_j,
+                 cs_lnum_t         b_ij,
+                 cs_lnum_t         b_size,
+                 cs_lnum_t         b_size_2,
+                 const cs_real_t  *restrict a,
+                 const cs_real_t  *restrict x,
+                 cs_real_t        *restrict y)
 {
   cs_lnum_t   ii, jj;
 
@@ -709,7 +709,7 @@ _dense_eb_ax_add(cs_lnum_t        b_i,
 }
 
 /*----------------------------------------------------------------------------
- * y[i] = da[i].x[i], with da possibly NULL
+ * y[i] = da[i].x[i], with da possibly nullptr
  *
  * parameters:
  *   da     <-- pointer to coefficients array (usually matrix diagonal)
@@ -719,14 +719,14 @@ _dense_eb_ax_add(cs_lnum_t        b_i,
  *----------------------------------------------------------------------------*/
 
 static inline void
-_diag_vec_p_l(const cs_real_t  da[restrict],
-              const cs_real_t  x[restrict],
-              cs_real_t        y[restrict],
-              cs_lnum_t        n_elts)
+_diag_vec_p_l(const cs_real_t  *restrict da,
+              const cs_real_t  *restrict x,
+              cs_real_t        *restrict y,
+              cs_lnum_t         n_elts)
 {
   cs_lnum_t  ii;
 
-  if (da != NULL) {
+  if (da != nullptr) {
 #   pragma omp parallel for  if(n_elts > CS_THR_MIN)
     for (ii = 0; ii < n_elts; ii++)
       y[ii] = da[ii] * x[ii];
@@ -740,7 +740,7 @@ _diag_vec_p_l(const cs_real_t  da[restrict],
 }
 
 /*----------------------------------------------------------------------------
- * Block version of y[i] = da[i].x[i], with da possibly NULL
+ * Block version of y[i] = da[i].x[i], with da possibly nullptr
  *
  * parameters:
  *   da       <-- pointer to coefficients array (usually matrix diagonal)
@@ -751,13 +751,13 @@ _diag_vec_p_l(const cs_real_t  da[restrict],
  *----------------------------------------------------------------------------*/
 
 static inline void
-_b_diag_vec_p_l(const cs_real_t  da[restrict],
-                const cs_real_t  x[restrict],
-                cs_real_t        y[restrict],
-                cs_lnum_t        n_elts,
-                cs_lnum_t        b_size)
+_b_diag_vec_p_l(const cs_real_t  *restrict da,
+                const cs_real_t  *restrict x,
+                cs_real_t        *restrict y,
+                cs_lnum_t         n_elts,
+                cs_lnum_t         b_size)
 {
-  if (da != NULL) {
+  if (da != nullptr) {
     cs_lnum_t  b_size_2 = b_size*b_size;
 #   pragma omp parallel for  if(n_elts > CS_THR_MIN)
     for (cs_lnum_t ii = 0; ii < n_elts; ii++)
@@ -771,7 +771,7 @@ _b_diag_vec_p_l(const cs_real_t  da[restrict],
 }
 
 /*----------------------------------------------------------------------------
- * Block version of y[i] = da[i].x[i], with da possibly NULL
+ * Block version of y[i] = da[i].x[i], with da possibly nullptr
  *
  * This variant uses a fixed 3x3 block, for better compiler optimization.
  *
@@ -783,27 +783,25 @@ _b_diag_vec_p_l(const cs_real_t  da[restrict],
  *----------------------------------------------------------------------------*/
 
 static inline void
-_3_3_diag_vec_p_l(const cs_real_t  da[restrict],
-                  const cs_real_t  x[restrict],
-                  cs_real_t        y[restrict],
-                  cs_lnum_t        n_elts)
+_3_3_diag_vec_p_l(const cs_real_t  *restrict da,
+                  const cs_real_t  *restrict x,
+                  cs_real_t        *restrict y,
+                  cs_lnum_t         n_elts)
 {
-  cs_lnum_t   ii;
-
-  if (da != NULL) {
+  if (da != nullptr) {
 #   pragma omp parallel for  if(n_elts*3 > CS_THR_MIN)
-    for (ii = 0; ii < n_elts; ii++)
+    for (auto ii = 0; ii < n_elts; ii++)
       _dense_3_3_ax(ii, da, x, y);
   }
   else {
 #   pragma omp parallel for  if(n_elts*3 > CS_THR_MIN)
-    for (ii = 0; ii < n_elts*3; ii++)
+    for (auto ii = 0; ii < n_elts*3; ii++)
       y[ii] = 0.0;
   }
 }
 
 /*----------------------------------------------------------------------------
- * Block version of y[i] = da[i].x[i], with da possibly NULL
+ * Block version of y[i] = da[i].x[i], with da possibly nullptr
  *
  * This variant uses a fixed 6x6 block, for better compiler optimization.
  *
@@ -815,21 +813,19 @@ _3_3_diag_vec_p_l(const cs_real_t  da[restrict],
  *----------------------------------------------------------------------------*/
 
 static inline void
-_6_6_diag_vec_p_l(const cs_real_t  da[restrict],
-                  const cs_real_t  x[restrict],
-                  cs_real_t        y[restrict],
-                  cs_lnum_t        n_elts)
+_6_6_diag_vec_p_l(const cs_real_t  *restrict da,
+                  const cs_real_t  *restrict x,
+                  cs_real_t        *restrict y,
+                  cs_lnum_t         n_elts)
 {
-  cs_lnum_t   ii;
-
-  if (da != NULL) {
+  if (da != nullptr) {
 #   pragma omp parallel for  if(n_elts*6 > CS_THR_MIN)
-    for (ii = 0; ii < n_elts; ii++)
+    for (auto ii = 0; ii < n_elts; ii++)
       _dense_6_6_ax(ii, da, x, y);
   }
   else {
 #   pragma omp parallel for  if(n_elts*6 > CS_THR_MIN)
-    for (ii = 0; ii < n_elts*6; ii++)
+    for (auto ii = 0; ii < n_elts*6; ii++)
       y[ii] = 0.0;
   }
 }
@@ -844,9 +840,9 @@ _6_6_diag_vec_p_l(const cs_real_t  da[restrict],
  *----------------------------------------------------------------------------*/
 
 static inline void
-_zero_range(cs_real_t   y[restrict],
-            cs_lnum_t   start_id,
-            cs_lnum_t   end_id)
+_zero_range(cs_real_t   *restrict y,
+            cs_lnum_t    start_id,
+            cs_lnum_t    end_id)
 {
   cs_lnum_t   ii;
 
@@ -867,15 +863,13 @@ _zero_range(cs_real_t   y[restrict],
  *----------------------------------------------------------------------------*/
 
 static inline void
-_b_zero_range(cs_real_t  y[restrict],
-              cs_lnum_t  start_id,
-              cs_lnum_t  end_id,
-              cs_lnum_t  b_size)
+_b_zero_range(cs_real_t  *restrict y,
+              cs_lnum_t   start_id,
+              cs_lnum_t   end_id,
+              cs_lnum_t   b_size)
 {
-  cs_lnum_t  ii;
-
 # pragma omp parallel for  if((end_id-start_id)*b_size > CS_THR_MIN)
-  for (ii = start_id*b_size; ii < end_id*b_size; ii++)
+  for (auto ii = start_id*b_size; ii < end_id*b_size; ii++)
     y[ii] = 0.0;
 }
 
@@ -889,14 +883,12 @@ _b_zero_range(cs_real_t  y[restrict],
  *----------------------------------------------------------------------------*/
 
 static inline void
-_3_3_zero_range(cs_real_t  y[restrict],
-                cs_lnum_t  start_id,
-                cs_lnum_t  end_id)
+_3_3_zero_range(cs_real_t  *restrict y,
+                cs_lnum_t   start_id,
+                cs_lnum_t   end_id)
 {
-  cs_lnum_t  ii;
-
 # pragma omp parallel for  if((end_id-start_id)*3 > CS_THR_MIN)
-  for (ii = start_id*3; ii < end_id*3; ii++)
+  for (auto ii = start_id*3; ii < end_id*3; ii++)
     y[ii] = 0.0;
 }
 
@@ -910,14 +902,12 @@ _3_3_zero_range(cs_real_t  y[restrict],
  *----------------------------------------------------------------------------*/
 
 static inline void
-_6_6_zero_range(cs_real_t  y[restrict],
-                cs_lnum_t  start_id,
-                cs_lnum_t  end_id)
+_6_6_zero_range(cs_real_t  *restrict y,
+                cs_lnum_t   start_id,
+                cs_lnum_t   end_id)
 {
-  cs_lnum_t  ii;
-
 # pragma omp parallel for  if((end_id-start_id)*6 > CS_THR_MIN)
-  for (ii = start_id*6; ii < end_id*6; ii++)
+  for (auto ii = start_id*6; ii < end_id*6; ii++)
     y[ii] = 0.0;
 }
 
@@ -934,7 +924,7 @@ _6_6_zero_range(cs_real_t  y[restrict],
 
 static cs_halo_state_t *
 _pre_vector_multiply_sync_x_start(const cs_matrix_t   *matrix,
-                                  cs_real_t            x[restrict])
+                                  cs_real_t          *restrict x)
 {
  cs_halo_state_t *hs = NULL;
 
@@ -970,7 +960,7 @@ _pre_vector_multiply_sync_x_start(const cs_matrix_t   *matrix,
 static void
 _pre_vector_multiply_sync_x_end(const cs_matrix_t   *matrix,
                                 cs_halo_state_t     *hs,
-                                cs_real_t            x[restrict])
+                                cs_real_t           *restrict x)
 {
   if (hs != NULL) {
 
@@ -1013,8 +1003,8 @@ static void
 _mat_vec_p_l_native(cs_matrix_t  *matrix,
                     bool          exclude_diag,
                     bool          sync,
-                    cs_real_t     x[restrict],
-                    cs_real_t     y[restrict])
+                    cs_real_t    *restrict x,
+                    cs_real_t    *restrict y)
 {
   cs_lnum_t  ii, jj, face_id;
 
@@ -1089,8 +1079,8 @@ static void
 _b_mat_vec_p_l_native(cs_matrix_t  *matrix,
                       bool          exclude_diag,
                       bool          sync,
-                      cs_real_t     x[restrict],
-                      cs_real_t     y[restrict])
+                      cs_real_t    *restrict x,
+                      cs_real_t    *restrict y)
 {
   cs_lnum_t  ii, jj, kk, face_id;
 
@@ -1170,8 +1160,8 @@ static void
 _bb_mat_vec_p_l_native(cs_matrix_t  *matrix,
                        bool          exclude_diag,
                        bool          sync,
-                       cs_real_t     x[restrict],
-                       cs_real_t     y[restrict])
+                       cs_real_t    *restrict x,
+                       cs_real_t    *restrict y)
 {
   cs_lnum_t  ii, jj, face_id;
 
@@ -1251,8 +1241,8 @@ static void
 _3_3_mat_vec_p_l_native(cs_matrix_t  *matrix,
                         bool          exclude_diag,
                         bool          sync,
-                        cs_real_t     x[restrict],
-                        cs_real_t     y[restrict])
+                        cs_real_t    *restrict x,
+                        cs_real_t    *restrict y)
 {
   cs_lnum_t  ii, jj, kk, face_id;
 
@@ -1335,8 +1325,8 @@ static void
 _6_6_mat_vec_p_l_native(cs_matrix_t  *matrix,
                         bool          exclude_diag,
                         bool          sync,
-                        cs_real_t     x[restrict],
-                        cs_real_t     y[restrict])
+                        cs_real_t   *restrict x,
+                        cs_real_t   *restrict y)
 {
   cs_lnum_t  ii, jj, kk, face_id;
 
@@ -1419,8 +1409,8 @@ static void
 _b_mat_vec_p_l_native_fixed(cs_matrix_t  *matrix,
                             bool          exclude_diag,
                             bool          sync,
-                            cs_real_t     x[restrict],
-                            cs_real_t     y[restrict])
+                            cs_real_t   *restrict x,
+                            cs_real_t   *restrict y)
 {
   if (matrix->db_size == 3)
     _3_3_mat_vec_p_l_native(matrix, exclude_diag, sync, x, y);
@@ -1449,8 +1439,8 @@ static void
 _mat_vec_p_l_native_omp(cs_matrix_t  *matrix,
                         bool          exclude_diag,
                         bool          sync,
-                        cs_real_t     x[restrict],
-                        cs_real_t     y[restrict])
+                        cs_real_t   *restrict x,
+                        cs_real_t   *restrict y)
 {
   const int n_threads = matrix->numbering->n_threads;
   const int n_groups = matrix->numbering->n_groups;
@@ -1544,8 +1534,8 @@ static void
 _b_mat_vec_p_l_native_omp(cs_matrix_t  *matrix,
                           bool          exclude_diag,
                           bool          sync,
-                          cs_real_t     x[restrict],
-                          cs_real_t     y[restrict])
+                          cs_real_t    *restrict x,
+                          cs_real_t    *restrict y)
 {
   const cs_lnum_t db_size = matrix->db_size;
 
@@ -1647,8 +1637,8 @@ static void
 _mat_vec_p_l_native_omp_atomic(cs_matrix_t  *matrix,
                                bool          exclude_diag,
                                bool          sync,
-                               cs_real_t     x[restrict],
-                               cs_real_t     y[restrict])
+                               cs_real_t    *restrict x,
+                               cs_real_t    *restrict y)
 {
   const cs_matrix_struct_native_t  *ms
     = (const cs_matrix_struct_native_t *)matrix->structure;
@@ -1724,8 +1714,8 @@ static void
 _b_mat_vec_p_l_native_omp_atomic(cs_matrix_t  *matrix,
                                  bool          exclude_diag,
                                  bool          sync,
-                                 cs_real_t     x[restrict],
-                                 cs_real_t     y[restrict])
+                                 cs_real_t    *restrict x,
+                                 cs_real_t    *restrict y)
 {
   const cs_lnum_t db_size = matrix->db_size;
 
@@ -1811,8 +1801,8 @@ static void
 _mat_vec_p_l_native_vector(cs_matrix_t  *matrix,
                            bool          exclude_diag,
                            bool          sync,
-                           cs_real_t     x[restrict],
-                           cs_real_t     y[restrict])
+                           cs_real_t    *restrict x,
+                           cs_real_t    *restrict y)
 {
   cs_lnum_t  ii, jj, face_id;
   const cs_matrix_struct_native_t  *ms
@@ -2318,8 +2308,8 @@ static void
 _b_mat_vec_p_l_msr_generic(cs_matrix_t  *matrix,
                            bool          exclude_diag,
                            bool          sync,
-                           cs_real_t     x[restrict],
-                           cs_real_t     y[restrict])
+                           cs_real_t    *restrict x,
+                           cs_real_t    *restrict y)
 {
   const cs_matrix_struct_dist_t  *ms
     = (const cs_matrix_struct_dist_t *)matrix->structure;
@@ -2488,8 +2478,8 @@ static void
 _b_mat_vec_p_l_msr_6(cs_matrix_t  *matrix,
                      bool          exclude_diag,
                      bool          sync,
-                     cs_real_t     x[restrict],
-                     cs_real_t     y[restrict])
+                     cs_real_t    *restrict x,
+                     cs_real_t    *restrict y)
 {
   const cs_matrix_struct_dist_t  *ms
     = (const cs_matrix_struct_dist_t *)matrix->structure;
@@ -2573,8 +2563,8 @@ static void
 _b_mat_vec_p_l_msr(cs_matrix_t  *matrix,
                    bool          exclude_diag,
                    bool          sync,
-                   cs_real_t     x[restrict],
-                   cs_real_t     y[restrict])
+                   cs_real_t    *restrict x,
+                   cs_real_t    *restrict y)
 {
   if (matrix->db_size == 3)
     _b_mat_vec_p_l_msr_3(matrix, exclude_diag, sync, x, y);
@@ -2601,8 +2591,8 @@ static void
 _bb_mat_vec_p_l_msr_3(cs_matrix_t  *matrix,
                       bool          exclude_diag,
                       bool          sync,
-                      cs_real_t     x[restrict],
-                      cs_real_t     y[restrict])
+                      cs_real_t    *restrict x,
+                      cs_real_t    *restrict y)
 {
   const cs_matrix_struct_dist_t  *ms
     = (const cs_matrix_struct_dist_t *)matrix->structure;
@@ -2700,8 +2690,8 @@ static void
 _bb_mat_vec_p_l_msr_generic(cs_matrix_t  *matrix,
                             bool          exclude_diag,
                             bool          sync,
-                            cs_real_t     x[restrict],
-                            cs_real_t     y[restrict])
+                            cs_real_t    *restrict x,
+                            cs_real_t    *restrict y)
 {
   const cs_matrix_struct_dist_t  *ms
     = (const cs_matrix_struct_dist_t *)matrix->structure;
@@ -2799,8 +2789,8 @@ static void
 _bb_mat_vec_p_l_msr(cs_matrix_t  *matrix,
                     bool          exclude_diag,
                     bool          sync,
-                    cs_real_t     x[restrict],
-                    cs_real_t     y[restrict])
+                    cs_real_t    *restrict x,
+                    cs_real_t    *restrict y)
 {
   if (matrix->eb_size == 3)
     _bb_mat_vec_p_l_msr_3(matrix, exclude_diag, sync, x, y);
@@ -2828,8 +2818,8 @@ static void
 _mat_vec_p_l_msr_mkl(cs_matrix_t  *matrix,
                      bool          exclude_diag,
                      bool          sync,
-                     cs_real_t     x[restrict],
-                     cs_real_t     y[restrict])
+                     cs_real_t    *restrict x,
+                     cs_real_t    *restrict y)
 {
   const cs_matrix_coeff_dist_t  *mc
     = (const cs_matrix_coeff_dist_t  *)matrix->coeffs;
@@ -2968,8 +2958,8 @@ static void
 _mat_vec_p_l_msr_mkl_sycl(cs_matrix_t  *matrix,
                           bool          exclude_diag,
                           bool          sync,
-                          cs_real_t     x[restrict],
-                          cs_real_t     y[restrict])
+                          cs_real_t    *restrict x,
+                          cs_real_t    *restrict y)
 {
   const cs_matrix_coeff_dist_t  *mc
     = (const cs_matrix_coeff_dist_t  *)matrix->coeffs;
@@ -3232,8 +3222,8 @@ static void
 _b_mat_vec_p_l_dist_generic(cs_matrix_t  *matrix,
                             bool          exclude_diag,
                             bool          sync,
-                            cs_real_t     x[restrict],
-                            cs_real_t     y[restrict])
+                            cs_real_t    *restrict x,
+                            cs_real_t    *restrict y)
 {
   /* Initialize halo synchronization */
 
@@ -3370,8 +3360,8 @@ static void
 _b_mat_vec_p_l_dist_6(cs_matrix_t  *matrix,
                       bool          exclude_diag,
                       bool          sync,
-                      cs_real_t     x[restrict],
-                      cs_real_t     y[restrict])
+                      cs_real_t    *restrict x,
+                      cs_real_t    *restrict y)
 {
   /* Initialize halo synchronization */
 
@@ -3439,8 +3429,8 @@ static void
 _b_mat_vec_p_l_dist(cs_matrix_t  *matrix,
                     bool          exclude_diag,
                     bool          sync,
-                    cs_real_t     x[restrict],
-                    cs_real_t     y[restrict])
+                    cs_real_t    *restrict x,
+                    cs_real_t    *restrict y)
 {
   if (matrix->db_size == 3)
     _b_mat_vec_p_l_dist_3(matrix, exclude_diag, sync, x, y);
@@ -3467,8 +3457,8 @@ static void
 _bb_mat_vec_p_l_dist_3(cs_matrix_t  *matrix,
                        bool          exclude_diag,
                        bool          sync,
-                       cs_real_t     x[restrict],
-                       cs_real_t     y[restrict])
+                       cs_real_t    *restrict x,
+                       cs_real_t    *restrict y)
 {
   /* Initialize halo synchronization */
 
@@ -3543,8 +3533,8 @@ static void
 _bb_mat_vec_p_l_dist_generic(cs_matrix_t  *matrix,
                              bool          exclude_diag,
                              bool          sync,
-                             cs_real_t     x[restrict],
-                             cs_real_t     y[restrict])
+                             cs_real_t    *restrict x,
+                             cs_real_t    *restrict y)
 {
   /* Initialize halo synchronization */
 
@@ -3620,8 +3610,8 @@ static void
 _bb_mat_vec_p_l_dist(cs_matrix_t  *matrix,
                      bool          exclude_diag,
                      bool          sync,
-                     cs_real_t     x[restrict],
-                     cs_real_t     y[restrict])
+                     cs_real_t    *restrict x,
+                     cs_real_t    *restrict y)
 {
   if (matrix->eb_size == 3)
     _bb_mat_vec_p_l_dist_3(matrix, exclude_diag, sync, x, y);
@@ -3649,8 +3639,8 @@ static void
 _mat_vec_p_l_dist_mkl(cs_matrix_t  *matrix,
                       bool          exclude_diag,
                       bool          sync,
-                      cs_real_t     x[restrict],
-                      cs_real_t     y[restrict])
+                      cs_real_t    *restrict x,
+                      cs_real_t    *restrict y)
 {
   /* Initialize halo synchronization */
 
@@ -3709,8 +3699,8 @@ static void
 _mat_vec_p_l_dist_mkl_sycl(cs_matrix_t  *matrix,
                            bool          exclude_diag,
                            bool          sync,
-                           cs_real_t     x[restrict],
-                           cs_real_t     y[restrict])
+                           cs_real_t    *restrict x,
+                           cs_real_t    *restrict y)
 {
   /* Initialize halo synchronization */
 

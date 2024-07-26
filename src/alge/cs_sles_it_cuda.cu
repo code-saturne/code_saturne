@@ -147,11 +147,11 @@ _warp_reduce_sum(volatile T  *stmp,
 
 template <size_t block_size>
 __global__ static void
-_jacobi_compute_vx(cs_lnum_t          n_rows,
-                   const cs_real_t   *restrict ad_inv,
-                   const cs_real_t   *rhs,
-                   cs_real_t         *restrict vx,
-                   cs_real_t         *restrict rk)
+_jacobi_compute_vx(cs_lnum_t                       n_rows,
+                   const cs_real_t   *__restrict__ ad_inv,
+                   const cs_real_t   *__restrict__ rhs,
+                   cs_real_t         *__restrict__ vx,
+                   cs_real_t         *__restrict__ rk)
 {
   cs_lnum_t ii = blockIdx.x*blockDim.x + threadIdx.x;
 
@@ -175,11 +175,11 @@ _jacobi_compute_vx(cs_lnum_t          n_rows,
 
 template <size_t block_size>
 __global__ static void
-_jacobi_compute_vx_ini0(cs_lnum_t          n_rows,
-                        const cs_real_t   *restrict ad_inv,
-                        const cs_real_t   *rhs,
-                        cs_real_t         *restrict vx,
-                        cs_real_t         *restrict rk)
+_jacobi_compute_vx_ini0(cs_lnum_t                       n_rows,
+                        const cs_real_t   *__restrict__ ad_inv,
+                        const cs_real_t   *__restrict__ rhs,
+                        cs_real_t         *__restrict__ vx,
+                        cs_real_t         *__restrict__ rk)
 {
   cs_lnum_t ii = blockIdx.x*blockDim.x + threadIdx.x;
 
@@ -209,13 +209,13 @@ _jacobi_compute_vx_ini0(cs_lnum_t          n_rows,
 
 template <size_t block_size>
 __global__ static void
-_jacobi_compute_vx_and_residual(cs_lnum_t          n_rows,
-                                const cs_real_t   *restrict ad_inv,
-                                const cs_real_t   *restrict ad,
-                                const cs_real_t   *rhs,
-                                cs_real_t         *restrict vx,
-                                cs_real_t         *restrict rk,
-                                double            *sum_block)
+_jacobi_compute_vx_and_residual(cs_lnum_t                       n_rows,
+                                const cs_real_t   *__restrict__ ad_inv,
+                                const cs_real_t   *__restrict__ ad,
+                                const cs_real_t   *__restrict__ rhs,
+                                cs_real_t         *__restrict__ vx,
+                                cs_real_t         *__restrict__ rk,
+                                double            *__restrict__ sum_block)
 {
   __shared__ double sdata[block_size];
 
@@ -254,12 +254,12 @@ _jacobi_compute_vx_and_residual(cs_lnum_t          n_rows,
 
 template <size_t block_size>
 __global__ static void
-_jacobi_compute_vx_and_residual_ini0(cs_lnum_t          n_rows,
-                                     const cs_real_t   *restrict ad_inv,
-                                     const cs_real_t   *rhs,
-                                     cs_real_t         *restrict vx,
-                                     cs_real_t         *restrict rk,
-                                     double            *sum_block)
+_jacobi_compute_vx_and_residual_ini0(cs_lnum_t                       n_rows,
+                                     const cs_real_t   *__restrict__ ad_inv,
+                                     const cs_real_t   *__restrict__ rhs,
+                                     cs_real_t         *__restrict__ vx,
+                                     cs_real_t         *__restrict__ rk,
+                                     double            *__restrict__ sum_block)
 {
   __shared__ double sdata[block_size];
 
@@ -289,9 +289,9 @@ _jacobi_compute_vx_and_residual_ini0(cs_lnum_t          n_rows,
  *----------------------------------------------------------------------------*/
 
 __device__ static void  __forceinline__
-_fw_and_bw_lu33_cuda(const cs_real_t  mat[],
-                     cs_real_t        x[restrict],
-                     const cs_real_t  c[restrict])
+_fw_and_bw_lu33_cuda(const cs_real_t  *__restrict__ mat,
+                     cs_real_t        *__restrict__ x,
+                     const cs_real_t  *__restrict__ c)
 {
   cs_real_t  aux[3];
 
@@ -325,13 +325,16 @@ _fw_and_bw_lu33_cuda(const cs_real_t  mat[],
 
 template <size_t block_size>
 __global__ static void
-_block_3_jacobi_compute_vx_and_residual(cs_lnum_t          n_b_rows,
-                                        const cs_real_t   *restrict ad_inv,
-                                        const cs_real_t   *restrict ad,
-                                        const cs_real_t   *rhs,
-                                        cs_real_t         *restrict vx,
-                                        cs_real_t         *restrict rk,
-                                        double            *sum_block)
+_block_3_jacobi_compute_vx_and_residual
+(
+ cs_lnum_t                       n_b_rows,
+ const cs_real_t   *__restrict__ ad_inv,
+ const cs_real_t   *__restrict__ ad,
+ const cs_real_t   *__restrict__ rhs,
+ cs_real_t         *__restrict__ vx,
+ cs_real_t         *__restrict__ rk,
+ double            *__restrict__ sum_block
+)
 {
   __shared__ cs_real_t sdata[block_size];
 
@@ -381,13 +384,16 @@ _block_3_jacobi_compute_vx_and_residual(cs_lnum_t          n_b_rows,
 
 template <size_t block_size>
 __global__ static void
-_block_3_jacobi_compute_vx_and_residual_ini0(cs_lnum_t          n_b_rows,
-                                             const cs_real_t   *restrict ad_inv,
-                                             const cs_real_t   *restrict ad,
-                                             const cs_real_t   *rhs,
-                                             cs_real_t         *restrict vx,
-                                             cs_real_t         *restrict rk,
-                                             double            *sum_block)
+_block_3_jacobi_compute_vx_and_residual_ini0
+(
+ cs_lnum_t                       n_b_rows,
+ const cs_real_t   *__restrict__ ad_inv,
+ const cs_real_t   *__restrict__ ad,
+ const cs_real_t   *__restrict__ rhs,
+ cs_real_t         *__restrict__ vx,
+ cs_real_t         *__restrict__ rk,
+ double            *__restrict__ sum_block
+)
 {
   __shared__ cs_real_t sdata[block_size];
 
@@ -433,10 +439,10 @@ _block_3_jacobi_compute_vx_and_residual_ini0(cs_lnum_t          n_b_rows,
  *----------------------------------------------------------------------------*/
 
 __device__ static void  __forceinline__
-_fw_and_bw_lu_cuda(const cs_real_t  mat[],
-                   cs_lnum_t        db_size,
-                   cs_real_t        x[restrict],
-                   const cs_real_t  c[restrict])
+_fw_and_bw_lu_cuda(const cs_real_t  *__restrict__ mat,
+                   cs_lnum_t                      db_size,
+                   cs_real_t        *__restrict__ x,
+                   const cs_real_t  *__restrict__ c)
 {
   assert(db_size <= 9);
   cs_real_t aux[9];
@@ -475,14 +481,14 @@ _fw_and_bw_lu_cuda(const cs_real_t  mat[],
 
 template <size_t block_size>
 __global__ static void
-_block_jacobi_compute_vx_and_residual(cs_lnum_t          n_b_rows,
-                                      cs_lnum_t          db_size,
-                                      const cs_real_t   *restrict ad_inv,
-                                      const cs_real_t   *restrict ad,
-                                      const cs_real_t   *rhs,
-                                      cs_real_t         *restrict vx,
-                                      cs_real_t         *restrict rk,
-                                      double            *sum_block)
+_block_jacobi_compute_vx_and_residual(cs_lnum_t                       n_b_rows,
+                                      cs_lnum_t                       db_size,
+                                      const cs_real_t   *__restrict__ ad_inv,
+                                      const cs_real_t   *__restrict__ ad,
+                                      const cs_real_t   *__restrict__ rhs,
+                                      cs_real_t         *__restrict__ vx,
+                                      cs_real_t         *__restrict__ rk,
+                                      double            *__restrict__ sum_block)
 {
   __shared__ cs_real_t sdata[block_size];
 
@@ -530,14 +536,17 @@ _block_jacobi_compute_vx_and_residual(cs_lnum_t          n_b_rows,
 
 template <size_t block_size>
 __global__ static void
-_block_jacobi_compute_vx_and_residual_ini0(cs_lnum_t          n_b_rows,
-                                           cs_lnum_t          db_size,
-                                           const cs_real_t   *restrict ad_inv,
-                                           const cs_real_t   *restrict ad,
-                                           const cs_real_t   *rhs,
-                                           cs_real_t         *restrict vx,
-                                           cs_real_t         *restrict rk,
-                                           double            *sum_block)
+_block_jacobi_compute_vx_and_residual_ini0
+(
+ cs_lnum_t                       n_b_rows,
+ cs_lnum_t                       db_size,
+ const cs_real_t   *__restrict__ ad_inv,
+ const cs_real_t   *__restrict__ ad,
+ const cs_real_t   *__restrict__ rhs,
+ cs_real_t         *__restrict__ vx,
+ cs_real_t         *__restrict__ rk,
+ double            *__restrict__ sum_block
+)
 {
   __shared__ cs_real_t sdata[block_size];
 
@@ -585,10 +594,10 @@ _block_jacobi_compute_vx_and_residual_ini0(cs_lnum_t          n_b_rows,
  *----------------------------------------------------------------------------*/
 
 __global__ static void
-_fcg_init(cs_lnum_t         n,
-          const cs_real_t  *restrict rhs,
-          cs_real_t        *restrict rk,
-          cs_real_t        *restrict qk)
+_fcg_init(cs_lnum_t                      n,
+          const cs_real_t  *__restrict__ rhs,
+          cs_real_t        *__restrict__ rk,
+          cs_real_t        *__restrict__ qk)
 {
   cs_lnum_t ii = blockIdx.x*blockDim.x + threadIdx.x;
 
@@ -610,11 +619,11 @@ _fcg_init(cs_lnum_t         n,
  *----------------------------------------------------------------------------*/
 
 __global__ static void
-_fcg_init_vx0(cs_lnum_t         n,
-              const cs_real_t  *restrict rhs,
-              cs_real_t        *restrict vx,
-              cs_real_t        *restrict rk,
-              cs_real_t        *restrict qk)
+_fcg_init_vx0(cs_lnum_t                      n,
+              const cs_real_t  *__restrict__ rhs,
+              cs_real_t        *__restrict__ vx,
+              cs_real_t        *__restrict__ rk,
+              cs_real_t        *__restrict__ qk)
 {
   cs_lnum_t ii = blockIdx.x*blockDim.x + threadIdx.x;
 
@@ -641,15 +650,15 @@ _fcg_init_vx0(cs_lnum_t         n,
  *----------------------------------------------------------------------------*/
 
 __global__ static void
-_fcg_update_n(cs_lnum_t         n,
-              cs_real_t         gk_rk1,
-              cs_real_t         ak_rk,
-              const cs_real_t  *restrict wk,
-              cs_real_t        *restrict dk,
-              cs_real_t        *restrict qk,
-              cs_real_t        *restrict rk,
-              cs_real_t        *restrict vk,
-              cs_real_t        *restrict vx)
+_fcg_update_n(cs_lnum_t                      n,
+              cs_real_t                      gk_rk1,
+              cs_real_t                      ak_rk,
+              const cs_real_t  *__restrict__ wk,
+              cs_real_t        *__restrict__ dk,
+              cs_real_t        *__restrict__ qk,
+              cs_real_t        *__restrict__ rk,
+              cs_real_t        *__restrict__ vk,
+              cs_real_t        *__restrict__ vx)
 {
   cs_lnum_t ii = blockIdx.x*blockDim.x + threadIdx.x;
 
@@ -677,14 +686,14 @@ _fcg_update_n(cs_lnum_t         n,
  *----------------------------------------------------------------------------*/
 
 __global__ static void
-_fcg_update_0(cs_lnum_t         n,
-              cs_real_t         ak_rk,
-              const cs_real_t  *restrict wk,
-              cs_real_t        *restrict dk,
-              cs_real_t        *restrict qk,
-              cs_real_t        *restrict rk,
-              cs_real_t        *restrict vk,
-              cs_real_t        *restrict vx)
+_fcg_update_0(cs_lnum_t                      n,
+              cs_real_t                      ak_rk,
+              const cs_real_t  *__restrict__ wk,
+              cs_real_t        *__restrict__ dk,
+              cs_real_t        *__restrict__ qk,
+              cs_real_t        *__restrict__ rk,
+              cs_real_t        *__restrict__ vk,
+              cs_real_t        *__restrict__ vx)
 {
   cs_lnum_t ii = blockIdx.x*blockDim.x + threadIdx.x;
 
@@ -714,10 +723,10 @@ _fcg_update_0(cs_lnum_t         n,
 
 template <size_t block_size>
 __global__ static void
-_ymx_dot_yy(cs_lnum_t          n,
-            const cs_real_t   *restrict x,
-            cs_real_t         *restrict y,
-            double            *sum_block)
+_ymx_dot_yy(cs_lnum_t                       n,
+            const cs_real_t   *__restrict__ x,
+            cs_real_t         *__restrict__ y,
+            double            *__restrict__ sum_block)
 {
   __shared__ double sdata[block_size];
 
@@ -756,11 +765,11 @@ _ymx_dot_yy(cs_lnum_t          n,
 
 template <size_t block_size>
 __global__ static void
-_x0_ymr_dot_yy(cs_lnum_t          n,
-               const cs_real_t   *restrict r,
-               cs_real_t         *restrict x,
-               cs_real_t         *restrict y,
-               double            *sum_block)
+_x0_ymr_dot_yy(cs_lnum_t                       n,
+               const cs_real_t   *__restrict__ r,
+               cs_real_t         *__restrict__ x,
+               cs_real_t         *__restrict__ y,
+               double            *__restrict__ sum_block)
 {
   __shared__ double sdata[block_size];
 
@@ -798,11 +807,11 @@ _x0_ymr_dot_yy(cs_lnum_t          n,
 
 template <size_t block_size>
 __global__ static void
-_smaxpy_dot_yy(cs_lnum_t          n,
-               const cs_real_t   *restrict alpha,
-               const cs_real_t   *restrict x,
-               cs_real_t         *restrict y,
-               double            *sum_block)
+_smaxpy_dot_yy(cs_lnum_t                       n,
+               const cs_real_t   *__restrict__ alpha,
+               const cs_real_t   *__restrict__ x,
+               cs_real_t         *__restrict__ y,
+               double            *__restrict__ sum_block)
 {
   __shared__ double sdata[block_size];
 
@@ -842,11 +851,11 @@ _smaxpy_dot_yy(cs_lnum_t          n,
 
 template <size_t block_size>
 __global__ static void
-_y_scale_dot_xy(cs_lnum_t         n,
-                const cs_real_t  *restrict alpha,
-                const cs_real_t  *restrict x,
-                cs_real_t        *restrict y,
-                double           *sum_block)
+_y_scale_dot_xy(cs_lnum_t                      n,
+                const cs_real_t  *__restrict__ alpha,
+                const cs_real_t  *__restrict__ x,
+                cs_real_t        *__restrict__ y,
+                double           *__restrict__ sum_block)
 {
   __shared__ double sdata[block_size];
 
@@ -882,10 +891,10 @@ _y_scale_dot_xy(cs_lnum_t         n,
  *----------------------------------------------------------------------------*/
 
 __global__ static void
-_gcr_gkj_inv(int               n_c_iter,
-             int               n_gkj,
-             const cs_real_t  *restrict mgkj,
-             cs_real_t        *restrict gkj_inv)
+_gcr_gkj_inv(int                            n_c_iter,
+             int                            n_gkj,
+             const cs_real_t  *__restrict__ mgkj,
+             cs_real_t        *__restrict__ gkj_inv)
 {
   int kk = blockIdx.x*blockDim.x + threadIdx.x;
   size_t grid_size = blockDim.x*gridDim.x;
@@ -925,8 +934,8 @@ _gcr_gkj_inv(int               n_c_iter,
  *----------------------------------------------------------------------------*/
 
 __global__ static void
-_gcr_gkj_inv_1(const cs_real_t  *restrict gkj,
-               cs_real_t        *restrict gkj_inv)
+_gcr_gkj_inv_1(const cs_real_t  *__restrict__ gkj,
+               cs_real_t        *__restrict__ gkj_inv)
 {
   int ii = blockIdx.x*blockDim.x + threadIdx.x;
   if (ii != 0)
@@ -952,13 +961,13 @@ _gcr_gkj_inv_1(const cs_real_t  *restrict gkj,
  *----------------------------------------------------------------------------*/
 
 __global__ static void
-_gcr_update_vx(cs_lnum_t         n_rows,
-               cs_lnum_t         n_c_iter,
-               size_t            wa_size,
-               const cs_real_t  *restrict alpha,
-               const cs_real_t  *restrict gkj_inv,
-               const cs_real_t  *restrict zk,
-               cs_real_t        *restrict vx)
+_gcr_update_vx(cs_lnum_t                      n_rows,
+               int                            n_c_iter,
+               size_t                         wa_size,
+               const cs_real_t  *__restrict__ alpha,
+               const cs_real_t  *__restrict__ gkj_inv,
+               const cs_real_t  *__restrict__ zk,
+               cs_real_t        *__restrict__ vx)
 {
   cs_lnum_t ii = blockIdx.x*blockDim.x + threadIdx.x;
 
@@ -1249,9 +1258,9 @@ cs_sles_it_cuda_jacobi(cs_sles_it_t              *c,
   if (amode_rhs == CS_ALLOC_HOST_DEVICE_SHARED)
     cudaMemPrefetchAsync(rhs, vec_size, device_id, stream_pf);
 
-  const cs_real_t  *restrict ad
+  const cs_real_t  *__restrict__ ad
     =  cs_get_device_ptr_const(cs_matrix_get_diagonal(a));
-  const cs_real_t *restrict ad_inv
+  const cs_real_t *__restrict__ ad_inv
     = cs_get_device_ptr_const(c->setup_data->ad_inv);
 
   const cs_lnum_t n_rows = c->setup_data->n_rows;
@@ -1284,7 +1293,7 @@ cs_sles_it_cuda_jacobi(cs_sles_it_t              *c,
       _aux_vectors = (cs_real_t *)aux_vectors;
   }
 
-  cs_real_t *restrict rk = _aux_vectors;
+  cs_real_t *__restrict__ rk = _aux_vectors;
 
   const unsigned int blocksize = 256;
   unsigned int gridsize = cs_cuda_grid_size(n_rows, blocksize);
@@ -1452,8 +1461,8 @@ cs_sles_it_cuda_block_jacobi(cs_sles_it_t              *c,
                              cs_lnum_t                  diag_block_size,
                              cs_sles_it_convergence_t  *convergence,
                              const cs_real_t           *rhs,
-                             cs_real_t                 *restrict vx_ini,
-                             cs_real_t                 *restrict vx,
+                             cs_real_t                 *__restrict__ vx_ini,
+                             cs_real_t                 *__restrict__ vx,
                              size_t                     aux_size,
                              void                      *aux_vectors)
 {
@@ -1484,9 +1493,9 @@ cs_sles_it_cuda_block_jacobi(cs_sles_it_t              *c,
   if (amode_rhs == CS_ALLOC_HOST_DEVICE_SHARED)
     cudaMemPrefetchAsync(rhs, vec_size, device_id, stream_pf);
 
-  const cs_real_t  *restrict ad
+  const cs_real_t  *__restrict__ ad
     =  cs_get_device_ptr_const(cs_matrix_get_diagonal(a));
-  const cs_real_t *restrict ad_inv
+  const cs_real_t *__restrict__ ad_inv
     = cs_get_device_ptr_const(c->setup_data->ad_inv);
 
   const cs_lnum_t n_rows = c->setup_data->n_rows;
@@ -1516,7 +1525,7 @@ cs_sles_it_cuda_block_jacobi(cs_sles_it_t              *c,
       _aux_vectors = (cs_real_t *)aux_vectors;
   }
 
-  cs_real_t *restrict rk = _aux_vectors;
+  cs_real_t *__restrict__ rk = _aux_vectors;
 
   const unsigned int blocksize = 256;
   cs_lnum_t n_b_rows = n_rows / diag_block_size;
@@ -1724,8 +1733,8 @@ cs_sles_it_cuda_fcg(cs_sles_it_t              *c,
   assert(c->setup_data != NULL);
 
   cs_real_t  *_aux_vectors;
-  cs_real_t  *restrict rk, *restrict vk, *restrict wk;
-  cs_real_t  *restrict dk, *restrict qk;
+  cs_real_t  *__restrict__ rk, *__restrict__ vk, *__restrict__ wk;
+  cs_real_t  *__restrict__ dk, *__restrict__ qk;
 
   unsigned n_iter = 0;
 
@@ -1951,16 +1960,18 @@ cs_sles_it_cuda_gcr(cs_sles_it_t              *c,
     const size_t n_wa = 1 + n_k_per_restart * 2;
     wa_size = CS_SIMD_SIZE(n_cols);
 
-    if (aux_vectors == NULL || aux_size/sizeof(cs_real_t) < (wa_size * n_wa))
+    if (   aux_vectors == nullptr
+        || cs_cuda_get_host_ptr(aux_vectors) == nullptr
+        || aux_size/sizeof(cs_real_t) < (wa_size * n_wa))
       CS_MALLOC_HD(_aux_vectors, wa_size * n_wa, cs_real_t, CS_ALLOC_DEVICE);
     else
       _aux_vectors = (cs_real_t *)aux_vectors;
 
   }
-  cs_real_t *restrict rk = _aux_vectors;             /* store residuals  */
-  cs_real_t *restrict zk = _aux_vectors + wa_size;   /* store inv(M)*r   */
-  cs_real_t *restrict ck = _aux_vectors + wa_size * (1 + n_k_per_restart);
-                                                     /* store A*zk */
+  cs_real_t *__restrict__ rk = _aux_vectors;             /* store residuals  */
+  cs_real_t *__restrict__ zk = _aux_vectors + wa_size;   /* store inv(M)*r   */
+  cs_real_t *__restrict__ ck = _aux_vectors + wa_size * (1 + n_k_per_restart);
+                                                         /* store A*zk */
 
   /* Use unified memory for arrays which may require an MPI reduction,
      device memory for others; also use double instead of generic
@@ -1978,9 +1989,9 @@ cs_sles_it_cuda_gcr(cs_sles_it_t              *c,
   CS_MALLOC_HD(_aux_arrays, aux_arrays_size, double,
                CS_ALLOC_HOST_DEVICE_SHARED);
 
-  double *restrict mgkj = _aux_arrays;
-  double *restrict alpha = _aux_arrays + n_gkj;
-  double *restrict scale = alpha + n_k_per_restart+1;
+  double *__restrict__ mgkj = _aux_arrays;
+  double *__restrict__ alpha = _aux_arrays + n_gkj;
+  double *__restrict__ scale = alpha + n_k_per_restart+1;
 
   cs_real_t *gkj_inv;
   CS_MALLOC_HD(gkj_inv, n_gkj, cs_real_t, CS_ALLOC_DEVICE);
