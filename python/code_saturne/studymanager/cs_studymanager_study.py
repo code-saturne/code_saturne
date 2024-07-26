@@ -1298,7 +1298,7 @@ class Studies(object):
             except Exception as error:
                 print("\n  /!\ ERROR while reading studymanager file :\n"
                       + str(error))
-                sys.exit()
+                sys.exit(error)
 
             smgr['xmlfile'] = filename
 
