@@ -35,42 +35,81 @@
 
 /*----------------------------------------------------------------------------*/
 
+
 BEGIN_C_DECLS
+
+/*============================================================================
+ * Local Macro definitions
+ *============================================================================*/
+
+/*============================================================================
+ * Type definitions
+ *============================================================================*/
+
+/*! \cond DOXYGEN_SHOULD_SKIP_THIS */
 
 typedef struct {
 
+  /*! number of the zones with a specific condensation source terms
+      depending on the wall temperature and material properties */
   int        nzones;
+  /*! Maximal number of discretized points */
   int        znmurx;
+  /*! ztheta-scheme of the 1-D thermal model
+      - 0 : explicit scheme
+      - 1 : implicit scheme */
   cs_real_t *ztheta;
+  /*! the minimal space step of 1-D thermal model
+      by default equal to 0 with a homogeneus space step.
+      this numerical parameter is used to impose a
+      geometric progression ratio of the mesh refinement */
   cs_real_t *zdxmin;
+  /*! number of discretized points */
   cs_lnum_t *znmur;
+  /*! the wall thickness */
   cs_real_t *zepais;
+  /*! initial temperature */
   cs_real_t *ztpar0;
-
+  /*! exterior exchange coefficient */
   cs_real_t *zhext;
+  /*! exterior temperature */
   cs_real_t *ztext;
+  /*! concrete density */
   cs_real_t *zrob;
+  /*! concrete conductivity coefficient */
   cs_real_t *zcondb;
+  /*!  concrete specific heat coefficient */
   cs_real_t *zcpb;
+  /*! initial temperature */
   cs_real_t *ztpar;
-
+  /*! space step */
   cs_real_t *zdxp;
+  /*! wall temperature */
   cs_real_t *ztmur;
 
 } cs_wall_cond_1d_thermal_t;
 
 typedef struct {
 
+  /*! number of the volume strutures with a specific condensation source terms */
   cs_lnum_t    nvolumes;
+  /*! thickness */
   cs_real_t   *volume_thickness;
+  /*! wall temperature */
   cs_real_2_t *volume_t;
-
+  /*! the density (kg.m-3) */
   cs_real_t   *volume_rho;
+  /*! specific heat coefficient (J.kg-1.C-1) */
   cs_real_t   *volume_cp;
+  /*! conductivity coefficient (W.m-1.C-1) */
   cs_real_t   *volume_lambda;
+  /*! metal mass (kg) */
   cs_real_t   *volume_mass;
+  /*! exchange surface (m2) */
   cs_real_t   *volume_surf;
+  /*! wall temperature */
   cs_real_t   *volume_t0;
+  /*! volume mesaure (m3) */
   cs_real_t   *volume_measure;
 
 } cs_wall_cond_0d_thermal_t;
@@ -83,6 +122,8 @@ typedef struct {
 
 extern const cs_wall_cond_1d_thermal_t *cs_glob_wall_cond_1d_thermal;
 extern const cs_wall_cond_0d_thermal_t *cs_glob_wall_cond_0d_thermal;
+
+/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*=============================================================================
  * Public function prototypes

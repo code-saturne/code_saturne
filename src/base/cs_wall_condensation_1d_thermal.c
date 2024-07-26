@@ -135,39 +135,6 @@ const cs_wall_cond_0d_thermal_t *cs_glob_wall_cond_0d_thermal
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
 
 /*============================================================================
- * Prototypes for functions intended for use only by Fortran wrappers.
- * (descriptions follow, with function bodies).
- *============================================================================*/
-
-void cs_f_wall_condensation_1d_thermal_get_pointers(cs_lnum_t **znmur,
-                                                    cs_real_t **ztheta,
-                                                    cs_real_t **zdxmin,
-                                                    cs_real_t **zepais,
-                                                    cs_real_t **zrob,
-                                                    cs_real_t **zcondb,
-                                                    cs_real_t **zcpb,
-                                                    cs_real_t **zhext,
-                                                    cs_real_t **ztext,
-                                                    cs_real_t **ztpar0);
-
-void cs_f_wall_condensation_1d_thermal_get_mesh_pointers(int **      znmurx,
-                                                         cs_real_t **zdxp,
-                                                         cs_real_t **ztmur);
-
-
-void
-cs_f_wall_condensation_0d_thermal_get_pointers
-  (cs_real_t   **volume_thickness,
-   cs_real_2_t **volume_t,
-   cs_real_t   **volume_rho,
-   cs_real_t   **volume_cp,
-   cs_real_t   **volume_lambda,
-   cs_real_t   **volume_mass,
-   cs_real_t   **volume_surf,
-   cs_real_t   **volume_measure,
-   cs_real_t   **volume_t0);
-
-/*============================================================================
  * Private function definitions
  *============================================================================*/
 
@@ -220,66 +187,6 @@ _log_debug(void)
                  kk, zdxp[iz + kk*nzones], r0);
     }
   }
-}
-
-/*============================================================================
- * Fortran wrapper function definitions
- *============================================================================*/
-
-void
-cs_f_wall_condensation_1d_thermal_get_pointers(cs_lnum_t **znmur,
-                                               cs_real_t **ztheta,
-                                               cs_real_t **zdxmin,
-                                               cs_real_t **zepais,
-                                               cs_real_t **zrob,
-                                               cs_real_t **zcondb,
-                                               cs_real_t **zcpb,
-                                               cs_real_t **zhext,
-                                               cs_real_t **ztext,
-                                               cs_real_t **ztpar0)
-{
-  *znmur  = _wall_cond_1d_thermal.znmur;
-  *ztheta = _wall_cond_1d_thermal.ztheta;
-  *zdxmin = _wall_cond_1d_thermal.zdxmin;
-  *zepais = _wall_cond_1d_thermal.zepais;
-  *zrob   = _wall_cond_1d_thermal.zrob;
-  *zcondb = _wall_cond_1d_thermal.zcondb;
-  *zcpb   = _wall_cond_1d_thermal.zcpb;
-  *zhext  = _wall_cond_1d_thermal.zhext;
-  *ztext  = _wall_cond_1d_thermal.ztext;
-  *ztpar0 = _wall_cond_1d_thermal.ztpar0;
-}
-
-void
-cs_f_wall_condensation_1d_thermal_get_mesh_pointers(int **      znmurx,
-                                                    cs_real_t **zdxp,
-                                                    cs_real_t **ztmur)
-{
-  *znmurx = &(_wall_cond_1d_thermal.znmurx);
-  *zdxp   = _wall_cond_1d_thermal.zdxp;
-  *ztmur  = _wall_cond_1d_thermal.ztmur;
-}
-
-void cs_f_wall_condensation_0d_thermal_get_pointers
-  (cs_real_t   **volume_thickness,
-   cs_real_2_t **volume_t,
-   cs_real_t   **volume_rho,
-   cs_real_t   **volume_cp,
-   cs_real_t   **volume_lambda,
-   cs_real_t   **volume_mass,
-   cs_real_t   **volume_surf,
-   cs_real_t   **volume_measure,
-   cs_real_t   **volume_t0)
-{
-  *volume_thickness    = _wall_cond_0d_thermal.volume_thickness;
-  *volume_t            = _wall_cond_0d_thermal.volume_t;
-  *volume_rho          = _wall_cond_0d_thermal.volume_rho;
-  *volume_cp           = _wall_cond_0d_thermal.volume_cp;
-  *volume_lambda       = _wall_cond_0d_thermal.volume_lambda;
-  *volume_mass         = _wall_cond_0d_thermal.volume_mass;
-  *volume_surf         = _wall_cond_0d_thermal.volume_surf;
-  *volume_measure      = _wall_cond_0d_thermal.volume_measure;
-  *volume_t0           = _wall_cond_0d_thermal.volume_t0;
 }
 
 /*! (DOXYGEN_SHOULD_SK.IP_THIS) \endcond */
