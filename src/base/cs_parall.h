@@ -694,10 +694,12 @@ template <typename T, typename... Vals>
 static void
 cs_parall_sum_scalars
 (
-  T&       First, /*!<[in,out] First scalar to update */
-  Vals&... values /*!<[in,out] Additional scalars to update */
+  T&       First, /*!< [in, out]  First scalar to update */
+  Vals&... values /*!< [in, out]  Additional scalars to update */
 )
 {
+#if defined(HAVE_MPI)
+
   if (cs_glob_n_ranks == 1)
     return;
 
@@ -731,15 +733,17 @@ cs_parall_sum_scalars
 
     T w[n_vals + 1];
     w[0] = First;
-    for (cs_gnum_t i = 0; i < n_vals; i++)
+    for (size_t i = 0; i < n_vals; i++)
       w[i+1] = *(_values[i]);
 
     cs_parall_sum(n_vals + 1, datatype, w);
 
     First = w[0];
-    for (cs_gnum_t i = 0; i < n_vals; i++)
+    for (size_t i = 0; i < n_vals; i++)
       *(_values[i]) = w[i+1];
   }
+
+#endif
 }
 
 /*----------------------------------------------------------------------------*/
@@ -756,10 +760,12 @@ template <int Stride, typename T, typename... Vals>
 static void
 cs_parall_sum_strided
 (
-  T         First[], /*!<[in,out] First scalar to update */
-  Vals&&... values   /*!<[in,out] Additional scalars to update */
+  T         first[], /*!< [in, out]  First scalar to update */
+  Vals&&... values   /*!< [in, out]  Additional scalars to update */
 )
 {
+#if defined(HAVE_MPI)
+
   if (cs_glob_n_ranks == 1)
     return;
 
@@ -786,7 +792,7 @@ cs_parall_sum_strided
 
   /* Temporary work array and parallel sum */
   if (n_vals == 0)
-    cs_parall_sum(Stride, datatype, First);
+    cs_parall_sum(Stride, datatype, first);
   else {
     /* Unpack values */
     T *_values[] = {values ...};
@@ -795,21 +801,24 @@ cs_parall_sum_strided
 
     T w[work_size];
     for (int i = 0; i < Stride; i++)
-      w[i] = First[i];
+      w[i] = first[i];
 
-    for (cs_gnum_t i = 0; i < n_vals; i++)
+    for (size_t i = 0; i < n_vals; i++)
       for (int j = 0; j < Stride; j++)
         w[(i+1)*Stride + j] = _values[i][j];
 
     cs_parall_sum(work_size, datatype, w);
 
     for (int i = 0; i < Stride; i++)
-      First[i] = w[i];
+      first[i] = w[i];
 
-    for (cs_gnum_t i = 0; i < n_vals; i++)
+    for (size_t i = 0; i < n_vals; i++) {
       for (int j = 0; j < Stride; j++)
         _values[i][j] = w[(i+1)*Stride + j];
+    }
   }
+
+#endif
 }
 
 /*----------------------------------------------------------------------------*/
@@ -825,10 +834,12 @@ template <typename T, typename... Vals>
 static void
 cs_parall_max_scalars
 (
-  T&       First, /*!<[in,out] First scalar to update */
-  Vals&... values /*!<[in,out] Additional scalars to update */
+  T&       first, /*!< [in, out]  First scalar to update */
+  Vals&... values /*!< [in, out]  Additional scalars to update */
 )
 {
+#if defined(HAVE_MPI)
+
   if (cs_glob_n_ranks == 1)
     return;
 
@@ -855,23 +866,25 @@ cs_parall_max_scalars
 
   /* Temporary work array and parallel sum */
   if (n_vals == 0)
-    cs_parall_max(1, datatype, &First);
+    cs_parall_max(1, datatype, &first);
   else {
 
     /* Unpack values */
     T *_values[] = {&values ...};
 
     T w[n_vals + 1];
-    w[0] = First;
-    for (cs_gnum_t i = 0; i < n_vals; i++)
+    w[0] = first;
+    for (size_t i = 0; i < n_vals; i++)
       w[i+1] = *(_values[i]);
 
     cs_parall_max(n_vals + 1, datatype, w);
 
-    First = w[0];
-    for (cs_gnum_t i = 0; i < n_vals; i++)
+    first = w[0];
+    for (size_t i = 0; i < n_vals; i++)
       *(_values[i]) = w[i+1];
   }
+
+#endif
 }
 
 /*----------------------------------------------------------------------------*/
@@ -888,10 +901,12 @@ template <int Stride, typename T, typename... Vals>
 static void
 cs_parall_max_strided
 (
-  T         First[], /*!<[in,out] First scalar to update */
-  Vals&&... values   /*!<[in,out] Additional scalars to update */
+  T         first[], /*!< [in, out]  First scalar to update */
+  Vals&&... values   /*!< [in, out]  Additional scalars to update */
 )
 {
+#if defined(HAVE_MPI)
+
   if (cs_glob_n_ranks == 1)
     return;
 
@@ -918,7 +933,7 @@ cs_parall_max_strided
 
   /* Temporary work array and parallel sum */
   if (n_vals == 0)
-    cs_parall_max(Stride, datatype, First);
+    cs_parall_max(Stride, datatype, first);
   else {
     /* Unpack values */
     T *_values[] = {values ...};
@@ -927,21 +942,23 @@ cs_parall_max_strided
 
     T w[work_size];
     for (int i = 0; i < Stride; i++)
-      w[i] = First[i];
+      w[i] = first[i];
 
-    for (cs_gnum_t i = 0; i < n_vals; i++)
+    for (size_t i = 0; i < n_vals; i++)
       for (int j = 0; j < Stride; j++)
         w[(i+1)*Stride + j] = _values[i][j];
 
     cs_parall_max(work_size, datatype, w);
 
     for (int i = 0; i < Stride; i++)
-      First[i] = w[i];
+      first[i] = w[i];
 
-    for (cs_gnum_t i = 0; i < n_vals; i++)
+    for (size_t i = 0; i < n_vals; i++)
       for (int j = 0; j < Stride; j++)
         _values[i][j] = w[(i+1)*Stride + j];
   }
+
+#endif
 }
 
 /*----------------------------------------------------------------------------*/
@@ -957,10 +974,12 @@ template <typename T, typename... Vals>
 static void
 cs_parall_min_scalars
 (
-  T&       First, /*!<[in,out] First scalar to update */
-  Vals&... values /*!<[in,out] Additional scalars to update */
+  T&       first, /*!< [in, out]  First scalar to update */
+  Vals&... values /*!< [in, out]  Additional scalars to update */
 )
 {
+#if defined(HAVE_MPI)
+
   if (cs_glob_n_ranks == 1)
     return;
 
@@ -986,7 +1005,7 @@ cs_parall_min_scalars
     datatype = CS_COORD_TYPE;
 
   if (n_vals == 0)
-    cs_parall_min(1, datatype, &First);
+    cs_parall_min(1, datatype, &first);
 
   else {
     /* Temporary work array and parallel sum */
@@ -995,16 +1014,18 @@ cs_parall_min_scalars
     T *_values[] = {&values ...};
 
     T w[n_vals + 1];
-    w[0] = First;
-    for (cs_gnum_t i = 0; i < n_vals; i++)
+    w[0] = first;
+    for (size_t i = 0; i < n_vals; i++)
       w[i + 1] = *(_values[i]);
 
     cs_parall_min(n_vals + 1, datatype, w);
 
-    First = w[0];
-    for (cs_gnum_t i = 0; i < n_vals; i++)
+    first = w[0];
+    for (size_t i = 0; i < n_vals; i++)
       *(_values[i]) = w[i + 1];
   }
+
+#endif
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1021,10 +1042,12 @@ template <int Stride, typename T, typename... Vals>
 static void
 cs_parall_min_strided
 (
-  T         First[], /*!<[in,out] First scalar to update */
-  Vals&&... values   /*!<[in,out] Additional scalars to update */
+  T         first[], /*!< [in, out]  First scalar to update */
+  Vals&&... values   /*!< [in, out]  Additional scalars to update */
 )
 {
+#if defined(HAVE_MPI)
+
   if (cs_glob_n_ranks == 1)
     return;
 
@@ -1051,7 +1074,7 @@ cs_parall_min_strided
 
   /* Temporary work array and parallel sum */
   if (n_vals == 0)
-    cs_parall_min(Stride, datatype, First);
+    cs_parall_min(Stride, datatype, first);
   else {
     /* Unpack values */
     T *_values[] = {values ...};
@@ -1060,21 +1083,23 @@ cs_parall_min_strided
 
     T w[work_size];
     for (int i = 0; i < Stride; i++)
-      w[i] = First[i];
+      w[i] = first[i];
 
-    for (cs_gnum_t i = 0; i < n_vals; i++)
+    for (size_t i = 0; i < n_vals; i++)
       for (int j = 0; j < Stride; j++)
         w[(i+1)*Stride + j] = _values[i][j];
 
     cs_parall_min(work_size, datatype, w);
 
     for (int i = 0; i < Stride; i++)
-      First[i] = w[i];
+      first[i] = w[i];
 
-    for (cs_gnum_t i = 0; i < n_vals; i++)
+    for (size_t i = 0; i < n_vals; i++)
       for (int j = 0; j < Stride; j++)
         _values[i][j] = w[(i+1)*Stride + j];
   }
+
+#endif
 }
 
 #endif //__cplusplus
