@@ -188,11 +188,6 @@ if (ippmod(iaeros).ge.0) then
   call cs_ctwr_bcond()
 endif
 
-! Compressible
-if (ippmod(icompf).ge.0) then
-  call cfxtcl(nvar, icodcl, itypfb, dt, rcodcl)
-endif
-
 if (init .eqv. .true.) return
 
 ! ---> Chimie 3 points : USD3PC

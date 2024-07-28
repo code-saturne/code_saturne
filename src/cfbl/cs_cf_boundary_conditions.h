@@ -58,6 +58,17 @@ extern int *cs_glob_cf_ifbet;
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Automatic boundary condition for compressible flows
+ *
+ * \param[in]  bc_type  type of boundary for each face
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cf_boundary_conditions(int  bc_type[]);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Prepare (reset) condition coefficients specific to compressible flows.
  */
 /*----------------------------------------------------------------------------*/

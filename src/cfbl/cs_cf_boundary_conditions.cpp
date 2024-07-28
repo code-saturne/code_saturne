@@ -27,20 +27,32 @@
 #include "cs_defs.h"
 
 /*----------------------------------------------------------------------------
- * Standard C library headers
+ * Standard C and C++ library headers
  *----------------------------------------------------------------------------*/
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
+#include <cmath>
+
 /*----------------------------------------------------------------------------
  * Local headers
  *----------------------------------------------------------------------------*/
 
+#include "cs_array.h"
 #include "bft_mem.h"
 #include "cs_cf_model.h"
-#include "cs_mesh_location.h"
+#include "cs_cf_boundary_flux.h"
+#include "cs_cf_thermo.h"
+#include "cs_field.h"
+#include "cs_field_pointer.h"
+#include "cs_math.h"
+#include "cs_mesh.h"
+#include "cs_mesh_quantities.h"
+#include "cs_parameters.h"
+#include "cs_physical_constants.h"
+#include "cs_physical_model.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file
@@ -88,6 +100,640 @@ extern int *cs_glob_cf_ifbet;
 /*=============================================================================
  * Public function definitions
  *============================================================================*/
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Automatic boundary condition for compressible flows
+ *
+ * \param[in]  bc_type  type of boundary for each face
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cf_boundary_conditions(int  bc_type[])
+{
+  /* Initializations
+     --------------- */
+
+  const cs_mesh_t *m = cs_glob_mesh;
+  const cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
+  const cs_lnum_t n_b_faces = m->n_b_faces;
+  const cs_lnum_t *b_face_cells = m->b_face_cells;
+
+  const cs_mesh_quantities_t *fvq = cs_glob_mesh_quantities;
+  const cs_real_3_t *b_face_cog
+    = reinterpret_cast<const cs_real_3_t *>(fvq->b_face_cog);
+  const cs_nreal_3_t *b_f_u_normal = fvq->b_face_u_normal;
+  const cs_real_t *b_f_surf = fvq->b_face_surf;
+
+  const cs_real_3_t *cell_cen
+    = reinterpret_cast<const cs_real_3_t *>(fvq->cell_cen);
+
+  const cs_real_t *b_dist = fvq->b_dist;
+
+  const cs_fluid_properties_t  *fluid_props = cs_glob_fluid_properties;
+  const cs_real_t *grav = cs_glob_physical_constants->gravity;
+
+  const cs_real_t cv0 = fluid_props->cv0;
+
+  const int icfgrp = cs_glob_cf_model->icfgrp;
+
+  // Threshold to detect whether some BC values were set or are at default.
+  const cs_real_t r_inf_05 = cs_math_infinite_r * 0.5;
+
+  cs_real_t *w5, *w7, *wbfa, *wbfb;
+  cs_real_3_t *bc_vel;
+  cs_real_t *bc_en, *bc_pr, *bc_tk;
+  BFT_MALLOC(w5, n_cells_ext, cs_real_t);
+  BFT_MALLOC(w7, n_b_faces, cs_real_t);
+  BFT_MALLOC(wbfa, n_b_faces, cs_real_t);
+  BFT_MALLOC(wbfb, n_b_faces, cs_real_t);
+  BFT_MALLOC(bc_vel, n_b_faces, cs_real_3_t);
+  BFT_MALLOC(bc_en, n_b_faces, cs_real_t);
+  BFT_MALLOC(bc_pr, n_b_faces, cs_real_t);
+  BFT_MALLOC(bc_tk, n_b_faces, cs_real_t);
+
+  cs_field_t *f_vel = CS_F_(vel);
+  cs_field_t *f_pr = CS_F_(p);
+  cs_field_t *f_en = CS_F_(e_tot);
+  cs_field_t *f_tk = CS_F_(t);
+
+  auto *vel_icodcl = f_vel->bc_coeffs->icodcl;
+  auto *vel_rcodcl1 = f_vel->bc_coeffs->rcodcl1;
+  auto *vel_rcodcl3 = f_vel->bc_coeffs->rcodcl3;
+
+  auto *pr_icodcl  = f_pr->bc_coeffs->icodcl;
+  auto *pr_rcodcl1 = f_pr->bc_coeffs->rcodcl1;
+  auto *pr_rcodcl2 = f_pr->bc_coeffs->rcodcl2;
+  auto *pr_rcodcl3 = f_pr->bc_coeffs->rcodcl3;
+
+  auto *tk_icodcl  = f_tk->bc_coeffs->icodcl;
+  auto *tk_rcodcl1 = f_tk->bc_coeffs->rcodcl1;
+  auto *tk_rcodcl2 = f_tk->bc_coeffs->rcodcl2;
+  auto *tk_rcodcl3 = f_tk->bc_coeffs->rcodcl3;
+
+  auto *en_icodcl  = f_en->bc_coeffs->icodcl;
+  auto *en_rcodcl1 = f_en->bc_coeffs->rcodcl1;
+  auto *en_rcodcl2 = f_en->bc_coeffs->rcodcl2;
+  auto *en_rcodcl3 = f_en->bc_coeffs->rcodcl3;
+
+  const cs_real_3_t *vel = (const cs_real_3_t *)(CS_F_(vel)->val);
+  const cs_real_t *crom = (const cs_real_t *)(CS_F_(rho)->val);
+  const cs_real_t *brom = (const cs_real_t *)(CS_F_(rho_b)->val);
+  const cs_real_t *cvar_en = (const cs_real_t *)(f_en->val);
+  const cs_real_t *cvar_fracv = nullptr, *cvar_fracm = nullptr;
+  const cs_real_t *cvar_frace = nullptr, *cpro_cv = nullptr;
+  const cs_real_t *dt = CS_F_(dt)->val;
+
+  if (fluid_props->icv >= 0)
+    cpro_cv = static_cast<const cs_real_t *>
+                (cs_field_by_id(fluid_props->icv)->val);
+
+  cs_real_t *bc_fracv = nullptr, *bc_fracm = nullptr, *bc_frace = nullptr;
+  int *fracv_icodcl = nullptr;
+  int *fracm_icodcl = nullptr;
+  int *frace_icodcl = nullptr;
+  cs_real_t *fracv_rcodcl1 = nullptr;
+  cs_real_t *fracm_rcodcl1 = nullptr;
+  cs_real_t *frace_rcodcl1 = nullptr;
+
+  // Mixture fractions for the homogeneous two-phase flows
+  if (cs_glob_physical_model_flag[CS_COMPRESSIBLE] == 2) {
+    cvar_fracv = static_cast<const cs_real_t *>(CS_F_(volume_f)->val);
+    cvar_fracm = static_cast<const cs_real_t *>(CS_F_(mass_f)->val);
+    cvar_frace = static_cast<const cs_real_t *>(CS_F_(energy_f)->val);
+    BFT_MALLOC(bc_fracv, n_b_faces, cs_real_t);
+    BFT_MALLOC(bc_fracm, n_b_faces, cs_real_t);
+    BFT_MALLOC(bc_frace, n_b_faces, cs_real_t);
+    fracv_icodcl = CS_F_(volume_f)->bc_coeffs->icodcl;
+    fracm_icodcl = CS_F_(mass_f)->bc_coeffs->icodcl;
+    frace_icodcl = CS_F_(energy_f)->bc_coeffs->icodcl;
+    fracv_rcodcl1 = CS_F_(volume_f)->bc_coeffs->rcodcl1;
+    fracm_rcodcl1 = CS_F_(mass_f)->bc_coeffs->rcodcl1;
+    frace_rcodcl1 = CS_F_(energy_f)->bc_coeffs->rcodcl1;
+  }
+
+  cs_array_copy(n_b_faces, f_pr->bc_coeffs->b, wbfb);
+
+  /* Computation of epsilon_sup = e - CvT
+     Needed if walls with imposed temperature are set. */
+
+  int icalep = 0;
+  for (auto face_id = 0; face_id < n_b_faces; face_id++) {
+    if (tk_icodcl[face_id] == 5)
+      icalep = 1;
+  }
+
+  if (icalep > 0) { // Local only, no need for parallel sync of icalep.
+    cs_cf_thermo_eps_sup(crom, w5, m->n_cells);
+    cs_cf_thermo_eps_sup(brom, w7, n_b_faces);
+  }
+
+  int *ifbet = cs_cf_get_ifbet();
+
+  /* Main loop on boundary faces for series BC computation
+     ----------------------------------------------------- */
+
+  for (auto face_id = 0; face_id < n_b_faces; face_id++) {
+
+    auto cell_id = b_face_cells[face_id];
+
+    switch(bc_type[face_id]) {
+
+    /* Wall faces
+       --------- */
+
+    case CS_SMOOTHWALL:
+      [[fallthrough]];
+    case CS_ROUGHWALL:
+      {
+        /* Pressure:
+           if the gravity is prevailing: hydrostatic pressure
+           (warning: the density is here explicit and the term is
+           an approximation). */
+
+        if (icfgrp == 1) {
+          pr_icodcl[face_id] = 15;
+          cs_real_t hint = dt[cell_id] / b_dist[face_id];
+          pr_rcodcl3[face_id]
+            = -hint * cs_math_3_distance_dot_product(b_face_cog[face_id],
+                                                     cell_cen[cell_id],
+                                                     grav)
+              * crom[cell_id];
+        }
+        else {
+          /* generally proportional to the bulk value
+             (Pboundary = COEFB*Pi)
+             The part deriving from pinf in stiffened gas is explicit for now */
+
+          cs_cf_thermo_wall_bc(wbfa, wbfb, face_id);
+
+          if (wbfb[face_id] < r_inf_05 && wbfb[face_id] > 0.) {
+            pr_icodcl[face_id] = 12;
+            pr_rcodcl1[face_id] = wbfa[face_id];
+            pr_rcodcl2[face_id] = wbfb[face_id];
+          }
+          else {
+            // If rarefaction is too strong: homogeneous Dirichlet
+            pr_icodcl[face_id] = 13;
+            pr_rcodcl1[face_id] = 0.;
+          }
+        }
+
+        /* Velocity and turbulence are treated in a standard manner
+           in cs_boundary_condition_set_coeffs.
+
+           For thermal B.C., a pre-processing has be done here since the solved
+           variable is the total energy
+           (internal energy + epsilon_sup + kinetic energy).
+           Especially, when a temperature is imposed on a wall, clptur treatment
+           has to be prepared. Except for the solved energy all the variables rho
+           and s will take arbitrarily a zero flux B.C. (their B.C.s are only
+           used for gradient reconstructions and imposing something other than
+           zero flux could bring out spurious values near the boundary layer). */
+
+        // Adiabatic by default
+        if (tk_icodcl[face_id] == 0 && en_icodcl[face_id] == 0) {
+          tk_icodcl[face_id] = 3;
+          tk_rcodcl3[face_id] = 0.;
+        }
+
+        /* Imposed temperature */
+        if (tk_icodcl[face_id] == 5) {
+
+          /* The value of the energy that leads to the right flux is imposed.
+             However it should be noted that it is the B.C. for the diffusion
+             flux. For the gradient reconstruction, something else will be
+             needed. For example, a zero flux or an other B.C. respecting a
+             profile: it may be possible to treat the total energy as the
+             temperature, keeping in mind that the total energy contains
+             the cinetic energy, which could make the choice of the profile more
+             difficult. */
+
+          en_icodcl[face_id] = 5;
+          if (cpro_cv == nullptr)
+            en_rcodcl1[face_id] = cv0 * tk_rcodcl1[face_id];
+          else
+            en_rcodcl1[face_id] = cpro_cv[cell_id] * tk_rcodcl1[face_id];
+          en_rcodcl1[face_id] +=   0.5*cs_math_3_square_norm(vel[cell_id])
+                                 + w5[cell_id];
+          // w5 contains epsilon_sup
+
+          /* fluxes in grad(epsilon_sup and kinetic energy) have to be zero
+             since they are already accounted for in the energy diffusion term
+             ifbet[face_id] = 1;
+
+             Dirichlet condition on the temperature for gradient reconstruction
+             used only in post-processing (typically Nusselt computation). */
+
+          tk_icodcl[face_id] = 1;
+
+        }
+
+        /* Imposed flux */
+        else if (tk_icodcl[face_id] == 3) {
+
+          // zero flux on energy
+          en_icodcl[face_id] = 3;
+          en_rcodcl3[face_id] = tk_rcodcl3[face_id];
+
+          // Fluxes in grad(epsilon_sup and cinetic energy) have to be zero
+          // since they are already accounted for in the energy diffusion term
+          ifbet[face_id] = 1;
+
+          // zero flux for the possible temperature reconstruction
+          tk_icodcl[face_id] = 3;
+          tk_rcodcl3[face_id] = 0.;
+
+        }
+      }
+      break;
+
+    /* Imposed Inlet/outlet (for example: supersonic inlet)
+       ---------------------------------------------------- */
+
+    case CS_ESICF:
+      {
+        // We have
+        //   - velocity,
+        //   - 2 variables among P, rho, T, E (but not the couple (T,E)),
+        //   - turbulence variables
+        //   - scalars
+
+        // We look for the variable to be initialized
+        // (if a zero value has been given, it is not adapted, so it will
+        // be considered as not initialized and the computation will stop
+        // displaying an error message. The boundary density may
+        // be pre-initialized to the cell density also, so is tested last.
+
+        cs_real_t drom = abs(crom[cell_id] - brom[face_id]);
+
+        int level = 0;
+        int iccfth = 10000;
+        if (pr_rcodcl1[face_id] < r_inf_05) {
+          iccfth = 2*iccfth;
+          level += 1;
+        }
+        if (tk_rcodcl1[face_id] < r_inf_05) {
+          iccfth = 5*iccfth;
+          level += 1;
+        }
+        if (en_rcodcl1[face_id] < r_inf_05) {
+          iccfth = 7*iccfth;
+          level += 1;
+        }
+
+        if (brom[face_id] > 0.  &&  (level < 2  ||  drom > cs_math_epzero)) {
+          iccfth = 3*iccfth;
+          level += 1;
+        }
+
+        if (level != 2) {
+          bft_error
+            (__FILE__, __LINE__, 0,
+             _("Prescribed inlet conditions for compressible flow (CS_ESICF)\n"
+               "   Two and only two independant variables among\n"
+               "   P, rho, T and E must be given. Here %d variables have been\n"
+               "   given; check the user-defined BC definitions."), level);
+        }
+
+        iccfth += 900;
+
+        // Compute missing thermo variables among P, rho, T, E.
+        bc_en[face_id] = en_rcodcl1[face_id];
+        bc_pr[face_id] = pr_rcodcl1[face_id];
+        bc_tk[face_id] = tk_rcodcl1[face_id];
+        for (cs_lnum_t i = 0; i < 3; i++)
+          bc_vel[face_id][i] = vel_rcodcl1[n_b_faces*i + face_id];
+
+        cs_cf_thermo(iccfth, face_id, bc_en, bc_pr, bc_tk, bc_vel);
+      }
+      break;
+
+    /* Outlet with imposed pressure
+       ---------------------------- */
+
+    case CS_SOPCF:
+      {
+        // If no value was given for P or if its value is negative,
+        // abort the computation (a negative value could be possible,
+        // but in most cases it would be an error).
+        if (pr_rcodcl1[face_id] < -r_inf_05) {
+          bft_error
+            (__FILE__, __LINE__, 0,
+             _("The pressure was not set at an outlet with imposed pressure."
+               " (CS_SOPCF);\n"
+               " check the user-defined BC definitions."));
+        }
+
+        bc_en[face_id] = en_rcodcl1[face_id];
+        bc_pr[face_id] = pr_rcodcl1[face_id];
+        bc_tk[face_id] = tk_rcodcl1[face_id];
+        for (cs_lnum_t i = 0; i < 3; i++)
+          bc_vel[face_id][i] = vel_rcodcl1[n_b_faces*i + face_id];
+
+        cs_cf_thermo_subsonic_outlet_bc(bc_en, bc_pr, bc_vel, face_id);
+      }
+      break;
+
+    /* Inlet with Ptot, Htot imposed (reservoir boundary conditions)
+       ------------------------------------------------------------- */
+
+    case CS_EPHCF:
+      {
+        // If values for Ptot and Htot were not given, the computation stops.
+
+        // en_rcodcl1 contains the boundary total enthalpy values
+        // prescribed by the user.
+
+        if (pr_rcodcl1[face_id] < -r_inf_05 || en_rcodcl1[face_id] < -r_inf_05) {
+          bft_error
+            (__FILE__, __LINE__, 0,
+             _("The total pressure or total enthalpy were not provided\n"
+               "at inlet with total pressure and total enthalpy imposed"
+               " (CS_EPHCF);\n"
+               " check the user-defined BC definitions."));
+        }
+
+        bc_en[face_id] = en_rcodcl1[face_id];
+        bc_pr[face_id] = pr_rcodcl1[face_id];
+        bc_tk[face_id] = tk_rcodcl1[face_id];
+        for (cs_lnum_t i = 0; i < 3; i++)
+          bc_vel[face_id][i] = vel_rcodcl1[n_b_faces*i + face_id];
+
+        cs_cf_thermo_ph_inlet_bc(bc_en, bc_pr, bc_vel, face_id);
+      }
+      break;
+
+    /* Inlet  with imposed rho*U and rho*U*H
+       ------------------------------------- */
+
+    case CS_EQHCF:
+      {
+        //! TODO to be implemented
+        bft_error
+          (__FILE__, __LINE__, 0,
+           _("Inlet with mass and enthalpy flow rate (CS_EQHCF)\n"
+             "prescribed, but feature not iplemented/available yet."));
+
+        // Use a scenario in which we have a 2-contact and a 3-relaxation
+        // entering the domain. We determine the conditions on the interface
+        // based on thermodynalics and use Rusanov for smoothing.
+
+        // Both rho and vel must be given.
+        if (en_rcodcl1[face_id] < -r_inf_05) {
+          bft_error
+            (__FILE__, __LINE__, 0,
+             _("The mass or enthalpy flow rate were not specified at an inlet\n"
+               "with imposed mass and enthalpy flow rate (CS_IEQHCF)\n"
+               " check the user-defined BC definitions."));
+        }
+      }
+      break;
+
+    default:
+      break;
+
+    } // End for switch/case on bc type
+
+    /* Complete the treatment for inlets and outlets:
+     *  - boundary convective fluxes computation
+     *    (analytical or Rusanov) if needed
+     *  - B.C. code (Dirichlet or Neumann)
+     *  - Dirichlet values
+     *----------------------------------------------*/
+
+    if (   bc_type[face_id] == CS_ESICF || bc_type[face_id] == CS_SSPCF
+        || bc_type[face_id] == CS_EPHCF || bc_type[face_id] == CS_SOPCF
+        || bc_type[face_id] == CS_EQHCF) {
+
+      /* Boundary convective fluxes computation (analytical or Rusanov) if needed
+         (gamma has already have been computed if Rusanov fluxes are computed) */
+
+      // Compute Rusanov fluxes only for the imposed inlet for stability reasons.
+
+      if (bc_type[face_id] == CS_ESICF) {
+        // Dirichlet for velocity and pressure are computed in order to
+        // impose the Rusanov fluxes in mass, momentum and energy balance.
+        cs_cf_boundary_rusanov(face_id, bc_en, bc_pr, bc_vel);
+      }
+
+      // For the other types of inlets/outlets (subsonic outlet, QH inlet,
+      // PH inlet), analytical fluxes are computed
+
+      else if (bc_type[face_id] != CS_SSPCF) {
+        // the pressure part of the boundary analytical flux is not added here,
+        // but set through the pressure gradient boundary conditions (Dirichlet).
+        cs_cf_boundary_analytical_flux(face_id, bc_en, bc_pr, bc_vel);
+      }
+
+      /* Copy of boundary values into the Dirichlet values array */
+
+      if (bc_type[face_id] != CS_SSPCF) {
+        en_rcodcl1[face_id] = bc_en[face_id];
+        pr_rcodcl1[face_id] = bc_pr[face_id];
+        tk_rcodcl1[face_id] = bc_tk[face_id];
+        for (cs_lnum_t i = 0; i < 3; i++)
+          vel_rcodcl1[n_b_faces*i + face_id]  = bc_vel[face_id][i];
+        if (cs_glob_physical_model_flag[CS_COMPRESSIBLE] == 2) {
+          // FIXME fill bc_frac...
+          assert(0);
+          fracv_rcodcl1[face_id] = bc_fracv[face_id];
+          fracm_rcodcl1[face_id] = bc_fracm[face_id];
+          frace_rcodcl1[face_id] = bc_frace[face_id];
+        }
+      }
+      else { // supersonic outlet
+        en_rcodcl3[face_id] = 0.;
+        pr_rcodcl3[face_id] = 0.;
+        tk_rcodcl3[face_id] = 0.;
+        for (cs_lnum_t i = 0; i < 3; i++)
+          vel_rcodcl3[n_b_faces*i + face_id] = 0.;
+        if (cs_glob_physical_model_flag[CS_COMPRESSIBLE] == 2) {
+          fracv_rcodcl1[face_id] = 0.;
+          fracm_rcodcl1[face_id] = 0.;
+          frace_rcodcl1[face_id] = 0.;
+        }
+      }
+
+      /* Boundary conditions codes (Dirichlet or Neumann) */
+
+      // P               : Neumann but pressure part of momentum flux is imposed
+      //                   as a Dirichlet BC for the pressure gradient (code 13)
+      // rho, U, E, T    : Dirichlet
+      // k, R, eps, scal : Dirichlet/Neumann depending on the flux mass value
+
+      if (bc_type[face_id] != CS_SSPCF) {
+        // Pressure : - Dirichlet for the gradient computation, allowing to have
+        //              the pressure part of the convective flux at the boundary
+        //            - Homogeneous Neumann for the diffusion
+        pr_icodcl[face_id]   = 13;
+        // velocity
+        vel_icodcl[face_id]  = 1;
+        // total energy
+        en_icodcl[face_id]   = 1;
+        // temperature
+        tk_icodcl[face_id]   = 1;
+        // mixture fractions
+        if (cs_glob_physical_model_flag[CS_COMPRESSIBLE] == 2) {
+          fracv_icodcl[face_id] = 1;
+          fracm_icodcl[face_id] = 1;
+          frace_icodcl[face_id] = 1;
+        }
+      }
+      else { // supersonic outlet
+        pr_icodcl[face_id]   = 3;
+        vel_icodcl[face_id]  = 3;
+        en_icodcl[face_id]   = 3;
+        tk_icodcl[face_id]   = 3;
+        // mixture fractions
+        if (cs_glob_physical_model_flag[CS_COMPRESSIBLE] == 2) {
+          fracv_icodcl[face_id] = 3;
+          fracm_icodcl[face_id] = 3;
+          frace_icodcl[face_id] = 3;
+        }
+      }
+
+      /* Turbulence and passive scalars:
+         Dirichlet / Neumann depending on the mass flux,
+         handled later in common part of the code
+         (not specific to compressible flow). */
+
+    } /* End case for open BC's */
+
+  } // Loop on boundary faces.
+
+  /* Free work arrays */
+
+  BFT_FREE(w5);
+  BFT_FREE(w7);
+  BFT_FREE(wbfa);
+  BFT_FREE(wbfb);
+  BFT_FREE(bc_vel);
+  BFT_FREE(bc_en);
+  BFT_FREE(bc_pr);
+  BFT_FREE(bc_tk);
+
+  BFT_FREE(bc_fracv);
+  BFT_FREE(bc_fracm);
+  BFT_FREE(bc_frace);
+}
+
+#if 0
+
+      // Dirichlet or homogeneous Neumann
+      // A Dirichlet is chosen if the mass flux is ingoing and if the user provided
+      // a value in rcodcl(ifac,ivar,1)
+
+      const cs_real_t bmasfl_dir = cs_math_3_dot_product(bc_vel[face_id],
+                                                         b_f_u_normal[face_id]);
+
+      if (bc_type[face_id] != CS_ISSPCF && bmasfl_dir >= 0.) {
+        cs_turbulence_bc_set_hmg_neumann(face_id);
+
+        if (nscaus > 0) {
+          do ii = 1, nscaus
+               icodcl(ifac,isca(ii)) = 3;
+          enddo
+            }
+        if (nscasp > 0) {
+          do ii = 1, nscasp
+          icodcl(ifac,iscasp(ii)) = 3
+        enddo
+      }
+
+      }
+    else
+      if (itytur == 2) {
+        if (rcodcl(ifac,ik ,1) < r_inf_05   &&     &
+           rcodcl(ifac,iep,1) < r_inf_05) {
+          icodcl(ifac,ik ) = 1
+          icodcl(ifac,iep) = 1
+        else
+          icodcl(ifac,ik ) = 3
+          icodcl(ifac,iep) = 3
+        }
+      elseif (itytur == 3) {
+        if (rcodcl(ifac,ir11,1) < r_inf_05   &&       &
+           rcodcl(ifac,ir22,1) < r_inf_05   &&       &
+           rcodcl(ifac,ir33,1) < r_inf_05   &&       &
+           rcodcl(ifac,ir12,1) < r_inf_05   &&       &
+           rcodcl(ifac,ir13,1) < r_inf_05   &&       &
+           rcodcl(ifac,ir23,1) < r_inf_05   &&       &
+           rcodcl(ifac,iep ,1) < r_inf_05) {
+          icodcl(ifac,ir11) = 1
+          icodcl(ifac,ir22) = 1
+          icodcl(ifac,ir33) = 1
+          icodcl(ifac,ir12) = 1
+          icodcl(ifac,ir13) = 1
+          icodcl(ifac,ir23) = 1
+          icodcl(ifac,iep ) = 1
+        else
+          icodcl(ifac,ir11) = 3
+          icodcl(ifac,ir22) = 3
+          icodcl(ifac,ir33) = 3
+          icodcl(ifac,ir12) = 3
+          icodcl(ifac,ir13) = 3
+          icodcl(ifac,ir23) = 3
+          icodcl(ifac,iep ) = 3
+        }
+      elseif (iturb == 50) {
+        if (rcodcl(ifac,ik  ,1) < r_inf_05   &&       &
+           rcodcl(ifac,iep ,1) < r_inf_05   &&       &
+           rcodcl(ifac,iphi,1) < r_inf_05   &&       &
+           rcodcl(ifac,ifb ,1) < r_inf_05) {
+          icodcl(ifac,ik  ) = 1
+          icodcl(ifac,iep ) = 1
+          icodcl(ifac,iphi) = 1
+          icodcl(ifac,ifb ) = 1
+        else
+          icodcl(ifac,ik  ) = 3
+          icodcl(ifac,iep ) = 3
+          icodcl(ifac,iphi) = 3
+          icodcl(ifac,ifb ) = 3
+        }
+      elseif (iturb == 60) {
+        if (rcodcl(ifac,ik  ,1) < r_inf_05   &&       &
+           rcodcl(ifac,iomg,1) < r_inf_05) {
+          icodcl(ifac,ik  ) = 1
+          icodcl(ifac,iomg) = 1
+        else
+          icodcl(ifac,ik  ) = 3
+          icodcl(ifac,iomg) = 3
+        }
+      elseif (iturb == 70) {
+        if (rcodcl(ifac,inusa,1) > 0.) {
+          icodcl(ifac,inusa) = 1
+        else
+          icodcl(ifac,inusa) = 3
+        }
+      }
+
+  }
+
+      if (nscaus > 0) {
+        do ii = 1, nscaus
+          if (rcodcl(ifac,isca(ii),1) < r_inf_05) {
+            icodcl(ifac,isca(ii)) = 1
+          else
+            icodcl(ifac,isca(ii)) = 3
+          }
+        enddo
+      }
+      if (nscasp > 0) {
+        do ii = 1, nscasp
+          if (rcodcl(ifac,iscasp(ii),1) < r_inf_05) {
+            icodcl(ifac,iscasp(ii)) = 1
+          else
+            icodcl(ifac,iscasp(ii)) = 3
+          }
+        enddo
+      }
+    }
+
+  } // end of test on inlet/outlet faces
+
+#endif
 
 /*----------------------------------------------------------------------------*/
 /*!

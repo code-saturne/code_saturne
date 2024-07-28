@@ -1069,13 +1069,13 @@ cs_boundary_conditions_set_coeffs(int        nvar,
    *--------------------------------------------------------------------------*/
 
   {
-    if (   (   cs_glob_physical_model_flag[CS_PHYSICAL_MODEL_FLAG] >=  1
-            && cs_glob_physical_model_flag[CS_GAS_MIX]             == -1
-            && cs_glob_physical_model_flag[CS_JOULE_EFFECT]        == -1
-            && cs_glob_physical_model_flag[CS_ELECTRIC_ARCS]       == -1)
-        || (   cs_glob_physical_model_flag[CS_COMPRESSIBLE]       >=  0
-            && cs_glob_physical_model_flag[CS_GAS_MIX]            >=  0)) {
+    if (cs_glob_physical_model_flag[CS_COMPRESSIBLE] >= 0)
+      cs_cf_boundary_conditions(bc_type);
 
+    if (   cs_glob_physical_model_flag[CS_PHYSICAL_MODEL_FLAG] >=  1
+        && cs_glob_physical_model_flag[CS_GAS_MIX]             == -1
+        && cs_glob_physical_model_flag[CS_JOULE_EFFECT]        == -1
+        && cs_glob_physical_model_flag[CS_ELECTRIC_ARCS]       == -1) {
       cs_f_pptycl(false,
                   bc_type,
                   izfppp,
@@ -3755,12 +3755,13 @@ cs_boundary_conditions_set_coeffs_init(void)
     cs_sat_coupling_bnd_initialize(bc_type);
   }
 
-  if (   (   cs_glob_physical_model_flag[CS_PHYSICAL_MODEL_FLAG] >=  1
-          && cs_glob_physical_model_flag[CS_GAS_MIX]             == -1
-          && cs_glob_physical_model_flag[CS_JOULE_EFFECT]        == -1
-          && cs_glob_physical_model_flag[CS_ELECTRIC_ARCS]       == -1)
-      || (   cs_glob_physical_model_flag[CS_COMPRESSIBLE]       >=  0
-          && cs_glob_physical_model_flag[CS_GAS_MIX]            >=  0)) {
+  if (cs_glob_physical_model_flag[CS_COMPRESSIBLE] >= 0)
+    cs_cf_boundary_conditions(bc_type);
+
+  if (   cs_glob_physical_model_flag[CS_PHYSICAL_MODEL_FLAG] >=  1
+      && cs_glob_physical_model_flag[CS_GAS_MIX]             == -1
+      && cs_glob_physical_model_flag[CS_JOULE_EFFECT]        == -1
+      && cs_glob_physical_model_flag[CS_ELECTRIC_ARCS]       == -1) {
 
     cs_f_pptycl(true,
                 bc_type,
