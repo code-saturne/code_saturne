@@ -420,7 +420,6 @@ iniini.f90 \
 iniva0.f90 \
 inivar.f90 \
 majgeo.f90 \
-tdesi1.f90 \
 varpos.f90
 
 libcsbase_a_LIBADD =
