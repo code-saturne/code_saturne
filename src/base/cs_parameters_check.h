@@ -95,24 +95,6 @@ cs_parameters_error(cs_parameter_error_behavior_t   err_behavior,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Print general parameters error or warning info.
- *
- * \param[in]  err_behavior  warn or abort ?
- * \param[in]  section_desc  optional description of code section
- *                           containing this parameter, or NULL
- * \param [in] format        format string, as printf() and family.
- * \param [in] ...           variable arguments based on format string.
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_parameters_error(cs_parameter_error_behavior_t   err_behavior,
-                    const char                     *section_desc,
-                    const char                     *format,
-                    ...);
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief Print header for a given parameters error message type.
  *
  * \param[in]  err_behavior  warn or abort ?

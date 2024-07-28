@@ -124,12 +124,13 @@ if (ippmod(icompf).ge.0) then
 
     ! Set restart file for fractions
     call field_get_key_id('restart_file', keyrf)
-    call field_set_key_int (ivarfl(isca(ifracv)), keyrf, RESTART_MAIN)
-    call field_set_key_int (ivarfl(isca(ifracm)), keyrf, RESTART_MAIN)
-    call field_set_key_int (ivarfl(isca(ifrace)), keyrf, RESTART_MAIN)
+    call field_set_key_int(ivarfl(isca(ifracv)), keyrf, RESTART_MAIN)
+    call field_set_key_int(ivarfl(isca(ifracm)), keyrf, RESTART_MAIN)
+    call field_set_key_int(ivarfl(isca(ifrace)), keyrf, RESTART_MAIN)
   endif
 
 endif
+
 !--------
 ! Formats
 !--------

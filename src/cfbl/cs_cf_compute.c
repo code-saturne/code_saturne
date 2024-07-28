@@ -608,7 +608,6 @@ cs_cf_convective_mass_flux(int  iterns)
     const cs_real_t qimp = cofaf_p[f_id];
     wbfa[f_id] = -qimp / cs_math_fmax(hint, 1e-300);
     wbfb[f_id] = 1.0;
-
   }
 
   /* Source terms

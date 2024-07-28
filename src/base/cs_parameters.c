@@ -2552,7 +2552,8 @@ cs_parameters_eqp_complete(void)
       if (isca > 0) {
         int iscacp = cs_field_get_key_int(f_sca, kscacp);
         if (iscacp == -1) {
-          if (f_sca == f_t && cs_glob_thermal_model->thermal_variable == 1) {
+          if (f_sca == f_t && (cs_glob_thermal_model->thermal_variable
+                               == CS_THERMAL_MODEL_TEMPERATURE)) {
             iscacp = 1;
           }
           else {

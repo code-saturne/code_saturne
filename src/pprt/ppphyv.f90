@@ -97,8 +97,6 @@ integer          mbrom
 ! Local variables
 
 !===============================================================================
-
-!===============================================================================
 ! 1. Fill properties depending on the model
 !===============================================================================
 
@@ -149,7 +147,7 @@ endif
 ! ---> Aerorefrigerants
 
 if (ippmod(iaeros).ge.0) then
-  call cs_ctwr_phyvar_update(ro0,t0,p0)
+  call cs_ctwr_phyvar_update(ro0, t0, p0)
 
 ! ---> Atmospheric Flows (except constant density: ippmod(iatmos) = 0)
 else if (ippmod(iatmos).ge.1) then
@@ -162,80 +160,3 @@ endif
 
 return
 end subroutine cs_physical_properties1
-
-!-------------------------------------------------------------------------------
-! Arguments
-!______________________________________________________________________________.
-!  mode           name          role                                           !
-!______________________________________________________________________________!
-!_______________________________________________________________________________
-
-subroutine cs_physical_properties2() &
-  bind(C, name='cs_f_physical_properties2')
-
-!===============================================================================
-! Module files
-!===============================================================================
-
-use paramx
-use numvar
-use optcal
-use cstphy
-use entsor
-use pointe
-use ppppar
-use ppthch
-use coincl
-use cpincl
-use ppincl
-use mesh
-use cs_c_bindings
-use, intrinsic :: iso_c_binding
-
-!===============================================================================
-
-implicit none
-
-! Arguments
-
-! Local variables
-
-!===============================================================================
-
-interface
-
-  subroutine cs_gas_mix_physical_properties () &
-    bind(C, name='cs_gas_mix_physical_properties')
-    use, intrinsic :: iso_c_binding
-    implicit none
-  end subroutine cs_gas_mix_physical_properties
-
-end interface
-!===============================================================================
-! 1. Initializations
-!===============================================================================
-
-!===============================================================================
-! 2. Fill properties depending on the model
-!===============================================================================
-
-! Gas mixture modelling in presence of noncondensable gases or/and
-! condensable gas as stream.
-if (ippmod(igmix).ge.0) then
-  call cs_gas_mix_physical_properties()
-endif
-
-! Compressible
-! Has to be called after the gas mix physical properties. The isobaric specific
-! heat (Cp) is computed in cs_gas_mix_physical_properties and used in cfphyv to
-! compute the isochoric specific heat, if gas mix specific physics is enabled.
-if (ippmod(icompf).ge.0) then
-  call cfphyv
-endif
-
-!----
-! End
-!----
-
-return
-end subroutine cs_physical_properties2

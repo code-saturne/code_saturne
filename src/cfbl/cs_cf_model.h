@@ -92,7 +92,7 @@ extern const cs_cf_model_t         *cs_glob_cf_model;
  *============================================================================*/
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Provide access to compressible model global structure cs_glob_cf_model
  */
 /*----------------------------------------------------------------------------*/
@@ -101,7 +101,7 @@ cs_cf_model_t *
 cs_get_glob_cf_model(void);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Property field definitions for the compressible module,
  *        according to calculation type selected by the user.
  */
@@ -111,13 +111,40 @@ void
 cs_cf_add_property_fields(void);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
+ * \brief Setup options specific to the compressible model.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cf_setup(void);
+
+/*----------------------------------------------------------------------------*/
+/*
  * \brief Print the compressible module options to setup.log.
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_cf_model_log_setup(void);
+
+/*----------------------------------------------------------------------------*/
+/*
+ * \brief Initialize variables of the compressible flow model.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cf_initialize(void);
+
+/*----------------------------------------------------------------------------*/
+/*
+ * \brief Compute variable physical properties for the compressible model.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cf_physical_properties(void);
 
 /*----------------------------------------------------------------------------*/
 

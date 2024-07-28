@@ -61,14 +61,33 @@ use cpincl
 use ppincl
 use field
 
+use, intrinsic :: iso_c_binding
+
 !===============================================================================
 
 implicit none
 
 ! Local variables
-integer ii
-integer iscacp
+integer ii, iscacp
+
 !===============================================================================
+! Interfaces
+!===============================================================================
+
+interface
+
+  subroutine cs_cf_setup()  &
+    bind(C, name='cs_cf_setup')
+    use, intrinsic :: iso_c_binding
+    implicit none
+  end subroutine cs_cf_setup
+
+end interface
+
+!===============================================================================
+! Initialization
+!===============================================================================
+
 if (nscal.gt.0) then
   do ii = 1, nscal
     call field_get_key_int(ivarfl(isca(ii)), kscacp, iscacp)
@@ -82,6 +101,7 @@ if (nscal.gt.0) then
     endif
   enddo
 endif
+
 !===============================================================================
 ! 1. VARIABLES TRANSPORTEES
 !===============================================================================
@@ -98,14 +118,14 @@ endif
 
 ! ---> Physique particuliere : Combustion Charbon Pulverise
 
-if ( ippmod(iccoal).ge.0 ) then
+if (ippmod(iccoal).ge.0) then
   call cs_coal_param
 endif
 
 ! ---> Physique particuliere : Compressible
 
-if ( ippmod(icompf).ge.0) then
-  call cfini1
+if (ippmod(icompf).ge.0) then
+  call cs_cf_setup
 endif
 
 ! ---> Physique particuliere : Versions electriques

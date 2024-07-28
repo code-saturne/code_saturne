@@ -179,6 +179,12 @@ implicit none
 
 interface
 
+  subroutine cs_cf_initialize()  &
+    bind(C, name='cs_cf_initialize')
+    use, intrinsic :: iso_c_binding
+    implicit none
+  end subroutine cs_cf_initialize
+
   subroutine cs_ctwr_fields_init1()  &
     bind(C, name='cs_ctwr_fields_init1')
     use, intrinsic :: iso_c_binding
@@ -215,7 +221,7 @@ endif
 ! mixture composition is taken into account in the thermodynamic
 ! law, if gas mix specific physics is enabled.
 if (ippmod(icompf).ge.0) then
-  call cfiniv
+  call cs_cf_initialize
 endif
 
 !----

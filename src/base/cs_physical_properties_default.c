@@ -50,11 +50,13 @@
 #include "cs_array.h"
 #include "cs_ale.h"
 #include "cs_boundary_conditions.h"
+#include "cs_cf_model.h"
 #include "cs_domain.h"
 #include "cs_equation.h"
 #include "cs_field.h"
 #include "cs_field_default.h"
 #include "cs_field_pointer.h"
+#include "cs_gas_mix.h"
 #include "cs_gui.h"
 #include "cs_ht_convert.h"
 #include "cs_les_mu_t.h"
@@ -98,7 +100,6 @@ BEGIN_C_DECLS
   \file cs_physical_properties_default.c
 
   Comoute physical properties which are variable in time.
-
 */
 
 /*----------------------------------------------------------------------------*/
@@ -419,7 +420,6 @@ _compute_anisotropic_turbulent_viscosity(cs_lnum_t                   n_cells,
   else {
     cs_array_real_fill_zero(6*n_cells, (cs_real_t *)visten);
   }
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -909,8 +909,11 @@ cs_physical_properties_update(int   iterns)
 
   // Finalization of physical properties for specific physics
   // AFTER the user
-  if (cs_glob_physical_model_flag[CS_PHYSICAL_MODEL_FLAG] > 0)
-    cs_f_physical_properties2();
+  if (cs_glob_physical_model_flag[CS_GAS_MIX] >= 0)
+    cs_gas_mix_physical_properties();
+
+  if (cs_glob_physical_model_flag[CS_COMPRESSIBLE] >= 0)
+    cs_cf_physical_properties();
 
   // Boundary density based on adjacent cell value if not explicitely set.
   if (mbrom == 0 && rho_b_f != NULL) {

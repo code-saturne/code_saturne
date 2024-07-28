@@ -82,9 +82,6 @@ cs_hgn_source_terms_step.h
 
 noinst_LIBRARIES = libcscfbl.a
 libcscfbl_a_SOURCES = \
-cfini1.f90 \
-cfiniv.f90 \
-cfphyv.f90 \
 cfvarp.f90 \
 cs_cf_boundary_conditions.cpp \
 cs_cf_boundary_flux.c \

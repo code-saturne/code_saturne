@@ -38,20 +38,26 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
+#include "bft_error.h"
 #include "bft_mem.h"
+#include "cs_array.h"
+#include "cs_field.h"
+#include "cs_field_default.h"
+#include "cs_field_pointer.h"
+#include "cs_mesh.h"
+#include "cs_mesh_location.h"
+#include "cs_parameters_check.h"
+#include "cs_physical_constants.h"
+#include "cs_physical_model.h"
+#include "cs_physical_properties.h"
+#include "cs_velocity_pressure.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
  *----------------------------------------------------------------------------*/
 
 #include "cs_cf_model.h"
-#include "cs_field.h"
-#include "cs_field_pointer.h"
-#include "cs_mesh.h"
-#include "cs_mesh_location.h"
-#include "cs_physical_constants.h"
-#include "cs_physical_model.h"
-#include "cs_physical_properties.h"
+#include "cs_cf_thermo.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -172,8 +178,7 @@ const cs_cf_model_t  *cs_glob_cf_model = &_cf_model;
 
 void
 cs_f_cf_model_get_pointers(int    **ieos,
-                           int    **ithvar,
-                           int    **icfgrp);
+                           int    **ithvar);
 
 /*============================================================================
  * Fortran wrapper function definitions
@@ -192,12 +197,10 @@ cs_f_cf_model_get_pointers(int    **ieos,
 
 void
 cs_f_cf_model_get_pointers(int    **ieos,
-                           int    **ithvar,
-                           int    **icfgrp)
+                           int    **ithvar)
 {
   *ieos             = &(_cf_model.ieos);
   *ithvar           = &(_cf_model.ithvar);
-  *icfgrp           = &(_cf_model.icfgrp);
 }
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
@@ -281,6 +284,65 @@ cs_cf_add_property_fields(void)
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Setup options specific to the compressible model.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cf_setup(void)
+{
+  /* Tranported variables
+     -------------------- */
+
+  // Does the temperature scalar behave like a solved temperature
+  // (regarding the handling of Cp) ?
+  // TODO check this; should be 1 for temperature unless handled in
+  // another manner, which migh be the case using Cv instead of Cp...
+
+  const int kscacp  = cs_field_key_id("is_temperature");
+  cs_field_set_key_int(cs_field_by_name("temperature"), kscacp, 0);
+
+  // Set upwind convection scheme fo all fields
+
+  const int n_fields = cs_field_n_fields();
+  for (int f_id = 0; f_id < n_fields; f_id++) {
+    cs_field_t *f = cs_field_by_id(f_id);
+    if (   f->type & CS_FIELD_VARIABLE
+        && !(f->type & CS_FIELD_CDO)) {
+      cs_equation_param_t *eqp = cs_field_get_equation_param(f);
+      if (eqp != NULL) {
+        eqp->blencv = 0;
+      }
+    }
+  }
+
+  /* Default computation options
+     --------------------------- */
+
+  // Variable density
+
+  cs_fluid_properties_t *fp = cs_get_glob_fluid_properties();
+  fp->irovar = 1;
+
+  /* Parameter checks
+     ---------------- */
+
+  cs_parameters_is_equal_int(CS_ABORT_IMMEDIATE,
+                             _("Compressible model not compatible "
+                               "with pseudo coupled pressure-velocity solver."),
+                               "cs_glob_velocity_pressure_param->ipucou",
+                               cs_glob_velocity_pressure_param->ipucou,
+                               0);
+
+  cs_parameters_is_in_range_int(CS_ABORT_IMMEDIATE,
+                             _("Compressible model setup"),
+                               "cs_glob_cf_model->icfgrp",
+                               cs_glob_cf_model->icfgrp,
+                               0, 2);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Print the compressible module options to setup.log.
  */
 /*----------------------------------------------------------------------------*/
@@ -304,6 +366,106 @@ cs_cf_model_log_setup(void)
   cs_log_printf(CS_LOG_SETUP,
                 _("    icfgrp:        %s\n"),
                 _(icfgrp_value_str[cs_glob_cf_model->icfgrp]));
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Initialize variables of the compressible flow model.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cf_initialize(void)
+{
+  /* Compute variable Cv in order to have a correct initialization
+     of the total energy (computed in inivar by a call to a thermodynamic
+     function), now that initial gas mixture composition is known.
+     Note that the only eos with a variable Cv is the ideal gas mix (ieos=3). */
+
+  const cs_fluid_properties_t *fluid_props = cs_glob_fluid_properties;
+  if (fluid_props->icv > -1) {
+    cs_real_t *cpro_cp = cs_field_by_id(fluid_props->icp)->val;
+    cs_real_t *cpro_cv = cs_field_by_id(fluid_props->icv)->val;
+    cs_real_t *mix_mol_mas = cs_field_by_name("mix_mol_mas")->val;
+
+    cs_cf_thermo_cv(cpro_cp, mix_mol_mas, cpro_cv, cs_glob_mesh->n_cells);
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Compute variable physical properties for the  compressible module.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cf_physical_properties(void)
+{
+  const cs_lnum_t n_cells = cs_glob_mesh->n_cells;
+
+  /* Update Lambda/Cv
+     ---------------- */
+
+  // It has been checked before this subroutine that cv0 was non zero.
+  // If Cv is variable and zero, it is an error due to the user.
+  // Here a test is performed at each call (not optimal).
+  // If the diffusivity of the total energy is constant, then the thermal
+  // conductivity and the isochoric specific heat should be constant.
+
+  const cs_fluid_properties_t *fluid_props = cs_glob_fluid_properties;
+  const int kivisl  = cs_field_key_id("diffusivity_id");
+  int ifcven = cs_field_get_key_int(CS_F_(e_tot), kivisl);
+
+  if (ifcven >= 0) {
+
+    cs_real_t *cpro_venerg = cs_field_by_id(ifcven)->val;
+
+    int ifclam = cs_field_get_key_int(CS_F_(t), kivisl);
+    if (ifclam >= 0) {
+      const cs_real_t *cpro_lambda = cs_field_by_id(ifclam)->val;
+      cs_array_real_copy(n_cells, cpro_lambda, cpro_venerg);
+    }
+    else {
+      const int kvisl0 = cs_field_key_id("diffusivity_ref");
+      double visls_0 = cs_field_get_key_double(CS_F_(t), kvisl0);
+      cs_array_real_set_scalar(n_cells, visls_0, cpro_venerg);
+    }
+
+    if (fluid_props->icv > -1) {
+      cs_real_t *cpro_cp = cs_field_by_id(fluid_props->icp)->val;
+      cs_real_t *cpro_cv = cs_field_by_id(fluid_props->icv)->val;
+      cs_real_t *mix_mol_mas = cs_field_by_name("mix_mol_mas")->val;
+
+      cs_cf_thermo_cv(cpro_cp, mix_mol_mas, cpro_cv, n_cells);
+
+#     pragma omp parallel for if (n_cells > CS_THR_MIN)
+      for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+        if (cpro_cv[c_id] <= 0)
+          bft_error(__FILE__, __LINE__, 0,
+                    _("The isochoric specific heat has at least one\n"
+                      " negative or zero value: %g."), cpro_cv[c_id]);
+        cpro_venerg[c_id] /= cpro_cv[c_id];
+      }
+    }
+    else {
+      cs_real_t cv0 = fluid_props->cv0;
+#     pragma omp parallel for if (n_cells > CS_THR_MIN)
+      for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+        cpro_venerg[c_id] /= cv0;
+      }
+    }
+  }
+
+  else {
+    // TODO: this part should be done at setup time,
+    // instead of modifying field keywards in the time loop
+    // (i.e. after setup logging), which is ugly and risky.
+
+    const int kvisl0 = cs_field_key_id("diffusivity_ref");
+    double visls_0 = cs_field_get_key_double(CS_F_(t), kvisl0);
+    visls_0 /= fluid_props->cv0;
+    cs_field_set_key_double(CS_F_(e_tot), kvisl0, visls_0);
+  }
 }
 
 /*----------------------------------------------------------------------------*/

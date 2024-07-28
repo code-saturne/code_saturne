@@ -74,30 +74,6 @@ module cs_cf_bindings
       implicit none
     end subroutine cs_cf_thermo_default_init
 
-    !---------------------------------------------------------------------------
-
-    ! Interface to C function computing the thermal expansion coefficient.
-
-    subroutine cs_cf_thermo_beta(cp, cv, dens, beta, l_size) &
-      bind(C, name='cs_cf_thermo_beta')
-      use, intrinsic :: iso_c_binding
-      implicit none
-      integer(c_int), value :: l_size
-      real(kind=c_double), dimension(*) :: cp, cv, dens, beta
-    end subroutine cs_cf_thermo_beta
-
-    !---------------------------------------------------------------------------
-
-    ! Interface to C function computing the isochoric specific heat.
-
-    subroutine cs_cf_thermo_cv(cp, xmasml, cv, l_size) &
-      bind(C, name='cs_cf_thermo_cv')
-      use, intrinsic :: iso_c_binding
-      implicit none
-      integer(c_int), value :: l_size
-      real(kind=c_double), dimension(*) :: cp, xmasml, cv
-    end subroutine cs_cf_thermo_cv
-
   end interface
 
   !=============================================================================
