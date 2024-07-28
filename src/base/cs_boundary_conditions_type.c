@@ -215,7 +215,7 @@ cs_boundary_conditions_type(bool  init,
   const cs_real_t *cvara_pr = (const cs_real_t *)CS_F_(p)->val_pre;
   const cs_equation_param_t *eqp_vel
     = cs_field_get_equation_param_const(CS_F_(vel));
-  const cs_real_3_t *nu = (const cs_real_3_t *)fvq->b_face_u_normal;
+  const cs_nreal_3_t *nu = (const cs_nreal_3_t *)fvq->b_face_u_normal;
   const cs_real_3_t *vel = (const cs_real_3_t *)CS_F_(vel)->val;
 
   cs_real_t *b_head_loss = cs_boundary_conditions_get_b_head_loss(false);
@@ -388,6 +388,89 @@ cs_boundary_conditions_type(bool  init,
     }
 
     cs_log_separator(CS_LOG_DEFAULT);
+  }
+
+  /* Compressible flow BCs
+     --------------------- */
+
+  /* BC's for velocity, pressure, and specific variables have been already
+     been set at this stage in cs_cf_boundary_conditions, but more generic
+     turbulence variables and scalars are handled here. */
+
+  if (cs_glob_physical_model_flag[CS_COMPRESSIBLE] >= 0) {
+
+    int inlet_types[5] = {CS_ESICF, CS_SSPCF, CS_SOPCF, CS_EPHCF, CS_EQHCF};
+
+    short *outflow_type;
+    BFT_MALLOC(outflow_type, n_b_faces, short);
+    {
+      for (int type_idx = 0; type_idx < 5; type_idx++) {
+
+        const int inlet_bc_type = inlet_types[type_idx];
+        const cs_lnum_t s_id = bc_type_idx[inlet_bc_type-1];
+        const cs_lnum_t e_id = bc_type_idx[inlet_bc_type];
+
+        for (cs_lnum_t ii = s_id; ii < e_id; ii++) {
+          const cs_lnum_t f_id = itrifb[ii];
+          outflow_type[f_id] = 0;
+          if (inlet_bc_type != CS_SSPCF) {
+            cs_real_t vel_bc[3] = {rcodcl1_vel[f_id],
+                                   rcodcl1_vel[n_b_faces + f_id],
+                                   rcodcl1_vel[n_b_faces*2 + f_id]};
+            cs_real_t flow_dir = cs_math_3_dot_product(nu[f_id], vel_bc);
+            if (flow_dir > 0)
+              outflow_type[f_id] = 1;
+          }
+        }
+
+      }
+    }
+
+    for (int field_id = 0; field_id < n_fields; field_id++) {
+
+      cs_field_t *f = cs_field_by_id(field_id);
+      if (!(f->type & CS_FIELD_VARIABLE))
+        continue;
+      if (f->type & CS_FIELD_CDO)
+        continue;
+
+      if (f == CS_F_(vel) || f == CS_F_(p) || f == CS_F_(e_tot) || f == CS_F_(t))
+        continue;
+
+      if (cs_glob_physical_model_flag[CS_COMPRESSIBLE] == 2) {
+        if (f == CS_F_(volume_f) || f == CS_F_(mass_f) || f == CS_F_(energy_f))
+          continue;
+      }
+
+      int *icodcl = f->bc_coeffs->icodcl;
+      cs_real_t *rcodcl1 = f->bc_coeffs->rcodcl1;
+
+      for (int type_idx = 0; type_idx < 5; type_idx++) {
+
+        const int inlet_bc_type = inlet_types[type_idx];
+        const cs_lnum_t s_id = bc_type_idx[inlet_bc_type-1];
+        const cs_lnum_t e_id = bc_type_idx[inlet_bc_type];
+
+        for (cs_lnum_t ii = s_id; ii < e_id; ii++) {
+          const cs_lnum_t f_id = itrifb[ii];
+
+          if (outflow_type[f_id] == 1) {
+            icodcl[f_id] = 3;
+          }
+          else {
+            if (rcodcl1[f_id] < 0.5*cs_math_infinite_r)
+              icodcl[f_id] = 1;
+            else
+              icodcl[f_id] = 3;
+          }
+        }
+
+      }
+
+    } /* End of loop on fields */
+
+    BFT_FREE(outflow_type);
+
   }
 
   /* rcodcl1 arrays have been initialized as cs_math_infinite_r so as to
@@ -733,19 +816,17 @@ cs_boundary_conditions_type(bool  init,
      If icodcl = -1, then the BC Dirichlet value is given in solved pressure P,
      no need of transformation from P_tot to P */
 
-  if (CS_F_(p) != NULL) {
+  if (CS_F_(p) != NULL && cs_glob_physical_model_flag[CS_COMPRESSIBLE] < 0) {
 
-    if (cs_glob_physical_model_flag[CS_COMPRESSIBLE] < 0) {
-      for (cs_lnum_t f_id = 0; f_id < n_b_faces; f_id++) {
-        if (icodcl_p[f_id] == -1)
-          icodcl_p[f_id] = 1;
-        else if (icodcl_p[f_id] != 0)
-          rcodcl1_p[f_id] += - ro0 * cs_math_3_distance_dot_product
-                                       (xyzp0,
-                                        b_face_cog[f_id],
-                                        gxyz)
-                             - p0;
-      }
+    for (cs_lnum_t f_id = 0; f_id < n_b_faces; f_id++) {
+      if (icodcl_p[f_id] == -1)
+        icodcl_p[f_id] = 1;
+      else if (icodcl_p[f_id] != 0)
+        rcodcl1_p[f_id] += - ro0 * cs_math_3_distance_dot_product
+                                     (xyzp0,
+                                      b_face_cog[f_id],
+                                      gxyz)
+                           - p0;
     }
 
   }
@@ -1317,7 +1398,6 @@ cs_boundary_conditions_type(bool  init,
         }
 
       } /* End of loop on inlet types (int bc_type_idx) */
-
 
     } /* End of loop on fields */
 
