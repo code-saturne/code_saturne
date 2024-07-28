@@ -49,6 +49,7 @@
 #include "bft_printf.h"
 #include "bft_error.h"
 
+#include "cs_cf_boundary_conditions.h"
 #include "cs_cf_thermo.h"
 #include "cs_field_pointer.h"
 #include "cs_math.h"
@@ -135,7 +136,7 @@ cs_cf_boundary_analytical_flux(const cs_lnum_t    f_id,
      The tag will be used in bilsc2 to retrieve the faces
      where an analytical flux has to be imposed */
 
-  int *icvfli = cs_cf_get_icvfli();
+  int *icvfli = cs_cf_boundary_conditions_get_icvfli();
   icvfli[f_id] = 1;
 
   /* Momentum flux (the centered pressure contribution is
@@ -263,7 +264,7 @@ cs_cf_boundary_rusanov(const cs_lnum_t  f_id,
      The tag will be used in bilsc2 to retrieve the faces
      where a Rusanov flux has to be imposed */
 
-   int *icvfli = cs_cf_get_icvfli();
+   int *icvfli = cs_cf_boundary_conditions_get_icvfli();
    icvfli[f_id] = 1;
 
    /* Momentum flux (the centered pressure contribution is directly

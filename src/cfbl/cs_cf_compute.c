@@ -51,6 +51,7 @@
 #include "cs_balance.h"
 #include "cs_blas.h"
 #include "cs_boundary_conditions_set_coeffs.h"
+#include "cs_cf_boundary_conditions.h"
 #include "cs_cf_thermo.h"
 #include "cs_convection_diffusion.h"
 #include "cs_divergence.h"
@@ -318,7 +319,7 @@ _compressible_pressure_mass_flux(int iterns, // cfmsfp en fortran
     eqp_vel_loc.epsilo = -1;
     eqp_vel_loc.epsrsm = -1;
 
-    int *icvfli = cs_cf_get_icvfli();
+    int *icvfli = cs_cf_boundary_conditions_get_icvfli();
 
     cs_balance_vector(idtvar,
                       vel->id,

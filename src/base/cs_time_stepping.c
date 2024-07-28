@@ -128,9 +128,6 @@ void
 cs_f_init_chemistry_reacnum(void);
 
 void
-cs_f_init_compf(void);
-
-void
 cs_f_init_nz_pcond(void);
 
 void
@@ -372,7 +369,7 @@ cs_time_stepping(void)
   }
 
   if (cs_glob_physical_model_flag[CS_COMPRESSIBLE] >= 0)
-    cs_f_init_compf();
+    cs_cf_boundary_conditions_init();
 
   if (   cs_glob_wall_condensation->icondb == 0
       || cs_glob_wall_condensation->icondv == 0) {

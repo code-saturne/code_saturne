@@ -43,21 +43,12 @@ BEGIN_C_DECLS
  * Type definitions
  *============================================================================*/
 
-/*============================================================================
- * Static global variables
- *============================================================================*/
-
-/* pointer to global compressible model arrays */
-
-extern int *cs_glob_cf_icvfli;
-extern int *cs_glob_cf_ifbet;
-
 /*=============================================================================
  * Public function definitions
  *============================================================================*/
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Automatic boundary condition for compressible flows
  *
  * \param[in]  bc_type  type of boundary for each face
@@ -68,7 +59,38 @@ void
 cs_cf_boundary_conditions(int  bc_type[]);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
+ * \brief Allocate boundary flux indicator arrays.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cf_boundary_conditions_init(void);
+
+/*----------------------------------------------------------------------------*/
+/*
+ * \brief Provide access to boundary face indicator array of convection flux
+ *        - 0 upwind scheme
+ *        - 1 imposed flux
+ */
+/*----------------------------------------------------------------------------*/
+
+int *
+cs_cf_boundary_conditions_get_icvfli(void);
+
+/*----------------------------------------------------------------------------*/
+/*
+ * \brief Provide access to imposed thermal flux indicator at the boundary
+ *        (some boundary contributions of the total energy eq. have to be
+ *         cancelled)
+ */
+/*----------------------------------------------------------------------------*/
+
+int *
+cs_cf_boundary_conditions_get_ifbet(void);
+
+/*----------------------------------------------------------------------------*/
+/*
  * \brief Prepare (reset) condition coefficients specific to compressible flows.
  */
 /*----------------------------------------------------------------------------*/

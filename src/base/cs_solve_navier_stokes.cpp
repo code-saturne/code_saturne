@@ -56,7 +56,7 @@
 #include "cs_boundary_conditions.h"
 #include "cs_boundary_conditions_set_coeffs.h"
 #include "cs_bw_time_diff.h"
-#include "cs_cf_model.h"
+#include "cs_cf_boundary_conditions.h"
 #include "cs_cf_compute.h"
 #include "cs_convection_diffusion.h"
 #include "cs_ctwr.h"
@@ -3139,7 +3139,7 @@ _velocity_prediction(const cs_mesh_t             *m,
     /* Warning: in case of convergence estimators, eswork gives the estimator
        of the predicted velocity */
 
-    int *icvfli = cs_cf_get_icvfli();
+    int *icvfli = cs_cf_boundary_conditions_get_icvfli();
 
     cs_equation_iterative_solve_vector(cs_glob_time_step_options->idtvar,
                                        iterns,
@@ -3297,7 +3297,7 @@ _velocity_prediction(const cs_mesh_t             *m,
     eqp_loc.epsilo = -1;
     eqp_loc.epsrsm = -1;
 
-    int *icvfli = cs_cf_get_icvfli();
+    int *icvfli = cs_cf_boundary_conditions_get_icvfli();
 
     cs_balance_vector(idtva0,
                       CS_F_(vel)->id,

@@ -68,9 +68,6 @@ BEGIN_C_DECLS
  * Prototypes for Fortran functions and variables.
  *============================================================================*/
 
-extern int *cs_glob_cf_icvfli;
-extern int *cs_glob_cf_ifbet;
-
 /*=============================================================================
  * Additional doxygen documentation
  *============================================================================*/
@@ -87,13 +84,36 @@ extern int *cs_glob_cf_ifbet;
  *============================================================================*/
 
 /*============================================================================
- * Prototypes for functions intended for use only by Fortran wrappers.
- * (descriptions follow, with function bodies).
+ * Static global variables
  *============================================================================*/
 
+/* Imposed thermal flux indicator at the boundary
+  (some boundary contributions of the total energy equation
+  have to be cancelled) */
+static int *_ifbet = NULL;
+
+/*! boundary convection flux indicator of a Rusanov or an analytical flux
+  (some boundary contributions of the momentum eq. have to be cancelled) */
+static int *_icvfli = NULL;
+
 /*============================================================================
- * Fortran wrapper function definitions
+ * Private function definitions
  *============================================================================*/
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Finalize coal model.
+ *
+ * \pram[in, out]  cm  pointer to coal model pointer to destroy.
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_cf_boundary_conditions_finalize(void)
+{
+  BFT_FREE(_ifbet);
+  BFT_FREE(_icvfli);
+}
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
@@ -123,8 +143,6 @@ cs_cf_boundary_conditions(int  bc_type[])
   const cs_mesh_quantities_t *fvq = cs_glob_mesh_quantities;
   const cs_real_3_t *b_face_cog
     = reinterpret_cast<const cs_real_3_t *>(fvq->b_face_cog);
-  const cs_nreal_3_t *b_f_u_normal = fvq->b_face_u_normal;
-  const cs_real_t *b_f_surf = fvq->b_face_surf;
 
   const cs_real_3_t *cell_cen
     = reinterpret_cast<const cs_real_3_t *>(fvq->cell_cen);
@@ -169,20 +187,16 @@ cs_cf_boundary_conditions(int  bc_type[])
 
   auto *tk_icodcl  = f_tk->bc_coeffs->icodcl;
   auto *tk_rcodcl1 = f_tk->bc_coeffs->rcodcl1;
-  auto *tk_rcodcl2 = f_tk->bc_coeffs->rcodcl2;
   auto *tk_rcodcl3 = f_tk->bc_coeffs->rcodcl3;
 
   auto *en_icodcl  = f_en->bc_coeffs->icodcl;
   auto *en_rcodcl1 = f_en->bc_coeffs->rcodcl1;
-  auto *en_rcodcl2 = f_en->bc_coeffs->rcodcl2;
   auto *en_rcodcl3 = f_en->bc_coeffs->rcodcl3;
 
   const cs_real_3_t *vel = (const cs_real_3_t *)(CS_F_(vel)->val);
   const cs_real_t *crom = (const cs_real_t *)(CS_F_(rho)->val);
   const cs_real_t *brom = (const cs_real_t *)(CS_F_(rho_b)->val);
-  const cs_real_t *cvar_en = (const cs_real_t *)(f_en->val);
-  const cs_real_t *cvar_fracv = nullptr, *cvar_fracm = nullptr;
-  const cs_real_t *cvar_frace = nullptr, *cpro_cv = nullptr;
+  const cs_real_t *cpro_cv = nullptr;
   const cs_real_t *dt = CS_F_(dt)->val;
 
   if (fluid_props->icv >= 0)
@@ -199,9 +213,6 @@ cs_cf_boundary_conditions(int  bc_type[])
 
   // Mixture fractions for the homogeneous two-phase flows
   if (cs_glob_physical_model_flag[CS_COMPRESSIBLE] == 2) {
-    cvar_fracv = static_cast<const cs_real_t *>(CS_F_(volume_f)->val);
-    cvar_fracm = static_cast<const cs_real_t *>(CS_F_(mass_f)->val);
-    cvar_frace = static_cast<const cs_real_t *>(CS_F_(energy_f)->val);
     BFT_MALLOC(bc_fracv, n_b_faces, cs_real_t);
     BFT_MALLOC(bc_fracm, n_b_faces, cs_real_t);
     BFT_MALLOC(bc_frace, n_b_faces, cs_real_t);
@@ -229,7 +240,7 @@ cs_cf_boundary_conditions(int  bc_type[])
     cs_cf_thermo_eps_sup(brom, w7, n_b_faces);
   }
 
-  int *ifbet = cs_cf_get_ifbet();
+  int *ifbet = cs_cf_boundary_conditions_get_ifbet();
 
   /* Main loop on boundary faces for series BC computation
      ----------------------------------------------------- */
@@ -619,121 +630,48 @@ cs_cf_boundary_conditions(int  bc_type[])
   BFT_FREE(bc_frace);
 }
 
-#if 0
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Allocate boundary flux indicator arrays.
+ */
+/*----------------------------------------------------------------------------*/
 
-      // Dirichlet or homogeneous Neumann
-      // A Dirichlet is chosen if the mass flux is ingoing and if the user provided
-      // a value in rcodcl(ifac,ivar,1)
+void
+cs_cf_boundary_conditions_init(void)
+{
+  cs_base_at_finalize(_cf_boundary_conditions_finalize);
 
-      const cs_real_t bmasfl_dir = cs_math_3_dot_product(bc_vel[face_id],
-                                                         b_f_u_normal[face_id]);
+  BFT_REALLOC(_ifbet, cs_glob_mesh->n_b_faces, int);
+  BFT_REALLOC(_icvfli, cs_glob_mesh->n_b_faces, int);
+}
 
-      if (bc_type[face_id] != CS_ISSPCF && bmasfl_dir >= 0.) {
-        cs_turbulence_bc_set_hmg_neumann(face_id);
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Provide access to boundary face indicator array of convection flux
+ *        - 0 upwind scheme
+ *        - 1 imposed flux
+ */
+/*----------------------------------------------------------------------------*/
 
-        if (nscaus > 0) {
-          do ii = 1, nscaus
-               icodcl(ifac,isca(ii)) = 3;
-          enddo
-            }
-        if (nscasp > 0) {
-          do ii = 1, nscasp
-          icodcl(ifac,iscasp(ii)) = 3
-        enddo
-      }
+int *
+cs_cf_boundary_conditions_get_icvfli(void)
+{
+  return _icvfli;
+}
 
-      }
-    else
-      if (itytur == 2) {
-        if (rcodcl(ifac,ik ,1) < r_inf_05   &&     &
-           rcodcl(ifac,iep,1) < r_inf_05) {
-          icodcl(ifac,ik ) = 1
-          icodcl(ifac,iep) = 1
-        else
-          icodcl(ifac,ik ) = 3
-          icodcl(ifac,iep) = 3
-        }
-      elseif (itytur == 3) {
-        if (rcodcl(ifac,ir11,1) < r_inf_05   &&       &
-           rcodcl(ifac,ir22,1) < r_inf_05   &&       &
-           rcodcl(ifac,ir33,1) < r_inf_05   &&       &
-           rcodcl(ifac,ir12,1) < r_inf_05   &&       &
-           rcodcl(ifac,ir13,1) < r_inf_05   &&       &
-           rcodcl(ifac,ir23,1) < r_inf_05   &&       &
-           rcodcl(ifac,iep ,1) < r_inf_05) {
-          icodcl(ifac,ir11) = 1
-          icodcl(ifac,ir22) = 1
-          icodcl(ifac,ir33) = 1
-          icodcl(ifac,ir12) = 1
-          icodcl(ifac,ir13) = 1
-          icodcl(ifac,ir23) = 1
-          icodcl(ifac,iep ) = 1
-        else
-          icodcl(ifac,ir11) = 3
-          icodcl(ifac,ir22) = 3
-          icodcl(ifac,ir33) = 3
-          icodcl(ifac,ir12) = 3
-          icodcl(ifac,ir13) = 3
-          icodcl(ifac,ir23) = 3
-          icodcl(ifac,iep ) = 3
-        }
-      elseif (iturb == 50) {
-        if (rcodcl(ifac,ik  ,1) < r_inf_05   &&       &
-           rcodcl(ifac,iep ,1) < r_inf_05   &&       &
-           rcodcl(ifac,iphi,1) < r_inf_05   &&       &
-           rcodcl(ifac,ifb ,1) < r_inf_05) {
-          icodcl(ifac,ik  ) = 1
-          icodcl(ifac,iep ) = 1
-          icodcl(ifac,iphi) = 1
-          icodcl(ifac,ifb ) = 1
-        else
-          icodcl(ifac,ik  ) = 3
-          icodcl(ifac,iep ) = 3
-          icodcl(ifac,iphi) = 3
-          icodcl(ifac,ifb ) = 3
-        }
-      elseif (iturb == 60) {
-        if (rcodcl(ifac,ik  ,1) < r_inf_05   &&       &
-           rcodcl(ifac,iomg,1) < r_inf_05) {
-          icodcl(ifac,ik  ) = 1
-          icodcl(ifac,iomg) = 1
-        else
-          icodcl(ifac,ik  ) = 3
-          icodcl(ifac,iomg) = 3
-        }
-      elseif (iturb == 70) {
-        if (rcodcl(ifac,inusa,1) > 0.) {
-          icodcl(ifac,inusa) = 1
-        else
-          icodcl(ifac,inusa) = 3
-        }
-      }
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Provide access to imposed thermal flux indicator at the boundary
+ *        (some boundary contributions of the total energy eq. have to be
+ *         cancelled)
+ */
+/*----------------------------------------------------------------------------*/
 
-  }
-
-      if (nscaus > 0) {
-        do ii = 1, nscaus
-          if (rcodcl(ifac,isca(ii),1) < r_inf_05) {
-            icodcl(ifac,isca(ii)) = 1
-          else
-            icodcl(ifac,isca(ii)) = 3
-          }
-        enddo
-      }
-      if (nscasp > 0) {
-        do ii = 1, nscasp
-          if (rcodcl(ifac,iscasp(ii),1) < r_inf_05) {
-            icodcl(ifac,iscasp(ii)) = 1
-          else
-            icodcl(ifac,iscasp(ii)) = 3
-          }
-        enddo
-      }
-    }
-
-  } // end of test on inlet/outlet faces
-
-#endif
+int *
+cs_cf_boundary_conditions_get_ifbet(void)
+{
+  return _ifbet;
+}
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -753,8 +691,8 @@ cs_cf_boundary_conditions_reset(void)
   */
 
   for (cs_lnum_t i = 0; i < n_b_faces; i++) {
-    cs_glob_cf_icvfli[i] = 0;
-    cs_glob_cf_ifbet[i] = 0;
+    _icvfli[i] = 0;
+    _ifbet[i] = 0;
   }
 }
 

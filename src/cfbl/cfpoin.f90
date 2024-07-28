@@ -46,43 +46,9 @@ module cfpoin
   !> indicator for thermodynamic variables initialization
   integer(c_int), pointer, save :: icfgrp
 
-  !> imposed thermal flux indicator at the boundary
-  !> (some boundary contributions of the total energy eq. have to be cancelled)
-  integer, allocatable, dimension(:), target :: ifbet
-
-  !> boundary convection flux indicator of a Rusanov or an analytical flux
-  !> (some boundary contributions of the momentum eq. have to be cancelled)
-  integer, allocatable, dimension(:), target :: icvfli
-
-  !> Stiffened gas limit pressure (Pa) for single phase model
-  !> Equal to zero in perfect gas
-  !> mapping cs_cf_model_t::psginf
-  real(c_double), pointer, save :: psginf
-
-  !> Stiffened gas polytropic coefficient (dimensionless) for single phase model
-  !> mapping cs_cf_model_t::gammasg
-  real(c_double), pointer, save :: gammasg
-
-  !> \addtogroup comp_homogeneous
-  !> \{
-
-  !> \anchor hgn_relax_eq_st
-  !> homogeneous two-phase flow model indicator for source terms
-  !>    -  -1: source terms are disabled
-  !>    -   0: source terms are enabled
-  !> mapping cs_cf_model_t::hgn_relax_eq_st
-  integer(c_int), pointer, save :: hgn_relax_eq_st
-
-  !> \}
   !> \}
 
   !=============================================================================
-
-  type(c_ptr) :: p_icvfli
-  bind(C, name='cs_glob_cf_icvfli') :: p_icvfli
-
-  type(c_ptr) :: p_ifbet
-  bind(C, name='cs_glob_cf_ifbet') :: p_ifbet
 
   interface
 
@@ -95,17 +61,11 @@ module cfpoin
     ! Interface to C function retrieving pointers to members of the
     ! global compressible model structure
 
-    subroutine cs_f_cf_model_get_pointers(ieos,            &
-                                          ithvar,          &
-                                          icfgrp,          &
-                                          psginf,          &
-                                          gammasg,         &
-                                          hgn_relax_eq_st) &
+    subroutine cs_f_cf_model_get_pointers(ieos, ithvar, icfgrp)  &
       bind(C, name='cs_f_cf_model_get_pointers')
       use, intrinsic :: iso_c_binding
       implicit none
-      type(c_ptr), intent(out) :: ieos, ithvar, icfgrp, psginf, &
-                                  gammasg, hgn_relax_eq_st
+      type(c_ptr), intent(out) :: ieos, ithvar, icfgrp
     end subroutine cs_f_cf_model_get_pointers
 
     !---------------------------------------------------------------------------
@@ -133,41 +93,14 @@ contains
     ! Local variables
 
     type(c_ptr) :: c_ieos, c_ithvar, c_icfgrp
-    type(c_ptr) :: c_psginf, c_gammasg, c_hgn_relax_eq_st
 
-    call cs_f_cf_model_get_pointers(c_ieos,           &
-                                    c_ithvar,         &
-                                    c_icfgrp,        &
-                                    c_psginf,         &
-                                    c_gammasg,        &
-                                    c_hgn_relax_eq_st)
+    call cs_f_cf_model_get_pointers(c_ieos, c_ithvar, c_icfgrp)
 
     call c_f_pointer(c_ieos, ieos)
     call c_f_pointer(c_ithvar, ithvar)
     call c_f_pointer(c_icfgrp, icfgrp)
-    call c_f_pointer(c_psginf, psginf)
-    call c_f_pointer(c_gammasg, gammasg)
-    call c_f_pointer(c_hgn_relax_eq_st, hgn_relax_eq_st)
 
   end subroutine cf_model_init
-
-  !> \brief Allocate boundary flux indicators array
-
-  subroutine init_compf() &
-    bind(C, name='cs_f_init_compf')
-
-    use mesh, only: nfabor
-
-    implicit none
-
-    allocate(ifbet(nfabor))
-    allocate(icvfli(nfabor))
-
-    ! Map pointers to C
-    p_icvfli = c_loc(icvfli)
-    p_ifbet = c_loc(ifbet)
-
-  end subroutine init_compf
 
   !=============================================================================
 

@@ -102,28 +102,6 @@ cs_get_glob_cf_model(void);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Provide access to boundary face indicator array of convection flux
- *        - 0 upwind scheme
- *        - 1 imposed flux
- */
-/*----------------------------------------------------------------------------*/
-
-int *
-cs_cf_get_icvfli(void);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Provide access to imposed thermal flux indicator at the boundary
- *        (some boundary contributions of the total energy eq. have to be
- *         cancelled)
- */
-/*----------------------------------------------------------------------------*/
-
-int *
-cs_cf_get_ifbet(void);
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief Property field definitions for the compressible module,
  *        according to calculation type selected by the user.
  */

@@ -47,6 +47,7 @@
 #include "cs_cf_model.h"
 #include "cs_field.h"
 #include "cs_field_pointer.h"
+#include "cs_mesh.h"
 #include "cs_mesh_location.h"
 #include "cs_physical_constants.h"
 #include "cs_physical_model.h"
@@ -55,13 +56,6 @@
 /*----------------------------------------------------------------------------*/
 
 BEGIN_C_DECLS
-
-/*============================================================================
- * Prototypes for Fortran functions and variables.
- *============================================================================*/
-
-extern int *cs_glob_cf_icvfli;
-extern int *cs_glob_cf_ifbet;
 
 /*=============================================================================
  * Additional doxygen documentation
@@ -179,10 +173,7 @@ const cs_cf_model_t  *cs_glob_cf_model = &_cf_model;
 void
 cs_f_cf_model_get_pointers(int    **ieos,
                            int    **ithvar,
-                           int    **icfgrp,
-                           double **psginf,
-                           double **gammasg,
-                           int    **hgn_relax_eq_st);
+                           int    **icfgrp);
 
 /*============================================================================
  * Fortran wrapper function definitions
@@ -197,25 +188,16 @@ cs_f_cf_model_get_pointers(int    **ieos,
  * parameters:
  *   ieos             --> pointer to cs_glob_cf_model->ieos
  *   ithvar           --> pointer to cs_glob_cf_model->ithvar
- *   psginf           --> pointer to cs_glob_cf_model->psginf
- *   gammasg          --> pointer to cs_glob_cf_model->gammasg
- *   hgn_relax_eq_st  --> pointer to cs_glob_cf_model->hgn_relax_eq_st
  *----------------------------------------------------------------------------*/
 
 void
 cs_f_cf_model_get_pointers(int    **ieos,
                            int    **ithvar,
-                           int    **icfgrp,
-                           double **psginf,
-                           double **gammasg,
-                           int    **hgn_relax_eq_st)
+                           int    **icfgrp)
 {
   *ieos             = &(_cf_model.ieos);
   *ithvar           = &(_cf_model.ithvar);
   *icfgrp           = &(_cf_model.icfgrp);
-  *psginf           = &(_cf_model.psginf);
-  *gammasg          = &(_cf_model.gammasg);
-  *hgn_relax_eq_st  = &(_cf_model.hgn_relax_eq_st);
 }
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
@@ -234,34 +216,6 @@ cs_cf_model_t *
 cs_get_glob_cf_model(void)
 {
   return &_cf_model;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Provide access to boundary face indicator array of convection flux
- *        - 0 upwind scheme
- *        - 1 imposed flux
- */
-/*----------------------------------------------------------------------------*/
-
-int *
-cs_cf_get_icvfli(void)
-{
-  return cs_glob_cf_icvfli;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Provide access to imposed thermal flux indicator at the boundary
- *        (some boundary contributions of the total energy eq. have to be
- *         cancelled)
- */
-/*----------------------------------------------------------------------------*/
-
-int *
-cs_cf_get_ifbet(void)
-{
-  return cs_glob_cf_ifbet;
 }
 
 /*----------------------------------------------------------------------------*/

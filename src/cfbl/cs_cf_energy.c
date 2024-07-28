@@ -52,6 +52,7 @@
 #include "cs_array.h"
 #include "cs_assert.h"
 #include "cs_blas.h"
+#include "cs_cf_boundary_conditions.h"
 #include "cs_cf_model.h"
 #include "cs_cf_thermo.h"
 #include "cs_divergence.h"
@@ -536,7 +537,7 @@ cs_cf_energy(int f_sc_id)
 
   const cs_real_t *coefa_p = f_pr->bc_coeffs->a;
   const cs_real_t *coefb_p = f_pr->bc_coeffs->b;
-  int *icvfli = cs_cf_get_icvfli();
+  int *icvfli = cs_cf_boundary_conditions_get_icvfli();
 
 # pragma omp parallel for if (n_b_faces > CS_THR_MIN)
   for (cs_lnum_t f_id = 0; f_id < n_b_faces; f_id++) {
@@ -898,7 +899,7 @@ cs_cf_energy(int f_sc_id)
     cs_real_3_t  *coefau = (cs_real_3_t  *)f_vel->bc_coeffs->a;
     cs_real_33_t *coefbu = (cs_real_33_t *)f_vel->bc_coeffs->b;
 
-    int *ifbet = cs_cf_get_ifbet();
+    int *ifbet = cs_cf_boundary_conditions_get_ifbet();
 
 #   pragma omp parallel for
     for (int t_id = 0; t_id < n_b_threads; t_id++) {
