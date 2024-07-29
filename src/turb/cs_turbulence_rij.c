@@ -3993,10 +3993,9 @@ cs_turbulence_rij_mu_t(int  phase_id)
     for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
 
       cs_real_t xk = 0.5 * cs_math_6_trace(cvar_rij[c_id]);
-      cs_real_t xrnn = cs_math_fmax(xk, 1.e-12);
       cs_real_t xe = cvar_ep[c_id];
 
-      visct[c_id] = crom[c_id] * cs_turb_cmu * xrnn * xk / xe;
+      visct[c_id] = crom[c_id] * cs_turb_cmu * cs_math_pow2(xk) / xe;
     }
 
   }
