@@ -162,6 +162,15 @@ _thermal_flux_st(const char          *name,
     cvar_tt = f_tv->val;
     cvara_tt = f_tv->val_pre;
   }
+  /* Save production terms if required */
+
+  cs_real_3_t *prod_ut = NULL;
+  cs_field_t *f_ut_prod =
+    cs_field_by_composite_name_try("algo:turbulent_flux_production",
+                                   f->name);
+
+  if (f_ut_prod != NULL)
+      prod_ut = (cs_real_3_t *)f_ut_prod->val;
 
   if (turb_flux_model == 31) {
     char fname[128];
@@ -193,10 +202,10 @@ _thermal_flux_st(const char          *name,
 
     cs_real_t prdtl = viscl[c_id]*xcpp[c_id]/viscls[l_viscls*c_id];
 
-    const cs_real_t trrij = 0.5 * cs_math_6_trace(cvar_rij[c_id]);
+    const cs_real_t tke = 0.5 * cs_math_6_trace(cvar_rij[c_id]);
 
     /* Compute Durbin time scheme */
-    const cs_real_t xttke = trrij/cvar_ep[c_id];
+    const cs_real_t xttke = tke / cvar_ep[c_id];
 
     cs_real_t alpha = 1., xttdrbt = xttke, xttdrbw = xttke;
     cs_real_t xxc1 = 0, xxc2 = 0, xxc3 = 0;
@@ -243,7 +252,7 @@ _thermal_flux_st(const char          *name,
 
     for (cs_lnum_t i = 0; i < 3; i++) {
        phiith[i] = - c1trit / xttdrbt * xuta[c_id][i]
-                   + c2trit * cs_math_3_dot_product(xuta[c_id], gradv[c_id][i])
+                   + c2trit * cs_math_3_dot_product( gradv[c_id][i], xuta[c_id])
                    + c4trit * (-xrij[0][i] * gradt[c_id][0]
                                -xrij[1][i] * gradt[c_id][1]
                                -xrij[2][i] * gradt[c_id][2]);
@@ -296,6 +305,10 @@ _thermal_flux_st(const char          *name,
                            + xuta[c_id][2]*xnal[2]*xnal[i]));
 
        rhs_ut[c_id][i] += ept * cell_f_vol[c_id]*crom[c_id];
+
+       /* Save production terms for post-processing */
+       if (prod_ut != NULL)
+         prod_ut[c_id][i] = ept;
 
        /* TODO we can implicit more terms */
        imp_term =   cell_f_vol[c_id] * crom[c_id]

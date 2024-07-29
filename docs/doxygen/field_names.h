@@ -66,6 +66,8 @@
     Pressure gradient, cell-based field of dimension 3.
   - <tt> algo:gradient_ </tt> supplemented with a transported field name
     Field gradient, cell-based field of dimension 3x the dimension of the corresponding field.
+  - <tt> algo:turbulent_flux_production_ </tt> supplemented with a transported field name
+    Field corresponding to the production of u'T' if scalar taken is temperature, cell-based field of dimension 3.
   - <tt> algo:gradient_velocity</tt>
     Velocity gradient, cell-based field of dimension 3x3.
   - <tt> algo:gradient_pressure_increment </tt>
