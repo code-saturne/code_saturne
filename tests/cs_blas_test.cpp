@@ -2145,9 +2145,9 @@ _copy_test(double  t_measure)
  *----------------------------------------------------------------------------*/
 
 static inline void
-_dense_3_3_sv_pc(const cs_real_t   a[restrict 3][3],
-                 cs_real_t         b[restrict 3],
-                 cs_real_t         x[restrict 3])
+_dense_3_3_sv_pc(const cs_real_t   (*restrict a)[3],
+                 cs_real_t          *restrict b,
+                 cs_real_t          *restrict x)
 {
   int i, j;
 
@@ -2201,7 +2201,7 @@ _dense_3_3_sv_pc(const cs_real_t   a[restrict 3][3],
 *----------------------------------------------------------------------------*/
 
 static inline void
-_fact_lu33(cs_real_t  a[restrict 3][3])
+_fact_lu33(cs_real_t  (*restrict a)[3])
 {
   cs_real_t lu[3][3];
 
@@ -2232,9 +2232,9 @@ _fact_lu33(cs_real_t  a[restrict 3][3])
  *----------------------------------------------------------------------------*/
 
 inline static void
-_fw_and_bw_lu33(const cs_real_t  a[restrict 3][3],
-                const cs_real_t  b[restrict 3],
-                cs_real_t        x[restrict 3])
+_fw_and_bw_lu33(const cs_real_t  (*restrict a)[3],
+                const cs_real_t   *restrict b,
+                cs_real_t         *restrict x)
 {
   cs_real_t aux = b[1] - b[0]*a[1][0];
 
@@ -2257,9 +2257,9 @@ _fw_and_bw_lu33(const cs_real_t  a[restrict 3][3],
  *----------------------------------------------------------------------------*/
 
 static inline void
-_dense_3_3_sv_lu(const cs_real_t   a[restrict 3][3],
-                 cs_real_t         b[restrict 3],
-                 cs_real_t         x[restrict 3])
+_dense_3_3_sv_lu(const cs_real_t  (*restrict a)[3],
+                 const cs_real_t   *restrict b,
+                 cs_real_t         *restrict x)
 {
   cs_real_t lu[3][3];
 
@@ -2291,9 +2291,9 @@ _dense_3_3_sv_lu(const cs_real_t   a[restrict 3][3],
  *----------------------------------------------------------------------------*/
 
 static inline void
-_dense_3_3_axl(const cs_real_t  a[restrict 3][3],
-               const cs_real_t  b[restrict 3],
-               cs_real_t        x[restrict 3])
+_dense_3_3_axl(const cs_real_t  (*restrict a)[3],
+               const cs_real_t   *restrict b,
+               cs_real_t         *restrict x)
 {
   x[0] = a[0][0]*b[0] + a[0][1]*b[1] + a[0][2]*b[2];
   x[1] = a[1][0]*b[0] + a[1][1]*b[1] + a[1][2]*b[2];
@@ -2314,9 +2314,9 @@ _dense_3_3_axl(const cs_real_t  a[restrict 3][3],
  *----------------------------------------------------------------------------*/
 
 static inline void
-_dense_3_3_sv_c(const cs_real_t   a[restrict 3][3],
-                const cs_real_t   b[restrict 3],
-                cs_real_t         x[restrict 3])
+_dense_3_3_sv_c(const cs_real_t  (*restrict a)[3],
+                const cs_real_t   *restrict b,
+                cs_real_t         *restrict x)
 {
   cs_real_t t[12], di;
 
@@ -2352,15 +2352,15 @@ _dense_3_3_sv_c(const cs_real_t   a[restrict 3][3],
  * This assumes the matrix is invertible
  *
  * parameters:
- *   a      <-- block matrix
+ *   a      <-> block matrix
  *   b      <-> right-hand side
  *   x      --> Resulting vector
  *----------------------------------------------------------------------------*/
 
 static inline void
-_dense_3_3_sv_p(cs_real_t   a[restrict 3][3],
-                cs_real_t   b[restrict 3],
-                cs_real_t   x[restrict 3])
+_dense_3_3_sv_p(cs_real_t  (*restrict a)[3],
+                cs_real_t   *restrict b,
+                cs_real_t   *restrict x)
 {
   double factor;
 
