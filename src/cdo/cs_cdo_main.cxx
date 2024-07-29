@@ -1126,7 +1126,10 @@ cs_cdo_main(cs_domain_t   *domain)
 
     /* Do one need log information for this time step ? */
 
-    cs_log_iteration_set_active();
+    if (domain->is_last_iter || domain->time_step->nt_cur < 6)
+      cs_log_default_activate(true); // Always do a log for this iteration
+    else
+      cs_log_iteration_set_active();
 
     /* Build and solve equations related to the computational domain */
 

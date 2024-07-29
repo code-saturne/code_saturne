@@ -414,7 +414,7 @@ cs_param_sles_log(cs_param_sles_t   *slesp)
       break;
     }
 
-    cs_log_printf(CS_LOG_SETUP, "  * %s | Allow no operation:      %s",
+    cs_log_printf(CS_LOG_SETUP, "  * %s | Allow no operation:      %s\n",
                   slesp->name, cs_base_strtf(slesp->allow_no_op));
 
   } /* Iterative solver */
