@@ -108,11 +108,7 @@ cs_theta_scheme_update_var(const cs_lnum_t  iappel)
   cs_real_t *bmasfl_pre = cs_field_by_id(iflmab)->val_pre;
 
   const cs_real_t *crom   = CS_F_(rho)->val;
-  const cs_real_t *croma  = CS_F_(rho)->val_pre;
-  const cs_real_t *cromaa = CS_F_(rho)->vals[2];
   const cs_real_t *brom   = CS_F_(rho_b)->val;
-  const cs_real_t *broma  = CS_F_(rho_b)->val_pre;
-  const cs_real_t *bromaa = CS_F_(rho_b)->vals[2];
 
   cs_real_t *cpro_viscl  = CS_F_(mu)->val;
   cs_real_t *cproa_viscl = CS_F_(mu)->val_pre;
@@ -174,7 +170,12 @@ cs_theta_scheme_update_var(const cs_lnum_t  iappel)
      *----------------------------------------------------------------------*/
 
     if (cs_glob_fluid_properties->irovar > 0) {
-      if ((time_order == 2) && (vp_param->itpcol == 1)) {
+      if (time_order == 2 && vp_param->itpcol == 1) {
+        const cs_real_t *croma  = CS_F_(rho)->val_pre;
+        const cs_real_t *cromaa = CS_F_(rho)->vals[2];
+        const cs_real_t *broma  = CS_F_(rho_b)->val_pre;
+        const cs_real_t *bromaa = CS_F_(rho_b)->vals[2];
+
         for (cs_lnum_t c_id = 0; c_id < n_cells_ext; c_id++) {
           cpro_rho_mass[c_id] = 3.*crom[c_id] - 3.*croma[c_id]
                                 + cromaa[c_id];
