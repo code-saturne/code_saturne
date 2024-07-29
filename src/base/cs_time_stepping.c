@@ -919,26 +919,12 @@ cs_time_stepping(void)
            "   Checkpoint at iteration %d, physical time %15.5f\n\n"),
          info, ts->nt_cur, ts->t_cur);
 
-      cs_restart_main_and_aux_write();
-
+      bool checkpoint_mesh = false;
       if (   iturbo == CS_TURBOMACHINERY_TRANSIENT
           && cs_glob_restart_auxiliary->write_auxiliary == 1)
-        /* Save output mesh for turbomachinery if needed */
-        cs_mesh_save(m, NULL, "checkpoint", "mesh.csm");
+        checkpoint_mesh = true;
 
-      if (cs_get_glob_1d_wall_thermal()->nfpt1t > 0)
-        cs_1d_wall_thermal_write();
-
-      cs_les_synthetic_eddy_restart_write();
-
-      if (cs_glob_lagr_time_scheme->iilagr > 0)
-        cs_restart_lagrangian_checkpoint_write();
-
-      if (cs_glob_rad_transfer_params->type > 0)
-        cs_rad_transfer_write();
-
-      if (cs_glob_les_balance->i_les_balance > 0)
-        cs_les_balance_write_restart();
+      cs_time_stepping_write_checkpoint(checkpoint_mesh);
 
       /* Indicate that a chechpoint has been done */
       cs_restart_checkpoint_done(ts);
@@ -1084,6 +1070,41 @@ cs_time_stepping(void)
        "                      END OF CALCULATION\n"
        "                      ==================\n\n\n\n"
        "=============================================================\n"));
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Output a checkpoint.
+ *
+ * If needed, the mesh is also output in the checkpoint directory,
+ * exect if this function is called for checkpoint serialized in memory
+ * (which is a special case for FMI exchange).
+ *
+ * \param[in]  checkpoint_mesh  also save mesh in checkpoint directory
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_time_stepping_write_checkpoint(bool  checkpoint_mesh)
+{
+  cs_restart_main_and_aux_write();
+
+  if (checkpoint_mesh)
+    cs_mesh_save(cs_glob_mesh, NULL, "checkpoint", "mesh.csm");
+
+  if (cs_get_glob_1d_wall_thermal()->nfpt1t > 0)
+    cs_1d_wall_thermal_write();
+
+  cs_les_synthetic_eddy_restart_write();
+
+  if (cs_glob_lagr_time_scheme->iilagr > 0)
+    cs_restart_lagrangian_checkpoint_write();
+
+  if (cs_glob_rad_transfer_params->type > 0)
+    cs_rad_transfer_write();
+
+  if (cs_glob_les_balance->i_les_balance > 0)
+    cs_les_balance_write_restart();
 }
 
 /*----------------------------------------------------------------------------*/

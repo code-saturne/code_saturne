@@ -70,6 +70,21 @@ void
 cs_time_stepping(void);
 
 /*----------------------------------------------------------------------------*/
+/*!
+ * \brief Output a checkpoint.
+ *
+ * If needed, the mesh is also output in the checkpoint directory,
+ * exect if this function is called for checkpoint serialized in memory
+ * (which is a special case for FMI exchange).
+ *
+ * \param[in]  checkpoint_mesh  also save mesh in checkpoint directory
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_time_stepping_write_checkpoint(bool  checkpoint_mesh);
+
+/*----------------------------------------------------------------------------*/
 
 END_C_DECLS
 

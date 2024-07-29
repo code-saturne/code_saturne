@@ -67,6 +67,7 @@
 #include "cs_resource.h"
 #include "cs_restart.h"
 #include "cs_time_plot.h"
+#include "cs_time_stepping.h"
 #include "cs_timer.h"
 
 /*----------------------------------------------------------------------------
@@ -1401,6 +1402,8 @@ _control_snapshot(const char             *cur_line,
   else if (strncmp(*s, "get_serialized", 14) == 0) {
     size_t nb;
     void *data;
+    cs_checkpoint_set_to_memory_serialized(true);
+    cs_time_stepping_write_checkpoint(false);
     cs_restart_get_from_memory_serialized(&nb, &data);
     if (control_comm != NULL && cs_glob_rank_id <= 0) {
       char ack[] = "serialized_snapshot";
@@ -1410,6 +1413,7 @@ _control_snapshot(const char             *cur_line,
       if (nb > 0)
         _comm_write_sock(control_comm, data, 1, nb);
     }
+    cs_checkpoint_set_to_memory_serialized(false);
   }
   else
     bft_printf(_("   ignored: \"%s\"\n"), cur_line);

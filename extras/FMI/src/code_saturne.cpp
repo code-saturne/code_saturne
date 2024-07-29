@@ -213,6 +213,14 @@ typedef struct {
 
 } cs_variables_t;
 
+/* Save state of read and written variables */
+
+typedef struct {
+
+  double  *vals;
+
+} cs_state_t;
+
 /*============================================================================
  * Static global variables
  *============================================================================*/
@@ -1400,7 +1408,8 @@ _get_serialized_snapshot(int     sock)
   _recv_sock(_cs_socket, (char *)restart_size, _cs_glob_control_queue,
              sizeof(size_t), 1);
 
-  _serialized_data = (char *)malloc(restart_size[0] + n_add);
+  _serialized_size = restart_size[0] + n_add;
+  _serialized_data = (char *)malloc(_serialized_size);
 
   if (restart_size[0] > 0)
     _recv_sock(_cs_socket, _serialized_data, _cs_glob_control_queue,
@@ -1871,25 +1880,44 @@ fmi2Status fmi2GetFMUstate(fmi2Component  c,
   CS_UNUSED(c);
 
   char s[128];
-  if (state != 0) {
-    snprintf(s, 127, "%s: called for %p; not handled for state != 0\n",
-             __func__, (void *)state);
-    _cs_log(fmi2Error, CS_LOG_ERROR, s);
-    return fmi2Error;
-  }
-  else {
-    snprintf(s, 127, "%s: called for %p; only handed for serialized case\n",
-             __func__, (void *)state);
-    _cs_log(fmi2Warning, CS_LOG_WARNING, s);
-    return fmi2Warning;
-  }
+  snprintf(s, 127, "%s: called for %p; only client state is partially saved",
+           __func__, (void *)*state);
+  _cs_log(fmi2Warning, CS_LOG_WARNING, s);
 
   /* Not a valid pointer to actual data here,
      just a distinct pointer per state... */
-  fmi2FMUstate fs = (fmi2FMUstate)(_state_p++);
-  _states[fs] = fs;
 
-  *state = fs;
+  cs_variables_t *v = _cs_variables;
+  cs_state_t *csst = nullptr;
+
+  if (*state == nullptr) {
+    csst = (cs_state_t *)malloc(sizeof(cs_state_t));
+    csst->vals = (double *)malloc(sizeof(double) * (v->n_input+v->n_output));
+    fmi2FMUstate fs = (fmi2FMUstate)csst;
+    _states[fs] = fs;
+
+    *state = fs;
+  }
+  else {
+    if (_states.count(*state) > 0)
+      csst = (cs_state_t *)_states[*state];
+    else {
+      snprintf(s, 127, "%s: called for %p, not previously defined",
+               __func__, (void *)*state);
+      _cs_log(fmi2Error, CS_LOG_ERROR, s);
+      return fmi2Error;
+    }
+  }
+
+  {
+    int j = 0;
+    for (int i = 0; i < v->n_input; i++)
+      csst->vals[j++] = v->input_vals[i];
+    for (int i = 0; i < v->n_output; i++)
+      csst->vals[j++] = v->output_vals[i];
+  }
+
+  return fmi2Warning;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1900,9 +1928,29 @@ fmi2Status fmi2SetFMUstate(fmi2Component  c,
   CS_UNUSED(c);
 
   char s[128];
-  snprintf(s, 127, "%s: called for %p; not handled yet\n",
+  snprintf(s, 127, "%s: called for %p; only client state is partially set",
            __func__, (void *)state);
   _cs_log(fmi2Warning, CS_LOG_WARNING, s);
+
+  cs_variables_t *v = _cs_variables;
+  cs_state_t *csst = nullptr;
+
+  if (_states.count(state) > 0)
+    csst = (cs_state_t *)_states[state];
+  else {
+    snprintf(s, 127, "%s: called for %p, not previously defined",
+             __func__, (void *)state);
+    _cs_log(fmi2Error, CS_LOG_ERROR, s);
+    return fmi2Error;
+  }
+
+  {
+    int j = 0;
+    for (int i = 0; i < v->n_input; i++)
+      v->input_vals[i] = csst->vals[j++];
+    for (int i = 0; i < v->n_output; i++)
+      v->output_vals[i] = csst->vals[j++];
+  }
 
   return fmi2Warning;
 }
@@ -1920,16 +1968,19 @@ fmi2Status fmi2FreeFMUstate(fmi2Component  c,
   char s[128];
 
   if (_states.count(*state) > 0) {
-    _states.erase(*state);
-    snprintf(s, 127, "%s: called for %p; not fully handled yet\n",
+    snprintf(s, 127, "%s: called for %p\n",
              __func__, (void *)*state);
-    _cs_log(fmi2Warning, CS_LOG_WARNING, s);
+    _cs_log(fmi2OK, CS_LOG_TRACE, s);
+    cs_state_t *csst = (cs_state_t *)_states[*state];
+    free(csst->vals);
+    free(csst);
+    _states.erase(*state);
     *state = NULL;
   }
   else {
     snprintf(s, 127, "%s: called for %p, which is not present\n",
            __func__, (void *)*state);
-    _cs_log(fmi2Warning, CS_LOG_WARNING, s);
+    _cs_log(fmi2Error, CS_LOG_WARNING, s);
   }
 
   return fmi2Warning;
@@ -1947,7 +1998,8 @@ fmi2Status fmi2SerializedFMUstateSize(fmi2Component  c,
 
   *stateSize = _serialized_size;
   char s[128];
-  snprintf(s, 127, "%s: called for %p\n", __func__, (void *)state);
+  snprintf(s, 127, "%s: called for %p (%ld bytes)",
+           __func__, (void *)state, (long)_serialized_size);
   _cs_log(fmi2OK, CS_LOG_TRACE, s);
 
   return fmi2OK;
@@ -1968,7 +2020,7 @@ fmi2SerializeFMUstate(fmi2Component  c,
   if (serializedStateSize != _serialized_size) {
     snprintf(s, 127,
              "%s: called for %p\n"
-             "with size %d (%d expected)\n",
+             "with size %d (%d expected)",
              __func__, (void *)state,
              (int)serializedStateSize, (int)_serialized_size);
     _cs_log(fmi2Error, CS_LOG_TRACE, s);
@@ -1980,7 +2032,7 @@ fmi2SerializeFMUstate(fmi2Component  c,
   _serialized_size = 0;
   free(_serialized_data);
 
-  snprintf(s, 127, "%s: called for %p\n", __func__, (void *)state);
+  snprintf(s, 127, "%s: called for %p", __func__, (void *)state);
   _cs_log(fmi2Error, CS_LOG_TRACE, s);
   return fmi2OK;
 }
