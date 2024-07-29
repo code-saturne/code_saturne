@@ -502,7 +502,7 @@ cs_cuda_get_host_ptr(const void  *ptr)
 bool
 cs_cuda_is_device_ptr(const void  *ptr)
 {
-  if (ptr = nullptr)
+  if (ptr == nullptr)
     return true;
 
   cudaPointerAttributes attributes;
