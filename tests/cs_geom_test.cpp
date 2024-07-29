@@ -44,25 +44,27 @@
  * according to its normal.
  *
  * parameters:
- *   nb_vertex    <--> number of vertices of the polygon
- *   vertex_coord <--> coordinates of the vertices (size: 3*nb_vertex)
- *   plane        <--  plane definition (point + unit normal)
+ *   nb_vertex     <--> number of vertices of the polygon
+ *   nb_vertex_max <--> max number of vertices of the polygon
+ *   vertex_coord  <--> coordinates of the vertices (size: 3*nb_vertex)
+ *   plane         <--  plane definition (point + unit normal)
  ----------------------------------------------------------------------------*/
 
 static void
-_polygon_plane_intersection(int          *nb_vertex,
+_polygon_plane_intersection(cs_lnum_t    *nb_vertex,
+                            cs_lnum_t     nb_vtx_max,
                             cs_real_t     vertex_coord[][3],
                             cs_real_t     plane[6])
 {
   /* Initial number of vertices in the polygon */
-  cs_lnum_t n_vtx = *nb_vertex;
+  int n_vtx = *nb_vertex;
   cs_real_3_t *vtx = (cs_real_3_t *)vertex_coord;
 
   cs_real_t _new_vtx[10][3];
   cs_real_3_t *new_vtx = (cs_real_3_t *)_new_vtx;
   if (n_vtx >= 10)
     BFT_MALLOC(new_vtx, n_vtx + 1, cs_real_3_t);
-  cs_lnum_t j = 0;
+  int j = 0;
 
   cs_real_t tolerance_factor = 0.01; /* tunable in "real" code */
 
@@ -124,9 +126,16 @@ _polygon_plane_intersection(int          *nb_vertex,
     }
   }
 
-  for (cs_lnum_t i = 0; i < j; i++) {
+  if (j > nb_vtx_max)
+    bft_error(__FILE__, __LINE__, 0,
+              "%s: %d intersections detected, but local buffer sized\n"
+              " for %d intersections max. Need to increase this in caller\n"
+              " or check the theory.",
+              __func__, j, nb_vtx_max);
+
+  for (int i = 0; i < j; i++) {
     printf("%d: ", i);
-    for (cs_lnum_t dir = 0; dir < 3; dir ++) {
+    for (int dir = 0; dir < 3; dir ++) {
       vtx[i][dir] = new_vtx[i][dir];
       printf(" %g", vtx[i][dir]);
     }
@@ -149,7 +158,7 @@ main (int argc, char *argv[])
 
   int nb_vertex = 4;
   cs_real_3_t *vertex_coord;
-  BFT_MALLOC(vertex_coord, 4, cs_real_3_t);
+  BFT_MALLOC(vertex_coord, 10, cs_real_3_t);
 
   for (int p_id = 0; p_id < 3; p_id++) {
     vertex_coord[0][0] = 9;
@@ -183,9 +192,7 @@ main (int argc, char *argv[])
 
     printf("polygon_plane_intersection test %d\n", p_id);
 
-    _polygon_plane_intersection(&nb_vertex,
-                                vertex_coord,
-                                plane);
+    _polygon_plane_intersection(&nb_vertex, 10, vertex_coord, plane);
   }
 
   exit(EXIT_SUCCESS);

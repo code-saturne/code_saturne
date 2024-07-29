@@ -174,7 +174,6 @@ static bool
 _triangle_box_intersect(const cs_real_t  box_extents[6],
                         const cs_real_t  tria_coords[3][3])
 {
-
   // Origin axis
   cs_real_t e[3][3] = {{1.0, 0.0, 0.0}, {0.0, 1.0, 0.0}, {0.0, 0.0, 1.0}};
 
@@ -252,9 +251,8 @@ _triangle_box_intersect(const cs_real_t  box_extents[6],
   cs_real_t pmin = fmin(p[0], fmin(p[1],p[2]));
   cs_real_t pmax = fmax(p[0], fmax(p[1],p[2]));
 
-  if ( pmin > r || pmax < -r )
+  if (pmin > r || pmax < -r)
     return false;
-
 
   return true;
 }
@@ -295,25 +293,27 @@ _is_point_inside_plane(cs_real_t plane[6],
  * according to its normal.
  *
  * parameters:
- *   nb_vertex    <--> number of vertices of the polygon
- *   vertex_coord <--> coordinates of the vertices (size: 3*nb_vertex)
- *   plane        <--  plane definition (point + unit normal)
+ *   nb_vertex     <--> number of vertices of the polygon
+ *   nb_vertex_max <--> max number of vertices of the polygon
+ *   vertex_coord  <--> coordinates of the vertices (size: 3*nb_vertex)
+ *   plane         <--  plane definition (point + unit normal)
  ----------------------------------------------------------------------------*/
 
 static void
-_polygon_plane_intersection(int          *nb_vertex,
+_polygon_plane_intersection(cs_lnum_t    *nb_vertex,
+                            cs_lnum_t     nb_vtx_max,
                             cs_real_t     vertex_coord[][3],
                             cs_real_t     plane[6])
 {
   /* Initial number of vertices in the polygon */
-  cs_lnum_t n_vtx = *nb_vertex;
+  int n_vtx = *nb_vertex;
   cs_real_3_t *vtx = (cs_real_3_t *)vertex_coord;
 
   cs_real_t _new_vtx[10][3];
   cs_real_3_t *new_vtx = (cs_real_3_t *)_new_vtx;
   if (n_vtx >= 10)
     BFT_MALLOC(new_vtx, n_vtx + 1, cs_real_3_t);
-  cs_lnum_t j = 0;
+  int j = 0;
 
   cs_real_t tolerance_factor = _tolerance_factor;
 
@@ -372,6 +372,19 @@ _polygon_plane_intersection(int          *nb_vertex,
           new_vtx[j][dir] = vtx[v2][dir] + v2_close * xn2 * plane[dir+3];
         j++;
       }
+    }
+  }
+
+  if (j > nb_vtx_max)
+    bft_error(__FILE__, __LINE__, 0,
+              "%s: %d intersections detected, but local buffer sized\n"
+              " for %d intersections max. Need to increase this in caller\n"
+              " or check the theory.",
+              __func__, j, nb_vtx_max);
+
+  for (int i = 0; i < j; i++) {
+    for (int dir = 0; dir < 3; dir ++) {
+      vtx[i][dir] = new_vtx[i][dir];
     }
   }
 
@@ -528,9 +541,10 @@ _exact_triangle_box_surface_intersection(const cs_real_t  box_extents[6],
     return surf;
 
   /* Successively cut the triangle by the planes
-   * defined byt the box faces */
+   * defined by the box faces; each intersection may add
+   * a vertex, and we intersect with 6 planes.*/
   int nv = 3;
-  cs_real_t coords[3][3];
+  cs_real_t coords[10][3];
 
   /* Polygon init */
   for (int i = 0; i < nv; i ++){
@@ -558,7 +572,7 @@ _exact_triangle_box_surface_intersection(const cs_real_t  box_extents[6],
 
   /* Recursively cut the triangle by the planes */
   for (int f = 0; f < 6; f++)
-    _polygon_plane_intersection(&nv, coords, plane[f]);
+    _polygon_plane_intersection(&nv, 10, coords, plane[f]);
 
   /* If no intersection, surface is 0 */
   if (nv ==0) {
