@@ -974,7 +974,7 @@ main(int argc, char *argv[])
 
     bft_printf("\nSpMV pass %d (scattered)\n", id_ie);
     for (cs_lnum_t i = 0; i < _n_vtx; i++)
-      bft_printf("%d (%d): %f %f\n", i, _g_vtx_id[i], y_0[i], y_1[i]);
+      bft_printf("%d (%d): %f %f\n", i, (int)_g_vtx_id[i], y_0[i], y_1[i]);
 
     BFT_FREE(x);
     BFT_FREE(y_0);
