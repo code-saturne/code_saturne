@@ -355,7 +355,7 @@ cs_user_lagr_imposed_motion(const cs_lagr_particle_set_t *particles,
 void
 cs_user_lagr_in_force_coords(cs_lagr_particle_set_t         *particles,
                              const cs_lagr_injection_set_t  *zis,
-                             cs_lnum_t                       particle_range[2],
+                             const cs_lnum_t                 particle_range[2],
                              const cs_lnum_t                 particle_face_id[],
                              const cs_real_t                 visc_length[])
 {
