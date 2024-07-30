@@ -1202,7 +1202,8 @@ class Studies(object):
         self.__postpro           = options.post
         self.__slurm_batch       = options.slurm_batch
         self.__slurm_batch_size  = options.slurm_batch_size
-        self.__slurm_batch_wtime = options.slurm_batch_wtime
+        # Convert in minutes
+        self.__slurm_batch_wtime = options.slurm_batch_wtime * 60
         self.__slurm_batch_args  = options.slurm_batch_args
         self.__sheet             = options.sheet
         self.__default_fmt       = options.default_fmt
