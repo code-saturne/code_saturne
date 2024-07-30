@@ -85,45 +85,6 @@ cs_user_lagr_ef(cs_real_t            dt_p,
                 cs_real_t            rho_p[],
                 cs_real_3_t          fextla[]);
 
-/*
- * \brief User function of the Lagrangian particle-tracking module
- *
- *  User input of physical, numerical and post-processing options.
- */
-/*----------------------------------------------------------------------------*/
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief User modification of newly injected particle location and cell_id.
- *
- * This function is called before the initialization of the new particles in
- * order to initialize them according to new particle positions, to this aim it
- * is necessary to modify the cell_id associated to the particle accordingly.
- *
- * This function is called for each injection zone and class. Particles
- * with ids between \c pset->n_particles and \c n_elts are initialized
- * but may be modified by this function.
- *
- * \param[in,out]  particles         particle set
- * \param[in]      zis               injection data for this set
- * \param[in,out]  particle_range    start and past-the-end ids of new particles
- *                                   for this zone and class
- * \param[in]      particle_face_id  face ids of new particles if zone is
- *                                   a boundary,  NULL otherwise
- * \param[in]      visc_length       viscous layer thickness
- *                                   (size: number of mesh boundary faces)
- *
- *
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_user_lagr_in_modif_pos(cs_lagr_particle_set_t         *particles,
-                          const cs_lagr_injection_set_t  *zis,
-                          cs_lnum_t                       particle_range[2],
-                          const cs_lnum_t                 particle_face_id[],
-                          const cs_real_t                 visc_length[]);
-
-/*---------------------------------------------------------------------------*/
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief User modification of newly injected particles.
@@ -132,10 +93,8 @@ cs_user_lagr_in_modif_pos(cs_lagr_particle_set_t         *particles,
  * order to modify them according to new particle profiles (injection
  * profiles, statistical weights, correction of the diameter if the
  * standard-deviation option is activated); the modification of particles
- * position should preferentially be made in cs_user_lagr_in_modif_pos to
+ * position should preferentially be made in cs_user_lagr_in_force_coords to
  * get an initialization of particle properties coherent with the local fields.
- *
- *
  *
  * This function is called for each injection zone and class. Particles
  * with ids between \c pset->n_particles and \c n_elts are initialized
@@ -158,6 +117,36 @@ cs_user_lagr_in(cs_lagr_particle_set_t         *particles,
                 const cs_lnum_t                 particle_range[2],
                 const cs_lnum_t                 particle_face_id[],
                 const cs_real_t                 visc_length[]);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief User modification of newly injected particle location and cell_id.
+ *
+ * This function is called before the initialization of the new particles in
+ * order to initialize them according to new particle positions, to this aim it
+ * is necessary to modify the cell_id associated to the particle accordingly.
+ *
+ * This function is called for each injection zone and class. Particles
+ * with ids between \c pset->n_particles and \c n_elts are initialized
+ * but may be modified by this function.
+ *
+ * \param[in,out]  particles         particle set
+ * \param[in]      zis               injection data for this set
+ * \param[in,out]  particle_range    start and past-the-end ids of new particles
+ *                                   for this zone and class
+ * \param[in]      particle_face_id  face ids of new particles if zone is
+ *                                   a boundary,  NULL otherwise
+ * \param[in]      visc_length       viscous layer thickness
+ *                                   (size: number of mesh boundary faces)
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_user_lagr_in_force_coords(cs_lagr_particle_set_t         *particles,
+                             const cs_lagr_injection_set_t  *zis,
+                             cs_lnum_t                       particle_range[2],
+                             const cs_lnum_t                 particle_face_id[],
+                             const cs_real_t                 visc_length[]);
 
 /*---------------------------------------------------------------------------*/
 /*

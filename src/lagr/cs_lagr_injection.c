@@ -608,8 +608,7 @@ _get_particle_face_ids(cs_lnum_t         n_faces,
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Update the initial particle values with regard to the new cell_id if
- *        modified in cs_user_lagr_in_modif_pos
- *
+ *        modified in cs_user_lagr_in_force_coords.
  *
  * \param[in,out]  p_set             particle set
  * \param[in]      particle_range    start and past-the-end ids of new particles
@@ -618,7 +617,6 @@ _get_particle_face_ids(cs_lnum_t         n_faces,
  *                                     0: use fields at current time step
  *                                     1: use fields at previous time step
  * \param[in]      zis               injection data for this zone and set
- *
  */
 /*----------------------------------------------------------------------------*/
 
@@ -1583,7 +1581,8 @@ cs_lagr_injection(int        time_id,
         bft_error
           (__FILE__, __LINE__, 0,
            _("Lagrangian boundary zone %d nature is of type CS_LAGR_FOULING,\n"
-             "but cs_glob_lagr_model->physical_model is not equal to CS_LAGR_PHYS_COAL."),
+             "but cs_glob_lagr_model->physical_model is not"
+             " equal to CS_LAGR_PHYS_COAL."),
            z_id);
       if (   zd->zone_type[z_id] == CS_LAGR_FOULING
           && cs_glob_lagr_model->fouling != 1)
@@ -1791,7 +1790,6 @@ cs_lagr_injection(int        time_id,
                           z_elt_ids,
                           elt_particle_idx);
 
-
           /* Advanced user modification:
 
            WARNING: the user may change the particle coordinates but is
@@ -1824,14 +1822,13 @@ cs_lagr_injection(int        time_id,
               saved_coords[i][j] = p_coords[j];
           }
 
-          cs_user_lagr_in_modif_pos(p_set,
-                                    zis,
-                                    particle_range,
-                                    particle_face_ids,
-                                    visc_length);
+          cs_user_lagr_in_force_coords(p_set,
+                                   zis,
+                                   particle_range,
+                                   particle_face_ids,
+                                   visc_length);
 
-
-          bool is_modified_pos = false;
+          bool is_displaced = false;
           /* For safety, reset saved values for cell number and previous
              particle coordinates and rank_id. */
           for (cs_lnum_t p_id = p_set->n_particles - n_inject;
@@ -1842,14 +1839,13 @@ cs_lagr_injection(int        time_id,
 
             cs_lnum_t i = p_id + n_inject - p_set->n_particles;
 
-
             cs_lagr_particles_set_lnum(p_set,
                                          p_id,
                                          CS_LAGR_CELL_ID,
                                          saved_cell_id[i]);
 
             cs_lagr_particles_set_lnum_n(p_set, p_id, 1, CS_LAGR_RANK_ID,
-                                                      cs_glob_rank_id);
+                                         cs_glob_rank_id);
 
             const cs_real_t *p_coords
               = cs_lagr_particles_attr_const(p_set,
@@ -1873,10 +1869,10 @@ cs_lagr_injection(int        time_id,
             if (   fabs(disp[0] * inv_ref_length) > 1e-15
                 || fabs(disp[1] * inv_ref_length) > 1e-15
                 || fabs(disp[2] * inv_ref_length) > 1e-15)
-              is_modified_pos = true;
+              is_displaced = true;
           }
 
-          if (is_modified_pos) {
+          if (is_displaced) {
             /* Tracking step to determine the cell_id of the  new location */
             cs_lagr_tracking_particle_movement(visc_length, particle_range);
 
@@ -1884,7 +1880,7 @@ cs_lagr_injection(int        time_id,
           }
 
           /* The number of particles injected in each rank may have been modify
-           * in the tracking step within cs_user_lagr_in_modif_pos */
+           * in the tracking step within cs_user_lagr_in_force_coords */
           cs_lnum_t prev_n_inject = n_inject;
           n_inject = particle_range[1] - particle_range[0];
 
@@ -1955,8 +1951,9 @@ cs_lagr_injection(int        time_id,
             /* Just after injection, compute the next particle position with
              * a reduce integration time so as to simulate continuous injection
              */
-            cs_real_t res_time = cs_lagr_particles_get_real(p_set, p_id,
-                                                            CS_LAGR_RESIDENCE_TIME);
+            cs_real_t res_time
+              = cs_lagr_particles_get_real(p_set, p_id,
+                                           CS_LAGR_RESIDENCE_TIME);
 
             if (res_time < 0) {
 

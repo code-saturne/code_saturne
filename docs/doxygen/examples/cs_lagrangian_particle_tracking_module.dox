@@ -212,7 +212,7 @@
   profiles, position of the injection point, statistical weights,
   correction of the diameter if the standard-deviation option is activated).
   \warning The modification of particles
-  position must be made in \ref cs_user_lagr_in_modif_pos to
+  position must be made in \ref cs_user_lagr_in_force_pos to
   get an initialization of particle properties coherent with the local fields.
 
   This function is called for each injection zone and set. Particles

@@ -351,19 +351,19 @@ cs_user_lagr_imposed_motion(const cs_lagr_particle_set_t *particles,
 /*----------------------------------------------------------------------------*/
 
 /*! [lagr_inj_pos] */
-#pragma weak cs_user_lagr_in_modif_pos
+#pragma weak cs_user_lagr_in_force_coords
 void
-cs_user_lagr_in_modif_pos(cs_lagr_particle_set_t         *particles,
-                          const cs_lagr_injection_set_t  *zis,
-                          cs_lnum_t                       particle_range[2],
-                          const cs_lnum_t                 particle_face_id[],
-                          const cs_real_t                 visc_length[])
+cs_user_lagr_in_force_coords(cs_lagr_particle_set_t         *particles,
+                             const cs_lagr_injection_set_t  *zis,
+                             cs_lnum_t                       particle_range[2],
+                             const cs_lnum_t                 particle_face_id[],
+                             const cs_real_t                 visc_length[])
 {
   CS_UNUSED(zis);
   CS_UNUSED(particle_face_id);
   CS_UNUSED(visc_length);
 
-  cs_real_3_t dest   = {0., 0., 0.};
+  cs_real_t dest[3]  = {0., 0., 0.};
   for (cs_lnum_t p_id = particle_range[0]; p_id < particle_range[1]; p_id++) {
     cs_real_t *part_coord
       = cs_lagr_particles_attr(particles, p_id, CS_LAGR_COORDS);
@@ -382,7 +382,7 @@ cs_user_lagr_in_modif_pos(cs_lagr_particle_set_t         *particles,
  * order to modify them according to new particle profiles (injection
  * profiles, statistical weights, correction of the diameter if the
  * standard-deviation option is activated); the modification of particles
- * position must be made in cs_user_lagr_in_modif_pos to
+ * position must be made in cs_user_lagr_in_force_coords to
  * get an initialization of particle properties coherent with the local fields.
  *
  * This function is called for each injection zone and set. Particles
