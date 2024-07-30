@@ -62,7 +62,6 @@ use ppincl
 use cfpoin
 use lagran
 use radiat
-use cplsat
 use mesh
 use field
 use cs_c_bindings

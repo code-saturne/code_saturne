@@ -2761,7 +2761,7 @@ cs_parameters_eqp_complete(void)
     cs_glob_ale_need_init = 0;
   }
 
-  /* Parameters of cplsat */
+  /* Global Parameters */
 
   const int nbrcpl = cs_sat_coupling_n_couplings();
   if (nbrcpl >= 1 && iturbo != 0) {

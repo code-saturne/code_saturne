@@ -178,28 +178,6 @@ static int _cs_sat_coupling_initialized = 0;
 
 int  cs_glob_sat_coupling_face_interpolation_type = 0;
 
-/*==============================================================================
- * Prototypes for functions intended for use only by Fortran wrappers.
- * (descriptions follow, with function bodies).
- *============================================================================*/
-
-void
-cs_f_sat_coupling_get_pointers(int  **ifaccp);
-
-/*==============================================================================
- * Functions intended for use only by Fortran wrappers.
- *============================================================================*/
-
-/*----------------------------------------------------------------------------
- * Get pointers for Fortran bindings.
- *----------------------------------------------------------------------------*/
-
-void
-cs_f_sat_coupling_get_pointers(int  **ifaccp)
-{
-  *ifaccp = &cs_glob_sat_coupling_face_interpolation_type;
-}
-
 /*============================================================================
  * Private function definitions
  *============================================================================*/

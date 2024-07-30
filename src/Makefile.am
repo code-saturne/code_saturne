@@ -54,7 +54,6 @@ base/field_operator.f90 \
 base/albase.f90 \
 base/cavitation.f90 \
 base/cdomod.f90 \
-base/cplsat.f90 \
 base/cstphy.f90 \
 base/cstnum.f90 \
 base/dimens.f90 \
@@ -88,8 +87,7 @@ base/turbomachinery.f90
 # Module dependencies (handled manually, as Automake does
 # not yet handle Fortran module dependencies)
 
-base/albase.$(OBJEXT): base/cplsat.$(OBJEXT) base/optcal.$(OBJEXT) \
- base/cs_c_bindings.$(OBJEXT)
+base/albase.$(OBJEXT): base/optcal.$(OBJEXT) base/cs_c_bindings.$(OBJEXT)
 
 base/cavitation.$(OBJEXT): base/cstphy.$(OBJEXT) base/field.$(OBJEXT) \
  base/numvar.$(OBJEXT) base/optcal.$(OBJEXT) base/pointe.$(OBJEXT) \
@@ -102,13 +100,10 @@ base/vof.$(OBJEXT): base/cstphy.$(OBJEXT) base/field.$(OBJEXT) \
  base/mesh.$(OBJEXT) base/paramx.$(OBJEXT) base/entsor.$(OBJEXT) \
  base/parall.$(OBJEXT) base/rotation.$(OBJEXT) base/turbomachinery.$(OBJEXT)
 
-base/cplsat.$(OBJEXT): base/paramx.$(OBJEXT)
-
 base/cstphy.$(OBJEXT): base/paramx.$(OBJEXT)
 
 base/cs_c_bindings.$(OBJEXT): base/paramx.$(OBJEXT) base/entsor.$(OBJEXT) \
- base/mesh.$(OBJEXT) base/period.$(OBJEXT) base/field.$(OBJEXT) \
- base/cplsat.$(OBJEXT)
+ base/mesh.$(OBJEXT) base/period.$(OBJEXT) base/field.$(OBJEXT)
 
 base/cs_nz_condensation.$(OBJEXT): base/mesh.$(OBJEXT)
 
@@ -133,8 +128,7 @@ base/pointe.$(OBJEXT): base/paramx.$(OBJEXT) base/mesh.$(OBJEXT) \
 
 base/rotation.$(OBJEXT): base/paramx.$(OBJEXT)
 
-base/turbomachinery.$(OBJEXT): base/mesh.$(OBJEXT) base/cstphy.$(OBJEXT) \
- base/cplsat.$(OBJEXT)
+base/turbomachinery.$(OBJEXT): base/mesh.$(OBJEXT) base/cstphy.$(OBJEXT)
 
 atmo/atincl.$(OBJEXT): pprt/ppppar.$(OBJEXT) pprt/ppincl.$(OBJEXT) \
  base/mesh.$(OBJEXT) atmo/atsoil.$(OBJEXT) base/cs_c_bindings.$(OBJEXT) \

@@ -45,7 +45,6 @@ use pointe
 use albase
 use parall
 use period
-use cplsat
 use ppincl
 use ppcpfu
 use mesh
@@ -127,7 +126,6 @@ iporf = -1
 
 call atmo_init
 call cdo_init
-call cplsat_init
 call time_step_init
 call time_step_options_init
 call thermal_model_init

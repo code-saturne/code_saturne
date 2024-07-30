@@ -62,7 +62,6 @@ use ppthch
 use ppincl
 use cfpoin
 use lagran
-use cplsat
 use mesh
 use field
 use turbomachinery
