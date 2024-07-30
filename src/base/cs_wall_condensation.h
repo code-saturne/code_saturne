@@ -85,7 +85,8 @@ typedef struct {
        - 1 for an variable at imposed value.
        See \ref cs_user_wall_condensation*/
   cs_lnum_t *itypcd;
-  /*! list of the zones associated to the faces where a condensation source term */
+  /*! list of the zones associated to the faces whith a
+    condensation source term */
   cs_lnum_t *izzftcd;
   /*! value of the condensation source terms for pressure.
       For the other variables, eventual imposed specific value.
@@ -119,30 +120,31 @@ typedef struct {
        by default (nzones = 1) if the user does not specified different zones
        in the user \ref cs_user_wall_condensation.c .*/
   cs_lnum_t  nzones;
-  /*! choice the way to compute the exchange coefficient of the
+  /*! compute method for the exchange coefficient of the
       condensation source term used by the copain model.
-        - 1: the turbulent exchange coefficient of the flow
-        - 2: the exchange coefficient of the copain correlation
-        - 3: the maximal value between the two previous exchange coefficients */
+      - 1: the turbulent exchange coefficient of the flow
+      - 2: the exchange coefficient of the copain correlation
+      - 3: the maximal value between the two previous exchange coefficients */
   cs_lnum_t *izcophc;
-  /*! choice the way to compute the thermal exchange coefficient associated
+  /*! compute method for the thermal exchange coefficient associated
       to the heat transfer to the wall due to the condensation phenomenon.
         - 2: the thermal exchange coefficient of the copain correlation
         - 3: the maximal value between the current and previous thermal
              exchange coefficient evaluated by the copain correlation */
   cs_lnum_t *izcophg;
-  /*! choice the way to compute the wall temperature at the solid/fluid interface
+  /*! compute method for the wall temperature at the solid/fluid interface
       coupled with condensation to the wall
-        - 1: the wall temperature is computed with a 1-D thermal model
-             with implicit numerical scheme
-        - 0: the wall temperature is imposed as constant by the user (default)
+      - 1: the wall temperature is computed with a 1-D thermal model
+           with implicit numerical scheme
+      - 0: the wall temperature is imposed as constant by the user (default)
            exchange coefficient evaluated by the copain correlation */
   cs_lnum_t *iztag1d;
   /*! Constant value of the wall temperature given by the user when
       the thermal 1D model is not activated for the condensation model with
       different zones specified in the user \ref cs_user_wall_condensation. */
   cs_real_t *ztpar;
-  /*! Coordinates of the reference point for forced and mixed convection regimes */
+  /*! Coordinates of the reference point for forced and mixed
+    convection regimes */
   cs_real_t *zxrefcond;
   cs_real_t *zprojcond;
 
@@ -176,12 +178,13 @@ typedef struct {
       associated to the metal structures modelling.
       See the user function \ref cs_user_wall_condensation. */
   cs_real_t *flxmst;
-  /*! choice the way to compute the wall temperature at the solid/fluid interface
-      coupled with condensation to the metal mass structures wall
-       - 1: the wall temperature is computed with a 0-D thermal model
-            with explicit numerical scheme
-       - 0: the wall temperature is imposed as constant by the user (default)
-            and past to the copain correlation to evaluate the exchange coefficient */
+  /*! compute method for the wall temperature at the solid/fluid
+    interface coupled with condensation to the metal mass structures wall
+    - 1: the wall temperature is computed with a 0-D thermal model
+         with explicit numerical scheme
+    - 0: the wall temperature is imposed as constant by the user (default)
+         and passed to the copain correlation to evaluate the
+         exchange coefficient */
   cs_lnum_t *itagms;
 
 } cs_wall_condensation_t;
@@ -200,7 +203,7 @@ extern const cs_wall_condensation_t  *cs_glob_wall_condensation;
  *============================================================================*/
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Provide writable access to _wall_cond structure.
  *
  * \return pointer to global wall_cond structure
@@ -211,7 +214,7 @@ cs_wall_condensation_t *
 cs_get_glob_wall_condensation(void);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Set the wall condensation model
  *
  * \param[in] model    integer corresponding to the desired model
@@ -222,7 +225,7 @@ void
 cs_wall_condensation_set_model(cs_wall_cond_natural_conv_model_t  model);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Set the onoff state of wall condensation modeling
  *
  * \param[in] icondb  integer corresponding to the onoff state (-1: off, 0: on)
@@ -236,9 +239,8 @@ cs_wall_condensation_set_onoff_state(int  icondb,
                                      int  icondv);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief  Create the context for wall condensation models.
- *
  */
 /*----------------------------------------------------------------------------*/
 
@@ -246,7 +248,7 @@ void
 cs_wall_condensation_create(void);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief  Free all structures related to wall condensation models
  */
 /*----------------------------------------------------------------------------*/
@@ -255,7 +257,29 @@ void
 cs_wall_condensation_free(void);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
+ * \brief  Initialize wall condensation models.
+ *
+ * This includes building the associated meshes.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_wall_condensation_initialize(void);
+
+/*----------------------------------------------------------------------------*/
+/*
+ * \brief Return condensing volume structures surface at each cell.
+ *
+ * \param[out]  surf  array of volume structure surfaces at each cell
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_wall_condensation_volume_exchange_surf_at_cells(cs_real_t  *surf);
+
+/*----------------------------------------------------------------------------*/
+/*
  * \brief Compute the wall condensation source terms.
  */
 /*----------------------------------------------------------------------------*/
@@ -264,7 +288,7 @@ void
 cs_wall_condensation_compute(cs_real_t  total_htc[]);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Output statistics about wall condensation source terms (for user log)
  */
 /*----------------------------------------------------------------------------*/
@@ -285,7 +309,6 @@ cs_wall_condensation_log(void);
  *                           to be stored in the matrix
  */
 /*----------------------------------------------------------------------------*/
-
 
 void
 cs_wall_condensation_source_terms(const cs_field_t  *f,

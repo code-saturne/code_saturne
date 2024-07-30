@@ -175,43 +175,6 @@ cs_f_wall_condensation_get_model_pointers
    int                                **icondv,
    cs_wall_cond_natural_conv_model_t  **icondb_model);
 
-void
-cs_f_wall_condensation_get_size_pointers(cs_lnum_t **nfbpcd,
-                                         cs_lnum_t **nzones,
-                                         cs_lnum_t **ncmast,
-                                         cs_lnum_t **nvolumes,
-                                         int       **nztag1d);
-
-void
-cs_f_wall_condensation_get_pointers(cs_lnum_t **ifbpcd,
-                                    cs_lnum_t **itypcd,
-                                    cs_lnum_t **izzftcd,
-                                    cs_real_t **spcond,
-                                    cs_real_t **hpcond,
-                                    cs_real_t **twall_cond,
-                                    cs_real_t **thermflux,
-                                    cs_real_t **flthr,
-                                    cs_real_t **dflthr,
-                                    cs_lnum_t **izcophc,
-                                    cs_lnum_t **izcophg,
-                                    cs_lnum_t **iztag1d,
-                                    cs_real_t **ztpar,
-                                    cs_real_t **xrefcond,
-                                    cs_real_t **projcond,
-                                    cs_lnum_t **ltmast,
-                                    cs_lnum_t **itypst,
-                                    cs_lnum_t **izmast,
-                                    cs_real_t **svcond,
-                                    cs_real_t **flxmst,
-                                    cs_lnum_t **itagms);
-
-void
-cs_f_wall_condensation_source_terms(const int        id,
-                                    const cs_real_t  xcpp[],
-                                    const cs_real_t  pvara[],
-                                    cs_real_t        st_exp[],
-                                    cs_real_t        st_imp[]);
-
 /*============================================================================
  * Private function definitions
  *============================================================================*/
@@ -810,98 +773,6 @@ cs_f_wall_condensation_get_model_pointers
   *icondb_model = &(_wall_cond.natural_conv_model);
 }
 
-void
-cs_f_wall_condensation_get_size_pointers(cs_lnum_t **nfbpcd,
-                                         cs_lnum_t **nzones,
-                                         cs_lnum_t **ncmast,
-                                         cs_lnum_t **nvolumes,
-                                         int       **nztag1d)
-{
-  *nfbpcd = &(_wall_cond.nfbpcd);
-  *nzones = &(_wall_cond.nzones);
-  *ncmast = &(_wall_cond.ncmast);
-  *nvolumes = &(_wall_cond.nvolumes);
-  *nztag1d  = &(_wall_cond.nztag1d);
-}
-
-void
-cs_f_wall_condensation_get_pointers(cs_lnum_t **ifbpcd,
-                                    cs_lnum_t **itypcd,
-                                    cs_lnum_t **izzftcd,
-                                    cs_real_t **spcond,
-                                    cs_real_t **hpcond,
-                                    cs_real_t **twall_cond,
-                                    cs_real_t **thermflux,
-                                    cs_real_t **flthr,
-                                    cs_real_t **dflthr,
-                                    cs_lnum_t **izcophc,
-                                    cs_lnum_t **izcophg,
-                                    cs_lnum_t **iztag1d,
-                                    cs_real_t **ztpar,
-                                    cs_real_t **zxrefcond,
-                                    cs_real_t **zprojcond,
-                                    cs_lnum_t **ltmast,
-                                    cs_lnum_t **itypst,
-                                    cs_lnum_t **izmast,
-                                    cs_real_t **svcond,
-                                    cs_real_t **flxmst,
-                                    cs_lnum_t **itagms)
-{
-  *ifbpcd     = _wall_cond.ifbpcd;
-  *itypcd     = _wall_cond.itypcd;
-  *izzftcd    = _wall_cond.izzftcd;
-  *spcond     = _wall_cond.spcond;
-  *hpcond     = _wall_cond.hpcond;
-  *twall_cond = _wall_cond.twall_cond;
-  *thermflux  = _wall_cond.thermal_condensation_flux;
-  *flthr      = _wall_cond.flthr;
-  *dflthr     = _wall_cond.dflthr;
-  *izcophc    = _wall_cond.izcophc;
-  *izcophg    = _wall_cond.izcophg;
-  *iztag1d    = _wall_cond.iztag1d;
-  *ztpar      = _wall_cond.ztpar;
-  *zxrefcond  = _wall_cond.zxrefcond;
-  *zprojcond  = _wall_cond.zprojcond;
-
-  *ltmast     = _wall_cond.ltmast;
-  *itypst     = _wall_cond.itypst;
-  *izmast     = _wall_cond.izmast;
-  *svcond     = _wall_cond.svcond;
-  *flxmst     = _wall_cond.flxmst;
-  *itagms     = _wall_cond.itagms;
-}
-
-/*----------------------------------------------------------------------------*/
-/*
- * \brief Explicit and implicit sources terms from sources
- *        condensation computation.
- *
- * \param[in]      f         pointer to field structure
- * \param[in]      xcpp      array of specific heat (Cp)
- * \param[in]      pvara     variable value at time step beginning
- * \param[in,out]  st_exp    explicit source term part linear in the variable
- * \param[in,out]  st_imp    associated value with \c tsexp
- *                           to be stored in the matrix
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_f_wall_condensation_source_terms(const int        id,
-                                    const cs_real_t  xcpp[],
-                                    const cs_real_t  pvara[],
-                                    cs_real_t        st_exp[],
-                                    cs_real_t        st_imp[])
-
-{
-  const cs_field_t *f = cs_field_by_id(id);
-
-  cs_wall_condensation_source_terms(f,
-                                    xcpp,
-                                    pvara,
-                                    st_exp,
-                                    st_imp);
-}
-
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
@@ -957,14 +828,12 @@ cs_wall_condensation_set_onoff_state(int  icondb,
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Create the context for wall condensation models.
- *
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_wall_condensation_create(void)
 {
-
   int n_var = 0;
   const int n_fields = cs_field_n_fields();
 
@@ -1061,36 +930,6 @@ cs_wall_condensation_create(void)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Return condensing volume structures surface at each cell.
- *
- * \param[out]  surf  array of volume structure surfaces at each cell
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_wall_condensation_volume_exchange_surf_at_cells(cs_real_t  *surf)
-{
-  const cs_wall_cond_0d_thermal_t *wall_cond_0d_thermal
-    = cs_glob_wall_cond_0d_thermal;
-
-  const cs_real_t *vol_surf = wall_cond_0d_thermal->volume_surf;
-  const cs_real_t *vol_measure = wall_cond_0d_thermal->volume_measure;
-
-  const cs_real_t *cell_vol = cs_glob_mesh_quantities->cell_vol;
-
-  const cs_lnum_t ncmast = _wall_cond.ncmast;
-  const cs_lnum_t *ltmast = _wall_cond.ltmast;
-  const cs_lnum_t *izmast = _wall_cond.izmast;
-
-  for (cs_lnum_t ii = 0; ii < ncmast; ii++) {
-    const cs_lnum_t c_id = ltmast[ii];
-    const cs_lnum_t vol_id = izmast[ii];
-    surf[ii] = vol_surf[vol_id]*cell_vol[c_id]/vol_measure[vol_id];
-  }
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief  Free all structures related to wall condensation models
  */
 /*----------------------------------------------------------------------------*/
@@ -1125,6 +964,102 @@ cs_wall_condensation_free(void)
   BFT_FREE(_wall_cond.svcond);
   BFT_FREE(_wall_cond.flxmst);
   BFT_FREE(_wall_cond.itagms);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Initialize wall condensation models.
+ *
+ * This includes building the associated meshes.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_wall_condensation_initialize(void)
+{
+  cs_wall_condensation_t *wall_cond = cs_get_glob_wall_condensation();
+  cs_wall_cond_1d_thermal_t *wall_thermal = cs_get_glob_wall_cond_1d_thermal();
+  cs_wall_cond_0d_thermal_t *wall_0d_thermal = cs_get_glob_wall_cond_0d_thermal();
+
+  if (wall_thermal->nzones < 1)
+    wall_thermal->nzones = 1;
+  if (wall_0d_thermal->nvolumes < 1)
+    wall_0d_thermal->nvolumes = 1;
+
+  cs_wall_condensation_1d_thermal_create(wall_cond->nzones);
+
+  cs_wall_condensation_0d_thermal_create(wall_0d_thermal->nvolumes,
+                                         wall_cond->ncmast);
+
+  /* We call cs_user_wall_condensation when there are cells with condensation
+     source terms on at least one processor. We only fill the cell indirection
+     array. However, cs_user_condensation is called on all processors in case
+     the user has implemented global operations. */
+
+  cs_user_wall_condensation(2);
+
+  cs_wall_condensation_set_model(wall_cond->natural_conv_model);
+
+  /* Verification if wall temperature is computed with
+     a 1-D thermal model with implicit numerical scheme */
+  wall_cond->nztag1d = 0;
+  for (cs_lnum_t iz = 0; iz < wall_thermal->nzones; iz++) {
+    for (cs_lnum_t ii = 0; ii < wall_cond->nfbpcd; ii++) {
+      if (wall_cond->izzftcd[ii] == iz && wall_cond->iztag1d[iz] == 1)
+        wall_cond->nztag1d
+          = cs_math_fmax(wall_cond->iztag1d[iz], wall_cond->nztag1d);
+    }
+  }
+
+  cs_parall_max(1, CS_INT_TYPE, &wall_cond->nztag1d);
+
+  if (wall_cond->nztag1d == 1) {
+    // Compute maximal number of discretized points
+    wall_thermal->znmurx = 0;
+    for (cs_lnum_t iz = 0; iz < wall_cond->nzones; iz++) {
+      wall_thermal->znmurx
+        = cs_math_fmax(wall_thermal->znmur[iz], wall_thermal->znmurx);
+    }
+
+    cs_parall_max(1, CS_INT_TYPE, &wall_thermal->znmurx);
+
+    cs_wall_condensation_1d_thermal_mesh_create(wall_thermal->znmurx,
+                                                wall_cond->nfbpcd,
+                                                wall_thermal->nzones);
+
+    //1-D mesh generated and temperature initialization
+    cs_wall_condensation_1d_thermal_mesh_initialize();
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Return condensing volume structures surface at each cell.
+ *
+ * \param[out]  surf  array of volume structure surfaces at each cell
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_wall_condensation_volume_exchange_surf_at_cells(cs_real_t  *surf)
+{
+  const cs_wall_cond_0d_thermal_t *wall_cond_0d_thermal
+    = cs_glob_wall_cond_0d_thermal;
+
+  const cs_real_t *vol_surf = wall_cond_0d_thermal->volume_surf;
+  const cs_real_t *vol_measure = wall_cond_0d_thermal->volume_measure;
+
+  const cs_real_t *cell_vol = cs_glob_mesh_quantities->cell_vol;
+
+  const cs_lnum_t ncmast = _wall_cond.ncmast;
+  const cs_lnum_t *ltmast = _wall_cond.ltmast;
+  const cs_lnum_t *izmast = _wall_cond.izmast;
+
+  for (cs_lnum_t ii = 0; ii < ncmast; ii++) {
+    const cs_lnum_t c_id = ltmast[ii];
+    const cs_lnum_t vol_id = izmast[ii];
+    surf[ii] = vol_surf[vol_id]*cell_vol[c_id]/vol_measure[vol_id];
+  }
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1327,11 +1262,10 @@ cs_wall_condensation_log(void)
     bft_printf(" Total mass sink term [kg/s/m2] on volume structure: %15.12e\n",
                gamma_cond);
   }
-
 }
 
 /*----------------------------------------------------------------------------*/
-/*
+/*!
  * \brief Explicit and implicit sources terms from sources
  *        condensation computation.
  *

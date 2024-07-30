@@ -487,61 +487,10 @@ cs_time_stepping(void)
 
   } /* End test on cs_glob_porous_model >= 1 */
 
-  /* We call cs_user_wall_condensation when there are cells with condensation
-     source terms on at least one processor. We only fill the cell indirection
-     array. However, cs_user_condensation is called on all processors in case
-     the user has implemented global operations. */
-
+  /* Initialize wall condensation model */
   if (   cs_glob_wall_condensation->icondb == 0
-      || cs_glob_wall_condensation->icondv == 0) {
-
-    cs_wall_condensation_t *wall_cond = cs_get_glob_wall_condensation();
-    cs_wall_cond_1d_thermal_t *wall_thermal = cs_get_glob_wall_cond_1d_thermal();
-    cs_wall_cond_0d_thermal_t *wall_0d_thermal = cs_get_glob_wall_cond_0d_thermal();
-
-    if (wall_thermal->nzones < 1)
-      wall_thermal->nzones = 1;
-    if (wall_0d_thermal->nvolumes < 1)
-      wall_0d_thermal->nvolumes = 1;
-
-    cs_wall_condensation_1d_thermal_create(wall_cond->nzones);
-
-    cs_wall_condensation_0d_thermal_create(wall_0d_thermal->nvolumes,
-                                           wall_cond->ncmast);
-
-    cs_user_wall_condensation(2);
-
-    cs_wall_condensation_set_model(wall_cond->natural_conv_model);
-
-    /* Verification if wall temperature is computed with
-       a 1-D thermal model with implicit numerical scheme */
-    wall_cond->nztag1d = 0;
-    for (cs_lnum_t iz = 0; iz < wall_thermal->nzones; iz++)
-      for (cs_lnum_t ii = 0; ii < wall_cond->nfbpcd; ii++)
-        if (wall_cond->izzftcd[ii] == iz && wall_cond->iztag1d[iz] == 1)
-          wall_cond->nztag1d
-            = cs_math_fmax(wall_cond->iztag1d[iz], wall_cond->nztag1d);
-
-    cs_parall_max(1, CS_LNUM_TYPE, &wall_cond->nztag1d);
-
-    if (wall_cond->nztag1d == 1) {
-      // Compute maximal number of discretized points
-      wall_thermal->znmurx = 0;
-      for (cs_lnum_t iz = 0; iz < wall_cond->nzones; iz++)
-        wall_thermal->znmurx
-          = cs_math_fmax(wall_thermal->znmur[iz], wall_thermal->znmurx);
-
-      cs_parall_max(1, CS_LNUM_TYPE, &wall_thermal->znmurx);
-
-      cs_wall_condensation_1d_thermal_mesh_create(wall_thermal->znmurx,
-                                                  wall_cond->nfbpcd,
-                                                  wall_thermal->nzones);
-
-      //1-D mesh generated and temperature initialization
-      cs_wall_condensation_1d_thermal_mesh_initialize();
-    }
-
-  }
+      || cs_glob_wall_condensation->icondv == 0)
+    cs_wall_condensation_initialize();
 
   /* Initialization for the Synthetic turbulence Inlets
      -------------------------------------------------- */

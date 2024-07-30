@@ -344,17 +344,6 @@ cs_prediction_mass_flux(cs_lnum_t  ncesmp,
 void
 cs_fortran_resize_aux_arrays(void);
 
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Return condensing volume structures surface at each cell.
- *
- * \param[out]  surf  array of volume structures surface at each cell
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_wall_condensation_volume_exchange_surf_at_cells(cs_real_t    *surf);
-
 /*============================================================================
  *  User function prototypes
  *============================================================================*/

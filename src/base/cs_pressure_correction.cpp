@@ -81,6 +81,7 @@
 #include "cs_velocity_pressure.h"
 #include "cs_vof.h"
 #include "cs_volume_mass_injection.h"
+#include "cs_wall_condensation.h"
 
 #if defined(DEBUG) && !defined(NDEBUG)
 #include "cs_dbg.h"

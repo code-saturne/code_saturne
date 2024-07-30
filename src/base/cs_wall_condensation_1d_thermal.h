@@ -53,37 +53,51 @@ typedef struct {
   /*! number of the zones with a specific condensation source terms
       depending on the wall temperature and material properties */
   int        nzones;
-  /*! Maximal number of discretized points */
+
+  /*! maximal number of discretized points */
   int        znmurx;
+
   /*! ztheta-scheme of the 1-D thermal model
       - 0 : explicit scheme
       - 1 : implicit scheme */
   cs_real_t *ztheta;
+
   /*! the minimal space step of 1-D thermal model
       by default equal to 0 with a homogeneus space step.
       this numerical parameter is used to impose a
       geometric progression ratio of the mesh refinement */
   cs_real_t *zdxmin;
-  /*! number of discretized points */
+
+  /*! number of discretized points associated to a face */
   cs_lnum_t *znmur;
+
   /*! the wall thickness */
   cs_real_t *zepais;
+
   /*! initial temperature */
   cs_real_t *ztpar0;
+
   /*! exterior exchange coefficient */
   cs_real_t *zhext;
+
   /*! exterior temperature */
   cs_real_t *ztext;
+
   /*! concrete density */
   cs_real_t *zrob;
+
   /*! concrete conductivity coefficient */
   cs_real_t *zcondb;
+
   /*!  concrete specific heat coefficient */
   cs_real_t *zcpb;
+
   /*! initial temperature */
   cs_real_t *ztpar;
+
   /*! space step */
   cs_real_t *zdxp;
+
   /*! wall temperature */
   cs_real_t *ztmur;
 
