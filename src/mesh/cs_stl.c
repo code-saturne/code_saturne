@@ -311,8 +311,8 @@ _polygon_plane_intersection(cs_lnum_t    *nb_vertex,
 
   cs_real_t _new_vtx[10][3];
   cs_real_3_t *new_vtx = (cs_real_3_t *)_new_vtx;
-  if (n_vtx >= 10)
-    BFT_MALLOC(new_vtx, n_vtx + 1, cs_real_3_t);
+  if (nb_vtx_max >= 10)
+    BFT_MALLOC(new_vtx, nb_vtx_max + 1, cs_real_3_t);
   int j = 0;
 
   cs_real_t tolerance_factor = _tolerance_factor;
@@ -339,7 +339,7 @@ _polygon_plane_intersection(cs_lnum_t    *nb_vertex,
     /* If [v1, v2] (almost) tangent then add v2 projected on the plane */
     if (cs_math_fabs(xn1) <= tolerance_v1
         && (cs_math_fabs(xn2) <= tolerance_v2)) {
-      assert(j <= n_vtx);
+      assert(j <= nb_vtx_max);
       for (cs_lnum_t dir = 0; dir < 3; dir++)
         new_vtx[j][dir] = vtx[v2][dir] + xn2 * plane[dir+3];
       j++;
@@ -356,7 +356,7 @@ _polygon_plane_intersection(cs_lnum_t    *nb_vertex,
         cs_real_t d1 = t * edge_length, d2 = (1 - t) * edge_length;
 
         if (d1 > tolerance_v1 && d2 > tolerance_v2) {
-          assert(j <= n_vtx);
+          assert(j <= nb_vtx_max);
           for (cs_lnum_t dir = 0; dir < 3; dir++)
             new_vtx[j][dir] = vtx[v1][dir] + t * (vtx[v2][dir] - vtx[v1][dir]);
           j++;
@@ -366,7 +366,7 @@ _polygon_plane_intersection(cs_lnum_t    *nb_vertex,
       /* If v2 inside the plane (with tolerance) then add v2,
          if its close project it on to the plane */
       if (xn2 >= -tolerance_v2) {
-        assert(j <= n_vtx);
+        assert(j <= nb_vtx_max);
         bool v2_close = cs_math_fabs(xn2) < tolerance_v2;
         for (cs_lnum_t dir = 0; dir < 3; dir++)
           new_vtx[j][dir] = vtx[v2][dir] + v2_close * xn2 * plane[dir+3];
