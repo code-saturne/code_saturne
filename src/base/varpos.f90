@@ -601,6 +601,7 @@ if (iporos.ge.1) then
                       3,& ! dimension
                       .false.,&
                       f_id)
+    call field_set_key_int(f_id, key_restart_file, 7)
     call hide_property(f_id)
 
     ! Center of gravity of solid face immersed in the cells

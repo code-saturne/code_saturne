@@ -3326,6 +3326,7 @@ cs_mesh_quantities_solid_compute(const cs_mesh_t       *m,
     = (cs_real_t *restrict)mq->c_w_face_surf;
   cs_real_3_t *restrict c_w_face_cog
     = (cs_real_3_t *restrict)mq->c_w_face_cog;
+  cs_field_t *f_poro = cs_field_by_name("porosity");
 
   const cs_lnum_t n_cells = m->n_cells;
   const cs_mesh_adjacencies_t *ma = cs_glob_mesh_adjacencies;
@@ -3430,6 +3431,9 @@ cs_mesh_quantities_solid_compute(const cs_mesh_t       *m,
   for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
 
     cs_lnum_t n_w_vtx = 0;
+
+    /* First guess of fluid volume */
+    mq->cell_f_vol[c_id] = (1 - mq->c_disable_flag[c_id]) * mq->cell_vol[c_id];
 
     /* Interior faces */
     const cs_lnum_t s_id_i = c2c_idx[c_id];
@@ -4234,12 +4238,8 @@ cs_mesh_quantities_solid_compute(const cs_mesh_t       *m,
                            0.,
                            (cs_real_t *)c_w_face_normal);
 
-  cs_real_t *nb_scan = cs_field_by_name("nb_scan_points")->val;
   cs_porosity_from_scan_opt_t *poro_from_scan = cs_glob_porosity_from_scan_opt;
-  cs_real_t threshold = poro_from_scan->threshold;
-
   /* Update the cell porosity field value and penalize small fluid cells */
-  cs_field_t *f_poro = cs_field_by_name("porosity");
   cs_real_t poro_threshold = poro_from_scan->porosity_threshold;
 
   for (cs_lnum_t c_id = 0; c_id < m->n_cells; c_id++) {
@@ -4327,7 +4327,7 @@ cs_mesh_quantities_solid_compute(const cs_mesh_t       *m,
     } /* End loop on adjacent cells */
 
     /* Penalizes IBM cell when its neighbors have zero fluid surfaces */
-    if (!(is_active_cell) && nb_scan[c_id] > threshold) {
+    if (!(is_active_cell)) {
 
       mq->c_disable_flag[c_id] = 1;
 

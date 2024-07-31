@@ -207,21 +207,12 @@ cs_time_stepping(void)
   cs_mesh_t *m = cs_glob_mesh;
   cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
 
-  const cs_lnum_t n_i_faces = m->n_i_faces;
-  const cs_lnum_t n_b_faces = m->n_b_faces;
   const cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
-  const cs_lnum_2_t *i_face_cells = (const cs_lnum_2_t *)m->i_face_cells;
-  const cs_real_t *cell_vol = mq->cell_vol;
-  const cs_lnum_t *b_face_cells = m->b_face_cells;
-
   cs_time_step_t *ts = cs_get_glob_time_step();
-  const cs_halo_t *halo = cs_glob_mesh->halo;
   const cs_turb_model_t *turb_model = cs_get_glob_turb_model();
 
   int idtvar = cs_glob_time_step_options->idtvar;
   cs_turbomachinery_model_t iturbo = cs_turbomachinery_get_model();
-
-  int *c_disable_flag = mq->c_disable_flag;
 
   /* Initialization
      -------------- */
@@ -392,112 +383,11 @@ cs_time_stepping(void)
   cs_f_iniva0();
   cs_initialize_fields_stage_0();
 
-  /* Compute the porosity if needed */
   if (cs_glob_porous_model >= 1) {
-
     /* Make fluid surfaces of mesh quantity point to the created fields */
     cs_porous_model_set_has_disable_flag(1);
-
     cs_porous_model_init_fluid_quantities();
-
-    cs_real_t *cell_f_vol = mq->cell_f_vol;
-    cs_real_3_t *i_f_face_normal = (cs_real_3_t *)mq->i_f_face_normal;
-    cs_real_3_t * b_f_face_normal = (cs_real_3_t *)mq->b_f_face_normal;
-    cs_real_t *i_f_face_surf = (cs_real_t *)mq->i_f_face_surf;
-    cs_real_t *b_f_face_surf = mq->b_f_face_surf;
-
-    /* Compute porosity from scan */
-    if (cs_glob_porosity_from_scan_opt->compute_porosity_from_scan) {
-
-      cs_log_printf(CS_LOG_DEFAULT,
-                    _(" Compute porosity field from scan\n"
-                      " WARNING: user porosity will be ignored"
-                      " (GUI, cs_user_porosity.c)"));
-
-      cs_compute_porosity_from_scan();
-
-    }
-    /* Note using porosity from scan: give the hand to the user */
-    else if (cs_glob_porosity_ibm_opt->porosity_mode > 0) {
-
-      cs_log_printf(CS_LOG_DEFAULT,
-                    _(" Compute porosity field from immersed boundaries\n"));
-
-      cs_immersed_boundaries(m, mq);
-    }
-    else {
-
-      cs_gui_porosity();
-      cs_user_porosity(cs_glob_domain);
-
-      cs_real_t *porosi = cs_field_by_name_try("porosity")->val;
-      cs_halo_sync_var(halo, CS_HALO_STANDARD, porosi);
-
-      for (cs_lnum_t c_id = 0; c_id < n_cells_ext; c_id++) {
-        /* Penalisation of solid cells */
-        if (porosi[c_id] < cs_math_epzero) {
-          porosi[c_id] = 0.0;
-          c_disable_flag[c_id] = 1;
-        }
-
-        cell_f_vol[c_id] = cell_vol[c_id] * porosi[c_id];
-      }
-
-      /* For integral formulation, in case of 0 fluid volume, clip fluid faces */
-      if (cs_glob_porous_model == 3) {
-        for (cs_lnum_t f_id = 0; f_id < n_i_faces; f_id++) {
-          /* TODO compute i_f_face_factor with porosi
-             AND fluid surface and surface:
-             epsilon_i*surface/f_surface */
-          if (c_disable_flag[i_face_cells[f_id][0]] == 1) {
-            i_f_face_normal[f_id][0] = 0.0;
-            i_f_face_normal[f_id][1] = 0.0;
-            i_f_face_normal[f_id][2] = 0.0;
-            i_f_face_surf[f_id] = 0.;
-          }
-          else if (c_disable_flag[i_face_cells[f_id][1]] == 1) {
-            i_f_face_normal[f_id][0] = 0.0;
-            i_f_face_normal[f_id][1] = 0.0;
-            i_f_face_normal[f_id][2] = 0.0;
-            i_f_face_surf[f_id] = 0.0;
-          }
-        }
-
-        for (cs_lnum_t f_id = 0; f_id < n_b_faces; f_id++) {
-          /* TODO
-             compute i_f_face_factor with porosi AND fluid surface and surface:
-             epsilon_i*surface/f_surface */
-          if (c_disable_flag[b_face_cells[f_id]] == 1) {
-            b_f_face_normal[f_id][0] = 0.0;
-            b_f_face_normal[f_id][1] = 0.0;
-            b_f_face_normal[f_id][2] = 0.0;
-            b_f_face_surf[f_id] = 0.0;
-          }
-
-        }
-      } /* End test on cs_glob_porous_model = 3 */
-    }
-
-    if (cs_glob_porous_model == 3) {
-      /* Compute solid quantities and update fluid volume and porosity */
-      if (!(cs_glob_porosity_from_scan_opt->use_staircase)) {
-        cs_f_mesh_quantities_solid_compute();
-      }
-    }
-
-    cs_mesh_quantities_fluid_vol_reductions(m, mq);
-
-  } /* End test on cs_glob_porous_model >= 1 */
-
-  /* Initialize wall condensation model */
-  if (   cs_glob_wall_condensation->icondb == 0
-      || cs_glob_wall_condensation->icondv == 0)
-    cs_wall_condensation_initialize();
-
-  /* Initialization for the Synthetic turbulence Inlets
-     -------------------------------------------------- */
-
-  cs_les_inflow_initialize();
+  }
 
   /* Possible restart
      ---------------- */
@@ -515,6 +405,8 @@ cs_time_stepping(void)
 
     cs_restart_map_build();
 
+    /* In the case of points cloud, porosity is a variable
+       and readed here */
     cs_restart_main_and_aux_read();
 
     /* Radiative module restart */
@@ -526,6 +418,8 @@ cs_time_stepping(void)
       cs_restart_lagrangian_checkpoint_read();
 
     cs_les_synthetic_eddy_restart_read();
+
+    cs_porous_model_read();
 
     /* TODO
        cs_restart_map_free may not be called yet, because
@@ -541,6 +435,60 @@ cs_time_stepping(void)
     cs_timer_stats_stop(restart_stats_id);
 
   }
+
+  /* Compute the porosity if needed */
+  if (cs_glob_porous_model >= 1) {
+    /* Compute porosity from scan */
+    if (cs_glob_porosity_from_scan_opt->compute_porosity_from_scan) {
+
+      if (!(cs_glob_porosity_from_scan_opt->use_restart)) {
+        cs_log_printf(CS_LOG_DEFAULT,
+                      _(" Compute porosity field from scan\n"
+                        " WARNING: user porosity will be ignored"
+                        " (GUI, cs_user_porosity.c)"));
+
+        cs_compute_porosity_from_scan();
+      }
+      /* Save pre-process for restart */
+      cs_porous_model_write();
+      cs_porous_model_fluid_surfaces_preprocessing();
+    }
+    /* Note using porosity from scan: give the hand to the user */
+    else if (cs_glob_porosity_ibm_opt->porosity_mode > 0) {
+
+      cs_log_printf(CS_LOG_DEFAULT,
+                    _(" Compute porosity field from immersed boundaries\n"));
+
+      cs_immersed_boundaries(m, mq);
+      cs_porous_model_fluid_surfaces_preprocessing();
+    }
+    else {
+
+      cs_gui_porosity();
+      cs_user_porosity(cs_glob_domain);
+      cs_porous_model_clip();
+
+    }
+
+    if (cs_glob_porous_model == 3) {
+      /* Compute solid quantities and update fluid volume and porosity */
+      if (!(cs_glob_porosity_from_scan_opt->use_staircase)) {
+        cs_porous_model_mesh_quantities_update();
+      }
+    }
+
+    cs_mesh_quantities_fluid_vol_reductions(m, mq);
+  }
+
+  /* Initialize wall condensation model */
+  if (   cs_glob_wall_condensation->icondb == 0
+      || cs_glob_wall_condensation->icondv == 0)
+    cs_wall_condensation_initialize();
+
+  /* Initialization for the Synthetic turbulence Inlets
+     -------------------------------------------------- */
+
+  cs_les_inflow_initialize();
 
   /* Initializations (user and additional)
      dt rom romb viscl visct viscls (tpucou with periodicity)

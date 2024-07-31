@@ -955,6 +955,7 @@ _additional_fields(void)
                                3,
                                false);
     cs_field_set_key_int(cs_field_by_id(f_id), keyvis, CS_POST_ON_LOCATION);
+    cs_field_set_key_int(cs_field_by_id(f_id), key_restart_id, CS_RESTART_IBM);
 
     f_id = _add_property_field("cell_scan_points_color",
                                "Cell color",

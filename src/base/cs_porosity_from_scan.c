@@ -119,7 +119,8 @@ static cs_porosity_from_scan_opt_t _porosity_from_scan_opt = {
   .convection_porosity_threshold = 0.5,
   .porosity_threshold = 1e-12,
   .use_staircase = false,
-  .eigenvalue_criteria = 1e-3
+  .eigenvalue_criteria = 1e-3,
+  .use_restart = false
 };
 
 /*============================================================================
@@ -818,7 +819,7 @@ _prepare_porosity_from_scan(const cs_mesh_t             *m,
       i_f_face_normal[face_id][0] = i_face_normal[face_id][0];
       i_f_face_normal[face_id][1] = i_face_normal[face_id][1];
       i_f_face_normal[face_id][2] = i_face_normal[face_id][2];
-      i_f_face_surf[face_id]      = i_face_surf[face_id]     ;
+      i_f_face_surf[face_id]      = i_face_surf[face_id];
     }
   }
 
@@ -1048,7 +1049,6 @@ cs_compute_porosity_from_scan(void)
   const cs_domain_t *domain = cs_glob_domain;
   const cs_mesh_t *m = domain->mesh;
   const cs_mesh_quantities_t *mq = domain->mesh_quantities;
-  cs_real_t *restrict cell_f_vol = mq->cell_f_vol;
 
   const cs_real_3_t *restrict cell_cen
     = (const cs_real_3_t *restrict)mq->cell_cen;
@@ -1056,22 +1056,11 @@ cs_compute_porosity_from_scan(void)
     = (const cs_real_3_t *restrict)mq->i_face_cog;
   const cs_real_3_t *restrict b_face_cog
     = (const cs_real_3_t *restrict)mq->b_face_cog;
+
   cs_real_3_t *restrict i_f_face_normal =
      (cs_real_3_t *restrict)mq->i_f_face_normal;
   cs_real_3_t *restrict b_f_face_normal =
      (cs_real_3_t *restrict)mq->b_f_face_normal;
-  const cs_lnum_2_t *i_face_cells
-    = (const cs_lnum_2_t *)m->i_face_cells;
-  const cs_lnum_t *b_face_cells
-    = (const cs_lnum_t *)m->b_face_cells;
-  const cs_real_3_t *restrict i_face_normal
-    = (const cs_real_3_t *restrict)mq->i_face_normal;
-  const cs_real_3_t *restrict b_face_normal
-    = (const cs_real_3_t *restrict)mq->b_face_normal;
-  cs_real_t *restrict i_f_face_surf
-    = (cs_real_t *restrict)mq->i_f_face_surf;
-  cs_real_t *restrict b_f_face_surf
-    = (cs_real_t *restrict)mq->b_f_face_surf;
 
   /* Pointer to porosity field */
   cs_field_t *f = cs_field_by_name_try("porosity");
@@ -1300,84 +1289,6 @@ cs_compute_porosity_from_scan(void)
       f->val[c_id] = 0.;
       mq->c_disable_flag[c_id] = 1;
     }
-    cell_f_vol[c_id] = f->val[c_id] * mq->cell_vol[c_id];
-  }
-
-  /* Set interior face values */
-  for (cs_lnum_t face_id = 0; face_id < m->n_i_faces; face_id++) {
-
-    cs_lnum_t c_id0 = i_face_cells[face_id][0];
-    cs_lnum_t c_id1 = i_face_cells[face_id][1];
-
-    cs_real_t face_porosity = CS_MIN(f->val[c_id0], f->val[c_id1]);
-
-    for (cs_lnum_t i = 0; i < 3; i++)
-      i_f_face_normal[face_id][i] = face_porosity * i_face_normal[face_id][i];
-
-    mq->i_f_face_surf[face_id] = cs_math_3_norm(i_f_face_normal[face_id]);
-
-    if (mq->i_f_face_factor != NULL) {
-      //FIXME
-      //if (face_porosity > cs_math_epzero) {
-      //  mq->i_f_face_factor[face_id][0] = cpro_porosi[c_id0] / face_porosity;
-      //  mq->i_f_face_factor[face_id][1] = cpro_porosi[c_id1] / face_porosity;
-      //}
-      //else {
-        mq->i_f_face_factor[face_id][0] = 1.;
-        mq->i_f_face_factor[face_id][1] = 1.;
-      //}
-    }
-
-  }
-
-  /* Set boundary face values */
-  for (cs_lnum_t face_id = 0; face_id < m->n_b_faces; face_id++) {
-
-    cs_lnum_t c_id = b_face_cells[face_id];
-
-    cs_real_t face_porosity = f->val[c_id];
-
-    for (cs_lnum_t i = 0; i < 3; i++)
-      b_f_face_normal[face_id][i] = face_porosity * b_face_normal[face_id][i];
-
-    mq->b_f_face_surf[face_id] = cs_math_3_norm(b_f_face_normal[face_id]);
-
-    if (mq->b_f_face_factor != NULL) {
-      //FIXME
-      //if (face_porosity > cs_math_epzero) {
-      //  mq->b_f_face_factor[face_id] = cpro_porosi[c_id] / face_porosity;
-      //}
-      //else {
-        mq->b_f_face_factor[face_id] = 1.;
-      //}
-    }
-  }
-
-  /* Set interior face values */
-  for (cs_lnum_t face_id = 0; face_id < m->n_i_faces; face_id++) {
-
-    cs_lnum_t c_id0 = i_face_cells[face_id][0];
-    cs_lnum_t c_id1 = i_face_cells[face_id][1];
-
-    if (mq->c_disable_flag[c_id0] == 1 || mq->c_disable_flag[c_id1] == 1) {
-      i_f_face_normal[face_id][0] = 0.;
-      i_f_face_normal[face_id][1] = 0.;
-      i_f_face_normal[face_id][2] = 0.;
-      i_f_face_surf[face_id] = 0.;
-    }
-  }
-
-  /* Set boundary face values */
-  for (cs_lnum_t face_id = 0; face_id < m->n_b_faces; face_id++) {
-
-    cs_lnum_t c_id0 = b_face_cells[face_id];
-
-    if (mq->c_disable_flag[c_id0] == 1) {
-      b_f_face_normal[face_id][0] = 0.;
-      b_f_face_normal[face_id][1] = 0.;
-      b_f_face_normal[face_id][2] = 0.;
-      b_f_face_surf[face_id] = 0.;
-    }
   }
 
   /* Free memory */
@@ -1392,6 +1303,130 @@ cs_compute_porosity_from_scan(void)
   CS_FREE_HD(pvar);
   CS_FREE_HD(dpvar);
   CS_FREE_HD(rhs);
+}
+
+/*--------------------------------------------------------------------*/
+/*!
+ * \brief Write the restart file of the ibm module
+ */
+/*--------------------------------------------------------------------*/
+
+void
+cs_porous_model_write(void) {
+
+  if (   cs_glob_porous_model != 3
+      && !(cs_glob_porosity_from_scan_opt->compute_porosity_from_scan))
+    return;
+
+  cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
+
+  cs_log_printf(CS_LOG_DEFAULT,
+                _("   ** Writing the porous restart file\n"
+                  "-------------------------------------\n"));
+
+  cs_restart_t *porous_restart
+    = cs_restart_create("ibm.csc", NULL, CS_RESTART_MODE_WRITE);
+
+  cs_restart_write_fields(porous_restart, CS_RESTART_IBM);
+
+  /* Store some useful mesh quantities arrays (not a field) */
+  cs_restart_write_section(porous_restart,
+                           "c_disable_flag::vals::0",
+                           CS_MESH_LOCATION_CELLS,
+                           1,
+                           CS_TYPE_int,
+                           mq->c_disable_flag);
+
+  cs_restart_destroy(&porous_restart);
+
+  cs_log_printf(CS_LOG_DEFAULT,_(" Finished writting porous arrays.\n"));
+}
+
+/*--------------------------------------------------------------------*/
+/*!
+ * \brief Read the restart file of the ibm module
+ */
+/*--------------------------------------------------------------------*/
+void
+cs_porous_model_read(void) {
+
+  if (   cs_glob_porous_model != 3
+      && !(cs_glob_porosity_from_scan_opt->compute_porosity_from_scan))
+    return;
+
+  cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
+  char error_name[128];
+
+  cs_log_printf(CS_LOG_DEFAULT,
+                _(" \nReading the porous restart file\n"
+                  " -------------------------------\n"));
+
+  int errcount = 0;
+
+  const char *new_sec_name[] = {"c_w_face_normal",
+                                "cell_scan_points_cog"};
+
+  cs_restart_t *porous_restart
+    = cs_restart_create("ibm.csc", NULL, CS_RESTART_MODE_READ);
+
+  cs_restart_read_fields(porous_restart, CS_RESTART_IBM);
+
+  /* Read some useful mesh quantities arrays (not a field) */
+
+  int ierr = cs_restart_read_section(porous_restart,
+                                     "c_disable_flag::vals::0",
+                                     CS_MESH_LOCATION_CELLS,
+                                     1,
+                                     CS_TYPE_int,
+                                     mq->c_disable_flag);
+
+  if (ierr != CS_RESTART_SUCCESS) {
+    errcount += 1;
+    snprintf(error_name, 127, "%s", "c_disable_flag");
+  }
+
+  /* Check if all all porous arrays are read successfully */
+
+  for (int i = 0; i < 2; i++) {
+
+    cs_field_t *f = cs_field_by_name(new_sec_name[i]);
+
+    char sec_name[128];
+    snprintf(sec_name, 127, "%s::vals::%d", new_sec_name[i], 0);
+
+    int retval = cs_restart_check_section(porous_restart,
+                                          sec_name,
+                                          f->location_id,
+                                          f->dim,
+                                          CS_TYPE_cs_real_t);
+
+    if (retval != CS_RESTART_SUCCESS) {
+      errcount += 1;
+      snprintf(error_name, 127, "%s", new_sec_name[i]);
+    }
+  }
+
+  cs_parall_sum(1, CS_INT_TYPE, &errcount);
+
+  if (errcount > 0) {
+    cs_base_warn(__FILE__, __LINE__);
+    cs_log_printf(CS_LOG_DEFAULT,_("\n Some immersed boundary arrays "
+                                   "could not be read "
+                                   "from a restart file. For example : %s\n\n"),
+                  error_name);
+    /* The .pts cloud of points file must be read */
+    cs_glob_porosity_from_scan_opt->use_restart = 0;
+  }
+  else {
+    cs_log_printf(CS_LOG_DEFAULT,
+                  _(" All immersed boundary arrays are read successfully.\n"));
+    cs_glob_porosity_from_scan_opt->use_restart = 1;
+  }
+
+  cs_restart_destroy(&porous_restart);
+
+  cs_log_printf(CS_LOG_DEFAULT,_(" Finished reading immersed "
+                                 "boundary arrays.\n\n"));
 }
 
 /*----------------------------------------------------------------------------*/

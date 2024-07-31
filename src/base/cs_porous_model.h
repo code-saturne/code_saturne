@@ -105,7 +105,7 @@ cs_porous_model_init_fluid_quantities(void);
 /*----------------------------------------------------------------------------*/
 
 void
-cs_f_mesh_quantities_solid_compute(void);
+cs_porous_model_mesh_quantities_update(void);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -117,6 +117,24 @@ cs_f_mesh_quantities_solid_compute(void);
 
 void
 cs_porous_model_auto_face_porosity(void);
+
+/*----------------------------------------------------------------------------*/
+/*
+ * \brief Preprocess the fluid surfaces.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_porous_model_fluid_surfaces_preprocessing(void);
+
+/*----------------------------------------------------------------------------*/
+/*
+ * \brief Penalize porosity and fluid surfaces.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_porous_model_clip(void);
 
 /*----------------------------------------------------------------------------*/
 

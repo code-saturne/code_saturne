@@ -3064,8 +3064,8 @@ cs_parameters_check(void)
   }
 
   /* Check the consistency of the restart_file key */
-  for (int f_id = 0 ; f_id < cs_field_n_fields() ; f_id++) {
-    cs_field_t  *f = cs_field_by_id(f_id);
+  for (int f_id = 0; f_id < cs_field_n_fields(); f_id++) {
+    cs_field_t *f = cs_field_by_id(f_id);
     cs_restart_file_t r_id = cs_field_get_key_int(f, restart_file_key_id);
     cs_parameters_is_in_range_int(CS_ABORT_DELAYED,
                                 _("while reading input data"),
@@ -3106,7 +3106,6 @@ cs_parameters_check(void)
                                      "restart_file",
                                      r_id,
                                      CS_RESTART_1D_WALL_THERMAL);
-
   }
 
   /* Stop the calculation if needed once all checks have been done */

@@ -64,7 +64,8 @@ typedef enum {
   CS_RESTART_1D_WALL_THERMAL = 5, /*!< save values in 1D wall thermal restart
                                        file */
   CS_RESTART_LES_INFLOW = 6,      /*!< save values in LES inflow restart file */
-  CS_RESTART_N_RESTART_FILES = 7  /*!< Number of types of restart file */
+  CS_RESTART_IBM = 7,             /*!< save values in porous restart file */
+  CS_RESTART_N_RESTART_FILES = 8  /*!< Number of types of restart file */
 
 } cs_restart_file_t ;
 

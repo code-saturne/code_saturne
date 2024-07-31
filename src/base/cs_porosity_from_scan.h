@@ -86,6 +86,7 @@ typedef struct {
   cs_real_t convection_porosity_threshold;
   bool      use_staircase;
   cs_real_t eigenvalue_criteria;
+  int       use_restart;
 } cs_porosity_from_scan_opt_t;
 
 /*============================================================================
@@ -177,6 +178,26 @@ cs_ibm_add_sources_by_file_name(const char *file_name);
 
 void
 cs_compute_porosity_from_scan(void);
+
+/*----------------------------------------------------------------------------*/
+
+/*--------------------------------------------------------------------*/
+/*
+ * \brief Write the restart file of the ibm module
+ */
+/*--------------------------------------------------------------------*/
+
+void
+cs_porous_model_write(void);
+
+/*--------------------------------------------------------------------*/
+/*
+ * \brief Read the restart file of the ibm module
+ */
+/*--------------------------------------------------------------------*/
+
+void
+cs_porous_model_read(void);
 
 /*----------------------------------------------------------------------------*/
 

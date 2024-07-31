@@ -1748,17 +1748,6 @@ module cs_c_bindings
 
     !---------------------------------------------------------------------------
 
-    ! Set has_disable_flag
-
-    subroutine cs_porous_model_set_has_disable_flag(flag)   &
-      bind(C, name='cs_porous_model_set_has_disable_flag')
-      use, intrinsic :: iso_c_binding
-      implicit none
-      integer(kind=c_int), value :: flag
-    end subroutine cs_porous_model_set_has_disable_flag
-
-    !---------------------------------------------------------------------------
-
     ! Set porosity model.
 
     subroutine cs_porous_model_set_model(iporos)   &
