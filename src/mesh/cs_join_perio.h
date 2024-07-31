@@ -63,13 +63,11 @@ BEGIN_C_DECLS
  * *****************
  *
  * INTEGER        iperio    : <-> : do we have periodicity ?
- * INTEGER        iperot    : <-> : do we have periodicity of rotation ?
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF(tstjpe, tstjpe)
 (
- int    *iperio,
- int    *iperot
+ int    *iperio
 );
 
 /*=============================================================================

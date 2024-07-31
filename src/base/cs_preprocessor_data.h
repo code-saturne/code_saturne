@@ -77,12 +77,10 @@ typedef enum {
  * *****************
  *
  * integer          iperio      : <-- : Periodicity indicator
- * integer          iperot      : <-- : Number of rotation periodicities
  *----------------------------------------------------------------------------*/
 
 void
-CS_PROCF(ledevi, LEDEVI)(int  *iperio,
-                         int  *iperot);
+CS_PROCF(ledevi, LEDEVI)(int  *iperio);
 
 /*============================================================================
  *  Public function prototypes

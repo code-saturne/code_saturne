@@ -88,7 +88,6 @@ BEGIN_C_DECLS
  * Static global variables
  *============================================================================*/
 
-
 //> Constants for the correlation of steam saturated pressure
 static const cs_real_t pr_c = 221.2e+5;
 static const cs_real_t t_c  = 647.3e0;

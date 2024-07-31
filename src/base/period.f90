@@ -39,13 +39,6 @@ module period
   !> - 0: no periodicity (default value)
   integer, save :: iperio = 0
 
-  !> number of rotation periodicities. automaticly evaluated.
-  !> default value is 0
-  integer, save :: iperot = 0
-
-  ! TODO
-  integer, save :: igrper
-
   !=============================================================================
 
   !> \}

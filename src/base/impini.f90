@@ -76,9 +76,7 @@ implicit none
 ! Local variables
 
 character        chaine*80
-integer          ii
 integer          kscmin, kscmax, keyvar
-integer          f_id, n_fields
 integer          igg, ige
 integer          kturt, turb_flux_model
 
@@ -91,8 +89,6 @@ character(len=4), dimension(3) :: nomext63
 
 nomext3 = (/'[X]', '[Y]', '[Z]'/)
 nomext63 = (/'[11]', '[22]', '[33]'/)
-
-call field_get_n_fields(n_fields)
 
 ! Key ids for clipping
 call field_get_key_id("min_scalar_clipping", kscmin)

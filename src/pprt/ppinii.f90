@@ -28,9 +28,8 @@
 !>
 !------------------------------------------------------------------------------
 
-subroutine ppinii
-
-!===============================================================================
+subroutine ppinii () &
+  bind(C, name='cs_f_ppinii')
 
 !===============================================================================
 ! Module files
@@ -74,14 +73,6 @@ call pp_models_init
 !===============================================================================
 
 ihm = 0 ! enthalpy, common to many models
-
-!> --- Specific condensation modelling
-!>     (icondb, icondv = -1 : not activated by default)
-icondb = -1
-icondv = -1
-
-!> Wall condensation modelling
-icondb_model  = 0 ! Wall condensation correlation (default: COPAIN)
 
 ! ---> Initialisation pour la combustion gaz
 !       Variables transportees

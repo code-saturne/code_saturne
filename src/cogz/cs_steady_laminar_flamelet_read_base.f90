@@ -151,8 +151,10 @@ use coincl
 implicit none
 
 integer ::  ii, jj, mm, nn,ig
+integer :: imprad
 
-open(unit = imprad, file = ficrad, status='old')
+imprad = -1
+open(newunit=imprad, file=ficrad, status='old')
 
 do mm = 1, nki
   do nn = 1, nxr

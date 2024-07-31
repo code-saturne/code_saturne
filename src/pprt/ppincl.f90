@@ -248,13 +248,6 @@ module ppincl
   !>      if =  0 condensation source terms activated
   integer(c_int), pointer, save ::  icondb
 
-  !> Wall condensation correlation (only if icondb > -1)
-  !>      if =  0 legacy copain model
-  !>      if =  1 updated copain model (Benteboula and Dabbene 2020)
-  !>      if =  2 Uchida model (TODO : add ref)
-  !>      if =  3 Dehbi model (Dehbi 2015)
-  integer(c_int), pointer, save ::  icondb_model
-
   !> Specific condensation modelling
   !>      if = -1 module not activated
   !>      if =  0 condensation source terms with metal
@@ -416,12 +409,11 @@ module ppincl
     ! global physical model flags
 
     subroutine cs_f_wall_condensation_get_model_pointers(p_icondb, &
-                                                         p_icondv, &
-                                                         p_icondb_model) &
+                                                         p_icondv) &
       bind(C, name='cs_f_wall_condensation_get_model_pointers')
       use, intrinsic :: iso_c_binding
       implicit none
-      type(c_ptr), intent(out) :: p_icondb, p_icondv, p_icondb_model
+      type(c_ptr), intent(out) :: p_icondb, p_icondv
     end subroutine cs_f_wall_condensation_get_model_pointers
 
     !---------------------------------------------------------------------------
@@ -461,20 +453,17 @@ contains
     ! Local variables
 
     type(c_ptr) :: p_viscv0, p_ippmod
-    type(c_ptr) :: p_icondb, p_icondv, p_icondb_model
+    type(c_ptr) :: p_icondb, p_icondv
 
     call cs_f_fluid_properties_pp_get_pointers(p_viscv0)
     call c_f_pointer(p_viscv0, viscv0)
 
     call cs_f_physical_model_get_pointers(p_ippmod)
-    call cs_f_wall_condensation_get_model_pointers(p_icondb,  &
-                                                   p_icondv,  &
-                                                   p_icondb_model)
+    call cs_f_wall_condensation_get_model_pointers(p_icondb, p_icondv)
 
     call c_f_pointer(p_ippmod, ippmod, [nmodmx])
     call c_f_pointer(p_icondb, icondb)
     call c_f_pointer(p_icondv, icondv)
-    call c_f_pointer(p_icondb_model, icondb_model)
 
   end subroutine pp_models_init
 

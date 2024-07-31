@@ -64,28 +64,11 @@ implicit none
 
 ! Local variables
 
-integer          ii, iscal
+integer        ii, iscal
 
-procedure() :: ledevi, tstjpe, ppinii
-
-!===============================================================================
+procedure() :: ledevi, tstjpe
 
 !===============================================================================
-! 0. STOCKAGE DES ARGUMENTS ET IMPRESSIONS INITIALES
-!===============================================================================
-
-write(nfecra, 900)
-
- 900  format(/,                                                   &
-'===============================================================',&
-/,/,                                                        &
-'                   CALCULATION PREPARATION'                   ,/,&
-'                   ======================='                   ,/,&
-                                                                /,&
-                                                                /,&
-' ===========================================================' ,/,&
-                                                                /,&
-                                                                /)
 
 !===============================================================================
 ! 0. Global field keys
@@ -152,40 +135,14 @@ call map_ale
 call cf_model_init
 call vof_model_init
 call cavitation_model_init
-
 call map_turbomachinery_model(iturbo)
-
-!===============================================================================
-! I/O: entsor.f90
-!===============================================================================
-
-! ---> NFECRA vaut 6 par defaut ou 9 en parallele (CSINIT)
-
-! ---> Fichier thermochimie
-!        FPP : utilisateur
-!        Les deux fichiers peuvent partager la meme unite
-!          puisqu'ils sont lus l'un a pres l'autre.
-
-impfpp = 25
-
-! ---> Fichiers module atmospherique
-call atmo_set_meteo_file_name('meteo')
-
-! ---> Fichiers utilisateurs
-
-do ii = 1, nusrmx
-  impusr(ii) = 69+ii
-enddo
-
-! Here entsor.f90 is completely initialized
 
 !===============================================================================
 ! Get mesh metadata.
 !===============================================================================
 
-call ledevi(iperio, iperot)
-
-call tstjpe(iperio, iperot)
+call ledevi(iperio)
+call tstjpe(iperio)
 
 !===============================================================================
 ! Position of variables in numvar.f90
@@ -204,19 +161,6 @@ do iscal = 1, nscamx
   iscapp(iscal) = 0
   iscasp(iscal) = 0
 enddo
-
-! Default initialization for specific physical models
-
-call ppinii
-
-! Here, all of optcal.f90 is initialized
-
-!===============================================================================
-! Arrays of cstphy.f90
-!===============================================================================
-
-! Reset pther to p0
-pther = p0
 
 return
 end subroutine

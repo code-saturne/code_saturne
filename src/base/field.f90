@@ -580,17 +580,6 @@ module field
 
     !---------------------------------------------------------------------------
 
-    ! Interface to C deallocating and unmapping boundary condition
-    ! coefficients for all variable fields.
-
-    subroutine cs_field_free_bc_codes_all()  &
-      bind(C, name='cs_field_free_bc_codes_all')
-      use, intrinsic :: iso_c_binding
-      implicit none
-    end subroutine cs_field_free_bc_codes_all
-
-    !---------------------------------------------------------------------------
-
     !> (DOXYGEN_SHOULD_SKIP_THIS) \endcond
 
     !---------------------------------------------------------------------------
@@ -1491,92 +1480,6 @@ contains
 
   !=============================================================================
 
-  ! Remove character X, x, U, u, or 1 from a Fortran character string if the
-  ! compared strings are identical except for the last character, respectively
-  ! Y, y, V,v, or 2 and Z, z, W, w, or 3.
-
-  subroutine fldsnv(name1, name2, name3)
-
-    implicit none
-
-    ! Arguments
-
-    character(len=*), intent(inout) :: name1  ! Name of base character string
-    character(len=*), intent(in)    :: name2  ! Name of second character string
-    character(len=*), intent(in)    :: name3  ! Name of third character string
-
-    ! Local variables
-
-    integer :: ii, jj
-    integer :: lnmvar, lnmva2, lnmva3
-
-    lnmvar = len(name1)
-    lnmva2 = len(name2)
-    lnmva3 = len(name3)
-
-    if ((lnmvar .eq. lnmva2) .and. (lnmvar .eq. lnmva3)) then
-
-      do ii = lnmvar, 1, -1
-        if (    name1(ii:ii)  .ne. ' '         &
-            .or. name2(ii:ii) .ne. ' '         &
-            .or. name3(ii:ii) .ne. ' ') exit
-      enddo
-
-      if (ii .gt. 1) then
-
-        jj = ii
-
-        ! Handle the case where the next-to-last character changes, such
-        ! as with VelocityX1, VelocityX2, ... in case of a calculation
-        ! with multiple phases.
-
-        if (      (ii .gt. 2)                                       &
-            .and. (name1(ii:ii) .eq. name2(ii:ii))                  &
-            .and. (name1(ii:ii) .eq. name3(ii:ii))) then
-          ii = jj-1
-        endif
-
-        ! Remove the character related to the spatial axis
-
-        if (      name1(ii:ii) .eq. 'X'                              &
-            .and. name2(ii:ii) .eq. 'Y'                              &
-            .and. name3(ii:ii) .eq. 'Z') then
-          name1(ii:ii) = ' '
-        else if (      name1(ii:ii) .eq. 'x'                         &
-                 .and. name2(ii:ii) .eq. 'y'                         &
-                 .and. name3(ii:ii) .eq. 'z') then
-          name1(ii:ii) = ' '
-        else if (      name1(ii:ii) .eq. 'U'                         &
-                 .and. name2(ii:ii) .eq. 'V'                         &
-                 .and. name3(ii:ii) .eq. 'W') then
-          name1(ii:ii) = ' '
-        else if (      name1(ii:ii) .eq. 'u'                         &
-                 .and. name2(ii:ii) .eq. 'v'                         &
-                 .and. name3(ii:ii) .eq. 'w') then
-          name1(ii:ii) = ' '
-        else if (      name1(ii:ii) .eq. '1'                         &
-                 .and. name2(ii:ii) .eq. '2'                         &
-                 .and. name3(ii:ii) .eq. '3') then
-          name1(ii:ii) = ' '
-        endif
-
-        ! If the next-to last character was removed, shift the last one.
-
-        if (ii .eq. jj+1) then
-          name1(ii:ii) = name1(jj:jj)
-          name1(jj:jj) = ' '
-        endif
-
-      endif
-
-    endif
-
-    return
-
-  end subroutine fldsnv
-
-  !=============================================================================
-
   !> \brief Return a label associated with a field.
 
   !> If the "label" key has been set for this field, its associated string
@@ -2001,66 +1904,6 @@ contains
 
   !=============================================================================
 
-  !> \brief Return pointer to the coefa array of a given vector field
-
-  !> \param[in]     field_id  id of given field (which must be a vector)
-  !> \param[out]    p         pointer to vector field BC coefa values
-
-  subroutine field_get_coefa_v(field_id, p)
-
-    use, intrinsic :: iso_c_binding
-    implicit none
-
-    integer, intent(in)                                      :: field_id
-    double precision, dimension(:,:), pointer, intent(inout) :: p
-
-    ! Local variables
-
-    integer(c_int) :: f_id, p_type, p_rank
-    integer(c_int), dimension(3) :: f_dim
-    type(c_ptr) :: c_p
-
-    f_id = field_id
-    p_type = 1
-    p_rank = 2
-
-    call cs_f_field_bc_coeffs_ptr_by_id(f_id, p_type, p_rank, f_dim, c_p)
-    call c_f_pointer(c_p, p, [f_dim(1), f_dim(2)])
-
-  end subroutine field_get_coefa_v
-
-  !=============================================================================
-
-  !> \brief Return pointer to the coefac array of a given vector field
-
-  !> \param[in]     field_id  id of given field (which must be a vector)
-  !> \param[out]    p         pointer to vector field BC coefa values
-
-  subroutine field_get_coefac_v(field_id, p)
-
-    use, intrinsic :: iso_c_binding
-    implicit none
-
-    integer, intent(in)                                    :: field_id
-    double precision, dimension(:,:), pointer, intent(out) :: p
-
-    ! Local variables
-
-    integer(c_int) :: f_id, p_type, p_rank
-    integer(c_int), dimension(3) :: f_dim
-    type(c_ptr) :: c_p
-
-    f_id = field_id
-    p_type = 7
-    p_rank = 2
-
-    call cs_f_field_bc_coeffs_ptr_by_id(f_id, p_type, p_rank, f_dim, c_p)
-    call c_f_pointer(c_p, p, [f_dim(1), f_dim(2)])
-
-  end subroutine field_get_coefac_v
-
-  !=============================================================================
-
   !> \brief Return pointer to the coefb array of a given scalar field
 
   !> \param[in]     field_id  id of given field (which must be scalar)
@@ -2088,36 +1931,6 @@ contains
     call c_f_pointer(c_p, p, [f_dim(1)])
 
   end subroutine field_get_coefb_s
-
-  !=============================================================================
-
-  !> \brief Return pointer to the coefb array of a given coupled vector field
-
-  !> \param[in]     field_id  id of given field (which must be a vector)
-  !> \param[out]    p         pointer to vector field BC coefa values
-
-  subroutine field_get_coefb_v(field_id, p)
-
-    use, intrinsic :: iso_c_binding
-    implicit none
-
-    integer, intent(in)                                        :: field_id
-    double precision, dimension(:,:,:), pointer, intent(inout) :: p
-
-    ! Local variables
-
-    integer(c_int) :: f_id, p_type, p_rank
-    integer(c_int), dimension(3) :: f_dim
-    type(c_ptr) :: c_p
-
-    f_id = field_id
-    p_type = 2
-    p_rank = 3
-
-    call cs_f_field_bc_coeffs_ptr_by_id(f_id, p_type, p_rank, f_dim, c_p)
-    call c_f_pointer(c_p, p, [f_dim(1), f_dim(2), f_dim(3)])
-
-  end subroutine field_get_coefb_v
 
   !=============================================================================
 
@@ -2181,36 +1994,6 @@ contains
 
   !=============================================================================
 
-  !> \brief Return pointer to the coefaf array of a given vector field
-
-  !> \param[in]     field_id  id of given field (which must be scalar)
-  !> \param[out]    p         pointer to vector field BC coefa values
-
-  subroutine field_get_coefaf_v(field_id, p)
-
-    use, intrinsic :: iso_c_binding
-    implicit none
-
-    integer, intent(in)                                      :: field_id
-    double precision, dimension(:,:), pointer, intent(inout) :: p
-
-    ! Local variables
-
-    integer(c_int) :: f_id, p_type, p_rank
-    integer(c_int), dimension(3) :: f_dim
-    type(c_ptr) :: c_p
-
-    f_id = field_id
-    p_type = 3
-    p_rank = 2
-
-    call cs_f_field_bc_coeffs_ptr_by_id(f_id, p_type, p_rank, f_dim, c_p)
-    call c_f_pointer(c_p, p, [f_dim(1), f_dim(2)])
-
-  end subroutine field_get_coefaf_v
-
-  !=============================================================================
-
   !> \brief Return pointer to the coefbf array of a given scalar field
 
   !> \param[in]     field_id  id of given field (which must be scalar)
@@ -2241,36 +2024,6 @@ contains
 
   !=============================================================================
 
-  !> \brief Return pointer to the coefbf array of a given coupled vector field
-
-  !> \param[in]     field_id  id of given field (which must be scalar)
-  !> \param[out]    p         pointer to vector field BC coefb values
-
-  subroutine field_get_coefbf_v(field_id, p)
-
-    use, intrinsic :: iso_c_binding
-    implicit none
-
-    integer, intent(in)                                        :: field_id
-    double precision, dimension(:,:,:), pointer, intent(inout) :: p
-
-    ! Local variables
-
-    integer(c_int) :: f_id, p_type, p_rank
-    integer(c_int), dimension(3) :: f_dim
-    type(c_ptr) :: c_p
-
-    f_id = field_id
-    p_type = 4
-    p_rank = 3
-
-    call cs_f_field_bc_coeffs_ptr_by_id(f_id, p_type, p_rank, f_dim, c_p)
-    call c_f_pointer(c_p, p, [f_dim(1), f_dim(2), f_dim(3)])
-
-  end subroutine field_get_coefbf_v
-
-  !=============================================================================
-
   !> \brief Map and return icodcl and rcodcl boundary condition arrays.
 
   !> \param[out]  icodcl  pointer to icodcl array
@@ -2296,30 +2049,6 @@ contains
     call c_f_pointer(c_pr, rcodcl, [dim_r(1), dim_r(2), dim_r(3)])
 
   end subroutine field_build_bc_codes_all
-
-  !=============================================================================
-
-  !> \brief Map and return icodcl and rcodcl boundary condition arrays.
-
-  !> \param[out]  icodcl  pointer to icodcl array
-  !> \param[out]  rcodcl  pointer to rcodcl array
-
-  subroutine field_free_bc_codes_all(icodcl, rcodcl)
-
-    use, intrinsic :: iso_c_binding
-    implicit none
-
-    integer, dimension(:,:), pointer, intent(inout) :: icodcl
-    double precision, dimension(:,:,:), pointer, intent(inout) :: rcodcl
-
-    ! Local code
-
-    icodcl => null()
-    rcodcl => null()
-
-    call cs_field_free_bc_codes_all()
-
-  end subroutine field_free_bc_codes_all
 
   !=============================================================================
 

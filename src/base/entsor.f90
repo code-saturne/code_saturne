@@ -64,24 +64,8 @@ module entsor
   character(len=64), save :: ficrad
 
   !> logical unit of the thermochemical data file.
-  !> Useful in case of gas or pulverized coal combustion or electric arcs;
-  integer, save :: impfpp, imprad
-
-  !> \}
-
-  !> \addtogroup userfile
-  !> \{
-
-  ! --- Fichiers utilisateurs
-
-  !> maximal number of user files
-  integer    nusrmx
-  parameter(nusrmx=20)
-
-  !> unit numbers fo potential user specified files.
-  !> Useful if and only if the user needs files
-  !> (therefore always useful, by security)
-  integer, save :: impusr(nusrmx)
+  !> Useful in case of gas combustion;
+  integer, save :: impfpp = 25
 
   !> \}
 

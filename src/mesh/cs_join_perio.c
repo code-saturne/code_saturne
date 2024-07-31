@@ -297,23 +297,17 @@ _perio_face_clean(cs_join_param_t      param,
  * *****************
  *
  * INTEGER        iperio    : <-> : do we have periodicity ?
- * INTEGER        iperot    : <-> : do we have periodicity of rotation ?
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF(tstjpe, tstjpe)
 (
- int    *iperio,
- int    *iperot
+ int    *iperio
 )
 {
-  int i;
-
-  for (i = 0; i < cs_glob_n_joinings; i++) {
+  for (int i = 0; i < cs_glob_n_joinings; i++) {
     cs_join_param_t param = (cs_glob_join_array[i])->param;
     if (param.perio_type > FVM_PERIODICITY_NULL)
       *iperio = 1;
-    if (param.perio_type > FVM_PERIODICITY_TRANSLATION)
-      *iperot = 1;
   }
 }
 

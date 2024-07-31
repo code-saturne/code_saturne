@@ -2151,16 +2151,14 @@ _read_data(int                 file_id,
  *
  * Fortran Interface:
  *
- * subroutine ledevi(iperio, iperot)
+ * subroutine ledevi(iperio)
  * *****************
  *
  * integer          iperio      : <-- : Periodicity indicator
- * integer          iperot      : <-- : Number of rotation periodicities
  *----------------------------------------------------------------------------*/
 
 void
-CS_PROCF(ledevi, LEDEVI)(int  *iperio,
-                         int  *iperot)
+CS_PROCF(ledevi, LEDEVI)(int  *iperio)
 {
   cs_mesh_t  *m = cs_glob_mesh;
 
@@ -2169,15 +2167,11 @@ CS_PROCF(ledevi, LEDEVI)(int  *iperio,
   if (m != NULL) {
     if (m->n_init_perio > 0)
       *iperio = 1;
-    if (m->have_rotation_perio > 0)
-      *iperot = 1;
   }
   else {
     int retval = cs_preprocessor_check_perio();
     if (retval > 0) {
       *iperio = 1;
-      if (retval > 1)
-        *iperot = 1;
     }
   }
 }

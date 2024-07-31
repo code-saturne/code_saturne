@@ -151,20 +151,46 @@ void
 cs_f_iniini(void);
 
 void
-cs_f_ppini1(void);
+cs_f_ppinii(void);
 
 void
-cs_f_atmo_get_soil_zone(cs_lnum_t         *n_elts,
-                        int               *n_soil_cat,
-                        const cs_lnum_t  **elt_ids);
-
-/*----------------------------------------------------------------------------
- * Local variable definitions
- *----------------------------------------------------------------------------*/
+cs_f_ppini1(void);
 
 /*============================================================================
  * Private function definitions
  *============================================================================*/
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief First initialization stages
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_init_setup(void)
+{
+  cs_log_printf
+    (CS_LOG_DEFAULT,
+     _("\n\n"
+       "===============================================================\n\n\n"
+       "                   CALCULATION PREPARATION\n"
+       "                   =======================\n\n\n"
+       "===============================================================\n\n\n"));
+
+  /* File for some specific physical models */
+
+  cs_atmo_set_meteo_file_name("meteo");
+
+  /* Handle some reference and physical values */
+
+  cs_fluid_properties_t *fp = cs_get_glob_fluid_properties();
+  fp->pther = fp->p0;
+
+  /* Other mappings */
+
+  cs_f_iniini();
+  cs_f_ppinii();
+}
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -444,7 +470,7 @@ cs_setup(void)
   cs_time_scheme_t *time_scheme = cs_get_glob_time_scheme();
 
   /* Initialize modules before user has access */
-  cs_f_iniini();
+  _init_setup();
 
   int nmodpp = 0;
   for (int i = 1; i < CS_N_PHYSICAL_MODEL_TYPES; i++) {
