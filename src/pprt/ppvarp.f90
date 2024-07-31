@@ -193,16 +193,9 @@ endif
 if (ippmod(iatmos).ge.0) then
   call cs_atmo_add_variable_fields()
 
-  ! Update scalr id in Fortran no need in c version
   call init_chemistry_pointers()
-  if (ippmod(iatmos).eq.1) then
-    call field_get_id('temperature', f_id)
-    call field_get_key_int_by_name(f_id, "scalar_id", iscalt)
-  end if
+  ! Update scalar id in Fortran no need in c version
   if (ippmod(iatmos).eq.2) then
-    call field_get_id('temperature', f_id)
-    call field_get_key_int_by_name(f_id, "scalar_id", iscalt)
-
     call field_get_id('ym_water', f_id)
     call field_get_key_int_by_name(f_id, "scalar_id", iymw)
 

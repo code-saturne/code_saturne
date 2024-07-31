@@ -115,7 +115,7 @@ cs_atmo_add_variable_fields(void)
                                         CS_MESH_LOCATION_CELLS,
                                         1);
     cs_field_t *f = cs_field_by_id(f_id);
-    cs_add_model_field_indexes(f->id);
+    cs_add_model_thermal_field_indexes(f->id);
     cs_field_set_key_double(f, kscmin, 0.0);
   }
 
@@ -130,7 +130,7 @@ cs_atmo_add_variable_fields(void)
                                         CS_MESH_LOCATION_CELLS,
                                         1);
     cs_field_t *f = cs_field_by_id(f_id);
-    cs_add_model_field_indexes(f->id);
+    cs_add_model_thermal_field_indexes(f->id);
     cs_field_set_key_double(f, kscmin, 200.0);
 
     // total water content
