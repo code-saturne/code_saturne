@@ -11292,7 +11292,9 @@ cs_face_diffusion_potential(const int                   f_id,
       cs_lnum_t ii = i_face_cells[face_id][0];
       cs_lnum_t jj = i_face_cells[face_id][1];
 
-      cs_dispatch_sum(&i_massflux[face_id], i_visc[face_id]*(pvar[ii] - pvar[jj]), i_sum_type);
+      cs_dispatch_sum(&i_massflux[face_id],
+                      i_visc[face_id]*(pvar[ii] - pvar[jj]),
+                      i_sum_type);
     });
 
     /* Mass flow through boundary faces */
