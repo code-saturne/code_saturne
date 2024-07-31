@@ -1952,7 +1952,7 @@ cs_log_iteration_clipping(const char       *name,
 
   _add_clipping(name_id, -1, dim,
                 n_clip_min, n_clip_max,
-                min_pre_clip, max_pre_clip, 0, 0);
+                min_pre_clip, max_pre_clip, NULL, NULL);
 }
 
 /*----------------------------------------------------------------------------*/

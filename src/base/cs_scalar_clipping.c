@@ -164,25 +164,41 @@ cs_scalar_clipping(cs_field_t  *f)
   /* Variances are always clipped at positive values */
 
   /* Compute min and max values */
-  cs_real_t vmin[1] = {HUGE_VAL};
-  cs_real_t vmax[1] = {-HUGE_VAL};
+  cs_real_t *vmin;
+  cs_real_t *vmax;
 
-  for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-    vmin[0] = cs_math_fmin(cvar_scal[c_id], vmin[0]);
-    vmax[0] = cs_math_fmax(cvar_scal[c_id], vmax[0]);
+  BFT_MALLOC(vmin, f->dim, cs_real_t);
+  BFT_MALLOC(vmax, f->dim, cs_real_t);
+
+  for (cs_lnum_t i = 0; i < f->dim; i++) {
+
+    vmin[i] = HUGE_VAL;
+    vmax[i] = -HUGE_VAL;
+
+    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+      vmin[i] = cs_math_fmin(cvar_scal[f->dim * c_id + i], vmin[i]);
+      vmax[i] = cs_math_fmax(cvar_scal[f->dim * c_id + i], vmax[i]);
+    }
   }
 
  /* Clipping of non-variance scalars
   * And first clippings for the variances
   * (usually 0 for min and +grand for max) */
 
-  cs_lnum_t iclmax[1] = {0};
-  cs_lnum_t iclmin[1] = {0};
+  cs_lnum_t *iclmax;
+  cs_lnum_t *iclmin;
+  BFT_MALLOC(iclmin, f->dim, cs_lnum_t);
+  BFT_MALLOC(iclmax, f->dim, cs_lnum_t);
+
+  for (cs_lnum_t i = 0; i < f->dim; i++) {
+    iclmin[i] = 0;
+    iclmax[i] = 0;
+  }
 
   const cs_real_t scminp = cs_field_get_key_double(f, kscmin);
   const cs_real_t scmaxp = cs_field_get_key_double(f, kscmax);
 
-  if (scmaxp > scminp) {
+  if (scmaxp > scminp && f->dim == 1) {
     for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
       if (cvar_scal[c_id] > scmaxp) {
         iclmax[0] += 1;
@@ -240,6 +256,12 @@ cs_scalar_clipping(cs_field_t  *f)
                                   vmax,
                                   iclmin,
                                   iclmax);
+
+
+  BFT_FREE(vmin);
+  BFT_FREE(vmax);
+  BFT_FREE(iclmin);
+  BFT_FREE(iclmax);
 }
 
 /*----------------------------------------------------------------------------*/
