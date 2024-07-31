@@ -51,7 +51,6 @@ use numvar
 use optcal
 use cstphy
 use entsor
-use albase
 use parall
 use ppppar
 use ppthch
@@ -59,12 +58,8 @@ use coincl
 use cpincl
 use ppincl
 use radiat
-use lagran
-use mesh
 use field
-use cavitation
 use cs_c_bindings
-use vof
 
 !===============================================================================
 
@@ -75,26 +70,11 @@ implicit none
 
 ! Local variables
 
-character        chaine*80
-integer          kscmin, kscmax, keyvar
 integer          igg, ige
-integer          kturt, turb_flux_model
-
-character(len=3), dimension(3) :: nomext3
-character(len=4), dimension(3) :: nomext63
 
 !===============================================================================
 ! 1. Introduction
 !===============================================================================
-
-nomext3 = (/'[X]', '[Y]', '[Z]'/)
-nomext63 = (/'[11]', '[22]', '[33]'/)
-
-! Key ids for clipping
-call field_get_key_id("min_scalar_clipping", kscmin)
-call field_get_key_id("max_scalar_clipping", kscmax)
-
-call field_get_key_id("variable_id", keyvar)
 
 write(nfecra,1000)
 
@@ -159,7 +139,7 @@ endif
 "       ", a," + ",f6.3," (",a,") --> ",a,                      /)
 
 !===============================================================================
-! 2. DEFINITION GENERALE DU CAS
+! DEFINITION GENERALE DU CAS
 !===============================================================================
 
 ! --- Dimensions
@@ -181,86 +161,7 @@ write(nfecra,9900)
 '       NSCAPP = ',4x,i10,    ' (Nb specific physics scalars )',/)
 
 !===============================================================================
-! 3. MODELISATION PHYSIQUE
-!===============================================================================
-
-! --- Homogeneous VoF Model
-
-write(nfecra,2101)
-write(nfecra,2111) ivofmt
-
-if (ivofmt.gt.0) then
-
-  write(nfecra,2121) rho1, mu1
-  write(nfecra,2131) rho2, mu2
-  write(nfecra,2141) sigmaS
-  write(nfecra,2151) idrift, kdrift, cdrift
-
-  ! --- cavitation model
-
-  write(nfecra,2100)
-
-  if (iand(ivofmt,VOF_MERKLE_MASS_TRANSFER).ne.0) then
-
-    write(nfecra,2120)
-    write(nfecra,2130)
-
-    write(nfecra,2140) presat, linf, uinf
-    if (itytur.eq.2 .or. itytur.eq.5 .or. iturb.eq.60 .or. iturb.eq.70) then
-      write(nfecra,2150) icvevm, mcav
-    endif
-
-  endif
-
-endif
-
-write(nfecra,9900)
-
-
- 2100 format(                                                     &
-                                                                /,&
-' ** CAVITATION MODEL'                        ,                 /,&
-'    ----------------------------------------',                 /)
- 2120 format(                                                     &
-'  -- Liquid phase: fluid 1',                                   /)
- 2130 format(                                                     &
-'  -- Gas phase: fluid 2',                                      /)
- 2140 format(                                                     &
-'  -- Vaporization/condensation model (Merkle)',                /,&
-'       PRESAT = ', e14.5,    ' (Saturation pressure         )',/,&
-'       LINF   = ', e14.5,    ' (Reference length scale      )',/,&
-'       UINF   = ', e14.5,    ' (Reference velocity          )',/)
- 2150 format(                                                     &
-'  -- Eddy-viscosity correction (Reboud correction)',           /,&
-'       ICVEVM = ',4x,i10,    ' (Activated (1) or not (0)    )',/,&
-'       MCAV   = ', e14.5,    ' (mcav constant               )',/)
-
- 2101 format(                                                     &
-                                                                /,&
-' ** HOMOGENEOUS MIXTURE MODEL VoF'           ,                 /,&
-'    ----------------------------------------',                 /)
- 2111 format(                                                     &
-'       IVOFMT = ',4x,i10,    ' ( 0  : disabled              )',/,&
-'                               ( > 0: enabled               )',/)
- 2121 format(                                                     &
-'  -- Fluid 1:',                                                /,&
-'       RHO1   = ', e14.5,    ' (Reference density           )',/,&
-'       MU1    = ', e14.5,    ' (Ref. molecular dyn. visc.   )',/)
- 2131 format(                                                     &
-'  -- Fluid 2:',                                                /,&
-'       RHO2   = ', e14.5,    ' (Reference density           )',/,&
-'       MU2    = ', e14.5,    ' (Ref. molecular dyn. visc.   )',/)
- 2141 format(                                                     &
-'  -- Surface tension:',                                        /,&
-'       SIGMA  = ', e14.5,    ' (Surface tension             )',/)
- 2151 format(                                                     &
-'  -- Drift velocity:',                                         /,&
-'       IDRIFT = ',4x,i10,    ' (0: disabled; > 0: enabled   )',/,&
-'       KDRIFT = ', e14.5,    ' (Diffusion effect coeff.     )',/,&
-'       CDRIFT = ', e14.5,    ' (Drift flux coeff.           )',/)
-
-!===============================================================================
-! 4. DISCRETISATION DES EQUATIONS
+! DISCRETISATION DES EQUATIONS
 !===============================================================================
 
 ! --- Marche en temps

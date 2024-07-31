@@ -138,6 +138,15 @@ cs_get_glob_vof_parameters(void);
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Log setup of VoF model.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_vof_log_setup(void);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Compute the mixture density, mixture dynamic viscosity given fluid
  *         volume fractions and the reference density and dynamic viscosity
  *         \f$ \rho_l, \mu_l \f$ (liquid), \f$ \rho_v, \mu_v \f$ (gas).

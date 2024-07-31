@@ -73,6 +73,7 @@
 #include "cs_turbulence_model.h"
 #include "cs_lagr_log.h"
 #include "cs_velocity_pressure.h"
+#include "cs_vof.h"
 #include "cs_volume_zone.h"
 #include "cs_wall_distance.h"
 
@@ -210,6 +211,10 @@ _log_global_model_options(void)
   /* Atmospheric aerosols */
 
   cs_atmo_aerosol_log_setup();
+
+  /* VoF */
+
+  cs_vof_log_setup();
 
   /* Combustion */
 

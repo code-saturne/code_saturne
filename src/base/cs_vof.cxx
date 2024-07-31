@@ -61,6 +61,7 @@
 #include "cs_rotation.h"
 #include "cs_sles_default.h"
 #include "cs_turbomachinery.h"
+#include "cs_turbulence_model.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file
@@ -760,6 +761,84 @@ cs_vof_update_phys_prop(const cs_mesh_t  *m)
 
   for (cs_lnum_t f_id = 0; f_id < n_b_faces; f_id++) {
     b_massflux[f_id] += drho * b_voidflux[f_id] + rho1*b_volflux[f_id];
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Log setup of VoF model.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_vof_log_setup(void)
+{
+  cs_log_printf(CS_LOG_SETUP,
+                _("\n"
+                  "Homogeneous mixture model VoF\n"
+                  "-----------------------------\n\n"));
+
+  auto vp = cs_glob_vof_parameters;
+  if (vp->vof_model <= 0) {
+    cs_log_printf(CS_LOG_SETUP,
+                  _("  Disabled (%d)\n"), vp->vof_model);
+    return;
+  }
+
+  cs_log_printf(CS_LOG_SETUP,
+                _("  Enabled (%d)\n"), vp->vof_model);
+
+  cs_log_printf
+    (CS_LOG_SETUP,
+     _("\n"
+       "  Fluid 1:\n"
+       "    ro1:         %14.5e (Reference density)\n"
+       "    mu1:         %14.5e (Ref. molecular dyn. visc.)\n"
+       "  Fluid 2:\n"
+       "    rho2:        %14.5e (Reference density)\n"
+       "    mu2:         %14.5e (Ref. molecular dyn. visc.)\n"
+       "  Surface tension:\n"
+       "    sigma:       %14.5e (surface tension)\n"
+       "  Drift velocity:\n"
+       "    idrift:          %10d (0: disabled; > 0: enabled)\n"
+       "    kdrift       %14.5e (Diffusion effect coeff.)\n"
+       "    cdrift       %14.5e (Diffusion flux coeff.)\n"),
+     vp->rho1, vp->mu1, vp->rho2, vp->mu2, vp->sigma_s,
+     vp->idrift, vp->cdrift, vp->kdrift);
+
+  /* cavitation model */
+
+  if (vp->vof_model & CS_VOF_MERKLE_MASS_TRANSFER) {
+
+    cs_log_printf(CS_LOG_SETUP,
+                  _("\n"
+                    "Cavitation model\n"
+                    "----------------\n\n"));
+
+    const cs_cavitation_parameters_t *cvp
+      = cs_get_glob_cavitation_parameters();
+
+    cs_log_printf
+      (CS_LOG_SETUP,
+     _("\n"
+       "  Liquid phase: fluid 1:\n"
+       "  Gas phase: fluid 2:\n"
+       "  Vaporization/condensation model (Merkle):\n"
+       "    presat:      %14.5e (saturation pressure)\n"
+       "    linf:        %14.5e (reference lenght scale)\n"
+       "    uinf:        %14.5e (reference velocity)\n"),
+       cvp->presat, cvp->linf, cvp->uinf);
+
+    int itytur = cs_glob_turb_model->itytur;
+
+    if (itytur == 2 || itytur == 5 || itytur == 6 || itytur == 7)
+      cs_log_printf
+        (CS_LOG_SETUP,
+         _("\n"
+           "  Eddy-viscosity correction (Rebound correction):\n"
+           "    icvevm:          %10d (activated (1) or not (0)\n"
+           "    mcav:        %14.5e (mcav constant)\n"),
+         cvp->icvevm, cvp->mcav);
   }
 }
 
