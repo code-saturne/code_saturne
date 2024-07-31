@@ -503,7 +503,7 @@ _run(void)
            * Call main calculation function (code Kernel)
            *----------------------------------------------*/
 
-          /* Maybe should be allocate in caltri.c */
+          /* Maybe should be allocate in cs_time_stepping.c */
           cs_ale_allocate();
 
           cs_time_stepping();
