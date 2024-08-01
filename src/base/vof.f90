@@ -51,21 +51,6 @@ module vof
   !> By convention, gas phase for cavitation model.
   real(c_double), pointer, save :: rho2
 
-  !> reference molecular viscosity of fluid 1 (kg/(m s))
-  real(c_double), pointer, save :: mu1
-
-  !> reference molecular viscosity of fluid 2 (kg/(m s))
-  real(c_double), pointer, save :: mu2
-
-  !> surface tension (N/m)
-  real(c_double), pointer, save :: sigmaS
-
-  !> Drift flux factor
-  real(c_double), pointer, save :: cdrift
-
-  !> volume fraction gradient factor in drift velocity
-  real(c_double), pointer, save :: kdrift
-
   !> \}
   !> \}
 
@@ -82,13 +67,11 @@ module vof
      ! Interface to C function retrieving pointers to VOF model indicator
      ! and parameters
 
-     subroutine cs_f_vof_get_pointers(ivofmt, rho1, rho2, mu1, mu2, &
-       sigmaS, idrift, cdrift, kdrift) &
+     subroutine cs_f_vof_get_pointers(ivofmt, rho1, rho2, idrift) &
        bind(C, name='cs_f_vof_get_pointers')
        use, intrinsic :: iso_c_binding
        implicit none
-       type(c_ptr), intent(out) :: ivofmt, rho1, rho2, mu1, mu2, &
-       sigmaS, idrift, cdrift, kdrift
+       type(c_ptr), intent(out) :: ivofmt, rho1, rho2, idrift
      end subroutine cs_f_vof_get_pointers
 
      !---------------------------------------------------------------------------
@@ -117,21 +100,14 @@ contains
 
     ! Local variables
 
-    type(c_ptr) :: c_ivofmt, c_rho1, c_rho2, c_mu1, c_mu2, &
-         c_sigmaS, c_idrift, c_cdrift, c_kdrift
+    type(c_ptr) :: c_ivofmt, c_rho1, c_rho2, c_idrift
 
-    call cs_f_vof_get_pointers(c_ivofmt, c_rho1, c_rho2, c_mu1, c_mu2,       &
-                               c_sigmaS, c_idrift, c_cdrift, c_kdrift)
+    call cs_f_vof_get_pointers(c_ivofmt, c_rho1, c_rho2, c_idrift)
 
     call c_f_pointer(c_ivofmt, ivofmt)
     call c_f_pointer(c_rho1, rho1)
     call c_f_pointer(c_rho2, rho2)
-    call c_f_pointer(c_mu1, mu1)
-    call c_f_pointer(c_mu2, mu2)
-    call c_f_pointer(c_sigmaS, sigmaS)
     call c_f_pointer(c_idrift, idrift)
-    call c_f_pointer(c_cdrift, cdrift)
-    call c_f_pointer(c_kdrift, kdrift)
 
   end subroutine vof_model_init
 

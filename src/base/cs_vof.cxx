@@ -264,12 +264,7 @@ void
 cs_f_vof_get_pointers(unsigned **ivofmt,
                       double   **rho1,
                       double   **rho2,
-                      double   **mu1,
-                      double   **mu2,
-                      double   **sigma_s,
-                      int      **idrift,
-                      double   **cdrift,
-                      double   **kdrift);
+                      int      **idrift);
 
 void
 cs_f_vof_compute_linear_rho_mu(void);
@@ -301,34 +296,19 @@ cs_f_cavitation_get_pointers(double **presat,
  *   ivofmt --> pointer to cs_glob_vof_parameters->vof_model
  *   rho1   --> pointer to cs_glob_vof_parameters->rho1
  *   rho2   --> pointer to cs_glob_vof_parameters->rho2
- *   mu1    --> pointer to cs_glob_vof_parameters->mu1
- *   mu2    --> pointer to cs_glob_vof_parameters->mu2
- *   sigma_s --> pointer to cs_glob_vof_parameters->sigma_s
  *   idrift --> pointer to cs_glob_vof_parameters->idrift
- *   cdrift --> pointer to cs_glob_vof_parameters->cdrift
- *   kdrift --> pointer to cs_glob_vof_parameters->kdrift
  *----------------------------------------------------------------------------*/
 
 void
 cs_f_vof_get_pointers(unsigned **ivofmt,
                       double   **rho1,
                       double   **rho2,
-                      double   **mu1,
-                      double   **mu2,
-                      double   **sigma_s,
-                      int      **idrift,
-                      double   **cdrift,
-                      double   **kdrift)
+                      int      **idrift)
 {
   *ivofmt  = &(_vof_parameters.vof_model);
   *rho1    = &(_vof_parameters.rho1);
   *rho2    = &(_vof_parameters.rho2);
-  *mu1     = &(_vof_parameters.mu1);
-  *mu2     = &(_vof_parameters.mu2);
-  *sigma_s = &(_vof_parameters.sigma_s);
   *idrift  = &(_vof_parameters.idrift);
-  *cdrift  = &(_vof_parameters.cdrift);
-  *kdrift  = &(_vof_parameters.kdrift);
 }
 
 /*----------------------------------------------------------------------------
@@ -1251,16 +1231,15 @@ cs_vof_deshpande_drift_flux(const cs_mesh_t             *m,
   const cs_real_t *restrict i_volflux =
     cs_field_by_id(cs_field_get_key_int(CS_F_(void_f), kimasf))->val;
 
-  cs_field_t *idriftflux = NULL;
-  idriftflux = cs_field_by_name_try("inner_drift_velocity_flux");
+  cs_real_t *cpro_idriftf = cs_field_by_name("inner_drift_velocity_flux")->val;
 
   /* Check if field exists */
-  if (idriftflux == NULL)
+  if (cpro_idriftf == NULL)
     bft_error(__FILE__, __LINE__, 0,_("error drift velocity not defined\n"));
-  cs_real_t *cpro_idriftf = idriftflux->val;
 
   cs_real_3_t *voidf_grad;
   BFT_MALLOC(voidf_grad, n_cells_with_ghosts, cs_real_3_t);
+
   /* Compute the gradient of the void fraction */
   cs_field_gradient_scalar(CS_F_(void_f),
                            true,           // use_previous_t
