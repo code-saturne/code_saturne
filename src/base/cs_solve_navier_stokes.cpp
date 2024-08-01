@@ -3374,8 +3374,8 @@ _velocity_prediction(const cs_mesh_t             *m,
       cs_parall_max(1, CS_REAL_TYPE, &rnormx);
       cs_parall_min(1, CS_REAL_TYPE, &rnormn);
 
-      bft_printf(_("Maximum velocity after prediction %e10.12\n"
-                   "Minimum velocity after prediction %e10.12\n"),
+      bft_printf(_("Maximum velocity after prediction %10.12e\n"
+                   "Minimum velocity after prediction %10.12e\n"),
                  rnormx, rnormn);
     }
 
