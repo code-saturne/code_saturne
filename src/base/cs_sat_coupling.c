@@ -2557,6 +2557,11 @@ cs_sat_coupling_exchange_at_cells
               _("'%s' Cannot be called for non variable fields.\n"),
               __func__);
 
+  cs_equation_param_t *eqp = cs_field_get_equation_param_const(f);
+
+  if (eqp->verbosity > 0)
+    bft_printf("\n  Code-code coupling, add volume source terms for field %s\n\n", f->name);
+
   /* Loop on the different couplings */
   for (int cpl_id = 0; cpl_id < cs_glob_sat_n_couplings; cpl_id++) {
     cs_sat_coupling_t *cpl = cs_glob_sat_couplings[cpl_id];
@@ -2676,7 +2681,7 @@ cs_sat_coupling_exchange_at_cells
           }
         }
         else {
-          /* Vectotrs */
+          /* Vectors */
           for (cs_lnum_t e_id = 0; e_id < n_cells_loc; e_id++) {
             cs_lnum_t c_id = cpl_cells_ids[e_id];
             cs_real_t rovtau = cell_f_vol[c_id] * cvar_rho[c_id] * one_ov_xtau;
