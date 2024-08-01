@@ -294,7 +294,6 @@ cs_halo_cuda.cu
 endif
 
 libcsbase_a_SOURCES = \
-addfld.f90 \
 cs_mass_source_terms.c \
 condli.f90 \
 cs_wall_condensation.c \

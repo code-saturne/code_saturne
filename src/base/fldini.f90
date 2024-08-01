@@ -171,7 +171,7 @@ do ii = 1, nscal
       idfm = 1
     endif
 
-    ! Additional fields for Drift scalars is done in addfld
+    ! Additional fields for Drift scalars is done in cs_setup.c
 
   endif
 enddo
@@ -207,7 +207,7 @@ end if
 
 ! friction velocity at the wall, in the case of a LES calculation
 ! with van Driest-wall damping (delayed here rather than placed in
-! addfld, as idries may be set in cs_parameters_*_complete).
+! cs_setup.c, as idries may be set in cs_parameters_*_complete).
 
 itycat = FIELD_INTENSIVE + FIELD_PROPERTY
 ityloc = 3 ! boundary faces

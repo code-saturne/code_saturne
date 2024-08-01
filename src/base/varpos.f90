@@ -694,13 +694,13 @@ itycat = FIELD_INTENSIVE
 ncpdct = volume_zone_n_type_zones(VOLUME_ZONE_HEAD_LOSS)
 
 if (ipucou.ne.0 .or. ncpdct.gt.0 .or. iporos.eq.2) then
-  call field_create('dttens', itycat, ityloc, 6, .false., idtten)
+  call field_create('dttens', itycat, ityloc, 6, .false., id)
   if (ipucou.ne.0 .or. ncpdct.gt.0) then
-    call field_set_key_int(idtten, keyvis, POST_ON_LOCATION)
+    call field_set_key_int(id, keyvis, POST_ON_LOCATION)
   endif
-  call field_set_key_int(idtten, keylog, 1)
+  call field_set_key_int(id, keylog, 1)
   if (iporos.eq.2) then
-    call field_set_key_int(ivarfl(ipr), kwgrec, idtten)
+    call field_set_key_int(ivarfl(ipr), kwgrec, id)
   endif
 endif
 

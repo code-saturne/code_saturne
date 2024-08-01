@@ -252,12 +252,6 @@ module numvar
   !> pointer for gas mix molar mass
   integer, save :: igmxml = -1
 
-  !> field id of the stresses at boundary  (if post-processed)
-  integer, save :: iforbr = -1
-
-  !>  field id of \f$y^+\f$ at boundary (if post-processed)
-  integer, save :: iyplbr = -1
-
   !>  field id of temperature at boundary
   integer, save ::  itempb = -1
 
@@ -286,9 +280,6 @@ module numvar
 
   !> Field id for variable i
   integer, save :: ivarfl(nvarmx)
-
-  !> Field id for the dttens tensor
-  integer, save :: idtten = -1
 
   !> \}
 
