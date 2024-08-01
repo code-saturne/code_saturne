@@ -2663,8 +2663,8 @@ cs_sat_coupling_exchange_at_cells
       const cs_real_t one_ov_xtau = 1./(100.0 * cs_glob_time_step->dt_ref);
       cs_real_t *cell_f_vol = cs_glob_mesh_quantities->cell_f_vol;
 
-      /*  Compuite source term (n_cells_loc contribution) */
-      if (cpl->reverse && n_g_cells_loc > 0) {
+      /*  Compute source term (n_cells_loc contribution) */
+      if (cpl->reverse == 0 && n_g_cells_loc > 0) {
         if (f->dim == 1) {
           /* Scalars */
           for (cs_lnum_t e_id = 0; e_id < n_cells_loc; e_id++) {
