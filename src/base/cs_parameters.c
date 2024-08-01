@@ -463,9 +463,10 @@ static cs_equation_param_t _equation_param_default
 
    .adv_formulation = CS_PARAM_ADVECTION_FORM_CONSERV,
    .adv_scheme = CS_PARAM_N_ADVECTION_SCHEMES,
-   .adv_strategy = CS_PARAM_ADVECTION_IMPLICIT_LINEARIZED,
+   .adv_strategy = CS_PARAM_N_ADVECTION_STRATEGIES,
    .adv_extrapol = CS_PARAM_N_ADVECTION_EXTRAPOLATIONS,
    .upwind_portion = 0.,
+   .cip_scaling_coef = -1.0,
    .adv_field = NULL,
    .adv_scaling_property = NULL,
 
