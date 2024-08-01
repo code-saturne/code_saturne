@@ -154,6 +154,7 @@ _thermal_flux_st(const char          *name,
 
   const cs_real_t *cvar_tt = NULL, *cvara_tt = NULL, *cvar_al = NULL;
 
+  const cs_turb_rans_model_t *rans_mdl = cs_glob_turb_rans_model;
   /* Get the turbulent flux model */
   const int kturt = cs_field_key_id("turbulent_flux_model");
   int turb_flux_model =  cs_field_get_key_int(f, kturt);
@@ -235,12 +236,9 @@ _thermal_flux_st(const char          *name,
       }
 
       cs_real_t gk = 0;
-      if (cpro_beta != NULL) {
-        /* FIXME make buoyant term coherent elsewhere */
+      /* FIXME make buoyant term coherent elsewhere */
+      if (cpro_beta != NULL && rans_mdl->has_buoyant_term == 1)
         gk = cpro_beta[c_id] * cs_math_3_dot_product(xuta[c_id], grav);
-      }
-      else
-        gk = 0;
 
       xxc1 = 1.+2.*(1.-cvar_al[c_id])*(pk+gk)/cvar_ep[c_id];
       xxc2 = 0.5*(1.+1./prdtl)*(1.-0.3*(1.-cvar_al[c_id])
@@ -257,7 +255,8 @@ _thermal_flux_st(const char          *name,
                                -xrij[1][i] * gradt[c_id][1]
                                -xrij[2][i] * gradt[c_id][2]);
 
-       if ((cvar_tt != NULL) && (cpro_beta != NULL))
+       if ((cvar_tt != NULL) && (cpro_beta != NULL)
+           && rans_mdl->has_buoyant_term == 1)
          phiith[i] += c3trit*(cpro_beta[c_id] * grav[i] * cvar_tt[c_id]);
 
        phiitw[i] =   -1. / xttdrbw *xxc1   /* FIXME full implicit */
@@ -294,7 +293,8 @@ _thermal_flux_st(const char          *name,
                + xrij[i][2]*gradt[c_id][2]);
 
        /* Production term due to the gravity */
-       if ((cvar_tt != NULL) && (cpro_beta != NULL))
+       if ((cvar_tt != NULL) && (cpro_beta != NULL)
+           && rans_mdl->has_buoyant_term == 1)
          ept -= grav[i] * cpro_beta[c_id] * cvara_tt[c_id];
 
        /* Dissipation (Wall term only because "h" term is zero */
@@ -370,6 +370,7 @@ _thermal_flux_and_diff(cs_field_t         *f,
   const cs_real_6_t *cvara_rij = (const cs_real_6_t *)CS_F_(rij)->val_pre;
 
   const cs_field_t *f_beta = cs_field_by_name_try("thermal_expansion");
+  const cs_turb_rans_model_t *rans_mdl = cs_glob_turb_rans_model;
   const cs_real_t *cpro_beta = NULL, *cvara_tt = NULL;
   if (f_beta != NULL)
     cpro_beta = f_beta->val;
@@ -496,7 +497,8 @@ _thermal_flux_and_diff(cs_field_t         *f,
       /* AFM model
          "-C_theta*k/eps*( xi* uT'.Grad u + eta*beta*g_i*T'^2)" */
       if (turb_flux_model == 20) {
-        if ((cvara_tt != NULL) && (cpro_beta != NULL))
+        if ((cvara_tt != NULL) && (cpro_beta != NULL)
+            && rans_mdl->has_buoyant_term == 1)
           temp[ii] -=   ctheta * xtt * cs_turb_etaafm
                       * cpro_beta[c_id] * grav[ii] * cvara_tt[c_id];
 
@@ -518,7 +520,8 @@ _thermal_flux_and_diff(cs_field_t         *f,
        *                   + eps/k gamma uT' ni nj )"
        */
       if (turb_flux_model == 21) {
-        if ((cvara_tt != NULL) && (cpro_beta != NULL))
+        if ((cvara_tt != NULL) && (cpro_beta != NULL)
+            && rans_mdl->has_buoyant_term == 1)
           temp[ii] -=   ctheta * xtt * eta_ebafm
                       * cpro_beta[c_id] * grav[ii] * cvara_tt[c_id];
         for (cs_lnum_t jj = 0; jj < 3; jj++) {
@@ -1114,11 +1117,13 @@ cs_turbulence_rij_transport_div_tf(const int        field_id,
   const int irovar = cs_glob_fluid_properties->irovar;
   const int idilat = cs_glob_velocity_pressure_model->idilat;
   const cs_real_t *grav = cs_glob_physical_constants->gravity;
+  const cs_turb_rans_model_t *rans_mdl = cs_glob_turb_rans_model;
 
   const cs_real_t mod_grav = cs_math_3_norm(grav);
   if (   (mod_grav > cs_math_epzero)
       && ((irovar > 0) || (idilat == 0))
-      && ((turb_flux_model_type == 2) || (turb_flux_model_type == 3))) {
+      && ((turb_flux_model_type == 2) || (turb_flux_model_type == 3))
+      && rans_mdl->has_buoyant_term == 1) {
 
     f_tv = cs_field_get_variance(f);
 

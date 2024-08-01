@@ -342,7 +342,7 @@
          <item row="3" column="0">
           <widget class="QCheckBox" name="checkBoxGravity">
            <property name="toolTip">
-            <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Indicate if the buoyancy related terms are taken into account or not in the turbulence equations.&lt;/p&gt;&lt;p&gt;(code_saturne key word: &lt;span style=&quot; font-weight:600;&quot;&gt;igrake&lt;/span&gt; / &lt;span style=&quot; font-weight:600;&quot;&gt;igrari&lt;/span&gt;)&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+            <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Indicate if the buoyancy related terms are taken into account or not in the turbulence equations.&lt;/p&gt;&lt;p&gt;(code_saturne key word: &lt;span style=&quot; font-weight:600;&quot;&gt;has_buoyant_term&lt;/span&gt;)&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
            </property>
            <property name="text">
             <string>Gravity terms in the turbulence equations</string>
