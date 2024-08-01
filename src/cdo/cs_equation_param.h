@@ -569,7 +569,7 @@ typedef struct {
    * \var time_scheme
    * Type of numerical scheme used for the time discretization
    *
-   * NB: theta is share with the legacy schema
+   * NB: theta is share with the legacy scheme
    *
    */
 

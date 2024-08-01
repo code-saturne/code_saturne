@@ -1482,7 +1482,7 @@ cs_parameters_define_auxiliary_fields(void)
   }
 
   /* If humid air equation of state, define yv,
-     the mass fraction of water vapor*/
+     the mass fraction of water vapor */
 
   if (th_cf_model->ieos == CS_EOS_MOIST_AIR) {
     cs_field_t *fld = cs_field_create("yv",
@@ -1525,6 +1525,7 @@ cs_parameters_define_auxiliary_fields(void)
 
       cs_field_set_key_int(fld, cs_field_key_id("log"), 1);
       cs_field_set_key_int(fld, cs_field_key_id("post_vis"), 0);
+
     }
 
   }

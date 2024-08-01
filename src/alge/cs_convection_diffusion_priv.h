@@ -892,7 +892,7 @@ cs_blend_f_val_strided(const double     blencp,
  * to fluxes at face ij.
  *
  * \param[in]     iconvp       convection flag
- * \param[in]     thetap       weighting coefficient for the theta-schema,
+ * \param[in]     thetap       weighting coefficient for the theta-scheme,
  * \param[in]     imasac       take mass accumulation into account?
  * \param[in]     pi           value at cell i
  * \param[in]     pj           value at cell j
@@ -942,7 +942,7 @@ cs_i_conv_flux(const int       iconvp,
  *   stride        1 for scalars, 3 for vectors, 6 for symmetric tensors
  *
  * \param[in]     iconvp       convection flag
- * \param[in]     thetap        weighting coefficient for the theta-schema,
+ * \param[in]     thetap        weighting coefficient for the theta-scheme,
  * \param[in]     imasac        take mass accumulation into account?
  * \param[in]     pi           value at cell i
  * \param[in]     pj           value at cell j
@@ -989,7 +989,7 @@ cs_i_conv_flux_strided(int              iconvp,
  * \brief Add diffusive fluxes to fluxes at face ij.
  *
  * \param[in]     idiffp   diffusion flag
- * \param[in]     thetap   weighting coefficient for the theta-schema,
+ * \param[in]     thetap   weighting coefficient for the theta-scheme,
  * \param[in]     pip      reconstructed value at cell i
  * \param[in]     pjp      reconstructed value at cell j
  * \param[in]     pipr     relaxed reconstructed value at cell i
@@ -1021,7 +1021,7 @@ cs_i_diff_flux(const int        idiffp,
  *   stride        1 for scalars, 3 for vectors, 6 for symmetric tensors
  *
  * \param[in]     idiffp   diffusion flag
- * \param[in]     thetap   weighting coefficient for the theta-schema,
+ * \param[in]     thetap   weighting coefficient for the theta-scheme,
  * \param[in]     pip      reconstructed value at cell i
  * \param[in]     pjp      reconstructed value at cell j
  * \param[in]     pipr     relaxed reconstructed value at cell i
@@ -2985,7 +2985,7 @@ cs_b_relax_c_val_strided(const double     relaxp,
  * imposed value.
  *
  * \param[in]     iconvp       convection flag
- * \param[in]     thetap       weighting coefficient for the theta-schema,
+ * \param[in]     thetap       weighting coefficient for the theta-scheme,
  * \param[in]     imasac       take mass accumulation into account?
  * \param[in]     inc          Not an increment flag
  * \param[in]     bc_type      type of boundary face
@@ -3060,7 +3060,7 @@ cs_b_imposed_conv_flux(int         iconvp,
  *   stride        1 for scalars, 3 for vectors, 6 for symmetric tensors
  *
  * \param[in]     iconvp       convection flag
- * \param[in]     thetap       weighting coefficient for the theta-schema,
+ * \param[in]     thetap       weighting coefficient for the theta-scheme,
  * \param[in]     imasac       take mass accumulation into account?
  * \param[in]     inc          Not an increment flag
  * \param[in]     bc_type      type of boundary face
@@ -3143,7 +3143,7 @@ cs_b_imposed_conv_flux_strided(int              iconvp,
  * flux at boundary face. The convective flux is a pure upwind flux.
  *
  * \param[in]     iconvp       convection flag
- * \param[in]     thetap       weighting coefficient for the theta-schema,
+ * \param[in]     thetap       weighting coefficient for the theta-scheme,
  * \param[in]     imasac       take mass accumulation into account?
  * \param[in]     inc          Not an increment flag
  * \param[in]     bc_type      type of boundary face
@@ -3198,7 +3198,7 @@ cs_b_upwind_flux(const int        iconvp,
  *   stride        1 for scalars, 3 for vectors, 6 for symmetric tensors
  *
  * \param[in]     iconvp       convection flag
- * \param[in]     thetap       weighting coefficient for the theta-schema,
+ * \param[in]     thetap       weighting coefficient for the theta-scheme,
  * \param[in]     imasac       take mass accumulation into account?
  * \param[in]     inc          Not an increment flag
  * \param[in]     bc_type      type of boundary face
@@ -3256,7 +3256,7 @@ cs_b_upwind_flux_strided(int              iconvp,
  * \brief Add diffusive flux to flux at boundary face.
  *
  * \param[in]     idiffp   diffusion flag
- * \param[in]     thetap   weighting coefficient for the theta-schema,
+ * \param[in]     thetap   weighting coefficient for the theta-scheme,
  * \param[in]     inc      Not an increment flag
  * \param[in]     pipr     relaxed reconstructed value at cell i
  * \param[in]     cofafp   explicit boundary coefficient for diffusion operator
@@ -3288,7 +3288,7 @@ cs_b_diff_flux(const int        idiffp,
  *   stride        1 for scalars, 3 for vectors, 6 for symmetric tensors
  *
  * \param[in]     idiffp   diffusion flag
- * \param[in]     thetap   weighting coefficient for the theta-schema,
+ * \param[in]     thetap   weighting coefficient for the theta-scheme,
  * \param[in]     inc      Not an increment flag
  * \param[in]     pipr     relaxed reconstructed value at cell i
  * \param[in]     cofaf    explicit boundary coefficient for diffusion operator

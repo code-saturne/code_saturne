@@ -330,11 +330,11 @@ cs_theta_scheme_update_var(const cs_lnum_t  iappel)
 
     /*----------------------------------------------------------------------
      * Only update an unique mass flux.
-     * For the second order schema (istmpf=2), theta is set to 0.5.
-     * For the explicit schema (istmpf=0), the mass flux is set to the
+     * For the second order scheme (istmpf=2), theta is set to 0.5.
+     * For the explicit scheme (istmpf=0), the mass flux is set to the
      * previous one F(n) in the last iteration. Another modification will
      * be done in iappel = 4.
-     * Nothing is done for standard schema (istmpf=1).
+     * Nothing is done for standard scheme (istmpf=1).
      * In case of iterations in cs_solve_navier_stokes, the following process
      * is applied in all iterations except the last one if istmpf=0
      *----------------------------------------------------------------------*/
@@ -366,7 +366,7 @@ cs_theta_scheme_update_var(const cs_lnum_t  iappel)
     /*----------------------------------------------------------------------
      * Only update an unique mass flux.
      * Nothing is done for standard and second order schemes (istmpf=1 and 2)
-     * For the explicit schema (istmpf=0), F(n+1) is saved in imasfl_pre but
+     * For the explicit scheme (istmpf=0), F(n+1) is saved in imasfl_pre but
      * computations are done with F(n) in imasfl
      * In case of iterations in cs_solve_navier_stokes, the following process
      * is applied in all iterations if istmpf differs from 0 and only in the
@@ -400,7 +400,7 @@ cs_theta_scheme_update_var(const cs_lnum_t  iappel)
      * Previous modifications are reverted in order to be ready for the next
      * iteration in time.
      * Nothing is done for standard and second order schemes (istmpf=1 and 2)
-     * For the explicit schema (istmpf=0), imasfl is set to F(n+1)
+     * For the explicit scheme (istmpf=0), imasfl is set to F(n+1)
      *----------------------------------------------------------------------*/
 
     /* Restore the mass flux */
