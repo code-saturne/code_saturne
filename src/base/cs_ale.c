@@ -1655,7 +1655,7 @@ cs_ale_add_pty_fields(void)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Setup the equations solving the mesh velocity
+ * \brief Setup the equations solving the mesh velocity when CDO is activated
  *
  * \param[in, out] domain  pointer to a cs_domain_t structure
  */
@@ -1695,17 +1695,10 @@ cs_ale_init_setup(cs_domain_t *domain)
 
   }
 
-  cs_equation_param_t *eqp
-    = cs_field_get_equation_param(CS_F_(mesh_u));
-
-  //FIXME should be done elsewhere
-  cs_domain_set_output_param(domain,
-                             -1, /* restart frequency: Only at the end */
-                             domain->output_nt,
-                             eqp->verbosity);
+  /* Update the equation related to the mesh displacement */
 
   cs_equation_t  *eq = cs_equation_by_name("mesh_velocity");
-  eqp = cs_equation_get_param(eq);
+  cs_equation_param_t  *eqp = cs_equation_get_param(eq);
 
   assert(mesh_visc != NULL);
   cs_equation_add_diffusion(eqp, mesh_visc);

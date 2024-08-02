@@ -205,14 +205,14 @@ cs_ale_add_pty_fields(void);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Setup the equations related to mesh deformation.
+ * \brief Setup the equations solving the mesh velocity when CDO is activated
  *
- * \param[in, out]   domain     pointer to a cs_domain_t structure
+ * \param[in, out] domain  pointer to a cs_domain_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_ale_init_setup(cs_domain_t   *domain);
+cs_ale_init_setup(cs_domain_t *domain);
 
 /*----------------------------------------------------------------------------
  *!
