@@ -285,41 +285,6 @@ if (iand(ivofmt,VOF_FREE_SURFACE).ne.0) then
                           has_previous, iflid)
 endif
 
-! --- Mesh displacement for ALE
-
-if (iale.ge.1) then
-
-  has_previous = .true.
-  idim3 = 3
-  f_name = 'mesh_displacement'
-  f_label = 'Mesh displacement'
-  type_flag = FIELD_PROPERTY
-  post_flag = POST_ON_LOCATION
-  location_id = 4 ! variables defined on vertices
-
-  call field_create(f_name, type_flag, location_id, idim3, &
-                    has_previous, iflid)
-  call field_set_key_int(iflid, keyvis, post_flag)
-  call field_set_key_int(iflid, keylog, 1)
-
-  call field_set_key_str(iflid, keylbl, trim(f_label))
-
-  call field_set_key_int(iflid, k_restart_id, RESTART_AUXILIARY)
-  call field_set_key_int(iflid, key_n_restart_id, 2)
-
-  has_previous = .false.
-  idim3 = 3
-  f_name = 'vtx_coord0'
-  type_flag = FIELD_PROPERTY
-  location_id = 4 ! variables defined on vertices
-
-  call field_create(f_name, type_flag, location_id, idim3, &
-                    has_previous, iflid)
-
-  call hide_property(iflid)
-
-endif
-
 ! Properties and other fields defined in C
 
 call cs_parameters_define_auxiliary_fields

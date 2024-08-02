@@ -196,6 +196,15 @@ cs_ale_is_activated(void);
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Add "property" fields dedicated to the ALE modelling
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_ale_add_pty_fields(void);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Setup the equations related to mesh deformation.
  *
  * \param[in, out]   domain     pointer to a cs_domain_t structure

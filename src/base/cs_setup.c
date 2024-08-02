@@ -322,8 +322,12 @@ _init_user
     cs_pressure_correction_model_activate();
   }
 
-  if (cs_glob_ale != CS_ALE_NONE)
+  if (cs_glob_ale != CS_ALE_NONE) {
     cs_gui_ale_diffusion_type();
+
+    /* Add auxiliary property fields dedicated to the ALE modelling */
+    cs_ale_add_pty_fields();
+  }
 
   cs_gui_laminar_viscosity();
 
