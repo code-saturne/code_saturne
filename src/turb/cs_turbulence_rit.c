@@ -105,7 +105,7 @@ BEGIN_C_DECLS
  * \brief Compute the thermal flux source terms
  *
  * \param[in]     name       name of current field
- * \param[in]     f_ut       vscalar turbulent flux field
+ * \param[in]     f_ut       scalar turbulent flux field
  * \param[in]     f_tv       variance of the thermal scalar field, or NULL
  * \param[in]     n_cells    number of cells
  * \param[in]     l_viscls   0 uniform viscls values, 1 for local values
@@ -167,39 +167,39 @@ _thermal_flux_st(const char          *name,
 
   cs_real_3_t *prod_ut = NULL;
   cs_field_t *f_ut_prod =
-    cs_field_by_composite_name_try("algo:turbulent_flux_production",
-                                   f->name);
+    cs_field_by_composite_name_try("algo:production",
+                                   f_ut->name);
 
   if (f_ut_prod != NULL)
       prod_ut = (cs_real_3_t *)f_ut_prod->val;
 
   cs_real_3_t *phi_ut = NULL;
   cs_field_t *f_phi_ut = cs_field_by_composite_name_try(
-      "algo:turbulent_flux_scrambling", f->name);
+      "algo:scrambling", f_ut->name);
   if (f_phi_ut != NULL)
     phi_ut = (cs_real_3_t *)f_phi_ut->val;
 
   cs_real_3_t *prod_by_vel_grad_ut = NULL;
   cs_field_t *f_ut_prod_by_vel = cs_field_by_composite_name_try(
-      "algo:turbulent_flux_production_by_velocity_gradient", f->name);
+      "algo:production_by_velocity_gradient", f_ut->name);
   if (f_ut_prod_by_vel != NULL)
       prod_by_vel_grad_ut = (cs_real_3_t *)f_ut_prod_by_vel->val;
 
   cs_real_3_t *prod_by_scal_grad_ut = NULL;
   cs_field_t *f_ut_prod_by_scal = cs_field_by_composite_name_try(
-      "algo:turbulent_flux_production_by_scalar_gradient", f->name);
+      "algo:production_by_scalar_gradient", f_ut->name);
   if (f_ut_prod_by_scal != NULL)
       prod_by_scal_grad_ut = (cs_real_3_t *)f_ut_prod_by_scal->val;
 
   cs_real_3_t *buo_ut = NULL;
   cs_field_t *f_buo_ut = cs_field_by_composite_name_try(
-      "algo:turbulent_flux_buoyancy", f->name);
+      "algo:buoyancy", f_ut->name);
   if (f_buo_ut != NULL)
     buo_ut = (cs_real_3_t *)f_buo_ut->val;
 
   cs_real_3_t *dissip_ut = NULL;
   cs_field_t *f_dissip_ut_ut = cs_field_by_composite_name_try(
-      "algo:turbulent_flux_dissipation", f->name);
+      "algo:dissipation", f_ut->name);
   if (f_dissip_ut_ut != NULL)
     dissip_ut = (cs_real_3_t *)f_buo_ut->val;
 
@@ -1276,8 +1276,8 @@ cs_turbulence_rij_transport_div_tf(const int        field_id,
       || turb_flux_model_type == 2
       || turb_flux_model_type == 3) {
     cs_real_t *divut;
-    if (cs_field_by_name_try("algo:turbulent_flux_divergence") != NULL)
-      divut = cs_field_by_name_try("algo:turbulent_flux_divergence")->val;
+    if (cs_field_by_composite_name_try("algo:divergence", f_ut->name) != NULL)
+      divut = cs_field_by_name_try("algo:divergence", f_ut->name)->val;
     else
       BFT_MALLOC(divut, n_cells_ext, cs_real_t);
 
@@ -1287,7 +1287,7 @@ cs_turbulence_rij_transport_div_tf(const int        field_id,
     for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
       smbrs[c_id] -= divut[c_id];
 
-    if (cs_field_by_name_try("algo:turbulent_flux_divergence") == NULL)
+    if (cs_field_by_composite_name_try("algo:divergence", f_ut->name) == NULL)
       BFT_FREE(divut);
   }
 

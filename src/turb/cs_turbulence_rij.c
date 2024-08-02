@@ -1079,7 +1079,7 @@ _pre_solve_lrr(const cs_field_t  *f_rij,
   if (cs_glob_turb_rans_model->has_buoyant_term == 1) {
 
     cs_real_6_t *_buoyancy = NULL, *cpro_buoyancy = NULL;
-    cs_field_t *f_buo = cs_field_by_name_try("algo:rij_buoyancy");
+    cs_field_t *f_buo = cs_field_by_name_try("algo:buoyancy_rij");
 
     if (f_buo != NULL) {
       cpro_buoyancy = (cs_real_6_t*)f_buo->val;
@@ -1482,7 +1482,7 @@ _pre_solve_lrr_sg(const cs_field_t  *f_rij,
   if (cs_glob_turb_rans_model->has_buoyant_term == 1) {
 
     cs_real_6_t *_buoyancy = NULL, *cpro_buoyancy = NULL;
-    cs_field_t *f_buo = cs_field_by_name_try("algo:rij_buoyancy");
+    cs_field_t *f_buo = cs_field_by_name_try("algo:buoyancy_rij");
 
     if (f_buo != NULL) {
       cpro_buoyancy = (cs_real_6_t*)f_buo->val;
@@ -2087,7 +2087,7 @@ _pre_solve_ssg(const cs_field_t  *f_rij,
   if (cs_glob_turb_rans_model->has_buoyant_term == 1) {
 
     cs_real_6_t *_buoyancy = NULL, *cpro_buoyancy = NULL;
-    cs_field_t *f_buo = cs_field_by_name_try("algo:rij_buoyancy");
+    cs_field_t *f_buo = cs_field_by_name_try("algo:buoyancy_rij");
 
     if (f_buo != NULL) {
       cpro_buoyancy = (cs_real_6_t*)f_buo->val;
@@ -2823,14 +2823,14 @@ cs_turbulence_rij(int phase_id)
 
   cs_real_6_t *cpro_press_correl = NULL;
   {
-    cs_field_t *f_psc = cs_field_by_name_try("algo:rij_pressure_strain_correlation");
+    cs_field_t *f_psc = cs_field_by_name_try("algo:pressure_strain_correlation_rij");
     if (f_psc != NULL)
       cpro_press_correl = (cs_real_6_t *)f_psc->val;
   }
 
   cs_real_6_t *produc = NULL, *_produc = NULL;
-  if (cs_field_by_name_try("algo:rij_production") != NULL) {
-    produc = (cs_real_6_t *)cs_field_by_name_try("algo:rij_production")->val;
+  if (cs_field_by_name_try("algo:production_rij") != NULL) {
+    produc = (cs_real_6_t *)cs_field_by_name_try("algo:production_rij")->val;
   }
   else {
     BFT_MALLOC(_produc, n_cells_ext, cs_real_6_t);

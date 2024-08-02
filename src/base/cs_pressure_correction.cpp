@@ -646,7 +646,8 @@ _pressure_correction_fv(int                   iterns,
   }
 
   cs_real_t *cpro_divu = NULL, *_cpro_divu = NULL;
-  cs_field_t *f_divu = cs_field_by_name_try("algo:predicted_vel_divergence");
+  cs_field_t *f_divu =
+    cs_field_by_name_try("algo:divergence_predicted_velocity");
   if (f_divu != NULL)
     cpro_divu = f_divu->val;
   else {

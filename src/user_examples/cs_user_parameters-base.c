@@ -1572,7 +1572,7 @@ cs_user_parameters(cs_domain_t *domain)
    * and the pressure gradient in the momentum equation.
    */
 
-  cs_parameters_add_property("algo:predicted_vel_divergence",
+  cs_parameters_add_property("algo:divergence_predicted_velocity",
                              1,
                              CS_MESH_LOCATION_CELLS);
 
@@ -1586,7 +1586,7 @@ cs_user_parameters(cs_domain_t *domain)
    * (for DRSM models only)
    */
 
-  cs_parameters_add_property("algo:rij_production",
+  cs_parameters_add_property("algo:production_rij",
                              6,
                              CS_MESH_LOCATION_CELLS);
 

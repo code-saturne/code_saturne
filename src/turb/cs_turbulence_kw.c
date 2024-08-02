@@ -196,8 +196,8 @@ cs_turbulence_kw(int phase_id)
   /* Allocate work arrays */
 
   cs_real_t *w1, *dpvar, *gdkgdw, *prodk, *prodw;
-  cs_field_t *f_tke_prod = cs_field_by_name_try("algo:tke_production");
-  cs_field_t *f_tke_buoy = cs_field_by_name_try("algo:tke_buoyancy");
+  cs_field_t *f_tke_prod = cs_field_by_name_try("algo:production_k");
+  cs_field_t *f_tke_buoy = cs_field_by_name_try("algo:buoyancy_k");
   CS_MALLOC_HD(dpvar, n_cells_ext, cs_real_t, cs_alloc_mode);
   CS_MALLOC_HD(w1, n_cells_ext, cs_real_t, cs_alloc_mode);
   BFT_MALLOC(gdkgdw, n_cells_ext, cs_real_t);

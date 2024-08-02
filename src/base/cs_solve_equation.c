@@ -322,8 +322,8 @@ _production_and_dissipation_terms(const cs_field_t  *f,
         = (const cs_real_3_t *)cs_field_by_composite_name(f_fm->name,
                                                           "turbulent_flux")->val;
       for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-        const cs_real_t prod = - 2 * cs_math_3_dot_product(grad[c_id],
-                                                           xut[c_id]);
+        const cs_real_t prod = - 2. * cs_math_3_dot_product(grad[c_id],
+                                                            xut[c_id]);
         if (f_produc != NULL )
           f_produc->val[c_id] = prod;
         cpro_st[c_id] += xcpp[c_id] * cell_f_vol[c_id] * crom[c_id]
@@ -334,7 +334,7 @@ _production_and_dissipation_terms(const cs_field_t  *f,
     /* SGDH model */
     else {
       for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-        const cs_real_t prod = 2 * sgdh_diff[c_id] / crom[c_id]
+        const cs_real_t prod = 2. * sgdh_diff[c_id] / crom[c_id]
                          * cs_math_3_dot_product(grad[c_id], grad[c_id]);
         if (f_produc != NULL )
           f_produc->val[c_id] = prod;
@@ -371,7 +371,7 @@ _production_and_dissipation_terms(const cs_field_t  *f,
     /* SGDH model */
     else {
       for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-        const cs_real_t prod =   2 * sgdh_diff[c_id] / crom[c_id]
+        const cs_real_t prod =   2. * sgdh_diff[c_id] / crom[c_id]
                             * cs_math_3_dot_product(grad[c_id], grad[c_id]);
         if (f_produc != NULL )
           f_produc->val[c_id] = prod;
@@ -393,7 +393,7 @@ _production_and_dissipation_terms(const cs_field_t  *f,
   /* Dissipation term
      ---------------- */
 
-  cs_field_t *f_dissip = cs_field_by_composite_name_try("algo:dissip",
+  cs_field_t *f_dissip = cs_field_by_composite_name_try("algo:dissipation",
                                                         f->name);
 
   cs_real_6_t *cvara_rij = NULL;

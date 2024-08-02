@@ -708,7 +708,7 @@ cs_turbulence_ke(int              phase_id,
    * the production term is assumed to be asymptotic in S and
    * not in mu_TxS**2 */
 
-  cs_field_t *f_tke_prod = cs_field_by_name_try("algo:tke_production");
+  cs_field_t *f_tke_prod = cs_field_by_name_try("algo:production_k");
 
   if (cs_glob_turb_model->iturb == CS_TURB_K_EPSILON_LIN_PROD) {
 #   pragma omp parallel for if(n_cells_ext > CS_THR_MIN)
@@ -1019,7 +1019,7 @@ cs_turbulence_ke(int              phase_id,
        smbrk = P+G
        smbre = P+(1-ce3)*G */
 
-    cs_field_t *f_tke_buoy = cs_field_by_name_try("algo:tke_buoyancy");
+    cs_field_t *f_tke_buoy = cs_field_by_name_try("algo:buoyancy_k");
 
     /* smbr* store mu_TxS**2 */
 #   pragma omp parallel for if(n_cells_ext > CS_THR_MIN)
