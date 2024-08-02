@@ -288,17 +288,17 @@ _init_user
 
   /* If CDO is active, initialize the context structures for models which
    * have been activated */
-  if (cs_glob_param_cdo_mode >= 1) {
+  if (cs_glob_param_cdo_mode != CS_PARAM_CDO_MODE_OFF) {
     /* Groundwater flow module */
     if (cs_gwf_is_activated())
       cs_gwf_init_model_context();
   }
 
   /* Activate CDO for ALE */
-  if (cs_glob_ale == 2)
+  if (cs_glob_ale == CS_ALE_CDO)
     cs_ale_activate();
 
-  if (cs_glob_ale == 1)
+  if (cs_glob_ale == CS_ALE_LEGACY)
     cs_gui_mobile_mesh_structures_add();
 
   /* Read thermomechanical data for specific physics */
@@ -315,14 +315,14 @@ _init_user
   /* Initialize parameters for specific physics */
   cs_rad_transfer_options();
 
-  if (cs_glob_param_cdo_mode < 2) {
+  if (cs_glob_param_cdo_mode != CS_PARAM_CDO_MODE_ONLY) {
     cs_f_fldvar(nmodpp);
 
     /* Activate pressure correction model if CDO mode is not stand-alone */
     cs_pressure_correction_model_activate();
   }
 
-  if (cs_glob_ale >= 1)
+  if (cs_glob_ale != CS_ALE_NONE)
     cs_gui_ale_diffusion_type();
 
   cs_gui_laminar_viscosity();
@@ -356,7 +356,7 @@ _init_user
   /* Initialization of global parameters */
   cs_gui_output_boundary();
 
-  if (cs_glob_param_cdo_mode < 2)
+  if (cs_glob_param_cdo_mode != CS_PARAM_CDO_MODE_ONLY)
     cs_f_fldprp();
 
   /* Initialization of additional user parameters */
@@ -367,7 +367,7 @@ _init_user
   /* Local numerical options */
   cs_gui_equation_parameters();
 
-  if (cs_glob_param_cdo_mode < 2)
+  if (cs_glob_param_cdo_mode != CS_PARAM_CDO_MODE_ONLY)
     cs_gui_numerical_options();
 
   /* Physical properties */
@@ -434,7 +434,7 @@ _init_user
 
   /* Varpos
    * If CDO mode only, skip this stage */
-  if (cs_glob_param_cdo_mode < 2)
+  if (cs_glob_param_cdo_mode != CS_PARAM_CDO_MODE_ONLY)
     cs_f_varpos();
 
   /* Internal coupling */
@@ -446,7 +446,7 @@ _init_user
   /* Mobile structures
    * After call to cs_gui_mobile_mesh_structures_add possible
    * call by user to cs_mobile_structures_add_n_structures */
-  if (cs_glob_ale >= 1)
+  if (cs_glob_ale != CS_ALE_NONE)
     cs_mobile_structures_setup();
 }
 
@@ -525,12 +525,13 @@ cs_setup(void)
   /* Some final settings */
   cs_gui_output();
 
-  if (cs_glob_param_cdo_mode < 2) {
+  if (cs_glob_param_cdo_mode != CS_PARAM_CDO_MODE_ONLY) {
     /* Warning: Used in 0 validation cases ? */
     cs_f_usipes(&nmodpp);
+
     /* Avoid a second spurious call to this function
      * called in the C part if CDO is activated */
-    if (cs_glob_param_cdo_mode < 0) {
+    if (cs_glob_param_cdo_mode == CS_PARAM_CDO_MODE_OFF) {
       cs_user_boundary_conditions_setup(cs_glob_domain);
       cs_user_finalize_setup(cs_glob_domain);
     }
@@ -539,7 +540,7 @@ cs_setup(void)
   cs_parameters_output_complete();
 
   /* Coherency checks */
-  if (cs_glob_param_cdo_mode < 2)
+  if (cs_glob_param_cdo_mode != CS_PARAM_CDO_MODE_ONLY)
     cs_parameters_check();
 
   cs_log_printf(CS_LOG_DEFAULT,
