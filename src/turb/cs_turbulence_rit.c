@@ -1277,7 +1277,7 @@ cs_turbulence_rij_transport_div_tf(const int        field_id,
       || turb_flux_model_type == 3) {
     cs_real_t *divut;
     if (cs_field_by_composite_name_try("algo:divergence", f_ut->name) != NULL)
-      divut = cs_field_by_name_try("algo:divergence", f_ut->name)->val;
+      divut = cs_field_by_composite_name_try("algo:divergence", f_ut->name)->val;
     else
       BFT_MALLOC(divut, n_cells_ext, cs_real_t);
 
