@@ -171,8 +171,7 @@ const cs_wall_condensation_t *cs_glob_wall_condensation = &_wall_cond;
 void
 cs_f_wall_condensation_get_model_pointers
   (int                                **icondb,
-   int                                **icondv,
-   cs_wall_cond_natural_conv_model_t  **icondb_model);
+   int                                **icondv);
 
 /*============================================================================
  * Private function definitions
@@ -764,12 +763,10 @@ _compute_exchange_natural_convection_volume_structure(cs_real_t   *hcond,
 void
 cs_f_wall_condensation_get_model_pointers
   (int                                **icondb,
-   int                                **icondv,
-   cs_wall_cond_natural_conv_model_t  **icondb_model)
+   int                                **icondv)
 {
   *icondb       = &(_wall_cond.icondb);
   *icondv       = &(_wall_cond.icondv);
-  *icondb_model = &(_wall_cond.natural_conv_model);
 }
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
