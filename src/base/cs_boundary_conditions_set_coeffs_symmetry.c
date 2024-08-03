@@ -139,7 +139,7 @@ _boundary_conditions_set_coeffs_symmetry_scalar(cs_field_t  *f_sc)
 
   /* Turbulent flux */
   cs_field_t *f_tf
-    = cs_field_by_composite_name(f_sc->name, "turbulent_flux");
+    = cs_field_by_composite_name("turbulent_flux", f_sc->name);
 
   cs_real_3_t  *coefa_tf = (cs_real_3_t  *)f_tf->bc_coeffs->a;
   cs_real_33_t *coefb_tf = (cs_real_33_t *)f_tf->bc_coeffs->b;
@@ -255,7 +255,7 @@ _boundary_conditions_set_coeffs_symmetry_scalar(cs_field_t  *f_sc)
       /* EB-GGDH/AFM/DFM alpha boundary conditions */
       if (turb_flux_model == 11 || turb_flux_model == 21 || turb_flux_model == 31) {
 
-        cs_field_t *f_al = cs_field_by_composite_name(f_sc->name, "alpha");
+        cs_field_t *f_al = cs_field_by_composite_name("alpha", f_sc->name);
 
         /* Dirichlet Boundary Condition
            ---------------------------- */

@@ -3046,7 +3046,7 @@ cs_boundary_conditions_set_coeffs(int        nvar,
           if (turb_flux_model_type == 3) {
 
             cs_field_t *f_tf
-              = cs_field_by_composite_name_try(f_scal->name, "turbulent_flux");
+              = cs_field_by_composite_name_try("turbulent_flux", f_scal->name);
 
             cs_real_3_t  *coefa_tf = (cs_real_3_t  *)f_tf->bc_coeffs->a;
             cs_real_33_t *coefb_tf = (cs_real_33_t *)f_tf->bc_coeffs->b;
@@ -3381,7 +3381,7 @@ cs_boundary_conditions_set_coeffs(int        nvar,
           || turb_flux_model == 21
           || turb_flux_model == 31) {
 
-        cs_field_t *f_al = cs_field_by_composite_name_try(f_scal->name, "alpha");
+        cs_field_t *f_al = cs_field_by_composite_name_try("alpha", f_scal->name);
 
         int *icodcl_al = f_al->bc_coeffs->icodcl;
         cs_real_t *rcodcl1_al = f_al->bc_coeffs->rcodcl1;

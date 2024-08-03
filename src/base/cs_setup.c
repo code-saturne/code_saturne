@@ -1224,7 +1224,7 @@ _additional_fields_stage_2(void)
 
       if (turb_flux_model_type > 0) {
         char f_tf_name[128];
-        snprintf(f_tf_name, 127, "%s_turbulent_flux", f->name);
+        snprintf(f_tf_name, 127, "turbulent_flux_%s", f->name);
         f_tf_name[127] = '\0';
         cs_field_t *f_turb_flux = NULL;
 
@@ -1246,7 +1246,7 @@ _additional_fields_stage_2(void)
                   || cs_glob_velocity_pressure_model->idilat == 0)
               && grav > cs_math_epzero) {
             char f_var_name[128];
-            snprintf(f_var_name, 127, "%s_variance", f->name);
+            snprintf(f_var_name, 127, "variance_%s", f->name);
             f_var_name[127] = '\0';
 
             cs_field_t *f_var = _add_model_scalar_field(f_var_name,
@@ -1272,7 +1272,7 @@ _additional_fields_stage_2(void)
             || turb_flux_model == 21
             || turb_flux_model == 31) {
           char f_alp_name[128];
-          snprintf(f_alp_name, 127, "%s_alpha", f->name);
+          snprintf(f_alp_name, 127, "alpha_%s", f->name);
           f_alp_name[127] = '\0';
 
           cs_field_t *f_alpha = _add_variable_field(f_alp_name,
@@ -1358,12 +1358,12 @@ _additional_fields_stage_2(void)
       char s_label[128];
       int iscacp = cs_field_get_key_int(f, kscacp);
       if (iscacp > 0) {
-        snprintf(s_name, 127, "%s_conductivity", f_name);
-        snprintf(s_label, 127, "%s Cond", f_label);
+        snprintf(s_name, 127, "conductivity_%s", f_name);
+        snprintf(s_label, 127, "Cond %s", f_label);
       }
       else {
-        snprintf(s_name, 127, "%s_diffusivity", f_name);
-        snprintf(s_label, 127, "%s Diff", f_label);
+        snprintf(s_name, 127, "diffusivity_%s", f_name);
+        snprintf(s_label, 127, "Diff %s", f_label);
       }
       /* Special case for electric arcs: real and imaginary electric
        * conductivity is the same (and ipotr < ipoti) */
@@ -1428,8 +1428,8 @@ _additional_fields_stage_2(void)
        * a fixed name for temperature or enthalpy */
       char s_name[128];
       char s_label[128];
-      snprintf(s_name, 127, "%s_turb_diffusivity", f->name);
-      snprintf(s_label, 127, "%s Turb Diff", cs_field_get_label(f));
+      snprintf(s_name, 127, "turb_diffusivity_%s", f->name);
+      snprintf(s_label, 127, "Turb Diff %s", cs_field_get_label(f));
       s_name[127] = '\0';
       s_label[127] = '\0';
 
@@ -1485,8 +1485,8 @@ _additional_fields_stage_2(void)
         /* Build name and label using a general rule */
         char s_name[128];
         char s_label[128];
-        snprintf(s_name, 127, "%s_sgs_flux_coef", f->name);
-        snprintf(s_label, 127, "%s SGS Flux Coef", cs_field_get_label(f));
+        snprintf(s_name, 127, "sgs_flux_coef_%s", f->name);
+        snprintf(s_label, 127, "SGS Flux Coef %s", cs_field_get_label(f));
         s_name[127] = '\0';
         s_label[127] = '\0';
 
@@ -1550,8 +1550,8 @@ _additional_fields_stage_2(void)
     if (ifcdep == 0 && var_f_id < 0) {
       char f_name[128];
       char f_label[128];
-      snprintf(f_name, 127, "%s_density", f->name);
-      snprintf(f_label, 127, "%s Rho", cs_field_get_label(f));
+      snprintf(f_name, 127, "density_%s", f->name);
+      snprintf(f_label, 127, "Rho %s", cs_field_get_label(f));
       f_name[127] = '\0';
       f_label[127] = '\0';
 
@@ -1600,8 +1600,8 @@ _additional_fields_stage_2(void)
     if (ifcdep == 0 && var_f_id < 0) {
       char f_name[128];
       char f_label[128];
-      snprintf(f_name, 127, "%s_turb_schmidt", f->name);
-      snprintf(f_label, 127, "%s ScT", cs_field_get_label(f));
+      snprintf(f_name, 127, "turb_schmidt_%s", f->name);
+      snprintf(f_label, 127, "ScT %s", cs_field_get_label(f));
       f_name[127] = '\0';
       f_label[127] = '\0';
 
@@ -2730,7 +2730,7 @@ _additional_fields_stage_3(void)
     if (ifctsl != -1
         && eqp_f->iconv > 0 && eqp_f->blencv > 0 && eqp_f->isstpc == 0) {
       char f_name[128];
-      snprintf(f_name, 127, "%s_slope_upwind", f->name);
+      snprintf(f_name, 127, "slope_upwind_%s", f->name);
       f_name[127] = '\0';
 
       cs_field_t *f_su = cs_field_create(f_name,
@@ -2748,7 +2748,7 @@ _additional_fields_stage_3(void)
     const int ikdf = cs_field_get_key_int(f, k_dflim);
     if (ikdf != -1) {
       char f_name[128];
-      snprintf(f_name, 60, "%s_diff_lim", f->name);
+      snprintf(f_name, 60, "diff_lim_%s", f->name);
       f_name[127] = '\0';
 
       cs_field_t *f_dflim = cs_field_create(f_name,
@@ -2767,7 +2767,7 @@ _additional_fields_stage_3(void)
     const int icv = cs_field_get_key_int(f, k_cvlim);
     if (eqp_f->isstpc == 2 || icv != -1) {
       char f_name[128];
-      snprintf(f_name, 127, "%s_conv_lim", f->name);
+      snprintf(f_name, 127, "conv_lim_%s", f->name);
       f_name[127] = '\0';
 
       cs_field_t *f_cvlim = cs_field_create(f_name,

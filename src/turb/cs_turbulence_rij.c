@@ -315,15 +315,14 @@ _compute_up_rhop(int        phase_id,
   const int turb_flux_model_type = turb_flux_model / 10;
 
   if (turb_flux_model_type == 3) {
-    /* Value of the corresponding turbulent flux */
-    char fname[128];
-    snprintf(fname, 128, "%s_turbulent_flux", thf->name); fname[127] = '\0';
-
     /* Using thermal fluxes
      * (only for thermal scalar for the moment) */
     cs_field_t *f_beta = cs_field_by_name_try("thermal_expansion");
 
-    cs_real_3_t *xut = (cs_real_3_t *)cs_field_by_name(fname)->val;
+    /* Value of the corresponding turbulent flux */
+    cs_real_3_t *xut =
+      (cs_real_3_t *)cs_field_by_composite_name("turbulent_flux",
+                                                thf->name)->val;
     /* finalize rho'u' = -rho beta T'u' = -rho beta C k/eps R.gradT */
 #   pragma omp parallel for if(n_cells > CS_THR_MIN)
     for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {

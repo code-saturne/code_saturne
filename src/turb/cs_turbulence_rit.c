@@ -203,11 +203,8 @@ _turb_flux_st(const char          *name,
   if (f_dissip_ut != NULL)
     dissip_ut = (cs_real_3_t *)f_dissip_ut->val;
 
-  if (turb_flux_model == 31) {
-    char fname[128];
-    snprintf(fname, 128, "%s_alpha", f->name); fname[127] = '\0';
-    cvar_al = cs_field_by_name_try(fname)->val;
-  }
+  if (turb_flux_model == 31)
+    cvar_al = cs_field_by_composite_name_try("alpha", f->name)->val;
 
   const cs_real_t rhebdfm = 0.5;
   const cs_real_t *grav = cs_glob_physical_constants->gravity;
@@ -438,11 +435,8 @@ _thermal_flux_and_diff(cs_field_t         *f,
   cs_real_t *cvar_al = NULL;
   if (   (turb_flux_model == 11)
       || (turb_flux_model == 21)
-      || (turb_flux_model == 31)) {
-    char fname[128];
-    snprintf(fname, 128, "%s_alpha", f->name); fname[127] = '\0';
-    cvar_al = cs_field_by_name(fname)->val;
-  }
+      || (turb_flux_model == 31))
+    cvar_al = cs_field_by_composite_name("alpha",f->name)->val;
 
   const cs_real_t *grav = cs_glob_physical_constants->gravity;
 
@@ -1084,10 +1078,7 @@ cs_turbulence_rij_transport_div_tf(const int        field_id,
   const int turb_flux_model_type = turb_flux_model / 10;
 
   /* Value of the corresponding turbulent flux */
-  char fname[128];
-  snprintf(fname, 128, "%s_turbulent_flux", f->name); fname[127] = '\0';
-
-  cs_field_t *f_ut = cs_field_by_name(fname);
+  cs_field_t *f_ut = cs_field_by_composite_name("turbulent_flux", f->name);
   cs_real_3_t *xut = (cs_real_3_t *)f_ut->val;
 
   cs_field_t *f_vel = CS_F_(vel);
@@ -1139,12 +1130,9 @@ cs_turbulence_rij_transport_div_tf(const int        field_id,
       || (turb_flux_model == 21)
       || (turb_flux_model == 31)) {
 
-    char fname_al[128];
-    snprintf(fname_al, 128, "%s_alpha", f->name); fname_al[127] = '\0';
-
     BFT_MALLOC(grad_al, n_cells_ext, cs_real_3_t);
 
-    cs_field_gradient_scalar(cs_field_by_name(fname_al),
+    cs_field_gradient_scalar(cs_field_by_composite_name("alpha", f->name),
                              false,       /* use previous t */
                              1,           /* not on increment */
                              grad_al);
@@ -1215,9 +1203,9 @@ cs_turbulence_rij_transport_div_tf(const int        field_id,
     /*  Clipping of the turbulence flux vector */
     if ((f_tv != NULL) && (cs_glob_time_step->nt_cur > 1)) {
       const int kclipp = cs_field_key_id("is_clipped");
-      const int clprit = cs_field_get_key_int(cs_field_by_name(fname), kclipp);
+      const int clprit = cs_field_get_key_int(f_ut, kclipp);
       if (clprit > 0)
-        cs_clip_turbulent_fluxes(cs_field_by_name(fname)->id,
+        cs_clip_turbulent_fluxes(f_ut->id,
                                  f_tv->id);
     }
 

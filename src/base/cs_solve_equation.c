@@ -319,8 +319,8 @@ _production_and_dissipation_terms(const cs_field_t  *f,
 
     if (variance_turb_flux_model_type >= 1) {
       const cs_real_3_t *xut
-        = (const cs_real_3_t *)cs_field_by_composite_name(f_fm->name,
-                                                          "turbulent_flux")->val;
+        = (const cs_real_3_t *)cs_field_by_composite_name("turbulent_flux",
+                                                          f_fm->name)->val;
       for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
         const cs_real_t prod = - 2. * cs_math_3_dot_product(grad[c_id],
                                                             xut[c_id]);
@@ -349,8 +349,8 @@ _production_and_dissipation_terms(const cs_field_t  *f,
 
     if (variance_turb_flux_model_type >= 1) {
       const cs_real_3_t *xut
-        = (const cs_real_3_t *)cs_field_by_composite_name(f_fm->name,
-                                                          "turbulent_flux")->val;
+        = (const cs_real_3_t *)cs_field_by_composite_name("turbulent_flux",
+                                                          f_fm->name)->val;
       for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
         const cs_real_t cprovol = xcpp[c_id] * cell_f_vol[c_id] * crom[c_id];
         /* Special time stepping to ensure positivity of the variance */
@@ -411,7 +411,7 @@ _production_and_dissipation_terms(const cs_field_t  *f,
     if (   variance_turb_flux_model == 11
         || variance_turb_flux_model == 21
         || variance_turb_flux_model == 31) {
-      cvar_al = cs_field_by_composite_name(f_fm->name, "alpha")->val;
+      cvar_al = cs_field_by_composite_name("alpha", f_fm->name)->val;
     }
   }
   else if (turb_model->iturb == CS_TURB_K_OMEGA) {
@@ -514,7 +514,7 @@ _diffusion_terms_scalar(const cs_field_t           *f,
     if (   scalar_turb_flux_model == 11
         || scalar_turb_flux_model == 21
         || scalar_turb_flux_model == 31) {
-      cs_field_t *f_alpha = cs_field_by_composite_name(f->name, "alpha");
+      cs_field_t *f_alpha = cs_field_by_composite_name("alpha", f->name);
       cs_turbulence_rij_solve_alpha(f_alpha->id, -1, cs_turb_xclt);
     }
     cs_turbulence_rij_transport_div_tf(f->id, xcpp, vistet, rhs);

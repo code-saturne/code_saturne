@@ -547,7 +547,7 @@ class DefineUserScalarsModel(Variables, Model):
     @Variables.noUndo
     def getVarianceLabelFromScalarLabel(self, name):
         """
-        Get the name of scalar with variancy's name: name
+        Get the name of scalar with variance's name: name
         """
         self.isInList(name, self.getScalarNameList())
 

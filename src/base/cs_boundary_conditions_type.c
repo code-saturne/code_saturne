@@ -1217,7 +1217,7 @@ cs_boundary_conditions_type(bool  init,
       if (turb_flux_model_type == 3) {
 
         cs_field_t *f_tf
-          = cs_field_by_composite_name(f->name, "turbulent_flux");
+          = cs_field_by_composite_name("turbulent_flux", f->name);
 
         int *icodcl_tf = f_tf->bc_coeffs->icodcl;
         cs_real_t *rcodcl1_tf = f_tf->bc_coeffs->rcodcl1;
@@ -1237,7 +1237,7 @@ cs_boundary_conditions_type(bool  init,
 
       if (turb_flux_model%10 == 1) {
 
-        cs_field_t *f_al = cs_field_by_composite_name(f->name, "alpha");
+        cs_field_t *f_al = cs_field_by_composite_name("alpha", f->name);
 
         int *icodcl_al = f_al->bc_coeffs->icodcl;
         cs_real_t *rcodcl1_al = f_al->bc_coeffs->rcodcl1;
