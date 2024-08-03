@@ -348,7 +348,7 @@ _thermal_flux_st(const char          *name,
                           + buoyancy_i - dissip_i;
 
        rhs_ut[c_id][i] += (  prod_by_vel_grad_i + prod_by_scal_grad_i
-                           + buoyancy_i - dissip_i)
+                           + buoyancy_i + press_correl_i - dissip_i)
                          * cell_f_vol[c_id]*crom[c_id];
 
        /* TODO we can implicit more terms */
