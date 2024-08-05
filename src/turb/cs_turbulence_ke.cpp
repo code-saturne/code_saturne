@@ -1594,7 +1594,7 @@ cs_turbulence_ke(int              phase_id,
         /* Implicit source terms on k */
         tinstk[c_id] += fmax(-lag_st_i[c_id], 0.);
 
-        /* Implicit source terms on omega */
+        /* Implicit source terms on epsilon */
         tinste[c_id] += fmax(-cs_turb_ce4 * lag_st_k[c_id] / cvara_k[c_id], 0.);
 
       }
