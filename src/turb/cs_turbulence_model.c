@@ -713,8 +713,8 @@ double cs_turb_ckwbt2 = 0.0828;
  * Constant \f$\gamma_1\f$ for the \f$k-\omega\f$ SST model.
  * Useful if and only if \ref iturb=60 (\f$k-\omega\f$ SST).
  * \warning: \f$\gamma_1\f$ is calculated before the call to
- * \ref usipsu. Hence, if \f$\beta_1\f$, \f$C_\mu\f$, \f$\kappa\f$ or
- * \f$\sigma_{\omega 1}\f$ is modified in \ref usipsu,
+ * \ref cs_user_parameters. Hence, if \f$\beta_1\f$, \f$C_\mu\f$, \f$\kappa\f$ or
+ * \f$\sigma_{\omega 1}\f$ is modified in \ref cs_user_parameters,
  * \ref cs_turb_ckwgm1 must also be modified in accordance.
  */
 double cs_turb_ckwgm1 = -1.;
@@ -723,9 +723,9 @@ double cs_turb_ckwgm1 = -1.;
  * \f$\frac{\beta_2}{C_\mu}-\frac{\kappa^2}{\sqrt{C_\mu}\sigma_{\omega 2}}\f$.
  * Constant \f$\gamma_2\f$ for the \f$k-\omega\f$ SST model.
  * Useful if and only if \ref iturb=60 (\f$k-\omega\f$ SST).
- * \warning: \f$\gamma_2\f$ is calculated before the call to \ref usipsu. Hence,
+ * \warning: \f$\gamma_2\f$ is calculated before the call to \ref cs_user_parameters. Hence,
  * if \f$\beta_2\f$, \f$C_\mu\f$, \f$\kappa\f$ or \f$\sigma_{\omega 2}\f$ is
- * modified in \ref usipsu, \ref cs_turb_ckwgm2 must also be modified
+ * modified in \ref cs_user_parameters, \ref cs_turb_ckwgm2 must also be modified
  * in accordance.
  */
 double cs_turb_ckwgm2 = -1.;
@@ -2207,7 +2207,7 @@ cs_turb_init_ref_quantities(void)
        _("\n"
          " Characteristic values for turbulence:\n"
          " -------------------------------------\n\n"
-         "   almax: %11.3g (caracteristic length for initialization)\n"),
+         "   almax: %11.3g (characteristic length for initialization)\n"),
        _turb_ref_values.almax);
   }
 }

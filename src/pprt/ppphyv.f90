@@ -26,9 +26,9 @@
 
 !> \file ppphyv.f90
 !>
-!> \brief These subroutineS fill physical properties which are variable in time
+!> \brief These subroutines fill physical properties which are variable in time
 !>        for the dedicated physics modules
-!>        (BEFORE and AFTER the user surbroutines).
+!>        (BEFORE and AFTER the user subroutines).
 !>
 !> \warning:
 !>  - it is forbidden to modify the turbulent viscosity here.
@@ -37,19 +37,17 @@
 !>  - it is necessary to call field_set_key_int(ivarfl(isca(iscal)), kivisl, 0)
 !>    if one wants the specific heat to be variable in space
 !> \remarks:
-!>  - this routine is called at the begining of each time step,
+!>  - this routine is called at the beginning of each time step,
 !>    thus, at the first time step, the only initialized variables are:
-!>     - in usipsu.f90:
+!>     - in cs_user_parameters:
 !>         - the density (set at ro0)
 !>         - the molecular viscosity (set to viscl0)
-!>     - in usppiv.f90:
-!>         - the variables (0 by default)
 !>
 !> Here can be given:
 !>  - the cell density in kg/m3
 !>    (and eventually the boundary density)
 !>  - the dynamic molecular viscosity in kg/(m s)
-!>  - the specific heat Cp in J/(kg degres)
+!>  - the specific heat Cp in J/(kg degrees)
 !>  - scalars diffusivities in kg/(m s)
 !>
 !-------------------------------------------------------------------------------

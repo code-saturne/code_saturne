@@ -915,7 +915,7 @@ cs_physical_properties_update(int   iterns)
   if (cs_glob_physical_model_flag[CS_COMPRESSIBLE] >= 0)
     cs_cf_physical_properties();
 
-  // Boundary density based on adjacent cell value if not explicitely set.
+  // Boundary density based on adjacent cell value if not explicitly set.
   if (mbrom == 0 && rho_b_f != NULL) {
     assert(CS_F_(rho) != NULL);
     const cs_real_t  *crom = CS_F_(rho)->val;
@@ -924,7 +924,7 @@ cs_physical_properties_update(int   iterns)
       rho_b_f->val[face_id] = crom[b_face_cells[face_id]];
   }
 
-  // Only density may be updated in Navier Stokes loop
+  // Only density may be updated in Navier-Stokes loop
   if (iterns > 0)
     return;
 

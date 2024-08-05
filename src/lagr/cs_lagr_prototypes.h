@@ -56,7 +56,8 @@ BEGIN_C_DECLS
  *
  * It must be prescribed in every cell and be homogeneous to gravity (m/s^2)
  * By default gravity and drag force are the only forces acting on the particles
- * (the gravity components gx gy gz are assigned in the GUI or in usipsu)
+ * (the gravity components gx gy gz are assigned in the GUI or in
+ * cs_user_parameters)
  *
  * \param[in]      dt_p     time step (for the cell)
  * \param[in]      taup     particle relaxation time
