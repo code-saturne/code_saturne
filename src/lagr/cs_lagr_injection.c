@@ -1828,7 +1828,7 @@ cs_lagr_injection(int        time_id,
                                    particle_face_ids,
                                    visc_length);
 
-          bool is_displaced = false;
+          int is_displaced = 0;
           /* For safety, reset saved values for cell number and previous
              particle coordinates and rank_id. */
           for (cs_lnum_t p_id = p_set->n_particles - n_inject;
@@ -1869,9 +1869,10 @@ cs_lagr_injection(int        time_id,
             if (   fabs(disp[0] * inv_ref_length) > 1e-15
                 || fabs(disp[1] * inv_ref_length) > 1e-15
                 || fabs(disp[2] * inv_ref_length) > 1e-15)
-              is_displaced = true;
+              is_displaced = 1;
           }
 
+          cs_parall_max(1, CS_INT_TYPE, &is_displaced);
           if (is_displaced) {
             /* Tracking step to determine the cell_id of the new location */
             cs_lagr_tracking_particle_movement(visc_length, particle_range);
