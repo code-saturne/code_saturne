@@ -326,7 +326,7 @@ _init_user
     cs_gui_ale_diffusion_type();
 
     /* Add auxiliary property fields dedicated to the ALE modelling */
-    cs_ale_add_pty_fields();
+    cs_ale_add_property_fields();
   }
 
   cs_gui_laminar_viscosity();

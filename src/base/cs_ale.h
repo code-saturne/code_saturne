@@ -196,12 +196,12 @@ cs_ale_is_activated(void);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Add "property" fields dedicated to the ALE modelling
+ * \brief Add "property" fields dedicated to the ALE model.
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_ale_add_pty_fields(void);
+cs_ale_add_property_fields(void);
 
 /*----------------------------------------------------------------------------*/
 /*!

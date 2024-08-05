@@ -1597,60 +1597,60 @@ cs_ale_is_activated(void)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Add "property" fields dedicated to the ALE modelling
+ * \brief Add "property" fields dedicated to the ALE model.
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_ale_add_pty_fields(void)
+cs_ale_add_property_fields(void)
 {
   assert(cs_glob_ale != CS_ALE_NONE);
 
   int  log_key_id = cs_field_key_id("log");
   int  post_key_id = cs_field_key_id("post_vis");
 
-  /* Add the mesh displacement */
-  /* ------------------------- */
+  /* Add the mesh displacement
+     ------------------------- */
 
-  cs_field_t *md_fld = cs_field_create("mesh_displacement",
-                                       CS_FIELD_PROPERTY,
-                                       CS_MESH_LOCATION_VERTICES,
-                                       3,      /* dim */
-                                       true);  /* has previous */
+  cs_field_t *f_md = cs_field_create("mesh_displacement",
+                                     CS_FIELD_PROPERTY,
+                                     CS_MESH_LOCATION_VERTICES,
+                                     3,      /* dim */
+                                     true);  /* has previous */
 
   /* Add a label for this field */
 
-  cs_field_set_key_str(md_fld, cs_field_key_id("label"), "Mesh displacement");
+  cs_field_set_key_str(f_md, cs_field_key_id("label"), "Mesh displacement");
 
   /* Output related to this field */
 
   const int post_flag = CS_POST_ON_LOCATION;
 
-  cs_field_set_key_int(md_fld, log_key_id, 1);
-  cs_field_set_key_int(md_fld, post_key_id, post_flag);
+  cs_field_set_key_int(f_md, log_key_id, 1);
+  cs_field_set_key_int(f_md, post_key_id, post_flag);
 
   /* Handle the restart settings */
 
-  cs_field_set_key_int(md_fld,
+  cs_field_set_key_int(f_md,
                        cs_field_key_id("restart_file"),
                        CS_RESTART_AUXILIARY);
-  cs_field_set_key_int(md_fld,
+  cs_field_set_key_int(f_md,
                        cs_field_key_id("restart_n_values"),
                        2);
 
-  /* Add the initial vertex coordinates */
-  /* ---------------------------------- */
+  /* Add the initial vertex coordinates
+     ---------------------------------- */
 
-  cs_field_t *xyz0_fld = cs_field_create("vtx_coord0",
-                                         CS_FIELD_PROPERTY,
-                                         CS_MESH_LOCATION_VERTICES,
-                                         3,       /* dim */
-                                         false);  /* has previous */
+  cs_field_t *f_xyz0 = cs_field_create("vtx_coord0",
+                                       CS_FIELD_PROPERTY,
+                                       CS_MESH_LOCATION_VERTICES,
+                                       3,       /* dim */
+                                       false);  /* has previous */
 
   /* No output related to this field */
 
-  cs_field_set_key_int(xyz0_fld, log_key_id, 0);
-  cs_field_set_key_int(xyz0_fld, post_key_id, 0);
+  cs_field_set_key_int(f_xyz0, log_key_id, 0);
+  cs_field_set_key_int(f_xyz0, post_key_id, 0);
 }
 
 /*----------------------------------------------------------------------------*/
