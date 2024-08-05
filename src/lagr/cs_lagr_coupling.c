@@ -83,6 +83,15 @@ BEGIN_C_DECLS
 
 static const cs_real_t  _c_stephan = 5.6703e-8;
 
+/* Tensor to vector (t2v) and vector to tensor (v2t) mask arrays */
+
+static const cs_lnum_t _iv2t[6] = {0, 1, 2, 0, 1, 0};
+static const cs_lnum_t _jv2t[6] = {0, 1, 2, 1, 2, 2};
+
+static const cs_lnum_t _t2v[3][3] = {{0, 3, 5},
+                                     {3, 1, 4},
+                                     {5, 4, 2}};
+
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
@@ -153,11 +162,10 @@ cs_lagr_coupling(const cs_real_t  taup[],
 
   cs_lnum_t ntersl = cs_glob_lagr_dim->ntersl;
 
-  cs_real_t *tslag, *auxl1, *auxl2, *auxl3;
+  cs_real_t *tslag;
+  cs_real_3_t *auxl;
   BFT_MALLOC(tslag, ncelet * ntersl, cs_real_t);
-  BFT_MALLOC(auxl1, nbpart, cs_real_t);
-  BFT_MALLOC(auxl2, nbpart, cs_real_t);
-  BFT_MALLOC(auxl3, nbpart, cs_real_t);
+  BFT_MALLOC(auxl, nbpart, cs_real_3_t);
 
   /* Number of passes for steady source terms */
   if (   cs_glob_lagr_time_scheme->isttio == 1
@@ -171,15 +179,15 @@ cs_lagr_coupling(const cs_real_t  taup[],
   cs_real_t *volp = NULL, *volm = NULL;
   BFT_MALLOC(volp, ncel, cs_real_t);
   BFT_MALLOC(volm, ncel, cs_real_t);
-  for (cs_lnum_t iel = 0; iel < ncel; iel++) {
-    volp[iel] = 0.0;
-    volm[iel] = 0.0;
+  for (cs_lnum_t c_id = 0; c_id < ncel; c_id++) {
+    volp[c_id] = 0.0;
+    volm[c_id] = 0.0;
   }
 
   for (cs_lnum_t ivar = 0; ivar < ntersl; ivar++) {
 
-    for (cs_lnum_t iel = 0; iel < ncel; iel++)
-      tslag[ncelet * ivar + iel]  = 0.0;
+    for (cs_lnum_t c_id = 0; c_id < ncel; c_id++)
+      tslag[ncelet * ivar + c_id]  = 0.0;
 
   }
 
@@ -189,39 +197,36 @@ cs_lagr_coupling(const cs_real_t  taup[],
   /* Finalization of external forces (if the particle interacts with a
      domain boundary, revert to order 1). */
 
-  for (cs_lnum_t npt = 0; npt < nbpart; npt++) {
+  for (cs_lnum_t p_id = 0; p_id < nbpart; p_id++) {
 
-    cs_real_t aux1 = dtp / taup[npt];
-    cs_real_t p_mass = cs_lagr_particles_get_real(p_set, npt, CS_LAGR_MASS);
+    cs_real_t aux1 = dtp / taup[p_id];
+    cs_real_t p_mass = cs_lagr_particles_get_real(p_set, p_id, CS_LAGR_MASS);
 
     if (   cs_glob_lagr_time_scheme->t_order == 1
-        || cs_lagr_particles_get_lnum(p_set, npt, CS_LAGR_REBOUND_ID) == 0)
-      tsfext[npt] = (1.0 - exp(-aux1)) * p_mass * taup[npt];
+        || cs_lagr_particles_get_lnum(p_set, p_id, CS_LAGR_REBOUND_ID) == 0)
+      tsfext[p_id] = (1.0 - exp(-aux1)) * p_mass * taup[p_id];
 
     else
-      tsfext[npt] +=  (1.0 - (1.0 - exp (-aux1)) / aux1) * taup[npt]
+      tsfext[p_id] +=  (1.0 - (1.0 - exp (-aux1)) / aux1) * taup[p_id]
                     * p_mass;
 
   }
 
-  for (cs_lnum_t npt = 0; npt < nbpart; npt++) {
+  for (cs_lnum_t p_id = 0; p_id < nbpart; p_id++) {
 
-    cs_real_t  p_stat_w = cs_lagr_particles_get_real(p_set, npt,
+    cs_real_t  p_stat_w = cs_lagr_particles_get_real(p_set, p_id,
                                                      CS_LAGR_STAT_WEIGHT);
-    cs_real_t  p_mass   = cs_lagr_particles_get_real(p_set, npt, CS_LAGR_MASS);
-    cs_real_t *p_vel    = cs_lagr_particles_attr(p_set, npt, CS_LAGR_VELOCITY);
+    cs_real_t  p_mass   = cs_lagr_particles_get_real(p_set, p_id, CS_LAGR_MASS);
+    cs_real_t *p_vel    = cs_lagr_particles_attr(p_set, p_id, CS_LAGR_VELOCITY);
 
-    cs_real_t  prev_p_mass = cs_lagr_particles_get_real_n(p_set, npt, 1,
+    cs_real_t  prev_p_mass = cs_lagr_particles_get_real_n(p_set, p_id, 1,
                                                           CS_LAGR_MASS);
-    cs_real_t *prev_p_vel  = cs_lagr_particles_attr_n(p_set, npt, 1,
+    cs_real_t *prev_p_vel  = cs_lagr_particles_attr_n(p_set, p_id, 1,
                                                       CS_LAGR_VELOCITY);
 
-    auxl1[npt] = p_stat_w * (p_mass * p_vel[0] - prev_p_mass * prev_p_vel[0]
-                                               - grav[0] * tsfext[npt]) / dtp;
-    auxl2[npt] = p_stat_w * (p_mass * p_vel[1] - prev_p_mass * prev_p_vel[1]
-                                               - grav[1] * tsfext[npt]) / dtp;
-    auxl3[npt] = p_stat_w * (p_mass * p_vel[2] - prev_p_mass * prev_p_vel[2]
-                                               - grav[2] * tsfext[npt]) / dtp;
+    for (cs_lnum_t i = 0; i < 3; i++)
+      auxl[p_id][i] = p_stat_w * (p_mass * p_vel[i] - prev_p_mass * prev_p_vel[i]
+                                                - grav[i] * tsfext[p_id]) / dtp;
 
   }
 
@@ -235,14 +240,14 @@ cs_lagr_coupling(const cs_real_t  taup[],
     else
       t_st_vel = st_vel;
 
-    for (cs_lnum_t i = 0; i < ncel; i++) {
+    for (cs_lnum_t c_id = 0; c_id < ncel; c_id++) {
       for (cs_lnum_t j = 0; j < 3; j++)
-        t_st_vel[i][j] = 0;
+        t_st_vel[c_id][j] = 0;
     }
 
-    for (cs_lnum_t npt = 0; npt < nbpart; npt++) {
+    for (cs_lnum_t p_id = 0; p_id < nbpart; p_id++) {
 
-      unsigned char *particle = p_set->p_buffer + p_am->extents * npt;
+      unsigned char *particle = p_set->p_buffer + p_am->extents * p_id;
 
       cs_real_t  p_stat_w = cs_lagr_particle_get_real(particle, p_am,
                                                       CS_LAGR_STAT_WEIGHT);
@@ -254,18 +259,18 @@ cs_lagr_coupling(const cs_real_t  taup[],
       cs_real_t  p_mass = cs_lagr_particle_get_real(particle, p_am,
                                                     CS_LAGR_MASS);
 
-      cs_lnum_t iel = cs_lagr_particle_get_lnum(particle, p_am, CS_LAGR_CELL_ID);
+      cs_lnum_t c_id = cs_lagr_particle_get_lnum(particle, p_am, CS_LAGR_CELL_ID);
 
       /* Volume and mass of particles in cell */
-      volp[iel] += p_stat_w * cs_math_pi * pow(prev_p_diam, 3) / 6.0;
-      volm[iel] += p_stat_w * prev_p_mass;
+      volp[c_id] += p_stat_w * cs_math_pi * pow(prev_p_diam, 3) / 6.0;
+      volm[c_id] += p_stat_w * prev_p_mass;
 
       /* Momentum source term */
-      t_st_vel[iel][0] += - auxl1[npt];
-      t_st_vel[iel][1] += - auxl2[npt];
-      t_st_vel[iel][2] += - auxl3[npt];
-      tslag[iel + (lag_st->itsli-1) * ncelet]
-        += - 2.0 * p_stat_w * p_mass / taup[npt];
+      for (cs_lnum_t i = 0; i < 3; i++)
+        t_st_vel[c_id][i] -= auxl[p_id][i];
+
+      tslag[c_id + (lag_st->itsli-1) * ncelet]
+        -= 2.0 * p_stat_w * p_mass / taup[p_id];
 
     }
 
@@ -279,32 +284,32 @@ cs_lagr_coupling(const cs_real_t  taup[],
          (difficult to write something for v2, which loses its meaning as
          "Rij comonent") */
 
-      for (cs_lnum_t npt = 0; npt < nbpart; npt++) {
+      for (cs_lnum_t p_id = 0; p_id < nbpart; p_id++) {
 
-        unsigned char *particle = p_set->p_buffer + p_am->extents * npt;
+        unsigned char *particle = p_set->p_buffer + p_am->extents * p_id;
 
-        cs_lnum_t  iel         = cs_lagr_particle_get_lnum(particle, p_am,
+        cs_lnum_t  c_id         = cs_lagr_particle_get_lnum(particle, p_am,
                                                            CS_LAGR_CELL_ID);
         cs_real_t *prev_f_vel  = cs_lagr_particle_attr_n(particle, p_am, 1,
                                                          CS_LAGR_VELOCITY_SEEN);
         cs_real_t *f_vel       = cs_lagr_particle_attr(particle, p_am,
                                                        CS_LAGR_VELOCITY_SEEN);
 
-        cs_real_t uuf = 0.5 * (prev_f_vel[0] + f_vel[0]);
-        cs_real_t vvf = 0.5 * (prev_f_vel[1] + f_vel[1]);
-        cs_real_t wwf = 0.5 * (prev_f_vel[2] + f_vel[2]);
+        cs_real_3_t vel_s =
+        { 0.5 * (prev_f_vel[0] + f_vel[0]),
+          0.5 * (prev_f_vel[1] + f_vel[1]),
+          0.5 * (prev_f_vel[2] + f_vel[2])};
 
-        tslag[iel + (lag_st->itske-1) * ncelet] += - uuf * auxl1[npt]
-                                                   - vvf * auxl2[npt]
-                                                   - wwf * auxl3[npt];
+        tslag[c_id + (lag_st->itske-1) * ncelet] -=
+          cs_math_3_dot_product(vel_s, auxl[p_id]);
 
       }
 
-      for (cs_lnum_t iel = 0; iel < ncel; iel++)
-        tslag[iel + (lag_st->itske-1) * ncelet]
-          += - extra->vel->val[iel * 3    ] * t_st_vel[iel][0]
-             - extra->vel->val[iel * 3 + 1] * t_st_vel[iel][1]
-             - extra->vel->val[iel * 3 + 2] * t_st_vel[iel][2];
+      for (cs_lnum_t c_id = 0; c_id < ncel; c_id++)
+        tslag[c_id + (lag_st->itske-1) * ncelet]
+          += - extra->vel->val[c_id * 3    ] * t_st_vel[c_id][0]
+             - extra->vel->val[c_id * 3 + 1] * t_st_vel[c_id][1]
+             - extra->vel->val[c_id * 3 + 2] * t_st_vel[c_id][2];
 
     }
     else if (extra->itytur == 3) {
@@ -319,11 +324,11 @@ cs_lagr_coupling(const cs_real_t  taup[],
           t_st_rij[i][j] = 0;
       }
 
-      for (cs_lnum_t npt = 0; npt < nbpart; npt++) {
+      for (cs_lnum_t p_id = 0; p_id < nbpart; p_id++) {
 
-        unsigned char *particle = p_set->p_buffer + p_am->extents * npt;
+        unsigned char *particle = p_set->p_buffer + p_am->extents * p_id;
 
-        cs_lnum_t  iel         = cs_lagr_particle_get_lnum(particle, p_am,
+        cs_lnum_t  c_id         = cs_lagr_particle_get_lnum(particle, p_am,
                                                            CS_LAGR_CELL_ID);
 
         cs_real_t *prev_f_vel  = cs_lagr_particle_attr_n(particle, p_am, 1,
@@ -331,37 +336,41 @@ cs_lagr_coupling(const cs_real_t  taup[],
         cs_real_t *f_vel       = cs_lagr_particle_attr(particle, p_am,
                                                        CS_LAGR_VELOCITY_SEEN);
 
-        cs_real_t uuf = 0.5 * (prev_f_vel[0] + f_vel[0]);
-        cs_real_t vvf = 0.5 * (prev_f_vel[1] + f_vel[1]);
-        cs_real_t wwf = 0.5 * (prev_f_vel[2] + f_vel[2]);
+        cs_real_3_t vel_s =
+        { 0.5 * (prev_f_vel[0] + f_vel[0]),
+          0.5 * (prev_f_vel[1] + f_vel[1]),
+          0.5 * (prev_f_vel[2] + f_vel[2])};
 
-        t_st_rij[iel][0] += - 2.0 * uuf * auxl1[npt];
-        t_st_rij[iel][1] += - 2.0 * vvf * auxl2[npt];
-        t_st_rij[iel][2] += - 2.0 * wwf * auxl3[npt];
-        t_st_rij[iel][3] += - uuf * auxl2[npt] - vvf * auxl1[npt];
-        t_st_rij[iel][4] += - vvf * auxl3[npt] - wwf * auxl2[npt];
-        t_st_rij[iel][5] += - uuf * auxl3[npt] - wwf * auxl1[npt];
+
+        for (cs_lnum_t ij = 0; ij < 6; ij++) {
+          cs_lnum_t i = _iv2t[ij];
+          cs_lnum_t j = _jv2t[ij];
+
+          t_st_rij[c_id][ij] -= ( vel_s[i] * auxl[p_id][j]
+                                + vel_s[j] * auxl[p_id][i]);
+        }
+
 
       }
-      for (cs_lnum_t iel = 0; iel < ncel; iel++) {
+      for (cs_lnum_t c_id = 0; c_id < ncel; c_id++) {
 
-        t_st_rij[iel][0] += - 2.0 * extra->vel->val[iel * 3    ]
-                                  * t_st_vel[iel][0];
+        t_st_rij[c_id][0] += - 2.0 * extra->vel->val[c_id * 3    ]
+                                  * t_st_vel[c_id][0];
 
-        t_st_rij[iel][1] += - 2.0 * extra->vel->val[iel * 3 + 1]
-                                  * t_st_vel[iel][1];
+        t_st_rij[c_id][1] += - 2.0 * extra->vel->val[c_id * 3 + 1]
+                                  * t_st_vel[c_id][1];
 
-        t_st_rij[iel][2] += - 2.0 * extra->vel->val[iel * 3 + 2]
-                                  * t_st_vel[iel][2];
+        t_st_rij[c_id][2] += - 2.0 * extra->vel->val[c_id * 3 + 2]
+                                  * t_st_vel[c_id][2];
 
-        t_st_rij[iel][3] += - extra->vel->val[iel * 3    ] * t_st_vel[iel][1]
-                            - extra->vel->val[iel * 3 + 1] * t_st_vel[iel][0];
+        t_st_rij[c_id][3] += - extra->vel->val[c_id * 3    ] * t_st_vel[c_id][1]
+                            - extra->vel->val[c_id * 3 + 1] * t_st_vel[c_id][0];
 
-        t_st_rij[iel][4] += - extra->vel->val[iel * 3 + 1] * t_st_vel[iel][2]
-                            - extra->vel->val[iel * 3 + 2] * t_st_vel[iel][1];
+        t_st_rij[c_id][4] += - extra->vel->val[c_id * 3 + 1] * t_st_vel[c_id][2]
+                            - extra->vel->val[c_id * 3 + 2] * t_st_vel[c_id][1];
 
-        t_st_rij[iel][5] += - extra->vel->val[iel * 3    ] * t_st_vel[iel][2]
-                            - extra->vel->val[iel * 3 + 2] * t_st_vel[iel][0];
+        t_st_rij[c_id][5] += - extra->vel->val[c_id * 3    ] * t_st_vel[c_id][2]
+                            - extra->vel->val[c_id * 3 + 2] * t_st_vel[c_id][0];
 
       }
 
@@ -377,9 +386,9 @@ cs_lagr_coupling(const cs_real_t  taup[],
           || cs_glob_lagr_specific_physics->idpvar == 1
           || cs_glob_lagr_model->physical_model == CS_LAGR_PHYS_CTWR )) {
 
-    for (cs_lnum_t npt = 0; npt < nbpart; npt++) {
+    for (cs_lnum_t p_id = 0; p_id < nbpart; p_id++) {
 
-      unsigned char *particle = p_set->p_buffer + p_am->extents * npt;
+      unsigned char *particle = p_set->p_buffer + p_am->extents * p_id;
 
       cs_real_t  p_stat_w
         = cs_lagr_particle_get_real(particle, p_am, CS_LAGR_STAT_WEIGHT);
@@ -407,10 +416,10 @@ cs_lagr_coupling(const cs_real_t  taup[],
     if (   cs_glob_lagr_model->physical_model == CS_LAGR_PHYS_HEAT
         && cs_glob_lagr_specific_physics->itpvar == 1) {
 
-      for (cs_lnum_t npt = 0; npt < nbpart; npt++) {
+      for (cs_lnum_t p_id = 0; p_id < nbpart; p_id++) {
 
-        unsigned char *particle = p_set->p_buffer + p_am->extents * npt;
-        cs_lnum_t  iel = cs_lagr_particle_get_lnum(particle, p_am,
+        unsigned char *particle = p_set->p_buffer + p_am->extents * p_id;
+        cs_lnum_t  c_id = cs_lagr_particle_get_lnum(particle, p_am,
                                                    CS_LAGR_CELL_ID);
         cs_real_t  p_mass = cs_lagr_particle_get_real_n(particle, p_am, 0,
                                                         CS_LAGR_MASS);
@@ -427,19 +436,19 @@ cs_lagr_coupling(const cs_real_t  taup[],
         cs_real_t  p_stat_w = cs_lagr_particle_get_real(particle, p_am,
                                                         CS_LAGR_STAT_WEIGHT);
 
-        tslag[iel + (lag_st->itste-1) * ncelet]
+        tslag[c_id + (lag_st->itste-1) * ncelet]
           += - (p_mass * p_tmp * p_cp
              - prev_p_mass * prev_p_tmp * prev_p_cp) / dtp * p_stat_w;
-        tslag[iel + (lag_st->itsti-1) * ncelet]
-          += tempct[nbpart + npt] * p_stat_w;
+        tslag[c_id + (lag_st->itsti-1) * ncelet]
+          += tempct[nbpart + p_id] * p_stat_w;
 
       }
       if (extra->radiative_model > 0) {
 
-        for (cs_lnum_t npt = 0; npt < nbpart; npt++) {
+        for (cs_lnum_t p_id = 0; p_id < nbpart; p_id++) {
 
-          unsigned char *particle = p_set->p_buffer + p_am->extents * npt;
-          cs_lnum_t  iel = cs_lagr_particle_get_lnum(particle, p_am,
+          unsigned char *particle = p_set->p_buffer + p_am->extents * p_id;
+          cs_lnum_t  c_id = cs_lagr_particle_get_lnum(particle, p_am,
                                                      CS_LAGR_CELL_ID);
           cs_real_t  p_diam = cs_lagr_particle_get_real_n(particle, p_am, 0,
                                                           CS_LAGR_DIAMETER);
@@ -451,10 +460,10 @@ cs_lagr_coupling(const cs_real_t  taup[],
                                                           CS_LAGR_STAT_WEIGHT);
 
           cs_real_t aux1 = cs_math_pi * p_diam * p_diam * p_eps
-                          * (extra->rad_energy->val[iel]
+                          * (extra->rad_energy->val[c_id]
                              - 4.0 * _c_stephan * cs_math_pow4(p_tmp));
 
-          tslag[iel + (lag_st->itste-1) * ncelet] += aux1 * p_stat_w;
+          tslag[c_id + (lag_st->itste-1) * ncelet] += aux1 * p_stat_w;
 
         }
 
@@ -468,11 +477,11 @@ cs_lagr_coupling(const cs_real_t  taup[],
 
       else {
 
-        for (cs_lnum_t npt = 0; npt < nbpart; npt++) {
+        for (cs_lnum_t p_id = 0; p_id < nbpart; p_id++) {
 
-          unsigned char *particle = p_set->p_buffer + p_am->extents * npt;
+          unsigned char *particle = p_set->p_buffer + p_am->extents * p_id;
 
-          cs_lnum_t  iel = cs_lagr_particle_get_lnum(particle, p_am,
+          cs_lnum_t  c_id = cs_lagr_particle_get_lnum(particle, p_am,
                                                      CS_LAGR_CELL_ID);
 
           cs_real_t  p_mass = cs_lagr_particle_get_real_n(particle, p_am, 0,
@@ -492,11 +501,11 @@ cs_lagr_coupling(const cs_real_t  taup[],
           cs_real_t  p_stat_w = cs_lagr_particle_get_real
                                   (particle, p_am, CS_LAGR_STAT_WEIGHT);
 
-          tslag[iel + (lag_st->itste-1) * ncelet]
+          tslag[c_id + (lag_st->itste-1) * ncelet]
             += - (  p_mass * p_tmp * p_cp
                - prev_p_mass * prev_p_tmp * prev_p_cp) / dtp * p_stat_w;
-          tslag[iel + (lag_st->itsti-1) * ncelet]
-            += tempct[nbpart + npt] * p_stat_w;
+          tslag[c_id + (lag_st->itsti-1) * ncelet]
+            += tempct[nbpart + p_id] * p_stat_w;
 
         }
 
@@ -505,11 +514,11 @@ cs_lagr_coupling(const cs_real_t  taup[],
     }
     else if (cs_glob_lagr_model->physical_model == CS_LAGR_PHYS_CTWR) {
 
-      for (cs_lnum_t npt = 0; npt < nbpart; npt++) {
+      for (cs_lnum_t p_id = 0; p_id < nbpart; p_id++) {
 
-        unsigned char *particle = p_set->p_buffer + p_am->extents * npt;
+        unsigned char *particle = p_set->p_buffer + p_am->extents * p_id;
 
-        cs_lnum_t  iel = cs_lagr_particle_get_lnum(particle, p_am,
+        cs_lnum_t  c_id = cs_lagr_particle_get_lnum(particle, p_am,
                                                    CS_LAGR_CELL_ID);
 
         cs_real_t  p_mass = cs_lagr_particle_get_real_n(particle, p_am, 0,
@@ -529,11 +538,11 @@ cs_lagr_coupling(const cs_real_t  taup[],
         cs_real_t  p_stat_w = cs_lagr_particle_get_real
                                 (particle, p_am, CS_LAGR_STAT_WEIGHT);
 
-        tslag[iel + (lag_st->itste-1) * ncelet]
+        tslag[c_id + (lag_st->itste-1) * ncelet]
           += - (  p_mass * p_tmp * p_cp
              - prev_p_mass * prev_p_tmp * prev_p_cp) / dtp * p_stat_w;
-        tslag[iel + (lag_st->itsti-1) * ncelet]
-          += tempct[nbpart + npt] * p_stat_w;
+        tslag[c_id + (lag_st->itsti-1) * ncelet]
+          += tempct[nbpart + p_id] * p_stat_w;
 
       }
 
@@ -550,27 +559,27 @@ cs_lagr_coupling(const cs_real_t  taup[],
   const cs_real_t tvmax = 0.8;
   const cs_real_t *cell_vol = cs_glob_mesh_quantities->cell_vol;
 
-  for (cs_lnum_t iel = 0; iel < ncel; iel++) {
+  for (cs_lnum_t c_id = 0; c_id < ncel; c_id++) {
 
-    cs_real_t mf   = cell_vol[iel] * extra->cromf->val[iel];
-    cs_real_t tauv = volp[iel] / cell_vol[iel];
-    cs_real_t taum = volm[iel] / mf;
+    cs_real_t mf   = cell_vol[c_id] * extra->cromf->val[c_id];
+    cs_real_t tauv = volp[c_id] / cell_vol[c_id];
+    cs_real_t taum = volm[c_id] / mf;
 
     if (tauv > tvmax) {
 
       cs_glob_lagr_source_terms->ntxerr++;;
 
       for (int ivar = 0; ivar < ntersl; ivar++)
-        st_val[iel + ivar * ncelet] = 0.0;
+        st_val[c_id + ivar * ncelet] = 0.0;
 
       if (t_st_vel != NULL) {
         for (cs_lnum_t j = 0; j < 3; j++)
-          t_st_vel[iel][j] = 0.0;
+          t_st_vel[c_id][j] = 0.0;
       }
 
       if (t_st_rij != NULL) {
         for (cs_lnum_t j = 0; j < 6; j++)
-          t_st_rij[iel][j] = 0.0;
+          t_st_rij[c_id][j] = 0.0;
       }
 
     }
@@ -589,29 +598,29 @@ cs_lagr_coupling(const cs_real_t  taup[],
 
     for (int ivar = 0; ivar < ntersl; ivar++) {
 
-      for (cs_lnum_t iel = 0; iel < ncel; iel++)
-        st_val[iel + ivar * ncelet]
-          =  (  tslag[iel + ncelet * ivar]
-              + (lag_st->npts - 1.0) * st_val[iel + ncelet * ivar])
+      for (cs_lnum_t c_id = 0; c_id < ncel; c_id++)
+        st_val[c_id + ivar * ncelet]
+          =  (  tslag[c_id + ncelet * ivar]
+              + (lag_st->npts - 1.0) * st_val[c_id + ncelet * ivar])
             / lag_st->npts;
 
     }
 
     if (st_vel != NULL) {
-      for (cs_lnum_t iel = 0; iel < ncel; iel++) {
+      for (cs_lnum_t c_id = 0; c_id < ncel; c_id++) {
         for (cs_lnum_t j = 0; j < 3; j++) {
-          st_vel[iel][j]
-            =    (t_st_vel[iel][j] + (lag_st->npts - 1.0) * st_vel[iel][j])
+          st_vel[c_id][j]
+            =    (t_st_vel[c_id][j] + (lag_st->npts - 1.0) * st_vel[c_id][j])
                / lag_st->npts;
         }
       }
     }
 
     if (st_rij != NULL) {
-      for (cs_lnum_t iel = 0; iel < ncel; iel++) {
+      for (cs_lnum_t c_id = 0; c_id < ncel; c_id++) {
         for (cs_lnum_t j = 0; j < 6; j++) {
-          st_rij[iel][j]
-            =    (t_st_rij[iel][j] + (lag_st->npts - 1.0) * st_rij[iel][j])
+          st_rij[c_id][j]
+            =    (t_st_rij[c_id][j] + (lag_st->npts - 1.0) * st_rij[c_id][j])
                / lag_st->npts;
         }
       }
@@ -621,8 +630,8 @@ cs_lagr_coupling(const cs_real_t  taup[],
   else {
 
     for (int ivar = 0; ivar < ntersl; ivar++) {
-      for (cs_lnum_t iel = 0; iel < ncel; iel++)
-        st_val[iel + ncelet * ivar] = tslag[iel + ncelet * ivar];
+      for (cs_lnum_t c_id = 0; c_id < ncel; c_id++)
+        st_val[c_id + ncelet * ivar] = tslag[c_id + ncelet * ivar];
     }
 
   }
@@ -636,9 +645,7 @@ cs_lagr_coupling(const cs_real_t  taup[],
   BFT_FREE(volp);
   BFT_FREE(volm);
 
-  BFT_FREE(auxl1);
-  BFT_FREE(auxl2);
-  BFT_FREE(auxl3);
+  BFT_FREE(auxl);
   BFT_FREE(tslag);
 }
 

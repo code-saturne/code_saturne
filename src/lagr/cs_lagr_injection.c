@@ -688,6 +688,7 @@ _update_init_particles(cs_lagr_particle_set_t         *p_set,
       if (zis->velocity_profile == CS_LAGR_IN_IMPOSED_FLUID_VALUE) {
         cs_real_t *part_vel = cs_lagr_particle_attr(particle, p_am,
                                                     CS_LAGR_VELOCITY);
+
         for (cs_lnum_t i = 0; i < 3; i++)
           part_vel[i] = vela[cell_id * 3  + i];
       }
@@ -836,7 +837,7 @@ _init_particles(cs_lagr_particle_set_t         *p_set,
   const cs_coal_model_t  *coal_model = cs_glob_coal_model;
   cs_lagr_extra_module_t *extra = cs_get_lagr_extra_module();
 
-  /* Non-lagrangian fields */
+  /* Non-Lagrangian fields */
 
   const cs_real_t  *xashch = coal_model->xashch;
   const cs_real_t  *cp2ch  = coal_model->cp2ch;
@@ -952,6 +953,7 @@ _init_particles(cs_lagr_particle_set_t         *p_set,
       /* fluid velocity seen */
       cs_real_t *part_seen_vel = cs_lagr_particle_attr(particle, p_am,
                                                        CS_LAGR_VELOCITY_SEEN);
+
       for (cs_lnum_t i = 0; i < 3; i++)
         part_seen_vel[i] = vela[cell_id * 3 + i];
 
