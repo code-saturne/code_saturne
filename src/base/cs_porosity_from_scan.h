@@ -85,6 +85,8 @@ typedef struct {
   cs_real_t porosity_threshold;
   cs_real_t convection_porosity_threshold;
   bool      use_staircase;
+  cs_real_t largest_eigenvalue_criteria;
+  cs_real_t largest_eigenvalues_sum_criteria;
 } cs_porosity_from_scan_opt_t;
 
 /*============================================================================

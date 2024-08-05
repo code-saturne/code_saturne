@@ -118,7 +118,9 @@ static cs_porosity_from_scan_opt_t _porosity_from_scan_opt = {
   .threshold = 4,
   .convection_porosity_threshold = 0.5,
   .porosity_threshold = 1e-12,
-  .use_staircase = false
+  .use_staircase = false,
+  .largest_eigenvalue_criteria = 1,
+  .largest_eigenvalues_sum_criteria = 0.95
 };
 
 /*============================================================================
@@ -151,6 +153,7 @@ cs_f_porosity_from_scan_get_pointer(bool  **compute_porosity_from_scan);
  *   elt_ids         <-- point to cell id
  *   n_points_cell   <-- number of points in cell
  *   cen_cell        <-- center of gravity of cell
+ *   cen_points      <-- centroid of solid plane multiplied by n_points_cell
  *   cov_mat         --> incremental covariance matrix
  *----------------------------------------------------------------------------*/
 
@@ -159,9 +162,10 @@ _incremental_solid_plane_from_points(const cs_mesh_t   *m,
                                      cs_lnum_t          n_points,
                                      const cs_lnum_t    elt_ids[],
                                      const cs_real_t    n_points_cell[],
-                                     const cs_real_3_t  cen_cell[],
-                                     const cs_real_3_t  point_coords[],
-                                     cs_real_33_t       cov_mat[])
+                                     const cs_real_t    cen_cell[][3],
+                                     const cs_real_t    point_coords[][3],
+                                     const cs_real_t    cen_points[][3],
+                                     cs_real_t          cov_mat[][3][3])
 {
   cs_real_33_t  *c, *d, *z, *t;
   BFT_MALLOC(c, m->n_cells, cs_real_33_t);
@@ -187,23 +191,24 @@ _incremental_solid_plane_from_points(const cs_mesh_t   *m,
 
   for (cs_lnum_t p_id = 0; p_id < n_points; p_id++) {
 
-    cs_lnum_t cell_id = elt_ids[p_id];
+    cs_lnum_t c_id = elt_ids[p_id];
 
-    if (n_points_cell[cell_id] > threshold) { // At least three points required
+    if (n_points_cell[c_id] > threshold) { // At least three points required
 
       cs_real_t point_local[3];
       for (cs_lnum_t i = 0; i < 3; i++)
-        point_local[i] = point_coords[p_id][i] - cen_cell[cell_id][i];
+        point_local[i] =   (point_coords[p_id][i] - cen_cell[c_id][i])
+                         - (cen_points[c_id][i] / n_points_cell[c_id]);
 
       // Kahan summation
       for (cs_lnum_t i = 0; i < 3; i++) {
         for (cs_lnum_t j = 0; j < 3; j++) {
-          z[cell_id][i][j] = point_local[i] * point_local[j]
-                            - c[cell_id][i][j];
-          t[cell_id][i][j] = d[cell_id][i][j] + z[cell_id][i][j];
-          c[cell_id][i][j] = (t[cell_id][i][j] - d[cell_id][i][j])
-                            - z[cell_id][i][j];
-          d[cell_id][i][j] = t[cell_id][i][j];
+          z[c_id][i][j] = point_local[i] * point_local[j]
+                            - c[c_id][i][j];
+          t[c_id][i][j] = d[c_id][i][j] + z[c_id][i][j];
+          c[c_id][i][j] = (t[c_id][i][j] - d[c_id][i][j])
+                            - z[c_id][i][j];
+          d[c_id][i][j] = t[c_id][i][j];
         }
       }
     }
@@ -214,10 +219,10 @@ _incremental_solid_plane_from_points(const cs_mesh_t   *m,
   BFT_FREE(t);
   BFT_FREE(c);
 
-  for (cs_lnum_t cell_id = 0; cell_id < m->n_cells; cell_id++) {
+  for (cs_lnum_t c_id = 0; c_id < m->n_cells; c_id++) {
     for (cs_lnum_t i = 0; i < 3; i++)
       for (cs_lnum_t j = 0; j < 3; j++)
-          cov_mat[cell_id][i][j] += d[cell_id][i][j];
+          cov_mat[c_id][i][j] += d[c_id][i][j];
 
   } // Loop over cells
 
@@ -231,7 +236,6 @@ _incremental_solid_plane_from_points(const cs_mesh_t   *m,
  * parameters:
  *   m               <-- pointer to mesh
  *   n_points_cell   <-- number of points in cell
- *   cen_points      <-- center of gravity of points relative to cell center
  *   cov_mat         <-- Covariance matrix of points in cell
  *   c_w_face_normal --> normal vector to the solid plane
  *----------------------------------------------------------------------------*/
@@ -239,110 +243,72 @@ _incremental_solid_plane_from_points(const cs_mesh_t   *m,
 static void
 _solid_plane_from_points(const cs_mesh_t   *m,
                          const cs_real_t    n_points_cell[],
-                         const cs_real_3_t  cen_points[],
-                         const cs_real_33_t cov_mat[],
-                         cs_real_3_t        c_w_face_normal[])
+                         const cs_real_t    cov_mat[][3][3],
+                         cs_real_t          c_w_face_normal[][3])
 {
   const cs_real_t threshold = _porosity_from_scan_opt.threshold;
+  cs_real_t tol_err = 1.0e-12;
 
-  for (cs_lnum_t cell_id = 0; cell_id < m->n_cells; cell_id++) {
+  for (cs_lnum_t c_id = 0; c_id < m->n_cells; c_id++) {
 
     /* At least three points required */
-    if (n_points_cell[cell_id] > threshold) {
-
-      cs_real_33_t cv;
-      cs_real_3_t sx;
-
-      cs_real_33_t a_x, a_y, a_z;
-      cs_real_33_t b;
-
-      // Initialization
-      for (cs_lnum_t i = 0; i < 3; i++) {
-        sx[i] = cen_points[cell_id][i]/n_points_cell[cell_id];
-        for (cs_lnum_t j = 0; j < 3; j++) {
-          cv[i][j] = cov_mat[cell_id][i][j]/n_points_cell[cell_id];
-        }
-      }
-
-      for (cs_lnum_t i = 0; i < 3; i++) {
-        for (cs_lnum_t j = 0; j < 3; j++) {
-          a_x[i][j] = cv[i][j];
-          a_y[i][j] = cv[i][j];
-          a_z[i][j] = cv[i][j];
-        }
-      }
-      a_x[0][0] = 1.;
-      a_x[0][1] = sx[1];
-      a_x[0][2] = sx[2];
-      a_x[1][0] = sx[1];
-      a_x[2][0] = sx[2];
-
-      a_y[0][1] = sx[0];
-      a_y[1][0] = sx[0];
-      a_y[1][1] = 1.;
-      a_y[1][2] = sx[2];
-      a_y[2][1] = sx[2];
-
-      a_z[0][2] = sx[0];
-      a_z[1][2] = sx[1];
-      a_z[2][0] = sx[0];
-      a_z[2][1] = sx[1];
-      a_z[2][2] = 1.;
-
-
-      cs_real_t det_x =  cs_math_33_determinant(a_x);
-      cs_real_t det_y =  cs_math_33_determinant(a_y);
-      cs_real_t det_z =  cs_math_33_determinant(a_z);
-
-      /* RHS of linear system */
-      for (cs_lnum_t i = 0; i < 3; i++) {
-        for (cs_lnum_t j = 0; j < 3; j++) {
-          b[i][j] = -cv[i][j];
-          if (i == j)
-            b[i][j] = -sx[i];
-        }
-      }
-
-      cs_real_t det_max = fmax(fmax(det_x, det_y), det_z);
-      if (det_max > 0.0) {
-        // Pick path with best conditioning:
-        if (CS_ABS(det_max - det_x) < cs_math_epzero*det_max) {
-          cs_math_33_inv_cramer_in_place(a_x);
-          cs_math_33_3_product(a_x, b[0], c_w_face_normal[cell_id]);
-          c_w_face_normal[cell_id][0] = 1.;
-        }
-        else if (CS_ABS(det_max - det_y) < cs_math_epzero*det_max) {
-          cs_math_33_inv_cramer_in_place(a_y);
-          cs_math_33_3_product(a_y, b[1], c_w_face_normal[cell_id]);
-          c_w_face_normal[cell_id][1] = 1.;
-        }
-        else {
-          cs_math_33_inv_cramer_in_place(a_z);
-          cs_math_33_3_product(a_z, b[2], c_w_face_normal[cell_id]);
-          c_w_face_normal[cell_id][2] = 1.;
-        }
-        cs_math_3_normalize(c_w_face_normal[cell_id],
-                            c_w_face_normal[cell_id]);
-      }
-
-      // c_w_face_normal is forced to be 0 vector
-      else {
-        c_w_face_normal[cell_id][0] = 0.;
-        c_w_face_normal[cell_id][1] = 0.;
-        c_w_face_normal[cell_id][2] = 0.;
-      }
+    if (n_points_cell[c_id] <= threshold) {
+      // If not enough points, c_w_face_normal is forced to be 0 vector
+      c_w_face_normal[c_id][0] = 0.;
+      c_w_face_normal[c_id][1] = 0.;
+      c_w_face_normal[c_id][2] = 0.;
+      continue;
     }
 
-    // If not enough points, c_w_face_normal is forced to be 0 vector
+    cs_real_t eig_val[3];
+    cs_real_t eig_vec[3][3] = {{1.0, 0.0, 0.0},
+                               {0.0, 1.0, 0.0},
+                               {0.0, 0.0, 1.0}};
+
+    cs_math_33_eig_val_vec(cov_mat[c_id], tol_err, eig_val, eig_vec);
+
+    /* Compute the trace of the covariance matrix i.e the sum of the
+       the eigen values */
+
+    cs_real_t trace = eig_val[0] + eig_val[1] + eig_val[2];
+
+    /* Normalization of the eigen values (sum_i lambda_norm_i = 1.0) */
+
+    eig_val[0] /= trace;
+    eig_val[1] /= trace;
+    eig_val[2] /= trace;
+
+    /* Dominance criteria (eig_val[2] <= largest_eigenvalue_criteria).
+       If not, the largest eigenvalue dominates i.e the cloud of points
+       is spread over a single line.
+
+       Plane criteria:
+       (eig_val[1] + eig_val[2] > largest_eigenvalues_sum_criteria).
+       In this case, the cloud of points is spread over two directions
+       and the normal vector to the plane is the eigen vector of the
+       smallest eigen value. */
+
+    cs_real_t largest_eigenvalues_sum_criteria
+      =  _porosity_from_scan_opt.largest_eigenvalues_sum_criteria;
+
+    if (   !(eig_val[2] > _porosity_from_scan_opt.largest_eigenvalue_criteria)
+         && (eig_val[1] + eig_val[2]) > largest_eigenvalues_sum_criteria) {
+
+      c_w_face_normal[c_id][0] = eig_vec[0][0];
+      c_w_face_normal[c_id][1] = eig_vec[1][0];
+      c_w_face_normal[c_id][2] = eig_vec[2][0];
+
+      cs_math_3_normalize(c_w_face_normal[c_id], c_w_face_normal[c_id]);
+    }
     else {
-      c_w_face_normal[cell_id][0] = 0.;
-      c_w_face_normal[cell_id][1] = 0.;
-      c_w_face_normal[cell_id][2] = 0.;
+      c_w_face_normal[c_id][0] = 0.;
+      c_w_face_normal[c_id][1] = 0.;
+      c_w_face_normal[c_id][2] = 0.;
     }
 
   } // Loop over cells
-
 }
+
 /*----------------------------------------------------------------------------
  * Prepare computation of porosity from scan points file.
  *
@@ -697,8 +663,9 @@ _prepare_porosity_from_scan(const cs_mesh_t             *m,
         cs_lnum_t c_id = dist_loc[i];
         f_nb_scan->val[c_id] += 1.;
         for (cs_lnum_t idim = 0; idim < 3; idim++) {
-          cen_points[c_id*3+idim] += (dist_coords[i*3 + idim]
-                                    - mq->cell_cen[c_id*3+idim]);
+          cen_points[c_id*3+idim]
+            += (dist_coords[i*3 + idim] - mq->cell_cen[c_id*3+idim]);
+
           cell_color[c_id*3+idim] += dist_colors[i*3 + idim];
         }
       }
@@ -711,6 +678,7 @@ _prepare_porosity_from_scan(const cs_mesh_t             *m,
                                            (const cs_real_t   *)f_nb_scan->val,
                                            (const cs_real_3_t *)mq->cell_cen,
                                            (const cs_real_3_t *)dist_coords,
+                                           (const cs_real_3_t *)cen_points,
                                            cov_mat);
 
       /* Solid face roughness from point cloud is computed as the RMS of points
@@ -760,8 +728,7 @@ _prepare_porosity_from_scan(const cs_mesh_t             *m,
     = (cs_real_3_t *restrict)mq->c_w_face_normal;
 
   _solid_plane_from_points(m,
-                           (const cs_real_t   *)f_nb_scan->val,
-                           (const cs_real_3_t *)cen_points,
+                           (const cs_real_t *)f_nb_scan->val,
                            cov_mat,
                            c_w_face_normal);
 
@@ -802,11 +769,11 @@ _prepare_porosity_from_scan(const cs_mesh_t             *m,
 
 
   /* Solid cells should have enough points */
-  for (cs_lnum_t cell_id = 0; cell_id < m->n_cells_with_ghosts; cell_id++) {
-    cell_f_vol[cell_id] = mq->cell_vol[cell_id];
-    if (cs_math_3_norm(c_w_face_normal[cell_id]) > 0.) {
-      cell_f_vol[cell_id] = 0.;
-      mq->c_disable_flag[cell_id] = 1;
+  for (cs_lnum_t c_id = 0; c_id < m->n_cells_with_ghosts; c_id++) {
+    cell_f_vol[c_id] = mq->cell_vol[c_id];
+    if (cs_math_3_norm(c_w_face_normal[c_id]) > 0.) {
+      cell_f_vol[c_id] = 0.;
+      mq->c_disable_flag[c_id] = 1;
     }
   }
 
@@ -834,9 +801,9 @@ _prepare_porosity_from_scan(const cs_mesh_t             *m,
   /* Penalization of cells with points */
 
   for (cs_lnum_t face_id = 0; face_id < m->n_i_faces; face_id++) {
-    cs_lnum_t cell_id1 = m->i_face_cells[face_id][0];
-    cs_lnum_t cell_id2 = m->i_face_cells[face_id][1];
-    if (cell_f_vol[cell_id1] <= 0. || cell_f_vol[cell_id2] <= 0.) {
+    cs_lnum_t c_id1 = m->i_face_cells[face_id][0];
+    cs_lnum_t c_id2 = m->i_face_cells[face_id][1];
+    if (cell_f_vol[c_id1] <= 0. || cell_f_vol[c_id2] <= 0.) {
       i_f_face_normal[face_id][0] = 0.;
       i_f_face_normal[face_id][1] = 0.;
       i_f_face_normal[face_id][2] = 0.;
@@ -851,8 +818,8 @@ _prepare_porosity_from_scan(const cs_mesh_t             *m,
   }
 
   for (cs_lnum_t face_id = 0; face_id < m->n_b_faces; face_id++) {
-    cs_lnum_t cell_id = m->b_face_cells[face_id];
-    if (cell_f_vol[cell_id] <= 0.) {
+    cs_lnum_t c_id = m->b_face_cells[face_id];
+    if (cell_f_vol[c_id] <= 0.) {
       b_f_face_normal[face_id][0] = 0.;
       b_f_face_normal[face_id][1] = 0.;
       b_f_face_normal[face_id][2] = 0.;
@@ -916,9 +883,10 @@ cs_porosity_from_scan_set_file_name(const char  *file_name)
     BFT_REALLOC(_porosity_from_scan_opt.file_names,
                length + strlen(file_name) + 1 + 1,
                char);
+
     sprintf(_porosity_from_scan_opt.file_names, "%s%s;",
-                    _porosity_from_scan_opt.file_names,
-                    file_name);
+            _porosity_from_scan_opt.file_names,
+            file_name);
   }
 
   bft_printf("Add file %s to the list %s\n",
@@ -1211,8 +1179,8 @@ cs_compute_porosity_from_scan(void)
     /* Matrix
      *=======*/
 
-    for (cs_lnum_t cell_id = 0; cell_id < m->n_cells_with_ghosts; cell_id++)
-      rovsdt[cell_id] = 0.;
+    for (cs_lnum_t c_id = 0; c_id < m->n_cells_with_ghosts; c_id++)
+      rovsdt[c_id] = 0.;
 
     /* Penalisation term for the source
      * in parallel, only one rank takes that
@@ -1227,9 +1195,9 @@ cs_compute_porosity_from_scan(void)
     /* Right hand side and initial guess
      *==================================*/
 
-    for (cs_lnum_t cell_id = 0; cell_id< m->n_cells_with_ghosts; cell_id++) {
-      rhs[cell_id] = 0.;
-      pvar[cell_id] = 0.;
+    for (cs_lnum_t c_id = 0; c_id < m->n_cells_with_ghosts; c_id++) {
+      rhs[c_id] = 0.;
+      pvar[c_id] = 0.;
     }
 
     /* in parallel, only one rank takes that */
@@ -1276,8 +1244,8 @@ cs_compute_porosity_from_scan(void)
                                        NULL,
                                        NULL);
 
-    for (cs_lnum_t cell_id = 0; cell_id< m->n_cells; cell_id++)
-      f->val[cell_id] = CS_MAX(f->val[cell_id], pvar[cell_id]);
+    for (cs_lnum_t c_id = 0; c_id< m->n_cells; c_id++)
+      f->val[c_id] = CS_MAX(f->val[c_id], pvar[c_id]);
 
     /* Parallel synchronisation */
     cs_mesh_sync_var_scal(f->val);
@@ -1312,12 +1280,11 @@ cs_compute_porosity_from_scan(void)
   cs_real_3_t *restrict c_w_face_normal
     = (cs_real_3_t *restrict)mq->c_w_face_normal;
 
-  for (cs_lnum_t cell_id = 0; cell_id < m->n_cells_with_ghosts; cell_id++) {
+  for (cs_lnum_t c_id = 0; c_id < m->n_cells_with_ghosts; c_id++) {
 
-    if (cs_math_3_dot_product(grdporo[cell_id], c_w_face_normal[cell_id]) >
-        0.0) {
+    if (cs_math_3_dot_product(grdporo[c_id], c_w_face_normal[c_id]) > 0.0) {
       for (cs_lnum_t i = 0; i < 3; i++)
-        c_w_face_normal[cell_id][i] = -c_w_face_normal[cell_id][i];
+        c_w_face_normal[c_id][i] = - c_w_face_normal[c_id][i];
     }
   }
 
