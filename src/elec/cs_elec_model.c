@@ -940,8 +940,8 @@ cs_electrical_properties_read(void)
                   _("incorrect number of species \"%i\";\n"),
                   _elec_properties.ngaz);
 
-      cs_lnum_t size =   cs_glob_elec_properties->ngaz
-                       * cs_glob_elec_properties->npoint;
+      cs_lnum_t size =   _elec_properties.ngaz
+                       * _elec_properties.npoint;
 
       if (nb_line_tot == 8) {
         BFT_MALLOC(_elec_properties.th,
@@ -971,17 +971,18 @@ cs_electrical_properties_read(void)
         continue;
 
       if (nb_line_tot >= 22) {
+        int shift = iesp *  (_elec_properties.npoint - 1);
         sscanf(str, "%lf %lf %lf %lf %lf %lf %lf %lf",
                &(_elec_properties.th[it]),
-               &(_elec_properties.ehgaz[iesp *  (cs_glob_elec_properties->npoint - 1) + it]),
-               &(_elec_properties.rhoel[iesp *  (cs_glob_elec_properties->npoint - 1) + it]),
-               &(_elec_properties.cpel[iesp *  (cs_glob_elec_properties->npoint - 1) + it]),
-               &(_elec_properties.sigel[iesp *  (cs_glob_elec_properties->npoint - 1) + it]),
-               &(_elec_properties.visel[iesp *  (cs_glob_elec_properties->npoint - 1) + it]),
-               &(_elec_properties.xlabel[iesp *  (cs_glob_elec_properties->npoint - 1) + it]),
-               &(_elec_properties.xkabel[iesp *  (cs_glob_elec_properties->npoint - 1) + it]));
+               &(_elec_properties.ehgaz[shift + it]),
+               &(_elec_properties.rhoel[shift + it]),
+               &(_elec_properties.cpel[shift + it]),
+               &(_elec_properties.sigel[shift + it]),
+               &(_elec_properties.visel[shift + it]),
+               &(_elec_properties.xlabel[shift + it]),
+               &(_elec_properties.xkabel[shift + it]));
         it++;
-        if (it == cs_glob_elec_properties->npoint) {
+        if (it == _elec_properties.npoint) {
           iesp++;
           it = 0;
         }
@@ -1052,7 +1053,8 @@ cs_electrical_properties_read(void)
         if (it == 3)
           sscanf(str, "%lf", &(_transformer->rnbs[iesp]));
         if (it == 4)
-          sscanf(str, "%lf %lf", &(_transformer->zr[iesp]), &(_transformer->zi[iesp]));
+          sscanf(str, "%lf %lf", &(_transformer->zr[iesp]),
+                 &(_transformer->zi[iesp]));
         if (it == 5)
           sscanf(str, "%i", &(_transformer->ibrpr[iesp]));
         if (it == 6) {

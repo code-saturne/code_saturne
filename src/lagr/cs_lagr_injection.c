@@ -1861,7 +1861,7 @@ cs_lagr_injection(int        time_id,
 
             /* Check if a particle has moved*/
             const cs_real_t  *cell_vol = cs_glob_mesh_quantities->cell_vol;
-            /* Dimension less test: no movement ? */
+            /* Dimensionless test: no movement ? */
             cs_real_t inv_ref_length = 1./pow(cell_vol[saved_cell_id[i]],1./3.);
             cs_real_3_t disp;
             for (int k = 0; k < 3; k++)
@@ -1873,7 +1873,7 @@ cs_lagr_injection(int        time_id,
           }
 
           if (is_displaced) {
-            /* Tracking step to determine the cell_id of the  new location */
+            /* Tracking step to determine the cell_id of the new location */
             cs_lagr_tracking_particle_movement(visc_length, particle_range);
 
             _update_init_particles(p_set, particle_range, time_id, zis);

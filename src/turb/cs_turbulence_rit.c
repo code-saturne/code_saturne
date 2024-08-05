@@ -977,7 +977,8 @@ _solve_rit(const cs_field_t     *f,
      cs_real_33_t *cofbfp = (cs_real_33_t *)f_ut->bc_coeffs->bf;
      for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++) {
        cs_real_t n[3];
-       cs_math_3_normalize(b_face_normal[face_id], n); /* Warning: normalized here */
+       cs_math_3_normalize(b_face_normal[face_id], n); /* Warning:
+                                                          normalized here */
 
        for (cs_lnum_t i = 0; i < 3; i++) {
          for (cs_lnum_t j = 0; j < 3; j++) {
@@ -1269,15 +1270,17 @@ cs_turbulence_rij_transport_div_tf(const int        field_id,
     BFT_FREE(w1);
   }
 
-  /*  Add the divergence of the thermal flux to the thermal transport equation
-   *===============================================================================*/
+  /* Add the divergence of the thermal flux to the thermal transport equation
+     ------------------------------------------------------------------------ */
 
   if (   turb_flux_model == 11
       || turb_flux_model_type == 2
       || turb_flux_model_type == 3) {
     cs_real_t *divut;
-    if (cs_field_by_composite_name_try("algo:divergence", f_ut->name) != NULL)
-      divut = cs_field_by_composite_name_try("algo:divergence", f_ut->name)->val;
+    cs_field_t *f_dut = cs_field_by_composite_name_try("algo:divergence",
+                                                       f_ut->name);
+    if (f_dut != NULL)
+      divut = f_dut->val;
     else
       BFT_MALLOC(divut, n_cells_ext, cs_real_t);
 
@@ -1287,7 +1290,7 @@ cs_turbulence_rij_transport_div_tf(const int        field_id,
     for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
       smbrs[c_id] -= divut[c_id];
 
-    if (cs_field_by_composite_name_try("algo:divergence", f_ut->name) == NULL)
+    if (f_dut == NULL)
       BFT_FREE(divut);
   }
 
