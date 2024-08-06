@@ -56,6 +56,7 @@
 #include "cs_sles_it_priv.h"
 
 #if defined(HAVE_CUDA)
+#include "cs_base_cuda.h"
 #include "cs_sles_it_cuda.h"
 #endif
 
@@ -4853,8 +4854,18 @@ cs_sles_it_solve(void                *context,
     cs_alloc_mode_t amode_vx = CS_ALLOC_HOST, amode_rhs = CS_ALLOC_HOST;
 
     if (c->on_device) {
-      amode_vx = cs_check_device_ptr(vx);
-      amode_rhs = cs_check_device_ptr(rhs);
+
+#if defined(HAVE_CUDA)
+      if (cs_cuda_is_device_ptr(vx))
+        amode_vx = CS_ALLOC_DEVICE;
+      if (cs_cuda_is_device_ptr(rhs))
+        amode_rhs = CS_ALLOC_DEVICE;
+#endif
+
+      if (amode_vx == CS_ALLOC_HOST)
+        amode_vx = cs_check_device_ptr(vx);
+      if (amode_rhs == CS_ALLOC_HOST)
+        amode_rhs = cs_check_device_ptr(rhs);
 
       if (amode_vx == CS_ALLOC_HOST) {
         CS_MALLOC_HD(_vx, v_size, cs_real_t, CS_ALLOC_DEVICE);
