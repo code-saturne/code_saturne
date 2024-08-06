@@ -803,6 +803,8 @@ _pressure_correction_fv(int                   iterns,
 
   if (vp_param->staggered == 1) {
 
+    cs_halo_sync_var(m->halo, CS_HALO_STANDARD, dt);
+
     const cs_real_t *hli = cs_field_by_name("inner_face_head_loss")->val;
     const cs_real_t *hlb = cs_field_by_name("boundary_face_head_loss")->val;
 
@@ -823,7 +825,6 @@ _pressure_correction_fv(int                   iterns,
     });
 
     ctx_c.wait();
-    cs_halo_sync_var(m->halo, CS_HALO_STANDARD, taui);
 
   }
 
