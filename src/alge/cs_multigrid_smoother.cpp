@@ -2091,7 +2091,8 @@ _p_gauss_seidel(cs_sles_it_t              *c,
  *                             see \ref sles_it for details)
  * \param[in]  n_iter          number of iterations to perform
  *
- * \return a pointer to newly created smoother info object.
+ * \return a pointer to newly created smoother info object, or NULL
+ *         if not available for this solver type.
  */
 /*----------------------------------------------------------------------------*/
 
@@ -2150,7 +2151,7 @@ cs_multigrid_smoother_create(cs_sles_it_type_t    smoother_type,
     break;
 
   default: /* Other iterative solvers are not tuned for smoothing */
-    bft_error(__FILE__, __LINE__, 0, "%s: Invalid smoother.", __func__);
+    return nullptr;
     break;
 
   } /* Smoother type */

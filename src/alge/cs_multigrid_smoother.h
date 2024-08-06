@@ -73,7 +73,8 @@ typedef struct _cs_multigrid_smoother_t  cs_multigrid_smoother_t;
  *                             see \ref sles_it for details)
  * \param[in]  n_iter          number of iterations to perform
  *
- * \return a pointer to newly created smoother info object.
+ * \return a pointer to newly created smoother info object, or NULL
+ *         if not available for this solver type.
  */
 /*----------------------------------------------------------------------------*/
 

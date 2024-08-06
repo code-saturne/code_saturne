@@ -266,7 +266,6 @@ typedef struct _cs_multigrid_setup_data_t {
 
   cs_real_t     *pc_aux;                 /* preconditioner auxiliary array */
 
-
 } cs_multigrid_setup_data_t;
 
 /* Grid hierarchy */
@@ -2027,13 +2026,27 @@ _multigrid_setup_sles(cs_multigrid_t  *mg,
       if (   mg->info.type[j+k] != CS_SLES_N_IT_TYPES
           && mg->info.type[j+k] < CS_SLES_N_SMOOTHER_TYPES) {
         cs_mg_sles_t  *mg_sles = &(mgd->sles_hierarchy[i*2 + j]);
-        mg_sles->context
-          = cs_multigrid_smoother_create(mg->info.type[j+k],
-                                         mg->info.poly_degree[j+k],
-                                         mg->info.n_max_iter[j+k]);
-        mg_sles->setup_func = cs_multigrid_smoother_setup;
-        mg_sles->solve_func = cs_multigrid_smoother_solve;
-        mg_sles->destroy_func = cs_sles_it_destroy;
+        mg_sles->context = nullptr;
+        if (mg->info.precision_mult[j] < 0) {
+          mg_sles->context
+            = cs_multigrid_smoother_create(mg->info.type[j+k],
+                                           mg->info.poly_degree[j+k],
+                                           mg->info.n_max_iter[j+k]);
+          if (mg_sles->context != nullptr) {
+            mg_sles->setup_func = cs_multigrid_smoother_setup;
+            mg_sles->solve_func = cs_multigrid_smoother_solve;
+            mg_sles->destroy_func = cs_sles_it_destroy;
+          }
+        }
+        if (mg_sles->context == nullptr) {
+          mg_sles->context
+            = cs_sles_it_create(mg->info.type[j+k],
+                                mg->info.poly_degree[j+k],
+                                mg->info.n_max_iter[j+k],
+                                false); /* stats not updated here */
+          mg_sles->setup_func = cs_sles_it_setup;
+          mg_sles->solve_func = cs_sles_it_solve;
+        }
 
         /* Share context between descent and ascent smoothers if both
            are of the cs_sles_it type */
@@ -2105,14 +2118,29 @@ _multigrid_setup_sles(cs_multigrid_t  *mg,
     mg_lv_info = mg->lv_info + i;
 
     cs_mg_sles_t  *mg_sles = &(mgd->sles_hierarchy[i*2]);
-    mg_sles->context
-      = cs_sles_it_create(mg->info.type[2+k],
-                          mg->info.poly_degree[2+k],
-                          mg->info.n_max_iter[2+k],
-                          false); /* stats not updated here */
-    mg_sles->setup_func = cs_sles_it_setup;
-    mg_sles->solve_func = cs_sles_it_solve;
-    mg_sles->destroy_func = cs_sles_it_destroy;
+
+    mg_sles->context = nullptr;
+    if (mg->info.precision_mult[2] < 0) {
+      mg_sles->context
+        = cs_multigrid_smoother_create(mg->info.type[2+k],
+                                       mg->info.poly_degree[2+k],
+                                       mg->info.n_max_iter[2+k]);
+      if (mg_sles->context != nullptr) {
+        mg_sles->setup_func = cs_multigrid_smoother_setup;
+        mg_sles->solve_func = cs_multigrid_smoother_solve;
+        mg_sles->destroy_func = cs_sles_it_destroy;
+      }
+    }
+    if (mg_sles->context == nullptr) {
+      mg_sles->context
+        = cs_sles_it_create(mg->info.type[2+k],
+                            mg->info.poly_degree[2+k],
+                            mg->info.n_max_iter[2+k],
+                            false); /* stats not updated here */
+      mg_sles->setup_func = cs_sles_it_setup;
+      mg_sles->solve_func = cs_sles_it_solve;
+      mg_sles->destroy_func = cs_sles_it_destroy;
+    }
 
     if (mg->lv_mg[2] != nullptr) {
       cs_sles_pc_t *pc = _pc_create_from_mg_sub(mg->lv_mg[2]);
