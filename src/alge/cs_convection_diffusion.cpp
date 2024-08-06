@@ -8230,7 +8230,8 @@ cs_convection_diffusion_vector(int                         idtvar,
       /* Trace of velocity gradient */
       cs_real_t grdtrv = (grad[ii][0][0]+grad[ii][1][1]+grad[ii][2][2]);
       cs_real_t secvis = b_secvis[face_id]; /* - 2/3 * mu */
-      cs_real_t mult = secvis * grdtrv * b_f_face_surf[face_id];
+      cs_real_t mult = thetap * bndcel[ii]
+        * secvis * grdtrv * b_f_face_surf[face_id];
 
       cs_real_t flux[3];
       for (cs_lnum_t isou = 0; isou < 3; isou++) {
