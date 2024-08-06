@@ -737,7 +737,7 @@ cs_lagr_new_particle_init(const cs_lnum_t  particle_range[2],
   BFT_MALLOC(eig_vec, n_cells, cs_real_33_t);
   BFT_MALLOC(eig_val, n_cells, cs_real_3_t);
 
-  /* Initialisation from the mean eulerian fluid */
+  /* Initialisation from the mean Eulerian fluid */
   if (cs_glob_lagr_model->idistu == 1) {
 
     cs_real_33_t *sym_rij;
@@ -822,7 +822,6 @@ cs_lagr_new_particle_init(const cs_lnum_t  particle_range[2],
                   + vagaus[l_id][1] * sqrt(eig_val[cell_id][1]) * eig_vec[cell_id][1][i]
                   + vagaus[l_id][2] * sqrt(eig_val[cell_id][2]) * eig_vec[cell_id][2][i];
     }
-
 
   }
 

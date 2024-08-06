@@ -277,7 +277,7 @@ _ke_hyd_diam(double   uref2,
  * for a circular duct flow with smooth wall
  * (for inlet boundary conditions).
  *
- * \f[ k = 1.5 I {U_{ref}}^2 \f]
+ * \f[ k = 1.5 I^2 {U_{ref}}^2 \f]
  * \f[ \varepsilon = 10 \dfrac{{C_\mu}^{0.75} k^{1.5}}{ \kappa D_H} \f]
  *
  * parameters:
