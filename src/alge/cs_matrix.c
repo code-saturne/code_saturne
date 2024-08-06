@@ -6553,7 +6553,7 @@ cs_matrix_variant_apply_tuned(cs_matrix_t          *m,
     m->vector_multiply[m->fill_type][i] = mv->vector_multiply[i];
 
 #if defined(HAVE_ACCEL)
-  if (cs_get_device_id() > -1) {
+  if (cs_get_device_id() > -1 && m->alloc_mode > CS_ALLOC_HOST) {
     for (int i = 0; i < 2; i++)
       m->vector_multiply_h[m->fill_type][i] = (mv+1)->vector_multiply[i];
     for (int i = 0; i < 2; i++)
