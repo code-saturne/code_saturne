@@ -3,6 +3,8 @@ Release 8.2.1 (unreleased)
 
 ### Bug fixes:
 
+- Major fix in velocity balance (transpose of gradient terms).
+
 - Fix for atmospheric model imbrication.
 
 - Fix potential memory leak in multigrid.
