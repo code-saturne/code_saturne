@@ -68,6 +68,7 @@ implicit none
 
 integer       idirac, ifmk
 integer       key_restart_id
+integer       itycat, ityloc
 
 character(len=80) :: f_name, f_label
 
@@ -190,6 +191,24 @@ if (ippmod(icolwc).ge.0) then
 
   enddo
 
+endif
+
+! Boundary mass fractions
+!========================
+
+if (     ippmod(icod3p).ne.-1         &
+    .or. ippmod(icoebu).ne.-1         &
+    .or. ippmod(icolwc).ne.-1 ) then
+
+  itycat = FIELD_INTENSIVE + FIELD_PROPERTY
+  ityloc = 3 ! boundary faces
+
+  call field_create('boundary_ym_fuel',  &
+                    itycat, ityloc, 1, .false., ibym(1))
+  call field_create('boundary_ym_oxydizer',  &
+                    itycat, ityloc, 1, .false., ibym(2))
+  call field_create('boundary_ym_product',  &
+                    itycat, ityloc, 1, .false., ibym(3))
 endif
 
 ! Additional fields for radiation

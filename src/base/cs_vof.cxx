@@ -42,21 +42,22 @@
 #include "cs_boundary_conditions.h"
 #include "cs_convection_diffusion.h"
 #include "cs_convection_diffusion_priv.h"
-#include "cs_equation.h"
-#include "cs_face_viscosity.h"
 #include "cs_divergence.h"
+#include "cs_equation.h"
 #include "cs_equation_iterative_solve.h"
+#include "cs_face_viscosity.h"
 #include "cs_field.h"
 #include "cs_field_default.h"
-#include "cs_field_pointer.h"
 #include "cs_field_operator.h"
+#include "cs_field_pointer.h"
 #include "cs_log.h"
 #include "cs_log_iteration.h"
-#include "cs_physical_constants.h"
 #include "cs_math.h"
 #include "cs_mesh.h"
+#include "cs_mesh_location.h"
 #include "cs_mesh_quantities.h"
 #include "cs_parall.h"
+#include "cs_physical_constants.h"
 #include "cs_prototypes.h"
 #include "cs_rotation.h"
 #include "cs_sles_default.h"
@@ -603,6 +604,155 @@ cs_get_glob_vof_parameters(void)
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Create VoF fields.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_vof_field_create(void)
+{
+  if (cs_glob_vof_parameters->vof_model < 1)
+    return;
+
+  // Key id for mass flux
+  const int k_imasf = cs_field_key_id("inner_mass_flux_id");
+  const int k_bmasf = cs_field_key_id("boundary_mass_flux_id");
+
+  // Key id for flux id
+  const int k_iflux = cs_field_key_id("inner_flux_id");
+  const int k_bflux = cs_field_key_id("boundary_flux_id");
+
+  /* Interior faces*/
+
+  cs_field_t *f_ivf = cs_field_create("inner_volume_flux",
+                                      CS_FIELD_EXTENSIVE | CS_FIELD_PROPERTY,
+                                      CS_MESH_LOCATION_INTERIOR_FACES,
+                                      1,
+                                      false);
+  cs_field_set_key_int(CS_F_(void_f), k_imasf, f_ivf->id);
+
+  cs_field_t *f_ivff = cs_field_create("inner_void_fraction_flux",
+                                       CS_FIELD_EXTENSIVE | CS_FIELD_PROPERTY,
+                                       CS_MESH_LOCATION_INTERIOR_FACES,
+                                       1,
+                                       false);
+  cs_field_set_key_int(CS_F_(void_f), k_iflux, f_ivff->id);
+
+  /* Boundary faces*/
+
+  cs_field_t *f_bvf = cs_field_create("boundary_volume_flux",
+                                      CS_FIELD_EXTENSIVE | CS_FIELD_PROPERTY,
+                                      CS_MESH_LOCATION_BOUNDARY_FACES,
+                                      1,
+                                      false);
+  cs_field_set_key_int(CS_F_(void_f), k_bmasf, f_bvf->id);
+
+  cs_field_t *f_bvff = cs_field_create("boundary_void_fraction_flux",
+                                       CS_FIELD_EXTENSIVE | CS_FIELD_PROPERTY,
+                                       CS_MESH_LOCATION_BOUNDARY_FACES,
+                                       1,
+                                       false);
+  cs_field_set_key_int(CS_F_(void_f), k_bflux, f_bvff->id);
+
+  /* Drift */
+
+  if (cs_glob_vof_parameters->idrift > 0) {
+
+    cs_field_create("inner_drift_velocity_flux",
+                    CS_FIELD_EXTENSIVE | CS_FIELD_PROPERTY,
+                    CS_MESH_LOCATION_INTERIOR_FACES,
+                    1,
+                    false);
+
+    cs_field_create("boundary_drift_velocity_flux",
+                    CS_FIELD_EXTENSIVE | CS_FIELD_PROPERTY,
+                    CS_MESH_LOCATION_BOUNDARY_FACES,
+                    1,
+                    false);
+
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Log setup of VoF model.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_vof_log_setup(void)
+{
+  cs_log_printf(CS_LOG_SETUP,
+                _("\n"
+                  "Homogeneous mixture model VoF\n"
+                  "-----------------------------\n\n"));
+
+  auto vp = cs_glob_vof_parameters;
+  if (vp->vof_model <= 0) {
+    cs_log_printf(CS_LOG_SETUP,
+                  _("  Disabled (%d)\n"), vp->vof_model);
+    return;
+  }
+
+  cs_log_printf(CS_LOG_SETUP,
+                _("  Enabled (%d)\n"), vp->vof_model);
+
+  cs_log_printf
+    (CS_LOG_SETUP,
+     _("\n"
+       "  Fluid 1:\n"
+       "    ro1:         %14.5e (Reference density)\n"
+       "    mu1:         %14.5e (Ref. molecular dyn. visc.)\n"
+       "  Fluid 2:\n"
+       "    rho2:        %14.5e (Reference density)\n"
+       "    mu2:         %14.5e (Ref. molecular dyn. visc.)\n"
+       "  Surface tension:\n"
+       "    sigma:       %14.5e (surface tension)\n"
+       "  Drift velocity:\n"
+       "    idrift:          %10d (0: disabled; > 0: enabled)\n"
+       "    kdrift       %14.5e (Diffusion effect coeff.)\n"
+       "    cdrift       %14.5e (Diffusion flux coeff.)\n"),
+     vp->rho1, vp->mu1, vp->rho2, vp->mu2, vp->sigma_s,
+     vp->idrift, vp->cdrift, vp->kdrift);
+
+  /* cavitation model */
+
+  if (vp->vof_model & CS_VOF_MERKLE_MASS_TRANSFER) {
+
+    cs_log_printf(CS_LOG_SETUP,
+                  _("\n"
+                    "Cavitation model\n"
+                    "----------------\n\n"));
+
+    const cs_cavitation_parameters_t *cvp
+      = cs_get_glob_cavitation_parameters();
+
+    cs_log_printf
+      (CS_LOG_SETUP,
+     _("\n"
+       "  Liquid phase: fluid 1:\n"
+       "  Gas phase: fluid 2:\n"
+       "  Vaporization/condensation model (Merkle):\n"
+       "    presat:      %14.5e (saturation pressure)\n"
+       "    linf:        %14.5e (reference lenght scale)\n"
+       "    uinf:        %14.5e (reference velocity)\n"),
+       cvp->presat, cvp->linf, cvp->uinf);
+
+    int itytur = cs_glob_turb_model->itytur;
+
+    if (itytur == 2 || itytur == 5 || itytur == 6 || itytur == 7)
+      cs_log_printf
+        (CS_LOG_SETUP,
+         _("\n"
+           "  Eddy-viscosity correction (Rebound correction):\n"
+           "    icvevm:          %10d (activated (1) or not (0)\n"
+           "    mcav:        %14.5e (mcav constant)\n"),
+         cvp->icvevm, cvp->mcav);
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Compute the mixture density, mixture dynamic viscosity given fluid
  *         volume fractions and the reference density and dynamic viscosity
  *         \f$ \rho_l, \mu_l \f$ (liquid), \f$ \rho_v, \mu_v \f$ (gas).
@@ -741,84 +891,6 @@ cs_vof_update_phys_prop(const cs_mesh_t  *m)
 
   for (cs_lnum_t f_id = 0; f_id < n_b_faces; f_id++) {
     b_massflux[f_id] += drho * b_voidflux[f_id] + rho1*b_volflux[f_id];
-  }
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Log setup of VoF model.
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_vof_log_setup(void)
-{
-  cs_log_printf(CS_LOG_SETUP,
-                _("\n"
-                  "Homogeneous mixture model VoF\n"
-                  "-----------------------------\n\n"));
-
-  auto vp = cs_glob_vof_parameters;
-  if (vp->vof_model <= 0) {
-    cs_log_printf(CS_LOG_SETUP,
-                  _("  Disabled (%d)\n"), vp->vof_model);
-    return;
-  }
-
-  cs_log_printf(CS_LOG_SETUP,
-                _("  Enabled (%d)\n"), vp->vof_model);
-
-  cs_log_printf
-    (CS_LOG_SETUP,
-     _("\n"
-       "  Fluid 1:\n"
-       "    ro1:         %14.5e (Reference density)\n"
-       "    mu1:         %14.5e (Ref. molecular dyn. visc.)\n"
-       "  Fluid 2:\n"
-       "    rho2:        %14.5e (Reference density)\n"
-       "    mu2:         %14.5e (Ref. molecular dyn. visc.)\n"
-       "  Surface tension:\n"
-       "    sigma:       %14.5e (surface tension)\n"
-       "  Drift velocity:\n"
-       "    idrift:          %10d (0: disabled; > 0: enabled)\n"
-       "    kdrift       %14.5e (Diffusion effect coeff.)\n"
-       "    cdrift       %14.5e (Diffusion flux coeff.)\n"),
-     vp->rho1, vp->mu1, vp->rho2, vp->mu2, vp->sigma_s,
-     vp->idrift, vp->cdrift, vp->kdrift);
-
-  /* cavitation model */
-
-  if (vp->vof_model & CS_VOF_MERKLE_MASS_TRANSFER) {
-
-    cs_log_printf(CS_LOG_SETUP,
-                  _("\n"
-                    "Cavitation model\n"
-                    "----------------\n\n"));
-
-    const cs_cavitation_parameters_t *cvp
-      = cs_get_glob_cavitation_parameters();
-
-    cs_log_printf
-      (CS_LOG_SETUP,
-     _("\n"
-       "  Liquid phase: fluid 1:\n"
-       "  Gas phase: fluid 2:\n"
-       "  Vaporization/condensation model (Merkle):\n"
-       "    presat:      %14.5e (saturation pressure)\n"
-       "    linf:        %14.5e (reference lenght scale)\n"
-       "    uinf:        %14.5e (reference velocity)\n"),
-       cvp->presat, cvp->linf, cvp->uinf);
-
-    int itytur = cs_glob_turb_model->itytur;
-
-    if (itytur == 2 || itytur == 5 || itytur == 6 || itytur == 7)
-      cs_log_printf
-        (CS_LOG_SETUP,
-         _("\n"
-           "  Eddy-viscosity correction (Rebound correction):\n"
-           "    icvevm:          %10d (activated (1) or not (0)\n"
-           "    mcav:        %14.5e (mcav constant)\n"),
-         cvp->icvevm, cvp->mcav);
   }
 }
 

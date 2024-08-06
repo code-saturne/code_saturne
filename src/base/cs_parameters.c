@@ -2506,12 +2506,7 @@ cs_parameters_eqp_complete(void)
    * The consistency tests will be done in verini. */
 
   /* Count the number of scalars nscal */
-  int nscal = 0;
-  for (int f_id = 0; f_id < n_fields; f_id ++) {
-    cs_field_t *f_sca = cs_field_by_id(f_id);
-    int isca = cs_field_get_key_int(f_sca, ks);
-    if (isca > 0) nscal++;
-  }
+  int nscal = cs_field_n_scalar_fields();
 
   if (nscal > 0) {
 

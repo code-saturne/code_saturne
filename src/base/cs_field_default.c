@@ -608,5 +608,34 @@ cs_field_map_and_init_bcs(void)
 }
 
 /*----------------------------------------------------------------------------*/
+/*!
+ * \brief Return the number of defined scalar fields.
+ *
+ * \return number of legacy FV scalar variavble fields.
+ */
+/*----------------------------------------------------------------------------*/
+
+int
+cs_field_n_scalar_fields(void)
+{
+  int n_scal = 0;
+
+  /* Count the number of scalars nscal */
+  const int k_sca = cs_field_key_id("scalar_id");
+
+  for (int f_id = 0; f_id < cs_field_n_fields(); f_id++) {
+    cs_field_t *f     = cs_field_by_id(f_id);
+    if (   f->type & CS_FIELD_VARIABLE
+        && !(f->type & CS_FIELD_CDO)) {
+      int i_sca = cs_field_get_key_int(f, k_sca);
+      if (i_sca > 0)
+        n_scal++;
+    }
+  }
+
+  return n_scal;
+}
+
+/*----------------------------------------------------------------------------*/
 
 END_C_DECLS

@@ -46,7 +46,9 @@
 #include "cs_field.h"
 #include "cs_log.h"
 #include "cs_math.h"
+#include "cs_mesh_location.h"
 #include "cs_parall.h"
+#include "cs_post.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file
@@ -134,40 +136,6 @@ enum {X, Y, Z};
  *============================================================================*/
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
-
-/*============================================================================
- * Public function definitions for Fortran API
- *============================================================================*/
-
-/*----------------------------------------------------------------------------
- * Compute the flows through the fans
- *
- * Fortran interface:
- *
- * subroutine debvtl
- * *****************
- *
- * double precision flumas(*)      : <-- : interior faces mass flux
- * double precision flumab(*)      : <-- : boundary faces mass flux
- * double precision rhofac(*)      : <-- : density at cells
- * double precision rhofab(*)      : <-- : density at boundary faces
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF (debvtl, DEBVTL)
-(
- cs_real_t  flumas[],
- cs_real_t  flumab[],
- cs_real_t  rho[],
- cs_real_t  rhofab[]
-)
-{
-  cs_fan_compute_flows(cs_glob_mesh,
-                       cs_glob_mesh_quantities,
-                       flumas,
-                       flumab,
-                       rho,
-                       rhofab);
-}
 
 /*============================================================================
  * Public function definitions
@@ -311,6 +279,28 @@ int
 cs_fan_n_fans(void)
 {
   return _cs_glob_n_fans;
+}
+
+/*----------------------------------------------------------------------------
+ * Create fans field.
+ *----------------------------------------------------------------------------*/
+
+void
+cs_fan_field_create(void)
+{
+  if (cs_fan_n_fans() > 0) {
+
+    /* Get ids */
+    const int k_log = cs_field_key_id("log");
+    const int k_vis = cs_field_key_id("post_vis");
+
+    cs_field_t *f_fan
+      = cs_field_create("fan_id",
+                        CS_FIELD_PROPERTY, CS_MESH_LOCATION_CELLS, 1, false);
+
+    cs_field_set_key_int(f_fan, k_log, 1);
+    cs_field_set_key_int(f_fan, k_vis, CS_POST_ON_LOCATION);
+  }
 }
 
 /*----------------------------------------------------------------------------*/

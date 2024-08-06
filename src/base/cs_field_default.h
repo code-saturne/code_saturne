@@ -55,7 +55,7 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief  Add a field shared between CDO and legacy schemes. This field is
  *         related to a general solved variable, with default options.
  *
@@ -77,7 +77,7 @@ cs_variable_cdo_field_create(const char  *name,
                              int          has_previous);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Add field defining a general solved variable, with default options.
  *
  * \param[in]  name         field name
@@ -96,7 +96,7 @@ cs_variable_field_create(const char  *name,
                          int          dim);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Access a field's equation parameters.
  *
  * If the equation parameters were never initialized, they will be initialized
@@ -116,7 +116,7 @@ cs_equation_param_t *
 cs_field_get_equation_param(cs_field_t  *f);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Access a field's equation parameters for read only.
  *
  * If the equation parameters were never initialized, the current default
@@ -136,7 +136,7 @@ const cs_equation_param_t *
 cs_field_get_equation_param_const(const cs_field_t  *f);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief For a given field, returns field defined as its variance, if present.
  *
  * \param[in]  f  field
@@ -149,7 +149,7 @@ cs_field_t *
 cs_field_get_variance(const cs_field_t  *f);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Allocate and map boundary condition coefficients for all
  *        variable fields.
  */
@@ -159,7 +159,7 @@ void
 cs_field_build_bc_codes_all(void);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Deallocate and unmap boundary condition coefficients for all
  *        variable fields.
  */
@@ -169,13 +169,24 @@ void
 cs_field_free_bc_codes_all(void);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Initialize all field BC coefficients.
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_field_map_and_init_bcs(void);
+
+/*----------------------------------------------------------------------------*/
+/*
+ * \brief Return the number of defined scalar fields.
+ *
+ * \return number of legacy FV scalar variavble fields.
+ */
+/*----------------------------------------------------------------------------*/
+
+int
+cs_field_n_scalar_fields(void);
 
 /*----------------------------------------------------------------------------*/
 

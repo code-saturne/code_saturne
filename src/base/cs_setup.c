@@ -42,13 +42,14 @@
 
 #include "bft_printf.h"
 #include "cs_ale.h"
-#include "cs_atmo.h"
 #include "cs_at_data_assim.h"
+#include "cs_atmo.h"
 #include "cs_cf_thermo.h"
 #include "cs_coal_read_data.h"
 #include "cs_ctwr.h"
 #include "cs_domain_setup.h"
 #include "cs_elec_model.h"
+#include "cs_fan.h"
 #include "cs_field.h"
 #include "cs_field_default.h"
 #include "cs_field_operator.h"
@@ -65,29 +66,30 @@
 #include "cs_internal_coupling.h"
 #include "cs_lagr.h"
 #include "cs_lagr_options.h"
+#include "cs_mesh_location.h"
 #include "cs_mobile_structures.h"
 #include "cs_parameters.h"
 #include "cs_parameters_check.h"
+#include "cs_physical_constants.h"
+#include "cs_physical_model.h"
 #include "cs_physical_properties.h"
 #include "cs_porous_model.h"
 #include "cs_porosity_from_scan.h"
 #include "cs_post.h"
-#include "cs_prototypes.h"
-#include "cs_physical_constants.h"
-#include "cs_physical_model.h"
 #include "cs_pressure_correction.h"
+#include "cs_prototypes.h"
 #include "cs_rad_transfer.h"
-#include "cs_thermal_model.h"
-#include "cs_turbulence_model.h"
 #include "cs_rad_transfer_options.h"
 #include "cs_restart.h"
 #include "cs_runaway_check.h"
+#include "cs_thermal_model.h"
 #include "cs_turbomachinery.h"
+#include "cs_turbulence_model.h"
 #include "cs_velocity_pressure.h"
 #include "cs_vof.h"
 #include "cs_wall_condensation.h"
-#include "cs_wall_functions.h"
 #include "cs_wall_distance.h"
+#include "cs_wall_functions.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file
@@ -125,9 +127,6 @@ cs_f_indsui(void);
 
 void
 cs_f_colecd(void);
-
-void
-cs_f_fldini(void);
 
 void
 cs_f_usppmo(void);
@@ -287,7 +286,7 @@ _add_model_scalar_field
 /*----------------------------------------------------------------------------*/
 
 static void
-_additional_fields(void)
+_additional_fields_stage_1(void)
 {
   const int n_fields = cs_field_n_fields();
   cs_turb_les_model_t *turb_les_param = cs_get_glob_turb_les_model();
@@ -1404,6 +1403,611 @@ _init_user
     cs_mobile_structures_setup();
 }
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Create some additional fields which depend on main field options.
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_additional_fields_stage_2(void)
+{
+  /* Get ids */
+  const int k_log = cs_field_key_id("log");
+  const int k_vis = cs_field_key_id("post_vis");
+  const int k_lbl = cs_field_key_id("label");
+  const int k_sca = cs_field_key_id("scalar_id");
+
+  // Keys not stored globally
+  const int k_turt = cs_field_key_id("turbulent_flux_model");
+
+  // Key id for mass flux
+  const int k_imasf = cs_field_key_id("inner_mass_flux_id");
+  const int k_bmasf = cs_field_key_id("boundary_mass_flux_id");
+
+  // Key id for gradient weighting
+  const int k_wgrec = cs_field_key_id("gradient_weighting_id");
+
+  // Key id for limiter
+  const int k_cvlim = cs_field_key_id("convection_limiter_id");
+  const int k_dflim = cs_field_key_id("diffusion_limiter_id");
+
+  // Key id for slope test
+  const int k_slts = cs_field_key_id("slope_test_upwind_id");
+
+  // Key id of the coal scalar class
+  const int k_ccl = cs_field_key_id("scalar_class");
+
+  // Key id for drift scalar
+  const int k_dri = cs_field_key_id("drift_scalar_model");
+
+  // Key id for restart file
+  const int k_restart_id = cs_field_key_id("restart_file");
+
+  // Get number of fields
+  const int n_fld = cs_field_n_fields();
+
+  /* Global param */
+
+  cs_velocity_pressure_param_t *vp_param
+    = cs_get_glob_velocity_pressure_param();
+
+  /* Equation param */
+
+  const cs_equation_param_t *eqp_u
+    = cs_field_get_equation_param_const(CS_F_(vel));
+
+  /* Set keywords and add some additional fields
+     ------------------------------------------- */
+
+  /* User variables */
+
+  int idfm = 0, iggafm = 0;
+
+  for (int f_id = 0; f_id < n_fld; f_id++) {
+    cs_field_t *f = cs_field_by_id(f_id);
+    if (!(f->type & CS_FIELD_VARIABLE) || f->type & CS_FIELD_CDO)
+      continue;
+    int scalar_id = cs_field_get_key_int(f, k_sca) -1;
+    if (scalar_id < 0)
+      continue;
+
+    const cs_equation_param_t *eqp_f = cs_field_get_equation_param_const(f);
+
+    const int turb_flux_model      = cs_field_get_key_int(f, k_turt);
+    const int turb_flux_model_type = turb_flux_model / 10;
+
+    if (turb_flux_model_type != CS_TURB_TYPE_NONE) {
+      if (turb_flux_model_type == CS_TURB_HYBRID)
+        idfm = 1;
+
+      /* GGDH or AFM on current scalar and if DFM, GGDH on the scalar variance
+       */
+      iggafm = 1;
+    }
+    else if (eqp_f->idften & CS_ANISOTROPIC_DIFFUSION) {
+      /* If the user has chosen a tensorial diffusivity */
+      idfm = 1;
+    }
+
+    /* Additional fields for Drift scalars
+       is done in _additional_fields_stage_1 */
+  }
+
+  /* Reserved fields whose ids are not saved (may be queried by name) */
+
+  const int iphydr = cs_glob_velocity_pressure_param->iphydr;
+  if (iphydr == 1) {
+    cs_field_t *f_vf = cs_field_find_or_create("volume_forces",
+                                               CS_FIELD_INTENSIVE,
+                                               CS_MESH_LOCATION_CELLS,
+                                               3,
+                                               false);
+
+    cs_field_set_key_int(f_vf, k_log, 1);
+    cs_field_set_key_int(f_vf, k_vis, 0);
+    cs_field_set_key_int(f_vf, k_restart_id, CS_RESTART_AUXILIARY);
+  }
+  else if (iphydr == 2) {
+    cs_field_t *f_hp = cs_field_find_or_create("hydrostatic_pressure_prd",
+                                               CS_FIELD_INTENSIVE,
+                                               CS_MESH_LOCATION_CELLS,
+                                               1,
+                                               false);
+
+    cs_field_set_key_int(f_hp, k_restart_id, CS_RESTART_AUXILIARY);
+  }
+
+  /* Hybrid blending field */
+
+  if (eqp_u->ischcv == 3) {
+    cs_field_find_or_create("hybrid_blend",
+                            CS_FIELD_INTENSIVE | CS_FIELD_PROPERTY,
+                            CS_MESH_LOCATION_CELLS,
+                            1,
+                            false);
+  }
+
+  /* Friction velocity at the wall, in the case of a LES calculation
+   * with van Driest-wall damping (delayed here rather than placed in
+   * addfld, as idries may be set in cs_parameters_*_complete). */
+
+  if (cs_glob_turb_model->itytur == 4 && cs_glob_turb_les_model->idries == 1) {
+    cs_field_find_or_create("boundary_ustar",
+                            CS_FIELD_INTENSIVE | CS_FIELD_PROPERTY,
+                            CS_MESH_LOCATION_BOUNDARY_FACES,
+                            1,
+                            false);
+  }
+
+  if (vp_param->staggered == 1) {
+
+    /* Head loss on interior faces */
+
+    cs_field_create("inner_face_head_loss",
+                    CS_FIELD_PROPERTY,
+                    CS_MESH_LOCATION_INTERIOR_FACES,
+                    1,
+                    false);
+
+    /* Head loss on boundary faces */
+
+    cs_field_create("boundary_face_head_loss",
+                    CS_FIELD_PROPERTY,
+                    CS_MESH_LOCATION_BOUNDARY_FACES,
+                    1,
+                    false);
+
+    /* Source term on interior faces */
+
+    cs_field_create("inner_face_source_term",
+                    CS_FIELD_PROPERTY,
+                    CS_MESH_LOCATION_INTERIOR_FACES,
+                    1,
+                    false);
+  }
+
+  /* Interior mass flux field */
+
+  bool previous_val = false;
+  if (cs_glob_time_scheme->istmpf != 1 || vp_param->staggered == 1) {
+    previous_val = true;
+  }
+
+  cs_field_t *f_imf = cs_field_create("inner_mass_flux",
+                                      CS_FIELD_EXTENSIVE,
+                                      CS_MESH_LOCATION_INTERIOR_FACES,
+                                      1,
+                                      previous_val);
+
+  cs_field_set_key_int(f_imf, k_log, 0);
+  cs_field_set_key_int(f_imf, k_vis, 0);
+
+  /* Same mass flux for every variable, an other mass flux
+   * might be defined hereafterwards */
+
+  for (int f_id = 0; f_id < n_fld; f_id++) {
+    cs_field_t *f = cs_field_by_id(f_id);
+    if ((f->type & CS_FIELD_VARIABLE)) {
+      cs_field_set_key_int(f, k_imasf, f_imf->id);
+    }
+  }
+
+  /* Rusanov flux */
+
+  if (cs_glob_turb_rans_model->irijnu == 2) {
+    cs_field_create("i_rusanov_diff",
+                    CS_FIELD_EXTENSIVE,
+                    CS_MESH_LOCATION_INTERIOR_FACES,
+                    1,
+                    false);
+
+    cs_field_create("b_rusanov_diff",
+                    CS_FIELD_EXTENSIVE,
+                    CS_MESH_LOCATION_BOUNDARY_FACES,
+                    1,
+                    false);
+  }
+
+  /* Godunov scheme flux */
+
+  if (cs_glob_turb_rans_model->irijnu == 3) {
+
+    cs_field_create("i_velocity",
+                    CS_FIELD_EXTENSIVE,
+                    CS_MESH_LOCATION_INTERIOR_FACES,
+                    3,
+                    false);
+
+    cs_field_create("i_reynolds_stress",
+                    CS_FIELD_EXTENSIVE,
+                    CS_MESH_LOCATION_INTERIOR_FACES,
+                    6,
+                    false);
+
+    cs_field_create("b_velocity",
+                    CS_FIELD_EXTENSIVE,
+                    CS_MESH_LOCATION_BOUNDARY_FACES,
+                    3,
+                    false);
+
+    cs_field_create("b_reynolds_stress",
+                    CS_FIELD_EXTENSIVE,
+                    CS_MESH_LOCATION_BOUNDARY_FACES,
+                    6,
+                    false);
+
+  }
+
+  /* Boundary mass flux field */
+
+  previous_val = false;
+  if (cs_glob_time_scheme->istmpf != 1 || vp_param->staggered == 1) {
+    previous_val = true;
+  }
+
+  cs_field_t *f_bmf = cs_field_create("boundary_mass_flux",
+                                      CS_FIELD_EXTENSIVE,
+                                      CS_MESH_LOCATION_BOUNDARY_FACES,
+                                      1,
+                                      previous_val);
+
+  cs_field_set_key_int(f_bmf, k_log, 0);
+  cs_field_set_key_int(f_bmf, k_vis, 0);
+
+  /* The same mass flux for every variable, an other mass flux
+   * might be defined here afterwards */
+
+  for (int f_id = 0; f_id < n_fld; f_id++) {
+    cs_field_t *f = cs_field_by_id(f_id);
+    if ((f->type & CS_FIELD_VARIABLE)) {
+      cs_field_set_key_int(f, k_bmasf, f_bmf->id);
+    }
+  }
+
+  /* Add mass flux for scalar with a drift (one mass flux per class) */
+
+  for (int f_id = 0; f_id < n_fld; f_id++) {
+    cs_field_t *f = cs_field_by_id(f_id);
+
+    const int iscdri = cs_field_get_key_int(f, k_dri);
+
+    if (iscdri & CS_DRIFT_SCALAR_ADD_DRIFT_FLUX) {
+
+      /* Mass flux for the class on interior faces */
+
+      char f_imf_name[60];
+      snprintf(f_imf_name, 60, "inner_mass_flux_%s", f->name);
+
+      cs_field_t *f_imf_d = cs_field_create(f_imf_name,
+                                            CS_FIELD_PROPERTY,
+                                            CS_MESH_LOCATION_INTERIOR_FACES,
+                                            1,
+                                            false);
+
+      cs_field_set_key_int(f_imf_d, k_log, 0);
+      cs_field_set_key_str(f_imf_d, k_lbl, f->name);
+
+      /* Set the inner mass flux index */
+      cs_field_set_key_int(f, k_imasf, f_imf_d->id);
+
+      /* Mass flux for the class on boundary faces */
+
+      char f_bmf_name[60];
+      snprintf(f_bmf_name, 60, "boundary_mass_flux_%s", f->name);
+
+      cs_field_t *f_bmf_d = cs_field_create(f_bmf_name,
+                                            CS_FIELD_PROPERTY,
+                                            CS_MESH_LOCATION_BOUNDARY_FACES,
+                                            1,
+                                            false);
+
+      cs_field_set_key_int(f_bmf_d, k_log, 0);
+      cs_field_set_key_str(f_bmf_d, k_lbl, f->name);
+
+      /* Set the inner mass flux index */
+      cs_field_set_key_int(f, k_imasf, f_bmf_d->id);
+
+      /* Index of the class, all member of the class share the same mass flux */
+      const int icla = cs_field_get_key_int(f, k_ccl);
+
+      /* If the scalar is the representant of a class, then
+       * set the mass flux index to all members of the class */
+      if (icla != 0) {
+        for (int fj_id = 0; fj_id < n_fld; fj_id++) {
+          cs_field_t *fj    = cs_field_by_id(fj_id);
+          const int   iclap = cs_field_get_key_int(fj, k_ccl);
+
+          if (icla == iclap
+              && ((fj->type & CS_FIELD_VARIABLE) == CS_FIELD_VARIABLE)) {
+            cs_field_set_key_int(fj, k_imasf, f_imf_d->id);
+            cs_field_set_key_int(fj, k_bmasf, f_bmf_d->id);
+          }
+        }
+      }
+
+      /* Get the scalar's output options
+       * (except non-reconstructed boundary output) */
+
+      int       iopchr = cs_field_get_key_int(f, k_vis);
+      const int ilog   = cs_field_get_key_int(f, k_log);
+
+      if (iopchr & CS_POST_BOUNDARY_NR) {
+        iopchr -= CS_POST_BOUNDARY_NR;
+      }
+
+      /* If the mass flux is imposed, no need of drift_tau nor drift_vel */
+      if (!(iscdri & CS_DRIFT_SCALAR_IMPOSED_MASS_FLUX)) {
+        char f_name[128];
+
+        /* Relaxation time */
+
+        snprintf(f_name, 127, "drift_tau_%s", f->name);
+        f_name[127] = '\0';
+
+        cs_field_t *f_dt = cs_field_create(f_name,
+                                           CS_FIELD_PROPERTY,
+                                           CS_MESH_LOCATION_CELLS,
+                                           1,
+                                           false);
+
+        cs_field_set_key_str(f_dt, k_lbl, f->name);
+
+        /* Set the same visualization options as the scalar */
+        cs_field_set_key_int(f_dt, k_log, ilog);
+        cs_field_set_key_int(f_dt, k_vis, iopchr);
+
+        /* Drift velocity */
+
+        snprintf(f_name, 127, "drift_vel_%s", f->name);
+        f_name[127] = '\0';
+
+        cs_field_t *f_dv = cs_field_create(f_name,
+                                           CS_FIELD_PROPERTY,
+                                           CS_MESH_LOCATION_CELLS,
+                                           3,
+                                           false);
+
+        cs_field_set_key_str(f_dv, k_lbl, f->name);
+
+        /* Set the same visualization options as the scalar */
+        cs_field_set_key_int(f_dv, k_log, ilog);
+        cs_field_set_key_int(f_dv, k_vis, iopchr);
+      }
+
+      /* Interaction time particle--eddies */
+      if (iscdri & CS_DRIFT_SCALAR_TURBOPHORESIS) {
+        char f_name[128];
+        snprintf(f_name, 127, "drift_turb_tau_%s", f->name);
+        f_name[127] = '\0';
+
+        cs_field_t *f_ddt = cs_field_create(f_name,
+                                            CS_FIELD_PROPERTY,
+                                            CS_MESH_LOCATION_CELLS,
+                                            1,
+                                            false);
+
+        cs_field_set_key_str(f_ddt, k_lbl, f->name);
+
+        /* Set the same visualization options as the scalar */
+        cs_field_set_key_int(f_ddt, k_log, ilog);
+        cs_field_set_key_int(f_ddt, k_vis, iopchr);
+      }
+    }
+  }
+
+  /* Add various associated fields for variables */
+
+  for (int f_id = 0; f_id < n_fld; f_id++) {
+    cs_field_t *f = cs_field_by_id(f_id);
+    if (!(f->type & CS_FIELD_VARIABLE) || f->type & CS_FIELD_CDO)
+      continue;
+
+    const cs_equation_param_t *eqp_f = cs_field_get_equation_param_const(f);
+
+    /* Add weight fields for variables to compute gradient */
+
+    if (eqp_f->iwgrec == 1 && eqp_f->idiff > 0) {
+      int idimf = -1;
+      if (eqp_f->idften & CS_ISOTROPIC_DIFFUSION)
+        idimf = 1;
+      else if (eqp_f->idften & CS_ANISOTROPIC_DIFFUSION)
+        idimf = 6;
+
+      const int fl_id = cs_field_get_key_int(f, k_wgrec);
+
+      if (fl_id > -1) {
+        const cs_field_t *fl = cs_field_by_id(fl_id);
+
+        if (fl->dim == idimf) {
+          char f_name[128];
+          snprintf(f_name, 127, "gradient_weighting_%s", f->name);
+          f_name[127] = '\0';
+
+          cs_field_t *f_gw = cs_field_create(f_name,
+                                             0,
+                                             CS_MESH_LOCATION_CELLS,
+                                             fl->dim,
+                                             false);
+          cs_field_set_key_int(f_gw, k_wgrec, fl_id);
+        }
+        else {
+          cs_parameters_error(CS_ABORT_IMMEDIATE,
+                              _("initial data setup"),
+                              _("Variable %s should be assigned a\n"
+                                "gradient_weighting_field of dimension %d\n"
+                                "but has already been assigned field %s \n"
+                                "of dimension %d.\n"),
+                              f->name,
+                              idimf,
+                              fl->name,
+                              fl->dim);
+        }
+      }
+    }
+
+    /* Postprocessing of slope tests */
+
+    const int ifctsl = cs_field_get_key_int(f, k_slts);
+    if (ifctsl != -1
+        && eqp_f->iconv > 0 && eqp_f->blencv > 0 && eqp_f->isstpc == 0) {
+      char f_name[128];
+      snprintf(f_name, 127, "%s_slope_upwind", f->name);
+      f_name[127] = '\0';
+
+      cs_field_t *f_su = cs_field_create(f_name,
+                                         CS_FIELD_POSTPROCESS,
+                                         CS_MESH_LOCATION_CELLS,
+                                         1,
+                                         false);
+
+      cs_field_set_key_int(f_su, k_vis, CS_POST_ON_LOCATION);
+      cs_field_set_key_int(f, k_slts, f_su->id);
+    }
+
+    /* Diffusion limiter */
+
+    const int ikdf = cs_field_get_key_int(f, k_dflim);
+    if (ikdf != -1) {
+      char f_name[128];
+      snprintf(f_name, 60, "%s_diff_lim", f->name);
+      f_name[127] = '\0';
+
+      cs_field_t *f_dflim = cs_field_create(f_name,
+                                            CS_FIELD_PROPERTY,
+                                            CS_MESH_LOCATION_CELLS,
+                                            f->dim,
+                                            false);
+
+      cs_field_set_key_int(f_dflim, k_log, 1);
+      cs_field_set_key_int(f_dflim, k_vis, CS_POST_ON_LOCATION);
+      cs_field_set_key_int(f, k_cvlim, f_dflim->id);
+    }
+
+    /* Convection limiter */
+
+    const int icv = cs_field_get_key_int(f, k_cvlim);
+    if (eqp_f->isstpc == 2 || icv != -1) {
+      char f_name[128];
+      snprintf(f_name, 127, "%s_conv_lim", f->name);
+      f_name[127] = '\0';
+
+      cs_field_t *f_cvlim = cs_field_create(f_name,
+                                            CS_FIELD_PROPERTY,
+                                            CS_MESH_LOCATION_CELLS,
+                                            f->dim,
+                                            false);
+
+      cs_field_set_key_int(f_cvlim, k_log, 1);
+      cs_field_set_key_int(f, k_cvlim, f_cvlim->id);
+    }
+
+  } /* End of loop on fields */
+
+  /* Fan id visualization */
+
+  cs_fan_field_create();
+
+  /* VOF */
+
+  cs_vof_field_create();
+
+  /* Turbulent anisotropic viscosity or user defined tensorial diffusivity
+   * for a scalar (exclusive or).*/
+
+  if ((idfm == 1 || iggafm == 1 || cs_glob_turb_model->itytur == 3)
+      && cs_glob_turb_rans_model->idirsm == 1) {
+
+    cs_field_t *f_atv = cs_field_create("anisotropic_turbulent_viscosity",
+                                        CS_FIELD_INTENSIVE | CS_FIELD_PROPERTY,
+                                        CS_MESH_LOCATION_CELLS,
+                                        6,
+                                        false);
+
+    cs_field_set_key_int(f_atv, k_log, 0);
+
+    if (cs_glob_turb_model->iturb == CS_TURB_RIJ_EPSILON_EBRSM && iggafm == 1) {
+      cs_field_t *f_atvs
+        = cs_field_create("anisotropic_turbulent_viscosity_scalar",
+                          CS_FIELD_INTENSIVE | CS_FIELD_PROPERTY,
+                          CS_MESH_LOCATION_CELLS,
+                          6,
+                          false);
+
+      cs_field_set_key_int(f_atvs, k_log, 0);
+    }
+  }
+
+  /* Change some field settings
+     -------------------------- */
+
+  if (cs_glob_ale > 0) {
+    cs_field_t *f_imasf
+      = cs_field_by_id(cs_field_get_key_int(CS_F_(p), k_imasf));
+    cs_field_set_n_time_vals(f_imasf, 2);
+    cs_field_t *f_bmasf
+      = cs_field_by_id(cs_field_get_key_int(CS_F_(p), k_bmasf));
+    cs_field_set_n_time_vals(f_bmasf, 2);
+  }
+
+  /* Set some field keys
+     ------------------- */
+
+  /* Copy imrgra into the field structure if still at default */
+
+  for (int f_id = 0; f_id < n_fld; f_id++) {
+    cs_field_t *f = cs_field_by_id(f_id);
+    if (!(f->type & CS_FIELD_VARIABLE) || f->type & CS_FIELD_CDO)
+      continue;
+
+    cs_equation_param_t *eqp_f = cs_field_get_equation_param(f);
+
+    if (eqp_f->imrgra < 0) {
+      eqp_f->imrgra = cs_glob_space_disc->imrgra;
+    }
+  }
+
+  /* Check if scalars are buoyant and set n_buoyant_scal accordingly.
+   * It is then used in tridim to update buoyant scalars and density
+   * in U-P loop */
+
+  cs_velocity_pressure_set_n_buoyant_scalars();
+
+  /* For Low Mach and compressible (increment) algorithms, particular care
+   * must be taken when dealing with density in the unsteady term in the
+   * velocity pressure loop */
+
+  if (cs_glob_fluid_properties->irovar == 1
+      && (cs_glob_velocity_pressure_model->idilat > 1
+          || cs_glob_vof_parameters->vof_model > 0
+          || cs_glob_physical_model_flag[CS_COMPRESSIBLE] == 3)) {
+
+    /* EOS density, imposed after the correction step, so we need
+     * to keep the previous one, which is in balance with the mass */
+
+    cs_field_t *f_dm = cs_field_create("density_mass",
+                                       CS_FIELD_PROPERTY,
+                                       CS_MESH_LOCATION_CELLS,
+                                       1,
+                                       false);
+    cs_field_set_key_int(f_dm, k_log, 0);
+    cs_field_set_key_int(f_dm, k_vis, 0);
+
+    cs_field_t *f_bdm = cs_field_create("boundary_density_mass",
+                                        CS_FIELD_PROPERTY,
+                                        CS_MESH_LOCATION_BOUNDARY_FACES,
+                                        1,
+                                        false);
+    cs_field_set_key_int(f_bdm, k_log, 0);
+    cs_field_set_key_int(f_bdm, k_vis, 0);
+  }
+
+  /* Update field pointer mappings
+     ----------------------------- */
+  cs_field_pointer_map_base();
+  cs_field_pointer_map_boundary();
+}
+
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
@@ -1425,7 +2029,7 @@ cs_setup(void)
   int nmodpp = 0;
   for (int i = 1; i < CS_N_PHYSICAL_MODEL_TYPES; i++) {
     if (cs_glob_physical_model_flag[i] > -1)
-      nmodpp ++;
+      nmodpp++;
   }
 
   /* User input, variable definitions */
@@ -1456,13 +2060,13 @@ cs_setup(void)
 
   if (cs_glob_param_cdo_mode != CS_PARAM_CDO_MODE_ONLY) {
     /* Additional fields if not in CDO mode only */
-    _additional_fields();
+    _additional_fields_stage_1();
 
     /* Changes after user initialization and additional fields dependent on
      * main fields options. */
     cs_parameters_global_complete();
 
-    cs_f_fldini();
+    _additional_fields_stage_2();
   }
 
   cs_parameters_eqp_complete();

@@ -411,7 +411,6 @@ cs_wall_functions.c \
 cs_xdef_eval_at_zone.c \
 ecrlis.f90 \
 findpt.f90 \
-fldini.f90 \
 fldvar.f90 \
 fldprp.f90 \
 impini.f90 \

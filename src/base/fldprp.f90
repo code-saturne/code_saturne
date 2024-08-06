@@ -67,11 +67,9 @@ implicit none
 
 ! Local variables
 
-character(len=80) :: f_label, f_name
 integer           :: ischcp
 integer           :: idim1, idim3, idim6, iflid
 integer           :: k_restart_id, key_n_restart_id
-integer           :: type_flag, post_flag, location_id
 integer           :: keypid
 logical           :: has_previous
 

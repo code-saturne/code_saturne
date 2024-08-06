@@ -51,32 +51,6 @@ BEGIN_C_DECLS
 typedef struct _cs_fan_t cs_fan_t;
 
 /*============================================================================
- *  Public function prototypes for Fortran API
- *============================================================================*/
-
-/*----------------------------------------------------------------------------
- * Compute the flows through the fans
- *
- * Fortran interface:
- *
- * subroutine debvtl
- * *****************
- *
- * double precision flumas(*)      : <-- : interior faces mass flux
- * double precision flumab(*)      : <-- : boundary faces mass flux
- * double precision rhofac(*)      : <-- : density at cells
- * double precision rhofab(*)      : <-- : density at boundary faces
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF (debvtl, DEBVTL)
-(
- cs_real_t  flumas[],
- cs_real_t  flumab[],
- cs_real_t  rhofac[],
- cs_real_t  rhofab[]
-);
-
-/*============================================================================
  * Public function prototypes
  *============================================================================*/
 
@@ -135,6 +109,13 @@ cs_fan_destroy_all(void);
 
 int
 cs_fan_n_fans(void);
+
+/*----------------------------------------------------------------------------
+ * Create fans field.
+ *----------------------------------------------------------------------------*/
+
+void
+cs_fan_field_create(void);
 
 /*----------------------------------------------------------------------------
  * Log fans definition setup information.
