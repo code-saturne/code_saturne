@@ -2900,8 +2900,6 @@ cs_lagr_sde(cs_real_t           dt_p,
     /* If no deposition sub-model is activated, call of subroutine lages1
        for every particle */
 
-    bft_printf("Lagrangian SDE: first order time-stepping\n");
-
     if (cs_glob_lagr_model->deposition <= 0)
       _lages1(dt_p,
               taup,

@@ -634,6 +634,36 @@ _update_init_particles(cs_lagr_particle_set_t         *p_set,
   cs_real_t tscl_shift = 0;
   const cs_lagr_attribute_map_t  *p_am = p_set->p_am;
 
+  const cs_real_t    *cvar_k = NULL;
+  const cs_real_6_t  *cvar_rij = NULL;
+
+  if (cs_glob_lagr_model->idistu == 1) {
+
+    if (extra->cvar_rij != NULL)
+      cvar_rij = (const cs_real_6_t *) extra->cvar_rij->vals[time_id];
+
+    else if (extra->cvar_k != NULL) {
+      cvar_k = (const cs_real_t *)extra->cvar_k->vals[time_id];
+      if (extra->cvar_k != NULL)
+        cvar_k = (const cs_real_t *)extra->cvar_k->val;
+    }
+
+    else {
+      bft_error
+        (__FILE__, __LINE__, 0,
+         _("The Lagrangian module is incompatible with the selected\n"
+           " turbulence model.\n\n"
+           "Turbulent dispersion is used with:\n"
+           "  cs_glob_lagr_model->idistu = %d\n"
+           "And the turbulence model is iturb = %d\n\n"
+           "The only turbulence models compatible with the Lagrangian model's\n"
+           "turbulent dispersion are k-epsilon, Rij-epsilon, v2f, and k-omega."),
+         cs_glob_lagr_model->idistu,
+         extra->iturb);
+    }
+
+  }
+
   /* Initialize pointers (used to simplify future tests) */
 
   if (   (   cs_glob_lagr_model->physical_model == CS_LAGR_PHYS_HEAT
@@ -699,6 +729,68 @@ _update_init_particles(cs_lagr_particle_set_t         *p_set,
                                                        CS_LAGR_VELOCITY_SEEN);
       for (cs_lnum_t i = 0; i < 3; i++)
         part_seen_vel[i] = vela[cell_id * 3 + i];
+
+
+      /* Initialisation stochastic part */
+      if (cs_glob_lagr_model->idistu == 1) {
+        cs_real_t vagaus[3];
+
+        cs_random_normal(3, vagaus);
+
+        cs_real_33_t eig_vec;
+        cs_real_3_t eig_val;
+
+        cs_real_33_t sym_rij;
+        cs_real_t tol_err = cs_math_epzero;
+
+        cs_real_t w = 0.;
+
+        if (cvar_rij != NULL) {
+          sym_rij[0][0] = cvar_rij[cell_id][0];
+          sym_rij[1][1] = cvar_rij[cell_id][1];
+          sym_rij[2][2] = cvar_rij[cell_id][2];
+          sym_rij[0][1] = cvar_rij[cell_id][3];
+          sym_rij[1][0] = cvar_rij[cell_id][3];
+          sym_rij[1][2] = cvar_rij[cell_id][4];
+          sym_rij[2][1] = cvar_rij[cell_id][4];
+          sym_rij[0][2] = cvar_rij[cell_id][5];
+          sym_rij[2][0] = cvar_rij[cell_id][5];
+        }
+        /* TODO do it better for EVM models */
+        else {
+
+          if (cvar_k != NULL)
+            w = 2./3. * cvar_k[cell_id];
+
+          sym_rij[0][0] = w;
+          sym_rij[1][1] = w;
+          sym_rij[2][2] = w;
+          sym_rij[0][1] = 0.;
+          sym_rij[1][0] = 0.;
+          sym_rij[1][2] = 0.;
+          sym_rij[2][1] = 0.;
+          sym_rij[0][2] = 0.;
+          sym_rij[2][0] = 0.;
+        }
+
+        eig_vec[0][0] = 1;
+        eig_vec[0][1] = 0;
+        eig_vec[0][2] = 0;
+        eig_vec[1][0] = 0;
+        eig_vec[1][1] = 1;
+        eig_vec[1][2] = 0;
+        eig_vec[2][0] = 0;
+        eig_vec[2][1] = 0;
+        eig_vec[2][2] = 1;
+
+        cs_math_33_eig_val_vec(sym_rij, tol_err, eig_val, eig_vec);
+
+        for (cs_lnum_t i = 0; i < 3; i++)
+          part_seen_vel[i] += vagaus[0] * sqrt(eig_val[0]) * eig_vec[0][i]
+                            + vagaus[1] * sqrt(eig_val[1]) * eig_vec[1][i]
+                            + vagaus[2] * sqrt(eig_val[2]) * eig_vec[2][i];
+
+      }
 
       /* Shape for spheroids without inertia */
       if (shape == CS_LAGR_SHAPE_SPHEROID_JEFFERY_MODEL) {
