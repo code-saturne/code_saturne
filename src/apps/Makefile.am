@@ -119,7 +119,7 @@ $(top_builddir)/src/bft/libbft.a
 
 cs_solver = $(top_srcdir)/src/apps/cs_solver.c
 cs_solver.$(OBJEXT): $(cs_solver)
-	$(CC) -c $(DEFS) $(DEFAULT_INCLUDES) $(AM_CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) ${cs_solver}
+	$(CC) -c $(DEFS) $(DEFAULT_INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) ${cs_solver}
 
 if ENABLE_SHARED
 
