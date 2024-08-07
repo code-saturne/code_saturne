@@ -117,7 +117,8 @@ static cs_porosity_from_scan_opt_t _porosity_from_scan_opt = {
   .source_c_ids = NULL,
   .threshold = 4,
   .convection_porosity_threshold = 0.5,
-  .porosity_threshold = 1e-12
+  .porosity_threshold = 1e-12,
+  .use_staircase = false
 };
 
 /*============================================================================
@@ -1327,7 +1328,7 @@ cs_compute_porosity_from_scan(void)
       f->val[c_id] = 0.;
       mq->c_disable_flag[c_id] = 1;
     }
-    cell_f_vol[c_id] =  f->val[c_id] * mq->cell_vol[c_id];
+    cell_f_vol[c_id] = f->val[c_id] * mq->cell_vol[c_id];
   }
 
   /* Set interior face values */

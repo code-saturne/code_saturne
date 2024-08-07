@@ -480,7 +480,9 @@ cs_time_stepping(void)
 
     if (cs_glob_porous_model == 3) {
       /* Compute solid quantities and update fluid volume and porosity */
-      cs_f_mesh_quantities_solid_compute();
+      if (!(cs_glob_porosity_from_scan_opt->use_staircase)) {
+        cs_f_mesh_quantities_solid_compute();
+      }
     }
 
     cs_mesh_quantities_fluid_vol_reductions(m, mq);
