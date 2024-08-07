@@ -321,7 +321,10 @@ _cs_boundary_conditions_set_coeffs_turb_scalar(cs_field_t  *f_sc,
     bvar_s = f_scal_b->val;
 
   /* Does the scalar behave as a temperature ? */
-  const int iscacp = cs_field_get_key_int(f_sc, kscacp);
+  int iscacp = cs_field_get_key_int(f_sc, kscacp);
+
+  if (f_sc == f_th && thermal_variable == CS_THERMAL_MODEL_TOTAL_ENERGY)
+    iscacp = 3; // TODO- generalize this for the keyword itself.
 
   /* Retrieve turbulent Schmidt value for current scalar */
   const cs_real_t turb_schmidt = cs_field_get_key_double(f_sc, ksigmas);
@@ -370,38 +373,28 @@ _cs_boundary_conditions_set_coeffs_turb_scalar(cs_field_t  *f_sc,
     const cs_real_t *rnxyz = b_face_u_normal[f_id];
     const cs_real_t distbf = b_dist[f_id];
 
-    cs_real_t cpp = 1.;
+    cs_real_t cpp = 1.;   // 1, Cp, Cv, or Cp/Cv
+
     if (iscacp == 1)
       cpp = (icp >= 0) ? cpro_cp[c_id] : cp0;
     else if (iscacp == 2)
       cpp = (icp >= 0) ? cpro_cv[c_id] : cp0;
+    else if (iscacp == 3) {
+      cpp = (icp >= 0) ? cpro_cp[c_id] : cp0;
+      cpp = (icv >= 0) ? cpp / cpro_cv[c_id] : cpp / cv0;
+    }
 
     const cs_real_t rkl = (ifcvsl < 0) ? visls_0 : viscls[c_id];
-    cs_real_t prdtl = cpp * visclc / rkl;
 
     /* Compressible module:
        We assume that the Prandlt number should be defined in the same manner
        whether we solve for enthalpy or energy, that is Mu*Cp/Lambda.
        If we solve in energy we have computed Mu*Cv/Lambda above. */
 
-    if (f_sc == f_th && thermal_variable == CS_THERMAL_MODEL_TOTAL_ENERGY) {
-      prdtl = (icp >= 0) ? prdtl * cpro_cp[c_id] : prdtl * cp0;
-      prdtl = (icv >= 0) ? prdtl / cpro_cv[c_id] : prdtl / cv0;
-    }
-
     /* Scalar diffusivity */
     if (eqp_sc->idften & CS_ISOTROPIC_DIFFUSION) {
-
-      /* In compressible, for energy Lambda/Cv+Cp/Cv*(mu_t/turb_schmidt) */
-      if (f_sc == f_th && thermal_variable == CS_THERMAL_MODEL_TOTAL_ENERGY) {
-        cs_real_t cpscv = (icp >= 0) ? cpro_cp[c_id] : cp0;
-        cpscv = (icv >= 0) ? cpscv / cpro_cv[c_id] : cpscv / cv0;
-        hint[f_id]
-          = (rkl + eqp_sc->idifft * cpscv * visctc / turb_schmidt) / distbf;
-      }
-      else
-        hint[f_id]
-          = (rkl + eqp_sc->idifft * cpp * visctc / turb_schmidt) / distbf;
+      hint[f_id] = (rkl + eqp_sc->idifft * cpp * visctc / turb_schmidt) / distbf;
+      /* In compressible case, for energy: Lambda/Cv + Cp/Cv*(mu_t/turb_schmidt). */
     }
 
     /* Symmetric tensor diffusivity (GGDH or AFM) */
@@ -414,14 +407,8 @@ _cs_boundary_conditions_set_coeffs_turb_scalar(cs_field_t  *f_sc,
       dist[1] = b_face_cog[f_id][1] - cell_cen[c_id][1];
       dist[2] = b_face_cog[f_id][2] - cell_cen[c_id][2];
 
-      /* In compressible, for energy Lambda/Cv+Cp/Cv*(mu_t/sigmas) */
-      if (f_sc == f_th && thermal_variable == CS_THERMAL_MODEL_TOTAL_ENERGY) {
-        cs_real_t cpscv = (icp >= 0) ? cpro_cp[c_id] : cp0;
-        cpscv = (icv >= 0) ? cpscv / cpro_cv[c_id] : cpscv / cv0;
-        temp = eqp_sc->idifft * cpscv * ctheta / cs_turb_csrij;
-      }
-      else
-        temp = eqp_sc->idifft * cpp * ctheta / cs_turb_csrij;
+      temp = eqp_sc->idifft * cpp * ctheta / cs_turb_csrij;
+      /* In compressible case, for energy: Lambda/Cv+Cp/Cv*(mu_t/sigmas) */
 
       visci[0][0] = temp * visten[c_id][0] + rkl;
       visci[1][1] = temp * visten[c_id][1] + rkl;
@@ -469,6 +456,9 @@ _cs_boundary_conditions_set_coeffs_turb_scalar(cs_field_t  *f_sc,
             || icodcl_sc[f_id] == 6
             || icodcl_sc[f_id] == 15
             || icodcl_sc[f_id] == 3)) {
+
+      cs_real_t prdtl = cpp * visclc / rkl;
+
       /* Note: to make things clearer yplus is always
          "y uk /nu" even for rough modelling. And the roughness correction is
          multiplied afterwards where needed. */
@@ -506,7 +496,7 @@ _cs_boundary_conditions_set_coeffs_turb_scalar(cs_field_t  *f_sc,
     }
     else {
       /* y+/T+ *PrT */
-      yptp[f_id] = 1.0 / prdtl;
+      yptp[f_id] = rkl / (cpp * visclc);   /* 1.0 / prdtl; */
       hflui = hint[f_id];
     }
 
@@ -567,7 +557,10 @@ _cs_boundary_conditions_set_coeffs_turb_scalar(cs_field_t  *f_sc,
       hflui = hbnd[f_id];
 
       /* T+ = (T_I - T_w) / Tet */
-      tplus = cs_math_fmax(yplus, cs_math_epzero) / yptp[f_id];
+      if (fabs(yptp[f_id]) > 1e-24)  // TODO improve this test
+        tplus = cs_math_fmax(yplus, cs_math_epzero) / yptp[f_id];
+      else
+        tplus = HUGE_VAL;
     }
 
     else if (icodcl_vel[f_id] == 6) {  /* rough wall (legacy) */
