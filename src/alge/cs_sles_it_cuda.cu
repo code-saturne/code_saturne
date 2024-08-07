@@ -1237,8 +1237,7 @@ cs_sles_it_cuda_jacobi(cs_sles_it_t              *c,
   int device_id = cs_get_device_id();
 
   bool local_stream = false;
-  cudaStream_t stream_pf, stream;
-  cudaStreamCreate(&stream_pf);
+  cudaStream_t stream;
   stream = cs_matrix_spmv_cuda_get_stream();
   if (stream == 0) {
     local_stream = true;
@@ -1249,14 +1248,20 @@ cs_sles_it_cuda_jacobi(cs_sles_it_t              *c,
 
   size_t vec_size = n_cols * sizeof(cs_real_t);
 
-  cs_alloc_mode_t amode_vx = cs_check_device_ptr(vx);
-  cs_alloc_mode_t amode_rhs = cs_check_device_ptr(rhs);
+  /* Prefetch in case it is needed; actually, the reported allocation
+     mode may be incorrect if the array are sub-arrays of a greater allocation,
+     such as for multigrid, but in this case no prefetching should be needed,
+     or it should have bed done by the caller. */
+  {
+    cs_alloc_mode_t amode_vx = cs_check_device_ptr(vx);
+    cs_alloc_mode_t amode_rhs = cs_check_device_ptr(rhs);
 
-  if (amode_vx == CS_ALLOC_HOST_DEVICE_SHARED && vx_ini == vx)
-    cudaMemPrefetchAsync(vx, vec_size, device_id, stream_pf);
+    if (amode_vx == CS_ALLOC_HOST_DEVICE_SHARED && vx_ini == vx)
+      cs_cuda_prefetch_h2d(vx, vec_size);
 
-  if (amode_rhs == CS_ALLOC_HOST_DEVICE_SHARED)
-    cudaMemPrefetchAsync(rhs, vec_size, device_id, stream_pf);
+    if (amode_rhs == CS_ALLOC_HOST_DEVICE_SHARED)
+      cs_cuda_prefetch_h2d(rhs, vec_size);
+  }
 
   const cs_real_t  *__restrict__ ad
     =  cs_get_device_ptr_const(cs_matrix_get_diagonal(a));
@@ -1428,7 +1433,6 @@ cs_sles_it_cuda_jacobi(cs_sles_it_t              *c,
     cs_matrix_spmv_cuda_set_stream(0);
     cudaStreamDestroy(stream);
   }
-  cudaStreamDestroy(stream_pf);
 
   return cvg;
 }
@@ -1472,8 +1476,7 @@ cs_sles_it_cuda_block_jacobi(cs_sles_it_t              *c,
   int device_id = cs_get_device_id();
 
   bool local_stream = false;
-  cudaStream_t stream_pf, stream;
-  cudaStreamCreate(&stream_pf);
+  cudaStream_t stream;
   stream = cs_matrix_spmv_cuda_get_stream();
   if (stream == 0) {
     local_stream = true;
@@ -1484,14 +1487,20 @@ cs_sles_it_cuda_block_jacobi(cs_sles_it_t              *c,
 
   size_t vec_size = n_cols * sizeof(cs_real_t);
 
-  cs_alloc_mode_t amode_vx = cs_check_device_ptr(vx);
-  cs_alloc_mode_t amode_rhs = cs_check_device_ptr(rhs);
+  /* Prefetch in case it is needed; actually, the reported allocation
+     mode may be incorrect if the array are sub-arrays of a greater allocation,
+     such as for multigrid, but in this case no prefetching should be needed,
+     or it should have bed done by the caller. */
+  {
+    cs_alloc_mode_t amode_vx = cs_check_device_ptr(vx);
+    cs_alloc_mode_t amode_rhs = cs_check_device_ptr(rhs);
 
-  if (amode_vx == CS_ALLOC_HOST_DEVICE_SHARED)
-    cudaMemPrefetchAsync(vx, vec_size, device_id, stream);
+    if (amode_vx == CS_ALLOC_HOST_DEVICE_SHARED && vx_ini == vx)
+      cs_cuda_prefetch_h2d(vx, vec_size);
 
-  if (amode_rhs == CS_ALLOC_HOST_DEVICE_SHARED)
-    cudaMemPrefetchAsync(rhs, vec_size, device_id, stream_pf);
+    if (amode_rhs == CS_ALLOC_HOST_DEVICE_SHARED)
+      cs_cuda_prefetch_h2d(rhs, vec_size);
+  }
 
   const cs_real_t  *__restrict__ ad
     =  cs_get_device_ptr_const(cs_matrix_get_diagonal(a));
@@ -1675,7 +1684,6 @@ cs_sles_it_cuda_block_jacobi(cs_sles_it_t              *c,
     cs_matrix_spmv_cuda_set_stream(0);
     cudaStreamDestroy(stream);
   }
-  cudaStreamDestroy(stream_pf);
 
   return cvg;
 }
@@ -1722,8 +1730,7 @@ cs_sles_it_cuda_fcg(cs_sles_it_t              *c,
   int device_id = cs_get_device_id();
 
   bool local_stream = false;
-  cudaStream_t stream, stream_pf;
-  cudaStreamCreate(&stream_pf);
+  cudaStream_t stream;
   stream = cs_matrix_spmv_cuda_get_stream();
   if (stream == 0) {
     local_stream = true;
@@ -1748,14 +1755,20 @@ cs_sles_it_cuda_fcg(cs_sles_it_t              *c,
 
   size_t vec_size = n_cols * sizeof(cs_real_t);
 
-  cs_alloc_mode_t amode_vx = cs_check_device_ptr(vx);
-  cs_alloc_mode_t amode_rhs = cs_check_device_ptr(rhs);
+  /* Prefetch in case it is needed; actually, the reported allocation
+     mode may be incorrect if the array are sub-arrays of a greater allocation,
+     such as for multigrid, but in this case no prefetching should be needed,
+     or it should have bed done by the caller. */
+  {
+    cs_alloc_mode_t amode_vx = cs_check_device_ptr(vx);
+    cs_alloc_mode_t amode_rhs = cs_check_device_ptr(rhs);
 
-  if (amode_vx == CS_ALLOC_HOST_DEVICE_SHARED)
-    cudaMemPrefetchAsync(vx, vec_size, device_id, stream_pf);
+    if (amode_vx == CS_ALLOC_HOST_DEVICE_SHARED && vx_ini == vx)
+      cs_cuda_prefetch_h2d(vx, vec_size);
 
-  if (amode_rhs == CS_ALLOC_HOST_DEVICE_SHARED)
-    cudaMemPrefetchAsync(rhs, vec_size, device_id, stream_pf);
+    if (amode_rhs == CS_ALLOC_HOST_DEVICE_SHARED)
+      cs_cuda_prefetch_h2d(rhs, vec_size);
+  }
 
   {
     const size_t n_wa = 5;
@@ -1768,9 +1781,6 @@ cs_sles_it_cuda_fcg(cs_sles_it_t              *c,
                     CS_ALLOC_HOST_DEVICE_SHARED);
     else
       _aux_vectors = (cs_real_t *)aux_vectors;
-
-    cudaMemPrefetchAsync(_aux_vectors, wa_size*n_wa*sizeof(cs_real_t),
-                         device_id, stream_pf);
 
     rk = _aux_vectors;
     vk = _aux_vectors + wa_size;
@@ -1874,7 +1884,6 @@ cs_sles_it_cuda_fcg(cs_sles_it_t              *c,
     cs_matrix_spmv_cuda_set_stream(0);
     cudaStreamDestroy(stream);
   }
-  cudaStreamDestroy(stream_pf);
 
   return cvg;
 }
@@ -1916,8 +1925,7 @@ cs_sles_it_cuda_gcr(cs_sles_it_t              *c,
   int device_id = cs_get_device_id();
 
   bool local_stream = false;
-  cudaStream_t stream, stream_pf;
-  cudaStreamCreate(&stream_pf);
+  cudaStream_t stream;
   stream = cs_matrix_spmv_cuda_get_stream();
   if (stream == 0) {
     local_stream = true;
@@ -1931,16 +1939,19 @@ cs_sles_it_cuda_gcr(cs_sles_it_t              *c,
 
   size_t vec_size = n_cols * sizeof(cs_real_t);
 
-  cs_alloc_mode_t amode_vx = cs_check_device_ptr(vx);
-  cs_alloc_mode_t amode_rhs = cs_check_device_ptr(rhs);
+  /* Prefetch in case it is needed; actually, the reported allocation
+     mode may be incorrect if the array are sub-arrays of a greater allocation,
+     such as for multigrid, but in this case no prefetching should be needed,
+     or it should have bed done by the caller. */
+  {
+    cs_alloc_mode_t amode_vx = cs_check_device_ptr(vx);
+    cs_alloc_mode_t amode_rhs = cs_check_device_ptr(rhs);
 
-  if (amode_vx == CS_ALLOC_HOST_DEVICE_SHARED)
-    cudaMemPrefetchAsync(vx, vec_size, device_id, stream_pf);
+    if (amode_vx == CS_ALLOC_HOST_DEVICE_SHARED && vx_ini == vx)
+      cs_cuda_prefetch_h2d(vx, vec_size);
 
-  if (amode_rhs == CS_ALLOC_HOST_DEVICE_SHARED)
-    cudaMemPrefetchAsync(rhs, vec_size, device_id, stream_pf);
-  else if (amode_rhs == CS_ALLOC_HOST) {
-    cudaMemPrefetchAsync(rhs, vec_size, device_id, stream_pf);
+    if (amode_rhs == CS_ALLOC_HOST_DEVICE_SHARED)
+      cs_cuda_prefetch_h2d(rhs, vec_size);
   }
 
   double  residual = -1;
@@ -2163,7 +2174,6 @@ cs_sles_it_cuda_gcr(cs_sles_it_t              *c,
     cs_matrix_spmv_cuda_set_stream(0);
     cudaStreamDestroy(stream);
   }
-  cudaStreamDestroy(stream_pf);
 
   return cvg;
 }

@@ -325,17 +325,16 @@ cs_cuda_copy_d2h_async(void        *dst,
  *
  * A safety check is added.
  *
- * \param [out]  dst   pointer to destination data
- * \param [in]   src   pointer to source data
- * \param [in]   size  size of data to copy
+ * \param [in]  dst   pointer to data
+ * \param [in]  size  size of data to copy
  *
  * \returns pointer to allocated memory.
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cuda_prefetch_h2d(void    *dst,
-                     size_t   size);
+cs_cuda_prefetch_h2d(const void  *dst,
+                     size_t       size);
 
 /*----------------------------------------------------------------------------*/
 /*
@@ -345,17 +344,16 @@ cs_cuda_prefetch_h2d(void    *dst,
  *
  * A safety check is added.
  *
- * \param [out]  dst   pointer to destination data
- * \param [in]   src   pointer to source data
- * \param [in]   size  size of data to copy
+ * \param [in]  dst   pointer to data
+ * \param [in]  size  size of data to copy
  *
  * \returns pointer to allocated memory.
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cuda_prefetch_d2h(void    *dst,
-                     size_t   size);
+cs_cuda_prefetch_d2h(const void  *dst,
+                     size_t       size);
 
 /*----------------------------------------------------------------------------*/
 /*
