@@ -1672,7 +1672,7 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
       /* Computation of the variable relaxation coefficient */
       lvar = -1;
 
-      ctx.parallel_for(n_cells_ext, [=] CS_F_HOST_DEVICE (cs_lnum_t cell_id) {
+      ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t cell_id) {
         adxkm1[cell_id] = adxk[cell_id];
         adxk[cell_id] = - rhs0[cell_id];
       });
@@ -1764,7 +1764,7 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
        and compute the new residual */
 
     if (iswdyp <= 0) {
-      ctx.parallel_for(n_cells_ext, [=] CS_F_HOST_DEVICE (cs_lnum_t cell_id) {
+      ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t cell_id) {
         pvar[cell_id] += dpvar[cell_id];
         /* smbini already contains unsteady terms and mass source terms
            of the RHS updated at each sweep */
@@ -1774,7 +1774,7 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
     }
     else if (iswdyp == 1) {
       if (alph < 0.) break;
-      ctx.parallel_for(n_cells_ext, [=] CS_F_HOST_DEVICE (cs_lnum_t cell_id) {
+      ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t cell_id) {
         pvar[cell_id] += alph*dpvar[cell_id];
         /* smbini already contains unsteady terms and mass source terms
            of the RHS updated at each sweep */
@@ -1783,7 +1783,7 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
       });
     }
     else if (iswdyp >= 2) {
-      ctx.parallel_for(n_cells_ext, [=] CS_F_HOST_DEVICE (cs_lnum_t cell_id) {
+      ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t cell_id) {
         pvar[cell_id] += alph*dpvar[cell_id] + beta*dpvarm1[cell_id];
         /* smbini already contains unsteady terms and mass source terms
            of the RHS updated at each sweep */
