@@ -248,16 +248,11 @@ cs_les_balance_t  *cs_glob_les_balance = &_les_balance;
 static cs_field_t *
 _les_balance_get_tm_by_name(const char *name)
 {
-  int n_moments = cs_time_moment_n_moments();
-  cs_field_t *f = NULL;
+  cs_field_t *f = cs_field_by_name_try(name);
+  if (! (f->type & CS_FIELD_ACCUMULATOR))
+    f = nullptr;
 
-  for (int imom = 0; imom < n_moments; imom++) {
-    f = cs_time_moment_get_field(imom);
-    if (strcmp(f->name, name) == 0)
-      return f;
-  }
-
-  return NULL;
+  return f;
 }
 
 /*----------------------------------------------------------------------------*
@@ -648,11 +643,12 @@ _les_balance_compute_pdjuisym(const void   *input,
 
   cs_real_33_t *grdv = (cs_real_33_t *)_gradv->val;
 
+# pragma omp parallel for if (n_cells > CS_THR_MIN)
   for (cs_lnum_t iel = 0; iel < n_cells; iel++) {
     cs_real_t pre = CS_F_(p)->val[iel];
     for (cs_lnum_t ii = 0; ii < 6; ii++) {
-      int i = idirtens[ii][0];
-      int j = idirtens[ii][1];
+      cs_lnum_t i = idirtens[ii][0];
+      cs_lnum_t j = idirtens[ii][1];
       vals[6*iel + ii] = pre*(grdv[iel][i][j] + grdv[iel][j][i]);
     }
   }
@@ -677,6 +673,7 @@ _les_balance_compute_smag(const void   *input,
 
   cs_real_t *cpro_smago = cs_field_by_name("smagorinsky_constant^2")->val;
 
+# pragma omp parallel for if (n_cells > CS_THR_MIN)
   for (cs_lnum_t iel = 0; iel < n_cells; iel++)
     vals[iel] = cs_math_sq(cpro_smago[iel]);
 }
@@ -699,6 +696,7 @@ _les_balance_compute_dkuidkuj(const void   *input,
 
   cs_real_33_t *grdv = (cs_real_33_t *)_gradv->val;
 
+# pragma omp parallel for if (n_cells > CS_THR_MIN)
   for (cs_lnum_t iel = 0; iel < n_cells; iel++) {
 
     for (cs_lnum_t ii = 0; ii < 6; ii++)
@@ -744,13 +742,16 @@ _les_balance_compute_uidktaujk(const void   *input,
 
     for (cs_lnum_t j = 0; j < 3; j++) {
 
-      for (cs_lnum_t iel = 0; iel < n_cells; iel++)
+#     pragma omp parallel for if (n_cells > CS_THR_MIN)
+      for (cs_lnum_t iel = 0; iel < n_cells; iel++) {
         for (cs_lnum_t k = 0; k < 3; k++)
           vel[iel][k] = -CS_F_(mu_t)->val[iel]*( grdv[iel][j][k]
                                                 +grdv[iel][k][j]);
+      }
 
       _les_balance_divergence_vector(vel, diverg);
 
+#     pragma omp parallel for if (n_cells > CS_THR_MIN)
       for (cs_lnum_t iel = 0; iel < n_cells; iel++)
         vals[9*iel+i*3+j] = velocity[iel][i]*diverg[iel];
     }
@@ -778,6 +779,7 @@ _les_balance_compute_nutdkuidkuj(const void   *input,
 
   cs_real_33_t *grdv = (cs_real_33_t *)_gradv->val;
 
+# pragma omp parallel for if (n_cells > CS_THR_MIN)
   for (cs_lnum_t iel = 0; iel < n_cells; iel++) {
 
     for (cs_lnum_t ii = 0; ii < 6; ii++)
@@ -806,7 +808,6 @@ _les_balance_compute_dknutuidjuksym(const void   *input,
                                     cs_real_t    *vals)
 {
   const cs_lnum_t n_cells = cs_glob_mesh->n_cells;
-  int i, j;
 
   CS_UNUSED(input);
 
@@ -816,14 +817,15 @@ _les_balance_compute_dknutuidjuksym(const void   *input,
   cs_real_33_t *grdv  = (cs_real_33_t *)_gradv->val;
   cs_real_3_t *grdnu = (cs_real_3_t *)_gradnut->val;
 
+# pragma omp parallel for if (n_cells > CS_THR_MIN)
   for (cs_lnum_t iel = 0; iel < n_cells; iel++) {
 
     for (cs_lnum_t ii = 0; ii < 6; ii++)
       vals[6*iel + ii] = 0.;
 
     for (cs_lnum_t ii = 0; ii < 6; ii++) {
-      i = idirtens[ii][0];
-      j = idirtens[ii][1];
+      cs_lnum_t i = idirtens[ii][0];
+      cs_lnum_t j = idirtens[ii][1];
       for (cs_lnum_t k = 0; k < 3; k++)
         vals[6*iel + ii] += grdnu[iel][i]
                             *( vel[iel][i]*grdv[iel][k][j]
@@ -846,17 +848,18 @@ _les_balance_compute_nutdkuiuj(const void   *input,
 {
   const int *k = (const int *)input;
   const cs_lnum_t n_cells = cs_glob_mesh->n_cells;
-  int i,j;
 
   cs_real_3_t *vel   = (cs_real_3_t *)CS_F_(vel)->val;
+  cs_real_t   *mu_t  = CS_F_(mu_t)->val;
   cs_real_6_t *tens  = (cs_real_6_t *)vals;
   cs_real_33_t *grdv = (cs_real_33_t *)_gradv->val;
 
+# pragma omp parallel for if (n_cells > CS_THR_MIN)
   for (cs_lnum_t iel = 0; iel < n_cells; iel++) {
     for (cs_lnum_t ii = 0; ii < 6; ii++) {
-      i = idirtens[ii][0];
-      j = idirtens[ii][1];
-      tens[iel][ii] = CS_F_(mu_t)->val[iel]
+      cs_lnum_t i = idirtens[ii][0];
+      cs_lnum_t j = idirtens[ii][1];
+      tens[iel][ii] = mu_t[iel]
                       *( vel[iel][i]*grdv[iel][j][*k]
                         +vel[iel][j]*grdv[iel][i][*k]);
     }
@@ -882,6 +885,7 @@ _les_balance_compute_dknutdiuk(const void   *input,
   cs_real_33_t *grdv = (cs_real_33_t *)_gradv->val;
   cs_real_3_t *grdnu = (cs_real_3_t *)_gradnut->val;
 
+# pragma omp parallel for if (n_cells > CS_THR_MIN)
   for (cs_lnum_t iel = 0; iel < n_cells; iel++) {
 
     for (cs_lnum_t i = 0; i < 3; i++)
@@ -913,10 +917,12 @@ _les_balance_compute_uidjnut(const void   *input,
   cs_real_3_t *vel   = (cs_real_3_t *)CS_F_(vel)->val;
   cs_real_33_t *tens = (cs_real_33_t *)vals;
 
+# pragma omp parallel for if (n_cells > CS_THR_MIN)
   for (cs_lnum_t iel = 0; iel < n_cells; iel++) {
-    for (cs_lnum_t i = 0; i < 3; i++)
+    for (cs_lnum_t i = 0; i < 3; i++) {
       for (cs_lnum_t j = 0; j < 3; j++)
         tens[iel][i][j] = vel[iel][i]*grdnu[iel][j];
+    }
   }
 }
 
@@ -933,26 +939,19 @@ _les_balance_compute_djtdjui(const void   *input,
                              cs_real_t    *vals)
 {
   const cs_field_t *sca = (const cs_field_t *)input;
-  const int keysca = cs_field_key_id("scalar_id");
   const cs_lnum_t n_cells = cs_glob_mesh->n_cells;
-  cs_real_t dtdxjduidxj;
-  int isca = 0;
 
-  for (int f_id = 0; f_id < cs_field_n_fields(); f_id++) {
-    cs_field_t *f = cs_field_by_id(f_id);
-    if (cs_field_get_key_int(f, keysca) > 0) {
-      if (f_id == sca->id)
-        break;
-      isca++;
-    }
-  }
+  const int keysca = cs_field_key_id("scalar_id");
+  int isca = cs_field_get_key_int(sca, keysca) - 1;
+  assert(isca > -1);
 
   cs_real_33_t *grdv = (cs_real_33_t *)_gradv->val;
   cs_real_3_t *grdt = (cs_real_3_t *)_gradt[isca]->val;
 
+# pragma omp parallel for if (n_cells > CS_THR_MIN)
   for (cs_lnum_t iel = 0; iel < n_cells; iel++) {
     for (cs_lnum_t i = 0; i < 3; i++) {
-      dtdxjduidxj = 0.;
+      cs_real_t dtdxjduidxj = 0.;
       for (cs_lnum_t kk = 0; kk < 3; kk++)
         dtdxjduidxj += grdt[iel][kk]*grdv[iel][i][kk];
 
@@ -976,12 +975,12 @@ _les_balance_compute_tuiuj(const void   *input,
   const cs_field_t *sca = (const cs_field_t *)input;
   const cs_lnum_t n_cells = cs_glob_mesh->n_cells;
   cs_real_3_t *vel = (cs_real_3_t *)CS_F_(vel)->val;
-  int i, j;
 
+# pragma omp parallel for if (n_cells > CS_THR_MIN)
   for (cs_lnum_t iel = 0; iel < n_cells; iel++) {
     for (cs_lnum_t ii = 0; ii < 6; ii++) {
-      i = idirtens[ii][0];
-      j = idirtens[ii][1];
+      cs_lnum_t i = idirtens[ii][0];
+      cs_lnum_t j = idirtens[ii][1];
       vals[6*iel+ii] = sca->val[iel]*vel[iel][i]*vel[iel][j];
     }
   }
@@ -1005,16 +1004,8 @@ _les_balance_compute_uidjt(const void   *input,
   cs_real_33_t *tens = (cs_real_33_t *)vals;
 
   const int keysca = cs_field_key_id("scalar_id");
-  int isca = 0;
-
-  for (int f_id = 0; f_id < cs_field_n_fields(); f_id++) {
-    cs_field_t *f = cs_field_by_id(f_id);
-    if (cs_field_get_key_int(f, keysca) > 0) {
-      if (f_id == sca->id)
-        break;
-      isca++;
-    }
-  }
+  int isca = cs_field_get_key_int(sca, keysca) - 1;
+  assert(isca > -1);
 
   cs_real_3_t *grdt = (cs_real_3_t *)_gradt[isca]->val;
 
@@ -1038,23 +1029,16 @@ _les_balance_compute_ditdit(const void   *input,
 {
   const cs_field_t *sca = (const cs_field_t *)input;
   const cs_lnum_t n_cells = cs_glob_mesh->n_cells;
-  const int keysca = cs_field_key_id("scalar_id");
-  cs_real_t dtdxidtdxi;
-  int isca = 0;
 
-  for (int f_id = 0; f_id < cs_field_n_fields(); f_id++) {
-    cs_field_t *f = cs_field_by_id(f_id);
-    if (cs_field_get_key_int(f, keysca) > 0) {
-      if (f_id == sca->id)
-        break;
-      isca++;
-    }
-  }
+  const int keysca = cs_field_key_id("scalar_id");
+  int isca = cs_field_get_key_int(sca, keysca) - 1;
+  assert(isca > -1);
 
   cs_real_3_t *grdt = (cs_real_3_t *)_gradt[isca]->val;
 
+# pragma omp parallel for if (n_cells > CS_THR_MIN)
   for (cs_lnum_t iel = 0; iel < n_cells; iel++) {
-    dtdxidtdxi = 0.;
+    cs_real_t dtdxidtdxi = 0.;
     for (cs_lnum_t i = 0; i < 3; i++)
       dtdxidtdxi += grdt[iel][i]; // FIXME: missing SQUARE??
     vals[iel] = dtdxidtdxi;
@@ -1095,13 +1079,16 @@ _les_balance_compute_tdjtauij(const void   *input,
   cs_real_33_t *grdv = (cs_real_33_t *)_gradv->val;
 
   for (cs_lnum_t i = 0; i < 3; i++) {
-    for (cs_lnum_t iel = 0; iel < n_cells; iel++)
+#   pragma omp parallel for if (n_cells > CS_THR_MIN)
+    for (cs_lnum_t iel = 0; iel < n_cells; iel++) {
       for (cs_lnum_t k = 0; k < 3; k++)
         w1[iel][k] = -CS_F_(mu_t)->val[iel]*( grdv[iel][i][k]
                                              +grdv[iel][k][i]);
+    }
 
     _les_balance_divergence_vector(w1, diverg);
 
+#   pragma omp parallel for if (n_cells > CS_THR_MIN)
     for (cs_lnum_t iel = 0; iel < n_cells; iel++)
       vals[3*iel+i] = sca->val[iel]*diverg[iel];
   }
@@ -1148,13 +1135,16 @@ _les_balance_compute_uidivturflux(const void   *input,
   cs_real_33_t *grdv = (cs_real_33_t *)_gradv->val;
 
   for (cs_lnum_t i = 0; i < 3; i++) {
-    for (cs_lnum_t iel = 0; iel < n_cells; iel++)
+#   pragma omp parallel for if (n_cells > CS_THR_MIN)
+    for (cs_lnum_t iel = 0; iel < n_cells; iel++) {
       for (cs_lnum_t k = 0; k < 3; k++)
         w1[iel][k] =  cs_math_sq(CS_F_(mu_t)->val[iel])/sigmas
                      *(grdv[iel][i][k]+grdv[iel][k][i]);
+    }
 
     _les_balance_divergence_vector(w1, diverg);
 
+#   pragma omp parallel for if (n_cells > CS_THR_MIN)
     for (cs_lnum_t iel = 0; iel < n_cells; iel++)
       vals[3*iel+i] = vel[iel][i]*diverg[iel];
   }
@@ -1200,14 +1190,18 @@ _les_balance_compute_tdivturflux(const void   *input,
   cs_real_33_t *grdv = (cs_real_33_t *)_gradv->val;
 
   /* TODO : bug dans le fortran, boucle sur ii ? */
-  for (cs_lnum_t i = 0; i < 3; i++)
-    for (cs_lnum_t iel = 0; iel < n_cells; iel++)
+  for (cs_lnum_t i = 0; i < 3; i++) {
+#   pragma omp parallel for if (n_cells > CS_THR_MIN)
+    for (cs_lnum_t iel = 0; iel < n_cells; iel++) {
       for (cs_lnum_t k = 0; k < 3; k++)
         w1[iel][k] =  cs_math_sq(CS_F_(mu_t)->val[iel])/sigmas
                      *(grdv[iel][i][k]+grdv[iel][k][i]);
+    }
+  }
 
   _les_balance_divergence_vector(w1, diverg);
 
+# pragma omp parallel for if (n_cells > CS_THR_MIN)
   for (cs_lnum_t iel = 0; iel < n_cells; iel++)
     vals[iel] = sca->val[iel]*diverg[iel];
 
@@ -1229,23 +1223,16 @@ _les_balance_compute_nutditdit(const void   *input,
 {
   const cs_field_t *sca = (const cs_field_t *)input;
   const cs_lnum_t n_cells = cs_glob_mesh->n_cells;
-  const int keysca = cs_field_key_id("scalar_id");
-  cs_real_t nutditdit;
-  int isca = 0;
 
-  for (int f_id = 0; f_id < cs_field_n_fields(); f_id++) {
-    cs_field_t *f = cs_field_by_id(f_id);
-    if (cs_field_get_key_int(f, keysca) > 0) {
-      if (f_id == sca->id)
-        break;
-      isca++;
-    }
-  }
+  const int keysca = cs_field_key_id("scalar_id");
+  int isca = cs_field_get_key_int(sca, keysca) - 1;
+  assert(isca > -1);
 
   cs_real_3_t *grdt = (cs_real_3_t *)_gradt[isca]->val;
 
+# pragma omp parallel for if (n_cells > CS_THR_MIN)
   for (cs_lnum_t iel = 0; iel < n_cells; iel++) {
-    nutditdit = 0.;
+    cs_real_t nutditdit = 0.;
     for (cs_lnum_t i = 0; i < 3; i++)
       nutditdit +=  CS_F_(mu_t)->val[iel]*sca->val[iel]
                        *cs_math_sq(grdt[iel][i]);
@@ -1272,23 +1259,17 @@ _les_balance_compute_nutuidjt(const void   *input,
   cs_real_33_t *tens = (cs_real_33_t *)vals;
 
   const int keysca = cs_field_key_id("scalar_id");
-  int isca = 0;
-
-  for (int f_id = 0; f_id < cs_field_n_fields(); f_id++) {
-    cs_field_t *f = cs_field_by_id(f_id);
-    if (cs_field_get_key_int(f, keysca) > 0) {
-      if (f_id == sca->id)
-        break;
-      isca++;
-    }
-  }
+  int isca = cs_field_get_key_int(sca, keysca) - 1;
+  assert(isca > -1);
 
   cs_real_3_t *grdt = (cs_real_3_t *)_gradt[isca]->val;
 
-  for (cs_lnum_t iel = 0; iel < n_cells; iel++)
+# pragma omp parallel for if (n_cells > CS_THR_MIN)
+  for (cs_lnum_t iel = 0; iel < n_cells; iel++) {
     for (cs_lnum_t i = 0; i < 3; i++)
       for (cs_lnum_t j = 0; j < 3; j++)
         tens[iel][i][j] = CS_F_(mu_t)->val[iel]*vel[iel][i]*grdt[iel][j];
+  }
 }
 
 /*----------------------------------------------------------------------------
@@ -1305,25 +1286,18 @@ _les_balance_compute_nutdjuidjt(const void   *input,
 {
   const cs_field_t *sca = (const cs_field_t *)input;
   const cs_lnum_t n_cells = cs_glob_mesh->n_cells;
-  const int keysca = cs_field_key_id("scalar_id");
-  cs_real_t nutdjuidjt;
-  int isca = 0;
 
-  for (int f_id = 0; f_id < cs_field_n_fields(); f_id++) {
-    cs_field_t *f = cs_field_by_id(f_id);
-    if (cs_field_get_key_int(f, keysca) > 0) {
-      if (f_id == sca->id)
-        break;
-      isca++;
-    }
-  }
+  const int keysca = cs_field_key_id("scalar_id");
+  int isca = cs_field_get_key_int(sca, keysca) - 1;
+  assert(isca > -1);
 
   cs_real_33_t *grdv = (cs_real_33_t *)_gradv->val;
   cs_real_3_t *grdt = (cs_real_3_t *)_gradt[isca]->val;
 
+# pragma omp parallel for if (n_cells > CS_THR_MIN)
   for (cs_lnum_t iel = 0; iel < n_cells; iel++) {
     for (cs_lnum_t i = 0; i < 3; i++) {
-      nutdjuidjt = 0.;
+      cs_real_t nutdjuidjt = 0.;
       for (cs_lnum_t kk = 0; kk < 3; kk++)
         nutdjuidjt += CS_F_(mu_t)->val[iel]*grdv[iel][i][kk]*grdt[iel][kk];
 
@@ -1347,14 +1321,14 @@ _les_balance_compute_djnutdiuj(const void   *input,
   CS_UNUSED(input);
 
   const cs_lnum_t n_cells = cs_glob_mesh->n_cells;
-  cs_real_t djnutdiuj;
 
   cs_real_33_t *grdv = (cs_real_33_t *)_gradv->val;
   cs_real_3_t *grdnu = (cs_real_3_t *)_gradnut->val;
 
+# pragma omp parallel for if (n_cells > CS_THR_MIN)
   for (cs_lnum_t iel = 0; iel < n_cells; iel++) {
     for (cs_lnum_t i = 0; i < 3; i++) {
-      djnutdiuj = 0.;
+      cs_real_t djnutdiuj = 0.;
       for (cs_lnum_t kk = 0; kk < 3; kk++)
         djnutdiuj += grdnu[iel][kk]*grdv[iel][kk][i];
 
@@ -1377,14 +1351,14 @@ _les_balance_compute_djnuttdiuj(const void   *input,
 {
   const cs_field_t *sca = (const cs_field_t *)input;
   const cs_lnum_t n_cells = cs_glob_mesh->n_cells;
-  cs_real_t djnuttdiuj;
 
   cs_real_33_t *grdv = (cs_real_33_t *)_gradv->val;
   cs_real_3_t *grdnu = (cs_real_3_t *)_gradnut->val;
 
+# pragma omp parallel for if (n_cells > CS_THR_MIN)
   for (cs_lnum_t iel = 0; iel < n_cells; iel++) {
     for (cs_lnum_t i = 0; i < 3; i++) {
-      djnuttdiuj = 0.;
+      cs_real_t djnuttdiuj = 0.;
       for (cs_lnum_t kk = 0; kk < 3; kk++)
         djnuttdiuj += grdnu[iel][kk]*sca->val[iel]*grdv[iel][kk][i];
 
