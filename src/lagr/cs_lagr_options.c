@@ -800,7 +800,7 @@ cs_lagr_options_definition(int         is_restart,
   /* Initialization which must not be changed by the user
      ==================================================== */
 
-  /* Lagrangian time step (by defaul, the continuous phase time step) */
+  /* Lagrangian time step (by default, the continuous phase time step) */
   cs_glob_lagr_time_step->dtp = dtref;
 
   /* Lagrangian current physical time */

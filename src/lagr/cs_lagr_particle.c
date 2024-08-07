@@ -99,7 +99,7 @@ BEGIN_C_DECLS
 
    rvar real values at current and previous time steps
    ivar integer values at current and previous time steps
-   rprp real properties at current an previous time steps
+   rprp real properties at current and previous time steps
    iprp integer properties at current and previous time steps
    rkid values are for rank ids, useful and valid only for previous
    time steps */
@@ -669,11 +669,11 @@ cs_lagr_particle_attr_initialize(void)
 
   int loc_count = 0;
 
-  int pepa_loc_add = 1000; /* should be abore any j* pointer if used */
+  int pepa_loc_add = 1000; /* should be above any j* pointer if used */
 
   cs_lnum_t attr_keys[CS_LAGR_N_ATTRIBUTES][3];
 
-  /* Initialize global parameter relative to the lagrangian module */
+  /* Initialize global parameter relative to the Lagrangian module */
 
   /*  cs_glob_lagr_brownian->lamvbr = *lamvbr; */
 
