@@ -106,38 +106,10 @@ const cs_wall_distance_options_t *cs_glob_wall_distance_options
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
 
 /*============================================================================
- * Prototypes for functions intended for use only by Fortran wrappers.
- * (descriptions follow, with function bodies).
- *============================================================================*/
-
-void
-cs_f_wall_distance_get_pointers(int **ineedy,
-                                int **imajdy);
-
-/*============================================================================
  * Private function definitions
  *============================================================================*/
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
-
-/*============================================================================
- * Fortran wrapper function definitions
- *============================================================================*/
-
-/*----------------------------------------------------------------------------
- * Get pointers to int indicators concerning wall distance computation.
- *
- * This function is intended for use by Fortran wrappers, and
- * enables mapping to Fortran global pointers.
- *----------------------------------------------------------------------------*/
-
-void
-cs_f_wall_distance_get_pointers(int **ineedy,
-                                int **imajdy)
-{
-  *ineedy = &(_wall_distance_options.need_compute);
-  *imajdy = &(_wall_distance_options.is_up_to_date);
-}
 
 /*============================================================================
  * Public function definitions

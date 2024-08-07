@@ -196,14 +196,11 @@ endif
 ! La pression totale sera initialisee a P0 + rho.g.r dans INIVAR
 !  si l'utilisateur n'a pas fait d'initialisation personnelle
 ! Non valable en compressible
-! For groundwater flows, the field of index iprtot is the
-! pressure head (h = H - z). h is only used when gravity is taken
-! into account
 
 gravn2 = gx**2+gy**2+gz**2
 
 if (ippmod(icompf).lt.0) then
-  call field_get_val_s(iprtot, cpro_prtot)
+  call field_get_val_s_by_name('total_pressure', cpro_prtot)
   do iel = 1, ncelet
     cpro_prtot(iel) = - rinfin
   enddo
@@ -212,7 +209,7 @@ endif
 ! Initialization of mix_mol_mas with default values (air)
 ! (used in cs_cf_thermo_default_init)
 if(ippmod(igmix).ge.0) then
-  call field_get_val_s(igmxml, mix_mol_mas)
+  call field_get_val_s_by_name('mix_mol_mas', mix_mol_mas)
   do iel =1, ncelet
     mix_mol_mas(iel) = xmasmr
   enddo
@@ -265,7 +262,7 @@ if (iale.ge.1) then
   idftnp = vcopt_uma%idften
 
   if (iand(idftnp, ANISOTROPIC_LEFT_DIFFUSION).ne.0) then
-    call field_get_val_v(ivisma, cpro_visma_v)
+    call field_get_val_v_by_name('mesh_viscosity', cpro_visma_v)
     do iel = 1, ncelet
       do ii = 1, 3
         cpro_visma_v(ii  ,iel) = 1.d0
@@ -273,7 +270,7 @@ if (iale.ge.1) then
       enddo
     enddo
   else if (iand(idftnp, ISOTROPIC_DIFFUSION).ne.0) then
-    call field_get_val_s(ivisma, cpro_visma_s)
+    call field_get_val_s_by_name('mesh_viscosity', cpro_visma_s)
     do iel = 1, ncelet
       cpro_visma_s(iel) = 1.d0
     enddo
@@ -285,7 +282,7 @@ endif
 
 ! Porosity
 if (iporos.ge.1) then
-  call field_get_val_s(ipori, porosi)
+  call field_get_val_s_by_name('porosity', porosi)
   if (compute_porosity_from_scan) then
     do iel = 1, ncelet
       porosi(iel) = 0.d0
@@ -312,7 +309,7 @@ if (iporos.ge.1) then
   endif
   ! Tensorial porosity
   if (iporos.eq.2) then
-    call field_get_val_v(iporf, porosf)
+    call field_get_val_v_by_name('tensorial_porosity', porosf)
     do iel = 1, ncelet
       porosf(1, iel) = 1.d0
       porosf(2, iel) = 1.d0

@@ -134,9 +134,9 @@ if (iale.ge.1) then
   idftnp = vcopt%idften
 
   if (iand(idftnp, ISOTROPIC_DIFFUSION).ne.0) then
-    call add_property_field('mesh_viscosity', 'Mesh Visc', 1, .false., ivisma)
+    call add_property_field('mesh_viscosity', 'Mesh Visc', 1, .false., f_id)
   else if (iand(idftnp, ANISOTROPIC_LEFT_DIFFUSION).ne.0) then
-    call add_property_field('mesh_viscosity', 'Mesh Visc', 6, .false., ivisma)
+    call add_property_field('mesh_viscosity', 'Mesh Visc', 6, .false., f_id)
   endif
 endif
 
@@ -432,10 +432,10 @@ if (iporos.ge.1) then
   if (compute_porosity_from_scan .or. ibm_porosity_mode.gt.0) then
     !TODO move it to fldvar?
     call add_variable_field(f_name, f_name, 1, ivar)
-    ipori = ivarfl(ivar)
+    f_id = ivarfl(ivar)
 
     ! Pure convection equation (no time term)
-    call field_get_key_struct_var_cal_opt(ipori, vcopt)
+    call field_get_key_struct_var_cal_opt(f_id, vcopt)
     vcopt%iconv = 1
     vcopt%blencv= 0.d0 ! Pure upwind
     vcopt%istat = 0
@@ -443,7 +443,7 @@ if (iporos.ge.1) then
     vcopt%idiff  = 0
     vcopt%idifft = 0
     vcopt%relaxv = 1.d0 ! No relaxation, even for steady algorithm.
-    call field_set_key_struct_var_cal_opt(ipori, vcopt)
+    call field_set_key_struct_var_cal_opt(f_id, vcopt)
 
     ! Activate the drift for all scalars with key "drift" > 0
     iscdri = 1
@@ -455,12 +455,12 @@ if (iporos.ge.1) then
 
     iscdri = ibset(iscdri, DRIFT_SCALAR_IMPOSED_MASS_FLUX)
 
-    call field_set_key_int(ipori, keydri, iscdri)
+    call field_set_key_int(f_id, keydri, iscdri)
 
   else
-    call field_create(f_name, itycat, ityloc, 1, .false., ipori)
-    call field_set_key_int(ipori, keylog, 1)
-    call field_set_key_int(ipori, keyvis, pflag)
+    call field_create(f_name, itycat, ityloc, 1, .false., f_id)
+    call field_set_key_int(f_id, keylog, 1)
+    call field_set_key_int(f_id, keyvis, pflag)
   endif
 
   f_name = 'cell_f_vol'
@@ -473,7 +473,7 @@ if (iporos.ge.1) then
 
   if (iporos.eq.2) then
     f_name = 'tensorial_porosity'
-    call field_create(f_name, itycat, ityloc, 6, .false., iporf)
+    call field_create(f_name, itycat, ityloc, 6, .false., f_id)
   endif
   if (iporos.eq.3) then
     f_name = 'poro_div_duq'

@@ -204,41 +204,11 @@ module numvar
   !> turbulent schmidt key for scalars
   integer, save :: ksigmas = -1
 
-  !> turbulent flow models GGDH and AFM key for scalar
-  integer, save :: kctheta = -1
-
-  !> convective mass flux of the variables at the previous time-step
-  integer, save :: ifluaa(nvarmx)
-
   !> cell density field ids of the variables
   integer, save :: icrom = -1
 
   !> boundary density field ids of the variables
   integer, save :: ibrom = -1
-
-  !> field ids of the cell porosity
-  integer, save :: ipori = -1, iporf = -1
-
-  !> dynamic constant of Smagorinsky
-  integer, save :: ismago = -1
-
-  !> field ids of the anisotropic viscosity
-  !> \remark turbulent or Darcy module anisotropic diffusion
-  integer, save :: ivsten = -1, ivstes = -1
-
-  !> Courant number
-  integer, save :: icour = -1
-
-  !> Fourier number
-  integer, save :: ifour = -1
-
-  !> Total pressure at cell centers
-  !> \f$ P_{tot} = P^\star +\rho \vect{g} \cdot (\vect{x}-\vect{x}_0) \f$
-  integer, save :: iprtot = -1
-
-  !> Mesh velocity viscosity for the ALE module
-  !> \remark might be orthotropic
-  integer, save :: ivisma = -1
 
   !> pointer for dilatation source terms
   integer, save :: iustdy(nscamx)
@@ -248,12 +218,6 @@ module numvar
 
   !> pointer for deduced mass fraction in case of gas mix
   integer, save :: iddgas = -1
-
-  !> pointer for gas mix molar mass
-  integer, save :: igmxml = -1
-
-  !>  field id of temperature at boundary
-  integer, save ::  itempb = -1
 
   !> \}
   !----------------------------------------------------------------------------

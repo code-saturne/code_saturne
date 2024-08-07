@@ -259,7 +259,7 @@ endif
 if (ippmod(icompf).lt.0) then
 
   call field_get_val_s(ivarfl(ipr), cvar_pr)
-  call field_get_val_s(iprtot, cpro_prtot)
+  call field_get_val_s_by_name('total_pressure', cpro_prtot)
 
   uprtot = 0
 

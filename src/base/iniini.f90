@@ -95,13 +95,8 @@ call field_get_key_id("source_term_id", kst)
 
 call field_get_key_id("turbulent_schmidt", ksigmas)
 
-call field_get_key_id("turbulent_flux_ctheta", kctheta)
-
 icrom = -1
 ibrom = -1
-
-ipori = -1
-iporf = -1
 
 !===============================================================================
 ! Map Fortran pointers to C global data
@@ -124,7 +119,6 @@ call porosity_from_scan_init
 call fluid_properties_init
 call space_disc_options_init
 call time_scheme_options_init
-call wall_distance_options_init
 call velocity_pressure_options_init
 call restart_auxiliary_options_init
 call turb_reference_values_init
@@ -159,7 +153,6 @@ enddo
 do iscal = 1, nscamx
   isca  (iscal) = 0
   iscapp(iscal) = 0
-  iscasp(iscal) = 0
 enddo
 
 return

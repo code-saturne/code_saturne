@@ -236,9 +236,9 @@ if  (iturb.eq.60) then
   call hide_property(iflid)
 endif
 
-call add_property_field_1d('courant_number', 'CFL', icour)
+call add_property_field_1d('courant_number', 'CFL', iflid)
 if (idtvar.lt.0) then
-  call hide_property(icour)
+  call hide_property(iflid)
 endif
 
 if (ivofmt.gt.0) then
@@ -247,28 +247,26 @@ if (ivofmt.gt.0) then
     call hide_property(iflid)
   endif
 endif
-call add_property_field_1d('fourier_number', 'Fourier Number', ifour)
+call add_property_field_1d('fourier_number', 'Fourier Number', iflid)
 if (idtvar.lt.0) then
-  call hide_property(ifour)
+  call hide_property(iflid)
 endif
 
 
-! Total pressure is stored in property field of index iprtot
+! Total pressure is stored in a property field.
 ! if the compressible module is not enabled (otherwise Ptot=P*).
 ! For groundwater flows, this field is the pressure head (h = H - z),
 ! only used if the gravity is set.
 
 if (ippmod(icompf).lt.0) then
-  call add_property_field_1d('total_pressure', 'Total Pressure', iprtot)
+  call add_property_field_1d('total_pressure', 'Total Pressure', iflid)
   ! Save total pressure in auxiliary restart file
-  call field_set_key_int(iprtot, k_restart_id, RESTART_AUXILIARY)
+  call field_set_key_int(iflid, k_restart_id, RESTART_AUXILIARY)
 endif
 
 ! Cs^2 si on est en LES dynamique
 if (iturb.eq.41) then
-  call add_property_field_1d('smagorinsky_constant^2', 'Csdyn2', ismago)
-else
-  ismago = 0
+  call add_property_field_1d('smagorinsky_constant^2', 'Csdyn2', iflid)
 endif
 
 !     Numero max des proprietes ; ressert plus bas pour

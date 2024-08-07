@@ -661,14 +661,14 @@ ityloc = 1 ! cells
 
 if (idfm.eq.1.or.iggafm.eq.1.or. itytur.eq.3 .and. idirsm.eq.1) then
   call field_create('anisotropic_turbulent_viscosity', itycat, ityloc, idim6, &
-                    inoprv, ivsten)
+                    inoprv, f_id)
   ! By default set log printing to false
-  call field_set_key_int(ivsten, keylog, 0)
+  call field_set_key_int(f_id, keylog, 0)
   if (iturb.eq.32.and.iggafm.eq.1) then
     call field_create('anisotropic_turbulent_viscosity_scalar', itycat, &
-                      ityloc, idim6, inoprv, ivstes)
+                      ityloc, idim6, inoprv, f_id)
     ! By default set log printing to false
-    call field_set_key_int(ivstes, keylog, 0)
+    call field_set_key_int(f_id, keylog, 0)
   endif
 endif
 

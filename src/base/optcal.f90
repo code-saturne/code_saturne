@@ -802,26 +802,6 @@ module optcal
   !> \}
 
   !----------------------------------------------------------------------------
-  ! Numerical parameters for the wall distance calculation
-  !----------------------------------------------------------------------------
-
-  !> \defgroup num_wall_distance Numerical parameters for the wall distance
-  !> calculation
-
-  !> \addtogroup num_wall_distance
-  !> \{
-
-  !> - 1, the wall distance must be computed,
-  !> - 0, the wall distance computation is not necessary.
-  integer(c_int), pointer, save :: ineedy
-
-  !> - 1, the wall distance is up to date,
-  !> - 0, the wall distance has not been updated.
-  integer(c_int), pointer, save :: imajdy
-
-  !> \}
-
-  !----------------------------------------------------------------------------
   ! Transported scalars parameters
   !----------------------------------------------------------------------------
 
@@ -829,10 +809,6 @@ module optcal
 
   !> \addtogroup scalar_params
   !> \{
-
-  !> iscasp(ii) : index of the ii^th species (0 if not a species)
-  integer, save ::  iscasp(nscamx)
-  ! Note that this is already mapped to C using a specific gas-mix structure.
 
   !> flag for computing the drift mass flux:
   !> (for coal classes for instance, only the first
@@ -1087,16 +1063,6 @@ module optcal
       type(c_ptr), intent(out) :: thetsn, thetst, thetvi, thetcp, iccvfg
       type(c_ptr), intent(out) :: initvi, initro, initcp
     end subroutine cs_f_time_scheme_get_pointers
-
-    ! Interface to C function retrieving pointers wall distance computation
-    ! indicators
-
-    subroutine cs_f_wall_distance_get_pointers(ineedy, imajdy) &
-      bind(C, name='cs_f_wall_distance_get_pointers')
-      use, intrinsic :: iso_c_binding
-      implicit none
-      type(c_ptr), intent(out) :: ineedy, imajdy
-    end subroutine cs_f_wall_distance_get_pointers
 
     ! Interface to C function retrieving pointers to members of the
     ! global restart_auxiliary options structure
@@ -1506,25 +1472,6 @@ contains
     call c_f_pointer(c_initcp, initcp)
 
   end subroutine time_scheme_options_init
-
-  !> \Interface to C function retrieving pointers wall distance computation
-  !> indicators
-
-  subroutine wall_distance_options_init
-
-    use, intrinsic :: iso_c_binding
-    implicit none
-
-    ! Local variables
-
-    type(c_ptr) :: c_ineedy, c_imajdy
-
-    call cs_f_wall_distance_get_pointers(c_ineedy, c_imajdy)
-
-    call c_f_pointer(c_ineedy, ineedy)
-    call c_f_pointer(c_imajdy, imajdy)
-
-  end subroutine
 
   !> \brief Initialize Fortran auxiliary options API.
   !> This maps Fortran pointers to global C structure members.

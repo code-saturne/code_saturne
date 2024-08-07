@@ -70,7 +70,7 @@ implicit none
 
 ! Local variables
 
-integer          f_id
+integer          f_id, scal_id
 integer          kscmin, kscmax
 
 double precision scmaxp, scminp
@@ -231,31 +231,31 @@ if (ippmod(igmix).ge.0) then
   scmaxp = 1.d0
 
   if (ippmod(igmix).lt.5) then
-    call add_model_scalar_field('y_o2', 'Y_O2', iscasp(1))
-    f_id = ivarfl(isca(iscasp(1)))
+    call add_model_scalar_field('y_o2', 'Y_O2', scal_id)
+    f_id = ivarfl(isca(scal_id))
     call gas_mix_add_species(f_id)
     call field_set_key_int(f_id, kivisl, 0)
     call field_set_key_double(f_id, kscmin, scminp)
     call field_set_key_double(f_id, kscmax, scmaxp)
 
-    call add_model_scalar_field('y_n2', 'Y_N2', iscasp(2))
-    f_id = ivarfl(isca(iscasp(2)))
+    call add_model_scalar_field('y_n2', 'Y_N2', scal_id)
+    f_id = ivarfl(isca(scal_id))
     call gas_mix_add_species(f_id)
     call field_set_key_int(f_id, kivisl, 0)
     call field_set_key_double(f_id, kscmin, scminp)
     call field_set_key_double(f_id, kscmax, scmaxp)
 
     if (ippmod(igmix).eq.3) then
-      call add_model_scalar_field('y_he', 'Y_He', iscasp(3))
-      f_id = ivarfl(isca(iscasp(3)))
+      call add_model_scalar_field('y_he', 'Y_He', scal_id)
+      f_id = ivarfl(isca(scal_id))
       call gas_mix_add_species(f_id)
       call field_set_key_int(f_id, kivisl, 0)
       call field_set_key_double(f_id, kscmin, scminp)
       call field_set_key_double(f_id, kscmax, scmaxp)
 
     elseif (ippmod(igmix).eq.4) then
-      call add_model_scalar_field('y_h2', 'Y_H2', iscasp(3))
-      f_id = ivarfl(isca(iscasp(3)))
+      call add_model_scalar_field('y_h2', 'Y_H2', scal_id)
+      f_id = ivarfl(isca(scal_id))
       call gas_mix_add_species(f_id)
       call field_set_key_int(f_id, kivisl, 0)
       call field_set_key_double(f_id, kscmin, scminp)
@@ -264,15 +264,15 @@ if (ippmod(igmix).ge.0) then
     endif
   else ! ippmod(igmix).eq.5
 
-    call add_model_scalar_field('y_n2', 'Y_N2', iscasp(1))
-    f_id = ivarfl(isca(iscasp(1)))
+    call add_model_scalar_field('y_n2', 'Y_N2', scal_id)
+    f_id = ivarfl(isca(scal_id))
     call gas_mix_add_species(f_id)
     call field_set_key_int(f_id, kivisl, 0)
     call field_set_key_double(f_id, kscmin, scminp)
     call field_set_key_double(f_id, kscmax, scmaxp)
 
-    call add_model_scalar_field('y_he', 'Y_He', iscasp(2))
-    f_id = ivarfl(isca(iscasp(2)))
+    call add_model_scalar_field('y_he', 'Y_He', scal_id)
+    f_id = ivarfl(isca(scal_id))
     call gas_mix_add_species(f_id)
     call field_set_key_int(f_id, kivisl, 0)
     call field_set_key_double(f_id, kscmin, scminp)
