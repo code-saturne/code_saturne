@@ -469,10 +469,6 @@ _init_user
 void
 cs_setup(void)
 {
-  int is_restart = cs_restart_present();
-  cs_real_t dtref = cs_glob_time_step->dt[0];
-  cs_time_scheme_t *time_scheme = cs_get_glob_time_scheme();
-
   /* Initialize modules before user has access */
   _init_setup();
 
@@ -498,6 +494,10 @@ cs_setup(void)
   int have_thermal_model = 0;
   if (cs_thermal_model_field() != NULL)
     have_thermal_model = 1;
+
+  int is_restart = cs_restart_present();
+  cs_real_t dtref = cs_glob_time_step->dt_ref;
+  cs_time_scheme_t *time_scheme = cs_get_glob_time_scheme();
 
   cs_lagr_options_definition(is_restart,
                              have_thermal_model,

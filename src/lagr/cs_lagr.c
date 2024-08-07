@@ -1526,8 +1526,6 @@ cs_lagr_solve_initialize(const cs_real_t  *dt)
 {
   CS_UNUSED(dt);
 
-  cs_lagr_map_specific_physics();
-
   /* Allocate pressure and velocity gradients */
   cs_lagr_extra_module_t *extra = cs_glob_lagr_extra_module;
   cs_lnum_t ncelet = cs_glob_mesh->n_cells_with_ghosts;
