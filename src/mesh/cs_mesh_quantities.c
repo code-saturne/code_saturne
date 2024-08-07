@@ -1834,7 +1834,7 @@ _compute_face_distances(cs_lnum_t        n_i_faces,
           i_dist[face_id] = cs_math_3_distance(cell_cen[cell_id1],
                                                cell_cen[cell_id2]);
 
-        /* i_dist is arbirary clipped to 1. in this case.
+        /* i_dist is arbitrary clipped to 1. in this case.
          * FIXME: This value could be improved in future releases
          */
         if (i_dist[face_id] < 1.e-20)
