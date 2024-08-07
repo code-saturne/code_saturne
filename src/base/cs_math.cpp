@@ -602,7 +602,7 @@ cs_math_33_eig_val_vec(const cs_real_t   m_in[3][3],
   for (int id1 = 0; id1 < 2; id1++) {
     cs_lnum_t ind_min = id1;
     for (int id2 = id1+1; id2 < 3; id2++) {
-      if ( eig_val[id2] < eig_val[id1] )
+      if ( eig_val[id2] < eig_val[ind_min] )
         ind_min = id2;
     }
     if ( ind_min != id1 ) {
