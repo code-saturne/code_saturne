@@ -2256,7 +2256,7 @@ cs_multigrid_smoother_setup(void               *context,
     {
       bool single_reduce = false;
 #if defined(HAVE_MPI)
-      cs_gnum_t n_m_rows = c->setup_data->n_rows;
+      cs_gnum_t n_m_rows = cs_matrix_get_n_rows(a) * diag_block_size;
       if (c->comm != MPI_COMM_NULL) {
         int size;
         cs_gnum_t _n_m_rows;
