@@ -74,7 +74,6 @@ cfbl/cs_cf_bindings.f90 \
 comb/cs_coal_incl.f90 \
 comb/cpincl.f90 \
 ctwr/ctincl.f90 \
-lagr/lagran.f90 \
 pprt/ppcpfu.f90 \
 pprt/ppincl.f90 \
 pprt/ppppar.f90 \
@@ -152,10 +151,6 @@ comb/cpincl.$(OBJEXT): pprt/ppppar.$(OBJEXT) pprt/ppthch.$(OBJEXT)
 comb/cs_coal_incl.$(OBJEXT): pprt/ppppar.$(OBJEXT) pprt/ppthch.$(OBJEXT)
 
 ctwr/ctincl.$(OBJEXT): base/cstphy.$(OBJEXT)
-
-lagr/lagran.$(OBJEXT): base/cstnum.$(OBJEXT) base/optcal.$(OBJEXT) \
- pprt/ppincl.$(OBJEXT) rayt/radiat.$(OBJEXT) comb/cpincl.$(OBJEXT) \
- pprt/ppppar.$(OBJEXT) base/cstphy.$(OBJEXT)
 
 pprt/ppcpfu.$(OBJEXT): pprt/ppthch.$(OBJEXT) pprt/ppppar.$(OBJEXT)
 

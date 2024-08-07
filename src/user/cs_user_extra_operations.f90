@@ -65,7 +65,6 @@ use optcal
 use cstphy
 use cstnum
 use entsor
-use lagran
 use parall
 use period
 use ppppar

@@ -151,9 +151,6 @@ void
 cs_f_varpos(void);
 
 void
-cs_f_lagran_init_map(void);
-
-void
 cs_f_iniini(void);
 
 void
@@ -1439,7 +1436,6 @@ cs_setup(void)
     cs_at_data_assim_initialize();
 
   /* Initialize lagr structures */
-  cs_f_lagran_init_map();
   cs_lagr_map_specific_physics();
 
   int have_thermal_model = 0;

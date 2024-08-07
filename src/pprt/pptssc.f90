@@ -86,7 +86,6 @@ use ppthch
 use coincl
 use cpincl
 use ppincl
-use lagran
 use mesh
 use field
 use cs_c_bindings

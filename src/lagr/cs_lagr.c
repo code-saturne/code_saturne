@@ -408,38 +408,6 @@ cs_lagr_internal_condition_t  *cs_glob_lagr_internal_conditions = NULL;
 
 cs_real_33_t  *cs_glob_lagr_b_face_proj = NULL;
 
-/*============================================================================
- * Prototypes for functions intended for use only by Fortran wrappers.
- * (descriptions follow, with function bodies).
- *============================================================================*/
-
-void
-cs_f_lagr_params_pointers(int  **p_iilagr,
-                          int  **p_iflow);
-
-/*============================================================================
- * Fortran wrapper function definitions
- *============================================================================*/
-
-/*----------------------------------------------------------------------------
- * Map some options
- *
- * This function is intended for use by Fortran wrappers.
- *
- * parameters:
- *   p_iilagr --> lagrangian model type
- *   p_idepo  --> deposition option flag
- *   p_iflow  -->
- *----------------------------------------------------------------------------*/
-
-void
-cs_f_lagr_params_pointers(int  **p_iilagr,
-                          int  **p_iflow)
-{
-  *p_iilagr = &_lagr_time_scheme.iilagr;
-  *p_iflow= &_lagr_reentrained_model.iflow;
-}
-
 /*=============================================================================
  * Private function definitions
  *============================================================================*/
