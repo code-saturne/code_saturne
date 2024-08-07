@@ -3717,6 +3717,84 @@ cs_equation_add_volume_mass_injection_by_dof_func(cs_equation_param_t *eqp,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Add a new volume mass injection definition source term by
+ *        initializing a cs_xdef_t structure, using an array.
+ *
+ * \param[in, out] eqp          pointer to a cs_equation_param_t structure
+ * \param[in]      bc_type      type of boundary condition to add
+ * \param[in]      z_name       name of the related boundary zone
+ * \param[in]      loc          information to know where are located values
+ * \param[in]      array        pointer to an array
+ * \param[in]      is_owner     transfer the lifecycle to the cs_xdef_t struct.
+ *                              (true or false)
+ * \param[in]      full_length  if true, size of "array" should be allocated
+ *                              to the total numbers of entities related to the
+ *                              given location. If false, a new list is
+ *                              allocated and filled with the related subset
+ *                              indirection.
+ *
+ * \return a pointer to the new allocated \ref cs_xdef_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_xdef_t *
+cs_equation_add_volume_mass_injection_by_array(cs_equation_param_t *eqp,
+                                               const char          *z_name,
+                                               cs_flag_t            loc_flag,
+                                               cs_real_t           *array,
+                                               bool                 is_owner,
+                                               bool                 full_length)
+{
+  if (eqp == nullptr)
+    bft_error(__FILE__, __LINE__, 0, "%s: %s\n", __func__, _err_empty_eqp);
+
+  int  z_id = cs_volume_zone_id_by_name(z_name);
+  int  dim = eqp->dim;
+
+  cs_flag_t  state_flag = 0, meta_flag = 0;
+  if (z_id == 0)
+    meta_flag |= CS_FLAG_FULL_LOC;
+
+  /* Add a new cs_xdef_t structure */
+
+  cs_xdef_array_context_t input = {
+    .z_id           = z_id,
+    .stride         = dim,
+    .value_location = loc_flag,
+    .is_owner       = is_owner,
+    .full_length    = full_length,
+    .values         = array,
+    /* Optional parameters */
+    .full2subset = nullptr,
+    .n_list_elts = 0,
+    .elt_ids     = nullptr,
+    .adjacency   = nullptr,
+  };
+
+  cs_xdef_t  *d = cs_xdef_volume_create(CS_XDEF_BY_ARRAY,
+                                        dim,
+                                        z_id,
+                                        state_flag,
+                                        meta_flag,
+                                        (void *)&input);
+
+  /* Build the indirection array if only a subset is used */
+
+  if (!full_length)
+    cs_xdef_array_build_full2subset(d);
+
+  int  new_id = eqp->n_volume_mass_injections;
+  eqp->n_volume_mass_injections += 1;
+  BFT_REALLOC(eqp->volume_mass_injections,
+              eqp->n_volume_mass_injections,
+              cs_xdef_t *);
+  eqp->volume_mass_injections[new_id] = d;
+
+  return d;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Add an enforcement of the value of degrees of freedom located at
  *        the mesh vertices.
  *        The spatial discretization scheme for the given equation has to be
