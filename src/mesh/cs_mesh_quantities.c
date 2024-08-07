@@ -1777,7 +1777,7 @@ _compute_face_distances(cs_lnum_t        n_i_faces,
 
   for (cs_lnum_t face_id = 0; face_id < n_i_faces; face_id++) {
 
-    const cs_real_t *normal = i_face_u_normal[face_id];
+    const cs_real_t *u_normal = i_face_u_normal[face_id];
 
     const cs_lnum_t cell_id1 = i_face_cells[face_id][0];
     const cs_lnum_t cell_id2 = i_face_cells[face_id][1];
@@ -1786,7 +1786,7 @@ _compute_face_distances(cs_lnum_t        n_i_faces,
      * and dot-product with the normal */
     i_dist[face_id] = cs_math_3_distance_dot_product(cell_cen[cell_id1],
                                                      cell_cen[cell_id2],
-                                                     normal);
+                                                     u_normal);
 
     if (CS_ABS(i_dist[face_id]) > 1e-20) {
       /* Distance between the face center of gravity
@@ -1794,7 +1794,7 @@ _compute_face_distances(cs_lnum_t        n_i_faces,
          and dot-product with the normal */
       cs_real_t dist2f = cs_math_3_distance_dot_product(i_face_cog[face_id],
                                                         cell_cen[cell_id2],
-                                                        normal);
+                                                        u_normal);
       weight[face_id] = dist2f / i_dist[face_id];
     }
     else {
@@ -1814,7 +1814,7 @@ _compute_face_distances(cs_lnum_t        n_i_faces,
        * if the face surface is not 0.
        */
       if (   !(cs_glob_mesh_quantities_flag & CS_FACE_NULL_SURFACE)
-          || face_normal_norm > 1.e-20)
+          && face_normal_norm > 1.e-20)
         distmax = cs_math_fmin(cs_math_3_distance(cell_cen[cell_id1],
                                                   cell_cen[cell_id2]),
                                (  (cell_vol[cell_id1] + cell_vol[cell_id2])
@@ -1872,7 +1872,7 @@ _compute_face_distances(cs_lnum_t        n_i_faces,
        * if the face surface is not 0.
        */
       if (   !(cs_glob_mesh_quantities_flag & CS_FACE_NULL_SURFACE)
-          || face_normal_norm > 1.e-20) {
+          && face_normal_norm > 1.e-20) {
         distmax = fmin(cs_math_3_distance(cell_cen[cell_id],
                                           b_face_cog[face_id]),
                        cell_vol[cell_id]/face_normal_norm);
@@ -2121,7 +2121,7 @@ _compute_face_sup_vectors(cs_lnum_t          n_cells,
     const cs_lnum_t cell_id2 = i_face_cells[face_id][1];
 
     /* Normalized normal */
-    const cs_real_t *normal = i_face_u_normal[face_id];
+    const cs_real_t *u_normal = i_face_u_normal[face_id];
 
     /* ---> IF and JF */
     cs_real_t vec_if[3] = {
@@ -2135,10 +2135,10 @@ _compute_face_sup_vectors(cs_lnum_t          n_cells,
       i_face_cog[face_id][2] - cell_cen[cell_id2][2]};
 
     /* ---> diipf = IF - (IF.Nij)Nij */
-    cs_math_3_orthogonal_projection(normal, vec_if, diipf[face_id]);
+    cs_math_3_orthogonal_projection(u_normal, vec_if, diipf[face_id]);
 
     /* ---> djjpf = JF - (JF.Nij)Nij */
-    cs_math_3_orthogonal_projection(normal, vec_jf, djjpf[face_id]);
+    cs_math_3_orthogonal_projection(u_normal, vec_jf, djjpf[face_id]);
 
     /* Limiter on interior face reconstruction */
     if (cs_glob_mesh_quantities_flag & CS_FACE_RECONSTRUCTION_CLIP) {
