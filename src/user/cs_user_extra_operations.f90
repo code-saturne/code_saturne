@@ -73,7 +73,6 @@ use ppincl
 use mesh
 use field
 use field_operator
-use turbomachinery
 use cs_c_bindings
 
 !===============================================================================

@@ -70,7 +70,7 @@ integer(c_int), value ::  nmodpp
 ! Local variables
 
 integer       ipp
-integer       iok, keycpl, nmodpp_compatibility, vof_mask
+integer       iok, keycpl, vof_mask
 integer       key_lim_id, kscmin, kscmax
 
 type(var_cal_opt) :: vcopt
@@ -101,6 +101,13 @@ end interface
 ! 0. INITIALISATIONS
 !===============================================================================
 
+nmodpp = 0
+do ipp = 2, nmodmx
+  if (ippmod(ipp).ne.-1) then
+    nmodpp = nmodpp+1
+  endif
+enddo
+
 call field_get_key_id('coupled', keycpl)
 
 !===============================================================================
@@ -113,63 +120,6 @@ call field_get_key_id('coupled', keycpl)
 !  On en profite aussi pour remplir ITYTUR et ITYTURT puisque ITURB et ITURT
 !    viennent d'etre definis.
 !===============================================================================
-
-! ---> Remplissage de ITYTUR
-itytur = iturb/10
-
-! ---> Coherence modele
-!     Rq : ATTENTION il faudrait renforcer le blindage
-
-iok   = 0
-nmodpp = 0
-do ipp = 2, nmodmx
-  if (ippmod(ipp).ne.-1) then
-    nmodpp = nmodpp+1
-    if (ippmod(ipp).lt.0 .or. ippmod(ipp).gt.5) then
-      write(nfecra,6001)
-      iok = iok + 1
-    endif
-  endif
-enddo
-
-nmodpp_compatibility = nmodpp
-
-! Compressible module and gas mix are compatible
-if (ippmod(igmix).ne.-1 .and. ippmod(icompf) .ne. -1) then
-  nmodpp_compatibility = nmodpp_compatibility - 1
-endif
-
-! Atmo in humid atmosphere et Couling tower (iaeros) coupling
-if (ippmod(iatmos).eq.2 .and. ippmod(iaeros) .ne. -1) then
-  nmodpp_compatibility = nmodpp_compatibility - 1
-endif
-
-if (nmodpp_compatibility.gt.1) then
-  write(nfecra,6000)
-  iok = iok + 1
-endif
-
-! In case ideal gas mix specific physics was enabled by the user
-! together with the compressible module, the equation of state
-! indicator is reset to the approprate value automatically (ieos=3)
-! and the user is warned.
-if (ippmod(igmix).ge.0.and.ippmod(icompf).ge.0.and.ieos.ne.3) then
-  ieos = 3
-  write(nfecra,6002)
-endif
-
-if (iok.ne.0) then
-  call csexit (1)
-  !==========
-endif
-
-! Set global indicator: ippmod(iphpar)
-!  0: no specific model
-!  1: active specific physical model
-ippmod(iphpar) = 0
-if (nmodpp.gt.0) then
-  ippmod(iphpar) = 1
-endif
 
 ! Define main variables
 !======================
@@ -350,11 +300,6 @@ call cs_field_pointer_map_boundary
 
 iok = 0
 
-if (nscaus.lt.0) then
-  write(nfecra,6010) nscaus
-  iok = iok + 1
-endif
-
 if (nscaus.gt.0 .or. nscapp.gt.0) then
   if ((nscaus+nscapp).gt.nscamx) then
     if (nscapp.le.0) then
@@ -377,76 +322,6 @@ return
 ! 5. FORMATS
 !===============================================================================
 
- 6000 format(                                                     &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ WARNING   : STOP AT THE INITIAL DATA VERIFICATION       ',/,&
-'@    =========                                               ',/,&
-'@     SEVERAL INCOMPATIBLE MODELS OF SPECIFIC PHYSICS ARE    ',/,&
-'@     ARE ENABLED.                                           ',/,&
-'@                                                            ',/,&
-'@  Only the compressible and gas mix specific physics can be ',/,&
-'@    enabled simultaneously.                                 ',/,&
-'@                                                            ',/,&
-'@  The calculation will not be run.                          ',/,&
-'@                                                            ',/,&
-'@  Modify the indices of       IPPMOD in   usppmo.           ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
- 6001 format(                                                     &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ WARNING   : STOP AT THE INITIAL DATA VERIFICATION       ',/,&
-'@    =========                                               ',/,&
-'@     WRONG SELLECTION OF THE MODEL FOR SPECIFIC PHYSICS     ',/,&
-'@                                                            ',/,&
-'@  The values of the indices of the array IPPMOD are not     ',/,&
-'@    admissible                                              ',/,&
-'@                                                            ',/,&
-'@  The calculation will not be run.                          ',/,&
-'@                                                            ',/,&
-'@  Modify the indices of       IPPMOD in   usppmo.           ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
- 6002 format(                                                     &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ WARNING   : AT THE INITIAL DATA VERIFICATION            ',/,&
-'@    =========                                               ',/,&
-'@     EQUATION OF STATE INCOMPATIBLE WITH SELECTED SPECIFIC  ',/,&
-'@     PHYSICS                                                ',/,&
-'@                                                            ',/,&
-'@  The specific physics compressible and gas mix are         ',/,&
-'@    simultaneously enabled but the selected equation of     ',/,&
-'@    state is not ideal gas mix (ieos different from 3).     ',/,&
-'@                                                            ',/,&
-'@  The indicator ieos has been reset to 3 and the calculation',/,&
-'@  will run.                                                 ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
- 6010 format(                                                     &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ WARNING   : STOP AT THE INITIAL DATA VERIFICATION       ',/,&
-'@    =========                                               ',/,&
-'@     ERRONEOUS NUMBER OF SCALARS                            ',/,&
-'@                                                            ',/,&
-'@  The number of users scalars must be an integer either     ',/,&
-'@   positive or zero. Here is      NSCAUS  = ',I10            ,/,&
-'@                                                            ',/,&
-'@  The calculation will not be run.                          ',/,&
-'@                                                            ',/,&
-'@  Verify   parameters.                                      ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
  6011 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&

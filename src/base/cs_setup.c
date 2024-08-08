@@ -281,6 +281,89 @@ _add_model_scalar_field
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Variables definition initialization based on active model.
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_init_variable_fields(void)
+{
+  /* Set turbulence model type to allow for simpler tests */
+  cs_turb_model_t *turb_model = cs_get_glob_turb_model();
+  turb_model->itytur = turb_model->iturb / 10;
+
+  /* Check models compatibility (this test should be improved,
+     as allowed ranges vary from one model to another). */
+
+  int nmodpp = 0;
+  for (int ipp = CS_PHYSICAL_MODEL_FLAG +1;
+       ipp < CS_N_PHYSICAL_MODEL_TYPES;
+       ipp++) {
+    if (cs_glob_physical_model_flag[ipp] != -1) {
+      nmodpp += 1;
+      if (   cs_glob_physical_model_flag[ipp] < -1
+          || cs_glob_physical_model_flag[ipp] > 5) {
+        cs_parameters_error
+          (CS_ABORT_DELAYED,
+           _("initial data verification"),
+           _("Incorrect physical model selection.\n\n"
+             "Out-of bounds value (%d) for cs_glob_physical model flag[%d].\n"),
+           cs_glob_physical_model_flag[ipp], ipp);
+      }
+    }
+  }
+
+  int nmodpp_compatibility = nmodpp;
+
+  /* Compressible module and gas mix are compatible */
+  if (   cs_glob_physical_model_flag[CS_GAS_MIX] != -1
+      && cs_glob_physical_model_flag[CS_COMPRESSIBLE] != -1) {
+    nmodpp_compatibility -= 1;
+  }
+
+  /* Atmo in humid atmosphere et Couling tower (iaeros) coupling */
+  if (   cs_glob_physical_model_flag[CS_ATMOSPHERIC] == 2
+      && cs_glob_physical_model_flag[CS_COOLING_TOWERS] != -1) {
+    nmodpp_compatibility -= 1;
+  }
+
+  if (nmodpp_compatibility > 1) {
+    cs_parameters_error
+      (CS_ABORT_DELAYED,
+       _("initial data verification"),
+       _("%d incompatible physical models are enabled simultaneously.\n"),
+       nmodpp_compatibility);
+  }
+
+  cs_parameters_error_barrier();
+
+  /* Set global indicator */
+
+  cs_glob_physical_model_flag[CS_PHYSICAL_MODEL_FLAG] = (nmodpp > 0) ? 1 : 0;
+
+  /* In case ideal gas mix specific physics was enabled by the user
+     together with the compressible module, the equation of state
+     indicator is reset to the approprate value automatically (ieos=3)
+     and the user is warned. */
+  if (   cs_glob_physical_model_flag[CS_GAS_MIX] >= 0
+      && cs_glob_physical_model_flag[CS_COMPRESSIBLE] >= 0
+      && cs_glob_cf_model->ieos != CS_EOS_GAS_MIX) {
+    cs_cf_model_t *cf_model = cs_get_glob_cf_model();
+    cf_model->ieos = CS_EOS_GAS_MIX;
+    cs_parameters_error
+      (CS_WARNING,
+       _("initial data verification"),
+       _("Equation of state incompatible with selected physical model.\n"
+         "\n"
+         "The compressible and gas mix models are  enabled but the selected\n"
+         "equation of state is not ideal gas mix.\n"
+         "\n"
+         "cs_glob_cf_model->ieos is forced to CS_EOS_GAS_MIX.\n"));
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Create additional fields based on user options.
  */
 /*----------------------------------------------------------------------------*/
@@ -1265,6 +1348,7 @@ _init_user
   cs_rad_transfer_options();
 
   if (cs_glob_param_cdo_mode != CS_PARAM_CDO_MODE_ONLY) {
+    _init_variable_fields();
     cs_f_fldvar(nmodpp);
 
     /* Activate pressure correction model if CDO mode is not stand-alone */

@@ -80,36 +80,22 @@ pprt/ppppar.f90 \
 pprt/ppthch.f90 \
 cogz/coincl.f90 \
 rayt/radiat.f90 \
-base/vof.f90 \
-base/turbomachinery.f90
+base/vof.f90
 
 # Module dependencies (handled manually, as Automake does
 # not yet handle Fortran module dependencies)
 
 base/albase.$(OBJEXT): base/optcal.$(OBJEXT) base/cs_c_bindings.$(OBJEXT)
 
-base/cavitation.$(OBJEXT): base/cstphy.$(OBJEXT) base/field.$(OBJEXT) \
- base/numvar.$(OBJEXT) base/optcal.$(OBJEXT) base/pointe.$(OBJEXT) \
- base/mesh.$(OBJEXT) base/paramx.$(OBJEXT) base/entsor.$(OBJEXT) \
- base/parall.$(OBJEXT) base/rotation.$(OBJEXT) \
- base/turbomachinery.$(OBJEXT) base/vof.$(OBJEXT)
+base/cavitation.$(OBJEXT): base/optcal.$(OBJEXT) base/pointe.$(OBJEXT) \
+ base/mesh.$(OBJEXT) base/vof.$(OBJEXT)
 
-base/vof.$(OBJEXT): base/cstphy.$(OBJEXT) base/field.$(OBJEXT) \
- base/numvar.$(OBJEXT) base/optcal.$(OBJEXT) base/pointe.$(OBJEXT) \
- base/mesh.$(OBJEXT) base/paramx.$(OBJEXT) base/entsor.$(OBJEXT) \
- base/parall.$(OBJEXT) base/rotation.$(OBJEXT) base/turbomachinery.$(OBJEXT)
+base/vof.$(OBJEXT): base/optcal.$(OBJEXT)
 
 base/cstphy.$(OBJEXT): base/paramx.$(OBJEXT)
 
 base/cs_c_bindings.$(OBJEXT): base/paramx.$(OBJEXT) base/entsor.$(OBJEXT) \
  base/mesh.$(OBJEXT) base/period.$(OBJEXT) base/field.$(OBJEXT)
-
-base/cs_nz_condensation.$(OBJEXT): base/mesh.$(OBJEXT)
-
-base/cs_nz_tagmr.$(OBJEXT): base/optcal.$(OBJEXT) base/pointe.$(OBJEXT) \
- base/parall.$(OBJEXT) base/cs_nz_condensation.$(OBJEXT)
-
-base/cs_tagms.$(OBJEXT): base/mesh.$(OBJEXT)
 
 base/entsor.$(OBJEXT): base/paramx.$(OBJEXT) base/field.$(OBJEXT)
 
@@ -124,10 +110,6 @@ base/optcal.$(OBJEXT): base/paramx.$(OBJEXT) base/field.$(OBJEXT) \
 
 base/pointe.$(OBJEXT): base/paramx.$(OBJEXT) base/mesh.$(OBJEXT) \
  base/optcal.$(OBJEXT) base/cs_c_bindings.$(OBJEXT)
-
-base/rotation.$(OBJEXT): base/paramx.$(OBJEXT)
-
-base/turbomachinery.$(OBJEXT): base/mesh.$(OBJEXT) base/cstphy.$(OBJEXT)
 
 atmo/atincl.$(OBJEXT): pprt/ppppar.$(OBJEXT) pprt/ppincl.$(OBJEXT) \
  base/mesh.$(OBJEXT) atmo/atsoil.$(OBJEXT) base/cs_c_bindings.$(OBJEXT) \
@@ -160,8 +142,6 @@ pprt/ppthch.$(OBJEXT): base/cstphy.$(OBJEXT)
 
 rayt/radiat.$(OBJEXT): pprt/ppppar.$(OBJEXT) pprt/ppincl.$(OBJEXT) \
  base/optcal.$(OBJEXT) pprt/ppcpfu.$(OBJEXT) base/numvar.$(OBJEXT)
-
-cfbl/cfpoin.$(OBJEXT): pprt/ppincl.$(OBJEXT)
 
 # Additional local targets
 

@@ -108,7 +108,6 @@ use ppcpfu
 use cs_coal_incl
 use mesh
 use field
-use turbomachinery
 
 use cs_c_bindings
 

@@ -52,7 +52,6 @@ use field
 use vof
 use cavitation
 use radiat
-use turbomachinery
 use ctincl
 use cfpoin
 use vof
@@ -129,7 +128,6 @@ call map_ale
 call cf_model_init
 call vof_model_init
 call cavitation_model_init
-call map_turbomachinery_model(iturbo)
 
 !===============================================================================
 ! Get mesh metadata.

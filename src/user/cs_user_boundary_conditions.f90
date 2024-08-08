@@ -83,7 +83,6 @@ use atsoil
 use ctincl
 use mesh
 use field
-use turbomachinery
 use iso_c_binding
 use cs_c_bindings
 
