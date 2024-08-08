@@ -398,11 +398,12 @@ _additional_fields(void)
           cs_field_t *f_alpha = _add_variable_field(f_alp_name,
                                                     f_alp_name,
                                                     1);
-          cs_field_set_key_int(f_alpha, kfturt_alpha, f_turb_flux->id);
 
           cs_equation_param_t *eqp_alp = cs_field_get_equation_param(f_alpha);
           eqp_alp->iconv = 0;
           eqp_alp->istat = 0;
+
+          cs_field_set_key_int(f, kfturt_alpha, f_alpha->id);
         }
       }
     }
