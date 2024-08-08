@@ -1276,13 +1276,15 @@ cs_turbulence_rij_transport_div_tf(const int        field_id,
   if (   turb_flux_model == 11
       || turb_flux_model_type == 2
       || turb_flux_model_type == 3) {
-    cs_real_t *divut;
+    cs_real_t *divut = NULL, *_divut = NULL;
     cs_field_t *f_dut = cs_field_by_composite_name_try("algo:divergence",
                                                        f_ut->name);
     if (f_dut != NULL)
       divut = f_dut->val;
-    else
-      BFT_MALLOC(divut, n_cells_ext, cs_real_t);
+    else {
+      BFT_MALLOC(_divut, n_cells_ext, cs_real_t);
+      divut = _divut;
+    }
 
     cs_divergence(m, 1, thflxf, thflxb, divut);
 
@@ -1290,8 +1292,7 @@ cs_turbulence_rij_transport_div_tf(const int        field_id,
     for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
       smbrs[c_id] -= divut[c_id];
 
-    if (f_dut == NULL)
-      BFT_FREE(divut);
+    BFT_FREE(_divut);
   }
 
   BFT_FREE(grad_al);
