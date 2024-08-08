@@ -2806,9 +2806,12 @@ _velocity_prediction(const cs_mesh_t             *m,
       && (   cs_glob_turb_model->itytur == 3
           || cs_glob_turb_model->iturb == CS_TURB_K_EPSILON_QUAD)) {
 
-    if (cs_field_by_name_try("algo:divergence_rij") != nullptr)
+    cs_field_t *f_drij = cs_field_by_name_try("algo:divergence_rij");
+    if (f_drij != nullptr) {
+      assert(f_drij->dim == 3);
       cpro_divr
-        = (cs_real_3_t *)cs_field_by_name_try("algo:divergence_rij")->val;
+        = (cs_real_3_t *)f_drij->val;
+    }
     else {
       CS_MALLOC_HD(divt, n_cells_ext, cs_real_3_t, cs_alloc_mode);
       cpro_divr = divt;
