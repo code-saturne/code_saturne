@@ -524,6 +524,8 @@ _matrix_strided(const cs_mesh_t            *m,
     = (const cs_lnum_2_t *restrict)m->i_face_cells;
   const cs_lnum_t *restrict b_face_cells
     = (const cs_lnum_t *restrict)m->b_face_cells;
+  const cs_real_3_t *i_face_u_normal
+    = (const cs_real_3_t *)mq->i_face_u_normal;
   const cs_real_3_t *b_face_u_normal
     = (const cs_real_3_t *)mq->b_face_u_normal;
   cs_real_2_t *i_f_face_factor;
@@ -612,7 +614,7 @@ _matrix_strided(const cs_mesh_t            *m,
   else {
     ctx.parallel_for_i_faces(m, [=] CS_F_HOST_DEVICE (cs_lnum_t  f_id) {
       const cs_lnum_t _p = is_p*f_id;
-      const cs_real_t *n = b_face_u_normal[f_id];
+      const cs_real_t *n = i_face_u_normal[f_id];
       const cs_real_t _i_massflux = i_massflux[f_id];
       cs_lnum_t ii = i_face_cells[f_id][0];
       cs_lnum_t jj = i_face_cells[f_id][1];
@@ -666,6 +668,7 @@ _matrix_strided(const cs_mesh_t            *m,
           vfaci[stride*i+j] = - diag -_xa[f_id][1][i][j];
 
           vfacj[stride*i+j] =   diag -_xa[f_id][0][i][j];
+
         }
       }
 
@@ -949,6 +952,8 @@ _matrix_anisotropic_diffusion_strided(const cs_mesh_t            *m,
     = (const cs_lnum_2_t *restrict)m->i_face_cells;
   const cs_lnum_t *restrict b_face_cells
     = (const cs_lnum_t *restrict)m->b_face_cells;
+  const cs_real_3_t *i_face_u_normal
+    = (const cs_real_3_t *)mq->i_face_u_normal;
   const cs_real_3_t *b_face_u_normal
     = (const cs_real_3_t *)mq->b_face_u_normal;
 
@@ -989,7 +994,7 @@ _matrix_anisotropic_diffusion_strided(const cs_mesh_t            *m,
 
   ctx.parallel_for_i_faces(m, [=] CS_F_HOST_DEVICE (cs_lnum_t f_id) {
     const cs_lnum_t _p = is_p*f_id;
-    const cs_real_t *n = b_face_u_normal[f_id];
+    const cs_real_t *n = i_face_u_normal[f_id];
     cs_lnum_t ii = i_face_cells[f_id][0];
     cs_lnum_t jj = i_face_cells[f_id][1];
 
