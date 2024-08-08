@@ -297,8 +297,6 @@ _solid_plane_from_points(const cs_mesh_t   *m,
       c_w_face_normal[c_id][0] = eig_vec[0][0];
       c_w_face_normal[c_id][1] = eig_vec[1][0];
       c_w_face_normal[c_id][2] = eig_vec[2][0];
-
-      cs_math_3_normalize(c_w_face_normal[c_id], c_w_face_normal[c_id]);
     }
     else {
       c_w_face_normal[c_id][0] = 0.;

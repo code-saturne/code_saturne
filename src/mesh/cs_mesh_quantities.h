@@ -110,6 +110,7 @@ typedef struct {
   cs_real_t     *i_face_cog;     /* Center of gravity of interior faces */
   cs_real_t     *b_face_cog;     /* Center of gravity of border faces */
 
+  cs_real_t     *i_f_face_cog;   /* Center of gravity of fluid interior faces */
   cs_real_t     *b_f_face_cog;   /* Center of gravity of fluid border faces */
   cs_real_t     *c_w_face_cog;   /* Center of gravity of solid face
                                     immersed in the cells */

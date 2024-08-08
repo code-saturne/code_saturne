@@ -199,7 +199,7 @@ _compute_corr_grad_lin(const cs_mesh_t       *m,
   const cs_real_3_t *restrict b_face_cog
     = (const cs_real_3_t *restrict)fvq->b_f_face_cog;
   const cs_real_3_t *restrict i_face_cog
-    = (const cs_real_3_t *restrict)fvq->i_face_cog;
+    = (const cs_real_3_t *restrict)fvq->i_f_face_cog;
 
   if (fvq->corr_grad_lin_det == NULL)
     BFT_MALLOC(fvq->corr_grad_lin_det, n_cells_with_ghosts, cs_real_t);
@@ -2919,6 +2919,7 @@ cs_mesh_quantities_create(void)
   mesh_quantities->c_w_face_normal = NULL;
   mesh_quantities->i_face_cog = NULL;
   mesh_quantities->b_face_cog = NULL;
+  mesh_quantities->i_f_face_cog = NULL;
   mesh_quantities->b_f_face_cog = NULL;
   mesh_quantities->c_w_face_cog = NULL;
   mesh_quantities->i_face_surf = NULL;
@@ -2995,6 +2996,7 @@ cs_mesh_quantities_free_all(cs_mesh_quantities_t  *mq)
 
   CS_FREE_HD(mq->i_face_cog);
   CS_FREE_HD(mq->b_face_cog);
+  mq->i_f_face_cog = NULL;
   mq->b_f_face_cog = NULL;
   mq->c_w_face_cog = NULL;
   CS_FREE_HD(mq->i_face_surf);
@@ -3303,14 +3305,15 @@ cs_mesh_quantities_solid_compute(const cs_mesh_t       *m,
     = (const cs_lnum_t *)m->b_face_vtx_idx;
   const cs_lnum_t * b_face_vtx_lst
     = (const cs_lnum_t *)m->b_face_vtx_lst;
-
   const cs_real_3_t *restrict vtx_coord
     = (const cs_real_3_t *)m->vtx_coord;
-
-  cs_real_3_t *restrict i_face_cog
-    = (cs_real_3_t *restrict)mq->i_face_cog;
+  const cs_real_3_t *restrict i_face_cog
+    = (const cs_real_3_t *restrict)mq->i_face_cog;
   const cs_real_3_t *restrict b_face_cog
     = (const cs_real_3_t *restrict)mq->b_face_cog;
+
+  cs_real_3_t *restrict i_f_face_cog
+    = (cs_real_3_t *restrict)mq->i_f_face_cog;
   cs_real_3_t *restrict b_f_face_cog
     = (cs_real_3_t *restrict)mq->b_f_face_cog;
   cs_real_3_t *restrict i_f_face_normal
@@ -3363,11 +3366,11 @@ cs_mesh_quantities_solid_compute(const cs_mesh_t       *m,
 
   }
 
-  cs_real_23_t *i_f_face_cog;
-  BFT_MALLOC(i_f_face_cog, m->n_i_faces, cs_real_23_t);
+  cs_real_23_t *i_f_face_cog_dual;
+  BFT_MALLOC(i_f_face_cog_dual, m->n_i_faces, cs_real_23_t);
   cs_array_real_set_scalar(3*2*m->n_i_faces,
                            -HUGE_VAL,
-                           (cs_real_t *)i_f_face_cog);
+                           (cs_real_t *)i_f_face_cog_dual);
 
   cs_real_23_t *i_f_face_cell_normal;
   BFT_MALLOC(i_f_face_cell_normal, m->n_i_faces, cs_real_23_t);
@@ -3441,7 +3444,7 @@ cs_mesh_quantities_solid_compute(const cs_mesh_t       *m,
 
       for (cs_lnum_t i = 0; i < 3; i++) {
         i_f_face_cell_normal[face_id][side][i] = 0.0;
-        i_f_face_cog[face_id][side][i] = 0.0;
+        i_f_face_cog_dual[face_id][side][i] = 0.0;
       }
 
       const cs_lnum_t s_id = i_face_vtx_idx[face_id];
@@ -3501,7 +3504,7 @@ cs_mesh_quantities_solid_compute(const cs_mesh_t       *m,
 
       if (n_s_face_vertices < n_face_vertices) {
         for (cs_lnum_t i = 0; i < 3; i++)
-          i_f_face_cog[face_id][side][i] = i_face_cog[face_id][i];
+          i_f_face_cog_dual[face_id][side][i] = i_face_cog[face_id][i];
       }
 
       /* Fluid face from one side */
@@ -3716,7 +3719,7 @@ cs_mesh_quantities_solid_compute(const cs_mesh_t       *m,
 
         /* Storing fluid face COG associated to each cell */
         for (cs_lnum_t i = 0; i < 3; i++) {
-          i_f_face_cog[face_id][side][i] = _i_f_face_cog[0][i];
+          i_f_face_cog_dual[face_id][side][i] = _i_f_face_cog[0][i];
           i_f_face_cell_normal[face_id][side][i] = _i_f_face_normal[0][i];
         }
 
@@ -4114,7 +4117,7 @@ cs_mesh_quantities_solid_compute(const cs_mesh_t       *m,
                          2*3,
                          true,
                          CS_REAL_TYPE,
-                         (cs_real_23_t *)i_f_face_cog);
+                         (cs_real_23_t *)i_f_face_cog_dual);
 
     cs_interface_set_destroy(&f_if);
   }
@@ -4129,13 +4132,13 @@ cs_mesh_quantities_solid_compute(const cs_mesh_t       *m,
 
     if (area0 < area1) {
       for (cs_lnum_t i = 0; i < 3; i++) {
-        i_face_cog[f_id][i] = i_f_face_cog[f_id][0][i];
+        i_f_face_cog[f_id][i] = i_f_face_cog_dual[f_id][0][i];
         i_f_face_normal[f_id][i] = i_f_face_cell_normal[f_id][0][i];
       }
     }
     else {
       for (cs_lnum_t i = 0; i < 3; i++) {
-        i_face_cog[f_id][i] = i_f_face_cog[f_id][1][i];
+        i_f_face_cog[f_id][i] = i_f_face_cog_dual[f_id][1][i];
         i_f_face_normal[f_id][i] = i_f_face_cell_normal[f_id][1][i];
       }
     }
@@ -4150,7 +4153,7 @@ cs_mesh_quantities_solid_compute(const cs_mesh_t       *m,
    * and fluid volumes */
   _compute_fluid_solid_cell_quantities(m,
                                        (const cs_real_23_t *)i_f_face_cell_normal,
-                                       (const cs_real_23_t *)i_f_face_cog,
+                                       (const cs_real_23_t *)i_f_face_cog_dual,
                                        (const cs_real_3_t *)mq->b_f_face_normal,
                                        (const cs_real_3_t *)mq->b_f_face_cog,
                                        (const cs_real_3_t *)mq->c_w_face_normal,
@@ -4190,7 +4193,7 @@ cs_mesh_quantities_solid_compute(const cs_mesh_t       *m,
                           (const cs_real_3_t *)(mq->i_f_face_normal),
                           (const cs_real_3_t *)(mq->b_face_u_normal),
                           (const cs_real_3_t *)(mq->b_f_face_normal),
-                          (const cs_real_3_t *)(mq->i_face_cog),
+                          (const cs_real_3_t *)(mq->i_f_face_cog),
                           (const cs_real_3_t *)(mq->b_f_face_cog),
                           (const cs_real_3_t *)(mq->cell_f_cen),
                           (const cs_real_t *)(mq->cell_f_vol),
@@ -4205,7 +4208,7 @@ cs_mesh_quantities_solid_compute(const cs_mesh_t       *m,
                         m->b_face_cells,
                         (const cs_real_3_t *)mq->i_face_u_normal,
                         (const cs_real_3_t *)mq->b_face_u_normal,
-                        mq->i_face_cog,
+                        mq->i_f_face_cog,
                         mq->b_f_face_cog,
                         mq->cell_f_cen,
                         mq->weight,
@@ -4219,7 +4222,7 @@ cs_mesh_quantities_solid_compute(const cs_mesh_t       *m,
                             (const cs_lnum_2_t *)(m->i_face_cells),
                             (const cs_real_3_t *)(mq->i_face_u_normal),
                             (const cs_real_3_t *)(mq->i_face_normal),
-                            (const cs_real_3_t *)(mq->i_face_cog),
+                            (const cs_real_3_t *)(mq->i_f_face_cog),
                             (const cs_real_3_t *)(mq->cell_f_cen),
                             mq->cell_f_vol,
                             mq->i_dist,
@@ -4316,7 +4319,7 @@ cs_mesh_quantities_solid_compute(const cs_mesh_t       *m,
         c_w_face_normal[c_id][i] -= sign*i_f_face_normal[f_id][i];
 
         const cs_real_t xfmxc
-          = (mq->i_face_cog[3*f_id+i] - mq->cell_f_cen[3*c_id+i]);
+          = (mq->i_f_face_cog[3*f_id+i] - mq->cell_f_cen[3*c_id+i]);
 
         for (cs_lnum_t j = 0; j < 3; j++)
           xpsn[c_id][i][j] += sign*xfmxc*i_f_face_normal[f_id][j];
@@ -4488,7 +4491,7 @@ cs_mesh_quantities_solid_compute(const cs_mesh_t       *m,
   BFT_FREE(vtx_ids);
   BFT_FREE(w_vtx);
 
-  BFT_FREE(i_f_face_cog);
+  BFT_FREE(i_f_face_cog_dual);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -4523,6 +4526,7 @@ cs_mesh_quantities_compute(const cs_mesh_t       *m,
   mq->b_f_face_normal = mq->b_face_normal;
   mq->i_f_face_surf = mq->i_face_surf;
   mq->b_f_face_surf = mq->b_face_surf;
+  mq->i_f_face_cog = mq->i_face_cog;
   mq->b_f_face_cog = mq->b_face_cog;
 
   mq->cell_f_vol = mq->cell_vol;
