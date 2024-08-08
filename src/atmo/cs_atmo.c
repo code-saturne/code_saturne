@@ -4514,6 +4514,7 @@ cs_atmo_finalize(void)
   BFT_FREE(_atmo_option.meteo_file_name);
   BFT_FREE(_atmo_option.z_dyn_met);
   BFT_FREE(_atmo_option.z_temp_met);
+  BFT_FREE(_atmo_option.xyp_met);
   BFT_FREE(_atmo_option.u_met);
   BFT_FREE(_atmo_option.v_met);
   BFT_FREE(_atmo_option.w_met);
@@ -4522,6 +4523,13 @@ cs_atmo_finalize(void)
   BFT_FREE(_atmo_option.pot_t_met);
   BFT_FREE(_atmo_option.ek_met);
   BFT_FREE(_atmo_option.ep_met);
+  BFT_FREE(_atmo_option.temp_met);
+  BFT_FREE(_atmo_option.rho_met);
+  BFT_FREE(_atmo_option.qw_met);
+  BFT_FREE(_atmo_option.ndrop_met);
+  BFT_FREE(_atmo_option.dpdt_met);
+  BFT_FREE(_atmo_option.mom_met);
+  BFT_FREE(_atmo_option.mom_cs);
 
   BFT_FREE(_atmo_option.rad_1d_xy);
   BFT_FREE(_atmo_option.rad_1d_z);
