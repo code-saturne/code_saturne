@@ -146,17 +146,12 @@ cs_user_physical_properties(cs_domain_t *domain)
       const cs_real_t rhop = 1.e4;     /* particle density */
 
       /* Get corresponding relaxation time (cpro_taup) */
-
-      char df_name[128]; df_name[127] = '\0';
-      snprintf(df_name, 127, "drift_tau_%s", f->name);
-
-      cpro_taup = cs_field_by_name(df_name)->val;
+      cpro_taup = cs_field_by_composite_name("drift_tau",f->name)->val;
 
       /* Corresponding interaction time particle--eddies */
 
       if (drift_flag & CS_DRIFT_SCALAR_TURBOPHORESIS) {
-        snprintf(df_name, 127, "drift_turb_tau_%s", f->name);
-        cpro_taufpt = cs_field_by_name(df_name)->val;
+        cpro_taufpt = cs_field_by_composite_name("drift_turb_tau", f->name)->val;
       }
 
       /* Computation of the relaxation time of the particles
@@ -165,7 +160,7 @@ cs_user_physical_properties(cs_domain_t *domain)
       const cs_real_t diamp2 = cs_math_pow2(diamp);
 
       if (diamp <= 1.e-6) {
-        /* Cuningham's correction for submicronic particules */
+        /* Cuningham's correction for submicronic particles */
         for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
           cpro_taup[c_id] =   cuning*diamp2*rhop / (18.*cpro_viscl[c_id]);
         }
