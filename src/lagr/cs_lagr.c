@@ -381,7 +381,7 @@ static cs_lagr_zone_data_t  *_volume_conditions = NULL;
  *============================================================================*/
 
 /* Pointers to global structures; some may be const-qualified in the future
-   to set to read-only ouside accessor functions, but this is not done
+   to set to read-only outside accessor functions, but this is not done
    at this stage, as the API is not yet stabilized */
 
 cs_lagr_time_scheme_t       *cs_glob_lagr_time_scheme = &_lagr_time_scheme;
@@ -837,7 +837,7 @@ cs_lagr_init_arrays(void)
 }
 
 /*----------------------------------------------------------------------------
- * Free lagrangian arrays
+ * Free Lagrangian arrays
  *----------------------------------------------------------------------------*/
 
 void
