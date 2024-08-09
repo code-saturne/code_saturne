@@ -422,6 +422,16 @@ typedef struct {
    * - CS_ATMO_SOIL_VEGETATION */
   cs_atmo_soil_meb_model_t soil_meb_model;
 
+  bool rain;
+  int cloud_type;
+  bool accretion;
+  bool autoconversion;
+  bool autocollection_cloud;
+  bool autocollection_rain;
+  bool precipitation;
+  bool evaporation;
+  bool rupture;
+
 } cs_atmo_option_t;
 
 /*----------------------------------------------------------------------------
@@ -547,6 +557,17 @@ extern cs_atmo_imbrication_t *cs_glob_atmo_imbrication;
 /*============================================================================
  * Public function definitions
  *============================================================================*/
+
+void
+cs_atmo_phyvar_update(void);
+
+void
+cs_atmo_source_term(int              f_id,
+                    cs_real_t        exp_st[],
+                    cs_real_t        imp_st[]);
+
+void
+cs_atmo_bcond(void);
 
 /*----------------------------------------------------------------------------*/
 /*!

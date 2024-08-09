@@ -99,6 +99,55 @@ cs_atmo_add_variable_fields(void)
   const int kscmin = cs_field_key_id("min_scalar_clipping");
   const int kscmax = cs_field_key_id("max_scalar_clipping");
 
+  cs_atmo_option_t *at_opt = cs_glob_atmo_option;
+  bool rain = at_opt->rain;
+
+  if (rain == true) {
+    cs_field_t *f;
+
+    /*Create the mass fraction of rain */
+    int f_id = cs_variable_field_create("ym_l_r",
+                                        "Mass frac rain",
+                                        CS_MESH_LOCATION_CELLS,
+                                        1);
+    f = cs_field_by_id(f_id);
+
+    /* Clipping of rain mass fraction 0 <= ym_l_r <=1 */
+    cs_field_set_key_double(f, kscmin, 0.e0);
+    cs_field_set_key_double(f, kscmax, 1.e0);
+
+    /* Add the rain mass fraction to the index of fields */
+    cs_add_model_field_indexes(f->id);
+
+    /* Equation parameters */
+    cs_equation_param_t *eqp = cs_field_get_equation_param(f);
+    /* Set beta limiter to maintain y_p in the limits */
+    eqp->isstpc = 2;
+    /* Full upwind scheme */
+    eqp->blencv = 0.0;
+
+
+    /* Create the concentration of rain droplets */
+    f_id = cs_variable_field_create("n_r",
+                                      "Number of rain drops",
+                                      CS_MESH_LOCATION_CELLS,
+                                      1);
+    f = cs_field_by_id(f_id);
+    eqp = cs_field_get_equation_param(f);
+
+    /* Clipping of rain mass fraction 0 <= ym_l_r <=1 */
+    cs_field_set_key_double(f, kscmin, 0.e0);
+    cs_field_set_key_double(f, kscmax, 1.e10);
+
+    /* Add the rain mass fraction to the index of fields */
+    cs_add_model_field_indexes(f->id);
+
+    /* Set beta limiter to maintain y_p in the limits */
+    eqp->isstpc = 2;
+    /* Full upwind scheme */
+    eqp->blencv = 0.0;
+  }
+
   cs_thermal_model_t *thermal = cs_get_glob_thermal_model();
 
   /* Add variables
@@ -240,6 +289,32 @@ cs_atmo_add_variable_fields(void)
 void
 cs_atmo_add_property_fields(void)
 {
+
+  cs_atmo_option_t *at_opt = cs_glob_atmo_option;
+  bool rain = at_opt->rain;
+
+  if (rain == true) {
+   {
+    cs_field_t *f;
+    int field_type = CS_FIELD_INTENSIVE | CS_FIELD_PROPERTY;
+    bool has_previous = false;
+    const int klbl   = cs_field_key_id("label");
+    const int keyvis = cs_field_key_id("post_vis");
+    const int keylog = cs_field_key_id("log");
+    const int post_flag = CS_POST_ON_LOCATION | CS_POST_MONITOR;
+
+    /* Continuous phase density (humid air) */
+    f = cs_field_create("rho_humid_air",
+                        field_type,
+                        CS_MESH_LOCATION_CELLS,
+                        1,
+                        has_previous);
+    cs_field_set_key_int(f, keyvis, post_flag);
+    cs_field_set_key_int(f, keylog, 1);
+    cs_field_set_key_str(f, klbl, "Density humid air");
+    }
+
+  }
   const int klbl   = cs_field_key_id("label");
   const int keyvis = cs_field_key_id("post_vis");
   const int keylog = cs_field_key_id("log");
@@ -315,7 +390,6 @@ cs_atmo_add_property_fields(void)
 
   /* Liquid water content HUMID */
   if (cs_glob_physical_model_flag[CS_ATMOSPHERIC] == CS_ATMO_HUMID) {
-    cs_atmo_option_t *at_opt = cs_glob_atmo_option;
 
     f = cs_field_by_name_try("liquid_water");
     cs_physical_property_define_from_field("liquid_water",

@@ -1241,6 +1241,10 @@ cs_solve_equation_scalar(cs_field_t        *f,
   /* Specific physical models; order 2 not handled. */
   if (cs_glob_physical_model_flag[CS_PHYSICAL_MODEL_FLAG] > 0) {
     cs_physical_model_source_terms(iscal, rhs, fimp);
+    cs_atmo_option_t *at_opt = cs_glob_atmo_option;
+    if (at_opt->rain == true){
+      cs_atmo_source_term(f->id, rhs, fimp);
+    }
 
     /*! Electric arcs, Joule effect ionic conduction */
     if (   cs_glob_physical_model_flag[CS_JOULE_EFFECT] > 0
@@ -1998,7 +2002,10 @@ cs_solve_equation_vector(cs_field_t       *f,
   /* Specific physical models; order 2 not handled */
 
   if (cs_glob_physical_model_flag[CS_PHYSICAL_MODEL_FLAG] > 0) {
-
+    cs_atmo_option_t *at_opt = cs_glob_atmo_option;
+    if (at_opt->rain == true){
+      cs_atmo_source_term(f->id, (cs_real_t *)rhs, (cs_real_t *)fimp);
+    }
     if (cs_glob_physical_model_flag[CS_COOLING_TOWERS] > 0)
       cs_ctwr_source_term(f->id, (cs_real_t *)rhs, (cs_real_t *)fimp);
 

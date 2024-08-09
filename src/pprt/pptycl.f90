@@ -111,6 +111,12 @@ interface
     implicit none
   end subroutine cs_ctwr_bcond
 
+  subroutine cs_atmo_bcond()  &
+    bind(C, name='cs_atmo_bcond')
+    use, intrinsic :: iso_c_binding
+    implicit none
+  end subroutine cs_atmo_bcond
+
 end interface
 
 !===============================================================================
@@ -181,6 +187,7 @@ call field_build_bc_codes_all(icodcl, rcodcl) ! Get map
 ! Atmospheric flows
 if (ippmod(iatmos).ge.0) then
   call attycl(itypfb, icodcl, rcodcl)
+  call cs_atmo_bcond()
 endif
 
 ! Cooling towers
