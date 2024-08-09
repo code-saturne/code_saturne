@@ -394,20 +394,22 @@ _rescale_flowrate(cs_lnum_t         n_points,
   cs_real_t area = 0., area_g = 0.;
   cs_real_t *density = CS_F_(rho)->val;
   const cs_mesh_t  *mesh = cs_glob_mesh;
-  const cs_mesh_quantities_t  *mesh_q = cs_glob_mesh_quantities;
+  const cs_mesh_quantities_t  *mq = cs_glob_mesh_quantities;
+
+  cs_real_3_t *b_face_u_normal = (cs_real_3_t * )mq->b_face_u_normal;
 
   for (point_id = 0; point_id < n_points; point_id++) {
 
-    cs_lnum_t b_face_id = face_ids[point_id];
-    cs_lnum_t cell_id = mesh->b_face_cells[b_face_id];
+    cs_lnum_t face_id = face_ids[point_id];
+    cs_lnum_t cell_id = mesh->b_face_cells[face_id];
 
     const cs_real_t *fluct = fluctuations[point_id];
-    const cs_real_t *normal = mesh_q->b_face_normal + b_face_id*3;
+    const cs_real_t *normal = mq->b_face_normal + face_id*3;
 
     cs_real_t dot_product = cs_math_3_dot_product(fluct, normal);
 
     mass_flow_rate += density[cell_id]*dot_product;
-    area = area + mesh_q->b_face_surf[b_face_id];
+    area = area + mq->b_face_surf[face_id];
 
   }
   mass_flow_rate_g = mass_flow_rate;
@@ -427,21 +429,18 @@ _rescale_flowrate(cs_lnum_t         n_points,
     /* (not valid for warped boundary faces) */
 
     int coo_id;
-    cs_lnum_t b_face_id = face_ids[point_id];
-    cs_lnum_t cell_id = mesh->b_face_cells[b_face_id];
+    cs_lnum_t face_id = face_ids[point_id];
+    cs_lnum_t cell_id = mesh->b_face_cells[face_id];
 
-    cs_lnum_t idx = mesh->b_face_vtx_idx[b_face_id];
+    cs_lnum_t idx = mesh->b_face_vtx_idx[face_id];
     cs_lnum_t vtx_id1 = mesh->b_face_vtx_lst[idx];
     cs_lnum_t vtx_id2 = mesh->b_face_vtx_lst[idx+1];
 
-    cs_real_t normal_unit[3], tangent_unit1[3], tangent_unit2[3];
+    cs_real_t tangent_unit1[3], tangent_unit2[3];
+
+    cs_real_t *normal_unit = b_face_u_normal[face_id];
 
     const cs_real_t *fluct = fluctuations[point_id];
-
-    for (coo_id = 0; coo_id < 3; coo_id++) {
-      normal_unit[coo_id] = mesh_q->b_face_normal[b_face_id*3 + coo_id];
-      normal_unit[coo_id] /= mesh_q->b_face_surf[b_face_id];
-    }
 
     for (coo_id = 0; coo_id < 3; coo_id++) {
       tangent_unit1[coo_id] = mesh->vtx_coord[3*vtx_id1 + coo_id]
@@ -456,7 +455,7 @@ _rescale_flowrate(cs_lnum_t         n_points,
     cs_real_t tangent_comp1 = cs_math_3_dot_product(fluct, tangent_unit1);
     cs_real_t tangent_comp2 = cs_math_3_dot_product(fluct, tangent_unit2);
 
-    /* Rescale the normal component and return in cartesian coordinates*/
+    /* Rescale the normal component and return in Cartesian coordinates*/
 
     normal_comp -= mass_flow_rate_g/(density[cell_id]*area_g);
 
@@ -1682,15 +1681,15 @@ cs_les_synthetic_eddy_method(cs_lnum_t           n_points,
   else{
     for (cs_lnum_t point_id = 0; point_id < n_points; point_id++) {
 
-      cs_lnum_t b_face_id = elt_ids[point_id];
-      cs_lnum_t cell_id = mesh->b_face_cells[b_face_id];
+      cs_lnum_t face_id = elt_ids[point_id];
+      cs_lnum_t cell_id = mesh->b_face_cells[face_id];
 
       for (cs_lnum_t coo_id = 0; coo_id < 3; coo_id++) {
 
         cs_real_t length_scale_min = -HUGE_VAL;
 
-        for (cs_lnum_t j = mesh->b_face_vtx_idx[b_face_id];
-             j < mesh->b_face_vtx_idx[b_face_id + 1];
+        for (cs_lnum_t j = mesh->b_face_vtx_idx[face_id];
+             j < mesh->b_face_vtx_idx[face_id + 1];
              j++) {
           cs_lnum_t vtx_id = mesh->b_face_vtx_lst[j];
           length_scale_min
