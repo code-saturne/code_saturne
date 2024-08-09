@@ -119,8 +119,7 @@ static cs_porosity_from_scan_opt_t _porosity_from_scan_opt = {
   .convection_porosity_threshold = 0.5,
   .porosity_threshold = 1e-12,
   .use_staircase = false,
-  .largest_eigenvalue_criteria = 1,
-  .largest_eigenvalues_sum_criteria = 0.95
+  .eigenvalue_criteria = 1e-3
 };
 
 /*============================================================================
@@ -153,8 +152,7 @@ cs_f_porosity_from_scan_get_pointer(bool  **compute_porosity_from_scan);
  *   elt_ids         <-- point to cell id
  *   n_points_cell   <-- number of points in cell
  *   cen_cell        <-- center of gravity of cell
- *   cen_points      <-- centroid of solid plane multiplied by n_points_cell
- *   cov_mat         --> incremental covariance matrix
+ *   mom_mat         --> incremental second moment matrix
  *----------------------------------------------------------------------------*/
 
 static void
@@ -164,8 +162,7 @@ _incremental_solid_plane_from_points(const cs_mesh_t   *m,
                                      const cs_real_t    n_points_cell[],
                                      const cs_real_t    cen_cell[][3],
                                      const cs_real_t    point_coords[][3],
-                                     const cs_real_t    cen_points[][3],
-                                     cs_real_t          cov_mat[][3][3])
+                                     cs_real_t          mom_mat[][3][3])
 {
   cs_real_33_t  *c, *d, *z, *t;
   BFT_MALLOC(c, m->n_cells, cs_real_33_t);
@@ -197,8 +194,7 @@ _incremental_solid_plane_from_points(const cs_mesh_t   *m,
 
       cs_real_t point_local[3];
       for (cs_lnum_t i = 0; i < 3; i++)
-        point_local[i] =   (point_coords[p_id][i] - cen_cell[c_id][i])
-                         - (cen_points[c_id][i] / n_points_cell[c_id]);
+        point_local[i] = (point_coords[p_id][i] - cen_cell[c_id][i]);
 
       // Kahan summation
       for (cs_lnum_t i = 0; i < 3; i++) {
@@ -222,7 +218,7 @@ _incremental_solid_plane_from_points(const cs_mesh_t   *m,
   for (cs_lnum_t c_id = 0; c_id < m->n_cells; c_id++) {
     for (cs_lnum_t i = 0; i < 3; i++)
       for (cs_lnum_t j = 0; j < 3; j++)
-          cov_mat[c_id][i][j] += d[c_id][i][j];
+          mom_mat[c_id][i][j] += d[c_id][i][j];
 
   } // Loop over cells
 
@@ -236,14 +232,16 @@ _incremental_solid_plane_from_points(const cs_mesh_t   *m,
  * parameters:
  *   m               <-- pointer to mesh
  *   n_points_cell   <-- number of points in cell
- *   cov_mat         <-- Covariance matrix of points in cell
+ *   cen_points      <-- mean points center
+ *   mom_mat         <-- second moment matrix of points in cell
  *   c_w_face_normal --> normal vector to the solid plane
  *----------------------------------------------------------------------------*/
 
 static void
 _solid_plane_from_points(const cs_mesh_t   *m,
                          const cs_real_t    n_points_cell[],
-                         const cs_real_t    cov_mat[][3][3],
+                         const cs_real_t    cen_points[][3],
+                         const cs_real_t    mom_mat[][3][3],
                          cs_real_t          c_w_face_normal[][3])
 {
   const cs_real_t threshold = _porosity_from_scan_opt.threshold;
@@ -261,39 +259,46 @@ _solid_plane_from_points(const cs_mesh_t   *m,
     }
 
     cs_real_t eig_val[3];
+    cs_real_t cv[3][3];
     cs_real_t eig_vec[3][3] = {{1.0, 0.0, 0.0},
                                {0.0, 1.0, 0.0},
                                {0.0, 0.0, 1.0}};
 
-    cs_math_33_eig_val_vec(cov_mat[c_id], tol_err, eig_val, eig_vec);
+    cs_real_t _cen_points[3] = {cen_points[c_id][0] / n_points_cell[c_id],
+                                cen_points[c_id][1] / n_points_cell[c_id],
+                                cen_points[c_id][2] / n_points_cell[c_id]};
 
-    /* Compute the trace of the covariance matrix i.e the sum of the
-       the eigen values */
+    for (cs_lnum_t i = 0; i < 3; i++) {
+      for (cs_lnum_t j = 0; j < 3; j++) {
+        cv[i][j] =   mom_mat[c_id][i][j] / n_points_cell[c_id]
+                   - _cen_points[i] * _cen_points[j];
+      }
+    }
 
-    cs_real_t trace = eig_val[0] + eig_val[1] + eig_val[2];
+    cs_real_t sq_len = cs_math_3_square_norm(_cen_points);
+    cs_real_t trace = cs_math_33_trace(cv);
 
-    /* Normalization of the eigen values (sum_i lambda_norm_i = 1.0) */
+    if (trace < cs_math_epzero * sq_len || sq_len <= 0.) {
+      /* if the points are concentrated on a single points, trace = 0. */
+      c_w_face_normal[c_id][0] = 0.;
+      c_w_face_normal[c_id][1] = 0.;
+      c_w_face_normal[c_id][2] = 0.;
+      continue;
+    }
 
-    eig_val[0] /= trace;
-    eig_val[1] /= trace;
-    eig_val[2] /= trace;
+    /* Normalization of coviance matrix */
 
-    /* Dominance criteria (eig_val[2] <= largest_eigenvalue_criteria).
-       If not, the largest eigenvalue dominates i.e the cloud of points
-       is spread over a single line.
+    for (cs_lnum_t i = 0; i < 3; i++)
+      for (cs_lnum_t j = 0; j < 3; j++)
+        cv[i][j] /= trace;
 
-       Plane criteria:
-       (eig_val[1] + eig_val[2] > largest_eigenvalues_sum_criteria).
-       In this case, the cloud of points is spread over two directions
-       and the normal vector to the plane is the eigen vector of the
-       smallest eigen value. */
+    cs_math_33_eig_val_vec(cv, tol_err, eig_val, eig_vec);
 
-    cs_real_t largest_eigenvalues_sum_criteria
-      =  _porosity_from_scan_opt.largest_eigenvalues_sum_criteria;
+    /* eigenvalue criteria (eig_val[1] > eigenvalue_criteria).
+       If the second eigenvalue is near zero, the cloud of points
+       is spread over a single line. */
 
-    if (   !(eig_val[2] > _porosity_from_scan_opt.largest_eigenvalue_criteria)
-         && (eig_val[1] + eig_val[2]) > largest_eigenvalues_sum_criteria) {
-
+    if (eig_val[1] > _porosity_from_scan_opt.eigenvalue_criteria) {
       c_w_face_normal[c_id][0] = eig_vec[0][0];
       c_w_face_normal[c_id][1] = eig_vec[1][0];
       c_w_face_normal[c_id][2] = eig_vec[2][0];
@@ -365,9 +370,9 @@ _prepare_porosity_from_scan(const cs_mesh_t             *m,
     (cs_real_t *)cs_field_by_name("solid_roughness")->val;
 
   /* Covariance matrix for solid plane computation */
-  cs_real_33_t *cov_mat;
-  BFT_MALLOC(cov_mat, m->n_cells, cs_real_33_t);
-  memset(cov_mat, 0., m->n_cells * sizeof(cs_real_33_t));
+  cs_real_33_t *mom_mat;
+  BFT_MALLOC(mom_mat, m->n_cells, cs_real_33_t);
+  memset(mom_mat, 0., m->n_cells * sizeof(cs_real_33_t));
 
   /* Loop on file_names */
   char *tok;
@@ -668,16 +673,15 @@ _prepare_porosity_from_scan(const cs_mesh_t             *m,
         }
       }
 
-      BFT_FREE(dist_colors);
-
       _incremental_solid_plane_from_points(m,
                                            n_points_dist,
                                            dist_loc,
                                            (const cs_real_t   *)f_nb_scan->val,
                                            (const cs_real_3_t *)mq->cell_cen,
                                            (const cs_real_3_t *)dist_coords,
-                                           (const cs_real_3_t *)cen_points,
-                                           cov_mat);
+                                           mom_mat);
+
+      BFT_FREE(dist_colors);
 
       /* Solid face roughness from point cloud is computed as the RMS of points
        *  distance to the reconstructed plane */
@@ -726,9 +730,12 @@ _prepare_porosity_from_scan(const cs_mesh_t             *m,
     = (cs_real_3_t *restrict)mq->c_w_face_normal;
 
   _solid_plane_from_points(m,
-                           (const cs_real_t *)f_nb_scan->val,
-                           cov_mat,
+                           f_nb_scan->val,
+                           (const cs_real_3_t *)cen_points,
+                           mom_mat,
                            c_w_face_normal);
+
+  /* Finalize the computation of points center in the global reference frame */
 
   for (cs_lnum_t c_id = 0; c_id < m->n_cells; c_id++) {
     if (f_nb_scan->val[c_id] > 0) {
@@ -741,7 +748,7 @@ _prepare_porosity_from_scan(const cs_mesh_t             *m,
   }
 
   /* Free memory */
-  BFT_FREE(cov_mat);
+  BFT_FREE(mom_mat);
   BFT_FREE(file_names);
 
   /* Parallel synchronisation */
