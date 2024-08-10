@@ -1577,8 +1577,8 @@ cs_turbulence_ke(int              phase_id,
 
     if (lag_st->ltsdyn == 1) {
 
-      cs_real_t *lag_st_k = lag_st->st_val + (lag_st->itske-1)*n_cells_ext;
-      cs_real_t *lag_st_i = lag_st->st_val + (lag_st->itsli-1)*n_cells_ext;
+      cs_real_t *lag_st_k = cs_field_by_name("lagr_st_k")->val;
+      cs_real_t *lag_st_i = cs_field_by_name("lagr_st_imp_velocity")->val;
 
 #     pragma omp parallel for if(n_cells_ext > CS_THR_MIN)
       for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {

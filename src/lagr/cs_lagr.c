@@ -149,8 +149,7 @@ const cs_lagr_const_dim_t *cs_glob_lagr_const_dim
 
 /* General dimensions */
 
-cs_lagr_dim_t _lagr_dim = {.ntersl = 0,
-                           .n_boundary_stats = 0};
+cs_lagr_dim_t _lagr_dim = {.n_boundary_stats = 0};
 
 cs_lagr_dim_t *cs_glob_lagr_dim = &_lagr_dim;
 
@@ -280,22 +279,16 @@ static cs_lagr_time_step_t _cs_glob_lagr_time_step
      .dtp = 0.,
      .ttclag = 0.};
 
-/* lagr source terms structure and associated pointer */
+/* Lagrangian source terms structure and associated pointer */
 static cs_lagr_source_terms_t _cs_glob_lagr_source_terms
   = {.ltsdyn = 0,
      .ltsmas = 0,
      .ltsthe = 0,
-     .itsli = 0,
-     .itske = 0,
-     .itste = 0,
-     .itsti = 0,
-     .itsmas = 0,
      .nstits = 0,
      .npts = 0,
      .ntxerr = 0,
      .vmax = 0,
-     .tmamax = 0,
-     .st_val = NULL};
+     .tmamax = 0};
 
 cs_lagr_source_terms_t *cs_glob_lagr_source_terms
 = &_cs_glob_lagr_source_terms;
@@ -812,7 +805,7 @@ _get_n_deleted(cs_lagr_particle_set_t  *p_set,
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
- * Initialize lagrangian arrays
+ * Initialize Lagrangian arrays
  *----------------------------------------------------------------------------*/
 
 void
@@ -826,14 +819,6 @@ cs_lagr_init_arrays(void)
   if (n_boundary_stats > 0)
     BFT_MALLOC(bound_stat, n_b_faces * n_boundary_stats, cs_real_t);
 
-  BFT_MALLOC(cs_glob_lagr_source_terms->st_val,
-             cs_glob_lagr_dim->ntersl * cs_glob_mesh->n_cells_with_ghosts,
-             cs_real_t);
-  for (cs_lnum_t i = 0; i < cs_glob_lagr_dim->ntersl; i++) {
-    cs_real_t *st =   cs_glob_lagr_source_terms->st_val
-                   + i*cs_glob_mesh->n_cells_with_ghosts;
-    cs_array_real_fill_zero(cs_glob_mesh->n_cells_with_ghosts, st);
-  }
 }
 
 /*----------------------------------------------------------------------------
@@ -854,8 +839,6 @@ cs_lagr_finalize(void)
   BFT_FREE(cs_glob_lagr_precipitation_model->solub);
 
   BFT_FREE(cs_glob_lagr_precipitation_model->mp_diss);
-
-  BFT_FREE(cs_glob_lagr_source_terms->st_val);
 
   /* geometry */
 

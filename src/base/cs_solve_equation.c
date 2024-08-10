@@ -1356,10 +1356,8 @@ cs_solve_equation_scalar(cs_field_t        *f,
     if (   is_thermal_model_field
         && (   th_model->thermal_variable == CS_THERMAL_MODEL_TEMPERATURE
             || th_model->thermal_variable == CS_THERMAL_MODEL_ENTHALPY)) {
-      const int itste = cs_glob_lagr_source_terms->itste - 1;
-      const int itsti = cs_glob_lagr_source_terms->itsti - 1;
-      cs_real_t *ste = cs_glob_lagr_source_terms->st_val + itste*n_cells_ext;
-      cs_real_t *sti = cs_glob_lagr_source_terms->st_val + itsti*n_cells_ext;
+      cs_real_t *ste = cs_field_by_name("lagr_st_temperature")->val;
+      cs_real_t *sti = cs_field_by_name("lagr_st_imp_temperature")->val;
       for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
         rhs[c_id] += ste[c_id];
         fimp[c_id] += xcpp[c_id]*cs_math_fmax(sti[c_id], 0.0);

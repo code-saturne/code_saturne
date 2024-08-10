@@ -98,35 +98,18 @@ cs_restart_lagrangian_checkpoint_read(void)
 
   cs_lagr_extra_module_t *extra = cs_glob_lagr_extra_module;
 
-  int nvplmx = 50+4*cs_glob_lagr_const_dim->nlayer;
-
-  typedef char cs_char_64_t[64];
-
   cs_lnum_t nfabor      = cs_glob_mesh->n_b_faces;
   cs_lnum_t ncel        = cs_glob_mesh->n_cells;
   cs_lnum_t n_cells_ext = cs_glob_mesh->n_cells_with_ghosts;
 
   /* Default initializations */
 
-  if (cs_glob_lagr_time_scheme->iilagr == CS_LAGR_TWOWAY_COUPLING) {
-
-    for (int ivar = 0; ivar < cs_glob_lagr_dim->ntersl; ivar++) {
-
-      cs_real_t *st_val = cs_glob_lagr_source_terms->st_val + ivar*n_cells_ext;
-
-      for (cs_lnum_t iel = 0; iel < ncel; iel++)
-        st_val[iel] = 0.;
-
-    }
-
-  }
-
   if (cs_glob_lagr_dim->n_boundary_stats > 0) {
 
-    for (cs_lnum_t ivar = 0; ivar < cs_glob_lagr_dim->n_boundary_stats; ivar++) {
+    for (cs_lnum_t var_id = 0; var_id < cs_glob_lagr_dim->n_boundary_stats; var_id++) {
 
       for (cs_lnum_t ifac = 0; ifac < nfabor; ifac++)
-        bound_stat[ifac + nfabor * ivar] = 0.0;
+        bound_stat[ifac + nfabor * var_id] = 0.0;
 
     }
 
@@ -134,10 +117,6 @@ cs_restart_lagrangian_checkpoint_read(void)
 
   if (cs_glob_lagr_time_scheme->isuila == 0)
     return;
-
-  cs_char_64_t *nomtsl = NULL;
-
-  BFT_MALLOC(nomtsl, nvplmx, cs_char_64_t);
 
   /* Read stats and ST restart file. */
 
@@ -576,68 +555,23 @@ cs_restart_lagrangian_checkpoint_read(void)
                cs_glob_lagr_source_terms->nstits, mstits);
         }
 
-        /* Assign labels to different ST for section names
-         * Same lable for keps, au v2f et au k-omega (same variable k)*/
-        if (cs_glob_lagr_source_terms->ltsdyn == 1) {
-
-          sprintf(nomtsl[cs_glob_lagr_source_terms->itsli],
-                  "terme_source_vitesse_implicite");
-
-          if (extra->itytur == 2 || extra->itytur == 4 ||
-              extra->itytur == 5 || extra->iturb == CS_TURB_K_OMEGA)
-            sprintf(nomtsl[cs_glob_lagr_source_terms->itske],
-                    "terme_source_turbulence_keps");
-
-        }
-
-        if (cs_glob_lagr_source_terms->ltsmas == 1)
-          sprintf(nomtsl[cs_glob_lagr_source_terms->itsmas], "terme_source_masse");
-
-        if (cs_glob_lagr_source_terms->ltsthe == 1) {
-
-          if (   cs_glob_lagr_model->physical_model == CS_LAGR_PHYS_HEAT
-              && cs_glob_lagr_specific_physics->itpvar == 1) {
-
-            sprintf(nomtsl[cs_glob_lagr_source_terms->itste],
-                    "terme_source_thermique_explicite");
-            sprintf(nomtsl[cs_glob_lagr_source_terms->itsti],
-                    "terme_source_thermique_implicite");
-
-          }
-          else if (cs_glob_lagr_model->physical_model == CS_LAGR_PHYS_COAL) {
-
-            sprintf(nomtsl[cs_glob_lagr_source_terms->itste],
-                    "terme_source_thermique_explicite");
-            sprintf(nomtsl[cs_glob_lagr_source_terms->itsti],
-                    "terme_source_thermique_implicite");
-
-          }
-
-          else if (cs_glob_lagr_model->physical_model == CS_LAGR_PHYS_CTWR) {
-            sprintf(nomtsl[cs_glob_lagr_source_terms->itste],
-                    "terme_source_thermique_explicite");
-            sprintf(nomtsl[cs_glob_lagr_source_terms->itsti],
-                    "terme_source_thermique_implicite");
-          }
-
-        }
-
-        /* Old style return coupling terms */
-
-        for (cs_lnum_t ivar = 0; ivar < cs_glob_lagr_dim->ntersl; ivar++) {
-
-          cs_real_t *st_val = cs_glob_lagr_source_terms->st_val + ivar*n_cells_ext;
-
-          cs_restart_read_section(lag_stat_restart,
-                                  nomtsl[ivar+1],
-                                  CS_MESH_LOCATION_CELLS,
-                                  1, CS_TYPE_cs_real_t, st_val);
-        }
-
-        /* New style return coupling terms */
+        /* Compatibility New style return coupling terms */
 
         {
-          cs_field_t *f = cs_field_by_name_try("velocity_st_lagr");
+          cs_field_t *f = cs_field_by_name_try("lagr_st_pressure");
+          if (f != NULL) {
+            cs_restart_read_section_compat(lag_stat_restart,
+                                          f->name,
+                                          "terme_source_masse",
+                                          f->location_id,
+                                          n_cells_ext,
+                                          CS_TYPE_cs_real_t,
+                                          f->vals);
+          }
+        }
+
+        {
+          cs_field_t *f = cs_field_by_name_try("lagr_st_velocity");
           if (f != NULL) {
             cs_restart_read_real_3_t_compat(lag_stat_restart,
                                             f->name,
@@ -648,9 +582,34 @@ cs_restart_lagrangian_checkpoint_read(void)
                                             (cs_real_3_t *)(f->vals));
           }
         }
+        {
+          cs_field_t *f = cs_field_by_name_try("lagr_st_imp_velocity");
+          if (f != NULL) {
+            cs_restart_read_section_compat(lag_stat_restart,
+                                          f->name,
+                                          "terme_source_vitesse_implicite",
+                                          f->location_id,
+                                          n_cells_ext,
+                                          CS_TYPE_cs_real_t,
+                                          f->vals);
+          }
+        }
 
         {
-          cs_field_t *f = cs_field_by_name_try("rij_st_lagr");
+          cs_field_t *f = cs_field_by_name_try("lagr_st_k");
+          if (f != NULL) {
+            cs_restart_read_section_compat(lag_stat_restart,
+                                          f->name,
+                                          "terme_source_turbulence_keps",
+                                          f->location_id,
+                                          n_cells_ext,
+                                          CS_TYPE_cs_real_t,
+                                          f->vals);
+          }
+        }
+
+        {
+          cs_field_t *f = cs_field_by_name_try("lagr_st_rij");
           if (f != NULL) {
             cs_restart_read_real_6_t_compat(lag_stat_restart,
                                             f->name,
@@ -664,6 +623,33 @@ cs_restart_lagrangian_checkpoint_read(void)
                                             (cs_real_6_t *)(f->vals));
           }
         }
+
+        {
+          cs_field_t *f = cs_field_by_name_try("lagr_st_temperature");
+          if (f != NULL) {
+            cs_restart_read_section_compat(lag_stat_restart,
+                                          f->name,
+                                          "terme_source_thermique_explicite",
+                                          f->location_id,
+                                          n_cells_ext,
+                                          CS_TYPE_cs_real_t,
+                                          f->vals);
+          }
+        }
+
+        {
+          cs_field_t *f = cs_field_by_name_try("lagr_st_imp_temperature");
+          if (f != NULL) {
+            cs_restart_read_section_compat(lag_stat_restart,
+                                          f->name,
+                                          "terme_source_thermique_implicite",
+                                          f->location_id,
+                                          n_cells_ext,
+                                          CS_TYPE_cs_real_t,
+                                          f->vals);
+          }
+        }
+
 
       }
 
@@ -684,7 +670,6 @@ cs_restart_lagrangian_checkpoint_read(void)
 
   cs_log_separator(CS_LOG_DEFAULT);
 
-  BFT_FREE(nomtsl);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1059,7 +1044,7 @@ cs_lagr_restart_read_p(void)
   /* Particle data */
   cs_lagr_restart_read_particle_data(lag_stat_restart);
 
-  cs_restart_read_fields(lag_stat_restart, CS_RESTART_LAGR);
+  (lag_stat_restart, CS_RESTART_LAGR);
 
   cs_log_printf(CS_LOG_DEFAULT,
                 _("    End reading particle data restart file\n"));
@@ -1081,14 +1066,6 @@ void
 cs_restart_lagrangian_checkpoint_write(void)
 {
   cs_lagr_extra_module_t *extra = cs_glob_lagr_extra_module;
-
-  int nvplmx = 50+4*cs_glob_lagr_const_dim->nlayer;
-
-  typedef char cs_char_64_t[64];
-
-  cs_char_64_t *nomtsl = NULL;
-
-  BFT_MALLOC(nomtsl, nvplmx, cs_char_64_t);
 
   /* Output restart file: variables related to particles */
   /*-----------------------------------------------------*/
@@ -1359,65 +1336,17 @@ cs_restart_lagrangian_checkpoint_write(void)
                                  1, CS_TYPE_int, tabvar);
       }
 
-      /* ST labels for section names */
-      /* Same label for keps, v2f and k-omega (save variable k) */
-      if (cs_glob_lagr_source_terms->ltsdyn == 1) {
-        sprintf(nomtsl[cs_glob_lagr_source_terms->itsli],
-                "terme_source_vitesse_implicite");
-        if (extra->itytur == 2 || extra->itytur == 4 ||
-            extra->itytur == 5 || extra->iturb == CS_TURB_K_OMEGA) {
-          sprintf(nomtsl[cs_glob_lagr_source_terms->itske],
-                  "terme_source_turbulence_keps");
-        }
-      }
-      if (cs_glob_lagr_source_terms->ltsmas == 1) {
-        sprintf(nomtsl[cs_glob_lagr_source_terms->itsmas],
-                "terme_source_masse");
-      }
-      if (cs_glob_lagr_source_terms->ltsthe == 1) {
-        if (   cs_glob_lagr_model->physical_model == CS_LAGR_PHYS_HEAT
-            && cs_glob_lagr_specific_physics->itpvar == 1) {
-          sprintf(nomtsl[cs_glob_lagr_source_terms->itste],
-                  "terme_source_thermique_explicite");
-          sprintf(nomtsl[cs_glob_lagr_source_terms->itsti],
-                  "terme_source_thermique_implicite");
-        }
-        else if (cs_glob_lagr_model->physical_model == CS_LAGR_PHYS_COAL) {
-          sprintf(nomtsl[cs_glob_lagr_source_terms->itste],
-                  "terme_source_thermique_explicite");
-          sprintf(nomtsl[cs_glob_lagr_source_terms->itsti],
-                  "terme_source_thermique_implicite");
-        }
-
-        else if (cs_glob_lagr_model->physical_model == CS_LAGR_PHYS_CTWR) {
-          sprintf(nomtsl[cs_glob_lagr_source_terms->itste],
-                  "terme_source_thermique_explicite");
-          sprintf(nomtsl[cs_glob_lagr_source_terms->itsti],
-                  "terme_source_thermique_implicite");
-        }
-      }
-
-      /* Old style return source terms */
-
-      const cs_lnum_t n_cells_ext = cs_glob_mesh->n_cells_with_ghosts;
-
-      for (int ii = 0; ii < cs_glob_lagr_dim->ntersl; ii++) {
-
-        cs_real_t *st_val = cs_glob_lagr_source_terms->st_val + ii*n_cells_ext;
-
-        cs_restart_write_section(lag_stat_restart, nomtsl[ii+1],
-                                 CS_MESH_LOCATION_CELLS,
-                                 1, CS_TYPE_cs_real_t,
-                                 st_val);
-
-      }
-
       /* New style return source terms */
 
-      const char *st_names[] = {"velocity_st_lagr",
-                                "rij_st_lagr"};
+      const char *st_names[] = {"lagr_st_pressure",
+                                "lagr_st_velocity",
+                                "lagr_st_imp_velocity",
+                                "lagr_st_rij",
+                                "lagr_st_k",
+                                "lagr_st_temperature",
+                                "lagr_st_imp_temperature"};
 
-      for (int st_id = 0; st_id < 2; st_id++) {
+      for (int st_id = 0; st_id < 4; st_id++) {
         cs_field_t *f = cs_field_by_name_try(st_names[st_id]);
         if (f != NULL)
           cs_restart_write_field_vals(lag_stat_restart, f->id, 0);
@@ -1438,7 +1367,6 @@ cs_restart_lagrangian_checkpoint_write(void)
 
   }
 
-  BFT_FREE(nomtsl);
 }
 
 /*----------------------------------------------------------------------------*/

@@ -2400,7 +2400,7 @@ _solve_epsilon(int              phase_id,
       && (cs_glob_lagr_source_terms->ltsdyn == 1)) {
 
     const cs_real_6_t *lagr_st_rij
-      = (const cs_real_6_t *)cs_field_by_name("rij_st_lagr")->val;
+      = (const cs_real_6_t *)cs_field_by_name("st_lagr_rij")->val;
 
 #   pragma omp parallel for if(n_cells_ext > CS_THR_MIN)
     for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
@@ -3106,17 +3106,15 @@ cs_turbulence_rij(int phase_id)
   if (   cs_glob_lagr_time_scheme->iilagr == CS_LAGR_TWOWAY_COUPLING
       && cs_glob_lagr_source_terms->ltsdyn == 1) {
     const cs_real_6_t *lagr_st_rij
-      = (const cs_real_6_t *)cs_field_by_name_try("rij_st_lagr")->val;
+      = (const cs_real_6_t *)cs_field_by_name_try("st_lagr_rij")->val;
 
-    const cs_lagr_source_terms_t  *lag_st = cs_glob_lagr_source_terms;
-    cs_real_t *tslagi = lag_st->st_val + (lag_st->itsli-1)*n_cells_ext;
+    cs_real_t *lag_st_i = cs_field_by_name("lagr_st_imp_velocity")->val;
 
 #   pragma omp parallel for if(n_cells > CS_THR_MIN)
     for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
       for (cs_lnum_t ii = 0; ii < 6; ii++) {
         smbrts[c_id][ii] += lagr_st_rij[c_id][ii];
-        rovsdtts[c_id][ii][ii] += cs_math_fmax(-tslagi[c_id],
-                                               cs_math_zero_threshold);
+        rovsdtts[c_id][ii][ii] += cs_math_fmax(-lag_st_i[c_id], 0.);
       }
     }
   }

@@ -48,6 +48,7 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
+#include "cs_array.h"
 #include "cs_base.h"
 #include "cs_math.h"
 #include "cs_mesh.h"
@@ -111,7 +112,7 @@ static const cs_lnum_t _t2v[3][3] = {{0, 3, 5},
  *          are computed as if nor == 1.
  *
  * \param[in]   taup    dynamic characteristic time
- * \param[in]   tempct  thermal charactersitic time
+ * \param[in]   tempct  thermal characteristic time
  * \param[out]  tsfext  external forces
  * \param[in]   cpgd1   devolatization term 1 for heterogeneous coal
  * \param[in]   cpgd2   devolatization term 2 for heterogeneous coal
@@ -127,21 +128,59 @@ cs_lagr_coupling(const cs_real_t  taup[],
                  const cs_real_t  cpgd2[],
                  const cs_real_t  cpght[])
 {
+  /*Note: t_* stands for temporary array, used in case of time moments */
+  cs_real_t *st_p = NULL, *t_st_p = NULL;
   cs_real_3_t *st_vel = NULL, *t_st_vel = NULL;
+  cs_real_t *st_imp_vel = NULL, *t_st_imp_vel = NULL;
   cs_real_6_t *st_rij = NULL, *t_st_rij = NULL;
+  cs_real_t *st_k = NULL, *t_st_k = NULL;
+  cs_real_t *st_t_e = NULL, *t_st_t_e = NULL;
+  cs_real_t *st_t_i = NULL, *t_st_t_i = NULL;
+
 
   /* Initialization
      ============== */
+
   {
-    cs_field_t *f = cs_field_by_name_try("velocity_st_lagr");
+    cs_field_t *f = cs_field_by_name_try("lagr_st_pressure");
+    if (f != NULL)
+      st_p = f->val;
+  }
+
+  {
+    cs_field_t *f = cs_field_by_name_try("lagr_st_velocity");
     if (f != NULL)
       st_vel = (cs_real_3_t *)(f->val);
   }
 
   {
-    cs_field_t *f = cs_field_by_name_try("rij_st_lagr");
+    cs_field_t *f = cs_field_by_name_try("lagr_st_imp_velocity");
+    if (f != NULL)
+      st_imp_vel = f->val;
+  }
+
+  {
+    cs_field_t *f = cs_field_by_name_try("lagr_st_rij");
     if (f != NULL)
       st_rij = (cs_real_6_t *)(f->val);
+  }
+
+  {
+    cs_field_t *f = cs_field_by_name_try("lagr_st_k");
+    if (f != NULL)
+      st_k = f->val;
+  }
+
+  {
+    cs_field_t *f = cs_field_by_name_try("lagr_st_temperature");
+    if (f != NULL)
+      st_t_e = f->val;
+  }
+
+  {
+    cs_field_t *f = cs_field_by_name_try("lagr_st_imp_temperature");
+    if (f != NULL)
+      st_t_i = f->val;
   }
 
   cs_lagr_extra_module_t *extra = cs_glob_lagr_extra_module;
@@ -154,27 +193,26 @@ cs_lagr_coupling(const cs_real_t  taup[],
   cs_lagr_particle_set_t  *p_set = cs_glob_lagr_particle_set;
   const cs_lagr_attribute_map_t  *p_am = p_set->p_am;
 
-  cs_lnum_t ncelet = cs_glob_mesh->n_cells_with_ghosts;
+  cs_lnum_t n_cells_ext = cs_glob_mesh->n_cells_with_ghosts;
   cs_lnum_t ncel = cs_glob_mesh->n_cells;
   cs_lnum_t nbpart = p_set->n_particles;
 
   cs_real_t dtp = cs_glob_lagr_time_step->dtp;
 
-  cs_lnum_t ntersl = cs_glob_lagr_dim->ntersl;
-
-  cs_real_t *tslag;
   cs_real_3_t *auxl;
-  BFT_MALLOC(tslag, ncelet * ntersl, cs_real_t);
   BFT_MALLOC(auxl, nbpart, cs_real_3_t);
 
   /* Number of passes for steady source terms */
   if (   cs_glob_lagr_time_scheme->isttio == 1
-      && cs_glob_time_step->nt_cur >= cs_glob_lagr_source_terms->nstits)
+      && cs_glob_time_step->nt_cur >= lag_st->nstits)
     lag_st->npts += 1;
 
-  cs_glob_lagr_source_terms->ntxerr = 0;
-  cs_glob_lagr_source_terms->vmax = 0.0;
-  cs_glob_lagr_source_terms->tmamax = 0.0;
+  bool is_time_averaged = (   cs_glob_lagr_time_scheme->isttio == 1
+                           && lag_st->npts > 0);
+
+  lag_st->ntxerr = 0;
+  lag_st->vmax = 0.0;
+  lag_st->tmamax = 0.0;
 
   cs_real_t *volp = NULL, *volm = NULL;
   BFT_MALLOC(volp, ncel, cs_real_t);
@@ -182,13 +220,6 @@ cs_lagr_coupling(const cs_real_t  taup[],
   for (cs_lnum_t c_id = 0; c_id < ncel; c_id++) {
     volp[c_id] = 0.0;
     volm[c_id] = 0.0;
-  }
-
-  for (cs_lnum_t ivar = 0; ivar < ntersl; ivar++) {
-
-    for (cs_lnum_t c_id = 0; c_id < ncel; c_id++)
-      tslag[ncelet * ivar + c_id]  = 0.0;
-
   }
 
   /* Preliminary computations
@@ -233,17 +264,19 @@ cs_lagr_coupling(const cs_real_t  taup[],
   /* Momentum source terms
      ===================== */
 
-  if (cs_glob_lagr_source_terms->ltsdyn == 1) {
+  if (lag_st->ltsdyn == 1) {
 
-    if (cs_glob_lagr_time_scheme->isttio == 1 && lag_st->npts > 0)
-      BFT_MALLOC(t_st_vel, ncel, cs_real_3_t);
-    else
-      t_st_vel = st_vel;
-
-    for (cs_lnum_t c_id = 0; c_id < ncel; c_id++) {
-      for (cs_lnum_t j = 0; j < 3; j++)
-        t_st_vel[c_id][j] = 0;
+    if (is_time_averaged) {
+      BFT_MALLOC(t_st_vel, n_cells_ext, cs_real_3_t);
+      BFT_MALLOC(t_st_imp_vel, n_cells_ext, cs_real_t);
     }
+    else {
+      t_st_vel = st_vel;
+      t_st_imp_vel = st_imp_vel;
+    }
+
+    cs_array_real_fill_zero(3 * n_cells_ext, (cs_real_t *) t_st_vel);
+    cs_array_real_fill_zero(n_cells_ext,  t_st_imp_vel);
 
     for (cs_lnum_t p_id = 0; p_id < nbpart; p_id++) {
 
@@ -269,20 +302,28 @@ cs_lagr_coupling(const cs_real_t  taup[],
       for (cs_lnum_t i = 0; i < 3; i++)
         t_st_vel[c_id][i] -= auxl[p_id][i];
 
-      tslag[c_id + (lag_st->itsli-1) * ncelet]
-        -= 2.0 * p_stat_w * p_mass / taup[p_id];
+      t_st_imp_vel[c_id] -= 2.0 * p_stat_w * p_mass / taup[p_id];
 
     }
 
   /* Turbulence source terms
      ======================= */
 
+    cs_real_3_t *vel = (cs_real_3_t *)extra->vel->val;
+
     if (extra->itytur == 2 || extra->itytur == 4 ||
         extra->itytur == 5 || extra->iturb == CS_TURB_K_OMEGA) {
 
       /* In v2f the Lagrangian STs only influence k and epsilon
          (difficult to write something for v2, which loses its meaning as
-         "Rij comonent") */
+         "Rij component") */
+
+      if (is_time_averaged)
+        BFT_MALLOC(t_st_k, n_cells_ext, cs_real_t);
+      else
+        t_st_k = st_k;
+
+      cs_array_real_fill_zero(n_cells_ext, t_st_k);
 
       for (cs_lnum_t p_id = 0; p_id < nbpart; p_id++) {
 
@@ -300,29 +341,22 @@ cs_lagr_coupling(const cs_real_t  taup[],
           0.5 * (prev_f_vel[1] + f_vel[1]),
           0.5 * (prev_f_vel[2] + f_vel[2])};
 
-        tslag[c_id + (lag_st->itske-1) * ncelet] -=
-          cs_math_3_dot_product(vel_s, auxl[p_id]);
+        t_st_k[c_id] -= cs_math_3_dot_product(vel_s, auxl[p_id]);
 
       }
 
       for (cs_lnum_t c_id = 0; c_id < ncel; c_id++)
-        tslag[c_id + (lag_st->itske-1) * ncelet]
-          += - extra->vel->val[c_id * 3    ] * t_st_vel[c_id][0]
-             - extra->vel->val[c_id * 3 + 1] * t_st_vel[c_id][1]
-             - extra->vel->val[c_id * 3 + 2] * t_st_vel[c_id][2];
+        t_st_k[c_id] -= cs_math_3_dot_product(vel[c_id], t_st_vel[c_id]);
 
     }
     else if (extra->itytur == 3) {
 
-      if (cs_glob_lagr_time_scheme->isttio == 1 && lag_st->npts > 0)
-        BFT_MALLOC(t_st_rij, ncel, cs_real_6_t);
+      if (is_time_averaged)
+        BFT_MALLOC(t_st_rij, n_cells_ext, cs_real_6_t);
       else
         t_st_rij = st_rij;
 
-      for (cs_lnum_t i = 0; i < ncel; i++) {
-        for (cs_lnum_t j = 0; j < 6; j++)
-          t_st_rij[i][j] = 0;
-      }
+      cs_array_real_fill_zero(n_cells_ext * 6, (cs_real_t *)t_st_rij);
 
       for (cs_lnum_t p_id = 0; p_id < nbpart; p_id++) {
 
@@ -353,25 +387,14 @@ cs_lagr_coupling(const cs_real_t  taup[],
 
       }
       for (cs_lnum_t c_id = 0; c_id < ncel; c_id++) {
+        for (cs_lnum_t ij = 0; ij < 6; ij++) {
+          cs_lnum_t i = _iv2t[ij];
+          cs_lnum_t j = _jv2t[ij];
 
-        t_st_rij[c_id][0] += - 2.0 * extra->vel->val[c_id * 3    ]
-                                  * t_st_vel[c_id][0];
+          t_st_rij[c_id][ij] -= ( vel[c_id][i] * t_st_vel[c_id][j]
+                                + vel[c_id][j] * t_st_vel[c_id][i]);
 
-        t_st_rij[c_id][1] += - 2.0 * extra->vel->val[c_id * 3 + 1]
-                                  * t_st_vel[c_id][1];
-
-        t_st_rij[c_id][2] += - 2.0 * extra->vel->val[c_id * 3 + 2]
-                                  * t_st_vel[c_id][2];
-
-        t_st_rij[c_id][3] += - extra->vel->val[c_id * 3    ] * t_st_vel[c_id][1]
-                            - extra->vel->val[c_id * 3 + 1] * t_st_vel[c_id][0];
-
-        t_st_rij[c_id][4] += - extra->vel->val[c_id * 3 + 1] * t_st_vel[c_id][2]
-                            - extra->vel->val[c_id * 3 + 2] * t_st_vel[c_id][1];
-
-        t_st_rij[c_id][5] += - extra->vel->val[c_id * 3    ] * t_st_vel[c_id][2]
-                            - extra->vel->val[c_id * 3 + 2] * t_st_vel[c_id][0];
-
+        }
       }
 
     }
@@ -381,10 +404,17 @@ cs_lagr_coupling(const cs_real_t  taup[],
   /* Mass source terms
      ================= */
 
-  if (    cs_glob_lagr_source_terms->ltsmas == 1
+  if (    lag_st->ltsmas == 1
       && (   cs_glob_lagr_specific_physics->impvar == 1
           || cs_glob_lagr_specific_physics->idpvar == 1
           || cs_glob_lagr_model->physical_model == CS_LAGR_PHYS_CTWR )) {
+
+    if (is_time_averaged)
+      BFT_MALLOC(t_st_p, n_cells_ext, cs_real_t);
+    else
+      t_st_p = st_p;
+
+    cs_array_real_fill_zero(n_cells_ext, t_st_p);
 
     for (cs_lnum_t p_id = 0; p_id < nbpart; p_id++) {
 
@@ -401,8 +431,7 @@ cs_lagr_coupling(const cs_real_t  taup[],
       cs_lnum_t cell_id = cs_lagr_particle_get_lnum(particle, p_am,
                                                     CS_LAGR_CELL_ID);
 
-      tslag[cell_id + (lag_st->itsmas-1) * ncelet]
-        += - p_stat_w * (p_mass - prev_p_mass) / dtp;
+      t_st_p[cell_id] += - p_stat_w * (p_mass - prev_p_mass) / dtp;
 
     }
 
@@ -411,10 +440,22 @@ cs_lagr_coupling(const cs_real_t  taup[],
   /* Thermal source terms
      ==================== */
 
-  if (cs_glob_lagr_source_terms->ltsthe == 1) {
+  if (lag_st->ltsthe == 1) {
 
     if (   cs_glob_lagr_model->physical_model == CS_LAGR_PHYS_HEAT
         && cs_glob_lagr_specific_physics->itpvar == 1) {
+
+      if (is_time_averaged) {
+        BFT_MALLOC(t_st_t_e, n_cells_ext, cs_real_t);
+        BFT_MALLOC(t_st_t_i, n_cells_ext, cs_real_t);
+      }
+      else {
+        t_st_t_e = st_t_e;
+        t_st_t_i = st_t_i;
+      }
+
+      cs_array_real_fill_zero(n_cells_ext, t_st_t_e);
+      cs_array_real_fill_zero(n_cells_ext, t_st_t_i);
 
       for (cs_lnum_t p_id = 0; p_id < nbpart; p_id++) {
 
@@ -436,11 +477,10 @@ cs_lagr_coupling(const cs_real_t  taup[],
         cs_real_t  p_stat_w = cs_lagr_particle_get_real(particle, p_am,
                                                         CS_LAGR_STAT_WEIGHT);
 
-        tslag[c_id + (lag_st->itste-1) * ncelet]
-          += - (p_mass * p_tmp * p_cp
-             - prev_p_mass * prev_p_tmp * prev_p_cp) / dtp * p_stat_w;
-        tslag[c_id + (lag_st->itsti-1) * ncelet]
-          += tempct[nbpart + p_id] * p_stat_w;
+        t_st_t_e[c_id] += - (p_mass * p_tmp * p_cp
+                            - prev_p_mass * prev_p_tmp * prev_p_cp
+                            ) / dtp * p_stat_w;
+        t_st_t_i[c_id] += tempct[nbpart + p_id] * p_stat_w;
 
       }
       if (extra->radiative_model > 0) {
@@ -463,7 +503,7 @@ cs_lagr_coupling(const cs_real_t  taup[],
                           * (extra->rad_energy->val[c_id]
                              - 4.0 * _c_stephan * cs_math_pow4(p_tmp));
 
-          tslag[c_id + (lag_st->itste-1) * ncelet] += aux1 * p_stat_w;
+          t_st_t_e[c_id] += aux1 * p_stat_w;
 
         }
 
@@ -476,6 +516,18 @@ cs_lagr_coupling(const cs_real_t  taup[],
                   _("Thermal coupling not implemented in multi-layer case"));
 
       else {
+
+        if (is_time_averaged) {
+          BFT_MALLOC(t_st_t_e, n_cells_ext, cs_real_t);
+          BFT_MALLOC(t_st_t_i, n_cells_ext, cs_real_t);
+        }
+        else {
+          t_st_t_e = st_t_e;
+          t_st_t_i = st_t_i;
+        }
+
+        cs_array_real_fill_zero(n_cells_ext, t_st_t_e);
+        cs_array_real_fill_zero(n_cells_ext, t_st_t_i);
 
         for (cs_lnum_t p_id = 0; p_id < nbpart; p_id++) {
 
@@ -501,11 +553,10 @@ cs_lagr_coupling(const cs_real_t  taup[],
           cs_real_t  p_stat_w = cs_lagr_particle_get_real
                                   (particle, p_am, CS_LAGR_STAT_WEIGHT);
 
-          tslag[c_id + (lag_st->itste-1) * ncelet]
-            += - (  p_mass * p_tmp * p_cp
-               - prev_p_mass * prev_p_tmp * prev_p_cp) / dtp * p_stat_w;
-          tslag[c_id + (lag_st->itsti-1) * ncelet]
-            += tempct[nbpart + p_id] * p_stat_w;
+          t_st_t_e[c_id] += - (  p_mass * p_tmp * p_cp
+                              - prev_p_mass * prev_p_tmp * prev_p_cp
+                              ) / dtp * p_stat_w;
+          t_st_t_i[c_id] += tempct[nbpart + p_id] * p_stat_w;
 
         }
 
@@ -513,6 +564,18 @@ cs_lagr_coupling(const cs_real_t  taup[],
 
     }
     else if (cs_glob_lagr_model->physical_model == CS_LAGR_PHYS_CTWR) {
+
+      if (is_time_averaged) {
+        BFT_MALLOC(t_st_t_e, n_cells_ext, cs_real_t);
+        BFT_MALLOC(t_st_t_i, n_cells_ext, cs_real_t);
+      }
+      else {
+        t_st_t_e = st_t_e;
+        t_st_t_i = st_t_i;
+      }
+
+      cs_array_real_fill_zero(n_cells_ext, t_st_t_e);
+      cs_array_real_fill_zero(n_cells_ext, t_st_t_i);
 
       for (cs_lnum_t p_id = 0; p_id < nbpart; p_id++) {
 
@@ -538,11 +601,10 @@ cs_lagr_coupling(const cs_real_t  taup[],
         cs_real_t  p_stat_w = cs_lagr_particle_get_real
                                 (particle, p_am, CS_LAGR_STAT_WEIGHT);
 
-        tslag[c_id + (lag_st->itste-1) * ncelet]
-          += - (  p_mass * p_tmp * p_cp
-             - prev_p_mass * prev_p_tmp * prev_p_cp) / dtp * p_stat_w;
-        tslag[c_id + (lag_st->itsti-1) * ncelet]
-          += tempct[nbpart + p_id] * p_stat_w;
+        t_st_t_e[c_id] += - (  p_mass * p_tmp * p_cp
+                             - prev_p_mass * prev_p_tmp * prev_p_cp
+                             ) / dtp * p_stat_w;
+        t_st_t_i[c_id] += tempct[nbpart + p_id] * p_stat_w;
 
       }
 
@@ -554,7 +616,6 @@ cs_lagr_coupling(const cs_real_t  taup[],
      is not exceeded in some cells.
      ============================================================== */
 
-  cs_real_t *st_val = cs_glob_lagr_source_terms->st_val; /* short alias */
 
   const cs_real_t tvmax = 0.8;
   const cs_real_t *cell_vol = cs_glob_mesh_quantities->cell_vol;
@@ -566,44 +627,53 @@ cs_lagr_coupling(const cs_real_t  taup[],
     cs_real_t taum = volm[c_id] / mf;
 
     if (tauv > tvmax) {
+      lag_st->ntxerr++;
 
-      cs_glob_lagr_source_terms->ntxerr++;;
-
-      for (int ivar = 0; ivar < ntersl; ivar++)
-        st_val[c_id + ivar * ncelet] = 0.0;
+      /* Note: it was not temporary array but directly st_val.
+       * By consistency with st_vel, we put temporary array. */
+      if (t_st_p != NULL)
+        t_st_p[c_id] = 0.0;
 
       if (t_st_vel != NULL) {
         for (cs_lnum_t j = 0; j < 3; j++)
           t_st_vel[c_id][j] = 0.0;
       }
 
+      if (t_st_imp_vel != NULL)
+        t_st_imp_vel[c_id] = 0.0;
+
+      if (t_st_k != NULL)
+        t_st_k[c_id] = 0.0;
+
       if (t_st_rij != NULL) {
         for (cs_lnum_t j = 0; j < 6; j++)
           t_st_rij[c_id][j] = 0.0;
       }
 
+      if (t_st_t_e != NULL)
+        t_st_t_e[c_id] = 0.0;
+
+      if (t_st_t_i != NULL)
+        t_st_t_i[c_id] = 0.0;
+
     }
 
-    cs_glob_lagr_source_terms->vmax
-      = CS_MAX(tauv, cs_glob_lagr_source_terms->vmax);
-    cs_glob_lagr_source_terms->tmamax
-      = CS_MAX(taum, cs_glob_lagr_source_terms->tmamax);
+    lag_st->vmax = CS_MAX(tauv, lag_st->vmax);
+    lag_st->tmamax = CS_MAX(taum, lag_st->tmamax);
 
   }
 
   /* Time average of source terms
      ============================ */
 
-  if (cs_glob_lagr_time_scheme->isttio == 1 && lag_st->npts > 0) {
+  if (is_time_averaged) {
 
-    for (int ivar = 0; ivar < ntersl; ivar++) {
-
-      for (cs_lnum_t c_id = 0; c_id < ncel; c_id++)
-        st_val[c_id + ivar * ncelet]
-          =  (  tslag[c_id + ncelet * ivar]
-              + (lag_st->npts - 1.0) * st_val[c_id + ncelet * ivar])
-            / lag_st->npts;
-
+    if (st_p != NULL) {
+      for (cs_lnum_t c_id = 0; c_id < ncel; c_id++) {
+        st_p[c_id]
+          = (t_st_p[c_id] + (lag_st->npts - 1.0) * st_p[c_id])
+          / lag_st->npts;
+      }
     }
 
     if (st_vel != NULL) {
@@ -613,6 +683,22 @@ cs_lagr_coupling(const cs_real_t  taup[],
             =    (t_st_vel[c_id][j] + (lag_st->npts - 1.0) * st_vel[c_id][j])
                / lag_st->npts;
         }
+      }
+    }
+
+    if (st_imp_vel != NULL) {
+      for (cs_lnum_t c_id = 0; c_id < ncel; c_id++) {
+        st_imp_vel[c_id]
+          = (t_st_imp_vel[c_id] + (lag_st->npts - 1.0) * st_imp_vel[c_id])
+          / lag_st->npts;
+      }
+    }
+
+    if (st_k != NULL) {
+      for (cs_lnum_t c_id = 0; c_id < ncel; c_id++) {
+        st_k[c_id]
+          = (t_st_k[c_id] + (lag_st->npts - 1.0) * st_k[c_id])
+          / lag_st->npts;
       }
     }
 
@@ -626,27 +712,49 @@ cs_lagr_coupling(const cs_real_t  taup[],
       }
     }
 
-  }
-  else {
+    if (st_t_e != NULL) {
+      for (cs_lnum_t c_id = 0; c_id < ncel; c_id++) {
+        st_t_e[c_id]
+          = (t_st_t_e[c_id] + (lag_st->npts - 1.0) * st_t_e[c_id])
+          / lag_st->npts;
+      }
+    }
 
-    for (int ivar = 0; ivar < ntersl; ivar++) {
-      for (cs_lnum_t c_id = 0; c_id < ncel; c_id++)
-        st_val[c_id + ncelet * ivar] = tslag[c_id + ncelet * ivar];
+    if (st_t_i != NULL) {
+      for (cs_lnum_t c_id = 0; c_id < ncel; c_id++) {
+        st_t_i[c_id]
+          = (t_st_t_i[c_id] + (lag_st->npts - 1.0) * st_t_i[c_id])
+          / lag_st->npts;
+      }
     }
 
   }
 
+  if (t_st_p != st_p)
+    BFT_FREE(t_st_p);
+
   if (t_st_vel != st_vel)
     BFT_FREE(t_st_vel);
 
+  if (t_st_imp_vel != st_imp_vel)
+    BFT_FREE(t_st_imp_vel);
+
+  if (t_st_k != st_k)
+    BFT_FREE(t_st_k);
+
   if (t_st_rij != st_rij)
     BFT_FREE(t_st_rij);
+
+  if (t_st_t_e != st_t_e)
+    BFT_FREE(t_st_t_e);
+
+  if (t_st_t_i != st_t_i)
+    BFT_FREE(t_st_t_i);
 
   BFT_FREE(volp);
   BFT_FREE(volm);
 
   BFT_FREE(auxl);
-  BFT_FREE(tslag);
 }
 
 /*----------------------------------------------------------------------------*/

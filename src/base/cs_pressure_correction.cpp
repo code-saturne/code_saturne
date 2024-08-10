@@ -1967,8 +1967,7 @@ _pressure_correction_fv(int                   iterns,
 
     const cs_lagr_source_terms_t  *lag_st = cs_glob_lagr_source_terms;
 
-    cs_lnum_t itsmas = cs_glob_lagr_source_terms->itsmas;
-    cs_real_t *lag_st_m = lag_st->st_val + (itsmas-1)*n_cells_ext;
+    cs_real_t *lag_st_m = cs_field_by_name("lagr_st_pressure")->val;
 
     ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
       cpro_divu[c_id] -= lag_st_m[c_id];

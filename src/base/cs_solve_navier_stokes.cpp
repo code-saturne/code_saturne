@@ -3072,18 +3072,17 @@ _velocity_prediction(const cs_mesh_t             *m,
       && cs_glob_lagr_time_scheme->iilagr == CS_LAGR_TWOWAY_COUPLING) {
 
     const cs_real_3_t *lagr_st_vel
-      = (const cs_real_3_t *)cs_field_by_name_try("velocity_st_lagr")->val;
+      = (const cs_real_3_t *)cs_field_by_name("lagr_st_velocity")->val;
 
     cs_axpy(n_cells*3, 1, (const cs_real_t *)lagr_st_vel, (cs_real_t *)smbr);
 
     if (iappel == 1) {
-      const cs_lnum_t itsli = cs_glob_lagr_source_terms->itsli;
-      cs_real_t *st_val =   cs_glob_lagr_source_terms->st_val
-                          + (itsli-1)*n_cells_ext;
+      const cs_real_t *lagr_st_imp_vel
+        = cs_field_by_name("lagr_st_imp_velocity")->val;
 
 #     pragma omp parallel for if (n_cells > CS_THR_MIN)
       for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-        cs_real_t st = cs_math_fmax(-st_val[c_id], 0.0);
+        cs_real_t st = cs_math_fmax(-lagr_st_imp_vel[c_id], 0.0);
         for (cs_lnum_t ii = 0; ii < 3; ii++)
           fimp[c_id][ii][ii] += st;
       }
@@ -4304,14 +4303,6 @@ cs_solve_navier_stokes(const int        iterns,
         cs_mesh_sync_var_vect((cs_real_t *)dfrcxt);
 
         /* Resize other arrays, depending on user options */
-
-        if (   cs_glob_lagr_time_scheme->iilagr != CS_LAGR_OFF
-            && cs_glob_lagr_dim->ntersl > 0) {
-          _resize_non_interleaved_cell_arrays
-            (m,
-             cs_glob_lagr_dim->ntersl,
-             &(cs_glob_lagr_source_terms->st_val));
-        }
 
         if (vp_param->iphydr == 1)
           frcxt = (cs_real_3_t *)cs_field_by_name("volume_forces")->val;

@@ -1179,11 +1179,10 @@ cs_ctwr_source_term(int              f_id,
 
       cs_lnum_t ncelet  = cs_glob_mesh->n_cells_with_ghosts;
       cs_lnum_t ncel    = cs_glob_mesh->n_cells;
-      cs_real_t *st_val = cs_glob_lagr_source_terms->st_val;
-      cs_lagr_source_terms_t *lag_st = cs_glob_lagr_source_terms;
 
-      /* verifying if a mass source term is activated in the lagrangian module*/
+      /* verifying if a mass source term is activated in the Lagrangian module*/
       if (cs_glob_lagr_source_terms->ltsmas == 1) {
+        cs_real_t *lag_st_m = cs_field_by_name("lagr_st_pressure")->val;
         for (cs_lnum_t cell_id = 0; cell_id < ncel; cell_id++) {
           /* Since there is only evaporation accounting for a liquid - gas phase
              mass transfer, the transferred must be water vapor -> ym_w*/
@@ -1194,7 +1193,9 @@ cs_ctwr_source_term(int              f_id,
                the cs_lagr_sde_model.c
                subroutine, since the mass transfer rate has been calculated as
                a function of the local humidity (and thus ym_w)*/
-            exp_st[cell_id] += st_val[cell_id + (lag_st->itsmas-1) * ncelet];
+            // FIXME it is kept as it was coded but the mass source terms must
+            // be written on mass equation and not on ym_w
+            exp_st[cell_id] += lag_st_m[cell_id];
           }
         }
       }

@@ -876,41 +876,26 @@ cs_lagr_options_definition(int         is_restart,
   /* Definition of pointers related to Lagrangian source terms
      for return coupling. */
 
-  irf = 0;
-
-  lagdim->ntersl = 0;
-  cs_glob_lagr_source_terms->itsli  = 0;
-  cs_glob_lagr_source_terms->itske  = 0;
-  cs_glob_lagr_source_terms->itsmas = 0;
-  cs_glob_lagr_source_terms->itste  = 0;
-  cs_glob_lagr_source_terms->itsti  = 0;
-  cs_glob_lagr_source_terms->itshum = 0;
+  irf = -1;
 
   /* Dynamics: velocity + turbulence */
   if (cs_glob_lagr_source_terms->ltsdyn == 1) {
 
-    _define_st_field("velocity_st_lagr", 3);
+    _define_st_field("lagr_st_velocity", 3);
 
-    lagdim->ntersl += 1;
-    cs_glob_lagr_source_terms->itsli = ++irf;
+    _define_st_field("lagr_st_imp_velocity", 1);
 
+    /* K-eps, LES, v2f and k-omega */
     if (   extra->itytur == 2
         || extra->itytur == 4
         || extra->itytur == 5
-        || extra->iturb == CS_TURB_K_OMEGA) {
+        || extra->iturb == CS_TURB_K_OMEGA)
+      _define_st_field("lagr_st_k", 1);
 
-      /* K-eps, LES, v2f and k-omega */
-      lagdim->ntersl += 1;
-      cs_glob_lagr_source_terms->itske = ++irf;
+    /* Rij */
+    else if (extra->itytur == 3)
+      _define_st_field("lagr_st_rij", 6);
 
-    }
-    else if (extra->itytur == 3) {
-
-      /* RIJ */
-
-      _define_st_field("rij_st_lagr", 6);
-
-    }
     else
       cs_parameters_error
         (CS_ABORT_IMMEDIATE,
@@ -933,52 +918,24 @@ cs_lagr_options_definition(int         is_restart,
            "with the second order scheme (%s)."),
          "cs_glob_lagr_time_scheme->t_order == 2");
 
-  /* Mass */
-  if (cs_glob_lagr_source_terms->ltsmas == 1) {
-
-    lagdim->ntersl += 1;
-    cs_glob_lagr_source_terms->itsmas = irf + 1;
-    irf = cs_glob_lagr_source_terms->itsmas;
-
-  }
+  /* Mass: associated to pressure equation  */
+  if (cs_glob_lagr_source_terms->ltsmas == 1)
+    _define_st_field("lagr_st_pressure", 1);
 
   /* Thermal model */
   if (cs_glob_lagr_source_terms->ltsthe == 1) {
 
-    if (lagr_model->physical_model == CS_LAGR_PHYS_HEAT) {
+    if ((lagr_model->physical_model == CS_LAGR_PHYS_HEAT
+          /* Temperature */
+        && cs_glob_lagr_specific_physics->itpvar == 1)
+       || lagr_model->physical_model == CS_LAGR_PHYS_COAL
+       || lagr_model->physical_model == CS_LAGR_PHYS_CTWR
+        ) {
 
-      /* Temperature */
-      if (cs_glob_lagr_specific_physics->itpvar == 1) {
-
-        lagdim->ntersl += 2;
-        cs_glob_lagr_source_terms->itste = irf + 1;
-        cs_glob_lagr_source_terms->itsti = cs_glob_lagr_source_terms->itste + 1;
-        irf = cs_glob_lagr_source_terms->itsti;
-
-      }
+      _define_st_field("lagr_st_temperature", 1);
+      _define_st_field("lagr_st_imp_temperature", 1);
 
     }
-
-    /* Coal */
-    else if (lagr_model->physical_model == CS_LAGR_PHYS_COAL) {
-
-      lagdim->ntersl += 4 + 2 * extra->ncharb;
-      cs_glob_lagr_source_terms->itste = irf + 1;
-      cs_glob_lagr_source_terms->itsti
-        = cs_glob_lagr_source_terms->itste + 1;
-
-      irf = cs_glob_lagr_source_terms->itsti;
-
-    }
-    else if (lagr_model->physical_model == CS_LAGR_PHYS_CTWR) {
-
-      lagdim->ntersl += 2;
-      cs_glob_lagr_source_terms->itste = irf + 1;
-      cs_glob_lagr_source_terms->itsti = cs_glob_lagr_source_terms->itste + 1;
-      irf = cs_glob_lagr_source_terms->itsti;
-
-    }
-
   }
 
   /* Now define particle map */

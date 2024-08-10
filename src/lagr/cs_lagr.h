@@ -172,7 +172,6 @@ typedef struct {
 
 typedef struct {
 
-  int   ntersl;  /*!< number of source terms for return coupling */
   int   n_boundary_stats;  /*!< number of boundary statistics */
 
 } cs_lagr_dim_t;
@@ -662,26 +661,6 @@ typedef struct {
    Useful if \ref iilagr = CS_LAGR_TWOWAY_COUPLING */
   int  ltsthe;
 
-  /*! implicit source term for the continuous phase velocity and
-    for the turbulent energy if the \f$k-\varepsilon\f$ model is used */
-  int  itsli;
-
-  /*  explicit source term for the turbulent dissipation and the
-   turbulent energy if the \f$k-\varepsilon\f$ turbulence model is used
-   for the continuous phase */
-  int  itske;
-
-  /*! explicit thermal source term for the thermal scalar of
-    the continuous phase */
-  int  itste;
-
-  /*! implicit thermal source term for the thermal scalar of
-    the continuous phase */
-  int  itsti;
-
-  /*! mass source term */
-  int  itsmas;
-
   /*! number of absolute time steps (including the restarts)
     after which a time-average of the two-way coupling source terms is
     calculated.
@@ -700,21 +679,15 @@ typedef struct {
   /*! number of time steps for source terms accumulations */
   int  npts;
 
-  /*! number of cells, whose vulumetric rate DODO
-      (concentration ?)is greather than 0.8 */
+  /*! number of cells, whose volumetric rate DODO
+      (concentration ?)is greater than 0.8 */
   int  ntxerr;
 
   /*! maximum volumetric concentration reached */
   cs_real_t      vmax;
 
-  /*! maximum massic concentration reached */
+  /*! maximum mass concentration reached */
   cs_real_t      tmamax;
-
-  /*! source term values */
-  cs_real_t     *st_val;
-
-  /* source term for humid air of the cooling tower model */
-  int itshum;
 
 } cs_lagr_source_terms_t;
 
