@@ -360,6 +360,181 @@ _init_variable_fields(void)
          "\n"
          "cs_glob_cf_model->ieos is forced to CS_EOS_GAS_MIX.\n"));
   }
+
+  /* Enable VoF model if free surface or mass transfer modeling enabled */
+  int vof_mask = CS_VOF_FREE_SURFACE || CS_VOF_MERKLE_MASS_TRANSFER;
+  if ((cs_glob_vof_parameters->vof_model & vof_mask) != 0) {
+    cs_vof_parameters_t *vof_parameters = cs_get_glob_vof_parameters();
+    vof_parameters->vof_model |= CS_VOF_ENABLED;
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Create variable fields based on active model.
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_create_variable_fields(void)
+{
+  const int keycpl = cs_field_key_id("coupled");
+
+  /*! Velocity */
+
+  {
+    cs_field_t *f = _add_variable_field("velocity", "Velocity", 3);
+    cs_field_set_key_int(f, keycpl, 1);
+    cs_field_pointer_map(CS_ENUMF_(vel), f);
+  }
+
+  /* Pressure */
+
+  {
+    cs_field_t *f = _add_variable_field("pressure", "Pressure", 1);
+    cs_field_pointer_map(CS_ENUMF_(p), f);
+
+    cs_equation_param_t *eqp = cs_field_get_equation_param(f);
+
+    // elliptic equation
+    eqp->iconv = 0;
+
+    // compressible algorithm
+    if (cs_glob_physical_model_flag[CS_COMPRESSIBLE] >= 0
+        || (cs_glob_velocity_pressure_model->idilat == 2
+            && cs_glob_cf_model->ieos != CS_EOS_NONE))
+      eqp->istat = 1;
+    else
+      eqp->istat = 0;
+
+    // VoF algorithm: activate the weighting for the pressure
+    if (cs_glob_vof_parameters->vof_model > 0)
+      eqp->iwgrec = 1;
+  }
+
+  /* void fraction (VoF algorithm) */
+
+  if (cs_glob_vof_parameters->vof_model > 0) {
+
+    cs_field_t *f = _add_variable_field("void_fraction", "Void Fraction", 1);
+    cs_field_pointer_map(CS_ENUMF_(void_f),  f);
+
+    cs_equation_param_t *eqp = cs_field_get_equation_param(f);
+    eqp->idiff = 0;  // pure convection equation
+
+    // NVD/TVD scheme
+    eqp->ischcv = 4;
+    // (CICSAM limiter)
+    cs_field_set_key_int(f, cs_field_key_id("limiter_choice"), 11);
+    // Beta Limiter
+    eqp->isstpc = 2;
+
+    // Bounds for the beta limiter
+    cs_field_set_key_double(f, cs_field_key_id("min_scalar"), 0.);
+    cs_field_set_key_double(f, cs_field_key_id("max_scalar"), 1.);
+
+  }
+
+  /* Turbulence */
+
+  const int itytur = cs_glob_turb_model->itytur;
+  const cs_turb_model_type_t iturb = cs_glob_turb_model->iturb;
+
+  if (itytur == 2) {
+    cs_field_pointer_map(CS_ENUMF_(k),
+                         _add_variable_field("k", "Turb Kinetic Energy", 1));
+    cs_field_pointer_map(CS_ENUMF_(eps),
+                         _add_variable_field("epsilon", "Turb Dissipation", 1));
+  }
+  else if (itytur == 3) {
+    cs_field_pointer_map(CS_ENUMF_(rij),
+                         _add_variable_field("rij", "Rij", 6));
+    cs_field_set_key_int(CS_F_(rij), keycpl, 1);
+
+    cs_field_pointer_map(CS_ENUMF_(eps),
+                         _add_variable_field("epsilon", "Turb Dissipation", 1));
+
+    if (iturb == CS_TURB_RIJ_EPSILON_EBRSM) {
+      cs_field_pointer_map(CS_ENUMF_(alp_bl),
+                           _add_variable_field("alpha", "Alphap", 1));
+
+      cs_equation_param_t *eqp = cs_field_get_equation_param(CS_F_(alp_bl));
+      // Elliptic equation (no convection, no time term)
+      eqp->istat = 0;
+      eqp->iconv = 0;
+      // For alpha, we always have a diagonal term, so do not shift the diagonal
+      eqp->idircl = 0;
+    }
+  }
+  else if (itytur == 5) {
+    cs_field_pointer_map(CS_ENUMF_(k),
+                         _add_variable_field("k", "Turb Kinetic Energy", 1));
+    cs_field_pointer_map(CS_ENUMF_(eps),
+                         _add_variable_field("epsilon", "Turb Dissipation", 1));
+    cs_field_pointer_map(CS_ENUMF_(phi),
+                         _add_variable_field("phi", "Phi", 1));
+    if (iturb == CS_TURB_V2F_PHI) {
+      cs_field_pointer_map(CS_ENUMF_(f_bar),
+                           _add_variable_field("f_bar", "f_bar", 1));
+      cs_equation_param_t *eqp = cs_field_get_equation_param(CS_F_(f_bar));
+      // Elliptic equation (no convection, no time term)
+      eqp->istat = 0;
+      eqp->iconv = 0;
+      // For f_bar, we always have a diagonal term, so do not shift the diagonal
+      eqp->idircl = 0;
+    }
+    else if (iturb == CS_TURB_V2F_BL_V2K) {
+      cs_field_pointer_map(CS_ENUMF_(alp_bl),
+                           _add_variable_field("alpha", "Alpha", 1));
+      cs_equation_param_t *eqp = cs_field_get_equation_param(CS_F_(alp_bl));
+      // Elliptic equation (no convection, no time term)
+      eqp->istat = 0;
+      eqp->iconv = 0;
+      // For alpha, we always have a diagonal term, so do not shift the diagonal
+      eqp->idircl = 0;
+    }
+  }
+  else if (iturb == CS_TURB_K_OMEGA) {
+    cs_field_pointer_map(CS_ENUMF_(k),
+                         _add_variable_field("k", "Turb Kinetic Energy", 1));
+    cs_field_pointer_map(CS_ENUMF_(omg),
+                         _add_variable_field("omega", "Omega", 1));
+  }
+  else if (iturb == CS_TURB_SPALART_ALLMARAS) {
+    cs_field_pointer_map(CS_ENUMF_(nusa),
+                         _add_variable_field("nu_tilda", "NuTilda", 1));
+  }
+
+  /* Mesh velocity with ALE */
+
+  if (cs_glob_ale != CS_ALE_NONE) {
+
+    // field defined on vertices if CDO-Vb scheme is used
+    if (cs_glob_ale == CS_ALE_CDO) {
+      int f_id = cs_variable_cdo_field_create("mesh_velocity",
+                                              "Mesh Velocity",
+                                              CS_MESH_LOCATION_VERTICES,
+                                              3,
+                                              1);
+      cs_field_pointer_map(CS_ENUMF_(mesh_u), cs_field_by_id(f_id));
+      // TODO remove this once iuma is not referenced in Fortran anymore
+      cs_add_model_field_indexes(CS_F_(mesh_u)->id);
+    }
+    else
+      cs_field_pointer_map(CS_ENUMF_(mesh_u),
+                           _add_variable_field("mesh_velocity",
+                                               "Mesh Velocity",
+                                               3));
+
+    cs_field_set_key_int(CS_F_(mesh_u), keycpl, 1);
+
+    cs_equation_param_t *eqp = cs_field_get_equation_param(CS_F_(mesh_u));
+    eqp->istat = 0;
+    eqp->iconv = 0;
+    eqp->idifft = 0;
+    eqp->relaxv = 1;
+
+  }
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1349,6 +1524,7 @@ _init_user
 
   if (cs_glob_param_cdo_mode != CS_PARAM_CDO_MODE_ONLY) {
     _init_variable_fields();
+    _create_variable_fields();
     cs_f_fldvar(nmodpp);
 
     /* Activate pressure correction model if CDO mode is not stand-alone */

@@ -279,33 +279,8 @@ cs_field_pointer_map_base(void)
   cs_field_pointer_map(CS_ENUMF_(dt),
                        cs_field_by_name_try("dt"));
 
-  cs_field_pointer_map(CS_ENUMF_(p),
-                       cs_field_by_name_try("pressure"));
-  cs_field_pointer_map(CS_ENUMF_(vel),
-                       cs_field_by_name_try("velocity"));
-
-  cs_field_pointer_map(CS_ENUMF_(k),
-                       cs_field_by_name_try("k"));
-  cs_field_pointer_map(CS_ENUMF_(eps),
-                       cs_field_by_name_try("epsilon"));
-
-  cs_field_pointer_map(CS_ENUMF_(rij), cs_field_by_name_try("rij"));
-
-  cs_field_pointer_map(CS_ENUMF_(phi), cs_field_by_name_try("phi"));
-  cs_field_pointer_map(CS_ENUMF_(f_bar), cs_field_by_name_try("f_bar"));
-  cs_field_pointer_map(CS_ENUMF_(alp_bl), cs_field_by_name_try("alpha"));
-
-  cs_field_pointer_map(CS_ENUMF_(omg), cs_field_by_name_try("omega"));
-  cs_field_pointer_map(CS_ENUMF_(nusa), cs_field_by_name_try("nu_tilda"));
-
   cs_field_pointer_map(CS_ENUMF_(hybrid_blend),
                        cs_field_by_name_try("hybrid_blend"));
-
-  cs_field_pointer_map(CS_ENUMF_(mesh_u),
-                       cs_field_by_name_try("mesh_velocity"));
-
-  cs_field_pointer_map(CS_ENUMF_(void_f),
-                       cs_field_by_name_try("void_fraction"));
 
   cs_field_pointer_map(CS_ENUMF_(h),
                        cs_field_by_name_try("enthalpy"));

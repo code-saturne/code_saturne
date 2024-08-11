@@ -57,7 +57,6 @@ use radiat
 use mesh
 use field
 use cs_c_bindings
-use cfpoin, only:ieos
 
 !===============================================================================
 
@@ -70,10 +69,7 @@ integer(c_int), value ::  nmodpp
 ! Local variables
 
 integer       ipp
-integer       iok, keycpl, vof_mask
-integer       key_lim_id, kscmin, kscmax
-
-type(var_cal_opt) :: vcopt
+integer       iok, keycpl
 
 !===============================================================================
 ! Interfaces
@@ -92,7 +88,7 @@ interface
     bind(C, name='cs_parameters_n_added_variables')
     use, intrinsic :: iso_c_binding
     implicit none
-    integer(c_int)                                           :: n
+    integer(c_int) :: n
   end function cs_parameters_n_added_variables
 
 end interface
@@ -124,77 +120,25 @@ call field_get_key_id('coupled', keycpl)
 ! Define main variables
 !======================
 
-nvar = 0
-
-! Velocity
-
-call add_variable_field('velocity', 'Velocity', 3, iu)
-call field_set_key_int(ivarfl(iu), keycpl, 1)
-
-! All components point to same field
+! Velocity (components point to same field)
+call map_variable_field_try('velocity', iu)
 iv = iu + 1
 iw = iv + 1
 
-! Pressure or hydraulic head for groundwater flow module
-
-call add_variable_field('pressure', 'Pressure', 1, ipr)
-
-! Enabled VoF model if free surface or mass transfer modeling enabled
-vof_mask = ior(VOF_FREE_SURFACE, VOF_MERKLE_MASS_TRANSFER)
-if (iand(ivofmt, vof_mask).ne.0) &
-     ivofmt = ior(VOF_ENABLED, ivofmt)
-
-! Mass balance equation options (pressure)
-
-call field_get_key_struct_var_cal_opt(ivarfl(ipr), vcopt)
-
-! elliptic equation
-vcopt%iconv = 0
-
-! compressible algorithm
-if ((ippmod(icompf).ge.0).or.(idilat.eq.2.and.ieos.gt.-1)) then
-  vcopt%istat = 1
-else
-  vcopt%istat = 0
-endif
-
-! VoF algorithm: activate the weighting for the pressure
-if (ivofmt.gt.0) vcopt%iwgrec = 1
-
-call field_set_key_struct_var_cal_opt(ivarfl(ipr), vcopt)
+! Pressure
+call map_variable_field_try('pressure', ipr)
 
 ! void fraction (VoF algorithm)
 
-if (ivofmt.gt.0) then
-  call add_variable_field('void_fraction', 'Void Fraction', 1, ivolf2)
-  call field_get_key_struct_var_cal_opt(ivarfl(ivolf2), vcopt)
-  vcopt%idiff = 0  ! pure convection equation
-
-  ! NVD/TVD scheme
-  vcopt%ischcv = 4
-  call field_get_key_id("limiter_choice", key_lim_id)
-  ! (CICSAM limiter)
-  call field_set_key_int(ivarfl(ivolf2), key_lim_id, 11)
-  ! Beta Limiter
-  vcopt%isstpc = 2
-
-  call field_set_key_struct_var_cal_opt(ivarfl(ivolf2), vcopt)
-  ! Bounds for the beta limiter
-  call field_get_key_id("min_scalar", kscmin)
-  call field_get_key_id("max_scalar", kscmax)
-  call field_set_key_double(ivarfl(ivolf2), kscmin, 0.d0)
-  call field_set_key_double(ivarfl(ivolf2), kscmax, 1.d0)
-endif
+call map_variable_field_try('void_fraction', ivolf2)
 
 ! Turbulence
 
 if (itytur.eq.2) then
-  call add_variable_field('k', 'Turb Kinetic Energy', 1, ik)
-  call add_variable_field('epsilon', 'Turb Dissipation', 1, iep)
+  call map_variable_field_try('k', ik)
+  call map_variable_field_try('epsilon', iep)
 else if (itytur.eq.3) then
-  call add_variable_field('rij', 'Rij', 6, irij)
-  call field_set_key_int(ivarfl(irij), keycpl, 1)
-
+  call map_variable_field_try('rij', irij)
   ! All rij components point to same field
   ir11 = irij
   ir22 = ir11 + 1
@@ -203,68 +147,31 @@ else if (itytur.eq.3) then
   ir23 = ir12 + 1
   ir13 = ir23 + 1
 
-  call add_variable_field('epsilon', 'Turb Dissipation', 1, iep)
+  call map_variable_field_try('epsilon', iep)
   if (iturb.eq.32) then
-    call add_variable_field('alpha', 'Alphap', 1, ial)
-    ! Elliptic equation (no convection, no time term)
-    call field_get_key_struct_var_cal_opt(ivarfl(ial), vcopt)
-    vcopt%istat = 0
-    vcopt%iconv = 0
-    ! For alpha, we always have a diagonal term, so do not shift the diagonal
-    vcopt%idircl = 0
-    call field_set_key_struct_var_cal_opt(ivarfl(ial), vcopt)
+    call map_variable_field_try('alpha', ial)
   endif
 else if (itytur.eq.5) then
-  call add_variable_field('k', 'Turb Kinetic Energy', 1, ik)
-  call add_variable_field('epsilon', 'Turb Dissipation', 1, iep)
-  call add_variable_field('phi', 'Phi', 1, iphi)
+  call map_variable_field_try('k', ik)
+  call map_variable_field_try('epsilon', iep)
+  call map_variable_field_try('phi', iphi)
   if (iturb.eq.50) then
-    call add_variable_field('f_bar', 'f_bar', 1, ifb)
-    call field_get_key_struct_var_cal_opt(ivarfl(ifb), vcopt)
-    vcopt%istat = 0
-    vcopt%iconv = 0
-    ! For fb, we always have a diagonal term, so do not shift the diagonal
-    vcopt%idircl = 0
-    call field_set_key_struct_var_cal_opt(ivarfl(ifb), vcopt)
+    call map_variable_field_try('f_bar', ifb)
   else if (iturb.eq.51) then
-    call add_variable_field('alpha', 'Alpha', 1, ial)
-    call field_get_key_struct_var_cal_opt(ivarfl(ial), vcopt)
-    vcopt%istat = 0
-    vcopt%iconv = 0
-    ! For alpha, we always have a diagonal term, so do not shift the diagonal
-    vcopt%idircl = 0
-    call field_set_key_struct_var_cal_opt(ivarfl(ial), vcopt)
+    call map_variable_field_try('alpha', ial)
   endif
 else if (iturb.eq.60) then
-  call add_variable_field('k', 'Turb Kinetic Energy', 1, ik)
-  call add_variable_field('omega', 'Omega', 1, iomg)
+  call map_variable_field_try('k', ik)
+  call map_variable_field_try('omega', iomg)
 else if (iturb.eq.70) then
-  call add_variable_field('nu_tilda', 'NuTilda', 1, inusa)
+  call map_variable_field_try('nu_tilda', inusa)
 endif
 
 ! Mesh velocity with ALE
 if (iale.ge.1) then
-
-  ! field defined on vertices if CDO-Vb scheme is used
-  if (iale.eq.2) then
-    call add_cdo_variable_field('mesh_velocity', 'Mesh Velocity',    &
-                                3, MESH_LOCATION_VERTICES, 1, iuma)
-  else
-    call add_variable_field('mesh_velocity', 'Mesh Velocity', 3, iuma)
-  endif
-
-  call field_set_key_int(ivarfl(iuma), keycpl, 1)
-
+  call map_variable_field_try('mesh_velocity', iuma)
   ivma = iuma + 1
   iwma = ivma + 1
-
-  call field_get_key_struct_var_cal_opt(ivarfl(iuma), vcopt)
-  vcopt%istat = 0
-  vcopt%iconv = 0
-  vcopt%idifft = 0
-  vcopt%relaxv = 1
-  call field_set_key_struct_var_cal_opt(ivarfl(iuma), vcopt)
-
 endif
 
 ! Number of user variables
@@ -931,6 +838,65 @@ call init_var_cal_opt(f_id)
 return
 
 end subroutine add_model_field_indexes
+
+!===============================================================================
+
+!> \brief Map field defining a general solved variable to Fortran id
+
+!> If field is not available, value is at 0
+
+!-------------------------------------------------------------------------------
+! Arguments
+!______________________________________________________________________________.
+!  mode           name          role                                           !
+!______________________________________________________________________________!
+!> \param[in]   name          field name
+!> \param[out]  ivar          variable id, or 0
+!_______________________________________________________________________________
+
+subroutine map_variable_field_try &
+ ( name, ivar )
+
+!===============================================================================
+! Module files
+!===============================================================================
+
+use paramx
+use numvar
+use field
+use cs_c_bindings
+
+!===============================================================================
+
+implicit none
+
+! Arguments
+
+character(len=*), intent(in) :: name
+integer, intent(out)         :: ivar
+
+! Local variables
+
+integer f_id
+integer keyvar
+character(len=len_trim(name)+1, kind=c_char) :: c_name
+
+! Find field id
+
+ivar = 0
+
+c_name = trim(name)//c_null_char
+
+f_id = cs_f_field_id_by_name_try(c_name)
+
+if (f_id .ge. 0) then
+  call field_get_key_id("variable_id", keyvar)
+  call field_get_key_int(f_id, keyvar, ivar)
+endif
+
+return
+
+end subroutine map_variable_field_try
 
 !===============================================================================
 
