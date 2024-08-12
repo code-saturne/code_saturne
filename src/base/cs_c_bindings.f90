@@ -812,11 +812,11 @@ module cs_c_bindings
 
     ! Interface to C function to get the bc type array pointer
 
-    subroutine cs_f_boundary_conditions_get_pointers(itypfb, izfppp, itrifb) &
+    subroutine cs_f_boundary_conditions_get_pointers(itypfb, izfppp) &
       bind(C, name='cs_f_boundary_conditions_get_pointers')
       use, intrinsic :: iso_c_binding
       implicit none
-      type(c_ptr), intent(out) :: itypfb, izfppp, itrifb
+      type(c_ptr), intent(out) :: itypfb, izfppp
     end subroutine cs_f_boundary_conditions_get_pointers
 
     !---------------------------------------------------------------------------
@@ -2613,7 +2613,7 @@ contains
 
   !> \param[in, out]  bc_type  boundary face types
 
-  subroutine user_f_boundary_conditions(itrifb, itypfb, izfppp, dt)  &
+  subroutine user_f_boundary_conditions(itypfb, izfppp, dt)  &
     bind(C, name='cs_f_user_boundary_conditions_wrapper')
 
     use dimens
@@ -2622,7 +2622,6 @@ contains
 
     ! Arguments
 
-    integer(kind=c_int), dimension(*), intent(in) :: itrifb
     integer(kind=c_int), dimension(*), intent(inout) :: itypfb, izfppp
     real(c_double), dimension(*), intent(in) :: dt
 
@@ -2632,10 +2631,12 @@ contains
 
     ! Local variables
 
+    integer, pointer, dimension(:) :: itrifb
     integer, pointer, dimension(:,:) :: icodcl
     double precision, pointer, dimension(:,:,:) :: rcodcl
 
     call field_build_bc_codes_all(icodcl, rcodcl) ! Get map
+    itrifb => null()
 
     call cs_f_user_boundary_conditions &
           (nvar, nscal, icodcl, itrifb, itypfb, izfppp, dt, rcodcl)

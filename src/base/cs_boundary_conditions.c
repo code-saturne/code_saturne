@@ -175,8 +175,7 @@ cs_f_boundary_conditions_mapped_set(int                        field_id,
 
 void
 cs_f_boundary_conditions_get_pointers(int  **itypfb,
-                                      int  **izfppp,
-                                      int  **itrifb);
+                                      int  **izfppp);
 
 void
 cs_f_boundary_conditions_get_ppincl_pointers(int     **iqimp,
@@ -1696,14 +1695,11 @@ cs_f_boundary_conditions_mapped_set(int                        field_id,
 
 void
 cs_f_boundary_conditions_get_pointers(int **itypfb,
-                                      int **izfppp,
-                                      int **itrifb)
+                                      int **izfppp)
 {
   *itypfb = _bc_type;
 
   *izfppp = cs_glob_bc_pm_info->izfppp;
-
-  *itrifb = cs_glob_bc_pm_info->itrifb;
 }
 
 void

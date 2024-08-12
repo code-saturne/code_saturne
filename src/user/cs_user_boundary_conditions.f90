@@ -40,7 +40,7 @@
 !> \param[in]     nvar          total number of variables
 !> \param[in]     nscal         total number of scalars
 !> \param[out]    icodcl        boundary condition code
-!> \param[in]     itrifb        indirection for boundary faces ordering
+!> \param[in]     itrifb        unused (null)
 !> \param[in,out] itypfb        boundary face types
 !> \param[in,out] izfppp        boundary face zone number
 !> \param[in]     dt            time step (per cell)

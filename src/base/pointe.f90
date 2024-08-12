@@ -68,11 +68,6 @@ module pointe
   !> (see \ref cs_user_boundary_conditions)
   integer, dimension(:), pointer, save :: itypfb
 
-  !> indirection array allowing to sort the boundary faces
-  !> according to their boundary condition type \c itypfb
-  !integer, allocatable, dimension(:) :: itrifb
-  integer, dimension(:), pointer, save :: itrifb
-
   !> to identify boundary zones associated with boundary faces
   !> (specific physics models)
   integer, dimension(:), pointer :: izfppp
@@ -140,10 +135,6 @@ contains
     ! Arguments
 
     ! Local variables
-
-    ! Boundary-face related arrays
-
-    allocate(itrifb(nfabor))
 
     ! liquid-vapor mass transfer term for cavitating flows
     ! and its part implicit in pressure
@@ -213,7 +204,6 @@ contains
   subroutine finalize_aux_arrays() &
     bind(C, name='cs_f_finalize_aux_arrays')
 
-    deallocate(itrifb)
     if (allocated(gamcav)) deallocate(gamcav, dgdpca)
 
   end subroutine finalize_aux_arrays
@@ -231,15 +221,14 @@ contains
 
     ! Local variables
 
-    type(c_ptr) :: c_itypfb, c_izfppp, c_itrifb
+    type(c_ptr) :: c_itypfb, c_izfppp
 
     call cs_f_boundary_conditions_create
 
-    call cs_f_boundary_conditions_get_pointers(c_itypfb, c_izfppp, c_itrifb)
+    call cs_f_boundary_conditions_get_pointers(c_itypfb, c_izfppp)
 
     call c_f_pointer(c_itypfb, itypfb, [nfabor])
     call c_f_pointer(c_izfppp, izfppp, [nfabor])
-    call c_f_pointer(c_itrifb, itrifb, [nfabor])
 
   end subroutine boundary_conditions_init
 
