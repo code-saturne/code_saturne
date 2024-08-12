@@ -1513,8 +1513,8 @@ _check_particles(cs_lagr_particle_set_t         *p_set,
                  const cs_lagr_injection_set_t  *zis,
                  const cs_lnum_t                 particle_range[2])
 {
-  const cs_lnum_t e_id = particle_range[0];
-  const cs_lnum_t s_id = p_set->n_particles;
+  const cs_lnum_t s_id = particle_range[0];
+  const cs_lnum_t e_id = particle_range[1];
 
   char z_type_name[32] = "unknown";
   if (zis->location_id == CS_MESH_LOCATION_BOUNDARY_FACES)
