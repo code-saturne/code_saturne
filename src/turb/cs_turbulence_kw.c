@@ -1061,7 +1061,9 @@ cs_turbulence_kw(int phase_id)
         smbrw[c_id] +=   cs_turb_ce4 * lag_st_k[c_id] * cromo[c_id]
                        / cpro_pcvto[c_id];
 
-        /* Implicit source terms on k */
+        /* Implicit source terms on k,
+         * Note: we implicit lag_st_k if negative */
+        tinstk[c_id] += fmax(-lag_st_k[c_id]/cvara_k[c_id], 0.);
         tinstk[c_id] += CS_MAX(-lag_st_i[c_id], 0.);
 
         /* Implicit source terms on omega */
