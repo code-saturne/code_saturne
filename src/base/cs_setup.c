@@ -2081,20 +2081,7 @@ _additional_fields_stage_2(void)
 
       if (fl_id > -1) {
         const cs_field_t *fl = cs_field_by_id(fl_id);
-
-        if (fl->dim == idimf) {
-          char f_name[128];
-          snprintf(f_name, 127, "gradient_weighting_%s", f->name);
-          f_name[127] = '\0';
-
-          cs_field_t *f_gw = cs_field_create(f_name,
-                                             0,
-                                             CS_MESH_LOCATION_CELLS,
-                                             fl->dim,
-                                             false);
-          cs_field_set_key_int(f_gw, k_wgrec, fl_id);
-        }
-        else {
+        if (fl->dim != idimf) {
           cs_parameters_error(CS_ABORT_IMMEDIATE,
                               _("initial data setup"),
                               _("Variable %s should be assigned a\n"
@@ -2106,6 +2093,18 @@ _additional_fields_stage_2(void)
                               fl->name,
                               fl->dim);
         }
+      }
+      else {
+        char f_name[128];
+        snprintf(f_name, 127, "gradient_weighting_%s", f->name);
+        f_name[127] = '\0';
+
+        cs_field_t *f_gw = cs_field_create(f_name,
+                                           0,
+                                           CS_MESH_LOCATION_CELLS,
+                                           idimf,
+                                           false);
+        cs_field_set_key_int(f, k_wgrec, f_gw->id);
       }
     }
 
