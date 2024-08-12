@@ -415,7 +415,6 @@ fldvar.f90 \
 fldprp.f90 \
 impini.f90 \
 iniini.f90 \
-iniva0.f90 \
 inivar.f90 \
 majgeo.f90 \
 varpos.f90

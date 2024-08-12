@@ -588,7 +588,7 @@ _additional_fields_stage_1(void)
     cs_field_t *f = cs_field_by_id(f_id);
     if (!(f->type & CS_FIELD_VARIABLE) || f->type & CS_FIELD_CDO)
       continue;
-    int scalar_id = (ks > -1) ? cs_field_get_key_int(f, ks) : -1;
+    int scalar_id = (ks > -1) ? cs_field_get_key_int(f, ks) -1 : -1;
     if (scalar_id < 0)
       continue;
 
@@ -715,7 +715,7 @@ _additional_fields_stage_1(void)
     cs_field_t *f = cs_field_by_id(f_id);
     if (!(f->type & CS_FIELD_VARIABLE) || f->type & CS_FIELD_CDO)
       continue;
-    int scalar_id = (ks > -1) ? cs_field_get_key_int(f, ks) : -1;
+    int scalar_id = (ks > -1) ? cs_field_get_key_int(f, ks) -1 : -1;
     if (scalar_id < 0)
       continue;
     int ifcvsl = cs_field_get_key_int(f, kivisl);
@@ -919,7 +919,7 @@ _additional_fields_stage_1(void)
     cs_field_t *f = cs_field_by_id(f_id);
     if (!(f->type & CS_FIELD_VARIABLE) || f->type & CS_FIELD_CDO)
       continue;
-    int scalar_id = (ks > -1) ? cs_field_get_key_int(f, ks) : -1;
+    int scalar_id = (ks > -1) ? cs_field_get_key_int(f, ks) -1 : -1;
     if (scalar_id < 0)
       continue;
     int ifcdep = cs_field_get_key_int(f, kromsl);
@@ -1367,7 +1367,7 @@ _additional_fields_stage_1(void)
     cs_field_t *f = cs_field_by_id(f_id);
     if (!(f->type & CS_FIELD_VARIABLE) || f->type & CS_FIELD_CDO)
       continue;
-    int scalar_id = (ks > -1) ? cs_field_get_key_int(f, ks) : -1;
+    int scalar_id = (ks > -1) ? cs_field_get_key_int(f, ks) -1 : -1;
     if (scalar_id < 0)
       continue;
     int f_s_id = cs_field_get_key_int(f, kivisl);

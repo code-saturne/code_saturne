@@ -1132,7 +1132,7 @@ cs_boundary_conditions_set_dirichlet_conv_neumann_diff_tensor
 {
   for (int isou = 0; isou < 6; isou++) {
 
-    /* BS test sur hextv ? if (abs(hextv[isou])>rinfin*0.5d0) then */
+    /* BS test on hextv ? if (abs(hextv[isou]) > cs_math_infinite_r * 0.5) */
 
     /* Gradient BCs */
     a[isou] = pimpts[isou];

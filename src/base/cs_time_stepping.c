@@ -129,9 +129,6 @@ void
 cs_f_init_chemistry_reacnum(void);
 
 void
-cs_f_iniva0(void);
-
-void
 cs_f_atmo_models_boundary_conditions_map(void);
 
 void
@@ -370,7 +367,6 @@ cs_time_stepping(void)
 
   cs_field_allocate_or_map_all();
 
-  cs_f_iniva0();
   cs_initialize_fields_stage_0();
 
   if (cs_glob_porous_model >= 1) {
