@@ -75,9 +75,6 @@ if (ippmod(icompf).ge.0) then
   call add_model_scalar_field('total_energy', 'TotEner', ienerg)
   iscalt = ienerg
 
-  ! Alias for B.C.
-  irunh = isca(ienerg)
-
   ! Temperature (post)
   call add_model_scalar_field('temperature', 'TempK', itempk)
 

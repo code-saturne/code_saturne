@@ -296,9 +296,6 @@ module ppincl
   !> alias for boundary conditions
   integer, save :: irun
 
-  !> alias for boundary conditions
-  integer, save :: irunh
-
   !> reference volume viscosity
   real(c_double), pointer, save :: viscv0
 
