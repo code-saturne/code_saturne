@@ -177,8 +177,7 @@ const cs_cf_model_t  *cs_glob_cf_model = &_cf_model;
  *============================================================================*/
 
 void
-cs_f_cf_model_get_pointers(int    **ieos,
-                           int    **ithvar);
+cs_f_cf_model_get_pointers(int    **ithvar);
 
 /*============================================================================
  * Fortran wrapper function definitions
@@ -191,16 +190,13 @@ cs_f_cf_model_get_pointers(int    **ieos,
  * enables mapping to Fortran global pointers.
  *
  * parameters:
- *   ieos             --> pointer to cs_glob_cf_model->ieos
  *   ithvar           --> pointer to cs_glob_cf_model->ithvar
  *----------------------------------------------------------------------------*/
 
 void
-cs_f_cf_model_get_pointers(int    **ieos,
-                           int    **ithvar)
+cs_f_cf_model_get_pointers(int    **ithvar)
 {
-  *ieos             = &(_cf_model.ieos);
-  *ithvar           = &(_cf_model.ithvar);
+  *ithvar = &(_cf_model.ithvar);
 }
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */

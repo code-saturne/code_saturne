@@ -291,11 +291,6 @@ module ppincl
   !> \addtogroup common
   !> \{
 
-  ! ---- Aliases pour les conditions aux limites
-
-  !> alias for boundary conditions
-  integer, save :: irun
-
   !> reference volume viscosity
   real(c_double), pointer, save :: viscv0
 

@@ -36,9 +36,6 @@ module cfpoin
   !> \addtogroup compressible
   !> \{
 
-  !> indicator of equation of state mapping \ref cs_cf_model_t::ieos
-  integer(c_int), pointer, save :: ieos
-
   !> thermodynamic variables indicator for initialization
   !> mapping cs_cf_model_t::ithvar
   integer(c_int), pointer, save :: ithvar
@@ -58,11 +55,11 @@ module cfpoin
     ! Interface to C function retrieving pointers to members of the
     ! global compressible model structure
 
-    subroutine cs_f_cf_model_get_pointers(ieos, ithvar)  &
+    subroutine cs_f_cf_model_get_pointers(ithvar)  &
       bind(C, name='cs_f_cf_model_get_pointers')
       use, intrinsic :: iso_c_binding
       implicit none
-      type(c_ptr), intent(out) :: ieos, ithvar
+      type(c_ptr), intent(out) :: ithvar
     end subroutine cs_f_cf_model_get_pointers
 
     !---------------------------------------------------------------------------
@@ -89,11 +86,10 @@ contains
 
     ! Local variables
 
-    type(c_ptr) :: c_ieos, c_ithvar
+    type(c_ptr) :: c_ithvar
 
-    call cs_f_cf_model_get_pointers(c_ieos, c_ithvar)
+    call cs_f_cf_model_get_pointers(c_ithvar)
 
-    call c_f_pointer(c_ieos, ieos)
     call c_f_pointer(c_ithvar, ithvar)
 
   end subroutine cf_model_init
