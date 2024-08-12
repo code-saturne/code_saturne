@@ -61,6 +61,26 @@ cs_ctwr_source_term(int              f_id,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief cs_dof_func_t function to compute volume mass injection for
+ *   pressure (mass) equation.
+ *
+ * \param[in]      n_elts        number of elements to consider
+ * \param[in]      elt_ids       list of elements ids
+ * \param[in]      dense_output  perform an indirection in retval or not
+ * \param[in]      input         NULL or pointer to a structure cast on-the-fly
+ * \param[in, out] retval        resulting value(s). Must be allocated.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_ctwr_volume_mass_injection_dof_func(cs_lnum_t         n_elts,
+                                       const cs_lnum_t  *elt_ids,
+                                       bool              dense_output,
+                                       void             *input,
+                                       cs_real_t        *retval);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Phase change mass source term from the evaporating liquid to the
  *        bulk, humid air.
  *

@@ -75,6 +75,7 @@
  *----------------------------------------------------------------------------*/
 
 #include "cs_ctwr.h"
+#include "cs_ctwr_source_terms.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -590,8 +591,35 @@ cs_ctwr_build_all(void)
     cs_ctwr_zone_t *ct = _ct_zone[ict];
 
     /* Set number of cells */
-    ct->n_cells = cs_volume_zone_by_name(ct->name)->n_elts;
-    ct->vol_f = cs_volume_zone_by_name(ct->name)->f_measure;
+    cs_zone_t *z = cs_volume_zone_by_name(ct->name);
+    ct->n_cells = z->n_elts;
+    ct->vol_f = z->f_measure;
+
+    void *input = (void *) ct;
+    const cs_equation_param_t *eqp =
+        cs_field_get_equation_param_const(CS_F_(p));
+
+    /* Set the bulk mass source term function (associated to pressure field) */
+    cs_equation_add_volume_mass_injection_by_dof_func
+      (eqp,
+       z->name,
+       cs_flag_primal_cell,
+       cs_ctwr_volume_mass_injection_dof_func,
+       input);
+
+  }
+  /* Define the zones with source terms */
+  cs_ctwr_option_t *ct_opt = cs_get_glob_ctwr_option();
+  if (ct_opt->has_rain) {
+    /* Set number of cells */
+    cs_zone_t *z = cs_volume_zone_by_id(0);
+
+    double mass_in[1] = {0.};
+    const cs_equation_param_t *eqp =
+        cs_field_get_equation_param_const(CS_F_(p));
+    cs_equation_add_volume_mass_injection_by_value(eqp,
+                                                   z->name,
+                                                   mass_in);
   }
 
   /* Post-processing: multiply enthalpy by fraction */

@@ -982,12 +982,8 @@ cs_solve_all(int  itrale)
   /* Evaluate mass source term coefficients
      (called on all ranks in case user calls global operations). */
 
-  if (cs_volume_zone_n_type_zones(CS_VOLUME_ZONE_MASS_SOURCE_TERM) > 0) {
+  if (cs_volume_zone_n_type_zones(CS_VOLUME_ZONE_MASS_SOURCE_TERM) > 0)
     cs_volume_mass_injection_eval();
-
-    // Cooling tower model evaporation mass exchange term
-    cs_ctwr_bulk_mass_source_term();
-  }
 
   /* Fill the condensation arrays spcond for the sink term of condensation
    * and hpcond the thermal exchange coefficient associated to the phase

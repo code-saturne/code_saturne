@@ -112,6 +112,308 @@ _lewis_factor(const int        evap_model,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief cs_dof_func_t function to compute volume mass injection for
+ *   pressure (mass) equation.
+ *
+ * \param[in]      n_elts        number of elements to consider
+ * \param[in]      elt_ids       list of elements ids
+ * \param[in]      dense_output  perform an indirection in retval or not
+ * \param[in]      input         NULL or pointer to a structure cast on-the-fly
+ * \param[in, out] retval        resulting value(s). Must be allocated.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_ctwr_volume_mass_injection_dof_func(cs_lnum_t         n_elts,
+                                       const cs_lnum_t  *elt_ids,
+                                       bool              dense_output,
+                                       void             *input,
+                                       cs_real_t        *retval)
+{
+  /* Get ct_zone from input */
+  cs_ctwr_zone_t *ct
+    = (cs_ctwr_zone_t*)input;
+
+  const cs_mesh_t *m = cs_glob_mesh;
+  const cs_lnum_2_t *i_face_cells
+    = (const cs_lnum_2_t *)(m->i_face_cells);
+  const cs_lnum_t n_i_faces = m->n_i_faces;
+
+  const cs_real_t *cell_f_vol = cs_glob_mesh_quantities->cell_f_vol;
+
+  cs_fluid_properties_t *fp = cs_get_glob_fluid_properties();
+  cs_air_fluid_props_t *air_prop = cs_glob_air_props;
+
+  /* Water / air molar mass ratio */
+  const cs_real_t molmassrat = air_prop->molmass_rat;
+
+  cs_real_t *rho_m = (cs_real_t *)CS_F_(rho)->val; /* Mixture density */
+  cs_real_t *rho_h = cs_field_by_name("rho_humid_air")->val; /* Humid air density */
+
+  cs_real_3_t *vel_h = (cs_real_3_t *)CS_F_(vel)->val; /* Humid air velocity*/
+
+  cs_real_t *ym_w = (cs_real_t *)CS_F_(ym_w)->val; /* Water mass fraction
+                                                     in humid air */
+
+  cs_real_t *t_h = NULL;
+  if (cs_glob_physical_model_flag[CS_ATMOSPHERIC] == CS_ATMO_HUMID) {
+    t_h = cs_field_by_name("real_temperature")->val; /* Humid air temp */
+  }
+  else{
+    t_h = cs_field_by_name("temperature")->val; /* Humid air temp */
+  }
+  cs_real_t *x = cs_field_by_name("humidity")->val; /* Humidity in air (bulk) */
+  cs_real_t *x_s = cs_field_by_name("x_s")->val;
+  cs_real_t *vel_l = cs_field_by_name("vertvel_l")->val;  /* Liquid velocity
+                                                             in packing */
+
+  cs_real_t *t_l_p = cs_field_by_name("temp_l_packing")->val;
+  cs_real_t *h_l_p = cs_field_by_name("h_l_packing")->val;
+  cs_real_t *y_l_p = CS_F_(y_l_pack)->val_pre;
+
+  /* Variable and properties for rain drops */
+  cs_field_t *cfld_yp = cs_field_by_name("ym_l_r");     /* Rain mass fraction */
+  cs_field_t *cfld_yh_rain = cs_field_by_name("ymh_l_r"); /* Yp times Tp */
+  /* Rain drift velocity */
+  cs_field_t *cfld_drift_vel = cs_field_by_name("drift_vel_ym_l_r");
+  /* Phases volume fractions */
+  cs_real_t *vol_f_r = cs_field_by_name("vol_f_r")->val; /* Vol frac. rain */
+
+  /* Rain inner mass flux */
+  const int kimasf = cs_field_key_id("inner_mass_flux_id");
+  cs_real_t *imasfl_r = cs_field_by_id
+                         (cs_field_get_key_int(cfld_yp, kimasf))->val;
+
+  cs_real_t vertical[3], horizontal[3];
+
+  const cs_ctwr_option_t *ct_opt = cs_glob_ctwr_option;
+
+  int evap_model = ct_opt->evap_model;
+
+  /* Need to cook up the cell value of the liquid mass flux
+     In the old code, it seems to be taken as the value of the
+     face mass flux upstream of the cell */
+
+  cs_real_t v_air = 0.;
+
+  cs_real_t mass_flux_h = 0.; /* Highly suspicious for rain
+                                 zones - not recomputed */
+
+  /* Compute the bulk volume mass source terms */
+
+  /* Fields for source terms post-processing */
+  cs_real_t *evap_rate_pack = NULL;
+  evap_rate_pack = cs_field_by_name("evaporation_rate_packing")->val;
+
+  /* Air / fluid properties */
+  cs_real_t cp_d = fp->cp0;
+  cs_real_t rscp = fp->r_pg_cnst / cp_d;
+  cs_real_t cp_v = air_prop->cp_v;
+  cs_real_t cp_l = air_prop->cp_l;
+  cs_real_t hv0 = air_prop->hv0;
+  cs_real_t rho_l = air_prop->rho_l;
+  cs_real_t visc = fp->viscl0;
+  cs_real_t p0 = fp->p0;
+  cs_real_t ps = cs_glob_atmo_constants->ps;
+  cs_real_t lambda_h = air_prop->lambda_h;
+  cs_real_t droplet_diam  = air_prop->droplet_diam;
+
+  /* Fields necessary for humid atmosphere model */
+  cs_field_t *meteo_pressure = cs_field_by_name_try("meteo_pressure");
+  cs_field_t *yw_liq = cs_field_by_name_try("liquid_water");
+
+  if (evap_model != CS_CTWR_NONE) {
+
+    /* =========================
+       Phase change source terms
+       ========================= */
+
+    cs_math_3_normalize(cs_glob_physical_constants->gravity, vertical);
+
+    vertical[0] *= -1;
+    vertical[1] *= -1;
+    vertical[2] *= -1;
+
+    horizontal[0] = vertical[0] -1.;
+    horizontal[1] = vertical[1] -1.;
+    horizontal[2] = vertical[2] -1.;
+
+    /* =========================================
+     * PHASE CHANGE : PACKING ZONES
+     * Between the liquid film and the humid air
+     * ========================================= */
+
+    /* We skip this if we are in injection zone
+     * FIXME add volume mass source terms? */
+    if (ct->type == CS_CTWR_INJECTION)
+      return;
+
+    /* Packing zone characteristics */
+    cs_real_t a_0 = ct->xap;
+    cs_real_t xnp = ct->xnp;
+    int zone_type = ct->type;
+
+    assert(n_elts == ct->n_cells);
+
+    for (cs_lnum_t j = 0; j < n_elts; j++) {
+
+      cs_lnum_t cell_id = elt_ids[j];
+
+      /* Compute cell reference pressure */
+      cs_real_t pphy = cs_ctwr_compute_reference_pressure(cell_id,
+                                                          p0,
+                                                          meteo_pressure);
+
+      /* For correlations, T_h cannot be greater than T_l */
+      cs_real_t temp_h = CS_MIN(t_h[cell_id], t_l_p[cell_id]);
+
+      /* Saturation humidity at humid air temperature */
+      cs_real_t x_s_th = cs_air_x_sat(temp_h, pphy);
+
+      /* Saturation humidity at injected liquid temperature */
+      cs_real_t x_s_tl = cs_air_x_sat(t_l_p[cell_id], pphy);
+
+      /*--------------------------------------------*
+       * Counter or cross flow packing zone         *
+       *--------------------------------------------*/
+
+      /* Counter flow packing */
+      if (zone_type == CS_CTWR_COUNTER_CURRENT)
+        v_air = CS_ABS(cs_math_3_dot_product(vel_h[cell_id], vertical));
+
+      /* Cross flow packing */
+      else if (zone_type == CS_CTWR_CROSS_CURRENT)
+        v_air = CS_ABS(cs_math_3_dot_product(vel_h[cell_id], horizontal));
+
+      /* Dry air flux */
+      mass_flux_h = rho_h[cell_id] * v_air * (1. - ym_w[cell_id]);
+
+      /* Liquid mass flux */
+      cs_real_t mass_flux_l = rho_m[cell_id] * y_l_p[cell_id] * vel_l[cell_id];
+
+      /* Evaporation coefficient 'Beta_x' (kg/m2/s) times exchange surface
+       * per unit of volume 'ai' (m2/m3)*/
+      cs_real_t beta_x_ai = 0.;
+
+      /* There is evaporation only if we have an injected liquid flow */
+      if (mass_flux_l > 0.)
+        beta_x_ai = a_0 * mass_flux_l * pow((mass_flux_h/mass_flux_l), xnp);
+
+      /* Humid air mass source term */
+      cs_real_t mass_source = 0.0;
+
+      if (x[cell_id] <= x_s_th)
+        mass_source = beta_x_ai * (x_s_tl - x[cell_id]);
+      else
+        mass_source = beta_x_ai * (x_s_tl - x_s_th);
+
+      mass_source = fmax(mass_source, 0.);
+
+      /* Global mass source term for continuity (pressure) equation
+       * Note that rain is already considered in the bulk, so inner
+       * mass transfer between liquid and vapor disappears */
+      /* Warning: not multiplied by Cell volume! no addition neither */
+      retval[j] = mass_source;
+
+      /* Saving evaporation rate for post-processing */
+      evap_rate_pack[cell_id] = mass_source;
+
+    } /* end loop over the cells of a packing zone */
+
+  } /* End evaporation model active */
+
+  /* Note: rain is in the bulk, so no bulk mass source term
+   * due to phase change in the rain zones */
+  if (ct_opt->has_rain) {
+
+    /* Generate rain from packing zones which are leaking
+       ================================================== */
+
+    cs_real_t *liq_mass_frac = CS_F_(y_l_pack)->val; /* Liquid mass fraction
+                                                        in packing */
+    /* Inner mass flux of liquids (in the packing) */
+    cs_real_t *liq_mass_flow
+      = cs_field_by_name("inner_mass_flux_y_l_packing")->val;
+
+#if 0
+    if (ct->xleak_fac > 0.0 && ct->type != CS_CTWR_INJECTION) {
+
+      /* Rain generation source terms
+         ============================ */
+
+      for (cs_lnum_t i = 0; i < ct->n_outlet_faces; i++) {
+
+        /* Leak face_id */
+        cs_lnum_t face_id = ct->outlet_faces_ids[i];
+        cs_lnum_t cell_id_leak, cell_id_rain;
+
+        /* Convention: outlet is positive mass flux
+         * Then upwind cell for liquid is i_face_cells[][0] */
+        int sign = 1;
+        if (liq_mass_flow[face_id] < 0) {
+          sign = -1;
+          cell_id_leak = i_face_cells[face_id][1];
+          cell_id_rain = i_face_cells[face_id][0];
+        }
+        else {
+          cell_id_leak = i_face_cells[face_id][0];
+          cell_id_rain = i_face_cells[face_id][1];
+        }
+
+        /* Note: vol_mass_source must not be multiplied by
+         * cell_f_vol[cell_id_rain]
+         * because mass source computed from liq_mass_flow is
+         * already in kg/s associated to the facing rain cell */
+        cs_real_t vol_mass_source = ct->xleak_fac
+          * liq_mass_frac[cell_id_leak] * sign * liq_mass_flow[face_id];
+
+        /* Global bulk mass - continuity */
+        if (f_id == (CS_F_(p)->id)) {
+          /* Warning: not multiplied by Cell volume! */
+          exp_st[cell_id_rain] = vol_mass_source;
+        }
+
+      } /* End of loop through outlet cells of the packing zone */
+
+    } /* End of leaking zone test */
+#endif
+
+    /* Testing if we are in an rain injection zone */
+    if (ct->xleak_fac > 0.0 && ct->type == CS_CTWR_INJECTION) {
+      const cs_lnum_t *ze_cell_ids
+        = cs_volume_zone_by_name(ct->name)->elt_ids;
+      cs_real_t inj_vol = ct->vol_f;
+
+      for (cs_lnum_t j = 0; j < ct->n_cells; j++) {
+        cs_lnum_t cell_id = ze_cell_ids[j];
+
+        cs_real_t vol_mass_source = cell_f_vol[cell_id] / inj_vol
+                                    * ct->q_l_bc * ct->xleak_fac;
+
+        //TODO add bulk volume mass source term?
+      }
+    }
+
+    /* Rain - packing interaction
+     * ========================== */
+
+    /* Boolean rain_to_packing ctwr model option enables rain liquid water to
+     * become liquid water film when it reaches a packing zone */
+
+    /* FIXME: Corrections needed to ensure mass and energy conservation,
+     * better not use it for the moment */
+    if  (ct_opt->rain_to_packing) {
+      /* Rain sink term in packing zones */
+      //TODO : Add rain leak portion inside packing
+
+    }
+
+  } /* End of test on whether to generate rain */
+
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Phase change source terms - Exchange terms between the injected
  *        liquid and the water vapor phase in the bulk, humid air
  *
