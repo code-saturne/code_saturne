@@ -162,12 +162,6 @@ void
 cs_f_finalize_steady_laminar_flamelet_library(void);
 
 void
-cs_f_init_aux_arrays(void);
-
-void
-cs_f_finalize_aux_arrays(void);
-
-void
 cs_f_pp_models_bc_map(void);
 
 /*=============================================================================
@@ -342,8 +336,6 @@ cs_time_stepping(void)
      ----------------- */
 
   cs_f_boundary_conditions_init();
-
-  cs_f_init_aux_arrays();
 
   if (cs_glob_physical_model_flag[CS_ATMOSPHERIC] >= 0) {
     if (cs_glob_atmo_chemistry->model > 0) {
@@ -957,8 +949,6 @@ cs_time_stepping(void)
 
   cs_turbulence_bc_free_pointers();
   cs_boundary_conditions_free();
-
-  cs_f_finalize_aux_arrays();
 
   cs_f_finalize_meteo();
 

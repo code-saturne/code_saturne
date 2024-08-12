@@ -255,6 +255,8 @@ static cs_cavitation_parameters_t  _cavit_parameters =
  *============================================================================*/
 
 const cs_vof_parameters_t *cs_glob_vof_parameters = &_vof_parameters;
+const cs_cavitation_parameters_t *cs_glob_cavitation_parameters
+  = &_cavit_parameters;
 
 /*============================================================================
  * Prototypes for functions intended for use only by Fortran wrappers.
@@ -263,8 +265,6 @@ const cs_vof_parameters_t *cs_glob_vof_parameters = &_vof_parameters;
 
 void
 cs_f_vof_get_pointers(unsigned **ivofmt,
-                      double   **rho1,
-                      double   **rho2,
                       int      **idrift);
 
 void
@@ -272,16 +272,6 @@ cs_f_vof_compute_linear_rho_mu(void);
 
 void
 cs_f_vof_deshpande_drift_flux(void);
-
-void
-cs_f_cavitation_get_pointers(double **presat,
-                             double **uinf,
-                             double **linf,
-                             double **cdest,
-                             double **cprod,
-                             int    **icvevm,
-                             double **mcav,
-                             int    **itscvi);
 
 /*============================================================================
  * Fortran wrapper function definitions
@@ -295,20 +285,14 @@ cs_f_cavitation_get_pointers(double **presat,
  *
  * parameters:
  *   ivofmt --> pointer to cs_glob_vof_parameters->vof_model
- *   rho1   --> pointer to cs_glob_vof_parameters->rho1
- *   rho2   --> pointer to cs_glob_vof_parameters->rho2
  *   idrift --> pointer to cs_glob_vof_parameters->idrift
  *----------------------------------------------------------------------------*/
 
 void
 cs_f_vof_get_pointers(unsigned **ivofmt,
-                      double   **rho1,
-                      double   **rho2,
                       int      **idrift)
 {
   *ivofmt  = &(_vof_parameters.vof_model);
-  *rho1    = &(_vof_parameters.rho1);
-  *rho2    = &(_vof_parameters.rho2);
   *idrift  = &(_vof_parameters.idrift);
 }
 
@@ -326,43 +310,6 @@ void
 cs_f_vof_deshpande_drift_flux(void)
 {
   cs_vof_deshpande_drift_flux(cs_glob_mesh, cs_glob_mesh_quantities);
-}
-
-/*----------------------------------------------------------------------------
- * Get pointer to cavitation model indicator and parameters
- *
- * This function is intended for use by Fortran wrappers, and
- * enables mapping to Fortran global pointers.
- *
- * parameters:
- *   presat --> pointer to cs_glob_cavitation_parameters->presat
- *   uinf   --> pointer to cs_glob_cavitation_parameters->uinf
- *   linf   --> pointer to cs_glob_cavitation_parameters->linf
- *   cdest  --> pointer to cs_glob_cavitation_parameters->cdest
- *   cprod  --> pointer to cs_glob_cavitation_parameters->cprod
- *   icvevm --> pointer to cs_glob_cavitation_parameters->icvevm
- *   mcav   --> pointer to cs_glob_cavitation_parameters->mcav
- *   itscvi --> pointer to cs_glob_cavitation_parameters->itscvi
- *----------------------------------------------------------------------------*/
-
-void
-cs_f_cavitation_get_pointers(double **presat,
-                             double **uinf,
-                             double **linf,
-                             double **cdest,
-                             double **cprod,
-                             int    **icvevm,
-                             double **mcav,
-                             int    **itscvi)
-{
-  *presat = &(_cavit_parameters.presat);
-  *uinf   = &(_cavit_parameters.uinf);
-  *linf   = &(_cavit_parameters.linf);
-  *cdest  = &(_cavit_parameters.cdest);
-  *cprod  = &(_cavit_parameters.cprod);
-  *icvevm = &(_cavit_parameters.icvevm);
-  *mcav   = &(_cavit_parameters.mcav);
-  *itscvi = &(_cavit_parameters.itscvi);
 }
 
 /*============================================================================
@@ -592,7 +539,7 @@ _smoothe(const cs_mesh_t              *m,
 
 /*----------------------------------------------------------------------------
  *!
- * \brief Provide access to VOF structure.
+ * \brief Provide write access to VOF structure.
  */
 /*----------------------------------------------------------------------------*/
 
@@ -614,6 +561,10 @@ cs_vof_field_create(void)
   if (cs_glob_vof_parameters->vof_model < 1)
     return;
 
+  // Key ids for logging and visualization
+  const int keylog = cs_field_key_id("log");
+  const int keyvis = cs_field_key_id("post_vis");
+
   // Key id for mass flux
   const int k_imasf = cs_field_key_id("inner_mass_flux_id");
   const int k_bmasf = cs_field_key_id("boundary_mass_flux_id");
@@ -630,6 +581,8 @@ cs_vof_field_create(void)
                                       1,
                                       false);
   cs_field_set_key_int(CS_F_(void_f), k_imasf, f_ivf->id);
+  cs_field_set_key_int(f_ivf, keyvis, 0);
+  cs_field_set_key_int(f_ivf, keylog, 0);
 
   cs_field_t *f_ivff = cs_field_create("inner_void_fraction_flux",
                                        CS_FIELD_EXTENSIVE | CS_FIELD_PROPERTY,
@@ -637,6 +590,8 @@ cs_vof_field_create(void)
                                        1,
                                        false);
   cs_field_set_key_int(CS_F_(void_f), k_iflux, f_ivff->id);
+  cs_field_set_key_int(f_ivff, keyvis, 0);
+  cs_field_set_key_int(f_ivff, keylog, 0);
 
   /* Boundary faces*/
 
@@ -646,6 +601,8 @@ cs_vof_field_create(void)
                                       1,
                                       false);
   cs_field_set_key_int(CS_F_(void_f), k_bmasf, f_bvf->id);
+  cs_field_set_key_int(f_bvf, keyvis, 0);
+  cs_field_set_key_int(f_bvf, keylog, 0);
 
   cs_field_t *f_bvff = cs_field_create("boundary_void_fraction_flux",
                                        CS_FIELD_EXTENSIVE | CS_FIELD_PROPERTY,
@@ -653,22 +610,55 @@ cs_vof_field_create(void)
                                        1,
                                        false);
   cs_field_set_key_int(CS_F_(void_f), k_bflux, f_bvff->id);
+  cs_field_set_key_int(f_bvff, keyvis, 0);
+  cs_field_set_key_int(f_bvff, keylog, 0);
 
   /* Drift */
 
   if (cs_glob_vof_parameters->idrift > 0) {
 
-    cs_field_create("inner_drift_velocity_flux",
-                    CS_FIELD_EXTENSIVE | CS_FIELD_PROPERTY,
-                    CS_MESH_LOCATION_INTERIOR_FACES,
-                    1,
-                    false);
+    cs_field_t *f_idvf
+      = cs_field_create("inner_drift_velocity_flux",
+                        CS_FIELD_EXTENSIVE | CS_FIELD_PROPERTY,
+                        CS_MESH_LOCATION_INTERIOR_FACES,
+                        1,
+                        false);
+    cs_field_set_key_int(f_idvf, keyvis, 0);
+    cs_field_set_key_int(f_idvf, keylog, 0);
 
-    cs_field_create("boundary_drift_velocity_flux",
-                    CS_FIELD_EXTENSIVE | CS_FIELD_PROPERTY,
-                    CS_MESH_LOCATION_BOUNDARY_FACES,
-                    1,
-                    false);
+    cs_field_t *f_bdvf
+      = cs_field_create("boundary_drift_velocity_flux",
+                        CS_FIELD_EXTENSIVE | CS_FIELD_PROPERTY,
+                        CS_MESH_LOCATION_BOUNDARY_FACES,
+                        1,
+                        false);
+    cs_field_set_key_int(f_bdvf, keyvis, 0);
+    cs_field_set_key_int(f_bdvf, keylog, 0);
+
+  }
+
+  /* Cavitation model
+
+     Liquid-vapor mass transfer term for cavitating flows
+     and its part implicit in pressure. */
+
+  if (cs_glob_vof_parameters->vof_model & CS_VOF_MERKLE_MASS_TRANSFER) {
+
+    cs_field_t *f_gamma = cs_field_create("model:cavitation_gamma",
+                                          CS_FIELD_INTENSIVE,
+                                          CS_MESH_LOCATION_CELLS,
+                                          1,
+                                          false);
+    cs_field_set_key_int(f_gamma, keyvis, 0);
+    cs_field_set_key_int(f_gamma, keylog, 0);
+
+    cs_field_t *f_dgdp = cs_field_create("model:cavitation_st_dgdp",
+                                          CS_FIELD_INTENSIVE,
+                                          CS_MESH_LOCATION_CELLS,
+                                          1,
+                                          false);
+    cs_field_set_key_int(f_dgdp, keyvis, 0);
+    cs_field_set_key_int(f_dgdp, keylog, 0);
 
   }
 }
@@ -1570,18 +1560,6 @@ cs_vof_drift_term(int                        imrgra,
   }
 }
 
-/*----------------------------------------------------------------------------
- *!
- * \brief Provide access to cavitation parameters structure.
- */
-/*----------------------------------------------------------------------------*/
-
-cs_cavitation_parameters_t *
-cs_get_glob_cavitation_parameters(void)
-{
-  return &_cavit_parameters;
-}
-
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Solve the void fraction \f$ \alpha \f$ for the Volume of Fluid
@@ -1606,7 +1584,7 @@ cs_get_glob_cavitation_parameters(void)
 /*----------------------------------------------------------------------------*/
 
 void
-cs_vof_solve_void_fraction(int  iterns) // resvoi en fortran
+cs_vof_solve_void_fraction(int  iterns)
 {
   const cs_mesh_t *mesh = cs_glob_mesh;
   const cs_mesh_quantities_t *fvq = cs_glob_mesh_quantities;
@@ -1717,8 +1695,8 @@ cs_vof_solve_void_fraction(int  iterns) // resvoi en fortran
      if it has been implicited in pressure at correction step,
      in order to ensure mass conservation. */
 
-  cs_real_t *gamcav = cs_get_cavitation_gam();
-  cs_real_t *dgdpca = cs_get_cavitation_dgdp_st();
+  cs_real_t *gamcav = cs_field_by_name("model:cavitation_gamma")->val;
+  cs_real_t *dgdpca = cs_field_by_name("model:cavitation_st_dgdp")->val;
 
   if (i_vof_mass_transfer != 0 && cavitation_parameters->itscvi == 1) {
     for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
@@ -1973,6 +1951,86 @@ cs_vof_solve_void_fraction(int  iterns) // resvoi en fortran
   CS_FREE_HD(b_visc);
   CS_FREE_HD(smbrs);
   CS_FREE_HD(dpvar);
+}
+
+/*----------------------------------------------------------------------------
+ *!
+ * \brief Provide write access to cavitation parameters structure.
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_cavitation_parameters_t *
+cs_get_glob_cavitation_parameters(void)
+{
+  return &_cavit_parameters;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Compute the vaporization source term
+ * \f$ \Gamma_V \left(\alpha, p\right) = m^+ + m^- \f$ using the
+ * Merkle model:
+ *
+ * \f[
+ * m^+ = -\dfrac{C_{prod} \rho_l \min \left( p-p_V,0 \right)\alpha(1-\alpha)}
+ *              {0.5\rho_lu_\infty^2t_\infty},
+ * \f]
+ * \f[
+ * m^- = -\dfrac{C_{dest} \rho_v \max \left( p-p_V,0 \right)\alpha(1-\alpha)}
+ *              {0.5\rho_lu_\infty^2t_\infty},
+ * \f]
+ * with \f$ C_{prod}, C_{dest} \f$ empirical constants,
+ * \f$ t_\infty=l_\infty/u_\infty \f$ a reference time scale and \f$p_V\f$
+ * the reference saturation pressure.
+ * \f$ l_\infty \f$, \f$ u_\infty \f$ and \f$p_V\f$ may be provided by
+ * the user (user function).
+ *
+ * Note that the r.h.s. of the void fraction transport equation is
+ * \f$ \Gamma_V/\rho_v \f$.
+ *
+ * \param[in]  pressure  Pressure array
+ * \param[in]  voidf     Void fraction array
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cavitation_compute_source_term(const cs_real_t  pressure[],
+                                  const cs_real_t  voidf[])
+{
+  if (!(cs_glob_vof_parameters->vof_model & CS_VOF_MERKLE_MASS_TRANSFER))
+    return;
+
+  const cs_vof_parameters_t *vof = cs_glob_vof_parameters;
+  const cs_cavitation_parameters_t *cav = cs_glob_cavitation_parameters;
+
+  const cs_mesh_t *mesh = cs_glob_mesh;
+  const cs_lnum_t n_cells = mesh->n_cells;
+
+  // Merkle model
+
+  cs_real_t *gamcav = cs_field_by_name("model:cavitation_gamma")->val;
+  cs_real_t *dgdpca = cs_field_by_name("model:cavitation_st_dgdp")->val;
+
+  cs_real_t tinf = cav->linf / cav->uinf;
+
+  cs_real_t cond =   (cav->cdest * vof->rho2)
+                   / (0.5 * vof->rho1 * cav->uinf * cav->uinf * tinf);
+  cs_real_t cvap =   (cav->cprod * vof->rho1)
+                   / (0.5 * vof->rho1 * cav->uinf * cav->uinf * tinf);
+  const cs_real_t presat = cav->presat;
+
+# pragma omp parallel for  if (n_cells > CS_THR_MIN)
+  for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+
+    const cs_real_t w = voidf[c_id] * (1. - voidf[c_id]);
+    cs_real_t condens = -cond * cs_math_fmax(0., pressure[c_id] - presat) * w;
+    cs_real_t vaporis = -cvap * cs_math_fmin(0., pressure[c_id] - presat) * w;
+    gamcav[c_id] = condens + vaporis;
+    if (gamcav[c_id] < 0)
+      dgdpca[c_id] = -cond*voidf[c_id]*(1. - voidf[c_id]);
+    else
+      dgdpca[c_id] = -cvap*voidf[c_id]*(1. - voidf[c_id]);
+  }
 }
 
 /*----------------------------------------------------------------------------*/

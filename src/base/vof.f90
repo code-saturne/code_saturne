@@ -33,29 +33,6 @@ module vof
 
   !=============================================================================
 
-  !> \addtogroup vof
-  !> \{
-
-  !----------------------------------------------------------------------------
-  ! Homogeneous mixture physical properties
-  !----------------------------------------------------------------------------
-
-  !> \addtogroup vof_mixture_properties
-  !> \{
-
-  !> reference density of fluid 1 (kg/m3).
-  !> By convention, liquid phase for cavitation model.
-  real(c_double), pointer, save :: rho1
-
-  !> reference density of fluid 2 (kg/m3).
-  !> By convention, gas phase for cavitation model.
-  real(c_double), pointer, save :: rho2
-
-  !> \}
-  !> \}
-
-  !=============================================================================
-
   interface
 
      !---------------------------------------------------------------------------
@@ -67,11 +44,11 @@ module vof
      ! Interface to C function retrieving pointers to VOF model indicator
      ! and parameters
 
-     subroutine cs_f_vof_get_pointers(ivofmt, rho1, rho2, idrift) &
+     subroutine cs_f_vof_get_pointers(ivofmt, idrift) &
        bind(C, name='cs_f_vof_get_pointers')
        use, intrinsic :: iso_c_binding
        implicit none
-       type(c_ptr), intent(out) :: ivofmt, rho1, rho2, idrift
+       type(c_ptr), intent(out) :: ivofmt, idrift
      end subroutine cs_f_vof_get_pointers
 
      !---------------------------------------------------------------------------
@@ -100,13 +77,11 @@ contains
 
     ! Local variables
 
-    type(c_ptr) :: c_ivofmt, c_rho1, c_rho2, c_idrift
+    type(c_ptr) :: c_ivofmt, c_idrift
 
-    call cs_f_vof_get_pointers(c_ivofmt, c_rho1, c_rho2, c_idrift)
+    call cs_f_vof_get_pointers(c_ivofmt, c_idrift)
 
     call c_f_pointer(c_ivofmt, ivofmt)
-    call c_f_pointer(c_rho1, rho1)
-    call c_f_pointer(c_rho2, rho2)
     call c_f_pointer(c_idrift, idrift)
 
   end subroutine vof_model_init

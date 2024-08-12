@@ -212,7 +212,7 @@ _log_global_model_options(void)
 
   cs_atmo_aerosol_log_setup();
 
-  /* VoF */
+  /* VoF and cavitation */
 
   cs_vof_log_setup();
 

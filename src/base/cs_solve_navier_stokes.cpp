@@ -4289,9 +4289,6 @@ cs_solve_navier_stokes(const int        iterns,
 
         dt = cs_field_by_name("dt")->val;
 
-        /* Resize auxiliary arrays (pointe module) */
-        cs_fortran_resize_aux_arrays();
-
         /* Resize other arrays related to the velocity-pressure resolution */
         CS_REALLOC_HD(da_uu, n_cells_ext, cs_real_6_t, cs_alloc_mode);
         cs_mesh_sync_var_sym_tens(da_uu);

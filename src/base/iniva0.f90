@@ -59,7 +59,6 @@ use ppthch
 use ppincl
 use field
 use mesh
-use cavitation
 use vof
 use cs_cf_bindings
 use cs_c_bindings

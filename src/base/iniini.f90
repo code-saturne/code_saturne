@@ -50,7 +50,6 @@ use ppcpfu
 use mesh
 use field
 use vof
-use cavitation
 use radiat
 use ctincl
 use cfpoin
@@ -84,8 +83,6 @@ call field_get_key_id("diffusivity_id", kivisl)
 call field_get_key_id("diffusivity_ref", kvisl0)
 
 call field_get_key_id("is_temperature", kscacp)
-
-call field_get_key_id("density_id", kromsl)
 
 call field_get_key_id("gradient_weighting_id", kwgrec)
 
@@ -127,7 +124,6 @@ call ctwr_properties_init
 call map_ale
 call cf_model_init
 call vof_model_init
-call cavitation_model_init
 
 !===============================================================================
 ! Get mesh metadata.

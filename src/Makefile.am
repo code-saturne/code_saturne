@@ -52,7 +52,6 @@ base/mesh.f90 \
 base/field.f90 \
 base/field_operator.f90 \
 base/albase.f90 \
-base/cavitation.f90 \
 base/cdomod.f90 \
 base/cstphy.f90 \
 base/cstnum.f90 \
@@ -86,9 +85,6 @@ base/vof.f90
 # not yet handle Fortran module dependencies)
 
 base/albase.$(OBJEXT): base/optcal.$(OBJEXT) base/cs_c_bindings.$(OBJEXT)
-
-base/cavitation.$(OBJEXT): base/optcal.$(OBJEXT) base/pointe.$(OBJEXT) \
- base/mesh.$(OBJEXT) base/vof.$(OBJEXT)
 
 base/vof.$(OBJEXT): base/optcal.$(OBJEXT)
 

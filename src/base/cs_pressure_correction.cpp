@@ -1144,7 +1144,7 @@ _pressure_correction_fv(int                   iterns,
 
   /* Implicit part of the cavitation source */
   if (i_vof_mass_transfer != 0 && cavitation_parameters->itscvi == 1) {
-    cs_real_t *dgdpca = cs_get_cavitation_dgdp_st();
+    cs_real_t *dgdpca = cs_field_by_name("model:cavitation_st_dgdp")->val;
     cs_real_t rho1 = vof_parameters->rho1;
     cs_real_t rho2 = vof_parameters->rho2;
 
@@ -1977,7 +1977,7 @@ _pressure_correction_fv(int                   iterns,
   /* Cavitation source term */
 
   if (i_vof_mass_transfer != 0) {
-    cs_real_t *gamcav = cs_get_cavitation_gam();
+    cs_real_t *gamcav = cs_field_by_name("model:cavitation_gamma")->val;
     cs_real_t rho1 = vof_parameters->rho1;
     cs_real_t rho2 = vof_parameters->rho2;
 

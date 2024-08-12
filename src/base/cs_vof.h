@@ -1,5 +1,5 @@
-#ifndef __CS_VOF_H__
-#define __CS_VOF_H__
+#ifndef CS_VOF_H
+#define CS_VOF_H
 
 /*============================================================================
  * Functions associated to VOF model
@@ -35,7 +35,7 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "cs_base.h"
+#include "cs_defs.h"
 #include "cs_mesh.h"
 #include "cs_mesh_quantities.h"
 
@@ -123,13 +123,17 @@ typedef struct {
 
 extern const cs_vof_parameters_t *cs_glob_vof_parameters;
 
+/* pointer to cavitation model parameters structure */
+
+extern const cs_cavitation_parameters_t *cs_glob_cavitation_parameters;
+
 /*============================================================================
  * Public function prototypes
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
  *!
- * \brief Provide access to VOF structure.
+ * \brief Provide write access to VOF structure.
  */
 /*----------------------------------------------------------------------------*/
 
@@ -339,15 +343,6 @@ cs_vof_drift_term(int               imrgra,
                   const cs_real_t  *pvara,
                   cs_real_t        *rhs);
 
-/*----------------------------------------------------------------------------
- *!
- * \brief Provide access to cavitation parameters structure.
- */
-/*----------------------------------------------------------------------------*/
-
-cs_cavitation_parameters_t *
-cs_get_glob_cavitation_parameters(void);
-
 /*----------------------------------------------------------------------------*/
 /*
  * \param[in]     iterns        Navier-Stokes iteration number
@@ -357,8 +352,49 @@ cs_get_glob_cavitation_parameters(void);
 void
 cs_vof_solve_void_fraction(int  iterns);
 
+/*----------------------------------------------------------------------------
+ *!
+ * \brief Provide write access to cavitation parameters structure.
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_cavitation_parameters_t *
+cs_get_glob_cavitation_parameters(void);
+
+/*----------------------------------------------------------------------------*/
+/*
+ * \brief Compute the vaporization source term
+ * \f$ \Gamma_V \left(\alpha, p\right) = m^+ + m^- \f$ using the
+ * Merkle model:
+ *
+ * \f[
+ * m^+ = -\dfrac{C_{prod} \rho_l \min \left( p-p_V,0 \right)\alpha(1-\alpha)}
+ *              {0.5\rho_lu_\infty^2t_\infty},
+ * \f]
+ * \f[
+ * m^- = -\dfrac{C_{dest} \rho_v \max \left( p-p_V,0 \right)\alpha(1-\alpha)}
+ *              {0.5\rho_lu_\infty^2t_\infty},
+ * \f]
+ * with \f$ C_{prod}, C_{dest} \f$ empirical constants,
+ * \f$ t_\infty=l_\infty/u_\infty \f$ a reference time scale and \f$p_V\f$
+ * the reference saturation pressure.
+ * \f$ l_\infty \f$, \f$ u_\infty \f$ and \f$p_V\f$ may be provided by
+ * the user (user function).
+ *
+ * Note that the r.h.s. of the void fraction transport equation is
+ * \f$ \Gamma_V/\rho_v \f$.
+ *
+ * \param[in]  pressure  Pressure array
+ * \param[in]  voidf     Void fraction array
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cavitation_compute_source_term(const cs_real_t  pressure[],
+                                  const cs_real_t  voidf[]);
+
 /*----------------------------------------------------------------------------*/
 
 END_C_DECLS
 
-#endif /* __CS_VOF_H__ */
+#endif /* CS_VOF_H */

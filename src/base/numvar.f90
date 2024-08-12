@@ -192,9 +192,6 @@ module numvar
   !> do scalars behave as a temperature (regarding multiplication by Cp) ?
   integer, save :: kscacp = -1
 
-  !> variable density field id key for scalars
-  integer, save :: kromsl = -1
-
   !> source terms at previous time step for 2nd order
   integer, save :: kstprv = -1
 
