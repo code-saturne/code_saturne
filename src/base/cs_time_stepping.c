@@ -378,8 +378,6 @@ cs_time_stepping(void)
 
   cs_field_allocate_or_map_all();
 
-  cs_real_t *dt = cs_field_by_name("dt")->val;
-
   cs_f_iniva0();
   cs_initialize_fields_stage_0();
 
@@ -585,7 +583,7 @@ cs_time_stepping(void)
 
     cs_timer_stats_start(lagr_stats_id);
 
-    cs_lagr_solve_initialize(dt);
+    cs_lagr_solve_initialize(CS_F_(dt)->val);
 
     cs_timer_stats_stop(lagr_stats_id);
 
@@ -651,6 +649,7 @@ cs_time_stepping(void)
     */
 
     if (idtvar != 1) {
+      cs_real_t *dt = CS_F_(dt)->val;
 
       cs_coupling_sync_apps(0,      /* flags */
                             ts->nt_cur,
@@ -756,7 +755,7 @@ cs_time_stepping(void)
 
         cs_timer_stats_start(lagr_stats_id);
 
-        cs_lagr_solve_time_step(bc_type, dt);
+        cs_lagr_solve_time_step(bc_type, CS_F_(dt)->val);
 
         cs_timer_stats_stop(lagr_stats_id);
 
@@ -797,7 +796,7 @@ cs_time_stepping(void)
       cs_gui_balance_by_zone();
       cs_gui_pressure_drop_by_zone();
 
-      cs_f_user_extra_operations_wrapper(dt);
+      cs_f_user_extra_operations_wrapper(CS_F_(dt)->val);
 
       cs_user_extra_operations(cs_glob_domain);
 
@@ -891,7 +890,7 @@ cs_time_stepping(void)
 
     if (cs_log_default_is_active()) {
 
-      cs_f_equation_convergence_info_write(dt);
+      cs_f_equation_convergence_info_write(CS_F_(dt)->val);
 
       cs_log_iteration();
 
