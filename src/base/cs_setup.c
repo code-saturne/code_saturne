@@ -798,9 +798,9 @@ _additional_fields_stage_1(void)
     cs_field_t *f = cs_field_by_id(f_id);
     if (!(f->type & CS_FIELD_VARIABLE) || f->type & CS_FIELD_CDO)
       continue;
-    int ifcvsl = cs_field_get_key_int(f, kivisl);
+    int ifcdep = cs_field_get_key_int(f, key_turb_diff);
     int var_f_id = cs_field_get_key_int(f, kscavr);
-    if (ifcvsl >= 0 && var_f_id < 0) {
+    if (ifcdep >= 0 && var_f_id < 0) {
       /* Build name and label, using a general rule, with
        * a fixed name for temperature or enthalpy */
       char s_name[128];
@@ -811,9 +811,9 @@ _additional_fields_stage_1(void)
       s_label[127] = '\0';
 
       if (cs_glob_physical_model_flag[CS_COMBUSTION_SLFM] >= 0) {
-        int ifm_ifcvsl = cs_field_get_key_int(CS_F_(fm), key_turb_diff);
+        int ifm_ifcdep = cs_field_get_key_int(CS_F_(fm), key_turb_diff);
         if (f != CS_F_(fm))
-          cs_field_set_key_int(f, key_turb_diff, ifm_ifcvsl);
+          cs_field_set_key_int(f, key_turb_diff, ifm_ifcdep);
         continue;
       }
 
@@ -835,7 +835,8 @@ _additional_fields_stage_1(void)
     const int iscavr = cs_field_get_key_int(f, kscavr);
     if (iscavr < 0)
       continue;
-    int ifcvsl = cs_field_get_key_int(cs_field_by_id(iscavr), kivisl);
+    int ifcdep = cs_field_get_key_int(cs_field_by_id(iscavr),
+                                      key_turb_diff);
     if (cs_field_is_key_set(f, key_turb_diff) == true)
       cs_parameters_error
         (CS_ABORT_DELAYED,
@@ -846,7 +847,7 @@ _additional_fields_stage_1(void)
            "automatically set equal to that of the associated scalar.\n"),
          f_id, iscavr);
     else
-      cs_field_set_key_int(f, key_turb_diff, ifcvsl);
+      cs_field_set_key_int(f, key_turb_diff, ifcdep);
   }
 
   if (cs_glob_turb_model->iturb == CS_TURB_LES_SMAGO_DYN) {
@@ -855,9 +856,9 @@ _additional_fields_stage_1(void)
       cs_field_t *f = cs_field_by_id(f_id);
       if (!(f->type & CS_FIELD_VARIABLE) || f->type & CS_FIELD_CDO)
         continue;
-      int ifcvsl = cs_field_get_key_int(f, key_sgs_sca_coef);
+      int ifcdep = cs_field_get_key_int(f, key_sgs_sca_coef);
       int var_f_id = cs_field_get_key_int(f, kscavr);
-      if (ifcvsl >= 0 && var_f_id < 0) {
+      if (ifcdep >= 0 && var_f_id < 0) {
         /* Build name and label using a general rule */
         char s_name[128];
         char s_label[128];
@@ -867,9 +868,9 @@ _additional_fields_stage_1(void)
         s_label[127] = '\0';
 
         if (cs_glob_physical_model_flag[CS_COMBUSTION_SLFM] >= 0) {
-          int ifm_ifcvsl = cs_field_get_key_int(CS_F_(fm), key_sgs_sca_coef);
+          int ifm_ifcdep = cs_field_get_key_int(CS_F_(fm), key_sgs_sca_coef);
           if (f != CS_F_(fm))
-            cs_field_set_key_int(f, key_sgs_sca_coef, ifm_ifcvsl);
+            cs_field_set_key_int(f, key_sgs_sca_coef, ifm_ifcdep);
           continue;
         }
         /* Now create matching property */
@@ -889,7 +890,8 @@ _additional_fields_stage_1(void)
         continue;
       const int iscavr = cs_field_get_key_int(f, kscavr);
       if (iscavr > -1) {
-        int ifcvsl = cs_field_get_key_int(cs_field_by_id(iscavr), kivisl);
+        int ifcdep = cs_field_get_key_int(cs_field_by_id(iscavr),
+                                          key_sgs_sca_coef);
         if (cs_field_is_key_set(f, key_sgs_sca_coef) == true)
           cs_parameters_error
             (CS_ABORT_DELAYED,
@@ -900,7 +902,7 @@ _additional_fields_stage_1(void)
                "automatically set equal to that of the associated scalar.\n"),
              f_id, iscavr);
         else
-          cs_field_set_key_int(f, key_sgs_sca_coef, ifcvsl);
+          cs_field_set_key_int(f, key_sgs_sca_coef, ifcdep);
       }
     }
   } /* End for CS_TURB_LES_SMAGO_DYN) */
@@ -920,9 +922,9 @@ _additional_fields_stage_1(void)
     int scalar_id = (ks > -1) ? cs_field_get_key_int(f, ks) : -1;
     if (scalar_id < 0)
       continue;
-    int ifcvsl = cs_field_get_key_int(f, kromsl);
+    int ifcdep = cs_field_get_key_int(f, kromsl);
     int var_f_id = cs_field_get_key_int(f, kscavr);
-    if (ifcvsl == 0 && var_f_id < 0) {
+    if (ifcdep == 0 && var_f_id < 0) {
       char f_name[128];
       char f_label[128];
       snprintf(f_name, 127, "%s_density", f->name);
@@ -948,7 +950,7 @@ _additional_fields_stage_1(void)
     const int iscavr = cs_field_get_key_int(f, kscavr);
     if (iscavr < 0)
       continue;
-    int ifcvsl = cs_field_get_key_int(cs_field_by_id(iscavr), kivisl);
+    int ifcdep = cs_field_get_key_int(cs_field_by_id(iscavr), kromsl);
     if (cs_field_is_key_set(f, kromsl) == true)
       cs_parameters_error
         (CS_ABORT_DELAYED,
@@ -959,7 +961,7 @@ _additional_fields_stage_1(void)
            "automatically set equal to that of the associated scalar.\n"),
          f_id, iscavr);
     else
-      cs_field_set_key_int(f, kromsl, ifcvsl);
+      cs_field_set_key_int(f, kromsl, ifcdep);
   }
 
   /* Add a scalar turbulent Schmidt field. */
@@ -970,9 +972,9 @@ _additional_fields_stage_1(void)
     const int iscavr = cs_field_get_key_int(f, kscavr);
     if (iscavr < 0)
       continue;
-    int ifcvsl = cs_field_get_key_int(f, key_turb_schmidt);
+    int ifcdep = cs_field_get_key_int(f, key_turb_schmidt);
     int var_f_id = cs_field_get_key_int(f, kscavr);
-    if (ifcvsl == 0 && var_f_id < 0) {
+    if (ifcdep == 0 && var_f_id < 0) {
       char f_name[128];
       char f_label[128];
       snprintf(f_name, 127, "%s_turb_schmidt", f->name);
@@ -998,7 +1000,8 @@ _additional_fields_stage_1(void)
     const int iscavr = cs_field_get_key_int(f, kscavr);
     if (iscavr < 0)
       continue;
-    int ifcvsl = cs_field_get_key_int(cs_field_by_id(iscavr), kivisl);
+    int ifcdep = cs_field_get_key_int(cs_field_by_id(iscavr),
+                                      key_turb_schmidt);
     if (cs_field_is_key_set(f, key_turb_schmidt) == true)
       cs_parameters_error
         (CS_ABORT_DELAYED,
@@ -1009,7 +1012,7 @@ _additional_fields_stage_1(void)
            "automatically set equal to that of the associated scalar.\n"),
          f_id, iscavr);
     else
-      cs_field_set_key_int(f, key_turb_schmidt, ifcvsl);
+      cs_field_set_key_int(f, key_turb_schmidt, ifcdep);
   }
 
   /* Boundary roughness (may be already created by the atmospheric module) */
