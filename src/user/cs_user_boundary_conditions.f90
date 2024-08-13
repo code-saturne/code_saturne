@@ -103,30 +103,8 @@ double precision rcodcl(nfabor,nvar,3)
 
 ! Local variables
 
-! INSERT_VARIABLE_DEFINITIONS_HERE
-
-integer, allocatable, dimension(:) :: lstelt
-
 !===============================================================================
 
-!===============================================================================
-! Initialization
-!===============================================================================
-
-allocate(lstelt(nfabor))  ! temporary array for boundary faces selection
-
-! INSERT_ADDITIONAL_INITIALIZATION_CODE_HERE
-
-!===============================================================================
-! Assign boundary conditions to boundary faces here
-
-! For each subset:
-! - use selection criteria to filter boundary faces of a given subset
-! - loop on faces from a subset
-!   - set the boundary condition for each face
-!===============================================================================
-
-! INSERT_MAIN_CODE_HERE
 
 !--------
 ! Formats
@@ -136,11 +114,5 @@ allocate(lstelt(nfabor))  ! temporary array for boundary faces selection
 ! End
 !----
 
-deallocate(lstelt)  ! temporary array for boundary faces selection
-
 return
 end subroutine cs_f_user_boundary_conditions
-
-!> \section examples Examples
-!>   Several examples are provided
-!>   \ref cs_user_boundary_conditions_examples "here".

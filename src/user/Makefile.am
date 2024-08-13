@@ -171,10 +171,7 @@ install-data-hook:
 	stubvers="^\!VERS\n"; \
 	version1="\!                      code_saturne version $(cs_version_short)\n"; \
 	version2="\!                      ------------------------"; \
-	comment1="^\! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_START"; \
-	comment2="^\! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_END"; \
 	for file in $${f90_user_files}; do \
-	  $(SED) -e "N;s/$${stubvers}/$${version1}$${version2}/" < "$${file}" | \
-	  $(SED) -e "/$${comment1}/,/$${comment2}/d" > "$${file}.tmp" && \
+	  $(SED) -e "N;s/$${stubvers}/$${version1}$${version2}/" < "$${file}" > "$${file}.tmp" && \
 	  mv "$${file}.tmp" "$${file}"; \
 	done
