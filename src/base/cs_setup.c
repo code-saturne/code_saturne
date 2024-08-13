@@ -2096,7 +2096,7 @@ _additional_fields_stage_3(void)
     const int turb_flux_model_type = turb_flux_model / 10;
 
     if (turb_flux_model_type != CS_TURB_TYPE_NONE) {
-      if (turb_flux_model_type == CS_TURB_HYBRID)
+      if (turb_flux_model_type == 3)
         idfm = 1;
 
       /* GGDH or AFM on current scalar and if DFM, GGDH on the scalar variance
@@ -2529,11 +2529,12 @@ _additional_fields_stage_3(void)
 
   cs_vof_field_create();
 
-  /* Turbulent anisotropic viscosity or user defined tensorial diffusivity
+  /* Turbulent anisotropic viscosity or user defined tensor diffusivity
    * for a scalar (exclusive or).*/
 
-  if ((idfm == 1 || iggafm == 1 || cs_glob_turb_model->itytur == 3)
-      && cs_glob_turb_rans_model->idirsm == 1) {
+  if (idfm == 1 || iggafm == 1
+        || (cs_glob_turb_model->order == CS_TURB_SECOND_ORDER
+        && cs_glob_turb_rans_model->idirsm == 1)) {
 
     cs_field_t *f_atv = cs_field_create("anisotropic_turbulent_viscosity",
                                         CS_FIELD_INTENSIVE | CS_FIELD_PROPERTY,
