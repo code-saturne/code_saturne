@@ -44,34 +44,6 @@ module cdomod
 
   interface
 
-    ! Interface to C function to solve the steady state for related CDO
-    ! equations
-
-    subroutine cs_f_cdo_solve_steady_state_domain()  &
-      bind(C, name='cs_f_cdo_solve_steady_state_domain')
-      use, intrinsic :: iso_c_binding
-      implicit none
-    end subroutine cs_f_cdo_solve_steady_state_domain
-
-    ! Interface to C function to force the resolution of steady equation
-
-    subroutine cs_equation_solve_steady_state_wrapper(eqname) &
-      bind(C, name='cs_equation_solve_steady_state_wrapper')
-      use, intrinsic :: iso_c_binding
-      implicit none
-      character(kind=c_char, len=1), dimension(*), intent(in) :: eqname
-    end subroutine cs_equation_solve_steady_state_wrapper
-
-    ! Interface to C function to force the resolution of an unsteady equation
-
-    subroutine solve_cdo_equation(cur2prev, eqname) &
-      bind(C, name='cs_equation_solve_wrapper')
-      use, intrinsic :: iso_c_binding
-      implicit none
-      logical(c_bool), value :: cur2prev
-      character(kind=c_char, len=1), dimension(*), intent(in) :: eqname
-    end subroutine solve_cdo_equation
-
     ! Interface to C function retrieving pointers to global CDO parameters
 
     subroutine cs_f_cdo_get_pointers(icdo) &
@@ -88,26 +60,6 @@ module cdomod
 contains
 
   !=============================================================================
-
-  subroutine solve_steady_state_cdo_equation(eqname)
-    use, intrinsic :: iso_c_binding
-    implicit none
-
-    ! Arguments
-
-    character(len=*), intent(in) :: eqname
-
-    ! Local variables
-
-    character(len=len_trim(eqname)+1, kind=c_char) :: c_eqname
-
-    c_eqname = trim(eqname)//c_null_char
-
-    call cs_equation_solve_steady_state_wrapper(c_eqname)
-
-    return
-
-  end subroutine solve_steady_state_cdo_equation
 
   !> \brief Initialize Fortran CDO flag.
   !> This maps Fortran pointers to global C structure members.

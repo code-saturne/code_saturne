@@ -769,34 +769,6 @@ cs_equation_solve(bool             cur2prev,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Build and then solve the linear system for a steady-state equation.
- *        This is wrapper for the FORTRAN interface (limitation of the
- *        parameters to simple types).
- *
- * \param[in] eqname     name of the equation to solve
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_equation_solve_steady_state_wrapper(const char *eqname);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Build and then solve the linear system for an equation with an
- *        unsteady term. This is wrapper for the FORTRAN interface (limitation
- *        of the parameters to simple types)
- *
- * \param[in] cur2prev   true="current to previous" operation is performed
- * \param[in] eqname     name of the equation to solve
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_equation_solve_wrapper(bool        cur2prev,
-                          const char *eqname);
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief Build the linear system for this equation (deprecated). Only for HHO
  *        schemes
  *

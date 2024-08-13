@@ -582,7 +582,7 @@ cs_time_stepping(void)
 
   if (cs_glob_param_cdo_mode == CS_PARAM_CDO_MODE_WITH_FV) {
     /* FV and CDO activated */
-    cs_f_cdo_solve_steady_state_domain();
+    cs_cdo_solve_steady_state_domain();
   }
 
   /* Logging of initial values */

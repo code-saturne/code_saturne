@@ -116,15 +116,6 @@ static const char _err_empty_eq[]
        " Please check your settings.\n");
 
 /*============================================================================
- * Prototypes for functions intended for use only by Fortran wrappers.
- * (descriptions follow, with function bodies).
- *============================================================================*/
-
-void solve_steady_state_cdo_equation(const char *eqname);
-
-void solve_cdo_equation(bool cur2prev, const char *eqname);
-
-/*============================================================================
  * Private function prototypes
  *============================================================================*/
 
