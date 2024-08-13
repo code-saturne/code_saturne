@@ -671,6 +671,11 @@ cs_lagr_particle_attr_initialize(void)
 
   int pepa_loc_add = 1000; /* should be above any j* pointer if used */
 
+  /* attr_keys contains:
+   * 0: type (0 if unused attr)
+   * 1: attr_id (0 if unused attr)
+   * 2: dim (0 if unused attr)
+   * */
   cs_lnum_t attr_keys[CS_LAGR_N_ATTRIBUTES][3];
 
   /* Initialize global parameter relative to the Lagrangian module */
@@ -697,6 +702,8 @@ cs_lagr_particle_attr_initialize(void)
   attr_keys[CS_LAGR_CELL_ID][0] = CS_LAGR_P_IVAR;
   attr_keys[CS_LAGR_CELL_ID][1] = ++loc_count;
 
+  /* Warning: apparently rank_id point at the same location
+   * as cell_id. */
   attr_keys[CS_LAGR_RANK_ID][0] = CS_LAGR_P_RKID;
   attr_keys[CS_LAGR_RANK_ID][1] = 1;
 
@@ -960,7 +967,7 @@ cs_lagr_particle_attr_initialize(void)
 /*!
  * \brief  Return const pointer to the main particle attribute map structure.
  *
- * \return pointer to current particle attrbute map, or NULL
+ * \return pointer to current particle attribute map, or NULL
  */
 /*----------------------------------------------------------------------------*/
 

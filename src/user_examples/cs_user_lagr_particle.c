@@ -466,32 +466,6 @@ cs_user_lagr_in(cs_lagr_particle_set_t         *particles,
     cs_glob_lagr_time_scheme->isttio = 1;
   }
 
-  /* Simulation of the instantaneous turbulent fluid flow velocities seen
-     by the solid particles along their trajectories
-     -------------------------------------------------------------------- */
-
-  /* In the previous operations, the particle data has been set with the
-   * components of the instantaneous velocity (fluctuation + mean value) seen
-   * by the particles.
-   *
-   * When the velocity of the flow is modified as above, most of the time
-   * the user knows only the mean value. In some flow configurations and some
-   * injection conditions, it may be necessary to reconstruct the
-   * fluctuating part.
-   * That is why the following function may be called.
-   * Caution:
-   *   - this turbulent component must be reconstructed only on the modified
-   *     velocities of the flow seen.
-   *   - the reconstruction must be adapted to the case. */
-
-  {
-    int time_id = 1;
-    if (cs_glob_time_step->nt_cur == 1)
-      time_id = 0;
-    cs_lagr_new_particle_init(particle_range,
-                              time_id,
-                              visc_length);
-  }
 }
 /*! [lagr_inj] */
 

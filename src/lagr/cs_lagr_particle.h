@@ -30,6 +30,7 @@
 #include "cs_defs.h"
 
 #include "assert.h"
+#include "string.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -882,6 +883,28 @@ cs_lagr_particles_set_real_n(cs_lagr_particle_set_t  *particle_set,
   *((cs_real_t *)(  particle_set->p_buffer
                   + particle_set->p_am->extents*particle_id
                   + particle_set->p_am->displ[time_id][attr])) = value;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Set attribute value of type cs_real_t of a given particle in a set
+ *        at a given time.
+ *
+ * \param[in, out]   p_set         pointer to particle set
+ * \param[in]        particle_id   particle id
+ * \param[in]        time_id       0 for current, 1 for previous
+ * \param[in]        attr          requested attribute id
+ * \param[in]        value         value to assign
+ */
+/*----------------------------------------------------------------------------*/
+
+inline static void
+cs_lagr_particles_attributes_fill_zero(cs_lagr_particle_set_t  *p_set,
+                                       cs_lnum_t                p_id)
+{
+  memset(p_set->p_buffer + p_set->p_am->extents * p_id,
+         0,
+         p_set->p_am->extents);
 }
 
 /*----------------------------------------------------------------------------*/

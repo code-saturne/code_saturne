@@ -108,13 +108,15 @@ cs_lagr_new_v(cs_lagr_particle_set_t  *particles,
  * \param[in]  time_id         associated time id (0: current, 1: previous)
  * \param[in]  visc_length     viscous layer thickness
  *                             (size: number of mesh boundary faces)
+ * \param[in]  zis             injection data for this zone and set
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_lagr_new_particle_init(const cs_lnum_t  particle_range[2],
-                          int              time_id,
-                          const cs_real_t  visc_length[]);
+cs_lagr_new_particle_init(const cs_lnum_t                 particle_range[2],
+                          int                             time_id,
+                          const cs_real_t                 visc_length[],
+                          const cs_lagr_injection_set_t  *zis);
 
 /*----------------------------------------------------------------------------*/
 
