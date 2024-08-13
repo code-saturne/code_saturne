@@ -200,7 +200,7 @@ _init_setup(void)
  */
 /*----------------------------------------------------------------------------*/
 
-static int
+static cs_field_t *
 _add_property_field
 (
   const char *f_name,
@@ -213,6 +213,12 @@ _add_property_field
   const int keylog = cs_field_key_id("log");
   const int keylbl = cs_field_key_id("label");
 
+  if (cs_field_by_name_try(f_name) != NULL)
+    cs_parameters_error(CS_ABORT_IMMEDIATE,
+                        _("initial data setup"),
+                        _("Field %s has already been assigned.\n"),
+                        f_name);
+
   cs_physical_property_define_from_field(f_name,
                                          CS_FIELD_INTENSIVE | CS_FIELD_PROPERTY,
                                          CS_MESH_LOCATION_CELLS,
@@ -220,13 +226,14 @@ _add_property_field
                                          has_previous);
 
   int f_id = cs_physical_property_field_id_by_name(f_name);
+  cs_field_t *f = cs_field_by_id(f_id);
 
-  cs_field_set_key_int(cs_field_by_id(f_id), keyvis, 0);
-  cs_field_set_key_int(cs_field_by_id(f_id), keylog, 1);
+  cs_field_set_key_int(f, keyvis, 0);
+  cs_field_set_key_int(f, keylog, 1);
   if (f_label != NULL)
-    cs_field_set_key_str(cs_field_by_id(f_id), keylbl, f_label);
+    cs_field_set_key_str(f, keylbl, f_label);
 
-  return f_id;
+  return f;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -546,6 +553,349 @@ _create_variable_fields(void)
 static void
 _additional_fields_stage_1(void)
 {
+  /* Initialization
+     -------------- */
+
+  const int keyvis = cs_field_key_id("post_vis");
+  const int keylog = cs_field_key_id("log");
+  const int keylbl = cs_field_key_id("label");
+
+  const int pflag = CS_POST_ON_LOCATION | CS_POST_MONITOR;
+
+  const cs_turb_model_t *turb_model = cs_glob_turb_model;
+  cs_turb_rans_model_t *turb_rans_model = cs_get_glob_turb_rans_model();
+  cs_fluid_properties_t *fluid_props = cs_get_glob_fluid_properties();
+
+  /* Determine itycor now that irccor is known (iturb/itytur known much earlier)
+     type of rotation/curvature correction for turbulent viscosity models. */
+
+  if (turb_rans_model->irccor == 1) {
+    if (turb_model->itytur == 2 || turb_model->itytur == 5)
+      turb_rans_model->itycor = 1;
+    else if (   turb_model->iturb == CS_TURB_K_OMEGA
+             || turb_model->iturb == CS_TURB_SPALART_ALLMARAS)
+      turb_rans_model->itycor = 2;
+  }
+
+  /* Additional physical properties
+     ------------------------------ */
+
+  if (cs_glob_vof_parameters->vof_model != 0) {
+    // variable density
+    fluid_props->irovar = 1;
+    fluid_props->ivivar = 1;
+  }
+
+  // CP when variable
+  if (fluid_props->icp >= 0) {
+    cs_field_t *f_cp = _add_property_field("specific_heat",
+                                           "Specific Heat",
+                                           1,
+                                           false);
+
+    cs_field_set_key_int(f_cp, keyvis, 1);
+    cs_field_set_key_int(f_cp, keylog, 1);
+
+    fluid_props->icp = f_cp->id;
+  }
+
+  // ALE mesh viscosity
+  if (cs_glob_ale != CS_ALE_NONE) {
+    const cs_equation_param_t *eqp
+      = cs_field_get_equation_param_const(CS_F_(mesh_u));
+    const int idftnp = eqp->idften;
+
+    if (idftnp & CS_ISOTROPIC_DIFFUSION)
+      _add_property_field("mesh_viscosity", "Mesh Visc", 1, false);
+
+    else if (idftnp & CS_ANISOTROPIC_LEFT_DIFFUSION)
+      _add_property_field("mesh_viscosity", "Mesh Visc", 6, false);
+  }
+
+  if (turb_rans_model->irccor == 1 && cs_glob_time_step_options->idtvar >= 0) {
+    // Strain rate tensor at the previous time step
+    cs_field_t *f = _add_property_field("strain_rate_tensor",
+                                        "Strain Rate Tensor",
+                                        6,
+                                        false);
+    cs_field_set_key_int(f, keyvis, 1);
+  }
+
+  /* TODO: migrate varpos to C */
+
+  cs_f_varpos();
+
+  /* Porosity
+     -------- */
+
+  if (cs_glob_porous_model >= 1) {
+
+    const char porosity_name[] = "porosity";
+    cs_field_t *f = NULL;
+
+    if (   cs_glob_porosity_from_scan_opt->compute_porosity_from_scan
+        || cs_glob_porosity_ibm_opt->porosity_mode > 0) {
+
+      // TODO move it to _create_variable_fields() ?
+      f = _add_variable_field(porosity_name, NULL, 1);
+
+      // Pure convection equation (no time term)
+      cs_equation_param_t *eqp = cs_field_get_equation_param(f);
+      eqp->iconv = 1;
+      eqp->blencv= 0.; // Pure upwind
+      eqp->istat = 0;
+      eqp->nswrsm = 1;
+      eqp->idiff  = 0;
+      eqp->idifft = 0;
+      eqp->relaxv = 1.; // No relaxation, even for steady algorithm.
+
+      // Activate the drift for all scalars with key "drift" > 0
+      int iscdri =   CS_DRIFT_SCALAR_ON
+                   | CS_DRIFT_SCALAR_ADD_DRIFT_FLUX
+                   | CS_DRIFT_SCALAR_IMPOSED_MASS_FLUX;
+
+      int keydri = cs_field_key_id("drift_scalar_model");
+      cs_field_set_key_int(f, keydri, iscdri);
+
+    }
+    else {
+      f = cs_field_create(porosity_name,
+                          CS_FIELD_INTENSIVE | CS_FIELD_PROPERTY,
+                          CS_MESH_LOCATION_CELLS,
+                          1,
+                          false);
+      cs_field_set_key_int(f, keylog, 1);
+      cs_field_set_key_int(f, keyvis, pflag);
+    }
+
+    f = cs_field_create("cell_f_vol",
+                        CS_FIELD_EXTENSIVE,
+                        CS_MESH_LOCATION_CELLS,
+                        1,
+                        false);
+
+    if (cs_glob_porous_model == 2) {
+      f = cs_field_create("tensorial_porosity",
+                          CS_FIELD_INTENSIVE | CS_FIELD_PROPERTY,
+                          CS_MESH_LOCATION_CELLS,
+                          6,
+                          false);
+    }
+    else if (cs_glob_porous_model == 3) {
+      const int key_restart_file = cs_field_key_id("restart_file");
+
+      f = cs_field_create("poro_div_duq",
+                          CS_FIELD_INTENSIVE | CS_FIELD_PROPERTY,
+                          CS_MESH_LOCATION_CELLS,
+                          3,
+                          false);
+
+      f = cs_field_create("i_poro_duq_0",
+                          CS_FIELD_INTENSIVE | CS_FIELD_PROPERTY,
+                          CS_MESH_LOCATION_INTERIOR_FACES,
+                          1,
+                          false);
+      f = cs_field_create("i_poro_duq_1",
+                          CS_FIELD_INTENSIVE | CS_FIELD_PROPERTY,
+                          CS_MESH_LOCATION_INTERIOR_FACES,
+                          1,
+                          false);
+
+      f = cs_field_create("b_poro_duq",
+                          CS_FIELD_INTENSIVE | CS_FIELD_PROPERTY,
+                          CS_MESH_LOCATION_BOUNDARY_FACES,
+                          1,
+                          false);
+
+      f = cs_field_create("i_f_face_normal",
+                          CS_FIELD_EXTENSIVE,
+                          CS_MESH_LOCATION_INTERIOR_FACES,
+                          3,
+                          false);
+
+      f = cs_field_create("i_f_face_surf",
+                          CS_FIELD_EXTENSIVE,
+                          CS_MESH_LOCATION_INTERIOR_FACES,
+                          1,
+                          false);
+
+      f = cs_field_create("i_f_face_cog",
+                          0,
+                          CS_MESH_LOCATION_INTERIOR_FACES,
+                          3,
+                          false);
+
+      f = cs_field_create("b_f_face_normal",
+                          CS_FIELD_EXTENSIVE,
+                          CS_MESH_LOCATION_BOUNDARY_FACES,
+                          3,
+                          false);
+
+      f = cs_field_create("b_f_face_surf",
+                          CS_FIELD_EXTENSIVE,
+                          CS_MESH_LOCATION_BOUNDARY_FACES,
+                          1,
+                          false);
+
+      f = cs_field_create("b_f_face_cog",
+                          0,
+                          CS_MESH_LOCATION_BOUNDARY_FACES,
+                          3,
+                          false);
+
+      f = cs_field_create("i_f_face_factor",
+                          CS_FIELD_INTENSIVE,
+                          CS_MESH_LOCATION_INTERIOR_FACES,
+                          2,  // 2 values per face
+                          false);
+
+      f = cs_field_create("b_f_face_factor",
+                          CS_FIELD_INTENSIVE,
+                          CS_MESH_LOCATION_BOUNDARY_FACES,
+                          1,
+                          false);
+
+      // Interior faces weighting factor with new cell cog
+      f = cs_field_create("i_f_weight",
+                          CS_FIELD_INTENSIVE,
+                          CS_MESH_LOCATION_INTERIOR_FACES,
+                          2,  // 2 values per face
+                          false);
+
+      // Solid surface normal immersed in the cells
+      f = cs_field_create("c_w_face_normal",
+                          CS_FIELD_EXTENSIVE,
+                          CS_MESH_LOCATION_CELLS,
+                          3,
+                          false);
+      cs_field_set_key_int(f, key_restart_file, CS_RESTART_IBM);
+
+      // Center of gravity of solid face immersed in the cells
+      f = cs_field_create("c_w_face_cog",
+                          0,
+                          CS_MESH_LOCATION_CELLS,
+                          3,
+                          false);
+
+      // Solid surface of cells
+      f = cs_field_create("c_w_face_surf",
+                          CS_FIELD_EXTENSIVE,
+                          CS_MESH_LOCATION_CELLS,
+                          1,
+                          false);
+
+      // Distance between the centers of the cell and the solid face
+      f = cs_field_create("c_w_dist_inv",
+                          0,
+                          CS_MESH_LOCATION_CELLS,
+                          1,
+                          false);
+
+      // Cell fluid center coordinates
+      f = cs_field_create("cell_f_cen",
+                          0,
+                          CS_MESH_LOCATION_CELLS,
+                          3,
+                          false);
+
+      // Cell solid center coordinates
+      f = cs_field_create("cell_s_cen",
+                          0,
+                          CS_MESH_LOCATION_CELLS,
+                          3,
+                          false);
+
+      // Porosity at internal faces
+      f = cs_field_create("i_face_porosity",
+                          CS_FIELD_INTENSIVE,
+                          CS_MESH_LOCATION_INTERIOR_FACES,
+                          1,
+                          false);
+
+      // Porosity at boundary faces
+      f = cs_field_create("b_face_porosity",
+                          CS_FIELD_INTENSIVE,
+                          CS_MESH_LOCATION_BOUNDARY_FACES,
+                          1,
+                          false);
+    }
+
+  }
+
+  /* Local time step and postprocessing fields
+     ----------------------------------------- */
+
+  /* Local time step */
+
+  {
+    cs_field_t *f = cs_field_create("dt",
+                                    CS_FIELD_INTENSIVE,
+                                    CS_MESH_LOCATION_CELLS,
+                                    1,
+                                    false);
+
+    cs_field_set_key_str(f, keylbl, "Local Time Step");
+
+    if (cs_glob_time_step_options->idtvar == 2) {
+      cs_field_set_key_int(f, keylog, 1);
+      cs_field_set_key_int(f, keyvis, pflag);
+    }
+  }
+
+  /* Transient velocity/pressure coupling, postprocessing field
+     (variant used for computation is a tensorial field, not this one) */
+
+  int ncpdct = cs_volume_zone_n_type_zones(CS_VOLUME_ZONE_HEAD_LOSS);
+
+  cs_velocity_pressure_param_t *vp_param = cs_glob_velocity_pressure_param;
+
+  if (vp_param->ipucou != 0 || ncpdct > 0 || cs_glob_porous_model == 2) {
+
+    cs_field_t *f = cs_field_create("dttens",
+                                    CS_FIELD_INTENSIVE,
+                                    CS_MESH_LOCATION_CELLS,
+                                    6,
+                                    false);
+    if (vp_param->ipucou != 0 || ncpdct > 0)
+      cs_field_set_key_int(f, keyvis, CS_POST_ON_LOCATION);
+    cs_field_set_key_int(f, keylog, 1);
+    if (cs_glob_porous_model == 2) {
+      int kwgrec = cs_field_key_id("gradient_weighting_id");
+      cs_field_set_key_int(CS_F_(p), kwgrec, f->id);
+    }
+
+    /* Tensorial diffusivity */
+
+    if (cs_glob_porous_model == 2) {
+      cs_equation_param_t *eqp = cs_field_get_equation_param(CS_F_(vel));
+      eqp->idften = CS_ANISOTROPIC_LEFT_DIFFUSION;
+    }
+
+    /* Diagonal cell tensor for the pressure solving when needed */
+
+    if (vp_param->ipucou == 1 || ncpdct > 0 || cs_glob_porous_model == 2) {
+      cs_equation_param_t *eqp = cs_field_get_equation_param(CS_F_(p));
+      eqp->idften = CS_ANISOTROPIC_LEFT_DIFFUSION;
+    }
+
+  }
+
+  /* Map to field pointers
+     --------------------- */
+
+  cs_field_pointer_map_base();
+  cs_field_pointer_map_boundary();
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Create additional fields based on user options.
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_additional_fields_stage_2(void)
+{
   const int n_fields = cs_field_n_fields();
   cs_turb_les_model_t *turb_les_param = cs_get_glob_turb_les_model();
 
@@ -762,11 +1112,11 @@ _additional_fields_stage_1(void)
       s_label[127] = '\0';
 
       /* Now create matching property */
-      int f_s_id = _add_property_field(s_name,
-                                       s_label,
-                                       1,
-                                       false);
-      cs_field_set_key_int(f, kivisl, f_s_id);
+      cs_field_t *f_s = _add_property_field(s_name,
+                                            s_label,
+                                            1,
+                                            false);
+      cs_field_set_key_int(f, kivisl, f_s->id);
     }
   }
 
@@ -818,11 +1168,11 @@ _additional_fields_stage_1(void)
       }
 
       /* Now create matching property */
-      int f_s_id = _add_property_field(s_name,
-                                       s_label,
-                                       1,
-                                       false);
-      cs_field_set_key_int(f, key_turb_diff, f_s_id);
+      cs_field_t *f_s = _add_property_field(s_name,
+                                            s_label,
+                                            1,
+                                            false);
+      cs_field_set_key_int(f, key_turb_diff, f_s->id);
     }
   }
 
@@ -874,11 +1224,11 @@ _additional_fields_stage_1(void)
           continue;
         }
         /* Now create matching property */
-        int f_s_id = _add_property_field(s_name,
-                                         s_label,
-                                         1,
-                                         false);
-        cs_field_set_key_int(f, key_sgs_sca_coef, f_s_id);
+        cs_field_t *f_s = _add_property_field(s_name,
+                                              s_label,
+                                              1,
+                                              false);
+        cs_field_set_key_int(f, key_sgs_sca_coef, f_s->id);
       }
     }
 
@@ -933,11 +1283,11 @@ _additional_fields_stage_1(void)
       f_label[127] = '\0';
 
       /* Now create matching property */
-      int f_s_id = _add_property_field(f_name,
-                                       f_label,
-                                       1,
-                                       false);
-      cs_field_set_key_int(f, kromsl, f_s_id);
+      cs_field_t *f_s = _add_property_field(f_name,
+                                            f_label,
+                                            1,
+                                            false);
+      cs_field_set_key_int(f, kromsl, f_s->id);
     }
   }
 
@@ -983,11 +1333,11 @@ _additional_fields_stage_1(void)
       f_label[127] = '\0';
 
       /* Now create matching property */
-      int f_s_id = _add_property_field(f_name,
-                                       f_label,
-                                       1,
-                                       false);
-      cs_field_set_key_int(f, key_turb_schmidt, f_s_id);
+      cs_field_t *f_s = _add_property_field(f_name,
+                                            f_label,
+                                            1,
+                                            false);
+      cs_field_set_key_int(f, key_turb_schmidt, f_s->id);
     }
   }
 
@@ -1066,11 +1416,10 @@ _additional_fields_stage_1(void)
      * if needed (ALE) */
     int model = cs_turbomachinery_get_model();
     if (cs_glob_ale != 0 || model > 0) {
-      cs_field_t *f_wd_aux_pre
-        = cs_field_by_id(_add_property_field("wall_distance_aux_pre",
-                                             NULL,
-                                             1,
-                                             false));
+      cs_field_t *f_wd_aux_pre = _add_property_field("wall_distance_aux_pre",
+                                                     NULL,
+                                                     1,
+                                                     false);
       cs_field_set_key_int(f_wd_aux_pre, keyvis, 0);
       cs_field_set_key_int(f_wd_aux_pre, keylog, 0);
     }
@@ -1198,30 +1547,32 @@ _additional_fields_stage_1(void)
   }
 
   if (cs_glob_porosity_from_scan_opt->compute_porosity_from_scan) {
-    int f_id = _add_property_field("nb_scan_points",
-                                   "nb scan points",
-                                   1,
-                                   false);
-    cs_field_set_key_int(cs_field_by_id(f_id), keyvis, CS_POST_ON_LOCATION);
+    cs_field_t *f;
 
-    f_id = _add_property_field("solid_roughness",
-                               "solid roughness",
-                               1,
-                               false);
-    cs_field_set_key_int(cs_field_by_id(f_id), keyvis, CS_POST_ON_LOCATION);
+    f = _add_property_field("nb_scan_points",
+                            "nb scan points",
+                            1,
+                            false);
+    cs_field_set_key_int(f, keyvis, CS_POST_ON_LOCATION);
 
-    f_id = _add_property_field("cell_scan_points_cog",
-                               "Point centers",
-                               3,
-                               false);
-    cs_field_set_key_int(cs_field_by_id(f_id), keyvis, CS_POST_ON_LOCATION);
-    cs_field_set_key_int(cs_field_by_id(f_id), key_restart_id, CS_RESTART_IBM);
+    f = _add_property_field("solid_roughness",
+                            "solid roughness",
+                            1,
+                            false);
+    cs_field_set_key_int(f, keyvis, CS_POST_ON_LOCATION);
 
-    f_id = _add_property_field("cell_scan_points_color",
-                               "Cell color",
-                               3,
-                               false);
-    cs_field_set_key_int(cs_field_by_id(f_id), keyvis, CS_POST_ON_LOCATION);
+    f = _add_property_field("cell_scan_points_cog",
+                            "Point centers",
+                            3,
+                            false);
+    cs_field_set_key_int(f, keyvis, CS_POST_ON_LOCATION);
+    cs_field_set_key_int(f, key_restart_id, CS_RESTART_IBM);
+
+    f = _add_property_field("cell_scan_points_color",
+                            "Cell color",
+                            3,
+                            false);
+    cs_field_set_key_int(f, keyvis, CS_POST_ON_LOCATION);
   }
 
   /* Additional postprocessing fields
@@ -1530,6 +1881,10 @@ _init_user
     _create_variable_fields();
     cs_f_fldvar(nmodpp);
 
+    /* Map pointers */
+    cs_field_pointer_map_base();
+    cs_field_pointer_map_boundary();
+
     /* Activate pressure correction model if CDO mode is not stand-alone */
     cs_pressure_correction_model_activate();
   }
@@ -1651,7 +2006,7 @@ _init_user
   /* Varpos
    * If CDO mode only, skip this stage */
   if (cs_glob_param_cdo_mode != CS_PARAM_CDO_MODE_ONLY)
-    cs_f_varpos();
+    _additional_fields_stage_1();
 
   /* Internal coupling */
   cs_gui_internal_coupling();
@@ -1673,7 +2028,7 @@ _init_user
 /*----------------------------------------------------------------------------*/
 
 static void
-_additional_fields_stage_2(void)
+_additional_fields_stage_3(void)
 {
   /* Get ids */
   const int k_log = cs_field_key_id("log");
@@ -1754,7 +2109,7 @@ _additional_fields_stage_2(void)
     }
 
     /* Additional fields for Drift scalars
-       is done in _additional_fields_stage_1 */
+       is done in _additional_fields_stage_2 */
   }
 
   /* Reserved fields whose ids are not saved (may be queried by name) */
@@ -2322,13 +2677,13 @@ cs_setup(void)
 
   if (cs_glob_param_cdo_mode != CS_PARAM_CDO_MODE_ONLY) {
     /* Additional fields if not in CDO mode only */
-    _additional_fields_stage_1();
+    _additional_fields_stage_2();
 
     /* Changes after user initialization and additional fields dependent on
      * main fields options. */
     cs_parameters_global_complete();
 
-    _additional_fields_stage_2();
+    _additional_fields_stage_3();
   }
 
   cs_parameters_eqp_complete();

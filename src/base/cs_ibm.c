@@ -129,29 +129,6 @@ const char *_ibm_obj_init_vals_names[] = {"Equilibrium Center of gravity",
                                           "Fluid force"};
 
 /*============================================================================
- * Prototypes for functions intended for use only by Fortran wrappers.
- * (descriptions follow, with function bodies).
- *============================================================================*/
-
-void
-cs_f_porosity_ibm_get_pointer(int **ibm_porosity_mode);
-
-/*----------------------------------------------------------------------------
- * Wrapper immersed boundary function, intended for use by Fortran wrapper only.
- *----------------------------------------------------------------------------*/
-
-/*----------------------------------------------------------------------------
- * Get pointer
- *----------------------------------------------------------------------------*/
-
-void
-cs_f_porosity_ibm_get_pointer(int **ibm_porosity_mode)
-{
-  *ibm_porosity_mode
-    = &(_porosity_ibm_opt.porosity_mode);
-}
-
-/*============================================================================
  * Private function definitions
  *============================================================================*/
 

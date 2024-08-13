@@ -133,16 +133,9 @@ cs_porosity_from_scan_opt_t *cs_glob_porosity_from_scan_opt
 static  ple_locator_t  *_locator = NULL;  /* PLE locator */
 
 /*============================================================================
- * Prototypes for functions intended for use only by Fortran wrappers.
- * (descriptions follow, with function bodies).
- *============================================================================*/
-
-void
-cs_f_porosity_from_scan_get_pointer(bool  **compute_porosity_from_scan);
-
-/*============================================================================
  * Private function definitions
  *============================================================================*/
+
 /*----------------------------------------------------------------------------
  * Incremental local solid plane computation at cells from scan points.
  * So that the summed squared distance to all points is minimized.
@@ -838,17 +831,6 @@ _prepare_porosity_from_scan(const cs_mesh_t             *m,
       b_f_face_surf[face_id]      = b_face_surf[face_id];
     }
   }
-}
-
-/*----------------------------------------------------------------------------
- * Get pointer
- *----------------------------------------------------------------------------*/
-
-void
-cs_f_porosity_from_scan_get_pointer(bool **compute_porosity_from_scan)
-{
-  *compute_porosity_from_scan
-    = &(_porosity_from_scan_opt.compute_porosity_from_scan);
 }
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */

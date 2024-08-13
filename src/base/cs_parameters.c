@@ -1420,6 +1420,9 @@ cs_parameters_create_added_variables(void)
     cs_field_set_key_int(f, cs_field_key_id("log"), 1);
     cs_field_set_key_int(f, cs_field_key_id("post_vis"), post_flag);
 
+    if (f->dim == 3)
+      cs_field_set_key_int(f, cs_field_key_id("coupled"), 1);
+
   }
 
   BFT_FREE(_user_variable_defs);

@@ -198,11 +198,6 @@ endif
 
 call add_user_scalar_fields
 
-! Map pointers
-
-call cs_field_pointer_map_base
-call cs_field_pointer_map_boundary
-
 ! ---> Verifications
 
 iok = 0
@@ -491,7 +486,7 @@ procedure() :: fldvar_check_nvar, init_var_cal_opt
 ! Local variables
 
 integer  iscal, nfld1, nfld2
-integer  dim, id, ii, ivar, keycpl
+integer  dim, id, ii, ivar
 
 integer :: keyvar, keysca
 
@@ -525,7 +520,6 @@ call field_get_n_fields(nfld2)
 
 iscal = 0
 
-call field_get_key_id('coupled', keycpl)
 call field_get_key_id("scalar_id", keysca)
 call field_get_key_id("variable_id", keyvar)
 
@@ -533,11 +527,7 @@ do id = nfld1, nfld2 - 1
 
   call field_get_dim(id, dim)
 
-  if (dim.eq.3) then
-    call field_set_key_int(id, keycpl, 1)
-  else if (dim.ne.1) then
-    cycle
-  endif
+  if (dim.ne.1 .and. dim.ne.3) cycle
 
   iscal = iscal + 1
 
