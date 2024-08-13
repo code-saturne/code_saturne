@@ -84,7 +84,6 @@ integer          idimf
 integer          ivoid, uprtot
 
 double precision valmax, valmin, vfmin , vfmax
-double precision gravn
 double precision xxp0, xyp0, xzp0
 double precision scmaxp, scminp
 
@@ -149,8 +148,6 @@ call field_get_key_id("max_scalar_clipping", kscmax)
 call field_get_key_id("variance_clipping", kclvfl)
 
 iok = 0
-
-gravn = sqrt(gx**2+gy**2+gz**2)
 
 !===============================================================================
 ! 2. ON REPASSE LA MAIN A L'UTILISATEUR POUR LA PROGRAMMATION DES
