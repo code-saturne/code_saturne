@@ -58,29 +58,6 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*============================================================================
- *  Public function prototypes for Fortran API
- *============================================================================*/
-
-/*----------------------------------------------------------------------------
- * Limit number of remaining time steps if the remaining allocated time is
- * too small to attain the requested number of steps.
- *
- * Fortran interface:
- *
- * subroutine armtsp (ntcabs, ntmabs)
- * *****************
- *
- * integer          ntcabs      : <-- : current time step number
- * integer          ntmabs      : <-> : maximum time step number
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF (armtps, ARMTPS)
-(
- const int  *ntcabs,
- int        *ntmabs
-);
-
-/*============================================================================
  * Public function prototypes
  *============================================================================*/
 

@@ -98,47 +98,6 @@ static double _cs_coupling_ts_multiplier = 1.0;
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
- * Public function definitions for Fortran API
- *============================================================================*/
-
-/*----------------------------------------------------------------------------
- * Synchronize with applications in the same PLE coupling group.
- *
- * This function should be called before starting a new time step. The
- * current time step id is that of the last finished time step, or 0 at
- * initialization.
- *
- * Fortran Interface:
- *
- * subroutine cplsyn (ntcmabs, ntcabs, dtref)
- * *****************
- *
- * integer          ntmabs      : <-> : maximum iteration number
- * integer          ntcabs      : <-- : current iteration number
- * double precision dtref       : <-> : reference time step value
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF(cplsyn, CPLSYN)
-(
- int         *ntmabs,
- const int   *ntcabs,
- cs_real_t   *dtref
-)
-{
-  int  current_ts_id = *ntcabs;
-  int  max_ts_id = *ntmabs;
-  double  ts = *dtref;
-
-  cs_coupling_sync_apps(0,
-                        current_ts_id,
-                        &max_ts_id,
-                        &ts);
-
-  *ntmabs = max_ts_id;
-  *dtref = ts;
-}
-
-/*============================================================================
  * Public function definitions
  *============================================================================*/
 

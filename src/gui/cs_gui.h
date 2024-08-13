@@ -54,37 +54,6 @@ typedef struct {
 } cs_gui_volume_meg_context_t;
 
 /*============================================================================
- * Public function prototypes for Fortran API
- *============================================================================*/
-
-/*----------------------------------------------------------------------------
- * Global numerical parameters.
- *
- * Fortran Interface:
- *
- * SUBROUTINE CSNUM2
- * *****************
- *
- * INTEGER          RELAXP  -->   pressure relaxation
- * INTEGER          IMRGRA  -->   gradient reconstruction
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF (csnum2, CSNUM2) (double  *relaxp,
-                                int     *imrgra);
-
-/*----------------------------------------------------------------------------
- * Turbulence initialization parameters.
- *
- * Fortran Interface:
- *
- * SUBROUTINE CSTINI
- * *****************
- *
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF (cstini, CSTINI) (void);
-
-/*============================================================================
  * Public function prototypes
  *============================================================================*/
 

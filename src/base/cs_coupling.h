@@ -60,51 +60,6 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*============================================================================
- * Public function prototypes for Fortran API
- *============================================================================*/
-
-/*----------------------------------------------------------------------------
- * Synchronize with applications in the same PLE coupling group.
- *
- * This function should be called before starting a new time step. The
- * current time step id is that of the last finished time step, or 0 at
- * initialization.
- *
- * Fortran Interface:
- *
- * subroutine cplsyn (ntcmabs, ntcabs, dtref)
- * *****************
- *
- * integer          ntmabs      : <-> : maximum iteration number
- * integer          ntcabs      : <-- : current iteration number
- * double precision dtref       : <-> : reference time step value
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF(cplsyn, CPLSYN)
-(
- int         *ntmabs,
- const int   *ntcabs,
- cs_real_t   *dtref
- );
-
-/*----------------------------------------------------------------------------
- * Indicate if there are synchronized applications in the same
- * PLE coupling group.
- *
- * Fortran Interface:
- *
- * subroutine cplact (isync)
- * *****************
- *
- * integer          isync       : <-- : 1 if synchronized, 0 otherwise
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF(cplact, CPLACT)
-(
- int         *isync
-);
-
-/*============================================================================
  * Public function prototypes
  *============================================================================*/
 
