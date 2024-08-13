@@ -42,7 +42,6 @@ use optcal
 use cstphy
 use entsor
 use pointe
-use albase
 use parall
 use period
 use ppincl
@@ -118,7 +117,6 @@ call restart_auxiliary_options_init
 call turb_reference_values_init
 call radiat_init
 call ctwr_properties_init
-call map_ale
 call cf_model_init
 call vof_model_init
 

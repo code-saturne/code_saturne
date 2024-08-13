@@ -51,7 +51,6 @@ base/paramx.f90 \
 base/mesh.f90 \
 base/field.f90 \
 base/field_operator.f90 \
-base/albase.f90 \
 base/cdomod.f90 \
 base/cstphy.f90 \
 base/cstnum.f90 \
@@ -84,8 +83,6 @@ base/vof.f90
 # Module dependencies (handled manually, as Automake does
 # not yet handle Fortran module dependencies)
 
-base/albase.$(OBJEXT): base/optcal.$(OBJEXT) base/cs_c_bindings.$(OBJEXT)
-
 base/vof.$(OBJEXT): base/optcal.$(OBJEXT)
 
 base/cstphy.$(OBJEXT): base/paramx.$(OBJEXT)
@@ -105,7 +102,7 @@ base/optcal.$(OBJEXT): base/paramx.$(OBJEXT) base/field.$(OBJEXT) \
  base/cdomod.$(OBJEXT)
 
 base/pointe.$(OBJEXT): base/paramx.$(OBJEXT) base/mesh.$(OBJEXT) \
- base/optcal.$(OBJEXT) base/cs_c_bindings.$(OBJEXT)
+ base/cs_c_bindings.$(OBJEXT)
 
 atmo/atincl.$(OBJEXT): pprt/ppppar.$(OBJEXT) pprt/ppincl.$(OBJEXT) \
  base/mesh.$(OBJEXT) atmo/atsoil.$(OBJEXT) base/cs_c_bindings.$(OBJEXT) \

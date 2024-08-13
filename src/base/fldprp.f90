@@ -48,7 +48,6 @@ use cstphy
 use cstnum
 use entsor
 use atincl
-use albase
 use parall
 use ppppar
 use ppthch

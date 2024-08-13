@@ -55,7 +55,6 @@ use entsor
 use optcal
 use cstnum
 use cstphy
-use albase
 use parall
 use ppppar
 use ppthch

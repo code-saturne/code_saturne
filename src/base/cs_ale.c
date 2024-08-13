@@ -96,28 +96,6 @@ int cs_glob_ale_n_ini_f = 0;
 /*! Indicate whether an iteration to initialize ALE is required */
 int cs_glob_ale_need_init = -999;
 
-/*============================================================================
- * Prototypes for functions intended for use only by Fortran wrappers.
- * (descriptions follow, with function bodies).
- *============================================================================*/
-
-void
-cs_f_ale_get_pointers(int  **iale);
-
-/*============================================================================
- * Fortran wrapper function definitions
- *============================================================================*/
-
-/*----------------------------------------------------------------------------
- * Get pointer to cs_glob_ale_info->type
- *----------------------------------------------------------------------------*/
-
-void
-cs_f_ale_get_pointers(int **iale)
-{
-  *iale = (int *)(&cs_glob_ale);
-}
-
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
 
 /*============================================================================

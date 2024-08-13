@@ -136,7 +136,6 @@ use cstphy
 use entsor
 use parall
 use period
-use albase
 use ppppar
 use ppthch
 use ppincl

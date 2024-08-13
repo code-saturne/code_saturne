@@ -46,7 +46,6 @@ use optcal
 use cstphy
 use cstnum
 use entsor
-use albase
 use parall
 use ppppar
 use ppthch
@@ -168,8 +167,8 @@ else if (iturb.eq.70) then
 endif
 
 ! Mesh velocity with ALE
-if (iale.ge.1) then
-  call map_variable_field_try('mesh_velocity', iuma)
+call map_variable_field_try('mesh_velocity', iuma)
+if (iuma.ge.1) then
   ivma = iuma + 1
   iwma = ivma + 1
 endif
