@@ -102,7 +102,7 @@ BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Compute the thermal flux source terms
+ * \brief Compute the turbulent flux source terms
  *
  * \param[in]     name       name of current field
  * \param[in]     f_ut       scalar turbulent flux field
@@ -124,19 +124,19 @@ BEGIN_C_DECLS
 /*----------------------------------------------------------------------------*/
 
 static void
-_thermal_flux_st(const char          *name,
-                 const cs_field_t    *f_ut,
-                 const cs_field_t    *f_tv,
-                 const cs_lnum_t      n_cells,
-                 const cs_lnum_t      l_viscls,
-                 const cs_real_t      xcpp[],
-                 const cs_real_t      viscl[],
-                 const cs_real_t      viscls[],
-                 const cs_real_33_t   gradv[],
-                 const cs_real_3_t    gradt[],
-                 const cs_real_3_t    grad_al[],
-                 cs_real_33_t         fimp[],
-                 cs_real_3_t          rhs_ut[])
+_turb_flux_st(const char          *name,
+              const cs_field_t    *f_ut,
+              const cs_field_t    *f_tv,
+              const cs_lnum_t      n_cells,
+              const cs_lnum_t      l_viscls,
+              const cs_real_t      xcpp[],
+              const cs_real_t      viscl[],
+              const cs_real_t      viscls[],
+              const cs_real_33_t   gradv[],
+              const cs_real_3_t    gradt[],
+              const cs_real_3_t    grad_al[],
+              cs_real_33_t         fimp[],
+              cs_real_3_t          rhs_ut[])
 {
   const cs_real_t *cell_f_vol = cs_glob_mesh_quantities->cell_f_vol;
 
@@ -888,13 +888,13 @@ _solve_rit(const cs_field_t     *f,
     }
   }
 
-  /* Right Hand Side of the thermal fluxes:
+  /* Right Hand Side of the turbulent fluxes:
    *     rho*(Pit + Git + Phi*_it - eps_it)
    * -------------------------------------- */
 
-  _thermal_flux_st(f->name, f_ut, f_tv, n_cells, l_viscls,
-                   xcpp, viscl, viscls, gradv,
-                   gradt, grad_al, fimp, rhs_ut);
+  _turb_flux_st(f->name, f_ut, f_tv, n_cells, l_viscls,
+                xcpp, viscl, viscls, gradv,
+                gradt, grad_al, fimp, rhs_ut);
 
   /* Tensor diffusion
    * ---------------- */
