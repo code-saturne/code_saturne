@@ -890,19 +890,6 @@ module cs_c_bindings
 
     !---------------------------------------------------------------------------
 
-    ! Interface to C function initializing condensation-related field key.
-
-    function cs_gas_mix_species_to_field_id(sp_id)  &
-      result(f_id) &
-      bind(C, name='cs_f_gas_mix_species_to_field_id')
-      use, intrinsic :: iso_c_binding
-      implicit none
-      integer(c_int), value :: sp_id
-      integer(c_int) :: f_id
-    end function cs_gas_mix_species_to_field_id
-
-    !---------------------------------------------------------------------------
-
     ! Interface to C function
     !> \brief Get reference value of a physical property
 

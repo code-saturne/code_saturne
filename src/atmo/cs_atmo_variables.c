@@ -1,5 +1,5 @@
 /*============================================================================
- * Functions relative to fields atmospheric
+ * Functions relative to atmospheric model fields.
  *============================================================================*/
 
 /*
@@ -67,8 +67,7 @@ BEGIN_C_DECLS
 
 /*!
   \file cs_atmo_variables.c
-        Add fields atmospheric.
-
+        Add atmospheric model fields.
 */
 
 /*----------------------------------------------------------------------------*/
@@ -96,7 +95,6 @@ BEGIN_C_DECLS
 void
 cs_atmo_add_variable_fields(void)
 {
-
   /* Key ids for clipping */
   const int kscmin = cs_field_key_id("min_scalar_clipping");
   const int kscmax = cs_field_key_id("max_scalar_clipping");
@@ -245,14 +243,30 @@ cs_atmo_add_property_fields(void)
   const int klbl   = cs_field_key_id("label");
   const int keyvis = cs_field_key_id("post_vis");
   const int keylog = cs_field_key_id("log");
+
   int field_type = CS_FIELD_INTENSIVE | CS_FIELD_PROPERTY;
   const int post_flag = CS_POST_ON_LOCATION | CS_POST_MONITOR;
 
-  cs_field_t *f = cs_field_create("boundary_roughness",
-                                  field_type,
-                                  CS_MESH_LOCATION_BOUNDARY_FACES,
-                                  1,
-                                  false);
+  cs_field_t *f = NULL;
+
+  /* Momentum source terms */
+  if (cs_glob_atmo_option->open_bcs_treatment > 0) {
+    f = cs_field_create("momentum_source_terms",
+                        field_type,
+                        CS_MESH_LOCATION_CELLS,
+                        3,
+                        false);
+    cs_field_set_key_int(f, keyvis, 1);
+    cs_field_set_key_int(f, keylog, 1);
+    cs_field_set_key_str(f, klbl, "MomentumSourceTerms");
+  }
+
+  /* Boundary roughness */
+  f = cs_field_create("boundary_roughness",
+                      field_type,
+                      CS_MESH_LOCATION_BOUNDARY_FACES,
+                      1,
+                      false);
   cs_field_set_key_int(f, keyvis, 0);
   cs_field_set_key_int(f, keylog, 1);
   cs_field_set_key_str(f, klbl, "Boundary Roughness");
@@ -641,7 +655,6 @@ cs_atmo_add_property_fields(void)
     }
 
   }
-
 }
 
 /*----------------------------------------------------------------------------*/

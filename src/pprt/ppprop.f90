@@ -38,7 +38,8 @@
 !_______________________________________________________________________________
 
 
-subroutine ppprop
+subroutine ppprop () &
+ bind(C, name='cs_f_ppprop')
 
 !===============================================================================
 
@@ -57,9 +58,7 @@ use ppppar
 use ppthch
 use coincl
 use cpincl
-use atincl
 use ppincl
-use field
 use cs_c_bindings
 
 !===============================================================================
@@ -67,58 +66,6 @@ use cs_c_bindings
 implicit none
 
 ! Local variables
-
-integer  igmxml
-
-!===============================================================================
-! Interfaces
-!===============================================================================
-
-interface
-
-  subroutine cs_cf_set_thermo_options()  &
-    bind(C, name='cs_cf_set_thermo_options')
-    use, intrinsic :: iso_c_binding
-    implicit none
-  end subroutine cs_cf_set_thermo_options
-
-  subroutine cs_cf_add_property_fields()  &
-    bind(C, name='cs_cf_add_property_fields')
-    use, intrinsic :: iso_c_binding
-    implicit none
-  end subroutine cs_cf_add_property_fields
-
-  subroutine cs_elec_add_property_fields()  &
-    bind(C, name='cs_elec_add_property_fields')
-    use, intrinsic :: iso_c_binding
-    implicit none
-  end subroutine cs_elec_add_property_fields
-
-  subroutine cs_gas_mix_add_property_fields()  &
-    bind(C, name='cs_gas_mix_add_property_fields')
-    use, intrinsic :: iso_c_binding
-    implicit none
-  end subroutine cs_gas_mix_add_property_fields
-
-  subroutine cs_atmo_add_property_fields()  &
-    bind(C, name='cs_atmo_add_property_fields')
-    use, intrinsic :: iso_c_binding
-    implicit none
-  end subroutine cs_atmo_add_property_fields
-
-  subroutine cs_ctwr_add_property_fields()  &
-    bind(C, name='cs_ctwr_add_property_fields')
-    use, intrinsic :: iso_c_binding
-    implicit none
-  end subroutine cs_ctwr_add_property_fields
-
-  subroutine cs_atmo_add_prop_fields()  &
-    bind(C, name='cs_atmo_add_prop_fields')
-    use, intrinsic :: iso_c_binding
-    implicit none
-  end subroutine cs_atmo_add_prop_fields
-
-end interface
 
 !===============================================================================
 
@@ -133,57 +80,6 @@ endif
 
 if (ippmod(iccoal).ge.0) then
   call cs_coal_prop
-endif
-
-! ---> Physique particuliere : Compressible
-
-if (ippmod(icompf).ge.0) then
-  call cs_cf_set_thermo_options
-  call cs_cf_add_property_fields
-endif
-
-! ---> Physique particuliere : Versions electriques
-
-if (ippmod(ieljou).ge.1 .or. ippmod(ielarc).ge.1) then
-  call cs_elec_add_property_fields
-endif
-
-! ---> Atmospheric modules:
-if (ippmod(iatmos).ge.0) then
-
-  ! Momentum source terms
-  if (iatmst.ge.1) then
-    call add_property_field('momentum_source_terms', 'MomentumSourceTerms', 3, &
-                            .false., imomst)
-    call field_set_key_int(imomst, keylog, 1)
-    call field_set_key_int(imomst, keyvis, 1)
-  endif
-
-  call cs_atmo_add_property_fields()
-  ! Update for C
-  call field_get_id_try("real_temperature", itempc)
-  if (ippmod(iatmos).eq.2) then
-    call field_get_id("liquid_water", iliqwt)
-  end if
-
-endif
-
-! ---> Cooling towers model
-if (ippmod(iaeros).ge.0) then
-  call cs_ctwr_add_property_fields
-endif
-
-! Add the mixture molar mass fraction field
-if (ippmod(igmix).ge.0) then
-
-  call cs_gas_mix_add_property_fields
-
-  call field_get_id('mix_mol_mas', igmxml)
-
-  if (ippmod(igmix).ge.0 .and. ippmod(igmix).le.5) then
-    iddgas = cs_gas_mix_species_to_field_id(nscasp)
-  endif
-
 endif
 
 end subroutine ppprop

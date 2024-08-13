@@ -149,17 +149,6 @@ const cs_gas_mix_t  *cs_glob_gas_mix = &_gas_mix;
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
 
 /*============================================================================
- * Prototypes for functions intended for use only by Fortran wrappers.
- * (descriptions follow, with function bodies).
- *============================================================================*/
-
-void
-cs_f_gas_mix_get_pointers(int **nscasp);
-
-int
-cs_f_gas_mix_species_to_field_id(int sp_id);
-
-/*============================================================================
  * Private function definitions
  *============================================================================*/
 
@@ -497,49 +486,6 @@ _set_predefined_property(cs_field_t  *f)
   }
 
   cs_field_set_key_struct(f, k_id, &gmp);
-}
-
-/*============================================================================
- * Fortran wrapper function definitions
- *============================================================================*/
-
-/*----------------------------------------------------------------------------
- * Get pointers to members of the global gas mix structure.
- *
- * This function is intended for use by Fortran wrappers, and
- * enables mapping to Fortran global pointers.
- *
- * parameters:
- *   nscasp --> pointer to cs_glob_gas_mix->n_species_solved
- *----------------------------------------------------------------------------*/
-
-void
-cs_f_gas_mix_get_pointers(int  **nscasp)
-{
-  *nscasp = &(_gas_mix.n_species_solved);
-}
-
-/*----------------------------------------------------------------------------
- * Return field id matching a given species id.
- *
- * This function is intended for use by Fortran wrappers.
- *
- * parameters:
- *   sp_id --> matching species id (1-based,
- *             deduced species if sp_id == nscasp + 1)
- *----------------------------------------------------------------------------*/
-
-int
-cs_f_gas_mix_species_to_field_id(int sp_id)
-{
-  int retval = -1;
-
-  int _sp_id = sp_id-1;
-
-  if (_sp_id >= 0 && _sp_id < _gas_mix.n_species)
-    retval = _gas_mix.species_to_field_id[_sp_id];
-
-  return retval;
 }
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */

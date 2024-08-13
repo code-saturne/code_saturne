@@ -2,7 +2,7 @@
 #define __CS__ATMO_VARIABLES_H__
 
 /*============================================================================
- * Functions relative to fields atmospheric
+ * Functions relative to atmospheric model fields.
  *============================================================================*/
 
 /*
@@ -38,7 +38,7 @@
 BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------
- * Add atmospheric variables fields
+ * Add atmospheric variable fields
  *----------------------------------------------------------------------------*/
 
 void

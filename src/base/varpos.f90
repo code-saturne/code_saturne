@@ -81,7 +81,7 @@ character(len=80) :: f_name, s_label, s_name
 
 type(var_cal_opt) :: vcopt
 
-procedure() :: add_property_field, add_property_field_1d, hide_property
+procedure() :: add_property_field_1d, hide_property
 procedure() :: add_source_term_prev_field
 
 !===============================================================================

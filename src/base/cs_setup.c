@@ -44,9 +44,11 @@
 #include "cs_ale.h"
 #include "cs_at_data_assim.h"
 #include "cs_atmo.h"
+#include "cs_atmo_variables.h"
 #include "cs_cf_thermo.h"
 #include "cs_coal_read_data.h"
 #include "cs_ctwr.h"
+#include "cs_ctwr_variables.h"
 #include "cs_domain_setup.h"
 #include "cs_elec_model.h"
 #include "cs_fan.h"
@@ -55,6 +57,7 @@
 #include "cs_field_operator.h"
 #include "cs_field_pointer.h"
 #include "cs_function_default.h"
+#include "cs_gas_mix.h"
 #include "cs_gui.h"
 #include "cs_gui_boundary_conditions.h"
 #include "cs_gui_mobile_mesh.h"
@@ -144,6 +147,9 @@ void
 cs_f_fldprp(void);
 
 void
+cs_f_ppprop(void);
+
+void
 cs_f_usipsu(int *nmodpp);
 
 void
@@ -196,17 +202,35 @@ _init_setup(void)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Add a property field.
+ * \brief Disable logging and visualization for a given field.
+ *
+ * \param (in, out]  f  pointer to field
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_hide_field(cs_field_t *f)
+{
+  const int keyvis = cs_field_key_id("post_vis");
+  const int keylog = cs_field_key_id("log");
+
+  cs_field_set_key_int(f, keyvis, 0);
+  cs_field_set_key_int(f, keylog, 1);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Add a property field at cells.
  */
 /*----------------------------------------------------------------------------*/
 
 static cs_field_t *
 _add_property_field
 (
-  const char *f_name,
-  const char *f_label,
-  int         dim,
-  bool        has_previous
+  const char *f_name,       /*!< field name */
+  const char *f_label,      /*!< field label, or NULL */
+  int         dim,          /*!< field dimension */
+  bool        has_previous  /*!< do we maintain time step values */
 )
 {
   const int keyvis = cs_field_key_id("post_vis");
@@ -227,6 +251,45 @@ _add_property_field
 
   int f_id = cs_physical_property_field_id_by_name(f_name);
   cs_field_t *f = cs_field_by_id(f_id);
+
+  cs_field_set_key_int(f, keyvis, 0);
+  cs_field_set_key_int(f, keylog, 1);
+  if (f_label != NULL)
+    cs_field_set_key_str(f, keylbl, f_label);
+
+  return f;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Add an associted property field at boundary.
+ */
+/*----------------------------------------------------------------------------*/
+
+static cs_field_t *
+_add_property_field_boundary
+(
+  const char *f_name,       /*!< field name */
+  const char *f_label,      /*!< field label, or NULL */
+  int         dim,          /*!< field dimension */
+  bool        has_previous  /*!< do we maintain time step values */
+)
+{
+  const int keyvis = cs_field_key_id("post_vis");
+  const int keylog = cs_field_key_id("log");
+  const int keylbl = cs_field_key_id("label");
+
+  if (cs_field_by_name_try(f_name) != NULL)
+    cs_parameters_error(CS_ABORT_IMMEDIATE,
+                        _("initial data setup"),
+                        _("Field %s has already been assigned.\n"),
+                        f_name);
+
+  cs_field_t *f = cs_field_create(f_name,
+                                  CS_FIELD_INTENSIVE,
+                                  CS_MESH_LOCATION_BOUNDARY_FACES,
+                                  dim,
+                                  has_previous);
 
   cs_field_set_key_int(f, keyvis, 0);
   cs_field_set_key_int(f, keylog, 1);
@@ -546,6 +609,198 @@ _create_variable_fields(void)
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Create variable fields based on active model.
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_create_property_fields(void)
+{
+  const int keyvis = cs_field_key_id("post_vis");
+  const int keylog = cs_field_key_id("log");
+
+  const cs_turb_model_t *turb_model = cs_glob_turb_model;
+
+  cs_field_t *f;
+
+  /* Main properties
+     -------------- */
+
+  // Base properties, always present
+
+  {
+    f = _add_property_field("density", "Density", 1, false);
+    cs_field_pointer_map(CS_ENUMF_(rho), f);
+
+    // Postprocessed and in the log file by default, hidden later in
+    // cs_parameters_*_complete if constant.
+    cs_field_set_key_int(f, keyvis, CS_POST_ON_LOCATION);
+    cs_field_set_key_int(f, keylog, 1);
+
+    f = _add_property_field_boundary("boundary_density", "Boundary Density",
+                                     1, false);
+    cs_field_pointer_map(CS_ENUMF_(rho_b), f);
+  }
+
+  {
+    f = _add_property_field("molecular_viscosity", "Laminar Viscosity",
+                            1, false);
+    cs_field_pointer_map(CS_ENUMF_(mu), f);
+
+    f = _add_property_field("turbulent_viscosity", "Turb Viscosity",
+                            1, false);
+    cs_field_pointer_map(CS_ENUMF_(mu_t), f);
+    if (turb_model->iturb == CS_TURB_NONE)
+      _hide_field(f);
+  }
+
+  /* Hybrid RANS/LES function f_d is stored for Post Processing in hybrid_blend.
+     If the hybrid spatial scheme is activated for the velocity (ischcv=3)
+     create field hybrid_blend which contains the local blending factor. */
+
+  {
+    cs_equation_param_t *eqp_u = cs_field_get_equation_param(CS_F_(vel));
+    if (eqp_u->ischcv == 3 || turb_model->hybrid_turb > 0) {
+      _add_property_field("hybrid_blend", "Hybrid blending function", 1, false);
+    }
+
+    if (turb_model->hybrid_turb == 3) {
+      _add_property_field("hybrid_sas_source_term",
+                          "SAS hybrid source term",
+                          1, false);
+    }
+    else if (turb_model->hybrid_turb == 4) {
+      _add_property_field("k_tot",   "Energy total",     1, false);
+      _add_property_field("k_mod",   "Modelised Energy", 1, false);
+      _add_property_field("k_res",   "Resolved Energy",  1, false);
+      _add_property_field("eps_mod", "Mean Dissipation", 1, false);
+      if (turb_model->iturb == CS_TURB_K_OMEGA) {
+        _add_property_field("omg_mod",  "Mean Specific Dissipation", 1, false);
+        _add_property_field("f1_kwsst", "Function F1 of k-omg SST",  1, false);
+      }
+      _add_property_field("htles_psi", "Psi HTLES",          1, false);
+      _add_property_field("htles_r",   "Energy ratio",       1, false);
+      _add_property_field("htles_t",   "Time scale HTLES",   1, false);
+      _add_property_field("htles_icc", "ICC coefficient",    1, false);
+      _add_property_field("htles_fs",  "Shielding function", 1, false);
+      _add_property_field("Delta_max", "Delta max",          1, false);
+
+      // Time averaged with exponential filtering, TODO use standard time moment
+      _add_property_field("vel_mag_mean","Mean velocity mag.",1, false);
+      _add_property_field("velocity_mean", "Vel Tavg", 3, false);
+
+      // Diagonal part of time moment of uiuj
+      _add_property_field("ui2_mean", "Vel Tavg", 3, false);
+    }
+  }
+
+  if (turb_model->iturb == CS_TURB_K_OMEGA) {
+    // Square of the norm of the deviatoric part of the deformation rate
+    // tensor (\f$S^2=2S_{ij}^D S_{ij}^D\f$).
+    f = _add_property_field("s2", "S2", 1, false);
+    _hide_field(f);
+
+    // Divergence of the velocity. More precisely, trace of the velocity gradient
+    // (and not a finite volume divergence term). Defined only for k-omega SST
+    // (because in this case it may be calculated at the same time as \f$S^2\f$)
+    f = _add_property_field("vel_gradient_trace", "Vel. Gradient Trace",
+                            1, false);
+    _hide_field(f);
+  }
+
+  {
+    int idtvar = cs_glob_time_step_options->idtvar;
+
+    f = _add_property_field("courant_number", "CFL", 1, false);
+    if (idtvar < 0)
+      _hide_field(f);
+
+    if (cs_glob_vof_parameters->vof_model > 0) {
+      f = _add_property_field("volume_courant_number", "CourantNbVol", 1, false);
+      if (idtvar < 0)
+        _hide_field(f);
+    }
+
+    f = _add_property_field("fourier_number", "Fourier Number", 1, false);
+    if (idtvar < 0)
+      _hide_field(f);
+  }
+
+  // Total pressure is stored in a property field.
+  // if the compressible module is not enabled (otherwise Ptot=P*).
+  // only used if the gravity is set.
+
+  if (cs_glob_physical_model_flag[CS_COMPRESSIBLE] < 0) {
+    f = _add_property_field("total_pressure", "Total Pressure", 1, false);
+
+    // Save total pressure in auxiliary restart file
+    int k_restart_id = cs_field_key_id("restart_file");
+    cs_field_set_key_int(f, k_restart_id, CS_RESTART_AUXILIARY);
+  }
+
+  //! Cs^2 for dynamic LES model
+  if (turb_model->iturb == CS_TURB_LES_SMAGO_DYN) {
+    _add_property_field("smagorinsky_constant^2", "Csdyn2", 1, false);
+  }
+
+  /* Additions for specific models
+     ----------------------------- */
+
+  cs_f_ppprop();
+
+  // Compressible model
+  if (cs_glob_physical_model_flag[CS_COMPRESSIBLE] >= 0) {
+    cs_cf_set_thermo_options();
+    cs_cf_add_property_fields();
+  }
+
+  // Electric models
+  if (   cs_glob_physical_model_flag[CS_JOULE_EFFECT] >= 1
+      || cs_glob_physical_model_flag[CS_ELECTRIC_ARCS] >= 1)
+    cs_elec_add_property_fields();
+
+  // Atmospheric modules
+  if (cs_glob_physical_model_flag[CS_ATMOSPHERIC] >= 0)
+    cs_atmo_add_property_fields();
+
+  // Cooling towers model
+  if (cs_glob_physical_model_flag[CS_COOLING_TOWERS] >= 0)
+    cs_ctwr_add_property_fields();
+
+  // Add the mixture molar mass fraction field
+  if (cs_glob_physical_model_flag[CS_GAS_MIX] >= 0)
+    cs_gas_mix_add_property_fields();
+
+  if (cs_glob_vof_parameters->vof_model & CS_VOF_FREE_SURFACE) {
+    cs_vof_parameters_t *vof_parameters = cs_get_glob_vof_parameters();
+    vof_parameters->idrift = 2;
+    _add_property_field("drift_velocity", "Drift Velocity", 3, false);
+  }
+
+  // Auxiliary property fields dedicated to ALE model
+  if (cs_glob_ale != CS_ALE_NONE)
+    cs_ale_add_property_fields();
+
+  /* Other properties and fields
+     --------------------------- */
+
+  cs_parameters_define_auxiliary_fields();
+
+  // User-defined properties
+  cs_parameters_create_added_properties();
+
+  /* Ensure some field pointers are mapped */
+
+  cs_field_pointer_map_base();
+  cs_field_pointer_map_boundary();
+
+  /* Map some Fortran field ids */
+
+  cs_f_fldprp();
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Create additional fields based on user options.
  */
 /*----------------------------------------------------------------------------*/
@@ -847,7 +1102,8 @@ _additional_fields_stage_1(void)
 
   int ncpdct = cs_volume_zone_n_type_zones(CS_VOLUME_ZONE_HEAD_LOSS);
 
-  cs_velocity_pressure_param_t *vp_param = cs_glob_velocity_pressure_param;
+  const cs_velocity_pressure_param_t *vp_param
+    = cs_glob_velocity_pressure_param;
 
   if (vp_param->ipucou != 0 || ncpdct > 0 || cs_glob_porous_model == 2) {
 
@@ -1889,12 +2145,8 @@ _init_user
     cs_pressure_correction_model_activate();
   }
 
-  if (cs_glob_ale != CS_ALE_NONE) {
+  if (cs_glob_ale != CS_ALE_NONE)
     cs_gui_ale_diffusion_type();
-
-    /* Add auxiliary property fields dedicated to the ALE modelling */
-    cs_ale_add_property_fields();
-  }
 
   cs_gui_laminar_viscosity();
 
@@ -1928,7 +2180,7 @@ _init_user
   cs_gui_output_boundary();
 
   if (cs_glob_param_cdo_mode != CS_PARAM_CDO_MODE_ONLY)
-    cs_f_fldprp();
+    _create_property_fields();
 
   /* Initialization of additional user parameters */
   cs_gui_checkpoint_parameters();
@@ -2533,8 +2785,8 @@ _additional_fields_stage_3(void)
    * for a scalar (exclusive or).*/
 
   if (idfm == 1 || iggafm == 1
-        || (cs_glob_turb_model->order == CS_TURB_SECOND_ORDER
-        && cs_glob_turb_rans_model->idirsm == 1)) {
+      || (cs_glob_turb_model->order == CS_TURB_SECOND_ORDER
+          && cs_glob_turb_rans_model->idirsm == 1)) {
 
     cs_field_t *f_atv = cs_field_create("anisotropic_turbulent_viscosity",
                                         CS_FIELD_INTENSIVE | CS_FIELD_PROPERTY,

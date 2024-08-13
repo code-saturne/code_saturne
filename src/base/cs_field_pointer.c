@@ -287,16 +287,8 @@ cs_field_pointer_map_base(void)
   cs_field_pointer_map(CS_ENUMF_(t),
                        cs_field_by_name_try("temperature"));
 
-  cs_field_pointer_map(CS_ENUMF_(rho),
-                       cs_field_by_name_try("density"));
-
   cs_field_pointer_map(CS_ENUMF_(cp),
                        cs_field_by_name_try("specific_heat"));
-
-  cs_field_pointer_map(CS_ENUMF_(mu),
-                       cs_field_by_name_try("molecular_viscosity"));
-  cs_field_pointer_map(CS_ENUMF_(mu_t),
-                       cs_field_by_name_try("turbulent_viscosity"));
 
   cs_field_pointer_map(CS_ENUMF_(lambda),
                        cs_field_by_name_try("thermal_conductivity"));
@@ -323,9 +315,6 @@ cs_field_pointer_map_boundary(void)
 {
   cs_field_pointer_map(CS_ENUMF_(t_b),
                        cs_field_by_name_try("boundary_temperature"));
-
-  cs_field_pointer_map(CS_ENUMF_(rho_b),
-                       cs_field_by_name_try("boundary_density"));
 }
 
 /*----------------------------------------------------------------------------*/

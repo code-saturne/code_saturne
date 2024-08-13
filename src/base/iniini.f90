@@ -117,7 +117,6 @@ call velocity_pressure_options_init
 call restart_auxiliary_options_init
 call turb_reference_values_init
 call radiat_init
-call gas_mix_options_init
 call ctwr_properties_init
 call map_ale
 call cf_model_init
