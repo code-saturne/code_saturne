@@ -1023,7 +1023,7 @@ cs_lagr_part_copy(cs_lnum_t  dest,
          particles->p_am->extents);
   cs_real_t random = -1;
   cs_random_uniform(1, &random);
-  cs_lagr_particles_set_real(particles, (dest-1), CS_LAGR_RANDOM_VALUE,
+  cs_lagr_particles_set_real(particles, dest, CS_LAGR_RANDOM_VALUE,
                              random);
 }
 
