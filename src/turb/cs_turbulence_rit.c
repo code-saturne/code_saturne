@@ -198,10 +198,10 @@ _thermal_flux_st(const char          *name,
     buo_ut = (cs_real_3_t *)f_buo_ut->val;
 
   cs_real_3_t *dissip_ut = NULL;
-  cs_field_t *f_dissip_ut_ut = cs_field_by_composite_name_try(
+  cs_field_t *f_dissip_ut = cs_field_by_composite_name_try(
       "algo:dissipation", f_ut->name);
-  if (f_dissip_ut_ut != NULL)
-    dissip_ut = (cs_real_3_t *)f_buo_ut->val;
+  if (f_dissip_ut != NULL)
+    dissip_ut = (cs_real_3_t *)f_dissip_ut->val;
 
   if (turb_flux_model == 31) {
     char fname[128];
