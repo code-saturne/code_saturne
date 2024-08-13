@@ -2618,12 +2618,10 @@ contains
 
     ! Local variables
 
-    integer, pointer, dimension(:) :: itrifb
     integer, pointer, dimension(:,:) :: icodcl
     double precision, pointer, dimension(:,:,:) :: rcodcl
 
     call field_build_bc_codes_all(icodcl, rcodcl) ! Get map
-    itrifb => null()
 
     call cs_f_user_boundary_conditions &
           (nvar, nscal, icodcl, c_null_ptr, itypfb, izfppp, dt, rcodcl)
