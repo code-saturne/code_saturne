@@ -2472,16 +2472,7 @@ _solve_epsilon(int              phase_id,
 
   cs_real_t thetap = (st_prv_id > -1) ? thetv : 1.;
 
-  cs_real_t ceps2;
-  if (cs_glob_turb_model->iturb == CS_TURB_RIJ_EPSILON_LRR) {
-    ceps2 = cs_turb_ce2;
-  }
-  else if (cs_glob_turb_model->iturb == CS_TURB_RIJ_EPSILON_SSG) {
-    ceps2 = cs_turb_cssge2;
-  }
-  else {
-    ceps2 = cs_turb_cebme2;
-  }
+  cs_real_t ceps2 = cs_turb_ce2;
 
   cs_real_t *cprod;
   BFT_MALLOC(cprod, n_cells_ext, cs_real_t);

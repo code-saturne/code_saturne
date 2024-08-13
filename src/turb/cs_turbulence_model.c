@@ -504,8 +504,9 @@ double cs_turb_ce1 = 1.44;
 /*!
  * Constant \f$C_{\varepsilon 2}\f$ for the \f$k-\varepsilon\f$ and
  * \f$R_{ij}-\varepsilon\f$ LRR models.
- * Useful if and only if \ref iturb = 20, 21 or 30
- * (\f$k-\varepsilon\f$ or \f$R_{ij}-\varepsilon\f$ LRR).
+ * Default value for (\f$k-\varepsilon\f$ or \f$R_{ij}-\varepsilon\f$ LRR)
+ * is 1.92, modified otherwise.
+ * - Rij-epsilon SSG or EBRSM: 1.83
  */
 double cs_turb_ce2 = 1.92;
 
@@ -560,12 +561,6 @@ double cs_turb_crijp1 = 0.50;
  * (\f$R_{ij}-\varepsilon\f$ LRR).
  */
 double cs_turb_crijp2 = 0.30;
-
-/*!
- * Constant \f$C_{\varepsilon 2}\f$ for the \f$R_{ij}-\varepsilon\f$ SSG model.
- * Useful if and only if \ref iturb=31 (\f$R_{ij}-\varepsilon\f$ SSG).
- */
-double cs_turb_cssge2 = 1.83;
 
 /*!
  * Constant \f$C_{s1}\f$ for the \f$R_{ij}-\varepsilon\f$ SSG model.
@@ -627,8 +622,6 @@ double cs_turb_cebmr5 = 0.20;
  */
 double cs_turb_csrij;
 
-/*! Constant of the Rij-epsilon EBRSM. */
-double cs_turb_cebme2 = 1.83;
 
 /*! Constant of the Rij-epsilon EBRSM. */
 double cs_turb_cebmmu = 0.22;
@@ -1591,6 +1584,10 @@ cs_turb_compute_constants(int phase_id)
       (CS_ABS(cs_turb_crij2) < 1.e-12))
     cs_turb_crij_c0 = (cs_turb_crij1-1.0)*2.0/3.0;
 
+  if (cs_glob_turb_model->iturb == CS_TURB_RIJ_EPSILON_SSG
+      || cs_glob_turb_model->iturb == CS_TURB_RIJ_EPSILON_EBRSM)
+    cs_turb_ce2 = 1.83;
+
 }
 
 /*----------------------------------------------------------------------------*/
@@ -2003,18 +2000,18 @@ cs_turb_constants_log_setup(void)
   else if (turb_model->iturb == CS_TURB_RIJ_EPSILON_LRR)
     cs_log_printf
       (CS_LOG_SETUP,
-       _("    ce1:         %14.5e (Cepsilon 1: production coef.)\n"
-         "    ce2:         %14.5e (Cepsilon 2: dissipat.  coef.)\n"
-         "    crij1:       %14.5e (Slow term coefficient)\n"
+       _("    crij1:       %14.5e (Slow term coefficient)\n"
          "    crij2:       %14.5e (Fast term coefficient)\n"
          "    crij3:       %14.5e (Gravity term coefficient)\n"
          "    csrij:       %14.5e (Rij diffusion coeff.)\n"
          "    crijp1:      %14.5e (Slow coeff. for wall echo)\n"
          "    crijp2:      %14.5e (Fast coeff. for wall echo)\n"
+         "    ce1:         %14.5e (Cepsilon 1: production coef.)\n"
+         "    ce2:         %14.5e (Cepsilon 2: dissipat.  coef.)\n"
          "    cmu:         %14.5e (Cmu constant)\n"),
-         cs_turb_ce1, cs_turb_ce2, cs_turb_crij1, cs_turb_crij2,
+         cs_turb_crij1, cs_turb_crij2,
          cs_turb_crij3, cs_turb_csrij, cs_turb_crijp1,
-         cs_turb_crijp2, cs_turb_cmu);
+         cs_turb_crijp2, cs_turb_ce1, cs_turb_ce2, cs_turb_cmu);
 
   else if (turb_model->iturb == CS_TURB_RIJ_EPSILON_SSG)
     cs_log_printf
@@ -2028,13 +2025,13 @@ cs_turb_constants_log_setup(void)
          "    cssgr5:      %14.5e (Cr5 coeff.)\n"
          "    csrij:       %14.5e (Rij Cs diffusion coeff.)\n"
          "    crij3:       %14.5e (Gravity term coeff.)\n"
-         "    ce1:         %14.5e (Ceps1 coeff.)\n"
-         "    cssge2:      %14.5e (Ceps2 coeff.)\n"
+         "    ce1:         %14.5e (Cepsilon 1: production coef.)\n"
+         "    ce2:         %14.5e (Cepsilon 2: dissipat.  coef.)\n"
          "    cmu:         %14.5e (Cmu constant)\n"),
          cs_turb_cssgs1, cs_turb_cssgs2, cs_turb_cssgr1,
          cs_turb_cssgr2, cs_turb_cssgr3, cs_turb_cssgr4,
          cs_turb_cssgr5, cs_turb_csrij, cs_turb_crij3,
-         cs_turb_ce1, cs_turb_cssge2,
+         cs_turb_ce1, cs_turb_ce2,
          cs_turb_cmu);
 
   else if (turb_model->iturb == CS_TURB_RIJ_EPSILON_EBRSM) {
@@ -2049,15 +2046,15 @@ cs_turb_constants_log_setup(void)
          "    cebmr5:      %14.5e (Cr5 coeff.)\n"
          "    csrij:       %14.5e (Rij Cs diffusion coeff.)\n"
          "    crij3:       %14.5e (Gravity term coeff.)\n"
-         "    cebme2:      %14.5e (Coef Ceps2)\n"
-         "    ce1:         %14.5e (Coef Ceps1)\n"
+         "    ce1:         %14.5e (Cepsilon 1: production coef.)\n"
+         "    ce2:         %14.5e (Cepsilon 2: dissipat.  coef.)\n"
          "    xa1:         %14.5e (Coef A1)\n"
          "    xceta:       %14.5e (Coef Ceta)\n"
          "    xct:         %14.5e (Coef CT)\n"),
          cs_turb_cebms1, cs_turb_cebmr1, cs_turb_cebmr2,
          cs_turb_cebmr3, cs_turb_cebmr4, cs_turb_cebmr5,
-         cs_turb_csrij, cs_turb_crij3,  cs_turb_cebme2,
-         cs_turb_ce1, cs_turb_xa1,
+         cs_turb_csrij, cs_turb_crij3, cs_turb_ce1, cs_turb_ce2,
+         cs_turb_xa1,
          cs_turb_xceta, cs_turb_xct);
 
   }
