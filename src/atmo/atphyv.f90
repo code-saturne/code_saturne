@@ -73,13 +73,9 @@ double precision, dimension(:), pointer :: cpro_tempc, cpro_liqwt
 double precision, dimension(:), pointer :: cpro_beta
 double precision, dimension(:), pointer :: cpro_met_p, cpro_met_rho
 
-logical activate
-
 !===============================================================================
 ! 0. INITIALISATIONS A CONSERVER
 !===============================================================================
-
-activate = .false.
 
 ! Initialize variables to avoid compiler warnings
 

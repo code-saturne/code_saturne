@@ -390,9 +390,9 @@ cs_cf_energy(int f_sc_id)
   /* Initialization */
 
   /* Allocate a temporary array */
-  cs_real_t *wb, *smbrs, *rovsdt;
+  cs_real_t *wb, *rhs, *rovsdt;
   BFT_MALLOC(wb, n_b_faces, cs_real_t);
-  BFT_MALLOC(smbrs, n_cells_ext, cs_real_t);
+  BFT_MALLOC(rhs, n_cells_ext, cs_real_t);
   BFT_MALLOC(rovsdt, n_cells_ext, cs_real_t);
 
   /* Allocate work arrays */
@@ -437,18 +437,18 @@ cs_cf_energy(int f_sc_id)
 
 # pragma omp parallel for if (n_cells > CS_THR_MIN)
   for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-    smbrs[c_id] = 0.0;
+    rhs[c_id] = 0.0;
     rovsdt[c_id] = 0.0;
   }
 
-  /* Heat volumic source term: rho * phi * volume
+  /* Heat volume source term: rho * phi * volume
      -------------------------------------------- */
 
-  cs_user_source_terms(cs_glob_domain, f_sc->id, smbrs, rovsdt);
+  cs_user_source_terms(cs_glob_domain, f_sc->id, rhs, rovsdt);
 
 # pragma omp parallel for if (n_cells > CS_THR_MIN)
   for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-    smbrs[c_id] += rovsdt[c_id] * energy[c_id];
+    rhs[c_id] += rovsdt[c_id] * energy[c_id];
     rovsdt[c_id] = cs_math_fmax(-rovsdt[c_id], 0.0);
   }
 
@@ -485,7 +485,7 @@ cs_cf_energy(int f_sc_id)
                          energy,
                          smcel_sc,
                          smcel_p,
-                         smbrs,
+                         rhs,
                          rovsdt,
                          NULL);
   }
@@ -507,7 +507,7 @@ cs_cf_energy(int f_sc_id)
   */
 
   if (eqp_vel->idiff >= 1)
-    _cf_div(smbrs);
+    _cf_div(rhs);
 
   /*                              __   P        n+1
      Pressure transport term  : - >  (---)  *(Q    .n)  *S
@@ -558,7 +558,7 @@ cs_cf_energy(int f_sc_id)
                 0, /* init */
                 iprtfl,
                 bprtfl,
-                smbrs);
+                rhs);
 
   BFT_FREE(iprtfl);
   BFT_FREE(bprtfl);
@@ -568,7 +568,7 @@ cs_cf_energy(int f_sc_id)
 
 # pragma omp parallel for if (n_cells > CS_THR_MIN)
   for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-    smbrs[c_id] +=   crom[c_id]*cell_f_vol[c_id]
+    rhs[c_id] +=   crom[c_id]*cell_f_vol[c_id]
                    * cs_math_3_dot_product(gxyz, vel[c_id]);
   }
 
@@ -579,8 +579,8 @@ cs_cf_energy(int f_sc_id)
 
   /* Only SGDH available */
 
-  cs_real_t *w1, *i_visc, *b_visc;
-  BFT_MALLOC(w1, n_cells_ext, cs_real_t);
+  cs_real_t *c_viscs_t, *i_visc, *b_visc;
+  BFT_MALLOC(c_viscs_t, n_cells_ext, cs_real_t);
   BFT_MALLOC(i_visc, n_i_faces, cs_real_t);
   BFT_MALLOC(b_visc, n_b_faces, cs_real_t);
 
@@ -604,37 +604,37 @@ cs_cf_energy(int f_sc_id)
       /* mu_t/turb_schmidt */
 
       for (cs_lnum_t c_id = s_id; c_id < e_id; c_id++)
-        w1[c_id] = visct[c_id] / turb_schmidt;
+        c_viscs_t[c_id] = visct[c_id] / turb_schmidt;
 
       /* cp*mu_t/turb_schmidt */
       if (icp >= 0) {
         for (cs_lnum_t c_id = s_id; c_id < e_id; c_id++)
-          w1[c_id] *= cpro_cp[c_id];
+          c_viscs_t[c_id] *= cpro_cp[c_id];
       }
       else {
         for (cs_lnum_t c_id = s_id; c_id < e_id; c_id++)
-          w1[c_id] *= cp0;
+          c_viscs_t[c_id] *= cp0;
       }
 
       /* (cp/cv)*mu_t/turb_schmidt */
       if (icv >= 0) {
         for (cs_lnum_t c_id = s_id; c_id < e_id; c_id++)
-          w1[c_id] /= cpro_cv[c_id];
+          c_viscs_t[c_id] /= cpro_cv[c_id];
       }
       else {
         for (cs_lnum_t c_id = s_id; c_id < e_id; c_id++)
-          w1[c_id] /= cv0;
+          c_viscs_t[c_id] /= cv0;
       }
 
       /* (cp/cv)*mu_t/turb_schmidt+lambda/cv */
       if (ifcvsl < 0) {
         cs_real_t visls_0 = cs_field_get_key_double(f_sc, kvisl0);
         for (cs_lnum_t c_id = s_id; c_id < e_id; c_id++)
-          w1[c_id] += visls_0;
+          c_viscs_t[c_id] += visls_0;
       }
       else {
         for (cs_lnum_t c_id = s_id; c_id < e_id; c_id++)
-          w1[c_id] += viscls[c_id];
+          c_viscs_t[c_id] += viscls[c_id];
       }
 
     } /* End of OpenMP section */
@@ -642,7 +642,7 @@ cs_cf_energy(int f_sc_id)
     cs_face_viscosity(mesh,
                       fvq,
                       eqp_vel->imvisf,
-                      w1,
+                      c_viscs_t,
                       i_visc,
                       b_visc);
 
@@ -735,8 +735,8 @@ cs_cf_energy(int f_sc_id)
 
           const cs_real_t flux = i_visc[f_id] * (pip - pjp);
 
-          smbrs[c_id0] = smbrs[c_id0] + flux;
-          smbrs[c_id1] = smbrs[c_id1] - flux;
+          rhs[c_id0] = rhs[c_id0] + flux;
+          rhs[c_id1] = rhs[c_id1] - flux;
 
         }
 
@@ -758,7 +758,7 @@ cs_cf_energy(int f_sc_id)
       /* Diffusion coefficient  T*lambda*Cvk/Cv */
 #     pragma omp parallel for if (n_cells > CS_THR_MIN)
       for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-        kspe[c_id] = w1[c_id] * tempk[c_id];
+        kspe[c_id] = c_viscs_t[c_id] * tempk[c_id];
       }
 
       cs_face_viscosity(mesh,
@@ -837,8 +837,8 @@ cs_cf_energy(int f_sc_id)
 
               const cs_real_t flux = i_visck[f_id] * cv * (yip - yjp);
 
-              smbrs[c_id0] = smbrs[c_id0] + flux;
-              smbrs[c_id1] = smbrs[c_id1] - flux;
+              rhs[c_id0] = rhs[c_id0] + flux;
+              rhs[c_id1] = rhs[c_id1] - flux;
 
             }
 
@@ -877,8 +877,8 @@ cs_cf_energy(int f_sc_id)
 
             const cs_real_t flux = i_visc[f_id] * grad_dd[f_id] * cv;
 
-            smbrs[c_id0] = smbrs[c_id0] + flux;
-            smbrs[c_id1] = smbrs[c_id1] - flux;
+            rhs[c_id0] = rhs[c_id0] + flux;
+            rhs[c_id1] = rhs[c_id1] - flux;
 
           }
 
@@ -913,7 +913,7 @@ cs_cf_energy(int f_sc_id)
         const cs_lnum_t c_id = b_face_cells[f_id];
 
         const cs_real_t flux
-          =     b_visc[f_id] * (w1[c_id] / b_dist[f_id])
+          =     b_visc[f_id] * (c_viscs_t[c_id] / b_dist[f_id])
             * (  w9[c_id] - wb[f_id]
                 + 0.5 *(  cs_math_pow2(vel[c_id][0])
                         - cs_math_pow2(  coefau[f_id][0]
@@ -930,7 +930,7 @@ cs_cf_energy(int f_sc_id)
                                        + coefbu[f_id][0][2] * vel[c_id][0]
                                        + coefbu[f_id][1][2] * vel[c_id][1]
                                        + coefbu[f_id][2][2] * vel[c_id][2])));
-        smbrs[c_id] = smbrs[c_id] + flux;
+        rhs[c_id] = rhs[c_id] + flux;
       }
 
     }
@@ -1001,10 +1001,10 @@ cs_cf_energy(int f_sc_id)
 
             grad_dd[f_id] = grad_dd[f_id] - gradnb;
 
-            const cs_real_t flux =   b_visck[f_id] * w1[c_id] * btemp[f_id] * cv
+            const cs_real_t flux =   b_visck[f_id] * c_viscs_t[c_id] * btemp[f_id] * cv
                                    / b_dist[f_id] * (-gradnb);
 
-            smbrs[c_id] = smbrs[c_id] + flux;
+            rhs[c_id] = rhs[c_id] + flux;
           }
 
         } /* End loops on boundary faces */
@@ -1037,10 +1037,10 @@ cs_cf_energy(int f_sc_id)
 
           const cs_lnum_t c_id = b_face_cells[f_id];
 
-          const cs_real_t flux =   b_visck[f_id] * w1[c_id] * btemp[f_id] * cv
+          const cs_real_t flux =   b_visck[f_id] * c_viscs_t[c_id] * btemp[f_id] * cv
                                  / b_dist[f_id] * grad_dd[f_id];
 
-          smbrs[c_id] = smbrs[c_id] + flux;
+          rhs[c_id] = rhs[c_id] + flux;
         }
       }
 
@@ -1097,7 +1097,7 @@ cs_cf_energy(int f_sc_id)
                                      icvflb,
                                      icvfli,
                                      rovsdt,
-                                     smbrs,
+                                     rhs,
                                      energy, dpvar,
                                      NULL,   /* xcpp */
                                      NULL);  /* eswork */
@@ -1122,12 +1122,12 @@ cs_cf_energy(int f_sc_id)
   if (eqp_e->verbosity >= 2) {
 #   pragma omp parallel for if (n_cells > CS_THR_MIN)
     for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
-      smbrs[c_id] =   smbrs[c_id]
+      rhs[c_id] =   rhs[c_id]
                     - eqp_e->istat*(crom[c_id]/dt[c_id])*cell_f_vol[c_id]
                     * (energy[c_id] - energy_pre[c_id])
                     * cs_math_fmax(0., cs_math_fmin(eqp_e->nswrsm - 2., 1.));
 
-    const cs_real_t sclnor = sqrt(cs_gdot(n_cells, smbrs, smbrs));
+    const cs_real_t sclnor = sqrt(cs_gdot(n_cells, rhs, rhs));
 
     cs_log_printf(CS_LOG_DEFAULT,
                   _(" %s : EXPLICIT BALANCE = %14.5e"),
@@ -1170,10 +1170,10 @@ cs_cf_energy(int f_sc_id)
 
   /* Free memory */
   BFT_FREE(wb);
-  BFT_FREE(smbrs);
+  BFT_FREE(rhs);
   BFT_FREE(rovsdt);
   BFT_FREE(grad);
-  BFT_FREE(w1);
+  BFT_FREE(c_viscs_t);
   BFT_FREE(w7);
   BFT_FREE(w9);
 }
