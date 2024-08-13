@@ -2626,7 +2626,7 @@ contains
     itrifb => null()
 
     call cs_f_user_boundary_conditions &
-          (nvar, nscal, icodcl, itrifb, itypfb, izfppp, dt, rcodcl)
+          (nvar, nscal, icodcl, c_null_ptr, itypfb, izfppp, dt, rcodcl)
 
   end subroutine user_f_boundary_conditions
 
