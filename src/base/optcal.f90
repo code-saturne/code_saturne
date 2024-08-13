@@ -750,26 +750,6 @@ module optcal
   !> See defined masks in \ref vof_masks.
   integer(c_int), pointer, save :: ivofmt
 
-  integer(c_int), pointer, save :: idrift
-
-  !> \addtogroup vof_masks
-  !> \{
-
-  !> Volume of Fluid model
-  integer :: VOF_ENABLED
-
-  !> Free surface model
-  integer :: VOF_FREE_SURFACE
-
-  !> Mass transfer Merkle model for vaporization / condensation (cavitation)
-  integer :: VOF_MERKLE_MASS_TRANSFER
-
-  parameter (VOF_ENABLED=1)
-  parameter (VOF_FREE_SURFACE=2)
-  parameter (VOF_MERKLE_MASS_TRANSFER=4)
-
-  !> \}
-
   !> \}
   !> \}
 

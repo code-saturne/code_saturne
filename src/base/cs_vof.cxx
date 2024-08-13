@@ -264,8 +264,7 @@ const cs_cavitation_parameters_t *cs_glob_cavitation_parameters
  *============================================================================*/
 
 void
-cs_f_vof_get_pointers(unsigned **ivofmt,
-                      int      **idrift);
+cs_f_vof_get_pointers(unsigned **ivofmt);
 
 void
 cs_f_vof_compute_linear_rho_mu(void);
@@ -285,15 +284,12 @@ cs_f_vof_deshpande_drift_flux(void);
  *
  * parameters:
  *   ivofmt --> pointer to cs_glob_vof_parameters->vof_model
- *   idrift --> pointer to cs_glob_vof_parameters->idrift
  *----------------------------------------------------------------------------*/
 
 void
-cs_f_vof_get_pointers(unsigned **ivofmt,
-                      int      **idrift)
+cs_f_vof_get_pointers(unsigned **ivofmt)
 {
   *ivofmt  = &(_vof_parameters.vof_model);
-  *idrift  = &(_vof_parameters.idrift);
 }
 
 /*----------------------------------------------------------------------------
