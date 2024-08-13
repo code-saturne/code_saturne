@@ -115,25 +115,26 @@ _insert_particles(cs_lnum_t   newpart,
 {
   /* Create new particles (indices > n_particles) */
   cs_lagr_particle_set_t *p_set = cs_glob_lagr_particle_set;
-  cs_lnum_t inserted_parts = p_set->n_particles + newpart;
+  /* inserted particle id */
+  cs_lnum_t p_id = p_set->n_particles - 1 + newpart;
 
-  cs_lagr_particle_set_resize(inserted_parts);
-  cs_lagr_part_copy(inserted_parts-1, corr[idx]);
+  cs_lagr_particle_set_resize(p_set->n_particles + newpart);
+  cs_lagr_part_copy(p_id, corr[idx]);
 
   /* Set properties of particles
    * (diameter, statistical weight, mass, velocity, velocity seen, cell id) */
-  cs_lagr_particles_set_real(p_set, inserted_parts-1, CS_LAGR_STAT_WEIGHT, vp);
+  cs_lagr_particles_set_real(p_set, p_id, CS_LAGR_STAT_WEIGHT, vp);
 
-  cs_real_t fractal_dim = cs_lagr_particles_get_real(p_set, inserted_parts-1,
+  cs_real_t fractal_dim = cs_lagr_particles_get_real(p_set, p_id,
                                                      CS_LAGR_AGGLO_FRACTAL_DIM);
   cs_real_t diam = minimum_particle_diam * pow((cs_real_t)newclass,
                                                1./fractal_dim);
 
-  cs_lagr_particles_set_real(p_set, inserted_parts-1, CS_LAGR_DIAMETER, diam);
+  cs_lagr_particles_set_real(p_set, p_id, CS_LAGR_DIAMETER, diam);
 
-  cs_lagr_particles_set_real(p_set, inserted_parts-1, CS_LAGR_MASS, mass);
+  cs_lagr_particles_set_real(p_set, p_id, CS_LAGR_MASS, mass);
 
-  cs_real_t * inserted_vel = cs_lagr_particles_attr(p_set, inserted_parts-1,
+  cs_real_t * inserted_vel = cs_lagr_particles_attr(p_set, p_id,
                                                     CS_LAGR_VELOCITY);
   cs_real_t * idx_vel = cs_lagr_particles_attr(p_set, corr[idx],
                                                CS_LAGR_VELOCITY);
@@ -141,7 +142,7 @@ _insert_particles(cs_lnum_t   newpart,
   inserted_vel[1] = idx_vel[1];
   inserted_vel[2] = idx_vel[2];
 
-  cs_real_t * inserted_vel_f = cs_lagr_particles_attr(p_set, inserted_parts-1,
+  cs_real_t * inserted_vel_f = cs_lagr_particles_attr(p_set, p_id,
                                                       CS_LAGR_VELOCITY_SEEN);
   cs_real_t * idx_vel_f = cs_lagr_particles_attr(p_set, corr[idx],
                                                  CS_LAGR_VELOCITY_SEEN);
@@ -150,8 +151,8 @@ _insert_particles(cs_lnum_t   newpart,
   inserted_vel_f[2] = idx_vel_f[2];
 
   cs_lnum_t iep = cs_lagr_particles_get_lnum(p_set, corr[idx], CS_LAGR_CELL_ID);
-  cs_lagr_particles_set_lnum(p_set, inserted_parts-1, CS_LAGR_CELL_ID, iep);
-  cs_lagr_particles_set_lnum(p_set, inserted_parts-1,
+  cs_lagr_particles_set_lnum(p_set, p_id, CS_LAGR_CELL_ID, iep);
+  cs_lagr_particles_set_lnum(p_set, p_id,
                              CS_LAGR_AGGLO_CLASS_ID,  newclass);
 }
 
