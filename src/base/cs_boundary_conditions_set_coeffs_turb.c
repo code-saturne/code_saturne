@@ -1287,6 +1287,8 @@ _update_physical_quantities_smooth_wall(const cs_lnum_t  c_id,
   const cs_real_t xkappa = cs_turb_xkappa;
   const cs_turb_model_type_t iturb  = cs_glob_turb_model->iturb;
   const int itytur = cs_glob_turb_model->itytur;
+  const int order = cs_glob_turb_model->order;
+  const int type = cs_glob_turb_model->type;
 
   /* Deprecated power law (Werner & Wengle) */
   if (cs_glob_wall_functions->iwallf == 1) {
@@ -1334,7 +1336,7 @@ _update_physical_quantities_smooth_wall(const cs_lnum_t  c_id,
        -------------------------------------------*/
 
     else if (   iturb == CS_TURB_NONE || iturb == CS_TURB_MIXING_LENGTH
-             || itytur == 3) {
+             || order == CS_TURB_SECOND_ORDER) {
 
       /* In the case of elliptic weighting, we should ignore the wall laws.
          So we use a test on the turbulence model:
@@ -1360,7 +1362,7 @@ _update_physical_quantities_smooth_wall(const cs_lnum_t  c_id,
     /* LES and Spalart Allmaras
        ------------------------ */
 
-    else if (itytur == 4 || iturb == CS_TURB_SPALART_ALLMARAS) {
+    else if (type == CS_TURB_LES || iturb == CS_TURB_SPALART_ALLMARAS) {
 
       *uiptn  = utau - 1.5 * uet / xkappa;
 
@@ -1897,12 +1899,14 @@ cs_boundary_conditions_set_coeffs_turb(int        isvhb,
     yplbr = f_yplus->val;
 
   const int itytur = cs_glob_turb_model->itytur;
+  const int order = cs_glob_turb_model->order;
+  const int type = cs_glob_turb_model->type;
   const int idirsm = cs_glob_turb_rans_model->idirsm;
 
   cs_field_t *f_a_t_visc = NULL;
   cs_real_6_t *visten = NULL;
 
-  if (itytur == 3 && idirsm == 1) {
+  if (order == CS_TURB_SECOND_ORDER && idirsm == 1) {
     f_a_t_visc = cs_field_by_name("anisotropic_turbulent_viscosity");
     visten = (cs_real_6_t *)f_a_t_visc->val;
   }
@@ -1951,7 +1955,7 @@ cs_boundary_conditions_set_coeffs_turb(int        isvhb,
       f_alpha = CS_F_(alp_bl);
     }
   }
-  else if (itytur == 3) {
+  else if (order == CS_TURB_SECOND_ORDER) {
     f_eps = CS_F_(eps);
     f_rij = CS_F_(rij);
     if (iturb == CS_TURB_RIJ_EPSILON_EBRSM)
@@ -2174,7 +2178,7 @@ cs_boundary_conditions_set_coeffs_turb(int        isvhb,
 
     cs_real_t eloglo[3][3], alpha[6][6];
 
-    if (itytur == 3) {
+    if (order == CS_TURB_SECOND_ORDER) {
 
       /* --> T2 = RN X T (where X is the cross product) */
 
@@ -2557,7 +2561,7 @@ cs_boundary_conditions_set_coeffs_turb(int        isvhb,
     /* Save turbulent subgrid viscosity after van Driest damping in LES
        care is taken to not dampen it twice at boundary cells having more
        than one boundary face */
-    if (itytur == 4 && cs_glob_turb_les_model->idries == 1) {
+    if (type == CS_TURB_LES && cs_glob_turb_les_model->idries == 1) {
       if (visvdr[c_id] < -900.) {
         if (icodcl_vel[f_id] == 5)
           visct[c_id] =   visct[c_id]
@@ -2614,7 +2618,7 @@ cs_boundary_conditions_set_coeffs_turb(int        isvhb,
     if (uiptn * iuntur < - cs_math_epzero)
       iuiptn = iuiptn + 1;
 
-    const cs_real_t hintv = (itytur == 3) ?
+    const cs_real_t hintv = (order == CS_TURB_SECOND_ORDER) ?
                             visclc / distbf:
                             (visclc + visctc) / distbf;
 
@@ -2960,7 +2964,7 @@ cs_boundary_conditions_set_coeffs_turb(int        isvhb,
     /* Boundary conditions on Rij-epsilon
        ================================== */
 
-    else if (itytur == 3) {
+    else if (order == CS_TURB_SECOND_ORDER) {
 
       cs_real_t visci[3][3], dist[3], hint = 0.0;
 
@@ -3205,7 +3209,7 @@ cs_boundary_conditions_set_coeffs_turb(int        isvhb,
       }
 
       if (iturb == CS_TURB_RIJ_EPSILON_LRR || iturb == CS_TURB_RIJ_EPSILON_SSG
-          || (itytur == 3 && icodcl_vel[f_id] == 6)) {
+          || (order == CS_TURB_SECOND_ORDER && icodcl_vel[f_id] == 6)) {
 
         /* Si yplus=0, on met coefa a 0 directement pour eviter une division
            par 0 */
@@ -3412,7 +3416,7 @@ cs_boundary_conditions_set_coeffs_turb(int        isvhb,
       if (icodcl_vel[f_id] == 6 && df_limiter_eps != NULL)
         df_limiter_eps[c_id] = 0.0;
 
-    } /* End if itytur == 3 */
+    } /* End if order == CS_TURB_SECOND_ORDER */
 
     /* Boundary conditions on k, epsilon, f_bar and phi in the phi_Fbar model
        ====================================================================== */
@@ -3849,7 +3853,7 @@ cs_boundary_conditions_set_coeffs_turb(int        isvhb,
 
     if (   (iturb == CS_TURB_NONE && n_per_layer[0] != 0)
         ||  (itytur == 5 && n_per_layer[0] != 0)
-        || ((itytur == 2 || itytur == 3) && n_per_layer[1] > 0))
+        || ((itytur == 2 || order == CS_TURB_SECOND_ORDER) && n_per_layer[1] > 0))
       _ntlast = nt_cur;
 
     if (  (_ntlast == nt_cur && _iaff < 2)

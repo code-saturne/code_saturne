@@ -711,7 +711,7 @@ _face_diff_vel(const cs_mesh_t             *m,
     cs_real_t *w1;
     CS_MALLOC_HD(w1, n_cells_ext, cs_real_t, cs_alloc_mode);
 
-    if (cs_glob_turb_model->itytur == 3)
+    if (cs_glob_turb_model->order == CS_TURB_SECOND_ORDER)
       cs_array_copy<cs_real_t>(n_cells, (const cs_real_t *)viscl, w1);
     else {
       ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
@@ -728,7 +728,7 @@ _face_diff_vel(const cs_mesh_t             *m,
 
       /* When using Rij-epsilon model with the option irijnu=1, the face
        * viscosity for the Matrix (viscfi and viscbi) is increased */
-      if (   cs_glob_turb_model->itytur == 3
+      if (   cs_glob_turb_model->order == CS_TURB_SECOND_ORDER
           && cs_glob_turb_rans_model->irijnu == 1) {
         ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
           w1[c_id] = viscl[c_id] + idifft*visct[c_id];
@@ -758,7 +758,7 @@ _face_diff_vel(const cs_mesh_t             *m,
 
       /* When using Rij-epsilon model with the option irijnu=1, the face
        * viscosity for the Matrix (viscfi and viscbi) is increased */
-      if (   cs_glob_turb_model->itytur == 3
+      if (   cs_glob_turb_model->order == CS_TURB_SECOND_ORDER
           && cs_glob_turb_rans_model->irijnu == 1) {
         ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
           w1[c_id] = viscl[c_id] + idifft*visct[c_id];
@@ -783,7 +783,7 @@ _face_diff_vel(const cs_mesh_t             *m,
   /* If no diffusion, viscosity is set to 0. */
   else {
 
-    if (   cs_glob_turb_model->itytur == 3
+    if (   cs_glob_turb_model->order == CS_TURB_SECOND_ORDER
         && cs_glob_turb_rans_model->irijnu == 1) {
 
       cs_arrays_set_value<cs_real_t, 1>(n_i_faces, 0., viscf, viscfi);
@@ -844,7 +844,7 @@ _div_rij(const cs_mesh_t     *m,
   CS_MALLOC_HD(tflmab, n_b_faces,cs_real_3_t, cs_alloc_mode);
 
   /* Reynolds Stress Models */
-  if (cs_glob_turb_model->itytur == 3) {
+  if (cs_glob_turb_model->order == CS_TURB_SECOND_ORDER) {
 
     const cs_field_t *f_rij = CS_F_(rij);
     eqp = cs_field_get_equation_param_const(f_rij);
@@ -872,7 +872,7 @@ _div_rij(const cs_mesh_t     *m,
   }
 
   /* Baglietto et al. quadratic k-epislon model */
-  else if (cs_glob_turb_model->iturb == CS_TURB_K_EPSILON_QUAD) {
+  else if (cs_glob_turb_model->model == CS_TURB_K_EPSILON_QUAD) {
 
     cs_real_6_t *rij = nullptr;
     CS_MALLOC_HD(rij, n_cells_ext, cs_real_6_t, cs_alloc_mode);
@@ -1245,7 +1245,7 @@ _ext_forces(const cs_mesh_t                *m,
   }
 
   /* Add -div( rho R) as external force */
-  if (   cs_glob_turb_model->itytur == 3
+  if (   cs_glob_turb_model->order == CS_TURB_SECOND_ORDER
       && cs_glob_velocity_pressure_param->igprij == 1) {
     ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
       cs_real_t dvol = 0;
@@ -2170,9 +2170,10 @@ _velocity_prediction(const cs_mesh_t             *m,
   if (   iterns == 1
       && iforbr != nullptr
       && cs_glob_turb_rans_model->igrhok == 1
-      && (   cs_glob_turb_model->itytur == 2
-          || cs_glob_turb_model->itytur == 5
-          || cs_glob_turb_model->iturb == CS_TURB_K_OMEGA)) {
+      /* Eddy viscosity model with k defined */
+      && ( cs_glob_turb_model->order == CS_TURB_FIRST_ORDER
+        && cs_glob_turb_model->type == CS_TURB_RANS
+        && CS_F_(k) != nullptr)) {
     if (iappel == 2)
       cvara_k = CS_F_(k)->val;
     else
@@ -2571,7 +2572,7 @@ _velocity_prediction(const cs_mesh_t             *m,
   ctx.wait();
   CS_FREE_HD(cproa_rho_tc);
 
-  /* 2/3 rho * grad(k) for k-epsilon ou k-omega
+  /* 2/3 rho * grad(k) for Eddy viscosity models with k defined
    * Note: we do not take the gradient of (rho k), as this would make
    *       the handling of BC's more complex...
    *
@@ -2582,9 +2583,9 @@ _velocity_prediction(const cs_mesh_t             *m,
    * in time ; it goes into trava if we do not extrapolate or iterate on
    * cs_solve_navier_stokes. */
 
-  if (  (   cs_glob_turb_model->itytur == 2
-         || cs_glob_turb_model->itytur == 5
-         || cs_glob_turb_model->iturb == CS_TURB_K_OMEGA)
+  if (( cs_glob_turb_model->order == CS_TURB_FIRST_ORDER
+        && cs_glob_turb_model->type == CS_TURB_RANS
+        && CS_F_(k) != nullptr)
       && cs_glob_turb_rans_model->igrhok == 1 && iterns == 1) {
     cs_real_3_t *grad_k = nullptr;
     BFT_MALLOC(grad_k, n_cells_ext, cs_real_3_t);
@@ -2803,8 +2804,8 @@ _velocity_prediction(const cs_mesh_t             *m,
   cs_real_3_t *cpro_divr = nullptr, *divt = nullptr;
 
   if (   iterns == 1
-      && (   cs_glob_turb_model->itytur == 3
-          || cs_glob_turb_model->iturb == CS_TURB_K_EPSILON_QUAD)) {
+      && (   cs_glob_turb_model->order == CS_TURB_SECOND_ORDER
+          || cs_glob_turb_model->model == CS_TURB_K_EPSILON_QUAD)) {
 
     cs_field_t *f_drij = cs_field_by_name_try("algo:divergence_rij");
     if (f_drij != nullptr) {
@@ -3707,10 +3708,9 @@ cs_solve_navier_stokes_update_total_pressure
   /* Update cell values */
 
   bool is_eddy_model
-    =  (  (   cs_glob_turb_model->itytur == 2
-           || cs_glob_turb_model->itytur == 5
-           || cs_glob_turb_model->iturb == CS_TURB_K_OMEGA)
-        && cs_glob_turb_rans_model->igrhok != 1);
+    = cs_glob_turb_model->order == CS_TURB_FIRST_ORDER
+    && CS_F_(k) != nullptr
+    && cs_glob_turb_rans_model->igrhok != 1;
 
 
   if (cpro_momst == nullptr) {
@@ -4001,7 +4001,7 @@ cs_solve_navier_stokes(const int        iterns,
      ------------------------ */
 
   bool irijnu_1 = false;
-  if (   cs_glob_turb_model->itytur == 3
+  if (   cs_glob_turb_model->order == CS_TURB_SECOND_ORDER
       && cs_glob_turb_rans_model->irijnu == 1)
     irijnu_1 = true;
 
@@ -4408,7 +4408,7 @@ cs_solve_navier_stokes(const int        iterns,
       const cs_real_t *ufn = b_face_u_normal[face_id];
 
       cs_real_t hint;
-      if (cs_glob_turb_model->itytur == 3)
+      if (cs_glob_turb_model->order == CS_TURB_SECOND_ORDER)
         hint = visclc / distbf;
       else
         hint = (visclc+visctc) / distbf;

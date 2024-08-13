@@ -89,7 +89,7 @@ BEGIN_C_DECLS
   Members of this turbulence model are publicly accessible, to allow for concise
   syntax, as it is expected to be used in many places.
 
-  \var  cs_turb_model_t::iturb
+  \var  cs_turb_model_t::model
         turbulence model
         - CS_TURB_NONE: no turbulence model (laminar flow)
         - CS_TURB_MIXING_LENGTH: mixing length model
@@ -110,7 +110,7 @@ BEGIN_C_DECLS
         - CS_TURB_K_OMEGA: \f$ k-\omega \f$ SST
         - CS_TURB_SPALART_ALLMARAS: Spalart-Allmaras model
   \var  cs_turb_model_t::itytur
-        class of turbulence model (integer value iturb/10, deprecated)
+        class of turbulence model (integer value model/10, deprecated)
   \var  cs_turb_model_t::hybrid_turb
         Type of hybrid turbulence model
         - 0: No model
@@ -152,7 +152,7 @@ BEGIN_C_DECLS
         - 1: Cazalbou correction (default when \ref irccor = 1 and
         \ref cs_turb_model_t::itytur "itytur" = 2 or 5)
         - 2: Spalart-Shur correction (default when \ref irccor = 1 and
-        \ref iturb = 60 or 70)
+        \ref model = CS_TURB_K_OMEGA or CS_TURB_SPALART_ALLMARAS)
   \var  cs_turb_rans_model_t::idirsm
         turbulent diffusion model for second moment closure
         - 0: scalar diffusivity (Shir model, default model)
@@ -162,7 +162,8 @@ BEGIN_C_DECLS
         \f$\varepsilon\f$, for the \f$k-\epsilon\f$ and v2f models\n
         - 0: clipping in absolute value
         - 1: coupled clipping based on physical relationships\n
-        Useful if and only if \ref iturb = 20, 21 or 50 (\f$k-\epsilon\f$ and
+        Useful if and only if \ref model = CS_TURB_K_EPSILON,
+        CS_TURB_K_EPSILON_LIN_PROD or CS_TURB_V2F_PHI (\f$k-\epsilon\f$ and
         v2f models). The results obtained with the method corresponding to
         \ref iclkep =1 showed in some cases a substantial sensitivity to the
         values of the length scale \ref almax.\n
@@ -173,7 +174,8 @@ BEGIN_C_DECLS
         is taken into account in the velocity equation.
         - 1: true
         - 0: false in the velocity
-        Useful if and only if \ref iturb = 20, 21, 50 or 60.\n
+        Useful if and only if \ref model = CS_TURB_K_EPSILON,
+        CS_TURB_K_EPSILON_LIN_PROD, CS_TURB_V2F_PHI, CS_TURB_K_OMEGA.\n
         This term may generate non-physical velocities at the wall.
         When it is not explicitly taken into account, it is
         implicitly included into the pressure.
@@ -193,11 +195,9 @@ BEGIN_C_DECLS
         - 0: false\n
         If \ref ikecou = 0 in \f$k-\epsilon\f$ model, the term
         in \f$\epsilon\f$ in the equation of \f$k\f$ is made implicit.\n
-        \ref ikecou is initialised to 0 if \ref iturb = 21 or 60, and
-        to 1 if \ref iturb = 20.\n
-        \ref ikecou = 1 is forbidden when using the v2f model (\ref iturb = 50).\n
-        Useful if and only if \ref iturb = 20, 21 or 60 (\f$k-\epsilon\f$ and
-        \f$k-\omega\f$ models)
+        \ref ikecou is initialised to 0.\n
+        \ref ikecou = 1 is forbidden when using the v2f model (\ref model = 50).\n
+        Useful if and only if eddy viscosity models are chosen.
   \var  cs_turb_rans_model_t::reinit_turb
         Advanced re-init for EBRSM and k-omega models
         - 1: true
@@ -217,8 +217,8 @@ BEGIN_C_DECLS
         incremental form, this extra turbulent viscosity does
         not change the final solution for steady flows. However,
         for unsteady flows, the parameter \ref cs_equation_param_t::nswrsm "nswrsm"
-        should be increased.\n Useful if and only if \ref iturb = 30
-        or 31 (\f$R_{ij}-\epsilon\f$ model).
+        should be increased.\n Useful if and only if \ref order =
+        CS_TURB_SECOND_ORDER (\f$R_{ij}-\epsilon\f$ model).
   \var  cs_turb_rans_model_t::irijrb
         accurate treatment of \f$ \tens{R} \f$ at the boundary
         (see \ref cs_boundary_condition_set_coeffs)
@@ -229,8 +229,9 @@ BEGIN_C_DECLS
         \f$R_{ij}-\epsilon\f$ LRR model are taken into account:
         - 1: true,
         - 0: false (default)\n
-        Useful if and only if \ref iturb = 30 (\f$R_{ij}-\epsilon\f$
-        LRR).\n It is not recommended to take these terms into account:
+        Useful if and only if \ref model = CS_TURB_RIJ_EPSILON_LRR
+        (\f$R_{ij}-\epsilon\f$LRR).\n
+        It is not recommended to take these terms into account:
         they have an influence only near the walls, their expression is hardly
         justifiable according to some authors and, in the configurations
         studied with code_saturne, they did not bring any improvement in the
@@ -275,7 +276,7 @@ BEGIN_C_DECLS
   \var  cs_turb_rans_model_t::xlomlg
         mixing length for the mixing length model
 
-        Useful if and only if \ref iturb= 10 (mixing length).
+        Useful if and only if \ref model= CS_TURB_MIXING_LENGTH (mixing length).
 */
 
 /*----------------------------------------------------------------------------*/
@@ -300,7 +301,7 @@ BEGIN_C_DECLS
         and 0 for the dynamic model.\n The van Driest
         wall-damping requires the knowledge of the distance
         to the nearest wall for each cell in the domain.
-        Useful if and only if \ref iturb = CS_TURB_LES_SMAGO_CONST
+        Useful if and only if \ref model = CS_TURB_LES_SMAGO_CONST
         or CS_TURB_LES_SMAGO_DYN.
 */
 
@@ -349,11 +350,12 @@ BEGIN_C_DECLS
 
 static cs_turb_model_t  _turb_model =
 {
-  .iturb  = -999,
+  .model  = -999,
   .itytur = -999,
   .hybrid_turb = 0,
   .type = -1,
-  .order = -1
+  .order = -1,
+  .high_low_re = -1
 };
 
 const cs_turb_model_t  *cs_glob_turb_model = NULL;
@@ -425,7 +427,7 @@ const cs_turb_hybrid_model_t  *cs_glob_turb_hybrid_model = &_turb_hybrid_model;
 /*!
  * Karman constant. (= 0.42)
  *
- * Useful if and only if \ref iturb >= 10.
+ * Useful if and only if \ref model != CS_TURB_NONE.
  *  (mixing length, \f$k-\varepsilon\f$, \f$R_{ij}-\varepsilon\f$,
  * LES, v2f or \f$k-\omega\f$).
  */
@@ -446,7 +448,8 @@ double cs_turb_vdriest = 25.6;
  * (\f$ cstlog = 5.2 \f$).
  *
  * Constant of the logarithmic wall function.
- * Useful if and only if \ref iturb >= 10 (mixing length, \f$k-\varepsilon\f$,
+ * Useful if and only if \ref model != CS_TURB_NONE
+ * (mixing length, \f$k-\varepsilon\f$,
  * \f$R_{ij}-\varepsilon\f$, LES, v2f or \f$k-\omega\f$).
  */
 double cs_turb_cstlog = 5.2;
@@ -457,7 +460,8 @@ double cs_turb_cstlog = 5.2;
  * (\f$ cstlog_{rough} = 8.5 \f$).
  *
  * Constant of the logarithmic wall function.
- * Useful if and only if \ref iturb >= 10 (mixing length, \f$k-\varepsilon\f$,
+ * Useful if and only if \ref model != CS_TURB_NONE
+ * (mixing length, \f$k-\varepsilon\f$,
  * \f$R_{ij}-\varepsilon\f$, LES, v2f or \f$k-\omega\f$).
  */
 double cs_turb_cstlog_rough = 8.5;
@@ -468,7 +472,8 @@ double cs_turb_cstlog_rough = 8.5;
  * \f$ \dfrac{1}{\kappa} \ln(y u_k/(\nu + \alpha \xi u_k)) + cstlog \f$
  * (\f$ \alpha = \exp \left( -\kappa (8.5 - 5.2) \right) \f$).
  *
- * Useful if and only if \ref iturb >= 10 (mixing length, \f$k-\varepsilon\f$,
+ * Useful if and only if \ref model != CS_TURB_NONE
+ * (mixing length, \f$k-\varepsilon\f$,
  * \f$R_{ij}-\varepsilon\f$, LES, v2f or \f$k-\omega\f$).
  */
 double cs_turb_cstlog_alpha;
@@ -496,7 +501,7 @@ double cs_turb_cmu025 = 0.547722557; /* computed more precisely later */
 /*!
  * Constant \f$C_{\varepsilon 1}\f$ for all the RANS turbulence models except
  * for the v2f and the \f$k-\omega\f$ models.
- * Useful if and only if \ref iturb= 20, 21, 30 or 31 (\f$k-\varepsilon\f$
+ * Useful if and only if \ref model= 20, 21, 30 or 31 (\f$k-\varepsilon\f$
  * or \f$R_{ij}-\varepsilon\f$).
  */
 double cs_turb_ce1 = 1.44;
@@ -521,20 +526,20 @@ double cs_turb_ce4 = 1.20;
 
 /*!
  * Constant \f$C_1\f$ for the \f$R_{ij}-\varepsilon\f$ LRR model.
- * Useful if and only if \ref iturb=30 (\f$R_{ij}-\varepsilon\f$ LRR).
+ * Useful if and only if \ref model=30 (\f$R_{ij}-\varepsilon\f$ LRR).
  */
 double cs_turb_crij1 = 1.80;
 
 /*!
  * Constant \f$C_2\f$ for the \f$R_{ij}-\varepsilon\f$ LRR model.
- * Useful if and only if \ref iturb=30 (\f$R_{ij}-\varepsilon\f$ LRR).
+ * Useful if and only if \ref model=30 (\f$R_{ij}-\varepsilon\f$ LRR).
  */
 double cs_turb_crij2 = 0.60;
 
 /*!
  * Rotta constant \f$C_0\f$ for the \f$R_{ij}-\varepsilon\f$ model.
  * Useful for the Lagrangian model. The value is set from \f$C_1\f$
- * if and only if \ref iturb=CS_TURB_RIJ_EPSILON_LRR
+ * if and only if \ref model=CS_TURB_RIJ_EPSILON_LRR
  * (\f$R_{ij}-\varepsilon\f$ LRR) and \f$C_2=0\f$.
  */
 double cs_turb_crij_c0 = 3.5;
@@ -548,7 +553,7 @@ double cs_turb_crij3 = 0.55;
 /*!
  * Constant \f$C_1^\prime\f$ for the \f$R_{ij}-\varepsilon\f$ LRR model,
  * corresponding to the wall echo terms.
- * Useful if and only if \ref iturb=30 and \ref cs_turb_rans_model_t::irijec
+ * Useful if and only if \ref model=30 and \ref cs_turb_rans_model_t::irijec
  * "cs_turb_rans_model_t::irijec"=1
  * (\f$R_{ij}-\varepsilon\f$ LRR).
  */
@@ -557,50 +562,50 @@ double cs_turb_crijp1 = 0.50;
 /*!
  * Constant \f$C_2^\prime\f$ for the \f$R_{ij}-\varepsilon\f$ LRR model,
  * corresponding to the wall echo terms.
- * Useful if and only if \ref iturb=30 and \ref cs_turb_rans_model_t::irijec=1
+ * Useful if and only if \ref model=30 and \ref cs_turb_rans_model_t::irijec=1
  * (\f$R_{ij}-\varepsilon\f$ LRR).
  */
 double cs_turb_crijp2 = 0.30;
 
 /*!
  * Constant \f$C_{s1}\f$ for the \f$R_{ij}-\varepsilon\f$ SSG model.
- * Useful if and only if \ref iturb=31 (\f$R_{ij}-\varepsilon\f$ SSG).
+ * Useful if and only if \ref model=31 (\f$R_{ij}-\varepsilon\f$ SSG).
  */
 double cs_turb_cssgs1 = 1.70;
 
 /*!
  * Constant \f$C_{s2}\f$ for the \f$R_{ij}-\varepsilon\f$ SSG model.
- * Useful if and only if \ref iturb=31 (\f$R_{ij}-\varepsilon\f$ SSG).
+ * Useful if and only if \ref model=31 (\f$R_{ij}-\varepsilon\f$ SSG).
  */
 double cs_turb_cssgs2 = -1.05;
 
 /*!
  * Constant \f$C_{r1}\f$ for the \f$R_{ij}-\varepsilon\f$ SSG model.
- * Useful if and only if \ref iturb=31 (\f$R_{ij}-\varepsilon\f$ SSG).
+ * Useful if and only if \ref model=31 (\f$R_{ij}-\varepsilon\f$ SSG).
  */
 double cs_turb_cssgr1 = 0.90;
 
 /*!
  * Constant \f$C_{r2}\f$ for the \f$R_{ij}-\varepsilon\f$ SSG model.
- * Useful if and only if \ref iturb=31 (\f$R_{ij}-\varepsilon\f$ SSG).
+ * Useful if and only if \ref model=31 (\f$R_{ij}-\varepsilon\f$ SSG).
  */
 double cs_turb_cssgr2 = 0.80;
 
 /*!
  * Constant \f$C_{r3}\f$ for the \f$R_{ij}-\varepsilon\f$ SSG model.
- * Useful if and only if \ref iturb=31 (\f$R_{ij}-\varepsilon\f$ SSG).
+ * Useful if and only if \ref model=31 (\f$R_{ij}-\varepsilon\f$ SSG).
  */
 double cs_turb_cssgr3 = 0.65;
 
 /*!
  * constant \f$C_{r4}\f$ for the \f$R_{ij}-\varepsilon\f$ SSG model.
- * Useful if and only if \ref iturb=31 (\f$R_{ij}-\varepsilon\f$ SSG).
+ * Useful if and only if \ref model=31 (\f$R_{ij}-\varepsilon\f$ SSG).
  */
 double cs_turb_cssgr4 = 0.625;
 
 /*!
  * Constant \f$C_{r1}\f$ for the \f$R_{ij}-\varepsilon\f$ SSG model.
- * Useful if and only if \ref iturb=31 (\f$R_{ij}-\varepsilon\f$ SSG).
+ * Useful if and only if \ref model=31 (\f$R_{ij}-\varepsilon\f$ SSG).
  */
 double cs_turb_cssgr5 = 0.20;
 
@@ -618,7 +623,7 @@ double cs_turb_cebmr5 = 0.20;
 
 /*!
  * Constant \f$C_s\f$ for the \f$R_{ij}-\varepsilon\f$ LRR model.
- * Useful if and only if \ref iturb=30 (\f$R_{ij}-\varepsilon\f$ LRR).
+ * Useful if and only if \ref model=30 (\f$R_{ij}-\varepsilon\f$ LRR).
  */
 double cs_turb_csrij;
 
@@ -667,44 +672,44 @@ double cs_turb_cpalet = 75.0;
 
 /*!
  * Constant \f$\sigma_{k1}\f$ for the \f$k-\omega\f$ SST model.
- * Useful if and only if \ref iturb=60.
+ * Useful if and only if \ref model=60.
  */
 double cs_turb_ckwsk1 = 1.0/0.85;
 
 /*!
  * Constant \f$\sigma_{k2}\f$ for the \f$k-\omega\f$ SST model.
- * Useful if and only if \ref iturb=60.
+ * Useful if and only if \ref model=60.
  */
 double cs_turb_ckwsk2 = 1.0;
 
 /*!
  * Constant \f$\sigma_{\omega 1}\f$ for the \f$k-\omega\f$ SST model.
- * Useful if and only if \ref iturb=60 (\f$k-\omega\f$ SST).
+ * Useful if and only if \ref model=60 (\f$k-\omega\f$ SST).
  */
 double cs_turb_ckwsw1 = 2.0;
 
 /*!
  * Constant \f$\sigma_{\omega 2}\f$ for the \f$k-\omega\f$ SST model.
- * Useful if and only if \ref iturb=60 (\f$k-\omega\f$ SST).
+ * Useful if and only if \ref model=60 (\f$k-\omega\f$ SST).
  */
 double cs_turb_ckwsw2 = 1.0/0.856;
 
 /*!
  * Constant \f$\beta_1\f$ for the \f$k-\omega\f$ SST model.
- * Useful if and only if \ref iturb=60 (\f$k-\omega\f$ SST).
+ * Useful if and only if \ref model=60 (\f$k-\omega\f$ SST).
  */
 double cs_turb_ckwbt1 = 0.075;
 
 /*!
  * Constant \f$\beta_2\f$ for the \f$k-\omega\f$ SST model.
- * Useful if and only if \ref iturb=60 (\f$k-\omega\f$ SST).
+ * Useful if and only if \ref model=60 (\f$k-\omega\f$ SST).
  */
 double cs_turb_ckwbt2 = 0.0828;
 
 /*!
  * \f$\frac{\beta_1}{C_\mu}-\frac{\kappa^2}{\sqrt{C_\mu}\sigma_{\omega 1}}\f$.
  * Constant \f$\gamma_1\f$ for the \f$k-\omega\f$ SST model.
- * Useful if and only if \ref iturb=60 (\f$k-\omega\f$ SST).
+ * Useful if and only if \ref model=60 (\f$k-\omega\f$ SST).
  * \warning: \f$\gamma_1\f$ is calculated before the call to
  * \ref cs_user_parameters. Hence, if \f$\beta_1\f$, \f$C_\mu\f$, \f$\kappa\f$ or
  * \f$\sigma_{\omega 1}\f$ is modified in \ref cs_user_parameters,
@@ -715,7 +720,7 @@ double cs_turb_ckwgm1 = -1.;
 /*!
  * \f$\frac{\beta_2}{C_\mu}-\frac{\kappa^2}{\sqrt{C_\mu}\sigma_{\omega 2}}\f$.
  * Constant \f$\gamma_2\f$ for the \f$k-\omega\f$ SST model.
- * Useful if and only if \ref iturb=60 (\f$k-\omega\f$ SST).
+ * Useful if and only if \ref model=60 (\f$k-\omega\f$ SST).
  * \warning: \f$\gamma_2\f$ is calculated before the call to \ref cs_user_parameters. Hence,
  * if \f$\beta_2\f$, \f$C_\mu\f$, \f$\kappa\f$ or \f$\sigma_{\omega 2}\f$ is
  * modified in \ref cs_user_parameters, \ref cs_turb_ckwgm2 must also be modified
@@ -726,38 +731,38 @@ double cs_turb_ckwgm2 = -1.;
 /*!
  * Specific constant of k-omega SST.
  * Constant \f$a_1\f$ for the \f$k-\omega\f$ SST model.
- * Useful if and only if \ref iturb=60 (\f$k-\omega\f$ SST).
+ * Useful if and only if \ref model=60 (\f$k-\omega\f$ SST).
  */
 double cs_turb_ckwa1 = 0.31;
 
 /*!
  * Constant \f$ c_1 \f$ for the \f$k-\omega\f$ SST model.
- * Useful if and only if \ref iturb=60 (\f$k-\omega\f$ SST).
+ * Useful if and only if \ref model=60 (\f$k-\omega\f$ SST).
  * Specific constant of k-omega SST.
  */
 double cs_turb_ckwc1 = 10.0;
 
 /*!
  * Constant \f$ C_{DDES} \f$ for the \f$k-\omega\f$ SST model.
- * Useful if and only if \ref iturb=60 (\f$k-\omega\f$ SST) and hybrid_turb=1.
+ * Useful if and only if \ref model=60 (\f$k-\omega\f$ SST) and hybrid_turb=1.
  */
 double cs_turb_cddes = 0.65;
 
 /*!
  * Constant \f$ C_{SAS}\f$ for the hybrid \f$k-\omega\f$ SST model.
- * Useful if and only if \ref iturb=60 (\f$k-\omega\f$ SST) and hybrid_turb=3.
+ * Useful if and only if \ref model=60 (\f$k-\omega\f$ SST) and hybrid_turb=3.
  */
 double cs_turb_csas = 0.11;
 
 /*! constant \f$ C_{DDES}\f$ for the hybrid \f$k-\omega\f$ SST model.
- * Useful if and only if \ref iturb=60 (\f$k-\omega\f$ SST) and hybrid_turb=3.
+ * Useful if and only if \ref model=60 (\f$k-\omega\f$ SST) and hybrid_turb=3.
  */
 double cs_turb_csas_eta2 = 3.51;
 
 /*!
  * Constant \f$ \beta_0 \f$ for the HTLES model.
- * Useful if and only if \ref iturb=60 (\f$k-\omega\f$ SST)
- * or if \ref iturb=51 (\f$BL-v^2-k\f$)
+ * Useful if and only if \ref model=60 (\f$k-\omega\f$ SST)
+ * or if \ref model=51 (\f$BL-v^2-k\f$)
  * and hybrid_turb=4.
  */
 double cs_turb_chtles_bt0 = 0.48;
@@ -848,7 +853,7 @@ double cs_turb_ccazd = 0.682;
  * \ref cs_turb_xlesfl is a constant used to define, for
  * each cell \f$\Omega_i\f$, the width of the (implicit) filter:
  * \f$\overline{\Delta}=xlesfl(ales*|\Omega_i|)^{bles}\f$\n
- * Useful if and only if \ref iturb = 40 or 41
+ * Useful if and only if \ref model = 40 or 41
  */
 double cs_turb_xlesfl = 2.0;
 
@@ -857,7 +862,7 @@ double cs_turb_xlesfl = 2.0;
  * the (implicit) filter:
  * - \f$\overline{\Delta}=xlesfl(ales*|\Omega_i|)^{bles}\f$
  *
- * Useful if and only if \ref iturb = 40 or 41.
+ * Useful if and only if \ref model = 40 or 41.
  */
 double cs_turb_ales = 1.0;
 
@@ -866,7 +871,7 @@ double cs_turb_ales = 1.0;
  * the (implicit) filter:
  * - \f$\overline{\Delta}=xlesfl(ales*|\Omega_i|)^{bles}\f$
  *
- * Useful if and only if \ref iturb = 40 or 41.
+ * Useful if and only if \ref model = 40 or 41.
  */
 double cs_turb_bles = 1.0/3.0;
 
@@ -878,7 +883,7 @@ double cs_turb_bles = 1.0/3.0;
  * where \f$\bar{\Delta}\f$ is the width of the filter
  * and \f$\bar{S}_{ij}\f$ the filtered strain rate.
  *
- * Useful if and only if \ref iturb = 40.
+ * Useful if and only if \ref model = 40.
  * \note In theory Smagorinsky constant is 0.18.
  * For a channel, 0.065 value is rather taken.
  */
@@ -890,7 +895,7 @@ double cs_turb_csmago = 0.065;
  * explicit filter used in the framework of the LES dynamic model:
  * \f$\widetilde{\overline{\Delta}}=xlesfd\overline{\Delta}\f$.
  *
- * Useful if and only if \ref iturb = 41.
+ * Useful if and only if \ref model = 41.
  */
 double cs_turb_xlesfd = 1.5;
 
@@ -900,7 +905,7 @@ double cs_turb_xlesfd = 1.5;
  * Any larger value yielded by the calculation procedure of the dynamic model
  * will be clipped to \f$ smagmx\f$.
  *
- * Useful if and only if \ref iturb = 41.
+ * Useful if and only if \ref model = 41.
  */
 double cs_turb_csmago_max = -1.;
 
@@ -910,7 +915,7 @@ double cs_turb_csmago_max = -1.;
  * Any smaller value yielded by the calculation procedure of the dynamic model
  * will be clipped to \f$ smagmn\f$.
  *
- * Useful if and only if \ref iturb = 41.
+ * Useful if and only if \ref model = 41.
  */
 double cs_turb_csmago_min = 0.;
 
@@ -919,55 +924,55 @@ double cs_turb_csmago_min = 0.;
  * the Smagorinsky constant:
  * - \f$ (1-\exp^{(-y^+/cdries}) \f$.
  *
- * Useful if and only if \ref iturb = 40 or 41.
+ * Useful if and only if \ref model = 40 or 41.
  */
 double cs_turb_cdries = 26.0;
 
 /*!
  * Constant \f$a_1\f$ for the v2f \f$\varphi\f$-model.
- * Useful if and only if \ref iturb=50 (v2f \f$\varphi\f$-model).
+ * Useful if and only if \ref model=50 (v2f \f$\varphi\f$-model).
  */
 double cs_turb_cv2fa1 = 0.05;
 
 /*!
  * Constant \f$C_{\varepsilon 2}\f$ for the v2f \f$\varphi\f$-model.
- * Useful if and only if \ref iturb=50 (v2f \f$\varphi\f$-model).
+ * Useful if and only if \ref model=50 (v2f \f$\varphi\f$-model).
  */
 double cs_turb_cv2fe2 = 1.85;
 
 /*!
  * Constant \f$C_1\f$ for the v2f \f$\varphi\f$-model.
- * Useful if and only if \ref iturb=50 (v2f \f$\varphi\f$-model).
+ * Useful if and only if \ref model=50 (v2f \f$\varphi\f$-model).
  */
 double cs_turb_cv2fc1 = 1.4;
 
 /*!
  * Constant \f$C_2\f$ for the v2f \f$\varphi\f$-model.
- * Useful if and only if \ref iturb=50 (v2f \f$\varphi\f$-model).
+ * Useful if and only if \ref model=50 (v2f \f$\varphi\f$-model).
  */
 double cs_turb_cv2fc2 = 0.3;
 
 /*!
  * Constant \f$C_T\f$ for the v2f \f$\varphi\f$-model.
- * Useful if and only if \ref iturb=50 (v2f \f$\varphi\f$-model).
+ * Useful if and only if \ref model=50 (v2f \f$\varphi\f$-model).
  */
 double cs_turb_cv2fct = 6.0;
 
 /*!
  * Constant \f$C_L\f$ for the v2f \f$\varphi\f$-model.
- * Useful if and only if \ref iturb=50 (v2f \f$\varphi\f$-model).
+ * Useful if and only if \ref model=50 (v2f \f$\varphi\f$-model).
  */
 double cs_turb_cv2fcl = 0.25;
 
 /*!
  * Constant \f$C_\eta\f$ for the v2f \f$\varphi\f$-model.
- * Useful if and only if \ref iturb=50 (v2f \f$\varphi\f$-model).
+ * Useful if and only if \ref model=50 (v2f \f$\varphi\f$-model).
  */
 double cs_turb_cv2fet = 110.0;
 
 /*!
  * Constants for the Baglietto et al. quadratic k-epsilon model.
- * Useful if and only if \ref iturb = CS_TURB_K_EPSILON_QUAD
+ * Useful if and only if \ref model = CS_TURB_K_EPSILON_QUAD
  */
 double cs_turb_cnl1 = 0.8;
 double cs_turb_cnl2 = 11.;
@@ -1034,7 +1039,7 @@ double cs_turb_xclt = 0.305;
  *============================================================================*/
 
 void
-cs_f_turb_model_get_pointers(int     **iturb,
+cs_f_turb_model_get_pointers(int     **model,
                              int     **itytur,
                              int     **hybrid_turb);
 
@@ -1091,7 +1096,7 @@ cs_f_turb_model_constants_get_pointers(double  **cmu,
  * enables mapping to Fortran global pointers.
  *
  * parameters:
- *   iturb  --> pointer to cs_glob_turb_model->iturb
+ *   iturb  --> pointer to cs_glob_turb_model->model
  *   itytur --> pointer to cs_glob_turb_model->itytur
  *   hybrid_turb --> pointer to cs_glob_turb_model->hybrid_turb
  *----------------------------------------------------------------------------*/
@@ -1101,7 +1106,7 @@ cs_f_turb_model_get_pointers(int     **iturb,
                              int     **itytur,
                              int     **hybrid_turb)
 {
-  *iturb  = &(_turb_model.iturb);
+  *iturb  = &(_turb_model.model);
   *itytur = &(_turb_model.itytur);
   *hybrid_turb = &(_turb_model.hybrid_turb);
 }
@@ -1423,38 +1428,49 @@ void
 cs_set_type_order_turbulence_model(void)
 {
   _turb_model.type = CS_TURB_NONE;
-  if (_turb_model.iturb == CS_TURB_MIXING_LENGTH) {
+  if (_turb_model.model == CS_TURB_MIXING_LENGTH) {
      _turb_model.type = CS_TURB_RANS;
      _turb_model.order = CS_TURB_ALGEBRAIC;
   }
-  else if (   _turb_model.iturb == CS_TURB_K_EPSILON
-           || _turb_model.iturb == CS_TURB_K_EPSILON_LIN_PROD
-           || _turb_model.iturb == CS_TURB_K_EPSILON_LS
-           || _turb_model.iturb == CS_TURB_K_EPSILON_QUAD
-           || _turb_model.iturb == CS_TURB_V2F_PHI
-           || _turb_model.iturb == CS_TURB_V2F_BL_V2K
-           || _turb_model.iturb == CS_TURB_K_OMEGA
-           || _turb_model.iturb == CS_TURB_SPALART_ALLMARAS) {
+  else if (   _turb_model.model == CS_TURB_K_EPSILON
+           || _turb_model.model == CS_TURB_K_EPSILON_LIN_PROD
+           || _turb_model.model == CS_TURB_K_EPSILON_LS
+           || _turb_model.model == CS_TURB_K_EPSILON_QUAD
+           || _turb_model.model == CS_TURB_V2F_PHI
+           || _turb_model.model == CS_TURB_V2F_BL_V2K
+           || _turb_model.model == CS_TURB_K_OMEGA
+           || _turb_model.model == CS_TURB_SPALART_ALLMARAS) {
     _turb_model.type = CS_TURB_RANS;
     _turb_model.order = CS_TURB_FIRST_ORDER;
   }
-  else if (   _turb_model.iturb == CS_TURB_RIJ_EPSILON_LRR
-           || _turb_model.iturb == CS_TURB_RIJ_EPSILON_SSG
-           || _turb_model.iturb == CS_TURB_RIJ_EPSILON_EBRSM) {
+  else if (   _turb_model.model == CS_TURB_RIJ_EPSILON_LRR
+           || _turb_model.model == CS_TURB_RIJ_EPSILON_SSG
+           || _turb_model.model == CS_TURB_RIJ_EPSILON_EBRSM) {
     _turb_model.type = CS_TURB_RANS;
     _turb_model.order = CS_TURB_SECOND_ORDER;
   }
-  else if (   _turb_model.iturb == CS_TURB_LES_SMAGO_CONST
-           || _turb_model.iturb == CS_TURB_LES_SMAGO_DYN
-           || _turb_model.iturb == CS_TURB_LES_WALE) {
+  else if (   _turb_model.model == CS_TURB_LES_SMAGO_CONST
+           || _turb_model.model == CS_TURB_LES_SMAGO_DYN
+           || _turb_model.model == CS_TURB_LES_WALE) {
     _turb_model.type = CS_TURB_LES;
     _turb_model.order = CS_TURB_ALGEBRAIC;
   }
 
   else {
-    _turb_model.iturb = 0;
+    _turb_model.model = 0;
     _turb_model.itytur = CS_TURB_TYPE_NONE;
   }
+
+  if (   _turb_model.model == CS_TURB_K_EPSILON_LS
+      || _turb_model.model == CS_TURB_V2F_PHI
+      || _turb_model.model == CS_TURB_V2F_BL_V2K
+      || _turb_model.model == CS_TURB_RIJ_EPSILON_EBRSM)
+    _turb_model.high_low_re = CS_TURB_LOW_RE;
+  else if (_turb_model.model == CS_TURB_K_OMEGA)
+    _turb_model.high_low_re = CS_TURB_HIGH_LOW_RE;
+  else
+    _turb_model.high_low_re = CS_TURB_HIGH_RE;
+
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1527,14 +1543,14 @@ cs_turb_compute_constants(int phase_id)
   if (f_phi != NULL)
     cs_field_set_key_double(f_phi, k_turb_schmidt, 1.);
 
-  if (   cs_glob_turb_model->iturb == CS_TURB_RIJ_EPSILON_LRR
-      || cs_glob_turb_model->iturb == CS_TURB_RIJ_EPSILON_SSG)
+  if (   cs_glob_turb_model->model == CS_TURB_RIJ_EPSILON_LRR
+      || cs_glob_turb_model->model == CS_TURB_RIJ_EPSILON_SSG)
     cs_field_set_key_double(f_eps, k_turb_schmidt, 1.22);
-  else if (cs_glob_turb_model->iturb == CS_TURB_RIJ_EPSILON_EBRSM) {
+  else if (cs_glob_turb_model->model == CS_TURB_RIJ_EPSILON_EBRSM) {
     cs_field_set_key_double(f_eps, k_turb_schmidt, 1.15);
     cs_turb_crij3 = 0.6;
   }
-  else if (cs_glob_turb_model->iturb == CS_TURB_V2F_BL_V2K)
+  else if (cs_glob_turb_model->model == CS_TURB_V2F_BL_V2K)
     cs_field_set_key_double(f_eps, k_turb_schmidt, 1.5);
   else
     cs_field_set_key_double(f_eps, k_turb_schmidt, 1.30);
@@ -1542,28 +1558,28 @@ cs_turb_compute_constants(int phase_id)
   if (cs_glob_turb_rans_model->idirsm == 0)
     cs_turb_csrij = 0.11;
   else {
-    if (cs_glob_turb_model->iturb == CS_TURB_RIJ_EPSILON_EBRSM)
+    if (cs_glob_turb_model->model == CS_TURB_RIJ_EPSILON_EBRSM)
       cs_turb_csrij = 0.21;
     else
       cs_turb_csrij = 0.22;
   }
 
-  if (cs_glob_turb_model->iturb == CS_TURB_K_OMEGA){
+  if (cs_glob_turb_model->model == CS_TURB_K_OMEGA){
     /* SST DDES */
     if (cs_glob_turb_model->hybrid_turb == 2)
       cs_turb_cddes = 0.65;
     else if (cs_glob_turb_model->hybrid_turb == 1)
       cs_turb_cddes = 0.61;
   }
-  else if (cs_glob_turb_model->iturb == CS_TURB_V2F_BL_V2K) {
+  else if (cs_glob_turb_model->model == CS_TURB_V2F_BL_V2K) {
     cs_turb_cddes = 0.60;
   }
 
-  if (cs_glob_turb_model->iturb == CS_TURB_K_OMEGA){
+  if (cs_glob_turb_model->model == CS_TURB_K_OMEGA){
     /* SST HTLES */
     cs_turb_chtles_bt0 = 0.48;
   }
-  else if (cs_glob_turb_model->iturb == CS_TURB_V2F_BL_V2K) {
+  else if (cs_glob_turb_model->model == CS_TURB_V2F_BL_V2K) {
     /* BL-v2/k HTLES */
     cs_turb_chtles_bt0 = 0.42;
   }
@@ -1580,12 +1596,12 @@ cs_turb_compute_constants(int phase_id)
 
   /* In case of Rotta model (ie LRR + Cr2 = 0) compute
    * automatically the C0 constant */
-  if ((cs_glob_turb_model->iturb == CS_TURB_RIJ_EPSILON_LRR) &&
+  if ((cs_glob_turb_model->model == CS_TURB_RIJ_EPSILON_LRR) &&
       (CS_ABS(cs_turb_crij2) < 1.e-12))
     cs_turb_crij_c0 = (cs_turb_crij1-1.0)*2.0/3.0;
 
-  if (cs_glob_turb_model->iturb == CS_TURB_RIJ_EPSILON_SSG
-      || cs_glob_turb_model->iturb == CS_TURB_RIJ_EPSILON_EBRSM)
+  if (cs_glob_turb_model->model == CS_TURB_RIJ_EPSILON_SSG
+      || cs_glob_turb_model->model == CS_TURB_RIJ_EPSILON_EBRSM)
     cs_turb_ce2 = 1.83;
 
 }
@@ -1684,9 +1700,9 @@ cs_turb_model_log_setup(void)
 
   cs_log_printf(CS_LOG_SETUP,
                 _("\n    %s\n"
-                  "      (iturb = %s)\n\n"),
-                _turbulence_model_name(turb_model->iturb),
-                _turbulence_model_enum_name(turb_model->iturb));
+                  "      (model = %s)\n\n"),
+                _turbulence_model_name(turb_model->model),
+                _turbulence_model_enum_name(turb_model->model));
 
   const char *iwallf_value_str[]
     = {N_("Disabled"),
@@ -1730,17 +1746,17 @@ cs_turb_model_log_setup(void)
                 _("    igrhok:        %s\n"),
                 _(igrhok_value_str[cs_glob_turb_rans_model->igrhok]));
 
-  if (turb_model->iturb == CS_TURB_MIXING_LENGTH) {
+  if (turb_model->model == CS_TURB_MIXING_LENGTH) {
 
     cs_log_printf(CS_LOG_SETUP,
                   _("    xlomlg:      %14.5e (Characteristic length)\n"),
                   cs_glob_turb_rans_model->xlomlg);
 
   }
-  else if (   turb_model->iturb == CS_TURB_K_EPSILON
-           || turb_model->iturb == CS_TURB_K_EPSILON_LIN_PROD
-           || turb_model->iturb == CS_TURB_K_EPSILON_LS
-           || turb_model->iturb == CS_TURB_K_EPSILON_QUAD) {
+  else if (   turb_model->model == CS_TURB_K_EPSILON
+           || turb_model->model == CS_TURB_K_EPSILON_LIN_PROD
+           || turb_model->model == CS_TURB_K_EPSILON_LS
+           || turb_model->model == CS_TURB_K_EPSILON_QUAD) {
 
     cs_log_printf
       (CS_LOG_SETUP,
@@ -1766,9 +1782,9 @@ cs_turb_model_log_setup(void)
       cs_log_printf(CS_LOG_SETUP, _("\n"));
 
   }
-  else if (   turb_model->iturb == CS_TURB_RIJ_EPSILON_LRR
-           || turb_model->iturb == CS_TURB_RIJ_EPSILON_SSG
-           || turb_model->iturb == CS_TURB_RIJ_EPSILON_EBRSM) {
+  else if (   turb_model->model == CS_TURB_RIJ_EPSILON_LRR
+           || turb_model->model == CS_TURB_RIJ_EPSILON_SSG
+           || turb_model->model == CS_TURB_RIJ_EPSILON_EBRSM) {
 
     cs_log_printf(CS_LOG_SETUP,
                   _("    uref:             %14.5e (Characteristic velocity)\n"
@@ -1804,14 +1820,14 @@ cs_turb_model_log_setup(void)
                   _("    idirsm:      %14d (%s)\n"),
                   idirsm, s_turb_diff_model[idirsm]);
 
-    if (turb_model->iturb == CS_TURB_RIJ_EPSILON_LRR) {
+    if (turb_model->model == CS_TURB_RIJ_EPSILON_LRR) {
       cs_log_printf(CS_LOG_SETUP,
                     _("    irijec:      %14d (Wall echo terms)\n"
                       "    idifre:      %14d (Handle diffusion tensor)\n"),
                     cs_glob_turb_rans_model->irijec,
                     cs_glob_turb_rans_model->idifre);
     }
-    else if (turb_model->iturb == CS_TURB_RIJ_EPSILON_EBRSM) {
+    else if (turb_model->model == CS_TURB_RIJ_EPSILON_EBRSM) {
       cs_log_printf(CS_LOG_SETUP,
                     _("    reinit_turb: %14d (turbulence reinitialization)\n"),
                     cs_glob_turb_rans_model->reinit_turb);
@@ -1837,7 +1853,7 @@ cs_turb_model_log_setup(void)
                   cs_turb_cdries, cs_turb_xlesfd, cs_turb_csmago_max);
 
   }
-  else if (turb_model->iturb == CS_TURB_V2F_PHI) {
+  else if (turb_model->model == CS_TURB_V2F_PHI) {
 
     cs_log_printf(CS_LOG_SETUP,
                   _("    uref:             %14.5e (Characteristic velocity)\n"
@@ -1864,7 +1880,7 @@ cs_turb_model_log_setup(void)
       cs_log_printf(CS_LOG_SETUP,_("\n"));
 
   }
-  else if (turb_model->iturb == CS_TURB_V2F_BL_V2K) {
+  else if (turb_model->model == CS_TURB_V2F_BL_V2K) {
 
     const char *hybrid_turb_value_str[]
       = {N_("CS_HYBRID_NONE (no RANS-LES hybrid model)"),
@@ -1900,7 +1916,7 @@ cs_turb_model_log_setup(void)
       cs_log_printf(CS_LOG_SETUP,_("\n"));
 
   }
-  else if (turb_model->iturb == CS_TURB_K_OMEGA) {
+  else if (turb_model->model == CS_TURB_K_OMEGA) {
 
     const char *hybrid_turb_value_str[]
       = {N_("CS_HYBRID_NONE (no RANS-LES hybrid model)"),
@@ -1935,7 +1951,7 @@ cs_turb_model_log_setup(void)
       cs_log_printf(CS_LOG_SETUP,_("\n"));
 
   }
-  else if (turb_model->iturb == CS_TURB_SPALART_ALLMARAS) {
+  else if (turb_model->model == CS_TURB_SPALART_ALLMARAS) {
 
     cs_real_t relaxv = cs_field_get_equation_param_const(CS_F_(nusa))->relaxv;
     cs_log_printf(CS_LOG_SETUP,
@@ -1981,15 +1997,15 @@ cs_turb_constants_log_setup(void)
        "    bpow:        %14.5e (U+=apow (y+)**bpow (W&W law))\n\n"),
        cs_turb_xkappa, cs_turb_cstlog, cs_turb_apow, cs_turb_bpow);
 
-  if (turb_model->iturb != CS_TURB_NONE)
+  if (turb_model->model != CS_TURB_NONE)
     cs_log_printf(CS_LOG_SETUP,
                   _("  %s constants:\n"),
-                  _turbulence_model_name(turb_model->iturb));
+                  _turbulence_model_name(turb_model->model));
 
-  if (   turb_model->iturb == CS_TURB_K_EPSILON
-      || turb_model->iturb == CS_TURB_K_EPSILON_LIN_PROD
-      || turb_model->iturb == CS_TURB_K_EPSILON_LS
-      || turb_model->iturb == CS_TURB_K_EPSILON_QUAD)
+  if (   turb_model->model == CS_TURB_K_EPSILON
+      || turb_model->model == CS_TURB_K_EPSILON_LIN_PROD
+      || turb_model->model == CS_TURB_K_EPSILON_LS
+      || turb_model->model == CS_TURB_K_EPSILON_QUAD)
     cs_log_printf
       (CS_LOG_SETUP,
        _("    ce1:         %14.5e (Cepsilon 1: production coef.)\n"
@@ -1997,7 +2013,7 @@ cs_turb_constants_log_setup(void)
          "    cmu:         %14.5e (Cmu constant)\n"),
          cs_turb_ce1, cs_turb_ce2, cs_turb_cmu);
 
-  else if (turb_model->iturb == CS_TURB_RIJ_EPSILON_LRR)
+  else if (turb_model->model == CS_TURB_RIJ_EPSILON_LRR)
     cs_log_printf
       (CS_LOG_SETUP,
        _("    crij1:       %14.5e (Slow term coefficient)\n"
@@ -2013,7 +2029,7 @@ cs_turb_constants_log_setup(void)
          cs_turb_crij3, cs_turb_csrij, cs_turb_crijp1,
          cs_turb_crijp2, cs_turb_ce1, cs_turb_ce2, cs_turb_cmu);
 
-  else if (turb_model->iturb == CS_TURB_RIJ_EPSILON_SSG)
+  else if (turb_model->model == CS_TURB_RIJ_EPSILON_SSG)
     cs_log_printf
       (CS_LOG_SETUP,
        _("    cssgs1:      %14.5e (Cs1 coeff.)\n"
@@ -2034,7 +2050,7 @@ cs_turb_constants_log_setup(void)
          cs_turb_ce1, cs_turb_ce2,
          cs_turb_cmu);
 
-  else if (turb_model->iturb == CS_TURB_RIJ_EPSILON_EBRSM) {
+  else if (turb_model->model == CS_TURB_RIJ_EPSILON_EBRSM) {
     cs_turb_crij3 = 0.6;
     cs_log_printf
       (CS_LOG_SETUP,
@@ -2059,7 +2075,7 @@ cs_turb_constants_log_setup(void)
 
   }
 
-  else if (turb_model->iturb == CS_TURB_V2F_PHI)
+  else if (turb_model->model == CS_TURB_V2F_PHI)
     cs_log_printf
       (CS_LOG_SETUP,
        _("    cv2fa1:      %14.5e (a1 to calculate Cepsilon1)\n"
@@ -2075,7 +2091,7 @@ cs_turb_constants_log_setup(void)
          cs_turb_cv2fcl, cs_turb_cv2fet, cs_turb_cv2fc1,
          cs_turb_cv2fc2);
 
-  else if (turb_model->iturb == CS_TURB_V2F_BL_V2K)
+  else if (turb_model->model == CS_TURB_V2F_BL_V2K)
     cs_log_printf
       (CS_LOG_SETUP,
        _("    cpale1:      %14.5e (Cepsilon 1 : Prod. coeff.)\n"
@@ -2093,7 +2109,7 @@ cs_turb_constants_log_setup(void)
          cs_turb_cmu, cs_turb_cpalct, cs_turb_cpalcl,
          cs_turb_cpalet, cs_turb_cpalc1, cs_turb_cpalc2);
 
-  else if (turb_model->iturb == CS_TURB_K_OMEGA)
+  else if (turb_model->model == CS_TURB_K_OMEGA)
     cs_log_printf
       (CS_LOG_SETUP,
        _("    ckwsk1:      %14.5e (sigma_k1 constant)\n"
@@ -2113,7 +2129,7 @@ cs_turb_constants_log_setup(void)
        cs_turb_ckwgm1, cs_turb_ckwgm2, cs_turb_ckwa1,
        cs_turb_ckwc1, cs_turb_cmu);
 
-  else if (turb_model->iturb == CS_TURB_SPALART_ALLMARAS)
+  else if (turb_model->model == CS_TURB_SPALART_ALLMARAS)
     cs_log_printf(CS_LOG_SETUP,
                   _("    csab1:        %14.5e (b1 constant)\n"
                     "    csab2:        %14.5e (b2 constant)\n"
@@ -2389,7 +2405,7 @@ cs_turbulence_function_k(int              location_id,
       cs_log_warning(_("%s: cannot simply determine k from other variables\n"
                        "with turbulence model %s.\n"),
                      __func__,
-                     _turbulence_model_enum_name(tm->iturb));
+                     _turbulence_model_enum_name(tm->model));
     }
 
     for (cs_lnum_t i = 0; i < n_elts; i++)
@@ -2446,7 +2462,7 @@ cs_turbulence_function_eps(int              location_id,
       }
     }
   }
-  else if (tm->iturb == CS_TURB_K_OMEGA) {
+  else if (tm->model == CS_TURB_K_OMEGA) {
     const cs_real_t *val_k = CS_F_(omg)->val;
     const cs_real_t *val_omg = CS_F_(omg)->val;
     if (elt_ids != NULL) {
@@ -2466,7 +2482,7 @@ cs_turbulence_function_eps(int              location_id,
       cs_log_warning(_("%s: cannot simply determine k from other variables\n"
                        "with turbulence model %s.\n"),
                      __func__,
-                     _turbulence_model_enum_name(tm->iturb));
+                     _turbulence_model_enum_name(tm->model));
     }
 
     for (cs_lnum_t i = 0; i < n_elts; i++)
@@ -2582,7 +2598,7 @@ cs_turbulence_function_rij(int               location_id,
       cs_log_warning(_("%s: cannot simply determine Rij from other variables\n"
                        "with turbulence model %s.\n"),
                      __func__,
-                     _turbulence_model_enum_name(tm->iturb));
+                     _turbulence_model_enum_name(tm->model));
     }
 
     for (cs_lnum_t i = 0; i < n_elts; i++) {
