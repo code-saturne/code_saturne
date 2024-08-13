@@ -2576,7 +2576,7 @@ _additional_fields_stage_3(void)
       cs_field_set_key_str(f_bmf_d, k_lbl, f->name);
 
       /* Set the inner mass flux index */
-      cs_field_set_key_int(f, k_imasf, f_bmf_d->id);
+      cs_field_set_key_int(f, k_bmasf, f_bmf_d->id);
 
       /* Index of the class, all member of the class share the same mass flux */
       const int icla = cs_field_get_key_int(f, k_ccl);
