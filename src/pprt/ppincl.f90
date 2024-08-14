@@ -267,23 +267,6 @@ module ppincl
   !> temperature deduced from the specific total energy
   integer, save :: itempk
 
-  !> \defgroup comp_homogeneous Homogeneous two-phase compressible model options
-
-  !> \addtogroup comp_homogeneous
-  !> \{
-
-  !> \anchor ifracv
-  !> homogeneous model, volume fraction \f$ \alpha \f$
-  integer, save :: ifracv
-
-  !> \anchor ifracm
-  !> homogeneous model, mass fraction \f$ y \f$
-  integer, save :: ifracm
-
-  !> \anchor ifrace
-  !> homogeneous model, energy fraction \f$ z \f$
-  integer, save :: ifrace
-
   !> \}
 
   !> \defgroup common Common

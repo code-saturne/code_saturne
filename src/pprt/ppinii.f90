@@ -121,10 +121,6 @@ ifsm = 0
 ! Standard compressible module scalars
 ienerg = 0
 itempk = 0
-! Compressible homogeneous two-phase flow scalars
-ifracv = 0
-ifracm = 0
-ifrace = 0
 
 !===============================================================================
 ! 2. REMPLISSAGE INCLUDE ppthch.h

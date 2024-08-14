@@ -60,13 +60,17 @@ implicit none
 
 ! Local variables
 
-integer keyrf
+integer keyrf, ifracv, ifracm, ifrace
 
 type(var_cal_opt) :: vcopt
 
 !===============================================================================
 
 if (ippmod(icompf).ge.0) then
+
+  ifracv = 0
+  ifracm = 0
+  ifrace = 0
 
   ! Pointers and reference values definition
 
