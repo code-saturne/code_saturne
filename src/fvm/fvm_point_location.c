@@ -1914,7 +1914,7 @@ _inverse_3x3(double  m[3][3],
         - m[1][0]*(m[0][1]*m[2][2] - m[2][1]*m[0][2])
         + m[2][0]*(m[0][1]*m[1][2] - m[1][1]*m[0][2]);
 
-  if (det < _epsilon_denom)
+  if (CS_ABS(det) < _epsilon_denom)
     return 1;
   else
     det_inv = 1./det;
