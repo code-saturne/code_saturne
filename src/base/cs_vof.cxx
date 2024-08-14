@@ -1691,8 +1691,11 @@ cs_vof_solve_void_fraction(int  iterns)
      if it has been implicited in pressure at correction step,
      in order to ensure mass conservation. */
 
-  cs_real_t *gamcav = cs_field_by_name("model:cavitation_gamma")->val;
-  cs_real_t *dgdpca = cs_field_by_name("model:cavitation_st_dgdp")->val;
+  cs_real_t *gamcav = nullptr, *dgdpca = nullptr;
+  if (i_vof_mass_transfer != 0) {
+    gamcav = cs_field_by_name("model:cavitation_gamma")->val;
+    dgdpca = cs_field_by_name("model:cavitation_st_dgdp")->val;
+  }
 
   if (i_vof_mass_transfer != 0 && cavitation_parameters->itscvi == 1) {
     for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
