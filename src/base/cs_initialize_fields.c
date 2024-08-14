@@ -139,7 +139,7 @@ cs_initialize_fields_stage_0(void)
   /* Initialize boundary temperature to "marker" if present */
   if (CS_F_(t_b) != NULL) {
     cs_array_real_set_scalar(m->n_b_faces,
-                             cs_math_big_r,
+                             -cs_math_big_r,
                              CS_F_(t_b)->val);
   }
 
