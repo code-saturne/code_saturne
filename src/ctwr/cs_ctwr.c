@@ -614,12 +614,14 @@ cs_ctwr_build_all(void)
     /* Set number of cells */
     cs_zone_t *z = cs_volume_zone_by_id(0);
 
-    double mass_in[1] = {0.};
     const cs_equation_param_t *eqp =
         cs_field_get_equation_param_const(CS_F_(p));
-    cs_equation_add_volume_mass_injection_by_value(eqp,
-                                                   z->name,
-                                                   mass_in);
+
+    cs_equation_add_volume_mass_injection_by_dof_func(eqp,
+                                                      z->name,
+                                                      cs_flag_primal_cell,
+                                                      cs_ctwr_volume_mass_injection_rain_dof_func,
+                                                      NULL);
   }
 
   /* Post-processing: multiply enthalpy by fraction */

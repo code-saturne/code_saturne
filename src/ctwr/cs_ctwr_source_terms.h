@@ -81,16 +81,23 @@ cs_ctwr_volume_mass_injection_dof_func(cs_lnum_t         n_elts,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Phase change mass source term from the evaporating liquid to the
- *        bulk, humid air.
+ * \brief cs_dof_func_t function to compute volume mass injection for
+ *   pressure (mass) equation for the rain.
  *
- * Careful, this is different from an injection source term, which would
- * normally be handled with a 'cs_equation_add_volume_mass_injection_' function.
+ * \param[in]      n_elts        number of elements to consider
+ * \param[in]      elt_ids       list of elements ids
+ * \param[in]      dense_output  perform an indirection in retval or not
+ * \param[in]      input         NULL or pointer to a structure cast on-the-fly
+ * \param[in, out] retval        resulting value(s). Must be allocated.
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_ctwr_bulk_mass_source_term(void);
+cs_ctwr_volume_mass_injection_rain_dof_func(cs_lnum_t         n_elts,
+                                            const cs_lnum_t  *elt_ids,
+                                            bool              dense_output,
+                                            void             *input,
+                                            cs_real_t        *retval);
 
 /*----------------------------------------------------------------------------*/
 
