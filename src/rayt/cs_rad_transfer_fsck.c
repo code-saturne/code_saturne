@@ -969,7 +969,7 @@ cs_rad_transfer_fsck(const cs_real_t  *restrict pco2,
 
     /* Read k-distributions */
     {
-      snprintf(filepath, 256, "%s/data/thch/dp_radiat_MFS", pathdatadir);
+      snprintf(filepath, 256, "%s/data/thch/dp_radiat_MFS_FSCK", pathdatadir);
       radfile = fopen(filepath, "r");
       char line[256];
       for (int cco2 = 0; cco2 < nconc; cco2++) {

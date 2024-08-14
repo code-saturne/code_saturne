@@ -191,7 +191,7 @@ lib/code_saturne_build.cfg
 CLEANFILES = $(edit_scripts)
 EXTRA_DIST += bin/code_saturne.py.in \
 	      bin/code_saturne.sh.in \
-              data/thch/dp_radiat_MFS.tar.xz
+              data/thch/dp_radiat_MFS_FSCK.tar.xz
 
 # Install binary scripts
 
@@ -218,7 +218,7 @@ nobase_dist_pkgdata_DATA = \
 data/thch/dp_C3P_auto \
 data/thch/dp_radiat_ADF50 \
 data/thch/dp_radiat_ADF8 \
-data/thch/dp_radiat_MFS.tar.xz \
+data/thch/dp_radiat_MFS_FSCK.tar.xz \
 data/thch/dp_radiat_Planck_CO2 \
 data/thch/dp_radiat_Planck_H2O \
 data/thch/dp_radiat_wave \
@@ -316,10 +316,10 @@ install-data-local:
 	$(MKDIR_P) "$(DESTDIR)$(libdir)"
 	cp lib/code_saturne_build.cfg "$(DESTDIR)$(libdir)/code_saturne_build.cfg"
 	test -z "$(pkgdatadir)/data/thch" || $(MKDIR_P) "$(DESTDIR)$(pkgdatadir)/data/thch"
-	tar xvJf "$(top_srcdir)/data/thch/dp_radiat_MFS.tar.xz" -C "$(DESTDIR)$(pkgdatadir)/data/thch"
+	tar xvJf "$(top_srcdir)/data/thch/dp_radiat_MFS_FSCK.tar.xz" -C "$(DESTDIR)$(pkgdatadir)/data/thch"
 
 uninstall-local:
-	rm -rf "$(DESTDIR)$(pkgdatadir)/data/thch/dp_radiat_MFS"
+	rm -rf "$(DESTDIR)$(pkgdatadir)/data/thch/dp_radiat_MFS_FSCK"
 	rm -f"$(DESTDIR)$(libdir)"
 	@$(NORMAL_UNINSTALL)
 
