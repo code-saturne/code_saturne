@@ -286,7 +286,7 @@ _add_property_field_boundary
                         f_name);
 
   cs_field_t *f = cs_field_create(f_name,
-                                  CS_FIELD_INTENSIVE,
+                                  CS_FIELD_INTENSIVE | CS_FIELD_PROPERTY,
                                   CS_MESH_LOCATION_BOUNDARY_FACES,
                                   dim,
                                   has_previous);

@@ -678,7 +678,7 @@ cs_time_step_log_setup(void)
 
       cs_log_printf
         (CS_LOG_SETUP,
-         _("  Time step parameters:\n"
+         _("  Time step parameters:\n\n"
            "    idtvar: %21s (%s)\n"
            "    iptlro:     %17d (1: rho-related DT clipping)\n"
            "    coumax:     %17.5g (Maximum target CFL)\n"
