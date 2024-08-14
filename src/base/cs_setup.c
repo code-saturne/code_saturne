@@ -2556,7 +2556,6 @@ _additional_fields_stage_3(void)
                                             false);
 
       cs_field_set_key_int(f_imf_d, k_log, 0);
-      cs_field_set_key_str(f_imf_d, k_lbl, f->name);
 
       /* Set the inner mass flux index */
       cs_field_set_key_int(f, k_imasf, f_imf_d->id);
@@ -2573,7 +2572,6 @@ _additional_fields_stage_3(void)
                                             false);
 
       cs_field_set_key_int(f_bmf_d, k_log, 0);
-      cs_field_set_key_str(f_bmf_d, k_lbl, f->name);
 
       /* Set the inner mass flux index */
       cs_field_set_key_int(f, k_bmasf, f_bmf_d->id);
@@ -2621,8 +2619,6 @@ _additional_fields_stage_3(void)
                                            1,
                                            false);
 
-        cs_field_set_key_str(f_dt, k_lbl, f->name);
-
         /* Set the same visualization options as the scalar */
         cs_field_set_key_int(f_dt, k_log, ilog);
         cs_field_set_key_int(f_dt, k_vis, iopchr);
@@ -2637,8 +2633,6 @@ _additional_fields_stage_3(void)
                                            CS_MESH_LOCATION_CELLS,
                                            3,
                                            false);
-
-        cs_field_set_key_str(f_dv, k_lbl, f->name);
 
         /* Set the same visualization options as the scalar */
         cs_field_set_key_int(f_dv, k_log, ilog);
@@ -2656,8 +2650,6 @@ _additional_fields_stage_3(void)
                                             CS_MESH_LOCATION_CELLS,
                                             1,
                                             false);
-
-        cs_field_set_key_str(f_ddt, k_lbl, f->name);
 
         /* Set the same visualization options as the scalar */
         cs_field_set_key_int(f_ddt, k_log, ilog);
