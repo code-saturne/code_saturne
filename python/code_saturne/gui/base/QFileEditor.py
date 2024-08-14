@@ -32,6 +32,7 @@ This module defines the following classes:
 #-------------------------------------------------------------------------------
 
 import sys, os, shutil
+from code_saturne import get_cs_data_path
 from code_saturne.gui.base import QtGui, QtCore, QtWidgets
 
 # Check if QString exists
@@ -718,8 +719,11 @@ class QFileEditor(QMainWindow):
         self.opened = False
         self.saved  = True
 
+        # Path to icons:
+        icons_path = os.path.join(get_cs_data_path(), 'icons', '22x22')
+
         # Open file action
-        open_img_path = ":/icons/22x22/document-open.png"
+        open_img_path = os.path.join(icons_path, 'document-open.png')
         icon_open     = QtGui.QIcon()
         icon_open.addPixmap(QtGui.QPixmap(_fromUtf8(open_img_path)),
                             QtGui.QIcon.Normal,
@@ -730,7 +734,7 @@ class QFileEditor(QMainWindow):
         self.openFileAction.triggered.connect(self.openFileForAction)
 
         # New file action
-        new_img_path = ":/icons/22x22/document-new.png"
+        new_img_path = os.path.join(icons_path, 'document-new.png')
         icon_new     = QtGui.QIcon()
         icon_new.addPixmap(QtGui.QPixmap(_fromUtf8(new_img_path)),
                           QtGui.QIcon.Normal,
@@ -741,7 +745,7 @@ class QFileEditor(QMainWindow):
         self.newFileAction.triggered.connect(self.newFile)
 
         # Save action
-        save_img_path = ":/icons/22x22/document-save.png"
+        save_img_path = os.path.join(icons_path, 'document-save.png')
         icon_save     = QtGui.QIcon()
         icon_save.addPixmap(QtGui.QPixmap(_fromUtf8(save_img_path)),
                           QtGui.QIcon.Normal,
@@ -752,7 +756,7 @@ class QFileEditor(QMainWindow):
         self.saveFileAction.triggered.connect(self.saveFile)
 
         # Save as action
-        saveas_img_path = ":/icons/22x22/document-save-as.png"
+        saveas_img_path = os.path.join(icons_path, 'document-save-as.png')
         icon_saveas     = QtGui.QIcon()
         icon_saveas.addPixmap(QtGui.QPixmap(_fromUtf8(saveas_img_path)),
                               QtGui.QIcon.Normal,
@@ -762,7 +766,7 @@ class QFileEditor(QMainWindow):
         self.saveFileAsAction.triggered.connect(self.saveFileAs)
 
         # Close file action
-        close_img_path = ":/icons/22x22/process-stop.png"
+        close_img_path = os.path.join(icons_path, 'process-stop.png')
         icon_close     = QtGui.QIcon()
         icon_close.addPixmap(QtGui.QPixmap(_fromUtf8(close_img_path)),
                              QtGui.QIcon.Normal,
@@ -773,7 +777,7 @@ class QFileEditor(QMainWindow):
         self.closeFileAction.triggered.connect(self.closeOpenedFile)
 
         # Exit editor action
-        quit_img_path = ":/icons/22x22/system-log-out.png"
+        quit_img_path = os.path.join(icons_path, 'system-log-out.png')
         icon_quit     = QtGui.QIcon()
         icon_quit.addPixmap(QtGui.QPixmap(_fromUtf8(quit_img_path)),
                           QtGui.QIcon.Normal,

@@ -21,5 +21,42 @@
 # Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
 #-------------------------------------------------------------------------------
+if HAVE_GUI
+ENABLE_GUI = --with-gui
 
-SUBDIRS = . code_saturne
+# QT
+if HAVE_QT5
+USE_QT5 = --use-qt5
+PYUIC = --pyuic $(PYUIC5)
+PYRCC = --pyrcc $(PYRCC5)
+else
+PYUIC = --pyuic $(PYUIC4)
+PYRCC = --pyrcc "$(PYRCC5) -py$(PYRCC4VER)"
+endif
+
+else
+ENABLE_GUI = --without-gui
+endif
+
+EXTRA_DIST="$(find ${srcdir} -maxdepth 8 -type f)"
+
+clean-local:
+	if test -d ${abs_top_srcdir}/python/code_saturne.egg-info; then \
+		echo "rm -rf ${abs_top_srcdir}/python/code_saturne.egg-info"; \
+		rm -rf ${abs_top_srcdir}/python/code_saturne.egg-info; \
+	fi
+
+all-local: clean-local
+	$(PYTHON) ${abs_top_srcdir}/python/setup.py build \
+		--build-base ${abs_top_builddir}/python/build \
+		$(ENABLE_GUI) $(USE_QT5) $(PYUIC) $(PYRCC) \
+		--version $(VERSION) \
+		--verbose
+
+install-exec-local:
+	$(PYTHON) ${abs_top_srcdir}/python/setup.py install \
+		--prefix $(DESTDIR)$(prefix) \
+		--single-version-externally-managed \
+		--record $(DESTDIR)/$(pkgpythondir)/install_files.txt \
+		--version $(VERSION) \
+		--verbose

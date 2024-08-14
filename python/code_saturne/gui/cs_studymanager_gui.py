@@ -123,9 +123,6 @@ def main(argv, pkg):
     set_modules(pkg)
     source_rcfile(pkg)
 
-    # Test the package name to know which modules have to be imported
-    images_path = os.path.join(pkg.get_dir('pkgdatadir'), 'images')
-
     case = process_cmd_line(argv)
 
     app = QApplication(sys.argv)

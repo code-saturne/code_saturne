@@ -147,7 +147,7 @@ p, li { white-space: pre-wrap; }
            </property>
            <property name="icon">
             <iconset resource="resource_base.qrc">
-             <normaloff>:/icons/22x22/add.png</normaloff>:/icons/22x22/add.png</iconset>
+             <normaloff>:/data/icons/22x22/add.png</normaloff>:/data/icons/22x22/add.png</iconset>
            </property>
            <property name="iconSize">
             <size>
@@ -167,7 +167,7 @@ p, li { white-space: pre-wrap; }
            </property>
            <property name="icon">
             <iconset resource="resource_base.qrc">
-             <normaloff>:/icons/22x22/remove.png</normaloff>:/icons/22x22/remove.png</iconset>
+             <normaloff>:/data/icons/22x22/remove.png</normaloff>:/data/icons/22x22/remove.png</iconset>
            </property>
            <property name="iconSize">
             <size>
@@ -216,7 +216,7 @@ p, li { white-space: pre-wrap; }
            </property>
            <property name="icon">
             <iconset resource="resource_base.qrc">
-             <normaloff>:/icons/22x22/remove.png</normaloff>:/icons/22x22/remove.png</iconset>
+             <normaloff>:/data/icons/22x22/remove.png</normaloff>:/data/icons/22x22/remove.png</iconset>
            </property>
           </widget>
          </item>
@@ -243,7 +243,7 @@ p, li { white-space: pre-wrap; }
            </property>
            <property name="icon">
             <iconset resource="resource_base.qrc">
-             <normaloff>:/icons/22x22/add.png</normaloff>:/icons/22x22/add.png</iconset>
+             <normaloff>:/data/icons/22x22/add.png</normaloff>:/data/icons/22x22/add.png</iconset>
            </property>
            <property name="iconSize">
             <size>

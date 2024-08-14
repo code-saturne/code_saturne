@@ -135,7 +135,8 @@ def main(argv, pkg):
     set_modules(pkg)
     source_rcfile(pkg)
 
-    images_path = os.path.join(pkg.get_dir('pkgdatadir'), 'images')
+    from code_saturne import get_cs_data_path
+    images_path = os.path.join(get_cs_data_path(), 'icons')
 
     # Test if EOS modules could be imported
     cfg = pkg.config

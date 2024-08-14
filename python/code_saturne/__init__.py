@@ -26,7 +26,14 @@
 # Library modules import
 #-------------------------------------------------------------------------------
 
+import os
+
+_CS_ROOT = os.path.abspath(os.path.dirname(__file__))
+
 __all__ = ["base", "gui", "model", "studymanager"]
+
+def get_cs_data_path():
+    return os.path.join(_CS_ROOT, 'data')
 
 #-------------------------------------------------------------------------------
 # End

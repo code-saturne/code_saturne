@@ -207,7 +207,7 @@
                 </property>
                 <property name="icon">
                  <iconset>
-                  <normaloff>:/new/prefix1/icons/22x22/edit-find-replace.png</normaloff>:/new/prefix1/icons/22x22/edit-find-replace.png</iconset>
+                  <normaloff>:/new/prefix1/data/icons/22x22/edit-find-replace.png</normaloff>:/new/prefix1/data/icons/22x22/edit-find-replace.png</iconset>
                 </property>
                </widget>
               </item>
@@ -352,7 +352,7 @@
                   </property>
                   <property name="icon">
                    <iconset>
-                    <normaloff>:/new/prefix1/icons/22x22/edit-find-replace.png</normaloff>:/new/prefix1/icons/22x22/edit-find-replace.png</iconset>
+                    <normaloff>:/new/prefix1/data/icons/22x22/edit-find-replace.png</normaloff>:/new/prefix1/data/icons/22x22/edit-find-replace.png</iconset>
                   </property>
                  </widget>
                 </item>
@@ -499,7 +499,7 @@
                   </property>
                   <property name="icon">
                    <iconset>
-                    <normaloff>:/new/prefix1/icons/22x22/edit-find-replace.png</normaloff>:/new/prefix1/icons/22x22/edit-find-replace.png</iconset>
+                    <normaloff>:/new/prefix1/data/icons/22x22/edit-find-replace.png</normaloff>:/new/prefix1/data/icons/22x22/edit-find-replace.png</iconset>
                   </property>
                  </widget>
                 </item>
@@ -641,7 +641,7 @@
                   </property>
                   <property name="icon">
                    <iconset>
-                    <normaloff>:/new/prefix1/icons/22x22/edit-find-replace.png</normaloff>:/new/prefix1/icons/22x22/edit-find-replace.png</iconset>
+                    <normaloff>:/new/prefix1/data/icons/22x22/edit-find-replace.png</normaloff>:/new/prefix1/data/icons/22x22/edit-find-replace.png</iconset>
                   </property>
                  </widget>
                 </item>
@@ -788,7 +788,7 @@
                   </property>
                   <property name="icon">
                    <iconset>
-                    <normaloff>:/new/prefix1/icons/22x22/edit-find-replace.png</normaloff>:/new/prefix1/icons/22x22/edit-find-replace.png</iconset>
+                    <normaloff>:/new/prefix1/data/icons/22x22/edit-find-replace.png</normaloff>:/new/prefix1/data/icons/22x22/edit-find-replace.png</iconset>
                   </property>
                  </widget>
                 </item>
@@ -890,7 +890,7 @@
                 </property>
                 <property name="icon">
                  <iconset>
-                  <normaloff>:/new/prefix1/icons/22x22/edit-find-replace.png</normaloff>:/new/prefix1/icons/22x22/edit-find-replace.png</iconset>
+                  <normaloff>:/new/prefix1/data/icons/22x22/edit-find-replace.png</normaloff>:/new/prefix1/data/icons/22x22/edit-find-replace.png</iconset>
                 </property>
                </widget>
               </item>
@@ -981,7 +981,7 @@
                 </property>
                 <property name="icon">
                  <iconset>
-                  <normaloff>:/new/prefix1/icons/22x22/edit-find-replace.png</normaloff>:/new/prefix1/icons/22x22/edit-find-replace.png</iconset>
+                  <normaloff>:/new/prefix1/data/icons/22x22/edit-find-replace.png</normaloff>:/new/prefix1/data/icons/22x22/edit-find-replace.png</iconset>
                 </property>
                </widget>
               </item>

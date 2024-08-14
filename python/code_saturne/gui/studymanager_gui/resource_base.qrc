@@ -1,22 +1,22 @@
 <RCC>
   <qresource prefix="/">
-    <file>icons/22x22/add.png</file>
-    <file>icons/22x22/remove.png</file>
-    <file>icons/22x22/document-new.png</file>
-    <file>icons/22x22/document-open.png</file>
-    <file>icons/22x22/document-properties.png</file>
-    <file>icons/22x22/document-save-as.png</file>
-    <file>icons/22x22/document-save.png</file>
-    <file>icons/22x22/edit-redo.png</file>
-    <file>icons/22x22/edit-undo.png</file>
-    <file>icons/22x22/format-justify-fill.png</file>
-    <file>icons/22x22/preferences-desktop-font.png</file>
-    <file>icons/22x22/preferences-desktop-wallpaper.png</file>
-    <file>icons/22x22/process-stop.png</file>
-    <file>icons/22x22/system-log-out.png</file>
-    <file>icons/22x22/utilities-terminal.png</file>
-    <file>icons/22x22/application-certificate.png</file>
-    <file>icons/22x22/x-office-address-book.png</file>
-    <file>icons/22x22/help-browser.png</file>
+    <file>../../data/icons/22x22/add.png</file>
+    <file>../../data/icons/22x22/remove.png</file>
+    <file>../../data/icons/22x22/document-new.png</file>
+    <file>../../data/icons/22x22/document-open.png</file>
+    <file>../../data/icons/22x22/document-properties.png</file>
+    <file>../../data/icons/22x22/document-save-as.png</file>
+    <file>../../data/icons/22x22/document-save.png</file>
+    <file>../../data/icons/22x22/edit-redo.png</file>
+    <file>../../data/icons/22x22/edit-undo.png</file>
+    <file>../../data/icons/22x22/format-justify-fill.png</file>
+    <file>../../data/icons/22x22/preferences-desktop-font.png</file>
+    <file>../../data/icons/22x22/preferences-desktop-wallpaper.png</file>
+    <file>../../data/icons/22x22/process-stop.png</file>
+    <file>../../data/icons/22x22/system-log-out.png</file>
+    <file>../../data/icons/22x22/utilities-terminal.png</file>
+    <file>../../data/icons/22x22/application-certificate.png</file>
+    <file>../../data/icons/22x22/x-office-address-book.png</file>
+    <file>../../data/icons/22x22/help-browser.png</file>
   </qresource>
 </RCC>

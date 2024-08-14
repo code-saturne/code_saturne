@@ -52,7 +52,7 @@
           </property>
           <property name="icon">
            <iconset resource="resources_pages.qrc">
-            <normaloff>:/new/prefix1/icons/22x22/preferences-system.png</normaloff>:/new/prefix1/icons/22x22/preferences-system.png</iconset>
+            <normaloff>:/new/prefix1/data/icons/22x22/preferences-system.png</normaloff>:/new/prefix1/data/icons/22x22/preferences-system.png</iconset>
           </property>
           <property name="iconSize">
            <size>
@@ -165,7 +165,7 @@
              </property>
              <property name="icon">
               <iconset resource="resources_pages.qrc">
-               <normaloff>:/new/prefix1/icons/22x22/document-open.png</normaloff>:/new/prefix1/icons/22x22/document-open.png</iconset>
+               <normaloff>:/new/prefix1/data/icons/22x22/document-open.png</normaloff>:/new/prefix1/data/icons/22x22/document-open.png</iconset>
              </property>
             </widget>
            </item>
@@ -195,7 +195,7 @@
              </property>
              <property name="icon">
               <iconset resource="resources_pages.qrc">
-               <normaloff>:/new/prefix1/icons/22x22/document-new.png</normaloff>:/new/prefix1/icons/22x22/document-new.png</iconset>
+               <normaloff>:/new/prefix1/data/icons/22x22/document-new.png</normaloff>:/new/prefix1/data/icons/22x22/document-new.png</iconset>
              </property>
             </widget>
            </item>

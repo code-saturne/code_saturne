@@ -296,7 +296,7 @@
              </property>
              <property name="icon">
               <iconset resource="resources_pages.qrc">
-               <normaloff>:/new/prefix1/icons/22x22/add.png</normaloff>:/new/prefix1/icons/22x22/add.png</iconset>
+               <normaloff>:/new/prefix1/data/icons/22x22/add.png</normaloff>:/new/prefix1/data/icons/22x22/add.png</iconset>
              </property>
             </widget>
            </item>
@@ -310,7 +310,7 @@
              </property>
              <property name="icon">
               <iconset resource="resources_pages.qrc">
-               <normaloff>:/new/prefix1/icons/22x22/remove.png</normaloff>:/new/prefix1/icons/22x22/remove.png</iconset>
+               <normaloff>:/new/prefix1/data/icons/22x22/remove.png</normaloff>:/new/prefix1/data/icons/22x22/remove.png</iconset>
              </property>
             </widget>
            </item>
@@ -430,7 +430,7 @@
             </property>
             <property name="icon">
              <iconset resource="resources_pages.qrc">
-              <normaloff>:/new/prefix1/icons/22x22/preferences-system.png</normaloff>:/new/prefix1/icons/22x22/preferences-system.png</iconset>
+              <normaloff>:/new/prefix1/data/icons/22x22/preferences-system.png</normaloff>:/new/prefix1/data/icons/22x22/preferences-system.png</iconset>
             </property>
            </widget>
           </item>
@@ -794,7 +794,7 @@
              </property>
              <property name="icon">
               <iconset resource="resources_pages.qrc">
-               <normaloff>:/new/prefix1/icons/22x22/add.png</normaloff>:/new/prefix1/icons/22x22/add.png</iconset>
+               <normaloff>:/new/prefix1/data/icons/22x22/add.png</normaloff>:/new/prefix1/data/icons/22x22/add.png</iconset>
              </property>
             </widget>
            </item>
@@ -808,7 +808,7 @@
              </property>
              <property name="icon">
               <iconset resource="resources_pages.qrc">
-               <normaloff>:/new/prefix1/icons/22x22/remove.png</normaloff>:/new/prefix1/icons/22x22/remove.png</iconset>
+               <normaloff>:/new/prefix1/data/icons/22x22/remove.png</normaloff>:/new/prefix1/data/icons/22x22/remove.png</iconset>
              </property>
             </widget>
            </item>
@@ -1008,7 +1008,7 @@
               </property>
               <property name="icon">
                <iconset resource="resources_pages.qrc">
-                <normaloff>:/new/prefix1/icons/22x22/add.png</normaloff>:/new/prefix1/icons/22x22/add.png</iconset>
+                <normaloff>:/new/prefix1/data/icons/22x22/add.png</normaloff>:/new/prefix1/data/icons/22x22/add.png</iconset>
               </property>
              </widget>
             </item>
@@ -1022,7 +1022,7 @@
               </property>
               <property name="icon">
                <iconset resource="resources_pages.qrc">
-                <normaloff>:/new/prefix1/icons/22x22/remove.png</normaloff>:/new/prefix1/icons/22x22/remove.png</iconset>
+                <normaloff>:/new/prefix1/data/icons/22x22/remove.png</normaloff>:/new/prefix1/data/icons/22x22/remove.png</iconset>
               </property>
              </widget>
             </item>
@@ -1130,7 +1130,7 @@
              </property>
              <property name="icon">
               <iconset resource="resources_pages.qrc">
-               <normaloff>:/new/prefix1/icons/22x22/add.png</normaloff>:/new/prefix1/icons/22x22/add.png</iconset>
+               <normaloff>:/new/prefix1/data/icons/22x22/add.png</normaloff>:/new/prefix1/data/icons/22x22/add.png</iconset>
              </property>
             </widget>
            </item>
@@ -1144,7 +1144,7 @@
              </property>
              <property name="icon">
               <iconset resource="resources_pages.qrc">
-               <normaloff>:/new/prefix1/icons/22x22/remove.png</normaloff>:/new/prefix1/icons/22x22/remove.png</iconset>
+               <normaloff>:/new/prefix1/data/icons/22x22/remove.png</normaloff>:/new/prefix1/data/icons/22x22/remove.png</iconset>
              </property>
             </widget>
            </item>
@@ -1344,7 +1344,7 @@
               </property>
               <property name="icon">
                <iconset resource="resources_pages.qrc">
-                <normaloff>:/new/prefix1/icons/22x22/add.png</normaloff>:/new/prefix1/icons/22x22/add.png</iconset>
+                <normaloff>:/new/prefix1/data/icons/22x22/add.png</normaloff>:/new/prefix1/data/icons/22x22/add.png</iconset>
               </property>
              </widget>
             </item>
@@ -1358,7 +1358,7 @@
               </property>
               <property name="icon">
                <iconset resource="resources_pages.qrc">
-                <normaloff>:/new/prefix1/icons/22x22/remove.png</normaloff>:/new/prefix1/icons/22x22/remove.png</iconset>
+                <normaloff>:/new/prefix1/data/icons/22x22/remove.png</normaloff>:/new/prefix1/data/icons/22x22/remove.png</iconset>
               </property>
              </widget>
             </item>
@@ -1644,7 +1644,7 @@
               </property>
               <property name="icon">
                <iconset resource="resources_pages.qrc">
-                <normaloff>:/new/prefix1/icons/22x22/add.png</normaloff>:/new/prefix1/icons/22x22/add.png</iconset>
+                <normaloff>:/new/prefix1/data/icons/22x22/add.png</normaloff>:/new/prefix1/data/icons/22x22/add.png</iconset>
               </property>
              </widget>
             </item>
@@ -1673,7 +1673,7 @@
               </property>
               <property name="icon">
                <iconset resource="resources_pages.qrc">
-                <normaloff>:/new/prefix1/icons/22x22/remove.png</normaloff>:/new/prefix1/icons/22x22/remove.png</iconset>
+                <normaloff>:/new/prefix1/data/icons/22x22/remove.png</normaloff>:/new/prefix1/data/icons/22x22/remove.png</iconset>
               </property>
              </widget>
             </item>

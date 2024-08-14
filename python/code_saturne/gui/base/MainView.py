@@ -47,6 +47,8 @@ import subprocess, platform
 # Third-party modules
 #-------------------------------------------------------------------------------
 
+from code_saturne import get_cs_data_path
+
 from code_saturne.gui.base.QtCore    import *
 from code_saturne.gui.base.QtGui     import *
 from code_saturne.gui.base.QtWidgets import *
@@ -516,7 +518,7 @@ class MainView(object):
 
         if recentFiles:
             for i, f in enumerate(recentFiles):
-                action = QAction(QIcon(":/icons/22x22/document-open.png"), "&%d %s" % (
+                action = QAction(QIcon(get_cs_data_path()+"/icons/22x22/document-open.png"), "&%d %s" % (
                            i + 1, QFileInfo(f).fileName()), self)
                 action.setData(f)
                 action.triggered.connect(self.loadRecentFile)

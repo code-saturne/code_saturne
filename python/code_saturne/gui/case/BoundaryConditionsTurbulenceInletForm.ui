@@ -134,7 +134,7 @@
               </property>
               <property name="icon">
                <iconset resource="resources_pages.qrc">
-                <normaloff>:/new/prefix1/icons/22x22/edit-find-replace.png</normaloff>:/new/prefix1/icons/22x22/edit-find-replace.png</iconset>
+                <normaloff>:/new/prefix1/data/icons/22x22/edit-find-replace.png</normaloff>:/new/prefix1/data/icons/22x22/edit-find-replace.png</iconset>
               </property>
               <property name="iconSize">
                <size>

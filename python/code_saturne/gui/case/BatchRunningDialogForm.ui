@@ -69,7 +69,7 @@
               </property>
               <property name="icon">
                <iconset>
-                <normaloff>../base/icons/22x22/src_editor-icon.png</normaloff>../base/icons/22x22/src_editor-icon.png</iconset>
+                <normaloff>../base/data/icons/22x22/src_editor-icon.png</normaloff>../base/data/icons/22x22/src_editor-icon.png</iconset>
               </property>
              </widget>
             </item>
@@ -836,7 +836,7 @@
               </property>
               <property name="icon">
                <iconset resource="resources_pages.qrc">
-                <normaloff>:/new/prefix1/icons/22x22/help.png</normaloff>:/new/prefix1/icons/22x22/help.png</iconset>
+                <normaloff>:/new/prefix1/data/icons/22x22/help.png</normaloff>:/new/prefix1/data/icons/22x22/help.png</iconset>
               </property>
              </widget>
             </item>

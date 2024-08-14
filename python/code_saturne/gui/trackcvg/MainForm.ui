@@ -47,7 +47,7 @@
               </property>
               <property name="icon">
                <iconset resource="resource_base.qrc">
-                <normaloff>:/icons/22x22/document-open.png</normaloff>:/icons/22x22/document-open.png</iconset>
+                <normaloff>:/data/icons/22x22/document-open.png</normaloff>:/data/icons/22x22/document-open.png</iconset>
               </property>
              </widget>
             </item>
@@ -185,7 +185,7 @@
      </property>
      <property name="icon">
       <iconset resource="resource_base.qrc">
-       <normaloff>:/icons/22x22/x-office-address-book.png</normaloff>:/icons/22x22/x-office-address-book.png</iconset>
+       <normaloff>:/data/icons/22x22/x-office-address-book.png</normaloff>:/data/icons/22x22/x-office-address-book.png</iconset>
      </property>
      <addaction name="displayCSManualAction"/>
      <addaction name="displayNCManualAction"/>
@@ -250,7 +250,7 @@
   <action name="fileCloseAction">
    <property name="icon">
     <iconset resource="resource_base.qrc">
-     <normaloff>:/icons/22x22/process-stop.png</normaloff>:/icons/22x22/process-stop.png</iconset>
+     <normaloff>:/data/icons/22x22/process-stop.png</normaloff>:/data/icons/22x22/process-stop.png</iconset>
    </property>
    <property name="text">
     <string>&amp;Close</string>
@@ -265,7 +265,7 @@
   <action name="openXtermAction">
    <property name="icon">
     <iconset resource="resource_base.qrc">
-     <normaloff>:/icons/22x22/utilities-terminal.png</normaloff>:/icons/22x22/utilities-terminal.png</iconset>
+     <normaloff>:/data/icons/22x22/utilities-terminal.png</normaloff>:/data/icons/22x22/utilities-terminal.png</iconset>
    </property>
    <property name="text">
     <string>&amp;Open shell</string>
@@ -280,7 +280,7 @@
   <action name="displayCaseAction">
    <property name="icon">
     <iconset resource="resource_base.qrc">
-     <normaloff>:/icons/22x22/document-properties.png</normaloff>:/icons/22x22/document-properties.png</iconset>
+     <normaloff>:/data/icons/22x22/document-properties.png</normaloff>:/data/icons/22x22/document-properties.png</iconset>
    </property>
    <property name="text">
     <string>&amp;Show current case</string>
@@ -295,7 +295,7 @@
   <action name="reload_modulesAction">
    <property name="icon">
     <iconset>
-     <normaloff>:/icons/22x22/view-refresh.png</normaloff>:/icons/22x22/view-refresh.png</iconset>
+     <normaloff>:/data/icons/22x22/view-refresh.png</normaloff>:/data/icons/22x22/view-refresh.png</iconset>
    </property>
    <property name="text">
     <string>&amp;Reload all loaded modules</string>
@@ -310,7 +310,7 @@
   <action name="reload_pageAction">
    <property name="icon">
     <iconset>
-     <normaloff>:/icons/22x22/view-refresh.png</normaloff>:/icons/22x22/view-refresh.png</iconset>
+     <normaloff>:/data/icons/22x22/view-refresh.png</normaloff>:/data/icons/22x22/view-refresh.png</iconset>
    </property>
    <property name="text">
     <string>R&amp;eload the loaded page</string>
@@ -325,7 +325,7 @@
   <action name="displayAboutAction">
    <property name="icon">
     <iconset resource="resource_base.qrc">
-     <normaloff>:/icons/22x22/help-browser.png</normaloff>:/icons/22x22/help-browser.png</iconset>
+     <normaloff>:/data/icons/22x22/help-browser.png</normaloff>:/data/icons/22x22/help-browser.png</iconset>
    </property>
    <property name="text">
     <string>&amp;About</string>
@@ -337,7 +337,7 @@
   <action name="displayLicenceAction">
    <property name="icon">
     <iconset resource="resource_base.qrc">
-     <normaloff>:/icons/22x22/application-certificate.png</normaloff>:/icons/22x22/application-certificate.png</iconset>
+     <normaloff>:/data/icons/22x22/application-certificate.png</normaloff>:/data/icons/22x22/application-certificate.png</iconset>
    </property>
    <property name="text">
     <string>&amp;Licence</string>
@@ -446,7 +446,7 @@
   <action name="fileQuitAction">
    <property name="icon">
     <iconset resource="resource_base.qrc">
-     <normaloff>:/icons/22x22/system-log-out.png</normaloff>:/icons/22x22/system-log-out.png</iconset>
+     <normaloff>:/data/icons/22x22/system-log-out.png</normaloff>:/data/icons/22x22/system-log-out.png</iconset>
    </property>
    <property name="text">
     <string>&amp;Quit</string>
@@ -461,7 +461,7 @@
   <action name="backgroundColorAction">
    <property name="icon">
     <iconset resource="resource_base.qrc">
-     <normaloff>:/icons/22x22/preferences-desktop-wallpaper.png</normaloff>:/icons/22x22/preferences-desktop-wallpaper.png</iconset>
+     <normaloff>:/data/icons/22x22/preferences-desktop-wallpaper.png</normaloff>:/data/icons/22x22/preferences-desktop-wallpaper.png</iconset>
    </property>
    <property name="text">
     <string>Background color</string>
@@ -470,7 +470,7 @@
   <action name="actionFont">
    <property name="icon">
     <iconset resource="resource_base.qrc">
-     <normaloff>:/icons/22x22/preferences-desktop-font.png</normaloff>:/icons/22x22/preferences-desktop-font.png</iconset>
+     <normaloff>:/data/icons/22x22/preferences-desktop-font.png</normaloff>:/data/icons/22x22/preferences-desktop-font.png</iconset>
    </property>
    <property name="text">
     <string>Font</string>
@@ -485,7 +485,7 @@
    </property>
    <property name="icon">
     <iconset resource="resource_base.qrc">
-     <normaloff>:/icons/22x22/edit-undo.png</normaloff>:/icons/22x22/edit-undo.png</iconset>
+     <normaloff>:/data/icons/22x22/edit-undo.png</normaloff>:/data/icons/22x22/edit-undo.png</iconset>
    </property>
    <property name="text">
     <string>&amp;Undo</string>
@@ -497,7 +497,7 @@
   <action name="actionRedo">
    <property name="icon">
     <iconset resource="resource_base.qrc">
-     <normaloff>:/icons/22x22/edit-redo.png</normaloff>:/icons/22x22/edit-redo.png</iconset>
+     <normaloff>:/data/icons/22x22/edit-redo.png</normaloff>:/data/icons/22x22/edit-redo.png</iconset>
    </property>
    <property name="text">
     <string>&amp;Redo</string>
@@ -509,7 +509,7 @@
   <action name="caseNewAction">
    <property name="icon">
     <iconset resource="resource_base.qrc">
-     <normaloff>:/icons/22x22/document-new.png</normaloff>:/icons/22x22/document-new.png</iconset>
+     <normaloff>:/data/icons/22x22/document-new.png</normaloff>:/data/icons/22x22/document-new.png</iconset>
    </property>
    <property name="text">
     <string>&amp;New case</string>

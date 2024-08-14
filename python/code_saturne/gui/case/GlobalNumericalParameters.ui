@@ -703,7 +703,7 @@ after last restart</string>
              </property>
              <property name="icon">
               <iconset>
-               <normaloff>:/new/prefix1/icons/22x22/preferences-system.png</normaloff>:/new/prefix1/icons/22x22/preferences-system.png</iconset>
+               <normaloff>:/new/prefix1/data/icons/22x22/preferences-system.png</normaloff>:/new/prefix1/data/icons/22x22/preferences-system.png</iconset>
              </property>
              <property name="iconSize">
               <size>

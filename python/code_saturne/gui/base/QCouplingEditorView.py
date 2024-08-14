@@ -31,6 +31,7 @@ This module defines the view for coupling parameters handling.
 
 import sys, os
 import logging
+from code_saturne import get_cs_data_path
 from code_saturne.gui.base.QtCore    import *
 from code_saturne.gui.base.QtGui     import *
 from code_saturne.gui.base.QtWidgets import *
@@ -337,7 +338,7 @@ class QCouplingEditor(QMainWindow):
                 return None
 
         # Save file action
-        save_img_path = ":/icons/22x22/document-save.png"
+        save_img_path = get_cs_data_path() + "/icons/22x22/document-save.png"
         icon_save     = QIcon()
         icon_save.addPixmap(QPixmap(_fromUtf8(save_img_path)),
                             QIcon.Normal,
@@ -348,7 +349,7 @@ class QCouplingEditor(QMainWindow):
         self.saveFileAction.triggered.connect(self.saveFile)
 
         # Close file action
-        close_img_path = ":/icons/22x22/process-stop.png"
+        close_img_path = get_cs_data_path() + "/icons/22x22/process-stop.png"
         icon_close     = QIcon()
         icon_close.addPixmap(QPixmap(_fromUtf8(close_img_path)),
                              QIcon.Normal,

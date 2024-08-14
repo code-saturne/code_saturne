@@ -16,6 +16,11 @@ Master (not on release branches yet)
   run.cfg file of a given case. Specific resources can also be specified in the
   run.cfg file using the run_id `[<resource>/run_id=<run_id>]`.
 
+### Architectural changes:
+
+- Modify the python layer (CLI and GUI) installation process to now use
+  setup.py instead of Makefile scripts.
+
 Release 8.2.0 (2024-06-17)
 --------------------------
 

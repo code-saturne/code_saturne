@@ -176,7 +176,7 @@
                </property>
                <property name="icon">
                 <iconset resource="resources_pages.qrc">
-                 <normaloff>:/new/prefix1/icons/32x32/go-next.png</normaloff>:/new/prefix1/icons/32x32/go-next.png</iconset>
+                 <normaloff>:/new/prefix1/data/icons/32x32/go-next.png</normaloff>:/new/prefix1/data/icons/32x32/go-next.png</iconset>
                </property>
               </widget>
              </item>
@@ -190,7 +190,7 @@
                </property>
                <property name="icon">
                 <iconset resource="resources_pages.qrc">
-                 <normaloff>:/new/prefix1/icons/32x32/go-previous.png</normaloff>:/new/prefix1/icons/32x32/go-previous.png</iconset>
+                 <normaloff>:/new/prefix1/data/icons/32x32/go-previous.png</normaloff>:/new/prefix1/data/icons/32x32/go-previous.png</iconset>
                </property>
               </widget>
              </item>

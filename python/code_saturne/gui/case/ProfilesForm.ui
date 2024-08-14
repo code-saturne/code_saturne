@@ -266,7 +266,7 @@ frequency</string>
                  </property>
                  <property name="icon">
                   <iconset resource="resources_pages.qrc">
-                   <normaloff>:/new/prefix1/icons/22x22/edit-find-replace.png</normaloff>:/new/prefix1/icons/22x22/edit-find-replace.png</iconset>
+                   <normaloff>:/new/prefix1/data/icons/22x22/edit-find-replace.png</normaloff>:/new/prefix1/data/icons/22x22/edit-find-replace.png</iconset>
                  </property>
                  <property name="iconSize">
                   <size>
@@ -460,7 +460,7 @@ frequency</string>
                  </property>
                  <property name="icon">
                   <iconset resource="resources_pages.qrc">
-                   <normaloff>:/new/prefix1/icons/32x32/go-next.png</normaloff>:/new/prefix1/icons/32x32/go-next.png</iconset>
+                   <normaloff>:/new/prefix1/data/icons/32x32/go-next.png</normaloff>:/new/prefix1/data/icons/32x32/go-next.png</iconset>
                  </property>
                 </widget>
                </item>
@@ -474,7 +474,7 @@ frequency</string>
                  </property>
                  <property name="icon">
                   <iconset resource="resources_pages.qrc">
-                   <normaloff>:/new/prefix1/icons/32x32/go-previous.png</normaloff>:/new/prefix1/icons/32x32/go-previous.png</iconset>
+                   <normaloff>:/new/prefix1/data/icons/32x32/go-previous.png</normaloff>:/new/prefix1/data/icons/32x32/go-previous.png</iconset>
                  </property>
                 </widget>
                </item>

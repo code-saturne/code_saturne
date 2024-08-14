@@ -31,11 +31,12 @@ This module defines the following classes:
 # Standard modules
 #-------------------------------------------------------------------------------
 
-import sys, logging
+import sys, logging, os
 
 #-------------------------------------------------------------------------------
 #Third-party modules
 #-------------------------------------------------------------------------------
+from code_saturne import get_cs_data_path
 
 from code_saturne.gui.base.QtCore import *
 from code_saturne.gui.base.QtGui import *
@@ -191,6 +192,7 @@ class TreeModel(QAbstractItemModel):
         item = index.internalPointer()
         column = index.column()
 
+        icons_path = os.path.join(get_cs_data_path(), 'icons', '22x22')
         if role == Qt.DisplayRole:
             # return text for columns
             if column == 0:
@@ -205,37 +207,37 @@ class TreeModel(QAbstractItemModel):
                 icon = QIcon()
 
                 if page_name == self.tr('Mesh'):
-                    img_path = ":/icons/22x22/cube_mesh.png"
+                    img_path = os.path.join(icons_path, 'cube_mesh.png')
                     icon.addPixmap(QPixmap(_fromUtf8(img_path)), QIcon.Normal, QIcon.Off)
                 elif page_name == self.tr('Calculation features'):
-                    img_path = ":/icons/22x22/calculation_features.png"
+                    img_path = os.path.join(icons_path, 'calculation_features.png')
                     icon.addPixmap(QPixmap(_fromUtf8(img_path)), QIcon.Normal, QIcon.Off)
 #                elif page_name == self.tr('Volume zones'):
 #                    img_path = ":/icons/22x22/volume_zones.png"
 #                    icon.addPixmap(QPixmap(_fromUtf8(img_path)), QIcon.Normal, QIcon.Off)
                 elif page_name == self.tr('Volume conditions'):
-                    img_path = ":/icons/22x22/cube_volume_zone_v2.png"
+                    img_path = os.path.join(icons_path, 'cube_volume_zone_v2.png')
                     icon.addPixmap(QPixmap(_fromUtf8(img_path)), QIcon.Normal, QIcon.Off)
 #                elif page_name == self.tr('Boundary zones'):
 #                    img_path = ":/icons/22x22/boundary_conditions.png"
 #                    icon.addPixmap(QPixmap(_fromUtf8(img_path)), QIcon.Normal, QIcon.Off)
                 elif page_name == self.tr('Boundary conditions'):
-                    img_path = ":/icons/22x22/cube_bc.png"
+                    img_path = os.path.join(icons_path, 'cube_bc.png')
                     icon.addPixmap(QPixmap(_fromUtf8(img_path)), QIcon.Normal, QIcon.Off)
                 elif page_name == self.tr('Time settings'):
-                    img_path = ":/icons/22x22/time_stepping.png"
+                    img_path = os.path.join(icons_path, 'time_stepping.png')
                     icon.addPixmap(QPixmap(_fromUtf8(img_path)), QIcon.Normal, QIcon.Off)
                 elif page_name == self.tr('Numerical parameters'):
-                    img_path = ":/icons/22x22/numerical_params.png"
+                    img_path = os.path.join(icons_path, 'numerical_params.png')
                     icon.addPixmap(QPixmap(_fromUtf8(img_path)), QIcon.Normal, QIcon.Off)
                 elif page_name == self.tr('Postprocessing'):
-                    img_path = ":/icons/22x22/postprocessing.png"
+                    img_path = os.path.join(icons_path, 'postprocessing.png')
                     icon.addPixmap(QPixmap(_fromUtf8(img_path)), QIcon.Normal, QIcon.Off)
                 elif page_name == 'Closure modeling':
-                    img_path = ":/icons/22x22/closure_modeling.png"
+                    img_path = os.path.join(icons_path, 'closure_modeling.png')
                     icon.addPixmap(QPixmap(_fromUtf8(img_path)), QIcon.Normal, QIcon.Off)
                 elif page_name == self.tr('Performance settings'):
-                    img_path = ":/icons/22x22/run_parameters.png"
+                    img_path = os.path.join(icons_path, 'run_parameters.png')
                     icon.addPixmap(QPixmap(_fromUtf8(img_path)), QIcon.Normal, QIcon.Off)
 
                 elif item.itemType == "folder-new":
