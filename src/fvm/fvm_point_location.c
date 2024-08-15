@@ -1914,7 +1914,9 @@ _inverse_3x3(double  m[3][3],
         - m[1][0]*(m[0][1]*m[2][2] - m[2][1]*m[0][2])
         + m[2][0]*(m[0][1]*m[1][2] - m[1][1]*m[0][2]);
 
-  if (CS_ABS(det) < _epsilon_denom)
+  double adet = fabs(det);
+  if (adet < _epsilon_denom || adet > 1e150) /* test on high value to avoid
+                                                SIGFPE if diverging*/
     return 1;
   else
     det_inv = 1./det;
