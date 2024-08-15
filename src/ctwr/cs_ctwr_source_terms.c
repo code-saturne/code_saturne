@@ -365,15 +365,6 @@ cs_ctwr_volume_mass_injection_rain_dof_func(cs_lnum_t         n_elts,
 
   const cs_real_t *cell_f_vol = cs_glob_mesh_quantities->cell_f_vol;
 
-  /* Variable and properties for rain drops */
-  cs_field_t *cfld_yp = cs_field_by_name("ym_l_r");     /* Rain mass fraction */
-  cs_field_t *cfld_yh_rain = cs_field_by_name("ymh_l_r"); /* Yp times Tp */
-
-  /* Rain inner mass flux */
-  const int kimasf = cs_field_key_id("inner_mass_flux_id");
-  cs_real_t *imasfl_r = cs_field_by_id
-                         (cs_field_get_key_int(cfld_yp, kimasf))->val;
-
   const cs_ctwr_option_t *ct_opt = cs_glob_ctwr_option;
 
   /* Generate rain from packing zones which are leaking
@@ -452,6 +443,104 @@ cs_ctwr_volume_mass_injection_rain_dof_func(cs_lnum_t         n_elts,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief cs_dof_func_t function to compute volume mass injection for
+ *   yphp rain equation (enthalpy).
+ *
+ * \param[in]      n_elts        number of elements to consider
+ * \param[in]      elt_ids       list of elements ids
+ * \param[in]      dense_output  perform an indirection in retval or not
+ * \param[in]      input         NULL or pointer to a structure cast on-the-fly
+ * \param[in, out] retval        resulting value(s). Must be allocated.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_ctwr_volume_mass_injection_yh_rain_dof_func(cs_lnum_t         n_elts,
+                                               const cs_lnum_t  *elt_ids,
+                                               bool              dense_output,
+                                               void             *input,
+                                               cs_real_t        *retval)
+{
+  const cs_mesh_t *m = cs_glob_mesh;
+  const cs_lnum_2_t *i_face_cells
+    = (const cs_lnum_2_t *)(m->i_face_cells);
+
+  /* Variable and properties for rain drops */
+  cs_real_t *h_l_p = cs_field_by_name("h_l_packing")->val;
+
+  const cs_ctwr_option_t *ct_opt = cs_glob_ctwr_option;
+
+  /* Generate rain from packing zones which are leaking
+     ================================================== */
+
+  cs_real_t *liq_mass_frac = CS_F_(y_l_pack)->val; /* Liquid mass fraction
+                                                      in packing */
+  /* Inner mass flux of liquids (in the packing) */
+  cs_real_t *liq_mass_flow
+    = cs_field_by_name("inner_mass_flux_y_l_packing")->val;
+
+  /* Cooling tower zones */
+  cs_ctwr_zone_t **_ct_zone = cs_get_glob_ctwr_zone();
+  const int *_n_ct_zones = cs_get_glob_ctwr_n_zones();
+
+  for (int ict = 0; ict < *_n_ct_zones; ict++) {
+    cs_ctwr_zone_t *ct = _ct_zone[ict];
+
+    if (ct->xleak_fac > 0.0 && ct->type != CS_CTWR_INJECTION) {
+
+      /* Rain generation source terms
+         ============================ */
+
+      for (cs_lnum_t i = 0; i < ct->n_outlet_faces; i++) {
+
+        /* Leak face_id */
+        cs_lnum_t face_id = ct->outlet_faces_ids[i];
+        cs_lnum_t cell_id_leak, cell_id_rain;
+
+        /* Convention: outlet is positive mass flux
+         * Then upwind cell for liquid is i_face_cells[][0] */
+        int sign = 1;
+        if (liq_mass_flow[face_id] < 0) {
+          sign = -1;
+          cell_id_leak = i_face_cells[face_id][1];
+          cell_id_rain = i_face_cells[face_id][0];
+        }
+        else {
+          cell_id_leak = i_face_cells[face_id][0];
+          cell_id_rain = i_face_cells[face_id][1];
+        }
+
+        /* Rain enthalpy */
+        /* Warning: not multiplied by Cell volume! */
+        // FIXME: There should be a y_p factor in there so that
+        // mass and enthalpy are h_l_p[ch_l_p[cell_id_leak]]
+        retval[cell_id_rain] = h_l_p[cell_id_leak];
+
+      } /* End of loop through outlet cells of the packing zone */
+
+    } /* End of leaking zone test */
+
+
+    /* Rain - packing interaction
+     * ========================== */
+
+    /* Boolean rain_to_packing ctwr model option enables rain liquid water to
+     * become liquid water film when it reaches a packing zone */
+
+    /* FIXME: Corrections needed to ensure mass and energy conservation,
+     * better not use it for the moment */
+    if  (ct_opt->rain_to_packing) {
+      /* Rain sink term in packing zones */
+      //TODO : Add rain leak portion inside packing
+
+    }
+
+  } /* End of loop over cooling towers */
+
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Phase change source terms - Exchange terms between the injected
  *        liquid and the water vapor phase in the bulk, humid air
  *
@@ -500,7 +589,6 @@ cs_ctwr_source_term(int              f_id,
                                                              in packing */
 
   cs_real_t *t_l_p = cs_field_by_name("temp_l_packing")->val;
-  cs_real_t *h_l_p = cs_field_by_name("h_l_packing")->val;
   cs_real_t *y_l_p = CS_F_(y_l_pack)->val_pre;
 
   /* Variable and properties for rain drops */
@@ -970,7 +1058,6 @@ cs_ctwr_source_term(int              f_id,
             cs_real_t l_exp_st = 0.;
             cs_real_t l_imp_st = 0.;
 
-            /* Under saturated */
             if (x[cell_id] <= x_s_th) {
               /* Explicit term */
               l_exp_st -= vol_beta_x_ai * ((x_s_tl - x[cell_id])
@@ -1011,72 +1098,15 @@ cs_ctwr_source_term(int              f_id,
     /* Generate rain from packing zones which are leaking
        ================================================== */
 
-    cs_real_t *liq_mass_frac = CS_F_(y_l_pack)->val; /* Liquid mass fraction
-                                                        in packing */
-    /* Inner mass flux of liquids (in the packing) */
-    cs_real_t *liq_mass_flow
-      = cs_field_by_name("inner_mass_flux_y_l_packing")->val;
+    /* Note: global bulk mass - continuity is taken with
+     * cs_ctwr_volume_mass_injection_rain_dof_func
+     * Injected liquid mass equation for rain zones is taken
+     * into account using standard volume mass injection mechanism
+     * (cs_equation_add_volume_mass_injection_by_value, with 1 as value)
+     * */
 
-    for (int ict = 0; ict < *_n_ct_zones; ict++) {
-
-      cs_ctwr_zone_t *ct = _ct_zone[ict];
-
-      if (ct->xleak_fac > 0.0 && ct->type != CS_CTWR_INJECTION) {
-
-        /* Rain generation source terms
-           ============================ */
-
-        for (cs_lnum_t i = 0; i < ct->n_outlet_faces; i++) {
-
-          /* Leak face_id */
-          cs_lnum_t face_id = ct->outlet_faces_ids[i];
-          cs_lnum_t cell_id_leak, cell_id_rain;
-
-          /* Convention: outlet is positive mass flux
-           * Then upwind cell for liquid is i_face_cells[][0] */
-          int sign = 1;
-          if (liq_mass_flow[face_id] < 0) {
-            sign = -1;
-            cell_id_leak = i_face_cells[face_id][1];
-            cell_id_rain = i_face_cells[face_id][0];
-          }
-          else {
-            cell_id_leak = i_face_cells[face_id][0];
-            cell_id_rain = i_face_cells[face_id][1];
-          }
-
-          /* Note: vol_mass_source must not be multiplied by
-           * cell_f_vol[cell_id_rain]
-           * because mass source computed from liq_mass_flow is
-           * already in kg/s associated to the facing rain cell */
-          cs_real_t vol_mass_source = ct->xleak_fac
-            * liq_mass_frac[cell_id_leak] * sign * liq_mass_flow[face_id];
-
-          /* Note: global bulk mass - continuity is taken with
-           * cs_ctwr_volume_mass_injection_rain_dof_func
-           * Injected liquid mass equation for rain zones is taken
-           * into account using standard volume mass injection mechanism
-           * (cs_equation_add_volume_mass_injection_by_value, with 1 as value)
-           * */
-
-          /* Rain enthalpy */
-          if (f_id == cfld_yh_rain->id) {
-            // FIXME: There should be a y_p factor in there so that
-            // mass and enthalpy are compatible
-            /* The transported variable is y_rain * T_rain */
-            /* Since it is treated as a scalar, no multiplication by cp_l is
-             * required */
-            /* For temperature equation of the rain */
-            exp_st[cell_id_rain] += vol_mass_source * (h_l_p[cell_id_leak]
-                                    - f_var[cell_id_rain]);
-            imp_st[cell_id_rain] += vol_mass_source;
-          }
-
-        } /* End of loop through outlet cells of the packing zone */
-
-      } /* End of leaking zone test */
-
-    } /* End of loop through the packing zones */
+    /* Note: Rain enthalpy is treated by
+     * cs_ctwr_volume_mass_injection_yh_rain_dof_func */
 
     /* Rain - packing interaction
      * ========================== */

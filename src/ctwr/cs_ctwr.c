@@ -662,6 +662,17 @@ cs_ctwr_build_all(void)
     cs_real_t y_in = 1.;
     cs_equation_add_volume_mass_injection_by_value(eqp, z->name, &y_in);
 
+    /* Rain enthalpy (yp.hp) */
+    cs_field_t *f_yphp = cs_field_by_name("ymh_l_r");
+    eqp = cs_field_get_equation_param_const(f_yphp);
+    cs_equation_add_volume_mass_injection_by_dof_func(eqp,
+                                                      z->name,
+                                                      cs_flag_primal_cell,
+                                                      cs_ctwr_volume_mass_injection_yh_rain_dof_func,
+                                                      NULL);
+
+
+
   }
 
   /* Post-processing: multiply enthalpy by fraction */

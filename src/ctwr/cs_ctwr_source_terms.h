@@ -100,6 +100,26 @@ cs_ctwr_volume_mass_injection_rain_dof_func(cs_lnum_t         n_elts,
                                             cs_real_t        *retval);
 
 /*----------------------------------------------------------------------------*/
+/*!
+ * \brief cs_dof_func_t function to compute volume mass injection for
+ *   yphp rain equation (enthalpy).
+ *
+ * \param[in]      n_elts        number of elements to consider
+ * \param[in]      elt_ids       list of elements ids
+ * \param[in]      dense_output  perform an indirection in retval or not
+ * \param[in]      input         NULL or pointer to a structure cast on-the-fly
+ * \param[in, out] retval        resulting value(s). Must be allocated.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_ctwr_volume_mass_injection_yh_rain_dof_func(cs_lnum_t         n_elts,
+                                               const cs_lnum_t  *elt_ids,
+                                               bool              dense_output,
+                                               void             *input,
+                                               cs_real_t        *retval);
+
+/*----------------------------------------------------------------------------*/
 
 END_C_DECLS
 
