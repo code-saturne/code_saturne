@@ -1125,18 +1125,14 @@ cs_ctwr_source_term(int              f_id,
             * liq_mass_frac[cell_id_leak] * sign * liq_mass_flow[face_id];
 
           /* Note: global bulk mass - continuity is taken with
-           * cs_ctwr_volume_mass_injection_rain_dof_func */
+           * cs_ctwr_volume_mass_injection_rain_dof_func
+           * Injected liquid mass equation for rain zones is taken
+           * into account using standard volume mass injection mechanism
+           * (cs_equation_add_volume_mass_injection_by_value, with 1 as value)
+           * */
 
-          /* Injected liquid mass equation for rain zones
-             (solve in drift model form) */
-          if (f_id == cfld_yp->id) {
-            /* Because we deal with an increment */
-            exp_st[cell_id_rain] += vol_mass_source
-                                    * (1. - f_var[cell_id_rain]);
-            imp_st[cell_id_rain] += vol_mass_source;
-          }
           /* Rain enthalpy */
-          else if (f_id == cfld_yh_rain->id) {
+          if (f_id == cfld_yh_rain->id) {
             // FIXME: There should be a y_p factor in there so that
             // mass and enthalpy are compatible
             /* The transported variable is y_rain * T_rain */

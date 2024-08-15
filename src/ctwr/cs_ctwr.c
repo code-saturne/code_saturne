@@ -628,6 +628,15 @@ cs_ctwr_build_all(void)
                                                       cs_flag_primal_cell,
                                                       cs_ctwr_volume_mass_injection_rain_dof_func,
                                                       NULL);
+
+    /* Rain mass fraction */
+    cs_field_t *f_yp = cs_field_by_name("ym_l_r");
+    eqp = cs_field_get_equation_param_const(f_yp);
+
+    /* Set value of ingoing rain */
+    cs_real_t y_in = 1.;
+    cs_equation_add_volume_mass_injection_by_value(eqp, z->name, &y_in);
+
   }
 
   /* Post-processing: multiply enthalpy by fraction */
