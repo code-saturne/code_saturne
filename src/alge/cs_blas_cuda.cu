@@ -404,7 +404,7 @@ cs_blas_cuda_get_2_stage_reduce_buffers(cs_lnum_t      n,
 {
   unsigned int t_grid_size = grid_size * tuple_size;
 
-  if (_r_tuple_size < tuple_size) {
+  if (_r_tuple_size < (unsigned int)tuple_size) {
     _r_tuple_size = tuple_size;
     CS_REALLOC_HD(_r_reduce, _r_tuple_size, double, CS_ALLOC_HOST_DEVICE_SHARED);
   }
@@ -511,10 +511,10 @@ cs_blas_cublas_asum(cs_lnum_t        n,
     _handle = _init_cublas();
 
   if (sizeof(cs_real_t) == 8)
-    status = cublasDasum(_handle, n, (double *)x, 1, &dot);
+    status = cublasDasum(_handle, n, (const double *)x, 1, &dot);
   else if (sizeof(cs_real_t) == 4) {
     float fdot;
-    status = cublasSasum(_handle, n, (float *)x, 1, &fdot);
+    status = cublasSasum(_handle, n, (const float *)x, 1, &fdot);
     dot = fdot;
   }
 
@@ -605,13 +605,13 @@ cs_blas_cuda_axpy(cs_lnum_t         n,
 
     if (sizeof(cs_real_t) == 8)
       status = cublasDaxpy(_handle, n,
-                           (double *)alpha,
-                           (double *)x, 1,
+                           (const double *)alpha,
+                           (const double *)x, 1,
                            (double *)y, 1);
     else if (sizeof(cs_real_t) == 4)
       status = cublasSaxpy(_handle, n,
-                           (float *)alpha,
-                           (float *)x, 1,
+                           (const float *)alpha,
+                           (const float *)x, 1,
                            (float *)y, 1);
 
     if (status != CUBLAS_STATUS_SUCCESS) {
@@ -664,11 +664,11 @@ cs_blas_cuda_scal(cs_lnum_t         n,
 
     if (sizeof(cs_real_t) == 8)
       status = cublasDscal(_handle, n,
-                           (double *)alpha,
+                           (const double *)alpha,
                            (double *)x, 1);
     else if (sizeof(cs_real_t) == 4)
       status = cublasSscal(_handle, n,
-                           (float *)alpha,
+                           (const float *)alpha,
                            (float *)x, 1);
 
     if (status != CUBLAS_STATUS_SUCCESS) {
