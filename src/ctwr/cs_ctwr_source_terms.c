@@ -617,9 +617,7 @@ cs_ctwr_source_term(int              f_id,
   /* Compute the source terms */
 
   /* Fields for source terms post-processing */
-  cs_real_t *evap_rate_pack = NULL;
   cs_real_t *evap_rate_rain = NULL;
-  evap_rate_pack = cs_field_by_name("evaporation_rate_packing")->val;
   evap_rate_rain = cs_field_by_name("evaporation_rate_rain")->val;
 
   cs_real_t *thermal_power_pack = NULL;
@@ -765,24 +763,15 @@ cs_ctwr_source_term(int              f_id,
         cs_real_t cp_h = cs_air_cp_humidair(x[cell_id], x_s[cell_id]);
 
         /* Global mass source term for continuity (pressure) equation
-         * Note that rain is already considered in the bulk, so inner
-         * mass transfer between liquid and vapor disappears */
-        if (f_id == (CS_F_(p)->id)) {
-          /* Warning: not multiplied by Cell volume! no addition neither */
-          exp_st[cell_id] = mass_source;
-
-          /* Saving evaporation rate for post-processing */
-          evap_rate_pack[cell_id] = mass_source;
-        }
-
-        /* Water mass fraction equation except rain */
-        else if (f_id == (CS_F_(ym_w)->id)) {
-          exp_st[cell_id] += vol_mass_source * (1. - f_var[cell_id]);
-          imp_st[cell_id] += vol_mass_source;
-        }
+         * is already taken into account using standard volume
+         * mass injection (see cs_ctwr_volume_mass_injection_dof_func)
+         *
+         * Consequent source terms on ym_w are also taken into account
+         * using standard mass source term mechanism.
+         * */
 
         /* Injected liquid mass equation (solve in drift model form) */
-        else if (f_id == (CS_F_(y_l_pack)->id)) {
+        if (f_id == (CS_F_(y_l_pack)->id)) {
           exp_st[cell_id] -= vol_mass_source_oy * y_l_p[cell_id];
           imp_st[cell_id] += vol_mass_source_oy;
         }
@@ -1134,7 +1123,6 @@ cs_ctwr_source_term(int              f_id,
            * already in kg/s associated to the facing rain cell */
           cs_real_t vol_mass_source = ct->xleak_fac
             * liq_mass_frac[cell_id_leak] * sign * liq_mass_flow[face_id];
-
 
           /* Note: global bulk mass - continuity is taken with
            * cs_ctwr_volume_mass_injection_rain_dof_func */

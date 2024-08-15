@@ -607,6 +607,12 @@ cs_ctwr_build_all(void)
        cs_ctwr_volume_mass_injection_dof_func,
        input);
 
+    eqp = cs_field_get_equation_param_const(CS_F_(ym_w));
+
+    /* Set value of ingoing water */
+    cs_real_t yw_in = 1.;
+    cs_equation_add_volume_mass_injection_by_value(eqp, z->name, &yw_in);
+
   }
   /* Define the zones with source terms */
   cs_ctwr_option_t *ct_opt = cs_get_glob_ctwr_option();
