@@ -979,6 +979,73 @@ cs_solve_all(int  itrale)
                           ckupdc);
   }
 
+  /* Current to previous for variables
+     --------------------------------- */
+
+  _update_previous_values(itrale, n_fields, n_cells);
+
+  /* Compute time step if variable
+     ----------------------------- */
+
+  if (eqp_vel->verbosity > 0) {
+    bft_printf
+      (_(" ------------------------------------------------------------\n\n"
+         "  COMPUTATION OF CFL, FOURIER AND VARIABLE DT\n"
+         "  ===========================================\n\n"));
+  }
+
+  cs_local_time_step_compute(itrale);
+  const int nalinf = cs_glob_ale_n_ini_f;
+  const int nbaste = cs_glob_ast_coupling_n_couplings;
+  if (nbaste > 0 && itrale > nalinf)
+    cs_ast_coupling_exchange_time_step(CS_F_(dt)->val);
+
+  if (eqp_p->idften & CS_ANISOTROPIC_DIFFUSION)
+    _compute_tensorial_time_step(m,
+                                 ncepdc,
+                                 icepdc,
+                                 ckupdc);
+
+  BFT_FREE(icepdc);
+
+  /* Adjustment of Pth pressure and rho
+   * volume mass for the variable density algorithm */
+
+  if (   cs_glob_fluid_properties->ipthrm == 1
+      || cs_glob_velocity_pressure_model->idilat == 3)
+    cs_compute_thermo_pressure_density();
+
+  /* Setup boundary conditions
+     ------------------------- */
+
+  if (eqp_vel->verbosity > 0) {
+    bft_printf
+      (_(" ------------------------------------------------------------\n\n"
+         "  SETTING UP THE BOUNDARY CONDITIONS\n"
+         "  ==================================\n\n"));
+  }
+
+  /* ALE method: start of loop for implying the movement of structures.
+                 itrfin=0 indicates that we need to redo an iteration
+                 for Syrthes, T1D or radiation. */
+  int itrfup = 1;
+  int italim = 1;
+  int itrfin = 1;
+  int ineefl = 0;
+
+  if (   cs_glob_ale >  CS_ALE_NONE
+      && itrale > nalinf
+      && cs_glob_mobile_structures_i_max > 1) {
+    /* Indicate if we need to return to the initial state at the end
+       of an  ALE iteration. */
+    ineefl = 1;
+
+    if (   cs_syr_coupling_n_couplings() > 0
+        || cs_get_glob_1d_wall_thermal()->nfpt1t > 0
+        || cs_glob_rad_transfer_params->type > 0)
+      itrfin = 0;
+  }
+
   /* Evaluate mass source term coefficients
      (called on all ranks in case user calls global operations). */
 
@@ -1016,73 +1083,6 @@ cs_solve_all(int  itrale)
     // and mass transfer due to wall condensation
     BFT_MALLOC(htot_cond, wall_cond->nfbpcd, cs_real_t);
     cs_wall_condensation_compute(htot_cond);
-  }
-
-  /* Current to previous for variables
-     --------------------------------- */
-
-  _update_previous_values(itrale, n_fields, n_cells);
-
-  /* Compute time step if variable
-     ----------------------------- */
-
-  if (eqp_vel->verbosity > 0) {
-    bft_printf
-      (_(" ------------------------------------------------------------\n\n"
-         "  COMPUTATION OF CFL, FOURIER AND VARIABLE DT\n"
-         "  ===========================================\n\n"));
-  }
-
-  cs_local_time_step_compute(itrale);
-  const int nalinf = cs_glob_ale_n_ini_f;
-  const int nbaste = cs_glob_ast_coupling_n_couplings;
-  if (nbaste > 0 && itrale > nalinf)
-    cs_ast_coupling_exchange_time_step(CS_F_(dt)->val);
-
-  if (eqp_p->idften & CS_ANISOTROPIC_DIFFUSION)
-    _compute_tensorial_time_step(m,
-                                 ncepdc,
-                                 icepdc,
-                                 ckupdc);
-
-  BFT_FREE(icepdc);
-
-  /* Adjutement of Pth pressure and rho
-   * volume mass for the variable density algorithm */
-
-  if (   cs_glob_fluid_properties->ipthrm == 1
-      || cs_glob_velocity_pressure_model->idilat == 3)
-    cs_compute_thermo_pressure_density();
-
-  /* Setup boundary conditions
-     ------------------------- */
-
-  if (eqp_vel->verbosity > 0) {
-    bft_printf
-      (_(" ------------------------------------------------------------\n\n"
-         "  SETTING UP THE BOUNDARY CONDITIONS\n"
-         "  ==================================\n\n"));
-  }
-
-  /* ALE method: start of loop for implying the movement of structures.
-                 itrfin=0 indicates that we need to redo an iteration
-                 for Syrthes, T1D or radiation. */
-  int itrfup = 1;
-  int italim = 1;
-  int itrfin = 1;
-  int ineefl = 0;
-
-  if (   cs_glob_ale >  CS_ALE_NONE
-      && itrale > nalinf
-      && cs_glob_mobile_structures_i_max > 1) {
-    /* Indicate if we need to return to the initial state at the end
-       of an  ALE iteration. */
-    ineefl = 1;
-
-    if (   cs_syr_coupling_n_couplings() > 0
-        || cs_get_glob_1d_wall_thermal()->nfpt1t > 0
-        || cs_glob_rad_transfer_params->type > 0)
-      itrfin = 0;
   }
 
   bool must_return = false;

@@ -150,7 +150,7 @@ cs_ctwr_volume_mass_injection_dof_func(cs_lnum_t         n_elts,
   cs_real_t *rho_m = (cs_real_t *)CS_F_(rho)->val; /* Mixture density */
   cs_real_t *rho_h = cs_field_by_name("rho_humid_air")->val; /* Humid air density */
 
-  cs_real_3_t *vel_h = (cs_real_3_t *)CS_F_(vel)->val; /* Humid air velocity*/
+  cs_real_3_t *vel_h = (cs_real_3_t *)CS_F_(vel)->val_pre; /* Humid air velocity*/
 
   cs_real_t *ym_w = (cs_real_t *)CS_F_(ym_w)->val; /* Water mass fraction
                                                      in humid air */
@@ -376,7 +376,7 @@ cs_ctwr_volume_mass_injection_rain_dof_func(cs_lnum_t         n_elts,
   cs_real_t *rho_m = (cs_real_t *)CS_F_(rho)->val; /* Mixture density */
   cs_real_t *rho_h = cs_field_by_name("rho_humid_air")->val; /* Humid air density */
 
-  cs_real_3_t *vel_h = (cs_real_3_t *)CS_F_(vel)->val; /* Humid air velocity*/
+  cs_real_3_t *vel_h = (cs_real_3_t *)CS_F_(vel)->val_pre; /* Humid air velocity*/
 
   cs_real_t *ym_w = (cs_real_t *)CS_F_(ym_w)->val; /* Water mass fraction
                                                      in humid air */
@@ -554,7 +554,7 @@ cs_ctwr_source_term(int              f_id,
   cs_real_t *rho_m = (cs_real_t *)CS_F_(rho)->val; /* Mixture density */
   cs_real_t *rho_h = cs_field_by_name("rho_humid_air")->val; /* Humid air density */
 
-  cs_real_3_t *vel_h = (cs_real_3_t *)CS_F_(vel)->val; /* Humid air velocity*/
+  cs_real_3_t *vel_h = (cs_real_3_t *)CS_F_(vel)->val_pre; /* Humid air velocity*/
 
   cs_real_t *ym_w = (cs_real_t *)CS_F_(ym_w)->val; /* Water mass fraction
                                                      in humid air */
