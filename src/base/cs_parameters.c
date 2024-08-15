@@ -2082,7 +2082,6 @@ cs_parameters_eqp_complete(void)
   const int kvisl0 = cs_field_key_id("diffusivity_ref");
   const int kscacp  = cs_field_key_id("is_temperature");
 
-  const int kcdtvar = cs_field_key_id("time_step_factor");
   const int kcpsyr = cs_field_key_id("syrthes_coupling");
   const int kclvfl = cs_field_key_id("variance_clipping");
   const int kscmin = cs_field_key_id("min_scalar_clipping");
@@ -2381,54 +2380,6 @@ cs_parameters_eqp_complete(void)
   /* dtmin dtmax cdtvar */
   if (time_opt->dtmin <= -cs_math_big_r) time_opt->dtmin = 0.1*ts->dt_ref;
   if (time_opt->dtmax <= -cs_math_big_r) time_opt->dtmax = 1000.*ts->dt_ref;
-
-  /* Initialization of the time step factor for velocity, pressure and
-   * turbulent variables.
-   * FIXME time step factor is used ONLY for additional variables
-   * (user or model) */
-
-  if (cs_glob_param_cdo_mode != CS_PARAM_CDO_MODE_ONLY) {
-
-    cs_real_t cdtvar = cs_field_get_key_double(CS_F_(vel), kcdtvar);
-    cs_field_set_key_double(CS_F_(p), kcdtvar, cdtvar);
-    if (cs_glob_turb_model->itytur == 2) {
-      cdtvar = cs_field_get_key_double(CS_F_(k), kcdtvar);
-      cs_field_set_key_double(CS_F_(eps), kcdtvar, cdtvar);
-    }
-    else if (cs_glob_turb_model->itytur == 3) {
-      cdtvar = cs_field_get_key_double(CS_F_(rij), kcdtvar);
-      cs_field_set_key_double(CS_F_(eps), kcdtvar, cdtvar);
-
-      /* cdtvar for alp_bl is useless because there is no time dependency
-         in the equation of alpha. */
-      if (cs_glob_turb_model->iturb == CS_TURB_RIJ_EPSILON_EBRSM) {
-        cdtvar = cs_field_get_key_double(CS_F_(rij), kcdtvar);
-        cs_field_set_key_double(CS_F_(alp_bl), kcdtvar, cdtvar);
-      }
-    }
-    else if (cs_glob_turb_model->itytur == 5) {
-      cdtvar = cs_field_get_key_double(CS_F_(k), kcdtvar);
-      cs_field_set_key_double(CS_F_(eps), kcdtvar, cdtvar);
-      cs_field_set_key_double(CS_F_(phi), kcdtvar, cdtvar);
-
-      /* CDTVAR for f_bar/alp_bl is in fact useless
-       * as the time step is in the equation of f_bar/alpha */
-      if (cs_glob_turb_model->iturb == CS_TURB_V2F_PHI) {
-        cs_field_set_key_double(CS_F_(f_bar), kcdtvar, cdtvar);
-      }
-      else if (cs_glob_turb_model->iturb == CS_TURB_V2F_BL_V2K) {
-        cs_field_set_key_double(CS_F_(alp_bl), kcdtvar, cdtvar);
-      }
-    }
-    else if (cs_glob_turb_model->iturb == CS_TURB_K_OMEGA) {
-      cdtvar = cs_field_get_key_double(CS_F_(k), kcdtvar);
-      cs_field_set_key_double(CS_F_(omg), kcdtvar, cdtvar);
-    }
-    else if (cs_glob_turb_model->iturb == CS_TURB_SPALART_ALLMARAS) {
-      /* cdtvar is equal to 1. by default in cs_parameters.c */
-    }
-
-  }
 
   /* For laminar cases or when using low Reynolds model: no wall function.
    * When using mixing length, Spalart-Allmaras or LES: one scale log law.

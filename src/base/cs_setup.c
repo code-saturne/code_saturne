@@ -450,6 +450,8 @@ _create_variable_fields(void)
 {
   const int keycpl = cs_field_key_id("coupled");
 
+  int dyn_field_id_start = cs_field_n_fields();
+
   /*! Velocity */
 
   {
@@ -603,6 +605,18 @@ _create_variable_fields(void)
     eqp->iconv = 0;
     eqp->idifft = 0;
     eqp->relaxv = 1;
+  }
+
+  int dyn_field_id_end = cs_field_n_fields();
+
+  /* Lock time step multiplier for all "dynamic" model fields.
+     (used only for user or model scalars or similar fields). */
+
+  const int keycdt = cs_field_key_id("time_step_factor");
+
+  for (int i = dyn_field_id_start; i < dyn_field_id_end; i++) {
+    cs_field_t *f = cs_field_by_id(i);
+    cs_field_lock_key(f, keycdt);
   }
 }
 
@@ -2284,7 +2298,6 @@ _additional_fields_stage_3(void)
   /* Get ids */
   const int k_log = cs_field_key_id("log");
   const int k_vis = cs_field_key_id("post_vis");
-  const int k_lbl = cs_field_key_id("label");
   const int k_sca = cs_field_key_id("scalar_id");
 
   // Keys not stored globally
