@@ -57,6 +57,8 @@ BEGIN_C_DECLS
  * Public function prototypes
  *============================================================================*/
 
+END_C_DECLS
+
 /*=============================================================================
  * Templated function definitions
  *============================================================================*/
@@ -77,7 +79,7 @@ cs_diff_ulp(T x,
   // If `x` and `y` have different gap sizes (which means they have
   // different exponents), we take the smaller one. Taking the bigger
   // one is also reasonable, I guess.
-  const T m = std::min(std::fabs(x), std::fabs(y));
+  const T m = fmin(std::fabs(x), std::fabs(y));
 
   // Subnormal numbers have fixed exponent, which is `min_exponent - 1`.
   const int exp = m < std::numeric_limits<T>::min()
@@ -92,7 +94,5 @@ cs_diff_ulp(T x,
 #endif // __cplusplus
 
 /*----------------------------------------------------------------------------*/
-
-END_C_DECLS
 
 #endif /* CS_DEBUG_H */
