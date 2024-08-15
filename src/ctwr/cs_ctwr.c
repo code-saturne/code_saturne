@@ -596,8 +596,8 @@ cs_ctwr_build_all(void)
     ct->vol_f = z->f_measure;
 
     void *input = (void *) ct;
-    const cs_equation_param_t *eqp =
-        cs_field_get_equation_param_const(CS_F_(p));
+    cs_equation_param_t *eqp =
+        cs_field_get_equation_param(CS_F_(p));
 
     /* Set the bulk mass source term function (associated to pressure field) */
     cs_equation_add_volume_mass_injection_by_dof_func
@@ -607,7 +607,7 @@ cs_ctwr_build_all(void)
        cs_ctwr_volume_mass_injection_dof_func,
        input);
 
-    eqp = cs_field_get_equation_param_const(CS_F_(ym_w));
+    eqp = cs_field_get_equation_param(CS_F_(ym_w));
 
     /* Set value of ingoing water */
     cs_real_t yw_in = 1.;
@@ -618,7 +618,7 @@ cs_ctwr_build_all(void)
 
       /* Rain mass fraction */
       cs_field_t *f_yp = cs_field_by_name("ym_l_r");
-      eqp = cs_field_get_equation_param_const(f_yp);
+      eqp = cs_field_get_equation_param(f_yp);
 
       /* Set value of ingoing rain */
       cs_real_t y_in = 1.;
@@ -626,7 +626,7 @@ cs_ctwr_build_all(void)
 
       /* Rain enthalpy */
       cs_field_t *f_yh_rain = cs_field_by_name("ymh_l_r"); /* Yp times Tp */
-      eqp = cs_field_get_equation_param_const(f_yh_rain);
+      eqp = cs_field_get_equation_param(f_yh_rain);
       cs_real_t t_in = ct->t_l_bc;
 
       // FIXME: There should be a y_p factor in there so that
@@ -645,8 +645,8 @@ cs_ctwr_build_all(void)
     /* Set number of cells */
     cs_zone_t *z = cs_volume_zone_by_id(0);
 
-    const cs_equation_param_t *eqp =
-        cs_field_get_equation_param_const(CS_F_(p));
+    cs_equation_param_t *eqp =
+        cs_field_get_equation_param(CS_F_(p));
 
     cs_equation_add_volume_mass_injection_by_dof_func(eqp,
                                                       z->name,
@@ -656,7 +656,7 @@ cs_ctwr_build_all(void)
 
     /* Rain mass fraction */
     cs_field_t *f_yp = cs_field_by_name("ym_l_r");
-    eqp = cs_field_get_equation_param_const(f_yp);
+    eqp = cs_field_get_equation_param(f_yp);
 
     /* Set value of ingoing rain */
     cs_real_t y_in = 1.;
@@ -664,7 +664,7 @@ cs_ctwr_build_all(void)
 
     /* Rain enthalpy (yp.hp) */
     cs_field_t *f_yphp = cs_field_by_name("ymh_l_r");
-    eqp = cs_field_get_equation_param_const(f_yphp);
+    eqp = cs_field_get_equation_param(f_yphp);
     cs_equation_add_volume_mass_injection_by_dof_func(eqp,
                                                       z->name,
                                                       cs_flag_primal_cell,

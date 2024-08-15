@@ -134,18 +134,8 @@ cs_ctwr_volume_mass_injection_dof_func(cs_lnum_t         n_elts,
   cs_ctwr_zone_t *ct
     = (cs_ctwr_zone_t*)input;
 
-  const cs_mesh_t *m = cs_glob_mesh;
-  const cs_lnum_2_t *i_face_cells
-    = (const cs_lnum_2_t *)(m->i_face_cells);
-  const cs_lnum_t n_i_faces = m->n_i_faces;
-
-  const cs_real_t *cell_f_vol = cs_glob_mesh_quantities->cell_f_vol;
-
   cs_fluid_properties_t *fp = cs_get_glob_fluid_properties();
   cs_air_fluid_props_t *air_prop = cs_glob_air_props;
-
-  /* Water / air molar mass ratio */
-  const cs_real_t molmassrat = air_prop->molmass_rat;
 
   cs_real_t *rho_m = (cs_real_t *)CS_F_(rho)->val; /* Mixture density */
   cs_real_t *rho_h = cs_field_by_name("rho_humid_air")->val; /* Humid air density */
@@ -170,19 +160,6 @@ cs_ctwr_volume_mass_injection_dof_func(cs_lnum_t         n_elts,
   cs_real_t *t_l_p = cs_field_by_name("temp_l_packing")->val;
   cs_real_t *y_l_p = CS_F_(y_l_pack)->val_pre;
 
-  /* Variable and properties for rain drops */
-  cs_field_t *cfld_yp = cs_field_by_name("ym_l_r");     /* Rain mass fraction */
-  cs_field_t *cfld_yh_rain = cs_field_by_name("ymh_l_r"); /* Yp times Tp */
-  /* Rain drift velocity */
-  cs_field_t *cfld_drift_vel = cs_field_by_name("drift_vel_ym_l_r");
-  /* Phases volume fractions */
-  cs_real_t *vol_f_r = cs_field_by_name("vol_f_r")->val; /* Vol frac. rain */
-
-  /* Rain inner mass flux */
-  const int kimasf = cs_field_key_id("inner_mass_flux_id");
-  cs_real_t *imasfl_r = cs_field_by_id
-                         (cs_field_get_key_int(cfld_yp, kimasf))->val;
-
   cs_real_t vertical[3], horizontal[3];
 
   const cs_ctwr_option_t *ct_opt = cs_glob_ctwr_option;
@@ -205,21 +182,10 @@ cs_ctwr_volume_mass_injection_dof_func(cs_lnum_t         n_elts,
   evap_rate_pack = cs_field_by_name("evaporation_rate_packing")->val;
 
   /* Air / fluid properties */
-  cs_real_t cp_d = fp->cp0;
-  cs_real_t rscp = fp->r_pg_cnst / cp_d;
-  cs_real_t cp_v = air_prop->cp_v;
-  cs_real_t cp_l = air_prop->cp_l;
-  cs_real_t hv0 = air_prop->hv0;
-  cs_real_t rho_l = air_prop->rho_l;
-  cs_real_t visc = fp->viscl0;
   cs_real_t p0 = fp->p0;
-  cs_real_t ps = cs_glob_atmo_constants->ps;
-  cs_real_t lambda_h = air_prop->lambda_h;
-  cs_real_t droplet_diam  = air_prop->droplet_diam;
 
   /* Fields necessary for humid atmosphere model */
   cs_field_t *meteo_pressure = cs_field_by_name_try("meteo_pressure");
-  cs_field_t *yw_liq = cs_field_by_name_try("liquid_water");
 
   if (evap_model != CS_CTWR_NONE) {
 
@@ -249,8 +215,6 @@ cs_ctwr_volume_mass_injection_dof_func(cs_lnum_t         n_elts,
       cs_real_t inj_vol = ct->vol_f;
 
       for (cs_lnum_t j = 0; j < ct->n_cells; j++) {
-        cs_lnum_t cell_id = ze_cell_ids[j];
-
         cs_real_t mass_source =  ct->q_l_bc * ct->xleak_fac / inj_vol;
 
         /* Global mass source term for continuity (pressure) equation
@@ -499,9 +463,7 @@ cs_ctwr_volume_mass_injection_yh_rain_dof_func(cs_lnum_t         n_elts,
 
         /* Convention: outlet is positive mass flux
          * Then upwind cell for liquid is i_face_cells[][0] */
-        int sign = 1;
         if (liq_mass_flow[face_id] < 0) {
-          sign = -1;
           cell_id_leak = i_face_cells[face_id][1];
           cell_id_rain = i_face_cells[face_id][0];
         }
