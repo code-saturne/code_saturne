@@ -215,7 +215,7 @@ _hide_field(cs_field_t *f)
   const int keylog = cs_field_key_id("log");
 
   cs_field_set_key_int(f, keyvis, 0);
-  cs_field_set_key_int(f, keylog, 1);
+  cs_field_set_key_int(f, keylog, 0);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -578,6 +578,7 @@ _create_variable_fields(void)
   /* Mesh velocity with ALE */
 
   if (cs_glob_ale != CS_ALE_NONE) {
+    cs_field_t *f;
 
     // field defined on vertices if CDO-Vb scheme is used
     if (cs_glob_ale == CS_ALE_CDO) {
@@ -586,24 +587,22 @@ _create_variable_fields(void)
                                               CS_MESH_LOCATION_VERTICES,
                                               3,
                                               1);
-      cs_field_pointer_map(CS_ENUMF_(mesh_u), cs_field_by_id(f_id));
+      f = cs_field_by_id(f_id);
       // TODO remove this once iuma is not referenced in Fortran anymore
-      cs_add_model_field_indexes(CS_F_(mesh_u)->id);
+      cs_add_variable_field_indexes(f->id);
     }
     else
-      cs_field_pointer_map(CS_ENUMF_(mesh_u),
-                           _add_variable_field("mesh_velocity",
-                                               "Mesh Velocity",
-                                               3));
+      f = _add_variable_field("mesh_velocity", "Mesh Velocity", 3);
 
-    cs_field_set_key_int(CS_F_(mesh_u), keycpl, 1);
+    cs_field_pointer_map(CS_ENUMF_(mesh_u), f);
 
-    cs_equation_param_t *eqp = cs_field_get_equation_param(CS_F_(mesh_u));
+    cs_field_set_key_int(f, keycpl, 1);
+
+    cs_equation_param_t *eqp = cs_field_get_equation_param(f);
     eqp->istat = 0;
     eqp->iconv = 0;
     eqp->idifft = 0;
     eqp->relaxv = 1;
-
   }
 }
 
