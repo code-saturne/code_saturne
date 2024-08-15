@@ -362,90 +362,19 @@ cs_ctwr_volume_mass_injection_rain_dof_func(cs_lnum_t         n_elts,
   const cs_mesh_t *m = cs_glob_mesh;
   const cs_lnum_2_t *i_face_cells
     = (const cs_lnum_2_t *)(m->i_face_cells);
-  const cs_lnum_t n_i_faces = m->n_i_faces;
 
   const cs_real_t *cell_f_vol = cs_glob_mesh_quantities->cell_f_vol;
-
-  cs_fluid_properties_t *fp = cs_get_glob_fluid_properties();
-  cs_air_fluid_props_t *air_prop = cs_glob_air_props;
-
-  /* Water / air molar mass ratio */
-  const cs_real_t molmassrat = air_prop->molmass_rat;
-
-  cs_real_t *rho_m = (cs_real_t *)CS_F_(rho)->val; /* Mixture density */
-  cs_real_t *rho_h = cs_field_by_name("rho_humid_air")->val; /* Humid air density */
-
-  cs_real_3_t *vel_h = (cs_real_3_t *)CS_F_(vel)->val_pre; /* Humid air velocity*/
-
-  cs_real_t *ym_w = (cs_real_t *)CS_F_(ym_w)->val; /* Water mass fraction
-                                                     in humid air */
-
-  cs_real_t *t_h = NULL;
-  if (cs_glob_physical_model_flag[CS_ATMOSPHERIC] == CS_ATMO_HUMID) {
-    t_h = cs_field_by_name("real_temperature")->val; /* Humid air temp */
-  }
-  else{
-    t_h = cs_field_by_name("temperature")->val; /* Humid air temp */
-  }
-  cs_real_t *x = cs_field_by_name("humidity")->val; /* Humidity in air (bulk) */
-  cs_real_t *x_s = cs_field_by_name("x_s")->val;
-  cs_real_t *vel_l = cs_field_by_name("vertvel_l")->val;  /* Liquid velocity
-                                                             in packing */
-
-  cs_real_t *t_l_p = cs_field_by_name("temp_l_packing")->val;
-  cs_real_t *h_l_p = cs_field_by_name("h_l_packing")->val;
-  cs_real_t *y_l_p = CS_F_(y_l_pack)->val_pre;
 
   /* Variable and properties for rain drops */
   cs_field_t *cfld_yp = cs_field_by_name("ym_l_r");     /* Rain mass fraction */
   cs_field_t *cfld_yh_rain = cs_field_by_name("ymh_l_r"); /* Yp times Tp */
-  /* Rain drift velocity */
-  cs_field_t *cfld_drift_vel = cs_field_by_name("drift_vel_ym_l_r");
-  /* Phases volume fractions */
-  cs_real_t *vol_f_r = cs_field_by_name("vol_f_r")->val; /* Vol frac. rain */
 
   /* Rain inner mass flux */
   const int kimasf = cs_field_key_id("inner_mass_flux_id");
   cs_real_t *imasfl_r = cs_field_by_id
                          (cs_field_get_key_int(cfld_yp, kimasf))->val;
 
-  cs_real_t vertical[3], horizontal[3];
-
   const cs_ctwr_option_t *ct_opt = cs_glob_ctwr_option;
-
-  int evap_model = ct_opt->evap_model;
-
-  /* Need to cook up the cell value of the liquid mass flux
-     In the old code, it seems to be taken as the value of the
-     face mass flux upstream of the cell */
-
-  cs_real_t v_air = 0.;
-
-  cs_real_t mass_flux_h = 0.; /* Highly suspicious for rain
-                                 zones - not recomputed */
-
-  /* Compute the bulk volume mass source terms */
-
-  /* Fields for source terms post-processing */
-  cs_real_t *evap_rate_pack = NULL;
-  evap_rate_pack = cs_field_by_name("evaporation_rate_packing")->val;
-
-  /* Air / fluid properties */
-  cs_real_t cp_d = fp->cp0;
-  cs_real_t rscp = fp->r_pg_cnst / cp_d;
-  cs_real_t cp_v = air_prop->cp_v;
-  cs_real_t cp_l = air_prop->cp_l;
-  cs_real_t hv0 = air_prop->hv0;
-  cs_real_t rho_l = air_prop->rho_l;
-  cs_real_t visc = fp->viscl0;
-  cs_real_t p0 = fp->p0;
-  cs_real_t ps = cs_glob_atmo_constants->ps;
-  cs_real_t lambda_h = air_prop->lambda_h;
-  cs_real_t droplet_diam  = air_prop->droplet_diam;
-
-  /* Fields necessary for humid atmosphere model */
-  cs_field_t *meteo_pressure = cs_field_by_name_try("meteo_pressure");
-  cs_field_t *yw_liq = cs_field_by_name_try("liquid_water");
 
   /* Generate rain from packing zones which are leaking
      ================================================== */
