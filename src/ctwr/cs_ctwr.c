@@ -613,6 +613,31 @@ cs_ctwr_build_all(void)
     cs_real_t yw_in = 1.;
     cs_equation_add_volume_mass_injection_by_value(eqp, z->name, &yw_in);
 
+    /* Injection zone */
+    if (ct->xleak_fac > 0.0 && ct->type == CS_CTWR_INJECTION) {
+
+      /* Rain mass fraction */
+      cs_field_t *f_yp = cs_field_by_name("ym_l_r");
+      eqp = cs_field_get_equation_param_const(f_yp);
+
+      /* Set value of ingoing rain */
+      cs_real_t y_in = 1.;
+      cs_equation_add_volume_mass_injection_by_value(eqp, z->name, &y_in);
+
+      /* Rain enthalpy */
+      cs_field_t *f_yh_rain = cs_field_by_name("ymh_l_r"); /* Yp times Tp */
+      eqp = cs_field_get_equation_param_const(f_yh_rain);
+      cs_real_t t_in = ct->t_l_bc;
+
+      // FIXME: There should be a y_p factor in there so that
+      // mass and enthalpy are compatible
+      /* The transported variable is y_rain * h_rain */
+      cs_real_t h_in = cs_liq_t_to_h(t_in);
+      cs_equation_add_volume_mass_injection_by_value(eqp, z->name, &h_in);
+
+    }
+
+
   }
   /* Define the zones with source terms */
   cs_ctwr_option_t *ct_opt = cs_get_glob_ctwr_option();

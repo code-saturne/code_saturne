@@ -168,7 +168,6 @@ cs_ctwr_volume_mass_injection_dof_func(cs_lnum_t         n_elts,
                                                              in packing */
 
   cs_real_t *t_l_p = cs_field_by_name("temp_l_packing")->val;
-  cs_real_t *h_l_p = cs_field_by_name("h_l_packing")->val;
   cs_real_t *y_l_p = CS_F_(y_l_pack)->val_pre;
 
   /* Variable and properties for rain drops */
@@ -1148,37 +1147,6 @@ cs_ctwr_source_term(int              f_id,
 
       } /* End of leaking zone test */
 
-      /* Testing if we are in an rain injection zone */
-      else if (ct->xleak_fac > 0.0 && ct->type == CS_CTWR_INJECTION) {
-        const cs_lnum_t *ze_cell_ids
-          = cs_volume_zone_by_name(ct->name)->elt_ids;
-        cs_real_t inj_vol = ct->vol_f;
-
-        for (cs_lnum_t j = 0; j < ct->n_cells; j++) {
-          cs_lnum_t cell_id = ze_cell_ids[j];
-
-          cs_real_t vol_mass_source = cell_f_vol[cell_id] / inj_vol
-                                      * ct->q_l_bc * ct->xleak_fac;
-          cs_real_t t_inj = ct->t_l_bc;
-
-          /* Injected liquid mass equation for rain zones
-             (solve in drift model form) */
-          if (f_id == cfld_yp->id) {
-            /* Because we deal with an increment */
-            exp_st[cell_id] += vol_mass_source * (1. - f_var[cell_id]);
-            imp_st[cell_id] += vol_mass_source;
-          }
-          /* Rain enthalpy */
-          else if (f_id == cfld_yh_rain->id) {
-            // FIXME: There should be a y_p factor in there so that
-            // mass and enthalpy are compatible
-            /* The transported variable is y_rain * h_rain */
-            cs_real_t h_inj = cs_liq_t_to_h(t_inj);
-            exp_st[cell_id] += vol_mass_source * (h_inj - f_var[cell_id]);
-            imp_st[cell_id] += vol_mass_source;
-          }
-        }
-      }
     } /* End of loop through the packing zones */
 
     /* Rain - packing interaction
