@@ -1056,6 +1056,10 @@ cs_sles_hypre_solve(void                *context,
   HYPRE_IJVectorGetObject(sd->coeffs->hx, (void **)&p_x);
   HYPRE_IJVectorGetObject(sd->coeffs->hy, (void **)&p_rhs);
 
+  /* Resolution */
+
+  cs_fp_exception_disable_trap();
+
   switch(c->solver_type) {
 
   case CS_SLES_HYPRE_BOOMERAMG:
@@ -1205,6 +1209,8 @@ cs_sles_hypre_solve(void                *context,
               _("HYPRE: solver type (%s) not handled."),
               _cs_hypre_type_name(c->solver_type));
   }
+
+  cs_fp_exception_restore_trap();
 
   if (_t == NULL) {
     HYPRE_IJVectorGetValues(sd->coeffs->hx, n_rows, NULL, vx);
