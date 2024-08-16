@@ -2903,6 +2903,8 @@ cs_sles_mumps_setup(void               *context,
   /* 1. Initialize the MUMPS structure */
   /* --------------------------------- */
 
+  cs_fp_exception_disable_trap();
+
   if (_is_dmumps(c)) {
 
     /* Sanity checks: DMUMPS_COMPLEX = DMUMPS_REAL = double
@@ -3192,6 +3194,8 @@ cs_sles_mumps_setup(void               *context,
     } while(_try_again_smumps(c));
 
   } /* single-precision case */
+
+  cs_fp_exception_restore_trap();
 
   /* Check the feedback given by MUMPS */
 
