@@ -1992,14 +1992,15 @@ _additional_fields_stage_2(void)
       continue;
     int f_s_id = cs_field_get_key_int(f, kivisl);
     if (f_s_id >= 0) {
-      t_ext = cs_field_get_key_int(cs_field_by_id(f_s_id), key_t_ext_id);
+      cs_field_t *f_s = cs_field_by_id(f_s_id);
+      t_ext = cs_field_get_key_int(f_s, key_t_ext_id);
       if (t_ext == -1) {
         if (cs_glob_time_scheme->time_order == 1)
           t_ext = 0;
         else if (cs_glob_time_scheme->time_order == 2)
           t_ext = 0;
       }
-      cs_field_set_key_int(CS_F_(cp), key_t_ext_id, t_ext);
+      cs_field_set_key_int(f_s, key_t_ext_id, t_ext);
     }
   }
 

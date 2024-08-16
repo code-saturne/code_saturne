@@ -997,14 +997,15 @@ cs_parameters_check(void)
       const int iscavr = cs_field_get_key_int(f, kscavr);
       int f_diff_id = cs_field_get_key_int(f, key_diffusivity_id);
       if (f_diff_id >= 0 && iscavr < 0) {
+        const cs_field_t *f_diff = cs_field_by_id(f_diff_id);
         int scalar_diff_t_ext
-          = cs_field_get_key_int(cs_field_by_id(f_diff_id), key_t_ext);
+          = cs_field_get_key_int(f_diff, key_t_ext);
         if (scalar_diff_t_ext != mu_t_ext)
           cs_log_warning
             (_("Non standard choice of time-scheme for \"%s\":\n"
                " diffusivity time_extrapolated is %d "
                "while viscosity one is %d.\n"),
-             f->name, scalar_diff_t_ext, mu_t_ext);
+             f_diff->name, scalar_diff_t_ext, mu_t_ext);
       }
     }
   }
