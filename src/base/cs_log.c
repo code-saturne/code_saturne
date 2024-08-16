@@ -705,20 +705,20 @@ cs_log_warning(const char *format,
   if (cs_glob_rank_id > 0)
     return 0;
 
-  va_start(arg_ptr, format);
-
   /* Print to warning log */
+  va_start(arg_ptr, format);
   cs_log_separator(CS_LOG_WARNINGS);
   retval = cs_log_vprintf(CS_LOG_WARNINGS, format, arg_ptr);
   cs_log_separator(CS_LOG_WARNINGS);
   cs_log_printf(CS_LOG_WARNINGS, "\n");
+  va_end(arg_ptr);
 
   /* Print copy to main log */
   cs_log_printf(CS_LOG_DEFAULT, _("\n"
                                   "Warning:\n"
                                   "--------\n\n"));
+  va_start(arg_ptr, format);
   cs_log_vprintf(CS_LOG_DEFAULT, format, arg_ptr);
-
   va_end(arg_ptr);
 
   return retval;
