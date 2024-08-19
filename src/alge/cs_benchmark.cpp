@@ -453,7 +453,7 @@ _sub_matrix_vector_test(int                  n_time_runs,
   wt1 = std::chrono::high_resolution_clock::now();
   wt_r0_m =  std::chrono::duration_cast
             <std::chrono::microseconds>(wt1 - wt0);
-  double wt_r0 = wt_r0_m.count() * 1.e-6 / n_time_runs;
+  double wt_r0 = wt_r0_m.count() * 1.e-6;
 
   cs_log_printf(CS_LOG_PERFORMANCE,
                 "\n"
@@ -480,7 +480,7 @@ _sub_matrix_vector_test(int                  n_time_runs,
   wt1 = std::chrono::high_resolution_clock::now();
   wt_r0_m =  std::chrono::duration_cast
             <std::chrono::microseconds>(wt1 - wt0);
-  wt_r0 = wt_r0_m.count() * 1.e-6 / n_time_runs;
+  wt_r0 = wt_r0_m.count() * 1.e-6;
 
   cs_log_printf(CS_LOG_PERFORMANCE,
                 "\n"
@@ -554,7 +554,7 @@ _sub_matrix_vector_test(int                  n_time_runs,
   wt1 = std::chrono::high_resolution_clock::now();
   wt_r0_m =  std::chrono::duration_cast
             <std::chrono::microseconds>(wt1 - wt0);
-  wt_r0 = wt_r0_m.count() * 1.e-6 / n_time_runs;
+  wt_r0 = wt_r0_m.count() * 1.e-6;
 
   cs_log_printf
     (CS_LOG_PERFORMANCE,
@@ -582,7 +582,7 @@ _sub_matrix_vector_test(int                  n_time_runs,
   wt1 = std::chrono::high_resolution_clock::now();
   wt_r0_m =  std::chrono::duration_cast
             <std::chrono::microseconds>(wt1 - wt0);
-  wt_r0 = wt_r0_m.count() * 1.e-6 / n_time_runs;
+  wt_r0 = wt_r0_m.count() * 1.e-6;
 
   cs_log_printf(CS_LOG_PERFORMANCE,
                 "\n"
