@@ -2400,7 +2400,7 @@ _solve_epsilon(int              phase_id,
       && (cs_glob_lagr_source_terms->ltsdyn == 1)) {
 
     const cs_real_6_t *lagr_st_rij
-      = (const cs_real_6_t *)cs_field_by_name("st_lagr_rij")->val;
+      = (const cs_real_6_t *)cs_field_by_name("lagr_st_rij")->val;
 
 #   pragma omp parallel for if(n_cells_ext > CS_THR_MIN)
     for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
@@ -3097,7 +3097,7 @@ cs_turbulence_rij(int phase_id)
   if (   cs_glob_lagr_time_scheme->iilagr == CS_LAGR_TWOWAY_COUPLING
       && cs_glob_lagr_source_terms->ltsdyn == 1) {
     const cs_real_6_t *lagr_st_rij
-      = (const cs_real_6_t *)cs_field_by_name_try("st_lagr_rij")->val;
+      = (const cs_real_6_t *)cs_field_by_name_try("lagr_st_rij")->val;
 
     cs_real_t *lag_st_i = cs_field_by_name("lagr_st_imp_velocity")->val;
 
