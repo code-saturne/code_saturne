@@ -604,7 +604,6 @@ _beta_limiter_num(cs_field_t                 *f,
  *   grad           --> gradient of a variable
  *----------------------------------------------------------------------------*/
 
-template <cs_lnum_t stride>
 static void
 _sync_gradient_halo(const cs_mesh_t         *m,
                     [[maybe_unused]] bool    on_device,
@@ -617,7 +616,7 @@ _sync_gradient_halo(const cs_mesh_t         *m,
                    (cs_real_t *)grad);
   else
 #endif
-    cs_halo_sync_var(m->halo, halo_type, (cs_real_t *)grad);
+    cs_halo_sync_var_strided(m->halo, halo_type, (cs_real_t *)grad, 3);
 
   if (m->have_rotation_perio) {
 #if defined(HAVE_ACCEL)
@@ -12802,10 +12801,10 @@ cs_slope_test_gradient(int                         f_id,
   /* Synchronization for parallelism or periodicity */
 
   if (m->halo != NULL)
-    _sync_gradient_halo<1>(m,
-                           use_gpu,
-                           halo_type,
-                           grdpa);
+    _sync_gradient_halo(m,
+                        use_gpu,
+                        halo_type,
+                        grdpa);
 
   if (cs_glob_timer_kernels_flag > 0) {
     std::chrono::high_resolution_clock::time_point
