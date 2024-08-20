@@ -2424,10 +2424,10 @@ _solve_epsilon(int              phase_id,
 
   if (eqp->n_volume_mass_injections > 0) {
 
-    int *itypsm = NULL;
-    cs_lnum_t ncesmp = 0;
-    const cs_lnum_t *icetsm = NULL;
-    cs_real_t *smacel = NULL, *gamma = NULL;
+    int *mst_type = NULL;
+    cs_lnum_t n_elts = 0;
+    const cs_lnum_t *elt_ids = NULL;
+    cs_real_t *mst_val = NULL, *mst_val_p = NULL;
 
     /* If we extrapolate the source terms, we put Gamma Pinj in c_st_prv;
         Otherwise we put it directly in rhs */
@@ -2436,20 +2436,20 @@ _solve_epsilon(int              phase_id,
     /* We increment rhs with -Gamma.var_prev. and fimp with Gamma */
 
     cs_volume_mass_injection_get_arrays(f_eps,
-                                        &ncesmp,
-                                        &icetsm,
-                                        &itypsm,
-                                        &smacel,
-                                        &gamma);
+                                        &n_elts,
+                                        &elt_ids,
+                                        &mst_type,
+                                        &mst_val,
+                                        &mst_val_p);
     cs_mass_source_terms(1, /* iterns*/
                          1, /* dim */
-                         ncesmp,
-                         icetsm,
-                         itypsm,
+                         n_elts,
+                         elt_ids,
+                         mst_type,
                          cell_f_vol,
                          cvara_ep,
-                         smacel,
-                         gamma,
+                         mst_val,
+                         mst_val_p,
                          rhs,
                          fimp,
                          gapinj);
@@ -3095,17 +3095,17 @@ cs_turbulence_rij(int phase_id)
    *------------------ */
 
   if (eqp->n_volume_mass_injections > 0) {
-    int *itypsm = NULL;
-    cs_lnum_t ncesmp = 0;
-    const cs_lnum_t *icetsm = NULL;
-    cs_real_t *smacel = NULL, *gamma = NULL;
+    int *mst_type = NULL;
+    cs_lnum_t n_elts = 0;
+    const cs_lnum_t *elt_ids = NULL;
+    cs_real_t *mst_val = NULL, *mst_val_p = NULL;
 
     cs_volume_mass_injection_get_arrays(f_rij,
-                                        &ncesmp,
-                                        &icetsm,
-                                        &itypsm,
-                                        &smacel,
-                                        &gamma);
+                                        &n_elts,
+                                        &elt_ids,
+                                        &mst_type,
+                                        &mst_val,
+                                        &mst_val_p);
 
     /* If we extrapolate the source terms, we put Gamma Pinj in c_st_prv;
         Otherwise we put it directly in rhs */
@@ -3115,13 +3115,13 @@ cs_turbulence_rij(int phase_id)
 
     cs_mass_source_terms(1, /* iterns*/
                          6, /* dim */
-                         ncesmp,
-                         icetsm,
-                         itypsm,
+                         n_elts,
+                         elt_ids,
+                         mst_type,
                          cell_f_vol,
                          (cs_real_t*)cvara_rij,
-                         smacel,
-                         gamma,
+                         mst_val,
+                         mst_val_p,
                          (cs_real_t*)rhs,
                          (cs_real_t*)fimp,
                          (cs_real_t*)gatinj);

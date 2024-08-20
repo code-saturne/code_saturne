@@ -248,22 +248,22 @@ _cs_mass_flux_prediction(const cs_mesh_t       *m,
 
   /* Mass source terms */
 
-  cs_lnum_t  ncesmp;
-  const cs_lnum_t  *icetsm;
-  cs_real_t *smacel_p;
+  cs_lnum_t  n_elts;
+  const cs_lnum_t  *elt_ids;
+  cs_real_t *mst_val_p;
 
   cs_volume_mass_injection_get_arrays(CS_F_(p),
-                                      &ncesmp,
-                                      &icetsm,
+                                      &n_elts,
+                                      &elt_ids,
                                       nullptr,
-                                      &smacel_p,
+                                      &mst_val_p,
                                       nullptr);
 
-  if (ncesmp > 0) {
-    ctx.parallel_for(ncesmp, [=] CS_F_HOST_DEVICE (cs_lnum_t cidx) {
-      const cs_lnum_t cell_id = icetsm[cidx];
-      /* FIXME It should be scmacel at time n-1 */
-      divu[cell_id] -= volume[cell_id] * smacel_p[cidx];
+  if (n_elts > 0) {
+    ctx.parallel_for(n_elts, [=] CS_F_HOST_DEVICE (cs_lnum_t cidx) {
+      const cs_lnum_t cell_id = elt_ids[cidx];
+      /* FIXME It should be mst_val at time n-1 */
+      divu[cell_id] -= volume[cell_id] * mst_val_p[cidx];
     });
   }
 
@@ -2972,18 +2972,18 @@ _velocity_prediction(const cs_mesh_t             *m,
 
   if (eqp_u->n_volume_mass_injections > 0) {
 
-    cs_lnum_t ncetsm = 0;
-    int *itypsm = nullptr;
-    const cs_lnum_t *icetsm = nullptr;
-    cs_real_t *smacel_p = nullptr;
-    cs_real_t *smacel_vel = nullptr;
+    cs_lnum_t n_elts = 0;
+    int *mst_type = nullptr;
+    const cs_lnum_t *elt_ids = nullptr;
+    cs_real_t *mst_val_p = nullptr;
+    cs_real_t *mst_val_vel = nullptr;
 
     cs_volume_mass_injection_get_arrays(CS_F_(vel),
-                                        &ncetsm,
-                                        &icetsm,
-                                        &itypsm,
-                                        &smacel_vel,
-                                        &smacel_p);
+                                        &n_elts,
+                                        &elt_ids,
+                                        &mst_type,
+                                        &mst_val_vel,
+                                        &mst_val_p);
 
     cs_real_3_t *gavinj = nullptr;
     if (iterns == 1) {
@@ -3002,13 +3002,13 @@ _velocity_prediction(const cs_mesh_t             *m,
 
     cs_mass_source_terms(iterns,
                          3,
-                         ncetsm,
-                         icetsm,
-                         itypsm,
+                         n_elts,
+                         elt_ids,
+                         mst_type,
                          cell_f_vol,
                          (cs_real_t*)vela,
-                         smacel_vel,
-                         smacel_p,
+                         mst_val_vel,
+                         mst_val_p,
                          (cs_real_t*)trav_p,
                          (cs_real_t*)fimp,
                          (cs_real_t*)gavinj);
@@ -4654,17 +4654,17 @@ cs_solve_navier_stokes(const int        iterns,
       cs_real_t *c_estim = iescor->val;
       cs_divergence(m, 1, esflum, esflub, c_estim);
 
-      cs_lnum_t ncetsm = 0;
-      const cs_lnum_t *icetsm = nullptr;
-      cs_real_t *smacel = nullptr;
-      cs_volume_mass_injection_get_arrays(CS_F_(p), &ncetsm, &icetsm, nullptr,
-                                          &smacel, nullptr);
+      cs_lnum_t n_elts = 0;
+      const cs_lnum_t *elt_ids = nullptr;
+      cs_real_t *mst_val = nullptr;
+      cs_volume_mass_injection_get_arrays(CS_F_(p), &n_elts, &elt_ids, nullptr,
+                                          &mst_val, nullptr);
 
-      if (ncetsm > 0) {
+      if (n_elts > 0) {
 
-        ctx.parallel_for(ncetsm, [=] CS_F_HOST_DEVICE (cs_lnum_t c_idx) {
-          cs_lnum_t c_id = icetsm[c_idx];
-          c_estim[c_id] -= cell_f_vol[c_id] * smacel[c_idx];
+        ctx.parallel_for(n_elts, [=] CS_F_HOST_DEVICE (cs_lnum_t c_idx) {
+          cs_lnum_t c_id = elt_ids[c_idx];
+          c_estim[c_id] -= cell_f_vol[c_id] * mst_val[c_idx];
         });
       }
 

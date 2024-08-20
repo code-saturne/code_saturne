@@ -671,8 +671,6 @@ cs_ctwr_build_all(void)
                                                       cs_ctwr_volume_mass_injection_yh_rain_dof_func,
                                                       NULL);
 
-
-
   }
 
   /* Post-processing: multiply enthalpy by fraction */

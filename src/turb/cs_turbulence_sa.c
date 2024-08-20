@@ -554,26 +554,26 @@ cs_turbulence_sa(void)
        (if we extrapolate source terms, Gamma.var_prev is stored in prev. TS) */
     cs_real_t *gapinj = (istprv >= 0) ? c_st_nusa_p : rhs_sa;
 
-    int *itypsm = NULL;
-    cs_lnum_t ncesmp = 0;
-    const cs_lnum_t *icetsm = NULL;
-    cs_real_t *smacel = NULL, *gamma = NULL;
+    int *mst_type = NULL;
+    cs_lnum_t n_elts = 0;
+    const cs_lnum_t *elt_ids = NULL;
+    cs_real_t *mst_val = NULL, *mst_val_p = NULL;
 
     cs_volume_mass_injection_get_arrays(CS_F_(nusa),
-                                        &ncesmp,
-                                        &icetsm,
-                                        &itypsm,
-                                        &smacel,
-                                        &gamma);
+                                        &n_elts,
+                                        &elt_ids,
+                                        &mst_type,
+                                        &mst_val,
+                                        &mst_val_p);
     cs_mass_source_terms(1,
                          1,
-                         ncesmp,
-                         icetsm,
-                         itypsm,
+                         n_elts,
+                         elt_ids,
+                         mst_type,
                          cell_f_vol,
                          cvara_nusa,
-                         smacel,
-                         gamma,
+                         mst_val,
+                         mst_val_p,
                          rhs_sa,
                          imp_sa,
                          gapinj);

@@ -89,13 +89,13 @@ BEGIN_C_DECLS
  *
  * \param[in]     iterns        iteration number on Navier-Stoke
  * \param[in]     dim           associated field dimension
- * \param[in]     ncesmp        number of cells with mass source term
- * \param[in]     icetsm        source mass cells pointer (1-based numbering)
- * \param[in]     itpsmp        mass source type for the working variable
+ * \param[in]     n_elts        number of cells with mass source term
+ * \param[in]     elt_ids       source mass cells pointer (1-based numbering)
+ * \param[in]     mst_type      mass source type for the working variable
  * \param[in]     volume        cells volume
  * \param[in]     pvara         variable value at time step beginning
- * \param[in]     smcelp        value of the variable associated with mass source
- * \param[in]     gamma         flow mass value
+ * \param[in]     mst_val       value of the variable associated with mass source
+ * \param[in]     gamma         volume mass injection value
  * \param[in,out] st_exp        explicit source term part linear in the variable
  * \param[in,out] st_imp        associated value with \c tsexp
  *                              to be stored in the matrix
@@ -107,21 +107,21 @@ BEGIN_C_DECLS
 void
 cs_mass_source_terms(int                   iterns,
                      int                   dim,
-                     cs_lnum_t             ncesmp,
-                     const cs_lnum_t       icetsm[],
-                     int                   itpsmp[],
+                     cs_lnum_t             n_elts,
+                     const cs_lnum_t       elt_ids[],
+                     int                   mst_type[],
                      const cs_real_t       volume[],
                      const cs_real_t       pvara[],
-                     const cs_real_t       smcelp[],
+                     const cs_real_t       mst_val[],
                      const cs_real_t       gamma[],
                      cs_real_t             st_exp[],
                      cs_real_t             st_imp[],
                      cs_real_t             gapinj[])
 {
-  if (gamma == NULL || itpsmp == NULL)
+  if (gamma == NULL || mst_type == NULL)
     return;
 
-  /* Remark for tests on gamma[i] > O && itpsmp[i] == 1:
+  /* Remark for tests on gamma[i] > O && mst_type[i] == 1:
      *
      * If we remove matter or enter with the cell value
      * then the equation on the variable has not been modified.
@@ -139,44 +139,44 @@ cs_mass_source_terms(int                   iterns,
 
   if (iterns == 1) {
 
-    if (smcelp != NULL && gapinj != NULL) {
+    if (mst_val != NULL && gapinj != NULL) {
       if (dim == 1) {
-        for (cs_lnum_t i = 0; i < ncesmp; i++) {
-          cs_lnum_t c_id = icetsm[i];
-          if (gamma[i] > 0. && itpsmp[i] == 1) {
+        for (cs_lnum_t i = 0; i < n_elts; i++) {
+          cs_lnum_t c_id = elt_ids[i];
+          if (gamma[i] > 0. && mst_type[i] == 1) {
             st_exp[c_id] -= volume[c_id]*gamma[i] * pvara[c_id];
-            gapinj[c_id] += volume[c_id]*gamma[i] * smcelp[i];
+            gapinj[c_id] += volume[c_id]*gamma[i] * mst_val[i];
           }
         }
       }
       else {
         cs_lnum_t _dim = dim;
-        for (cs_lnum_t i = 0; i < ncesmp; i++) {
-          cs_lnum_t c_id = icetsm[i];
-          if (gamma[i] > 0. && itpsmp[i] == 1) {
+        for (cs_lnum_t i = 0; i < n_elts; i++) {
+          cs_lnum_t c_id = elt_ids[i];
+          if (gamma[i] > 0. && mst_type[i] == 1) {
             for (cs_lnum_t j = 0; j < _dim; j++) {
               cs_lnum_t k = c_id*_dim + j;
               st_exp[k] -= volume[c_id]*gamma[i] * pvara[k];
-              gapinj[k] += volume[c_id]*gamma[i] * smcelp[i*_dim + j];
+              gapinj[k] += volume[c_id]*gamma[i] * mst_val[i*_dim + j];
             }
           }
         }
       }
     }
 
-    else { /* smcelp == NULL && gapinj == NULL */
+    else { /* mst_val == NULL && gapinj == NULL */
       if (dim == 1) {
-        for (cs_lnum_t i = 0; i < ncesmp; i++) {
-          cs_lnum_t c_id = icetsm[i];
-          if (gamma[i] > 0. && itpsmp[i] == 1)
+        for (cs_lnum_t i = 0; i < n_elts; i++) {
+          cs_lnum_t c_id = elt_ids[i];
+          if (gamma[i] > 0. && mst_type[i] == 1)
             st_exp[c_id] -= volume[c_id]*gamma[i] * pvara[c_id];
         }
       }
       else {
         cs_lnum_t _dim = dim;
-        for (cs_lnum_t i = 0; i < ncesmp; i++) {
-          cs_lnum_t c_id = icetsm[i];
-          if (gamma[i] > 0. && itpsmp[i] == 1) {
+        for (cs_lnum_t i = 0; i < n_elts; i++) {
+          cs_lnum_t c_id = elt_ids[i];
+          if (gamma[i] > 0. && mst_type[i] == 1) {
             for (cs_lnum_t j = 0; j < _dim; j++) {
               cs_lnum_t k = c_id*_dim + j;
               st_exp[k] -= volume[c_id]*gamma[i] * pvara[k];
@@ -191,18 +191,18 @@ cs_mass_source_terms(int                   iterns,
   /* On the diagonal */
 
   if (dim == 1) {
-    for (cs_lnum_t i = 0; i < ncesmp; i++) {
-      cs_lnum_t c_id = icetsm[i];
-      if (gamma[i] > 0. && itpsmp[i] == 1) {
+    for (cs_lnum_t i = 0; i < n_elts; i++) {
+      cs_lnum_t c_id = elt_ids[i];
+      if (gamma[i] > 0. && mst_type[i] == 1) {
         st_imp[c_id] += volume[c_id]*gamma[i];
       }
     }
   }
   else {
     cs_lnum_t _dim = dim, _dim2 = dim*dim;
-    for (cs_lnum_t i = 0; i < ncesmp; i++) {
-      cs_lnum_t c_id = icetsm[i];
-      if (gamma[i] > 0. && itpsmp[i] == 1) {
+    for (cs_lnum_t i = 0; i < n_elts; i++) {
+      cs_lnum_t c_id = elt_ids[i];
+      if (gamma[i] > 0. && mst_type[i] == 1) {
         for (cs_lnum_t j = 0; j < _dim; j++) {
           cs_lnum_t k = c_id*_dim2 + j*_dim + j;
           st_imp[k] += volume[c_id]*gamma[i];

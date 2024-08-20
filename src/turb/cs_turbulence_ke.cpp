@@ -1612,10 +1612,10 @@ cs_turbulence_ke(int              phase_id,
   if (   eqp_k->n_volume_mass_injections > 0
       || eqp_eps->n_volume_mass_injections > 0) {
 
-    int *itypsm = NULL;
-    cs_lnum_t ncesmp = 0;
-    const cs_lnum_t *icetsm = NULL;
-    cs_real_t *smacel = NULL, *gamma = NULL;
+    int *mst_type = NULL;
+    cs_lnum_t n_elts = 0;
+    const cs_lnum_t *elt_ids = NULL;
+    cs_real_t *mst_val = NULL, *mst_val_p = NULL;
     cs_real_t *gapinj_k = NULL, *gapinj_eps = NULL;
 
     /* If we extrapolate the source terms we put Gamma Pinj in c_st */
@@ -1634,41 +1634,41 @@ cs_turbulence_ke(int              phase_id,
     /* For k */
 
     cs_volume_mass_injection_get_arrays(f_k,
-                                        &ncesmp,
-                                        &icetsm,
-                                        &itypsm,
-                                        &smacel,
-                                        &gamma);
+                                        &n_elts,
+                                        &elt_ids,
+                                        &mst_type,
+                                        &mst_val,
+                                        &mst_val_p);
     cs_mass_source_terms(1,
                          1,
-                         ncesmp,
-                         icetsm,
-                         itypsm,
+                         n_elts,
+                         elt_ids,
+                         mst_type,
                          cell_f_vol,
                          cvara_k,
-                         smacel,
-                         gamma,
+                         mst_val,
+                         mst_val_p,
                          smbrk,
                          tinstk,
                          gapinj_k);
 
     /* For eps */
     cs_volume_mass_injection_get_arrays(f_eps,
-                                        &ncesmp,
-                                        &icetsm,
-                                        &itypsm,
-                                        &smacel,
-                                        &gamma);
+                                        &n_elts,
+                                        &elt_ids,
+                                        &mst_type,
+                                        &mst_val,
+                                        &mst_val_p);
 
     cs_mass_source_terms(1,
                          1,
-                         ncesmp,
-                         icetsm,
-                         itypsm,
+                         n_elts,
+                         elt_ids,
+                         mst_type,
                          cell_f_vol,
                          cvara_ep,
-                         smacel,
-                         gamma,
+                         mst_val,
+                         mst_val_p,
                          smbre,
                          tinste,
                          gapinj_eps);

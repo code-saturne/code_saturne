@@ -838,7 +838,6 @@ _diffusion_terms_vector(const cs_field_t            *f,
  *        terms and/or drift) for a scalar quantity over a time step.
  *
  * \param[in]     f          pointer to field structure
- * \param[in]     ncesmp     number of cells with mass source term
  * \param[in]     iterns     Navier-Stokes iteration number
  * \param[in]     itspdv     indicator to compute production/dissipation
  *                           terms for a variance:
@@ -1370,30 +1369,30 @@ cs_solve_equation_scalar(cs_field_t        *f,
      TODO this section could be replaced by lower-level code from
      cs_volume_mass_injection.c for the specific field being handled
      (i.e. using the direct xdef-based evaluation).
-     This would allow removing the itypsm and smacel arrays and
+     This would allow removing the mst_type and mst_val arrays and
      associated dimensions. */
 
   if (eqp->n_volume_mass_injections > 0) {
-    cs_lnum_t ncetsm = 0;
-    const cs_lnum_t *icetsm = NULL;
-    int *itypsm_sc = NULL;
-    cs_real_t *smacel_sc = NULL, *smacel_ipr = NULL;
+    cs_lnum_t n_elts = 0;
+    const cs_lnum_t *elt_ids = NULL;
+    int *mst_type_sc = NULL;
+    cs_real_t *mst_val_sc = NULL, *mst_val_p = NULL;
 
     cs_volume_mass_injection_get_arrays(f,
-                                        &ncetsm,
-                                        &icetsm,
-                                        &itypsm_sc,
-                                        &smacel_sc,
-                                        &smacel_ipr);
+                                        &n_elts,
+                                        &elt_ids,
+                                        &mst_type_sc,
+                                        &mst_val_sc,
+                                        &mst_val_p);
 
     cs_real_t *srcmas;
-    BFT_MALLOC(srcmas, ncetsm, cs_real_t);
+    BFT_MALLOC(srcmas, n_elts, cs_real_t);
 
     /* When treating the Temperature, the equation is multiplied by Cp */
-    for (cs_lnum_t c_idx = 0; c_idx < ncetsm; c_idx++) {
-      if (smacel_ipr[c_idx] > 0.0) {
-        const cs_lnum_t id = icetsm[c_idx];
-        srcmas[c_idx] = smacel_ipr[c_idx] * xcpp[id];
+    for (cs_lnum_t c_idx = 0; c_idx < n_elts; c_idx++) {
+      if (mst_val_p[c_idx] > 0.0) {
+        const cs_lnum_t id = elt_ids[c_idx];
+        srcmas[c_idx] = mst_val_p[c_idx] * xcpp[id];
       }
       else {
        srcmas[c_idx] = 0.;
@@ -1407,12 +1406,12 @@ cs_solve_equation_scalar(cs_field_t        *f,
     /* Increment rhs by -Gamma.cvara_var and fimp by Gamma */
     cs_mass_source_terms(1,
                          1,
-                         ncetsm,
-                         icetsm,
-                         itypsm_sc,
+                         n_elts,
+                         elt_ids,
+                         mst_type_sc,
                          cell_f_vol,
                          cvara_var,
-                         smacel_sc,
+                         mst_val_sc,
                          srcmas,
                          rhs,
                          fimp,
@@ -2008,32 +2007,32 @@ cs_solve_equation_vector(cs_field_t       *f,
   /* Mass source term */
 
   if (eqp->n_volume_mass_injections > 0) {
-    cs_lnum_t ncetsm = 0;
-    const cs_lnum_t *icetsm = NULL;
-    int *itypsm_v = NULL;
-    cs_real_t *smacel_v = NULL, *smacel_ipr = NULL;
+    cs_lnum_t n_elts = 0;
+    const cs_lnum_t *elt_ids = NULL;
+    int *mst_type_v = NULL;
+    cs_real_t *mst_val_v = NULL, *mst_val_p = NULL;
 
     cs_volume_mass_injection_get_arrays(f,
-                                        &ncetsm,
-                                        &icetsm,
-                                        &itypsm_v,
-                                        &smacel_v,
-                                        &smacel_ipr);
+                                        &n_elts,
+                                        &elt_ids,
+                                        &mst_type_v,
+                                        &mst_val_v,
+                                        &mst_val_p);
 
     /* If we extrapolate source terms we put -Gamma Pinj in cproa_vect_st;
        if we do not extrapolate we put directly in SMBRV */
     cs_real_3_t *gavinj = (st_prv_id > -1) ? cproa_vect_st : rhs;
 
-    /* We increment SMBRV by -Gamma RTPA and FIMP by Gamma */
+    /* We increment rhs by -gamma vara and fimp by gamma */
     cs_mass_source_terms(1,
                          3,
-                         ncetsm,
-                         icetsm,
-                         itypsm_v,
+                         n_elts,
+                         elt_ids,
+                         mst_type_v,
                          cell_f_vol,
                          (const cs_real_t *)cvara_var,
-                         smacel_v,
-                         smacel_ipr,
+                         mst_val_v,
+                         mst_val_p,
                          (cs_real_t *)rhs,
                          (cs_real_t *)fimp,
                          (cs_real_t *)gavinj);

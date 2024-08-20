@@ -620,10 +620,10 @@ cs_volume_mass_injection_eval(void)
 
   /* Initialize arrays */
 
-  int *itypsm = NULL;
-  cs_lnum_t ncesmp = 0;
-  const cs_lnum_t *icetsm = NULL;
-  cs_real_t *smacel= NULL;
+  int *mst_type = NULL;
+  cs_lnum_t n_elts = 0;
+  const cs_lnum_t *elt_ids = NULL;
+  cs_real_t *mst_val= NULL;
 
   /* Compute shift for zones in case they do not appear in order */
 
@@ -658,15 +658,15 @@ cs_volume_mass_injection_eval(void)
       continue;
 
     cs_volume_mass_injection_get_arrays(f,
-                                        &ncesmp,
-                                        &icetsm,
-                                        &itypsm,
-                                        &smacel,
+                                        &n_elts,
+                                        &elt_ids,
+                                        &mst_type,
+                                        &mst_val,
                                         NULL);
 
     const cs_lnum_t dim = f->dim;
 
-    cs_array_real_fill_zero(ncesmp*dim, smacel);
+    cs_array_real_fill_zero(n_elts*dim, mst_val);
 
     /* xdef-based method */
 
@@ -692,16 +692,16 @@ cs_volume_mass_injection_eval(void)
       if (f->dim == 1) {
         for (cs_lnum_t i = 0; i < z->n_elts; i++) {
           cs_lnum_t j = c_shift + i;
-          itypsm[j] = 1;
-          smacel[j] += st_loc[i];
+          mst_type[j] = 1;
+          mst_val[j] += st_loc[i];
         }
       }
       else {
         for (cs_lnum_t i = 0; i < z->n_elts; i++) {
           cs_lnum_t j = c_shift + i;
-          itypsm[j] = 1;
+          mst_type[j] = 1;
           for (cs_lnum_t k = 0; k < dim; k++)
-            smacel[j*dim + k] += st_loc[i*dim + k];
+            mst_val[j*dim + k] += st_loc[i*dim + k];
         }
       }
 
@@ -719,45 +719,44 @@ cs_volume_mass_injection_eval(void)
  * \brief Return pointers to the mass source term arrays.
  *
  * \param[in]   f         pointer to associated field
- * \param[out]  ncesmp    number of cells with mass source terms
- * \param[out]  icetsm    pointet to source mass cells list (1-based numbering)
- * \param[out]  itpsmp    mass source type for the working variable
- * \param[out]  s_type    mass source types (0: ambient value, 1: s_val value)
- * \param[out]  smcelp    pointer to mass source values
+ * \param[out]  n_elts    number of cells with mass source terms
+ * \param[out]  elt_ids   pointer to source mass cells list (1-based numbering)//FIXME
+ * \param[out]  mst_type  mass source types (0: ambient value, 1: s_val value)
+ * \param[out]  mst_val   pointer to mass source values
  * \param[out]  gamma     pointer to flow mass value
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_volume_mass_injection_get_arrays(const cs_field_t   *f,
-                                    cs_lnum_t          *ncesmp,
-                                    const cs_lnum_t   **icetsm,
-                                    int               **itpsmp,
-                                    cs_real_t         **smcelp,
+                                    cs_lnum_t          *n_elts,
+                                    const cs_lnum_t   **elt_ids,
+                                    int               **mst_type,
+                                    cs_real_t         **mst_val,
                                     cs_real_t         **gamma)
 {
-  cs_lnum_t  _ncesmp = 0;
-  cs_lnum_t  *_icetsm = NULL;
-  int        *_itpsmp = NULL;
-  cs_real_t  *_smcelp = NULL;
+  cs_lnum_t  _n_elts = 0;
+  cs_lnum_t  *_elt_ids = NULL;
+  int        *_mst_type = NULL;
+  cs_real_t  *_mst_val = NULL;
   cs_real_t  *_gamma = NULL;
 
   cs_volume_mass_injection_t *mi = _mass_injection;
 
   if (mi != NULL) {
-    _ncesmp = mi->n_elts;
-    _icetsm = mi->elt_id;
+    _n_elts = mi->n_elts;
+    _elt_ids = mi->elt_id;
     const cs_field_t *f_p = CS_F_(p);
     _volume_mass_injection_get_field_arrays(f_p, NULL, &_gamma);
     const cs_equation_param_t *eqp = cs_field_get_equation_param_const(f);
     if (eqp->n_volume_mass_injections > 0 || f->id == f_p->id)
-      _volume_mass_injection_get_field_arrays(f, &_itpsmp, &_smcelp);
+      _volume_mass_injection_get_field_arrays(f, &_mst_type, &_mst_val);
   }
 
-  if (ncesmp != NULL) *ncesmp = _ncesmp;
-  if (icetsm != NULL) *icetsm = _icetsm;
-  if (itpsmp != NULL) *itpsmp = _itpsmp;
-  if (smcelp != NULL) *smcelp = _smcelp;
+  if (n_elts != NULL) *n_elts = _n_elts;
+  if (elt_ids != NULL) *elt_ids = _elt_ids;
+  if (mst_type != NULL) *mst_type = _mst_type;
+  if (mst_val != NULL) *mst_val = _mst_val;
   if (gamma != NULL) *gamma = _gamma;
 }
 

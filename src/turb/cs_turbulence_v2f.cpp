@@ -767,29 +767,29 @@ _solve_eq_phi(const int           istprv,
   if (eqp->n_volume_mass_injections > 0) {
 
     /* We increment rhs by -Gamma.var_prev and rovsdt by Gamma */
-    int *itypsm = NULL;
-    cs_lnum_t ncesmp = 0;
-    const cs_lnum_t *icetsm = NULL;
-    cs_real_t *smacel = NULL, *gamma = NULL;
+    int *mst_type = NULL;
+    cs_lnum_t n_elts = 0;
+    const cs_lnum_t *elt_ids = NULL;
+    cs_real_t *mst_val = NULL, *mst_val_p = NULL;
 
     /* If we extrapolate the source term we put Gamma Pinj in the prev. TS */
     cs_real_t *gapinj = (istprv >= 0) ? c_st_phi_p : rhs;
 
     cs_volume_mass_injection_get_arrays(f_phi,
-                                        &ncesmp,
-                                        &icetsm,
-                                        &itypsm,
-                                        &smacel,
-                                        &gamma);
+                                        &n_elts,
+                                        &elt_ids,
+                                        &mst_type,
+                                        &mst_val,
+                                        &mst_val_p);
     cs_mass_source_terms(1,  /* iterns*/
                          1,  /* dim*/
-                         ncesmp,
-                         icetsm,
-                         itypsm,
+                         n_elts,
+                         elt_ids,
+                         mst_type,
                          cell_f_vol,
                          cvara_phi,
-                         smacel,
-                         gamma,
+                         mst_val,
+                         mst_val_p,
                          rhs,
                          rovsdt,
                          gapinj);
