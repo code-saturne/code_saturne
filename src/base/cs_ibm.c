@@ -505,16 +505,16 @@ _prism_vol(cs_real_3_t x1,
 
 static void
 _tetra_vol_poro(cs_real_t   *vol,
-                 cs_real_3_t  cog,
-                 cs_real_3_t  x1,
-                 cs_real_t    por1,
-                 cs_real_3_t  x2,
-                 cs_real_t    por2,
-                 cs_real_3_t  x3,
-                 cs_real_t    por3,
-                 cs_real_3_t  x4,
-                 cs_real_t    por4,
-                 int          icut)
+                cs_real_3_t  cog,
+                cs_real_3_t  x1,
+                cs_real_t    por1,
+                cs_real_3_t  x2,
+                cs_real_t    por2,
+                cs_real_3_t  x3,
+                cs_real_t    por3,
+                cs_real_3_t  x4,
+                cs_real_t    por4,
+                int          icut)
 {
   /* Mean porosity */
   cs_real_t porc = (por1 + por2 + por3 + por4) * 0.25;
@@ -548,6 +548,7 @@ _tetra_vol_poro(cs_real_t   *vol,
   /* Check if the volume is considered as completely solid, null volume */
   if (cpt5 == 5)
     return;
+
   /* Check if no solid vertex, complete volume */
   else if (cpt5 == 0 && icut > 0) {
 
@@ -603,14 +604,15 @@ _tetra_vol_poro(cs_real_t   *vol,
 
   } else {
     if (cpt4 == 0) {
-      /* No penalized point -> full tetrahedron */
 
+      /* No penalized point -> full tetrahedron */
       *vol = _tetra_vol(x1, x2, x3, x4);
 
       for (int i = 0; i < 3; i++)
         cog[i] += 0.25 * (x1[i] + x2[i] + x3[i] + x4[i]) * *vol;
 
     } else if (cpt4 == 1) {
+
       /* One penalized point tetrahedron - tetra from the penalized point */
       cs_real_3_t d12, d13, d14;
       for (int i = 0; i < 3; i++) {
@@ -763,6 +765,7 @@ _tetra_vol_poro(cs_real_t   *vol,
                   "Error in function _tetra_vol_poro\n");
 
     } else if (cpt4 == 3) {
+
       /* Three penalized points : tetrahedron from the non penalized
        * fourth point */
       cs_real_3_t d12, d13, d14;
@@ -904,6 +907,7 @@ _tetra_vol_poro(cs_real_t   *vol,
                   "Error in function _tetra_vol_cutcell\n");
 
     } else if (cpt4 == 2) {
+
       /* Two penalized points : more complex */
       /* One puts in y1 and y2 the two non penalized points and in y3 and y4
        * the penalized points */
@@ -1093,6 +1097,7 @@ _tri_surf_trunc(cs_real_3_t x1,
   /* Check if the area is considered as completely solid, null are */
   if (cpt4 == 4)
     return surf;
+
   /* Check if no solid vertex, complete area */
   else if (cpt4 == 0) {
 
@@ -1388,6 +1393,7 @@ _tetra_vol_cutcell(cs_real_t    *vol,
   /* Check if the volume is considered as completely solid, null volume */
   if (cpt5 == 5)
     return;
+
   /* Check if no solid vertex, complete volume */
   else if (cpt5 == 0 && icut > 0) {
 
@@ -1426,11 +1432,12 @@ _tetra_vol_cutcell(cs_real_t    *vol,
 
   } else {
     if (cpt4 == 0) {
-      /* No penalized point -> full tetrahedron */
 
+      /* No penalized point -> full tetrahedron */
       *vol = _tetra_vol(x1, x2, x3, x4);
 
     } else if (cpt4 == 1) {
+
       /* One penalized point tetrahedron - tetra from the penalized point */
       cs_real_3_t d12, d13, d14;
       for (int i = 0; i < 3; i++) {
@@ -1531,6 +1538,7 @@ _tetra_vol_cutcell(cs_real_t    *vol,
                   "Error in function _tetra_vol_cutcell\n");
 
     } else if (cpt4 == 3) {
+
       /* Three penalized points : tetrahedron from the non penalized
        * fourth point */
       cs_real_3_t d12, d13, d14;
@@ -1632,6 +1640,7 @@ _tetra_vol_cutcell(cs_real_t    *vol,
                   "Error in function _tetra_vol_cutcell\n");
 
     } else if (cpt4 == 2) {
+
       /* Two penalized points : more complex */
       /* One puts in y1 et y2 the two non penalized points and in y3 and y4
        * the penalized points */
@@ -1980,8 +1989,8 @@ _compute_cell_cut_porosity(const cs_mesh_t *mesh,
     if (comp_cell[c_id] == 0)
       computi = false;
 
-    if ((     nbvtx[c_id] == nbvtx_in[c_id] && cog_in[c_id] > 0)
-         || ( nbvtx_in[c_id] == 0 && cog_in[c_id] == 0))
+    if (   (nbvtx[c_id] == nbvtx_in[c_id] && cog_in[c_id] > 0)
+        || (nbvtx_in[c_id] == 0 && cog_in[c_id] == 0))
       computi = false;
 
     if (computi) {
@@ -2072,7 +2081,7 @@ _compute_cell_cog(const cs_mesh_t            *mesh,
   cs_lnum_t *b_face_cells = mesh->b_face_cells;
   const cs_lnum_2_t *i_face_cells = (const cs_lnum_2_t *)mesh->i_face_cells;
 
-  cs_real_t *cell_vol  = mesh_quantities->cell_vol;
+  cs_real_t *cell_vol = mesh_quantities->cell_vol;
 
   const cs_real_3_t *cell_cen = (const cs_real_3_t *)mesh_quantities->cell_cen;
   cs_real_3_t *cell_f_cen = (cs_real_3_t *)mesh_quantities->cell_f_cen;
@@ -2925,7 +2934,7 @@ _compute_solid_surface_vector(const cs_mesh_t            *mesh,
     cs_real_t alpij = b_poro[f_id] - 1.;
 
     for (int idim = 0; idim < 3; idim++)
-      c_w_face_normal[c_id][idim] += alpij  * b_face_normal[f_id][idim];
+      c_w_face_normal[c_id][idim] += alpij * b_face_normal[f_id][idim];
   }
 
   cs_real_3_t sx;
@@ -3396,7 +3405,7 @@ _compute_solid_surface_cog(const cs_mesh_t            *mesh,
     cs_real_t dwall
       = cs_math_fabs(cs_math_3_distance_dot_product(xpp, xip, npx));
 
-    cs_real_t poro = 0.5*(CS_F_(poro)->val[c_id]+CS_F_(poro)->val_pre[c_id]);
+    cs_real_t poro = 0.5*(CS_F_(poro)->val[c_id] + CS_F_(poro)->val_pre[c_id]);
 
     npx[0] = cs_math_fmax(cs_math_fabs(npx[0]), 1.e-20);
     npx[1] = cs_math_fmax(cs_math_fabs(npx[1]), 1.e-20);
@@ -3414,7 +3423,8 @@ _compute_solid_surface_cog(const cs_mesh_t            *mesh,
              + cell_length3D[c_id][1]*cell_length3D[c_id][1]
              + cell_length3D[c_id][2]*cell_length3D[c_id][2]);
 
-    cs_real_t dcell_geom = cs_math_fmin(lambda,dcell_geom_max) * 0.5* cs_math_fmax(poro,1.e-3);
+    cs_real_t dcell_geom = cs_math_fmin(lambda,dcell_geom_max) * 0.5
+                         * cs_math_fmax(poro,1.e-3);
 
     c_w_dist_inv[c_id]
       = 1./cs_math_fmax(dwall, 0.5 * dcell_geom);
@@ -3577,7 +3587,7 @@ _ibm_object_define_property_def(cs_ibm_object_t               *obj,
   def = cs_xdef_volume_create(CS_XDEF_BY_VALUE,
                               n_vals,                /* Array size */
                               -1,                    /* Zone id */
-                                                    /* -1 since no zone */
+                                                     /* -1 since no zone */
                               CS_FLAG_STATE_UNIFORM, /* Uniform value */
                               0,                     /* No meta data */
                               vals);                 /* Pointer to values */
@@ -3824,10 +3834,10 @@ void cs_immersed_boundaries(const cs_mesh_t *mesh,
   cs_lnum_t n_i_faces   = mesh->n_i_faces;
   cs_lnum_t n_b_faces   = mesh->n_b_faces;
 
-  cs_real_3_t *restrict i_f_face_normal =
-     (cs_real_3_t *restrict)mesh_quantities->i_f_face_normal;
-  cs_real_3_t *restrict b_f_face_normal =
-     (cs_real_3_t *restrict)mesh_quantities->b_f_face_normal;
+  cs_real_3_t *restrict i_f_face_normal
+    = (cs_real_3_t *restrict)mesh_quantities->i_f_face_normal;
+  cs_real_3_t *restrict b_f_face_normal
+    = (cs_real_3_t *restrict)mesh_quantities->b_f_face_normal;
   const cs_lnum_t *b_face_cells
     = (const cs_lnum_t *)mesh->b_face_cells;
   const cs_real_3_t *restrict i_face_normal
@@ -3843,13 +3853,14 @@ void cs_immersed_boundaries(const cs_mesh_t *mesh,
     = (const cs_lnum_2_t *)mesh->i_face_cells;
   const cs_real_3_t *cell_f_cen
     = (const cs_real_3_t *)mesh_quantities->cell_f_cen;
-  cs_real_t *cell_vol  = mesh_quantities->cell_vol;
-  cs_real_t *cell_f_vol  = mesh_quantities->cell_f_vol;
+  cs_real_t *cell_vol = mesh_quantities->cell_vol;
+  cs_real_t *cell_f_vol = mesh_quantities->cell_f_vol;
 
   static int ipass = 0;
   ipass++;
 
   if (ipass == 1) {
+
     /* Initialization for time/space immersed boundaries */
     if (cs_glob_porosity_ibm_opt->porosity_mode > 0)
       cs_ibm = cs_ibm_create();
@@ -3875,13 +3886,13 @@ void cs_immersed_boundaries(const cs_mesh_t *mesh,
   int nt_cur = cs_glob_time_step->nt_cur;
   int nt_prev = cs_glob_time_step->nt_prev;
   if (   cs_turbomachinery_get_model() == CS_TURBOMACHINERY_TRANSIENT
-      || nt_cur == 0 || (cs_restart_present() && nt_cur == nt_prev)
-      || (_porosity_ibm_opt.porosity_mode == CS_IBM_FIXED_SOLID
-          && cs_ibm->porosity_user_source_term_modification) )  {
+      || nt_cur == 0
+      || (cs_restart_present() && nt_cur == nt_prev)
+      || (   _porosity_ibm_opt.porosity_mode == CS_IBM_FIXED_SOLID
+          && cs_ibm->porosity_user_source_term_modification)) {
 
-    if (cs_turbomachinery_get_model() == CS_TURBOMACHINERY_TRANSIENT) {
+    if (cs_turbomachinery_get_model() == CS_TURBOMACHINERY_TRANSIENT)
       BFT_REALLOC(cs_ibm->solid_porosity, n_cells_ext, cs_real_t);
-    }
 
     cs_real_3_t *gradp;
 
@@ -3889,7 +3900,7 @@ void cs_immersed_boundaries(const cs_mesh_t *mesh,
 
     int hyd_p_flag = cs_glob_velocity_pressure_param->iphydr;
     cs_real_3_t *f_ext = (hyd_p_flag == 1) ?
-      (cs_real_3_t *)cs_field_by_name_try("volume_forces")->val:NULL;
+      (cs_real_3_t *)cs_field_by_name_try("volume_forces")->val : NULL;
 
     bool use_previous_t = false;
     int inc = 1;
@@ -4011,7 +4022,7 @@ void cs_immersed_boundaries(const cs_mesh_t *mesh,
       cs_real_t *c_poro;
       BFT_MALLOC(c_poro, n_cells_ext, cs_real_t);
       for (cs_lnum_t c_id = 0; c_id < n_cells_ext; c_id++)
-        c_poro[c_id] = 0.5*(CS_F_(poro)->val_pre[c_id]+CS_F_(poro)->val[c_id]);
+        c_poro[c_id] = 0.5*(CS_F_(poro)->val_pre[c_id] + CS_F_(poro)->val[c_id]);
 
       cs_cell_to_vertex(CS_CELL_TO_VERTEX_SHEPARD, 0, 1, false, NULL,
                         c_poro, NULL, v_poro);
@@ -4542,7 +4553,7 @@ cs_ibm_object_compute_intersect_vol(cs_ibm_object_t            *obj,
 
   cs_real_t *wfrac = NULL;
   cs_lnum_t *windic = NULL;
-  BFT_MALLOC(wfrac , m->n_cells_with_ghosts, cs_real_t);
+  BFT_MALLOC(wfrac, m->n_cells_with_ghosts, cs_real_t);
   BFT_MALLOC(windic, m->n_cells_with_ghosts, cs_lnum_t);
 
   switch(obj->method) {
