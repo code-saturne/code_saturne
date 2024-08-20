@@ -40,6 +40,8 @@
 
 #include "cs_headers.h"
 
+BEGIN_C_DECLS
+
 /*---------------------------------------------------------------------------*/
 /*
  * \brief User function of the Lagrangian particle-tracking module

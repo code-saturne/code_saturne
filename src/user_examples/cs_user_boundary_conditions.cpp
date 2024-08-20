@@ -147,8 +147,8 @@ _scalar_inlet_profile(cs_real_t           time,
 
   const cs_real_3_t *elt_coords = (const cs_real_3_t *)coords;
 
-  const cs_field_t *f = input;  /* field pointer passed as input
-                                   upon assignment */
+  /* field pointer passed as input upon assignment */
+  const cs_field_t *f = (const cs_field_t *)input;
 
   if (strcmp(f->name, "scalar1") == 0) {
 

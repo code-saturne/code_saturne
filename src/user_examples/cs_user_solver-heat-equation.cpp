@@ -151,7 +151,7 @@ cs_user_solver(const cs_mesh_t             *mesh,
                           var_name,  /* buffer name */
                           1,         /* location id */
                           1,         /* number of values per location */
-                          2,         /* value type */
+                          CS_TYPE_cs_real_t, /* value type */
                           t_old);    /* buffer */
 
   cs_restart_destroy(&restart);
@@ -228,12 +228,12 @@ cs_user_solver(const cs_mesh_t             *mesh,
                                  NULL,                    /* force directory */
                                  CS_RESTART_MODE_WRITE);  /* write mode */
 
-  cs_restart_write_section(checkpoint,  /* restart file */
-                           var_name,    /* buffer name */
-                           1,           /* location id */
-                           1,           /* number of values per location */
-                           2,           /* value type */
-                           t);          /* buffer */
+  cs_restart_write_section(checkpoint,        /* restart file */
+                           var_name,          /* buffer name */
+                           1,                 /* location id */
+                           1,                 /* number of values per location */
+                           CS_TYPE_cs_real_t, /* value type */
+                           t);                /* buffer */
 
   cs_restart_destroy(&checkpoint);
 

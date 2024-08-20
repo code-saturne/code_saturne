@@ -87,7 +87,7 @@ _define_injection(cs_real_t           time,
   CS_UNUSED(time);
   CS_UNUSED(xyz);
 
-  cs_field_t *f = input; /* Current field for which this injection is called */
+  cs_field_t *f = (cs_field_t *)input; /* Current field for which this injection is called */
 
   const cs_zone_t *z = cs_volume_zone_by_name("mass_injection");
 

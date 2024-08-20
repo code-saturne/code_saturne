@@ -78,9 +78,10 @@ _cs_post_write_sfc_serial(fvm_writer_t   *writer)
 
   /* Loop on space-filling curve types */
 
-  for (sfc_id = FVM_IO_NUM_SFC_MORTON_BOX;
-       sfc_id <= FVM_IO_NUM_SFC_HILBERT_CUBE;
-       sfc_id++) {
+  for (int i_sfc_id = FVM_IO_NUM_SFC_MORTON_BOX;
+       i_sfc_id <= FVM_IO_NUM_SFC_HILBERT_CUBE;
+       i_sfc_id++) {
+    sfc_id = (fvm_io_num_sfc_t)i_sfc_id;
 
     BFT_MALLOC(connect, n_edges*2, cs_lnum_t);
 
@@ -177,9 +178,10 @@ _cs_post_write_sfc_parall(fvm_writer_t  *writer)
 
   /* Loop on space-filling curve types */
 
-  for (sfc_id = FVM_IO_NUM_SFC_MORTON_BOX;
-       sfc_id <= FVM_IO_NUM_SFC_HILBERT_CUBE;
-       sfc_id++) {
+  for (int i_sfc_id = FVM_IO_NUM_SFC_MORTON_BOX;
+       i_sfc_id <= FVM_IO_NUM_SFC_HILBERT_CUBE;
+       i_sfc_id++) {
+    sfc_id = (fvm_io_num_sfc_t)i_sfc_id;
 
     cs_lnum_t block_size = 0;
     cs_lnum_t n_edges = 0;

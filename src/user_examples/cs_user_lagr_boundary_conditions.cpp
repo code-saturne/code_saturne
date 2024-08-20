@@ -345,7 +345,7 @@ cs_lagr_user_boundary_interaction(cs_lagr_particle_set_t    *particles,
   cs_lagr_particles_set_flag(particles, p_id, CS_LAGR_PART_DEPOSITED);
 
   cs_real_t  *particle_coord
-    = cs_lagr_particles_attr(particles, p_id, CS_LAGR_COORDS);
+    = (cs_real_t *)cs_lagr_particles_attr(particles, p_id, CS_LAGR_COORDS);
   for (int k = 0; k < 3; k++)
     particle_coord[k] = c_intersect[k];
 

@@ -424,12 +424,12 @@ cs_user_linear_solvers(void)
                                              CS_MULTIGRID_V_CYCLE);
 
     cs_multigrid_set_coarsening_options(mg,
-                                        3,    /* aggregation_limit (default 3) */
-                                        0,    /* coarsening_type (default 0) */
-                                        10,   /* n_max_levels (default 25) */
-                                        30,   /* min_g_cells (default 30) */
-                                        0.95, /* P0P1 relaxation (default 0.95) */
-                                        20);  /* postprocessing (default 0) */
+                                        3,                             /* aggregation_limit (default 3) */
+                                        CS_GRID_COARSENING_DEFAULT,    /* coarsening_type (default 0) */
+                                        10,                            /* n_max_levels (default 25) */
+                                        30,                            /* min_g_cells (default 30) */
+                                        0.95,                          /* P0P1 relaxation (default 0.95) */
+                                        20);                           /* postprocessing (default 0) */
 
     cs_multigrid_set_solver_options
       (mg,
@@ -477,7 +477,7 @@ cs_user_linear_solvers(void)
                                         -1,
                                         10000);
     cs_sles_pc_t *pc = cs_multigrid_pc_create(CS_MULTIGRID_V_CYCLE);
-    cs_multigrid_t *mg = cs_sles_pc_get_context(pc);
+    cs_multigrid_t *mg = (cs_multigrid_t *)cs_sles_pc_get_context(pc);
     cs_sles_it_transfer_pc(c, &pc);
 
     assert(strcmp(cs_sles_pc_get_type(cs_sles_it_get_pc(c)), "multigrid") == 0);
@@ -575,11 +575,11 @@ cs_user_linear_solvers(void)
     bool use_iteration = true; /* use iteration or wall clock time for axis */
 
     if (strcmp(cs_sles_get_type(sles_p), "cs_sles_it_t") == 0) {
-      cs_sles_it_t *c = cs_sles_get_context(sles_p);
+      cs_sles_it_t *c = (cs_sles_it_t *)cs_sles_get_context(sles_p);
       cs_sles_it_set_plot_options(c, f->name, use_iteration);
     }
     else if (strcmp(cs_sles_get_type(sles_p), "cs_multigrid_t") == 0) {
-      cs_multigrid_t *c = cs_sles_get_context(sles_p);
+      cs_multigrid_t *c = (cs_multigrid_t *)cs_sles_get_context(sles_p);
       cs_multigrid_set_plot_options(c, f->name, use_iteration);
     }
 

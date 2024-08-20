@@ -128,7 +128,7 @@ tracy_update(const cs_real_t              t_eval,
 
   /* Retrieve the hydraulic context */
 
-  cs_gwf_uspf_t  *hc = soil->hydraulic_context;
+  cs_gwf_uspf_t *hc = (cs_gwf_uspf_t *)soil->hydraulic_context;
 
   /* Additional parameters */
 
@@ -215,9 +215,9 @@ get_bc(cs_real_t           time,
        void               *input,
        cs_real_t          *retval)
 {
-  const cs_gwf_soil_t  *soil = input;
+  const cs_gwf_soil_t *soil = (const cs_gwf_soil_t *)input;
   assert(soil != NULL);
-  const cs_soil_tracy_param_t  *tp = soil->model_param;
+  const cs_soil_tracy_param_t *tp = (const cs_soil_tracy_param_t *)soil->model_param;
   assert(tp != NULL);
 
   /* Physical parameters */
@@ -271,7 +271,7 @@ get_ic(cs_real_t           time,
 {
   CS_UNUSED(time);
 
-  cs_soil_tracy_param_t  *tp = input;
+  cs_soil_tracy_param_t *tp = (cs_soil_tracy_param_t *)input;
   assert(input != NULL);
 
   const double  one6 = 1./6;
@@ -472,8 +472,8 @@ cs_user_finalize_setup(cs_domain_t   *domain)
 
   /* 1. Retrieve the soil by its name and then its parameter structure */
 
-  cs_gwf_soil_t  *soil = cs_gwf_soil_by_name("cells");
-  cs_soil_tracy_param_t  *tp = soil->model_param;
+  cs_gwf_soil_t *soil = cs_gwf_soil_by_name("cells");
+  cs_soil_tracy_param_t *tp = (cs_soil_tracy_param_t *)soil->model_param;
 
   /* Define the boundary conditions  */
 

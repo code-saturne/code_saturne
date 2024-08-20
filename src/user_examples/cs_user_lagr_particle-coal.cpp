@@ -190,13 +190,13 @@ cs_user_lagr_in(cs_lagr_particle_set_t         *particles,
                                water_mass_f * mass);
 
     cs_real_t *particle_temperature
-      = cs_lagr_particles_attr(particles, p_id, CS_LAGR_TEMPERATURE);
+      = (cs_real_t *)cs_lagr_particles_attr(particles, p_id, CS_LAGR_TEMPERATURE);
     cs_real_t *particle_coal_mass
-      = cs_lagr_particles_attr(particles, p_id, CS_LAGR_COAL_MASS);
+      = (cs_real_t *)cs_lagr_particles_attr(particles, p_id, CS_LAGR_COAL_MASS);
     cs_real_t *particle_coke_mass
-      = cs_lagr_particles_attr(particles, p_id, CS_LAGR_COKE_MASS);
+      = (cs_real_t *)cs_lagr_particles_attr(particles, p_id, CS_LAGR_COKE_MASS);
     cs_real_t *particle_coal_density
-      = cs_lagr_particles_attr(particles, p_id, CS_LAGR_COAL_DENSITY);
+      = (cs_real_t *)cs_lagr_particles_attr(particles, p_id, CS_LAGR_COAL_DENSITY);
 
     for (int l_id = 0; l_id < n_layers; l_id++) {
       particle_temperature[l_id] = temperature[l_id];

@@ -124,8 +124,9 @@ _incident_kinetic_energy(const void                 *input,
     else {
       const cs_real_t  part_mass = cs_lagr_events_get_real(events, ev_id,
                                                            CS_LAGR_MASS);
-      const cs_real_t  *part_vel = cs_lagr_events_attr_const(events, ev_id,
-                                                             CS_LAGR_VELOCITY);
+      const cs_real_t  *part_vel =
+        (const cs_real_t *)cs_lagr_events_attr_const(events, ev_id,
+                                                     CS_LAGR_VELOCITY);
       cs_real_t vel_norm2 = cs_math_3_square_norm(part_vel);
 
       ke = 0.5 * vel_norm2 * part_mass;
@@ -711,11 +712,11 @@ cs_user_lagr_model(void)
   /* Add a user-defined boundary statistic:
      incident kinetic energy */
 
-  for (int class = 0;
-       class < cs_glob_lagr_model->n_stat_classes + 1;
-       class++) {
+  for (int i_class = 0;
+       i_class < cs_glob_lagr_model->n_stat_classes + 1;
+       i_class++) {
 
-    for (cs_lagr_stat_moment_t m_type = CS_LAGR_MOMENT_MEAN;
+    for (int m_type = CS_LAGR_MOMENT_MEAN;
          m_type <= CS_LAGR_MOMENT_VARIANCE;
          m_type++) {
 
@@ -724,8 +725,8 @@ cs_user_lagr_model(void)
          CS_MESH_LOCATION_BOUNDARY_FACES,
          -1,                        /* non predefined stat type */
          CS_LAGR_STAT_GROUP_TRACKING_EVENT,
-         m_type,
-         class,
+         (cs_lagr_stat_moment_t)m_type,
+         i_class,
          1,                         /* dimension */
          -1,                        /* component_id, */
          _incident_kinetic_energy,  /* data_func */
