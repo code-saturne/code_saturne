@@ -154,8 +154,10 @@ _volume_mass_injection_get_field_arrays(const cs_field_t  *f,
   }
 
   if (mst_type != NULL) {
-    if (mi->mst_type[f->id] == NULL)
+    if (mi->mst_type[f->id] == NULL) {
       CS_MALLOC_HD(mi->mst_type[f->id], mi->n_elts, int, cs_alloc_mode);
+      cs_array_int_fill_zero(mi->n_elts, mi->mst_type[f->id]);
+    }
     *mst_type = mi->mst_type[f->id];
   }
 
