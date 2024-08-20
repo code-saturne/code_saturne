@@ -211,8 +211,14 @@ _petsc_p_setup_hook_view(void  *context,
     /* Output matrix in several ways depending on
        CS_USER_PETSC_MAT_VIEW environment variable */
 
-    if (strcmp(p, "DEFAULT") == 0)
-      MatView(a, PETSC_VIEWER_DEFAULT);
+    if (strcmp(p, "DEFAULT") == 0) {
+#if defined(HAVE_MPI)
+      if (cs_glob_n_ranks > 1)
+        MatView(a, PETSC_VIEWER_STDOUT_(cs_glob_mpi_comm));
+#endif
+      if (cs_glob_n_ranks == 1)
+        MatView(a, PETSC_VIEWER_STDOUT_SELF);
+    }
 
     else if (strcmp(p, "DRAW_WORLD") == 0)
       MatView(a, PETSC_VIEWER_DRAW_WORLD);
@@ -318,8 +324,8 @@ _hypre_p_setup_hook(int    verbosity,
   CS_NO_WARN_IF_UNUSED(verbosity);
   CS_NO_WARN_IF_UNUSED(context);
 
-  HYPRE_Solver  solver = solver_p;
-  HYPRE_Solver  precond = NULL;
+  HYPRE_Solver  solver = (HYPRE_Solver)solver_p;
+  HYPRE_Solver  precond = nullptr;
 
   /* Get pointer to preconditioner, based on solver type (here for PCG) */
   HYPRE_PCGGetPrecond(solver, &precond);

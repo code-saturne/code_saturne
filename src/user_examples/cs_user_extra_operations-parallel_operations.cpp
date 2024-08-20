@@ -211,7 +211,7 @@ cs_user_extra_operations(cs_domain_t     *domain)
    * and false for the other. */
 
   /* ![example_8] */
-  cs_gnum_t g_itab[3] = {n_cells, 0, n_b_faces};
+  cs_gnum_t g_itab[3] = {(cs_gnum_t)n_cells, 0, (cs_gnum_t)n_b_faces};
 
   for (cs_lnum_t f_id = 0; f_id < n_i_faces; f_id++)
     if (i_face_cells[f_id][0] <= n_cells)

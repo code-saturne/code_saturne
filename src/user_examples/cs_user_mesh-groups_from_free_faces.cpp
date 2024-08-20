@@ -181,7 +181,10 @@ _mesh_groups_from_free_faces(cs_mesh_t  *mesh,
   /* Log number of found and free faces */
 
   {
-    cs_gnum_t n_g_faces[5] = {n_free_faces, n_b_faces, n_no_group, 0, 0};
+    cs_gnum_t n_g_faces[5];
+    n_g_faces[0] = n_free_faces;
+    n_g_faces[1] = n_b_faces;
+    n_g_faces[2] = n_no_group;
     n_g_faces[3] = ple_locator_get_n_interior(locator);
     n_g_faces[4] = ple_locator_get_n_exterior(locator);
 
