@@ -564,6 +564,37 @@ cs_parall_set_min_coll_buf_size(size_t buffer_size);
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Compute recommended number of threads for a section.
+ *
+ * This is based on the available number of threads, and limited
+ * by a minimum number of elements per thread.
+ *
+ * \param[in]  n_elements           size of array
+ * \param[in]  min_thread_elements  minimum number of elements per thread.
+ */
+/*----------------------------------------------------------------------------*/
+
+inline static int
+cs_parall_n_threads(cs_lnum_t  n_elements,
+                    cs_lnum_t  min_thread_elements)
+{
+#if defined(HAVE_OPENMP)
+  int n_t = omp_get_max_threads();
+  int n_t_l = n_elements / min_thread_elements;
+  if (n_t_l < n_t)
+    n_t = n_t_l;
+  if (n_t < 1)
+    n_t = 1;
+  return n_t;
+#else
+  CS_UNUSED(n_elements);         /* avoid compiler warning */
+  CS_UNUSED(min_thread_elements);
+  return 1;
+#endif
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Compute array index bounds for a local thread.
  *        When called inside an OpenMP parallel section, this will return the
  *        start an past-the-end indexes for the array range assigned to that
