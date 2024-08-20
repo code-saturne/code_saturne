@@ -761,7 +761,7 @@ cs_drift_convective_flux(cs_field_t  *f_sc,
 
       ctx.parallel_for(n_elts, [=] CS_F_HOST_DEVICE (cs_lnum_t cidx) {
         const cs_lnum_t cell_id = elt_ids[cidx];
-        divflu[cell_id] -= cell_vol[cell_id] * mst_val_p[cidx];
+        divflu[cell_id] += cell_vol[cell_id] * mst_val_p[cidx];
       });
     }
 
