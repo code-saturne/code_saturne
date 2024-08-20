@@ -144,9 +144,6 @@ void
 cs_f_user_extra_operations_wrapper(cs_real_t dt[]);
 
 void
-cs_f_equation_convergence_info_write(cs_real_t dt[]);
-
-void
 cs_f_finalize_meteo(void);
 
 void
@@ -858,7 +855,7 @@ cs_time_stepping(void)
 
     cs_post_activate_by_time_step(ts);
 
-    /* If itrale=0, deactivate all writers, as geometry has not been output yet. */
+    /* When geometry has not been output yet, deactivate all writers. */
     if (itrale == 0)
       cs_post_activate_writer(0, false);
 
@@ -877,8 +874,6 @@ cs_time_stepping(void)
        -------------------------------------- */
 
     if (cs_log_default_is_active()) {
-
-      cs_f_equation_convergence_info_write(CS_F_(dt)->val);
 
       cs_log_iteration();
 

@@ -565,7 +565,7 @@ cs_local_time_step_compute(int  itrale)
 
       if (cs_glob_time_step_options->iptlro == 1)  {
 
-        /* Clip the time step to DTTMAX (display in ecrlis) */
+        /* Clip the time step to DTTMAX (display in cs_log_iteration.c) */
 
         cs_lnum_t nclptr = 0;
 
@@ -703,7 +703,7 @@ cs_local_time_step_compute(int  itrale)
 
   }
 
-    /* Ratio DT/DTmax related to density effect (display in ecrlis) */
+    /* Ratio DT/DTmax related to density effect (display in cs_log_iteration.c) */
 
     if (   cs_glob_time_step_options->iptlro == 1
         && log_is_active) {
