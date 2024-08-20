@@ -94,29 +94,25 @@ bft_mem_usage_test \
 bft_mem_test \
 bft_printf_test
 
-CPPFLAGS_BFT_TESTS = -I$(top_srcdir)/src/bft
-LDFLAGS_BFT_TESTS =
-LDADD_BFT_TESTS = $(top_builddir)/src/bft/libbft.a $(CUDA_LIBS)
-
 bft_backtrace_test_SOURCES  = bft_backtrace_test.c
-bft_backtrace_test_LDFLAGS  = $(LDFLAGS_BFT_TESTS)
-bft_backtrace_test_LDADD    = $(LDADD_BFT_TESTS)
+bft_backtrace_test_LDFLAGS  = $(LDFLAGS_CS_TESTS)
+bft_backtrace_test_LDADD    = $(LDADD_CS_TESTS)
 
 bft_error_test_SOURCES  = bft_error_test.c
-bft_error_test_LDFLAGS  = $(LDFLAGS_BFT_TESTS)
-bft_error_test_LDADD    = $(LDADD_BFT_TESTS)
+bft_error_test_LDFLAGS  = $(LDFLAGS_CS_TESTS)
+bft_error_test_LDADD    = $(LDADD_CS_TESTS)
 
 bft_mem_usage_test_SOURCES  = bft_mem_usage_test.c
-bft_mem_usage_test_LDFLAGS  = $(LDFLAGS_BFT_TESTS)
-bft_mem_usage_test_LDADD    = $(LDADD_BFT_TESTS)
+bft_mem_usage_test_LDFLAGS  = $(LDFLAGS_CS_TESTS)
+bft_mem_usage_test_LDADD    = $(LDADD_CS_TESTS)
 
 bft_mem_test_SOURCES  = bft_mem_test.cpp
-bft_mem_test_LDFLAGS  = $(LDFLAGS_BFT_TESTS)
-bft_mem_test_LDADD    = $(LDADD_BFT_TESTS)
+bft_mem_test_LDFLAGS  = $(LDFLAGS_CS_TESTS)
+bft_mem_test_LDADD    = $(LDADD_CS_TESTS)
 
 bft_printf_test_SOURCES  = bft_printf_test.c
-bft_printf_test_LDFLAGS  = $(LDFLAGS_BFT_TESTS)
-bft_printf_test_LDADD    = $(LDADD_BFT_TESTS)
+bft_printf_test_LDFLAGS  = $(LDFLAGS_CS_TESTS)
+bft_printf_test_LDADD    = $(LDADD_CS_TESTS)
 
 # code_saturne tests
 
