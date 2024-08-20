@@ -162,7 +162,7 @@ _compute_min_max(cs_lnum_t       n_vals,
  *----------------------------------------------------------------------------*/
 
 static user_profile_med_t *
-_allocate_med_mesh_struct(cs_lnum_t n_layers)
+_allocate_med_mesh_struct([[maybe_unused]] cs_lnum_t n_layers)
 {
   user_profile_med_t *med_t = NULL;
   BFT_MALLOC(med_t, 1, user_profile_med_t);
@@ -639,8 +639,8 @@ _compute_histogram(user_histogram_t  *histogram,
  *----------------------------------------------------------------------------*/
 
 static void
-_output_histogram_ot(user_histogram_t  *histogram,
-                     const char        *dirname)
+_output_histogram_ot([[maybe_unused]]user_histogram_t  *histogram,
+                     [[maybe_unused]]const char        *dirname)
 {
 #if HAVE_OT == 1
 
@@ -1337,8 +1337,8 @@ _set_layers_stl_mesh(user_profile_t  *profile,
  *----------------------------------------------------------------------------*/
 
 static void
-_set_med_layer_mesh(user_profile_t  *profile,
-                    cs_lnum_t        layer_id)
+_set_med_layer_mesh([[maybe_unused]]user_profile_t  *profile,
+                    [[maybe_unused]]cs_lnum_t        layer_id)
 {
 #if defined(HAVE_MEDCOUPLING)
   // Get mesh quantities
@@ -1748,9 +1748,12 @@ _compute_cell_volume_per_layer_stl(user_profile_t  *profile)
  *----------------------------------------------------------------------------*/
 
 static void
-_compute_intersection_volume_med(user_profile_med_t *med_t,
-                                 cs_real_t          *vol_intersect,
-                                 cs_lnum_t           layer_id)
+_compute_intersection_volume_med
+(
+ [[maybe_unused]]user_profile_med_t *med_t,
+ [[maybe_unused]]cs_real_t          *vol_intersect,
+ [[maybe_unused]]cs_lnum_t           layer_id
+)
 {
 #if defined(HAVE_MEDCOUPLING)
   cs_lnum_t n_elts = med_t->local_mesh->n_elts;
@@ -1810,7 +1813,7 @@ _compute_intersection_volume_med(user_profile_med_t *med_t,
  *----------------------------------------------------------------------------*/
 
 static void
-_compute_cell_vol_per_layer_med(user_profile_t *profile)
+_compute_cell_vol_per_layer_med([[maybe_unused]] user_profile_t *profile)
 {
 #if defined(HAVE_MEDCOUPLING)
 
@@ -2202,8 +2205,8 @@ _user_output_profile_stl_mesh(user_profile_t  *profile,
  *----------------------------------------------------------------------------*/
 
 static void
-_output_profile_med_mesh(user_profile_t  *profile,
-                         const char      *dirname)
+_output_profile_med_mesh([[maybe_unused]] user_profile_t  *profile,
+                         [[maybe_unused]] const char      *dirname)
 {
 #if defined(HAVE_MEDCOUPLING_LOADER)
   if (cs_glob_rank_id <= 0) {
@@ -2296,23 +2299,23 @@ user_create_profile(const char  *name,
   // Initialize and allocate memory for profile
   BFT_MALLOC(profile, 1, user_profile_t);
 
-  char *_dummy = (char *)profile->name;
-  strncpy(_dummy, name, strlen(name));
-  _dummy[strlen(name)] = '\0';
+  char *_dummy = const_cast<char *>(profile->name);
+  strncpy(_dummy, name, 511);
+  _dummy[511] = '\0';
 
-  _dummy = (char *)profile->field;
-  strncpy(_dummy, field, strlen(field));
-  _dummy[strlen(field)] = '\0';
+  _dummy = const_cast<char *>(profile->field);
+  strncpy(_dummy, field, 511);
+  _dummy[511] = '\0';
 
-  _dummy = (char *)profile->criteria;
-  strncpy(_dummy, criteria, strlen(criteria));
-  _dummy[strlen(criteria)] = '\0';
+  _dummy = const_cast<char *>(profile->criteria);
+  strncpy(_dummy, criteria, 511);
+  _dummy[511] = '\0';
 
   profile->n_layers        = n_layers;
 
-  _dummy = (char *)profile->progression_law;
-  strncpy(_dummy, progression_law, strlen(progression_law));
-  _dummy[strlen(progression_law)] = '\0';
+  _dummy = const_cast<char *>(profile->progression_law);
+  strncpy(_dummy, progression_law, 511);
+  _dummy[511] = '\0';
 
   profile->progression     = progression;
 
@@ -2328,9 +2331,9 @@ user_create_profile(const char  *name,
               __func__);
 
 
-  _dummy = (char *)profile->weighted;
-  strncpy(_dummy, weighted, strlen(weighted));
-  _dummy[strlen(weighted)] = '\0';
+  _dummy = const_cast<char *>(profile->weighted);
+  strncpy(_dummy, weighted, 511);
+  _dummy[511] = '\0';
 
   /* In case of Medcoupling method, check CS has been compiled with
    * MEDCouppling*/
@@ -2344,9 +2347,9 @@ user_create_profile(const char  *name,
                 "MEDCoupling support.\n"));
 #endif
   }
-  _dummy = (char *)profile->intersect_method;
-  strncpy(_dummy, intersect_method, strlen(intersect_method));
-  _dummy[strlen(intersect_method)] = '\0';
+  _dummy = const_cast<char *>(profile->intersect_method);
+  strncpy(_dummy, intersect_method, 511);
+  _dummy[511] = '\0';
 
   BFT_MALLOC(profile->l_thick, n_layers, cs_real_t);
   BFT_MALLOC(profile->pos, n_layers, cs_real_t);
@@ -2556,7 +2559,6 @@ user_destroy_histogram(user_histogram_t  *histogram)
 void
 user_compute_cell_volume_per_layer(user_profile_t *profile)
 {
-  user_profile_med_t *med_t = profile->med_mesh_struct;
   if (strcmp(profile->intersect_method, "MEDCOUPLING") == 0) {
 #if !defined(HAVE_MEDCOUPLING)
     bft_error(__FILE__,
@@ -2565,9 +2567,7 @@ user_compute_cell_volume_per_layer(user_profile_t *profile)
               _("Error: This intersection method cannot be called without "
                 "MEDCoupling support.\n"));
 #else
-
     _compute_cell_vol_per_layer_med(profile);
-
 #endif
   }
   else if (strcmp(profile->intersect_method, "STL") == 0) {
@@ -2900,8 +2900,8 @@ user_histogram_ot_output(user_histogram_t  *histogram,
  *----------------------------------------------------------------------------*/
 
 void
-user_profile_histogram_ot_output(user_profile_t  *profile,
-                                 int              interval)
+user_profile_histogram_ot_output([[maybe_unused]] user_profile_t  *profile,
+                                 [[maybe_unused]] int              interval)
 {
 #if HAVE_OT == 1
   /*Output the PDF historgam thks to OT lib features*/

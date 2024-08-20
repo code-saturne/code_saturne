@@ -2144,8 +2144,6 @@ cs_io_initialize_with_index_from_mem(const char        *file_name,
 
 #if defined(HAVE_MPI)
 
-  MPI_Info _hints = MPI_INFO_NULL;
-
   _cs_io_initialize_with_index_from_mem(inp, file_name, magic_string, method,
                                         nb, data,
                                         block_comm, comm);
