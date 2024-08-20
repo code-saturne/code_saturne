@@ -38,7 +38,8 @@ else
 ENABLE_GUI = --without-gui
 endif
 
-EXTRA_DIST="$(find ${srcdir} -maxdepth 8 -type f)"
+# Copy all files in pythondir
+EXTRA_DIST = ${srcdir}/*
 
 clean-local:
 	if test -d ${abs_top_srcdir}/python/code_saturne.egg-info; then \
