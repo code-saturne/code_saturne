@@ -3,6 +3,9 @@ Master (not on release branches yet)
 
 ### Users changes:
 
+- Rename all cs_user_XXX.c functions to cs_user_XXX.cpp thus allowing calls
+  to C++ functions within these functions.
+
 - Add a runtime option for `run` and `submit` commands to check for memory leaks.
   User can now run `code_saturne run --mem-log` which will position the
   environment variable `CS_MEM_LOG=cs_mem.log` automatically, and will
