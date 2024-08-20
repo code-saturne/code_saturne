@@ -759,8 +759,8 @@ _gravity_st_epsilon(int              phase_id,
  * \param[out]  viscf     visc*surface/dist at internal faces
  * \param[out]  viscb     visc*surface/dist at edge faces
  * \param[out]  viscce    Daly Harlow diffusion term
- * \param[out]  rhs       working array
- * \param[out]  rovsdt    working array
+ * \param[out]  rhs       right hand side
+ * \param[out]  fimp      Implicit term (containing unsteady term)
  * \param[out]  weighf    working array
  * \param[out]  weighb    working array
  */
@@ -776,7 +776,7 @@ _pre_solve_lrr(const cs_field_t  *f_rij,
                cs_real_t          viscb[],
                cs_real_t          viscce[][6],
                cs_real_t          rhs[][6],
-               cs_real_t          rovsdt[][6][6],
+               cs_real_t          fimp[][6][6],
                cs_real_t          weighf[][2],
                cs_real_t          weighb[])
 {
@@ -910,13 +910,13 @@ _pre_solve_lrr(const cs_field_t  *f_rij,
     /* Compute inverse matrix of R^n
        (scaling by tr(R) for numerical stability) */
     cs_real_t matrn[6];
-    for (cs_lnum_t ii = 0; ii < 6; ii++)
-      matrn[ii] = cvara_var[c_id][ii] / trrij;
+    for (cs_lnum_t ij = 0; ij < 6; ij++)
+      matrn[ij] = cvara_var[c_id][ij] / trrij;
 
     cs_real_t oo_matrn[6];
     cs_math_sym_33_inv_cramer(matrn, oo_matrn);
-    for (cs_lnum_t ii = 0; ii < 6; ii++)
-      oo_matrn[ii] /= trrij;
+    for (cs_lnum_t ij = 0; ij < 6; ij++)
+      oo_matrn[ij] /= trrij;
 
     /* Compute the maximal eigenvalue (in terms of norm!) of S */
     cs_real_t eigen_vals[3];
@@ -938,11 +938,11 @@ _pre_solve_lrr(const cs_field_t  *f_rij,
     cs_real_t implmat2add[3][3];
     for (cs_lnum_t i = 0; i < 3; i++) {
       for (cs_lnum_t j = 0; j < 3; j++) {
-        cs_lnum_t _ij = _t2v[i][j];
+        cs_lnum_t ij = _t2v[i][j];
         implmat2add[i][j] =   (1.0 - crij2) * xrotac[i][j]
-                              + impl_lin_cst * deltij[_ij]
-                              + impl_id_cst * d1s2 * oo_matrn[_ij]
-                              + ceps_impl * oo_matrn[_ij];
+                              + impl_lin_cst * deltij[ij]
+                              + impl_id_cst * d1s2 * oo_matrn[ij]
+                              + ceps_impl * oo_matrn[ij];
       }
     }
 
@@ -981,12 +981,12 @@ _pre_solve_lrr(const cs_field_t  *f_rij,
                          * (pij + phiij1 + phiij2 + epsij);
 
         /* Implicit terms */
-        rovsdt[c_id][ij][ij] +=   crom[c_id] * cell_f_vol[c_id] / trrij
+        fimp[c_id][ij][ij] +=   crom[c_id] * cell_f_vol[c_id] / trrij
                                 * (crij1 * cvara_ep[c_id]);
 
-        for (cs_lnum_t jj = 0; jj < 6; jj++)
-          rovsdt[c_id][ij][jj] +=   crom[c_id] * cell_f_vol[c_id]
-                                  * impl_drsm[ij][jj];
+        for (cs_lnum_t kl = 0; kl < 6; kl++)
+          fimp[c_id][ij][kl] +=   crom[c_id] * cell_f_vol[c_id]
+                                  * impl_drsm[ij][kl];
       }
     }
 
@@ -1184,8 +1184,8 @@ _pre_solve_lrr(const cs_field_t  *f_rij,
  * \param[out]  viscf     visc*surface/dist at internal faces
  * \param[out]  viscb     visc*surface/dist at edge faces
  * \param[out]  viscce    Daly Harlow diffusion term
- * \param[out]  rhs       working array
- * \param[out]  rovsdt    working array
+ * \param[out]  rhs       right hand side
+ * \param[out]  fimp      Implicit term (containing unsteady term)
  * \param[out]  weighf    working array
  * \param[out]  weighb    working array
  */
@@ -1200,7 +1200,7 @@ _pre_solve_lrr_sg(const cs_field_t  *f_rij,
                   cs_real_t          viscb[],
                   cs_real_t          viscce[][6],
                   cs_real_t          rhs[][6],
-                  cs_real_t          rovsdt[][6][6],
+                  cs_real_t          fimp[][6][6],
                   cs_real_t          weighf[][2],
                   cs_real_t          weighb[])
 {
@@ -1332,7 +1332,7 @@ _pre_solve_lrr_sg(const cs_field_t  *f_rij,
                                    * cvara_var[c_id][ii]);
 
         /* Calculation of the implicit part coming from Phil = C1rho eps/k(1) */
-        rovsdt[c_id][ii][ii] +=   crom[c_id] * cell_f_vol[c_id]
+        fimp[c_id][ii][ii] +=   crom[c_id] * cell_f_vol[c_id]
                                 * crij1 * cvara_ep[c_id] / trrij * thetv;
       }
 
@@ -1353,8 +1353,8 @@ _pre_solve_lrr_sg(const cs_field_t  *f_rij,
           rhs[c_id][ii] +=   crom[c_id] * cell_f_vol[c_id]
                            * t1 * cvara_var[c_id][ii];
 
-          /* We add to rovsdt = C1rho eps/k(-1/3) */
-          rovsdt[c_id][ii][ii] += crom[c_id] * cell_f_vol[c_id] * t1;
+          /* We add to fimp = C1rho eps/k(-1/3) */
+          fimp[c_id][ii][ii] += crom[c_id] * cell_f_vol[c_id] * t1;
         }
       }
     }
@@ -1388,7 +1388,7 @@ _pre_solve_lrr_sg(const cs_field_t  *f_rij,
 
         /* Calculation of the implicit part coming from Phi1
          *  = C1rho eps/k(1-1/3 dij) */
-        rovsdt[c_id][ii][ii] +=   crom[c_id] * cell_f_vol[c_id]
+        fimp[c_id][ii][ii] +=   crom[c_id] * cell_f_vol[c_id]
                                 * (1-d1s3 *deltij[ii]) * crij1
                                 * cvara_ep[c_id]/trrij;
       }
@@ -1587,8 +1587,8 @@ _pre_solve_lrr_sg(const cs_field_t  *f_rij,
  * \param[out]  viscf     visc*surface/dist at internal faces
  * \param[out]  viscb     visc*surface/dist at edge faces
  * \param[out]  viscce    Daly Harlow diffusion term
- * \param[out]  rhs       working array
- * \param[out]  rovsdt    working array
+ * \param[out]  rhs       right hand side
+ * \param[out]  fimp      Implicit term (containing unsteady term)
  * \param[out]  weighf    working array
  * \param[out]  weighb    working array
  */
@@ -1604,7 +1604,7 @@ _pre_solve_ssg(const cs_field_t  *f_rij,
                cs_real_t          viscb[],
                cs_real_t          viscce[][6],
                cs_real_t          rhs[][6],
-               cs_real_t          rovsdt[][6][6],
+               cs_real_t          fimp[][6][6],
                cs_real_t          weighf[][2],
                cs_real_t          weighb[])
 {
@@ -2065,11 +2065,11 @@ _pre_solve_ssg(const cs_field_t  *f_rij,
       }
       else {
         rhs[c_id][ij] += w1[c_id];
-        rovsdt[c_id][ij][ij] += w2[c_id];
+        fimp[c_id][ij][ij] += w2[c_id];
 
         if (coupled_components != 0) {
           for (cs_lnum_t jj = 0; jj < 6; jj++)
-            rovsdt[c_id][ij][jj] +=   crom[c_id] * cell_f_vol[c_id]
+            fimp[c_id][ij][jj] +=   crom[c_id] * cell_f_vol[c_id]
                                     * impl_drsm[ij][jj];
         }
       }
@@ -2180,7 +2180,7 @@ _pre_solve_ssg(const cs_field_t  *f_rij,
 
         for (cs_lnum_t ii = 0; ii < 6; ii++) {
           for (cs_lnum_t jj = 0; jj < 6; jj++)
-            rovsdt[c_id][ii][jj] += cell_f_vol[c_id] * impl_drsm[ii][jj];
+            fimp[c_id][ii][jj] += cell_f_vol[c_id] * impl_drsm[ii][jj];
         }
 
       } /* End of loop on cells */
@@ -2247,17 +2247,17 @@ _pre_solve_ssg(const cs_field_t  *f_rij,
  * \brief Solve epsilon for the \f$ R_{ij} - \varepsilon \f$ RANS
  *        turbulence model.
  *
- * \param[in]     phase_id    turbulent phase id (-1 for single phase flow)
- * \param[in]     gradv       work array for the term grad
- *                            of velocity only for iturb=31
- * \param[in]     produc      work array for production (without
- *                            rho volume) only for iturb=30
- * \param[in]     up_rhop     work array for \f$ \vect{u}'\rho' \f$
- *                            source terms or mass rate
- * \param[in]     viscf       visc*surface/dist at internal faces
- * \param[in]     viscb       visc*surface/dist at edge faces
- * \param[in]     rhs         working array
- * \param[in]     rovsdt      working array
+ * \param[in]   phase_id  turbulent phase id (-1 for single phase flow)
+ * \param[in]   gradv     work array for the term grad
+ *                        of velocity only for iturb=31
+ * \param[in]   produc    work array for production (without
+ *                        rho volume) only for iturb=30
+ * \param[in]   up_rhop   work array for \f$ \vect{u}'\rho' \f$
+ *                        source terms or mass rate
+ * \param[in]   viscf     visc*surface/dist at internal faces
+ * \param[in]   viscb     visc*surface/dist at edge faces
+ * \param[out]  rhs       right hand side
+ * \param[out]  fimp      Implicit term (containing unsteady term)
  !*/
 /*----------------------------------------------------------------------------*/
 
@@ -2269,7 +2269,7 @@ _solve_epsilon(int              phase_id,
                cs_real_t        viscf[],
                cs_real_t        viscb[],
                cs_real_t        rhs[],
-               cs_real_t        rovsdt[])
+               cs_real_t        fimp[])
 {
   const cs_mesh_t *m = cs_glob_mesh;
   const cs_mesh_quantities_t *fvq = cs_glob_mesh_quantities;
@@ -2350,7 +2350,7 @@ _solve_epsilon(int              phase_id,
   const cs_real_t thetv = eqp->theta;
 
   cs_array_real_fill_zero(n_cells, rhs);
-  cs_array_real_fill_zero(n_cells, rovsdt);
+  cs_array_real_fill_zero(n_cells, fimp);
 
   /* Work arrays */
   cs_real_t *w1;
@@ -2362,10 +2362,10 @@ _solve_epsilon(int              phase_id,
   cs_user_source_terms(cs_glob_domain,
                        f_eps->id,
                        rhs,
-                       rovsdt);
+                       fimp);
 
   if (cs_glob_porous_model == 3)
-    cs_immersed_boundary_wall_functions(f_eps->id, rhs, rovsdt);
+    cs_immersed_boundary_wall_functions(f_eps->id, rhs, fimp);
 
   /* If we extrapolate the source terms */
   if (st_prv_id > -1) {
@@ -2376,18 +2376,18 @@ _solve_epsilon(int              phase_id,
       /* For the continuation and the next time step */
       c_st_prv[c_id] = rhs[c_id];
       /* RHS of previous time step
-       *   We assume -rovsdt > 0: we implicit
+       *   We assume -fimp > 0: we implicit
        *   the user source term (the rest)  */
-      rhs[c_id] = rovsdt[c_id]*cvara_ep[c_id] - thets*tuexpe;
+      rhs[c_id] = fimp[c_id]*cvara_ep[c_id] - thets*tuexpe;
       /* Diagonal */
-      rovsdt[c_id] = -thetv*rovsdt[c_id];
+      fimp[c_id] = -thetv*fimp[c_id];
     }
   }
   else {
 #   pragma omp parallel for if(n_cells_ext > CS_THR_MIN)
     for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-      rhs[c_id]   += rovsdt[c_id]*cvara_ep[c_id];
-      rovsdt[c_id]  = cs_math_fmax(-rovsdt[c_id], cs_math_zero_threshold);
+      rhs[c_id]   += fimp[c_id]*cvara_ep[c_id];
+      fimp[c_id]  = cs_math_fmax(-fimp[c_id], cs_math_zero_threshold);
     }
   }
 
@@ -2414,7 +2414,7 @@ _solve_epsilon(int              phase_id,
       rhs[c_id]   += cs_turb_ce4 * st_eps / k;
 
       /* equiv:                    -cs_turb_ce4 * st_eps * / (k/eps) */
-      rovsdt[c_id] += cs_math_fmax(-cs_turb_ce4 * st_eps / k * cvara_ep[c_id],
+      fimp[c_id] += cs_math_fmax(-cs_turb_ce4 * st_eps / k * cvara_ep[c_id],
                                    cs_math_zero_threshold);
    }
   }
@@ -2433,7 +2433,7 @@ _solve_epsilon(int              phase_id,
         Otherwise we put it directly in rhs */
     cs_real_t *gapinj = (st_prv_id > -1) ? c_st_prv : rhs;
 
-    /* We increment rhs with -Gamma.var_prev. and rovsdt with Gamma */
+    /* We increment rhs with -Gamma.var_prev. and fimp with Gamma */
 
     cs_volume_mass_injection_get_arrays(f_eps,
                                         &ncesmp,
@@ -2451,7 +2451,7 @@ _solve_epsilon(int              phase_id,
                          smacel,
                          gamma,
                          rhs,
-                         rovsdt,
+                         fimp,
                          gapinj);
 
   }
@@ -2462,7 +2462,7 @@ _solve_epsilon(int              phase_id,
   if (eqp->istat == 1) {
 #   pragma omp parallel for if(n_cells_ext > CS_THR_MIN)
     for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-      rovsdt[c_id] += (crom[c_id] / dt[c_id]) * cell_f_vol[c_id];
+      fimp[c_id] += (crom[c_id] / dt[c_id]) * cell_f_vol[c_id];
     }
   }
 
@@ -2525,7 +2525,7 @@ _solve_epsilon(int              phase_id,
       /* Dissipation (implicit) */
       const cs_real_t crom_vol = crom[c_id] * cell_f_vol[c_id];
       rhs[c_id] -= crom_vol * ceps2 * cvara_ep[c_id] / xttdrb;
-      rovsdt[c_id] += ceps2 * crom_vol * thetap / xttdrb;
+      fimp[c_id] += ceps2 * crom_vol * thetap / xttdrb;
     }
 
   }
@@ -2542,7 +2542,7 @@ _solve_epsilon(int              phase_id,
 
       /* Production (explicit, a part might be implicit) */
       const cs_real_t cromo_vol = cromo[c_id] * cell_f_vol[c_id];
-      rovsdt[c_id]
+      fimp[c_id]
         += cs_math_fmax(- cromo_vol * cs_turb_ce1 * trprod / trrij,
                         0.0);
       w1[c_id] = cromo_vol * cs_turb_ce1 / xttke * trprod;
@@ -2550,7 +2550,7 @@ _solve_epsilon(int              phase_id,
       /* Dissipation (implicit) */
       const cs_real_t crom_vol = crom[c_id] * cell_f_vol[c_id];
       rhs[c_id]   -= crom_vol * ceps2 * cs_math_pow2(cvara_ep[c_id]) / trrij;
-      rovsdt[c_id] += ceps2 * crom_vol / xttke * thetap;
+      fimp[c_id] += ceps2 * crom_vol / xttke * thetap;
     }
 
   }
@@ -2688,7 +2688,7 @@ _solve_epsilon(int              phase_id,
                                      weighb,
                                      0,  /* boundary convective upwind flux */
                                      NULL,
-                                     rovsdt,
+                                     fimp,
                                      rhs,
                                      cvar_ep,
                                      dpvar,
@@ -2756,6 +2756,57 @@ cs_turbulence_rij(int phase_id)
 
   cs_real_t *cvar_ep = f_eps->val;
   cs_real_6_t *cvar_rij = (cs_real_6_t *)f_rij->val;
+
+  cs_real_6_t *rhs;
+  cs_real_66_t *fimp;
+  CS_MALLOC_HD(rhs, n_cells_ext, cs_real_6_t, cs_alloc_mode);
+  CS_MALLOC_HD(fimp,  n_cells_ext, cs_real_66_t, cs_alloc_mode);
+
+  /* Source terms for Rij
+   * -------------------- */
+
+  cs_array_real_fill_zero(6*n_cells, (cs_real_t*)rhs);
+  cs_array_real_fill_zero(36*n_cells, (cs_real_t*)fimp);
+
+  cs_user_source_terms(cs_glob_domain,
+                       f_rij->id,
+                       (cs_real_t*)rhs,
+                       (cs_real_t*)fimp);
+
+  if (c_st_prv != NULL) {
+
+#   pragma omp parallel for if(n_cells > CS_THR_MIN)
+    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+      for (cs_lnum_t ii = 0; ii < 6; ii++) {
+        const cs_real_t tuexpr = c_st_prv[c_id][ii];
+        /* For continuation and the next time step */
+        c_st_prv[c_id][ii] = rhs[c_id][ii];
+
+        rhs[c_id][ii] = -thets*tuexpr;
+        /* Right hand side of the previous time step
+         * We suppose -fimp > 0: we implicit
+         * the user source term (the rest) */
+        for (cs_lnum_t jj = 0; jj < 6; jj++) {
+          rhs[c_id][ii] += fimp[c_id][ii][jj] * cvara_rij[c_id][jj];
+          /* Diagonal */
+          fimp[c_id][ii][jj] *= -thetv;
+        }
+      }
+    }
+
+  }
+  else {
+
+#   pragma omp parallel for if(n_cells > CS_THR_MIN)
+    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+      for (cs_lnum_t ii = 0; ii < 6; ii++) {
+        for (cs_lnum_t jj = 0; jj < 6; jj++)
+          rhs[c_id][ii] += fimp[c_id][ii][jj] * cvara_rij[c_id][jj];
+        fimp[c_id][ii][ii] = cs_math_fmax(-fimp[c_id][ii][ii], 0.);
+      }
+    }
+
+  }
 
   const cs_real_t *dt = CS_F_(dt)->val;
   const cs_real_t *crom = f_rho->val;
@@ -2846,12 +2897,7 @@ cs_turbulence_rij(int phase_id)
     }
   }
 
-  cs_real_6_t *smbrts;
-  cs_real_66_t *rovsdtts;
-  CS_MALLOC_HD(smbrts, n_cells_ext, cs_real_6_t, cs_alloc_mode);
-  CS_MALLOC_HD(rovsdtts,  n_cells_ext, cs_real_66_t, cs_alloc_mode);
-
-  /* Advanced initialiation for EBRSM
+  /* Advanced initialization for EBRSM
    * -------------------------------- */
 
   /* Automatic reinitialization at the end of the first iteration:
@@ -2962,39 +3008,18 @@ cs_turbulence_rij(int phase_id)
 
     /* Pij = - (Rik dUk/dXj + dUk/dXi Rkj)
      * Pij is stored as (P11, P22, P33, P12, P23, P13) */
-    produc[c_id][0] = -2. * (  cvara_rij[c_id][0] * gradv[c_id][0][0]
-                             + cvara_rij[c_id][3] * gradv[c_id][0][1]
-                             + cvara_rij[c_id][5] * gradv[c_id][0][2]);
+    for (cs_lnum_t ij = 0; ij < 6; ij++) {
+      cs_lnum_t i = _iv2t[ij];
+      cs_lnum_t j = _jv2t[ij];
 
-    produc[c_id][1] = -2. * (  cvara_rij[c_id][3] * gradv[c_id][1][0]
-                             + cvara_rij[c_id][1] * gradv[c_id][1][1]
-                             + cvara_rij[c_id][4] * gradv[c_id][1][2]);
 
-    produc[c_id][2] = -2. * (  cvara_rij[c_id][5] * gradv[c_id][2][0]
-                             + cvara_rij[c_id][4] * gradv[c_id][2][1]
-                             + cvara_rij[c_id][2] * gradv[c_id][2][2]);
-
-    produc[c_id][3] = - (  cvara_rij[c_id][3] * gradv[c_id][0][0]
-                         + cvara_rij[c_id][1] * gradv[c_id][0][1]
-                         + cvara_rij[c_id][4] * gradv[c_id][0][2])
-                      - (  cvara_rij[c_id][0] * gradv[c_id][1][0]
-                         + cvara_rij[c_id][3] * gradv[c_id][1][1]
-                         + cvara_rij[c_id][5] * gradv[c_id][1][2]);
-
-    produc[c_id][4] = - (  cvara_rij[c_id][5] * gradv[c_id][1][0]
-                         + cvara_rij[c_id][4] * gradv[c_id][1][1]
-                         + cvara_rij[c_id][2] * gradv[c_id][1][2])
-                      - (  cvara_rij[c_id][3] * gradv[c_id][2][0]
-                         + cvara_rij[c_id][1] * gradv[c_id][2][1]
-                         + cvara_rij[c_id][4] * gradv[c_id][2][2]);
-
-    produc[c_id][5] = - (  cvara_rij[c_id][5] * gradv[c_id][0][0]
-                         + cvara_rij[c_id][4] * gradv[c_id][0][1]
-                         + cvara_rij[c_id][2] * gradv[c_id][0][2])
-                      - (  cvara_rij[c_id][0] * gradv[c_id][2][0]
-                         + cvara_rij[c_id][3] * gradv[c_id][2][1]
-                         + cvara_rij[c_id][5] * gradv[c_id][2][2]);
-
+    produc[c_id][ij] = - ( cvara_rij[c_id][_t2v[i][0]] * gradv[c_id][0][j]
+                         + cvara_rij[c_id][_t2v[i][1]] * gradv[c_id][1][j]
+                         + cvara_rij[c_id][_t2v[i][2]] * gradv[c_id][2][j]
+                         + gradv[c_id][0][i] * cvara_rij[c_id][_t2v[0][j]]
+                         + gradv[c_id][1][i] * cvara_rij[c_id][_t2v[1][j]]
+                         + gradv[c_id][2][i] * cvara_rij[c_id][_t2v[2][j]]
+                         );
   }
 
   /* Compute the pressure correlation  term for Rij
@@ -3038,56 +3063,10 @@ cs_turbulence_rij(int phase_id)
      to that of cs_solve_equation_scalar.
    * ========================================= */
 
-  /* Source terms for Rij
-   * -------------------- */
-
-  cs_array_real_fill_zero(6*n_cells, (cs_real_t*)smbrts);
-  cs_array_real_fill_zero(36*n_cells, (cs_real_t*)rovsdtts);
-
-  cs_user_source_terms(cs_glob_domain,
-                       f_rij->id,
-                       (cs_real_t*)smbrts,
-                       (cs_real_t*)rovsdtts);
-
   if (cs_glob_porous_model == 3)
     cs_immersed_boundary_wall_functions(f_rij->id,
-                                        (cs_real_t*)smbrts,
-                                        (cs_real_t*)rovsdtts);
-
-  if (c_st_prv != NULL) {
-
-#   pragma omp parallel for if(n_cells > CS_THR_MIN)
-    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-      for (cs_lnum_t ii = 0; ii < 6; ii++) {
-        const cs_real_t tuexpr = c_st_prv[c_id][ii];
-        /* For continuation and the next time step */
-        c_st_prv[c_id][ii] = smbrts[c_id][ii];
-
-        smbrts[c_id][ii] = -thets*tuexpr;
-        /* Right hand side of the previous time step
-         * We suppose -rovsdt > 0: we implicit
-         * the user source term (the rest) */
-        for (cs_lnum_t jj = 0; jj < 6; jj++) {
-          smbrts[c_id][ii] += rovsdtts[c_id][ii][jj] * cvara_rij[c_id][jj];
-          /* Diagonal */
-          rovsdtts[c_id][ii][jj] *= -thetv;
-        }
-      }
-    }
-
-  }
-  else {
-
-#   pragma omp parallel for if(n_cells > CS_THR_MIN)
-    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-      for (cs_lnum_t ii = 0; ii < 6; ii++) {
-        for (cs_lnum_t jj = 0; jj < 6; jj++)
-          smbrts[c_id][ii] += rovsdtts[c_id][ii][jj] * cvara_rij[c_id][jj];
-        rovsdtts[c_id][ii][ii] = cs_math_fmax(-rovsdtts[c_id][ii][ii], 0.);
-      }
-    }
-
-  }
+                                        (cs_real_t*)rhs,
+                                        (cs_real_t*)fimp);
 
   /* Lagrangian source terms
    * ----------------------- */
@@ -3103,9 +3082,38 @@ cs_turbulence_rij(int phase_id)
 
 #   pragma omp parallel for if(n_cells > CS_THR_MIN)
     for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-      for (cs_lnum_t ii = 0; ii < 6; ii++) {
-        smbrts[c_id][ii] += lagr_st_rij[c_id][ii];
-        rovsdtts[c_id][ii][ii] += cs_math_fmax(-lag_st_i[c_id], 0.);
+      /* Compute inverse matrix of R^n
+         (scaling by tr(R) for numerical stability) */
+      cs_real_t matrn[6];
+      for (cs_lnum_t ij = 0; ij < 6; ij++)
+        matrn[ij] = cvara_var[c_id][ij] / trrij;
+
+      cs_real_t oo_matrn[6];
+      cs_math_sym_33_inv_cramer(matrn, oo_matrn);
+      for (cs_lnum_t ij = 0; ij < 6; ij++)
+        oo_matrn[ij] /= trrij;
+
+      cs_real_t implmat2add[3][3];
+      const cs_real_t ceps_impl = d1s3 * cvara_ep[c_id];
+      for (cs_lnum_t i = 0; i < 3; i++) {
+        for (cs_lnum_t j = 0; j < 3; j++) {
+          cs_lnum_t ij = _t2v[i][j];
+          implmat2add[i][j] =  ceps_impl * oo_matrn[ij];
+        }
+      }
+
+      /* Compute the 6x6 matrix A which verifies
+       * A.R = M.R + R.M^t */
+      cs_real_t impl_drsm[6][6];
+      cs_math_reduce_sym_prod_33_to_66(implmat2add, impl_drsm);
+
+      for (cs_lnum_t ij = 0; ij < 6; ij++) {
+        /* Implicit terms */
+        for (cs_lnum_t kl = 0; kl < 6; kl++)
+          fimp[c_id][ij][kl] +=   crom[c_id] * cell_f_vol[c_id]
+                                  * impl_drsm[ij][kl];
+        rhs[c_id][ij] += lagr_st_rij[c_id][ij];
+        fimp[c_id][ij][ij] += cs_math_fmax(-lag_st_i[c_id], 0.);
       }
     }
   }
@@ -3127,10 +3135,10 @@ cs_turbulence_rij(int phase_id)
                                         &gamma);
 
     /* If we extrapolate the source terms, we put Gamma Pinj in c_st_prv;
-        Otherwise we put it directly in smbrts */
-    cs_real_6_t *gatinj = (st_prv_id > -1) ? c_st_prv : smbrts;
+        Otherwise we put it directly in rhs */
+    cs_real_6_t *gatinj = (st_prv_id > -1) ? c_st_prv : rhs;
 
-    /* We increment smbrts with -Gamma.var_prev. and rovsdr with Gamma */
+    /* We increment rhs with -Gamma.var_prev. and rovsdr with Gamma */
 
     cs_mass_source_terms(1, /* iterns*/
                          6, /* dim */
@@ -3141,8 +3149,8 @@ cs_turbulence_rij(int phase_id)
                          (cs_real_t*)cvara_rij,
                          smacel,
                          gamma,
-                         (cs_real_t*)smbrts,
-                         (cs_real_t*)rovsdtts,
+                         (cs_real_t*)rhs,
+                         (cs_real_t*)fimp,
                          (cs_real_t*)gatinj);
   }
 
@@ -3151,7 +3159,7 @@ cs_turbulence_rij(int phase_id)
   if (eqp->istat == 1) {
     for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
       for (int ii = 0; ii < 6; ii++)
-        rovsdtts[c_id][ii][ii] += (crom[c_id]/dt[c_id])*cell_f_vol[c_id];
+        fimp[c_id][ii][ii] += (crom[c_id]/dt[c_id])*cell_f_vol[c_id];
     }
   }
 
@@ -3171,13 +3179,13 @@ cs_turbulence_rij(int phase_id)
        _pre_solve_lrr(f_rij, phase_id, gradv,
                       produc, up_rhop,
                       viscf, viscb, viscce,
-                      smbrts, rovsdtts,
+                      rhs, fimp,
                       weighf, weighb);
      else
        _pre_solve_lrr_sg(f_rij, phase_id,
                          produc, up_rhop,
                          viscf, viscb, viscce,
-                         smbrts, rovsdtts,
+                         rhs, fimp,
                          weighf, weighb);
 
    }
@@ -3186,7 +3194,7 @@ cs_turbulence_rij(int phase_id)
      _pre_solve_ssg(f_rij, phase_id, gradv,
                     produc, up_rhop,
                     viscf, viscb, viscce,
-                    smbrts, rovsdtts,
+                    rhs, fimp,
                     weighf, weighb);
    }
 
@@ -3245,10 +3253,10 @@ cs_turbulence_rij(int phase_id)
 #    pragma omp parallel for if(n_cells > CS_THR_MIN)
      for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
        for (cs_lnum_t ii = 0; ii < 6; ii++)
-         smbrts[c_id][ii] += thetp1 * c_st_prv[c_id][ii];
+         rhs[c_id][ii] += thetp1 * c_st_prv[c_id][ii];
    }
 
-   cs_solid_zone_set_zero_on_cells(6, (cs_real_t *)smbrts);
+   cs_solid_zone_set_zero_on_cells(6, (cs_real_t *)rhs);
 
    /* All boundary convective flux with upwind */
    int icvflb = 0;
@@ -3277,21 +3285,21 @@ cs_turbulence_rij(int phase_id)
                                       weighb,
                                       icvflb,
                                       NULL,
-                                      rovsdtts,
-                                      smbrts,
+                                      fimp,
+                                      rhs,
                                       cvar_rij);
 
    CS_FREE_HD(viscce);
-   CS_FREE_HD(rovsdtts);
-   CS_FREE_HD(smbrts);
+   CS_FREE_HD(fimp);
+   CS_FREE_HD(rhs);
 
    /* Solve Epsilon
     * ------------- */
 
    {
-     cs_real_t *smbr, *rovsdt;
+     cs_real_t *smbr, *fimp;
      CS_MALLOC_HD(smbr, n_cells_ext, cs_real_t, cs_alloc_mode);
-     CS_MALLOC_HD(rovsdt, n_cells_ext, cs_real_t, cs_alloc_mode);
+     CS_MALLOC_HD(fimp, n_cells_ext, cs_real_t, cs_alloc_mode);
 
      _solve_epsilon(phase_id,
                     gradv,
@@ -3300,9 +3308,9 @@ cs_turbulence_rij(int phase_id)
                     viscf,
                     viscb,
                     smbr,
-                    rovsdt);
+                    fimp);
 
-     BFT_FREE(rovsdt);
+     BFT_FREE(fimp);
      BFT_FREE(smbr);
    }
 
@@ -3401,14 +3409,14 @@ cs_turbulence_rij_solve_alpha(int        f_id,
                   cs_field_get_label(cs_field_by_id(f_id)));
   }
 
-  cs_real_t *rovsdt, *rhs;
+  cs_real_t *fimp, *rhs;
 
   /* Allocate temporary arrays */
   BFT_MALLOC(rhs, n_cells_ext, cs_real_t);
-  BFT_MALLOC(rovsdt, n_cells_ext, cs_real_t);
+  BFT_MALLOC(fimp, n_cells_ext, cs_real_t);
 
   cs_array_real_fill_zero(n_cells, rhs);
-  cs_array_real_fill_zero(n_cells, rovsdt);
+  cs_array_real_fill_zero(n_cells, fimp);
 
   /* Source term of alpha
    *  \f$ rhs = \dfrac{1}{L^2 (\alpha)} - \dfrac{1}{L^2}\f$
@@ -3439,7 +3447,7 @@ cs_turbulence_rij_solve_alpha(int        f_id,
       rhs[c_id] = cell_f_vol[c_id]*(1.0-cvara_al[c_id]) / l2;
 
       /* Implicit term */
-      rovsdt[c_id] = (rovsdt[c_id]+cell_f_vol[c_id]*thetap) / l2;
+      fimp[c_id] = (fimp[c_id]+cell_f_vol[c_id]*thetap) / l2;
     }
 
   }
@@ -3467,7 +3475,7 @@ cs_turbulence_rij_solve_alpha(int        f_id,
       rhs[c_id] = cell_f_vol[c_id]*(1.0-cvara_al[c_id]) / l2;
 
       /* Implicit term */
-      rovsdt[c_id] = (rovsdt[c_id]+cell_f_vol[c_id]*thetap) / l2;
+      fimp[c_id] = (fimp[c_id]+cell_f_vol[c_id]*thetap) / l2;
     }
 
   }
@@ -3530,7 +3538,7 @@ cs_turbulence_rij_solve_alpha(int        f_id,
                                      NULL,
                                      0, /* boundary convective upwind flux */
                                      NULL,
-                                     rovsdt,
+                                     fimp,
                                      rhs,
                                      cvar_al,
                                      dpvar,
@@ -3554,7 +3562,7 @@ cs_turbulence_rij_solve_alpha(int        f_id,
    * much smaller than the wanted value. */
 
   cs_array_real_fill_zero(n_cells_ext, alpha_min);
-  cs_array_real_copy(n_cells, rovsdt, alpha_min);
+  cs_array_real_copy(n_cells, fimp, alpha_min);
 
   for (cs_lnum_t face_id = 0; face_id < n_i_faces; face_id++) {
     const cs_lnum_t ii = i_face_cells[face_id][0];
@@ -3569,12 +3577,12 @@ cs_turbulence_rij_solve_alpha(int        f_id,
   }
 
   for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
-    alpha_min[c_id] = rovsdt[c_id]/alpha_min[c_id];
+    alpha_min[c_id] = fimp[c_id]/alpha_min[c_id];
 
   _clip_alpha(f_id, n_cells, alpha_min);
 
   BFT_FREE(alpha_min);
-  BFT_FREE(rovsdt);
+  BFT_FREE(fimp);
   CS_FREE_HD(viscf);
   CS_FREE_HD(viscb);
 }
