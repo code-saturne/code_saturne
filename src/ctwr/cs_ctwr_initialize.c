@@ -45,6 +45,7 @@
 #include "bft_printf.h"
 
 #include "cs_air_props.h"
+#include "cs_array.h"
 #include "cs_atmo.h"
 #include "cs_atmo_profile_std.h"
 #include "cs_base.h"
@@ -543,15 +544,13 @@ cs_ctwr_init_flow_vars(cs_real_t  liq_mass_flow[])
   cs_math_3_normalize(gravity, g_dir);
 
   /* Initialize the liquid mass flux to null */
-  for (cs_lnum_t face_id = 0; face_id < n_i_faces; face_id++)
-    liq_mass_flow[face_id] = 0.0;
+  cs_array_real_fill_zero(n_i_faces, liq_mass_flow);
 
   /* Tag and initialize the ct values in the packing zone cells */
 
   BFT_MALLOC(packing_cell, n_cells_with_ghosts, int);
 
-  for (cs_lnum_t cell_id = 0; cell_id < n_cells_with_ghosts; cell_id++)
-    packing_cell[cell_id] = -1;
+  cs_array_int_set_value(n_cells_with_ghosts, -1, packing_cell);
 
   /* Cooling tower zones */
   cs_ctwr_zone_t **_ct_zone = cs_get_glob_ctwr_zone();
@@ -573,9 +572,8 @@ cs_ctwr_init_flow_vars(cs_real_t  liq_mass_flow[])
   }
 
   /* Parallel synchronization */
-  if (halo != NULL) {
+  if (halo != NULL)
     cs_halo_sync_untyped(halo, CS_HALO_STANDARD, sizeof(int), packing_cell);
-  }
 
   /* Initialize the liquid mass flux at packing zone faces
    * and the ghost cells for the liquid mass and enthalpy
