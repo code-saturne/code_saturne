@@ -240,7 +240,7 @@ _mat_vec_exdiag_native(cs_lnum_t            n_faces,
   cs_lnum_t  ii, jj, face_id;
 
   const cs_lnum_t *restrict face_cel_p
-    = (const cs_lnum_t *restrict)face_cell;
+    = (const cs_lnum_t *)face_cell;
 
   for (face_id = 0; face_id < n_faces; face_id++) {
     ii = *face_cel_p++;
@@ -284,7 +284,7 @@ _mat_vec_exdiag_native_v1(cs_lnum_t            n_faces,
    */
 
   const cs_lnum_t *restrict face_cel_p
-    = (const cs_lnum_t *restrict)face_cell;
+    = (const cs_lnum_t *)face_cell;
 
   for (face_id = 0;
        face_id < n_faces;
@@ -343,7 +343,7 @@ _mat_vec_exdiag_native_v2(bool                 accel,
   const cs_mesh_t *m = cs_glob_mesh;
 
   const cs_lnum_2_t *restrict i_face_cells
-    = (const cs_lnum_2_t *restrict)m->i_face_cells;
+    = (const cs_lnum_2_t *)m->i_face_cells;
 
   cs_dispatch_context ctx;
   if (accel == false)
@@ -386,7 +386,7 @@ _mat_vec_exdiag_part_p1(cs_lnum_t            n_faces,
                         cs_real_t           *restrict ya)
 {
   const cs_lnum_t *restrict face_cel_p
-    = (const cs_lnum_t *restrict)face_cell;
+    = (const cs_lnum_t *)face_cell;
 
   for (cs_lnum_t face_id = 0; face_id < n_faces; face_id++) {
     cs_lnum_t ii = *face_cel_p++;

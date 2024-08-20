@@ -116,9 +116,9 @@ cs_user_boundary_conditions(cs_domain_t  *domain,
   const cs_lnum_t *b_face_cells = domain->mesh->b_face_cells;
 
   const cs_real_3_t *restrict b_face_normal
-    = (const cs_real_3_t *restrict)domain->mesh_quantities->b_face_normal;
+    = (const cs_real_3_t *)domain->mesh_quantities->b_face_normal;
   const cs_real_t *restrict b_face_surf
-    = ( const cs_real_t *restrict)domain->mesh_quantities->b_face_surf;
+    = ( const cs_real_t *)domain->mesh_quantities->b_face_surf;
 
   const cs_real_t viscl0 = cs_glob_fluid_properties->viscl0;
 

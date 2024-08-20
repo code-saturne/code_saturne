@@ -619,19 +619,19 @@ _turbomachinery_mass_flux(const cs_mesh_t             *m,
   const cs_lnum_t n_b_faces = m->n_b_faces;
 
   const cs_lnum_2_t *restrict i_face_cells
-    = (const cs_lnum_2_t *restrict)m->i_face_cells;
+    = (const cs_lnum_2_t *)m->i_face_cells;
   const cs_lnum_t *restrict b_face_cells
-    = (const cs_lnum_t *restrict)m->b_face_cells;
+    = (const cs_lnum_t *)m->b_face_cells;
 
   const cs_real_3_t  *restrict b_face_normal
-    = (const cs_real_3_t  *restrict) mq->b_face_normal;
+    = (const cs_real_3_t  *) mq->b_face_normal;
   const cs_real_3_t *restrict i_face_normal
-    = (const cs_real_3_t *restrict) mq->i_face_normal;
+    = (const cs_real_3_t *) mq->i_face_normal;
 
   const cs_real_3_t *restrict b_face_cog
-    = (const cs_real_3_t *restrict)mq->b_face_cog;
+    = (const cs_real_3_t *)mq->b_face_cog;
   const cs_real_3_t *restrict i_face_cog
-    = (const cs_real_3_t *restrict)mq->i_face_cog;
+    = (const cs_real_3_t *)mq->i_face_cog;
 
   const int *irotce = cs_turbomachinery_get_cell_rotor_num();
 
@@ -979,9 +979,9 @@ _mesh_velocity_mass_flux(const cs_mesh_t             *m,
   const cs_lnum_t n_b_faces = m->n_b_faces;
 
   const cs_lnum_2_t *restrict i_face_cells
-    = (const cs_lnum_2_t *restrict)m->i_face_cells;
+    = (const cs_lnum_2_t *)m->i_face_cells;
   const cs_lnum_t *restrict b_face_cells
-    = (const cs_lnum_t *restrict)m->b_face_cells;
+    = (const cs_lnum_t *)m->b_face_cells;
 
   const cs_lnum_t *i_face_vtx_idx = m->i_face_vtx_idx;
   const cs_lnum_t *i_face_vtx_lst = m->i_face_vtx_lst;
@@ -1327,14 +1327,14 @@ _update_fluid_vel(const cs_mesh_t             *m,
   const cs_lnum_t n_b_faces = m->n_b_faces;
 
   const cs_lnum_2_t *restrict i_face_cells
-    = (const cs_lnum_2_t *restrict)m->i_face_cells;
+    = (const cs_lnum_2_t *)m->i_face_cells;
   const cs_lnum_t *restrict b_face_cells
-    = (const cs_lnum_t *restrict)m->b_face_cells;
+    = (const cs_lnum_t *)m->b_face_cells;
 
   const cs_real_3_t *restrict i_face_cog
-    = (const cs_real_3_t *restrict)mq->i_face_cog;
+    = (const cs_real_3_t *)mq->i_face_cog;
   const cs_real_3_t *restrict b_face_cog
-    = (const cs_real_3_t *restrict)mq->b_face_cog;
+    = (const cs_real_3_t *)mq->b_face_cog;
   const cs_real_3_t *cell_cen = (const cs_real_3_t *)mq->cell_cen;
 
   int has_disable_flag = mq->has_disable_flag;
@@ -1707,9 +1707,9 @@ _log_norm(const cs_mesh_t                *m,
   const cs_lnum_t n_b_faces = m->n_b_faces;
 
   const cs_lnum_2_t *restrict i_face_cells
-    = (const cs_lnum_2_t *restrict)m->i_face_cells;
+    = (const cs_lnum_2_t *)m->i_face_cells;
   const cs_lnum_t *restrict b_face_cells
-    = (const cs_lnum_t *restrict)m->b_face_cells;
+    = (const cs_lnum_t *)m->b_face_cells;
 
   const cs_real_3_t *cell_cen = (const cs_real_3_t *)mq->cell_cen;
   const cs_real_t *i_face_surf = mq->i_face_surf;
@@ -2017,10 +2017,10 @@ _velocity_prediction(const cs_mesh_t             *m,
   const cs_lnum_t *b_face_cells = m->b_face_cells;
 
   const cs_real_t *cell_f_vol = mq->cell_f_vol;
-  const cs_real_3_t *restrict diipb = (const cs_real_3_t *restrict)mq->diipb;
+  const cs_real_3_t *restrict diipb = (const cs_real_3_t *)mq->diipb;
 
   const cs_real_3_t  *restrict b_face_normal
-    = (const cs_real_3_t  *restrict) mq->b_face_normal;
+    = (const cs_real_3_t  *) mq->b_face_normal;
   int has_disable_flag = mq->has_disable_flag;
   int *c_disable_flag = mq->c_disable_flag;
 
@@ -2376,7 +2376,7 @@ _velocity_prediction(const cs_mesh_t             *m,
                                 cpro_gradp);
 
   const cs_real_3_t *restrict cdgfbo
-      = (const cs_real_3_t *restrict)mq->b_face_cog;
+      = (const cs_real_3_t *)mq->b_face_cog;
 
   /* Compute stress at walls (part 2/5), if required.
    * Face pressure is computed at face and computed as in gradient
@@ -3778,7 +3778,7 @@ cs_solve_navier_stokes(const int        iterns,
   cs_lnum_t n_b_faces = m->n_b_faces;
 
   const cs_lnum_t *restrict b_face_cells
-    = (const cs_lnum_t *restrict)m->b_face_cells;
+    = (const cs_lnum_t *)m->b_face_cells;
 
   const cs_time_step_t *ts = cs_glob_time_step;
   const cs_wall_condensation_t *w_condensation = cs_glob_wall_condensation;
@@ -4224,7 +4224,7 @@ cs_solve_navier_stokes(const int        iterns,
     n_i_faces = m->n_i_faces;
     n_b_faces = m->n_b_faces;
 
-    b_face_cells = (const cs_lnum_t *restrict)m->b_face_cells;
+    b_face_cells = (const cs_lnum_t *)m->b_face_cells;
 
     if (cs_turbomachinery_get_n_couplings() < 1) {
 
@@ -4386,9 +4386,9 @@ cs_solve_navier_stokes(const int        iterns,
     const int *irotce = cs_turbomachinery_get_cell_rotor_num();
 
     const cs_real_3_t *restrict b_face_u_normal
-      = (const cs_real_3_t *restrict )mq->b_face_u_normal;
+      = (const cs_real_3_t *)mq->b_face_u_normal;
     const cs_real_3_t *restrict b_face_cog
-      = (const cs_real_3_t *restrict)mq->b_face_cog;
+      = (const cs_real_3_t *)mq->b_face_cog;
 
     for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++) {
 

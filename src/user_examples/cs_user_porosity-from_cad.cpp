@@ -138,9 +138,9 @@ cs_user_porosity(cs_domain_t   *domain)
   if (mq->i_f_face_surf != mq->i_face_surf) {
 
     const cs_real_3_t *restrict i_face_normal
-      = (const cs_real_3_t *restrict)mq->i_face_normal;
+      = (const cs_real_3_t *)mq->i_face_normal;
     cs_real_3_t *restrict i_f_face_normal
-      = (cs_real_3_t *restrict)mq->i_f_face_normal;
+      = (cs_real_3_t *)mq->i_f_face_normal;
     cs_real_t *i_f_face_surf = mq->i_f_face_surf;
 
     for (cs_lnum_t f_id = 0; f_id < n_i_faces; f_id++) {
@@ -155,9 +155,9 @@ cs_user_porosity(cs_domain_t   *domain)
   if (mq->b_f_face_surf != mq->b_face_surf) {
 
     const cs_real_3_t *restrict b_face_normal
-      = (const cs_real_3_t *restrict)mq->b_face_normal;
+      = (const cs_real_3_t *)mq->b_face_normal;
     cs_real_3_t *restrict b_f_face_normal
-      = (cs_real_3_t *restrict)mq->b_f_face_normal;
+      = (cs_real_3_t *)mq->b_f_face_normal;
     cs_real_t *b_f_face_surf = mq->b_f_face_surf;
 
     for (cs_lnum_t f_id = 0; f_id < n_b_faces; f_id++) {

@@ -146,7 +146,7 @@ cs_user_extra_operations(cs_domain_t     *domain)
   const cs_lnum_t n_b_faces = domain->mesh->n_b_faces;
 
   const cs_real_3_t  *restrict cell_cen
-    = (const cs_real_3_t *restrict)domain->mesh_quantities->cell_cen;
+    = (const cs_real_3_t *)domain->mesh_quantities->cell_cen;
 
   /* 0. Initialization
      ================= */

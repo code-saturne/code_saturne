@@ -909,14 +909,14 @@ cs_vof_log_mass_budget(const cs_mesh_t             *m,
 
   const cs_real_t *restrict cell_f_vol = mq->cell_f_vol;
   const cs_real_3_t *restrict i_face_cog
-    = (const cs_real_3_t *restrict)mq->i_face_cog;
+    = (const cs_real_3_t *)mq->i_face_cog;
   const cs_real_3_t *restrict b_face_cog
-    = (const cs_real_3_t *restrict)mq->b_face_cog;
+    = (const cs_real_3_t *)mq->b_face_cog;
 
   const cs_real_3_t *restrict i_f_face_normal
-    = (const cs_real_3_t *restrict)mq->i_f_face_normal;
+    = (const cs_real_3_t *)mq->i_f_face_normal;
   const cs_real_3_t *restrict b_f_face_normal
-    = (const cs_real_3_t *restrict)mq->b_f_face_normal;
+    = (const cs_real_3_t *)mq->b_f_face_normal;
 
   const int kimasf = cs_field_key_id("inner_mass_flux_id");
   const int kbmasf = cs_field_key_id("boundary_mass_flux_id");
@@ -1060,7 +1060,7 @@ cs_vof_surface_tension(const cs_mesh_t             *m,
   const cs_real_t *restrict pond = mq->weight;
 
   cs_real_3_t *restrict surfac = (cs_real_3_t *restrict )mq->i_face_normal;
-  cs_real_3_t *restrict dofij = (cs_real_3_t *restrict)mq->dofij;
+  cs_real_3_t *restrict dofij = (cs_real_3_t *)mq->dofij;
 
   const cs_equation_param_t *eqp_volf
     = cs_field_get_equation_param_const(CS_F_(void_f));
@@ -1394,7 +1394,7 @@ cs_vof_drift_term(int                        imrgra,
   const cs_lnum_t *restrict i_group_index = m->i_face_numbering->group_index;
 
   const cs_lnum_2_t *restrict i_face_cells
-    = (const cs_lnum_2_t *restrict)m->i_face_cells;
+    = (const cs_lnum_2_t *)m->i_face_cells;
   const cs_real_t *restrict i_dist = fvq->i_dist;
   const cs_real_t *restrict i_face_surf = fvq->i_face_surf;
 
@@ -1412,7 +1412,7 @@ cs_vof_drift_term(int                        imrgra,
     }
   }
   else if (pvara == NULL)
-    pvara = (const cs_real_t *restrict)pvar;
+    pvara = (const cs_real_t *)pvar;
 
   const cs_real_t  *restrict _pvar = (pvar != NULL) ? pvar : pvara;
 

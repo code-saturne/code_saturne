@@ -253,9 +253,9 @@ cs_wall_distance(int iterns)
 
   /* Immersed boundaries */
   const cs_real_t *c_w_face_surf
-    = (const cs_real_t *restrict)mq->c_w_face_surf;
+    = (const cs_real_t *)mq->c_w_face_surf;
   const cs_real_t *c_w_dist_inv
-    = (const cs_real_t *restrict)mq->c_w_dist_inv;
+    = (const cs_real_t *)mq->c_w_dist_inv;
 
   if (c_w_face_surf != NULL && c_w_dist_inv != NULL) {
     have_diff = 0;

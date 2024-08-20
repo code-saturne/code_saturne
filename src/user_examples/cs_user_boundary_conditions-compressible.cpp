@@ -110,7 +110,7 @@ cs_user_boundary_conditions(cs_domain_t  *domain,
   const cs_lnum_t n_b_faces = domain->mesh->n_b_faces;
   const cs_lnum_t *b_face_cells = domain->mesh->b_face_cells;
   const cs_real_3_t *restrict b_face_normal
-    = (const cs_real_3_t *restrict)domain->mesh_quantities->b_face_normal;
+    = (const cs_real_3_t *)domain->mesh_quantities->b_face_normal;
 
   const cs_zone_t  *zn = NULL;
   const int n_fields = cs_field_n_fields();

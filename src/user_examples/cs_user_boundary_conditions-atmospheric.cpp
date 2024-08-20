@@ -131,7 +131,7 @@ cs_user_boundary_conditions(cs_domain_t  *domain,
   {
     const cs_lnum_t n_b_faces = domain->mesh->n_b_faces;
     const cs_real_3_t *restrict b_face_cog
-      = (const cs_real_3_t *restrict)domain->mesh_quantities->b_face_cog;
+      = (const cs_real_3_t *)domain->mesh_quantities->b_face_cog;
 
     const cs_real_t d2o3 = 2./3;
 

@@ -526,16 +526,16 @@ _pressure_correction_fv(int                   iterns,
   const cs_lnum_t n_b_faces = m->n_b_faces;
 
   const cs_lnum_2_t *restrict i_face_cells
-    = (const cs_lnum_2_t *restrict)m->i_face_cells;
+    = (const cs_lnum_2_t *)m->i_face_cells;
   const cs_lnum_t *restrict b_face_cells
-    = (const cs_lnum_t *restrict)m->b_face_cells;
+    = (const cs_lnum_t *)m->b_face_cells;
 
   const cs_real_3_t *restrict cell_cen
-    = (const cs_real_3_t *restrict)fvq->cell_cen;
+    = (const cs_real_3_t *)fvq->cell_cen;
   const cs_real_3_t *restrict b_face_cog
-    = (const cs_real_3_t *restrict)fvq->b_face_cog;
+    = (const cs_real_3_t *)fvq->b_face_cog;
   const cs_real_3_t *restrict b_face_normal
-    = (const cs_real_3_t *restrict)fvq->b_face_normal;
+    = (const cs_real_3_t *)fvq->b_face_normal;
   const cs_real_t *restrict b_dist = (const cs_real_t *)fvq->b_dist;
   const cs_real_t *restrict b_face_surf = fvq->b_face_surf;
   const cs_real_t *restrict i_f_face_surf = fvq->i_f_face_surf;

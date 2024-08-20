@@ -87,19 +87,19 @@ cs_user_porosity(cs_domain_t   *domain)
     = (const cs_lnum_2_t *)m->i_face_cells;
 
   const cs_real_3_t *restrict i_face_cog
-    = (const cs_real_3_t *restrict)mq->i_face_cog;
+    = (const cs_real_3_t *)mq->i_face_cog;
   const cs_real_3_t *restrict b_face_cog
-    = (const cs_real_3_t *restrict)mq->b_face_cog;
+    = (const cs_real_3_t *)mq->b_face_cog;
   const cs_real_3_t *restrict cell_cen
-    = (const cs_real_3_t *restrict)mq->cell_cen;
+    = (const cs_real_3_t *)mq->cell_cen;
   const cs_real_3_t *restrict i_face_normal
-    = (const cs_real_3_t *restrict)mq->i_face_normal;
+    = (const cs_real_3_t *)mq->i_face_normal;
   cs_real_3_t *restrict i_f_face_normal
-    = (cs_real_3_t *restrict)mq->i_f_face_normal;
+    = (cs_real_3_t *)mq->i_f_face_normal;
   const cs_real_3_t *restrict b_face_normal
-    = (const cs_real_3_t *restrict)mq->b_face_normal;
+    = (const cs_real_3_t *)mq->b_face_normal;
   cs_real_3_t *restrict b_f_face_normal
-    = (cs_real_3_t *restrict)mq->b_f_face_normal;
+    = (cs_real_3_t *)mq->b_f_face_normal;
 
   const cs_real_t *i_f_face_surf = mq->i_f_face_surf;
   const cs_real_t *i_face_surf = mq->i_face_surf;

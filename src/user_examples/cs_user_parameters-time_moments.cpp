@@ -157,7 +157,7 @@ _velocity_moment_data(const void  *input,
   const cs_real_3_t *vel = (const cs_real_3_t *)(CS_F_(vel)->val);
 
   const cs_real_3_t  *restrict cell_cen
-    = (const cs_real_3_t *restrict)cs_glob_mesh_quantities->cell_cen;
+    = (const cs_real_3_t *)cs_glob_mesh_quantities->cell_cen;
 
   const cs_rotation_t *rot = cs_glob_rotation;
 

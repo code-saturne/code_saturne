@@ -316,9 +316,9 @@ _schur_approx_diag_inv_m11(cs_param_solver_class_t  mat_class,
   const cs_lnum_t  n_i_faces = mesh->n_i_faces;
   const cs_lnum_t  n_b_faces = mesh->n_b_faces;
   const cs_lnum_2_t *restrict i_face_cells
-    = (const cs_lnum_2_t *restrict)mesh->i_face_cells;
+    = (const cs_lnum_2_t *)mesh->i_face_cells;
   const cs_lnum_t *restrict b_face_cells
-    = (const cs_lnum_t *restrict)mesh->b_face_cells;
+    = (const cs_lnum_t *)mesh->b_face_cells;
 
   /* Native format for the Schur approximation matrix */
 
