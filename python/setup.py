@@ -82,61 +82,15 @@ else:
 
 
 # ==============================================
-# Specific command to build python files for GUI
+# Specific commands to build python files for GUI
 # ==============================================
 
-class build_py_from_ui(Command):
+class _cs_build_py_dummy(Command):
     """
-    A custom command to build python files from .ui files.
+    A custom command used to factorize code.
     """
 
     user_options = []
-
-    # ===============
-    # Private methods
-    # ===============
-
-    def _copy_qt_files(self, build_base):
-        """
-        Copy corresponding Qt4 or Qt5 files.
-        """
-
-        for _f in glob.glob(os.path.join(SRC_PATH, 'code_saturne', 'gui', 'base', _cs_opts['qtpkg'], '*.py')):
-            _abs_dst = os.path.join(SRC_PATH, 'code_saturne', 'gui', 'base', os.path.basename(_f))
-            _nf = os.path.join(build_base,
-                               'lib',
-                               os.path.relpath(_abs_dst, SRC_PATH))
-
-            shutil.copy2(_f, _nf, follow_symlinks=False)
-
-
-    def _compile_cs_ui_files(self, build_base):
-        """
-        Compile ".ui" files into ".py" files.
-        """
-        for _f in glob.glob(SRC_PATH+'/**/*.ui', recursive=True):
-            _ui_f = os.path.join(build_base,
-                                 'lib',
-                                 os.path.relpath(_f.replace('.ui','.py'),
-                                                 SRC_PATH)
-                                 )
-            subprocess.run(args=[_cs_opts['pyuic'], '-o', _ui_f, _f],
-                           check=True)
-
-    def _compile_cs_rc_files(self, build_base):
-        """
-        Compile ".rc" files into ".py" files
-        """
-        for _f in glob.glob(SRC_PATH+'/**/*.qrc', recursive=True):
-            _rc_f = os.path.join(build_base,
-                                 'lib',
-                                 os.path.relpath(_f.replace('.qrc','_rc.py'),
-                                                 SRC_PATH)
-                                 )
-            _rc_dir = os.path.dirname(_f)
-            subprocess.run(args=[_cs_opts['pyrcc'], '-o', _rc_f, _f],
-                           check=True)
-
 
     # ==============
     # Public methods
@@ -149,19 +103,61 @@ class build_py_from_ui(Command):
         pass
 
     def run(self):
-        # Get ui files
-        if 'build' in self.distribution.command_obj:
-            build_command = self.distribution.command_obj["build"]
+        raise Exception('Method non implemented for dummy class')
 
-            # Copy Qt files
-            if _cs_opts['qtpkg']:
-                self._copy_qt_files(build_command.build_base)
+class _build_qt_files(_cs_build_py_dummy):
+    """
+    A custom command to generate the Qt files based on distribution of Qt
+    """
 
-            if _cs_opts['pyuic']:
-                self._compile_cs_ui_files(build_command.build_base)
+    def run(self):
+        build_command = self.distribution.command_obj.get('build', None)
+        if build_command and _cs_opts['qtpkg']:
+            _p1 = os.path.join('code_saturne', 'gui', 'base')
+            for _f in glob.glob(os.path.join(SRC_PATH, _p1,
+                                             _cs_opts['qtpkg'],
+                                             '*.py')):
+                _abs_dst = os.path.join(SRC_PATH, _p1, os.path.basename(_f))
+                _nf = os.path.join(build_command.build_base,
+                                   'lib',
+                                   os.path.relpath(_abs_dst, SRC_PATH))
 
-            if _cs_opts['pyrcc']:
-                self._compile_cs_rc_files(build_command.build_base)
+                shutil.copy2(_f, _nf, follow_symlinks=False)
+
+class _build_ui_files(_cs_build_py_dummy):
+    """
+    A custom command to generate the ui based python files using pyuic
+    """
+
+    def run(self):
+        build_command = self.distribution.command_obj.get('build', None)
+        if build_command and _cs_opts['pyuic']:
+            for _f in glob.glob(SRC_PATH+'/**/*.ui', recursive=True):
+                _ui_f = os.path.join(build_command.build_base,
+                                     'lib',
+                                     os.path.relpath(_f.replace('.ui','.py'),
+                                                     SRC_PATH)
+                                     )
+                subprocess.run(args=[_cs_opts['pyuic'], '-o', _ui_f, _f],
+                               check=True)
+
+class _build_rc_files(_cs_build_py_dummy):
+    """
+    A custom command to generate the qrc based python files using pyrcc
+    """
+
+    def run(self):
+        build_command = self.distribution.command_obj.get('build', None)
+        if build_command and _cs_opts['pyrcc']:
+            for _f in glob.glob(SRC_PATH+'/**/*.qrc', recursive=True):
+                _rc_f = os.path.join(build_command.build_base,
+                                     'lib',
+                                     os.path.relpath(_f.replace('.qrc','_rc.py'),
+                                                     SRC_PATH)
+                                     )
+                _rc_dir = os.path.dirname(_f)
+                subprocess.run(args=[_cs_opts['pyrcc'], '-o', _rc_f, _f],
+                               check=True)
 
 # =========================
 # Overload build_py command
@@ -177,7 +173,9 @@ class build_py(_build_py):
 
     def run(self):
         super().run()
-        self.run_command("build_py_from_ui")
+        self.run_command("build_cs_qt_files")
+        self.run_command("build_cs_ui_files")
+        self.run_command("build_cs_rc_files")
 
 setup(name='code_saturne',
       author='code_saturne dev team',
@@ -185,8 +183,10 @@ setup(name='code_saturne',
       description='Python CLI and GUI of code_saturne multiphysics CFD package',
       package_dir={'':SRC_PATH},
       package_data={'code_saturne':['data/icons/*', 'data/icons/22x22/*', 'data/icons/32x32/*'],},
-      cmdclass={'build_py_from_ui':build_py_from_ui,
-                'build_py':build_py,},
+      cmdclass={'build_py':build_py,
+                'build_cs_qt_files':_build_qt_files,
+                'build_cs_ui_files':_build_ui_files,
+                'build_cs_rc_files':_build_rc_files,},
       version=_cs_opts['version'],
       packages=find_packages(where=SRC_PATH, exclude=_cs_opts['exclude_dirs'])
       )
