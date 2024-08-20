@@ -1147,7 +1147,7 @@ cs_ctwr_source_term(int              f_id,
   /*  Adding Lagrangian source terms when twoway_coupling is activated
       ================================================================ */
 
-  /* General comment: Since all lagrangian source terms have been calculated
+  /* General comment: Since all Lagrangian source terms have been calculated
      using the values of the current and previous time step (see the
      cs_lagr_coupling.c subroutine), only explicit source terms have to be
      accounted for in the corresponding transport equations ?! */

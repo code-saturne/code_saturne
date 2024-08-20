@@ -1909,7 +1909,7 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
       });
 
       inc  = 1;
-      imasac = 0; /* mass accumluation not taken into account */
+      imasac = 0; /* mass accumulation not taken into account */
 
       ctx.wait();
 
