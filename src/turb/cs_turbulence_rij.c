@@ -2757,6 +2757,10 @@ cs_turbulence_rij(int phase_id)
   cs_real_t *cvar_ep = f_eps->val;
   cs_real_6_t *cvar_rij = (cs_real_6_t *)f_rij->val;
 
+  const cs_real_t *dt = CS_F_(dt)->val;
+  const cs_real_t *crom = f_rho->val;
+  const cs_real_6_t *cvara_rij = (const cs_real_6_t *)f_rij->val_pre;
+
   cs_real_6_t *rhs;
   cs_real_66_t *fimp;
   CS_MALLOC_HD(rhs, n_cells_ext, cs_real_6_t, cs_alloc_mode);
@@ -2772,6 +2776,22 @@ cs_turbulence_rij(int phase_id)
                        f_rij->id,
                        (cs_real_t*)rhs,
                        (cs_real_t*)fimp);
+
+  /* Time extrapolation ? */
+  cs_real_6_t *c_st_prv = NULL;
+  int kstprv = cs_field_key_id("source_term_prev_id");
+  int st_prv_id = cs_field_get_key_int(f_rij, kstprv);
+  if (st_prv_id > -1)
+    c_st_prv = (cs_real_6_t *)cs_field_by_id(st_prv_id)->val;
+
+  const cs_equation_param_t *eqp
+    = cs_field_get_equation_param_const(f_rij);
+
+  const cs_time_step_t *time_step = cs_glob_time_step;
+  const cs_time_scheme_t *time_scheme = cs_glob_time_scheme;
+
+  const cs_real_t thets = time_scheme->thetst;
+  const cs_real_t thetv = eqp->theta;
 
   if (c_st_prv != NULL) {
 
@@ -2808,10 +2828,6 @@ cs_turbulence_rij(int phase_id)
 
   }
 
-  const cs_real_t *dt = CS_F_(dt)->val;
-  const cs_real_t *crom = f_rho->val;
-  const cs_real_6_t *cvara_rij = (const cs_real_6_t *)f_rij->val_pre;
-
   const int kimasf = cs_field_key_id("inner_mass_flux_id");
   const int kbmasf = cs_field_key_id("boundary_mass_flux_id");
   const int iflmas =  cs_field_get_key_int(f_vel, kimasf);
@@ -2820,21 +2836,6 @@ cs_turbulence_rij(int phase_id)
   const cs_real_t *imasfl = cs_field_by_id(iflmas)->val;
   const cs_real_t *bmasfl = cs_field_by_id(iflmab)->val;
 
-  /* Time extrapolation ? */
-  cs_real_6_t *c_st_prv = NULL;
-  int kstprv = cs_field_key_id("source_term_prev_id");
-  int st_prv_id = cs_field_get_key_int(f_rij, kstprv);
-  if (st_prv_id > -1)
-    c_st_prv = (cs_real_6_t *)cs_field_by_id(st_prv_id)->val;
-
-  const cs_equation_param_t *eqp
-    = cs_field_get_equation_param_const(f_rij);
-
-  const cs_time_step_t *time_step = cs_glob_time_step;
-  const cs_time_scheme_t *time_scheme = cs_glob_time_scheme;
-
-  const cs_real_t thets = time_scheme->thetst;
-  const cs_real_t thetv = eqp->theta;
   const cs_real_t ro0 = cs_glob_fluid_properties->ro0;
   const cs_real_t viscl0 = cs_glob_fluid_properties->viscl0;
 
@@ -3020,6 +3021,7 @@ cs_turbulence_rij(int phase_id)
                          + gradv[c_id][1][i] * cvara_rij[c_id][_t2v[1][j]]
                          + gradv[c_id][2][i] * cvara_rij[c_id][_t2v[2][j]]
                          );
+    }
   }
 
   /* Compute the pressure correlation  term for Rij
@@ -3082,36 +3084,7 @@ cs_turbulence_rij(int phase_id)
 
 #   pragma omp parallel for if(n_cells > CS_THR_MIN)
     for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-      /* Compute inverse matrix of R^n
-         (scaling by tr(R) for numerical stability) */
-      cs_real_t matrn[6];
-      for (cs_lnum_t ij = 0; ij < 6; ij++)
-        matrn[ij] = cvara_var[c_id][ij] / trrij;
-
-      cs_real_t oo_matrn[6];
-      cs_math_sym_33_inv_cramer(matrn, oo_matrn);
-      for (cs_lnum_t ij = 0; ij < 6; ij++)
-        oo_matrn[ij] /= trrij;
-
-      cs_real_t implmat2add[3][3];
-      const cs_real_t ceps_impl = d1s3 * cvara_ep[c_id];
-      for (cs_lnum_t i = 0; i < 3; i++) {
-        for (cs_lnum_t j = 0; j < 3; j++) {
-          cs_lnum_t ij = _t2v[i][j];
-          implmat2add[i][j] =  ceps_impl * oo_matrn[ij];
-        }
-      }
-
-      /* Compute the 6x6 matrix A which verifies
-       * A.R = M.R + R.M^t */
-      cs_real_t impl_drsm[6][6];
-      cs_math_reduce_sym_prod_33_to_66(implmat2add, impl_drsm);
-
       for (cs_lnum_t ij = 0; ij < 6; ij++) {
-        /* Implicit terms */
-        for (cs_lnum_t kl = 0; kl < 6; kl++)
-          fimp[c_id][ij][kl] +=   crom[c_id] * cell_f_vol[c_id]
-                                  * impl_drsm[ij][kl];
         rhs[c_id][ij] += lagr_st_rij[c_id][ij];
         fimp[c_id][ij][ij] += cs_math_fmax(-lag_st_i[c_id], 0.);
       }
@@ -3297,9 +3270,9 @@ cs_turbulence_rij(int phase_id)
     * ------------- */
 
    {
-     cs_real_t *smbr, *fimp;
-     CS_MALLOC_HD(smbr, n_cells_ext, cs_real_t, cs_alloc_mode);
-     CS_MALLOC_HD(fimp, n_cells_ext, cs_real_t, cs_alloc_mode);
+     cs_real_t *_rhs, *_fimp;
+     CS_MALLOC_HD(_rhs, n_cells_ext, cs_real_t, cs_alloc_mode);
+     CS_MALLOC_HD(_fimp, n_cells_ext, cs_real_t, cs_alloc_mode);
 
      _solve_epsilon(phase_id,
                     gradv,
@@ -3307,11 +3280,11 @@ cs_turbulence_rij(int phase_id)
                     up_rhop,
                     viscf,
                     viscb,
-                    smbr,
-                    fimp);
+                    _rhs,
+                    _fimp);
 
-     BFT_FREE(fimp);
-     BFT_FREE(smbr);
+     BFT_FREE(_fimp);
+     BFT_FREE(_rhs);
    }
 
    /* Clipping
