@@ -505,8 +505,8 @@ cs_user_sles_mumps_hook(const cs_param_sles_t   *slesp,
   CS_UNUSED(slesp);
   CS_UNUSED(context);
 
-  DMUMPS_STRUC_C  *mumps = pmumps;
-  assert(mumps != NULL);
+  DMUMPS_STRUC_C  *mumps = (DMUMPS_STRUC_C *)pmumps;
+  assert(mumps != nullptr);
 
   /* If MUMPS is used in single-precision, one has to modify the declaration as
      follows:
