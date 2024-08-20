@@ -151,7 +151,7 @@ public:
 
 public:
 
-  __device__
+  // __device__
   assembled_value() noexcept = default;
 
   __device__
@@ -271,7 +271,7 @@ public:
   using inner_type = typename assembled_value<T, Tail...>::inner_type[Head];
 
 public:
-  __device__ assembled_value() noexcept = default;
+  // __device__ assembled_value() noexcept = default;
 
   __device__ void
   add(const assembled_value &restrict other) restrict noexcept
