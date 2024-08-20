@@ -100,7 +100,9 @@ _get_sol(cs_real_t          time,
   CS_UNUSED(time);
   CS_UNUSED(input);
 
-  const double  pi = 4.0*atan(1.0);
+  const double  pi = cs_math_pi;
+  constexpr cs_real_t c_1ov3 = 1./3.;
+
   if (pt_ids != NULL && !dense_output) {
 
     for (cs_lnum_t p = 0; p < n_pts; p++) {
@@ -109,7 +111,7 @@ _get_sol(cs_real_t          time,
       const cs_real_t  *_xyz = xyz + 3*id;
       const double  x = _xyz[0], y = _xyz[1], z = _xyz[2];
 
-      retval[id] = 1 + sin(pi*x)*sin(pi*(y+0.5))*sin(pi*(z+cs_math_1ov3));
+      retval[id] = 1 + sin(pi*x)*sin(pi*(y+0.5))*sin(pi*(z+c_1ov3));
 
     }
 
@@ -120,7 +122,7 @@ _get_sol(cs_real_t          time,
       const cs_real_t  *_xyz = xyz + 3*pt_ids[p];
       const double  x = _xyz[0], y = _xyz[1], z = _xyz[2];
 
-      retval[p] = 1 + sin(pi*x)*sin(pi*(y+0.5))*sin(pi*(z+cs_math_1ov3));
+      retval[p] = 1 + sin(pi*x)*sin(pi*(y+0.5))*sin(pi*(z+c_1ov3));
     }
 
   }
@@ -131,7 +133,7 @@ _get_sol(cs_real_t          time,
       const cs_real_t  *_xyz = xyz + 3*p;
       const double  x = _xyz[0], y = _xyz[1], z = _xyz[2];
 
-      retval[p] = 1 + sin(pi*x)*sin(pi*(y+0.5))*sin(pi*(z+cs_math_1ov3));
+      retval[p] = 1 + sin(pi*x)*sin(pi*(y+0.5))*sin(pi*(z+c_1ov3));
     }
 
   }
