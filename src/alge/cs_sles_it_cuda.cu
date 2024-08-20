@@ -1509,7 +1509,7 @@ cs_sles_it_cuda_block_jacobi(cs_sles_it_t              *c,
 
   const cs_lnum_t n_rows = c->setup_data->n_rows;
 
-  double residual;
+  double residual = -1;
 
   /* Allocate or map work arrays
      --------------------------- */
