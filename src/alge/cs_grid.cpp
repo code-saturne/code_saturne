@@ -3617,7 +3617,7 @@ _automatic_aggregation_fc(const cs_grid_t       *f,
   cs_lnum_t n_faces;
 
   cs_lnum_t isym = 2;
-  int ncoarse = 8, npass_max = 10, inc_nei = 1;
+  int ncoarse = 8, npass_max = 10, inc_nei = 0;
   int _max_aggregation = 1, npass = 0;
 
   cs_lnum_t f_n_cells = f->n_rows;
@@ -3678,6 +3678,15 @@ _automatic_aggregation_fc(const cs_grid_t       *f,
     c_aggr_count[ii] = 1;
   }
 
+  cs_real_t *xv_sum = nullptr;
+  if (f->level == 0) {
+    BFT_MALLOC(xv_sum, f_n_cells_ext, cs_real_t);
+#   pragma omp parallel for if(f_n_cells_ext > CS_THR_MIN)
+    for (cs_lnum_t ii = 0; ii < f_n_cells_ext; ii++) {
+      xv_sum[ii] = 0;
+    }
+  }
+
 # pragma omp parallel for if(f_n_faces > CS_THR_MIN)
   for (cs_lnum_t face_id = 0; face_id < f_n_faces; face_id++) {
     merge_flag[face_id] = face_id +1;
@@ -3686,12 +3695,38 @@ _automatic_aggregation_fc(const cs_grid_t       *f,
 
   /* Compute cardinality (number of neighbors for each cell -1) */
 
-  for (cs_lnum_t face_id = 0; face_id < f_n_faces; face_id++) {
-    cs_lnum_t ii = f_face_cells[face_id][0];
-    cs_lnum_t jj = f_face_cells[face_id][1];
+  if (f->level == 0) {
+    for (cs_lnum_t face_id = 0; face_id < f_n_faces; face_id++) {
+      cs_lnum_t ii = f_face_cells[face_id][0];
+      cs_lnum_t jj = f_face_cells[face_id][1];
 
-    c_cardinality[ii] += 1;
-    c_cardinality[jj] += 1;
+      c_cardinality[ii] += 1;
+      c_cardinality[jj] += 1;
+
+      xv_sum[ii] += fabs(_f_xa[face_id*isym]);
+      xv_sum[jj] += fabs(_f_xa[face_id*isym + isym-1]);
+    }
+
+    /* Also check for penalization */
+
+    for (cs_lnum_t ii = 0; ii < f_n_cells; ii++) {
+      if (_f_da[ii] > _penalization_threshold * xv_sum[ii]) {
+        f_c_cell[ii] = c_n_cells;
+        c_n_cells++;
+      }
+    }
+
+    BFT_FREE(xv_sum);
+  }
+
+  else { /* if f->level > 0) */
+    for (cs_lnum_t face_id = 0; face_id < f_n_faces; face_id++) {
+      cs_lnum_t ii = f_face_cells[face_id][0];
+      cs_lnum_t jj = f_face_cells[face_id][1];
+
+      c_cardinality[ii] += 1;
+      c_cardinality[jj] += 1;
+    }
   }
 
   /* Passes */
@@ -3701,6 +3736,7 @@ _automatic_aggregation_fc(const cs_grid_t       *f,
 
   do {
 
+    inc_nei++;
     npass++;
     n_faces = r_n_faces;
     _max_aggregation++;
@@ -3715,12 +3751,6 @@ _automatic_aggregation_fc(const cs_grid_t       *f,
     if (verbosity > 3)
       bft_printf("       pass %3d; r_n_faces = %10ld; aggr_count = %10ld\n",
                  npass, (long)r_n_faces, (long)aggr_count);
-
-    /* Increment number of neighbors */
-
-#   pragma omp parallel for if(f_n_cells > CS_THR_MIN)
-    for (cs_lnum_t ii = 0; ii < f_n_cells; ii++)
-      c_cardinality[ii] += inc_nei;
 
     /* Initialize non-eliminated faces */
     r_n_faces = 0;
@@ -3749,8 +3779,9 @@ _automatic_aggregation_fc(const cs_grid_t       *f,
 
         cs_lnum_t ix0 = c_face*isym, ix1 = (c_face +1)*isym -1;
 
-        cs_real_t f_da0_da1_inv = (c_cardinality[ii]*c_cardinality[jj])
-                                / (_f_da[ii] * _f_da[jj]);
+        cs_real_t f_da0_da1_inv
+          =   ((c_cardinality[ii]+inc_nei)*(c_cardinality[jj]+inc_nei))
+            / (_f_da[ii] * _f_da[jj]);
 
         cs_real_t aggr_crit;
 
@@ -6497,7 +6528,7 @@ cs_grid_coarsen(const cs_grid_t      *f,
                                 verbosity,
                                 c->coarse_row);
     }
-    if (fine_matrix_type == CS_MATRIX_MSR)
+    else if (fine_matrix_type == CS_MATRIX_MSR)
       _automatic_aggregation_dx_msr(f,
                                     coarsening_type,
                                     aggregation_limit,
