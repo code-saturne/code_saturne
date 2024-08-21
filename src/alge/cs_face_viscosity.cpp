@@ -450,6 +450,25 @@ cs_face_viscosity(const cs_mesh_t               *m,
 
   }
 
+  /* Force face viscosity (and thus matrix extradiagonal terms)
+     to 0 when both cells are disabled. This is especially useful for
+     the multigrid solvers, which can then handle disabled cells as
+     penalized rows, and build an aggregation ignoring those. */
+
+  if (fvq->has_disable_flag) {
+
+    int *c_disable_flag = fvq->c_disable_flag;
+
+    ctx_c.parallel_for(n_i_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t f_id) {
+      cs_lnum_t ii = i_face_cells[f_id][0];
+      cs_lnum_t jj = i_face_cells[f_id][1];
+
+      if (c_disable_flag[ii] + c_disable_flag[jj] == 2)
+        i_visc[f_id] = 0;
+    });
+
+  }
+
   // guaranteed results for the CPU outside functions
   ctx_c.wait();
   ctx.wait();
