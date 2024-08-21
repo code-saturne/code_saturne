@@ -149,7 +149,10 @@ struct _cs_grid_t {
   /* Restriction from parent to current level */
 
   cs_lnum_t          *coarse_row;   /* Fine -> coarse row connectivity;
-                                       size: parent n_cols_ext */
+                                       size: parent n_cols_ext
+                                       -2: undetermined (initial value)
+                                       -1: penalized
+                                        {0, n-1}: standard mapping */
   cs_lnum_t          *coarse_face;  /* Fine -> coarse face connectivity
                                        (1 to n, signed:
                                        = 0 fine face inside coarse cell
@@ -464,7 +467,7 @@ _coarse_init(const cs_grid_t  *f,
 
 # pragma omp parallel for if(f->n_cols_ext > CS_THR_MIN)
   for (cs_lnum_t ii = 0; ii < f->n_cols_ext; ii++)
-    c->coarse_row[ii] = -1;
+    c->coarse_row[ii] = -2;
 
 #if defined(HAVE_MPI)
   c->merge_stride = f->merge_stride;
@@ -2859,7 +2862,7 @@ _pairwise_msr(cs_lnum_t                  f_n_rows,
           cs_real_t xv = x_val[jj];
           sum += CS_ABS(xv);
           if (xv < 0)
-            a_max[ii] = CS_MAX(a_max[ii], -xv);
+            a_max[ii] = cs_math_fmax(a_max[ii], -xv);
         }
 
         /* Check if the line seems ignored or not */
@@ -2894,7 +2897,7 @@ _pairwise_msr(cs_lnum_t                  f_n_rows,
         for (cs_lnum_t jj = s_id; jj < e_id; jj++) {
           cs_real_t xv = x_val[jj];
           if (xv < 0)
-            a_max[ii] = CS_MAX(a_max[ii], -xv);
+            a_max[ii] = cs_math_fmax(a_max[ii], -xv);
         }
 
         a_m[ii] = 0;
@@ -3188,10 +3191,9 @@ _automatic_aggregation_mx_native(const cs_grid_t  *f,
   cs_lnum_t c_n_rows = 0;
 
   cs_lnum_t *c_aggr_count = NULL;
-  bool *penalize = NULL;
   cs_real_t *maxi = NULL;
 
-  /* Access matrix MSR vectors */
+  /* Access matrix native arrays */
 
   cs_lnum_t n_edges = 0;
   const cs_lnum_2_t  *edges;
@@ -3230,11 +3232,9 @@ _automatic_aggregation_mx_native(const cs_grid_t  *f,
 
   BFT_MALLOC(c_aggr_count, f_n_rows, cs_lnum_t);
   BFT_MALLOC(maxi, f_n_rows, cs_real_t);
-  BFT_MALLOC(penalize, f_n_rows, bool);
 
   for (cs_lnum_t ii = 0; ii < f_n_rows; ii++){
     c_aggr_count[ii] = 1;
-    penalize[ii] = false;
   }
 
   /* Computation of the maximum over line ii and test if the line ii is
@@ -3257,13 +3257,13 @@ _automatic_aggregation_mx_native(const cs_grid_t  *f,
     cs_real_t xv1 = x_val[(e_id+1)*isym-1];
     if (ii < f_n_rows) {
       sum[ii] += CS_ABS(xv0);
-      if (xv0 < 0)
-        maxi[ii] = CS_MAX(maxi[ii], -xv0);
+      if (xv0 < 0.)
+        maxi[ii] = cs_math_fmax(maxi[ii], -xv0);
     }
     if (jj < f_n_rows) {
       sum[jj] += CS_ABS(xv1);
-      if (xv1 < 0)
-        maxi[jj] = CS_MAX(maxi[jj], -xv1);
+      if (xv1 < 0.)
+        maxi[jj] = cs_math_fmax(maxi[jj], -xv1);
     }
   }
 
@@ -3271,7 +3271,7 @@ _automatic_aggregation_mx_native(const cs_grid_t  *f,
   if (f->level == 0) {
     for (cs_lnum_t ii = 0; ii < f_n_rows; ii++) {
       if (d_val[ii] > _penalization_threshold * sum[ii])
-        penalize[ii] = true;
+        f_c_row[ii] = -1;
     }
   }
   BFT_FREE(sum);
@@ -3300,34 +3300,38 @@ _automatic_aggregation_mx_native(const cs_grid_t  *f,
 
       /* ii or jj is candidate to aggregation only if it is not penalized */
 
-      if (   ii >= f_n_rows || penalize[ii]
-          || jj >= f_n_rows || penalize[jj])
+      if (ii >= f_n_rows || jj >= f_n_rows)
+        continue;
+
+      cs_lnum_t ii_c = f_c_row[ii];
+      cs_lnum_t jj_c = f_c_row[jj];
+
+      if (ii_c == -1 || jj_c == -1)  /* penalization */
         continue;
 
       cs_real_t xv = x_val[e_id*isym];
 
       if (isym == 2)
-        xv = CS_MAX(xv, x_val[e_id*2 + 1]);
+        xv = cs_math_fmax(xv, x_val[e_id*2 + 1]);
 
       /* Test if ii and jj are strongly negatively coupled and at */
       /* least one of them is not already in an aggregate. */
 
-      if (   xv < -beta*maxi[ii]
-          && (f_c_row[ii] < 0 || f_c_row[jj] < 0)) {
+      if (xv < -beta*maxi[ii] && (ii_c == -2 || jj_c == -2)) {
 
-        if (f_c_row[ii] > -1 && f_c_row[jj] < 0 ) {
-          if (c_aggr_count[f_c_row[ii]] < _max_aggregation +1) {
-            f_c_row[jj] = f_c_row[ii];
-            c_aggr_count[f_c_row[ii]] += 1;
+        if (ii_c > -1 && jj_c < -1) {
+          if (c_aggr_count[ii_c] < _max_aggregation +1) {
+            f_c_row[jj] = ii_c;
+            c_aggr_count[ii_c] += 1;
           }
         }
-        else if (f_c_row[ii] < 0 && f_c_row[jj] > -1) {
-          if (c_aggr_count[f_c_row[jj]] < _max_aggregation +1) {
-            f_c_row[ii] = f_c_row[jj];
-            c_aggr_count[f_c_row[jj]] += 1;
+        else if (ii_c < -1 && jj_c > -1) {
+          if (c_aggr_count[jj_c] < _max_aggregation +1) {
+            f_c_row[ii] = jj_c;
+            c_aggr_count[jj_c] += 1;
           }
         }
-        else if (f_c_row[ii] < 0 && f_c_row[jj] < 0) {
+        else if (ii_c < -1 && jj_c < -1) {
           f_c_row[ii] = c_n_rows;
           f_c_row[jj] = c_n_rows;
           c_aggr_count[c_n_rows] += 1;
@@ -3340,7 +3344,7 @@ _automatic_aggregation_mx_native(const cs_grid_t  *f,
     /* Check the number of coarse rows created */
     aggr_count = 0;
     for (cs_lnum_t ii = 0; ii < f_n_rows; ii++) {
-      if (f_c_row[ii] < 0)
+      if (f_c_row[ii] < -1)
         aggr_count++;
     }
 
@@ -3353,7 +3357,7 @@ _automatic_aggregation_mx_native(const cs_grid_t  *f,
   /* Finish assembly: rows that are not diagonally dominant and not in an
    * aggregate form their own aggregate */
   for (cs_lnum_t ii = 0; ii < f_n_rows; ii++) {
-    if (!penalize[ii] && f_c_row[ii] < 0) {
+    if (f_c_row[ii] < -1) {
       f_c_row[ii] = c_n_rows;
       c_n_rows++;
     }
@@ -3365,7 +3369,6 @@ _automatic_aggregation_mx_native(const cs_grid_t  *f,
   BFT_FREE(_x_val);
   BFT_FREE(c_aggr_count);
   BFT_FREE(maxi);
-  BFT_FREE(penalize);
 }
 
 /*----------------------------------------------------------------------------
@@ -3392,25 +3395,22 @@ _automatic_aggregation_mx_msr(const cs_grid_t  *f,
 
   const cs_lnum_t f_n_rows = f->n_rows;
 
-  int npass_max = 10;
-  int _max_aggregation = 1, npass = 0;
-  cs_lnum_t aggr_count = f_n_rows;
-  cs_lnum_t c_n_rows = 0;
+  const int npass_max = 10;
 
   cs_lnum_t *c_aggr_count = NULL;
-  bool *penalize = NULL;
   cs_real_t *maxi = NULL;
 
   /* Algorithm parameters */
   const cs_real_t beta = 0.25; /* 0.5 for HHO */
   const int ncoarse = 8;
-  const cs_real_t p_test = (f->level == 0) ? 1. : -1;
 
   if (verbosity > 3)
     bft_printf("\n     %s: npass_max: %d; n_coarse: %d;"
-               " beta %5.3e; pena_thd: %5.3e, p_test: %g\n",
-               __func__, npass_max, ncoarse, beta, _penalization_threshold,
-               p_test);
+               " beta %5.3e; pena_thd: %5.3e\n",
+               __func__, npass_max, ncoarse, beta, _penalization_threshold);
+
+  const cs_lnum_t db_size = f->db_size;
+  const cs_lnum_t eb_size = f->eb_size;
 
   /* Access matrix MSR vectors */
 
@@ -3424,8 +3424,7 @@ _automatic_aggregation_mx_msr(const cs_grid_t  *f,
                            &d_val,
                            &x_val);
 
-  const cs_lnum_t db_size = f->db_size;
-  const cs_lnum_t eb_size = f->eb_size;
+  const cs_lnum_t f_nnz = row_index[f_n_rows];
 
   if (db_size > 1) {
     BFT_MALLOC(_d_val, f_n_rows, cs_real_t);
@@ -3440,18 +3439,50 @@ _automatic_aggregation_mx_msr(const cs_grid_t  *f,
     x_val = _x_val;
   }
 
+  /* Coarse row count scan array for shared-memory parallelism */
+
+  cs_lnum_t *t_c_scan = nullptr;
+  int n_loc_threads = cs_parall_n_threads(f_n_rows, CS_THR_MIN);
+  if (n_loc_threads > 1) {
+    BFT_MALLOC(t_c_scan, n_loc_threads, cs_lnum_t);
+    for (int i = 0; i < n_loc_threads; i++)
+      t_c_scan[i] = 0;
+  }
+
   /* Allocate working arrays */
 
   BFT_MALLOC(c_aggr_count, f_n_rows, cs_lnum_t);
   BFT_MALLOC(maxi, f_n_rows, cs_real_t);
-  BFT_MALLOC(penalize, f_n_rows, bool);
 
-# pragma omp parallel if (f_n_rows > CS_THR_MIN)
+  /* aggregation queue: local column id, index in matrix, and
+     index of symmetric element if needed */
+  cs_lnum_t *ag_queue;
+  BFT_MALLOC(ag_queue, f_nnz*2, cs_lnum_t);
+
+  /* Handle a block of rows per thread; aggregation will not be done
+     across thread blocks, in a similar manner that it is not done
+     across MPI ranks. */
+
+  #pragma omp parallel  num_threads(n_loc_threads)
   {
-#   pragma omp for
-    for (cs_lnum_t ii = 0; ii < f_n_rows; ii++){
+
+#if defined(HAVE_OPENMP)
+    const int t_id = omp_get_thread_num();
+#else
+    const int t_id = 0;
+#endif
+    /* Use a simple thread range for now. Perhaps a more complex range
+       computation could lead to better work balance between threads,
+       as rows with low ids will tend to get more work than rows
+       with high ids, given that we consider the upper triangular part */
+
+    cs_lnum_t t_s_id, t_e_id;
+    cs_parall_thread_range(f_n_rows, sizeof(cs_real_t), &t_s_id, &t_e_id);
+
+    int _max_aggregation = 1;
+
+    for (cs_lnum_t ii = t_s_id; ii < t_e_id; ii++) {
       c_aggr_count[ii] = 1;
-      penalize[ii] = false;
     }
 
     /* Computation of the maximum over line ii and test if the line ii is
@@ -3459,124 +3490,249 @@ _automatic_aggregation_mx_msr(const cs_grid_t  *f,
      * value of every extra-diagonal coefficient, but the maximum is only on the
      * negative coefficient. */
 
-#   pragma omp for
-    for (cs_lnum_t ii = 0; ii < f_n_rows; ii++) {
+    if (f->level == 0) {
+      for (cs_lnum_t ii = t_s_id; ii < t_e_id; ii++) {
+        maxi[ii] = 0.0;
+        cs_real_t  sum = 0.0;
 
-      maxi[ii] = 0.0;
-
-      cs_real_t  sum = 0.0;
-      for (cs_lnum_t jj = row_index[ii]; jj < row_index[ii+1]; jj++) {
-
-        const cs_real_t  xv = x_val[jj];
-        if (xv < 0) {
-          sum -= xv;
-          maxi[ii] = CS_MAX(maxi[ii], -xv);
+        for (cs_lnum_t jj = row_index[ii]; jj < row_index[ii+1]; jj++) {
+          const cs_real_t  xv = x_val[jj];
+          if (xv < 0.) {
+            sum -= xv;
+            maxi[ii] = cs_math_fmax(maxi[ii], -xv);
+          }
+          else {
+            sum += xv;
+          }
         }
-        else {
-          sum += xv;
+
+        /* Check if the line seems penalized or not. */
+        if (d_val[ii] > _penalization_threshold * sum)
+          f_c_row[ii] = -1;
+      }
+    }
+    else {
+      for (cs_lnum_t ii = t_s_id; ii < t_e_id; ii++) {
+        maxi[ii] = 0.0;
+        for (cs_lnum_t jj = row_index[ii]; jj < row_index[ii+1]; jj++) {
+          const cs_real_t  xv = x_val[jj];
+          if (xv < 0.)
+            maxi[ii] = cs_math_fmax(maxi[ii], -xv);
         }
       }
+    }
 
-      /* Check if the line seems penalized or not. */
-      if (d_val[ii]*p_test > _penalization_threshold * sum)
-        penalize[ii] = true;
+    /* Indexes and counters */
 
-    } /* Loop on f_n_rows */
+    const cs_lnum_t t_r_s_id = row_index[t_s_id] * 2;
+    cs_lnum_t t_r_e_id = t_r_s_id;
 
-  }   /* OpenMP block */
+    cs_lnum_t t_c_n_rows = 0;
+    cs_lnum_t r_n_faces = 0;
 
-  /* Passes */
+    /* First pass */
 
-  do {
+    {
+      if (_max_aggregation < max_aggregation)
+        _max_aggregation++;
 
-    npass++;
-    _max_aggregation++;
-    _max_aggregation = CS_MIN(_max_aggregation, max_aggregation);
+      /* Pairwise aggregation */
 
-    /* Pairwise aggregation */
+      for (cs_lnum_t ii = t_s_id; ii < t_e_id; ii++) {
 
-    for (cs_lnum_t ii = 0; ii < f_n_rows; ii++) {
+        /* ii is candidate to aggregation only if it is not penalized */
 
-      /* ii is candidate to aggregation only if it is not penalized */
+        cs_lnum_t ii_c = f_c_row[ii];
 
-      if (penalize[ii])
-        continue;
+        if (ii_c == -1) /* penalized */
+          continue;
 
-      const cs_real_t  row_criterion = -beta*maxi[ii];
+        const cs_real_t  row_criterion = -beta*maxi[ii];
 
-      for (cs_lnum_t jidx = row_index[ii]; jidx < row_index[ii+1]; jidx++) {
+        for (cs_lnum_t jidx = row_index[ii]; jidx < row_index[ii+1]; jidx++) {
+
+          /* Exclude rows on parallel or periodic boundary, so as not to */
+          /* coarsen the grid across those boundaries (which would change */
+          /* the communication pattern and require a more complex algorithm). */
+
+          cs_lnum_t jj = col_id[jidx];
+          if (jj < t_s_id || jj >= t_e_id)
+            continue;
+
+          cs_lnum_t jj_c = f_c_row[jj];
+
+          if (   (ii_c > -1 && jj_c > -1)   /* both already aggregated */
+              || jj_c == -1)                /* one penalized */
+            continue;
+
+          /* Test if ii and jj are strongly negatively coupled */
+
+          int count = 0;
+
+          if (x_val[jidx] < row_criterion) {
+
+            if (ii_c > -1 && jj_c < -1) {
+              if (c_aggr_count[t_s_id + ii_c] < _max_aggregation +1) {
+                f_c_row[jj] = ii_c;
+                c_aggr_count[t_s_id + ii_c] += 1;
+                count++;
+              }
+            }
+            else if (ii_c < -1 && jj_c > -1) {
+              if (c_aggr_count[t_s_id + jj_c] < _max_aggregation +1) {
+                f_c_row[ii] = jj_c;
+                c_aggr_count[t_s_id + jj_c] += 1;
+                count++;
+              }
+            }
+            else if (ii_c < -1 && jj_c < -1) {
+              f_c_row[ii] = t_c_n_rows;
+              f_c_row[jj] = t_c_n_rows;
+              c_aggr_count[t_s_id + t_c_n_rows] += 1;
+              t_c_n_rows++;
+              count++;
+            }
+          }
+
+          if (count == 0) {
+            ag_queue[t_r_e_id] = ii;
+            ag_queue[t_r_e_id+1] = jidx;
+            t_r_e_id += 2;
+            r_n_faces++;
+          }
+
+        } /* Loop on columns */
+
+      } /* Loop on rows */
+    }
+
+    /* Other passes */
+
+    for (int npass = 2; npass < npass_max; npass++) {
+
+      /* Exit loop on passes if aggregation is sufficient
+         (note that each thread may loop independently). */
+
+      cs_lnum_t aggr_count = 0; /* Count of cells not yet aggregated */
+      for (cs_lnum_t ii = t_s_id; ii < t_e_id; ii++) {
+        if (f_c_row[ii] < -1)
+          aggr_count++;
+      }
+
+      if (   aggr_count == 0
+          || (t_c_n_rows + aggr_count)*ncoarse < (t_e_id - t_s_id)
+          || r_n_faces == 0) {
+        break;
+      }
+
+      if (_max_aggregation < max_aggregation)
+        _max_aggregation++;
+
+      /* Re-initialize non-eliminated faces */
+      r_n_faces = 0;
+
+      /* Loop on non-eliminated faces (i.e. "aggregation queue").
+
+         Faces adjacent to penalized rows, or row on parallel boundaries,
+         were already excluded from the aggregation queue in the first pass,
+         so we do not need to test for those anymore. */
+
+      cs_lnum_t r_idx_n = t_r_s_id;
+
+      for (cs_lnum_t r_idx = t_r_s_id; r_idx < t_r_e_id; r_idx += 2) {
+
+        cs_lnum_t ii = ag_queue[r_idx];
+        cs_lnum_t jidx = ag_queue[r_idx+1];
 
         cs_lnum_t jj = col_id[jidx];
 
-        /* Exclude rows on parallel or periodic boundary, so as not to */
-        /* coarsen the grid across those boundaries (which would change */
-        /* the communication pattern and require a more complex algorithm). */
+        /* If both cells are already aggregated, pass */
 
-        if (jj < f_n_rows) {
-          if (!penalize[jj]) {
+        cs_lnum_t ii_c = f_c_row[ii];
+        cs_lnum_t jj_c = f_c_row[jj];
 
-            /* Test if ii and jj are strongly negatively coupled and at */
-            /* least one of them is not already in an aggregate. */
+        if (ii_c >= 0 && jj_c >= 0)
+          continue;
 
-            if (    x_val[jidx] < row_criterion
-                && (f_c_row[ii] < 0 || f_c_row[jj] < 0)) {
+        /* Test if ii and jj are strongly negatively coupled  */
 
-              if (f_c_row[ii] > -1 && f_c_row[jj] < 0 ) {
-                if (c_aggr_count[f_c_row[ii]] < _max_aggregation +1) {
-                  f_c_row[jj] = f_c_row[ii];
-                  c_aggr_count[f_c_row[ii]] += 1;
-                }
-              }
-              else if (f_c_row[ii] < 0 && f_c_row[jj] > -1) {
-                if (c_aggr_count[f_c_row[jj]] < _max_aggregation +1) {
-                  f_c_row[ii] = f_c_row[jj];
-                  c_aggr_count[f_c_row[jj]] += 1;
-                }
-              }
-              else if (f_c_row[ii] < 0 && f_c_row[jj] < 0) {
-                f_c_row[ii] = c_n_rows;
-                f_c_row[jj] = c_n_rows;
-                c_aggr_count[c_n_rows] += 1;
-                c_n_rows++;
-              }
+        const cs_real_t  row_criterion = -beta*maxi[ii];
+
+        int count = 0;
+
+        if (x_val[jidx] < row_criterion) {
+
+          if (ii_c > -1 && jj_c < -1) {
+            if (c_aggr_count[t_s_id + ii_c] < _max_aggregation +1) {
+              f_c_row[jj] = ii_c;
+              c_aggr_count[t_s_id + ii_c] += 1;
+              count++;
             }
+          }
+          else if (ii_c < -1 && jj_c > -1) {
+            if (c_aggr_count[t_s_id + jj_c] < _max_aggregation +1) {
+              f_c_row[ii] = jj_c;
+              c_aggr_count[t_s_id + jj_c] += 1;
+              count++;
+            }
+          }
+          else if (ii_c < -1 && jj_c < -1) {
+            f_c_row[ii] = t_c_n_rows;
+            f_c_row[jj] = t_c_n_rows;
+            c_aggr_count[t_s_id + t_c_n_rows] += 1;
+            t_c_n_rows++;
+            count++;
+          }
+        }
 
-          } /* Column is not penalized */
-        } /* The current rank is owner of the column */
+        /* Place faces where no merging occurs back in queue
+           (we reuse the same location, knowing that
+           t_r_s_id + n_r_faces*ag_queue_stride < r_id) */
+        if (count == 0) {
+          assert(r_idx_n < t_r_e_id);
+          ag_queue[r_idx_n] = ii;
+          ag_queue[r_idx_n+1] = jidx;
+          r_idx_n += 0;
+          r_n_faces++;
+        }
 
-      } /* Loop on columns */
+      } /* Loop on aggregation queue */
 
-    } /* Loop on rows */
+      t_r_e_id = r_idx_n;
 
-    /* Check the number of coarse rows created */
-    aggr_count = 0;
-    for (cs_lnum_t ii = 0; ii < f_n_rows; ii++) {
-      if (f_c_row[ii] < 0)
-        aggr_count++;
+    } /* Loop on passes */
+
+    /* Finish assembly: rows that are not diagonally dominant and not in an
+     * aggregate form their own aggregate */
+    for (cs_lnum_t ii = t_s_id; ii < t_e_id; ii++) {
+      if (f_c_row[ii] < -1) {
+        f_c_row[ii] = t_c_n_rows;
+        t_c_n_rows++;
+      }
     }
 
-    /* Additional passes if aggregation is insufficient */
-    if (aggr_count == 0 || (c_n_rows + aggr_count)*ncoarse < f_n_rows)
-      npass_max = npass;
+    /* Prepare combining thread results */
 
-  } while (npass < npass_max); /* Loop on passes */
+    if (n_loc_threads > 1)
+      t_c_scan[t_id] = t_c_n_rows;
 
-  /* Finish assembly: rows that are not diagonally dominant and not in an
-   * aggregate form their own aggregate */
-  for (cs_lnum_t ii = 0; ii < f_n_rows; ii++) {
-    if (!penalize[ii] && f_c_row[ii] < 0) {
-      f_c_row[ii] = c_n_rows;
-      c_n_rows++;
-    }
+  } // End of OpenMP section
+
+  /* Combine thread results */
+
+#if defined(HAVE_OPENMP)
+  if (n_loc_threads > 1) {
+    _scan_f_c_row(n_loc_threads, f_n_rows, t_c_scan, f_c_row);
   }
+#endif
 
   /* Free working arrays */
 
+  BFT_FREE(ag_queue);
+  BFT_FREE(c_aggr_count);
   BFT_FREE(_d_val);
   BFT_FREE(_x_val);
-  BFT_FREE(c_aggr_count);
   BFT_FREE(maxi);
-  BFT_FREE(penalize);
 
   if (cs_glob_timer_kernels_flag > 0) {
     std::chrono::high_resolution_clock::time_point
@@ -3674,7 +3830,6 @@ _automatic_aggregation_fc(const cs_grid_t       *f,
 # pragma omp parallel for if(f_n_cells_ext > CS_THR_MIN)
   for (cs_lnum_t ii = 0; ii < f_n_cells_ext; ii++) {
     c_cardinality[ii] = -1;
-    f_c_cell[ii] = -1;
     c_aggr_count[ii] = 1;
   }
 
@@ -3710,10 +3865,8 @@ _automatic_aggregation_fc(const cs_grid_t       *f,
     /* Also check for penalization */
 
     for (cs_lnum_t ii = 0; ii < f_n_cells; ii++) {
-      if (_f_da[ii] > _penalization_threshold * xv_sum[ii]) {
-        f_c_cell[ii] = c_n_cells;
-        c_n_cells++;
-      }
+      if (_f_da[ii] > _penalization_threshold * xv_sum[ii])
+        f_c_cell[ii] = -1;
     }
 
     BFT_FREE(xv_sum);
@@ -3773,7 +3926,7 @@ _automatic_aggregation_fc(const cs_grid_t       *f,
       /* the communication pattern and require a more complex algorithm). */
 
       if (   (ii < f_n_cells && jj < f_n_cells)
-          && (f_c_cell[ii] < 0 || f_c_cell[jj] < 0)) {
+          && (f_c_cell[ii] < -1 || f_c_cell[jj] < -1)) {
 
         cs_lnum_t count = 0;
 
@@ -3786,9 +3939,9 @@ _automatic_aggregation_fc(const cs_grid_t       *f,
         cs_real_t aggr_crit;
 
         if (coarsening_type == CS_GRID_COARSENING_CONV_DIFF_DX) {
-          cs_real_t f_xa0 = CS_MAX(-_f_xa[ix0], 0.);
-          cs_real_t f_xa1 = CS_MAX(-_f_xa[ix1], 0.);
-          aggr_crit =   CS_MAX(f_xa0, f_xa1) * sqrt(f_da0_da1_inv);
+          cs_real_t f_xa0 = cs_math_fmax(-_f_xa[ix0], 0.);
+          cs_real_t f_xa1 = cs_math_fmax(-_f_xa[ix1], 0.);
+          aggr_crit = cs_math_fmax(f_xa0, f_xa1) * sqrt(f_da0_da1_inv);
         }
         else {
           cs_real_t f_xa0_xa1 =  _f_xa[ix0] * _f_xa[ix1];
@@ -3797,21 +3950,21 @@ _automatic_aggregation_fc(const cs_grid_t       *f,
 
         if (aggr_crit > ag_threshold) {
 
-          if (f_c_cell[ii] > -1 && f_c_cell[jj] < 0 ) {
+          if (f_c_cell[ii] > -1 && f_c_cell[jj] < -1 ) {
             if (c_aggr_count[f_c_cell[ii]] < _max_aggregation +1) {
               f_c_cell[jj] = f_c_cell[ii];
               c_aggr_count[f_c_cell[ii]] += 1;
               count++;
             }
           }
-          else if (f_c_cell[ii] < 0 && f_c_cell[jj] > -1) {
+          else if (f_c_cell[ii] < -1 && f_c_cell[jj] > -1) {
             if (c_aggr_count[f_c_cell[jj]] < _max_aggregation +1) {
               f_c_cell[ii] = f_c_cell[jj];
               c_aggr_count[f_c_cell[jj]] += 1;
               count++;
             }
           }
-          else if (f_c_cell[ii] < 0 && f_c_cell[jj] < 0) {
+          else if (f_c_cell[ii] < -1 && f_c_cell[jj] < -1) {
             f_c_cell[ii] = c_n_cells;
             f_c_cell[jj] = c_n_cells;
             c_aggr_count[c_n_cells] += 1;
@@ -3820,7 +3973,7 @@ _automatic_aggregation_fc(const cs_grid_t       *f,
           }
         }
 
-        if (count == 0 && (f_c_cell[ii] < 0 || f_c_cell[jj] < 0)) {
+        if (count == 0 && (f_c_cell[ii] < -1 || f_c_cell[jj] < -1)) {
           merge_flag[r_n_faces] = c_face +1;
           r_n_faces++;
         }
@@ -3833,7 +3986,7 @@ _automatic_aggregation_fc(const cs_grid_t       *f,
     aggr_count = 0;
 #   pragma omp parallel for reduction(+:aggr_count) if(f_n_cells > CS_THR_MIN)
     for (cs_lnum_t i = 0; i < f_n_cells; i++) {
-      if (f_c_cell[i] < 0)
+      if (f_c_cell[i] < -1)
         aggr_count++;
     }
 
@@ -3850,7 +4003,7 @@ _automatic_aggregation_fc(const cs_grid_t       *f,
 
   /* Finish assembly */
   for (cs_lnum_t i = 0; i < f_n_cells; i++) {
-    if (f_c_cell[i] < 0) {
+    if (f_c_cell[i] < -1) {
       f_c_cell[i] = c_n_cells;
       c_n_cells++;
     }
@@ -3903,8 +4056,6 @@ _automatic_aggregation_dx_msr(const cs_grid_t       *f,
   cs_lnum_t f_n_rows = f->n_rows;
   cs_lnum_t f_n_faces = f->n_faces;
 
-  cs_lnum_t c_n_rows = 0;
-
   cs_real_t epsilon = 1.e-6;
 
   const cs_lnum_t db_size = f->db_size;
@@ -3952,17 +4103,17 @@ _automatic_aggregation_dx_msr(const cs_grid_t       *f,
   BFT_MALLOC(c_cardinality, f_n_rows, short);
   BFT_MALLOC(c_aggr_count, f_n_rows, short);
 
-  /* Merge queue: local column id, index in matrix, and
-     index of symmetric if needed */
-  const cs_lnum_t merge_queue_stride = (1+isym);
-  cs_lnum_t *merge_queue;
-  BFT_MALLOC(merge_queue, f_nnz*merge_queue_stride, cs_lnum_t);
+  /* aggregation queue: local column id, index in matrix, and
+     index of symmetric element if needed */
+  const cs_lnum_t ag_queue_stride = (1+isym);
+  cs_lnum_t *ag_queue;
+  BFT_MALLOC(ag_queue, f_nnz*ag_queue_stride, cs_lnum_t);
 
   /* Handle a block of rows per thread; aggregation will not be done
      across thread blocks, in a similar manner that it is not done
      across MPI ranks. */
 
-  #pragma omp parallel shared(c_n_rows)  num_threads(n_loc_threads)
+  #pragma omp parallel  num_threads(n_loc_threads)
   {
 
 #if defined(HAVE_OPENMP)
@@ -3979,42 +4130,50 @@ _automatic_aggregation_dx_msr(const cs_grid_t       *f,
     cs_lnum_t t_s_id, t_e_id;
     cs_parall_thread_range(f_n_rows, sizeof(cs_real_t), &t_s_id, &t_e_id);
 
-    cs_lnum_t t_c_n_rows = 0;
-    cs_lnum_t r_n_faces = f_n_faces;
-
     int ncoarse = 8, npass_max = 10, inc_nei = 0;
     int _max_aggregation = 1;
 
     /* Computation of the cardinality and test if the line is
      * penalized, in which case its cardinality is set to 0. */
 
-    for (cs_lnum_t ii = t_s_id; ii < t_e_id; ii++) {
+    if (f->level == 0) {
+      for (cs_lnum_t ii = t_s_id; ii < t_e_id; ii++) {
+        cs_lnum_t t_r_s_id = row_index[ii];
+        cs_lnum_t t_r_e_id = row_index[ii+1];
 
-      c_cardinality[ii] = row_index[ii+1] - row_index[ii] + 1;
-      f_c_row[ii] = -1;
-      c_aggr_count[ii] = 1;
+        c_cardinality[ii] = t_r_e_id - t_r_s_id + 1;
+        c_aggr_count[ii] = 1;
 
-      if (f->level == 0) {
         cs_real_t  sum = 0.0;
-        for (cs_lnum_t jj = row_index[ii]; jj < row_index[ii+1]; jj++) {
+        for (cs_lnum_t jj = t_r_s_id; jj < t_r_e_id; jj++) {
           const cs_real_t  xv = x_val[jj];
-          if (xv < 0) {
+          if (xv < 0.)
             sum -= xv;
-          }
-          else {
+          else
             sum += xv;
-          }
         }
 
         /* Check if the line seems penalized or not. */
-        if (d_val[ii] > _penalization_threshold * sum)
-          c_cardinality[ii] = 0;
+        if (d_val[ii] > _penalization_threshold * sum) {
+          f_c_row[ii] = -1;
+          c_aggr_count[ii] = 0;
+        }
       }
-
+    }
+    else {
+      for (cs_lnum_t ii = t_s_id; ii < t_e_id; ii++) {
+        c_cardinality[ii] = row_index[ii+1] - row_index[ii] + 1;
+        c_aggr_count[ii] = 1;
+      }
     }
 
-    const cs_lnum_t t_r_s_id = row_index[t_s_id] * merge_queue_stride;
+    /* Indexes and counterss */
+
+    const cs_lnum_t t_r_s_id = row_index[t_s_id] * ag_queue_stride;
     cs_lnum_t t_r_e_id = t_r_s_id;
+
+    cs_lnum_t t_c_n_rows = 0;
+    cs_lnum_t r_n_faces = 0;
 
     /* Passes */
 
@@ -4034,9 +4193,6 @@ _automatic_aggregation_dx_msr(const cs_grid_t       *f,
                    " aggr_count = %ld\n",
                    t_id, (long)f_n_faces, (long)f_n_rows);
       }
-
-      /* Initialize non-eliminated faces */
-      r_n_faces = 0;
 
       /* Loop on non-eliminated faces */
 
@@ -4074,10 +4230,12 @@ _automatic_aggregation_dx_msr(const cs_grid_t       *f,
           if (jj < ii || jj >= t_e_id)
             continue;
 
+          cs_lnum_t ii_c = f_c_row[ii];
+          cs_lnum_t jj_c = f_c_row[jj];
+
           /* If both rows are already aggregated or one is penalized, pass */
 
-          if (c_cardinality[ii] == 0 || c_cardinality[jj] == 0
-              || (f_c_row[ii] >= 0 && f_c_row[jj] >= 0))
+          if (ii_c == -1 || jj_c == -1 || (ii_c >= 0 && jj_c >= 0))
             continue;
 
           cs_lnum_t ix1 = ix0;
@@ -4090,41 +4248,39 @@ _automatic_aggregation_dx_msr(const cs_grid_t       *f,
               continue;
           }
 
-          cs_lnum_t count = 0;
-
           cs_real_t f_da0_da1_inv =   (c_cardinality[ii]*c_cardinality[jj])
                                     / (d_val[ii] * d_val[jj]);
 
           cs_real_t aggr_crit;
 
           if (coarsening_type == CS_GRID_COARSENING_CONV_DIFF_DX) {
-            cs_real_t f_xa0 = CS_MAX(-x_val[ix0], 0.);
-            cs_real_t f_xa1 = CS_MAX(-x_val[ix1], 0.);
-            aggr_crit = CS_MAX(f_xa0, f_xa1) * sqrt(f_da0_da1_inv);
+            cs_real_t f_xa0 = cs_math_fmax(-x_val[ix0], 0.);
+            cs_real_t f_xa1 = cs_math_fmax(-x_val[ix1], 0.);
+            aggr_crit = cs_math_fmax(f_xa0, f_xa1) * sqrt(f_da0_da1_inv);
           }
           else {
             cs_real_t f_xa0_xa1 =  x_val[ix0] * x_val[ix1];
             aggr_crit = f_da0_da1_inv * f_xa0_xa1;
           }
 
+          int count = 0;
+
           if (aggr_crit > ag_threshold) {
-            cs_lnum_t ii_c = f_c_row[ii];
-            cs_lnum_t jj_c = f_c_row[jj];
-            if (ii_c > -1 && jj_c < 0 ) {
+            if (ii_c > -1 && jj_c < -1 ) {
               if (c_aggr_count[t_s_id + ii_c] < _max_aggregation +1) {
                 f_c_row[jj] = ii_c;
                 c_aggr_count[t_s_id + ii_c] += 1;
                 count++;
               }
             }
-            else if (ii_c < 0 && jj_c > -1) {
+            else if (ii_c < -1 && jj_c > -1) {
               if (c_aggr_count[t_s_id + jj_c] < _max_aggregation +1) {
                 f_c_row[ii] = jj_c;
                 c_aggr_count[t_s_id + jj_c] += 1;
                 count++;
               }
             }
-            else if (ii_c < 0 && jj_c < 0) {
+            else if (ii_c < -1 && jj_c < -1) {
               f_c_row[ii] = t_c_n_rows;
               f_c_row[jj] = t_c_n_rows;
               c_aggr_count[t_s_id + t_c_n_rows] += 1;
@@ -4133,73 +4289,81 @@ _automatic_aggregation_dx_msr(const cs_grid_t       *f,
             }
           }
 
-          if (count == 0 && (f_c_row[ii] < 0 || f_c_row[jj] < 0)) {
-            merge_queue[t_r_e_id] = ii;
-            merge_queue[t_r_e_id+1] = ix0;
-            if (merge_queue_stride == 3)
-              merge_queue[t_r_e_id+1] = ix1;
-            t_r_e_id += merge_queue_stride;
+          if (count == 0) {
+            ag_queue[t_r_e_id] = ii;
+            ag_queue[t_r_e_id+1] = ix0;
+            if (ag_queue_stride == 3)
+              ag_queue[t_r_e_id+1] = ix1;
+            t_r_e_id += ag_queue_stride;
             r_n_faces++;
           }
 
-        }
+        }  /* Loop on columns */
 
-      }
+      }  /* Loop on rows */
     }
 
     /* Other passes */
 
-    cs_lnum_t aggr_count = 0; /* Count of cells not yet aggregated */
-
     for (int npass = 2; npass < npass_max; npass++) {
+
+      /* Exit loop on passes if aggregation is sufficient
+         (note that each thread may loop independently). */
+
+      cs_lnum_t aggr_count = 0; /* Count of cells not yet aggregated */
+      for (cs_lnum_t ii = t_s_id; ii < t_e_id; ii++) {
+        if (f_c_row[ii] < -1)
+          aggr_count++;
+      }
+
+      if (   aggr_count == 0
+          || (t_c_n_rows + aggr_count)*ncoarse < (t_e_id - t_s_id)
+          || r_n_faces == 0) {
+        break;
+      }
 
       if (_max_aggregation < max_aggregation)
         _max_aggregation++;
 
       if (verbosity > 3) {
-        if (npass == 2) {
-          aggr_count = 0;
-          for (cs_lnum_t ii = t_s_id; ii < t_e_id; ii++) {
-            if (f_c_row[ii] < 0)
-              aggr_count++;
-          }
-        }
-
         bft_printf("       pass %d, thread %d; r_n_faces = %ld;"
                    " aggr_count = %ld\n",
                    npass, t_id, (long)r_n_faces, (long)aggr_count);
       }
 
-      /* Initialize non-eliminated faces */
+      /* Re-initialize non-eliminated faces */
       r_n_faces = 0;
 
       inc_nei += 1;
 
-      /* Loop on non-eliminated faces (i.e. "merge queue").
+      /* Loop on non-eliminated faces (i.e. "aggregation queue").
 
-         Faces adjacent to penalized rows, or row on parallel boundaies,
-         were already excluded from the merge queue in the first pass,
+         Faces adjacent to penalized rows, or row on parallel boundaries,
+         were already excluded from the aggregation queue in the first pass,
          so we do not need to test for those anymore. */
 
       cs_lnum_t r_idx_n = t_r_s_id;
 
       for (cs_lnum_t r_idx = t_r_s_id;
            r_idx < t_r_e_id;
-           r_idx += merge_queue_stride) {
+           r_idx += ag_queue_stride) {
 
         cs_real_t ag_threshold = 1. - epsilon;
         if (coarsening_type == CS_GRID_COARSENING_CONV_DIFF_DX)
           ag_threshold = (1. - epsilon) * pow(relaxation_parameter, npass);
 
-        cs_lnum_t ii = merge_queue[r_idx];
-        cs_lnum_t ix0 = merge_queue[r_idx+1];
-        cs_lnum_t ix1 = (merge_queue_stride == 3) ? merge_queue[r_idx+2] : ix0;
+        cs_lnum_t ii = ag_queue[r_idx];
+        cs_lnum_t ix0 = ag_queue[r_idx+1];
+        cs_lnum_t ix1 = (ag_queue_stride == 3) ? ag_queue[r_idx+2] : ix0;
 
         cs_lnum_t jj = col_id[ix0];
 
         /* If both cells are already aggregated, pass */
 
-        if (f_c_row[ii] >= 0 && f_c_row[jj] >= 0)
+        cs_lnum_t ii_c = f_c_row[ii];
+        cs_lnum_t jj_c = f_c_row[jj];
+
+        if (ii_c >= 0 && jj_c >= 0)
           continue;
 
         cs_lnum_t count = 0;
@@ -4211,9 +4375,9 @@ _automatic_aggregation_dx_msr(const cs_grid_t       *f,
         cs_real_t aggr_crit;
 
         if (coarsening_type == CS_GRID_COARSENING_CONV_DIFF_DX) {
-          cs_real_t f_xa0 = CS_MAX(-x_val[ix0], 0.);
-          cs_real_t f_xa1 = CS_MAX(-x_val[ix1], 0.);
-          aggr_crit = CS_MAX(f_xa0, f_xa1) * sqrt(f_da0_da1_inv);
+          cs_real_t f_xa0 = cs_math_fmax(-x_val[ix0], 0.);
+          cs_real_t f_xa1 = cs_math_fmax(-x_val[ix1], 0.);
+          aggr_crit = cs_math_fmax(f_xa0, f_xa1) * sqrt(f_da0_da1_inv);
         }
         else {
           cs_real_t f_xa0_xa1 =  x_val[ix0] * x_val[ix1];
@@ -4221,26 +4385,24 @@ _automatic_aggregation_dx_msr(const cs_grid_t       *f,
         }
 
         if (aggr_crit > ag_threshold) {
-          cs_lnum_t ii_c = f_c_row[ii];
-          cs_lnum_t jj_c = f_c_row[jj];
-          if (ii_c > -1 && jj_c < 0 ) {
+          if (ii_c > -1 && jj_c < -1 ) {
             if (c_aggr_count[t_s_id + ii_c] < _max_aggregation +1) {
               f_c_row[jj] = ii_c;
               c_aggr_count[t_s_id + ii_c] += 1;
               count++;
             }
           }
-          else if (ii_c < 0 && jj_c > -1) {
+          else if (ii_c < -1 && jj_c > -1) {
             if (c_aggr_count[t_s_id + jj_c] < _max_aggregation +1) {
               f_c_row[ii] = jj_c;
               c_aggr_count[t_s_id + jj_c] += 1;
               count++;
             }
           }
-          else if (ii_c < 0 && jj_c < 0) {
+          else if (ii_c < -1 && jj_c < -1) {
             f_c_row[ii] = t_c_n_rows;
             f_c_row[jj] = t_c_n_rows;
-            c_aggr_count[t_s_id + c_n_rows] += 1;
+            c_aggr_count[t_s_id + t_c_n_rows] += 1;
             t_c_n_rows++;
             count++;
           }
@@ -4248,42 +4410,26 @@ _automatic_aggregation_dx_msr(const cs_grid_t       *f,
 
         /* Place faces where no merging occurs back in queue
            (we reuse the same location, knowing that
-           t_r_s_id + n_r_faces*merge_queue_stride < r_id) */
-        if (count == 0 && (f_c_row[ii] < 0 || f_c_row[jj] < 0)) {
+           t_r_s_id + n_r_faces*ag_queue_stride < r_id) */
+        if (count == 0) {
           assert(r_idx_n < t_r_e_id);
-          merge_queue[r_idx_n] = ii;
-          merge_queue[r_idx_n+1] = ix0;
-          if (merge_queue_stride == 3)
-            merge_queue[r_idx_n+2] = ix1;
-          r_idx_n += merge_queue_stride;
+          ag_queue[r_idx_n] = ii;
+          ag_queue[r_idx_n+1] = ix0;
+          if (ag_queue_stride == 3)
+            ag_queue[r_idx_n+2] = ix1;
+          r_idx_n += ag_queue_stride;
           r_n_faces++;
         }
 
-      }
+      } /* Loop on aggregation queue */
 
       t_r_e_id = r_idx_n;
-
-      /* Check the number of coarse cells created */
-      aggr_count = 0;
-      for (cs_lnum_t ii = t_s_id; ii < t_e_id; ii++) {
-        if (f_c_row[ii] < 0)
-          aggr_count++;
-      }
-
-      /* Exit loop on passes if aggregation is sufficient
-         (note that each thread may loop independently). */
-
-      if (   aggr_count == 0
-          || (t_c_n_rows + aggr_count)*ncoarse < (t_e_id - t_s_id)
-          || r_n_faces == 0) {
-        break;
-      }
 
     } /* Loop on passes */
 
     /* Finish assembly */
     for (cs_lnum_t ii = t_s_id; ii < t_e_id; ii++) {
-      if (f_c_row[ii] < 0) {
+      if (f_c_row[ii] < -1) {
         f_c_row[ii] = t_c_n_rows;
         t_c_n_rows++;
       }
@@ -4293,8 +4439,6 @@ _automatic_aggregation_dx_msr(const cs_grid_t       *f,
 
     if (n_loc_threads > 1)
       t_c_scan[t_id] = t_c_n_rows;
-    else
-      c_n_rows = t_c_n_rows;
 
   } // End of OpenMP section
 
@@ -4302,15 +4446,15 @@ _automatic_aggregation_dx_msr(const cs_grid_t       *f,
 
 #if defined(HAVE_OPENMP)
   if (n_loc_threads > 1) {
-    c_n_rows = _scan_f_c_row(n_loc_threads, f_n_rows, t_c_scan, f_c_row);
+    _scan_f_c_row(n_loc_threads, f_n_rows, t_c_scan, f_c_row);
   }
 #endif
 
   /* Free working arrays */
 
+  BFT_FREE(ag_queue);
   BFT_FREE(c_cardinality);
   BFT_FREE(c_aggr_count);
-  BFT_FREE(merge_queue);
 
   BFT_FREE(_d_val);
   BFT_FREE(_x_val);
@@ -4517,19 +4661,19 @@ _verify_coarse_quantities(const cs_grid_t  *fine_grid,
   for (face_id = 0; face_id < f_n_faces; face_id++) {
     ii = f_face_cell[face_id][0];
     jj = f_face_cell[face_id][1];
-    w1[ii] = CS_MAX(fabs(f_xa[face_id*isym]), w1[ii]);
-    w2[ii] = CS_MIN(fabs(f_xa[face_id*isym]), w2[ii]);
-    w1[jj] = CS_MAX(fabs(f_xa[(face_id +1)*isym -1]), w1[jj]);
-    w2[jj] = CS_MIN(fabs(f_xa[(face_id +1)*isym -1]), w2[jj]);
+    w1[ii] = cs_math_fmax(fabs(f_xa[face_id*isym]), w1[ii]);
+    w2[ii] = cs_math_fmin(fabs(f_xa[face_id*isym]), w2[ii]);
+    w1[jj] = cs_math_fmax(fabs(f_xa[(face_id +1)*isym -1]), w1[jj]);
+    w2[jj] = cs_math_fmin(fabs(f_xa[(face_id +1)*isym -1]), w2[jj]);
   }
 
   for (c_face = 0; c_face < c_n_faces; c_face++) {
     ic = c_face_cell[c_face][0];
     jc = c_face_cell[c_face][1];
-    w3[ic] = CS_MAX(fabs(c_xa[c_face*isym]), w3[ic]);
-    w4[ic] = CS_MIN(fabs(c_xa[c_face*isym]), w4[ic]);
-    w3[jc] = CS_MAX(fabs(c_xa[(c_face +1)*isym -1]), w3[jc]);
-    w4[jc] = CS_MIN(fabs(c_xa[(c_face +1)*isym -1]), w4[jc]);
+    w3[ic] = cs_math_fmax(fabs(c_xa[c_face*isym]), w3[ic]);
+    w4[ic] = cs_math_fmin(fabs(c_xa[c_face*isym]), w4[ic]);
+    w3[jc] = cs_math_fmax(fabs(c_xa[(c_face +1)*isym -1]), w3[jc]);
+    w4[jc] = cs_math_fmin(fabs(c_xa[(c_face +1)*isym -1]), w4[jc]);
   }
 
   for (ii = 0; ii < f_n_cells; ii++)
@@ -4574,8 +4718,8 @@ _verify_coarse_quantities(const cs_grid_t  *fine_grid,
   if (interp == 1) {
     double rmin = HUGE_VAL, rmax = -HUGE_VAL;
     for (c_face = 0; c_face < c_n_faces; c_face++) {
-      rmin = CS_MIN(rmin, c_xa[c_face*isym] / c_xa0[c_face]);
-      rmax = CS_MAX(rmax, c_xa[c_face*isym] / c_xa0[c_face]);
+      rmin = cs_math_fmin(rmin, c_xa[c_face*isym] / c_xa0[c_face]);
+      rmax = cs_math_fmax(rmax, c_xa[c_face*isym] / c_xa0[c_face]);
     }
 #if defined(HAVE_MPI) && defined(HAVE_MPI_IN_PLACE)
     if (comm != MPI_COMM_NULL) {
