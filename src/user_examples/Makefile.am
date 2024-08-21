@@ -81,7 +81,7 @@ AM_LDFLAGS =
 EXTRA_DIST = \
 cs_cad_intersect.h \
 cs_cad_intersect.cxx \
-cs_user_porosity-from_cad.c
+cs_user_porosity-from_cad.cpp
 
 # Library source files
 
