@@ -321,11 +321,10 @@ cs_lagr_car(int              iprev,
             dir[i] = stat_vel->val[cell_id * 3 + i]
                    - extra->vel->vals[iprev][cell_id * 3 + i];
 
-          mean_uvwdif = 0.;
-          /* Compute and store the mean relative velocity |<U_r>| = |<Up>-Uf|*/
-          for (int i = 0; i < 3; i++) {
-            mean_uvwdif  += cs_math_sq(dir[i]);
-          }
+          /* Compute and store the mean relative velocity square
+           * |<U_r>|^2 = |<Up>-Uf|^2*/
+          mean_uvwdif = cs_math_3_square_norm(dir);
+
           mean_uvwdif = (3.0 * mean_uvwdif) / (2.0 * energi[cell_id]);
 
           /* FIXME add proper isotropic behavior */
@@ -398,8 +397,8 @@ cs_lagr_car(int              iprev,
             //
             // cos(theta/2) = || dir + dir_r|| / 2
             cs_real_t dir_p_dir_r[3] = {dir[0] + dir_r[0],
-              dir[1] + dir_r[1],
-              dir[2] + dir_r[2]};
+                                        dir[1] + dir_r[1],
+                                        dir[2] + dir_r[2]};
             cs_real_t dir_p_dir_r_normed[3];
             cs_math_3_normalize(dir_p_dir_r, dir_p_dir_r_normed);
 

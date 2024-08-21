@@ -710,7 +710,7 @@ cs_lagr_options_definition(int         is_restart,
   /* Default diffusion model depending on complete model or fluid particles */
 
   /* Fluid particle: activate turbulent dispersion,
-   * deactivate crossing effetc*/
+   * deactivate crossing effect */
   if (lagr_model->modcpl == 0) {
 
     if (lagr_model->idistu < 0)
