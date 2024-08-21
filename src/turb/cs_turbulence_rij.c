@@ -3007,19 +3007,19 @@ cs_turbulence_rij(int phase_id)
 # pragma omp parallel for if(n_cells > CS_THR_MIN)
   for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
 
-    /* Pij = - (Rik dUk/dXj + dUk/dXi Rkj)
+    /* Pij = - (Rik dUj/dXk + dUi/dXk Rkj)
      * Pij is stored as (P11, P22, P33, P12, P23, P13) */
     for (cs_lnum_t ij = 0; ij < 6; ij++) {
       cs_lnum_t i = _iv2t[ij];
       cs_lnum_t j = _jv2t[ij];
 
 
-    produc[c_id][ij] = - ( cvara_rij[c_id][_t2v[i][0]] * gradv[c_id][0][j]
-                         + cvara_rij[c_id][_t2v[i][1]] * gradv[c_id][1][j]
-                         + cvara_rij[c_id][_t2v[i][2]] * gradv[c_id][2][j]
-                         + gradv[c_id][0][i] * cvara_rij[c_id][_t2v[0][j]]
-                         + gradv[c_id][1][i] * cvara_rij[c_id][_t2v[1][j]]
-                         + gradv[c_id][2][i] * cvara_rij[c_id][_t2v[2][j]]
+    produc[c_id][ij] = - ( cvara_rij[c_id][_t2v[i][0]] * gradv[c_id][j][0]
+                         + cvara_rij[c_id][_t2v[i][1]] * gradv[c_id][j][1]
+                         + cvara_rij[c_id][_t2v[i][2]] * gradv[c_id][j][2]
+                         + gradv[c_id][i][0] * cvara_rij[c_id][_t2v[0][j]]
+                         + gradv[c_id][i][1] * cvara_rij[c_id][_t2v[1][j]]
+                         + gradv[c_id][i][2] * cvara_rij[c_id][_t2v[2][j]]
                          );
     }
   }
