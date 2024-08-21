@@ -50,6 +50,7 @@ BEGIN_C_DECLS
  * \param[in]  piil      terme in P-U SDE integration
  * \param[in]  bx        turbulence characteristics
  * \param[out] tsfext    info for return coupling source terms
+ * \param[out] force_p   forces per mass unit on particles (m/s^2)
  * \param[in]  gradpr    pressure gradient
  * \param[in]  gradvf    fluid velocity gradient
  * \param[out] terbru    Diffusion coefficient accounting for Brownian
@@ -66,6 +67,7 @@ cs_lagr_sde(cs_real_t           dt_p,
             const cs_real_3_t   piil[],
             const cs_real_33_t  bx[],
             cs_real_t           tsfext[],
+            cs_real_3_t        *force_p,
             const cs_real_3_t   gradpr[],
             const cs_real_33_t  gradvf[],
             cs_real_t           terbru[],

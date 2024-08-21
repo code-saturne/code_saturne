@@ -1924,10 +1924,14 @@ cs_lagr_solve_time_step(const int         itypfb[],
       cs_real_t *taup;
       cs_real_33_t *bx;
       cs_real_3_t *tlag, *piil;
+      cs_real_3_t *force_p;
       BFT_MALLOC(taup, p_set->n_particles, cs_real_t);
       BFT_MALLOC(tlag, p_set->n_particles, cs_real_3_t);
+      BFT_MALLOC(force_p, p_set->n_particles, cs_real_3_t);
       BFT_MALLOC(piil, cs_glob_mesh->n_cells, cs_real_3_t);
       BFT_MALLOC(bx, p_set->n_particles, cs_real_33_t);
+
+      cs_array_real_fill_zero(3 * p_set->n_particles, (cs_real_t *)force_p);
 
       cs_real_t *tsfext = NULL;
       if (cs_glob_lagr_time_scheme->iilagr == CS_LAGR_TWOWAY_COUPLING)
@@ -2027,6 +2031,7 @@ cs_lagr_solve_time_step(const int         itypfb[],
                   (const cs_real_3_t *)piil,
                   (const cs_real_33_t *)bx,
                   tsfext,
+                  force_p,
                   (const cs_real_3_t *)extra->grad_pr,
                   (const cs_real_33_t *)extra->grad_vel,
                   terbru,
@@ -2233,12 +2238,13 @@ cs_lagr_solve_time_step(const int         itypfb[],
 
       if (   cs_glob_lagr_time_scheme->iilagr == CS_LAGR_TWOWAY_COUPLING
           && cs_glob_lagr_time_step->nor == cs_glob_lagr_time_scheme->t_order)
-        cs_lagr_coupling(taup, tempct, tsfext, cpgd1, cpgd2, cpght);
+        cs_lagr_coupling(taup, tempct, tsfext, force_p, cpgd1, cpgd2, cpght);
 
       /* Deallocate arrays whose size is based on p_set->n_particles
          (which may change next) */
 
       BFT_FREE(tlag);
+      BFT_FREE(force_p);
       BFT_FREE(taup);
       BFT_FREE(piil);
       BFT_FREE(bx);

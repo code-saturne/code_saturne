@@ -64,6 +64,7 @@ BEGIN_C_DECLS
  * \param[in]   taup    dynamic characteristic time
  * \param[in]   tempct  thermal charactersitic time
  * \param[out]  tsfext  external forces
+ * \param[in]   force_p forces per mass unit on particles (m/s^2)
  * \param[in]   cpgd1   devolatization term 1 for heterogeneous coal
  * \param[in]   cpgd2   devolatization term 2 for heterogeneous coal
  * \param[in]   cpght   combustion term for heterogeneous coal
@@ -71,12 +72,13 @@ BEGIN_C_DECLS
 /*----------------------------------------------------------------------------*/
 
 void
-cs_lagr_coupling(const cs_real_t  taup[],
-                 const cs_real_t  tempct[],
-                 cs_real_t        tsfext[],
-                 const cs_real_t  cpgd1[],
-                 const cs_real_t  cpgd2[],
-                 const cs_real_t  cpght[]);
+cs_lagr_coupling(const cs_real_t    taup[],
+                 const cs_real_t    tempct[],
+                 cs_real_t          tsfext[],
+                 const cs_real_3_t *force_p,
+                 const cs_real_t    cpgd1[],
+                 const cs_real_t    cpgd2[],
+                 const cs_real_t    cpght[]);
 
 /*----------------------------------------------------------------------------*/
 

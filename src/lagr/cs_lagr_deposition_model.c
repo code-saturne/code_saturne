@@ -100,7 +100,7 @@ static const double _k_boltz = 1.38e-23;
  *   indint    <->    interface indicator
  *   gnorm     <--    wall-normal gravity component
  *   vnorm     <--    wall-normal fluid (Eulerian) velocity
- *   force_pn  <--    wall-normal particle force
+ *   force_p_r <--    wall-normal particle force
  *   piiln     <--    SDE integration auxiliary term
  *----------------------------------------------------------------------------*/
 
@@ -130,7 +130,7 @@ _dep_inner_zone_diffusion(cs_real_t *dx,
                           cs_lnum_t *indint,
                           cs_real_t *gnorm,
                           cs_real_t *vnorm,
-                          cs_real_t *force_pn,
+                          cs_real_t *force_p_r,
                           cs_real_t *piiln);
 
 /*=============================================================================
@@ -237,7 +237,7 @@ _dep_ejection(cs_lnum_t *marko,
  *   kdifcl    <--    internal zone diffusion coefficient
  *   gnorm     <--    wall-normal gravity component
  *   vnorm     <--    wall-normal fluid (Eulerian) velocity
- *   force_pn  <--    wall-normal particle force
+ *   force_p_r <--    wall-normal particle force
  *   depint    <--    interface location near-wall/core-flow
  *   piiln     <--    SDE integration auxiliary term
  *----------------------------------------------------------------------------*/
@@ -267,7 +267,7 @@ _dep_sweep(cs_real_t *dx,
            cs_real_t *kdifcl,
            cs_real_t *gnorm,
            cs_real_t *vnorm,
-           cs_real_t *force_pn,
+           cs_real_t *force_p_r,
            cs_real_t *piiln)
 {
   /* -------------------------------------------------------
@@ -330,7 +330,7 @@ _dep_sweep(cs_real_t *dx,
                               &indint,
                               gnorm,
                               vnorm,
-                              force_pn,
+                              force_p_r,
                               piiln);
 
     indint  = 0;
@@ -401,7 +401,7 @@ _dep_sweep(cs_real_t *dx,
  *   indint    <->    interface indicator
  *   gnorm     <--    wall-normal gravity component
  *   vnorm     <--    wall-normal fluid (Eulerian) velocity
- *   force_pn  <--    wall-normal particle force
+ *   force_p_r <--    wall-normal particle force
  *   piiln     <--    SDE integration auxiliary term
  *----------------------------------------------------------------------------*/
 
@@ -431,7 +431,7 @@ _dep_diffusion_phases(cs_real_t *dx,
                       cs_lnum_t *indint,
                       cs_real_t *gnorm,
                       cs_real_t *vnorm,
-                      cs_real_t *force_pn,
+                      cs_real_t *force_p_r,
                       cs_real_t *piiln)
 {
   cs_real_t  tci, aux1, aux2, aux3, aux4, aux5, aux6;
@@ -453,7 +453,7 @@ _dep_diffusion_phases(cs_real_t *dx,
 
   tci = *piiln * *tlag2 + *vnorm;
 
-  cs_real_t force = *force_pn;
+  cs_real_t v_lim = *force_p_r * taup;
 
   /* --> Coefficients and deterministic terms computation
    *     ------------------------------------------------    */
@@ -474,7 +474,7 @@ _dep_diffusion_phases(cs_real_t *dx,
   ter1x  = aa * vpart0;
   ter2x  = bb * vvue0;
   ter3x  = cc * tci;
-  ter4x  = (dtl - aa) * force;
+  ter4x  = (dtl - aa) * v_lim;
 
   /* --> seen fluid terms   */
   ter1f  = vvue0 * aux2;
@@ -486,7 +486,7 @@ _dep_diffusion_phases(cs_real_t *dx,
   ter1p  = vpart0 * aux1;
   ter2p  = vvue0 * dd;
   ter3p  = tci * (ee - dd);
-  ter4p  = force * ee;
+  ter4p  = v_lim * ee;
 
   /* --> Coefficients computation for the stochastic integrals:
    * --> Integral on the particles position   */
@@ -610,7 +610,7 @@ _dep_diffusion_phases(cs_real_t *dx,
                               indint,
                               gnorm,
                               vnorm,
-                              force_pn,
+                              force_p_r,
                               piiln);
 
     *dx  = dxaux + *dx;
@@ -667,7 +667,7 @@ _dep_diffusion_phases(cs_real_t *dx,
  *   indint    <->    interface indicator
  *   gnorm     <--    wall-normal gravity component
  *   vnorm     <--    wall-normal fluid (Eulerian) velocity
- *   force_pn  <--    wall-normal particle force
+ *   force_p_r <--    wall-normal particle force
  *   piiln     <--    SDE integration auxiliary term
  *----------------------------------------------------------------------------*/
 
@@ -697,14 +697,14 @@ _dep_inner_zone_diffusion(cs_real_t *dx,
                           cs_lnum_t *indint,
                           cs_real_t *gnorm,
                           cs_real_t *vnorm,
-                          cs_real_t *force_pn,
+                          cs_real_t *force_p_r,
                           cs_real_t *piiln)
 {
   cs_real_t vagaus[3], vagausbr[2];
   cs_random_normal(3, vagaus);
   cs_random_normal(2, vagausbr);
 
-  cs_real_t force = *force_pn;
+  cs_real_t v_lim = *force_p_r * taup;
   cs_real_t vvue0  = *vvue;
   cs_real_t vpart0 = *vpart;
 
@@ -776,8 +776,8 @@ _dep_inner_zone_diffusion(cs_real_t *dx,
    * ---------------------------------------------------*/
 
   *vvue  = vvue0 * etl + tci * l1l;
-  *vpart = vpart0 * etp + dd1 * vvue0 + tci * (ee1 - dd1) + force * ee1;
-  *dx    = aa1 * vpart0 + bb1 * vvue0 + cc1 * tci + (dtl - aa1) * force;
+  *vpart = vpart0 * etp + dd1 * vvue0 + tci * (ee1 - dd1) + v_lim * ee1;
+  *dx    = aa1 * vpart0 + bb1 * vvue0 + cc1 * tci + (dtl - aa1) * v_lim;
 
   /* ---------------------------------------------------
    * Correlation matrix
@@ -921,7 +921,7 @@ _dep_inner_zone_diffusion(cs_real_t *dx,
                           indint,
                           gnorm,
                           vnorm,
-                          force_pn,
+                          force_p_r,
                           piiln);
 
     *dx  = dxaux + *dx;
@@ -967,7 +967,7 @@ _dep_inner_zone_diffusion(cs_real_t *dx,
 
       *vvue   = vvue0 * etl + aa2 * tci + bb2 * tcin1;
       *vpart  = vpart0 * etp + vvue0 * c2c + a2c * tci + b2c * tcin1
-                             + force * (1.0 - (etp - 1.0) / ( -dtstp));
+                             + v_lim * (1.0 - (etp - 1.0) / ( -dtstp));
 
       /* -------------------------------------------------
        *  Diffusion coefficient computation
@@ -1044,7 +1044,7 @@ _dep_inner_zone_diffusion(cs_real_t *dx,
  *   enertur   <--    turbulent kinetic energy
  *   gnorm     <--    wall-normal gravity component
  *   vnorm     <--    wall-normal fluid (Eulerian) velocity
- *   force_pn  <--    wall-normal particle force
+ *   force_p_r <--    wall-normal particle force
  *   piiln     <--    SDE integration auxiliary term
  *   depint    <--    interface location near-wall/core-flow
  *----------------------------------------------------------------------------*/
@@ -1066,7 +1066,7 @@ cs_lagr_deposition(cs_real_t  dtp,
                    cs_real_t *enertur,
                    cs_real_t *gnorm,
                    cs_real_t *vnorm,
-                   cs_real_t *force_pn,
+                   cs_real_t *force_p_r,
                    cs_real_t *piiln,
                    cs_real_t *depint)
 {
@@ -1195,7 +1195,7 @@ cs_lagr_deposition(cs_real_t  dtp,
                &kdifcl,
                gnorm,
                vnorm,
-               force_pn,
+               force_p_r,
                piiln);
 
   else if (   *marko == CS_LAGR_COHERENCE_STRUCT_DIFFUSION
@@ -1225,7 +1225,7 @@ cs_lagr_deposition(cs_real_t  dtp,
                           &indint,
                           gnorm,
                           vnorm,
-                          force_pn,
+                          force_p_r,
                           piiln);
 
   else if (*marko == CS_LAGR_COHERENCE_STRUCT_EJECTION)
@@ -1271,7 +1271,7 @@ cs_lagr_deposition(cs_real_t  dtp,
                               &indint,
                               gnorm,
                               vnorm,
-                              force_pn,
+                              force_p_r,
                               piiln);
 }
 

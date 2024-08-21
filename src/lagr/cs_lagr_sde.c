@@ -154,7 +154,7 @@ _add_resuspension_event(cs_lagr_event_set_t     *events,
  * \param[in]  bx        caracteristiques de la turbulence
  * \param[in]  vagaus    gaussian random variables
  * \param[in]  brgaus    gaussian random variables
- * \param[in]  force_p   taup times forces on particles (m/s)
+ * \param[in]  force_p   forces per mass unit on particles (m/s^2)
  * \param[in]  beta      proportional to the gradient of T_lag
  * \param[out] terbru    Diffusion coefficient accounting for Brownian
  *                       (molecular) effect
@@ -492,7 +492,8 @@ _lages1(cs_real_t           dtp,
          compute II*TL+<u> and [(grad<P>/rhop+g)*tau_p+<Uf>] ? */
 
       cs_real_t tci = piil_r[id] * tlag_r[id] + fluid_vel_r[id];
-      cs_real_t force = force_p_r[id];
+      /* velocity induced by a force by unit mass */
+      cs_real_t v_lim = force_p_r[id] * taup_r[id];
 
       /* Compute deterministic coefficients/terms
          ---------------------------------------- */
@@ -514,7 +515,7 @@ _lages1(cs_real_t           dtp,
       ter1x = aa * old_part_vel_r[id];
       ter2x = bb * old_part_vel_seen_r[id];
       ter3x = cc * tci;
-      ter4x = (dtp - aa) * force;
+      ter4x = (dtp - aa) * v_lim;
 
       /* Flow-seen velocity terms */
       ter1f = old_part_vel_seen_r[id] * aux2;
@@ -527,7 +528,7 @@ _lages1(cs_real_t           dtp,
       ter1p = old_part_vel_r[id] * aux1;
       ter2p = old_part_vel_seen_r[id] * dd;
       ter3p = tci * (ee - dd);
-      ter4p = force * ee;
+      ter4p = v_lim * ee;
 
       /* Integral on flow velocity seen */
       gama2  = 0.5 * (1.0 - aux2 * aux2);
@@ -741,7 +742,7 @@ _lages1(cs_real_t           dtp,
  * \param[in]  vagaus    variables aleatoires gaussiennes
  * \param[in]  brgaus    gaussian variable for brownian movement
  * \param[in]  romp      masse volumique des particules
- * \param[in]  force_p   taup times forces on particles (m/s)
+ * \param[in]  force_p   forces per mass unit on particles (m/s^2)
  * \param[out] terbru
  */
 /*----------------------------------------------------------------------------*/
@@ -814,7 +815,7 @@ _lages2(cs_real_t           dtp,
 
     for (cs_lnum_t id = 0; id < 3; id++) {
 
-      auxl[p_id * 6 + id] = force_p[p_id][id];
+      auxl[p_id * 6 + id] = force_p[p_id][id] * taup[p_id];
 
       if (nor == 1)
         auxl[p_id * 6 + id + 3] =   piil[cell_id][id] * tlag[p_id][id]
@@ -1053,7 +1054,7 @@ _lages2(cs_real_t           dtp,
  * \param[in]  piil      term in integration of UP SDEs
  * \param[in]  vagaus    gaussian random variables
  * \param[in]  romp      particles associated density
- * \param[in]  force_p   taup times forces on particles (m/s)
+ * \param[in]  force_p   forces per mass unit on particles (m/s^2)
  * \param[in]  tempf     temperature of the fluid (K)
  * \param[in]  vislen    FIXME
  * \param[in]  events    associated events set
@@ -1234,9 +1235,9 @@ _lagesd(cs_real_t             dtp,
 
   /* 2.5 Particle force: - pressure gradient/romp + external force + g   */
 
-  cs_real_t force_pn[3];
+  cs_real_t force_p_r[3];
 
-  cs_math_33_3_product(rot_m, force_p[p_id], force_pn);
+  cs_math_33_3_product(rot_m, force_p[p_id], force_p_r);
 
   /* 2.6 - "piil" term    */
 
@@ -1294,7 +1295,7 @@ _lagesd(cs_real_t             dtp,
                      &enertur,
                      ggp,
                      vflui,
-                     force_pn,
+                     force_p_r,
                      piilp,
                      depint);
 
@@ -1340,7 +1341,7 @@ _lagesd(cs_real_t             dtp,
       cs_lnum_t i0 = id-1; //FIXME strange
 
       cs_real_t tci   = piilp[id] * tlp + vflui[id];
-      cs_real_t force = force_pn[id];
+      cs_real_t v_lim = force_p_r[id] * taup[p_id];
       cs_real_t aux1  = exp(-dtp / taup[p_id]);
       cs_real_t aux2  = exp(-dtp / tlp);
       cs_real_t aux3  = tlp / (tlp - taup[p_id]);
@@ -1357,7 +1358,7 @@ _lagesd(cs_real_t             dtp,
       cs_real_t ter1x = aa * vpart[id];
       cs_real_t ter2x = bb * vvue[id];
       cs_real_t ter3x = cc * tci;
-      cs_real_t ter4x = (dtp - aa) * force;
+      cs_real_t ter4x = (dtp - aa) * v_lim;
 
       /* --> Terms for the flow-seen velocity     */
       cs_real_t ter1f = vvue[id] * aux2;
@@ -1369,7 +1370,7 @@ _lagesd(cs_real_t             dtp,
       cs_real_t ter1p = vpart[id] * aux1;
       cs_real_t ter2p = vvue[id] * dd;
       cs_real_t ter3p = tci * (ee - dd);
-      cs_real_t ter4p = force * ee;
+      cs_real_t ter4p = v_lim * ee;
 
       /* --> (2.3) Coefficients computation for the stochastic integrals:  */
       cs_real_t gama2  = 0.5 * (1.0 - aux2 * aux2);
@@ -2385,7 +2386,7 @@ _lagesd(cs_real_t             dtp,
  * \param[in] bx        turbulence characteristics
  * \param[in] vagaus    gaussian random variables
  * \param[in] romp      particles associated density
- * \param[in] force_p   taup times forces on particles (m/s)
+ * \param[in] force_p   forces per mass unit on particles (m/s^2)
  * \param[in] vislen    FIXME
  */
 /*----------------------------------------------------------------------------*/
@@ -2521,7 +2522,7 @@ _lagdep(cs_real_t           dtp,
              compute II*TL+<u> and [(grad<P>/rhop+g)*tau_p+<Uf>] ?  */
 
           cs_real_t tci = piil[cell_id][id] * tlag[p_id][id] + vitf;
-          cs_real_t force = force_p[p_id][id];
+          cs_real_t v_lim = force_p[p_id][id] * taup[p_id];
 
           /* Compute deterministic coefficients/terms
              ---------------------------------------- */
@@ -2543,7 +2544,7 @@ _lagdep(cs_real_t           dtp,
           ter1x = aa * old_part_vel[id];
           ter2x = bb * old_part_vel_seen[id];
           ter3x = cc * tci;
-          ter4x = (dtp - aa) * force;
+          ter4x = (dtp - aa) * v_lim;
 
           /* --> flow-seen velocity terms   */
           ter1f = old_part_vel_seen[id] * aux2;
@@ -2556,7 +2557,7 @@ _lagdep(cs_real_t           dtp,
           ter1p = old_part_vel[id] * aux1;
           ter2p = old_part_vel_seen[id] * dd;
           ter3p = tci * (ee - dd);
-          ter4p = force * ee;
+          ter4p = v_lim * ee;
 
           /* Coefficients computation for the stochastic integral */
           /* Integral for particles position */
@@ -2737,6 +2738,7 @@ _lagdep(cs_real_t           dtp,
  * \param[in]  piil      term in integration of U-P SDEs
  * \param[in]  bx        turbulence characteristics
  * \param[out] tsfext    info for return coupling source terms
+ * \param[out] force_p   forces per mass unit on particles (m/s^2)
  * \param[in]  gradpr    pressure gradient
  * \param[in]  gradvf    fluid velocity gradient
  * \param[out] terbru    Diffusion coefficient accounting for Brownian
@@ -2753,6 +2755,7 @@ cs_lagr_sde(cs_real_t           dt_p,
             const cs_real_3_t   piil[],
             const cs_real_33_t  bx[],
             cs_real_t           tsfext[],
+            cs_real_3_t        *force_p,
             const cs_real_3_t   gradpr[],
             const cs_real_33_t  gradvf[],
             cs_real_t           terbru[],
@@ -2834,15 +2837,6 @@ cs_lagr_sde(cs_real_t           dt_p,
   /* Management of user external force fields
      ---------------------------------------- */
 
-  cs_real_3_t *force_p;
-  BFT_MALLOC(force_p, p_set->n_particles, cs_real_3_t);
-
-  for (cs_lnum_t p_id = 0; p_id < p_set->n_particles; p_id++) {
-    force_p[p_id][0] = 0.0;
-    force_p[p_id][1] = 0.0;
-    force_p[p_id][2] = 0.0;
-  }
-
   cs_user_lagr_ef(dt_p,
                   (const cs_real_t *)taup,
                   (const cs_real_3_t *)tlag,
@@ -2871,7 +2865,7 @@ cs_lagr_sde(cs_real_t           dt_p,
                                                     CS_LAGR_CELL_ID);
       for (int id = 0; id < 3; id++) {
         force_p[p_id][id] = (- gradpr[cell_id][id] / romp[p_id]
-          + grav[id] + force_p[p_id][id]) * taup[p_id];
+          + grav[id] + force_p[p_id][id]);
 
       }
     }
@@ -2968,8 +2962,6 @@ cs_lagr_sde(cs_real_t           dt_p,
     }
 
   }
-
-  BFT_FREE(force_p);
 
   BFT_FREE(brgaus);
   BFT_FREE(vagaus);
