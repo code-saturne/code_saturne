@@ -42,9 +42,9 @@ endif
 EXTRA_DIST = ${srcdir}/*
 
 clean-local:
-	if test -d ${abs_top_srcdir}/python/code_saturne.egg-info; then \
-		echo "rm -rf ${abs_top_srcdir}/python/code_saturne.egg-info"; \
-		rm -rf ${abs_top_srcdir}/python/code_saturne.egg-info; \
+	if test -d build; then \
+		echo "rm -rf build"; \
+		rm -rf build; \
 	fi
 
 all-local: clean-local
