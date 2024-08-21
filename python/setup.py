@@ -4,6 +4,7 @@
 
 from setuptools import setup, find_packages, Command
 from setuptools.command.egg_info import egg_info
+from setuptools.command.install_egg_info import install_egg_info
 from setuptools.command.build_py import build_py as _build_py
 import glob
 import os
@@ -80,6 +81,32 @@ else:
     _cs_opts['qtpkg'] = None
     _cs_opts['use_qt5'] = False
 
+
+# ==============================================
+# Overloading the egg-info command
+# ==============================================
+
+# We overload the egg_info command to avoid creating the ".egg-info"
+# folder in the sources folder
+
+class _cs_egg_info(egg_info):
+
+    def run(self):
+        build_command = self.distribution.command_obj.get('build', None)
+        if build_command:
+            self.egg_base = build_command.build_base
+            self.egg_info = os.path.join(self.egg_base, os.path.basename(self.egg_info))
+
+        super().run()
+
+# We overload the install_egg_info to ensure that the correct "egg_info"
+# command is found, otherwise the wrong egg_info path is used...
+
+class _cs_install_egg_info(install_egg_info):
+
+    def finalize_options(self):
+        self.run_command('egg_info')
+        super().finalize_options()
 
 # ==============================================
 # Specific commands to build python files for GUI
@@ -186,7 +213,9 @@ setup(name='code_saturne',
       cmdclass={'build_py':build_py,
                 'build_cs_qt_files':_build_qt_files,
                 'build_cs_ui_files':_build_ui_files,
-                'build_cs_rc_files':_build_rc_files,},
+                'build_cs_rc_files':_build_rc_files,
+                'egg_info':_cs_egg_info,
+                'install_egg_info':_cs_install_egg_info},
       version=_cs_opts['version'],
       packages=find_packages(where=SRC_PATH, exclude=_cs_opts['exclude_dirs'])
       )
