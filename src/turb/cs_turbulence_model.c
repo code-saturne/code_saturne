@@ -1406,20 +1406,6 @@ _turbulence_model_name(cs_turb_model_type_t  id)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Initialize turbulence model structures
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_turb_model_init(void) {
-
-  /* set global pointer to turbulence model */
-  cs_set_glob_turb_model();
-
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief Initialize type and order members of turbulence model structure
  */
 /*----------------------------------------------------------------------------*/

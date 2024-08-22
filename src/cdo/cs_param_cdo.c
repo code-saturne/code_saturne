@@ -67,33 +67,8 @@ BEGIN_C_DECLS
 cs_param_cdo_mode_t  cs_glob_param_cdo_mode = CS_PARAM_CDO_MODE_OFF;
 
 /*============================================================================
- * Prototypes for functions intended for use only by Fortran wrappers.
- * (descriptions follow, with function bodies).
- *============================================================================*/
-
-/*----------------------------------------------------------------------------
- * Map Fortran pointers to global C structure members.
- *----------------------------------------------------------------------------*/
-
-void cs_f_cdo_get_pointers(int **icdo);
-
-/*============================================================================
  * Private function definitions
  *============================================================================*/
-
-/*============================================================================
- * Fortran wrapper function definitions
- *============================================================================*/
-
-/*----------------------------------------------------------------------------
- * Map Fortran pointers to global C structure members.
- *----------------------------------------------------------------------------*/
-
-void
-cs_f_cdo_get_pointers(int  **icdo)
-{
-  *icdo = &cs_glob_param_cdo_mode;
-}
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 

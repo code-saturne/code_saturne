@@ -51,7 +51,6 @@ base/paramx.f90 \
 base/mesh.f90 \
 base/field.f90 \
 base/field_operator.f90 \
-base/cdomod.f90 \
 base/cstphy.f90 \
 base/cstnum.f90 \
 base/dimens.f90 \
@@ -97,8 +96,7 @@ base/field_operator.$(OBJEXT): base/paramx.$(OBJEXT) base/dimens.$(OBJEXT) \
 base/numvar.$(OBJEXT): base/paramx.$(OBJEXT)
 
 base/optcal.$(OBJEXT): base/paramx.$(OBJEXT) base/field.$(OBJEXT) \
- base/numvar.$(OBJEXT) base/cstphy.$(OBJEXT) base/cs_c_bindings.$(OBJEXT) \
- base/cdomod.$(OBJEXT)
+ base/numvar.$(OBJEXT) base/cstphy.$(OBJEXT) base/cs_c_bindings.$(OBJEXT)
 
 base/pointe.$(OBJEXT): base/paramx.$(OBJEXT) base/mesh.$(OBJEXT) \
  base/cs_c_bindings.$(OBJEXT)

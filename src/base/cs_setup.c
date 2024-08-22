@@ -196,6 +196,10 @@ _init_setup(void)
 
   /* Other mappings */
 
+  if (cs_glob_param_cdo_mode != CS_PARAM_CDO_MODE_ONLY) {
+    cs_set_glob_turb_model(); /* set global pointer to turbulence model */
+  }
+
   cs_f_iniini();
   cs_f_ppinii();
 }
