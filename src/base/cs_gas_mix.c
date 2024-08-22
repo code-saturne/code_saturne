@@ -715,7 +715,7 @@ cs_gas_mix_add_property_fields(void)
     cs_field_set_key_int(f, keyvis, 0);
     cs_field_set_key_int(f, keylog, 1);
 
-    /* Add molecular weight of non-condensable mixture */
+    /* Add temperature in kelvin */
     f = cs_field_create("tempk",
                         field_type,
                         CS_MESH_LOCATION_CELLS,
@@ -725,6 +725,7 @@ cs_gas_mix_add_property_fields(void)
     cs_field_set_key_int(f, keyvis, 0);
     cs_field_set_key_int(f, keylog, 1);
 
+    cs_field_pointer_map(CS_ENUMF_(t_kelvin), f);
   }
 
   /* Add molar mass property */
