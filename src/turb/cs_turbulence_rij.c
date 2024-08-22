@@ -647,19 +647,47 @@ _rij_echo(int              phase_id,
  * \brief Gravity terms for terms
  *        For \f$R_{ij}\f$
  *
+ * \param[in]   f_rij     pointer to Rij field
  * \param[in]   up_rhop   work array for \f$ \vect{u}'\rho' \f$
- * \param[out]  buoyancy  buoyancy term
+ * \param[in]   st_prv_id id of the previous source term in case of
+ *                        time extrapolation
+ * \param[in]   c_st_prv  pointer to the previous source term id
+ * \param[out]  fimp      implicit contribution
+ * \param[out]  rhs       explicit right-hand side
  */
 /*----------------------------------------------------------------------------*/
 
 static void
-_gravity_st_rij(const cs_real_t  up_rhop[][3],
-                cs_real_t        buoyancy[][6])
+_gravity_st_rij(const cs_field_t  *f_rij,
+                const cs_real_t    up_rhop[][3],
+                int                st_prv_id,
+                cs_real_6_t       *c_st_prv,
+                cs_real_66_t      *fimp,
+                cs_real_6_t       *rhs)
 {
-  const cs_lnum_t n_cells = cs_glob_mesh->n_cells;
+  const cs_mesh_t *m = cs_glob_mesh;
+  const cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
+  const cs_lnum_t n_cells = m->n_cells;
+  const cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
+
+  const cs_real_t *cell_f_vol = mq->cell_f_vol;
+
+  const int coupled_components = cs_glob_turb_rans_model->irijco;
 
   const cs_real_t *grav = cs_glob_physical_constants->gravity;
+  const cs_real_t g = cs_math_3_norm(grav);
   const cs_real_t o_m_crij3 = (1. - cs_turb_crij3);
+
+  cs_real_6_t *_buoyancy = NULL, *cpro_buoyancy = NULL;
+  cs_field_t *f_buo = cs_field_by_name_try("algo:buoyancy_rij");
+
+  if (f_buo != NULL) {
+    cpro_buoyancy = (cs_real_6_t*)f_buo->val;
+  }
+  else {
+    BFT_MALLOC(_buoyancy, n_cells_ext, cs_real_6_t);
+    cpro_buoyancy = _buoyancy;
+  }
 
 # pragma omp parallel for if(n_cells > CS_THR_MIN)
   for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
@@ -672,13 +700,112 @@ _gravity_st_rij(const cs_real_t  up_rhop[][3],
 
      const cs_real_t gkks3 = (gij[0][0] + gij[1][1] + gij[2][2]) / 3.;
 
-     buoyancy[c_id][0] = gij[0][0] * o_m_crij3 + cs_turb_crij3*gkks3;
-     buoyancy[c_id][1] = gij[1][1] * o_m_crij3 + cs_turb_crij3*gkks3;
-     buoyancy[c_id][2] = gij[2][2] * o_m_crij3 + cs_turb_crij3*gkks3;
-     buoyancy[c_id][3] = gij[0][1] * o_m_crij3;
-     buoyancy[c_id][4] = gij[1][2] * o_m_crij3;
-     buoyancy[c_id][5] = gij[0][2] * o_m_crij3;
+     cpro_buoyancy[c_id][0] = gij[0][0] * o_m_crij3 + cs_turb_crij3*gkks3;
+     cpro_buoyancy[c_id][1] = gij[1][1] * o_m_crij3 + cs_turb_crij3*gkks3;
+     cpro_buoyancy[c_id][2] = gij[2][2] * o_m_crij3 + cs_turb_crij3*gkks3;
+     cpro_buoyancy[c_id][3] = gij[0][1] * o_m_crij3;
+     cpro_buoyancy[c_id][4] = gij[1][2] * o_m_crij3;
+     cpro_buoyancy[c_id][5] = gij[0][2] * o_m_crij3;
   }
+
+  /* If we extrapolate the source terms: previous ST */
+  if (st_prv_id > -1) {
+#     pragma omp parallel for if(n_cells_ext > CS_THR_MIN)
+    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+      for (cs_lnum_t ij = 0; ij < 6; ij++)
+        c_st_prv[c_id][ij] += cpro_buoyancy[c_id][ij] * cell_f_vol[c_id];
+    }
+  }
+  /* Otherwise RHS */
+  else {
+#     pragma omp parallel for if(n_cells_ext > CS_THR_MIN)
+    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+      for (cs_lnum_t ij = 0; ij < 6; ij++)
+        rhs[c_id][ij] += cpro_buoyancy[c_id][ij] * cell_f_vol[c_id];
+    }
+  }
+
+  /* Partial implicitation in case of coupled component solver */
+
+  if (coupled_components != 0) {
+
+    const cs_real_6_t*cvara_var = (const cs_real_6_t *)f_rij->val_pre;
+
+    cs_lnum_t solid_stride = 1;
+    int *c_is_solid_zone_flag = cs_solid_zone_flag(cs_glob_mesh);
+    const int c_is_solid_ref[1] = {0};
+    const int *c_is_solid = c_is_solid_zone_flag;
+    if (c_is_solid == NULL) {
+      c_is_solid = c_is_solid_ref;
+      solid_stride = 0;
+    }
+
+#     pragma omp parallel for if(n_cells_ext > CS_THR_MIN)
+    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+
+      if (c_is_solid[solid_stride*c_id])
+        continue;
+
+      cs_real_t implmat2add[3][3] = {{0, 0, 0}, {0, 0, 0}, {0, 0, 0}};
+
+      const cs_real_t gkks3 = cs_math_3_dot_product(up_rhop[c_id], grav) / 3.;
+
+      /* Compute inverse matrix of R^n
+         (scaling by tr(R) for numerical stability) */
+      cs_real_t matrn[6];
+      const cs_real_t trrij = 0.5 * cs_math_6_trace(cvara_var[c_id]);
+      for (int ij = 0; ij < 6; ij++)
+        matrn[ij] = cvara_var[c_id][ij] / trrij;
+
+      cs_real_t oo_matrn[6];
+      cs_math_sym_33_inv_cramer(matrn, oo_matrn);
+      for (int ij = 0; ij < 6; ij++)
+        oo_matrn[ij] /= trrij;
+
+      if (gkks3 <= 0) {
+        /* Term "C3 tr(G) Id"
+           Compute inverse matrix of R^n
+           (scaling by tr(R) for numerical stability) */
+
+        for (cs_lnum_t i = 0; i < 3; i++) {
+          for (cs_lnum_t j = 0; j < 3; j++) {
+            cs_lnum_t ij = _t2v[i][j];
+            implmat2add[i][j] = -0.5 * gkks3 * oo_matrn[ij];
+          }
+        }
+      }
+
+      /* Identity constant, remove the negative eigen value of Gij
+       * which is:
+       * g.rho'u' - g ||rho'u'||
+       */
+      cs_real_t impl_id_cst = g * cs_math_3_norm(up_rhop[c_id])
+        - cs_math_3_dot_product(grav, up_rhop[c_id]);
+
+      for (cs_lnum_t i = 0; i < 3; i++) {
+        for (cs_lnum_t j = 0; j < 3; j++) {
+          cs_lnum_t ij = _t2v[i][j];
+          implmat2add[i][j] += 0.5 * impl_id_cst * oo_matrn[ij];
+        }
+      }
+
+      /* Compute the 6x6 matrix A which verifies
+       * A.R = M.R + R.M^t */
+      cs_real_t impl_drsm[6][6];
+      cs_math_reduce_sym_prod_33_to_66(implmat2add, impl_drsm);
+
+      for (cs_lnum_t ij = 0; ij < 6; ij++) {
+        for (cs_lnum_t kl = 0; kl < 6; kl++)
+          fimp[c_id][ij][kl] += cell_f_vol[c_id] * impl_drsm[ij][kl];
+      }
+
+    } /* End of loop on cells */
+
+    BFT_FREE(c_is_solid_zone_flag);
+  } /* End of test on coupled components */
+
+  BFT_FREE(_buoyancy);
+
 }
 
 /*----------------------------------------------------------------------------*/
@@ -791,6 +918,8 @@ _pre_solve_lrr(const cs_field_t  *f_rij,
   cs_field_t *f_eps = CS_F_(eps);
   cs_field_t *f_rho = CS_F_(rho);
   cs_field_t *f_mu = CS_F_(mu);
+
+  const int coupled_components = cs_glob_turb_rans_model->irijco;
 
   if (phase_id >= 0) {
     f_eps = CS_FI_(eps, phase_id);
@@ -1076,40 +1205,8 @@ _pre_solve_lrr(const cs_field_t  *f_rij,
   /* Buoyancy source term
    * -------------------- */
 
-  if (cs_glob_turb_rans_model->has_buoyant_term == 1) {
-
-    cs_real_6_t *_buoyancy = NULL, *cpro_buoyancy = NULL;
-    cs_field_t *f_buo = cs_field_by_name_try("algo:buoyancy_rij");
-
-    if (f_buo != NULL) {
-      cpro_buoyancy = (cs_real_6_t*)f_buo->val;
-    }
-    else {
-      BFT_MALLOC(_buoyancy, n_cells_ext, cs_real_6_t);
-      cpro_buoyancy = _buoyancy;
-    }
-
-    _gravity_st_rij(up_rhop, cpro_buoyancy);
-
-    /* If we extrapolate the source terms: previous ST */
-    if (st_prv_id > -1) {
-#     pragma omp parallel for if(n_cells_ext > CS_THR_MIN)
-      for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-        for (cs_lnum_t ii = 0; ii < 6; ii++)
-          c_st_prv[c_id][ii] += cpro_buoyancy[c_id][ii] * cell_f_vol[c_id];
-      }
-    }
-    /* Otherwise RHS */
-    else {
-#     pragma omp parallel for if(n_cells_ext > CS_THR_MIN)
-      for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-        for (cs_lnum_t ii = 0; ii < 6; ii++)
-          rhs[c_id][ii] += cpro_buoyancy[c_id][ii] * cell_f_vol[c_id];
-      }
-    }
-
-    BFT_FREE(_buoyancy);
-  }
+  if (cs_glob_turb_rans_model->has_buoyant_term == 1)
+    _gravity_st_rij(f_rij, up_rhop, st_prv_id, c_st_prv, fimp, rhs);
 
   /* Diffusion term (Daly Harlow: generalized gradient hypothesis method)
    * -------------------------------------------------------------------- */
@@ -1479,40 +1576,8 @@ _pre_solve_lrr_sg(const cs_field_t  *f_rij,
   /* Buoyancy source term
    * -------------------- */
 
-  if (cs_glob_turb_rans_model->has_buoyant_term == 1) {
-
-    cs_real_6_t *_buoyancy = NULL, *cpro_buoyancy = NULL;
-    cs_field_t *f_buo = cs_field_by_name_try("algo:buoyancy_rij");
-
-    if (f_buo != NULL) {
-      cpro_buoyancy = (cs_real_6_t*)f_buo->val;
-    }
-    else {
-      BFT_MALLOC(_buoyancy, n_cells_ext, cs_real_6_t);
-      cpro_buoyancy = _buoyancy;
-    }
-
-    _gravity_st_rij(up_rhop, cpro_buoyancy);
-
-    /* If we extrapolate the source terms: previous ST */
-    if (st_prv_id > -1) {
-#     pragma omp parallel for if(n_cells_ext > CS_THR_MIN)
-      for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-        for (cs_lnum_t ii = 0; ii < 6; ii++)
-          c_st_prv[c_id][ii] += cpro_buoyancy[c_id][ii] * cell_f_vol[c_id];
-      }
-    }
-    /* Otherwise RHS */
-    else {
-#     pragma omp parallel for if(n_cells_ext > CS_THR_MIN)
-      for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-        for (cs_lnum_t ii = 0; ii < 6; ii++)
-          rhs[c_id][ii] += cpro_buoyancy[c_id][ii] * cell_f_vol[c_id];
-      }
-    }
-
-    BFT_FREE(_buoyancy);
-  }
+  if (cs_glob_turb_rans_model->has_buoyant_term == 1)
+    _gravity_st_rij(f_rij, up_rhop, st_prv_id, c_st_prv, fimp, rhs);
 
   /* Diffusion term (Daly Harlow: generalized gradient hypothesis method)
    * -------------------------------------------------------------------- */
@@ -2084,110 +2149,8 @@ _pre_solve_ssg(const cs_field_t  *f_rij,
   /* Buoyancy source term
    * -------------------- */
 
-  if (cs_glob_turb_rans_model->has_buoyant_term == 1) {
-
-    cs_real_6_t *_buoyancy = NULL, *cpro_buoyancy = NULL;
-    cs_field_t *f_buo = cs_field_by_name_try("algo:buoyancy_rij");
-
-    if (f_buo != NULL) {
-      cpro_buoyancy = (cs_real_6_t*)f_buo->val;
-    }
-    else {
-      BFT_MALLOC(_buoyancy, n_cells_ext, cs_real_6_t);
-      cpro_buoyancy = _buoyancy;
-    }
-
-    _gravity_st_rij(up_rhop, cpro_buoyancy);
-
-    /* If we extrapolate the source terms: previous ST */
-    if (st_prv_id > -1) {
-#     pragma omp parallel for if(n_cells_ext > CS_THR_MIN)
-      for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
-        for (cs_lnum_t ii = 0; ii < 6; ii++)
-          c_st_prv[c_id][ii] += cpro_buoyancy[c_id][ii] * cell_f_vol[c_id];
-    }
-    /* Otherwise RHS */
-    else {
-#     pragma omp parallel for if(n_cells_ext > CS_THR_MIN)
-      for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-        for (cs_lnum_t ii = 0; ii < 6; ii++) {
-          rhs[c_id][ii] += cpro_buoyancy[c_id][ii] * cell_f_vol[c_id];
-        }
-      }
-    }
-
-    BFT_FREE(_buoyancy);
-
-    if (coupled_components != 0) {
-
-      const cs_real_t *grav = cs_glob_physical_constants->gravity;
-
-#     pragma omp parallel for if(n_cells_ext > CS_THR_MIN)
-      for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-
-        if (c_is_solid[solid_stride*c_id])
-          continue;
-
-        const cs_real_t trrij = 0.5 * cs_math_6_trace(cvara_var[c_id]);
-
-        cs_real_t implmat2add[3][3] = {{0, 0, 0}, {0, 0, 0}, {0, 0, 0}};
-
-        const cs_real_t gkks3 = cs_math_3_dot_product(up_rhop[c_id], grav) / 3.;
-
-        cs_real_t matrn[6];
-        for (int ii = 0; ii < 6; ii++)
-          matrn[ii] = cvara_var[c_id][ii] / trrij;
-
-        cs_real_t oo_matrn[6];
-        cs_math_sym_33_inv_cramer(matrn, oo_matrn);
-        for (int ii = 0; ii < 6; ii++)
-          oo_matrn[ii] /= trrij;
-
-        if (gkks3 <= 0) {
-          /* Term "C3 tr(G) Id"
-             Compute inverse matrix of R^n
-             (scaling by tr(R) for numerical stability) */
-
-          for (cs_lnum_t jj = 0; jj < 3; jj++) {
-            for (cs_lnum_t ii = 0; ii < 3; ii++) {
-              cs_lnum_t iii = _t2v[jj][ii];
-              implmat2add[jj][ii] = -0.5 * gkks3 * oo_matrn[iii];
-            }
-          }
-        }
-
-        /* rho'u' is written as R^{n+1} (R^n)^-1 rho'u'
-         * only if g . (R^n)^-1 . rho'u' < 0
-         * */
-        cs_real_3_t gradro;
-        cs_math_sym_33_3_product(oo_matrn, up_rhop[c_id], gradro);
-
-        if (cs_math_3_dot_product(gradro, grav) <= 0.) {
-          /* Implicit term written as:
-           *   Po . R^n+1 + R^n+1 . Po^t
-           * with Po proportional to "g (x) Grad rho" */
-          const cs_real_t factor = (1.-crij3);
-          for (cs_lnum_t i = 0; i < 3; i++) {
-            for (cs_lnum_t j = 0; j < 3; j++)
-              implmat2add[i][j] -= factor * grav[i] * gradro[j];//FIXME check sign
-          }
-        }
-
-        /* Compute the 6x6 matrix A which verifies
-         * A.R = M.R + R.M^t */
-        cs_real_t impl_drsm[6][6];
-        cs_math_reduce_sym_prod_33_to_66(implmat2add, impl_drsm);
-
-        for (cs_lnum_t ii = 0; ii < 6; ii++) {
-          for (cs_lnum_t jj = 0; jj < 6; jj++)
-            fimp[c_id][ii][jj] += cell_f_vol[c_id] * impl_drsm[ii][jj];
-        }
-
-      } /* End of loop on cells */
-
-    } /* End of test on coupled components */
-
-  } /* End for buoyancy source term */
+  if (cs_glob_turb_rans_model->has_buoyant_term == 1)
+    _gravity_st_rij(f_rij, up_rhop, st_prv_id, c_st_prv, fimp, rhs);
 
   BFT_FREE(c_is_solid_zone_flag);
 
