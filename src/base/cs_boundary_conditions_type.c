@@ -302,8 +302,8 @@ cs_boundary_conditions_type(bool  init,
     cs_log_printf
       (CS_LOG_DEFAULT,
        _("\n"
-         "   ** INFORMATION ON BOUNDARY FACES TYPE\n"
-         "      ----------------------------------\n\n"));
+         "  ** Information on boundary faces type\n"
+         "     ----------------------------------\n\n"));
 
     cs_log_separator(CS_LOG_DEFAULT);
     cs_log_printf(CS_LOG_DEFAULT,

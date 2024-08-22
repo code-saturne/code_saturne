@@ -3868,8 +3868,8 @@ cs_boundary_conditions_set_coeffs_turb(int        isvhb,
       cs_log_printf
         (CS_LOG_DEFAULT,
          _("\n"
-           "   ** Boundary conditions for walls\n"
-           "      -----------------------------\n\n"));
+           "  ** Boundary conditions for walls\n"
+           "     -----------------------------\n\n"));
       cs_log_separator(CS_LOG_DEFAULT);
       cs_log_printf
         (CS_LOG_DEFAULT,
