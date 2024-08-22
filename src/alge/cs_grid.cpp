@@ -4326,9 +4326,12 @@ _automatic_aggregation_dx_msr(const cs_grid_t       *f,
         _max_aggregation++;
 
       if (verbosity > 3) {
-        bft_printf("       pass %d, thread %d; r_n_faces = %ld;"
-                   " aggr_count = %ld\n",
-                   npass, t_id, (long)r_n_faces, (long)aggr_count);
+        #pragma omp critical
+        {
+          bft_printf("       pass %d, thread %d; r_n_faces = %ld;"
+                     " aggr_count = %ld\n",
+                     npass, t_id, (long)r_n_faces, (long)aggr_count);
+        }
       }
 
       /* Re-initialize non-eliminated faces */
