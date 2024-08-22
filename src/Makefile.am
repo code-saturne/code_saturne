@@ -68,7 +68,6 @@ atmo/atchem.f90 \
 atmo/atimbr.f90 \
 atmo/sshaerosol.f90 \
 cfbl/cfpoin.f90 \
-cfbl/cs_cf_bindings.f90 \
 comb/cs_coal_incl.f90 \
 comb/cpincl.f90 \
 ctwr/ctincl.f90 \

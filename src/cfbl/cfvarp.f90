@@ -50,7 +50,6 @@ use ppthch
 use ppincl
 use field
 use cs_c_bindings
-use cs_cf_bindings
 
 !===============================================================================
 

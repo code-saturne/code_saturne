@@ -59,7 +59,6 @@ use mesh
 use field
 use cfpoin, only:ithvar
 use cs_c_bindings
-use cs_cf_bindings
 use vof
 use dimens, only: nvar, nscal
 
@@ -105,30 +104,51 @@ procedure() :: ppiniv0, ppiniv1,  cs_user_f_initialization
 
 interface
 
+  subroutine cs_cf_thermo_default_init() &
+    bind(C, name='cs_cf_thermo_default_init')
+    use, intrinsic :: iso_c_binding
+    implicit none
+  end subroutine cs_cf_thermo_default_init
+
+  subroutine cs_cf_set_thermo_options() &
+    bind(C, name='cs_cf_set_thermo_options')
+    use, intrinsic :: iso_c_binding
+    implicit none
+  end subroutine cs_cf_set_thermo_options
+
+  subroutine cs_cf_thermo(iccfth, face_id, bc_en, bc_pr, bc_tk, bc_vel) &
+    bind(C, name='cs_cf_thermo')
+    use, intrinsic :: iso_c_binding
+    implicit none
+    integer(c_int), value :: iccfth, face_id
+    real(kind=c_double), dimension(*) :: bc_en, bc_pr, bc_tk
+    real(kind=c_double), dimension(3, *) :: bc_vel
+  end subroutine cs_cf_thermo
+
   subroutine cs_gui_initial_conditions()  &
-      bind(C, name='cs_gui_initial_conditions')
+    bind(C, name='cs_gui_initial_conditions')
     use, intrinsic :: iso_c_binding
     implicit none
   end subroutine cs_gui_initial_conditions
 
   function cs_turbulence_init_clip_and_verify() result(n_errors) &
-      bind(C, name='cs_turbulence_init_clip_and_verify')
+    bind(C, name='cs_turbulence_init_clip_and_verify')
     use, intrinsic :: iso_c_binding
     implicit none
     integer(c_int) :: n_errors
   end function cs_turbulence_init_clip_and_verify
 
   subroutine cs_navstv_total_pressure() &
-   bind(C, name='cs_f_navier_stokes_total_pressure')
-   use,intrinsic :: iso_c_binding
-   implicit none
- end subroutine cs_navstv_total_pressure
+    bind(C, name='cs_f_navier_stokes_total_pressure')
+    use,intrinsic :: iso_c_binding
+    implicit none
+  end subroutine cs_navstv_total_pressure
 
- subroutine vof_compute_linear_rho_mu() &
-      bind(C, name='cs_f_vof_compute_linear_rho_mu')
-   use, intrinsic :: iso_c_binding
-   implicit none
- end subroutine vof_compute_linear_rho_mu
+  subroutine vof_compute_linear_rho_mu() &
+    bind(C, name='cs_f_vof_compute_linear_rho_mu')
+    use, intrinsic :: iso_c_binding
+    implicit none
+  end subroutine vof_compute_linear_rho_mu
 
 end interface
 
