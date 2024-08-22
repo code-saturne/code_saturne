@@ -579,18 +579,11 @@ cs_f_time_scheme_get_pointers(int     **ischtp,
                               int     **istmpf,
                               int     **isno2t,
                               int     **isto2t,
-                              double  **thetsn,
-                              double  **thetst,
-                              double  **thetvi,
-                              double  **thetcp,
                               int     **iccvfg,
-                              int     **initvi,
-                              int     **initro,
-                              int     **initcp);
+                              int     **initro);
 
 void
-cs_f_restart_auxiliary_get_pointers(int  **ileaux,
-                                    int  **iecaux);
+cs_f_restart_auxiliary_get_pointers(int  **ileaux);
 
 void
 cs_f_field_get_key_struct_var_cal_opt(int                  f_id,
@@ -814,28 +807,16 @@ cs_f_time_scheme_get_pointers(int     **ischtp,
                               int     **istmpf,
                               int     **isno2t,
                               int     **isto2t,
-                              double  **thetsn,
-                              double  **thetst,
-                              double  **thetvi,
-                              double  **thetcp,
                               int     **iccvfg,
-                              int     **initvi,
-                              int     **initro,
-                              int     **initcp)
+                              int     **initro)
 {
   *ischtp = &(_time_scheme.time_order);
   *istmpf = &(_time_scheme.istmpf);
   *isno2t = &(_time_scheme.isno2t);
   *isto2t = &(_time_scheme.isto2t);
-  *thetsn = &(_time_scheme.thetsn);
-  *thetst = &(_time_scheme.thetst);
-  *thetvi = &(_time_scheme.thetvi);
-  *thetcp = &(_time_scheme.thetcp);
   *iccvfg = &(_time_scheme.iccvfg);
 
-  *initvi = &_initvi;
   *initro = &_initro;
-  *initcp = &_initcp;
 }
 
 /*----------------------------------------------------------------------------
@@ -846,15 +827,12 @@ cs_f_time_scheme_get_pointers(int     **ischtp,
  *
  * parameters:
  *   ileaux  --> pointer to cs_glob_restart_auxiliary->read_auxiliary
- *   iecaux  --> pointer to cs_glob_restart_auxiliary->write_auxiliary
  *----------------------------------------------------------------------------*/
 
 void
-cs_f_restart_auxiliary_get_pointers(int  **ileaux,
-                                    int  **iecaux)
+cs_f_restart_auxiliary_get_pointers(int  **ileaux)
 {
   *ileaux = &(_restart_auxiliary.read_auxiliary);
-  *iecaux = &(_restart_auxiliary.write_auxiliary);
 }
 
 /*----------------------------------------------------------------------------

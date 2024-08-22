@@ -1745,16 +1745,6 @@ module cs_c_bindings
 
     !---------------------------------------------------------------------------
 
-    ! Interface to C function to count number of buoyant scalars.
-
-    subroutine cs_velocity_pressure_set_n_buoyant_scalars()   &
-      bind(C, name='cs_velocity_pressure_set_n_buoyant_scalars')
-      use, intrinsic :: iso_c_binding
-      implicit none
-    end subroutine cs_velocity_pressure_set_n_buoyant_scalars
-
-    !---------------------------------------------------------------------------
-
     ! Interface to C function for scalar gradient with homogeneous Neumann BCs
 
     subroutine cs_f_gradient_hn_s(f_id, imrgra, inc, n_r_sweeps,               &

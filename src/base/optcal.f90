@@ -57,10 +57,6 @@ module optcal
   !> (see \ref cs_time_scheme_t::istmpf).
   integer(c_int), pointer, save :: istmpf
 
-  !> number of iterations on the velocity-pressure coupling on Navier-Stokes
-  !> (for the U/P inner iterations scheme)
-  integer(c_int), pointer, save :: nterup
-
   !> Time scheme for source terms of momentum equations
   !> (see \ref cs_time_scheme_t::isno2t).
   integer(c_int), pointer, save :: isno2t
@@ -69,37 +65,8 @@ module optcal
   !> (see \ref cs_time_scheme_t::isto2t).
   integer(c_int), pointer, save :: isto2t
 
-  !> initvi : =1 if total viscosity read from checkpoint file
-  integer(c_int), pointer, save :: initvi
-
   !> initro : =1 if density read from checkpoint file
   integer(c_int), pointer, save :: initro
-
-  !> initcp : =1 if specific heat read from checkpoint file
-  integer(c_int), pointer, save :: initcp
-
-  !> Value of \f$theta_S\f$ (see \ref cs_time_scheme_t::thetsn).
-  real(c_double), pointer, save :: thetsn
-
-  !> Value of \f$theta\f$ (see \ref cs_time_scheme_t::thetst).
-  real(c_double), pointer, save :: thetst
-
-  !> Value of \f$theta\f$ for total viscoity (see \ref cs_time_scheme_t::thetvi).
-  real(c_double), pointer, save :: thetvi
-
-  !> Value of \f$theta\f$ for specific heat (see \ref cs_time_scheme_t::thetcp).
-  real(c_double), pointer, save :: thetcp
-
-  !> relative precision for the convergence test of the iterative process on
-  !> velocity-pressure coupling (inner iterations)
-  real(c_double), pointer, save :: epsup
-
-  !> norm  of the increment \f$ \vect{u}^{k+1} - \vect{u}^k \f$
-  !> of the iterative process on velocity-pressure coupling (inner iterations)
-  real(c_double), pointer, save :: xnrmu
-
-  !> norm of \f$ \vect{u}^0 \f$ (used by velocity-pressure inner iterations)
-  real(c_double), pointer, save :: xnrmu0
 
   !> \}
 
@@ -161,10 +128,6 @@ module optcal
   !> calculation restart file\n
   !> Useful only in the case of a calculation restart
   integer(c_int), pointer, save :: ileaux
-
-  !> Indicates the writing (=1) or not (=0) of the auxiliary calculation
-  !> restart file.
-  integer(c_int), pointer, save :: iecaux
 
   !> \anchor isuit1
   !> For the 1D wall thermal module, activation (1) or not(0)
@@ -232,24 +195,6 @@ module optcal
   !> Maximum absolute time.
   real(c_double), pointer, save :: ttmabs
 
-  !> Clip the time step with respect to the buoyant effects
-  !>
-  !> When density gradients and gravity are present, a local thermal time
-  !> step can be calculated, based on the Brunt-Vaisala frequency. In
-  !> numerical simulations, it is usually wise for the time step to be
-  !> lower than this limit, otherwise numerical instabilities may appear.\n
-  !> \ref iptlro indicates whether the time step should be limited to the
-  !> local thermal time step (=1) or not (=0).\n
-  !> When \ref iptlro=1, the log shows the number of cells where the
-  !> time step has been clipped due to the thermal criterion, as well as
-  !> the maximum ratio between the time step and the maximum thermal time
-  !> step. If \ref idtvar=0, since the time step is fixed and cannot be
-  !> clipped, this ratio can be greater than 1. When \ref idtvar > 0, this
-  !> ratio will be less than 1, except if the constraint \ref dtmin has
-  !> prevented the code from reaching a sufficiently low value for \ref dt.
-  !> Useful when density gradients and gravity are present.
-  integer(c_int), pointer, save :: iptlro
-
   !> option for a variable time step
   !>    - -1: steady algorithm
   !>    -  0: constant time step
@@ -271,33 +216,6 @@ module optcal
   !> 2 in the previous calculation).\n
   !> See \subpage user_initialization_time_step for examples.
   real(c_double), pointer, save :: dtref
-
-  !> maximum Courant number (when \ref idtvar is different from 0)
-  real(c_double), pointer, save :: coumax
-
-  !> maximum Courant number for the continuity equation in compressible model
-  real(c_double), pointer, save :: cflmmx
-
-  !> maximum Fourier number (when \ref idtvar is different from 0)
-  real(c_double), pointer, save :: foumax
-
-  !> maximum allowed relative increase in the calculated time step value
-  !> between two successive time steps (to ensure stability, any decrease
-  !> in the time step is immediate and without limit).\n
-  !> Useful when \ref idtvar is different from 0.
-  real(c_double), pointer, save :: varrdt
-
-  !> lower limit for the calculated time step when idtvar is different from 0.\n
-  !> Take \ref dtmin = min (ld/ud, sqrt(lt/(gdelta rho/rho)), ...)
-  real(c_double), pointer, save :: dtmin
-
-  !> upper limit for the calculated time step when idtvar is different from 0.\n
-  !> Take \ref dtmax = max (ld/ud, sqrt(lt/(gdelta rho/rho)), ...)
-  real(c_double), pointer, save :: dtmax
-
-  !> relaxation coefficient for the steady algorithm
-  !> \ref relxst = 1 : no relaxation.
-  real(c_double), pointer, save :: relxst
 
   !> \}
 
@@ -599,41 +517,6 @@ module optcal
   !> \addtogroup stokes
   !> \{
 
-  !> Indicates whether the source terms in transposed gradient
-  !> and velocity divergence should be taken into account in the
-  !> momentum equation. In the compressible module, these terms
-  !> also account for the volume viscosity
-  !> (cf. \ref cs_fluid_properties_t::viscv0 "viscv0"
-  !> and \ref cs_fluid_properties_t::iviscv "iviscv")
-  !> \f$\partial_i \left[(\kappa -2/3\,(\mu+\mu_t))\partial_k U_k  \right]
-  !> +     \partial_j \left[ (\mu+\mu_t)\partial_i U_j \right]\f$:
-  !> - 0: not taken into account,
-  !> - 1: taken into account.
-  integer(c_int), pointer, save :: ivisse
-
-  !> Reconstruction of the velocity field with the updated pressure option
-  !>    - 0: default
-  !>    - 1: from the mass flux with a RT0 like recontruction
-  integer(c_int), pointer, save ::          irevmc
-
-  !> Compute the pressure step thanks to the continuity equation
-  !>    - 1: true (default)
-  !>    - 0: false
-  integer(c_int), pointer, save ::          iprco
-
-  !> Arakawa multiplicator for the Rhie and Chow filter (1 by default)
-  real(c_double), pointer, save :: arak
-
-  !> Factor of the Rhie and Chow filter:
-  !>    - 0: dt (default)
-  !>    - 1: 1/A_u
-  integer(c_int), pointer, save :: rcfact
-
-  !> 1D staggered scheme option:
-  !>    - 0: colocated (default)
-  !>    - 1: staggered
-  integer(c_int), pointer, save :: staggered
-
   !> Time scheme option:
   !>    - 0: staggered time scheme. On the time grids, the velocity is
   !>         half a time step behind the density and the buoyant scalar.
@@ -642,14 +525,6 @@ module optcal
   !>         at the same location as the density and the buoyant scalar.
   !>         (See \cite Ma:2019)
   integer(c_int), pointer, save :: itpcol
-
-  !> indicates the algorithm for velocity-pressure coupling:
-  !> - 0: standard algorithm,
-  !> - 1: reinforced coupling in case calculation with long time steps\n
-  !> Always useful (it is seldom advised, but it can prove very useful,
-  !> for instance, in case of flows with weak convection effects and
-  !> highly variable viscosity).
-  integer(c_int), pointer, save :: ipucou
 
   !> \anchor iccvfg
   !> indicates whether the dynamic field should be frozen or not:
@@ -676,14 +551,6 @@ module optcal
   !>    - 4: algorithm for fire
   integer(c_int), pointer, save :: idilat
 
-  !> Option to switch on massflux prediction before momentum solving
-  !> to be fully conservative in momentum over time for variable density flows.
-  !> This option is to be removed.
-  integer(c_int), pointer, save :: ipredfl
-
-  !> parameter of diagonal pressure strengthening
-  real(c_double), pointer, save :: epsdp
-
   !> accurate treatment of the wall temperature
   !>    - 1: true
   !>    - 0: false (default)
@@ -696,44 +563,11 @@ module optcal
 
   integer(c_int), pointer, save :: iphydr
 
-  !> Improved pressure interpolation scheme.
-  !> See \ref cs_velocity_pressure_param_t::igprij
-  integer(c_int), pointer, save :: igprij
-
-  !> Improved pressure interpolation scheme.
-  !> See \ref cs_velocity_pressure_param_t::igpust
-  integer(c_int), pointer, save :: igpust
-
-  !> indicates the presence of a Bernoulli boundary face (automatically computed)
-  !>    - 0: no face
-  !>    - 1: at least one face
-  integer(c_int), pointer, save :: iifren
-
   !> compute the hydrostatic pressure in order to compute the Dirichlet
   !> conditions on the pressure at outlets
   !>    - 1: true
   !>    - 0: false (default)
   integer(c_int), pointer, save :: icalhy
-
-  !> use interpolated face diffusion coefficient instead of cell diffusion
-  !> coefficient for the mass flux reconstruction for the non-orthogonalities
-  !>    - 1: true
-  !>    - 0: false (default)
-  integer(c_int), pointer, save :: irecmf
-
-  !> Has a solid zone where dynamics must be killed?
-  !>    - false (default)
-  !>    - true
-  logical(c_bool), pointer, save :: fluid_solid
-
-  !> \ref n_buoyant_scal is the number of buoyant scalar
-  !> It will be zero if there is no buoyant scalar
-  integer(c_int), pointer, save :: n_buoyant_scal
-
-  !> Dicretization method for pressure
-  !>    - 0: Legacy FV method
-  !>    - 1: Use CDF face-based scheme
-  integer(c_int), pointer, save :: iprcdo
 
   !> \}
 
@@ -894,15 +728,11 @@ module optcal
     ! Interface to C function retrieving pointers to members of the
     ! global time step options structure
 
-    subroutine cs_f_time_step_options_get_pointers(iptlro, idtvar,         &
-                                                   coumax, cflmmx,         &
-                                                   foumax, varrdt, dtmin,  &
-                                                   dtmax, relxst)          &
+    subroutine cs_f_time_step_options_get_pointers(idtvar)         &
       bind(C, name='cs_f_time_step_options_get_pointers')
       use, intrinsic :: iso_c_binding
       implicit none
-      type(c_ptr), intent(out) :: iptlro, idtvar, coumax, cflmmx
-      type(c_ptr), intent(out) :: foumax, varrdt, dtmin, dtmax, relxst
+      type(c_ptr), intent(out) :: idtvar
     end subroutine cs_f_time_step_options_get_pointers
 
     ! Interface to C function retrieving pointers to members of the
@@ -996,28 +826,22 @@ module optcal
     ! velocity pressure model options structure
 
     subroutine cs_f_velocity_pressure_model_get_pointers  &
-      (ivisse, idilat, fluid_solid, n_buoyant_scal, iprcdo)  &
+      (idilat)  &
       bind(C, name='cs_f_velocity_pressure_model_get_pointers')
       use, intrinsic :: iso_c_binding
       implicit none
-      type(c_ptr), intent(out) :: ivisse, idilat, fluid_solid
-      type(c_ptr), intent(out) :: n_buoyant_scal, iprcdo
+      type(c_ptr), intent(out) :: idilat
     end subroutine cs_f_velocity_pressure_model_get_pointers
 
     ! Interface to C function retrieving pointers to members of the
     ! velocity pressure parameters structure
 
     subroutine cs_f_velocity_pressure_param_get_pointers  &
-      (iphydr, icalhy, iprco, ipredfl, irevmc, iifren, irecmf,  &
-       igprij, igpust, ipucou, itpcol, arak, rcfact, staggered, nterup, epsup, &
-       xnrmu, xnrmu0, c_epsdp)  &
+      (iphydr, icalhy, itpcol)  &
       bind(C, name='cs_f_velocity_pressure_param_get_pointers')
       use, intrinsic :: iso_c_binding
       implicit none
-      type(c_ptr), intent(out) :: iphydr, icalhy, iprco, ipredfl, irevmc, iifren
-      type(c_ptr), intent(out) :: irecmf, igprij, igpust, ipucou, itpcol
-      type(c_ptr), intent(out) :: arak, rcfact, staggered, nterup, epsup
-      type(c_ptr), intent(out) :: xnrmu, xnrmu0, c_epsdp
+      type(c_ptr), intent(out) :: iphydr, icalhy, itpcol
     end subroutine cs_f_velocity_pressure_param_get_pointers
 
     ! Interface to C function retrieving pointers to members of the
@@ -1034,24 +858,22 @@ module optcal
     ! global time schemeoptions structure
 
     subroutine cs_f_time_scheme_get_pointers(ischtp, istmpf, isno2t, isto2t, &
-                                             thetsn, thetst, thetvi, thetcp, &
-                                             iccvfg, initvi, initro, initcp) &
+                                             iccvfg, initro) &
       bind(C, name='cs_f_time_scheme_get_pointers')
       use, intrinsic :: iso_c_binding
       implicit none
       type(c_ptr), intent(out) :: ischtp, istmpf, isno2t, isto2t
-      type(c_ptr), intent(out) :: thetsn, thetst, thetvi, thetcp, iccvfg
-      type(c_ptr), intent(out) :: initvi, initro, initcp
+      type(c_ptr), intent(out) :: iccvfg, initro
     end subroutine cs_f_time_scheme_get_pointers
 
     ! Interface to C function retrieving pointers to members of the
     ! global restart_auxiliary options structure
 
-    subroutine cs_f_restart_auxiliary_get_pointers(ileaux, iecaux)          &
+    subroutine cs_f_restart_auxiliary_get_pointers(ileaux)          &
       bind(C, name='cs_f_restart_auxiliary_get_pointers')
       use, intrinsic :: iso_c_binding
       implicit none
-      type(c_ptr), intent(out) :: ileaux, iecaux
+      type(c_ptr), intent(out) :: ileaux
     end subroutine cs_f_restart_auxiliary_get_pointers
 
     !---------------------------------------------------------------------------
@@ -1175,25 +997,11 @@ contains
 
     ! Local variables
 
-    type(c_ptr) :: c_iptlro, c_idtvar
-    type(c_ptr) :: c_coumax, c_cflmmx
-    type(c_ptr) :: c_foumax, c_varrdt, c_dtmin
-    type(c_ptr) :: c_dtmax, c_relxst
+    type(c_ptr) :: c_idtvar
 
-    call cs_f_time_step_options_get_pointers(c_iptlro, c_idtvar,  &
-                                             c_coumax, c_cflmmx,  &
-                                             c_foumax, c_varrdt, c_dtmin,  &
-                                             c_dtmax, c_relxst)
+    call cs_f_time_step_options_get_pointers(c_idtvar)
 
-    call c_f_pointer(c_iptlro, iptlro)
     call c_f_pointer(c_idtvar, idtvar)
-    call c_f_pointer(c_coumax, coumax)
-    call c_f_pointer(c_cflmmx, cflmmx)
-    call c_f_pointer(c_foumax, foumax)
-    call c_f_pointer(c_varrdt, varrdt)
-    call c_f_pointer(c_dtmin,  dtmin)
-    call c_f_pointer(c_dtmax,  dtmax)
-    call c_f_pointer(c_relxst, relxst)
 
   end subroutine time_step_options_init
 
@@ -1347,50 +1155,23 @@ contains
 
     ! Local variables
 
-    type(c_ptr) :: c_iporos, c_ivisse, c_irevmc, c_iprco, c_ipredfl,  c_arak
-    type(c_ptr) :: c_rcfact, c_staggered
-    type(c_ptr) :: c_ipucou, c_itpcol, c_idilat, c_epsdp, c_iphydr
-    type(c_ptr) :: c_igprij, c_igpust, c_iifren, c_icalhy, c_irecmf
-    type(c_ptr) :: c_fluid_solid, c_iprcdo
-    type(c_ptr) :: c_nterup, c_epsup, c_xnrmu, c_xnrmu0, c_n_buoyant_scal
+    type(c_ptr) :: c_iporos
+    type(c_ptr) :: c_itpcol, c_idilat, c_iphydr, c_icalhy
 
     call cs_f_porous_model_get_pointers(c_iporos)
 
     call c_f_pointer(c_iporos, iporos)
 
-    call cs_f_velocity_pressure_model_get_pointers  &
-      (c_ivisse, c_idilat, c_fluid_solid, c_n_buoyant_scal, c_iprcdo)
+    call cs_f_velocity_pressure_model_get_pointers(c_idilat)
 
-    call c_f_pointer(c_ivisse, ivisse)
     call c_f_pointer(c_idilat, idilat)
-    call c_f_pointer(c_fluid_solid, fluid_solid)
-    call c_f_pointer(c_n_buoyant_scal, n_buoyant_scal)
-    call c_f_pointer(c_iprcdo, iprcdo)
 
     call cs_f_velocity_pressure_param_get_pointers  &
-      (c_iphydr, c_icalhy, c_iprco, c_ipredfl, c_irevmc, c_iifren, c_irecmf,  &
-       c_igprij, c_igpust, c_ipucou, c_itpcol, c_arak, c_rcfact,   &
-       c_staggered, c_nterup, c_epsup, c_xnrmu, c_xnrmu0, c_epsdp)
+      (c_iphydr, c_icalhy, c_itpcol)
 
     call c_f_pointer(c_iphydr, iphydr)
     call c_f_pointer(c_icalhy, icalhy)
-    call c_f_pointer(c_iprco, iprco)
-    call c_f_pointer(c_ipredfl, ipredfl)
-    call c_f_pointer(c_irevmc, irevmc)
-    call c_f_pointer(c_iifren, iifren)
-    call c_f_pointer(c_irecmf, irecmf)
-    call c_f_pointer(c_igprij, igprij)
-    call c_f_pointer(c_igpust, igpust)
-    call c_f_pointer(c_ipucou, ipucou)
     call c_f_pointer(c_itpcol, itpcol)
-    call c_f_pointer(c_arak, arak)
-    call c_f_pointer(c_rcfact, rcfact)
-    call c_f_pointer(c_staggered, staggered)
-    call c_f_pointer(c_nterup, nterup)
-    call c_f_pointer(c_epsup, epsup)
-    call c_f_pointer(c_xnrmu, xnrmu)
-    call c_f_pointer(c_xnrmu0, xnrmu0)
-    call c_f_pointer(c_epsdp, epsdp)
 
   end subroutine velocity_pressure_options_init
 
@@ -1426,25 +1207,17 @@ contains
     ! Local variables
 
     type(c_ptr) :: c_ischtp, c_istmpf, c_isno2t, c_isto2t
-    type(c_ptr) :: c_thetsn, c_thetst, c_thetvi, c_thetcp, c_iccvfg
-    type(c_ptr) :: c_initvi, c_initro, c_initcp
+    type(c_ptr) :: c_iccvfg, c_initro
 
     call cs_f_time_scheme_get_pointers(c_ischtp, c_istmpf, c_isno2t, c_isto2t, &
-                                       c_thetsn, c_thetst, c_thetvi, c_thetcp, &
-                                       c_iccvfg, c_initvi, c_initro, c_initcp)
+                                       c_iccvfg, c_initro)
 
     call c_f_pointer(c_ischtp, ischtp)
     call c_f_pointer(c_istmpf, istmpf)
     call c_f_pointer(c_isno2t, isno2t)
     call c_f_pointer(c_isto2t, isto2t)
-    call c_f_pointer(c_thetst, thetst)
-    call c_f_pointer(c_thetsn, thetsn)
-    call c_f_pointer(c_thetvi, thetvi)
-    call c_f_pointer(c_thetcp, thetcp)
     call c_f_pointer(c_iccvfg, iccvfg)
-    call c_f_pointer(c_initvi, initvi)
     call c_f_pointer(c_initro, initro)
-    call c_f_pointer(c_initcp, initcp)
 
   end subroutine time_scheme_options_init
 
@@ -1458,12 +1231,11 @@ contains
 
     ! Local variables
 
-    type(c_ptr) :: c_ileaux, c_iecaux
+    type(c_ptr) :: c_ileaux
 
-    call cs_f_restart_auxiliary_get_pointers(c_ileaux, c_iecaux)
+    call cs_f_restart_auxiliary_get_pointers(c_ileaux)
 
     call c_f_pointer(c_ileaux, ileaux)
-    call c_f_pointer(c_iecaux, iecaux)
 
   end subroutine restart_auxiliary_options_init
 

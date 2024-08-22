@@ -349,31 +349,11 @@ const cs_velocity_pressure_param_t  *cs_glob_velocity_pressure_param
  *============================================================================*/
 
 void
-cs_f_velocity_pressure_model_get_pointers(int     **ivisse,
-                                          int     **idilat,
-                                          bool    **fluid_solid,
-                                          int     **n_buoyant_scal,
-                                          int     **iprcdo);
+cs_f_velocity_pressure_model_get_pointers(int     **idilat);
 void
 cs_f_velocity_pressure_param_get_pointers(int     **iphydr,
                                           int     **icalhy,
-                                          int     **iprco,
-                                          int     **ipredfl,
-                                          int     **irevmc,
-                                          int     **iifren,
-                                          int     **irecmf,
-                                          int     **igprij,
-                                          int     **igpust,
-                                          int     **ipucou,
-                                          int     **itpcol,
-                                          double  **arak,
-                                          int     **rcfact,
-                                          int     **staggered,
-                                          int     **nterup,
-                                          double  **epsup,
-                                          double  **xnrmu,
-                                          double  **xnrmu0,
-                                          double  **epsdp);
+                                          int     **itpcol);
 
 /*============================================================================
  * Fortran wrapper function definitions
@@ -387,17 +367,9 @@ cs_f_velocity_pressure_param_get_pointers(int     **iphydr,
  *----------------------------------------------------------------------------*/
 
 void
-cs_f_velocity_pressure_model_get_pointers(int     **ivisse,
-                                          int     **idilat,
-                                          bool    **fluid_solid,
-                                          int     **n_buoyant_scal,
-                                          int     **iprcdo)
+cs_f_velocity_pressure_model_get_pointers(int     **idilat)
 {
-  *ivisse = &(_velocity_pressure_model.ivisse);
   *idilat = &(_velocity_pressure_model.idilat);
-  *fluid_solid = &(_velocity_pressure_model.fluid_solid);
-  *n_buoyant_scal = &(_velocity_pressure_model.n_buoyant_scal);
-  *iprcdo = &(_velocity_pressure_model.iprcdo);
 }
 
 /*----------------------------------------------------------------------------
@@ -410,43 +382,11 @@ cs_f_velocity_pressure_model_get_pointers(int     **ivisse,
 void
 cs_f_velocity_pressure_param_get_pointers(int     **iphydr,
                                           int     **icalhy,
-                                          int     **iprco,
-                                          int     **ipredfl,
-                                          int     **irevmc,
-                                          int     **iifren,
-                                          int     **irecmf,
-                                          int     **igprij,
-                                          int     **igpust,
-                                          int     **ipucou,
-                                          int     **itpcol,
-                                          double  **arak,
-                                          int     **rcfact,
-                                          int     **staggered,
-                                          int     **nterup,
-                                          double  **epsup,
-                                          double  **xnrmu,
-                                          double  **xnrmu0,
-                                          double  **epsdp)
+                                          int     **itpcol)
 {
   *iphydr = &(_velocity_pressure_param.iphydr);
   *icalhy = &(_velocity_pressure_param.icalhy);
-  *iprco  = &(_velocity_pressure_param.iprco);
-  *ipredfl = &(_velocity_pressure_param.ipredfl);
-  *irevmc = &(_velocity_pressure_param.irevmc);
-  *iifren = &(_velocity_pressure_param.iifren);
-  *irecmf = &(_velocity_pressure_param.irecmf);
-  *igprij = &(_velocity_pressure_param.igprij);
-  *igpust = &(_velocity_pressure_param.igpust);
-  *ipucou = &(_velocity_pressure_param.ipucou);
   *itpcol = &(_velocity_pressure_param.itpcol);
-  *arak   = &(_velocity_pressure_param.arak);
-  *rcfact = &(_velocity_pressure_param.rcfact);
-  *staggered = &(_velocity_pressure_param.staggered);
-  *nterup = &(_velocity_pressure_param.nterup);
-  *epsup  = &(_velocity_pressure_param.epsup);
-  *xnrmu  = &(_velocity_pressure_param.xnrmu);
-  *xnrmu0 = &(_velocity_pressure_param.xnrmu0);
-  *epsdp  = &(_velocity_pressure_param.epsdp );
 }
 
 /*============================================================================
