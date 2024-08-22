@@ -347,7 +347,7 @@ cs_cf_energy(int f_sc_id)
   cs_field_t *f_sc = cs_field_by_id(f_sc_id);
   cs_field_t *f_vel = CS_F_(vel);
   cs_field_t *f_pr = CS_F_(p);
-  cs_field_t *f_tempk = CS_F_(t_kelvin);
+  cs_field_t *f_tempk = CS_F_(t);
 
   cs_real_t *energy_pre = f_sc->val_pre;
   cs_real_t *energy = f_sc->val;

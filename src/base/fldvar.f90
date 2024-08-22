@@ -68,7 +68,7 @@ integer(c_int), value ::  nmodpp
 ! Local variables
 
 integer       ipp
-integer       iok, keycpl
+integer       iok
 
 !===============================================================================
 ! Interfaces
@@ -102,8 +102,6 @@ do ipp = 2, nmodmx
     nmodpp = nmodpp+1
   endif
 enddo
-
-call field_get_key_id('coupled', keycpl)
 
 !===============================================================================
 ! Calcul de nscapp

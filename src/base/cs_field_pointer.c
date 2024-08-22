@@ -416,43 +416,6 @@ cs_field_pointer_map_coal_combustion(int  n_coals,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Map base fields to enumerated pointers for compressible model
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_field_pointer_map_compressible(void)
-{
-  cs_field_pointer_map(CS_ENUMF_(e_tot),
-                       cs_field_by_name_try("total_energy"));
-
-  cs_field_pointer_map(CS_ENUMF_(t_kelvin),
-                       cs_field_by_name_try("temperature"));
-
-  /* Also map to main temperature pointer */
-
-  cs_field_pointer_map(CS_ENUMF_(t),
-                       cs_field_by_name_try("temperature"));
-
-  /* map volume specific heat if it is non constant */
-
-  cs_field_pointer_map(CS_ENUMF_(cv),
-                       cs_field_by_name_try("specific_heat_const_vol"));
-
-  /* map fractions for homogeneous two phase model */
-
-  cs_field_pointer_map(CS_ENUMF_(volume_f),
-                       cs_field_by_name_try("volume_fraction"));
-
-  cs_field_pointer_map(CS_ENUMF_(mass_f),
-                       cs_field_by_name_try("mass_fraction"));
-
-  cs_field_pointer_map(CS_ENUMF_(energy_f),
-                       cs_field_by_name_try("energy_fraction"));
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief Map base fields to enumerated pointers for gas mix model
  */
 /*----------------------------------------------------------------------------*/
@@ -497,20 +460,6 @@ cs_field_pointer_map_gas_combustion(void)
   cs_field_pointer_map(CS_ENUMF_(coyfp),
                        cs_field_by_name_try("mass_fraction_covariance"));
 }
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Map base fields to enumerated pointers for groundwater flows
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_field_pointer_map_groundwater(void)
-{
-  cs_field_pointer_map(CS_ENUMF_(head),
-                       cs_field_by_name_try("hydraulic_head"));
-}
-
 
 /*----------------------------------------------------------------------------*/
 

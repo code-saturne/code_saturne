@@ -151,7 +151,7 @@ cs_hgn_source_terms_step(const cs_mesh_t *m)
   cs_real_t *cvar_fracv = CS_F_(volume_f)->val;
   cs_real_t *cvar_fracm = CS_F_(mass_f)->val;
   cs_real_t *cvar_frace = CS_F_(energy_f)->val;
-  cs_real_t *cvar_tempk = CS_F_(t_kelvin)->val;
+  cs_real_t *cvar_tempk = CS_F_(t)->val;
 
   cs_real_t *ei, *v;
   BFT_MALLOC(ei, m->n_cells_with_ghosts, cs_real_t);

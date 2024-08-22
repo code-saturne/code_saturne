@@ -81,15 +81,17 @@ double precision scmaxp, scminp
 
 interface
 
+  subroutine cs_cf_add_variable_fields() &
+    bind(C, name='cs_cf_add_variable_fields')
+    use, intrinsic :: iso_c_binding
+    implicit none
+  end subroutine cs_cf_add_variable_fields
+
   subroutine cs_elec_add_variable_fields()  &
     bind(C, name='cs_elec_add_variable_fields')
     use, intrinsic :: iso_c_binding
     implicit none
   end subroutine cs_elec_add_variable_fields
-
-end interface
-
-interface
 
   subroutine cs_field_pointer_map_gas_mix()  &
     bind(C, name='cs_field_pointer_map_gas_mix')
@@ -97,29 +99,11 @@ interface
     implicit none
   end subroutine cs_field_pointer_map_gas_mix
 
-end interface
-
-interface
-
-  subroutine cs_field_pointer_map_groundwater()  &
-    bind(C, name='cs_field_pointer_map_groundwater')
-    use, intrinsic :: iso_c_binding
-    implicit none
-  end subroutine cs_field_pointer_map_groundwater
-
-end interface
-
-interface
-
   subroutine cs_ctwr_add_variable_fields()  &
     bind(C, name='cs_ctwr_add_variable_fields')
     use, intrinsic :: iso_c_binding
     implicit none
   end subroutine cs_ctwr_add_variable_fields
-
-end interface
-
-interface
 
   subroutine cs_rad_transfer_add_variable_fields()  &
     bind(C, name='cs_rad_transfer_add_variable_fields')
@@ -177,7 +161,11 @@ endif
 !----------------------
 
 if (ippmod(icompf).ge.0) then
-  call cfvarp
+  call cs_cf_add_variable_fields
+
+  ! Fortran field mappings
+  call map_variable_field_try('total_energy', ienerg)
+  call map_variable_field_try('temperature', itempk)
 endif
 
 ! 4. Electric arcs model

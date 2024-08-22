@@ -102,6 +102,16 @@ cs_get_glob_cf_model(void);
 
 /*----------------------------------------------------------------------------*/
 /*
+ * \brief Variable field definitions for the compressible module,
+ *        according to calculation type selected by the user.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cf_add_variable_fields(void);
+
+/*----------------------------------------------------------------------------*/
+/*
  * \brief Property field definitions for the compressible module,
  *        according to calculation type selected by the user.
  */

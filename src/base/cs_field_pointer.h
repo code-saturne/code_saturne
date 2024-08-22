@@ -363,13 +363,6 @@ cs_field_pointer_map_coal_combustion(int  n_coals,
                                      int  n_classes);
 
 /*----------------------------------------------------------------------------*
- * Map base fields to enumerated pointers for compressible model
- *----------------------------------------------------------------------------*/
-
-void
-cs_field_pointer_map_compressible(void);
-
-/*----------------------------------------------------------------------------*
  * Map base fields to enumerated pointers for gas mix model
  *----------------------------------------------------------------------------*/
 
@@ -382,14 +375,6 @@ cs_field_pointer_map_gas_mix(void);
 
 void
 cs_field_pointer_map_gas_combustion(void);
-
-/*----------------------------------------------------------------------------*/
-/*
- * Map base fields to enumerated pointers for groundwater flows
- *----------------------------------------------------------------------------*/
-
-void
-cs_field_pointer_map_groundwater(void);
 
 /*----------------------------------------------------------------------------*/
 

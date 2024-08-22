@@ -50,6 +50,8 @@
 #include "cs_physical_constants.h"
 #include "cs_physical_model.h"
 #include "cs_physical_properties.h"
+#include "cs_prototypes.h"   // for cs_add_model_thermal_field_indexes
+#include "cs_restart_default.h"
 #include "cs_velocity_pressure.h"
 
 /*----------------------------------------------------------------------------
@@ -219,6 +221,109 @@ cs_get_glob_cf_model(void)
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Variable field definitions for the compressible module,
+ *        according to calculation type selected by the user.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cf_add_variable_fields(void)
+{
+  const int kivisl = cs_field_key_id("diffusivity_id");
+  const int kvisl0 = cs_field_key_id("diffusivity_ref");
+
+  const cs_real_t epzero = 1e-12;
+
+  /* Set thermal model */
+  {
+    cs_thermal_model_t *thermal_model = cs_get_glob_thermal_model();
+    thermal_model->thermal_variable = CS_THERMAL_MODEL_TOTAL_ENERGY;
+    thermal_model->temperature_scale = CS_TEMPERATURE_SCALE_KELVIN;
+  }
+
+  /* Total energy */
+  {
+    cs_field_t *f
+      = cs_field_by_id(cs_variable_field_create("total_energy",
+                                                "TotEner",
+                                                CS_MESH_LOCATION_CELLS,
+                                                1));
+    cs_add_model_thermal_field_indexes(f->id);
+
+    cs_field_pointer_map(CS_ENUMF_(e_tot), f);
+
+    /* Reference value for diffusivity */
+    cs_field_set_key_int (f, kivisl, -1);
+    cs_field_set_key_double(f, kvisl0, epzero);
+  }
+
+  /* Temperature (postprocessing);
+     TODO: should be a property, not a variable */
+  {
+    cs_field_t *f
+      = cs_field_by_id(cs_variable_field_create("temperature",
+                                                "TempK",
+                                                CS_MESH_LOCATION_CELLS,
+                                                1));
+    cs_add_model_field_indexes(f->id);
+
+    /* Map to both temperature and secondary t_kelvin pointers */
+    cs_field_pointer_map(CS_ENUMF_(t), f);
+    cs_field_pointer_map(CS_ENUMF_(t_kelvin),
+                       cs_field_by_name_try("temperature"));
+
+
+    /* Reference value for conductivity */
+    cs_field_set_key_int (f, kivisl, -1);
+    cs_field_set_key_double(f, kvisl0, epzero);
+  }
+
+  /* Mixture fractions (two-phase homogeneous flows) */
+
+  if (cs_glob_physical_model_flag[CS_COMPRESSIBLE] == 2) {
+
+    const int keyrf = cs_field_key_id("restart_file");
+
+    const char *f_names[] = {"volume_fraction",
+                             "mass_fraction",
+                             "energy_fraction"};
+    const char *f_labels[] = {"Volume Fraction",
+                              "Mass Fraction",
+                              "Energy Fraction"};
+    const cs_field_pointer_id_t f_pointers[] = {CS_ENUMF_(volume_f),
+                                                CS_ENUMF_(mass_f),
+                                                CS_ENUMF_(energy_f)};
+
+    /* Volume fraction of phase 1 (with respect to the EOS parameters),
+       Mass fraction of phase 1, and
+       Energy fraction of phase 1 */
+
+    for (int idx = 0; idx < 3; idx++) {
+      cs_field_t *f
+        = cs_field_by_id(cs_variable_field_create(f_names[idx],
+                                                  f_labels[idx],
+                                                  CS_MESH_LOCATION_CELLS,
+                                                  1));
+      cs_add_model_field_indexes(f->id);
+
+      cs_field_pointer_map(f_pointers[idx], f);
+
+      /* Reference value for diffusivity */
+      cs_field_set_key_int (f, kivisl, -1);
+      cs_field_set_key_double(f, kvisl0, epzero);
+
+      /* Pure convection equation */
+      cs_equation_param_t *eqp = cs_field_get_equation_param(f);
+      eqp->idifft= 0;
+
+      /* Set restart file for fractions */
+      cs_field_set_key_int(f, keyrf, CS_RESTART_MAIN);
+    }
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Property field definitions for the compressible module,
  *        according to calculation type selected by the user.
  */
@@ -258,6 +363,8 @@ cs_cf_add_property_fields(void)
     cs_physical_property_define_from_field(f->name, f->type,
                                            f->location_id, f->dim, false);
     fp->icv = f->id;
+
+    cs_field_pointer_map(CS_ENUMF_(cv), f);
   }
 
   if (fp->iviscv >= 0) {
@@ -273,9 +380,6 @@ cs_cf_add_property_fields(void)
                                            f->location_id, f->dim, false);
     fp->iviscv = f->id;
   }
-
-  /* MAP to field pointers */
-  cs_field_pointer_map_compressible();
 }
 
 /*----------------------------------------------------------------------------*/

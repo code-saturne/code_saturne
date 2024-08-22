@@ -2597,7 +2597,7 @@ cs_syr_coupling_recv_boundary(const int  nvar,
 
       if (cs_glob_physical_model_flag[CS_COMPRESSIBLE] >= 0) {
         if (f == CS_F_(e_tot)) {
-          f_t = CS_F_(t_kelvin);
+          f_t = CS_F_(t);
         }
         else
           bft_error
