@@ -85,7 +85,7 @@ cs_turbulence_bc.c \
 cs_turbulence_inflow.c \
 cs_turbulence_init.c \
 cs_turbulence_ke.cpp \
-cs_turbulence_kw.c \
+cs_turbulence_kw.cpp \
 cs_turbulence_ml.c \
 cs_turbulence_model.c \
 cs_turbulence_rij.c \

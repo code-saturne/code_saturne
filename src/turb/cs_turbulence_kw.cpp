@@ -50,6 +50,7 @@
 #include "cs_blas.h"
 #include "cs_halo.h"
 #include "cs_base.h"
+#include "cs_dispatch.h"
 #include "cs_equation.h"
 #include "cs_equation_iterative_solve.h"
 #include "cs_face_viscosity.h"
@@ -175,6 +176,8 @@ cs_turbulence_kw(int phase_id)
   const cs_real_t *dt = CS_F_(dt)->val;
   const cs_real_t *grav = cs_glob_physical_constants->gravity;
 
+  cs_dispatch_context ctx;
+
   /* Initialization
      ============== */
 
@@ -191,7 +194,7 @@ cs_turbulence_kw(int phase_id)
   cs_real_t *tinstk, *tinstw, *xf1;
   CS_MALLOC_HD(tinstk, n_cells_ext, cs_real_t, cs_alloc_mode);
   CS_MALLOC_HD(tinstw, n_cells_ext, cs_real_t, cs_alloc_mode);
-  BFT_MALLOC(xf1, n_cells_ext, cs_real_t);
+  CS_MALLOC_HD(xf1, n_cells_ext, cs_real_t, cs_alloc_mode);
 
   /* Allocate work arrays */
 
@@ -200,9 +203,9 @@ cs_turbulence_kw(int phase_id)
   cs_field_t *f_tke_buoy = cs_field_by_name_try("algo:buoyancy_k");
   CS_MALLOC_HD(dpvar, n_cells_ext, cs_real_t, cs_alloc_mode);
   CS_MALLOC_HD(w1, n_cells_ext, cs_real_t, cs_alloc_mode);
-  BFT_MALLOC(gdkgdw, n_cells_ext, cs_real_t);
-  BFT_MALLOC(prodk, n_cells_ext, cs_real_t);
-  BFT_MALLOC(prodw, n_cells_ext, cs_real_t);
+  CS_MALLOC_HD(gdkgdw, n_cells_ext, cs_real_t, cs_alloc_mode);
+  CS_MALLOC_HD(prodk, n_cells_ext, cs_real_t, cs_alloc_mode);
+  CS_MALLOC_HD(prodw, n_cells_ext, cs_real_t, cs_alloc_mode);
 
   cs_real_t *s2pw2 = NULL;
   cs_real_t *maxgdsv = NULL;
@@ -210,12 +213,12 @@ cs_turbulence_kw(int phase_id)
 
   if (cs_glob_turb_model->hybrid_turb == 2) {
     /* DDES hybrid model */
-    BFT_MALLOC(s2pw2, n_cells_ext, cs_real_t);
+    CS_MALLOC_HD(s2pw2, n_cells_ext, cs_real_t, cs_alloc_mode);
   }
   else if (cs_glob_turb_model->hybrid_turb == 3) {
     /* SAS hybrid model */
-    BFT_MALLOC(maxgdsv, n_cells_ext, cs_real_t);
-    BFT_MALLOC(d2uidxi2, n_cells_ext, cs_real_t);
+    CS_MALLOC_HD(maxgdsv, n_cells_ext, cs_real_t, cs_alloc_mode);
+    CS_MALLOC_HD(d2uidxi2, n_cells_ext, cs_real_t, cs_alloc_mode);
   }
 
   const cs_real_t *cvisct = (const cs_real_t *)f_mut->val;
@@ -333,17 +336,13 @@ cs_turbulence_kw(int phase_id)
 
   cs_real_t *usimpk;
   cs_real_t *usimpw;
-  BFT_MALLOC(usimpk, n_cells_ext, cs_real_t);
-  BFT_MALLOC(usimpw, n_cells_ext, cs_real_t);
+  CS_MALLOC_HD(usimpk, n_cells_ext, cs_real_t, cs_alloc_mode);
+  CS_MALLOC_HD(usimpw, n_cells_ext, cs_real_t, cs_alloc_mode);
 
-  for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-    smbrk[c_id] = 0.;
-    smbrw[c_id] = 0.;
-    usimpk[c_id] = 0.;
-    usimpw[c_id] = 0.;
-    tinstk[c_id] = 0.;
-    tinstw[c_id] = 0.;
-  }
+  cs_arrays_set_value<cs_real_t, 1>(n_cells, 0.,
+                                    smbrk, smbrw,
+                                    usimpk, usimpw,
+                                    tinstk, tinstw);
 
   cs_user_source_terms(domain,
                        f_k->id,
@@ -367,7 +366,7 @@ cs_turbulence_kw(int phase_id)
     cs_real_t thetak = eqp_k->theta;
     cs_real_t thetaw = eqp_w->theta;
 
-    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+    ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
       /* Recover the value at time (n-1) */
       cs_real_t tuexpk = c_st_k_p[c_id];
       cs_real_t tuexpw = c_st_omg_p[c_id];
@@ -383,22 +382,24 @@ cs_turbulence_kw(int phase_id)
       /* Implicit part */
       tinstk[c_id] -= usimpk[c_id]*thetak;
       tinstw[c_id] -= usimpw[c_id]*thetaw;
-    }
+    });
   }
 
   /* If no extrapolation over time */
   else {
-    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+    ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
       /* Explicit Part */
       smbrk[c_id] += usimpk[c_id]*cvara_k[c_id];
       smbrw[c_id] += usimpw[c_id]*cvara_omg[c_id];
       /* Implicit part */
       tinstk[c_id] += CS_MAX(-usimpk[c_id], 0.);
       tinstw[c_id] += CS_MAX(-usimpw[c_id], 0.);
-    }
+    });
   }
 
-  const double d2s3 = 2./3.;
+  ctx.wait();
+
+  const cs_real_t d2s3 = 2./3.;
   const cs_real_t epz2 = cs_math_pow2(cs_math_epzero);
 
   /* Compute dk/dxj.dw/dxj stored in gdkgdw
@@ -449,7 +450,7 @@ cs_turbulence_kw(int phase_id)
       else if (f_vg != NULL)
         gradv = (cs_real_33_t *)f_vg->val;
       else {
-        BFT_MALLOC(_gradv, n_cells_ext, cs_real_33_t);
+        CS_MALLOC_HD(_gradv, n_cells_ext, cs_real_33_t, cs_alloc_mode);
         gradv = _gradv;
       }
     }
@@ -463,13 +464,13 @@ cs_turbulence_kw(int phase_id)
     } else
       gradv = (cs_real_33_t *)f_vel->grad;
 
-    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+    ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
       s2pw2[c_id] =   cs_math_3_square_norm(gradv[c_id][0])
                     + cs_math_3_square_norm(gradv[c_id][1])
                     + cs_math_3_square_norm(gradv[c_id][2]);
-    }
+    });
 
-    BFT_FREE(_gradv);
+    CS_FREE_HD(_gradv);
   }
   else if (cs_glob_turb_model->hybrid_turb == 3) {
 
@@ -482,8 +483,7 @@ cs_turbulence_kw(int phase_id)
     cs_real_3_t *cvar_vel = (cs_real_3_t *)f_vel->val;
     const cs_real_3_t *cvar_vela = (const cs_real_3_t *)f_vel->val_pre;
 
-#   pragma omp parallel for if(n_cells_ext > CS_THR_MIN)
-    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+    ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
 
       cs_real_t xgdk2sk =   cs_math_3_square_norm(gradk[c_id])
                           / cs_math_pow2(cvar_k[c_id]);
@@ -495,7 +495,10 @@ cs_turbulence_kw(int phase_id)
 
       /* Viscosity for the following computation of the velocity Laplacian */
       w1[c_id] = 1.;
-    }
+
+    });
+
+    ctx.wait();
 
     cs_face_viscosity(m,
                       fvq,
@@ -538,15 +541,15 @@ cs_turbulence_kw(int phase_id)
                       NULL,
                       vel_laplacian);
 
-#   pragma omp parallel for if(n_cells_ext > CS_THR_MIN)
-    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+    ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
       cs_real_t v_lap[3];
       for (cs_lnum_t i = 0; i < 3; i++)
         v_lap[i] = vel_laplacian[c_id][i] / volume[c_id];
       d2uidxi2[c_id] = cs_math_3_square_norm(v_lap);
-    }
+    });
 
-    BFT_FREE(vel_laplacian);
+    //ctx.wait();
+    CS_FREE_HD(vel_laplacian);
 
   }
   else if (cs_glob_turb_model->hybrid_turb == 4) {
@@ -558,9 +561,11 @@ cs_turbulence_kw(int phase_id)
     htles_kwsst_f1 = cs_field_by_name("f1_kwsst")->val;
   }
 
-# pragma omp parallel for if(n_cells_ext > CS_THR_MIN)
-  for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
+  ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
     gdkgdw[c_id] = cs_math_3_dot_product(gradk[c_id], grado[c_id]);
+  });
+
+  ctx.wait();
 
   /* Free memory */
   CS_FREE_HD(gradk);
@@ -578,8 +583,7 @@ cs_turbulence_kw(int phase_id)
 
 # pragma omp parallel if(n_cells_ext > CS_THR_MIN)
   {
-#   pragma omp for nowait
-    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+    ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
       cs_real_t ro = cromo[c_id];
       cs_real_t xnu = cpro_pcvlo[c_id]/ro;
       cs_real_t xk = cvara_k[c_id];
@@ -595,17 +599,15 @@ cs_turbulence_kw(int phase_id)
       if (cs_glob_turb_model->hybrid_turb == 4) {
         htles_kwsst_f1[c_id] = xf1[c_id];
       }
-    }
 
-    /* Unsteady terms (stored in tinstk and tinstw)
-       ============================================ */
+      /* Unsteady terms (stored in tinstk and tinstw)
+         ============================================ */
 
-#   pragma omp for nowait
-    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
       cs_real_t romvsd = crom[c_id]*cell_f_vol[c_id]/dt[c_id];
       tinstk[c_id] += eqp_k->istat*romvsd;
       tinstw[c_id] += eqp_w->istat*romvsd;
-    }
+
+    });
 
     /* Compute production terms
      * ========================
@@ -613,8 +615,7 @@ cs_turbulence_kw(int phase_id)
      * stored in: prodk,prodw
      * At the end of this step, we keep gdkgdw, xf1, prodk, tinstW */
 
-#   pragma omp for nowait
-    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+    ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
 
       cs_real_t xk   = cvara_k[c_id];
       cs_real_t xw   = cvara_omg[c_id];
@@ -653,8 +654,10 @@ cs_turbulence_kw(int phase_id)
       if (f_tke_prod != NULL)
         f_tke_prod->val[c_id] = prodk[c_id] / ro;
 
-    }
+    });
   }
+
+  ctx.wait();
 
   /* Take into account rotation/curvature correction, if necessary
      ============================================================ */
@@ -671,15 +674,16 @@ cs_turbulence_kw(int phase_id)
     /* Compute the rotation function (gdkgdw array not used) */
     cs_turbulence_rotation_correction(dt, rotfct, gdkgdw);
 
-#   pragma omp parallel for if(n_cells_ext > CS_THR_MIN)
-    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+    ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
       prodk[c_id] *= rotfct[c_id];
       prodw[c_id] *= rotfct[c_id];
-    }
+    });
 
     /* rotfct array is used later in case of renforced coupling (ikecou = 1).
        The array is deallocated at the end of the subroutine. */
   }
+
+  ctx.wait();
 
   /* Compute buoyancy terms
    * ======================
@@ -687,7 +691,7 @@ cs_turbulence_kw(int phase_id)
    * stored in: prodk, prodw, grad_dot_g */
 
   cs_real_t *grad_dot_g = NULL;
-  BFT_MALLOC(grad_dot_g, n_cells_ext, cs_real_t);
+  CS_MALLOC_HD(grad_dot_g, n_cells_ext, cs_real_t, cs_alloc_mode);
 
   if (cs_glob_turb_rans_model->has_buoyant_term == 1) {
 
@@ -729,10 +733,10 @@ cs_turbulence_kw(int phase_id)
       cs_real_t *cpro_beta = cs_field_by_name("thermal_expansion")->val;
 
       /* - Beta grad(T) . g / Pr_T */
-      for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+      ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
         grad_dot_g[c_id] =
           - cpro_beta[c_id] * (cs_math_3_dot_product(grad[c_id], grav) / prdtur);
-      }
+      });
 
     }
     else {
@@ -740,9 +744,7 @@ cs_turbulence_kw(int phase_id)
       /* BCs on rho: Dirichlet ROMB
          NB: viscb is used as COEFB */
 
-      for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++) {
-        viscb[face_id] = 0.;
-      }
+      cs_array_real_fill_zero(n_b_faces, viscb);
 
       cs_halo_type_t halo_type = CS_HALO_STANDARD;
       cs_gradient_type_t gradient_type = CS_GRADIENT_GREEN_ITER;
@@ -764,7 +766,7 @@ cs_turbulence_kw(int phase_id)
                          0,
                          1,             /* w_stride */
                          eqp_k->verbosity,
-                         eqp_k->imligr,
+                         (cs_gradient_limit_t)(eqp_k->imligr),
                          eqp_k->epsrgr,
                          eqp_k->climgr,
                          NULL,
@@ -774,14 +776,13 @@ cs_turbulence_kw(int phase_id)
                          NULL, /* internal coupling */
                          grad);
 
-      for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+      ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
         cs_real_t rho = cromo[c_id];
         grad_dot_g[c_id] = cs_math_3_dot_product(grad[c_id], grav)/(rho*prdtur);
-      }
+      });
     }
 
-#   pragma omp parallel for if(n_cells_ext > CS_THR_MIN)
-    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+    ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
       cs_real_t visct = cpro_pcvto[c_id];
       cs_real_t rho = cromo[c_id];
       prodw[c_id] += visct*CS_MAX(-grad_dot_g[c_id], 0.);
@@ -795,7 +796,7 @@ cs_turbulence_kw(int phase_id)
       if (f_tke_buoy != NULL)
         f_tke_buoy->val[c_id] = -visct*grad_dot_g[c_id]/rho;
 
-    }
+    });
 
     /* Free memory */
     CS_FREE_HD(grad);
@@ -803,6 +804,8 @@ cs_turbulence_kw(int phase_id)
   else {
     cs_array_real_fill_zero(n_cells, grad_dot_g);
   }
+
+  ctx.wait();
 
   /* Finalization of explicit and implicit source terms
    * ==================================================
@@ -816,8 +819,7 @@ cs_turbulence_kw(int phase_id)
   {
     if (cs_glob_turb_model->hybrid_turb == 0) {
 
-#     pragma omp for nowait
-      for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+      ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
 
         cs_real_t visct  = cpro_pcvto[c_id];
         cs_real_t ro     = cromo[c_id];
@@ -843,7 +845,7 @@ cs_turbulence_kw(int phase_id)
         tinstw[c_id] +=   cell_f_vol[c_id]
                         * fmax(  -2.*ro/cs_math_pow2(xw)*(1. - xxf1)
                                / cs_turb_ckwsw2*gdkgdw[c_id], 0.);
-      }
+      });
     }
 
     /* DES or DDES mode for k-w SST */
@@ -851,8 +853,7 @@ cs_turbulence_kw(int phase_id)
     else if (   cs_glob_turb_model->hybrid_turb == 1
              || cs_glob_turb_model->hybrid_turb == 2) {
 
-#     pragma omp for nowait
-      for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+      ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
 
         cs_real_t xfd = 0;
 
@@ -908,7 +909,7 @@ cs_turbulence_kw(int phase_id)
         tinstw[c_id] +=   cell_f_vol[c_id]
                         * fmax(-2.*ro/cs_math_pow2(xw)*(1.-xxf1)
                                /cs_turb_ckwsw2*gdkgdw[c_id], 0.);
-      }
+      });
 
     }
 
@@ -916,8 +917,7 @@ cs_turbulence_kw(int phase_id)
 
     else if (cs_glob_turb_model->hybrid_turb == 3) {
 
-#     pragma omp for nowait
-      for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+      ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
 
         cs_real_t visct  = cpro_pcvto[c_id];
         cs_real_t ro     = cromo[c_id];
@@ -961,15 +961,14 @@ cs_turbulence_kw(int phase_id)
         tinstw[c_id] +=   cell_f_vol[c_id]
                         * fmax(-2.*ro/cs_math_pow2(xw)*(1. - xxf1)
                                /cs_turb_ckwsw2*gdkgdw[c_id], 0.);
-      }
+      });
     }
 
     /* HTLES mode for k-w SST */
 
     else if (cs_glob_turb_model->hybrid_turb == 4) {
 
-#     pragma omp for nowait
-      for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+      ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
 
         cs_real_t visct  = cpro_pcvto[c_id];
         cs_real_t ro     = cromo[c_id];
@@ -1000,7 +999,7 @@ cs_turbulence_kw(int phase_id)
         tinstw[c_id] +=   cell_f_vol[c_id]
                         * fmax(  -2.*ro/xpsi/cs_math_pow2(xw)*(1. - xxf1)
                                / cs_turb_ckwsw2*gdkgdw[c_id], 0.);
-      }
+      });
 
     } /* End of test on hybrid models */
 
@@ -1009,8 +1008,7 @@ cs_turbulence_kw(int phase_id)
 
     if (cs_glob_turb_rans_model->ikecou == 0) {
 
-#     pragma omp for nowait
-      for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+      ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
         cs_real_t xw    = cvara_omg[c_id];
         cs_real_t xxf1  = xf1[c_id];
         cs_real_t xbeta = xxf1 * cs_turb_ckwbt1 + (1. - xxf1)*cs_turb_ckwbt2;
@@ -1027,13 +1025,15 @@ cs_turbulence_kw(int phase_id)
 
         tinstk[c_id] += cell_f_vol[c_id]*cs_turb_cmu*ro*xw*fhybr;
         tinstw[c_id] += 2.*cell_f_vol[c_id]*xbeta*ro*xw;
-      }
+      });
     }
 
   } /* End of OpenMP section */
 
+  ctx.wait();
+
   /* Free memory */
-  BFT_FREE(gdkgdw);
+  CS_FREE_HD(gdkgdw);
 
   /* Account for Lagrangian 2-way coupling source terms
      -------------------------------------------------- */
@@ -1049,8 +1049,7 @@ cs_turbulence_kw(int phase_id)
       cs_real_t *lag_st_k = cs_field_by_name("lagr_st_k")->val;
       cs_real_t *lag_st_i = cs_field_by_name("lagr_st_imp_velocity")->val;
 
-#     pragma omp parallel for if(n_cells_ext > CS_THR_MIN)
-      for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+      ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
 
         /* Implicit and explicit source terms on k */
         cs_real_t st_k = cell_f_vol[c_id] * lag_st_k[c_id];
@@ -1071,10 +1070,11 @@ cs_turbulence_kw(int phase_id)
         /* Implicit source terms on omega */
         tinstw[c_id] += CS_MAX(-cs_turb_ce4 * st_k / cvara_k[c_id], 0.);
 
-      }
+      });
 
     }
   }
+  ctx.wait();
 
   /* Mass source terms (Implicit and explicit parts)
      =============================================== */
@@ -1146,10 +1146,10 @@ cs_turbulence_kw(int phase_id)
   /* Finalize source terms */
   if (istprv >= 0) {
     cs_real_t thetp1 = 1. + thets;
-    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+    ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
       smbrk[c_id] += thetp1 * c_st_k_p[c_id];
       smbrw[c_id] += thetp1 * c_st_omg_p[c_id];
-    }
+    });
   }
 
   /* Re-set Boundary conditions flux coefficient for k and omega
@@ -1157,7 +1157,7 @@ cs_turbulence_kw(int phase_id)
      is not constant in the k-omega model (and not directly accessible)
      *===================================================================== */
 
-  for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++) {
+  ctx.parallel_for(n_b_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t face_id) {
 
     cs_lnum_t c_id = b_face_cells[face_id];
 
@@ -1183,7 +1183,9 @@ cs_turbulence_kw(int phase_id)
     coefaf_o[face_id] = -hint*coefa_o[face_id];
     coefbf_o[face_id] = hint*(1. - coefb_o[face_id]);
 
-  }
+  });
+
+  ctx.wait();
 
   /* Account for convection/diffusion in the right-hand side for the reinforced
    * k-omega coupling (ikecou == 1)
@@ -1198,26 +1200,23 @@ cs_turbulence_kw(int phase_id)
 
   if (cs_glob_turb_rans_model->ikecou == 1) {
 
-    BFT_MALLOC(w5, n_cells_ext, cs_real_t);
-    BFT_MALLOC(w6, n_cells_ext, cs_real_t);
+    CS_MALLOC_HD(w5, n_cells_ext, cs_real_t, cs_alloc_mode);
+    CS_MALLOC_HD(w6, n_cells_ext, cs_real_t, cs_alloc_mode);
     CS_MALLOC_HD(w7, n_cells_ext, cs_real_t, cs_alloc_mode);
 
-#   pragma omp parallel for if(n_cells_ext > CS_THR_MIN)
-    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-      w5[c_id] = 0.;
-      w6[c_id] = 0.;
-    }
+    cs_arrays_set_value<cs_real_t, 1>(n_cells, 0., w5, w6);
 
     /* Handle k */
 
     if (eqp_k->idiff >=  1) {
 
-#     pragma omp parallel for if(n_cells_ext > CS_THR_MIN)
-      for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+      ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
         cs_real_t xxf1 = xf1[c_id];
         cs_real_t sigma = xxf1*cs_turb_ckwsk1 + (1. - xxf1)*cs_turb_ckwsk2;
         w7[c_id] = viscl[c_id] + eqp_k->idifft*cvisct[c_id]/sigma;
-      }
+      });
+
+      ctx.wait();
 
       cs_face_viscosity(m,
                         fvq,
@@ -1228,10 +1227,8 @@ cs_turbulence_kw(int phase_id)
 
     }
     else {
-      for (cs_lnum_t face_id = 0; face_id < n_i_faces; face_id++)
-        viscf[face_id] = 0.;
-      for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++)
-        viscb[face_id] = 0.;
+      cs_array_real_fill_zero(n_i_faces, viscf);
+      cs_array_real_fill_zero(n_b_faces, viscb);
     }
 
     cs_balance_scalar(cs_glob_time_step_options->idtvar,
@@ -1265,12 +1262,13 @@ cs_turbulence_kw(int phase_id)
     /* Handle omega */
 
     if (eqp_w->idiff >= 1) {
-#     pragma omp parallel for if(n_cells_ext > CS_THR_MIN)
-      for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+      ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
         cs_real_t xxf1 = xf1[c_id];
         cs_real_t sigma = xxf1*cs_turb_ckwsw1 + (1.-xxf1)*cs_turb_ckwsw2;
         w7[c_id] = viscl[c_id] + eqp_w->idifft*cvisct[c_id]/sigma;
-      }
+      });
+
+      ctx.wait();
 
       cs_face_viscosity(m,
                         fvq,
@@ -1281,10 +1279,8 @@ cs_turbulence_kw(int phase_id)
 
     }
     else {
-      for (cs_lnum_t face_id = 0; face_id < n_i_faces; face_id++)
-        viscf[face_id] = 0.;
-      for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++)
-        viscb[face_id] = 0.;
+      cs_array_real_fill_zero(n_i_faces, viscf);
+      cs_array_real_fill_zero(n_b_faces, viscb);
     }
 
     cs_balance_scalar(cs_glob_time_step_options->idtvar,
@@ -1315,11 +1311,10 @@ cs_turbulence_kw(int phase_id)
                     sqrt(cs_gdot(n_cells, smbrw, smbrw)));
     }
 
-#   pragma omp parallel for if(n_cells_ext > CS_THR_MIN)
-    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+    ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
       smbrk[c_id] += w5[c_id];
       smbrw[c_id] += w6[c_id];
-    }
+    });
   }
 
   /* k-omega coupling (ikecou == 1)
@@ -1331,17 +1326,16 @@ cs_turbulence_kw(int phase_id)
     /* Take into account, if necessary, the Spalart-Shur rotation/curvature
        correction of the production term */
     if (cs_glob_turb_rans_model->irccor == 1) {
-      for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+      ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
         w1[c_id] = rotfct[c_id];
-      }
+      });
     } else {
-      for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+      ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
         w1[c_id] = 1.;
-      }
+      });
     }
 
-#   pragma omp parallel for if(n_cells_ext > CS_THR_MIN)
-    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+    ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
 
       cs_real_t ro = crom[c_id];
 
@@ -1376,18 +1370,18 @@ cs_turbulence_kw(int phase_id)
       smbrk[c_id] = romvsd*deltk;
       smbrw[c_id] = romvsd*deltw;
 
-    }
+    });
 
     /* Substract convection/diffusion at time n from smbrk and  smbrw
        if they were computed */
-    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+    ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
       smbrk[c_id] = smbrk[c_id] - w5[c_id];
       smbrw[c_id] = smbrw[c_id] - w6[c_id];
-    }
+    });
 
     /* Free memory */
-    BFT_FREE(w5);
-    BFT_FREE(w6);
+    CS_FREE_HD(w5);
+    CS_FREE_HD(w6);
     CS_FREE_HD(w7);
   }
 
@@ -1397,12 +1391,13 @@ cs_turbulence_kw(int phase_id)
   /* Face viscosity */
   if (eqp_k->idiff >= 1) {
 
-#   pragma omp parallel for if(n_cells_ext > CS_THR_MIN)
-    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+    ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
       cs_real_t xxf1 = xf1[c_id];
       cs_real_t sigma = xxf1*cs_turb_ckwsk1 + (1.-xxf1)*cs_turb_ckwsk2;
       w1[c_id] = viscl[c_id] + eqp_k->idifft*cvisct[c_id]/sigma;
-    }
+    });
+
+    ctx.wait();
 
     cs_face_viscosity(m,
                       fvq,
@@ -1413,12 +1408,8 @@ cs_turbulence_kw(int phase_id)
 
   } else {
 
-    for (cs_lnum_t face_id = 0; face_id < n_i_faces; face_id++) {
-      viscf[face_id] = 0.;
-    }
-    for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++) {
-      viscb[face_id] = 0.;
-    }
+    cs_array_real_fill_zero(n_i_faces, viscf);
+    cs_array_real_fill_zero(n_b_faces, viscb);
 
   }
 
@@ -1457,12 +1448,13 @@ cs_turbulence_kw(int phase_id)
 
   /* Face viscosity */
   if (eqp_w->idiff >=  1) {
-#   pragma omp parallel for if(n_cells_ext > CS_THR_MIN)
-    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+    ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
       cs_real_t xxf1 = xf1[c_id];
       cs_real_t sigma = xxf1*cs_turb_ckwsw1 + (1. - xxf1)*cs_turb_ckwsw2;
       w1[c_id] = viscl[c_id] + eqp_w->idifft*cvisct[c_id]/sigma;
-    }
+    });
+
+    ctx.wait();
 
     cs_face_viscosity(m,
                       fvq,
@@ -1472,10 +1464,8 @@ cs_turbulence_kw(int phase_id)
                       viscb);
   }
   else {
-    for (cs_lnum_t face_id = 0; face_id < n_i_faces; face_id++)
-      viscf[face_id] = 0.;
-    for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++)
-      viscb[face_id] = 0.;
+    cs_array_real_fill_zero(n_i_faces, viscf);
+    cs_array_real_fill_zero(n_b_faces, viscb);
   }
 
   /* Solve omega */
@@ -1550,13 +1540,10 @@ cs_turbulence_kw(int phase_id)
     cpro_w_clipped = cs_field_by_id(clip_w_id)->val;
   }
 
-# pragma omp parallel for if(n_cells_ext > CS_THR_MIN)
-  for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-    if (clip_k_id >= 0)
-      cpro_k_clipped[c_id] = 0.;
-    if (clip_w_id >= 0)
-      cpro_w_clipped[c_id] = 0.;
-  }
+  if (clip_k_id >= 0)
+    cs_array_real_fill_zero(n_cells, cpro_k_clipped);
+  if (clip_w_id >= 0)
+    cs_array_real_fill_zero(n_cells, cpro_w_clipped);
 
   cs_lnum_t iclipk[1] = {0};
   cs_lnum_t iclipw = 0;
@@ -1640,14 +1627,12 @@ cs_turbulence_kw(int phase_id)
     cs_real_t utaurf = 0.05*uref;
     cs_real_t nu0 = viscl0 / ro0;
 
-#   pragma omp parallel for if(n_cells_ext > CS_THR_MIN)
-    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-
+    ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
       /* In case of coupled fluid/solid simulation
        * avoid reinitializing turbulence in the solid region */
       if (fvq->has_disable_flag) {
         if (fvq->c_disable_flag[c_id])
-          continue;
+          return; // return from lambda == continue loop
       }
 
       /* Compute the velocity magnitude */
@@ -1684,8 +1669,7 @@ cs_turbulence_kw(int phase_id)
       cvar_omg[c_id] = cs_math_pow3(ut2) / (cs_turb_xkappa * 15. * nu0 / ut2)
                                          / (cs_math_pow2(ut2)/sqrt(cs_turb_cmu))
                                          / cs_turb_cmu;
-
-    }
+    });
 
   } /* End of test on turbulence reinitialization */
 
@@ -1700,18 +1684,20 @@ cs_turbulence_kw(int phase_id)
   CS_FREE_HD(dpvar);
   CS_FREE_HD(w1);
   CS_FREE_HD(rotfct);
+  CS_FREE_HD(xf1);
 
-  BFT_FREE(xf1);
-  BFT_FREE(grad_dot_g);
-  BFT_FREE(usimpk);
-  BFT_FREE(usimpw);
+  CS_FREE_HD(grad_dot_g);
+  CS_FREE_HD(usimpk);
+  CS_FREE_HD(usimpw);
 
-  BFT_FREE(prodk);
-  BFT_FREE(prodw);
+  CS_FREE_HD(prodk);
+  CS_FREE_HD(prodw);
 
-  BFT_FREE(s2pw2);
-  BFT_FREE(maxgdsv);
-  BFT_FREE(d2uidxi2);
+  CS_FREE_HD(s2pw2);
+  CS_FREE_HD(maxgdsv);
+  CS_FREE_HD(d2uidxi2);
+
+  ctx.wait();
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1743,6 +1729,8 @@ cs_turbulence_kw_mu_t(int phase_id)
   const cs_lnum_t n_cells = mesh->n_cells;
   const cs_lnum_t n_cells_ext = mesh->n_cells_with_ghosts;
   const cs_lnum_t ntcabs = cs_glob_time_step->nt_cur;
+
+  cs_dispatch_context ctx;
 
   /* Initialization
      ============== */
@@ -1787,7 +1775,7 @@ cs_turbulence_kw_mu_t(int phase_id)
     else if (f_vg != NULL)
       gradv = (cs_real_33_t *)f_vg->val;
     else {
-      BFT_MALLOC(_gradv, n_cells_ext, cs_real_33_t);
+      CS_MALLOC_HD(_gradv, n_cells_ext, cs_real_33_t, cs_alloc_mode);
       gradv = _gradv;
     }
   }
@@ -1825,8 +1813,7 @@ cs_turbulence_kw_mu_t(int phase_id)
   cs_real_t *cpro_s2kw = f_s2kw->val;
   cs_real_t *cpro_divukw = f_divukw->val;
 
-# pragma omp parallel for if(n_cells > CS_THR_MIN)
-  for (cs_lnum_t c_id = 0; c_id < n_cells; c_id ++) {
+  ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
    cpro_s2kw[c_id] = 2.0 *(  cs_math_pow2(  d2s3*gradv[c_id][0][0]
                                           - d1s3*gradv[c_id][1][1]
                                           - d1s3*gradv[c_id][2][2])
@@ -1843,9 +1830,9 @@ cs_turbulence_kw_mu_t(int phase_id)
    cpro_divukw[c_id] =   gradv[c_id][0][0]
                        + gradv[c_id][1][1]
                        + gradv[c_id][2][2];
-  }
+  });
 
-  BFT_FREE(_gradv);
+  CS_FREE_HD(_gradv);
 
   /* Calculation of viscosity
    * ======================== */
@@ -1857,8 +1844,7 @@ cs_turbulence_kw_mu_t(int phase_id)
     blend = cs_field_by_name("hybrid_blend")->val;
   }
 
-# pragma omp parallel for if(n_cells > CS_THR_MIN)
-  for (cs_lnum_t c_id = 0; c_id < n_cells; c_id ++) {
+  ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
     const cs_real_t xk = cvar_k[c_id];
     cs_real_t xw = cvar_omg[c_id];
     const cs_real_t rom = crom[c_id];
@@ -1891,7 +1877,9 @@ cs_turbulence_kw_mu_t(int phase_id)
     else {
       visct[c_id] = 1.e-30;
     }
-  }
+  });
+
+  ctx.wait();
 }
 
 /*----------------------------------------------------------------------------*/
