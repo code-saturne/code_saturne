@@ -511,8 +511,10 @@ cs_lagr_log_setup(void)
     (CS_LOG_SETUP,
      _("\n  Numerical options:\n"
        "    trajectory time scheme order:                 %d\n"
+       "    Extended time scheme:                         %s\n"
        "    Poisson correction for particle velocity:     %s\n"),
      cs_glob_lagr_time_scheme->t_order,
+     _status(cs_glob_lagr_time_scheme->extended_t_scheme),
      _status(cs_glob_lagr_time_scheme->ilapoi));
 
   cs_log_printf
