@@ -1849,7 +1849,8 @@ cs_log_iteration_destroy_all(void)
 void
 cs_log_iteration(void)
 {
-  _equation_convergence_info_write();
+  if (cs_glob_param_cdo_mode != CS_PARAM_CDO_MODE_ONLY)
+    _equation_convergence_info_write();
 
   if (_n_clips > 0)
     _log_clips();
