@@ -363,9 +363,9 @@ cs_lagr_aux_mean_fluid_quantities(cs_field_t    *lagr_time,
       for (cs_lnum_t cell_id = 0; cell_id < cs_glob_mesh->n_cells; cell_id++) {
         cs_real_t dvol = 1. / cell_f_vol[cell_id];
         for (cs_lnum_t i = 0; i < 3; i++) {
-          div_mu_gradvel[cell_id][i] *= dvol;
           /* mind that div_mu_gradvel contains -div(mu gradvel) */
-          grad_pr[cell_id][i] += div_mu_gradvel[cell_id][i];
+          div_mu_gradvel[cell_id][i] *= -dvol;
+          grad_pr[cell_id][i] -= div_mu_gradvel[cell_id][i];
         }
       }
 
