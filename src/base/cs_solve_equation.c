@@ -1361,8 +1361,9 @@ cs_solve_equation_scalar(cs_field_t        *f,
       cs_real_t *ste = cs_field_by_name("lagr_st_temperature")->val;
       cs_real_t *sti = cs_field_by_name("lagr_st_imp_temperature")->val;
       for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-        rhs[c_id] += ste[c_id];
-        fimp[c_id] += xcpp[c_id]*cs_math_fmax(sti[c_id], 0.0);
+        rhs[c_id] += ste[c_id] * cell_f_vol[c_id];
+        fimp[c_id] += xcpp[c_id] * cs_math_fmax(sti[c_id], 0.0)
+          * cell_f_vol[c_id];
       }
     }
   }

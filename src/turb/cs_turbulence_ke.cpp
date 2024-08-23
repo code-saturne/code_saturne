@@ -1584,20 +1584,22 @@ cs_turbulence_ke(int              phase_id,
       for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
 
         /* Implicit and explicit source terms on k */
-        smbrk[c_id] += lag_st_k[c_id];
+        cs_real_t st_k = cell_f_vol[c_id] * lag_st_k[c_id];
+        cs_real_t st_i = cell_f_vol[c_id] * lag_st_i[c_id];
+        smbrk[c_id] += st_k;
 
         /* Explicit source terms on epsilon */
 
-        smbre[c_id] += cs_turb_ce4 * lag_st_k[c_id] * cvara_ep[c_id]
-                                                    / cvara_k[c_id];
+        smbre[c_id] += cs_turb_ce4 * st_k * cvara_ep[c_id]
+                                          / cvara_k[c_id];
 
         /* Implicit source terms on k,
          * Note: we implicit lag_st_k if negative */
-        tinstk[c_id] += fmax(-lag_st_k[c_id]/cvara_k[c_id], 0.);
-        tinstk[c_id] += fmax(-lag_st_i[c_id], 0.);
+        tinstk[c_id] += fmax(-st_k/cvara_k[c_id], 0.);
+        tinstk[c_id] += fmax(-st_i, 0.);
 
         /* Implicit source terms on epsilon */
-        tinste[c_id] += fmax(-cs_turb_ce4 * lag_st_k[c_id] / cvara_k[c_id], 0.);
+        tinste[c_id] += fmax(-cs_turb_ce4 * st_k / cvara_k[c_id], 0.);
 
       }
 

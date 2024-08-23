@@ -139,6 +139,12 @@ cs_lagr_coupling(const cs_real_t    taup[],
   cs_real_t *st_t_e = NULL, *t_st_t_e = NULL;
   cs_real_t *st_t_i = NULL, *t_st_t_i = NULL;
 
+  cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
+
+  cs_real_t *cell_f_vol = mq->cell_f_vol;
+
+  const int *restrict c_disable_flag = mq->c_disable_flag;
+  cs_lnum_t has_dc = mq->has_disable_flag; /* Has cells disabled? */
 
   /* Initialization
      ============== */
@@ -299,10 +305,14 @@ cs_lagr_coupling(const cs_real_t    taup[],
       volm[c_id] += p_stat_w * prev_p_mass;
 
       /* Momentum source term */
-      for (cs_lnum_t i = 0; i < 3; i++)
-        t_st_vel[c_id][i] -= auxl[p_id][i];
+      cs_real_t dvol = 0.;
+      if (has_dc * c_disable_flag[has_dc * c_id] == 0)
+        dvol = 1. / cell_f_vol[c_id];
 
-      t_st_imp_vel[c_id] -= 2.0 * p_stat_w * p_mass / taup[p_id];
+      for (cs_lnum_t i = 0; i < 3; i++)
+        t_st_vel[c_id][i] -= dvol * auxl[p_id][i];
+
+      t_st_imp_vel[c_id] -= 2.0 * dvol * p_stat_w * p_mass / taup[p_id];
 
     }
 
@@ -341,7 +351,10 @@ cs_lagr_coupling(const cs_real_t    taup[],
           0.5 * (prev_f_vel[1] + f_vel[1]),
           0.5 * (prev_f_vel[2] + f_vel[2])};
 
-        t_st_k[c_id] -= cs_math_3_dot_product(vel_s, auxl[p_id]);
+        cs_real_t dvol = 0.;
+        if (has_dc * c_disable_flag[has_dc * c_id] == 0)
+          dvol = 1. / cell_f_vol[c_id];
+        t_st_k[c_id] -= dvol * cs_math_3_dot_product(vel_s, auxl[p_id]);
 
       }
 
@@ -375,13 +388,16 @@ cs_lagr_coupling(const cs_real_t    taup[],
           0.5 * (prev_f_vel[1] + f_vel[1]),
           0.5 * (prev_f_vel[2] + f_vel[2])};
 
+        cs_real_t dvol = 0.;
+        if (has_dc * c_disable_flag[has_dc * c_id] == 0)
+          dvol = 1. / cell_f_vol[c_id];
 
         for (cs_lnum_t ij = 0; ij < 6; ij++) {
           cs_lnum_t i = _iv2t[ij];
           cs_lnum_t j = _jv2t[ij];
 
           t_st_rij[c_id][ij] -= ( vel_s[i] * auxl[p_id][j]
-                                + vel_s[j] * auxl[p_id][i]);
+                                + vel_s[j] * auxl[p_id][i])*dvol;
         }
 
 
@@ -428,10 +444,14 @@ cs_lagr_coupling(const cs_real_t    taup[],
         = cs_lagr_particle_get_real_n(particle, p_am, 0, CS_LAGR_MASS);
 
       /* Fluid mass source term > 0 -> add mass to fluid */
-      cs_lnum_t cell_id = cs_lagr_particle_get_lnum(particle, p_am,
+      cs_lnum_t c_id = cs_lagr_particle_get_lnum(particle, p_am,
                                                     CS_LAGR_CELL_ID);
 
-      t_st_p[cell_id] += - p_stat_w * (p_mass - prev_p_mass) / dtp;
+      cs_real_t dvol = 0.;
+      if (has_dc * c_disable_flag[has_dc * c_id] == 0)
+        dvol = 1. / cell_f_vol[c_id];
+
+      t_st_p[c_id] += - p_stat_w * (p_mass - prev_p_mass) / dtp * dvol;
 
     }
 
@@ -477,10 +497,14 @@ cs_lagr_coupling(const cs_real_t    taup[],
         cs_real_t  p_stat_w = cs_lagr_particle_get_real(particle, p_am,
                                                         CS_LAGR_STAT_WEIGHT);
 
+        cs_real_t dvol = 0.;
+        if (has_dc * c_disable_flag[has_dc * c_id] == 0)
+          dvol = 1. / cell_f_vol[c_id];
+
         t_st_t_e[c_id] += - (p_mass * p_tmp * p_cp
                             - prev_p_mass * prev_p_tmp * prev_p_cp
-                            ) / dtp * p_stat_w;
-        t_st_t_i[c_id] += tempct[nbpart + p_id] * p_stat_w;
+                            ) / dtp * p_stat_w * dvol;
+        t_st_t_i[c_id] += tempct[nbpart + p_id] * p_stat_w; //FIXME not homogeneous
 
       }
       if (extra->radiative_model > 0) {
@@ -499,7 +523,11 @@ cs_lagr_coupling(const cs_real_t    taup[],
           cs_real_t  p_stat_w = cs_lagr_particle_get_real(particle, p_am,
                                                           CS_LAGR_STAT_WEIGHT);
 
-          cs_real_t aux1 = cs_math_pi * p_diam * p_diam * p_eps
+          cs_real_t dvol = 0.;
+          if (has_dc * c_disable_flag[has_dc * c_id] == 0)
+            dvol = 1. / cell_f_vol[c_id];
+
+          cs_real_t aux1 = cs_math_pi * p_diam * p_diam * p_eps * dvol
                           * (extra->rad_energy->val[c_id]
                              - 4.0 * _c_stephan * cs_math_pow4(p_tmp));
 
@@ -553,10 +581,14 @@ cs_lagr_coupling(const cs_real_t    taup[],
           cs_real_t  p_stat_w = cs_lagr_particle_get_real
                                   (particle, p_am, CS_LAGR_STAT_WEIGHT);
 
+          cs_real_t dvol = 0.;
+          if (has_dc * c_disable_flag[has_dc * c_id] == 0)
+            dvol = 1. / cell_f_vol[c_id];
+
           t_st_t_e[c_id] += - (  p_mass * p_tmp * p_cp
                               - prev_p_mass * prev_p_tmp * prev_p_cp
-                              ) / dtp * p_stat_w;
-          t_st_t_i[c_id] += tempct[nbpart + p_id] * p_stat_w;
+                              ) / dtp * p_stat_w * dvol;
+          t_st_t_i[c_id] += tempct[nbpart + p_id] * p_stat_w; //FIXME not homogeneous
 
         }
 
@@ -601,10 +633,14 @@ cs_lagr_coupling(const cs_real_t    taup[],
         cs_real_t  p_stat_w = cs_lagr_particle_get_real
                                 (particle, p_am, CS_LAGR_STAT_WEIGHT);
 
+        cs_real_t dvol = 0.;
+        if (has_dc * c_disable_flag[has_dc * c_id] == 0)
+          dvol = 1. / cell_f_vol[c_id];
+
         t_st_t_e[c_id] += - (  p_mass * p_tmp * p_cp
                              - prev_p_mass * prev_p_tmp * prev_p_cp
-                             ) / dtp * p_stat_w;
-        t_st_t_i[c_id] += tempct[nbpart + p_id] * p_stat_w;
+                             ) / dtp * p_stat_w * dvol;
+        t_st_t_i[c_id] += tempct[nbpart + p_id] * p_stat_w; //FIXME not homogeneous
 
       }
 

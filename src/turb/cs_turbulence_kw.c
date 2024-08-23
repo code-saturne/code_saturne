@@ -1053,21 +1053,23 @@ cs_turbulence_kw(int phase_id)
       for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
 
         /* Implicit and explicit source terms on k */
-        smbrk[c_id] += lag_st_k[c_id];
+        cs_real_t st_k = cell_f_vol[c_id] * lag_st_k[c_id];
+        cs_real_t st_i = cell_f_vol[c_id] * lag_st_i[c_id];
+        smbrk[c_id] += st_k;
 
         /* Explicit source terms on omega: directly use CE4 constant from
            k-epsilon (without justification). To be explored if necessary */
 
-        smbrw[c_id] +=   cs_turb_ce4 * lag_st_k[c_id] * cromo[c_id]
+        smbrw[c_id] +=   cs_turb_ce4 * st_k * cromo[c_id]
                        / cpro_pcvto[c_id];
 
         /* Implicit source terms on k,
          * Note: we implicit lag_st_k if negative */
-        tinstk[c_id] += fmax(-lag_st_k[c_id]/cvara_k[c_id], 0.);
-        tinstk[c_id] += CS_MAX(-lag_st_i[c_id], 0.);
+        tinstk[c_id] += fmax(-st_k/cvara_k[c_id], 0.);
+        tinstk[c_id] += CS_MAX(-st_i, 0.);
 
         /* Implicit source terms on omega */
-        tinstw[c_id] += CS_MAX(-cs_turb_ce4 * lag_st_k[c_id] / cvara_k[c_id], 0.);
+        tinstw[c_id] += CS_MAX(-cs_turb_ce4 * st_k / cvara_k[c_id], 0.);
 
       }
 

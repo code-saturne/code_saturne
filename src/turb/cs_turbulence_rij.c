@@ -2368,7 +2368,7 @@ _solve_epsilon(int              phase_id,
 #   pragma omp parallel for if(n_cells_ext > CS_THR_MIN)
     for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
       /* Source terms with epsilon */
-      const cs_real_t st_eps = -0.50 * cs_math_6_trace(lagr_st_rij[c_id]);
+      const cs_real_t st_eps = -0.5 * cell_f_vol[c_id] * cs_math_6_trace(lagr_st_rij[c_id]);
 
       /* k */
       const cs_real_t k = 0.50 * cs_math_6_trace(cvara_rij[c_id]);
@@ -3047,9 +3047,10 @@ cs_turbulence_rij(int phase_id)
 
 #   pragma omp parallel for if(n_cells > CS_THR_MIN)
     for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+      cs_real_t st_i = cell_f_vol[c_id] * lag_st_i[c_id];
       for (cs_lnum_t ij = 0; ij < 6; ij++) {
-        rhs[c_id][ij] += lagr_st_rij[c_id][ij];
-        fimp[c_id][ij][ij] += cs_math_fmax(-lag_st_i[c_id], 0.);
+        rhs[c_id][ij] += cell_f_vol[c_id] * lagr_st_rij[c_id][ij];
+        fimp[c_id][ij][ij] += cs_math_fmax(-st_i, 0.);
       }
     }
   }

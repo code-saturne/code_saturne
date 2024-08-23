@@ -3075,7 +3075,10 @@ _velocity_prediction(const cs_mesh_t             *m,
     const cs_real_3_t *lagr_st_vel
       = (const cs_real_3_t *)cs_field_by_name("lagr_st_velocity")->val;
 
-    cs_axpy(n_cells*3, 1, (const cs_real_t *)lagr_st_vel, (cs_real_t *)smbr);
+    ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
+      for (cs_lnum_t i = 0; i < 3; i++)
+        smbr[c_id][i] += cell_f_vol[c_id] * lagr_st_vel[c_id][i] ;
+    });
 
     if (iappel == 1) {
       const cs_real_t *lagr_st_imp_vel
@@ -3083,9 +3086,9 @@ _velocity_prediction(const cs_mesh_t             *m,
 
 #     pragma omp parallel for if (n_cells > CS_THR_MIN)
       for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-        cs_real_t st = cs_math_fmax(-lagr_st_imp_vel[c_id], 0.0);
-        for (cs_lnum_t ii = 0; ii < 3; ii++)
-          fimp[c_id][ii][ii] += st;
+        cs_real_t st = cell_f_vol[c_id] * cs_math_fmax(-lagr_st_imp_vel[c_id], 0.0);
+        for (cs_lnum_t i = 0; i < 3; i++)
+          fimp[c_id][i][i] += st;
       }
     }
 
