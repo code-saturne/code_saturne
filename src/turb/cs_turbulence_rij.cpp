@@ -28,6 +28,8 @@
  * Standard C library headers
  *----------------------------------------------------------------------------*/
 
+#include <chrono>
+
 #include <assert.h>
 #include <math.h>
 #include <stdio.h>
@@ -49,6 +51,7 @@
 #include "cs_base.h"
 #include "cs_blas.h"
 #include "cs_boundary_conditions.h"
+#include "cs_dispatch.h"
 #include "cs_domain.h"
 #include "cs_equation_iterative_solve.h"
 #include "cs_equation_param.h"
@@ -73,6 +76,7 @@
 #include "cs_solid_zone.h"
 #include "cs_thermal_model.h"
 #include "cs_time_step.h"
+#include "cs_timer.h"
 #include "cs_turbomachinery.h"
 #include "cs_turbulence_bc.h"
 #include "cs_turbulence_model.h"
@@ -131,7 +135,7 @@ _sign(cs_real_t  a,
       cs_real_t  b)
 
 {
-  cs_real_t sgn = (b <  0) ? - 1 : 1;
+  cs_real_t sgn = (b < 0) ? - 1 : 1;
 
   return (sgn * cs_math_fabs(a));
 }
@@ -154,7 +158,7 @@ _clip_alpha(const int          f_id,
   cs_real_t *cvar_al = cs_field_by_id(f_id)->val;
 
   int kclipp = cs_field_key_id("clipping_id");
-  cs_gnum_t nclp[2] =  {0, 0};  /* Min and max clipping values respectively */
+  cs_lnum_t nclp[2] =  {0, 0};  /* Min and max clipping values respectively */
 
   /* Postprocess clippings ? */
   cs_real_t *cpro_a_clipped = NULL;
@@ -260,12 +264,14 @@ _rij_min_max(cs_lnum_t        n_cells,
  * \brief Compute \f$ \overline{\vect{u}' \rho'}\f$
  *
  * \param[in]   phase_id  turbulent phase id (-1 for single phase flow)
+ * \param[in]   ctx       dispatch GPU context
  * \param[out]  up_rhop   correlation fluctuation of velocity and density
  */
 /*----------------------------------------------------------------------------*/
 
 static void
 _compute_up_rhop(int        phase_id,
+                 cs_dispatch_context ctx,
                  cs_real_t  up_rhop[][3])
 {
   const cs_lnum_t n_cells = cs_glob_mesh->n_cells;
@@ -324,15 +330,14 @@ _compute_up_rhop(int        phase_id,
       (cs_real_3_t *)cs_field_by_composite_name("turbulent_flux",
                                                 thf->name)->val;
     /* finalize rho'u' = -rho beta T'u' = -rho beta C k/eps R.gradT */
-#   pragma omp parallel for if(n_cells > CS_THR_MIN)
-    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+    ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
       cs_real_t beta = (f_beta == NULL) ? 0. : f_beta->val[c_id];
 
       const cs_real_t factor = - beta * rho[c_id];
 
       for (cs_lnum_t i = 0; i < 3; i++)
         up_rhop[c_id][i] = factor * xut[c_id][i];
-    }
+    });
   }
 
   /* Note that the buoyant term is normally expressed in term of
@@ -356,7 +361,7 @@ _compute_up_rhop(int        phase_id,
         cs_field_t *f_beta = cs_field_by_name_try("thermal_expansion");
 
         cs_real_3_t *gradt;
-        BFT_MALLOC(gradt, n_cells_ext, cs_real_3_t);
+        CS_MALLOC_HD(gradt, n_cells_ext, cs_real_3_t, cs_alloc_mode);
 
         cs_field_gradient_scalar(thf,
                                  false,  /* use current (not previous) value */
@@ -364,8 +369,7 @@ _compute_up_rhop(int        phase_id,
                                  gradt);
 
         /* finalize rho'u' = -rho beta T'u' = -rho beta C k/eps R.gradT */
-#       pragma omp parallel for if(n_cells > CS_THR_MIN)
-        for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+        ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
 
           cs_real_t rit[3];
           cs_math_sym_33_3_product(cvara_rij[c_id], gradt[c_id], rit);
@@ -379,9 +383,9 @@ _compute_up_rhop(int        phase_id,
 
           for (cs_lnum_t i = 0; i < 3; i++)
             up_rhop[c_id][i] = factor * rit[i];
-        }
+        });
 
-        BFT_FREE(gradt);
+        CS_FREE_HD(gradt);
       }
 
     }
@@ -390,12 +394,12 @@ _compute_up_rhop(int        phase_id,
     else {
 
       cs_real_3_t *gradro;
-      BFT_MALLOC(gradro, n_cells_ext, cs_real_3_t);
+      CS_MALLOC_HD(gradro, n_cells_ext, cs_real_3_t, cs_alloc_mode);
 
       /* Boundary conditions: Dirichlet romb
        * We impose in Dirichlet (coefa) the value romb */
       cs_real_t *coefb;
-      BFT_MALLOC(coefb, n_b_faces, cs_real_t);
+      CS_MALLOC_HD(coefb, n_b_faces, cs_real_t, cs_alloc_mode);
 
       cs_array_real_fill_zero(n_b_faces, coefb);
 
@@ -419,7 +423,7 @@ _compute_up_rhop(int        phase_id,
                          0,             /* iphydp */
                          1,             /* w_stride */
                          eqp->verbosity,
-                         eqp->imligr,
+                         (cs_gradient_limit_t)(eqp->imligr),
                          eqp->epsrgr,
                          eqp->climgr,
                          NULL,          /* f_ext */
@@ -430,8 +434,7 @@ _compute_up_rhop(int        phase_id,
                          gradro);
 
       /* finalize rho'u' */
-#     pragma omp parallel for if(n_cells > CS_THR_MIN)
-      for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+      ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
 
         cs_real_t rit[3];
         cs_math_sym_33_3_product(cvara_rij[c_id], gradro[c_id], rit);
@@ -442,12 +445,13 @@ _compute_up_rhop(int        phase_id,
         for (cs_lnum_t i = 0; i < 3; i++)
           up_rhop[c_id][i] = cons * k_ov_eps * rit[i];
 
-      }
+      });
 
-      BFT_FREE(gradro);
-      BFT_FREE(coefb);
+      CS_FREE_HD(gradro);
+      CS_FREE_HD(coefb);
     }
   }
+  ctx.wait();
 }
 
 /*----------------------------------------------------------------------------*/
@@ -471,6 +475,8 @@ _rij_echo(int              phase_id,
   const cs_lnum_t n_cells_ext = cs_glob_mesh->n_cells_with_ghosts;
 
   const cs_real_t *cell_f_vol = cs_glob_mesh_quantities->cell_f_vol;
+
+  cs_dispatch_context ctx;
 
   cs_field_t *f_rij = CS_F_(rij);
   cs_field_t *f_eps = CS_F_(eps);
@@ -502,14 +508,14 @@ _rij_echo(int              phase_id,
   const cs_real_t *w_dist = cs_field_by_name("wall_distance")->val;
 
   cs_real_3_t *grad;
-  BFT_MALLOC(grad, n_cells_ext, cs_real_3_t);
+  CS_MALLOC_HD(grad, n_cells_ext, cs_real_3_t, cs_alloc_mode);
 
   cs_real_t *produk, *epsk;
-  BFT_MALLOC(epsk, n_cells_ext, cs_real_t);
-  BFT_MALLOC(produk, n_cells_ext, cs_real_t);
+  CS_MALLOC_HD(epsk, n_cells_ext, cs_real_t, cs_alloc_mode);
+  CS_MALLOC_HD(produk, n_cells_ext, cs_real_t, cs_alloc_mode);
 
   cs_real_6_t *w6;
-  BFT_MALLOC(w6, n_cells_ext, cs_real_6_t);
+  CS_MALLOC_HD(w6, n_cells_ext, cs_real_6_t, cs_alloc_mode);
 
   /* Current gradient */
   cs_field_gradient_scalar(cs_field_by_name("wall_distance"),
@@ -517,8 +523,7 @@ _rij_echo(int              phase_id,
                            1,      /* inc */
                            grad);
 
-# pragma omp parallel for if(n_cells > CS_THR_MIN)
-  for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+  ctx.parallel_for(n_cells, [=] (cs_lnum_t c_id) {
 
     const cs_real_t norm2 = cs_math_3_square_norm(grad[c_id]);
     const cs_real_t xnorm = cs_math_fmax(sqrt(norm2), cs_math_epzero);
@@ -532,7 +537,7 @@ _rij_echo(int              phase_id,
 
     const cs_real_t xk = 0.5 * cs_math_6_trace(cvara_rij[c_id]);
     epsk[c_id] = cvara_ep[c_id] / xk;
-  }
+  });
 
   /* Tensor indexing */
 
@@ -556,8 +561,7 @@ _rij_echo(int              phase_id,
 
   cs_array_real_fill_zero(6*n_cells, (cs_real_t *)w6);
 
-# pragma omp parallel for if(n_cells > CS_THR_MIN)
-  for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+  ctx.parallel_for(n_cells, [=] (cs_lnum_t c_id) {
 
     for (cs_lnum_t kk = 0; kk < 3; kk++) {
 
@@ -617,14 +621,13 @@ _rij_echo(int              phase_id,
 
     } /* End of loop on kk */
 
-  } /* End of loop on cells */
+  }); /* End of loop on cells */
 
   /* Distance to the wall and amortization function: W3
    *   For each calculation mode: same code, test
    *   Apart from the loop */
 
-# pragma omp parallel for if(n_cells > CS_THR_MIN)
-  for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+  ctx.parallel_for(n_cells, [=] (cs_lnum_t c_id) {
     const cs_real_t distxn = cs_math_fmax(w_dist[c_id], cs_math_epzero); //FIXME
     const cs_real_t trrij = 0.5 * cs_math_6_trace(cvara_rij[c_id]);
     cs_real_t bb =   cmu075 * pow(trrij, 1.5)
@@ -633,18 +636,20 @@ _rij_echo(int              phase_id,
 
     for (cs_lnum_t isub = 0; isub < 6; isub++)
       rhs[c_id][isub] += cromo[c_id] * cell_f_vol[c_id] * w6[c_id][isub] * bb;
-  }
+  });
 
-  BFT_FREE(w6);
-  BFT_FREE(grad);
-  BFT_FREE(epsk);
-  BFT_FREE(produk);
+  CS_FREE_HD(w6);
+  CS_FREE_HD(grad);
+  CS_FREE_HD(epsk);
+  CS_FREE_HD(produk);
+
+  ctx.wait();
+
 }
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Gravity terms for terms
- *        For \f$R_{ij}\f$
+ * \brief Gravity terms for \f$R_{ij}\f$
  *
  * \param[in]   f_rij     pointer to Rij field
  * \param[in]   up_rhop   work array for \f$ \vect{u}'\rho' \f$
@@ -684,12 +689,12 @@ _gravity_st_rij(const cs_field_t  *f_rij,
     cpro_buoyancy = (cs_real_6_t*)f_buo->val;
   }
   else {
-    BFT_MALLOC(_buoyancy, n_cells_ext, cs_real_6_t);
+    CS_MALLOC_HD(_buoyancy, n_cells_ext, cs_real_6_t, cs_alloc_mode);
     cpro_buoyancy = _buoyancy;
   }
+  cs_dispatch_context ctx;
 
-# pragma omp parallel for if(n_cells > CS_THR_MIN)
-  for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+  ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
 
      cs_real_t gij[3][3];
      for (cs_lnum_t i = 0; i < 3; i++) {
@@ -705,23 +710,21 @@ _gravity_st_rij(const cs_field_t  *f_rij,
      cpro_buoyancy[c_id][3] = gij[0][1] * o_m_crij3;
      cpro_buoyancy[c_id][4] = gij[1][2] * o_m_crij3;
      cpro_buoyancy[c_id][5] = gij[0][2] * o_m_crij3;
-  }
+  });
 
   /* If we extrapolate the source terms: previous ST */
   if (st_prv_id > -1) {
-#     pragma omp parallel for if(n_cells_ext > CS_THR_MIN)
-    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+    ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
       for (cs_lnum_t ij = 0; ij < 6; ij++)
         c_st_prv[c_id][ij] += cpro_buoyancy[c_id][ij] * cell_f_vol[c_id];
-    }
+    });
   }
   /* Otherwise RHS */
   else {
-#     pragma omp parallel for if(n_cells_ext > CS_THR_MIN)
-    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+    ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
       for (cs_lnum_t ij = 0; ij < 6; ij++)
         rhs[c_id][ij] += cpro_buoyancy[c_id][ij] * cell_f_vol[c_id];
-    }
+    });
   }
 
   /* Partial implicitation in case of coupled component solver */
@@ -739,11 +742,10 @@ _gravity_st_rij(const cs_field_t  *f_rij,
       solid_stride = 0;
     }
 
-#     pragma omp parallel for if(n_cells_ext > CS_THR_MIN)
-    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+    ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
 
       if (c_is_solid[solid_stride*c_id])
-        continue;
+        return;  /* return from lambda function == continue in loop */
 
       cs_real_t implmat2add[3][3] = {{0, 0, 0}, {0, 0, 0}, {0, 0, 0}};
 
@@ -798,13 +800,14 @@ _gravity_st_rij(const cs_field_t  *f_rij,
           fimp[c_id][ij][kl] += cell_f_vol[c_id] * impl_drsm[ij][kl];
       }
 
-    } /* End of loop on cells */
+    }); /* End of loop on cells */
 
-    BFT_FREE(c_is_solid_zone_flag);
+    CS_FREE_HD(c_is_solid_zone_flag);
   } /* End of test on coupled components */
 
-  BFT_FREE(_buoyancy);
+  CS_FREE_HD(_buoyancy);
 
+  ctx.wait();
 }
 
 /*----------------------------------------------------------------------------*/
@@ -830,6 +833,8 @@ _gravity_st_epsilon(int              phase_id,
 {
   const cs_lnum_t n_cells = cs_glob_mesh->n_cells;
 
+  cs_dispatch_context ctx;
+
   cs_field_t *f_rij = CS_F_(rij);
   cs_field_t *f_eps = CS_F_(eps);
   cs_field_t *f_rho = CS_F_(rho);
@@ -850,8 +855,7 @@ _gravity_st_epsilon(int              phase_id,
   const cs_real_t *crom = f_rho->val;
   const cs_real_t *viscl = f_mu->val;
 
-# pragma omp parallel for if(n_cells > CS_THR_MIN)
-  for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+  ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
 
     const cs_real_t g_up_rhop = cs_math_3_dot_product(g, up_rhop[c_id]);
 
@@ -869,7 +873,9 @@ _gravity_st_epsilon(int              phase_id,
 
     rhs[c_id] += cs_turb_ce1 * cs_math_fmax(0., g_up_rhop/time_scale)
                * cell_f_vol[c_id];
-  }
+  });
+
+  ctx.wait();
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1678,6 +1684,8 @@ _pre_solve_ssg(const cs_field_t  *f_rij,
 
   const cs_real_t *cell_f_vol = fvq->cell_f_vol;
 
+  cs_dispatch_context ctx;
+
   cs_field_t *f_eps = CS_F_(eps);
   cs_field_t *f_alpbl = CS_F_(alp_bl);
   cs_field_t *f_rho = CS_F_(rho);
@@ -1780,8 +1788,8 @@ _pre_solve_ssg(const cs_field_t  *f_rij,
   const int *irotce = cs_turbomachinery_get_cell_rotor_num();
 
   cs_real_t *w1, *w2;
-  BFT_MALLOC(w1, n_cells_ext, cs_real_t);
-  BFT_MALLOC(w2, n_cells_ext, cs_real_t);
+  CS_MALLOC_HD(w1, n_cells_ext, cs_real_t, cs_alloc_mode);
+  CS_MALLOC_HD(w2, n_cells_ext, cs_real_t, cs_alloc_mode);
 
   cs_lnum_t solid_stride = 1;
   int *c_is_solid_zone_flag = cs_solid_zone_flag(cs_glob_mesh);
@@ -1792,11 +1800,10 @@ _pre_solve_ssg(const cs_field_t  *f_rij,
     solid_stride = 0;
   }
 
-# pragma omp parallel for if(n_cells_ext > CS_THR_MIN)
-  for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+  ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
 
     if (c_is_solid[solid_stride*c_id])
-      continue;
+      return; // return from lambda function == continue in loop
 
     cs_real_t xnal[3] = {0, 0, 0};
 
@@ -2136,11 +2143,13 @@ _pre_solve_ssg(const cs_field_t  *f_rij,
       }
     } /* End of loop on ij */
 
-  } /* end loop on cells */
+  }); /* end loop on cells */
 
-  BFT_FREE(grad_al);
+  ctx.wait();
 
-  BFT_FREE(w2);
+  CS_FREE_HD(grad_al);
+
+  CS_FREE_HD(w2);
 
   /* Buoyancy source term
    * -------------------- */
@@ -2148,7 +2157,7 @@ _pre_solve_ssg(const cs_field_t  *f_rij,
   if (cs_glob_turb_rans_model->has_buoyant_term == 1)
     _gravity_st_rij(f_rij, up_rhop, st_prv_id, c_st_prv, fimp, rhs);
 
-  BFT_FREE(c_is_solid_zone_flag);
+  CS_FREE_HD(c_is_solid_zone_flag);
 
   /* Diffusion term (Daly Harlow: generalized gradient hypothesis method)
    * -------------------------------------------------------------------- */
@@ -2160,13 +2169,12 @@ _pre_solve_ssg(const cs_field_t  *f_rij,
       = cs_field_by_name("anisotropic_turbulent_viscosity");
     const cs_real_6_t *visten = (const cs_real_6_t *)f_a_t_visc->val;
 
-#   pragma omp parallel for if(n_cells_ext > CS_THR_MIN)
-    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+    ctx.parallel_for(n_cells, [=] (cs_lnum_t c_id) {
       for (cs_lnum_t i = 0; i < 3; i++)
         viscce[c_id][i] = visten[c_id][i] + viscl[c_id];
       for (cs_lnum_t i = 3; i < 6; i++)
         viscce[c_id][i] = visten[c_id][i];
-    }
+    });
 
     cs_face_anisotropic_viscosity_scalar(m,
                                          fvq,
@@ -2183,9 +2191,9 @@ _pre_solve_ssg(const cs_field_t  *f_rij,
  else {
 
     if (eqp->idifft == 1) {
-#     pragma omp parallel for if(n_cells_ext > CS_THR_MIN)
-      for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
+      ctx.parallel_for(n_cells, [=] (cs_lnum_t c_id) {
         w1[c_id] = viscl[c_id] + (csrij * visct[c_id] / cs_turb_cmu);
+      });
     }
     else
       cs_array_real_copy(n_cells, viscl, w1);
@@ -2198,7 +2206,9 @@ _pre_solve_ssg(const cs_field_t  *f_rij,
                       viscb);
   }
 
-  BFT_FREE(w1);
+  CS_FREE_HD(w1);
+
+  ctx.wait();
 }
 
 /*----------------------------------------------------------------------------*/
@@ -2237,6 +2247,8 @@ _solve_epsilon(int              phase_id,
   const cs_lnum_t n_b_faces = m->n_b_faces;
   const cs_lnum_t n_i_faces = m->n_i_faces;
   const cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
+
+  cs_dispatch_context ctx;
 
   const cs_real_t *cell_f_vol = fvq->cell_f_vol;
 
@@ -2308,12 +2320,11 @@ _solve_epsilon(int              phase_id,
   const cs_real_t thets = time_scheme->thetst;
   const cs_real_t thetv = eqp->theta;
 
-  cs_array_real_fill_zero(n_cells, rhs);
-  cs_array_real_fill_zero(n_cells, fimp);
+  cs_arrays_set_value<cs_real_t, 1>(n_cells, 0., rhs, fimp);
 
   /* Work arrays */
   cs_real_t *w1;
-  BFT_MALLOC(w1, n_cells_ext, cs_real_t);
+  CS_MALLOC_HD(w1, n_cells_ext, cs_real_t, cs_alloc_mode);
 
   /* User source terms
    * ----------------- */
@@ -2328,8 +2339,7 @@ _solve_epsilon(int              phase_id,
 
   /* If we extrapolate the source terms */
   if (st_prv_id > -1) {
-#   pragma omp parallel for if(n_cells_ext > CS_THR_MIN)
-    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+    ctx.parallel_for(n_cells, [=] (cs_lnum_t c_id) {
       /* Save for exchange */
       const cs_real_t tuexpe = c_st_prv[c_id];
       /* For the continuation and the next time step */
@@ -2340,14 +2350,13 @@ _solve_epsilon(int              phase_id,
       rhs[c_id] = fimp[c_id]*cvara_ep[c_id] - thets*tuexpe;
       /* Diagonal */
       fimp[c_id] = -thetv*fimp[c_id];
-    }
+    });
   }
   else {
-#   pragma omp parallel for if(n_cells_ext > CS_THR_MIN)
-    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+    ctx.parallel_for(n_cells, [=] (cs_lnum_t c_id) {
       rhs[c_id]   += fimp[c_id]*cvara_ep[c_id];
       fimp[c_id]  = cs_math_fmax(-fimp[c_id], cs_math_zero_threshold);
-    }
+    });
   }
 
   /* Lagrangian source terms
@@ -2361,8 +2370,7 @@ _solve_epsilon(int              phase_id,
     const cs_real_6_t *lagr_st_rij
       = (const cs_real_6_t *)cs_field_by_name("lagr_st_rij")->val;
 
-#   pragma omp parallel for if(n_cells_ext > CS_THR_MIN)
-    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+    ctx.parallel_for(n_cells, [=] (cs_lnum_t c_id) {
       /* Source terms with epsilon */
       const cs_real_t st_eps = -0.5 * cell_f_vol[c_id] * cs_math_6_trace(lagr_st_rij[c_id]);
 
@@ -2375,7 +2383,7 @@ _solve_epsilon(int              phase_id,
       /* equiv:                    -cs_turb_ce4 * st_eps * / (k/eps) */
       fimp[c_id] += cs_math_fmax(-cs_turb_ce4 * st_eps / k * cvara_ep[c_id],
                                    cs_math_zero_threshold);
-   }
+   });
   }
 
   /* Mass source term
@@ -2419,10 +2427,9 @@ _solve_epsilon(int              phase_id,
    * ------------- */
 
   if (eqp->istat == 1) {
-#   pragma omp parallel for if(n_cells_ext > CS_THR_MIN)
-    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+    ctx.parallel_for(n_cells, [=] (cs_lnum_t c_id) {
       fimp[c_id] += (crom[c_id] / dt[c_id]) * cell_f_vol[c_id];
-    }
+    });
   }
 
   /* Production (rho * Ce1 * epsilon / k * P)
@@ -2440,13 +2447,12 @@ _solve_epsilon(int              phase_id,
    * Rij or in SSG (use of produc or grdvit) */
 
   if (cs_glob_turb_model->iturb == CS_TURB_RIJ_EPSILON_LRR) {
-#   pragma omp parallel for if(n_cells_ext > CS_THR_MIN)
-    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
+    ctx.parallel_for(n_cells, [=] (cs_lnum_t c_id) {
       cprod[c_id] = 0.5*(produc[c_id][0] + produc[c_id][1] + produc[c_id][2]);
+    });
   }
   else {
-#   pragma omp parallel for if(n_cells_ext > CS_THR_MIN)
-    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
+    ctx.parallel_for(n_cells, [=] (cs_lnum_t c_id) {
       cprod[c_id] = -(  cvara_rij[c_id][0] * gradv[c_id][0][0]
                       + cvara_rij[c_id][3] * gradv[c_id][0][1]
                       + cvara_rij[c_id][5] * gradv[c_id][0][2]
@@ -2456,13 +2462,13 @@ _solve_epsilon(int              phase_id,
                       + cvara_rij[c_id][5] * gradv[c_id][2][0]
                       + cvara_rij[c_id][4] * gradv[c_id][2][1]
                       + cvara_rij[c_id][2] * gradv[c_id][2][2]);
+    });
   }
 
   /* EBRSM */
   if (cs_glob_turb_model->iturb ==  CS_TURB_RIJ_EPSILON_EBRSM) {
 
-#   pragma omp parallel for if(n_cells_ext > CS_THR_MIN)
-    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+    ctx.parallel_for(n_cells, [=] (cs_lnum_t c_id) {
       /* Half-traces */
       const cs_real_t trprod = cprod[c_id];
       const cs_real_t trrij = 0.5 * cs_math_6_trace(cvara_rij[c_id]);
@@ -2485,15 +2491,14 @@ _solve_epsilon(int              phase_id,
       const cs_real_t crom_vol = crom[c_id] * cell_f_vol[c_id];
       rhs[c_id] -= crom_vol * ceps2 * cvara_ep[c_id] / xttdrb;
       fimp[c_id] += ceps2 * crom_vol * thetap / xttdrb;
-    }
+    });
 
   }
 
   /* SSG and LRR */
   else {
 
-#   pragma omp parallel for if(n_cells_ext > CS_THR_MIN)
-    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+    ctx.parallel_for(n_cells, [=] (cs_lnum_t c_id) {
       /* Half-traces */
       const cs_real_t trprod = cprod[c_id];
       const cs_real_t trrij = 0.5 * cs_math_6_trace(cvara_rij[c_id]);
@@ -2510,24 +2515,26 @@ _solve_epsilon(int              phase_id,
       const cs_real_t crom_vol = crom[c_id] * cell_f_vol[c_id];
       rhs[c_id]   -= crom_vol * ceps2 * cs_math_pow2(cvara_ep[c_id]) / trrij;
       fimp[c_id] += ceps2 * crom_vol / xttke * thetap;
-    }
+    });
 
   }
 
   /* Extrapolation of source terms (2nd order in time) */
   if (st_prv_id > -1) {
-#   pragma omp parallel for if(n_cells_ext > CS_THR_MIN)
-    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
+    ctx.parallel_for(n_cells, [=] (cs_lnum_t c_id) {
       c_st_prv[c_id] += w1[c_id];
+    });
   }
   else {
-#   pragma omp parallel for if(n_cells_ext > CS_THR_MIN)
-    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
+    ctx.parallel_for(n_cells, [=] (cs_lnum_t c_id) {
       rhs[c_id] += w1[c_id];
+    });
   }
 
   /* Buoyancy term
    * ------------- */
+
+  ctx.wait();
 
   /* FIXME use beta ... WARNING */
   if (cs_glob_turb_rans_model->has_buoyant_term == 1) {
@@ -2559,13 +2566,12 @@ _solve_epsilon(int              phase_id,
       = cs_field_by_name("anisotropic_turbulent_viscosity");
     const cs_real_6_t *visten = (const cs_real_6_t *)f_a_t_visc->val;
 
-#   pragma omp parallel for if(n_cells_ext > CS_THR_MIN)
-    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+    ctx.parallel_for(n_cells, [=] (cs_lnum_t c_id) {
       for (cs_lnum_t i = 0; i < 3; i++)
         viscce[c_id][i] = visten[c_id][i] / sigmae + viscl[c_id];
       for (cs_lnum_t i = 3; i < 6; i++)
         viscce[c_id][i] = visten[c_id][i] / sigmae;
-    }
+    });
 
     cs_face_anisotropic_viscosity_scalar(m,
                                          fvq,
@@ -2582,9 +2588,9 @@ _solve_epsilon(int              phase_id,
   else {
 
     if (eqp->idifft == 1) {
-#     pragma omp parallel for if(n_cells_ext > CS_THR_MIN)
-      for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
+      ctx.parallel_for(n_cells, [=] (cs_lnum_t c_id) {
         w1[c_id] = viscl[c_id] + visct[c_id]/sigmae;
+      });
     }
     else
       cs_array_real_copy(n_cells, viscl, w1);
@@ -2602,9 +2608,9 @@ _solve_epsilon(int              phase_id,
 
   if (st_prv_id > -1) {
     const cs_real_t thetp1 = 1.+thets;
-#   pragma omp parallel for if(n_cells_ext > CS_THR_MIN)
-    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
+    ctx.parallel_for(n_cells, [=] (cs_lnum_t c_id) {
       rhs[c_id] += thetp1*c_st_prv[c_id];
+    });
   }
 
   cs_solid_zone_set_zero_on_cells(1, rhs);
@@ -2657,11 +2663,13 @@ _solve_epsilon(int              phase_id,
   /* Free memory */
 
   CS_FREE_HD(dpvar);
-  BFT_FREE(w1);
+  CS_FREE_HD(w1);
   BFT_FREE(cprod);
   CS_FREE_HD(viscce);
   CS_FREE_HD(weighb);
   CS_FREE_HD(weighf);
+
+  ctx.wait();
 }
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
@@ -2696,6 +2704,11 @@ cs_turbulence_rij(int phase_id)
   const cs_lnum_t n_b_faces = m->n_b_faces;
   const cs_lnum_t n_i_faces = m->n_i_faces;
   const cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
+
+  cs_dispatch_context ctx;
+  std::chrono::high_resolution_clock::time_point t_start;
+  if (cs_glob_timer_kernels_flag > 0)
+    t_start = std::chrono::high_resolution_clock::now();
 
   const cs_real_t *cell_f_vol = fvq->cell_f_vol;
 
@@ -2754,8 +2767,7 @@ cs_turbulence_rij(int phase_id)
 
   if (c_st_prv != NULL) {
 
-#   pragma omp parallel for if(n_cells > CS_THR_MIN)
-    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+    ctx.parallel_for(n_cells, [=] (cs_lnum_t c_id) {
       for (cs_lnum_t ij = 0; ij < 6; ij++) {
         const cs_real_t tuexpr = c_st_prv[c_id][ij];
         /* For continuation and the next time step */
@@ -2771,20 +2783,19 @@ cs_turbulence_rij(int phase_id)
           fimp[c_id][ij][kl] *= -thetv;
         }
       }
-    }
+    });
 
   }
   else {
 
-#   pragma omp parallel for if(n_cells > CS_THR_MIN)
-    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+    ctx.parallel_for(n_cells, [=] (cs_lnum_t c_id) {
       for (cs_lnum_t ij = 0; ij < 6; ij++) {
         for (cs_lnum_t kl = 0; kl < 6; kl++) {
           rhs[c_id][ij] += fimp[c_id][ij][kl] * cvara_rij[c_id][kl];
           fimp[c_id][ij][kl] = cs_math_fmax(-fimp[c_id][ij][kl], 0.);
         }
       }
-    }
+    });
 
   }
 
@@ -2826,7 +2837,8 @@ cs_turbulence_rij(int phase_id)
 
   cs_real_6_t *cpro_press_correl = NULL;
   {
-    cs_field_t *f_psc = cs_field_by_name_try("algo:pressure_strain_correlation_rij");
+    cs_field_t *f_psc = cs_field_by_name_try
+                          ("algo:pressure_strain_correlation_rij");
     if (f_psc != NULL)
       cpro_press_correl = (cs_real_6_t *)f_psc->val;
   }
@@ -2836,7 +2848,7 @@ cs_turbulence_rij(int phase_id)
     produc = (cs_real_6_t *)cs_field_by_name_try("algo:production_rij")->val;
   }
   else {
-    BFT_MALLOC(_produc, n_cells_ext, cs_real_6_t);
+    CS_MALLOC_HD(_produc, n_cells_ext, cs_real_6_t, cs_alloc_mode);
     produc = _produc;
   }
 
@@ -2853,7 +2865,7 @@ cs_turbulence_rij(int phase_id)
     else if (f_vg != NULL)
       gradv = (cs_real_33_t *)f_vg->val;
     else {
-      BFT_MALLOC(_gradv, n_cells_ext, cs_real_33_t);
+      CS_MALLOC_HD(_gradv, n_cells_ext, cs_real_33_t, cs_alloc_mode);
       gradv = _gradv;
     }
   }
@@ -2883,7 +2895,7 @@ cs_turbulence_rij(int phase_id)
     const cs_real_t xkappa = cs_turb_xkappa;
 
     cs_real_3_t *grad;
-    BFT_MALLOC(grad, n_cells_ext, cs_real_3_t);
+    CS_MALLOC_HD(grad, n_cells_ext, cs_real_3_t, cs_alloc_mode);
 
     /* Compute the gradient of Alpha */
     cs_field_gradient_scalar(f_alpbl,
@@ -2891,8 +2903,7 @@ cs_turbulence_rij(int phase_id)
                              1,      /* inc */
                              grad);
 
-#   pragma omp parallel for if(n_cells > CS_THR_MIN)
-    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+    ctx.parallel_for(n_cells, [=] (cs_lnum_t c_id) {
 
       /* Velocity magnitude */
       cs_real_t xunorm = cs_math_3_norm(vel[c_id]);
@@ -2948,9 +2959,9 @@ cs_turbulence_rij(int phase_id)
       cvar_rij[c_id][4] = -(1.-alpha3)*(xnal[1]*xnal[2])*tke;
       cvar_rij[c_id][5] = -(1.-alpha3)*(xnal[0]*xnal[2])*tke;
 
-    } /* End of loop on cells */
+    }); /* End of loop on cells */
 
-    BFT_FREE(grad);
+    CS_FREE_HD(grad);
 
     cs_field_current_to_previous(f_vel);
     cs_field_current_to_previous(f_rij);
@@ -2964,8 +2975,7 @@ cs_turbulence_rij(int phase_id)
   /* Compute the production term for Rij
    * ----------------------------------- */
 
-# pragma omp parallel for if(n_cells > CS_THR_MIN)
-  for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+  ctx.parallel_for(n_cells, [=] (cs_lnum_t c_id) {
 
     /* Pij = - (Rik dUj/dXk + dUi/dXk Rkj)
      * Pij is stored as (P11, P22, P33, P12, P23, P13) */
@@ -2982,7 +2992,7 @@ cs_turbulence_rij(int phase_id)
                          + gradv[c_id][i][2] * cvara_rij[c_id][_t2v[2][j]]
                          );
     }
-  }
+  });
 
   /* Compute the pressure correlation  term for Rij
    * ----------------------------------------------
@@ -2998,8 +3008,7 @@ cs_turbulence_rij(int phase_id)
     const cs_real_t crij1 = cs_turb_crij1;
     const cs_real_t crij2 = cs_turb_crij2;
 
-#   pragma omp parallel for if(n_cells > CS_THR_MIN)
-    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+    ctx.parallel_for(n_cells, [=] (cs_lnum_t c_id) {
       const cs_real_t k = 0.5 * cs_math_6_trace(cvara_rij[c_id]);
       const cs_real_t p = 0.5 * cs_math_6_trace(produc[c_id]);
       for (cs_lnum_t ii = 0; ii < 3; ii++)
@@ -3010,15 +3019,15 @@ cs_turbulence_rij(int phase_id)
         cpro_press_correl[c_id][ii]
           = - crij1 * cvar_ep[c_id] /  k * (cvara_rij[c_id][ii])
             - crij2 * (produc[c_id][ii]);
-    }
+    });
   }
 
   /* Compute the density gradient for buoyant terms
    * ---------------------------------------------- */
 
   if (turb_rans_model->has_buoyant_term == 1) {
-    BFT_MALLOC(up_rhop, n_cells_ext, cs_real_3_t);
-    _compute_up_rhop(phase_id, up_rhop);
+    CS_MALLOC_HD(up_rhop, n_cells_ext, cs_real_3_t, cs_alloc_mode);
+    _compute_up_rhop(phase_id, ctx, up_rhop);
   }
 
   /* Prepare to solve Rij, in a manner similar
@@ -3042,14 +3051,13 @@ cs_turbulence_rij(int phase_id)
 
     cs_real_t *lag_st_i = cs_field_by_name("lagr_st_imp_velocity")->val;
 
-#   pragma omp parallel for if(n_cells > CS_THR_MIN)
-    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+    ctx.parallel_for(n_cells, [=] (cs_lnum_t c_id) {
       cs_real_t st_i = cell_f_vol[c_id] * lag_st_i[c_id];
       for (cs_lnum_t ij = 0; ij < 6; ij++) {
         rhs[c_id][ij] += cell_f_vol[c_id] * lagr_st_rij[c_id][ij];
         fimp[c_id][ij][ij] += cs_math_fmax(-st_i, 0.);
       }
-    }
+    });
   }
 
   /* Mass source terms
@@ -3080,7 +3088,7 @@ cs_turbulence_rij(int phase_id)
                          elt_ids,
                          mst_type,
                          cell_f_vol,
-                         (cs_real_t*)cvara_rij,
+                         (const cs_real_t*)cvara_rij,
                          mst_val,
                          mst_val_p,
                          (cs_real_t*)rhs,
@@ -3108,163 +3116,178 @@ cs_turbulence_rij(int phase_id)
   CS_MALLOC_HD(weighf, n_i_faces, cs_real_2_t, cs_alloc_mode);
   CS_MALLOC_HD(viscce, n_cells_ext, cs_real_6_t, cs_alloc_mode);
 
-   if (turb_model->iturb == CS_TURB_RIJ_EPSILON_LRR) {
-     if (turb_rans_model->irijco == 1)
-       _pre_solve_lrr(f_rij, phase_id, gradv,
-                      produc, up_rhop,
-                      viscf, viscb, viscce,
-                      rhs, fimp,
-                      weighf, weighb);
-     else
-       _pre_solve_lrr_sg(f_rij, phase_id,
-                         produc, up_rhop,
-                         viscf, viscb, viscce,
-                         rhs, fimp,
-                         weighf, weighb);
+  if (turb_model->iturb == CS_TURB_RIJ_EPSILON_LRR) {
+    if (turb_rans_model->irijco == 1)
+      _pre_solve_lrr(f_rij, phase_id, gradv,
+                     produc, up_rhop,
+                     viscf, viscb, viscce,
+                     rhs, fimp,
+                     weighf, weighb);
+    else
+      _pre_solve_lrr_sg(f_rij, phase_id,
+                        produc, up_rhop,
+                        viscf, viscb, viscce,
+                        rhs, fimp,
+                        weighf, weighb);
 
-   }
-   else { /* if (   turb_model->iturb == CS_TURB_RIJ_EPSILON_SSG
-                 || turb_model->iturb == CS_TURB_RIJ_EPSILON_EBRSM) */
-     _pre_solve_ssg(f_rij, phase_id, gradv,
-                    produc, up_rhop,
-                    viscf, viscb, viscce,
-                    rhs, fimp,
-                    weighf, weighb);
-   }
+  }
+  else { /* if (   turb_model->iturb == CS_TURB_RIJ_EPSILON_SSG
+                || turb_model->iturb == CS_TURB_RIJ_EPSILON_EBRSM) */
+    _pre_solve_ssg(f_rij, phase_id, gradv,
+                   produc, up_rhop,
+                   viscf, viscb, viscce,
+                   rhs, fimp,
+                   weighf, weighb);
+  }
 
-   cs_real_6_t  *coefap = (cs_real_6_t *)f_rij->bc_coeffs->a;
-   cs_real_6_t  *cofafp = (cs_real_6_t *)f_rij->bc_coeffs->af;
-   cs_real_66_t *cofbfp = (cs_real_66_t *)f_rij->bc_coeffs->bf;
+  cs_real_6_t  *coefap = (cs_real_6_t *)f_rij->bc_coeffs->a;
+  cs_real_6_t  *cofafp = (cs_real_6_t *)f_rij->bc_coeffs->af;
+  cs_real_66_t *cofbfp = (cs_real_66_t *)f_rij->bc_coeffs->bf;
 
-   /* Add Rusanov fluxes */
-   if (cs_glob_turb_rans_model->irijnu == 2) {
-     cs_real_t *ipro_rusanov = cs_field_by_name("i_rusanov_diff")->val;
-     for (cs_lnum_t face_id = 0; face_id < n_i_faces; face_id++) {
-       viscf[face_id] = fmax(0.5 * ipro_rusanov[face_id], viscf[face_id]);
-     }
+  /* Add Rusanov fluxes */
+  if (cs_glob_turb_rans_model->irijnu == 2) {
+    cs_real_t *ipro_rusanov = cs_field_by_name("i_rusanov_diff")->val;
+    for (cs_lnum_t face_id = 0; face_id < n_i_faces; face_id++) {
+      viscf[face_id] = fmax(0.5 * ipro_rusanov[face_id], viscf[face_id]);
+    }
 
-     const cs_real_3_t *restrict b_face_normal
-       = (const cs_real_3_t *restrict)fvq->b_face_normal;
-     cs_real_t *b_lam = cs_field_by_name("b_rusanov_diff")->val;
+    const cs_real_3_t *restrict b_face_normal
+      = (const cs_real_3_t *restrict)fvq->b_face_normal;
+    cs_real_t *b_lam = cs_field_by_name("b_rusanov_diff")->val;
 
-     for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++) {
-       cs_real_t n[3];
-       cs_math_3_normalize(b_face_normal[face_id], n);
-       cs_real_66_t bf;
-       const cs_real_t kr_33[3][3] = {{1., 0., 0.},
-                                      {0., 1., 0.},
-                                      {0., 0., 1.}};
+    for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++) {
+      cs_real_t n[3];
+      cs_math_3_normalize(b_face_normal[face_id], n);
+      cs_real_66_t bf;
+      const cs_real_t kr_33[3][3] = {{1., 0., 0.},
+                                     {0., 1., 0.},
+                                     {0., 0., 1.}};
 
-       for (cs_lnum_t ij = 0; ij < 6; ij++) {
-         cs_lnum_t i = _iv2t[ij];
-         cs_lnum_t j = _jv2t[ij];
-         for (cs_lnum_t kl = 0; kl < 6; kl++) {
-           cs_lnum_t k = _iv2t[kl];
-           cs_lnum_t l = _jv2t[kl];
-           bf[ij][kl] = b_lam[face_id] * n[l] *(
-                 n[i] * (kr_33[j][k] - n[j] * n[k])
-               + n[j] * (kr_33[i][k] - n[i] * n[k])
-               );
-         }
-       }
+      for (cs_lnum_t ij = 0; ij < 6; ij++) {
+        cs_lnum_t i = _iv2t[ij];
+        cs_lnum_t j = _jv2t[ij];
+        for (cs_lnum_t kl = 0; kl < 6; kl++) {
+          cs_lnum_t k = _iv2t[kl];
+          cs_lnum_t l = _jv2t[kl];
+          bf[ij][kl] = b_lam[face_id] * n[l]
+                       * (  n[i] * (kr_33[j][k] - n[j]*n[k])
+                          + n[j] * (kr_33[i][k] - n[i]*n[k]));
+        }
+      }
 
-       for (cs_lnum_t i = 0; i < 6; i++) {
-         for (cs_lnum_t j = 0; j < 6; j++) {
-           cofbfp[face_id][i][j] +=  bf[i][j];
-           cofafp[face_id][i] -= bf[i][j] * coefap[face_id][j];
-         }
-       }
+      for (cs_lnum_t i = 0; i < 6; i++) {
+        for (cs_lnum_t j = 0; j < 6; j++) {
+          cofbfp[face_id][i][j] +=  bf[i][j];
+          cofafp[face_id][i] -= bf[i][j] * coefap[face_id][j];
+        }
+      }
 
-     }
+    }
 
-   }
+  }
 
-   /* Solve Rij
-    * --------- */
+  /* Solve Rij
+   * --------- */
 
-   if (c_st_prv != NULL) {
-     const cs_real_t thetp1 = 1. + thets;
-#    pragma omp parallel for if(n_cells > CS_THR_MIN)
-     for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
-       for (cs_lnum_t ii = 0; ii < 6; ii++)
-         rhs[c_id][ii] += thetp1 * c_st_prv[c_id][ii];
-   }
+  if (c_st_prv != NULL) {
+    const cs_real_t thetp1 = 1. + thets;
+     ctx.parallel_for(n_cells, [=] (cs_lnum_t c_id) {
+      for (cs_lnum_t ii = 0; ii < 6; ii++)
+        rhs[c_id][ii] += thetp1 * c_st_prv[c_id][ii];
+     });
+  }
 
-   cs_solid_zone_set_zero_on_cells(6, (cs_real_t *)rhs);
+  cs_solid_zone_set_zero_on_cells(6, (cs_real_t *)rhs);
 
-   /* All boundary convective flux with upwind */
-   int icvflb = 0;
+  /* All boundary convective flux with upwind */
+  int icvflb = 0;
 
-   cs_equation_param_t eqp_loc = *eqp;
-   eqp_loc.istat  = -1;
-   eqp_loc.iwgrec = 0;     /* Warning, may be overwritten if a field */
-   eqp_loc.theta = thetv;
-   eqp_loc.blend_st = 0;   /* Warning, may be overwritten if a field */
+  cs_equation_param_t eqp_loc = *eqp;
+  eqp_loc.istat  = -1;
+  eqp_loc.iwgrec = 0;     /* Warning, may be overwritten if a field */
+  eqp_loc.theta = thetv;
+  eqp_loc.blend_st = 0;   /* Warning, may be overwritten if a field */
 
-   cs_equation_iterative_solve_tensor(cs_glob_time_step_options->idtvar,
-                                      f_rij->id,
-                                      NULL,
-                                      &eqp_loc,
-                                      cvara_rij,
-                                      cvara_rij,
-                                      f_rij->bc_coeffs,
-                                      imasfl,
-                                      bmasfl,
-                                      viscf,
-                                      viscb,
-                                      viscf,
-                                      viscb,
-                                      viscce,
-                                      weighf,
-                                      weighb,
-                                      icvflb,
-                                      NULL,
-                                      fimp,
-                                      rhs,
-                                      cvar_rij);
+  ctx.wait();
 
-   CS_FREE_HD(viscce);
-   CS_FREE_HD(fimp);
-   CS_FREE_HD(rhs);
+  cs_equation_iterative_solve_tensor(cs_glob_time_step_options->idtvar,
+                                     f_rij->id,
+                                     NULL,
+                                     &eqp_loc,
+                                     cvara_rij,
+                                     cvara_rij,
+                                     f_rij->bc_coeffs,
+                                     imasfl,
+                                     bmasfl,
+                                     viscf,
+                                     viscb,
+                                     viscf,
+                                     viscb,
+                                     viscce,
+                                     weighf,
+                                     weighb,
+                                     icvflb,
+                                     NULL,
+                                     fimp,
+                                     rhs,
+                                     cvar_rij);
 
-   /* Solve Epsilon
-    * ------------- */
+  CS_FREE_HD(viscce);
+  CS_FREE_HD(fimp);
+  CS_FREE_HD(rhs);
 
-   {
-     cs_real_t *_rhs, *_fimp;
-     CS_MALLOC_HD(_rhs, n_cells_ext, cs_real_t, cs_alloc_mode);
-     CS_MALLOC_HD(_fimp, n_cells_ext, cs_real_t, cs_alloc_mode);
+  /* Solve Epsilon
+   * ------------- */
 
-     _solve_epsilon(phase_id,
-                    gradv,
-                    produc,
-                    up_rhop,
-                    viscf,
-                    viscb,
-                    _rhs,
-                    _fimp);
+  {
+    cs_real_t *_rhs, *_fimp;
+    CS_MALLOC_HD(_rhs, n_cells_ext, cs_real_t, cs_alloc_mode);
+    CS_MALLOC_HD(_fimp, n_cells_ext, cs_real_t, cs_alloc_mode);
 
-     BFT_FREE(_fimp);
-     BFT_FREE(_rhs);
-   }
+    _solve_epsilon(phase_id,
+                   gradv,
+                   produc,
+                   up_rhop,
+                   viscf,
+                   viscb,
+                   _rhs,
+                   _fimp);
 
-   /* Clipping
-    * -------- */
+    CS_FREE_HD(_fimp);
+    CS_FREE_HD(_rhs);
+  }
 
-   cs_turbulence_rij_clip(phase_id, n_cells);
+  /* Clipping
+   * -------- */
 
-   /* Free memory */
+  cs_turbulence_rij_clip(phase_id, n_cells);
 
-   BFT_FREE(_gradv);
-   produc = NULL;
-   BFT_FREE(_produc);
+  /* Free memory */
 
-   BFT_FREE(up_rhop);
+  CS_FREE_HD(_gradv);
+  produc = NULL;
+  CS_FREE_HD(_produc);
 
-   CS_FREE_HD(viscf);
-   CS_FREE_HD(viscb);
-   CS_FREE_HD(weighb);
-   CS_FREE_HD(weighf);
+  CS_FREE_HD(up_rhop);
+
+  CS_FREE_HD(viscf);
+  CS_FREE_HD(viscb);
+  CS_FREE_HD(weighb);
+  CS_FREE_HD(weighf);
+
+  ctx.wait();
+
+  if (cs_glob_timer_kernels_flag > 0) {
+    std::chrono::high_resolution_clock::time_point
+      t_stop = std::chrono::high_resolution_clock::now();
+
+    std::chrono::microseconds elapsed;
+    printf("%d: %s", cs_glob_rank_id, __func__);
+
+    elapsed = std::chrono::duration_cast
+      <std::chrono::microseconds>(t_stop - t_start);
+    printf(", total = %ld\n", elapsed.count());
+  }
 }
 
 /*----------------------------------------------------------------------------*/
@@ -3290,6 +3313,10 @@ cs_turbulence_rij_solve_alpha(int        f_id,
   const cs_lnum_t n_b_faces = m->n_b_faces;
   const cs_lnum_t n_i_faces = m->n_i_faces;
   const cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
+
+  cs_dispatch_context ctx;
+  cs_dispatch_sum_type_t i_sum_type = ctx.get_parallel_for_i_faces_sum_type(m);
+  cs_dispatch_sum_type_t b_sum_type = ctx.get_parallel_for_b_faces_sum_type(m);
 
   const cs_real_t *distb = fvq->b_dist;
   const cs_real_t *cell_f_vol = fvq->cell_f_vol;
@@ -3346,11 +3373,10 @@ cs_turbulence_rij_solve_alpha(int        f_id,
   cs_real_t *fimp, *rhs;
 
   /* Allocate temporary arrays */
-  BFT_MALLOC(rhs, n_cells_ext, cs_real_t);
-  BFT_MALLOC(fimp, n_cells_ext, cs_real_t);
+  CS_MALLOC_HD(rhs, n_cells_ext, cs_real_t, cs_alloc_mode);
+  CS_MALLOC_HD(fimp, n_cells_ext, cs_real_t, cs_alloc_mode);
 
-  cs_array_real_fill_zero(n_cells, rhs);
-  cs_array_real_fill_zero(n_cells, fimp);
+  cs_arrays_set_value<cs_real_t, 1>(n_cells, 0., rhs, fimp);
 
   /* Source term of alpha
    *  \f$ rhs = \dfrac{1}{L^2 (\alpha)} - \dfrac{1}{L^2}\f$
@@ -3375,20 +3401,18 @@ cs_turbulence_rij_solve_alpha(int        f_id,
     const cs_real_t xlldrb = 50.0 * viscl0 / ro0 / (0.050*uref);
     const cs_real_t l2 = cs_math_pow2(xlldrb);
 
-#   pragma omp parallel for if(n_cells > CS_THR_MIN)
-    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+    ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
       /* Explicit term */
       rhs[c_id] = cell_f_vol[c_id]*(1.0-cvara_al[c_id]) / l2;
 
       /* Implicit term */
       fimp[c_id] = (fimp[c_id]+cell_f_vol[c_id]*thetap) / l2;
-    }
+    });
 
   }
   else {
 
-#   pragma omp parallel for if(n_cells > CS_THR_MIN)
-    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+    ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
       const cs_real_t xk
         = d1s2 * (cvara_rij[c_id][0] + cvara_rij[c_id][1] + cvara_rij[c_id][2]);
       const cs_real_t xnu = viscl[c_id] / crom[c_id];
@@ -3410,9 +3434,11 @@ cs_turbulence_rij_solve_alpha(int        f_id,
 
       /* Implicit term */
       fimp[c_id] = (fimp[c_id]+cell_f_vol[c_id]*thetap) / l2;
-    }
+    });
 
   }
+
+  ctx.wait();
 
   /* Calculation of viscf and viscb for cs_equation_iterative_solve_scalar. */
   cs_real_t *w1, *viscf, *viscb;
@@ -3448,7 +3474,7 @@ cs_turbulence_rij_solve_alpha(int        f_id,
   eqp_loc.blend_st = 0;   /* Warning, may be overwritten if a field */
 
   cs_real_t *dpvar;
-  BFT_MALLOC(dpvar, n_cells_ext, cs_real_t);
+  CS_MALLOC_HD(dpvar, n_cells_ext, cs_real_t, cs_alloc_mode);
 
   cs_equation_iterative_solve_scalar(cs_glob_time_step_options->idtvar,
                                      1, /* init */
@@ -3479,8 +3505,8 @@ cs_turbulence_rij_solve_alpha(int        f_id,
                                      NULL,
                                      NULL);
 
-  BFT_FREE(dpvar);
-  BFT_FREE(rhs);
+  CS_FREE_HD(dpvar);
+  CS_FREE_HD(rhs);
 
   cs_solid_zone_set_scalar_on_cells(1., cvar_al);
 
@@ -3488,7 +3514,7 @@ cs_turbulence_rij_solve_alpha(int        f_id,
      ======== */
 
   cs_real_t *alpha_min;
-  BFT_MALLOC(alpha_min, n_cells_ext, cs_real_t);
+  CS_MALLOC_HD(alpha_min, n_cells_ext, cs_real_t, cs_alloc_mode);
 
   /* Compute a first estimator of the minimal value of alpha per cell.
    * This is deduced from "alpha/L^2 - div(grad alpha) = 1/L^2" and assuming that
@@ -3498,25 +3524,31 @@ cs_turbulence_rij_solve_alpha(int        f_id,
   cs_array_real_fill_zero(n_cells_ext, alpha_min);
   cs_array_real_copy(n_cells, fimp, alpha_min);
 
-  for (cs_lnum_t face_id = 0; face_id < n_i_faces; face_id++) {
+  ctx.parallel_for_i_faces(m, [=] CS_F_HOST_DEVICE (cs_lnum_t  face_id) {
     const cs_lnum_t ii = i_face_cells[face_id][0];
     const cs_lnum_t jj = i_face_cells[face_id][1];
-    alpha_min[ii] += viscf[face_id];
-    alpha_min[jj] += viscf[face_id];
-  }
+    if (ii < n_cells)
+      cs_dispatch_sum(&alpha_min[ii], viscf[face_id], i_sum_type);
+    if (jj < n_cells)
+      cs_dispatch_sum(&alpha_min[jj], viscf[face_id], i_sum_type);
+  });
 
-  for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++) {
+  ctx.parallel_for_b_faces(m, [=] CS_F_HOST_DEVICE (cs_lnum_t  face_id) {
     const cs_lnum_t ii = b_face_cells[face_id];
-    alpha_min[ii] += viscb[face_id]/distb[face_id];
-  }
+    if (ii < n_cells)
+      cs_dispatch_sum(&alpha_min[ii], viscb[face_id]/distb[face_id], b_sum_type);
+  });
 
-  for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
+  ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
     alpha_min[c_id] = fimp[c_id]/alpha_min[c_id];
+  });
+
+  ctx.wait();
 
   _clip_alpha(f_id, n_cells, alpha_min);
 
-  BFT_FREE(alpha_min);
-  BFT_FREE(fimp);
+  CS_FREE_HD(alpha_min);
+  CS_FREE_HD(fimp);
   CS_FREE_HD(viscf);
   CS_FREE_HD(viscb);
 }
@@ -3539,6 +3571,8 @@ cs_turbulence_rij_init_by_ref_quantities(cs_real_t  uref,
 {
   const cs_lnum_t n_cells = cs_glob_mesh->n_cells;
 
+  cs_dispatch_context ctx;
+
   cs_real_t *cvar_ep = CS_F_(eps)->val;
   cs_real_6_t *cvar_rij = (cs_real_6_t *)CS_F_(rij)->val;
 
@@ -3550,8 +3584,7 @@ cs_turbulence_rij_init_by_ref_quantities(cs_real_t  uref,
                                                 tr_ii diagonal) */
     const cs_real_t ep = pow(k, 1.5) * cs_turb_cmu / almax;
 
-#   pragma omp parallel if(n_cells > CS_THR_MIN)
-    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+    ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
       cvar_rij[c_id][0] = tr_ii;
       cvar_rij[c_id][1] = tr_ii;
       cvar_rij[c_id][2] = tr_ii;
@@ -3559,19 +3592,18 @@ cs_turbulence_rij_init_by_ref_quantities(cs_real_t  uref,
       cvar_rij[c_id][4] = 0;
       cvar_rij[c_id][5] = 0;
       cvar_ep[c_id] = ep;
-    }
+    });
 
     cs_turbulence_rij_clip(-1, n_cells);
   }
 
   /* Without reference velocity */
   else {
-#   pragma omp parallel if(n_cells > CS_THR_MIN)
-    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+    ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
       for (cs_lnum_t i = 0; i < 6; i++)
         cvar_rij[c_id][i] = -cs_math_big_r;
       cvar_ep[c_id] =  -cs_math_big_r;
-    }
+    });
   }
 
   cs_solid_zone_set_zero_on_cells(6, (cs_real_t *)cvar_rij);
@@ -3584,6 +3616,7 @@ cs_turbulence_rij_init_by_ref_quantities(cs_real_t  uref,
     cs_real_t *cvar_al = CS_F_(alp_bl)->val;
     cs_array_real_set_scalar(n_cells, 1., cvar_al);
   }
+  ctx.wait();
 }
 
 /*----------------------------------------------------------------------------*/
@@ -3694,7 +3727,7 @@ cs_turbulence_rij_clip(int        phase_id,
       }
 
       /* Check if R is positive and ill-conditioned (since the former
-       * will induce the latter after clipping ...*/
+       * will induce the latter after clipping...) */
 
       const cs_real_t trrij = cs_math_6_trace(cvar_rij[c_id]);
 
@@ -3843,6 +3876,8 @@ cs_turbulence_rij_mu_t(int  phase_id)
   const cs_lnum_t n_cells = cs_glob_mesh->n_cells;
   const cs_lnum_t n_cells_ext = cs_glob_mesh->n_cells_with_ghosts;
 
+  cs_dispatch_context ctx;
+
   /* Initialization
    * ============== */
 
@@ -3872,13 +3907,12 @@ cs_turbulence_rij_mu_t(int  phase_id)
   if (cs_glob_turb_model->iturb == CS_TURB_RIJ_EPSILON_EBRSM) {
 
     cs_real_3_t *grad_al = NULL;
-    BFT_MALLOC(grad_al, n_cells_ext, cs_real_3_t);
+    CS_MALLOC_HD(grad_al, n_cells_ext, cs_real_3_t, cs_alloc_mode);
     cs_field_gradient_scalar(f_alpbl, true, 1, grad_al);
 
     const cs_real_t *cvar_al = f_alpbl->val;
 
-#   pragma omp parallel if(n_cells > CS_THR_MIN)
-    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+    ctx.parallel_for(n_cells, [=] (cs_lnum_t c_id) {
       cs_real_t xrij[3][3];
       xrij[0][0] = cvar_rij[c_id][0];
       xrij[1][1] = cvar_rij[c_id][1];
@@ -3910,9 +3944,9 @@ cs_turbulence_rij_mu_t(int  phase_id)
       xrnn = cs_math_fmax(xrnn, 1.e-12);
 
       visct[c_id] = crom[c_id] * cs_turb_cmu * xrnn * xk / xe;
-    }
+    });
 
-    BFT_FREE(grad_al);
+    CS_FREE_HD(grad_al);
 
   }
 
@@ -3920,16 +3954,17 @@ cs_turbulence_rij_mu_t(int  phase_id)
 
   else {
 
-#   pragma omp parallel if(n_cells > CS_THR_MIN)
-    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+    ctx.parallel_for(n_cells, [=] (cs_lnum_t c_id) {
 
       cs_real_t xk = 0.5 * cs_math_6_trace(cvar_rij[c_id]);
       cs_real_t xe = cvar_ep[c_id];
 
       visct[c_id] = crom[c_id] * cs_turb_cmu * cs_math_pow2(xk) / xe;
-    }
+    });
 
   }
+
+  ctx.wait();
 
   /* Zero turbulent viscosity for solid cells */
 
@@ -4009,4 +4044,4 @@ cs_turbulence_rij_compute_rusanov(void)
 
 /*----------------------------------------------------------------------------*/
 
- END_C_DECLS
+END_C_DECLS

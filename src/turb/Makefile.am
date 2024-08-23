@@ -88,7 +88,7 @@ cs_turbulence_ke.cpp \
 cs_turbulence_kw.cpp \
 cs_turbulence_ml.c \
 cs_turbulence_model.c \
-cs_turbulence_rij.c \
+cs_turbulence_rij.cpp \
 cs_turbulence_rit.c \
 cs_turbulence_rotation.c \
 cs_turbulence_sa.c \
