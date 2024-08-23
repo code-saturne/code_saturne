@@ -614,23 +614,34 @@ cs_lagr_car(int              iprev,
                                 0,
                                 -1);
 
+    stat_type = cs_lagr_stat_type_from_attr_id(CS_LAGR_VELOCITY_SEEN);
+
+    cs_field_t *stat_vel_s
+      = cs_lagr_stat_get_moment(stat_type,
+                                CS_LAGR_STAT_GROUP_PARTICLE,
+                                CS_LAGR_MOMENT_MEAN,
+                                0,
+                                -1);
+
+
+
     cs_field_t *stat_w = cs_lagr_stat_get_stat_weight(0);
 
     for (cs_lnum_t cell_id= 0; cell_id < cs_glob_mesh->n_cells ; cell_id++) {
-      /* Compute: II = ( -grad(P)/Rom(f)+grad(<Vf>)*(<Up>-<Uf>) + g ) */
+      /* Compute: II = ( -grad(P)/Rom(f)+grad(<Uf>)*(<Up>-<Us>) + g ) */
 
       cs_real_t romf = extra->cromf->val[cell_id];
 
-      for (int id = 0; id < 3; id++) {
+      for (int i = 0; i < 3; i++) {
 
-        piil[cell_id][id] = -gradpr[cell_id][id] / romf + grav[id];
+        piil[cell_id][i] = -gradpr[cell_id][i] / romf + grav[i];
 
         if (stat_w->val[cell_id] > cs_glob_lagr_stat_options->threshold) {
 
-          for (cs_lnum_t i = 0; i < 3; i++) {
-            cs_real_t vpm   = stat_vel->val[cell_id*3 + i];
-            cs_real_t fluid_vel = extra->vel->vals[iprev][cell_id*3 + i];
-            piil[cell_id][id] += gradvf[cell_id][id][i] * (vpm - fluid_vel);
+          for (cs_lnum_t j = 0; j < 3; j++) {
+            cs_real_t vpm   = stat_vel->val[cell_id*3 + j];
+            cs_real_t vsm   = stat_vel_s->val[cell_id*3 + j];
+            piil[cell_id][i] += gradvf[cell_id][i][j] * (vpm - vsm);
           }
 
         }

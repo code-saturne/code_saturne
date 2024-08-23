@@ -729,6 +729,7 @@ cs_lagr_options_definition(int         is_restart,
 
     /* Velocity statistics are needed for this model */
     cs_lagr_stat_activate_attr(CS_LAGR_VELOCITY);
+    cs_lagr_stat_activate_attr(CS_LAGR_VELOCITY_SEEN);
 
     /* Force immediate activation of volume statistics
        (may be adjusted later based on restart time step) */

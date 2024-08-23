@@ -213,6 +213,7 @@ _lages1(cs_real_t           dtp,
   /* Obtain the mean particle velocity for each cell, if present */
 
   cs_field_t *stat_vel = NULL;
+  cs_field_t *stat_vel_s = NULL;
 
   if (   cs_glob_lagr_model->shape == CS_LAGR_SHAPE_SPHERE_MODEL
       && cs_glob_lagr_model->modcpl) {
@@ -221,6 +222,12 @@ _lages1(cs_real_t           dtp,
                                        CS_LAGR_STAT_GROUP_PARTICLE,
                                        CS_LAGR_MOMENT_MEAN,
                                        0, -1);
+    stat_type = cs_lagr_stat_type_from_attr_id(CS_LAGR_VELOCITY_SEEN);
+    stat_vel_s = cs_lagr_stat_get_moment(stat_type,
+                                       CS_LAGR_STAT_GROUP_PARTICLE,
+                                       CS_LAGR_MOMENT_MEAN,
+                                       0, -1);
+
   }
 
   /* Integrate SDE's over particles
@@ -332,11 +339,15 @@ _lages1(cs_real_t           dtp,
           cs_real_t dir[3];
 
           /* Obtain the mean particle velocity for each cell */
-          const cs_real_t *fluid_vel = (cs_real_t *)loc_fluid_vel;
-          const cs_real_t *mean_part_vel = stat_vel->val + (cell_id * 3);
+          const cs_real_t *mean_part_vel_p = stat_vel->val + (cell_id * 3);
+          const cs_real_t *mean_part_vel_s = stat_vel_s->val + (cell_id * 3);
 
+          /* Relative mean velocity
+           * <u_p> - <u_s> = <u_r>
+           * See Minier et al 2024.
+           * */
           for (cs_lnum_t i = 0; i < 3; i++)
-            dir[i] = mean_part_vel[i] - fluid_vel[i];
+            dir[i] = mean_part_vel_p[i] - mean_part_vel_s[i];
           cs_math_3_normalize(dir, dir);
 
           // Rotate the frame of reference with respect to the
@@ -2770,7 +2781,7 @@ cs_lagr_sde(cs_real_t           dt_p,
 
   BFT_MALLOC(romp, p_set->n_particles, cs_real_t);
 
-  /* Allocate temporay arrays  */
+  /* Allocate temporary arrays  */
   cs_real_33_t *vagaus;
   BFT_MALLOC(vagaus, p_set->n_particles, cs_real_33_t);
 
