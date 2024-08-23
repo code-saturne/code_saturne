@@ -115,6 +115,23 @@ _status(int i)
   return (i > 0) ? _(_astat[1]) : _(_astat[0]);
 }
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Return string indicating on/off depending on boolean value
+ *
+ * \param  b  input bool
+ *
+ * \return  status string, possibly translated
+ */
+/*----------------------------------------------------------------------------*/
+
+static const char *
+_status_b(bool i)
+{
+  return (i == true) ? _(_astat[1]) : _(_astat[0]);
+}
+
+
 /*----------------------------------------------------------------*/
 /*!
  *\brief Computes min/max for boundary statistics.
@@ -484,6 +501,11 @@ cs_lagr_log_setup(void)
      _status(cs_glob_lagr_model->idiffl),
      cs_glob_lagr_model->modcpl,
      cs_turb_crij_c0);
+
+  cs_log_printf
+    (CS_LOG_SETUP,
+     _("\n  Take mean viscous term into account: %s\n"),
+     _status_b(cs_glob_lagr_model->viscous_terms));
 
   cs_log_printf
     (CS_LOG_SETUP,
