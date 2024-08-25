@@ -386,6 +386,7 @@ if (mod(ntcabs,nfatr1).eq.0.or.ideb.eq.0) then
       qvray(k) = 0.d0
       fneray(k) = 0.d0
       ncray(k) = 0.d0
+      aeroso(k) = aevert(k, ii)
 
       ! initialize with standard atmosphere
       call atmstd(zray(k), preray(k), temray(k), romray(k))
