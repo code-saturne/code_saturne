@@ -268,7 +268,7 @@ _turb_flux_st(const char          *name,
       cs_real_t gk = 0;
       /* FIXME make buoyant term coherent elsewhere */
       if (cpro_beta != NULL && rans_mdl->has_buoyant_term == 1)
-        gk = cpro_beta[c_id] * cs_math_3_dot_product(xuta[c_id], grav);
+        gk = - cpro_beta[c_id] * cs_math_3_dot_product(xuta[c_id], grav);
 
       xxc1 = 1.+2.*(1.-cvar_al[c_id])*(pk+gk)/cvar_ep[c_id];
       xxc2 = 0.5*(1.+1./prdtl)*(1.-0.3*(1.-cvar_al[c_id])
@@ -375,7 +375,6 @@ _turb_flux_st(const char          *name,
  * \param[in]     gradv              mean velocity gradient
  * \param[in]     gradt              mean scalar gradient
  * \param[in]     grad_al            alpha scalar gradient
- * \param[in]     grav               gravity
  * \param[out]    xut                calculated variables at cell centers
  *                                    (at current and previous time steps)
  * \param[out]    thflxf             thermal flux on interior faces
@@ -395,7 +394,6 @@ _thermal_flux_and_diff(cs_field_t         *f,
                        const cs_real_33_t  gradv[],
                        const cs_real_3_t   gradt[],
                        const cs_real_3_t   grad_al[],
-                       const cs_real_t     grav[],
                        cs_real_3_t         xut[],
                        cs_real_t           thflxf[],
                        cs_real_t           thflxb[],
@@ -446,7 +444,7 @@ _thermal_flux_and_diff(cs_field_t         *f,
     cvar_al = cs_field_by_name(fname)->val;
   }
 
-  const cs_real_t *gxyz = cs_glob_physical_constants->gravity;
+  const cs_real_t *grav = cs_glob_physical_constants->gravity;
 
   const int kctheta = cs_field_key_id("turbulent_flux_ctheta");
   cs_real_t ctheta = cs_field_get_key_double(f, kctheta);
@@ -496,7 +494,7 @@ _thermal_flux_and_diff(cs_field_t         *f,
           xpk -= xrij[jj][ii] * gradv[c_id][jj][ii];
       }
       if (cpro_beta != NULL)
-        xgk = cpro_beta[c_id] * cs_math_3_dot_product(xut[c_id], gxyz);
+        xgk = -cpro_beta[c_id] * cs_math_3_dot_product(xut[c_id], grav);
 
       /* Thermo-mecanical scales ratio R */
       cs_real_t prdtl = viscl[c_id] * xcpp[c_id] / viscls[l_viscls*c_id];
@@ -1201,7 +1199,6 @@ cs_turbulence_rij_transport_div_tf(const int        field_id,
                            gradv,
                            gradt,
                            grad_al,
-                           grav,
                            xut,
                            thflxf,
                            thflxb,
