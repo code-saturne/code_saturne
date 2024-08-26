@@ -239,6 +239,7 @@ cs_f_parall_barrier(void);
  * \brief Define the array distribution over all ranks on a given root rank.
  *        The size of each local array may be different.
  *
+ * \param[in]   comm       MPI Communicator
  * \param[in]   root_rank  rank which stores the global array
  * \param[in]   n_elts     size of the local array
  * \param[in]   n_g_elts   size of the global array
@@ -250,11 +251,12 @@ cs_f_parall_barrier(void);
 #if defined(HAVE_MPI)
 
 static void
-_get_array_distribution(int     root_rank,
-                        int     n_elts,
-                        int     n_g_elts,
-                        int    *p_count[],
-                        int    *p_shift[])
+_get_array_distribution(MPI_Comm  comm,
+                        int       root_rank,
+                        int       n_elts,
+                        int       n_g_elts,
+                        int      *p_count[],
+                        int      *p_shift[])
 {
   int  *count = NULL;
   int  *shift = NULL;
@@ -267,7 +269,7 @@ _get_array_distribution(int     root_rank,
   BFT_MALLOC(shift, n_ranks, int);
 
   MPI_Gather(&n_elts, 1, MPI_INT,
-             count, 1, MPI_INT, root_rank, cs_glob_mpi_comm);
+             count, 1, MPI_INT, root_rank, comm);
 
   shift[0] = 0;
   for (cs_lnum_t i = 1; i < n_ranks; i++)
@@ -292,6 +294,7 @@ _get_array_distribution(int     root_rank,
  * operation on all default communicator processes.
  *
  * parameters:
+ *   comm      <-- MPI Communicator
  *   n         <-- number of values
  *   datatype  <-- matching code_saturne datatype
  *   operation <-- MPI operation
@@ -301,7 +304,8 @@ _get_array_distribution(int     root_rank,
 #if !defined(HAVE_MPI_IN_PLACE) && defined(HAVE_MPI)
 
 static void
-_cs_parall_allreduce(int             n,
+_cs_parall_allreduce(MPI_Comm        comm,
+                     int             n,
                      cs_datatype_t   datatype,
                      MPI_Op          operation,
                      void           *val)
@@ -318,7 +322,7 @@ _cs_parall_allreduce(int             n,
   memcpy(locval, val, data_size);
 
   MPI_Allreduce(locval, val, n, cs_datatype_to_mpi[datatype], operation,
-                cs_glob_mpi_comm);
+                comm);
 
   if (locval != _locval)
     BFT_FREE(locval);
@@ -657,7 +661,7 @@ cs_parall_counter(cs_gnum_t   cpt[],
                   const int   n)
 {
   if (cs_glob_n_ranks > 1)
-    _cs_parall_allreduce(n, CS_GNUM_TYPE, MPI_SUM, cpt);
+    _cs_parall_allreduce(cs_glob_mpi_comm, n, CS_GNUM_TYPE, MPI_SUM, cpt);
 }
 
 #endif
@@ -677,7 +681,7 @@ cs_parall_counter_max(cs_lnum_t   cpt[],
                       const int   n)
 {
   if (cs_glob_n_ranks > 1)
-    _cs_parall_allreduce(n, CS_LNUM_TYPE, MPI_MAX, cpt);
+    _cs_parall_allreduce(cs_glob_mpi_comm, n, CS_LNUM_TYPE, MPI_MAX, cpt);
 }
 
 #endif
@@ -699,7 +703,7 @@ cs_parall_sum(int             n,
               void           *val)
 {
   if (cs_glob_n_ranks > 1)
-    _cs_parall_allreduce(n, datatype, MPI_SUM, val);
+    _cs_parall_allreduce(cs_glob_mpi_comm, n, datatype, MPI_SUM, val);
 }
 
 #endif
@@ -721,7 +725,7 @@ cs_parall_max(int             n,
               void           *val)
 {
   if (cs_glob_n_ranks > 1)
-    _cs_parall_allreduce(n, datatype, MPI_MAX, val);
+    _cs_parall_allreduce(cs_glob_mpi_comm, n, datatype, MPI_MAX, val);
 }
 
 #endif
@@ -743,7 +747,7 @@ cs_parall_min(int             n,
               void           *val)
 {
   if (cs_glob_n_ranks > 1)
-    _cs_parall_allreduce(n, datatype, MPI_MIN, val);
+    _cs_parall_allreduce(cs_glob_mpi_comm, n, datatype, MPI_MIN, val);
 }
 
 #endif
@@ -1032,7 +1036,7 @@ cs_parall_gather_r(int               root_rank,
 
     int  *count = NULL, *shift = NULL;
 
-    _get_array_distribution(root_rank, n_elts, n_g_elts, &count, &shift);
+    _get_array_distribution(cs_glob_mpi_comm, root_rank, n_elts, n_g_elts, &count, &shift);
 
     MPI_Gatherv(array, n_elts, CS_MPI_REAL,
                 g_array, count, shift, CS_MPI_REAL,
@@ -1150,7 +1154,7 @@ cs_parall_scatter_r(int               root_rank,
 
     int  *count = NULL, *shift = NULL;
 
-    _get_array_distribution(root_rank, n_elts, n_g_elts, &count, &shift);
+    _get_array_distribution(cs_glob_mpi_comm, root_rank, n_elts, n_g_elts, &count, &shift);
 
     MPI_Scatterv(g_array, count, shift, CS_MPI_REAL,
                  array, n_elts, CS_MPI_REAL, root_rank, cs_glob_mpi_comm);
@@ -1215,7 +1219,7 @@ cs_parall_gather_f(int             root_rank,
 
     int  *count = NULL, *shift = NULL;
 
-    _get_array_distribution(root_rank, n_elts, n_g_elts, &count, &shift);
+    _get_array_distribution(cs_glob_mpi_comm, root_rank, n_elts, n_g_elts, &count, &shift);
 
     MPI_Gatherv(array, n_elts, MPI_FLOAT,
                 g_array, count, shift, MPI_FLOAT, root_rank, cs_glob_mpi_comm);
@@ -1280,7 +1284,7 @@ cs_parall_scatter_f(int           root_rank,
 
     int  *count = NULL, *shift = NULL;
 
-    _get_array_distribution(root_rank, n_elts, n_g_elts, &count, &shift);
+    _get_array_distribution(cs_glob_mpi_comm, root_rank, n_elts, n_g_elts, &count, &shift);
 
     MPI_Scatterv(g_array, count, shift, MPI_FLOAT,
                  array, n_elts, MPI_FLOAT, root_rank, cs_glob_mpi_comm);
