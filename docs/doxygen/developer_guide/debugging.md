@@ -121,9 +121,7 @@ the situation can lead to one or more orders of magnitude in time savings.
      - Use <span style="color:rgb(48,119,16)">`--enable-debug`</span>
        to configure builds for debug.
 
-       * Enables use of many `assert` checks in C code.
-
-       * Enables arrays bounds-checking in Fortran.
+       * Enables use of many `assert` checks in C and C++ code.
 
    * Using recent versions of the [GCC](https://gcc.gnu.org/)
      or [clang](https://clang.llvm.org/) compiler, compile/run with

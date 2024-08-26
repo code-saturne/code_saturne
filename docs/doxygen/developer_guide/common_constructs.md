@@ -39,19 +39,11 @@ A common solution to this problem is to use indexed arrays, in which an array
 containing data is supplemented by a second array containing the start indexes
 of entries in the data array for each element.
 
-These arrays are mainly used in the C parts of the code_saturne source, though
-the interior and boundary *faces → vertices* connectivity is also
-visible in the Fortran code. Remember that in Fortran code, arrays
-are always one-based (i.e. the first element of an array has index 1),
-while in C code, the natural indexing is zero-based, but one-based
-indexing may also be used for arrays visible from Fortran code, or for arrays
-using global numbers. In code_saturne, zero-based indexes are often used with
-one-based data, for example when defining element connectivities,
-where element ids are usually one-based (both as a convention
-to simplify mapping to Fortran, and in the case of *cells → faces*
-connectivities, so as to use the sign to determine face orientation).
-For C code, when there are no mapping constraints due to Fortran,
-the recommendations are the following:
+In C and C++ code, the natural indexing is zero-based, but one-based
+indexing may also be used for some arrays as a vestige of prior Fortran code,
+or for arrays using global numbers.
+
+The recommendations are the following:
 
 - Local index arrays should be zero-based.
 - Global index arrays should be one-based. This should only concern

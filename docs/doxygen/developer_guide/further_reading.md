@@ -49,10 +49,6 @@ may be useful.
 For the [Git](https://git-scm.com/) source code management system:
 - *pro Git*: https://git-scm.com/book/en/v2
 
-Fortran programming
-- Link to various learning resources: https://fortran-lang.org/learn/
-- For French readers, the IDRIS courses are recommended: http://www.idris.fr/formations/fortran/
-
 C programming
 - Interactive tutorial https://www.learn-c.org/
 - MIT OpenCourseWare (OCM): [Practical Programming in C](https://ocw.mit.edu/courses/electrical-engineering-and-computer-science/6-087-practical-programming-in-c-january-iap-2010/index.htm)
@@ -74,14 +70,14 @@ C++ parallel programming
 - Note that this requires C++17, and as more and more systems include compilers
   supporting C++20, newer constructs may be an option in the near future.
 
-C and Fortran basics
-====================
+C and C++ basics
+================
 
-A very brief comparison of equivalent C and Fortran Syntax is provided here,
+A very brief comparison of equivalent C Syntax is provided here,
 which may be useful for those already familiar with one or the other.
 
 <table>
-<tr><th> <th> C <th> Fortran
+<tr><th> <th> C
 <tr><td>
 Basic types
 <td>
@@ -91,14 +87,6 @@ _Bool, bool
 int
 float
 double
-```
-<td>
-```{.f90}
-character
-logical
-integer
-real
-double precision
 ```
 <tr><td>
 Basic math functions
@@ -111,15 +99,6 @@ sqrt  pow(x, y)
 abs  fabs
 a%b
 ```
-<td>
-```{.f90}
-(a)dcos  (a)dsin  (a)dtan
-dcosh  dsinh  dtanh
-dexp  dlog
-sqrt  x**y
-iabs  dabs
-mod(a,b)
-```
 <tr><td>
 Logical expressions
 <td>
@@ -128,23 +107,12 @@ Logical expressions
 <  >  <=  >=  ==  !=
 ==  !=
 ```
-<td>
-```{.f90}
-.and. .or. .not.
-.lt. .gt. .le. .ge. .eq. .ne.
-.eqv. .neqv.
-```
 <tr><td>
 Function/subroutine call
 <td>
 ```{.c}
 x = f(y);
 g(a);
-```
-<td>
-```{.f90}
-x = f(y)
-call g(a)
 ```
 <tr><td>
 Conditional
@@ -153,12 +121,6 @@ Conditional
 if (expr) {
   operations;
 }
-```
-<td>
-```{.f90}
-if (expr) then
-  operations
-end if
 ```
 <tr><td>
 Simple loops
@@ -169,13 +131,6 @@ for (i = 0; i < n; i++) {
   z = x + i + y*5.;
 }
 ```
-<td>
-```{.f90}
-do i = 0, n
-  y = y/2.d0
-  z = x + i + y*5.d0
-end do
-```
 <tr><td>
 Complex loops
 <td>
@@ -183,12 +138,6 @@ Complex loops
 while (expr) {
   operations
 }
-```
-<td>
-```{.f90}
-do while (expr)
-  operations
-end do
 ```
 <tr><td>
 Loop control
@@ -201,15 +150,6 @@ for (i = 0; i < n; i++) {
     break;
 }
 ```
-<td>
-```{.f90}
-do i = 0, n
-  if (ignore_condition)
-    cycle;
-  else if (exit_loop_condition)
-    exit;
-end do
-```
 <tr><td>
 Variable declaration and initialization
 <td>
@@ -217,12 +157,6 @@ Variable declaration and initialization
 int i, j,
     k = 0, l = 1;
 double a = 1.;
-```
-<td>
-```{.f90}
-integer :: i, j, &
-           k = 0, l = 1
-double precision :: a = 1.d0
 ```
 <tr><td>
 Array declaration and initialization
@@ -232,19 +166,10 @@ int tab[2][3] = {{1, 2, 3},
                  {4, 5, 6}};
 printf("%d", tab[1][0]); // 4
 ```
-<td>
-```{.f90}
-integer, dimension(3,2) :: tab
-data / 1, 2, 3, 4, 5, 6 /
-write(*,*) tab(2, 1) ! 2
-```
 </table>
 
-An important difference to be aware of between C and Fortran is that when
-calling functions, C passes arguments by copy (so changing argument
-values in C has not effect unless that argument is a pointer or array
-(see following sections), while in Fortran, variables are passed by
-reference, allowing their modification directly.
+It is important to keep in mind that C passes arguments by copy (so changing argument values in C has not effect unless that argument is a pointer or array
+(see following sections), while in Fortran, variables are passed by reference, allowing their modification directly.
 
 C language
 ==========
@@ -469,6 +394,8 @@ const double *const c;  /* can modify neither pointer
 A variable declaration may also be qualified with a `restrict` attribute.
 
  - The `restrict` attribute indicates that no other pointer refers to the same content.
+   - It is part of the C standard but only an extension in C++.
+     - The `[restrict]` syntax allowed for arrays in C is not supported by the known C++ `__restrict__` extensions, so should be avoided.
  - For example, with `int f(double *restrict a, double *restrict b)`, we tell
    the compiler that arrays a and b do not overlap.
    - Allows a better optimization, possibly vectorisation.
@@ -480,8 +407,6 @@ A variable declaration may also be qualified with a `restrict` attribute.
    - If we forget to use this, we may lose some performance
    - If we incorrectly declare a variable `restrict`, we may have
      _undefined_ behavior...
-     - In Fortran, passing the same array (or overlapping arrays) twice as
-       function arguments may also lead to similar behavior...
 
 ### C functions
 
@@ -554,17 +479,10 @@ g(x);           // returns no value
 s = h();        // takes no argument
   ```
 
-- A function returning a value is equivalent to a Fortran _function_, and a
-  function returning void to a Fortran _subroutine_.
 - In C, functions <span style="color:red">pass arguments by value</span>.
   - Item array contents, or values referenced by pointers may be modified normally
   - Non-pointer (or array) arguments are copied, so the original is
     unchanged in the calling code
-- In Fortran, functions and subroutines
-  <span style="color:red">pass arguments by reference</span>.
-  - Unless otherwise specified
-    (using for example `integer, value :: n`)
-  - Values modified in the function are still after its return.
 
 Example of call by value semantics:
 ```{.c}
@@ -684,21 +602,11 @@ on several rules.
 Preprocessors do not exist in all "modern" languages, are often decried by purists,
 but are very useful in C and C++ for optional library support.
 - in Python, not missed, as we can use `try...import` sequences
-- Almost all Fortran compilers allow for the use of the C preprocessor, or a slightly
-  adapted version of it (`fpp`)
-  - The Fortran 95 standard suggested (as an optional appendix) a conditional
-    compilation mechanism, named coco (conditional compilation)
-    - Very few compilers support it
-    - As always, before trying to follow a standard, check how well it is supported
-    - In this specific case, a tool less powerful the the C preprocessor was invented,
-      15 or so years later; it is not surprising it failed
-    - coco was recently retired from the latest Fortran standards, so it can be
-      safely forgotten.
 
 C variable and function scoping
 -------------------------------
 
-Compared to Fortran, variables may have a local scope:
+Variables may have a local scope:
 
 ```{.c}
 int f(int n, double x[]) {
@@ -784,7 +692,7 @@ The C scoping rules also allow definition of global variables.
 C Undefined behavior
 --------------------
 
-Some ambiguous constructions lead to what is called _unspecified behavior_.
+Some ambiguous constructions lead to what is called _undefined behavior_.
 
 - The compiler is free to do whatever it wants in such cases.
   - different compilers may exhibit different behaviors

@@ -73,7 +73,7 @@ Programming models
 
 ### A few possible programming models
 
-As classical C and current C++ or Fortran standards cannot express all the
+As classical C and current C++ standards cannot express all the
 possible parallelism, programming for accelerators may be done using either:
 
 - Directive-based approaches, such as:
@@ -98,7 +98,7 @@ Note that the mainstream language extensions listed above, as well as Kokkos,
 and many DSLs are all based on C++.
 
 None of these approches is currently as ubiquitous or portable as the C and
-Fortran basis with host-based OpenMP directives on which most of code_saturne
+C++ basis with host-based OpenMP directives on which most of code_saturne
 is built:
 
 - OpenMP would be expected to be the most portable solution here, but handling of

@@ -81,8 +81,8 @@ Specific adaptations
 - Libtool has some nice features relative to building and organizing
   libraries, but unfortunately decides that it is always right, even when
   it is wrong. In addition, it does not handle some compilers or
-  languages, such as CUDA. So Libtool has been removed from the
-  code_saturne build system as of August 2022 (for version 7.3).
+  languages, such as CUDA. So Libtool was removed from the
+  code_saturne build system in August 2022 (for version 7.3).
   Shared libraries are now handled through addtional Automake
   rules and a `build-aux/cs_link_library.py` helper script.
 

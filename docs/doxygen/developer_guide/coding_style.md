@@ -33,8 +33,8 @@ file to a more current style (in which case the other guidelines should be
 followed), try to remain consistent with the style in the current file.
 
 For new files, use recently updated or reference examples, such as
-`src/base/cs_field.c` and  `src/base/cs_field.h` for C, `src/base/field.f90`,
-or `src/base/tridim.f90` for Fortran modules.
+`src/base/cs_field.c` and  `src/base/cs_field.h` for C, `src/base/cs_array.cpp`,
+and `src/base/cs_array.h` for C++.
 
 If you consider your preferred coding style is better than the one used is
 superior in some manner to the one used, suggestions are welcome, and
@@ -68,14 +68,9 @@ The following general rules are strongly recommended:
   constructs (one could argue that using one line per paragraph and relying
   on line wrapping would actually make revision merging simpler).
 
-For new developments, prefer C to Fortran, as the code should progressively
-move to purely C (and maybe C++) code. As many variables and arrays are still
-accessible only through Fortran modules, this is not always possible,
-but defining Fortran/C bindings such as in the `field.f90` module helps
-make data accessible to both languages, easing the progressive migration
-from Fortran to C. Fortran bindings should only be defined when access
-to C functions or variables from Fortran is required, and may be removed
-for parts of the code purely handled in C.
+For new developments, prefer C++ to C, as the code base will be progressively
+migrated to C++ (though C++ features will only be introduced by small
+increments)..
 
 Punctuation
 -----------
@@ -369,81 +364,10 @@ should not be used instead of `bft_printf` or `cs_log` for production code.
 Fortran coding style
 ====================
 
-Conventions inherited from Fortran 77
--------------------------------------
-
-The following coding conventions were applied when the code used
-Fortran 77, prior to conversion to Fortran 95. Some of them should be
-updated, as long as we maintain consistency within a given
-file.
-
-- One routine per file (except if all routines except the first
-  are `private`. This rule has exceptions, such as in modules,
-  in the `cs_user_parameters.f90` user file which contains several
-  subroutines (it initially followed the rule, but subroutines were split,
-  while the file was not), and Fortran wrappers for several C
-  functions defined in a single C file are also usually defined
-  in a single source, as they are a consistent whole.
-
-- When a routine should be callable from C, if that routine's name
-  includes `_` characters, use `bind(C)` (iso-C bindings) in the
-  Fortran code rather than the obsolete `CS_PROCF` C macro, as
-  compilers may add extra `_` characters for identifiers already
-  containing them, and this can lead to linkage issues.
-  * The `CS_PROCF` macro must not be used for new code.
-    ISO C bindings must be used instead.
-
-- Use short variable names (such as `i`, `j`, or `k`) for local or
-  short loops if this helps make the code concise and readable,
-  but prefer more explicit identifiers whenever the scope is not
-  obvious.
-
-- Avoid commented example lines in user subroutines; otherwise,
-  the code is never compiled and thus probably incorrect.
-  Examples should always be "active"; anybody blindly copying an example
-  without adapting it should get what they deserve.
-
-- Use `do` / `enddo` constructs instead of `do` / `continue`.
-
-- Avoid `goto` constructs where `select` / `case`
-  would be more appropriate.
-
-- Avoid print statements using `write(format, *)`,
-  or `print` constructs, to ensure that output is redirected
-  correctly in parallel mode.
-  * Use `write(format, nfecra)` instead
-
-- Use `d` and not `e` to define double-precision
-  floating-point constant definitions. Especially avoid
-  constants with exponents such as `e50`, which are impossible
-  in single precision (the limit is `e38`), and may thus not
-  be accepted by "strict" compilers, or worst, lead to run-time
-  exceptions.
-
-Language {#sec_prg_lang_fortran}
---------
-
-Fortran 2008 or above is required (to allow for intrinsics such as the
-gamma function), though the coding style is inherited from Fortan 95.
-
-### Interoperability of Fortran and C
-
-Interoperability of Fortran and C is possible using the
-[iso_c_bindings](http://fortranwiki.org/fortran/show/iso_c_binding)
-Fortran module, but not easy to automate.
-
-- Does not allow direct mapping of structures with allocated arrays...
-- See \ref field.f90, \ref cs_field.c,  and \ref cs_c_bindings.f90 for simple
-  examples, \ref cs_turbulence_model.c for others.
-  -  This will probably make youo want to abandon Fortran
-
-Fortran constructs which do not map easily to C using these bindings
-should be avoided.
-
 Migration from Fortran to C
 ---------------------------
 
-It is preferred than new code be written in C rather than in Fortran.
+It is imperative that new code be written in C or C++ rather than in Fortran.
 Fortran continues to be one of the best supported languages in HPC
 (with C++ and C), and has some interesting features such as Co-Array Fortran
 (starting with in Fortran 2008), but...
@@ -463,7 +387,7 @@ Fortran continues to be one of the best supported languages in HPC
   than C when using OpenMP loop-based constructs.
 - C has its limitations, but is in general simpler to code for, and can
   interoperate easily with C++.
-- Performance od C and Fortran is similar when both are used correctly,
+- Performance of C and Fortran is similar when both are used correctly,
   so is not a discriminating factor.
 
 Python coding style
@@ -498,8 +422,7 @@ When building the code, remember to often use `make html` and check the
 and warnings.
 
 When modifying arguments to a function or modifying structures, make sure
-the special Doxygen comments are kept up to date. In C code, comments may
-appear both in the C and Fortran parts of the code. Using Doxygen
+the special Doxygen comments are kept up to date. Using Doxygen
 comments in the C code and simplified comments in the headers
 (see \ref cs_medcoupling_postprocess.cxx and \ref cs_medcoupling_postprocess.h for example)
 is recommended, but as this
