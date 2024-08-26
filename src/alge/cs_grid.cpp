@@ -2762,8 +2762,10 @@ _scan_f_c_row(int          n_threads,
     if (r_shift != 0) { /* No shift needed for thread 0 */
       cs_lnum_t t_s_id, t_e_id;
       cs_parall_thread_range(f_n_rows, sizeof(cs_real_t), &t_s_id, &t_e_id);
-      for (cs_lnum_t ii = t_s_id; ii < t_e_id; ii++)
-        f_c_row[ii] += r_shift;
+      for (cs_lnum_t ii = t_s_id; ii < t_e_id; ii++) {
+        if (f_c_row[ii] > -1)
+          f_c_row[ii] += r_shift;
+      }
     }
   }
 
