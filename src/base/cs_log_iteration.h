@@ -74,6 +74,13 @@ void
 cs_log_iteration(void);
 
 /*----------------------------------------------------------------------------
+ * Log field and other array statistics for the current time step.
+ *----------------------------------------------------------------------------*/
+
+void
+cs_log_equation_convergence_info_write(void);
+
+/*----------------------------------------------------------------------------
  * Set adaptive interval for "per time step" logging information.
  *
  * Logging will also occur:

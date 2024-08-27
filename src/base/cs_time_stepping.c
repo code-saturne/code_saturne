@@ -875,6 +875,8 @@ cs_time_stepping(void)
 
     if (cs_log_default_is_active()) {
 
+      cs_log_equation_convergence_info_write();
+
       cs_log_iteration();
 
       cs_log_iteration_l2residual();
