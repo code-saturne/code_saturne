@@ -2726,11 +2726,12 @@ cs_boundary_conditions_compute(int  bc_type[])
      looping in an at least partially specified order, and not just
      field id order); This will allow user-defined xdefs to supercede
      values defined here. */
-
+//TODO check atmo already called
   bool std_turbulence_bcs = false;
   if (   cs_glob_physical_model_flag[CS_PHYSICAL_MODEL_FLAG] == 0
       || cs_glob_physical_model_flag[CS_COMPRESSIBLE] >= 0
       || cs_glob_physical_model_flag[CS_COMBUSTION_COAL] >= 0
+      || cs_glob_physical_model_flag[CS_ATMOSPHERIC] >= 0
       || cs_glob_physical_model_flag[CS_COOLING_TOWERS] >= 0
       || cs_glob_physical_model_flag[CS_ELECTRIC_ARCS] >= 0
       || cs_glob_physical_model_flag[CS_GAS_MIX] >= 0)

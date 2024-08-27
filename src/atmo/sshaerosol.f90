@@ -63,9 +63,6 @@ module sshaerosol
   !> and aerosol number read in file
   double precision, save, allocatable, dimension(:) :: dlconc0
 
-  !> read zone boundary conditions from file
-  integer, save :: iprofa(nozppm)
-
   !> \}
 
   !=============================================================================

@@ -58,7 +58,7 @@ implicit none
 
 ! Local variables
 
-integer         igg, it, ir, ih, if, izone
+integer         igg, it, ir, ih, if
 integer         idirac
 
 !===============================================================================
@@ -199,14 +199,6 @@ vref  = zero
 lref  = zero
 ta    = zero
 tstar = zero
-!frmel = zero
-!tgf   = 300.d0
-!do izone = 1, nozppm
-!  ientgf(izone) = 0
-!  ientgb(izone) = 0
-!  fment(izone)  = zero
-!  tkent(izone)  = zero
-!enddo
 hgf   = zero
 tgbad = zero
 
@@ -276,10 +268,6 @@ nespgi = 0
 dtchemmax = 10.d0
 
 ! --> Initialisation for the aerosol chemistry model:
-
-do izone = 1, nozppm
-  iprofa(izone) = 0
-enddo
 
 ! Default values (climatic ones) for radiative transfer and
 ! aerosols

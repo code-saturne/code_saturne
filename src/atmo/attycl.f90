@@ -31,7 +31,6 @@
 !  mode           name          role                                           !
 !______________________________________________________________________________!
 !> \param[in]   itypfb          boundary face types
-!> \param[in]   izfppp          boundary face zone number for atmospheric module
 !> \param[out]  icodcl          face boundary condition code
 !>                               - 1 Dirichlet
 !>                               - 2 Radiative outlet
@@ -61,7 +60,7 @@
 !>                                     \grad T \cdot \vect{n} \f$
 !
 !-------------------------------------------------------------------------------
-subroutine attycl ( itypfb, izfppp, icodcl, rcodcl )
+subroutine attycl ( itypfb, icodcl, rcodcl )
 
 !===============================================================================
 ! Module files
@@ -101,7 +100,7 @@ double precision rcodcl(nfabor,nvar,3)
 
 ! Local variables
 
-integer          ifac, iel, izone, ilelt
+integer          ifac, iel, ilelt
 integer          ii, nbrsol, nelts
 integer          jsp, isc, ivar
 integer          fid_axz
@@ -307,7 +306,6 @@ call field_get_coefa_s(ivarfl(ipr), coefap)
 
 do ifac = 1, nfabor
 
-  izone = izfppp(ifac)
   iel = ifabor(ifac)
 
   ! If meteo profile is on, we take the value and store it in rcolcl if not
@@ -498,36 +496,6 @@ do ifac = 1, nfabor
 
     endif
 
-  else
-
-    if (itypfb(ifac).eq.ientre.or.itypfb(ifac).eq.i_convective_inlet) then
-
-      if (icalke(izone).eq.1) then
-        uref2 =   rcodcl(ifac,iu,1)**2                       &
-                + rcodcl(ifac,iv,1)**2                       &
-                + rcodcl(ifac,iw,1)**2
-        uref2 = max(uref2,epzero)
-        rhomoy = brom(ifac)
-        iel    = ifabor(ifac)
-        viscla = viscl(iel)
-        dhy    = dh(izone)
-        call turbulence_bc_inlet_hyd_diam(ifac,                            &
-                                          uref2, dhy, rhomoy, viscla,      &
-                                          rcodcl)
-      else if (icalke(izone).eq.2) then
-        uref2 =   rcodcl(ifac,iu,1)**2                       &
-                + rcodcl(ifac,iv,1)**2                       &
-                + rcodcl(ifac,iw,1)**2
-        uref2 = max(uref2,epzero)
-        dhy    = dh(izone)
-        xiturb = xintur(izone)
-        call turbulence_bc_inlet_turb_intensity(ifac,                      &
-                                                uref2, xiturb, dhy,        &
-                                                rcodcl)
-      endif
-
-    endif
-
   endif
 
   ! Conversion Temperature to potential temperature for Dirichlet and
@@ -610,15 +578,11 @@ if (iaerosol.ne.CS_ATMO_AEROSOL_OFF) then
 
     if (itypfb(ifac).eq.ientre) then
 
-     izone = izfppp(ifac)
-
-      if (iprofa(izone).eq.1) then
-        do jsp = 1, nlayer_aer*n_aer+n_aer
-          isc = isca_chem(nespg + jsp)
-          if (rcodcl(ifac,isca(isc),1).gt.0.5d0*rinfin) &
-              rcodcl(ifac,isca(isc),1) = dlconc0(jsp)
-        enddo
-      endif
+      do jsp = 1, nlayer_aer*n_aer+n_aer
+        isc = isca_chem(nespg + jsp)
+        if (rcodcl(ifac,isca(isc),1).gt.0.5d0*rinfin) &
+            rcodcl(ifac,isca(isc),1) = dlconc0(jsp)
+      enddo
 
       ! For other species zero dirichlet conditions are imposed,
       ! unless they have already been treated earlier (eg, in usatcl)

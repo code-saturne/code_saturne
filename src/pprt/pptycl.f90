@@ -117,7 +117,7 @@ end interface
 ! 1. Zones list (for some models)
 !===============================================================================
 
-if (ippmod(icompf).lt.0) then
+if (ippmod(icompf).lt.0.and.ippmod(iatmos).eq.-1.and.ippmod(iaeros).eq.-1) then
   ! --> faces all belong to a boundary zone
   iok = 0
 
@@ -180,7 +180,7 @@ call field_build_bc_codes_all(icodcl, rcodcl) ! Get map
 
 ! Atmospheric flows
 if (ippmod(iatmos).ge.0) then
-  call attycl(itypfb, izfppp, icodcl, rcodcl)
+  call attycl(itypfb, icodcl, rcodcl)
 endif
 
 ! Cooling towers

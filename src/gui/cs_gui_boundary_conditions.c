@@ -3115,9 +3115,6 @@ cs_gui_boundary_conditions_processing(int  *itypfb)
 
   } /*  for (izone=0; izone < boundaries->n_zones; izone++) */
 
-  /* Define boundary conditions based on cs_equation_param_t structures */
-
-  cs_boundary_conditions_compute(itypfb);
 }
 
 /*----------------------------------------------------------------------------

@@ -880,6 +880,9 @@ cs_boundary_conditions_set_coeffs(int        nvar,
 
   cs_gui_boundary_conditions_processing(bc_type);
 
+  /* Define boundary conditions based on cs_equation_param_t structures */
+  cs_boundary_conditions_compute(itypfb);
+
   cs_boundary_conditions_complete(bc_type);
 
   /* User-defined functions
@@ -3684,6 +3687,9 @@ cs_boundary_conditions_set_coeffs_init(void)
      -> will be modified when restructuring BC zones. */
 
   cs_gui_boundary_conditions_processing(bc_type);
+
+  /* Define boundary conditions based on cs_equation_param_t structures */
+  cs_boundary_conditions_compute(itypfb);
 
   /* User-defined function settings */
 
