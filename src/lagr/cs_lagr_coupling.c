@@ -253,9 +253,11 @@ cs_lagr_coupling(const cs_real_t    taup[],
     cs_real_t *prev_p_vel  = cs_lagr_particles_attr_n(p_set, p_id, 1,
                                                       CS_LAGR_VELOCITY);
 
+    //TODO tsfext should be computed elsewhere (in sde) and the mass of particle
+    // may be the previous mass.
     for (cs_lnum_t i = 0; i < 3; i++)
       auxl[p_id][i] = p_stat_w * (p_mass * p_vel[i] - prev_p_mass * prev_p_vel[i]
-                                                - force_p[p_id][i] * tsfext[p_id]) / dtp;
+                                 - force_p[p_id][i] * tsfext[p_id]) / dtp;
 
   }
 

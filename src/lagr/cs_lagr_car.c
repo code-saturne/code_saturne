@@ -662,6 +662,26 @@ cs_lagr_car(int              iprev,
 
   }
 
+  /* Add particle back effect seen by mean fluid velocity
+   * (two way coupling terms)
+   * ==================================================== */
+  if (   cs_glob_lagr_source_terms->ltsdyn == 1
+      && cs_glob_lagr_time_scheme->iilagr == CS_LAGR_TWOWAY_COUPLING) {
+
+    const cs_real_3_t *lagr_st_vel
+      = (const cs_real_3_t *)cs_field_by_name("lagr_st_velocity")->val;
+
+    for (cs_lnum_t cell_id= 0; cell_id < cs_glob_mesh->n_cells ; cell_id++) {
+      /* Add: II =  -alpha_p rho_p <(U_s -U_p)/tau_p> / (alpha_f rho_f)  */
+
+      cs_real_t romf = extra->cromf->val[cell_id];
+
+      for (int i = 0; i < 3; i++)
+        piil[cell_id][i] += lagr_st_vel[cell_id][i] / romf;
+
+    }
+  }
+
 }
 
 /*----------------------------------------------------------------------------*/

@@ -279,7 +279,7 @@ cs_lagr_aux_mean_fluid_quantities(cs_field_t    *lagr_time,
       /* local copy of equation parameters for velocity */
       cs_field_get_key_struct(f_vel, cs_field_key_id("var_cal_opt"), &eqp_loc);
       const cs_mesh_t  *m = cs_glob_mesh;
-      cs_mesh_quantities_t  *fvq = cs_glob_mesh_quantities;
+      cs_mesh_quantities_t  *mq = cs_glob_mesh_quantities;
 
       cs_real_3_t *cvar_vel = (cs_real_3_t *)f_vel->val;
       const cs_real_3_t *cvar_vela = (const cs_real_3_t *)f_vel->val_pre;
@@ -292,7 +292,7 @@ cs_lagr_aux_mean_fluid_quantities(cs_field_t    *lagr_time,
       BFT_MALLOC(b_visc, n_b_faces, cs_real_t);
 
       cs_face_viscosity(m,
-                        fvq,
+                        mq,
                         eqp_loc.imvisf,
                         CS_F_(mu)->val, // cell viscosity
                         i_visc,
@@ -358,7 +358,7 @@ cs_lagr_aux_mean_fluid_quantities(cs_field_t    *lagr_time,
                         NULL,
                         div_mu_gradvel);
 
-      const cs_real_t  *cell_f_vol = fvq->cell_vol;
+      const cs_real_t  *cell_f_vol = mq->cell_vol;
 
       for (cs_lnum_t cell_id = 0; cell_id < cs_glob_mesh->n_cells; cell_id++) {
         cs_real_t dvol = 1. / cell_f_vol[cell_id];
