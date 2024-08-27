@@ -950,6 +950,21 @@ _div_rij(const cs_mesh_t     *m,
     }
   }
 
+  /* For post processing */
+  int has_disable_flag = mq->has_disable_flag;
+  int *c_disable_flag = mq->c_disable_flag;
+  const cs_real_t *cell_f_vol = mq->cell_f_vol;
+
+  ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
+    cs_real_t dvol = 0;
+    const int ind = has_disable_flag * c_id;
+    const int c_act = (1 - (has_disable_flag * c_disable_flag[ind]));
+    if (c_act == 1)
+      dvol = 1.0/cell_f_vol[c_id];
+    for (cs_lnum_t i = 0; i < 3; i++)
+      cpro_divr[c_id][i] *= dvol;
+  });
+
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1248,13 +1263,8 @@ _ext_forces(const cs_mesh_t                *m,
   if (   cs_glob_turb_model->order == CS_TURB_SECOND_ORDER
       && cs_glob_velocity_pressure_param->igprij == 1) {
     ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
-      cs_real_t dvol = 0;
-      const int ind = has_disable_flag * c_id;
-      const int c_act = (1 - (has_disable_flag * c_disable_flag[ind]));
-      if (c_act == 1)
-        dvol = 1.0/cell_f_vol[c_id];
       for (cs_lnum_t ii = 0; ii < 3; ii++)
-        dfrcxt[c_id][ii] -= cpro_divr[c_id][ii]*dvol;
+        dfrcxt[c_id][ii] -= cpro_divr[c_id][ii];
     });
   }
 
