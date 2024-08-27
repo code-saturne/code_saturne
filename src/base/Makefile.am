@@ -351,7 +351,7 @@ cs_measures_util.c \
 cs_notebook.c \
 cs_numbering.c \
 cs_opts.c \
-cs_parall.c \
+cs_parall.cpp \
 cs_param_types.c \
 cs_parameters.c \
 cs_parameters_check.c \
