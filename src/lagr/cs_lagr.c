@@ -917,22 +917,23 @@ cs_lagr_add_fields(void)
   cs_field_set_key_int(f, k_log, 1);
   cs_field_set_key_int(f, k_vis, 1);
 
-  /* Add TKE for DRSM model */
+  /* Add TKE for DRSM and LES models */
 
-  if (extra->itytur == 3 || extra->itytur == 4) {
-    f = cs_field_by_name_try("k");
-    if (f == NULL)
-      f = cs_field_by_name_try("k_sgs");
-    if (f == NULL)
-      f = cs_field_by_name_try("lagr_k");
-    if (f == NULL) {
-      f = cs_field_find_or_create("k_sgs",
-                                  CS_FIELD_INTENSIVE | CS_FIELD_PROPERTY,
-                                  CS_MESH_LOCATION_CELLS,
-                                  1,
-                                  true);
-      cs_field_set_key_int(f, k_log, 1);
-    }
+  f = cs_field_by_name_try("k");
+  if (f == NULL && (extra->itytur == 3 || extra->itytur == 4)) {
+    char f_name[128];
+    if (extra->itytur == 3)
+      snprintf(f_name, 127, "%s", "k");
+    else
+      snprintf(f_name, 127, "%s", "k_sgs");
+    f_name[127] = '\0';
+
+    f = cs_field_find_or_create(f_name,
+                                CS_FIELD_INTENSIVE | CS_FIELD_PROPERTY,
+                                CS_MESH_LOCATION_CELLS,
+                                1,
+                                true);
+    cs_field_set_key_int(f, k_log, 1);
   }
 
   /* Add Dissipation for LES or k-omega */
@@ -943,7 +944,14 @@ cs_lagr_add_fields(void)
   if (f == NULL)
     f = cs_field_by_name_try("lagr_epsilon");
   if (f == NULL) {
-    f = cs_field_find_or_create("epsilon_sgs",
+    char f_name[128];
+    if (extra->itytur == 3)
+      snprintf(f_name, 127, "%s", "epsilon");
+    else
+      snprintf(f_name, 127, "%s", "epsilon_sgs");
+    f_name[127] = '\0';
+
+    f = cs_field_find_or_create(f_name,
                                 CS_FIELD_INTENSIVE | CS_FIELD_PROPERTY,
                                 CS_MESH_LOCATION_CELLS,
                                 1,
