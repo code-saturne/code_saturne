@@ -3137,6 +3137,20 @@ _pressure_correction_fv(int                   iterns,
   ctx.wait();
   ctx_c.wait();
 
+  /* Finalize optional post_processing algo field */
+  if (f_divu != NULL) {
+    int *c_disable_flag = fvq->c_disable_flag;
+    cs_lnum_t has_dc = fvq->has_disable_flag;
+     ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
+       cs_real_t dvol = 0;
+       const int ind = has_dc * c_id;
+       const int c_act = (1 - (has_dc * c_disable_flag[ind]));
+       if (c_act == 1)
+         dvol = 1.0/cell_f_vol[c_id];
+       cpro_divu[c_id] *= dvol;
+    });
+  }
+
   /*  Free memory */
   CS_FREE_HD(taui);
   CS_FREE_HD(taub);
