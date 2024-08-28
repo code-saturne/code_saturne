@@ -881,7 +881,7 @@ cs_boundary_conditions_set_coeffs(int        nvar,
   cs_gui_boundary_conditions_processing(bc_type);
 
   /* Define boundary conditions based on cs_equation_param_t structures */
-  cs_boundary_conditions_compute(itypfb);
+  cs_boundary_conditions_compute(bc_type);
 
   cs_boundary_conditions_complete(bc_type);
 
@@ -961,7 +961,7 @@ cs_boundary_conditions_set_coeffs(int        nvar,
       _boundary_condition_wall_condensation_1d_thermal();
   }
 
-  /* For internal coupling, set itypfb to wall function by default
+  /* For internal coupling, set bc_type to wall function by default
      if not set by the user */
   cs_internal_coupling_bcs(bc_type);
 
@@ -1067,7 +1067,7 @@ cs_boundary_conditions_set_coeffs(int        nvar,
     forbr = (cs_real_3_t *)f_forbr->val;
 
   /*--------------------------------------------------------------------------
-   * 2) Treatment of types of bcs given by itypfb
+   * 2) Treatment of types of bcs given by bc_type
    *--------------------------------------------------------------------------*/
 
   {
@@ -3689,7 +3689,7 @@ cs_boundary_conditions_set_coeffs_init(void)
   cs_gui_boundary_conditions_processing(bc_type);
 
   /* Define boundary conditions based on cs_equation_param_t structures */
-  cs_boundary_conditions_compute(itypfb);
+  cs_boundary_conditions_compute(bc_type);
 
   /* User-defined function settings */
 
@@ -3730,7 +3730,7 @@ cs_boundary_conditions_set_coeffs_init(void)
     }
   }
 
-  /* For internal coupling, set itypfb to wall function by default
+  /* For internal coupling, set bc_type to wall function by default
      if not set by the user. */
 
   cs_internal_coupling_bcs(bc_type);
