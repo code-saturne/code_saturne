@@ -2968,6 +2968,10 @@ cs_boundary_conditions_set_coeffs_turb(int        isvhb,
 
       cs_real_t visci[3][3], dist[3], hint = 0.0;
 
+      dist[0] = b_face_cog[f_id][0] - cell_cen[c_id][0];
+      dist[1] = b_face_cog[f_id][1] - cell_cen[c_id][1];
+      dist[2] = b_face_cog[f_id][2] - cell_cen[c_id][2];
+
       cs_real_6_t  *coefa_rij = (cs_real_6_t  *)f_rij->bc_coeffs->a;
       cs_real_66_t *coefb_rij = (cs_real_66_t *)f_rij->bc_coeffs->b;
       cs_real_6_t  *cofaf_rij = (cs_real_6_t  *)f_rij->bc_coeffs->af;
@@ -2989,10 +2993,6 @@ cs_boundary_conditions_set_coeffs_turb(int        isvhb,
         visci[2][1] =          visten[c_id][4];
         visci[0][2] =          visten[c_id][5];
         visci[2][0] =          visten[c_id][5];
-
-        dist[0] = b_face_cog[f_id][0] - cell_cen[c_id][0];
-        dist[1] = b_face_cog[f_id][1] - cell_cen[c_id][1];
-        dist[2] = b_face_cog[f_id][2] - cell_cen[c_id][2];
 
         /* ||Ki.n||^2 */
         const cs_real_t viscis = cs_math_pow2(  visci[0][0]*rnxyz[0]
