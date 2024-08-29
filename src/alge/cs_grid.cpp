@@ -3820,7 +3820,6 @@ _automatic_aggregation_mx_msr(const cs_grid_t  *f,
  * \param[in]   c_n_rows       number of rows in fine grid
  * \param[in]   alloc_mode     allocation mode for cf_row_index and cs_row_ids
  * \param[in]   n_f_threads    number of threads for fine rows
- * \param[in]   f_row_index    fine grid row index
  * \param[in]   f_c_row        fine to coarse row map
  * \param[in]   f_row_index    MSR row index for fine grid (to count columns)
  * \param[out]  c_f_row_index  coarse to fine rows index
@@ -3996,10 +3995,17 @@ _coarse_to_fine_adjacency_msr(cs_lnum_t         f_n_rows,
  * with a matrix in MSR format.
  *
  * parameters:
- *   f_c_row             --> Fine row -> coarse row connectivity
- *
- * return:
- *   number of coarse rows
+ *   f_n_rows          <-- number of fine rows
+ *   c_n_rows          <-- number of coarse rows
+ *   alloc_mode        <-- allocation mode
+ *   f_row_index       <-- fine matrix row index
+ *   f_col_id          <-- fine matrix column ids
+ *   f_c_row           <-- fine to coarse row mapping
+ *   c_f_row_index     <-- coarse to fine row index
+ *   c_f_row_ids       <-- coarse to fine row ids
+ *   c_row_index_0     <-- oversized (pre-merging) row index for coarse matrix
+ *   c_row_index       --> coarse row index
+ *   c_col_ids         --> coarse column ids
  *----------------------------------------------------------------------------*/
 
 static void
