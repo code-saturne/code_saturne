@@ -918,8 +918,6 @@ _pre_solve_lrr(const cs_field_t  *f_rij,
   cs_field_t *f_rho = CS_F_(rho);
   cs_field_t *f_mu = CS_F_(mu);
 
-  const int coupled_components = cs_glob_turb_rans_model->irijco;
-
   if (phase_id >= 0) {
     f_eps = CS_FI_(eps, phase_id);
     f_rho = CS_FI_(rho, phase_id);
@@ -1750,7 +1748,6 @@ _pre_solve_ssg(const cs_field_t  *f_rij,
 
   const cs_real_t cebms1 = cs_turb_cebms1;
 
-  const cs_real_t crij3  = cs_turb_crij3;
   const cs_real_t csrij  = cs_turb_csrij;
 
   const cs_real_t cssgr1 = cs_turb_cssgr1;
