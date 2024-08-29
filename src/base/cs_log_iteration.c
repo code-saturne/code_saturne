@@ -1720,6 +1720,11 @@ cs_log_equation_convergence_info_write(void)
   const int keylog = cs_field_key_id("log");
   const cs_real_t *cell_vol = cs_glob_mesh_quantities->cell_vol;
   const cs_lnum_t n_cells = cs_glob_mesh->n_cells;
+
+  cs_real_t *w1, *w2;
+  BFT_MALLOC(w1, n_cells, cs_real_t);
+  BFT_MALLOC(w2, n_cells, cs_real_t);
+
   char title[128] = "   Variable    ";
   char line[128] = "";
   int ic = 15;
@@ -1755,120 +1760,108 @@ cs_log_equation_convergence_info_write(void)
      _("\n"
        "  ** Information on convergence\n"
        "     --------------------------\n\n"));
-  cs_log_printf
-    (CS_LOG_DEFAULT,
-     _("%s\n%s\n%s\n"),
-     line, title, line);
+
+  cs_log_printf(CS_LOG_DEFAULT, _("%s\n%s\n%s\n"), line, title, line);
 
   /* Print convergence information for each solved field */
   for (int f_id = 0; f_id < n_fields; f_id++) {
     cs_field_t *f = cs_field_by_id(f_id);
-    cs_real_t *dervar, *varres, *varnrm, *w1, *w2;
-    BFT_MALLOC(dervar, f->dim, cs_real_t);
-    BFT_MALLOC(varres, f->dim, cs_real_t);
-    BFT_MALLOC(varnrm, f->dim, cs_real_t);
-    BFT_MALLOC(w1, n_cells, cs_real_t);
-    BFT_MALLOC(w2, n_cells, cs_real_t);
+    cs_real_t dervar[9], varres[9], varnrm[9];
+    assert(f->dim <= 9);
 
     int log_flag = cs_field_get_key_int(f, keylog);
-    /* Is the field of type CS_FIELD_VARIABLE ? */
-    if (f->type & CS_FIELD_VARIABLE) {
-      char chain[128] = "c  ";
 
-      const char *f_label = cs_field_get_label(f);
-      char var_name_trunc[max_name_width + 1];
-      strncpy(var_name_trunc, f_label, max_name_width);
-      var_name_trunc[max_name_width] = '\0';
-      strcat(chain, var_name_trunc);
+    if (!(f->type & CS_FIELD_VARIABLE))
+      continue;
 
-      for (int i = strlen(chain); i < 3 + max_name_width; i++)
-        strcat(chain, " ");
+    char chain[128] = "c  ";
 
-      /* Check if the variable was solved in the current time step */
-      cs_solving_info_t sinfo;
-      cs_field_get_key_struct(f, cs_field_key_id("solving_info"), &sinfo);
-      if (sinfo.n_it < 0)
-        continue;
+    const char *f_label = cs_field_get_label(f);
+    char var_name_trunc[max_name_width + 1];
+    strncpy(var_name_trunc, f_label, max_name_width);
+    var_name_trunc[max_name_width] = '\0';
+    strcat(chain, var_name_trunc);
 
-      /* Compute the time drift */
-      /* Cell based variables */
-      if (f->location_id == CS_MESH_LOCATION_CELLS) {
-        const int dim = f->dim;
-        cs_real_t *dt = CS_F_(dt)->val;
+    for (int i = strlen(chain); i < 3 + max_name_width; i++)
+      strcat(chain, " ");
 
-        /* Pressure time drift (computed in cs_pressure_correction.c) */
-        dervar[0] = sinfo.derive;
+    /* Check if the variable was solved in the current time step */
+    cs_solving_info_t sinfo;
+    cs_field_get_key_struct(f, cs_field_key_id("solving_info"), &sinfo);
+    if (sinfo.n_it < 0)
+      continue;
+
+    /* Compute the time drift */
+    /* Cell based variables */
+    if (f->location_id == CS_MESH_LOCATION_CELLS) {
+      const int dim = f->dim;
+      cs_real_t *dt = CS_F_(dt)->val;
+
+      /* Pressure time drift (computed in cs_pressure_correction.c) */
+      dervar[0] = sinfo.derive;
 
         /* Time drift for cell based variables (except pressure) */
-        if (   cs_glob_physical_model_flag[CS_COMPRESSIBLE] > -1
-            || strcmp(f->name, "pressure") != 0) {
-          for (int isou = 0; isou < dim; isou++) {
-            for (int c_id = 0; c_id < n_cells; c_id++)
-              w1[c_id] = (f->val[dim * c_id + isou] - f->val_pre[dim * c_id + isou])
-                / sqrt(dt[c_id]);
-
-            dervar[isou] = cs_gres(n_cells, cell_vol, w1, w1);
-          }
-
-          for (int isou = 1; isou < dim; isou++)
-            dervar[0] += dervar[isou];
-          /* We don't update the sinfo attribute since it may not be
-           * updated at each time step (only when logging)
-           * NOTE: it should be added in the bindings again
-           * if needed */
-          // sinfo.derive = dervar[0];
-        }
-
-        /* L2 time normalized residual */
+      if (   cs_glob_physical_model_flag[CS_COMPRESSIBLE] > -1
+          || strcmp(f->name, "pressure") != 0) {
         for (int isou = 0; isou < dim; isou++) {
-          for (int c_id = 0; c_id < n_cells; c_id++) {
-            w1[c_id] = (f->val[dim * c_id + isou] - f->val_pre[dim * c_id + isou])
-              / dt[c_id];
-            w2[c_id] = f->val[dim * c_id + isou];
-          }
+          for (int c_id = 0; c_id < n_cells; c_id++)
+            w1[c_id] =   (f->val[dim*c_id + isou] - f->val_pre[dim*c_id + isou])
+                       / sqrt(dt[c_id]);
 
-          varres[isou] = cs_gres(n_cells, cell_vol, w1, w1);
-          varnrm[isou] = cs_gres(n_cells, cell_vol, w2, w2);
-
-          if (isou > 0) {
-            varres[0] += varres[isou];
-            varnrm[0] += varnrm[isou];
-          }
+          dervar[isou] = cs_gres(n_cells, cell_vol, w1, w1);
         }
 
-        if (varnrm[0] > 0.)
-          varres[0] = varres[0] / varnrm[0];
+        for (int isou = 1; isou < dim; isou++)
+          dervar[0] += dervar[isou];
         /* We don't update the sinfo attribute since it may not be
          * updated at each time step (only when logging)
          * NOTE: it should be added in the bindings again
          * if needed */
-        // sinfo.l2residual = sqrt(cs_math_fabs(varres[0]));
+        // sinfo.derive = dervar[0];
       }
 
-      char var_log[128];
-      snprintf(var_log, 127, "%12.5e %7d   %12.5e %12.5e %12.5e",
-          sinfo.rhs_norm, sinfo.n_it, sinfo.res_norm,
-          dervar[0], sqrt(cs_math_fabs(varres[0])));
-      strcat(chain, var_log);
+      /* L2 time normalized residual */
+      for (int isou = 0; isou < dim; isou++) {
+        for (int c_id = 0; c_id < n_cells; c_id++) {
+          w1[c_id] =   (f->val[dim*c_id + isou] - f->val_pre[dim*c_id + isou])
+                     / dt[c_id];
+          w2[c_id] = f->val[dim * c_id + isou];
+        }
 
-      if (log_flag > 0)
-        cs_log_printf
-          (CS_LOG_DEFAULT,
-           _("%s\n"),
-           chain);
+        varres[isou] = cs_gres(n_cells, cell_vol, w1, w1);
+        varnrm[isou] = cs_gres(n_cells, cell_vol, w2, w2);
 
+        if (isou > 0) {
+          varres[0] += varres[isou];
+          varnrm[0] += varnrm[isou];
+        }
+      }
+
+      if (varnrm[0] > 0.)
+        varres[0] = varres[0] / varnrm[0];
+      /* We don't update the sinfo attribute since it may not be
+       * updated at each time step (only when logging)
+       * NOTE: it should be added in the bindings again
+       * if needed */
+      // sinfo.l2residual = sqrt(cs_math_fabs(varres[0]));
     }
 
-    BFT_FREE(dervar);
-    BFT_FREE(varres);
-    BFT_FREE(varnrm);
-    BFT_FREE(w1);
-    BFT_FREE(w2);
-  }
-  cs_log_printf
-    (CS_LOG_DEFAULT,
-     _("%s\n"),
-     line);
+    char var_log[128];
+    snprintf(var_log, 127, "%12.5e %7d   %12.5e %12.5e %12.5e",
+             sinfo.rhs_norm, sinfo.n_it, sinfo.res_norm,
+             dervar[0], sqrt(cs_math_fabs(varres[0])));
+
+    strcat(chain, var_log);
+
+    if (log_flag > 0)
+      cs_log_printf(CS_LOG_DEFAULT, _("%s\n"), chain);
+
+  } /* End loop on fields */
+
+  cs_log_printf(CS_LOG_DEFAULT, _("%s\n"), line);
+
+  BFT_FREE(w1);
+  BFT_FREE(w2);
 }
 
 /*----------------------------------------------------------------------------*/
