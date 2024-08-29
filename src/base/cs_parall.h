@@ -914,6 +914,41 @@ cs_parall_min(MPI_Comm        comm,
 
 #endif
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Compute array index bounds for a given thread.
+ *        This will return the
+ *        start an past-the-end indexes for the array range assigned to that
+ *        thread. In other cases, the start index is 1, and the past-the-end
+ *        index is n;
+ *
+ * \param[in]       n          size of array
+ * \param[in]       type_size  element type size (or multiple)
+ * \param[in]       t_id       thread id
+ * \param[in]       n_t        number of threads
+ * \param[in, out]  s_id       start index for the current thread
+ * \param[in, out]  e_id       past-the-end index for the current thread
+ */
+/*----------------------------------------------------------------------------*/
+
+inline static void
+cs_parall_thread_range(cs_lnum_t    n,
+                       size_t       type_size,
+                       int          t_id,
+                       int          n_t,
+                       cs_lnum_t   *s_id,
+                       cs_lnum_t   *e_id)
+{
+  const cs_lnum_t t_n = (n + n_t - 1) / n_t;
+  const cs_lnum_t cl_m = CS_CL_SIZE / type_size;  /* Cache line multiple */
+
+  *s_id =  t_id    * t_n;
+  *e_id = (t_id+1) * t_n;
+  *s_id = cs_align(*s_id, cl_m);
+  *e_id = cs_align(*e_id, cl_m);
+  if (*e_id > n) *e_id = n;
+}
+
 /*=============================================================================
  * Public C++ templates
  *============================================================================*/
