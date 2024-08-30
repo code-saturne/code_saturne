@@ -308,7 +308,7 @@ _turb_flux_st(const char          *name,
        /* Production terms
         *----------------- */
 
-       /* Production term due to the mean velcoity */
+       /* Production term due to the mean velocity */
        const cs_real_t prod_by_vel_grad_i =
          - cs_math_3_dot_product(gradv[c_id][i], xuta[c_id]);
        if (prod_by_vel_grad_ut != NULL) /* Save it if needed */
@@ -316,8 +316,8 @@ _turb_flux_st(const char          *name,
 
        /* Production term due to the mean temperature */
       const cs_real_t prod_by_scal_grad_i =  - (   xrij[i][0]*gradt[c_id][0]
-                                           + xrij[i][1]*gradt[c_id][1]
-                                           + xrij[i][2]*gradt[c_id][2]);
+                                                 + xrij[i][1]*gradt[c_id][1]
+                                                 + xrij[i][2]*gradt[c_id][2]);
        if (prod_by_scal_grad_ut != NULL) /* Save it if needed */
          prod_by_scal_grad_ut[c_id][i] = prod_by_scal_grad_i;
 

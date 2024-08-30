@@ -2756,19 +2756,19 @@ cs_turbulence_rij(int phase_id)
 
 #   pragma omp parallel for if(n_cells > CS_THR_MIN)
     for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-      for (cs_lnum_t ii = 0; ii < 6; ii++) {
-        const cs_real_t tuexpr = c_st_prv[c_id][ii];
+      for (cs_lnum_t ij = 0; ij < 6; ij++) {
+        const cs_real_t tuexpr = c_st_prv[c_id][ij];
         /* For continuation and the next time step */
-        c_st_prv[c_id][ii] = rhs[c_id][ii];
+        c_st_prv[c_id][ij] = rhs[c_id][ij];
 
-        rhs[c_id][ii] = -thets*tuexpr;
+        rhs[c_id][ij] = -thets*tuexpr;
         /* Right hand side of the previous time step
          * We suppose -fimp > 0: we implicit
          * the user source term (the rest) */
-        for (cs_lnum_t jj = 0; jj < 6; jj++) {
-          rhs[c_id][ii] += fimp[c_id][ii][jj] * cvara_rij[c_id][jj];
+        for (cs_lnum_t kl = 0; kl < 6; kl++) {
+          rhs[c_id][ij] += fimp[c_id][ij][kl] * cvara_rij[c_id][kl];
           /* Diagonal */
-          fimp[c_id][ii][jj] *= -thetv;
+          fimp[c_id][ij][kl] *= -thetv;
         }
       }
     }
@@ -3092,8 +3092,8 @@ cs_turbulence_rij(int phase_id)
    * ------------- */
   if (eqp->istat == 1) {
     for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-      for (int ii = 0; ii < 6; ii++)
-        fimp[c_id][ii][ii] += (crom[c_id]/dt[c_id])*cell_f_vol[c_id];
+      for (int ij = 0; ij < 6; ij++)
+        fimp[c_id][ij][ij] += (crom[c_id]/dt[c_id])*cell_f_vol[c_id];
     }
   }
 
