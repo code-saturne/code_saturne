@@ -2778,10 +2778,11 @@ cs_turbulence_rij(int phase_id)
 
 #   pragma omp parallel for if(n_cells > CS_THR_MIN)
     for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-      for (cs_lnum_t ii = 0; ii < 6; ii++) {
-        for (cs_lnum_t jj = 0; jj < 6; jj++)
-          rhs[c_id][ii] += fimp[c_id][ii][jj] * cvara_rij[c_id][jj];
-        fimp[c_id][ii][ii] = cs_math_fmax(-fimp[c_id][ii][ii], 0.);
+      for (cs_lnum_t ij = 0; ij < 6; ij++) {
+        for (cs_lnum_t kl = 0; kl < 6; kl++) {
+          rhs[c_id][ij] += fimp[c_id][ij][kl] * cvara_rij[c_id][kl];
+          fimp[c_id][ij][kl] = cs_math_fmax(-fimp[c_id][ij][kl], 0.);
+        }
       }
     }
 
