@@ -1224,7 +1224,6 @@ cs_turbulence_ke(int              phase_id,
                        NULL,  /* internal coupling */
                        grad_sqk);
 
-    bc_coeffs_sqk_loc.a = NULL;
     cs_field_bc_coeffs_free_copy(f_k->bc_coeffs, &bc_coeffs_sqk_loc);
 
     /* Gradient of the Strain (grad S)

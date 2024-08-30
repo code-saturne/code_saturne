@@ -4180,9 +4180,12 @@ _lsq_scalar_b_face_val(const cs_mesh_t             *m,
     BFT_MALLOC(bc_coeffs_loc->a, m->n_b_faces, cs_real_t);
     for (cs_lnum_t i = 0; i < m->n_b_faces; i++)
       bc_coeffs_loc->a[i] = 0;
-
-    bc_coeffs = (const cs_field_bc_coeffs_t *)bc_coeffs_loc;
   }
+
+  const cs_field_bc_coeffs_t *_bc_coeffs
+    = (bc_coeffs_loc != nullptr) ?
+      (const cs_field_bc_coeffs_t *)bc_coeffs_loc :
+      (const cs_field_bc_coeffs_t *)bc_coeffs;
 
   /* Reconstruct gradients using least squares for non-orthogonal meshes */
 
@@ -4196,7 +4199,7 @@ _lsq_scalar_b_face_val(const cs_mesh_t             *m,
                             fvq,
                             c_id,
                             halo_type,
-                            bc_coeffs,
+                            _bc_coeffs,
                             c_var,
                             c_weight,
                             grad);
@@ -4212,13 +4215,12 @@ _lsq_scalar_b_face_val(const cs_mesh_t             *m,
 
       cs_real_t pip =   c_var[c_id]
                       + cs_math_3_dot_product(diipb[f_id], grad);
-      b_f_var[f_id] = bc_coeffs->a[f_id]*inc + pip*bc_coeffs->b[f_id];
+      b_f_var[f_id] = _bc_coeffs->a[f_id]*inc + pip*_bc_coeffs->b[f_id];
 
     }
   }
 
   if (bc_coeffs_loc != nullptr) {
-    bc_coeffs_loc->a = nullptr;
     cs_field_bc_coeffs_free_copy(bc_coeffs, bc_coeffs_loc);
     BFT_FREE(bc_coeffs_loc);
   }
@@ -7749,9 +7751,6 @@ _lsq_strided_b_face_val(const cs_mesh_t               *m,
   using a_t = cs_real_t[stride];
   using b_t = cs_real_t[stride][stride];
 
-  const a_t *bc_coeff_a = (const a_t *)bc_coeffs_v->a;
-  const b_t *bc_coeff_b = (const b_t *)bc_coeffs_v->b;
-
   const cs_lnum_t n_b_faces = m->n_b_faces;
 
   cs_field_bc_coeffs_t *bc_coeffs_v_loc = nullptr;
@@ -7766,8 +7765,15 @@ _lsq_strided_b_face_val(const cs_mesh_t               *m,
       for (cs_lnum_t j = 0; j < stride; j++)
         bc_coeff_loc_a[i][j] = 0;
     }
-    bc_coeffs_v = (const cs_field_bc_coeffs_t *)bc_coeffs_v_loc;
   }
+
+  const cs_field_bc_coeffs_t *_bc_coeffs
+    = (bc_coeffs_v_loc != nullptr) ?
+      (const cs_field_bc_coeffs_t *)bc_coeffs_v_loc :
+      (const cs_field_bc_coeffs_t *)bc_coeffs_v;
+
+  const a_t *bc_coeff_a = (const a_t *)_bc_coeffs->a;
+  const b_t *bc_coeff_b = (const b_t *)_bc_coeffs->b;
 
   /* Reconstruct gradients using least squares for non-orthogonal meshes */
 
@@ -7779,7 +7785,7 @@ _lsq_strided_b_face_val(const cs_mesh_t               *m,
        nullptr,
        halo_type,
        -1,
-       bc_coeffs_v,
+       _bc_coeffs,
        c_weight,
        reinterpret_cast<const cs_real_t(*)[3]>(c_var),
        reinterpret_cast<cs_real_t(*)[3]>(b_f_var));
@@ -7792,7 +7798,7 @@ _lsq_strided_b_face_val(const cs_mesh_t               *m,
        nullptr,
        halo_type,
        -1,
-       bc_coeffs_v,
+       _bc_coeffs,
        c_weight,
        reinterpret_cast<const cs_real_t(*)[6]>(c_var),
        reinterpret_cast<cs_real_t(*)[6]>(b_f_var));
@@ -7813,9 +7819,10 @@ _lsq_strided_b_face_val(const cs_mesh_t               *m,
 
   }
 
-  bc_coeffs_v_loc->a = nullptr;
-  cs_field_bc_coeffs_free_copy(bc_coeffs_v, bc_coeffs_v_loc);
-  BFT_FREE(bc_coeffs_v_loc);
+  if (bc_coeffs_v_loc != nullptr) {
+    cs_field_bc_coeffs_free_copy(bc_coeffs_v, bc_coeffs_v_loc);
+    BFT_FREE(bc_coeffs_v_loc);
+  }
 }
 
 /*----------------------------------------------------------------------------
