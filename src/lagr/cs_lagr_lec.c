@@ -99,7 +99,6 @@ cs_restart_lagrangian_checkpoint_read(void)
   cs_lagr_extra_module_t *extra = cs_glob_lagr_extra_module;
 
   cs_lnum_t nfabor      = cs_glob_mesh->n_b_faces;
-  cs_lnum_t ncel        = cs_glob_mesh->n_cells;
   cs_lnum_t n_cells_ext = cs_glob_mesh->n_cells_with_ghosts;
 
   /* Default initializations */
@@ -1044,7 +1043,7 @@ cs_lagr_restart_read_p(void)
   /* Particle data */
   cs_lagr_restart_read_particle_data(lag_stat_restart);
 
-  (lag_stat_restart, CS_RESTART_LAGR);
+  cs_restart_read_fields(lag_stat_restart, CS_RESTART_LAGR);
 
   cs_log_printf(CS_LOG_DEFAULT,
                 _("    End reading particle data restart file\n"));

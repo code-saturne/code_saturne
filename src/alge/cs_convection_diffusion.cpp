@@ -594,9 +594,6 @@ _beta_limiter_num(cs_field_t                 *f,
 /*----------------------------------------------------------------------------
  * Synchronize strided gradient ghost cell values.
  *
- * template parameters:
- *   stride        1 for scalars, 3 for vectors, 6 for symmetric tensors
- *
  * parameters:
  *   m              <-- pointer to associated mesh structure
  *   on_device,     <-- is data on device (GPU) ?

@@ -2557,7 +2557,7 @@ cs_sat_coupling_exchange_at_cells
               _("'%s' Cannot be called for non variable fields.\n"),
               __func__);
 
-  cs_equation_param_t *eqp = cs_field_get_equation_param_const(f);
+  const cs_equation_param_t *eqp = cs_field_get_equation_param_const(f);
 
   if (eqp->verbosity > 0)
     bft_printf("\n  Code-code coupling, add volume source terms for field %s\n\n", f->name);

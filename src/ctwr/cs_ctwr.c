@@ -591,7 +591,7 @@ cs_ctwr_build_all(void)
     cs_ctwr_zone_t *ct = _ct_zone[ict];
 
     /* Set number of cells */
-    cs_zone_t *z = cs_volume_zone_by_name(ct->name);
+    const cs_zone_t *z = cs_volume_zone_by_name(ct->name);
     ct->n_cells = z->n_elts;
     ct->vol_f = z->f_measure;
 
@@ -643,16 +643,17 @@ cs_ctwr_build_all(void)
   cs_ctwr_option_t *ct_opt = cs_get_glob_ctwr_option();
   if (ct_opt->has_rain) {
     /* Set number of cells */
-    cs_zone_t *z = cs_volume_zone_by_id(0);
+    const cs_zone_t *z = cs_volume_zone_by_id(0);
 
     cs_equation_param_t *eqp =
         cs_field_get_equation_param(CS_F_(p));
 
-    cs_equation_add_volume_mass_injection_by_dof_func(eqp,
-                                                      z->name,
-                                                      cs_flag_primal_cell,
-                                                      cs_ctwr_volume_mass_injection_rain_dof_func,
-                                                      NULL);
+    cs_equation_add_volume_mass_injection_by_dof_func
+      (eqp,
+       z->name,
+       cs_flag_primal_cell,
+       cs_ctwr_volume_mass_injection_rain_dof_func,
+       NULL);
 
     /* Rain mass fraction */
     cs_field_t *f_yp = cs_field_by_name("ym_l_r");

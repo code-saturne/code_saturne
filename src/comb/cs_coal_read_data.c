@@ -646,7 +646,7 @@ cs_coal_read_data(void)
 
   for (int icha = 0; icha < n_coals; icha++) {
 
-    double pcisec, pcipur, pcibrut, xwatpc, pcspur;
+    double pcisec = 0., pcipur, pcibrut, xwatpc, pcspur;
 
     xwatpc = cm->xwatch[icha] * 100.;
 

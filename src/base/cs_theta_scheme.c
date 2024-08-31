@@ -115,7 +115,7 @@ cs_theta_scheme_update_var(const cs_lnum_t  iappel)
   cs_real_t *cpro_visct  = CS_F_(mu_t)->val;
   cs_real_t *cproa_visct = CS_F_(mu_t)->val_pre;
 
-  const cs_field_t *f_cp = CS_F_(cp);
+  cs_field_t *f_cp = CS_F_(cp);
   cs_real_t *cpro_cp = NULL;
   cs_real_t *cproa_cp = NULL;
   if (f_cp != NULL) {

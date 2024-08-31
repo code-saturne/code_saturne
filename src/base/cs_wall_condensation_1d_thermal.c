@@ -147,7 +147,6 @@ _log_debug(void)
   cs_real_t *zdxp = _wall_cond_1d_thermal.zdxp;
 
   const int nzones = _wall_cond_1d_thermal.nzones;
-  const int znmurx = _wall_cond_1d_thermal.znmurx;
   const cs_lnum_t *znmur  = _wall_cond_1d_thermal.znmur;
   const cs_real_t *zdxmin = _wall_cond_1d_thermal.zdxmin;
   const cs_real_t *zepais = _wall_cond_1d_thermal.zepais;
@@ -485,7 +484,6 @@ cs_wall_condensation_1d_thermal_mesh_initialize(void)
 
   cs_real_t *zdxp = _wall_cond_1d_thermal.zdxp;
 
-  const int znmurx = _wall_cond_1d_thermal.znmurx;
   const int nzones =  _wall_cond_1d_thermal.nzones;
   const cs_lnum_t *znmur  = _wall_cond_1d_thermal.znmur;
   const cs_real_t *zdxmin = _wall_cond_1d_thermal.zdxmin;

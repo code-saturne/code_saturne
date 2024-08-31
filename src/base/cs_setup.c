@@ -436,7 +436,7 @@ _init_variable_fields(void)
   }
 
   /* Enable VoF model if free surface or mass transfer modeling enabled */
-  int vof_mask = CS_VOF_FREE_SURFACE || CS_VOF_MERKLE_MASS_TRANSFER;
+  int vof_mask = CS_VOF_FREE_SURFACE | CS_VOF_MERKLE_MASS_TRANSFER;
   if ((cs_glob_vof_parameters->vof_model & vof_mask) != 0) {
     cs_vof_parameters_t *vof_parameters = cs_get_glob_vof_parameters();
     vof_parameters->vof_model |= CS_VOF_ENABLED;
