@@ -4870,6 +4870,15 @@ _automatic_aggregation_dx_msr(const cs_grid_t       *f,
       }
     }
 
+    /* We need to wait for all threads if we want to reuse
+       the work array, as the portion we use is not the same
+       (we could use the same portion if we were absolutely sure that
+        (row_index[t_s_id] - row_index[t_e_id]) / 2 > (t_e_id - t_s_id),
+       which is always the case if there is at least one non-diagonal
+       term per row, but could be false in some strage configurations). */
+
+    #pragma omp barrier
+
     _reorder_f_c_row(t_e_id - t_s_id,
                      t_c_n_rows,
                      ag_work + t_s_id,
