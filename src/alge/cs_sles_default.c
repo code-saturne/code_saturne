@@ -351,12 +351,10 @@ _sles_setup_matrix_native(int                  f_id,
       if (eb_size > 1)
         need_msr = false;
     }
-    else {
-      pc = cs_sles_it_get_pc(c);
-      if (pc != NULL) {
-        if (strcmp(cs_sles_pc_get_type(pc), "multigrid") == 0)
-          mg = cs_sles_pc_get_context(pc);
-      }
+    pc = cs_sles_it_get_pc(c);
+    if (pc != NULL) {
+      if (strcmp(cs_sles_pc_get_type(pc), "multigrid") == 0)
+        mg = cs_sles_pc_get_context(pc);
     }
   }
   else if (strcmp(cs_sles_get_type(sc), "cs_multigrid_t") == 0)
@@ -422,16 +420,21 @@ _sles_setup_matrix_native(int                  f_id,
                              da,
                              xa);
 
-  const cs_mesh_adjacencies_t *ma = cs_glob_mesh_adjacencies;
-  const cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
+  if (mg != NULL) {
+    const cs_mesh_adjacencies_t *ma = cs_glob_mesh_adjacencies;
+    const cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
 
-  cs_matrix_set_mesh_association(a,
-                                 ma->cell_cells_idx,
-                                 ma->cell_i_faces,
-                                 ma->cell_i_faces_sgn,
-                                 (const cs_real_3_t *)mq->cell_cen,
-                                 (const cs_real_t *)mq->cell_vol,
-                                 (const cs_real_3_t *)mq->i_face_normal);
+    if (ma->cell_i_faces == NULL)
+      cs_mesh_adjacencies_update_cell_i_faces();
+
+    cs_matrix_set_mesh_association(a,
+                                   ma->cell_cells_idx,
+                                   ma->cell_i_faces,
+                                   ma->cell_i_faces_sgn,
+                                   (const cs_real_3_t *)mq->cell_cen,
+                                   (const cs_real_t *)mq->cell_vol,
+                                   (const cs_real_3_t *)mq->i_face_normal);
+  }
 
   cs_matrix_default_set_tuned(a);
 
@@ -712,6 +715,9 @@ cs_sles_setup_native_conv_diff(int                  f_id,
 
       const cs_mesh_adjacencies_t *ma = cs_glob_mesh_adjacencies;
       const cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
+
+      if (ma->cell_i_faces == NULL)
+        cs_mesh_adjacencies_update_cell_i_faces();
 
       cs_matrix_set_mesh_association(a,
                                      ma->cell_cells_idx,

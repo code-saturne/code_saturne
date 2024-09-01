@@ -158,6 +158,11 @@ struct _cs_grid_t {
                                        < 0 orientation opposite as parent);
                                        size: parent n_faces */
 
+  /* Face to cell date (if owner); uses same index as MSR matrix */
+
+  cs_lnum_t    *cell_face;           /* Cell to faces adjacency */
+  short int    *cell_face_sgn;       /* Cell to faces orientation */
+
   /* Geometric data */
 
   cs_real_t         relaxation;     /* P0/P1 relaxation parameter */
@@ -382,6 +387,9 @@ _create_grid(void)
 
   g->coarse_row = NULL;
   g->coarse_face = NULL;
+
+  g->cell_face = nullptr;
+  g->cell_face_sgn = nullptr;
 
   g->cell_cen = NULL;
   g->_cell_cen = NULL;
@@ -741,7 +749,8 @@ _coarsen_faces(const cs_grid_t    *fine,
     std::chrono::microseconds elapsed
       = std::chrono::duration_cast
           <std::chrono::microseconds>(t_stop - t_start);
-    printf("%d: %s (level %d)", cs_glob_rank_id, __func__, fine->level);
+    printf("%d: %s (level %d -> %d)", cs_glob_rank_id, __func__,
+           fine->level, fine->level - 1);
     printf(", total = %ld\n", elapsed.count());
   }
 }
@@ -1276,7 +1285,8 @@ _coarsen_halo(const cs_grid_t   *f,
     std::chrono::microseconds elapsed
       = std::chrono::duration_cast
           <std::chrono::microseconds>(t_stop - t_start);
-    printf("%d: %s", cs_glob_rank_id, __func__);
+    printf("%d: %s (level %d -> %d)", cs_glob_rank_id, __func__,
+           f->level, c->level);
     printf(", total = %ld\n", elapsed.count());
   }
 }
@@ -3203,8 +3213,8 @@ _automatic_aggregation_pw_msr(const cs_grid_t  *f,
     std::chrono::microseconds elapsed
       = std::chrono::duration_cast
           <std::chrono::microseconds>(t_stop - t_start);
-    printf("%d: %s (level %d)", cs_glob_rank_id, __func__, f->level);
-    printf("%d: %s", cs_glob_rank_id, __func__);
+    printf("%d: %s (level %d -> %d)", cs_glob_rank_id, __func__,
+           f->level, f->level-1);
     printf(", total = %ld\n", elapsed.count());
   }
 
@@ -3801,7 +3811,8 @@ _automatic_aggregation_mx_msr(const cs_grid_t  *f,
     std::chrono::microseconds elapsed
       = std::chrono::duration_cast
           <std::chrono::microseconds>(t_stop - t_start);
-    printf("%d: %s (level %d)", cs_glob_rank_id, __func__, f->level);
+    printf("%d: %s (level %d -> %d)", cs_glob_rank_id, __func__,
+           f->level, f->level-1);
     printf(", total = %ld\n", elapsed.count());
   }
 
@@ -3990,8 +4001,7 @@ _coarse_to_fine_adjacency_msr(cs_lnum_t         f_n_rows,
 }
 
 /*----------------------------------------------------------------------------
- * Build a coarse grid level from the previous level using an
- * automatic criterion and pairwise aggregation variant 1,
+ * Build a coarse grid msr structure from the previous level
  * with a matrix in MSR format.
  *
  * parameters:
@@ -4163,6 +4173,166 @@ _coarse_msr_struct(cs_lnum_t          f_n_rows,
 
   *c_row_index = c_row_idx;
   *c_col_ids = c_col_id;
+}
+
+/*----------------------------------------------------------------------------
+ * Compute MSR face adjacency for a give grid.
+ *
+ * We choose to orient faces in order of increasing local row id.
+ *
+ * Note that in the case of distributed (MPI) computation, this means
+ * that faces on parallel boundaries will not have the same orientation
+ * for each rank, which is not an issue here as we should never need this
+ * hypothesis in the multigrid infrastructure (contrary to other portions
+ * of the code where summing on faces may be done).
+ *
+ * parameters:
+ *   g             <-- pointer to grid structure.
+ *   row_index     <-- matrix row index
+ *   col_id        <-- matrix column ids
+ *----------------------------------------------------------------------------*/
+
+static void
+_msr_face_adjacency(cs_grid_t        *g,
+                    const cs_lnum_t  *restrict row_index,
+                    const cs_lnum_t  *restrict col_id)
+{
+  std::chrono::high_resolution_clock::time_point tm_start;
+  if (cs_glob_timer_kernels_flag > 0)
+    tm_start = std::chrono::high_resolution_clock::now();
+
+  const cs_lnum_t n_rows = g->n_rows;
+  const cs_lnum_t c_nnz = row_index[g->n_rows];
+
+  cs_lnum_t *cell_to_face;
+  short int *cell_to_face_sgn;
+  CS_MALLOC_HD(cell_to_face, c_nnz, cs_lnum_t, g->alloc_mode);
+  CS_MALLOC_HD(cell_to_face_sgn, c_nnz, short int, g->alloc_mode);
+
+  cs_lnum_t *t_f_scan = nullptr;
+  int n_loc_threads = cs_parall_n_threads(c_nnz, CS_THR_MIN);
+
+  cs_lnum_t n_faces = 0;
+
+  if (n_loc_threads > 1) {
+    BFT_MALLOC(t_f_scan, n_loc_threads*2, cs_lnum_t);
+    for (int i = 0; i < n_loc_threads; i++) {
+      t_f_scan[i] = 0;
+    }
+  }
+
+  /* First stage: determine coarse face ids in direct orientation */
+
+  #pragma omp parallel shared(n_faces) num_threads(n_loc_threads)
+  {
+    cs_lnum_t t_s_id, t_e_id;
+    cs_parall_thread_range(n_rows, sizeof(cs_real_t), &t_s_id, &t_e_id);
+
+    cs_lnum_t t_n_faces = 0;
+
+    /* Loop on block's coarse rows */
+    for (cs_lnum_t c_id = t_s_id; c_id < t_e_id; c_id++) {
+      const cs_lnum_t s_id = row_index[c_id];
+      const cs_lnum_t e_id = row_index[c_id+1];
+
+      for (cs_lnum_t idx = s_id; idx < e_id; idx++) {
+        cs_lnum_t c_id_a = col_id[idx];
+        if (c_id_a < c_id) {
+          cell_to_face[idx] = -1;
+          cell_to_face_sgn[idx] = -1;
+        }
+        else {
+          cell_to_face[idx] = t_n_faces;
+          cell_to_face_sgn[idx] = 1;
+          t_n_faces++;
+        }
+      }
+    }
+
+#if defined(HAVE_OPENMP)
+    if (t_f_scan != nullptr) {
+      int t_id = omp_get_thread_num();
+      t_f_scan[t_id] = t_n_faces;
+    }
+    else
+      n_faces = t_n_faces;
+#else
+    n_faces = t_n_faces;
+#endif
+  } // End of OpenMP section
+
+  /* Second stage: scan operation in case of multiple threads */
+
+#if defined(HAVE_OPENMP)
+
+  if (n_loc_threads > 1) {
+
+    n_faces = 0;
+    for (int i = 0; i < n_loc_threads; i++) {
+      n_faces += t_f_scan[i];
+      t_f_scan[i] = n_faces;
+    }
+
+    #pragma omp parallel num_threads(n_loc_threads)
+    {
+      int t_id = omp_get_thread_num();
+
+      if (t_id > 0) {
+        cs_lnum_t t_s_id, t_e_id;
+        cs_parall_thread_range(n_rows, sizeof(cs_real_t),
+                               t_id, n_loc_threads, &t_s_id, &t_e_id);
+
+        const cs_lnum_t face_shift = t_f_scan[t_id-1];
+
+        const cs_lnum_t s_idx = row_index[t_s_id];
+        const cs_lnum_t e_idx = row_index[t_e_id];
+
+        for (cs_lnum_t idx = s_idx; idx < e_idx; idx++) {
+          if (cell_to_face[idx] > -1)
+            cell_to_face[idx] += face_shift;
+        }
+      }
+
+    }
+
+  }
+
+#endif /* defined(HAVE_OPENMP) */
+
+  BFT_FREE(t_f_scan);
+
+  /* Third stage: determine coarse face ids in opposite orientation */
+
+  #pragma omp parallel for num_threads(n_loc_threads)
+  for (cs_lnum_t c_id = 0; c_id < n_rows; c_id++) {
+    const cs_lnum_t s_id = row_index[c_id];
+    const cs_lnum_t e_id = row_index[c_id+1];
+    for (cs_lnum_t idx = s_id; idx < e_id; idx++) {
+      if (cell_to_face[idx] == -1) {
+        cs_lnum_t c_id_a = col_id[idx];
+        const cs_lnum_t s_id_a = row_index[c_id_a];
+        const cs_lnum_t e_id_a = row_index[c_id_a];
+        const cs_lnum_t idx_a = _l_id_binary_search(e_id_a - s_id_a,
+                                                    c_id,
+                                                    col_id + s_id_a);
+        cell_to_face[idx] = cell_to_face[s_id_a + idx_a];
+      }
+    }
+  }
+
+  g->n_faces = n_faces;
+  g->cell_face = cell_to_face;
+  g->cell_face_sgn = cell_to_face_sgn;
+
+  if (cs_glob_timer_kernels_flag > 0) {
+    std::chrono::high_resolution_clock::time_point
+      tm_stop = std::chrono::high_resolution_clock::now();
+    std::chrono::microseconds elapsed
+      = std::chrono::duration_cast
+          <std::chrono::microseconds>(tm_stop - tm_start);
+    printf("%d: %s (level %d)", cs_glob_rank_id, __func__, g->level);
+    printf(", total = %ld\n", elapsed.count());
+  }
 }
 
 /*----------------------------------------------------------------------------
@@ -4442,7 +4612,8 @@ _automatic_aggregation_fc(const cs_grid_t       *f,
     std::chrono::microseconds elapsed
       = std::chrono::duration_cast
           <std::chrono::microseconds>(t_stop - t_start);
-    printf("%d: %s (level %d)", cs_glob_rank_id, __func__, f->level);
+    printf("%d: %s (level %d -> %d)", cs_glob_rank_id, __func__,
+           f->level, f->level-1);
     printf(", total = %ld\n", elapsed.count());
   }
 
@@ -4918,7 +5089,8 @@ _automatic_aggregation_dx_msr(const cs_grid_t       *f,
     std::chrono::microseconds elapsed
       = std::chrono::duration_cast
           <std::chrono::microseconds>(t_stop - t_start);
-    printf("%d: %s (level %d)", cs_glob_rank_id, __func__, f->level);
+    printf("%d: %s (level %d -> %d)", cs_glob_rank_id, __func__,
+           f->level, f->level-1);
     printf(", total = %ld\n", elapsed.count());
   }
 
@@ -5581,7 +5753,8 @@ _compute_coarse_quantities_native(const cs_grid_t  *fine_grid,
     std::chrono::microseconds elapsed
       = std::chrono::duration_cast
           <std::chrono::microseconds>(t_stop - t_start);
-    printf("%d: %s (level %d)", cs_glob_rank_id, __func__, fine_grid->level);
+    printf("%d: %s (level %d -> %d)", cs_glob_rank_id, __func__,
+           fine_grid->level, coarse_grid->level);
     printf(", total = %ld\n", elapsed.count());
   }
 
@@ -5922,7 +6095,8 @@ _compute_coarse_quantities_conv_diff(const cs_grid_t  *fine_grid,
     std::chrono::microseconds elapsed
       = std::chrono::duration_cast
           <std::chrono::microseconds>(t_stop - t_start);
-    printf("%d: %s (level %d)", cs_glob_rank_id, __func__, fine_grid->level);
+    printf("%d: %s (level %d -> %d)", cs_glob_rank_id, __func__,
+           fine_grid->level, coarse_grid->level);
     printf(", total = %ld\n", elapsed.count());
   }
 
@@ -6064,7 +6238,7 @@ _compute_coarse_quantities_msr(const cs_grid_t  *fine_grid,
         } /* Loop in fine columns */
       } /* Loop on fine rows */
 
-    } /* OpenMP loop on corse rows */
+    } /* OpenMP loop on coarse rows */
 
   }
 
@@ -6152,7 +6326,400 @@ _compute_coarse_quantities_msr(const cs_grid_t  *fine_grid,
     std::chrono::microseconds elapsed
       = std::chrono::duration_cast
           <std::chrono::microseconds>(t_stop - t_start);
-    printf("%d: %s (level %d)", cs_glob_rank_id, __func__, fine_grid->level);
+    printf("%d: %s (level %d -> %d)", cs_glob_rank_id, __func__,
+           fine_grid->level, coarse_grid->level);
+    printf(", total = %ld\n", elapsed.count());
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief compute coarse mesh quantities from fine quantities with MSR matrix.
+ *
+ * Also build direct a fine to coarse MSR matrix index.
+ *
+ * Though thie can be computed on the fly, in cases whare multiple passes
+ * are required, this will avoid extra searches.
+ *
+ * Whether running searches multiple times on the coarse structure,
+ * or requiring more bandwith but with a simpler access (choice here)
+ * provides best performance would need exploring.
+ *
+ * The caller is responsible for freeing the returned array.
+ *
+ * \param[in]       f              fine grid structure
+ * \param[in, out]  c              coarse grid structure
+ * \param[in]       f_row_index    fine matrix row index
+ * \param[in]       f_col_id       fine matrix column ids
+ * \param[in]       c_f_row_index  coarse to fine rows index
+ * \param[in]       c_f_row_ids    coarse to fine row ids
+ * \param[in]       c_row_index    coarse row index
+ * \param[in]       c_col_id       coarse column ids
+ *
+ * \return  fine to coarse index mapping, with -1 for unmapped faces,
+ *          and -1 - coarse_row_id when an index maps to the diagonal
+ *          (i.e. if the index associates 2 merged rows).
+ */
+/*----------------------------------------------------------------------------*/
+
+static cs_lnum_t *
+_coarse_mesh_quantities_msr(const cs_grid_t  *f,
+                            cs_grid_t        *c,
+                            const cs_lnum_t  *f_row_index,
+                            const cs_lnum_t  *f_col_id,
+                            const cs_lnum_t  *c_f_row_index,
+                            const cs_lnum_t  *c_f_row_ids,
+                            const cs_lnum_t  *c_row_index,
+                            const cs_lnum_t  *c_col_id)
+{
+  std::chrono::high_resolution_clock::time_point t_0;
+  std::chrono::high_resolution_clock::time_point t_1;
+  if (cs_glob_timer_kernels_flag > 0)
+    t_0 = std::chrono::high_resolution_clock::now();
+
+  const cs_lnum_t f_n_rows = f->n_rows;
+
+  const cs_lnum_t c_n_rows = c->n_rows;
+  const cs_lnum_t c_n_cols = c->n_cols_ext;
+  const cs_lnum_t c_n_faces = c->n_faces;
+
+  const cs_lnum_t *f_c_row = c->coarse_row;
+
+  const cs_alloc_mode_t alloc_mode = f->alloc_mode;
+
+  const cs_lnum_t   *f_cell_idx;
+  const cs_lnum_t   *f_cell_face;
+  const short int   *f_cell_face_sgn;
+  const cs_real_3_t *f_cell_cen;
+  const cs_real_3_t *f_face_normal;
+  const cs_real_t   *f_cell_vol;
+
+  cs_matrix_get_mesh_association(f->matrix,
+                                 &f_cell_idx,
+                                 &f_cell_face,
+                                 &f_cell_face_sgn,
+                                 &f_cell_cen,
+                                 &f_cell_vol,
+                                 &f_face_normal);
+
+  const cs_lnum_t  *c_cell_face = c->cell_face;
+
+  int n_loc_threads = cs_parall_n_threads(f_n_rows, CS_THR_MIN);
+
+  cs_real_3_t  *c_cell_cen;
+  cs_real_t    *c_cell_vol;
+  cs_real_3_t  *c_face_normal;
+
+  CS_MALLOC_HD(c_cell_cen, c_n_cols, cs_real_3_t, alloc_mode);
+  CS_MALLOC_HD(c_cell_vol, c_n_cols, cs_real_t, alloc_mode);
+  CS_MALLOC_HD(c_face_normal, c_n_faces, cs_real_3_t, alloc_mode);
+
+  #pragma omp parallel num_threads(n_loc_threads)
+  for (cs_lnum_t i = 0; i < c_n_faces; i++) {
+    c_face_normal[i][0] = 0.;
+    c_face_normal[i][1] = 0.;
+    c_face_normal[i][2] = 0.;
+  }
+
+  /* Allocate mapping */
+
+  cs_lnum_t f_nnz = f_row_index[f_n_rows];
+  cs_lnum_t *fc_m_idx;
+  CS_MALLOC_HD(fc_m_idx, f_nnz, cs_lnum_t, f->alloc_mode);
+
+  /* Loop on coarse rows */
+
+  #pragma omp parallel for  num_threads(n_loc_threads)
+  for (cs_lnum_t ii_c = 0; ii_c < c_n_rows; ii_c++) {
+
+    const cs_lnum_t c_s_idx = c_row_index[ii_c];
+    const cs_lnum_t n_c_cols = c_row_index[ii_c+1] - c_s_idx;
+
+    cs_real_t *restrict _c_cell_cen = c_cell_cen[ii_c];
+
+    for (cs_lnum_t coo_id = 0; coo_id < 3; coo_id++)
+      _c_cell_cen[coo_id] = 0.;
+    c_cell_vol[ii_c] = 0;
+
+    /* Loop on matching fine rows */
+    cs_lnum_t r_s_id = c_f_row_index[ii_c];
+    cs_lnum_t r_e_id = c_f_row_index[ii_c+1];
+    for (cs_lnum_t r_idx = r_s_id; r_idx < r_e_id; r_idx++) {
+      cs_lnum_t ii = c_f_row_ids[r_idx];
+
+      /* Cell quantities */
+      for (cs_lnum_t coo_id = 0; coo_id < 3; coo_id++)
+        _c_cell_cen[coo_id] += f_cell_cen[ii][coo_id];
+      c_cell_vol[ii_c] += f_cell_vol[ii];
+
+      cs_lnum_t f_s_idx = f_row_index[ii];
+      cs_lnum_t f_e_idx = f_row_index[ii+1];
+      for (cs_lnum_t f_idx = f_s_idx; f_idx < f_e_idx; f_idx++) {
+        cs_lnum_t jj = f_col_id[f_idx];
+        cs_lnum_t jj_c = f_c_row[jj];
+        if (jj_c < 0)
+          fc_m_idx[f_idx] = -1;
+        else if (jj_c == ii_c)
+          fc_m_idx[f_idx] = -1 - jj_c;
+        else {
+          cs_lnum_t k = _l_id_binary_search(n_c_cols,
+                                            jj_c,
+                                            c_col_id + c_s_idx);
+          assert(k > -1);
+          cs_lnum_t c_idx = c_s_idx + k;
+          fc_m_idx[f_idx] = c_idx;
+
+          if (jj_c > ii_c) {
+            int sgn = f_cell_face_sgn[f_idx];
+            if (ii > jj)
+              sgn *= -1;
+
+            /* Note: coarse face id is handled by a single
+               thread, since it is associated with the coarse
+               upper diagonal matrix. */
+
+            cs_lnum_t f_face_id = f_cell_face[f_idx];
+            cs_lnum_t c_face_id = c_cell_face[c_idx];
+
+            for (cs_lnum_t coo_id = 0; coo_id < 3; coo_id++)
+              c_face_normal[c_face_id][coo_id]
+                += sgn * f_face_normal[f_face_id][coo_id];
+          }
+        }
+      } /* Loop on fine columns */
+
+    } /* Loop on fine rows associated to current coarse row */
+
+  } /* Loop on coarse rows */
+
+  /* Add to coarse grid */
+
+  c->_cell_cen = (cs_real_t *)c_cell_cen;
+  c->cell_cen = c->cell_cen;
+
+  c->_cell_vol = (cs_real_t *)c_cell_vol;
+  c->cell_vol = c->_cell_vol;
+
+  c->_face_normal = (cs_real_t *)c_face_normal;
+  c->face_normal = c->_face_normal;
+
+  if (cs_glob_timer_kernels_flag > 0) {
+    t_1 = std::chrono::high_resolution_clock::now();
+    std::chrono::microseconds elapsed
+      = std::chrono::duration_cast
+          <std::chrono::microseconds>(t_1 - t_0);
+    printf("%d: %s (level %d -> %d)", cs_glob_rank_id, __func__,
+           f->level, c->level);
+    printf(", total = %ld\n", elapsed.count());
+  }
+
+  /* Synchronize grid's geometric quantities */
+
+  if (c->halo != NULL) {
+    cs_halo_sync_var_strided(c->halo, CS_HALO_STANDARD, c->_cell_cen, 3);
+    if (c->halo->n_transforms > 0)
+      cs_halo_perio_sync_coords(c->halo, CS_HALO_STANDARD, c->_cell_cen);
+
+    cs_halo_sync_var(c->halo, CS_HALO_STANDARD, c->_cell_vol);
+  }
+
+  if (cs_glob_timer_kernels_flag > 0) {
+    std::chrono::high_resolution_clock::time_point
+      t_2 = std::chrono::high_resolution_clock::now();
+    std::chrono::microseconds elapsed
+      = std::chrono::duration_cast
+          <std::chrono::microseconds>(t_2 - t_1);
+    printf("%d: %s halo exchange (level %d)", cs_glob_rank_id, __func__,
+           c->level);
+    printf(", total = %ld\n", elapsed.count());
+  }
+
+  return fc_m_idx;
+}
+
+/*----------------------------------------------------------------------------
+ * Build a coarse level from a finer level with an MSR matrix.
+ *
+ * parameters:
+ *   fine_grid   <-- Fine grid structure
+ *   coarse_grid <-> Coarse grid structure
+ *----------------------------------------------------------------------------*/
+
+static void
+_compute_coarse_quantities_msr_with_faces(const cs_grid_t  *fine_grid,
+                                          cs_grid_t        *coarse_grid)
+{
+  std::chrono::high_resolution_clock::time_point t_start;
+  if (cs_glob_timer_kernels_flag > 0)
+    t_start = std::chrono::high_resolution_clock::now();
+
+  int n_f_threads = cs_parall_n_threads(fine_grid->n_rows, CS_THR_MIN);
+
+  const cs_lnum_t db_size = fine_grid->db_size;
+  const cs_lnum_t db_stride = db_size*db_size;
+
+  const cs_lnum_t eb_size = fine_grid->eb_size;
+  const cs_lnum_t eb_stride = eb_size*eb_size;
+
+  const cs_lnum_t f_n_rows = fine_grid->n_rows;
+
+  const cs_lnum_t c_n_rows = coarse_grid->n_rows;
+  const cs_lnum_t *f_c_row = coarse_grid->coarse_row;
+
+  /* Fine matrix in the MSR format */
+
+  const cs_lnum_t  *f_row_index, *f_col_id;
+  const cs_real_t  *f_d_val, *f_x_val;
+
+  cs_matrix_get_msr_arrays(fine_grid->matrix,
+                           &f_row_index,
+                           &f_col_id,
+                           &f_d_val,
+                           &f_x_val);
+
+  /* Determine reverse coarse to fine adjacency */
+
+  cs_lnum_t *c_f_row_index = nullptr, *c_f_row_ids = nullptr;
+  cs_lnum_t *c_row_index_0 = nullptr;
+
+  _coarse_to_fine_adjacency_msr(f_n_rows,
+                                c_n_rows,
+                                coarse_grid->alloc_mode,
+                                n_f_threads,
+                                f_c_row,
+                                f_row_index,
+                                &c_f_row_index,
+                                &c_f_row_ids,
+                                &c_row_index_0);
+
+  /* Coarse matrix elements in the MSR format */
+
+  /* Build structure
+     --------------- */
+
+  cs_lnum_t *c_row_index,  *c_col_id;
+
+  _coarse_msr_struct(f_n_rows,
+                     c_n_rows,
+                     coarse_grid->alloc_mode,
+                     f_row_index,
+                     f_col_id,
+                     f_c_row,
+                     c_f_row_index,
+                     c_f_row_ids,
+                     c_row_index_0,
+                     &c_row_index,
+                     &c_col_id);
+
+  CS_FREE(c_row_index_0);
+
+  /* Compute face adjacency
+     ---------------------- */
+
+  _msr_face_adjacency(coarse_grid,
+                      c_row_index,
+                      c_col_id);
+
+  /* Compute fine face->coarse adjacency */
+
+  cs_lnum_t *fine_to_coarse_idx
+    = _coarse_mesh_quantities_msr(fine_grid,
+                                  coarse_grid,
+                                  f_row_index,
+                                  f_col_id,
+                                  c_f_row_index,
+                                  c_f_row_ids,
+                                  c_row_index,
+                                  c_col_id);
+
+  CS_FREE(fine_to_coarse_idx);
+
+#if 0
+  {
+  const cs_lnum_t f_n_faces = fine_grid->n_faces;
+
+  int n_loc_threads = cs_parall_n_threads(f_n_faces, CS_THR_MIN);
+
+  cs_real_t *c_cell_cen = coarse_grid->_cell_cen;
+  cs_real_t *c_face_normal = coarse_grid->_face_normal;
+
+  cs_real_t *c_xa0 = coarse_grid->_xa0;
+  cs_real_t *c_xa0ij = coarse_grid->xa0ij;
+
+  /* Build fine-> coarse face mapping */
+
+  cs_lnum_t *fc_face;
+  CS_MALLOC_HD(fc_face, f_n_faces, cs_lnum_t, fine_grid->alloc_mode);
+
+  #pragma omp parallel num_threads(n_loc_threads)
+  for (cs_lnum_t ii = 0; ii < f_n_faces; ii++) {
+    fc_face[ii] = 0;
+  }
+
+  #pragma omp parallel for num_threads(n_loc_threads)
+  for (cs_lnum_t ic = 0; ic < c_n_rows; ic++) {
+
+    const cs_lnum_t s_id = c_row_index[ic];
+    const cs_lnum_t n_cols = c_row_index[ic+1] - s_id;
+    const cs_lnum_t n_vals = n_cols;
+    cs_real_t *restrict row_x_vals = c_x_val + s_id;
+
+    c_d_val[ic] = 0;
+    for (cs_lnum_t ll = 0; ll < n_vals; ll++)
+      row_x_vals[ll] = 0;
+
+    cs_lnum_t r_s_id = c_f_row_index[ic];
+    cs_lnum_t r_e_id = c_f_row_index[ic+1];
+    for (cs_lnum_t r_idx = r_s_id; r_idx < r_e_id; r_idx++) {
+      cs_lnum_t ii = c_f_row_ids[r_idx];
+
+      cs_lnum_t f_s_id = f_row_index[ii];
+      cs_lnum_t f_e_id = f_row_index[ii+1];
+      for (cs_lnum_t jj = f_s_id; jj < f_e_id; jj++) {
+        cs_lnum_t jc = f_c_row[f_col_id[jj]];
+        if (jc > ic) { /* Has matching coarse row, + upper diagonal part
+                          (matching coarse face numbering) */
+          /* ids are sorted, so binary search possible */
+          cs_lnum_t k = _l_id_binary_search(n_cols, jc, c_col_id + s_id);
+          cs_lnum_t f_face_id = f_c2f[jj];
+          cs_lnum_t f_face_sgn = f_c2f_sgn[jj];
+          f_c_face[s_id + k] = (f_face_id+1) * f_face_sgn;
+        }
+      } /* Loop in fine columns */
+    } /* Loop on fine rows */
+
+  } /* OpenMP loop on coarse rows */
+#endif
+
+  /* Assign values
+     ------------- */
+
+  /* TODO */
+
+  CS_FREE(c_col_id);
+  CS_FREE(c_row_index);
+
+  /* Free working arrays */
+
+  CS_FREE(c_f_row_ids);
+  CS_FREE(c_f_row_index);
+
+  /* Now build matrix */
+
+#if 0
+  _build_coarse_matrix_msr(coarse_grid, fine_grid->symmetric,
+                           c_row_index, c_col_id,
+                           c_d_val, c_x_val);
+#endif
+
+  if (cs_glob_timer_kernels_flag > 0) {
+    std::chrono::high_resolution_clock::time_point
+      t_stop = std::chrono::high_resolution_clock::now();
+    std::chrono::microseconds elapsed
+      = std::chrono::duration_cast
+          <std::chrono::microseconds>(t_stop - t_start);
+    printf("%d: %s (level %d -> %d)", cs_glob_rank_id, __func__,
+           fine_grid->level, coarse_grid->level);
     printf(", total = %ld\n", elapsed.count());
   }
 }
@@ -6668,6 +7235,9 @@ cs_grid_destroy(cs_grid_t **grid)
     cs_matrix_destroy(&(g->_matrix));
     cs_matrix_structure_destroy(&(g->matrix_struct));
 
+    CS_FREE(g->cell_face);
+    CS_FREE(g->cell_face_sgn);
+
 #if defined(HAVE_MPI)
     BFT_FREE(g->merge_cell_idx);
 #endif
@@ -6999,8 +7569,6 @@ cs_grid_coarsen(const cs_grid_t      *f,
   cs_matrix_type_t fine_matrix_type = cs_matrix_get_type(f->matrix);
   cs_matrix_type_t coarse_matrix_type = CS_MATRIX_MSR;
 
-  cs_matrix_variant_t *coarse_mv = NULL;
-
   cs_grid_t *c = NULL;
 
   const cs_lnum_t db_size = f->db_size;
@@ -7170,6 +7738,13 @@ cs_grid_coarsen(const cs_grid_t      *f,
 
     }
 
+    /* New threaded variant, in progress */
+#if 0
+    if (   fine_matrix_type == CS_MATRIX_MSR
+        && coarse_matrix_type == CS_MATRIX_MSR)
+      _compute_coarse_quantities_msr_with_faces(f, c);
+#endif
+
   }
 
   if (fine_matrix_type == CS_MATRIX_MSR && c->relaxation <= 0) {
@@ -7192,52 +7767,52 @@ cs_grid_coarsen(const cs_grid_t      *f,
 
     _matrix_from_native(coarse_matrix_type, c);
 
-    /* Apply tuning if needed */
+  }
 
-    if (_grid_tune_max_level > 0) {
+  /* Apply tuning if needed */
 
-      cs_matrix_fill_type_t mft
-        = cs_matrix_get_fill_type(f->symmetric,
-                                  f->db_size,
-                                  f->eb_size);
+  if (_grid_tune_max_level > 0 && c->matrix == NULL && recurse < 2) {
 
-      if (_grid_tune_max_level > f->level) {
-        int k = CS_MATRIX_N_FILL_TYPES*(f->level) + mft;
-        coarse_mv = _grid_tune_variant[k];
+    cs_matrix_fill_type_t mft
+      = cs_matrix_get_fill_type(f->symmetric,
+                                f->db_size,
+                                f->eb_size);
 
-        /* Create tuned variant upon first pass for this level and
-           fill type */
+    if (_grid_tune_max_level > f->level) {
+      int k = CS_MATRIX_N_FILL_TYPES*(f->level) + mft;
+      cs_matrix_variant_t *coarse_mv = _grid_tune_variant[k];
 
-        if  (   coarse_mv == NULL
-             && _grid_tune_max_fill_level[mft] > f->level) {
+      /* Create tuned variant upon first pass for this level and
+         fill type */
 
-          cs_log_printf(CS_LOG_PERFORMANCE,
-                        _("\n"
-                          "Tuning for coarse matrices of level %d and type: %s\n"
-                          "==========================\n"),
-                        f->level + 1, cs_matrix_fill_type_name[mft]);
+      if  (   coarse_mv == NULL
+           && _grid_tune_max_fill_level[mft] > f->level) {
 
-          int n_min_products = cs_matrix_get_tuning_runs();
+        cs_log_printf(CS_LOG_PERFORMANCE,
+                      _("\n"
+                        "Tuning for coarse matrices of level %d and type: %s\n"
+                        "==========================\n"),
+                      f->level + 1, cs_matrix_fill_type_name[mft]);
 
-          coarse_mv = cs_matrix_variant_tuned(c->matrix,
-                                              1,
-                                              n_min_products);
+        int n_min_products = cs_matrix_get_tuning_runs();
 
-          _grid_tune_variant[k] = coarse_mv;
+        coarse_mv = cs_matrix_variant_tuned(c->matrix,
+                                            1,
+                                            n_min_products);
 
-          if  (_grid_tune_max_fill_level[mft] == f->level + 1) {
-            cs_log_printf(CS_LOG_PERFORMANCE, "\n");
-            cs_log_separator(CS_LOG_PERFORMANCE);
-          }
+        _grid_tune_variant[k] = coarse_mv;
 
+        if  (_grid_tune_max_fill_level[mft] == f->level + 1) {
+          cs_log_printf(CS_LOG_PERFORMANCE, "\n");
+          cs_log_separator(CS_LOG_PERFORMANCE);
         }
 
       }
 
+      if (coarse_mv != NULL)
+        cs_matrix_variant_apply_tuned(c->_matrix, coarse_mv);
     }
 
-    if (coarse_mv != NULL)
-      cs_matrix_variant_apply_tuned(c->_matrix, coarse_mv);
   }
 
   if (c->matrix == NULL) {
