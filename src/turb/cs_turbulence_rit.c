@@ -746,14 +746,14 @@ _solve_rit(const cs_field_t     *f,
   }
 
   const cs_mesh_t *m = cs_glob_mesh;
-  const cs_mesh_quantities_t *fvq = cs_glob_mesh_quantities;
+  const cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
 
   const cs_lnum_t n_cells = m->n_cells;
   const cs_lnum_t n_b_faces = m->n_b_faces;
   const cs_lnum_t n_i_faces = m->n_i_faces;
   const cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
 
-  const cs_real_t *cell_f_vol = fvq->cell_f_vol;
+  const cs_real_t *cell_f_vol = mq->cell_f_vol;
 
   const cs_real_t *dt = CS_F_(dt)->val;
   const cs_real_t *crom = CS_F_(rho)->val;
@@ -923,7 +923,7 @@ _solve_rit(const cs_field_t     *f,
       }
 
       cs_face_anisotropic_viscosity_scalar(m,
-                                           fvq,
+                                           mq,
                                            viscce,
                                            eqp->verbosity,
                                            weighf,
@@ -941,7 +941,7 @@ _solve_rit(const cs_field_t     *f,
       }
 
       cs_face_viscosity(m,
-                        fvq,
+                        mq,
                         eqp->imvisf,
                         w1,
                         viscf,
@@ -962,7 +962,7 @@ _solve_rit(const cs_field_t     *f,
      }
 
      const cs_real_3_t *restrict b_face_normal
-       = (const cs_real_3_t *restrict)fvq->b_face_normal;
+       = (const cs_real_3_t *restrict)mq->b_face_normal;
      cs_real_t *bpro_rusanov = cs_field_by_name("b_rusanov_diff")->val;
 
      //cs_real_3_t *coefap = (cs_real_3_t *)f_ut->bc_coeffs->a;
@@ -1063,7 +1063,7 @@ cs_turbulence_rij_transport_div_tf(const int        field_id,
                                    cs_real_t        smbrs[])
 {
   const cs_mesh_t *m = cs_glob_mesh;
-  const cs_mesh_quantities_t *fvq = cs_glob_mesh_quantities;
+  const cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
 
   /* TODO: declare field as const when ctheta issue (#387) is solved */
   cs_field_t *f = cs_field_by_id(field_id);
@@ -1233,7 +1233,7 @@ cs_turbulence_rij_transport_div_tf(const int        field_id,
     const cs_equation_param_t *eqp = cs_field_get_equation_param_const(f);
 
     cs_mass_flux(m,
-                 fvq,
+                 mq,
                  -1, /*f_id */
                  1,
                  1,
@@ -1277,6 +1277,21 @@ cs_turbulence_rij_transport_div_tf(const int        field_id,
     for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
       smbrs[c_id] -= divut[c_id];
 
+    /* For post-processing intensive quantities */
+    if (f_dut != NULL) {
+      int has_disable_flag = mq->has_disable_flag;
+      int *c_disable_flag = mq->c_disable_flag;
+      const cs_real_t *cell_f_vol = mq->cell_f_vol;
+
+      for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+        cs_real_t dvol = 0;
+        const int ind = has_disable_flag * c_id;
+        const int c_act = (1 - (has_disable_flag * c_disable_flag[ind]));
+        if (c_act == 1)
+          dvol = 1.0/cell_f_vol[c_id];
+        divut[c_id] *= dvol;
+      }
+    }
     BFT_FREE(_divut);
   }
 
