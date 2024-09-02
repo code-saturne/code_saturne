@@ -125,6 +125,8 @@ class AtmosphericFlowsModel(Variables, Model):
         self.__default['meteo_zref'] = 10.
         self.__default['meteo_uref'] = 5.
         self.__default['meteo_ustar'] = -1.
+        self.__default['meteo_qw0'] = 0.
+        self.__default['meteo_qwstar'] = 0.
 
     @Variables.undoLocal
     def setAtmosphericFlowsModel(self, model):
@@ -333,6 +335,29 @@ class AtmosphericFlowsModel(Variables, Model):
     def setMeteoZref(self, tag):
         self.__node_atmos.xmlSetData('meteo_zref', tag)
 
+    #-------------------------------------------------------------------------
+    @Variables.noUndo
+    def getMeteoQw0(self):
+        f = self.__node_atmos.xmlGetDouble('meteo_qw0')
+        if f is None:
+            f = self.__default['meteo_qw0']
+            self.setMeteoQw0(f)
+        return f
+    @Variables.undoLocal
+    def setMeteoQw0(self, tag):
+        self.__node_atmos.xmlSetData('meteo_qw0', tag)
+
+    #-------------------------------------------------------------------------
+    @Variables.noUndo
+    def getMeteoQwstar(self):
+        f = self.__node_atmos.xmlGetDouble('meteo_qwstar')
+        if f is None:
+            f = self.__default['meteo_qwstar']
+            self.setMeteoQwstar(f)
+        return f
+    @Variables.undoLocal
+    def setMeteoQwstar(self, tag):
+        self.__node_atmos.xmlSetData('meteo_qwstar', tag)
 
     #-------------------------------------------------------------------------
     @Variables.noUndo

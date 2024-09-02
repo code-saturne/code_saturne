@@ -108,6 +108,9 @@ class AtmosphericFlowsView(QWidget, Ui_AtmosphericFlowsForm):
 
         self.lineEditZref.textChanged[str].connect(self.slotMeteoZref)
 
+        self.lineEditHumiditySeaLevel.textChanged[str].connect(self.slotMeteoQw0)
+        self.lineEditHumidityFriction.textChanged[str].connect(self.slotMeteoQwstar)
+
         # Initialize the widgets in groupBoxMeteoData
         isMeteoDataChecked = model.getMeteoDataStatus() == 'on'
         self.groupBoxMeteoData.setChecked(isMeteoDataChecked)
@@ -136,6 +139,11 @@ class AtmosphericFlowsView(QWidget, Ui_AtmosphericFlowsForm):
         self.lineEditUstarOrDlmo.setValidator(validatorUstarOrDlmo)
         self.lineEditUrefOrDlmo.setValidator(validatorUrefOrDlmo)
 
+        validatorQw0 = DoubleValidator(self.lineEditHumiditySeaLevel)
+        validatorQwstar = DoubleValidator(self.lineEditHumidityFriction)
+
+        self.lineEditHumiditySeaLevel.setValidator(validatorQw0)
+        self.lineEditHumidityFriction.setValidator(validatorQwstar)
         # Initialize the widgets in groupBoxLargeScaleMeteo
         isLargeScaleMeteoChecked = model.getLargeScaleMeteoStatus() == 'on'
         self.groupBoxLargeScaleMeteo.setChecked(isLargeScaleMeteoChecked)
@@ -182,6 +190,13 @@ class AtmosphericFlowsView(QWidget, Ui_AtmosphericFlowsForm):
 
         tmpVar=model.getWindDir()
         self.spinBoxWindDir.setValue(int(tmpVar))
+
+        tmpVar = model.getMeteoQw0();
+        self.lineEditHumiditySeaLevel.setText(str(tmpVar))
+
+        tmpVar = model.getMeteoQwstar();
+        self.lineEditHumidityFriction.setText(str(tmpVar))
+
 
         startTimeStr = model.getStartTime()
         startTime = QDateTime.fromString(startTimeStr, "yyyy-MM-dd HH:mm:ss")
@@ -326,6 +341,21 @@ class AtmosphericFlowsView(QWidget, Ui_AtmosphericFlowsForm):
             elif self.comboBoxUrefOrdLMO.currentIndex() == 1:
                 self.__model.setMeteoDlmo(val)
                 self.__model.setMeteoUref(-1.)
+
+    @pyqtSlot(str)
+    def slotMeteoQw0(self, text):
+        if self.lineEditHumiditySeaLevel.validator().state == QValidator.Acceptable:
+            val = from_qvariant(text, float)
+            self.__model.setMeteoQw0(val)
+
+    @pyqtSlot(str)
+    def slotMeteoQwstar(self, text):
+        if self.lineEditHumidityFriction.validator().state == QValidator.Acceptable:
+            val = from_qvariant(text, float)
+            self.__model.setMeteoQwstar(val)
+
+
+
 
     #--------------- Functions for the groupBox Activate Chemistry--------------
     @pyqtSlot(bool)

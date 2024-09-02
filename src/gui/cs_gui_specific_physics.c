@@ -583,6 +583,10 @@ _gui_atmo_get_set_meteo_profile(void)
       = cs_tree_node_get_child_value_str(tn, "meteo_psea");
     const char *str_meteo_t0
       = cs_tree_node_get_child_value_str(tn, "meteo_t0");
+    const char *str_meteo_qw0
+      = cs_tree_node_get_child_value_str(tn, "meteo_qw0");
+    const char *str_meteo_qwstar
+      = cs_tree_node_get_child_value_str(tn, "meteo_qwstar");
 
     const char *str_syear = cs_tree_node_get_child_value_str(tn, "start_year");
     const char *str_sday = cs_tree_node_get_child_value_str(tn, "start_day");
@@ -613,6 +617,10 @@ _gui_atmo_get_set_meteo_profile(void)
       cs_glob_atmo_option->meteo_psea  = atof(str_meteo_psea);
     if (str_meteo_t0 != NULL)
       cs_glob_atmo_option->meteo_t0  = atof(str_meteo_t0);
+    if (str_meteo_qw0 != NULL)
+      cs_glob_atmo_option->meteo_qw0  = atof(str_meteo_qw0);
+    if (str_meteo_qwstar != NULL)
+      cs_glob_atmo_option->meteo_qwstar  = atof(str_meteo_qwstar);
 
     if(str_syear != NULL)
       cs_glob_atmo_option->syear = atoi(str_syear);
