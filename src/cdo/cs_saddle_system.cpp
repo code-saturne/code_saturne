@@ -92,7 +92,6 @@ BEGIN_C_DECLS
  *        This is an update operation. Be careful that the resulting array has
  *        been initialized.
  *
- * \param[in]      n2_dofs  number of DoFs for x2
  * \param[in]      x2       array for the second set
  * \param[in]      ub       unassembled block related to the (2,1) block
  * \param[in, out] m12x2    resulting array (have to be allocated)
@@ -100,16 +99,14 @@ BEGIN_C_DECLS
 /*----------------------------------------------------------------------------*/
 
 static void
-_m12_multiply_vector(cs_lnum_t                      n2_dofs,
-                     const cs_cdo_system_ublock_t  *ub,
+_m12_multiply_vector(const cs_cdo_system_ublock_t  *ub,
                      const cs_real_t               *x2,
                      cs_real_t                     *m12x2)
 {
   const cs_adjacency_t  *m21_adj = ub->adjacency;
+  const cs_lnum_t  n2_dofs =  m21_adj->n_elts; /* adjacency should be related
+                                                  to the (2,1) block */
   const cs_real_t  *m21_val = ub->values;
-
-  assert(n2_dofs == m21_adj->n_elts); /* adjacency should be related to the
-                                         (2,1) block */
 
 # pragma omp parallel for if (n2_dofs > CS_THR_MIN)
   for (cs_lnum_t i2 = 0; i2 < n2_dofs; i2++) {
@@ -141,7 +138,6 @@ _m12_multiply_vector(cs_lnum_t                      n2_dofs,
  *        This is an update operation. Be careful that the resulting array has
  *        been initialized.
  *
- * \param[in]      n2_dofs  number of DoFs for x2
  * \param[in]      x2       array for the second set
  * \param[in]      ub       unassembled block related to the (2,1) block
  * \param[in, out] m12x2    resulting array (have to be allocated)
@@ -149,16 +145,14 @@ _m12_multiply_vector(cs_lnum_t                      n2_dofs,
 /*----------------------------------------------------------------------------*/
 
 static void
-_m12_multiply_scalar(cs_lnum_t                      n2_dofs,
-                     const cs_cdo_system_ublock_t  *ub,
+_m12_multiply_scalar(const cs_cdo_system_ublock_t  *ub,
                      const cs_real_t               *x2,
                      cs_real_t                     *m12x2)
 {
   const cs_adjacency_t  *m21_adj = ub->adjacency;
+  const cs_lnum_t  n2_dofs =  m21_adj->n_elts; /* adjacency should be related
+                                                  to the (2,1) block */
   const cs_real_t  *m21_val = ub->values;
-
-  assert(n2_dofs == m21_adj->n_elts); /* adjacency should be related to the
-                                         (2,1) block */
 
 # pragma omp parallel for if (n2_dofs > CS_THR_MIN)
   for (cs_lnum_t i2 = 0; i2 < n2_dofs; i2++) {
@@ -610,12 +604,10 @@ cs_saddle_system_b12_matvec(const cs_cdo_system_helper_t  *sh,
   /* n2_dofs = n2_elts since stride is equal to 1 in all our cases of
      saddle-point systems up to now (these are cell unknowns) */
 
-  const cs_lnum_t  n1_dofs = sh->col_block_sizes[0];
-  const cs_lnum_t  n2_dofs = sh->col_block_sizes[1];
   cs_cdo_system_block_t  *blk12 = sh->blocks[1];
 
   if (reset_res)
-    cs_array_real_fill_zero(n1_dofs, res);
+    cs_array_real_fill_zero(sh->col_block_sizes[0], res);
 
   /* Handled only unassembled blocks when dealing with saddle-point systems */
 
@@ -625,11 +617,11 @@ cs_saddle_system_b12_matvec(const cs_cdo_system_helper_t  *sh,
 
   switch (blk12->info.stride) {
   case 1:
-    _m12_multiply_scalar(n2_dofs, ub12, x2, res);
+    _m12_multiply_scalar(ub12, x2, res);
     break;
 
   case 3:
-    _m12_multiply_vector(n2_dofs, ub12, x2, res);
+    _m12_multiply_vector(ub12, x2, res);
     break;
 
   default:

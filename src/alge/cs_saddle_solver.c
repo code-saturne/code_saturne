@@ -3517,7 +3517,10 @@ cs_saddle_solver_notay(cs_saddle_solver_t  *solver,
 
   const cs_param_sles_t  *slesp = saddlep->block11_sles_param;
 
-  cs_real_t  rtol = saddlep->cvg_param.rtol;
+  /* Warning: rtol associated to the saddle solver is not used in the case of
+     the Notay's algebraic transformation */
+
+  cs_real_t  rtol = slesp->cvg_param.rtol;
   cs_field_t  *fld = NULL;
 
   cs_solving_info_t  sinfo;
@@ -3579,7 +3582,13 @@ cs_saddle_solver_notay(cs_saddle_solver_t  *solver,
 
   BFT_MALLOC(m12_x2, n1_dofs, cs_real_t);
 
-  cs_saddle_system_b12_matvec(sh, x2, m12_x2, true);
+  /* Warning: Do not reset the array inside the function since there is a trick
+     in the way that the system_helper is built (there are two blocks but the
+     system is stored in the first block and the second block is only used for
+     the matrix-vector operation in an unssembled way) */
+
+  cs_array_real_fill_zero(n1_dofs, m12_x2);
+  cs_saddle_system_b12_matvec(sh, x2, m12_x2, false);
 
   /* Perform the parallel synchronization. */
 
