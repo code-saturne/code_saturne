@@ -82,12 +82,12 @@ cs_ctwr_headers.h
 
 noinst_LIBRARIES = libcsctwr.a
 libcsctwr_a_SOURCES = \
-cs_ctwr.c \
-cs_ctwr_boundary_conditions.c \
-cs_ctwr_variables.c \
-cs_ctwr_initialize.c \
-cs_ctwr_source_terms.c \
-cs_ctwr_physical_properties.c
+cs_ctwr.cpp \
+cs_ctwr_boundary_conditions.cpp \
+cs_ctwr_variables.cpp \
+cs_ctwr_initialize.cpp \
+cs_ctwr_source_terms.cpp \
+cs_ctwr_physical_properties.cpp
 
 clean-local:
 	-rm -f *__genmod.f90 *.mod
