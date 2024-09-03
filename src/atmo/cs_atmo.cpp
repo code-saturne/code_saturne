@@ -199,6 +199,7 @@ static cs_atmo_option_t  _atmo_option = {
   .meteo_t1 = 0.,
   .meteo_t2 = 0.,
   .meteo_tstar = 0.,
+  .meteo_psea = 101325.,
   .meteo_qw0 = 0.,
   .meteo_qwstar = DBL_MAX,
   .meteo_qw1 = DBL_MAX,
@@ -206,7 +207,6 @@ static cs_atmo_option_t  _atmo_option = {
   .meteo_ql0 = 0.,
   .meteo_evapor = DBL_MAX,
   .meteo_sensi = DBL_MAX,
-  .meteo_psea = 101325.,
   .meteo_phim_s = 0, /* Cheng 2005 by default */
   .meteo_phih_s = 0, /* Cheng 2005 by default */
   .meteo_phim_u = 1, /* Hogstrom 1988 by default */
@@ -230,9 +230,9 @@ static cs_atmo_option_t  _atmo_option = {
   .mom_met    = NULL,
   .mom_cs     = NULL,
   .soil_model = 0, /* off or user defined */
-  .soil_cat = 0, /* CS_ATMO_SOIL_5_CAT */
+  .soil_cat = (cs_atmo_soil_cat_t) 0, /* CS_ATMO_SOIL_5_CAT */
   .soil_zone_id = -1,
-  .soil_meb_model = 0,
+  .soil_meb_model = (cs_atmo_soil_meb_model_t) 0,
   .rain = false,
   .cloud_type = 0, /* 0 Continental, 1 Maritime */
   .accretion = false,
@@ -571,7 +571,7 @@ _hydrostatic_pressure_compute(cs_real_3_t  f_ext[],
   int key_sinfo_id = cs_field_key_id("solving_info");
   if (f_id > -1) {
     f = cs_field_by_id(f_id);
-    sinfo = cs_field_get_key_struct_ptr(f, key_sinfo_id);
+    sinfo = (cs_solving_info_t *)cs_field_get_key_struct_ptr(f, key_sinfo_id);
     sinfo->n_it = 0;
   }
 

@@ -511,7 +511,7 @@ _humid_atmosphere(const cs_real_t  cromo[],
  * \brief Modify the \f$k-\varepsilon\f$ turbulence model
  *        formulation for the atmospheric module
  *
- * Adjunction of a production term for buyancy in the \f$k-\varepsilon\f$
+ * Adjunction of a production term for buoyancy in the \f$k-\varepsilon\f$
  * model in the context of the atmospheric module
  * g = g*grad(theta)/prdtur/theta
  *
