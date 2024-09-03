@@ -154,7 +154,7 @@ typedef void
  * Static global variables
  *============================================================================*/
 
-static cs_time_plot_t   *cs_gwf_tpf_time_plot = NULL;
+static cs_time_plot_t *cs_gwf_tpf_time_plot = nullptr;
 
 static const char _output_varnames[CS_GWF_TPF_N_OUTPUT_VARS][32] = {
 
@@ -166,8 +166,8 @@ static const char _output_varnames[CS_GWF_TPF_N_OUTPUT_VARS][32] = {
 
 };
 
-static _compute_rhog_h_t   *compute_rhog_h = NULL;
-static _compute_rhogl_h_t  *compute_rhogl_h = NULL;
+static _compute_rhog_h_t  *compute_rhog_h  = nullptr;
+static _compute_rhogl_h_t *compute_rhogl_h = nullptr;
 
 /*============================================================================
  * Private function prototypes
@@ -189,16 +189,16 @@ _add_pty_array(cs_lnum_t         array_size,
                cs_flag_t         location_flag,
                cs_property_t    *pty)
 {
-  cs_real_t  *array = NULL;
+  cs_real_t *array = nullptr;
   BFT_MALLOC(array, array_size, cs_real_t);
   cs_array_real_fill_zero(array_size, array);
 
-  cs_xdef_t  *def = cs_property_def_by_array(pty,
-                                             NULL,           /* all cells */
-                                             location_flag,  /* data location */
-                                             array,
-                                             true,           /* xdef is owner */
-                                             true);          /* full length */
+  cs_xdef_t *def = cs_property_def_by_array(pty,
+                                            nullptr,       /* all cells */
+                                            location_flag, /* data location */
+                                            array,
+                                            true,  /* xdef is owner */
+                                            true); /* full length */
 
   return def;
 }
@@ -217,7 +217,7 @@ _add_pty_array(cs_lnum_t         array_size,
 static inline bool
 _pcpg_coupled_solver_needs_diffusion(const cs_gwf_tpf_t     *tpf)
 {
-  assert(tpf != NULL);
+  assert(tpf != nullptr);
   if (tpf->use_diffusion_view_for_darcy)
     return true;
   else {
@@ -239,7 +239,7 @@ _pcpg_coupled_solver_needs_diffusion(const cs_gwf_tpf_t     *tpf)
 static inline void
 _set_default_eqp_settings(cs_equation_param_t      *eqp)
 {
-  if (eqp == NULL)
+  if (eqp == nullptr)
     return;
 
   cs_equation_param_set(eqp, CS_EQKEY_BC_ENFORCEMENT, "algebraic");
@@ -566,7 +566,7 @@ _build_h_eq_diff_st(const cs_equation_param_t     *eqp,
   const cs_cdovb_scaleq_t  *eqc = (const cs_cdovb_scaleq_t *)eq_context;
   assert(csys->n_dofs == cm->n_vc);
 
-  cs_gwf_tpf_t  *tpf = context;
+  cs_gwf_tpf_t *tpf = (cs_gwf_tpf_t *)context;
 
   /* Modify the property data associated to the hodge operator related to the
      diffusion term */
@@ -612,13 +612,13 @@ _build_h_eq_diff_st(const cs_equation_param_t     *eqp,
  *        This relies on the case of CDO-Vb schemes and a Darcy flux defined
  *        at dual faces
  *
- *        cell_values could be set to NULL when the space discretization does
+ *        cell_values could be set to nullptr when the space discretization does
  *        not request these values for the update.
  *
  * \param[in]      connect       pointer to a cs_cdo_connect_t structure
  * \param[in]      cdoq          pointer to a cs_cdo_quantities_t structure
  * \param[in]      dof_values    values to consider for the update
- * \param[in]      cell_values   values to consider for the update or NULL
+ * \param[in]      cell_values   values to consider for the update or nullptr
  * \param[in]      t_eval        time at which one performs the evaluation
  * \param[in]      cur2prev      true or false
  * \param[in, out] darcy         pointer to the darcy flux structure
@@ -637,12 +637,12 @@ _update_darcy_l(const cs_cdo_connect_t      *connect,
   CS_NO_WARN_IF_UNUSED(connect);
   CS_NO_WARN_IF_UNUSED(cdoq);
 
-  assert(darcy != NULL);
-  assert(darcy->flux_val != NULL);
-  assert(darcy->update_input != NULL);
+  assert(darcy != nullptr);
+  assert(darcy->flux_val != nullptr);
+  assert(darcy->update_input != nullptr);
 
   cs_adv_field_t  *adv = darcy->adv_field;
-  assert(adv != NULL);
+  assert(adv != nullptr);
   if (adv->definition->type != CS_XDEF_BY_ARRAY)
     bft_error(__FILE__, __LINE__, 0,
               " %s: Invalid definition of the advection field", __func__);
@@ -661,8 +661,8 @@ _update_darcy_l(const cs_cdo_connect_t      *connect,
     cs_property_set_scaling_factor(tpf->diff_wl_pty, 1./tpf->l_mass_density);
 
     cs_equation_compute_diffusive_flux(tpf->w_eq,
-                                       NULL, /* eqp --> default */
-                                       NULL, /* diff_pty --> default */
+                                       nullptr, /* eqp --> default */
+                                       nullptr, /* diff_pty --> default */
                                        dof_values,
                                        cell_values,
                                        darcy->flux_location,
@@ -677,7 +677,7 @@ _update_darcy_l(const cs_cdo_connect_t      *connect,
     cs_property_set_scaling_factor(tpf->diff_wg_pty, 1./tpf->l_mass_density);
 
     cs_equation_compute_diffusive_flux(tpf->w_eq,
-                                       NULL, /* eqp --> default */
+                                       nullptr, /* eqp --> default */
                                        tpf->diff_wg_pty,
                                        dof_values,
                                        cell_values,
@@ -692,7 +692,7 @@ _update_darcy_l(const cs_cdo_connect_t      *connect,
   /* Update the velocity field at cell centers induced by the Darcy flux */
 
   cs_field_t  *vel = cs_advection_field_get_field(adv, CS_MESH_LOCATION_CELLS);
-  assert(vel != NULL);
+  assert(vel != nullptr);
   if (cur2prev)
     cs_field_current_to_previous(vel);
 
@@ -706,7 +706,8 @@ _update_darcy_l(const cs_cdo_connect_t      *connect,
   cs_field_t  *bdy_nflx =
     cs_advection_field_get_field(adv, CS_MESH_LOCATION_BOUNDARY_FACES);
 
-  if (bdy_nflx != NULL) { /* Values of the Darcy flux at boundary face exist */
+  if (bdy_nflx
+      != nullptr) { /* Values of the Darcy flux at boundary face exist */
 
     if (cur2prev)
       cs_field_current_to_previous(bdy_nflx);
@@ -714,7 +715,6 @@ _update_darcy_l(const cs_cdo_connect_t      *connect,
     /* Set the new values of the field related to the normal boundary flux */
 
     cs_advection_field_across_boundary(adv, t_eval, bdy_nflx->val);
-
   }
 }
 
@@ -726,13 +726,13 @@ _update_darcy_l(const cs_cdo_connect_t      *connect,
  *        This relies on the case of CDO-Vb schemes and a Darcy flux defined
  *        at dual faces
  *
- *        cell_values could be set to NULL when the space discretization does
+ *        cell_values could be set to nullptr when the space discretization does
  *        not request these values for the update.
  *
  * \param[in]      connect       pointer to a cs_cdo_connect_t structure
  * \param[in]      cdoq          pointer to a cs_cdo_quantities_t structure
  * \param[in]      dof_values    values to consider for the update
- * \param[in]      cell_values   values to consider for the update or NULL
+ * \param[in]      cell_values   values to consider for the update or nullptr
  * \param[in]      t_eval        time at which one performs the evaluation
  * \param[in]      cur2prev      true or false
  * \param[in, out] darcy         pointer to the darcy flux structure
@@ -750,10 +750,10 @@ _update_darcy_g_coupled(const cs_cdo_connect_t      *connect,
 {
   CS_NO_WARN_IF_UNUSED(cur2prev);
 
-  assert(darcy != NULL);
-  assert(darcy->flux_val != NULL);
-  assert(darcy->update_input != NULL);
-  assert(darcy->adv_field != NULL);
+  assert(darcy != nullptr);
+  assert(darcy->flux_val != nullptr);
+  assert(darcy->update_input != nullptr);
+  assert(darcy->adv_field != nullptr);
 
   cs_adv_field_t  *adv = darcy->adv_field;
 
@@ -761,13 +761,13 @@ _update_darcy_g_coupled(const cs_cdo_connect_t      *connect,
     bft_error(__FILE__, __LINE__, 0,
               " %s: Invalid definition of the advection field", __func__);
 
-  cs_gwf_tpf_t  *tpf = darcy->update_input;
+  cs_gwf_tpf_t   *tpf = (cs_gwf_tpf_t *)darcy->update_input;
   cs_equation_t  *eq = tpf->h_eq;
 
   /* Update the array of flux values associated to the advection field */
 
   cs_equation_compute_diffusive_flux(eq,
-                                     NULL, /* eqp --> default */
+                                     nullptr, /* eqp --> default */
                                      tpf->diff_g_pty,
                                      dof_values,
                                      cell_values,
@@ -778,7 +778,7 @@ _update_darcy_g_coupled(const cs_cdo_connect_t      *connect,
   /* Update the velocity field at cell centers induced by the Darcy flux */
 
   cs_field_t  *vel = cs_advection_field_get_field(adv, CS_MESH_LOCATION_CELLS);
-  assert(vel != NULL);
+  assert(vel != nullptr);
   if (cur2prev)
     cs_field_current_to_previous(vel);
 
@@ -791,7 +791,8 @@ _update_darcy_g_coupled(const cs_cdo_connect_t      *connect,
   cs_field_t  *bdy_nflx =
     cs_advection_field_get_field(adv, CS_MESH_LOCATION_BOUNDARY_FACES);
 
-  if (bdy_nflx != NULL) { /* Values of the Darcy flux at boundary face exist */
+  if (bdy_nflx
+      != nullptr) { /* Values of the Darcy flux at boundary face exist */
 
     if (cur2prev)
       cs_field_current_to_previous(bdy_nflx);
@@ -799,7 +800,6 @@ _update_darcy_g_coupled(const cs_cdo_connect_t      *connect,
     /* Set the new values of the field related to the normal boundary flux */
 
     cs_advection_field_across_boundary(adv, t_eval, bdy_nflx->val);
-
   }
 }
 
@@ -811,13 +811,13 @@ _update_darcy_g_coupled(const cs_cdo_connect_t      *connect,
  *        This relies on the case of CDO-Vb schemes and a Darcy flux defined
  *        at dual faces
  *
- *        cell_values could be set to NULL when the space discretization does
+ *        cell_values could be set to nullptr when the space discretization does
  *        not request these values for the update.
  *
  * \param[in]      connect       pointer to a cs_cdo_connect_t structure
  * \param[in]      cdoq          pointer to a cs_cdo_quantities_t structure
  * \param[in]      dof_values    values to consider for the update
- * \param[in]      cell_values   values to consider for the update or NULL
+ * \param[in]      cell_values   values to consider for the update or nullptr
  * \param[in]      t_eval        time at which one performs the evaluation
  * \param[in]      cur2prev      true or false
  * \param[in, out] darcy         pointer to the darcy flux structure
@@ -837,10 +837,10 @@ _update_darcy_g_segregated(const cs_cdo_connect_t      *connect,
   CS_NO_WARN_IF_UNUSED(cdoq);
   CS_NO_WARN_IF_UNUSED(cur2prev);
 
-  assert(darcy != NULL);
-  assert(darcy->flux_val != NULL);
-  assert(darcy->update_input != NULL);
-  assert(darcy->adv_field != NULL);
+  assert(darcy != nullptr);
+  assert(darcy->flux_val != nullptr);
+  assert(darcy->update_input != nullptr);
+  assert(darcy->adv_field != nullptr);
 
   cs_adv_field_t  *adv = darcy->adv_field;
 
@@ -848,14 +848,14 @@ _update_darcy_g_segregated(const cs_cdo_connect_t      *connect,
     bft_error(__FILE__, __LINE__, 0,
               " %s: Invalid definition of the advection field", __func__);
 
-  cs_gwf_tpf_t  *tpf = darcy->update_input;
+  cs_gwf_tpf_t   *tpf = (cs_gwf_tpf_t *)darcy->update_input;
   cs_equation_t  *eq = tpf->h_eq;
 
   /* Update the array of flux values associated to the advection field */
 
   cs_equation_compute_diffusive_flux(eq,
-                                     NULL, /* eqp --> default */
-                                     NULL, /* diff_pty --> default */
+                                     nullptr, /* eqp --> default */
+                                     nullptr, /* diff_pty --> default */
                                      dof_values,
                                      cell_values,
                                      darcy->flux_location,
@@ -865,7 +865,7 @@ _update_darcy_g_segregated(const cs_cdo_connect_t      *connect,
   /* Update the velocity field at cell centers induced by the Darcy flux */
 
   cs_field_t  *vel = cs_advection_field_get_field(adv, CS_MESH_LOCATION_CELLS);
-  assert(vel != NULL);
+  assert(vel != nullptr);
   if (cur2prev)
     cs_field_current_to_previous(vel);
 
@@ -876,7 +876,8 @@ _update_darcy_g_segregated(const cs_cdo_connect_t      *connect,
   cs_field_t  *bdy_nflx =
     cs_advection_field_get_field(adv, CS_MESH_LOCATION_BOUNDARY_FACES);
 
-  if (bdy_nflx != NULL) { /* Values of the Darcy flux at boundary face exist */
+  if (bdy_nflx
+      != nullptr) { /* Values of the Darcy flux at boundary face exist */
 
     if (cur2prev)
       cs_field_current_to_previous(bdy_nflx);
@@ -884,7 +885,6 @@ _update_darcy_g_segregated(const cs_cdo_connect_t      *connect,
     /* Set the new values of the field related to the normal boundary flux */
 
     cs_advection_field_across_boundary(adv, t_eval, bdy_nflx->val);
-
   }
 }
 
@@ -895,13 +895,13 @@ _update_darcy_g_segregated(const cs_cdo_connect_t      *connect,
  *        This relies on the case of CDO-Vb schemes and a Darcy flux defined
  *        at dual faces
  *
- *        cell_values could be set to NULL when the space discretization does
+ *        cell_values could be set to nullptr when the space discretization does
  *        not request these values for the update.
  *
  * \param[in]      connect       pointer to a cs_cdo_connect_t structure
  * \param[in]      cdoq          pointer to a cs_cdo_quantities_t structure
  * \param[in]      dof_values    values to consider for the update
- * \param[in]      cell_values   values to consider for the update or NULL
+ * \param[in]      cell_values   values to consider for the update or nullptr
  * \param[in]      t_eval        time at which one performs the evaluation
  * \param[in]      cur2prev      true or false
  * \param[in, out] darcy         pointer to the darcy flux structure
@@ -920,10 +920,10 @@ _update_darcy_t(const cs_cdo_connect_t      *connect,
   CS_NO_WARN_IF_UNUSED(dof_values);
   CS_NO_WARN_IF_UNUSED(cell_values);
 
-  assert(darcy != NULL);
-  assert(darcy->flux_val != NULL);
-  assert(darcy->update_input != NULL);
-  assert(darcy->adv_field != NULL);
+  assert(darcy != nullptr);
+  assert(darcy->flux_val != nullptr);
+  assert(darcy->update_input != nullptr);
+  assert(darcy->adv_field != nullptr);
 
   cs_adv_field_t  *adv = darcy->adv_field;
 
@@ -931,7 +931,7 @@ _update_darcy_t(const cs_cdo_connect_t      *connect,
     bft_error(__FILE__, __LINE__, 0,
               " %s: Invalid definition of the advection field", __func__);
 
-  cs_gwf_tpf_t  *tpf = darcy->update_input;
+  cs_gwf_tpf_t               *tpf     = (cs_gwf_tpf_t *)darcy->update_input;
   const cs_gwf_darcy_flux_t  *l_darcy = tpf->l_darcy;
   const cs_gwf_darcy_flux_t  *g_darcy = tpf->g_darcy;
 
@@ -948,7 +948,7 @@ _update_darcy_t(const cs_cdo_connect_t      *connect,
   /* Update the velocity field at cell centers induced by the Darcy flux */
 
   cs_field_t  *vel = cs_advection_field_get_field(adv, CS_MESH_LOCATION_CELLS);
-  assert(vel != NULL);
+  assert(vel != nullptr);
   if (cur2prev)
     cs_field_current_to_previous(vel);
 
@@ -974,7 +974,7 @@ _update_darcy_fluxes(const cs_cdo_connect_t      *connect,
                      bool                         cur2prev,
                      cs_gwf_tpf_t                *tpf)
 {
-  cs_real_t  *dof_vals = NULL, *cell_vals = NULL;
+  cs_real_t *dof_vals = nullptr, *cell_vals = nullptr;
 
   /* Darcy velocity/flux in the liquid phase. The liquid pressure is the
      unknown for the coupled and the segregated solver */
@@ -995,13 +995,8 @@ _update_darcy_fluxes(const cs_cdo_connect_t      *connect,
 
   cs_gwf_darcy_flux_t  *g_darcy = tpf->g_darcy;
 
-  g_darcy->update_func(connect,
-                       cdoq,
-                       tpf->g_pressure->val,
-                       NULL,
-                       t_eval,
-                       cur2prev,
-                       g_darcy);
+  g_darcy->update_func(
+    connect, cdoq, tpf->g_pressure->val, nullptr, t_eval, cur2prev, g_darcy);
 
   if (!tpf->use_diffusion_view_for_darcy) {
 
@@ -1012,12 +1007,11 @@ _update_darcy_fluxes(const cs_cdo_connect_t      *connect,
 
     t_darcy->update_func(connect,
                          cdoq,
-                         NULL,    /* values are defined inside the call */
-                         NULL,    /* values are defined inside the call */
+                         nullptr, /* values are defined inside the call */
+                         nullptr, /* values are defined inside the call */
                          t_eval,
                          cur2prev,
                          t_darcy);
-
   }
 }
 
@@ -1238,12 +1232,12 @@ _update_iso_mtpf_plpc_coupled(const cs_cdo_connect_t      *connect,
 
     cs_gwf_soil_t  *soil = cs_gwf_soil_by_id(soil_id);
 
-    assert(soil != NULL);
+    assert(soil != nullptr);
     assert(soil->hydraulic_model == CS_GWF_MODEL_MISCIBLE_TWO_PHASE);
     assert(soil->abs_permeability_dim == 1);
 
     const cs_zone_t  *zone = cs_volume_zone_by_id(soil->zone_id);
-    assert(zone != NULL);
+    assert(zone != nullptr);
 
     /* Soil properties and its derived quantities */
 
@@ -1430,12 +1424,12 @@ _update_iso_itpf_plpc_coupled(const cs_cdo_connect_t     *connect,
 
     cs_gwf_soil_t  *soil = cs_gwf_soil_by_id(soil_id);
 
-    assert(soil != NULL);
+    assert(soil != nullptr);
     assert(soil->hydraulic_model == CS_GWF_MODEL_IMMISCIBLE_TWO_PHASE);
     assert(soil->abs_permeability_dim == 1);
 
     const cs_zone_t  *zone = cs_volume_zone_by_id(soil->zone_id);
-    assert(zone != NULL);
+    assert(zone != nullptr);
 
     /* Soil properties and its derived quantities */
 
@@ -1610,12 +1604,12 @@ _update_iso_itpf_pcpg_coupled_diffview(const cs_cdo_connect_t     *connect,
 
     cs_gwf_soil_t  *soil = cs_gwf_soil_by_id(soil_id);
 
-    assert(soil != NULL);
+    assert(soil != nullptr);
     assert(soil->hydraulic_model == CS_GWF_MODEL_IMMISCIBLE_TWO_PHASE);
     assert(soil->abs_permeability_dim == 1);
 
     const cs_zone_t  *zone = cs_volume_zone_by_id(soil->zone_id);
-    assert(zone != NULL);
+    assert(zone != nullptr);
 
     /* Soil properties and its derived quantities */
 
@@ -1705,7 +1699,7 @@ _init_non_linear_algo(const cs_field_t     *pa,
     return;
 
   cs_iter_algo_t  *algo = tpf->nl_algo;
-  assert(algo != NULL);
+  assert(algo != nullptr);
 
   cs_iter_algo_reset(algo);
 
@@ -1798,7 +1792,7 @@ static cs_sles_convergence_state_t
 _check_cvg_nl_dpc(const cs_real_t          *dpc_iter,
                   cs_iter_algo_t           *algo)
 {
-  assert(algo != NULL);
+  assert(algo != nullptr);
 
   double dpc_norm = cs_cdo_blas_square_norm_pvsp(dpc_iter);
 
@@ -1843,7 +1837,7 @@ _check_cvg_nl(cs_param_nl_algo_t        nl_algo_type,
   if (nl_algo_type == CS_PARAM_NL_ALGO_NONE)
     return CS_SLES_CONVERGED;
 
-  assert(algo != NULL);
+  assert(algo != nullptr);
 
   if (nl_algo_type == CS_PARAM_NL_ALGO_ANDERSON) {
 
@@ -1918,13 +1912,13 @@ _compute_coupled_picard(const cs_mesh_t              *mesh,
   cs_flag_t  update_flag = CS_FLAG_CURRENT_TO_PREVIOUS;
 
   cs_iter_algo_t  *algo = tpf->nl_algo;
-  assert(algo != NULL);
+  assert(algo != nullptr);
   assert(tpf->nl_algo_type == CS_PARAM_NL_ALGO_PICARD);
 
   _init_non_linear_algo(pa, pb, tpf);
 
-  cs_real_t  *pa_kp1 = NULL, *pb_kp1 = NULL;  /* at ^{n+1,k+1} */
-  cs_real_t  *pa_k = NULL, *pb_k = NULL;      /* at ^{n+1,k} */
+  cs_real_t *pa_kp1 = nullptr, *pb_kp1 = nullptr; /* at ^{n+1,k+1} */
+  cs_real_t *pa_k = nullptr, *pb_k = nullptr;     /* at ^{n+1,k} */
 
   BFT_MALLOC(pa_k, cdoq->n_vertices, cs_real_t);
   BFT_MALLOC(pb_k, cdoq->n_vertices, cs_real_t);
@@ -2019,7 +2013,7 @@ _compute_coupled_anderson(const cs_mesh_t              *mesh,
   bool  cur2prev = false;
   cs_flag_t  update_flag = 0;   /* No current to previous operation */
   cs_iter_algo_t  *algo = tpf->nl_algo;
-  assert(algo != NULL);
+  assert(algo != nullptr);
 
   _init_non_linear_algo(pa, pb, tpf);
 
@@ -2036,8 +2030,8 @@ _compute_coupled_anderson(const cs_mesh_t              *mesh,
 
   /* A first resolution has been done followed by an update */
 
-  cs_real_t  *pa_kp1 = NULL, *pb_kp1 = NULL;  /* at ^{n+1,k+1} */
-  cs_real_t  *pa_k = NULL, *pb_k = NULL;      /* at ^{n+1,k} */
+  cs_real_t *pa_kp1 = nullptr, *pb_kp1 = nullptr; /* at ^{n+1,k+1} */
+  cs_real_t *pa_k = nullptr, *pb_k = nullptr;     /* at ^{n+1,k} */
 
   BFT_MALLOC(pa_k, 2*cdoq->n_vertices, cs_real_t);
   pb_k = pa_k + cdoq->n_vertices;
@@ -2113,7 +2107,7 @@ _compute_coupled_anderson(const cs_mesh_t              *mesh,
 
   BFT_FREE(pa_k);
   BFT_FREE(pa_kp1);
-  cs_iter_algo_release_anderson_arrays(algo->context);
+  cs_iter_algo_release_anderson_arrays((cs_iter_algo_aac_t *)algo->context);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -2153,7 +2147,7 @@ _compute_segregated(const cs_mesh_t              *mesh,
   /* Initialize the non-linear algorithm */
 
   cs_iter_algo_t  *algo = tpf->nl_algo;
-  assert(algo != NULL);
+  assert(algo != nullptr);
 
   cs_iter_algo_reset(algo);
 
@@ -2223,7 +2217,7 @@ _compute_segregated(const cs_mesh_t              *mesh,
                            time_step);
 #endif
 
-  cs_real_t  *dpc_kp1 = NULL;
+  cs_real_t *dpc_kp1 = nullptr;
   BFT_MALLOC(dpc_kp1, mesh->n_vertices, cs_real_t);
 
   _get_capillarity_pressure_increment(mesh, tpf->w_eq, tpf->h_eq, dpc_kp1);
@@ -2750,11 +2744,11 @@ _finalize_setup_plpg_segregated_solver(const cs_cdo_connect_t  *connect,
   cs_array_real_fill_zero(n_cells, tpf->srct_w_array);
 
   cs_equation_add_source_term_by_array(w_eqp,
-                                       NULL,    /* all cells */
+                                       nullptr, /* all cells */
                                        cs_flag_primal_cell,
                                        tpf->srct_w_array,
-                                       false,   /* xdef not owner */
-                                       true);   /* full length */
+                                       false, /* xdef not owner */
+                                       true); /* full length */
 
   /* Conservation of the mass of component mainly present in the gas phase
    * --------------------------------------------------------------------- */
@@ -2784,11 +2778,11 @@ _finalize_setup_plpg_segregated_solver(const cs_cdo_connect_t  *connect,
   cs_array_real_fill_zero(n_cells, tpf->srct_h_array);
 
   cs_equation_add_source_term_by_array(h_eqp,
-                                       NULL,   /* all cells */
+                                       nullptr, /* all cells */
                                        cs_flag_primal_cell,
                                        tpf->srct_h_array,
-                                       false,  /* xdef not owner */
-                                       true);  /* full length */
+                                       false, /* xdef not owner */
+                                       true); /* full length */
 }
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
@@ -2814,33 +2808,33 @@ cs_gwf_tpf_create(cs_gwf_model_type_t      model)
   assert(model == CS_GWF_MODEL_MISCIBLE_TWO_PHASE ||
          model == CS_GWF_MODEL_IMMISCIBLE_TWO_PHASE);
 
-  cs_gwf_tpf_t  *tpf = NULL;
+  cs_gwf_tpf_t *tpf = nullptr;
 
   BFT_MALLOC(tpf, 1, cs_gwf_tpf_t);
 
-  /* Set to NULL since one has to know if a coupled or segregated solver is
+  /* Set to nullptr since one has to know if a coupled or segregated solver is
      used or what couple of variables is considered */
 
-  tpf->w_eq = NULL;
-  tpf->h_eq = NULL;
-  tpf->b01_w_eqp = NULL;
-  tpf->b10_h_eqp = NULL;
-  tpf->system = NULL;
+  tpf->w_eq      = nullptr;
+  tpf->h_eq      = nullptr;
+  tpf->b01_w_eqp = nullptr;
+  tpf->b10_h_eqp = nullptr;
+  tpf->system    = nullptr;
 
   /* Advection fields */
   /* ---------------- */
 
-  tpf->l_darcy = NULL;
-  tpf->g_darcy = NULL;
-  tpf->t_darcy = NULL;
+  tpf->l_darcy = nullptr;
+  tpf->g_darcy = nullptr;
+  tpf->t_darcy = nullptr;
 
   /* Properties
    * ---------- */
 
-  tpf->krl_pty = NULL;
-  tpf->krg_pty = NULL;
-  tpf->lsat_pty = NULL;
-  tpf->lcap_pty = NULL;
+  tpf->krl_pty  = nullptr;
+  tpf->krg_pty  = nullptr;
+  tpf->lsat_pty = nullptr;
+  tpf->lcap_pty = nullptr;
 
   /* Note: Adding the properties related to the permeability (diffusion) is
    * postponed since one has to know which type of permeability is considered
@@ -2850,30 +2844,30 @@ cs_gwf_tpf_create(cs_gwf_model_type_t      model)
 
   /* Properties related to the water equation  */
 
-  tpf->time_wc_pty = NULL;
-  tpf->diff_wl_pty = NULL;
-  tpf->diff_wc_pty = NULL;       /* only if (Pc, Pg) is used */
-  tpf->diff_wg_pty = NULL;       /* only if (Pc, Pg) is used */
+  tpf->time_wc_pty = nullptr;
+  tpf->diff_wl_pty = nullptr;
+  tpf->diff_wc_pty = nullptr; /* only if (Pc, Pg) is used */
+  tpf->diff_wg_pty = nullptr; /* only if (Pc, Pg) is used */
 
   /* Properties related to the hydrogen equation  */
 
-  tpf->time_hc_pty = NULL;
-  tpf->time_hl_pty = NULL;       /* only if (Pc, Pl) is used */
-  tpf->time_hg_pty = NULL;       /* only if (Pc, Pg) is used */
+  tpf->time_hc_pty = nullptr;
+  tpf->time_hl_pty = nullptr; /* only if (Pc, Pl) is used */
+  tpf->time_hg_pty = nullptr; /* only if (Pc, Pg) is used */
 
-  tpf->diff_hc_pty = NULL;
-  tpf->diff_hl_pty = NULL;       /* only if (Pc, Pl) is used */
-  tpf->diff_hg_pty = NULL;       /* only if (Pc, Pl) is used */
+  tpf->diff_hc_pty = nullptr;
+  tpf->diff_hl_pty = nullptr; /* only if (Pc, Pl) is used */
+  tpf->diff_hg_pty = nullptr; /* only if (Pc, Pl) is used */
 
-  tpf->reac_h_pty = NULL;
+  tpf->reac_h_pty = nullptr;
 
   /* Fields */
   /* ------ */
 
-  tpf->c_pressure = NULL;
-  tpf->l_pressure = NULL;
-  tpf->g_pressure = NULL;
-  tpf->l_saturation = NULL;
+  tpf->c_pressure   = nullptr;
+  tpf->l_pressure   = nullptr;
+  tpf->g_pressure   = nullptr;
+  tpf->l_saturation = nullptr;
 
   /* Arrays */
   /* ------ */
@@ -2881,8 +2875,8 @@ cs_gwf_tpf_create(cs_gwf_model_type_t      model)
   /* The properties will be defined using arrays.
    * Store these arrays of property values associated to equation terms */
 
-  tpf->srct_w_array = NULL;
-  tpf->srct_h_array = NULL;
+  tpf->srct_w_array = nullptr;
+  tpf->srct_h_array = nullptr;
 
   /* Model parameters (default values) */
   /* ---------------- */
@@ -2934,7 +2928,7 @@ cs_gwf_tpf_create(cs_gwf_model_type_t      model)
   tpf->anderson_param.beta = 1.0;    /* No damping by default */
   tpf->anderson_param.dp_type = CS_PARAM_DOTPROD_EUCLIDEAN;
 
-  tpf->nl_algo = NULL;
+  tpf->nl_algo = nullptr;
 
   return tpf;
 }
@@ -2951,12 +2945,12 @@ cs_gwf_tpf_create(cs_gwf_model_type_t      model)
 void
 cs_gwf_tpf_free(cs_gwf_tpf_t    **p_tpf)
 {
-  if (cs_gwf_tpf_time_plot != NULL)
+  if (cs_gwf_tpf_time_plot != nullptr)
     cs_time_plot_finalize(&cs_gwf_tpf_time_plot);
 
-  if (p_tpf == NULL)
+  if (p_tpf == nullptr)
     return;
-  if (*p_tpf == NULL)
+  if (*p_tpf == nullptr)
     return;
 
   cs_gwf_tpf_t  *tpf = *p_tpf;
@@ -2976,7 +2970,7 @@ cs_gwf_tpf_free(cs_gwf_tpf_t    **p_tpf)
   cs_iter_algo_free(&(tpf->nl_algo));
 
   BFT_FREE(tpf);
-  *p_tpf = NULL;
+  *p_tpf = nullptr;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -2991,7 +2985,7 @@ cs_gwf_tpf_free(cs_gwf_tpf_t    **p_tpf)
 void
 cs_gwf_tpf_log_setup(cs_gwf_tpf_t          *tpf)
 {
-  if (tpf == NULL)
+  if (tpf == nullptr)
     return;
 
   cs_log_printf(CS_LOG_SETUP,
@@ -3132,7 +3126,7 @@ void
 cs_gwf_tpf_init(cs_gwf_tpf_t            *tpf,
                 cs_property_type_t       perm_type)
 {
-  if (tpf == NULL)
+  if (tpf == nullptr)
     return;
 
   /* Property common to all solvers. This property is used to compute the Darcy
@@ -3231,10 +3225,10 @@ void
 cs_gwf_tpf_init_setup(cs_flag_t         post_flag,
                       cs_gwf_tpf_t     *tpf)
 {
-  if (tpf == NULL)
+  if (tpf == nullptr)
     return;
 
-  if (tpf->w_eq == NULL || tpf->h_eq == NULL)
+  if (tpf->w_eq == nullptr || tpf->h_eq == nullptr)
     bft_error(__FILE__, __LINE__, 0,
               "%s: Equations are not defined for this model. Stop execution.\n",
               __func__);
@@ -3377,12 +3371,12 @@ cs_gwf_tpf_init_setup(cs_flag_t         post_flag,
         const char  *vname = _output_varnames[j];
         int  len = strlen(z->name) + strlen(vname) + 4;
 
-        char *min_name = NULL;
+        char *min_name = nullptr;
         BFT_MALLOC(min_name, len + 1, char);
         sprintf(min_name, "%s-%sMin", z->name, vname);
         labels[min_shift + j] = min_name;
 
-        char *max_name = NULL;
+        char *max_name = nullptr;
         BFT_MALLOC(max_name, len + 1, char);
         sprintf(max_name, "%s-%sMax", z->name, vname);
         labels[max_shift + j] = max_name;
@@ -3395,11 +3389,11 @@ cs_gwf_tpf_init_setup(cs_flag_t         post_flag,
                                                    "",
                                                    CS_TIME_PLOT_CSV,
                                                    false,
-                                                   180,   /* flush time */
+                                                   180, /* flush time */
                                                    -1,
                                                    n_outputs,
-                                                   NULL,
-                                                   NULL,
+                                                   nullptr,
+                                                   nullptr,
                                                    (const char **)labels);
 
     for (int i = 0; i < n_outputs; i++)
@@ -3476,23 +3470,23 @@ cs_gwf_tpf_finalize_setup(const cs_cdo_connect_t      *connect,
 
   case CS_GWF_TPF_APPROX_VERTEX_SUBCELL:
     {
-      cs_xdef_t  *d = NULL;
+    cs_xdef_t *d = nullptr;
 
-      /* Relative permeability in the liquid and gas phase */
+    /* Relative permeability in the liquid and gas phase */
 
-      d = _add_pty_array(c2v_size, cs_flag_dual_cell_byc, tpf->krl_pty);
-      cs_xdef_array_set_adjacency(d, c2v);
+    d = _add_pty_array(c2v_size, cs_flag_dual_cell_byc, tpf->krl_pty);
+    cs_xdef_array_set_adjacency(d, c2v);
 
-      d = _add_pty_array(c2v_size, cs_flag_dual_cell_byc, tpf->krg_pty);
-      cs_xdef_array_set_adjacency(d, c2v);
+    d = _add_pty_array(c2v_size, cs_flag_dual_cell_byc, tpf->krg_pty);
+    cs_xdef_array_set_adjacency(d, c2v);
 
-      /* Liquid saturation and liquid capacity */
+    /* Liquid saturation and liquid capacity */
 
-      _add_pty_array(c2v_size, cs_flag_dual_cell_byc, tpf->lsat_pty);
-      cs_xdef_array_set_adjacency(d, c2v);
+    _add_pty_array(c2v_size, cs_flag_dual_cell_byc, tpf->lsat_pty);
+    cs_xdef_array_set_adjacency(d, c2v);
 
-      _add_pty_array(c2v_size, cs_flag_dual_cell_byc, tpf->lcap_pty);
-      cs_xdef_array_set_adjacency(d, c2v);
+    _add_pty_array(c2v_size, cs_flag_dual_cell_byc, tpf->lcap_pty);
+    cs_xdef_array_set_adjacency(d, c2v);
     }
     break;
 
@@ -3551,7 +3545,7 @@ cs_gwf_tpf_init_values(const cs_cdo_connect_t        *connect,
 {
   CS_NO_WARN_IF_UNUSED(connect);
 
-  if (tpf == NULL)
+  if (tpf == nullptr)
     return;
 
   /* Set a builder hook function if needed */
@@ -3634,7 +3628,7 @@ cs_gwf_tpf_compute(const cs_mesh_t               *mesh,
                    cs_flag_t                      option_flag,
                    cs_gwf_tpf_t                  *tpf)
 {
-  if (tpf == NULL)
+  if (tpf == nullptr)
     return;
 
   switch(tpf->solver_type) {
@@ -3642,41 +3636,38 @@ cs_gwf_tpf_compute(const cs_mesh_t               *mesh,
   case CS_GWF_TPF_SOLVER_PCPG_COUPLED:
   case CS_GWF_TPF_SOLVER_PLPC_COUPLED:
     {
-      cs_field_t  *pa = NULL, *pb = NULL;
+    cs_field_t *pa = nullptr, *pb = nullptr;
 
-      if (tpf->solver_type == CS_GWF_TPF_SOLVER_PCPG_COUPLED)
-        pa = tpf->c_pressure, pb = tpf->g_pressure;
-      else
-        pa = tpf->l_pressure, pb = tpf->c_pressure;
+    if (tpf->solver_type == CS_GWF_TPF_SOLVER_PCPG_COUPLED)
+      pa = tpf->c_pressure, pb = tpf->g_pressure;
+    else
+      pa = tpf->l_pressure, pb = tpf->c_pressure;
 
-      switch (tpf->nl_algo_type) {
+    switch (tpf->nl_algo_type) {
 
-      case CS_PARAM_NL_ALGO_NONE: /* Linear case */
-        cs_equation_system_solve(true, tpf->system); /* cur2prev = true */
+    case CS_PARAM_NL_ALGO_NONE:                    /* Linear case */
+      cs_equation_system_solve(true, tpf->system); /* cur2prev = true */
 
-        /* Update the variables related to the groundwater flow system */
+      /* Update the variables related to the groundwater flow system */
 
-        cs_gwf_tpf_update(mesh, connect, cdoq, time_step,
-                          CS_FLAG_CURRENT_TO_PREVIOUS,
-                          option_flag,
-                          tpf);
-        break;
+      cs_gwf_tpf_update(mesh,
+                        connect,
+                        cdoq,
+                        time_step,
+                        CS_FLAG_CURRENT_TO_PREVIOUS,
+                        option_flag,
+                        tpf);
+      break;
 
-      case CS_PARAM_NL_ALGO_PICARD:
-        _compute_coupled_picard(mesh, connect, cdoq, time_step,
-                                option_flag,
-                                pa, pb,
-                                tpf);
-        break;
+    case CS_PARAM_NL_ALGO_PICARD:
+      _compute_coupled_picard(
+        mesh, connect, cdoq, time_step, option_flag, pa, pb, tpf);
+      break;
 
-      case CS_PARAM_NL_ALGO_ANDERSON:
-      {
-        _compute_coupled_anderson(mesh, connect, cdoq, time_step,
-                                    option_flag,
-                                    pa, pb,
-                                    tpf);
-        }
-        break;
+    case CS_PARAM_NL_ALGO_ANDERSON: {
+      _compute_coupled_anderson(
+        mesh, connect, cdoq, time_step, option_flag, pa, pb, tpf);
+    } break;
 
       default:
         break; /* Nothing else to do */
@@ -3862,7 +3853,7 @@ cs_gwf_tpf_extra_op(const cs_cdo_connect_t       *connect,
                     cs_flag_t                     post_flag,
                     cs_gwf_tpf_t                 *tpf)
 {
-  assert(tpf != NULL);
+  assert(tpf != nullptr);
 
   if (cs_flag_test(post_flag, CS_GWF_POST_DARCY_FLUX_BALANCE)) {
 
@@ -3897,7 +3888,7 @@ cs_gwf_tpf_extra_op(const cs_cdo_connect_t       *connect,
     const int  n_min_outputs = n_soils * CS_GWF_TPF_N_OUTPUT_VARS;
     const int  n_outputs = 2 * n_min_outputs;
 
-    cs_real_t  *output_values = NULL;
+    cs_real_t *output_values = nullptr;
 
     BFT_MALLOC(output_values, n_outputs, cs_real_t);
 
@@ -3915,7 +3906,7 @@ cs_gwf_tpf_extra_op(const cs_cdo_connect_t       *connect,
       cs_real_t  *_maxv = max_outputs + CS_GWF_TPF_N_OUTPUT_VARS*id;
 
       const cs_zone_t  *z = cs_gwf_soil_get_zone(id);
-      assert(z != NULL);
+      assert(z != nullptr);
 
       for (cs_lnum_t i = 0; i < z->n_elts; i++) {
 
@@ -3966,7 +3957,7 @@ cs_gwf_tpf_extra_op(const cs_cdo_connect_t       *connect,
 
     }
 
-    if (cs_glob_rank_id < 1 && cs_gwf_tpf_time_plot != NULL)
+    if (cs_glob_rank_id < 1 && cs_gwf_tpf_time_plot != nullptr)
       cs_time_plot_vals_write(cs_gwf_tpf_time_plot,
                               ts->nt_cur,
                               ts->t_cur,
@@ -4009,13 +4000,13 @@ cs_gwf_tpf_extra_post(int                         mesh_id,
   if (mesh_id != CS_POST_MESH_VOLUME)
     return; /* Only postprocessings in the volume are defined */
 
-  assert(tpf != NULL);
+  assert(tpf != nullptr);
 
   if (post_flag & CS_GWF_POST_SOIL_CAPACITY) {
 
     if (tpf->approx_type == CS_GWF_TPF_APPROX_VERTEX_SUBCELL) {
 
-      cs_real_t  *lcap_cell = NULL;
+      cs_real_t *lcap_cell = nullptr;
       BFT_MALLOC(lcap_cell, n_cells, cs_real_t);
 
       cs_reco_scalar_vbyc2c(n_cells, cell_ids,
@@ -4028,12 +4019,12 @@ cs_gwf_tpf_extra_post(int                         mesh_id,
                         CS_POST_WRITER_DEFAULT,
                         "l_capacity",
                         1,
-                        false,        /* interlace */
-                        false,        /* use parent */
+                        false, /* interlace */
+                        false, /* use parent */
                         CS_POST_TYPE_cs_real_t,
                         lcap_cell,
-                        NULL,
-                        NULL,
+                        nullptr,
+                        nullptr,
                         time_step);
 
       BFT_FREE(lcap_cell);
@@ -4045,14 +4036,13 @@ cs_gwf_tpf_extra_post(int                         mesh_id,
                         CS_POST_WRITER_DEFAULT,
                         "l_capacity",
                         1,
-                        false,       /* interlace */
-                        true,        /* use parent */
+                        false, /* interlace */
+                        true,  /* use parent */
                         CS_POST_TYPE_cs_real_t,
                         cs_property_get_array(tpf->lcap_pty),
-                        NULL,
-                        NULL,
+                        nullptr,
+                        nullptr,
                         time_step);
-
     }
 
   } /* Postprocess the soil capacity */
@@ -4061,7 +4051,7 @@ cs_gwf_tpf_extra_post(int                         mesh_id,
 
     /* permeability = krl * abs_permeability */
 
-    cs_real_t  *permeability = NULL;
+    cs_real_t *permeability = nullptr;
     int  dim = cs_property_get_dim(abs_perm);
     int  post_dim = (dim == 1) ? 1 : 9;
 
@@ -4076,8 +4066,9 @@ cs_gwf_tpf_extra_post(int                         mesh_id,
 
         for (cs_lnum_t i = 0; i < n_cells; i++) {
 
-          cs_lnum_t  c_id = (cell_ids == NULL || n_cells == cdoq->n_cells) ?
-            i : cell_ids[i];
+          cs_lnum_t  c_id = (cell_ids == nullptr || n_cells == cdoq->n_cells)
+                              ? i
+                              : cell_ids[i];
           cs_real_t  tensor[3][3];
 
           cs_property_get_cell_tensor(c_id,
@@ -4105,8 +4096,9 @@ cs_gwf_tpf_extra_post(int                         mesh_id,
 
         for (cs_lnum_t i = 0; i < n_cells; i++) {
 
-          cs_lnum_t  c_id = (cell_ids == NULL || n_cells == cdoq->n_cells) ?
-            i : cell_ids[i];
+          cs_lnum_t  c_id = (cell_ids == nullptr || n_cells == cdoq->n_cells)
+                              ? i
+                              : cell_ids[i];
           cs_real_t  tensor[3][3];
 
           cs_property_get_cell_tensor(c_id,
@@ -4150,8 +4142,9 @@ cs_gwf_tpf_extra_post(int                         mesh_id,
 
           for (cs_lnum_t i = 0; i < n_cells; i++) {
 
-            cs_lnum_t  c_id = (cell_ids == NULL || n_cells == cdoq->n_cells) ?
-              i : cell_ids[i];
+            cs_lnum_t c_id = (cell_ids == nullptr || n_cells == cdoq->n_cells)
+                               ? i
+                               : cell_ids[i];
 
             double  abs_perm_cell = cs_property_get_cell_value(c_id,
                                                                time_step->t_cur,
@@ -4174,8 +4167,9 @@ cs_gwf_tpf_extra_post(int                         mesh_id,
 
           for (cs_lnum_t i = 0; i < n_cells; i++) {
 
-            cs_lnum_t  c_id = (cell_ids == NULL || n_cells == cdoq->n_cells) ?
-              i : cell_ids[i];
+            cs_lnum_t c_id = (cell_ids == nullptr || n_cells == cdoq->n_cells)
+                               ? i
+                               : cell_ids[i];
 
             permeability[i] = abs_perm_value * krl_values[c_id];
 
@@ -4186,8 +4180,9 @@ cs_gwf_tpf_extra_post(int                         mesh_id,
 
           for (cs_lnum_t i = 0; i < n_cells; i++) {
 
-            cs_lnum_t  c_id = (cell_ids == NULL || n_cells == cdoq->n_cells) ?
-              i : cell_ids[i];
+            cs_lnum_t c_id = (cell_ids == nullptr || n_cells == cdoq->n_cells)
+                               ? i
+                               : cell_ids[i];
 
             double  abs_perm_cell = cs_property_get_cell_value(c_id,
                                                                time_step->t_cur,
@@ -4206,12 +4201,12 @@ cs_gwf_tpf_extra_post(int                         mesh_id,
                       CS_POST_WRITER_DEFAULT,
                       "permeability",
                       post_dim,
-                      true,     /* interlace */
-                      false,    /* use_parent */
+                      true,  /* interlace */
+                      false, /* use_parent */
                       CS_POST_TYPE_cs_real_t,
                       permeability,
-                      NULL,
-                      NULL,
+                      nullptr,
+                      nullptr,
                       time_step);
 
     BFT_FREE(permeability);
@@ -4220,7 +4215,7 @@ cs_gwf_tpf_extra_post(int                         mesh_id,
 
   if (post_flag & CS_GWF_POST_GAS_MASS_DENSITY) {
 
-    cs_real_t  *gas_mass_density = NULL;
+    cs_real_t *gas_mass_density = nullptr;
     BFT_MALLOC(gas_mass_density, n_cells, cs_real_t);
 
     cs_reco_scalar_v2c(n_cells, cell_ids,
@@ -4239,12 +4234,12 @@ cs_gwf_tpf_extra_post(int                         mesh_id,
                       CS_POST_WRITER_DEFAULT,
                       "gas_mass_density",
                       1,
-                      false,    /* interlace */
-                      false,    /* use parent */
+                      false, /* interlace */
+                      false, /* use parent */
                       CS_POST_TYPE_cs_real_t,
                       gas_mass_density,
-                      NULL,
-                      NULL,
+                      nullptr,
+                      nullptr,
                       time_step);
 
     BFT_FREE(gas_mass_density);
@@ -4255,15 +4250,17 @@ cs_gwf_tpf_extra_post(int                         mesh_id,
 
     const int  *soil_state = cs_gwf_soil_get_soil_state();
 
-    if (soil_state != NULL)
+    if (soil_state != nullptr)
       cs_post_write_var(mesh_id,
                         CS_POST_WRITER_DEFAULT,
                         "soil_state",
                         1,
-                        false,  /* interlace */
-                        true,   /* use_parent */
+                        false, /* interlace */
+                        true,  /* use_parent */
                         CS_POST_TYPE_int,
-                        soil_state, NULL, NULL,
+                        soil_state,
+                        nullptr,
+                        nullptr,
                         time_step);
 
   } /* Post-processing of the soil state */

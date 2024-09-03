@@ -86,7 +86,7 @@ cs_gwf_toolbox_bateman(double                              time_eval,
                        const double                        init_inv[],
                        double                              eval_inv[])
 {
-  if (tdc == NULL)
+  if (tdc == nullptr)
     return;
   if (tdc->n_tracers < 1)
     return;
@@ -94,7 +94,7 @@ cs_gwf_toolbox_bateman(double                              time_eval,
   /* Collect all decay coefficients in one array (either in the stack or malloc
      if there are more than 6 tracers in the decay chain */
 
-  double  *lambda = NULL, *_lambda = NULL;
+  double *lambda = nullptr, *_lambda = nullptr;
   double  lambda6[6];
 
   if (tdc->n_tracers < 6)
@@ -105,7 +105,8 @@ cs_gwf_toolbox_bateman(double                              time_eval,
   }
 
   for (int it = 0; it < tdc->n_tracers; it++) {
-    cs_gwf_tracer_default_context_t  *tc = tdc->tracers[it]->context;
+    cs_gwf_tracer_default_context_t *tc
+      = (cs_gwf_tracer_default_context_t *)tdc->tracers[it]->context;
     lambda[it] = tc->decay_coef;
   }
 

@@ -41,6 +41,7 @@ AM_CPPFLAGS = \
 -I$(top_srcdir)/src/mesh \
 -I$(top_srcdir)/src/pprt \
 $(CPPFLAGS_PLE) $(MPI_CPPFLAGS)
+
 AM_CXXFLAGS = $(CXXFLAGS_STD) $(CXXFLAGS_SYCL) $(CXXFLAGS_DBG) $(CXXFLAGS_OPT) $(CXXFLAGS_SHARED)
 
 AM_CFLAGS = $(CFLAGS_DBG) $(CFLAGS_OPT) $(CFLAGS_SHARED)
@@ -66,14 +67,14 @@ cs_gwf_headers.h
 
 noinst_LIBRARIES = libcsgwf.a
 libcsgwf_a_SOURCES = \
-cs_gwf.c \
-cs_gwf_priv.c \
-cs_gwf_soil.c \
-cs_gwf_sspf.c \
-cs_gwf_toolbox.c \
-cs_gwf_tpf.c \
-cs_gwf_tracer.c \
-cs_gwf_uspf.c
+cs_gwf.cpp \
+cs_gwf_priv.cpp \
+cs_gwf_soil.cpp \
+cs_gwf_sspf.cpp \
+cs_gwf_toolbox.cpp \
+cs_gwf_tpf.cpp \
+cs_gwf_tracer.cpp \
+cs_gwf_uspf.cpp
 
 libcsgwf_a_LIBADD =
 
