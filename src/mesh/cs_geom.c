@@ -501,7 +501,7 @@ cs_geom_segment_intersect_face(int               orient,
    *  (i.e.  n_intersects < 1 , but retval < 1),
    *  the retval value is forced to 2
    *  (no intersection since the particle entered and left from this face). */
-  if ((n_intersects < 1) && retval < 1. && retval >= 0) {
+  if ((n_intersects < 1) && retval < 1. && retval > 0) {
     retval = 2.;
   }
 
