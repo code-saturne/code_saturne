@@ -7771,7 +7771,7 @@ cs_grid_coarsen(const cs_grid_t      *f,
 
   /* Apply tuning if needed */
 
-  if (_grid_tune_max_level > 0 && c->matrix == NULL && recurse < 2) {
+  if (_grid_tune_max_level > 0 && c->matrix != nullptr && recurse < 2) {
 
     cs_matrix_fill_type_t mft
       = cs_matrix_get_fill_type(f->symmetric,
