@@ -529,10 +529,12 @@ _notay_hook(void  *context,
   cs_fp_exception_disable_trap(); /* Avoid trouble with a too restrictive
                                      SIGFPE detection */
 
-  if (cs_glob_n_ranks > 1)
+  if (cs_glob_n_ranks > 1) {
+    cs_base_warn(__FILE__, __LINE__);
     cs_log_printf(CS_LOG_DEFAULT,
                   " %s (Eq. %s) Warning: Algo. not tested in parallel.\n",
                   __func__, b11_slesp->name);
+  }
 
   /* Build IndexSet structures to extract block matrices */
 

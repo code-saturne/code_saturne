@@ -1194,6 +1194,7 @@ cs_param_saddle_set_solver(const char          *keyval,
     cs_sles_set_epzero(1e-15);  /* Avoid a too early exit */
 
     saddlep->context = ctxp;
+
   }
   else
     return ierr;

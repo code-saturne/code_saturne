@@ -247,17 +247,17 @@ cs_param_sles_create(int          field_id,
     strncpy(slesp->name, system_name, len + 1);
   }
 
-  slesp->field_id = field_id;                   /* associated field id */
-  slesp->verbosity = 0;                         /* SLES verbosity */
+  slesp->field_id = field_id;                     // associated field id
+  slesp->verbosity = 0;                           // SLES verbosity
 
-  slesp->solver_class = CS_PARAM_SOLVER_CLASS_CS; /* solver family */
-  slesp->precond = CS_PARAM_PRECOND_DIAG;       /* preconditioner */
-  slesp->solver = CS_PARAM_SOLVER_GCR;           /* iterative solver */
-  slesp->flexible = false;                      /* not the flexible variant */
-  slesp->restart = 25;                          /* restart after ? iterations */
-  slesp->amg_type = CS_PARAM_AMG_NONE;          /* no predefined AMG type */
+  slesp->solver_class = CS_PARAM_SOLVER_CLASS_CS; // solver family
+  slesp->precond = CS_PARAM_PRECOND_DIAG;         // preconditioner
+  slesp->solver = CS_PARAM_SOLVER_GCR;            // iterative solver
+  slesp->flexible = false;                        // not the flexible variant
+  slesp->restart = 25;                            // restart after ? iterations
+  slesp->amg_type = CS_PARAM_AMG_NONE;            // no predefined AMG type
 
-  slesp->precond_block_type = CS_PARAM_PRECOND_BLOCK_NONE; /* no block by default */
+  slesp->precond_block_type = CS_PARAM_PRECOND_BLOCK_NONE;
   slesp->resnorm_type = CS_PARAM_RESNORM_FILTERED_RHS;
   slesp->allow_no_op = false;
 

@@ -397,8 +397,9 @@ cs_cdo_quantities_dump(const cs_cdo_quantities_t  *cdoq);
  */
 /*----------------------------------------------------------------------------*/
 
-const cs_real_t *cs_cdo_quantities_get_pvol_fc(const cs_cdo_quantities_t *cdoq,
-                                               const cs_adjacency_t      *c2f);
+const cs_real_t *
+cs_cdo_quantities_get_pvol_fc(const cs_cdo_quantities_t *cdoq,
+                              const cs_adjacency_t      *c2f);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -414,9 +415,10 @@ const cs_real_t *cs_cdo_quantities_get_pvol_fc(const cs_cdo_quantities_t *cdoq,
  */
 /*----------------------------------------------------------------------------*/
 
-void cs_cdo_quantities_compute_pvol_fc(const cs_cdo_quantities_t *cdoq,
-                                       const cs_adjacency_t      *c2f,
-                                       cs_real_t                **p_pvol_fc);
+void
+cs_cdo_quantities_compute_pvol_fc(const cs_cdo_quantities_t *cdoq,
+                                  const cs_adjacency_t      *c2f,
+                                  cs_real_t                **p_pvol_fc);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -433,8 +435,9 @@ void cs_cdo_quantities_compute_pvol_fc(const cs_cdo_quantities_t *cdoq,
  */
 /*----------------------------------------------------------------------------*/
 
-const cs_real_t *cs_cdo_quantities_get_pvol_ec(const cs_cdo_quantities_t *cdoq,
-                                               const cs_adjacency_t      *c2e);
+const cs_real_t *
+cs_cdo_quantities_get_pvol_ec(const cs_cdo_quantities_t *cdoq,
+                              const cs_adjacency_t      *c2e);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -678,9 +681,10 @@ cs_quant_set_face_nvec(cs_lnum_t                    f_id,
  */
 /*----------------------------------------------------------------------------*/
 
-cs_quant_t cs_quant_get_edge_center(cs_lnum_t                  e_id,
-                                    const cs_cdo_connect_t    *topo,
-                                    const cs_cdo_quantities_t *cdoq);
+cs_quant_t
+cs_quant_get_edge_center(cs_lnum_t                  e_id,
+                         const cs_cdo_connect_t    *topo,
+                         const cs_cdo_quantities_t *cdoq);
 
 /*----------------------------------------------------------------------------*/
 /*!
