@@ -1507,7 +1507,8 @@ cs_param_saddle_log(const cs_param_saddle_t  *saddlep)
 
   /* Convergence criteria */
 
-  if (saddlep->solver != CS_PARAM_SADDLE_SOLVER_MUMPS) {
+  if (saddlep->solver != CS_PARAM_SADDLE_SOLVER_MUMPS &&
+      saddlep->solver != CS_PARAM_SADDLE_SOLVER_NOTAY_TRANSFORM) {
 
     cs_log_printf(CS_LOG_SETUP, "%s Convergence.max_iter:  %d\n",
                   prefix, saddlep->cvg_param.n_max_iter);
@@ -1559,7 +1560,8 @@ cs_param_saddle_log(const cs_param_saddle_t  *saddlep)
     {
       cs_param_saddle_context_alu_t  *ctxp = saddlep->context;
 
-      cs_param_sles_log(ctxp->init_sles_param);
+      if (ctxp->dedicated_init_sles)
+        cs_param_sles_log(ctxp->init_sles_param);
     }
     break;
 
@@ -1575,7 +1577,8 @@ cs_param_saddle_log(const cs_param_saddle_t  *saddlep)
     {
       cs_param_saddle_context_gkb_t  *ctxp = saddlep->context;
 
-      cs_param_sles_log(ctxp->init_sles_param);
+      if (ctxp->dedicated_init_sles)
+        cs_param_sles_log(ctxp->init_sles_param);
     }
     break;
 
@@ -1583,7 +1586,9 @@ cs_param_saddle_log(const cs_param_saddle_t  *saddlep)
     {
       cs_param_saddle_context_uzacg_t  *ctxp = saddlep->context;
 
-      cs_param_sles_log(ctxp->init_sles_param);
+      if (ctxp->dedicated_init_sles)
+        cs_param_sles_log(ctxp->init_sles_param);
+
       cs_param_sles_log(ctxp->xtra_sles_param);
     }
     break;
