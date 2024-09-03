@@ -888,13 +888,18 @@ cs_user_parameters(cs_domain_t *domain)
 
   /*! [duration] */
 
-  /* Calculation (restart) with frozen velocity field (1 yes, 0 no) */
+  /* Calculation with frozen dynamic field
+   * (here solved every nt_interval iterations so not solved) */
 
   /*! [param_iccvfg] */
   {
     cs_time_scheme_t *t_sc = cs_get_glob_time_scheme();
 
-    t_sc->iccvfg = 1;
+    cs_velocity_pressure_param_t *vp_param
+      = cs_get_glob_velocity_pressure_param();
+    cs_time_control_t *vp_tc =
+      &(vp_param->time_control);
+    vp_tc->interval_nt = -1;
   }
   /*! [param_iccvfg] */
 

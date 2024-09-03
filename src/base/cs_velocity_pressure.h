@@ -33,6 +33,8 @@
 
 #include "cs_defs.h"
 
+#include "cs_time_control.h"
+
 /*----------------------------------------------------------------------------*/
 
 BEGIN_C_DECLS
@@ -176,9 +178,11 @@ typedef struct {
 
   double      epsdp;          /* parameter of diagonal pressure strengthening */
 
+  cs_time_control_t  time_control;   /* Time control for radiation updates */
+
 } cs_velocity_pressure_param_t;
 
-/* Deprecated structures (partial compatibilty mode) */
+/* Deprecated structures (partial compatibility mode) */
 
 typedef cs_velocity_pressure_model_t cs_stokes_model_t;
 typedef cs_velocity_pressure_param_t cs_piso_t;

@@ -338,6 +338,21 @@ static cs_velocity_pressure_param_t  _velocity_pressure_param =
   .xnrmu = 0.,
   .xnrmu0 = 0.,
   .epsdp  = 1.e-12,
+  .time_control = {
+    .type = CS_TIME_CONTROL_TIME_STEP,
+    .at_start = true,
+    .at_first = true,
+    .at_end = false,
+    .start_nt = -1,
+    .end_nt = -1,
+    .interval_nt = 1,
+    .control_func = NULL,
+    .control_input = NULL,
+    .current_state = false,
+    .current_time_step = -1,
+    .last_nt = -2,
+    .last_t = -HUGE_VAL
+  }
 };
 
 const cs_velocity_pressure_param_t  *cs_glob_velocity_pressure_param

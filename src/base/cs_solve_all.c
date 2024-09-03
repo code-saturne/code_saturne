@@ -553,11 +553,15 @@ _solve_most(int              n_var,
     }
 
     /* Compute velocity when not frozen:
-       - We solve velocity and tubulence
+       - We solve velocity and turbulence
        - We assume that all phases are frozen, or non are.
        --------------------------------------------------- */
 
-    if (cs_glob_time_scheme->iccvfg == 0) {
+    cs_time_control_t *vp_tc =
+      &(cs_glob_velocity_pressure_param->time_control);
+    const cs_time_step_t *ts = cs_glob_time_step;
+    bool _active_dyn = cs_time_control_is_active(vp_tc, ts);
+    if (_active_dyn) {
 
       /* Solve momentum and mass equation
          -------------------------------- */
@@ -1087,6 +1091,10 @@ cs_solve_all(int  itrale)
 
   bool must_return = false;
   bool need_new_solve = true;
+  cs_time_control_t *vp_tc =
+    &(cs_glob_velocity_pressure_param->time_control);
+  const cs_time_step_t *ts = cs_glob_time_step;
+  bool _active_dyn = cs_time_control_is_active(vp_tc, ts);
 
   while (need_new_solve) {
 
@@ -1114,8 +1122,7 @@ cs_solve_all(int  itrale)
 
     /* Computation on non-frozen velocity field, continued */
 
-    if (   cs_glob_time_scheme->iccvfg == 0
-        && cs_glob_ale > CS_ALE_NONE) {
+    if (_active_dyn && cs_glob_ale > CS_ALE_NONE) {
 
       /* Movement of structures in ALE and test implicit loop */
 
@@ -1134,7 +1141,7 @@ cs_solve_all(int  itrale)
 
   /* Computation on non-frozen velocity field, continued */
 
-  if (cs_glob_time_scheme->iccvfg == 0) {
+  if (_active_dyn) {
 
     // We pass in cs_theta_scheme_update_var only in explicit
     if (cs_glob_time_scheme->istmpf == 0)
@@ -1145,7 +1152,7 @@ cs_solve_all(int  itrale)
 
     _solve_turbulence(n_cells, n_cells_ext, eqp_vel->verbosity);
 
-  } // end if iccvfg
+  } // end if _active_dyn
 
   BFT_FREE(htot_cond);
 
