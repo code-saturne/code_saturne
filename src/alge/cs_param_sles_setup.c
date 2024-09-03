@@ -162,6 +162,30 @@ _petsc_cmd(bool         use_prefix,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Get a prefix for the current KSP structure
+ *
+ * \param[in] slesp  set of parameters for the linear algebra
+ * \param[in] ksp    PETSc structure
+ *
+ * \return a pointer to a string
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline const char *
+_set_prefix(cs_param_sles_t *slesp,
+            KSP              ksp)
+{
+  const char *petsc_prefix;
+  KSPGetOptionsPrefix(ksp, &petsc_prefix);
+
+  if (petsc_prefix == NULL)
+    return slesp->name;
+  else
+    return petsc_prefix;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Predefined settings for a block ILU(0) with PETSc
  *
  * \param[in] prefix  prefix name associated to the current SLES
@@ -714,6 +738,8 @@ _petsc_set_pc_type(cs_param_sles_t  *slesp,
   if (slesp->solver == CS_PARAM_SOLVER_MUMPS)
     return; /* Direct solver: Nothing to do at this stage */
 
+  const char *prefix = _set_prefix(slesp, ksp);
+
   PC  pc;
   KSPGetPC(ksp, &pc);
 
@@ -732,17 +758,17 @@ _petsc_set_pc_type(cs_param_sles_t  *slesp,
 #if defined(PETSC_HAVE_HYPRE)
       PCSetType(pc, PCHYPRE);
       PCHYPRESetType(pc, "euclid");
-      _petsc_cmd(true, slesp->name, "pc_euclid_level", "0");
+      _petsc_cmd(true, prefix, "pc_euclid_level", "0");
 #else
-      _petsc_bilu0_hook(slesp->name);
+      _petsc_bilu0_hook(prefix);
 #endif
     }
     else
-      _petsc_bilu0_hook(slesp->name);
+      _petsc_bilu0_hook(prefix);
     break;
 
   case CS_PARAM_PRECOND_BJACOB_SGS:
-    _petsc_bssor_hook(slesp->name);
+    _petsc_bssor_hook(prefix);
     break;
 
   case CS_PARAM_PRECOND_SSOR:
@@ -751,12 +777,13 @@ _petsc_set_pc_type(cs_param_sles_t  *slesp,
       slesp->precond = CS_PARAM_PRECOND_BJACOB_SGS;
       cs_base_warn(__FILE__, __LINE__);
       cs_log_printf(CS_LOG_WARNINGS,
-                    " %s: System %s: Modify the requested preconditioner to"
-                    " enable a parallel computation with PETSC.\n"
+                    " %s: System \"%s\" (prefix:\"%s\"): Modify the requested"
+                    " preconditioner to enable a parallel computation with"
+                    " PETSC.\n"
                     " Switch to a block jacobi preconditioner.\n",
-                    __func__, slesp->name);
+                    __func__, slesp->name, prefix);
 
-      _petsc_bssor_hook(slesp->name);
+      _petsc_bssor_hook(prefix);
 
     }
     else { /* Serial computation */
@@ -772,12 +799,13 @@ _petsc_set_pc_type(cs_param_sles_t  *slesp,
 
       cs_base_warn(__FILE__, __LINE__);
       cs_log_printf(CS_LOG_WARNINGS,
-                    " %s: System %s: Modify the requested preconditioner to"
-                    " enable a parallel computation with PETSC.\n"
+                    " %s: System \"%s\" (prefix:\"%s\"): Modify the requested"
+                    " preconditioner to enable a parallel computation with"
+                    " PETSC.\n"
                     " Switch to a block jacobi preconditioner.\n",
-                    __func__, slesp->name);
+                    __func__, slesp->name, prefix);
 
-      _petsc_bicc0_hook(slesp->name);
+      _petsc_bicc0_hook(prefix);
 
     }
     else {
@@ -796,27 +824,29 @@ _petsc_set_pc_type(cs_param_sles_t  *slesp,
       /* Euclid is a parallel version of the ILU(0) factorisation */
       PCSetType(pc, PCHYPRE);
       PCHYPRESetType(pc, "euclid");
-      _petsc_cmd(true, slesp->name, "pc_euclid_level", "0");
+      _petsc_cmd(true, prefix, "pc_euclid_level", "0");
 
 #else
 
-      _petsc_bilu0_hook(slesp->name);
+      _petsc_bilu0_hook(prefix);
       if (cs_glob_n_ranks > 1)  /* Switch to a block version */
         slesp->precond = CS_PARAM_PRECOND_BJACOB_ILU0;
 #endif
     }
     else {
 
-      _petsc_bilu0_hook(slesp->name);
+      _petsc_bilu0_hook(prefix);
       if (cs_glob_n_ranks > 1) { /* Switch to a block version */
 
         slesp->precond = CS_PARAM_PRECOND_BJACOB_ILU0;
         cs_base_warn(__FILE__, __LINE__);
         cs_log_printf(CS_LOG_WARNINGS,
-                      " %s: System %s: Modify the requested preconditioner to"
-                      " enable a parallel computation with PETSC.\n"
+                      " %s: System \"%s\" (prefix:\"%s\"): Modify the requested"
+                      " preconditioner to enable a parallel computation with"
+                      " PETSC.\n"
                       " Switch to a block jacobi preconditioner.\n",
-                      __func__, slesp->name);
+                      __func__, slesp->name, prefix);
+
       }
 
     }
@@ -825,28 +855,29 @@ _petsc_set_pc_type(cs_param_sles_t  *slesp,
   case CS_PARAM_PRECOND_LU:
 #if defined(PETSC_HAVE_MUMPS)
   case CS_PARAM_PRECOND_MUMPS:
-    _petsc_cmd(true, slesp->name, "pc_type", "lu");
-    _petsc_cmd(true, slesp->name, "pc_factor_mat_solver_type", "mumps");
+    _petsc_cmd(true, prefix, "pc_type", "lu");
+    _petsc_cmd(true, prefix, "pc_factor_mat_solver_type", "mumps");
 #else
     if (cs_glob_n_ranks == 1)
-      _petsc_cmd(true, slesp->name, "pc_type", "lu");
+      _petsc_cmd(true, prefix, "pc_type", "lu");
     else { /* Switch to a block version (sequential in each block) */
-      _petsc_cmd(true, slesp->name, "pc_type", "bjacobi");
-      _petsc_cmd(true, slesp->name, "pc_jacobi_blocks", "1");
-      _petsc_cmd(true, slesp->name, "sub_ksp_type", "preonly");
-      _petsc_cmd(true, slesp->name, "sub_pc_type", "lu");
+      _petsc_cmd(true, prefix, "pc_type", "bjacobi");
+      _petsc_cmd(true, prefix, "pc_jacobi_blocks", "1");
+      _petsc_cmd(true, prefix, "sub_ksp_type", "preonly");
+      _petsc_cmd(true, prefix, "sub_pc_type", "lu");
     }
 #endif
     break;
 
   case CS_PARAM_PRECOND_AMG:
-    cs_param_sles_setup_petsc_pc_amg(slesp->name, slesp, pc);
+    cs_param_sles_setup_petsc_pc_amg(prefix, slesp, pc);
     break;
 
   default:
     bft_error(__FILE__, __LINE__, 0,
-              " %s: Eq. %s: Preconditioner not interfaced with PETSc.",
-              __func__, slesp->name);
+              " %s: Eq. \"%s\" (prefix: \"%s\"): Preconditioner not interfaced"
+              " with PETSc.",
+              __func__, slesp->name, prefix);
   }
 
   /* Apply modifications to the PC structure given with command lines.
@@ -932,11 +963,13 @@ _petsc_set_krylov_solver(cs_param_sles_t  *slesp,
 
   /* 3) Additional settings arising from command lines */
 
+  const char *prefix = _set_prefix(slesp, ksp);
+
   switch (slesp->solver) {
 
   case CS_PARAM_SOLVER_GMRES:
   case CS_PARAM_SOLVER_FGMRES:
-    _petsc_cmd(true, slesp->name, "ksp_gmres_modifiedgramschmidt", "1");
+    _petsc_cmd(true, prefix, "ksp_gmres_modifiedgramschmidt", "1");
     break;
 
   default:
@@ -3041,7 +3074,7 @@ cs_param_sles_setup_petsc_pc_amg(const char       *prefix,
 
   } /* End of switch on the AMG type */
 }
-#endif
+#endif  /* HAVE_PETSC */
 
 /*----------------------------------------------------------------------------*/
 
