@@ -473,8 +473,6 @@ _solve_pressure_correction(const cs_mesh_t              *mesh,
 
   /* Boundary conditions are always evaluated at t + dt */
 
-  const cs_real_t  time_eval = ts->t_cur + ts->dt[0];
-
   cs_timer_t  t_bld = cs_timer_time();
 
   /* Compute the source term */
