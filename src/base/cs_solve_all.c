@@ -255,10 +255,10 @@ _compute_tensorial_time_step(const cs_mesh_t   *m,
 /*----------------------------------------------------------------------------*/
 
 static void
-_solve_buoyancy_energy_scalar_equation(const int        n_scal,
-                                       const int        iterns,
-                                       const cs_lnum_t  n_cells,
-                                       const int        scalar_idx[])
+_solve_coupled_vel_p_variables_equation(const int        n_scal,
+                                        const int        iterns,
+                                        const cs_lnum_t  n_cells,
+                                        const int        scalar_idx[])
 {
   if (cs_glob_velocity_pressure_model->n_buoyant_scal < 1)
     return;
@@ -273,7 +273,7 @@ _solve_buoyancy_energy_scalar_equation(const int        n_scal,
          "  ====================================\n\n"));
   }
 
-  // Update buoyant scalar(s)
+  // Update coupled with dynamic scalar(s)
   cs_solve_transported_variables(iterns);
 
   // Diffusion terms for weakly compressible algorithm
@@ -567,10 +567,10 @@ _solve_most(int              n_var,
          -------------------------------- */
 
       // In case of buoyancy, scalars and momentum are coupled
-      _solve_buoyancy_energy_scalar_equation(n_scal,
-                                             iterns,
-                                             n_cells,
-                                             scalar_idx);
+      _solve_coupled_vel_p_variables_equation(n_scal,
+                                              iterns,
+                                              n_cells,
+                                              scalar_idx);
 
       if (vel_verbosity > 0) {
         bft_printf
