@@ -464,7 +464,7 @@ _pot_gradient_im_f(int               location_id,
   CS_UNUSED(input);
   assert(location_id == CS_MESH_LOCATION_CELLS);
 
-  cs_real_3_t *v = vals;
+  cs_real_3_t *v = (cs_real_3_t *)vals;
 
   const cs_mesh_t *m = cs_glob_mesh;
   const cs_field_t *f = cs_field_by_name("elec_pot_i");
@@ -518,7 +518,7 @@ _current_im_f(int               location_id,
   CS_UNUSED(input);
   assert(location_id == CS_MESH_LOCATION_CELLS);
 
-  cs_real_3_t *v = vals;
+  cs_real_3_t *v = (cs_real_3_t *)vals;
 
   const cs_mesh_t *m = cs_glob_mesh;
   const cs_field_t *f = cs_field_by_name("elec_pot_i");
@@ -599,7 +599,7 @@ _pot_module_f(int               location_id,
   CS_UNUSED(input);
   assert(location_id == CS_MESH_LOCATION_CELLS);
 
-  cs_real_t *v = vals;
+  cs_real_t *v = (cs_real_t *)vals;
 
   const cs_real_t *cpotr = cs_field_by_name("elec_pot_r")->val;
   const cs_real_t *cpoti = cs_field_by_name("elec_pot_i")->val;
@@ -644,7 +644,7 @@ _pot_arg_f(int               location_id,
   CS_UNUSED(input);
   assert(location_id == CS_MESH_LOCATION_CELLS);
 
-  cs_real_t *v = vals;
+  cs_real_t *v = (cs_real_t *)vals;
 
   const cs_real_t *cpotr = cs_field_by_name("elec_pot_r")->val;
   const cs_real_t *cpoti = cs_field_by_name("elec_pot_i")->val;

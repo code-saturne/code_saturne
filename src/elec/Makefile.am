@@ -60,7 +60,7 @@ cs_elec_model.h
 
 noinst_LIBRARIES = libcselec.a
 libcselec_a_SOURCES = \
-cs_elec_model.c
+cs_elec_model.cpp
 
 # Rules for CUDA (not known by Automake)
 
@@ -72,4 +72,4 @@ endif
 # Additional rules
 
 clean-local:
-	-rm -f .deps
+	-rm -rf .deps

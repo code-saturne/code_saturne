@@ -252,12 +252,13 @@ cs_lagr_coupling(const cs_real_t    taup[],
     cs_real_t  p_stat_w = cs_lagr_particles_get_real(p_set, p_id,
                                                      CS_LAGR_STAT_WEIGHT);
     cs_real_t  p_mass   = cs_lagr_particles_get_real(p_set, p_id, CS_LAGR_MASS);
-    cs_real_t *p_vel    = cs_lagr_particles_attr(p_set, p_id, CS_LAGR_VELOCITY);
+    cs_real_t *p_vel    =
+      cs_lagr_particles_get_real_ptr(p_set, p_id, CS_LAGR_VELOCITY);
 
     cs_real_t  prev_p_mass = cs_lagr_particles_get_real_n(p_set, p_id, 1,
                                                           CS_LAGR_MASS);
-    cs_real_t *prev_p_vel  = cs_lagr_particles_attr_n(p_set, p_id, 1,
-                                                      CS_LAGR_VELOCITY);
+    cs_real_t *prev_p_vel  = cs_lagr_particles_get_real_ptr_n(p_set, p_id, 1,
+                                                              CS_LAGR_VELOCITY);
 
     //TODO tsfext should be computed elsewhere (in sde) and the mass of particle
     // may be the previous mass.
@@ -341,10 +342,12 @@ cs_lagr_coupling(const cs_real_t    taup[],
 
         cs_lnum_t  c_id         = cs_lagr_particle_get_lnum(particle, p_am,
                                                            CS_LAGR_CELL_ID);
-        cs_real_t *prev_f_vel  = cs_lagr_particle_attr_n(particle, p_am, 1,
-                                                         CS_LAGR_VELOCITY_SEEN);
-        cs_real_t *f_vel       = cs_lagr_particle_attr(particle, p_am,
-                                                       CS_LAGR_VELOCITY_SEEN);
+        cs_real_t *prev_f_vel  =
+          (cs_real_t *)cs_lagr_particle_attr_n(particle, p_am, 1,
+                                               CS_LAGR_VELOCITY_SEEN);
+        cs_real_t *f_vel       =
+          (cs_real_t *)cs_lagr_particle_attr(particle, p_am,
+                                             CS_LAGR_VELOCITY_SEEN);
 
         cs_real_3_t vel_s =
         { 0.5 * (prev_f_vel[0] + f_vel[0]),
@@ -378,10 +381,12 @@ cs_lagr_coupling(const cs_real_t    taup[],
         cs_lnum_t  c_id         = cs_lagr_particle_get_lnum(particle, p_am,
                                                            CS_LAGR_CELL_ID);
 
-        cs_real_t *prev_f_vel  = cs_lagr_particle_attr_n(particle, p_am, 1,
-                                                         CS_LAGR_VELOCITY_SEEN);
-        cs_real_t *f_vel       = cs_lagr_particle_attr(particle, p_am,
-                                                       CS_LAGR_VELOCITY_SEEN);
+        cs_real_t *prev_f_vel  =
+          (cs_real_t *)cs_lagr_particle_attr_n(particle, p_am, 1,
+                                               CS_LAGR_VELOCITY_SEEN);
+        cs_real_t *f_vel       =
+          (cs_real_t *)cs_lagr_particle_attr(particle, p_am,
+                                             CS_LAGR_VELOCITY_SEEN);
 
         cs_real_3_t vel_s =
         { 0.5 * (prev_f_vel[0] + f_vel[0]),

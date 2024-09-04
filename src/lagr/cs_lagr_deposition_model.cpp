@@ -29,7 +29,6 @@
  *============================================================================*/
 
 #include "cs_defs.h"
-#include "cs_math.h"
 
 /*----------------------------------------------------------------------------
  * Standard C library headers
@@ -52,6 +51,7 @@
 #include "bft_error.h"
 #include "bft_printf.h"
 
+#include "cs_math.h"
 #include "cs_physical_constants.h"
 #include "cs_random.h"
 
@@ -60,6 +60,8 @@
  *----------------------------------------------------------------------------*/
 
 #include "cs_lagr_deposition_model.h"
+
+BEGIN_C_DECLS
 
 /*============================================================================
  * Static global variables

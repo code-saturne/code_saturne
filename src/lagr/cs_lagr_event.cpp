@@ -208,7 +208,8 @@ _create_attr_map(cs_lnum_t attr_keys[CS_LAGR_N_E_ATTRIBUTES][3])
   e_am->lb = 0;
   e_am->extents = e_am->lb;
 
-  for (attr = 0; attr < CS_LAGR_N_E_ATTRIBUTES; attr++) {
+  cs_lagr_event_attribute_t attr0 = (cs_lagr_event_attribute_t) 0;
+  for (attr = attr0; attr < CS_LAGR_N_E_ATTRIBUTES; attr++) {
     e_am->size[attr] = 0;
     e_am->datatype[attr] = CS_REAL_TYPE;
     e_am->displ[attr] = -1;

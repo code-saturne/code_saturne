@@ -100,39 +100,39 @@ cs_lagr_headers.h
 
 noinst_LIBRARIES = libcslagr.a
 libcslagr_a_SOURCES = \
-cs_lagr.c \
-cs_lagr_adh.c \
-cs_lagr_agglo.c \
-cs_lagr_aux_mean_fluid_quantities.c \
-cs_lagr_car.c \
-cs_lagr_clogging.c \
-cs_lagr_coupling.c \
-cs_lagr_deposition_model.c \
-cs_lagr_dlvo.c \
-cs_lagr_event.c \
-cs_lagr_extract.c \
-cs_lagr_fragmentation.c \
-cs_lagr_geom.c \
-cs_lagr_head_losses.c \
-cs_lagr_injection.c \
-cs_lagr_lec.c \
-cs_lagr_log.c \
-cs_lagr_new.c \
-cs_lagr_options.c \
-cs_lagr_orientation.c \
-cs_lagr_particle.c \
-cs_lagr_poisson.c \
-cs_lagr_porosity.c \
-cs_lagr_post.c \
-cs_lagr_precipitation_model.c \
-cs_lagr_print.c \
-cs_lagr_query.c \
-cs_lagr_restart.c \
-cs_lagr_resuspension.c \
-cs_lagr_roughness.c \
-cs_lagr_sde.c \
-cs_lagr_sde_model.c \
-cs_lagr_stat.c \
+cs_lagr.cpp \
+cs_lagr_adh.cpp \
+cs_lagr_agglo.cpp \
+cs_lagr_aux_mean_fluid_quantities.cpp \
+cs_lagr_car.cpp \
+cs_lagr_clogging.cpp \
+cs_lagr_coupling.cpp \
+cs_lagr_deposition_model.cpp \
+cs_lagr_dlvo.cpp \
+cs_lagr_event.cpp \
+cs_lagr_extract.cpp \
+cs_lagr_fragmentation.cpp \
+cs_lagr_geom.cpp \
+cs_lagr_head_losses.cpp \
+cs_lagr_injection.cpp \
+cs_lagr_lec.cpp \
+cs_lagr_log.cpp \
+cs_lagr_new.cpp \
+cs_lagr_options.cpp \
+cs_lagr_orientation.cpp \
+cs_lagr_particle.cpp \
+cs_lagr_poisson.cpp \
+cs_lagr_porosity.cpp \
+cs_lagr_post.cpp \
+cs_lagr_precipitation_model.cpp \
+cs_lagr_print.cpp \
+cs_lagr_query.cpp \
+cs_lagr_restart.cpp \
+cs_lagr_resuspension.cpp \
+cs_lagr_roughness.cpp \
+cs_lagr_sde.cpp \
+cs_lagr_sde_model.cpp \
+cs_lagr_stat.cpp \
 cs_lagr_tracking.c
 
 # Rules for CUDA (not known by Automake)

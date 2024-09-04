@@ -809,6 +809,57 @@ cs_lagr_particles_get_real(const cs_lagr_particle_set_t  *particle_set,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Get pointer to a current real attribute of a given particle in a set.
+ *
+ * \param[in]  particle_set  pointer to particle set
+ * \param[in]  particle_id   particle id
+ * \param[in]  attr          requested attribute id
+ *
+ * \return    pointer to current attribute data
+ */
+/*----------------------------------------------------------------------------*/
+
+inline static cs_real_t *
+cs_lagr_particles_get_real_ptr(cs_lagr_particle_set_t  *particle_set,
+                               cs_lnum_t                particle_id,
+                               cs_lagr_attribute_t      attr)
+{
+  assert(particle_set->p_am->count[0][attr] > 0);
+
+  return (cs_real_t *)( particle_set->p_buffer
+         + particle_set->p_am->extents*particle_id
+         + particle_set->p_am->displ[0][attr]);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Get pointer to a real attribute data of a given particle in a set
+ *        at a given time.
+ *
+ * \param[in]  particle_set  pointer to particle set
+ * \param[in]  particle_id   particle id
+ * \param[in]  time_id       0 for current, 1 for previous
+ * \param[in]  attr          requested attribute id
+ *
+ * \return    pointer to attribute data at given time
+ */
+/*----------------------------------------------------------------------------*/
+
+inline static cs_real_t *
+cs_lagr_particles_get_real_ptr_n(cs_lagr_particle_set_t  *particle_set,
+                                 cs_lnum_t                particle_id,
+                                 int                      time_id,
+                                 cs_lagr_attribute_t      attr)
+{
+  assert(particle_set->p_am->count[time_id][attr] > 0);
+
+  return (cs_real_t *)( particle_set->p_buffer
+         + particle_set->p_am->extents*particle_id
+         + particle_set->p_am->displ[time_id][attr]);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Get attribute value of type cs_real_t of a given particle in a set
  *        at a given time.
  *
