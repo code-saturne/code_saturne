@@ -370,7 +370,7 @@ _cs_boundary_conditions_set_coeffs_turb_scalar(cs_field_t  *f_sc,
     const cs_real_t xnuii = visclc / romc;
 
     /* Geometric quantities */
-    const cs_real_t *rnxyz = b_face_u_normal[f_id];
+    const cs_real_t *n = b_face_u_normal[f_id];
     const cs_real_t distbf = b_dist[f_id];
 
     cs_real_t cpp = 1.;   // 1, Cp, Cv, or Cp/Cv
@@ -421,21 +421,21 @@ _cs_boundary_conditions_set_coeffs_turb_scalar(cs_field_t  *f_sc,
       visci[2][0] = temp * visten[c_id][5];
 
       /* ||Ki.n||^2 */
-      const cs_real_t viscis =   cs_math_pow2(  visci[0][0]*rnxyz[0]
-                                              + visci[1][0]*rnxyz[1]
-                                              + visci[2][0]*rnxyz[2])
-                               + cs_math_pow2(  visci[0][1]*rnxyz[0]
-                                              + visci[1][1]*rnxyz[1]
-                                              + visci[2][1]*rnxyz[2])
-                               + cs_math_pow2(  visci[0][2]*rnxyz[0]
-                                              + visci[1][2]*rnxyz[1]
-                                              + visci[2][2]*rnxyz[2]);
+      const cs_real_t viscis =   cs_math_pow2(  visci[0][0]*n[0]
+                                              + visci[1][0]*n[1]
+                                              + visci[2][0]*n[2])
+                               + cs_math_pow2(  visci[0][1]*n[0]
+                                              + visci[1][1]*n[1]
+                                              + visci[2][1]*n[2])
+                               + cs_math_pow2(  visci[0][2]*n[0]
+                                              + visci[1][2]*n[1]
+                                              + visci[2][2]*n[2]);
 
       /* IF.Ki.n */
       cs_real_t fikis
-        = (  cs_math_3_dot_product(dist, visci[0]) * rnxyz[0]
-           + cs_math_3_dot_product(dist, visci[1]) * rnxyz[1]
-           + cs_math_3_dot_product(dist, visci[2]) * rnxyz[2]);
+        = (  cs_math_3_dot_product(dist, visci[0]) * n[0]
+           + cs_math_3_dot_product(dist, visci[1]) * n[1]
+           + cs_math_3_dot_product(dist, visci[2]) * n[2]);
 
       /* Take I so that I"F= eps*||FI||*Ki.n when I" is not in cell i
          NB: eps =1.d-1 must be consistent
@@ -528,7 +528,7 @@ _cs_boundary_conditions_set_coeffs_turb_scalar(cs_field_t  *f_sc,
     /* Geometric quantities */
     const cs_lnum_t c_id = b_face_cells[f_id];
     const cs_real_t distbf = b_dist[f_id];
-    const cs_real_t *rnxyz = b_face_u_normal[f_id];
+    const cs_real_t *n = b_face_u_normal[f_id];
 
     /* Physical quantities */
     const cs_real_t visclc = viscl[c_id];
@@ -810,7 +810,7 @@ _cs_boundary_conditions_set_coeffs_turb_scalar(cs_field_t  *f_sc,
       cs_real_t pimpv[3];
       if (yplus >= ypth || icodcl_vel[f_id] == 6) {
         for (int i = 0; i < 3; i++)
-          pimpv[i] = rnxyz[i] * phit / (cpp * romc);
+          pimpv[i] = n[i] * phit / (cpp * romc);
       }
       else {
         for (int isou = 0; isou < 3; isou++)
@@ -1109,7 +1109,7 @@ _cs_boundary_conditions_set_coeffs_turb_vector(cs_field_t  *f_v,
 
     /* Geometric quantities */
     const cs_lnum_t c_id = b_face_cells[f_id];
-    const cs_real_t *rnxyz = b_face_u_normal[f_id];
+    const cs_real_t *n = b_face_u_normal[f_id];
 
     /* Physical quantities */
     const cs_real_t visclc = viscl[c_id];
@@ -1128,12 +1128,12 @@ _cs_boundary_conditions_set_coeffs_turb_vector(cs_field_t  *f_v,
 
     /* Keep tangential part */
 
-    cs_real_t rcodcn = cs_math_3_dot_product(rcodcxyz, rnxyz);
-    rcodcxyz[0] = rcodcxyz[0] - rcodcn * rnxyz[0];
-    rcodcxyz[1] = rcodcxyz[1] - rcodcn * rnxyz[1];
-    rcodcxyz[2] = rcodcxyz[2] - rcodcn * rnxyz[2];
+    cs_real_t rcodcn = cs_math_3_dot_product(rcodcxyz, n);
+    rcodcxyz[0] = rcodcxyz[0] - rcodcn * n[0];
+    rcodcxyz[1] = rcodcxyz[1] - rcodcn * n[1];
+    rcodcxyz[2] = rcodcxyz[2] - rcodcn * n[2];
 
-    rcodcn = cs_math_3_dot_product(rcodcxyz, rnxyz);
+    rcodcn = cs_math_3_dot_product(rcodcxyz, n);
 
     cs_real_t heq = 0.0;
     if (cs_math_fabs(hext) > 0.5*cs_math_infinite_r || icodcl_v[f_id] == 15)
@@ -1176,24 +1176,24 @@ _cs_boundary_conditions_set_coeffs_turb_vector(cs_field_t  *f_v,
       /* Gradient boundary conditions
          ---------------------------- */
 
-      coefa_v[f_id][0] =   (1.0 - cofimp) * (rcodcxyz[0] - rcodcn*rnxyz[0])
-                         + rcodcn*rnxyz[0];
+      coefa_v[f_id][0] =   (1.0 - cofimp) * (rcodcxyz[0] - rcodcn*n[0])
+                         + rcodcn*n[0];
 
-      coefa_v[f_id][1] =   (1.0 - cofimp) * (rcodcxyz[1] - rcodcn*rnxyz[1])
-                         + rcodcn*rnxyz[1];
+      coefa_v[f_id][1] =   (1.0 - cofimp) * (rcodcxyz[1] - rcodcn*n[1])
+                         + rcodcn*n[1];
 
-      coefa_v[f_id][2] =   (1.0 - cofimp) * (rcodcxyz[2] - rcodcn*rnxyz[2])
-                         + rcodcn*rnxyz[2];
+      coefa_v[f_id][2] =   (1.0 - cofimp) * (rcodcxyz[2] - rcodcn*n[2])
+                         + rcodcn*n[2];
 
       /* Projection in order to have the vector parallel to the wall
          B = cofimp * ( IDENTITY - n x n ) */
 
-      coefb_v[f_id][0][0] =   cofimp * (1.0 - rnxyz[0] * rnxyz[0]);
-      coefb_v[f_id][1][1] =   cofimp * (1.0 - rnxyz[1] * rnxyz[1]);
-      coefb_v[f_id][2][2] =   cofimp * (1.0 - rnxyz[2] * rnxyz[2]);
-      coefb_v[f_id][0][1] = - cofimp * rnxyz[0] * rnxyz[1];
-      coefb_v[f_id][0][2] = - cofimp * rnxyz[0] * rnxyz[2];
-      coefb_v[f_id][1][2] = - cofimp * rnxyz[1] * rnxyz[2];
+      coefb_v[f_id][0][0] =   cofimp * (1.0 - n[0] * n[0]);
+      coefb_v[f_id][1][1] =   cofimp * (1.0 - n[1] * n[1]);
+      coefb_v[f_id][2][2] =   cofimp * (1.0 - n[2] * n[2]);
+      coefb_v[f_id][0][1] = - cofimp * n[0] * n[1];
+      coefb_v[f_id][0][2] = - cofimp * n[0] * n[2];
+      coefb_v[f_id][1][2] = - cofimp * n[1] * n[2];
       coefb_v[f_id][1][0] =   coefb_v[f_id][0][1];
       coefb_v[f_id][2][1] =   coefb_v[f_id][1][2];
       coefb_v[f_id][2][0] =   coefb_v[f_id][0][2];
@@ -1201,33 +1201,33 @@ _cs_boundary_conditions_set_coeffs_turb_vector(cs_field_t  *f_v,
       /* Flux boundary conditions
          ------------------------ */
 
-      cofaf_v[f_id][0] = - heq * (rcodcxyz[0] - rcodcn * rnxyz[0])
-                         - hint[f_id] * rcodcn * rnxyz[0];
+      cofaf_v[f_id][0] = - heq * (rcodcxyz[0] - rcodcn * n[0])
+                         - hint[f_id] * rcodcn * n[0];
 
-      cofaf_v[f_id][1] = - heq * (rcodcxyz[1] - rcodcn * rnxyz[1])
-                         - hint[f_id] * rcodcn * rnxyz[1];
+      cofaf_v[f_id][1] = - heq * (rcodcxyz[1] - rcodcn * n[1])
+                         - hint[f_id] * rcodcn * n[1];
 
-      cofaf_v[f_id][2] = - heq * (rcodcxyz[2] - rcodcn * rnxyz[2])
-                         - hint[f_id] * rcodcn * rnxyz[2];
+      cofaf_v[f_id][2] = - heq * (rcodcxyz[2] - rcodcn * n[2])
+                         - hint[f_id] * rcodcn * n[2];
 
       /* Projection
          B = heq*( IDENTITY - n x n ) */
 
-      cofbf_v[f_id][0][0] =   heq*(1.-rnxyz[0]*rnxyz[0])
-                            + hint[f_id]*rnxyz[0]*rnxyz[0];
+      cofbf_v[f_id][0][0] =   heq*(1.-n[0]*n[0])
+                            + hint[f_id]*n[0]*n[0];
 
-      cofbf_v[f_id][1][1] =   heq*(1.-rnxyz[1]*rnxyz[1])
-                            + hint[f_id]*rnxyz[1]*rnxyz[1];
+      cofbf_v[f_id][1][1] =   heq*(1.-n[1]*n[1])
+                            + hint[f_id]*n[1]*n[1];
 
-      cofbf_v[f_id][2][2] =   heq*(1.-rnxyz[2]*rnxyz[2])
-                            + hint[f_id]*rnxyz[2]*rnxyz[2];
+      cofbf_v[f_id][2][2] =   heq*(1.-n[2]*n[2])
+                            + hint[f_id]*n[2]*n[2];
 
-      cofbf_v[f_id][0][1] = (hint[f_id] - heq) * rnxyz[0] * rnxyz[1];
-      cofbf_v[f_id][0][2] = (hint[f_id] - heq) * rnxyz[0] * rnxyz[2];
-      cofbf_v[f_id][1][0] = (hint[f_id] - heq) * rnxyz[1] * rnxyz[0];
-      cofbf_v[f_id][1][2] = (hint[f_id] - heq) * rnxyz[1] * rnxyz[2];
-      cofbf_v[f_id][2][0] = (hint[f_id] - heq) * rnxyz[2] * rnxyz[0];
-      cofbf_v[f_id][2][1] = (hint[f_id] - heq) * rnxyz[2] * rnxyz[1];
+      cofbf_v[f_id][0][1] = (hint[f_id] - heq) * n[0] * n[1];
+      cofbf_v[f_id][0][2] = (hint[f_id] - heq) * n[0] * n[2];
+      cofbf_v[f_id][1][0] = (hint[f_id] - heq) * n[1] * n[0];
+      cofbf_v[f_id][1][2] = (hint[f_id] - heq) * n[1] * n[2];
+      cofbf_v[f_id][2][0] = (hint[f_id] - heq) * n[2] * n[0];
+      cofbf_v[f_id][2][1] = (hint[f_id] - heq) * n[2] * n[1];
 
       /* TODO: postprocessing at the boundary */
 
@@ -2126,7 +2126,7 @@ cs_boundary_conditions_set_coeffs_turb(int        isvhb,
 
     /* Geometric quantities */
     const cs_real_t distbf = b_dist[f_id];
-    const cs_real_t *rnxyz = b_face_u_normal[f_id];
+    const cs_real_t *n = b_face_u_normal[f_id];
     const cs_real_t distfi = b_dist[f_id];
 
     /* Local reference frame
@@ -2146,10 +2146,10 @@ cs_boundary_conditions_set_coeffs_turb(int        isvhb,
     if (   cs_glob_ale == CS_ALE_NONE
         && cs_turbomachinery_get_model() == CS_TURBOMACHINERY_NONE) {
 
-      const cs_real_t rcodcn = cs_math_3_dot_product(rcodcxyz, rnxyz);
-      rcodcxyz[0] = rcodcxyz[0] - rcodcn * rnxyz[0];
-      rcodcxyz[1] = rcodcxyz[1] - rcodcn * rnxyz[1];
-      rcodcxyz[2] = rcodcxyz[2] - rcodcn * rnxyz[2];
+      const cs_real_t rcodcn = cs_math_3_dot_product(rcodcxyz, n);
+      rcodcxyz[0] = rcodcxyz[0] - rcodcn * n[0];
+      rcodcxyz[1] = rcodcxyz[1] - rcodcn * n[1];
+      rcodcxyz[2] = rcodcxyz[2] - rcodcn * n[2];
 
       rcodcl1_vel[n_b_faces*0 + f_id] = rcodcxyz[0];
       rcodcl1_vel[n_b_faces*1 + f_id] = rcodcxyz[1];
@@ -2162,11 +2162,11 @@ cs_boundary_conditions_set_coeffs_turb(int        isvhb,
                                 velipb[f_id][1] - rcodcxyz[1],
                                 velipb[f_id][2] - rcodcxyz[2]};
 
-    const cs_real_t usn = cs_math_3_dot_product(upxyz, rnxyz);
+    const cs_real_t usn = cs_math_3_dot_product(upxyz, n);
 
-    cs_real_t txyz[3] = {upxyz[0] - usn*rnxyz[0],
-                         upxyz[1] - usn*rnxyz[1],
-                         upxyz[2] - usn*rnxyz[2]};
+    cs_real_t txyz[3] = {upxyz[0] - usn*n[0],
+                         upxyz[1] - usn*n[1],
+                         upxyz[2] - usn*n[2]};
 
     /* Unit tangent (if the velocity is zero, Tx, Ty, Tz is not
        used (we cancel the velocity),
@@ -2182,9 +2182,9 @@ cs_boundary_conditions_set_coeffs_turb(int        isvhb,
 
       /* --> T2 = RN X T (where X is the cross product) */
 
-      const cs_real_t t2xyz[3] = {rnxyz[1]*txyz[2] - rnxyz[2]*txyz[1],
-                                  rnxyz[2]*txyz[0] - rnxyz[0]*txyz[2],
-                                  rnxyz[0]*txyz[1] - rnxyz[1]*txyz[0]};
+      const cs_real_t t2xyz[3] = {n[1]*txyz[2] - n[2]*txyz[1],
+                                  n[2]*txyz[0] - n[0]*txyz[2],
+                                  n[0]*txyz[1] - n[1]*txyz[0]};
 
       /* Orthogonal matrix for change of reference frame ELOGLOij
          (from local to global reference frame)
@@ -2196,13 +2196,13 @@ cs_boundary_conditions_set_coeffs_turb(int        isvhb,
          Its transpose ELOGLOt is its inverse */
 
       eloglo[0][0] =  txyz[0];
-      eloglo[1][0] = -rnxyz[0];
+      eloglo[1][0] = -n[0];
       eloglo[2][0] =  t2xyz[0];
       eloglo[0][1] =  txyz[1];
-      eloglo[1][1] = -rnxyz[1];
+      eloglo[1][1] = -n[1];
       eloglo[2][1] =  t2xyz[1];
       eloglo[0][2] =  txyz[2];
-      eloglo[1][2] = -rnxyz[2];
+      eloglo[1][2] = -n[2];
       eloglo[2][2] =  t2xyz[2];
 
       /* Compute Reynolds stress transformation matrix */
@@ -2236,7 +2236,7 @@ cs_boundary_conditions_set_coeffs_turb(int        isvhb,
              && turb_model->type  == CS_TURB_RANS) {
       ek = 0.5 * (cvar_rij[c_id][0] + cvar_rij[c_id][1] + cvar_rij[c_id][2]);
 
-      rnnb = cs_math_3_sym_33_3_dot_product(rnxyz, cvar_rij[c_id], rnxyz);
+      rnnb = cs_math_3_sym_33_3_dot_product(n, cvar_rij[c_id], n);
       rttb = cs_math_3_sym_33_3_dot_product(txyz, cvar_rij[c_id], txyz);
     }
 
@@ -2303,7 +2303,7 @@ cs_boundary_conditions_set_coeffs_turb(int        isvhb,
         /* Atmospheric Louis wall functions for rough wall */
         if (cs_glob_physical_model_flag[CS_ATMOSPHERIC] >= 1) {
 
-          const cs_real_t gredu = cs_math_3_dot_product(gxyz, rnxyz);
+          const cs_real_t gredu = cs_math_3_dot_product(gxyz, n);
           const cs_real_t temp = cvar_t[c_id];
           cs_real_t totwt = 0.;
           cs_real_t liqwt = 0.;
@@ -2347,7 +2347,7 @@ cs_boundary_conditions_set_coeffs_turb(int        isvhb,
                && cs_glob_physical_model_flag[CS_ATMOSPHERIC] >= 1) {
 
         /* Compute reduced gravity for non horizontal walls */
-        const cs_real_t gredu = cs_math_3_dot_product(gxyz, rnxyz);
+        const cs_real_t gredu = cs_math_3_dot_product(gxyz, n);
         const cs_real_t temp = cvar_t[c_id];
         cs_real_t totwt = 0.;
         cs_real_t liqwt = 0.;
@@ -2423,7 +2423,7 @@ cs_boundary_conditions_set_coeffs_turb(int        isvhb,
       /* Compute local LMO */
       if (cs_glob_physical_model_flag[CS_ATMOSPHERIC] >= 1) {
 
-        const cs_real_t gredu = cs_math_3_dot_product(gxyz, rnxyz);
+        const cs_real_t gredu = cs_math_3_dot_product(gxyz, n);
 
         const int *icodcl_th = f_th->bc_coeffs->icodcl;
 
@@ -2625,26 +2625,26 @@ cs_boundary_conditions_set_coeffs_turb(int        isvhb,
     /* Gradient boundary conditions
        ---------------------------- */
 
-    const cs_real_t rcodcn = cs_math_3_dot_product(rcodcxyz, rnxyz);
+    const cs_real_t rcodcn = cs_math_3_dot_product(rcodcxyz, n);
 
-    coefa_vel[f_id][0] =   (1.0 - cofimp) * (rcodcxyz[0] - rcodcn*rnxyz[0])
-                         + rcodcn*rnxyz[0];
+    coefa_vel[f_id][0] =   (1.0 - cofimp) * (rcodcxyz[0] - rcodcn*n[0])
+                         + rcodcn*n[0];
 
-    coefa_vel[f_id][1] =   (1.0 - cofimp) * (rcodcxyz[1] - rcodcn*rnxyz[1])
-                         + rcodcn*rnxyz[1];
+    coefa_vel[f_id][1] =   (1.0 - cofimp) * (rcodcxyz[1] - rcodcn*n[1])
+                         + rcodcn*n[1];
 
-    coefa_vel[f_id][2] =   (1.0 - cofimp) * (rcodcxyz[2] - rcodcn*rnxyz[2])
-                         + rcodcn*rnxyz[2];
+    coefa_vel[f_id][2] =   (1.0 - cofimp) * (rcodcxyz[2] - rcodcn*n[2])
+                         + rcodcn*n[2];
 
     /* Projection in order to have the velocity parallel to the wall
        B = cofimp * ( IDENTITY - n x n ) */
 
-    coefb_vel[f_id][0][0] =   cofimp * (1.0 - rnxyz[0] * rnxyz[0]);
-    coefb_vel[f_id][1][1] =   cofimp * (1.0 - rnxyz[1] * rnxyz[1]);
-    coefb_vel[f_id][2][2] =   cofimp * (1.0 - rnxyz[2] * rnxyz[2]);
-    coefb_vel[f_id][0][1] = - cofimp * rnxyz[0] * rnxyz[1];
-    coefb_vel[f_id][0][2] = - cofimp * rnxyz[0] * rnxyz[2];
-    coefb_vel[f_id][1][2] = - cofimp * rnxyz[1] * rnxyz[2];
+    coefb_vel[f_id][0][0] =   cofimp * (1.0 - n[0] * n[0]);
+    coefb_vel[f_id][1][1] =   cofimp * (1.0 - n[1] * n[1]);
+    coefb_vel[f_id][2][2] =   cofimp * (1.0 - n[2] * n[2]);
+    coefb_vel[f_id][0][1] = - cofimp * n[0] * n[1];
+    coefb_vel[f_id][0][2] = - cofimp * n[0] * n[2];
+    coefb_vel[f_id][1][2] = - cofimp * n[1] * n[2];
     coefb_vel[f_id][1][0] =   coefb_vel[f_id][0][1];
     coefb_vel[f_id][2][1] =   coefb_vel[f_id][1][2];
     coefb_vel[f_id][2][0] =   coefb_vel[f_id][0][2];
@@ -2652,28 +2652,28 @@ cs_boundary_conditions_set_coeffs_turb(int        isvhb,
     /* Flux boundary conditions
        ------------------------ */
 
-    cofaf_vel[f_id][0] = - hflui*(rcodcxyz[0] - rcodcn*rnxyz[0])
-                         - hintv*rcodcn*rnxyz[0];
+    cofaf_vel[f_id][0] = - hflui*(rcodcxyz[0] - rcodcn*n[0])
+                         - hintv*rcodcn*n[0];
 
-    cofaf_vel[f_id][1] = - hflui*(rcodcxyz[1] - rcodcn*rnxyz[1])
-                         - hintv*rcodcn*rnxyz[1];
+    cofaf_vel[f_id][1] = - hflui*(rcodcxyz[1] - rcodcn*n[1])
+                         - hintv*rcodcn*n[1];
 
-    cofaf_vel[f_id][2] = - hflui*(rcodcxyz[2] - rcodcn*rnxyz[2])
-                         - hintv*rcodcn*rnxyz[2];
+    cofaf_vel[f_id][2] = - hflui*(rcodcxyz[2] - rcodcn*n[2])
+                         - hintv*rcodcn*n[2];
 
     /* Projection in order to have the shear stress parallel to the wall
        B = hflui*( IDENTITY - n x n ) */
 
-    cofbf_vel[f_id][0][0] =   hflui*(1.-rnxyz[0]*rnxyz[0])
-                            + hintv*rnxyz[0]*rnxyz[0];
-    cofbf_vel[f_id][1][1] =   hflui*(1.-rnxyz[1]*rnxyz[1])
-                            + hintv*rnxyz[1]*rnxyz[1];
-    cofbf_vel[f_id][2][2] =   hflui*(1.-rnxyz[2]*rnxyz[2])
-                            + hintv*rnxyz[2]*rnxyz[2];
+    cofbf_vel[f_id][0][0] =   hflui*(1.-n[0]*n[0])
+                            + hintv*n[0]*n[0];
+    cofbf_vel[f_id][1][1] =   hflui*(1.-n[1]*n[1])
+                            + hintv*n[1]*n[1];
+    cofbf_vel[f_id][2][2] =   hflui*(1.-n[2]*n[2])
+                            + hintv*n[2]*n[2];
 
-    cofbf_vel[f_id][0][1] = (hintv - hflui)*rnxyz[0]*rnxyz[1];
-    cofbf_vel[f_id][0][2] = (hintv - hflui)*rnxyz[0]*rnxyz[2];
-    cofbf_vel[f_id][1][2] = (hintv - hflui)*rnxyz[1]*rnxyz[2];
+    cofbf_vel[f_id][0][1] = (hintv - hflui)*n[0]*n[1];
+    cofbf_vel[f_id][0][2] = (hintv - hflui)*n[0]*n[2];
+    cofbf_vel[f_id][1][2] = (hintv - hflui)*n[1]*n[2];
 
     cofbf_vel[f_id][1][0] = cofbf_vel[f_id][0][1];
     cofbf_vel[f_id][2][0] = cofbf_vel[f_id][0][2];
@@ -2995,21 +2995,21 @@ cs_boundary_conditions_set_coeffs_turb(int        isvhb,
         visci[2][0] =          visten[c_id][5];
 
         /* ||Ki.n||^2 */
-        const cs_real_t viscis = cs_math_pow2(  visci[0][0]*rnxyz[0]
-                                              + visci[1][0]*rnxyz[1]
-                                              + visci[2][0]*rnxyz[2])
-                               + cs_math_pow2(  visci[0][1]*rnxyz[0]
-                                              + visci[1][1]*rnxyz[1]
-                                              + visci[2][1]*rnxyz[2])
-                               + cs_math_pow2(  visci[0][2]*rnxyz[0]
-                                              + visci[1][2]*rnxyz[1]
-                                              + visci[2][2]*rnxyz[2]);
+        const cs_real_t viscis = cs_math_pow2(  visci[0][0]*n[0]
+                                              + visci[1][0]*n[1]
+                                              + visci[2][0]*n[2])
+                               + cs_math_pow2(  visci[0][1]*n[0]
+                                              + visci[1][1]*n[1]
+                                              + visci[2][1]*n[2])
+                               + cs_math_pow2(  visci[0][2]*n[0]
+                                              + visci[1][2]*n[1]
+                                              + visci[2][2]*n[2]);
 
         /* IF.Ki.n */
         cs_real_t fikis
-          = (  cs_math_3_dot_product(dist, visci[0]) * rnxyz[0]
-             + cs_math_3_dot_product(dist, visci[1]) * rnxyz[1]
-             + cs_math_3_dot_product(dist, visci[2]) * rnxyz[2]);
+          = (  cs_math_3_dot_product(dist, visci[0]) * n[0]
+             + cs_math_3_dot_product(dist, visci[1]) * n[1]
+             + cs_math_3_dot_product(dist, visci[2]) * n[2]);
 
         /* Take I" so that I"F= eps*||FI||*Ki.n when J" is in cell rji
            NB: eps =1.d-1 must be consistent
@@ -3179,21 +3179,21 @@ cs_boundary_conditions_set_coeffs_turb(int        isvhb,
         visci[2][0] =          visten[c_id][5] / sigmae;
 
         /* ||Ki.S||^2 */
-        const cs_real_t viscis = cs_math_pow2(  visci[0][0]*rnxyz[0]
-                                              + visci[1][0]*rnxyz[1]
-                                              + visci[2][0]*rnxyz[2])
-                               + cs_math_pow2(  visci[0][1]*rnxyz[0]
-                                              + visci[1][1]*rnxyz[1]
-                                              + visci[2][1]*rnxyz[2])
-                               + cs_math_pow2(  visci[0][2]*rnxyz[0]
-                                              + visci[1][2]*rnxyz[1]
-                                              + visci[2][2]*rnxyz[2]);
+        const cs_real_t viscis = cs_math_pow2(  visci[0][0]*n[0]
+                                              + visci[1][0]*n[1]
+                                              + visci[2][0]*n[2])
+                               + cs_math_pow2(  visci[0][1]*n[0]
+                                              + visci[1][1]*n[1]
+                                              + visci[2][1]*n[2])
+                               + cs_math_pow2(  visci[0][2]*n[0]
+                                              + visci[1][2]*n[1]
+                                              + visci[2][2]*n[2]);
 
         /* if.ki.s */
         cs_real_t fikis
-          = (  cs_math_3_dot_product(dist, visci[0]) * rnxyz[0]
-             + cs_math_3_dot_product(dist, visci[1]) * rnxyz[1]
-             + cs_math_3_dot_product(dist, visci[2]) * rnxyz[2]);
+          = (  cs_math_3_dot_product(dist, visci[0]) * n[0]
+             + cs_math_3_dot_product(dist, visci[1]) * n[1]
+             + cs_math_3_dot_product(dist, visci[2]) * n[2]);
 
         /* take i" so that i"f= eps*||fi||*ki.n when j" is in cell rji
              nb: eps =1.d-1 must be consistent
