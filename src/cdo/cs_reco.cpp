@@ -1692,6 +1692,8 @@ cs_reco_cw_vgrd_wbs_from_pvc(const cs_cell_mesh_t   *cm,
                        CS_FLAG_COMP_PV  | CS_FLAG_COMP_PFQ | CS_FLAG_COMP_DEQ |
                        CS_FLAG_COMP_FEQ | CS_FLAG_COMP_EV  | CS_FLAG_COMP_HFQ));
 
+  constexpr cs_real_t c_1ov3 = 1./3.;
+
   cs_real_3_t  grd_c, grd_v1, grd_v2;
 
   /* Temporary buffers */
@@ -1742,7 +1744,7 @@ cs_reco_cw_vgrd_wbs_from_pvc(const cs_cell_mesh_t   *cm,
 
     /* Loop on face edges to scan p_{ef,c} subvolumes */
 
-    const cs_real_t  hf_coef = cs_math_1ov3 * cm->hfc[f];
+    const cs_real_t  hf_coef = c_1ov3 * cm->hfc[f];
     for (int i = cm->f2e_idx[f]; i < cm->f2e_idx[f+1]; i++) {
 
       const short int  *e2v = cm->e2v_ids + 2*cm->f2e_ids[i];
@@ -1791,6 +1793,8 @@ cs_reco_cw_cgrd_wbs_from_pvc(const cs_cell_mesh_t   *cm,
                              cs_cell_builder_t      *cb,
                              cs_real_t              *cgrd)
 {
+  constexpr cs_real_t c_1ov3 = 1./3.;
+
   assert(cs_eflag_test(cm->flag,
                        CS_FLAG_COMP_PV  | CS_FLAG_COMP_PFQ | CS_FLAG_COMP_DEQ |
                        CS_FLAG_COMP_FEQ | CS_FLAG_COMP_EV  | CS_FLAG_COMP_HFQ));
@@ -1843,7 +1847,7 @@ cs_reco_cw_cgrd_wbs_from_pvc(const cs_cell_mesh_t   *cm,
 
     /* Loop on face edges to scan p_{ef,c} subvolumes */
 
-    const cs_real_t  hf_coef = cs_math_1ov3 * cm->hfc[f];
+    const cs_real_t  hf_coef = c_1ov3 * cm->hfc[f];
     for (int i = cm->f2e_idx[f]; i < cm->f2e_idx[f+1]; i++) {
 
       const short int  *e2v = cm->e2v_ids + 2*cm->f2e_ids[i];

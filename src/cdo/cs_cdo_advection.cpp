@@ -761,7 +761,9 @@ _vcb_cellwise_consistent_part(const cs_nvec3_t            adv_cell,
 
   /* Useful quantities are stored in cb->values and cb->vectors */
 
-  const double  hf_coef = cs_math_1ov3 * fm->hfc;
+  constexpr cs_real_t c_1ov3 = 1./3.;
+
+  const double  hf_coef = c_1ov3 * fm->hfc;
 
   /* Set the consistent part for already known part.
      Consistent part (c,c) contribution: sum_(f \in F_c) |pfc| bgc
@@ -882,11 +884,13 @@ _vcb_consistent_part(const cs_adv_field_t     *adv_field,
   cs_real_3_t  grd_v1, grd_v2, grd_c, xg;
   cs_nvec3_t  bnv;
 
+  constexpr cs_real_t c_1ov3 = 1./3.;
+
   const short int  fshift = cm->f2e_idx[fm->f_id];
   const int  n_sysf = fm->n_vf + 1;
   const cs_nvec3_t  deq = fm->dedge;
   const cs_quant_t  pfq = fm->face;
-  const double  hf_coef = cs_math_1ov3 * cm->hfc[fm->f_id];
+  const double  hf_coef = c_1ov3 * cm->hfc[fm->f_id];
 
   /* Useful quantities are stored in cb->values and cb->vectors */
 

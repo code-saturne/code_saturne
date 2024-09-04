@@ -135,5 +135,14 @@ cs_lagr_sde_model.c \
 cs_lagr_stat.c \
 cs_lagr_tracking.c
 
+# Rules for CUDA (not known by Automake)
+
+if HAVE_CUDA_CPP
+.cpp.$(OBJEXT):
+	$(NVCC) $(DEFS) $(AM_CPPFLAGS) -I$(top_srcdir)/src/base -I../.. $(NVCCFLAGS) $(NVCCFLAGS_DBG) $(NVCCFLAGS_OPT) $(NVCCFLAGS_CPP) -c -o $@ $<
+endif
+
+# Additional rules
+
 clean-local:
 	-rm -rf .deps

@@ -907,6 +907,8 @@ _ck1_compute_projector(void                    *pbf,
                        CS_FLAG_COMP_PFQ| CS_FLAG_COMP_HFQ | CS_FLAG_COMP_FEQ |
                        CS_FLAG_COMP_EV | CS_FLAG_COMP_FE));
 
+  constexpr cs_real_t c_1ov3 = 1./3.;
+
   const int n_rows = CK1_SIZE;
   const int n_gpts = 4;
 
@@ -956,7 +958,7 @@ _ck1_compute_projector(void                    *pbf,
       const short int n_ef = end - start; /* #vertices (= #edges) */
       const short int *f2e_ids = cm->f2e_ids + start;
       const cs_quant_t  pfq = cm->face[f];
-      const double  hf_coef = cs_math_1ov3 * cm->hfc[f];
+      const double  hf_coef = c_1ov3 * cm->hfc[f];
 
       switch (n_ef) { /* Optimized version for triangles */
       case CS_TRIANGLE_CASE: /* Triangle */
@@ -1080,6 +1082,8 @@ _ck2_compute_projector(void                    *pbf,
                        CS_FLAG_COMP_PFQ| CS_FLAG_COMP_HFQ | CS_FLAG_COMP_FEQ |
                        CS_FLAG_COMP_EV | CS_FLAG_COMP_FE));
 
+  constexpr cs_real_t c_1ov3 = 1./3.;
+
   const int n_rows = CK2_SIZE;
   const int n_gpts = 15;
 
@@ -1117,7 +1121,7 @@ _ck2_compute_projector(void                    *pbf,
       const short int n_ef = end - start; /* #vertices (= #edges) */
       const short int *f2e_ids = cm->f2e_ids + start;
       const cs_quant_t  pfq = cm->face[f];
-      const double  hf_coef = cs_math_1ov3 * cm->hfc[f];
+      const double  hf_coef = c_1ov3 * cm->hfc[f];
 
       switch (n_ef) { /* Optimized version for triangles */
       case CS_TRIANGLE_CASE: /* Triangle */
@@ -1271,10 +1275,13 @@ _cka_compute_projector(void                    *pbf,
                        const short int          id)
 {
   CS_UNUSED(id);
+
   /* Sanity checks */
   assert(cs_eflag_test(cm->flag,
                        CS_FLAG_COMP_PFQ| CS_FLAG_COMP_HFQ | CS_FLAG_COMP_FEQ |
                        CS_FLAG_COMP_EV | CS_FLAG_COMP_FE));
+
+  constexpr cs_real_t c_1ov3 = 1./3.;
 
   cs_basis_func_t  *bf = (cs_basis_func_t *)pbf;
 
@@ -1330,7 +1337,7 @@ _cka_compute_projector(void                    *pbf,
       const short int n_ef = end - start; /* #vertices (= #edges) */
       const short int *f2e_ids = cm->f2e_ids + start;
       const cs_quant_t  pfq = cm->face[f];
-      const double  hf_coef = cs_math_1ov3 * cm->hfc[f];
+      const double  hf_coef = c_1ov3 * cm->hfc[f];
 
       switch (n_ef) { /* Optimized version for triangles */
       case CS_TRIANGLE_CASE: /* Triangle */

@@ -100,6 +100,15 @@ cs_coal_verify.f90 \
 cs_gascomb.f90 \
 cs_physical_properties_combustion_drift.f90
 
+# Rules for CUDA (not known by Automake)
+
+if HAVE_CUDA_CPP
+.cpp.$(OBJEXT):
+	$(NVCC) $(DEFS) $(AM_CPPFLAGS) -I$(top_srcdir)/src/base -I../.. $(NVCCFLAGS) $(NVCCFLAGS_DBG) $(NVCCFLAGS_OPT) $(NVCCFLAGS_CPP) -c -o $@ $<
+endif
+
+# Additional rules
+
 clean-local:
 	-rm -f *__genmod.f90 *.mod
 	-rm -rf .deps

@@ -402,12 +402,16 @@ _get_proj_quantities(cs_lnum_t                 f_id,
 
   } /* Loop on face edges */
 
+  constexpr cs_real_t c_1ov6 = 1./6.;
+  constexpr cs_real_t c_1ov12 = 1./12.;
+  constexpr cs_real_t c_1ov24 = 1./24.;
+
   projq.p1  *=  0.5;
-  projq.pa  *=  cs_math_1ov6;
-  projq.pb  *= -cs_math_1ov6;
-  projq.pab *=  cs_math_1ov24;
-  projq.pa2 *=  cs_math_1ov12;
-  projq.pb2 *= -cs_math_1ov12;
+  projq.pa  *=  c_1ov6;
+  projq.pb  *= -c_1ov6;
+  projq.pab *=  c_1ov24;
+  projq.pa2 *=  c_1ov12;
+  projq.pb2 *= -c_1ov12;
 
   return  projq;
 }
@@ -587,6 +591,8 @@ _compute_edge_based_quantities(const cs_cdo_connect_t  *topo,
   assert(topo->e2v != nullptr);
   assert(topo->f2e != nullptr && topo->f2c != nullptr && topo->c2e != nullptr);
 
+  constexpr cs_real_t c_1ov3 = 1./3.;
+
   const cs_lnum_t  n_cells = quant->n_cells;
   const cs_lnum_t  n_edges = quant->n_edges;
 
@@ -723,8 +729,8 @@ _compute_edge_based_quantities(const cs_cdo_connect_t  *topo,
 
       cs_real_t  *_pvol = quant->pvol_ec + c2e_idx[0];
       for (short int e = 0; e < n_ec; e++) {
-        _pvol[e] = cs_math_1ov3 * _dp3(cell_dface + 3*e,
-                                       quant->edge_vector + 3*c2e_ids[e]);
+        _pvol[e] = c_1ov3 * _dp3(cell_dface + 3*e,
+                                 quant->edge_vector + 3*c2e_ids[e]);
         CS_CDO_OMP_ASSERT(_pvol[e] > 0);
       }
 
@@ -1483,6 +1489,8 @@ cs_cdo_quantities_compute_pvol_fc(cs_cdo_quantities_t  *cdoq,
               " %s: A mandatory structure is not allocated.\n",
               __func__);
 
+  constexpr cs_real_t c_1ov3 = 1./3.;
+
   const cs_lnum_t n_cells = cdoq->n_cells;
 
   cs_real_t *pvol_fc = *p_pvol_fc;
@@ -1505,7 +1513,7 @@ cs_cdo_quantities_compute_pvol_fc(cs_cdo_quantities_t  *cdoq,
       const cs_nvec3_t ed_nvec = cs_quant_set_dedge_nvec(j, cdoq);
 
       cs_real_t p_fc = _dp3(fp_nvec.unitv, ed_nvec.unitv);
-      p_fc *= cs_math_1ov3 * fp_nvec.meas * ed_nvec.meas;
+      p_fc *= c_1ov3 * fp_nvec.meas * ed_nvec.meas;
 
       pvol_fc[j] = p_fc;
 
@@ -1569,6 +1577,8 @@ cs_cdo_quantities_compute_pvol_ec(const cs_cdo_quantities_t   *cdoq,
     bft_error(__FILE__, __LINE__, 0,
               " %s: A mandatory structure is not allocated.\n", __func__);
 
+  constexpr cs_real_t c_1ov3 = 1./3.;
+
   const cs_lnum_t  n_cells = cdoq->n_cells;
 
   cs_real_t  *pvol_ec = *p_pvol_ec;
@@ -1596,8 +1606,8 @@ cs_cdo_quantities_compute_pvol_ec(const cs_cdo_quantities_t   *cdoq,
 
       cs_real_t  *_pvol = pvol_ec + start;
       for (cs_lnum_t j = 0; j < c2e->idx[c_id+1]-start; j++)
-        _pvol[j] = cs_math_1ov3 * _dp3(sface + 3*j,
-                                       cdoq->edge_vector + 3*c2e_ids[j]);
+        _pvol[j] = c_1ov3 * _dp3(sface + 3*j,
+                                 cdoq->edge_vector + 3*c2e_ids[j]);
 
     } /* Loop on cells */
 

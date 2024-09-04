@@ -606,6 +606,8 @@ cs_cdoeb_vecteq_init_context(cs_equation_param_t    *eqp,
                              int                     bflux_id,
                              cs_equation_builder_t  *eqb)
 {
+  constexpr cs_real_t c_1ov3 = 1./3.;
+
   assert(eqp != nullptr && eqb != nullptr);
 
   /* This is a vector-valued equation but the DoF is scalar-valued since it is
@@ -708,7 +710,7 @@ cs_cdoeb_vecteq_init_context(cs_equation_param_t    *eqp,
   eqc->mass_hodgep.inv_pty  = false;
   eqc->mass_hodgep.algo = CS_HODGE_ALGO_COST;
   eqc->mass_hodgep.type = CS_HODGE_TYPE_EPFD;
-  eqc->mass_hodgep.coef = cs_math_1ov3;
+  eqc->mass_hodgep.coef = c_1ov3;
 
   /* Specify the algorithm */
 

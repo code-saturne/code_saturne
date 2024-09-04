@@ -1815,7 +1815,7 @@ cs_cdofb_vecteq_init_context(cs_equation_param_t    *eqp,
   eqc->mass_hodgep.inv_pty  = false;
   eqc->mass_hodgep.type = CS_HODGE_TYPE_FB;
   eqc->mass_hodgep.algo = CS_HODGE_ALGO_COST;
-  eqc->mass_hodgep.coef = cs_math_1ov3;
+  eqc->mass_hodgep.coef = 1./3.;
 
   eqc->get_mass_matrix = nullptr;
   eqc->mass_hodge      = nullptr;

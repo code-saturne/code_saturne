@@ -2792,6 +2792,8 @@ cs_advection_field_cw_dface_flux(const cs_cell_mesh_t *cm,
     return;
   }
 
+  constexpr cs_real_t c_1ov3 = 1./3.;
+
   cs_xdef_t *def = adv->definition;
 
   assert(def != nullptr);
@@ -2846,7 +2848,7 @@ cs_advection_field_cw_dface_flux(const cs_cell_mesh_t *cm,
           const cs_nvec3_t sefc = cm->sefc[i];
 
           for (int k = 0; k < 3; k++)
-            xg[k] = cs_math_1ov3 * (xfc[k] + edge.center[k]);
+            xg[k] = c_1ov3 * (xfc[k] + edge.center[k]);
 
           cs_xdef_cw_eval_at_xyz_by_analytic(cm,
                                              1,

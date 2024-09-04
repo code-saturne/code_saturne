@@ -682,6 +682,8 @@ _gravity_st_rij(const cs_field_t  *f_rij,
   const cs_real_t g = cs_math_3_norm(grav);
   const cs_real_t o_m_crij3 = (1. - cs_turb_crij3);
 
+  const cs_real_t crij3 = cs_turb_crij3;
+
   cs_real_6_t *_buoyancy = NULL, *cpro_buoyancy = NULL;
   cs_field_t *f_buo = cs_field_by_name_try("algo:buoyancy_rij");
 
@@ -704,9 +706,9 @@ _gravity_st_rij(const cs_field_t  *f_rij,
 
      const cs_real_t gkks3 = (gij[0][0] + gij[1][1] + gij[2][2]) / 3.;
 
-     cpro_buoyancy[c_id][0] = gij[0][0] * o_m_crij3 + cs_turb_crij3*gkks3;
-     cpro_buoyancy[c_id][1] = gij[1][1] * o_m_crij3 + cs_turb_crij3*gkks3;
-     cpro_buoyancy[c_id][2] = gij[2][2] * o_m_crij3 + cs_turb_crij3*gkks3;
+     cpro_buoyancy[c_id][0] = gij[0][0] * o_m_crij3 + crij3*gkks3;
+     cpro_buoyancy[c_id][1] = gij[1][1] * o_m_crij3 + crij3*gkks3;
+     cpro_buoyancy[c_id][2] = gij[2][2] * o_m_crij3 + crij3*gkks3;
      cpro_buoyancy[c_id][3] = gij[0][1] * o_m_crij3;
      cpro_buoyancy[c_id][4] = gij[1][2] * o_m_crij3;
      cpro_buoyancy[c_id][5] = gij[0][2] * o_m_crij3;
@@ -855,6 +857,12 @@ _gravity_st_epsilon(int              phase_id,
   const cs_real_t *crom = f_rho->val;
   const cs_real_t *viscl = f_mu->val;
 
+  const cs_turb_model_type_t iturb
+    = (cs_turb_model_type_t)cs_glob_turb_model->iturb;
+
+  const cs_real_t xct = cs_turb_xct;
+  const cs_real_t ce1 = cs_turb_ce1;
+
   ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
 
     const cs_real_t g_up_rhop = cs_math_3_dot_product(g, up_rhop[c_id]);
@@ -863,15 +871,15 @@ _gravity_st_epsilon(int              phase_id,
 
     cs_real_t time_scale = tke / cvara_ep[c_id];
 
-    if (cs_glob_turb_model->iturb ==  CS_TURB_RIJ_EPSILON_EBRSM) {
+    if (iturb ==  CS_TURB_RIJ_EPSILON_EBRSM) {
 
       /* Calculation of the Durbin time scale */
       const cs_real_t xttkmg
-        = cs_turb_xct*sqrt(viscl[c_id] / crom[c_id] / cvara_ep[c_id]);
+        = xct*sqrt(viscl[c_id] / crom[c_id] / cvara_ep[c_id]);
       time_scale = cs_math_fmax(time_scale, xttkmg);
     }
 
-    rhs[c_id] += cs_turb_ce1 * cs_math_fmax(0., g_up_rhop/time_scale)
+    rhs[c_id] += ce1 * cs_math_fmax(0., g_up_rhop/time_scale)
                * cell_f_vol[c_id];
   });
 
@@ -975,6 +983,9 @@ _pre_solve_lrr(const cs_field_t  *f_rij,
   const cs_real_t crij2 = cs_turb_crij2;
 
   const cs_real_t deltij[6] = {1, 1, 1, 0, 0, 0};
+  const cs_real_33_t identity = {{1., 0., 0.,},
+                                 {0., 1., 0.},
+                                 {0., 0., 1.}};
 
   cs_lnum_t solid_stride = 1;
   int *c_is_solid_zone_flag = cs_solid_zone_flag(cs_glob_mesh);
@@ -1005,7 +1016,7 @@ _pre_solve_lrr(const cs_field_t  *f_rij,
     for (cs_lnum_t ii = 0; ii < 3; ii++) {
       for (cs_lnum_t jj = 0; jj < 3; jj++) {
         xaniso[ii][jj] =   cvara_var[c_id][_t2v[ii][jj]] / trrij
-                         - d2s3 * cs_math_33_identity[ii][jj];
+                         - d2s3 * identity[ii][jj];
       }
     }
 
@@ -1768,6 +1779,12 @@ _pre_solve_ssg(const cs_field_t  *f_rij,
   const cs_real_t cssgs2 = cs_turb_cssgs2;
 
   const cs_real_6_t deltij = {1, 1, 1, 0, 0, 0};
+  const cs_real_33_t identity = {{1., 0., 0.,},
+                                 {0., 1., 0.},
+                                 {0., 0., 1.}};
+
+  const cs_turb_model_type_t iturb
+    = (cs_turb_model_type_t)cs_glob_turb_model->iturb;
 
   /* Production, Pressure-Strain correlation, dissipation, Coriolis
    * -------------------------------------------------------------- */
@@ -1800,6 +1817,8 @@ _pre_solve_ssg(const cs_field_t  *f_rij,
     solid_stride = 0;
   }
 
+  const cs_rotation_t *rotation = cs_glob_rotation;
+
   ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
 
     if (c_is_solid[solid_stride*c_id])
@@ -1812,7 +1831,7 @@ _pre_solve_ssg(const cs_field_t  *f_rij,
 
     /* EBRSM: compute the magnitude of the Alpha gradient */
 
-    if (cs_glob_turb_model->iturb == CS_TURB_RIJ_EPSILON_EBRSM) {
+    if (iturb == CS_TURB_RIJ_EPSILON_EBRSM) {
       cs_math_3_normalize(grad_al[c_id], xnal);
     }
 
@@ -1839,7 +1858,7 @@ _pre_solve_ssg(const cs_field_t  *f_rij,
     for (cs_lnum_t ii = 0; ii < 3; ii++) {
       for (cs_lnum_t jj = 0; jj < 3; jj++) {
         xaniso[ii][jj] =   xrij[ii][jj] / trrij
-                         - d2s3 * cs_math_33_identity[ii][jj];
+                         - d2s3 * identity[ii][jj];
       }
     }
 
@@ -1872,7 +1891,7 @@ _pre_solve_ssg(const cs_field_t  *f_rij,
     /* Rotating frame of reference => "absolute" vorticity */
 
     if (rot_id >= 1) {
-      const cs_rotation_t *r = cs_glob_rotation + rot_id;
+      const cs_rotation_t *r = rotation + rot_id;
 
       cs_rotation_coriolis_t(r, 1., matrot);
       for (cs_lnum_t ii = 0; ii < 3; ii++) {
@@ -1936,7 +1955,7 @@ _pre_solve_ssg(const cs_field_t  *f_rij,
       /* Constant for the dissipation */
       const cs_real_t ceps_impl = d1s3 * cvara_ep[c_id];
 
-      if (cs_glob_turb_model->iturb == CS_TURB_RIJ_EPSILON_SSG) {
+      if (iturb == CS_TURB_RIJ_EPSILON_SSG) {
 
         /* Identity constant for phi3 */
         const cs_real_t cphi3impl = cs_math_fabs(cssgr2 - cssgr3*sqrt(aii));
@@ -2045,7 +2064,7 @@ _pre_solve_ssg(const cs_field_t  *f_rij,
        * the RHS but not in the prev. ST and by using ipcrom ....
        * to be modified if needed. */
 
-      if (cs_glob_turb_model->iturb == CS_TURB_RIJ_EPSILON_SSG) {
+      if (iturb == CS_TURB_RIJ_EPSILON_SSG) {
 
         /* Explicit terms */
         const cs_real_t pij =     xprod[j][i];
@@ -2903,6 +2922,8 @@ cs_turbulence_rij(int phase_id)
                              1,      /* inc */
                              grad);
 
+    constexpr cs_real_t c_1ov3 = 1./3.;
+
     ctx.parallel_for(n_cells, [=] (cs_lnum_t c_id) {
 
       /* Velocity magnitude */
@@ -2915,7 +2936,7 @@ cs_turbulence_rij(int phase_id)
       /* Magnitude and unit vector of the Alpha gradient */
       cs_real_t xnal[3];
       cs_real_t xnoral = cs_math_3_norm(grad[c_id]);
-      if (xnoral <= cs_math_epzero / pow(cell_f_vol[c_id], cs_math_1ov3)) {
+      if (xnoral <= cs_math_epzero / pow(cell_f_vol[c_id], c_1ov3)) {
         for (int ii = 0; ii < 3; ii++)
           xnal[ii] = 1.0 / sqrt(3.0);
       }
@@ -3152,7 +3173,7 @@ cs_turbulence_rij(int phase_id)
     }
 
     const cs_real_3_t *restrict b_face_normal
-      = (const cs_real_3_t *restrict)fvq->b_face_normal;
+      = (cs_real_3_t *)fvq->b_face_normal;
     cs_real_t *b_lam = cs_field_by_name("b_rusanov_diff")->val;
 
     for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++) {
@@ -3412,6 +3433,8 @@ cs_turbulence_rij_solve_alpha(int        f_id,
   }
   else {
 
+    const cs_real_t xceta = cs_turb_xceta;
+
     ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
       const cs_real_t xk
         = d1s2 * (cvara_rij[c_id][0] + cvara_rij[c_id][1] + cvara_rij[c_id][2]);
@@ -3421,7 +3444,7 @@ cs_turbulence_rij_solve_alpha(int        f_id,
       const cs_real_t xllke = pow(xk, d3s2) / cvara_ep[c_id];
 
       /* Kolmogorov length scale */
-      const cs_real_t xllkmg =   cs_turb_xceta
+      const cs_real_t xllkmg =   xceta
                                * pow(cs_math_pow3(xnu)/cvara_ep[c_id], d1s4);
 
       /* Durbin length scale */
@@ -3985,9 +4008,9 @@ cs_turbulence_rij_compute_rusanov(void)
   const cs_mesh_t *m = cs_glob_mesh;
   const cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
   const cs_real_3_t *restrict i_face_normal
-    = (const cs_real_3_t *restrict)mq->i_face_normal;
+    = (const cs_real_3_t *)mq->i_face_normal;
   const cs_real_3_t *restrict b_face_normal
-    = (const cs_real_3_t *restrict)mq->b_face_normal;
+    = (const cs_real_3_t *)mq->b_face_normal;
   const cs_lnum_2_t *i_face_cells = m->i_face_cells;
   const cs_lnum_t *b_face_cells = m->b_face_cells;
   const int *bc_type = cs_glob_bc_type;

@@ -352,6 +352,8 @@ cs_compute_inertia_tensor(const cs_cell_mesh_t   *cm,
                           const cs_real_t         center[3],
                           cs_real_t               inertia[3][3])
 {
+  constexpr cs_real_t c_1ov3 = 1./3.;
+
   assert(cs_eflag_test(cm->flag, CS_FLAG_COMP_PV | CS_FLAG_COMP_PFQ |
                        CS_FLAG_COMP_FE | CS_FLAG_COMP_FEQ | CS_FLAG_COMP_HFQ));
 
@@ -375,7 +377,7 @@ cs_compute_inertia_tensor(const cs_cell_mesh_t   *cm,
     for (short int f = 0; f < cm->n_fc; ++f) {
 
       const cs_quant_t  pfq = cm->face[f];
-      const double  hf_coef = cs_math_1ov3 * cm->hfc[f];
+      const double  hf_coef = c_1ov3 * cm->hfc[f];
       const int  start = cm->f2e_idx[f];
       const int  end = cm->f2e_idx[f+1];
       const short int n_vf = end - start; /* #vertices (=#edges) */

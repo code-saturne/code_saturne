@@ -2594,6 +2594,7 @@ cs_source_term_fcb_pcsd_by_analytic(const cs_xdef_t           *source,
 
   else {
 
+    constexpr cs_real_t c_1ov3 = 1./3.;
     const cs_real_t *xv = cm->xv;
 
     double  cell_values  = 0.0;
@@ -2623,7 +2624,7 @@ cs_source_term_fcb_pcsd_by_analytic(const cs_xdef_t           *source,
       for (short int f = 0; f < cm->n_fc; f++) {
 
         const cs_quant_t  pfq = cm->face[f];
-        const double  hf_coef = cs_math_1ov3 * cm->hfc[f];
+        const double  hf_coef = c_1ov3 * cm->hfc[f];
         const int  start = cm->f2e_idx[f];
         const int  end = cm->f2e_idx[f+1];
         const short int  n_vf = end - start;  /* #vertices (=#edges) */
@@ -2905,6 +2906,7 @@ cs_source_term_fb_pcvd_by_analytic(const cs_xdef_t           *source,
 
   else {
 
+    constexpr cs_real_t c_1ov3 = 1./3.;
     const cs_real_t *xv = cm->xv;
 
     cs_real_3_t  cell_values = {0.0, 0.0, 0.0};
@@ -2936,7 +2938,7 @@ cs_source_term_fb_pcvd_by_analytic(const cs_xdef_t           *source,
       for (short int f = 0; f < cm->n_fc; f++) {
 
         const cs_quant_t  pfq = cm->face[f];
-        const double  hf_coef = cs_math_1ov3 * cm->hfc[f];
+        const double  hf_coef = c_1ov3 * cm->hfc[f];
         const int  start = cm->f2e_idx[f];
         const int  end = cm->f2e_idx[f+1];
         const short int  n_vf = end - start; // #vertices (=#edges)
@@ -3074,6 +3076,8 @@ cs_source_term_hhosd_by_value(const cs_xdef_t           *source,
 
   assert(values != nullptr && cm != nullptr && input != nullptr);
 
+  constexpr cs_real_t c_1ov3 = 1./3.;
+
   const cs_real_t  *const_val = (const cs_real_t *)source->context;
 
   cs_hho_builder_t  *hhob = (cs_hho_builder_t *)input;
@@ -3114,7 +3118,7 @@ cs_source_term_hhosd_by_value(const cs_xdef_t           *source,
       for (short int f = 0; f < cm->n_fc; f++) {
 
         const cs_quant_t pfq     = cm->face[f];
-        const double     hf_coef = cs_math_1ov3 * cm->hfc[f];
+        const double     hf_coef = c_1ov3 * cm->hfc[f];
         const int        start   = cm->f2e_idx[f];
         const int        end     = cm->f2e_idx[f + 1];
         const short int  n_vf    = end - start; /* #vertices (=#edges) */
@@ -3202,6 +3206,8 @@ cs_source_term_hhosd_by_analytic(const cs_xdef_t           *source,
                        CS_FLAG_COMP_PEQ | CS_FLAG_COMP_PFQ | CS_FLAG_COMP_FE |
                        CS_FLAG_COMP_FEQ | CS_FLAG_COMP_EV));
 
+  constexpr cs_real_t c_1ov3 = 1./3.;
+
   cs_hho_builder_t  *hhob = (cs_hho_builder_t *)input;
   cs_xdef_analytic_context_t  *ac =
     (cs_xdef_analytic_context_t *)source->context;
@@ -3232,7 +3238,7 @@ cs_source_term_hhosd_by_analytic(const cs_xdef_t           *source,
     for (short int f = 0; f < cm->n_fc; f++) {
 
       const cs_quant_t  pfq = cm->face[f];
-      const double  hf_coef = cs_math_1ov3 * cm->hfc[f];
+      const double  hf_coef = c_1ov3 * cm->hfc[f];
       const int  start = cm->f2e_idx[f];
       const int  end = cm->f2e_idx[f+1];
       const short int n_vf = end - start; /* #vertices (=#edges) */
@@ -3317,6 +3323,8 @@ cs_source_term_hhovd_by_analytic(const cs_xdef_t           *source,
                        CS_FLAG_COMP_PEQ | CS_FLAG_COMP_PFQ | CS_FLAG_COMP_FE |
                        CS_FLAG_COMP_FEQ | CS_FLAG_COMP_EV));
 
+  constexpr cs_real_t c_1ov3 = 1./3.;
+
   cs_hho_builder_t  *hhob = (cs_hho_builder_t *)input;
   cs_xdef_analytic_context_t  *ac =
     (cs_xdef_analytic_context_t *)source->context;
@@ -3347,7 +3355,7 @@ cs_source_term_hhovd_by_analytic(const cs_xdef_t           *source,
     for (short int f = 0; f < cm->n_fc; f++) {
 
       const cs_quant_t  pfq = cm->face[f];
-      const double  hf_coef = cs_math_1ov3 * cm->hfc[f];
+      const double  hf_coef = c_1ov3 * cm->hfc[f];
       const int  start = cm->f2e_idx[f];
       const int  end = cm->f2e_idx[f+1];
       const short int n_vf = end - start; /* #vertices (=#edges) */

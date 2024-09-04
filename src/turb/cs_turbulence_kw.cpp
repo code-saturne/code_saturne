@@ -181,6 +181,18 @@ cs_turbulence_kw(int phase_id)
   /* Initialization
      ============== */
 
+  /* Turbulence model constants */
+
+  const cs_real_t cmu = cs_turb_cmu;
+  const cs_real_t ckwgm1 = cs_turb_ckwgm1;
+  const cs_real_t ckwgm2 = cs_turb_ckwgm2;
+  const cs_real_t ckwbt1 = cs_turb_ckwbt1;
+  const cs_real_t ckwbt2 = cs_turb_ckwbt2;
+  const cs_real_t ckwsw2 = cs_turb_ckwsw2;
+  const cs_real_t xkappa = cs_turb_xkappa;
+
+  const int hybrid_turb = cs_glob_turb_model->hybrid_turb;
+
   /* Allocate temporary arrays for the turbulence resolution */
 
   cs_real_t *viscf, *viscb;
@@ -581,22 +593,23 @@ cs_turbulence_kw(int phase_id)
      -> but the effect on "constants" is small
      -> to remember if we really use second-order in time in k-omega */
 
-# pragma omp parallel if(n_cells_ext > CS_THR_MIN)
   {
+    const cs_real_t ckwc1 = cs_turb_ckwc1;
+
     ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
       cs_real_t ro = cromo[c_id];
       cs_real_t xnu = cpro_pcvlo[c_id]/ro;
       cs_real_t xk = cvara_k[c_id];
       cs_real_t xw  = cvara_omg[c_id];
-      cs_real_t cdkw = 2*ro/cs_turb_ckwsw2/xw*gdkgdw[c_id];
+      cs_real_t cdkw = 2*ro/ckwsw2/xw*gdkgdw[c_id];
       cdkw = fmax(cdkw, 1.e-20);
       cs_real_t distf = fmax(w_dist[c_id], cs_math_epzero);
-      cs_real_t xarg1 = fmax(sqrt(xk)/cs_turb_cmu/xw/distf,
+      cs_real_t xarg1 = fmax(sqrt(xk)/cmu/xw/distf,
                              500.*xnu/xw/cs_math_pow2(distf));
       xarg1 = fmin(xarg1,
-                   4.*ro*xk/cs_turb_ckwsw2/cdkw/cs_math_pow2(distf));
+                   4.*ro*xk/ckwsw2/cdkw/cs_math_pow2(distf));
       xf1[c_id] = tanh(cs_math_pow4(xarg1));
-      if (cs_glob_turb_model->hybrid_turb == 4) {
+      if (hybrid_turb == 4) {
         htles_kwsst_f1[c_id] = xf1[c_id];
       }
 
@@ -619,11 +632,11 @@ cs_turbulence_kw(int phase_id)
 
       cs_real_t xk   = cvara_k[c_id];
       cs_real_t xw   = cvara_omg[c_id];
-      cs_real_t xeps = cs_turb_cmu*xw*xk;
+      cs_real_t xeps = cmu*xw*xk;
       cs_real_t visct = cpro_pcvto[c_id];
       /* k / (mu_T * omega) , clipped to 1 if mu_t is zero */
-      if (cs_glob_turb_model->hybrid_turb == 4) {
-        xeps = cs_turb_cmu*xw*xk*psi[c_id];
+      if (hybrid_turb == 4) {
+        xeps = cmu*xw*xk*psi[c_id];
       }
 
       cs_real_t k_dmut_dom;
@@ -637,13 +650,13 @@ cs_turbulence_kw(int phase_id)
 
       /* The negative part is implicit */
       cs_real_t xxf1   = xf1[c_id];
-      cs_real_t xgamma = xxf1*cs_turb_ckwgm1 + (1.-xxf1)*cs_turb_ckwgm2;
+      cs_real_t xgamma = xxf1*ckwgm1 + (1.-xxf1)*ckwgm2;
       tinstw[c_id] += fmax(  d2s3*ro*cell_f_vol[c_id]
                            * (ro*xgamma*k_dmut_dom)*cpro_divukw[c_id], 0.);
 
       /* Take the min between prodw and the low Reynolds one */
-      if (prodw[c_id] > cs_turb_ckwc1*ro*xeps) {
-        prodk[c_id] = cs_turb_ckwc1*ro*xeps;
+      if (prodw[c_id] > ckwc1*ro*xeps) {
+        prodk[c_id] = ckwc1*ro*xeps;
       }
       else {
         prodk[c_id] = prodw[c_id];
@@ -815,7 +828,6 @@ cs_turbulence_kw(int phase_id)
 
   /* Standard k-w SST RANS model */
 
-# pragma omp parallel if(n_cells_ext > CS_THR_MIN)
   {
     if (cs_glob_turb_model->hybrid_turb == 0) {
 
@@ -826,8 +838,8 @@ cs_turbulence_kw(int phase_id)
         cs_real_t xk     = cvara_k[c_id];
         cs_real_t xw     = cvara_omg[c_id];
         cs_real_t xxf1   = xf1[c_id];
-        cs_real_t xgamma = xxf1 * cs_turb_ckwgm1 + (1. - xxf1)*cs_turb_ckwgm2;
-        cs_real_t xbeta  = xxf1 * cs_turb_ckwbt1 + (1. - xxf1)*cs_turb_ckwbt2;
+        cs_real_t xgamma = xxf1 * ckwgm1 + (1. - xxf1)*ckwgm2;
+        cs_real_t xbeta  = xxf1 * ckwbt1 + (1. - xxf1)*ckwbt2;
 
         cs_real_t prodw_dmut;
         if (visct <= cs_math_epzero*prodw[c_id])
@@ -835,16 +847,16 @@ cs_turbulence_kw(int phase_id)
         else
           prodw_dmut = prodw[c_id]/visct;
 
-        smbrk[c_id] += cell_f_vol[c_id]*(prodk[c_id] - cs_turb_cmu*ro*xw*xk);
+        smbrk[c_id] += cell_f_vol[c_id]*(prodk[c_id] - cmu*ro*xw*xk);
 
         smbrw[c_id] += cell_f_vol[c_id]*(  ro*xgamma*prodw_dmut
                                          - xbeta*ro*cs_math_pow2(xw)
-                                         + 2.*ro/xw*(1.-xxf1)/cs_turb_ckwsw2
+                                         + 2.*ro/xw*(1.-xxf1)/ckwsw2
                                            *gdkgdw[c_id]);
 
         tinstw[c_id] +=   cell_f_vol[c_id]
                         * fmax(  -2.*ro/cs_math_pow2(xw)*(1. - xxf1)
-                               / cs_turb_ckwsw2*gdkgdw[c_id], 0.);
+                               / ckwsw2*gdkgdw[c_id], 0.);
       });
     }
 
@@ -852,6 +864,8 @@ cs_turbulence_kw(int phase_id)
 
     else if (   cs_glob_turb_model->hybrid_turb == 1
              || cs_glob_turb_model->hybrid_turb == 2) {
+
+      const cs_real_t cddes = cs_turb_cddes;
 
       ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
 
@@ -863,25 +877,25 @@ cs_turbulence_kw(int phase_id)
         cs_real_t xk     = cvara_k[c_id];
         cs_real_t xw     = cvara_omg[c_id];
         cs_real_t xxf1   = xf1[c_id];
-        cs_real_t xgamma = xxf1 * cs_turb_ckwgm1 + (1. - xxf1)*cs_turb_ckwgm2;
-        cs_real_t xbeta  = xxf1 * cs_turb_ckwbt1 + (1. - xxf1)*cs_turb_ckwbt2;
+        cs_real_t xgamma = xxf1 * ckwgm1 + (1. - xxf1)*ckwgm2;
+        cs_real_t xbeta  = xxf1 * ckwbt1 + (1. - xxf1)*ckwbt2;
         cs_real_t xdist  = CS_MAX(w_dist[c_id], cs_math_epzero);
-        cs_real_t xlt    = sqrt(xk) / (cs_turb_cmu*xw);
+        cs_real_t xlt    = sqrt(xk) / (cmu*xw);
         cs_real_t xdelta = pow(cell_f_vol[c_id], 1./3.);
 
-        if (cs_glob_turb_model->hybrid_turb == 1)
+        if (hybrid_turb == 1)
           /* Detached Eddy Simulation - DES - mode */
           xfd = 1.;
-        else if (cs_glob_turb_model->hybrid_turb == 2) {
+        else if (hybrid_turb == 2) {
           /* Delayed Detached Eddy Simulation - DDES - mode */
           cs_real_t xs2pw2 = fmax(sqrt(s2pw2[c_id]), cs_math_epzero);
           cs_real_t xrd =   (visct + xnu)
-                          / (ro * xs2pw2 * cs_math_pow2(cs_turb_xkappa)
+                          / (ro * xs2pw2 * cs_math_pow2(xkappa)
                                          * cs_math_pow2(xdist));
           xfd    = 1. - tanh(pow(8.*xrd, 3));
         }
 
-        cs_real_t xdiff  = CS_MAX(xlt - (cs_turb_cddes * xdelta),0.);
+        cs_real_t xdiff  = CS_MAX(xlt - (cddes * xdelta), 0.);
         cs_real_t fhybr  = xlt/(xlt - xfd*xdiff);
         /* fhybr is stored so that it can be used after */
         w1[c_id]= fhybr;
@@ -890,7 +904,7 @@ cs_turbulence_kw(int phase_id)
         /* Storage of the Fd coefficient and check if
            DDES is activated for post-processing
            NB: for RANS zones (L_RANS < L_LES) Fd is clipped to 0 */
-        if (cs_turb_cddes*xdelta >= xlt)
+        if (cddes*xdelta >= xlt)
           hybrid_fd_coeff[c_id] = 0.;
 
         cs_real_t prodw_dmut;
@@ -899,16 +913,16 @@ cs_turbulence_kw(int phase_id)
         else
           prodw_dmut = prodw[c_id]/visct;
 
-        smbrk[c_id] += cell_f_vol[c_id]*(prodk[c_id] - cs_turb_cmu*ro*xw*xk*fhybr);
+        smbrk[c_id] += cell_f_vol[c_id]*(prodk[c_id] - cmu*ro*xw*xk*fhybr);
 
         smbrw[c_id] += cell_f_vol[c_id]*(  ro*xgamma*prodw_dmut
                                          - xbeta*ro*cs_math_pow2(xw)
                                          + 2.*ro/xw*(1. - xxf1)
-                                           /cs_turb_ckwsw2*gdkgdw[c_id]);
+                                           /ckwsw2*gdkgdw[c_id]);
 
         tinstw[c_id] +=   cell_f_vol[c_id]
                         * fmax(-2.*ro/cs_math_pow2(xw)*(1.-xxf1)
-                               /cs_turb_ckwsw2*gdkgdw[c_id], 0.);
+                               /ckwsw2*gdkgdw[c_id], 0.);
       });
 
     }
@@ -917,6 +931,9 @@ cs_turbulence_kw(int phase_id)
 
     else if (cs_glob_turb_model->hybrid_turb == 3) {
 
+      const cs_real_t csas = cs_turb_csas;
+      const cs_real_t csas_eta2 = cs_turb_csas_eta2;
+
       ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
 
         cs_real_t visct  = cpro_pcvto[c_id];
@@ -924,21 +941,21 @@ cs_turbulence_kw(int phase_id)
         cs_real_t xk     = cvara_k[c_id];
         cs_real_t xw     = cvara_omg[c_id];
         cs_real_t xxf1   = xf1[c_id];
-        cs_real_t xgamma = xxf1 * cs_turb_ckwgm1 + (1. - xxf1)*cs_turb_ckwgm2;
-        cs_real_t xbeta  = xxf1 * cs_turb_ckwbt1 + (1. - xxf1)*cs_turb_ckwbt2;
+        cs_real_t xgamma = xxf1 * ckwgm1 + (1. - xxf1)*ckwgm2;
+        cs_real_t xbeta  = xxf1 * ckwbt1 + (1. - xxf1)*ckwbt2;
 
         /* Computation of the Scale Adaptive model source term xqsas
            that is added to the omega equation */
         cs_real_t xsij2 = cpro_s2kw[c_id];
-        cs_real_t lvkmin =   cs_turb_csas
-                           * sqrt(  cs_turb_csas_eta2 * cs_turb_xkappa
-                                  / ((xbeta/cs_turb_cmu)-xgamma))
+        cs_real_t lvkmin =   csas
+                           * sqrt(  csas_eta2 * xkappa
+                                  / ((xbeta/cmu)-xgamma))
                            * pow(volume[c_id], 1./3.);
-        cs_real_t lvk = cs_turb_xkappa*sqrt(xsij2 / d2uidxi2[c_id]);
+        cs_real_t lvk = xkappa*sqrt(xsij2 / d2uidxi2[c_id]);
         cs_real_t lvksas = CS_MAX(lvkmin, lvk);
-        cs_real_t lmod = sqrt(xk)/(pow(cs_turb_cmu,0.25)*xw);
+        cs_real_t lmod = sqrt(xk)/(pow(cmu,0.25)*xw);
 
-        cs_real_t xqsas = fmax(  ro * cs_turb_csas_eta2 * cs_turb_xkappa * xsij2
+        cs_real_t xqsas = fmax(  ro * csas_eta2 * xkappa * xsij2
                                * cs_math_pow2(lmod/lvksas)
                                - 6.*ro*xk*maxgdsv[c_id], 0.);
 
@@ -950,17 +967,17 @@ cs_turbulence_kw(int phase_id)
 
         sas_source_term[c_id] = xqsas;
 
-        smbrk[c_id] += cell_f_vol[c_id]*(prodk[c_id] - cs_turb_cmu*ro*xw*xk);
+        smbrk[c_id] += cell_f_vol[c_id]*(prodk[c_id] - cmu*ro*xw*xk);
 
         smbrw[c_id] += cell_f_vol[c_id]*(ro*xgamma*prodw_dmut
                                          - xbeta*ro*cs_math_pow2(xw)
                                          + 2.*ro/xw*(1.-xxf1)
-                                                /cs_turb_ckwsw2*gdkgdw[c_id]
+                                                /ckwsw2*gdkgdw[c_id]
                                          + xqsas);
 
         tinstw[c_id] +=   cell_f_vol[c_id]
                         * fmax(-2.*ro/cs_math_pow2(xw)*(1. - xxf1)
-                               /cs_turb_ckwsw2*gdkgdw[c_id], 0.);
+                               /ckwsw2*gdkgdw[c_id], 0.);
       });
     }
 
@@ -975,8 +992,8 @@ cs_turbulence_kw(int phase_id)
         cs_real_t xk     = cvara_k[c_id];
         cs_real_t xw     = cvara_omg[c_id];
         cs_real_t xxf1   = xf1[c_id];
-        cs_real_t xgamma = xxf1 * cs_turb_ckwgm1 + (1. - xxf1)*cs_turb_ckwgm2;
-        cs_real_t xbeta  = xxf1 * cs_turb_ckwbt1 + (1. - xxf1)*cs_turb_ckwbt2;
+        cs_real_t xgamma = xxf1 * ckwgm1 + (1. - xxf1)*ckwgm2;
+        cs_real_t xbeta  = xxf1 * ckwbt1 + (1. - xxf1)*ckwbt2;
 
         /* HTLES method */
         cs_real_t xpsi  = psi[c_id];
@@ -994,11 +1011,11 @@ cs_turbulence_kw(int phase_id)
         smbrw[c_id] += cell_f_vol[c_id]*(  ro*xgamma*prodw_dmut/xpsi
                                          - xbeta*ro*cs_math_pow2(xw)
                                          + 2.*ro/xpsi/xw*(1.-xxf1)
-                                           /cs_turb_ckwsw2*gdkgdw[c_id]);
+                                           /ckwsw2*gdkgdw[c_id]);
 
         tinstw[c_id] +=   cell_f_vol[c_id]
                         * fmax(  -2.*ro/xpsi/cs_math_pow2(xw)*(1. - xxf1)
-                               / cs_turb_ckwsw2*gdkgdw[c_id], 0.);
+                               / ckwsw2*gdkgdw[c_id], 0.);
       });
 
     } /* End of test on hybrid models */
@@ -1011,19 +1028,18 @@ cs_turbulence_kw(int phase_id)
       ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
         cs_real_t xw    = cvara_omg[c_id];
         cs_real_t xxf1  = xf1[c_id];
-        cs_real_t xbeta = xxf1 * cs_turb_ckwbt1 + (1. - xxf1)*cs_turb_ckwbt2;
+        cs_real_t xbeta = xxf1 * ckwbt1 + (1. - xxf1)*ckwbt2;
         cs_real_t ro = crom[c_id];
 
         cs_real_t fhybr;
-        if (   cs_glob_turb_model->hybrid_turb == 1
-            || cs_glob_turb_model->hybrid_turb == 2)
+        if (hybrid_turb == 1 || hybrid_turb == 2)
           fhybr = w1[c_id];
-        else if (cs_glob_turb_model->hybrid_turb == 4)
-          fhybr = 1./(cs_turb_cmu*xw*htles_t[c_id]);
+        else if (hybrid_turb == 4)
+          fhybr = 1./(cmu*xw*htles_t[c_id]);
         else
           fhybr = 1.;
 
-        tinstk[c_id] += cell_f_vol[c_id]*cs_turb_cmu*ro*xw*fhybr;
+        tinstk[c_id] += cell_f_vol[c_id]*cmu*ro*xw*fhybr;
         tinstw[c_id] += 2.*cell_f_vol[c_id]*xbeta*ro*xw;
       });
     }
@@ -1044,6 +1060,8 @@ cs_turbulence_kw(int phase_id)
 
     const cs_lagr_source_terms_t  *lag_st = cs_glob_lagr_source_terms;
 
+    const cs_real_t ce4 = cs_turb_ce4;
+
     if (lag_st->ltsdyn == 1) {
 
       cs_real_t *lag_st_k = cs_field_by_name("lagr_st_k")->val;
@@ -1059,7 +1077,7 @@ cs_turbulence_kw(int phase_id)
         /* Explicit source terms on omega: directly use CE4 constant from
            k-epsilon (without justification). To be explored if necessary */
 
-        smbrw[c_id] +=   cs_turb_ce4 * st_k * cromo[c_id]
+        smbrw[c_id] +=   ce4 * st_k * cromo[c_id]
                        / cpro_pcvto[c_id];
 
         /* Implicit source terms on k,
@@ -1068,7 +1086,7 @@ cs_turbulence_kw(int phase_id)
         tinstk[c_id] += CS_MAX(-st_i, 0.);
 
         /* Implicit source terms on omega */
-        tinstw[c_id] += CS_MAX(-cs_turb_ce4 * st_k / cvara_k[c_id], 0.);
+        tinstw[c_id] += CS_MAX(-ce4 * st_k / cvara_k[c_id], 0.);
 
       });
 
@@ -1157,6 +1175,10 @@ cs_turbulence_kw(int phase_id)
      is not constant in the k-omega model (and not directly accessible)
      *===================================================================== */
 
+  const cs_real_t ckwsk1 = cs_turb_ckwsk1;
+  const cs_real_t ckwsk2 = cs_turb_ckwsk2;
+  const cs_real_t ckwsw1 = cs_turb_ckwsw1;
+
   ctx.parallel_for(n_b_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t face_id) {
 
     cs_lnum_t c_id = b_face_cells[face_id];
@@ -1168,7 +1190,7 @@ cs_turbulence_kw(int phase_id)
     cs_real_t xxf1 = xf1[c_id];
 
     /* k */
-    cs_real_t sigma = xxf1*cs_turb_ckwsk1 + (1. - xxf1)*cs_turb_ckwsk2;
+    cs_real_t sigma = xxf1*ckwsk1 + (1. - xxf1)*ckwsk2;
     cs_real_t hint = (visclc + visctc/sigma)/distb[face_id];
 
     /* Translate coefa into cofaf and coefb into cofbf */
@@ -1176,7 +1198,7 @@ cs_turbulence_kw(int phase_id)
     coefbf_k[face_id] = hint*(1. - coefb_k[face_id]);
 
     /* Omega */
-    sigma = xxf1*cs_turb_ckwsw1 + (1. - xxf1)*cs_turb_ckwsw2;
+    sigma = xxf1*ckwsw1 + (1. - xxf1)*ckwsw2;
     hint = (visclc + visctc/sigma)/distb[face_id];
 
     /* Translate coefa into cofaf and coefb into cofbf */
@@ -1212,7 +1234,7 @@ cs_turbulence_kw(int phase_id)
 
       ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
         cs_real_t xxf1 = xf1[c_id];
-        cs_real_t sigma = xxf1*cs_turb_ckwsk1 + (1. - xxf1)*cs_turb_ckwsk2;
+        cs_real_t sigma = xxf1*ckwsk1 + (1. - xxf1)*ckwsk2;
         w7[c_id] = viscl[c_id] + eqp_k->idifft*cvisct[c_id]/sigma;
       });
 
@@ -1264,7 +1286,7 @@ cs_turbulence_kw(int phase_id)
     if (eqp_w->idiff >= 1) {
       ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
         cs_real_t xxf1 = xf1[c_id];
-        cs_real_t sigma = xxf1*cs_turb_ckwsw1 + (1.-xxf1)*cs_turb_ckwsw2;
+        cs_real_t sigma = xxf1*ckwsw1 + (1.-xxf1)*ckwsw2;
         w7[c_id] = viscl[c_id] + eqp_w->idifft*cvisct[c_id]/sigma;
       });
 
@@ -1349,12 +1371,12 @@ cs_turbulence_kw(int phase_id)
       cs_real_t xk = cvara_k[c_id];
       cs_real_t xw = cvara_omg[c_id];
       cs_real_t xxf1 = xf1[c_id];
-      cs_real_t xgamma = xxf1*cs_turb_ckwgm1 + (1. - xxf1)*cs_turb_ckwgm2;
-      cs_real_t xbeta = xxf1*cs_turb_ckwbt1 + (1. - xxf1)*cs_turb_ckwbt2;
+      cs_real_t xgamma = xxf1*ckwgm1 + (1. - xxf1)*ckwgm2;
+      cs_real_t xbeta = xxf1*ckwbt1 + (1. - xxf1)*ckwbt2;
 
       cs_real_t a11 =   1./dt[c_id] - 1./xw*fmin(produc, 0.)
-                      + divp23+cs_turb_cmu*xw;
-      cs_real_t a12 = cs_turb_cmu*xk;
+                      + divp23+cmu*xw;
+      cs_real_t a12 = cmu*xk;
       cs_real_t a21 = 0.;
       cs_real_t a22 = 1./dt[c_id] + xgamma*divp23 + 2.*xbeta*xw;
 
@@ -1393,7 +1415,7 @@ cs_turbulence_kw(int phase_id)
 
     ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
       cs_real_t xxf1 = xf1[c_id];
-      cs_real_t sigma = xxf1*cs_turb_ckwsk1 + (1.-xxf1)*cs_turb_ckwsk2;
+      cs_real_t sigma = xxf1*ckwsk1 + (1.-xxf1)*ckwsk2;
       w1[c_id] = viscl[c_id] + eqp_k->idifft*cvisct[c_id]/sigma;
     });
 
@@ -1450,7 +1472,7 @@ cs_turbulence_kw(int phase_id)
   if (eqp_w->idiff >=  1) {
     ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
       cs_real_t xxf1 = xf1[c_id];
-      cs_real_t sigma = xxf1*cs_turb_ckwsw1 + (1. - xxf1)*cs_turb_ckwsw2;
+      cs_real_t sigma = xxf1*ckwsw1 + (1. - xxf1)*ckwsw2;
       w1[c_id] = viscl[c_id] + eqp_w->idifft*cvisct[c_id]/sigma;
     });
 
@@ -1659,16 +1681,16 @@ cs_turbulence_kw(int phase_id)
 
       cs_real_t ut2 = 0.05 * uref;
       cs_real_t xeps =   cs_math_pow3(utaurf)
-                       * fmin(1. / (cs_turb_xkappa * 15. * nu0 / utaurf),
-                              1. / (cs_turb_xkappa * ya));
+                       * fmin(1. / (xkappa * 15. * nu0 / utaurf),
+                              1. / (xkappa * ya));
       cvar_k[c_id] = xeps /2. / nu0 * cs_math_pow2(ya)
                                     * cs_math_pow2(exp(-ypa/25.))
-                    + cs_math_pow2(ut2) / sqrt(cs_turb_cmu)
+                    + cs_math_pow2(ut2) / sqrt(cmu)
                     * cs_math_pow2(1. - exp(-ypa / 25.));
 
-      cvar_omg[c_id] = cs_math_pow3(ut2) / (cs_turb_xkappa * 15. * nu0 / ut2)
-                                         / (cs_math_pow2(ut2)/sqrt(cs_turb_cmu))
-                                         / cs_turb_cmu;
+      cvar_omg[c_id] = cs_math_pow3(ut2) / (xkappa * 15. * nu0 / ut2)
+                                         / (cs_math_pow2(ut2)/sqrt(cmu))
+                                         / cmu;
     });
 
   } /* End of test on turbulence reinitialization */
@@ -1844,6 +1866,10 @@ cs_turbulence_kw_mu_t(int phase_id)
     blend = cs_field_by_name("hybrid_blend")->val;
   }
 
+  const int hybrid_turb = cs_glob_turb_model->hybrid_turb;
+  const cs_real_t cmu = cs_turb_cmu;
+  const cs_real_t ckwa1 = cs_turb_ckwa1;
+
   ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
     const cs_real_t xk = cvar_k[c_id];
     cs_real_t xw = cvar_omg[c_id];
@@ -1862,17 +1888,17 @@ cs_turbulence_kw_mu_t(int phase_id)
         xf2 = 0.0;
       }
       else {
-        cs_real_t xarg2 = fmax(2.0 * sqrt(xk) / cs_turb_cmu / xw / xdist,
+        cs_real_t xarg2 = fmax(2.0 * sqrt(xk) / cmu / xw / xdist,
                                500.0 * xmu / rom / xw / cs_math_pow2(xdist));
         xf2 = tanh(cs_math_pow2(xarg2));
       }
 
-      if (cs_glob_turb_model->hybrid_turb == 4) {
+      if (hybrid_turb == 4) {
         xw *= psi[c_id];
         xf2 *= CS_MAX(cs_math_epzero, 1. - blend[c_id]);
       }
-      visct[c_id] =   rom*cs_turb_ckwa1*xk
-                    / fmax(cs_turb_ckwa1*xw, sqrt(cpro_s2kw[c_id])*xf2);
+      visct[c_id] =   rom*ckwa1*xk
+                    / fmax(ckwa1*xw, sqrt(cpro_s2kw[c_id])*xf2);
     }
     else {
       visct[c_id] = 1.e-30;

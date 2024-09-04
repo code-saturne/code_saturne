@@ -92,5 +92,14 @@ cs_gui_specific_physics.c \
 cs_gui_util.c \
 cs_tree_xml.c
 
+# Rules for CUDA (not known by Automake)
+
+if HAVE_CUDA_CPP
+.cpp.$(OBJEXT):
+	$(NVCC) $(DEFS) $(AM_CPPFLAGS) -I$(top_srcdir)/src/base -I../.. $(NVCCFLAGS) $(NVCCFLAGS_DBG) $(NVCCFLAGS_OPT) $(NVCCFLAGS_CPP) -c -o $@ $<
+endif
+
+# Additional rules
+
 clean-local:
 	-rm -rf .deps

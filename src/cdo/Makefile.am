@@ -37,6 +37,7 @@ AM_CPPFLAGS = \
 -I$(top_srcdir)/src/bft  \
 -I$(top_srcdir)/src/fvm  \
 -I$(top_srcdir)/src/base \
+-I$(top_srcdir)/src/cdo \
 -I$(top_srcdir)/src/gwf  \
 -I$(top_srcdir)/src/mesh \
 -I$(top_srcdir)/src/pprt \
@@ -245,6 +246,11 @@ libcscdo_extension_a_SOURCES = \
 cs_equation_system_sles.cpp
 libcscdo_a_LIBADD += \
 libcscdo_extension_a-cs_equation_system_sles.$(OBJEXT)
+
+if HAVE_CUDA_CPP
+.cpp.$(OBJEXT):
+	$(NVCC) $(DEFS) $(AM_CPPFLAGS) -I$(top_srcdir)/src/alge -I../.. $(NVCCFLAGS) $(NVCCFLAGS_DBG) $(NVCCFLAGS_OPT) $(NVCCFLAGS_CPP) -c -o $@ $<
+endif
 
 clean-local:
 	-rm -rf .deps

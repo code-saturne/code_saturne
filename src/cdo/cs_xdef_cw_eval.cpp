@@ -164,6 +164,8 @@ cs_xdef_cw_eval_c_int_by_analytic(const cs_cell_mesh_t            *cm,
                                   cs_quadrature_tetra_integral_t  *qfunc,
                                   cs_real_t                       *eval)
 {
+  constexpr cs_real_t c_1ov3 = 1./3.;
+
   switch (cm->type) {
 
   case FVM_CELL_TETRA:
@@ -182,7 +184,7 @@ cs_xdef_cw_eval_c_int_by_analytic(const cs_cell_mesh_t            *cm,
       for (short int f = 0; f < cm->n_fc; ++f) {
 
         const cs_quant_t  pfq = cm->face[f];
-        const double  hf_coef = cs_math_1ov3 * cm->hfc[f];
+        const double  hf_coef = c_1ov3 * cm->hfc[f];
         const int  start = cm->f2e_idx[f];
         const int  end = cm->f2e_idx[f+1];
         const short int  n_vf = end - start; /* #vertices (=#edges) */
@@ -264,6 +266,7 @@ cs_xdef_cw_eval_fc_int_by_analytic(const cs_cell_mesh_t             *cm,
 {
   short int  v0, v1, v2;
 
+  constexpr cs_real_t c_1ov3 = 1./3.;
   const short int  nf = cm->n_fc;
 
   /* Switch on the cell-type: optimised version for tetra */
@@ -296,7 +299,7 @@ cs_xdef_cw_eval_fc_int_by_analytic(const cs_cell_mesh_t             *cm,
     for (short int f = 0; f < nf; ++f) {
 
       const cs_quant_t  pfq = cm->face[f];
-      const double  hf_coef = cs_math_1ov3 * cm->hfc[f];
+      const double  hf_coef = c_1ov3 * cm->hfc[f];
       const int  start = cm->f2e_idx[f];
       const int  end = cm->f2e_idx[f+1];
       const short int  n_vf = end - start; /* #vertices (=#edges) */
@@ -1184,6 +1187,8 @@ cs_xdef_cw_eval_flux_v_by_scalar_analytic(const cs_cell_mesh_t      *cm,
   assert(cs_eflag_test(cm->flag,
                        CS_FLAG_COMP_PFQ | CS_FLAG_COMP_EV | CS_FLAG_COMP_FE));
 
+  constexpr cs_real_t c_1ov3 = 1./3.;
+
   const cs_xdef_analytic_context_t *ac = (cs_xdef_analytic_context_t *)context;
   const cs_quant_t  fq = cm->face[f];
 
@@ -1228,8 +1233,8 @@ cs_xdef_cw_eval_flux_v_by_scalar_analytic(const cs_cell_mesh_t      *cm,
 
           for (int k = 0; k < 3; k++) {
             const double xef = cm->edge[e].center[k] + fq.center[k];
-            _xyz[0][k] = cs_math_1ov3 * (xef + cm->xv[3*v1+k]);
-            _xyz[1][k] = cs_math_1ov3 * (xef + cm->xv[3*v2+k]);
+            _xyz[0][k] = c_1ov3 * (xef + cm->xv[3*v1+k]);
+            _xyz[1][k] = c_1ov3 * (xef + cm->xv[3*v2+k]);
           }
 
           /* Evaluate the function for this time at the given coordinates */
@@ -1259,8 +1264,8 @@ cs_xdef_cw_eval_flux_v_by_scalar_analytic(const cs_cell_mesh_t      *cm,
 
           for (int k = 0; k < 3; k++) {
             const double xef = cm->edge[e].center[k] + fq.center[k];
-            _xyz[0][k] = cs_math_1ov3 * (xef + cm->xv[3*v1+k]);
-            _xyz[1][k] = cs_math_1ov3 * (xef + cm->xv[3*v2+k]);
+            _xyz[0][k] = c_1ov3 * (xef + cm->xv[3*v1+k]);
+            _xyz[1][k] = c_1ov3 * (xef + cm->xv[3*v2+k]);
           }
 
           /* Evaluate the function for this time at the given coordinates */
@@ -1524,6 +1529,8 @@ cs_xdef_cw_eval_flux_v_by_vector_analytic(const cs_cell_mesh_t      *cm,
   assert(cs_eflag_test(cm->flag,
                        CS_FLAG_COMP_PFQ | CS_FLAG_COMP_EV | CS_FLAG_COMP_FE));
 
+  constexpr cs_real_t c_1ov3 = 1./3.;
+
   const cs_xdef_analytic_context_t *ac = (cs_xdef_analytic_context_t *)context;
   const cs_quant_t  fq = cm->face[f];
 
@@ -1567,8 +1574,8 @@ cs_xdef_cw_eval_flux_v_by_vector_analytic(const cs_cell_mesh_t      *cm,
 
           for (int k = 0; k < 3; k++) {
             const double xef = cm->edge[e].center[k] + fq.center[k];
-            _xyz[0][k] = cs_math_1ov3 * (xef + cm->xv[3*v1+k]);
-            _xyz[1][k] = cs_math_1ov3 * (xef + cm->xv[3*v2+k]);
+            _xyz[0][k] = c_1ov3 * (xef + cm->xv[3*v1+k]);
+            _xyz[1][k] = c_1ov3 * (xef + cm->xv[3*v2+k]);
           }
 
           /* Evaluate the function for this time at the given coordinates */
@@ -1599,8 +1606,8 @@ cs_xdef_cw_eval_flux_v_by_vector_analytic(const cs_cell_mesh_t      *cm,
 
           for (int k = 0; k < 3; k++) {
             const double xef = cm->edge[e].center[k] + fq.center[k];
-            _xyz[0][k] = cs_math_1ov3 * (xef + cm->xv[3*v1+k]);
-            _xyz[1][k] = cs_math_1ov3 * (xef + cm->xv[3*v2+k]);
+            _xyz[0][k] = c_1ov3 * (xef + cm->xv[3*v1+k]);
+            _xyz[1][k] = c_1ov3 * (xef + cm->xv[3*v2+k]);
           }
 
           /* Evaluate the function for this time at the given coordinates */
@@ -1868,6 +1875,8 @@ cs_xdef_cw_eval_flux_by_scalar_analytic(const cs_cell_mesh_t      *cm,
                                         cs_quadrature_type_t       qtype,
                                         cs_real_t                 *eval)
 {
+  constexpr cs_real_t c_1ov3 = 1./3.;
+
   cs_xdef_analytic_context_t  *ac = (cs_xdef_analytic_context_t *)context;
 
   switch (qtype) {
@@ -1909,7 +1918,7 @@ cs_xdef_cw_eval_flux_by_scalar_analytic(const cs_cell_mesh_t      *cm,
 
         cs_real_3_t  _xyz;
         for (int k = 0; k < 3; k++)
-          _xyz[k] = cs_math_1ov3 * (fq.center[k] + xv[3*v1+k] + xv[3*v2+k]);
+          _xyz[k] = c_1ov3 * (fq.center[k] + xv[3*v1+k] + xv[3*v2+k]);
 
         /* Evaluate the function for this time at the given coordinates */
 
@@ -2061,6 +2070,8 @@ cs_xdef_cw_eval_flux_by_vector_analytic(const cs_cell_mesh_t      *cm,
                                         cs_quadrature_type_t       qtype,
                                         cs_real_t                 *eval)
 {
+  constexpr cs_real_t c_1ov3 = 1./3.;
+
   assert(cs_flag_test(cm->flag, CS_FLAG_COMP_PFQ));
   assert(eval != nullptr);
 
@@ -2107,7 +2118,7 @@ cs_xdef_cw_eval_flux_by_vector_analytic(const cs_cell_mesh_t      *cm,
         const cs_real_t  *xv1 = cm->xv + 3*e2v[1];
 
         for (int k = 0; k < 3; k++)
-          _xyz[k] = cs_math_1ov3 * (pfq.center[k] + xv0[k] + xv1[k]);
+          _xyz[k] = c_1ov3 * (pfq.center[k] + xv0[k] + xv1[k]);
 
         /* Evaluate the function for this time at the given coordinates */
 
@@ -2245,6 +2256,8 @@ cs_xdef_cw_eval_vector_flux_by_analytic(const cs_cell_mesh_t      *cm,
                                         cs_quadrature_type_t       qtype,
                                         cs_real_t                 *eval)
 {
+  constexpr cs_real_t c_1ov3 = 1./3.;
+
   assert(cs_flag_test(cm->flag, CS_FLAG_COMP_PFQ));
   assert(eval != nullptr);
 
@@ -2293,7 +2306,7 @@ cs_xdef_cw_eval_vector_flux_by_analytic(const cs_cell_mesh_t      *cm,
         const cs_real_t  *xv1 = cm->xv + 3*e2v[1];
 
         for (int k = 0; k < 3; k++)
-          _xyz[k] = cs_math_1ov3 * (pfq.center[k] + xv0[k] + xv1[k]);
+          _xyz[k] = c_1ov3 * (pfq.center[k] + xv0[k] + xv1[k]);
 
         /* Evaluate the function for this time at the given coordinates */
 

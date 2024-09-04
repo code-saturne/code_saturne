@@ -107,6 +107,15 @@ cs_rad_transfer_modak.c \
 cs_rad_transfer_source_terms.c \
 cs_rad_transfer_restart.c
 
+# Rules for CUDA (not known by Automake)
+
+if HAVE_CUDA_CPP
+.cpp.$(OBJEXT):
+	$(NVCC) $(DEFS) $(AM_CPPFLAGS) -I$(top_srcdir)/src/base -I../.. $(NVCCFLAGS) $(NVCCFLAGS_DBG) $(NVCCFLAGS_OPT) $(NVCCFLAGS_CPP) -c -o $@ $<
+endif
+
+# Additional rules
+
 clean-local:
 	-rm -f *__genmod.f90 *.mod
 	-rm -rf .deps

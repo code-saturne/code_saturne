@@ -42,6 +42,7 @@ AM_CPPFLAGS = \
 -I$(top_srcdir)/src/lagr \
 -I$(top_srcdir)/src/mesh \
 -I$(top_srcdir)/src/pprt \
+-I$(top_srcdir)/src/turb \
 $(CPPFLAGS_PLE) \
 $(MPI_CPPFLAGS)
 
@@ -94,6 +95,15 @@ cs_turbulence_rotation.c \
 cs_turbulence_sa.c \
 cs_turbulence_v2f.cpp \
 cs_turbulence_htles.c
+
+# Rules for CUDA (not known by Automake)
+
+if HAVE_CUDA_CPP
+.cpp.$(OBJEXT):
+	$(NVCC) $(DEFS) $(AM_CPPFLAGS) -I$(top_srcdir)/src/base -I../.. $(NVCCFLAGS) $(NVCCFLAGS_DBG) $(NVCCFLAGS_OPT) $(NVCCFLAGS_CPP) -c -o $@ $<
+endif
+
+# Additional rules
 
 clean-local:
 	-rm -rf .deps

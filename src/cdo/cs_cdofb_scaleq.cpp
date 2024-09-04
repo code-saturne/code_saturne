@@ -816,6 +816,8 @@ cs_cdofb_scaleq_init_context(cs_equation_param_t    *eqp,
     bft_error(__FILE__, __LINE__, 0, " %s: Invalid type of equation.\n"
               " Expected: scalar-valued CDO face-based equation.", __func__);
 
+  constexpr cs_real_t c_1ov3 = 1./3.;
+
   const cs_cdo_connect_t  *connect = cs_shared_connect;
   const cs_lnum_t  n_cells = connect->n_cells;
   const cs_lnum_t  n_faces = connect->n_faces[CS_ALL_FACES];
@@ -997,7 +999,7 @@ cs_cdofb_scaleq_init_context(cs_equation_param_t    *eqp,
   eqc->mass_hodgep.inv_pty  = false;
   eqc->mass_hodgep.type = CS_HODGE_TYPE_FB;
   eqc->mass_hodgep.algo = CS_HODGE_ALGO_COST;
-  eqc->mass_hodgep.coef = cs_math_1ov3;
+  eqc->mass_hodgep.coef = c_1ov3;
 
   eqc->get_mass_matrix = nullptr;
   eqc->mass_hodge      = nullptr;

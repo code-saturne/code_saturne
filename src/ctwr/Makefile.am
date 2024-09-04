@@ -89,6 +89,15 @@ cs_ctwr_initialize.cpp \
 cs_ctwr_source_terms.cpp \
 cs_ctwr_physical_properties.cpp
 
+# Rules for CUDA (not known by Automake)
+
+if HAVE_CUDA_CPP
+.cpp.$(OBJEXT):
+	$(NVCC) $(DEFS) $(AM_CPPFLAGS) -I$(top_srcdir)/src/base -I../.. $(NVCCFLAGS) $(NVCCFLAGS_DBG) $(NVCCFLAGS_OPT) $(NVCCFLAGS_CPP) -c -o $@ $<
+endif
+
+# Additional rules
+
 clean-local:
 	-rm -f *__genmod.f90 *.mod
 	-rm -rf .deps

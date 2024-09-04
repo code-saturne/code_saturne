@@ -450,6 +450,8 @@ _vb_wbs_normal_flux_op(const cs_face_mesh_t     *fm,
 
   /* Compute a weight for each vertex of the current face */
 
+  constexpr cs_real_t c_1ov3 = 1./3.;
+
   double  sum_ef = 0.;
   for (short int e = 0; e < fm->n_ef; e++) {
 
@@ -467,7 +469,7 @@ _vb_wbs_normal_flux_op(const cs_face_mesh_t     *fm,
     for (int k = 0; k < 3; k++)
       grd_f[k] = -(grd_c[k] + grd_v1[k] + grd_v2[k]);
 
-    const double  tef_coef = fm->tef[e] * cs_math_1ov3;
+    const double  tef_coef = fm->tef[e] * c_1ov3;
     mng_ef[e][0] = _dp3(pty_nuf, grd_v1) * tef_coef;
     mng_ef[e][1] = _dp3(pty_nuf, grd_v2) * tef_coef;
     mng_ef[e][2] = _dp3(pty_nuf, grd_f)  * tef_coef;
@@ -562,6 +564,8 @@ _vcb_wbs_normal_flux_op(const cs_face_mesh_t     *fm,
                         cs_cell_builder_t        *cb,
                         cs_sdm_t                 *ntrgrd)
 {
+  constexpr cs_real_t c_1ov3 = 1./3.;
+
   cs_real_3_t  grd_f, grd_v1, grd_v2, grd_c;
 
   /* Useful quantities are stored in cb->values and cb->tmp-vect */
@@ -604,7 +608,7 @@ _vcb_wbs_normal_flux_op(const cs_face_mesh_t     *fm,
     for (int k = 0; k < 3; k++)
       grd_f[k] = -(grd_c[k] + grd_v1[k] + grd_v2[k]);
 
-    const double  tef_coef = fm->tef[e] * cs_math_1ov3;
+    const double  tef_coef = fm->tef[e] * c_1ov3;
     mng_ef[e][0] = _dp3(pty_nuf, grd_v1) * tef_coef;
     mng_ef[e][1] = _dp3(pty_nuf, grd_v2) * tef_coef;
     mng_ef[e][2] = _dp3(pty_nuf, grd_f)  * tef_coef;

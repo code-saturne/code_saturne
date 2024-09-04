@@ -1117,11 +1117,12 @@ cs_cell_mesh_build(cs_lnum_t                    c_id,
           cm->pvol_f[f] = _pvol[f];
       }
       else {
+        constexpr cs_real_t c_1ov3 = 1./3.;
 
         assert(cs_eflag_test(build_flag, CS_FLAG_COMP_PFQ | CS_FLAG_COMP_DEQ));
         for (short int f = 0; f < cm->n_fc; f++) {
           cm->pvol_f[f] = _dp3(cm->face[f].unitv, cm->dedge[f].unitv);
-          cm->pvol_f[f] *= cs_math_1ov3 * cm->face[f].meas * cm->dedge[f].meas;
+          cm->pvol_f[f] *= c_1ov3 * cm->face[f].meas * cm->dedge[f].meas;
         }
       }
     }

@@ -364,18 +364,15 @@ cs_equation_bc_init_boundary_flux(cs_real_t                     t_eval,
         {
           const cs_real_t  *constant_val = (cs_real_t *)def->context;
 
-          switch (eqp->dim) {
-
-          case 1: /* scalar-valued equation */
+          if (eqp->dim == 1) {  /* scalar-valued equation */
 #           pragma omp parallel for if (z->n_elts > CS_THR_MIN)
             for (cs_lnum_t i = 0; i < z->n_elts; i++) {
               const cs_lnum_t elt_id
                 = (z->elt_ids != nullptr) ? z->elt_ids[i] : i;
               values[elt_id] = constant_val[0];
             }
-            break;
-
-          default:
+          }
+          else {
 #           pragma omp parallel for if (z->n_elts > CS_THR_MIN)
             for (cs_lnum_t i = 0; i < z->n_elts; i++) {
               const cs_lnum_t elt_id
@@ -383,9 +380,7 @@ cs_equation_bc_init_boundary_flux(cs_real_t                     t_eval,
               for (int k = 0; k < eqp->dim; k++)
                 values[eqp->dim*elt_id + k] = constant_val[k];
             }
-            break;
-
-          } /* switch on dimension */
+          } /* dimension */
 
         }
         break; /* definition by value */
