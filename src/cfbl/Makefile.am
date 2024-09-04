@@ -21,6 +21,7 @@
 # Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
 #-------------------------------------------------------------------------------
+
 # PLE dependency
 
 if HAVE_INTERNAL_PLE
@@ -30,6 +31,7 @@ else
 endif
 
 # Main part
+
 AM_CPPFLAGS = \
 -I$(top_srcdir)/src/alge \
 -I$(top_srcdir)/src/base \
@@ -66,12 +68,12 @@ cs_hgn_source_terms_step.h
 noinst_LIBRARIES = libcscfbl.a
 libcscfbl_a_SOURCES = \
 cs_cf_boundary_conditions.cpp \
-cs_cf_boundary_flux.c \
-cs_cf_compute.c \
-cs_cf_energy.c \
-cs_cf_model.c \
-cs_cf_thermo.c \
-cs_hgn_thermo.c \
-cs_hgn_phase_thermo.c \
-cs_hgn_source_terms_step.c
+cs_cf_boundary_flux.cpp \
+cs_cf_compute.cpp \
+cs_cf_energy.cpp \
+cs_cf_model.cpp \
+cs_cf_thermo.cpp \
+cs_hgn_thermo.cpp \
+cs_hgn_phase_thermo.cpp \
+cs_hgn_source_terms_step.cpp
 

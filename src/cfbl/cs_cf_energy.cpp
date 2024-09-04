@@ -688,7 +688,7 @@ cs_cf_energy(int f_sc_id)
                        0,             /* iphydp */
                        1,             /* w_stride */
                        eqp_vel->verbosity,
-                       eqp_vel->imligr,
+                       (cs_gradient_limit_t) eqp_vel->imligr,
                        eqp_vel->epsrgr,
                        eqp_vel->climgr,
                        NULL,          /* f_ext */
