@@ -76,4 +76,11 @@ cs_cf_thermo.cpp \
 cs_hgn_thermo.cpp \
 cs_hgn_phase_thermo.cpp \
 cs_hgn_source_terms_step.cpp
+clean-local:
+	-rm -f *__genmod.f90 *__genmod.mod
+	-rm -rf .deps
 
+if HAVE_CUDA_CPP
+.cpp.$(OBJEXT):
+	$(NVCC) $(DEFS) $(AM_CPPFLAGS) -I$(top_srcdir)/src/cfbl -I../.. $(NVCCFLAGS) $(NVCCFLAGS_DBG) $(NVCCFLAGS_OPT) $(NVCCFLAGS_CPP) -c -o $@ $<
+endif
