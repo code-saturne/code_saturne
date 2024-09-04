@@ -221,7 +221,7 @@ cs_rotation_add_coriolis_t(const cs_rotation_t  *r,
  *   tr --> dual tensor of rotation
  *---------------------------------------------------------------------------*/
 
-static inline void
+CS_F_HOST_DEVICE static inline void
 cs_rotation_coriolis_t(const cs_rotation_t  *r,
                        cs_real_t             c,
                        cs_real_t             tr[3][3])
