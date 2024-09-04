@@ -123,6 +123,94 @@ static const cs_lnum_t _t2v[3][3] = {{0, 3, 5},
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Compute all eigenvalues of a 3x3 symmetric matrix
+ *        with symmetric storage.
+ *
+ * Based on: Oliver K. Smith "eigenvalues of a symmetric 3x3 matrix",
+ *           Communication of the ACM (April 1961)
+ *           (Wikipedia article entitled "Eigenvalue algorithm")
+ *
+ * \param[in]  m          3x3 symmetric matrix (m11, m22, m33, m12, m23, m13)
+ * \param[out] eig_vals   size 3 vector
+ */
+/*----------------------------------------------------------------------------*/
+
+CS_F_HOST_DEVICE void
+_sym_33_eigen(const cs_real_t  m[6],
+              cs_real_t        eig_vals[3])
+{
+  constexpr cs_real_t c_1ov3 = 1./3.;
+  constexpr cs_real_t c_1ov6 = 1./6.;
+
+  cs_real_t  e, e1, e2, e3;
+
+  cs_real_t  p1 = cs_math_3_square_norm((const cs_real_t *)(m+3));
+  cs_real_t  d2 = cs_math_3_square_norm((const cs_real_t *)m);
+
+  cs_real_t  tr = (m[0] + m[1] + m[2]);
+  cs_real_t  tr_third = c_1ov3 * tr;
+
+  e1 = m[0] - tr_third, e2 = m[1] - tr_third, e3 = m[2] - tr_third;
+  cs_real_t  p2 = e1*e1 + e2*e2 + e3*e3 + 2.*p1;
+
+  cs_real_t  p = sqrt(p2*c_1ov6);
+
+  if (p1 > cs_math_epzero*d2 && p > 0.) { /* m is not diagonal */
+
+    cs_real_6_t  n;
+    cs_real_t  ovp = 1./p;
+
+    for (int  i = 0; i < 3; i++) {
+      /* Diagonal */
+      n[i] = ovp * (m[i] - tr_third);
+      /* Extra diagonal */
+      n[3 + i] = ovp * m[3 + i];
+    }
+
+    /* r should be between -1 and 1 but truncation error and bad conditioning
+       can lead to slightly under/over-shoot */
+    cs_real_t  r = 0.5 * cs_math_sym_33_determinant(n);
+
+    cs_real_t  cos_theta, cos_theta_2pi3;
+    if (r <= -1.) {
+      cos_theta = 0.5; /* theta = pi/3; */
+      cos_theta_2pi3 = -1.;
+    }
+    else if (r >= 1.) {
+      cos_theta = 1.; /* theta = 0.; */
+      cos_theta_2pi3 = -0.5;
+    }
+    else {
+      cos_theta = cos(c_1ov3*acos(r));
+      cos_theta_2pi3 = cos(c_1ov3*(acos(r) + 2.*cs_math_pi));
+    }
+
+    /* eigenvalues computed should satisfy e1 < e2 < e3 */
+    e3 = tr_third + 2.*p*cos_theta;
+    e1 = tr_third + 2.*p*cos_theta_2pi3;
+    e2 = tr - e1 -e3; // since tr(m) = e1 + e2 + e3
+
+  }
+  else { /* m is diagonal */
+
+    e1 = m[0], e2 = m[1], e3 = m[2];
+
+  } /* diagonal or not */
+
+  if (e3 < e2) e = e3, e3 = e2, e2 = e;
+  if (e3 < e1) e = e3, e3 = e1, e1 = e2, e2 = e;
+  else {
+    if (e2 < e1) e = e2, e2 = e1, e1 = e;
+  }
+
+  /* Return values */
+  eig_vals[0] = e1;
+  eig_vals[1] = e2;
+  eig_vals[2] = e3;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief returns the value of A with the sign of B.
  *
  *  \param[in]  a  real A
@@ -325,19 +413,28 @@ _compute_up_rhop(int        phase_id,
      * (only for thermal scalar for the moment) */
     cs_field_t *f_beta = cs_field_by_name_try("thermal_expansion");
 
-    /* Value of the corresponding turbulent flux */
-    cs_real_3_t *xut =
-      (cs_real_3_t *)cs_field_by_composite_name("turbulent_flux",
-                                                thf->name)->val;
-    /* finalize rho'u' = -rho beta T'u' = -rho beta C k/eps R.gradT */
-    ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
-      cs_real_t beta = (f_beta == NULL) ? 0. : f_beta->val[c_id];
+    if (f_beta != nullptr) {
+      /* Value of the corresponding turbulent flux */
+      cs_real_3_t *xut =
+        (cs_real_3_t *)cs_field_by_composite_name("turbulent_flux",
+                                                  thf->name)->val;
 
-      const cs_real_t factor = - beta * rho[c_id];
+      const cs_real_t *beta = f_beta->val;
 
-      for (cs_lnum_t i = 0; i < 3; i++)
-        up_rhop[c_id][i] = factor * xut[c_id][i];
-    });
+      /* finalize rho'u' = -rho beta T'u' = -rho beta C k/eps R.gradT */
+      ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
+
+        const cs_real_t factor = - beta[c_id] * rho[c_id];
+
+        for (cs_lnum_t i = 0; i < 3; i++)
+          up_rhop[c_id][i] = factor * xut[c_id][i];
+
+      });
+      ctx.wait();
+    }
+    else { // beta = 0
+      cs_array_real_fill_zero(n_cells*3, (cs_real_t *)up_rhop);
+    }
   }
 
   /* Note that the buoyant term is normally expressed in term of
@@ -360,31 +457,39 @@ _compute_up_rhop(int        phase_id,
          * (only for thermal scalar for the moment) */
         cs_field_t *f_beta = cs_field_by_name_try("thermal_expansion");
 
-        cs_real_3_t *gradt;
-        CS_MALLOC_HD(gradt, n_cells_ext, cs_real_3_t, cs_alloc_mode);
+        if (f_beta != nullptr) {
 
-        cs_field_gradient_scalar(thf,
-                                 false,  /* use current (not previous) value */
-                                 1,      /* inc */
-                                 gradt);
+          /* finalize rho'u' = -rho beta T'u' = -rho beta C k/eps R.gradT */
+          const cs_real_t *beta = f_beta->val;
 
-        /* finalize rho'u' = -rho beta T'u' = -rho beta C k/eps R.gradT */
-        ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
-          cs_real_t rit[3];
-          cs_math_sym_33_3_product(cvara_rij[c_id], gradt[c_id], rit);
+          cs_real_3_t *gradt;
+          CS_MALLOC_HD(gradt, n_cells_ext, cs_real_3_t, cs_alloc_mode);
 
-          cs_real_t beta = (f_beta == NULL) ? 0. : f_beta->val[c_id];
+          cs_field_gradient_scalar(thf,
+                                   false,  /* use current (not previous) value */
+                                   1,      /* inc */
+                                   gradt);
 
-          /* factor = - rho beta C k/eps */
-          const cs_real_t factor = - beta * rho[c_id] * cons
-            * cs_math_6_trace(cvara_rij[c_id])
-            / (2. * cvara_ep[c_id]);
+          ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
+            cs_real_t rit[3];
+            cs_math_sym_33_3_product(cvara_rij[c_id], gradt[c_id], rit);
 
-          for (cs_lnum_t i = 0; i < 3; i++)
-            up_rhop[c_id][i] = factor * rit[i];
-        });
+            /* factor = - rho beta C k/eps */
+            const cs_real_t factor = - beta[c_id] * rho[c_id] * cons
+                                       * cs_math_6_trace(cvara_rij[c_id])
+                                       / (2. * cvara_ep[c_id]);
 
-        CS_FREE_HD(gradt);
+            for (cs_lnum_t i = 0; i < 3; i++)
+              up_rhop[c_id][i] = factor * rit[i];
+          });
+          ctx.wait();
+
+          CS_FREE_HD(gradt);
+        }
+
+        else { // beta = 0
+          cs_array_real_fill_zero(n_cells*3, (cs_real_t *)up_rhop);
+        }
       }
 
     }
@@ -446,11 +551,12 @@ _compute_up_rhop(int        phase_id,
 
       });
 
+      ctx.wait();
+
       CS_FREE_HD(gradro);
       CS_FREE_HD(coefb);
     }
   }
-  ctx.wait();
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1949,7 +2055,7 @@ _pre_solve_ssg(const cs_field_t  *f_rij,
 
       /* Compute the maximal eigenvalue (in terms of norm!) of S */
       cs_real_t eigen_vals[3];
-      cs_math_sym_33_eigen(sym_strain, eigen_vals);
+      _sym_33_eigen(sym_strain, eigen_vals);
       cs_real_t eigen_max = cs_math_fabs(eigen_vals[0]);
       for (cs_lnum_t i = 1; i < 3; i++)
         eigen_max = cs_math_fmax(cs_math_fabs(eigen_max),
@@ -3790,7 +3896,7 @@ cs_turbulence_rij_clip(int        phase_id,
           tensor[ii] = cvar_rij[c_id][ii]/trrij;
 
         cs_real_t eigen_vals[3];
-        cs_math_sym_33_eigen(tensor, eigen_vals);
+        _sym_33_eigen(tensor, eigen_vals);
 
         cs_real_t eigen_min = eigen_vals[0];
         cs_real_t eigen_max = eigen_vals[0];
