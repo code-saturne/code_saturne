@@ -760,9 +760,11 @@ _manage_error(cs_lnum_t                       failsafe_mode,
               cs_lagr_tracking_error_t        error_type)
 {
   cs_real_t *prev_part_coord
-    = cs_lagr_particle_attr_n(particle, attr_map, 1, CS_LAGR_COORDS);
+    = cs_lagr_particle_attr_n_get_ptr<cs_real_t>(particle, attr_map, 1,
+                                                 CS_LAGR_COORDS);
   cs_real_t *part_coord
-    = cs_lagr_particle_attr(particle, attr_map, CS_LAGR_COORDS);
+    = cs_lagr_particle_attr_get_ptr<cs_real_t>(particle, attr_map,
+                                                 CS_LAGR_COORDS);
 
   const cs_real_t  *prev_location
     = ((const cs_lagr_tracking_info_t *)particle)->start_coords;
@@ -837,11 +839,13 @@ _internal_treatment(cs_lagr_particle_set_t  *particles,
   cs_lagr_tracking_info_t *p_info = (cs_lagr_tracking_info_t *)particle;
 
   cs_real_t  *particle_coord
-    = cs_lagr_particle_attr(particle, p_am, CS_LAGR_COORDS);
+    = cs_lagr_particle_attr_get_ptr<cs_real_t>(particle, p_am, CS_LAGR_COORDS);
   cs_real_t  *particle_velocity
-    = cs_lagr_particle_attr(particle, p_am, CS_LAGR_VELOCITY);
+    = cs_lagr_particle_attr_get_ptr<cs_real_t>(particle, p_am,
+                                               CS_LAGR_VELOCITY);
   cs_real_t  *particle_velocity_seen
-    = cs_lagr_particle_attr(particle, p_am, CS_LAGR_VELOCITY_SEEN);
+    = cs_lagr_particle_attr_get_ptr<cs_real_t>(particle, p_am,
+                                               CS_LAGR_VELOCITY_SEEN);
 
   cs_real_t particle_stat_weight
     = cs_lagr_particle_get_real(particle, p_am, CS_LAGR_STAT_WEIGHT);
@@ -982,18 +986,18 @@ _roll_off_event(cs_lagr_particle_set_t    *particles,
                           CS_LAGR_E_FACE_ID,
                           b_face_id);
 
-  cs_real_t *p_vel = cs_lagr_particles_attr(particles,
-                                            p_id,
-                                            CS_LAGR_VELOCITY);
-  cs_real_t *e_vel_post = cs_lagr_events_attr(events,
-                                              event_id,
-                                              CS_LAGR_E_VELOCITY);
+  cs_real_t *p_vel =
+    cs_lagr_particles_attr_get_ptr<cs_real_t>(particles, p_id,
+                                              CS_LAGR_VELOCITY);
+  cs_real_t *e_vel_post =
+    cs_lagr_events_attr_get_ptr<cs_real_t>(events, event_id,
+                                           CS_LAGR_E_VELOCITY);
   for (int k = 0; k < 3; k++)
     e_vel_post[k] = p_vel[k];
 
-  cs_lnum_t *e_flag = cs_lagr_events_attr(events,
-                                          event_id,
-                                          CS_LAGR_E_FLAG);
+  cs_lnum_t *e_flag = cs_lagr_events_attr_get_ptr<cs_lnum_t>(events,
+                                                             event_id,
+                                                             CS_LAGR_E_FLAG);
   *e_flag = *e_flag | CS_EVENT_ROLL_OFF;
 }
 
@@ -1053,11 +1057,13 @@ _boundary_treatment(cs_lagr_particle_set_t    *particles,
   cs_lagr_tracking_info_t *p_info = (cs_lagr_tracking_info_t *)particle;
 
   cs_real_t  *particle_coord
-    = cs_lagr_particle_attr(particle, p_am, CS_LAGR_COORDS);
+    = cs_lagr_particle_attr_get_ptr<cs_real_t>(particle, p_am, CS_LAGR_COORDS);
   cs_real_t  *particle_velocity
-    = cs_lagr_particle_attr(particle, p_am, CS_LAGR_VELOCITY);
+    = cs_lagr_particle_attr_get_ptr<cs_real_t>(particle, p_am,
+                                               CS_LAGR_VELOCITY);
   cs_real_t  *particle_velocity_seen
-    = cs_lagr_particle_attr(particle, p_am, CS_LAGR_VELOCITY_SEEN);
+    = cs_lagr_particle_attr_get_ptr<cs_real_t>(particle, p_am,
+                                               CS_LAGR_VELOCITY_SEEN);
 
   cs_real_t particle_stat_weight
     = cs_lagr_particle_get_real(particle, p_am, CS_LAGR_STAT_WEIGHT);
@@ -1114,9 +1120,9 @@ _boundary_treatment(cs_lagr_particle_set_t    *particles,
                             face_id);
 
     cs_real_t *e_coords
-      = cs_lagr_events_attr(events,
-                            event_id,
-                            (cs_lagr_event_attribute_t)CS_LAGR_COORDS);
+      = cs_lagr_events_attr_get_ptr<cs_real_t>(events,
+                                               event_id,
+                                    (cs_lagr_event_attribute_t)CS_LAGR_COORDS);
     for (int k = 0; k < 3; k++)
       e_coords[k] = intersect_pt[k];
 
@@ -1625,7 +1631,8 @@ _boundary_treatment(cs_lagr_particle_set_t    *particles,
       = cs_lagr_particle_get_lnum(particle, p_am, CS_LAGR_COAL_ID);
     const cs_lnum_t n_layers = p_am->count[0][CS_LAGR_TEMPERATURE];
     const cs_real_t *particle_temp
-      = cs_lagr_particle_attr_const(particle, p_am, CS_LAGR_TEMPERATURE);
+      = cs_lagr_particle_attr_get_const_ptr<cs_real_t>(particle, p_am,
+                                                       CS_LAGR_TEMPERATURE);
 
     cs_real_t  temp_ext_part = particle_temp[n_layers - 1];
     cs_real_t  tprenc_icoal
@@ -1753,13 +1760,12 @@ _boundary_treatment(cs_lagr_particle_set_t    *particles,
   }
 
   if (events != NULL) {
-    cs_lnum_t *e_flag = cs_lagr_events_attr(events,
-                                            event_id,
-                                            CS_LAGR_E_FLAG);
+    cs_lnum_t *e_flag =
+      cs_lagr_events_attr_get_ptr<cs_lnum_t>(events, event_id, CS_LAGR_E_FLAG);
 
-    cs_real_t *e_vel_post = cs_lagr_events_attr(events,
-                                                event_id,
-                                                CS_LAGR_E_VELOCITY);
+    cs_real_t *e_vel_post =
+      cs_lagr_events_attr_get_ptr<cs_real_t>(events, event_id,
+                                             CS_LAGR_E_VELOCITY);
 
     *e_flag = *e_flag | event_flag;
 
@@ -1854,11 +1860,12 @@ _local_propagation(cs_lagr_particle_set_t         *particles,
   cs_lagr_tracking_info_t *p_info = (cs_lagr_tracking_info_t *)particle;
 
   cs_real_t  *particle_coord
-    = cs_lagr_particle_attr(particle, p_am, CS_LAGR_COORDS);
+    = cs_lagr_particle_attr_get_ptr<cs_real_t>(particle, p_am, CS_LAGR_COORDS);
   cs_real_t  *prev_location = p_info->start_coords;
 
   cs_real_t  *particle_velocity_seen
-    = cs_lagr_particle_attr(particle, p_am, CS_LAGR_VELOCITY_SEEN);
+    = cs_lagr_particle_attr_get_ptr<cs_real_t>(particle, p_am,
+                                               CS_LAGR_VELOCITY_SEEN);
 
   for (int k = 0; k < 3; k++)
     disp[k] = particle_coord[k] - prev_location[k];
@@ -1883,14 +1890,15 @@ _local_propagation(cs_lagr_particle_set_t         *particles,
   cs_lnum_t  *neighbor_face_id = &null_face_id;
   if (p_am->size[CS_LAGR_NEIGHBOR_FACE_ID] > 0)
     neighbor_face_id
-      = cs_lagr_particle_attr(particle, p_am, CS_LAGR_NEIGHBOR_FACE_ID);
+      = cs_lagr_particle_attr_get_ptr<cs_lnum_t>(particle, p_am,
+                                                 CS_LAGR_NEIGHBOR_FACE_ID);
 
   /* Particle y+  (allow tes even without attribute */
   cs_real_t  null_yplus = 0.;
   cs_real_t  *particle_yplus = &null_yplus;
   if (p_am->size[CS_LAGR_YPLUS] > 0)
     particle_yplus
-      = cs_lagr_particle_attr(particle, p_am, CS_LAGR_YPLUS);
+      = cs_lagr_particle_attr_get_ptr<cs_real_t>(particle, p_am, CS_LAGR_YPLUS);
 
   /*  particle_state is defined at the top of this file */
 
@@ -1976,7 +1984,8 @@ _local_propagation(cs_lagr_particle_set_t         *particles,
     int n_out = 0;
 
     const cs_real_t  *next_location
-      = cs_lagr_particle_attr_const(particle, p_am, CS_LAGR_COORDS);
+      = cs_lagr_particle_attr_get_const_ptr<cs_real_t>(particle, p_am,
+                                                       CS_LAGR_COORDS);
 
     /* Loop on faces to see if the particle trajectory crosses it*/
 
@@ -2705,14 +2714,14 @@ _sync_particle_set(cs_lagr_particle_set_t  *particles,
         /* Apply transformation to the coordinates in any case */
 
         _apply_vector_transfo((const cs_real_t (*)[4])matrix,
-                              cs_lagr_particles_attr(particles, i,
+                        cs_lagr_particles_attr_get_ptr<cs_real_t>(particles, i,
                                                      CS_LAGR_COORDS));
 
         _apply_vector_transfo((const cs_real_t (*)[4])matrix,
                               _tracking_info(particles, i)->start_coords);
 
         _apply_vector_transfo((const cs_real_t (*)[4])matrix,
-                              cs_lagr_particles_attr_n(particles, i, 1,
+                    cs_lagr_particles_attr_n_get_ptr<cs_real_t>(particles, i, 1,
                                                        CS_LAGR_COORDS));
 
         /* Apply rotation to velocity vectors in case of rotation */
@@ -2722,22 +2731,22 @@ _sync_particle_set(cs_lagr_particle_set_t  *particles,
           /* Rotation of the velocity */
 
           _apply_vector_rotation((const cs_real_t (*)[4])matrix,
-                                 cs_lagr_particles_attr(particles, i,
+                        cs_lagr_particles_attr_get_ptr<cs_real_t>(particles, i,
                                                         CS_LAGR_VELOCITY));
 
           _apply_vector_rotation((const cs_real_t (*)[4])matrix,
-                                 cs_lagr_particles_attr_n(particles, i, 1,
+                    cs_lagr_particles_attr_n_get_ptr<cs_real_t>(particles, i, 1,
                                                           CS_LAGR_VELOCITY));
 
           /* Rotation of the velocity seen */
 
           _apply_vector_rotation((const cs_real_t (*)[4])matrix,
-                                 cs_lagr_particles_attr(particles, i,
+                         cs_lagr_particles_attr_get_ptr<cs_real_t>(particles, i,
                                                         CS_LAGR_VELOCITY_SEEN));
 
           _apply_vector_rotation((const cs_real_t (*)[4])matrix,
-                                 cs_lagr_particles_attr_n(particles, i, 1,
-                                                          CS_LAGR_VELOCITY_SEEN));
+                    cs_lagr_particles_attr_n_get_ptr<cs_real_t>(particles, i, 1,
+                                                        CS_LAGR_VELOCITY_SEEN));
 
         } /* Specific treatment in case of rotation for the velocities */
 
@@ -2889,7 +2898,8 @@ _initialize_displacement(cs_lagr_particle_set_t  *particles,
     /* Coordinates of the particle */
 
     cs_real_t *prv_part_coord
-      = cs_lagr_particles_attr_n(particles, i, 1, CS_LAGR_COORDS);
+      = cs_lagr_particles_attr_n_get_ptr<cs_real_t>(particles, i, 1,
+                                                    CS_LAGR_COORDS);
 
     _tracking_info(particles, i)->start_coords[0] = prv_part_coord[0];
     _tracking_info(particles, i)->start_coords[1] = prv_part_coord[1];
@@ -3110,14 +3120,15 @@ cs_lagr_tracking_particle_movement(const cs_real_t  visc_length[],
 
         /* Main particle displacement stage */
 
-        cur_part_state = _local_propagation(particles,
-                                            events,
-                                            i,
-                                            displacement_step_id,
-                                            failsafe_mode,
-                                            b_face_zone_id,
-                                            visc_length,
-                                            u);
+        cur_part_state =
+          (cs_lagr_tracking_state_t) _local_propagation(particles,
+                                                        events,
+                                                        i,
+                                                        displacement_step_id,
+                                                        failsafe_mode,
+                                                        b_face_zone_id,
+                                                        visc_length,
+                                                        u);
 
         _tracking_info(particles, i)->state = cur_part_state;
 
@@ -3151,9 +3162,11 @@ cs_lagr_tracking_particle_movement(const cs_real_t  visc_length[],
       unsigned char *particle = particles->p_buffer + p_am->extents * i;
 
       cs_lnum_t *neighbor_face_id
-        = cs_lagr_particle_attr(particle, p_am, CS_LAGR_NEIGHBOR_FACE_ID);
+        = cs_lagr_particle_attr_get_ptr<cs_lnum_t>(particle, p_am,
+                                                   CS_LAGR_NEIGHBOR_FACE_ID);
       cs_real_t *particle_yplus
-        = cs_lagr_particle_attr(particle, p_am, CS_LAGR_YPLUS);
+        = cs_lagr_particle_attr_get_ptr<cs_real_t>(particle, p_am,
+                                                   CS_LAGR_YPLUS);
 
       cs_lagr_test_wall_cell(particle, p_am, visc_length,
                              particle_yplus, neighbor_face_id);
@@ -3301,7 +3314,8 @@ cs_lagr_test_wall_cell(const void                     *particle,
     = (const cs_real_3_t *restrict)cs_glob_mesh_quantities->b_face_cog;
 
   const cs_real_t  *particle_coord
-    = cs_lagr_particle_attr_const(particle, p_am, CS_LAGR_COORDS);
+    = cs_lagr_particle_attr_get_const_ptr<cs_real_t>(particle, p_am,
+                                                     CS_LAGR_COORDS);
 
   cs_lnum_t  start = cell_b_face_idx[cell_id];
   cs_lnum_t  end =  cell_b_face_idx[cell_id + 1];

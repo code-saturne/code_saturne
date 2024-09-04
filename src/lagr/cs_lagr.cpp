@@ -183,9 +183,9 @@ static cs_lagr_model_t  _lagr_model
      .consolidation = 0,
      .precipitation = 0,
      .fouling = 0,
-     .n_stat_classes = 0,
      .agglomeration = 0,
      .fragmentation = 0,
+     .n_stat_classes = 0,
      .n_user_variables = 0,
      .viscous_terms = false};
 
@@ -2006,8 +2006,9 @@ cs_lagr_solve_time_step(const int         itypfb[],
 
         for (cs_lnum_t ip = 0; ip < p_set->n_particles; ip++) {
 
-          cs_real_t *jbx1 = cs_lagr_particles_attr(p_set, ip,
-                                                   CS_LAGR_TURB_STATE_1);
+          cs_real_t *jbx1 =
+            cs_lagr_particles_attr_get_ptr<cs_real_t>(p_set, ip,
+                                                      CS_LAGR_TURB_STATE_1);
 
           for (cs_lnum_t ii = 0; ii < 3; ii++) {
 
@@ -2067,7 +2068,9 @@ cs_lagr_solve_time_step(const int         itypfb[],
 
         for (cs_lnum_t ip = 0; ip < p_set->n_particles; ip++) {
 
-          cs_real_t *jbx1 = cs_lagr_particles_attr(p_set, ip, CS_LAGR_TURB_STATE_1);
+          cs_real_t *jbx1 =
+            cs_lagr_particles_attr_get_ptr<cs_real_t>(p_set,
+                                                      ip, CS_LAGR_TURB_STATE_1);
 
           for (int  ii = 0; ii < 3; ii++)
             jbx1[ii] = bx[ip][ii][0];

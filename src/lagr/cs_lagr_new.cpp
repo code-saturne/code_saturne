@@ -358,7 +358,7 @@ cs_lagr_new(cs_lagr_particle_set_t  *particles,
       cs_lagr_particles_set_lnum(particles, p_id, CS_LAGR_CELL_ID, c_id);
 
       cs_real_t *part_coord
-        = cs_lagr_particles_attr(particles, p_id, CS_LAGR_COORDS);
+        = cs_lagr_particles_attr_get_ptr<cs_real_t>(particles, p_id, CS_LAGR_COORDS);
 
       _random_point_in_face(n_vertices,
                             vertex_ids,
@@ -563,7 +563,7 @@ cs_lagr_new_v(cs_lagr_particle_set_t  *particles,
       cs_lagr_particles_set_lnum(particles, p_id, CS_LAGR_CELL_ID, cell_id);
 
       cs_real_t *part_coord
-        = cs_lagr_particles_attr(particles, p_id, CS_LAGR_COORDS);
+        = cs_lagr_particles_attr_get_ptr<cs_real_t>(particles, p_id, CS_LAGR_COORDS);
 
       /* search for matching center-to-face cone */
 
@@ -881,8 +881,9 @@ cs_lagr_new_particle_init(const cs_lnum_t                 particle_range[2],
 
     /* Particle velocity components */
 
-    cs_real_t *part_vel = cs_lagr_particle_attr(particle, p_am,
-                                                CS_LAGR_VELOCITY);
+    cs_real_t *part_vel =
+      cs_lagr_particle_attr_get_ptr<cs_real_t>(particle, p_am,
+                                               CS_LAGR_VELOCITY);
 
     if (zis->velocity_profile == CS_LAGR_IN_IMPOSED_FLUID_VALUE) {
       for (cs_lnum_t i = 0; i < 3; i++)
@@ -892,7 +893,8 @@ cs_lagr_new_particle_init(const cs_lnum_t                 particle_range[2],
     /* velocity as seen from fluid */
 
     cs_real_t  *vel_seen
-      = cs_lagr_particle_attr(particle, p_am, CS_LAGR_VELOCITY_SEEN);
+      = cs_lagr_particle_attr_get_ptr<cs_real_t>(particle, p_am,
+                                                 CS_LAGR_VELOCITY_SEEN);
 
     for (cs_lnum_t i = 0; i < 3; i++) {
       vel_seen[i] = vel[c_id][i]
@@ -937,16 +939,17 @@ cs_lagr_new_particle_init(const cs_lnum_t                 particle_range[2],
         || shape == CS_LAGR_SHAPE_SPHEROID_JEFFERY_MODEL) {
 
       /* Spherical radii a b c */
-      cs_real_t *radii = cs_lagr_particle_attr(particle, p_am,
-                                               CS_LAGR_RADII);
+      auto *radii = cs_lagr_particle_attr_get_ptr<cs_real_t>(particle, p_am,
+                                                             CS_LAGR_RADII);
 
       for (cs_lnum_t i = 0; i < 3; i++) {
         radii[i] = zis->radii[i];
       }
 
       /* Shape parameters */
-      cs_real_t *shape_param = cs_lagr_particle_attr(particle, p_am,
-                                                     CS_LAGR_SHAPE_PARAM);
+      auto *shape_param =
+        cs_lagr_particle_attr_get_ptr<cs_real_t>(particle, p_am,
+                                                 CS_LAGR_SHAPE_PARAM);
 
       /* Compute shape parameters from radii */
       /* FIXME valid for all spheroids only (a = b, c > a,b ) */
@@ -981,10 +984,12 @@ cs_lagr_new_particle_init(const cs_lnum_t                 particle_range[2],
 
       if (shape == CS_LAGR_SHAPE_SPHEROID_STOC_MODEL) {
         /* Orientation */
-        cs_real_t *orientation = cs_lagr_particle_attr(particle, p_am,
-                                                        CS_LAGR_ORIENTATION);
-        cs_real_t *quaternion = cs_lagr_particle_attr(particle, p_am,
-                                                        CS_LAGR_QUATERNION);
+        auto *orientation =
+          cs_lagr_particle_attr_get_ptr<cs_real_t>(particle, p_am,
+                                                   CS_LAGR_ORIENTATION);
+        auto *quaternion =
+          cs_lagr_particle_attr_get_ptr<cs_real_t>(particle, p_am,
+                                                   CS_LAGR_QUATERNION);
         for (cs_lnum_t i = 0; i < 3; i++) {
           orientation[i] = zis->orientation[i];
         }
@@ -1010,8 +1015,8 @@ cs_lagr_new_particle_init(const cs_lnum_t                 particle_range[2],
       if (shape == CS_LAGR_SHAPE_SPHEROID_JEFFERY_MODEL) {
 
         /* Euler parameters */
-        cs_real_t *euler = cs_lagr_particle_attr(particle, p_am,
-                                                 CS_LAGR_EULER);
+        auto *euler = cs_lagr_particle_attr_get_ptr<cs_real_t>(particle, p_am,
+                                                               CS_LAGR_EULER);
 
         for (cs_lnum_t i = 0; i < 4; i++)
           euler[i] = zis->euler[i];
@@ -1091,8 +1096,9 @@ cs_lagr_new_particle_init(const cs_lnum_t                 particle_range[2],
                                     trans_m,
                                     grad_vf_r);
 
-        cs_real_t *ang_vel = cs_lagr_particle_attr(particle, p_am,
-            CS_LAGR_ANGULAR_VEL);
+        auto *ang_vel =
+          cs_lagr_particle_attr_get_ptr<cs_real_t>(particle, p_am,
+                                                   CS_LAGR_ANGULAR_VEL);
 
         ang_vel[0] = 0.5*(grad_vf_r[2][1] - grad_vf_r[1][2]);
         ang_vel[1] = 0.5*(grad_vf_r[0][2] - grad_vf_r[2][0]);
@@ -1174,8 +1180,8 @@ cs_lagr_new_particle_init(const cs_lnum_t                 particle_range[2],
       cs_lagr_particle_set_real(particle, p_am, CS_LAGR_FLUID_TEMPERATURE,
                                 cval_t[c_id] + tscl_shift);
 
-      cs_real_t *particle_temp
-        = cs_lagr_particle_attr(particle, p_am, CS_LAGR_TEMPERATURE);
+      auto *particle_temp
+        = cs_lagr_particle_attr_get_ptr<cs_real_t>(particle, p_am, CS_LAGR_TEMPERATURE);
       for (int ilayer = 0;
            ilayer < cs_glob_lagr_model->n_temperature_layers;
            ilayer++)
@@ -1192,9 +1198,11 @@ cs_lagr_new_particle_init(const cs_lnum_t                 particle_range[2],
                                 xwatch[coal_id] * mass);
 
       cs_real_t *particle_coal_mass
-          = cs_lagr_particle_attr(particle, p_am, CS_LAGR_COAL_MASS);
+          = cs_lagr_particle_attr_get_ptr<cs_real_t>(particle, p_am,
+                                                     CS_LAGR_COAL_MASS);
       cs_real_t *particle_coke_mass
-        = cs_lagr_particle_attr(particle, p_am, CS_LAGR_COKE_MASS);
+        = cs_lagr_particle_attr_get_ptr<cs_real_t>(particle, p_am,
+                                                   CS_LAGR_COKE_MASS);
       for (int ilayer = 0;
            ilayer < cs_glob_lagr_model->n_temperature_layers;
            ilayer++) {
@@ -1218,7 +1226,8 @@ cs_lagr_new_particle_init(const cs_lnum_t                 particle_range[2],
          cs_lagr_particle_get_real(particle, p_am, CS_LAGR_DIAMETER));
 
       cs_real_t *particle_coal_density
-        = cs_lagr_particle_attr(particle, p_am, CS_LAGR_COAL_DENSITY);
+        = cs_lagr_particle_attr_get_ptr<cs_real_t>(particle, p_am,
+                                                   CS_LAGR_COAL_DENSITY);
       for (int ilayer = 0;
            ilayer < cs_glob_lagr_model->n_temperature_layers;
            ilayer++)
@@ -1293,9 +1302,11 @@ cs_lagr_new_particle_init(const cs_lnum_t                 particle_range[2],
           cs_real_t  *particle_yplus;
 
           neighbor_face_id
-            = cs_lagr_particle_attr(particle, p_am, CS_LAGR_NEIGHBOR_FACE_ID);
+            = cs_lagr_particle_attr_get_ptr<cs_lnum_t>(particle, p_am,
+                                                       CS_LAGR_NEIGHBOR_FACE_ID);
           particle_yplus
-            = cs_lagr_particle_attr(particle, p_am, CS_LAGR_YPLUS);
+            = cs_lagr_particle_attr_get_ptr<cs_real_t>(particle, p_am,
+                                                       CS_LAGR_YPLUS);
 
           cs_lagr_test_wall_cell(particle, p_am, visc_length,
                                  particle_yplus, neighbor_face_id);
@@ -1386,7 +1397,8 @@ cs_lagr_new_particle_init(const cs_lnum_t                 particle_range[2],
 
     if (cs_glob_lagr_model->n_user_variables > 0) {
       cs_real_t  *user_attr
-        = cs_lagr_particle_attr(particle, p_am, CS_LAGR_USER);
+        = cs_lagr_particle_attr_get_ptr<cs_real_t>(particle, p_am,
+                                                   CS_LAGR_USER);
       for (int i = 0;
            i < cs_glob_lagr_model->n_user_variables;
            i++)

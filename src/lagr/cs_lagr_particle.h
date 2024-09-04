@@ -1489,4 +1489,224 @@ cs_lagr_set_n_user_variables(int  n_user_variables);
 
 END_C_DECLS
 
+/*============================================================================
+ * Public C++ templates
+ *============================================================================*/
+
+#if defined(__cplusplus)
+
+template <typename T>
+T *
+cs_lagr_particles_attr_get_ptr(cs_lagr_particle_set_t  *particle_set,
+                               cs_lnum_t                particle_id,
+                               cs_lagr_attribute_t      attr)
+{
+  assert(particle_set->p_am->count[0][attr] > 0);
+
+  return   (T *)( particle_set->p_buffer
+                           + particle_set->p_am->extents*particle_id
+                           + particle_set->p_am->displ[0][attr]);
+}
+
+template <typename T>
+const T *
+cs_lagr_particles_attr_get_const_ptr(const cs_lagr_particle_set_t  *particle_set,
+                                     cs_lnum_t                      particle_id,
+                                     cs_lagr_attribute_t            attr)
+{
+  assert(particle_set->p_am->count[0][attr] > 0);
+
+  return   (const T *)( particle_set->p_buffer
+                                 + particle_set->p_am->extents*particle_id
+                                 + particle_set->p_am->displ[0][attr]);
+}
+
+template <typename T>
+T *
+cs_lagr_particles_attr_n_get_ptr(cs_lagr_particle_set_t  *particle_set,
+                                 cs_lnum_t                particle_id,
+                                 int                      time_id,
+                                 cs_lagr_attribute_t      attr)
+{
+  assert(particle_set->p_am->count[time_id][attr] > 0);
+
+  return (T *)( particle_set->p_buffer
+                         + particle_set->p_am->extents*particle_id
+                         + particle_set->p_am->displ[time_id][attr]);
+}
+
+template <typename T>
+const T *
+cs_lagr_particles_attr_n_get_const_ptr(const cs_lagr_particle_set_t *particle_set,
+                                       cs_lnum_t                     particle_id,
+                                       int                           time_id,
+                                       cs_lagr_attribute_t           attr)
+{
+  assert(particle_set->p_am->count[time_id][attr] > 0);
+
+  return (const T *)( particle_set->p_buffer
+                               + particle_set->p_am->extents*particle_id
+                               + particle_set->p_am->displ[time_id][attr]);
+}
+
+template <typename T>
+T
+cs_lagr_particles_attr_get_val(const cs_lagr_particle_set_t  *particle_set,
+                               cs_lnum_t                      particle_id,
+                               cs_lagr_attribute_t            attr)
+{
+  assert(particle_set->p_am->count[0][attr] > 0);
+
+  return *(T *)( particle_set->p_buffer
+                         + particle_set->p_am->extents*particle_id
+                         + particle_set->p_am->displ[0][attr]);
+}
+
+template <typename T>
+void
+cs_lagr_particles_attr_set_val(cs_lagr_particle_set_t  *particle_set,
+                               cs_lnum_t                particle_id,
+                               cs_lagr_attribute_t      attr,
+                               T                        value)
+{
+  assert(particle_set->p_am->count[0][attr] > 0);
+
+  *(T *)( particle_set->p_buffer
+                  + particle_set->p_am->extents*particle_id
+                  + particle_set->p_am->displ[0][attr]) = value;
+}
+
+template <typename T>
+T
+cs_lagr_particles_attr_n_get_val(const cs_lagr_particle_set_t  *particle_set,
+                                 cs_lnum_t                      particle_id,
+                                 int                            time_id,
+                                 cs_lagr_attribute_t            attr)
+{
+  assert(particle_set->p_am->count[time_id][attr] > 0);
+
+  return *(T *)( particle_set->p_buffer
+                         + particle_set->p_am->extents*particle_id
+                         + particle_set->p_am->displ[time_id][attr]);
+}
+
+template <typename T>
+void
+cs_lagr_particles_attr_n_set_val(cs_lagr_particle_set_t  *particle_set,
+                                 cs_lnum_t                particle_id,
+                                 int                      time_id,
+                                 cs_lagr_attribute_t      attr,
+                                 T                        value)
+{
+  assert(particle_set->p_am->count[time_id][attr] > 0);
+
+  *(T *)( particle_set->p_buffer
+        + particle_set->p_am->extents*particle_id
+        + particle_set->p_am->displ[time_id][attr]) = value;
+}
+
+template <typename T>
+T *
+cs_lagr_particle_attr_get_ptr(void                           *particle,
+                              const cs_lagr_attribute_map_t  *attr_map,
+                              cs_lagr_attribute_t             attr)
+{
+  assert(attr_map->count[0][attr] > 0);
+
+  return  (T *)((unsigned char *)particle + attr_map->displ[0][attr]);
+}
+
+template <typename T>
+const T *
+cs_lagr_particle_attr_get_const_ptr(const void                     *particle,
+                                    const cs_lagr_attribute_map_t  *attr_map,
+                                    cs_lagr_attribute_t             attr)
+{
+  assert(attr_map->count[0][attr] > 0);
+
+  return  (const T *)(  (const unsigned char *)particle
+                      + attr_map->displ[0][attr]);
+}
+
+template <typename T>
+T *
+cs_lagr_particle_attr_n_get_ptr(void                           *particle,
+                                const cs_lagr_attribute_map_t  *attr_map,
+                                int                             time_id,
+                                cs_lagr_attribute_t             attr)
+{
+  assert(attr_map->count[time_id][attr] > 0);
+
+  return  (T *)((unsigned char *)particle + attr_map->displ[time_id][attr]);
+}
+
+template <typename T>
+const T *
+cs_lagr_particle_attr_n_get_const_ptr(const void                     *particle,
+                                      const cs_lagr_attribute_map_t  *attr_map,
+                                      int                             time_id,
+                                      cs_lagr_attribute_t             attr)
+{
+  assert(attr_map->count[time_id][attr] > 0);
+
+  return  (const T *)(  (const unsigned char *)particle
+                      + attr_map->displ[time_id][attr]);
+}
+
+template <typename T>
+T
+cs_lagr_particle_attr_get_val(const void                     *particle,
+                              const cs_lagr_attribute_map_t  *attr_map,
+                              cs_lagr_attribute_t             attr)
+{
+  assert(attr_map->count[0][attr] > 0);
+
+  return  *((const T *)(  (const unsigned char *)particle
+                        + attr_map->displ[0][attr]));
+}
+
+template <typename T>
+void
+cs_lagr_particle_attr_set_val(void                           *particle,
+                              const cs_lagr_attribute_map_t  *attr_map,
+                              cs_lagr_attribute_t             attr,
+                              T                               value)
+{
+  assert(attr_map->count[0][attr] > 0);
+
+  *((T *)((unsigned char *)particle + attr_map->displ[0][attr]))
+    = value;
+}
+
+template <typename T>
+T
+cs_lagr_particle_attr_n_get_val(const void                     *particle,
+                                const cs_lagr_attribute_map_t  *attr_map,
+                                int                             time_id,
+                                cs_lagr_attribute_t             attr)
+{
+  assert(attr_map->count[time_id][attr] > 0);
+
+  return  *((const T *)(  (const unsigned char *)particle
+                        + attr_map->displ[time_id][attr]));
+}
+
+template <typename T>
+void
+cs_lagr_particle_attr_n_set_val(void                           *particle,
+                                const cs_lagr_attribute_map_t  *attr_map,
+                                int                             time_id,
+                                cs_lagr_attribute_t             attr,
+                                T                               value)
+{
+  assert(attr_map->count[time_id][attr] > 0);
+
+  *((T *)(  (unsigned char *)particle
+          + attr_map->displ[time_id][attr])) = value;
+}
+
+#endif
+
+/*----------------------------------------------------------------------------*/
+
 #endif /* __CS_LAGR_PARTICLE_H__ */

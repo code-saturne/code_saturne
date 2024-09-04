@@ -134,18 +134,18 @@ _insert_particles(cs_lnum_t   newpart,
 
   cs_lagr_particles_set_real(p_set, p_id, CS_LAGR_MASS, mass);
 
-  cs_real_t * inserted_vel = cs_lagr_particles_attr(p_set, p_id,
-                                                    CS_LAGR_VELOCITY);
-  cs_real_t * idx_vel = cs_lagr_particles_attr(p_set, corr[idx],
-                                               CS_LAGR_VELOCITY);
+  auto *inserted_vel = cs_lagr_particles_attr_get_ptr<cs_real_t>(p_set, p_id,
+                                                                  CS_LAGR_VELOCITY);
+  auto *idx_vel = cs_lagr_particles_attr_get_ptr<cs_real_t>(p_set, corr[idx],
+                                                            CS_LAGR_VELOCITY);
   inserted_vel[0] = idx_vel[0];
   inserted_vel[1] = idx_vel[1];
   inserted_vel[2] = idx_vel[2];
 
-  cs_real_t * inserted_vel_f = cs_lagr_particles_attr(p_set, p_id,
-                                                      CS_LAGR_VELOCITY_SEEN);
-  cs_real_t * idx_vel_f = cs_lagr_particles_attr(p_set, corr[idx],
-                                                 CS_LAGR_VELOCITY_SEEN);
+  auto *inserted_vel_f = cs_lagr_particles_attr_get_ptr<cs_real_t>(p_set, p_id,
+                                                                   CS_LAGR_VELOCITY_SEEN);
+  auto *idx_vel_f = cs_lagr_particles_attr_get_ptr<cs_real_t>(p_set, corr[idx],
+                                                              CS_LAGR_VELOCITY_SEEN);
   inserted_vel_f[0] = idx_vel_f[0];
   inserted_vel_f[1] = idx_vel_f[1];
   inserted_vel_f[2] = idx_vel_f[2];

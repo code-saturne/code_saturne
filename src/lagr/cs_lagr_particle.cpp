@@ -309,8 +309,12 @@ _create_attr_map(cs_lnum_t attr_keys[CS_LAGR_N_ATTRIBUTES][3])
 
   }
 
-  else { /* Variant:
-            to avoid issue with cast and no typdef, use lower level function */
+  /*
+   * Commented out for the moment, since not used and does not compile
+   * in C++
+  else {
+    // Variant:
+    // to avoid issue with cast and no typdef, use lower level function
 
     p_am->displ = bft_mem_malloc(2, sizeof(p_am->displ[0]),
                                  "p_am->displ", __FILE__, __LINE__);
@@ -318,10 +322,12 @@ _create_attr_map(cs_lnum_t attr_keys[CS_LAGR_N_ATTRIBUTES][3])
                                  "p_am->count", __FILE__, __LINE__);
 
   }
+  */
 
   p_am->source_term_displ = NULL;
 
-  for (attr = 0; attr < CS_LAGR_N_ATTRIBUTES; attr++) {
+  for (int i_attr = 0; i_attr < CS_LAGR_N_ATTRIBUTES; i_attr++) {
+    attr = static_cast<cs_lagr_attribute_t>(i_attr);
     p_am->size[attr] = 0;
     p_am->datatype[attr] = CS_REAL_TYPE;
     for (int time_id = 0; time_id < p_am->n_time_vals; time_id++) {
@@ -352,7 +358,7 @@ _create_attr_map(cs_lnum_t attr_keys[CS_LAGR_N_ATTRIBUTES][3])
       int min_time_id = 0;
       int max_time_id = 0;
 
-      attr = order[i];
+      attr = static_cast<cs_lagr_attribute_t>(order[i]);
 
       if (time_id == 0)
         p_am->datatype[attr] = CS_DATATYPE_NULL;
@@ -429,7 +435,7 @@ _create_attr_map(cs_lnum_t attr_keys[CS_LAGR_N_ATTRIBUTES][3])
 
     for (int i = 0; i < CS_LAGR_N_ATTRIBUTES; i++) {
 
-      attr = order[i];
+      attr = static_cast<cs_lagr_attribute_t>(order[i]);
 
       /* Add attribute to map if in CS_LAGR_P_RVARS array */
 
@@ -567,16 +573,20 @@ _dump_particle(const cs_lagr_particle_set_t  *particles,
     else
       bft_printf("    values at time: n-%d\n", time_id);
 
-    for (cs_lagr_attribute_t attr = 0;
-         attr < CS_LAGR_N_ATTRIBUTES;
-         attr++) {
+    for (int i_attr = 0;
+         i_attr < CS_LAGR_N_ATTRIBUTES;
+         i_attr++) {
+      auto attr = static_cast<cs_lagr_attribute_t>(i_attr);
       if (am->count[time_id][attr] > 0) {
         const char *attr_name = cs_lagr_attribute_name[attr];
         switch (am->datatype[attr]) {
         case CS_LNUM_TYPE:
           {
             const cs_lnum_t *v
-              = cs_lagr_particle_attr_n_const(p, particles->p_am, time_id, attr);
+              = cs_lagr_particle_attr_n_get_const_ptr<cs_lnum_t>(p,
+                                                                 particles->p_am,
+                                                                 time_id,
+                                                                 attr);
             bft_printf("      %24s: %10ld\n", attr_name, (long)v[0]);
             for (int i = 1; i < am->count[time_id][attr]; i++)
               bft_printf("      %24s: %10ld\n", " ", (long)v[i]);
@@ -585,7 +595,10 @@ _dump_particle(const cs_lagr_particle_set_t  *particles,
         case CS_GNUM_TYPE:
           {
             const cs_gnum_t *v
-              = cs_lagr_particle_attr_n_const(p, particles->p_am, time_id, attr);
+              = cs_lagr_particle_attr_n_get_const_ptr<cs_gnum_t>(p,
+                                                                 particles->p_am,
+                                                                 time_id,
+                                                                 attr);
             bft_printf("      %24s: %10lu\n", attr_name, (unsigned long)v[0]);
             for (int i = 1; i < am->count[time_id][attr]; i++)
               bft_printf("      %24s: %10lu\n", " ", (unsigned long)v[i]);
@@ -594,7 +607,10 @@ _dump_particle(const cs_lagr_particle_set_t  *particles,
         case CS_REAL_TYPE:
           {
             const cs_real_t *v
-              = cs_lagr_particle_attr_n_const(p, particles->p_am, time_id, attr);
+              = cs_lagr_particle_attr_n_get_const_ptr<cs_real_t>(p,
+                                                                 particles->p_am,
+                                                                 time_id,
+                                                                 attr);
             bft_printf("      %24s: %10.3g\n", attr_name, v[0]);
             for (int i = 1; i < am->count[time_id][attr]; i++)
               bft_printf("      %24s: %10.3g\n", " ", v[i]);
@@ -1282,9 +1298,10 @@ cs_lagr_particles_current_to_previous(cs_lagr_particle_set_t  *particles,
   const cs_lagr_attribute_map_t  *p_am = particles->p_am;
   unsigned char *p_buf = particles->p_buffer + p_am->extents*(particle_id);
 
-  for (cs_lagr_attribute_t attr = 0;
-       attr < CS_LAGR_N_ATTRIBUTES;
-       attr++) {
+  for (int i_attr = 0;
+       i_attr < CS_LAGR_N_ATTRIBUTES;
+       i_attr++) {
+    auto attr = static_cast<cs_lagr_attribute_t>(i_attr);
     if (p_am->count[1][attr] > 0 && p_am->count[0][attr] > 0) {
       memcpy(p_buf + p_am->displ[1][attr],
              p_buf + p_am->displ[0][attr],

@@ -625,10 +625,11 @@ cs_lagr_agglomeration(cs_lnum_t  cell_id,
 
         /* Set particle velocity */
 
-        cs_real_t * inserted_vel
-          = cs_lagr_particles_attr(p_set, inserted_parts-1,
-                                   CS_LAGR_VELOCITY);
-        cs_real_t * p1_vel = cs_lagr_particles_attr(p_set, p1+start_particle,
+        cs_real_t *inserted_vel
+          = cs_lagr_particles_attr_get_ptr<cs_real_t>(p_set, inserted_parts-1,
+                                                      CS_LAGR_VELOCITY);
+        cs_real_t * p1_vel =
+          cs_lagr_particles_attr_get_ptr<cs_real_t>(p_set, p1+start_particle,
                                                     CS_LAGR_VELOCITY);
         inserted_vel[0] = p1_vel[0];
         inserted_vel[1] = p1_vel[1];
@@ -636,11 +637,11 @@ cs_lagr_agglomeration(cs_lnum_t  cell_id,
 
         /* Set particle velocity seen*/
         cs_real_t * inserted_vel_seen
-          = cs_lagr_particles_attr(p_set, inserted_parts-1,
-                                   CS_LAGR_VELOCITY_SEEN);
+          = cs_lagr_particles_attr_get_ptr<cs_real_t>(p_set, inserted_parts-1,
+                                                      CS_LAGR_VELOCITY_SEEN);
         cs_real_t * p1_vel_seen
-          = cs_lagr_particles_attr(p_set, p1+start_particle,
-                                   CS_LAGR_VELOCITY_SEEN);
+          = cs_lagr_particles_attr_get_ptr<cs_real_t>(p_set, p1+start_particle,
+                                                      CS_LAGR_VELOCITY_SEEN);
         inserted_vel_seen[0] = p1_vel_seen[0];
         inserted_vel_seen[1] = p1_vel_seen[1];
         inserted_vel_seen[2] = p1_vel_seen[2];

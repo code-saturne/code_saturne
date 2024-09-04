@@ -273,7 +273,7 @@ cs_lagr_get_particle_values(const cs_lagr_particle_set_t  *particles,
   ptrdiff_t  displ;
   cs_datatype_t _datatype;
   int  _count;
-  unsigned char *_values = values;
+  unsigned char *_values = static_cast<unsigned char *>(values);
 
   assert(particles != NULL);
 
@@ -375,7 +375,7 @@ cs_lagr_get_trajectory_values(const cs_lagr_particle_set_t  *particles,
   ptrdiff_t  displ, displ_p;
   cs_datatype_t _datatype;
   int  _count;
-  unsigned char *_values = segment_values;
+  unsigned char *_values = static_cast<unsigned char *>(segment_values);
 
   assert(particles != NULL);
 

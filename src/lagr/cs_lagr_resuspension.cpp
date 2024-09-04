@@ -137,13 +137,14 @@ _add_resuspension_event(cs_lagr_event_set_t     *events,
                           CS_LAGR_E_FACE_ID,
                           face_id);
 
-  cs_lnum_t *e_flag = cs_lagr_events_attr(events,
-                                          event_id,
-                                          CS_LAGR_E_FLAG);
+  cs_lnum_t *e_flag = cs_lagr_events_attr_get_ptr<cs_lnum_t>(events,
+                                                             event_id,
+                                                             CS_LAGR_E_FLAG);
 
-  cs_real_t *e_vel_post = cs_lagr_events_attr(events,
-                                              event_id,
-                                              CS_LAGR_E_VELOCITY);
+  cs_real_t *e_vel_post =
+    cs_lagr_events_attr_get_ptr<cs_real_t>(events,
+                                           event_id,
+                                           CS_LAGR_E_VELOCITY);
 
   *e_flag = *e_flag | CS_EVENT_RESUSPENSION;
 
@@ -211,9 +212,10 @@ cs_lagr_resuspension(void)
       = cs_lagr_particle_get_real(part, p_am, CS_LAGR_STAT_WEIGHT);
     cs_real_t p_diam = cs_lagr_particle_get_real(part, p_am, CS_LAGR_DIAMETER);
 
-    cs_real_t *part_vel = cs_lagr_particle_attr(part, p_am, CS_LAGR_VELOCITY);
+    cs_real_t *part_vel =
+      cs_lagr_particle_attr_get_ptr<cs_real_t>(part, p_am, CS_LAGR_VELOCITY);
     cs_real_t *prev_part_vel
-      = cs_lagr_particle_attr_n(part, p_am, 1, CS_LAGR_VELOCITY);
+      = cs_lagr_particle_attr_n_get_ptr<cs_real_t>(part, p_am, 1, CS_LAGR_VELOCITY);
 
     test_colli = 0;
 

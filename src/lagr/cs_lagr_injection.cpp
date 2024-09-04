@@ -667,8 +667,8 @@ _init_particles(cs_lagr_particle_set_t         *p_set,
 
       /* Particle velocity components */
 
-      cs_real_t *part_vel = cs_lagr_particle_attr(particle, p_am,
-                                                  CS_LAGR_VELOCITY);
+      auto *part_vel = cs_lagr_particle_attr_get_ptr<cs_real_t>(particle, p_am,
+                                                                CS_LAGR_VELOCITY);
 
       /* prescribed components */
       if (zis->velocity_profile == CS_LAGR_IN_IMPOSED_COMPONENTS) {
@@ -735,11 +735,11 @@ _check_particles(cs_lagr_particle_set_t         *p_set,
 
     for (int i_attr = 0; i_attr < 4; i_attr++) {
 
-      int attr = attrs[i_attr];
+      auto attr = static_cast<cs_lagr_attribute_t>(attrs[i_attr]);
 
       if (p_set->p_am->count[1][attr] > 0) {
 
-        cs_real_t val  = cs_lagr_particles_get_real(p_set, p_id, attr);
+        auto val  = cs_lagr_particles_attr_get_val<cs_real_t>(p_set, p_id, attr);
 
         if (val <= 0.0)
           bft_error(__FILE__, __LINE__, 0,
@@ -764,9 +764,9 @@ _check_particles(cs_lagr_particle_set_t         *p_set,
 
       for (int i_attr = 0; i_attr < 4; i_attr++) {
 
-        int attr = r01_attrs[i_attr];
+        auto attr = static_cast<cs_lagr_attribute_t>(r01_attrs[i_attr]);
         int n_vals = p_set->p_am->count[1][attr];
-        cs_real_t *vals = cs_lagr_particles_attr(p_set, p_id, attr);
+        auto *vals = cs_lagr_particles_attr_get_ptr<cs_real_t>(p_set, p_id, attr);
 
         for (int l_id = 0; l_id < n_vals; l_id++) {
           if (vals[l_id] < 0.0) {
@@ -793,8 +793,8 @@ _check_particles(cs_lagr_particle_set_t         *p_set,
 
       for (int i_attr = 0; i_attr < 2; i_attr++) {
 
-        int attr = r00_attrs[i_attr];
-        cs_real_t val = cs_lagr_particles_get_real(p_set, p_id, attr);
+        auto attr = static_cast<cs_lagr_attribute_t>(r00_attrs[i_attr]);
+        cs_real_t val = cs_lagr_particles_attr_get_val<cs_real_t>(p_set, p_id, attr);
 
         if (val < 0) {
           bft_error(__FILE__, __LINE__, 0,
@@ -1122,9 +1122,9 @@ cs_lagr_injection(int        time_id,
                                                            p_id,
                                                            CS_LAGR_CELL_ID);
             const cs_real_t *p_coords
-              = cs_lagr_particles_attr_const(p_set,
-                                             p_id,
-                                             CS_LAGR_COORDS);
+              = cs_lagr_particles_attr_get_const_ptr<cs_real_t>(p_set,
+                                                                p_id,
+                                                                CS_LAGR_COORDS);
 
             for (cs_lnum_t j = 0; j < 3; j++)
               saved_coords[i][j] = p_coords[j];
@@ -1156,14 +1156,14 @@ cs_lagr_injection(int        time_id,
                                          cs_glob_rank_id);
 
             const cs_real_t *p_coords
-              = cs_lagr_particles_attr_const(p_set,
-                                             p_id,
-                                             CS_LAGR_COORDS);
+              = cs_lagr_particles_attr_get_const_ptr<cs_real_t>(p_set,
+                                                                p_id,
+                                                                CS_LAGR_COORDS);
             cs_real_t *p_coords_prev
-              = cs_lagr_particles_attr_n(p_set,
-                                         p_id,
-                                         1,
-                                         CS_LAGR_COORDS);
+              = cs_lagr_particles_attr_n_get_ptr<cs_real_t>(p_set,
+                                                            p_id,
+                                                            1,
+                                                            CS_LAGR_COORDS);
             for (cs_lnum_t j = 0; j < 3; j++)
               p_coords_prev[j] = saved_coords[i][j];
 
@@ -1220,9 +1220,9 @@ cs_lagr_injection(int        time_id,
                                                           p_id,
                                                           CS_LAGR_CELL_ID);
             const cs_real_t *p_coords
-              = cs_lagr_particles_attr_const(p_set,
-                                             p_id,
-                                             CS_LAGR_COORDS);
+              = cs_lagr_particles_attr_get_const_ptr<cs_real_t>(p_set,
+                                                                p_id,
+                                                                CS_LAGR_COORDS);
 
             for (cs_lnum_t j = 0; j < 3; j++)
               saved_coords[i][j] = p_coords[j];
@@ -1249,10 +1249,10 @@ cs_lagr_injection(int        time_id,
                                          CS_LAGR_CELL_ID,
                                          saved_cell_id[i]);
             cs_real_t *p_coords_prev
-              = cs_lagr_particles_attr_n(p_set,
-                                         p_id,
-                                         1,
-                                         CS_LAGR_COORDS);
+              = cs_lagr_particles_attr_n_get_ptr<cs_real_t>(p_set,
+                                                            p_id,
+                                                            1,
+                                                            CS_LAGR_COORDS);
             for (cs_lnum_t j = 0; j < 3; j++)
               p_coords_prev[j] = saved_coords[i][j];
 
@@ -1266,11 +1266,11 @@ cs_lagr_injection(int        time_id,
             if (res_time < 0) {
 
               cs_real_t *p_coords
-                = cs_lagr_particles_attr(p_set,
-                                         p_id,
-                                         CS_LAGR_COORDS);
+                = cs_lagr_particles_attr_get_ptr<cs_real_t>(p_set,
+                                                            p_id,
+                                                            CS_LAGR_COORDS);
               cs_real_t *p_vel =
-                cs_lagr_particles_attr(p_set, p_id, CS_LAGR_VELOCITY);
+                cs_lagr_particles_attr_get_ptr<cs_real_t>(p_set, p_id, CS_LAGR_VELOCITY);
               cs_real_t t_fraction = (cs_glob_lagr_time_step->dtp + res_time);
 
               for (cs_lnum_t j = 0; j < 3; j++)
@@ -1321,9 +1321,10 @@ cs_lagr_injection(int        time_id,
                                       CS_LAGR_E_FACE_ID,
                                       face_id);
 
-              cs_lnum_t *e_flag = cs_lagr_events_attr(events,
-                                                      event_id,
-                                                      CS_LAGR_E_FLAG);
+              cs_lnum_t *e_flag =
+                cs_lagr_events_attr_get_ptr<cs_lnum_t>(events,
+                                                       event_id,
+                                                       CS_LAGR_E_FLAG);
 
               *e_flag = *e_flag | CS_EVENT_INFLOW;
 

@@ -95,7 +95,7 @@ typedef struct {
 
   cs_lagr_stat_group_t      group;        /* Statistics moment data type */
 
-  int                       class;        /* Matching statistical class number */
+  int                       class_id;     /* Matching statistical class id */
 
   int                       restart_id;   /* Matching id in restart info */
 
@@ -168,7 +168,7 @@ typedef struct {
   int                       stat_type;    /* Associated type id, or -1 */
   int                       component_id; /* Associated component id, or -1 */
 
-  int                       class;        /* Class number */
+  int                       class_id;     /* Class number */
 
   char                     *name;         /* Associated name, while f_id < 0 */
 
@@ -183,7 +183,7 @@ typedef struct {
 
   cs_lagr_stat_group_t      group;        /* Statistics moment data type */
 
-  int                       class;        /* Matching statistical class number */
+  int                       class_id;     /* Matching statistical class id */
 
   int                       f_id;         /* Associated field id */
 
@@ -229,7 +229,7 @@ typedef struct {
   int                    *wa_class;       /* Weight accumulator class */
 
   int                    *m_type;         /* Moment types */
-  int                    *class;          /* Moment class */
+  int                    *class_id;       /* Moment class id */
   int                    *location_id;    /* Moment location */
   int                    *dimension;      /* Moment dimension */
   int                    *stat_type;      /* Moment pointer number */
@@ -243,7 +243,7 @@ typedef struct {
 
 typedef struct {
 
-  int  class;        /* Matching statistical class number */
+  int  class_id;     /* Matching statistical class id */
   int  location_id;  /* Matching location id */
 
 } cs_lagr_moment_input_t;
@@ -844,8 +844,9 @@ _boundary_impact_angle(const void                 *input,
         = cs_glob_mesh_quantities->b_face_normal + face_id*3;
       const cs_real_t face_area
         = cs_glob_mesh_quantities->b_face_surf[face_id];
-      const cs_real_t  *part_vel = cs_lagr_events_attr_const(events, ev_id,
-                                                             CS_LAGR_VELOCITY);
+      const cs_real_t  *part_vel =
+        cs_lagr_events_attr_get_const_ptr<cs_real_t>(events, ev_id,
+                                                     CS_LAGR_VELOCITY);
       cs_real_t vel_norm = cs_math_3_norm(part_vel);
 
       if (face_area * vel_norm > m_epsilon)
@@ -897,8 +898,9 @@ _boundary_impact_velocity(const void                 *input,
       face_id = - 1;
 
     if (face_id >= 0) {
-      const cs_real_t  *part_vel = cs_lagr_events_attr_const(events, ev_id,
-                                                             CS_LAGR_VELOCITY);
+      const cs_real_t  *part_vel =
+        cs_lagr_events_attr_get_const_ptr<cs_real_t>(events, ev_id,
+                                                     CS_LAGR_VELOCITY);
       vel_norm = cs_math_3_norm(part_vel);
     }
 
@@ -1040,9 +1042,11 @@ _boundary_fouling_coke_fraction(const void                 *input,
       const cs_lnum_t n_layers = events->e_am->count[CS_LAGR_COAL_MASS];
 
       const cs_real_t *p_coal_mass
-        = cs_lagr_events_attr_const(events, ev_id, CS_LAGR_COAL_MASS);
+        = cs_lagr_events_attr_get_const_ptr<cs_real_t>(events, ev_id,
+                                                       CS_LAGR_COAL_MASS);
       const cs_real_t *p_coke_mass
-        = cs_lagr_events_attr_const(events, ev_id, CS_LAGR_COKE_MASS);
+        = cs_lagr_events_attr_get_const_ptr<cs_real_t>(events, ev_id,
+                                                       CS_LAGR_COKE_MASS);
 
       cs_real_t p_mass = cs_lagr_events_get_real(events,
                                                  ev_id,
@@ -1096,22 +1100,22 @@ _n_stat_types(void)
  * \brief Create statistical weight
  *
  * \param[in]   stat_group  statistics group (particle or event)
- * \param[in]   class       statistical class id, or 0
+ * \param[in]   class_id    statistical class id, or 0
  * \param[out]  name        resulting name
  */
 /*---------------------------------------------------------------------------*/
 
 static void
 _statistical_weight_name(cs_lagr_stat_group_t  stat_group,
-                         int                   class,
+                         int                   class_id,
                          char                  name[64])
 {
   char _class_name[13];
 
   _class_name[0] = '\0';
 
-  if (class > 0)
-    snprintf(_class_name, 13, "_c%d", class);
+  if (class_id > 0)
+    snprintf(_class_name, 13, "_c%d", class_id);
 
   size_t l0 =  strlen(_class_name);
 
@@ -1178,7 +1182,7 @@ _attr_moment_name(int                    attr_id,
            63 - l0,
            "%s_particle_%s",
            type_name[moment_type],
-           cs_lagr_event_get_attr_name(attr_id));
+           cs_lagr_event_get_attr_name((cs_lagr_event_attribute_t )attr_id));
   name[63] = '\0';
 
   name[63] = '\0';
@@ -1383,7 +1387,7 @@ _cs_lagr_stat_update_mesh_stats(const cs_time_step_t  *ts)
     cs_field_t *f = cs_field_by_id(ms->f_id);
     cs_real_t *restrict val = f->val;
 
-    ms->m_data_func(ms->data_input, NULL, f->location_id, ms->class, val);
+    ms->m_data_func(ms->data_input, NULL, f->location_id, ms->class_id, val);
   }
 }
 
@@ -1529,7 +1533,7 @@ _check_restart(const char                     *name,
           || ri->m_type[i] != (int)moment_type
           || ri->location_id[i] != location_id
           || ri->stat_type[i]  != stat_type
-          || ri->class[i] != class_id
+          || ri->class_id[i] != class_id
           || ri->dimension[i] != dim)
         matching_restart = false;
 
@@ -1741,7 +1745,7 @@ _restart_info_read_auxiliary(cs_restart_t  *r)
   /* Information on moments proper */
 
   BFT_MALLOC(ri->m_type, ri->n_moments, int);
-  BFT_MALLOC(ri->class, ri->n_moments, int);
+  BFT_MALLOC(ri->class_id, ri->n_moments, int);
   BFT_MALLOC(ri->location_id, ri->n_moments, int);
   BFT_MALLOC(ri->dimension, ri->n_moments, int);
   BFT_MALLOC(ri->wa_id, ri->n_moments, int);
@@ -1769,11 +1773,11 @@ _restart_info_read_auxiliary(cs_restart_t  *r)
   _assert_restart_success(retcode);
 
   retcode = cs_restart_read_section(r,
-                                    "lagr_stats:class",
+                                    "lagr_stats:class_id",
                                     CS_MESH_LOCATION_NONE,
                                     ri->n_moments,
                                     CS_TYPE_int,
-                                    ri->class);
+                                    ri->class_id);
   _assert_restart_success(retcode);
 
   retcode = cs_restart_read_section(r,
@@ -1874,7 +1878,7 @@ _restart_info_free(void)
     BFT_FREE(ri->dimension);
     BFT_FREE(ri->location_id);
     BFT_FREE(ri->m_type);
-    BFT_FREE(ri->class);
+    BFT_FREE(ri->class_id);
 
     BFT_FREE(ri->wa_t_start);
     BFT_FREE(ri->wa_nt_start);
@@ -2023,7 +2027,7 @@ _init_events_attribute(void)
  *                          values, or NULL
  * \param[in]  data_input   pointer to optional (untyped) value or structure
  * \param[in]  stat_group   statistics group (particle or event)
- * \param[in]  class_id     statistical class number
+ * \param[in]  class_id     statistical class id
  * \param[in]  location_id  associated mesh location id
  * \param[in]  nt_start     starting time step
  * \param[in]  t_start      starting time
@@ -2073,7 +2077,7 @@ _find_or_add_wa(cs_lagr_moment_p_data_t  *p_data_func,
         && _allow_reset == mwa->allow_reset
         && prev_wa_id == mwa->restart_id
         && stat_group == mwa->group
-        && class_id == mwa->class
+        && class_id == mwa->class_id
         && p_data_func == mwa->p_data_func
         && e_data_func == mwa->e_data_func
         && m_data_func == mwa->m_data_func
@@ -2112,7 +2116,7 @@ _find_or_add_wa(cs_lagr_moment_p_data_t  *p_data_func,
   mwa->location_id = location_id;
 
   mwa->group = stat_group;
-  mwa->class = class_id;
+  mwa->class_id = class_id;
 
   mwa->p_data_func = p_data_func;
   mwa->e_data_func = e_data_func;
@@ -2211,7 +2215,7 @@ _cs_lagr_moment_associate_field(const char  *name,
  *
  * \param[in]  location_id id  of associated mesh location
  * \param[in]  component_id    attribute component id, or < 0 for all
- * \param[in]  class_id        statistical class
+ * \param[in]  class_id        statistical class id
  * \param[in]  stat_type       statistics type id, or -1
  * \param[in]  dim             dimension associated with element data
  * \param[in]  p_data_func     particle-based function used to define data
@@ -2270,7 +2274,7 @@ _find_or_add_moment(int                       location_id,
         && data_input   == mt->data_input
         && m_type       == mt->m_type
         && wa_id        == mt->wa_id
-        && class_id     == mt->class
+        && class_id     == mt->class_id
         && prev_id      == mt->restart_id)
       return i;
 
@@ -2315,7 +2319,7 @@ _find_or_add_moment(int                       location_id,
 
   mt->l_id = -1;
   mt->stat_type = stat_type;
-  mt->class = class_id;
+  mt->class_id = class_id;
   mt->component_id = component_id;
 
   mt->name = NULL;
@@ -2330,7 +2334,7 @@ _find_or_add_moment(int                       location_id,
  * \brief Add or find mesh statistics structure.
  *
  * \param[in]  location_id     id  of associated mesh location
- * \param[in]  class_id        statistical class
+ * \param[in]  class_id        statistical class id
  * \param[in]  stat_group      statistics group (particle or event)
  * \param[in]  dim             dimension associated with element data
  * \param[in]  data_func       mesh-based function used to define data values
@@ -2380,7 +2384,7 @@ _find_or_add_mesh_stat(int                       location_id,
     if (   stat_group == ms->group
         && data_func  == ms->m_data_func
         && data_input == ms->data_input
-        && class_id   == ms->class
+        && class_id   == ms->class_id
         && nt_start   == ms->nt_start
         && fabs(ms->t_start - _t_start) < 1e-18) {
 
@@ -2419,7 +2423,7 @@ _find_or_add_mesh_stat(int                       location_id,
   ms = _lagr_mesh_stats + ms_id;
 
   ms->group = stat_group;
-  ms->class = class_id;
+  ms->class_id = class_id;
   ms->f_id = -1;
 
   ms->m_data_func = data_func;
@@ -2587,7 +2591,7 @@ _compute_current_weight_m(cs_lagr_moment_wa_t  *mwa,
 
   /* Base weight */
 
-  mwa->m_data_func(mwa->data_input, NULL, mwa->location_id, mwa->class, w);
+  mwa->m_data_func(mwa->data_input, NULL, mwa->location_id, mwa->class_id, w);
 
   /* Multiply time step */
 
@@ -2698,7 +2702,7 @@ _cs_lagr_stat_update_mesh_moment(cs_lagr_moment_t           *mt,
   cs_real_t *restrict x;
   BFT_MALLOC(x, nd, cs_real_t);
 
-  mt->m_data_func(mt->data_input, NULL, mt->location_id, mt->class, x);
+  mt->m_data_func(mt->data_input, NULL, mt->location_id, mt->class_id, x);
 
   cs_field_t *f = cs_field_by_id(mt->f_id);
   cs_real_t *restrict val = f->val;
@@ -2874,7 +2878,8 @@ _cs_lagr_stat_update_all(void)
             && mwa->nt_start <= ts->nt_cur
             && mt->nt_cur < ts->nt_cur) {
 
-          int attr_id = cs_lagr_stat_type_to_attr_id(mt->stat_type);
+          cs_lagr_attribute_t attr_id =
+            (cs_lagr_attribute_t) cs_lagr_stat_type_to_attr_id(mt->stat_type);
 
           _ensure_init_moment(mt);
 
@@ -2929,7 +2934,7 @@ _cs_lagr_stat_update_all(void)
                                                     p_set->p_am,
                                                     CS_LAGR_STAT_CLASS);
 
-              if (cell_id >= 0 && (p_class == mt->class || mt->class == 0)) {
+              if (cell_id >= 0 && (p_class == mt->class_id || mt->class_id == 0)) {
 
                 /* weight associated to current particle */
 
@@ -2947,7 +2952,9 @@ _cs_lagr_stat_update_all(void)
                 p_weight *= dt_val[cell_id*dt_mult];
 
                 if (mt->p_data_func == NULL)
-                  pval = cs_lagr_particle_attr(particle, p_set->p_am, attr_id);
+                  pval = cs_lagr_particle_attr_get_ptr<cs_real_t>(particle,
+                                                                  p_set->p_am,
+                                                                  attr_id);
                 else
                   mt->p_data_func(mt->data_input, particle, p_set->p_am, pval);
 
@@ -3100,7 +3107,7 @@ _cs_lagr_stat_update_all(void)
                                               p_set->p_am,
                                               CS_LAGR_STAT_CLASS);
 
-        if (cell_id >= 0 && (p_class == mwa->class || mwa->class == 0)) {
+        if (cell_id >= 0 && (p_class == mwa->class_id || mwa->class_id == 0)) {
 
           /* weight associated to current particle */
 
@@ -3538,18 +3545,18 @@ _event_stat_initialize(void)
     n_b_stat_types += 1;
   }
 
-  for (int class = 0;
-       class < cs_glob_lagr_model->n_stat_classes + 1;
-       class++) {
+  for (int class_id = 0;
+       class_id < cs_glob_lagr_model->n_stat_classes + 1;
+       class_id++) {
 
     /* Particle events count */
 
     if (_base_stat_activate[CS_LAGR_STAT_E_CUMULATIVE_WEIGHT] > 0) {
-      _class_name(_lagr_stat_names[CS_LAGR_STAT_E_CUMULATIVE_WEIGHT], class, name);
+      _class_name(_lagr_stat_names[CS_LAGR_STAT_E_CUMULATIVE_WEIGHT], class_id, name);
       cs_lagr_stat_accumulator_define(name,
                                       CS_MESH_LOCATION_BOUNDARY_FACES,
                                       stat_group,
-                                      class,
+                                      class_id,
                                       NULL,
                                       NULL,
                                       NULL,
@@ -3559,11 +3566,11 @@ _event_stat_initialize(void)
     }
     if (_base_stat_activate[CS_LAGR_STAT_RESUSPENSION_CUMULATIVE_WEIGHT] > 0) {
       _class_name(_lagr_stat_names[CS_LAGR_STAT_RESUSPENSION_CUMULATIVE_WEIGHT],
-                  class, name);
+                  class_id, name);
       cs_lagr_stat_accumulator_define(name,
                                       CS_MESH_LOCATION_BOUNDARY_FACES,
                                       stat_group,
-                                      class,
+                                      class_id,
                                       NULL,
                                       _boundary_resuspension_weight,
                                       NULL,
@@ -3573,11 +3580,11 @@ _event_stat_initialize(void)
     }
     if (_base_stat_activate[CS_LAGR_STAT_FOULING_CUMULATIVE_WEIGHT] > 0) {
       _class_name(_lagr_stat_names[CS_LAGR_STAT_FOULING_CUMULATIVE_WEIGHT],
-                  class, name);
+                  class_id, name);
       cs_lagr_stat_accumulator_define(name,
                                       CS_MESH_LOCATION_BOUNDARY_FACES,
                                       stat_group,
-                                      class,
+                                      class_id,
                                       NULL,
                                       _boundary_fouling_weight,
                                       NULL,
@@ -3595,7 +3602,7 @@ _event_stat_initialize(void)
       cs_lagr_stat_mesh_define(b_stat_name[i],
                                CS_MESH_LOCATION_BOUNDARY_FACES,
                                stat_group,
-                               class,
+                               class_id,
                                1,                       /* dim */
                                b_stat_u_func[i],
                                b_stat_u_input[i],
@@ -3604,9 +3611,11 @@ _event_stat_initialize(void)
 
       /* Now define associated time averages */
 
-      for (cs_lagr_stat_moment_t m_type = CS_LAGR_MOMENT_MEAN;
-           m_type <= CS_LAGR_MOMENT_VARIANCE;
-           m_type++) {
+      for (int i_m_type = CS_LAGR_MOMENT_MEAN;
+           i_m_type <= CS_LAGR_MOMENT_VARIANCE;
+           i_m_type++) {
+        cs_lagr_stat_moment_t m_type =
+          static_cast<cs_lagr_stat_moment_t>(i_m_type);
 
         if ((int)(_base_stat_activate[stat_type]) < m_type + 2)
           continue;
@@ -3616,7 +3625,7 @@ _event_stat_initialize(void)
            CS_MESH_LOCATION_BOUNDARY_FACES,
            b_stat_type[i],
            m_type,
-           class,
+           class_id,
            1,                    /* dimension */
            -1,                   /* component_id, */
            b_stat_tm_func[i],    /* data_func */
@@ -3637,15 +3646,17 @@ _event_stat_initialize(void)
        stat_type < CS_LAGR_STAT_ATTR;
        stat_type++) {
 
-    for (int class = 0;
-         class < cs_glob_lagr_model->n_stat_classes + 1;
-         class++) {
+    for (int class_id = 0;
+         class_id < cs_glob_lagr_model->n_stat_classes + 1;
+         class_id++) {
 
       /* Now define associated moments */
 
-      for (cs_lagr_stat_moment_t m_type = CS_LAGR_MOMENT_MEAN;
-           m_type <= CS_LAGR_MOMENT_VARIANCE;
-           m_type++) {
+      for (int i_m_type = CS_LAGR_MOMENT_MEAN;
+           i_m_type <= CS_LAGR_MOMENT_VARIANCE;
+           i_m_type++) {
+        cs_lagr_stat_moment_t m_type =
+          static_cast<cs_lagr_stat_moment_t>(i_m_type);
 
         if ((int)(_base_stat_activate[stat_type]) < m_type + 2)
           continue;
@@ -3689,7 +3700,7 @@ _event_stat_initialize(void)
            stat_type_def,
            stat_group,
            m_type,
-           class,
+           class_id,
            dim,                  /* dimension */
            -1,                   /* component_id, */
            data_func,            /* data_func */
@@ -4414,9 +4425,9 @@ cs_lagr_stat_initialize(void)
 
     cs_lagr_stat_group_t  stat_group = CS_LAGR_STAT_GROUP_PARTICLE;
 
-    for (int class = 0;
-         class < cs_glob_lagr_model->n_stat_classes + 1;
-         class++) {
+    for (int class_id = 0;
+         class_id < cs_glob_lagr_model->n_stat_classes + 1;
+         class_id++) {
 
       for (int stat_type = 0; stat_type < _n_stat_types(); stat_type++) {
 
@@ -4430,11 +4441,11 @@ cs_lagr_stat_initialize(void)
 
         /* Special case for cumulative weights */
         if (stat_type == CS_LAGR_STAT_CUMULATIVE_WEIGHT) {
-          _class_name("particle_cumulative_weight", class, name);
+          _class_name("particle_cumulative_weight", class_id, name);
           cs_lagr_stat_accumulator_define(name,
                                           CS_MESH_LOCATION_CELLS,
                                           stat_group,
-                                          class,
+                                          class_id,
                                           NULL,
                                           NULL,
                                           NULL,
@@ -4463,9 +4474,11 @@ cs_lagr_stat_initialize(void)
             || attr_id == CS_LAGR_EULER)
           dim = 4;
 
-        for (cs_lagr_stat_moment_t m_type = CS_LAGR_MOMENT_MEAN;
-             m_type <= CS_LAGR_MOMENT_VARIANCE;
-             m_type++) {
+        for (int i_m_type = CS_LAGR_MOMENT_MEAN;
+            i_m_type <= CS_LAGR_MOMENT_VARIANCE;
+            i_m_type++) {
+          cs_lagr_stat_moment_t m_type =
+            static_cast<cs_lagr_stat_moment_t>(i_m_type);
 
           if ((int)(_base_stat_activate[stat_type]) < m_type + 2)
             continue;
@@ -4477,7 +4490,7 @@ cs_lagr_stat_initialize(void)
                CS_MESH_LOCATION_CELLS,
                stat_type,
                m_type,
-               class,
+               class_id,
                dim,
                -1,                   /* component_id, */
                _vol_fraction,        /* data_func */
@@ -4498,7 +4511,7 @@ cs_lagr_stat_initialize(void)
                                            CS_MESH_LOCATION_CELLS,
                                            stat_type,
                                            m_type,
-                                           class,
+                                           class_id,
                                            dim,
                                            -1,      /* component_id, */
                                            NULL,    /* data_func */
@@ -4515,7 +4528,7 @@ cs_lagr_stat_initialize(void)
                                              CS_MESH_LOCATION_CELLS,
                                              stat_type,
                                              m_type,
-                                             class,
+                                             class_id,
                                              1,       /* dim */
                                              c_id,
                                              NULL,    /* data_func */
@@ -4742,7 +4755,7 @@ cs_lagr_stat_update_event(cs_lagr_event_set_t   *events,
     cs_field_t *f = cs_field_by_id(ms->f_id);
     cs_real_t *restrict val = f->val;
 
-    ms->m_data_func(ms->data_input, events, f->location_id, ms->class, val);
+    ms->m_data_func(ms->data_input, events, f->location_id, ms->class_id, val);
 
   }
 
@@ -4854,7 +4867,7 @@ cs_lagr_stat_update_event(cs_lagr_event_set_t   *events,
                                                 ev_id,
                                                 CS_LAGR_STAT_CLASS);
 
-            if (elt_id >= 0 && (p_class == mt->class || mt->class == 0)) {
+            if (elt_id >= 0 && (p_class == mt->class_id || mt->class_id == 0)) {
 
               /* weight associated to current event */
 
@@ -4875,7 +4888,9 @@ cs_lagr_stat_update_event(cs_lagr_event_set_t   *events,
                 continue;
 
               if (mt->e_data_func == NULL)
-                pval = cs_lagr_events_attr(events, ev_id, attr_id);
+                pval = cs_lagr_events_attr_get_ptr<cs_real_t>(events,
+                                                              ev_id,
+                                                              attr_id);
               else
                 mt->e_data_func(mt->data_input, events, id_range, pval);
 
@@ -5020,7 +5035,7 @@ cs_lagr_stat_update_event(cs_lagr_event_set_t   *events,
                                             ev_id,
                                             CS_LAGR_STAT_CLASS);
 
-        if (elt_id >= 0 && (p_class == mwa->class || mwa->class == 0)) {
+        if (elt_id >= 0 && (p_class == mwa->class_id || mwa->class_id == 0)) {
 
           /* weight associated to current event */
 
@@ -5101,8 +5116,8 @@ cs_lagr_stat_log_setup(void)
                   _("\n"
                     "  statistic %d\n"
                     "    group: %s\n"
-                    "    class: %d\n"),
-                  i, group_name, ms->class);
+                    "    class_id: %d\n"),
+                  i, group_name, ms->class_id);
 
     const cs_field_t *f = cs_field_by_id(ms->f_id);
     cs_log_printf(CS_LOG_SETUP,
@@ -5132,8 +5147,8 @@ cs_lagr_stat_log_setup(void)
                   _("\n"
                     "  accumulator %d\n"
                     "    group: %s\n"
-                    "    class: %d\n"),
-                  i, group_name, mwa->class);
+                    "    class_id: %d\n"),
+                  i, group_name, mwa->class_id);
 
     if (mwa->f_id > -1) {
       const cs_field_t *f = cs_field_by_id(mwa->f_id);
@@ -5170,9 +5185,9 @@ cs_lagr_stat_log_setup(void)
                   _("\n"
                     "  moment %d\n"
                     "    accumulator id: %d\n"
-                    "    class: %d\n"
+                    "    class_id: %d\n"
                     "    moment type: %s\n"),
-                  i, mt->wa_id, mt->class,
+                  i, mt->wa_id, mt->class_id,
                   cs_lagr_moment_type_name[mt->m_type]);
 
     const cs_field_t *f = cs_field_by_id(mt->f_id);
@@ -5349,7 +5364,7 @@ void
 cs_lagr_stat_restart_write(cs_restart_t  *restart)
 {
   int *nt_start, *location_id, *dimension;
-  int *m_type, *wa_id, *l_id, *class, *stat_type, *stat_group;
+  int *m_type, *wa_id, *l_id, *class_id, *stat_type, *stat_group;
   cs_real_t *t_start;
 
   int n_active_wa = 0, n_active_moments = 0;
@@ -5560,7 +5575,7 @@ cs_lagr_stat_restart_write(cs_restart_t  *restart)
   /* Information on moments proper */
 
   BFT_MALLOC(m_type, n_active_moments, int);
-  BFT_MALLOC(class, n_active_moments, int);
+  BFT_MALLOC(class_id, n_active_moments, int);
   BFT_MALLOC(location_id, n_active_moments, int);
   BFT_MALLOC(dimension, n_active_moments, int);
   BFT_MALLOC(wa_id, n_active_moments, int);
@@ -5574,7 +5589,7 @@ cs_lagr_stat_restart_write(cs_restart_t  *restart)
       cs_lagr_moment_t *mt = _lagr_moments + i;
       cs_lagr_moment_wa_t *mwa = _lagr_moments_wa + mt->wa_id;
       m_type[j] = mt->m_type;
-      class[j] = mt->class;
+      class_id[j] = mt->class_id;
       location_id[j] = mt->location_id;
       dimension[j] = mt->dim;
       wa_id[j] = active_wa_id[mt->wa_id];
@@ -5592,7 +5607,7 @@ cs_lagr_stat_restart_write(cs_restart_t  *restart)
     if (j > -1) {
       cs_lagr_moment_wa_t *mwa = _lagr_moments_wa + i;
       m_type[j] = -1;
-      class[j] = mwa->class;
+      class_id[j] = mwa->class_id;
       location_id[j] = mwa->location_id;
       dimension[j] = 1;
       wa_id[j] = active_wa_id[i];
@@ -5617,11 +5632,11 @@ cs_lagr_stat_restart_write(cs_restart_t  *restart)
                            m_type);
 
   cs_restart_write_section(restart,
-                           "lagr_stats:class",
+                           "lagr_stats:class_id",
                            CS_MESH_LOCATION_NONE,
                            n_active_moments,
                            CS_TYPE_int,
-                           class);
+                           class_id);
 
   cs_restart_write_section(restart,
                            "lagr_stats:location_id",
@@ -5663,7 +5678,7 @@ cs_lagr_stat_restart_write(cs_restart_t  *restart)
   BFT_FREE(dimension);
   BFT_FREE(location_id);
   BFT_FREE(m_type);
-  BFT_FREE(class);
+  BFT_FREE(class_id);
   BFT_FREE(stat_type);
   BFT_FREE(stat_group);
 
@@ -5731,7 +5746,7 @@ cs_lagr_stat_get_moment(int                    stat_type,
         && mt->stat_type    == stat_type
         && (   mwa->group   == stat_group
             || mwa->group   == CS_LAGR_STAT_GROUP_PARTICLE)
-        && mt->class        == class_id
+        && mt->class_id        == class_id
         && mt->component_id == component_id)
       return cs_field_by_id(mt->f_id);
 
@@ -5758,7 +5773,7 @@ cs_lagr_stat_get_stat_weight(int  class_id)
   for (int i = 0; i < _n_lagr_moments_wa; i++) {
     cs_lagr_moment_wa_t *mwa = _lagr_moments_wa + i;
     if (   mwa->f_id > -1
-        && mwa->class == class_id)
+        && mwa->class_id == class_id)
       return cs_field_by_id(mwa->f_id);
   }
 
@@ -5780,7 +5795,7 @@ cs_lagr_stat_get_age(void)
 
   for (int i = 0; i < _n_lagr_moments_wa; i++) {
     cs_lagr_moment_wa_t *mwa = _lagr_moments_wa + i;
-    if (mwa->f_id > -1 && mwa->class == 0) {
+    if (mwa->f_id > -1 && mwa->class_id == 0) {
       const cs_time_step_t  *ts = cs_glob_time_step;
       if (mwa->nt_start >= ts->nt_cur)
         retval = ts->t_cur - mwa->t_start;

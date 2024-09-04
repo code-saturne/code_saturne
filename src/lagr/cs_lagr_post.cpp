@@ -95,8 +95,7 @@ static bool                    _lagr_post_options_is_set = false;
 
 /* Postprocessing options structure and associated pointer */
 
-static cs_lagr_post_options_t  _lagr_post_options
-= {.attr_output[0] = -1};
+static cs_lagr_post_options_t  _lagr_post_options = {-1};
 
 const cs_lagr_post_options_t *cs_glob_lagr_post_options = &_lagr_post_options;
 
@@ -114,18 +113,20 @@ _activate_particle_output(void)
   /* No output if nothing initialized by now */
 
   if (_lagr_post_options.attr_output[0] == -1) {
-    for (cs_lagr_attribute_t i = 0; i < CS_LAGR_N_ATTRIBUTES; i++) {
-      _lagr_post_options.attr_output[i] = 0;
+    for (int i = 0; i < CS_LAGR_N_ATTRIBUTES; i++) {
+      auto attr = static_cast<cs_lagr_attribute_t>(i);
+      _lagr_post_options.attr_output[attr] = 0;
     }
   }
 
   else {
-    for (cs_lagr_attribute_t i = 0; i < CS_LAGR_N_ATTRIBUTES; i++) {
-      if (_lagr_post_options.attr_output[i]) {
+    for (int i = 0; i < CS_LAGR_N_ATTRIBUTES; i++) {
+      auto attr = static_cast<cs_lagr_attribute_t>(i);
+      if (_lagr_post_options.attr_output[attr]) {
         int count = 0;
         cs_lagr_get_attr_info(cs_glob_lagr_particle_set,
                               0,
-                              i,
+                              attr,
                               NULL,
                               NULL,
                               NULL,
@@ -133,7 +134,7 @@ _activate_particle_output(void)
                               &count);
 
         if (count == 3) {
-          switch(i) {
+          switch(attr) {
           case CS_LAGR_COORDS:
           case CS_LAGR_VELOCITY:
           case CS_LAGR_VELOCITY_SEEN:
@@ -149,7 +150,7 @@ _activate_particle_output(void)
           }
         }
 
-        _lagr_post_options.attr_output[i] = count;
+        _lagr_post_options.attr_output[attr] = count;
       }
     }
   }
@@ -184,7 +185,8 @@ _write_particle_vars(cs_lagr_post_options_t  *options,
   int  component_id;
   char var_name_component[96];
 
-  for (attr_id = 0; attr_id < CS_LAGR_N_ATTRIBUTES; attr_id++) {
+  for (int i_attr_id = 0; i_attr_id < CS_LAGR_N_ATTRIBUTES; i_attr_id++) {
+    attr_id = static_cast<cs_lagr_attribute_t>(i_attr_id);
 
     if (options->attr_output[attr_id] > 0) {
 
@@ -274,7 +276,8 @@ _cs_lagr_post(void                  *input,
   /* Specific handling for particle meshes */
 
   if (cat_id == -3) {
-    _write_particle_vars(input, mesh_id, ts);
+    cs_lagr_post_options_t *_input = (cs_lagr_post_options_t *)input;
+    _write_particle_vars(_input, mesh_id, ts);
     return;
   }
 
@@ -365,8 +368,9 @@ cs_lagr_post_get_attr(cs_lagr_attribute_t  attr_id)
   /* Initialize if not done yet */
 
   if (_lagr_post_options.attr_output[0] == -1) {
-    for (cs_lagr_attribute_t i = 0; i < CS_LAGR_N_ATTRIBUTES; i++) {
-      _lagr_post_options.attr_output[i] = 0;
+    for (int i = 0; i < CS_LAGR_N_ATTRIBUTES; i++) {
+      cs_lagr_attribute_t attr = static_cast<cs_lagr_attribute_t>(i);
+      _lagr_post_options.attr_output[attr] = 0;
     }
   }
 
@@ -398,8 +402,9 @@ cs_lagr_post_set_attr(cs_lagr_attribute_t  attr_id,
   /* Initialize if not done yet */
 
   if (_lagr_post_options.attr_output[0] == -1) {
-    for (cs_lagr_attribute_t i = 0; i < CS_LAGR_N_ATTRIBUTES; i++) {
-      _lagr_post_options.attr_output[i] = 0;
+    for (int i = 0; i < CS_LAGR_N_ATTRIBUTES; i++) {
+      cs_lagr_attribute_t attr = static_cast<cs_lagr_attribute_t>(i);
+      _lagr_post_options.attr_output[attr] = 0;
     }
   }
 

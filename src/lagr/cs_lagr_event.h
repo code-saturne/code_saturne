@@ -303,6 +303,68 @@ cs_lagr_events_attr_const(const cs_lagr_event_set_t  *event_set,
 }
 
 /*----------------------------------------------------------------------------*/
+/*----------------------------------------------------------------------------*/
+
+END_C_DECLS
+
+#if defined(__cplusplus)
+template <typename T>
+T *
+cs_lagr_events_attr_get_ptr(cs_lagr_event_set_t  *event_set,
+                            cs_lnum_t             event_id,
+                            int                   attr)
+{
+  assert(event_set->e_am->count[attr] > 0);
+
+  return (T *)( event_set->e_buffer
+              + event_set->e_am->extents*event_id
+              + event_set->e_am->displ[attr]);
+}
+
+template <typename T>
+const T *
+cs_lagr_events_attr_get_const_ptr(const cs_lagr_event_set_t  *event_set,
+                                  cs_lnum_t                   event_id,
+                                  int                         attr)
+{
+  assert(event_set->e_am->count[attr] > 0);
+
+  return (const T *)( event_set->e_buffer
+                    + event_set->e_am->extents*event_id
+                    + event_set->e_am->displ[attr]);
+}
+
+template <typename T>
+T
+cs_lagr_events_attr_get_val(const cs_lagr_event_set_t  *event_set,
+                            cs_lnum_t                   event_id,
+                            int                         attr)
+{
+  assert(event_set->e_am->count[attr] > 0);
+
+  return *((const T *)( event_set->e_buffer
+                     + event_set->e_am->extents*event_id
+                     + event_set->e_am->displ[attr]));
+}
+
+template <typename T>
+void
+cs_lagr_events_attr_set_val(cs_lagr_event_set_t *event_set,
+                            cs_lnum_t            event_id,
+                            int                  attr,
+                            T                    value)
+{
+  assert(event_set->e_am->count[attr] > 0);
+
+  *((T *)(  event_set->e_buffer
+                  + event_set->e_am->extents*event_id
+                  + event_set->e_am->displ[attr])) = value;
+}
+#endif
+
+BEGIN_C_DECLS
+
+/*----------------------------------------------------------------------------*/
 /*!
  * \brief Get attribute value of type cs_lnum_t of a given event in a set.
  *

@@ -208,7 +208,9 @@ _create_attr_map(cs_lnum_t attr_keys[CS_LAGR_N_E_ATTRIBUTES][3])
   e_am->lb = 0;
   e_am->extents = e_am->lb;
 
-  for (attr = 0; attr < CS_LAGR_N_E_ATTRIBUTES; attr++) {
+  cs_lagr_event_attribute_t attr0 = (cs_lagr_event_attribute_t) 0;
+  for (int i_attr = attr0; i_attr < CS_LAGR_N_E_ATTRIBUTES; i_attr++) {
+    attr = static_cast<cs_lagr_event_attribute_t>(i_attr);
     e_am->size[attr] = 0;
     e_am->datatype[attr] = CS_REAL_TYPE;
     e_am->displ[attr] = -1;
@@ -231,7 +233,7 @@ _create_attr_map(cs_lnum_t attr_keys[CS_LAGR_N_E_ATTRIBUTES][3])
 
     cs_datatype_t datatype = CS_REAL_TYPE;
 
-    attr = order[i];
+    attr = static_cast<cs_lagr_event_attribute_t>(order[i]);
 
     e_am->datatype[attr] = CS_DATATYPE_NULL;
     e_am->displ[attr] =-1;
@@ -342,16 +344,17 @@ _dump_event(const cs_lagr_event_set_t  *events,
 
   bft_printf("    values:\n");
 
-  for (cs_lagr_event_attribute_t attr = 0;
-       attr < CS_LAGR_N_E_ATTRIBUTES;
-       attr++) {
+  for (int i_attr = 0;
+       i_attr < CS_LAGR_N_E_ATTRIBUTES;
+       i_attr++) {
+    auto attr = static_cast<cs_lagr_event_attribute_t>(i_attr);
     if (am->count[attr] > 0) {
       const char *attr_name = cs_lagr_event_get_attr_name(attr);
       switch (am->datatype[attr]) {
       case CS_LNUM_TYPE:
         {
-          const cs_lnum_t *v
-            = cs_lagr_events_attr_const(events, event_id, attr);
+          const auto *v
+            = cs_lagr_events_attr_get_const_ptr<cs_lnum_t>(events, event_id, attr);
           bft_printf("      %24s: %10ld\n", attr_name, (long)v[0]);
           for (int i = 1; i < am->count[attr]; i++)
             bft_printf("      %24s: %10ld\n", " ", (long)v[i]);
@@ -359,8 +362,8 @@ _dump_event(const cs_lagr_event_set_t  *events,
         break;
       case CS_REAL_TYPE:
         {
-          const cs_real_t *v
-            = cs_lagr_events_attr_const(events, event_id, attr);
+          const auto *v
+            = cs_lagr_events_attr_get_const_ptr<cs_real_t>(events, event_id, attr);
           bft_printf("      %24s: %10.3g\n", attr_name, v[0]);
           for (int i = 1; i < am->count[attr]; i++)
             bft_printf("      %24s: %10.3g\n", " ", v[i]);
@@ -739,15 +742,15 @@ cs_lagr_event_init_from_particle(cs_lagr_event_set_t     *events,
          events->e_am->extents);
 
   for (cs_lnum_t i = 0; i < _n_mapped_part_attr; i++) {
-    int attr = _mapped_part_attr[i];
+    auto attr = static_cast<cs_lagr_attribute_t>(_mapped_part_attr[i]);
 
-    const unsigned char *p_attr = cs_lagr_particles_attr(particles,
-                                                         particle_id,
-                                                         attr);
+    const auto *p_attr = cs_lagr_particles_attr_get_const_ptr<unsigned char>(particles,
+                                                                             particle_id,
+                                                                             attr);
 
-    unsigned char *e_attr = cs_lagr_events_attr(events,
-                                                event_id,
-                                                attr);
+    auto *e_attr = cs_lagr_events_attr_get_ptr<unsigned char>(events,
+                                                              event_id,
+                                                              attr);
 
     size_t size = particles->p_am->size[attr];
 

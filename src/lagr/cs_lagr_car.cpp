@@ -197,9 +197,11 @@ cs_lagr_car(int              iprev,
 
     cs_real_t  rom           = extra->cromf->val[cell_id];
     cs_real_t  xnul          = extra->viscl->val[cell_id] / rom;
-    cs_real_t *part_vel_seen = cs_lagr_particle_attr(particle, p_am,
+    cs_real_t *part_vel_seen =
+      (cs_real_t *)cs_lagr_particle_attr(particle, p_am,
                                                      CS_LAGR_VELOCITY_SEEN);
-    cs_real_t *part_vel      = cs_lagr_particle_attr(particle, p_am,
+    cs_real_t *part_vel      =
+      (cs_real_t *)cs_lagr_particle_attr(particle, p_am,
                                                      CS_LAGR_VELOCITY);
 
     cs_real_t rel_vel_norm = cs_math_3_distance(part_vel_seen, part_vel);
@@ -519,9 +521,11 @@ cs_lagr_car(int              iprev,
           tlag[ip][0] = CS_MAX(tlag[ip][0], cs_math_epzero);
 
           if (cs_glob_lagr_model->idiffl == 0) {
-            cs_real_t *part_vel_seen = cs_lagr_particle_attr(particle, p_am,
+            cs_real_t *part_vel_seen =
+              (cs_real_t *)cs_lagr_particle_attr(particle, p_am,
                                        CS_LAGR_VELOCITY_SEEN);
-            cs_real_t *part_vel      = cs_lagr_particle_attr(particle, p_am,
+            cs_real_t *part_vel      =
+              (cs_real_t *)cs_lagr_particle_attr(particle, p_am,
                                        CS_LAGR_VELOCITY);
 
             cs_real_t uvwdif = 0.;
