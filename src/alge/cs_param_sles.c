@@ -1109,6 +1109,11 @@ cs_param_sles_set_amg_type(const char       *keyval,
            strcmp(keyval, "boomer_v") == 0) {
 
     cs_param_solver_class_t  wanted_class = CS_PARAM_SOLVER_CLASS_HYPRE;
+    if (slesp->solver_class != CS_PARAM_SOLVER_CLASS_CS)
+      wanted_class = slesp->solver_class; // A solver class has been requested
+
+    /* Only PETSc is able to handle block preconditioning with BoomerAMG */
+
     if (slesp->precond_block_type != CS_PARAM_PRECOND_BLOCK_NONE)
       wanted_class = CS_PARAM_SOLVER_CLASS_PETSC;
 
@@ -1125,6 +1130,11 @@ cs_param_sles_set_amg_type(const char       *keyval,
   else if (strcmp(keyval, "boomer_w") == 0 || strcmp(keyval, "bamg_w") == 0) {
 
     cs_param_solver_class_t  wanted_class = CS_PARAM_SOLVER_CLASS_HYPRE;
+    if (slesp->solver_class != CS_PARAM_SOLVER_CLASS_CS)
+      wanted_class = slesp->solver_class; // A solver class has been requested
+
+    /* Only PETSc is able to handle block preconditioning with BoomerAMG */
+
     if (slesp->precond_block_type != CS_PARAM_PRECOND_BLOCK_NONE)
       wanted_class = CS_PARAM_SOLVER_CLASS_PETSC;
 
