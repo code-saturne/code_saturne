@@ -117,11 +117,11 @@ CS_V_CONSTANT cs_lnum_t _t2v[3][3] = {{0, 3, 5},
                                       {3, 1, 4},
                                       {5, 4, 2}};
 
-CS_V_CONSTANT cs_real_6_t _deltij = {1, 1, 1, 0, 0, 0};
+CS_V_CONSTANT cs_real_6_t _vdeltij = {1, 1, 1, 0, 0, 0};
 
-CS_V_CONSTANT cs_real_33_t _identity = {{1., 0., 0.},
-                                        {0., 1., 0.},
-                                        {0., 0., 1.}};
+CS_V_CONSTANT cs_real_33_t _tdeltij = {{1., 0., 0.},
+                                       {0., 1., 0.},
+                                       {0., 0., 1.}};
 
 /*============================================================================
  * Private function definitions
@@ -571,7 +571,7 @@ _compute_up_rhop(int                 phase_id,
  *        \f$var  = R_{11} \: R_{22} \: R_{33} \: R_{12} \: R_{13} \: R_{23}\f$
  *        \f$comp =  1 \:  2 \:  3 \:  4 \:  5 \:  6\f$
  *
- * \param[in]    phase_id    turbulent phase id (-1 for single phase flow)
+ * \param[in]     phase_id    turbulent phase id (-1 for single phase flow)
  * \param[in]     produc      production
  * \param[in,out] rhs         work array for right-hand-side
  */
@@ -621,10 +621,6 @@ _rij_echo(int              phase_id,
   cs_real_3_t *grad;
   CS_MALLOC_HD(grad, n_cells_ext, cs_real_3_t, cs_alloc_mode);
 
-  cs_real_t *produk, *epsk;
-  CS_MALLOC_HD(epsk, n_cells_ext, cs_real_t, cs_alloc_mode);
-  CS_MALLOC_HD(produk, n_cells_ext, cs_real_t, cs_alloc_mode);
-
   cs_real_6_t *w6;
   CS_MALLOC_HD(w6, n_cells_ext, cs_real_6_t, cs_alloc_mode);
 
@@ -633,21 +629,6 @@ _rij_echo(int              phase_id,
                            false,  /* use_previous_t */
                            1,      /* inc */
                            grad);
-
-  ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
-    const cs_real_t norm2 = cs_math_3_square_norm(grad[c_id]);
-    const cs_real_t xnorm = cs_math_fmax(sqrt(norm2), cs_math_epzero);
-
-    /* Normalization (warning, the gradient may be sometimes equal to 0) */
-    for (cs_lnum_t i = 0; i < 3; i++)
-      grad[c_id][i] = -grad[c_id][i] / xnorm;
-
-    /* Production and k */
-    produk[c_id] = 0.5 * cs_math_6_trace(produc[c_id]);
-
-    const cs_real_t xk = 0.5 * cs_math_6_trace(cvara_rij[c_id]);
-    epsk[c_id] = cvara_ep[c_id] / xk;
-  });
 
   /* Tensor indexing */
 
@@ -663,67 +644,64 @@ _rij_echo(int              phase_id,
 
   ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
 
-    for (cs_lnum_t kk = 0; kk < 3; kk++) {
+    cs_real_t n[3];
+    cs_math_3_normalize(grad, n);
+    /* Production and k */
+    cs_real_t prod_k = 0.5 * cs_math_6_trace(produc[c_id]);
 
-      for (cs_lnum_t mm = 0; mm < 3; mm++) {
+    const cs_real_t xk = 0.5 * cs_math_6_trace(cvara_rij[c_id]);
+    cs_real_t epsk = cvara_ep[c_id] / xk;
 
-        const cs_real_t vnk = grad[c_id][kk];
-        const cs_real_t vnm = grad[c_id][mm];
+    for (cs_lnum_t k = 0; k < 3; k++) {
 
-        const cs_lnum_t i_km = _t2v[kk][mm];
-        const cs_real_t deltkm = _identity[kk][mm];
+      for (cs_lnum_t l = 0; l < 3; l++) {
+
+        const cs_lnum_t kl = _t2v[k][l];
 
         /* Terms with R km and Phi km;
 
-           vnk * vnm * deltij[jj] in original expression,
+           nk * nl * deltij[jj] in original expression,
            with deltij Kronecker delta so 1 for terms 0-2, 0 for terms 3-6.
            (we only have diagonal contributions) */
 
         const cs_real_t c_tr
-          = vnk * vnm
-            * (crijp1 * cvara_rij[c_id][i_km] * epsk[c_id]
+          = n[k] * n[l]
+            * (crijp1 * cvara_rij[c_id][kl] * epsk
                - (  crijp2 * crij2
-                  * (produc[c_id][i_km] -d2s3 *produk[c_id] * deltkm)));
+                  * (produc[c_id][kl] - d2s3 * prod_k * _tdeltij[k][l])));
 
         w6[c_id][0] += c_tr;
         w6[c_id][1] += c_tr;
         w6[c_id][2] += c_tr;
 
-      } /* End of loop on mm */
+      } /* End of loop on l */
 
-      for (cs_lnum_t isub = 0; isub < 6; isub++) {
+      for (cs_lnum_t ij = 0; ij < 6; ij++) {
 
-        cs_lnum_t ii = _iv2t[isub];
-        cs_lnum_t jj = _jv2t[isub];
+        cs_lnum_t i = _iv2t[ij];
+        cs_lnum_t j = _jv2t[ij];
 
-        const cs_lnum_t i_ki = _t2v[kk][ii];
-        const cs_lnum_t i_kj = _t2v[kk][jj];
+        const cs_lnum_t ki = _t2v[k][i];
+        const cs_lnum_t kj = _t2v[k][j];
 
-        const cs_real_t deltki = _identity[kk][ii];
-        const cs_real_t deltkj = _identity[kk][jj];
-
-        const cs_real_t vnk = grad[c_id][kk];
-        const cs_real_t vni = grad[c_id][ii];
-        const cs_real_t vnj = grad[c_id][jj];
-
-        w6[c_id][isub] +=   1.5 * vnk
+        w6[c_id][ij] +=   1.5 * n[k]
                           * (- (  crijp1
-                                 * (  cvara_rij[c_id][i_ki]*vnj
-                                    + cvara_rij[c_id][i_kj]*vni)
-                                 * epsk[c_id])
+                                 * (  cvara_rij[c_id][ki] * n[j]
+                                    + cvara_rij[c_id][kj] * n[i])
+                                 * epsk)
                              + (  crijp2 * crij2
-                                * (  ( produc[c_id][i_ki]
-                                      -d2s3 * produk[c_id] * deltki)*vnj
-                                   + ( produc[c_id][i_kj]
-                                      -d2s3 * produk[c_id] * deltkj)*vni)));
+                                * (  ( produc[c_id][ki]
+                                      -d2s3 * prod_k * _tdeltij[k][i]) * n[j]
+                                   + ( produc[c_id][kj]
+                                      -d2s3 * prod_k * _tdeltij[k][j]) * n[i])));
 
-      } /* End of loop on isub */
+      } /* End of loop on ij */
 
-    } /* End of loop on kk */
+    } /* End of loop on k */
 
   }); /* End of loop on cells */
 
-  /* Distance to the wall and amortization function: W3
+  /* Distance to the wall and amortization function:
    *   For each calculation mode: same code, test
    *   Apart from the loop */
 
@@ -734,14 +712,12 @@ _rij_echo(int              phase_id,
                    / (xkappa * cvara_ep[c_id] * distxn);
     bb = cs_math_fmin(bb, 1.0);
 
-    for (cs_lnum_t isub = 0; isub < 6; isub++)
-      rhs[c_id][isub] += cromo[c_id] * cell_f_vol[c_id] * w6[c_id][isub] * bb;
+    for (cs_lnum_t ij = 0; ij < 6; ij++)
+      rhs[c_id][ij] += cromo[c_id] * cell_f_vol[c_id] * w6[c_id][ij] * bb;
   });
 
   CS_FREE_HD(w6);
   CS_FREE_HD(grad);
-  CS_FREE_HD(epsk);
-  CS_FREE_HD(produk);
 
   ctx.wait();
 }
@@ -1113,10 +1089,10 @@ _pre_solve_lrr(const cs_field_t  *f_rij,
     cs_real_t xaniso[3][3], xstrai[3][3], xrotac[3][3];
 
     /* aij */
-    for (cs_lnum_t ii = 0; ii < 3; ii++) {
-      for (cs_lnum_t jj = 0; jj < 3; jj++) {
-        xaniso[ii][jj] =   cvara_var[c_id][_t2v[ii][jj]] / trrij
-                         - d2s3 * _identity[ii][jj];
+    for (cs_lnum_t i = 0; i < 3; i++) {
+      for (cs_lnum_t j = 0; j < 3; j++) {
+        xaniso[i][j] =   cvara_var[c_id][_t2v[i][j]] / trrij
+                         - d2s3 * _tdeltij[i][j];
       }
     }
 
@@ -1183,7 +1159,7 @@ _pre_solve_lrr(const cs_field_t  *f_rij,
       for (cs_lnum_t j = 0; j < 3; j++) {
         cs_lnum_t ij = _t2v[i][j];
         implmat2add[i][j] =   (1.0 - crij2) * xrotac[i][j]
-                              + impl_lin_cst * _deltij[ij]
+                              + impl_lin_cst * _vdeltij[ij]
                               + impl_id_cst * d1s2 * oo_matrn[ij]
                               + ceps_impl * oo_matrn[ij];
       }
@@ -1212,8 +1188,8 @@ _pre_solve_lrr(const cs_field_t  *f_rij,
       /* Explicit terms */
       cs_real_t pij = (1.-crij2) * produc[c_id][_t2v[j][i]];
       cs_real_t phiij1 = -cvara_ep[c_id]*crij1*xaniso[j][i];
-      cs_real_t phiij2 = d2s3*crij2*trprod*_deltij[ij];
-      cs_real_t epsij = -d2s3*cvara_ep[c_id]*_deltij[ij];
+      cs_real_t phiij2 = d2s3*crij2*trprod*_vdeltij[ij];
+      cs_real_t epsij = -d2s3*cvara_ep[c_id]*_vdeltij[ij];
 
       if (st_prv_id > -1) {
         c_st_prv[c_id][ij] +=   cromo[c_id] * cell_f_vol[c_id]
@@ -1262,33 +1238,33 @@ _pre_solve_lrr(const cs_field_t  *f_rij,
       cs_rotation_coriolis_t(r, 1., matrot);
 
       /* Compute Gij: (i,j) component of the Coriolis production */
-      for (cs_lnum_t iii = 0; iii < 6; iii++) {
-        cs_lnum_t ii = _iv2t[iii];
-        cs_lnum_t jj = _jv2t[iii];
+      for (cs_lnum_t ij = 0; ij < 6; ij++) {
+        cs_lnum_t i = _iv2t[ij];
+        cs_lnum_t j = _jv2t[ij];
 
-        w2[c_id][iii] = 0.;
-        for (cs_lnum_t kk = 0; kk < 3; kk++)
-          w2[c_id][iii] -=   ccorio
-                           * (  matrot[kk][ii] * cvara_var[c_id][_t2v[kk][jj]]
-                              + matrot[kk][jj] * cvara_var[c_id][_t2v[kk][ii]]);
+        w2[c_id][ij] = 0.;
+        for (cs_lnum_t k = 0; k < 3; k++)
+          w2[c_id][ij] -=   ccorio
+                           * (  matrot[k][i] * cvara_var[c_id][_t2v[k][j]]
+                              + matrot[k][j] * cvara_var[c_id][_t2v[k][i]]);
       }
 
       /* Coriolis contribution in the Phi1 term: (1-C2/2)Gij */
       if (icorio == 1) {
-        for (cs_lnum_t ii = 0; ii < 6; ii++)
-          w2[c_id][ii] =   crom[c_id] * cell_f_vol[c_id]
-                         * (1.-0.5*crij2) * w2[c_id][ii];
+        for (cs_lnum_t ij = 0; ij < 6; ij++)
+          w2[c_id][ij] =   crom[c_id] * cell_f_vol[c_id]
+                         * (1.-0.5*crij2) * w2[c_id][ij];
       }
 
       /* If source terms are extrapolated */
       if (st_prv_id > -1) {
-        for (cs_lnum_t ii = 0; ii < 6; ii++)
-          c_st_prv[c_id][ii] += w2[c_id][ii];
+        for (cs_lnum_t ij = 0; ij < 6; ij++)
+          c_st_prv[c_id][ij] += w2[c_id][ij];
       }
       /* Otherwise, directly in rhs */
       else {
-        for (cs_lnum_t ii = 0; ii < 6; ii++)
-          rhs[c_id][ii] += w2[c_id][ii];
+        for (cs_lnum_t ij = 0; ij < 6; ij++)
+          rhs[c_id][ij] += w2[c_id][ij];
       }
 
     } /* End of loop on cells */
@@ -1524,26 +1500,26 @@ _pre_solve_lrr_sg(const cs_field_t  *f_rij,
       const cs_real_t trprod = 0.5 * cs_math_6_trace(produc[c_id]);
       const cs_real_t trrij = 0.5 * cs_math_6_trace(cvara_var[c_id]);
 
-      for (cs_lnum_t ii = 0; ii < 6; ii++) {
+      for (cs_lnum_t ij = 0; ij < 6; ij++) {
         /* Calculation of Prod+Phi1+Phi2-Eps
          *  = rhoPij - C1rho eps/k(Rij-2/3k dij)
          *           - C2rho(Pij-1/3Pkk dij) -2/3rho eps dij
          * In c_st_prv:
          *  = rhoPij-C1rho eps/k(-2/3k dij)-C2rho(Pij-1/3Pkk dij)-2/3rho eps dij
          *  = rho{2/3dij[C2 Pkk/2+(C1-1)eps)]+(1-C2)Pij */
-        c_st_prv[c_id][ii] +=  cromo[c_id] * cell_f_vol[c_id]
-                              * (  _deltij[ii]*d2s3
+        c_st_prv[c_id][ij] +=  cromo[c_id] * cell_f_vol[c_id]
+                              * (  _vdeltij[ij]*d2s3
                                  * (   crij2 * trprod
                                     + (crij1-1.) * cvara_ep[c_id])
-                                 + (1.-crij2)*produc[c_id][ii]);
+                                 + (1.-crij2)*produc[c_id][ij]);
 
         /*  In rhs = -C1rho eps/k(Rij) = rho {-C1eps/kRij} */
-        rhs[c_id][ii] +=   crom[c_id]*cell_f_vol[c_id]
+        rhs[c_id][ij] +=   crom[c_id]*cell_f_vol[c_id]
                          * (-crij1 * cvara_ep[c_id] / trrij
-                                   * cvara_var[c_id][ii]);
+                                   * cvara_var[c_id][ij]);
 
         /* Calculation of the implicit part coming from Phil = C1rho eps/k(1) */
-        fimp[c_id][ii][ii] +=   crom[c_id] * cell_f_vol[c_id]
+        fimp[c_id][ij][ij] +=   crom[c_id] * cell_f_vol[c_id]
                                 * crij1 * cvara_ep[c_id] / trrij * thetv;
       }
 
@@ -1553,19 +1529,19 @@ _pre_solve_lrr_sg(const cs_field_t  *f_rij,
        */
 
       if (false) {
-        for (cs_lnum_t ii = 0; ii < 3; ii++) {
+        for (cs_lnum_t i = 0; i < 3; i++) {
           cs_real_t t1 = d1s3 * crij1 * cvara_ep[c_id] / trrij;
 
           /*  We substract cromo = -C1rho eps/k(-1/3Rij dij) */
-          c_st_prv[c_id][ii] -=    cromo[c_id] * cell_f_vol[c_id]
-                                 * t1 * cvara_var[c_id][ii];
+          c_st_prv[c_id][i] -=    cromo[c_id] * cell_f_vol[c_id]
+                                 * t1 * cvara_var[c_id][i];
 
           /* We add to rhs = -C1rho eps/k(-1/3Rij) */
-          rhs[c_id][ii] +=   crom[c_id] * cell_f_vol[c_id]
-                           * t1 * cvara_var[c_id][ii];
+          rhs[c_id][i] +=   crom[c_id] * cell_f_vol[c_id]
+                           * t1 * cvara_var[c_id][i];
 
           /* We add to fimp = C1rho eps/k(-1/3) */
-          fimp[c_id][ii][ii] += crom[c_id] * cell_f_vol[c_id] * t1;
+          fimp[c_id][i][i] += crom[c_id] * cell_f_vol[c_id] * t1;
         }
       }
     }
@@ -1585,22 +1561,22 @@ _pre_solve_lrr_sg(const cs_field_t  *f_rij,
       const cs_real_t trprod = 0.5 * cs_math_6_trace(produc[c_id]);
       const cs_real_t trrij = 0.5 * cs_math_6_trace(cvara_var[c_id]);
 
-      for (cs_lnum_t ii = 0; ii < 6; ii++) {
+      for (cs_lnum_t ij = 0; ij < 6; ij++) {
         /* Calculation of Prod+Phi1+Phi2-Eps
          *  = rhoPij - C1rho eps/k(Rij-2/3k dij)
          *           - C2rho(Pij-1/3Pkk dij) -2/3rho eps dij
          *  = rho{2/3dij[C2 Pkk/2+(C1-1)eps)]+(1-C2)Pij */
-        rhs[c_id][ii] +=  crom[c_id] * cell_f_vol[c_id]
-                        * (  _deltij[ii] * d2s3
+        rhs[c_id][ij] +=  crom[c_id] * cell_f_vol[c_id]
+                        * (  _vdeltij[ij] * d2s3
                            * (   crij2 * trprod
                               + (crij1-1.) * cvara_ep[c_id])
-                           + (1-cs_turb_crij2) * produc[c_id][ii]
-                           - crij1 * cvara_ep[c_id]/trrij * cvara_var[c_id][ii]);
+                           + (1-cs_turb_crij2) * produc[c_id][ij]
+                           - crij1 * cvara_ep[c_id]/trrij * cvara_var[c_id][ij]);
 
         /* Calculation of the implicit part coming from Phi1
          *  = C1rho eps/k(1-1/3 dij) */
-        fimp[c_id][ii][ii] +=   crom[c_id] * cell_f_vol[c_id]
-                                * (1-d1s3 *_deltij[ii]) * crij1
+        fimp[c_id][ij][ij] +=   crom[c_id] * cell_f_vol[c_id]
+                                * (1-d1s3 *_vdeltij[ij]) * crij1
                                 * cvara_ep[c_id]/trrij;
       }
     }
@@ -1634,32 +1610,32 @@ _pre_solve_lrr_sg(const cs_field_t  *f_rij,
       cs_rotation_coriolis_t(r, 1., matrot);
 
       /* Compute Gij: (i,j) component of the Coriolis production */
-      for (cs_lnum_t iii = 0; iii < 6; iii++) {
-        cs_lnum_t ii = _iv2t[iii];
-        cs_lnum_t jj = _jv2t[iii];
+      for (cs_lnum_t ij = 0; ij < 6; ij++) {
+        cs_lnum_t i = _iv2t[ij];
+        cs_lnum_t j = _jv2t[ij];
 
-        w2[c_id][iii] = 0.;
+        w2[c_id][ij] = 0.;
         for (cs_lnum_t kk = 0; kk < 3; kk++)
-          w2[c_id][iii] -=   ccorio
-                           * (  matrot[kk][ii]*cvara_var[c_id][_t2v[kk][jj]]
-                              + matrot[kk][jj]*cvara_var[c_id][_t2v[kk][ii]]);
+          w2[c_id][ij] -=   ccorio
+                           * (  matrot[kk][i]*cvara_var[c_id][_t2v[kk][j]]
+                              + matrot[kk][j]*cvara_var[c_id][_t2v[kk][i]]);
       }
 
       /* Coriolis contribution in the Phi1 term: (1-C2/2)Gij */
       if (icorio == 1) {
-        for (cs_lnum_t ii = 0; ii < 6; ii++)
-          w2[c_id][ii] *= crom[c_id] * cell_f_vol[c_id ]* (1.-0.5*cs_turb_crij2);
+        for (cs_lnum_t ij = 0; ij < 6; ij++)
+          w2[c_id][ij] *= crom[c_id] * cell_f_vol[c_id ]* (1.-0.5*cs_turb_crij2);
       }
 
       /* If source terms are extrapolated */
       if (st_prv_id > -1) {
-        for (cs_lnum_t ii = 0; ii < 6; ii++)
-          c_st_prv[c_id][ii] += w2[c_id][ii];
+        for (cs_lnum_t ij = 0; ij < 6; ij++)
+          c_st_prv[c_id][ij] += w2[c_id][ij];
       }
       /* Otherwise, directly in RHS */
       else {
-        for (cs_lnum_t ii = 0; ii < 6; ii++)
-          rhs[c_id][ii] += w2[c_id][ii];
+        for (cs_lnum_t ij = 0; ij < 6; ij++)
+          rhs[c_id][ij] += w2[c_id][ij];
       }
 
     } /* End of loop on cells */
@@ -1943,24 +1919,24 @@ _pre_solve_ssg(const cs_field_t  *f_rij,
 
     /* Rij */
 
-    for (cs_lnum_t ii = 0; ii < 3; ii++) {
-      for (cs_lnum_t jj = 0; jj < 3; jj++) {
-        xrij[ii][jj] = cvara_var[c_id][_t2v[ii][jj]];
+    for (cs_lnum_t i = 0; i < 3; i++) {
+      for (cs_lnum_t j = 0; j < 3; j++) {
+        xrij[i][j] = cvara_var[c_id][_t2v[i][j]];
       }
     }
 
     /* Pij */
-    for (cs_lnum_t ii = 0; ii < 3; ii++) {
-      for (cs_lnum_t jj = 0; jj < 3; jj++) {
-        xprod[ii][jj] = produc[c_id][_t2v[ii][jj]];
+    for (cs_lnum_t i = 0; i < 3; i++) {
+      for (cs_lnum_t j = 0; j < 3; j++) {
+        xprod[i][j] = produc[c_id][_t2v[i][j]];
       }
     }
 
     /* aij */
-    for (cs_lnum_t ii = 0; ii < 3; ii++) {
-      for (cs_lnum_t jj = 0; jj < 3; jj++) {
-        xaniso[ii][jj] =   xrij[ii][jj] / trrij
-                         - d2s3 * _identity[ii][jj];
+    for (cs_lnum_t i = 0; i < 3; i++) {
+      for (cs_lnum_t j = 0; j < 3; j++) {
+        xaniso[i][j] =   xrij[i][j] / trrij
+                         - d2s3 * _tdeltij[i][j];
       }
     }
 
@@ -1996,15 +1972,15 @@ _pre_solve_ssg(const cs_field_t  *f_rij,
       const cs_rotation_t *r = rotation + rot_id;
 
       cs_rotation_coriolis_t(r, 1., matrot);
-      for (cs_lnum_t ii = 0; ii < 3; ii++) {
-        for (cs_lnum_t jj = ii; jj < 3; jj++) {
-          for (cs_lnum_t kk = 0; kk < 3; kk++)
-              xprod[jj][ii] -= ccorio * (  matrot[kk][ii] * xrij[kk][jj]
-                                         + matrot[kk][jj] * xrij[kk][ii]);
+      for (cs_lnum_t i = 0; i < 3; i++) {
+        for (cs_lnum_t j = i; j < 3; j++) {
+          for (cs_lnum_t k = 0; k < 3; k++)
+              xprod[j][i] -= ccorio * (  matrot[k][i] * xrij[k][j]
+                                       + matrot[k][j] * xrij[k][i]);
         }
       }
 
-      xprod[0][1] = xprod[1][0]; /* Ensure symmetry (probably not necessary) */
+      xprod[0][1] = xprod[1][0]; /* Ensure symmetry (j<i not computed) */
       xprod[0][2] = xprod[2][0];
       xprod[1][2] = xprod[2][1];
 
@@ -2015,10 +1991,10 @@ _pre_solve_ssg(const cs_field_t  *f_rij,
     /* aii = aijaij */
     cs_real_t aii = 0, aklskl = 0;
 
-    for (cs_lnum_t jj = 0; jj < 3; jj++) {
-      for (cs_lnum_t ii = 0; ii < 3; ii++) {
-        aii += cs_math_pow2(xaniso[jj][ii]);         /* aij.aij */
-        aklskl += xaniso[jj][ii] * xstrai[jj][ii];   /* aij.Sij */
+    for (cs_lnum_t j = 0; j < 3; j++) {
+      for (cs_lnum_t i = 0; i < 3; i++) {
+        aii += cs_math_pow2(xaniso[j][i]);       /* aij.aij */
+        aklskl += xaniso[j][i] * xstrai[j][i];   /* aij.Sij */
       }
     }
 
@@ -2035,13 +2011,13 @@ _pre_solve_ssg(const cs_field_t  *f_rij,
       /* Compute inverse matrix of R^n
          (scaling by tr(R) for numerical stability) */
       cs_real_t matrn[6];
-      for (cs_lnum_t ii = 0; ii < 6; ii++)
-        matrn[ii] = cvara_var[c_id][ii] / trrij;
+      for (cs_lnum_t ij = 0; ij < 6; ij++)
+        matrn[ij] = cvara_var[c_id][ij] / trrij;
 
       cs_real_t oo_matrn[6];
       cs_math_sym_33_inv_cramer(matrn, oo_matrn);
-      for (cs_lnum_t ii = 0; ii < 6; ii++)
-        oo_matrn[ii] /= trrij;
+      for (cs_lnum_t ij = 0; ij < 6; ij++)
+        oo_matrn[ij] /= trrij;
 
       cs_real_t impl_lin_cst = 0;
       cs_real_t impl_id_cst = 0;
@@ -2077,7 +2053,7 @@ _pre_solve_ssg(const cs_field_t  *f_rij,
           for (cs_lnum_t j = 0; j < 3; j++) {
             const cs_lnum_t _ij = _t2v[i][j];
             implmat2add[i][j] =   xrotac[i][j]
-                                + impl_lin_cst * _deltij[_ij]
+                                + impl_lin_cst * _vdeltij[_ij]
                                 + impl_id_cst * d1s2 * oo_matrn[_ij]
                                 + ceps_impl * oo_matrn[_ij];
           }
@@ -2115,7 +2091,7 @@ _pre_solve_ssg(const cs_field_t  *f_rij,
           for (cs_lnum_t j = 0; j < 3; j++) {
             const cs_lnum_t _ij = _t2v[i][j];
             implmat2add[i][j] =   xrotac[i][j]
-                                + impl_lin_cst * _deltij[_ij]
+                                + impl_lin_cst * _vdeltij[_ij]
                                 + impl_id_cst * d1s2 * oo_matrn[_ij]
                                 + alpha3 * ceps_impl * oo_matrn[_ij];
           }
@@ -2172,14 +2148,14 @@ _pre_solve_ssg(const cs_field_t  *f_rij,
         const cs_real_t pij =     xprod[j][i];
         const cs_real_t phiij1 =   -cvara_ep[c_id]
                                  * (  cssgs1 * xaniso[j][i]
-                                    + cssgs2 * (aikakj - d1s3*_deltij[ij]*aii));
+                                    + cssgs2 * (aikakj - d1s3*_vdeltij[ij]*aii));
         const cs_real_t phiij2 =   -cssgr1 * trprod * xaniso[j][i]
                                  +   trrij * xstrai[j][i]
                                    * (cssgr2 - cssgr3*sqrt(aii))
                                  + cssgr4*trrij * (  aiksjk
-                                                   - d2s3 * _deltij[ij] * aklskl)
+                                                   - d2s3 * _vdeltij[ij] * aklskl)
                                  + cssgr5*trrij * aikrjk;
-        const cs_real_t epsij = -d2s3 * cvara_ep[c_id] * _deltij[ij];
+        const cs_real_t epsij = -d2s3 * cvara_ep[c_id] * _vdeltij[ij];
 
         w1[c_id] =   cromo[c_id] * cell_f_vol[c_id]
                    * (pij + phiij1 + phiij2 + epsij);
@@ -2198,7 +2174,7 @@ _pre_solve_ssg(const cs_field_t  *f_rij,
          * Compute the term near the wall \f$ \Phi_{ij}^w \f$ --> w3
          *
          * Phiw = -5.0 * (eps/k) * [R*Xn + Xn^T*R - 0.5*tr(Xn*R)*(Xn+Id)] */
-        const cs_real_t xnnd = d1s2 * (xnal[i]*xnal[j] + _deltij[ij]);
+        const cs_real_t xnnd = d1s2 * (xnal[i]*xnal[j] + _vdeltij[ij]);
 
         cs_real_t phiijw = 0;
         for (cs_lnum_t kk = 0; kk < 3; kk++) {
@@ -2214,7 +2190,7 @@ _pre_solve_ssg(const cs_field_t  *f_rij,
         const cs_real_t phiij2
           =   -cebmr1 * trprod * xaniso[j][i]
             +   trrij * (  xstrai[j][i] * (cebmr2 - cebmr3 * sqrt(aii))
-                         + cebmr4 * (aiksjk - d2s3 * _deltij[ij] * aklskl)
+                         + cebmr4 * (aiksjk - d2s3 * _vdeltij[ij] * aklskl)
                          + cebmr5 * aikrjk);
 
         /* Compute \f $\e_{ij}^w \f$ (Rotta model)
@@ -2222,7 +2198,7 @@ _pre_solve_ssg(const cs_field_t  *f_rij,
         const cs_real_t epsijw = xrij[j][i] / trrij * cvara_ep[c_id];
 
         /* Compute \e_{ij}^h */
-        const cs_real_t epsij = d2s3 * cvara_ep[c_id] * _deltij[ij];
+        const cs_real_t epsij = d2s3 * cvara_ep[c_id] * _vdeltij[ij];
 
         /* Compute explicit ST of the Rij equation
          *  \f[ P_{ij} + (1-\alpha^3)\Phi_{ij}^w + \alpha^3\Phi_{ij}^h
@@ -3068,12 +3044,12 @@ cs_turbulence_rij(int phase_id)
       cs_real_t xnal[3];
       cs_real_t xnoral = cs_math_3_norm(grad[c_id]);
       if (xnoral <= cs_math_epzero / pow(cell_f_vol[c_id], c_1ov3)) {
-        for (int ii = 0; ii < 3; ii++)
-          xnal[ii] = 1.0 / sqrt(3.0);
+        for (int i = 0; i < 3; i++)
+          xnal[i] = 1.0 / sqrt(3.0);
       }
       else {
-        for (int ii = 0; ii < 3; ii++)
-          xnal[ii] = grad[c_id][ii]/xnoral;
+        for (int i = 0; i < 3; i++)
+          xnal[i] = grad[c_id][i]/xnoral;
       }
 
       const cs_real_t alpha3 = cs_math_pow3(cvar_al[c_id]);
@@ -3092,24 +3068,24 @@ cs_turbulence_rij(int phase_id)
                                           - (ypa/11.)*exp(-0.33*ypa))),
                                   1.0);
 
-      for (cs_lnum_t ii = 0; ii < 3; ii++)
-        vel[c_id][ii] = limiter * vel[c_id][ii];
+      for (cs_lnum_t i = 0; i < 3; i++)
+        vel[c_id][i] = limiter * vel[c_id][i];
 
       const cs_real_t ut2 = 0.050 * uref;
       cvar_ep[c_id] =   cs_math_pow3(utaurf)
                       * cs_math_fmin(1. / (xkappa * 15.0 * nu0 / utaurf),
                                      1. / (xkappa * ya));
       const cs_real_t tke =     cvar_ep[c_id] * 0.5 / nu0*cs_math_pow2(ya)
-                              * cs_math_pow2(exp(-ypa/25))
+                              * cs_math_pow2(exp(-ypa/25.))
                             +   cs_math_pow2(ut2) / 0.3
                               * cs_math_pow2((1.-exp(-ypa/25.)));
 
-      for (int ii = 0; ii < 3; ii++)
-        cvar_rij[c_id][ii] =      alpha3  * 2./3 * tke
-                            + (1.-alpha3) * (1. - cs_math_pow2(xnal[ii])) * tke;
-      cvar_rij[c_id][3] = -(1.-alpha3)*(xnal[0]*xnal[1])*tke;
-      cvar_rij[c_id][4] = -(1.-alpha3)*(xnal[1]*xnal[2])*tke;
-      cvar_rij[c_id][5] = -(1.-alpha3)*(xnal[0]*xnal[2])*tke;
+      for (cs_lnum_t ij = 0; ij < 6; ij++) {
+        cs_lnum_t i = _iv2t[ij];
+        cs_lnum_t j = _jv2t[ij];
+        cvar_rij[c_id][ij] =      alpha3  * 2./3 * tke * _vdeltij[ij]
+                            + (1.-alpha3) * (1. - xnal[i]*xnal[j]) * tke;
+      }
 
     }); /* End of loop on cells */
 
@@ -3162,14 +3138,11 @@ cs_turbulence_rij(int phase_id)
     ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
       const cs_real_t k = 0.5 * cs_math_6_trace(cvara_rij[c_id]);
       const cs_real_t p = 0.5 * cs_math_6_trace(produc[c_id]);
-      for (cs_lnum_t ii = 0; ii < 3; ii++)
-        cpro_press_correl[c_id][ii]
-          = - crij1 * cvar_ep[c_id] / k * (cvara_rij[c_id][ii] - d2s3*k)
-            - crij2 * (produc[c_id][ii] - d2s3 * p);
-      for (cs_lnum_t ii = 3; ii < 6; ii++)
-        cpro_press_correl[c_id][ii]
-          = - crij1 * cvar_ep[c_id] /  k * (cvara_rij[c_id][ii])
-            - crij2 * (produc[c_id][ii]);
+      for (cs_lnum_t ij = 0; ij < 3; ij++)
+        cpro_press_correl[c_id][ij]
+          = - crij1 * cvar_ep[c_id] / k
+                    * (cvara_rij[c_id][ij] - d2s3*k* _vdeltij[ij])
+            - crij2 * (produc[c_id][ij] - d2s3 * p * _vdeltij[ij]);
     });
   }
 
@@ -3318,8 +3291,8 @@ cs_turbulence_rij(int phase_id)
           cs_lnum_t k = _iv2t[kl];
           cs_lnum_t l = _jv2t[kl];
           bf[ij][kl] = b_lam[face_id] * n[l]
-                       * (  n[i] * (_identity[j][k] - n[j]*n[k])
-                          + n[j] * (_identity[i][k] - n[i]*n[k]));
+                       * (  n[i] * (_tdeltij[j][k] - n[j]*n[k])
+                          + n[j] * (_tdeltij[i][k] - n[i]*n[k]));
         }
       }
 
@@ -3340,8 +3313,8 @@ cs_turbulence_rij(int phase_id)
   if (c_st_prv != nullptr) {
     const cs_real_t thetp1 = 1. + thets;
     ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
-      for (cs_lnum_t ii = 0; ii < 6; ii++)
-        rhs[c_id][ii] += thetp1 * c_st_prv[c_id][ii];
+      for (cs_lnum_t ij = 0; ij < 6; ij++)
+        rhs[c_id][ij] += thetp1 * c_st_prv[c_id][ij];
     });
   }
 
@@ -3681,17 +3654,17 @@ cs_turbulence_rij_solve_alpha(int        f_id,
   cs_array_copy<cs_real_t>(n_cells, fimp, alpha_min);
 
   ctx.parallel_for_i_faces(m, [=] CS_F_HOST_DEVICE (cs_lnum_t  face_id) {
-    const cs_lnum_t ii = i_face_cells[face_id][0];
-    const cs_lnum_t jj = i_face_cells[face_id][1];
-    if (ii < n_cells)
-      cs_dispatch_sum(&alpha_min[ii], viscf[face_id], i_sum_type);
-    if (jj < n_cells)
-      cs_dispatch_sum(&alpha_min[jj], viscf[face_id], i_sum_type);
+    const cs_lnum_t c_id0 = i_face_cells[face_id][0];
+    const cs_lnum_t c_id1 = i_face_cells[face_id][1];
+    if (c_id0 < n_cells)
+      cs_dispatch_sum(&alpha_min[c_id0], viscf[face_id], i_sum_type);
+    if (c_id1 < n_cells)
+      cs_dispatch_sum(&alpha_min[c_id1], viscf[face_id], i_sum_type);
   });
 
   ctx.parallel_for_b_faces(m, [=] CS_F_HOST_DEVICE (cs_lnum_t  face_id) {
-    const cs_lnum_t ii = b_face_cells[face_id];
-    cs_dispatch_sum(&alpha_min[ii], viscb[face_id]/distb[face_id], b_sum_type);
+    const cs_lnum_t c_id = b_face_cells[face_id];
+    cs_dispatch_sum(&alpha_min[c_id], viscb[face_id]/distb[face_id], b_sum_type);
   });
 
   ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
@@ -3839,9 +3812,9 @@ cs_turbulence_rij_clip(int        phase_id,
    * New test is rii < epzero*rijref  */
 
   cs_real_t rijmax[3] = {0, 0, 0};
-  for (cs_lnum_t ii = 0; ii < 3; ii++) {
-    if (vmax[ii] > rijmax[ii])
-      rijmax[ii] = vmax[ii];
+  for (cs_lnum_t i = 0; i < 3; i++) {
+    if (vmax[i] > rijmax[i])
+      rijmax[i] = vmax[i];
   }
 
   cs_parall_max(3, CS_REAL_TYPE, rijmax);
@@ -3875,8 +3848,8 @@ cs_turbulence_rij_clip(int        phase_id,
          not count as clippings) */
 
       if (c_is_solid[solid_stride*c_id]) {
-        for (cs_lnum_t ii = 0; ii < 6; ii++)
-          cvar_rij[c_id][ii] = 0;
+        for (cs_lnum_t ij = 0; ij < 6; ij++)
+          cvar_rij[c_id][ij] = 0;
         cvar_ep[c_id] = 1e-12;
         continue;
       }
@@ -3887,26 +3860,26 @@ cs_turbulence_rij_clip(int        phase_id,
       const cs_real_t trrij = cs_math_6_trace(cvar_rij[c_id]);
 
       if (trrij <= cs_math_epzero*trref) {
-        for (cs_lnum_t ii = 0; ii < 3; ii++) {
+        for (cs_lnum_t i = 0; i < 3; i++) {
           if (cpro_rij_clipped != nullptr) {
-            cpro_rij_clipped[c_id][ii]
-              = cvar_rij[c_id][ii] - cs_math_epzero*rijref;
-            cpro_rij_clipped[c_id][ii+3] = cvar_rij[c_id][ii+3];
+            cpro_rij_clipped[c_id][i]
+              = cvar_rij[c_id][i] - cs_math_epzero*rijref;
+            cpro_rij_clipped[c_id][i+3] = cvar_rij[c_id][i+3];
           }
 
-          cvar_rij[c_id][ii] = cs_math_epzero*rijref;
-          cvar_rij[c_id][ii+3] = 0.0;
+          cvar_rij[c_id][i] = cs_math_epzero*rijref;
+          cvar_rij[c_id][i+3] = 0.0;
 
-          t_iclrij[ii]++;
-          t_iclrij[ii+3]++;
+          t_iclrij[i]++;
+          t_iclrij[i+3]++;
         }
 
         is_clipped = 1;
       }
       else {
         cs_real_t tensor[6];
-        for (cs_lnum_t ii = 0; ii < 6; ii++)
-          tensor[ii] = cvar_rij[c_id][ii]/trrij;
+        for (cs_lnum_t ij = 0; ij < 6; ij++)
+          tensor[ij] = cvar_rij[c_id][ij]/trrij;
 
         cs_real_t eigen_vals[3];
         _sym_33_eigen(tensor, eigen_vals);
@@ -3929,16 +3902,16 @@ cs_turbulence_rij_clip(int        phase_id,
           cs_real_t eigen_offset
             = cs_math_fmin(-eigen_min/(1.0/3.0-eigen_min)+0.1, 1.0);
 
-          for (cs_lnum_t ii = 0; ii < 6; ii++) {
-            cvar_rij[c_id][ii] = (1.0-eigen_offset)*cvar_rij[c_id][ii];
+          for (cs_lnum_t ij = 0; ij < 6; ij++) {
+            cvar_rij[c_id][ij] = (1.0-eigen_offset)*cvar_rij[c_id][ij];
 
-            if (ii < 3)
-              cvar_rij[c_id][ii] += trrij*(eigen_offset+eigen_tol)/3.;
+            if (ij < 3)
+              cvar_rij[c_id][ij] += trrij*(eigen_offset+eigen_tol)/3.;
 
             if (cpro_rij_clipped != nullptr)
-              cpro_rij_clipped[c_id][ii] = eigen_offset*cvar_rij[c_id][ii];
+              cpro_rij_clipped[c_id][ij] = eigen_offset*cvar_rij[c_id][ij];
 
-            t_iclrij[ii]++;
+            t_iclrij[ij]++;
           }
         }
       }
@@ -3962,28 +3935,28 @@ cs_turbulence_rij_clip(int        phase_id,
       /* Enforce Cauchy Schwartz inequality (only for x, y, z directions) */
 
       cs_real_t cvar_var1, cvar_var2;
-      for (cs_lnum_t ii = 3; ii < 6; ii++) {
-        if (ii == 3) {
+      for (cs_lnum_t ij = 3; ij < 6; ij++) {
+        if (ij == 3) {
           cvar_var1 = cvar_rij[c_id][0];
           cvar_var2 = cvar_rij[c_id][1];
         }
-        else if (ii == 4) {
+        else if (ij == 4) {
           cvar_var1 = cvar_rij[c_id][1];
           cvar_var2 = cvar_rij[c_id][2];
         }
-        else if (ii == 5) {
+        else if (ij == 5) {
           cvar_var1 = cvar_rij[c_id][0];
           cvar_var2 = cvar_rij[c_id][2];
         }
 
         const cs_real_t rijmin = sqrt(cvar_var1*cvar_var2);
-        if (rijmin < cs_math_fabs(cvar_rij[c_id][ii])) {
+        if (rijmin < cs_math_fabs(cvar_rij[c_id][ij])) {
           is_clipped = 1;
           if (cpro_rij_clipped != nullptr)
-            cpro_rij_clipped[c_id][ii] = cvar_rij[c_id][ii];
-          cvar_rij[c_id][ii] =   _sign(1., cvar_rij[c_id][ii])
+            cpro_rij_clipped[c_id][ij] = cvar_rij[c_id][ij];
+          cvar_rij[c_id][ij] =   _sign(1., cvar_rij[c_id][ij])
                                * rijmin/(1.+cs_math_epzero);
-          t_iclrij[ii]++;
+          t_iclrij[ij]++;
         }
       }
       t_icltot += is_clipped;
@@ -3992,9 +3965,9 @@ cs_turbulence_rij_clip(int        phase_id,
 
     /* Sum over threads */
 
-    for (cs_lnum_t i = 0; i < 6; i++) {
+    for (cs_lnum_t ij = 0; ij < 6; ij++) {
       #pragma omp atomic
-      iclrij[i] += t_iclrij[i];
+      iclrij[ij] += t_iclrij[ij];
     }
 
     #pragma omp atomic
@@ -4093,9 +4066,9 @@ cs_turbulence_rij_mu_t(int  phase_id)
       /* We compute the normal Reynolds Stresses */
 
       cs_real_t xrnn = 0;
-      for (cs_lnum_t ii = 0; ii < 3; ii++) {
-        for (cs_lnum_t jj = 0; jj < 3; jj++)
-          xrnn += xrij[ii][jj]*xnal[jj]*xnal[ii];
+      for (cs_lnum_t i = 0; i < 3; i++) {
+        for (cs_lnum_t j = 0; j < 3; j++)
+          xrnn += xrij[i][j]*xnal[j]*xnal[i];
       }
       xrnn = (1.-alpha3)*xrnn + alpha3*xk;
       xrnn = cs_math_fmax(xrnn, 1.e-12);
