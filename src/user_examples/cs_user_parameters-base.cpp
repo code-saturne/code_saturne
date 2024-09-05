@@ -243,6 +243,7 @@ cs_user_model(void)
    *  for unstable
    *  - CS_ATMO_UNIV_FN_HOGSTROM (default)
    *  - CS_ATMO_UNIV_FN_BUSINGER
+   *  - CS_ATMO_UNIV_FN_CARL
    *
    * */
 
