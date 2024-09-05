@@ -498,6 +498,17 @@ typedef enum {
 
 } cs_param_bc_type_t;
 
+/* Compatibility macros */
+
+#define  CS_PARAM_BC_HMG_DIRICHLET   CS_BC_HMG_DIRICHLET
+#define  CS_PARAM_BC_DIRICHLET       CS_BC_DIRICHLET
+#define  CS_PARAM_BC_HMG_NEUMANN     CS_BC_SYMMETRY
+#define  CS_PARAM_BC_NEUMANN         CS_BC_NEUMANN
+#define  CS_PARAM_BC_NEUMANN_FULL    CS_BC_NEUMANN_FULL
+#define  CS_PARAM_BC_ROBIN           CS_BC_ROBIN
+#define  CS_PARAM_BC_SLIDING         CS_BC_SYMMETRY
+#define  CS_PARAM_BC_CIRCULATION     CS_BC_CIRCULATION
+#define  CS_PARAM_BC_WALL_PRECRIBED  CS_BC_WALL_MODELLED
 
 /*! \enum cs_param_bc_enforce_t
  * Type of method for enforcing the boundary conditions. According to the type
