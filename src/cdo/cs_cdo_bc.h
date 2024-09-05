@@ -246,6 +246,7 @@ cs_cdo_bc_get_flag(cs_param_bc_type_t   bc_type)
   case CS_BC_GENERALIZED_SYM:
     bft_error(__FILE__, __LINE__, 0,
               _("invalid boundary condition CS_BC_GENERALIZED_SYM for CDO"));
+    ret_flag = 0;
     break;
   case CS_BC_ROBIN:
     ret_flag = CS_CDO_BC_ROBIN;

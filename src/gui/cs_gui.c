@@ -2098,8 +2098,9 @@ cs_gui_checkpoint_parameters(void)
   cs_gui_node_get_child_status_int(tn, "frozen_field", &(t_sch->iccvfg));
 
   if (t_sch->iccvfg == 1) {
-    cs_time_control_t *vp_tc =
-      &(cs_glob_velocity_pressure_param->time_control);
+    cs_velocity_pressure_param_t *vp_param
+      = cs_get_glob_velocity_pressure_param();
+    cs_time_control_t *vp_tc = &(vp_param->time_control);
     vp_tc->interval_nt = -1;
   }
 
