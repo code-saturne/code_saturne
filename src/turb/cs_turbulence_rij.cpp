@@ -649,7 +649,7 @@ _rij_echo(int              phase_id,
                                      {3, 1, 4},
                                      {5, 4, 2}};
 
-  const cs_lnum_t i_6_to_33[6] = {0, 1, 2, 0, 0, 1};
+  const cs_lnum_t i_6_to_33[6] = {0, 1, 2, 0, 1, 0};
   const cs_lnum_t j_6_to_33[6] = {0, 1, 2, 1, 2, 2};
 
   const cs_real_t kr_33[3][3] = {{1., 0., 0.},
