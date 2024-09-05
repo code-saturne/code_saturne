@@ -371,10 +371,10 @@
 
   Two modes are available:
 
-  - \ref CS_DOMAIN_CDO_MODE_ONLY for a usage of CDO, HHO or MAC in stand-lone
+  - \ref CS_PARAM_CDO_MODE_ONLY for a usage of CDO, HHO or MAC in stand-lone
     (i.e. without the legacy Finite Volume approach)
 
-  - \ref CS_DOMAIN_CDO_MODE_WITH_FV for a usage which can share some
+  - \ref CS_PARAM_CDO_MODE_WITH_FV for a usage which can share some
     equations/models solved with CDO/HHO schemes and some other
     equations/models solved with the legacy Finite Volume approach
 

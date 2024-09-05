@@ -147,9 +147,9 @@ Activation of the CDO/HHO part
 
 The very first step is to activate the CDO module in the function
 \ref cs_user_model There are two ways to switch on CDO/HHO schemes:
-    - \ref CS_DOMAIN_CDO_MODE_ONLY for a usage of CDO or HHO in stand-lone
+    - \ref CS_PARAM_CDO_MODE_ONLY for a usage of CDO or HHO in stand-lone
       (i.e. without the legacy Finite Volume approach)
-    - \ref CS_DOMAIN_CDO_MODE_WITH_FV for a usage which can share some
+    - \ref CS_PARAM_CDO_MODE_WITH_FV for a usage which can share some
     equations/models solved with CDO/HHO schemes and some other equations/models
     solved with the legacy Finite Volume approach.
 

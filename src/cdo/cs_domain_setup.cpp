@@ -925,7 +925,7 @@ cs_domain_setup_log(const cs_domain_t   *domain)
     else if (domain->time_options.idtvar == 1)
       cs_log_printf(CS_LOG_SETUP, " * Time step *variable in time*\n\n");
     else {
-      if (cs_glob_param_cdo_mode != CS_DOMAIN_CDO_MODE_WITH_FV)
+      if (cs_glob_param_cdo_mode != CS_PARAM_CDO_MODE_WITH_FV)
         bft_error(__FILE__, __LINE__, 0,
                   _(" Invalid idtvar value for the CDO module.\n"));
     }
