@@ -599,8 +599,10 @@ cs_ctwr_phyvar_update(cs_real_t  rho0,
     therm_diff_h[cell_id] = lambda_h;
   }
 
-  cs_gnum_t n_g_clip_count[4] = {nclip_yw_min, nclip_yw_max,
-                                 nclip_yr_min, nclip_yr_max};
+  cs_gnum_t n_g_clip_count[4] = {(cs_gnum_t)nclip_yw_min,
+                                 (cs_gnum_t)nclip_yw_max,
+                                 (cs_gnum_t)nclip_yr_min,
+                                 (cs_gnum_t)nclip_yr_max};
 
   cs_parall_sum(4, CS_GNUM_TYPE, n_g_clip_count);
 
