@@ -128,6 +128,68 @@ _system_should_be_sym(cs_param_solver_type_t  solver)
   }
 }
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Retrieve the PETSc kayword related to the given type of smmother used
+ *        in HYPRE boomeramg
+ *
+ * \param[in]      type    type of HYPRE boomeramg smoother
+ * \param[in]      msg     message to display in case of error
+ * \param[in, out] option  keyval option
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_get_petsc_bamg_smoother_keyval(cs_param_amg_boomer_smoother_t  type,
+                                const char                     *msg,
+                                char                            option[])
+{
+  assert(option != NULL);
+
+  switch (type) {
+
+  case CS_PARAM_AMG_BOOMER_JACOBI:
+    sprintf(option, "%s", "Jacobi");
+    break;
+  case CS_PARAM_AMG_BOOMER_BACKWARD_GS:
+    sprintf(option, "%s", "backward-SOR/Jacobi");
+    break;
+  case CS_PARAM_AMG_BOOMER_FORWARD_GS:
+    sprintf(option, "%s", "SOR/Jacobi");
+    break;
+  case CS_PARAM_AMG_BOOMER_HYBRID_SSOR:
+    sprintf(option, "%s", "symmetric-SOR/Jacobi");
+    break;
+  case CS_PARAM_AMG_BOOMER_L1_SGS:
+    sprintf(option, "%s", "l1scaled-SOR/Jacobi");
+    break;
+  case CS_PARAM_AMG_BOOMER_GAUSS_ELIM:
+    sprintf(option, "%s", "Gaussian-elimination");
+    break;
+  case CS_PARAM_AMG_BOOMER_BACKWARD_L1_GS:
+    sprintf(option, "%s", "backward-l1-Gauss-Seidel");
+    break;
+  case CS_PARAM_AMG_BOOMER_FORWARD_L1_GS:
+    sprintf(option, "%s", "l1-Gauss-Seidel");
+    break;
+  case CS_PARAM_AMG_BOOMER_CG:
+    sprintf(option, "%s", "CG");
+    break;
+  case CS_PARAM_AMG_BOOMER_CHEBYSHEV:
+    sprintf(option, "%s", "Chebyshev");
+    break;
+  case CS_PARAM_AMG_BOOMER_FCF_JACOBI:
+    sprintf(option, "%s", "FCF-Jacobi");
+    break;
+  case CS_PARAM_AMG_BOOMER_L1_JACOBI:
+    sprintf(option, "%s", "l1scaled-Jacobi");
+    break;
+
+  default:
+    bft_error(__FILE__, __LINE__, 0, "%s: Invalid %s", __func__, msg);
+  }
+}
+
 #if defined(HAVE_PETSC)
 /*----------------------------------------------------------------------------*/
 /*!
@@ -573,100 +635,20 @@ _petsc_pchypre_hook(const char             *prefix,
    *         can be a good choice
    */
 
-  /* Smoother for the down cycle */
+  /* Smoother for the down part of the cycle */
 
-  switch (bamgp->down_smoother) {
-
-  case CS_PARAM_AMG_BOOMER_JACOBI:
-    sprintf(option, "%s", "Jacobi");
-    break;
-  case CS_PARAM_AMG_BOOMER_BACKWARD_GS:
-    sprintf(option, "%s", "backward-SOR/Jacobi");
-    break;
-  case CS_PARAM_AMG_BOOMER_FORWARD_GS:
-    sprintf(option, "%s", "SOR/Jacobi");
-    break;
-  case CS_PARAM_AMG_BOOMER_HYBRID_SSOR:
-    sprintf(option, "%s", "symmetric-SOR/Jacobi");
-    break;
-  case CS_PARAM_AMG_BOOMER_L1_SGS:
-    sprintf(option, "%s", "l1scaled-SOR/Jacobi");
-    break;
-  case CS_PARAM_AMG_BOOMER_GAUSS_ELIM:
-    sprintf(option, "%s", "Gaussian-elimination");
-    break;
-  case CS_PARAM_AMG_BOOMER_BACKWARD_L1_GS:
-    sprintf(option, "%s", "backward-l1-Gauss-Seidel");
-    break;
-  case CS_PARAM_AMG_BOOMER_FORWARD_L1_GS:
-    sprintf(option, "%s", "l1-Gauss-Seidel");
-    break;
-  case CS_PARAM_AMG_BOOMER_CG:
-    sprintf(option, "%s", "CG");
-    break;
-  case CS_PARAM_AMG_BOOMER_CHEBYSHEV:
-    sprintf(option, "%s", "Chebyshev");
-    break;
-  case CS_PARAM_AMG_BOOMER_FCF_JACOBI:
-    sprintf(option, "%s", "FCF-Jacobi");
-    break;
-  case CS_PARAM_AMG_BOOMER_L1_JACOBI:
-    sprintf(option, "%s", "l1scaled-Jacobi");
-    break;
-
-  default:
-    bft_error(__FILE__, __LINE__, 0, "%s: Invalid down smoother", __func__);
-  }
+  _get_petsc_bamg_smoother_keyval(bamgp->down_smoother, "down smoother",
+                                  option);
 
   _petsc_cmd(true, prefix, "pc_hypre_boomeramg_relax_type_down", option);
 
   sprintf(option, "%d", bamgp->n_down_iter);
   _petsc_cmd(true, prefix, "pc_hypre_boomeramg_grid_sweeps_down", option);
 
-  /* Smoother for the Up cycle */
+  /* Smoother for the up part of the cycle */
 
-  switch (bamgp->up_smoother) {
-
-  case CS_PARAM_AMG_BOOMER_JACOBI:
-    sprintf(option, "%s", "Jacobi");
-    break;
-  case CS_PARAM_AMG_BOOMER_BACKWARD_GS:
-    sprintf(option, "%s", "backward-SOR/Jacobi");
-    break;
-  case CS_PARAM_AMG_BOOMER_FORWARD_GS:
-    sprintf(option, "%s", "SOR/Jacobi");
-    break;
-  case CS_PARAM_AMG_BOOMER_HYBRID_SSOR:
-    sprintf(option, "%s", "symmetric-SOR/Jacobi");
-    break;
-  case CS_PARAM_AMG_BOOMER_L1_SGS:
-    sprintf(option, "%s", "l1scaled-SOR/Jacobi");
-    break;
-  case CS_PARAM_AMG_BOOMER_GAUSS_ELIM:
-    sprintf(option, "%s", "Gaussian-elimination");
-    break;
-  case CS_PARAM_AMG_BOOMER_BACKWARD_L1_GS:
-    sprintf(option, "%s", "backward-l1-Gauss-Seidel");
-    break;
-  case CS_PARAM_AMG_BOOMER_FORWARD_L1_GS:
-    sprintf(option, "%s", "l1-Gauss-Seidel");
-    break;
-  case CS_PARAM_AMG_BOOMER_CG:
-    sprintf(option, "%s", "CG");
-    break;
-  case CS_PARAM_AMG_BOOMER_CHEBYSHEV:
-    sprintf(option, "%s", "Chebyshev");
-    break;
-  case CS_PARAM_AMG_BOOMER_FCF_JACOBI:
-    sprintf(option, "%s", "FCF-Jacobi");
-    break;
-  case CS_PARAM_AMG_BOOMER_L1_JACOBI:
-    sprintf(option, "%s", "l1scaled-Jacobi");
-    break;
-
-  default:
-    bft_error(__FILE__, __LINE__, 0, "%s: Invalid up smoother", __func__);
-  }
+  _get_petsc_bamg_smoother_keyval(bamgp->up_smoother, "up smoother",
+                                  option);
 
   _petsc_cmd(true, prefix, "pc_hypre_boomeramg_relax_type_up", option);
 
@@ -675,49 +657,9 @@ _petsc_pchypre_hook(const char             *prefix,
 
   /* Solver for the coarsest level */
 
-  switch (bamgp->coarse_solver) {
-
-  case CS_PARAM_AMG_BOOMER_JACOBI:
-    sprintf(option, "%s", "Jacobi");
-    break;
-  case CS_PARAM_AMG_BOOMER_FORWARD_GS:
-    sprintf(option, "%s", "SOR/Jacobi");
-    break;
-  case CS_PARAM_AMG_BOOMER_BACKWARD_GS:
-    sprintf(option, "%s", "backward-SOR/Jacobi");
-    break;
-  case CS_PARAM_AMG_BOOMER_HYBRID_SSOR:
-    sprintf(option, "%s", "symmetric-SOR/Jacobi");
-    break;
-  case CS_PARAM_AMG_BOOMER_L1_SGS:
-    sprintf(option, "%s", "l1scaled-SOR/Jacobi");
-    break;
-  case CS_PARAM_AMG_BOOMER_GAUSS_ELIM:
-    sprintf(option, "%s", "Gaussian-elimination");
-    break;
-  case CS_PARAM_AMG_BOOMER_BACKWARD_L1_GS:
-    sprintf(option, "%s", "l1-Gauss-Seidel");
-    break;
-  case CS_PARAM_AMG_BOOMER_FORWARD_L1_GS:
-    sprintf(option, "%s", "backward-l1-Gauss-Seidel");
-    break;
-  case CS_PARAM_AMG_BOOMER_CG:
-    sprintf(option, "%s", "CG");
-    break;
-  case CS_PARAM_AMG_BOOMER_CHEBYSHEV:
-    sprintf(option, "%s", "Chebyshev");
-    break;
-  case CS_PARAM_AMG_BOOMER_FCF_JACOBI:
-    sprintf(option, "%s", "FCF-Jacobi");
-    break;
-  case CS_PARAM_AMG_BOOMER_L1_JACOBI:
-    sprintf(option, "%s", "l1scaled-Jacobi");
-    break;
-
-  default:
-    bft_error(__FILE__, __LINE__, 0, "%s: Invalid up smoother", __func__);
-  }
-
+  _get_petsc_bamg_smoother_keyval(bamgp->coarse_solver, "coarse solver",
+                                  option);
+  _petsc_cmd(true, prefix, "pc_hypre_boomeramg_relax_type_coarse", option);
 #endif /* defined(PETSC_HAVE_HYPRE) */
 }
 
