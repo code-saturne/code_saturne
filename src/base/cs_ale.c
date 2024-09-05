@@ -1642,6 +1642,8 @@ cs_ale_add_property_fields(void)
 void
 cs_ale_init_setup(cs_domain_t *domain)
 {
+  CS_NO_WARN_IF_UNUSED(domain);
+
   /* Mesh viscosity (iso or ortho)
    * TODO declare it before: add in activate, def here...  */
 

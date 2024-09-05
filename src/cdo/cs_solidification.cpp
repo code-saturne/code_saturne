@@ -514,9 +514,9 @@ _do_monitoring(const cs_cdo_quantities_t   *quant)
 
     cs_log_printf(CS_LOG_DEFAULT,
                   "### Solidification monitoring: liquid/mushy/solid states\n"
-                  "  * Solid    | %6.2f\%% for %9lu cells;\n"
-                  "  * Mushy    | %6.2f\%% for %9lu cells;\n"
-                  "  * Liquid   | %6.2f\%% for %9lu cells;\n",
+                  "  * Solid    | %6.2f%% for %9lu cells;\n"
+                  "  * Mushy    | %6.2f%% for %9lu cells;\n"
+                  "  * Liquid   | %6.2f%% for %9lu cells;\n",
                   solid->state_ratio[CS_SOLIDIFICATION_STATE_SOLID],
                   solid->n_g_cells[CS_SOLIDIFICATION_STATE_SOLID],
                   solid->state_ratio[CS_SOLIDIFICATION_STATE_MUSHY],
@@ -526,7 +526,7 @@ _do_monitoring(const cs_cdo_quantities_t   *quant)
 
     if (solid->model == CS_SOLIDIFICATION_MODEL_BINARY_ALLOY)
       cs_log_printf(CS_LOG_DEFAULT,
-                    "  * Eutectic | %6.2f\%% for %9lu cells;\n",
+                    "  * Eutectic | %6.2f%% for %9lu cells;\n",
                     solid->state_ratio[CS_SOLIDIFICATION_STATE_EUTECTIC],
                     solid->n_g_cells[CS_SOLIDIFICATION_STATE_EUTECTIC]);
 
@@ -3752,7 +3752,7 @@ cs_solidification_check_voller_model(void)
 
   if (solid->forcing_coef < FLT_MIN)
     bft_error(__FILE__, __LINE__, 0,
-              " %s: Invalid value %g for the Kozeny-Carman parameters:\n"
+              " %s: Invalid value for the Kozeny-Carman parameters:\n"
               " Forcing coef: %6.4e\n",
               __func__, solid->forcing_coef);
 
@@ -3881,7 +3881,7 @@ cs_solidification_check_binary_alloy_model(void)
 
   if (solid->forcing_coef < FLT_MIN)
     bft_error(__FILE__, __LINE__, 0,
-              " %s: Invalid value %g for the Kozeny-Carman parameters:\n"
+              " %s: Invalid value for the Kozeny-Carman parameters:\n"
               " Forcing coef: %6.4e\n",
               __func__, solid->forcing_coef);
 
@@ -4811,7 +4811,7 @@ cs_solidification_log_setup(void)
                     module, solid->latent_heat);
       cs_log_printf(CS_LOG_SETUP,
                     "  * %s | Kozeny-Carman parameters: s_das: %6.4e,"
-                    " k: %6.4e, tortuosity: %6.4e\n",
+                    " k: %6.4e, tortuosity: %6.4e\n"
                     "  * %s | Resulting forcing coef: %6.4e\n",
                     module, solid->s_das, solid->kozeny_constant,
                     solid->tortuosity,

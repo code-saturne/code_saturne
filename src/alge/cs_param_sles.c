@@ -1387,24 +1387,24 @@ cs_param_sles_amg_inhouse(cs_param_sles_t                *slesp,
 
   if (n_down_iter != CS_CDO_KEEP_DEFAULT)
     amgp->n_down_iter = n_down_iter;
-  if (abs(down_smoother - CS_CDO_KEEP_DEFAULT) > 0)
+  if ((int)down_smoother != CS_CDO_KEEP_DEFAULT)
     amgp->down_smoother = down_smoother;
   if (down_poly_deg != CS_CDO_KEEP_DEFAULT)
     amgp->down_poly_degree = down_poly_deg;
 
   if (n_up_iter != CS_CDO_KEEP_DEFAULT)
     amgp->n_up_iter = n_up_iter;
-  if (abs(up_smoother - CS_CDO_KEEP_DEFAULT) > 0)
+  if ((int)up_smoother != CS_CDO_KEEP_DEFAULT)
     amgp->up_smoother = up_smoother;
   if (up_poly_deg != CS_CDO_KEEP_DEFAULT)
     amgp->up_poly_degree = up_poly_deg;
 
-  if (abs(coarse_solver - CS_CDO_KEEP_DEFAULT) > 0)
+  if ((int)coarse_solver != CS_CDO_KEEP_DEFAULT)
     amgp->coarse_solver = coarse_solver;
   if (coarse_poly_deg != CS_CDO_KEEP_DEFAULT)
     amgp->coarse_poly_degree = coarse_poly_deg;
 
-  if (abs(coarsen_algo - CS_CDO_KEEP_DEFAULT) > 0)
+  if ((int)coarsen_algo != CS_CDO_KEEP_DEFAULT)
     amgp->coarsen_algo = coarsen_algo;
   if (aggreg_limit != CS_CDO_KEEP_DEFAULT)
     amgp->aggreg_limit = aggreg_limit;
