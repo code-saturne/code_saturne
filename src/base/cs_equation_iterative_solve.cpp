@@ -179,7 +179,7 @@
  *                               - 0 upwind scheme
  *                               - 1 imposed flux
  * \param[in, out] fimp          \f$ \tens{f_s}^{imp} \f$
- * \param[in]      smbrp         Right hand side \f$ \vect{Rhs}^k \f$
+ * \param[in, out] smbrp         Right hand side \f$ \vect{Rhs}^k \f$
  * \param[in, out] pvar          current variable
  * \param[out]     eswork        prediction-stage error estimator
  *                               (if iescap >= 0)
@@ -422,7 +422,7 @@ _equation_iterative_solve_strided(int                   idtvar,
   /* We compute the total explicit balance. */
   cs_real_t thetex = 1. - thetap;
 
-  /* Si THETEX=0, ce n'est pas la peine d'en rajouter */
+  /* If THETEX=0, no need to add anything */
   if (cs_math_fabs(thetex) > cs_math_epzero) {
     inc = 1;
 
@@ -2157,7 +2157,7 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
  *                               - 0 upwind scheme
  *                               - 1 imposed flux
  * \param[in, out] fimp          \f$ \tens{f_s}^{imp} \f$
- * \param[in]      smbrp         Right hand side \f$ \vect{Rhs}^k \f$
+ * \param[in, out] smbrp         Right hand side \f$ \vect{Rhs}^k \f$
  * \param[in, out] pvar          current variable
  * \param[out]     eswork        prediction-stage error estimator
  *                               (if iescap >= 0)
@@ -2302,8 +2302,8 @@ cs_equation_iterative_solve_vector(int                   idtvar,
  * \param[in]     icvfli        boundary face indicator array of convection flux
  *                               - 0 upwind scheme
  *                               - 1 imposed flux
- * \param[in]     fimp          \f$ \tens{f_s}^{imp} \f$
- * \param[in]     smbrp         Right hand side \f$ \vect{Rhs}^k \f$
+ * \param[in,out] fimp          \f$ \tens{f_s}^{imp} \f$
+ * \param[in,out] smbrp         Right hand side \f$ \vect{Rhs}^k \f$
  * \param[in,out] pvar          current variable
  */
 /*----------------------------------------------------------------------------*/
