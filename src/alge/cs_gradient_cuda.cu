@@ -299,6 +299,7 @@ _compute_gradient_lsq_s(cs_lnum_t     n_cells,
 template <typename T>
 __global__ static void
 _compute_cocg_rhsv_lsq_s_i_face(cs_lnum_t           size,
+                                bool                increment,
                                 T                  *cocg,
                                 const cs_lnum_t    *cell_cells_idx,
                                 const cs_lnum_t    *cell_cells,
@@ -307,46 +308,48 @@ _compute_cocg_rhsv_lsq_s_i_face(cs_lnum_t           size,
                                 const cs_real_t    *c_weight)
 {
   cs_lnum_t c_id = blockIdx.x * blockDim.x + threadIdx.x;
-  if (c_id < size) {
+  if (c_id >= size)
+    return;
 
-    /* Initialize COCG (RHS initialize before) */
+  /* Initialize COCG (RHS initialized before) */
 
+  if (increment == false) {
     cocg[c_id][0] = 0; cocg[c_id][1] = 0; cocg[c_id][2] = 0;
     cocg[c_id][3] = 0; cocg[c_id][4] = 0; cocg[c_id][5] = 0;
+  }
 
-    cs_lnum_t s_id = cell_cells_idx[c_id];
-    cs_lnum_t e_id = cell_cells_idx[c_id + 1];
-    cs_real_t dc[3], ddc, _weight;
-    cs_lnum_t c_id1;
+  cs_lnum_t s_id = cell_cells_idx[c_id];
+  cs_lnum_t e_id = cell_cells_idx[c_id + 1];
+  cs_real_t dc[3], ddc, _weight;
+  cs_lnum_t c_id1;
 
-    /* Add contributions from neighbor cells/interior faces */
+  /* Add contributions from neighbor cells/interior faces */
 
-    for (cs_lnum_t i = s_id; i < e_id; i++) {
-      c_id1 = cell_cells[i];
+  for (cs_lnum_t i = s_id; i < e_id; i++) {
+    c_id1 = cell_cells[i];
 
-      dc[0] = cell_cen[c_id1][0] - cell_cen[c_id][0];
-      dc[1] = cell_cen[c_id1][1] - cell_cen[c_id][1];
-      dc[2] = cell_cen[c_id1][2] - cell_cen[c_id][2];
+    dc[0] = cell_cen[c_id1][0] - cell_cen[c_id][0];
+    dc[1] = cell_cen[c_id1][1] - cell_cen[c_id][1];
+    dc[2] = cell_cen[c_id1][2] - cell_cen[c_id][2];
 
-      ddc = 1. / (dc[0] * dc[0] + dc[1] * dc[1] + dc[2] * dc[2]);
-      if (c_weight == nullptr)
-        _weight = 1;
-      else
-        _weight = 2. * c_weight[c_id1] / (c_weight[c_id] + c_weight[c_id1]);
+    ddc = 1. / (dc[0] * dc[0] + dc[1] * dc[1] + dc[2] * dc[2]);
+    if (c_weight == nullptr)
+      _weight = 1;
+    else
+      _weight = 2. * c_weight[c_id1] / (c_weight[c_id] + c_weight[c_id1]);
 
-      _weight *= (rhsv[c_id1][3] - rhsv[c_id][3]) * ddc;
+    _weight *= (rhsv[c_id1][3] - rhsv[c_id][3]) * ddc;
 
-      rhsv[c_id][0] += dc[0] * _weight;
-      rhsv[c_id][1] += dc[1] * _weight;
-      rhsv[c_id][2] += dc[2] * _weight;
+    rhsv[c_id][0] += dc[0] * _weight;
+    rhsv[c_id][1] += dc[1] * _weight;
+    rhsv[c_id][2] += dc[2] * _weight;
 
-      cocg[c_id][0] += dc[0] * dc[0] * ddc;
-      cocg[c_id][1] += dc[1] * dc[1] * ddc;
-      cocg[c_id][2] += dc[2] * dc[2] * ddc;
-      cocg[c_id][3] += dc[0] * dc[1] * ddc;
-      cocg[c_id][4] += dc[1] * dc[2] * ddc;
-      cocg[c_id][5] += dc[0] * dc[2] * ddc;
-    }
+    cocg[c_id][0] += dc[0] * dc[0] * ddc;
+    cocg[c_id][1] += dc[1] * dc[1] * ddc;
+    cocg[c_id][2] += dc[2] * dc[2] * ddc;
+    cocg[c_id][3] += dc[0] * dc[1] * ddc;
+    cocg[c_id][4] += dc[1] * dc[2] * ddc;
+    cocg[c_id][5] += dc[0] * dc[2] * ddc;
   }
 }
 
@@ -1301,12 +1304,20 @@ cs_gradient_scalar_lsq_cuda(const cs_mesh_t              *m,
   if (init_cocg) {
 
     _compute_cocg_rhsv_lsq_s_i_face<<<gridsize, blocksize, 0, stream>>>
-      (n_cells, cocg, cell_cells_idx, cell_cells, cell_cen, rhsv, c_weight);
+      (n_cells,
+       false,
+       cocg,
+       cell_cells_idx,
+       cell_cells,
+       cell_cen,
+       rhsv,
+       c_weight);
 
     /* Contribution from extended neighborhood */
     if (halo_type == CS_HALO_EXTENDED && cell_cells_e_idx != nullptr)
       _compute_cocg_rhsv_lsq_s_i_face<<<gridsize, blocksize, 0, stream>>>
         (n_cells,
+         true,
          cocg,
          cell_cells_e_idx,
          cell_cells_e,
