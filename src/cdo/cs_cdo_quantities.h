@@ -386,20 +386,19 @@ cs_cdo_quantities_dump(const cs_cdo_quantities_t  *cdoq);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Compute or retrieve the portion of volume surrounding each face of
+ * \brief Retrieve the portion of volume surrounding each face of
  *        a cell. This volume corresponds to a pyramid with base f and apex x_f
  *        The computed quantity is scanned with the c2f adjacency structure.
  *
- * \param[in, out] cdoq    pointer to cs_cdo_quantities_t structure
+ * \param[in]      cdoq    pointer to cs_cdo_quantities_t structure
  * \param[in]      c2f     pointer to the cell --> faces connectivity
  *
  * \return the volume associated to each face in each cell
  */
 /*----------------------------------------------------------------------------*/
 
-const cs_real_t *
-cs_cdo_quantities_get_pvol_fc(cs_cdo_quantities_t     *cdoq,
-                              const cs_adjacency_t    *c2f);
+const cs_real_t *cs_cdo_quantities_get_pvol_fc(const cs_cdo_quantities_t *cdoq,
+                                               const cs_adjacency_t      *c2f);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -407,7 +406,7 @@ cs_cdo_quantities_get_pvol_fc(cs_cdo_quantities_t     *cdoq,
  *        This volume corresponds to a pyramid with base f and apex x_f
  *        The computed quantity is scanned with the c2f adjacency structure.
  *
- * \param[in, out] cdoq        pointer to cs_cdo_quantities_t structure
+ * \param[in]      cdoq        pointer to cs_cdo_quantities_t structure
  * \param[in]      c2f         pointer to the cell --> faces connectivity
  * \param[in, out] p_pvol_fc   double pointer to the face volume in each cell
  *                             If not allocated before calling this function,
@@ -415,29 +414,27 @@ cs_cdo_quantities_get_pvol_fc(cs_cdo_quantities_t     *cdoq,
  */
 /*----------------------------------------------------------------------------*/
 
-void
-cs_cdo_quantities_compute_pvol_fc(cs_cdo_quantities_t     *cdoq,
-                                  const cs_adjacency_t    *c2f,
-                                  cs_real_t              **p_pvol_fc);
+void cs_cdo_quantities_compute_pvol_fc(const cs_cdo_quantities_t *cdoq,
+                                       const cs_adjacency_t      *c2f,
+                                       cs_real_t                **p_pvol_fc);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Compute or retrieve the portion of volume surrounding each edge of a
+ * \brief Retrieve the portion of volume surrounding each edge of a
  *        cell. This volume corresponds to an octahedron with a vertical axis
  *        defined by the edge.  If this quantity does not exist, then one
  *        computes it and stores it inside the cdoq structures. The computed
  *        quantity is scanned with the c2e adjacency structure.
  *
- * \param[in, out] cdoq    pointer to cs_cdo_quantities_t structure
+ * \param[in]      cdoq    pointer to cs_cdo_quantities_t structure
  * \param[in]      c2e     pointer to the cell --> edges connectivity
  *
  * \return the volume associated to each edge in each cell
  */
 /*----------------------------------------------------------------------------*/
 
-const cs_real_t *
-cs_cdo_quantities_get_pvol_ec(cs_cdo_quantities_t     *cdoq,
-                              const cs_adjacency_t    *c2e);
+const cs_real_t *cs_cdo_quantities_get_pvol_ec(const cs_cdo_quantities_t *cdoq,
+                                               const cs_adjacency_t      *c2e);
 
 /*----------------------------------------------------------------------------*/
 /*!
