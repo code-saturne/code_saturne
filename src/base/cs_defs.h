@@ -547,12 +547,14 @@ typedef enum {
 #define CS_F_HOST __host__
 #define CS_F_DEVICE __device__
 #define CS_F_HOST_DEVICE __host__ __device__
+#define CS_V_CONSTANT __constant__
 
 #else
 
 #define CS_F_HOST
 #define CS_F_DEVICE
 #define CS_F_HOST_DEVICE
+#define CS_V_CONSTANT static const
 
 #endif
 
