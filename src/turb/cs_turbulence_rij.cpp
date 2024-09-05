@@ -645,7 +645,7 @@ _rij_echo(int              phase_id,
   ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
 
     cs_real_t n[3];
-    cs_math_3_normalize(grad, n);
+    cs_math_3_normalize(grad[c_id], n);
     /* Production and k */
     cs_real_t prod_k = 0.5 * cs_math_6_trace(produc[c_id]);
 
