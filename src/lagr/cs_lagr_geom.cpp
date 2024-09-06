@@ -164,3 +164,5 @@ cs_lagr_geom(void)
   }
 
 }
+
+END_C_DECLS

@@ -409,8 +409,9 @@ cs_lagr_precipitation_injection(cs_real_t   *vela,
       cs_lagr_particle_set_real(particle, p_am, CS_LAGR_RANDOM_VALUE,
                                 part_random);
 
-      cs_real_t *part_coord = cs_lagr_particle_attr(particle, p_am,
-                                                    CS_LAGR_COORDS);
+      cs_real_t *part_coord =
+        cs_lagr_particle_attr_get_ptr<cs_real_t>(particle, p_am,
+                                                 CS_LAGR_COORDS);
 
       for (cs_lnum_t i = 0; i <  3; i++)
         part_coord[i] = fvq->cell_cen[cell[ip - npt] * 3 + i];
@@ -419,13 +420,15 @@ cs_lagr_precipitation_injection(cs_real_t   *vela,
 
       cs_lagr_particle_set_lnum(particle, p_am, CS_LAGR_REBOUND_ID, -1);
 
-      cs_real_t *part_vel_seen = cs_lagr_particle_attr(particle, p_am,
-                                                       CS_LAGR_VELOCITY_SEEN);
+      cs_real_t *part_vel_seen =
+        cs_lagr_particle_attr_get_ptr<cs_real_t>(particle, p_am,
+                                                 CS_LAGR_VELOCITY_SEEN);
       for (cs_lnum_t i = 0; i < 3; i++)
         part_vel_seen[i] = vela[cell[ip - npt] * 3 + i];
 
-      cs_real_t *part_vel = cs_lagr_particle_attr(particle, p_am,
-                                                  CS_LAGR_VELOCITY);
+      cs_real_t *part_vel =
+        cs_lagr_particle_attr_get_ptr<cs_real_t>(particle, p_am,
+                                                 CS_LAGR_VELOCITY);
       for (cs_lnum_t i = 0; i < 3; i++)
         part_vel[i] = vela[cell[ip - npt] * 3 + i];
 

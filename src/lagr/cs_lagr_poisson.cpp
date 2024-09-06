@@ -114,16 +114,16 @@ diverv (cs_real_t                  *diverg,
   cs_gradient_vector("Work array",
                      gradient_type,
                      halo_type,
-                     1,      /* inc */
-                     100,    /* n_r_sweeps, */
-                     2,      /* iwarnp */
-                     -1,     /* imligp */
-                     1e-8,   /* epsrgp */
-                     1.5,    /* climgp */
+                     1,                      /* inc */
+                     100,                    /* n_r_sweeps, */
+                     2,                      /* iwarnp */
+                     CS_GRADIENT_LIMIT_NONE, /* imligp */
+                     1e-8,                   /* epsrgp */
+                     1.5,                    /* climgp */
                      bc_coeffs_v,
                      u,
-                     NULL, /* weighted gradient */
-                     NULL, /* cpl */
+                     NULL,                   /* weighted gradient */
+                     NULL,                   /* cpl */
                      grad);
 
   /* ====================================================================
@@ -460,15 +460,15 @@ cs_lagr_poisson(const int  itypfb[])
   cs_gradient_scalar("Work array",
                      gradient_type,
                      halo_type,
-                     1,               /* inc */
-                     100,             /* n_r_sweeps */
-                     0,               /* hyd_p_flag */
-                     1,               /* w_stride */
-                     2,               /* iwarnp */
-                     -1,              /* imligp */
-                     1e-8,            /* epsrgp */
-                     1.5,             /* climgp */
-                     NULL,            /* f_ext */
+                     1,                      /* inc */
+                     100,                    /* n_r_sweeps */
+                     0,                      /* hyd_p_flag */
+                     1,                      /* w_stride */
+                     2,                      /* iwarnp */
+                     CS_GRADIENT_LIMIT_NONE, /* imligp */
+                     1e-8,                   /* epsrgp */
+                     1.5,                    /* climgp */
+                     NULL,                   /* f_ext */
                      &bc_coeffs_loc,
                      phil,
                      NULL,            /* c_weight */
@@ -499,7 +499,8 @@ cs_lagr_poisson(const int  itypfb[])
 
     if (c_id >= 0) {
 
-      cs_real_t *part_vel = cs_lagr_particle_attr(part, p_am, CS_LAGR_VELOCITY);
+      cs_real_t *part_vel =
+        cs_lagr_particle_attr_get_ptr<cs_real_t>(part, p_am, CS_LAGR_VELOCITY);
 
       for (cs_lnum_t id = 0; id < 3; id++)
         part_vel[id] += -grad[c_id][id];

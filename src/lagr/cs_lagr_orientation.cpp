@@ -657,16 +657,18 @@ cs_lagr_orientation_dyn_spheroids(int              iprev,
     cs_real_t d_minus = sqrt(5.0/tau_eta);
 
     /* Get particle orientation*/
-    cs_real_t *orientation  = cs_lagr_particles_attr(p_set, p_id,
-                                                     CS_LAGR_ORIENTATION);
+    auto *orientation =
+      cs_lagr_particles_attr_get_ptr<cs_real_t>(p_set, p_id,
+                                                CS_LAGR_ORIENTATION);
 
     /* Get particle quaternion*/
-    cs_real_t *quaternion  = cs_lagr_particles_attr(p_set, p_id,
-                                                    CS_LAGR_QUATERNION);
+    auto *quaternion =
+      cs_lagr_particles_attr_get_ptr<cs_real_t>(p_set, p_id,
+                                                CS_LAGR_QUATERNION);
 
     /* Get particle shape_param*/
-    cs_real_t *radii = cs_lagr_particles_attr(p_set, p_id,
-                                              CS_LAGR_RADII);
+    auto *radii = cs_lagr_particles_attr_get_ptr<cs_real_t>(p_set, p_id,
+                                                            CS_LAGR_RADII);
     cs_real_t Lambda = (cs_math_pow2(radii[2]/radii[1]) - 1.0)
                      / (cs_math_pow2(radii[2]/radii[1]) + 1.0);
 
@@ -768,8 +770,8 @@ cs_lagr_orientation_dyn_jeffery(cs_real_t        dt_p,
     cs_lnum_t cell_id = cs_lagr_particle_get_lnum(particle, p_am, CS_LAGR_CELL_ID);
 
     /* Euler parameters */
-    cs_real_t *euler = cs_lagr_particle_attr(particle, p_am,
-                                             CS_LAGR_EULER);
+    auto *euler = cs_lagr_particle_attr_get_ptr<cs_real_t>(particle, p_am,
+                                                           CS_LAGR_EULER);
 
     cs_real_33_t trans_m = {
       {2.*(euler[0]*euler[0]+euler[1]*euler[1]-0.5),   /* (0,0) */
@@ -791,12 +793,12 @@ cs_lagr_orientation_dyn_jeffery(cs_real_t        dt_p,
     cs_math_33_transform_a_to_r(gradvf[cell_id], trans_m, grad_vf_r);
 
     /* Ellipsoid radii */
-    cs_real_t *radii = cs_lagr_particle_attr(particle, p_am,
-                                             CS_LAGR_RADII);
+    auto *radii = cs_lagr_particle_attr_get_ptr<cs_real_t>(particle, p_am,
+                                                           CS_LAGR_RADII);
 
     /* Corresponding shape parameters */
-    cs_real_t *s_p = cs_lagr_particle_attr(particle, p_am,
-                                           CS_LAGR_SHAPE_PARAM);
+    auto *s_p = cs_lagr_particle_attr_get_ptr<cs_real_t>(particle, p_am,
+                                                         CS_LAGR_SHAPE_PARAM);
 
     /* Tau_p */
     cs_real_t taup = dt_p; //FIXME: need of small time steps !! (e-8 in dns)
@@ -824,8 +826,8 @@ cs_lagr_orientation_dyn_jeffery(cs_real_t        dt_p,
     /* 3. Integration of the (S)DE on the Euler parameters and angular velocity
        ======================================================================== */
 
-    cs_real_t *ang_vel = cs_lagr_particle_attr(particle, p_am,
-                                               CS_LAGR_ANGULAR_VEL);
+    auto *ang_vel = cs_lagr_particle_attr_get_ptr<cs_real_t>(particle, p_am,
+                                                             CS_LAGR_ANGULAR_VEL);
 
     /* Integration of the Euler parameters:
      * Equation (26) of P. H. Mortensen (2008)*/

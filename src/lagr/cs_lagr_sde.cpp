@@ -128,13 +128,13 @@ _add_resuspension_event(cs_lagr_event_set_t     *events,
                           CS_LAGR_E_FACE_ID,
                           face_id);
 
-  cs_lnum_t *e_flag = cs_lagr_events_attr(events,
-                                          event_id,
-                                          CS_LAGR_E_FLAG);
+  auto *e_flag = cs_lagr_events_attr_get_ptr<cs_lnum_t>(events,
+                                                        event_id,
+                                                        CS_LAGR_E_FLAG);
 
-  cs_real_t *e_vel_post = cs_lagr_events_attr(events,
-                                              event_id,
-                                              CS_LAGR_E_VELOCITY);
+  auto *e_vel_post = cs_lagr_events_attr_get_ptr<cs_real_t>(events,
+                                                            event_id,
+                                                            CS_LAGR_E_VELOCITY);
 
   *e_flag = *e_flag | CS_EVENT_RESUSPENSION;
 
@@ -252,18 +252,24 @@ _lages1(cs_real_t           dtp,
 
     /* Get particle coordinates, velocity and velocity seen*/
 
-    cs_real_t *old_part_vel      = cs_lagr_particle_attr_n(particle, p_am, 1,
-                                                           CS_LAGR_VELOCITY);
-    cs_real_t *old_part_vel_seen = cs_lagr_particle_attr_n(particle, p_am, 1,
-                                                           CS_LAGR_VELOCITY_SEEN);
-    cs_real_t *old_part_coords   = cs_lagr_particle_attr_n(particle, p_am, 1,
-                                                           CS_LAGR_COORDS);
-    cs_real_t *part_vel          = cs_lagr_particle_attr(particle, p_am,
-                                                         CS_LAGR_VELOCITY);
-    cs_real_t *part_vel_seen     = cs_lagr_particle_attr(particle, p_am,
-                                                         CS_LAGR_VELOCITY_SEEN);
-    cs_real_t *part_coords       = cs_lagr_particle_attr(particle, p_am,
-                                                         CS_LAGR_COORDS);
+    auto *old_part_vel      =
+      cs_lagr_particle_attr_n_get_ptr<cs_real_t>(particle, p_am, 1,
+                                                 CS_LAGR_VELOCITY);
+    auto *old_part_vel_seen =
+      cs_lagr_particle_attr_n_get_ptr<cs_real_t>(particle, p_am, 1,
+                                                 CS_LAGR_VELOCITY_SEEN);
+    auto *old_part_coords   =
+      cs_lagr_particle_attr_n_get_ptr<cs_real_t>(particle, p_am, 1,
+                                                 CS_LAGR_COORDS);
+    auto *part_vel          =
+      cs_lagr_particle_attr_get_ptr<cs_real_t>(particle, p_am,
+                                               CS_LAGR_VELOCITY);
+    auto *part_vel_seen     =
+      cs_lagr_particle_attr_get_ptr<cs_real_t>(particle, p_am,
+                                               CS_LAGR_VELOCITY_SEEN);
+    auto *part_coords       =
+      cs_lagr_particle_attr_get_ptr<cs_real_t>(particle, p_am,
+                                               CS_LAGR_COORDS);
 
     int imposed_motion = cs_lagr_particles_get_flag(p_set, p_id,
                                                     CS_LAGR_PART_IMPOSED_MOTION);
@@ -403,8 +409,9 @@ _lages1(cs_real_t           dtp,
       case CS_LAGR_SHAPE_SPHEROID_JEFFERY_MODEL:
         {
           // Use Euler angles for spheroids (Jeffery)
-          const cs_real_t *euler = cs_lagr_particle_attr(particle, p_am,
-                                                         CS_LAGR_EULER);
+          const cs_real_t *euler =
+            cs_lagr_particle_attr_get_ptr<cs_real_t>(particle, p_am,
+                                                     CS_LAGR_EULER);
 
           trans_m[0][0] = 2.*(euler[0]*euler[0]+euler[1]*euler[1]-0.5);
           trans_m[0][1] = 2.*(euler[1]*euler[2]+euler[0]*euler[3]);
@@ -421,8 +428,9 @@ _lages1(cs_real_t           dtp,
       case CS_LAGR_SHAPE_SPHEROID_STOC_MODEL:
         {
           // Use rotation matrix for stochastic model
-          cs_real_t *orient_loc  = cs_lagr_particle_attr(particle, p_am,
-                                                         CS_LAGR_ORIENTATION);
+          cs_real_t *orient_loc  =
+            cs_lagr_particle_attr_get_ptr<cs_real_t>(particle, p_am,
+                                                     CS_LAGR_ORIENTATION);
           cs_real_t singularity_axis[3] = {1.0, 0.0, 0.0};
           // Get vector for rotation
           cs_real_t n_rot[3];

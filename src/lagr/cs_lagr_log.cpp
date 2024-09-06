@@ -520,7 +520,8 @@ cs_lagr_log_setup(void)
   cs_log_printf
     (CS_LOG_SETUP,
      _("\n  Trajectory/particle postprocessing options:\n"));
-     for (int attr = 0; attr < CS_LAGR_N_ATTRIBUTES; attr++) {
+     for (int i_attr = 0; i_attr < CS_LAGR_N_ATTRIBUTES; i_attr++) {
+       auto attr = static_cast<cs_lagr_attribute_t>(i_attr);
        if (cs_lagr_post_get_attr(attr))
          cs_log_printf(CS_LOG_SETUP,
                        "    %s\n", cs_lagr_attribute_name[attr]);
