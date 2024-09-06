@@ -211,7 +211,7 @@ _petsc_cmd(bool         use_prefix,
   char cmd_line[256];
 
   if (use_prefix)
-    sprintf(cmd_line, "-%s_%s", prefix, keyword);
+    sprintf(cmd_line, "-%s%s", prefix, keyword);
   else
     sprintf(cmd_line, "-%s", keyword);
 
@@ -671,14 +671,14 @@ _petsc_pchypre_hook(const char             *prefix,
  *
  * \param[in]      prefix        prefix name associated to the current SLES
  * \param[in]      slesp         pointer to a set of SLES parameters
- * \param[in]      is_symm       the linear system to solve is symmetric
  * \param[in, out] pc            pointer to a PETSc preconditioner
  */
 /*----------------------------------------------------------------------------*/
 
 static void
-_petsc_pchpddm_hook(const cs_param_sles_t *slesp, PC pc)
+_petsc_pchpddm_hook(const char *prefix, const cs_param_sles_t *slesp, PC pc)
 {
+  assert(prefix != NULL);
   assert(slesp != NULL);
   assert(slesp->precond == CS_PARAM_PRECOND_HPDDM);
 
@@ -691,14 +691,14 @@ _petsc_pchpddm_hook(const cs_param_sles_t *slesp, PC pc)
   if (_system_should_be_sym(slesp->solver)) {
 
     /* Define generic options */
-    sprintf(prefix_pc, "%s_%s", slesp->name, "pc_hpddm");
+    sprintf(prefix_pc, "%s%s", prefix, "pc_hpddm_");
 
     /* With Neumann matrix */
     _petsc_cmd(true, prefix_pc, "define_subdomains", "");
     _petsc_cmd(true, prefix_pc, "has_neumann", "");
 
     /* Define option for first level */
-    sprintf(prefix_pc, "%s_%s", slesp->name, "pc_hpddm_levels_1");
+    sprintf(prefix_pc, "%s%s", prefix, "pc_hpddm_levels_1_");
 
     _petsc_cmd(true, prefix_pc, "pc_type", "asm");
     _petsc_cmd(true, prefix_pc, "sub_mat_mumps_icntl_14", "5000");
@@ -713,7 +713,7 @@ _petsc_pchpddm_hook(const cs_param_sles_t *slesp, PC pc)
     _petsc_cmd(true, prefix_pc, "st_share_sub_ksp", "");
 
     /* Define option for coarse solver */
-    sprintf(prefix_pc, "%s_%s", slesp->name, "pc_hpddm_coarse");
+    sprintf(prefix_pc, "%s%s", prefix, "pc_hpddm_coarse_");
 
     _petsc_cmd(true, prefix_pc, "pc_factor_mat_solver_type", "mumps");
     _petsc_cmd(true, prefix_pc, "sub_pc_type", "choleski");
@@ -727,14 +727,14 @@ _petsc_pchpddm_hook(const cs_param_sles_t *slesp, PC pc)
   else {
 
     /* Define generic options */
-    sprintf(prefix_pc, "%s_%s", slesp->name, "pc_hpddm");
+    sprintf(prefix_pc, "%s%s", prefix, "pc_hpddm_");
 
     /* No Neumann matrix */
     _petsc_cmd(true, prefix_pc, "define_subdomains", "");
     _petsc_cmd(true, prefix_pc, "harmonic_overlap", "1");
 
     /* Define option for first level */
-    sprintf(prefix_pc, "%s_%s", slesp->name, "pc_hpddm_levels_1");
+    sprintf(prefix_pc, "%s%s", prefix, "pc_hpddm_levels_1_");
 
     _petsc_cmd(true, prefix_pc, "pc_asm_type", "restrict");
     _petsc_cmd(true, prefix_pc, "svd_nsv", "100");
@@ -747,7 +747,7 @@ _petsc_pchpddm_hook(const cs_param_sles_t *slesp, PC pc)
     _petsc_cmd(true, prefix_pc, "sub_pc_factor_mat_solver_type", "mumps");
 
     /* Define option for coarse solver */
-    sprintf(prefix_pc, "%s_%s", slesp->name, "pc_hpddm_coarse");
+    sprintf(prefix_pc, "%s%s", prefix, "pc_hpddm_coarse_");
 
     _petsc_cmd(true, prefix_pc, "pc_type", "lu");
     _petsc_cmd(true, prefix_pc, "pc_factor_mat_solver_type", "mumps");
@@ -908,7 +908,7 @@ _petsc_set_pc_type(cs_param_sles_t  *slesp,
 
   case CS_PARAM_PRECOND_HPDDM:
 #if defined(PETSC_HAVE_HPDDM)
-    _petsc_pchpddm_hook(slesp, pc);
+    _petsc_pchpddm_hook(prefix, slesp, pc);
 #else
     bft_error(
       __FILE__,
