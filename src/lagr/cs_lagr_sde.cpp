@@ -486,10 +486,13 @@ _lages1(cs_real_t           dtp,
       if (   cs_glob_lagr_model->shape == CS_LAGR_SHAPE_SPHEROID_STOC_MODEL
           || cs_glob_lagr_model->shape == CS_LAGR_SHAPE_SPHEROID_JEFFERY_MODEL) {
 
-        cs_real_t *radii = cs_lagr_particle_attr(particle, p_am, CS_LAGR_RADII);
+        cs_real_t *radii =
+          cs_lagr_particle_attr_get_ptr<cs_real_t>(particle, p_am,
+                                                   CS_LAGR_RADII);
 
-        cs_real_t *s_p = cs_lagr_particle_attr(particle, p_am,
-                                               CS_LAGR_SHAPE_PARAM);
+        cs_real_t *s_p =
+          cs_lagr_particle_attr_get_ptr<cs_real_t>(particle, p_am,
+                                                   CS_LAGR_SHAPE_PARAM);
 
         taup_r[0] = 3.0 / 8.0 * taup[p_id] * (radii[0]*radii[0]*s_p[0] + s_p[3])
                     / pow(radii[0]*radii[1]*radii[2], 2.0 / 3.0);
@@ -891,14 +894,18 @@ _lages2(cs_real_t           dtp,
           || cs_lagr_particles_get_flag(p_set, p_id, CS_LAGR_PART_IMPOSED_MOTION))
         continue;
 
-      cs_real_t *old_part_vel      = cs_lagr_particle_attr_n(particle, p_am,
-                                                             1, CS_LAGR_VELOCITY);
-      cs_real_t *old_part_vel_seen = cs_lagr_particle_attr_n(particle, p_am,
-                                                             1, CS_LAGR_VELOCITY_SEEN);
-      cs_real_t *pred_part_vel_seen = cs_lagr_particle_attr(particle, p_am,
-                                                            CS_LAGR_PRED_VELOCITY_SEEN);
-      cs_real_t *pred_part_vel = cs_lagr_particle_attr(particle, p_am,
-                                                       CS_LAGR_PRED_VELOCITY);
+      auto *old_part_vel      =
+        cs_lagr_particle_attr_n_get_ptr<cs_real_t>(particle, p_am,
+                                                   1, CS_LAGR_VELOCITY);
+      auto *old_part_vel_seen =
+        cs_lagr_particle_attr_n_get_ptr<cs_real_t>(particle, p_am,
+                                                   1, CS_LAGR_VELOCITY_SEEN);
+      auto *pred_part_vel_seen =
+        cs_lagr_particle_attr_get_ptr<cs_real_t>(particle, p_am,
+                                                 CS_LAGR_PRED_VELOCITY_SEEN);
+      auto *pred_part_vel =
+        cs_lagr_particle_attr_get_ptr<cs_real_t>(particle, p_am,
+                                                 CS_LAGR_PRED_VELOCITY);
 
       for (cs_lnum_t id = 0; id < 3; id++) {
 
@@ -962,17 +969,23 @@ _lages2(cs_real_t           dtp,
         continue;
 
       cs_real_t *part_vel
-        = cs_lagr_particle_attr(particle, p_am, CS_LAGR_VELOCITY);
+        = cs_lagr_particle_attr_get_ptr<cs_real_t>(particle, p_am,
+                                                   CS_LAGR_VELOCITY);
       cs_real_t *part_vel_seen
-        = cs_lagr_particle_attr(particle, p_am, CS_LAGR_VELOCITY_SEEN);
+        = cs_lagr_particle_attr_get_ptr<cs_real_t>(particle, p_am,
+                                                   CS_LAGR_VELOCITY_SEEN);
       cs_real_t *old_part_vel
-        = cs_lagr_particle_attr_n(particle, p_am, 1, CS_LAGR_VELOCITY);
+        = cs_lagr_particle_attr_n_get_ptr<cs_real_t>(particle, p_am,
+                                                     1, CS_LAGR_VELOCITY);
       cs_real_t *old_part_vel_seen
-        = cs_lagr_particle_attr_n(particle, p_am, 1, CS_LAGR_VELOCITY_SEEN);
+        = cs_lagr_particle_attr_n_get_ptr<cs_real_t>(particle, p_am,
+                                                     1, CS_LAGR_VELOCITY_SEEN);
       cs_real_t *pred_part_vel_seen
-        = cs_lagr_particle_attr(particle, p_am, CS_LAGR_PRED_VELOCITY_SEEN);
+        = cs_lagr_particle_attr_get_ptr<cs_real_t>(particle, p_am,
+                                                   CS_LAGR_PRED_VELOCITY_SEEN);
       cs_real_t *pred_part_vel
-        = cs_lagr_particle_attr(particle, p_am, CS_LAGR_PRED_VELOCITY);
+        = cs_lagr_particle_attr_get_ptr<cs_real_t>(particle, p_am,
+                                                   CS_LAGR_PRED_VELOCITY);
 
       for (cs_lnum_t id = 0; id < 3; id++) {
 
@@ -1204,8 +1217,9 @@ _lagesd(cs_real_t             dtp,
 
   /* 2.1 - particle velocity   */
 
-  cs_real_t *old_part_vel = cs_lagr_particle_attr_n(particle, p_am, 1,
-                                                    CS_LAGR_VELOCITY);
+  cs_real_t *old_part_vel =
+    cs_lagr_particle_attr_n_get_ptr<cs_real_t>(particle, p_am, 1,
+                                               CS_LAGR_VELOCITY);
   cs_real_t vpart[3];
 
   cs_math_33_3_product(rot_m, old_part_vel, vpart);
@@ -1214,8 +1228,9 @@ _lagesd(cs_real_t             dtp,
 
   /* 2.2 - flow-seen velocity  */
 
-  cs_real_t *old_part_vel_seen = cs_lagr_particle_attr_n(particle, p_am, 1,
-                                                         CS_LAGR_VELOCITY_SEEN);
+  cs_real_t *old_part_vel_seen =
+    cs_lagr_particle_attr_n_get_ptr<cs_real_t>(particle, p_am, 1,
+                                               CS_LAGR_VELOCITY_SEEN);
   cs_real_t vvue[3];
 
   cs_math_33_3_product(rot_m, old_part_vel_seen, vvue);
@@ -1576,7 +1591,8 @@ _lagesd(cs_real_t             dtp,
 
           if (events != NULL) {
             const cs_real_t *part_vel
-              = cs_lagr_particles_attr_const(p_set, p_id, CS_LAGR_VELOCITY);
+              = cs_lagr_particles_attr_get_const_ptr<cs_real_t>(p_set, p_id,
+                                                                CS_LAGR_VELOCITY);
             _add_resuspension_event(events,
                                     p_set,
                                     p_id,
@@ -1989,7 +2005,8 @@ _lagesd(cs_real_t             dtp,
 
           if (events != NULL) {
             const cs_real_t *part_vel
-              = cs_lagr_particles_attr_const(p_set, p_id, CS_LAGR_VELOCITY);
+              = cs_lagr_particles_attr_get_const_ptr<cs_real_t>(p_set, p_id,
+                                                                CS_LAGR_VELOCITY);
             _add_resuspension_event(events,
                                     p_set,
                                     p_id,
@@ -2366,23 +2383,26 @@ _lagesd(cs_real_t             dtp,
 
   /* 3.2 - Particle velocity   */
 
-  cs_real_t *part_vel = cs_lagr_particle_attr(particle, p_am,
-                                              CS_LAGR_VELOCITY);
+  cs_real_t *part_vel =
+    cs_lagr_particle_attr_get_ptr<cs_real_t>(particle, p_am,
+                                             CS_LAGR_VELOCITY);
 
   cs_math_33t_3_product(rot_m, vpart, part_vel);
 
   /* 3.3 - flow-seen velocity  */
 
-  cs_real_t *part_vel_seen = cs_lagr_particle_attr(particle, p_am,
-                                                   CS_LAGR_VELOCITY_SEEN);
+  cs_real_t *part_vel_seen =
+    cs_lagr_particle_attr_get_ptr<cs_real_t>(particle, p_am,
+                                             CS_LAGR_VELOCITY_SEEN);
 
   cs_math_33t_3_product(rot_m, vvue, part_vel_seen);
 
   /* Computation of the new particle position
    * ======================================== */
 
-  cs_real_t *part_coords = cs_lagr_particle_attr(particle, p_am,
-                                                 CS_LAGR_COORDS);
+  cs_real_t *part_coords =
+    cs_lagr_particle_attr_get_ptr<cs_real_t>(particle, p_am,
+                                             CS_LAGR_COORDS);
   for (cs_lnum_t id = 0; id < 3; id++)
     part_coords[id] += depg[id];
 }
@@ -2482,18 +2502,24 @@ _lagdep(cs_real_t           dtp,
       cs_lnum_t cell_id = cs_lagr_particle_get_lnum(particle, p_am,
                                                     CS_LAGR_CELL_ID);
 
-      cs_real_t *old_part_vel      = cs_lagr_particle_attr_n(particle, p_am, 1,
-                                                             CS_LAGR_VELOCITY);
-      cs_real_t *old_part_vel_seen = cs_lagr_particle_attr_n(particle, p_am, 1,
-                                                             CS_LAGR_VELOCITY_SEEN);
-      cs_real_t *part_vel          = cs_lagr_particle_attr(particle, p_am,
-                                                           CS_LAGR_VELOCITY);
-      cs_real_t *part_vel_seen     = cs_lagr_particle_attr(particle, p_am,
-                                                           CS_LAGR_VELOCITY_SEEN);
-      cs_real_t *part_coords       = cs_lagr_particle_attr(particle, p_am,
-                                                           CS_LAGR_COORDS);
-      cs_real_t *old_part_coords   = cs_lagr_particle_attr_n(particle, p_am, 1,
-                                                             CS_LAGR_COORDS);
+      cs_real_t *old_part_vel      =
+        cs_lagr_particle_attr_n_get_ptr<cs_real_t>(particle, p_am, 1,
+                                                   CS_LAGR_VELOCITY);
+      cs_real_t *old_part_vel_seen =
+        cs_lagr_particle_attr_n_get_ptr<cs_real_t>(particle, p_am, 1,
+                                                   CS_LAGR_VELOCITY_SEEN);
+      cs_real_t *part_vel          =
+        cs_lagr_particle_attr_get_ptr<cs_real_t>(particle, p_am,
+                                                 CS_LAGR_VELOCITY);
+      cs_real_t *part_vel_seen     =
+        cs_lagr_particle_attr_get_ptr<cs_real_t>(particle, p_am,
+                                                 CS_LAGR_VELOCITY_SEEN);
+      cs_real_t *part_coords       =
+        cs_lagr_particle_attr_get_ptr<cs_real_t>(particle, p_am,
+                                                 CS_LAGR_COORDS);
+      cs_real_t *old_part_coords   =
+        cs_lagr_particle_attr_n_get_ptr<cs_real_t>(particle, p_am, 1,
+                                                   CS_LAGR_COORDS);
 
       /* Fluid temperature computation depending on the type of flow  */
       cs_real_t tempf;
@@ -2709,16 +2735,20 @@ _lagdep(cs_real_t           dtp,
 
       cs_real_t disp[3] = {0., 0., 0.};
 
-      cs_real_t *old_part_coords = cs_lagr_particle_attr_n(particle, p_am, 1,
-                                                           CS_LAGR_COORDS);
-      cs_real_t *part_coords = cs_lagr_particle_attr(particle, p_am,
-                                                     CS_LAGR_COORDS);
+      cs_real_t *old_part_coords =
+        cs_lagr_particle_attr_n_get_ptr<cs_real_t>(particle, p_am, 1,
+                                                   CS_LAGR_COORDS);
+      cs_real_t *part_coords =
+        cs_lagr_particle_attr_get_ptr<cs_real_t>(particle, p_am,
+                                                 CS_LAGR_COORDS);
 
-      cs_real_t *part_vel_seen = cs_lagr_particle_attr(particle, p_am,
-                                                       CS_LAGR_VELOCITY_SEEN);
+      cs_real_t *part_vel_seen =
+        cs_lagr_particle_attr_get_ptr<cs_real_t>(particle, p_am,
+                                                 CS_LAGR_VELOCITY_SEEN);
 
-      cs_real_t *part_vel = cs_lagr_particle_attr(particle, p_am,
-                                                  CS_LAGR_VELOCITY);
+      cs_real_t *part_vel =
+        cs_lagr_particle_attr_get_ptr<cs_real_t>(particle, p_am,
+                                                 CS_LAGR_VELOCITY);
 
       cs_user_lagr_imposed_motion(p_set,
                                   p_id,
@@ -2799,8 +2829,9 @@ cs_lagr_sde(cs_real_t           dt_p,
     if (cs_glob_lagr_time_step->nor > 1) {
       for (cs_lnum_t p_id = 0; p_id < p_set->n_particles; p_id++) {
         unsigned char *particle = p_set->p_buffer + p_am->extents * p_id;
-        cs_real_t *_v_gauss = cs_lagr_particle_attr(particle, p_am,
-                                                    CS_LAGR_V_GAUSS);
+        cs_real_t *_v_gauss =
+          cs_lagr_particle_attr_get_ptr<cs_real_t>(particle, p_am,
+                                                   CS_LAGR_V_GAUSS);
         for (cs_lnum_t id = 0; id < 3; id++) {
           for (cs_lnum_t ivf = 0; ivf < 3; ivf++)
             vagaus[p_id][id][ivf] = _v_gauss[id*3 + ivf];
@@ -2830,8 +2861,9 @@ cs_lagr_sde(cs_real_t           dt_p,
     if (cs_glob_lagr_time_step->nor > 1) {
       for (cs_lnum_t p_id = 0; p_id < p_set->n_particles; p_id++) {
         unsigned char *particle = p_set->p_buffer + p_am->extents * p_id;
-        cs_real_t *_br_gauss = cs_lagr_particle_attr(particle, p_am,
-                                                     CS_LAGR_BR_GAUSS);
+        cs_real_t *_br_gauss =
+          cs_lagr_particle_attr_get_ptr<cs_real_t>(particle, p_am,
+                                                   CS_LAGR_BR_GAUSS);
         for (cs_lnum_t id = 0; id < 6; id++)
           brgaus[p_id*6 + id] = _br_gauss[id];
       }
@@ -2964,7 +2996,8 @@ cs_lagr_sde(cs_real_t           dt_p,
         unsigned char *particle = p_set->p_buffer + p_am->extents * p_id;
         if (cs_glob_lagr_model->idistu == 1) {
           cs_real_t *_v_gauss
-            = cs_lagr_particle_attr(particle, p_am, CS_LAGR_V_GAUSS);
+            = cs_lagr_particle_attr_get_ptr<cs_real_t>(particle, p_am,
+                                                       CS_LAGR_V_GAUSS);
           for (cs_lnum_t id = 0; id < 3; id++) {
             for (cs_lnum_t ivf = 0; ivf < 3; ivf++)
               _v_gauss[id*3 + ivf] = vagaus[p_id][id][ivf];
@@ -2972,7 +3005,8 @@ cs_lagr_sde(cs_real_t           dt_p,
         }
         if (cs_glob_lagr_brownian->lamvbr == 1) {
           cs_real_t *_br_gauss
-            = cs_lagr_particle_attr(particle, p_am, CS_LAGR_BR_GAUSS);
+            = cs_lagr_particle_attr_get_ptr<cs_real_t>(particle, p_am,
+                                                       CS_LAGR_BR_GAUSS);
           for (cs_lnum_t id = 0; id < 6; id++)
             _br_gauss[id] = brgaus[p_id*6 + id];
         }

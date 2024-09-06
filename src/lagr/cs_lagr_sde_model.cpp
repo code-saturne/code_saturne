@@ -202,9 +202,11 @@ _lagtmp(cs_lnum_t        npt,
   const cs_coal_model_t  *coal_model = cs_glob_coal_model;
 
   const cs_real_t *part_temp
-    = cs_lagr_particle_attr_const(particle, p_am, CS_LAGR_TEMPERATURE);
+    = cs_lagr_particle_attr_get_ptr<cs_real_t>(particle, p_am,
+                                               CS_LAGR_TEMPERATURE);
   const cs_real_t *prev_part_temp
-    = cs_lagr_particle_attr_n_const(particle, p_am, 1, CS_LAGR_TEMPERATURE);
+    = cs_lagr_particle_attr_n_get_ptr<cs_real_t>(particle, p_am, 1,
+                                                 CS_LAGR_TEMPERATURE);
 
   cs_real_t dd2 = cs_math_sq(p_diam);
 
@@ -501,7 +503,8 @@ _lagsec(cs_lnum_t         npt,
   }
 
   cs_real_t *part_temp
-    = cs_lagr_particle_attr(particle, p_am, CS_LAGR_TEMPERATURE);
+    = cs_lagr_particle_attr_get_ptr<cs_real_t>(particle, p_am,
+                                               CS_LAGR_TEMPERATURE);
   cs_real_t tpk = part_temp[l_id_wat];
 
   /* Compute mass fraction of saturating water */
@@ -1152,26 +1155,34 @@ _lagich(const cs_real_t   tempct[],
     cs_real_t shrink_diam    = cs_lagr_particle_get_real(particle, p_am,
                                                          CS_LAGR_SHRINKING_DIAMETER);
 
-    cs_real_t *part_vel_seen = cs_lagr_particle_attr(particle, p_am,
-                                                     CS_LAGR_VELOCITY_SEEN);
-    cs_real_t *part_vel      = cs_lagr_particle_attr(particle, p_am,
-                                                     CS_LAGR_VELOCITY);
+    cs_real_t *part_vel_seen =
+      cs_lagr_particle_attr_get_ptr<cs_real_t>(particle, p_am,
+                                               CS_LAGR_VELOCITY_SEEN);
+    cs_real_t *part_vel      =
+      cs_lagr_particle_attr_get_ptr<cs_real_t>(particle, p_am,
+                                               CS_LAGR_VELOCITY);
 
-    cs_real_t *part_temp     = cs_lagr_particle_attr(particle, p_am,
-                                                     CS_LAGR_TEMPERATURE);
+    cs_real_t *part_temp     =
+      cs_lagr_particle_attr_get_ptr<cs_real_t>(particle, p_am,
+                                               CS_LAGR_TEMPERATURE);
 
-    cs_real_t *part_coke_mass      = cs_lagr_particle_attr_n(particle, p_am,
-                                                             0, CS_LAGR_COKE_MASS);
-    cs_real_t *prev_part_coke_mass = cs_lagr_particle_attr_n(particle, p_am,
-                                                             1, CS_LAGR_COKE_MASS);
+    cs_real_t *part_coke_mass      =
+      cs_lagr_particle_attr_n_get_ptr<cs_real_t>(particle, p_am,
+                                                 0, CS_LAGR_COKE_MASS);
+    cs_real_t *prev_part_coke_mass =
+      cs_lagr_particle_attr_n_get_ptr<cs_real_t>(particle, p_am,
+                                                 1, CS_LAGR_COKE_MASS);
 
-    cs_real_t *part_coal_mass      = cs_lagr_particle_attr_n(particle, p_am,
-                                                             0, CS_LAGR_COAL_MASS);
-    cs_real_t *prev_part_coal_mass = cs_lagr_particle_attr_n(particle, p_am,
-                                                             1, CS_LAGR_COAL_MASS);
+    cs_real_t *part_coal_mass      =
+      cs_lagr_particle_attr_n_get_ptr<cs_real_t>(particle, p_am,
+                                                 0, CS_LAGR_COAL_MASS);
+    cs_real_t *prev_part_coal_mass =
+      cs_lagr_particle_attr_n_get_ptr<cs_real_t>(particle, p_am,
+                                                 1, CS_LAGR_COAL_MASS);
 
-    cs_real_t *part_coal_density   = cs_lagr_particle_attr(particle, p_am,
-                                                           CS_LAGR_COAL_DENSITY);
+    cs_real_t *part_coal_density   =
+      cs_lagr_particle_attr_get_ptr<cs_real_t>(particle, p_am,
+                                               CS_LAGR_COAL_DENSITY);
 
     cs_lnum_t co_id = cs_lagr_particle_get_lnum(particle, p_am, CS_LAGR_COAL_ID);
 
@@ -1728,7 +1739,7 @@ _sde_i_ct(void)
   cs_real_t rho_l                = air_prop->rho_l;
 
   /* General fluid properties*/
-  cs_fluid_properties_t *fluid_props = cs_glob_fluid_properties;
+  const cs_fluid_properties_t *fluid_props = cs_glob_fluid_properties;
   cs_real_t p0                       = fluid_props->p0;
 
   /* Numerical properties */
@@ -1751,9 +1762,11 @@ _sde_i_ct(void)
 
     /* Drop diameter based Reynolds number */
     const cs_real_t *vel_p
-      = cs_lagr_particle_attr_const(particle, p_am, CS_LAGR_VELOCITY);
+      = cs_lagr_particle_attr_get_ptr<cs_real_t>(particle, p_am,
+                                                 CS_LAGR_VELOCITY);
     const cs_real_t *vel_f
-      = cs_lagr_particle_attr_const(particle, p_am, CS_LAGR_VELOCITY_SEEN);
+      = cs_lagr_particle_attr_get_ptr<cs_real_t>(particle, p_am,
+                                                 CS_LAGR_VELOCITY_SEEN);
     cs_real_t vel_p_mag = cs_math_3_norm(vel_p);
     cs_real_t vel_f_mag = cs_math_3_norm(vel_f);
     cs_real_t rho_h = extra->cromf->val[cell_id];
