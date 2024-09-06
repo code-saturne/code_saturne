@@ -503,6 +503,11 @@ _cs_sles_hpddm_setup(void *context, const char *name, const cs_matrix_t *a)
 {
 #ifdef PETSC_HAVE_HPDDM
 
+  /* Neumann matrix is computed only for symetric matrix */
+  if (!cs_matrix_is_symmetric(a)) {
+    return;
+  }
+
   cs_timer_t t0;
   t0 = cs_timer_time();
 
@@ -519,18 +524,6 @@ _cs_sles_hpddm_setup(void *context, const char *name, const cs_matrix_t *a)
   const PetscInt         db_size     = cs_matrix_get_diag_block_size(a);
   const PetscInt         eb_size     = cs_matrix_get_extra_diag_block_size(a);
   const cs_halo_t       *halo        = cs_matrix_get_halo(a);
-
-  // if (!cs_matrix_is_symmetric(a)) {
-  //   bft_error(__FILE__,
-  //             __LINE__,
-  //             0,
-  //             _("Matrix type %s with block size %d for system \"%s\"\n"
-  //               "is not symmetric so it is not possible to setup Neumann "
-  //               "matrix for HPDDM."),
-  //             cs_matrix_get_type_name(a),
-  //             (int)db_size,
-  //             name);
-  // }
 
   bool have_perio = false;
   if (halo != NULL) {

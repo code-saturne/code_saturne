@@ -208,7 +208,7 @@ _petsc_cmd(bool         use_prefix,
            const char  *keyword,
            const char  *keyval)
 {
-  char cmd_line[128];
+  char cmd_line[256];
 
   if (use_prefix)
     sprintf(cmd_line, "-%s_%s", prefix, keyword);
@@ -682,53 +682,80 @@ _petsc_pchpddm_hook(const cs_param_sles_t *slesp, PC pc)
   assert(slesp != NULL);
   assert(slesp->precond == CS_PARAM_PRECOND_HPDDM);
 
-  char factor[20], n_p_agg[20], prefix_pc[128];
-
-  /* Symmetric matrix ? */
-  if (_system_should_be_sym(slesp->solver)) {
-    sprintf(factor, "%s", "cholesky");
-  }
-  else {
-    sprintf(factor, "%s", "lu");
-  }
-
-  sprintf(n_p_agg, "%d", cs_glob_n_ranks / 2);
+  char prefix_pc[128];
 
   /* Set type */
   PCSetType(pc, PCHPDDM);
 
-  /* Define generic options */
-  sprintf(prefix_pc, "%s_%s", slesp->name, "pc_hpddm");
+  /* Symmetric matrix ? */
+  if (_system_should_be_sym(slesp->solver)) {
 
-  _petsc_cmd(true, prefix_pc, "define_subdomains", "");
-  _petsc_cmd(true, prefix_pc, "has_neumann", "");
+    /* Define generic options */
+    sprintf(prefix_pc, "%s_%s", slesp->name, "pc_hpddm");
 
-  // /* Define option for first level */
-  sprintf(prefix_pc, "%s_%s", slesp->name, "pc_hpddm_levels_1");
+    /* With Neumann matrix */
+    _petsc_cmd(true, prefix_pc, "define_subdomains", "");
+    _petsc_cmd(true, prefix_pc, "has_neumann", "");
 
-  _petsc_cmd(true, prefix_pc, "pc_type", "asm");
-  _petsc_cmd(true, prefix_pc, "sub_mat_mumps_icntl_14", "5000");
-  _petsc_cmd(true, prefix_pc, "sub_mat_mumps_icntl_24", "1");
-  _petsc_cmd(true, prefix_pc, "sub_mat_mumps_icntl_25", "0");
-  _petsc_cmd(true, prefix_pc, "sub_mat_mumps_cntl_3", "1.e-50");
-  _petsc_cmd(true, prefix_pc, "sub_mat_mumps_cntl_5", "0.");
-  _petsc_cmd(true, prefix_pc, "eps_nev", "30");
-  _petsc_cmd(true, prefix_pc, "sub_pc_type", factor);
-  _petsc_cmd(true, prefix_pc, "sub_pc_factor_mat_solver_type", "mumps");
-  _petsc_cmd(true, prefix_pc, "st_pc_factor_mat_solver_type", "mumps");
-  _petsc_cmd(true, prefix_pc, "st_share_sub_ksp", "");
+    /* Define option for first level */
+    sprintf(prefix_pc, "%s_%s", slesp->name, "pc_hpddm_levels_1");
 
-  // /* Define option for coarse solver */
-  sprintf(prefix_pc, "%s_%s", slesp->name, "pc_hpddm_coarse");
+    _petsc_cmd(true, prefix_pc, "pc_type", "asm");
+    _petsc_cmd(true, prefix_pc, "sub_mat_mumps_icntl_14", "5000");
+    _petsc_cmd(true, prefix_pc, "sub_mat_mumps_icntl_24", "1");
+    _petsc_cmd(true, prefix_pc, "sub_mat_mumps_icntl_25", "0");
+    _petsc_cmd(true, prefix_pc, "sub_mat_mumps_cntl_3", "1.e-50");
+    _petsc_cmd(true, prefix_pc, "sub_mat_mumps_cntl_5", "0.");
+    _petsc_cmd(true, prefix_pc, "eps_nev", "30");
+    _petsc_cmd(true, prefix_pc, "sub_pc_type", "choleski");
+    _petsc_cmd(true, prefix_pc, "sub_pc_factor_mat_solver_type", "mumps");
+    _petsc_cmd(true, prefix_pc, "st_pc_factor_mat_solver_type", "mumps");
+    _petsc_cmd(true, prefix_pc, "st_share_sub_ksp", "");
 
-  _petsc_cmd(true, prefix_pc, "pc_factor_mat_solver_type", "mumps");
-  _petsc_cmd(true, prefix_pc, "sub_pc_type", factor);
-  _petsc_cmd(true, prefix_pc, "mat_mumps_icntl_14", "5000");
-  _petsc_cmd(true, prefix_pc, "mat_mumps_icntl_24", "1");
-  _petsc_cmd(true, prefix_pc, "mat_mumps_icntl_25", "0");
-  _petsc_cmd(true, prefix_pc, "mat_mumps_cntl_3", "1.e-50");
-  _petsc_cmd(true, prefix_pc, "mat_mumps_cntl_5", "0.");
-  _petsc_cmd(true, prefix_pc, "p", n_p_agg);
+    /* Define option for coarse solver */
+    sprintf(prefix_pc, "%s_%s", slesp->name, "pc_hpddm_coarse");
+
+    _petsc_cmd(true, prefix_pc, "pc_factor_mat_solver_type", "mumps");
+    _petsc_cmd(true, prefix_pc, "sub_pc_type", "choleski");
+    _petsc_cmd(true, prefix_pc, "mat_mumps_icntl_14", "5000");
+    _petsc_cmd(true, prefix_pc, "mat_mumps_icntl_24", "1");
+    _petsc_cmd(true, prefix_pc, "mat_mumps_icntl_25", "0");
+    _petsc_cmd(true, prefix_pc, "mat_mumps_cntl_3", "1.e-50");
+    _petsc_cmd(true, prefix_pc, "mat_mumps_cntl_5", "0.");
+    _petsc_cmd(true, prefix_pc, "p", "1");
+  }
+  else {
+
+    /* Define generic options */
+    sprintf(prefix_pc, "%s_%s", slesp->name, "pc_hpddm");
+
+    /* No Neumann matrix */
+    _petsc_cmd(true, prefix_pc, "define_subdomains", "");
+    _petsc_cmd(true, prefix_pc, "harmonic_overlap", "1");
+
+    /* Define option for first level */
+    sprintf(prefix_pc, "%s_%s", slesp->name, "pc_hpddm_levels_1");
+
+    _petsc_cmd(true, prefix_pc, "pc_asm_type", "restrict");
+    _petsc_cmd(true, prefix_pc, "svd_nsv", "100");
+    _petsc_cmd(true, prefix_pc, "svd_type", "lanczos");
+    _petsc_cmd(true, prefix_pc, "svd_max_it", "100");
+    _petsc_cmd(true, prefix_pc, "svd_tol", "1.e-2");
+    _petsc_cmd(true, prefix_pc, "svd_relative_threshold", "0.001");
+    _petsc_cmd(true, prefix_pc, "st_share_sub_ksp", "");
+    _petsc_cmd(true, prefix_pc, "sub_pc_type", "lu");
+    _petsc_cmd(true, prefix_pc, "sub_pc_factor_mat_solver_type", "mumps");
+
+    /* Define option for coarse solver */
+    sprintf(prefix_pc, "%s_%s", slesp->name, "pc_hpddm_coarse");
+
+    _petsc_cmd(true, prefix_pc, "pc_type", "lu");
+    _petsc_cmd(true, prefix_pc, "pc_factor_mat_solver_type", "mumps");
+    _petsc_cmd(true, prefix_pc, "correction", "deflated");
+    _petsc_cmd(true, prefix_pc, "mat_type", "aij");
+    _petsc_cmd(true, prefix_pc, "mat_filter", "1.0E-6");
+    _petsc_cmd(true, prefix_pc, "p", "1");
+  }
 }
 
 /*----------------------------------------------------------------------------*/
