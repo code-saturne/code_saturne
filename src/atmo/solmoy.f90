@@ -176,11 +176,11 @@ do isol = 1, nfmodsol
 
   do n = 1, nbrsol
     ! shifting of 1 for the percentage because starting by default value
-    rugdij = rugdij + tab_sol(n)%rugdyn*bpro_pourcent_sol(n+1,isol)/100.d0
-    rugtij = rugtij + tab_sol(n)%rugthe*bpro_pourcent_sol(n+1,isol)/100.d0
+    rugdij = rugdij + rugdyn(n)*bpro_pourcent_sol(n+1,isol)/100.d0
+    rugtij = rugtij + rugthe(n)*bpro_pourcent_sol(n+1,isol)/100.d0
     albeij = albeij + tab_sol(n)%albedo*bpro_pourcent_sol(n+1,isol)/100.d0
     emisij = emisij + tab_sol(n)%emissi*bpro_pourcent_sol(n+1,isol)/100.d0
-    csolij = csolij + tab_sol(n)%csol  *bpro_pourcent_sol(n+1,isol)/100.d0
+    csolij = csolij + csol(n)  *bpro_pourcent_sol(n+1,isol)/100.d0
     vegeij = vegeij + tab_sol(n)%vegeta*bpro_pourcent_sol(n+1,isol)/100.d0
     c1wij  = c1wij  + tab_sol(n)%c1w   *bpro_pourcent_sol(n+1,isol)/100.d0
     c2wij  = c2wij  + tab_sol(n)%c2w   *bpro_pourcent_sol(n+1,isol)/100.d0

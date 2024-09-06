@@ -25,6 +25,9 @@
 !>      file format
 
 module atsoil
+
+use, intrinsic :: iso_c_binding
+
 !> \defgroup at_soil
 !=============================================================================
 !> \addtogroup at_soil
@@ -37,10 +40,6 @@ integer, save :: nbrsol
 
 !> kind of soil (water, forest, urban ...) and associated constantes
 type categorie_sol
-!> Dynamic roughness length
-  double precision  :: rugdyn ! => field
-!> Thermal roughness length
-  double precision  :: rugthe! => field
 !> Albedo
   double precision  :: albedo! => field
 !> emissivity
@@ -52,8 +51,6 @@ type categorie_sol
 !> ratio of the maximum water capacity of the shallow reservoir to the deep
 !> reservoir [0,1]
   double precision  :: c2w
-!> Thermal inertia of the soil
-  double precision  :: csol
 !> Rij value for Rij1
   double precision  :: r1
 !> Rij value for Rij2
@@ -69,15 +66,22 @@ end type categorie_sol
 
 !> initial soil surface temperature
 !> for Sea, it is also the surface temperature
-double precision :: tsini = 20.d0
+real(c_double), pointer, save :: tsini
 !> initial deep soil temperature
-double precision :: tprini = 20.d0
+real(c_double), pointer, save :: tprini
 !> initial soil specific humidity
-double precision :: qvsini = 0.d0
+real(c_double), pointer, save :: qvsini
 !> initial water content of the first reservoir
 double precision :: w1ini = 0.d0
 !> initial water content of the second reservoir
 double precision :: w2ini = 0.d0
+
+!> Thermal inertia of the soil
+double precision, dimension(:), pointer :: csol
+!> Dynamic roughness length
+double precision, dimension(:), pointer :: rugdyn ! => field
+!> Thermal roughness length
+double precision, dimension(:), pointer :: rugthe! => field
 
 !> array of the different features of each soil category
 type(categorie_sol), dimension(:) , allocatable :: tab_sol

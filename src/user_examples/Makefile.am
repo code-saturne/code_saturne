@@ -191,7 +191,6 @@ cs_user_turbomachinery.cpp \
 cs_user_zones.cpp \
 cs_user_atmospheric_model.f90 \
 cs_user_boundary_conditions-gas_3ptchem.cpp \
-cs_user_parameters.f90 \
 cs_user_profile.cxx \
 cs_user_profile.h \
 cs_user_profile_plot.py

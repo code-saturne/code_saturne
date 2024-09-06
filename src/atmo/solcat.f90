@@ -67,7 +67,21 @@ use entsor
 use atincl
 use atsoil
 
+use, intrinsic :: iso_c_binding
+
 implicit none
+
+interface
+
+  subroutine cs_f_atmo_soil_init_arrays(nb_col, p_csol, p_rugdyn, p_rugthe) &
+    bind(C, name='cs_f_atmo_soil_init_arrays')
+    use, intrinsic :: iso_c_binding
+    implicit none
+    integer, intent(in) :: nb_col
+    type(c_ptr), intent(out) :: p_csol, p_rugdyn, p_rugthe
+  end subroutine cs_f_atmo_soil_init_arrays
+
+end interface
 
 procedure() :: csexit
 
@@ -86,6 +100,7 @@ double precision codinv
 integer inityp
 character(len=50) :: raison
 character(len=10) :: inicat
+type(c_ptr) :: c_csol, c_rugdyn, c_rugthe
 
 ! Initialisation
 
@@ -101,6 +116,11 @@ if (iappel.eq.1) then
 
   ! Allocation of table values
   allocate(tab_sol(nbrsol), stat=error)
+  call cs_f_atmo_soil_init_arrays(nbrsol, c_csol, c_rugdyn, c_rugthe)
+
+  call c_f_pointer(c_csol, csol, [nbrsol])
+  call c_f_pointer(c_rugdyn, rugdyn, [nbrsol])
+  call c_f_pointer(c_rugthe, rugthe, [nbrsol])
 
   if (error /= 0) then
     write(nfecra,*) "Allocation error of atmodsol::tab_sol"
@@ -113,11 +133,11 @@ endif
 
 if (iappel.eq.1) then
   do n = 1, nbrsol
-    tab_sol(n)%rugdyn = codinv
-    tab_sol(n)%rugthe = codinv
+    csol(n)   = codinv
+    rugdyn(n) = codinv
+    rugthe(n) = codinv
     tab_sol(n)%albedo = codinv
     tab_sol(n)%emissi = codinv
-    tab_sol(n)%csol   = codinv
     tab_sol(n)%vegeta = codinv
     tab_sol(n)%c1w    = codinv
     tab_sol(n)%c2w    = codinv
@@ -182,23 +202,23 @@ if (iappel.eq.1) then
 
   ! valeurs standard des parametres
 
-  if(eau    .ne. inityp)tab_sol(eau)%rugdyn    = 0.0005d0
-  if(foret  .ne. inityp)tab_sol(foret)%rugdyn  = 0.800d0
-  if(divers .ne. inityp)tab_sol(divers)%rugdyn = 0.100d0
-  if(minral .ne. inityp)tab_sol(minral)%rugdyn = 0.0012d0
-  if(diffus .ne. inityp)tab_sol(diffus)%rugdyn = 0.250d0
-  if(mixte  .ne. inityp)tab_sol(mixte )%rugdyn = 0.600d0
-  if(dense  .ne. inityp)tab_sol(dense )%rugdyn = 1.000d0
-  if(bati   .ne. inityp)tab_sol(bati  )%rugdyn = 0.600d0
+  if(eau    .ne. inityp)rugdyn(eau)    = 0.0005d0
+  if(foret  .ne. inityp)rugdyn(foret)  = 0.800d0
+  if(divers .ne. inityp)rugdyn(divers) = 0.100d0
+  if(minral .ne. inityp)rugdyn(minral) = 0.0012d0
+  if(diffus .ne. inityp)rugdyn(diffus) = 0.250d0
+  if(mixte  .ne. inityp)rugdyn(mixte)  = 0.600d0
+  if(dense  .ne. inityp)rugdyn(dense)  = 1.000d0
+  if(bati   .ne. inityp)rugdyn(bati)   = 0.600d0
 
-  if(eau    .ne. inityp)tab_sol(eau)%rugthe    = tab_sol(eau)%rugdyn
-  if(foret  .ne. inityp)tab_sol(foret)%rugthe  = tab_sol(foret)%rugdyn*exp(-2.d0)
-  if(divers .ne. inityp)tab_sol(divers)%rugthe = tab_sol(divers)%rugdyn*exp(-2.d0)
-  if(minral .ne. inityp)tab_sol(minral)%rugthe = tab_sol(minral)%rugdyn*exp(-2.d0)
-  if(diffus .ne. inityp)tab_sol(diffus)%rugthe = tab_sol(diffus)%rugdyn*exp(-2.d0)
-  if(mixte  .ne. inityp)tab_sol(mixte )%rugthe = tab_sol(mixte )%rugdyn*exp(-2.d0)
-  if(dense  .ne. inityp)tab_sol(dense )%rugthe = tab_sol(dense )%rugdyn*exp(-2.d0)
-  if(bati   .ne. inityp)tab_sol(bati  )%rugthe = tab_sol(bati  )%rugdyn*exp(-2.d0)
+  if(eau    .ne. inityp)rugthe(eau)    = rugdyn(eau)
+  if(foret  .ne. inityp)rugthe(foret)  = rugdyn(foret)*exp(-2.d0)
+  if(divers .ne. inityp)rugthe(divers) = rugdyn(divers)*exp(-2.d0)
+  if(minral .ne. inityp)rugthe(minral) = rugdyn(minral)*exp(-2.d0)
+  if(diffus .ne. inityp)rugthe(diffus) = rugdyn(diffus)*exp(-2.d0)
+  if(mixte  .ne. inityp)rugthe(mixte)  = rugdyn(mixte)*exp(-2.d0)
+  if(dense  .ne. inityp)rugthe(dense)  = rugdyn(dense)*exp(-2.d0)
+  if(bati   .ne. inityp)rugthe(bati)   = rugdyn(bati)*exp(-2.d0)
 
   if(eau    .ne. inityp)tab_sol(eau)%albedo    = 0.08d0
   if(foret  .ne. inityp)tab_sol(foret)%albedo  = 0.16d0
@@ -227,19 +247,19 @@ if (iappel.eq.1) then
   if(dense  .ne. inityp)tab_sol(dense )%vegeta = 0.00d0
   if(bati   .ne. inityp)tab_sol(bati  )%vegeta = 0.25d0
 
-  if(eau    .ne. inityp)tab_sol(eau)%csol    =  7.6d-06
-  if(foret  .ne. inityp)tab_sol(foret)%csol  = 11.0d-06
-  if(divers .ne. inityp)tab_sol(divers)%csol = 11.0d-06
-  if(minral .ne. inityp)tab_sol(minral)%csol =  5.0d-06
-  if(dense  .ne. inityp)tab_sol(dense )%csol =  3.9d-06
+  if(eau    .ne. inityp)csol(eau)    =  7.6d-06
+  if(foret  .ne. inityp)csol(foret)  = 11.0d-06
+  if(divers .ne. inityp)csol(divers) = 11.0d-06
+  if(minral .ne. inityp)csol(minral) =  5.0d-06
+  if(dense  .ne. inityp)csol(dense)  =  3.9d-06
   if(diffus .ne. inityp)                                                     &
-       tab_sol(diffus)%csol = tab_sol(foret)%csol*tab_sol(diffus)%vegeta +   &
-       tab_sol(dense)%csol*(1.d0-tab_sol(diffus)%vegeta)
+       csol(diffus) = csol(foret)*tab_sol(diffus)%vegeta +   &
+       csol(dense)*(1.d0-tab_sol(diffus)%vegeta)
   if(mixte  .ne. inityp)                                                     &
-       tab_sol(mixte )%csol =  tab_sol(foret )%csol*tab_sol(mixte )%vegeta + &
-       tab_sol(dense )%csol*(1.d0-tab_sol(mixte )%vegeta)
+       csol(mixte) = csol(foret)*tab_sol(mixte )%vegeta + &
+       csol(dense)*(1.d0-tab_sol(mixte )%vegeta)
   if(bati  .ne. inityp)                                                      &
-       tab_sol(bati  )%csol =  tab_sol(foret )%csol*tab_sol(bati  )%vegeta + &
+       csol(bati) = csol(foret)*tab_sol(bati  )%vegeta + &
        3.9d-06*(1.d0-tab_sol(bati  )%vegeta)
   if(eau    .ne. inityp)tab_sol(eau)%c1w    = 100.0d0
   if(foret  .ne. inityp)tab_sol(foret)%c1w  = 18.d0*tab_sol(foret)%vegeta + 2.d0
@@ -287,8 +307,8 @@ if (iappel.eq.2) then
   write(nfecra,2000)
   write(nfecra,2001)
   do n = 1, nbrsol
-    write(nfecra,2002) tab_sol(n)%nomcat, tab_sol(n)%rugdyn,tab_sol(n)%rugthe, &
-      tab_sol(n)%albedo, tab_sol(n)%emissi,1.d+06*tab_sol(n)%csol,          &
+    write(nfecra,2002) tab_sol(n)%nomcat, rugdyn(n),rugthe(n), &
+      tab_sol(n)%albedo, tab_sol(n)%emissi,1.d+06*csol(n),          &
       tab_sol(n)%vegeta, tab_sol(n)%c1w, tab_sol(n)%c2w, tab_sol(n)%r1,     &
       tab_sol(n)%r2
   enddo
@@ -299,10 +319,10 @@ if (iappel.eq.2) then
   ierreu = nbrsol
   raison = ' Wrong soil cofficients              '
   do n = 1, nbrsol
-    if (tab_sol(n)%rugdyn.ne.codinv .and. tab_sol(n)%rugthe.ne.codinv .and.   &
+    if (rugdyn(n).ne.codinv .and. rugthe(n).ne.codinv .and.   &
         tab_sol(n)%albedo.ne.codinv .and. tab_sol(n)%emissi.ne.codinv .and.   &
         tab_sol(n)%c1w   .ne.codinv .and. tab_sol(n)%c2w   .ne.codinv .and.   &
-        tab_sol(n)%csol  .ne.codinv .and. tab_sol(n)%r1    .ne.codinv .and.   &
+        csol(n)  .ne.codinv .and. tab_sol(n)%r1    .ne.codinv .and.   &
         tab_sol(n)%r2    .ne.codinv) ierreu = ierreu - 1
   enddo
 

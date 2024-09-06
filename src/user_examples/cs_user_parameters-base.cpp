@@ -1940,6 +1940,11 @@ cs_user_finalize_setup(cs_domain_t     *domain)
       at_opt->rad_1d_p0     [i] = 102300.;
       at_opt->rad_1d_rho0   [i] = 1.23;
     }
+
+    /* Modify the soil parameters if activated */
+    at_opt->soil_roughness[3] = 0.0012;
+    at_opt->soil_thermal_inertia[3] = 1.7e-5;
+    at_opt->soil_thermal_roughness[3] = 0.0012;
   }
 
   at_opt->rad_1d_z[0 ] = 0.;

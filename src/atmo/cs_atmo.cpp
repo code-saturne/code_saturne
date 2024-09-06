@@ -241,7 +241,14 @@ static cs_atmo_option_t  _atmo_option = {
   .autocollection_rain = false,
   .precipitation = false,
   .evaporation = false,
-  .rupture = false
+  .rupture = false,
+  .soil_surf_temp = 20.0,
+  .soil_temperature = 20.0,
+  .soil_humidity = 0.0,
+  .soil_thermal_inertia = NULL,
+  .soil_roughness = NULL,
+  .soil_thermal_roughness = NULL,
+  .hydrostatic_pressure_model = 0
 };
 
 static const char *_univ_fn_name[] = {N_("Cheng 2005"),
@@ -382,7 +389,11 @@ cs_f_atmo_get_pointers(cs_real_t              **ps,
                        int                    **soil_model,
                        int                    **nvert,
                        int                    **kvert,
-                       int                    **kmx);
+                       int                    **kmx,
+                       cs_real_t              **tsini,
+                       cs_real_t              **tprini,
+                       cs_real_t              **qvsini,
+                       int                    **ihpm);
 
 void
 cs_f_atmo_arrays_get_pointers(cs_real_t **z_dyn_met,
@@ -492,6 +503,11 @@ cs_f_ssh_dimensions(int  *spack_n_species,
                     int  *n_reactions,
                     int  *n_photolysis);
 
+void
+cs_f_atmo_soil_init_arrays(int       *n_soil_cat,
+                           cs_real_t **csol,
+                           cs_real_t **rugdyn,
+                           cs_real_t **rugthe);
 
 /*============================================================================
  * Private function definitions
@@ -1826,7 +1842,11 @@ cs_f_atmo_get_pointers(cs_real_t              **ps,
                        int                    **soil_model,
                        int                    **nvert,
                        int                    **kvert,
-                       int                    **kmx)
+                       int                    **kmx,
+                       cs_real_t              **tsini,
+                       cs_real_t              **tprini,
+                       cs_real_t              **qvsini,
+                       int                    **ihpm)
 {
   *ps        = &(_atmo_constants.ps);
   *syear     = &(_atmo_option.syear);
@@ -1868,6 +1888,10 @@ cs_f_atmo_get_pointers(cs_real_t              **ps,
   *nvert = &(_atmo_option.rad_1d_nvert);
   *kvert = &(_atmo_option.rad_1d_nlevels);
   *kmx = &(_atmo_option.rad_1d_nlevels_max);
+  *tsini = &(_atmo_option.soil_surf_temp);
+  *tprini = &(_atmo_option.soil_temperature);
+  *qvsini = &(_atmo_option.soil_humidity);
+  *ihpm = &(_atmo_option.hydrostatic_pressure_model);
 }
 
 void
@@ -2289,6 +2313,24 @@ cs_f_atmo_get_pointers_imbrication(bool      **imbrication_flag,
   *id_tke   = &(_atmo_imbrication.id_tke);
   *id_eps   = &(_atmo_imbrication.id_eps);
   *id_theta = &(_atmo_imbrication.id_theta);
+}
+
+void
+cs_f_atmo_soil_init_arrays(int        *n_soil_cat,
+                           cs_real_t  **csol,
+                           cs_real_t  **rugdyn,
+                           cs_real_t  **rugthe)
+{
+  if (_atmo_option.soil_roughness == NULL)
+    BFT_MALLOC(_atmo_option.soil_roughness, *n_soil_cat, cs_real_t);
+  if (_atmo_option.soil_thermal_inertia == NULL)
+    BFT_MALLOC(_atmo_option.soil_thermal_inertia, *n_soil_cat, cs_real_t);
+  if (_atmo_option.soil_thermal_roughness == NULL)
+    BFT_MALLOC(_atmo_option.soil_thermal_roughness, *n_soil_cat, cs_real_t);
+
+  *rugdyn = _atmo_option.soil_roughness;
+  *csol   = _atmo_option.soil_thermal_inertia;
+  *rugthe = _atmo_option.soil_thermal_roughness;
 }
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
@@ -4815,6 +4857,11 @@ cs_atmo_finalize(void)
   BFT_FREE(_atmo_option.rad_1d_qw0);
   BFT_FREE(_atmo_option.rad_1d_p0);
   BFT_FREE(_atmo_option.rad_1d_rho0);
+
+  BFT_FREE(_atmo_option.soil_roughness);
+  BFT_FREE(_atmo_option.soil_thermal_inertia);
+  BFT_FREE(_atmo_option.soil_thermal_roughness);
+
 }
 
 /*----------------------------------------------------------------------------*/

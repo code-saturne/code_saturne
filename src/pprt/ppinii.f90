@@ -215,16 +215,8 @@ coeff3 = zero
 !===============================================================================
 
 ! Space and time reference of the run:
+
 ! ------------------------------------
-
-! Option for the meteo profile computation
-!ihpm   --> flag to compute the hydrostastic pressure by Laplace integration
-!           in the meteo profiles
-!       = 0 : bottom to top Laplace integration, based on P(sea level) (default)
-!       = 1 : top to bottom Laplace integration based on P computed for
-!            the standard atmosphere at z(nbmaxt)
-ihpm = 0
-
 ! 1d radiative transfer model:
 ! ----------------------------
 

@@ -439,6 +439,25 @@ typedef struct {
   bool evaporation;
   bool rupture;
 
+  /*! initial soil surface temperature
+   *  for Sea, it is also the surface temperature */
+  cs_real_t soil_surf_temp;
+  /*! initial deep soil temperature */
+  cs_real_t soil_temperature;
+  /*! initial soil specific humidity */
+  cs_real_t soil_humidity;
+  /*! Thermal inertia of the soil */
+  cs_real_t *soil_thermal_inertia;
+  /*! Dynamic roughness length */
+  cs_real_t *soil_roughness;
+  /*! Thermal roughness length*/
+  cs_real_t *soil_thermal_roughness;
+  /*! flag to compute the hydrostatic pressure by Laplace integration
+   *  in the meteo profiles
+   *  0: based on P (sea level) value by default
+   *  1: based on P computed for the standard atmosphere
+   */
+  int hydrostatic_pressure_model;
 } cs_atmo_option_t;
 
 /*----------------------------------------------------------------------------
