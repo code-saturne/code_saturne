@@ -2254,8 +2254,8 @@ _pre_solve_ssg(const cs_field_t  *f_rij,
   if (cs_glob_turb_rans_model->has_buoyant_term == 1)
     _gravity_st_rij(f_rij, up_rhop, grav, st_prv_id, c_st_prv, fimp, rhs);
 
+  c_is_solid == nullptr;  // Was const pointer to c_is_solid_zone_flag.
   CS_FREE_HD(c_is_solid_zone_flag);
-  CS_FREE_HD(c_is_solid);
 
   /* Diffusion term (Daly Harlow: generalized gradient hypothesis method)
    * -------------------------------------------------------------------- */
