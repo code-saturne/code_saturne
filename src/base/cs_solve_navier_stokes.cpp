@@ -63,6 +63,7 @@
 #include "cs_ctwr_source_terms.h"
 #include "cs_dispatch.h"
 #include "cs_divergence.h"
+#include "cs_drift_convective_flux.h"
 #include "cs_equation_iterative_solve.h"
 #include "cs_equation_param.h"
 #include "cs_face_viscosity.h"
@@ -4140,6 +4141,12 @@ cs_solve_navier_stokes(const int        iterns,
                                 crom, brom,
                                 imasfl, bmasfl);
 
+    /* In case of scalars with drift for particle classes
+     * boundary mass flux of the mixture may be updated */
+    cs_drift_boundary_mass_flux(m,
+                                mq,
+                                bmasfl);
+
     CS_FREE_HD(trav);
     CS_FREE_HD(da_uu);
     CS_FREE_HD(dfrcxt);
@@ -4535,6 +4542,12 @@ cs_solve_navier_stokes(const int        iterns,
                               imasfl, bmasfl);
     rs_ell[1] += cs_timer_wtime() - t3;
   }
+
+  /* In case of scalars with drift for particle classes
+   * boundary mass flux of the mixture may be updated */
+  cs_drift_boundary_mass_flux(m,
+                              mq,
+                              bmasfl);
 
   /* VoF: void fraction solving and update the mixture density/viscosity and
    *      mass flux (cs_pressure_correction solved the convective flux of

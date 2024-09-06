@@ -85,6 +85,8 @@ BEGIN_C_DECLS
 
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
 
+static int class_id_max = 0;
+
 /*============================================================================
  * Private function definitions
  *============================================================================*/
@@ -94,6 +96,91 @@ BEGIN_C_DECLS
 /*============================================================================
  * Public function definitions
  *============================================================================*/
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Update boundary flux mass of the mixture
+ *
+ * \param[in]      m       pointer to associated mesh structure
+ * \param[in]      mq      pointer to associated mesh quantities structure
+ * \param[in, out] bmasfl  boundary face mass flux
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_drift_boundary_mass_flux(const cs_mesh_t             *m,
+                            const cs_mesh_quantities_t  *mq,
+                            cs_real_t                    b_mass_flux[])
+{
+  const cs_lnum_t n_i_faces = m->n_i_faces;
+  const cs_lnum_t n_b_faces = m->n_b_faces;
+
+  const cs_lnum_2_t *restrict i_face_cells
+    = (const cs_lnum_2_t *)m->i_face_cells;
+  const cs_lnum_t *restrict b_face_cells
+    = (const cs_lnum_t *)m->b_face_cells;
+
+  const cs_real_3_t  *restrict b_face_normal
+    = (const cs_real_3_t  *) mq->b_face_normal;
+  const cs_real_3_t *restrict i_face_normal
+    = (const cs_real_3_t *) mq->i_face_normal;
+  const int *bc_type = cs_glob_bc_type;
+
+  const cs_real_3_t *restrict b_face_cog
+    = (const cs_real_3_t *)mq->b_face_cog;
+  const cs_real_3_t *restrict i_face_cog
+    = (const cs_real_3_t *)mq->i_face_cog;
+
+  //TODO add a return in case no addition
+  const int keydri = cs_field_key_id("drift_scalar_model");
+  const int kbmasf = cs_field_key_id("boundary_mass_flux_id");
+
+ /* At walls, if particle classes have a outgoing flux,
+  * mixture get the same quantity.
+    (rho Vs)_f = sum_classes (rho x2 V2)_f
+    Warning in case of ALE or turbomachinary...
+   ---------------------------------------------------------------- */
+  for (int jcla = 1; jcla < class_id_max; jcla++) {
+
+    char var_name[15];
+    snprintf(var_name, 14, "x_p_%02d", jcla);
+    var_name[14] = '\0';
+
+    cs_field_t *f_x_p_i = cs_field_by_name_try(var_name);
+    cs_real_t *x2 = NULL;
+
+    if (f_x_p_i != NULL) {
+      x2 = f_x_p_i->val;
+      const int iscdri = cs_field_get_key_int(f_x_p_i, keydri);
+
+      /* We have a boundary flux on particle class */
+      if (   !(iscdri & CS_DRIFT_SCALAR_IMPOSED_MASS_FLUX)
+          && !(iscdri & CS_DRIFT_SCALAR_ZERO_BNDY_FLUX)
+          && !(iscdri & CS_DRIFT_SCALAR_ZERO_BNDY_FLUX_AT_WALLS)) {
+
+
+        int b_flmass_id = cs_field_get_key_int(f_x_p_i, kbmasf);
+
+        assert(b_flmass_id > -1);
+        /* Pointer to the Boundary mass flux */
+        cs_real_t *b_mass_flux2 = cs_field_by_id(b_flmass_id)->val;
+
+#     pragma omp parallel for if (n_b_faces > CS_THR_MIN)
+        for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++) {
+
+          /* Only for walls and outgoing values */
+          if ((  bc_type[face_id] != CS_SMOOTHWALL
+              && bc_type[face_id] != CS_ROUGHWALL)
+              || b_mass_flux2[face_id] < 0.)
+            continue;
+
+          cs_lnum_t c_id = b_face_cells[face_id];
+          b_mass_flux[face_id] += x2[c_id] * b_mass_flux2[face_id];
+        }
+      }
+    }
+  }
+}
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -136,6 +223,8 @@ cs_drift_convective_flux(cs_field_t  *f_sc,
   const int iscdri = cs_field_get_key_int(f_sc, keydri);
   const int icla = cs_field_get_key_int(f_sc, keyccl);
 
+  class_id_max = CS_MAX(icla, class_id_max);
+
   const cs_real_t *dt = CS_F_(dt)->val;
   const int iturb  = cs_glob_turb_model->iturb;
   const int itytur = cs_glob_turb_model->itytur;
@@ -143,46 +232,6 @@ cs_drift_convective_flux(cs_field_t  *f_sc,
   const cs_real_t *gxyz = cs_get_glob_physical_constants()->gravity;
   const int idtvar = cs_glob_time_step_options->idtvar;
   const int *bc_type = cs_glob_bc_type;
-
-  /* Mass fraction of gas */
-
-  cs_field_t *f_xc = cs_field_by_name_try("x_c");
-  cs_real_t *x1 = nullptr, *b_x1 = nullptr;
-  cs_real_t *i_mass_flux_gas = nullptr;
-  cs_real_t *b_mass_flux_gas = nullptr;
-
-  if (f_xc != nullptr) {
-    x1 = f_xc->val;
-
-    /* Mass fraction of the gas at the boundary */
-    cs_field_t *f_b_xc = cs_field_by_name("b_x_c");
-    b_x1 = f_b_xc->val;
-
-    /* Get the mass flux of the continuous phase (gas)
-       that is the negative scalar class */
-
-    int iflmas = -1;
-    int iflmab = -1;
-
-    for (int i = 0; i < n_fields; i++) {
-      cs_field_t *f = cs_field_by_id(i);
-
-      if (!(f->type & CS_FIELD_VARIABLE))
-        continue;
-
-      const int jcla = cs_field_get_key_int(f, keyccl);
-      if (jcla == -1) {
-        iflmas = cs_field_get_key_int(f, kimasf);
-        iflmab = cs_field_get_key_int(f, kbmasf);
-        break;
-      }
-    }
-
-    assert(iflmab > -1);
-    i_mass_flux_gas = cs_field_by_id(iflmas)->val;
-    /* Pointer to the Boundary mass flux */
-    b_mass_flux_gas = cs_field_by_id(iflmab)->val;
-  }
 
   cs_field_t *f_vel = CS_F_(vel);
   cs_equation_param_t *eqp_sc = cs_field_get_equation_param(f_sc);
@@ -195,6 +244,19 @@ cs_drift_convective_flux(cs_field_t  *f_sc,
   cs_real_t *i_mass_flux_mix = cs_field_by_id(iflmas_v)->val;
   cs_real_t *b_mass_flux_mix = cs_field_by_id(iflmab_v)->val;
 
+  /* Mass fraction of gas */
+  cs_field_t *f_xc = cs_field_by_name_try("x_c");
+  cs_real_t *x1 = nullptr, *b_x1 = nullptr;
+  cs_real_t *i_mass_flux_gas = nullptr;
+  cs_real_t *b_mass_flux_gas = nullptr;
+
+  if (f_xc != nullptr) {
+    x1 = f_xc->val;
+
+    /* Mass fraction of the gas at the boundary */
+    cs_field_t *f_b_xc = cs_field_by_name("b_x_c");
+    b_x1 = f_b_xc->val;
+  }
   /* Map field arrays */
   cs_real_3_t *vel = (cs_real_3_t *)f_vel->val;
   cs_real_3_t *vel_pre = (cs_real_3_t *)f_vel->val_pre;
@@ -260,6 +322,9 @@ cs_drift_convective_flux(cs_field_t  *f_sc,
   BFT_MALLOC(flumab, n_b_faces, cs_real_t);
   BFT_MALLOC(b_visc, n_b_faces, cs_real_t);
 
+  BFT_MALLOC(i_mass_flux_gas, n_i_faces, cs_real_t);
+  BFT_MALLOC(b_mass_flux_gas, n_b_faces, cs_real_t);
+
   if (iscdri & CS_DRIFT_SCALAR_ADD_DRIFT_FLUX) {
 
     /* Index of the corresponding relaxation time */
@@ -309,7 +374,6 @@ cs_drift_convective_flux(cs_field_t  *f_sc,
       cs_array_real_copy(n_i_faces, i_mass_flux_mix, i_mass_flux_gas);
       cs_array_real_copy(n_b_faces, b_mass_flux_mix, b_mass_flux_gas);
     }
-
     /* Initialize the additional convective flux with the gravity term
        --------------------------------------------------------------- */
 
@@ -330,6 +394,7 @@ cs_drift_convective_flux(cs_field_t  *f_sc,
         for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
 
           const cs_real_t rho = crom[c_id];
+          // FIXME should by multiplied by (1-x2) or x1
           cpro_drift[c_id][0] = rho * vdp_i[c_id][0];
           cpro_drift[c_id][1] = rho * vdp_i[c_id][1];
           cpro_drift[c_id][2] = rho * vdp_i[c_id][2];
@@ -626,15 +691,36 @@ cs_drift_convective_flux(cs_field_t  *f_sc,
       for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++)
         b_mass_flux[face_id] = b_mass_flux_mix[face_id] + flumab[face_id];
 
+    } /* End: not drift scalar imposed mass flux */
+
+    else if (icla == -1 && f_xc != NULL) {
+
       /* Deduce the convective flux of the continuous "class" by removing
          the flux of the current particle "class":
-         (rho x1 V1)_ij = (rho Vs)_ij - sum_classes (rho x2 V2)_ij
+         (rho x1 V1)_f = (rho Vs)_f - sum_classes (rho x2 V2)_f
          ---------------------------------------------------------------- */
 
-      if (icla >= 1) {
+      /* Mass fraction of gas */
+
+      cs_field_t *f_xc = cs_field_by_name_try("x_c");
+      cs_real_t *x1 = NULL, *b_x1 = NULL;
+
+      if (f_xc != NULL) {
+        x1 = f_xc->val;
+
+        /* Mass fraction of the gas at the boundary */
+        cs_field_t *f_b_xc = cs_field_by_name("b_x_c");
+        b_x1 = f_b_xc->val;
+      }
+
+      /* Initialize continuous phase mass flux as mixture mass flux */
+      cs_array_real_copy(n_i_faces, i_mass_flux_mix, i_mass_flux);
+      cs_array_real_copy(n_b_faces, b_mass_flux_mix, b_mass_flux);
+
+      for (int jcla = 1; jcla < class_id_max; jcla++) {
 
         char var_name[15];
-        snprintf(var_name, 14, "x_p_%02d", icla);
+        snprintf(var_name, 14, "x_p_%02d", jcla);
         var_name[14] = '\0';
 
         cs_field_t *f_x_p_i = cs_field_by_name_try(var_name);
@@ -642,6 +728,14 @@ cs_drift_convective_flux(cs_field_t  *f_sc,
 
         if (f_x_p_i != nullptr) {
           x2 = f_x_p_i->val;
+
+          int i_flmass_id = cs_field_get_key_int(f_x_p_i, kimasf);
+          int b_flmass_id = cs_field_get_key_int(f_x_p_i, kbmasf);
+
+          assert(b_flmass_id > -1);
+          cs_real_t *i_mass_flux2 = cs_field_by_id(i_flmass_id)->val;
+          /* Pointer to the Boundary mass flux */
+          cs_real_t *b_mass_flux2 = cs_field_by_id(b_flmass_id)->val;
 
 #         pragma omp parallel for if (n_i_faces > CS_THR_MIN)
           for (cs_lnum_t face_id = 0; face_id < n_i_faces; face_id++) {
@@ -651,10 +745,10 @@ cs_drift_convective_flux(cs_field_t  *f_sc,
 
             cs_lnum_t c_id_up = i_face_cells[face_id][1];
 
-            if (i_mass_flux[face_id] >= 0.0)
+            if (i_mass_flux2[face_id] >= 0.0)
               c_id_up = i_face_cells[face_id][0];
 
-            i_mass_flux_gas[face_id] -= x2[c_id_up] * i_mass_flux[face_id];
+            i_mass_flux[face_id] -= x2[c_id_up] * i_mass_flux2[face_id];
 
           }
 
@@ -665,20 +759,17 @@ cs_drift_convective_flux(cs_field_t  *f_sc,
                other transport equations
                !if (bmasfl[face_id]>=0.d0) */
             cs_lnum_t c_id_up = b_face_cells[face_id];
-            b_mass_flux_gas[face_id] -= x2[c_id_up] * b_mass_flux[face_id];
-
+            b_mass_flux[face_id] -= x2[c_id_up] * b_mass_flux2[face_id];
           }
         }
       }
-    } /* End drift scalar imposed mass flux */
-
+    }
     /* Finalize the convective flux of the gas "class" by scaling by x1
-       (rho x1 V1)_ij = (rho Vs)_ij - sum_classes (rho x2 V2)_ij
-       Warning, x1 at the face must be computed so that it is consistent
-       with an upwind scheme on (rho V1) */
+     (rho x1 V1)_ij = (rho Vs)_ij - sum_classes (rho x2 V2)_ij
+     Warning, x1 at the face must be computed so that it is consistent
+     with an upwind scheme on (rho V1) */
 
     else if (icla == -1 && f_xc != nullptr) {
-
 #     pragma omp parallel for if (n_i_faces > CS_THR_MIN)
       for (cs_lnum_t face_id = 0; face_id < n_i_faces; face_id++) {
 
@@ -686,10 +777,10 @@ cs_drift_convective_flux(cs_field_t  *f_sc,
            other transport equations */
         cs_lnum_t c_id_up = i_face_cells[face_id][1];
 
-        if (i_mass_flux_gas[face_id] >= 0.0)
+        if (i_mass_flux[face_id] >= 0.0)
           c_id_up = i_face_cells[face_id][0];
 
-        i_mass_flux_gas[face_id] /= x1[c_id_up];
+        i_mass_flux[face_id] /= x1[c_id_up];
 
       }
 
@@ -700,14 +791,13 @@ cs_drift_convective_flux(cs_field_t  *f_sc,
            other transport equations */
         const cs_lnum_t c_id_up = b_face_cells[face_id];
 
-        if (b_mass_flux_gas[face_id] < 0.0)
-          b_mass_flux_gas[face_id] /= b_x1[face_id];
+        if (b_mass_flux[face_id] < 0.0)
+          b_mass_flux[face_id] /= b_x1[face_id];
         else
-          b_mass_flux_gas[face_id] /= x1[c_id_up];
+          b_mass_flux[face_id] /= x1[c_id_up];
 
       }
-
-    }
+    } /* End continuous phase */
 
   } /* End drift scalar add drift flux */
 
@@ -743,28 +833,6 @@ cs_drift_convective_flux(cs_field_t  *f_sc,
                   flumab,
                   divflu);
 
-    /* Mass source terms */
-
-    cs_lnum_t  n_elts;
-    const cs_lnum_t  *elt_ids;
-    cs_real_t *mst_val_p;
-
-    cs_volume_mass_injection_get_arrays(CS_F_(p),
-                                        &n_elts,
-                                        &elt_ids,
-                                        nullptr,
-                                        &mst_val_p,
-                                        nullptr);
-
-    if (n_elts > 0) {
-      cs_dispatch_context ctx;
-
-      ctx.parallel_for(n_elts, [=] CS_F_HOST_DEVICE (cs_lnum_t cidx) {
-        const cs_lnum_t cell_id = elt_ids[cidx];
-        divflu[cell_id] += cell_vol[cell_id] * mst_val_p[cidx];
-      });
-    }
-
     const int iconvp = eqp_sc->iconv;
     const cs_real_t thetap = eqp_sc->theta;
 
@@ -776,7 +844,7 @@ cs_drift_convective_flux(cs_field_t  *f_sc,
       cs_real_t *cvara_var = f_sc->val_pre;
 #     pragma omp parallel for if(n_cells > CS_THR_MIN)
       for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-        fimp[c_id] += iconvp*thetap*divflu[c_id];
+        fimp[c_id] += iconvp*divflu[c_id];
         rhs[c_id] -= iconvp*divflu[c_id]*cvara_var[c_id];
       }
     }
@@ -788,7 +856,7 @@ cs_drift_convective_flux(cs_field_t  *f_sc,
 #     pragma omp parallel for if(n_cells > CS_THR_MIN)
       for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
         for (cs_lnum_t i = 0; i < f_sc->dim; i++) {
-          _fimp[c_id][i][i] += iconvp*thetap*divflu[c_id];
+          _fimp[c_id][i][i] += iconvp*divflu[c_id];
           _rhs[c_id][i] -= iconvp*divflu[c_id]*cvara_var[c_id][i];
         }
       }
@@ -805,6 +873,9 @@ cs_drift_convective_flux(cs_field_t  *f_sc,
   BFT_FREE(b_visc);
   BFT_FREE(flumas);
   BFT_FREE(flumab);
+
+  BFT_FREE(i_mass_flux_gas);
+  BFT_FREE(b_mass_flux_gas);
 
   BFT_FREE(coefap);
   BFT_FREE(coefbp);
