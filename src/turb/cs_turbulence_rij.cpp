@@ -814,12 +814,16 @@ _gravity_st_rij(const cs_field_t  *f_rij,
     cs_lnum_t solid_stride = 1;
     int *c_is_solid_zone_flag = cs_solid_zone_flag(cs_glob_mesh);
     const int c_is_solid_ref[1] = {0};
-    int *c_is_solid = c_is_solid_zone_flag;
-    if (c_is_solid == nullptr) {
-      CS_MALLOC_HD(c_is_solid, 1, int, cs_alloc_mode);
-      c_is_solid[0] = c_is_solid_ref[0];
+    if (c_is_solid_zone_flag == nullptr) {
+      if (cs_alloc_mode > CS_ALLOC_HOST) {
+        CS_MALLOC_HD(c_is_solid_zone_flag, 1, int, cs_alloc_mode);
+        c_is_solid_zone_flag[0] = 0;
+      }
       solid_stride = 0;
     }
+    const int *c_is_solid = c_is_solid_zone_flag;
+    if (c_is_solid == nullptr)
+      c_is_solid = c_is_solid_ref;
 
     ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
 
@@ -882,7 +886,6 @@ _gravity_st_rij(const cs_field_t  *f_rij,
 
     }); /* End of loop on cells */
 
-    CS_FREE_HD(c_is_solid);
     CS_FREE_HD(c_is_solid_zone_flag);
   } /* End of test on coupled components */
 
@@ -1886,12 +1889,16 @@ _pre_solve_ssg(const cs_field_t  *f_rij,
   cs_lnum_t solid_stride = 1;
   int *c_is_solid_zone_flag = cs_solid_zone_flag(cs_glob_mesh);
   const int c_is_solid_ref[1] = {0};
-  int *c_is_solid = c_is_solid_zone_flag;
-  if (c_is_solid == nullptr) {
-    CS_MALLOC_HD(c_is_solid, 1, int, cs_alloc_mode);
-    c_is_solid[0] = c_is_solid_ref[0];
+  if (c_is_solid_zone_flag == nullptr) {
+    if (cs_alloc_mode > CS_ALLOC_HOST) {
+      CS_MALLOC_HD(c_is_solid_zone_flag, 1, int, cs_alloc_mode);
+      c_is_solid_zone_flag[0] = 0;
+    }
     solid_stride = 0;
   }
+  const int *c_is_solid = c_is_solid_zone_flag;
+  if (c_is_solid == nullptr)
+    c_is_solid = c_is_solid_ref;
 
   const cs_rotation_t *rotation = cs_glob_rotation;
 
@@ -2254,7 +2261,6 @@ _pre_solve_ssg(const cs_field_t  *f_rij,
   if (cs_glob_turb_rans_model->has_buoyant_term == 1)
     _gravity_st_rij(f_rij, up_rhop, grav, st_prv_id, c_st_prv, fimp, rhs);
 
-  c_is_solid == nullptr;  // Was const pointer to c_is_solid_zone_flag.
   CS_FREE_HD(c_is_solid_zone_flag);
 
   /* Diffusion term (Daly Harlow: generalized gradient hypothesis method)
