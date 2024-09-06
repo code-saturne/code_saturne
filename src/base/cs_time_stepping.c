@@ -890,8 +890,8 @@ cs_time_stepping(void)
     if (itrale <= 0) {
 
       cs_log_printf(CS_LOG_DEFAULT,
-                    _("\n Time for ALE initialization:        %14.5f"),
-                    titer2-titer1);
+                    _("\n Time for ALE initialization:        %14.5f s.\n"),
+                    titer2 - titer1);
 
       cs_log_separator(CS_LOG_DEFAULT);
     }
