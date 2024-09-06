@@ -1346,24 +1346,30 @@ _additional_fields_stage_2(void)
     if (ifcvsl == 0 && var_f_id < 0) {
       /* Build name and label, using a general rule, with
        * a fixed name for temperature or enthalpy */
-      const char th_name[] = "thermal";
-      const char th_label[] = "Th";
       const char *f_name = f->name;
       const char *f_label = cs_field_get_label(f);
-      if (f == thm_field) {
-        f_name = th_name;
-        f_label = th_label;
-      }
       char s_name[128];
       char s_label[128];
       int iscacp = cs_field_get_key_int(f, kscacp);
       if (iscacp > 0) {
-        snprintf(s_name, 127, "conductivity_%s", f_name);
-        snprintf(s_label, 127, "Cond %s", f_label);
+        if (f == thm_field) {
+          snprintf(s_name, 127, "thermal_conductivity");
+          snprintf(s_label, 127, "Th Cond");
+        }
+        else {
+          snprintf(s_name, 127, "conductivity_%s", f_name);
+          snprintf(s_label, 127, "Cond %s", f_label);
+        }
       }
       else {
-        snprintf(s_name, 127, "diffusivity_%s", f_name);
-        snprintf(s_label, 127, "Diff %s", f_label);
+        if (f == thm_field) {
+          snprintf(s_name, 127, "thermal_diffusivity");
+          snprintf(s_label, 127, "Th Diff");
+        }
+        else {
+          snprintf(s_name, 127, "diffusivity_%s", f_name);
+          snprintf(s_label, 127, "Diff %s", f_label);
+        }
       }
       /* Special case for electric arcs: real and imaginary electric
        * conductivity is the same (and ipotr < ipoti) */
