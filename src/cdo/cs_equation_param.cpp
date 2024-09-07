@@ -2619,7 +2619,7 @@ cs_equation_add_bc_by_analytic(cs_equation_param_t      *eqp,
 
   int dim = eqp->dim;
 
-  if (bc_type == CS_BC_NEUMANN)
+  if (bc_type == CS_BC_NEUMANN_FULL)
     dim *= 3; /* vector if scalar eq, tensor if vector eq. */
 
   if (bc_type == CS_BC_CIRCULATION) {
@@ -2716,7 +2716,7 @@ cs_equation_add_bc_by_time_func(cs_equation_param_t      *eqp,
 
   int dim = eqp->dim;
 
-  if (bc_type == CS_BC_NEUMANN)
+  if (bc_type == CS_BC_NEUMANN_FULL)
     dim *= 3; /* vector if scalar eq, tensor if vector eq. */
 
   if (bc_type == CS_BC_CIRCULATION) {
@@ -2814,7 +2814,7 @@ cs_equation_add_bc_by_dof_func(cs_equation_param_t      *eqp,
 
   int dim = eqp->dim;
 
-  if (bc_type == CS_BC_NEUMANN)
+  if (bc_type == CS_BC_NEUMANN_FULL)
     dim *= 3; /* vector if scalar eq, tensor if vector eq. */
 
   if (bc_type == CS_BC_CIRCULATION) {
