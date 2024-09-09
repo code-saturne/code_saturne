@@ -574,8 +574,8 @@ cs_field_map_and_init_bcs(void)
 
     /* Boundary conditions of the turbulent fluxes T'u' or Y'u' */
     if (turb_flux_model_type == 3) {
-      cs_field_t  *f_ut = cs_field_by_composite_name_try("turbulent_flux",
-                                                         f->name);
+      cs_field_t  *f_ut = cs_field_by_composite_name_try(f->name,
+                                                         "turbulent_flux");
       bc_flags[f_ut->id*4 + 1] = true;
     }
   }

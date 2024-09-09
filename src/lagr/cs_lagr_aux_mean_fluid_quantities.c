@@ -310,8 +310,8 @@ cs_lagr_aux_mean_fluid_quantities(cs_field_t    *lagr_time,
 
       cs_real_3_t *_div_mu_gradvel = NULL;
       cs_real_3_t *div_mu_gradvel = NULL;
-      cs_field_t *f_visc_forces =
-        cs_field_by_name_try("algo:divergence_viscous_shear");
+      cs_field_t *f_visc_forces
+        = cs_field_by_name_try("algo:viscous_shear_divergence");
 
       if (f_visc_forces != NULL)
         div_mu_gradvel = (cs_real_3_t *)f_visc_forces->val;

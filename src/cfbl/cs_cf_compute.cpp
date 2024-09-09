@@ -702,7 +702,8 @@ cs_cf_convective_mass_flux(int  iterns)
                 wflmab,
                 smbrs);
 
-  cs_field_t *f_divu = cs_field_by_name_try("algo:divergence_predicted_velocity");
+  cs_field_t *f_divu
+    = cs_field_by_name_try("algo:predicted_velocity_divergence");
 
   if (f_divu != NULL) {
     cs_real_t * cpro_divu = f_divu->val;

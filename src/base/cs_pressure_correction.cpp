@@ -646,8 +646,8 @@ _pressure_correction_fv(int                   iterns,
   }
 
   cs_real_t *cpro_divu = NULL, *_cpro_divu = NULL;
-  cs_field_t *f_divu =
-    cs_field_by_name_try("algo:divergence_predicted_velocity");
+  cs_field_t *f_divu
+    = cs_field_by_name_try("algo:predicted_velocity_divergence");
   if (f_divu != NULL)
     cpro_divu = f_divu->val;
   else {
@@ -3652,7 +3652,7 @@ cs_pressure_correction_cdo_init_setup(void)
   const int  field_post_flag = CS_POST_ON_LOCATION | CS_POST_MONITOR;
 
   prcdo->pressure_gradient =
-    cs_field_find_or_create("algo:gradient_pressure",
+    cs_field_find_or_create("algo:pressure_gradient",
                             CS_FIELD_INTENSIVE,
                             CS_MESH_LOCATION_CELLS,
                             3,
@@ -3662,7 +3662,7 @@ cs_pressure_correction_cdo_init_setup(void)
   cs_field_set_key_int(prcdo->pressure_gradient, log_key, field_post_flag);
 
   prcdo->pressure_incr_gradient =
-    cs_field_find_or_create("algo:gradient_pressure_increment",
+    cs_field_find_or_create("algo:pressure_gradient_increment",
                             CS_FIELD_INTENSIVE,
                             CS_MESH_LOCATION_CELLS,
                             3,

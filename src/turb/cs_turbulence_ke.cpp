@@ -165,7 +165,7 @@ _tsepls(int       phase_id,
   cs_real_33_t *gradv = nullptr, *_gradv = nullptr;
 
   {
-    cs_field_t *f_vg = cs_field_by_name_try("algo:gradient_velocity");
+    cs_field_t *f_vg = cs_field_by_name_try("algo:velocity_gradient");
 
     if (f_vel->grad != nullptr)
       gradv = (cs_real_33_t *)f_vel->grad;
@@ -661,7 +661,7 @@ cs_turbulence_ke(int              phase_id,
   cs_real_33_t *gradv = nullptr, *_gradv = nullptr;
 
   {
-    cs_field_t *f_vg = cs_field_by_name_try("algo:gradient_velocity");
+    cs_field_t *f_vg = cs_field_by_name_try("algo:velocity_gradient");
 
     if (f_vel->grad != nullptr)
       gradv = (cs_real_33_t *)f_vel->grad;
@@ -732,7 +732,7 @@ cs_turbulence_ke(int              phase_id,
    * the production term is assumed to be asymptotic in S and
    * not in mu_TxS**2 */
 
-  cs_field_t *f_tke_prod = cs_field_by_name_try("algo:production_k");
+  cs_field_t *f_tke_prod = cs_field_by_name_try("algo:k_production");
 
   if (turb_model_type == CS_TURB_K_EPSILON_LIN_PROD) {
     ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
@@ -1037,7 +1037,7 @@ cs_turbulence_ke(int              phase_id,
        smbrk = P+G
        smbre = P+(1-ce3)*G */
 
-    cs_field_t *f_tke_buoy = cs_field_by_name_try("algo:buoyancy_k");
+    cs_field_t *f_tke_buoy = cs_field_by_name_try("algo:k_buoyancy");
     cs_real_t *tke_buoy = nullptr;
     if (f_tke_buoy != nullptr)
       tke_buoy = f_tke_buoy->val;
@@ -2519,7 +2519,7 @@ cs_turbulence_ke_q_mu_t(int phase_id)
 
   cs_real_33_t *gradv = nullptr, *_gradv = nullptr;
   {
-    cs_field_t *f_vg = cs_field_by_name_try("algo:gradient_velocity");
+    cs_field_t *f_vg = cs_field_by_name_try("algo:velocity_gradient");
 
     if (f_vel->grad != nullptr)
       gradv = (cs_real_33_t *)f_vel->grad;

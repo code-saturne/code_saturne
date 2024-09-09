@@ -224,7 +224,7 @@ cs_user_physical_properties(cs_domain_t   *domain)
 
       /* Name of the drift scalar */
       cs_real_t *cpro_taupg
-        = cs_field_by_composite_name("drift_tau", fld->name)->val;
+        = cs_field_by_composite_name(fld->name, "drift_tau")->val;
 
       /* Initialize to 0 */
       cs_array_real_fill_zero(n_cells, cpro_taupg);
@@ -257,7 +257,7 @@ cs_user_physical_properties(cs_domain_t   *domain)
 
       /* Name of the drift scalar */
       cs_real_t *cpro_taup
-        = cs_field_by_composite_name("drift_tau", fld->name)->val;
+        = cs_field_by_composite_name(fld->name, "drift_tau")->val;
 
       /* Computation of the relaxation time of the particles
        * the drift is therefore v_g = tau_p * g

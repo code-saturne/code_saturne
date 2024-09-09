@@ -443,7 +443,7 @@ cs_ctwr_phyvar_update(cs_real_t  rho0,
     t_h = cs_field_by_name("temperature")->val; /* Humid air temp */
 
   cs_real_t *h_h = (cs_real_t *)CS_F_(h)->val;       /* Humid air enthalpy */
-  cs_real_t *therm_diff_h = cs_field_by_name("conductivity_thermal")->val;
+  cs_real_t *therm_diff_h = cs_field_by_name("thermal_conductivity")->val;
   cs_real_t *cpro_x1 = cs_field_by_name("x_c")->val;
   cs_real_t *bpro_x1 = cs_field_by_name("b_x_c")->val;
   cs_real_t *ym_w = (cs_real_t *)CS_F_(ym_w)->val;     /* Water mass fraction

@@ -163,48 +163,50 @@ _turb_flux_st(const char          *name,
     cvar_tt = f_tv->val;
     cvara_tt = f_tv->val_pre;
   }
+
   /* Save production terms if required */
 
   cs_real_3_t *prod_ut = NULL;
-  cs_field_t *f_ut_prod =
-    cs_field_by_composite_name_try("algo:production",
-                                   f_ut->name);
+  cs_field_t *f_ut_prod = cs_field_by_double_composite_name_try
+                            ("algo:", f->name, "_turbulent_flux_production");
 
   if (f_ut_prod != NULL)
-      prod_ut = (cs_real_3_t *)f_ut_prod->val;
+    prod_ut = (cs_real_3_t *)f_ut_prod->val;
 
   cs_real_3_t *phi_ut = NULL;
-  cs_field_t *f_phi_ut = cs_field_by_composite_name_try(
-      "algo:scrambling", f_ut->name);
+  cs_field_t *f_phi_ut = cs_field_by_double_composite_name_try
+                           ("algo:", f->name, "_turbulent_flux_scrambling");
   if (f_phi_ut != NULL)
     phi_ut = (cs_real_3_t *)f_phi_ut->val;
 
   cs_real_3_t *prod_by_vel_grad_ut = NULL;
-  cs_field_t *f_ut_prod_by_vel = cs_field_by_composite_name_try(
-      "algo:production_by_velocity_gradient", f_ut->name);
+  cs_field_t *f_ut_prod_by_vel
+    = cs_field_by_double_composite_name_try
+        ("algo:", f->name, "_turbulent_flux_production_by_velocity_gradient");
   if (f_ut_prod_by_vel != NULL)
-      prod_by_vel_grad_ut = (cs_real_3_t *)f_ut_prod_by_vel->val;
+    prod_by_vel_grad_ut = (cs_real_3_t *)f_ut_prod_by_vel->val;
 
   cs_real_3_t *prod_by_scal_grad_ut = NULL;
-  cs_field_t *f_ut_prod_by_scal = cs_field_by_composite_name_try(
-      "algo:production_by_scalar_gradient", f_ut->name);
+  cs_field_t *f_ut_prod_by_scal
+    = cs_field_by_double_composite_name_try
+        ("algo:", f->name, "_turbulent_flux_production_by_scalar_gradient");
   if (f_ut_prod_by_scal != NULL)
-      prod_by_scal_grad_ut = (cs_real_3_t *)f_ut_prod_by_scal->val;
+    prod_by_scal_grad_ut = (cs_real_3_t *)f_ut_prod_by_scal->val;
 
   cs_real_3_t *buo_ut = NULL;
-  cs_field_t *f_buo_ut = cs_field_by_composite_name_try(
-      "algo:buoyancy", f_ut->name);
+  cs_field_t *f_buo_ut = cs_field_by_double_composite_name_try
+                           ("algo:", f->name, "_turbulent_flux_buoyancy");
   if (f_buo_ut != NULL)
     buo_ut = (cs_real_3_t *)f_buo_ut->val;
 
   cs_real_3_t *dissip_ut = NULL;
-  cs_field_t *f_dissip_ut = cs_field_by_composite_name_try(
-      "algo:dissipation", f_ut->name);
+  cs_field_t *f_dissip_ut = cs_field_by_double_composite_name_try
+                              ("algo:", f_ut->name, "_dissipation");
   if (f_dissip_ut != NULL)
     dissip_ut = (cs_real_3_t *)f_dissip_ut->val;
 
   if (turb_flux_model == 31)
-    cvar_al = cs_field_by_composite_name_try("alpha", f->name)->val;
+    cvar_al = cs_field_by_composite_name_try(f->name, "alpha")->val;
 
   const cs_real_t rhebdfm = 0.5;
   const cs_real_t *grav = cs_glob_physical_constants->gravity;
@@ -436,7 +438,7 @@ _thermal_flux_and_diff(cs_field_t         *f,
   if (   (turb_flux_model == 11)
       || (turb_flux_model == 21)
       || (turb_flux_model == 31))
-    cvar_al = cs_field_by_composite_name("alpha",f->name)->val;
+    cvar_al = cs_field_by_composite_name(f->name, "alpha")->val;
 
   const cs_real_t *grav = cs_glob_physical_constants->gravity;
 
@@ -1078,7 +1080,7 @@ cs_turbulence_rij_transport_div_tf(const int        field_id,
   const int turb_flux_model_type = turb_flux_model / 10;
 
   /* Value of the corresponding turbulent flux */
-  cs_field_t *f_ut = cs_field_by_composite_name("turbulent_flux", f->name);
+  cs_field_t *f_ut = cs_field_by_composite_name(f->name, "turbulent_flux");
   cs_real_3_t *xut = (cs_real_3_t *)f_ut->val;
 
   cs_field_t *f_vel = CS_F_(vel);
@@ -1087,7 +1089,7 @@ cs_turbulence_rij_transport_div_tf(const int        field_id,
 
   cs_real_33_t *gradv = NULL, *_gradv = NULL;
   {
-    cs_field_t *f_vg = cs_field_by_name_try("algo:gradient_velocity");
+    cs_field_t *f_vg = cs_field_by_name_try("algo:velocity_gradient");
 
     if (f_vel->grad != NULL)
       gradv = (cs_real_33_t *)f_vel->grad;
@@ -1105,8 +1107,8 @@ cs_turbulence_rij_transport_div_tf(const int        field_id,
 
   cs_real_3_t *gradt = NULL, *_gradt = NULL;
   {
-    cs_field_t *f_tg = cs_field_by_composite_name_try("algo:gradient",
-                                                      f->name);
+    cs_field_t *f_tg = cs_field_by_double_composite_name_try
+                         ("algo:", f->name, "_gradient");
 
     if (f_tg != NULL)
       gradt = (cs_real_3_t *)f_tg->val;
@@ -1132,7 +1134,7 @@ cs_turbulence_rij_transport_div_tf(const int        field_id,
 
     BFT_MALLOC(grad_al, n_cells_ext, cs_real_3_t);
 
-    cs_field_gradient_scalar(cs_field_by_composite_name("alpha", f->name),
+    cs_field_gradient_scalar(cs_field_by_composite_name(f->name, "alpha"),
                              false,       /* use previous t */
                              1,           /* not on increment */
                              grad_al);
@@ -1262,8 +1264,8 @@ cs_turbulence_rij_transport_div_tf(const int        field_id,
       || turb_flux_model_type == 2
       || turb_flux_model_type == 3) {
     cs_real_t *divut = NULL, *_divut = NULL;
-    cs_field_t *f_dut = cs_field_by_composite_name_try("algo:divergence",
-                                                       f_ut->name);
+    cs_field_t *f_dut = cs_field_by_double_composite_name_try
+                          ("algo:", f_ut->name, "_divergence");
     if (f_dut != NULL)
       divut = f_dut->val;
     else {

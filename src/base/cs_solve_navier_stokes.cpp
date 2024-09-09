@@ -1373,7 +1373,7 @@ _update_fluid_vel(const cs_mesh_t             *m,
     /* Pressure increment gradient */
 
     cs_real_3_t *cpro_gradp = nullptr, *gradp = nullptr;
-    cs_field_t *f_inc = cs_field_by_name_try("algo:gradient_pressure_increment");
+    cs_field_t *f_inc = cs_field_by_name_try("algo:pressure_gradient_increment");
     if (f_inc != nullptr)
       cpro_gradp = (cs_real_3_t *)f_inc->val;
     else {
@@ -2304,7 +2304,7 @@ _velocity_prediction(const cs_mesh_t             *m,
 
   /* Pressure gradient */
   cs_real_3_t *grad = nullptr, *cpro_gradp = nullptr;
-  f = cs_field_by_name_try("algo:gradient_pressure");
+  f = cs_field_by_name_try("algo:pressure_gradient");
   if (f != nullptr)
     cpro_gradp = (cs_real_3_t *)f->val;
   else {
@@ -2817,7 +2817,7 @@ _velocity_prediction(const cs_mesh_t             *m,
       && (   cs_glob_turb_model->order == CS_TURB_SECOND_ORDER
           || cs_glob_turb_model->model == CS_TURB_K_EPSILON_QUAD)) {
 
-    cs_field_t *f_drij = cs_field_by_name_try("algo:divergence_rij");
+    cs_field_t *f_drij = cs_field_by_name_try("algo:rij_divergence");
     if (f_drij != nullptr) {
       assert(f_drij->dim == 3);
       cpro_divr

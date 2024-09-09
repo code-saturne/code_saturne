@@ -243,7 +243,7 @@ do iflid = 0, nfld-1
     call field_get_name(iflid, fname)
 
     ! Index of the corresponding relaxation time (cpro_taup)
-    call field_get_id('drift_tau_'//trim(fname), f_id)
+    call field_get_id(trim(fname)//'_drift_tau', f_id)
     call field_get_val_s(f_id, cpro_taup)
 
     ! Computation of the relaxation time of the particles

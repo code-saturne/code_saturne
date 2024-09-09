@@ -422,8 +422,8 @@ _compute_up_rhop(int                 phase_id,
     if (f_beta != nullptr) {
       /* Value of the corresponding turbulent flux */
       cs_real_3_t *xut =
-        (cs_real_3_t *)cs_field_by_composite_name("turbulent_flux",
-                                                  thf->name)->val;
+        (cs_real_3_t *)cs_field_by_composite_name(thf->name,
+                                                  "turbulent_flux")->val;
 
       const cs_real_t *beta = f_beta->val;
 
@@ -751,7 +751,7 @@ _gravity_st_rij(const cs_field_t  *f_rij,
   const cs_real_t crij3 = cs_turb_crij3;
 
   cs_real_6_t *_buoyancy = nullptr, *cpro_buoyancy = nullptr;
-  cs_field_t *f_buo = cs_field_by_name_try("algo:buoyancy_rij");
+  cs_field_t *f_buo = cs_field_by_name_try("algo:rij_buoyancy");
 
   if (f_buo != nullptr) {
     cpro_buoyancy = (cs_real_6_t*)f_buo->val;
@@ -2962,18 +2962,21 @@ cs_turbulence_rij(int phase_id)
   cs_real_6_t *cpro_press_correl = nullptr;
   {
     cs_field_t *f_psc = cs_field_by_name_try
-                          ("algo:pressure_strain_correlation_rij");
+                          ("algo:rij_pressure_strain_correlation");
     if (f_psc != nullptr)
       cpro_press_correl = (cs_real_6_t *)f_psc->val;
   }
 
   cs_real_6_t *produc = nullptr, *_produc = nullptr;
-  if (cs_field_by_name_try("algo:production_rij") != nullptr) {
-    produc = (cs_real_6_t *)cs_field_by_name_try("algo:production_rij")->val;
-  }
-  else {
-    CS_MALLOC_HD(_produc, n_cells_ext, cs_real_6_t, cs_alloc_mode);
-    produc = _produc;
+  {
+    cs_field_t *f_rij_p = cs_field_by_name_try
+                             ("algo:rij_production");
+    if (f_rij_p != nullptr)
+      produc = (cs_real_6_t *)f_rij_p->val;
+    else {
+      CS_MALLOC_HD(_produc, n_cells_ext, cs_real_6_t, cs_alloc_mode);
+      produc = _produc;
+    }
   }
 
   cs_real_t *viscf, *viscb;
@@ -2982,7 +2985,7 @@ cs_turbulence_rij(int phase_id)
 
   cs_real_33_t *gradv = nullptr, *_gradv = nullptr;
   {
-    cs_field_t *f_vg = cs_field_by_name_try("algo:gradient_velocity");
+    cs_field_t *f_vg = cs_field_by_name_try("algo:velocity_gradient");
 
     if (f_vel->grad != nullptr)
       gradv = (cs_real_33_t *)f_vel->grad;

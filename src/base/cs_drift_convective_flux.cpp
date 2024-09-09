@@ -266,7 +266,7 @@ cs_drift_convective_flux(cs_field_t  *f_sc,
     cs_real_t *cpro_taup = NULL;
     {
       cs_field_t *f_tau
-        = cs_field_by_composite_name_try("drift_tau", f_sc->name);
+        = cs_field_by_composite_name_try(f_sc->name, "drift_tau");
 
       if (f_tau != NULL)
         cpro_taup = f_tau->val;
@@ -276,7 +276,7 @@ cs_drift_convective_flux(cs_field_t  *f_sc,
     cs_real_3_t *cpro_drift = NULL;
     {
       cs_field_t *f_drift_vel
-        = cs_field_by_composite_name_try("drift_vel", f_sc->name);
+        = cs_field_by_composite_name_try(f_sc->name, "drift_vel");
 
       if (f_drift_vel != NULL)
         cpro_drift = (cs_real_3_t *)f_drift_vel->val;
@@ -288,7 +288,7 @@ cs_drift_convective_flux(cs_field_t  *f_sc,
     cs_real_t *cpro_taufpt = NULL;
     if (iscdri & CS_DRIFT_SCALAR_TURBOPHORESIS) {
       cs_field_t *f_drift_turb_tau
-        = cs_field_by_composite_name("drift_turb_tau", f_sc->name);
+        = cs_field_by_composite_name(f_sc->name, "drift_turb_tau");
 
       cpro_taufpt = f_drift_turb_tau->val;
     }

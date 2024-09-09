@@ -60,31 +60,31 @@
 
   - <tt> algo:predicted_velocity </tt>
     Velocity field after the prediction step, cell-based field of dimension 3.
-  - <tt> algo:divergence_predicted_velocity </tt>
+  - <tt> algo:predicted_velocity_divergence </tt>
     Divergence of the velocity field after the prediction step, cell-based field of dimension 1.
-  - <tt> algo:gradient_pressure </tt>
+  - <tt> algo:pressure_gradient </tt>
     Pressure gradient, cell-based field of dimension 3.
   - <tt> algo:gradient_ </tt> supplemented with a transported field name
     Field gradient, cell-based field of dimension 3x the dimension of the corresponding field.
-  - <tt> algo:production_turbulent_flux_ </tt> supplemented with a transported field name
+  - <tt> algo:turbulent_flux_production_ </tt> supplemented with a transported field name
     Field corresponding to the production of u'T' if scalar taken is temperature, cell-based field of dimension 3.
-  - <tt> algo:gradient_velocity </tt>
+  - <tt> algo:velocity_gradient</tt>
     Velocity gradient, cell-based field of dimension 3x3.
-  - <tt> algo:gradient_pressure_increment </tt>
+  - <tt> algo:pressure_gradient_increment </tt>
     Gradient of the pressure increment solved in the correction step, cell-based field of dimension 3.
-  - <tt> algo:divergence_rij </tt>
+  - <tt> algo:rij_divergence </tt>
     Divergence of the Reynolds stress in the momentum equation for  Reynolds stress RANS models, cell-based field of dimension 3.
-  - <tt> algo:production_rij </tt>
+  - <tt> algo:rij_production </tt>
     So called production term in Reynolds stress RANS models, cell-based field of dimension 6.
-  - <tt> algo:pressure_strain_correlation_rij </tt>
+  - <tt> algo:rij_pressure_strain_correlation </tt>
     So called pressure strain correlation term in Reynolds stress RANS models, cell-based field of dimension 6.
-  - <tt> algo:buoyancy_rij </tt>
+  - <tt> algo:rij_buoyancy </tt>
     So called buoyancy term in Reynolds stress RANS models, cell-based field of dimension 6.
-  - <tt> algo:production_k </tt>
+  - <tt> algo:k_production </tt>
     So called production term in k-epsilon RANS models, cell-based field of dimension 1.
-  - <tt> algo:buoyancy_k </tt>
+  - <tt> algo:k_buoyancy </tt>
     So called buoyancy term in k-epsilon RANS models, cell-based field of dimension 1.
-  - <tt> algo:divergence_turbulent_flux_ </tt> supplemented with a transported field name
+  - <tt> algo:turbulent_flux_divergence </tt>
     Divergence of the turbulent flux in the energy equation, cell-based field of dimension 1.
 
   - <tt> algo:grad_clip_factor_<variable_name> </tt>

@@ -1235,10 +1235,10 @@ cs_thermal_model_pdivu(cs_real_t  smbrs[])
 
   const cs_real_3_t *gradp = nullptr, *gradphi = nullptr;
 
-  cs_field_t *f_pg = cs_field_by_name_try("algo:gradient_pressure");
+  cs_field_t *f_pg = cs_field_by_name_try("algo:pressure_gradient");
   if (f_pg != nullptr)
     gradp = (const cs_real_3_t *)f_pg->val;
-  cs_field_t *f_pig = cs_field_by_name_try("algo:gradient_pressure_increment");
+  cs_field_t *f_pig = cs_field_by_name_try("algo:pressure_gradient_increment");
   if (f_pig != nullptr)
     gradphi = (const cs_real_3_t *)f_pig->val;
 
@@ -1447,9 +1447,9 @@ cs_thermal_model_cflt(const cs_real_t  croma[],
   cs_dispatch_context ctx;
 
   cs_real_3_t *gradp
-    = (cs_real_3_t *)cs_field_by_name("algo:gradient_pressure")-> val;
+    = (cs_real_3_t *)cs_field_by_name("algo:pressure_gradient")-> val;
   cs_real_3_t *gradphi
-    = (cs_real_3_t *)cs_field_by_name("algo:gradient_pressure_increment")-> val;
+    = (cs_real_3_t *)cs_field_by_name("algo:pressure_gradient_increment")-> val;
   cs_real_t gammagp = phys_pro->cp0/(phys_pro->cp0  - phys_pro->r_pg_cnst);
 
   ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {

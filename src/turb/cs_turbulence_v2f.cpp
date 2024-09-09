@@ -1267,7 +1267,7 @@ cs_turbulence_v2f_bl_v2k_mu_t(void)
   cs_field_t *f_vel = CS_F_(vel);
   cs_real_33_t *gradv = NULL, *_gradv = NULL;
   {
-    cs_field_t *f_vg = cs_field_by_name_try("algo:gradient_velocity");
+    cs_field_t *f_vg = cs_field_by_name_try("algo:velocity_gradient");
 
     if (f_vel->grad != NULL)
       gradv = (cs_real_33_t *)f_vel->grad;

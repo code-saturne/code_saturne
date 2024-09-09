@@ -146,12 +146,12 @@ cs_user_physical_properties(cs_domain_t *domain)
       const cs_real_t rhop = 1.e4;     /* particle density */
 
       /* Get corresponding relaxation time (cpro_taup) */
-      cpro_taup = cs_field_by_composite_name("drift_tau",f->name)->val;
+      cpro_taup = cs_field_by_composite_name(f->name, "drift_tau")->val;
 
       /* Corresponding interaction time particle--eddies */
 
       if (drift_flag & CS_DRIFT_SCALAR_TURBOPHORESIS) {
-        cpro_taufpt = cs_field_by_composite_name("drift_turb_tau", f->name)->val;
+        cpro_taufpt = cs_field_by_composite_name(f->name, "drift_turb_tau")->val;
       }
 
       /* Computation of the relaxation time of the particles

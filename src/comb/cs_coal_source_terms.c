@@ -641,7 +641,7 @@ cs_coal_source_terms_scalar(int        fld_id,
       snprintf(name, 24, "n_p_%02d", class_id+1);
       name[24] = '\0';
 
-      cs_real_t *taup = cs_field_by_composite_name("drift_tau", name)->val;
+      cs_real_t *taup = cs_field_by_composite_name(name, "drift_tau")->val;
 
       const char *coo_prefix[3] = {"v_x_p_", "v_y_p_", "v_z_p_"};
       const char coo_c[3] = {'x', 'y', 'z'};

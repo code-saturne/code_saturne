@@ -1485,13 +1485,13 @@ cs_parameters_define_auxiliary_fields(void)
     if (   th_model->thermal_variable == CS_THERMAL_MODEL_TEMPERATURE
         || th_model->thermal_variable == CS_THERMAL_MODEL_INTERNAL_ENERGY) {
 
-      cs_field_create("algo:gradient_pressure",
+      cs_field_create("algo:pressure_gradient",
                       0,
                       CS_MESH_LOCATION_CELLS,
                       3,
                       false);
 
-      cs_field_create("algo:gradient_pressure_increment",
+      cs_field_create("algo:pressure_gradient_increment",
                       0,
                       CS_MESH_LOCATION_CELLS,
                       3,

@@ -511,9 +511,9 @@ _cs_boundary_conditions_set_coeffs_turb_scalar(cs_field_t  *f_sc,
   }
 
   /* Model-dependent fields */
-  cs_field_t *f_tf = cs_field_by_composite_name_try("turbulent_flux",
-                                                    f_sc->name);
-  cs_field_t *f_al = cs_field_by_composite_name_try("alpha", f_sc->name);
+  cs_field_t *f_tf = cs_field_by_composite_name_try(f_sc->name,
+                                                    "turbulent_flux");
+  cs_field_t *f_al = cs_field_by_composite_name_try(f_sc->name, "alpha");
 
   /* Loop on boundary faces */
   for (cs_lnum_t f_id = 0; f_id < n_b_faces; f_id++) {

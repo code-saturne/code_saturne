@@ -2556,6 +2556,9 @@ cs_field_by_composite_name(const char  *name_prefix,
  * The name is expected to be of the form <name_prefix>_<name_suffix>.
  * If no field of the given name is defined, NULL is returned.
  *
+ * \remark: in C++, we could simply have a cs_field_by_name_try template
+ *          with a variable number of arguments.
+ *
  * \param[in]  name_prefix  first part of field name
  * \param[in]  name_suffix  second part of field name
  *
@@ -2581,6 +2584,65 @@ cs_field_by_composite_name_try(const char  *name_prefix,
   buffer[lp] = '_';
   memcpy(buffer + lp + 1, name_suffix, ls);
   buffer[lt] = '\0';
+
+  int id = cs_map_name_to_id_try(_field_map, buffer);
+
+  if (buffer != _buffer)
+    BFT_FREE(buffer);
+
+  if (id > -1)
+    return _fields[id];
+  else
+    return NULL;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Return pointer to a field based on a double composite name if present.
+ *
+ * If no field of the given name is defined, NULL is returned.
+ *
+ * Contrary to \ref cs_field_by_composite_name_try, this function
+ * does not automatically add '_' characters between component names.
+ * This allows adding different separators, such as ':'.
+
+ * \remark: in C++, we could simply have a cs_field_by_name_try template
+ *          with a variable number of arguments.
+ *
+ * \param[in]  name_part_1  first part of field name
+ * \param[in]  name_part_2  second part of field name
+ * \param[in]  name_part_3  second part of field name
+ *
+ * \return  pointer to the field structure, or NULL
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_field_t  *
+cs_field_by_double_composite_name_try(const char  *name_part_1,
+                                      const char  *name_part_2,
+                                      const char  *name_part_3)
+{
+  const char *parts[3] = {name_part_1, name_part_2, name_part_3};
+  size_t l_p[3];
+
+  size_t l = 0;
+  for (size_t i = 0; i < 3; i++) {
+    l_p[i] = strlen(parts[i]);
+    l += l_p[i];
+  }
+
+  char _buffer[196];
+  char *buffer = _buffer;
+
+  if (l + 1 > 196)
+    BFT_MALLOC(buffer, l+1, char);
+
+  size_t s = 0;
+  for (size_t i = 0; i < 3; i++) {
+    memcpy(buffer + s, parts[i], l_p[i]);
+    s += l_p[i];
+  }
+  buffer[s] = '\0';  /* Null character instead of trailing '_' at end */
 
   int id = cs_map_name_to_id_try(_field_map, buffer);
 

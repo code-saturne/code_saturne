@@ -773,7 +773,7 @@ cs_ctwr_field_pointer_map(void)
   cs_field_pointer_map(CS_ENUMF_(y_l_pack),
                        cs_field_by_name_try("y_l_packing"));
   cs_field_pointer_map(CS_ENUMF_(thermal_diff_h),
-                       cs_field_by_name_try("conductivity_thermal"));
+                       cs_field_by_name_try("thermal_conductivity"));
 }
 
 /*----------------------------------------------------------------------------*/

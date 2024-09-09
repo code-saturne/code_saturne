@@ -213,8 +213,8 @@ cs_turbulence_kw(int phase_id)
   /* Allocate work arrays */
 
   cs_real_t *w1, *dpvar, *gdkgdw, *prodk, *prodw;
-  cs_field_t *f_tke_prod = cs_field_by_name_try("algo:production_k");
-  cs_field_t *f_tke_buoy = cs_field_by_name_try("algo:buoyancy_k");
+  cs_field_t *f_tke_prod = cs_field_by_name_try("algo:k_production");
+  cs_field_t *f_tke_buoy = cs_field_by_name_try("algo:k_buoyancy");
   CS_MALLOC_HD(dpvar, n_cells_ext, cs_real_t, cs_alloc_mode);
   CS_MALLOC_HD(w1, n_cells_ext, cs_real_t, cs_alloc_mode);
   CS_MALLOC_HD(gdkgdw, n_cells_ext, cs_real_t, cs_alloc_mode);
@@ -455,7 +455,7 @@ cs_turbulence_kw(int phase_id)
 
     cs_real_33_t *gradv = nullptr, *_gradv = nullptr;
     {
-      cs_field_t *f_vg = cs_field_by_name_try("algo:gradient_velocity");
+      cs_field_t *f_vg = cs_field_by_name_try("algo:velocity_gradient");
 
       if (f_vel->grad != nullptr)
         gradv = (cs_real_33_t *)f_vel->grad;
@@ -1817,7 +1817,7 @@ cs_turbulence_kw_mu_t(int phase_id)
 
   cs_real_33_t *gradv = nullptr, *_gradv = nullptr;
   {
-    cs_field_t *f_vg = cs_field_by_name_try("algo:gradient_velocity");
+    cs_field_t *f_vg = cs_field_by_name_try("algo:velocity_gradient");
 
     if (f_vel->grad != nullptr)
       gradv = (cs_real_33_t *)f_vel->grad;
