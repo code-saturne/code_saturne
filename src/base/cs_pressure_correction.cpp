@@ -3134,9 +3134,6 @@ _pressure_correction_fv(int                   iterns,
 
   }
 
-  ctx.wait();
-  ctx_c.wait();
-
   /* Finalize optional post_processing algo field */
   if (f_divu != NULL) {
     int *c_disable_flag = fvq->c_disable_flag;
@@ -3150,6 +3147,9 @@ _pressure_correction_fv(int                   iterns,
        cpro_divu[c_id] *= dvol;
     });
   }
+
+  ctx.wait();
+  ctx_c.wait();
 
   /*  Free memory */
   CS_FREE_HD(taui);
