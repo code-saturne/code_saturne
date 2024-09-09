@@ -3085,7 +3085,7 @@ cs_turbulence_rij(int phase_id)
         cs_lnum_t i = _iv2t[ij];
         cs_lnum_t j = _jv2t[ij];
         cvar_rij[c_id][ij] =      alpha3  * 2./3 * tke * _vdeltij[ij]
-                            + (1.-alpha3) * (1. - xnal[i]*xnal[j]) * tke;
+                            + (1.-alpha3)*(_vdeltij[ij] - xnal[i]*xnal[j])*tke;
       }
 
     }); /* End of loop on cells */
@@ -3141,7 +3141,7 @@ cs_turbulence_rij(int phase_id)
     ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
       const cs_real_t k = 0.5 * cs_math_6_trace(cvara_rij[c_id]);
       const cs_real_t p = 0.5 * cs_math_6_trace(produc[c_id]);
-      for (cs_lnum_t ij = 0; ij < 3; ij++)
+      for (cs_lnum_t ij = 0; ij < 6; ij++)
         cpro_press_correl[c_id][ij]
           = - crij1 * cvar_ep[c_id] / k
                     * (cvara_rij[c_id][ij] - d2s3*k* _vdeltij[ij])
