@@ -1209,11 +1209,12 @@ if test "x$NVCC" != "x" ; then
       cs_nvcc_hc="clang"
     fi
 
-    if test "x" != "x$cs_nvcc_hc_version" ; then
+    if test "x" = "x$cs_nvcc_hc_version" ; then
       cs_nvcc_hc_version="`$NVCC -E -x cu --compiler-options -v - \
                            < /dev/null 2>&1 | grep -c 'D__PGI'`"
       if test "0" != "$cs_nvcc_hc_version" ; then
         cs_nvcc_hc="nvc"
+        cs_nvcc_hc_version="nvc"
       fi
       cs_nvcc_hc_version=""
     fi
