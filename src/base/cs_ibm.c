@@ -3831,26 +3831,7 @@ void cs_immersed_boundaries(const cs_mesh_t *mesh,
 {
   cs_lnum_t n_cells     = mesh->n_cells;
   cs_lnum_t n_cells_ext = mesh->n_cells_with_ghosts;
-  cs_lnum_t n_i_faces   = mesh->n_i_faces;
-  cs_lnum_t n_b_faces   = mesh->n_b_faces;
 
-  cs_real_3_t *restrict i_f_face_normal
-    = (cs_real_3_t *restrict)mesh_quantities->i_f_face_normal;
-  cs_real_3_t *restrict b_f_face_normal
-    = (cs_real_3_t *restrict)mesh_quantities->b_f_face_normal;
-  const cs_lnum_t *b_face_cells
-    = (const cs_lnum_t *)mesh->b_face_cells;
-  const cs_real_3_t *restrict i_face_normal
-    = (const cs_real_3_t *restrict)mesh_quantities->i_face_normal;
-  const cs_real_3_t *restrict b_face_normal
-    = (const cs_real_3_t *restrict)mesh_quantities->b_face_normal;
-  cs_real_t *restrict i_f_face_surf
-    = (cs_real_t *restrict)mesh_quantities->i_f_face_surf;
-  cs_real_t *restrict b_f_face_surf
-    = (cs_real_t *restrict)mesh_quantities->b_f_face_surf;
-
-  const cs_lnum_2_t *i_face_cells
-    = (const cs_lnum_2_t *)mesh->i_face_cells;
   const cs_real_3_t *cell_f_cen
     = (const cs_real_3_t *)mesh_quantities->cell_f_cen;
   cs_real_t *cell_vol = mesh_quantities->cell_vol;
@@ -3904,6 +3885,19 @@ void cs_immersed_boundaries(const cs_mesh_t *mesh,
 
     bool use_previous_t = false;
     int inc = 1;
+
+    if (nt_cur == nt_prev) {
+
+      /* FIXME: gradp computation bellow needs cell_f_vol wich is computed
+         after porosity. If possible, gradp could be computed after cell_f_vol.
+         The following bad alternative solution is to copy cell_vol
+         in cell_f_vol for initialization ...*/
+
+      cs_array_real_copy(n_cells,
+                         (const cs_real_t *)cell_vol,
+                         cell_f_vol);
+    }
+
     cs_field_gradient_potential(CS_F_(p),
                                 use_previous_t,
                                 inc,
