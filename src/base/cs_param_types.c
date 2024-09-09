@@ -136,18 +136,6 @@ cs_param_adv_extrapol_name
   };
 
 static const char
-cs_param_bc_type_name[CS_PARAM_N_BC_TYPES][CS_BASE_STRING_LEN] =
-  { N_("Homogeneous Dirichlet"),
-    N_("Dirichlet"),
-    N_("Symmetry"),
-    N_("Neumann"),
-    N_("Neumann (full)"),
-    N_("Robin"),
-    N_("Circulation"),
-    N_("Wall prescribed")
-  };
-
-static const char
 cs_param_bc_enforcement_name[CS_PARAM_N_BC_ENFORCEMENTS][CS_BASE_STRING_LEN] =
   { N_("weak using an algebraic manipulation"),
     N_("weak using a big penalization coefficient"),
@@ -387,18 +375,37 @@ const char *
 cs_param_get_bc_name(cs_param_bc_type_t    type)
 {
   switch (type) {
+
   case CS_BC_HMG_DIRICHLET:
+    return "Homogeneous Dirichlet";
   case CS_BC_DIRICHLET:
-  case CS_BC_SYMMETRY:
+    return "Dirichlet";
+  case CS_BC_RADIATIVE_OUTLET:
+    return "Radiative outlet";
   case CS_BC_NEUMANN:
-  case CS_BC_NEUMANN_FULL:
-  case CS_BC_ROBIN:
-  case CS_BC_CIRCULATION:
+    return "Neumann";
+  case CS_BC_SYMMETRY:
+    return "Symmetry";
   case CS_BC_WALL_MODELLED:
-    return cs_param_bc_type_name[type];
+    return "Wall modelled";
+  case CS_BC_ROUGH_WALL_MODELLED:
+    return "Rough wall modelled";
+  case CS_BC_NEUMANN_FULL:
+    return "Neumann (full)";
+  case CS_BC_ROBIN:
+    return "Robin";
+  case CS_BC_CIRCULATION:
+    return "Circulation";
+  case CS_BC_IMPOSED_TOT_FLUX:
+    return "Total flux enforcement";
+  case CS_BC_GENERALIZED_SYM:
+    return "Symmetry (Generalized)";
+  case CS_BC_IMPOSED_EXCHANGE_COEF:
+    return "Exchange coefficient enforcement";
 
   default:
-    return NULL;
+    return "Undefined. Check your settings.";
+
   }
 }
 
