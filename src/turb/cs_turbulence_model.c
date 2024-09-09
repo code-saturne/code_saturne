@@ -277,6 +277,11 @@ BEGIN_C_DECLS
         mixing length for the mixing length model
 
         Useful if and only if \ref model= CS_TURB_MIXING_LENGTH (mixing length).
+  \var  cs_turb_rans_model_t::dissip_buo_mdl
+        Turbulent dissipation buoyant production model
+
+        Useful if and only if \ref order = 
+        CS_TURB_SECOND_ORDER (\f$R_{ij}-\epsilon\f$ model). 
 */
 
 /*----------------------------------------------------------------------------*/
@@ -392,7 +397,8 @@ _turb_rans_model =
   .iclsyr     =    1,
   .iclptr     =    0,
   .ikwcln     =    1,
-  .xlomlg     = -1e13
+  .xlomlg     = -1e13,
+  .dissip_buo_mdl = 0
 };
 
 const cs_turb_rans_model_t  *cs_glob_turb_rans_model = &_turb_rans_model;
@@ -514,6 +520,13 @@ double cs_turb_ce1 = 1.44;
  * - Rij-epsilon SSG or EBRSM: 1.83
  */
 double cs_turb_ce2 = 1.92;
+
+/*!
+ * Constant \f$C_{\varepsilon 3}\f$ for EB-RSM model.
+ * Useful only for buoyant term calculation of \f$R_{ij}\f$ 
+ * in \f$R_{ij}-\varepsilon EB-RSM\f$.
+ */
+double cs_turb_ce3 = 2.02;
 
 /*!
  * Coefficient of interfacial coefficient in k-eps, used in Lagrange treatment.
@@ -1406,13 +1419,16 @@ _turbulence_model_name(cs_turb_model_type_t  id)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Initialize type and order members of turbulence model structure
+ * \brief Initialize additional turbulence model members of turbulence model
+ *        and RANS model structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_set_type_order_turbulence_model(void)
+cs_turbulence_init_models(void)
 {
+  /* Set type and order of turbulence model */
+
   _turb_model.type = CS_TURB_NONE;
   if (_turb_model.model == CS_TURB_MIXING_LENGTH) {
      _turb_model.type = CS_TURB_RANS;
@@ -1456,6 +1472,11 @@ cs_set_type_order_turbulence_model(void)
     _turb_model.high_low_re = CS_TURB_HIGH_LOW_RE;
   else
     _turb_model.high_low_re = CS_TURB_HIGH_RE;
+
+  /* Set the model used for the turbulent dissipation buoyant 
+     production term */
+  if ( _turb_model.model == CS_TURB_RIJ_EPSILON_EBRSM )
+    _turb_rans_model.dissip_buo_mdl = 1;
 
 }
 
@@ -1782,7 +1803,9 @@ cs_turb_model_log_setup(void)
                     "    iclsyr:           %14d (Symmetry implicitation)\n"
                     "    iclptr:           %14d (Wall implicitation)\n"
                     "    ikwcln:           %14d (Wall boundary condition"
-                                                "on omega in k-omega SST)\n"),
+                                                "on omega in k-omega SST)\n"
+                    "    dissip_buo_mdl    %14d (Turbulent dissipation"
+                                                "buoyant production model)\n"),
                   cs_glob_turb_ref_values->uref,
                   cs_glob_turb_rans_model->reinit_turb,
                   cs_glob_turb_rans_model->irijco,
@@ -1791,7 +1814,8 @@ cs_turb_model_log_setup(void)
                   cs_glob_turb_rans_model->has_buoyant_term,
                   cs_glob_turb_rans_model->iclsyr,
                   cs_glob_turb_rans_model->iclptr,
-                  cs_glob_turb_rans_model->ikwcln);
+                  cs_glob_turb_rans_model->ikwcln,
+                  cs_glob_turb_rans_model->dissip_buo_mdl);
 
     int idirsm = cs_glob_turb_rans_model->idirsm;
     if (idirsm < 0 || idirsm > 1)

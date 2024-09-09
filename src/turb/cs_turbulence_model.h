@@ -264,6 +264,10 @@ typedef struct {
 
   double        xlomlg;       /* mixing length */
 
+  int           dissip_buo_mdl;
+                              /* Turbulent dissipation buoyant production model
+                                 0: Default: Production term clipped to 0
+                                 1: For EM-RSM */
 } cs_turb_rans_model_t;
 
 /* LES turbulence model descriptor */
@@ -336,6 +340,7 @@ extern double cs_turb_cmu;
 extern double cs_turb_cmu025;
 extern double cs_turb_ce1;
 extern double cs_turb_ce2;
+extern double cs_turb_ce3;
 extern double cs_turb_ce4;
 extern double cs_turb_crij1;
 extern double cs_turb_crij2;
@@ -439,11 +444,12 @@ extern double cs_turb_cthebdfm;
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
- * Set type and order of the turbulence model
+ * Initialize additional turbulence model members of turbulence model
+ * and RANS model structure
  *----------------------------------------------------------------------------*/
 
 void
-cs_set_type_order_turbulence_model(void);
+cs_turbulence_init_models(void);
 
 /*----------------------------------------------------------------------------
  * Set global pointer to turbulence model structure

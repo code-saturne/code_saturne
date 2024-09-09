@@ -394,17 +394,16 @@ _compute_up_rhop(int                 phase_id,
 
   cs_real_t cons = -1.5 * cs_turb_cmu;
 
-  const cs_field_t *tf = cs_thermal_model_field();
-  if (tf != nullptr) {
+  const cs_field_t *thf = cs_thermal_model_field();
+  if (thf != nullptr) {
     const int ksigmas = cs_field_key_id("turbulent_schmidt");
-    const cs_real_t turb_schmidt = cs_field_get_key_double(tf, ksigmas);
+    const cs_real_t turb_schmidt = cs_field_get_key_double(thf, ksigmas);
     cons = -1.5 * cs_turb_cmu / turb_schmidt;
   }
   const cs_velocity_pressure_model_t  *vp_model
     = cs_glob_velocity_pressure_model;
   const int idilat = vp_model->idilat;
 
-  const cs_field_t *thf = cs_thermal_model_field();
   if (phase_id >= 0)
     thf = CS_FI_(h_tot, phase_id);
 
@@ -414,16 +413,22 @@ _compute_up_rhop(int                 phase_id,
     turb_flux_model = cs_field_get_key_int(thf, kturt);
   const int turb_flux_model_type = turb_flux_model / 10;
 
-  if (turb_flux_model_type == 3) {
+  cs_field_t *f_hf = cs_field_by_composite_name_try(thf->name,
+                                                    "turbulent_flux");
+
+  /* We want to use the computed turbulent heat fluxes (when they exist)
+     when we are not dealing with atmo cases */
+  if (   ( f_hf != NULL && cs_glob_physical_model_flag[CS_ATMOSPHERIC] < 1 )
+       || turb_flux_model_type == 3 
+       || turb_flux_model_type == 2 ) {
+
     /* Using thermal fluxes
      * (only for thermal scalar for the moment) */
     cs_field_t *f_beta = cs_field_by_name_try("thermal_expansion");
 
     if (f_beta != nullptr) {
       /* Value of the corresponding turbulent flux */
-      cs_real_3_t *xut =
-        (cs_real_3_t *)cs_field_by_composite_name(thf->name,
-                                                  "turbulent_flux")->val;
+      cs_real_3_t *xut = (cs_real_3_t *)f_hf->val;
 
       const cs_real_t *beta = f_beta->val;
 
@@ -921,20 +926,52 @@ _gravity_st_epsilon(int              phase_id,
     f_mu = CS_FI_(mu, phase_id);
   }
 
+  cs_fluid_properties_t *fp = cs_get_glob_fluid_properties();
+
+  cs_field_t *f_t = cs_thermal_model_field();
+  cs_field_t *f_t_var = cs_field_get_variance(f_t);
+
   const cs_real_6_t *cvara_rij = (const cs_real_6_t *)f_rij->val_pre;
-
   const cs_real_t *cvara_ep = f_eps->val_pre;
-
   const cs_real_t *crom = f_rho->val;
   const cs_real_t *viscl = f_mu->val;
 
+  const int kturt = cs_field_key_id("turbulent_flux_model");
+  int turb_flux_model =  cs_field_get_key_int(f_t, kturt);
   const cs_turb_model_type_t iturb
     = (cs_turb_model_type_t)cs_glob_turb_model->iturb;
 
   const cs_real_t xct = cs_turb_xct;
   const cs_real_t ce1 = cs_turb_ce1;
 
+  /* Laminar thermal conductivity k for Prandtl calculation */
+  cs_lnum_t l_viscls = 0; /* stride for uniform/local viscosity access */
+  cs_real_t _visls_0 = -1;
+  const cs_real_t *viscls = NULL;
+  {
+    const int kivisl = cs_field_key_id("diffusivity_id");
+    int ifcvsl = cs_field_get_key_int(f_t, kivisl);
+    if (ifcvsl > -1) {
+      viscls = cs_field_by_id(ifcvsl)->val;
+      l_viscls = 1;
+    }
+    else {
+      const int kvisls0 = cs_field_key_id("diffusivity_ref");
+      _visls_0 = cs_field_get_key_double(f_t, kvisls0);
+      viscls = &_visls_0;
+      l_viscls = 0;
+    }
+  }
+
   ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
+
+    /* Specific heat for Prandtl calculation */
+    const cs_field_t *f_cp = cs_field_by_name_try("specific_heat");
+    cs_real_t xcp;
+    if (f_cp != NULL)      /* Variable */
+      xcp = f_cp->val[c_id];
+    else                /* Constant */
+      xcp = fp->cp0;
 
     const cs_real_t g_up_rhop = cs_math_3_dot_product(grav, up_rhop[c_id]);
 
@@ -942,16 +979,44 @@ _gravity_st_epsilon(int              phase_id,
 
     cs_real_t time_scale = tke / cvara_ep[c_id];
 
+    cs_real_t buoyancy_constant = cs_turb_ce1;
+
     if (iturb == CS_TURB_RIJ_EPSILON_EBRSM) {
 
       /* Calculation of the Durbin time scale */
       const cs_real_t xttkmg
         = xct*sqrt(viscl[c_id] / crom[c_id] / cvara_ep[c_id]);
       time_scale = cs_math_fmax(time_scale, xttkmg);
+
+      /* Calculation of the mixed time scale for EB thermal 
+       *  flux models (Dehoux, 2017) */
+      if (  (turb_flux_model == 11)  /* EB-GGDH */
+         || (turb_flux_model == 21)  /* EB-AFM */
+         || (turb_flux_model == 31)) /* EB-DFM */ {
+
+        cs_real_t alpha_theta = 
+           cs_field_by_composite_name(f_t->name, "alpha")->val[c_id];
+
+        const int krvarfl = cs_field_key_id("variance_dissipation");
+        const cs_real_t rvarfl = cs_field_get_key_double(f_t_var, krvarfl);
+
+        cs_real_t prdtl = viscl[c_id]*xcp/viscls[l_viscls*c_id];
+        cs_real_t xr = (1.0 - alpha_theta)*prdtl + alpha_theta*rvarfl;
+
+        buoyancy_constant = cs_turb_ce3;
+
+        time_scale = time_scale * sqrt(xr)/sqrt(prdtl); 
+      }
     }
 
-    rhs[c_id] += ce1 * cs_math_fmax(0., g_up_rhop/time_scale)
-               * cell_f_vol[c_id];
+    if ( cs_glob_turb_rans_model->dissip_buo_mdl == 1 ) {
+      rhs[c_id] += buoyancy_constant *  
+                   g_up_rhop/time_scale * cell_f_vol[c_id];
+    } else {
+      rhs[c_id] += buoyancy_constant *  
+                   cs_math_fmax(0., g_up_rhop/time_scale) * cell_f_vol[c_id];
+    }
+
   });
 
   ctx.wait();

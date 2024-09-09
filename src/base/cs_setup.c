@@ -2118,8 +2118,9 @@ _init_user
   /* Flow and other model selection through user C routines */
   cs_user_model();
 
-  /* Set type and order of the turbulence model */
-  cs_set_type_order_turbulence_model();
+  /* Set additional members of turbulence model and RANS
+     turbulence model strucutre */
+  cs_turbulence_init_models();
 
   /* If CDO is active, initialize the context structures for models which
    * have been activated */
