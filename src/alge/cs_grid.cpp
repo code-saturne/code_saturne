@@ -3677,7 +3677,7 @@ _automatic_aggregation_mx_msr(const cs_grid_t  *f,
 
     /* Other passes */
 
-    for (int npass = 2; npass < npass_max; npass++) {
+    for (int npass = 2; npass <= npass_max; npass++) {
 
       /* Exit loop on passes if aggregation is sufficient
          (note that each thread may loop independently). */
@@ -4648,6 +4648,8 @@ _automatic_aggregation_dx_msr(const cs_grid_t       *f,
   if (cs_glob_timer_kernels_flag > 0)
     t_start = std::chrono::high_resolution_clock::now();
 
+  const int npass_max = 10;
+
   cs_lnum_t isym = 2;
   if (f->symmetric == true)
     isym = 1;
@@ -4712,6 +4714,12 @@ _automatic_aggregation_dx_msr(const cs_grid_t       *f,
   BFT_MALLOC(ag_work, ag_work_size, cs_lnum_t);
   cs_lnum_t *ag_queue = ag_work;
 
+  cs_lnum_t *log_counts = nullptr;
+  if (verbosity > 3) {
+    BFT_MALLOC(log_counts, n_loc_threads*npass_max*2, cs_lnum_t);
+    memset(log_counts, 0, n_loc_threads*npass_max*2*sizeof(cs_lnum_t));
+  }
+
   /* Handle a block of rows per thread; aggregation will not be done
      across thread blocks, in a similar manner that it is not done
      across MPI ranks. */
@@ -4733,7 +4741,7 @@ _automatic_aggregation_dx_msr(const cs_grid_t       *f,
     cs_lnum_t t_s_id, t_e_id;
     cs_parall_thread_range(f_n_rows, sizeof(cs_real_t), &t_s_id, &t_e_id);
 
-    int ncoarse = 8, npass_max = 10, inc_nei = 0;
+    int ncoarse = 8, inc_nei = 0;
     int _max_aggregation = 1;
 
     /* Computation of the cardinality and test if the line is
@@ -4792,9 +4800,9 @@ _automatic_aggregation_dx_msr(const cs_grid_t       *f,
         _max_aggregation++;
 
       if (verbosity > 3 && t_id == 0) {
-        bft_printf("       pass 1, thread %d; r_n_faces = %ld;"
+        bft_printf("       pass 1; r_n_faces = %ld;"
                    " aggr_count = %ld\n",
-                   t_id, (long)f_n_faces, (long)f_n_rows);
+                   (long)f_n_faces, (long)f_n_rows);
       }
 
       /* Loop on non-eliminated faces */
@@ -4908,7 +4916,7 @@ _automatic_aggregation_dx_msr(const cs_grid_t       *f,
 
     /* Other passes */
 
-    for (int npass = 2; npass < npass_max; npass++) {
+    for (int npass = 2; npass <= npass_max; npass++) {
 
       /* Exit loop on passes if aggregation is sufficient
          (note that each thread may loop independently). */
@@ -4929,12 +4937,8 @@ _automatic_aggregation_dx_msr(const cs_grid_t       *f,
         _max_aggregation++;
 
       if (verbosity > 3) {
-        #pragma omp critical
-        {
-          bft_printf("       pass %d, thread %d; r_n_faces = %ld;"
-                     " aggr_count = %ld\n",
-                     npass, t_id, (long)r_n_faces, (long)aggr_count);
-        }
+        log_counts[t_id*(npass-1)*2] = r_n_faces;
+        log_counts[t_id*(npass-1)*2 + 1] = aggr_count;
       }
 
       /* Re-initialize non-eliminated faces */
@@ -5063,6 +5067,20 @@ _automatic_aggregation_dx_msr(const cs_grid_t       *f,
       c_n_rows = t_c_n_rows;
 
   } // End of OpenMP section
+
+  if (verbosity > 3) {
+    for (int npass = 2; npass <= npass_max; npass++) {
+      for (int t_id = 0; t_id < n_loc_threads; t_id++) {
+        cs_lnum_t r_n_faces = log_counts[t_id*(npass-1)*2];
+        cs_lnum_t aggr_count = log_counts[t_id*(npass-1)*2 + 1];
+        if (r_n_faces > 0 && aggr_count > 0)
+          bft_printf("       pass %d, thread %d; r_n_faces = %ld;"
+                     " aggr_count = %ld\n",
+                     npass, t_id, (long)r_n_faces, (long)aggr_count);
+      }
+    }
+    BFT_FREE(log_counts);
+  }
 
   /* Combine thread results */
 
