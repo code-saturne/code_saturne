@@ -939,19 +939,20 @@ cs_sles_petsc_create(const char                 *matrix_type,
     cs_base_signal_restore();
   }
 
-    PetscOptionsSetValue(NULL, "-log_view", "");
-    PetscOptionsSetValue(NULL, "-ksp_monitor_true_residual", "");
+  // Option for debug
+  // PetscOptionsSetValue(NULL, "-log_view", "");
+  // PetscOptionsSetValue(NULL, "-ksp_monitor_true_residual", "");
 
-    if (_viewer == NULL) {
-      PetscLogStageRegister("Linear system setup", _log_stage);
-      PetscLogStageRegister("Linear system solve", _log_stage + 1);
-      PetscViewerASCIIOpen(PETSC_COMM_WORLD, "petsc.log", &_viewer);
+  if (_viewer == NULL) {
+    PetscLogStageRegister("Linear system setup", _log_stage);
+    PetscLogStageRegister("Linear system solve", _log_stage + 1);
+    PetscViewerASCIIOpen(PETSC_COMM_WORLD, "petsc.log", &_viewer);
 #if PETSC_VERSION_GE(3,7,0)
     PetscLogDefaultBegin();
 #else
     PetscLogBegin();
 #endif
-    }
+  }
 
   _n_petsc_systems += 1;
 

@@ -722,39 +722,44 @@ _petsc_pchpddm_hook(const char *prefix, const cs_param_sles_t *slesp, PC pc)
     _petsc_cmd(true, prefix_pc, "mat_mumps_icntl_25", "0");
     _petsc_cmd(true, prefix_pc, "mat_mumps_cntl_3", "1.e-50");
     _petsc_cmd(true, prefix_pc, "mat_mumps_cntl_5", "0.");
-    _petsc_cmd(true, prefix_pc, "p", "1");
+    _petsc_cmd(true, prefix_pc, "p", "2");
   }
   else {
+    /* There is three important parameters */
+    /* Left bounds: easy problem and low cost */
+    /* Right bounds: hard problem and high cost */
+    /* - 1 <= N <= 10 */
+    /* - 40 <= M =< 500 */
+    /* - 0.5 >= eps >= 1.e-6 */
+    const char N[10] = "2", M[10] = "80", eps[10] = "5e-2";
 
     /* Define generic options */
     sprintf(prefix_pc, "%s%s", prefix, "pc_hpddm_");
 
     /* No Neumann matrix */
     _petsc_cmd(true, prefix_pc, "define_subdomains", "");
-    _petsc_cmd(true, prefix_pc, "harmonic_overlap", "1");
+    _petsc_cmd(true, prefix_pc, "harmonic_overlap", N);
 
     /* Define option for first level */
     sprintf(prefix_pc, "%s%s", prefix, "pc_hpddm_levels_1_");
 
-    _petsc_cmd(true, prefix_pc, "pc_asm_type", "restrict");
-    _petsc_cmd(true, prefix_pc, "svd_nsv", "100");
     _petsc_cmd(true, prefix_pc, "svd_type", "lanczos");
-    _petsc_cmd(true, prefix_pc, "svd_max_it", "100");
-    _petsc_cmd(true, prefix_pc, "svd_tol", "1.e-2");
-    _petsc_cmd(true, prefix_pc, "svd_relative_threshold", "0.001");
+    _petsc_cmd(true, prefix_pc, "svd_nsv", M);
+    _petsc_cmd(true, prefix_pc, "svd_relative_threshold", eps);
     _petsc_cmd(true, prefix_pc, "st_share_sub_ksp", "");
     _petsc_cmd(true, prefix_pc, "sub_pc_type", "lu");
     _petsc_cmd(true, prefix_pc, "sub_pc_factor_mat_solver_type", "mumps");
+    _petsc_cmd(true, prefix_pc, "sub_mat_mumps_icntl_14", "400");
 
     /* Define option for coarse solver */
     sprintf(prefix_pc, "%s%s", prefix, "pc_hpddm_coarse_");
 
+    _petsc_cmd(true, prefix_pc, "correction", "deflated");
     _petsc_cmd(true, prefix_pc, "pc_type", "lu");
     _petsc_cmd(true, prefix_pc, "pc_factor_mat_solver_type", "mumps");
-    _petsc_cmd(true, prefix_pc, "correction", "deflated");
-    _petsc_cmd(true, prefix_pc, "mat_type", "aij");
-    _petsc_cmd(true, prefix_pc, "mat_filter", "1.0E-6");
-    _petsc_cmd(true, prefix_pc, "p", "1");
+    _petsc_cmd(true, prefix_pc, "sub_mat_mumps_icntl_14", "400");
+    _petsc_cmd(true, prefix_pc, "mat_type", "baij");
+    _petsc_cmd(true, prefix_pc, "p", "2");
   }
 }
 
