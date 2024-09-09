@@ -267,6 +267,13 @@ cs_turbulence_kw(int phase_id)
   cs_real_t *coefaf_o = (cs_real_t *)f_omg->bc_coeffs->af;
   cs_real_t *coefbf_o = (cs_real_t *)f_omg->bc_coeffs->bf;
 
+  cs_real_t *tke_prod = nullptr;
+  cs_real_t *tke_buoy = nullptr;
+  if (f_tke_prod != nullptr)
+    tke_prod = f_tke_prod->val;
+  if (f_tke_buoy != nullptr)
+    tke_buoy = f_tke_buoy->val;
+
   const cs_equation_param_t *eqp_k
     = cs_field_get_equation_param_const(f_k);
 
@@ -608,6 +615,8 @@ cs_turbulence_kw(int phase_id)
       cs_real_t xk = cvara_k[c_id];
       cs_real_t xw  = cvara_omg[c_id];
       cs_real_t cdkw = 2*ro/ckwsw2/xw*gdkgdw[c_id];
+      cs_real_t xeps = cmu*xw*xk;
+      cs_real_t visct = cpro_pcvto[c_id];
       cdkw = fmax(cdkw, 1.e-20);
       cs_real_t distf = fmax(w_dist[c_id], cs_math_epzero);
       cs_real_t xarg1 = fmax(sqrt(xk)/cmu/xw/distf,
@@ -625,7 +634,6 @@ cs_turbulence_kw(int phase_id)
       cs_real_t romvsd = crom[c_id]*cell_f_vol[c_id]/dt[c_id];
       tinstk[c_id] += k_istat*romvsd;
       tinstw[c_id] += w_istat*romvsd;
-    });
 
     /* Compute production terms
      * ========================
@@ -633,12 +641,6 @@ cs_turbulence_kw(int phase_id)
      * stored in: prodk,prodw
      * At the end of this step, we keep gdkgdw, xf1, prodk, tinstW */
 
-    ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
-
-      cs_real_t xk   = cvara_k[c_id];
-      cs_real_t xw   = cvara_omg[c_id];
-      cs_real_t xeps = cmu*xw*xk;
-      cs_real_t visct = cpro_pcvto[c_id];
       /* k / (mu_T * omega) , clipped to 1 if mu_t is zero */
       if (hybrid_turb == CS_HYBRID_HTLES) {
         xeps = cmu*xw*xk*psi[c_id];
@@ -650,7 +652,6 @@ cs_turbulence_kw(int phase_id)
       else
         k_dmut_dom = xk / (visct*xw);
 
-      cs_real_t ro = cromo[c_id];
       prodw[c_id] = visct*cpro_s2kw[c_id] - d2s3*ro*xk*cpro_divukw[c_id];
 
       /* The negative part is implicit */
@@ -670,7 +671,7 @@ cs_turbulence_kw(int phase_id)
 
       /* Save production for post processing */
       if (f_tke_prod != nullptr)
-        f_tke_prod->val[c_id] = prodk[c_id] / ro;
+        tke_prod[c_id] = prodk[c_id] / ro;
 
     });
   }
@@ -812,7 +813,7 @@ cs_turbulence_kw(int phase_id)
 
       /* Save for post processing */
       if (f_tke_buoy != nullptr)
-        f_tke_buoy->val[c_id] = -visct*grad_dot_g[c_id]/rho;
+        tke_buoy[c_id] = -visct*grad_dot_g[c_id]/rho;
 
     });
 
@@ -1881,10 +1882,6 @@ cs_turbulence_kw_mu_t(int phase_id)
                        + gradv[c_id][2][2];
   });
 
-  ctx.wait();
-
-  CS_FREE_HD(_gradv);
-
   /* Calculation of viscosity
    * ======================== */
 
@@ -1935,6 +1932,8 @@ cs_turbulence_kw_mu_t(int phase_id)
   });
 
   ctx.wait();
+
+  CS_FREE_HD(_gradv);
 }
 
 /*----------------------------------------------------------------------------*/
