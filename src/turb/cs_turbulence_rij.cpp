@@ -942,7 +942,7 @@ _gravity_st_epsilon(int              phase_id,
 
     cs_real_t time_scale = tke / cvara_ep[c_id];
 
-    if (iturb ==  CS_TURB_RIJ_EPSILON_EBRSM) {
+    if (iturb == CS_TURB_RIJ_EPSILON_EBRSM) {
 
       /* Calculation of the Durbin time scale */
       const cs_real_t xttkmg
@@ -2237,11 +2237,9 @@ _pre_solve_ssg(const cs_field_t  *f_rij,
     } /* End of loop on ij */
 
   }); /* end loop on cells */
-
   ctx.wait();
 
   CS_FREE_HD(grad_al);
-
   CS_FREE_HD(w2);
 
   /* Buoyancy source term
@@ -2268,7 +2266,6 @@ _pre_solve_ssg(const cs_field_t  *f_rij,
       for (cs_lnum_t i = 3; i < 6; i++)
         viscce[c_id][i] = visten[c_id][i];
     });
-
     ctx.wait();
 
     cs_face_anisotropic_viscosity_scalar(m,
@@ -2490,6 +2487,7 @@ _solve_epsilon(int              phase_id,
                                  cs_math_zero_threshold);
     });
   }
+  ctx.wait();
 
   /* Mass source term
    * ---------------- */
@@ -2677,7 +2675,6 @@ _solve_epsilon(int              phase_id,
       for (cs_lnum_t i = 3; i < 6; i++)
         viscce[c_id][i] = visten[c_id][i] / sigmae;
     });
-
     ctx.wait();
 
     cs_face_anisotropic_viscosity_scalar(m,
@@ -2770,8 +2767,6 @@ _solve_epsilon(int              phase_id,
                                      nullptr);
 
   /* Free memory */
-
-  ctx.wait();
 
   CS_FREE_HD(dpvar);
   CS_FREE_HD(w1);
