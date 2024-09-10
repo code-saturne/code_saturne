@@ -434,6 +434,9 @@ _mono_apply_remaining_bc(const cs_equation_param_t     *eqp,
 
         for (int k = 0; k < 3; k++) div_op[3*f+k] = 0;
 
+        // TODO: WARNING --> Issue with a symmetry condition wich is not
+        // aligned with one of the Cartesian axis
+
       }
 
       /* default: nothing to do (case of a "natural" outlet) */
