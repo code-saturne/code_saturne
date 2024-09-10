@@ -3531,7 +3531,7 @@ cs_turbulence_rij_solve_alpha(int        f_id,
       rhs[c_id] = cell_f_vol[c_id]*(1.0-cvara_al[c_id]) / l2;
 
       /* Implicit term */
-      fimp[c_id] = (fimp[c_id]+cell_f_vol[c_id]*thetap) / l2;
+      fimp[c_id] = cell_f_vol[c_id]*thetap / l2;
     });
 
   }
@@ -3560,7 +3560,7 @@ cs_turbulence_rij_solve_alpha(int        f_id,
       rhs[c_id] = cell_f_vol[c_id]*(1.0-cvara_al[c_id]) / l2;
 
       /* Implicit term */
-      fimp[c_id] = (fimp[c_id]+cell_f_vol[c_id]*thetap) / l2;
+      fimp[c_id] = cell_f_vol[c_id]*thetap / l2;
     });
 
   }
