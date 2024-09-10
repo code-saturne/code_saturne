@@ -1360,16 +1360,23 @@ cs_solve_equation_scalar(cs_field_t        *f,
       (cs_glob_lagr_source_terms->ltsthe == 1)) {
 
     if (   is_thermal_model_field
-        && (   th_model->thermal_variable == CS_THERMAL_MODEL_TEMPERATURE
-            || th_model->thermal_variable == CS_THERMAL_MODEL_ENTHALPY)) {
+        && (th_model->thermal_variable == CS_THERMAL_MODEL_TEMPERATURE)) {
       cs_real_t *ste = cs_field_by_name("lagr_st_temperature")->val;
       cs_real_t *sti = cs_field_by_name("lagr_st_imp_temperature")->val;
       for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
         rhs[c_id] += ste[c_id] * cell_f_vol[c_id];
-        fimp[c_id] += xcpp[c_id] * cs_math_fmax(sti[c_id], 0.0)
-          * cell_f_vol[c_id];
+        fimp[c_id] += cs_math_fmax(sti[c_id], 0.0) * cell_f_vol[c_id];
       }
     }
+    /* When solving in enthalpy, no clear way to implicit Lagrangian source
+     * term */
+    if (   is_thermal_model_field
+        && th_model->thermal_variable == CS_THERMAL_MODEL_ENTHALPY) {
+      cs_real_t *ste = cs_field_by_name("lagr_st_temperature")->val;
+      for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
+        rhs[c_id] += ste[c_id] * cell_f_vol[c_id];
+    }
+
   }
 
   /* Mass source term.

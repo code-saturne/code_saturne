@@ -588,7 +588,8 @@ cs_lagr_coupling(const cs_real_t    taup[],
           t_st_t_e[c_id] += - (  p_mass * p_tmp * p_cp
                               - prev_p_mass * prev_p_tmp * prev_p_cp
                               ) / dtp * p_stat_w * dvol;
-          t_st_t_i[c_id] += tempct[nbpart + p_id] * p_stat_w; //FIXME not homogeneous
+          t_st_t_i[c_id] += p_stat_w * p_mass * p_cp * dvol
+                          / tempct[nbpart + p_id];
 
         }
 
@@ -640,7 +641,8 @@ cs_lagr_coupling(const cs_real_t    taup[],
         t_st_t_e[c_id] += - (  p_mass * p_tmp * p_cp
                              - prev_p_mass * prev_p_tmp * prev_p_cp
                              ) / dtp * p_stat_w * dvol;
-        t_st_t_i[c_id] += tempct[nbpart + p_id] * p_stat_w; //FIXME not homogeneous
+        t_st_t_i[c_id] += p_stat_w * p_mass * p_cp * dvol
+                          / tempct[nbpart + p_id];
 
       }
 
