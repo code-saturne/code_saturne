@@ -358,19 +358,19 @@ _rij_min_max(cs_lnum_t        n_cells,
  * \brief Compute \f$ \overline{\vect{u}' \rho'}\f$
  *
  * \param[in]   phase_id  turbulent phase id (-1 for single phase flow)
- * \param[in]   ctx       dispatch GPU context
  * \param[out]  up_rhop   correlation fluctuation of velocity and density
  */
 /*----------------------------------------------------------------------------*/
 
 static void
 _compute_up_rhop(int                 phase_id,
-                 cs_dispatch_context &ctx,
                  cs_real_t           up_rhop[][3])
 {
   const cs_lnum_t n_cells = cs_glob_mesh->n_cells;
   const cs_lnum_t n_cells_ext = cs_glob_mesh->n_cells_with_ghosts;
   const cs_lnum_t n_b_faces = cs_glob_mesh->n_b_faces;
+
+  cs_dispatch_context ctx;
 
   cs_field_t *f_rij = CS_F_(rij);
   cs_field_t *f_eps = CS_F_(eps);
@@ -1498,7 +1498,7 @@ _pre_solve_lrr_sg(const cs_field_t  *f_rij,
          *           - C2rho(Pij-1/3Pkk dij) -2/3rho eps dij
          * In c_st_prv:
          *  = rhoPij-C1rho eps/k(-2/3k dij)-C2rho(Pij-1/3Pkk dij)-2/3rho eps dij
-         *  = rho{2/3dij[C2 Pkk/2+(C1-1)eps)]+(1-C2)Pij */
+         *  = rho(2/3dij[C2 Pkk/2+(C1-1)eps)]+(1-C2)Pij */
         c_st_prv[c_id][ij] +=  cromo[c_id] * cell_f_vol[c_id]
                               * (  _vdeltij[ij]*d2s3
                                  * (   crij2 * trprod
@@ -2299,8 +2299,6 @@ _pre_solve_ssg(const cs_field_t  *f_rij,
                       viscb);
   }
 
-  ctx.wait();
-
   CS_FREE_HD(w1);
 }
 
@@ -2634,10 +2632,10 @@ _solve_epsilon(int              phase_id,
     });
   }
 
+  ctx.wait();
+
   /* Buoyancy term
    * ------------- */
-
-  ctx.wait();
 
   /* FIXME use beta ... WARNING */
   if (cs_glob_turb_rans_model->has_buoyant_term == 1) {
@@ -3118,6 +3116,7 @@ cs_turbulence_rij(int phase_id)
     }
 
   });
+  ctx.wait();
 
   /* Compute the pressure correlation  term for Rij
    * ----------------------------------------------
@@ -3149,7 +3148,7 @@ cs_turbulence_rij(int phase_id)
 
   if (turb_rans_model->has_buoyant_term == 1) {
     CS_MALLOC_HD(up_rhop, n_cells_ext, cs_real_3_t, cs_alloc_mode);
-    _compute_up_rhop(phase_id, ctx, up_rhop);
+    _compute_up_rhop(phase_id, up_rhop);
   }
 
   /* Prepare to solve Rij, in a manner similar
@@ -3180,6 +3179,7 @@ cs_turbulence_rij(int phase_id)
         fimp[c_id][ij][ij] += cs_math_fmax(-st_i, 0.);
       }
     });
+    ctx.wait();
   }
 
   /* Mass source terms
@@ -3713,7 +3713,6 @@ cs_turbulence_rij_init_by_ref_quantities(cs_real_t  uref,
       cvar_rij[c_id][5] = 0;
       cvar_ep[c_id] = ep;
     });
-
     ctx.wait();
 
     cs_turbulence_rij_clip(-1, n_cells);
