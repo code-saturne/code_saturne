@@ -419,9 +419,9 @@ _compute_up_rhop(int                 phase_id,
 
   /* We want to use the computed turbulent heat fluxes (when they exist)
      when we are not dealing with atmo cases */
-  if (   ( f_hf != NULL && cs_glob_physical_model_flag[CS_ATMOSPHERIC] < 1 )
-       || turb_flux_model_type == 3
-       || turb_flux_model_type == 2 ) {
+  if (   (f_hf != NULL && cs_glob_physical_model_flag[CS_ATMOSPHERIC] < 1)
+      || turb_flux_model_type == 3
+      || turb_flux_model_type == 2 ) {
 
     /* Using thermal fluxes
      * (only for thermal scalar for the moment) */
