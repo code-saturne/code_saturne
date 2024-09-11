@@ -243,6 +243,28 @@ cs_cdofb_monolithic_sles_uzawa_cg(const cs_navsto_param_t  *nsp,
                                   cs_real_t                *p_c);
 
 /*----------------------------------------------------------------------------*/
+/*!
+ * \brief Solve a linear system arising from the discretization of the
+ *        Navier-Stokes equation using a monolithic velocity-pressure coupling
+ *        with a CDO face-based approach.
+ *        Solve this system using the SIMPLE algorithm.
+ *
+ * \param[in]      nsp     set of parameters related to the Navier-Stokes eqs.
+ * \param[in, out] solver  pointer to a cs_saddle_solver_t structure
+ * \param[in, out] u_f     values of the velocity at faces (3 components)
+ * \param[in, out] p_c     values of the pressure in cells
+ *
+ * \return the (cumulated) number of iterations of the solver
+ */
+/*----------------------------------------------------------------------------*/
+
+int
+cs_cdofb_monolithic_sles_simple(const cs_navsto_param_t  *nsp,
+                                cs_saddle_solver_t       *solver,
+                                cs_real_t                *u_f,
+                                cs_real_t                *p_c);
+
+/*----------------------------------------------------------------------------*/
 
 END_C_DECLS
 

@@ -191,6 +191,7 @@ typedef enum {
   CS_PARAM_SADDLE_SOLVER_MINRES,
   CS_PARAM_SADDLE_SOLVER_MUMPS,
   CS_PARAM_SADDLE_SOLVER_NOTAY_TRANSFORM,
+  CS_PARAM_SADDLE_SOLVER_SIMPLE,
   CS_PARAM_SADDLE_SOLVER_UZAWA_CG,
 
   CS_PARAM_SADDLE_N_SOLVERS
@@ -512,6 +513,37 @@ typedef struct {
 
 } cs_param_saddle_context_uzacg_t;
 
+/* SIMPLE-like algorithm */
+/* --------------------- */
+
+typedef struct {
+
+  /* \var dedicated_init_sles
+   * Define an additional SLES to perform the initial resolution. By default,
+   * this is false in order to not compute two setup steps in one call. */
+
+  bool              dedicated_init_sles;
+
+  /*! \var init_sles_param
+   * The initial linear system requires a more accurate resolution. Thus, one
+   * adds a dedicated \ref cs_param_sles_t structure for this purpose)
+   */
+
+  cs_param_sles_t  *init_sles_param;
+
+  /*! \var xtra_sles_param
+   * Set of parameters only used in some situations such as the need to solve
+   * approximately the A.x = 1 linear system (A is the (1,1)-block
+   * matrix). This is a complementary step in the approximation of the Schur
+   * complement.
+   *
+   * By default, this is a copy of the \ref block11_sles_param with less
+   * restrictive convergence criteria
+   */
+
+  cs_param_sles_t  *xtra_sles_param;
+
+} cs_param_saddle_context_simple_t;
 
 /*============================================================================
  * Global variables

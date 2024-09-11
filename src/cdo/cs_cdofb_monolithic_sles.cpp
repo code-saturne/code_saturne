@@ -659,6 +659,46 @@ _uzawa_cg_init_context(const cs_navsto_param_t              *nsp,
   ctx->inv_m22 = _get_scaled_diag_m22(nsp, ctx->pty_22);
 }
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Initialize the context structure associated to a SIMPLE algorithm
+ *
+ * \param[in]      nsp     set of parameters related to the Navier-Stokes eqs.
+ * \param[in, out] solver  pointer to a cs_saddle_solver_t structure
+ * \param[in, out] ctx     additional members specific to the Uzawa-CG algo.
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_simple_init_context(const cs_navsto_param_t              *nsp,
+                     cs_saddle_solver_t                   *solver,
+                     cs_saddle_solver_context_simple_t    *ctx)
+{
+  const cs_cdo_quantities_t  *quant = cs_shared_quant;
+  const cs_cdo_connect_t  *connect = cs_shared_connect;
+
+  assert(ctx != nullptr);
+  assert(solver->n2_scatter_dofs == quant->n_cells);
+  assert(solver->n1_scatter_dofs == 3*quant->n_faces);
+
+  cs_cdo_system_helper_t  *sh = solver->system_helper;
+
+  ctx->m11 = cs_cdo_system_get_matrix(sh, 0);
+  ctx->b11_max_size = CS_MAX(cs_matrix_get_n_columns(ctx->m11),
+                             solver->n1_scatter_dofs);
+
+  /* Buffers of size n1_scatter_dofs */
+
+  BFT_MALLOC(ctx->b1_tilda, solver->n1_scatter_dofs, cs_real_t);
+  BFT_MALLOC(ctx->rhs, solver->n1_scatter_dofs, cs_real_t);
+
+  /* Buffers of size n2_scatter_dofs */
+
+  BFT_MALLOC(ctx->m21x1, solver->n2_scatter_dofs, cs_real_t);
+
+  ctx->inv_m22 = nullptr;
+}
+
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
@@ -719,6 +759,7 @@ cs_cdofb_monolithic_sles_init_system_helper(const cs_navsto_param_t  *nsp,
   case CS_PARAM_SADDLE_SOLVER_GKB:
   case CS_PARAM_SADDLE_SOLVER_MINRES:
   case CS_PARAM_SADDLE_SOLVER_UZAWA_CG:
+  case CS_PARAM_SADDLE_SOLVER_SIMPLE:
     {
       cs_lnum_t  block_sizes[2];
       block_sizes[0] = 3*cdoq->n_faces, block_sizes[1] = cdoq->n_cells;
@@ -1008,6 +1049,26 @@ cs_cdofb_monolithic_sles_init_solver(const cs_navsto_param_t  *nsp,
     }
     break;
 
+  case CS_PARAM_SADDLE_SOLVER_SIMPLE:
+    {
+      sc->solve = cs_cdofb_monolithic_sles_simple;
+
+      cs_saddle_solver_context_simple_create(m->n_cells_with_ghosts, solver);
+
+      cs_saddle_solver_context_simple_t *ctx
+        = (cs_saddle_solver_context_simple_t *)solver->context;
+
+      ctx->square_norm_b11 = cs_cdo_blas_square_norm_pfvp;
+      ctx->m12_vector_multiply = cs_saddle_solver_m12_multiply_vector;
+      ctx->m21_vector_multiply = cs_saddle_solver_m21_multiply_vector;
+
+      if (nsp->turbulence->model->iturb == CS_TURB_NONE)
+        ctx->pty_22 = nsp->lam_viscosity;
+      else
+        ctx->pty_22 = nsp->tot_viscosity;
+    }
+    break;
+
   default:
     /* CS_PARAM_SADDLE_SOLVER_FGMRES
      * CS_PARAM_SADDLE_SOLVER_MUMPS */
@@ -1212,7 +1273,7 @@ cs_cdofb_monolithic_sles_block_krylov(const cs_navsto_param_t  *nsp,
 
   case CS_PARAM_SADDLE_SCHUR_LUMPED_INVERSE:
     {
-      cs_real_t  *m11_inv_lumped =
+      ctx->m11_inv_diag =
         cs_saddle_solver_m11_inv_lumped(solver,
                                         ctx->m11,
                                         ctx->b11_range_set,
@@ -1222,13 +1283,12 @@ cs_cdofb_monolithic_sles_block_krylov(const cs_navsto_param_t  *nsp,
       algo_ctx->n_inner_iter += n_xtra_iters;
 
       ctx->schur_matrix = _schur_approx_diag_inv_m11(schur_slesp->solver_class,
-                                                     m11_inv_lumped,
+                                                     ctx->m11_inv_diag,
                                                      ctx->m21_adj,
                                                      ctx->m21_val,
                                                      &(ctx->schur_diag),
                                                      &(ctx->schur_xtra));
 
-      BFT_FREE(m11_inv_lumped);
     }
     break;
 
@@ -1251,7 +1311,7 @@ cs_cdofb_monolithic_sles_block_krylov(const cs_navsto_param_t  *nsp,
 
   case CS_PARAM_SADDLE_SCHUR_MASS_SCALED_LUMPED_INVERSE:
     {
-      cs_real_t  *m11_inv_lumped =
+      ctx->m11_inv_diag =
         cs_saddle_solver_m11_inv_lumped(solver,
                                         ctx->m11,
                                         ctx->b11_range_set,
@@ -1261,7 +1321,7 @@ cs_cdofb_monolithic_sles_block_krylov(const cs_navsto_param_t  *nsp,
       algo_ctx->n_inner_iter += n_xtra_iters;
 
       ctx->schur_matrix = _schur_approx_diag_inv_m11(schur_slesp->solver_class,
-                                                     m11_inv_lumped,
+                                                     ctx->m11_inv_diag,
                                                      ctx->m21_adj,
                                                      ctx->m21_val,
                                                      &(ctx->schur_diag),
@@ -1269,7 +1329,6 @@ cs_cdofb_monolithic_sles_block_krylov(const cs_navsto_param_t  *nsp,
 
       ctx->m22_mass_diag = _get_scaled_diag_m22(nsp, ctx->pty_22);
 
-      BFT_FREE(m11_inv_lumped);
     }
     break;
 
@@ -1679,7 +1738,7 @@ cs_cdofb_monolithic_sles_uzawa_cg(const cs_navsto_param_t  *nsp,
 
   case CS_PARAM_SADDLE_SCHUR_LUMPED_INVERSE:
     {
-      cs_real_t  *m11_inv_lumped =
+      ctx->m11_inv_diag =
         cs_saddle_solver_m11_inv_lumped(solver,
                                         ctx->m11,
                                         ctx->b11_range_set,
@@ -1689,13 +1748,12 @@ cs_cdofb_monolithic_sles_uzawa_cg(const cs_navsto_param_t  *nsp,
       algo_ctx->n_inner_iter += n_xtra_iters;
 
       ctx->schur_matrix = _schur_approx_diag_inv_m11(schur_slesp->solver_class,
-                                                     m11_inv_lumped,
+                                                     ctx->m11_inv_diag,
                                                      ctx->m21_adj,
                                                      ctx->m21_val,
                                                      &(ctx->schur_diag),
                                                      &(ctx->schur_xtra));
 
-      BFT_FREE(m11_inv_lumped);
     }
     break;
 
@@ -1712,7 +1770,7 @@ cs_cdofb_monolithic_sles_uzawa_cg(const cs_navsto_param_t  *nsp,
 
   case CS_PARAM_SADDLE_SCHUR_MASS_SCALED_LUMPED_INVERSE:
     {
-      cs_real_t  *m11_inv_lumped =
+      ctx->m11_inv_diag =
         cs_saddle_solver_m11_inv_lumped(solver,
                                         ctx->m11,
                                         ctx->b11_range_set,
@@ -1722,13 +1780,12 @@ cs_cdofb_monolithic_sles_uzawa_cg(const cs_navsto_param_t  *nsp,
       algo_ctx->n_inner_iter += n_xtra_iters;
 
       ctx->schur_matrix = _schur_approx_diag_inv_m11(schur_slesp->solver_class,
-                                                     m11_inv_lumped,
+                                                     ctx->m11_inv_diag,
                                                      ctx->m21_adj,
                                                      ctx->m21_val,
                                                      &(ctx->schur_diag),
                                                      &(ctx->schur_xtra));
 
-      BFT_FREE(m11_inv_lumped);
     }
     break;
 
@@ -1769,6 +1826,165 @@ cs_cdofb_monolithic_sles_uzawa_cg(const cs_navsto_param_t  *nsp,
   /* Memory cleaning */
 
   cs_saddle_solver_context_uzawa_cg_clean(ctx);
+  cs_iter_algo_free(&(solver->algo));
+
+  return n_iters;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Solve a linear system arising from the discretization of the
+ *        Navier-Stokes equation using a monolithic velocity-pressure coupling
+ *        with a CDO face-based approach.
+ *        Solve this system using the SIMPLE algorithm.
+ *
+ * \param[in]      nsp     set of parameters related to the Navier-Stokes eqs.
+ * \param[in, out] solver  pointer to a cs_saddle_solver_t structure
+ * \param[in, out] u_f     values of the velocity at faces (3 components)
+ * \param[in, out] p_c     values of the pressure in cells
+ *
+ * \return the (cumulated) number of iterations of the solver
+ */
+/*----------------------------------------------------------------------------*/
+
+int
+cs_cdofb_monolithic_sles_simple(const cs_navsto_param_t  *nsp,
+                                cs_saddle_solver_t       *solver,
+                                cs_real_t                *u_f,
+                                cs_real_t                *p_c)
+{
+  if (solver == nullptr)
+    return 0;
+
+  const cs_param_saddle_t  *saddlep = solver->param;
+
+  if (saddlep->solver != CS_PARAM_SADDLE_SOLVER_SIMPLE)
+    bft_error(__FILE__, __LINE__, 0,
+              "%s: SINGLE algorithm is expected.\n"
+              "%s: Please check your settings.\n", __func__, __func__);
+
+  cs_cdo_system_helper_t  *sh = solver->system_helper;
+
+#if defined(DEBUG) && !defined(NDEBUG)
+  assert(sh != nullptr);
+  assert(sh->n_blocks == 2);
+  if (sh->type != CS_CDO_SYSTEM_SADDLE_POINT)
+    bft_error(__FILE__, __LINE__, 0,
+              "%s: Invalid type of system: saddle-point system expected\n",
+              __func__);
+#endif
+
+  cs_iter_algo_type_t  type = CS_ITER_ALGO_DEFAULT | CS_ITER_ALGO_TWO_LEVEL;
+
+  solver->algo = cs_iter_algo_create_with_settings(type,
+                                                   saddlep->verbosity,
+                                                   saddlep->cvg_param);
+
+  cs_iter_algo_default_t *algo_ctx
+    = (cs_iter_algo_default_t *)solver->algo->context;
+
+  /* 0. Partial initialization of the context */
+  /* ---------------------------------------- */
+
+  cs_saddle_solver_context_simple_t *ctx
+    = (cs_saddle_solver_context_simple_t *)solver->context;
+  assert(ctx != nullptr);
+
+  /* Update the context after the matrix building */
+
+  _simple_init_context(nsp, solver, ctx);
+
+  /* Prepare the solution array at faces. It has to be allocated to a greater
+   * size in case of parallelism in order to allow for a correct matrix-vector
+   * product */
+
+  cs_real_t *x1 = nullptr;
+
+  if (cs_glob_n_ranks > 1) {
+    BFT_MALLOC(x1, ctx->b11_max_size, cs_real_t);
+    cs_array_real_copy(solver->n1_scatter_dofs, u_f, x1);
+  }
+  else
+    x1 = u_f;
+
+
+  /* 1. Build the schur approximation */
+  /* -------------------------------- */
+
+  const cs_param_sles_t  *schur_slesp = saddlep->schur_sles_param;
+  int  n_xtra_iters = 0;
+
+  switch (saddlep->schur_approx) {
+
+  case CS_PARAM_SADDLE_SCHUR_DIAG_INVERSE:
+    ctx->m11_inv_diag = cs_saddle_system_b11_inv_diag(ctx->b11_max_size, sh);
+
+    ctx->schur_matrix = _schur_approx_diag_inv_m11(schur_slesp->solver_class,
+                                                   ctx->m11_inv_diag,
+                                                   ctx->m21_adj,
+                                                   ctx->m21_val,
+                                                   &(ctx->schur_diag),
+                                                   &(ctx->schur_xtra));
+    break;
+
+  case CS_PARAM_SADDLE_SCHUR_LUMPED_INVERSE:
+    {
+      ctx->m11_inv_diag =
+        cs_saddle_solver_m11_inv_lumped(solver,
+                                        ctx->m11,
+                                        ctx->b11_range_set,
+                                        ctx->xtra_sles,
+                                        &n_xtra_iters);
+
+      algo_ctx->n_inner_iter += n_xtra_iters;
+
+      ctx->schur_matrix = _schur_approx_diag_inv_m11(schur_slesp->solver_class,
+                                                     ctx->m11_inv_diag,
+                                                     ctx->m21_adj,
+                                                     ctx->m21_val,
+                                                     &(ctx->schur_diag),
+                                                     &(ctx->schur_xtra));
+
+    }
+    break;
+
+  default:
+  case CS_PARAM_SADDLE_SCHUR_MASS_SCALED:
+    /* Do nothing else */
+    break;
+
+  } /* Switch on the type of Schur approximation */
+
+  /* 2. Solve the saddle-point system */
+  /* -------------------------------- */
+
+  cs_saddle_solver_simple(solver, x1, p_c);
+
+  /* Copy back to the original array the velocity values at faces */
+
+  if (cs_glob_n_ranks > 1) {
+    cs_array_real_copy(solver->n1_scatter_dofs, x1, u_f);
+    BFT_FREE(x1);
+  }
+
+  /* 3. Monitoring and output */
+  /* ------------------------ */
+
+  int  n_iters = algo_ctx->n_algo_iter;
+
+  cs_saddle_solver_update_monitoring(solver, n_iters);
+
+  /* Output information about the convergence */
+
+  if (saddlep->verbosity > 0 && cs_log_default_is_active())
+    cs_log_printf(CS_LOG_DEFAULT, "\n  <%s/%20s> "
+                  "cvg_code:%-d | n_iter:%3d (inner:%4d) | residual:% -8.4e\n",
+                  __func__, saddlep->name, algo_ctx->cvg_status,
+                  n_iters, algo_ctx->n_inner_iter, algo_ctx->res);
+
+  /* Memory cleaning */
+
+  cs_saddle_solver_context_simple_clean(ctx);
   cs_iter_algo_free(&(solver->algo));
 
   return n_iters;

@@ -320,6 +320,17 @@ _init_schur_slesp(cs_param_saddle_t  *saddlep)
     }
     break;
 
+  case CS_PARAM_SADDLE_SOLVER_SIMPLE:
+    {
+      cs_param_saddle_context_uzacg_t  *ctxp = saddlep->context;
+
+      if (ctxp->xtra_sles_param != NULL)
+        cs_param_sles_free(&(ctxp->xtra_sles_param));
+
+      ctxp->xtra_sles_param = xtra_slesp;
+    }
+    break;
+
   default:
     assert(xtra_slesp == NULL); /* There should be no xtra_slesp */
     break;
@@ -711,6 +722,14 @@ cs_param_saddle_get_xtra_sles_param(const cs_param_saddle_t  *saddlep)
   case CS_PARAM_SADDLE_SOLVER_UZAWA_CG:
     {
       cs_param_saddle_context_uzacg_t  *ctxp = saddlep->context;
+
+      return ctxp->xtra_sles_param;
+    }
+    break;
+
+  case CS_PARAM_SADDLE_SOLVER_SIMPLE:
+    {
+      cs_param_saddle_context_simple_t *ctxp = saddlep->context;
 
       return ctxp->xtra_sles_param;
     }
@@ -1196,6 +1215,35 @@ cs_param_saddle_set_solver(const char          *keyval,
     saddlep->context = ctxp;
 
   }
+  else if (strcmp(keyval, "simple") == 0) {
+
+    saddlep->solver = CS_PARAM_SADDLE_SOLVER_SIMPLE;
+    saddlep->solver_class = CS_PARAM_SOLVER_CLASS_CS;
+    saddlep->precond = CS_PARAM_SADDLE_PRECOND_NONE;
+    saddlep->schur_approx = CS_PARAM_SADDLE_SCHUR_DIAG_INVERSE;
+
+    /* Context structure dedicated to this algorithm */
+
+    cs_param_saddle_context_simple_t *ctxp = NULL;
+    BFT_MALLOC(ctxp, 1, cs_param_saddle_context_simple_t);
+
+    ctxp->xtra_sles_param = NULL;  /* It depends on the type of Schur
+                                      approximation used */
+
+    ctxp->dedicated_init_sles = false;
+
+    /* Initialize an additional set of SLES parameters for the initial
+       transformation of the system (this is different from defining a
+       dedicated cs_sles_t structure). The same SLES can be shared but with
+       different settings w.r.t. the stopping convergence criteria. */
+
+    ctxp->init_sles_param = _init_init_slesp(saddlep);
+
+    cs_sles_set_epzero(1e-15);  /* Avoid a too early exit */
+
+    saddlep->context = ctxp;
+  }
+
   else
     return ierr;
 

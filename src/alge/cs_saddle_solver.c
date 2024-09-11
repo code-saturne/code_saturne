@@ -2331,6 +2331,13 @@ cs_saddle_solver_clean(cs_saddle_solver_t  *solver)
     }
     break;
 
+  case CS_PARAM_SADDLE_SOLVER_SIMPLE:
+    {
+      cs_saddle_solver_context_simple_t  *ctx = solver->context;
+
+      cs_saddle_solver_context_simple_clean(ctx);
+    }
+    break;
   default:
   case CS_PARAM_SADDLE_SOLVER_FGMRES:
   case CS_PARAM_SADDLE_SOLVER_MUMPS:
@@ -3219,6 +3226,176 @@ cs_saddle_solver_context_uzawa_cg_free
     return;
 
   cs_saddle_solver_context_uzawa_cg_clean(ctx);
+
+  BFT_FREE(ctx);
+  *p_ctx = NULL;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Create and initialize the context structure for an algorithm related
+ *        to the SIMPLE-like algorithm
+ *
+ * \param[in]      b22_max_size  max. size for the second part of unknows
+ * \param[in, out] solver        pointer to a saddle-point solver structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_saddle_solver_context_simple_create(cs_lnum_t            b22_max_size,
+                                       cs_saddle_solver_t  *solver)
+{
+  if (solver == NULL)
+    return;
+
+  cs_saddle_solver_context_simple_t  *ctx = NULL;
+  BFT_MALLOC(ctx, 1, cs_saddle_solver_context_simple_t);
+
+  ctx->m21x1 = NULL;
+  ctx->rhs = NULL;
+  ctx->b1_tilda = NULL;
+
+  const cs_cdo_system_helper_t  *sh = solver->system_helper;
+  const cs_cdo_system_block_t  *b11 = sh->blocks[0];
+  const cs_cdo_system_dblock_t  *b11_dblock = b11->block_pointer;
+
+  /* One assumes that up to now, the (1,1)-block is associated to only one
+     matrix */
+
+  ctx->m11 = NULL; /* To be set later */
+  ctx->b11_range_set = b11_dblock->range_set;
+  ctx->b11_max_size = 0; /* To be set later */
+  ctx->b22_max_size = b22_max_size;
+
+  /* Function pointers */
+
+  ctx->square_norm_b11 = NULL;
+  ctx->m12_vector_multiply = NULL;
+  ctx->m21_vector_multiply = NULL;
+
+  /* Quick access to the (2,1)-block in an unassembled way. This is also the
+   * transposed part of the (1,2)-block by definition of the saddle-point
+   * system */
+
+  const cs_cdo_system_block_t  *b21 = sh->blocks[1];
+  const cs_cdo_system_ublock_t  *b21_ublock = b21->block_pointer;
+
+  ctx->m21_val = b21_ublock->values;
+  ctx->m21_adj = b21_ublock->adjacency;
+
+  /* The following members are defined by the higher-level functions since it
+     may depends on the discretization and modelling choices */
+
+  ctx->schur_diag = NULL;
+  ctx->schur_xtra = NULL;
+  ctx->schur_matrix = NULL;
+  ctx->schur_sles = NULL;
+  ctx->xtra_sles = NULL;
+  ctx->init_sles = NULL;
+
+  ctx->m11_inv_diag = NULL;
+  ctx->inv_m22 = NULL;
+
+  /* Schur approximation depending on the settings of the block
+     preconditioner */
+
+  const cs_param_saddle_t  *saddlep = solver->param;
+  const cs_param_saddle_context_simple_t  *ctxp = saddlep->context;
+
+  ctx->init_sles = NULL;
+  if (ctxp->dedicated_init_sles)
+    ctx->init_sles = cs_sles_find_or_add(-1, ctxp->init_sles_param->name);
+
+  switch (saddlep->schur_approx) {
+
+  case CS_PARAM_SADDLE_SCHUR_DIAG_INVERSE:
+  case CS_PARAM_SADDLE_SCHUR_LUMPED_INVERSE:
+  case CS_PARAM_SADDLE_SCHUR_MASS_SCALED_DIAG_INVERSE:
+  case CS_PARAM_SADDLE_SCHUR_MASS_SCALED_LUMPED_INVERSE:
+    {
+      cs_param_sles_t  *schur_slesp =
+        cs_param_saddle_get_schur_sles_param(saddlep);
+      assert(schur_slesp != NULL);
+
+      ctx->schur_sles = cs_sles_find_or_add(-1, schur_slesp->name);
+
+      cs_param_sles_t  *xtra_slesp =
+        cs_param_saddle_get_xtra_sles_param(saddlep);
+
+      if (xtra_slesp != NULL)
+        ctx->xtra_sles = cs_sles_find_or_add(-1, xtra_slesp->name);
+    }
+    break;
+
+  default:
+    /*  CS_PARAM_SADDLE_SCHUR_NONE,
+        CS_PARAM_SADDLE_SCHUR_IDENTITY,
+        CS_PARAM_SADDLE_SCHUR_MASS_SCALED */
+
+    ctx->schur_sles = NULL;
+    break;
+  }
+
+  /* Set the context structure */
+
+  solver->context = ctx;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Free main memory consuming part of the context structure associated
+ *        to a SIMPLE algorithm
+ *
+ * \param[in, out] ctx  pointer to the context structure to clean
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_saddle_solver_context_simple_clean
+(
+ cs_saddle_solver_context_simple_t  *ctx
+)
+{
+  if (ctx == NULL)
+    return;
+
+  BFT_FREE(ctx->m21x1);
+  BFT_FREE(ctx->b1_tilda);
+  BFT_FREE(ctx->rhs);
+
+  /* Remove the setup data in SLES. The pointer to the following SLES will be
+     still valid */
+
+  cs_sles_free(ctx->schur_sles);
+  cs_sles_free(ctx->xtra_sles);
+  cs_sles_free(ctx->init_sles);
+
+  BFT_FREE(ctx->schur_diag);
+  BFT_FREE(ctx->schur_xtra);
+  BFT_FREE(ctx->m11_inv_diag);
+  BFT_FREE(ctx->inv_m22);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Free the context structure associated to a SIMPLE algorithm
+ *
+ * \param[in, out] p_ctx  double pointer to the context structure to free
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_saddle_solver_context_simple_free
+(
+ cs_saddle_solver_context_simple_t  **p_ctx
+)
+{
+  cs_saddle_solver_context_simple_t  *ctx = *p_ctx;
+
+  if (ctx == NULL)
+    return;
+
+  cs_saddle_solver_context_simple_clean(ctx);
 
   BFT_FREE(ctx);
   *p_ctx = NULL;
@@ -4660,6 +4837,145 @@ cs_saddle_solver_uzawa_cg(cs_saddle_solver_t  *solver,
       dk[i2] = gk[i2] + beta_factor*dk[i2];
 
   } /* End of main loop */
+
+  /* --- ALGO END --- */
+  /* ---------------- */
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Apply the SIMPLE-like algorithm to solve a saddle point problem
+ *
+ * \param[in, out] solver  pointer to a cs_saddle_solver_t structure
+ * \param[in, out] x1      array for the first part
+ * \param[in, out] x2      array for the second part
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_saddle_solver_simple(cs_saddle_solver_t  *solver,
+                        cs_real_t           *x1,
+                        cs_real_t           *x2)
+{
+  assert(solver != NULL);
+
+  const cs_param_saddle_t  *saddlep = solver->param;
+
+  cs_iter_algo_t  *algo = solver->algo;
+  cs_cdo_system_helper_t  *sh = solver->system_helper;
+  cs_saddle_solver_context_simple_t  *ctx = solver->context;
+  cs_param_saddle_context_simple_t  *ctxp = saddlep->context;
+
+  const cs_param_sles_t  *init_slesp = ctxp->init_sles_param;
+
+  assert(saddlep->solver == CS_PARAM_SADDLE_SOLVER_SIMPLE);
+  assert(ctx != NULL);
+  assert(init_slesp != NULL);
+
+  /* ------------------ */
+  /* --- ALGO BEGIN --- */
+
+  const cs_lnum_t  n1_dofs = solver->n1_scatter_dofs;
+  const cs_lnum_t  n2_dofs = solver->n2_scatter_dofs;
+  const cs_lnum_t  n2_elts = solver->n2_elts;
+  const cs_range_set_t  *rset = ctx->b11_range_set;
+  const cs_matrix_t  *m11 = ctx->m11;
+
+  cs_real_t  *rhs1 = sh->rhs_array[0];
+  cs_real_t  *rhs2 = sh->rhs_array[1];
+
+  /* Compute the first RHS: A.u0 = rhs = b_f - B^t.p_0 to solve */
+
+  cs_array_real_fill_zero(n1_dofs, ctx->rhs);
+  ctx->m12_vector_multiply(n2_elts, x2, ctx->m21_adj, ctx->m21_val,
+                           ctx->rhs);
+
+  if (rset->ifs != NULL) {
+
+    cs_interface_set_sum(rset->ifs,
+                         /* n_elts, stride, interlaced */
+                         n1_dofs, 1, false, CS_REAL_TYPE,
+                         ctx->rhs);
+
+    cs_interface_set_sum(rset->ifs,
+                         /* n_elts, stride, interlaced */
+                         n1_dofs, 1, false, CS_REAL_TYPE,
+                         rhs1);
+
+  }
+
+# pragma omp parallel for if (n1_dofs > CS_THR_MIN)
+  for (cs_lnum_t i1 = 0; i1 < n1_dofs; i1++)
+    ctx->rhs[i1] = rhs1[i1] - ctx->rhs[i1];
+
+  /* Initial normalization from the newly computed rhs */
+
+  double  normalization = ctx->square_norm_b11(ctx->rhs);
+
+  normalization = (fabs(normalization) > FLT_MIN) ? sqrt(normalization) : 1.0;
+
+  /* Compute the first velocity guess
+   * Modify the tolerance in order to be more accurate on this step */
+
+  cs_sles_t  *init_sles =
+    (ctxp->dedicated_init_sles) ? ctx->init_sles : solver->main_sles;
+  assert(init_sles != NULL);
+
+  int  n_iter = cs_cdo_solve_scalar_system(n1_dofs,
+                                           init_slesp,
+                                           m11,
+                                           rset,
+                                           normalization,
+                                           false, /* rhs_redux */
+                                           init_sles,
+                                           x1,
+                                           ctx->rhs);
+
+  cs_iter_algo_update_inner_iters(algo, n_iter);
+
+  /* Set pointers used in this algorithm */
+
+  cs_real_t  *rk = ctx->m21x1;
+
+  /* Compute the residual rk (in fact the negative velocity divergence) */
+
+  ctx->m21_vector_multiply(n2_dofs, x1, ctx->m21_adj, ctx->m21_val, rk);
+
+# pragma omp parallel for if (n2_dofs > CS_THR_MIN)
+  for (cs_lnum_t i2 = 0; i2 < n2_dofs; i2++)
+    rk[i2] = rhs2[i2] + rk[i2];
+
+  /* Solve S.dx2 = rk */
+
+  cs_real_t *dx2 = NULL;
+  BFT_MALLOC(dx2, n2_elts, cs_real_t);
+
+  n_iter = _solve_schur_approximation(solver,
+                                      ctx->schur_sles,
+                                      ctx->schur_matrix,
+                                      ctx->inv_m22,
+                                      1.0,
+                                      rk,
+                                      dx2);
+
+  /* Update x1 and x2 */
+
+  cs_array_real_fill_zero(n1_dofs, ctx->rhs);
+  /* Calculate Grad(dx2) */
+  ctx->m12_vector_multiply(solver->n2_scatter_dofs,
+                           dx2, ctx->m21_adj, ctx->m21_val,
+                           ctx->rhs);
+
+  cs_real_t *m11_inv = ctx->m11_inv_diag;
+
+# pragma omp parallel for if (n1_dofs > CS_THR_MIN)
+  for (cs_lnum_t i1 = 0; i1 < n1_dofs; i1++)
+    x1[i1] -= m11_inv[i1]*ctx->rhs[i1];
+# pragma omp parallel for if (n2_dofs > CS_THR_MIN)
+  for (cs_lnum_t i2 = 0; i2 < n2_dofs; i2++)
+    x2[i2] += dx2[i2];
+
+  BFT_FREE(dx2);
 
   /* --- ALGO END --- */
   /* ---------------- */

@@ -1896,6 +1896,7 @@ cs_cdofb_monolithic_init_scheme_context(const cs_navsto_param_t *nsp,
   case CS_PARAM_SADDLE_SOLVER_MINRES:
   case CS_PARAM_SADDLE_SOLVER_NOTAY_TRANSFORM:
   case CS_PARAM_SADDLE_SOLVER_UZAWA_CG:
+  case CS_PARAM_SADDLE_SOLVER_SIMPLE:
     BFT_MALLOC(sc->block21_op, 3*connect->c2f->idx[quant->n_cells], cs_real_t);
     break;
 
@@ -1922,6 +1923,7 @@ cs_cdofb_monolithic_init_scheme_context(const cs_navsto_param_t *nsp,
   case CS_PARAM_SADDLE_SOLVER_GKB:
   case CS_PARAM_SADDLE_SOLVER_MINRES:
   case CS_PARAM_SADDLE_SOLVER_UZAWA_CG:
+  case CS_PARAM_SADDLE_SOLVER_SIMPLE:
     sc->assemble = _velocity_full_assembly;
     break;
 

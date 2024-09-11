@@ -376,6 +376,65 @@ typedef struct {
 
 } cs_saddle_solver_context_uzawa_cg_t;
 
+/* Context structure for the SIMPLE-lile algorithm */
+/* ----------------------------------------------- */
+
+typedef struct {
+
+
+  /* Auxiliary buffers */
+
+  cs_real_t  *res2;     /* buffer of size n2_dofs */
+  cs_real_t  *m21x1;    /* buffer of size n2_dofs */
+
+  cs_real_t  *b1_tilda; /* Modified RHS (size n1_dofs) */
+  cs_real_t  *rhs;      /* buffer of size n1_dofs */
+
+  /* Function pointers */
+
+  cs_cdo_blas_square_norm_t  *square_norm_b11;
+  cs_saddle_solver_matvec_t  *m12_vector_multiply;
+  cs_saddle_solver_matvec_t  *m21_vector_multiply;
+
+  /* Shortcut on pointers available through the system helper */
+
+  cs_matrix_t           *m11;
+  cs_range_set_t        *b11_range_set;
+
+  /* Max. size of the blocks (scatter or gather view). This size takes into
+     account the size needed for synchronization. */
+
+  cs_lnum_t              b11_max_size;
+  cs_lnum_t              b22_max_size;
+
+  /* SLES structure associated to the Schur complement. It depends on the type
+     of Schur complement approximation used */
+
+  cs_real_t             *inv_m22;  /* reciprocal of the mass matrix for the
+                                    * (2,2) block; buffer of size n2_dofs */
+  cs_matrix_t           *schur_matrix;
+  cs_sles_t             *schur_sles;
+
+  /* Native arrays for the Schur matrix (optional) */
+
+  cs_real_t             *schur_diag;
+  cs_real_t             *schur_xtra;
+
+  /* Diagonal approximations of block matrices (optional) */
+
+  cs_real_t             *m11_inv_diag;
+
+  cs_sles_t             *xtra_sles;
+  cs_sles_t             *init_sles;
+
+  /* Shared pointers */
+
+  const cs_property_t   *pty_22;  /* Property related to the (2,2) block */
+  const cs_real_t       *m21_val;
+  const cs_adjacency_t  *m21_adj; /* Indexed list used to scan the unassembled
+                                     m21 operator */
+
+} cs_saddle_solver_context_simple_t;
 
 /*============================================================================
  * Public function prototypes
@@ -776,6 +835,49 @@ cs_saddle_solver_context_uzawa_cg_free
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Create and initialize the context structure for an algorithm related
+ *        to the SIMPLE algorithm
+ *
+ * \param[in]      b22_max_size  max. size for the second part of unknows
+ * \param[in, out] solver        pointer to a saddle-point solver structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_saddle_solver_context_simple_create(cs_lnum_t            b22_max_size,
+                                       cs_saddle_solver_t  *solver);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Free main memory consuming part of the context structure associated
+ *        to a SIMPLE algorithm
+ *
+ * \param[in, out] ctx  pointer to the context structure to clean
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_saddle_solver_context_simple_clean
+(
+ cs_saddle_solver_context_simple_t  *ctx
+);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Free the context structure associated to a Uzawa-CG algorithm
+ *
+ * \param[in, out] p_ctx  double pointer to the context structure to free
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_saddle_solver_context_simple_free
+(
+ cs_saddle_solver_context_simple_t  **p_ctx
+);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Apply the Augmented Lagrangian-Uzawa algorithm to a saddle point
  *        problem (the system is stored in a hybrid way). The stride is equal
  *        to 1 for the matrix (db_size[3] = 1) and the vector.
@@ -897,6 +999,21 @@ void
 cs_saddle_solver_uzawa_cg(cs_saddle_solver_t  *solver,
                           cs_real_t           *x1,
                           cs_real_t           *x2);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Apply the SIMPLE-like algorithm to solve a saddle point problem
+ *
+ * \param[in, out] solver  pointer to a cs_saddle_solver_t structure
+ * \param[in, out] x1      array for the first part
+ * \param[in, out] x2      array for the second part
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_saddle_solver_simple(cs_saddle_solver_t  *solver,
+                        cs_real_t           *x1,
+                        cs_real_t           *x2);
 
 /*----------------------------------------------------------------------------*/
 
