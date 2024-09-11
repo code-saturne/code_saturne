@@ -1262,6 +1262,7 @@ cs_matrix_wrapper_scalar(int                         iconvp,
       da[c_id] += (cs_real_t)c_disable_flag[c_id];
     });
   }
+  ctx.wait();
 
 }
 
@@ -1403,6 +1404,7 @@ cs_matrix_wrapper_vector(int                         iconvp,
         da[c_id][i][i] += (cs_real_t)c_disable_flag[c_id];
     });
   }
+  ctx.wait();
 
 }
 
@@ -1526,6 +1528,7 @@ cs_matrix_wrapper_tensor(int                         iconvp,
         da[c_id][i][i] += (cs_real_t)c_disable_flag[c_id];
     });
   }
+  ctx.wait();
 
 }
 
