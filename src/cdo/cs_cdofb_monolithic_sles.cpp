@@ -359,6 +359,8 @@ _get_scaled_diag_m22(const cs_navsto_param_t  *nsp,
  *
  * \param[in]  schur_mat_class  type of Schur matrix to define
  * \param[in]  m11_inv_approx   diagonal approx. of the inverse of m11
+ * \param[in]  m21_adj          adjacency related to the m21
+ * \param[in]  m21_val          array associated to the m21 matrix (unassembled)
  * \param[out] p_diag_smat      diagonal coeffs for the Schur matrix
  * \param[out] p_xtra_smat      extra-diagonal coeffs for the Schur matrix
  *
@@ -369,6 +371,8 @@ _get_scaled_diag_m22(const cs_navsto_param_t  *nsp,
 static cs_matrix_t *
 _schur_approx_diag_inv_m11(cs_param_solver_class_t  mat_class,
                            const cs_real_t         *m11_inv_approx,
+                           const cs_adjacency_t    *m21_adj,
+                           const cs_real_t         *m21_val,
                            cs_real_t              **p_diag_smat,
                            cs_real_t              **p_xtra_smat)
 {
@@ -376,7 +380,6 @@ _schur_approx_diag_inv_m11(cs_param_solver_class_t  mat_class,
   const cs_mesh_t  *mesh = cs_shared_mesh;
   const cs_lnum_t  n_cells_ext = mesh->n_cells_with_ghosts;
   const cs_lnum_t  n_i_faces = mesh->n_i_faces;
-  const cs_lnum_t  n_b_faces = mesh->n_b_faces;
   const cs_lnum_2_t *restrict i_face_cells
     = (const cs_lnum_2_t *)mesh->i_face_cells;
   const cs_lnum_t *restrict b_face_cells
@@ -393,7 +396,31 @@ _schur_approx_diag_inv_m11(cs_param_solver_class_t  mat_class,
   cs_array_real_fill_zero(n_cells_ext, diag_smat);
   cs_array_real_fill_zero(2*n_i_faces, xtra_smat);
 
-  /* Add diagonal and extra-diagonal contributions from interior faces */
+  const cs_lnum_t n_elts = m21_adj->n_elts;
+
+  /* Add diagonal contributions from interior and boundary faces */
+
+# pragma omp parallel for if (n_elts > CS_THR_MIN)
+  for (cs_lnum_t i = 0; i < n_elts; i++) {
+    for (cs_lnum_t j = m21_adj->idx[i]; j < m21_adj->idx[i+1]; j++) {
+
+      const cs_lnum_t f_id = m21_adj->ids[j];
+      const cs_real_t *m11_inv_ff = m11_inv_approx + 3*f_id;
+
+      const cs_real_t *m21_vals = m21_val + 3*j;
+
+      cs_real_t _m11_inv_m12[3];
+      for (short int k = 0; k < 3; k++)
+        _m11_inv_m12[k] = m11_inv_ff[k] * m21_vals[k];
+
+      cs_real_t _m21_m11_inv_m21 =
+        cs_math_3_dot_product(m21_vals, _m11_inv_m12);
+
+      diag_smat[i] += _m21_m11_inv_m21;
+    }
+  }
+
+  /* Add extra-diagonal contributions from interior faces */
 
   for (cs_lnum_t f_id = 0; f_id < n_i_faces; f_id++) {
 
@@ -411,36 +438,7 @@ _schur_approx_diag_inv_m11(cs_param_solver_class_t  mat_class,
     cs_real_t  *_xtra_smat = xtra_smat + 2*f_id;
     _xtra_smat[0] = _xtra_smat[1] = contrib;
 
-    /* Diagonal contributions */
-
-    cs_lnum_t  cell_i = i_face_cells[f_id][0];
-    cs_lnum_t  cell_j = i_face_cells[f_id][1];
-
-    diag_smat[cell_i] -= contrib;
-    diag_smat[cell_j] -= contrib;
-
   } /* Loop on interior faces */
-
-  /* Add diagonal contributions from border faces*/
-
-  const cs_real_t  *_shift = m11_inv_approx + 3*n_i_faces;
-  for (cs_lnum_t f_id = 0; f_id < n_b_faces; f_id++) {
-
-    const cs_real_t  *m11_inv_ff = _shift + 3*f_id;
-
-    cs_nvec3_t  nvf;
-    cs_nvec3(quant->b_face_normal + 3*f_id, &nvf);
-
-    double  contrib = 0;
-    for (int k = 0; k < 3; k++)
-      contrib += m11_inv_ff[k] * nvf.unitv[k]*nvf.unitv[k];
-    contrib *= nvf.meas*nvf.meas;
-
-    /* Diagonal contributions */
-
-    diag_smat[b_face_cells[f_id]] += contrib;
-
-  } /* Loop on border faces */
 
   /* One assumes a non-symmetric matrix even if in most (all?) cases the matrix
      should be symmetric */
@@ -1206,6 +1204,8 @@ cs_cdofb_monolithic_sles_block_krylov(const cs_navsto_param_t  *nsp,
 
     ctx->schur_matrix = _schur_approx_diag_inv_m11(schur_slesp->solver_class,
                                                    ctx->m11_inv_diag,
+                                                   ctx->m21_adj,
+                                                   ctx->m21_val,
                                                    &(ctx->schur_diag),
                                                    &(ctx->schur_xtra));
     break;
@@ -1223,6 +1223,8 @@ cs_cdofb_monolithic_sles_block_krylov(const cs_navsto_param_t  *nsp,
 
       ctx->schur_matrix = _schur_approx_diag_inv_m11(schur_slesp->solver_class,
                                                      m11_inv_lumped,
+                                                     ctx->m21_adj,
+                                                     ctx->m21_val,
                                                      &(ctx->schur_diag),
                                                      &(ctx->schur_xtra));
 
@@ -1241,6 +1243,8 @@ cs_cdofb_monolithic_sles_block_krylov(const cs_navsto_param_t  *nsp,
 
     ctx->schur_matrix = _schur_approx_diag_inv_m11(schur_slesp->solver_class,
                                                    ctx->m11_inv_diag,
+                                                   ctx->m21_adj,
+                                                   ctx->m21_val,
                                                    &(ctx->schur_diag),
                                                    &(ctx->schur_xtra));
     break;
@@ -1258,6 +1262,8 @@ cs_cdofb_monolithic_sles_block_krylov(const cs_navsto_param_t  *nsp,
 
       ctx->schur_matrix = _schur_approx_diag_inv_m11(schur_slesp->solver_class,
                                                      m11_inv_lumped,
+                                                     ctx->m21_adj,
+                                                     ctx->m21_val,
                                                      &(ctx->schur_diag),
                                                      &(ctx->schur_xtra));
 
@@ -1665,6 +1671,8 @@ cs_cdofb_monolithic_sles_uzawa_cg(const cs_navsto_param_t  *nsp,
 
     ctx->schur_matrix = _schur_approx_diag_inv_m11(schur_slesp->solver_class,
                                                    ctx->m11_inv_diag,
+                                                   ctx->m21_adj,
+                                                   ctx->m21_val,
                                                    &(ctx->schur_diag),
                                                    &(ctx->schur_xtra));
     break;
@@ -1682,6 +1690,8 @@ cs_cdofb_monolithic_sles_uzawa_cg(const cs_navsto_param_t  *nsp,
 
       ctx->schur_matrix = _schur_approx_diag_inv_m11(schur_slesp->solver_class,
                                                      m11_inv_lumped,
+                                                     ctx->m21_adj,
+                                                     ctx->m21_val,
                                                      &(ctx->schur_diag),
                                                      &(ctx->schur_xtra));
 
@@ -1694,6 +1704,8 @@ cs_cdofb_monolithic_sles_uzawa_cg(const cs_navsto_param_t  *nsp,
 
     ctx->schur_matrix = _schur_approx_diag_inv_m11(schur_slesp->solver_class,
                                                    ctx->m11_inv_diag,
+                                                   ctx->m21_adj,
+                                                   ctx->m21_val,
                                                    &(ctx->schur_diag),
                                                    &(ctx->schur_xtra));
     break;
@@ -1711,6 +1723,8 @@ cs_cdofb_monolithic_sles_uzawa_cg(const cs_navsto_param_t  *nsp,
 
       ctx->schur_matrix = _schur_approx_diag_inv_m11(schur_slesp->solver_class,
                                                      m11_inv_lumped,
+                                                     ctx->m21_adj,
+                                                     ctx->m21_val,
                                                      &(ctx->schur_diag),
                                                      &(ctx->schur_xtra));
 
