@@ -549,7 +549,7 @@ cs_field_gradient_scalar(const cs_field_t          *f,
                      0, /* hyd_p_flag */
                      w_stride,
                      eqp->verbosity,
-                     eqp->imligr,
+                     static_cast<cs_gradient_limit_t>(eqp->imligr),
                      eqp->epsrgr,
                      eqp->climgr,
                      NULL, /* f_ext */
@@ -727,7 +727,7 @@ cs_field_gradient_potential(const cs_field_t          *f,
                      hyd_p_flag,
                      w_stride,
                      eqp->verbosity,
-                     eqp->imligr,
+                     static_cast<cs_gradient_limit_t>(eqp->imligr),
                      eqp->epsrgr,
                      eqp->climgr,
                      f_ext,
@@ -825,7 +825,7 @@ cs_field_gradient_vector(const cs_field_t          *f,
                      inc,
                      eqp->nswrgr,
                      eqp->verbosity,
-                     eqp->imligr,
+                     static_cast<cs_gradient_limit_t>(eqp->imligr),
                      eqp->epsrgr,
                      eqp->climgr,
                      bc_coeffs,
@@ -896,7 +896,7 @@ cs_field_gradient_tensor(const cs_field_t          *f,
                      inc,
                      eqp->nswrgr,
                      eqp->verbosity,
-                     eqp->imligr,
+                     static_cast<cs_gradient_limit_t>(eqp->imligr),
                      eqp->epsrgr,
                      eqp->climgr,
                      bc_coeffs_ts,
@@ -1017,7 +1017,7 @@ cs_field_gradient_boundary_iprime_scalar(const cs_field_t  *f,
   else {
 
     const cs_real_3_t *restrict diipb
-      = (const cs_real_3_t *restrict)fvq->diipb;
+      = (const cs_real_3_t *)fvq->diipb;
 
     cs_real_3_t *grad;
     CS_MALLOC_HD(grad,
@@ -1033,7 +1033,7 @@ cs_field_gradient_boundary_iprime_scalar(const cs_field_t  *f,
                        0, /* hyd_p_flag */
                        w_stride,
                        eqp->verbosity,
-                       eqp->imligr,
+                       static_cast<cs_gradient_limit_t>(eqp->imligr),
                        eqp->epsrgr,
                        eqp->climgr,
                        NULL, /* f_ext */
@@ -1046,7 +1046,7 @@ cs_field_gradient_boundary_iprime_scalar(const cs_field_t  *f,
     /* Finally, reconstruct value at I' */
 
     const cs_lnum_t *restrict b_face_cells
-      = (const cs_lnum_t *restrict)m->b_face_cells;
+      = (const cs_lnum_t *)m->b_face_cells;
 
     if (face_ids != NULL) {
       for (cs_lnum_t idx = 0; idx < n_faces; idx++) {
@@ -1185,7 +1185,7 @@ cs_field_gradient_boundary_iprime_vector(const cs_field_t  *f,
                        : (cs_real_3_t *)f->val;
 
     const cs_real_3_t *restrict diipb
-      = (const cs_real_3_t *restrict)fvq->diipb;
+      = (const cs_real_3_t *)fvq->diipb;
 
     cs_real_33_t *grad;
     CS_MALLOC_HD(grad,
@@ -1199,7 +1199,7 @@ cs_field_gradient_boundary_iprime_vector(const cs_field_t  *f,
                        1, /* inc */
                        eqp->nswrgr,
                        eqp->verbosity,
-                       eqp->imligr,
+                       static_cast<cs_gradient_limit_t>(eqp->imligr),
                        eqp->epsrgr,
                        eqp->climgr,
                        bc_coeffs_v,
@@ -1211,7 +1211,7 @@ cs_field_gradient_boundary_iprime_vector(const cs_field_t  *f,
     /* Finally, reconstruct value at I' */
 
     const cs_lnum_t *restrict b_face_cells
-      = (const cs_lnum_t *restrict)m->b_face_cells;
+      = (const cs_lnum_t *)m->b_face_cells;
 
     for (cs_lnum_t idx = 0; idx < n_faces; idx++) {
       cs_lnum_t i = (face_ids != NULL) ? face_ids[idx] : idx;
@@ -1328,7 +1328,7 @@ cs_field_gradient_boundary_iprime_tensor(const cs_field_t  *f,
                        : (cs_real_6_t *)f->val;
 
     const cs_real_3_t *restrict diipb
-      = (const cs_real_3_t *restrict)fvq->diipb;
+      = (const cs_real_3_t *)fvq->diipb;
 
     cs_real_63_t *grad;
     CS_MALLOC_HD(grad,
@@ -1342,7 +1342,7 @@ cs_field_gradient_boundary_iprime_tensor(const cs_field_t  *f,
                        1, /* inc */
                        eqp->nswrgr,
                        eqp->verbosity,
-                       eqp->imligr,
+                       static_cast<cs_gradient_limit_t>(eqp->imligr),
                        eqp->epsrgr,
                        eqp->climgr,
                        bc_coeffs_ts,
@@ -1352,7 +1352,7 @@ cs_field_gradient_boundary_iprime_tensor(const cs_field_t  *f,
     /* Finally, reconstruct value at I' */
 
     const cs_lnum_t *restrict b_face_cells
-      = (const cs_lnum_t *restrict)m->b_face_cells;
+      = (const cs_lnum_t *)m->b_face_cells;
 
     for (cs_lnum_t idx = 0; idx < n_faces; idx++) {
       cs_lnum_t i = (face_ids != NULL) ? face_ids[idx] : idx;

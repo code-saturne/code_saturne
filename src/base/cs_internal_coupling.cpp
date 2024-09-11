@@ -338,8 +338,7 @@ _compute_physical_face_weight(const cs_internal_coupling_t  *cpl,
   const cs_real_t* g_weight = cpl->g_weight;
 
   const cs_mesh_t* m = cs_glob_mesh;
-  const cs_lnum_t *restrict b_face_cells
-    = (const cs_lnum_t *restrict)m->b_face_cells;
+  const cs_lnum_t *restrict b_face_cells = (const cs_lnum_t *)m->b_face_cells;
 
   /* Exchange c_weight */
 
@@ -1091,11 +1090,11 @@ cs_internal_coupling_initialize_scalar_gradient(
 
   const cs_mesh_t* m = cs_glob_mesh;
   const cs_lnum_t *restrict b_face_cells
-    = (const cs_lnum_t *restrict)m->b_face_cells;
+    = (const cs_lnum_t *)m->b_face_cells;
 
   const cs_mesh_quantities_t* fvq = cs_glob_mesh_quantities;
   const cs_real_3_t *restrict b_f_face_normal
-    = (const cs_real_3_t *restrict)fvq->b_f_face_normal;
+    = (const cs_real_3_t *)fvq->b_f_face_normal;
 
   /* Exchange pvar */
   cs_real_t *pvar_local = NULL;
@@ -1172,11 +1171,11 @@ cs_internal_coupling_initialize_vector_gradient(
 
   const cs_mesh_t* m = cs_glob_mesh;
   const cs_lnum_t *restrict b_face_cells
-    = (const cs_lnum_t *restrict)m->b_face_cells;
+    = (const cs_lnum_t *)m->b_face_cells;
 
   const cs_mesh_quantities_t* fvq = cs_glob_mesh_quantities;
   const cs_real_3_t *restrict b_f_face_normal
-    = (const cs_real_3_t *restrict)fvq->b_f_face_normal;
+    = (const cs_real_3_t *)fvq->b_f_face_normal;
 
   /* Exchange pvar */
   cs_real_3_t *pvar_local = NULL;
@@ -1258,11 +1257,11 @@ cs_internal_coupling_initialize_tensor_gradient(
 
   const cs_mesh_t* m = cs_glob_mesh;
   const cs_lnum_t *restrict b_face_cells
-    = (const cs_lnum_t *restrict)m->b_face_cells;
+    = (const cs_lnum_t *)m->b_face_cells;
 
   const cs_mesh_quantities_t* fvq = cs_glob_mesh_quantities;
   const cs_real_3_t *restrict b_f_face_normal
-    = (const cs_real_3_t *restrict)fvq->b_f_face_normal;
+    = (const cs_real_3_t *)fvq->b_f_face_normal;
 
   /* Exchange pvar */
   cs_real_6_t *pvar_local = NULL;
@@ -1348,11 +1347,11 @@ cs_internal_coupling_iterative_scalar_gradient(
 
   const cs_mesh_t* m = cs_glob_mesh;
   const cs_lnum_t *restrict b_face_cells
-    = (const cs_lnum_t *restrict)m->b_face_cells;
+    = (const cs_lnum_t *)m->b_face_cells;
 
   const cs_mesh_quantities_t* fvq = cs_glob_mesh_quantities;
   const cs_real_3_t *restrict b_f_face_normal
-    = (const cs_real_3_t *restrict)fvq->b_f_face_normal;
+    = (const cs_real_3_t *)fvq->b_f_face_normal;
 
   /* Exchange grad and pvar */
   cs_real_3_t *grad_local = NULL;
@@ -1452,11 +1451,11 @@ cs_internal_coupling_iterative_vector_gradient(
 
   const cs_mesh_t* m = cs_glob_mesh;
   const cs_lnum_t *restrict b_face_cells
-    = (const cs_lnum_t *restrict)m->b_face_cells;
+    = (const cs_lnum_t *)m->b_face_cells;
 
   const cs_mesh_quantities_t* fvq = cs_glob_mesh_quantities;
   const cs_real_3_t *restrict b_f_face_normal
-    = (const cs_real_3_t *restrict)fvq->b_f_face_normal;
+    = (const cs_real_3_t *)fvq->b_f_face_normal;
 
   /* Exchange grad and pvar */
   cs_real_33_t *grad_local = NULL;
@@ -1560,11 +1559,11 @@ cs_internal_coupling_iterative_tensor_gradient(
 
   const cs_mesh_t* m = cs_glob_mesh;
   const cs_lnum_t *restrict b_face_cells
-    = (const cs_lnum_t *restrict)m->b_face_cells;
+    = (const cs_lnum_t *)m->b_face_cells;
 
   const cs_mesh_quantities_t* fvq = cs_glob_mesh_quantities;
   const cs_real_3_t *restrict b_f_face_normal
-    = (const cs_real_3_t *restrict)fvq->b_f_face_normal;
+    = (const cs_real_3_t *)fvq->b_f_face_normal;
 
   /* Exchange grad and pvar */
   cs_real_63_t *grad_local = NULL;
@@ -1649,7 +1648,7 @@ cs_internal_coupling_iterative_tensor_gradient(
 void
 cs_internal_coupling_reconstruct_scalar_gradient
   (const cs_internal_coupling_t  *cpl,
-   cs_real_3_t                    r_grad[restrict],
+   cs_real_3_t                   *restrict r_grad,
    cs_real_3_t                    grad[])
 {
   const cs_lnum_t n_local = cpl->n_local;
@@ -1658,11 +1657,11 @@ cs_internal_coupling_reconstruct_scalar_gradient
 
   const cs_mesh_t* m = cs_glob_mesh;
   const cs_lnum_t *restrict b_face_cells
-    = (const cs_lnum_t *restrict)m->b_face_cells;
+    = (const cs_lnum_t *)m->b_face_cells;
 
   const cs_mesh_quantities_t* fvq = cs_glob_mesh_quantities;
   const cs_real_3_t *restrict b_f_face_normal
-    = (const cs_real_3_t *restrict)fvq->b_f_face_normal;
+    = (const cs_real_3_t *)fvq->b_f_face_normal;
 
   /* Exchange r_grad */
 
@@ -1717,11 +1716,11 @@ cs_internal_coupling_reconstruct_vector_gradient(
 
   const cs_mesh_t* m = cs_glob_mesh;
   const cs_lnum_t *restrict b_face_cells
-    = (const cs_lnum_t *restrict)m->b_face_cells;
+    = (const cs_lnum_t *)m->b_face_cells;
 
   const cs_mesh_quantities_t* fvq = cs_glob_mesh_quantities;
   const cs_real_3_t *restrict b_f_face_normal
-    = (const cs_real_3_t *restrict)fvq->b_f_face_normal;
+    = (const cs_real_3_t *)fvq->b_f_face_normal;
 
   /* Exchange r_grad */
 
@@ -1778,11 +1777,11 @@ cs_internal_coupling_reconstruct_tensor_gradient(
 
   const cs_mesh_t* m = cs_glob_mesh;
   const cs_lnum_t *restrict b_face_cells
-    = (const cs_lnum_t *restrict)m->b_face_cells;
+    = (const cs_lnum_t *)m->b_face_cells;
 
   const cs_mesh_quantities_t* fvq = cs_glob_mesh_quantities;
   const cs_real_3_t *restrict b_f_face_normal
-    = (const cs_real_3_t *restrict)fvq->b_f_face_normal;
+    = (const cs_real_3_t *)fvq->b_f_face_normal;
 
   /* Exchange r_grad */
 
@@ -1835,10 +1834,10 @@ cs_internal_coupling_it_cocg_contribution(const cs_internal_coupling_t  *cpl,
   const cs_mesh_t* m = cs_glob_mesh;
   /* const int n_cells_ext = m->n_cells_with_ghosts; */
   const cs_lnum_t *restrict b_face_cells
-    = (const cs_lnum_t *restrict)m->b_face_cells;
+    = (const cs_lnum_t *)m->b_face_cells;
   const cs_mesh_quantities_t* fvq = cs_glob_mesh_quantities;
   const cs_real_3_t *restrict b_f_face_normal
-    = (const cs_real_3_t *restrict)fvq->b_f_face_normal;
+    = (const cs_real_3_t *)fvq->b_f_face_normal;
   const cs_real_t *restrict cell_vol = fvq->cell_vol;
 
   for (cs_lnum_t ii = 0; ii < n_local; ii++) {
@@ -1945,7 +1944,7 @@ cs_internal_coupling_exchange_by_cell_id(const cs_internal_coupling_t  *cpl,
   const cs_mesh_t* m = cs_glob_mesh;
 
   const cs_lnum_t *restrict b_face_cells
-    = (const cs_lnum_t *restrict)m->b_face_cells;
+    = (const cs_lnum_t *)m->b_face_cells;
 
   /* Initialize distant array */
 
@@ -2120,7 +2119,7 @@ cs_internal_coupling_update_bc_coeff_s(const cs_field_bc_coeffs_t    *bc_coeffs,
     }
     else {
       const cs_lnum_t *restrict b_face_cells
-        = (const cs_lnum_t *restrict)mesh->b_face_cells;
+        = (const cs_lnum_t *)mesh->b_face_cells;
       for (cs_lnum_t ii = 0; ii < n_distant; ii++) {
         cs_lnum_t face_id = faces_distant[ii];
         cs_lnum_t cell_id = b_face_cells[face_id];
@@ -2224,7 +2223,7 @@ cs_internal_coupling_update_bc_coeff_v(const cs_field_bc_coeffs_t    *bc_coeffs_
     }
     else {
       const cs_lnum_t *restrict b_face_cells
-        = (const cs_lnum_t *restrict)mesh->b_face_cells;
+        = (const cs_lnum_t *)mesh->b_face_cells;
       for (cs_lnum_t ii = 0; ii < n_distant; ii++) {
         cs_lnum_t face_id = faces_distant[ii];
         cs_lnum_t cell_id = b_face_cells[face_id];
@@ -2293,7 +2292,7 @@ cs_internal_coupling_spmv_contribution(bool               exclude_diag,
   cs_lnum_t face_id, cell_id;
 
   const cs_lnum_t *restrict b_face_cells
-    = (const cs_lnum_t *restrict)cs_glob_mesh->b_face_cells;
+    = (const cs_lnum_t *)cs_glob_mesh->b_face_cells;
 
   int coupling_id = cs_field_get_key_int(f,
                                          cs_field_key_id("coupling_entity"));
@@ -2391,7 +2390,7 @@ cs_internal_coupling_matrix_add_ids(int                     coupling_id,
                                     cs_matrix_assembler_t  *ma)
 {
   const cs_lnum_t *restrict b_face_cells
-    = (const cs_lnum_t *restrict)cs_glob_mesh->b_face_cells;
+    = (const cs_lnum_t *)cs_glob_mesh->b_face_cells;
   const cs_internal_coupling_t *cpl
     = cs_internal_coupling_by_id(coupling_id);
 
@@ -2467,7 +2466,7 @@ cs_internal_coupling_matrix_add_values(const cs_field_t              *f,
 {
   const cs_real_t* b_face_surf = cs_glob_mesh_quantities->b_face_surf;
   const cs_lnum_t *restrict b_face_cells
-    = (const cs_lnum_t *restrict)cs_glob_mesh->b_face_cells;
+    = (const cs_lnum_t *)cs_glob_mesh->b_face_cells;
 
   int coupling_id = cs_field_get_key_int(f, cs_field_key_id("coupling_entity"));
   const cs_internal_coupling_t *cpl

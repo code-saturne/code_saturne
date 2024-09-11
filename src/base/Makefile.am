@@ -332,7 +332,7 @@ cs_fan.c \
 cs_field.c \
 cs_field_default.c \
 cs_field_pointer.c \
-cs_field_operator.c \
+cs_field_operator.cpp \
 cs_flag_check.c \
 cs_function.c \
 cs_function_default.c \
@@ -342,7 +342,7 @@ cs_halo_perio.c \
 cs_head_losses.c \
 cs_ibm.c \
 cs_initialize_fields.c \
-cs_internal_coupling.c \
+cs_internal_coupling.cpp \
 cs_interpolate.c \
 cs_log_iteration.c \
 cs_log_setup.c \
