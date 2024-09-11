@@ -1247,8 +1247,13 @@ _pressure_correction_fv(int                   iterns,
 
   }
   else {
-    cs_arrays_set_value<cs_real_t, 1>(n_i_faces, 0., i_visc);
-    cs_arrays_set_value<cs_real_t, 1>(n_b_faces, 0., b_visc);
+    ctx_c.parallel_for(n_i_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t f_id) {
+      i_visc[f_id] = 0.;
+    });
+
+    ctx.parallel_for(n_b_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t f_id) {
+      b_visc[f_id] = 0.;
+    });
   }
 
   if (vp_param->staggered == 1) {
@@ -1263,11 +1268,10 @@ _pressure_correction_fv(int                   iterns,
       cs_lnum_t c_id = b_face_cells[f_id];
       b_visc[f_id] = taub[f_id] / dt[c_id] * b_visc[f_id];
     });
-
-    ctx_c.wait();
   }
 
-  ctx.wait(); // needed for rovsdt
+  ctx.wait(); // needed for rovsdt and b_visc
+  ctx_c.wait(); // needed for i_visc
 
   cs_matrix_wrapper_scalar(eqp_p->iconv, eqp_p->idiff, eqp_p->ndircl,
                            isym,
@@ -3063,6 +3067,8 @@ _pressure_correction_fv(int                   iterns,
       cflp = f_cflp->val;
 
       cs_arrays_set_value<cs_real_t, 1>(n_cells_ext, 0., cflp);
+
+      ctx.wait();
 
       /* Parallelism and periodicity */
       cs_mesh_sync_var_vect((cs_real_t *)wrk2);
