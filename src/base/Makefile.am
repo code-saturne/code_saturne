@@ -309,7 +309,7 @@ cs_boundary.c \
 cs_boundary_conditions.c \
 cs_boundary_conditions_check.c \
 cs_boundary_conditions_coupling.c\
-cs_boundary_conditions_set_coeffs.c \
+cs_boundary_conditions_set_coeffs.cpp \
 cs_boundary_conditions_set_coeffs_symmetry.c \
 cs_boundary_conditions_set_coeffs_turb.c \
 cs_boundary_conditions_type.c \

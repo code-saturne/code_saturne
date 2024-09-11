@@ -1006,7 +1006,8 @@ cs_boundary_conditions_set_coeffs(int        nvar,
   cs_real_3_t *velipb = NULL;
   BFT_MALLOC(velipb, n_b_faces, cs_real_3_t);
 
-  cs_turb_model_type_t iturb  = cs_glob_turb_model->iturb;
+  cs_turb_model_type_t iturb
+    = static_cast<cs_turb_model_type_t>(cs_glob_turb_model->iturb);
   int itytur = cs_glob_turb_model->itytur;
 
   /* coefa and coefb are required to compute the cell gradients for the wall
