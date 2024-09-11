@@ -679,6 +679,8 @@ cs_thermal_model_kinetic_st_finalize(const cs_real_t  cromk1[],
   ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
     sk[c_id] += cromk1[c_id]/cromk[c_id] * sk_pre[c_id];
   });
+
+  ctx.wait();
 }
 
 /*----------------------------------------------------------------------------*/
@@ -828,6 +830,8 @@ cs_thermal_model_cflp(const cs_real_t  croma[],
       cs_dispatch_sum(&cflp[c_id], fluxi, b_sum_type);
 
   });
+
+  ctx.wait();
 
 }
 
