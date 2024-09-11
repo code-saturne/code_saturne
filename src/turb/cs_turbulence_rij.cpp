@@ -419,7 +419,7 @@ _compute_up_rhop(int                 phase_id,
   /* We want to use the computed turbulent heat fluxes (when they exist)
      when we are not dealing with atmo cases */
   if (   ( f_hf != NULL && cs_glob_physical_model_flag[CS_ATMOSPHERIC] < 1 )
-       || turb_flux_model_type == 3 
+       || turb_flux_model_type == 3
        || turb_flux_model_type == 2 ) {
 
     /* Using thermal fluxes
@@ -912,6 +912,8 @@ _gravity_st_epsilon(int              phase_id,
                     cs_real_t        rhs[])
 {
   const cs_lnum_t n_cells = cs_glob_mesh->n_cells;
+  const int kturt = cs_field_key_id("turbulent_flux_model");
+  const int krvarfl = cs_field_key_id("variance_dissipation");
 
   cs_dispatch_context ctx;
 
@@ -927,22 +929,38 @@ _gravity_st_epsilon(int              phase_id,
   }
 
   cs_fluid_properties_t *fp = cs_get_glob_fluid_properties();
+  cs_real_t cp0 = fp->cp0;
+
+  /* Specific heat for Prandtl calculation */
+  const cs_field_t *f_cp = cs_field_by_name_try("specific_heat");
+  cs_real_t *cpro_cp = nullptr;
+  if (f_cp != nullptr)
+    cpro_cp = f_cp->val;
 
   cs_field_t *f_t = cs_thermal_model_field();
   cs_field_t *f_t_var = cs_field_get_variance(f_t);
+  const cs_real_t rvarfl = cs_field_get_key_double(f_t_var, krvarfl);
+
+  cs_field_t *f_alpha_theta
+    = cs_field_by_composite_name_try(f_t->name, "alpha");
+
+  cs_real_t *alpha_theta = nullptr;
+  if (f_alpha_theta != nullptr)
+    alpha_theta = f_alpha_theta->val;
 
   const cs_real_6_t *cvara_rij = (const cs_real_6_t *)f_rij->val_pre;
   const cs_real_t *cvara_ep = f_eps->val_pre;
   const cs_real_t *crom = f_rho->val;
   const cs_real_t *viscl = f_mu->val;
 
-  const int kturt = cs_field_key_id("turbulent_flux_model");
   int turb_flux_model =  cs_field_get_key_int(f_t, kturt);
   const cs_turb_model_type_t iturb
     = (cs_turb_model_type_t)cs_glob_turb_model->iturb;
+  int dissip_buo_mdl = cs_glob_turb_rans_model->dissip_buo_mdl;
 
   const cs_real_t xct = cs_turb_xct;
   const cs_real_t ce1 = cs_turb_ce1;
+  const cs_real_t ce3 = cs_turb_ce3;
 
   /* Laminar thermal conductivity k for Prandtl calculation */
   cs_lnum_t l_viscls = 0; /* stride for uniform/local viscosity access */
@@ -965,13 +983,9 @@ _gravity_st_epsilon(int              phase_id,
 
   ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
 
-    /* Specific heat for Prandtl calculation */
-    const cs_field_t *f_cp = cs_field_by_name_try("specific_heat");
-    cs_real_t xcp;
-    if (f_cp != NULL)      /* Variable */
-      xcp = f_cp->val[c_id];
-    else                /* Constant */
-      xcp = fp->cp0;
+    cs_real_t xcp = cp0;
+    if (cpro_cp != nullptr)
+      xcp = cpro_cp[c_id];
 
     const cs_real_t g_up_rhop = cs_math_3_dot_product(grav, up_rhop[c_id]);
 
@@ -979,44 +993,40 @@ _gravity_st_epsilon(int              phase_id,
 
     cs_real_t time_scale = tke / cvara_ep[c_id];
 
-    cs_real_t buoyancy_constant = cs_turb_ce1;
+    cs_real_t buoyancy_constant = ce1;
 
     if (iturb == CS_TURB_RIJ_EPSILON_EBRSM) {
 
       /* Calculation of the Durbin time scale */
       const cs_real_t xttkmg
         = xct*sqrt(viscl[c_id] / crom[c_id] / cvara_ep[c_id]);
+
       time_scale = cs_math_fmax(time_scale, xttkmg);
 
-      /* Calculation of the mixed time scale for EB thermal 
+      /* Calculation of the mixed time scale for EB thermal
        *  flux models (Dehoux, 2017) */
       if (  (turb_flux_model == 11)  /* EB-GGDH */
          || (turb_flux_model == 21)  /* EB-AFM */
          || (turb_flux_model == 31)) /* EB-DFM */ {
 
-        cs_real_t alpha_theta = 
-           cs_field_by_composite_name(f_t->name, "alpha")->val[c_id];
-
-        const int krvarfl = cs_field_key_id("variance_dissipation");
-        const cs_real_t rvarfl = cs_field_get_key_double(f_t_var, krvarfl);
-
         cs_real_t prdtl = viscl[c_id]*xcp/viscls[l_viscls*c_id];
-        cs_real_t xr = (1.0 - alpha_theta)*prdtl + alpha_theta*rvarfl;
+        cs_real_t xr
+          = (1.0 - alpha_theta[c_id])*prdtl + alpha_theta[c_id]*rvarfl;
 
-        buoyancy_constant = cs_turb_ce3;
+        buoyancy_constant = ce3;
 
-        time_scale = time_scale * sqrt(xr)/sqrt(prdtl); 
+        time_scale = time_scale * sqrt(xr)/sqrt(prdtl);
       }
     }
 
-    if ( cs_glob_turb_rans_model->dissip_buo_mdl == 1 ) {
-      rhs[c_id] += buoyancy_constant *  
-                   g_up_rhop/time_scale * cell_f_vol[c_id];
-    } else {
-      rhs[c_id] += buoyancy_constant *  
-                   cs_math_fmax(0., g_up_rhop/time_scale) * cell_f_vol[c_id];
+    if (dissip_buo_mdl == 1) {
+      rhs[c_id] +=   buoyancy_constant
+                   * g_up_rhop/time_scale * cell_f_vol[c_id];
     }
-
+    else {
+      rhs[c_id] +=   buoyancy_constant
+                   * cs_math_fmax(0., g_up_rhop/time_scale) * cell_f_vol[c_id];
+    }
   });
 
   ctx.wait();
