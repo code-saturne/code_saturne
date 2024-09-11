@@ -193,7 +193,7 @@ cs_convection_diffusion.cpp \
 cs_divergence.cpp \
 cs_face_viscosity.cpp \
 cs_gradient.cpp \
-cs_gradient_boundary.c \
+cs_gradient_boundary.cpp \
 cs_grid.cpp \
 cs_matrix.c \
 cs_matrix_assembler.c \

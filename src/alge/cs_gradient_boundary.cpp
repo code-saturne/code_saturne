@@ -205,27 +205,27 @@ _rc_var_b_faces_iprime_strided_lsq(const cs_mesh_t               *m,
 
   const cs_mesh_adjacencies_t *ma = cs_glob_mesh_adjacencies;
   const cs_lnum_t *restrict cell_cells_idx
-    = (const cs_lnum_t *restrict) ma->cell_cells_idx;
+    = (const cs_lnum_t *) ma->cell_cells_idx;
   const cs_lnum_t *restrict cell_cells_e_idx
-    = (const cs_lnum_t *restrict) ma->cell_cells_e_idx;
+    = (const cs_lnum_t *) ma->cell_cells_e_idx;
   const cs_lnum_t *restrict cell_b_faces_idx
-    = (const cs_lnum_t *restrict) ma->cell_b_faces_idx;
+    = (const cs_lnum_t *) ma->cell_b_faces_idx;
   const cs_lnum_t *restrict cell_cells
-    = (const cs_lnum_t *restrict) ma->cell_cells;
+    = (const cs_lnum_t *) ma->cell_cells;
   const cs_lnum_t *restrict cell_cells_e
-    = (const cs_lnum_t *restrict) ma->cell_cells_e;
+    = (const cs_lnum_t *) ma->cell_cells_e;
   const cs_lnum_t *restrict cell_b_faces
-    = (const cs_lnum_t *restrict) ma->cell_b_faces;
+    = (const cs_lnum_t *) ma->cell_b_faces;
 
   const cs_real_3_t *restrict cell_cen
-    = (const cs_real_3_t *restrict)fvq->cell_cen;
+    = (const cs_real_3_t *)fvq->cell_cen;
 
   const cs_real_3_t *restrict b_face_cog
-    = (const cs_real_3_t *restrict)fvq->b_face_cog;
+    = (const cs_real_3_t *)fvq->b_face_cog;
   const cs_real_3_t *restrict diipb
-    = (const cs_real_3_t *restrict)fvq->diipb;
+    = (const cs_real_3_t *)fvq->diipb;
   const cs_real_t *restrict b_dist
-    = (const cs_real_t *restrict)fvq->b_dist;
+    = (const cs_real_t *)fvq->b_dist;
 
   assert(var_dim <= 9);  /* Local arrays with hard-coded dimensions follow. */
 
@@ -279,12 +279,12 @@ _rc_var_b_faces_iprime_strided_lsq(const cs_mesh_t               *m,
       if (adj_id == 0){
         s_id = cell_cells_idx[c_id];
         e_id = cell_cells_idx[c_id+1];
-        cell_cells_p = (const cs_lnum_t *restrict)(cell_cells);
+        cell_cells_p = (const cs_lnum_t *)(cell_cells);
       }
       else if (cell_cells_e_idx != NULL){
         s_id = cell_cells_e_idx[c_id];
         e_id = cell_cells_e_idx[c_id+1];
-        cell_cells_p = (const cs_lnum_t *restrict)(cell_cells_e);
+        cell_cells_p = (const cs_lnum_t *)(cell_cells_e);
       }
       else
         break;
@@ -834,30 +834,30 @@ cs_gradient_boundary_iprime_lsq_s(const cs_mesh_t               *m,
   const cs_mesh_adjacencies_t *ma = cs_glob_mesh_adjacencies;
 
   const cs_lnum_t *restrict b_face_cells
-    = (const cs_lnum_t *restrict)m->b_face_cells;
+    = (const cs_lnum_t *)m->b_face_cells;
 
   const cs_lnum_t *restrict cell_cells_idx
-    = (const cs_lnum_t *restrict) ma->cell_cells_idx;
+    = (const cs_lnum_t *) ma->cell_cells_idx;
   const cs_lnum_t *restrict cell_cells_e_idx
-    = (const cs_lnum_t *restrict) ma->cell_cells_e_idx;
+    = (const cs_lnum_t *) ma->cell_cells_e_idx;
   const cs_lnum_t *restrict cell_b_faces_idx
-    = (const cs_lnum_t *restrict) ma->cell_b_faces_idx;
+    = (const cs_lnum_t *) ma->cell_b_faces_idx;
   const cs_lnum_t *restrict cell_cells
-    = (const cs_lnum_t *restrict) ma->cell_cells;
+    = (const cs_lnum_t *) ma->cell_cells;
   const cs_lnum_t *restrict cell_cells_e
-    = (const cs_lnum_t *restrict) ma->cell_cells_e;
+    = (const cs_lnum_t *) ma->cell_cells_e;
   const cs_lnum_t *restrict cell_b_faces
-    = (const cs_lnum_t *restrict) ma->cell_b_faces;
+    = (const cs_lnum_t *) ma->cell_b_faces;
 
   const cs_real_3_t *restrict cell_cen
-    = (const cs_real_3_t *restrict)fvq->cell_f_cen;
+    = (const cs_real_3_t *)fvq->cell_f_cen;
 
   const cs_real_3_t *restrict b_face_u_normal
-    = (const cs_real_3_t *restrict)fvq->b_face_u_normal;
+    = (const cs_real_3_t *)fvq->b_face_u_normal;
   const cs_real_t *restrict b_dist
-    = (const cs_real_t *restrict)fvq->b_dist;
+    = (const cs_real_t *)fvq->b_dist;
   const cs_real_3_t *restrict diipb
-    = (const cs_real_3_t *restrict)fvq->diipb;
+    = (const cs_real_3_t *)fvq->diipb;
 
   /* Loop on selected boundary faces */
 
@@ -895,12 +895,12 @@ cs_gradient_boundary_iprime_lsq_s(const cs_mesh_t               *m,
       if (adj_id == 0){
         s_id = cell_cells_idx[c_id];
         e_id = cell_cells_idx[c_id+1];
-        cell_cells_p = (const cs_lnum_t *restrict)(cell_cells);
+        cell_cells_p = (const cs_lnum_t *)(cell_cells);
       }
       else if (cell_cells_e_idx != NULL){
         s_id = cell_cells_e_idx[c_id];
         e_id = cell_cells_e_idx[c_id+1];
-        cell_cells_p = (const cs_lnum_t *restrict)(cell_cells_e);
+        cell_cells_p = (const cs_lnum_t *)(cell_cells_e);
       }
       else
         break;
@@ -1111,39 +1111,39 @@ cs_gradient_boundary_iprime_lsq_s_ani(const cs_mesh_t               *m,
   const cs_mesh_adjacencies_t *ma = cs_glob_mesh_adjacencies;
 
   const cs_lnum_t *restrict b_face_cells
-    = (const cs_lnum_t *restrict)m->b_face_cells;
+    = (const cs_lnum_t *)m->b_face_cells;
 
   const cs_lnum_t *restrict cell_cells_idx
-    = (const cs_lnum_t *restrict) ma->cell_cells_idx;
+    = (const cs_lnum_t *) ma->cell_cells_idx;
   const cs_lnum_t *restrict cell_b_faces_idx
-    = (const cs_lnum_t *restrict) ma->cell_b_faces_idx;
+    = (const cs_lnum_t *) ma->cell_b_faces_idx;
   const cs_lnum_t *restrict cell_cells
-    = (const cs_lnum_t *restrict) ma->cell_cells;
+    = (const cs_lnum_t *) ma->cell_cells;
 
   const cs_lnum_t *restrict cell_i_faces
-    = (const cs_lnum_t *restrict) ma->cell_i_faces;
+    = (const cs_lnum_t *) ma->cell_i_faces;
   const short int *restrict cell_i_faces_sgn
-    = (const short int *restrict) ma->cell_i_faces_sgn;
+    = (const short int *) ma->cell_i_faces_sgn;
   const cs_lnum_t *restrict cell_b_faces
-    = (const cs_lnum_t *restrict) ma->cell_b_faces;
+    = (const cs_lnum_t *) ma->cell_b_faces;
 
   const cs_real_3_t *restrict cell_cen
-    = (const cs_real_3_t *restrict)fvq->cell_f_cen;
+    = (const cs_real_3_t *)fvq->cell_f_cen;
 
   const cs_real_3_t *restrict b_face_u_normal
-    = (const cs_real_3_t *restrict)fvq->b_face_u_normal;
+    = (const cs_real_3_t *)fvq->b_face_u_normal;
   const cs_real_t *restrict b_dist
-    = (const cs_real_t *restrict)fvq->b_dist;
+    = (const cs_real_t *)fvq->b_dist;
   const cs_real_3_t *restrict diipb
-    = (const cs_real_3_t *restrict)fvq->diipb;
+    = (const cs_real_3_t *)fvq->diipb;
   const cs_real_t *restrict weight = fvq->weight;
 
   if (cell_i_faces == NULL) {
     cs_mesh_adjacencies_update_cell_i_faces();
     cell_i_faces
-      = (const cs_lnum_t *restrict) ma->cell_i_faces;
+      = (const cs_lnum_t *) ma->cell_i_faces;
     cell_i_faces_sgn
-      = (const short int *restrict) ma->cell_i_faces_sgn;
+      = (const short int *) ma->cell_i_faces_sgn;
   }
 
   /* Loop on selected boundary faces */
@@ -1369,7 +1369,7 @@ cs_gradient_boundary_iprime_lsq_v(const cs_mesh_t            *m,
                                   const cs_field_bc_coeffs_t *bc_coeffs_v,
                                   const cs_real_t             c_weight[],
                                   const cs_real_t             var[][3],
-                                  cs_real_t    var_iprime[restrict][3])
+                                  cs_real_t    (*restrict var_iprime)[3])
 {
   _rc_var_b_faces_iprime_strided_lsq(m,
                                      fvq,
@@ -1381,7 +1381,7 @@ cs_gradient_boundary_iprime_lsq_v(const cs_mesh_t            *m,
                                      bc_coeffs_v,
                                      c_weight,
                                      (const cs_real_t *)var,
-                                     (cs_real_t *restrict) var_iprime);
+                                     (cs_real_t *) var_iprime);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1433,7 +1433,7 @@ cs_gradient_boundary_iprime_lsq_t(const cs_mesh_t            *m,
                                   const cs_field_bc_coeffs_t *bc_coeffs_ts,
                                   const cs_real_t             c_weight[],
                                   const cs_real_t             var[][6],
-                                  cs_real_t    var_iprime[restrict][6])
+                                  cs_real_t    (*restrict var_iprime)[6])
 {
   _rc_var_b_faces_iprime_strided_lsq(m,
                                      fvq,
@@ -1445,7 +1445,7 @@ cs_gradient_boundary_iprime_lsq_t(const cs_mesh_t            *m,
                                      bc_coeffs_ts,
                                      c_weight,
                                      (const cs_real_t *)var,
-                                     (cs_real_t *restrict) var_iprime);
+                                     (cs_real_t *) var_iprime);
 }
 
 /*----------------------------------------------------------------------------*/

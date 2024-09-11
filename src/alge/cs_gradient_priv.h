@@ -32,8 +32,8 @@
 
 #include "cs_base.h"
 #include "cs_base_accel.h"
-#include "cs_halo.h"
-#include "cs_mesh.h"
+#include "cs_halo_perio.h"
+#include "cs_mesh_adjacencies.h"
 #include "cs_mesh_quantities.h"
 
 /*----------------------------------------------------------------------------*/
@@ -268,4 +268,3 @@ cs_gradient_strided_gg_r_cuda
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*----------------------------------------------------------------------------*/
-
