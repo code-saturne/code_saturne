@@ -688,8 +688,7 @@ _petsc_pchpddm_hook(const char *prefix, const cs_param_sles_t *slesp, PC pc)
   PCSetType(pc, PCHPDDM);
 
   /* Symmetric matrix ? */
-  if (_system_should_be_sym(slesp->solver)) {
-
+  if (slesp->mat_is_sym) {
     /* Define generic options */
     sprintf(prefix_pc, "%s%s", prefix, "pc_hpddm_");
 
@@ -701,23 +700,23 @@ _petsc_pchpddm_hook(const char *prefix, const cs_param_sles_t *slesp, PC pc)
     sprintf(prefix_pc, "%s%s", prefix, "pc_hpddm_levels_1_");
 
     _petsc_cmd(true, prefix_pc, "pc_type", "asm");
-    _petsc_cmd(true, prefix_pc, "sub_mat_mumps_icntl_14", "5000");
+    _petsc_cmd(true, prefix_pc, "st_share_sub_ksp", "");
+    _petsc_cmd(true, prefix_pc, "eps_nev", "30");
+    _petsc_cmd(true, prefix_pc, "sub_pc_factor_mat_solver_type", "mumps");
+    _petsc_cmd(true, prefix_pc, "st_pc_factor_mat_solver_type", "mumps");
+    _petsc_cmd(true, prefix_pc, "sub_pc_type", "cholesky");
+    _petsc_cmd(true, prefix_pc, "sub_mat_mumps_icntl_14", "400");
     _petsc_cmd(true, prefix_pc, "sub_mat_mumps_icntl_24", "1");
     _petsc_cmd(true, prefix_pc, "sub_mat_mumps_icntl_25", "0");
     _petsc_cmd(true, prefix_pc, "sub_mat_mumps_cntl_3", "1.e-50");
     _petsc_cmd(true, prefix_pc, "sub_mat_mumps_cntl_5", "0.");
-    _petsc_cmd(true, prefix_pc, "eps_nev", "30");
-    _petsc_cmd(true, prefix_pc, "sub_pc_type", "choleski");
-    _petsc_cmd(true, prefix_pc, "sub_pc_factor_mat_solver_type", "mumps");
-    _petsc_cmd(true, prefix_pc, "st_pc_factor_mat_solver_type", "mumps");
-    _petsc_cmd(true, prefix_pc, "st_share_sub_ksp", "");
 
     /* Define option for coarse solver */
     sprintf(prefix_pc, "%s%s", prefix, "pc_hpddm_coarse_");
 
     _petsc_cmd(true, prefix_pc, "pc_factor_mat_solver_type", "mumps");
-    _petsc_cmd(true, prefix_pc, "sub_pc_type", "choleski");
-    _petsc_cmd(true, prefix_pc, "mat_mumps_icntl_14", "5000");
+    _petsc_cmd(true, prefix_pc, "sub_pc_type", "cholesky");
+    _petsc_cmd(true, prefix_pc, "mat_mumps_icntl_14", "400");
     _petsc_cmd(true, prefix_pc, "mat_mumps_icntl_24", "1");
     _petsc_cmd(true, prefix_pc, "mat_mumps_icntl_25", "0");
     _petsc_cmd(true, prefix_pc, "mat_mumps_cntl_3", "1.e-50");

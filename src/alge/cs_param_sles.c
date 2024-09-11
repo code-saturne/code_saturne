@@ -261,6 +261,8 @@ cs_param_sles_create(int          field_id,
   slesp->resnorm_type = CS_PARAM_RESNORM_FILTERED_RHS;
   slesp->allow_no_op = false;
 
+  slesp->mat_is_sym = false;
+
   slesp->cvg_param =  (cs_param_convergence_t) {
     .n_max_iter = 10000, /* max. number of iterations */
     .atol = 1e-15,       /* absolute tolerance */
@@ -416,6 +418,11 @@ cs_param_sles_log(cs_param_sles_t   *slesp)
 
     cs_log_printf(CS_LOG_SETUP, "  * %s | Allow no operation:      %s\n",
                   slesp->name, cs_base_strtf(slesp->allow_no_op));
+
+    cs_log_printf(CS_LOG_SETUP,
+                  "  * %s | Matrix is symmetric:     %s\n",
+                  slesp->name,
+                  cs_base_strtf(slesp->mat_is_sym));
 
   } /* Iterative solver */
 

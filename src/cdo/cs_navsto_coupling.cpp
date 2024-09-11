@@ -497,6 +497,11 @@ cs_navsto_monolithic_init_setup(const cs_navsto_param_t    *nsp,
   if (nsp->model & CS_NAVSTO_MODEL_INCOMPRESSIBLE_NAVIER_STOKES)
     cs_equation_add_advection(mom_eqp, adv_field);
 
+  /* The matrix is symmetric for Stokes */
+  if (nsp->model == CS_NAVSTO_MODEL_STOKES) {
+    mom_eqp->sles_param->mat_is_sym = true;
+  }
+
   /* All considered models needs a viscous term */
 
   cs_equation_add_diffusion(mom_eqp, nsp->tot_viscosity);

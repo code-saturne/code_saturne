@@ -503,11 +503,6 @@ _cs_sles_hpddm_setup(void *context, const char *name, const cs_matrix_t *a)
 {
 #ifdef PETSC_HAVE_HPDDM
 
-  /* Neumann matrix is computed only for symetric matrix */
-  if (!cs_matrix_is_symmetric(a)) {
-    return;
-  }
-
   cs_timer_t t0;
   t0 = cs_timer_time();
 
@@ -1397,7 +1392,7 @@ cs_sles_petsc_setup(void               *context,
   if (c->setup_hook != NULL) {
     cs_param_sles_t *slesp = (cs_param_sles_t *)c->hook_context;
 
-    if (slesp->precond == CS_PARAM_PRECOND_HPDDM) {
+    if (slesp->precond == CS_PARAM_PRECOND_HPDDM && slesp->mat_is_sym) {
       _cs_sles_hpddm_setup(context, name, a);
     }
     c->setup_hook(c->hook_context, sd->ksp);

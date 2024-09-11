@@ -94,6 +94,13 @@ typedef struct {
 
   bool                       allow_no_op;
 
+  /*! \var mat_is_sym
+   *  allow one to know if the matric is symmetric (independent of the storing)
+   *  Default value is false
+   */
+
+  bool mat_is_sym;
+
   /*! \var cvg_param
    *  Structure storing the parameters to know if an iterative process has to
    *  stop (convergence or divergence).
