@@ -193,6 +193,14 @@ def process_cmd_line(argv, pkg):
                           + "and check that memory is correctly freed at the " \
                           + "end of the computation.")
 
+    parser.add_option("--print-study-info", dest="print_study_info",
+                      action="store_true", default=False,
+                      help="Print study metadata information.")
+
+    parser.add_option("--dump-study-info", dest="dump_study_info",
+                      action="store_true", default=False,
+                      help="Dump study metadata information to report files")
+
     if len(argv)==0:
         parser.print_help(sys.stderr)
         sys.exit(1)
@@ -281,6 +289,18 @@ def release():
     return issue
 
 #-------------------------------------------------------------------------------
+# get study metadata information
+#-------------------------------------------------------------------------------
+
+def get_study_metadata(options, pkg):
+
+    from code_saturne.studymanager.cs_studymanager_metadata import study_metadata
+
+    md = study_metadata(pkg, options.filename)
+
+    return md
+
+#-------------------------------------------------------------------------------
 # Start point of studymanager script
 #-------------------------------------------------------------------------------
 
@@ -342,6 +362,17 @@ def run_studymanager(pkg, options):
         return 0
     if options.debug:
         print(" run_studymanager() >> Studies are initialized")
+
+    # Print metadata
+    if options.print_study_info:
+        md = get_study_metadata(options, pkg)
+        md.log()
+        return 0
+
+    if options.dump_study_info:
+        md = get_study_metadata(options, pkg)
+        md.dump_keywords()
+        md.dump_readme()
 
     # Print header
     report_in_file = False

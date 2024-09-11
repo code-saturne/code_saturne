@@ -310,6 +310,30 @@ class Parser(object):
 
     #---------------------------------------------------------------------------
 
+    def getStudyKeywords(self, studyNode):
+        """
+        Read:
+            <study label='STUDY' status='on' keywords='laminar, 2D'>
+                <case label='CASE' status='on' compute="on" post="on"/>
+            </study>
+
+        @type studyNode: C{DOM Element}
+        @param studyNode: node of the current study
+        @rtype: C{List} of C{String}
+        @return: list of the keywords of a study
+        """
+        keywords = []
+        for node_kw in studyNode.getElementsByTagName("study_keywords"):
+            try:
+                text = str(node_kw.firstChild.data)
+                keywords.extend([kw.strip() for kw in re.split(',', text)])
+            except:
+                continue
+
+        return keywords
+
+    #---------------------------------------------------------------------------
+
     def getStatusOnCasesLabels(self, l, attr=None):
         """
         Read:
@@ -335,6 +359,80 @@ class Parser(object):
                     labels.pop()
 
         return labels
+
+    #---------------------------------------------------------------------------
+
+    def getStudyMetadata(self, l):
+        """
+        test
+        """
+
+        data = {"study":{}, "cases":[]}
+
+        study_node = self.getStudyNode(l)
+
+        # STUDY
+        data['study']['name'] = str(l)
+        data['study']['keywords'] = self.getStudyKeywords(study_node)
+        data['study']['tags::study'] = self.getStudyTags(study_node)
+        data['study']['tags::cases'] = []
+
+
+        # First pass based on availability of case descriptions
+        for node_descr in study_node.getElementsByTagName("case_description"):
+            case_name = str(node_descr.attributes['label'].value)
+
+            for c in data['cases']:
+                if c['name'] == case_name:
+                    raise Exception(f'More than one description for label {case_name} in file {filename}')
+
+            new_d = {'name':None,
+                     'tags':[],
+                     'vnvitem':[]}
+
+            new_d['name'] = case_name
+
+            for n in node_descr.getElementsByTagName('item'):
+                new_d['vnvitem'].append(str(n.firstChild.data))
+
+            data['cases'].append(new_d)
+
+        # Get tags from the different subcases
+        for node in study_node.getElementsByTagName("case"):
+            case_name = str(node.attributes['label'].value)
+
+            case_id = -1
+            for c_id, c in enumerate(data['cases']):
+                if c['name'] == case_name:
+                    case_id = c_id
+
+            ctags = None
+            try:
+                tags = str(node.attributes["tags"].value)
+                ctags = [tag.strip() for tag in re.split(',', tags)]
+            except:
+                ctags = []
+
+            if case_id < 0:
+                data['cases'].append({'name':case_name,
+                                     'tags':[],
+                                     'vnvitem':[]})
+
+                case_id = len(data['cases']) - 1
+
+            if ctags:
+                data['cases'][case_id]['tags'] += ctags
+
+
+        # Unique list of sub-cases tags for study
+        tmp = []
+        for c in data['cases']:
+            tmp += c['tags']
+
+        data['study']['tags::cases'] = list(dict.fromkeys(tmp))
+
+        return data
+
 
     #---------------------------------------------------------------------------
 
