@@ -189,8 +189,8 @@ cs_ctwr_restart_field_vars(cs_real_t  rho0,
 
   /* Rain variables */
   cs_field_t *cfld_yp = cs_field_by_name_try("ym_l_r"); /* Rain mass fraction */
-  cs_field_t *cfld_taup = cs_field_by_name_try("drift_tau_ym_l_r");
-  cs_field_t *cfld_drift_vel = cs_field_by_name_try("drift_vel_ym_l_r");
+  cs_field_t *cfld_taup = cs_field_by_name_try("ym_l_r_drift_tau");
+  cs_field_t *cfld_drift_vel = cs_field_by_name_try("ym_l_r_drift_vel");
 
   cs_real_t *cpro_taup = NULL;
   if (cfld_taup != NULL)
@@ -630,7 +630,7 @@ cs_ctwr_phyvar_update(cs_real_t  rho0,
     cs_real_t gravity[] = {cs_glob_physical_constants->gravity[0],
       cs_glob_physical_constants->gravity[1],
       cs_glob_physical_constants->gravity[2]};
-    cs_field_t *cfld_taup = cs_field_by_name_try("drift_tau_ym_l_r");
+    cs_field_t *cfld_taup = cs_field_by_name_try("ym_l_r_drift_tau");
     cs_real_t *cpro_taup = NULL;
     if (cfld_taup != NULL)
       cpro_taup = cfld_taup->val;

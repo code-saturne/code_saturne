@@ -283,8 +283,8 @@ cs_ctwr_init_field_vars(cs_real_t  rho0,
   /* Rain drops variables */
   cs_field_t *cfld_yp = cs_field_by_name_try("ym_l_r"); /* Rain mass fraction */
   cs_real_t *ym_l_r = cfld_yp->val; /* Rain mass fraction */
-  cs_field_t *cfld_taup = cs_field_by_name_try("drift_tau_ym_l_r");
-  cs_field_t *cfld_drift_vel = cs_field_by_name_try("drift_vel_ym_l_r");
+  cs_field_t *cfld_taup = cs_field_by_name_try("ym_l_r_drift_tau");
+  cs_field_t *cfld_drift_vel = cs_field_by_name_try("ym_l_r_drift_vel");
 
   const cs_real_3_t *vel = (const cs_real_3_t *)(CS_F_(vel)->val);
   cs_field_t *cfld_vc = cs_field_by_name_try("v_c");
