@@ -1939,7 +1939,7 @@ _set_saturne_sles(bool                 use_field_id,
     break;
 
   case CS_PARAM_SOLVER_CG:
-    if (slesp->flexible) {
+    if (slesp->need_flexible) {
       slesp->solver = CS_PARAM_SOLVER_FCG;
       itsol = cs_sles_it_define(slesp->field_id, sles_name,
                                 CS_SLES_IPCG,
@@ -1989,7 +1989,7 @@ _set_saturne_sles(bool                 use_field_id,
     break;
 
   case CS_PARAM_SOLVER_GMRES:
-    if (slesp->flexible) {
+    if (slesp->need_flexible) {
       slesp->solver = CS_PARAM_SOLVER_GCR;
       itsol = cs_sles_it_define(slesp->field_id, sles_name,
                                 CS_SLES_GCR,
@@ -2033,7 +2033,7 @@ _set_saturne_sles(bool                 use_field_id,
 
   } /* End of switch */
 
-  if (slesp->flexible && !multigrid_as_solver) { /* Additional checks */
+  if (slesp->need_flexible && !multigrid_as_solver) { /* Additional checks */
 
     assert(itsol != NULL);
     switch (cs_sles_it_get_type(itsol)) {
@@ -2051,7 +2051,6 @@ _set_saturne_sles(bool                 use_field_id,
     default:
       break;
     }
-
   }
 
   /* 2- Define the preconditioner

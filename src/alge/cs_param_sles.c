@@ -253,7 +253,7 @@ cs_param_sles_create(int          field_id,
   slesp->solver_class = CS_PARAM_SOLVER_CLASS_CS; // solver family
   slesp->precond = CS_PARAM_PRECOND_DIAG;         // preconditioner
   slesp->solver = CS_PARAM_SOLVER_GCR;            // iterative solver
-  slesp->flexible = false;                        // not the flexible variant
+  slesp->need_flexible = false; // not the flexible variant
   slesp->restart = 25;                            // restart after ? iterations
   slesp->amg_type = CS_PARAM_AMG_NONE;            // no predefined AMG type
 
@@ -501,8 +501,7 @@ cs_param_sles_set_solver(const char       *keyval,
   const char  *sles_name = slesp->name;
 
   if (strcmp(keyval, "amg") == 0) {
-
-    slesp->flexible = false;
+    slesp->need_flexible      = false;
     slesp->solver = CS_PARAM_SOLVER_AMG;
     slesp->amg_type = CS_PARAM_AMG_INHOUSE_V;
     slesp->solver_class = CS_PARAM_SOLVER_CLASS_CS;
@@ -517,45 +516,35 @@ cs_param_sles_set_solver(const char       *keyval,
 
     slesp->solver = CS_PARAM_SOLVER_BICGS;
     slesp->solver_class = CS_PARAM_SOLVER_CLASS_CS;
-    slesp->flexible = false;
-
+    slesp->need_flexible = false;
   }
   else if (strcmp(keyval, "bicgstab2") == 0) {
-
-    slesp->solver = CS_PARAM_SOLVER_BICGS2;
-    slesp->solver_class = CS_PARAM_SOLVER_CLASS_CS;
-    slesp->flexible = false;
-
+    slesp->solver        = CS_PARAM_SOLVER_BICGS2;
+    slesp->solver_class  = CS_PARAM_SOLVER_CLASS_CS;
+    slesp->need_flexible = false;
   }
   else if (strcmp(keyval, "cg") == 0) {
 
     if (slesp->precond == CS_PARAM_PRECOND_AMG) {
 
       slesp->solver = CS_PARAM_SOLVER_FCG;
-      slesp->flexible = true;
-
+      slesp->need_flexible = true;
     }
     else {
-
-      slesp->solver = CS_PARAM_SOLVER_CG;
-      slesp->flexible = false;
-
+      slesp->solver        = CS_PARAM_SOLVER_CG;
+      slesp->need_flexible = false;
     }
-
   }
   else if (strcmp(keyval, "cr3") == 0) {
 
     slesp->solver = CS_PARAM_SOLVER_CR3;
     slesp->solver_class = CS_PARAM_SOLVER_CLASS_CS;
-    slesp->flexible = false;
-
+    slesp->need_flexible = false;
   }
   else if (strcmp(keyval, "fcg") == 0) {
-
-    slesp->solver = CS_PARAM_SOLVER_FCG;
-    slesp->solver_class = CS_PARAM_SOLVER_CLASS_CS;
-    slesp->flexible = true;
-
+    slesp->solver        = CS_PARAM_SOLVER_FCG;
+    slesp->solver_class  = CS_PARAM_SOLVER_CLASS_CS;
+    slesp->need_flexible = true;
   }
   else if (strcmp(keyval, "gauss_seidel") == 0 ||
            strcmp(keyval, "gs") == 0) {
@@ -570,21 +559,18 @@ cs_param_sles_set_solver(const char       *keyval,
 
     slesp->solver = CS_PARAM_SOLVER_GCR;
     slesp->solver_class = CS_PARAM_SOLVER_CLASS_CS;
-    slesp->flexible = true;
-
+    slesp->need_flexible = true;
   }
   else if (strcmp(keyval, "gmres") == 0) {
-
-    slesp->solver = CS_PARAM_SOLVER_GMRES;
-    slesp->solver_class = CS_PARAM_SOLVER_CLASS_CS;
-    slesp->flexible = false;
-
+    slesp->solver        = CS_PARAM_SOLVER_GMRES;
+    slesp->solver_class  = CS_PARAM_SOLVER_CLASS_CS;
+    slesp->need_flexible = false;
   }
   else if (strcmp(keyval, "fgmres") == 0) {
 
     slesp->solver = CS_PARAM_SOLVER_FGMRES;
     slesp->solver_class = CS_PARAM_SOLVER_CLASS_PETSC;
-    slesp->flexible = true;
+    slesp->need_flexible = true;
 
     cs_param_solver_class_t  ret_class =
       cs_param_sles_check_class(CS_PARAM_SOLVER_CLASS_PETSC);
@@ -607,8 +593,7 @@ cs_param_sles_set_solver(const char       *keyval,
     slesp->solver_class = CS_PARAM_SOLVER_CLASS_CS;
     slesp->precond = CS_PARAM_PRECOND_NONE;
     slesp->precond_block_type = CS_PARAM_PRECOND_BLOCK_NONE;
-    slesp->flexible = false;
-
+    slesp->need_flexible      = false;
   }
   else if (strcmp(keyval, "mumps") == 0) {
 
@@ -617,7 +602,7 @@ cs_param_sles_set_solver(const char       *keyval,
     slesp->precond = CS_PARAM_PRECOND_NONE;
     slesp->precond_block_type = CS_PARAM_PRECOND_BLOCK_NONE;
     slesp->amg_type = CS_PARAM_AMG_NONE;
-    slesp->flexible = false;
+    slesp->need_flexible      = false;
 
     /* By default, one considers the stand-alone MUMPS library
      * MUMPS or PETSc are valid choices
@@ -648,8 +633,7 @@ cs_param_sles_set_solver(const char       *keyval,
     slesp->solver_class = CS_PARAM_SOLVER_CLASS_CS;
     slesp->precond = CS_PARAM_PRECOND_NONE;
     slesp->precond_block_type = CS_PARAM_PRECOND_BLOCK_NONE;
-    slesp->flexible = true;
-
+    slesp->need_flexible      = true;
   }
   else if (strcmp(keyval, "user") == 0) {
 
@@ -698,16 +682,14 @@ cs_param_sles_set_precond(const char       *keyval,
     slesp->precond = CS_PARAM_PRECOND_NONE;
     slesp->precond_block_type = CS_PARAM_PRECOND_BLOCK_NONE;
     slesp->amg_type = CS_PARAM_AMG_NONE;
-    slesp->flexible = false;
-
+    slesp->need_flexible      = false;
   }
   else if (strcmp(keyval, "jacobi") == 0 || strcmp(keyval, "diag") == 0) {
 
     slesp->precond = CS_PARAM_PRECOND_DIAG;
     slesp->precond_block_type = CS_PARAM_PRECOND_BLOCK_NONE;
     slesp->amg_type = CS_PARAM_AMG_NONE;
-    slesp->flexible = false;
-
+    slesp->need_flexible      = false;
   }
   else if (strcmp(keyval, "block_jacobi") == 0 ||
            strcmp(keyval, "bjacobi") == 0) {
@@ -720,8 +702,7 @@ cs_param_sles_set_precond(const char       *keyval,
     slesp->precond_block_type = CS_PARAM_PRECOND_BLOCK_DIAG;
     slesp->precond = CS_PARAM_PRECOND_BJACOB_ILU0;
     slesp->amg_type = CS_PARAM_AMG_NONE;
-    slesp->flexible = false;
-
+    slesp->need_flexible      = false;
   }
   else if (strcmp(keyval, "bjacobi_sgs") == 0 ||
            strcmp(keyval, "bjacobi_ssor") == 0) {
@@ -743,8 +724,7 @@ cs_param_sles_set_precond(const char       *keyval,
     slesp->precond = CS_PARAM_PRECOND_BJACOB_SGS;
     slesp->precond_block_type = CS_PARAM_PRECOND_BLOCK_DIAG;
     slesp->amg_type = CS_PARAM_AMG_NONE;
-    slesp->flexible = false;
-
+    slesp->need_flexible      = false;
   }
   else if (strcmp(keyval, "lu") == 0) {
 
@@ -762,20 +742,17 @@ cs_param_sles_set_precond(const char       *keyval,
 
     slesp->precond = CS_PARAM_PRECOND_LU;
     slesp->amg_type = CS_PARAM_AMG_NONE;
-    slesp->flexible = false;
-
+    slesp->need_flexible = false;
   }
   else if (strcmp(keyval, "ilu0") == 0) {
-
     /* Either with PETSc or with PETSc/HYPRE or HYPRE using Euclid */
 
     slesp->solver_class = _get_petsc_or_hypre(slesp, false);
 
-    slesp->precond = CS_PARAM_PRECOND_ILU0;
+    slesp->precond            = CS_PARAM_PRECOND_ILU0;
     slesp->precond_block_type = CS_PARAM_PRECOND_BLOCK_NONE;
-    slesp->amg_type = CS_PARAM_AMG_NONE;
-    slesp->flexible = false;
-
+    slesp->amg_type           = CS_PARAM_AMG_NONE;
+    slesp->need_flexible      = false;
   }
   else if (strcmp(keyval, "icc0") == 0) {
 
@@ -786,15 +763,14 @@ cs_param_sles_set_precond(const char       *keyval,
     slesp->precond = CS_PARAM_PRECOND_ICC0;
     slesp->precond_block_type = CS_PARAM_PRECOND_BLOCK_NONE;
     slesp->amg_type = CS_PARAM_AMG_NONE;
-    slesp->flexible = false;
-
+    slesp->need_flexible      = false;
   }
   else if (strcmp(keyval, "amg") == 0) {
 
     slesp->precond = CS_PARAM_PRECOND_AMG;
     slesp->precond_block_type = CS_PARAM_PRECOND_BLOCK_NONE;
 
-    slesp->flexible = true;
+    slesp->need_flexible = true;
 
     switch (slesp->solver) {
     case CS_PARAM_SOLVER_CG:
@@ -856,7 +832,7 @@ cs_param_sles_set_precond(const char       *keyval,
 
     slesp->precond = CS_PARAM_PRECOND_AMG;
     slesp->precond_block_type = CS_PARAM_PRECOND_BLOCK_DIAG;
-    slesp->flexible = true;
+    slesp->need_flexible      = true;
 
     cs_param_solver_class_t  ret_class =
       cs_param_sles_check_class(slesp->solver_class);
@@ -926,8 +902,7 @@ cs_param_sles_set_precond(const char       *keyval,
     slesp->precond_block_type = CS_PARAM_PRECOND_BLOCK_NONE;
     slesp->amg_type = CS_PARAM_AMG_NONE;
     slesp->solver_class = CS_PARAM_SOLVER_CLASS_CS;
-    slesp->flexible = false;
-
+    slesp->need_flexible      = false;
   }
   else if (strcmp(keyval, "poly2") == 0 ||
            strcmp(keyval, "poly_2") == 0) {
@@ -936,8 +911,7 @@ cs_param_sles_set_precond(const char       *keyval,
     slesp->precond_block_type = CS_PARAM_PRECOND_BLOCK_NONE;
     slesp->amg_type = CS_PARAM_AMG_NONE;
     slesp->solver_class = CS_PARAM_SOLVER_CLASS_CS;
-    slesp->flexible = false;
-
+    slesp->need_flexible      = false;
   }
   else if (strcmp(keyval, "ssor") == 0) {
 
@@ -945,7 +919,7 @@ cs_param_sles_set_precond(const char       *keyval,
     slesp->precond_block_type = CS_PARAM_PRECOND_BLOCK_NONE;
     slesp->amg_type = CS_PARAM_AMG_NONE;
     slesp->solver_class = CS_PARAM_SOLVER_CLASS_PETSC;
-    slesp->flexible = false;
+    slesp->need_flexible      = false;
 
     if (cs_param_sles_check_class(CS_PARAM_SOLVER_CLASS_PETSC) !=
         CS_PARAM_SOLVER_CLASS_PETSC)
@@ -1120,7 +1094,7 @@ cs_param_sles_set_amg_type(const char       *keyval,
 
     slesp->amg_type = CS_PARAM_AMG_INHOUSE_V;
     slesp->solver_class = CS_PARAM_SOLVER_CLASS_CS;
-    slesp->flexible = true;
+    slesp->need_flexible = true;
 
     if (slesp->solver == CS_PARAM_SOLVER_AMG)
       cs_param_sles_amg_inhouse_reset(slesp, true, false);
@@ -1132,7 +1106,7 @@ cs_param_sles_set_amg_type(const char       *keyval,
 
     slesp->amg_type = CS_PARAM_AMG_INHOUSE_K;
     slesp->solver_class = CS_PARAM_SOLVER_CLASS_CS;
-    slesp->flexible = true;
+    slesp->need_flexible = true;
 
     if (slesp->solver == CS_PARAM_SOLVER_AMG)
       cs_param_sles_amg_inhouse_reset(slesp, true, true);
@@ -1155,7 +1129,7 @@ cs_param_sles_set_amg_type(const char       *keyval,
     cs_param_solver_class_t ret_class =
       cs_param_sles_check_class(wanted_class);
 
-    slesp->flexible = true;
+    slesp->need_flexible = true;
     slesp->amg_type = CS_PARAM_AMG_HYPRE_BOOMER_V;
     slesp->solver_class = ret_class;
 
@@ -1176,7 +1150,7 @@ cs_param_sles_set_amg_type(const char       *keyval,
     cs_param_solver_class_t ret_class =
       cs_param_sles_check_class(wanted_class);
 
-    slesp->flexible = true;
+    slesp->need_flexible = true;
     slesp->amg_type = CS_PARAM_AMG_HYPRE_BOOMER_W;
     slesp->solver_class = ret_class;
 
@@ -1196,12 +1170,10 @@ cs_param_sles_set_amg_type(const char       *keyval,
 
     slesp->amg_type = CS_PARAM_AMG_PETSC_GAMG_V;
     slesp->solver_class = CS_PARAM_SOLVER_CLASS_PETSC;
-    slesp->flexible = true;
-
+    slesp->need_flexible = true;
   }
   else if (strcmp(keyval, "gamg_w") == 0) {
-
-    cs_param_solver_class_t  ret_class =
+    cs_param_solver_class_t ret_class =
       cs_param_sles_check_class(CS_PARAM_SOLVER_CLASS_PETSC);
 
     if (ret_class != CS_PARAM_SOLVER_CLASS_PETSC)
@@ -1210,10 +1182,9 @@ cs_param_sles_set_amg_type(const char       *keyval,
                 " PETSc is not available."
                 " Please check your settings.", __func__, sles_name);
 
-    slesp->amg_type = CS_PARAM_AMG_PETSC_GAMG_W;
-    slesp->solver_class = CS_PARAM_SOLVER_CLASS_PETSC;
-    slesp->flexible = true;
-
+    slesp->amg_type      = CS_PARAM_AMG_PETSC_GAMG_W;
+    slesp->solver_class  = CS_PARAM_SOLVER_CLASS_PETSC;
+    slesp->need_flexible = true;
   }
   else if (strcmp(keyval, "pcmg") == 0) {
 
@@ -1228,8 +1199,7 @@ cs_param_sles_set_amg_type(const char       *keyval,
 
     slesp->amg_type = CS_PARAM_AMG_PETSC_PCMG;
     slesp->solver_class = CS_PARAM_SOLVER_CLASS_PETSC;
-    slesp->flexible = true;
-
+    slesp->need_flexible = true;
   }
   else {
 
