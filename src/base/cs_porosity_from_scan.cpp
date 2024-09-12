@@ -106,18 +106,18 @@ BEGIN_C_DECLS
 
 static cs_porosity_from_scan_opt_t _porosity_from_scan_opt = {
   .compute_porosity_from_scan = false,
-  .file_names = NULL,
-  .output_name = NULL,
+  .file_names = nullptr,
+  .output_name = nullptr,
   .postprocess_points = true,
   .transformation_matrix = {{1., 0., 0., 0.},
                             {0., 1., 0., 0.},
                             {0., 0., 1., 0.}},
   .nb_sources = 0,
-  .sources = NULL,
-  .source_c_ids = NULL,
+  .sources = nullptr,
+  .source_c_ids = nullptr,
   .threshold = 4,
-  .convection_porosity_threshold = 0.5,
   .porosity_threshold = 1e-12,
+  .convection_porosity_threshold = 0.5,
   .use_staircase = false,
   .eigenvalue_criteria = 1e-3,
   .use_restart = false
@@ -130,7 +130,7 @@ static cs_porosity_from_scan_opt_t _porosity_from_scan_opt = {
 cs_porosity_from_scan_opt_t *cs_glob_porosity_from_scan_opt
 = &_porosity_from_scan_opt;
 
-static  ple_locator_t  *_locator = NULL;  /* PLE locator */
+static  ple_locator_t  *_locator = nullptr;  /* PLE locator */
 
 /*============================================================================
  * Private function definitions
@@ -379,7 +379,7 @@ _prepare_porosity_from_scan(const cs_mesh_t             *m,
 
   tok = strtok(file_names, sep);
 
-  while (tok != NULL) {
+  while (tok != nullptr) {
     char *f_name;
     BFT_MALLOC(f_name,
         strlen(tok) + 1,
@@ -390,12 +390,12 @@ _prepare_porosity_from_scan(const cs_mesh_t             *m,
           "    %s\n\n"),
         f_name);
     FILE *file = fopen(f_name, "rt");
-    if (file == NULL)
+    if (file == nullptr)
       bft_error(__FILE__,__LINE__, 0,
           _("Porosity from scan: Could not open file."));
 
     /* next file to be read */
-    tok = strtok(NULL, sep);
+    tok = strtok(nullptr, sep);
     long int n_read_points = 0;
     long int n_points = 0;
     if (fscanf(file, "%ld\n", &n_read_points) != 1)
@@ -414,7 +414,7 @@ _prepare_porosity_from_scan(const cs_mesh_t             *m,
                                      "pts_location_mesh",
                                      false, // no family info
                                      m->n_cells,
-                                     NULL);
+                                     nullptr);
 
     fvm_nodal_make_vertices_private(location_mesh);
 
@@ -497,8 +497,8 @@ _prepare_porosity_from_scan(const cs_mesh_t             *m,
       }
 
       /* Check EOF was correctly reached */
-      if (fgets(line, sizeof(line), file) != NULL)
-        n_read_points = strtol(line, NULL, 10);
+      if (fgets(line, sizeof(line), file) != nullptr)
+        n_read_points = strtol(line, nullptr, 10);
       else
         n_read_points = 0;
 
@@ -521,7 +521,7 @@ _prepare_porosity_from_scan(const cs_mesh_t             *m,
       /* FVM meshes for writers */
       if (_porosity_from_scan_opt.postprocess_points) {
         char *fvm_name;
-        if (_porosity_from_scan_opt.output_name == NULL) {
+        if (_porosity_from_scan_opt.output_name == nullptr) {
           BFT_MALLOC(fvm_name,
                      strlen(f_name) + 3 + 1,
                      char);
@@ -541,11 +541,11 @@ _prepare_porosity_from_scan(const cs_mesh_t             *m,
         fvm_nodal_t *pts_mesh = fvm_nodal_create(fvm_name, 3);
 
         /* Only the first rank writes points for now */
-        cs_gnum_t *vtx_gnum = NULL;
+        cs_gnum_t *vtx_gnum = nullptr;
 
         if (cs_glob_rank_id < 1) {
           /* Update the points set structure */
-          fvm_nodal_define_vertex_list(pts_mesh, n_points, NULL);
+          fvm_nodal_define_vertex_list(pts_mesh, n_points, nullptr);
           fvm_nodal_set_shared_vertices(pts_mesh, (cs_coord_t *)point_coords);
 
           BFT_MALLOC(vtx_gnum, n_points, cs_gnum_t);
@@ -568,7 +568,7 @@ _prepare_porosity_from_scan(const cs_mesh_t             *m,
 
         fvm_writer_export_nodal(writer, pts_mesh);
 
-        const void *var_ptr[1] = {NULL};
+        const void *var_ptr[1] = {nullptr};
 
         var_ptr[0] = colors;
 
@@ -610,7 +610,7 @@ _prepare_porosity_from_scan(const cs_mesh_t             *m,
 #endif
 
       cs_lnum_t _n_points = (cs_glob_rank_id < 1) ? n_points : 0;
-      cs_real_t *_point_coords = (cs_glob_rank_id < 1) ? (cs_real_t *)point_coords : NULL;
+      cs_real_t *_point_coords = (cs_glob_rank_id < 1) ? (cs_real_t *)point_coords : nullptr;
 
       ple_locator_set_mesh(_locator,
                            location_mesh,
@@ -619,10 +619,10 @@ _prepare_porosity_from_scan(const cs_mesh_t             *m,
                            0.1, /* tolerance */
                            3, /* dim */
                            _n_points,
-                           NULL,
-                           NULL, /* point_tag */
+                           nullptr,
+                           nullptr, /* point_tag */
                            _point_coords,
-                           NULL, /* distance */
+                           nullptr, /* distance */
                            cs_coupling_mesh_extents,
                            cs_coupling_point_in_mesh_p);
 
@@ -645,13 +645,13 @@ _prepare_porosity_from_scan(const cs_mesh_t             *m,
       const cs_lnum_t *dist_loc = ple_locator_get_dist_locations(_locator);
       const ple_coord_t *dist_coords = ple_locator_get_dist_coords(_locator);
 
-      float *dist_colors = NULL;
+      float *dist_colors = nullptr;
       BFT_MALLOC(dist_colors, 3*n_points_dist, float);
 
       ple_locator_exchange_point_var(_locator,
                                      dist_colors,
                                      colors,
-                                     NULL,
+                                     nullptr,
                                      sizeof(float),
                                      3,
                                      1);
@@ -721,7 +721,7 @@ _prepare_porosity_from_scan(const cs_mesh_t             *m,
 
   // Normal vector to the solid plane
   cs_real_3_t *restrict c_w_face_normal
-    = (cs_real_3_t *restrict)mq->c_w_face_normal;
+    = (cs_real_3_t *)mq->c_w_face_normal;
 
   _solid_plane_from_points(m,
                            f_nb_scan->val,
@@ -747,7 +747,7 @@ _prepare_porosity_from_scan(const cs_mesh_t             *m,
 
   /* Parallel synchronisation */
   cs_mesh_sync_var_scal(mq->cell_vol);
-  if (m->halo != NULL) {
+  if (m->halo != nullptr) {
     cs_halo_sync_var_strided(m->halo, CS_HALO_EXTENDED,
                              (cs_real_t *)cen_points, 3);
     cs_halo_sync_var_strided(m->halo, CS_HALO_EXTENDED,
@@ -780,22 +780,22 @@ _prepare_porosity_from_scan(const cs_mesh_t             *m,
   cs_mesh_sync_var_scal(cell_f_vol);
 
   cs_real_3_t *restrict i_face_normal
-    =  (cs_real_3_t *restrict)mq->i_face_normal;
+    =  (cs_real_3_t *)mq->i_face_normal;
   cs_real_3_t *restrict b_face_normal
-    =  (cs_real_3_t *restrict)mq->b_face_normal;
+    =  (cs_real_3_t *)mq->b_face_normal;
   cs_real_t *restrict i_face_surf
-    = (cs_real_t *restrict)mq->i_face_surf;
+    = (cs_real_t *)mq->i_face_surf;
   cs_real_t *restrict b_face_surf
-    = (cs_real_t *restrict)mq->b_face_surf;
+    = (cs_real_t *)mq->b_face_surf;
 
   cs_real_3_t *restrict i_f_face_normal
-    = (cs_real_3_t *restrict)mq->i_f_face_normal;
+    = (cs_real_3_t *)mq->i_f_face_normal;
   cs_real_3_t *restrict b_f_face_normal
-    = (cs_real_3_t *restrict)mq->b_f_face_normal;
+    = (cs_real_3_t *)mq->b_f_face_normal;
   cs_real_t *restrict i_f_face_surf
-    = (cs_real_t *restrict)mq->i_f_face_surf;
+    = (cs_real_t *)mq->i_f_face_surf;
   cs_real_t *restrict b_f_face_surf
-    = (cs_real_t *restrict)mq->b_f_face_surf;
+    = (cs_real_t *)mq->b_f_face_surf;
 
   /* Penalization of cells with points */
 
@@ -851,7 +851,7 @@ _prepare_porosity_from_scan(const cs_mesh_t             *m,
 void
 cs_porosity_from_scan_set_file_name(const char  *file_name)
 {
-  if (file_name == NULL) {
+  if (file_name == nullptr) {
     _porosity_from_scan_opt.compute_porosity_from_scan = false;
     return;
   }
@@ -860,7 +860,7 @@ cs_porosity_from_scan_set_file_name(const char  *file_name)
   /* Force porous model */
   cs_glob_porous_model = 3;
 
-  if (_porosity_from_scan_opt.file_names == NULL) {
+  if (_porosity_from_scan_opt.file_names == nullptr) {
     BFT_MALLOC(_porosity_from_scan_opt.file_names,
                strlen(file_name) + 1 + 1,
                char);
@@ -893,7 +893,7 @@ cs_porosity_from_scan_set_file_name(const char  *file_name)
 void
 cs_porosity_from_scan_set_output_name(const char  *output_name)
 {
-  if (output_name == NULL) {
+  if (output_name == nullptr) {
     _porosity_from_scan_opt.postprocess_points = false;
     return;
   }
@@ -960,7 +960,7 @@ cs_porosity_from_scan_add_source(const cs_real_t  source[3],
 void
 cs_ibm_add_sources_by_file_name(const char *file_name)
 {
-  if (file_name == NULL)
+  if (file_name == nullptr)
     bft_error(__FILE__,__LINE__, 0, _("Could not read scanner sources file"));
 
   /* read the csv file */
@@ -1033,16 +1033,16 @@ cs_compute_porosity_from_scan(void)
   const cs_mesh_quantities_t *mq = domain->mesh_quantities;
 
   const cs_real_3_t *restrict cell_cen
-    = (const cs_real_3_t *restrict)mq->cell_cen;
+    = (const cs_real_3_t *)mq->cell_cen;
   const cs_real_3_t *restrict i_face_cog
-    = (const cs_real_3_t *restrict)mq->i_face_cog;
+    = (const cs_real_3_t *)mq->i_face_cog;
   const cs_real_3_t *restrict b_face_cog
-    = (const cs_real_3_t *restrict)mq->b_face_cog;
+    = (const cs_real_3_t *)mq->b_face_cog;
 
   cs_real_3_t *restrict i_f_face_normal =
-     (cs_real_3_t *restrict)mq->i_f_face_normal;
+     (cs_real_3_t *)mq->i_f_face_normal;
   cs_real_3_t *restrict b_f_face_normal =
-     (cs_real_3_t *restrict)mq->b_f_face_normal;
+     (cs_real_3_t *)mq->b_f_face_normal;
 
   /* Pointer to porosity field */
   cs_field_t *f = cs_field_by_name_try("porosity");
@@ -1194,7 +1194,7 @@ cs_compute_porosity_from_scan(void)
     cs_equation_iterative_solve_scalar(0,   /* idtvar: no steady state algo */
                                        -1,  /* no over loops */
                                        f->id,
-                                       NULL,
+                                       nullptr,
                                        0,   /* iescap */
                                        0,   /* imucpp */
                                        norm,
@@ -1208,17 +1208,17 @@ cs_compute_porosity_from_scan(void)
                                        b_massflux, /* viscosity, not used */
                                        i_massflux, /* viscosity, not used */
                                        b_massflux, /* viscosity, not used */
-                                       NULL,
-                                       NULL,
-                                       NULL,
+                                       nullptr,
+                                       nullptr,
+                                       nullptr,
                                        0, /* icvflb (upwind) */
-                                       NULL,
+                                       nullptr,
                                        rovsdt,
                                        rhs,
                                        pvar,
                                        dpvar,
-                                       NULL,
-                                       NULL);
+                                       nullptr,
+                                       nullptr);
 
     for (cs_lnum_t c_id = 0; c_id< m->n_cells; c_id++)
       f->val[c_id] = CS_MAX(f->val[c_id], pvar[c_id]);
@@ -1254,7 +1254,7 @@ cs_compute_porosity_from_scan(void)
   cs_porous_model_set_has_disable_flag(1);
 
   cs_real_3_t *restrict c_w_face_normal
-    = (cs_real_3_t *restrict)mq->c_w_face_normal;
+    = (cs_real_3_t *)mq->c_w_face_normal;
 
   for (cs_lnum_t c_id = 0; c_id < m->n_cells_with_ghosts; c_id++) {
 
@@ -1307,7 +1307,7 @@ cs_porous_model_write(void) {
                   "-------------------------------------\n"));
 
   cs_restart_t *porous_restart
-    = cs_restart_create("ibm.csc", NULL, CS_RESTART_MODE_WRITE);
+    = cs_restart_create("ibm.csc", nullptr, CS_RESTART_MODE_WRITE);
 
   cs_restart_write_fields(porous_restart, CS_RESTART_IBM);
 
@@ -1349,7 +1349,7 @@ cs_porous_model_read(void) {
                                 "cell_scan_points_cog"};
 
   cs_restart_t *porous_restart
-    = cs_restart_create("ibm.csc", NULL, CS_RESTART_MODE_READ);
+    = cs_restart_create("ibm.csc", nullptr, CS_RESTART_MODE_READ);
 
   cs_restart_read_fields(porous_restart, CS_RESTART_IBM);
 

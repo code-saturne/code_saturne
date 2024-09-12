@@ -306,14 +306,14 @@ cs_array_reduce.c \
 cs_ast_coupling.c \
 cs_base_fortran.c \
 cs_boundary.c \
-cs_boundary_conditions.c \
+cs_boundary_conditions.cpp \
 cs_boundary_conditions_check.cpp \
 cs_boundary_conditions_coupling.c\
 cs_boundary_conditions_set_coeffs.cpp \
 cs_boundary_conditions_set_coeffs_symmetry.cpp \
 cs_boundary_conditions_set_coeffs_turb.c \
-cs_boundary_conditions_type.c \
-cs_boundary_zone.c \
+cs_boundary_conditions_type.cpp \
+cs_boundary_zone.cpp \
 cs_calcium.c \
 cs_compute_thermo_pressure_density.c \
 csclli.f90 \
@@ -323,7 +323,7 @@ csprnt.f90 \
 cs_time_step_compute.c \
 cs_control.c \
 cs_coupling.c \
-cs_dilatable_scalar_diff_st.c \
+cs_dilatable_scalar_diff_st.cpp \
 cs_drift_convective_flux.cpp \
 cs_ext_library_info.c \
 cs_ext_neighborhood.c \
@@ -340,7 +340,7 @@ cs_gas_mix.c \
 cs_halo.cpp \
 cs_halo_perio.c \
 cs_head_losses.c \
-cs_ibm.c \
+cs_ibm.cpp \
 cs_initialize_fields.c \
 cs_internal_coupling.cpp \
 cs_interpolate.c \
@@ -354,12 +354,12 @@ cs_opts.c \
 cs_parall.cpp \
 cs_param_types.c \
 cs_parameters.c \
-cs_parameters_check.c \
+cs_parameters_check.cpp \
 cs_physical_constants.c \
 cs_physical_properties.c \
 cs_physical_properties_default.c \
-cs_porosity_from_scan.c \
-cs_porous_model.c \
+cs_porosity_from_scan.cpp \
+cs_porous_model.cpp \
 cs_post.c \
 cs_post_default.c \
 cs_post_util.c \
@@ -386,7 +386,7 @@ cs_solid_zone.c \
 cs_solve_all.cpp \
 cs_solve_equation.cpp \
 cs_solve_navier_stokes.cpp \
-cs_solve_transported_variables.c \
+cs_solve_transported_variables.cpp \
 cs_sort.c \
 cs_sort_partition.c \
 cs_syr_coupling.c \
@@ -402,7 +402,7 @@ cs_time_stepping.cpp \
 cs_timer_stats.c \
 cs_turbomachinery.c \
 cs_utilities.c \
-cs_velocity_pressure.c \
+cs_velocity_pressure.cpp \
 cs_vof.cxx \
 cs_volume_mass_injection.c \
 cs_volume_zone.c \

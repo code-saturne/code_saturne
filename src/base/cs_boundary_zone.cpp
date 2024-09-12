@@ -99,7 +99,7 @@ BEGIN_C_DECLS
 
 typedef struct {
   cs_lnum_t         n_elts;   /*!< local number of associated elements */
-  const cs_lnum_t  *max_id;   /*!< local face ids, or NULL if trivial */
+  const cs_lnum_t  *max_id;   /*!< local face ids, or nullptr if trivial */
 } cs_boundary_zone_id_t;
 
 /*============================================================================
@@ -110,17 +110,17 @@ typedef struct {
 
 static int  _n_zones = 0;
 static int  _n_zones_max = 0;
-static cs_zone_t   **_zones = NULL;
-static cs_map_name_to_id_t   *_zone_map = NULL;
+static cs_zone_t   **_zones = nullptr;
+static cs_map_name_to_id_t   *_zone_map = nullptr;
 
 /* Boundary zone id associated with boundary faces */
 
-static int *_zone_id = NULL;
+static int *_zone_id = nullptr;
 
 /* Optional, separate zone classification id for data extraction */
 
 static int  _max_zone_class_id = -1;
-static int *_zone_class_id = NULL;
+static int *_zone_class_id = nullptr;
 
 /*============================================================================
  * Prototypes for functions intended for use only by Fortran wrappers.
@@ -135,18 +135,18 @@ static int *_zone_class_id = NULL;
 /*!
  * \brief Return a pointer to a boundary zone based on its name if present.
  *
- * If no boundary zone of the given name is defined, NULL is returned.
+ * If no boundary zone of the given name is defined, nullptr is returned.
  *
  * \param[in]  name  boundary zone name
  *
- * \return  pointer to (read only) zone structure, or NULL
+ * \return  pointer to (read only) zone structure, or nullptr
  */
 /*----------------------------------------------------------------------------*/
 
 static cs_zone_t  *
 _zone_by_name_try(const char  *name)
 {
-  cs_zone_t *z = NULL;
+  cs_zone_t *z = nullptr;
   int id = cs_map_name_to_id_try(_zone_map, name);
 
   if (id > -1)
@@ -174,16 +174,16 @@ _zone_define(const char  *name)
 
   /* Check this name was not already used */
 
-  if (z != NULL)
+  if (z != nullptr)
     return z;
 
   /* Initialize if necessary */
 
-  if (_zone_map == NULL)
+  if (_zone_map == nullptr)
     _zone_map = cs_map_name_to_id_create();
 
   size_t l = 0;
-  if (name != NULL)
+  if (name != nullptr)
     l = strlen(name);
   if (l == 0)
     bft_error(__FILE__, __LINE__, 0, _("Defining a zone requires a name."));
@@ -228,7 +228,7 @@ _zone_define(const char  *name)
   z->location_id = 0;
 
   z->n_elts = 0;
-  z->elt_ids = NULL;
+  z->elt_ids = nullptr;
 
   z->time_varying = false;
   z->allow_overlay = false;
@@ -609,7 +609,7 @@ cs_boundary_zone_define(const char  *name,
                         const char  *criteria,
                         int          type_flag)
 {
-  if (criteria == NULL)
+  if (criteria == nullptr)
     bft_error(__FILE__, __LINE__, 0,
               _("%s: selection criteria string must be non-null."),
               __func__);
@@ -654,7 +654,7 @@ cs_boundary_zone_define_by_func(const char                 *name,
                                 void                       *input,
                                 int                         type_flag)
 {
-  if (func == NULL)
+  if (func == nullptr)
     bft_error(__FILE__, __LINE__, 0,
               _("%s: selection function pointer must be non-null."),
               __func__);
@@ -691,7 +691,7 @@ cs_boundary_zone_by_id(int  id)
   else {
     bft_error(__FILE__, __LINE__, 0,
               _("Boundary zone with id %d is not defined."), id);
-    return NULL;
+    return nullptr;
   }
 }
 
@@ -717,7 +717,7 @@ cs_boundary_zone_by_name(const char  *name)
   else {
     bft_error(__FILE__, __LINE__, 0,
               _("Boundary zone \"%s\" is not defined."), name);
-    return NULL;
+    return nullptr;
   }
 }
 
@@ -725,18 +725,18 @@ cs_boundary_zone_by_name(const char  *name)
 /*!
  * \brief Return a pointer to a boundary zone based on its name if present.
  *
- * If no boundary zone of the given name is defined, NULL is returned.
+ * If no boundary zone of the given name is defined, nullptr is returned.
  *
  * \param[in]  name  boundary zone name
  *
- * \return  pointer to (read only) zone structure, or NULL
+ * \return  pointer to (read only) zone structure, or nullptr
  */
 /*----------------------------------------------------------------------------*/
 
 const cs_zone_t  *
 cs_boundary_zone_by_name_try(const char  *name)
 {
-  const cs_zone_t *z = NULL;
+  const cs_zone_t *z = nullptr;
   int id = cs_map_name_to_id_try(_zone_map, name);
 
   if (id > -1)
@@ -748,10 +748,10 @@ cs_boundary_zone_by_name_try(const char  *name)
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Retrieve the boundary zone id from its zone name.
- *         If the zone name is equal to NULL or has an empty length, then
+ *         If the zone name is equal to nullptr or has an empty length, then
  *         the default zone id (=0) corresponding to all entities is returned
  *
- * \param[in] z_name        name of the zone or NULL or ""
+ * \param[in] z_name        name of the zone or nullptr or ""
  *
  * \return the id of the boundary zone
  */
@@ -763,7 +763,7 @@ cs_boundary_zone_id_by_name(const char   *z_name)
   int  id = 0; /* Return the default zone correspoinding to all boundary faces
                   by default */
 
-  if (z_name != NULL) {
+  if (z_name != nullptr) {
     if (strlen(z_name) > 0) {
 
       id = cs_map_name_to_id_try(_zone_map, z_name);
@@ -858,7 +858,7 @@ cs_boundary_zone_face_zone_id(void)
 void
 cs_boundary_zone_log_info(const cs_zone_t  *z)
 {
-  if (z == NULL)
+  if (z == nullptr)
     return;
 
   /* Global indicators */
@@ -1083,7 +1083,7 @@ cs_boundary_zone_face_class_or_zone_id(void)
 {
   const int *retval = _zone_class_id;
 
-  if (retval == NULL)
+  if (retval == nullptr)
     retval = _zone_id;
 
   return retval;
@@ -1137,7 +1137,7 @@ cs_boundary_zone_print_info(void)
                z->measure,
                z->cog[0], z->cog[1], z->cog[2]);
     /* Only log fluid fluid when different to surface */
-    if (b_f_face_surf != b_face_surf && b_f_face_surf != NULL)
+    if (b_f_face_surf != b_face_surf && b_f_face_surf != nullptr)
       bft_printf(_("    Fluid surface   = %1.5g\n"),
                  z->f_measure);
 
@@ -1145,7 +1145,7 @@ cs_boundary_zone_print_info(void)
       bft_printf(_("    Perimeter       = %1.5g\n"),
                  z->boundary_measure);
       /* Only log fluid fluid when different to surface */
-      if (b_f_face_surf != b_face_surf && b_f_face_surf != NULL)
+      if (b_f_face_surf != b_face_surf && b_f_face_surf != nullptr)
         bft_printf(_("    Fluid perimeter = %1.5g\n"),
                    z->f_boundary_measure);
     }

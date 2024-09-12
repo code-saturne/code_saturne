@@ -143,7 +143,7 @@ _field_section_desc(cs_field_t  *f,
   int s_size =  cs_log_strlen(section_desc_b)
               + cs_log_strlen(f_name) + 2;
 
-  char *section_desc = NULL;
+  char *section_desc = nullptr;
   BFT_MALLOC(section_desc, s_size, char);
   snprintf(section_desc, s_size, "%s %s", section_desc_b, f_name);
 
@@ -180,7 +180,7 @@ _raise_turb_error(const char  *turbulence_model_name)
  *
  * \param[in]  err_behavior  warn or abort ?
  * \param[in]  section_desc  optional description of code section
- *                           containing this parameter, or NULL
+ *                           containing this parameter, or nullptr
  * \param [in] format        format string, as printf() and family.
  * \param [in] ...           variable arguments based on format string.
  */
@@ -194,7 +194,7 @@ cs_parameters_error(cs_parameter_error_behavior_t   err_behavior,
 {
   cs_parameters_error_header(err_behavior, section_desc);
 
-  int log_id = CS_LOG_DEFAULT;
+  cs_log_t log_id = CS_LOG_DEFAULT;
 
   va_list  arg_ptr;
   va_start(arg_ptr, format);
@@ -212,7 +212,7 @@ cs_parameters_error(cs_parameter_error_behavior_t   err_behavior,
  *
  * \param[in]  err_behavior  warn or abort ?
  * \param[in]  section_desc  optional description of code section
- *                           containing this parameter, or NULL
+ *                           containing this parameter, or nullptr
  */
 /*----------------------------------------------------------------------------*/
 
@@ -224,9 +224,9 @@ cs_parameters_error_header(cs_parameter_error_behavior_t   err_behavior,
   const char *error_type[] = {N_("Warning"),
                               N_("Error")};
 
-  int log_id = CS_LOG_DEFAULT;
+  cs_log_t log_id = CS_LOG_DEFAULT;
 
-  if (section_desc != NULL)
+  if (section_desc != nullptr)
     cs_log_printf(log_id,
                   "\n%s %s\n",
                   _(error_type[err_type_id]),
@@ -268,7 +268,7 @@ cs_parameters_error_footer(cs_parameter_error_behavior_t   err_behavior)
  *
  * \param[in]  err_behavior  warn or abort ?
  * \param[in]  section_desc  optional description of code section
- *                           containing this parameter, or NULL
+ *                           containing this parameter, or nullptr
  * \param[in]  param_name    name of parameter whose value we are checking
  * \param[in]  param_value   parameter's current_value
  * \param[in]  range_l       range lower bound (included)
@@ -288,7 +288,7 @@ cs_parameters_is_in_range_int(cs_parameter_error_behavior_t   err_behavior,
 
     cs_parameters_error_header(err_behavior, section_desc);
 
-    int log_id = CS_LOG_DEFAULT;
+    cs_log_t log_id = CS_LOG_DEFAULT;
 
     cs_log_printf(log_id,
                   _("Parameter: %s = %d\n"
@@ -306,7 +306,7 @@ cs_parameters_is_in_range_int(cs_parameter_error_behavior_t   err_behavior,
  *
  * \param[in]  err_behavior  warn or abort ?
  * \param[in]  section_desc  optional description of code section
- *                           containing this parameter, or NULL
+ *                           containing this parameter, or nullptr
  * \param[in]  param_name    name of parameter whose value we are checking
  * \param[in]  param_value   parameter's current_value
  * \param[in]  range_l       range lower bound (included)
@@ -326,7 +326,7 @@ cs_parameters_is_not_in_range_int(cs_parameter_error_behavior_t   err_behavior,
 
     cs_parameters_error_header(err_behavior, section_desc);
 
-    int log_id = CS_LOG_DEFAULT;
+    cs_log_t log_id = CS_LOG_DEFAULT;
 
     cs_log_printf(log_id,
                   _("Parameter: %s = %d\n"
@@ -343,13 +343,13 @@ cs_parameters_is_not_in_range_int(cs_parameter_error_behavior_t   err_behavior,
  *
  * \param[in]  err_behavior  warn or abort ?
  * \param[in]  section_desc  optional description of code section
- *                           containing this parameter, or NULL
+ *                           containing this parameter, or nullptr
  * \param[in]  param_name    name of parameter whose value we are checking
  * \param[in]  param_value   parameter's current_value
  * \param[in]  enum_size     size of possible enumeration
- * \param[in]  enum_values   optional list of enumerated values, or NULL
+ * \param[in]  enum_values   optional list of enumerated values, or nullptr
  *                           (in which case {0, ... enum_sizes-1} assumed
- * \param[in]  enum_names    optional list of value names, or NULL
+ * \param[in]  enum_names    optional list of value names, or nullptr
  */
 /*----------------------------------------------------------------------------*/
 
@@ -364,7 +364,7 @@ cs_parameters_is_in_list_int(cs_parameter_error_behavior_t   err_behavior,
 {
   /* Check if we are in the defined list */
 
-  if (enum_values != NULL) {
+  if (enum_values != nullptr) {
     for (int i = 0; i < enum_size; i++) {
       if (param_value == enum_values[i])
         return;
@@ -377,9 +377,9 @@ cs_parameters_is_in_list_int(cs_parameter_error_behavior_t   err_behavior,
 
   cs_parameters_error_header(err_behavior, section_desc);
 
-  int log_id = CS_LOG_DEFAULT;
+  cs_log_t log_id = CS_LOG_DEFAULT;
 
-  if (enum_names != NULL) {
+  if (enum_names != nullptr) {
     cs_log_printf(log_id,
                   _("Parameter: %s = %d\n"
                     "while its value must be one of:\n"),
@@ -387,7 +387,7 @@ cs_parameters_is_in_list_int(cs_parameter_error_behavior_t   err_behavior,
     for (int i = 0; i < enum_size; i++)
       cs_log_printf(log_id, "  %s\n", enum_names[i]);
   }
-  else if (enum_values != NULL) {
+  else if (enum_values != nullptr) {
     cs_log_printf(log_id,
                   _("Parameter: %s = %d\n"
                     "while its value must be one of:\n"),
@@ -412,13 +412,13 @@ cs_parameters_is_in_list_int(cs_parameter_error_behavior_t   err_behavior,
  *
  * \param[in]  err_behavior  warn or abort ?
  * \param[in]  section_desc  optional description of code section
- *                           containing this parameter, or NULL
+ *                           containing this parameter, or nullptr
  * \param[in]  param_name    name of parameter whose value we are checking
  * \param[in]  param_value   parameter's current_value
  * \param[in]  enum_size     size of possible enumeration
- * \param[in]  enum_values   optional list of enumerated values, or NULL
+ * \param[in]  enum_values   optional list of enumerated values, or nullptr
  *                           (in which case {0, ... enum_sizes-1} assumed
- * \param[in]  enum_names    optional list of value names, or NULL
+ * \param[in]  enum_names    optional list of value names, or nullptr
  */
 /*----------------------------------------------------------------------------*/
 
@@ -434,7 +434,7 @@ cs_parameters_is_not_in_list_int(cs_parameter_error_behavior_t   err_behavior,
   /* Check if we are in the defined list */
 
   int in = 0;
-  if (enum_values != NULL) {
+  if (enum_values != nullptr) {
     for (int i = 0; i < enum_size; i++) {
       if (param_value == enum_values[i]) {
         in = 1;
@@ -450,9 +450,9 @@ cs_parameters_is_not_in_list_int(cs_parameter_error_behavior_t   err_behavior,
   if (in == 1) {
     cs_parameters_error_header(err_behavior, section_desc);
 
-    int log_id = CS_LOG_DEFAULT;
+    cs_log_t log_id = CS_LOG_DEFAULT;
 
-    if (enum_names != NULL) {
+    if (enum_names != nullptr) {
       cs_log_printf(log_id,
                     _("Parameter: %s = %d\n"
                       "while its value must not be one of:\n"),
@@ -460,7 +460,7 @@ cs_parameters_is_not_in_list_int(cs_parameter_error_behavior_t   err_behavior,
       for (int i = 0; i < enum_size; i++)
         cs_log_printf(log_id, "  %s\n", enum_names[i]);
     }
-    else if (enum_values != NULL) {
+    else if (enum_values != nullptr) {
       cs_log_printf(log_id,
                     _("Parameter: %s = %d\n"
                       "while its value must not be one of:\n"),
@@ -485,7 +485,7 @@ cs_parameters_is_not_in_list_int(cs_parameter_error_behavior_t   err_behavior,
  *
  * \param[in]  err_behavior  warn or abort ?
  * \param[in]  section_desc  optional description of code section
- *                           containing this parameter, or NULL
+ *                           containing this parameter, or nullptr
  * \param[in]  param_name    name of parameter whose value we are checking
  * \param[in]  param_value   parameter's current_value
  * \param[in]  std_value     compulsory or recommended parameter's value
@@ -503,7 +503,7 @@ cs_parameters_is_equal_int(cs_parameter_error_behavior_t   err_behavior,
 
     cs_parameters_error_header(err_behavior, section_desc);
 
-    int log_id = CS_LOG_DEFAULT;
+    cs_log_t log_id = CS_LOG_DEFAULT;
 
     if (err_behavior > CS_WARNING) {
       cs_log_printf(log_id,
@@ -528,7 +528,7 @@ cs_parameters_is_equal_int(cs_parameter_error_behavior_t   err_behavior,
  *
  * \param[in]  err_behavior  warn or abort ?
  * \param[in]  section_desc  optional description of code section
- *                           containing this parameter, or NULL
+ *                           containing this parameter, or nullptr
  * \param[in]  param_name    name of parameter whose value we are checking
  * \param[in]  param_value   parameter's current_value
  * \param[in]  fbd_value     forbidden value
@@ -546,7 +546,7 @@ cs_parameters_is_not_equal_int(cs_parameter_error_behavior_t   err_behavior,
 
     cs_parameters_error_header(err_behavior, section_desc);
 
-    int log_id = CS_LOG_DEFAULT;
+    cs_log_t log_id = CS_LOG_DEFAULT;
 
     cs_log_printf(log_id,
                   _("Parameter: %s = %d\n"
@@ -563,7 +563,7 @@ cs_parameters_is_not_equal_int(cs_parameter_error_behavior_t   err_behavior,
  *
  * \param[in]  err_behavior  warn or abort ?
  * \param[in]  section_desc  optional description of code section
- *                           containing this parameter, or NULL
+ *                           containing this parameter, or nullptr
  * \param[in]  param_name    name of parameter whose value we are checking
  * \param[in]  param_value   parameter's current_value
  */
@@ -579,7 +579,7 @@ cs_parameters_is_positive_int(cs_parameter_error_behavior_t   err_behavior,
 
     cs_parameters_error_header(err_behavior, section_desc);
 
-    int log_id = CS_LOG_DEFAULT;
+    cs_log_t log_id = CS_LOG_DEFAULT;
 
     cs_log_printf(log_id,
                   _("Parameter: %s = %d\n"
@@ -596,7 +596,7 @@ cs_parameters_is_positive_int(cs_parameter_error_behavior_t   err_behavior,
  *
  * \param[in]  err_behavior  warn or abort ?
  * \param[in]  section_desc  optional description of code section
- *                           containing this parameter, or NULL
+ *                           containing this parameter, or nullptr
  * \param[in]  param_name    name of parameter whose value we are checking
  * \param[in]  param_value   parameter's current_value
  * \param[in]  ib_value     inferior bound value
@@ -614,7 +614,7 @@ cs_parameters_is_greater_int(cs_parameter_error_behavior_t   err_behavior,
 
     cs_parameters_error_header(err_behavior, section_desc);
 
-    int log_id = CS_LOG_DEFAULT;
+    cs_log_t log_id = CS_LOG_DEFAULT;
 
     cs_log_printf(log_id,
                   _("Parameter: %s = %d\n"
@@ -631,7 +631,7 @@ cs_parameters_is_greater_int(cs_parameter_error_behavior_t   err_behavior,
  *
  * \param[in]  err_behavior  warn or abort ?
  * \param[in]  section_desc  optional description of code section
- *                           containing this parameter, or NULL
+ *                           containing this parameter, or nullptr
  * \param[in]  param_name    name of parameter whose value we are checking
  * \param[in]  param_value   parameter's current_value
  * \param[in]  range_l       range lower bound (included)
@@ -651,7 +651,7 @@ cs_parameters_is_in_range_double(cs_parameter_error_behavior_t   err_behavior,
 
     cs_parameters_error_header(err_behavior, section_desc);
 
-    int log_id = CS_LOG_DEFAULT;
+    cs_log_t log_id = CS_LOG_DEFAULT;
 
     cs_log_printf(log_id,
                   _("Parameter: %s = %-5.3g\n"
@@ -668,12 +668,12 @@ cs_parameters_is_in_range_double(cs_parameter_error_behavior_t   err_behavior,
  *
  * \param[in]  err_behavior  warn or abort ?
  * \param[in]  section_desc  optional description of code section
- *                           containing this parameter, or NULL
+ *                           containing this parameter, or nullptr
  * \param[in]  param_name    name of parameter whose value we are checking
  * \param[in]  param_value   parameter's current_value
  * \param[in]  enum_size     size of possible enumeration
  * \param[in]  enum_values   list of enumerated values
- * \param[in]  enum_names    optional list of value names, or NULL
+ * \param[in]  enum_names    optional list of value names, or nullptr
  */
 /*----------------------------------------------------------------------------*/
 
@@ -688,7 +688,7 @@ cs_parameters_is_in_list_double(cs_parameter_error_behavior_t   err_behavior,
 {
   /* Check if we are in the defined list */
 
-  if (enum_values != NULL) {
+  if (enum_values != nullptr) {
     for (int i = 0; i < enum_size; i++) {
       if (CS_ABS(param_value - enum_values[i]) > cs_math_epzero)
         return;
@@ -699,9 +699,9 @@ cs_parameters_is_in_list_double(cs_parameter_error_behavior_t   err_behavior,
 
   cs_parameters_error_header(err_behavior, section_desc);
 
-  int log_id = CS_LOG_DEFAULT;
+  cs_log_t log_id = CS_LOG_DEFAULT;
 
-  if (enum_names != NULL) {
+  if (enum_names != nullptr) {
     cs_log_printf(log_id,
                   _("Parameter: %s = %-5.3g\n"
                     "while its value must be one of:\n"),
@@ -709,7 +709,7 @@ cs_parameters_is_in_list_double(cs_parameter_error_behavior_t   err_behavior,
     for (int i = 0; i < enum_size; i++)
       cs_log_printf(log_id, "  %s\n", enum_names[i]);
   }
-  else if (enum_values != NULL) {
+  else if (enum_values != nullptr) {
     cs_log_printf(log_id,
                   _("Parameter: %s = %-5.3g\n"
                     "while its value must be one of:\n"),
@@ -727,7 +727,7 @@ cs_parameters_is_in_list_double(cs_parameter_error_behavior_t   err_behavior,
  *
  * \param[in]  err_behavior  warn or abort ?
  * \param[in]  section_desc  optional description of code section
- *                           containing this parameter, or NULL
+ *                           containing this parameter, or nullptr
  * \param[in]  param_name    name of parameter whose value we are checking
  * \param[in]  param_value   parameter's current_value
  * \param[in]  std_value     compulsory or recommended parameter's value
@@ -745,7 +745,7 @@ cs_parameters_is_equal_double(cs_parameter_error_behavior_t   err_behavior,
 
     cs_parameters_error_header(err_behavior, section_desc);
 
-    int log_id = CS_LOG_DEFAULT;
+    cs_log_t log_id = CS_LOG_DEFAULT;
 
     if (err_behavior > CS_WARNING) {
       cs_log_printf(log_id,
@@ -770,7 +770,7 @@ cs_parameters_is_equal_double(cs_parameter_error_behavior_t   err_behavior,
  *
  * \param[in]  err_behavior  warn or abort ?
  * \param[in]  section_desc  optional description of code section
- *                           containing this parameter, or NULL
+ *                           containing this parameter, or nullptr
  * \param[in]  param_name    name of parameter whose value we are checking
  * \param[in]  param_value   parameter's current_value
  * \param[in]  ib_value     inferior bound value
@@ -788,7 +788,7 @@ cs_parameters_is_greater_double(cs_parameter_error_behavior_t   err_behavior,
 
     cs_parameters_error_header(err_behavior, section_desc);
 
-    int log_id = CS_LOG_DEFAULT;
+    cs_log_t log_id = CS_LOG_DEFAULT;
 
     cs_log_printf(log_id,
                   _("Parameter: %s = %-5.3g\n"
@@ -856,7 +856,7 @@ cs_parameters_check(void)
     return; /* Avoid the detection of false setting errors when using
                CDO schemes */
 
-  cs_field_t *f_pot = NULL;
+  cs_field_t *f_pot = nullptr;
   if (cs_glob_physical_model_flag[CS_GROUNDWATER] > 0) {
     f_pot = CS_F_(head);
     if (cs_glob_velocity_pressure_param->iphydr != 0) {
@@ -875,7 +875,7 @@ cs_parameters_check(void)
 
   cs_field_t *f_th = cs_thermal_model_field();
 
-  char *f_desc = NULL;
+  char *f_desc = nullptr;
 
   int list_01[2] = {0, 1};
 
@@ -895,7 +895,7 @@ cs_parameters_check(void)
         continue;
 
       cs_equation_param_t *eqp = cs_field_get_equation_param(f);
-      if (eqp != NULL) {
+      if (eqp != nullptr) {
         int scalar_id = (ks > -1) ? cs_field_get_key_int(f, ks) : -1;
         if (f == CS_F_(vel) || scalar_id > -1) {
           if (eqp->nswrsm < nr_sweep_default) {
@@ -934,13 +934,13 @@ cs_parameters_check(void)
   cs_equation_param_t *eqp_u = cs_field_get_equation_param(CS_F_(vel));
 
   int rho_t_ext = 0, mu_t_ext = 0, cp_t_ext = 0;
-  if (CS_F_(rho) != NULL)
+  if (CS_F_(rho) != nullptr)
     rho_t_ext = cs_field_get_key_int(CS_F_(rho), key_t_ext);
-  if (CS_F_(mu) != NULL)
+  if (CS_F_(mu) != nullptr)
     mu_t_ext = cs_field_get_key_int(CS_F_(mu), key_t_ext);
 
   const cs_field_t *f_cp = cs_field_by_name_try("specific_heat");
-  if (f_cp != NULL)
+  if (f_cp != nullptr)
     cp_t_ext = cs_field_get_key_int(f_cp, key_t_ext);
 
   if (   fabs(eqp_u->theta - 1.) < cs_math_epzero
@@ -982,7 +982,7 @@ cs_parameters_check(void)
     if (!(f->type & CS_FIELD_VARIABLE))
       continue;
     cs_equation_param_t *eqp = cs_field_get_equation_param(f);
-    if (eqp == NULL)
+    if (eqp == nullptr)
       continue;
     int scalar_id = (ks > -1) ? cs_field_get_key_int(f, ks) : -1;
     if (scalar_id > -1) {
@@ -1100,7 +1100,7 @@ cs_parameters_check(void)
         continue;
       bool stop_criteria = false;
       cs_equation_param_t *eqp = cs_field_get_equation_param(f);
-      if (eqp == NULL)
+      if (eqp == nullptr)
         continue;
       if (fabs(eqp->theta - 1.) > 1.e-3)
         stop_criteria = true;
@@ -1165,7 +1165,7 @@ cs_parameters_check(void)
         if (!(f->type & CS_FIELD_VARIABLE))
           continue;
         cs_equation_param_t *eqp = cs_field_get_equation_param(f);
-        if (eqp == NULL)
+        if (eqp == nullptr)
           continue;
         int scalar_id = (ks > -1) ? cs_field_get_key_int(f, ks) : -1;
         if (scalar_id > -1) {
@@ -1196,7 +1196,7 @@ cs_parameters_check(void)
       if (!(f->type & CS_FIELD_VARIABLE))
         continue;
       cs_equation_param_t *eqp = cs_field_get_equation_param(f);
-      if (eqp == NULL)
+      if (eqp == nullptr)
         continue;
       int scalar_id = (ks > -1) ? cs_field_get_key_int(f, ks) : -1;
       if (scalar_id > -1) {
@@ -1265,13 +1265,13 @@ cs_parameters_check(void)
     if (!(f->type & CS_FIELD_VARIABLE))
       continue;
     cs_equation_param_t *eqp = cs_field_get_equation_param(f);
-    if (eqp == NULL)
+    if (eqp == nullptr)
       continue;
 
     int scalar_id = (ks > -1) ? cs_field_get_key_int(f, ks) : -1;
     if (scalar_id > -1) {
       if (   cs_glob_turb_model->type == CS_TURB_RANS
-          && cs_thermal_model_field() == NULL
+          && cs_thermal_model_field() == nullptr
           && cs_math_3_norm(cs_glob_physical_constants->gravity) > cs_math_epzero) {
         cs_log_warning
           (_("Turbulence model with gravity\n"
@@ -1300,7 +1300,7 @@ cs_parameters_check(void)
       continue;
 
     cs_equation_param_t *eqp = cs_field_get_equation_param(f);
-    if (eqp != NULL) {
+    if (eqp != nullptr) {
       int scalar_id = (ks > -1) ? cs_field_get_key_int(f, ks) : -1;
       if (scalar_id > -1) {
         const int kscacp = cs_field_key_id("is_temperature");
@@ -1549,7 +1549,7 @@ cs_parameters_check(void)
                                cs_glob_restart_auxiliary->read_auxiliary,
                                2,
                                list_01,
-                               NULL);
+                               nullptr);
 
   cs_parameters_is_in_list_int(CS_ABORT_DELAYED,
                                _("while reading input data"),
@@ -1557,7 +1557,7 @@ cs_parameters_check(void)
                                cs_glob_restart_auxiliary->write_auxiliary,
                                2,
                                list_01,
-                               NULL);
+                               nullptr);
 
   /*--------------------------------------------------------------
    * Error estimators
@@ -1573,7 +1573,7 @@ cs_parameters_check(void)
 
     for (int i = 0; i < 4; i++) {
       const cs_field_t *f = cs_field_by_name_try(name[i]);
-      if (f != NULL)
+      if (f != nullptr)
         n_ns_error_estimators += 1;
     }
 
@@ -1714,10 +1714,11 @@ cs_parameters_check(void)
   }
 
   /* check if NVD scheme for thermal scalar is not one of the VOF schemes */
-  if (f_th != NULL) {
+  if (f_th != nullptr) {
     cs_equation_param_t *eqp = cs_field_get_equation_param(f_th);
     if (eqp->ischcv >= 4) { /* NVD scheme on thermal scalar? */
-      cs_nvd_type_t limiter_choice = cs_field_get_key_int(f_th, key_limiter);
+      cs_nvd_type_t limiter_choice
+        = (cs_nvd_type_t)cs_field_get_key_int(f_th, key_limiter);
 
       f_desc = _field_section_desc(f_th, "while reading numerical "
                                          "parameters for variable");
@@ -1754,7 +1755,7 @@ cs_parameters_check(void)
      - iphydr = 2
      - local or variable time step */
 
-  if (CS_F_(vel) != NULL) {
+  if (CS_F_(vel) != nullptr) {
     cs_equation_param_t *eqp = cs_field_get_equation_param(CS_F_(vel));
 
     const char *tds_err_str
@@ -1817,7 +1818,7 @@ cs_parameters_check(void)
    * there is more than 5% of upwind.
    * Centered scheme with/without slope test, nwsrsm */
   const cs_turb_model_t  *turb_model = cs_get_glob_turb_model();
-  assert(turb_model != NULL);
+  assert(turb_model != nullptr);
 
   if (turb_model->type == CS_TURB_LES) {
     cs_equation_param_t *eqp_v = cs_field_get_equation_param(CS_F_(vel));
@@ -2047,7 +2048,7 @@ cs_parameters_check(void)
                                      turb_model->iturb,
                                      3,
                                      les_iturb,
-                                     NULL);
+                                     nullptr);
   }
 
   /* Gradient reconstruction */
@@ -2194,10 +2195,10 @@ cs_parameters_check(void)
                                turb_model->iturb,
                                16,
                                iturb_vals,
-                               NULL);
+                               nullptr);
 
   /* Rotation curvature correction for eddy-viscosity models */
-  assert(cs_glob_turb_rans_model != NULL);
+  assert(cs_glob_turb_rans_model != nullptr);
   cs_parameters_is_in_range_int(CS_ABORT_DELAYED,
                                 _("while reading input data"),
                                 "cs_glob_turb_rans_model->irccor",
@@ -2223,7 +2224,7 @@ cs_parameters_check(void)
                                  turb_model->iturb,
                                  6,
                                  iturb_evm_vals,
-                                 NULL);
+                                 nullptr);
   }
 
   /* Hybrid RANS/LES models (DES, DDES, SAS) only with k-omega SST model */
@@ -2240,7 +2241,7 @@ cs_parameters_check(void)
                                  turb_model->iturb,
                                  1,
                                  iturb_ddes_vals,
-                                 NULL);
+                                 nullptr);
 
   }
 
@@ -2257,7 +2258,7 @@ cs_parameters_check(void)
                                  turb_model->iturb,
                                  2,
                                  iturb_htles_vals,
-                                 NULL);
+                                 nullptr);
 
   }
 
@@ -2328,7 +2329,7 @@ cs_parameters_check(void)
                                  turb_model->itytur,
                                  5,
                                  itytur_vals,
-                                 NULL);
+                                 nullptr);
   }
 
   /* Specific k-epsilon, v2f and k-omega */
@@ -2640,7 +2641,7 @@ cs_parameters_check(void)
                                cs_glob_space_disc->imrgra,
                                5,
                                imrgra_vals,
-                               NULL);
+                               nullptr);
   }
 
   cs_equation_param_t *eqp_v = cs_field_get_equation_param(CS_F_(vel));
@@ -2781,7 +2782,7 @@ cs_parameters_check(void)
 
           if (eqp->isstpc == 0) {
             eqp->isstpc = 1;
-            int log_id = CS_LOG_DEFAULT;
+            cs_log_t log_id = CS_LOG_DEFAULT;
             cs_log_printf(log_id,
                           _("The calculation continues with isstpc = 1 for "
                             "the variable velocity.\n"));
@@ -2807,7 +2808,7 @@ cs_parameters_check(void)
 
       if (eqp->nswrsm <= 0) {
         eqp->nswrsm = 1;
-        int log_id = CS_LOG_DEFAULT;
+        cs_log_t log_id = CS_LOG_DEFAULT;
         cs_log_printf(log_id,
                       _("The calculation continues with nswrsm = 1 "
                         "for this variable.\n"));
@@ -3067,7 +3068,8 @@ cs_parameters_check(void)
   /* Check the consistency of the restart_file key */
   for (int f_id = 0; f_id < cs_field_n_fields(); f_id++) {
     cs_field_t *f = cs_field_by_id(f_id);
-    cs_restart_file_t r_id = cs_field_get_key_int(f, restart_file_key_id);
+    cs_restart_file_t r_id
+      = (cs_restart_file_t)cs_field_get_key_int(f, restart_file_key_id);
     cs_parameters_is_in_range_int(CS_ABORT_DELAYED,
                                 _("while reading input data"),
                                   "restart_file",

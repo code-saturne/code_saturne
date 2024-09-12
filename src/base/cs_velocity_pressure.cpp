@@ -346,8 +346,8 @@ static cs_velocity_pressure_param_t  _velocity_pressure_param =
     .start_nt = -1,
     .end_nt = -1,
     .interval_nt = 1,
-    .control_func = NULL,
-    .control_input = NULL,
+    .control_func = nullptr,
+    .control_input = nullptr,
     .current_state = false,
     .current_time_step = -1,
     .last_nt = -2,
@@ -497,18 +497,18 @@ cs_velocity_pressure_set_solid(void)
 void
 cs_velocity_pressure_model_log_setup(void)
 {
-  if (cs_glob_field_pointers == NULL)
+  if (cs_glob_field_pointers == nullptr)
     return;
 
   const cs_velocity_pressure_model_t *vp_model = cs_glob_velocity_pressure_model;
 
-  cs_field_t *f_p = NULL;
+  cs_field_t *f_p = nullptr;
   if (cs_glob_physical_model_flag[CS_GROUNDWATER] > 0)
     f_p = CS_F_(head);
   else
     f_p = CS_F_(p);
 
-  if (f_p == NULL)
+  if (f_p == nullptr)
     return;
 
   cs_log_printf(CS_LOG_SETUP,
@@ -575,13 +575,13 @@ cs_velocity_pressure_model_log_setup(void)
 void
 cs_velocity_pressure_param_log_setup(void)
 {
-  cs_field_t *f_p = NULL;
+  cs_field_t *f_p = nullptr;
   if (cs_glob_physical_model_flag[CS_GROUNDWATER] > 0)
     f_p = CS_F_(head);
   else
     f_p = CS_F_(p);
 
-  if (f_p == NULL)
+  if (f_p == nullptr)
     return;
 
   const char *f_p_label = cs_field_get_label(f_p);
@@ -648,7 +648,7 @@ cs_velocity_pressure_param_log_setup(void)
                   _(igpust_value_str[vp_param->igpust]));
 
     const cs_turb_model_t  *turb_model = cs_get_glob_turb_model();
-    if (turb_model != NULL) {
+    if (turb_model != nullptr) {
       if (turb_model->order == CS_TURB_SECOND_ORDER){
         const char *igprij_value_str[]
           = {N_("0 (do not take into account div(rho R) terms in the\n"
@@ -700,7 +700,7 @@ cs_velocity_pressure_param_log_setup(void)
                 vp_param->itpcol,
                 _(itpcol_type_str[vp_param->itpcol]));
 
-  const cs_equation_param_t *eqp = NULL;
+  const cs_equation_param_t *eqp = nullptr;
 
   if (cs_glob_time_step_options->idtvar >= 0) {
     eqp = cs_field_get_equation_param_const(f_p);

@@ -153,9 +153,9 @@ cs_boundary_conditions_type(bool  init,
   const int meteo_profile = cs_glob_atmo_option->meteo_profile;
   const int n_fields = cs_field_n_fields();
 
-  int *icodcl_p = NULL, *icodcl_vel = NULL;
-  cs_real_t *rcodcl1_p = NULL, *rcodcl2_p = NULL, *rcodcl3_p = NULL;
-  cs_real_t *rcodcl1_vel = NULL, *rcodcl2_vel = NULL, *rcodcl3_vel = NULL;
+  int *icodcl_p = nullptr, *icodcl_vel = nullptr;
+  cs_real_t *rcodcl1_p = nullptr, *rcodcl2_p = nullptr, *rcodcl3_p = nullptr;
+  cs_real_t *rcodcl1_vel = nullptr, *rcodcl2_vel = nullptr, *rcodcl3_vel = nullptr;
 
   /* Type ids and names (general case) */
 
@@ -187,14 +187,14 @@ cs_boundary_conditions_type(bool  init,
   /* Initialization
      ============== */
 
-  if (CS_F_(p) != NULL) {
+  if (CS_F_(p) != nullptr) {
     icodcl_p = CS_F_(p)->bc_coeffs->icodcl;
     rcodcl1_p = CS_F_(p)->bc_coeffs->rcodcl1;
     rcodcl2_p = CS_F_(p)->bc_coeffs->rcodcl2;
     rcodcl3_p = CS_F_(p)->bc_coeffs->rcodcl3;
   }
 
-  if (CS_F_(vel) != NULL) {
+  if (CS_F_(vel) != nullptr) {
     icodcl_vel = CS_F_(vel)->bc_coeffs->icodcl;
     rcodcl1_vel = CS_F_(vel)->bc_coeffs->rcodcl1;
     rcodcl2_vel = CS_F_(vel)->bc_coeffs->rcodcl2;
@@ -202,10 +202,10 @@ cs_boundary_conditions_type(bool  init,
   }
 
   /* Allocate temporary arrays */
-  cs_real_t *pripb = NULL;
+  cs_real_t *pripb = nullptr;
   BFT_MALLOC(pripb, n_b_faces, cs_real_t);
 
-  cs_lnum_t *bc_type_idx = NULL;
+  cs_lnum_t *bc_type_idx = nullptr;
   BFT_MALLOC(bc_type_idx, CS_MAX_BC_TYPE+1, cs_lnum_t);
 
   /* Initialize variables to avoid compiler warnings */
@@ -236,7 +236,7 @@ cs_boundary_conditions_type(bool  init,
     cs_parall_max(1, CS_INT_TYPE, &iok);
 
     if (iok != 0)
-      cs_boundary_conditions_error(bc_type, NULL);
+      cs_boundary_conditions_error(bc_type, nullptr);
   }
 
   /* Sort boundary faces
@@ -258,7 +258,7 @@ cs_boundary_conditions_type(bool  init,
 
     /* Build list of face ids sorted by bc type: itrifb */
 
-    cs_lnum_t *bc_type_count = NULL;
+    cs_lnum_t *bc_type_count = nullptr;
     BFT_MALLOC(bc_type_count, CS_MAX_BC_TYPE, cs_lnum_t);
     for (int j = 0; j < CS_MAX_BC_TYPE; j++)
       bc_type_count[j] = 0;
@@ -659,7 +659,7 @@ cs_boundary_conditions_type(bool  init,
     if (cs_glob_physical_model_flag[CS_COMPRESSIBLE] < 0) {
 
       cs_real_t *cpro_prtot = cs_field_by_name_try("total_pressure")->val;
-      if (cpro_prtot != NULL) {
+      if (cpro_prtot != nullptr) {
         cs_real_t prtot_shift = -ro0 * cs_math_3_distance_dot_product(xyzp0,
                                                                       xyzref,
                                                                       gxyz);
@@ -706,10 +706,10 @@ cs_boundary_conditions_type(bool  init,
   if (   _itbslb > -1
       && cs_glob_lagr_time_scheme->iilagr != CS_LAGR_FROZEN_CONTINUOUS_PHASE) {
 
-    cs_real_3_t *frcxt = NULL;
+    cs_real_3_t *frcxt = nullptr;
     {
       cs_field_t *f_vf = cs_field_by_name_try("volume_forces");
-      if (f_vf != NULL)
+      if (f_vf != nullptr)
         frcxt = (cs_real_3_t *)f_vf->val;
     }
 
@@ -816,7 +816,7 @@ cs_boundary_conditions_type(bool  init,
      If icodcl = -1, then the BC Dirichlet value is given in solved pressure P,
      no need of transformation from P_tot to P */
 
-  if (CS_F_(p) != NULL && cs_glob_physical_model_flag[CS_COMPRESSIBLE] < 0) {
+  if (CS_F_(p) != nullptr && cs_glob_physical_model_flag[CS_COMPRESSIBLE] < 0) {
 
     for (cs_lnum_t f_id = 0; f_id < n_b_faces; f_id++) {
       if (icodcl_p[f_id] == -1)
@@ -837,7 +837,7 @@ cs_boundary_conditions_type(bool  init,
   /* (The pressure has a Neumann processing, the other Dirichlet
      will be processed later) */
 
-  if (CS_F_(p) != NULL) {
+  if (CS_F_(p) != nullptr) {
 
     const int i_type_id[2] = {CS_INLET-1,
                               CS_CONVECTIVE_INLET-1};
@@ -874,7 +874,7 @@ cs_boundary_conditions_type(bool  init,
     const cs_lnum_t s_id = bc_type_idx[CS_OUTLET-1];
     const cs_lnum_t e_id = bc_type_idx[CS_OUTLET];
 
-    if (CS_F_(p) != NULL) {
+    if (CS_F_(p) != nullptr) {
 
       for (cs_lnum_t ii = s_id; ii < e_id; ii++) {
         const cs_lnum_t f_id = itrifb[ii];
@@ -888,7 +888,7 @@ cs_boundary_conditions_type(bool  init,
 
     }
 
-    if (CS_F_(vel) != NULL) {
+    if (CS_F_(vel) != nullptr) {
 
       cs_lnum_t n_inout_faces = 0;
       cs_lnum_t n_out_faces = e_id-s_id;
@@ -914,14 +914,14 @@ cs_boundary_conditions_type(bool  init,
             /* Dirichlet boundary condition */
             icodcl_vel[f_id] = 1;
             n_inout_faces++;
-            if (f_inout != NULL)
+            if (f_inout != nullptr)
               f_inout->val[f_id] = b_massflux/fvq->b_face_surf[f_id];
           }
           else {
             /* Neumann boundary conditions */
             icodcl_vel[f_id] = 3;
 
-            if (f_inout != NULL)
+            if (f_inout != nullptr)
               f_inout->val[f_id] = 0.;
           }
 
@@ -935,7 +935,8 @@ cs_boundary_conditions_type(bool  init,
       }
 
       if (cs_log_default_is_active() || eqp_vel->verbosity >= 0) {
-        cs_gnum_t isocpt[2] = {n_inout_faces, n_out_faces};
+        cs_gnum_t isocpt[2] = {static_cast<cs_gnum_t>(n_inout_faces),
+                               static_cast<cs_gnum_t>(n_out_faces)};
         cs_parall_sum(2, CS_GNUM_TYPE, isocpt);
         if (isocpt[1] > 0 && (eqp_vel->verbosity >= 2 || isocpt[0] > 0))
           cs_log_printf
@@ -956,7 +957,7 @@ cs_boundary_conditions_type(bool  init,
     const cs_lnum_t e_id = bc_type_idx[CS_FREE_INLET];
 
     /* Pressure */
-    if (CS_F_(p) != NULL) {
+    if (CS_F_(p) != nullptr) {
 
       for (cs_lnum_t ii = s_id; ii < e_id; ii++) {
         const cs_lnum_t f_id = itrifb[ii];
@@ -979,7 +980,7 @@ cs_boundary_conditions_type(bool  init,
     }
 
     /* Velocity */
-    if (CS_F_(vel) != NULL) {
+    if (CS_F_(vel) != nullptr) {
 
       for (cs_lnum_t ii = s_id; ii < e_id; ii++) {
         const cs_lnum_t f_id = itrifb[ii];
@@ -1005,7 +1006,7 @@ cs_boundary_conditions_type(bool  init,
     const cs_lnum_t s_id = bc_type_idx[CS_FREE_SURFACE-1];
     const cs_lnum_t e_id = bc_type_idx[CS_FREE_SURFACE];
 
-    if (CS_F_(p) != NULL) {
+    if (CS_F_(p) != nullptr) {
 
       for (cs_lnum_t ii = s_id; ii < e_id; ii++) {
         const cs_lnum_t f_id = itrifb[ii];
@@ -1022,7 +1023,7 @@ cs_boundary_conditions_type(bool  init,
 
     }
 
-    if (CS_F_(vel) != NULL) {
+    if (CS_F_(vel) != nullptr) {
 
       for (cs_lnum_t ii = s_id; ii < e_id; ii++) {
         const cs_lnum_t f_id = itrifb[ii];
@@ -1429,7 +1430,7 @@ cs_boundary_conditions_type(bool  init,
            "The calculation will not be run.\n\n"
            "Verify the boundary condition definitions.\n"));
 
-      cs_boundary_conditions_error(bc_type, NULL);
+      cs_boundary_conditions_error(bc_type, nullptr);
     }
   }
 
@@ -1623,7 +1624,7 @@ cs_boundary_conditions_type(bool  init,
      if not modified by the user */
 
   const cs_field_t *f_wall_dist = cs_field_by_name_try("wall_distance");
-  if (f_wall_dist != NULL) {
+  if (f_wall_dist != nullptr) {
 
     if (   (f_wall_dist->type & CS_FIELD_VARIABLE)
         && (!(f_wall_dist->type & CS_FIELD_CDO))) {
@@ -1721,7 +1722,7 @@ cs_boundary_conditions_type(bool  init,
            "   ** BOUNDARY MASS FLOW INFORMATION\n"
            "      ------------------------------\n\n"));
 
-      cs_real_t *flumty = NULL;
+      cs_real_t *flumty = nullptr;
       BFT_MALLOC(flumty, CS_MAX_BC_TYPE, cs_real_t);
       for (int i = 0; i < CS_MAX_BC_TYPE; i++)
         flumty[i] = 0;

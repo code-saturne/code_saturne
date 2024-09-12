@@ -181,7 +181,7 @@ cs_porous_model_init_disable_flag(void)
 
   if (cs_glob_porous_model > 0) {
     cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
-    if (mq->c_disable_flag == NULL || m->n_cells != n_cells_prev) {
+    if (mq->c_disable_flag == nullptr || m->n_cells != n_cells_prev) {
       /* Currently should handle turbomachinery (ghost cells only can change),
          not mesh refinement */
       assert(m->n_cells == n_cells_prev || n_cells_prev == 0);
@@ -195,13 +195,13 @@ cs_porous_model_init_disable_flag(void)
     else {
       if (mq->has_disable_flag != 0)
         BFT_REALLOC(mq->c_disable_flag, n_cells_ext, int);
-      if (m->halo != NULL)
+      if (m->halo != nullptr)
         cs_halo_sync_untyped(m->halo, CS_HALO_STANDARD, sizeof(int),
                              mq->c_disable_flag);
     }
   }
   else {
-    if (mq->c_disable_flag == NULL)
+    if (mq->c_disable_flag == nullptr)
       BFT_MALLOC(mq->c_disable_flag, 1, int);
     mq->c_disable_flag[0] = 0;
   }
@@ -237,14 +237,14 @@ cs_porous_model_set_has_disable_flag(int  flag)
         mq->b_f_face_surf   = mq->b_face_surf;
         mq->i_f_face_cog = mq->i_face_cog;
         mq->b_f_face_cog = mq->b_face_cog;
-        mq->i_f_face_factor = NULL;
-        mq->b_f_face_factor = NULL;
+        mq->i_f_face_factor = nullptr;
+        mq->b_f_face_factor = nullptr;
         mq->cell_f_cen = mq->cell_cen;
-        mq->cell_s_cen = NULL;
-        mq->c_w_face_normal = NULL;
-        mq->c_w_face_surf = NULL;
-        mq->c_w_face_cog = NULL;
-        mq->c_w_dist_inv = NULL;
+        mq->cell_s_cen = nullptr;
+        mq->c_w_face_normal = nullptr;
+        mq->c_w_face_surf = nullptr;
+        mq->c_w_face_cog = nullptr;
+        mq->c_w_dist_inv = nullptr;
       }
       mq->cell_f_vol = mq->cell_vol;
     }
@@ -301,9 +301,9 @@ cs_porous_model_mesh_quantities_update(void)
   cs_mesh_t *m = cs_glob_mesh;
   cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
 
-  cs_real_3_t *cen_points = NULL;
+  cs_real_3_t *cen_points = nullptr;
   cs_field_t *f = cs_field_by_name_try("cell_scan_points_cog");
-  if (f != NULL)
+  if (f != nullptr)
     cen_points = (cs_real_3_t *)f->val;
 
   cs_mesh_quantities_solid_compute(m, cen_points,  mq);
@@ -332,7 +332,7 @@ cs_porous_model_auto_face_porosity(void)
   /* Get the cell porosity field value */
   cs_real_t *cpro_porosi = cs_field_by_name("porosity")->val;
 
-  if (m->halo != NULL)
+  if (m->halo != nullptr)
     cs_halo_sync_var(m->halo, CS_HALO_STANDARD, cpro_porosi);
 
   /* Set interior face values */
@@ -343,9 +343,8 @@ cs_porous_model_auto_face_porosity(void)
       = (const cs_lnum_2_t *)m->i_face_cells;
 
     const cs_real_3_t *restrict i_face_normal
-      = (const cs_real_3_t *restrict)mq->i_face_normal;
-    cs_real_3_t *restrict i_f_face_normal
-      = (cs_real_3_t *restrict)mq->i_f_face_normal;
+      = (const cs_real_3_t *)mq->i_face_normal;
+    cs_real_3_t *restrict i_f_face_normal = (cs_real_3_t *)mq->i_f_face_normal;
 
     for (cs_lnum_t face_id = 0; face_id < n_i_faces; face_id++) {
 
@@ -359,7 +358,7 @@ cs_porous_model_auto_face_porosity(void)
 
       mq->i_f_face_surf[face_id] = cs_math_3_norm(i_f_face_normal[face_id]);
 
-      if (mq->i_f_face_factor != NULL) {
+      if (mq->i_f_face_factor != nullptr) {
         if (face_porosity > cs_math_epzero) {
           mq->i_f_face_factor[face_id][0] = cpro_porosi[c_id0] / face_porosity;
           mq->i_f_face_factor[face_id][1] = cpro_porosi[c_id1] / face_porosity;
@@ -381,9 +380,9 @@ cs_porous_model_auto_face_porosity(void)
       = (const cs_lnum_t *)m->b_face_cells;
 
     const cs_real_3_t *restrict b_face_normal
-      = (const cs_real_3_t *restrict)mq->b_face_normal;
+      = (const cs_real_3_t *)mq->b_face_normal;
     cs_real_3_t *restrict b_f_face_normal
-      = (cs_real_3_t *restrict)mq->b_f_face_normal;
+      = (cs_real_3_t *)mq->b_f_face_normal;
 
     for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++) {
 
@@ -396,7 +395,7 @@ cs_porous_model_auto_face_porosity(void)
 
       mq->b_f_face_surf[face_id] = cs_math_3_norm(b_f_face_normal[face_id]);
 
-      if (mq->b_f_face_factor != NULL) {
+      if (mq->b_f_face_factor != nullptr) {
         if (face_porosity > cs_math_epzero) {
           mq->b_f_face_factor[face_id] = cpro_porosi[c_id] / face_porosity;
         }
@@ -496,24 +495,16 @@ cs_porous_model_fluid_surfaces_preprocessing(void)
   const cs_mesh_t *m = cs_glob_mesh;
   const cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
 
-  const cs_real_3_t *restrict i_face_normal
-    =  (cs_real_3_t *restrict)mq->i_face_normal;
-  const cs_real_3_t *restrict b_face_normal
-    =  (cs_real_3_t *restrict)mq->b_face_normal;
-  const cs_lnum_2_t *i_face_cells
-    = (const cs_lnum_2_t *)m->i_face_cells;
-  const cs_lnum_t *b_face_cells
-    = (const cs_lnum_t *)m->b_face_cells;
+  const cs_real_3_t *restrict i_face_normal = (cs_real_3_t *)mq->i_face_normal;
+  const cs_real_3_t *restrict b_face_normal = (cs_real_3_t *)mq->b_face_normal;
+  const cs_lnum_2_t *i_face_cells = (const cs_lnum_2_t *)m->i_face_cells;
+  const cs_lnum_t *b_face_cells = (const cs_lnum_t *)m->b_face_cells;
 
   cs_real_t *restrict cell_f_vol = mq->cell_f_vol;
-  cs_real_3_t *restrict i_f_face_normal =
-    (cs_real_3_t *restrict)mq->i_f_face_normal;
-  cs_real_3_t *restrict b_f_face_normal =
-    (cs_real_3_t *restrict)mq->b_f_face_normal;
-  cs_real_t *restrict i_f_face_surf
-    = (cs_real_t *restrict)mq->i_f_face_surf;
-  cs_real_t *restrict b_f_face_surf
-    = (cs_real_t *restrict)mq->b_f_face_surf;
+  cs_real_3_t *restrict i_f_face_normal = (cs_real_3_t *)mq->i_f_face_normal;
+  cs_real_3_t *restrict b_f_face_normal = (cs_real_3_t *)mq->b_f_face_normal;
+  cs_real_t *restrict i_f_face_surf = (cs_real_t *)mq->i_f_face_surf;
+  cs_real_t *restrict b_f_face_surf = (cs_real_t *)mq->b_f_face_surf;
 
   /* Pointer to porosity field */
   cs_field_t *f = cs_field_by_name("porosity");
@@ -547,7 +538,7 @@ cs_porous_model_fluid_surfaces_preprocessing(void)
       mq->i_f_face_surf[face_id] = cs_math_3_norm(i_f_face_normal[face_id]);
     }
 
-    if (mq->i_f_face_factor != NULL) {
+    if (mq->i_f_face_factor != nullptr) {
       //FIXME
       //if (face_porosity > cs_math_epzero) {
       //  mq->i_f_face_factor[face_id][0] = cpro_porosi[c_id0] / face_porosity;
@@ -579,7 +570,7 @@ cs_porous_model_fluid_surfaces_preprocessing(void)
       mq->b_f_face_surf[face_id] = cs_math_3_norm(b_f_face_normal[face_id]);
     }
 
-    if (mq->b_f_face_factor != NULL) {
+    if (mq->b_f_face_factor != nullptr) {
       //FIXME
       //if (face_porosity > cs_math_epzero) {
       //  mq->b_f_face_factor[face_id] = cpro_porosi[c_id] / face_porosity;

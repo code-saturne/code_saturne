@@ -391,6 +391,9 @@ _tetra_vol(cs_real_3_t x1,
            cs_real_3_t x3,
            cs_real_3_t x4)
 {
+
+  constexpr cs_real_t c_1ov6 = 1./6.;
+
   /* Volume of the tetrahedron x1, x2, x3, x4 */
   cs_real_t tetra_vol = cs_math_fabs(( (x1[0]-x4[0])*(x2[1]-x4[1])
                                      - (x1[1]-x4[1])*(x2[0]-x4[0]) )
@@ -401,7 +404,7 @@ _tetra_vol(cs_real_3_t x1,
                                  + (   (x1[2]-x4[2])*(x2[0]-x4[0])
                                      - (x1[0]-x4[0])*(x2[2]-x4[2]) )
                                      * (x3[1]-x4[1]) )
-                                 * cs_math_1ov6;
+                                 * c_1ov6;
 
   return tetra_vol;
 }
@@ -467,10 +470,11 @@ _prism_vol(cs_real_3_t x1,
   /* Volume of the prism of base x3, x4, x5, x6 and edge x1 x2 */
   /* The two triangles are x1 x3 x6 and x2 x4 x5 */
 
-  cs_real_3_t xc;
+  cs_real_t xc[3];
+  constexpr cs_real_t c_1ov6 = 1./6.;
 
   for (int i = 0; i < 3; i++)
-    xc[i] = (x1[i]+x2[i]+x3[i]+x4[i]+x5[i]+x6[i]) * cs_math_1ov6;
+    xc[i] = (x1[i]+x2[i]+x3[i]+x4[i]+x5[i]+x6[i]) * c_1ov6;
 
   cs_real_t vol136c  = _tetra_vol(x1, x3, x6, xc);
   cs_real_t vol245c  = _tetra_vol(x2, x4, x5, xc);
@@ -518,6 +522,7 @@ _tetra_vol_poro(cs_real_t   *vol,
 {
   /* Mean porosity */
   cs_real_t porc = (por1 + por2 + por3 + por4) * 0.25;
+  constexpr cs_real_t c_1ov6 = 1./6.;
 
   /* Check if some vertices are considered as solid */
   int ipenal1 = 0;
@@ -1037,7 +1042,7 @@ _tetra_vol_poro(cs_real_t   *vol,
       cs_real_3_t cogp;
       for (int i = 0; i < 3; i++) {
         cogp[i] = (y1[i] + y2[i] + y13[i] + y23[i] + y24[i] + y14[i])
-                  * cs_math_1ov6;
+                  * c_1ov6;
         cog[i] += cogp[i] * *vol;
       }
     }
@@ -1070,7 +1075,8 @@ _tri_surf_trunc(cs_real_3_t x1,
                 int icut)
 {
   /* Mean porosity */
-  cs_real_t por4 = (por1 + por2 + por3) * cs_math_1ov3;
+  constexpr cs_real_t c_1ov3 = 1./3.;
+  cs_real_t por4 = (por1 + por2 + por3) * c_1ov3;
 
   /* Check if some vertices are considered as solid */
   int ipenal1 = 0;

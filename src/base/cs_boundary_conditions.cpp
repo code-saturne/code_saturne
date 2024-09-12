@@ -2010,7 +2010,7 @@ cs_boundary_conditions_map(cs_mesh_location_type_t    location_type,
   ple_coord_t *point_coords;
 
   const cs_real_3_t *restrict b_face_cog
-    = (const cs_real_3_t *restrict)cs_glob_mesh_quantities->b_face_cog;
+    = (const cs_real_3_t *)cs_glob_mesh_quantities->b_face_cog;
 
   BFT_MALLOC(point_coords, n_faces*3, ple_coord_t);
   if (faces != NULL) {
@@ -3063,7 +3063,7 @@ cs_boundary_conditions_assign_model_inlet(const cs_zone_t  *zone,
               __func__, zone->name);
 
   c->model_inlet = s_ptr;
-  c->model_inlet_del = s_del;
+  c->model_inlet_del = (cs_destructor_t *)s_del;
 }
 
 

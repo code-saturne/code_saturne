@@ -134,7 +134,7 @@ cs_dilatable_scalar_diff_st(int iterns)
   CS_MALLOC_HD(b_visc, n_b_faces, cs_real_t, cs_alloc_mode);
   CS_MALLOC_HD(xcpp, n_cells_ext, cs_real_t, cs_alloc_mode);
 
-  const cs_real_t *cpro_cp = NULL;
+  const cs_real_t *cpro_cp = nullptr;
   if (icp >= 0)
     cpro_cp = CS_F_(cp)->val;
 
@@ -191,7 +191,7 @@ cs_dilatable_scalar_diff_st(int iterns)
     }
 
     /* Handle parallelism and periodicity */
-    if (mesh->halo != NULL) {
+    if (mesh->halo != nullptr) {
       cs_halo_sync_var(mesh->halo, CS_HALO_STANDARD, xcpp);
     }
 
@@ -211,7 +211,7 @@ cs_dilatable_scalar_diff_st(int iterns)
 
     /* Index for molecular diffusivity */
     const int ifcvsl = cs_field_get_key_int(f_scal, kivisl);
-    cs_real_t *viscls = NULL;
+    cs_real_t *viscls = nullptr;
     if (ifcvsl > -1)
       viscls = cs_field_by_id(ifcvsl)->val;
 
@@ -292,12 +292,12 @@ cs_dilatable_scalar_diff_st(int iterns)
                       bc_coeffs_sc,
                       i_mass_flux, b_mass_flux,
                       i_visc, b_visc,
-                      NULL,  /* viscel */
+                      nullptr,  /* viscel */
                       xcpp,
-                      NULL,  /* weighf */
-                      NULL,  /* weighb */
+                      nullptr,  /* weighf */
+                      nullptr,  /* weighb */
                       0,     /* icvflb; upwind scheme */
-                      NULL,
+                      nullptr,
                       cpro_tsscal);
   } /* end loop on fields */
 

@@ -340,7 +340,7 @@ cs_solve_transported_variables(int iterns)
           cs_real_t *cvar_fm = f_fm->val;
 
           const int ifcvsl = cs_field_get_key_int(f_scal, kivisl);
-          const cs_real_t *viscls = NULL;
+          const cs_real_t *viscls = nullptr;
           if (ifcvsl >= 0)
             viscls = cs_field_by_id(ifcvsl)->val;
 
