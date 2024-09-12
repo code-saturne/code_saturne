@@ -4873,7 +4873,7 @@ cs_sles_it_solve(void                *context,
       }
       else if (amode_vx < CS_ALLOC_HOST_DEVICE_SHARED) {
         cs_sync_h2d(vx);
-        _vx = cs_get_device_ptr(vx);
+        _vx = (cs_real_t *)cs_get_device_ptr(vx);
       }
 
       if (amode_rhs == CS_ALLOC_HOST) {
