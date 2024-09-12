@@ -557,8 +557,8 @@ _solve_most(int              n_var,
        - We assume that all phases are frozen, or non are.
        --------------------------------------------------- */
 
-    cs_time_control_t *vp_tc =
-      &(cs_glob_velocity_pressure_param->time_control);
+    cs_time_control_t *vp_tc
+      = &(cs_get_glob_velocity_pressure_param()->time_control);
     const cs_time_step_t *ts = cs_glob_time_step;
     bool _active_dyn = cs_time_control_is_active(vp_tc, ts);
     if (_active_dyn) {
@@ -1091,8 +1091,8 @@ cs_solve_all(int  itrale)
 
   bool must_return = false;
   bool need_new_solve = true;
-  cs_time_control_t *vp_tc =
-    &(cs_glob_velocity_pressure_param->time_control);
+  cs_time_control_t *vp_tc
+    = &(cs_get_glob_velocity_pressure_param()->time_control);
   const cs_time_step_t *ts = cs_glob_time_step;
   bool _active_dyn = cs_time_control_is_active(vp_tc, ts);
 

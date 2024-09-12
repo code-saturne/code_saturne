@@ -383,7 +383,7 @@ cs_selector.c \
 cs_selector_f2c.f90 \
 cs_setup.c \
 cs_solid_zone.c \
-cs_solve_all.c \
+cs_solve_all.cpp \
 cs_solve_equation.c \
 cs_solve_navier_stokes.cpp \
 cs_solve_transported_variables.c \
