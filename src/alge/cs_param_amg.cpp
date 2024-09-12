@@ -162,7 +162,7 @@ cs_param_amg_get_class(cs_param_amg_type_t  amg_type)
 cs_param_amg_boomer_t *
 cs_param_amg_boomer_create(void)
 {
-  cs_param_amg_boomer_t  *bamgp = NULL;
+  cs_param_amg_boomer_t  *bamgp = nullptr;
 
   BFT_MALLOC(bamgp, 1, cs_param_amg_boomer_t);
 
@@ -301,10 +301,10 @@ void
 cs_param_amg_boomer_log(const char                  *name,
                        const cs_param_amg_boomer_t  *bamgp)
 {
-  if (bamgp == NULL)
+  if (bamgp == nullptr)
     return;
 
-  char  *prefix = NULL;
+  char  *prefix = nullptr;
   int  len = strlen(name) + strlen("  *  |") + 1;
   BFT_MALLOC(prefix, len, char);
   sprintf(prefix, "  * %s |", name);
@@ -428,7 +428,7 @@ cs_param_amg_inhouse_t *
 cs_param_amg_inhouse_create(bool  used_as_solver,
                             bool  used_as_k_cycle)
 {
-  cs_param_amg_inhouse_t  *amgp = NULL;
+  cs_param_amg_inhouse_t  *amgp = nullptr;
 
   BFT_MALLOC(amgp, 1, cs_param_amg_inhouse_t);
 
@@ -602,10 +602,10 @@ void
 cs_param_amg_inhouse_log(const char                    *name,
                          const cs_param_amg_inhouse_t  *amgp)
 {
-  if (amgp == NULL)
+  if (amgp == nullptr)
     return;
 
-  char  *prefix = NULL;
+  char  *prefix = nullptr;
   int  len = strlen(name) + strlen("  *  |") + 1;
   BFT_MALLOC(prefix, len, char);
   sprintf(prefix, "  * %s |", name);

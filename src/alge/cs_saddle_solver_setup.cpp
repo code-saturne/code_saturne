@@ -128,7 +128,7 @@ _build_is_for_fieldsplit(cs_saddle_solver_t  *solver,
 
   const cs_range_set_t  *rset = cs_cdo_system_get_range_set(sh, 0);
 
-  PetscInt  *indices = NULL;
+  PetscInt  *indices = nullptr;
   PetscMalloc1(CS_MAX(n1_dofs, n2_dofs), &indices);
 
   /* IndexSet for the (1,1)-block of DoFs */
@@ -357,7 +357,7 @@ _build_is_for_fieldsplit(cs_saddle_solver_t  *solver,
 /*     case CS_PARAM_AMG_HYPRE_BOOMER_V: */
 /* #if defined(PETSC_HAVE_HYPRE) */
 /*       PCHYPRESetType(u_pc, "boomeramg"); */
-/*       PetscOptionsSetValue(NULL, "-pc_hypre_boomeramg_cycle_type","V"); */
+/*       PetscOptionsSetValue(nullptr, "-pc_hypre_boomeramg_cycle_type","V"); */
 /*       _setup_velocity_boomeramg(); */
 /* #else */
 /*       PCGAMGSetType(u_pc, PCGAMGAGG); */
@@ -370,7 +370,7 @@ _build_is_for_fieldsplit(cs_saddle_solver_t  *solver,
 /*     case CS_PARAM_AMG_HYPRE_BOOMER_W: */
 /* #if defined(PETSC_HAVE_HYPRE) */
 /*       PCHYPRESetType(u_pc, "boomeramg"); */
-/*       PetscOptionsSetValue(NULL, "-pc_hypre_boomeramg_cycle_type","W"); */
+/*       PetscOptionsSetValue(nullptr, "-pc_hypre_boomeramg_cycle_type","W"); */
 /*       _setup_velocity_boomeramg(); */
 /* #else */
 /*       PCGAMGSetType(u_pc, PCGAMGAGG); */
@@ -428,8 +428,8 @@ _gkb_hook(void  *context,
 {
   /* PETSc structures */
 
-  IS  is1 = NULL, is2 = NULL;
-  KSP  ksp = ksp_struct;
+  IS  is1 = nullptr, is2 = nullptr;
+  KSP ksp = static_cast<KSP>(ksp_struct);
 
   cs_fp_exception_disable_trap(); /* Avoid trouble with a too restrictive
                                      SIGFPE detection */
@@ -438,9 +438,10 @@ _gkb_hook(void  *context,
 
   /* Get the context members */
 
-  cs_saddle_solver_t  *solver = context;
+  cs_saddle_solver_t       *solver = static_cast<cs_saddle_solver_t *>(context);
   const cs_param_saddle_t  *saddlep = solver->param;
-  const cs_param_saddle_context_gkb_t  *ctxp = saddlep->context;
+  const cs_param_saddle_context_gkb_t *ctxp =
+    static_cast<cs_param_saddle_context_gkb_t *>(saddlep->context);
 
   /* Apply modifications to the KSP structure */
 
@@ -479,7 +480,7 @@ _gkb_hook(void  *context,
 
   cs_equation_param_t  *eqp =
     cs_equation_param_by_name(saddlep->block11_sles_param->name);
-  assert(eqp != NULL);
+  assert(eqp != nullptr);
 
   cs_param_sles_t  *block11_slesp = eqp->sles_param;
 
@@ -517,14 +518,16 @@ static void
 _notay_hook(void  *context,
             void  *ksp_struct)
 {
-  cs_saddle_solver_t  *solver = context;
+  cs_saddle_solver_t *solver = static_cast<cs_saddle_solver_t *>(context);
 
   const cs_param_saddle_t  *saddlep = solver->param;
-  const cs_param_saddle_context_notay_t  *ctxp = saddlep->context;
-  const cs_param_sles_t  *b11_slesp = saddlep->block11_sles_param;
+  const cs_param_saddle_context_notay_t *ctxp =
+    static_cast<const cs_param_saddle_context_notay_t *>(saddlep->context);
+  cs_param_sles_t *b11_slesp =
+    const_cast<cs_param_sles_t *>(saddlep->block11_sles_param);
 
 #if defined(HAVE_PETSC)
-  KSP  ksp = ksp_struct;
+  KSP ksp = static_cast<KSP>(ksp_struct);
 
   cs_fp_exception_disable_trap(); /* Avoid trouble with a too restrictive
                                      SIGFPE detection */
@@ -538,11 +541,11 @@ _notay_hook(void  *context,
 
   /* Build IndexSet structures to extract block matrices */
 
-  IS  is1 = NULL, is2 = NULL;
+  IS  is1 = nullptr, is2 = nullptr;
   _build_is_for_fieldsplit(solver, &is1, &is2);
 
   Mat Amat, Amat_nest;
-  KSPGetOperators(ksp, &Amat, NULL);
+  KSPGetOperators(ksp, &Amat, nullptr);
 
   /* Retrieve blocks */
 
@@ -577,7 +580,7 @@ _notay_hook(void  *context,
   Mat T11;
   MatConvert(A11, MATSAME, MAT_INITIAL_MATRIX, &T11);
 
-  MatDiagonalScale(T11, NULL, D11); /* left scaling = NULL;
+  MatDiagonalScale(T11, nullptr, D11); /* left scaling = nullptr;
                                        right scaling = D11 */
   MatScale(T11, -one);
 
@@ -598,7 +601,7 @@ _notay_hook(void  *context,
 
   Mat T21, A22;
   MatConvert(A21, MATSAME, MAT_INITIAL_MATRIX, &T21);
-  MatDiagonalScale(T21, NULL, D11); /* T21 <- A21*inv(diag(A11)) */
+  MatDiagonalScale(T21, nullptr, D11); /* T21 <- A21*inv(diag(A11)) */
   MatMatMult(T21, A12, MAT_INITIAL_MATRIX, PETSC_DEFAULT, &A22);
 
   /* Partial free */
@@ -618,7 +621,7 @@ _notay_hook(void  *context,
 
   Mat subA[4] = {A11, T12, A21, A22};
 
-  MatCreateNest(PETSC_COMM_WORLD, 2, NULL, 2, NULL, subA, &Amat_nest);
+  MatCreateNest(PETSC_COMM_WORLD, 2, nullptr, 2, nullptr, subA, &Amat_nest);
   MatConvert(Amat_nest, MATMPIAIJ, MAT_INITIAL_MATRIX, &Amat);
 
   KSPSetOperators(ksp, Amat, Amat);
@@ -679,7 +682,7 @@ _gkb_setup(cs_saddle_solver_t  *solver,
       cs_sles_petsc_init();
 
       cs_sles_petsc_define(block11_slesp->field_id,
-                           NULL,
+                           nullptr,
                            MATMPIAIJ,
                            _gkb_hook,
                            (void *)solver); /* context structure for PETSc */
@@ -705,7 +708,8 @@ _gkb_setup(cs_saddle_solver_t  *solver,
 
       /* SLES for the initial transformation of the right hand-side */
 
-      cs_param_saddle_context_gkb_t  *ctxp = saddlep->context;
+      cs_param_saddle_context_gkb_t *ctxp =
+        static_cast<cs_param_saddle_context_gkb_t *>(saddlep->context);
 
       if (ctxp->dedicated_init_sles) {
 
@@ -750,7 +754,7 @@ _notay_transformation_setup(cs_saddle_solver_t  *solver,
     cs_sles_petsc_init();
 
     cs_sles_petsc_define(block11_slesp->field_id,
-                         NULL,
+                         nullptr,
                          MATMPIAIJ,
                          _notay_hook,
                          (void *)solver); /* context structure for PETSc */
@@ -795,7 +799,7 @@ _schur_complement_setup(cs_param_saddle_t  *saddlep)
     return ierr; /* Nothing to do */
 
   cs_param_sles_t  *schur_slesp = saddlep->schur_sles_param;
-  assert(schur_slesp != NULL);
+  assert(schur_slesp != nullptr);
 
   ierr = cs_param_sles_setup(false, schur_slesp);
 
@@ -815,7 +819,7 @@ _schur_complement_setup(cs_param_saddle_t  *saddlep)
     {
       cs_param_sles_t  *xtra_slesp =
         cs_param_saddle_get_xtra_sles_param(saddlep);
-      assert(xtra_slesp != NULL);
+      assert(xtra_slesp != nullptr);
 
       ierr = cs_param_sles_setup(false, xtra_slesp);
 
@@ -868,7 +872,8 @@ _setup(cs_saddle_solver_t  *solver,
   case CS_PARAM_SADDLE_SOLVER_ALU:
     /* -------------------------- */
     {
-      cs_param_saddle_context_alu_t  *ctxp = saddlep->context;
+      cs_param_saddle_context_alu_t *ctxp =
+        static_cast<cs_param_saddle_context_alu_t *>(saddlep->context);
 
       ierr = cs_param_sles_setup(true, block11_slesp);
 
@@ -1032,7 +1037,7 @@ cs_saddle_solver_setup_sles(void)
   for (int id = 0; id < n; id++) {
 
     cs_saddle_solver_t  *solver = cs_saddle_solver_by_id(id);
-    assert(solver != NULL);
+    assert(solver != nullptr);
     const cs_param_saddle_t  *const_saddlep = solver->param;
 
     if (const_saddlep->solver == CS_PARAM_SADDLE_SOLVER_NONE)
@@ -1042,7 +1047,7 @@ cs_saddle_solver_setup_sles(void)
 
     cs_equation_param_t  *eqp =
       cs_equation_param_by_name(const_saddlep->block11_sles_param->name);
-    assert(eqp != NULL);
+    assert(eqp != nullptr);
 
     cs_param_saddle_t  *saddlep = eqp->saddle_param;
     cs_param_sles_t  *block11_slesp = eqp->sles_param;

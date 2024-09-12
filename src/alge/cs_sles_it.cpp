@@ -216,7 +216,7 @@ _convergence_test(cs_sles_it_t              *c,
 
   /* Plot convergence if requested */
 
-  if (c->plot != NULL) {
+  if (c->plot != nullptr) {
     double vals = residual;
     double wall_time = cs_timer_wtime();
     c->plot_time_stamp += 1;
@@ -381,7 +381,7 @@ _conjugate_gradient(cs_sles_it_t              *c,
   /* Allocate or map work arrays */
   /*-----------------------------*/
 
-  assert(c->setup_data != NULL);
+  assert(c->setup_data != nullptr);
 
   const cs_lnum_t n_rows = c->setup_data->n_rows;
 
@@ -390,10 +390,10 @@ _conjugate_gradient(cs_sles_it_t              *c,
     const size_t n_wa = 4;
     const size_t wa_size = CS_SIMD_SIZE(n_cols);
 
-    if (aux_vectors == NULL || aux_size/sizeof(cs_real_t) < (wa_size * n_wa))
+    if (aux_vectors == nullptr || aux_size/sizeof(cs_real_t) < (wa_size * n_wa))
       BFT_MALLOC(_aux_vectors, wa_size * n_wa, cs_real_t);
     else
-      _aux_vectors = aux_vectors;
+      _aux_vectors = static_cast<cs_real_t *>(aux_vectors);
 
     rk = _aux_vectors;
     dk = _aux_vectors + wa_size;
@@ -588,7 +588,7 @@ _flexible_conjugate_gradient(cs_sles_it_t              *c,
   /* Allocate or map work arrays */
   /*-----------------------------*/
 
-  assert(c->setup_data != NULL);
+  assert(c->setup_data != nullptr);
 
   const cs_lnum_t n_rows = c->setup_data->n_rows;
 
@@ -597,10 +597,10 @@ _flexible_conjugate_gradient(cs_sles_it_t              *c,
     const size_t n_wa = 5;
     const size_t wa_size = CS_SIMD_SIZE(n_cols);
 
-    if (aux_vectors == NULL || aux_size/sizeof(cs_real_t) < (wa_size * n_wa))
+    if (aux_vectors == nullptr || aux_size/sizeof(cs_real_t) < (wa_size * n_wa))
       BFT_MALLOC(_aux_vectors, wa_size * n_wa, cs_real_t);
     else
-      _aux_vectors = aux_vectors;
+      _aux_vectors = static_cast<cs_real_t *>(aux_vectors);
 
     rk = _aux_vectors;
     vk = _aux_vectors + wa_size;
@@ -773,7 +773,7 @@ _conjugate_gradient_ip(cs_sles_it_t              *c,
   /* Allocate or map work arrays */
   /*-----------------------------*/
 
-  assert(c->setup_data != NULL);
+  assert(c->setup_data != nullptr);
 
   const cs_lnum_t n_rows = c->setup_data->n_rows;
 
@@ -782,10 +782,10 @@ _conjugate_gradient_ip(cs_sles_it_t              *c,
     const size_t n_wa = 5;
     const size_t wa_size = CS_SIMD_SIZE(n_cols);
 
-    if (aux_vectors == NULL || aux_size/sizeof(cs_real_t) < (wa_size * n_wa))
+    if (aux_vectors == nullptr || aux_size/sizeof(cs_real_t) < (wa_size * n_wa))
       BFT_MALLOC(_aux_vectors, wa_size * n_wa, cs_real_t);
     else
-      _aux_vectors = aux_vectors;
+      _aux_vectors = static_cast<cs_real_t *>(aux_vectors);
 
     rk    = _aux_vectors;
     rkm1  = _aux_vectors + wa_size;
@@ -983,7 +983,7 @@ _conjugate_gradient_sr(cs_sles_it_t              *c,
   /* Allocate or map work arrays */
   /*-----------------------------*/
 
-  assert(c->setup_data != NULL);
+  assert(c->setup_data != nullptr);
 
   const cs_lnum_t n_rows = c->setup_data->n_rows;
 
@@ -992,10 +992,10 @@ _conjugate_gradient_sr(cs_sles_it_t              *c,
     const size_t n_wa = 5;
     const size_t wa_size = CS_SIMD_SIZE(n_cols);
 
-    if (aux_vectors == NULL || aux_size/sizeof(cs_real_t) < (wa_size * n_wa))
+    if (aux_vectors == nullptr || aux_size/sizeof(cs_real_t) < (wa_size * n_wa))
       BFT_MALLOC(_aux_vectors, wa_size * n_wa, cs_real_t);
     else
-      _aux_vectors = aux_vectors;
+      _aux_vectors = static_cast<cs_real_t *>(aux_vectors);
 
     rk = _aux_vectors;
     dk = _aux_vectors + wa_size;
@@ -1186,7 +1186,7 @@ _conjugate_gradient_npc(cs_sles_it_t              *c,
   /* Allocate or map work arrays */
   /*-----------------------------*/
 
-  assert(c->setup_data != NULL);
+  assert(c->setup_data != nullptr);
 
   const cs_lnum_t n_rows = c->setup_data->n_rows;
 
@@ -1195,10 +1195,10 @@ _conjugate_gradient_npc(cs_sles_it_t              *c,
     const size_t n_wa = 3;
     const size_t wa_size = CS_SIMD_SIZE(n_cols);
 
-    if (aux_vectors == NULL || aux_size/sizeof(cs_real_t) < (wa_size * n_wa))
+    if (aux_vectors == nullptr || aux_size/sizeof(cs_real_t) < (wa_size * n_wa))
       BFT_MALLOC(_aux_vectors, wa_size * n_wa, cs_real_t);
     else
-      _aux_vectors = aux_vectors;
+      _aux_vectors = static_cast<cs_real_t *>(aux_vectors);
 
     rk = _aux_vectors;
     dk = _aux_vectors + wa_size;
@@ -1374,7 +1374,7 @@ _conjugate_gradient_npc_sr(cs_sles_it_t              *c,
   /* Allocate or map work arrays */
   /*-----------------------------*/
 
-  assert(c->setup_data != NULL);
+  assert(c->setup_data != nullptr);
 
   const cs_lnum_t n_rows = c->setup_data->n_rows;
 
@@ -1383,10 +1383,10 @@ _conjugate_gradient_npc_sr(cs_sles_it_t              *c,
     const size_t n_wa = 4;
     const size_t wa_size = CS_SIMD_SIZE(n_cols);
 
-    if (aux_vectors == NULL || aux_size/sizeof(cs_real_t) < (wa_size * n_wa))
+    if (aux_vectors == nullptr || aux_size/sizeof(cs_real_t) < (wa_size * n_wa))
       BFT_MALLOC(_aux_vectors, wa_size * n_wa, cs_real_t);
     else
-      _aux_vectors = aux_vectors;
+      _aux_vectors = static_cast<cs_real_t *>(aux_vectors);
 
     rk = _aux_vectors;
     dk = _aux_vectors + wa_size;
@@ -1574,7 +1574,7 @@ _conjugate_residual_3(cs_sles_it_t              *c,
   /* Allocate or map work arrays */
   /*-----------------------------*/
 
-  assert(c->setup_data != NULL);
+  assert(c->setup_data != nullptr);
 
   const cs_lnum_t n_rows = c->setup_data->n_rows;
 
@@ -1583,10 +1583,10 @@ _conjugate_residual_3(cs_sles_it_t              *c,
     const size_t n_wa = 6;
     const size_t wa_size = CS_SIMD_SIZE(n_cols);
 
-    if (aux_vectors == NULL || aux_size/sizeof(cs_real_t) < (wa_size * n_wa))
+    if (aux_vectors == nullptr || aux_size/sizeof(cs_real_t) < (wa_size * n_wa))
       BFT_MALLOC(_aux_vectors, wa_size * n_wa, cs_real_t);
     else
-      _aux_vectors = aux_vectors;
+      _aux_vectors = static_cast<cs_real_t *>(aux_vectors);
 
     vxm1 = _aux_vectors;
     rk = _aux_vectors + wa_size;
@@ -1748,7 +1748,7 @@ _jacobi(cs_sles_it_t              *c,
   /* Allocate or map work arrays */
   /*-----------------------------*/
 
-  assert(c->setup_data != NULL);
+  assert(c->setup_data != nullptr);
 
   const cs_real_t  *restrict ad_inv = c->setup_data->ad_inv;
 
@@ -1759,10 +1759,10 @@ _jacobi(cs_sles_it_t              *c,
     const size_t n_wa = 1;
     const size_t wa_size = CS_SIMD_SIZE(n_cols);
 
-    if (aux_vectors == NULL || aux_size/sizeof(cs_real_t) < (wa_size * n_wa))
+    if (aux_vectors == nullptr || aux_size/sizeof(cs_real_t) < (wa_size * n_wa))
       BFT_MALLOC(_aux_vectors, wa_size * n_wa, cs_real_t);
     else
-      _aux_vectors = aux_vectors;
+      _aux_vectors = static_cast<cs_real_t *>(aux_vectors);
 
     rk = _aux_vectors;
   }
@@ -1775,12 +1775,12 @@ _jacobi(cs_sles_it_t              *c,
      ------------------------------------- */
 
   if (vx_ini != vx) {
-    assert(vx_ini == NULL);
+    assert(vx_ini == nullptr);
     n_iter += 1;
 
     double  res2 = 0.0;
 
-    if (convergence->precision > 0. || c->plot != NULL) {
+    if (convergence->precision > 0. || c->plot != nullptr) {
 
 #     pragma omp parallel for reduction(+:res2) if(n_rows > CS_THR_MIN)
       for (cs_lnum_t ii = 0; ii < n_rows; ii++) {
@@ -1845,7 +1845,7 @@ _jacobi(cs_sles_it_t              *c,
 
     double  res2 = 0.0;
 
-    if (convergence->precision > 0. || c->plot != NULL) {
+    if (convergence->precision > 0. || c->plot != nullptr) {
 
 #     pragma omp parallel for reduction(+:res2) if(n_rows > CS_THR_MIN)
       for (cs_lnum_t ii = 0; ii < n_rows; ii++) {
@@ -1939,7 +1939,7 @@ _block_3_jacobi(cs_sles_it_t              *c,
   /* Allocate or map work arrays */
   /*-----------------------------*/
 
-  assert(c->setup_data != NULL);
+  assert(c->setup_data != nullptr);
 
   const cs_real_t  *restrict ad_inv = c->setup_data->ad_inv;
 
@@ -1951,10 +1951,10 @@ _block_3_jacobi(cs_sles_it_t              *c,
     const size_t n_wa = 2;
     const size_t wa_size = CS_SIMD_SIZE(n_cols);
 
-    if (aux_vectors == NULL || aux_size/sizeof(cs_real_t) < (wa_size * n_wa))
+    if (aux_vectors == nullptr || aux_size/sizeof(cs_real_t) < (wa_size * n_wa))
       BFT_MALLOC(_aux_vectors, wa_size * n_wa, cs_real_t);
     else
-      _aux_vectors = aux_vectors;
+      _aux_vectors = static_cast<cs_real_t *>(aux_vectors);
 
     rk  = _aux_vectors;
     vxx = _aux_vectors + wa_size;
@@ -1968,7 +1968,7 @@ _block_3_jacobi(cs_sles_it_t              *c,
      ------------------------------------- */
 
   if (vx_ini != vx) {
-    assert(vx_ini == NULL);
+    assert(vx_ini == nullptr);
 
     n_iter += 1;
     res2 = 0.0;
@@ -2110,7 +2110,7 @@ _block_jacobi(cs_sles_it_t              *c,
 
   /* Call setup if not already done, allocate or map work arrays */
   /*-------------------------------------------------------------*/
-  assert(c->setup_data != NULL);
+  assert(c->setup_data != nullptr);
 
   const cs_lnum_t db_size = cs_matrix_get_diag_block_size(a);
   const cs_lnum_t db_size_2 = db_size * db_size;
@@ -2125,10 +2125,10 @@ _block_jacobi(cs_sles_it_t              *c,
     const size_t n_wa = 2;
     const size_t wa_size = CS_SIMD_SIZE(n_cols);
 
-    if (aux_vectors == NULL || aux_size/sizeof(cs_real_t) < (wa_size * n_wa))
+    if (aux_vectors == nullptr || aux_size/sizeof(cs_real_t) < (wa_size * n_wa))
       BFT_MALLOC(_aux_vectors, wa_size * n_wa, cs_real_t);
     else
-      _aux_vectors = aux_vectors;
+      _aux_vectors = static_cast<cs_real_t *>(aux_vectors);
 
     rk  = _aux_vectors;
     vxx = _aux_vectors + wa_size;
@@ -2142,7 +2142,7 @@ _block_jacobi(cs_sles_it_t              *c,
      ------------------------------------- */
 
   if (vx_ini != vx) {
-    assert(vx_ini == NULL);
+    assert(vx_ini == nullptr);
 
     n_iter += 1;
     res2 = 0.0;
@@ -2344,7 +2344,7 @@ _bi_cgstab(cs_sles_it_t              *c,
   /* Allocate or map work arrays */
   /*-----------------------------*/
 
-  assert(c->setup_data != NULL);
+  assert(c->setup_data != nullptr);
 
   const cs_lnum_t n_rows = c->setup_data->n_rows;
 
@@ -2353,10 +2353,10 @@ _bi_cgstab(cs_sles_it_t              *c,
     const size_t n_wa = 6;
     const size_t wa_size = CS_SIMD_SIZE(n_cols);
 
-    if (aux_vectors == NULL || aux_size/sizeof(cs_real_t) < (wa_size * n_wa))
+    if (aux_vectors == nullptr || aux_size/sizeof(cs_real_t) < (wa_size * n_wa))
       BFT_MALLOC(_aux_vectors, wa_size * n_wa, cs_real_t);
     else
-      _aux_vectors = aux_vectors;
+      _aux_vectors = static_cast<cs_real_t *>(aux_vectors);
 
     res0 = _aux_vectors;
     rk = _aux_vectors + wa_size;
@@ -2560,7 +2560,7 @@ _bicgstab2(cs_sles_it_t              *c,
   /* Allocate or map work arrays */
   /*-----------------------------*/
 
-  assert(c->setup_data != NULL);
+  assert(c->setup_data != nullptr);
 
   const cs_lnum_t n_rows = c->setup_data->n_rows;
 
@@ -2569,10 +2569,10 @@ _bicgstab2(cs_sles_it_t              *c,
     size_t  n_wa = 9;
     const size_t wa_size = CS_SIMD_SIZE(n_cols);
 
-    if (aux_vectors == NULL || aux_size/sizeof(cs_real_t) < (wa_size * n_wa))
+    if (aux_vectors == nullptr || aux_size/sizeof(cs_real_t) < (wa_size * n_wa))
       BFT_MALLOC(_aux_vectors, wa_size * n_wa, cs_real_t);
     else
-      _aux_vectors = aux_vectors;
+      _aux_vectors = static_cast<cs_real_t *>(aux_vectors);
 
     res0 = _aux_vectors;
     zk = _aux_vectors + wa_size;
@@ -2920,7 +2920,7 @@ _gcr(cs_sles_it_t              *c,
 {
   cs_sles_convergence_state_t cvg = CS_SLES_ITERATING;
 
-  cs_real_t *_aux_vectors = NULL, *alpha = NULL;
+  cs_real_t *_aux_vectors = nullptr, *alpha = nullptr;
   cs_real_t *restrict rk, *restrict zk, *restrict ck;
   cs_real_t *restrict gkj, *restrict gkj_inv;
   cs_real_t *_vx = vx_ini;
@@ -2936,7 +2936,7 @@ _gcr(cs_sles_it_t              *c,
   /* Allocate or map work arrays */
   /*-----------------------------*/
 
-  assert(c->setup_data != NULL);
+  assert(c->setup_data != nullptr);
   const cs_lnum_t n_rows = c->setup_data->n_rows;
 
   {
@@ -2944,10 +2944,10 @@ _gcr(cs_sles_it_t              *c,
     const size_t n_wa = 1 + n_k_per_restart * 2;
     wa_size = CS_SIMD_SIZE(n_cols);
 
-    if (aux_vectors == NULL || aux_size/sizeof(cs_real_t) < (wa_size * n_wa))
+    if (aux_vectors == nullptr || aux_size/sizeof(cs_real_t) < (wa_size * n_wa))
       BFT_MALLOC(_aux_vectors, wa_size * n_wa, cs_real_t);
     else
-      _aux_vectors = aux_vectors;
+      _aux_vectors = static_cast<cs_real_t *>(aux_vectors);
 
     rk = _aux_vectors;                               /* store residuals  */
     zk = _aux_vectors + wa_size;                     /* store inv(M)*r   */
@@ -2979,7 +2979,7 @@ _gcr(cs_sles_it_t              *c,
         rk[ii] -= rhs[ii];
     }
     else {
-      assert(vx_ini == NULL);
+      assert(vx_ini == nullptr);
 #     pragma omp parallel for if(n_rows > CS_THR_MIN)
       for (cs_lnum_t ii = 0; ii < n_rows; ii++) {
         vx[ii] = 0;
@@ -3159,7 +3159,7 @@ _gmres(cs_sles_it_t              *c,
   /* Allocate or map work arrays */
   /*-----------------------------*/
 
-  assert(c->setup_data != NULL);
+  assert(c->setup_data != nullptr);
 
   const cs_lnum_t n_rows = c->setup_data->n_rows;
 
@@ -3196,10 +3196,10 @@ _gmres(cs_sles_it_t              *c,
     _aux_r_size =   wa_size*n_wa
                   + (krylov_size-1)*(n_rows + krylov_size) + 3*krylov_size;
 
-    if (aux_vectors == NULL || aux_size/sizeof(cs_real_t) < _aux_r_size)
+    if (aux_vectors == nullptr || aux_size/sizeof(cs_real_t) < _aux_r_size)
       BFT_MALLOC(_aux_vectors, _aux_r_size, cs_real_t);
     else
-      _aux_vectors = aux_vectors;
+      _aux_vectors = static_cast<cs_real_t *>(aux_vectors);
 
     dk = _aux_vectors;
     gk = _aux_vectors + wa_size;
@@ -3435,7 +3435,7 @@ _p_ordered_gauss_seidel_msr(cs_sles_it_t              *c,
       }
     }
 
-    else if (halo != NULL) {
+    else if (halo != nullptr) {
       cs_matrix_pre_vector_multiply_sync(a, vx);
     }
 
@@ -3605,7 +3605,7 @@ _p_gauss_seidel_msr(cs_sles_it_t              *c,
         vx[ii] = 0;
       }
     }
-    else if (halo != NULL)
+    else if (halo != nullptr)
       cs_matrix_pre_vector_multiply_sync(a, vx);
 
     n_iter += 1;
@@ -3678,7 +3678,7 @@ _p_gauss_seidel_msr(cs_sles_it_t              *c,
 
     }
 
-    if (convergence->precision > 0. || c->plot != NULL) {
+    if (convergence->precision > 0. || c->plot != nullptr) {
 
 #if defined(HAVE_MPI)
 
@@ -3793,7 +3793,7 @@ _p_sym_gauss_seidel_msr(cs_sles_it_t              *c,
         vx[ii] = 0;
       }
     }
-    else if (halo != NULL)
+    else if (halo != nullptr)
       cs_matrix_pre_vector_multiply_sync(a, vx);
 
     /* Compute Vx <- Vx - (A-diag).Rk and residual: forward step */
@@ -3850,7 +3850,7 @@ _p_sym_gauss_seidel_msr(cs_sles_it_t              *c,
 
     /* Synchronize ghost cells again */
 
-    if (halo != NULL)
+    if (halo != nullptr)
       cs_matrix_pre_vector_multiply_sync(a, vx);
 
     /* Compute Vx <- Vx - (A-diag).Rk and residual: backward step */
@@ -3921,7 +3921,7 @@ _p_sym_gauss_seidel_msr(cs_sles_it_t              *c,
 
     }
 
-    if (convergence->precision > 0. || c->plot != NULL) {
+    if (convergence->precision > 0. || c->plot != nullptr) {
 
 #if defined(HAVE_MPI)
 
@@ -4002,16 +4002,16 @@ _p_gauss_seidel(cs_sles_it_t              *c,
   /* Allocate or map work arrays */
   /*-----------------------------*/
 
-  assert(c->setup_data != NULL);
+  assert(c->setup_data != nullptr);
 
   /* Check for ordered variant */
 
-  const cs_lnum_t  *order = NULL;
+  const cs_lnum_t  *order = nullptr;
 
-  if (c->add_data != NULL)
+  if (c->add_data != nullptr)
     order = c->add_data->order;
 
-  if (order != NULL)
+  if (order != nullptr)
     cvg = _p_ordered_gauss_seidel_msr(c,
                                       a,
                                       diag_block_size,
@@ -4047,7 +4047,7 @@ _p_gauss_seidel(cs_sles_it_t              *c,
  *   vx              <-> system solution
  *   aux_size        <-- number of elements in aux_vectors (in bytes)
  *   aux_vectors     --- optional working area
- *                       (internal allocation if NULL)
+ *                       (internal allocation if nullptr)
  *
  * returns:
  *   convergence state
@@ -4070,7 +4070,7 @@ _fallback(cs_sles_it_t                    *c,
 
   /* Check if fallback was already defined for this case */
 
-  if (c->fallback == NULL) {
+  if (c->fallback == nullptr) {
 
     /* Share context if possible */
 
@@ -4200,7 +4200,7 @@ cs_user_sles_it_solver(cs_sles_it_t              *c,
  * \ref cs_sles_t container.
  *
  * \param[in]  f_id          associated field id, or < 0
- * \param[in]  name          associated name if f_id < 0, or NULL
+ * \param[in]  name          associated name if f_id < 0, or nullptr
  * \param[in]  solver_type   type of solver (PCG, Jacobi, ...)
  * \param[in]  poly_degree   preconditioning polynomial degree
  *                           (0: diagonal; -1: non-preconditioned)
@@ -4220,7 +4220,7 @@ cs_sles_it_define(int                 f_id,
   /* Test for environment variables here */
 
   const char *s = getenv("CS_THREAD_DEBUG");
-  if (s != NULL) {
+  if (s != nullptr) {
     if (atoi(s) > 0)
       _thread_debug = true;
   }
@@ -4274,19 +4274,19 @@ cs_sles_it_create(cs_sles_it_type_t   solver_type,
   BFT_MALLOC(c, 1, cs_sles_it_t);
 
   c->type = solver_type;
-  c->solve = NULL;
+  c->solve = nullptr;
 
   switch(c->type) {
   case CS_SLES_JACOBI:
   case CS_SLES_P_GAUSS_SEIDEL:
   case CS_SLES_P_SYM_GAUSS_SEIDEL:
-    c->_pc = NULL;
+    c->_pc = nullptr;
     break;
   default:
     if (poly_degree < 0) {
        /* specific implementation for non-preconditioned PCG */
       if (c->type == CS_SLES_PCG)
-        c->_pc = NULL;
+        c->_pc = nullptr;
       else
         c->_pc = cs_sles_pc_none_create();
     }
@@ -4318,22 +4318,22 @@ cs_sles_it_create(cs_sles_it_type_t   solver_type,
   CS_TIMER_COUNTER_INIT(c->t_solve);
 
   c->plot_time_stamp = 0;
-  c->plot = NULL;
-  c->_plot = NULL;
+  c->plot = nullptr;
+  c->_plot = nullptr;
 
 #if defined(HAVE_MPI)
   c->comm = cs_glob_mpi_comm;
   c->caller_comm = cs_glob_mpi_comm;
   c->caller_n_ranks = cs_glob_n_ranks;
   if (c->caller_n_ranks < 2) {
-    c->comm = MPI_COMM_NULL;
+    c->comm        = MPI_COMM_NULL;
     c->caller_comm = cs_glob_mpi_comm;
   }
 #endif
 
-  c->setup_data = NULL;
-  c->add_data = NULL;
-  c->shared = NULL;
+  c->setup_data = nullptr;
+  c->add_data = nullptr;
+  c->shared = nullptr;
 
   /* Fallback mechanism */
 
@@ -4348,7 +4348,7 @@ cs_sles_it_create(cs_sles_it_type_t   solver_type,
   }
   c->fallback_n_max_iter = n_max_iter;
 
-  c->fallback = NULL;
+  c->fallback = nullptr;
 
   return c;
 }
@@ -4366,19 +4366,19 @@ void
 cs_sles_it_destroy(void **context)
 {
   cs_sles_it_t *c = (cs_sles_it_t *)(*context);
-  if (c != NULL) {
-    if (c->fallback != NULL) {
+  if (c != nullptr) {
+    if (c->fallback != nullptr) {
       void *f = c->fallback;
       cs_sles_it_destroy(&f);
-      c->fallback = f;
+      c->fallback = static_cast<cs_sles_it_t *>(f);
     }
     cs_sles_pc_destroy(&(c->_pc));
     cs_sles_it_free(c);
-    if (c->_plot != NULL) {
+    if (c->_plot != nullptr) {
       cs_time_plot_finalize(&(c->_plot));
-      c->plot = NULL;
+      c->plot = nullptr;
     }
-    if (c->add_data != NULL) {
+    if (c->add_data != nullptr) {
       BFT_FREE(c->add_data->order);
       BFT_FREE(c->add_data);
     }
@@ -4403,15 +4403,15 @@ cs_sles_it_destroy(void **context)
 void *
 cs_sles_it_copy(const void  *context)
 {
-  cs_sles_it_t *d = NULL;
+  cs_sles_it_t *d = nullptr;
 
-  if (context != NULL) {
-    const cs_sles_it_t *c = context;
+  if (context != nullptr) {
+    const cs_sles_it_t *c = static_cast<const cs_sles_it_t *>(context);
     d = cs_sles_it_create(c->type,
                           -1,
                           c->n_max_iter,
                           c->update_stats);
-    if (c->pc != NULL && c->_pc != NULL) {
+    if (c->pc != nullptr && c->_pc != nullptr) {
       d->_pc = cs_sles_pc_clone(c->_pc);
       d->pc = d->_pc;
     }
@@ -4446,14 +4446,14 @@ void
 cs_sles_it_log(const void  *context,
                cs_log_t     log_type)
 {
-  const cs_sles_it_t  *c = context;
+  const cs_sles_it_t *c = static_cast<const cs_sles_it_t *>(context);
 
   if (log_type == CS_LOG_SETUP) {
 
     cs_log_printf(log_type,
                   _("  Solver type:                       %s\n"),
                   _(cs_sles_it_type_name[c->type]));
-    if (c->pc != NULL)
+    if (c->pc != nullptr)
       cs_log_printf(log_type,
                     _("  Preconditioning:                   %s\n"),
                     _(cs_sles_pc_get_type_name(c->pc)));
@@ -4490,7 +4490,7 @@ cs_sles_it_log(const void  *context,
                       "  Solver type:                   %s\n"),
                     _(cs_sles_it_type_name[c->type]));
 
-      if (c->pc != NULL)
+      if (c->pc != nullptr)
         cs_log_printf(log_type,
                       _("  Preconditioning:               %s\n"),
                       _(cs_sles_pc_get_type_name(c->pc)));
@@ -4506,7 +4506,7 @@ cs_sles_it_log(const void  *context,
                     c->t_setup.nsec*1e-9,
                     c->t_solve.nsec*1e-9);
 
-      if (c->fallback != NULL) {
+      if (c->fallback != nullptr) {
 
         n_calls = c->fallback->n_solves;
         n_it_min = c->fallback->n_iterations_min;
@@ -4540,7 +4540,7 @@ cs_sles_it_log(const void  *context,
 
   }
 
-  if (c->pc != NULL)
+  if (c->pc != nullptr)
     cs_sles_pc_log(c->pc, log_type);
 }
 
@@ -4562,7 +4562,7 @@ cs_sles_it_setup(void               *context,
                  const cs_matrix_t  *a,
                  int                 verbosity)
 {
-  cs_sles_it_t  *c = context;
+  cs_sles_it_t *c = static_cast<cs_sles_it_t *>(context);
 
   cs_timer_t t0;
   if (c->update_stats == true)
@@ -4618,14 +4618,14 @@ cs_sles_it_setup(void               *context,
         single_reduce = true;
 #endif
       if (!single_reduce) {
-        if (c->pc != NULL)
+        if (c->pc != nullptr)
           c->solve = _conjugate_gradient;
         else
           c->solve = _conjugate_gradient_npc;
         break;
       }
       else {
-        if (c->pc != NULL)
+        if (c->pc != nullptr)
           c->solve = _conjugate_gradient_sr;
         else
           c->solve = _conjugate_gradient_npc_sr;
@@ -4745,7 +4745,7 @@ cs_sles_it_setup(void               *context,
  * \param[in, out]  vx             system solution
  * \param[in]       aux_size       number of elements in aux_vectors (in bytes)
  * \param           aux_vectors    optional working area
- *                                 (internal allocation if NULL)
+ *                                 (internal allocation if nullptr)
  *
  * \return  convergence state
  */
@@ -4766,7 +4766,7 @@ cs_sles_it_solve(void                *context,
                  size_t               aux_size,
                  void                *aux_vectors)
 {
-  cs_sles_it_t  *c = context;
+  cs_sles_it_t *c = static_cast<cs_sles_it_t *>(context);
 
   cs_sles_convergence_state_t cvg = CS_SLES_ITERATING;
 
@@ -4788,7 +4788,7 @@ cs_sles_it_solve(void                *context,
 
   /* Setup if not already done */
 
-  if (c->setup_data == NULL) {
+  if (c->setup_data == nullptr) {
 
     if (c->update_stats) { /* Stop solve timer to switch to setup timer */
       t1 = cs_timer_time();
@@ -4802,7 +4802,7 @@ cs_sles_it_solve(void                *context,
 
   }
 
-  if (c->pc != NULL)
+  if (c->pc != nullptr)
     cs_sles_pc_set_tolerance(c->pc, precision, r_norm);
 
   /* Solve sparse linear system */
@@ -4850,7 +4850,7 @@ cs_sles_it_solve(void                *context,
        exploit additional asynchronicity */
 
     cs_lnum_t v_size = diag_block_size * cs_matrix_get_n_columns(a);
-    cs_real_t *_rhs_w = NULL;
+    cs_real_t *_rhs_w = nullptr;
     cs_alloc_mode_t amode_vx = CS_ALLOC_HOST, amode_rhs = CS_ALLOC_HOST;
 
     if (c->on_device) {
@@ -4994,22 +4994,22 @@ cs_sles_it_solve(void                *context,
 void
 cs_sles_it_free(void  *context)
 {
-  cs_sles_it_t  *c = context;
+  cs_sles_it_t *c = static_cast<cs_sles_it_t *>(context);
 
-  if (c == NULL)
+  if (c == nullptr)
     return;
 
   cs_timer_t t0;
   if (c->update_stats == true)
     t0 = cs_timer_time();
 
-  if (c->fallback != NULL)
+  if (c->fallback != nullptr)
     cs_sles_it_free(c->fallback);
 
-  if (c->_pc != NULL)
+  if (c->_pc != nullptr)
     cs_sles_pc_free(c->_pc);
 
-  if (c->setup_data != NULL) {
+  if (c->setup_data != nullptr) {
     CS_FREE_HD(c->setup_data->_ad_inv);
     BFT_FREE(c->setup_data);
   }
@@ -5033,7 +5033,7 @@ cs_sles_it_free(void  *context)
 cs_sles_it_type_t
 cs_sles_it_get_type(const cs_sles_it_t  *context)
 {
-  if (context == NULL)
+  if (context == nullptr)
     return CS_SLES_N_SMOOTHER_TYPES;
   else
     return context->type;
@@ -5062,7 +5062,7 @@ double
 cs_sles_it_get_last_initial_residual(const cs_sles_it_t  *context)
 {
   double retval = 1;
-  if (context->setup_data != NULL)
+  if (context->setup_data != nullptr)
     retval = context->setup_data->initial_residual;
 
   return retval;
@@ -5085,10 +5085,10 @@ cs_sles_it_get_last_initial_residual(const cs_sles_it_t  *context)
 cs_sles_pc_t  *
 cs_sles_it_get_pc(cs_sles_it_t  *context)
 {
-  cs_sles_pc_t  *pc = NULL;
+  cs_sles_pc_t  *pc = nullptr;
 
-  if (context != NULL) {
-    cs_sles_it_t  *c = context;
+  if (context != nullptr) {
+    cs_sles_it_t *c = static_cast<cs_sles_it_t *>(context);
     pc = c->pc;
   }
 
@@ -5102,7 +5102,7 @@ cs_sles_it_get_pc(cs_sles_it_t  *context)
  *
  * This allows assigning a non default (Jacobi or polynomial) preconditioner.
  *
- * The input pointer is set to NULL to make it clear the caller does not
+ * The input pointer is set to nullptr to make it clear the caller does not
  * own the preconditioner anymore, though the context can be accessed using
  * \ref cs_sles_it_get_pc.
  *
@@ -5115,16 +5115,16 @@ void
 cs_sles_it_transfer_pc(cs_sles_it_t     *context,
                        cs_sles_pc_t    **pc)
 {
-  if (context != NULL) {
-    cs_sles_it_t  *c = context;
-    c->pc = NULL;
+  if (context != nullptr) {
+    cs_sles_it_t *c = static_cast<cs_sles_it_t *>(context);
+    c->pc = nullptr;
     cs_sles_pc_destroy(&(c->_pc));
-    if (pc != NULL) {
+    if (pc != nullptr) {
       c->_pc = *pc;
       c->pc = *pc;
     }
   }
-  else if (pc != NULL)
+  else if (pc != nullptr)
     cs_sles_pc_destroy(pc);
 }
 
@@ -5147,7 +5147,7 @@ void
 cs_sles_it_transfer_parameters(const cs_sles_it_t  *src,
                                cs_sles_it_t        *dest)
 {
-  if (dest != NULL && src != NULL) {
+  if (dest != nullptr && src != nullptr) {
 
     dest->update_stats = src->update_stats;
     dest->n_max_iter = src->n_max_iter;
@@ -5155,7 +5155,7 @@ cs_sles_it_transfer_parameters(const cs_sles_it_t  *src,
 
     dest->plot_time_stamp = src->plot_time_stamp;
     dest->plot = src->plot;
-    if (dest->_plot != NULL)
+    if (dest->_plot != nullptr)
       cs_time_plot_finalize(&(dest->_plot));
 
 #if defined(HAVE_MPI)
@@ -5193,13 +5193,13 @@ void
 cs_sles_it_set_shareable(cs_sles_it_t        *context,
                          const cs_sles_it_t  *shareable)
 {
-  cs_sles_it_t  *c = context;
+  cs_sles_it_t *c = static_cast<cs_sles_it_t *>(context);
 
   c->shared = shareable;
 
   c->pc = shareable->pc;
 
-  if (c->pc != c->_pc && c->_pc != NULL)
+  if (c->pc != c->_pc && c->_pc != nullptr)
     cs_sles_pc_destroy(&(c->_pc));
 }
 
@@ -5209,7 +5209,7 @@ cs_sles_it_set_shareable(cs_sles_it_t        *context,
 /*!
  * \brief Set MPI communicator for global reductions.
  *
- * The system is solved only on ranks with a non-NULL communicator or
+ * The system is solved only on ranks with a non-nullptr communicator or
  * if the caller communicator has less than 2 ranks. convergence info
  * is the broadcast across the caller communicator.
  *
@@ -5224,7 +5224,7 @@ cs_sles_it_set_mpi_reduce_comm(cs_sles_it_t  *context,
                                MPI_Comm       comm,
                                MPI_Comm       caller_comm)
 {
-  cs_sles_it_t  *c = context;
+  cs_sles_it_t *c = static_cast<cs_sles_it_t *>(context);
 
   static int flag = -1;
 
@@ -5273,16 +5273,16 @@ cs_sles_it_assign_order(cs_sles_it_t   *context,
 
   else {
 
-    if (context->add_data == NULL) {
+    if (context->add_data == nullptr) {
       BFT_MALLOC(context->add_data, 1, cs_sles_it_add_t);
-      context->add_data->order = NULL;
+      context->add_data->order = nullptr;
     }
 
     BFT_FREE(context->add_data->order);
 
     context->add_data->order = *order;
 
-    *order = NULL;
+    *order = nullptr;
 
   }
 }
@@ -5359,7 +5359,7 @@ void
 cs_sles_it_set_restart_interval(cs_sles_it_t  *context,
                                 int            interval)
 {
-  if (context == NULL)
+  if (context == nullptr)
     return;
 
   context->restart_interval = interval;
@@ -5378,7 +5378,7 @@ void
 cs_sles_it_set_n_max_iter(cs_sles_it_t  *context,
                           int            n_max_iter)
 {
-  if (context == NULL)
+  if (context == nullptr)
     return;
 
   context->n_max_iter = n_max_iter;
@@ -5485,7 +5485,8 @@ cs_sles_it_error_post_and_abort(cs_sles_t                    *sles,
   if (state >= CS_SLES_BREAKDOWN)
     return false;
 
-  const cs_sles_it_t  *c = cs_sles_get_context(sles);
+  const cs_sles_it_t *c =
+    static_cast<const cs_sles_it_t *>(cs_sles_get_context(sles));
   const char *name = cs_sles_get_name(sles);
 
   int mesh_id = cs_post_init_error_writer_cells();
@@ -5515,7 +5516,7 @@ cs_sles_it_error_post_and_abort(cs_sles_t                    *sles,
  * \brief Set plotting options for an iterative sparse linear equation solver.
  *
  * \param[in, out]  context        pointer to iterative solver info and context
- * \param[in]       base_name      base plot name to activate, NULL otherwise
+ * \param[in]       base_name      base plot name to activate, nullptr otherwise
  * \param[in]       use_iteration  if true, use iteration as time stamp
  *                                 otherwise, use wall clock time
  */
@@ -5526,11 +5527,11 @@ cs_sles_it_set_plot_options(cs_sles_it_t  *context,
                             const char    *base_name,
                             bool           use_iteration)
 {
-  if (context != NULL) {
-    if (cs_glob_rank_id < 1 && base_name != NULL) {
+  if (context != nullptr) {
+    if (cs_glob_rank_id < 1 && base_name != nullptr) {
 
       /* Destroy previous plot if options reset */
-      if (context->_plot != NULL)
+      if (context->_plot != nullptr)
         cs_time_plot_finalize(&(context->_plot));
 
       /* Create new plot */
@@ -5543,8 +5544,8 @@ cs_sles_it_set_plot_options(cs_sles_it_t  *context,
                                                -1.0,  /* force flush */
                                                0,     /* no buffer */
                                                1,     /* n_probes */
-                                               NULL,  /* probe_list */
-                                               NULL,  /* probe_coords */
+                                               nullptr,  /* probe_list */
+                                               nullptr,  /* probe_coords */
                                                probe_names);
       context->plot = context->_plot;
       context->plot_time_stamp = 0;

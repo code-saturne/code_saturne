@@ -111,14 +111,14 @@ cs_param_saddle_schur_approx_name[CS_PARAM_SADDLE_N_SCHUR_APPROX]
 static cs_param_sles_t *
 _init_xtra_slesp(const cs_param_saddle_t  *saddlep)
 {
-  if (saddlep == NULL)
-    return NULL;
+  if (saddlep == nullptr)
+    return nullptr;
 
   const cs_param_sles_t  *b11_slesp = saddlep->block11_sles_param;
   const char  *basename = cs_param_saddle_get_name(saddlep);
 
   int  len = strlen(basename) + strlen("_b11_xtra");
-  char  *name = NULL;
+  char  *name = nullptr;
   BFT_MALLOC(name, len + 1, char);
   sprintf(name, "%s_b11_xtra", basename);
 
@@ -154,8 +154,8 @@ static cs_param_sles_t *
 _copy_xtra_slesp(const cs_param_sles_t    *slesp_ref,
                  const cs_param_saddle_t  *saddlep_dest)
 {
-  if (slesp_ref == NULL)
-    return NULL;
+  if (slesp_ref == nullptr)
+    return nullptr;
 
   cs_param_sles_t  *slesp_dest = _init_xtra_slesp(saddlep_dest);
 
@@ -179,14 +179,14 @@ _copy_xtra_slesp(const cs_param_sles_t    *slesp_ref,
 static cs_param_sles_t *
 _init_init_slesp(const cs_param_saddle_t  *saddlep)
 {
-  if (saddlep == NULL)
-    return NULL;
+  if (saddlep == nullptr)
+    return nullptr;
 
   const cs_param_sles_t  *b11_slesp = saddlep->block11_sles_param;
   const char  *basename = saddlep->block11_sles_param->name;
 
   int  len = strlen(basename) + strlen("_init");
-  char  *name = NULL;
+  char  *name = nullptr;
   BFT_MALLOC(name, len + 1, char);
   sprintf(name, "%s_init", basename);
 
@@ -234,8 +234,8 @@ static cs_param_sles_t *
 _copy_init_slesp(const cs_param_sles_t    *slesp_ref,
                  const cs_param_saddle_t  *saddlep_dest)
 {
-  if (slesp_ref == NULL)
-    return NULL;
+  if (slesp_ref == nullptr)
+    return nullptr;
 
   cs_param_sles_t  *slesp_dest = _init_init_slesp(saddlep_dest);
 
@@ -256,16 +256,16 @@ _copy_init_slesp(const cs_param_sles_t    *slesp_ref,
 static void
 _init_schur_slesp(cs_param_saddle_t  *saddlep)
 {
-  if (saddlep == NULL)
+  if (saddlep == nullptr)
     return;
 
-  if (saddlep->schur_sles_param != NULL)
+  if (saddlep->schur_sles_param != nullptr)
     cs_param_sles_free(&(saddlep->schur_sles_param));
 
   const char  *basename = cs_param_saddle_get_name(saddlep);
 
   int  len = strlen(basename) + strlen("_schur_approx");
-  char  *name = NULL;
+  char  *name = nullptr;
   BFT_MALLOC(name, len + 1, char);
   sprintf(name, "%s_schur_approx", basename);
 
@@ -289,7 +289,7 @@ _init_schur_slesp(cs_param_saddle_t  *saddlep)
   /* Extra solve needed to compute the Schur approximation with some
      settings */
 
-  cs_param_sles_t  *xtra_slesp = NULL;
+  cs_param_sles_t  *xtra_slesp = nullptr;
   if (saddlep->schur_approx == CS_PARAM_SADDLE_SCHUR_LUMPED_INVERSE ||
       saddlep->schur_approx == CS_PARAM_SADDLE_SCHUR_MASS_SCALED_LUMPED_INVERSE)
     xtra_slesp = _init_xtra_slesp(saddlep);
@@ -300,39 +300,42 @@ _init_schur_slesp(cs_param_saddle_t  *saddlep)
 
   case CS_PARAM_SADDLE_SOLVER_GCR:
     {
-      cs_param_saddle_context_block_krylov_t  *ctxp = saddlep->context;
+    cs_param_saddle_context_block_krylov_t *ctxp =
+      static_cast<cs_param_saddle_context_block_krylov_t *>(saddlep->context);
 
-      if (ctxp->xtra_sles_param != NULL)
-        cs_param_sles_free(&(ctxp->xtra_sles_param));
+    if (ctxp->xtra_sles_param != nullptr)
+      cs_param_sles_free(&(ctxp->xtra_sles_param));
 
-      ctxp->xtra_sles_param = xtra_slesp;
+    ctxp->xtra_sles_param = xtra_slesp;
     }
     break;
 
   case CS_PARAM_SADDLE_SOLVER_UZAWA_CG:
     {
-      cs_param_saddle_context_uzacg_t  *ctxp = saddlep->context;
+    cs_param_saddle_context_uzacg_t *ctxp =
+      static_cast<cs_param_saddle_context_uzacg_t *>(saddlep->context);
 
-      if (ctxp->xtra_sles_param != NULL)
-        cs_param_sles_free(&(ctxp->xtra_sles_param));
+    if (ctxp->xtra_sles_param != nullptr)
+      cs_param_sles_free(&(ctxp->xtra_sles_param));
 
-      ctxp->xtra_sles_param = xtra_slesp;
+    ctxp->xtra_sles_param = xtra_slesp;
     }
     break;
 
   case CS_PARAM_SADDLE_SOLVER_SIMPLE:
     {
-      cs_param_saddle_context_uzacg_t  *ctxp = saddlep->context;
+    cs_param_saddle_context_uzacg_t *ctxp =
+      static_cast<cs_param_saddle_context_uzacg_t *>(saddlep->context);
 
-      if (ctxp->xtra_sles_param != NULL)
-        cs_param_sles_free(&(ctxp->xtra_sles_param));
+    if (ctxp->xtra_sles_param != nullptr)
+      cs_param_sles_free(&(ctxp->xtra_sles_param));
 
-      ctxp->xtra_sles_param = xtra_slesp;
+    ctxp->xtra_sles_param = xtra_slesp;
     }
     break;
 
   default:
-    assert(xtra_slesp == NULL); /* There should be no xtra_slesp */
+    assert(xtra_slesp == nullptr); /* There should be no xtra_slesp */
     break;
   }
 
@@ -350,43 +353,47 @@ _init_schur_slesp(cs_param_saddle_t  *saddlep)
 static void
 _free_context(cs_param_saddle_t  *saddlep)
 {
-  if (saddlep == NULL)
+  if (saddlep == nullptr)
     return;
-  if (saddlep->context == NULL)
+  if (saddlep->context == nullptr)
     return;
 
   switch (saddlep->solver) {
 
   case CS_PARAM_SADDLE_SOLVER_ALU:
     {
-      cs_param_saddle_context_alu_t  *ctxp = saddlep->context;
+    cs_param_saddle_context_alu_t *ctxp =
+      static_cast<cs_param_saddle_context_alu_t *>(saddlep->context);
 
-      cs_param_sles_free(&(ctxp->init_sles_param));
+    cs_param_sles_free(&(ctxp->init_sles_param));
     }
     break;
 
   case CS_PARAM_SADDLE_SOLVER_GCR:
     {
-      cs_param_saddle_context_block_krylov_t  *ctxp = saddlep->context;
+    cs_param_saddle_context_block_krylov_t *ctxp =
+      static_cast<cs_param_saddle_context_block_krylov_t *>(saddlep->context);
 
-      cs_param_sles_free(&(ctxp->xtra_sles_param));
+    cs_param_sles_free(&(ctxp->xtra_sles_param));
     }
     break;
 
   case CS_PARAM_SADDLE_SOLVER_GKB:
     {
-      cs_param_saddle_context_gkb_t  *ctxp = saddlep->context;
+    cs_param_saddle_context_gkb_t *ctxp =
+      static_cast<cs_param_saddle_context_gkb_t *>(saddlep->context);
 
-      cs_param_sles_free(&(ctxp->init_sles_param));
+    cs_param_sles_free(&(ctxp->init_sles_param));
     }
     break;
 
   case CS_PARAM_SADDLE_SOLVER_UZAWA_CG:
     {
-      cs_param_saddle_context_uzacg_t  *ctxp = saddlep->context;
+    cs_param_saddle_context_uzacg_t *ctxp =
+      static_cast<cs_param_saddle_context_uzacg_t *>(saddlep->context);
 
-      cs_param_sles_free(&(ctxp->init_sles_param));
-      cs_param_sles_free(&(ctxp->xtra_sles_param));
+    cs_param_sles_free(&(ctxp->init_sles_param));
+    cs_param_sles_free(&(ctxp->xtra_sles_param));
     }
     break;
 
@@ -416,16 +423,17 @@ void
 cs_param_saddle_set_restart_range(cs_param_saddle_t  *saddlep,
                                   int                 restart_range)
 {
-  if (saddlep == NULL)
+  if (saddlep == nullptr)
     return;
 
   switch (saddlep->solver) {
   case CS_PARAM_SADDLE_SOLVER_FGMRES:
   case CS_PARAM_SADDLE_SOLVER_GCR:
     {
-      cs_param_saddle_context_block_krylov_t *ctxp = saddlep->context;
+    cs_param_saddle_context_block_krylov_t *ctxp =
+      static_cast<cs_param_saddle_context_block_krylov_t *>(saddlep->context);
 
-      ctxp->n_stored_directions = restart_range;
+    ctxp->n_stored_directions = restart_range;
     }
     break;
 
@@ -456,13 +464,14 @@ void
 cs_param_saddle_set_notay_scaling(cs_param_saddle_t  *saddlep,
                                   double              scaling_coef)
 {
-  if (saddlep == NULL)
+  if (saddlep == nullptr)
     return;
 
   if (saddlep->solver != CS_PARAM_SADDLE_SOLVER_NOTAY_TRANSFORM)
     return;
 
-  cs_param_saddle_context_notay_t  *ctx = saddlep->context;
+  cs_param_saddle_context_notay_t *ctx =
+    static_cast<cs_param_saddle_context_notay_t *>(saddlep->context);
 
   ctx->scaling_coef = scaling_coef;
 }
@@ -481,23 +490,25 @@ void
 cs_param_saddle_set_augmentation_coef(cs_param_saddle_t  *saddlep,
                                       double              coef)
 {
-  if (saddlep == NULL)
+  if (saddlep == nullptr)
     return;
 
   switch (saddlep->solver) {
   case CS_PARAM_SADDLE_SOLVER_ALU:
     {
-      cs_param_saddle_context_alu_t *ctx = saddlep->context;
+    cs_param_saddle_context_alu_t *ctx =
+      static_cast<cs_param_saddle_context_alu_t *>(saddlep->context);
 
-      ctx->augmentation_scaling = coef;
+    ctx->augmentation_scaling = coef;
     }
     break;
 
   case CS_PARAM_SADDLE_SOLVER_GKB:
     {
-      cs_param_saddle_context_gkb_t *ctx = saddlep->context;
+    cs_param_saddle_context_gkb_t *ctx =
+      static_cast<cs_param_saddle_context_gkb_t *>(saddlep->context);
 
-      ctx->augmentation_scaling = coef;
+    ctx->augmentation_scaling = coef;
     }
     break;
 
@@ -525,21 +536,23 @@ cs_param_saddle_set_augmentation_coef(cs_param_saddle_t  *saddlep,
 double
 cs_param_saddle_get_augmentation_coef(const cs_param_saddle_t  *saddlep)
 {
-  if (saddlep == NULL)
+  if (saddlep == nullptr)
     return 0;
 
   switch (saddlep->solver) {
   case CS_PARAM_SADDLE_SOLVER_ALU:
     {
-      cs_param_saddle_context_alu_t  *ctxp = saddlep->context;
+    cs_param_saddle_context_alu_t *ctxp =
+      static_cast<cs_param_saddle_context_alu_t *>(saddlep->context);
 
-      return ctxp->augmentation_scaling;
+    return ctxp->augmentation_scaling;
     }
   case CS_PARAM_SADDLE_SOLVER_GKB:
     {
-      cs_param_saddle_context_gkb_t  *ctxp = saddlep->context;
+    cs_param_saddle_context_gkb_t *ctxp =
+      static_cast<cs_param_saddle_context_gkb_t *>(saddlep->context);
 
-      return ctxp->augmentation_scaling;
+    return ctxp->augmentation_scaling;
     }
   default: /* Not useful */
     return 0.;
@@ -587,6 +600,9 @@ cs_param_saddle_get_type_name(cs_param_saddle_solver_t  type)
   case CS_PARAM_SADDLE_SOLVER_UZAWA_CG:
     return "Uzawa-CG";
 
+  case CS_PARAM_SADDLE_SOLVER_SIMPLE:
+    return "Simple";
+
   case CS_PARAM_SADDLE_N_SOLVERS:
     return "Undefined";
   }
@@ -606,32 +622,32 @@ cs_param_saddle_get_type_name(cs_param_saddle_solver_t  type)
 cs_param_saddle_t *
 cs_param_saddle_create(void)
 {
-  cs_param_saddle_t  *saddlep = NULL;
+  cs_param_saddle_t  *saddlep = nullptr;
 
   BFT_MALLOC(saddlep, 1, cs_param_saddle_t);
 
   saddlep->verbosity = 0;
-  saddlep->name = NULL;
+  saddlep->name = nullptr;
 
   saddlep->solver_class = CS_PARAM_SOLVER_CLASS_CS;
   saddlep->solver = CS_PARAM_SADDLE_SOLVER_NONE;  /* Not used by default */
   saddlep->precond = CS_PARAM_SADDLE_PRECOND_NONE;
 
-  saddlep->cvg_param = (cs_param_convergence_t) {
+  saddlep->cvg_param = (cs_param_convergence_t){
+    .atol       = 1e-12, /* absolute tolerance */
+    .rtol       = 1e-6,  /* relative tolerance */
+    .dtol       = 1e3,   /* divergence tolerance */
     .n_max_iter = 100,
-    .atol = 1e-12,       /* absolute tolerance */
-    .rtol = 1e-6,        /* relative tolerance */
-    .dtol = 1e3 };       /* divergence tolerance */
-
+  };
   /* saddlep->block11_sles_param is shared and thus is only set if a
      saddle-point problem is solved */
 
   saddlep->schur_approx = CS_PARAM_SADDLE_SCHUR_NONE;
-  saddlep->schur_sles_param = NULL;
+  saddlep->schur_sles_param = nullptr;
 
   /* By default, no context is set */
 
-  saddlep->context = NULL;
+  saddlep->context = nullptr;
 
   return saddlep;
 }
@@ -648,12 +664,12 @@ cs_param_saddle_create(void)
 void
 cs_param_saddle_free(cs_param_saddle_t  **p_saddlep)
 {
-  if (p_saddlep == NULL)
+  if (p_saddlep == nullptr)
     return;
 
   cs_param_saddle_t  *saddlep = *p_saddlep;
 
-  if (saddlep == NULL)
+  if (saddlep == nullptr)
     return;
 
   BFT_FREE(saddlep->name);
@@ -665,7 +681,7 @@ cs_param_saddle_free(cs_param_saddle_t  **p_saddlep)
   _free_context(saddlep);
 
   BFT_FREE(saddlep);
-  *p_saddlep = NULL;
+  *p_saddlep = nullptr;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -684,8 +700,8 @@ cs_param_saddle_free(cs_param_saddle_t  **p_saddlep)
 cs_param_sles_t *
 cs_param_saddle_get_schur_sles_param(const cs_param_saddle_t  *saddlep)
 {
-  if (saddlep == NULL)
-    return NULL;
+  if (saddlep == nullptr)
+    return nullptr;
 
   return saddlep->schur_sles_param;
 }
@@ -694,7 +710,7 @@ cs_param_saddle_get_schur_sles_param(const cs_param_saddle_t  *saddlep)
 /*!
  * \brief Get the pointer to the set of parameters to handle a SLES. This SLES
  *        is associated to an extra-operation specific to a saddle-point solver
- *        It returns a non NULL pointer only for some sadlle-point solver
+ *        It returns a non nullptr pointer only for some sadlle-point solver
  *        relying on a more elaborated Schur complement approximation.
  *
  * \param[in] saddlep  pointer to a \ref cs_param_saddle_t structure
@@ -706,37 +722,40 @@ cs_param_saddle_get_schur_sles_param(const cs_param_saddle_t  *saddlep)
 cs_param_sles_t *
 cs_param_saddle_get_xtra_sles_param(const cs_param_saddle_t  *saddlep)
 {
-  if (saddlep == NULL)
-    return NULL;
+  if (saddlep == nullptr)
+    return nullptr;
 
   switch (saddlep->solver) {
 
   case CS_PARAM_SADDLE_SOLVER_GCR:
     {
-      cs_param_saddle_context_block_krylov_t  *ctxp = saddlep->context;
+    cs_param_saddle_context_block_krylov_t *ctxp =
+      static_cast<cs_param_saddle_context_block_krylov_t *>(saddlep->context);
 
-      return ctxp->xtra_sles_param;
+    return ctxp->xtra_sles_param;
     }
     break;
 
   case CS_PARAM_SADDLE_SOLVER_UZAWA_CG:
     {
-      cs_param_saddle_context_uzacg_t  *ctxp = saddlep->context;
+    cs_param_saddle_context_uzacg_t *ctxp =
+      static_cast<cs_param_saddle_context_uzacg_t *>(saddlep->context);
 
-      return ctxp->xtra_sles_param;
+    return ctxp->xtra_sles_param;
     }
     break;
 
   case CS_PARAM_SADDLE_SOLVER_SIMPLE:
     {
-      cs_param_saddle_context_simple_t *ctxp = saddlep->context;
+    cs_param_saddle_context_simple_t *ctxp =
+      static_cast<cs_param_saddle_context_simple_t *>(saddlep->context);
 
-      return ctxp->xtra_sles_param;
+    return ctxp->xtra_sles_param;
     }
     break;
 
   default:
-    return NULL;
+    return nullptr;
     break;
   }
 }
@@ -745,7 +764,7 @@ cs_param_saddle_get_xtra_sles_param(const cs_param_saddle_t  *saddlep)
 /*!
  * \brief Get the pointer to the set of parameters to handle a SLES. This SLES
  *        is associated to the initial saddle-point problem. It returns a non
- *        NULL pointer only for some sadlle-point solver.
+ *        nullptr pointer only for some sadlle-point solver.
  *
  * \param[in] saddlep  pointer to a \ref cs_param_saddle_t structure
  *
@@ -756,37 +775,40 @@ cs_param_saddle_get_xtra_sles_param(const cs_param_saddle_t  *saddlep)
 cs_param_sles_t *
 cs_param_saddle_get_init_sles_param(const cs_param_saddle_t  *saddlep)
 {
-  if (saddlep == NULL)
-    return NULL;
+  if (saddlep == nullptr)
+    return nullptr;
 
   switch (saddlep->solver) {
 
   case CS_PARAM_SADDLE_SOLVER_ALU:
     {
-      cs_param_saddle_context_alu_t  *ctxp = saddlep->context;
+    cs_param_saddle_context_alu_t *ctxp =
+      static_cast<cs_param_saddle_context_alu_t *>(saddlep->context);
 
-      return ctxp->init_sles_param;
+    return ctxp->init_sles_param;
     }
     break;
 
   case CS_PARAM_SADDLE_SOLVER_GKB:
     {
-      cs_param_saddle_context_gkb_t  *ctxp = saddlep->context;
+    cs_param_saddle_context_gkb_t *ctxp =
+      static_cast<cs_param_saddle_context_gkb_t *>(saddlep->context);
 
-      return ctxp->init_sles_param;
+    return ctxp->init_sles_param;
     }
     break;
 
   case CS_PARAM_SADDLE_SOLVER_UZAWA_CG:
     {
-      cs_param_saddle_context_uzacg_t  *ctxp = saddlep->context;
+    cs_param_saddle_context_uzacg_t *ctxp =
+      static_cast<cs_param_saddle_context_uzacg_t *>(saddlep->context);
 
-      return ctxp->init_sles_param;
+    return ctxp->init_sles_param;
     }
     break;
 
   default:
-    return NULL;
+    return nullptr;
     break;
   }
 }
@@ -804,15 +826,15 @@ cs_param_saddle_get_init_sles_param(const cs_param_saddle_t  *saddlep)
 const char *
 cs_param_saddle_get_name(const cs_param_saddle_t  *saddlep)
 {
-  if (saddlep == NULL)
+  if (saddlep == nullptr)
     return "Undefined";
 
-  if (saddlep->name != NULL)
+  if (saddlep->name != nullptr)
     return saddlep->name;
 
   else {
 
-    if (saddlep->block11_sles_param != NULL)
+    if (saddlep->block11_sles_param != nullptr)
       return saddlep->block11_sles_param->name;
     else
       return "Undefined";
@@ -833,7 +855,7 @@ void
 cs_param_saddle_set_name(const char         *name,
                          cs_param_saddle_t  *saddlep)
 {
-  if (saddlep == NULL)
+  if (saddlep == nullptr)
     return;
 
   size_t  len = strlen(name);
@@ -856,7 +878,7 @@ void
 cs_param_saddle_set_block11_sles_param(cs_param_saddle_t      *saddlep,
                                        const cs_param_sles_t  *block11_slesp)
 {
-  if (saddlep == NULL)
+  if (saddlep == nullptr)
     return;
 
   saddlep->block11_sles_param = block11_slesp;
@@ -878,9 +900,9 @@ cs_param_saddle_set_precond(const char          *keyval,
                             cs_param_saddle_t   *saddlep)
 {
   int  ierr = 1;
-  if (keyval == NULL)
+  if (keyval == nullptr)
     return ierr;
-  if (saddlep == NULL)
+  if (saddlep == nullptr)
     return ierr;
 
   if (strcmp(keyval, "none") == 0)
@@ -926,9 +948,9 @@ cs_param_saddle_set_schur_approx(const char          *keyval,
                                  cs_param_saddle_t   *saddlep)
 {
   int  ierr = 1;
-  if (keyval == NULL)
+  if (keyval == nullptr)
     return ierr;
-  if (saddlep == NULL)
+  if (saddlep == nullptr)
     return ierr;
 
   if (strcmp(keyval, "none") == 0)
@@ -988,9 +1010,9 @@ cs_param_saddle_set_solver_class(const char          *keyval,
                                  cs_param_saddle_t   *saddlep)
 {
   int  ierr = 1;
-  if (keyval == NULL)
+  if (keyval == nullptr)
     return ierr;
-  if (saddlep == NULL)
+  if (saddlep == nullptr)
     return ierr;
 
   if (strcmp(keyval, "cs") == 0 ||
@@ -1040,9 +1062,9 @@ cs_param_saddle_set_solver(const char          *keyval,
                            cs_param_saddle_t   *saddlep)
 {
   int  ierr = 1;
-  if (keyval == NULL)
+  if (keyval == nullptr)
     return ierr;
-  if (saddlep == NULL)
+  if (saddlep == nullptr)
     return ierr;
 
   _free_context(saddlep); /* If one switches from one solver to another one */
@@ -1059,7 +1081,7 @@ cs_param_saddle_set_solver(const char          *keyval,
 
     /* Context structure dedicated to this algorithm */
 
-    cs_param_saddle_context_alu_t  *ctxp = NULL;
+    cs_param_saddle_context_alu_t  *ctxp = nullptr;
     BFT_MALLOC(ctxp, 1, cs_param_saddle_context_alu_t);
 
     /* Default value for this context */
@@ -1086,11 +1108,11 @@ cs_param_saddle_set_solver(const char          *keyval,
     if (ret_class != CS_PARAM_SOLVER_CLASS_PETSC)
       return 2;
 
-    cs_param_saddle_context_block_krylov_t  *ctxp = NULL;
+    cs_param_saddle_context_block_krylov_t  *ctxp = nullptr;
     BFT_MALLOC(ctxp, 1, cs_param_saddle_context_block_krylov_t);
 
     ctxp->n_stored_directions = 30;    /* default value */
-    ctxp->xtra_sles_param = NULL;      /* It should remain to NULL */
+    ctxp->xtra_sles_param = nullptr;      /* It should remain to nullptr */
 
     saddlep->context = ctxp;
 
@@ -1105,11 +1127,11 @@ cs_param_saddle_set_solver(const char          *keyval,
     saddlep->precond = CS_PARAM_SADDLE_PRECOND_UPPER;
     saddlep->schur_approx = CS_PARAM_SADDLE_SCHUR_MASS_SCALED;
 
-    cs_param_saddle_context_block_krylov_t  *ctxp = NULL;
+    cs_param_saddle_context_block_krylov_t  *ctxp = nullptr;
     BFT_MALLOC(ctxp, 1, cs_param_saddle_context_block_krylov_t);
 
     ctxp->n_stored_directions = 30;    /* default value */
-    ctxp->xtra_sles_param = NULL;      /* It depends on the type of Schur
+    ctxp->xtra_sles_param = nullptr;      /* It depends on the type of Schur
                                           approximation */
 
     saddlep->context = ctxp;
@@ -1124,7 +1146,7 @@ cs_param_saddle_set_solver(const char          *keyval,
 
     /* Context structure dedicated to this algorithm */
 
-    cs_param_saddle_context_gkb_t  *ctxp = NULL;
+    cs_param_saddle_context_gkb_t  *ctxp = nullptr;
     BFT_MALLOC(ctxp, 1, cs_param_saddle_context_gkb_t);
 
     ctxp->augmentation_scaling = 0;  /* default value */
@@ -1178,7 +1200,7 @@ cs_param_saddle_set_solver(const char          *keyval,
 
     /* Context structure dedicated to this algorithm */
 
-    cs_param_saddle_context_notay_t  *ctxp = NULL;
+    cs_param_saddle_context_notay_t  *ctxp = nullptr;
     BFT_MALLOC(ctxp, 1, cs_param_saddle_context_notay_t);
 
     ctxp->scaling_coef = 1.0;  /* default value */
@@ -1195,10 +1217,10 @@ cs_param_saddle_set_solver(const char          *keyval,
 
     /* Context structure dedicated to this algorithm */
 
-    cs_param_saddle_context_uzacg_t  *ctxp = NULL;
+    cs_param_saddle_context_uzacg_t  *ctxp = nullptr;
     BFT_MALLOC(ctxp, 1, cs_param_saddle_context_uzacg_t);
 
-    ctxp->xtra_sles_param = NULL;  /* It depends on the type of Schur
+    ctxp->xtra_sles_param = nullptr;  /* It depends on the type of Schur
                                       approximation used */
 
     ctxp->dedicated_init_sles = false;
@@ -1224,10 +1246,10 @@ cs_param_saddle_set_solver(const char          *keyval,
 
     /* Context structure dedicated to this algorithm */
 
-    cs_param_saddle_context_simple_t *ctxp = NULL;
+    cs_param_saddle_context_simple_t *ctxp = nullptr;
     BFT_MALLOC(ctxp, 1, cs_param_saddle_context_simple_t);
 
-    ctxp->xtra_sles_param = NULL;  /* It depends on the type of Schur
+    ctxp->xtra_sles_param = nullptr;  /* It depends on the type of Schur
                                       approximation used */
 
     ctxp->dedicated_init_sles = false;
@@ -1264,10 +1286,10 @@ cs_param_saddle_set_solver(const char          *keyval,
 void
 cs_param_saddle_try_init_schur_sles_param(cs_param_saddle_t  *saddlep)
 {
-  if (saddlep == NULL)
+  if (saddlep == nullptr)
     return;
 
-  if (saddlep->schur_sles_param != NULL)
+  if (saddlep->schur_sles_param != nullptr)
     return; /* Initialization has already been performed */
 
   _init_schur_slesp(saddlep);
@@ -1286,7 +1308,7 @@ void
 cs_param_saddle_copy(const cs_param_saddle_t  *ref,
                      cs_param_saddle_t        *dest)
 {
-  if (ref == NULL)
+  if (ref == nullptr)
     return;
 
   dest->solver_class = ref->solver_class;
@@ -1303,9 +1325,9 @@ cs_param_saddle_copy(const cs_param_saddle_t  *ref,
 
   dest->block11_sles_param = ref->block11_sles_param;
 
-  if (ref->schur_sles_param != NULL) {
+  if (ref->schur_sles_param != nullptr) {
 
-    if (dest->name == NULL)
+    if (dest->name == nullptr)
       cs_param_saddle_set_name("auto_schur", dest); /* Avoid using the same
                                                        name */
 
@@ -1321,62 +1343,66 @@ cs_param_saddle_copy(const cs_param_saddle_t  *ref,
 
   case CS_PARAM_SADDLE_SOLVER_ALU:
     {
-      cs_param_saddle_context_alu_t  *ctxp_ref = ref->context;
-      cs_param_saddle_context_alu_t  *ctxp_dest = NULL;
+    cs_param_saddle_context_alu_t *ctxp_ref =
+      static_cast<cs_param_saddle_context_alu_t *>(ref->context);
+    cs_param_saddle_context_alu_t *ctxp_dest = nullptr;
 
-      BFT_MALLOC(ctxp_dest, 1, cs_param_saddle_context_alu_t);
+    BFT_MALLOC(ctxp_dest, 1, cs_param_saddle_context_alu_t);
 
-      ctxp_dest->augmentation_scaling = ctxp_ref->augmentation_scaling;
-      ctxp_dest->dedicated_init_sles = ctxp_ref->dedicated_init_sles;
+    ctxp_dest->augmentation_scaling = ctxp_ref->augmentation_scaling;
+    ctxp_dest->dedicated_init_sles  = ctxp_ref->dedicated_init_sles;
 
-      ctxp_dest->init_sles_param = _copy_init_slesp(ctxp_ref->init_sles_param,
-                                                    dest);
+    ctxp_dest->init_sles_param =
+      _copy_init_slesp(ctxp_ref->init_sles_param, dest);
     }
     break;
 
   case CS_PARAM_SADDLE_SOLVER_FGMRES:
   case CS_PARAM_SADDLE_SOLVER_GCR:
     {
-      cs_param_saddle_context_block_krylov_t  *ctxp_ref = ref->context;
-      cs_param_saddle_context_block_krylov_t  *ctxp_dest = NULL;
+    cs_param_saddle_context_block_krylov_t *ctxp_ref =
+      static_cast<cs_param_saddle_context_block_krylov_t *>(ref->context);
+    cs_param_saddle_context_block_krylov_t *ctxp_dest = nullptr;
 
-      BFT_MALLOC(ctxp_dest, 1, cs_param_saddle_context_block_krylov_t);
+    BFT_MALLOC(ctxp_dest, 1, cs_param_saddle_context_block_krylov_t);
 
-      ctxp_ref->n_stored_directions = ctxp_ref->n_stored_directions;
+    ctxp_ref->n_stored_directions = ctxp_ref->n_stored_directions;
 
-      ctxp_dest->xtra_sles_param = _copy_xtra_slesp(ctxp_ref->xtra_sles_param,
-                                                    dest);
+    ctxp_dest->xtra_sles_param =
+      _copy_xtra_slesp(ctxp_ref->xtra_sles_param, dest);
     }
     break;
 
   case CS_PARAM_SADDLE_SOLVER_GKB:
     {
-      cs_param_saddle_context_gkb_t  *ctxp_ref = ref->context;
-      cs_param_saddle_context_gkb_t  *ctxp_dest = NULL;
+    cs_param_saddle_context_gkb_t *ctxp_ref =
+      static_cast<cs_param_saddle_context_gkb_t *>(ref->context);
+    cs_param_saddle_context_gkb_t *ctxp_dest = nullptr;
 
-      BFT_MALLOC(ctxp_dest, 1, cs_param_saddle_context_gkb_t);
+    BFT_MALLOC(ctxp_dest, 1, cs_param_saddle_context_gkb_t);
 
-      ctxp_dest->augmentation_scaling = ctxp_ref->augmentation_scaling;
-      ctxp_dest->truncation_threshold = ctxp_ref->truncation_threshold;
-      ctxp_dest->dedicated_init_sles = ctxp_ref->dedicated_init_sles;
+    ctxp_dest->augmentation_scaling = ctxp_ref->augmentation_scaling;
+    ctxp_dest->truncation_threshold = ctxp_ref->truncation_threshold;
+    ctxp_dest->dedicated_init_sles  = ctxp_ref->dedicated_init_sles;
 
-      ctxp_dest->init_sles_param = _copy_init_slesp(ctxp_ref->init_sles_param,
-                                                    dest);
+    ctxp_dest->init_sles_param =
+      _copy_init_slesp(ctxp_ref->init_sles_param, dest);
     }
     break;
 
   case CS_PARAM_SADDLE_SOLVER_UZAWA_CG:
     {
-      cs_param_saddle_context_uzacg_t  *ctxp_ref = ref->context;
-      cs_param_saddle_context_uzacg_t  *ctxp_dest = NULL;
+    cs_param_saddle_context_uzacg_t *ctxp_ref =
+      static_cast<cs_param_saddle_context_uzacg_t *>(ref->context);
+    cs_param_saddle_context_uzacg_t *ctxp_dest = nullptr;
 
-      ctxp_dest->dedicated_init_sles = ctxp_ref->dedicated_init_sles;
+    ctxp_dest->dedicated_init_sles = ctxp_ref->dedicated_init_sles;
 
-      ctxp_dest->init_sles_param = _copy_init_slesp(ctxp_ref->init_sles_param,
-                                                    dest);
+    ctxp_dest->init_sles_param =
+      _copy_init_slesp(ctxp_ref->init_sles_param, dest);
 
-      ctxp_dest->xtra_sles_param = _copy_xtra_slesp(ctxp_ref->xtra_sles_param,
-                                                    dest);
+    ctxp_dest->xtra_sles_param =
+      _copy_xtra_slesp(ctxp_ref->xtra_sles_param, dest);
     }
     break;
 
@@ -1398,7 +1424,7 @@ cs_param_saddle_copy(const cs_param_saddle_t  *ref,
 void
 cs_param_saddle_log(const cs_param_saddle_t  *saddlep)
 {
-  if (saddlep == NULL)
+  if (saddlep == nullptr)
     return;
 
   if (saddlep->solver == CS_PARAM_SADDLE_SOLVER_NONE)
@@ -1406,7 +1432,7 @@ cs_param_saddle_log(const cs_param_saddle_t  *saddlep)
 
   const char  *basename = cs_param_saddle_get_name(saddlep);
 
-  char  *prefix = NULL;
+  char  *prefix = nullptr;
   int  len = strlen(basename) + strlen("  *  |") + 1;
   BFT_MALLOC(prefix, len, char);
   sprintf(prefix, "  * %s |", basename);
@@ -1423,60 +1449,69 @@ cs_param_saddle_log(const cs_param_saddle_t  *saddlep)
 
   case CS_PARAM_SADDLE_SOLVER_ALU:
     {
-      cs_param_saddle_context_alu_t  *ctxp = saddlep->context;
+    cs_param_saddle_context_alu_t *ctxp =
+      static_cast<cs_param_saddle_context_alu_t *>(saddlep->context);
 
-      cs_log_printf(CS_LOG_SETUP,
-                    "%s Solver: Augmented Lagrangian-Uzawa (ALU)\n",
-                    prefix);
-      cs_log_printf(CS_LOG_SETUP,
-                    "%s ALU parameters: gamma=%5.2e\n",
-                    prefix, ctxp->augmentation_scaling);
-      cs_log_printf(CS_LOG_SETUP,
-                    "%s ALU parameters: dedicated_init_sles=%s\n",
-                    prefix, cs_base_strtf(ctxp->dedicated_init_sles));
+    cs_log_printf(CS_LOG_SETUP,
+                  "%s Solver: Augmented Lagrangian-Uzawa (ALU)\n",
+                  prefix);
+    cs_log_printf(CS_LOG_SETUP,
+                  "%s ALU parameters: gamma=%5.2e\n",
+                  prefix,
+                  ctxp->augmentation_scaling);
+    cs_log_printf(CS_LOG_SETUP,
+                  "%s ALU parameters: dedicated_init_sles=%s\n",
+                  prefix,
+                  cs_base_strtf(ctxp->dedicated_init_sles));
     }
     break;
 
   case CS_PARAM_SADDLE_SOLVER_FGMRES:
     {
-      cs_param_saddle_context_block_krylov_t  *ctxp = saddlep->context;
+    cs_param_saddle_context_block_krylov_t *ctxp =
+      static_cast<cs_param_saddle_context_block_krylov_t *>(saddlep->context);
 
-      cs_log_printf(CS_LOG_SETUP,
-                    "%s Solver: Flexible GMRES (FGMRES)\n",
-                    prefix);
-      cs_log_printf(CS_LOG_SETUP,
-                    "%s FGMRES parameters: n_stored_directions=%d\n",
-                    prefix, ctxp->n_stored_directions);
+    cs_log_printf(CS_LOG_SETUP, "%s Solver: Flexible GMRES (FGMRES)\n", prefix);
+    cs_log_printf(CS_LOG_SETUP,
+                  "%s FGMRES parameters: n_stored_directions=%d\n",
+                  prefix,
+                  ctxp->n_stored_directions);
     }
     break;
 
   case CS_PARAM_SADDLE_SOLVER_GCR:
     {
-      cs_param_saddle_context_block_krylov_t  *ctxp = saddlep->context;
+    cs_param_saddle_context_block_krylov_t *ctxp =
+      static_cast<cs_param_saddle_context_block_krylov_t *>(saddlep->context);
 
-      cs_log_printf(CS_LOG_SETUP,
-                    "%s Solver: Generalized Conjugate Residual (GCR)\n",
-                    prefix);
-      cs_log_printf(CS_LOG_SETUP,
-                    "%s GCR parameters: n_stored_directions=%d\n",
-                    prefix, ctxp->n_stored_directions);
+    cs_log_printf(CS_LOG_SETUP,
+                  "%s Solver: Generalized Conjugate Residual (GCR)\n",
+                  prefix);
+    cs_log_printf(CS_LOG_SETUP,
+                  "%s GCR parameters: n_stored_directions=%d\n",
+                  prefix,
+                  ctxp->n_stored_directions);
     }
     break;
 
   case CS_PARAM_SADDLE_SOLVER_GKB:
     {
-      cs_param_saddle_context_gkb_t  *ctxp = saddlep->context;
+    cs_param_saddle_context_gkb_t *ctxp =
+      static_cast<cs_param_saddle_context_gkb_t *>(saddlep->context);
 
-      cs_log_printf(CS_LOG_SETUP,
-                    "%s Solver: Golub-Kahan Bidiagonalization (GKB)\n",
-                    prefix);
-      cs_log_printf(CS_LOG_SETUP, "%s GKB parameters:"
-                    " gamma=%5.2e; trunctation_threshold=%d\n",
-                    prefix, ctxp->augmentation_scaling,
-                    ctxp->truncation_threshold);
-      cs_log_printf(CS_LOG_SETUP,
-                    "%s GKB parameters: dedicated_init_sles=%s\n",
-                    prefix, cs_base_strtf(ctxp->dedicated_init_sles));
+    cs_log_printf(CS_LOG_SETUP,
+                  "%s Solver: Golub-Kahan Bidiagonalization (GKB)\n",
+                  prefix);
+    cs_log_printf(CS_LOG_SETUP,
+                  "%s GKB parameters:"
+                  " gamma=%5.2e; trunctation_threshold=%d\n",
+                  prefix,
+                  ctxp->augmentation_scaling,
+                  ctxp->truncation_threshold);
+    cs_log_printf(CS_LOG_SETUP,
+                  "%s GKB parameters: dedicated_init_sles=%s\n",
+                  prefix,
+                  cs_base_strtf(ctxp->dedicated_init_sles));
     }
     break;
 
@@ -1490,24 +1525,28 @@ cs_param_saddle_log(const cs_param_saddle_t  *saddlep)
 
   case CS_PARAM_SADDLE_SOLVER_NOTAY_TRANSFORM:
     {
-      cs_param_saddle_context_notay_t  *ctxp = saddlep->context;
+    cs_param_saddle_context_notay_t *ctxp =
+      static_cast<cs_param_saddle_context_notay_t *>(saddlep->context);
 
-      cs_log_printf(CS_LOG_SETUP, "%s Solver: Notay's transformation\n",
-                    prefix);
-      cs_log_printf(CS_LOG_SETUP, "%s Notay parameters: alpha=%5.3e\n",
-                    prefix, ctxp->scaling_coef);
+    cs_log_printf(CS_LOG_SETUP, "%s Solver: Notay's transformation\n", prefix);
+    cs_log_printf(CS_LOG_SETUP,
+                  "%s Notay parameters: alpha=%5.3e\n",
+                  prefix,
+                  ctxp->scaling_coef);
     }
     break;
 
   case CS_PARAM_SADDLE_SOLVER_UZAWA_CG:
     {
-      cs_param_saddle_context_uzacg_t  *ctxp = saddlep->context;
+    cs_param_saddle_context_uzacg_t *ctxp =
+      static_cast<cs_param_saddle_context_uzacg_t *>(saddlep->context);
 
-      cs_log_printf(CS_LOG_SETUP, "%s Solver: Uzawa-CG\n", prefix);
+    cs_log_printf(CS_LOG_SETUP, "%s Solver: Uzawa-CG\n", prefix);
 
-      cs_log_printf(CS_LOG_SETUP,
-                    "%s Uzawa-CG parameters: dedicated_init_sles=%s\n",
-                    prefix, cs_base_strtf(ctxp->dedicated_init_sles));
+    cs_log_printf(CS_LOG_SETUP,
+                  "%s Uzawa-CG parameters: dedicated_init_sles=%s\n",
+                  prefix,
+                  cs_base_strtf(ctxp->dedicated_init_sles));
     }
     break;
 
@@ -1607,38 +1646,42 @@ cs_param_saddle_log(const cs_param_saddle_t  *saddlep)
 
   case CS_PARAM_SADDLE_SOLVER_ALU:
     {
-      cs_param_saddle_context_alu_t  *ctxp = saddlep->context;
+    cs_param_saddle_context_alu_t *ctxp =
+      static_cast<cs_param_saddle_context_alu_t *>(saddlep->context);
 
-      if (ctxp->dedicated_init_sles)
-        cs_param_sles_log(ctxp->init_sles_param);
+    if (ctxp->dedicated_init_sles)
+      cs_param_sles_log(ctxp->init_sles_param);
     }
     break;
 
   case CS_PARAM_SADDLE_SOLVER_GCR:
     {
-      cs_param_saddle_context_block_krylov_t  *ctxp = saddlep->context;
+    cs_param_saddle_context_block_krylov_t *ctxp =
+      static_cast<cs_param_saddle_context_block_krylov_t *>(saddlep->context);
 
-      cs_param_sles_log(ctxp->xtra_sles_param);
+    cs_param_sles_log(ctxp->xtra_sles_param);
     }
     break;
 
   case CS_PARAM_SADDLE_SOLVER_GKB:
     {
-      cs_param_saddle_context_gkb_t  *ctxp = saddlep->context;
+    cs_param_saddle_context_gkb_t *ctxp =
+      static_cast<cs_param_saddle_context_gkb_t *>(saddlep->context);
 
-      if (ctxp->dedicated_init_sles)
-        cs_param_sles_log(ctxp->init_sles_param);
+    if (ctxp->dedicated_init_sles)
+      cs_param_sles_log(ctxp->init_sles_param);
     }
     break;
 
   case CS_PARAM_SADDLE_SOLVER_UZAWA_CG:
     {
-      cs_param_saddle_context_uzacg_t  *ctxp = saddlep->context;
+    cs_param_saddle_context_uzacg_t *ctxp =
+      static_cast<cs_param_saddle_context_uzacg_t *>(saddlep->context);
 
-      if (ctxp->dedicated_init_sles)
-        cs_param_sles_log(ctxp->init_sles_param);
+    if (ctxp->dedicated_init_sles)
+      cs_param_sles_log(ctxp->init_sles_param);
 
-      cs_param_sles_log(ctxp->xtra_sles_param);
+    cs_param_sles_log(ctxp->xtra_sles_param);
     }
     break;
 

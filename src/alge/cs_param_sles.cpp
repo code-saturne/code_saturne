@@ -91,7 +91,7 @@ static cs_param_solver_class_t
 _get_petsc_or_hypre(const cs_param_sles_t  *slesp,
                     bool                    petsc_mandatory)
 {
-  assert(slesp != NULL);
+  assert(slesp != nullptr);
 
   cs_param_solver_class_t  ret_class =
     cs_param_sles_check_class(CS_PARAM_SOLVER_CLASS_PETSC);
@@ -132,7 +132,7 @@ _get_petsc_or_hypre(const cs_param_sles_t  *slesp,
 static void
 _check_amg_type(cs_param_sles_t   *slesp)
 {
-  if (slesp == NULL)
+  if (slesp == nullptr)
     return;
   if (slesp->precond != CS_PARAM_PRECOND_AMG)
     return;
@@ -226,7 +226,7 @@ _check_amg_type(cs_param_sles_t   *slesp)
  *         settings
  *
  * \param[in] field_id      id related to to the variable field or -1
- * \param[in] system_name   name of the system to solve or NULL
+ * \param[in] system_name   name of the system to solve or nullptr
  *
  * \return a pointer to a cs_param_sles_t stucture
  */
@@ -236,12 +236,12 @@ cs_param_sles_t *
 cs_param_sles_create(int          field_id,
                      const char  *system_name)
 {
-  cs_param_sles_t  *slesp = NULL;
+  cs_param_sles_t  *slesp = nullptr;
 
   BFT_MALLOC(slesp, 1, cs_param_sles_t);
 
-  slesp->name = NULL;
-  if (system_name != NULL) {
+  slesp->name = nullptr;
+  if (system_name != nullptr) {
     size_t  len = strlen(system_name);
     BFT_MALLOC(slesp->name, len + 1, char);
     strncpy(slesp->name, system_name, len + 1);
@@ -263,13 +263,14 @@ cs_param_sles_create(int          field_id,
 
   slesp->mat_is_sym = false;
 
-  slesp->cvg_param =  (cs_param_convergence_t) {
-    .n_max_iter = 10000, /* max. number of iterations */
-    .atol = 1e-15,       /* absolute tolerance */
-    .rtol = 1e-6,        /* relative tolerance */
-    .dtol = 1e3 };       /* divergence tolerance */
+  slesp->cvg_param = (cs_param_convergence_t){
+    .atol       = 1e-15, /* absolute tolerance */
+    .rtol       = 1e-6,  /* relative tolerance */
+    .dtol       = 1e3,   /* divergence tolerance */
+    .n_max_iter = 10000  /* max. number of iterations */
+  };
 
-  slesp->context_param = NULL;
+  slesp->context_param = nullptr;
 
   return slesp;
 }
@@ -285,12 +286,12 @@ cs_param_sles_create(int          field_id,
 void
 cs_param_sles_free(cs_param_sles_t  **p_slesp)
 {
-  if (p_slesp == NULL)
+  if (p_slesp == nullptr)
     return;
 
   cs_param_sles_t  *slesp = *p_slesp;
 
-  if (slesp == NULL)
+  if (slesp == nullptr)
     return;
 
   BFT_FREE(slesp->name);
@@ -301,7 +302,7 @@ cs_param_sles_free(cs_param_sles_t  **p_slesp)
   BFT_FREE(slesp->context_param);
 
   BFT_FREE(slesp);
-  slesp = NULL;
+  slesp = nullptr;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -316,7 +317,7 @@ cs_param_sles_free(cs_param_sles_t  **p_slesp)
 void
 cs_param_sles_log(cs_param_sles_t   *slesp)
 {
-  if (slesp == NULL)
+  if (slesp == nullptr)
     return;
 
   cs_log_printf(CS_LOG_SETUP, "\n### %s | Linear algebra settings\n",
@@ -340,7 +341,9 @@ cs_param_sles_log(cs_param_sles_t   *slesp)
                 slesp->name, cs_param_get_solver_name(slesp->solver));
 
   if (slesp->solver == CS_PARAM_SOLVER_MUMPS)
-    cs_param_mumps_log(slesp->name, slesp->context_param);
+    cs_param_mumps_log(slesp->name,
+                       static_cast<const cs_param_mumps_t *>(
+                         slesp->context_param));
 
   else { /* Iterative solvers */
 
@@ -351,13 +354,15 @@ cs_param_sles_log(cs_param_sles_t   *slesp)
 
       if (slesp->amg_type == CS_PARAM_AMG_INHOUSE_K ||
           slesp->amg_type == CS_PARAM_AMG_INHOUSE_V)
-        cs_param_amg_inhouse_log(slesp->name, slesp->context_param);
+        cs_param_amg_inhouse_log(slesp->name,
+                                 static_cast<const cs_param_amg_inhouse_t *>(
+                                   slesp->context_param));
 
       else if (slesp->amg_type == CS_PARAM_AMG_HYPRE_BOOMER_V ||
                slesp->amg_type == CS_PARAM_AMG_HYPRE_BOOMER_W)
-        cs_param_amg_boomer_log(slesp->name, slesp->context_param);
-
-
+        cs_param_amg_boomer_log(slesp->name,
+                                static_cast<const cs_param_amg_boomer_t *>(
+                                  slesp->context_param));
     }
 
     cs_log_printf(CS_LOG_SETUP, "  * %s | SLES Solver.Precond:      %s\n",
@@ -370,15 +375,20 @@ cs_param_sles_log(cs_param_sles_t   *slesp)
 
       if (slesp->amg_type == CS_PARAM_AMG_INHOUSE_K ||
           slesp->amg_type == CS_PARAM_AMG_INHOUSE_V)
-        cs_param_amg_inhouse_log(slesp->name, slesp->context_param);
+        cs_param_amg_inhouse_log(slesp->name,
+                                 static_cast<const cs_param_amg_inhouse_t *>(
+                                   slesp->context_param));
 
       if (slesp->amg_type == CS_PARAM_AMG_HYPRE_BOOMER_V ||
           slesp->amg_type == CS_PARAM_AMG_HYPRE_BOOMER_W)
-        cs_param_amg_boomer_log(slesp->name, slesp->context_param);
-
+        cs_param_amg_boomer_log(slesp->name,
+                                static_cast<const cs_param_amg_boomer_t *>(
+                                  slesp->context_param));
     }
     else if (slesp->precond == CS_PARAM_PRECOND_MUMPS)
-      cs_param_mumps_log(slesp->name, slesp->context_param);
+      cs_param_mumps_log(slesp->name,
+                         static_cast<const cs_param_mumps_t *>(
+                           slesp->context_param));
 
     cs_log_printf(CS_LOG_SETUP, "  * %s | SLES Block.Precond:       %s\n",
                   slesp->name,
@@ -442,7 +452,7 @@ void
 cs_param_sles_copy_from(const cs_param_sles_t  *src,
                         cs_param_sles_t        *dst)
 {
-  if (src == NULL || dst == NULL)
+  if (src == nullptr || dst == nullptr)
     return;
 
   /* Remark: name is managed at the creation of the structure */
@@ -462,22 +472,25 @@ cs_param_sles_copy_from(const cs_param_sles_t  *src,
   dst->cvg_param.dtol = src->cvg_param.dtol;
   dst->cvg_param.n_max_iter = src->cvg_param.n_max_iter;
 
-  if (dst->context_param != NULL)
+  if (dst->context_param != nullptr)
     BFT_FREE(dst->context_param);
 
   if (dst->precond == CS_PARAM_PRECOND_MUMPS ||
       dst->solver == CS_PARAM_SOLVER_MUMPS)
-    dst->context_param = cs_param_mumps_copy(src->context_param);
+    dst->context_param = cs_param_mumps_copy(
+      static_cast<const cs_param_mumps_t *>(src->context_param));
 
   else if (cs_param_amg_inhouse_is_needed(dst->solver,
                                           dst->precond,
                                           dst->amg_type))
-    dst->context_param = cs_param_amg_inhouse_copy(src->context_param);
+    dst->context_param = cs_param_amg_inhouse_copy(
+      static_cast<const cs_param_amg_inhouse_t *>(src->context_param));
 
   else if (cs_param_amg_boomer_is_needed(dst->solver,
                                          dst->precond,
                                          dst->amg_type))
-    dst->context_param = cs_param_amg_boomer_copy(src->context_param);
+    dst->context_param = cs_param_amg_boomer_copy(
+      static_cast<const cs_param_amg_boomer_t *>(src->context_param));
 }
 
 /*----------------------------------------------------------------------------*/
@@ -495,7 +508,7 @@ int
 cs_param_sles_set_solver(const char       *keyval,
                          cs_param_sles_t  *slesp)
 {
-  if (slesp == NULL)
+  if (slesp == nullptr)
     return EXIT_FAILURE;
 
   const char  *sles_name = slesp->name;
@@ -672,7 +685,7 @@ cs_param_sles_set_precond(const char       *keyval,
 {
   int  ierr = EXIT_SUCCESS;
 
-  if (slesp == NULL)
+  if (slesp == nullptr)
     return ierr;
 
   const char  *sles_name = slesp->name;
@@ -987,7 +1000,7 @@ cs_param_sles_set_solver_class(const char       *keyval,
 {
   int  ierr = 0;
 
-  if (slesp == NULL)
+  if (slesp == nullptr)
     return ierr;
 
   const char  *sles_name = slesp->name;
@@ -1085,7 +1098,7 @@ int
 cs_param_sles_set_amg_type(const char       *keyval,
                            cs_param_sles_t  *slesp)
 {
-  if (slesp == NULL)
+  if (slesp == nullptr)
     return EXIT_FAILURE;
 
   const char  *sles_name = slesp->name;
@@ -1301,7 +1314,7 @@ cs_param_sles_set_cvg_param(cs_param_sles_t  *slesp,
                             double            dtol,
                             int               max_iter)
 {
-  if (slesp == NULL)
+  if (slesp == nullptr)
     return;
 
   /* Absolute tolerance */
@@ -1341,10 +1354,10 @@ cs_param_sles_amg_inhouse_reset(cs_param_sles_t  *slesp,
                                 bool              used_as_solver,
                                 bool              used_as_k_cycle)
 {
-  if (slesp == NULL)
+  if (slesp == nullptr)
     return;
 
-  if (slesp->context_param != NULL)
+  if (slesp->context_param != nullptr)
     BFT_FREE(slesp->context_param);
 
   slesp->context_param = cs_param_amg_inhouse_create(used_as_solver,
@@ -1384,11 +1397,12 @@ cs_param_sles_amg_inhouse(cs_param_sles_t                *slesp,
                           cs_param_amg_inhouse_coarsen_t  coarsen_algo,
                           int                             aggreg_limit)
 {
-  if (slesp == NULL)
+  if (slesp == nullptr)
     return;
 
-  assert(slesp->context_param != NULL);
-  cs_param_amg_inhouse_t  *amgp = slesp->context_param;
+  assert(slesp->context_param != nullptr);
+  cs_param_amg_inhouse_t *amgp =
+    static_cast<cs_param_amg_inhouse_t *>(slesp->context_param);
 
   if (n_down_iter != CS_CDO_KEEP_DEFAULT)
     amgp->n_down_iter = n_down_iter;
@@ -1438,11 +1452,12 @@ cs_param_sles_amg_inhouse_advanced(cs_param_sles_t  *slesp,
                                    int               coarse_max_iter,
                                    double            coarse_rtol_mult)
 {
-  if (slesp == NULL)
+  if (slesp == nullptr)
     return;
 
-  assert(slesp->context_param != NULL);
-  cs_param_amg_inhouse_t  *amgp = slesp->context_param;
+  assert(slesp->context_param != nullptr);
+  cs_param_amg_inhouse_t *amgp =
+    static_cast<cs_param_amg_inhouse_t *>(slesp->context_param);
 
   if (max_levels != CS_CDO_KEEP_DEFAULT)
     amgp->max_levels = max_levels;
@@ -1472,10 +1487,10 @@ cs_param_sles_amg_inhouse_advanced(cs_param_sles_t  *slesp,
 void
 cs_param_sles_boomeramg_reset(cs_param_sles_t  *slesp)
 {
-  if (slesp == NULL)
+  if (slesp == nullptr)
     return;
 
-  if (slesp->context_param != NULL)
+  if (slesp->context_param != nullptr)
     BFT_FREE(slesp->context_param);
 
   slesp->context_param = cs_param_amg_boomer_create();
@@ -1507,12 +1522,13 @@ cs_param_sles_boomeramg(cs_param_sles_t                    *slesp,
                         cs_param_amg_boomer_smoother_t      coarse_solver,
                         cs_param_amg_boomer_coarsen_algo_t  coarsen_algo)
 {
-  if (slesp == NULL)
+  if (slesp == nullptr)
     return;
 
   cs_param_sles_boomeramg_reset(slesp);
 
-  cs_param_amg_boomer_t  *bamgp = slesp->context_param;
+  cs_param_amg_boomer_t *bamgp =
+    static_cast<cs_param_amg_boomer_t *>(slesp->context_param);
 
   bamgp->n_down_iter = n_down_iter;
   bamgp->down_smoother = down_smoother;
@@ -1548,15 +1564,16 @@ cs_param_sles_boomeramg_advanced(cs_param_sles_t                   *slesp,
                                  int                                n_agg_lv,
                                  int                                n_agg_paths)
 {
-  if (slesp == NULL)
+  if (slesp == nullptr)
     return;
 
-  if (slesp->context_param == NULL)
+  if (slesp->context_param == nullptr)
     slesp->context_param = cs_param_amg_boomer_create();
 
   /* One assumes that the existing context structure is related to boomeramg */
 
-  cs_param_amg_boomer_t  *bamgp = slesp->context_param;
+  cs_param_amg_boomer_t *bamgp =
+    static_cast<cs_param_amg_boomer_t *>(slesp->context_param);
 
   bamgp->strong_threshold = strong_thr;
   bamgp->interp_algo = interp_algo;
@@ -1577,10 +1594,10 @@ cs_param_sles_boomeramg_advanced(cs_param_sles_t                   *slesp,
 void
 cs_param_sles_mumps_reset(cs_param_sles_t  *slesp)
 {
-  if (slesp == NULL)
+  if (slesp == nullptr)
     return;
 
-  if (slesp->context_param != NULL)
+  if (slesp->context_param != nullptr)
     BFT_FREE(slesp->context_param);  /* Up to now the context structures have
                                         no allocation inside */
 
@@ -1607,12 +1624,13 @@ cs_param_sles_mumps(cs_param_sles_t             *slesp,
                     bool                         is_single,
                     cs_param_mumps_facto_type_t  facto_type)
 {
-  if (slesp == NULL)
+  if (slesp == nullptr)
     return;
 
   cs_param_sles_mumps_reset(slesp);
 
-  cs_param_mumps_t  *mumpsp = slesp->context_param;
+  cs_param_mumps_t *mumpsp =
+    static_cast<cs_param_mumps_t *>(slesp->context_param);
 
   mumpsp->is_single = is_single;
   mumpsp->facto_type = facto_type;
@@ -1646,15 +1664,16 @@ cs_param_sles_mumps_advanced(cs_param_sles_t                *slesp,
                              cs_param_mumps_memory_usage_t   mem_usage,
                              bool                            advanced_optim)
 {
-  if (slesp == NULL)
+  if (slesp == nullptr)
     return;
 
-  if (slesp->context_param == NULL)
+  if (slesp->context_param == nullptr)
     slesp->context_param = cs_param_mumps_create();
 
   /* One assumes that the existing context structure is related to MUMPS */
 
-  cs_param_mumps_t  *mumpsp = slesp->context_param;
+  cs_param_mumps_t *mumpsp =
+    static_cast<cs_param_mumps_t *>(slesp->context_param);
 
   mumpsp->analysis_algo = analysis_algo;
   mumpsp->block_analysis = block_analysis;

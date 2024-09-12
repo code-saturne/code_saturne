@@ -144,7 +144,7 @@ _get_petsc_bamg_smoother_keyval(cs_param_amg_boomer_smoother_t  type,
                                 const char                     *msg,
                                 char                            option[])
 {
-  assert(option != NULL);
+  assert(option != nullptr);
 
   switch (type) {
 
@@ -216,7 +216,7 @@ _petsc_cmd(bool         use_prefix,
     sprintf(cmd_line, "-%s", keyword);
 
 #if PETSC_VERSION_GE(3,7,0)
-  PetscOptionsSetValue(NULL, cmd_line, keyval);
+  PetscOptionsSetValue(nullptr, cmd_line, keyval);
 #else
   PetscOptionsSetValue(cmd_line, keyval);
 #endif
@@ -240,7 +240,7 @@ _set_prefix(cs_param_sles_t *slesp,
   const char *petsc_prefix;
   KSPGetOptionsPrefix(ksp, &petsc_prefix);
 
-  if (petsc_prefix == NULL)
+  if (petsc_prefix == nullptr)
     return slesp->name;
   else
     return petsc_prefix;
@@ -257,7 +257,7 @@ _set_prefix(cs_param_sles_t *slesp,
 static inline void
 _petsc_bilu0_hook(const char  *prefix)
 {
-  assert(prefix != NULL);
+  assert(prefix != nullptr);
 
   _petsc_cmd(true, prefix, "pc_type", "bjacobi");
   _petsc_cmd(true, prefix, "pc_jacobi_blocks", "1");
@@ -281,7 +281,7 @@ _petsc_bilu0_hook(const char  *prefix)
 static inline void
 _petsc_bicc0_hook(const char  *prefix)
 {
-  assert(prefix != NULL);
+  assert(prefix != nullptr);
 
   _petsc_cmd(true, prefix, "pc_type", "bjacobi");
   _petsc_cmd(true, prefix, "pc_jacobi_blocks", "1");
@@ -305,7 +305,7 @@ _petsc_bicc0_hook(const char  *prefix)
 static inline void
 _petsc_bssor_hook(const char  *prefix)
 {
-  assert(prefix != NULL);
+  assert(prefix != nullptr);
 
   _petsc_cmd(true, prefix, "pc_type", "bjacobi");
   _petsc_cmd(true, prefix, "pc_jacobi_blocks", "1");
@@ -335,8 +335,8 @@ _petsc_pcgamg_hook(const char              *prefix,
                    bool                     is_symm,
                    PC                       pc)
 {
-  assert(prefix != NULL);
-  assert(slesp != NULL);
+  assert(prefix != nullptr);
+  assert(slesp != nullptr);
   assert(slesp->precond == CS_PARAM_PRECOND_AMG);
 
   /* Remark: -pc_gamg_reuse_interpolation
@@ -493,12 +493,13 @@ _petsc_pchypre_hook(const char             *prefix,
 #if defined(PETSC_HAVE_HYPRE)
   CS_UNUSED(is_symm);
 
-  assert(prefix != NULL);
-  assert(slesp != NULL);
+  assert(prefix != nullptr);
+  assert(slesp != nullptr);
   assert(slesp->precond == CS_PARAM_PRECOND_AMG);
 
-  cs_param_amg_boomer_t  *bamgp = slesp->context_param;
-  assert(bamgp != NULL);
+  cs_param_amg_boomer_t *bamgp =
+    static_cast<cs_param_amg_boomer_t *>(slesp->context_param);
+  assert(bamgp != nullptr);
 
   PCSetType(pc, PCHYPRE);
   PCHYPRESetType(pc, "boomeramg");
@@ -678,8 +679,8 @@ _petsc_pchypre_hook(const char             *prefix,
 static void
 _petsc_pchpddm_hook(const char *prefix, const cs_param_sles_t *slesp, PC pc)
 {
-  assert(prefix != NULL);
-  assert(slesp != NULL);
+  assert(prefix != nullptr);
+  assert(slesp != nullptr);
   assert(slesp->precond == CS_PARAM_PRECOND_HPDDM);
 
   char prefix_pc[128];
@@ -1037,7 +1038,7 @@ _petsc_set_krylov_solver(cs_param_sles_t  *slesp,
    * parameters stored in the structure cs_param_sles_t
    *
    * Automatic monitoring
-   *  PetscOptionsSetValue(NULL, "-ksp_monitor", "");
+   *  PetscOptionsSetValue(nullptr, "-ksp_monitor", "");
    *
    */
 
@@ -1059,18 +1060,17 @@ _petsc_set_krylov_solver(cs_param_sles_t  *slesp,
   case CS_PARAM_SOLVER_MUMPS:
 #if defined(PETSC_HAVE_MUMPS)
     {
-      cs_param_mumps_t  *mumpsp = slesp->context_param;
-      assert(mumpsp != NULL);
+    cs_param_mumps_t *mumpsp =
+      static_cast<cs_param_mumps_t *>(slesp->context_param);
+    assert(mumpsp != nullptr);
 
-      PC  pc;
-      KSPGetPC(ksp, &pc);
+    PC pc;
+    KSPGetPC(ksp, &pc);
 
-      if (mumpsp->facto_type == CS_PARAM_MUMPS_FACTO_LU) {
-
-        PCSetType(pc, PCLU);
-        PCFactorSetMatSolverType(pc, MATSOLVERMUMPS);
-
-      }
+    if (mumpsp->facto_type == CS_PARAM_MUMPS_FACTO_LU) {
+      PCSetType(pc, PCLU);
+      PCFactorSetMatSolverType(pc, MATSOLVERMUMPS);
+    }
       else {
 
         assert(mumpsp->facto_type == CS_PARAM_MUMPS_FACTO_LDLT_SPD ||
@@ -1130,7 +1130,7 @@ _petsc_setup_hook(void  *context,
                   void  *ksp_struct)
 {
   cs_param_sles_t  *slesp = (cs_param_sles_t  *)context;
-  KSP  ksp = ksp_struct;
+  KSP               ksp   = static_cast<KSP>(ksp_struct);
 
   cs_fp_exception_disable_trap(); /* Avoid trouble with a too restrictive
                                      SIGFPE detection */
@@ -1204,7 +1204,7 @@ _petsc_amg_block_gamg_hook(void  *context,
                            void  *ksp_struct)
 {
   cs_param_sles_t  *slesp = (cs_param_sles_t *)context;
-  KSP  ksp = ksp_struct;
+  KSP               ksp   = static_cast<KSP>(ksp_struct);
 
   cs_fp_exception_disable_trap(); /* Avoid trouble with a too restrictive
                                      SIGFPE detection */
@@ -1213,7 +1213,7 @@ _petsc_amg_block_gamg_hook(void  *context,
 
   int len = strlen(slesp->name) + 1;
   int _len = len + strlen("_fieldsplit_x_") + 1;
-  char  *prefix = NULL;
+  char  *prefix = nullptr;
   BFT_MALLOC(prefix, _len + 1, char);
   sprintf(prefix, "%s_", slesp->name);
   prefix[len] = '\0';
@@ -1234,7 +1234,7 @@ _petsc_amg_block_gamg_hook(void  *context,
   PC  _pc;
   PetscInt  n_split;
   KSP  *xyz_subksp;
-  const char xyz[3] = "xyz";
+  const char xyz[4]  = "xyz";
   bool  is_symm = _system_should_be_sym(slesp->solver);
 
   PCFieldSplitGetSubKSP(pc, &n_split, &xyz_subksp);
@@ -1289,7 +1289,7 @@ _petsc_amg_block_boomer_hook(void     *context,
                              void     *ksp_struct)
 {
   cs_param_sles_t  *slesp = (cs_param_sles_t *)context;
-  KSP  ksp = ksp_struct;
+  KSP               ksp   = static_cast<KSP>(ksp_struct);
 
   cs_fp_exception_disable_trap(); /* Avoid trouble with a too restrictive
                                      SIGFPE detection */
@@ -1298,7 +1298,7 @@ _petsc_amg_block_boomer_hook(void     *context,
 
   int len = strlen(slesp->name) + 1;
   int _len = len + strlen("_fieldsplit_x_") + 1;
-  char  *prefix = NULL;
+  char  *prefix = nullptr;
   BFT_MALLOC(prefix, _len + 1, char);
   sprintf(prefix, "%s_", slesp->name);
   prefix[len] = '\0';
@@ -1321,7 +1321,7 @@ _petsc_amg_block_boomer_hook(void     *context,
   PC  _pc;
   PetscInt  n_split;
   KSP  *xyz_subksp;
-  const char xyz[3] = "xyz";
+  const char xyz[4]  = "xyz";
   bool  is_symm = _system_should_be_sym(slesp->solver);
 
   PCFieldSplitGetSubKSP(pc, &n_split, &xyz_subksp);
@@ -1371,7 +1371,7 @@ _petsc_block_hook(void     *context,
                   void     *ksp_struct)
 {
   cs_param_sles_t  *slesp = (cs_param_sles_t *)context;
-  KSP  ksp = ksp_struct;
+  KSP               ksp   = static_cast<KSP>(ksp_struct);
 
   cs_fp_exception_disable_trap(); /* Avoid trouble with a too restrictive
                                      SIGFPE detection */
@@ -1380,7 +1380,7 @@ _petsc_block_hook(void     *context,
 
   int len = strlen(slesp->name) + 1;
   int _len = len + strlen("_fieldsplit_x_") + 1;
-  char  *prefix = NULL;
+  char  *prefix = nullptr;
   BFT_MALLOC(prefix, _len + 1, char);
   sprintf(prefix, "%s_", slesp->name);
   prefix[len] = '\0';
@@ -1401,7 +1401,7 @@ _petsc_block_hook(void     *context,
   PC  _pc;
   KSP  *xyz_subksp;
   PetscInt  n_split;
-  const char  xyz[3] = "xyz";
+  const char xyz[4] = "xyz";
 
   PCFieldSplitGetSubKSP(pc, &n_split, &xyz_subksp);
   assert(n_split == 3);
@@ -1454,10 +1454,11 @@ _petsc_block_hook(void     *context,
       _petsc_cmd(true, prefix, "ksp_type", "preonly");
 #if defined(PETSC_HAVE_MUMPS)
       {
-        assert(slesp != NULL);
-        assert(slesp->context_param != NULL);
+        assert(slesp != nullptr);
+        assert(slesp->context_param != nullptr);
 
-        cs_param_mumps_t  *mumpsp = slesp->context_param;
+        cs_param_mumps_t *mumpsp =
+          static_cast<cs_param_mumps_t *>(slesp->context_param);
 
         if (mumpsp->facto_type == CS_PARAM_MUMPS_FACTO_LDLT_SPD)
           _petsc_cmd(true, prefix, "pc_type", "cholesky");
@@ -1713,7 +1714,7 @@ _convert_inhouse_coarsen_algo(cs_param_amg_inhouse_coarsen_t  algo)
 /*!
  * \brief Define an AMG solver using in-house implementation
  *
- * \param[in] sles_name  NULL or name of the SLES
+ * \param[in] sles_name  nullptr or name of the SLES
  * \param[in] slesp      pointer to a \ref cs_param_sles_t structure
  *
  * \return a pointer to a multigrid context
@@ -1724,10 +1725,11 @@ static cs_multigrid_t *
 _set_saturne_amg_solver(const char             *sles_name,
                         const cs_param_sles_t  *slesp)
 {
-  const cs_param_amg_inhouse_t  *amgp = slesp->context_param;
-  assert(amgp != NULL);
+  const cs_param_amg_inhouse_t *amgp =
+    static_cast<const cs_param_amg_inhouse_t *>(slesp->context_param);
+  assert(amgp != nullptr);
 
-  cs_multigrid_t  *mg = NULL;
+  cs_multigrid_t  *mg = nullptr;
 
   /* Convert enum */
 
@@ -1819,22 +1821,23 @@ static void
 _set_saturne_amg_precond(const cs_param_sles_t  *slesp,
                          cs_sles_it_t           *itsol)
 {
-  const cs_param_amg_inhouse_t  *amgp = slesp->context_param;
-  assert(amgp != NULL);
+  const cs_param_amg_inhouse_t *amgp =
+    static_cast<const cs_param_amg_inhouse_t *>(slesp->context_param);
+  assert(amgp != nullptr);
 
-  cs_multigrid_t  *mg = NULL;
+  cs_multigrid_t  *mg = nullptr;
 
   if (slesp->amg_type == CS_PARAM_AMG_INHOUSE_V) {
 
     cs_sles_pc_t  *pc = cs_multigrid_pc_create(CS_MULTIGRID_V_CYCLE);
-    mg = cs_sles_pc_get_context(pc);
+    mg = static_cast<cs_multigrid_t *>(cs_sles_pc_get_context(pc));
     cs_sles_it_transfer_pc(itsol, &pc);
 
   }
   else if (slesp->amg_type == CS_PARAM_AMG_INHOUSE_K) {
 
     cs_sles_pc_t  *pc = cs_multigrid_pc_create(CS_MULTIGRID_K_CYCLE);
-    mg = cs_sles_pc_get_context(pc);
+    mg = static_cast<cs_multigrid_t *>(cs_sles_pc_get_context(pc));
     cs_sles_it_transfer_pc(itsol, &pc);
 
   }
@@ -1843,7 +1846,7 @@ _set_saturne_amg_precond(const cs_param_sles_t  *slesp,
               " Invalid AMG type with code_saturne solvers.",
               __func__, slesp->name);
 
-  assert(mg != NULL);
+  assert(mg != nullptr);
 
   /* Convert enum */
 
@@ -1900,16 +1903,16 @@ static void
 _set_saturne_sles(bool                 use_field_id,
                   cs_param_sles_t     *slesp)
 {
-  assert(slesp != NULL);  /* Sanity checks */
+  assert(slesp != nullptr);  /* Sanity checks */
 
-  const char  *sles_name = use_field_id ? NULL : slesp->name;
-  assert(slesp->field_id > -1 || sles_name != NULL);
+  const char  *sles_name = use_field_id ? nullptr : slesp->name;
+  assert(slesp->field_id > -1 || sles_name != nullptr);
 
   /* Retrieve the sles structure for this equation */
 
   cs_sles_t  *sles = cs_sles_find_or_add(slesp->field_id, sles_name);
-  cs_sles_it_t  *itsol = NULL;
-  cs_multigrid_t  *mg = NULL;
+  cs_sles_it_t  *itsol = nullptr;
+  cs_multigrid_t  *mg = nullptr;
   bool  multigrid_as_solver = false;
 
   int  poly_degree = _get_poly_degree(slesp);
@@ -2035,7 +2038,7 @@ _set_saturne_sles(bool                 use_field_id,
 
   if (slesp->need_flexible && !multigrid_as_solver) { /* Additional checks */
 
-    assert(itsol != NULL);
+    assert(itsol != nullptr);
     switch (cs_sles_it_get_type(itsol)) {
 
     case CS_SLES_PCG:
@@ -2060,16 +2063,16 @@ _set_saturne_sles(bool                 use_field_id,
 
   case CS_PARAM_PRECOND_AMG:
     /* -------------------- */
-    assert(mg == NULL);
+    assert(mg == nullptr);
     _set_saturne_amg_precond(slesp, itsol);
     break;
 
   case CS_PARAM_PRECOND_MUMPS:
     {
-      cs_sles_pc_t  *pc = NULL;
+      cs_sles_pc_t  *pc = nullptr;
 
 #if defined(HAVE_MUMPS)
-      if (slesp->context_param == NULL)
+      if (slesp->context_param == nullptr)
         cs_param_sles_mumps(slesp,
                             true, /* single by default in case if precond. */
                             CS_PARAM_MUMPS_FACTO_LU);
@@ -2081,7 +2084,7 @@ _set_saturne_sles(bool                 use_field_id,
                 __func__, slesp->name);
 #endif
 
-      assert(itsol != NULL);
+      assert(itsol != nullptr);
       cs_sles_it_transfer_pc(itsol, &pc);
     }
     break;
@@ -2113,11 +2116,11 @@ _set_saturne_sles(bool                 use_field_id,
       /* 3rd parameter --> true = use_iteration instead of wall clock time */
 
       if (multigrid_as_solver) {
-        assert(mg != NULL);
+        assert(mg != nullptr);
         cs_multigrid_set_plot_options(mg, slesp->name, true);
       }
       else {
-        assert(itsol != NULL);
+        assert(itsol != nullptr);
         cs_sles_it_set_plot_options(itsol, slesp->name, true);
       }
     }
@@ -2138,12 +2141,12 @@ static void
 _set_mumps_sles(bool                 use_field_id,
                 cs_param_sles_t     *slesp)
 {
-  assert(slesp != NULL);  /* Sanity checks */
+  assert(slesp != nullptr);  /* Sanity checks */
 
-  const  char  *sles_name = use_field_id ? NULL : slesp->name;
-  assert(slesp->field_id > -1 || sles_name != NULL);
+  const  char  *sles_name = use_field_id ? nullptr : slesp->name;
+  assert(slesp->field_id > -1 || sles_name != nullptr);
 
-  if (slesp->context_param == NULL) /* Define the context by default */
+  if (slesp->context_param == nullptr) /* Define the context by default */
     cs_param_sles_mumps_reset(slesp);
 
 #if defined(HAVE_MUMPS)
@@ -2151,7 +2154,7 @@ _set_mumps_sles(bool                 use_field_id,
                        sles_name,
                        slesp,
                        cs_user_sles_mumps_hook,
-                       NULL);
+                       nullptr);
 #else
   bft_error(__FILE__, __LINE__, 0,
             "%s: System: %s\n"
@@ -2176,10 +2179,10 @@ static void
 _set_petsc_hypre_sles(bool                 use_field_id,
                       cs_param_sles_t     *slesp)
 {
-  assert(slesp != NULL);  /* Sanity checks */
+  assert(slesp != nullptr);  /* Sanity checks */
 
-  const  char  *sles_name = use_field_id ? NULL : slesp->name;
-  assert(slesp->field_id > -1 || sles_name != NULL);
+  const  char  *sles_name = use_field_id ? nullptr : slesp->name;
+  assert(slesp->field_id > -1 || sles_name != nullptr);
 
 #if defined(HAVE_PETSC)
   cs_sles_petsc_init();
@@ -2245,10 +2248,10 @@ _set_petsc_hypre_sles(bool                 use_field_id,
     if (slesp->precond == CS_PARAM_PRECOND_AMG) {
       if (slesp->amg_type == CS_PARAM_AMG_HYPRE_BOOMER_V ||
           slesp->amg_type == CS_PARAM_AMG_HYPRE_BOOMER_W) {
+        cs_param_amg_boomer_t *bamgp =
+          static_cast<cs_param_amg_boomer_t *>(slesp->context_param);
 
-        cs_param_amg_boomer_t  *bamgp = slesp->context_param;
-
-        if (bamgp == NULL) /* Define a default set of parameters */
+        if (bamgp == nullptr) /* Define a default set of parameters */
           cs_param_sles_boomeramg_reset(slesp);
 
       }
@@ -2288,7 +2291,7 @@ static HYPRE_Solver
 _set_hypre_solver(cs_param_sles_t    *slesp,
                   HYPRE_Solver        hs)
 {
-  HYPRE_Solver  pc = NULL;
+  HYPRE_Solver  pc = nullptr;
 
   switch (slesp->solver) {
 
@@ -2342,7 +2345,7 @@ _set_hypre_solver(cs_param_sles_t    *slesp,
  *         This function is called at the end of the setup stage for a KSP
  *         solver.
  *
- *         Note: if the context pointer is non-NULL, it must point to valid
+ *         Note: if the context pointer is non-nullptr, it must point to valid
  *         data when the selection function is called so that value or
  *         structure should not be temporary (i.e. local);
  *
@@ -2361,12 +2364,13 @@ _hypre_boomeramg_hook(int     verbosity,
                       void   *solver_p)
 {
   cs_param_sles_t  *slesp = (cs_param_sles_t *)context;
-  cs_param_amg_boomer_t  *bamgp = slesp->context_param;
-  HYPRE_Solver  hs = solver_p;
+  cs_param_amg_boomer_t *bamgp =
+    static_cast<cs_param_amg_boomer_t *>(slesp->context_param);
+  HYPRE_Solver  hs             = static_cast<HYPRE_Solver>(solver_p);
   HYPRE_Solver  amg = _set_hypre_solver(slesp, hs);
   bool  amg_as_precond = (slesp->solver == CS_PARAM_SOLVER_AMG) ? false:true;
 
-  assert(bamgp != NULL);
+  assert(bamgp != nullptr);
 
   /* Set the verbosity level */
 
@@ -2554,7 +2558,7 @@ _hypre_generic_pc_hook(int     verbosity,
   CS_NO_WARN_IF_UNUSED(verbosity);
 
   cs_param_sles_t  *slesp = (cs_param_sles_t *)context;
-  HYPRE_Solver  hs = solver_p;
+  HYPRE_Solver      hs    = static_cast<HYPRE_Solver>(solver_p);
   HYPRE_Solver  pc = _set_hypre_solver(slesp, hs);
 
   switch (slesp->precond) {
@@ -2599,11 +2603,11 @@ static void
 _set_hypre_sles(bool                 use_field_id,
                 cs_param_sles_t     *slesp)
 {
-  assert(slesp != NULL);  /* Sanity checks */
+  assert(slesp != nullptr);  /* Sanity checks */
 
   const char  errmsg[] = "Invalid couple (solver,preconditionner) with HYPRE.";
-  const  char  *sles_name = use_field_id ? NULL : slesp->name;
-  assert(slesp->field_id > -1 || sles_name != NULL);
+  const  char  *sles_name = use_field_id ? nullptr : slesp->name;
+  assert(slesp->field_id > -1 || sles_name != nullptr);
 
   /* Set the solver and the associated preconditioner */
 
@@ -2611,17 +2615,18 @@ _set_hypre_sles(bool                 use_field_id,
 
   case CS_PARAM_SOLVER_AMG:
     {
-      cs_param_amg_boomer_t  *bamgp = slesp->context_param;
+    cs_param_amg_boomer_t *bamgp =
+      static_cast<cs_param_amg_boomer_t *>(slesp->context_param);
 
-      if (bamgp == NULL) /* Define a default set of parameters */
-        cs_param_sles_boomeramg_reset(slesp);
+    if (bamgp == nullptr) /* Define a default set of parameters */
+      cs_param_sles_boomeramg_reset(slesp);
 
-      cs_sles_hypre_define(slesp->field_id,
-                           sles_name,
-                           CS_SLES_HYPRE_BOOMERAMG,
-                           CS_SLES_HYPRE_NONE,
-                           _hypre_boomeramg_hook,
-                           (void *)slesp);
+    cs_sles_hypre_define(slesp->field_id,
+                         sles_name,
+                         CS_SLES_HYPRE_BOOMERAMG,
+                         CS_SLES_HYPRE_NONE,
+                         _hypre_boomeramg_hook,
+                         (void *)slesp);
     }
     break;
 
@@ -2631,17 +2636,18 @@ _set_hypre_sles(bool                 use_field_id,
 
     case CS_PARAM_PRECOND_AMG:
       {
-        cs_param_amg_boomer_t  *bamgp = slesp->context_param;
+      cs_param_amg_boomer_t *bamgp =
+        static_cast<cs_param_amg_boomer_t *>(slesp->context_param);
 
-        if (bamgp == NULL) /* Define a default set of parameters */
-          cs_param_sles_boomeramg_reset(slesp);
+      if (bamgp == nullptr) /* Define a default set of parameters */
+        cs_param_sles_boomeramg_reset(slesp);
 
-        cs_sles_hypre_define(slesp->field_id,
-                             sles_name,
-                             CS_SLES_HYPRE_BICGSTAB,
-                             CS_SLES_HYPRE_BOOMERAMG,
-                             _hypre_boomeramg_hook,
-                             (void *)slesp);
+      cs_sles_hypre_define(slesp->field_id,
+                           sles_name,
+                           CS_SLES_HYPRE_BICGSTAB,
+                           CS_SLES_HYPRE_BOOMERAMG,
+                           _hypre_boomeramg_hook,
+                           (void *)slesp);
       }
       break;
 
@@ -2732,17 +2738,18 @@ _set_hypre_sles(bool                 use_field_id,
 
     case CS_PARAM_PRECOND_AMG:
       {
-        cs_param_amg_boomer_t  *bamgp = slesp->context_param;
+      cs_param_amg_boomer_t *bamgp =
+        static_cast<cs_param_amg_boomer_t *>(slesp->context_param);
 
-        if (bamgp == NULL) /* Define a default set of parameters */
-          cs_param_sles_boomeramg_reset(slesp);
+      if (bamgp == nullptr) /* Define a default set of parameters */
+        cs_param_sles_boomeramg_reset(slesp);
 
-        cs_sles_hypre_define(slesp->field_id,
-                             sles_name,
-                             CS_SLES_HYPRE_FLEXGMRES,
-                             CS_SLES_HYPRE_BOOMERAMG,
-                             _hypre_boomeramg_hook,
-                             (void *)slesp);
+      cs_sles_hypre_define(slesp->field_id,
+                           sles_name,
+                           CS_SLES_HYPRE_FLEXGMRES,
+                           CS_SLES_HYPRE_BOOMERAMG,
+                           _hypre_boomeramg_hook,
+                           (void *)slesp);
       }
       break;
 
@@ -2786,17 +2793,18 @@ _set_hypre_sles(bool                 use_field_id,
 
     case CS_PARAM_PRECOND_AMG:
       {
-        cs_param_amg_boomer_t  *bamgp = slesp->context_param;
+      cs_param_amg_boomer_t *bamgp =
+        static_cast<cs_param_amg_boomer_t *>(slesp->context_param);
 
-        if (bamgp == NULL) /* Define a default set of parameters */
-          cs_param_sles_boomeramg_reset(slesp);
+      if (bamgp == nullptr) /* Define a default set of parameters */
+        cs_param_sles_boomeramg_reset(slesp);
 
-        cs_sles_hypre_define(slesp->field_id,
-                             sles_name,
-                             CS_SLES_HYPRE_GMRES,
-                             CS_SLES_HYPRE_BOOMERAMG,
-                             _hypre_boomeramg_hook,
-                             (void *)slesp);
+      cs_sles_hypre_define(slesp->field_id,
+                           sles_name,
+                           CS_SLES_HYPRE_GMRES,
+                           CS_SLES_HYPRE_BOOMERAMG,
+                           _hypre_boomeramg_hook,
+                           (void *)slesp);
       }
       break;
 
@@ -2867,7 +2875,7 @@ int
 cs_param_sles_setup(bool              use_field_id,
                     cs_param_sles_t  *slesp)
 {
-  if (slesp == NULL)
+  if (slesp == nullptr)
     return 0;
 
   _check_settings(slesp);
@@ -2911,9 +2919,9 @@ cs_param_sles_setup(bool              use_field_id,
 
     /* All the previous SLES are defined thanks to the field_id */
 
-    cs_sles_t  *sles = NULL;
+    cs_sles_t  *sles = nullptr;
     if (use_field_id)
-      sles = cs_sles_find_or_add(slesp->field_id, NULL);
+      sles = cs_sles_find_or_add(slesp->field_id, nullptr);
     else
       sles = cs_sles_find_or_add(slesp->field_id, slesp->name);
 
@@ -2944,17 +2952,17 @@ void
 cs_param_sles_setup_cvg_param(bool                    use_field_id,
                               const cs_param_sles_t  *slesp)
 {
-  if (slesp == NULL)
+  if (slesp == nullptr)
     return;
 
   /* Retrieve the sles structure associated to this sles parameters */
 
-  const  char  *sles_name = use_field_id ? NULL : slesp->name;
-  assert(slesp->field_id > -1 || sles_name != NULL);
+  const  char  *sles_name = use_field_id ? nullptr : slesp->name;
+  assert(slesp->field_id > -1 || sles_name != nullptr);
 
   cs_sles_t  *sles = cs_sles_find(slesp->field_id, sles_name);
 
-  if (sles == NULL)
+  if (sles == nullptr)
     return;
 
   cs_param_convergence_t  cvgp = slesp->cvg_param;
@@ -2964,35 +2972,31 @@ cs_param_sles_setup_cvg_param(bool                    use_field_id,
   case CS_PARAM_SOLVER_CLASS_CS: /* code_saturne's own solvers */
     {
       switch (slesp->solver) {
-
-      case CS_PARAM_SOLVER_AMG:
-        {
-          cs_multigrid_t  *mg = cs_sles_get_context(sles);
-          assert(mg != NULL);
+        case CS_PARAM_SOLVER_AMG: {
+          cs_multigrid_t *mg =
+            static_cast<cs_multigrid_t *>(cs_sles_get_context(sles));
+          assert(mg != nullptr);
 
           cs_multigrid_set_max_cycles(mg, cvgp.n_max_iter);
-        }
-        break;
+        } break;
 
-      case CS_PARAM_SOLVER_GCR:
-      case CS_PARAM_SOLVER_GMRES:
-        {
-          cs_sles_it_t  *itsol = cs_sles_get_context(sles);
-          assert(itsol != NULL);
+        case CS_PARAM_SOLVER_GCR:
+        case CS_PARAM_SOLVER_GMRES: {
+          cs_sles_it_t *itsol =
+            static_cast<cs_sles_it_t *>(cs_sles_get_context(sles));
+          assert(itsol != nullptr);
 
           cs_sles_it_set_n_max_iter(itsol, cvgp.n_max_iter);
           cs_sles_it_set_restart_interval(itsol, slesp->restart);
-        }
-        break;
+        } break;
 
-      default:
-        {
-          cs_sles_it_t  *itsol = cs_sles_get_context(sles);
-          assert(itsol != NULL);
+        default: {
+          cs_sles_it_t *itsol =
+            static_cast<cs_sles_it_t *>(cs_sles_get_context(sles));
+          assert(itsol != nullptr);
 
           cs_sles_it_set_n_max_iter(itsol, cvgp.n_max_iter);
-        }
-        break;
+        } break;
 
       } /* which solver */
 
@@ -3002,12 +3006,15 @@ cs_param_sles_setup_cvg_param(bool                    use_field_id,
 #if defined(HAVE_PETSC)
   case CS_PARAM_SOLVER_CLASS_PETSC:
     {
-      cs_sles_petsc_t  *petsc_ctx = cs_sles_get_context(sles);
-      assert(petsc_ctx);
+    cs_sles_petsc_t *petsc_ctx =
+      static_cast<cs_sles_petsc_t *>(cs_sles_get_context(sles));
+    assert(petsc_ctx);
 
-      cs_sles_petsc_set_cvg_criteria(petsc_ctx,
-                                     cvgp.rtol, cvgp.atol, cvgp.dtol,
-                                     cvgp.n_max_iter);
+    cs_sles_petsc_set_cvg_criteria(petsc_ctx,
+                                   cvgp.rtol,
+                                   cvgp.atol,
+                                   cvgp.dtol,
+                                   cvgp.n_max_iter);
     }
     break;
 #endif
@@ -3015,10 +3022,11 @@ cs_param_sles_setup_cvg_param(bool                    use_field_id,
 #if defined(HAVE_HYPRE)
   case CS_PARAM_SOLVER_CLASS_HYPRE:
     {
-      cs_sles_hypre_t  *hypre_ctx = cs_sles_get_context(sles);
-      assert(hypre_ctx);
+    cs_sles_hypre_t *hypre_ctx =
+      static_cast<cs_sles_hypre_t *>(cs_sles_get_context(sles));
+    assert(hypre_ctx);
 
-      cs_sles_hypre_set_n_max_iter(hypre_ctx, cvgp.n_max_iter);
+    cs_sles_hypre_set_n_max_iter(hypre_ctx, cvgp.n_max_iter);
     }
     break;
 #endif
@@ -3066,11 +3074,11 @@ cs_param_sles_setup_petsc_ksp(const char       *label,
                               cs_param_sles_t  *slesp,
                               void             *p_ksp)
 {
-  KSP  ksp = p_ksp;
-  assert(ksp != NULL);
+  KSP ksp = static_cast<KSP>(p_ksp);
+  assert(ksp != nullptr);
 
   int len = strlen(label) + 1;
-  char  *prefix = NULL;
+  char  *prefix = nullptr;
   BFT_MALLOC(prefix, len + 1, char);
   sprintf(prefix, "%s_", label);
   prefix[len] = '\0';
@@ -3101,8 +3109,8 @@ cs_param_sles_setup_petsc_pc_amg(const char       *prefix,
                                  cs_param_sles_t  *slesp,
                                  void             *p_pc)
 {
-  PC  pc = p_pc;
-  assert(pc != NULL);
+  PC pc = static_cast<PC>(p_pc);
+  assert(pc != nullptr);
   bool  is_symm = _system_should_be_sym(slesp->solver);
 
   switch (slesp->amg_type) {

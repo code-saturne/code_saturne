@@ -98,7 +98,7 @@ BEGIN_C_DECLS
 
   This function is called the end of the setup stage.
 
-  Note: if the context pointer is non-NULL, it must point to valid data
+  Note: if the context pointer is non-nullptr, it must point to valid data
   when the selection function is called so that value or structure should
   not be temporary (i.e. local);
 
@@ -208,7 +208,7 @@ static inline bool
 _have_perio(const cs_halo_t     *halo)
 {
   bool  have_perio = false;
-  if (halo != NULL)
+  if (halo != nullptr)
     if (halo->n_transforms > 0)
       have_perio = true;
 
@@ -234,10 +234,11 @@ _have_perio(const cs_halo_t     *halo)
 static inline cs_sles_mumps_type_t
 _set_type(const cs_param_sles_t  *slesp)
 {
-  assert(slesp != NULL);
-  assert(slesp->context_param != NULL);
+  assert(slesp != nullptr);
+  assert(slesp->context_param != nullptr);
 
-  cs_param_mumps_t  *mumpsp = slesp->context_param;
+  cs_param_mumps_t *mumpsp =
+    static_cast<cs_param_mumps_t *>(slesp->context_param);
 
   if (mumpsp->is_single) {
 
@@ -286,7 +287,7 @@ _set_type(const cs_param_sles_t  *slesp)
 static inline bool
 _set_pc_usage(const cs_param_sles_t  *slesp)
 {
-  assert(slesp != NULL);
+  assert(slesp != nullptr);
 
   switch (slesp->solver) {
 
@@ -399,7 +400,7 @@ _mumps_pc_setup(void               *context,
 {
   CS_UNUSED(accel);
 
-  cs_sles_mumps_t  *c = context;
+  cs_sles_mumps_t *c = static_cast<cs_sles_mumps_t *>(context);
 
   c->matrix = a;                /* Only a shared pointer */
 
@@ -411,7 +412,7 @@ _mumps_pc_setup(void               *context,
  * \brief Apply MUMPS as preconditioner
  *
  * In cases where it is desired that the preconditioner modify a vector
- * "in place", x_in should be set to NULL, and x_out contains the vector to
+ * "in place", x_in should be set to nullptr, and x_out contains the vector to
  * be modified (\f$x_{out} \leftarrow M^{-1}x_{out})\f$).
 
  * \param[in, out] context    pointer to preconditioner context
@@ -429,10 +430,10 @@ _mumps_pc_apply(void                *context,
 {
   int     n_iter;
   double  residual;
-  cs_real_t  *_rhs = NULL;
+  cs_real_t  *_rhs = nullptr;
 
-  cs_sles_mumps_t  *c = context;
-  assert(c->is_pc && c->matrix != NULL);
+  cs_sles_mumps_t *c = static_cast<cs_sles_mumps_t *>(context);
+  assert(c->is_pc && c->matrix != nullptr);
 
   const cs_real_t *rhs = x_in;
   const cs_param_sles_t  *slesp = c->sles_param;
@@ -441,7 +442,7 @@ _mumps_pc_apply(void                *context,
 
   /* If preconditioner is "in-place", use additional buffer */
 
-  if (x_in == NULL) {
+  if (x_in == nullptr) {
 
     const cs_lnum_t n_cols = cs_matrix_get_n_columns(c->matrix) * db_size;
     BFT_MALLOC(_rhs, n_cols, cs_real_t);
@@ -465,9 +466,9 @@ _mumps_pc_apply(void                *context,
                                                          x_out,
                                                          x_out,
                                                          0,
-                                                         NULL);
+                                                         nullptr);
 
-  if (x_in == NULL)
+  if (x_in == nullptr)
     BFT_FREE(_rhs);
 
   cs_sles_pc_state_t state;
@@ -2000,7 +2001,7 @@ _native_sym_smumps(int                   verbosity,
 static bool
 _try_again_dmumps(cs_sles_mumps_t     *c)
 {
-  DMUMPS_STRUC_C  *mumps = c->mumps_struct;
+  DMUMPS_STRUC_C *mumps = static_cast<DMUMPS_STRUC_C *>(c->mumps_struct);
 
   int  infog1 = mumps->INFOG(1);
 
@@ -2075,7 +2076,8 @@ _automatic_dmumps_settings_before_analysis(cs_sles_mumps_type_t     type,
 {
   CS_NO_WARN_IF_UNUSED(type);
 
-  cs_param_mumps_t  *mumpsp = slesp->context_param;
+  cs_param_mumps_t *mumpsp =
+    static_cast<cs_param_mumps_t *>(slesp->context_param);
 
   if (mumpsp->advanced_optim)
     mumps->ICNTL(13) = 1; /* Bypass ScaLAPACK excepted for PT-SCOTCH where it
@@ -2213,7 +2215,8 @@ static void
 _automatic_dmumps_settings_before_facto(const cs_param_sles_t   *slesp,
                                         DMUMPS_STRUC_C          *mumps)
 {
-  cs_param_mumps_t  *mumpsp = slesp->context_param;
+  cs_param_mumps_t *mumpsp =
+    static_cast<cs_param_mumps_t *>(slesp->context_param);
 
   if (mumpsp->mem_usage == CS_PARAM_MUMPS_MEMORY_CPU_DRIVEN) {
 
@@ -2269,7 +2272,7 @@ _automatic_dmumps_settings_before_facto(const cs_param_sles_t   *slesp,
 static bool
 _try_again_smumps(cs_sles_mumps_t     *c)
 {
-  SMUMPS_STRUC_C  *mumps = c->mumps_struct;
+  SMUMPS_STRUC_C *mumps = static_cast<SMUMPS_STRUC_C *>(c->mumps_struct);
 
   int  infog1 = mumps->INFOG(1);
 
@@ -2344,7 +2347,8 @@ _automatic_smumps_settings_before_analysis(cs_sles_mumps_type_t     type,
 {
   CS_NO_WARN_IF_UNUSED(type);
 
-  cs_param_mumps_t  *mumpsp = slesp->context_param;
+  cs_param_mumps_t *mumpsp =
+    static_cast<cs_param_mumps_t *>(slesp->context_param);
 
   if (mumpsp->advanced_optim)
     mumps->ICNTL(13) = 1; /* Bypass ScaLAPACK excepted for PT-SCOTCH where it
@@ -2482,7 +2486,8 @@ static void
 _automatic_smumps_settings_before_facto(const cs_param_sles_t   *slesp,
                                         SMUMPS_STRUC_C          *mumps)
 {
-  cs_param_mumps_t  *mumpsp = slesp->context_param;
+  cs_param_mumps_t *mumpsp =
+    static_cast<cs_param_mumps_t *>(slesp->context_param);
 
   if (mumpsp->mem_usage == CS_PARAM_MUMPS_MEMORY_CPU_DRIVEN) {
 
@@ -2541,7 +2546,7 @@ _automatic_smumps_settings_before_facto(const cs_param_sles_t   *slesp,
  * One can recover the MUMPS step through the "job" member.
  * MUMPS_JOB_ANALYSIS or MUMPS_JOB_FACTORIZATION
  *
- * Note: if the context pointer is non-NULL, it must point to valid data
+ * Note: if the context pointer is non-nullptr, it must point to valid data
  * when the selection function is called so that structure should
  * not be temporary (i.e. local);
  *
@@ -2583,11 +2588,11 @@ cs_user_sles_mumps_hook(const cs_param_sles_t   *slesp,
  * \ref cs_sles_t container.
  *
  * \param[in]      f_id          associated field id, or < 0
- * \param[in]      name          associated name if f_id < 0, or NULL
+ * \param[in]      name          associated name if f_id < 0, or nullptr
  * \param[in]      slesp         pointer to a cs_param_sles_t structure
  * \param[in]      setup_hook    pointer to optional setup epilogue function
  * \param[in,out]  context       pointer to optional (untyped) value or
- *                               structure for setup_hook, or NULL
+ *                               structure for setup_hook, or nullptr
  *
  * \return  pointer to newly created sparse direct solver info object.
  */
@@ -2629,20 +2634,20 @@ cs_sles_mumps_define(int                            f_id,
 cs_sles_pc_t *
 cs_sles_mumps_pc_create(const cs_param_sles_t  *slesp)
 {
-  if (slesp == NULL)
-    return NULL;
+  if (slesp == nullptr)
+    return nullptr;
 
   assert(slesp->precond == CS_PARAM_PRECOND_MUMPS);
 
   cs_sles_mumps_t  *c = cs_sles_mumps_create(slesp,
                                              cs_user_sles_mumps_hook,
-                                             NULL);
+                                             nullptr);
   assert(c->is_pc == true);
 
   cs_sles_pc_t *pc = cs_sles_pc_define(c,
                                        _mumps_pc_get_type,
                                        _mumps_pc_setup,
-                                       NULL, /* tolerance */
+                                       nullptr, /* tolerance */
                                        _mumps_pc_apply,
                                        cs_sles_mumps_free,
                                        cs_sles_mumps_log,
@@ -2659,7 +2664,7 @@ cs_sles_mumps_pc_create(const cs_param_sles_t  *slesp)
  * \param[in]      slesp         pointer to a cs_param_sles_t structure
  * \param[in]      setup_hook    pointer to optional setup epilogue function
  * \param[in,out]  context       pointer to optional (untyped) value or
- *                               structure for setup_hook, or NULL
+ *                               structure for setup_hook, or nullptr
  *
  * \return  pointer to associated linear system object.
  */
@@ -2670,7 +2675,7 @@ cs_sles_mumps_create(const cs_param_sles_t       *slesp,
                      cs_sles_mumps_setup_hook_t  *setup_hook,
                      void                        *context)
 {
-  cs_sles_mumps_t  *c = NULL;
+  cs_sles_mumps_t  *c = nullptr;
 
   _n_mumps_systems += 1;
 
@@ -2688,14 +2693,14 @@ cs_sles_mumps_create(const cs_param_sles_t       *slesp,
   /* Options */
 
   c->is_pc = _set_pc_usage(slesp);
-  c->matrix = NULL;
+  c->matrix = nullptr;
   c->sles_param = slesp;
   c->hook_context = context;
   c->setup_hook = setup_hook;
 
   /* Setup data structure */
 
-  c->mumps_struct = NULL;
+  c->mumps_struct = nullptr;
 
   return c;
 }
@@ -2716,10 +2721,10 @@ cs_sles_mumps_create(const cs_param_sles_t       *slesp,
 void *
 cs_sles_mumps_copy(const void   *context)
 {
-  cs_sles_mumps_t  *d = NULL;
+  cs_sles_mumps_t  *d = nullptr;
 
-  if (context != NULL) {
-    const cs_sles_mumps_t *c = context;
+  if (context != nullptr) {
+    const cs_sles_mumps_t *c = static_cast<const cs_sles_mumps_t *>(context);
     d = cs_sles_mumps_create(c->sles_param,
                              c->setup_hook,
                              c->hook_context);
@@ -2744,19 +2749,18 @@ cs_sles_mumps_copy(const void   *context)
 void
 cs_sles_mumps_free(void  *context)
 {
-  cs_sles_mumps_t  *c  = context;
+  cs_sles_mumps_t *c = static_cast<cs_sles_mumps_t *>(context);
 
-  if (c == NULL) /* Nothing else to do */
+  if (c == nullptr) /* Nothing else to do */
     return;
 
   cs_timer_t t0;
   t0 = cs_timer_time();
 
-  if (c->mumps_struct != NULL) {
+  if (c->mumps_struct != nullptr) {
 
     if (_is_dmumps(c)) {
-
-      DMUMPS_STRUC_C  *dmumps = c->mumps_struct;
+      DMUMPS_STRUC_C *dmumps = static_cast<DMUMPS_STRUC_C *>(c->mumps_struct);
 
       dmumps->job = MUMPS_JOB_END;
       dmumps_c(dmumps);
@@ -2780,8 +2784,7 @@ cs_sles_mumps_free(void  *context)
 
     }
     else {
-
-      SMUMPS_STRUC_C  *smumps = c->mumps_struct;
+      SMUMPS_STRUC_C *smumps = static_cast<SMUMPS_STRUC_C *>(c->mumps_struct);
 
       smumps->job = MUMPS_JOB_END;
       smumps_c(smumps);
@@ -2805,7 +2808,7 @@ cs_sles_mumps_free(void  *context)
 
     }
 
-    c->mumps_struct = NULL;
+    c->mumps_struct = nullptr;
 
   } /* MUMPS structure is not freed */
 
@@ -2826,7 +2829,7 @@ void
 cs_sles_mumps_destroy(void   **context)
 {
   cs_sles_mumps_t *c = (cs_sles_mumps_t *)(*context);
-  if (c != NULL) {
+  if (c != nullptr) {
 
     /* Free structure */
 
@@ -2836,7 +2839,7 @@ cs_sles_mumps_destroy(void   **context)
 
     _n_mumps_systems -= 1;
 
-  } /* c != NULL */
+  } /* c != nullptr */
 }
 
 /*----------------------------------------------------------------------------*/
@@ -2864,7 +2867,7 @@ cs_sles_mumps_setup(void               *context,
 
   /* Sanity checks */
 
-  assert(a != NULL);
+  assert(a != nullptr);
   if (cs_matrix_get_diag_block_size(a) > 1 ||
       cs_matrix_get_extra_diag_block_size(a) > 1)
     bft_error(__FILE__, __LINE__, 0,
@@ -2882,9 +2885,9 @@ cs_sles_mumps_setup(void               *context,
     if (!flag) {
 #if   (MPI_VERSION >= 2) && defined(HAVE_OPENMP)
       int mpi_threads;
-      MPI_Init_thread(NULL, NULL, MPI_THREAD_FUNNELED, &mpi_threads);
+      MPI_Init_thread(nullptr, nullptr, MPI_THREAD_FUNNELED, &mpi_threads);
 #else
-      MPI_Init(NULL, NULL);
+      MPI_Init(nullptr, nullptr);
 #endif
     }
 
@@ -2896,9 +2899,9 @@ cs_sles_mumps_setup(void               *context,
 
   /* Begin the setup */
 
-  cs_sles_mumps_t  *c = context;
+  cs_sles_mumps_t *c = static_cast<cs_sles_mumps_t *>(context);
 
-  c->mumps_struct = NULL;
+  c->mumps_struct = nullptr;
 
   /* 1. Initialize the MUMPS structure */
   /* --------------------------------- */
@@ -2913,7 +2916,7 @@ cs_sles_mumps_setup(void               *context,
     assert(sizeof(double) == sizeof(DMUMPS_COMPLEX));
     assert(sizeof(double) == sizeof(DMUMPS_REAL));
 
-    DMUMPS_STRUC_C  *dmumps = NULL;
+    DMUMPS_STRUC_C  *dmumps = nullptr;
     BFT_MALLOC(dmumps, 1, DMUMPS_STRUC_C);
 
     dmumps->job = MUMPS_JOB_INIT;
@@ -2954,7 +2957,7 @@ cs_sles_mumps_setup(void               *context,
     assert(sizeof(float) == sizeof(SMUMPS_COMPLEX));
     assert(sizeof(float) == sizeof(SMUMPS_REAL));
 
-    SMUMPS_STRUC_C  *smumps = NULL;
+    SMUMPS_STRUC_C  *smumps = nullptr;
     BFT_MALLOC(smumps, 1, SMUMPS_STRUC_C);
 
     smumps->job = MUMPS_JOB_INIT;
@@ -3002,9 +3005,13 @@ cs_sles_mumps_setup(void               *context,
     if (cs_glob_n_ranks > 1) { /* Parallel computation */
 
       if (cs_mat_type == CS_MATRIX_MSR)
-        _parall_msr_dmumps(verbosity, a, c->mumps_struct);
+        _parall_msr_dmumps(verbosity,
+                           a,
+                           static_cast<DMUMPS_STRUC_C *>(c->mumps_struct));
       else if (cs_mat_type == CS_MATRIX_NATIVE)
-        _parall_native_dmumps(verbosity, a, c->mumps_struct);
+        _parall_native_dmumps(verbosity,
+                              a,
+                              static_cast<DMUMPS_STRUC_C *>(c->mumps_struct));
       else
         bft_error(__FILE__, __LINE__, 0,
                   " %s: Invalid matrix format in parallel", __func__);
@@ -3013,9 +3020,13 @@ cs_sles_mumps_setup(void               *context,
     else { /* Sequential computation */
 
       if (cs_mat_type == CS_MATRIX_MSR)
-        _msr_dmumps(verbosity, a, c->mumps_struct);
+        _msr_dmumps(verbosity,
+                    a,
+                    static_cast<DMUMPS_STRUC_C *>(c->mumps_struct));
       else if (cs_mat_type == CS_MATRIX_NATIVE)
-        _native_dmumps(verbosity, a, c->mumps_struct);
+        _native_dmumps(verbosity,
+                       a,
+                       static_cast<DMUMPS_STRUC_C *>(c->mumps_struct));
       else
         bft_error(__FILE__, __LINE__, 0,
                   " %s: Invalid matrix format", __func__);
@@ -3028,7 +3039,9 @@ cs_sles_mumps_setup(void               *context,
     if (cs_glob_n_ranks > 1) { /* Parallel computation */
 
       if (cs_mat_type == CS_MATRIX_MSR)
-        _parall_msr_sym_dmumps(verbosity, a, c->mumps_struct);
+        _parall_msr_sym_dmumps(verbosity,
+                               a,
+                               static_cast<DMUMPS_STRUC_C *>(c->mumps_struct));
       else
         bft_error(__FILE__, __LINE__, 0,
                   " %s: Invalid matrix format in parallel", __func__);
@@ -3037,9 +3050,13 @@ cs_sles_mumps_setup(void               *context,
     else { /* Sequential computation */
 
       if (cs_mat_type == CS_MATRIX_MSR)
-        _msr_sym_dmumps(verbosity, a, c->mumps_struct);
+        _msr_sym_dmumps(verbosity,
+                        a,
+                        static_cast<DMUMPS_STRUC_C *>(c->mumps_struct));
       else if (cs_mat_type == CS_MATRIX_NATIVE)
-        _native_sym_dmumps(verbosity, a, c->mumps_struct);
+        _native_sym_dmumps(verbosity,
+                           a,
+                           static_cast<DMUMPS_STRUC_C *>(c->mumps_struct));
       else
         bft_error(__FILE__, __LINE__, 0,
                   " %s: Invalid matrix format", __func__);
@@ -3051,7 +3068,9 @@ cs_sles_mumps_setup(void               *context,
     if (cs_glob_n_ranks > 1) { /* Parallel computation */
 
       if (cs_mat_type == CS_MATRIX_MSR)
-        _parall_msr_smumps(verbosity, a, c->mumps_struct);
+        _parall_msr_smumps(verbosity,
+                           a,
+                           static_cast<SMUMPS_STRUC_C *>(c->mumps_struct));
       else
         bft_error(__FILE__, __LINE__, 0,
                   " %s: Invalid matrix format in parallel", __func__);
@@ -3060,9 +3079,13 @@ cs_sles_mumps_setup(void               *context,
     else { /* Sequential computation */
 
       if (cs_mat_type == CS_MATRIX_MSR)
-        _msr_smumps(verbosity, a, c->mumps_struct);
+        _msr_smumps(verbosity,
+                    a,
+                    static_cast<SMUMPS_STRUC_C *>(c->mumps_struct));
       else if (cs_mat_type == CS_MATRIX_NATIVE)
-        _native_smumps(verbosity, a, c->mumps_struct);
+        _native_smumps(verbosity,
+                       a,
+                       static_cast<SMUMPS_STRUC_C *>(c->mumps_struct));
       else
         bft_error(__FILE__, __LINE__, 0,
                   " %s: Invalid matrix format", __func__);
@@ -3075,7 +3098,9 @@ cs_sles_mumps_setup(void               *context,
     if (cs_glob_n_ranks > 1) { /* Parallel computation */
 
       if (cs_mat_type == CS_MATRIX_MSR)
-        _parall_msr_sym_smumps(verbosity, a, c->mumps_struct);
+        _parall_msr_sym_smumps(verbosity,
+                               a,
+                               static_cast<SMUMPS_STRUC_C *>(c->mumps_struct));
       else
         bft_error(__FILE__, __LINE__, 0,
                   " %s: Invalid matrix format in parallel", __func__);
@@ -3084,9 +3109,13 @@ cs_sles_mumps_setup(void               *context,
     else { /* Sequential computation */
 
       if (cs_mat_type == CS_MATRIX_MSR)
-        _msr_sym_smumps(verbosity, a, c->mumps_struct);
+        _msr_sym_smumps(verbosity,
+                        a,
+                        static_cast<SMUMPS_STRUC_C *>(c->mumps_struct));
       else if (cs_mat_type == CS_MATRIX_NATIVE)
-        _native_sym_smumps(verbosity, a, c->mumps_struct);
+        _native_sym_smumps(verbosity,
+                           a,
+                           static_cast<SMUMPS_STRUC_C *>(c->mumps_struct));
       else
         bft_error(__FILE__, __LINE__, 0,
                   " %s: Invalid matrix format", __func__);
@@ -3109,8 +3138,7 @@ cs_sles_mumps_setup(void               *context,
   c->n_tries = 0;    /* reset the number of tries */
 
   if (_is_dmumps(c)) {
-
-    DMUMPS_STRUC_C  *dmumps = c->mumps_struct;
+    DMUMPS_STRUC_C *dmumps = static_cast<DMUMPS_STRUC_C *>(c->mumps_struct);
 
     do {
 
@@ -3124,7 +3152,7 @@ cs_sles_mumps_setup(void               *context,
 
       /* Window to enable advanced user settings (before analysis) */
 
-      if (c->setup_hook != NULL)
+      if (c->setup_hook != nullptr)
         c->setup_hook(c->sles_param, c->hook_context, dmumps);
 
       dmumps_c(dmumps);
@@ -3138,7 +3166,7 @@ cs_sles_mumps_setup(void               *context,
 
       /* Window to enable advanced user settings (before factorization) */
 
-      if (c->setup_hook != NULL)
+      if (c->setup_hook != nullptr)
         c->setup_hook(c->sles_param, c->hook_context, dmumps);
 
       dmumps_c(dmumps);
@@ -3152,8 +3180,7 @@ cs_sles_mumps_setup(void               *context,
 
   }
   else {
-
-    SMUMPS_STRUC_C  *smumps = c->mumps_struct;
+    SMUMPS_STRUC_C *smumps = static_cast<SMUMPS_STRUC_C *>(c->mumps_struct);
 
     do {
 
@@ -3167,7 +3194,7 @@ cs_sles_mumps_setup(void               *context,
 
       /* Window to enable advanced user settings (before analysis) */
 
-      if (c->setup_hook != NULL)
+      if (c->setup_hook != nullptr)
         c->setup_hook(c->sles_param, c->hook_context, smumps);
 
       smumps_c(smumps);
@@ -3181,7 +3208,7 @@ cs_sles_mumps_setup(void               *context,
 
       /* Window to enable advanced user settings (before factorization) */
 
-      if (c->setup_hook != NULL)
+      if (c->setup_hook != nullptr)
         c->setup_hook(c->sles_param, c->hook_context, smumps);
 
       smumps_c(smumps);
@@ -3248,7 +3275,7 @@ cs_sles_mumps_setup(void               *context,
  * \param[in, out]  vx             system solution
  * \param[in]       aux_size       number of elements in aux_vectors (in bytes)
  * \param           aux_vectors    optional working area
- *                                 (internal allocation if NULL)
+ *                                 (internal allocation if nullptr)
  *
  * \return  convergence state
  */
@@ -3275,9 +3302,9 @@ cs_sles_mumps_solve(void                *context,
   CS_UNUSED(aux_size);
   CS_UNUSED(aux_vectors);
 
-  cs_sles_mumps_t  *c = context;
+  cs_sles_mumps_t *c = static_cast<cs_sles_mumps_t *>(context);
 
-  if (c->mumps_struct == NULL)
+  if (c->mumps_struct == nullptr)
     cs_sles_mumps_setup(c, name, a, verbosity);
 
   MUMPS_INT  infog1 = 0;
@@ -3293,8 +3320,8 @@ cs_sles_mumps_solve(void                *context,
     /* MUMPS with double-precision arrays */
     /* ---------------------------------- */
 
-    DMUMPS_STRUC_C  *dmumps = c->mumps_struct;
-    assert(dmumps != NULL);
+    DMUMPS_STRUC_C *dmumps = static_cast<DMUMPS_STRUC_C *>(c->mumps_struct);
+    assert(dmumps != nullptr);
 
     /* 1. Build the RHS */
 
@@ -3315,7 +3342,7 @@ cs_sles_mumps_solve(void                *context,
       int  root_rank = 0;
       MUMPS_INT  n_g_rows = dmumps->n;
 
-      double  *glob_rhs = NULL;
+      double  *glob_rhs = nullptr;
       if (cs_glob_rank_id == root_rank)
         BFT_MALLOC(glob_rhs, n_g_rows, double);
 
@@ -3335,7 +3362,7 @@ cs_sles_mumps_solve(void                *context,
     /* 3. Post-resolution operations */
 
     if (cs_glob_n_ranks == 1)
-      dmumps->rhs = NULL;
+      dmumps->rhs = nullptr;
 
     else {
 
@@ -3352,7 +3379,7 @@ cs_sles_mumps_solve(void                *context,
 
       if (cs_glob_rank_id == root_rank)
         BFT_FREE(glob_rhs);
-      dmumps->rhs = NULL;
+      dmumps->rhs = nullptr;
 
     }
 
@@ -3362,8 +3389,8 @@ cs_sles_mumps_solve(void                *context,
     /* MUMPS with single-precision arrays */
     /* ---------------------------------- */
 
-    SMUMPS_STRUC_C  *smumps = c->mumps_struct;
-    assert(smumps != NULL);
+    SMUMPS_STRUC_C *smumps = static_cast<SMUMPS_STRUC_C *>(c->mumps_struct);
+    assert(smumps != nullptr);
 
     /* 1. Build the RHS */
 
@@ -3387,7 +3414,7 @@ cs_sles_mumps_solve(void                *context,
 
       int  root_rank = 0;
       MUMPS_INT  n_g_rows = smumps->n;
-      float  *glob_rhs = NULL;
+      float  *glob_rhs = nullptr;
       if (cs_glob_rank_id == root_rank)
         BFT_MALLOC(glob_rhs, n_g_rows, float);
 
@@ -3449,7 +3476,7 @@ cs_sles_mumps_solve(void                *context,
 
     }
 
-    smumps->rhs = NULL;
+    smumps->rhs = nullptr;
 
   } /* Single or double-precision algorithm */
 
@@ -3493,7 +3520,7 @@ void
 cs_sles_mumps_log(const void  *context,
                   cs_log_t     log_type)
 {
-  const cs_sles_mumps_t  *c = context;
+  const cs_sles_mumps_t *c = static_cast<const cs_sles_mumps_t *>(context);
 
   char sym_type_name[32];
   char storage_type_name[32];

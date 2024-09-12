@@ -120,7 +120,7 @@ static const int _n_max_iter_default_jacobi = 100;
  * \brief Default definition of a sparse linear equation solver
 
   \param[in]  f_id         associated field id, or < 0
-  \param[in]  name         associated name if f_id < 0, or NULL
+  \param[in]  name         associated name if f_id < 0, or nullptr
   \param[in]  matrix_type  matrix type, if available, or CS_MATRIX_N_TYPES
                            if not determined at calling site
   \param[in]  symmetric    indicate if matrix is symmetric
@@ -137,17 +137,17 @@ _sles_default_native(int                f_id,
   cs_sles_it_type_t sles_it_type = CS_SLES_N_IT_TYPES;
   int n_max_iter = _n_max_iter_default;
 
-  if (name != NULL) {
+  if (name != nullptr) {
 
     if (!strcmp(name, "potential")) {   /* predfl.f90 */
       /* Copy from pressure if possible */
       cs_field_t *cvar_p = (cs_field_by_name_try("pressure"));
-      cs_sles_t *src = NULL;
-      if (cvar_p != NULL) {
+      cs_sles_t *src = nullptr;
+      if (cvar_p != nullptr) {
         if (cvar_p->type & CS_FIELD_VARIABLE)
-          src = cs_sles_find_or_add(cvar_p->id, NULL);
+          src = cs_sles_find_or_add(cvar_p->id, nullptr);
       }
-      if (src != NULL) {
+      if (src != nullptr) {
         cs_sles_t *dest = cs_sles_find_or_add(-1, name);
         if (cs_sles_copy(dest, src) == 0) /* Copy OK, we are done */
           return;
@@ -278,15 +278,15 @@ _sles_default_native(int                f_id,
  * \brief Setup sparse linear equation solver using native matrix arrays.
  *
  * \param[in]       f_id          associated field id, or < 0
- * \param[in]       name          associated name if f_id < 0, or NULL
+ * \param[in]       name          associated name if f_id < 0, or nullptr
  * \param[in]       setup_id      associated setup id
  * \param[in]       sc            associated solver context
  * \param[in]       symmetric     indicates if matrix coefficients
  *                                are symmetric
  * \param[in]       db_size       block sizes for diagonal
  * \param[in]       eb_size       block sizes for extra diagonal
- * \param[in]       da            diagonal values (NULL if zero)
- * \param[in]       xa            extradiagonal values (NULL if zero)
+ * \param[in]       da            diagonal values (nullptr if zero)
+ * \param[in]       xa            extradiagonal values (nullptr if zero)
  */
 /*----------------------------------------------------------------------------*/
 
@@ -301,7 +301,7 @@ _sles_setup_matrix_native(int                  f_id,
                           const cs_real_t     *da,
                           const cs_real_t     *xa)
 {
-  cs_matrix_t *a = NULL;
+  cs_matrix_t *a = nullptr;
 
   const cs_mesh_t *m = cs_glob_mesh;
 
@@ -317,7 +317,7 @@ _sles_setup_matrix_native(int                  f_id,
      The matrix type might be modified later based on solver
      constraints. */
 
-  if (cs_sles_get_context(sc) == NULL) {
+  if (cs_sles_get_context(sc) == nullptr) {
     a = cs_matrix_msr(symmetric,
                       db_size,
                       eb_size);
@@ -336,13 +336,13 @@ _sles_setup_matrix_native(int                  f_id,
     cs_matrix_release_coefficients(a);
   }
 
-  assert(cs_sles_get_context(sc) != NULL);
+  assert(cs_sles_get_context(sc) != nullptr);
 
-  cs_sles_pc_t  *pc = NULL;
-  cs_multigrid_t *mg = NULL;
+  cs_sles_pc_t  *pc = nullptr;
+  cs_multigrid_t *mg = nullptr;
 
   if (strcmp(cs_sles_get_type(sc), "cs_sles_it_t") == 0) {
-    cs_sles_it_t *c = cs_sles_get_context(sc);
+    cs_sles_it_t     *c = static_cast<cs_sles_it_t *>(cs_sles_get_context(sc));
     cs_sles_it_type_t s_type = cs_sles_it_get_type(c);
     if (   s_type >= CS_SLES_P_GAUSS_SEIDEL
         && s_type <= CS_SLES_TS_B_GAUSS_SEIDEL) {
@@ -352,17 +352,18 @@ _sles_setup_matrix_native(int                  f_id,
         need_msr = false;
     }
     pc = cs_sles_it_get_pc(c);
-    if (pc != NULL) {
+    if (pc != nullptr) {
       if (strcmp(cs_sles_pc_get_type(pc), "multigrid") == 0)
-        mg = cs_sles_pc_get_context(pc);
+        mg = static_cast<cs_multigrid_t *>(cs_sles_pc_get_context(pc));
     }
   }
   else if (strcmp(cs_sles_get_type(sc), "cs_multigrid_t") == 0)
-    mg = cs_sles_get_context(sc);
+    mg = static_cast<cs_multigrid_t *>(cs_sles_get_context(sc));
 
 #if defined(HAVE_HYPRE)
   else if (strcmp(cs_sles_get_type(sc), "cs_sles_hypre_t") == 0) {
-    cs_sles_hypre_t *c = cs_sles_get_context(sc);
+    cs_sles_hypre_t *c =
+      static_cast<cs_sles_hypre_t *>(cs_sles_get_context(sc));
     int use_device = cs_sles_hypre_get_host_device(c);
     if (use_device)
       strncpy(external_type, "HYPRE_ParCSR, device", 31);
@@ -377,7 +378,7 @@ _sles_setup_matrix_native(int                  f_id,
            && m->have_rotation_perio == 0) {
     void *c = cs_sles_get_context(sc);
     const char *mat_type = cs_sles_petsc_get_mat_type(c);
-    if (mat_type == NULL)
+    if (mat_type == nullptr)
       strncpy(external_type, "PETSc", 31);
     else {
       snprintf(external_type, 31, "PETSc, %s", mat_type);
@@ -387,7 +388,7 @@ _sles_setup_matrix_native(int                  f_id,
   }
 #endif
 
-  if (mg != NULL) {
+  if (mg != nullptr) {
     if (cs_multigrid_need_msr(mg))
       need_msr = true;
   }
@@ -420,11 +421,11 @@ _sles_setup_matrix_native(int                  f_id,
                              da,
                              xa);
 
-  if (mg != NULL) {
+  if (mg != nullptr) {
     const cs_mesh_adjacencies_t *ma = cs_glob_mesh_adjacencies;
     const cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
 
-    if (ma->cell_i_faces == NULL)
+    if (ma->cell_i_faces == nullptr)
       cs_mesh_adjacencies_update_cell_i_faces();
 
     cs_matrix_set_mesh_association(a,
@@ -439,7 +440,7 @@ _sles_setup_matrix_native(int                  f_id,
   cs_matrix_default_set_tuned(a);
 
   _matrix_setup[setup_id][0] = a;
-  _matrix_setup[setup_id][1] = NULL;
+  _matrix_setup[setup_id][1] = nullptr;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -454,8 +455,8 @@ _sles_setup_matrix_native(int                  f_id,
  *                                    are symmetric
  * \param[in]  db_size                block sizes for diagonal
  * \param[in]  eb_size                block sizes for extra diagonal
- * \param[in]  da                     diagonal values (NULL if zero)
- * \param[in]  xa                     extradiagonal values (NULL if zero)
+ * \param[in]  da                     diagonal values (nullptr if zero)
+ * \param[in]  xa                     extradiagonal values (nullptr if zero)
  */
 /*----------------------------------------------------------------------------*/
 
@@ -469,11 +470,11 @@ _sles_setup_matrix_by_assembler(int               f_id,
                                 const cs_real_t  *da,
                                 const cs_real_t  *xa)
 {
-  cs_matrix_t *a = NULL;
+  cs_matrix_t *a = nullptr;
 
   /* Check field and associated internal coupling if present */
 
-  const cs_field_t *f = NULL;
+  const cs_field_t *f = nullptr;
   if (f_id > -1)
     f = cs_field_by_id(f_id);
 
@@ -494,12 +495,12 @@ _sles_setup_matrix_by_assembler(int               f_id,
   const cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
 
   cs_matrix_set_mesh_association(a,
-                                 NULL,
-                                 NULL,
-                                 NULL,
+                                 nullptr,
+                                 nullptr,
+                                 nullptr,
                                  (const cs_real_3_t *)mq->cell_cen,
                                  (const cs_real_t *)mq->cell_vol,
-                                 NULL);
+                                 nullptr);
 
   cs_matrix_default_set_tuned(a);
 
@@ -518,7 +519,7 @@ _sles_setup_matrix_by_assembler(int               f_id,
  * \brief Default definition of a sparse linear equation solver
 
   \param[in]  f_id  associated field id, or < 0
-  \param[in]  name  associated name if f_id < 0, or NULL
+  \param[in]  name  associated name if f_id < 0, or nullptr
   \param[in]  a     matrix
 */
 /*----------------------------------------------------------------------------*/
@@ -564,17 +565,17 @@ cs_sles_default_setup(void)
       if (f->type & CS_FIELD_CDO) /* Skipped this step for CDO equations */
         continue;                 /* This is done elsewhere. */
 
-      void *context = NULL;
-      cs_sles_t *sc = cs_sles_find(f->id, NULL);
-      if (sc != NULL)
+      void *context = nullptr;
+      cs_sles_t *sc = cs_sles_find(f->id, nullptr);
+      if (sc != nullptr)
         context = cs_sles_get_context(sc);
 
-      if (context == NULL) {
+      if (context == nullptr) {
         /* Get the calculation option from the field */
         const cs_equation_param_t *eqp = cs_field_get_equation_param_const(f);
-        if (eqp != NULL) {
+        if (eqp != nullptr) {
           bool symmetric = (eqp->iconv > 0) ? false : true;
-          _sles_default_native(f_id, NULL, CS_MATRIX_N_TYPES, symmetric);
+          _sles_default_native(f_id, nullptr, CS_MATRIX_N_TYPES, symmetric);
         }
       }
 
@@ -614,7 +615,7 @@ cs_sles_default_finalize(void)
  * \brief Return default verbosity associated to a field id, name couple.
  *
  * \param[in]  f_id  associated field id, or < 0
- * \param[in]  name  associated name if f_id < 0, or NULL
+ * \param[in]  name  associated name if f_id < 0, or nullptr
  *
  * \return  verbosity associated with field or name
  */
@@ -651,12 +652,12 @@ cs_sles_default_get_verbosity(int          f_id,
  *        systems
  *
  * \param[in]       f_id                   associated field id, or < 0
- * \param[in]       name                   associated name if f_id < 0, or NULL
- * \param[in]       diag_block_size        block sizes for diagonal, or NULL
+ * \param[in]       name                   associated name if f_id < 0, or nullptr
+ * \param[in]       diag_block_size        block sizes for diagonal, or nullptr
  * \param[in]       extra_diag_block_size  block sizes for extra diagonal,
- *                                         or NULL
- * \param[in]       da                     diagonal values (NULL if zero)
- * \param[in]       xa                     extradiagonal values (NULL if zero)
+ *                                         or nullptr
+ * \param[in]       da                     diagonal values (nullptr if zero)
+ * \param[in]       xa                     extradiagonal values (nullptr if zero)
  * \param[in]       conv_diff              convection-diffusion mode
  */
 /*----------------------------------------------------------------------------*/
@@ -670,7 +671,7 @@ cs_sles_setup_native_conv_diff(int                  f_id,
                                const cs_real_t     *xa,
                                bool                 conv_diff)
 {
-  cs_matrix_t *a = NULL;
+  cs_matrix_t *a = nullptr;
 
   const cs_mesh_t *m = cs_glob_mesh;
 
@@ -698,7 +699,7 @@ cs_sles_setup_native_conv_diff(int                  f_id,
          "If this is not an error, increase CS_SLES_DEFAULT_N_SETUPS\n"
          "  in file %s.", CS_SLES_DEFAULT_N_SETUPS, __FILE__);
 
-    if (a == NULL) {
+    if (a == nullptr) {
 
       a = cs_matrix_msr(false,
                         diag_block_size,
@@ -716,7 +717,7 @@ cs_sles_setup_native_conv_diff(int                  f_id,
       const cs_mesh_adjacencies_t *ma = cs_glob_mesh_adjacencies;
       const cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
 
-      if (ma->cell_i_faces == NULL)
+      if (ma->cell_i_faces == nullptr)
         cs_mesh_adjacencies_update_cell_i_faces();
 
       cs_matrix_set_mesh_association(a,
@@ -748,7 +749,7 @@ cs_sles_setup_native_conv_diff(int                  f_id,
 
   int verbosity = cs_sles_get_verbosity(sc);
 
-  cs_multigrid_t  *mg = cs_sles_get_context(sc);
+  cs_multigrid_t *mg = static_cast<cs_multigrid_t *>(cs_sles_get_context(sc));
   cs_multigrid_setup_conv_diff(mg, name, a, conv_diff, verbosity);
 }
 
@@ -757,13 +758,13 @@ cs_sles_setup_native_conv_diff(int                  f_id,
  * \brief Call sparse linear equation solver using native matrix arrays.
  *
  * \param[in]       f_id                   associated field id, or < 0
- * \param[in]       name                   associated name if f_id < 0, or NULL
+ * \param[in]       name                   associated name if f_id < 0, or nullptr
  * \param[in]       symmetric              indicates if matrix coefficients
  *                                         are symmetric
  * \param[in]       diag_block_size        block sizes for diagonal
  * \param[in]       extra_diag_block_size  block sizes for extra diagonal
- * \param[in]       da                     diagonal values (NULL if zero)
- * \param[in]       xa                     extradiagonal values (NULL if zero)
+ * \param[in]       da                     diagonal values (nullptr if zero)
+ * \param[in]       xa                     extradiagonal values (nullptr if zero)
  * \param[in]       precision              solver precision
  * \param[in]       r_norm                 residual normalization
  * \param[out]      n_iter                 number of "equivalent" iterations
@@ -791,7 +792,7 @@ cs_sles_solve_native(int                  f_id,
                      cs_real_t           *vx)
 {
   cs_sles_convergence_state_t cvg = CS_SLES_ITERATING;
-  cs_matrix_t *a = NULL;
+  cs_matrix_t *a = nullptr;
 
   const cs_mesh_t *m = cs_glob_mesh;
 
@@ -865,11 +866,11 @@ cs_sles_solve_native(int                  f_id,
      face->cell nonzeroes), allocate specific buffers and synchronize
      right hand side. */
 
-  cs_real_t *_vx = vx, *_rhs = NULL;
+  cs_real_t *_vx = vx, *_rhs = nullptr;
   const cs_real_t *rhs_p = rhs;
 
   const cs_halo_t *halo = cs_matrix_get_halo(a);
-  if (halo != NULL && halo != m->halo) {
+  if (halo != nullptr && halo != m->halo) {
 
     size_t stride = diag_block_size;
     cs_lnum_t n_rows = cs_matrix_get_n_rows(a);
@@ -899,7 +900,7 @@ cs_sles_solve_native(int                  f_id,
                       rhs_p,
                       _vx,
                       0,
-                      NULL);
+                      nullptr);
 
   BFT_FREE(_rhs);
   if (_vx != vx) {
@@ -920,7 +921,7 @@ cs_sles_solve_native(int                  f_id,
  * \brief Free sparse linear equation solver setup using native matrix arrays.
  *
  * \param[in]  f_id  associated field id, or < 0
- * \param[in]  name  associated name if f_id < 0, or NULL
+ * \param[in]  name  associated name if f_id < 0, or nullptr
  */
 /*----------------------------------------------------------------------------*/
 
@@ -941,10 +942,10 @@ cs_sles_free_native(int          f_id,
   if (setup_id < _n_setups) {
 
     cs_sles_free(sc);
-    if (_matrix_setup[setup_id][0] != NULL)
+    if (_matrix_setup[setup_id][0] != nullptr)
       cs_matrix_release_coefficients(_matrix_setup[setup_id][0]);
     /* Remove "copied" matrices */
-    if (_matrix_setup[setup_id][1] != NULL)
+    if (_matrix_setup[setup_id][1] != nullptr)
       cs_matrix_destroy(&(_matrix_setup[setup_id][1]));
 
     _n_setups -= 1;
@@ -1003,12 +1004,12 @@ cs_sles_default_error(cs_sles_t                    *sles,
      (tested for if CS_SLES_DIVERGED or CS_SLES_MAX_ITERATION) */
 
   if (strcmp(cs_sles_get_type(sles), "cs_sles_it_t") == 0) {
-
-    cs_sles_it_t  *c_old = cs_sles_get_context(sles);
+    cs_sles_it_t *c_old =
+      static_cast<cs_sles_it_t *>(cs_sles_get_context(sles));
 
     cs_sles_pc_t  *pc = cs_sles_it_get_pc(c_old);
 
-    if (pc != NULL) {
+    if (pc != nullptr) {
       const char *pc_type = cs_sles_pc_get_type(pc);
       if (strcmp(pc_type, "multigrid") == 0)
         alternative = true;
@@ -1045,8 +1046,8 @@ cs_sles_default_error(cs_sles_t                    *sles,
   } /* End of "cs_sles_it_t" case */
 
   else if (strcmp(cs_sles_get_type(sles), "cs_multigrid_t") == 0) {
-
-    cs_sles_it_t  *c_old = cs_sles_get_context(sles);
+    cs_sles_it_t *c_old =
+      static_cast<cs_sles_it_t *>(cs_sles_get_context(sles));
 
     alternative = true;
 

@@ -109,10 +109,10 @@ BEGIN_C_DECLS
 
   This function is called during the setup stage for a HYPRE solver.
 
-  When first called, the solver argument is NULL, and must be created
+  When first called, the solver argument is nullptr, and must be created
   using HYPRE functions.
 
-  Note: if the context pointer is non-NULL, it must point to valid data
+  Note: if the context pointer is non-nullptr, it must point to valid data
   when the selection function is called so that value or structure should
   not be temporary (i.e. local);
 
@@ -236,7 +236,7 @@ _cs_hypre_type_name(cs_sles_hypre_type_t  solver_type)
     break;
 
   default:
-    return NULL;
+    return nullptr;
   }
 }
 
@@ -254,7 +254,7 @@ _ensure_mpi_init(void)
   MPI_Initialized(&flag);
   if (!flag) {
     int mpi_threads;
-    MPI_Init_thread(NULL, NULL, MPI_THREAD_FUNNELED, &mpi_threads);
+    MPI_Init_thread(nullptr, nullptr, MPI_THREAD_FUNNELED, &mpi_threads);
   }
 #endif
 }
@@ -286,12 +286,12 @@ _ensure_mpi_init(void)
  * \ref cs_sles_t container.
  *
  * \param[in]      f_id          associated field id, or < 0
- * \param[in]      name          associated name if f_id < 0, or NULL
+ * \param[in]      name          associated name if f_id < 0, or nullptr
  * \param[in]      solver_type   HYPRE solver type
  * \param[in]      precond_type  HYPRE preconditioner type
  * \param[in]      setup_hook    pointer to optional setup epilogue function
  * \param[in,out]  context       pointer to optional (untyped) value or
- *                               structure for setup_hook, or NULL
+ *                               structure for setup_hook, or nullptr
  *
  * \return  pointer to newly created iterative solver info object.
  */
@@ -344,7 +344,7 @@ cs_sles_hypre_define(int                          f_id,
  * \param[in]  precond_type  HYPRE preconditioner type
  * \param[in]  setup_hook    pointer to optional setup epilogue function
  * \param[in]  context       pointer to optional (untyped) value or structure
- *                           for setup_hook, or NULL
+ *                           for setup_hook, or nullptr
  *
  * \return  pointer to newly created linear system object.
  */
@@ -394,7 +394,7 @@ cs_sles_hypre_create(cs_sles_hypre_type_t         solver_type,
   c->setup_hook = setup_hook;
 
   /* Setup data */
-  c->setup_data = NULL;
+  c->setup_data = nullptr;
 
   return c;
 }
@@ -412,7 +412,7 @@ void
 cs_sles_hypre_destroy(void **context)
 {
   cs_sles_hypre_t *c = (cs_sles_hypre_t *)(*context);
-  if (c != NULL) {
+  if (c != nullptr) {
     cs_sles_hypre_free(c);
     BFT_FREE(c);
     *context = c;
@@ -440,10 +440,10 @@ cs_sles_hypre_destroy(void **context)
 void *
 cs_sles_hypre_copy(const void  *context)
 {
-  cs_sles_hypre_t *d = NULL;
+  cs_sles_hypre_t *d = nullptr;
 
-  if (context != NULL) {
-    const cs_sles_hypre_t *c = context;
+  if (context != nullptr) {
+    const cs_sles_hypre_t *c = static_cast<const cs_sles_hypre_t *>(context);
     d = cs_sles_hypre_create(c->solver_type,
                              c->precond_type,
                              c->setup_hook,
@@ -487,9 +487,6 @@ cs_sles_hypre_error_post_and_abort(cs_sles_t                    *sles,
 
   const char *name = cs_sles_get_name(sles);
 
-  const cs_sles_hypre_t  *c = cs_sles_get_context(sles);
-  CS_UNUSED(c);
-
   const char *error_type[] = {N_("divergence"), N_("breakdown")};
   int err_id = (state == CS_SLES_BREAKDOWN) ? 1 : 0;
 
@@ -515,7 +512,7 @@ void
 cs_sles_hypre_log(const void  *context,
                   cs_log_t     log_type)
 {
-  const cs_sles_hypre_t  *c = context;
+  const cs_sles_hypre_t *c = static_cast<const cs_sles_hypre_t *>(context);
 
   if (log_type == CS_LOG_SETUP) {
 
@@ -592,13 +589,13 @@ cs_sles_hypre_setup(void               *context,
   cs_timer_t t0;
   t0 = cs_timer_time();
 
-  cs_sles_hypre_t  *c  = context;
+  cs_sles_hypre_t       *c  = static_cast<cs_sles_hypre_t *>(context);
   cs_sles_hypre_setup_t *sd = c->setup_data;
-  if (sd == NULL) {
+  if (sd == nullptr) {
     BFT_MALLOC(c->setup_data, 1, cs_sles_hypre_setup_t);
     sd = c->setup_data;
-    sd->solver = NULL;
-    sd->precond = NULL;
+    sd->solver = nullptr;
+    sd->precond = nullptr;
   }
 
   const char expected_matrix_type[] = "HYPRE_PARCSR";
@@ -616,18 +613,18 @@ cs_sles_hypre_setup(void               *context,
     comm = MPI_COMM_WORLD;
 
   bool have_set_pc = true;
-  HYPRE_PtrToParSolverFcn solve_ftn[2] = {NULL, NULL};
-  HYPRE_PtrToParSolverFcn setup_ftn[2] = {NULL, NULL};
+  HYPRE_PtrToParSolverFcn solve_ftn[2] = {nullptr, nullptr};
+  HYPRE_PtrToParSolverFcn setup_ftn[2] = {nullptr, nullptr};
 
   for (int i = 0; i < 2; i++) {
 
     HYPRE_Solver hs = (i == 0) ? sd->precond : sd->solver;
     cs_sles_hypre_type_t hs_type = (i == 0) ? c->precond_type : c->solver_type;
 
-    /* hs should be NULL at this point, unless we do not relly free
+    /* hs should be nullptr at this point, unless we do not relly free
      it (when cs_sles_hypre_free is called (for example to amortize setup) */
 
-    if (hs != NULL || hs_type >= CS_SLES_HYPRE_NONE)
+    if (hs != nullptr || hs_type >= CS_SLES_HYPRE_NONE)
       continue;
 
     switch(hs_type) {
@@ -701,7 +698,7 @@ cs_sles_hypre_setup(void               *context,
         solve_ftn[i] = HYPRE_ParCSRHybridSolve;
         setup_ftn[i] = HYPRE_ParCSRHybridSetup;
 
-        if (i == 1 && solve_ftn[0] != NULL) {  /* solver */
+        if (i == 1 && solve_ftn[0] != nullptr) {  /* solver */
           HYPRE_ParCSRHybridSetPrecond(hs,
                                        solve_ftn[0],
                                        setup_ftn[0],
@@ -751,7 +748,7 @@ cs_sles_hypre_setup(void               *context,
         }
         else { /* solver */
           HYPRE_BiCGSTABSetMaxIter(hs, 1000);  /* Max iterations */
-          if (solve_ftn[0] != NULL)
+          if (solve_ftn[0] != nullptr)
             HYPRE_ParCSRBiCGSTABSetPrecond(hs,
                                            solve_ftn[0],
                                            setup_ftn[0],
@@ -780,7 +777,7 @@ cs_sles_hypre_setup(void               *context,
         }
         else { /* solver */
           HYPRE_GMRESSetMaxIter(hs, 1000);  /* Max iterations */
-          if (solve_ftn[0] != NULL)
+          if (solve_ftn[0] != nullptr)
             HYPRE_ParCSRGMRESSetPrecond(hs,
                                         solve_ftn[0],
                                         setup_ftn[0],
@@ -807,7 +804,7 @@ cs_sles_hypre_setup(void               *context,
         }
         else { /* solver */
           HYPRE_FlexGMRESSetMaxIter(hs, 1000);  /* Max iterations */
-          if (solve_ftn[0] != NULL)
+          if (solve_ftn[0] != nullptr)
             HYPRE_ParCSRFlexGMRESSetPrecond(hs,
                                             solve_ftn[0],
                                             setup_ftn[0],
@@ -834,7 +831,7 @@ cs_sles_hypre_setup(void               *context,
         }
         else { /* solver */
           HYPRE_LGMRESSetMaxIter(hs, 1000);  /* Max iterations */
-          if (solve_ftn[0] != NULL)
+          if (solve_ftn[0] != nullptr)
             HYPRE_ParCSRLGMRESSetPrecond(hs,
                                          solve_ftn[0],
                                          setup_ftn[0],
@@ -861,7 +858,7 @@ cs_sles_hypre_setup(void               *context,
         }
         else { /* solver */
           HYPRE_PCGSetMaxIter(hs, 1000);  /* Max iterations */
-          if (solve_ftn[0] != NULL)
+          if (solve_ftn[0] != nullptr)
             HYPRE_ParCSRPCGSetPrecond(hs,
                                       solve_ftn[0],
                                       setup_ftn[0],
@@ -916,7 +913,7 @@ cs_sles_hypre_setup(void               *context,
       sd->solver = hs;
   }
 
-  if (sd->precond != NULL && have_set_pc == false)
+  if (sd->precond != nullptr && have_set_pc == false)
     bft_error(__FILE__, __LINE__, 0,
               _("HYPRE: solver (%s) will ignore preconditioner (%s)."),
               _cs_hypre_type_name(c->solver_type),
@@ -924,7 +921,7 @@ cs_sles_hypre_setup(void               *context,
 
   /* Call optional setup hook for user setting changes */
 
-  if (c->setup_hook != NULL)
+  if (c->setup_hook != nullptr)
     c->setup_hook(verbosity, c->hook_context, sd->solver);
 
   /* Now setup systems (where rhs and vx values may be different
@@ -937,7 +934,7 @@ cs_sles_hypre_setup(void               *context,
   HYPRE_IJVectorGetObject(sd->coeffs->hx, (void **)&p_x);
   HYPRE_IJVectorGetObject(sd->coeffs->hy, (void **)&p_rhs);
 
-  if (setup_ftn[1] != NULL)
+  if (setup_ftn[1] != nullptr)
     setup_ftn[1](sd->solver, par_a, p_rhs, p_x);
   else
     bft_error(__FILE__, __LINE__, 0,
@@ -971,7 +968,7 @@ cs_sles_hypre_setup(void               *context,
  * \param[in, out]  vx             system solution
  * \param[in]       aux_size       number of elements in aux_vectors (in bytes)
  * \param           aux_vectors    optional working area
- *                                 (internal allocation if NULL)
+ *                                 (internal allocation if nullptr)
  *
  * \return  convergence state
  */
@@ -998,14 +995,14 @@ cs_sles_hypre_solve(void                *context,
   cs_timer_t t0;
   t0 = cs_timer_time();
   cs_sles_convergence_state_t cvg = CS_SLES_ITERATING;
-  cs_sles_hypre_t  *c = context;
+  cs_sles_hypre_t            *c      = static_cast<cs_sles_hypre_t *>(context);
   cs_sles_hypre_setup_t  *sd = c->setup_data;
   cs_lnum_t n_rows = cs_matrix_get_n_rows(a);
   double res;
   HYPRE_Int its, max_its;
   HYPRE_Int ierr = -1;
 
-  if (sd == NULL) {
+  if (sd == nullptr) {
     cs_sles_hypre_setup(c, name, a, verbosity);
     sd = c->setup_data;
   }
@@ -1017,7 +1014,7 @@ cs_sles_hypre_solve(void                *context,
   if (sd->coeffs->memory_location != HYPRE_MEMORY_HOST)
     amode = CS_ALLOC_HOST_DEVICE_SHARED;
 
-  HYPRE_Real *_t = NULL;
+  HYPRE_Real *_t = nullptr;
 
   /* Set RHS and starting solution */
 
@@ -1027,8 +1024,8 @@ cs_sles_hypre_solve(void                *context,
         vx[ii] = 0;
       }
     }
-    HYPRE_IJVectorSetValues(sd->coeffs->hx, n_rows, NULL, vx);
-    HYPRE_IJVectorSetValues(sd->coeffs->hy, n_rows, NULL, rhs);
+    HYPRE_IJVectorSetValues(sd->coeffs->hx, n_rows, nullptr, vx);
+    HYPRE_IJVectorSetValues(sd->coeffs->hy, n_rows, nullptr, rhs);
   }
   else {
     CS_MALLOC_HD(_t, n_rows, HYPRE_Real, amode);
@@ -1042,11 +1039,11 @@ cs_sles_hypre_solve(void                *context,
         _t[ii] = 0;
       }
     }
-    HYPRE_IJVectorSetValues(sd->coeffs->hx, n_rows, NULL, _t);
+    HYPRE_IJVectorSetValues(sd->coeffs->hx, n_rows, nullptr, _t);
     for (HYPRE_BigInt ii = 0; ii < n_rows; ii++) {
       _t[ii] = rhs[ii];
     }
-    HYPRE_IJVectorSetValues(sd->coeffs->hy, n_rows, NULL, _t);
+    HYPRE_IJVectorSetValues(sd->coeffs->hy, n_rows, nullptr, _t);
   }
 
   HYPRE_IJVectorAssemble(sd->coeffs->hx);
@@ -1212,11 +1209,11 @@ cs_sles_hypre_solve(void                *context,
 
   cs_fp_exception_restore_trap();
 
-  if (_t == NULL) {
-    HYPRE_IJVectorGetValues(sd->coeffs->hx, n_rows, NULL, vx);
+  if (_t == nullptr) {
+    HYPRE_IJVectorGetValues(sd->coeffs->hx, n_rows, nullptr, vx);
   }
   else {
-    HYPRE_IJVectorGetValues(sd->coeffs->hx, n_rows, NULL, _t);
+    HYPRE_IJVectorGetValues(sd->coeffs->hx, n_rows, nullptr, _t);
     for (HYPRE_BigInt ii = 0; ii < n_rows; ii++) {
       vx[ii] = _t[ii];
     }
@@ -1270,15 +1267,15 @@ cs_sles_hypre_solve(void                *context,
 void
 cs_sles_hypre_free(void  *context)
 {
-  cs_sles_hypre_t  *c  = context;
+  cs_sles_hypre_t *c = static_cast<cs_sles_hypre_t *>(context);
 
-  if (c == NULL) /* Nothing else to do */
+  if (c == nullptr) /* Nothing else to do */
     return;
 
   cs_timer_t t0;
   t0 = cs_timer_time();
 
-  if (c->setup_data != NULL) {
+  if (c->setup_data != nullptr) {
 
     cs_sles_hypre_setup_t *sd = c->setup_data;
 
@@ -1286,7 +1283,7 @@ cs_sles_hypre_free(void  *context)
       HYPRE_Solver hs = (i == 0) ? sd->solver : sd->precond;
       cs_sles_hypre_type_t hs_type = (i == 0) ? c->solver_type : c->precond_type;
 
-      if (hs == NULL)
+      if (hs == nullptr)
         continue;
 
       switch(hs_type) {
@@ -1330,9 +1327,9 @@ cs_sles_hypre_free(void  *context)
       }
 
       if (i == 0)
-        sd->solver = NULL;
+        sd->solver = nullptr;
       else
-        sd->precond = NULL;
+        sd->precond = nullptr;
     }
 
     BFT_FREE(c->setup_data);
@@ -1356,12 +1353,12 @@ void
 cs_sles_hypre_set_n_max_iter(cs_sles_hypre_t   *context,
                              int                n_max_iter)
 {
-  if (context == NULL)
+  if (context == nullptr)
     return;
 
   cs_sles_hypre_setup_t *sd = context->setup_data;
 
-  if (sd == NULL)
+  if (sd == nullptr)
     return; /* No need to continue. This will be done during the first call to
                the solve function */
 

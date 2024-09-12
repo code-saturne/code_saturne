@@ -280,7 +280,7 @@ _load_amgx_config(cs_sles_amgx_t  *c)
                               "%s");
   AMGX_RC retval = AMGX_RC_OK;
 
-  if (c->amgx_config_file == NULL) {
+  if (c->amgx_config_file == nullptr) {
     retval = AMGX_config_create(&(c->amgx_config),
                                 cs_sles_amgx_get_config(c));
     if (retval != AMGX_RC_OK) {
@@ -316,7 +316,7 @@ _load_amgx_config(cs_sles_amgx_t  *c)
   AMGX_config_add_parameters(&(c->amgx_config), "exception_handling=1");
 #endif
 
-  void *comm_ptr = NULL;
+  void *comm_ptr = nullptr;
 #if defined(HAVE_MPI)
   if (cs_glob_n_ranks > 1)
     comm_ptr = &_amgx_comm;
@@ -366,7 +366,7 @@ _setup_matrix_1_ring(cs_sles_amgx_t     *c,
 
   const cs_lnum_t *a_row_index, *a_col_id;
 
-  const cs_real_t *a_val = NULL, *a_d_val = NULL;
+  const cs_real_t *a_val = nullptr, *a_d_val = nullptr;
 
   if (cs_mat_type == CS_MATRIX_CSR)
     cs_matrix_get_csr_arrays(a, &a_row_index, &a_col_id, &a_val);
@@ -374,9 +374,9 @@ _setup_matrix_1_ring(cs_sles_amgx_t     *c,
     cs_matrix_get_msr_arrays(a, &a_row_index, &a_col_id, &a_d_val, &a_val);
 
   const cs_lnum_t  *row_index = a_row_index;
-  int              *_row_index = NULL;
+  int              *_row_index = nullptr;
   const cs_lnum_t  *col_id = a_col_id;
-  cs_lnum_t        *_col_id = NULL;
+  cs_lnum_t        *_col_id = nullptr;
 
   if (sizeof(int) != sizeof(cs_lnum_t)) {
     BFT_MALLOC(_row_index, n_rows, int);
@@ -470,7 +470,7 @@ _setup_matrix_1_ring(cs_sles_amgx_t     *c,
     AMGX_pin_memory((void *)col_id, a_row_index[n_rows]*sizeof(int));
   if (amode_a_val < CS_ALLOC_HOST_DEVICE_PINNED)
     AMGX_pin_memory((void *)a_val, a_row_index[n_rows]*b_mem_size);
-  if (a_d_val != NULL && amode_a_d_val < CS_ALLOC_HOST_DEVICE_PINNED)
+  if (a_d_val != nullptr && amode_a_d_val < CS_ALLOC_HOST_DEVICE_PINNED)
       AMGX_pin_memory((void *)a_d_val, n_rows*b_mem_size);
 
   retval = AMGX_matrix_upload_all(sd->matrix,
@@ -489,7 +489,7 @@ _setup_matrix_1_ring(cs_sles_amgx_t     *c,
               "AMGX_matrix_upload_all", retval, err_str);
   }
 
-  if (a_d_val != NULL && amode_a_d_val < CS_ALLOC_HOST_DEVICE_PINNED)
+  if (a_d_val != nullptr && amode_a_d_val < CS_ALLOC_HOST_DEVICE_PINNED)
     AMGX_unpin_memory((void *)a_d_val);
   if (amode_a_val < CS_ALLOC_HOST_DEVICE_PINNED)
     AMGX_unpin_memory((void *)a_val);
@@ -534,7 +534,7 @@ _setup_matrix_dist(cs_sles_amgx_t     *c,
 
   const cs_lnum_t *a_row_index, *a_col_id;
 
-  const cs_real_t *a_val = NULL, *a_d_val = NULL;
+  const cs_real_t *a_val = nullptr, *a_d_val = nullptr;
 
   if (cs_mat_type == CS_MATRIX_CSR)
     cs_matrix_get_csr_arrays(a, &a_row_index, &a_col_id, &a_val);
@@ -542,8 +542,8 @@ _setup_matrix_dist(cs_sles_amgx_t     *c,
     cs_matrix_get_msr_arrays(a, &a_row_index, &a_col_id, &a_d_val, &a_val);
 
   const cs_lnum_t  *row_index = a_row_index;
-  int              *_row_index = NULL;
-  cs_gnum_t        *col_gid = NULL;
+  int              *_row_index = nullptr;
+  cs_gnum_t        *col_gid = nullptr;
 
   cs_alloc_mode_t amode = CS_ALLOC_HOST_DEVICE;
 
@@ -609,7 +609,7 @@ _setup_matrix_dist(cs_sles_amgx_t     *c,
     AMGX_pin_memory(col_gid, a_row_index[n_rows]*sizeof(int));
   if (amode_a_val < CS_ALLOC_HOST_DEVICE_PINNED)
     AMGX_pin_memory((void *)a_val, a_row_index[n_rows]*b_mem_size);
-  if (a_d_val != NULL && amode_a_d_val < CS_ALLOC_HOST_DEVICE_PINNED)
+  if (a_d_val != nullptr && amode_a_d_val < CS_ALLOC_HOST_DEVICE_PINNED)
     AMGX_pin_memory((void *)a_d_val, n_rows*b_mem_size);
   if (amode < CS_ALLOC_HOST_DEVICE_PINNED)
     AMGX_pin_memory(partition_offsets, (n_ranks+1)*sizeof(cs_gnum_t));
@@ -647,7 +647,7 @@ _setup_matrix_dist(cs_sles_amgx_t     *c,
 
   if (amode < CS_ALLOC_HOST_DEVICE_PINNED)
     AMGX_unpin_memory(partition_offsets);
-  if (a_d_val != NULL && amode_a_d_val < CS_ALLOC_HOST_DEVICE_PINNED)
+  if (a_d_val != nullptr && amode_a_d_val < CS_ALLOC_HOST_DEVICE_PINNED)
     AMGX_unpin_memory((void *)a_d_val);
   if (amode_a_val < CS_ALLOC_HOST_DEVICE_PINNED)
     AMGX_unpin_memory((void *)a_val);
@@ -684,7 +684,7 @@ _setup_update_coeffs(cs_sles_amgx_t     *c,
   const int n_rows = cs_matrix_get_n_rows(a);
   const cs_lnum_t *a_row_index, *a_col_id;
 
-  const cs_real_t *a_val = NULL, *a_d_val = NULL;
+  const cs_real_t *a_val = nullptr, *a_d_val = nullptr;
 
   if (cs_mat_type == CS_MATRIX_CSR)
     cs_matrix_get_csr_arrays(a, &a_row_index, &a_col_id, &a_val);
@@ -702,7 +702,7 @@ _setup_update_coeffs(cs_sles_amgx_t     *c,
   cs_alloc_mode_t amode_a_d_val = cs_check_device_ptr(a_d_val);
   if (amode_a_val < CS_ALLOC_HOST_DEVICE_PINNED)
     AMGX_pin_memory((void *)a_val, a_row_index[n_rows]*b_mem_size);
-  if (a_d_val != NULL && amode_a_d_val < CS_ALLOC_HOST_DEVICE_PINNED)
+  if (a_d_val != nullptr && amode_a_d_val < CS_ALLOC_HOST_DEVICE_PINNED)
     AMGX_pin_memory((void *)a_d_val, n_rows*b_mem_size);
 
   retval = AMGX_matrix_replace_coefficients(sd->matrix,
@@ -717,7 +717,7 @@ _setup_update_coeffs(cs_sles_amgx_t     *c,
               "AMGX_matrix_replace_coefficients", retval, err_str);
   }
 
-  if (a_d_val != NULL && amode_a_d_val < CS_ALLOC_HOST_DEVICE_PINNED)
+  if (a_d_val != nullptr && amode_a_d_val < CS_ALLOC_HOST_DEVICE_PINNED)
     AMGX_unpin_memory((void *)a_d_val);
   if (amode_a_val < CS_ALLOC_HOST_DEVICE_PINNED)
     AMGX_unpin_memory((void *)a_val);
@@ -751,7 +751,7 @@ _setup_update_coeffs(cs_sles_amgx_t     *c,
  * \ref cs_sles_t container.
  *
  * \param[in]      f_id          associated field id, or < 0
- * \param[in]      name          associated name if f_id < 0, or NULL
+ * \param[in]      name          associated name if f_id < 0, or nullptr
  *
  * \return  pointer to newly created AmgX solver info object.
  */
@@ -815,10 +815,10 @@ cs_sles_amgx_create(void)
 
   /* Setup data */
 
-  c->setup_data = NULL;
+  c->setup_data = nullptr;
 
-  c->amgx_config_file = NULL;
-  c->amgx_config_string = NULL;
+  c->amgx_config_file = nullptr;
+  c->amgx_config_string = nullptr;
 
   cs_sles_amgx_set_use_device(c, true);
 
@@ -843,19 +843,19 @@ cs_sles_amgx_create(void)
 void *
 cs_sles_amgx_copy(const void  *context)
 {
-  cs_sles_amgx_t *d = NULL;
+  cs_sles_amgx_t *d = nullptr;
 
-  if (context != NULL) {
+  if (context != nullptr) {
     const cs_sles_amgx_t *c = context;
     d = cs_sles_amgx_create();
 
-    if (c->amgx_config_file != NULL) {
+    if (c->amgx_config_file != nullptr) {
       size_t l = strlen(c->amgx_config_file);
       BFT_MALLOC(d->amgx_config_file, l+1, char);
       strncpy(d->amgx_config_file, c->amgx_config_file, l);
       d->amgx_config_file[l] = '\0';
     }
-    if (c->amgx_config_string != NULL) {
+    if (c->amgx_config_string != nullptr) {
       size_t l = strlen(c->amgx_config_string);
       BFT_MALLOC(d->amgx_config_string, l+1, char);
       strncpy(d->amgx_config_string, c->amgx_config_string, l);
@@ -882,7 +882,7 @@ void
 cs_sles_amgx_destroy(void **context)
 {
   cs_sles_amgx_t *c = (cs_sles_amgx_t *)(*context);
-  if (c != NULL) {
+  if (c != nullptr) {
 
     /* Free local strings */
 
@@ -939,8 +939,8 @@ cs_sles_amgx_get_config(void  *context)
 {
   cs_sles_amgx_t  *c = context;
 
-  if (   c->amgx_config_file == NULL
-      && c->amgx_config_string == NULL) {
+  if (   c->amgx_config_file == nullptr
+      && c->amgx_config_string == nullptr) {
 
     const char config[] =
       "{"
@@ -1014,7 +1014,7 @@ cs_sles_amgx_set_config(void        *context,
  *
  * \param[in, out]  context  pointer to AmgX solver info and context
  *
- * \return  configuration file name, or NULL
+ * \return  configuration file name, or nullptr
  */
 /*----------------------------------------------------------------------------*/
 
@@ -1180,7 +1180,7 @@ cs_sles_amgx_setup(void               *context,
 
   /* Case where setup data is not currently present */
 
-  if (sd == NULL) {
+  if (sd == nullptr) {
 
     BFT_MALLOC(c->setup_data, 1, cs_sles_amgx_setup_t);
     sd = c->setup_data;
@@ -1197,7 +1197,7 @@ cs_sles_amgx_setup(void               *context,
     /* Periodicity is not handled (at least not in serial mode), as the matrix
        is not square due to ghost cells */
 
-    if (halo != NULL) {
+    if (halo != nullptr) {
       bool have_perio = false;
       if (halo->n_transforms > 0)
         have_perio = true;
@@ -1374,7 +1374,7 @@ cs_sles_amgx_setup(void               *context,
  * \param[in, out]  vx             system solution
  * \param[in]       aux_size       number of elements in aux_vectors (in bytes)
  * \param           aux_vectors    optional working area
- *                                 (internal allocation if NULL)
+ *                                 (internal allocation if nullptr)
  *
  * \return  convergence state
  */
@@ -1412,7 +1412,7 @@ cs_sles_amgx_solve(void                *context,
   cs_sles_amgx_t  *c = context;
   cs_sles_amgx_setup_t  *sd = c->setup_data;
 
-  if (sd == NULL) {
+  if (sd == nullptr) {
     cs_sles_amgx_setup(c, name, a, verbosity);
     sd = c->setup_data;
   }
@@ -1589,13 +1589,13 @@ cs_sles_amgx_free(void  *context)
   cs_sles_amgx_t  *c  = context;
   cs_sles_amgx_setup_t *sd = c->setup_data;
 
-  if (sd != NULL) {
+  if (sd != nullptr) {
 
     AMGX_solver_destroy(sd->solver);
     AMGX_matrix_destroy(sd->matrix);
 
   }
-  if (c->setup_data != NULL)
+  if (c->setup_data != nullptr)
     BFT_FREE(c->setup_data);
 
   cs_timer_t t1 = cs_timer_time();

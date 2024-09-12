@@ -148,7 +148,7 @@ BEGIN_C_DECLS
   \brief  Function pointer for application of a preconditioner.
 
   In cases where it is desired that the preconditioner modify a vector
-  "in place", x_in should be set to NULL, and x_out contain the vector to
+  "in place", x_in should be set to nullptr, and x_out contain the vector to
   be modified (\f$x_{out} \leftarrow M^{-1}x_{out})\f$).
 
   \param[in, out]  context        pointer to solver context
@@ -306,10 +306,10 @@ _sles_pc_poly_create(void)
   pc->n_cols = 0;
   pc->n_aux = 0;
 
-  pc->ad_inv = NULL;
-  pc->_ad_inv = NULL;
+  pc->ad_inv = nullptr;
+  pc->_ad_inv = nullptr;
 
-  pc->aux = NULL;
+  pc->aux = nullptr;
 
   return pc;
 }
@@ -326,7 +326,7 @@ static const char *
 _sles_pc_poly_get_type(const void  *context,
                        bool         logging)
 {
-  const cs_sles_pc_poly_t  *c = context;
+  const cs_sles_pc_poly_t *c = static_cast<const cs_sles_pc_poly_t *>(context);
 
   assert(c->poly_degree > -2 && c->poly_degree < 3);
 
@@ -367,7 +367,7 @@ _sles_pc_poly_setup(void               *context,
   CS_UNUSED(name);
   CS_UNUSED(verbosity);
 
-  cs_sles_pc_poly_t  *c = context;
+  cs_sles_pc_poly_t *c = static_cast<cs_sles_pc_poly_t *>(context);
 
 #if defined(HAVE_ACCEL)
   c->accelerated = accel;
@@ -428,7 +428,7 @@ _sles_pc_poly_setup_none(void               *context,
   CS_UNUSED(name);
   CS_UNUSED(verbosity);
 
-  cs_sles_pc_poly_t  *c = context;
+  cs_sles_pc_poly_t *c = static_cast<cs_sles_pc_poly_t *>(context);
 
 #if defined(HAVE_ACCEL)
   c->accelerated = accel;
@@ -443,18 +443,18 @@ _sles_pc_poly_setup_none(void               *context,
 
   c->a = a;
 
-  c->ad_inv = NULL;
-  c->_ad_inv = NULL;
+  c->ad_inv = nullptr;
+  c->_ad_inv = nullptr;
 
   c->n_aux = 0;
-  c->aux = NULL;
+  c->aux = nullptr;
 }
 
 /*----------------------------------------------------------------------------
  * Function for application of a null-preconditioner.
  *
  * In cases where it is desired that the preconditioner modify a vector
- * "in place", x_in should be set to NULL, and x_out contain the vector to
+ * "in place", x_in should be set to nullptr, and x_out contain the vector to
  * be modified (\f$x_{out} \leftarrow M^{-1}x_{out})\f$).
  *
  * parameters:
@@ -471,9 +471,8 @@ _sles_pc_poly_apply_none(void                *context,
                          const cs_real_t     *x_in,
                          cs_real_t           *x_out)
 {
-  if (x_in != NULL) {
-
-    cs_sles_pc_poly_t  *c = context;
+  if (x_in != nullptr) {
+    cs_sles_pc_poly_t *c      = static_cast<cs_sles_pc_poly_t *>(context);
     const cs_lnum_t n_rows = c->n_rows;
 
 #if defined(HAVE_CUDA)
@@ -493,7 +492,7 @@ _sles_pc_poly_apply_none(void                *context,
  * Function for application of a Jacobi preconditioner.
  *
  * In cases where it is desired that the preconditioner modify a vector
- * "in place", x_in should be set to NULL, and x_out contain the vector to
+ * "in place", x_in should be set to nullptr, and x_out contain the vector to
  * be modified (\f$x_{out} \leftarrow M^{-1}x_{out})\f$).
  *
  * parameters:
@@ -510,7 +509,7 @@ _sles_pc_poly_apply_jacobi(void                *context,
                            const cs_real_t     *x_in,
                            cs_real_t           *x_out)
 {
-  cs_sles_pc_poly_t  *c = context;
+  cs_sles_pc_poly_t *c = static_cast<cs_sles_pc_poly_t *>(context);
 
 #if defined(HAVE_CUDA)
   if (c->accelerated)
@@ -520,7 +519,7 @@ _sles_pc_poly_apply_jacobi(void                *context,
   const cs_lnum_t n_rows = c->n_rows;
   const cs_real_t *restrict ad_inv = c->ad_inv;
 
-  if (x_in != NULL) {
+  if (x_in != nullptr) {
 #   pragma omp parallel for if(n_rows > CS_THR_MIN)
     for (cs_lnum_t ii = 0; ii < n_rows; ii++)
       x_out[ii] = x_in[ii] * ad_inv[ii];
@@ -538,7 +537,7 @@ _sles_pc_poly_apply_jacobi(void                *context,
  * Function for application of a polynomial preconditioner.
  *
  * In cases where it is desired that the preconditioner modify a vector
- * "in place", x_in should be set to NULL, and x_out contain the vector to
+ * "in place", x_in should be set to nullptr, and x_out contain the vector to
  * be modified (\f$x_{out} \leftarrow M^{-1}x_{out})\f$).
  *
  * parameters:
@@ -555,7 +554,7 @@ _sles_pc_poly_apply_poly(void                *context,
                          const cs_real_t     *x_in,
                          cs_real_t           *x_out)
 {
-  cs_sles_pc_poly_t  *c = context;
+  cs_sles_pc_poly_t *c = static_cast<cs_sles_pc_poly_t *>(context);
 
 #if defined(HAVE_CUDA)
   if (c->accelerated)
@@ -563,7 +562,7 @@ _sles_pc_poly_apply_poly(void                *context,
 #endif
 
   const cs_lnum_t n_rows = c->n_rows;
-  const cs_lnum_t n_aux = (x_in == NULL) ?
+  const cs_lnum_t n_aux = (x_in == nullptr) ?
     CS_SIMD_SIZE(c->n_cols) + c->n_cols : c->n_cols;
 
   if (c->n_aux < n_aux) {
@@ -577,7 +576,7 @@ _sles_pc_poly_apply_poly(void                *context,
   const cs_real_t *restrict r = x_in;
   const cs_real_t *restrict ad_inv = c->ad_inv;
 
-  if (x_in == NULL) {
+  if (x_in == nullptr) {
 
     cs_real_t *restrict _r = c->aux + CS_SIMD_SIZE(c->n_cols);
 
@@ -618,15 +617,15 @@ _sles_pc_poly_apply_poly(void                *context,
 static void
 _sles_pc_poly_free(void  *context)
 {
-  cs_sles_pc_poly_t  *c = context;
+  cs_sles_pc_poly_t *c = static_cast<cs_sles_pc_poly_t *>(context);
 
   c->n_rows = 0;
   c->n_cols = 0;
   c->n_aux = 0;
 
-  c->a = NULL;
+  c->a = nullptr;
 
-  c->ad_inv = NULL;
+  c->ad_inv = nullptr;
   CS_FREE_HD(c->_ad_inv);
   CS_FREE_HD(c->aux);
 }
@@ -673,7 +672,7 @@ _sles_pc_poly_clone(const void  *context)
 static void
 _sles_pc_poly_destroy (void  **context)
 {
-  if (context != NULL) {
+  if (context != nullptr) {
     _sles_pc_poly_free(*context);
     BFT_FREE(*context);
   }
@@ -753,9 +752,9 @@ cs_sles_pc_define(void                    *context,
 void
 cs_sles_pc_destroy(cs_sles_pc_t **pc)
 {
-  if (pc != NULL) {
+  if (pc != nullptr) {
     cs_sles_pc_t *_pc = *pc;
-    if (_pc != NULL) {
+    if (_pc != nullptr) {
       _pc->destroy_func(&(_pc->context));
       BFT_FREE(*pc);
     }
@@ -770,19 +769,19 @@ cs_sles_pc_destroy(cs_sles_pc_t **pc)
  * preconditioners to related systems, so as to allow simultaneous setups
  * and differentiate logging, while using the same settings by default.
  *
- * If no preconditioner (i.e. NULL) is passed, it will return NULL.
+ * If no preconditioner (i.e. nullptr) is passed, it will return nullptr.
  *
  * \param[in]       src   pointer to source preconditioner object
  *
- * \return  pointer to new preconditioner object, or NULL
+ * \return  pointer to new preconditioner object, or nullptr
  */
 /*----------------------------------------------------------------------------*/
 
 cs_sles_pc_t *
 cs_sles_pc_clone(const cs_sles_pc_t  *src)
 {
-  if (src == NULL)
-    return NULL;
+  if (src == nullptr)
+    return nullptr;
 
   cs_sles_pc_t  *dest;
 
@@ -821,7 +820,7 @@ cs_sles_pc_clone(const cs_sles_pc_t  *src)
 const char *
 cs_sles_pc_get_type(cs_sles_pc_t  *pc)
 {
-  if (pc != NULL)
+  if (pc != nullptr)
     return pc->get_type_func(pc->context, false);
   else {
     static const char t[] = "none";
@@ -842,7 +841,7 @@ cs_sles_pc_get_type(cs_sles_pc_t  *pc)
 const char *
 cs_sles_pc_get_type_name(cs_sles_pc_t  *pc)
 {
-  if (pc != NULL)
+  if (pc != nullptr)
     return pc->get_type_func(pc->context, true);
   else {
     static const char t[] = "none";
@@ -867,9 +866,9 @@ cs_sles_pc_get_type_name(cs_sles_pc_t  *pc)
 void *
 cs_sles_pc_get_context(cs_sles_pc_t  *pc)
 {
-  void *c = NULL;
+  void *c = nullptr;
 
-  if (pc != NULL)
+  if (pc != nullptr)
     c = pc->context;
 
   return c;
@@ -918,9 +917,9 @@ cs_sles_pc_set_tolerance(cs_sles_pc_t  *pc,
                          double         precision,
                          double         r_norm)
 {
-  if (pc != NULL) {
+  if (pc != nullptr) {
 
-    if (pc->context != NULL && pc->tolerance_func != NULL)
+    if (pc->context != nullptr && pc->tolerance_func != nullptr)
       pc->tolerance_func(pc->context, precision, r_norm);
   }
 }
@@ -951,8 +950,8 @@ cs_sles_pc_setup(cs_sles_pc_t       *pc,
                  bool                accel,
                  int                 verbosity)
 {
-  if (pc != NULL) {
-    if (pc->context != NULL && pc->setup_func != NULL)
+  if (pc != nullptr) {
+    if (pc->context != nullptr && pc->setup_func != nullptr)
       pc->setup_func(pc->context, name, a, accel, verbosity);
   }
 }
@@ -965,7 +964,7 @@ cs_sles_pc_setup(cs_sles_pc_t       *pc,
  * default options will be used.
  *
  * In cases where it is desired that the preconditioner modify a vector
- * "in place", x_in should be set to NULL, and x_out contain the vector to
+ * "in place", x_in should be set to nullptr, and x_out contain the vector to
  * be modified (\f$x_{out} \leftarrow M^{-1}x_{out})\f$).
  *
  * \param[in, out]  pc             pointer to preconditioner object
@@ -1000,8 +999,8 @@ cs_sles_pc_apply(cs_sles_pc_t        *pc,
 void
 cs_sles_pc_free(cs_sles_pc_t  *pc)
 {
-  if (pc != NULL) {
-    if (pc->free_func != NULL)
+  if (pc != nullptr) {
+    if (pc->free_func != nullptr)
       pc->free_func(pc->context);
   }
 }
@@ -1024,7 +1023,7 @@ void
 cs_sles_pc_log(cs_sles_pc_t  *pc,
                cs_log_t       log_type)
 {
-  if (pc->log_func != NULL)
+  if (pc->log_func != nullptr)
     pc->log_func(pc->context, log_type);
 }
 
@@ -1046,10 +1045,10 @@ cs_sles_pc_none_create(void)
   cs_sles_pc_t *pc = cs_sles_pc_define(pcp,
                                        _sles_pc_poly_get_type,
                                        _sles_pc_poly_setup_none,
-                                       NULL,
+                                       nullptr,
                                        _sles_pc_poly_apply_none,
                                        _sles_pc_poly_free,
-                                       NULL,
+                                       nullptr,
                                        _sles_pc_poly_clone,
                                        _sles_pc_poly_destroy);
 
@@ -1074,10 +1073,10 @@ cs_sles_pc_jacobi_create(void)
   cs_sles_pc_t *pc = cs_sles_pc_define(pcp,
                                        _sles_pc_poly_get_type,
                                        _sles_pc_poly_setup,
-                                       NULL,
+                                       nullptr,
                                        _sles_pc_poly_apply_jacobi,
                                        _sles_pc_poly_free,
-                                       NULL,
+                                       nullptr,
                                        _sles_pc_poly_clone,
                                        _sles_pc_poly_destroy);
 
@@ -1102,10 +1101,10 @@ cs_sles_pc_poly_1_create(void)
   cs_sles_pc_t *pc = cs_sles_pc_define(pcp,
                                        _sles_pc_poly_get_type,
                                        _sles_pc_poly_setup,
-                                       NULL,
+                                       nullptr,
                                        _sles_pc_poly_apply_poly,
                                        _sles_pc_poly_free,
-                                       NULL,
+                                       nullptr,
                                        _sles_pc_poly_clone,
                                        _sles_pc_poly_destroy);
 
@@ -1130,10 +1129,10 @@ cs_sles_pc_poly_2_create(void)
   cs_sles_pc_t *pc = cs_sles_pc_define(pcp,
                                        _sles_pc_poly_get_type,
                                        _sles_pc_poly_setup,
-                                       NULL,
+                                       nullptr,
                                        _sles_pc_poly_apply_poly,
                                        _sles_pc_poly_free,
-                                       NULL,
+                                       nullptr,
                                        _sles_pc_poly_clone,
                                        _sles_pc_poly_destroy);
 

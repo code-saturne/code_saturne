@@ -165,7 +165,7 @@ BEGIN_C_DECLS
   \param[out]      vx             system solution
   \param[in]       aux_size       number of elements in aux_vectors
   \param           aux_vectors    optional working area
-                                  (internal allocation if NULL)
+                                  (internal allocation if nullptr)
 
   \return  convergence status
 
@@ -256,7 +256,7 @@ BEGIN_C_DECLS
   defaults.
 
   \param[in]  f_id  associated field id, or < 0
-  \param[in]  name  associated name if f_id < 0, or NULL
+  \param[in]  name  associated name if f_id < 0, or nullptr
   \param[in]  a     matrix
 
   \typedef  cs_sles_verbosity_t
@@ -269,7 +269,7 @@ BEGIN_C_DECLS
   \ref cs_sles_find_or_add is called.
 
   \param[in]  f_id  associated field id, or < 0
-  \param[in]  name  associated name if f_id < 0, or NULL
+  \param[in]  name  associated name if f_id < 0, or nullptr
 
   \return  default verbosity value
 */
@@ -314,9 +314,9 @@ struct _cs_sles_t {
 
   int                       f_id;          /* matching field id, or < 0 */
 
-  const char               *name;          /* name if f_id < 0, or NULL */
+  const char               *name;          /* name if f_id < 0, or nullptr */
   char                     *_name;         /* private name if f_id < 0,
-                                              or NULL */
+                                              or nullptr */
 
   int                       verbosity;     /* verbosity level */
 
@@ -346,12 +346,12 @@ struct _cs_sles_t {
 
 /* Type name map */
 
-static cs_map_name_to_id_t  *_type_name_map = NULL;
+static cs_map_name_to_id_t  *_type_name_map = nullptr;
 
 /* Pointers to default definitions */
 
-static cs_sles_define_t *_cs_sles_define_default = NULL;
-static cs_sles_verbosity_t *_cs_sles_default_verbosity = NULL;
+static cs_sles_define_t *_cs_sles_define_default = nullptr;
+static cs_sles_verbosity_t *_cs_sles_default_verbosity = nullptr;
 
 /* Current and maximum number of systems respectively defined by field id,
    by name, or redefined after use */
@@ -360,7 +360,7 @@ static int _cs_sles_n_systems[3] = {0, 0, 0};
 static int _cs_sles_n_max_systems[3] = {0, 0, 0};
 
 /* Arrays of settings and status for linear systems */
-static cs_sles_t **_cs_sles_systems[3] = {NULL, NULL, NULL};
+static cs_sles_t **_cs_sles_systems[3] = {nullptr, nullptr, nullptr};
 
 /* Timer statistics */
 
@@ -380,7 +380,7 @@ static double _cs_sles_epzero = 1e-12;
  *
  * parameters:
  *   f_id <-- associated field id, or < 0
- *   name <-- associated name if f_id < 0, or NULL
+ *   name <-- associated name if f_id < 0, or nullptr
  *
  * returns:
  *   pointer to associated linear system object.
@@ -396,38 +396,38 @@ _sles_create(int          f_id,
 
   sles->f_id = f_id;
 
-  if (f_id < 0 && name != NULL) {
+  if (f_id < 0 && name != nullptr) {
     BFT_MALLOC(sles->_name, strlen(name) + 1, char);
     strcpy(sles->_name, name);
   }
   else
-    sles->_name = NULL;
+    sles->_name = nullptr;
 
-  if (_cs_sles_default_verbosity != NULL)
+  if (_cs_sles_default_verbosity != nullptr)
     sles->verbosity = _cs_sles_default_verbosity(f_id, name);
   else
     sles->verbosity = 0;
 
-  if (_type_name_map == NULL)
+  if (_type_name_map == nullptr)
     _type_name_map = cs_map_name_to_id_create();
   sles->type_id = cs_map_name_to_id(_type_name_map, "<undefined>");
 
   sles->name = sles->_name;
 
-  sles->context = NULL;
-  sles->setup_func = NULL;
-  sles->solve_func = NULL;
-  sles->free_func = NULL;
-  sles->log_func = NULL;
-  sles->copy_func = NULL;
-  sles->destroy_func = NULL;
-  sles->error_func = NULL;
+  sles->context = nullptr;
+  sles->setup_func = nullptr;
+  sles->solve_func = nullptr;
+  sles->free_func = nullptr;
+  sles->log_func = nullptr;
+  sles->copy_func = nullptr;
+  sles->destroy_func = nullptr;
+  sles->error_func = nullptr;
 
   sles->n_calls = 0;
   sles->n_no_op = 0;
   sles->allow_no_op = false;
 
-  sles->post_info = NULL;
+  sles->post_info = nullptr;
 
   return sles;
 }
@@ -452,7 +452,7 @@ _find_or_add_system_by_f_id(int  f_id)
 
   /* Return system id already defined */
   if (f_id < _cs_sles_n_max_systems[0]) {
-    if (_cs_sles_systems[0][f_id] != NULL)
+    if (_cs_sles_systems[0][f_id] != nullptr)
       return _cs_sles_systems[0][f_id];
   }
 
@@ -469,12 +469,12 @@ _find_or_add_system_by_f_id(int  f_id)
                 cs_sles_t *);
 
     for (int j = i; j < _cs_sles_n_max_systems[0]; j++)
-      _cs_sles_systems[0][j] = NULL;
+      _cs_sles_systems[0][j] = nullptr;
   }
 
   /* If we have not returned yet, we need to add a new system to the array */
 
-  _cs_sles_systems[0][f_id] = _sles_create(f_id, NULL);
+  _cs_sles_systems[0][f_id] = _sles_create(f_id, nullptr);
   _cs_sles_n_systems[0] += 1;
 
   return _cs_sles_systems[0][f_id];
@@ -534,7 +534,7 @@ _find_or_add_system_by_name(const char  *name)
                 cs_sles_t*);
 
     for (int j = i; j < _cs_sles_n_max_systems[1]; j++)
-      _cs_sles_systems[1][j] = NULL;
+      _cs_sles_systems[1][j] = nullptr;
   }
 
   /* Insert in sorted list */
@@ -561,7 +561,7 @@ _find_or_add_system_by_name(const char  *name)
 static void
 _save_system_info(cs_sles_t  *s)
 {
-  assert(s != NULL);
+  assert(s != nullptr);
 
   /* Resize array if needed */
 
@@ -577,13 +577,13 @@ _save_system_info(cs_sles_t  *s)
                 cs_sles_t *);
 
     for (int j = i; j < _cs_sles_n_max_systems[2]; j++)
-      _cs_sles_systems[2][j] = NULL;
+      _cs_sles_systems[2][j] = nullptr;
 
   }
 
   /* Ensure no extra data is maintained for old system */
 
-  if (s->free_func != NULL)
+  if (s->free_func != nullptr)
     s->free_func(s->context);
 
   /* Save other context and options */
@@ -592,8 +592,8 @@ _save_system_info(cs_sles_t  *s)
   BFT_MALLOC(s_old, 1, cs_sles_t);
   memcpy(s_old, s, sizeof(cs_sles_t));
 
-  s_old->_name = NULL; /* still points to new name */
-  s->context = NULL;   /* old context now only available through s_old */
+  s_old->_name = nullptr; /* still points to new name */
+  s->context = nullptr;   /* old context now only available through s_old */
 
   _cs_sles_systems[2][i] = s_old;
 
@@ -812,7 +812,7 @@ static void
 _ensure_alloc_post(cs_sles_t          *sles,
                    const cs_matrix_t  *a)
 {
-  if (sles->post_info != NULL) {
+  if (sles->post_info != nullptr) {
     const cs_lnum_t diag_block_size = cs_matrix_get_diag_block_size(a);
     const cs_lnum_t n_vals = cs_matrix_get_n_columns(a) * diag_block_size;
 
@@ -837,11 +837,11 @@ _post_function(void                  *sles_p,
 {
   CS_UNUSED(ts);
 
-  cs_sles_t *sles = sles_p;
+  cs_sles_t *sles = static_cast<cs_sles_t *>(sles_p);
 
   cs_sles_post_t *sp = sles->post_info;
 
-  assert(sp != NULL);
+  assert(sp != nullptr);
 
   const cs_mesh_t *mesh = cs_glob_mesh;
 
@@ -961,13 +961,13 @@ cs_sles_finalize(void)
 
     for (int j = 0; j < _cs_sles_n_max_systems[i]; j++) {
 
-      if (_cs_sles_systems[i][j] != NULL) {
+      if (_cs_sles_systems[i][j] != nullptr) {
         cs_sles_t *sles = _cs_sles_systems[i][j];
-        if (sles->free_func != NULL)
+        if (sles->free_func != nullptr)
           sles->free_func(sles->context);
-        if (sles->destroy_func != NULL)
+        if (sles->destroy_func != nullptr)
           sles->destroy_func(&(sles->context));
-        if (sles->post_info != NULL) {
+        if (sles->post_info != nullptr) {
           BFT_FREE(sles->post_info->row_residual);
           BFT_FREE(sles->post_info);
         }
@@ -1078,9 +1078,9 @@ cs_sles_log(cs_log_t  log_type)
     for (int k = 0; k < _cs_sles_n_max_systems[j]; k++) {
       cs_sles_t *sles = _cs_sles_systems[j][k];
 
-      if (sles == NULL) continue;
+      if (sles == nullptr) continue;
 
-      if (sles->log_func != NULL) {
+      if (sles->log_func != nullptr) {
 
         const char *name = cs_sles_base_name(sles->f_id, sles->name);
 
@@ -1128,7 +1128,7 @@ cs_sles_log(cs_log_t  log_type)
           cs_log_printf
             (log_type,
              _("  Verbosity: %d\n"), sles->verbosity);
-          if (sles->post_info != NULL)
+          if (sles->post_info != nullptr)
             cs_log_printf
               (log_type,
                _("  Residual postprocessing writer id: %d\n"),
@@ -1161,12 +1161,12 @@ cs_sles_log(cs_log_t  log_type)
  * \brief Return pointer to linear system object, based on matching field id or
  *        system name.
  *
- * If this system did not previously exist, NULL is returned.
+ * If this system did not previously exist, nullptr is returned.
  *
  * \param[in]  f_id  associated field id, or < 0
- * \param[in]  name  associated name if f_id < 0, or NULL
+ * \param[in]  name  associated name if f_id < 0, or nullptr
  *
- * \return  pointer to associated linear system object, or NULL
+ * \return  pointer to associated linear system object, or nullptr
  */
 /*----------------------------------------------------------------------------*/
 
@@ -1174,20 +1174,20 @@ cs_sles_t *
 cs_sles_find(int          f_id,
              const char  *name)
 {
-  cs_sles_t *retval = NULL;
+  cs_sles_t *retval = nullptr;
 
   if (f_id >= 0) {
     if (f_id < _cs_sles_n_max_systems[0]) {
-      if (_cs_sles_systems[0][f_id] != NULL) {
+      if (_cs_sles_systems[0][f_id] != nullptr) {
         retval = _cs_sles_systems[0][f_id];
         /* Check for masked ("pushed") definition */
-        if (retval->name != NULL)
+        if (retval->name != nullptr)
           retval = cs_sles_find(-1, retval->name);
       }
     }
   }
 
-  else if (name != NULL) {
+  else if (name != nullptr) {
 
     int start_id, end_id, mid_id;
     int cmp_ret = 1;
@@ -1229,9 +1229,9 @@ cs_sles_find(int          f_id,
  * the default solver policy.
  *
  * \param[in]  f_id  associated field id, or < 0
- * \param[in]  name  associated name if f_id < 0, or NULL
+ * \param[in]  name  associated name if f_id < 0, or nullptr
  *
- * \return  pointer to associated linear system object, or NULL
+ * \return  pointer to associated linear system object, or nullptr
  */
 /*----------------------------------------------------------------------------*/
 
@@ -1239,12 +1239,12 @@ cs_sles_t *
 cs_sles_find_or_add(int          f_id,
                     const char  *name)
 {
-  cs_sles_t *retval = NULL;
+  cs_sles_t *retval = nullptr;
 
   if (f_id >= 0) {
     retval = _find_or_add_system_by_f_id(f_id);
     /* Check for masked ("pushed") definition */
-    if (retval->name != NULL)
+    if (retval->name != nullptr)
       retval = _find_or_add_system_by_name(retval->name);
   }
   else
@@ -1266,7 +1266,7 @@ cs_sles_find_or_add(int          f_id,
  * would be preferred. As such, only a stack depth of 1 is allowed.
  *
  * \param[in]  f_id  associated field id, or < 0
- * \param[in]  name  associated name if f_id < 0, or NULL
+ * \param[in]  name  associated name if f_id < 0, or nullptr
  */
 /*----------------------------------------------------------------------------*/
 
@@ -1280,16 +1280,16 @@ cs_sles_push(int          f_id,
        "%s must be called only for an actual field, with id >=0, not %d.",
        __func__, f_id);
 
-  cs_sles_t *retval = cs_sles_find_or_add(f_id, NULL);
+  cs_sles_t *retval = cs_sles_find_or_add(f_id, nullptr);
 
-  if (retval->name != NULL)
+  if (retval->name != nullptr)
     bft_error
       (__FILE__, __LINE__, 0,
        _("cs_sles_push() only allows a stack of depth 1:\n"
          "  it  may not be called multiple times for a given field (id %d)\n"
          "  without calling cs_sles_pop between those calls."), f_id);
   else {
-    assert(retval->_name == NULL);
+    assert(retval->_name == nullptr);
     BFT_MALLOC(retval->_name, strlen(name) + 1, char);
     strcpy(retval->_name, name);
     retval->name = retval->_name;
@@ -1317,7 +1317,7 @@ cs_sles_pop(int  f_id)
 
   cs_sles_t *retval = _find_or_add_system_by_f_id(f_id);
 
-  retval->name = NULL;
+  retval->name = nullptr;
   BFT_FREE(retval->_name);
 }
 
@@ -1338,7 +1338,7 @@ cs_sles_pop(int  f_id)
  * "cs_multigrid_t").
  *
  * \param[in]       f_id          associated field id, or < 0
- * \param[in]       name          associated name if f_id < 0, or NULL
+ * \param[in]       name          associated name if f_id < 0, or nullptr
  * \param[in, out]  context       pointer to solver context management
  *                                structure (cs_sles subsystem becomes owner)
  * \param[in]       type_name     context structure or object type name
@@ -1375,14 +1375,14 @@ cs_sles_define(int                 f_id,
   /* Check if system was previously defined and used,
      and save info for future logging in this case */
 
-  if (sles->context != NULL) {
-    if (sles->n_calls > 0  && sles->log_func != NULL)
+  if (sles->context != nullptr) {
+    if (sles->n_calls > 0  && sles->log_func != nullptr)
       _save_system_info(sles);
-    else if (sles->destroy_func != NULL)
+    else if (sles->destroy_func != nullptr)
       sles->destroy_func(&(sles->context));
   }
 
-  if (type_name != NULL)
+  if (type_name != nullptr)
     sles->type_id = cs_map_name_to_id(_type_name_map, type_name);
 
   /* Now define options */
@@ -1457,14 +1457,14 @@ cs_sles_set_post_output(cs_sles_t  *sles,
   if (sles->n_calls > 0)
     return;
 
-  if (sles->post_info == NULL)
+  if (sles->post_info == nullptr)
     cs_post_add_time_dep_output(_post_function, (void *)sles);
 
   BFT_REALLOC(sles->post_info, 1, cs_sles_post_t);
   sles->post_info->writer_id = writer_id;
   sles->post_info->n_rows = 0;
   sles->post_info->block_size = 0;
-  sles->post_info->row_residual = NULL;
+  sles->post_info->row_residual = nullptr;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1483,7 +1483,7 @@ cs_sles_get_post_output(cs_sles_t  *sles)
 {
   int retval = 0;
 
-  if (sles->post_info != NULL)
+  if (sles->post_info != nullptr)
     retval = sles->post_info->writer_id;
 
   return retval;
@@ -1631,21 +1631,21 @@ cs_sles_setup(cs_sles_t          *sles,
 {
   cs_timer_t t0 = cs_timer_time();
 
-  if (sles->context == NULL)
+  if (sles->context == nullptr)
     _cs_sles_define_default(sles->f_id, sles->name, a);
 
   int t_top_id = cs_timer_stats_switch(_sles_stat_id);
 
   sles->n_calls += 1;
 
-  if (sles->setup_func != NULL) {
+  if (sles->setup_func != nullptr) {
     const char  *sles_name = cs_sles_base_name(sles->f_id, sles->name);
     sles->setup_func(sles->context, sles_name, a, sles->verbosity);
   }
 
   /* Prepare residual postprocessing if required */
 
-  if (sles->post_info != NULL) {
+  if (sles->post_info != nullptr) {
     _ensure_alloc_post(sles, a);
     const cs_lnum_t n_vals
       = cs_matrix_get_n_columns(a) * sles->post_info->block_size;
@@ -1687,7 +1687,7 @@ cs_sles_setup(cs_sles_t          *sles,
  * \param[in, out]  vx             system solution
  * \param[in]       aux_size       size of aux_vectors (in bytes)
  * \param           aux_vectors    optional working area
- *                                 (internal allocation if NULL)
+ *                                 (internal allocation if nullptr)
  *
  * \return  convergence state
  */
@@ -1707,14 +1707,14 @@ cs_sles_solve(cs_sles_t           *sles,
 {
   cs_timer_t t0 = cs_timer_time();
 
-  if (sles->context == NULL)
+  if (sles->context == nullptr)
     _cs_sles_define_default(sles->f_id, sles->name, a);
 
   int t_top_id = cs_timer_stats_switch(_sles_stat_id);
 
   sles->n_calls += 1;
 
-  assert(sles->solve_func != NULL);
+  assert(sles->solve_func != nullptr);
 
   const char  *sles_name = cs_sles_base_name(sles->f_id, sles->name);
 
@@ -1764,7 +1764,7 @@ cs_sles_solve(cs_sles_t           *sles,
                              aux_size,
                              aux_vectors);
 
-    if (state < CS_SLES_ITERATING && sles->error_func != NULL)
+    if (state < CS_SLES_ITERATING && sles->error_func != nullptr)
       do_solve = sles->error_func(sles,
                                   state,
                                   a,
@@ -1777,7 +1777,7 @@ cs_sles_solve(cs_sles_t           *sles,
 
   /* Prepare postprocessing if needed */
 
-  if (sles->post_info != NULL) {
+  if (sles->post_info != nullptr) {
     _ensure_alloc_post(sles, a);
     const cs_lnum_t n_vals
       = sles->post_info->n_rows * sles->post_info->block_size;
@@ -1795,7 +1795,7 @@ cs_sles_solve(cs_sles_t           *sles,
     const cs_lnum_t n_vals_ext = cs_matrix_get_n_columns(a) * block_size;
     const cs_lnum_t n_vals = cs_matrix_get_n_rows(a) * block_size;
 
-    cs_real_t *resr = NULL;
+    cs_real_t *resr = nullptr;
     BFT_MALLOC(resr, n_vals_ext, cs_real_t);
 
     _residual(n_vals, a, rhs, vx, resr);
@@ -1837,8 +1837,8 @@ cs_sles_solve(cs_sles_t           *sles,
 void
 cs_sles_free(cs_sles_t  *sles)
 {
-  if (sles != NULL) {
-    if (sles->free_func != NULL)
+  if (sles != nullptr) {
+    if (sles->free_func != nullptr)
       sles->free_func(sles->context);
   }
 }
@@ -1874,16 +1874,16 @@ cs_sles_copy(cs_sles_t        *dest,
   /* If no copy function is available or source does not have a
      context yet, we can do nothing */
 
-  if (src->copy_func == NULL)
+  if (src->copy_func == nullptr)
     return retval;
 
   /* Check if system was previously defined and used,
      and save info for future logging in this case */
 
-  if (dest->context != NULL) {
-    if (dest->n_calls > 0  && dest->log_func != NULL)
+  if (dest->context != nullptr) {
+    if (dest->n_calls > 0  && dest->log_func != nullptr)
       _save_system_info(dest);
-    else if (dest->destroy_func != NULL)
+    else if (dest->destroy_func != nullptr)
       dest->destroy_func(&(dest->context));
   }
 
@@ -1899,7 +1899,7 @@ cs_sles_copy(cs_sles_t        *dest,
   dest->copy_func = src->copy_func;
   dest->destroy_func = src->destroy_func;
 
-  if (dest->context != NULL)
+  if (dest->context != nullptr)
     retval = 0;
 
   return retval;
@@ -1911,7 +1911,7 @@ cs_sles_copy(cs_sles_t        *dest,
  *        equation solver.
  *
  * The error will be called whenever convergence fails. To dissassociate
- * the error handler, this function may be called with \p handler = NULL.
+ * the error handler, this function may be called with \p handler = nullptr.
  *
  * The association will only be successful if the matching solver
  * has already been defined.
@@ -1926,7 +1926,7 @@ void
 cs_sles_set_error_handler(cs_sles_t                *sles,
                           cs_sles_error_handler_t  *error_handler_func)
 {
-  if (sles != NULL)
+  if (sles != nullptr)
     sles->error_func = error_handler_func;
 }
 
@@ -2151,8 +2151,8 @@ cs_sles_post_output_var(const char      *name,
                         true, /* use parents */
                         CS_POST_TYPE_cs_real_t,
                         var,
-                        NULL,
-                        NULL,
+                        nullptr,
+                        nullptr,
                         ts);
     else if (location_id == CS_MESH_LOCATION_VERTICES)
       cs_post_write_vertex_var(mesh_id,
@@ -2187,8 +2187,8 @@ cs_sles_post_output_var(const char      *name,
                           true, /* use parents */
                           CS_POST_TYPE_cs_real_t,
                           val_type,
-                          NULL,
-                          NULL,
+                          nullptr,
+                          nullptr,
                           ts);
       else if (location_id == CS_MESH_LOCATION_VERTICES)
         cs_post_write_vertex_var(mesh_id,
@@ -2215,7 +2215,7 @@ cs_sles_post_output_var(const char      *name,
  * if f_id < 0, and the associated field's name or label otherwise.
  *
  * \param[in]  f_id  associated field id, or < 0
- * \param[in]  name  associated name if f_id < 0, or NULL
+ * \param[in]  name  associated name if f_id < 0, or nullptr
  *
  * \return  pointer to base name associated to the field id, name couple
  */
@@ -2240,7 +2240,7 @@ cs_sles_base_name(int          f_id,
  * \brief Return name associated to a field id, name couple.
  *
  * \param[in]  f_id  associated field id, or < 0
- * \param[in]  name  associated name if f_id < 0, or NULL
+ * \param[in]  name  associated name if f_id < 0, or nullptr
  *
  * \return  pointer to name associated to the field id, name couple
  */
@@ -2252,7 +2252,7 @@ cs_sles_name(int          f_id,
 {
   const cs_sles_t *sles = cs_sles_find_or_add(f_id, name);
 
-  if (sles->name != NULL)
+  if (sles->name != nullptr)
     return sles->name;
   else
     return cs_sles_base_name(f_id, name);

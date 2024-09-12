@@ -233,13 +233,13 @@ cs_sles_it_setup_priv(cs_sles_it_t       *c,
 
   cs_alloc_mode_t amode = cs_matrix_get_alloc_mode(a);
 
-  if (sd == NULL) {
+  if (sd == nullptr) {
     BFT_MALLOC(c->setup_data, 1, cs_sles_it_setup_t);
     sd = c->setup_data;
-    sd->ad_inv = NULL;
-    sd->_ad_inv = NULL;
-    sd->pc_context = NULL;
-    sd->pc_apply = NULL;
+    sd->ad_inv = nullptr;
+    sd->_ad_inv = nullptr;
+    sd->pc_context = nullptr;
+    sd->pc_apply = nullptr;
   }
 
   sd->n_rows = cs_matrix_get_n_rows(a) * diag_block_size;
@@ -248,14 +248,14 @@ cs_sles_it_setup_priv(cs_sles_it_t       *c,
 
   const cs_sles_it_t  *s = c->shared;
 
-  if (c->pc != NULL) {
+  if (c->pc != nullptr) {
 
-    if (s != NULL) {
-      if (s->setup_data == NULL)
-        s = NULL;
+    if (s != nullptr) {
+      if (s->setup_data == nullptr)
+        s = nullptr;
     }
 
-    if (s == NULL)
+    if (s == nullptr)
       cs_sles_pc_setup(c->pc,
                        name,
                        a,
@@ -271,14 +271,14 @@ cs_sles_it_setup_priv(cs_sles_it_t       *c,
 
   else if (block_nn_inverse) {
 
-    if (s != NULL) {
-      if (s->setup_data == NULL)
-        s = NULL;
-      else if (s->setup_data->ad_inv == NULL)
-        s = NULL;
+    if (s != nullptr) {
+      if (s->setup_data == nullptr)
+        s = nullptr;
+      else if (s->setup_data->ad_inv == nullptr)
+        s = nullptr;
     }
 
-    if (s != NULL) {
+    if (s != nullptr) {
       sd->ad_inv = s->setup_data->ad_inv;
       CS_FREE_HD(sd->_ad_inv);
     }

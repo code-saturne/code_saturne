@@ -86,7 +86,7 @@ BEGIN_C_DECLS
 cs_param_mumps_t *
 cs_param_mumps_create(void)
 {
-  cs_param_mumps_t  *mumpsp = NULL;
+  cs_param_mumps_t  *mumpsp = nullptr;
 
   BFT_MALLOC(mumpsp, 1, cs_param_mumps_t);
 
@@ -150,7 +150,7 @@ void
 cs_param_mumps_log(const char              *name,
                    const cs_param_mumps_t  *mumpsp)
 {
-  if (mumpsp == NULL)
+  if (mumpsp == nullptr)
     return;
 
   char type = (mumpsp->is_single) ? 's' : 'd';

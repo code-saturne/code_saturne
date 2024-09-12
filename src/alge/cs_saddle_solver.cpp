@@ -110,12 +110,12 @@ BEGIN_C_DECLS
  */
 /*----------------------------------------------------------------------------*/
 
-typedef int
-(cs_saddle_solver_pc_apply_t)(cs_saddle_solver_t                    *solver,
-                              cs_saddle_solver_context_block_pcd_t  *ctx,
-                              cs_real_t                             *r,
-                              cs_real_t                             *z,
-                              cs_real_t                             *pc_wsp);
+typedef int(cs_saddle_solver_pc_apply_t)(
+  cs_saddle_solver_t                   *solver,
+  cs_saddle_solver_context_block_pcd_t *ctx,
+  cs_real_t                            *r,
+  cs_real_t                            *z,
+  cs_real_t                            *pc_wsp);
 
 /*============================================================================
  * Private variables
@@ -126,7 +126,7 @@ typedef int
  *============================================================================*/
 
 static int  cs_saddle_solver_n_systems = 0;
-static cs_saddle_solver_t  **cs_saddle_solver_systems = NULL;
+static cs_saddle_solver_t  **cs_saddle_solver_systems = nullptr;
 
 /*============================================================================
  * Static inline private function prototypes
@@ -169,12 +169,13 @@ _scalar_scaling(cs_saddle_solver_t  *solver,
                 const cs_real_t      scalar,
                 cs_real_t           *x)
 {
-  assert(x != NULL);
-  cs_saddle_solver_context_block_pcd_t  *ctx = solver->context;
+  assert(x != nullptr);
+  cs_saddle_solver_context_block_pcd_t *ctx =
+    static_cast<cs_saddle_solver_context_block_pcd_t *>(solver->context);
   cs_real_t  *x1 = x, *x2 = x + ctx->b11_max_size;
 
-  cs_array_real_scale(solver->n1_scatter_dofs, 1, NULL, scalar, x1);
-  cs_array_real_scale(solver->n2_scatter_dofs, 1, NULL, scalar, x2);
+  cs_array_real_scale(solver->n1_scatter_dofs, 1, nullptr, scalar, x1);
+  cs_array_real_scale(solver->n2_scatter_dofs, 1, nullptr, scalar, x2);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -289,8 +290,9 @@ _add_scaled_vector(cs_saddle_solver_t  *solver,
                    const cs_real_t     *y,
                    cs_real_t           *x)
 {
-  assert(x != NULL && y != NULL);
-  cs_saddle_solver_context_block_pcd_t  *ctx = solver->context;
+  assert(x != nullptr && y != nullptr);
+  cs_saddle_solver_context_block_pcd_t *ctx =
+    static_cast<cs_saddle_solver_context_block_pcd_t *>(solver->context);
 
   cs_real_t  *x1 = x, *x2 = x + ctx->b11_max_size;
   const cs_real_t  *y1 = y, *y2 = y + ctx->b11_max_size;
@@ -325,10 +327,11 @@ _block_pcd_dot_product(cs_saddle_solver_t  *solver,
 {
   double  dp_value = 0.;
 
-  if (x == NULL || y== NULL)
+  if (x == nullptr || y== nullptr)
     return dp_value;
 
-  cs_saddle_solver_context_block_pcd_t  *ctx = solver->context;
+  cs_saddle_solver_context_block_pcd_t *ctx =
+    static_cast<cs_saddle_solver_context_block_pcd_t *>(solver->context);
   cs_real_t  *x1 = x, *x2 = x + ctx->b11_max_size;
   cs_real_t  *y1 = y, *y2 = y + ctx->b11_max_size;
 
@@ -336,7 +339,7 @@ _block_pcd_dot_product(cs_saddle_solver_t  *solver,
 
   const cs_range_set_t  *rset = ctx->b11_range_set;
 
-  if (rset != NULL) { /* Switch to a gather view to avoid summing an element
+  if (rset != nullptr) { /* Switch to a gather view to avoid summing an element
                          twice */
 
     cs_range_set_gather(rset,
@@ -402,11 +405,12 @@ _norm(cs_saddle_solver_t  *solver,
 {
   double  n_square_value = 0;
 
-  if (x == NULL)
+  if (x == nullptr)
     return n_square_value;
-  assert(solver != NULL);
+  assert(solver != nullptr);
 
-  cs_saddle_solver_context_block_pcd_t  *ctx = solver->context;
+  cs_saddle_solver_context_block_pcd_t *ctx =
+    static_cast<cs_saddle_solver_context_block_pcd_t *>(solver->context);
   cs_real_t  *x1 = x, *x2 = x + ctx->b11_max_size;
 
   const cs_range_set_t  *rset = ctx->b11_range_set;
@@ -415,7 +419,7 @@ _norm(cs_saddle_solver_t  *solver,
 
   double  _nx1_square = 0;
 
-  if (rset != NULL) { /* Switch to a gather view to avoid summing an element
+  if (rset != nullptr) { /* Switch to a gather view to avoid summing an element
                          twice */
 
     cs_range_set_gather(rset,
@@ -563,7 +567,7 @@ _m11_vector_multiply_allocated(const cs_range_set_t  *rset,
                                cs_real_t             *x1,
                                cs_real_t             *m11x1)
 {
-  if (m11 == NULL || x1 == NULL)
+  if (m11 == nullptr || x1 == nullptr)
     return;
 
   /* Remark:
@@ -617,13 +621,14 @@ _compute_residual(cs_saddle_solver_t *solver,
                   cs_real_t          *x2,
                   cs_real_t          *res)
 {
-  assert(res != NULL && x1 != NULL && x2 != NULL && solver != NULL);
+  assert(res != nullptr && x1 != nullptr && x2 != nullptr && solver != nullptr);
   assert(solver->n1_dofs_by_elt == 1 || solver->n1_dofs_by_elt == 3);
   assert(solver->n2_dofs_by_elt == 1);
 
   const cs_real_t *rhs1 = solver->system_helper->rhs_array[0];
   const cs_real_t *rhs2 = solver->system_helper->rhs_array[1];
-  const cs_saddle_solver_context_block_pcd_t *ctx  = solver->context;
+  const cs_saddle_solver_context_block_pcd_t *ctx =
+    static_cast<const cs_saddle_solver_context_block_pcd_t *>(solver->context);
   const cs_range_set_t                       *rset = ctx->b11_range_set;
 
   cs_real_t *res1 = res, *res2 = res + ctx->b11_max_size;
@@ -635,7 +640,7 @@ _compute_residual(cs_saddle_solver_t *solver,
    * b) res2 = rhs2 - M21.x1
    */
 
-  cs_real_t *m12x2 = NULL;
+  cs_real_t *m12x2 = nullptr;
   BFT_MALLOC(m12x2, solver->n1_scatter_dofs, cs_real_t);
   cs_array_real_fill_zero(solver->n1_scatter_dofs, m12x2);
 
@@ -703,7 +708,7 @@ _compute_residual(cs_saddle_solver_t *solver,
               solver->n1_dofs_by_elt);
   }
 
-  if (rset->ifs != NULL)
+  if (rset->ifs != nullptr)
     cs_interface_set_sum(rset->ifs,
                          solver->n1_scatter_dofs,
                          1,
@@ -737,11 +742,12 @@ _compute_residual(cs_saddle_solver_t *solver,
 static void
 _matvec_product(cs_saddle_solver_t *solver, cs_real_t *vec, cs_real_t *matvec)
 {
-  assert(vec != NULL && matvec != NULL && solver != NULL);
+  assert(vec != nullptr && matvec != nullptr && solver != nullptr);
   assert(solver->n1_dofs_by_elt == 1 || solver->n1_dofs_by_elt == 3);
   assert(solver->n2_dofs_by_elt == 1);
 
-  cs_saddle_solver_context_block_pcd_t *ctx = solver->context;
+  cs_saddle_solver_context_block_pcd_t *ctx =
+    static_cast<cs_saddle_solver_context_block_pcd_t *>(solver->context);
 
   cs_real_t *v1 = vec, *v2 = vec + ctx->b11_max_size;
   cs_real_t *mv1 = matvec, *mv2 = matvec + ctx->b11_max_size;
@@ -756,7 +762,7 @@ _matvec_product(cs_saddle_solver_t *solver, cs_real_t *vec, cs_real_t *matvec)
 
   /* 1) M12.v2 and M21.v1 */
 
-  cs_real_t *m12v2 = NULL;
+  cs_real_t *m12v2 = nullptr;
   BFT_MALLOC(m12v2, solver->n1_scatter_dofs, cs_real_t);
   cs_array_real_fill_zero(solver->n1_scatter_dofs, m12v2);
 
@@ -819,7 +825,7 @@ _matvec_product(cs_saddle_solver_t *solver, cs_real_t *vec, cs_real_t *matvec)
               solver->n1_dofs_by_elt);
   }
 
-  if (rset->ifs != NULL)
+  if (rset->ifs != nullptr)
     cs_interface_set_sum(rset->ifs,
                          solver->n1_scatter_dofs,
                          1,
@@ -852,12 +858,12 @@ _matvec_product(cs_saddle_solver_t *solver, cs_real_t *vec, cs_real_t *matvec)
 /*----------------------------------------------------------------------------*/
 
 static int
-_solve_m11_approximation(cs_saddle_solver_t                    *solver,
-                         cs_saddle_solver_context_block_pcd_t  *ctx,
-                         cs_real_t                             *r,
-                         bool                                   scatter_r,
-                         cs_real_t                             *z,
-                         bool                                   scatter_z)
+_solve_m11_approximation(cs_saddle_solver_t                   *solver,
+                         cs_saddle_solver_context_block_pcd_t *ctx,
+                         cs_real_t                            *r,
+                         bool                                  scatter_r,
+                         cs_real_t                            *z,
+                         bool                                  scatter_z)
 {
   const cs_range_set_t  *rset = ctx->b11_range_set;
 
@@ -874,7 +880,7 @@ _solve_m11_approximation(cs_saddle_solver_t                    *solver,
   /* Compute the norm of the rhs to normalize the linear system */
 
   cs_lnum_t  n_x1_elts =
-    (rset != NULL) ? rset->n_elts[0] : solver->n1_scatter_dofs;
+    (rset != nullptr) ? rset->n_elts[0] : solver->n1_scatter_dofs;
 
   double  r_norm = cs_dot_xx(n_x1_elts, r);
   cs_parall_sum(1, CS_DOUBLE, &r_norm);
@@ -884,12 +890,15 @@ _solve_m11_approximation(cs_saddle_solver_t                    *solver,
 
   cs_array_real_fill_zero(n_x1_elts, z);
 
-  cs_solving_info_t  m11_info =
-    {.n_it = 0, .res_norm = DBL_MAX, .rhs_norm = r_norm};
+  cs_solving_info_t m11_info = { .n_it       = 0,
+                                 .rhs_norm   = r_norm,
+                                 .res_norm   = DBL_MAX,
+                                 .derive     = DBL_MAX,
+                                 .l2residual = DBL_MAX };
 
   const cs_param_saddle_t  *saddlep = solver->param;
   const cs_param_sles_t  *m11_slesp = saddlep->block11_sles_param;
-  assert(m11_slesp != NULL);
+  assert(m11_slesp != nullptr);
 
   /* A gather view is used inside the following step */
 
@@ -902,7 +911,7 @@ _solve_m11_approximation(cs_saddle_solver_t                    *solver,
                                                     r,
                                                     z,
                                                     0,      /* aux. size */
-                                                    NULL);  /* aux. buffers */
+                                                    nullptr);  /* aux. buffers */
 
   /* Output information about the convergence of the resolution */
 
@@ -961,7 +970,7 @@ _solve_schur_approximation(cs_saddle_solver_t  *solver,
                            cs_real_t           *r_schur,
                            cs_real_t           *z_schur)
 {
-  assert(r_schur != NULL && z_schur != NULL);
+  assert(r_schur != nullptr && z_schur != nullptr);
 
   int  n_iter = 0;
 
@@ -977,7 +986,7 @@ _solve_schur_approximation(cs_saddle_solver_t  *solver,
     break;
 
   case CS_PARAM_SADDLE_SCHUR_MASS_SCALED:
-    assert(inv_m22 != NULL);
+    assert(inv_m22 != nullptr);
 
 #   pragma omp parallel for if (n2_elts > CS_THR_MIN)
     for (cs_lnum_t i2 = 0; i2 < n2_elts; i2++)
@@ -988,9 +997,9 @@ _solve_schur_approximation(cs_saddle_solver_t  *solver,
 
   default:
     {
-      assert(schur_sles != NULL);
-      assert(schur_mat != NULL);
-      assert(saddlep->schur_sles_param != NULL);
+      assert(schur_sles != nullptr);
+      assert(schur_mat != nullptr);
+      assert(saddlep->schur_sles_param != nullptr);
 
       /* Norm for the x2 DoFs (not shared so that there is no need to
          synchronize) */
@@ -1012,7 +1021,7 @@ _solve_schur_approximation(cs_saddle_solver_t  *solver,
       if (schur_type == CS_PARAM_SADDLE_SCHUR_MASS_SCALED_DIAG_INVERSE ||
           schur_type == CS_PARAM_SADDLE_SCHUR_MASS_SCALED_LUMPED_INVERSE) {
 
-        assert(inv_m22 != NULL);
+        assert(inv_m22 != nullptr);
 
 #       pragma omp parallel for if (n2_elts > CS_THR_MIN)
         for (cs_lnum_t i2 = 0; i2 < n2_elts; i2++)
@@ -1045,18 +1054,18 @@ _solve_schur_approximation(cs_saddle_solver_t  *solver,
 /*----------------------------------------------------------------------------*/
 
 static int
-_diag_schur_pc_apply(cs_saddle_solver_t                    *solver,
-                     cs_saddle_solver_context_block_pcd_t  *ctx,
-                     cs_real_t                             *r,
-                     cs_real_t                             *z,
-                     cs_real_t                             *pc_wsp)
+_diag_schur_pc_apply(cs_saddle_solver_t                   *solver,
+                     cs_saddle_solver_context_block_pcd_t *ctx,
+                     cs_real_t                            *r,
+                     cs_real_t                            *z,
+                     cs_real_t                            *pc_wsp)
 {
   CS_UNUSED(pc_wsp);
 
-  if (z == NULL)
+  if (z == nullptr)
     return 0;
 
-  assert(solver != NULL && ctx != NULL && r != NULL);
+  assert(solver != nullptr && ctx != nullptr && r != nullptr);
 
   /* 1. Solve M11.z1 = r1
      ==================== */
@@ -1101,17 +1110,17 @@ _diag_schur_pc_apply(cs_saddle_solver_t                    *solver,
 /*----------------------------------------------------------------------------*/
 
 static int
-_lower_schur_pc_apply(cs_saddle_solver_t                    *solver,
-                      cs_saddle_solver_context_block_pcd_t  *ctx,
-                      cs_real_t                             *r,
-                      cs_real_t                             *z,
-                      cs_real_t                             *pc_wsp)
+_lower_schur_pc_apply(cs_saddle_solver_t                   *solver,
+                      cs_saddle_solver_context_block_pcd_t *ctx,
+                      cs_real_t                            *r,
+                      cs_real_t                            *z,
+                      cs_real_t                            *pc_wsp)
 {
-  if (z == NULL)
+  if (z == nullptr)
     return 0;
 
-  assert(solver != NULL && ctx != NULL && r != NULL);
-  assert(pc_wsp != NULL);
+  assert(solver != nullptr && ctx != nullptr && r != nullptr);
+  assert(pc_wsp != nullptr);
 
   /* 1. Solve m11 z1 = r1
      ==================== */
@@ -1168,19 +1177,19 @@ _lower_schur_pc_apply(cs_saddle_solver_t                    *solver,
 /*----------------------------------------------------------------------------*/
 
 static int
-_upper_schur_pc_apply(cs_saddle_solver_t                    *solver,
-                      cs_saddle_solver_context_block_pcd_t  *ctx,
-                      cs_real_t                             *r,
-                      cs_real_t                             *z,
-                      cs_real_t                             *pc_wsp)
+_upper_schur_pc_apply(cs_saddle_solver_t                   *solver,
+                      cs_saddle_solver_context_block_pcd_t *ctx,
+                      cs_real_t                            *r,
+                      cs_real_t                            *z,
+                      cs_real_t                            *pc_wsp)
 {
-  if (z == NULL)
+  if (z == nullptr)
     return 0;
 
   int  n_iter = 0;
 
-  assert(solver != NULL && ctx != NULL && r != NULL);
-  assert(pc_wsp != NULL);
+  assert(solver != nullptr && ctx != nullptr && r != nullptr);
+  assert(pc_wsp != nullptr);
 
   cs_real_t  *z2 = z + ctx->b11_max_size;
   cs_real_t  *r2 = r + ctx->b11_max_size;
@@ -1208,7 +1217,7 @@ _upper_schur_pc_apply(cs_saddle_solver_t                    *solver,
                            z2, ctx->m21_adj, ctx->m21_val,
                            r1_tilda);
 
-  if (rset->ifs != NULL)
+  if (rset->ifs != nullptr)
     cs_interface_set_sum(rset->ifs,
                          solver->n1_scatter_dofs,
                          1, false, CS_REAL_TYPE, /* stride, interlaced */
@@ -1249,17 +1258,17 @@ _upper_schur_pc_apply(cs_saddle_solver_t                    *solver,
 /*----------------------------------------------------------------------------*/
 
 static int
-_sgs_schur_pc_apply(cs_saddle_solver_t                    *solver,
-                    cs_saddle_solver_context_block_pcd_t  *ctx,
-                    cs_real_t                             *r,
-                    cs_real_t                             *z,
-                    cs_real_t                             *pc_wsp)
+_sgs_schur_pc_apply(cs_saddle_solver_t                   *solver,
+                    cs_saddle_solver_context_block_pcd_t *ctx,
+                    cs_real_t                            *r,
+                    cs_real_t                            *z,
+                    cs_real_t                            *pc_wsp)
 {
-  if (z == NULL)
+  if (z == nullptr)
     return 0;
 
-  assert(solver != NULL && ctx != NULL && r != NULL);
-  assert(pc_wsp != NULL);
+  assert(solver != nullptr && ctx != nullptr && r != nullptr);
+  assert(pc_wsp != nullptr);
 
   const cs_lnum_t  n2_elts = solver->n2_scatter_dofs;
   const cs_range_set_t  *rset = ctx->b11_range_set;
@@ -1365,18 +1374,18 @@ _sgs_schur_pc_apply(cs_saddle_solver_t                    *solver,
 /*----------------------------------------------------------------------------*/
 
 static int
-_uza_schur_pc_apply(cs_saddle_solver_t                    *solver,
-                    cs_saddle_solver_context_block_pcd_t  *ctx,
-                    cs_real_t                             *r,
-                    cs_real_t                             *z,
-                    cs_real_t                             *pc_wsp)
+_uza_schur_pc_apply(cs_saddle_solver_t                   *solver,
+                    cs_saddle_solver_context_block_pcd_t *ctx,
+                    cs_real_t                            *r,
+                    cs_real_t                            *z,
+                    cs_real_t                            *pc_wsp)
 {
-  if (z == NULL)
+  if (z == nullptr)
     return 0;
 
-  assert(solver != NULL && ctx != NULL);
-  assert(r != NULL);
-  assert(pc_wsp != NULL);
+  assert(solver != nullptr && ctx != nullptr);
+  assert(r != nullptr);
+  assert(pc_wsp != nullptr);
 
   const cs_lnum_t  n1_elts = solver->n1_scatter_dofs;
   const cs_lnum_t  n2_elts = solver->n2_scatter_dofs;
@@ -1425,7 +1434,7 @@ _uza_schur_pc_apply(cs_saddle_solver_t                    *solver,
   ctx->m12_vector_multiply(n2_elts, z2, ctx->m21_adj, ctx->m21_val,
                            r1_tilda);
 
-  if (rset->ifs != NULL)
+  if (rset->ifs != nullptr)
     cs_interface_set_sum(rset->ifs,
                          n1_elts,
                          1, false, CS_REAL_TYPE, /* stride, interlaced */
@@ -1488,18 +1497,18 @@ _uza_schur_pc_apply(cs_saddle_solver_t                    *solver,
 /*----------------------------------------------------------------------------*/
 
 static int
-_no_pc_apply(cs_saddle_solver_t                    *solver,
-             cs_saddle_solver_context_block_pcd_t  *ctx,
-             cs_real_t                             *r,
-             cs_real_t                             *z,
-             cs_real_t                             *pc_wsp)
+_no_pc_apply(cs_saddle_solver_t                   *solver,
+             cs_saddle_solver_context_block_pcd_t *ctx,
+             cs_real_t                            *r,
+             cs_real_t                            *z,
+             cs_real_t                            *pc_wsp)
 {
   CS_NO_WARN_IF_UNUSED(solver);
   CS_NO_WARN_IF_UNUSED(pc_wsp);
 
-  if (z == NULL)
+  if (z == nullptr)
     return 0;
-  assert(r != NULL);
+  assert(r != nullptr);
 
   /* z <-- r */
 
@@ -1522,17 +1531,17 @@ _no_pc_apply(cs_saddle_solver_t                    *solver,
 /*----------------------------------------------------------------------------*/
 
 static cs_saddle_solver_pc_apply_t *
-_set_pc_by_block(const cs_saddle_solver_t                    *solver,
-                 const cs_saddle_solver_context_block_pcd_t  *ctx,
-                 cs_lnum_t                                   *wsp_size,
-                 cs_real_t                                  **p_wsp)
+_set_pc_by_block(const cs_saddle_solver_t                   *solver,
+                 const cs_saddle_solver_context_block_pcd_t *ctx,
+                 cs_lnum_t                                  *wsp_size,
+                 cs_real_t                                 **p_wsp)
 {
   /* Initialization */
 
   *wsp_size = 0;
-  *p_wsp = NULL;
+  *p_wsp = nullptr;
 
-  if (ctx == NULL) /* No preconditioning */
+  if (ctx == nullptr) /* No preconditioning */
     return  _no_pc_apply;
 
   const cs_param_saddle_t  *saddlep = solver->param;
@@ -1580,7 +1589,7 @@ _set_pc_by_block(const cs_saddle_solver_t                    *solver,
 
   } /* Switch on type of preconditioner */
 
-  return NULL;
+  return nullptr;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1642,9 +1651,9 @@ _alu_incr_cvg_test(cs_iter_algo_t    *algo,
 /*----------------------------------------------------------------------------*/
 
 static cs_sles_convergence_state_t
-_gkb_cvg_test(double                           gamma,
-              cs_iter_algo_t                  *algo,
-              cs_saddle_solver_context_gkb_t  *ctx)
+_gkb_cvg_test(double                          gamma,
+              cs_iter_algo_t                 *algo,
+              cs_saddle_solver_context_gkb_t *ctx)
 {
   /* n = n_algo_iter + 1 since a sum on the square values of zeta is performed
      to estimate the residual in energy norm and the current number of
@@ -1746,16 +1755,17 @@ _gkb_block22_weighted_norm(const cs_lnum_t   n2_dofs,
 /*----------------------------------------------------------------------------*/
 
 static void
-_gkb_transform_system(cs_saddle_solver_t              *solver,
-                      cs_saddle_solver_context_gkb_t  *ctx,
-                      const cs_real_t                 *x1)
+_gkb_transform_system(cs_saddle_solver_t             *solver,
+                      cs_saddle_solver_context_gkb_t *ctx,
+                      const cs_real_t                *x1)
 {
-  assert(ctx != NULL);
+  assert(ctx != nullptr);
   cs_cdo_system_helper_t  *sh = solver->system_helper;
   cs_iter_algo_t  *algo = solver->algo;
 
   const cs_param_saddle_t  *saddlep = solver->param;
-  const cs_param_saddle_context_gkb_t  *ctxp = saddlep->context;
+  const cs_param_saddle_context_gkb_t *ctxp =
+    static_cast<cs_param_saddle_context_gkb_t *>(saddlep->context);
   const double  gamma = ctxp->augmentation_scaling;
 
   const cs_lnum_t  n1_dofs = solver->n1_scatter_dofs;
@@ -1803,7 +1813,7 @@ _gkb_transform_system(cs_saddle_solver_t              *solver,
 
   cs_sles_t  *init_sles =
     (ctxp->dedicated_init_sles) ? ctx->init_sles : solver->main_sles;
-  assert(init_sles != NULL);
+  assert(init_sles != nullptr);
   cs_param_sles_t  *init_slesp = cs_param_saddle_get_init_sles_param(saddlep);
 
   int  n_iter = cs_cdo_solve_scalar_system(n1_dofs,
@@ -1845,11 +1855,11 @@ _gkb_transform_system(cs_saddle_solver_t              *solver,
 /*----------------------------------------------------------------------------*/
 
 static void
-_gkb_init_solution(cs_saddle_solver_t              *solver,
-                   cs_saddle_solver_context_gkb_t  *ctx,
-                   cs_real_t                       *x2)
+_gkb_init_solution(cs_saddle_solver_t             *solver,
+                   cs_saddle_solver_context_gkb_t *ctx,
+                   cs_real_t                      *x2)
 {
-  assert(ctx != NULL);
+  assert(ctx != nullptr);
   cs_cdo_system_helper_t  *sh = solver->system_helper;
   cs_iter_algo_t  *algo = solver->algo;
 
@@ -1893,7 +1903,7 @@ _gkb_init_solution(cs_saddle_solver_t              *solver,
   ctx->m12_vector_multiply(n2_dofs, ctx->q, ctx->m21_adj, ctx->m21_val,
                            ctx->w);
 
-  if (rset->ifs != NULL)
+  if (rset->ifs != nullptr)
     cs_interface_set_sum(rset->ifs,
                          /* n_elts, stride, interlaced */
                          n1_dofs, 1, false, CS_REAL_TYPE,
@@ -1995,12 +2005,12 @@ _create_saddle_solver(cs_lnum_t                 n1_elts,
                       cs_cdo_system_helper_t   *sh,
                       cs_sles_t                *main_sles)
 {
-  if (saddlep == NULL)
-    return NULL;
-  if (sh == NULL)
-    return NULL;
+  if (saddlep == nullptr)
+    return nullptr;
+  if (sh == nullptr)
+    return nullptr;
 
-  cs_saddle_solver_t  *solver = NULL;
+  cs_saddle_solver_t  *solver = nullptr;
 
   BFT_MALLOC(solver, 1, cs_saddle_solver_t);
 
@@ -2031,8 +2041,8 @@ _create_saddle_solver(cs_lnum_t                 n1_elts,
 
   /* Structures set later */
 
-  solver->context = NULL;
-  solver->algo = NULL;
+  solver->context = nullptr;
+  solver->algo = nullptr;
 
   /* Monitoring */
 
@@ -2055,7 +2065,7 @@ _create_saddle_solver(cs_lnum_t                 n1_elts,
 static void
 _log_monitoring(const cs_saddle_solver_t  *solver)
 {
-  if (solver == NULL)
+  if (solver == nullptr)
     return;
 
   const cs_param_saddle_t  *saddlep = solver->param;
@@ -2124,8 +2134,8 @@ cs_saddle_solver_t *
 cs_saddle_solver_by_id(int  id)
 {
   if (id < 0 || id >= cs_saddle_solver_n_systems)
-    return NULL;
-  assert(cs_saddle_solver_systems != NULL);
+    return nullptr;
+  assert(cs_saddle_solver_systems != nullptr);
 
   return cs_saddle_solver_systems[id];
 }
@@ -2167,7 +2177,7 @@ cs_saddle_solver_add(cs_lnum_t                 n1_elts,
                                                       saddlep,
                                                       sh,
                                                       main_sles);
-  assert(solver != NULL);
+  assert(solver != nullptr);
 
   /* Update static variables */
 
@@ -2201,12 +2211,12 @@ cs_saddle_solver_finalize(void)
 void
 cs_saddle_solver_free(cs_saddle_solver_t  **p_solver)
 {
-  if (p_solver == NULL)
+  if (p_solver == nullptr)
     return;
 
   cs_saddle_solver_t  *solver = *p_solver;
 
-  if (solver == NULL)
+  if (solver == nullptr)
     return;
 
   const cs_param_saddle_t  *saddlep = solver->param;
@@ -2215,50 +2225,55 @@ cs_saddle_solver_free(cs_saddle_solver_t  **p_solver)
 
   case CS_PARAM_SADDLE_SOLVER_ALU:
     {
-      cs_saddle_solver_context_alu_t  *ctx = solver->context;
+    cs_saddle_solver_context_alu_t *ctx =
+      static_cast<cs_saddle_solver_context_alu_t *>(solver->context);
 
-      cs_saddle_solver_context_alu_free(&ctx);
+    cs_saddle_solver_context_alu_free(&ctx);
 
-      BFT_FREE(ctx);
+    BFT_FREE(ctx);
     }
     break;
 
   case CS_PARAM_SADDLE_SOLVER_GCR:
   case CS_PARAM_SADDLE_SOLVER_MINRES:
     {
-      cs_saddle_solver_context_block_pcd_t  *ctx = solver->context;
+    cs_saddle_solver_context_block_pcd_t *ctx =
+      static_cast<cs_saddle_solver_context_block_pcd_t *>(solver->context);
 
-      cs_saddle_solver_context_block_pcd_free(&ctx);
+    cs_saddle_solver_context_block_pcd_free(&ctx);
 
-      BFT_FREE(ctx);
+    BFT_FREE(ctx);
     }
     break;
 
   case CS_PARAM_SADDLE_SOLVER_GKB:
     {
-      cs_saddle_solver_context_gkb_t  *ctx = solver->context;
+    cs_saddle_solver_context_gkb_t *ctx =
+      static_cast<cs_saddle_solver_context_gkb_t *>(solver->context);
 
-      cs_saddle_solver_context_gkb_free(&ctx);
+    cs_saddle_solver_context_gkb_free(&ctx);
 
-      BFT_FREE(ctx);
+    BFT_FREE(ctx);
     }
     break;
 
   case CS_PARAM_SADDLE_SOLVER_NOTAY_TRANSFORM:
     {
-      cs_saddle_solver_context_notay_t  *ctx = solver->context;
+    cs_saddle_solver_context_notay_t *ctx =
+      static_cast<cs_saddle_solver_context_notay_t *>(solver->context);
 
-      BFT_FREE(ctx);
+    BFT_FREE(ctx);
     }
     break;
 
   case CS_PARAM_SADDLE_SOLVER_UZAWA_CG:
     {
-      cs_saddle_solver_context_uzawa_cg_t  *ctx = solver->context;
+    cs_saddle_solver_context_uzawa_cg_t *ctx =
+      static_cast<cs_saddle_solver_context_uzawa_cg_t *>(solver->context);
 
-      cs_saddle_solver_context_uzawa_cg_free(&ctx);
+    cs_saddle_solver_context_uzawa_cg_free(&ctx);
 
-      BFT_FREE(ctx);
+    BFT_FREE(ctx);
     }
     break;
 
@@ -2267,7 +2282,7 @@ cs_saddle_solver_free(cs_saddle_solver_t  **p_solver)
   }
 
   BFT_FREE(solver);
-  *p_solver = NULL;
+  *p_solver = nullptr;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -2281,7 +2296,7 @@ cs_saddle_solver_free(cs_saddle_solver_t  **p_solver)
 void
 cs_saddle_solver_clean(cs_saddle_solver_t  *solver)
 {
-  if (solver == NULL)
+  if (solver == nullptr)
     return;
 
   /* Free data related to the main SLES (a new setup stage will be mandatory) */
@@ -2300,42 +2315,47 @@ cs_saddle_solver_clean(cs_saddle_solver_t  *solver)
 
   case CS_PARAM_SADDLE_SOLVER_ALU:
     {
-      cs_saddle_solver_context_alu_t  *ctx = solver->context;
+    cs_saddle_solver_context_alu_t *ctx =
+      static_cast<cs_saddle_solver_context_alu_t *>(solver->context);
 
-      cs_saddle_solver_context_alu_clean(ctx);
+    cs_saddle_solver_context_alu_clean(ctx);
     }
     break;
 
   case CS_PARAM_SADDLE_SOLVER_GCR:
   case CS_PARAM_SADDLE_SOLVER_MINRES:
     {
-      cs_saddle_solver_context_block_pcd_t  *ctx = solver->context;
+    cs_saddle_solver_context_block_pcd_t *ctx =
+      static_cast<cs_saddle_solver_context_block_pcd_t *>(solver->context);
 
-      cs_saddle_solver_context_block_pcd_clean(ctx);
+    cs_saddle_solver_context_block_pcd_clean(ctx);
     }
     break;
 
   case CS_PARAM_SADDLE_SOLVER_GKB:
     {
-      cs_saddle_solver_context_gkb_t  *ctx = solver->context;
+    cs_saddle_solver_context_gkb_t *ctx =
+      static_cast<cs_saddle_solver_context_gkb_t *>(solver->context);
 
-      cs_saddle_solver_context_gkb_clean(ctx);
+    cs_saddle_solver_context_gkb_clean(ctx);
     }
     break;
 
   case CS_PARAM_SADDLE_SOLVER_UZAWA_CG:
     {
-      cs_saddle_solver_context_uzawa_cg_t  *ctx = solver->context;
+    cs_saddle_solver_context_uzawa_cg_t *ctx =
+      static_cast<cs_saddle_solver_context_uzawa_cg_t *>(solver->context);
 
-      cs_saddle_solver_context_uzawa_cg_clean(ctx);
+    cs_saddle_solver_context_uzawa_cg_clean(ctx);
     }
     break;
 
   case CS_PARAM_SADDLE_SOLVER_SIMPLE:
     {
-      cs_saddle_solver_context_simple_t  *ctx = solver->context;
+    cs_saddle_solver_context_simple_t *ctx =
+      static_cast<cs_saddle_solver_context_simple_t *>(solver->context);
 
-      cs_saddle_solver_context_simple_clean(ctx);
+    cs_saddle_solver_context_simple_clean(ctx);
     }
     break;
   default:
@@ -2361,7 +2381,7 @@ void
 cs_saddle_solver_update_monitoring(cs_saddle_solver_t  *solver,
                                    unsigned             n_iter)
 {
-  if (solver == NULL)
+  if (solver == nullptr)
     return;
 
   solver->n_calls += 1;
@@ -2420,16 +2440,16 @@ cs_saddle_solver_m11_inv_lumped(cs_saddle_solver_t     *solver,
 {
   const cs_lnum_t  b11_size = solver->n1_scatter_dofs;
 
-  cs_real_t  *inv_lumped_m11 = NULL;
+  cs_real_t  *inv_lumped_m11 = nullptr;
   BFT_MALLOC(inv_lumped_m11, b11_size, cs_real_t);
   cs_array_real_fill_zero(b11_size, inv_lumped_m11);
 
-  cs_real_t  *rhs = NULL;
+  cs_real_t  *rhs = nullptr;
   BFT_MALLOC(rhs, b11_size, cs_real_t);
   cs_array_real_set_scalar(b11_size, 1., rhs);
 
   cs_param_sles_t  *slesp = cs_param_saddle_get_xtra_sles_param(solver->param);
-  assert(slesp != NULL);
+  assert(slesp != nullptr);
 
   /* Solve m11.x = 1 */
 
@@ -2616,31 +2636,32 @@ cs_saddle_solver_m21_multiply_scalar(cs_lnum_t              n2_dofs,
 void
 cs_saddle_solver_context_alu_create(cs_saddle_solver_t  *solver)
 {
-  if (solver == NULL)
+  if (solver == nullptr)
     return;
 
-  cs_saddle_solver_context_alu_t  *ctx = NULL;
+  cs_saddle_solver_context_alu_t *ctx = nullptr;
   BFT_MALLOC(ctx, 1, cs_saddle_solver_context_alu_t);
 
-  ctx->inv_m22 = NULL;
-  ctx->res2 = NULL;
-  ctx->m21x1 = NULL;
+  ctx->inv_m22 = nullptr;
+  ctx->res2 = nullptr;
+  ctx->m21x1 = nullptr;
 
-  ctx->b1_tilda = NULL;
-  ctx->rhs = NULL;
+  ctx->b1_tilda = nullptr;
+  ctx->rhs = nullptr;
 
   /* Function pointers */
 
-  ctx->square_norm_b11 = NULL;
-  ctx->m12_vector_multiply = NULL;
-  ctx->m21_vector_multiply = NULL;
+  ctx->square_norm_b11 = nullptr;
+  ctx->m12_vector_multiply = nullptr;
+  ctx->m21_vector_multiply = nullptr;
 
   /* Extra SLES if needed */
 
   const cs_param_saddle_t  *saddlep = solver->param;
-  const cs_param_saddle_context_alu_t  *ctxp = saddlep->context;
+  const cs_param_saddle_context_alu_t *ctxp =
+    static_cast<cs_param_saddle_context_alu_t *>(saddlep->context);
 
-  ctx->init_sles = NULL;
+  ctx->init_sles = nullptr;
   if (ctxp->dedicated_init_sles)
     ctx->init_sles = cs_sles_find_or_add(-1, ctxp->init_sles_param->name);
 
@@ -2655,7 +2676,8 @@ cs_saddle_solver_context_alu_create(cs_saddle_solver_t  *solver)
 
   const cs_cdo_system_helper_t  *sh = solver->system_helper;
   const cs_cdo_system_block_t  *block21 = sh->blocks[1];
-  const cs_cdo_system_ublock_t  *b21_ublock = block21->block_pointer;
+  const cs_cdo_system_ublock_t  *b21_ublock =
+    static_cast<const cs_cdo_system_ublock_t *>(block21->block_pointer);
 
   ctx->m21_val = b21_ublock->values;
   ctx->m21_adj = b21_ublock->adjacency;
@@ -2675,12 +2697,9 @@ cs_saddle_solver_context_alu_create(cs_saddle_solver_t  *solver)
 /*----------------------------------------------------------------------------*/
 
 void
-cs_saddle_solver_context_alu_clean
-(
- cs_saddle_solver_context_alu_t  *ctx
-)
+cs_saddle_solver_context_alu_clean(cs_saddle_solver_context_alu_t *ctx)
 {
-  if (ctx == NULL)
+  if (ctx == nullptr)
     return;
 
   cs_sles_free(ctx->init_sles);
@@ -2706,15 +2725,15 @@ cs_saddle_solver_context_alu_free
  cs_saddle_solver_context_alu_t  **p_ctx
 )
 {
-  cs_saddle_solver_context_alu_t  *ctx = *p_ctx;
+  cs_saddle_solver_context_alu_t *ctx = *p_ctx;
 
-  if (ctx == NULL)
+  if (ctx == nullptr)
     return;
 
   cs_saddle_solver_context_alu_clean(ctx);
 
   BFT_FREE(ctx);
-  *p_ctx = NULL;
+  *p_ctx = nullptr;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -2731,25 +2750,26 @@ void
 cs_saddle_solver_context_block_pcd_create(cs_lnum_t            b22_max_size,
                                           cs_saddle_solver_t  *solver)
 {
-  if (solver == NULL)
+  if (solver == nullptr)
     return;
 
-  cs_saddle_solver_context_block_pcd_t  *ctx = NULL;
+  cs_saddle_solver_context_block_pcd_t *ctx = nullptr;
   BFT_MALLOC(ctx, 1, cs_saddle_solver_context_block_pcd_t);
 
   /* Sanity checks on the system helper have already been done */
 
   const cs_cdo_system_helper_t  *sh = solver->system_helper;
   const cs_cdo_system_block_t  *vel_block = sh->blocks[0];
-  const cs_cdo_system_dblock_t  *vel_dblock = vel_block->block_pointer;
+  const cs_cdo_system_dblock_t  *vel_dblock =
+    static_cast<const cs_cdo_system_dblock_t *>(vel_block->block_pointer);
 
-  ctx->m12_vector_multiply = NULL;
-  ctx->m21_vector_multiply = NULL;
+  ctx->m12_vector_multiply = nullptr;
+  ctx->m21_vector_multiply = nullptr;
 
   /* One assumes that up to now, the (1,1)-block is associated to only one
      matrix */
 
-  ctx->m11 = NULL; /* To be set later */
+  ctx->m11 = nullptr; /* To be set later */
   ctx->b11_range_set = vel_dblock->range_set;
 
   ctx->b11_max_size = 0; /* To be set latter */
@@ -2760,7 +2780,8 @@ cs_saddle_solver_context_block_pcd_create(cs_lnum_t            b22_max_size,
    * system */
 
   const cs_cdo_system_block_t  *block21 = sh->blocks[1];
-  const cs_cdo_system_ublock_t  *b21_ublock = block21->block_pointer;
+  const cs_cdo_system_ublock_t *b21_ublock =
+    static_cast<const cs_cdo_system_ublock_t *>(block21->block_pointer);
 
   ctx->m21_val = b21_ublock->values;
   ctx->m21_adj = b21_ublock->adjacency;
@@ -2768,14 +2789,14 @@ cs_saddle_solver_context_block_pcd_create(cs_lnum_t            b22_max_size,
   /* The following members are defined by the higher-level functions since it
      may depends on the discretization and modelling choices */
 
-  ctx->schur_sles = NULL;
-  ctx->xtra_sles = NULL;
-  ctx->schur_matrix = NULL;
+  ctx->schur_sles = nullptr;
+  ctx->xtra_sles = nullptr;
+  ctx->schur_matrix = nullptr;
   ctx->schur_scaling = 1.0;
-  ctx->schur_diag = NULL;
-  ctx->schur_xtra = NULL;
-  ctx->m11_inv_diag = NULL;
-  ctx->m22_mass_diag = NULL;
+  ctx->schur_diag = nullptr;
+  ctx->schur_xtra = nullptr;
+  ctx->m11_inv_diag = nullptr;
+  ctx->m22_mass_diag = nullptr;
 
   /* Schur approximation depending on the settings of the block
      preconditioner */
@@ -2791,14 +2812,14 @@ cs_saddle_solver_context_block_pcd_create(cs_lnum_t            b22_max_size,
     {
       cs_param_sles_t  *schur_slesp =
         cs_param_saddle_get_schur_sles_param(saddlep);
-      assert(schur_slesp != NULL);
+      assert(schur_slesp != nullptr);
 
       ctx->schur_sles = cs_sles_find_or_add(-1, schur_slesp->name);
 
       cs_param_sles_t  *xtra_slesp =
         cs_param_saddle_get_xtra_sles_param(saddlep);
 
-      if (xtra_slesp != NULL)
+      if (xtra_slesp != nullptr)
         ctx->xtra_sles = cs_sles_find_or_add(-1, xtra_slesp->name);
     }
     break;
@@ -2808,7 +2829,7 @@ cs_saddle_solver_context_block_pcd_create(cs_lnum_t            b22_max_size,
         CS_PARAM_SADDLE_SCHUR_IDENTITY,
         CS_PARAM_SADDLE_SCHUR_MASS_SCALED */
 
-    ctx->schur_sles = NULL;
+    ctx->schur_sles = nullptr;
     break;
   }
 
@@ -2828,12 +2849,10 @@ cs_saddle_solver_context_block_pcd_create(cs_lnum_t            b22_max_size,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_saddle_solver_context_block_pcd_clean
-(
- cs_saddle_solver_context_block_pcd_t  *ctx
- )
+cs_saddle_solver_context_block_pcd_clean(
+  cs_saddle_solver_context_block_pcd_t *ctx)
 {
-  if (ctx == NULL)
+  if (ctx == nullptr)
     return;
 
   /* Remove the setup data in SLES. The pointer to the following SLES will be
@@ -2863,15 +2882,15 @@ cs_saddle_solver_context_block_pcd_free
  cs_saddle_solver_context_block_pcd_t  **p_ctx
  )
 {
-  cs_saddle_solver_context_block_pcd_t  *ctx = *p_ctx;
+  cs_saddle_solver_context_block_pcd_t *ctx = *p_ctx;
 
-  if (ctx == NULL)
+  if (ctx == nullptr)
     return;
 
   cs_saddle_solver_context_block_pcd_clean(ctx);
 
   BFT_FREE(ctx);
-  *p_ctx = NULL;
+  *p_ctx = nullptr;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -2885,10 +2904,10 @@ cs_saddle_solver_context_block_pcd_free
 void
 cs_saddle_solver_context_gkb_create(cs_saddle_solver_t  *solver)
 {
-  if (solver == NULL)
+  if (solver == nullptr)
     return;
 
-  cs_saddle_solver_context_gkb_t  *ctx = NULL;
+  cs_saddle_solver_context_gkb_t *ctx = nullptr;
   BFT_MALLOC(ctx, 1, cs_saddle_solver_context_gkb_t);
 
   ctx->alpha = 0.0;
@@ -2896,28 +2915,29 @@ cs_saddle_solver_context_gkb_create(cs_saddle_solver_t  *solver)
   ctx->zeta = 0.0;
 
   ctx->zeta_size = 0;
-  ctx->zeta_array = NULL;
+  ctx->zeta_array = nullptr;
   ctx->zeta_square_sum = 0;
 
-  ctx->q = NULL;
-  ctx->d = NULL;
-  ctx->m21v = NULL;
-  ctx->inv_m22 = NULL;
+  ctx->q = nullptr;
+  ctx->d = nullptr;
+  ctx->m21v = nullptr;
+  ctx->inv_m22 = nullptr;
   /* m22 is set later (shared pointer) */
 
-  ctx->w = NULL;
-  ctx->v = NULL;
-  ctx->m12q = NULL;
-  ctx->x1_tilda = NULL;
+  ctx->w = nullptr;
+  ctx->v = nullptr;
+  ctx->m12q = nullptr;
+  ctx->x1_tilda = nullptr;
 
-  ctx->rhs_tilda = NULL;
+  ctx->rhs_tilda = nullptr;
 
   const cs_param_saddle_t  *saddlep = solver->param;
-  cs_param_saddle_context_gkb_t  *ctxp = saddlep->context;
+  cs_param_saddle_context_gkb_t *ctxp =
+    static_cast<cs_param_saddle_context_gkb_t *>(saddlep->context);
 
   /* Extra SLES if needed */
 
-  ctx->init_sles = NULL;
+  ctx->init_sles = nullptr;
   if (ctxp->dedicated_init_sles)
     ctx->init_sles = cs_sles_find_or_add(-1, ctxp->init_sles_param->name);
 
@@ -2926,9 +2946,9 @@ cs_saddle_solver_context_gkb_create(cs_saddle_solver_t  *solver)
    * localization and stride of the (1,1)-block DoFs
    */
 
-  ctx->square_norm_b11 = NULL;
-  ctx->m12_vector_multiply = NULL;
-  ctx->m21_vector_multiply = NULL;
+  ctx->square_norm_b11 = nullptr;
+  ctx->m12_vector_multiply = nullptr;
+  ctx->m21_vector_multiply = nullptr;
 
   /* Quick access to the (2,1)-block in an unassembled way. This is also the
    * transposed part of the (1,2)-block by definition of the saddle-point
@@ -2936,7 +2956,8 @@ cs_saddle_solver_context_gkb_create(cs_saddle_solver_t  *solver)
 
   const cs_cdo_system_helper_t  *sh = solver->system_helper;
   const cs_cdo_system_block_t  *block21 = sh->blocks[1];
-  const cs_cdo_system_ublock_t  *b21_ublock = block21->block_pointer;
+  const cs_cdo_system_ublock_t  *b21_ublock =
+    static_cast<const cs_cdo_system_ublock_t *>(block21->block_pointer);
 
   ctx->m21_val = b21_ublock->values;
   ctx->m21_adj = b21_ublock->adjacency;
@@ -2956,9 +2977,9 @@ cs_saddle_solver_context_gkb_create(cs_saddle_solver_t  *solver)
 /*----------------------------------------------------------------------------*/
 
 void
-cs_saddle_solver_context_gkb_clean(cs_saddle_solver_context_gkb_t  *ctx)
+cs_saddle_solver_context_gkb_clean(cs_saddle_solver_context_gkb_t *ctx)
 {
-  if (ctx == NULL)
+  if (ctx == nullptr)
     return;
 
   cs_sles_free(ctx->init_sles);
@@ -2998,15 +3019,15 @@ cs_saddle_solver_context_gkb_free
  cs_saddle_solver_context_gkb_t  **p_ctx
 )
 {
-  cs_saddle_solver_context_gkb_t  *ctx = *p_ctx;
+  cs_saddle_solver_context_gkb_t *ctx = *p_ctx;
 
-  if (ctx == NULL)
+  if (ctx == nullptr)
     return;
 
   cs_saddle_solver_context_gkb_clean(ctx);
 
   BFT_FREE(ctx);
-  *p_ctx = NULL;
+  *p_ctx = nullptr;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -3021,15 +3042,15 @@ cs_saddle_solver_context_gkb_free
 void
 cs_saddle_solver_context_notay_create(cs_saddle_solver_t  *solver)
 {
-  if (solver == NULL)
+  if (solver == nullptr)
     return;
 
-  cs_saddle_solver_context_notay_t  *ctx = NULL;
+  cs_saddle_solver_context_notay_t *ctx = nullptr;
   BFT_MALLOC(ctx, 1, cs_saddle_solver_context_notay_t);
 
   /* Function pointer */
 
-  ctx->m12_vector_multiply = NULL;
+  ctx->m12_vector_multiply = nullptr;
 
   /* Quick access to the (2,1)-block in an unassembled way. This is also the
    * transposed part of the (1,2)-block by definition of the saddle-point
@@ -3037,7 +3058,8 @@ cs_saddle_solver_context_notay_create(cs_saddle_solver_t  *solver)
 
   const cs_cdo_system_helper_t  *sh = solver->system_helper;
   const cs_cdo_system_block_t  *block21 = sh->blocks[1];
-  const cs_cdo_system_ublock_t  *b21_ublock = block21->block_pointer;
+  const cs_cdo_system_ublock_t  *b21_ublock =
+    static_cast<const cs_cdo_system_ublock_t *>(block21->block_pointer);
 
   ctx->m21_val = b21_ublock->values;
   ctx->m21_adj = b21_ublock->adjacency;
@@ -3061,21 +3083,21 @@ void
 cs_saddle_solver_context_uzawa_cg_create(cs_lnum_t            b22_max_size,
                                          cs_saddle_solver_t  *solver)
 {
-  if (solver == NULL)
+  if (solver == nullptr)
     return;
 
-  cs_saddle_solver_context_uzawa_cg_t  *ctx = NULL;
+  cs_saddle_solver_context_uzawa_cg_t *ctx = nullptr;
   BFT_MALLOC(ctx, 1, cs_saddle_solver_context_uzawa_cg_t);
 
   ctx->alpha = 0.0;
 
-  ctx->res2 = NULL;
-  ctx->m21x1 = NULL;
-  ctx->gk = NULL;
+  ctx->res2 = nullptr;
+  ctx->m21x1 = nullptr;
+  ctx->gk = nullptr;
 
-  ctx->b1_tilda = NULL;
-  ctx->dzk = NULL;
-  ctx->rhs = NULL;
+  ctx->b1_tilda = nullptr;
+  ctx->dzk = nullptr;
+  ctx->rhs = nullptr;
 
   /* Rk: Setting the function for computing the b11 norm is done by the calling
    * since it depends on the type of system to solve and especially the
@@ -3084,28 +3106,31 @@ cs_saddle_solver_context_uzawa_cg_create(cs_lnum_t            b22_max_size,
 
   const cs_cdo_system_helper_t  *sh = solver->system_helper;
   const cs_cdo_system_block_t  *b11 = sh->blocks[0];
-  const cs_cdo_system_dblock_t  *b11_dblock = b11->block_pointer;
+  const cs_cdo_system_dblock_t  *b11_dblock =
+    static_cast<const cs_cdo_system_dblock_t *>(b11->block_pointer);
 
   /* One assumes that up to now, the (1,1)-block is associated to only one
      matrix */
 
-  ctx->m11 = NULL; /* To be set later */
+  ctx->m11 = nullptr; /* To be set later */
   ctx->b11_range_set = b11_dblock->range_set;
   ctx->b11_max_size = 0; /* To be set later */
   ctx->b22_max_size = b22_max_size;
 
   /* Function pointers */
 
-  ctx->square_norm_b11 = NULL;
-  ctx->m12_vector_multiply = NULL;
-  ctx->m21_vector_multiply = NULL;
+  ctx->square_norm_b11 = nullptr;
+  ctx->m12_vector_multiply = nullptr;
+  ctx->m21_vector_multiply = nullptr;
 
   /* Quick access to the (2,1)-block in an unassembled way. This is also the
    * transposed part of the (1,2)-block by definition of the saddle-point
    * system */
 
   const cs_cdo_system_block_t  *b21 = sh->blocks[1];
-  const cs_cdo_system_ublock_t  *b21_ublock = b21->block_pointer;
+  const cs_cdo_system_ublock_t *b21_ublock =
+    static_cast<const cs_cdo_system_ublock_t *>(b21->block_pointer);
+  ;
 
   ctx->m21_val = b21_ublock->values;
   ctx->m21_adj = b21_ublock->adjacency;
@@ -3113,23 +3138,24 @@ cs_saddle_solver_context_uzawa_cg_create(cs_lnum_t            b22_max_size,
   /* The following members are defined by the higher-level functions since it
      may depends on the discretization and modelling choices */
 
-  ctx->schur_diag = NULL;
-  ctx->schur_xtra = NULL;
-  ctx->schur_matrix = NULL;
-  ctx->schur_sles = NULL;
-  ctx->xtra_sles = NULL;
-  ctx->init_sles = NULL;
+  ctx->schur_diag = nullptr;
+  ctx->schur_xtra = nullptr;
+  ctx->schur_matrix = nullptr;
+  ctx->schur_sles = nullptr;
+  ctx->xtra_sles = nullptr;
+  ctx->init_sles = nullptr;
 
-  ctx->m11_inv_diag = NULL;
-  ctx->inv_m22 = NULL;
+  ctx->m11_inv_diag = nullptr;
+  ctx->inv_m22 = nullptr;
 
   /* Schur approximation depending on the settings of the block
      preconditioner */
 
   const cs_param_saddle_t  *saddlep = solver->param;
-  const cs_param_saddle_context_uzacg_t  *ctxp = saddlep->context;
+  const cs_param_saddle_context_uzacg_t *ctxp =
+    static_cast<cs_param_saddle_context_uzacg_t *>(saddlep->context);
 
-  ctx->init_sles = NULL;
+  ctx->init_sles = nullptr;
   if (ctxp->dedicated_init_sles)
     ctx->init_sles = cs_sles_find_or_add(-1, ctxp->init_sles_param->name);
 
@@ -3142,14 +3168,14 @@ cs_saddle_solver_context_uzawa_cg_create(cs_lnum_t            b22_max_size,
     {
       cs_param_sles_t  *schur_slesp =
         cs_param_saddle_get_schur_sles_param(saddlep);
-      assert(schur_slesp != NULL);
+      assert(schur_slesp != nullptr);
 
       ctx->schur_sles = cs_sles_find_or_add(-1, schur_slesp->name);
 
       cs_param_sles_t  *xtra_slesp =
         cs_param_saddle_get_xtra_sles_param(saddlep);
 
-      if (xtra_slesp != NULL)
+      if (xtra_slesp != nullptr)
         ctx->xtra_sles = cs_sles_find_or_add(-1, xtra_slesp->name);
     }
     break;
@@ -3159,7 +3185,7 @@ cs_saddle_solver_context_uzawa_cg_create(cs_lnum_t            b22_max_size,
         CS_PARAM_SADDLE_SCHUR_IDENTITY,
         CS_PARAM_SADDLE_SCHUR_MASS_SCALED */
 
-    ctx->schur_sles = NULL;
+    ctx->schur_sles = nullptr;
     break;
   }
 
@@ -3178,12 +3204,10 @@ cs_saddle_solver_context_uzawa_cg_create(cs_lnum_t            b22_max_size,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_saddle_solver_context_uzawa_cg_clean
-(
- cs_saddle_solver_context_uzawa_cg_t  *ctx
-)
+cs_saddle_solver_context_uzawa_cg_clean(
+  cs_saddle_solver_context_uzawa_cg_t *ctx)
 {
-  if (ctx == NULL)
+  if (ctx == nullptr)
     return;
 
   BFT_FREE(ctx->res2);
@@ -3220,15 +3244,15 @@ cs_saddle_solver_context_uzawa_cg_free
  cs_saddle_solver_context_uzawa_cg_t  **p_ctx
 )
 {
-  cs_saddle_solver_context_uzawa_cg_t  *ctx = *p_ctx;
+  cs_saddle_solver_context_uzawa_cg_t *ctx = *p_ctx;
 
-  if (ctx == NULL)
+  if (ctx == nullptr)
     return;
 
   cs_saddle_solver_context_uzawa_cg_clean(ctx);
 
   BFT_FREE(ctx);
-  *p_ctx = NULL;
+  *p_ctx = nullptr;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -3245,40 +3269,43 @@ void
 cs_saddle_solver_context_simple_create(cs_lnum_t            b22_max_size,
                                        cs_saddle_solver_t  *solver)
 {
-  if (solver == NULL)
+  if (solver == nullptr)
     return;
 
-  cs_saddle_solver_context_simple_t  *ctx = NULL;
+  cs_saddle_solver_context_simple_t *ctx = nullptr;
   BFT_MALLOC(ctx, 1, cs_saddle_solver_context_simple_t);
 
-  ctx->m21x1 = NULL;
-  ctx->rhs = NULL;
-  ctx->b1_tilda = NULL;
+  ctx->m21x1 = nullptr;
+  ctx->rhs = nullptr;
+  ctx->b1_tilda = nullptr;
 
   const cs_cdo_system_helper_t  *sh = solver->system_helper;
   const cs_cdo_system_block_t  *b11 = sh->blocks[0];
-  const cs_cdo_system_dblock_t  *b11_dblock = b11->block_pointer;
+  const cs_cdo_system_dblock_t  *b11_dblock =
+    static_cast<const cs_cdo_system_dblock_t *>(b11->block_pointer);
 
   /* One assumes that up to now, the (1,1)-block is associated to only one
      matrix */
 
-  ctx->m11 = NULL; /* To be set later */
+  ctx->m11 = nullptr; /* To be set later */
   ctx->b11_range_set = b11_dblock->range_set;
   ctx->b11_max_size = 0; /* To be set later */
   ctx->b22_max_size = b22_max_size;
 
   /* Function pointers */
 
-  ctx->square_norm_b11 = NULL;
-  ctx->m12_vector_multiply = NULL;
-  ctx->m21_vector_multiply = NULL;
+  ctx->square_norm_b11 = nullptr;
+  ctx->m12_vector_multiply = nullptr;
+  ctx->m21_vector_multiply = nullptr;
 
   /* Quick access to the (2,1)-block in an unassembled way. This is also the
    * transposed part of the (1,2)-block by definition of the saddle-point
    * system */
 
   const cs_cdo_system_block_t  *b21 = sh->blocks[1];
-  const cs_cdo_system_ublock_t  *b21_ublock = b21->block_pointer;
+  const cs_cdo_system_ublock_t *b21_ublock =
+    static_cast<const cs_cdo_system_ublock_t *>(b21->block_pointer);
+  ;
 
   ctx->m21_val = b21_ublock->values;
   ctx->m21_adj = b21_ublock->adjacency;
@@ -3286,23 +3313,24 @@ cs_saddle_solver_context_simple_create(cs_lnum_t            b22_max_size,
   /* The following members are defined by the higher-level functions since it
      may depends on the discretization and modelling choices */
 
-  ctx->schur_diag = NULL;
-  ctx->schur_xtra = NULL;
-  ctx->schur_matrix = NULL;
-  ctx->schur_sles = NULL;
-  ctx->xtra_sles = NULL;
-  ctx->init_sles = NULL;
+  ctx->schur_diag = nullptr;
+  ctx->schur_xtra = nullptr;
+  ctx->schur_matrix = nullptr;
+  ctx->schur_sles = nullptr;
+  ctx->xtra_sles = nullptr;
+  ctx->init_sles = nullptr;
 
-  ctx->m11_inv_diag = NULL;
-  ctx->inv_m22 = NULL;
+  ctx->m11_inv_diag = nullptr;
+  ctx->inv_m22 = nullptr;
 
   /* Schur approximation depending on the settings of the block
      preconditioner */
 
   const cs_param_saddle_t  *saddlep = solver->param;
-  const cs_param_saddle_context_simple_t  *ctxp = saddlep->context;
+  const cs_param_saddle_context_simple_t *ctxp =
+    static_cast<const cs_param_saddle_context_simple_t *>(saddlep->context);
 
-  ctx->init_sles = NULL;
+  ctx->init_sles = nullptr;
   if (ctxp->dedicated_init_sles)
     ctx->init_sles = cs_sles_find_or_add(-1, ctxp->init_sles_param->name);
 
@@ -3315,14 +3343,14 @@ cs_saddle_solver_context_simple_create(cs_lnum_t            b22_max_size,
     {
       cs_param_sles_t  *schur_slesp =
         cs_param_saddle_get_schur_sles_param(saddlep);
-      assert(schur_slesp != NULL);
+      assert(schur_slesp != nullptr);
 
       ctx->schur_sles = cs_sles_find_or_add(-1, schur_slesp->name);
 
       cs_param_sles_t  *xtra_slesp =
         cs_param_saddle_get_xtra_sles_param(saddlep);
 
-      if (xtra_slesp != NULL)
+      if (xtra_slesp != nullptr)
         ctx->xtra_sles = cs_sles_find_or_add(-1, xtra_slesp->name);
     }
     break;
@@ -3332,7 +3360,7 @@ cs_saddle_solver_context_simple_create(cs_lnum_t            b22_max_size,
         CS_PARAM_SADDLE_SCHUR_IDENTITY,
         CS_PARAM_SADDLE_SCHUR_MASS_SCALED */
 
-    ctx->schur_sles = NULL;
+    ctx->schur_sles = nullptr;
     break;
   }
 
@@ -3351,12 +3379,9 @@ cs_saddle_solver_context_simple_create(cs_lnum_t            b22_max_size,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_saddle_solver_context_simple_clean
-(
- cs_saddle_solver_context_simple_t  *ctx
-)
+cs_saddle_solver_context_simple_clean(cs_saddle_solver_context_simple_t *ctx)
 {
-  if (ctx == NULL)
+  if (ctx == nullptr)
     return;
 
   BFT_FREE(ctx->m21x1);
@@ -3390,15 +3415,15 @@ cs_saddle_solver_context_simple_free
  cs_saddle_solver_context_simple_t  **p_ctx
 )
 {
-  cs_saddle_solver_context_simple_t  *ctx = *p_ctx;
+  cs_saddle_solver_context_simple_t *ctx = *p_ctx;
 
-  if (ctx == NULL)
+  if (ctx == nullptr)
     return;
 
   cs_saddle_solver_context_simple_clean(ctx);
 
   BFT_FREE(ctx);
-  *p_ctx = NULL;
+  *p_ctx = nullptr;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -3418,11 +3443,12 @@ cs_saddle_solver_alu_incr(cs_saddle_solver_t  *solver,
                           cs_real_t           *x1,
                           cs_real_t           *x2)
 {
-  assert(solver != NULL);
+  assert(solver != nullptr);
 
   const cs_param_saddle_t  *saddlep = solver->param;
   assert(saddlep->solver == CS_PARAM_SADDLE_SOLVER_ALU);
-  const cs_param_saddle_context_alu_t  *ctxp = saddlep->context;
+  const cs_param_saddle_context_alu_t *ctxp =
+    static_cast<cs_param_saddle_context_alu_t *>(saddlep->context);
   const double  gamma = ctxp->augmentation_scaling;
   const cs_param_sles_t  *init_slesp = ctxp->init_sles_param;
 
@@ -3431,12 +3457,13 @@ cs_saddle_solver_alu_incr(cs_saddle_solver_t  *solver,
   /* Prepare the solution and rhs arrays given to the solver */
 
   cs_cdo_system_helper_t  *sh = solver->system_helper;
-  cs_saddle_solver_context_alu_t  *ctx = solver->context;
-  assert(ctx != NULL);
+  cs_saddle_solver_context_alu_t *ctx =
+    static_cast<cs_saddle_solver_context_alu_t *>(solver->context);
+  assert(ctx != nullptr);
 
   cs_sles_t  *init_sles =
     ctxp->dedicated_init_sles ? ctx->init_sles : solver->main_sles;
-  assert(init_sles != NULL);
+  assert(init_sles != nullptr);
 
   const cs_lnum_t  n1_dofs = solver->n1_scatter_dofs;
   const cs_lnum_t  n2_dofs = solver->n2_scatter_dofs;
@@ -3466,7 +3493,7 @@ cs_saddle_solver_alu_incr(cs_saddle_solver_t  *solver,
   cs_saddle_system_b12_matvec(sh, btilda_c, ctx->b1_tilda,
                               true); /* reset b1_tilda */
 
-  if (rset->ifs != NULL) {
+  if (rset->ifs != nullptr) {
 
     cs_interface_set_sum(rset->ifs,
                          /* n_elts, stride, interlaced */
@@ -3492,7 +3519,7 @@ cs_saddle_solver_alu_incr(cs_saddle_solver_t  *solver,
 
   cs_saddle_system_b12_matvec(sh, x2, ctx->rhs, true);
 
-  if (rset->ifs != NULL)
+  if (rset->ifs != nullptr)
     cs_interface_set_sum(rset->ifs,
                          /* n_elts, stride, interlaced */
                          n1_dofs, 1, false, CS_REAL_TYPE,
@@ -3565,13 +3592,13 @@ cs_saddle_solver_alu_incr(cs_saddle_solver_t  *solver,
 
     cs_saddle_system_b12_matvec(sh, ctx->res2, ctx->rhs, true);
 
-    if (rset->ifs != NULL)
+    if (rset->ifs != nullptr)
       cs_interface_set_sum(rset->ifs,
                            /* n_elts, stride, interlaced */
                            n1_dofs, 1, false, CS_REAL_TYPE,
                            ctx->rhs);
 
-    cs_array_real_scale(n1_dofs, 1, NULL, -gamma, ctx->rhs);
+    cs_array_real_scale(n1_dofs, 1, nullptr, -gamma, ctx->rhs);
 
     /* Solve AL.u_f = rhs */
 
@@ -3644,7 +3671,7 @@ cs_saddle_solver_notay(cs_saddle_solver_t  *solver,
                        cs_real_t           *x1,
                        cs_real_t           *x2)
 {
-  assert(solver != NULL);
+  assert(solver != nullptr);
 
   const cs_param_saddle_t  *saddlep = solver->param;
   const cs_cdo_system_helper_t  *sh = solver->system_helper;
@@ -3660,10 +3687,10 @@ cs_saddle_solver_notay(cs_saddle_solver_t  *solver,
 
   /* Prepare the solution and rhs arrays given to the solver */
 
-  cs_real_t  *sol = NULL;
+  cs_real_t  *sol = nullptr;
   BFT_MALLOC(sol, CS_MAX(n_cols, n_scatter_dofs), cs_real_t);
 
-  cs_real_t  *b = NULL;
+  cs_real_t  *b = nullptr;
   BFT_MALLOC(b, n_scatter_dofs, cs_real_t);
 
   if (solver->n1_dofs_by_elt == 3 && solver->n2_dofs_by_elt == 1)
@@ -3698,7 +3725,7 @@ cs_saddle_solver_notay(cs_saddle_solver_t  *solver,
      the Notay's algebraic transformation */
 
   cs_real_t  rtol = slesp->cvg_param.rtol;
-  cs_field_t  *fld = NULL;
+  cs_field_t  *fld = nullptr;
 
   cs_solving_info_t  sinfo;
   if (slesp->field_id > -1) {
@@ -3719,11 +3746,12 @@ cs_saddle_solver_notay(cs_saddle_solver_t  *solver,
                                                     b,
                                                     sol,
                                                     0,      /* aux. size */
-                                                    NULL);  /* aux. buffers */
+                                                    nullptr);  /* aux. buffers */
 
   /* Store metadata for monitoring */
 
-  cs_iter_algo_default_t  *algo_ctx = solver->algo->context;
+  cs_iter_algo_default_t *algo_ctx =
+    static_cast<cs_iter_algo_default_t *>(solver->algo->context);
 
   algo_ctx->cvg_status = code;
   algo_ctx->normalization = sinfo.rhs_norm;
@@ -3755,7 +3783,7 @@ cs_saddle_solver_notay(cs_saddle_solver_t  *solver,
 
   /* Compute M12(x2) */
 
-  cs_real_t  *m12_x2 = NULL, *mat_diag = NULL;
+  cs_real_t  *m12_x2 = nullptr, *mat_diag = nullptr;
 
   BFT_MALLOC(m12_x2, n1_dofs, cs_real_t);
 
@@ -3769,7 +3797,7 @@ cs_saddle_solver_notay(cs_saddle_solver_t  *solver,
 
   /* Perform the parallel synchronization. */
 
-  if (rset->ifs != NULL)
+  if (rset->ifs != nullptr)
     cs_interface_set_sum(rset->ifs,
                          /* n_elts, stride, interlaced */
                          n1_dofs, 1, false, CS_REAL_TYPE,
@@ -3788,7 +3816,8 @@ cs_saddle_solver_notay(cs_saddle_solver_t  *solver,
                        cs_matrix_get_diagonal(matrix), /* gathered view */
                        mat_diag);                      /* scatter view */
 
-  const cs_param_saddle_context_notay_t  *ctxp = saddlep->context;
+  const cs_param_saddle_context_notay_t *ctxp =
+    static_cast<const cs_param_saddle_context_notay_t *>(saddlep->context);
   const double  alpha = ctxp->scaling_coef;
   const cs_real_t  *dx = mat_diag,             *solx = sol;
   const cs_real_t  *dy = mat_diag + n1_elts,   *soly = sol + n1_elts;
@@ -3826,7 +3855,7 @@ cs_saddle_solver_minres(cs_saddle_solver_t  *solver,
                         cs_real_t           *x1,
                         cs_real_t           *x2)
 {
-  assert(solver != NULL);
+  assert(solver != nullptr);
 
   const cs_param_saddle_t  *saddlep = solver->param;
 
@@ -3835,14 +3864,15 @@ cs_saddle_solver_minres(cs_saddle_solver_t  *solver,
   /* Prepare the solution and rhs arrays given to the solver */
 
   cs_cdo_system_helper_t  *sh = solver->system_helper;
-  cs_saddle_solver_context_block_pcd_t  *ctx = solver->context;
-  assert(ctx != NULL);
+  cs_saddle_solver_context_block_pcd_t *ctx =
+    static_cast<cs_saddle_solver_context_block_pcd_t *>(solver->context);
+  assert(ctx != nullptr);
 
   /* Workspace */
 
   const cs_lnum_t  ssys_size = ctx->b11_max_size + ctx->b22_max_size;
   cs_lnum_t  wsp_size = 7*ssys_size;
-  cs_real_t  *wsp = NULL;
+  cs_real_t  *wsp = nullptr;
 
   BFT_MALLOC(wsp, wsp_size, cs_real_t);
 
@@ -3862,7 +3892,7 @@ cs_saddle_solver_minres(cs_saddle_solver_t  *solver,
   /* Set pointer for the block preconditioning */
 
   cs_lnum_t  pc_wsp_size = 0;
-  cs_real_t  *pc_wsp = NULL;
+  cs_real_t  *pc_wsp = nullptr;
   cs_saddle_solver_pc_apply_t  *pc_apply = _set_pc_by_block(solver,
                                                             ctx,
                                                             &pc_wsp_size,
@@ -3880,7 +3910,7 @@ cs_saddle_solver_minres(cs_saddle_solver_t  *solver,
 
   /* The RHS is not reduced by default */
 
-  if (rset->ifs != NULL)
+  if (rset->ifs != nullptr)
     cs_interface_set_sum(rset->ifs,
                          n1_dofs,
                          1, false, CS_REAL_TYPE, /* stride, interlaced */
@@ -4082,36 +4112,38 @@ cs_saddle_solver_gcr(cs_saddle_solver_t  *solver,
                      cs_real_t           *x1,
                      cs_real_t           *x2)
 {
-  assert(solver != NULL);
+  assert(solver != nullptr);
 
   const cs_param_saddle_t  *saddlep = solver->param;
   assert(saddlep->solver == CS_PARAM_SADDLE_SOLVER_GCR);
 
-  const cs_param_saddle_context_block_krylov_t  *ctxp = saddlep->context;
+  const cs_param_saddle_context_block_krylov_t *ctxp =
+    static_cast<cs_param_saddle_context_block_krylov_t *>(saddlep->context);
   const int  restart = ctxp->n_stored_directions;
 
   /* Prepare the solution and rhs arrays given to the solver */
 
-  cs_saddle_solver_context_block_pcd_t  *ctx = solver->context;
-  assert(ctx != NULL);
+  cs_saddle_solver_context_block_pcd_t *ctx =
+    static_cast<cs_saddle_solver_context_block_pcd_t *>(solver->context);
+  assert(ctx != nullptr);
 
   cs_cdo_system_helper_t  *sh = solver->system_helper;
 
   /* Workspace */
 
   const int  triangular_size = (restart*(restart+1))/2;
-  double  *gamma = NULL;
+  double  *gamma = nullptr;
   BFT_MALLOC(gamma, triangular_size, double);
   memset(gamma, 0, triangular_size*sizeof(double));
 
-  double  *alpha = NULL, *beta = NULL;
+  double  *alpha = nullptr, *beta = nullptr;
   BFT_MALLOC(alpha, 2*restart, double);
   memset(alpha, 0, 2*restart*sizeof(double));
   beta = alpha + restart;
 
   const cs_lnum_t  ssys_size = ctx->b11_max_size + ctx->b22_max_size;
   cs_lnum_t  wsp_size = (2 + 2*restart)*ssys_size;
-  cs_real_t  *wsp = NULL;
+  cs_real_t  *wsp = nullptr;
   BFT_MALLOC(wsp, wsp_size, cs_real_t);
   memset(wsp, 0, wsp_size*sizeof(cs_real_t));
 
@@ -4123,7 +4155,7 @@ cs_saddle_solver_gcr(cs_saddle_solver_t  *solver,
   /* Set pointer for the block preconditioning */
 
   cs_lnum_t  pc_wsp_size = 0;
-  cs_real_t  *pc_wsp = NULL;
+  cs_real_t  *pc_wsp = nullptr;
   cs_saddle_solver_pc_apply_t  *pc_apply = _set_pc_by_block(solver,
                                                             ctx,
                                                             &pc_wsp_size,
@@ -4141,7 +4173,7 @@ cs_saddle_solver_gcr(cs_saddle_solver_t  *solver,
 
   /* The RHS is not reduced by default */
 
-  if (rset->ifs != NULL)
+  if (rset->ifs != nullptr)
     cs_interface_set_sum(rset->ifs,
                          n1_dofs,
                          1, false, CS_REAL_TYPE, /* stride, interlaced */
@@ -4307,18 +4339,20 @@ cs_saddle_solver_gkb_inhouse(cs_saddle_solver_t  *solver,
                              cs_real_t           *x1,
                              cs_real_t           *x2)
 {
-  assert(solver != NULL);
+  assert(solver != nullptr);
 
   const cs_param_saddle_t  *saddlep = solver->param;
-  const cs_param_saddle_context_gkb_t  *ctxp = saddlep->context;
+  const cs_param_saddle_context_gkb_t *ctxp =
+    static_cast<cs_param_saddle_context_gkb_t *>(saddlep->context);
   const double  gamma = ctxp->augmentation_scaling;
 
   cs_iter_algo_t  *algo = solver->algo;
   cs_cdo_system_helper_t  *sh = solver->system_helper;
-  cs_saddle_solver_context_gkb_t  *ctx = solver->context;
+  cs_saddle_solver_context_gkb_t *ctx =
+    static_cast<cs_saddle_solver_context_gkb_t *>(solver->context);
 
   assert(saddlep->solver == CS_PARAM_SADDLE_SOLVER_GKB);
-  assert(ctx != NULL);
+  assert(ctx != nullptr);
 
   /* ------------------ */
   /* --- ALGO BEGIN --- */
@@ -4379,7 +4413,7 @@ cs_saddle_solver_gkb_inhouse(cs_saddle_solver_t  *solver,
     ctx->m12_vector_multiply(n2_elts, ctx->q, ctx->m21_adj, ctx->m21_val,
                              ctx->m12q);
 
-    if (rset->ifs != NULL)
+    if (rset->ifs != nullptr)
       cs_interface_set_sum(rset->ifs,
                            /* n_elts, stride, interlaced */
                            n1_dofs, 1, false, CS_REAL_TYPE,
@@ -4467,7 +4501,7 @@ cs_saddle_solver_sles_full_system(cs_saddle_solver_t  *solver,
                                   cs_real_t           *x1,
                                   cs_real_t           *x2)
 {
-  assert(solver != NULL);
+  assert(solver != nullptr);
 
   const cs_cdo_system_helper_t  *sh = solver->system_helper;
   const cs_range_set_t  *rset = cs_cdo_system_get_range_set(sh, 0);
@@ -4480,10 +4514,10 @@ cs_saddle_solver_sles_full_system(cs_saddle_solver_t  *solver,
 
   /* Prepare the solution and rhs arrays given to the solver */
 
-  cs_real_t  *sol = NULL;
+  cs_real_t  *sol = nullptr;
   BFT_MALLOC(sol, CS_MAX(n_cols, n_scatter_dofs), cs_real_t);
 
-  cs_real_t  *b = NULL;
+  cs_real_t  *b = nullptr;
   BFT_MALLOC(b, n_scatter_dofs, cs_real_t);
 
   assert(solver->n2_elts == n2_dofs);
@@ -4517,7 +4551,7 @@ cs_saddle_solver_sles_full_system(cs_saddle_solver_t  *solver,
   cs_real_t  rtol = saddlep->cvg_param.rtol;
 
   cs_solving_info_t  sinfo;
-  cs_field_t  *fld = NULL;
+  cs_field_t  *fld = nullptr;
   if (slesp->field_id > -1) {
     fld = cs_field_by_id(slesp->field_id);
     cs_field_get_key_struct(fld, cs_field_key_id("solving_info"), &sinfo);
@@ -4536,7 +4570,7 @@ cs_saddle_solver_sles_full_system(cs_saddle_solver_t  *solver,
                                                     b,
                                                     sol,
                                                     0,      /* aux. size */
-                                                    NULL);  /* aux. buffers */
+                                                    nullptr);  /* aux. buffers */
 
 #if 0 /* Export the saddle-point system for analysis */
   cs_dbg_binary_dump_system(saddlep->name, matrix, b, sol);
@@ -4544,7 +4578,8 @@ cs_saddle_solver_sles_full_system(cs_saddle_solver_t  *solver,
 
   /* Store metadata for monitoring */
 
-  cs_iter_algo_default_t  *algo_ctx = solver->algo->context;
+  cs_iter_algo_default_t *algo_ctx =
+    static_cast<cs_iter_algo_default_t *>(solver->algo->context);
 
   algo_ctx->cvg_status = code;
   algo_ctx->normalization = sinfo.rhs_norm;
@@ -4614,20 +4649,22 @@ cs_saddle_solver_uzawa_cg(cs_saddle_solver_t  *solver,
                           cs_real_t           *x1,
                           cs_real_t           *x2)
 {
-  assert(solver != NULL);
+  assert(solver != nullptr);
 
   const cs_param_saddle_t  *saddlep = solver->param;
 
   cs_iter_algo_t  *algo = solver->algo;
   cs_cdo_system_helper_t  *sh = solver->system_helper;
-  cs_saddle_solver_context_uzawa_cg_t  *ctx = solver->context;
-  cs_param_saddle_context_uzacg_t  *ctxp = saddlep->context;
+  cs_saddle_solver_context_uzawa_cg_t *ctx =
+    static_cast<cs_saddle_solver_context_uzawa_cg_t *>(solver->context);
+  cs_param_saddle_context_uzacg_t *ctxp =
+    static_cast<cs_param_saddle_context_uzacg_t *>(saddlep->context);
 
   const cs_param_sles_t  *init_slesp = ctxp->init_sles_param;
 
   assert(saddlep->solver == CS_PARAM_SADDLE_SOLVER_UZAWA_CG);
-  assert(ctx != NULL);
-  assert(init_slesp != NULL);
+  assert(ctx != nullptr);
+  assert(init_slesp != nullptr);
 
   /* ------------------ */
   /* --- ALGO BEGIN --- */
@@ -4647,7 +4684,7 @@ cs_saddle_solver_uzawa_cg(cs_saddle_solver_t  *solver,
   ctx->m12_vector_multiply(n2_elts, x2, ctx->m21_adj, ctx->m21_val,
                            ctx->rhs);
 
-  if (rset->ifs != NULL) {
+  if (rset->ifs != nullptr) {
 
     cs_interface_set_sum(rset->ifs,
                          /* n_elts, stride, interlaced */
@@ -4676,7 +4713,7 @@ cs_saddle_solver_uzawa_cg(cs_saddle_solver_t  *solver,
 
   cs_sles_t  *init_sles =
     (ctxp->dedicated_init_sles) ? ctx->init_sles : solver->main_sles;
-  assert(init_sles != NULL);
+  assert(init_sles != nullptr);
 
   int  n_iter = cs_cdo_solve_scalar_system(n1_dofs,
                                            init_slesp,
@@ -4751,7 +4788,7 @@ cs_saddle_solver_uzawa_cg(cs_saddle_solver_t  *solver,
     cs_array_real_fill_zero(n1_dofs, ctx->rhs);
     ctx->m12_vector_multiply(n2_elts, dk, ctx->m21_adj, ctx->m21_val, ctx->rhs);
 
-    if (rset->ifs != NULL)
+    if (rset->ifs != nullptr)
       cs_interface_set_sum(rset->ifs,
                            /* n_elts, stride, interlaced */
                            n1_dofs, 1, false, CS_REAL_TYPE,
@@ -4857,20 +4894,22 @@ cs_saddle_solver_simple(cs_saddle_solver_t  *solver,
                         cs_real_t           *x1,
                         cs_real_t           *x2)
 {
-  assert(solver != NULL);
+  assert(solver != nullptr);
 
   const cs_param_saddle_t  *saddlep = solver->param;
 
   cs_iter_algo_t  *algo = solver->algo;
   cs_cdo_system_helper_t  *sh = solver->system_helper;
-  cs_saddle_solver_context_simple_t  *ctx = solver->context;
-  cs_param_saddle_context_simple_t  *ctxp = saddlep->context;
+  cs_saddle_solver_context_simple_t *ctx =
+    static_cast<cs_saddle_solver_context_simple_t *>(solver->context);
+  cs_param_saddle_context_simple_t *ctxp =
+    static_cast<cs_param_saddle_context_simple_t *>(saddlep->context);
 
   const cs_param_sles_t  *init_slesp = ctxp->init_sles_param;
 
   assert(saddlep->solver == CS_PARAM_SADDLE_SOLVER_SIMPLE);
-  assert(ctx != NULL);
-  assert(init_slesp != NULL);
+  assert(ctx != nullptr);
+  assert(init_slesp != nullptr);
 
   /* ------------------ */
   /* --- ALGO BEGIN --- */
@@ -4890,7 +4929,7 @@ cs_saddle_solver_simple(cs_saddle_solver_t  *solver,
   ctx->m12_vector_multiply(n2_elts, x2, ctx->m21_adj, ctx->m21_val,
                            ctx->rhs);
 
-  if (rset->ifs != NULL) {
+  if (rset->ifs != nullptr) {
 
     cs_interface_set_sum(rset->ifs,
                          /* n_elts, stride, interlaced */
@@ -4919,7 +4958,7 @@ cs_saddle_solver_simple(cs_saddle_solver_t  *solver,
 
   cs_sles_t  *init_sles =
     (ctxp->dedicated_init_sles) ? ctx->init_sles : solver->main_sles;
-  assert(init_sles != NULL);
+  assert(init_sles != nullptr);
 
   int  n_iter = cs_cdo_solve_scalar_system(n1_dofs,
                                            init_slesp,
@@ -4947,7 +4986,7 @@ cs_saddle_solver_simple(cs_saddle_solver_t  *solver,
 
   /* Solve S.dx2 = rk */
 
-  cs_real_t *dx2 = NULL;
+  cs_real_t *dx2 = nullptr;
   BFT_MALLOC(dx2, n2_elts, cs_real_t);
 
   n_iter = _solve_schur_approximation(solver,
