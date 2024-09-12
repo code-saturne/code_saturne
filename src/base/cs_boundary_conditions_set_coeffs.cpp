@@ -257,7 +257,7 @@ _boundary_condition_mobile_mesh_rotor_stator_type(void)
     any specific Dirichlet condition for velocity.
   */
 
-  cs_real_t *coftur = NULL,  *hfltur = NULL;
+  cs_real_t *coftur = nullptr,  *hfltur = nullptr;
   cs_turbomachinery_get_wall_bc_coeffs(&coftur, &hfltur);
 
   if (cs_turbomachinery_get_model() == CS_TURBOMACHINERY_TRANSIENT) {
@@ -329,10 +329,10 @@ _boundary_condition_rt_type(const cs_mesh_t             *m,
     // cs_real_t *radiance = CS_FI_(radiance, gg_id)->val;
     cs_field_t *f_rad = CS_FI_(radiance, gg_id);
 
-    // int *icodcl_rad = NULL;
-    cs_real_t *rcodcl1_rad = NULL;
+    // int *icodcl_rad = nullptr;
+    cs_real_t *rcodcl1_rad = nullptr;
 
-    if (f_rad->bc_coeffs != NULL) {
+    if (f_rad->bc_coeffs != nullptr) {
       // icodcl_rad = f_rad->bc_coeffs->icodcl;
       rcodcl1_rad = f_rad->bc_coeffs->rcodcl1;
     }
@@ -379,12 +379,12 @@ _boundary_condition_ale_type(const cs_mesh_t             *m,
 
   cs_field_build_bc_codes_all();
 
-  int *icodcl_mesh_u = NULL;
-  cs_real_t *_rcodcl1_mesh_u = NULL;
-  cs_real_t *rcodcl1_mesh_u = NULL;
+  int *icodcl_mesh_u = nullptr;
+  cs_real_t *_rcodcl1_mesh_u = nullptr;
+  cs_real_t *rcodcl1_mesh_u = nullptr;
   cs_real_t *rcodcl1_vel = CS_F_(vel)->bc_coeffs->rcodcl1;
 
-  if (CS_F_(mesh_u)->bc_coeffs != NULL) {
+  if (CS_F_(mesh_u)->bc_coeffs != nullptr) {
     icodcl_mesh_u = CS_F_(mesh_u)->bc_coeffs->icodcl;
     rcodcl1_mesh_u = CS_F_(mesh_u)->bc_coeffs->rcodcl1;
   }
@@ -411,7 +411,7 @@ _boundary_condition_ale_type(const cs_mesh_t             *m,
   /* When using CDO solver, no need for checks. */
   if (cs_glob_ale == CS_ALE_CDO) {
 
-    cs_real_3_t *b_fluid_vel = NULL;
+    cs_real_3_t *b_fluid_vel = nullptr;
     BFT_MALLOC(b_fluid_vel, n_b_faces, cs_real_3_t);
 
     cs_array_real_fill_zero(3*n_b_faces, (cs_real_t *)b_fluid_vel);
@@ -449,7 +449,7 @@ _boundary_condition_ale_type(const cs_mesh_t             *m,
                  "At least one boundary face has an unknown boundary type.\n"
                  "  The calculation will not be run."
                  "Check boundary condition definitions.");
-      cs_boundary_conditions_error(ale_bc_type, NULL);
+      cs_boundary_conditions_error(ale_bc_type, nullptr);
     }
 
     /* Conversion into BC and values
@@ -593,7 +593,7 @@ _boundary_condition_ale_type(const cs_mesh_t             *m,
                    "Check boundary condition definitions.\n"),
                  icoder[0], icoder[1]);
 
-      cs_boundary_conditions_error(ale_bc_type, NULL);
+      cs_boundary_conditions_error(ale_bc_type, nullptr);
     }
 
   } /* if (cs_glob_ale != CS_ALE_CDO) */
@@ -823,12 +823,12 @@ cs_boundary_conditions_set_coeffs(int        nvar,
 
   const cs_real_3_t *vtx_coord = (const cs_real_3_t *)mesh->vtx_coord;
   const cs_lnum_t *restrict b_face_cells
-    = (const cs_lnum_t *restrict)mesh->b_face_cells;
+    = (const cs_lnum_t *)mesh->b_face_cells;
   const cs_real_3_t *b_face_normal  = (const cs_real_3_t *)fvq->b_face_normal;
   const cs_real_3_t *b_face_u_normal = (const cs_real_3_t *)fvq->b_face_u_normal;
   const cs_real_3_t *cell_cen = (const cs_real_3_t *)fvq->cell_cen;
   const cs_real_3_t *b_face_cog = (const cs_real_3_t *)fvq->b_face_cog;
-  const cs_real_3_t *restrict diipb = (const cs_real_3_t *restrict)fvq->diipb;
+  const cs_real_3_t *restrict diipb = (const cs_real_3_t *)fvq->diipb;
   const cs_real_t   *b_face_surf    = fvq->b_face_surf;
   const cs_real_t   *b_dist         = fvq->b_dist;
   int               *isympa         = fvq->b_sym_flag;
@@ -906,7 +906,7 @@ cs_boundary_conditions_set_coeffs(int        nvar,
   /* ALE method (mesh velocity BC and vertices displacement) */
   cs_field_t *f_displ = cs_field_by_name_try("mesh_displacement");
 
-  if (f_displ != NULL) { // (cs_glob_ale >= 1)
+  if (f_displ != nullptr) { // (cs_glob_ale >= 1)
 
     cs_real_3_t *disale = (cs_real_3_t *)(f_displ->val);
     cs_real_3_t *xyzno0 = (cs_real_3_t *)cs_field_by_name("vtx_coord0")->val;
@@ -972,8 +972,8 @@ cs_boundary_conditions_set_coeffs(int        nvar,
   /* Convert temperature to enthalpy for Dirichlet conditions */
 
   cs_lnum_t nbt2h = 0;
-  cs_real_t *vbt2h = NULL;
-  cs_lnum_t *lbt2h = NULL;
+  cs_real_t *vbt2h = nullptr;
+  cs_lnum_t *lbt2h = nullptr;
 
   if (thermal_variable == CS_THERMAL_MODEL_ENTHALPY) {
 
@@ -1003,7 +1003,7 @@ cs_boundary_conditions_set_coeffs(int        nvar,
    *--------------------------------------------------------------------------*/
 
   /* Allocate temporary arrays */
-  cs_real_3_t *velipb = NULL;
+  cs_real_3_t *velipb = nullptr;
   BFT_MALLOC(velipb, n_b_faces, cs_real_3_t);
 
   cs_turb_model_type_t iturb
@@ -1018,25 +1018,25 @@ cs_boundary_conditions_set_coeffs(int        nvar,
   /* velipb stores the velocity in i' of boundary cells */
 
   /* Pointers to y+, t+ and t* if saved */
-  cs_real_t *tplusp = NULL, *tstarp = NULL, *yplbr = NULL;
+  cs_real_t *tplusp = nullptr, *tstarp = nullptr, *yplbr = nullptr;
 
   /* Initialization of the array storing yplus
      which is computed in clptur.f90 and/or clptrg.f90 */
 
   cs_field_t *yplus = cs_field_by_name_try("yplus");
-  if (yplus != NULL) {
+  if (yplus != nullptr) {
     yplbr = yplus->val;
     cs_array_real_fill_zero(n_b_faces, yplbr);
   }
 
   cs_field_t *itplus = cs_field_by_name_try("tplus");
-  if (itplus != NULL) {
+  if (itplus != nullptr) {
     tplusp = itplus->val;
     cs_array_real_fill_zero(n_b_faces, tplusp);
   }
 
   cs_field_t *itstar = cs_field_by_name_try("tstar");
-  if (itstar != NULL) {
+  if (itstar != nullptr) {
     tstarp = itstar->val;
     cs_array_real_fill_zero(n_b_faces, tstarp);
   }
@@ -1047,9 +1047,9 @@ cs_boundary_conditions_set_coeffs(int        nvar,
   const cs_real_3_t *var_vela = (const cs_real_3_t *)vel->val_pre;
   cs_equation_param_t *eqp_vel = cs_field_get_equation_param(vel);
 
-  cs_real_t   *bfconv  = NULL, *bhconv = NULL;
-  cs_real_3_t *forbr   = NULL;
-  const cs_real_6_t *dttens = NULL;
+  cs_real_t   *bfconv  = nullptr, *bhconv = nullptr;
+  cs_real_3_t *forbr   = nullptr;
+  const cs_real_6_t *dttens = nullptr;
 
   /* Pointers to specific fields */
 
@@ -1059,12 +1059,12 @@ cs_boundary_conditions_set_coeffs(int        nvar,
   }
 
   cs_field_t *f_dttens  = cs_field_by_name_try("dttens");
-  if (f_dttens != NULL)
+  if (f_dttens != nullptr)
     dttens = (const cs_real_6_t *)f_dttens->val;
 
   cs_field_t *f_forbr = cs_field_by_name_try("boundary_forces");
 
-  if (f_forbr != NULL && iterns == 1)
+  if (f_forbr != nullptr && iterns == 1)
     forbr = (cs_real_3_t *)f_forbr->val;
 
   /*--------------------------------------------------------------------------
@@ -1172,10 +1172,10 @@ cs_boundary_conditions_set_coeffs(int        nvar,
       if (cs_field_get_key_int(f_scal, keysca) <= 0)
         continue;
 
-      cs_field_t  *f_scal_b = NULL;
-      cs_real_t   *bvar_s = NULL;
-      cs_real_3_t *bvar_v = NULL;
-      cs_real_6_t *bvar_t = NULL;
+      cs_field_t  *f_scal_b = nullptr;
+      cs_real_t   *bvar_s = nullptr;
+      cs_real_3_t *bvar_v = nullptr;
+      cs_real_6_t *bvar_t = nullptr;
 
       int b_f_id = cs_field_get_key_int(f_scal, kbfid);
 
@@ -1187,10 +1187,10 @@ cs_boundary_conditions_set_coeffs(int        nvar,
           f_scal_b = cs_field_by_name_try("boundary_temperature");
       }
 
-      if (f_scal_b == NULL && f_scal != f_th)
+      if (f_scal_b == nullptr && f_scal != f_th)
         continue; /* nothing to do for this scalar */
 
-      if (f_scal_b != NULL) {
+      if (f_scal_b != nullptr) {
         if (f_scal_b->dim == 1)
           bvar_s = f_scal_b->val;
         else if (f_scal_b->dim == 3)
@@ -1205,19 +1205,19 @@ cs_boundary_conditions_set_coeffs(int        nvar,
 
         if (cs_glob_space_disc->itbrrb == 1 && eqp_scal->ircflu == 1) {
           cs_real_t *var_iprime = theipb;
-          if (f_scal_b != NULL)
+          if (f_scal_b != nullptr)
             var_iprime = bvar_s;
 
           cs_field_gradient_boundary_iprime_scalar(f_scal,
                                                    true, /* use_previous_t */
                                                    n_b_faces,
-                                                   NULL,
+                                                   nullptr,
                                                    var_iprime);
         }
         else { /* itbrrb, ircflu */
           const cs_real_t *cvara_s = f_scal->val_pre;
 
-          if (f_scal_b != NULL) {
+          if (f_scal_b != nullptr) {
             for (cs_lnum_t f_id = 0; f_id < n_b_faces; f_id++) {
               cs_lnum_t c_id = b_face_cells[f_id];
               bvar_s[f_id] = cvara_s[c_id];
@@ -1233,14 +1233,14 @@ cs_boundary_conditions_set_coeffs(int        nvar,
 
         /* Copy bvar_s to theipb if both theipb and bvar_s present */
 
-        if (f_scal_b != NULL && f_th == f_scal) {
+        if (f_scal_b != nullptr && f_th == f_scal) {
           for (cs_lnum_t f_id = 0; f_id < n_b_faces; f_id++)
             theipb[f_id] = bvar_s[f_id];
         }
 
       }
 
-      else if (f_scal_b != NULL) {
+      else if (f_scal_b != nullptr) {
 
         if (f_scal->dim == 3) {
 
@@ -1248,7 +1248,7 @@ cs_boundary_conditions_set_coeffs(int        nvar,
             const cs_real_3_t *cvar_v
               = (const cs_real_3_t *)f_scal->val;
 
-            cs_real_33_t *gradv = NULL;
+            cs_real_33_t *gradv = nullptr;
             BFT_MALLOC(gradv, n_cells_ext, cs_real_33_t);
 
             const int inc = 1;
@@ -1285,7 +1285,7 @@ cs_boundary_conditions_set_coeffs(int        nvar,
             const cs_real_6_t *cvar_t
               = (const cs_real_6_t *)f_scal->val;
 
-            cs_real_63_t *gradt = NULL;
+            cs_real_63_t *gradt = nullptr;
             BFT_MALLOC(gradt, n_cells_ext, cs_real_63_t);
 
             const int inc = 1;
@@ -1355,13 +1355,13 @@ cs_boundary_conditions_set_coeffs(int        nvar,
 
   /* Compute the velocity in i' for boundary cells */
 
-  if (iclsym != 0 || ipatur != 0 || ipatrg != 0 || f_forbr != NULL) {
+  if (iclsym != 0 || ipatur != 0 || ipatrg != 0 || f_forbr != nullptr) {
 
     if (nt_cur > 1 && eqp_vel->ircflu == 1) {
       cs_field_gradient_boundary_iprime_vector(vel,
                                                true, /* use_previous_t */
                                                n_b_faces,
-                                               NULL,
+                                               nullptr,
                                                velipb);
     }
 
@@ -1379,7 +1379,7 @@ cs_boundary_conditions_set_coeffs(int        nvar,
 
   /* Compute rij in i' for boundary cells */
 
-  cs_real_6_t *rijipb = NULL;
+  cs_real_6_t *rijipb = nullptr;
   if ((iclsym != 0 || ipatur != 0 || ipatrg != 0) && itytur == 3) {
 
     /* Allocate a work array to store rij values at boundary faces */
@@ -1391,7 +1391,7 @@ cs_boundary_conditions_set_coeffs(int        nvar,
       cs_field_gradient_boundary_iprime_tensor(vel,
                                                true, /* use_previous_t */
                                                n_b_faces,
-                                               NULL,
+                                               nullptr,
                                                rijipb);
     }
 
@@ -1610,7 +1610,7 @@ cs_boundary_conditions_set_coeffs(int        nvar,
     const cs_real_t *rcodcl3_p = (const cs_real_t *)p->bc_coeffs->rcodcl3;
 
     cs_equation_param_t *eqp_p = cs_field_get_equation_param(p);
-    cs_real_t *crom = NULL;
+    cs_real_t *crom = nullptr;
 
     if (cs_glob_vof_parameters->vof_model > 0)
       crom = CS_F_(rho)->val; // FIXME consistency with correction step
@@ -1859,7 +1859,7 @@ cs_boundary_conditions_set_coeffs(int        nvar,
 
     if (itytur == 2 || iturb == CS_TURB_K_OMEGA) {
 
-      cs_field_t *turb = NULL;
+      cs_field_t *turb = nullptr;
       cs_real_t sigma = 0.0;
 
       for (int ii = 0; ii < 2; ii++) {
@@ -1979,8 +1979,8 @@ cs_boundary_conditions_set_coeffs(int        nvar,
       cs_real_t *rcodcl3_ts = rij->bc_coeffs->rcodcl3;
 
       cs_equation_param_t *eqp_ts = cs_field_get_equation_param(rij);
-      cs_field_t *f_a_t_visc = NULL;
-      cs_real_6_t *visten = NULL;
+      cs_field_t *f_a_t_visc = nullptr;
+      cs_real_6_t *visten = nullptr;
 
       if (eqp_ts->idften & CS_ANISOTROPIC_DIFFUSION) {
         f_a_t_visc = cs_field_by_name("anisotropic_turbulent_viscosity");
@@ -2163,7 +2163,7 @@ cs_boundary_conditions_set_coeffs(int        nvar,
       cs_real_t sigmae = cs_field_get_key_double(eps, ksigmas);
 
       cs_equation_param_t *eqp_eps = cs_field_get_equation_param(eps);
-      f_a_t_visc = NULL, visten = NULL;
+      f_a_t_visc = nullptr, visten = nullptr;
 
       if (eqp_eps->idften & CS_ANISOTROPIC_DIFFUSION) {
         f_a_t_visc = cs_field_by_name("anisotropic_turbulent_viscosity");
@@ -2365,7 +2365,7 @@ cs_boundary_conditions_set_coeffs(int        nvar,
 
       /* k, epsilon  and phi */
 
-      cs_field_t *v2f = NULL;
+      cs_field_t *v2f = nullptr;
       cs_real_t sigma = 0.;
 
       for (int ii = 0; ii < 3; ii++) {
@@ -2692,13 +2692,13 @@ cs_boundary_conditions_set_coeffs(int        nvar,
    *--------------------------------------------------------------------------*/
 
   {
-    const cs_real_t *cpro_cv = NULL, *cpro_cp = NULL;
+    const cs_real_t *cpro_cv = nullptr, *cpro_cp = nullptr;
 
     if (fluid_props->icp >= 0)
       cpro_cp = CS_F_(cp)->val;
 
     cs_field_t *f_id_cv = cs_field_by_name_try("isobaric_heat_capacity");
-    if (f_id_cv != NULL)
+    if (f_id_cv != nullptr)
       cpro_cv = f_id_cv->val;
 
     if (cs_glob_physical_model_flag[CS_COMPRESSIBLE] >= 0
@@ -2719,7 +2719,7 @@ cs_boundary_conditions_set_coeffs(int        nvar,
         isvhbl = isvhb;
 
       const int ifcvsl = cs_field_get_key_int(f_scal, kivisl);
-      const cs_real_t *viscls = NULL;
+      const cs_real_t *viscls = nullptr;
       if (ifcvsl >= 0)
         viscls = cs_field_by_id(ifcvsl)->val;
 
@@ -2741,7 +2741,7 @@ cs_boundary_conditions_set_coeffs(int        nvar,
       const int kvisl0 = cs_field_key_id("diffusivity_ref");
       cs_real_t visls_0 = 0.;
       cs_lnum_t iscacp = 0;
-      cs_field_t *f = NULL;
+      cs_field_t *f = nullptr;
 
       if (iscavr > 0) {
         f = cs_field_by_id(iscavr);
@@ -2768,10 +2768,10 @@ cs_boundary_conditions_set_coeffs(int        nvar,
       }
 
       cs_equation_param_t *eqp_scal = cs_field_get_equation_param(f_scal);
-      cs_field_t *f_vis = NULL;
+      cs_field_t *f_vis = nullptr;
       cs_real_t ctheta = 0.;
-      cs_real_6_t *visten = NULL;
-      cs_field_t  *f_a_t_visc = NULL;
+      cs_real_6_t *visten = nullptr;
+      cs_field_t  *f_a_t_visc = nullptr;
 
       if ((eqp_scal->idften & CS_ANISOTROPIC_DIFFUSION)
           || turb_flux_model_type == 3) {
@@ -2809,8 +2809,8 @@ cs_boundary_conditions_set_coeffs(int        nvar,
         cs_real_t *rcodcl3_sc = f_scal->bc_coeffs->rcodcl3;
 
         cs_equation_param_t *eqp_sc = cs_field_get_equation_param(f_scal);
-        cs_field_t  *f_scal_b = NULL;
-        cs_real_t *bvar_s = NULL;
+        cs_field_t  *f_scal_b = nullptr;
+        cs_real_t *bvar_s = nullptr;
 
         if (b_f_id > -1)
           f_scal_b = cs_field_by_id(b_f_id);
@@ -2820,7 +2820,7 @@ cs_boundary_conditions_set_coeffs(int        nvar,
             f_scal_b = cs_field_by_name_try("boundary_temperature");
         }
 
-        if (f_scal_b != NULL)
+        if (f_scal_b != nullptr)
           bvar_s = f_scal_b->val;
 
         for (cs_lnum_t f_id = 0; f_id < n_b_faces; f_id++) {
@@ -2920,7 +2920,7 @@ cs_boundary_conditions_set_coeffs(int        nvar,
                                                         hext);
 
             /* Store boundary value */
-            if (f_scal_b != NULL)
+            if (f_scal_b != nullptr)
               bvar_s[f_id] = coefa_sc[f_id] + coefb_sc[f_id] * bvar_s[f_id];
           }
 
@@ -2940,7 +2940,7 @@ cs_boundary_conditions_set_coeffs(int        nvar,
                for which it was not previously computed
                in clptur.f90 */
             if (icodcl_vel[f_id] != 5) {
-              if (f_scal_b != NULL)
+              if (f_scal_b != nullptr)
                 bvar_s[f_id] = coefa_sc[f_id] + coefb_sc[f_id] * bvar_s[f_id];
             }
           }
@@ -2957,7 +2957,7 @@ cs_boundary_conditions_set_coeffs(int        nvar,
               (f_id, f_scal->bc_coeffs, pimp, cfl, hint);
 
             /* Store boundary value */
-            if (f_scal_b != NULL)
+            if (f_scal_b != nullptr)
               bvar_s[f_id] = coefa_sc[f_id] + coefb_sc[f_id] * bvar_s[f_id];
           }
 
@@ -2975,7 +2975,7 @@ cs_boundary_conditions_set_coeffs(int        nvar,
                                                   dimp);
 
             /* Store boundary value */
-            if (f_scal_b != NULL)
+            if (f_scal_b != nullptr)
               bvar_s[f_id] = coefa_sc[f_id] + coefb_sc[f_id] * bvar_s[f_id];
           }
 
@@ -2992,7 +2992,7 @@ cs_boundary_conditions_set_coeffs(int        nvar,
               (f_id, f_scal->bc_coeffs, pimp, dimp);
 
             /* Store boundary value */
-            if (f_scal_b != NULL)
+            if (f_scal_b != nullptr)
               bvar_s[f_id] = coefa_sc[f_id] + coefb_sc[f_id] * bvar_s[f_id];
           }
 
@@ -3152,7 +3152,7 @@ cs_boundary_conditions_set_coeffs(int        nvar,
       /* Vector transported quantity (dimension may be greater than 3) */
       else {
 
-        cs_real_3_t *bvar_v = NULL;
+        cs_real_3_t *bvar_v = nullptr;
         if (b_f_id >= 0)
           bvar_v = (cs_real_3_t *)cs_field_by_id(b_f_id)->val;
 
@@ -3469,8 +3469,8 @@ cs_boundary_conditions_set_coeffs(int        nvar,
 
     cs_equation_param_t *eqp_displ = cs_field_get_equation_param(m_vel);
 
-    const cs_real_t   *cpro_visma_s = NULL;
-    const cs_real_6_t *cpro_visma_v = NULL;
+    const cs_real_t   *cpro_visma_s = nullptr;
+    const cs_real_6_t *cpro_visma_v = nullptr;
 
     if (eqp_displ->idften & CS_ISOTROPIC_DIFFUSION)
       cpro_visma_s = CS_F_(vism)->val;
@@ -3566,7 +3566,7 @@ cs_boundary_conditions_set_coeffs(int        nvar,
    * 15) Compute stresses at boundary (step 1 of 5)
    *--------------------------------------------------------------------------*/
 
-  if (f_forbr != NULL && iterns == 1) {
+  if (f_forbr != nullptr && iterns == 1) {
 
     cs_real_3_t  *cofaf_vel = (cs_real_3_t  *)vel->bc_coeffs->af;
     cs_real_33_t *cofbf_vel = (cs_real_33_t *)vel->bc_coeffs->bf;
@@ -3606,7 +3606,7 @@ cs_boundary_conditions_set_coeffs(int        nvar,
 
     cs_field_t *f_b_temp = cs_field_by_name_try("boundary_temperature");
 
-    if (f_b_temp != NULL) {
+    if (f_b_temp != nullptr) {
 
       cs_real_t *btemp_s = (cs_real_t *)f_b_temp->val;
 
@@ -3618,7 +3618,7 @@ cs_boundary_conditions_set_coeffs(int        nvar,
          saved to the boundary temperature field, so no copy is needed. */
 
       int b_f_id = cs_field_get_key_int(f_th, kbfid);
-      cs_real_t *bvar_s = NULL;
+      cs_real_t *bvar_s = nullptr;
 
       if (b_f_id > -1)
         bvar_s = cs_field_by_id(b_f_id)->val;
@@ -3701,7 +3701,7 @@ cs_boundary_conditions_set_coeffs_init(void)
   /* ALE BCs (mesh velocity and nodal displacement) */
 
   cs_field_t *f_displ = cs_field_by_name_try("mesh_displacement");
-  if (f_displ != NULL) {
+  if (f_displ != nullptr) {
 
     cs_real_3_t *disale = (cs_real_3_t *)(f_displ->val);
 

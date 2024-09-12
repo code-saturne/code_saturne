@@ -307,10 +307,10 @@ cs_ast_coupling.c \
 cs_base_fortran.c \
 cs_boundary.c \
 cs_boundary_conditions.c \
-cs_boundary_conditions_check.c \
+cs_boundary_conditions_check.cpp \
 cs_boundary_conditions_coupling.c\
 cs_boundary_conditions_set_coeffs.cpp \
-cs_boundary_conditions_set_coeffs_symmetry.c \
+cs_boundary_conditions_set_coeffs_symmetry.cpp \
 cs_boundary_conditions_set_coeffs_turb.c \
 cs_boundary_conditions_type.c \
 cs_boundary_zone.c \
@@ -384,7 +384,7 @@ cs_selector_f2c.f90 \
 cs_setup.c \
 cs_solid_zone.c \
 cs_solve_all.cpp \
-cs_solve_equation.c \
+cs_solve_equation.cpp \
 cs_solve_navier_stokes.cpp \
 cs_solve_transported_variables.c \
 cs_sort.c \
@@ -398,7 +398,7 @@ cs_time_control.c \
 cs_time_moment.c \
 cs_time_plot.c \
 cs_time_step.c \
-cs_time_stepping.c \
+cs_time_stepping.cpp \
 cs_timer_stats.c \
 cs_turbomachinery.c \
 cs_utilities.c \

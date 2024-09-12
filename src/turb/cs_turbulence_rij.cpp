@@ -952,7 +952,7 @@ _gravity_st_epsilon(int              phase_id,
   const cs_real_t ce3 = cs_turb_ce3;
 
   cs_field_t *f_alpha_theta = nullptr;
-  
+
   cs_real_t rvarfl = 0.0;
   int turb_flux_model =  -1;
 
@@ -960,10 +960,10 @@ _gravity_st_epsilon(int              phase_id,
   cs_real_t _visls_0 = -1;
   cs_real_t *viscls = nullptr;
 
-  cs_field_t *f_t = cs_thermal_model_field(); 
+  cs_field_t *f_t = cs_thermal_model_field();
   if (f_t != nullptr){
     turb_flux_model =  cs_field_get_key_int(f_t, kturt);
-    
+
     cs_field_t *f_t_var = cs_field_get_variance(f_t);
     if (f_t_var != nullptr)
       rvarfl = cs_field_get_key_double(f_t_var, krvarfl);

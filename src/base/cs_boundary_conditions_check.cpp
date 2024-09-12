@@ -134,7 +134,8 @@ cs_boundary_conditions_check(int  bc_type[],
   const cs_lnum_t n_b_faces = mesh->n_b_faces;
   const int n_fields = cs_field_n_fields();
 
-  cs_turb_model_type_t iturb = cs_glob_turb_model->iturb;
+  const cs_turb_model_type_t iturb
+    = (cs_turb_model_type_t)cs_glob_turb_model->model;
   int itytur = cs_glob_turb_model->itytur;
 
   const int keysca = cs_field_key_id("scalar_id");
@@ -152,16 +153,16 @@ cs_boundary_conditions_check(int  bc_type[],
   /* Initializations
      =============== */
 
-  cs_real_t *bpro_rough = NULL, *bpro_rough_t = NULL;
+  cs_real_t *bpro_rough = nullptr, *bpro_rough_t = nullptr;
 
   cs_field_t *f_rough = cs_field_by_name_try("boundary_roughness");
-  if (f_rough != NULL) {
+  if (f_rough != nullptr) {
     bpro_rough = f_rough->val;
     bpro_rough_t = f_rough->val;
   }
 
   cs_field_t *f_rough_t = cs_field_by_name_try("boundary_thermal_roughness");
-  if (f_rough_t != NULL)
+  if (f_rough_t != nullptr)
     bpro_rough_t = f_rough_t->val;
 
   int *icodcl_vel = CS_F_(vel)->bc_coeffs->icodcl;
@@ -247,7 +248,6 @@ cs_boundary_conditions_check(int  bc_type[],
   int icodcl_v = -1;
 
   cs_gnum_t n_rough_error = 0;
-  bool iok_rough = false;
 
   /* Eligible conditions for velocity components */
 
@@ -271,7 +271,7 @@ cs_boundary_conditions_check(int  bc_type[],
     /* Check roughness if rough wall function */
     if (icodcl_vel[f_id] == 6) {
 
-      if (f_rough == NULL)
+      if (f_rough == nullptr)
         n_rough_error++;
       else if (bpro_rough[f_id] <= 0.0)
         n_rough_error++;
@@ -325,7 +325,7 @@ cs_boundary_conditions_check(int  bc_type[],
     const cs_field_t *f_turb = f_turb_list[ii];
 
     /* Map pointers for later access */
-    if (f_turb != NULL) {
+    if (f_turb != nullptr) {
       if (!(f_turb->type & CS_FIELD_VARIABLE))
         continue;
       if (f_turb->type & CS_FIELD_CDO)
@@ -409,7 +409,7 @@ cs_boundary_conditions_check(int  bc_type[],
   /* Admissible conditions for additional transported variables
      (scalars or vectors) */
 
-  const char *sc_name = NULL, *sc_vf_name = NULL;
+  const char *sc_name = nullptr, *sc_vf_name = nullptr;
   int icodcl_scal = -1, icodcl_vf_sc = -1;
   cs_gnum_t n_scal_error = 0, n_scal_vf_error = 0;
   bool iok_rough_sc = false;
@@ -420,7 +420,7 @@ cs_boundary_conditions_check(int  bc_type[],
 
     if (!(f_sc->type & CS_FIELD_VARIABLE))
       continue;
-    if (f_sc->bc_coeffs == NULL)
+    if (f_sc->bc_coeffs == nullptr)
       continue;
     if (cs_field_get_key_int(f_sc, keysca) <= 0)
       continue;
@@ -470,7 +470,7 @@ cs_boundary_conditions_check(int  bc_type[],
       if (icodcl_sc[f_id] == 6) {
         bool ierr_rough_sc = false;
 
-        if (f_rough_t == NULL)
+        if (f_rough_t == nullptr)
           ierr_rough_sc = true;
         else if (bpro_rough_t[f_id] <= 0.0)
           ierr_rough_sc = true;
@@ -587,7 +587,7 @@ cs_boundary_conditions_check(int  bc_type[],
 
     } /* End rough and smooth wall process */
 
-    if (CS_F_(rij) != NULL) {
+    if (CS_F_(rij) != nullptr) {
 
       cs_field_t *f_rij = CS_F_(rij);
       if (    (f_rij->type & CS_FIELD_VARIABLE)
@@ -937,7 +937,7 @@ cs_boundary_conditions_check(int  bc_type[],
 
     }
 
-    cs_boundary_conditions_error(bc_type, NULL);
+    cs_boundary_conditions_error(bc_type, nullptr);
   }
 }
 

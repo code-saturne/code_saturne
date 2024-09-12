@@ -112,21 +112,20 @@ _boundary_conditions_set_coeffs_symmetry_scalar(cs_field_t  *f_sc)
 
   cs_field_t *f_a_t_visc = cs_field_by_name("anisotropic_turbulent_viscosity");
   cs_real_6_t *visten = (cs_real_6_t *)f_a_t_visc->val;
-  cs_real_t *crom = crom = CS_F_(rho)->val;
 
-  const cs_real_t *cpro_cp = NULL, *cpro_cv = NULL;
+  const cs_real_t *cpro_cp = nullptr, *cpro_cv = nullptr;
   if (icp >= 0)
     cpro_cp = CS_F_(cp)->val;
 
   cs_field_t *f_id_cv = cs_field_by_name_try("isobaric_heat_capacity");
-  if (f_id_cv != NULL)
+  if (f_id_cv != nullptr)
     cpro_cv = f_id_cv->val;
 
   /* Reference diffusivity of the primal scalar */
   const int kvisl0 = cs_field_key_id("diffusivity_ref");
   cs_real_t visls_0 = cs_field_get_key_double(f_sc, kvisl0);
 
-  const cs_real_t *viscls = NULL;
+  const cs_real_t *viscls = nullptr;
   if (ifcvsl >= 0)
     viscls = cs_field_by_id(ifcvsl)->val;
 
@@ -289,7 +288,8 @@ _boundary_conditions_set_coeffs_symmetry_vector(cs_field_t  *f_v)
 {
   const cs_mesh_t *mesh = cs_glob_mesh;
   const cs_mesh_quantities_t *fvq = cs_glob_mesh_quantities;
-  const cs_turb_model_type_t iturb = cs_glob_turb_model->iturb;
+  const cs_turb_model_type_t iturb
+    = (cs_turb_model_type_t)cs_glob_turb_model->model;
 
   const cs_lnum_t n_b_faces = mesh->n_b_faces;
   const cs_lnum_t *b_face_cells = mesh->b_face_cells;
@@ -307,7 +307,7 @@ _boundary_conditions_set_coeffs_symmetry_vector(cs_field_t  *f_v)
   cs_real_3_t  *cofaf_v = (cs_real_3_t  *)f_v->bc_coeffs->af;
   cs_real_33_t *cofbf_v = (cs_real_33_t *)f_v->bc_coeffs->bf;
 
-  cs_real_6_t *visten = NULL;
+  cs_real_6_t *visten = nullptr;
   if (eqp_v->idften & CS_ANISOTROPIC_DIFFUSION) {
     if (iturb != CS_TURB_RIJ_EPSILON_EBRSM) {
       cs_field_t *f_a_t_visc = cs_field_by_name("anisotropic_turbulent_viscosity");
@@ -320,9 +320,7 @@ _boundary_conditions_set_coeffs_symmetry_vector(cs_field_t  *f_v)
   }
 
   const cs_real_t *visct = CS_F_(mu_t)->val;
-  const cs_real_t *crom = crom = CS_F_(rho)->val;
-
-  const cs_real_t *viscls = NULL;
+  const cs_real_t *viscls = nullptr;
   if (ifcvsl >= 0)
     viscls = cs_field_by_id(ifcvsl)->val;
 
@@ -474,7 +472,7 @@ cs_boundary_conditions_set_coeffs_symmetry(cs_real_t  velipb[][3],
 
   const cs_lnum_t n_b_faces = mesh->n_b_faces;
   const cs_lnum_t *restrict b_face_cells
-    = (const cs_lnum_t *restrict)mesh->b_face_cells;
+    = (const cs_lnum_t *)mesh->b_face_cells;
   const cs_real_3_t *b_face_u_normal = (const cs_real_3_t *)fvq->b_face_u_normal;
   const cs_real_3_t *b_face_cog = (const cs_real_3_t *)fvq->b_face_cog;
   const cs_real_3_t *cell_cen = (const cs_real_3_t *)fvq->cell_cen;
@@ -491,7 +489,7 @@ cs_boundary_conditions_set_coeffs_symmetry(cs_real_t  velipb[][3],
   /* Initializations
      =============== */
 
-  cs_real_6_t *visten = NULL;
+  cs_real_6_t *visten = nullptr;
   if (itytur == 3 && idirsm == 1) {
     cs_field_t *f_a_t_visc = cs_field_by_name("anisotropic_turbulent_viscosity");
     visten = (cs_real_6_t *)f_a_t_visc->val;
@@ -836,8 +834,8 @@ cs_boundary_conditions_set_coeffs_symmetry(cs_real_t  velipb[][3],
     int *icodcl_displ = m_vel->bc_coeffs->icodcl;
     cs_equation_param_t *eqp_displ = cs_field_get_equation_param(m_vel);
 
-    const cs_real_t   *cpro_visma_s = NULL;
-    const cs_real_6_t *cpro_visma_v = NULL;
+    const cs_real_t   *cpro_visma_s = nullptr;
+    const cs_real_6_t *cpro_visma_v = nullptr;
 
     if (eqp_displ->idften & CS_ISOTROPIC_DIFFUSION)
       cpro_visma_s = CS_F_(vism)->val;

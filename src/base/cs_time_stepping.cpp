@@ -251,12 +251,12 @@ cs_time_stepping(void)
 
   cs_lnum_t ncetsm = 0;
 
-  cs_volume_mass_injection_get_arrays(NULL,
+  cs_volume_mass_injection_get_arrays(nullptr,
                                       &ncetsm,
-                                      NULL,
-                                      NULL,
-                                      NULL,
-                                      NULL);
+                                      nullptr,
+                                      nullptr,
+                                      nullptr,
+                                      nullptr);
 
   cs_lnum_t n_cells_mst_tot = ncetsm;
 
@@ -492,7 +492,7 @@ cs_time_stepping(void)
   cs_f_initialization_variables();
 
   if (cs_glob_param_cdo_mode >= CS_PARAM_CDO_MODE_OFF) {  // CDO mode
-    assert(cs_glob_domain != NULL);
+    assert(cs_glob_domain != nullptr);
     cs_domain_initialize_systems(cs_glob_domain);
   }
 
@@ -1000,7 +1000,7 @@ cs_time_stepping_write_checkpoint(bool  checkpoint_mesh)
   cs_restart_main_and_aux_write();
 
   if (checkpoint_mesh)
-    cs_mesh_save(cs_glob_mesh, NULL, "checkpoint", "mesh.csm");
+    cs_mesh_save(cs_glob_mesh, nullptr, "checkpoint", "mesh.csm");
 
   if (cs_get_glob_1d_wall_thermal()->nfpt1t > 0)
     cs_1d_wall_thermal_write();

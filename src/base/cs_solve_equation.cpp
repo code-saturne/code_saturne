@@ -867,7 +867,7 @@ cs_solve_equation_scalar(cs_field_t        *f,
   const cs_real_t *volume = fvq->cell_vol;
   const cs_real_t *cell_f_vol = fvq->cell_f_vol;
   const cs_real_3_t *restrict cell_cen
-    = (const cs_real_3_t *restrict)fvq->cell_cen;
+    = (const cs_real_3_t *)fvq->cell_cen;
 
   const cs_turb_model_t *turb_model = cs_glob_turb_model;
   const cs_wall_condensation_t *wall_condensation = cs_glob_wall_condensation;
@@ -2124,7 +2124,7 @@ cs_solve_equation_vector(cs_field_t       *f,
     }
 
     const cs_real_3_t *restrict b_face_normal
-      = (const cs_real_3_t *restrict)fvq->b_face_normal;
+      = (const cs_real_3_t *)fvq->b_face_normal;
     cs_real_t *bpro_rusanov = cs_field_by_name("b_rusanov_diff")->val;
     // cs_real_3_t  *coefap = (cs_real_3_t *)f->bc_coeffs->a;
     // cs_real_33_t *coefbp = (cs_real_33_t *)f->bc_coeffs->b;
