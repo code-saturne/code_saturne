@@ -2099,6 +2099,11 @@ class Studies(object):
         # fill file with template
         cmd = slurm_batch_template.format(1, 0, 10, cur_batch_id)
 
+        # add user defined options if needed
+        if self.__slurm_batch_args:
+            for _p in self.__slurm_batch_args:
+                cmd += "#SBATCH " + _p + "\n"
+
         cmd += "\n"
         slurm_batch_file.write(cmd)
 
