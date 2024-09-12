@@ -413,8 +413,9 @@ _compute_up_rhop(int                 phase_id,
     turb_flux_model = cs_field_get_key_int(thf, kturt);
   const int turb_flux_model_type = turb_flux_model / 10;
 
-  cs_field_t *f_hf = cs_field_by_composite_name_try(thf->name,
-                                                    "turbulent_flux");
+  cs_field_t *f_hf = nullptr;
+  if (thf != nullptr)
+    f_hf = cs_field_by_composite_name_try(thf->name, "turbulent_flux");
 
   /* We want to use the computed turbulent heat fluxes (when they exist)
      when we are not dealing with atmo cases */
@@ -937,23 +938,11 @@ _gravity_st_epsilon(int              phase_id,
   if (f_cp != nullptr)
     cpro_cp = f_cp->val;
 
-  cs_field_t *f_t = cs_thermal_model_field();
-  cs_field_t *f_t_var = cs_field_get_variance(f_t);
-  const cs_real_t rvarfl = cs_field_get_key_double(f_t_var, krvarfl);
-
-  cs_field_t *f_alpha_theta
-    = cs_field_by_composite_name_try(f_t->name, "alpha");
-
-  cs_real_t *alpha_theta = nullptr;
-  if (f_alpha_theta != nullptr)
-    alpha_theta = f_alpha_theta->val;
-
   const cs_real_6_t *cvara_rij = (const cs_real_6_t *)f_rij->val_pre;
   const cs_real_t *cvara_ep = f_eps->val_pre;
   const cs_real_t *crom = f_rho->val;
   const cs_real_t *viscl = f_mu->val;
 
-  int turb_flux_model =  cs_field_get_key_int(f_t, kturt);
   const cs_turb_model_type_t iturb
     = (cs_turb_model_type_t)cs_glob_turb_model->iturb;
   int dissip_buo_mdl = cs_glob_turb_rans_model->dissip_buo_mdl;
@@ -962,11 +951,23 @@ _gravity_st_epsilon(int              phase_id,
   const cs_real_t ce1 = cs_turb_ce1;
   const cs_real_t ce3 = cs_turb_ce3;
 
-  /* Laminar thermal conductivity k for Prandtl calculation */
+  cs_field_t *f_alpha_theta = nullptr;
+  
+  cs_real_t rvarfl = 0.0;
+  int turb_flux_model =  -1;
+
   cs_lnum_t l_viscls = 0; /* stride for uniform/local viscosity access */
   cs_real_t _visls_0 = -1;
-  const cs_real_t *viscls = NULL;
-  {
+  cs_real_t *viscls = nullptr;
+
+  cs_field_t *f_t = cs_thermal_model_field(); 
+  if (f_t != nullptr){
+    turb_flux_model =  cs_field_get_key_int(f_t, kturt);
+    
+    cs_field_t *f_t_var = cs_field_get_variance(f_t);
+    if (f_t_var != nullptr)
+      rvarfl = cs_field_get_key_double(f_t_var, krvarfl);
+
     const int kivisl = cs_field_key_id("diffusivity_id");
     int ifcvsl = cs_field_get_key_int(f_t, kivisl);
     if (ifcvsl > -1) {
@@ -979,7 +980,13 @@ _gravity_st_epsilon(int              phase_id,
       viscls = &_visls_0;
       l_viscls = 0;
     }
+
+    f_alpha_theta = cs_field_by_composite_name_try(f_t->name, "alpha");
   }
+
+  cs_real_t *alpha_theta = nullptr;
+  if (f_alpha_theta != nullptr)
+    alpha_theta = f_alpha_theta->val;
 
   ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
 
