@@ -373,26 +373,6 @@ void
 cs_sles_petsc_library_info(cs_log_t  log_type);
 
 /*----------------------------------------------------------------------------*/
-/*!
- * \brief Print information on HPDDM library.
- *
- * \param[in]  log_type  log type
- */
-/*----------------------------------------------------------------------------*/
-
-void cs_sles_hpddm_library_info(cs_log_t log_type);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Print information on SLEPc library.
- *
- * \param[in]  log_type  log type
- */
-/*----------------------------------------------------------------------------*/
-
-void cs_sles_slepc_library_info(cs_log_t log_type);
-
-/*----------------------------------------------------------------------------*/
 
 END_C_DECLS
 

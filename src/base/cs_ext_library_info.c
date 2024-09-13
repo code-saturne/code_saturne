@@ -74,8 +74,6 @@
 #else
 /* Duplicate prototype here to avoid requiring PETSc headers */
 void cs_sles_petsc_library_info(cs_log_t log_type);
-void cs_sles_hpddm_library_info(cs_log_t log_type);
-void cs_sles_slepc_library_info(cs_log_t log_type);
 #endif
 #endif
 
@@ -170,8 +168,6 @@ _ext_library_version_info(bool  log)
 
 #if defined(HAVE_PETSC)
     cs_sles_petsc_library_info(logs[log_id]);
-    cs_sles_slepc_library_info(logs[log_id]);
-    cs_sles_hpddm_library_info(logs[log_id]);
 #endif
 #if defined(HAVE_HYPRE)
     cs_sles_hypre_library_info(logs[log_id]);
