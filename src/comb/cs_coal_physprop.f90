@@ -128,6 +128,15 @@ interface
     implicit none
   end subroutine cs_coal_ht_convert_h_to_t_particles
 
+  subroutine cs_coal_physprop1(f1m, f2m, f3m, f4m, f5m, f6m, f7m, f8m, f9m, &
+                               fvp2m, enth, enthox, rom1)                   &
+    bind(C, name='cs_coal_physprop1')
+    use, intrinsic :: iso_c_binding
+    implicit none
+    double precision, dimension(*) :: f1m, f2m, f3m, f4m, f5m, f6m, f7m, f8m, f9m
+    double precision, dimension(*) :: fvp2m, enth, enthox, rom1
+  end subroutine cs_coal_physprop1
+
 end interface
 
 !===============================================================================
@@ -360,12 +369,8 @@ enddo
 
 call field_get_val_s(irom1, cpro_rom1)
 
-call cs_coal_physprop1 &
- ( ncelet , ncel   ,                                      &
-   f1m    , f2m    , f3m    , f4m    , f5m    ,           &
-   f6m    , f7m    , f8m    , f9m    , fvp2m  ,           &
-   enth1  , enthox ,                                      &
-   cpro_rom1 )
+call cs_coal_physprop1(f1m, f2m, f3m, f4m, f5m, f6m, f7m, f8m, f9m,  &
+                       fvp2m, enth1, enthox, cpro_rom1 )
 
 !===============================================================================
 ! 4. Calculation of the physical properties of the dispersed phase

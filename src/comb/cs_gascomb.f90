@@ -28,7 +28,8 @@ subroutine cs_gascomb &
    af1    , af2    , cx1m     , cx2m   , wmf1   , wmf2 ,                  &
    fuel1  , fuel2  , fuel3 , fuel4 , fuel5 ,fuel6 , fuel7  ,              &
    oxyd   , prod1  , prod2  , prod3 , xiner ,                             &
-   fs3no  , fs4no  , yfs4no    )
+   fs3no  , fs4no  , yfs4no    )                                          &
+ bind(C, name='cs_gascomb')
 
 !===============================================================================
 ! FONCTION :
@@ -104,9 +105,9 @@ implicit none
 
 ! Arguments
 
-integer          ncel
-integer          icb1   , icb2
-integer          indpdf(ncel)
+integer(c_int), value :: ncel
+integer(c_int), value :: icb1   , icb2
+integer(c_int) :: indpdf(ncel)
 
 double precision f1m(ncel)  , f2m(ncel) , f3m(ncel)
 double precision f4m(ncel)  , f5m(ncel) , f6m(ncel)

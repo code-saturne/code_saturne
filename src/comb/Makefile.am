@@ -73,6 +73,7 @@ pkginclude_HEADERS = \
 cs_coal.h \
 cs_coal_boundary_conditions.h \
 cs_coal_ht_convert.h \
+cs_coal_physical_properties.h \
 cs_coal_read_data.h \
 cs_coal_source_terms.h \
 cs_comb_headers.h
@@ -88,7 +89,7 @@ cs_coal_ht_convert.c \
 cs_coal_masstransfer.f90 \
 cs_coal_noxst.c \
 cs_coal_param.f90 \
-cs_coal_physprop1.f90 \
+cs_coal_physical_properties.cpp \
 cs_coal_physprop2.f90 \
 cs_coal_physprop.f90 \
 cs_coal_prop.f90 \
