@@ -120,6 +120,10 @@ def process_cmd_line(argv, pkg):
                       type="string",
                       help="name of studymanager log file (default value is 'studymanager.log')")
 
+    parser.add_option("--state-file", dest="state_file", default="state_detailed",
+                      type="string",
+                      help="name of file for state analysis (default value is 'state_detailed')")
+
     parser.add_option("-z", "--disable-tex",
                       action="store_true", dest="disable_tex", default=False,
                       help="disable text rendering with LaTex in Matplotlib (use Mathtext)")
@@ -451,7 +455,7 @@ def run_studymanager(pkg, options):
     if options.runcase:
         if slurm_submission:
             studies.check_slurm_batches()
-            studies.run_slurm_batches()
+            studies.run_slurm_batches(options.state_file)
         else:
             studies.run()
 
@@ -461,7 +465,7 @@ def run_studymanager(pkg, options):
     # Report state
 
     if options.casestate and not slurm_submission:
-        studies.report_state()
+        studies.report_state(options.state_file)
 
     # Compare checkpoint files
 
