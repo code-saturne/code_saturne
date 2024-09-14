@@ -27,8 +27,10 @@
 #include "cs_defs.h"
 
 /*----------------------------------------------------------------------------
- * Standard C library headers
+ * Standard C and C++ library headers
  *----------------------------------------------------------------------------*/
+
+#include <algorithm>
 
 #include <assert.h>
 #include <stdarg.h>
@@ -99,46 +101,565 @@ CS_PROCF(pppdfr, PPPDFR)(cs_lnum_t        *ncelet,
                          const cs_real_t  *pdfm2,
                          const cs_real_t  *hrec);
 
-void
-cs_gascomb(cs_lnum_t        n_cells,
-           int              ichx1,
-           int              ichx2,
-           int              intpdf[],
-           const cs_real_t  f1m[],
-           const cs_real_t  f2m[],
-           const cs_real_t  f3m[],
-           const cs_real_t  f4m[],
-           const cs_real_t  f5m[],
-           const cs_real_t  f6m[],
-           const cs_real_t  f7m[],
-           const cs_real_t  f8m[],
-           const cs_real_t  f9m[],
-           cs_real_t        pdfm1[],
-           cs_real_t        pdfm2[],
-           cs_real_t        doxyd[],
-           cs_real_t        dfuel[],
-           cs_real_t        hrec[],
-           cs_real_t        af1[],
-           cs_real_t        af2[],
-           cs_real_t        cx1m[],
-           cs_real_t        cx2m[],
-           cs_real_t        wmchx1[],
-           cs_real_t        wmchx2[],
-           const cs_real_t  cpro_cyf1[],
-           const cs_real_t  cpro_cyf2[],
-           const cs_real_t  cpro_cyf3[],
-           const cs_real_t  cpro_cyf4[],
-           const cs_real_t  cpro_cyf5[],
-           const cs_real_t  cpro_cyf6[],
-           const cs_real_t  cpro_cyf7[],
-           const cs_real_t  cpro_cyox[],
-           const cs_real_t  cpro_cyp1[],
-           const cs_real_t  cpro_cyp2[],
-           const cs_real_t  cpro_cyp3[],
-           const cs_real_t  cpro_cyin[],
-           cs_real_t  fs3no[],
-           cs_real_t  fs4no[],
-           cs_real_t  yfs4no[]);
+/*============================================================================
+ * Private function definitions
+ *============================================================================*/
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Compute mean gaseous concentrations.
+ *
+ * \param[in]     indpdf  use pdf
+ * \param[in]     f1m     mean of tracer 1 mvl [chx1m+co]
+ * \param[in]     f2m     mean of tracer 2 mvl [chx2m+co]
+ * \param[in]     f3m     mean of tracer 3 (oxydant 1)
+ * \param[in]     f4m     mean of tracer 4 (oxydant 2)
+ * \param[in]     f5m     mean of tracer 5 (oxydant 3)
+ * \param[in]     f6m     mean of tracer 6 (humidity)
+ * \param[in]     f7m     mean of tracer 7 (C + O2)
+ * \param[in]     f8m     mean of tracer 8 (C + CO2)
+ * \param[in]     f9m     mean of tracer 9 (C + H2O)
+ * \param[in]     pdfm1   lower bound of pdf
+ * \param[in]     pdfm2   upper bound of pdf
+ * \param[in]     dfuel   amplitude of Dirac at 0
+ * \param[in]     doxud   amplitude of Dirac at 0
+ * \param[in]     hrec    height of pdf rectangle
+ * \param[in]     fuel1   mass fraction of chx1m
+ * \param[in]     fuel2   mass fraction of chx2m
+ * \param[in]     fuel3   mass fraction of co
+ * \param[in]     fuel4   mass fraction of h2s
+ * \param[in]     fuel5   mass fraction of h2
+ * \param[in]     fuel6   mass fraction of hcn
+ * \param[in]     oxyd    mass fraction of o2
+ * \param[in]     prod1   mass fraction of co2
+ * \param[in]     prod2   mass fraction of h2o
+ * \param[in]     prod3   mass fraction of so2
+ * \param[in]     prod4   mass fraction of nh3
+ * \param[in]     xiner   mass fraction of n2
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_gas_comb(cs_lnum_t        n_cells,
+          int              icb1,
+          int              icb2,
+          int              indpdf[],
+          const cs_real_t  f1m[],
+          const cs_real_t  f2m[],
+          const cs_real_t  f3m[],
+          const cs_real_t  f4m[],
+          const cs_real_t  f5m[],
+          const cs_real_t  f6m[],
+          const cs_real_t  f7m[],
+          const cs_real_t  f8m[],
+          const cs_real_t  f9m[],
+          const cs_real_t  pdfm1[],
+          const cs_real_t  pdfm2[],
+          const cs_real_t  doxyd[],
+          const cs_real_t  dfuel[],
+          const cs_real_t  hrec[],
+          const cs_real_t  af1[],
+          const cs_real_t  af2[],
+          const cs_real_t  cx1m[],
+          const cs_real_t  cx2m[],
+          const cs_real_t  wmf1[],
+          const cs_real_t  wmf2[],
+          cs_real_t        fuel1[],
+          cs_real_t        fuel2[],
+          cs_real_t        fuel3[],
+          cs_real_t        fuel4[],
+          cs_real_t        fuel5[],
+          cs_real_t        fuel6[],
+          cs_real_t        fuel7[],
+          cs_real_t        oxyd[],
+          cs_real_t        prod1[],
+          cs_real_t        prod2[],
+          cs_real_t        prod3[],
+          cs_real_t        xiner[],
+          cs_real_t        fs3no[],
+          cs_real_t        fs4no[],
+          cs_real_t        yfs4no[])
+{
+  const cs_coal_model_t *cm = cs_glob_coal_model;
+
+  /* Initialization
+   * -------------- */
+
+  const int ico = cm->ico -1;
+  const int ih2s = cm->ih2s -1;
+  const int ihy =cm->ihy -1;
+  const int ihcn = cm->ihcn -1;
+  const int inh3 = cm->inh3 -1;
+  const int io2 = cm->io2 -1;
+  const int ico2 = cm->ico2 -1;
+  const int ih2o = cm->ih2o -1;
+  const int iso2 = cm->iso2 -1;
+  const int in2 = cm->in2 -1;
+
+  /* Aliases for simpler syntax */
+
+  const cs_real_t *wmole = cm->wmole;
+  const int n_gas_sp = cm->n_gas_species;
+
+  /* Preliminary computations
+     ------------------------ */
+
+  cs_real_t *cvar_yco2 = nullptr, *x1 = nullptr;
+
+  const auto af3 = cm->af3, af4 = cm->af4;
+  const auto af5 = cm->af5, af6 = cm->af6;
+  const auto af7 = cm->af7, af8 = cm->af8;
+  const auto af9 = cm->af9;
+
+  if (cm->ieqco2 == 1)
+    cvar_yco2 = cs_field_by_id(cm->iyco2)->val;
+
+  // Massic fraction of gas
+  x1 = cs_field_by_name("x_c")->val;
+
+  // Molar masses
+  double wmh2s = cm->wmole[ih2s];
+  double wmh2  = cm->wmole[ihy];
+  double wmhcn = wmole[ihcn];
+  double wmnh3 = wmole[inh3];
+  double wmco  = cm->wmole[ico];
+  double wmo2  = cm->wmole[io2];
+  double wmco2 = cm->wmole[ico2];
+  double wmh2o = cm->wmole[ih2o];
+  double wmso2 = cm->wmole[iso2];
+  double wmn2  = cm->wmole[in2];
+
+  // Initialization of mass fractions with oxydant 1
+
+  #pragma omp parallel for if (n_cells > CS_THR_MIN)
+  for (auto c_id = 0; c_id < n_cells; c_id++) {
+    fuel1[c_id]  = wmf1[c_id]*af3[icb1];
+    fuel2[c_id]  = wmf2[c_id]*af3[icb2];
+    fuel3[c_id]  = wmco     *af3[ico];
+    fuel4[c_id]  = wmh2s    *af3[ih2s];
+    fuel5[c_id]  = wmh2     *af3[ihy];
+    fuel6[c_id]  = wmhcn    *af3[ihcn];
+    fuel7[c_id]  = wmnh3    *af3[inh3];
+    oxyd[c_id]   = wmo2     *af3[io2];
+    prod1[c_id]  = wmco2    *af3[ico2];
+    prod2[c_id]  = wmh2o    *af3[ih2o];
+    prod3[c_id]  = wmso2    *af3[iso2];
+    xiner[c_id]  = wmn2     *af3[in2];
+  }
+
+  /* Compute mixture composition without the PDF
+     if the fluctuations are too small
+     ------------------------------------------- */
+
+  #pragma omp parallel for if (n_cells > CS_THR_MIN)
+  for (auto c_id = 0; c_id < n_cells; c_id++) {
+
+    if (indpdf[c_id] != 0)
+      continue;
+
+    cs_real_t zz[CS_COMBUSTION_COAL_MAX_ELEMENTARY_COMPONENTS];
+
+    // preliminary calculations
+    cs_real_t zco2t = 0.0;
+    if (cvar_yco2 != nullptr)
+      zco2t = (cvar_yco2[c_id] / x1[c_id]) / wmco2;
+
+    // Composition of gaseous phase before combustion
+
+    for (cs_lnum_t g_id = 0; g_id < n_gas_sp; g_id++) {
+      zz[g_id] =   af1[n_cells*g_id + c_id] * f1m[c_id]
+                 + af2[n_cells*g_id + c_id] * f2m[c_id]
+                 + af3[g_id]*f3m[c_id] + af4[g_id]*f4m[c_id]
+                 + af5[g_id]*f5m[c_id] + af6[g_id]*f6m[c_id]
+                 + af7[g_id]*f7m[c_id] + af8[g_id]*f8m[c_id]
+                 + af9[g_id]*f9m[c_id];
+    }
+
+    // Compute mixture composition
+
+    // 1st reaction:
+
+    cs_real_t anu1   = 0.5;
+    cs_real_t reac1  = std::min(zz[ihy],(zz[io2]/anu1));
+    zz[ihy] = zz[ihy]  -      reac1;
+    zz[io2] = zz[io2]  - anu1*reac1;
+    zz[ih2o]= zz[ih2o] +      reac1;
+
+    // 2nd reaction:
+
+    cs_real_t anu2   = 0.25*abs(cx1m[c_id]-cx2m[c_id]);
+    cs_real_t reac2  = std::min(zz[icb1], (zz[io2]/anu2));
+    zz[icb1]= zz[icb1] -           reac2;
+    zz[icb2]= zz[icb2] +           reac2;
+    zz[io2]  = zz[io2]   -      anu2*reac2;
+    zz[ih2o] = zz[ih2o]  + 2.0 *anu2*reac2;
+
+    // 3rd reaction:
+
+    cs_real_t anu3  = 0.25*(2.0 + cx2m[c_id]);
+    cs_real_t reac3 = std::min(zz[icb2], (zz[io2]/anu3));
+    zz[icb2]  = zz[icb2] -                reac3;
+    zz[ico]   = zz[ico]  +                reac3;
+    zz[io2]   = zz[io2]  -           anu3*reac3;
+    zz[ih2o]  = zz[ih2o] + 0.5*cx2m[c_id]*reac3;
+
+    // 4th reaction:
+
+    cs_real_t anu4  = 1.5;
+    cs_real_t reac4 = std::min(zz[ih2s], (zz[io2]/anu4));
+    zz[ih2s] = zz[ih2s]   -      reac4;
+    zz[io2]  = zz[io2]    - anu4*reac4;
+    zz[ih2o] = zz[ih2o]   +      reac4;
+    zz[iso2] = zz[iso2]   +      reac4;
+
+    // 5th reaction:
+
+    cs_real_t anu5   = 0.5;
+    cs_real_t reac5  = std::min(zz[ico], (zz[io2]/anu5));
+    if (cvar_yco2 != nullptr)
+      reac5  = std::min(std::max(zco2t-zz[ico2], 0.0), reac5);
+
+    zz[ico] = zz[ico]    -      reac5;
+    zz[io2] = zz[io2]    - anu5*reac5;
+    zz[ico2]= zz[ico2]   +      reac5;
+
+    fuel1[c_id] = zz[icb1] * wmf1[c_id];
+    fuel2[c_id] = zz[icb2] * wmf2[c_id];
+    fuel3[c_id] = zz[ico]  * wmco;
+    fuel4[c_id] = zz[ih2s] * wmh2s;
+    fuel5[c_id] = zz[ihy]  * wmh2;
+    fuel6[c_id] = zz[ihcn] * wmhcn;
+    fuel7[c_id] = zz[inh3] * wmnh3;
+    oxyd [c_id] = zz[io2]  * wmo2;
+    prod1[c_id] = zz[ico2] * wmco2;
+    prod2[c_id] = zz[ih2o] * wmh2o;
+    prod3[c_id] = zz[iso2] * wmso2;
+    xiner[c_id] = zz[in2]  * wmn2;
+
+  }
+
+  /* Compute mixture composition with the PDF
+     ---------------------------------------- */
+
+  { // Extra brace to work around nvcc 11 compiler bug
+
+  #pragma omp parallel for if (n_cells > CS_THR_MIN)
+  for (auto c_id = 0; c_id < n_cells; c_id++) {
+
+    if (indpdf[c_id] == 0)
+      continue;
+
+    cs_real_t zz[CS_COMBUSTION_COAL_MAX_ELEMENTARY_COMPONENTS];
+    cs_real_t zzox[CS_COMBUSTION_COAL_MAX_ELEMENTARY_COMPONENTS];
+    cs_real_t zzcl[CS_COMBUSTION_COAL_MAX_ELEMENTARY_COMPONENTS];
+    cs_real_t zzs1[CS_COMBUSTION_COAL_MAX_ELEMENTARY_COMPONENTS];
+    cs_real_t zzs2[CS_COMBUSTION_COAL_MAX_ELEMENTARY_COMPONENTS];
+    cs_real_t zzs3[CS_COMBUSTION_COAL_MAX_ELEMENTARY_COMPONENTS];
+    cs_real_t zzs4[CS_COMBUSTION_COAL_MAX_ELEMENTARY_COMPONENTS];
+
+    // preliminary calculations
+    cs_real_t zco2t = 0.0;
+    if (cvar_yco2 != nullptr)
+      zco2t = (cvar_yco2[c_id] / x1[c_id]) / wmco2;
+
+    // local oxydizer
+    cs_real_t soxy =   f3m[c_id] + f4m[c_id] + f5m[c_id] + f6m[c_id]
+                     + f7m[c_id] + f8m[c_id] + f9m[c_id];
+
+    zzox[icb1] = 0.0;
+    zzox[icb2] = 0.0;
+    for (cs_lnum_t g_id = 2; g_id < n_gas_sp; g_id++) {
+      zzox[g_id] = (  af3[g_id]*f3m[c_id] + af4[g_id]*f4m[c_id]
+                    + af5[g_id]*f5m[c_id] + af6[g_id]*f6m[c_id]
+                    + af7[g_id]*f7m[c_id] + af8[g_id]*f8m[c_id]
+                    + af9[g_id]*f9m[c_id]) / soxy;
+    }
+
+    // Local fuel
+    cs_real_t scomb = f1m[c_id] + f2m[c_id];
+    for (cs_lnum_t g_id = 0; g_id < n_gas_sp; g_id++) {
+      zzcl[g_id] = (  af1[n_cells*g_id + c_id] * f1m[c_id]
+                    + af2[n_cells*g_id + c_id] * f2m[c_id]) / scomb;
+    }
+
+    // 1st reaction: hydrogen recombination
+
+    cs_real_t reac1 = std::min(zzox[ihy], (2.0*zzox[io2]));
+    zzox[ihy]  = zzox[ihy]  -     reac1;
+    zzox[ih2o] = zzox[ih2o] +     reac1;
+    zzox[io2]  = zzox[io2]  - 0.5*reac1;
+
+    // 2nd reaction: CHx1 + (x1-x2)/4 O2  => CHx2 + (x1-x2)/2 H2O
+
+    cs_real_t fs1 = 1.0;
+    if (zzcl[icb1] > 0.0  &&  zzox[io2] > 0.0)
+      fs1 =   zzox[io2]/(  std::abs(cx1m[c_id]-cx2m[c_id])*0.25 * zzcl[icb1]
+                         + zzox[io2]);
+
+    for (cs_lnum_t g_id = 0; g_id < n_gas_sp; g_id++) {
+      zzs1[g_id] = fs1*zzcl[g_id] + (1.0-fs1)*zzox[g_id];
+    }
+    zzs1[icb2] = zzs1[icb1] + zzs1[icb2];
+    zzs1[ih2o] = zzs1[ih2o] + 0.5 * std::abs(cx1m[c_id]-cx2m[c_id]) * zzs1[icb1];
+    zzs1[icb1] = 0.0;
+    zzs1[io2]  = 0.0;
+
+    // 3rd reaction: CHx2 + (2+x2)/4 O2 => CO + x2/2 H2O
+
+    cs_real_t fs2 = fs1;
+    if (zzs1[icb2] > 0.0 && zzox[io2] > 0.0)
+      fs2 = fs1 * zzox[io2] / (  (2.0+cx2m[c_id])*0.25 * zzs1[icb2]
+                               + zzox[io2]);
+
+    for (cs_lnum_t g_id = 0; g_id < n_gas_sp; g_id++) {
+      zzs2[g_id] = (fs2/fs1)*zzs1[g_id]+(1.0-(fs2/fs1))*zzox[g_id];
+    }
+    zzs2[ico] = zzs2[ico] + zzs2[icb2];
+    zzs2[ih2o]= zzs2[ih2o] + cx2m[c_id] * 0.5 * zzs2[icb2];
+    zzs2[icb2]= 0.0;
+    zzs2[io2] = 0.0;
+
+    // 4eme reaction:  H2S + 3/2 O2 => H2O + SO2
+
+    cs_real_t fs3 = fs2;
+    if (zzs2[ih2s] > 0.0 && zzox[io2] > 0.0)
+      fs3 = fs2 * zzox[io2] / (1.5*zzs2[ih2s]+zzox[io2]);
+
+    for (cs_lnum_t g_id = 0; g_id < n_gas_sp; g_id++) {
+      zzs3[g_id] = (fs3/fs2)*zzs2[g_id]+(1.0-(fs3/fs2))*zzox[g_id];
+    }
+    zzs3[iso2] = zzs3[iso2] + zzs3[ih2s];
+    zzs3[ih2o] = zzs3[ih2o] + zzs3[ih2s];
+    zzs3[ih2s] = 0.0;
+    zzs3[io2]  = 0.0;
+
+    // 5th reaction CO+1/2 O2 => CO2
+
+    cs_real_t fs4 = fs3;
+    if (   (zzs3[ico] > 0.0 && zzox[io2] > 0.0)
+        && (cvar_yco2 == nullptr)) {
+      fs4 = fs3 * zzox[io2] / (zzs3[ico] + zzox[io2]);
+    }
+
+    for (cs_lnum_t g_id = 0; g_id < n_gas_sp; g_id++) {
+      zzs4[g_id] = (fs4/fs3)*zzs3[g_id] + (1.0-(fs4/fs3))*zzox[g_id];
+    }
+
+    if (cvar_yco2 == nullptr) {
+      zzs4[ico2] = zzs4[ico2] + zzs4[ico];
+      zzs4[io2]  = zzs4[io2] * 0.5;
+      zzs4[ico]  = 0.0;
+    }
+
+    // Store de fs3, fs4 and concentrations in fs4 for the NOx model
+
+    if (cvar_yco2 != nullptr) {
+
+      fs3no[c_id] = fs3;
+
+      if (zzs3[ico] > 0.0 && zzox[io2] > 0.0)
+        fs4no[c_id] = fs3 * zzox[io2] / (zzs3[ico] + zzox[io2]);
+      else
+        fs4no[c_id] = fs3;
+
+      for (cs_lnum_t g_id = 0; g_id < n_gas_sp; g_id++) {
+        yfs4no[n_cells*g_id + c_id]
+          =   (fs4no[c_id]/fs3) * zzs3[g_id]
+            + (1.0-(fs4no[c_id]/fs3)) * zzox[g_id];
+      }
+      yfs4no[n_cells*ico2 + c_id] += yfs4no[n_cells*ico + c_id];
+      yfs4no[n_cells*io2  + c_id] *= 0.5;
+      yfs4no[n_cells*ico + c_id] = 0.0;
+
+      yfs4no[n_cells*icb1 + c_id] *= wmf1[c_id];
+      yfs4no[n_cells*icb2 + c_id] *= wmf2[c_id];
+      for (cs_lnum_t g_id = ico; g_id < n_gas_sp; g_id++) {
+        yfs4no[n_cells*g_id + c_id] *= wmole[g_id];
+      }
+
+    }
+
+    // We now know the concentrations
+    // cl,s1,s2,s3,s4,Ox
+    // The intermediate concentrations are piecewise linear
+    // and the parameters of the pdf dfuel, doxyd, pdfm1, pdfm2, hrec
+
+    // Initialize by concentrations at extremities
+    for (cs_lnum_t g_id = 0; g_id < n_gas_sp; g_id++) {
+      zz[g_id] = dfuel[c_id]*zzcl[g_id] + doxyd[c_id]*zzox[g_id];
+    }
+
+    // Integration on first richness interval (between s1 and 1)
+    cs_real_t bb1 = std::max(pdfm1[c_id], fs1);
+    cs_real_t bb2 = std::min(pdfm2[c_id], 1.0);
+    if (bb2 > bb1) {
+      for (cs_lnum_t g_id = 0; g_id < n_gas_sp; g_id++) {
+        zz[g_id] =  zz[g_id] + hrec[c_id]*(bb2-bb1)/(1.0-fs1)
+                  * (   zzs1[g_id]-fs1*zzcl[g_id]
+                     + (zzcl[g_id]-zzs1[g_id])*(bb1+bb2)*0.5);
+      }
+    }
+
+    // Integration on second richness interval (between s2 and s1)
+    bb1 = std::max(pdfm1[c_id], fs2);
+    bb2 = std::min(pdfm2[c_id], fs1);
+    if (bb2 > bb1) {
+      for (cs_lnum_t g_id = 0; g_id < n_gas_sp; g_id++) {
+        zz[g_id] =   zz[g_id] + hrec[c_id]*(bb2-bb1)/(fs1-fs2)
+                   * (   fs1*zzs2[g_id]-fs2*zzs1[g_id]
+                      + (zzs1[g_id]-zzs2[g_id])*(bb1+bb2)*0.5);
+      }
+    }
+
+    // Integration on third richness interval (between s3 and s2)
+    bb1 = std::max(pdfm1[c_id], fs3);
+    bb2 = std::min(pdfm2[c_id], fs2);
+    if (bb2 > bb1) {
+      for (cs_lnum_t g_id = 0; g_id < n_gas_sp; g_id++) {
+        zz[g_id] =   zz[g_id] + hrec[c_id]*(bb2-bb1)/(fs2-fs3)
+                   * (  fs2*zzs3[g_id]-fs3*zzs2[g_id]
+                      + (zzs2[g_id]-zzs3[g_id])*(bb1+bb2)*0.5);
+      }
+    }
+
+    // Integration on fourth richness interval (between s4 and s3)
+    bb1 = std::max(pdfm1[c_id], fs4);
+    bb2 = std::min(pdfm2[c_id], fs3);
+    if (bb2 > bb1) {
+      for (cs_lnum_t g_id = 0; g_id < n_gas_sp; g_id++) {
+        zz[g_id] =   zz[g_id] + hrec[c_id]*(bb2-bb1)/(fs3-fs4)
+                   * (  fs3*zzs4[g_id]-fs4*zzs3[g_id]
+                      + (zzs3[g_id]-zzs4[g_id])*(bb1+bb2)*0.5);
+      }
+    }
+
+    // Integration on fifth richness interval (between 0and s4)
+    bb1 = std::max(pdfm1[c_id], 0.0);
+    bb2 = std::min(pdfm2[c_id], fs4);
+    if (bb2 > bb1) {
+      for (cs_lnum_t g_id = 0; g_id < n_gas_sp; g_id++) {
+        zz[g_id] =   zz[g_id] + hrec[c_id]*(bb2-bb1)/(fs4-0.0)
+                   * (  fs4*zzox[g_id]-0.0*zzs4[g_id]
+                      + (zzs4[g_id]-zzox[g_id])*(bb1+bb2)*0.5);
+      }
+    }
+
+    // CO2 transport
+    if (cvar_yco2 != nullptr) {
+      cs_real_t anu5   = 0.5;
+      cs_real_t reac5  = std::min(zz[ico], zz[io2]/anu5);
+      reac5  = std::min(std::max(zco2t-zz[ico2], 0.0),  reac5);
+
+      zz[ico]  = zz[ico]  -      reac5;
+      zz[io2]  = zz[io2]  - anu5*reac5;
+      zz[ico2] = zz[ico2] +      reac5;
+    }
+
+    fuel1[c_id] = zz[icb1] * wmf1[c_id];
+    fuel2[c_id] = zz[icb2] * wmf2[c_id];
+    fuel3[c_id] = zz[ico]  * wmco;
+    fuel4[c_id] = zz[ih2s] * wmh2s;
+    fuel5[c_id] = zz[ihy]  * wmh2;
+    fuel6[c_id] = zz[ihcn] * wmhcn;
+    fuel7[c_id] = zz[inh3] * wmnh3;
+    oxyd[c_id]  = zz[io2]  * wmo2;
+    prod1[c_id] = zz[ico2] * wmco2;
+    prod2[c_id] = zz[ih2o] * wmh2o;
+    prod3[c_id] = zz[iso2] * wmso2;
+    xiner[c_id] = zz[in2]  * wmn2;
+
+  }}
+
+  /* Logging
+     ------- */
+
+  if (cs_log_default_is_active() == false)
+    return;
+
+  cs_gnum_t n1 = (cs_gnum_t)n_cells;
+  cs_gnum_t n2 = 0, n3 = 0, n4 = 0, n5 = 0, n6 = 0, n7 = 0, n8 = 0;
+  cs_gnum_t n9 = 0, n10 = 0, n11 = 0, n12 = 0, n13 = 0, n14 = 0, n15 = 0;
+
+  // Control pdf parameters and different values of mass fractions
+
+  cs_real_t sommin =  HUGE_VALF;
+  cs_real_t sommax = -HUGE_VALF;
+
+  const cs_real_t epzero = cs_coal_epsilon;
+
+  for (auto c_id = 0; c_id < n_cells; c_id++) {
+
+    if (indpdf[c_id] != 0)
+      n2 += 1;
+
+    cs_real_t somm =   fuel1[c_id] + fuel2[c_id] + fuel3[c_id]
+                     + fuel4[c_id] + fuel5[c_id] + fuel6[c_id] + fuel7[c_id]
+                     + oxyd[c_id]
+                     + prod1[c_id] + prod2[c_id] + prod3[c_id]
+                     + xiner[c_id];
+
+    sommin = std::min(sommin, somm);
+    sommax = std::max(sommax, somm);
+
+    if (std::abs(somm-1.0) < epzero)
+      n3 += 1;
+    else
+      assert(0);
+
+    if (fuel1[c_id] < -epzero || fuel1[c_id] > (1.+epzero)) n4  += 1;
+    if (fuel2[c_id] < -epzero || fuel2[c_id] > (1.+epzero)) n5  += 1;
+    if (fuel3[c_id] < -epzero || fuel3[c_id] > (1.+epzero)) n6  += 1;
+    if (fuel4[c_id] < -epzero || fuel4[c_id] > (1.+epzero)) n7  += 1;
+    if (fuel5[c_id] < -epzero || fuel5[c_id] > (1.+epzero)) n8  += 1;
+    if (fuel6[c_id] < -epzero || fuel6[c_id] > (1.+epzero)) n9  += 1;
+    if (fuel7[c_id] < -epzero || fuel7[c_id] > (1.+epzero)) n10 += 1;
+    if (oxyd[c_id]  < -epzero || oxyd[c_id]  > (1.+epzero)) n11 += 1;
+    if (xiner[c_id] < -epzero || xiner[c_id] > (1.+epzero)) n12 += 1;
+    if (prod1[c_id] < -epzero || prod1[c_id] > (1.+epzero)) n13 += 1;
+    if (prod2[c_id] < -epzero || prod2[c_id] > (1.+epzero)) n14 += 1;
+    if (prod3[c_id] < -epzero || prod3[c_id] > (1.+epzero)) n15 += 1;
+
+  }
+
+  cs_parall_sum_scalars(n1, n2, n3, n4, n5, n6, n7, n8, n9,
+                        n10, n11, n12, n13, n14, n15);
+
+  cs_log_printf
+    (CS_LOG_DEFAULT,
+     _("\n"
+       "Combustion modeling with turbulent diffusion model (CPCYM2)\n"
+       "Fast 3-point chemistry - extension to 3 fuels\n"
+       "===========================================================\n"
+       "  Nb. of computation points                       : %llu\n"
+       "  Nb. of turbulent points (using PDFs)            : %llu\n\n"),
+     (unsigned long long)n1, (unsigned long long)n2);
+
+  cs_log_printf
+    (CS_LOG_DEFAULT,
+     _("Control of mass fraction values\n"
+       "  Nb. computation points verifying sum of Yi = 1  : %llu\n"
+       "  Nb. points YCHX1, YCHX2  < 0 or > 1             : %llu, %llu\n"
+       "  Nb. points YC0, YH2S     < 0 or > 1             : %llu, %llu\n"
+       "  Nb. points YH2, YHCN     < 0 or > 1             : %llu, %llu\n"
+       "  Nb. points YNH3          < 0 or > 1             : %llu\n"
+       "  Nb. points YO2, YN2      < 0 or > 1             : %llu, %llu\n"
+       "  Nb. points YCO2, YH2O    < 0 or > 1             : %llu, %llu\n"
+       "  Nb. points YSO2          < 0 or > 1             : %llu\n"),
+     (unsigned long long)n3, (unsigned long long)n4,
+     (unsigned long long)n5, (unsigned long long)n6,
+     (unsigned long long)n7, (unsigned long long)n8,
+     (unsigned long long)n9, (unsigned long long)n10,
+     (unsigned long long)n11, (unsigned long long)n12,
+     (unsigned long long)n13, (unsigned long long)n14,
+     (unsigned long long)n15);
+
+  cs_parall_min(1, CS_REAL_TYPE, &sommin);
+  cs_parall_max(1, CS_REAL_TYPE, &sommax);
+
+  cs_log_printf(CS_LOG_DEFAULT,
+                _(" Sum Min Max : %g %g\n"),
+                sommin, sommax);
+}
 
 /*============================================================================
  * Public function definitions
@@ -272,18 +793,18 @@ cs_coal_physprop1(const  cs_real_t  f1m[],
   }
 
   // Pointer to CHx1 and CHx2
-  const cs_real_t *cpro_cyf1 = cs_field_by_id(cm->iym1[ichx1])->val;
-  const cs_real_t *cpro_cyf2 = cs_field_by_id(cm->iym1[ichx2])->val;
-  const cs_real_t *cpro_cyf3 = cs_field_by_id(cm->iym1[ico])->val;
-  const cs_real_t *cpro_cyf4 = cs_field_by_id(cm->iym1[ih2s])->val;
-  const cs_real_t *cpro_cyf5 = cs_field_by_id(cm->iym1[ihy])->val;
-  const cs_real_t *cpro_cyf6 = cs_field_by_id(cm->iym1[ihcn])->val;
-  const cs_real_t *cpro_cyf7 = cs_field_by_id(cm->iym1[inh3])->val;
-  const cs_real_t *cpro_cyox = cs_field_by_id(cm->iym1[io2])->val;
-  const cs_real_t *cpro_cyp1 = cs_field_by_id(cm->iym1[ico2])->val;
-  const cs_real_t *cpro_cyp2 = cs_field_by_id(cm->iym1[ih2o])->val;
-  const cs_real_t *cpro_cyp3 = cs_field_by_id(cm->iym1[iso2])->val;
-  const cs_real_t *cpro_cyin = cs_field_by_id(cm->iym1[in2])->val;
+  cs_real_t *cpro_cyf1 = cs_field_by_id(cm->iym1[ichx1])->val;
+  cs_real_t *cpro_cyf2 = cs_field_by_id(cm->iym1[ichx2])->val;
+  cs_real_t *cpro_cyf3 = cs_field_by_id(cm->iym1[ico])->val;
+  cs_real_t *cpro_cyf4 = cs_field_by_id(cm->iym1[ih2s])->val;
+  cs_real_t *cpro_cyf5 = cs_field_by_id(cm->iym1[ihy])->val;
+  cs_real_t *cpro_cyf6 = cs_field_by_id(cm->iym1[ihcn])->val;
+  cs_real_t *cpro_cyf7 = cs_field_by_id(cm->iym1[inh3])->val;
+  cs_real_t *cpro_cyox = cs_field_by_id(cm->iym1[io2])->val;
+  cs_real_t *cpro_cyp1 = cs_field_by_id(cm->iym1[ico2])->val;
+  cs_real_t *cpro_cyp2 = cs_field_by_id(cm->iym1[ih2o])->val;
+  cs_real_t *cpro_cyp3 = cs_field_by_id(cm->iym1[iso2])->val;
+  cs_real_t *cpro_cyin = cs_field_by_id(cm->iym1[in2])->val;
 
   /* Determine the type of pdf
      ------------------------- */
@@ -437,18 +958,15 @@ cs_coal_physprop1(const  cs_real_t  f1m[],
 
   }
 
-  int icb1 = ichx1 + 1; // For Fortran index
-  int icb2 = ichx2 + 1;
-
-  cs_gascomb(n_cells, icb1, icb2,
-             intpdf, f1m, f2m, f3m, f4m, f5m, f6m, f7m, f8m, f9m,
-             pdfm1, pdfm2, doxyd, dfuel, hrec,
-             af1, af2, cx1m, cx2m, wmchx1, wmchx2,
-             cpro_cyf1, cpro_cyf2, cpro_cyf3,
-             cpro_cyf4, cpro_cyf5, cpro_cyf6,
-             cpro_cyf7, cpro_cyox, cpro_cyp1,
-             cpro_cyp2, cpro_cyp3, cpro_cyin,
-             fs3no, fs4no, yfs4no);
+  _gas_comb(n_cells, ichx1, ichx2,
+            intpdf, f1m, f2m, f3m, f4m, f5m, f6m, f7m, f8m, f9m,
+            pdfm1, pdfm2, doxyd, dfuel, hrec,
+            af1, af2, cx1m, cx2m, wmchx1, wmchx2,
+            cpro_cyf1, cpro_cyf2, cpro_cyf3,
+            cpro_cyf4, cpro_cyf5, cpro_cyf6,
+            cpro_cyf7, cpro_cyox, cpro_cyp1,
+            cpro_cyp2, cpro_cyp3, cpro_cyin,
+            fs3no, fs4no, yfs4no);
 
   // Eventual clipping of mass fractions.
 
