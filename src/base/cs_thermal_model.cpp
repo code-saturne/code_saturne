@@ -147,8 +147,8 @@ BEGIN_C_DECLS
 /* main thermal model structure and associated pointer */
 
 static cs_thermal_model_t  _thermal_model = {
-  .thermal_variable = CS_THERMAL_MODEL_INIT,
-  .temperature_scale = CS_TEMPERATURE_SCALE_KELVIN,
+  {.thermal_variable = CS_THERMAL_MODEL_INIT},
+  {.temperature_scale = CS_TEMPERATURE_SCALE_KELVIN},
   .has_kinetic_st = 0,
   .cflt = false,
   .cflp = false,

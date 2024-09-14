@@ -145,8 +145,6 @@ use cs_c_bindings
 
 implicit none
 
-procedure() :: add_property_field
-
 ! Arguments
 
 character(len=*), intent(in) :: name, label
