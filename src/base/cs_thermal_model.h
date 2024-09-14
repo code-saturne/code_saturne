@@ -75,10 +75,6 @@ typedef enum {
 
 typedef struct {
 
-#if defined(__NVCC__)
-  cs_thermal_model_variable_t  thermal_variable;
-  cs_temperature_scale_t       temperature_scale;
-#else
   union {
     cs_thermal_model_variable_t  thermal_variable;   /* Thermal variable */
     int                          itherm;
@@ -88,7 +84,6 @@ typedef struct {
     cs_temperature_scale_t       temperature_scale;  /* Temperature scale */
     int                          itpscl;
   };
-#endif
 
   /* Has kinetic source terme correction */
   int           has_kinetic_st;

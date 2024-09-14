@@ -846,7 +846,7 @@ cs_sles_amgx_copy(const void  *context)
   cs_sles_amgx_t *d = nullptr;
 
   if (context != nullptr) {
-    const cs_sles_amgx_t *c = context;
+    const cs_sles_amgx_t *c = (const cs_sles_amgx_t *)context;
     d = cs_sles_amgx_create();
 
     if (c->amgx_config_file != nullptr) {
@@ -937,7 +937,7 @@ cs_sles_amgx_destroy(void **context)
 const char *
 cs_sles_amgx_get_config(void  *context)
 {
-  cs_sles_amgx_t  *c = context;
+  cs_sles_amgx_t  *c = (cs_sles_amgx_t *)context;
 
   if (   c->amgx_config_file == nullptr
       && c->amgx_config_string == nullptr) {
@@ -997,7 +997,7 @@ void
 cs_sles_amgx_set_config(void        *context,
                         const char  *config)
 {
-  cs_sles_amgx_t  *c = context;
+  cs_sles_amgx_t  *c = (cs_sles_amgx_t *)context;
 
   size_t l = strlen(config);
 
@@ -1021,7 +1021,7 @@ cs_sles_amgx_set_config(void        *context,
 const char *
 cs_sles_amgx_get_config_file(void  *context)
 {
-  cs_sles_amgx_t  *c = context;
+  cs_sles_amgx_t  *c = (cs_sles_amgx_t *)context;
 
   return c->amgx_config_file;
 }
@@ -1043,7 +1043,7 @@ void
 cs_sles_amgx_set_config_file(void        *context,
                              const char  *path)
 {
-  cs_sles_amgx_t  *c = context;
+  cs_sles_amgx_t  *c = (cs_sles_amgx_t *)context;
 
   size_t l = strlen(path);
 
@@ -1065,7 +1065,7 @@ cs_sles_amgx_set_config_file(void        *context,
 bool
 cs_sles_amgx_get_use_device(void  *context)
 {
-  cs_sles_amgx_t  *c = context;
+  cs_sles_amgx_t  *c = (cs_sles_amgx_t *)context;
   bool use_device = true;
 
   if (   c->amgx_mode == AMGX_mode_hDDI
@@ -1092,7 +1092,7 @@ void
 cs_sles_amgx_set_use_device(void  *context,
                             bool   use_device)
 {
-  cs_sles_amgx_t  *c = context;
+  cs_sles_amgx_t  *c = (cs_sles_amgx_t *)context;
 
   if (use_device) {
     if (sizeof(cs_real_t) == sizeof(double))
@@ -1122,7 +1122,7 @@ cs_sles_amgx_set_use_device(void  *context,
 int
 cs_sles_amgx_get_flags(void  *context)
 {
-  cs_sles_amgx_t  *c = context;
+  cs_sles_amgx_t  *c = (cs_sles_amgx_t *)context;
   return c->flags;
 }
 
@@ -1142,7 +1142,7 @@ void
 cs_sles_amgx_set_flags(void  *context,
                        int    flags)
 {
-  cs_sles_amgx_t  *c = context;
+  cs_sles_amgx_t  *c = (cs_sles_amgx_t *)context;
   c->flags = flags;
 }
 
@@ -1173,7 +1173,7 @@ cs_sles_amgx_setup(void               *context,
   const char error_fmt[] = N_("%s returned %d.\n"
                               "%s");
 
-  cs_sles_amgx_t  *c = context;
+  cs_sles_amgx_t  *c = (cs_sles_amgx_t *)context;
   cs_sles_amgx_setup_t *sd = c->setup_data;
 
   AMGX_RC retval = AMGX_RC_OK;
@@ -1409,7 +1409,7 @@ cs_sles_amgx_solve(void                *context,
   cs_timer_t t0;
   t0 = cs_timer_time();
 
-  cs_sles_amgx_t  *c = context;
+  cs_sles_amgx_t  *c = (cs_sles_amgx_t *)context;
   cs_sles_amgx_setup_t  *sd = c->setup_data;
 
   if (sd == nullptr) {
@@ -1586,7 +1586,7 @@ cs_sles_amgx_free(void  *context)
   cs_timer_t t0;
   t0 = cs_timer_time();
 
-  cs_sles_amgx_t  *c  = context;
+  cs_sles_amgx_t  *c = (cs_sles_amgx_t *)context;
   cs_sles_amgx_setup_t *sd = c->setup_data;
 
   if (sd != nullptr) {
@@ -1616,7 +1616,7 @@ void
 cs_sles_amgx_log(const void  *context,
                  cs_log_t     log_type)
 {
-  const cs_sles_amgx_t  *c = context;
+  const cs_sles_amgx_t  *c = (const cs_sles_amgx_t *)context;
 
   const char m_type[] = "CSR";
 

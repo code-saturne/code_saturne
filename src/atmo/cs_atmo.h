@@ -161,12 +161,6 @@ typedef struct {
   /*! y coordinate of the domain origin in Lambert-93 */
   cs_real_t y_l93;
   /*! numbers of altitudes for the dynamics */
-#if defined(__NVCC__)
-  int met_1d_nlevels_d;
-  int met_1d_nlevels_t;
-  int met_1d_ntimes;
-  int met_1d_nlevels_max_t;
-#else
   union {
     int met_1d_nlevels_d;
     int nbmetd; /* deprecated */
@@ -187,7 +181,6 @@ typedef struct {
     int met_1d_nlevels_max_t;
     int nbmaxt;
   };
-#endif
   /*! 1-D radiative model (0 off, 1 on) */
   int radiative_model_1d;
   /*! 1-D radiative model: number of vertical arrays */
