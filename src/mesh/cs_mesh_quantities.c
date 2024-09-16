@@ -2269,7 +2269,7 @@ _b_thickness(const cs_mesh_t             *m,
  * \param[in]   c_w_face_normal       solid surface normal immersed in the cell
  * \param[in]   c_w_face_cog          solid center of gravity immersed in the
  *                                    cell
- * \param[out]  cell_cen              approximate cell centers
+ * \param[out]  a_cell_cen            approximate cell centers
  */
 /*----------------------------------------------------------------------------*/
 
@@ -2282,31 +2282,30 @@ _mesh_quantities_cell_faces_cog_solid
    const cs_real_3_t  b_f_face_cog[],
    const cs_real_3_t  c_w_face_normal[],
    const cs_real_3_t  c_w_face_cog[],
-   cs_real_3_t        cell_cen[])
+   cs_real_t          a_cell_cen[][3])
 {
   /* Mesh connectivity */
 
-  const cs_lnum_t n_b_faces = m->n_b_faces;
   const cs_lnum_t n_cells = m->n_cells;
-  const cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
-  const cs_lnum_t *b_face_cells
-    = (const cs_lnum_t *)(m->b_face_cells);
-
   const cs_mesh_adjacencies_t *ma = cs_glob_mesh_adjacencies;
   const cs_lnum_t *c2c_idx = ma->cell_cells_idx;
   const short int *cell_i_faces_sgn = ma->cell_i_faces_sgn;
   const cs_lnum_t *cell_i_faces = ma->cell_i_faces;
-
-  /* Initialization */
+  const cs_lnum_t *cell_b_faces_idx = ma->cell_b_faces_idx;
+  const cs_lnum_t *cell_b_faces = ma->cell_b_faces;
 
   cs_real_t *cell_area;
-  BFT_MALLOC(cell_area, n_cells_ext, cs_real_t);
-  cs_array_real_fill_zero(n_cells_ext, cell_area);
+  BFT_MALLOC(cell_area, n_cells, cs_real_t);
 
   /* Loop on cells
      ------------- */
 
   for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+
+    /* Initialization */
+    cell_area[c_id] = 0.;
+    for (cs_lnum_t i = 0; i < 3; i++)
+      a_cell_cen[c_id][i] = 0.;
 
     /* Interior faces */
     const cs_lnum_t s_id_i = c2c_idx[c_id];
@@ -2315,7 +2314,8 @@ _mesh_quantities_cell_faces_cog_solid
     /* Loop on interior faces of cell c_id */
     for (cs_lnum_t cidx = s_id_i; cidx < e_id_i; cidx++) {
       const cs_lnum_t f_id = cell_i_faces[cidx];
-      const cs_lnum_t side = (cell_i_faces_sgn[cidx]+2)%3;
+      const short int sign = cell_i_faces_sgn[cidx];
+      const cs_lnum_t side = (sign+2)%3;
 
       /* For each cell sharing the internal face, we update
        * cell_cen and cell_area */
@@ -2325,27 +2325,16 @@ _mesh_quantities_cell_faces_cog_solid
       cell_area[c_id] += area;
 
       for (cs_lnum_t i = 0; i < 3; i++)
-        cell_cen[c_id][i] += i_f_face_cog[f_id][side][i]*area;
+        a_cell_cen[c_id][i] += i_f_face_cog[f_id][side][i]*area;
 
     } /* End of loop on interior faces */
 
-  }  /* End of loop on cell */
+    const cs_lnum_t s_id_b = cell_b_faces_idx[c_id];
+    const cs_lnum_t e_id_b = cell_b_faces_idx[c_id+1];
 
-  /* Loop on boundary fluid faces
-     ---------------------------- */
+    for (cs_lnum_t cidx = s_id_b; cidx < e_id_b; cidx++) {
+      const cs_lnum_t f_id = cell_b_faces[cidx];
 
-  for (cs_lnum_t f_id = 0; f_id < n_b_faces; f_id++) {
-
-    /* For each cell sharing a border face, we update the numerator
-     * of cell_cen and cell_area */
-
-    cs_lnum_t c_id = b_face_cells[f_id];
-
-    /* Computation of the area of the face
-       (note that c_id1 == -1 may happen for isolated faces,
-       which are cleaned afterwards) */
-
-    if (c_id > -1) {
       cs_real_t area = cs_math_3_norm(b_f_face_normal[f_id]);
 
       cell_area[c_id] += area;
@@ -2353,34 +2342,26 @@ _mesh_quantities_cell_faces_cog_solid
       /* Computation of the numerator */
 
       for (cs_lnum_t i = 0; i < 3; i++)
-        cell_cen[c_id][i] += b_f_face_cog[f_id][i]*area;
+        a_cell_cen[c_id][i] += b_f_face_cog[f_id][i]*area;
     }
 
-  } /* End of loop on boundary faces */
-
-  /* Loop on cells: optional immersed boundary contribution */
-  if (c_w_face_normal != NULL) {
-    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+    /* Loop on cells: optional immersed boundary contribution */
+    if (c_w_face_normal != NULL) {
       const cs_real_t area = cs_math_3_norm(c_w_face_normal[c_id]);
 
       cell_area[c_id] += area;
 
       for (cs_lnum_t i = 0; i < 3; i++)
-        cell_cen[c_id][i] += c_w_face_cog[c_id][i] * area;
+        a_cell_cen[c_id][i] += c_w_face_cog[c_id][i] * area;
     }
-  }
 
-  /* Loop on cells to finalize the computation of center of gravity
-     -------------------------------------------------------------- */
-
-  for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
     if (cell_area[c_id] > DBL_MIN) {
-      for (cs_lnum_t i = 0; i < 3; i++)
-        cell_cen[c_id][i] /= cell_area[c_id];
+      for (cs_lnum_t i = 0; i < 3; i++) {
+        a_cell_cen[c_id][i] /= cell_area[c_id];
+      }
     }
-  }
 
-  /* Free memory */
+  } /* End of loop on cell */
 
   BFT_FREE(cell_area);
 }
@@ -2436,33 +2417,28 @@ _compute_fluid_solid_cell_quantities
 {
   /* Mesh connectivity */
 
-  const cs_lnum_t  n_b_faces = CS_MAX(m->n_b_faces, m->n_b_faces_all);
+  //const cs_lnum_t  n_b_faces = CS_MAX(m->n_b_faces, m->n_b_faces_all);
   const cs_lnum_t  n_cells = m->n_cells;
   const cs_lnum_t  n_cells_ext = m->n_cells_with_ghosts;
-  const cs_lnum_t  *b_face_cells = m->b_face_cells;
   const cs_mesh_adjacencies_t *ma = cs_glob_mesh_adjacencies;
   const cs_lnum_t *c2c_idx = ma->cell_cells_idx;
   const short int *cell_i_faces_sgn = ma->cell_i_faces_sgn;
   const cs_lnum_t *cell_i_faces = ma->cell_i_faces;
+  const cs_lnum_t *cell_b_faces_idx = ma->cell_b_faces_idx;
+  const cs_lnum_t *cell_b_faces = ma->cell_b_faces;
+
+  const cs_ibm_cog_location_t cog_location
+    = cs_glob_porosity_from_scan_opt->cog_location;
 
   /* Checking */
 
   assert(cell_f_cen != NULL);
   assert(cell_f_vol != NULL);
 
-  cs_real_t *_cell_f_vol;
-  BFT_MALLOC(_cell_f_vol, n_cells_ext, cs_real_t);
-
-  cs_real_3_t *_cell_f_cen;
-  BFT_MALLOC(_cell_f_cen, n_cells_ext, cs_real_3_t);
-
   /* Compute approximate cell center using face centers */
 
   cs_real_3_t *a_cell_cen;
   BFT_MALLOC(a_cell_cen, n_cells_ext, cs_real_3_t);
-  cs_array_real_set_scalar(3*n_cells_ext,
-                           0,
-                           (cs_real_t *)a_cell_cen);
 
   // TODO merge with cs_mesh_quantities_cell_faces_cog
   _mesh_quantities_cell_faces_cog_solid(m,
@@ -2474,17 +2450,22 @@ _compute_fluid_solid_cell_quantities
                                         c_w_face_cog,
                                         a_cell_cen);
 
-  /* Initialization */
-  for (cs_lnum_t j = 0; j < n_cells_ext; j++) {
-    _cell_f_vol[j] = 0.;
-    for (cs_lnum_t i = 0; i < 3; i++)
-      _cell_f_cen[j][i] = 0.;
-  }
+  /* Compute COG from pyramids sub-volume */
+
+  cs_real_t *_cell_f_vol;
+  BFT_MALLOC(_cell_f_vol, n_cells_ext, cs_real_t);
+
+  cs_real_3_t *_cell_f_cen;
+  BFT_MALLOC(_cell_f_cen, n_cells_ext, cs_real_3_t);
 
   /* Loop on cells
      ------------- */
 
   for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+
+    _cell_f_vol[c_id] = 0.;
+    for (cs_lnum_t i = 0; i < 3; i++)
+      _cell_f_cen[c_id][i] = 0.;
 
     /* Interior faces */
     const cs_lnum_t s_id_i = c2c_idx[c_id];
@@ -2511,40 +2492,29 @@ _compute_fluid_solid_cell_quantities
 
     } /* End of loop on interior faces */
 
-  } /* End of loop on cells */
+    /* Loop on boundary faces */
 
-  /* Loop on boundary faces
-     ---------------------- */
+    const cs_lnum_t s_id_b = cell_b_faces_idx[c_id];
+    const cs_lnum_t e_id_b = cell_b_faces_idx[c_id+1];
 
-  for (cs_lnum_t f_id = 0; f_id < n_b_faces; f_id++) {
+    for (cs_lnum_t cidx = s_id_b; cidx < e_id_b; cidx++) {
+      const cs_lnum_t f_id = cell_b_faces[cidx];
 
-    /* For each cell sharing a border face, we update the numerator
-     * of _cell_f_cen and cell_area */
+      if (c_id > -1) {
+        cs_real_t pyra_vol_3
+          = cs_math_3_distance_dot_product(a_cell_cen[c_id],
+                                           b_f_face_cog[f_id],
+                                           b_f_face_normal[f_id]);
 
-    cs_lnum_t c_id = b_face_cells[f_id];
+        for (cs_lnum_t i = 0; i < 3; i++)
+          _cell_f_cen[c_id][i] += pyra_vol_3 *(  0.75*b_f_face_cog[f_id][i]
+                                               + 0.25*a_cell_cen[c_id][i]);
+        _cell_f_vol[c_id] += pyra_vol_3;
 
-    /* Computation of the area of the face
-       (note that c_id == -1 may happen for isolated faces,
-       which are cleaned afterwards) */
-
-    if (c_id > -1) {
-      cs_real_t pyra_vol_3
-        = cs_math_3_distance_dot_product(a_cell_cen[c_id],
-                                         b_f_face_cog[f_id],
-                                         b_f_face_normal[f_id]);
-
-      for (cs_lnum_t i = 0; i < 3; i++)
-        _cell_f_cen[c_id][i] += pyra_vol_3 *(  0.75*b_f_face_cog[f_id][i]
-                                             + 0.25*a_cell_cen[c_id][i]);
-      _cell_f_vol[c_id] += pyra_vol_3;
-
+      }
     }
 
-  } /* End of loop on boundary faces */
-
-  /* Add pyramid formed with the solid face */
-
-  for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+    /* Add pyramid formed with the solid face */
 
     if (cs_math_3_norm(c_w_face_normal[c_id]) > 0.) {
 
@@ -2559,24 +2529,44 @@ _compute_fluid_solid_cell_quantities
 
     }
 
-  }
-
-  /* Loop on cells to finalize the computation
-     ----------------------------------------- */
-
-  // TODO loop only over selected cells
-  for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+    /* Finalize the computation */
 
     if (_cell_f_vol[c_id] > 0.) {
 
-      for (cs_lnum_t i = 0; i < 3; i++) {
+      for (cs_lnum_t i = 0; i < 3; i++)
         _cell_f_cen[c_id][i] /= _cell_f_vol[c_id];
-        cell_f_cen[c_id][i] = _cell_f_cen[c_id][i];
-      }
+
       _cell_f_vol[c_id] /= 3.0;
       cell_f_vol[c_id] = _cell_f_vol[c_id];
+
+      if (cog_location == CS_COG_FROM_FLUID_FACES) {
+        for (cs_lnum_t i = 0; i < 3; i++)
+          cell_f_cen[c_id][i] = a_cell_cen[c_id][i];
+      }
+      else if (cog_location == CS_COG_FROM_PYRAMID) {
+        for (cs_lnum_t i = 0; i < 3; i++)
+          cell_f_cen[c_id][i] = _cell_f_cen[c_id][i];
+      }
+      else if (cog_location == CS_COG_WITHOUT_RECONSTRUCTION_FOR_IBM_PLANE) {
+
+        /* Parallel projection to the IBM wall from pyramids COG
+           to be orthogonal to the wall (to have II' = 0) */
+
+        if (cs_math_3_norm(c_w_face_normal[c_id]) > 0) {
+          cs_real_t unit_n[3];
+          cs_math_3_normalize(c_w_face_normal[c_id], unit_n);
+
+          cs_real_t dot = cs_math_3_distance_dot_product(c_w_face_cog[c_id],
+                                                         _cell_f_cen[c_id],
+                                                         unit_n);
+
+          for (cs_lnum_t i = 0; i < 3; i++)
+            cell_f_cen[c_id][i] = c_w_face_cog[c_id][i] + dot * unit_n[i];
+        }
+      }
     }
-  }
+
+  } /* End of loop on cells */
 
   /* Free memory */
   BFT_FREE(a_cell_cen);

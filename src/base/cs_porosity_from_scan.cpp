@@ -120,7 +120,8 @@ static cs_porosity_from_scan_opt_t _porosity_from_scan_opt = {
   .convection_porosity_threshold = 0.5,
   .use_staircase = false,
   .eigenvalue_criteria = 1e-3,
-  .use_restart = false
+  .use_restart = false,
+  .cog_location = CS_COG_FROM_FLUID_FACES
 };
 
 /*============================================================================

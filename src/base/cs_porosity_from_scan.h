@@ -68,6 +68,14 @@ BEGIN_C_DECLS
  * Porosity from scan model options descriptor
  *----------------------------------------------------------------------------*/
 
+typedef enum {
+
+  CS_COG_FROM_FLUID_FACES = 0,
+  CS_COG_FROM_PYRAMID = 1,
+  CS_COG_WITHOUT_RECONSTRUCTION_FOR_IBM_PLANE = 2
+
+} cs_ibm_cog_location_t;
+
 typedef struct {
   bool  compute_porosity_from_scan;
   char *file_names;
@@ -87,6 +95,8 @@ typedef struct {
   bool      use_staircase;
   cs_real_t eigenvalue_criteria;
   int       use_restart;
+  cs_ibm_cog_location_t cog_location;
+
 } cs_porosity_from_scan_opt_t;
 
 /*============================================================================
