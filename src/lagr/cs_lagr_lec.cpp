@@ -965,11 +965,11 @@ cs_lagr_restart_read_p(void)
   }
 
   {
-    cs_lnum_t tabvar[1];
+    cs_gnum_t tabvar[1];
     ierror = cs_restart_read_section(lag_stat_restart,
                                      "nombre_total_particules",
                                      CS_MESH_LOCATION_NONE,
-                                     1, CS_TYPE_int, tabvar);
+                                     1, CS_TYPE_cs_gnum_t, tabvar);
     pc->n_g_cumulative_total = tabvar[0];
     if (ierror != 0)
       cs_parameters_error
@@ -983,11 +983,11 @@ cs_lagr_restart_read_p(void)
   }
 
   {
-    cs_lnum_t tabvar[1];
+    cs_gnum_t tabvar[1];
     ierror = cs_restart_read_section(lag_stat_restart,
                                      "nombre_particules_perdues",
                                      CS_MESH_LOCATION_NONE,
-                                     1, CS_TYPE_int, tabvar);
+                                     1, CS_TYPE_cs_gnum_t, tabvar);
     pc->n_g_cumulative_failed = tabvar[0];
     if (ierror != 0)
       cs_parameters_error
@@ -1099,19 +1099,19 @@ cs_restart_lagrangian_checkpoint_write(void)
 
   /* Infos sur le suivi du calcul   */
   {
-    cs_lnum_t tabvar[1] = {cs_glob_lagr_particle_counter->n_g_cumulative_total};
+    cs_gnum_t tabvar[1] = {cs_glob_lagr_particle_counter->n_g_cumulative_total};
     cs_restart_write_section(lag_stat_restart,
                              "nombre_total_particules",
                              CS_MESH_LOCATION_NONE,
-                             1, CS_TYPE_int, tabvar);
+                             1, CS_TYPE_cs_gnum_t, tabvar);
   }
 
   {
-    cs_lnum_t tabvar[1] = {cs_glob_lagr_particle_counter->n_g_cumulative_failed};
+    cs_gnum_t tabvar[1] = {cs_glob_lagr_particle_counter->n_g_cumulative_failed};
     cs_restart_write_section(lag_stat_restart,
                              "nombre_particules_perdues",
                              CS_MESH_LOCATION_NONE,
-                             1, CS_TYPE_int, tabvar);
+                             1, CS_TYPE_cs_gnum_t, tabvar);
   }
 
   {

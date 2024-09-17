@@ -261,7 +261,7 @@ static cs_lagr_fragmentation_model_t _cs_glob_lagr_fragmentation_model
   = {
     .scalar_kernel = 0.,
     .base_diameter = 0.,
-    NULL};
+    nullptr};
 
 cs_lagr_fragmentation_model_t *cs_glob_lagr_fragmentation_model
   = &_cs_glob_lagr_fragmentation_model;
@@ -1121,14 +1121,14 @@ cs_lagr_update_particle_counter(void)
   cs_lagr_particle_set_t *p_set = cs_glob_lagr_particle_set;
   cs_lagr_particle_counter_t *pc = &_lagr_particle_counter;
 
-  cs_gnum_t gcount[] = {p_set->n_particles,
-                        p_set->n_part_new,
-                        p_set->n_part_merged,
-                        p_set->n_part_out,
-                        p_set->n_part_dep,
-                        p_set->n_part_fou,
-                        p_set->n_part_resusp,
-                        p_set->n_failed_part};
+  cs_gnum_t gcount[] = {(cs_gnum_t)p_set->n_particles,
+                        (cs_gnum_t)p_set->n_part_new,
+                        (cs_gnum_t)p_set->n_part_merged,
+                        (cs_gnum_t)p_set->n_part_out,
+                        (cs_gnum_t)p_set->n_part_dep,
+                        (cs_gnum_t)p_set->n_part_fou,
+                        (cs_gnum_t)p_set->n_part_resusp,
+                        (cs_gnum_t)p_set->n_failed_part};
 
   cs_real_t wsum[] = {p_set->weight,
                       p_set->weight_new,
