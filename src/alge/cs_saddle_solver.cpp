@@ -5000,10 +5000,19 @@ cs_saddle_solver_simple(cs_saddle_solver_t  *solver,
   /* Update x1 and x2 */
 
   cs_array_real_fill_zero(n1_dofs, ctx->rhs);
+
   /* Calculate Grad(dx2) */
   ctx->m12_vector_multiply(solver->n2_scatter_dofs,
                            dx2, ctx->m21_adj, ctx->m21_val,
                            ctx->rhs);
+
+  if (rset->ifs != NULL) {
+
+    cs_interface_set_sum(rset->ifs,
+                         /* n_elts, stride, interlaced */
+                         n1_dofs, 1, false, CS_REAL_TYPE,
+                         ctx->rhs);
+  }
 
   cs_real_t *m11_inv = ctx->m11_inv_diag;
 
