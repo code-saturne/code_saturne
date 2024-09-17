@@ -119,6 +119,7 @@ cs_dilatable_scalar_diff_st.h \
 cs_dispatch.h \
 cs_drift_convective_flux.h \
 cs_equation_iterative_solve.h \
+cs_execution_context.h \
 cs_ext_library_info.h \
 cs_ext_neighborhood.h \
 cs_fan.h \

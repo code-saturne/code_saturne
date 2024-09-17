@@ -654,14 +654,16 @@ cs_f_parall_barrier(void)
  * Public function definitions
  *============================================================================*/
 
-#if !defined(HAVE_MPI_IN_PLACE) && defined(HAVE_MPI)
+#if !defined(HAVE_MPI_IN_PLACE)
 
 void
 cs_parall_counter(cs_gnum_t   cpt[],
                   const int   n)
 {
+#if defined(HAVE_MPI)
   if (cs_glob_n_ranks > 1)
     _cs_parall_allreduce(cs_glob_mpi_comm, n, CS_GNUM_TYPE, MPI_SUM, cpt);
+#endif
 }
 
 #endif
@@ -674,14 +676,16 @@ cs_parall_counter(cs_gnum_t   cpt[],
  *   n   <-- number of counter array values
  *----------------------------------------------------------------------------*/
 
-#if !defined(HAVE_MPI_IN_PLACE) && defined(HAVE_MPI)
+#if !defined(HAVE_MPI_IN_PLACE)
 
 void
 cs_parall_counter_max(cs_lnum_t   cpt[],
                       const int   n)
 {
+#if defined(HAVE_MPI)
   if (cs_glob_n_ranks > 1)
     _cs_parall_allreduce(cs_glob_mpi_comm, n, CS_LNUM_TYPE, MPI_MAX, cpt);
+#endif
 }
 
 #endif
@@ -695,15 +699,17 @@ cs_parall_counter_max(cs_lnum_t   cpt[],
  *   val      <-> local value  input, global value output (array)
  *----------------------------------------------------------------------------*/
 
-#if !defined(HAVE_MPI_IN_PLACE) && defined(HAVE_MPI)
+#if !defined(HAVE_MPI_IN_PLACE)
 
 void
 cs_parall_sum(int             n,
               cs_datatype_t   datatype,
               void           *val)
 {
+#if defined(HAVE_MPI)
   if (cs_glob_n_ranks > 1)
     _cs_parall_allreduce(cs_glob_mpi_comm, n, datatype, MPI_SUM, val);
+#endif
 }
 
 #endif
@@ -717,15 +723,17 @@ cs_parall_sum(int             n,
  *   val      <-> local value  input, global value output (array)
  *----------------------------------------------------------------------------*/
 
-#if !defined(HAVE_MPI_IN_PLACE) && defined(HAVE_MPI)
+#if !defined(HAVE_MPI_IN_PLACE)
 
 void
 cs_parall_max(int             n,
               cs_datatype_t   datatype,
               void           *val)
 {
+#if defined(HAVE_MPI)
   if (cs_glob_n_ranks > 1)
     _cs_parall_allreduce(cs_glob_mpi_comm, n, datatype, MPI_MAX, val);
+#endif
 }
 
 #endif
@@ -739,15 +747,17 @@ cs_parall_max(int             n,
  *   val      <-> local value  input, global value output (array)
  *----------------------------------------------------------------------------*/
 
-#if !defined(HAVE_MPI_IN_PLACE) && defined(HAVE_MPI)
+#if !defined(HAVE_MPI_IN_PLACE)
 
 void
 cs_parall_min(int             n,
               cs_datatype_t   datatype,
               void           *val)
 {
+#if defined(HAVE_MPI)
   if (cs_glob_n_ranks > 1)
     _cs_parall_allreduce(cs_glob_mpi_comm, n, datatype, MPI_MIN, val);
+#endif
 }
 
 #endif
@@ -1357,100 +1367,112 @@ END_C_DECLS
 
 #if !defined(HAVE_MPI_IN_PLACE) && defined(HAVE_MPI)
 
+/*----------------------------------------------------------------------------
+ * Sum of a counter on all default communicator processes.
+ *
+ * parameters:
+ *   ec  <-- execution context
+ *   cpt <-> local counter value  input, global counter value output (array)
+ *   n   <-- number of counter array values
+ *----------------------------------------------------------------------------*/
+
 void
-cs_parall_counter(MPI_Comm    comm,
-                  cs_gnum_t   cpt[],
-                  const int   n)
+cs_parall_counter(cs_execution_context  *ec,
+                  cs_gnum_t              cpt[],
+                  const int              n)
 {
-  int _n_ranks = 0;
-  MPI_Comm_size(comm, &_n_ranks);
-  if (_n_ranks > 1)
-    _cs_parall_allreduce(comm, n, CS_GNUM_TYPE, MPI_SUM, cpt);
+#if defined(HAVE_MPI)
+  if (ec->use_mpi())
+    _cs_parall_allreduce(ec->comm(), n, CS_GNUM_TYPE, MPI_SUM, cpt);
+#endif
 }
 
 /*----------------------------------------------------------------------------
  * Maximum values of a counter on all default communicator processes.
  *
  * parameters:
+ *   ec  <-- execution context
  *   cpt <-> local counter value  input, global counter value output (array)
  *   n   <-- number of counter array values
  *----------------------------------------------------------------------------*/
 
 void
-cs_parall_counter_max(MPI_Comm    comm,
-                      cs_lnum_t   cpt[],
-                      const int   n)
+cs_parall_counter_max(cs_execution_context  *ec,
+                      cs_lnum_t              cpt[],
+                      const int              n)
 {
-  int _n_ranks = 0;
-  MPI_Comm_size(comm, &_n_ranks);
-  if (_n_ranks > 1)
-    _cs_parall_allreduce(comm, n, CS_LNUM_TYPE, MPI_MAX, cpt);
+#if defined(HAVE_MPI)
+  if (ec->use_mpi())
+    _cs_parall_allreduce(ec->comm(), n, CS_LNUM_TYPE, MPI_MAX, cpt);
+#endif
 }
 
 /*----------------------------------------------------------------------------
  * Sum values of a given datatype on all of a  communicator processes.
  *
  * parameters:
- *   comm     <-- communicator
+ *   ec       <-- execution context
  *   n        <-- number of values
  *   datatype <-- matching code_saturne datatype
  *   val      <-> local value  input, global value output (array)
  *----------------------------------------------------------------------------*/
 
 void
-cs_parall_sum(MPI_Comm        comm,
-              int             n,
-              cs_datatype_t   datatype,
-              void           *val)
+cs_parall_sum(cs_execution_context  *ec,
+              int                    n,
+              cs_datatype_t          datatype,
+              void                  *val)
 {
-  int _n_ranks = 0;
-  MPI_Comm_size(comm, &_n_ranks);
-  if (_n_ranks > 1)
-    _cs_parall_allreduce(comm, n, datatype, MPI_SUM, val);
+#if defined(HAVE_MPI)
+  if (ec->use_mpi())
+    _cs_parall_allreduce(ec->comm(), n, datatype, MPI_SUM, val);
+#endif
 }
 
 /*----------------------------------------------------------------------------
  * Maximum values of a given datatype on all default communicator processes.
  *
  * parameters:
+ *   ec       <-- execution context
  *   n        <-- number of values
  *   datatype <-- matching code_saturne datatype
  *   val      <-> local value  input, global value output (array)
  *----------------------------------------------------------------------------*/
 
 void
-cs_parall_max(MPI_Comm        comm,
-              int             n,
-              cs_datatype_t   datatype,
-              void           *val)
+cs_parall_max(cs_execution_context  *ec,
+              int                    n,
+              cs_datatype_t          datatype,
+              void                  *val)
 {
-  int _n_ranks = 0;
-  MPI_Comm_size(comm, &_n_ranks);
-  if (_n_ranks > 1)
-    _cs_parall_allreduce(comm, n, datatype, MPI_MAX, val);
+#if defined(HAVE_MPI)
+  if (ec->use_mpi())
+    _cs_parall_allreduce(ec->comm(), n, datatype, MPI_MAX, val);
+#endif
 }
 
 /*----------------------------------------------------------------------------
  * Minimum values of a given datatype on all default communicator processes.
  *
  * parameters:
+ *   ec       <-- execution context
  *   n        <-- number of values
  *   datatype <-- matching code_saturne datatype
  *   val      <-> local value  input, global value output (array)
  *----------------------------------------------------------------------------*/
 
 void
-cs_parall_min(MPI_Comm        comm,
-              int             n,
-              cs_datatype_t   datatype,
-              void           *val)
+cs_parall_min(cs_execution_context  *ec,
+              int                    n,
+              cs_datatype_t          datatype,
+              void                  *val)
 {
-  int _n_ranks = 0;
-  MPI_Comm_size(comm, &_n_ranks);
-  if (_n_ranks > 1)
-    _cs_parall_allreduce(comm, n, datatype, MPI_MIN, val);
+#if defined(HAVE_MPI)
+  if (ec->use_mpi())
+    _cs_parall_allreduce(ec->comm(), n, datatype, MPI_MIN, val);
+#endif
 }
 
-#endif
+#endif // !defined(HAVE_MPI_IN_PLACE) && defined(HAVE_MPI)
 
 /*----------------------------------------------------------------------------*/
