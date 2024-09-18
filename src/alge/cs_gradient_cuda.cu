@@ -1325,22 +1325,26 @@ cs_gradient_scalar_lsq_cuda(const cs_mesh_t              *m,
          rhsv,
          c_weight);
 
-    _save_cocgb<<<gridsize_b, blocksize, 0, stream>>>
-      (m->n_b_cells, b_cells, cocg, cocgb);
+    if (m->n_b_cells > 0) {
 
-    _compute_cocg_rhsv_lsq_s_b_face<<<gridsize_bf, blocksize, 0, stream>>>
-      (m->n_b_cells,
-       inc,
-       b_cells,
-       cell_b_faces_idx,
-       cell_b_faces,
-       b_face_u_normal,
-       b_dist,
-       diipb,
-       coefa_d,
-       coefb_d,
-       cocg,
-       rhsv);
+      _save_cocgb<<<gridsize_b, blocksize, 0, stream>>>
+        (m->n_b_cells, b_cells, cocg, cocgb);
+
+      _compute_cocg_rhsv_lsq_s_b_face<<<gridsize_bf, blocksize, 0, stream>>>
+        (m->n_b_cells,
+         inc,
+         b_cells,
+         cell_b_faces_idx,
+         cell_b_faces,
+         b_face_u_normal,
+         b_dist,
+         diipb,
+         coefa_d,
+         coefb_d,
+         cocg,
+         rhsv);
+
+    }
 
     /* Invert COCG at all cells */
     _compute_cocg_inv<<<gridsize, blocksize, 0, stream>>>
@@ -1351,7 +1355,7 @@ cs_gradient_scalar_lsq_cuda(const cs_mesh_t              *m,
   }
   else {
 
-    if (recompute_cocg) {
+    if (recompute_cocg && m->n_b_cells > 0) {
 
       _compute_cocg_from_cocgb<<<gridsize_b, blocksize, 0, stream>>>
         (m->n_b_cells, b_cells, cocg, cocgb);
@@ -1376,7 +1380,7 @@ cs_gradient_scalar_lsq_cuda(const cs_mesh_t              *m,
         (m->n_b_cells, b_cells, cocg);
 
     }
-    else
+    else if (m->n_b_cells > 0)
       _compute_rhsv_lsq_s_b_face<<<gridsize_bf, blocksize, 0, stream>>>
         (m->n_b_cells,
          inc,
@@ -1619,22 +1623,24 @@ cs_gradient_strided_lsq_cuda
   if (cs_glob_timer_kernels_flag > 0)
     CS_CUDA_CHECK(cudaEventRecord(e_cells, stream));
 
-  gridsize = cs_cuda_grid_size(m->n_b_cells, blocksize);
-  _compute_rhs_lsq_strided_b_face<blocksize><<<gridsize, blocksize, 0, stream>>>
-    (m->n_b_cells,
-     inc,
-     cell_b_faces_idx,
-     cell_b_faces,
-     b_cells,
-     cell_f_cen,
-     b_f_face_cog,
-     b_dist,
-     coefa_d,
-     coefb_d,
-     pvar_d,
-     cocgb,
-     cocg,
-     rhs_d);
+  if (m->n_b_cells > 0) {
+    gridsize = cs_cuda_grid_size(m->n_b_cells, blocksize);
+    _compute_rhs_lsq_strided_b_face<blocksize><<<gridsize, blocksize, 0, stream>>>
+      (m->n_b_cells,
+       inc,
+       cell_b_faces_idx,
+       cell_b_faces,
+       b_cells,
+       cell_f_cen,
+       b_f_face_cog,
+       b_dist,
+       coefa_d,
+       coefb_d,
+       pvar_d,
+       cocgb,
+       cocg,
+       rhs_d);
+  }
 
   if (cs_glob_timer_kernels_flag > 0)
     CS_CUDA_CHECK(cudaEventRecord(e_b_faces, stream));
@@ -1646,21 +1652,23 @@ cs_gradient_strided_lsq_cuda
   if (cs_glob_timer_kernels_flag > 0)
     CS_CUDA_CHECK(cudaEventRecord(e_gradient, stream));
 
-  gridsize = cs_cuda_grid_size(m->n_b_cells, blocksize);
-  _correct_gradient_b_strided<stride><<<gridsize, blocksize, 0, stream>>>
-    (m->n_b_cells,
-     n_c_iter_max,
-     c_eps,
-     cs_math_epzero,
-     b_cells,
-     cell_b_faces_idx,
-     cell_b_faces,
-     b_f_face_cog,
-     cell_f_cen,
-     diipb,
-     coefb_d,
-     cocg,
-     grad_d);
+  if (m->n_b_cells > 0) {
+    gridsize = cs_cuda_grid_size(m->n_b_cells, blocksize);
+    _correct_gradient_b_strided<stride><<<gridsize, blocksize, 0, stream>>>
+      (m->n_b_cells,
+       n_c_iter_max,
+       c_eps,
+       cs_math_epzero,
+       b_cells,
+       cell_b_faces_idx,
+       cell_b_faces,
+       b_f_face_cog,
+       cell_f_cen,
+       diipb,
+       coefb_d,
+       cocg,
+       grad_d);
+  }
 
   if (cs_glob_timer_kernels_flag > 0)
     CS_CUDA_CHECK(cudaEventRecord(e_b_correction, stream));
@@ -1942,18 +1950,20 @@ cs_gradient_strided_gg_r_cuda
   if (cs_glob_timer_kernels_flag > 0)
     CS_CUDA_CHECK(cudaEventRecord(e_i_faces, stream));
 
-  gridsize = cs_cuda_grid_size(n_b_faces * stride, blocksize);
-  _gg_with_r_gradient_b_faces<<<gridsize, blocksize, 0, stream>>>
-    (n_b_faces,
-     inc,
-     b_f_face_normal,
-     b_face_cells,
-     diipb,
-     coefa_d,
-     coefb_d,
-     pvar_d,
-     r_grad_d,
-     grad_d);
+  if (n_b_faces > 0) {
+    gridsize = cs_cuda_grid_size(n_b_faces * stride, blocksize);
+    _gg_with_r_gradient_b_faces<<<gridsize, blocksize, 0, stream>>>
+      (n_b_faces,
+       inc,
+       b_f_face_normal,
+       b_face_cells,
+       diipb,
+       coefa_d,
+       coefb_d,
+       pvar_d,
+       r_grad_d,
+       grad_d);
+  }
 
   if (cs_glob_timer_kernels_flag > 0)
     CS_CUDA_CHECK(cudaEventRecord(e_b_faces, stream));
