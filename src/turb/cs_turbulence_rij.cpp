@@ -1136,6 +1136,7 @@ _pre_solve_lrr(const cs_field_t  *f_rij,
 
   const cs_real_t crij1 = cs_turb_crij1;
   const cs_real_t crij2 = cs_turb_crij2;
+  const cs_real_t crijeps = cs_turb_crij_eps;
 
   cs_lnum_t solid_stride = 1;
   int *c_is_solid_zone_flag = cs_solid_zone_flag(cs_glob_mesh);
@@ -1263,7 +1264,7 @@ _pre_solve_lrr(const cs_field_t  *f_rij,
       cs_real_t pij = (1.-crij2) * produc[c_id][_t2v[j][i]];
       cs_real_t phiij1 = -cvara_ep[c_id]*crij1*xaniso[j][i];
       cs_real_t phiij2 = d2s3*crij2*trprod*_vdeltij[ij];
-      cs_real_t epsij = -d2s3*cvara_ep[c_id]*_vdeltij[ij];
+      cs_real_t epsij = -d2s3*crijeps*cvara_ep[c_id]*_vdeltij[ij];
 
       if (st_prv_id > -1) {
         c_st_prv[c_id][ij] +=   cromo[c_id] * cell_f_vol[c_id]
@@ -1533,6 +1534,7 @@ _pre_solve_lrr_sg(const cs_field_t  *f_rij,
 
   const cs_real_t crij1 = cs_turb_crij1;
   const cs_real_t crij2 = cs_turb_crij2;
+  const cs_real_t crijeps = cs_turb_crij_eps;
 
   cs_lnum_t solid_stride = 1;
   int *c_is_solid_zone_flag = cs_solid_zone_flag(cs_glob_mesh);
@@ -1584,7 +1586,7 @@ _pre_solve_lrr_sg(const cs_field_t  *f_rij,
         c_st_prv[c_id][ij] +=  cromo[c_id] * cell_f_vol[c_id]
                               * (  _vdeltij[ij]*d2s3
                                  * (   crij2 * trprod
-                                    + (crij1-1.) * cvara_ep[c_id])
+                                    + (crij1-crijeps) * cvara_ep[c_id])
                                  + (1.-crij2)*produc[c_id][ij]);
 
         /*  In rhs = -C1rho eps/k(Rij) = rho {-C1eps/kRij} */
@@ -1643,7 +1645,7 @@ _pre_solve_lrr_sg(const cs_field_t  *f_rij,
         rhs[c_id][ij] +=  crom[c_id] * cell_f_vol[c_id]
                         * (  _vdeltij[ij] * d2s3
                            * (   crij2 * trprod
-                              + (crij1-1.) * cvara_ep[c_id])
+                              + (crij1-crijeps) * cvara_ep[c_id])
                            + (1-cs_turb_crij2) * produc[c_id][ij]
                            - crij1 * cvara_ep[c_id]/trrij * cvara_var[c_id][ij]);
 
@@ -1922,6 +1924,7 @@ _pre_solve_ssg(const cs_field_t  *f_rij,
   const cs_real_t cmu = cs_turb_cmu;
 
   const cs_real_t csrij  = cs_turb_csrij;
+  const cs_real_t crijeps = cs_turb_crij_eps;
 
   const cs_real_t cssgr1 = cs_turb_cssgr1;
   const cs_real_t cssgr2 = cs_turb_cssgr2;
@@ -2124,7 +2127,7 @@ _pre_solve_ssg(const cs_field_t  *f_rij,
                       + d2s3 * trrij * cssgr4 * cs_math_fmax(aklskl, 0);
 
         /* Linear constant */
-        impl_lin_cst = eigen_max * (1. + cssgr4 + cssgr5);
+        impl_lin_cst = eigen_max * (crijeps + cssgr4 + cssgr5);
 
         cs_real_t implmat2add[3][3];
         for (cs_lnum_t i = 0; i < 3; i++) {
@@ -2149,7 +2152,8 @@ _pre_solve_ssg(const cs_field_t  *f_rij,
         const cs_real_t cphi3impl = cs_math_fabs(cebmr2 - cebmr3*sqrt(aii));
 
         /* PhiWall + epsilon_wall constants for EBRSM */
-        const cs_real_t cphiw_impl = 6 * (1-alpha3) * cvara_ep[c_id] / trrij;
+        const cs_real_t cphiw_impl = 6 * (1 - alpha3)
+          * crijeps * cvara_ep[c_id] / trrij;
 
         /* The implicit components of Phi (pressure-velocity fluctuations)
          * are split into the linear part (A*R) and Id part (A*Id). */
@@ -2233,7 +2237,7 @@ _pre_solve_ssg(const cs_field_t  *f_rij,
                                  + cssgr4*trrij * (  aiksjk
                                                    - d2s3 * _vdeltij[ij] * aklskl)
                                  + cssgr5*trrij * aikrjk;
-        const cs_real_t epsij = -d2s3 * cvara_ep[c_id] * _vdeltij[ij];
+        const cs_real_t epsij = -d2s3*crijeps * cvara_ep[c_id] * _vdeltij[ij];
 
         w1[c_id] =   cromo[c_id] * cell_f_vol[c_id]
                    * (pij + phiij1 + phiij2 + epsij);
@@ -2291,7 +2295,7 @@ _pre_solve_ssg(const cs_field_t  *f_rij,
         /* Implicit terms */
         cs_real_t  epsijw_imp = 0; // FIXME
         if (coupled_components == 0)
-          epsijw_imp = 6. * (1.-alpha3) * cvara_ep[c_id] / trrij;
+          epsijw_imp = 6. * (1.-alpha3)*crijeps * cvara_ep[c_id] / trrij;
 
         /* The term below corresponds to the implicit part of SSG
          * in the context of elliptical weighting, it is multiplied by

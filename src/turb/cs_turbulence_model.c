@@ -280,8 +280,8 @@ BEGIN_C_DECLS
   \var  cs_turb_rans_model_t::dissip_buo_mdl
         Turbulent dissipation buoyant production model
 
-        Useful if and only if \ref order = 
-        CS_TURB_SECOND_ORDER (\f$R_{ij}-\epsilon\f$ model). 
+        Useful if and only if \ref order =
+        CS_TURB_SECOND_ORDER (\f$R_{ij}-\epsilon\f$ model).
 */
 
 /*----------------------------------------------------------------------------*/
@@ -523,7 +523,7 @@ double cs_turb_ce2 = 1.92;
 
 /*!
  * Constant \f$C_{\varepsilon 3}\f$ for EB-RSM model.
- * Useful only for buoyant term calculation of \f$R_{ij}\f$ 
+ * Useful only for buoyant term calculation of \f$R_{ij}\f$
  * in \f$R_{ij}-\varepsilon EB-RSM\f$.
  */
 double cs_turb_ce3 = 2.02;
@@ -536,6 +536,13 @@ double cs_turb_ce3 = 2.02;
  * in \f$k-\varepsilon\f$ and \f$R_{ij}-\varepsilon\f$ with two-way coupling.
  */
 double cs_turb_ce4 = 1.20;
+
+/*!
+ * Coefficient of in front of dissipation term in Rij models
+ * Default value is 1, can be used to unplung dissipation source term.
+ */
+double cs_turb_crij_eps = 1.;
+
 
 /*!
  * Constant \f$C_1\f$ for the \f$R_{ij}-\varepsilon\f$ LRR model.
@@ -1473,7 +1480,7 @@ cs_turbulence_init_models(void)
   else
     _turb_model.high_low_re = CS_TURB_HIGH_RE;
 
-  /* Set the model used for the turbulent dissipation buoyant 
+  /* Set the model used for the turbulent dissipation buoyant
      production term */
   if ( _turb_model.model == CS_TURB_RIJ_EPSILON_EBRSM )
     _turb_rans_model.dissip_buo_mdl = 1;
