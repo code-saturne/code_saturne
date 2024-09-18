@@ -253,14 +253,11 @@ main (int argc, char *argv[])
                                                      src_index,
                                                      NULL);
 
-    cs_gnum_t *dest_val
-      = (cs_gnum_t *)cs_all_to_all_copy_indexed(d,
-                                                CS_GNUM_TYPE,
-                                                false, /* reverse */
-                                                src_index,
-                                                src_val,
-                                                dest_index,
-                                                NULL);
+    cs_gnum_t *dest_val = cs_all_to_all_copy_indexed(d,
+                                                     false, /* reverse */
+                                                     src_index,
+                                                     src_val,
+                                                     dest_index);
 
     cs_lnum_t n_elts_dest = cs_all_to_all_n_elts_dest(d);
 
@@ -307,14 +304,11 @@ main (int argc, char *argv[])
                              dest_index,
                              src_index);
 
-    cs_gnum_t *ret_val
-      = (cs_gnum_t *)cs_all_to_all_copy_indexed(d,
-                                                CS_GNUM_TYPE,
-                                                true, /* reverse */
-                                                dest_index,
-                                                reverse_val,
-                                                src_index,
-                                                NULL);
+    cs_gnum_t *ret_val = cs_all_to_all_copy_indexed(d,
+                                                    true, /* reverse */
+                                                    dest_index,
+                                                    reverse_val,
+                                                    src_index);
 
     cs_all_to_all_destroy(&d);
 

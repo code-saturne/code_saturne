@@ -661,19 +661,16 @@ _uzawa_cg_init_context(const cs_navsto_param_t              *nsp,
 /*!
  * \brief Initialize the context structure associated to a SIMPLE algorithm
  *
- * \param[in]      nsp     set of parameters related to the Navier-Stokes eqs.
  * \param[in, out] solver  pointer to a cs_saddle_solver_t structure
  * \param[in, out] ctx     additional members specific to the Uzawa-CG algo.
  */
 /*----------------------------------------------------------------------------*/
 
 static void
-_simple_init_context(const cs_navsto_param_t              *nsp,
-                     cs_saddle_solver_t                   *solver,
-                     cs_saddle_solver_context_simple_t    *ctx)
+_simple_init_context(cs_saddle_solver_t                *solver,
+                     cs_saddle_solver_context_simple_t *ctx)
 {
-  const cs_cdo_quantities_t  *quant = cs_shared_quant;
-  const cs_cdo_connect_t  *connect = cs_shared_connect;
+  const cs_cdo_quantities_t *quant = cs_shared_quant;
 
   assert(ctx != nullptr);
   assert(solver->n2_scatter_dofs == quant->n_cells);
@@ -1890,7 +1887,7 @@ cs_cdofb_monolithic_sles_simple(const cs_navsto_param_t  *nsp,
 
   /* Update the context after the matrix building */
 
-  _simple_init_context(nsp, solver, ctx);
+  _simple_init_context(solver, ctx);
 
   /* Prepare the solution array at faces. It has to be allocated to a greater
    * size in case of parallelism in order to allow for a correct matrix-vector

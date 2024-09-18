@@ -55,23 +55,23 @@ AM_LDFLAGS  = $(CXXFLAGS_SYCL)
 
 BUILT_SOURCES = \
 cs_halo.cpp \
-cs_range_set.c \
-cs_sort.c \
+cs_range_set.cpp \
+cs_sort.cpp \
 cs_matrix.c \
 cs_matrix_assembler.c \
 cs_blas.c \
-cs_random.c
+cs_random.cpp
 
 cs_halo.cpp: Makefile $(top_srcdir)/src/base/cs_halo.cpp
 	cat $(top_srcdir)/src/base/$@ >$@
 
-cs_range_set.c: Makefile $(top_srcdir)/src/base/cs_range_set.c
+cs_range_set.cpp: Makefile $(top_srcdir)/src/base/cs_range_set.cpp
 	cat $(top_srcdir)/src/base/$@ >$@
 
-cs_sort.c: Makefile $(top_srcdir)/src/base/cs_sort.c
+cs_sort.cpp: Makefile $(top_srcdir)/src/base/cs_sort.cpp
 	cat $(top_srcdir)/src/base/$@ >$@
 
-cs_random.c: Makefile $(top_srcdir)/src/base/cs_random.c
+cs_random.cpp: Makefile $(top_srcdir)/src/base/cs_random.cpp
 	cat $(top_srcdir)/src/base/$@ >$@
 
 cs_blas.c: Makefile $(top_srcdir)/src/alge/cs_blas.c
@@ -243,7 +243,7 @@ cs_moment_test_LDADD    = -lm
 
 cs_random_test_SOURCES  = \
 cs_random_test.cpp \
-cs_random.c
+cs_random.cpp
 cs_random_test_LDFLAGS  = $(LDFLAGS_CS_TESTS)
 cs_random_test_LDADD    = $(LDADD_CS_TESTS)
 
