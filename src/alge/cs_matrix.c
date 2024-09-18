@@ -6364,14 +6364,18 @@ cs_matrix_variant_build_list(const cs_matrix_t       *m,
 
 #if defined(HAVE_MKL_SPARSE_IE)
 
-    _variant_add(_("CSR, with MKL"),
-                 m->type,
-                 m->fill_type,
-                 m->numbering,
-                 "mkl",
-                 n_variants,
-                 &n_variants_max,
-                 m_variant);
+    {
+      const cs_matrix_struct_csr_t  *ms = m->structure;
+      if (ms->col_id != NULL)
+        _variant_add(_("CSR, with MKL"),
+                     m->type,
+                     m->fill_type,
+                     m->numbering,
+                     "mkl",
+                     n_variants,
+                     &n_variants_max,
+                     m_variant);
+    }
 
 #endif /* defined(HAVE_MKL_SPARSE_IE) */
 
@@ -6387,15 +6391,18 @@ cs_matrix_variant_build_list(const cs_matrix_t       *m,
                    &n_variants_max,
                    m_variant);
 
-    if (cs_get_device_id() > -1)
-      _variant_add(_("CSR, with cuSPARSE"),
-                   m->type,
-                   m->fill_type,
-                   m->numbering,
-                   "cusparse",
-                   n_variants,
-                   &n_variants_max,
-                   m_variant);
+    if (cs_get_device_id() > -1) {
+      const cs_matrix_struct_csr_t  *ms = m->structure;
+      if (ms->col_id != NULL)
+        _variant_add(_("CSR, with cuSPARSE"),
+                     m->type,
+                     m->fill_type,
+                     m->numbering,
+                     "cusparse",
+                     n_variants,
+                     &n_variants_max,
+                     m_variant);
+    }
 
 #endif /* defined(HAVE_CUDA) */
 
@@ -6414,14 +6421,20 @@ cs_matrix_variant_build_list(const cs_matrix_t       *m,
 
 #if defined(HAVE_MKL_SPARSE_IE)
 
-    _variant_add(_("MSR, with MKL"),
-                 m->type,
-                 m->fill_type,
-                 m->numbering,
-                 "mkl",
-                 n_variants,
-                 &n_variants_max,
-                 m_variant);
+    {
+      cs_matrix_struct_dist_t *ms
+        = (cs_matrix_struct_dist_t *)m->structure;
+      if (ms->e.col_id != NULL) {
+        _variant_add(_("MSR, with MKL"),
+                     m->type,
+                     m->fill_type,
+                     m->numbering,
+                     "mkl",
+                   n_variants,
+                     &n_variants_max,
+                     m_variant);
+      }
+    }
 
 #endif /* defined(HAVE_MKL_SPARSE_IE) */
 
@@ -6441,15 +6454,20 @@ cs_matrix_variant_build_list(const cs_matrix_t       *m,
 
 #if defined(HAVE_CUSPARSE)
 
-    if (cs_get_device_id() > -1)
-      _variant_add(_("MSR, with cuSPARSE"),
-                   m->type,
-                   m->fill_type,
-                   m->numbering,
-                   "cusparse",
-                   n_variants,
-                   &n_variants_max,
-                   m_variant);
+    if (cs_get_device_id() > -1) {
+      cs_matrix_struct_dist_t *ms
+        = (cs_matrix_struct_dist_t *)m->structure;
+      if (ms->e.col_id != NULL) {
+        _variant_add(_("MSR, with cuSPARSE"),
+                     m->type,
+                     m->fill_type,
+                     m->numbering,
+                     "cusparse",
+                     n_variants,
+                     &n_variants_max,
+                     m_variant);
+      }
+    }
 
 #endif /* defined(HAVE_CUSPARSE) */
 
