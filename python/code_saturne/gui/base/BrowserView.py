@@ -55,6 +55,8 @@ from code_saturne.gui.base.QtPage import from_qvariant, to_text_string
 
 import code_saturne.gui.base.resource_base_rc
 
+from code_saturne.model.ImmersedBoundariesModel import ImmersedBoundariesModel
+
 #-------------------------------------------------------------------------------
 # log config
 #-------------------------------------------------------------------------------
@@ -218,11 +220,17 @@ class TreeModel(QAbstractItemModel):
                 elif page_name == self.tr('Volume conditions'):
                     img_path = os.path.join(icons_path, 'cube_volume_zone_v2.png')
                     icon.addPixmap(QPixmap(_fromUtf8(img_path)), QIcon.Normal, QIcon.Off)
+                elif page_name == self.tr('Immersed volume conditions'):
+                    img_path = os.path.join(icons_path, 'cube_volume_zone_v2.png')
+                    icon.addPixmap(QPixmap(_fromUtf8(img_path)), QIcon.Normal, QIcon.Off)
 #                elif page_name == self.tr('Boundary zones'):
 #                    img_path = ":/icons/22x22/boundary_conditions.png"
 #                    icon.addPixmap(QPixmap(_fromUtf8(img_path)), QIcon.Normal, QIcon.Off)
                 elif page_name == self.tr('Boundary conditions'):
                     img_path = os.path.join(icons_path, 'cube_bc.png')
+                    icon.addPixmap(QPixmap(_fromUtf8(img_path)), QIcon.Normal, QIcon.Off)
+                elif page_name == self.tr('Immersed boundary conditions'):
+                    img_path = os.path.join(icons_path, 'cube_volume_zone_v2.png')
                     icon.addPixmap(QPixmap(_fromUtf8(img_path)), QIcon.Normal, QIcon.Off)
                 elif page_name == self.tr('Time settings'):
                     img_path = os.path.join(icons_path, 'time_stepping.png')
@@ -474,7 +482,10 @@ class BrowserView(QWidget, Ui_BrowserForm):
         sl = ['Calculation environment', 'Mesh', 'Calculation features',
               'Closure modeling',
               'Particles and droplets tracking', 'Volume conditions',
-              'Boundary conditions', 'Coupling parameters', 'Time settings',
+              'Immersed volume conditions',
+              'Boundary conditions',
+              'Immersed boundary conditions',
+              'Coupling parameters', 'Time settings',
               'Numerical parameters',
               'Postprocessing', 'Performance settings']
 
@@ -485,7 +496,8 @@ class BrowserView(QWidget, Ui_BrowserForm):
         if section == 'Calculation environment':
             return ['Notebook', 'Time tables']
         elif section == 'Mesh':
-            return ['Preprocessing', "Volume zones", "Boundary zones"]
+            return ['Preprocessing', 'Immersed Boundaries',
+                    'Volume zones', 'Boundary zones']
         elif section == 'Calculation features':
             return ['Main fields', 'Deformable mesh', 'Gas combustion',
                     'Pulverized fuel combustion', 'Electrical models',
@@ -502,10 +514,14 @@ class BrowserView(QWidget, Ui_BrowserForm):
             return ['Statistics']
         elif section == 'Volume conditions':
             return []
+        elif section == 'Immersed volume conditions':
+            return []
         elif section == "Boundary conditions":
             return []
+        elif section == "Immersed boundary conditions":
+            return []
         elif section == 'Coupling parameters':
-            return ['Immersed Boundaries']
+            return [] #'Immersed Boundaries']
         elif section == 'Time settings':
             return ['Start/Restart']
         elif section == 'Numerical parameters':
@@ -792,6 +808,8 @@ class BrowserView(QWidget, Ui_BrowserForm):
         self.setRowClose(self.tr('Immersed Boundaries'))
         """
 
+        self.setRowClose(self.tr('Immersed volume conditions'))
+
         self.setRowClose(self.tr('Time settings'))
 
         self.setRowClose(self.tr('Numerical parameters'))
@@ -971,6 +989,9 @@ class BrowserView(QWidget, Ui_BrowserForm):
 
         self.setRowShow(self.tr('Preprocessing'), True)
 
+        # Immersed boundaries
+        self.setRowShow(self.tr('Immersed Boundaries'), is_ncfd)
+
         # Thermophysical Models
 
         self.setRowShow(self.tr('Calculation features'), True)
@@ -1009,14 +1030,26 @@ class BrowserView(QWidget, Ui_BrowserForm):
         self.setRowShow(self.tr('Volume zones'), True)
         self.setRowShow(self.tr('Volume conditions'), True)
 
+        # Immersed boudaries volume zones
+
+        self.setRowShow(self.tr('Immersed volume conditions'), is_ncfd)
+
         node_domain = case.xmlGetNode('solution_domain')
 
         # Boundary zones
 
         self.setRowShow(self.tr('Boundary conditions'))
-        # Immersed boundaries is deactivated for the moment. Will be
-        # reactivated following v6.1 once Page is updated in NCFD
-        self.setRowShow(self.tr('Immersed Boundaries'), False)
+
+        # Immersed boundary zones (disabled for CHT or FSI computation)
+
+        self.ibm = ImmersedBoundariesModel(case)
+        immersed_volume_labels = self.ibm.getObjectsNameList()
+        immersed_boundary_labels = immersed_volume_labels.copy()
+
+        self.setRowShow(self.tr('Immersed boundary conditions'), is_ncfd)
+
+        # Coupling
+
         self.setRowShow(self.tr("Coupling parameters"), m_lagr or m_ale or is_ncfd or m_cht or m_icm)
 
         # Time settings
@@ -1052,6 +1085,10 @@ class BrowserView(QWidget, Ui_BrowserForm):
         # Update volume zones display
         volume_zone_labels = LocalizationModel("VolumicZone", case).getSortedZoneLabels()
         self.updateBrowserZones(volume_zone_labels, "Volume conditions")
+
+        # Update immersed boundary/volume zones display
+        self.updateBrowserZones(immersed_volume_labels, "Immersed volume conditions")
+        self.updateBrowserZones(immersed_boundary_labels, "Immersed boundary conditions")
 
         self.__hideRow()
 

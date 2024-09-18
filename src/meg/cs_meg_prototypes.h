@@ -35,10 +35,20 @@
 #include "base/cs_field.h"
 #include "base/cs_volume_zone.h"
 #include "base/cs_boundary_zone.h"
+#include "base/cs_ibm.h"
 
 /*----------------------------------------------------------------------------*/
 
 BEGIN_C_DECLS
+
+typedef void
+(cs_ibm_volume_func_t)(const cs_lnum_t    c_id,
+                       const cs_real_3_t  xyz,
+                       const cs_real_t    t,
+                       cs_real_t         *retval);
+
+typedef void
+(cs_ibm_fsi_func_t)(cs_real_t  *retval);
 
 /*============================================================================
  * MEG function prototypes
@@ -137,7 +147,7 @@ cs_meg_initialization(const char       *zone_name,
  * \param[in]  xyz           list of coordinates related to the zone
  * \param[in]  field_name    variable field name
  * \param[in]  source_type   source term type
- * \param[out] retvals      array of computed values
+ * \param[out] retvals       array of computed values
  *
  */
 /*----------------------------------------------------------------------------*/
@@ -150,26 +160,6 @@ cs_meg_source_terms(const char       *zone_name,
                     const char       *name,
                     const char       *source_type,
                     cs_real_t        *retvals);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \file cs_meg_immersed_boundaries_inout.c
- *
- * \brief This function is used to indicate whether a given point is within or
- *        outside a given solid
- *
- * \param[in, out] ipenal       indicator for cut cells algorithm
- * \param[in]      object_name  name of the solid object
- * \param[in]      xyz          point coordinates
- * \param[in]      t            time value
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_meg_immersed_boundaries_inout(int         *ipenal,
-                                 const char  *object_name,
-                                 cs_real_t    xyz[3],
-                                 cs_real_t    t);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -232,6 +222,52 @@ cs_meg_post_calculator(const char       *name,
                        const cs_lnum_t  *elt_ids,
                        const cs_real_t   xyz[][3],
                        cs_real_t        *retvals);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief This function is used to get the cs_cutcell_func_t pointer for a
+ * given object.
+ *
+ * \return pointer to corresponding function.
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_cutcell_func_t *
+cs_meg_ibm_func_by_name
+(
+  const char *object_name /*!<[in] name of the object */
+);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ *
+ * \brief This function is used to get the cs_ibm_volume_func_t pointer for a
+ *        given object
+ *
+ * \return pointer to corresponding function.
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_ibm_volume_func_t *
+cs_meg_ibm_volume_func_by_name(const char *object_name,
+                               const char *gui_var_name);
+
+/*----------------------------------------------------------------------------*/
+
+/*----------------------------------------------------------------------------*/
+/*!
+ *
+ * \brief This function is used to get the cs_ibm_fsi_func_t pointer for a
+ *        given object
+ *
+ * \return pointer to corresponding function.
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_ibm_fsi_func_t *
+cs_meg_ibm_fsi_func_by_name(const char *object_name,
+                            const char *gui_var_name);
+
 /*----------------------------------------------------------------------------*/
 
 END_C_DECLS

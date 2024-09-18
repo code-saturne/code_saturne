@@ -58,7 +58,9 @@ cs_meg_headers.h
 megfiles = \
 cs_meg_boundary_function.cxx \
 cs_meg_fsi_struct.cxx \
-cs_meg_immersed_boundaries_inout.cxx \
+cs_meg_immersed_boundaries.cxx \
+cs_meg_immersed_boundaries_fsi.cxx \
+cs_meg_immersed_boundaries_volume.cxx \
 cs_meg_initialization.cxx \
 cs_meg_post_calculator.cxx \
 cs_meg_post_output.cxx \

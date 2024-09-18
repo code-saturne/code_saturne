@@ -71,9 +71,17 @@ def displaySelectedPage(page_name, root, case, stbar=None, tree=None):
                 import code_saturne.gui.case.BoundaryConditionsView as Page
                 thisPage = Page.BoundaryConditionsView(root, case, zone_name)
 
+        elif item.parentItem.itemData[0] == tr("Immersed boundary conditions"):
+            import code_saturne.gui.case.ImmersedBoundariesBoundaryConditionsView as Page
+            thisPage = Page.ImmersedBoundariesBoundaryConditionsView(root, case, zone_name)
+
         elif item.parentItem.itemData[0] == tr("Volume conditions"):
             import code_saturne.gui.case.VolumicConditionsView as Page
             thisPage = Page.VolumicConditionsView(root, case, zone_name)
+
+        elif item.parentItem.itemData[0] == tr("Immersed volume conditions"):
+            import code_saturne.gui.case.ImmersedBoundariesVolumicConditionsView as Page
+            thisPage = Page.ImmersedBoundariesVolumicConditionsView(root, case, zone_name)
 
         elif item.parentItem.itemData[0] == tr("Volume zones"):
             import code_saturne.gui.case.LocalizationView as Page
@@ -191,11 +199,19 @@ def displayStaticPage(case, page_name, root, stbar, tree):
 
     elif page_name == tr("Immersed Boundaries"):
         import code_saturne.gui.case.ImmersedBoundariesViewNeptune as Page
-        thisPage = Page.ImmersedBoundariesViewNeptune(root, case)
+        thisPage = Page.ImmersedBoundariesViewNeptune(root, case, stbar, tree)
+
+    elif page_name == tr("Immersed volume conditions"):
+        import code_saturne.gui.case.ImmersedBoundariesVolumicViewNeptune as Page
+        thisPage = Page.ImmersedBoundariesVolumicViewNeptune(root, case, tree)
 
     elif page_name == tr("Boundary conditions"):
         import code_saturne.gui.case.BoundaryNatureView as Page
         thisPage = Page.BoundaryNatureView(root, case, tree)
+
+    elif page_name == tr("Immersed boundary conditions"):
+        import code_saturne.gui.case.ImmersedBoundariesBoundaryViewNeptune as Page
+        thisPage = Page.ImmersedBoundariesBoundaryViewNeptune(root, case, tree)
 
     elif page_name == tr("Coupling parameters"):
         import code_saturne.gui.case.CouplingParametersView as Page

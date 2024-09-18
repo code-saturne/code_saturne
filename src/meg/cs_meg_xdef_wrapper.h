@@ -73,6 +73,9 @@ typedef struct {
   /* boundary or source term data */
   char additional_data[512];
 
+  /* constant data */
+  cs_real_t constant_value;
+
 } cs_meg_xdef_input_t;
 
 /*============================================================================

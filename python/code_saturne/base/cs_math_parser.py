@@ -798,8 +798,14 @@ class cs_math_parser:
                         new_v = 'retvals[e_id]'
 
                 elif func_type == 'ibm':
-                    new_v = '*ipenal'
+                    new_v = 'retval'
 
+                elif func_type in ['ibm_vol']:
+                    if nreq > 1:
+                        ir = req.index(tk)
+                        new_v = 'retvals[%d * c_id + %d]' % (nreq, ir)
+                    else:
+                        new_v = 'retvals[c_id]'
                 elif func_type == 'pca':
                     if nreq > 1:
                         ir = req.index(tk)

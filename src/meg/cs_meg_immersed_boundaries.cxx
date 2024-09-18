@@ -53,29 +53,19 @@ BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \file cs_meg_immersed_boundaries_inout.cxx
+ * \file cs_meg_immersed_boundaries.cxx
  *
- * \brief This function is used to indicate whether a given point is within or
- *        outside a given solid
- *
- * \param[in, out] ipenal       indicator for cut cells algorithm
- * \param[in]      object_name  name of the solid object
- * \param[in]      xyz          pointer containing the point coordinates
- * \param[in]      t            time value
  */
 /*----------------------------------------------------------------------------*/
 
-#pragma weak cs_meg_immersed_boundaries_inout
-void
-cs_meg_immersed_boundaries_inout(int         *ipenal,
-                                 const char  *object_name,
-                                 cs_real_3_t  xyz,
-                                 cs_real_t    t)
+#pragma weak cs_meg_ibm_func_by_name
+cs_cutcell_func_t *
+cs_meg_ibm_func_by_name
+(
+  const char *object_name
+)
 {
-  CS_NO_WARN_IF_UNUSED(ipenal);
   CS_NO_WARN_IF_UNUSED(object_name);
-  CS_NO_WARN_IF_UNUSED(xyz);
-  CS_NO_WARN_IF_UNUSED(t);
 }
 
 /*----------------------------------------------------------------------------*/

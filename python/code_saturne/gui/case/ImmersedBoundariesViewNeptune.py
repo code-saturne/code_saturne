@@ -26,18 +26,14 @@
 This module defines the Immersed boundaries view data management.
 
 This module contains the following classes and function:
-- SyrthesVerbosityDelegate
-- ProjectionAxisDelegate
-- SelectionCriteriaDelegate
-- StandardItemModelSyrthes
-- ConjugateHeatTransferView
+- ImmersedBoundariesViewNeptune
 """
 
 #-------------------------------------------------------------------------------
 # Standard modules
 #-------------------------------------------------------------------------------
 
-import logging
+import logging, os
 
 #-------------------------------------------------------------------------------
 # Third-party modules
@@ -58,6 +54,8 @@ from code_saturne.gui.case.ImmersedBoundariesNeptune import Ui_ImmersedBoundarie
 from code_saturne.model.ImmersedBoundariesModel import ImmersedBoundariesModel
 from code_saturne.gui.case.QMegEditorView import QMegEditorView
 
+#from code_saturne.base.cs_meg_to_c import meg_to_c_interpreter
+
 #-------------------------------------------------------------------------------
 # log config
 #-------------------------------------------------------------------------------
@@ -67,13 +65,13 @@ log = logging.getLogger("ImmersedBoundariesViewNeptune")
 log.setLevel(GuiParam.DEBUG)
 
 #-------------------------------------------------------------------------------
-# QLineEdit delegate to attach a label to the FSI object
+# QLineEdit delegate to attach a label to the solid object
 #-------------------------------------------------------------------------------
 
-class FSIObjectNameDelegate(QItemDelegate):
+class ObjectNameDelegate(QItemDelegate):
 
     def __init__(self, parent = None):
-        super(FSIObjectNameDelegate, self).__init__(parent)
+        super(ObjectNameDelegate, self).__init__(parent)
         self.parent = parent
 
 
@@ -94,18 +92,17 @@ class FSIObjectNameDelegate(QItemDelegate):
         if str(value) != "":
             model.setData(index, value, Qt.DisplayRole)
 
-
 #-------------------------------------------------------------------------------
-# QComboBox delegate for the FSI type : Set motion or computed from fluid forces
+# QComboBox delegate for the method : Set explicit function or use MED file
 #-------------------------------------------------------------------------------
 
-class FSITypeDelegate(QItemDelegate):
+class MethodDelegate(QItemDelegate):
     """
-    Use of a combobox to set the fsi interaction type
+    Use of a combobox to set the method to track the solid
     """
 
     def __init__(self, parent, mdl):
-        super(FSITypeDelegate, self).__init__(parent)
+        super(MethodDelegate, self).__init__(parent)
         self.parent  = parent
         self.mdl     = mdl
 
@@ -113,7 +110,9 @@ class FSITypeDelegate(QItemDelegate):
     def createEditor(self, parent, option, index):
         editor = QComboBox(parent)
 
-        for itm in ["imposed", "computed"]:
+        for itm in ["defined by function",
+                    "MEDCoupling using a MED file",
+                    "STL file"]:
             editor.addItem(itm)
 
         editor.installEventFilter(self)
@@ -123,7 +122,7 @@ class FSITypeDelegate(QItemDelegate):
     def setEditorData(self, comboBox, index):
         row = index.row()
         col = index.column()
-        string = index.model().dataFSI[row][col]
+        string = index.model().dataObject[row][col]
         comboBox.setEditText(string)
 
 
@@ -143,34 +142,55 @@ class FSITypeDelegate(QItemDelegate):
 # StandarItemModel class
 #-------------------------------------------------------------------------------
 
-class StandardItemModelFSI(QStandardItemModel):
+class StandardItemModel(QStandardItemModel):
 
-    def __init__(self, model):
+    def __init__(self, model, case, tree):
         """
         """
         QStandardItemModel.__init__(self)
 
         self.headers = [self.tr("Object name"),
-                        self.tr("Interaction type")]
+                        self.tr("Solid tracking method")]
+
         self.tooltip = [self.tr("Name of solid object"),
-                        self.tr("Type of motion interaction with the flow")]
+                        self.tr("Method to track the solid"),
+                        self.tr("Solve interaction between the fluid and the structure")]
 
         self.setColumnCount(len(self.headers))
-        self.dataFSI = []
+        self.dataObject = []
         self.__model = model
-
+        self.case = case
+        self.browser = tree
 
     def data(self, index, role):
         if not index.isValid():
+            return None
+
+        row = index.row()
+        col = index.column()
+
+        taille = len(self.dataObject)-1
+        if row > taille:
             return None
 
         # Tooltips
         if role == Qt.ToolTipRole:
             return self.tooltip[index.column()]
 
+        elif role == Qt.CheckStateRole:
+
+            if (index.column() == 2):
+                data_ibm = self.dataObject[index.row()][index.column()]
+
+                if data_ibm == 'on':
+                    return Qt.Checked
+                else:
+                    return Qt.Unchecked
+
         # Display
-        if role == Qt.DisplayRole:
-            return self.dataFSI[index.row()][index.column()]
+        elif role == Qt.DisplayRole:
+            return self.dataObject[index.row()][index.column()]
+
         elif role == Qt.TextAlignmentRole:
             return Qt.AlignCenter
 
@@ -181,7 +201,17 @@ class StandardItemModelFSI(QStandardItemModel):
         if not index.isValid():
             return Qt.ItemIsEnabled
 
-        return Qt.ItemIsEnabled | Qt.ItemIsSelectable | Qt.ItemIsEditable
+        row = index.row()
+        col = index.column()
+
+        taille = len(self.dataObject)-1
+        if row > taille:
+            return Qt.ItemIsEnabled
+
+        if (col == 2): #solve fsi:
+            return Qt.ItemIsEnabled | Qt.ItemIsSelectable | Qt.ItemIsUserCheckable
+        else:
+            return Qt.ItemIsEnabled | Qt.ItemIsSelectable | Qt.ItemIsEditable
 
 
     def headerData(self, section, orientation, role):
@@ -192,18 +222,18 @@ class StandardItemModelFSI(QStandardItemModel):
 
     def setData(self, index, value, role):
         if not index.isValid():
-            return
+            return Qt.ItemIsEnabled
 
         row = index.row()
         col = index.column()
 
-        self.dataFSI[row][col] = str(from_qvariant(value, to_text_string))
-
         num = row + 1
-        self.__model.setObjectName(num, self.dataFSI[row][0])
-        self.__model.setObjectInteraction(num, self.dataFSI[row][1])
 
-#        self.dataChanged.emit(index, index)
+        if col < 2:
+            self.dataObject[row][col] = str(from_qvariant(value, to_text_string))
+            self.__model.setObjectName(num, self.dataObject[row][0])
+            self.__model.setObjectMethod(num, self.dataObject[row][1])
+            self.browser.configureTree(self.case)
 
         id1 = self.index(0, 0)
         id2 = self.index(self.rowCount(), 0)
@@ -213,13 +243,14 @@ class StandardItemModelFSI(QStandardItemModel):
 
     def getData(self, index):
         row = index.row()
-        return self.dataFSI[row]
+        return self.dataObject[row]
 
-    def addItem(self, object_name, interaction_type):
+
+    def addItem(self, object_name, object_method):
         """
         Add a row in the table.
         """
-        self.dataFSI.append([object_name, interaction_type])
+        self.dataObject.append([object_name, object_method])
         row = self.rowCount()
         self.setRowCount(row+1)
 
@@ -228,12 +259,13 @@ class StandardItemModelFSI(QStandardItemModel):
         """
         Delete the row in the model
         """
-        del self.dataFSI[row]
+        del self.dataObject[row]
         row = self.rowCount()
         self.setRowCount(row-1)
 
+
     def getItem(self, row):
-        return self.dataFSI[row]
+        return self.dataObject[row]
 
 #-------------------------------------------------------------------------------
 # Main class
@@ -242,7 +274,7 @@ class StandardItemModelFSI(QStandardItemModel):
 class ImmersedBoundariesViewNeptune(QWidget, Ui_ImmersedBoundariesNeptune):
     """
     """
-    def __init__(self, parent, case):
+    def __init__(self, parent, case, stbar, tree):
         """
         Constructor
         """
@@ -253,77 +285,56 @@ class ImmersedBoundariesViewNeptune(QWidget, Ui_ImmersedBoundariesNeptune):
 
         self.case = case
         self.case.undoStopGlobal()
-
+        self.stbar = stbar
         self.ibm = ImmersedBoundariesModel(self.case)
-
         self.current_obj = None
+        self.browser = tree
+
+        # Connections
+        self.pushButtonAdd.clicked.connect(self.slotAdd)
+        self.pushButtonDelete.clicked.connect(self.slotDelete)
+        self.pushButtonExplicit.clicked.connect(self.slotExplicitFormula)
+        self.toolButtonMEDFile.clicked.connect(self.slotSearchMEDMesh)
+        self.toolButtonSTLFile.clicked.connect(self.slotSearchSTLMesh)
+
+        self.dim = ComboModel(self.comboBoxDim, 1, 1)
+        self.dim.addItem("3D computation")
+        self.dim.addItem("2D computation with symmetry in X-direction")
+        self.dim.addItem("2D computation with symmetry in Y-direction")
+        self.dim.addItem("2D computation with symmetry in Z-direction")
+        self.comboBoxDim.activated[str].connect(self.slotIBMDim)
+
+        self.lineEditSTLFile.setEnabled(False)
+        self.lineEditMEDFile.setEnabled(False)
 
         # Models
-        self.modelFSI = StandardItemModelFSI(self.ibm)
-        self.tableViewFSI.setModel(self.modelFSI)
+        self.model = StandardItemModel(self.ibm, self.case, self.browser)
+        self.tableView.setModel(self.model)
 
-        for obj in range(1,self.ibm.getNumberOfFSIObjects()+1):
-            self.modelFSI.addItem(self.ibm.getObjectName(obj),
-                                  self.ibm.getObjectInteraction(obj))
+        for obj in range(1,self.ibm.getNumberOfObjects()+1):
+            self.model.addItem(self.ibm.getObjectName(obj),
+                               self.ibm.getObjectMethod(obj))
 
         if QT_API == "PYQT4":
-            self.tableViewFSI.verticalHeader().setResizeMode(QHeaderView.ResizeToContents)
-            self.tableViewFSI.horizontalHeader().setResizeMode(QHeaderView.ResizeToContents)
-#            self.tableViewFSI.horizontalHeader().setResizeMode(2, QHeaderView.Stretch)
+            self.tableView.verticalHeader().setResizeMode(QHeaderView.ResizeToContents)
+            self.tableView.horizontalHeader().setResizeMode(QHeaderView.ResizeToContents)
+#            self.tableView.horizontalHeader().setResizeMode(2, QHeaderView.Stretch)
         elif QT_API == "PYQT5":
-            self.tableViewFSI.verticalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
-            self.tableViewFSI.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
-#            self.tableViewFSI.horizontalHeader().setSectionResizeMode(2, QHeaderView.Stretch)
+            self.tableView.verticalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
+            self.tableView.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
+#            self.tableView.horizontalHeader().setSectionResizeMode(2, QHeaderView.Stretch)
 
-        self.modelFSI.dataChanged.connect(self.dataChanged)
+        self.model.dataChanged.connect(self.dataChanged)
 
-        delegateObjectLabel  = FSIObjectNameDelegate(self.tableViewFSI)
-        self.tableViewFSI.setItemDelegateForColumn(0, delegateObjectLabel)
+        delegateObjectLabel = ObjectNameDelegate(self.tableView)
+        self.tableView.setItemDelegateForColumn(0, delegateObjectLabel)
 
-        delegateObjectType   = FSITypeDelegate(self.tableViewFSI, self.ibm)
-        self.tableViewFSI.setItemDelegateForColumn(1, delegateObjectType)
+        delegateObjectMethod = MethodDelegate(self.tableView, self.ibm)
+        self.tableView.setItemDelegateForColumn(1, delegateObjectMethod)
 
         self.checkBoxActivate.stateChanged.connect(self.slotCheckActivate)
 
-        self.tableViewFSI.clicked[QModelIndex].connect(self.slotChangedSelection)
-
-
-        for ind in ['Explicit', 'MEDCoupling']:
-            eval('self.radioButton'+ind+'.toggled.connect(self.slotRadioButton)')
-
-        # Connections
-        self.pushButtonAddFSI.clicked.connect(self.slotAddFSI)
-        self.pushButtonDeleteFSI.clicked.connect(self.slotDeleteFSI)
-
-        self.pushButtonExplicit.clicked.connect(self.slotExplicitFormula)
-
-        validatorDensity = DoubleValidator(self.lineEditObjDensity, min = 0.0)
-        self.lineEditObjDensity.setValidator(validatorDensity)
-        self.lineEditObjDensity.textChanged[str].connect(self.slotObjDensity)
-
-        validatorStiffness = DoubleValidator(self.lineEditObjStiffness, min = 0.0)
-        self.lineEditObjStiffness.setValidator(validatorStiffness)
-        self.lineEditObjStiffness.textChanged[str].connect(self.slotObjStiffness)
-
-        validatorDamping = DoubleValidator(self.lineEditObjDamping, min = 0.0)
-        self.lineEditObjDamping.setValidator(validatorDamping)
-        self.lineEditObjDamping.textChanged[str].connect(self.slotObjDamping)
-
-        self.lineEditXInit.textChanged[str].connect(self.slotObjXinit)
-        self.lineEditYInit.textChanged[str].connect(self.slotObjYinit)
-        self.lineEditZInit.textChanged[str].connect(self.slotObjZinit)
-
-        self.lineEditXEq.textChanged[str].connect(self.slotObjXeq)
-        self.lineEditYEq.textChanged[str].connect(self.slotObjYeq)
-        self.lineEditZEq.textChanged[str].connect(self.slotObjZeq)
-
-        self.lineEditVelXInit.textChanged[str].connect(self.slotObjVelXinit)
-        self.lineEditVelYInit.textChanged[str].connect(self.slotObjVelYinit)
-        self.lineEditVelZInit.textChanged[str].connect(self.slotObjVelZinit)
-
-        self.lineEditAccXInit.textChanged[str].connect(self.slotObjAccXinit)
-        self.lineEditAccYInit.textChanged[str].connect(self.slotObjAccYinit)
-        self.lineEditAccZInit.textChanged[str].connect(self.slotObjAccZinit)
+        self.tableView.clicked[QModelIndex].connect(self.slotChangedSelection)
 
         # Check for MEDCoupling presence
         self.has_medcoupling = False
@@ -334,39 +345,70 @@ class ImmersedBoundariesViewNeptune(QWidget, Ui_ImmersedBoundariesNeptune):
             print("Warning: package configuration not available")
             pass
 
-        # deactivated for the moment
-        self.has_medcoupling = False
-
-        self.radioButtonMEDCoupling.setEnabled(self.has_medcoupling)
-        if self.ibm.getMethod() == 'medcoupling' and self.has_medcoupling == False:
-            self.setMethod('explicit')
-
-        # Show/hide widgets on start
-        if self.ibm.getOnOff() == 'off':
-            self.groupBoxMethod.hide()
-            self.groupBoxObjects.hide()
-            self.groupBoxObjProperties.hide()
-            self.groupBoxExplicit.hide()
-            self.groupBoxMEDCoupling.hide()
-        else:
-            self.groupBoxMethod.show()
-            self.groupBoxObjects.show()
-            if self.ibm.getMethod() == 'explicit':
-                self.groupBoxExplicit.show()
-            else:
-                self.groupBoxMEDCoupling.show()
-
         self.updatePageView()
-
         self.case.undoStartGlobal()
 
+
+    def selectIBMMeshFiles(self, extension):
+        """
+        Open a File Dialog in order to select mesh files.
+        """
+
+        # 1) Meshes directory
+
+        self.mesh_dirs = [None]
+
+        case_dir = self.case['case_path']
+        study_path = os.path.split(case_dir)[0]
+        d = os.path.join(study_path, 'MESH')
+        mesh_files = []
+
+        title = self.tr("Select input IBM mesh file(s)")
+
+        default = self.mesh_dirs[0]
+        if default is None:
+            default = os.path.split(self.case['case_path'])[0]
+
+        if hasattr(QFileDialog, 'ReadOnly'):
+            options  = QFileDialog.DontUseNativeDialog | QFileDialog.ReadOnly
+        else:
+            options  = QFileDialog.DontUseNativeDialog
+
+        l_mesh_dirs = []
+        for i in range(0, len(self.mesh_dirs)):
+            if self.mesh_dirs[i] != None:
+                l_mesh_dirs.append(QUrl.fromLocalFile(self.mesh_dirs[i]))
+
+        dialog = QFileDialog()
+        dialog.setWindowTitle(title)
+        dialog.setDirectory(default)
+
+        if extension == 'stl':
+            dialog.setNameFilter(self.tr("*.stl"))
+        if extension == 'med':
+            dialog.setNameFilter(self.tr("*.med"))
+
+        if hasattr(dialog, 'setOptions'):
+            dialog.setOptions(options)
+        dialog.setSidebarUrls(l_mesh_dirs)
+        dialog.setFileMode(QFileDialog.ExistingFiles)
+
+        if dialog.exec_() == 1:
+            s = dialog.selectedFiles()
+            count = len(s)
+            for i in range(count):
+                el = str(s[0])
+                s = s[1:]
+                mesh_files.append(el)
+
+        return mesh_files
 
     @pyqtSlot("QModelIndex")
     def slotChangedSelection(self, index):
         """
         detect change in selection and update view
         """
-        row = self.tableViewFSI.currentIndex().row()
+        row = self.tableView.currentIndex().row()
         self.current_obj = row + 1
         self.updatePageView()
 
@@ -383,117 +425,121 @@ class ImmersedBoundariesViewNeptune(QWidget, Ui_ImmersedBoundariesNeptune):
         # Update the view if needed
         self.updatePageView()
 
+
+
     def dataChanged(self, topLeft, bottomRight):
         self.updatePageView()
+
 
     def updatePageView(self):
 
         if self.ibm.getOnOff() == 'off':
             self.checkBoxActivate.setChecked(False)
-            self.groupBoxMethod.hide()
             self.groupBoxObjects.hide()
             self.groupBoxExplicit.hide()
             self.groupBoxMEDCoupling.hide()
-            self.radioButtonExplicit.setChecked(False)
-            self.radioButtonMEDCoupling.setChecked(False)
+            self.groupBoxSTL.hide()
+            self.comboBoxDim.hide()
 
         else:
+            self.comboBoxDim.show()
             self.checkBoxActivate.setChecked(True)
-            self.groupBoxMethod.show()
             self.groupBoxObjects.show()
 
-            # Which button to show for the solid definition
-            if self.current_obj:
-                if self.ibm.getMethod() == 'explicit':
+            #Dimension
+            dim = str(self.ibm.getIBMDim())
+            self.comboBoxDim.setCurrentText(dim)
+
+            if (self.current_obj is not None
+                and self.ibm.getNumberOfObjects() > 0):
+
+                #row = self.tableView.currentIndex().row()
+                #col = self.tableView.currentIndex().column()
+                #if self.data[row][col] == 'defined by function':
+
+                if self.ibm.getObjectMethod(self.current_obj) == 'defined by function':
                     self.groupBoxExplicit.show()
                     self.groupBoxMEDCoupling.hide()
-                    self.radioButtonExplicit.setChecked(True)
-                    self.radioButtonMEDCoupling.setChecked(False)
-                elif self.ibm.getMethod() == 'medcoupling':
+                    self.groupBoxSTL.hide()
+
+                    exp = self.ibm.getObjectFormula(self.current_obj-1)
+                    if exp:
+                        self.pushButtonExplicit.setToolTip(exp)
+                        self.pushButtonExplicit.setStyleSheet("background-color: green")
+                    else:
+                        self.pushButtonExplicit.setStyleSheet("background-color: red")
+
+                elif self.ibm.getObjectMethod(self.current_obj) == 'MEDCoupling using a MED file':
                     self.groupBoxExplicit.hide()
                     self.groupBoxMEDCoupling.show()
-                    self.radioButtonExplicit.setChecked(False)
-                    self.radioButtonMEDCoupling.setChecked(True)
-                else:
-                    self.radioButtonExplicit.setChecked(False)
-                    self.radioButtonMEDCoupling.setChecked(False)
+                    self.groupBoxSTL.hide()
+
+                    if self.ibm.getMesh(self.current_obj).endswith('.med'):
+                        self.lineEditMEDFile.setText(os.path.basename(
+                            self.ibm.getMesh(self.current_obj)))
+                    else:
+                        self.lineEditMEDFile.setText('')
+
+                elif self.ibm.getObjectMethod(self.current_obj) == 'STL file':
                     self.groupBoxExplicit.hide()
                     self.groupBoxMEDCoupling.hide()
+                    self.groupBoxSTL.show()
 
-                if self.ibm.getObjectInteraction(self.current_obj) == 'computed':
-                    self.groupBoxObjProperties.show()
-                    # Set correct values for each slot
-                    self.lineEditObjDensity.setText(str(
-                            self.ibm.getObjectDensity(self.current_obj)))
+                    if self.ibm.getMesh(self.current_obj).endswith('.stl'):
+                        self.lineEditSTLFile.setText(os.path.basename(
+                            self.ibm.getMesh(self.current_obj)))
+                    else:
+                        self.lineEditSTLFile.setText('')
 
-                    self.lineEditObjStiffness.setText(str(
-                            self.ibm.getObjectStiffness(self.current_obj)))
 
-                    self.lineEditObjDamping.setText(str(
-                            self.ibm.getObjectDamping(self.current_obj)))
-
-                    x0,y0,z0 = self.ibm.getObjectInitPosition(self.current_obj)
-                    self.lineEditXInit.setText(x0)
-                    self.lineEditYInit.setText(y0)
-                    self.lineEditZInit.setText(z0)
-
-                    xe,ye,ze = self.ibm.getObjectEqPosition(self.current_obj)
-                    self.lineEditXEq.setText(xe)
-                    self.lineEditYEq.setText(ye)
-                    self.lineEditZEq.setText(ze)
-
-                    vx,vy,vz = self.ibm.getObjectInitVel(self.current_obj)
-                    self.lineEditVelXInit.setText(vx)
-                    self.lineEditVelYInit.setText(vy)
-                    self.lineEditVelZInit.setText(vz)
-
-                    ax,ay,az = self.ibm.getObjectInitAcc(self.current_obj)
-                    self.lineEditAccXInit.setText(ax)
-                    self.lineEditAccYInit.setText(ay)
-                    self.lineEditAccZInit.setText(az)
-                else:
-                    self.groupBoxObjProperties.hide()
 
             else:
                 self.groupBoxExplicit.hide()
                 self.groupBoxMEDCoupling.hide()
-                self.groupBoxObjProperties.hide()
+                self.groupBoxSTL.hide()
 
 
     @pyqtSlot()
-    def slotRadioButton(self):
+    def slotAdd(self):
 
-        for ind in ['Explicit', 'MEDCoupling']:
+        name = self.ibm.defaultValues()['object_name'] \
+            + str(self.ibm.getNumberOfObjects()+1)
 
-            radioButton = eval('self.radioButton'+ind)
-            if radioButton.isChecked():
-                self.ibm.setMethod(ind.lower())
+        #if the name is already taken, change the object_name
+        object_list = self.ibm.getObjectsNameList();
+        i = 1
+        while (name in object_list):
+            #name  = '_'.join([self.ibm.defaultValues()['object_name'], str(i)])
+            name  = self.ibm.defaultValues()['object_name']+str(i)
+            i = i+1
 
-        self.updatePageView()
+        method = self.ibm.defaultValues()['object_method']
+
+        is_fsi = self.ibm.defaultValues()['object_is_fsi']
+
+        moving_type = self.ibm.defaultValues()['object_moving']
+
+        num = self.ibm.addObject(name, method, is_fsi, moving_type)
+
+        self.model.addItem(name, method)
+
+        self.browser.configureTree(self.case)
 
 
     @pyqtSlot()
-    def slotAddFSI(self):
+    def slotDelete(self):
+        row = self.tableView.currentIndex().row()
 
-        name        = '_'.join([self.ibm.defaultValues()['fsi_object_name'],
-                                str(self.ibm.getNumberOfFSIObjects()+1)])
-        interaction = self.ibm.defaultValues()['fsi_interaction']
-
-        num = self.ibm.addFSIObject(name, interaction)
-        self.modelFSI.addItem(name, interaction)
-
-
-    @pyqtSlot()
-    def slotDeleteFSI(self):
-        row = self.tableViewFSI.currentIndex().row()
-        log.debug("slotDeleteFSI -> %s" % (row,))
+        log.debug("slotDelete -> %s" % (row,))
         if row == -1:
             title = self.tr("Warning")
             msg   = self.tr("You must select an existing object")
             QMessageBox.information(self, title, msg)
         else:
-            self.modelFSI.deleteRow(row)
-            self.ibm.deleteFSIObject(row+1)
+            self.model.deleteRow(row)
+            self.ibm.deleteObject(row+1)
+
+        self.browser.configureTree(self.case)
 
 
     @pyqtSlot()
@@ -505,10 +551,24 @@ class ImmersedBoundariesViewNeptune(QWidget, Ui_ImmersedBoundariesNeptune):
         objId = self.current_obj
 
         exp, req, sym = self.ibm.getIBMFormulaComponents(objId-1)
-        exa = """if (x < 0.5)
-                   indicator = 0;
-                 else
-                   indicator = 1;"""
+        #exa = """if (x < 0.5)
+        #           indicator = 0;
+        #         else
+        #           indicator = 1;"""
+
+        exa = (
+            "# FSI Cylinder with radius r=0.2m in the xy-plane.\n"
+            "# indicator values have to be 0 or 1: 1 means only solid and 0 only fluid.\n\n"
+            "# To use the FSI center of gravity 'cog_fsi', the FSI option "
+            "must be activated in immersed volume conditions page.\n"
+            "# Then, 'cog_fsi' must be filled in the FSI tab "
+            "associated to the current object.\n\n"
+            "r = 0.2;\n"
+            "dx = x - cog_fsi_x;\n"
+            "dy = y - cog_fsi_y;\n\n"
+            "if (dx*dx + dy*dy < r*r)\n"
+            "    indicator = 1;"
+        )
 
         name = self.ibm.getObjectName(objId)
 
@@ -525,115 +585,47 @@ class ImmersedBoundariesViewNeptune(QWidget, Ui_ImmersedBoundariesNeptune):
         if dialog.exec_():
             result = dialog.get_result()
             log.debug("slotExplicitFormula -> %s" % str(result))
-            self.ibm.setObjectFormula(objId-1, result)
             self.pushButtonExplicit.setStyleSheet("background-color: green")
             self.pushButtonExplicit.setToolTip(exp)
+            self.ibm.setObjectFormula(objId-1, result)
+
+
+    @pyqtSlot()
+    def slotSearchMEDMesh(self):
+        msg = self.tr("Select a mesh file.")
+        self.stbar.showMessage(msg, 2000)
+        num = self.current_obj
+
+        file_name = self.selectIBMMeshFiles('med')
+
+        if (file_name != [] and file_name[0].endswith('.med')):
+            self.ibm.setMesh(num, file_name[0])
+            self.lineEditMEDFile.setText(os.path.basename(file_name[0]))
+
+
+    @pyqtSlot()
+    def slotSearchSTLMesh(self):
+        msg = self.tr("Select a mesh file.")
+        self.stbar.showMessage(msg, 2000)
+        num = self.current_obj
+
+        file_name = self.selectIBMMeshFiles('stl')
+
+        if (file_name != []):
+            if (file_name[0].endswith('.stl')):
+                self.ibm.setMesh(num, file_name[0])
+                self.lineEditSTLFile.setText(os.path.basename(file_name[0]))
 
 
     @pyqtSlot(str)
-    def slotObjDensity(self, text):
-        num = self.tableViewFSI.currentIndex().row() + 1
-        val = float(text)
-        self.ibm.setObjectDensity(num, val)
+    def slotIBMDim(self):
+        """
+        """
+        val = str(self.comboBoxDim.currentText())
+        self.ibm.setIBMDim(val)
 
 
-    @pyqtSlot(str)
-    def slotObjStiffness(self, text):
-        num = self.tableViewFSI.currentIndex().row() + 1
-        val = float(text)
-        self.ibm.setObjectStiffness(num, val)
 
-
-    @pyqtSlot(str)
-    def slotObjDamping(self, text):
-        num = self.tableViewFSI.currentIndex().row() + 1
-        val = float(text)
-        self.ibm.setObjectDamping(num, val)
-
-
-    @pyqtSlot(str)
-    def slotObjXinit(self, text):
-        num = self.tableViewFSI.currentIndex().row() + 1
-        val = float(text)
-        self.ibm.setObjectInitPosition(num, xini=val)
-
-
-    @pyqtSlot(str)
-    def slotObjYinit(self, text):
-        num = self.tableViewFSI.currentIndex().row() + 1
-        val = float(text)
-        self.ibm.setObjectInitPosition(num, yini=val)
-
-
-    @pyqtSlot(str)
-    def slotObjZinit(self, text):
-        num = self.tableViewFSI.currentIndex().row() + 1
-        val = float(text)
-        self.ibm.setObjectInitPosition(num, zini=val)
-
-
-    @pyqtSlot(str)
-    def slotObjXeq(self, text):
-        num = self.tableViewFSI.currentIndex().row() + 1
-        val = float(text)
-        self.ibm.setObjectEqPosition(num, xeq=val)
-
-
-    @pyqtSlot(str)
-    def slotObjYeq(self, text):
-        num = self.tableViewFSI.currentIndex().row() + 1
-        val = float(text)
-        self.ibm.setObjectEqPosition(num, yeq=val)
-
-
-    @pyqtSlot(str)
-    def slotObjZeq(self, text):
-        num = self.tableViewFSI.currentIndex().row() + 1
-        val = float(text)
-        self.ibm.setObjectEqPosition(num, zeq=val)
-
-
-    @pyqtSlot(str)
-    def slotObjVelXinit(self, text):
-        num = self.tableViewFSI.currentIndex().row() + 1
-        val = float(text)
-        self.ibm.setObjectInitVel(num, vx=val)
-
-
-    @pyqtSlot(str)
-    def slotObjVelYinit(self, text):
-        num = self.tableViewFSI.currentIndex().row() + 1
-        val = float(text)
-        self.ibm.setObjectInitVel(num, vy=val)
-
-
-    @pyqtSlot(str)
-    def slotObjVelZinit(self, text):
-        num = self.tableViewFSI.currentIndex().row() + 1
-        val = float(text)
-        self.ibm.setObjectInitVel(num, vz=val)
-
-
-    @pyqtSlot(str)
-    def slotObjAccXinit(self, text):
-
-        num = self.tableViewFSI.currentIndex().row() + 1
-        val = float(text)
-        self.ibm.setObjectInitAcc(num, ax=val)
-
-    @pyqtSlot(str)
-    def slotObjAccYinit(self, text):
-
-        num = self.tableViewFSI.currentIndex().row() + 1
-        val = float(text)
-        self.ibm.setObjectInitAcc(num, ay=val)
-
-    @pyqtSlot(str)
-    def slotObjAccZinit(self, text):
-
-        num = self.tableViewFSI.currentIndex().row() + 1
-        val = float(text)
-        self.ibm.setObjectInitAcc(num, az=val)
 
 
 #-------------------------------------------------------------------------------

@@ -80,6 +80,27 @@ BEGIN_C_DECLS
 
 """
 
+_private_func_header = \
+"""
+/* =============================================================================
+ * Private functions
+ * ===========================================================================*/
+
+"""
+
+_public_func_header = \
+"""
+/* =============================================================================
+ * Public functions
+ * ===========================================================================*/
+
+"""
+
+_function_close = \
+"""}
+
+"""
+
 _file_footer = \
 """}
 
@@ -88,6 +109,65 @@ _file_footer = \
 END_C_DECLS
 
 """
+
+_function_getter_header = { \
+'ibm':"""cs_cutcell_func_t *
+cs_meg_ibm_func_by_name(const char *object_name)
+{
+""",
+'ibm_vol':"""cs_ibm_volume_func_t *
+cs_meg_ibm_volume_func_by_name(const char *object_name,
+                               const char *var_name)
+{
+""",
+'ibm_fsi':"""cs_ibm_fsi_func_t *
+cs_meg_ibm_fsi_func_by_name(const char *object_name,
+                            const char *var_name)
+{
+"""
+}
+
+_internal_function_name = { \
+'ibm':'_meg_immersed_boundaries',
+'ibm_vol':'_meg_immersed_boundaries_volume',
+'ibm_fsi':'_meg_immersed_boundaries_fsi'
+}
+
+_internal_function_prefix = { \
+'ibm':"""/*----------------------------------------------------------------------------*/
+
+static int
+{_name}
+(
+  [[maybe_unused]] const cs_lnum_t c_id,
+  [[maybe_unused]] const cs_real_t xyz[3],
+  [[maybe_unused]] const cs_real_t time,
+  [[maybe_unused]] const int       num_object
+)
+{_sep_open}
+""",
+'ibm_vol':"""/*----------------------------------------------------------------------------*/
+
+static void
+{_name}
+(
+  [[maybe_unused]] const cs_lnum_t c_id,
+  [[maybe_unused]] const cs_real_t xyz[3],
+  [[maybe_unused]] const cs_real_t time,
+                   cs_real_t      *retvals
+)
+{_sep_open}
+""",
+'ibm_fsi':"""/*----------------------------------------------------------------------------*/
+
+static void
+{_name}
+(
+  cs_real_t      *retvals
+)
+{_sep_open}
+"""
+}
 
 _function_header = { \
 'vol':"""void
@@ -128,13 +208,6 @@ cs_meg_initialization(const char      *zone_name,
                       cs_real_t       *retvals)
 {
 """,
-'ibm':"""void
-cs_meg_immersed_boundaries_inout(int         *ipenal,
-                                 [[maybe_unused]] const char  *object_name,
-                                 [[maybe_unused]] cs_real_t    xyz[3],
-                                 [[maybe_unused]] cs_real_t    t)
-{
-""",
 'fsi':"""void
 cs_meg_fsi_struct(const char       *object_type,
                   const char       *name,
@@ -166,7 +239,9 @@ _function_names = {'vol': 'cs_meg_volume_function.cxx',
                    'bnd': 'cs_meg_boundary_function.cxx',
                    'src': 'cs_meg_source_terms.cxx',
                    'ini': 'cs_meg_initialization.cxx',
-                   'ibm': 'cs_meg_immersed_boundaries_inout.cxx',
+                   'ibm': 'cs_meg_immersed_boundaries.cxx',
+                   'ibm_vol': 'cs_meg_immersed_boundaries_volume.cxx',
+                   'ibm_fsi': 'cs_meg_immersed_boundaries_fsi.cxx',
                    'fsi': 'cs_meg_fsi_struct.cxx',
                    'pfl': 'cs_meg_post_profile.cxx',
                    'pwa': 'cs_meg_post_output.cxx',
@@ -177,6 +252,8 @@ _block_comments = {'vol': 'User defined formula for variable(s) %s over zone %s'
                    'src': 'User defined source term for %s over zone %s',
                    'ini': 'User defined initialization for variable %s over zone %s',
                    'ibm': 'User defined explicit formula of %s indicator for object %s',
+                   'ibm_vol': 'User defined physical property for variable %s for IBM object %s',
+                   'ibm_fsi': 'User defined FSI coupling structure %s for IBM object %s',
                    'fsi': 'User defined FSI coupling structure %s for zone %s',
                    'pfl': 'User-defined %s for profile %s',
                    'pwa': 'User defined %s for writer %s',
@@ -186,7 +263,9 @@ _func_short_to_long = {'vol': 'volume zone',
                        'bnd': 'boundary',
                        'src': 'source term',
                        'ini': 'initialization',
-                       'ibm': 'Immersed boundaries',
+                       'ibm': 'Immersed boundaries explicit function',
+                       'ibm_vol': 'Immersed volume zone',
+                       'ibm_fsi': 'Immersed FSI',
                        'fsi': 'Mechanicaly-coupled structures',
                        'pfl': 'Profile coordinates',
                        'pwa': 'Writer activation',
@@ -226,14 +305,30 @@ _base_tokens = {'dt':'const cs_real_t dt = cs_glob_time_step->dt[0];',
                 'gx':'const cs_real_t gx = cs_glob_physical_constants->gravity[0];',
                 'gy':'const cs_real_t gy = cs_glob_physical_constants->gravity[1];',
                 'gz':'const cs_real_t gz = cs_glob_physical_constants->gravity[2];'}
+
 # ---------------------------------------------------------------------------
 
 def _error_and_exit(msg):
+    """
+    Print error message to stderr and exit.
+    """
 
     import sys
 
     print(msg, file=sys.stderr)
     sys.exit(1)
+
+# ---------------------------------------------------------------------------
+
+def build_internal_function_header(func_type, suffix):
+    """
+    Build a header for an internal function
+    """
+
+    _int_f_name = '_'.join([_internal_function_name[func_type], suffix])
+
+    return _int_f_name
+
 
 # ---------------------------------------------------------------------------
 
@@ -246,6 +341,9 @@ def parse_gui_expression(expression,
                          need_for_loop = False,
                          indent_decl = 2,
                          indent_main = 3):
+    """
+    Parse GUI expression.
+    """
 
     usr_code = ''
     usr_defs = ''
@@ -256,8 +354,6 @@ def parse_gui_expression(expression,
     if not need_for_loop:
         ntabs -= 1
 
-    if func_type == 'ibm':
-        ntabs = 2
 
     parser = cs_math_parser()
 
@@ -330,6 +426,8 @@ class meg_to_c_interpreter:
                       'src': {},
                       'ini': {},
                       'ibm': {},
+                      'ibm_vol': {},
+                      'ibm_fsi': {},
                       'fsi': {},
                       'pfl': {},
                       'pwa': {},
@@ -412,6 +510,7 @@ class meg_to_c_interpreter:
                     % (name, _func_short_to_long[ftype], zone_name,
                        self.funcs[ftype][fkey]['exp'])
             raise Exception(msg)
+
 
         self.funcs[ftype][fkey] = {'exp': expression,
                                    'req': required,
@@ -939,10 +1038,178 @@ class meg_to_c_interpreter:
         # Coordinates
         for kc in coords:
             ic = coords.index(kc)
-            loop_tokens[kc] = 'const cs_real_t %s = xyz[c_id][%s];' % (kc, str(ic))
+            loop_tokens[kc] = 'const cs_real_t %s = xyz[%s];' % (kc, str(ic))
 
-        glob_tokens['xyz'] = \
-        'const cs_real_3_t *xyz = (cs_real_3_t *)cs_glob_mesh_quantities->cell_cen;'
+        # For FSI objects:
+        #Center of gravity
+        cog_fsi = ['cog_fsi_x', 'cog_fsi_y', 'cog_fsi_z']
+
+        for ic, kc in enumerate(cog_fsi):
+            loop_tokens[kc] = 'const cs_real_t {_kc} = '.format(_kc=kc) + \
+                'nc_fsi_object->cdg[num_object][{_ic}];'.format(_ic=ic)
+
+        #rotation matrix (rot_m)
+        loop_tokens['rot_fsi'] = 'cs_real_3_t *rot_fsi = '\
+            'nc_fsi_object->rot_m[num_object];'
+
+        # Notebook variables
+        for kn in self.notebook.keys():
+            glob_tokens[kn] = \
+            'const cs_real_t %s = cs_notebook_parameter_value_by_name("%s");' % (kn, kn)
+
+        # ------------------------
+
+        for s in required:
+            known_symbols.append(s);
+
+        known_symbols.append('#')
+
+        if_loop = False
+
+        # Parse the user expresion
+        parsed_exp = parse_gui_expression(expression,
+                                          required,
+                                          known_symbols,
+                                          'ibm',
+                                          glob_tokens,
+                                          loop_tokens,
+                                          indent_decl=1,
+                                          indent_main=2)
+
+        usr_blck = tab + 'int retval = 0;\n'
+
+        usr_code += parsed_exp[0]
+        if parsed_exp[1] != '':
+            usr_defs += parsed_exp[1]
+        if usr_defs != '':
+            usr_blck += usr_defs + '\n'
+        usr_blck += usr_code
+
+        usr_blck += '\n'
+        usr_blck += tab + 'return retval;\n'
+
+        return usr_blck
+
+    #---------------------------------------------------------------------------
+
+    def write_ibm_vol_block(self, func_key):
+
+        func_params = self.funcs['ibm_vol'][func_key]
+
+        expression   = func_params['exp']
+        symbols      = func_params['sym']
+        known_fields = func_params['knf']
+
+        if type(func_params['req'][0]) == tuple:
+            required = [r[0] for r in func_params['req']]
+        else:
+            required = func_params['req']
+
+        object_name, name = func_key.split('::')
+        exp_lines_comp = func_params['lines']
+
+        # Get user definitions and code
+        usr_defs = ''
+        usr_code = ''
+        usr_blck = ''
+
+        tab   = "  "
+        ntabs = 2
+
+        known_symbols = []
+        coords = ['x', 'y', 'z']
+
+        # ------------------------
+
+        # Deal with tokens which require a definition
+        glob_tokens = {}
+        loop_tokens = {}
+        glob_tokens.update(_base_tokens)
+
+        # Coordinates
+        for kc in coords:
+            ic = coords.index(kc)
+            loop_tokens[kc] = 'const cs_real_t %s = xyz[%s];' % (kc, str(ic))
+
+        # Notebook variables
+        for kn in self.notebook.keys():
+            glob_tokens[kn] = \
+            'const cs_real_t %s = cs_notebook_parameter_value_by_name("%s");' % (kn, kn)
+
+        # Temperature for rho, cp, lambda
+        glob_tokens["temperature"] = 'const cs_real_t temperature = nc_poro_var->temp_sol[c_id];'
+
+        # ------------------------
+
+        for s in required:
+            known_symbols.append(s);
+
+        known_symbols.append('#')
+
+        ntabs += 1
+        #if_loop = False
+
+        # Parse the user expresion
+        parsed_exp = parse_gui_expression(expression,
+                                          required,
+                                          known_symbols,
+                                          'ibm_vol',
+                                          glob_tokens,
+                                          loop_tokens,
+                                          indent_decl=1,
+                                          indent_main=2)
+
+        usr_code += parsed_exp[0]
+        if parsed_exp[1] != '':
+            usr_defs += parsed_exp[1]
+        if usr_defs != '':
+            usr_blck += usr_defs + '\n'
+
+        usr_blck += usr_code
+
+        return usr_blck
+
+
+    #---------------------------------------------------------------------------
+
+    def write_ibm_fsi_block(self, func_key):
+
+        func_params = self.funcs['ibm_fsi'][func_key]
+
+        expression   = func_params['exp']
+        symbols      = func_params['sym']
+        known_fields = func_params['knf']
+
+        if type(func_params['req'][0]) == tuple:
+            required = [r[0] for r in func_params['req']]
+        else:
+            required = func_params['req']
+
+        object_name, mat_name = func_key.split('::')
+        exp_lines_comp = func_params['lines']
+
+        # Get user definitions and code
+        usr_defs = ''
+        usr_code = ''
+        usr_blck = ''
+
+        tab   = "  "
+        ntabs = 2
+
+        known_symbols = []
+        coords = ['x', 'y', 'z']
+
+        # ------------------------
+
+        # Deal with tokens which require a definition
+        glob_tokens = {}
+        loop_tokens = {}
+        glob_tokens.update(_base_tokens)
+
+        # Coordinates
+        for kc in coords:
+            ic = coords.index(kc)
+            loop_tokens[kc] = 'const cs_real_t %s = xyz[%s];' % (kc, str(ic))
 
         # Notebook variables
         for kn in self.notebook.keys():
@@ -957,25 +1224,34 @@ class meg_to_c_interpreter:
         known_symbols.append('#')
 
         ntabs += 1
-        if_loop = False
+        #if_loop = False
 
         # Parse the user expresion
         parsed_exp = parse_gui_expression(expression,
                                           required,
                                           known_symbols,
-                                          'ibm',
+                                          'ibm_fsi',
                                           glob_tokens,
-                                          loop_tokens)
+                                          loop_tokens,
+                                          need_for_loop=True)
 
         usr_code += parsed_exp[0]
         if parsed_exp[1] != '':
             usr_defs += parsed_exp[1]
-
-        usr_blck = tab + 'if (strcmp(object_name, "%s") == 0) {' % (name)
         if usr_defs != '':
             usr_blck += usr_defs + '\n'
+
+        set_blck = ''
+
+        if mat_name == "porous_inertia":
+            usr_blck += tab*2 + 'cs_real_t i11 = 0., i12 = 0., i13 = 0.;\n'
+            usr_blck += tab*2 + 'cs_real_t i22 = 0., i23 = 0., i33 = 0.;\n\n'
+            set_blck += tab*2 + 'retvals[0] = i11; retvals[1] = i12; retvals[2] = i13;\n'
+            set_blck += tab*2 + 'retvals[3] = i12; retvals[4] = i22; retvals[5] = i23;\n'
+            set_blck += tab*2 + 'retvals[6] = i13; retvals[7] = i23; retvals[8] = i33;\n'
+
         usr_blck += usr_code
-        usr_blck += tab + '}\n'
+        usr_blck += set_blck
 
         return usr_blck
 
@@ -1367,6 +1643,10 @@ class meg_to_c_interpreter:
             return self.write_ini_block(key)
         elif func_type == 'ibm':
             return self.write_ibm_block(key)
+        elif func_type == 'ibm_vol':
+            return self.write_ibm_vol_block(key)
+        elif func_type == 'ibm_fsi':
+            return self.write_ibm_fsi_block(key)
         elif func_type == 'fsi':
             return self.write_fsi_block(key)
         elif func_type == 'pfl':
@@ -2207,19 +2487,74 @@ class meg_to_c_interpreter:
 
     def generate_immersed_boundaries_code(self):
 
-        if self.module_name == 'neptune_cfd':
-            from code_saturne.model.ImmersedBoundariesModel import ImmersedBoundariesModel
-            ibm = ImmersedBoundariesModel(self.case)
+        from code_saturne.model.ImmersedBoundariesModel import ImmersedBoundariesModel
+        ibm = ImmersedBoundariesModel(self.case)
 
-            if ibm.getOnOff() == 'on' and ibm.getMethod() == 'explicit':
-                for objId in range(len(ibm.getObjectsNodeList())):
-                    node = ibm.getObjectsNodeList()[objId]
+        if ibm.getOnOff() == 'on':
+            for objId in range(1,ibm.getNumberOfObjects()+1):
 
-                    object_name = ibm.getObjectName(objId+1)
+                object_name = ibm.getObjectName(objId)
 
-                    exp, req, sym = ibm.getIBMFormulaComponents(objId)
+                if ibm.getObjectMethod(objId) == 'defined by function':
+                    exp, req, sym = ibm.getIBMFormulaComponents(objId-1)
                     self.init_block('ibm', object_name, 'porosity',
                                     exp, req, sym, [])
+
+                #inertia (mass is constant)
+                if ibm.getObjectModelingMode(objId) == 'mass':
+                    exp, req, sym = ibm.getFormulaInertia(objId-1)
+                    self.init_block('ibm_fsi', object_name, 'porous_inertia',
+                                    exp, req, sym, [])
+
+                #rho
+                if (ibm.getObjectCHT(objId) == "on" or ibm.getObjectFSI(objId) == "on"):
+                    if ibm.getObjectPropertyMode(objId, 'density') == 'user_law':
+                        exp, req, sym = ibm.getFormulaRho(objId-1)
+                        self.init_block('ibm_vol', object_name, 'porous_density',
+                                    exp, req, sym, [])
+
+                #CHT
+                if (ibm.getObjectCHT(objId) == "on"):
+                    #CP
+                    if ibm.getObjectPropertyMode(objId, 'specific_heat') == 'user_law':
+                        exp, req, sym = ibm.getFormulaCp(objId-1)
+                        self.init_block('ibm_vol', object_name, 'porous_specific_heat',
+                                        exp, req, sym, [])
+
+                    #lambda
+                    if ibm.getObjectPropertyMode(objId, 'thermal_conductivity') == 'user_law':
+                        exp, req, sym = ibm.getFormulaAl(objId-1)
+                        self.init_block('ibm_vol', object_name, 'porous_thermal_conductivity',
+                                        exp, req, sym, [])
+
+                #Thermal source term (only if CHT)
+                if ibm.getObjectThermalSourceTerm(objId) == 'on':
+                    exp, req, sym = ibm.getFormulaThermalSourceTerm(objId-1)
+                    self.init_block('ibm_vol', object_name, 'porous_thermal_st',
+                                    exp, req, sym, [])
+
+                # Moving
+                if ibm.getObjectMoving(objId) == 'imposed':
+                    exp, req, sym = ibm.getImposedMovingFormulaComponents(objId-1)
+                    self.init_block('ibm_vol', object_name, 'porous_velocity',
+                                    exp, req, sym, [])
+
+                # initial temperature
+                if (ibm.getObjectInit(objId) == 'on'):
+                    exp, req, sym = ibm.getFormulaTemperature(objId-1)
+                    self.init_block('ibm_vol', object_name, 'porous_temperature',
+                                    exp, req, sym, [])
+
+                # Boundary
+                energy_mode = ibm.getObjectBoundaryEnergyMode(objId)
+                if (energy_mode in ['temperature_formula', 'flux_formula']):
+                    exp, req, sym = ibm.getFormulaBoundaryEnergy(objId-1, energy_mode)
+                    if (energy_mode == 'temperature_formula'):
+                        self.init_block('ibm_vol', object_name, 'boundary_temperature',
+                                        exp, req, sym, [])
+                    elif (energy_mode == 'flux_formula'):
+                        self.init_block('ibm_vol', object_name, 'boundary_heat_flux',
+                                        exp, req, sym, [])
 
     # ---------------------------------------------------------------------------
 
@@ -2351,8 +2686,8 @@ class meg_to_c_interpreter:
         if not os.path.exists(self.tmp_path):
             os.makedirs(self.tmp_path)
 
-        if function_name in ('vol', 'bnd', 'src', 'ini', 'ibm', 'fsi',
-                             'pfl', 'pwa'):
+        if function_name in ('vol', 'bnd', 'src', 'ini', 'ibm', 'ibm_vol',
+                             'ibm_fsi', 'fsi', 'pfl', 'pwa'):
             try:
                 self.save_function(func_type=function_name,
                                    hard_path=self.tmp_path)
@@ -2483,6 +2818,10 @@ class meg_to_c_interpreter:
 
     def save_function(self, func_type, hard_path = None):
 
+        # Temporary modification to handle specific cases (IBM):
+        if func_type in ('ibm', 'ibm_vol', 'ibm_fsi'):
+            return self.save_functions_file(func_type, hard_path)
+
         # Delete previous existing file
         file2write = _function_names[func_type]
         self.delete_file(file2write)
@@ -2531,6 +2870,79 @@ class meg_to_c_interpreter:
         return save_status
 
     # ---------------------------------------------------------------------------
+
+    def save_functions_file(self, func_type, hard_path = None):
+
+        # Delete previous existing
+        file2write = _function_names[func_type]
+        self.delete_file(file2write)
+
+        # Check if it is a standard computation
+        if getRunType(self.case) != 'standard':
+            return 0
+
+        # Generate the functions code if needed
+        code_to_write = ''
+
+        if len(self.funcs[func_type].keys()) > 0:
+            code_to_write = _file_header
+            code_to_write += _file_header3
+
+            # We build the file while first writing the static internal
+            # functions, then the public function (getter)
+            code_to_write += _private_func_header
+
+            getter_func_code = _function_getter_header[func_type]
+            getter_func_code += '  if (object_name == nullptr)\n'
+            getter_func_code += '    return nullptr;\n'
+            k_count = 0
+
+            for key in self.funcs[func_type].keys():
+                w_block = self.write_block(func_type, key)
+                if w_block == None:
+                    continue
+
+                objname = key.split('::')[0]
+                var_name = key.split('::')[1]
+
+                suffix = objname
+                if (func_type in ["ibm_vol", "ibm_fsi"]):
+                    suffix = '_'.join([objname, var_name])
+
+                _fname = build_internal_function_header(func_type, suffix)
+                code_to_write += \
+                        _internal_function_prefix[func_type].format(_name=_fname,_sep_open='{')
+                code_to_write += w_block
+                code_to_write += _function_close
+
+                if (func_type in ["ibm"]):
+                    getter_func_code += '  else if (strcmp(object_name, "{}") == 0)\n'.format(objname)
+                elif (func_type in ["ibm_vol", "ibm_fsi"]):
+                    getter_func_code += (
+                        '  else if (   strcmp(object_name, "{}") == 0\n'
+                        '           && strcmp(var_name, "{}") == 0)\n'
+                    ).format(objname, var_name)
+
+                getter_func_code += '    return {};\n'.format(_fname)
+
+                k_count += 1
+
+            code_to_write += _public_func_header
+
+            code_to_write += getter_func_code
+#            code_to_write += _function_close
+
+            code_to_write += _file_footer
+
+        # Write the C file if necessary
+        save_status = self.save_file(file2write,
+                                     code_to_write,
+                                     hard_path = hard_path)
+
+        return save_status
+
+
+    #---------------------------------------------------------------------------
 
     def save_all_functions(self):
 

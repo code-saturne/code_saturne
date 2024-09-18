@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>ImmersedBoundariesVolumicConditionsForm</class>
+ <widget class="QWidget" name="ImmersedBoundariesVolumicConditionsForm">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>727</width>
+    <height>300</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>Form</string>
+  </property>
+  <layout class="QVBoxLayout" name="verticalLayout_2">
+   <item>
+    <widget class="QTabWidget" name="IBMtabWidget">
+     <property name="currentIndex">
+      <number>3</number>
+     </property>
+     <widget class="QWidget" name="IBMneptuneFSIPage">
+      <attribute name="title">
+       <string>Fluid structure interaction</string>
+      </attribute>
+      <layout class="QVBoxLayout" name="verticalLayout">
+       <item>
+        <widget class="ImmersedBoundariesFSIView" name="IBMneptuneFSIWidget" native="true"/>
+       </item>
+      </layout>
+     </widget>
+     <widget class="QWidget" name="IBMpropertiesPage">
+      <attribute name="title">
+       <string>Physical properties</string>
+      </attribute>
+      <layout class="QVBoxLayout" name="verticalLayout">
+       <item>
+        <widget class="ImmersedBoundariesThermodynamicsFieldView" name="IBMneptunePropertiesWidget" native="true"/>
+       </item>
+      </layout>
+     </widget>
+     <widget class="QWidget" name="IBMinitializationPage">
+      <attribute name="title">
+       <string>Initialization</string>
+      </attribute>
+      <layout class="QVBoxLayout" name="verticalLayout">
+       <item>
+        <widget class="ImmersedBoundariesInitializationView" name="IBMneptuneInitializationWidget" native="true"/>
+       </item>
+      </layout>
+     </widget>
+     <widget class="QWidget" name="IBMsourceTermPage">
+      <attribute name="title">
+       <string>Thermal source term</string>
+      </attribute>
+      <layout class="QVBoxLayout" name="verticalLayout">
+       <item>
+        <widget class="ImmersedBoundariesSourceTermView" name="IBMneptuneSourceTermWidget" native="true"/>
+       </item>
+      </layout>
+     </widget>
+    </widget>
+   </item>
+   <item>
+    <spacer name="verticalSpacer">
+     <property name="orientation">
+      <enum>Qt::Vertical</enum>
+     </property>
+     <property name="sizeHint" stdset="0">
+      <size>
+       <width>20</width>
+       <height>40</height>
+      </size>
+     </property>
+    </spacer>
+   </item>
+  </layout>
+ </widget>
+ <customwidgets>
+  <customwidget>
+   <class>ImmersedBoundariesInitializationView</class>
+   <extends>QWidget</extends>
+   <header>ImmersedBoundariesInitializationView</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>ImmersedBoundariesThermodynamicsFieldView</class>
+   <extends>QWidget</extends>
+   <header>ImmersedBoundariesThermodynamicsFieldView</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>ImmersedBoundariesFSIView</class>
+   <extends>QWidget</extends>
+   <header>ImmersedBoundariesFSIView</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>ImmersedBoundariesSourceTermView</class>
+   <extends>QWidget</extends>
+   <header>ImmersedBoundariesSourceTermView</header>
+   <container>1</container>
+  </customwidget>
+ </customwidgets>
+ <resources/>
+ <connections/>
+</ui>
