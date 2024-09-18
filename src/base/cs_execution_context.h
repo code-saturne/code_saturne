@@ -1,5 +1,5 @@
-#ifndef CS_EXECUTION_CONTEXT_H
-#define CS_EXECUTION_CONTEXT_H
+#ifndef __CS_EXECUTION_CONTEXT_H__
+#define __CS_EXECUTION_CONTEXT_H__
 
 /*============================================================================
  * Class to handle different execution policies (MPI, OpenMP, CUDA, ...)
@@ -27,7 +27,9 @@
 
 // Valid only for C++
 
+/*! \cond DOXYGEN_SHOULD_SKIP_THIS */
 #ifdef __cplusplus
+/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*----------------------------------------------------------------------------*/
 
@@ -172,7 +174,9 @@ public:
 #endif
   }
 
+/*! \cond DOXYGEN_SHOULD_SKIP_THIS */
 #if defined(HAVE_MPI)
+/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
   /*--------------------------------------------------------------------------*/
   /*!
@@ -208,7 +212,9 @@ public:
     return _comm;
   };
 
+/*! \cond DOXYGEN_SHOULD_SKIP_THIS */
 #endif // defined(HAVE_MPI)
+/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /* Private attributes
  -------------------- */
@@ -232,8 +238,10 @@ private:
 
 };
 
+/*! \cond DOXYGEN_SHOULD_SKIP_THIS */
 #endif /* __cplusplus */
+/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*----------------------------------------------------------------------------*/
 
-#endif /* CS_EXECUTION_CONTEXT_H */
+#endif /* __CS_EXECUTION_CONTEXT_H__ */
