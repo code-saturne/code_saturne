@@ -496,8 +496,9 @@ public:
       l_grid_size = (n % block_size_) ? n/block_size_ + 1 : n/block_size_;
     }
 
-    cs_cuda_kernel_parallel_for<<<l_grid_size, block_size_, 0, stream_>>>
-      (n, static_cast<F&&>(f), static_cast<Args&&>(args)...);
+    if (n > 0)
+      cs_cuda_kernel_parallel_for<<<l_grid_size, block_size_, 0, stream_>>>
+        (n, static_cast<F&&>(f), static_cast<Args&&>(args)...);
 
     return true;
   }
@@ -516,8 +517,9 @@ public:
       l_grid_size = (n % block_size_) ? n/block_size_ + 1 : n/block_size_;
     }
 
-    cs_cuda_kernel_parallel_for<<<l_grid_size, block_size_, 0, stream_>>>
-      (n, static_cast<F&&>(f), static_cast<Args&&>(args)...);
+    if (n > 0)
+      cs_cuda_kernel_parallel_for<<<l_grid_size, block_size_, 0, stream_>>>
+        (n, static_cast<F&&>(f), static_cast<Args&&>(args)...);
 
     return true;
   }
@@ -538,6 +540,10 @@ public:
     long l_grid_size = grid_size_;
     if (l_grid_size < 1) {
       l_grid_size = (n % block_size_) ? n/block_size_ + 1 : n/block_size_;
+    }
+    if (n == 0) {
+      sum = 0;
+      return true;
     }
 
     double *r_grid_, *r_reduce_;
