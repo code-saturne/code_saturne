@@ -3365,7 +3365,7 @@ cs_turbulence_rij(int phase_id)
       = (const cs_real_3_t *)fvq->b_face_u_normal;
     cs_real_t *b_lam = cs_field_by_name("b_rusanov_diff")->val;
 
-    ctx.parallel_for(n_i_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t face_id) {
+    ctx.parallel_for(n_b_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t face_id) {
       const cs_real_t *n = b_face_u_normal[face_id];
       cs_real_t bf[6][6];
 
