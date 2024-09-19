@@ -96,49 +96,49 @@ noinst_LIBRARIES = libcsmesh.a \
 		   libcspartition.a
 
 libcsmesh_a_SOURCES = \
-cs_geom.c \
-cs_join.c \
-cs_join_intersect.c \
-cs_join_merge.c \
-cs_join_mesh.c \
-cs_join_perio.c \
-cs_join_post.c \
-cs_join_set.c \
-cs_join_split.c \
-cs_join_update.c \
-cs_join_util.c \
-cs_mesh.c \
-cs_mesh_adjacencies.c \
-cs_mesh_bad_cells.c \
-cs_mesh_boundary.c \
-cs_mesh_boundary_layer.c \
-cs_mesh_builder.c \
-cs_mesh_cartesian.c \
-cs_mesh_coarsen.c \
-cs_mesh_coherency.c \
-cs_mesh_connect.c \
-cs_mesh_extrude.c \
-cs_mesh_from_builder.c \
-cs_mesh_group.c \
-cs_mesh_halo.c \
-cs_mesh_intersect.c \
-cs_mesh_location.c \
-cs_mesh_quality.c \
-cs_mesh_quantities.c \
-cs_mesh_refine.c \
-cs_mesh_remove.c \
-cs_mesh_save.c \
-cs_mesh_to_builder.c \
-cs_mesh_warping.c \
-cs_mesh_smoother.c \
-cs_stl.c \
-cs_symmetry_faces_filter.c
+cs_geom.cpp \
+cs_join.cpp \
+cs_join_intersect.cpp \
+cs_join_merge.cpp \
+cs_join_mesh.cpp \
+cs_join_perio.cpp \
+cs_join_post.cpp \
+cs_join_set.cpp \
+cs_join_split.cpp \
+cs_join_update.cpp \
+cs_join_util.cpp \
+cs_mesh.cpp \
+cs_mesh_adjacencies.cpp \
+cs_mesh_bad_cells.cpp \
+cs_mesh_boundary.cpp \
+cs_mesh_boundary_layer.cpp \
+cs_mesh_builder.cpp \
+cs_mesh_cartesian.cpp \
+cs_mesh_coarsen.cpp \
+cs_mesh_coherency.cpp \
+cs_mesh_connect.cpp \
+cs_mesh_extrude.cpp \
+cs_mesh_from_builder.cpp \
+cs_mesh_group.cpp \
+cs_mesh_halo.cpp \
+cs_mesh_intersect.cpp \
+cs_mesh_location.cpp \
+cs_mesh_quality.cpp \
+cs_mesh_quantities.cpp \
+cs_mesh_refine.cpp \
+cs_mesh_remove.cpp \
+cs_mesh_save.cpp \
+cs_mesh_smoother.cpp \
+cs_mesh_to_builder.cpp \
+cs_mesh_warping.cpp \
+cs_stl.cpp \
+cs_symmetry_faces_filter.cpp
 
 # Partitioner (may require extra headers)
 
 libcspartition_a_CPPFLAGS = $(AM_CPPFLAGS) \
 $(METIS_CPPFLAGS) $(SCOTCH_CPPFLAGS)
-libcspartition_a_SOURCES = cs_partition.c
+libcspartition_a_SOURCES = cs_partition.cpp
 
 # Rules for CUDA (not known by Automake)
 
