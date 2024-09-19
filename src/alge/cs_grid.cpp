@@ -5493,9 +5493,12 @@ _compute_coarse_quantities_native(const cs_grid_t  *fine_grid,
   if (fine_grid->symmetric == true)
     isym = 1;
 
-  /*  Finalize computation of matrix in c_da, c_xa */
-  /*  relax_param <= 0 : P0 restriction / P0 prolongation => c_xa = c_xa0 */
-  /*  relax_parm > 0   : P0 restriction / P1 prolongation => c_xa = c_xa0ij/icjc */
+  /*  Finalize computation of matrix in c_da, c_xa
+   *
+   *  relax_param:
+   *    <= 0 : P0 restriction / P0 prolongation => c_xa = c_xa0
+   *    > 0  : P0 restriction / P1 prolongation => c_xa = c_xa0ij/icjc
+   */
 
   /* Extradiagonal terms */
 
