@@ -3786,7 +3786,7 @@ _p_sym_gauss_seidel_msr(cs_sles_it_t              *c,
 
     /* Synchronize ghost cells first */
 
-    if (n_iter == 0 && vx_ini != vx) {
+    if (n_iter == 1 && vx_ini != vx) {
       const cs_lnum_t _n_cols = cs_matrix_get_n_columns(a)*diag_block_size;
 #     pragma omp parallel for if(_n_cols > CS_THR_MIN)
       for (cs_lnum_t ii = 0; ii < _n_cols; ii++) {
