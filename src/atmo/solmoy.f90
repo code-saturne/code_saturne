@@ -178,14 +178,14 @@ do isol = 1, nfmodsol
     ! shifting of 1 for the percentage because starting by default value
     rugdij = rugdij + rugdyn(n)*bpro_pourcent_sol(n+1,isol)/100.d0
     rugtij = rugtij + rugthe(n)*bpro_pourcent_sol(n+1,isol)/100.d0
-    albeij = albeij + tab_sol(n)%albedo*bpro_pourcent_sol(n+1,isol)/100.d0
-    emisij = emisij + tab_sol(n)%emissi*bpro_pourcent_sol(n+1,isol)/100.d0
+    albeij = albeij + soil_cat_albedo(n)*bpro_pourcent_sol(n+1,isol)/100.d0
+    emisij = emisij + soil_cat_emissi(n)*bpro_pourcent_sol(n+1,isol)/100.d0
     csolij = csolij + csol(n)  *bpro_pourcent_sol(n+1,isol)/100.d0
-    vegeij = vegeij + tab_sol(n)%vegeta*bpro_pourcent_sol(n+1,isol)/100.d0
-    c1wij  = c1wij  + tab_sol(n)%c1w   *bpro_pourcent_sol(n+1,isol)/100.d0
-    c2wij  = c2wij  + tab_sol(n)%c2w   *bpro_pourcent_sol(n+1,isol)/100.d0
-    r1ij   = r1ij   + tab_sol(n)%r1    *bpro_pourcent_sol(n+1,isol)/100.d0
-    r2ij   = r2ij   + tab_sol(n)%r2    *bpro_pourcent_sol(n+1,isol)/100.d0
+    vegeij = vegeij + soil_cat_vegeta(n)*bpro_pourcent_sol(n+1,isol)/100.d0
+    c1wij  = c1wij  + soil_cat_c1w(n)   *bpro_pourcent_sol(n+1,isol)/100.d0
+    c2wij  = c2wij  + soil_cat_c2w(n)   *bpro_pourcent_sol(n+1,isol)/100.d0
+    r1ij   = r1ij   + soil_cat_r1(n)    *bpro_pourcent_sol(n+1,isol)/100.d0
+    r2ij   = r2ij   + soil_cat_r2(n)    *bpro_pourcent_sol(n+1,isol)/100.d0
   enddo
 
   ifac = elt_ids(isol) + 1 ! C > Fortran

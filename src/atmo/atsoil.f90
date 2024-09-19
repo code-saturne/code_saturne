@@ -38,28 +38,6 @@ integer, save :: nfmodsol
 !> Number of soil model's type
 integer, save :: nbrsol
 
-!> kind of soil (water, forest, urban ...) and associated constantes
-type categorie_sol
-!> Albedo
-  double precision  :: albedo! => field
-!> emissivity
-  double precision  :: emissi ! => field
-!> Vegetation index
-  double precision  :: vegeta !> field
-!> maximum water capacity of shallow reservoir
-  double precision  :: c1w
-!> ratio of the maximum water capacity of the shallow reservoir to the deep
-!> reservoir [0,1]
-  double precision  :: c2w
-!> Rij value for Rij1
-  double precision  :: r1
-!> Rij value for Rij2
-  double precision  :: r2
-!> deep soil temperture
-  double precision  :: tprof
-!> Soil category name
-  character(len=10) :: nomcat
-end type categorie_sol
 
 ! Initialisation values for soil variables
 ! (filled in usispu/cs_user_parameters)
@@ -72,19 +50,33 @@ real(c_double), pointer, save :: tprini
 !> initial soil specific humidity
 real(c_double), pointer, save :: qvsini
 !> initial water content of the first reservoir
-double precision :: w1ini = 0.d0
+real(c_double), pointer, save :: w1ini
 !> initial water content of the second reservoir
-double precision :: w2ini = 0.d0
+real(c_double), pointer, save :: w2ini
+
+! Array for soil categories
 
 !> Thermal inertia of the soil
 double precision, dimension(:), pointer :: csol
 !> Dynamic roughness length
-double precision, dimension(:), pointer :: rugdyn ! => field
+double precision, dimension(:), pointer :: rugdyn
 !> Thermal roughness length
-double precision, dimension(:), pointer :: rugthe! => field
-
-!> array of the different features of each soil category
-type(categorie_sol), dimension(:) , allocatable :: tab_sol
+double precision, dimension(:), pointer :: rugthe
+!> Albedo
+double precision, dimension(:), pointer :: soil_cat_albedo
+!> emissivity
+double precision, dimension(:), pointer :: soil_cat_emissi
+!> Vegetation index
+double precision, dimension(:), pointer :: soil_cat_vegeta
+!> maximum water capacity of shallow reservoir
+double precision, dimension(:), pointer :: soil_cat_c1w
+!> ratio of the maximum water capacity of the shallow reservoir to the deep
+!> reservoir [0,1]
+double precision, dimension(:), pointer :: soil_cat_c2w
+!> Rij value for Rij1
+double precision, dimension(:), pointer :: soil_cat_r1
+!> Rij value for Rij2
+double precision, dimension(:), pointer :: soil_cat_r2
 
 !> \}
 !=============================================================================

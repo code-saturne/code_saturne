@@ -73,12 +73,16 @@ implicit none
 
 interface
 
-  subroutine cs_f_atmo_soil_init_arrays(nb_col, p_csol, p_rugdyn, p_rugthe) &
+  subroutine cs_f_atmo_soil_init_arrays(nb_col, p_csol, p_rugdyn, p_rugthe, &
+                                        p_albedo, p_emissi, p_vegeta,       &
+                                        p_c1w, p_c2w, p_r1, p_r2)           &
     bind(C, name='cs_f_atmo_soil_init_arrays')
     use, intrinsic :: iso_c_binding
     implicit none
     integer, intent(in) :: nb_col
     type(c_ptr), intent(out) :: p_csol, p_rugdyn, p_rugthe
+    type(c_ptr), intent(out) :: p_albedo, p_emissi, p_vegeta
+    type(c_ptr), intent(out) :: p_c1w, p_c2w, p_r1, p_r2
   end subroutine cs_f_atmo_soil_init_arrays
 
 end interface
@@ -99,12 +103,15 @@ integer, dimension(:), pointer :: elt_ids
 double precision codinv
 integer inityp
 character(len=50) :: raison
-character(len=10) :: inicat
+character(len=10) :: nomcat(8)
 type(c_ptr) :: c_csol, c_rugdyn, c_rugthe
+type(c_ptr) :: c_albedo, c_emissi, c_vegeta
+type(c_ptr) :: c_c1w, c_c2w, c_r1, c_r2
+
+DATA nomcat/'','','','','','','',''/
 
 ! Initialisation
 
-inicat = 'xxxxxxxx'
 inityp = -9
 codinv = -999.d0
 
@@ -115,44 +122,37 @@ if (iappel.eq.1) then
   call atmo_get_soil_zone(n_elts, nbrsol, elt_ids)
 
   ! Allocation of table values
-  allocate(tab_sol(nbrsol), stat=error)
-  call cs_f_atmo_soil_init_arrays(nbrsol, c_csol, c_rugdyn, c_rugthe)
+  call cs_f_atmo_soil_init_arrays(nbrsol, c_csol, c_rugdyn, c_rugthe,  &
+                                  c_albedo, c_emissi, c_vegeta,        &
+                                  c_c1w, c_c2w, c_r1, c_r2)
 
+  call c_f_pointer(c_r1, soil_cat_r1, [nbrsol])
+  call c_f_pointer(c_r2, soil_cat_r2, [nbrsol])
+  call c_f_pointer(c_c1w, soil_cat_c1w, [nbrsol])
+  call c_f_pointer(c_c2w, soil_cat_c2w, [nbrsol])
   call c_f_pointer(c_csol, csol, [nbrsol])
   call c_f_pointer(c_rugdyn, rugdyn, [nbrsol])
   call c_f_pointer(c_rugthe, rugthe, [nbrsol])
-
-  if (error /= 0) then
-    write(nfecra,*) "Allocation error of atmodsol::tab_sol"
-    call csexit(1)
-  endif
+  call c_f_pointer(c_albedo, soil_cat_albedo, [nbrsol])
+  call c_f_pointer(c_emissi, soil_cat_emissi, [nbrsol])
+  call c_f_pointer(c_vegeta, soil_cat_vegeta, [nbrsol])
 endif
 
 ! First pass, default values according to the choice of number of soils
 !----------------------------------------------------------------------
-
 if (iappel.eq.1) then
   do n = 1, nbrsol
     csol(n)   = codinv
     rugdyn(n) = codinv
     rugthe(n) = codinv
-    tab_sol(n)%albedo = codinv
-    tab_sol(n)%emissi = codinv
-    tab_sol(n)%vegeta = codinv
-    tab_sol(n)%c1w    = codinv
-    tab_sol(n)%c2w    = codinv
-    tab_sol(n)%r1     = codinv
-    tab_sol(n)%r2     = codinv
+    soil_cat_albedo(n) = codinv
+    soil_cat_emissi(n) = codinv
+    soil_cat_vegeta(n) = codinv
+    soil_cat_c1w(n)    = codinv
+    soil_cat_c2w(n)    = codinv
+    soil_cat_r1(n)     = codinv
+    soil_cat_r2(n)     = codinv
   enddo
-
-  do n = 1, nbrsol
-    tab_sol(n)%nomcat = inicat
-  enddo
-
-  ! note: si vous utilisez d'autres categories de sol (comme prairie),
-  !       rajoutez les a la liste deja existante au lieu de supprimer
-  !       celles que vous n'utilisez pas ou encore pire d'utiliser un nom
-  !       de categorie pour les coefficients d'une autre
 
   eau    = inityp
   foret  = inityp
@@ -191,14 +191,19 @@ if (iappel.eq.1) then
 
   ! Soil categories names
 
-  if (eau    .ne. inityp) tab_sol(eau)%nomcat    = 'water   '
-  if (foret  .ne. inityp) tab_sol(foret)%nomcat  = 'forest  '
-  if (divers .ne. inityp) tab_sol(divers)%nomcat = 'diverse '
-  if (minral .ne. inityp) tab_sol(minral)%nomcat = 'mineral '
-  if (diffus .ne. inityp) tab_sol(diffus)%nomcat = 'bg diffu'
-  if (mixte  .ne. inityp) tab_sol(mixte )%nomcat = 'bg mixte'
-  if (dense  .ne. inityp) tab_sol(dense )%nomcat = 'bg dense'
-  if (bati   .ne. inityp) tab_sol(bati  )%nomcat = 'building'
+  if (eau    .ne. inityp) nomcat(eau)    = 'water'
+  if (foret  .ne. inityp) nomcat(foret)  = 'forest'
+  if (divers .ne. inityp) nomcat(divers) = 'diverse'
+  if (minral .ne. inityp) nomcat(minral) = 'mineral'
+  if (diffus .ne. inityp) nomcat(diffus) = 'bg diffu'
+  if (mixte  .ne. inityp) nomcat(mixte)  = 'bg mixte'
+  if (dense  .ne. inityp) nomcat(dense)  = 'bg dense'
+  if (bati   .ne. inityp) nomcat(bati)   = 'building'
+
+  ! note: si vous utilisez d'autres categories de sol (comme prairie),
+  !       rajoutez les a la liste deja existante au lieu de supprimer
+  !       celles que vous n'utilisez pas ou encore pire d'utiliser un nom
+  !       de categorie pour les coefficients d'une autre
 
   ! valeurs standard des parametres
 
@@ -220,32 +225,32 @@ if (iappel.eq.1) then
   if(dense  .ne. inityp)rugthe(dense)  = rugdyn(dense)*exp(-2.d0)
   if(bati   .ne. inityp)rugthe(bati)   = rugdyn(bati)*exp(-2.d0)
 
-  if(eau    .ne. inityp)tab_sol(eau)%albedo    = 0.08d0
-  if(foret  .ne. inityp)tab_sol(foret)%albedo  = 0.16d0
-  if(divers .ne. inityp)tab_sol(divers)%albedo = 0.20d0
-  if(minral .ne. inityp)tab_sol(minral)%albedo = 0.25d0
-  if(diffus .ne. inityp)tab_sol(diffus)%albedo = 0.18d0
-  if(mixte  .ne. inityp)tab_sol(mixte )%albedo = 0.18d0
-  if(dense  .ne. inityp)tab_sol(dense )%albedo = 0.18d0
-  if(bati   .ne. inityp)tab_sol(bati  )%albedo = 0.18d0
+  if(eau    .ne. inityp)soil_cat_albedo(eau)    = 0.08d0
+  if(foret  .ne. inityp)soil_cat_albedo(foret)  = 0.16d0
+  if(divers .ne. inityp)soil_cat_albedo(divers) = 0.20d0
+  if(minral .ne. inityp)soil_cat_albedo(minral) = 0.25d0
+  if(diffus .ne. inityp)soil_cat_albedo(diffus) = 0.18d0
+  if(mixte  .ne. inityp)soil_cat_albedo(mixte)  = 0.18d0
+  if(dense  .ne. inityp)soil_cat_albedo(dense)  = 0.18d0
+  if(bati   .ne. inityp)soil_cat_albedo(bati)   = 0.18d0
 
-  if(eau    .ne. inityp)tab_sol(eau)%emissi    = 0.980d0
-  if(foret  .ne. inityp)tab_sol(foret)%emissi  = 0.950d0
-  if(divers .ne. inityp)tab_sol(divers)%emissi = 0.940d0
-  if(minral .ne. inityp)tab_sol(minral)%emissi = 0.965d0
-  if(diffus .ne. inityp)tab_sol(diffus)%emissi = 0.880d0
-  if(mixte  .ne. inityp)tab_sol(mixte )%emissi = 0.880d0
-  if(dense  .ne. inityp)tab_sol(dense )%emissi = 0.880d0
-  if(bati   .ne. inityp)tab_sol(bati  )%emissi = 0.880d0
+  if(eau    .ne. inityp)soil_cat_emissi(eau)    = 0.980d0
+  if(foret  .ne. inityp)soil_cat_emissi(foret)  = 0.950d0
+  if(divers .ne. inityp)soil_cat_emissi(divers) = 0.940d0
+  if(minral .ne. inityp)soil_cat_emissi(minral) = 0.965d0
+  if(diffus .ne. inityp)soil_cat_emissi(diffus) = 0.880d0
+  if(mixte  .ne. inityp)soil_cat_emissi(mixte)  = 0.880d0
+  if(dense  .ne. inityp)soil_cat_emissi(dense)  = 0.880d0
+  if(bati   .ne. inityp)soil_cat_emissi(bati)   = 0.880d0
 
-  if(eau    .ne. inityp)tab_sol(eau)%vegeta    = 0.00d0
-  if(foret  .ne. inityp)tab_sol(foret)%vegeta  = 1.00d0
-  if(divers .ne. inityp)tab_sol(divers)%vegeta = 1.00d0
-  if(minral .ne. inityp)tab_sol(minral)%vegeta = 0.00d0
-  if(diffus .ne. inityp)tab_sol(diffus)%vegeta = 0.50d0
-  if(mixte  .ne. inityp)tab_sol(mixte )%vegeta = 0.25d0
-  if(dense  .ne. inityp)tab_sol(dense )%vegeta = 0.00d0
-  if(bati   .ne. inityp)tab_sol(bati  )%vegeta = 0.25d0
+  if(eau    .ne. inityp)soil_cat_vegeta(eau)    = 0.00d0
+  if(foret  .ne. inityp)soil_cat_vegeta(foret)  = 1.00d0
+  if(divers .ne. inityp)soil_cat_vegeta(divers) = 1.00d0
+  if(minral .ne. inityp)soil_cat_vegeta(minral) = 0.00d0
+  if(diffus .ne. inityp)soil_cat_vegeta(diffus) = 0.50d0
+  if(mixte  .ne. inityp)soil_cat_vegeta(mixte)  = 0.25d0
+  if(dense  .ne. inityp)soil_cat_vegeta(dense)  = 0.00d0
+  if(bati   .ne. inityp)soil_cat_vegeta(bati)   = 0.25d0
 
   if(eau    .ne. inityp)csol(eau)    =  7.6d-06
   if(foret  .ne. inityp)csol(foret)  = 11.0d-06
@@ -253,49 +258,49 @@ if (iappel.eq.1) then
   if(minral .ne. inityp)csol(minral) =  5.0d-06
   if(dense  .ne. inityp)csol(dense)  =  3.9d-06
   if(diffus .ne. inityp)                                                     &
-       csol(diffus) = csol(foret)*tab_sol(diffus)%vegeta +   &
-       csol(dense)*(1.d0-tab_sol(diffus)%vegeta)
+       csol(diffus) = csol(foret)*soil_cat_vegeta(diffus) +   &
+       csol(dense)*(1.d0-soil_cat_vegeta(diffus))
   if(mixte  .ne. inityp)                                                     &
-       csol(mixte) = csol(foret)*tab_sol(mixte )%vegeta + &
-       csol(dense)*(1.d0-tab_sol(mixte )%vegeta)
+       csol(mixte) = csol(foret)*soil_cat_vegeta(mixte) + &
+       csol(dense)*(1.d0-soil_cat_vegeta(mixte ))
   if(bati  .ne. inityp)                                                      &
-       csol(bati) = csol(foret)*tab_sol(bati  )%vegeta + &
-       3.9d-06*(1.d0-tab_sol(bati  )%vegeta)
-  if(eau    .ne. inityp)tab_sol(eau)%c1w    = 100.0d0
-  if(foret  .ne. inityp)tab_sol(foret)%c1w  = 18.d0*tab_sol(foret)%vegeta + 2.d0
-  if(divers .ne. inityp)tab_sol(divers)%c1w = 18.d0*tab_sol(divers)%vegeta + 2.d0
-  if(minral .ne. inityp)tab_sol(minral)%c1w = 18.d0*tab_sol(minral)%vegeta + 2.d0
-  if(diffus .ne. inityp)tab_sol(diffus)%c1w = 18.d0*tab_sol(diffus)%vegeta + 2.d0
-  if(mixte  .ne. inityp)tab_sol(mixte )%c1w = 18.d0*tab_sol(mixte )%vegeta + 2.d0
-  if(dense  .ne. inityp)tab_sol(dense )%c1w = 18.d0*tab_sol(dense )%vegeta + 2.d0
-  if(bati   .ne. inityp)tab_sol(bati  )%c1w = 18.d0*tab_sol(bati  )%vegeta + 2.d0
+       csol(bati) = csol(foret)*soil_cat_vegeta(bati) + &
+       3.9d-06*(1.d0-soil_cat_vegeta(bati))
+  if(eau    .ne. inityp)soil_cat_c1w(eau)    = 100.0d0
+  if(foret  .ne. inityp)soil_cat_c1w(foret)  = 18.d0*soil_cat_vegeta(foret) + 2.d0
+  if(divers .ne. inityp)soil_cat_c1w(divers) = 18.d0*soil_cat_vegeta(divers) + 2.d0
+  if(minral .ne. inityp)soil_cat_c1w(minral) = 18.d0*soil_cat_vegeta(minral) + 2.d0
+  if(diffus .ne. inityp)soil_cat_c1w(diffus) = 18.d0*soil_cat_vegeta(diffus) + 2.d0
+  if(mixte  .ne. inityp)soil_cat_c1w(mixte)  = 18.d0*soil_cat_vegeta(mixte) + 2.d0
+  if(dense  .ne. inityp)soil_cat_c1w(dense)  = 18.d0*soil_cat_vegeta(dense) + 2.d0
+  if(bati   .ne. inityp)soil_cat_c1w(bati)   = 18.d0*soil_cat_vegeta(bati) + 2.d0
 
-  if(eau    .ne. inityp)tab_sol(eau)%c2w    = 1.00d0
-  if(foret  .ne. inityp)tab_sol(foret)%c2w  = 0.20d0
-  if(divers .ne. inityp)tab_sol(divers)%c2w = 0.20d0
-  if(minral .ne. inityp)tab_sol(minral)%c2w = 0.20d0
-  if(diffus .ne. inityp)tab_sol(diffus)%c2w = 0.20d0
-  if(mixte  .ne. inityp)tab_sol(mixte )%c2w = 0.20d0
-  if(dense  .ne. inityp)tab_sol(dense )%c2w = 0.20d0
-  if(bati   .ne. inityp)tab_sol(bati  )%c2w = 0.20d0
+  if(eau    .ne. inityp)soil_cat_c2w(eau)    = 1.00d0
+  if(foret  .ne. inityp)soil_cat_c2w(foret)  = 0.20d0
+  if(divers .ne. inityp)soil_cat_c2w(divers) = 0.20d0
+  if(minral .ne. inityp)soil_cat_c2w(minral) = 0.20d0
+  if(diffus .ne. inityp)soil_cat_c2w(diffus) = 0.20d0
+  if(mixte  .ne. inityp)soil_cat_c2w(mixte)  = 0.20d0
+  if(dense  .ne. inityp)soil_cat_c2w(dense)  = 0.20d0
+  if(bati   .ne. inityp)soil_cat_c2w(bati)   = 0.20d0
 
-  if(eau    .ne. inityp)tab_sol(eau)%r1    = 0.d0
-  if(foret  .ne. inityp)tab_sol(foret)%r1  = 0.d0
-  if(divers .ne. inityp)tab_sol(divers)%r1 = 0.d0
-  if(minral .ne. inityp)tab_sol(minral)%r1 = 0.d0
-  if(dense  .ne. inityp)tab_sol(dense )%r1 = 30.d0
-  if(diffus .ne. inityp)tab_sol(diffus)%r1 = 10.d0
-  if(mixte  .ne. inityp)tab_sol(mixte )%r1 = 15.d0
-  if(bati   .ne. inityp)tab_sol(bati  )%r1 = 15.d0
+  if(eau    .ne. inityp)soil_cat_r1(eau)    = 0.d0
+  if(foret  .ne. inityp)soil_cat_r1(foret)  = 0.d0
+  if(divers .ne. inityp)soil_cat_r1(divers) = 0.d0
+  if(minral .ne. inityp)soil_cat_r1(minral) = 0.d0
+  if(dense  .ne. inityp)soil_cat_r1(dense ) = 30.d0
+  if(diffus .ne. inityp)soil_cat_r1(diffus) = 10.d0
+  if(mixte  .ne. inityp)soil_cat_r1(mixte) = 15.d0
+  if(bati   .ne. inityp)soil_cat_r1(bati)  = 15.d0
 
-  if(eau    .ne. inityp)tab_sol(eau)%r2    = 0.d0
-  if(foret  .ne. inityp)tab_sol(foret)%r2  = 0.d0
-  if(divers .ne. inityp)tab_sol(divers)%r2 = 0.d0
-  if(minral .ne. inityp)tab_sol(minral)%r2 = 0.d0
-  if(dense  .ne. inityp)tab_sol(dense )%r2 = 2.0d0
-  if(diffus .ne. inityp)tab_sol(diffus)%r2 = 2.0d0/3.d0
-  if(mixte  .ne. inityp)tab_sol(mixte )%r2 = 1.d0
-  if(bati   .ne. inityp)tab_sol(bati  )%r2 = 1.0d0
+  if(eau    .ne. inityp)soil_cat_r2(eau)    = 0.d0
+  if(foret  .ne. inityp)soil_cat_r2(foret)  = 0.d0
+  if(divers .ne. inityp)soil_cat_r2(divers) = 0.d0
+  if(minral .ne. inityp)soil_cat_r2(minral) = 0.d0
+  if(dense  .ne. inityp)soil_cat_r2(dense) = 2.0d0
+  if(diffus .ne. inityp)soil_cat_r2(diffus) = 2.0d0/3.d0
+  if(mixte  .ne. inityp)soil_cat_r2(mixte) = 1.d0
+  if(bati   .ne. inityp)soil_cat_r2(bati) = 1.0d0
 
 endif
 
@@ -307,10 +312,10 @@ if (iappel.eq.2) then
   write(nfecra,2000)
   write(nfecra,2001)
   do n = 1, nbrsol
-    write(nfecra,2002) tab_sol(n)%nomcat, rugdyn(n),rugthe(n), &
-      tab_sol(n)%albedo, tab_sol(n)%emissi,1.d+06*csol(n),          &
-      tab_sol(n)%vegeta, tab_sol(n)%c1w, tab_sol(n)%c2w, tab_sol(n)%r1,     &
-      tab_sol(n)%r2
+    write(nfecra,2002) nomcat(n), rugdyn(n),rugthe(n), &
+      soil_cat_albedo(n), soil_cat_emissi(n),1.d+06*csol(n),          &
+      soil_cat_vegeta(n), soil_cat_c1w(n), soil_cat_c2w(n), soil_cat_r1(n),     &
+      soil_cat_r2(n)
   enddo
   write(nfecra,2012)
 
@@ -320,10 +325,10 @@ if (iappel.eq.2) then
   raison = ' Wrong soil cofficients              '
   do n = 1, nbrsol
     if (rugdyn(n).ne.codinv .and. rugthe(n).ne.codinv .and.   &
-        tab_sol(n)%albedo.ne.codinv .and. tab_sol(n)%emissi.ne.codinv .and.   &
-        tab_sol(n)%c1w   .ne.codinv .and. tab_sol(n)%c2w   .ne.codinv .and.   &
-        csol(n)  .ne.codinv .and. tab_sol(n)%r1    .ne.codinv .and.   &
-        tab_sol(n)%r2    .ne.codinv) ierreu = ierreu - 1
+        soil_cat_albedo(n).ne.codinv .and. soil_cat_emissi(n).ne.codinv .and.   &
+        soil_cat_c1w(n)   .ne.codinv .and. soil_cat_c2w(n)   .ne.codinv .and.   &
+        csol(n)  .ne.codinv .and. soil_cat_r1(n)    .ne.codinv .and.   &
+        soil_cat_r2(n)    .ne.codinv) ierreu = ierreu - 1
   enddo
 
   ! Error message if needed

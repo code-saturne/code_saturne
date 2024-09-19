@@ -1942,9 +1942,9 @@ cs_user_finalize_setup(cs_domain_t     *domain)
     }
 
     /* Modify the soil parameters if activated */
-    at_opt->soil_roughness[3] = 0.0012;
-    at_opt->soil_thermal_inertia[3] = 1.7e-5;
-    at_opt->soil_thermal_roughness[3] = 0.0012;
+    at_opt->soil_cat_roughness[3] = 0.0012;
+    at_opt->soil_cat_thermal_inertia[3] = 1.7e-5;
+    at_opt->soil_cat_thermal_roughness[3] = 0.0012;
   }
 
   at_opt->rad_1d_z[0 ] = 0.;

@@ -190,6 +190,8 @@ typedef struct {
   /*! 1-D radiative model: number of levels (up to 11000 m)
     (automatically computed) */
   int rad_1d_nlevels_max;
+  /*! 1D radiative model pass frequency (1 valu bu default)*/
+  int rad_1d_frequency;
 
   /*! horizontal coordinates of the vertical grid */
   cs_real_t *rad_1d_xy;
@@ -439,18 +441,48 @@ typedef struct {
   cs_real_t soil_temperature;
   /*! initial soil specific humidity */
   cs_real_t soil_humidity;
+  /*! initial water content of the first reservoir */
+  cs_real_t soil_w1_ini;
+  /*! initial water content of the second reservoir */
+  cs_real_t soil_w2_ini;
   /*! Thermal inertia of the soil */
-  cs_real_t *soil_thermal_inertia;
+  cs_real_t *soil_cat_thermal_inertia;
   /*! Dynamic roughness length */
-  cs_real_t *soil_roughness;
+  cs_real_t *soil_cat_roughness;
   /*! Thermal roughness length*/
-  cs_real_t *soil_thermal_roughness;
+  cs_real_t *soil_cat_thermal_roughness;
+  /*! Albedo per soil category */
+  cs_real_t *soil_cat_albedo;
+  /*! emissivity per soil category */
+  cs_real_t *soil_cat_emissi;
+  /*! Vegetation index per soil category */
+  cs_real_t *soil_cat_vegeta;
+  /*! maximum water capacity of shallow reservoir*/
+  cs_real_t *soil_cat_w1;
+  /*! ratio of the maximum water capacity of the shallow
+   *  reservoir to the deep reservoir [0,1]*/
+  cs_real_t *soil_cat_w2;
+  /*! Rij value for Rij1*/
+  cs_real_t *soil_cat_r1;
+  /*! Rij value for Rij2*/
+  cs_real_t *soil_cat_r2;
   /*! flag to compute the hydrostatic pressure by Laplace integration
    *  in the meteo profiles
    *  0: based on P (sea level) value by default
    *  1: based on P computed for the standard atmosphere
    */
   int hydrostatic_pressure_model;
+  /*! flag for the standard atmo humidity profile
+   *  hydrostatic_profile = 0 (default)
+   *  hydrostatic_profile = 1 decreasing exponential */
+  int hydrostatic_profile;
+  /*! adimensional : sigc=0.53 other referenced values are 0.28, 0.15 */
+  cs_real_t sigc;
+  /*! 1D infrared profile */
+  int infrared_1D_profile;
+  /*! 1D solar profile */
+  int solar_1D_profile;
+
 } cs_atmo_option_t;
 
 /*----------------------------------------------------------------------------

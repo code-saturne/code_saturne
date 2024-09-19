@@ -221,20 +221,8 @@ coeff3 = zero
 ! ----------------------------
 
 ! iatra1 -->  flag for the use of the 1d atmo radiative model
-! nfatr1 --> 1d radiative model pass frequency
-! iqv0   --> flag for humidity above the domain (0 : no humidity; 1 : decreasing)
 
 iatra1 = 0
-nfatr1 = 1
-iqv0 = 0
-
-!  -------------------------------------------------------------------------------
-!  Microphysics parameterization options
-!  -------------------------------------------------------------------------------
-
-! logaritmic standard deviation of the log-normal law of the droplet spectrum
-! adimensional
-sigc = 0.53 ! other referenced values are 0.28, 0.15
 
 call atmo_init_imbrication()
 
