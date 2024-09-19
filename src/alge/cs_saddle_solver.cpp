@@ -2451,14 +2451,18 @@ cs_saddle_solver_m11_inv_lumped(cs_saddle_solver_t     *solver,
   cs_param_sles_t  *slesp = cs_param_saddle_get_xtra_sles_param(solver->param);
   assert(slesp != nullptr);
 
+  /* Normalization of rhs */
+
+  const double  normalization = sqrt(1.0*b11_size);
+
   /* Solve m11.x = 1 */
 
   *n_iter = cs_cdo_solve_scalar_system(b11_size,
                                        slesp,
                                        m11,
                                        b11_rset,
-                                       1,     /* no normalization */
-                                       false, /* rhs_redux --> already done */
+                                       normalization,
+                                       false, /* No need for rhs reducing */
                                        xtra_sles,
                                        inv_lumped_m11,
                                        rhs);
