@@ -31,7 +31,6 @@
  *----------------------------------------------------------------------------*/
 
 #include <assert.h>
-#include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -315,14 +314,11 @@ _convert_to_offset(const unsigned char  buf[],
       val[i] = ((const unsigned long long *)buf)[i];
   }
   else
-    bft_error(__FILE__,
-              __LINE__,
-              0,
+    bft_error(__FILE__, __LINE__, 0,
               "Compilation configuration / porting error:\n"
               "Unable to determine a 64-bit unsigned int type.\n"
               "size_t is %lu bits, unsigned long long %lu bits",
-              sizeof(size_t) * 8,
-              sizeof(unsigned long long) * 8);
+              sizeof(size_t)*8, sizeof(unsigned long long)*8);
 
 #endif
 }
@@ -359,14 +355,11 @@ _convert_from_offset(unsigned char         buf[],
       ((unsigned long long *)buf)[i] = val[i];
   }
   else
-    bft_error(__FILE__,
-              __LINE__,
-              0,
+    bft_error(__FILE__, __LINE__, 0,
               "Compilation configuration / porting error:\n"
               "Unable to determine a 64-bit unsigned int type.\n"
               "size_t is %lu bits, unsigned long long %lu bits",
-              sizeof(size_t) * 8,
-              sizeof(unsigned long long) * 8);
+              sizeof(size_t)*8, sizeof(unsigned long long)*8);
 
 #endif
 }
@@ -1022,7 +1015,7 @@ _echo_header(const char     *sec_name,
       type_name = _type_name_r8;
       break;
     default:
-      bft_error(__FILE__, __LINE__, errno, _("Incorrect type"));
+      bft_error(__FILE__, __LINE__, 0, _("Incorrect type"));
       type_name = _type_name_none;
     }
 
@@ -1105,53 +1098,62 @@ _echo_data(size_t          echo,
      for different cases. */
 
   do {
+
     switch (elt_type) {
-      case CS_INT32:
-      case CS_INT64: {
+
+    case CS_INT32:
+    case CS_INT64:
+      {
         const cs_lnum_t *_elts = static_cast<const cs_lnum_t *>(elts);
 
         for (i = echo_start; i < echo_end; i++)
           bft_printf("    %10llu : %12ld\n",
                      (unsigned long long)(i + num_shift),
                      (long)*(_elts + i));
-      } break;
+      }
+      break;
 
-      case CS_UINT32:
-      case CS_UINT64: {
+    case CS_UINT32:
+    case CS_UINT64:
+      {
         const cs_gnum_t *_elts = static_cast<const cs_gnum_t *>(elts);
 
         for (i = echo_start; i < echo_end; i++)
           bft_printf("    %10llu : %12llu\n",
                      (unsigned long long)(i + num_shift),
                      (unsigned long long)*(_elts + i));
-      } break;
+      }
+      break;
 
-      case CS_FLOAT:
-      case CS_DOUBLE: {
+    case CS_FLOAT:
+    case CS_DOUBLE:
+      {
         const cs_real_t *_elts = static_cast<const cs_real_t *>(elts);
 
         for (i = echo_start; i < echo_end; i++)
           bft_printf("    %10llu : %12.5e\n",
-                     (unsigned long long)(i + num_shift),
-                     *(_elts + i));
-      } break;
+                     (unsigned long long)(i + num_shift), *(_elts + i));
+      }
+      break;
 
-      case CS_CHAR: {
+    case CS_CHAR:
+      {
         const char *_elts = static_cast<const char *>(elts);
 
         for (i = echo_start; i < echo_end; i++) {
           if (*(_elts + i) != '\0')
             bft_printf("    %10llu : '%c'\n",
-                       (unsigned long long)(i + num_shift),
-                       *(_elts + i));
+                       (unsigned long long)(i + num_shift), *(_elts + i));
           else
             bft_printf("    %10llu : '\\0'\n",
                        (unsigned long long)(i + num_shift));
         }
-      } break;
+      }
+      break;
 
-      default:
-        bft_error(__FILE__, __LINE__, errno, _("Incorrect type"));
+    default:
+      bft_error(__FILE__, __LINE__, 0, _("Incorrect type"));
+
     }
 
     if (echo_end < (cs_file_off_t)_n_elts) {
@@ -1203,7 +1205,9 @@ _cs_io_convert_read(void           *buffer,
      for different cases. */
 
   switch(dest_type) {
-    case CS_INT32: {
+
+  case CS_INT32:
+    {
       int32_t *_dest = static_cast<int32_t *>(dest);
 
       if (buffer_type == CS_INT32) {
@@ -1226,9 +1230,11 @@ _cs_io_convert_read(void           *buffer,
         for (ii = 0; ii < n_elts; ii++)
           _dest[ii] = _buffer[ii];
       }
-    } break;
+    }
+    break;
 
-    case CS_INT64: {
+  case CS_INT64:
+    {
       int64_t *_dest = static_cast<int64_t *>(dest);
 
       if (buffer_type == CS_INT32) {
@@ -1251,9 +1257,11 @@ _cs_io_convert_read(void           *buffer,
         for (ii = 0; ii < n_elts; ii++)
           _dest[ii] = _buffer[ii];
       }
-    } break;
+    }
+    break;
 
-    case CS_UINT32: {
+  case CS_UINT32:
+    {
       uint32_t *_dest = static_cast<uint32_t *>(dest);
 
       if (buffer_type == CS_INT32) {
@@ -1276,9 +1284,11 @@ _cs_io_convert_read(void           *buffer,
         for (ii = 0; ii < n_elts; ii++)
           _dest[ii] = _buffer[ii];
       }
-    } break;
+    }
+    break;
 
-    case CS_UINT64: {
+  case CS_UINT64:
+    {
       uint64_t *_dest = static_cast<uint64_t *>(dest);
 
       if (buffer_type == CS_INT32) {
@@ -1301,9 +1311,11 @@ _cs_io_convert_read(void           *buffer,
         for (ii = 0; ii < n_elts; ii++)
           _dest[ii] = _buffer[ii];
       }
-    } break;
+    }
+    break;
 
-    case CS_FLOAT: {
+  case CS_FLOAT:
+    {
       cs_real_t *_dest   = static_cast<cs_real_t *>(dest);
       double    *_buffer = static_cast<double *>(buffer);
 
@@ -1311,9 +1323,11 @@ _cs_io_convert_read(void           *buffer,
 
       for (ii = 0; ii < n_elts; ii++)
         _dest[ii] = _buffer[ii];
-    } break;
+    }
+    break;
 
-    case CS_DOUBLE: {
+  case CS_DOUBLE:
+    {
       cs_real_t *_dest   = static_cast<cs_real_t *>(dest);
       float     *_buffer = static_cast<float *>(buffer);
 
@@ -1321,10 +1335,12 @@ _cs_io_convert_read(void           *buffer,
 
       for (ii = 0; ii < n_elts; ii++)
         _dest[ii] = _buffer[ii];
-    } break;
+    }
+    break;
 
-    default:
-      bft_error(__FILE__, __LINE__, errno, _("Incorrect type"));
+  default:
+    bft_error(__FILE__, __LINE__, 0, _("Incorrect type"));
+
   }
 }
 
@@ -2895,8 +2911,11 @@ cs_io_read_index_block(cs_io_sec_header_t  *header,
 
   }
 
-  retval = static_cast<cs_gnum_t *>(
-    _cs_io_read_body(header, _global_num_start, _global_num_end, elts, cs_io));
+  retval = static_cast<cs_gnum_t *>(_cs_io_read_body(header,
+                                                     _global_num_start,
+                                                     _global_num_end,
+                                                     elts,
+                                                     cs_io));
 
   /* Ensure element value initialized in case of empty block */
 
