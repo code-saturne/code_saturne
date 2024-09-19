@@ -205,20 +205,6 @@ cs_time_stepping(void)
   /* Initialization
      -------------- */
 
-  /* Probes output tracking */
-  //cs_real_t ttchis = -1.0; unused
-
-  /* Test presence of control_file to modify nt_max if required */
-
-  int ntmsav = ts->nt_max;
-
-  cs_control_check_file();
-
-  if (idtvar == 1 && ntmsav > ts->nt_max && ts->nt_max == ts->nt_cur) {
-    if (cs_coupling_is_sync_active())
-      ts->nt_max++;
-  }
-
   /* Define timer stats based on options */
 
   int lagr_stats_id = -1;
@@ -236,9 +222,6 @@ cs_time_stepping(void)
      ----------------------------- */
 
   cs_turb_init_ref_quantities();
-
-  /* First pass for every subroutine requiring pass count */
-  int iappel = 1;
 
   /* Zone definition for head-loss, mass sources term,
      condensation sources term and 1D-wall module
@@ -275,7 +258,7 @@ cs_time_stepping(void)
   /* Condensation mass source terms
      ------------------------------ */
 
-  cs_user_wall_condensation(iappel);
+  cs_user_wall_condensation(1);
 
   /* Total number of cells with condensation source term */
   const cs_lnum_t nftcdt = cs_glob_wall_condensation->nfbpcd;
@@ -305,7 +288,7 @@ cs_time_stepping(void)
     isuit1 = 0;
 
   cs_1d_wall_thermal_create();
-  cs_user_1d_wall_thermal(iappel);
+  cs_user_1d_wall_thermal(1);
 
   cs_get_glob_1d_wall_thermal()->nfpt1t = cs_glob_1d_wall_thermal->nfpt1d;
   if (cs_glob_rank_id > -1)
@@ -324,7 +307,7 @@ cs_time_stepping(void)
 
   }
 
-  cs_1d_wall_thermal_check(iappel);
+  cs_1d_wall_thermal_check(1);
 
   /* Memory management
      ----------------- */
@@ -417,6 +400,17 @@ cs_time_stepping(void)
 
     cs_timer_stats_stop(restart_stats_id);
 
+  }
+
+  /* Test presence of control_file to modify nt_max if required */
+
+  int ntmsav = ts->nt_max;
+
+  cs_control_check_file();
+
+  if (idtvar == 1 && ntmsav > ts->nt_max && ts->nt_max == ts->nt_cur) {
+    if (cs_coupling_is_sync_active())
+      ts->nt_max++;
   }
 
   /* Compute the porosity if needed */
