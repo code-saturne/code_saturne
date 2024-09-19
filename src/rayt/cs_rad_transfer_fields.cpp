@@ -176,7 +176,7 @@ cs_rad_transfer_add_property_fields(void)
   const int keyvis = cs_field_key_id("post_vis");
   const int keylog = cs_field_key_id("log");
 
-  cs_field_t *f = NULL;
+  cs_field_t *f = nullptr;
 
   int field_type = CS_FIELD_INTENSIVE | CS_FIELD_PROPERTY;
   int location_id = CS_MESH_LOCATION_CELLS;
@@ -468,7 +468,7 @@ cs_rad_transfer_add_property_fields(void)
   /* Albedo Fields for atmospheric diFfuse Solar (FS) model */
   if (rt_params->atmo_model & CS_RAD_ATMO_3D_DIFFUSE_SOLAR) {
     f = cs_field_by_name_try("boundary_albedo");
-    if (f == NULL) {
+    if (f == nullptr) {
       f = cs_field_create("boundary_albedo",
                           field_type,
                           location_id,
@@ -483,7 +483,7 @@ cs_rad_transfer_add_property_fields(void)
 
   {
     f = cs_field_by_name_try("boundary_temperature");
-    if (f == NULL)
+    if (f == nullptr)
       f = cs_parameters_add_boundary_temperature();
 
     if (!cs_field_is_key_set(f, keylog))
@@ -538,7 +538,7 @@ cs_rad_transfer_add_property_fields(void)
 
   {
     f = cs_field_by_name_try("emissivity");
-    if (f == NULL)
+    if (f == nullptr)
       f = cs_field_create("emissivity",
                           field_type,
                           location_id,

@@ -116,7 +116,7 @@ cs_rad_transfer_options(void)
 
   /* -> For pulverized coal combustion:   */
 
-  if (cs_glob_coal_model != NULL) {
+  if (cs_glob_coal_model != nullptr) {
     rt_params->nrphas += cs_glob_coal_model->nclacp;
   }
 

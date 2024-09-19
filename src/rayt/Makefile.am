@@ -92,20 +92,20 @@ cs_rad_headers.h
 
 noinst_LIBRARIES = libcsrayt.a
 libcsrayt_a_SOURCES = \
-cs_rad_transfer_absorption.c \
-cs_rad_transfer.c \
-cs_rad_transfer_dir.c \
-cs_rad_transfer_fields.c \
-cs_rad_transfer_options.c \
-cs_rad_transfer_bcs.c \
-cs_rad_transfer_wall_flux.c \
-cs_rad_transfer_fsck.c \
-cs_rad_transfer_adf_models.c \
-cs_rad_transfer_pun.c \
-cs_rad_transfer_solve.c \
-cs_rad_transfer_modak.c \
-cs_rad_transfer_source_terms.c \
-cs_rad_transfer_restart.c
+cs_rad_transfer_absorption.cpp \
+cs_rad_transfer.cpp \
+cs_rad_transfer_dir.cpp \
+cs_rad_transfer_fields.cpp \
+cs_rad_transfer_options.cpp \
+cs_rad_transfer_bcs.cpp \
+cs_rad_transfer_wall_flux.cpp \
+cs_rad_transfer_fsck.cpp \
+cs_rad_transfer_adf_models.cpp\
+cs_rad_transfer_pun.cpp \
+cs_rad_transfer_solve.cpp \
+cs_rad_transfer_modak.cpp \
+cs_rad_transfer_source_terms.cpp \
+cs_rad_transfer_restart.cpp
 
 # Rules for CUDA (not known by Automake)
 

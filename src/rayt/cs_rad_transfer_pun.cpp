@@ -156,7 +156,7 @@ cs_rad_transfer_pun(int                          iband,
   const cs_real_t stephn = cs_physical_constants_stephan;
 
   /* Pointer to the spectral flux density field */
-  cs_field_t *f_qinspe = NULL;
+  cs_field_t *f_qinspe = nullptr;
   if (cs_glob_rad_transfer_params->imoadf >= 1)
     f_qinspe = cs_field_by_name_try("spectral_rad_incident_flux");
 
@@ -236,22 +236,21 @@ cs_rad_transfer_pun(int                          iband,
                                      viscb,
                                      viscf,
                                      viscb,
-                                     NULL,
-                                     NULL,
-                                     NULL,
+                                     nullptr,
+                                     nullptr,
+                                     nullptr,
                                      icvflb,
-                                     NULL,
+                                     nullptr,
                                      rovsdt,
                                      smbrs,
                                      theta4,
                                      dpvar,
-                                     NULL,
-                                     NULL);
+                                     nullptr,
+                                     nullptr);
 
   /* Radiative flux density Q */
 
   int inc = 1;
-  int imligp =  -1;
   int iwarnp = cs_glob_rad_transfer_params->verbosity;
   cs_real_t epsrgp = 1e-08;
   cs_real_t climgp = 1.5;
@@ -274,14 +273,14 @@ cs_rad_transfer_pun(int                          iband,
                      hyd_p_flag,
                      1,             /* w_stride */
                      iwarnp,
-                     imligp,
+                     CS_GRADIENT_LIMIT_NONE,
                      epsrgp,
                      climgp,
-                     NULL,
+                     nullptr,
                      bc_coeffs,
                      theta4,
-                     NULL,
-                     NULL, /* internal coupling */
+                     nullptr,
+                     nullptr, /* internal coupling */
                      q);
 
   cs_real_t aa = - stephn * 4.0 / 3.0;

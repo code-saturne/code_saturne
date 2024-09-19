@@ -125,7 +125,7 @@ cs_rad_transfer_absorption(const cs_real_t  tempk[],
                            cs_real_t        agas[],
                            cs_real_t        agasb[])
 {
-  cs_real_t *w1 = NULL, *w2 = NULL, *w3 = NULL;
+  cs_real_t *w1 = nullptr, *w2 = nullptr, *w3 = nullptr;
 
   const cs_mesh_t *m = cs_glob_mesh;
   const int n_cells = m->n_cells;
@@ -175,13 +175,13 @@ cs_rad_transfer_absorption(const cs_real_t  tempk[],
       const cs_real_t xsoot = cm->xsoot;
       const cs_real_t rosoot = cm->rosoot;
 
-      const cs_real_t *cvar_fsm = NULL;
+      const cs_real_t *cvar_fsm = nullptr;
       if (cm->isoot >= 1)
         cvar_fsm = CS_F_(fsm)->val;
 
       // If we are in multiphase, we get the first temperature field
       const cs_real_t *cpro_temp;
-      if (CS_F_(t) != NULL)
+      if (CS_F_(t) != nullptr)
         cpro_temp = CS_F_(t)->val;
       else
         cpro_temp = CS_FI_(t,0)->val;
@@ -239,7 +239,7 @@ cs_rad_transfer_absorption(const cs_real_t  tempk[],
         snprintf(f_name, 63, "spectral_absorption_coeff_%2d", gg_id + 1);
         cs_field_t *f_kgabs = cs_field_by_name_try(f_name);
 
-        if (f_kgabs != NULL)
+        if (f_kgabs != nullptr)
           for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++)
             kgas[n_cells*gg_id + cell_id] = f_kgabs->val[cell_id];
       }
@@ -251,7 +251,7 @@ cs_rad_transfer_absorption(const cs_real_t  tempk[],
     }
   }
 
-  else if (cs_glob_coal_model != NULL) {
+  else if (cs_glob_coal_model != nullptr) {
 
     cs_coal_model_t  *cm = cs_glob_coal_model;
 
@@ -308,7 +308,7 @@ cs_rad_transfer_absorption(const cs_real_t  tempk[],
 
   /* Coal combustion */
 
-  if (cs_glob_coal_model != NULL) {
+  if (cs_glob_coal_model != nullptr) {
 
     cs_coal_model_t  *cm = cs_glob_coal_model;
 
@@ -355,7 +355,7 @@ cs_rad_transfer_absorption(const cs_real_t  tempk[],
        directly when reading "dp_elec" (or read no such values, in
        which case the default initialization to zero stands). */
 
-    if (CS_F_(radsc) != NULL) {
+    if (CS_F_(radsc) != nullptr) {
 
       cs_real_t *cpro_radsc = CS_F_(radsc)->val;
 
@@ -383,7 +383,7 @@ cs_rad_transfer_absorption(const cs_real_t  tempk[],
 
     /* Absorption coefficient for a gas/coal particles mix */
 
-    if (cs_glob_coal_model != NULL) {
+    if (cs_glob_coal_model != nullptr) {
 
       cs_coal_model_t  *cm = cs_glob_coal_model;
 

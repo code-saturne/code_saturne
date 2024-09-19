@@ -75,7 +75,7 @@ BEGIN_C_DECLS
  * Additional Doxygen documentation
  *============================================================================*/
 
-/* \file cs_rad_transfer_adf_models.c.f90 */
+/* \file cs_rad_transfer_adf_models.c */
 
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
 
@@ -86,18 +86,18 @@ BEGIN_C_DECLS
 /* Common statics */
 static int  ntsto = 0;
 static int  ipass = 0;
-static cs_real_t *tsto = NULL;
-static cs_real_t *asto = NULL;
-static cs_real_t *ksto2 = NULL;
+static cs_real_t *tsto = nullptr;
+static cs_real_t *asto = nullptr;
+static cs_real_t *ksto2 = nullptr;
 
 /* ADF08 model specifics */
 static int        nysto = 0;
-static cs_real_t *ysto = NULL;
+static cs_real_t *ysto = nullptr;
 
 /* ADF50 model specifics */
 static int        nxh2osto = 0;
-static cs_real_t *xh2osto = NULL;
-static cs_real_t *ksto1 = NULL;
+static cs_real_t *xh2osto = nullptr;
+static cs_real_t *ksto1 = nullptr;
 
 /*----------------------------------------------------------------------------*/
 /*!

@@ -132,7 +132,7 @@ _set_internal_coupling_bcs(cs_internal_coupling_t  *cpl,
 
   cs_lnum_t  n_local = 0, n_distant = 0;
   bool have_unset = false;
-  const cs_lnum_t *faces_local = NULL, *faces_distant = NULL;
+  const cs_lnum_t *faces_local = nullptr, *faces_distant = nullptr;
 
   cs_internal_coupling_coupled_faces(cpl,
                                      &n_local,
@@ -150,7 +150,7 @@ _set_internal_coupling_bcs(cs_internal_coupling_t  *cpl,
   }
 
   if (have_unset) {
-    int *is_solid = NULL;
+    int *is_solid = nullptr;
 
     if (n_distant > 0) {
       cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
@@ -206,7 +206,7 @@ _sync_rad_bc_err(cs_gnum_t  nerloc[],
       cs_parall_max(1, CS_INT_TYPE, &irkerr);
 
 
-      if (rvferr != NULL) {
+      if (rvferr != nullptr) {
         cs_parall_bcast(irkerr, nerrcd, CS_DOUBLE, rvferr);
         cs_parall_bcast(irkerr, 1, CS_INT_TYPE, znferr);
       }
@@ -327,12 +327,12 @@ cs_rad_transfer_bcs(int bc_type[])
 
   cs_field_t *f_hgas = cs_field_by_name_try("x_c_h");
 
-  int *hg_icodcl = NULL;
-  cs_real_t *hg_rcodcl1 = NULL;
-  cs_real_t *hg_rcodcl2 = NULL;
-  cs_real_t *hg_rcodcl3 = NULL;
+  int *hg_icodcl = nullptr;
+  cs_real_t *hg_rcodcl1 = nullptr;
+  cs_real_t *hg_rcodcl2 = nullptr;
+  cs_real_t *hg_rcodcl3 = nullptr;
 
-  if (f_hgas != NULL) {
+  if (f_hgas != nullptr) {
     hg_icodcl = f_hgas->bc_coeffs->icodcl;
     hg_rcodcl1 = f_hgas->bc_coeffs->rcodcl1;
     hg_rcodcl2 = f_hgas->bc_coeffs->rcodcl2;
@@ -440,17 +440,17 @@ cs_rad_transfer_bcs(int bc_type[])
 
   /* Internal coupling settings */
   if (cs_internal_coupling_n_couplings() > 0) {
-    cs_internal_coupling_t *cpl = NULL;
+    cs_internal_coupling_t *cpl = nullptr;
 
     cs_field_t *tf = cs_thermal_model_field();
-    if (tf != NULL) {
+    if (tf != nullptr) {
       const int coupling_key_id = cs_field_key_id("coupling_entity");
       int coupling_id = cs_field_get_key_int(tf, coupling_key_id);
       if (coupling_id >= 0)
         cpl = cs_internal_coupling_by_id(coupling_id);
     }
 
-    if (cpl != NULL)
+    if (cpl != nullptr)
       _set_internal_coupling_bcs(cpl,
                                  isothm,
                                  f_bxlam->val,
@@ -640,7 +640,7 @@ cs_rad_transfer_bcs(int bc_type[])
 
   if (iok != 0) {
 
-    _sync_rad_bc_err(&nrferr[2], 1, &icoerr[2], NULL);
+    _sync_rad_bc_err(&nrferr[2], 1, &icoerr[2], nullptr);
     if (nrferr[2] > 0) {
       cs_log_printf(CS_LOG_DEFAULT,
                     _("\n%s\n\n"
@@ -652,7 +652,7 @@ cs_rad_transfer_bcs(int bc_type[])
                     icoerr[2]);
     }
 
-    _sync_rad_bc_err(&nrferr[3], 1, &icoerr[3], NULL);
+    _sync_rad_bc_err(&nrferr[3], 1, &icoerr[3], nullptr);
     if (nrferr[3] > 0) {
       cs_log_printf(CS_LOG_DEFAULT,
                     _("\n%s\n\n"
@@ -755,7 +755,7 @@ cs_rad_transfer_bcs(int bc_type[])
                     rvferr[25]);
     }
 
-    _sync_rad_bc_err(&nrferr[8], 2, &icoerr[9], NULL);
+    _sync_rad_bc_err(&nrferr[8], 2, &icoerr[9], nullptr);
     if (nrferr[8] > 0) {
       cs_log_printf(CS_LOG_DEFAULT,
                     _("\n%s\n\n"
@@ -846,7 +846,7 @@ cs_rad_transfer_bcs(int bc_type[])
                     rvferr[24]);
     }
 
-    cs_boundary_conditions_error(bc_type, NULL);
+    cs_boundary_conditions_error(bc_type, nullptr);
 
   }
 
@@ -873,32 +873,32 @@ cs_rad_transfer_bcs(int bc_type[])
         else
           th_icodcl[face_id] = icodw*sgn;
       }
-      if (f_hgas != NULL)
+      if (f_hgas != nullptr)
         hg_icodcl[face_id] = icodw;
     }
 
     else if (rad_bc_code == CS_BOUNDARY_RAD_WALL_GRAY_EXTERIOR_T) {
       th_icodcl[face_id]   = icodw;
-      if (f_hgas != NULL)
+      if (f_hgas != nullptr)
         hg_icodcl[face_id] = icodw;
     }
 
     else if (rad_bc_code == CS_BOUNDARY_RAD_WALL_REFL_EXTERIOR_T) {
       th_icodcl[face_id]   = icodw;
-      if (f_hgas != NULL)
+      if (f_hgas != nullptr)
         hg_icodcl[face_id] = icodw;
       f_beps->val[face_id]     = 0.0;
     }
 
     else if (rad_bc_code == CS_BOUNDARY_RAD_WALL_GRAY_COND_FLUX) {
       th_icodcl[face_id]   = icodw;
-      if (f_hgas != NULL)
+      if (f_hgas != nullptr)
         hg_icodcl[face_id] = icodw;
     }
 
     else if (rad_bc_code == CS_BOUNDARY_RAD_WALL_REFL_COND_FLUX) {
       th_icodcl[face_id]   = 3;
-      if (f_hgas != NULL)
+      if (f_hgas != nullptr)
         hg_icodcl[face_id] = 3;
       f_beps->val[face_id]     = 0.0;
     }
@@ -910,7 +910,7 @@ cs_rad_transfer_bcs(int bc_type[])
   if (thermal_variable == CS_THERMAL_MODEL_TEMPERATURE) {
 
     cs_field_t *f_temp = CS_F_(t);
-    if (f_temp == NULL)
+    if (f_temp == nullptr)
       f_temp = CS_FI_(t, 0);
 
     cs_real_t *cval_t = f_temp->val;
@@ -1027,7 +1027,7 @@ cs_rad_transfer_bcs(int bc_type[])
     cs_lnum_t *lstfac;
     BFT_MALLOC(lstfac, n_b_faces, cs_lnum_t);
 
-    cs_real_t *wall_enth = NULL, *ext_enth = NULL;
+    cs_real_t *wall_enth = nullptr, *ext_enth = nullptr;
     BFT_MALLOC(wall_enth, n_b_faces, cs_real_t);
     for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++)
       wall_enth[face_id] = 0.;
@@ -1068,7 +1068,7 @@ cs_rad_transfer_bcs(int bc_type[])
 
     for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++) {
       if (isothm[face_id] == CS_BOUNDARY_RAD_WALL_GRAY) {
-        if (f_hgas != NULL) {
+        if (f_hgas != nullptr) {
           hg_rcodcl1[face_id] = wall_enth[face_id];
           hg_rcodcl2[face_id] = cs_math_infinite_r;
           hg_rcodcl3[face_id] = 0.0;
@@ -1083,7 +1083,7 @@ cs_rad_transfer_bcs(int bc_type[])
         th_rcodcl2[face_id] = cs_math_infinite_r;
         th_rcodcl3[face_id] = 0.0;
 
-        if (f_hgas != NULL) {
+        if (f_hgas != nullptr) {
           hg_rcodcl1[face_id] = wall_enth[face_id];
           hg_rcodcl2[face_id] = cs_math_infinite_r;
           hg_rcodcl3[face_id] = 0.0;
@@ -1094,7 +1094,7 @@ cs_rad_transfer_bcs(int bc_type[])
         /* hext  */
         th_rcodcl2[face_id] = f_bxlam->val[face_id] / f_bepa->val[face_id];
         th_rcodcl3[face_id] = 0.0;
-        if (f_hgas != NULL) {
+        if (f_hgas != nullptr) {
           hg_rcodcl1[face_id] = ext_enth[face_id];
           hg_rcodcl2[face_id] = f_bxlam->val[face_id] / f_bepa->val[face_id];
           hg_rcodcl3[face_id] = 0.0;
@@ -1104,7 +1104,7 @@ cs_rad_transfer_bcs(int bc_type[])
         th_icodcl[face_id] = 3;
         th_rcodcl1[face_id] = 0.0;
         th_rcodcl2[face_id] = cs_math_infinite_r;
-        if (f_hgas != NULL) {
+        if (f_hgas != nullptr) {
           hg_icodcl[face_id] = 3;
           hg_rcodcl1[face_id] = 0.0;
           hg_rcodcl2[face_id] = cs_math_infinite_r;
@@ -1163,10 +1163,10 @@ cs_rad_transfer_bcs(int bc_type[])
  *   2/ Free boundary: condition to mimic infinite domain
  *
  * \param[in]  bc_type         boundary face types
- * \param[in]  vect_s          direction vector or NULL
+ * \param[in]  vect_s          direction vector or nullptr
  * \param[in]  ckmel           Absoprtion coefficcient of the mixture
- *                             gas-particules of coal or NULL
- * \param[in]  bpro_eps        Boundary emissivity, or NULL for solar radiation
+ *                             gas-particules of coal or nullptr
+ * \param[in]  bpro_eps        Boundary emissivity, or nullptr for solar radiation
  * \param[in]  w_gg            Weights of the i-th gray gas at boundaries
  * \param[in]  gg_id           number of the i-th grey gas
  * \param[out] bc_coeffs       boundary conditions structure for
@@ -1197,9 +1197,9 @@ cs_rad_transfer_bc_coeffs(int                   bc_type[],
   /* Pointer to the spectral flux density field */
   cs_field_t *f_qinspe = cs_field_by_name_try("spectral_rad_incident_flux");
 
-  cs_real_t *q_incid = NULL;
+  cs_real_t *q_incid = nullptr;
   cs_lnum_t stride = 1;
-  if (f_qinspe != NULL) {
+  if (f_qinspe != nullptr) {
     q_incid = f_qinspe->val;
     stride = f_qinspe->dim;
   }
@@ -1288,7 +1288,7 @@ cs_rad_transfer_bc_coeffs(int                   bc_type[],
          * if the normal to the face is colinear to the direction
          * or if coupled to a 1D module (Atmospheric module)
          * (warning: the treatment is different from than of P-1 model) */
-        if (vect_s != NULL) {
+        if (vect_s != nullptr) {
           cs_real_t normal[3];
           cs_math_3_normalize(b_face_normal[face_id], normal);
           cs_real_t vs_dot_n = cs_math_3_dot_product(vect_s, normal);
@@ -1334,7 +1334,7 @@ cs_rad_transfer_bc_coeffs(int                   bc_type[],
         /* Remember: In case of the usage of the standard radiation
            models of code_saturne, w_gg=1  */
         cs_real_t pimp;
-        if (bpro_eps != NULL)
+        if (bpro_eps != nullptr)
           pimp = bpro_eps[face_id] * stephn * cs_math_pow4(twall)
                  * onedpi * w_gg[face_id + gg_id * n_b_faces]
                + (1.0 - bpro_eps[face_id]) * qpatmp * onedpi;
@@ -1420,7 +1420,7 @@ cs_rad_transfer_bc_coeffs(int                   bc_type[],
     }
   }
 
-  cs_boundary_conditions_error(bc_type, NULL);
+  cs_boundary_conditions_error(bc_type, nullptr);
 
   /* --> Check radiance boundary conditions arrays
    *     In the case of the P-1 approximation, the value of coefap can be

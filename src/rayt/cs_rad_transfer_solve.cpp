@@ -232,7 +232,7 @@ _order_by_direction(void)
 
   const cs_lnum_t n_cells = m->n_cells;
   const cs_real_3_t *restrict cell_cen
-    = (const cs_real_3_t *restrict)fvq->cell_cen;
+    = (const cs_real_3_t *)fvq->cell_cen;
 
   int kdir = 0;
 
@@ -256,7 +256,7 @@ _order_by_direction(void)
 
           cs_sles_t *sles = cs_sles_find(-1, name);
 
-          if (sles == NULL) {
+          if (sles == nullptr) {
 
             if (cs_glob_rad_transfer_params->dispersion == false) {
 
@@ -349,23 +349,23 @@ _order_by_direction(void)
 /*----------------------------------------------------------------------------*/
 
 static void
-_cs_rad_transfer_sol(int                        gg_id,
-                     cs_real_t                  w_gg[],
-                     const cs_real_t            tempk[restrict],
-                     const cs_real_t            ckg[restrict],
-                     int                        bc_type[],
-                     cs_field_bc_coeffs_t      *bc_coeffs_rad,
-                     cs_real_t        *restrict flurds,
-                     cs_real_t        *restrict flurdb,
-                     cs_real_t        *restrict viscf,
-                     cs_real_t        *restrict viscb,
-                     cs_real_t        *restrict rhs,
-                     cs_real_t        *restrict rovsdt,
-                     cs_real_3_t      *restrict q,
-                     cs_real_t        *restrict int_rad_domega,
-                     cs_real_t        *restrict int_abso,
-                     cs_real_t        *restrict int_emi,
-                     cs_real_t        *restrict int_rad_ist)
+_cs_rad_transfer_sol(int       gg_id,
+                     cs_real_t w_gg[],
+                     const cs_real_t *restrict tempk,
+                     const cs_real_t *restrict ckg,
+                     int                   bc_type[],
+                     cs_field_bc_coeffs_t *bc_coeffs_rad,
+                     cs_real_t *restrict flurds,
+                     cs_real_t *restrict flurdb,
+                     cs_real_t *restrict viscf,
+                     cs_real_t *restrict viscb,
+                     cs_real_t *restrict rhs,
+                     cs_real_t *restrict rovsdt,
+                     cs_real_3_t *restrict q,
+                     cs_real_t *restrict int_rad_domega,
+                     cs_real_t *restrict int_abso,
+                     cs_real_t *restrict int_emi,
+                     cs_real_t *restrict int_rad_ist)
 {
   cs_lnum_t n_b_faces = cs_glob_mesh->n_b_faces;
   cs_lnum_t n_i_faces  = cs_glob_mesh->n_i_faces;
@@ -404,7 +404,7 @@ _cs_rad_transfer_sol(int                        gg_id,
   cs_real_t *rhs0, *dpvar;
   cs_real_t *radiance = CS_FI_(radiance, gg_id)->val;
   cs_real_t *radiance_prev = CS_FI_(radiance, gg_id)->val_pre;
-  cs_real_t *ck_u_d = NULL;
+  cs_real_t *ck_u_d = nullptr;
   BFT_MALLOC(rhs0,  n_cells_ext, cs_real_t);
   BFT_MALLOC(dpvar, n_cells_ext, cs_real_t);
 
@@ -427,9 +427,9 @@ _cs_rad_transfer_sol(int                        gg_id,
 
   /* Upwards/Downwards atmospheric integration */
   /* Postprocessing atmospheric upwards and downwards flux */
-  cs_field_t *f_up = NULL, *f_down = NULL;
-  cs_real_t *ck_u = NULL, *ck_d = NULL;
-  cs_real_t *w0 = NULL, *g_apc = NULL;
+  cs_field_t *f_up = nullptr, *f_down = nullptr;
+  cs_real_t *ck_u = nullptr, *ck_d = nullptr;
+  cs_real_t *w0 = nullptr, *g_apc = nullptr;
 
   if (rt_params->atmo_model != CS_RAD_ATMO_3D_NONE) {
     f_up = cs_field_by_name_try("rad_flux_up");
@@ -503,7 +503,7 @@ _cs_rad_transfer_sol(int                        gg_id,
     stride = rt_params->nwsgg;
 
   /* Pointer to the spectral flux density field */
-  cs_field_t *f_qinspe = NULL;
+  cs_field_t *f_qinspe = nullptr;
   if (   rt_params->imoadf >= 1
       || rt_params->imfsck >= 1
       || rt_params->atmo_model != CS_RAD_ATMO_3D_NONE)
@@ -614,7 +614,7 @@ _cs_rad_transfer_sol(int                        gg_id,
           /* Update boundary condition coefficients
            * Note: In Atmo, emissivity is usefull only for InfraRed
            * */
-          cs_real_t *bpro_eps = NULL;
+          cs_real_t *bpro_eps = nullptr;
           if ( rt_params->atmo_model == CS_RAD_ATMO_3D_NONE
               ||  gg_id == rt_params->atmo_ir_id)
             bpro_eps = cs_field_by_name("emissivity")->val;
@@ -622,7 +622,7 @@ _cs_rad_transfer_sol(int                        gg_id,
           if (rt_params->atmo_model != CS_RAD_ATMO_3D_NONE)
             cs_rad_transfer_bc_coeffs(bc_type,
                                       vect_s,
-                                      NULL, /* only useful for P1 */
+                                      nullptr, /* only useful for P1 */
                                       bpro_eps,
                                       w_gg,
                                       gg_id,
@@ -743,17 +743,17 @@ _cs_rad_transfer_sol(int                        gg_id,
                                              viscb,
                                              viscf,
                                              viscb,
-                                             NULL,
-                                             NULL,
-                                             NULL,
+                                             nullptr,
+                                             nullptr,
+                                             nullptr,
                                              0, /* icvflb (upwind) */
-                                             NULL,
+                                             nullptr,
                                              rovsdt,
                                              rhs,
                                              radiance,
                                              dpvar,
-                                             NULL,
-                                             NULL);
+                                             nullptr,
+                                             nullptr);
 
           cs_sles_pop(f_id);
 
@@ -817,13 +817,13 @@ _cs_rad_transfer_sol(int                        gg_id,
 
           /* Specific to Atmo (Direct Solar, diFfuse Solar, Infra Red) */
           if (cs_math_3_dot_product(cs_glob_physical_constants->gravity,
-                                    vect_s) < 0.0 && f_up != NULL) {
+                                    vect_s) < 0.0 && f_up != nullptr) {
             for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++)
               f_up->val[gg_id + cell_id * stride]
                 += radiance[cell_id] * domegat * vect_s[2];//FIXME S.g/||g||
           }
           else if (cs_math_3_dot_product(cs_glob_physical_constants->gravity,
-                                         vect_s) > 0.0 && f_down != NULL) {
+                                         vect_s) > 0.0 && f_down != nullptr) {
             for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++)
               f_down->val[gg_id + cell_id * stride]
                 += radiance[cell_id] * domegat * vect_s[2];
@@ -834,7 +834,7 @@ _cs_rad_transfer_sol(int                        gg_id,
   } /* End of loop over directions */
 
   /* Finalize spectral incident flux to boundary */
-  if (f_qinspe != NULL) {
+  if (f_qinspe != nullptr) {
 
     for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++)
       f_qinspe->val[gg_id + face_id * stride] = f_qincid->val[face_id];
@@ -906,10 +906,10 @@ _cs_rad_transfer_sol(int                        gg_id,
                cell_id, rad_estm[cell_id] *-86400.0
                / CS_F_(rho)->val[cell_id]
                / cs_glob_fluid_properties->cp0);
-    if (f_up != NULL)
+    if (f_up != nullptr)
       bft_printf("f_up[%d] = %f\n",
                  cell_id, f_up->val[cell_id]);
-    if (f_down != NULL)
+    if (f_down != nullptr)
       bft_printf("f_down[%d] = %f\n",
                  cell_id, f_down->val[cell_id]);
   }
@@ -1053,7 +1053,7 @@ _net_flux_internal_coupling_contribution(cs_internal_coupling_t  *cpl,
   cs_real_t *rad_estm = CS_FI_(rad_est, 0)->val;
 
   cs_lnum_t  n_local = 0, n_distant = 0;
-  const cs_lnum_t *faces_local = NULL, *faces_distant = NULL;
+  const cs_lnum_t *faces_local = nullptr, *faces_distant = nullptr;
 
   cs_internal_coupling_coupled_faces(cpl,
                                      &n_local,
@@ -1169,7 +1169,7 @@ cs_rad_transfer_solve(int  bc_type[])
 
   /* ADF model parameters */
   /* Irradiating spectral flux density */
-  cs_field_t *f_qinsp = NULL;
+  cs_field_t *f_qinsp = nullptr;
   if (   rt_params->imoadf >= 1
       || rt_params->imfsck >= 1)
     f_qinsp = cs_field_by_name("spectral_rad_incident_flux");
@@ -1225,7 +1225,7 @@ cs_rad_transfer_solve(int  bc_type[])
   cs_real_t *wq = rt_params->wq;
 
   /* FSCK model parameters */
-  if (wq == NULL) {
+  if (wq == nullptr) {
     /* Weight of the i-the Gaussian quadrature  */
     BFT_MALLOC(wq, nwsgg, cs_real_t);
     rt_params->wq = wq;
@@ -1270,7 +1270,7 @@ cs_rad_transfer_solve(int  bc_type[])
   cs_real_t *ckg = CS_FI_(rad_cak, 0)->val;
 
   /* Work arrays */
-  cs_real_t *int_abso = NULL, *int_emi, *int_rad_ist;
+  cs_real_t *int_abso = nullptr, *int_emi, *int_rad_ist;
   BFT_MALLOC(int_emi, n_cells_ext, cs_real_t);
   BFT_MALLOC(int_rad_ist, n_cells_ext, cs_real_t);
 
@@ -1368,7 +1368,7 @@ cs_rad_transfer_solve(int  bc_type[])
     /* val index to access, necessary for compatibility with neptune */
     cs_field_t *temp_field = cs_field_by_name_try("temperature");
     cs_real_t *cvara_scalt;
-    if (temp_field != NULL)
+    if (temp_field != nullptr)
       cvara_scalt = temp_field->vals[1];
     else
       cvara_scalt = CS_FI_(t, 0)->val;
@@ -1527,9 +1527,9 @@ cs_rad_transfer_solve(int  bc_type[])
     char f_name[64];
     snprintf(f_name, 63, "spectral_absorption_%02d", gg_id + 1);
     cs_field_t *f_abs  = cs_field_by_name_try(f_name);
-    if (f_abs != NULL)
+    if (f_abs != nullptr)
       int_abso = f_abs->val;
-    else if (int_abso == NULL)
+    else if (int_abso == nullptr)
       BFT_MALLOC(int_abso, n_cells_ext, cs_real_t);
 
     if (rt_params->imoadf >= 1 || rt_params->imfsck >= 1) {
@@ -1686,7 +1686,7 @@ cs_rad_transfer_solve(int  bc_type[])
       /* Update Boundary condition coefficients */
 
       cs_rad_transfer_bc_coeffs(bc_type,
-                                NULL, /* No specific direction */
+                                nullptr, /* No specific direction */
                                 ckmix,
                                 cs_field_by_name("emissivity")->val,
                                 w_gg,   gg_id,
@@ -1742,7 +1742,7 @@ cs_rad_transfer_solve(int  bc_type[])
     else if (rt_params->type == CS_RAD_TRANSFER_DOM) {
 
       /* -> Gas phase: Explicit source term of the ETR */
-      if (f_emi != NULL) {
+      if (f_emi != nullptr) {
 
         /* For atmospheric flow, solar diffuse band has emission
          * from direct solar absorption
@@ -1835,7 +1835,7 @@ cs_rad_transfer_solve(int  bc_type[])
        * default ones, identical for each directions, may be overwritten
        * afterwards */
       cs_rad_transfer_bc_coeffs(bc_type,
-                                NULL, /*no specific direction */
+                                nullptr, /*no specific direction */
                                 ckmix,
                                 cs_field_by_name("emissivity")->val,
                                 w_gg  , gg_id,
@@ -1884,7 +1884,7 @@ cs_rad_transfer_solve(int  bc_type[])
       }
     }
 
-    if (f_abs == NULL && gg_id == nwsgg-1)
+    if (f_abs == nullptr && gg_id == nwsgg-1)
       BFT_FREE(int_abso);
 
     /* Emission
@@ -1905,7 +1905,7 @@ cs_rad_transfer_solve(int  bc_type[])
 
     }
     else {
-      if (f_emi != NULL)
+      if (f_emi != nullptr)
         for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++)
           emim[cell_id] += - 4.0*cs_math_pi*f_emi->val[cell_id] * wq[gg_id];
     }
@@ -2178,13 +2178,13 @@ cs_rad_transfer_solve(int  bc_type[])
                        1,      /* inc */
                        100,    /* n_r_sweeps, */
                        verbosity,  /* iwarnp */
-                       -1,     /* imligp */
+                       CS_GRADIENT_LIMIT_NONE,     /* imligp */
                        1e-8,   /* epsrgp */
                        1.5,    /* climgp */
                        &bc_coeffs_loc,
                        cpro_q,
-                       NULL, /* weighted gradient */
-                       NULL, /* coupling */
+                       nullptr, /* weighted gradient */
+                       nullptr, /* coupling */
                        grad);
 
     for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
@@ -2252,17 +2252,17 @@ cs_rad_transfer_solve(int  bc_type[])
 
   /* Internal coupling contribution */
   if (cs_internal_coupling_n_couplings() > 0) {
-    cs_internal_coupling_t *cpl = NULL;
+    cs_internal_coupling_t *cpl = nullptr;
 
     cs_field_t *tf = cs_thermal_model_field();
-    if (tf != NULL) {
+    if (tf != nullptr) {
       const int coupling_key_id = cs_field_key_id("coupling_entity");
       int coupling_id = cs_field_get_key_int(tf, coupling_key_id);
       if (coupling_id >= 0)
         cpl = cs_internal_coupling_by_id(coupling_id);
     }
 
-    if (cpl != NULL)
+    if (cpl != nullptr)
       _net_flux_internal_coupling_contribution(cpl, f_fnet->val);
   }
 
