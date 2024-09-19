@@ -2654,7 +2654,7 @@ cs_file_open(const char        *name,
   /* Use MPI IO ? */
 
 #if !defined(HAVE_MPI_IO)
-  if (f->method > CS_FILE_STDIO_PARALLEL)
+  if (f->method > CS_FILE_STDIO_PARALLEL && f->method < CS_FILE_IN_MEMORY_SERIAL)
     bft_error(__FILE__, __LINE__, 0,
               _("Error opening file:\n%s\n"
                 "MPI-IO is requested, but not available."),
