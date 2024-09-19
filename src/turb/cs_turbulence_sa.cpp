@@ -208,7 +208,7 @@ _src_terms(const cs_real_t    dt[],
      at the cost of using a diffusion equation. */
 
   const cs_field_t  *f_r = cs_field_by_name_try("boundary_roughness");
-  if (f_r != NULL) {
+  if (f_r != nullptr) {
     const cs_real_t *b_roughness = f_r->val;
     const cs_real_t *coefbp = CS_F_(nusa)->bc_coeffs->b;
 
@@ -347,7 +347,7 @@ _clip(cs_lnum_t  n_cells)
 
   /* Postprocess clippings? */
   int clip_nusa_id = cs_field_get_key_int(CS_F_(nusa), key_clipping_id);
-  cs_real_t *cpro_nusa_clipped = NULL;
+  cs_real_t *cpro_nusa_clipped = nullptr;
   if (clip_nusa_id >= 0) {
     cpro_nusa_clipped = cs_field_by_id(clip_nusa_id)->val;
     cs_array_real_fill_zero(n_cells, cpro_nusa_clipped);
@@ -429,7 +429,7 @@ cs_turbulence_sa(void)
   int key_t_ext_id = cs_field_key_id("time_extrapolated");
   int kstprv = cs_field_key_id("source_term_prev_id");
 
-  cs_real_t *c_st_nusa_p = NULL;
+  cs_real_t *c_st_nusa_p = nullptr;
 
   int istprv = cs_field_get_key_int(CS_F_(nusa), kstprv);
   if (istprv >= 0) {
@@ -554,10 +554,10 @@ cs_turbulence_sa(void)
        (if we extrapolate source terms, Gamma.var_prev is stored in prev. TS) */
     cs_real_t *gapinj = (istprv >= 0) ? c_st_nusa_p : rhs_sa;
 
-    int *mst_type = NULL;
+    int *mst_type = nullptr;
     cs_lnum_t n_elts = 0;
-    const cs_lnum_t *elt_ids = NULL;
-    cs_real_t *mst_val = NULL, *mst_val_p = NULL;
+    const cs_lnum_t *elt_ids = nullptr;
+    cs_real_t *mst_val = nullptr, *mst_val_p = nullptr;
 
     cs_volume_mass_injection_get_arrays(CS_F_(nusa),
                                         &n_elts,
@@ -659,17 +659,17 @@ cs_turbulence_sa(void)
                                      viscb,
                                      viscf,
                                      viscb,
-                                     NULL,
-                                     NULL,
-                                     NULL,
+                                     nullptr,
+                                     nullptr,
+                                     nullptr,
                                      0, /* boundary convective upwind flux */
-                                     NULL,
+                                     nullptr,
                                      imp_sa,
                                      rhs_sa,
                                      cvar_nusa,
                                      dpvar,
-                                     NULL,
-                                     NULL);
+                                     nullptr,
+                                     nullptr);
 
   /* Clip values */
   _clip(n_cells);

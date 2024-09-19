@@ -141,8 +141,8 @@ cs_turbulence_htles(void)
 
   cs_real_3_t *vel    = (cs_real_3_t *)CS_F_(vel)->val;
   cs_real_t *cvar_k   = (cs_real_t *)CS_F_(k)->val;
-  cs_real_t *cvar_omg = NULL;
-  cs_real_t *cvar_eps = NULL;
+  cs_real_t *cvar_omg = nullptr;
+  cs_real_t *cvar_eps = nullptr;
   if (turb_model->iturb == CS_TURB_K_OMEGA) {
     cvar_omg = (cs_real_t *)CS_F_(omg)->val;
   }
@@ -154,8 +154,8 @@ cs_turbulence_htles(void)
 
   const double d2s3 = 2./3.;
 
-  cs_real_t *mean_omg = NULL;
-  cs_real_t *kwsst_f1 = NULL;
+  cs_real_t *mean_omg = nullptr;
+  cs_real_t *kwsst_f1 = nullptr;
 
   // TODO use standard time moments...
   cs_real_t *mean_u   = cs_field_by_name("vel_mag_mean")->val;
@@ -329,8 +329,8 @@ cs_htles_initialization(void) {
 
   cs_real_3_t *vel    = (cs_real_3_t *)CS_F_(vel)->val;
   cs_real_t *cvar_k   = (cs_real_t *)CS_F_(k)->val;
-  cs_real_t *cvar_omg = NULL;
-  cs_real_t *cvar_eps = NULL;
+  cs_real_t *cvar_omg = nullptr;
+  cs_real_t *cvar_eps = nullptr;
   if (turb_model->iturb == CS_TURB_K_OMEGA) {
     cvar_omg = (cs_real_t *)CS_F_(omg)->val;
   }
@@ -346,8 +346,8 @@ cs_htles_initialization(void) {
   cs_real_t *mean_kr  = cs_field_by_name("k_res")->val;
   cs_real_t *mean_eps = cs_field_by_name("eps_mod")->val;
 
-  cs_real_t *mean_omg = NULL;
-  cs_real_t *kwsst_f1 = NULL;
+  cs_real_t *mean_omg = nullptr;
+  cs_real_t *kwsst_f1 = nullptr;
 
   if (turb_model->iturb == CS_TURB_K_OMEGA) {
     mean_omg = cs_field_by_name("omg_mod")->val;
@@ -432,9 +432,9 @@ cs_htles_initialization(void) {
 
   cs_real_t cnx, cny, cnz;
 
-  cs_lnum_t *vtx1_edg_per_cells = NULL;
-  cs_lnum_t *vtx2_edg_per_cells = NULL;
-  cs_lnum_t *cpt_edg_per_cells = NULL;
+  cs_lnum_t *vtx1_edg_per_cells = nullptr;
+  cs_lnum_t *vtx2_edg_per_cells = nullptr;
+  cs_lnum_t *cpt_edg_per_cells = nullptr;
 
   BFT_MALLOC(vtx1_edg_per_cells, n_cells*max_edg_per_cells, cs_lnum_t);
   BFT_MALLOC(vtx2_edg_per_cells, n_cells*max_edg_per_cells, cs_lnum_t);

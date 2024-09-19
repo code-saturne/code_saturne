@@ -159,8 +159,8 @@ const char *cs_inflow_type_name[] = {"Laminar",
 /* Structures associated to the inlets */
 
 static int            cs_glob_inflow_n_inlets    = 0;
-static cs_inlet_t   **cs_glob_inflow_inlet_array = NULL;
-static cs_restart_t  *_inflow_restart = NULL;
+static cs_inlet_t   **cs_glob_inflow_inlet_array = nullptr;
+static cs_restart_t  *_inflow_restart = nullptr;
 
 static bool  _allow_restart_read = true;
 static bool  _allow_restart_write = true;
@@ -335,8 +335,8 @@ _batten_method(cs_lnum_t            n_points,
 
       cs_real_t mod_wave_vector[3];
 
-      cs_real_t norm_wave_vector
-        = cs_math_3_norm((cs_real_t *)(wave_vector + mode_id));
+      cs_real_t norm_wave_vector =
+        cs_math_3_norm((const cs_real_t *)(wave_vector + mode_id));
 
       cs_real_t spectral_velocity_scale
         = cs_math_3_sym_33_3_dot_product(wave_vector[mode_id],
@@ -567,12 +567,12 @@ cs_les_inflow_finalize(void)
 
     case CS_INFLOW_LAMINAR:
 
-      inlet->inflow = NULL;
+      inlet->inflow = nullptr;
       break;
 
     case CS_INFLOW_RANDOM:
 
-      inlet->inflow = NULL;
+      inlet->inflow = nullptr;
       break;
 
     case CS_INFLOW_BATTEN:
@@ -587,7 +587,7 @@ cs_les_inflow_finalize(void)
 
         BFT_FREE(inflow);
 
-        inlet->inflow = NULL;
+        inlet->inflow = nullptr;
       }
       break;
 
@@ -601,7 +601,7 @@ cs_les_inflow_finalize(void)
 
         BFT_FREE(inflow);
 
-        inlet->inflow = NULL;
+        inlet->inflow = nullptr;
       }
       break;
 
@@ -655,7 +655,7 @@ cs_les_inflow_add_inlet(cs_les_inflow_type_t   type,
                         cs_real_t              k_r,
                         cs_real_t              eps_r)
 {
-  cs_inlet_t   *inlet = NULL;
+  cs_inlet_t   *inlet = nullptr;
 
   bft_printf(_(" Definition of the LES inflow for zone \"%s\" \n"),
              zone->name);
@@ -677,8 +677,8 @@ cs_les_inflow_add_inlet(cs_les_inflow_type_t   type,
   cs_lnum_t n_elts = zone->n_elts;
   const cs_lnum_t *face_ids = zone->elt_ids;
 
-  inlet->face_center = NULL;
-  inlet->face_surface = NULL;
+  inlet->face_center = nullptr;
+  inlet->face_surface = nullptr;
 
   if (n_elts > 0) {
 
@@ -698,7 +698,7 @@ cs_les_inflow_add_inlet(cs_les_inflow_type_t   type,
 
   /* Turbulence level */
 
-  if (vel_r != NULL) {
+  if (vel_r != nullptr) {
     for (cs_lnum_t coo_id = 0; coo_id < 3; coo_id++)
       inlet->vel_m[coo_id] = vel_r[coo_id];
   }
@@ -726,12 +726,12 @@ cs_les_inflow_add_inlet(cs_les_inflow_type_t   type,
   switch(inlet->type) {
 
   case CS_INFLOW_LAMINAR:
-    inlet->inflow = NULL;
+    inlet->inflow = nullptr;
     bft_printf(_("   \n"));
     break;
 
   case CS_INFLOW_RANDOM:
-    inlet->inflow = NULL;
+    inlet->inflow = nullptr;
     bft_printf(_("   \n"));
     break;
 
@@ -831,11 +831,11 @@ cs_les_inflow_compute(void)
                               &(inlet->k_r),
                               &(inlet->eps_r));
 
-    cs_real_3_t *vel_m_l = NULL;
-    cs_real_6_t *rij_l = NULL;
-    cs_real_t   *eps_r = NULL;
+    cs_real_3_t *vel_m_l = nullptr;
+    cs_real_6_t *rij_l = nullptr;
+    cs_real_t   *eps_r = nullptr;
 
-    cs_real_3_t *fluctuations = NULL;
+    cs_real_3_t *fluctuations = nullptr;
 
     cs_real_t wt_start, wt_stop, cpu_start, cpu_stop;
 
@@ -914,7 +914,7 @@ cs_les_inflow_compute(void)
 
           cs_real_t dissiprate = eps_r[0];
           cs_lnum_t n_points = cs_glob_mesh->n_cells;
-          cs_real_t *point_weight = NULL;
+          cs_real_t *point_weight = nullptr;
 
           BFT_REALLOC(rij_l, n_cells, cs_real_6_t);
           for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
@@ -930,7 +930,7 @@ cs_les_inflow_compute(void)
           BFT_REALLOC(eps_r, n_points, cs_real_t);
           cs_array_real_set_scalar(n_cells, dissiprate, eps_r);
 
-          cs_real_3_t *point_coordinates = NULL;
+          cs_real_3_t *point_coordinates = nullptr;
           BFT_MALLOC(point_coordinates, n_cells, cs_real_3_t);
           for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
             for (cs_lnum_t j = 0; j < 3; j++)
@@ -946,7 +946,7 @@ cs_les_inflow_compute(void)
                                        point_weight,
                                        inlet->initialize,
                                        inlet->verbosity,
-                                       inlet->inflow,
+                                       (cs_inflow_sem_t *)inlet->inflow,
                                        time_step->dt[0],
                                        vel_m_l,
                                        rij_l,
@@ -960,7 +960,7 @@ cs_les_inflow_compute(void)
                                        inlet->face_surface,
                                        inlet->initialize,
                                        inlet->verbosity,
-                                       inlet->inflow,
+                                       (cs_inflow_sem_t *)inlet->inflow,
                                        time_step->dt[0],
                                        vel_m_l,
                                        rij_l,
@@ -1070,9 +1070,9 @@ cs_les_synthetic_eddy_restart_read(void)
   const char filename[] = "les_inflow.csc";
 
   _inflow_restart
-    = cs_restart_create(filename, NULL, CS_RESTART_MODE_READ);
+    = cs_restart_create(filename, nullptr, CS_RESTART_MODE_READ);
 
-  if (_inflow_restart == NULL)
+  if (_inflow_restart == nullptr)
     bft_error(__FILE__, __LINE__, 0,
               _("Abort while opening the LES inflow module restart file "
                 "in read mode.\n"
@@ -1412,9 +1412,9 @@ cs_les_synthetic_eddy_restart_write(void)
   const char filename[] = "les_inflow.csc";
 
   _inflow_restart
-    = cs_restart_create(filename, NULL, CS_RESTART_MODE_WRITE);
+    = cs_restart_create(filename, nullptr, CS_RESTART_MODE_WRITE);
 
-  if (_inflow_restart == NULL)
+  if (_inflow_restart == nullptr)
     bft_error(__FILE__, __LINE__, 0,
               _("Abort while opening the LES inflow module restart "
                 "file in write mode.\n"
@@ -1601,7 +1601,7 @@ cs_les_synthetic_eddy_restart_write(void)
  *                                  turbulence is generated
  * \param[in]   elt_ids             local id of inlet boundary faces
  * \param[in]   point_coordinates   point coordinates
- * \param[in]   point_weight        point weights (surface, volume or NULL)
+ * \param[in]   point_weight        point weights (surface, volume or nullptr)
  * \param[in]   initialize          initialization indicator
  * \param[in]   verbosity           verbosity level
  * \param[in]   inflow              pointer to structure for Batten method
@@ -1716,8 +1716,7 @@ cs_les_synthetic_eddy_method(cs_lnum_t           n_points,
   }
 
   if (verbosity > 0) {
-
-    char      direction[3] = "xyz";
+    char direction[4] = "xyz";
 
     bft_printf(_("Max. size of synthetic eddies:\n"));
 
@@ -1889,10 +1888,10 @@ cs_les_synthetic_eddy_method(cs_lnum_t           n_points,
   /* Estimation of the convection speed (with weighting by surface) */
   /*----------------------------------------------------------------*/
 
-  cs_real_t *weight = NULL;
+  cs_real_t *weight = nullptr;
   BFT_MALLOC(weight, n_points, cs_real_t);
 
-  if (point_weight == NULL)
+  if (point_weight == nullptr)
     for (cs_lnum_t point_id = 0; point_id < n_points; point_id++)
       weight[point_id] = 1.;
   else
@@ -2159,8 +2158,8 @@ cs_les_synthetic_eddy_get_n_restart_structures(void)
  *
  * See \ref cs_les_synthetic_eddy_set_restart for details.
  *
- * \param[out]  allow_read   pointer to read flag, or NULL
- * \param[out]  allow_write  pointer to write flag, or NULL
+ * \param[out]  allow_read   pointer to read flag, or nullptr
+ * \param[out]  allow_write  pointer to write flag, or nullptr
  */
 /*----------------------------------------------------------------------------*/
 
@@ -2168,9 +2167,9 @@ void
 cs_les_inflow_get_restart(bool  *allow_read,
                           bool  *allow_write)
 {
-  if (allow_read != NULL)
+  if (allow_read != nullptr)
     *allow_read = _allow_restart_read;
-  if (allow_write != NULL)
+  if (allow_write != nullptr)
     *allow_write = _allow_restart_write;
 }
 

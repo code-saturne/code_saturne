@@ -103,7 +103,7 @@ _les_filter_ext_neighborhood(int        stride,
                              cs_real_t  val[],
                              cs_real_t  f_val[])
 {
-  cs_real_t *w1 = NULL, *w2 = NULL;
+  cs_real_t *w1 = nullptr, *w2 = nullptr;
 
   const cs_mesh_t  *mesh = cs_glob_mesh;
   const cs_lnum_t  _stride = stride;
@@ -118,7 +118,7 @@ _les_filter_ext_neighborhood(int        stride,
   const cs_lnum_t  *cell_cells_lst = mesh->cell_cells_lst;
   const cs_real_t  *cell_vol = cs_glob_mesh_quantities->cell_vol;
 
-  assert(cell_cells_idx != NULL);
+  assert(cell_cells_idx != nullptr);
 
   /* Allocate and initialize working buffers */
 
@@ -132,7 +132,7 @@ _les_filter_ext_neighborhood(int        stride,
 
     /* Synchronize variable */
 
-    if (mesh->halo != NULL)
+    if (mesh->halo != nullptr)
       cs_halo_sync_var(mesh->halo, CS_HALO_EXTENDED, val);
 
     /* Define filtered variable array */
@@ -188,7 +188,7 @@ _les_filter_ext_neighborhood(int        stride,
 
     /* Synchronize variable */
 
-    if (mesh->halo != NULL)
+    if (mesh->halo != nullptr)
       cs_halo_sync_var(mesh->halo, CS_HALO_STANDARD, f_val);
   }
 
@@ -199,7 +199,7 @@ _les_filter_ext_neighborhood(int        stride,
 
     /* Synchronize variable */
 
-    if (mesh->halo != NULL)
+    if (mesh->halo != nullptr)
       cs_halo_sync_var_strided(mesh->halo, CS_HALO_EXTENDED, val, stride);
 
     /* Define filtered variable array */
@@ -271,7 +271,7 @@ _les_filter_ext_neighborhood(int        stride,
 
     /* Synchronize variable */
 
-    if (mesh->halo != NULL)
+    if (mesh->halo != nullptr)
       cs_halo_sync_var_strided(mesh->halo, CS_HALO_EXTENDED, f_val, stride);
   }
 
@@ -307,7 +307,7 @@ cs_les_filter(int        stride,
     return;
   }
 
-  cs_real_t *v_val = NULL, *v_weight = NULL;
+  cs_real_t *v_val = nullptr, *v_weight = nullptr;
 
   const cs_mesh_t  *mesh = cs_glob_mesh;
   const cs_lnum_t  _stride = stride;
@@ -327,16 +327,16 @@ cs_les_filter(int        stride,
                     true, /* ignore periodicity of rotation */
                     cell_vol,
                     val,
-                    NULL,
+                    nullptr,
                     v_val);
 
   cs_cell_to_vertex(CS_CELL_TO_VERTEX_LR,
                     0,
                     1,
                     true, /* ignore periodicity of rotation */
-                    NULL,
+                    nullptr,
                     cell_vol,
-                    NULL,
+                    nullptr,
                     v_weight);
 
   /* Build cell average */
@@ -392,7 +392,7 @@ cs_les_filter(int        stride,
 
   /* Synchronize variable */
 
-  if (mesh->halo != NULL)
+  if (mesh->halo != nullptr)
     cs_halo_sync_var_strided(mesh->halo, CS_HALO_STANDARD, f_val, _stride);
 }
 

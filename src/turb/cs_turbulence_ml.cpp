@@ -102,7 +102,7 @@ cs_turbulence_ml_mu_t(void)
   /* Compute S11^2+S22^2+S33^2+2*(S12^2+S13^2+S23^2),
      then dynamic viscosity */
 
-  if (f_lm == NULL) {
+  if (f_lm == nullptr) {
 # pragma omp parallel for if(n_cells > CS_THR_MIN)
     for (cs_lnum_t c_id = 0; c_id < n_cells; c_id ++) {
       visct[c_id] =   cs_math_pow2(gradv[c_id][0][0])

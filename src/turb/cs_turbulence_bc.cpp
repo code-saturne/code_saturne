@@ -131,19 +131,19 @@ typedef struct {
 static cs_turb_bc_ptr_t
 _turb_bc_id =
   {
-   NULL,  /* bc_k */
-   NULL,  /* bc_eps */
-   NULL,  /* bc_rij */
-   NULL,  /* bc_phi */
-   NULL,  /* bc_f_bar */
-   NULL,  /* bc_alp_bl */
-   NULL,  /* bc_omg */
-   NULL,  /* bc_nusa */
+   nullptr,  /* bc_k */
+   nullptr,  /* bc_eps */
+   nullptr,  /* bc_rij */
+   nullptr,  /* bc_phi */
+   nullptr,  /* bc_f_bar */
+   nullptr,  /* bc_alp_bl */
+   nullptr,  /* bc_omg */
+   nullptr,  /* bc_nusa */
 
    0,    /* size of ut */
    0,    /* size of alp_bl_t */
-   NULL,  /* f_id_ut */
-   NULL   /* f_id_alp_bl_t */
+   nullptr,  /* f_id_ut */
+   nullptr   /* f_id_alp_bl_t */
 };
 
 /*============================================================================
@@ -321,7 +321,7 @@ _inlet_bc(cs_lnum_t   face_id,
 {
   const cs_lnum_t n_b_faces = cs_glob_mesh->n_b_faces;
   const cs_turb_model_t  *turb_model = cs_glob_turb_model;
-  assert(turb_model != NULL);
+  assert(turb_model != nullptr);
 
   if (turb_model->itytur == 2) {
 
@@ -336,7 +336,7 @@ _inlet_bc(cs_lnum_t   face_id,
 
     for (int ii = 0; ii < 3; ii++)
       _turb_bc_id.bc_rij->rcodcl1[ii*n_b_faces + face_id] = d2s3 * k;
-    if (vel_dir != NULL) {
+    if (vel_dir != nullptr) {
       cs_math_3_normalize(vel_dir, vel_dir);
       /* Note: do not normalize shear_dir because it contains the
          level of anisotropy */
@@ -448,7 +448,7 @@ _set_uninit_inlet_bc(cs_lnum_t   face_id,
       if (_turb_bc_id.bc_rij->rcodcl1[ii*n_b_faces + face_id]
           > 0.5*cs_math_infinite_r)
         _turb_bc_id.bc_rij->rcodcl1[ii*n_b_faces + face_id] = d2s3 * k;
-    if (vel_dir != NULL) {
+    if (vel_dir != nullptr) {
       cs_math_3_normalize(vel_dir, vel_dir);
       if (_turb_bc_id.bc_rij->rcodcl1[3*n_b_faces + face_id]
           > 0.5*cs_math_infinite_r)
@@ -563,7 +563,7 @@ cs_f_turbulence_bc_inlet_hyd_diam(cs_lnum_t   face_num,
 
   _ke_hyd_diam(uref2, dh, rho, mu, &ustar2, &k, &eps);
 
-  _inlet_bc(face_num - 1, k, eps, NULL, NULL);
+  _inlet_bc(face_num - 1, k, eps, nullptr, nullptr);
 }
 
 /*----------------------------------------------------------------------------
@@ -587,7 +587,7 @@ cs_f_turbulence_bc_inlet_turb_intensity(cs_lnum_t   face_num,
 
   _ke_turb_intensity(uref2, t_intensity, dh, &k, &eps);
 
-  _inlet_bc(face_num - 1, k, eps, NULL, NULL);
+  _inlet_bc(face_num - 1, k, eps, nullptr, nullptr);
 }
 
 /*----------------------------------------------------------------------------
@@ -656,24 +656,24 @@ cs_turbulence_bc_init_pointers(void)
   const int k_f_turbt_alp_bl = cs_field_key_id("alpha_turbulent_flux_id");
   const int k_sca            = cs_field_key_id("scalar_id");
 
-  if (CS_F_(k) != NULL)
+  if (CS_F_(k) != nullptr)
     _turb_bc_id.bc_k = CS_F_(k)->bc_coeffs;
-  if (CS_F_(eps) != NULL)
+  if (CS_F_(eps) != nullptr)
     _turb_bc_id.bc_eps = CS_F_(eps)->bc_coeffs;
 
-  if (CS_F_(rij) != NULL)
+  if (CS_F_(rij) != nullptr)
     _turb_bc_id.bc_rij = CS_F_(rij)->bc_coeffs;
 
-  if (CS_F_(phi) != NULL)
+  if (CS_F_(phi) != nullptr)
     _turb_bc_id.bc_phi = CS_F_(phi)->bc_coeffs;
-  if (CS_F_(f_bar) != NULL)
+  if (CS_F_(f_bar) != nullptr)
     _turb_bc_id.bc_f_bar = CS_F_(f_bar)->bc_coeffs;
-  if (CS_F_(alp_bl) != NULL)
+  if (CS_F_(alp_bl) != nullptr)
     _turb_bc_id.bc_alp_bl = CS_F_(alp_bl)->bc_coeffs;
 
-  if (CS_F_(omg) != NULL)
+  if (CS_F_(omg) != nullptr)
     _turb_bc_id.bc_omg = CS_F_(omg)->bc_coeffs;
-  if (CS_F_(nusa) != NULL)
+  if (CS_F_(nusa) != nullptr)
     _turb_bc_id.bc_nusa = CS_F_(nusa)->bc_coeffs;
 
   int n_fields = cs_field_n_fields();
@@ -878,7 +878,7 @@ cs_turbulence_bc_inlet_hyd_diam(cs_lnum_t   face_id,
 
   _ke_hyd_diam(uref2, dh, rho, mu, &ustar2, &k, &eps);
 
-  _inlet_bc(face_id, k, eps, NULL, NULL);
+  _inlet_bc(face_id, k, eps, nullptr, nullptr);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -905,7 +905,7 @@ cs_turbulence_bc_inlet_turb_intensity(cs_lnum_t   face_id,
 
   _ke_turb_intensity(uref2, t_intensity, dh, &k, &eps);
 
-  _inlet_bc(face_id, k, eps, NULL, NULL);
+  _inlet_bc(face_id, k, eps, nullptr, nullptr);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -924,7 +924,7 @@ cs_turbulence_bc_inlet_k_eps(cs_lnum_t   face_id,
                              double      k,
                              double      eps)
 {
-  _inlet_bc(face_id, k, eps, NULL, NULL);
+  _inlet_bc(face_id, k, eps, nullptr, nullptr);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -941,7 +941,7 @@ cs_turbulence_bc_set_hmg_neumann(cs_lnum_t   face_id)
 {
   const cs_lnum_t n_b_faces = cs_glob_mesh->n_b_faces;
   const cs_turb_model_t  *turb_model = cs_glob_turb_model;
-  assert(turb_model != NULL);
+  assert(turb_model != nullptr);
 
   if (turb_model->itytur == 2) {
 
@@ -1037,8 +1037,8 @@ cs_turbulence_bc_set_hmg_neumann(cs_lnum_t   face_id)
  * is similar to \ref cs_turbulence_bc_inlet_hyd_diam.
  *
  * \param[in]     face_id    boundary face id
- * \param[in]     vel_dir    velocity direction (not normalized, or NULL)
- * \param[in]     shear_dir  shear direction (or NULL), it also contains the
+ * \param[in]     vel_dir    velocity direction (not normalized, or nullptr)
+ * \param[in]     shear_dir  shear direction (or nullptr), it also contains the
  *                           level of anisotropy (Rnt = a_nt k)
  * \param[in]     uref2      square of the reference flow velocity
  * \param[in]     dh         hydraulic diameter \f$ D_H \f$
@@ -1090,7 +1090,7 @@ cs_turbulence_bc_set_uninit_inlet_turb_intensity(cs_lnum_t   face_id,
 
   _ke_turb_intensity(uref2, t_intensity, dh, &k, &eps);
 
-  _set_uninit_inlet_bc(face_id, k, eps, NULL, NULL);
+  _set_uninit_inlet_bc(face_id, k, eps, nullptr, nullptr);
 }
 
 /*----------------------------------------------------------------------------*/

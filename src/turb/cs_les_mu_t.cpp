@@ -424,7 +424,7 @@ cs_les_mu_t_smago_dyn(void)
   /* Compute k_SGS and its dissipation if need (e.g. Lagrangian module) */
   cs_field_t *f_k = cs_field_by_name_try("k_sgs");
   cs_field_t *f_eps = cs_field_by_name_try("epsilon_sgs");
-  if (f_k != NULL && f_eps != NULL) {
+  if (f_k != nullptr && f_eps != nullptr) {
     const cs_fluid_properties_t *phys_pro = cs_get_glob_fluid_properties();
     cs_real_t viscl0 = phys_pro->viscl0; /* reference molecular viscosity */
     for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
@@ -571,19 +571,19 @@ cs_les_mu_t_smago_dyn(void)
       cs_gradient_scalar("Work array",
                          gradient_type,
                          halo_type,
-                         1,     /* inc */
+                         1, /* inc */
                          eqp_fld->nswrgr,
                          0,
-                         1,     /* w_stride */
+                         1, /* w_stride */
                          eqp_fld->verbosity,
-                         eqp_fld->imligr,
+                         static_cast<cs_gradient_limit_t>(eqp_fld->imligr),
                          eqp_fld->epsrgr,
                          eqp_fld->climgr,
-                         NULL,
+                         nullptr,
                          bc_coeffs,
                          w4,
-                         NULL,
-                         NULL, /* internal coupling */
+                         nullptr,
+                         nullptr, /* internal coupling */
                          gradsf);
 
       for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
@@ -722,7 +722,7 @@ cs_les_mu_t_smago_const(void)
   /* Compute k_SGS and its dissipation if need (e.g. Lagrangian module) */
   cs_field_t *f_k = cs_field_by_name_try("k_sgs");
   cs_field_t *f_eps = cs_field_by_name_try("epsilon_sgs");
-  if (f_k != NULL && f_eps != NULL) {
+  if (f_k != nullptr && f_eps != nullptr) {
     const cs_fluid_properties_t *phys_pro = cs_get_glob_fluid_properties();
     cs_real_t viscl0 = phys_pro->viscl0; /* reference molecular viscosity */
     for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
@@ -803,9 +803,9 @@ cs_les_mu_t_wale(void)
   /* Compute k_SGS and its dissipation if need (e.g. Lagrangian module) */
   cs_field_t *f_k = cs_field_by_name_try("k_sgs");
   cs_field_t *f_eps = cs_field_by_name_try("epsilon_sgs");
-  cs_real_t *s_eq = NULL;
+  cs_real_t *s_eq = nullptr;
   /* Store inverse of the time scale if needed */
-  if (f_k != NULL && f_eps != NULL)
+  if (f_k != nullptr && f_eps != nullptr)
     BFT_MALLOC(s_eq, n_cells, cs_real_t);
 
   for (cs_lnum_t c_id = 0; c_id < n_cells; c_id ++) {
@@ -858,7 +858,7 @@ cs_les_mu_t_wale(void)
     if (sinv > 0)
       con = sqrt(2.) * pow(sd, 1.5)/sinv;
 
-    if (s_eq != NULL)
+    if (s_eq != nullptr)
       s_eq[c_id] = con;
 
     cs_real_t delta = cs_turb_xlesfl * pow(cs_turb_ales*cell_vol[c_id],
@@ -869,7 +869,7 @@ cs_les_mu_t_wale(void)
   }
 
   /* Compute k_SGS and its dissipation if need (e.g. Lagrangian module) */
-  if (f_k != NULL && f_eps != NULL) {
+  if (f_k != nullptr && f_eps != nullptr) {
     const cs_fluid_properties_t *phys_pro = cs_get_glob_fluid_properties();
     cs_real_t viscl0 = phys_pro->viscl0; /* reference molecular viscosity */
     for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {

@@ -363,7 +363,7 @@ static cs_turb_model_t  _turb_model =
   .high_low_re = -1
 };
 
-const cs_turb_model_t  *cs_glob_turb_model = NULL;
+const cs_turb_model_t  *cs_glob_turb_model = nullptr;
 
 /* Reference values for turbulence structure and associated pointer */
 
@@ -414,13 +414,10 @@ const cs_turb_les_model_t  *cs_glob_turb_les_model = &_turb_les_model;
 
 /* Hybrid turbulence model structure and associated pointer */
 
-static cs_turb_hybrid_model_t  _turb_hybrid_model =
-{
-  .iicc    = 1,
-  .ishield = 1,
-  .n_iter_mean = -1,
-  .time_mean = -1.
-};
+static cs_turb_hybrid_model_t _turb_hybrid_model = { .iicc        = 1,
+                                                     .ishield     = 1,
+                                                     .n_iter_mean = -1,
+                                                     .time_mean   = -1 };
 
 const cs_turb_hybrid_model_t  *cs_glob_turb_hybrid_model = &_turb_hybrid_model;
 
@@ -1289,7 +1286,7 @@ cs_f_turb_model_constants_get_pointers(double  **cmu,
 static const char *
 _turbulence_model_enum_name(cs_turb_model_type_t  id)
 {
-  const char *s = NULL;
+  const char *s = nullptr;
   switch(id) {
   case CS_TURB_NONE:
     s = "CS_TURB_NONE";
@@ -1360,7 +1357,7 @@ _turbulence_model_enum_name(cs_turb_model_type_t  id)
 static const char *
 _turbulence_model_name(cs_turb_model_type_t  id)
 {
-  const char *s = NULL;
+  const char *s = nullptr;
   switch(id) {
   case CS_TURB_NONE:
     s = _("no turbulence model");
@@ -1511,7 +1508,7 @@ void
 cs_set_glob_turb_model(void)
 {
   /* If not set yet, points to the locally defined structure */
-  if (cs_glob_turb_model == NULL)
+  if (cs_glob_turb_model == nullptr)
     cs_glob_turb_model = &_turb_model;
 }
 
@@ -1551,10 +1548,10 @@ cs_turb_compute_constants(int phase_id)
     f_eps = CS_FI_(eps, phase_id);
   }
 
-  if (f_k != NULL)
+  if (f_k != nullptr)
     cs_field_set_key_double(f_k, k_turb_schmidt, 1.);
 
-  if (f_phi != NULL)
+  if (f_phi != nullptr)
     cs_field_set_key_double(f_phi, k_turb_schmidt, 1.);
 
   if (   cs_glob_turb_model->model == CS_TURB_RIJ_EPSILON_LRR
@@ -1685,7 +1682,7 @@ cs_get_glob_turb_hybrid_model(void)
 void
 cs_turb_model_log_setup(void)
 {
-  if (cs_glob_turb_model == NULL)
+  if (cs_glob_turb_model == nullptr)
     return;
 
   const cs_turb_model_t *turb_model = cs_glob_turb_model;
@@ -1712,11 +1709,13 @@ cs_turb_model_log_setup(void)
     cs_log_printf(CS_LOG_SETUP,
                   _("   Second order model (order = CS_TURB_SECOND_ORDER)\n"));
 
+  auto iturbm = static_cast<cs_turb_model_type_t>(turb_model->model);
+
   cs_log_printf(CS_LOG_SETUP,
                 _("\n    %s\n"
                   "      (model = %s)\n\n"),
-                _turbulence_model_name(turb_model->model),
-                _turbulence_model_enum_name(turb_model->model));
+                _turbulence_model_name(iturbm),
+                _turbulence_model_enum_name(iturbm));
 
   const char *iwallf_value_str[]
     = {N_("Disabled"),
@@ -2000,7 +1999,7 @@ cs_turb_model_log_setup(void)
 void
 cs_turb_constants_log_setup(void)
 {
-  if (cs_glob_turb_model == NULL)
+  if (cs_glob_turb_model == nullptr)
     return;
 
   const cs_turb_model_t *turb_model = cs_glob_turb_model;
@@ -2017,7 +2016,8 @@ cs_turb_constants_log_setup(void)
   if (turb_model->model != CS_TURB_NONE)
     cs_log_printf(CS_LOG_SETUP,
                   _("  %s constants:\n"),
-                  _turbulence_model_name(turb_model->model));
+                  _turbulence_model_name(
+                    static_cast<cs_turb_model_type_t>(turb_model->model)));
 
   if (   turb_model->model == CS_TURB_K_EPSILON
       || turb_model->model == CS_TURB_K_EPSILON_LIN_PROD
@@ -2161,7 +2161,7 @@ cs_turb_constants_log_setup(void)
 
   int iokss = 0, iokcaz = 0;
 
-  if (cs_glob_turb_rans_model != NULL) {
+  if (cs_glob_turb_rans_model != nullptr) {
     if (cs_glob_turb_rans_model->irccor == 1) {
       if (cs_glob_turb_rans_model->itycor == 1)
         iokcaz = 1;
@@ -2261,7 +2261,7 @@ cs_clip_turbulent_fluxes(int  flux_id,
   const cs_real_t *cvar_tt
     = (const cs_real_t *)cs_field_by_id(variance_id)->val;
   cs_real_3_t *cvar_rit = (cs_real_3_t *) cs_field_by_id(flux_id)->val;
-  cs_real_3_t *cvar_clip_rit = NULL;
+  cs_real_3_t *cvar_clip_rit = nullptr;
 
   cs_field_t *field_rit = cs_field_by_id(flux_id);
 
@@ -2365,7 +2365,7 @@ cs_clip_turbulent_fluxes(int  flux_id,
  *
  * \param[in]       location_id  base associated mesh location id
  * \param[in]       n_elts       number of associated elements
- * \param[in]       elt_ids      ids of associated elements, or NULL if no
+ * \param[in]       elt_ids      ids of associated elements, or nullptr if no
  *                               filtering is required
  * \param[in, out]  input        ignored
  * \param[in, out]  vals         pointer to output values
@@ -2382,16 +2382,16 @@ cs_turbulence_function_k(int              location_id,
 {
   CS_UNUSED(input);
 
-  cs_real_t *k = vals;
+  cs_real_t *k = static_cast<cs_real_t *>(vals);
 
   cs_assert(location_id == CS_MESH_LOCATION_CELLS);
 
   const cs_turb_model_t *tm = cs_glob_turb_model;
 
-  const cs_real_t *val_k = (CS_F_(k) != NULL) ? CS_F_(k)->val : NULL;
+  const cs_real_t *val_k = (CS_F_(k) != nullptr) ? CS_F_(k)->val : nullptr;
 
-  if (val_k != NULL) {
-    if (elt_ids != NULL) {
+  if (val_k != nullptr) {
+    if (elt_ids != nullptr) {
       for (cs_lnum_t i = 0; i < n_elts; i++) {
         cs_lnum_t c_id = elt_ids[i];
         k[i] = val_k[c_id];
@@ -2405,7 +2405,7 @@ cs_turbulence_function_k(int              location_id,
   }
   else if (tm->itytur == 3) {
     const cs_real_6_t *rij = (const cs_real_6_t *)CS_F_(rij)->val;
-    if (elt_ids != NULL) {
+    if (elt_ids != nullptr) {
       for (cs_lnum_t i = 0; i < n_elts; i++) {
         cs_lnum_t c_id = elt_ids[i];
         k[i] = (rij[c_id][0] + rij[c_id][1] + rij[c_id][2]) * 0.5;
@@ -2422,7 +2422,8 @@ cs_turbulence_function_k(int              location_id,
       cs_log_warning(_("%s: cannot simply determine k from other variables\n"
                        "with turbulence model %s.\n"),
                      __func__,
-                     _turbulence_model_enum_name(tm->model));
+                     _turbulence_model_enum_name(
+                       static_cast<cs_turb_model_type_t>(tm->model)));
     }
 
     for (cs_lnum_t i = 0; i < n_elts; i++)
@@ -2441,7 +2442,7 @@ cs_turbulence_function_k(int              location_id,
  *
  * \param[in]       location_id  base associated mesh location id
  * \param[in]       n_elts       number of associated elements
- * \param[in]       elt_ids      ids of associated elements, or NULL if no
+ * \param[in]       elt_ids      ids of associated elements, or nullptr if no
  *                               filtering is required
  * \param[in, out]  input        ignored
  * \param[in, out]  vals         pointer to output values
@@ -2458,16 +2459,16 @@ cs_turbulence_function_eps(int              location_id,
 {
   CS_UNUSED(input);
 
-  cs_real_t *eps = vals;
+  cs_real_t *eps = static_cast<cs_real_t *>(vals);
 
   cs_assert(location_id == CS_MESH_LOCATION_CELLS);
 
   const cs_turb_model_t *tm = cs_glob_turb_model;
 
-  const cs_real_t *val_eps = (CS_F_(eps) != NULL) ? CS_F_(eps)->val : NULL;
+  const cs_real_t *val_eps = (CS_F_(eps) != nullptr) ? CS_F_(eps)->val : nullptr;
 
-  if (val_eps != NULL) {
-    if (elt_ids != NULL) {
+  if (val_eps != nullptr) {
+    if (elt_ids != nullptr) {
       for (cs_lnum_t i = 0; i < n_elts; i++) {
         cs_lnum_t c_id = elt_ids[i];
         eps[i] = val_eps[c_id];
@@ -2482,7 +2483,7 @@ cs_turbulence_function_eps(int              location_id,
   else if (tm->model == CS_TURB_K_OMEGA) {
     const cs_real_t *val_k = CS_F_(omg)->val;
     const cs_real_t *val_omg = CS_F_(omg)->val;
-    if (elt_ids != NULL) {
+    if (elt_ids != nullptr) {
       for (cs_lnum_t i = 0; i < n_elts; i++) {
         cs_lnum_t c_id = elt_ids[i];
         eps[i] = cs_turb_cmu * val_k[c_id] * val_omg[c_id];
@@ -2499,7 +2500,8 @@ cs_turbulence_function_eps(int              location_id,
       cs_log_warning(_("%s: cannot simply determine k from other variables\n"
                        "with turbulence model %s.\n"),
                      __func__,
-                     _turbulence_model_enum_name(tm->model));
+                     _turbulence_model_enum_name(
+                       static_cast<cs_turb_model_type_t>(tm->model)));
     }
 
     for (cs_lnum_t i = 0; i < n_elts; i++)
@@ -2518,7 +2520,7 @@ cs_turbulence_function_eps(int              location_id,
  *
  * \param[in]       location_id  base associated mesh location id
  * \param[in]       n_elts       number of associated elements
- * \param[in]       elt_ids      ids of associated elements, or NULL if no
+ * \param[in]       elt_ids      ids of associated elements, or nullptr if no
  *                               filtering is required
  * \param[in, out]  input        ignored
  * \param[in, out]  vals         pointer to output values
@@ -2535,20 +2537,20 @@ cs_turbulence_function_rij(int               location_id,
 {
   CS_UNUSED(input);
 
-  cs_real_6_t *rij = vals;
+  cs_real_6_t *rij = static_cast<cs_real_6_t *>(vals);
 
   cs_assert(location_id == CS_MESH_LOCATION_CELLS);
 
   const cs_turb_model_t *tm = cs_glob_turb_model;
 
-  const cs_real_6_t *val_rij = NULL;
-  if (CS_F_(rij) != NULL)
+  const cs_real_6_t *val_rij = nullptr;
+  if (CS_F_(rij) != nullptr)
     val_rij = (const cs_real_6_t *)CS_F_(rij)->val;
 
   /* Rij already present */
 
-  if (val_rij != NULL) {
-    if (elt_ids != NULL) {
+  if (val_rij != nullptr) {
+    if (elt_ids != nullptr) {
       for (cs_lnum_t i = 0; i < n_elts; i++) {
         cs_lnum_t c_id = elt_ids[i];
         for (cs_lnum_t j = 0; j < 6; j++)
@@ -2565,7 +2567,7 @@ cs_turbulence_function_rij(int               location_id,
 
   /* Rij estimated from turbulent viscosity and velocity gradient */
 
-  else if (CS_F_(k) != NULL) {
+  else if (CS_F_(k) != nullptr) {
 
     const cs_real_t d2o3 = 2./3.;
     const cs_real_t *cpro_mu_t = CS_F_(mu_t)->val;
@@ -2575,14 +2577,14 @@ cs_turbulence_function_rij(int               location_id,
     const cs_mesh_t *m = cs_glob_mesh;
     const cs_mesh_quantities_t *fvq = cs_glob_mesh_quantities;
     cs_halo_type_t halo_type
-      = (m->cell_cells_idx != NULL) ? CS_HALO_EXTENDED : CS_HALO_STANDARD;
+      = (m->cell_cells_idx != nullptr) ? CS_HALO_EXTENDED : CS_HALO_STANDARD;
 
     const cs_field_t *f_vel = CS_F_(vel);
 
 #   pragma omp parallel for if(n_elts > CS_THR_MIN)
     for (cs_lnum_t i = 0; i < n_elts; i++) {
 
-      cs_lnum_t c_id = (elt_ids != NULL) ? elt_ids[i] : i;
+      cs_lnum_t c_id = (elt_ids != nullptr) ? elt_ids[i] : i;
 
       cs_real_t gradv[6][3];
 
@@ -2592,7 +2594,7 @@ cs_turbulence_function_rij(int               location_id,
                               halo_type,
                               f_vel->bc_coeffs,
                               (const cs_real_3_t *)f_vel->val,
-                              NULL,
+                              nullptr,
                               gradv);
 
       cs_real_t divu = gradv[0][0] + gradv[1][1] + gradv[2][2];
@@ -2615,7 +2617,8 @@ cs_turbulence_function_rij(int               location_id,
       cs_log_warning(_("%s: cannot simply determine Rij from other variables\n"
                        "with turbulence model %s.\n"),
                      __func__,
-                     _turbulence_model_enum_name(tm->model));
+                     _turbulence_model_enum_name(
+                       static_cast<cs_turb_model_type_t>(tm->model)));
     }
 
     for (cs_lnum_t i = 0; i < n_elts; i++) {

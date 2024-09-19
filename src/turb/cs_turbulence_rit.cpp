@@ -106,7 +106,7 @@ BEGIN_C_DECLS
  *
  * \param[in]     name       name of current field
  * \param[in]     f_ut       scalar turbulent flux field
- * \param[in]     f_tv       variance of the thermal scalar field, or NULL
+ * \param[in]     f_tv       variance of the thermal scalar field, or nullptr
  * \param[in]     n_cells    number of cells
  * \param[in]     l_viscls   0 uniform viscls values, 1 for local values
  * \param[in]     xcpp       \f$ C_p \f$
@@ -148,61 +148,61 @@ _turb_flux_st(const char          *name,
 
   const cs_real_3_t *xuta = (const cs_real_3_t *)f_ut->val_pre;
 
-  cs_real_t *cpro_beta = NULL;
-  if (cs_field_by_name_try("thermal_expansion") != NULL)
+  cs_real_t *cpro_beta = nullptr;
+  if (cs_field_by_name_try("thermal_expansion") != nullptr)
     cpro_beta = cs_field_by_name_try("thermal_expansion")->val;
 
-  const cs_real_t *cvar_tt = NULL, *cvara_tt = NULL, *cvar_al = NULL;
+  const cs_real_t *cvar_tt = nullptr, *cvara_tt = nullptr, *cvar_al = nullptr;
 
   const cs_turb_rans_model_t *rans_mdl = cs_glob_turb_rans_model;
   /* Get the turbulent flux model */
   const int kturt = cs_field_key_id("turbulent_flux_model");
   int turb_flux_model =  cs_field_get_key_int(f, kturt);
 
-  if (f_tv != NULL) {
+  if (f_tv != nullptr) {
     cvar_tt = f_tv->val;
     cvara_tt = f_tv->val_pre;
   }
 
   /* Save production terms if required */
 
-  cs_real_3_t *prod_ut = NULL;
+  cs_real_3_t *prod_ut = nullptr;
   cs_field_t *f_ut_prod = cs_field_by_double_composite_name_try
                             ("algo:", f->name, "_turbulent_flux_production");
 
-  if (f_ut_prod != NULL)
+  if (f_ut_prod != nullptr)
     prod_ut = (cs_real_3_t *)f_ut_prod->val;
 
-  cs_real_3_t *phi_ut = NULL;
+  cs_real_3_t *phi_ut = nullptr;
   cs_field_t *f_phi_ut = cs_field_by_double_composite_name_try
                            ("algo:", f->name, "_turbulent_flux_scrambling");
-  if (f_phi_ut != NULL)
+  if (f_phi_ut != nullptr)
     phi_ut = (cs_real_3_t *)f_phi_ut->val;
 
-  cs_real_3_t *prod_by_vel_grad_ut = NULL;
+  cs_real_3_t *prod_by_vel_grad_ut = nullptr;
   cs_field_t *f_ut_prod_by_vel
     = cs_field_by_double_composite_name_try
         ("algo:", f->name, "_turbulent_flux_production_by_velocity_gradient");
-  if (f_ut_prod_by_vel != NULL)
+  if (f_ut_prod_by_vel != nullptr)
     prod_by_vel_grad_ut = (cs_real_3_t *)f_ut_prod_by_vel->val;
 
-  cs_real_3_t *prod_by_scal_grad_ut = NULL;
+  cs_real_3_t *prod_by_scal_grad_ut = nullptr;
   cs_field_t *f_ut_prod_by_scal
     = cs_field_by_double_composite_name_try
         ("algo:", f->name, "_turbulent_flux_production_by_scalar_gradient");
-  if (f_ut_prod_by_scal != NULL)
+  if (f_ut_prod_by_scal != nullptr)
     prod_by_scal_grad_ut = (cs_real_3_t *)f_ut_prod_by_scal->val;
 
-  cs_real_3_t *buo_ut = NULL;
+  cs_real_3_t *buo_ut = nullptr;
   cs_field_t *f_buo_ut = cs_field_by_double_composite_name_try
                            ("algo:", f->name, "_turbulent_flux_buoyancy");
-  if (f_buo_ut != NULL)
+  if (f_buo_ut != nullptr)
     buo_ut = (cs_real_3_t *)f_buo_ut->val;
 
-  cs_real_3_t *dissip_ut = NULL;
+  cs_real_3_t *dissip_ut = nullptr;
   cs_field_t *f_dissip_ut = cs_field_by_double_composite_name_try
                               ("algo:", f_ut->name, "_dissipation");
-  if (f_dissip_ut != NULL)
+  if (f_dissip_ut != nullptr)
     dissip_ut = (cs_real_3_t *)f_dissip_ut->val;
 
   if (turb_flux_model == 31)
@@ -266,7 +266,7 @@ _turb_flux_st(const char          *name,
 
       cs_real_t gk = 0;
       /* FIXME make buoyant term coherent elsewhere */
-      if (cpro_beta != NULL && rans_mdl->has_buoyant_term == 1)
+      if (cpro_beta != nullptr && rans_mdl->has_buoyant_term == 1)
         gk = - cpro_beta[c_id] * cs_math_3_dot_product(xuta[c_id], grav);
 
       xxc1 = 1.+2.*(1.-cvar_al[c_id])*(pk+gk)/cvar_ep[c_id];
@@ -284,7 +284,7 @@ _turb_flux_st(const char          *name,
                                -xrij[1][i] * gradt[c_id][1]
                                -xrij[2][i] * gradt[c_id][2]);
 
-       if ((cvar_tt != NULL) && (cpro_beta != NULL)
+       if ((cvar_tt != nullptr) && (cpro_beta != nullptr)
            && rans_mdl->has_buoyant_term == 1)
          phiith[i] += c3trit*(cpro_beta[c_id] * grav[i] * cvar_tt[c_id]);
 
@@ -297,7 +297,7 @@ _turb_flux_st(const char          *name,
         * --------------------------------------------- */
        const cs_real_t press_correl_i =       alpha  * phiith[i]
                                         + (1.-alpha) * phiitw[i];
-       if (f_phi_ut != NULL) /* Save it if needed */
+       if (f_phi_ut != nullptr) /* Save it if needed */
          phi_ut[c_id][i] = press_correl_i;
 
        cs_real_t imp_term
@@ -313,23 +313,23 @@ _turb_flux_st(const char          *name,
        /* Production term due to the mean velocity */
        const cs_real_t prod_by_vel_grad_i =
          - cs_math_3_dot_product(gradv[c_id][i], xuta[c_id]);
-       if (prod_by_vel_grad_ut != NULL) /* Save it if needed */
+       if (prod_by_vel_grad_ut != nullptr) /* Save it if needed */
          prod_by_vel_grad_ut[c_id][i] = prod_by_vel_grad_i;
 
        /* Production term due to the mean temperature */
       const cs_real_t prod_by_scal_grad_i =  - (   xrij[i][0]*gradt[c_id][0]
                                                  + xrij[i][1]*gradt[c_id][1]
                                                  + xrij[i][2]*gradt[c_id][2]);
-       if (prod_by_scal_grad_ut != NULL) /* Save it if needed */
+       if (prod_by_scal_grad_ut != nullptr) /* Save it if needed */
          prod_by_scal_grad_ut[c_id][i] = prod_by_scal_grad_i;
 
        /* Production term due to the gravity */
        cs_real_t buoyancy_i = 0.;
-       if ((cvar_tt != NULL) && (cpro_beta != NULL)
+       if ((cvar_tt != nullptr) && (cpro_beta != nullptr)
            && rans_mdl->has_buoyant_term == 1)
          buoyancy_i = -grav[i] * cpro_beta[c_id] * cvara_tt[c_id];
 
-       if (buo_ut != NULL) /* Save it if needed */
+       if (buo_ut != nullptr) /* Save it if needed */
          buo_ut[c_id][i] = buoyancy_i;
 
        /* Dissipation (Wall term only because "h" term is zero */
@@ -338,11 +338,11 @@ _turb_flux_st(const char          *name,
                                     + xxc3 * (  xuta[c_id][0]*xnal[0]*xnal[i]
                                               + xuta[c_id][1]*xnal[1]*xnal[i]
                                               + xuta[c_id][2]*xnal[2]*xnal[i]));
-       if (dissip_ut != NULL)/* Save it if needed */
+       if (dissip_ut != nullptr)/* Save it if needed */
          dissip_ut[c_id][i] = dissip_i;
 
        /* Save production terms for post-processing */
-       if (prod_ut != NULL)
+       if (prod_ut != nullptr)
          prod_ut[c_id][i] = prod_by_vel_grad_i + prod_by_scal_grad_i
                           + buoyancy_i - dissip_i;
 
@@ -365,7 +365,7 @@ _turb_flux_st(const char          *name,
  *
  * \param[in]     f                  Current field
  * \param[in]     f_tv               variance of the thermal scalar field,
- *                                   or NULL
+ *                                   or nullptr
  * \param[in]     n_cells            number of cells
  * \param[in]     n_b_faces          number od boundary faces
  * \param[in]     n_cells_ext        number of cells + gost
@@ -409,16 +409,16 @@ _thermal_flux_and_diff(cs_field_t         *f,
 
   const cs_field_t *f_beta = cs_field_by_name_try("thermal_expansion");
   const cs_turb_rans_model_t *rans_mdl = cs_glob_turb_rans_model;
-  const cs_real_t *cpro_beta = NULL, *cvara_tt = NULL;
-  if (f_beta != NULL)
+  const cs_real_t *cpro_beta = nullptr, *cvara_tt = nullptr;
+  if (f_beta != nullptr)
     cpro_beta = f_beta->val;
 
-  if (f_tv != NULL)
+  if (f_tv != nullptr)
     cvara_tt = f_tv->val_pre;
 
   cs_lnum_t l_viscls = 0; /* stride for uniform/local viscosity access */
   cs_real_t _visls_0 = -1;
-  const cs_real_t *viscls = NULL;
+  const cs_real_t *viscls = nullptr;
   {
     const int kivisl = cs_field_key_id("diffusivity_id");
     int ifcvsl = cs_field_get_key_int(f, kivisl);
@@ -434,7 +434,7 @@ _thermal_flux_and_diff(cs_field_t         *f,
     }
   }
 
-  cs_real_t *cvar_al = NULL;
+  cs_real_t *cvar_al = nullptr;
   if (   (turb_flux_model == 11)
       || (turb_flux_model == 21)
       || (turb_flux_model == 31))
@@ -489,7 +489,7 @@ _thermal_flux_and_diff(cs_field_t         *f,
         for (cs_lnum_t jj = 0; jj < 3; jj++)
           xpk -= xrij[jj][ii] * gradv[c_id][jj][ii];
       }
-      if (cpro_beta != NULL)
+      if (cpro_beta != nullptr)
         xgk = -cpro_beta[c_id] * cs_math_3_dot_product(xut[c_id], grav);
 
       /* Thermo-mecanical scales ratio R */
@@ -532,7 +532,7 @@ _thermal_flux_and_diff(cs_field_t         *f,
       /* AFM model
          "-C_theta*k/eps*( xi* uT'.Grad u + eta*beta*g_i*T'^2)" */
       if (turb_flux_model == 20) {
-        if ((cvara_tt != NULL) && (cpro_beta != NULL)
+        if ((cvara_tt != nullptr) && (cpro_beta != nullptr)
             && rans_mdl->has_buoyant_term == 1)
           temp[ii] -=   ctheta * xtt * cs_turb_etaafm
                       * cpro_beta[c_id] * grav[ii] * cvara_tt[c_id];
@@ -555,7 +555,7 @@ _thermal_flux_and_diff(cs_field_t         *f,
        *                   + eps/k gamma uT' ni nj )"
        */
       if (turb_flux_model == 21) {
-        if ((cvara_tt != NULL) && (cpro_beta != NULL)
+        if ((cvara_tt != nullptr) && (cpro_beta != nullptr)
             && rans_mdl->has_buoyant_term == 1)
           temp[ii] -=   ctheta * xtt * eta_ebafm
                       * cpro_beta[c_id] * grav[ii] * cvara_tt[c_id];
@@ -795,7 +795,7 @@ _solve_rit(const cs_field_t     *f,
 
   cs_lnum_t l_viscls = 0; /* stride for uniform/local viscosity access */
   cs_real_t _visls_0 = -1;
-  const cs_real_t *viscls = NULL;
+  const cs_real_t *viscls = nullptr;
   {
     const int kivisl = cs_field_key_id("diffusivity_id");
     int ifcvsl = cs_field_get_key_int(f, kivisl);
@@ -824,12 +824,12 @@ _solve_rit(const cs_field_t     *f,
 
   const cs_real_t *grav = cs_glob_physical_constants->gravity;
 
-  const cs_field_t *f_tv = NULL;
+  const cs_field_t *f_tv = nullptr;
 
   if (cs_math_3_norm(grav) > cs_math_epzero)
     f_tv = cs_field_get_variance(f);
   else
-    grav = NULL;
+    grav = nullptr;
 
   /* User source terms
      ----------------- */
@@ -1006,7 +1006,7 @@ _solve_rit(const cs_field_t     *f,
   cs_equation_iterative_solve_vector(cs_glob_time_step_options->idtvar,
                                      1, // init
                                      f_ut->id,
-                                     NULL,
+                                     nullptr,
                                      0,
                                      0,
                                      &eqp_loc,
@@ -1019,17 +1019,17 @@ _solve_rit(const cs_field_t     *f,
                                      viscb,
                                      viscf,
                                      viscb,
-                                     NULL,
-                                     NULL,
+                                     nullptr,
+                                     nullptr,
                                      viscce,
                                      weighf,
                                      weighb,
                                      0,
-                                     NULL,
+                                     nullptr,
                                      fimp,
                                      rhs_ut,
                                      xut,
-                                     NULL);
+                                     nullptr);
 
   BFT_FREE(w1);
   BFT_FREE(viscf);
@@ -1087,13 +1087,13 @@ cs_turbulence_rij_transport_div_tf(const int        field_id,
 
   /* Compute velocity gradient */
 
-  cs_real_33_t *gradv = NULL, *_gradv = NULL;
+  cs_real_33_t *gradv = nullptr, *_gradv = nullptr;
   {
     cs_field_t *f_vg = cs_field_by_name_try("algo:velocity_gradient");
 
-    if (f_vel->grad != NULL)
+    if (f_vel->grad != nullptr)
       gradv = (cs_real_33_t *)f_vel->grad;
-    else if (f_vg != NULL)
+    else if (f_vg != nullptr)
       gradv = (cs_real_33_t *)f_vg->val;
     else {
       BFT_MALLOC(_gradv, n_cells_ext, cs_real_33_t);
@@ -1105,12 +1105,12 @@ cs_turbulence_rij_transport_div_tf(const int        field_id,
 
   /* Compute scalar gradient */
 
-  cs_real_3_t *gradt = NULL, *_gradt = NULL;
+  cs_real_3_t *gradt = nullptr, *_gradt = nullptr;
   {
     cs_field_t *f_tg = cs_field_by_double_composite_name_try
                          ("algo:", f->name, "_gradient");
 
-    if (f_tg != NULL)
+    if (f_tg != nullptr)
       gradt = (cs_real_3_t *)f_tg->val;
     else {
       BFT_MALLOC(_gradt, n_cells_ext, cs_real_3_t);
@@ -1126,7 +1126,7 @@ cs_turbulence_rij_transport_div_tf(const int        field_id,
 
   /* EB- AFM or EB-DFM: compute the gradient of alpha of the scalar */
 
-  cs_real_3_t *grad_al = NULL;
+  cs_real_3_t *grad_al = nullptr;
 
   if (   (turb_flux_model == 11)
       || (turb_flux_model == 21)
@@ -1142,7 +1142,7 @@ cs_turbulence_rij_transport_div_tf(const int        field_id,
 
   /* Find the corresponding variance of the scalar */
 
-  const cs_field_t *f_tv = NULL;
+  const cs_field_t *f_tv = nullptr;
 
   const int irovar = cs_glob_fluid_properties->irovar;
   const int idilat = cs_glob_velocity_pressure_model->idilat;
@@ -1157,7 +1157,7 @@ cs_turbulence_rij_transport_div_tf(const int        field_id,
 
     f_tv = cs_field_get_variance(f);
 
-    if (f_tv == NULL)
+    if (f_tv == nullptr)
       bft_error(__FILE__, __LINE__, 0,
                 _("%s: the variance field required for\n"
                   "the turbulent transport of \"%s\" is not available."),
@@ -1165,7 +1165,7 @@ cs_turbulence_rij_transport_div_tf(const int        field_id,
 
   }
   else
-    grav = NULL;
+    grav = nullptr;
 
   /* Agebraic models AFM
    * ------------------- */
@@ -1203,7 +1203,7 @@ cs_turbulence_rij_transport_div_tf(const int        field_id,
     _solve_rit(f, f_ut, xcpp, gradv, gradt, grad_al);
 
     /*  Clipping of the turbulence flux vector */
-    if ((f_tv != NULL) && (cs_glob_time_step->nt_cur > 1)) {
+    if ((f_tv != nullptr) && (cs_glob_time_step->nt_cur > 1)) {
       const int kclipp = cs_field_key_id("is_clipped");
       const int clprit = cs_field_get_key_int(f_ut, kclipp);
       if (clprit > 0)
@@ -1243,7 +1243,7 @@ cs_turbulence_rij_transport_div_tf(const int        field_id,
                  1,
                  eqp->imrgra,
                  eqp->nswrgr,
-                 eqp->imligr,
+                 static_cast<cs_gradient_limit_t>(eqp->imligr),
                  eqp->verbosity,
                  eqp->epsrgr,
                  eqp->climgr,
@@ -1263,10 +1263,10 @@ cs_turbulence_rij_transport_div_tf(const int        field_id,
   if (   turb_flux_model == 11
       || turb_flux_model_type == 2
       || turb_flux_model_type == 3) {
-    cs_real_t *divut = NULL, *_divut = NULL;
+    cs_real_t *divut = nullptr, *_divut = nullptr;
     cs_field_t *f_dut = cs_field_by_double_composite_name_try
                           ("algo:", f_ut->name, "_divergence");
-    if (f_dut != NULL)
+    if (f_dut != nullptr)
       divut = f_dut->val;
     else {
       BFT_MALLOC(_divut, n_cells_ext, cs_real_t);
@@ -1280,7 +1280,7 @@ cs_turbulence_rij_transport_div_tf(const int        field_id,
       smbrs[c_id] -= divut[c_id];
 
     /* For post-processing intensive quantities */
-    if (f_dut != NULL) {
+    if (f_dut != nullptr) {
       int has_disable_flag = mq->has_disable_flag;
       int *c_disable_flag = mq->c_disable_flag;
       const cs_real_t *cell_f_vol = mq->cell_f_vol;

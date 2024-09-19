@@ -108,7 +108,7 @@ cs_turbulence_inflow_volume_mass_injection_k_eps(const char  *zone_name,
                                                  double       k,
                                                  double       eps)
 {
-  cs_turb_model_type_t  iturb = cs_glob_turb_model->iturb;
+  auto iturb = static_cast<cs_turb_model_type_t>(cs_glob_turb_model->iturb);
   int                   itytur = cs_glob_turb_model->itytur;
 
   if (itytur == 2) {

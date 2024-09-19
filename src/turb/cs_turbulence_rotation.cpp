@@ -139,9 +139,9 @@ cs_turbulence_rotation_correction(const cs_real_t   dt[],
   /* Map field arrays */
 
   const cs_real_3_t *vela = (const cs_real_3_t *)CS_F_(vel)->val_pre;
-  const cs_real_t *cvara_k = NULL;
-  const cs_real_t *cvara_ep = NULL;
-  const cs_real_t *cvara_omg = NULL;
+  const cs_real_t *cvara_k = nullptr;
+  const cs_real_t *cvara_ep = nullptr;
+  const cs_real_t *cvara_omg = nullptr;
 
   if (cs_glob_turb_rans_model->itycor == 1){
     cvara_k = (const cs_real_t *)CS_F_(k)->val_pre;
@@ -168,9 +168,9 @@ cs_turbulence_rotation_correction(const cs_real_t   dt[],
   /* Compute the strain rate and absolute vorticity tensor
      ----------------------------------------------------- */
 
-  cs_real_6_t *strain = NULL;
-  cs_real_3_t *vortab = NULL;
-  cs_real_33_t *gradv = NULL;
+  cs_real_6_t *strain = nullptr;
+  cs_real_3_t *vortab = nullptr;
+  cs_real_33_t *gradv = nullptr;
 
   BFT_MALLOC(strain, n_cells_ext, cs_real_6_t);
   BFT_MALLOC(vortab, n_cells_ext, cs_real_3_t);
@@ -222,10 +222,10 @@ cs_turbulence_rotation_correction(const cs_real_t   dt[],
    *     eta2 = W_ij.W_ij
    */
 
-  cs_real_63_t *grdsij = NULL;
-  cs_real_t *brtild = NULL;
-  cs_real_t *eta1 = NULL;
-  cs_real_t *eta2 = NULL;
+  cs_real_63_t *grdsij = nullptr;
+  cs_real_t *brtild = nullptr;
+  cs_real_t *eta1 = nullptr;
+  cs_real_t *eta2 = nullptr;
 
   BFT_MALLOC(grdsij, n_cells_ext, cs_real_63_t);
   BFT_MALLOC(brtild, n_cells, cs_real_t);
@@ -284,7 +284,7 @@ cs_turbulence_rotation_correction(const cs_real_t   dt[],
     eta2[i] = 0.;
   }
 
-  const cs_equation_param_t *eqp = NULL;
+  const cs_equation_param_t *eqp = nullptr;
 
   if (   cs_glob_turb_model->itytur == 2
       || cs_glob_turb_model->itytur == 5
@@ -296,7 +296,7 @@ cs_turbulence_rotation_correction(const cs_real_t   dt[],
   }
 
   int nswrgp = eqp->nswrgr;
-  int imligp = eqp->imligr;
+  auto      imligp = static_cast<cs_gradient_limit_t>(eqp->imligr);
   int iwarnp = eqp->verbosity;
   cs_real_t epsrgp = eqp->epsrgr;
   cs_real_t climgp = eqp->climgr;
@@ -319,7 +319,7 @@ cs_turbulence_rotation_correction(const cs_real_t   dt[],
                      imligp,
                      epsrgp,
                      climgp,
-                     NULL,   /* Use default Neumann BC */
+                     nullptr,   /* Use default Neumann BC */
                      strain,
                      grdsij);
 

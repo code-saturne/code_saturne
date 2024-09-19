@@ -127,14 +127,14 @@ _clip_v2f(cs_lnum_t  n_cells,
   cs_lnum_t nclp[2] =  {0, 0};  /* Min and max clipping values respectively */
 
   /* Postprocess clippings ? */
-  cs_real_t *cpro_phi_clipped = NULL;
+  cs_real_t *cpro_phi_clipped = nullptr;
   int clip_phi_id = cs_field_get_key_int(CS_F_(phi), kclipp);
   if (clip_phi_id > -1) {
     cpro_phi_clipped = cs_field_by_id(clip_phi_id)->val;
     cs_array_real_fill_zero(n_cells, cpro_phi_clipped);
   }
 
-  cs_real_t *cvar_al = NULL, *cpro_a_clipped = NULL;
+  cs_real_t *cvar_al = nullptr, *cpro_a_clipped = nullptr;
   if (cs_glob_turb_model->iturb == CS_TURB_V2F_BL_V2K) {
     cvar_al = CS_F_(alp_bl)->val;
     int  clip_a_id = cs_field_get_key_int(CS_F_(alp_bl), kclipp);
@@ -185,7 +185,7 @@ _clip_v2f(cs_lnum_t  n_cells,
 
   for (cs_lnum_t i = 0; i < n_cells; i++) {
     if (cvar_phi[i] < 0) {
-      if (cpro_phi_clipped != NULL)
+      if (cpro_phi_clipped != nullptr)
         cpro_phi_clipped[i] = cvar_phi[i];
       cvar_phi[i] = -cvar_phi[i];
       nclp[0] += 1;
@@ -216,13 +216,13 @@ _clip_v2f(cs_lnum_t  n_cells,
 
     for (cs_lnum_t i = 0; i < n_cells; i++) {
       if (cvar_al[i] < 0) {
-        if (cpro_a_clipped != NULL)
+        if (cpro_a_clipped != nullptr)
           cpro_a_clipped[i] = -cvar_al[i];
         cvar_al[i] = 0;
         nclp[0] += 1;
       }
       if (cvar_al[i] > 1) {
-        if (cpro_a_clipped != NULL)
+        if (cpro_a_clipped != nullptr)
           cpro_a_clipped[i] = 1.0 - cvar_al[i];
         cvar_al[i] = 1.0;
         nclp[1] += 1;
@@ -329,7 +329,7 @@ _solve_eq_fbr_al(const int         istprv,
   CS_MALLOC_HD(viscf, n_i_faces, cs_real_t, cs_alloc_mode);
   CS_MALLOC_HD(viscb, n_b_faces, cs_real_t, cs_alloc_mode);
 
-  cs_field_t *f = NULL;
+  cs_field_t *f = nullptr;
 
   if (cs_glob_turb_model->iturb == CS_TURB_V2F_PHI) {
     f = CS_F_(f_bar);
@@ -359,8 +359,8 @@ _solve_eq_fbr_al(const int         istprv,
   }
 
   /* Initialization of work arrays in case of HTLES */
-  cs_real_t *htles_psi = NULL;
-  cs_real_t *htles_r   = NULL;
+  cs_real_t *htles_psi = nullptr;
+  cs_real_t *htles_r   = nullptr;
   if (cs_glob_turb_model->hybrid_turb == 4) {
     htles_psi = cs_field_by_name("htles_psi")->val;
     htles_r   = cs_field_by_name("htles_r")->val;
@@ -465,7 +465,7 @@ _solve_eq_fbr_al(const int         istprv,
                          eqp_phi->verbosity,
                          eqp_phi->epsrgr,
                          eqp_phi->climgr,
-                         NULL,
+                         nullptr,
                          CS_F_(phi)->val_pre,
                          CS_F_(phi)->bc_coeffs,
                          viscf,
@@ -615,17 +615,17 @@ _solve_eq_fbr_al(const int         istprv,
                                      viscb,
                                      viscf,
                                      viscb,
-                                     NULL,
-                                     NULL,
-                                     NULL,
+                                     nullptr,
+                                     nullptr,
+                                     nullptr,
                                      0,  /* boundary convective upwind flux */
-                                     NULL,
+                                     nullptr,
                                      rovsdt,
                                      rhs,
                                      cvar_var,
                                      w2, /* dpvar work array */
-                                     NULL,
-                                     NULL);
+                                     nullptr,
+                                     nullptr);
 
   /* Free memory */
   BFT_FREE(visel);
@@ -723,7 +723,7 @@ _solve_eq_phi(const int           istprv,
   }
 
   /* Initialization of work arrays in case of HTLES */
-  cs_real_t *htles_psi = NULL;
+  cs_real_t *htles_psi = nullptr;
   if (cs_glob_turb_model->hybrid_turb == 4) {
     htles_psi = cs_field_by_name("htles_psi")->val;
   }
@@ -767,10 +767,10 @@ _solve_eq_phi(const int           istprv,
   if (eqp->n_volume_mass_injections > 0) {
 
     /* We increment rhs by -Gamma.var_prev and rovsdt by Gamma */
-    int *mst_type = NULL;
+    int *mst_type = nullptr;
     cs_lnum_t n_elts = 0;
-    const cs_lnum_t *elt_ids = NULL;
-    cs_real_t *mst_val = NULL, *mst_val_p = NULL;
+    const cs_lnum_t *elt_ids = nullptr;
+    cs_real_t *mst_val = nullptr, *mst_val_p = nullptr;
 
     /* If we extrapolate the source term we put Gamma Pinj in the prev. TS */
     cs_real_t *gapinj = (istprv >= 0) ? c_st_phi_p : rhs;
@@ -1038,17 +1038,17 @@ _solve_eq_phi(const int           istprv,
                                      viscb,
                                      viscf,
                                      viscb,
-                                     NULL,
-                                     NULL,
-                                     NULL,
+                                     nullptr,
+                                     nullptr,
+                                     nullptr,
                                      0,   /* boundary convective upwind flux */
-                                     NULL,
+                                     nullptr,
                                      rovsdt,
                                      rhs,
                                      cvar_phi,
                                      w2,  /* dpvar work array */
-                                     NULL,
-                                     NULL);
+                                     nullptr,
+                                     nullptr);
 
   CS_FREE_HD(w2);
   CS_FREE_HD(viscf);
@@ -1081,8 +1081,8 @@ cs_turbulence_v2f(const cs_real_t   prdv2f[])
   const cs_equation_param_t *eqp_phi
     = cs_field_get_equation_param_const(CS_F_(phi));
 
-  cs_real_t *c_st_a_p = NULL;
-  cs_real_t *c_st_phi_p = NULL;
+  cs_real_t *c_st_a_p = nullptr;
+  cs_real_t *c_st_phi_p = nullptr;
 
   cs_real_t *rhs;
   cs_real_t *rovsdt;
@@ -1265,13 +1265,13 @@ cs_turbulence_v2f_bl_v2k_mu_t(void)
 
   cs_real_t *s2;
   cs_field_t *f_vel = CS_F_(vel);
-  cs_real_33_t *gradv = NULL, *_gradv = NULL;
+  cs_real_33_t *gradv = nullptr, *_gradv = nullptr;
   {
     cs_field_t *f_vg = cs_field_by_name_try("algo:velocity_gradient");
 
-    if (f_vel->grad != NULL)
+    if (f_vel->grad != nullptr)
       gradv = (cs_real_33_t *)f_vel->grad;
-    else if (f_vg != NULL)
+    else if (f_vg != nullptr)
       gradv = (cs_real_33_t *)f_vg->val;
     else {
       CS_MALLOC_HD(_gradv, n_cells_ext, cs_real_33_t, cs_alloc_mode);

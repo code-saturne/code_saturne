@@ -126,7 +126,7 @@ void
 cs_turbulence_init_by_ref_quantities(void)
 {
   const cs_turb_model_t  *turb_model = cs_glob_turb_model;
-  if (turb_model == NULL)
+  if (turb_model == nullptr)
     return;
 
   const cs_lnum_t n_cells = cs_glob_mesh->n_cells;
@@ -227,7 +227,7 @@ cs_turbulence_init_clip_and_verify(void)
   int n_errors = 0;
 
   const cs_turb_model_t  *turb_model = cs_glob_turb_model;
-  if (turb_model == NULL)
+  if (turb_model == nullptr)
     return n_errors;
 
   const cs_lnum_t n_cells = cs_glob_mesh->n_cells;
