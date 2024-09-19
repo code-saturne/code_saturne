@@ -774,6 +774,7 @@ def run_debug(cmds):
     if rank_filter != None:
         if rank_id not in rank_filter:
             cmd = cmds['program']
+            os.environ['CS_EXIT_ON_ERROR'] = 'ignore'
             return subprocess.call(cmd)
 
     # Tests for Valgrind
