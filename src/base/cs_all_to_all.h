@@ -418,6 +418,8 @@ cs_all_to_all_log_finalize(void);
 
 END_C_DECLS
 
+#if defined(HAVE_MPI)
+
 #if defined(__cplusplus)
 
 /*----------------------------------------------------------------------------*/
@@ -512,5 +514,7 @@ cs_all_to_all_copy_indexed(cs_all_to_all_t *d,
 };
 
 #endif //__cplusplus
+
+#endif
 
 #endif /* __CS_ALL_TO_ALL_H__ */
