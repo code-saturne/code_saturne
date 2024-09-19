@@ -3775,10 +3775,8 @@ cs_interface_set_dup_blocks(cs_interface_set_t  *ifs,
 #endif /* defined(HAVE_MPI) */
 
   if (n_ranks <= 1 && ifs->size > 0) {
-    cs_interface_t *itf = ifs->interfaces[0];
-
     assert(ifs->size <= 1);
-    assert(itf->rank == 0);
+    assert(ifs->interfaces[0]->rank == 0);
 
     d_block_size[0] = block_size;
   }

@@ -1911,53 +1911,6 @@ _log_norm(const cs_mesh_t                *m,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Print norms of density, velocity and pressure in listing.
- *
- * \param[in]  m         pointer to associated mesh structure
- * \param[in]  mq        pointer to associated mesh quantities structure
- * \param[in]  iterns    sub-iteration count
- * \param[in]  icvrge    convergence indicator
- * \param[in]  crom      density at cells
- * \param[in]  brom      density at boundary faces
- * \param[in]  imasfl    interior face mass flux
- * \param[in]  bmasfl    boundary face mass flux
- * \param[in]  cvar_pr   pressure
- * \param[in]  cvar_vel  velocity
- */
-/*----------------------------------------------------------------------------*/
-
-static void
-_resize_non_interleaved_cell_arrays(const cs_mesh_t    *m,
-                                    cs_lnum_t           n_sub,
-                                    cs_real_t         **array)
-{
-  const cs_lnum_t n_cells = m->n_cells;
-  const cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
-
-  cs_dispatch_context ctx;
-
-  cs_real_t *buffer = nullptr;
-
-  CS_MALLOC_HD(buffer, n_sub*n_cells, cs_real_t, cs_alloc_mode);
-  for (cs_lnum_t i = 0; i < n_sub; i++) {
-    cs_array_copy<cs_real_t>(n_cells, *array + i*n_cells_ext, buffer + i*n_cells);
-  }
-
-  CS_REALLOC_HD(*array, n_sub*n_cells_ext, cs_real_t, cs_alloc_mode);
-
-  for (cs_lnum_t i = 0; i < n_sub; i++) {
-    cs_real_t *src = buffer + i*n_cells;
-    cs_real_t *dst = *array + i*n_cells_ext;
-    cs_array_copy<cs_real_t>(n_cells, src, dst);
-    ctx.wait();
-    cs_mesh_sync_var_scal(dst);
-  }
-
-  CS_FREE_HD(buffer);
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
   * \brief Velocity prediction step of the Navier-Stokes equations for
   *        incompressible or slightly compressible flows.
   *

@@ -466,7 +466,6 @@ _solve_pressure_correction(const cs_mesh_t              *mesh,
   void  *pre_eqc = cs_equation_get_scheme_context(pre_eq);
   cs_equation_builder_t  *pre_eqb = pre_eq->builder;
 
-  const cs_time_step_t  *ts = cs_shared_time_step;
   const cs_cdo_connect_t  *connect = cs_shared_connect;
   const cs_cdo_quantities_t  *quant = cs_shared_quant;
   const cs_real_t *velp_f = sc->predicted_velocity_f;

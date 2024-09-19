@@ -936,12 +936,9 @@ cs_hho_builder_compute_grad_reco(const cs_cell_mesh_t      *cm,
      The right-hand side is a matrix since we are building an operator
      We define its transposed version to have a more convenient access to its
      columns */
-  int  tots = 0;
   for (int f = 0; f < cm->n_fc; f++) {
     cb->ids[f] = hhob->face_basis[f]->size;
-    tots += hhob->face_basis[f]->size;
   }
-  tots += hhob->cell_basis->size;
   cb->ids[cm->n_fc] = hhob->cell_basis->size;
 
   cs_sdm_block_init(rhs_t, cm->n_fc + 1, 1, cb->ids, &gs);
@@ -1178,14 +1175,11 @@ cs_hho_builder_diffusion(const cs_cell_mesh_t      *cm,
   cs_sdm_t  *gop_t = hhob->grad_reco_op;
 
   /* Initialize the matrix related to the diffusion term */
-  int  tots = 0;
   for (int f = 0; f < cm->n_fc; f++) {
     assert(fs == hhob->face_basis[f]->size);
     cb->ids[f] = fs;
-    tots += fs;
   }
   cb->ids[cm->n_fc] = cs;
-  tots += cs;
 
   cs_sdm_block_init(cb->loc, cm->n_fc + 1, cm->n_fc + 1, cb->ids, cb->ids);
 

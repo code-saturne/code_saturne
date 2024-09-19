@@ -86,41 +86,6 @@ static const cs_cdo_connect_t  *cs_cdo_connect;
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Allocate and initialize a name (copy or generic name)
- *
- * \param[in] name        input name
- * \param[in] base_name   generic name by default if input name is nullptr
- * \param[in] id          id related to this name
- *
- * \return a pointer to a new allocated string
- */
-/*----------------------------------------------------------------------------*/
-
-static inline char *
-_get_name(const char   *name,
-          const char   *base_name,
-          int           id)
-{
-  char *n = nullptr;
-
-  if (name == nullptr) { /* Define a name by default */
-    assert(id < 100);
-    int len = strlen(base_name) + 4; // 1 + 3 = "_00\n"
-    BFT_MALLOC(n, len, char);
-    sprintf(n, "%s_%2d", base_name, id);
-  }
-  else {  /* Copy name */
-    size_t  len = strlen(name);
-    BFT_MALLOC(n, len + 1, char);
-    strncpy(n, name, len);
-    n[len] = '\0';
-  }
-
-  return n;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief  Update the mask associated to each cell from the mask related to
  *         the given source term structure
  *

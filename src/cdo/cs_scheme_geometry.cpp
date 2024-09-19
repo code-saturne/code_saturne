@@ -123,50 +123,6 @@ _add_tria_to_covariance(const cs_real_t     x1[3],
 /*----------------------------------------------------------------------------*/
 
 static inline void
-_add_tetra_to_inertia2(const cs_real_t    x1[3],
-                       const cs_real_t    x2[3],
-                       const cs_real_t    x3[3],
-                       const cs_real_t    x4[3],
-                       const cs_real_t    center[3],
-                       cs_real_t          vol,
-                       cs_real_33_t       tensor)
-{
-  cs_real_3_t gpts[4], r;
-  cs_real_t   _gw[4];
-
-  cs_quadrature_tet_4pts(x1, x2, x3, x4, vol, gpts, _gw);
-
-  const cs_real_t gw = _gw[0];  /* same weight for all Gauss points */
-  for (short int gp = 0; gp < 4; gp++) {
-
-    for (int k = 0; k < 3; k++) r[k] = gpts[gp][k] - center[k];
-
-    const cs_real_t  rx2 = r[0]*r[0], ry2 = r[1]*r[1], rz2 = r[2]*r[2];
-
-    tensor[0][0] += gw * (ry2 + rz2), tensor[0][1] -= gw * r[0]*r[1];
-    tensor[0][2] -= gw * r[0]*r[2],   tensor[1][1] += gw * (rx2 + rz2);
-    tensor[1][2] -= gw * r[1]*r[2],   tensor[2][2] += gw * (rx2 + ry2);
-
-  } /* Loop on gauss points */
-
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Update the computation of the inertia tensor with the contribution
- *         of a tetrahedron
- *
- * \param[in]      x1       1st vertex coordinate
- * \param[in]      x2       2nd vertex coordinate
- * \param[in]      x3       3rd vertex coordinate
- * \param[in]      x4       4th vertex coordinate
- * \param[in]      center   center used for the computation
- * \param[in]      vol      volume of the tetrahedron
- * \param[in, out] tensor   inertia tensor to update
- */
-/*----------------------------------------------------------------------------*/
-
-static inline void
 _add_tetra_to_inertia3(const cs_real_t    x1[3],
                        const cs_real_t    x2[3],
                        const cs_real_t    x3[3],

@@ -621,12 +621,11 @@ _uzawa_cg_init_context(const cs_navsto_param_t              *nsp,
                        cs_saddle_solver_t                   *solver,
                        cs_saddle_solver_context_uzawa_cg_t  *ctx)
 {
-  const cs_cdo_quantities_t  *quant = cs_shared_quant;
   const cs_cdo_connect_t  *connect = cs_shared_connect;
 
   assert(ctx != nullptr);
-  assert(solver->n2_scatter_dofs == quant->n_cells);
-  assert(solver->n1_scatter_dofs == 3*quant->n_faces);
+  assert(solver->n2_scatter_dofs == cs_shared_quant->n_cells);
+  assert(solver->n1_scatter_dofs == 3 * cs_shared_quant->n_faces);
 
   cs_cdo_system_helper_t  *sh = solver->system_helper;
 
@@ -670,11 +669,9 @@ static void
 _simple_init_context(cs_saddle_solver_t                *solver,
                      cs_saddle_solver_context_simple_t *ctx)
 {
-  const cs_cdo_quantities_t *quant = cs_shared_quant;
-
   assert(ctx != nullptr);
-  assert(solver->n2_scatter_dofs == quant->n_cells);
-  assert(solver->n1_scatter_dofs == 3*quant->n_faces);
+  assert(solver->n2_scatter_dofs == cs_shared_quant->n_cells);
+  assert(solver->n1_scatter_dofs == 3 * cs_shared_quant->n_faces);
 
   cs_cdo_system_helper_t  *sh = solver->system_helper;
 
