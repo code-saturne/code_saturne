@@ -499,12 +499,7 @@ cs_coupling_is_sync_active(void)
 
     const int *app_status = nullptr;
 
-    /* Set synchronization flag */
-
-    app_status
-      = ple_coupling_mpi_set_get_status(_cs_glob_coupling_mpi_app_world);
-
-    /* Synchronize applications */
+    /* Get synchronization flag */
 
     app_status
       = ple_coupling_mpi_set_get_status(_cs_glob_coupling_mpi_app_world);
