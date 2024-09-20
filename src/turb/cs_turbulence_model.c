@@ -200,8 +200,8 @@ BEGIN_C_DECLS
         Useful if and only if eddy viscosity models are chosen.
   \var  cs_turb_rans_model_t::reinit_turb
         Advanced re-init for EBRSM and k-omega models
-        - 1: true
-        - 0: false (default)
+        - 1: true (default)
+        - 0: false
   \var  cs_turb_rans_model_t::irijco
         coupled solving of Rij
         - 1: true (default)
