@@ -110,18 +110,10 @@ BEGIN_C_DECLS
 
 /* Tensor to vector (t2v) and vector to tensor (v2t) mask arrays */
 
-CS_V_CONSTANT cs_lnum_t _iv2t[6] = {0, 1, 2, 0, 1, 0};
-CS_V_CONSTANT cs_lnum_t _jv2t[6] = {0, 1, 2, 1, 2, 2};
+const cs_lnum_t _t2v[3][3] = {{0, 3, 5}, {3, 1, 4}, {5, 4, 2}};
 
-CS_V_CONSTANT cs_lnum_t _t2v[3][3] = {{0, 3, 5},
-                                      {3, 1, 4},
-                                      {5, 4, 2}};
-
-CS_V_CONSTANT cs_real_6_t _vdeltij = {1, 1, 1, 0, 0, 0};
-
-CS_V_CONSTANT cs_real_33_t _tdeltij = {{1., 0., 0.},
-                                       {0., 1., 0.},
-                                       {0., 0., 1.}};
+const cs_lnum_t _iv2t[6] = {0, 1, 2, 0, 1, 0};
+const cs_lnum_t _jv2t[6] = {0, 1, 2, 1, 2, 2};
 
 /*============================================================================
  * Private function definitions
@@ -640,6 +632,11 @@ _rij_echo(int              phase_id,
   const cs_real_t crij2 = cs_turb_crij2;
   const cs_real_t xkappa = cs_turb_xkappa;
 
+  const auto t2v = _t2v;
+  const auto iv2t = _iv2t;
+  const auto jv2t = _jv2t;
+  const cs_real_t tdeltij[3][3] = {{1., 0., 0.}, {0., 1., 0.}, {0., 0., 1.}};
+
   ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
 
     cs_real_t w6[6] = {0., 0., 0., 0., 0., 0.};
@@ -655,7 +652,7 @@ _rij_echo(int              phase_id,
     for (cs_lnum_t k = 0; k < 3; k++) {
       for (cs_lnum_t l = 0; l < 3; l++) {
 
-        const cs_lnum_t kl = _t2v[k][l];
+        const cs_lnum_t kl = t2v[k][l];
 
         /* Terms with R km and Phi km;
 
@@ -667,7 +664,7 @@ _rij_echo(int              phase_id,
           = n[k] * n[l]
             * (crijp1 * cvara_rij[c_id][kl] * epsk
                - (  crijp2 * crij2
-                  * (produc[c_id][kl] - d2s3 * prod_k * _tdeltij[k][l])));
+                  * (produc[c_id][kl] - d2s3 * prod_k * tdeltij[k][l])));
 
         w6[0] += c_tr;
         w6[1] += c_tr;
@@ -677,11 +674,11 @@ _rij_echo(int              phase_id,
 
       for (cs_lnum_t ij = 0; ij < 6; ij++) {
 
-        cs_lnum_t i = _iv2t[ij];
-        cs_lnum_t j = _jv2t[ij];
+        cs_lnum_t i = iv2t[ij];
+        cs_lnum_t j = jv2t[ij];
 
-        const cs_lnum_t ki = _t2v[k][i];
-        const cs_lnum_t kj = _t2v[k][j];
+        const cs_lnum_t ki = t2v[k][i];
+        const cs_lnum_t kj = t2v[k][j];
 
         w6[ij] +=   1.5 * n[k]
                     * (- (  crijp1
@@ -690,9 +687,9 @@ _rij_echo(int              phase_id,
                            * epsk)
                        + (  crijp2 * crij2
                           * (  ( produc[c_id][ki]
-                                -d2s3 * prod_k * _tdeltij[k][i]) * n[j]
+                                -d2s3 * prod_k * tdeltij[k][i]) * n[j]
                              + ( produc[c_id][kj]
-                                -d2s3 * prod_k * _tdeltij[k][j]) * n[i])));
+                                -d2s3 * prod_k * tdeltij[k][j]) * n[i])));
 
       } /* End of loop on ij */
 
@@ -753,8 +750,9 @@ _gravity_st_rij(const cs_field_t  *f_rij,
 
   const cs_real_t g = cs_math_3_norm(grav);
   const cs_real_t o_m_crij3 = (1. - cs_turb_crij3);
-
   const cs_real_t crij3 = cs_turb_crij3;
+
+  const auto t2v = _t2v;
 
   cs_real_6_t *_buoyancy = nullptr, *cpro_buoyancy = nullptr;
   cs_field_t *f_buo = cs_field_by_name_try("algo:rij_buoyancy");
@@ -847,7 +845,7 @@ _gravity_st_rij(const cs_field_t  *f_rij,
 
         for (cs_lnum_t i = 0; i < 3; i++) {
           for (cs_lnum_t j = 0; j < 3; j++) {
-            cs_lnum_t ij = _t2v[i][j];
+            cs_lnum_t ij = t2v[i][j];
             implmat2add[i][j] = -0.5 * gkks3 * oo_matrn[ij];
           }
         }
@@ -862,7 +860,7 @@ _gravity_st_rij(const cs_field_t  *f_rij,
 
       for (cs_lnum_t i = 0; i < 3; i++) {
         for (cs_lnum_t j = 0; j < 3; j++) {
-          cs_lnum_t ij = _t2v[i][j];
+          cs_lnum_t ij = t2v[i][j];
           implmat2add[i][j] += 0.5 * impl_id_cst * oo_matrn[ij];
         }
       }
@@ -1138,6 +1136,10 @@ _pre_solve_lrr(const cs_field_t  *f_rij,
   const cs_real_t crij2 = cs_turb_crij2;
   const cs_real_t crijeps = cs_turb_crij_eps;
 
+  const auto t2v = _t2v;
+  const cs_real_t tdeltij[3][3] = {{1., 0., 0.}, {0., 1., 0.}, {0., 0., 1.}};
+  const cs_real_t vdeltij[6] = {1, 1, 1, 0, 0, 0};
+
   cs_lnum_t solid_stride = 1;
   int *c_is_solid_zone_flag = cs_solid_zone_flag(cs_glob_mesh);
   const int c_is_solid_ref[1] = {0};
@@ -1166,8 +1168,8 @@ _pre_solve_lrr(const cs_field_t  *f_rij,
     /* aij */
     for (cs_lnum_t i = 0; i < 3; i++) {
       for (cs_lnum_t j = 0; j < 3; j++) {
-        xaniso[i][j] =   cvara_var[c_id][_t2v[i][j]] / trrij
-                         - d2s3 * _tdeltij[i][j];
+        xaniso[i][j] =   cvara_var[c_id][t2v[i][j]] / trrij
+                       - d2s3 * tdeltij[i][j];
       }
     }
 
@@ -1232,9 +1234,9 @@ _pre_solve_lrr(const cs_field_t  *f_rij,
     cs_real_t implmat2add[3][3];
     for (cs_lnum_t i = 0; i < 3; i++) {
       for (cs_lnum_t j = 0; j < 3; j++) {
-        cs_lnum_t ij = _t2v[i][j];
+        cs_lnum_t ij = t2v[i][j];
         implmat2add[i][j] =   (1.0 - crij2) * xrotac[i][j]
-                              + impl_lin_cst * _vdeltij[ij]
+                              + impl_lin_cst * vdeltij[ij]
                               + impl_id_cst * d1s2 * oo_matrn[ij]
                               + ceps_impl * oo_matrn[ij];
       }
@@ -1261,10 +1263,10 @@ _pre_solve_lrr(const cs_field_t  *f_rij,
       cs_lnum_t j = _jv2t[ij];
 
       /* Explicit terms */
-      cs_real_t pij = (1.-crij2) * produc[c_id][_t2v[j][i]];
+      cs_real_t pij = (1.-crij2) * produc[c_id][t2v[j][i]];
       cs_real_t phiij1 = -cvara_ep[c_id]*crij1*xaniso[j][i];
-      cs_real_t phiij2 = d2s3*crij2*trprod*_vdeltij[ij];
-      cs_real_t epsij = -d2s3*crijeps*cvara_ep[c_id]*_vdeltij[ij];
+      cs_real_t phiij2 = d2s3*crij2*trprod*vdeltij[ij];
+      cs_real_t epsij = -d2s3*crijeps*cvara_ep[c_id]*vdeltij[ij];
 
       if (st_prv_id > -1) {
         c_st_prv[c_id][ij] +=   cromo[c_id] * cell_f_vol[c_id]
@@ -1320,8 +1322,8 @@ _pre_solve_lrr(const cs_field_t  *f_rij,
         w2[c_id][ij] = 0.;
         for (cs_lnum_t k = 0; k < 3; k++)
           w2[c_id][ij] -=   ccorio
-                           * (  matrot[k][i] * cvara_var[c_id][_t2v[k][j]]
-                              + matrot[k][j] * cvara_var[c_id][_t2v[k][i]]);
+                           * (  matrot[k][i] * cvara_var[c_id][t2v[k][j]]
+                              + matrot[k][j] * cvara_var[c_id][t2v[k][i]]);
       }
 
       /* Coriolis contribution in the Phi1 term: (1-C2/2)Gij */
@@ -1536,6 +1538,9 @@ _pre_solve_lrr_sg(const cs_field_t  *f_rij,
   const cs_real_t crij2 = cs_turb_crij2;
   const cs_real_t crijeps = cs_turb_crij_eps;
 
+  const auto t2v = _t2v;
+  const cs_real_t vdeltij[6] = {1, 1, 1, 0, 0, 0};
+
   cs_lnum_t solid_stride = 1;
   int *c_is_solid_zone_flag = cs_solid_zone_flag(cs_glob_mesh);
   const int c_is_solid_ref[1] = {0};
@@ -1584,7 +1589,7 @@ _pre_solve_lrr_sg(const cs_field_t  *f_rij,
          *  = rhoPij-C1rho eps/k(-2/3k dij)-C2rho(Pij-1/3Pkk dij)-2/3rho eps dij
          *  = rho(2/3dij[C2 Pkk/2+(C1-1)eps)]+(1-C2)Pij */
         c_st_prv[c_id][ij] +=  cromo[c_id] * cell_f_vol[c_id]
-                              * (  _vdeltij[ij]*d2s3
+                              * (  vdeltij[ij]*d2s3
                                  * (   crij2 * trprod
                                     + (crij1-crijeps) * cvara_ep[c_id])
                                  + (1.-crij2)*produc[c_id][ij]);
@@ -1643,7 +1648,7 @@ _pre_solve_lrr_sg(const cs_field_t  *f_rij,
          *           - C2rho(Pij-1/3Pkk dij) -2/3rho eps dij
          *  = rho{2/3dij[C2 Pkk/2+(C1-1)eps)]+(1-C2)Pij */
         rhs[c_id][ij] +=  crom[c_id] * cell_f_vol[c_id]
-                        * (  _vdeltij[ij] * d2s3
+                        * (  vdeltij[ij] * d2s3
                            * (   crij2 * trprod
                               + (crij1-crijeps) * cvara_ep[c_id])
                            + (1-cs_turb_crij2) * produc[c_id][ij]
@@ -1652,7 +1657,7 @@ _pre_solve_lrr_sg(const cs_field_t  *f_rij,
         /* Calculation of the implicit part coming from Phi1
          *  = C1rho eps/k(1-1/3 dij) */
         fimp[c_id][ij][ij] +=   crom[c_id] * cell_f_vol[c_id]
-                                * (1-d1s3 *_vdeltij[ij]) * crij1
+                                * (1-d1s3 *vdeltij[ij]) * crij1
                                 * cvara_ep[c_id]/trrij;
       }
     }
@@ -1693,8 +1698,8 @@ _pre_solve_lrr_sg(const cs_field_t  *f_rij,
         w2[c_id][ij] = 0.;
         for (cs_lnum_t kk = 0; kk < 3; kk++)
           w2[c_id][ij] -=   ccorio
-                           * (  matrot[kk][i]*cvara_var[c_id][_t2v[kk][j]]
-                              + matrot[kk][j]*cvara_var[c_id][_t2v[kk][i]]);
+                           * (  matrot[kk][i]*cvara_var[c_id][t2v[kk][j]]
+                              + matrot[kk][j]*cvara_var[c_id][t2v[kk][i]]);
       }
 
       /* Coriolis contribution in the Phi1 term: (1-C2/2)Gij */
@@ -1938,6 +1943,12 @@ _pre_solve_ssg(const cs_field_t  *f_rij,
   const cs_turb_model_type_t iturb
     = (cs_turb_model_type_t)cs_glob_turb_model->iturb;
 
+  const auto t2v = _t2v;
+  const auto iv2t = _iv2t;
+  const auto jv2t = _jv2t;
+  const cs_real_t tdeltij[3][3] = {{1., 0., 0.}, {0., 1., 0.}, {0., 0., 1.}};
+  const cs_real_t vdeltij[6] = {1, 1, 1, 0, 0, 0};
+
   /* Production, Pressure-Strain correlation, dissipation, Coriolis
    * -------------------------------------------------------------- */
 
@@ -2002,14 +2013,14 @@ _pre_solve_ssg(const cs_field_t  *f_rij,
 
     for (cs_lnum_t i = 0; i < 3; i++) {
       for (cs_lnum_t j = 0; j < 3; j++) {
-        xrij[i][j] = cvara_var[c_id][_t2v[i][j]];
+        xrij[i][j] = cvara_var[c_id][t2v[i][j]];
       }
     }
 
     /* Pij */
     for (cs_lnum_t i = 0; i < 3; i++) {
       for (cs_lnum_t j = 0; j < 3; j++) {
-        xprod[i][j] = produc[c_id][_t2v[i][j]];
+        xprod[i][j] = produc[c_id][t2v[i][j]];
       }
     }
 
@@ -2017,7 +2028,7 @@ _pre_solve_ssg(const cs_field_t  *f_rij,
     for (cs_lnum_t i = 0; i < 3; i++) {
       for (cs_lnum_t j = 0; j < 3; j++) {
         xaniso[i][j] =   xrij[i][j] / trrij
-                         - d2s3 * _tdeltij[i][j];
+                       - d2s3 * tdeltij[i][j];
       }
     }
 
@@ -2132,9 +2143,9 @@ _pre_solve_ssg(const cs_field_t  *f_rij,
         cs_real_t implmat2add[3][3];
         for (cs_lnum_t i = 0; i < 3; i++) {
           for (cs_lnum_t j = 0; j < 3; j++) {
-            const cs_lnum_t _ij = _t2v[i][j];
+            const cs_lnum_t _ij = t2v[i][j];
             implmat2add[i][j] =   xrotac[i][j]
-                                + impl_lin_cst * _vdeltij[_ij]
+                                + impl_lin_cst * vdeltij[_ij]
                                 + impl_id_cst * d1s2 * oo_matrn[_ij]
                                 + ceps_impl * oo_matrn[_ij];
           }
@@ -2171,9 +2182,9 @@ _pre_solve_ssg(const cs_field_t  *f_rij,
         cs_real_t implmat2add[3][3];
         for (cs_lnum_t i = 0; i < 3; i++) {
           for (cs_lnum_t j = 0; j < 3; j++) {
-            const cs_lnum_t _ij = _t2v[i][j];
+            const cs_lnum_t _ij = t2v[i][j];
             implmat2add[i][j] =   xrotac[i][j]
-                                + impl_lin_cst * _vdeltij[_ij]
+                                + impl_lin_cst * vdeltij[_ij]
                                 + impl_id_cst * d1s2 * oo_matrn[_ij]
                                 + alpha3 * ceps_impl * oo_matrn[_ij];
           }
@@ -2195,8 +2206,8 @@ _pre_solve_ssg(const cs_field_t  *f_rij,
     }
 
     for (cs_lnum_t ij = 0; ij < 6; ij++) {
-      cs_lnum_t i = _iv2t[ij];
-      cs_lnum_t j = _jv2t[ij];
+      cs_lnum_t i = iv2t[ij];
+      cs_lnum_t j = jv2t[ij];
 
       cs_real_t aiksjk = 0, aikrjk = 0, aikakj = 0;
 
@@ -2230,14 +2241,14 @@ _pre_solve_ssg(const cs_field_t  *f_rij,
         const cs_real_t pij =     xprod[j][i];
         const cs_real_t phiij1 =   -cvara_ep[c_id]
                                  * (  cssgs1 * xaniso[j][i]
-                                    + cssgs2 * (aikakj - d1s3*_vdeltij[ij]*aii));
+                                    + cssgs2 * (aikakj - d1s3*vdeltij[ij]*aii));
         const cs_real_t phiij2 =   -cssgr1 * trprod * xaniso[j][i]
                                  +   trrij * xstrai[j][i]
                                    * (cssgr2 - cssgr3*sqrt(aii))
                                  + cssgr4*trrij * (  aiksjk
-                                                   - d2s3 * _vdeltij[ij] * aklskl)
+                                                   - d2s3 * vdeltij[ij] * aklskl)
                                  + cssgr5*trrij * aikrjk;
-        const cs_real_t epsij = -d2s3*crijeps * cvara_ep[c_id] * _vdeltij[ij];
+        const cs_real_t epsij = -d2s3*crijeps * cvara_ep[c_id] * vdeltij[ij];
 
         w1[c_id] =   cromo[c_id] * cell_f_vol[c_id]
                    * (pij + phiij1 + phiij2 + epsij);
@@ -2256,7 +2267,7 @@ _pre_solve_ssg(const cs_field_t  *f_rij,
          * Compute the term near the wall \f$ \Phi_{ij}^w \f$ --> w3
          *
          * Phiw = -5.0 * (eps/k) * [R*Xn + Xn^T*R - 0.5*tr(Xn*R)*(Xn+Id)] */
-        const cs_real_t xnnd = d1s2 * (xnal[i]*xnal[j] + _vdeltij[ij]);
+        const cs_real_t xnnd = d1s2 * (xnal[i]*xnal[j] + vdeltij[ij]);
 
         cs_real_t phiijw = 0;
         for (cs_lnum_t kk = 0; kk < 3; kk++) {
@@ -2272,7 +2283,7 @@ _pre_solve_ssg(const cs_field_t  *f_rij,
         const cs_real_t phiij2
           =   -cebmr1 * trprod * xaniso[j][i]
             +   trrij * (  xstrai[j][i] * (cebmr2 - cebmr3 * sqrt(aii))
-                         + cebmr4 * (aiksjk - d2s3 * _vdeltij[ij] * aklskl)
+                         + cebmr4 * (aiksjk - d2s3 * vdeltij[ij] * aklskl)
                          + cebmr5 * aikrjk);
 
         /* Compute \f $\e_{ij}^w \f$ (Rotta model)
@@ -2280,7 +2291,7 @@ _pre_solve_ssg(const cs_field_t  *f_rij,
         const cs_real_t epsijw = xrij[j][i] / trrij * cvara_ep[c_id];
 
         /* Compute \e_{ij}^h */
-        const cs_real_t epsij = d2s3 * cvara_ep[c_id] * _vdeltij[ij];
+        const cs_real_t epsij = d2s3 * cvara_ep[c_id] * vdeltij[ij];
 
         /* Compute explicit ST of the Rij equation
          *  \f[ P_{ij} + (1-\alpha^3)\Phi_{ij}^w + \alpha^3\Phi_{ij}^h
@@ -2936,6 +2947,12 @@ cs_turbulence_rij(int phase_id)
   const cs_real_t *crom = f_rho->val;
   const cs_real_6_t *cvara_rij = (const cs_real_6_t *)f_rij->val_pre;
 
+  const auto t2v = _t2v;
+  const auto iv2t = _iv2t;
+  const auto jv2t = _jv2t;
+  const cs_real_t tdeltij[3][3] = {{1., 0., 0.}, {0., 1., 0.}, {0., 0., 1.}};
+  const cs_real_t vdeltij[6] = {1, 1, 1, 0, 0, 0};
+
   cs_real_6_t *rhs;
   cs_real_66_t *fimp;
   CS_MALLOC_HD(rhs, n_cells_ext, cs_real_6_t, cs_alloc_mode);
@@ -3161,10 +3178,10 @@ cs_turbulence_rij(int phase_id)
                               * cs_math_pow2((1.-exp(-ypa/25.)));
 
       for (cs_lnum_t ij = 0; ij < 6; ij++) {
-        cs_lnum_t i = _iv2t[ij];
-        cs_lnum_t j = _jv2t[ij];
-        cvar_rij[c_id][ij] =      alpha3  * 2./3 * tke * _vdeltij[ij]
-                            + (1.-alpha3)*(_vdeltij[ij] - xnal[i]*xnal[j])*tke;
+        cs_lnum_t i = iv2t[ij];
+        cs_lnum_t j = jv2t[ij];
+        cvar_rij[c_id][ij] =      alpha3  * 2./3 * tke * vdeltij[ij]
+                            + (1.-alpha3)*(vdeltij[ij] - xnal[i]*xnal[j])*tke;
       }
 
     }); /* End of loop on cells */
@@ -3190,15 +3207,15 @@ cs_turbulence_rij(int phase_id)
     /* Pij = - (Rik dUj/dXk + dUi/dXk Rkj)
      * Pij is stored as (P11, P22, P33, P12, P23, P13) */
     for (cs_lnum_t ij = 0; ij < 6; ij++) {
-      cs_lnum_t i = _iv2t[ij];
-      cs_lnum_t j = _jv2t[ij];
+      cs_lnum_t i = iv2t[ij];
+      cs_lnum_t j = jv2t[ij];
 
-      produc[c_id][ij] = - (  cvara_rij[c_id][_t2v[i][0]] * gradv[c_id][j][0]
-                            + cvara_rij[c_id][_t2v[i][1]] * gradv[c_id][j][1]
-                            + cvara_rij[c_id][_t2v[i][2]] * gradv[c_id][j][2]
-                            + gradv[c_id][i][0] * cvara_rij[c_id][_t2v[0][j]]
-                            + gradv[c_id][i][1] * cvara_rij[c_id][_t2v[1][j]]
-                            + gradv[c_id][i][2] * cvara_rij[c_id][_t2v[2][j]]);
+      produc[c_id][ij] = - (  cvara_rij[c_id][t2v[i][0]] * gradv[c_id][j][0]
+                            + cvara_rij[c_id][t2v[i][1]] * gradv[c_id][j][1]
+                            + cvara_rij[c_id][t2v[i][2]] * gradv[c_id][j][2]
+                            + gradv[c_id][i][0] * cvara_rij[c_id][t2v[0][j]]
+                            + gradv[c_id][i][1] * cvara_rij[c_id][t2v[1][j]]
+                            + gradv[c_id][i][2] * cvara_rij[c_id][t2v[2][j]]);
     }
 
   });
@@ -3224,8 +3241,8 @@ cs_turbulence_rij(int phase_id)
       for (cs_lnum_t ij = 0; ij < 6; ij++)
         cpro_press_correl[c_id][ij]
           = - crij1 * cvar_ep[c_id] / k
-                    * (cvara_rij[c_id][ij] - d2s3*k* _vdeltij[ij])
-            - crij2 * (produc[c_id][ij] - d2s3 * p * _vdeltij[ij]);
+                    * (cvara_rij[c_id][ij] - d2s3*k* vdeltij[ij])
+            - crij2 * (produc[c_id][ij] - d2s3 * p * vdeltij[ij]);
     });
   }
 
@@ -3370,14 +3387,14 @@ cs_turbulence_rij(int phase_id)
       cs_real_t bf[6][6];
 
       for (cs_lnum_t ij = 0; ij < 6; ij++) {
-        cs_lnum_t i = _iv2t[ij];
-        cs_lnum_t j = _jv2t[ij];
+        cs_lnum_t i = iv2t[ij];
+        cs_lnum_t j = jv2t[ij];
         for (cs_lnum_t kl = 0; kl < 6; kl++) {
-          cs_lnum_t k = _iv2t[kl];
-          cs_lnum_t l = _jv2t[kl];
+          cs_lnum_t k = iv2t[kl];
+          cs_lnum_t l = jv2t[kl];
           bf[ij][kl] = b_lam[face_id] * n[l]
-                       * (  n[i] * (_tdeltij[j][k] - n[j]*n[k])
-                          + n[j] * (_tdeltij[i][k] - n[i]*n[k]));
+                       * (  n[i] * (tdeltij[j][k] - n[j]*n[k])
+                          + n[j] * (tdeltij[i][k] - n[i]*n[k]));
         }
       }
 
