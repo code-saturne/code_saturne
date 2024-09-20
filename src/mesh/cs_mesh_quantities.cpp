@@ -1187,13 +1187,13 @@ _correct_cell_face_center(const cs_mesh_t    *mesh,
 /*----------------------------------------------------------------------------*/
 
 static void
-_compute_cell_quantities(const cs_mesh_t  *mesh,
-                         const cs_real_3_t i_face_norm[],
-                         const cs_real_3_t i_face_cog[],
-                         const cs_real_3_t b_face_norm[],
-                         const cs_real_3_t b_face_cog[],
+_compute_cell_quantities(const cs_mesh_t      *mesh,
+                         const cs_real_3_t     i_face_norm[],
+                         const cs_real_3_t     i_face_cog[],
+                         const cs_real_3_t     b_face_norm[],
+                         const cs_real_3_t     b_face_cog[],
                          cs_real_3_t *restrict cell_cen,
-                         cs_real_t *restrict cell_vol)
+                         cs_real_t   *restrict cell_vol)
 {
   /* Mesh connectivity */
 
@@ -2404,16 +2404,18 @@ _mesh_quantities_cell_faces_cog_solid
 /*----------------------------------------------------------------------------*/
 
 static void
-_compute_fluid_solid_cell_quantities(
-  const cs_mesh_t *m,
-  const cs_real_t  i_f_face_cell_normal[][2][3],
-  const cs_real_t  i_f_face_cog[][2][3],
-  const cs_real_t  b_f_face_normal[][3],
-  const cs_real_t  b_f_face_cog[][3],
-  const cs_real_t  c_w_face_normal[][3],
-  const cs_real_t  c_w_face_cog[][3],
-  cs_real_3_t *restrict cell_f_cen,
-  cs_real_t *restrict cell_f_vol)
+_compute_fluid_solid_cell_quantities
+(
+  const cs_mesh_t       *m,
+  const cs_real_t        i_f_face_cell_normal[][2][3],
+  const cs_real_t        i_f_face_cog[][2][3],
+  const cs_real_t        b_f_face_normal[][3],
+  const cs_real_t        b_f_face_cog[][3],
+  const cs_real_t        c_w_face_normal[][3],
+  const cs_real_t        c_w_face_cog[][3],
+  cs_real_3_t  *restrict cell_f_cen,
+  cs_real_t    *restrict cell_f_vol
+)
 {
   /* Mesh connectivity */
 

@@ -1190,9 +1190,9 @@ _new_cells_i_faces_count(const cs_mesh_t            *m,
                          const cs_mesh_refine_type_t c_r_flag[],
                          const cs_lnum_t             b_face_o2n_idx[],
                          const cs_lnum_t             i_face_o2n_idx[],
-                         cs_lnum_t *restrict c_n_s_cells,
-                         cs_lnum_t *restrict c_n_i_faces,
-                         cs_lnum_t *restrict c_i_faces_size)
+                         cs_lnum_t         *restrict c_n_s_cells,
+                         cs_lnum_t         *restrict c_n_i_faces,
+                         cs_lnum_t         *restrict c_i_faces_size)
 {
   const cs_lnum_t n_cells = m->n_cells;
 
@@ -2711,8 +2711,8 @@ _subdivided_faces_sizes(const cs_adjacency_t       *v2v,
                         const cs_mesh_refine_type_t f_r_flag[],
                         const cs_lnum_t             f2v_idx[],
                         const cs_lnum_t             f2v_lst[],
-                        cs_lnum_t *restrict f_o2n_idx,
-                        cs_lnum_t *restrict f_o2n_connect_size)
+                        cs_lnum_t         *restrict f_o2n_idx,
+                        cs_lnum_t         *restrict f_o2n_connect_size)
 {
   f_o2n_idx[0] = 0;
 
