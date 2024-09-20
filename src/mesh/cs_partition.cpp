@@ -1499,11 +1499,10 @@ _part_parmetis(cs_gnum_t   n_g_cells,
     assert(0); /* porting error, possible with future or modified ParMETIS */
   }
 
-#ifdef sizeof(idx_t) == sizeof(int)
-  _cell_part = cell_part;
-#else
-  BFT_MALLOC(_cell_part, n_cells, idx_t);
-#endif
+  if (sizeof(idx_t) == sizeof(int))
+    _cell_part = cell_part;
+  else
+    BFT_MALLOC(_cell_part, n_cells, idx_t);
 
   bft_printf(_("\n"
                " Partitioning %llu cells to %d domains on %d ranks\n"

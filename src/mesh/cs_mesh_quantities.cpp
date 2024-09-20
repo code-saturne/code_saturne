@@ -4352,6 +4352,8 @@ cs_mesh_quantities_solid_compute(const cs_mesh_t       *m,
 
   cs_real_t *c_w_dist_inv = mq->c_w_dist_inv;
 
+  const cs_real_t m_identity[3][3] = {{1., 0., 0.,}, {0., 1., 0.}, {0., 0., 1.}};
+
   for (cs_lnum_t c_id = 0; c_id < m->n_cells; c_id++) {
 
     cs_real_t xc[3] = {mq->cell_f_cen[3*c_id],
@@ -4376,9 +4378,10 @@ cs_mesh_quantities_solid_compute(const cs_mesh_t       *m,
 
       cs_real_t mat[3][3];
       for (cs_lnum_t i = 0; i < 3; i++) {
-        for (cs_lnum_t j = 0; j < 3; j++)
-          mat[i][j] = mq->cell_f_vol[c_id]*cs_math_33_identity[i][j]
+        for (cs_lnum_t j = 0; j < 3; j++) {
+          mat[i][j] = mq->cell_f_vol[c_id]*m_identity[i][j]
                     - xpsn[c_id][i][j];
+        }
       }
       cs_math_33_3_product(mat, c_w_face_normal[c_id], vc_w_f_cen);
       cs_real_t d_w = cs_math_3_square_norm(c_w_face_normal[c_id]);

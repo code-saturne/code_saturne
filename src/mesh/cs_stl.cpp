@@ -635,6 +635,7 @@ _tetra_vol(cs_real_t x1[3],
            cs_real_t x3[3],
            cs_real_t x4[3])
 {
+  constexpr cs_real_t c_1ov6 = 1./6.;
   cs_real_t tetra_vol;
 
   tetra_vol =  cs_math_fabs((  (x1[0]-x4[0])*(x2[1]-x4[1])
@@ -644,7 +645,7 @@ _tetra_vol(cs_real_t x1[3],
                          + (   (x1[2]-x4[2])*(x2[0]-x4[0])
                              - (x1[0]-x4[0])*(x2[2]-x4[2])) * (x3[1]-x4[1]));
 
-  tetra_vol *= cs_math_1ov6;
+  tetra_vol *= c_1ov6;
 
   return tetra_vol;
 }
@@ -710,10 +711,12 @@ _prism_vol(cs_real_t x1[3],
            cs_real_t x5[3],
            cs_real_t x6[3])
 {
+  constexpr cs_real_t c_1ov6 = 1./6.;
+
   cs_real_t xc[3];
 
   for (int i = 0; i < 3; i++)
-    xc[i] = (x1[i]+x2[i]+x3[i]+x4[i]+x5[i]+x6[i]) * cs_math_1ov6;
+    xc[i] = (x1[i]+x2[i]+x3[i]+x4[i]+x5[i]+x6[i]) * c_1ov6;
 
   cs_real_t vol136c  = _tetra_vol(x1, x3, x6, xc);
   cs_real_t vol245c  = _tetra_vol(x2, x4, x5, xc);

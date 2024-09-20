@@ -216,6 +216,8 @@ _turb_flux_st(const char          *name,
   const cs_real_t c3trit = cs_turb_c3trit;
   const cs_real_t c4trit = cs_turb_c4trit;
 
+  constexpr cs_real_t c_1ov3 = 1./3.;
+
 # pragma omp parallel if(n_cells > CS_THR_MIN)
   for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
 
@@ -250,8 +252,7 @@ _turb_flux_st(const char          *name,
 
       /* Compute the unit normal vector */
       cs_real_t xnoral = cs_math_3_norm(grad_al[c_id]);
-      const cs_real_t eps = cs_math_epzero/pow(cell_f_vol[c_id],
-                                               cs_math_1ov3);
+      const cs_real_t eps = cs_math_epzero/pow(cell_f_vol[c_id], c_1ov3);
       if (xnoral > eps) {
         for (cs_lnum_t i = 0; i < 3; i++)
           xnal[i] = grad_al[c_id][i] / xnoral;
@@ -964,7 +965,7 @@ _solve_rit(const cs_field_t     *f,
      }
 
      const cs_real_3_t *restrict b_face_normal
-       = (const cs_real_3_t *restrict)mq->b_face_normal;
+       = (const cs_real_3_t *)mq->b_face_normal;
      cs_real_t *bpro_rusanov = cs_field_by_name("b_rusanov_diff")->val;
 
      //cs_real_3_t *coefap = (cs_real_3_t *)f_ut->bc_coeffs->a;
