@@ -1384,7 +1384,7 @@ _update_fluid_vel(const cs_mesh_t             *m,
     /* Pressure increment gradient */
 
     cs_real_3_t *cpro_gradp = nullptr, *gradp = nullptr;
-    cs_field_t *f_inc = cs_field_by_name_try("algo:pressure_gradient_increment");
+    cs_field_t *f_inc = cs_field_by_name_try("algo:pressure_increment_gradient");
     if (f_inc != nullptr)
       cpro_gradp = (cs_real_3_t *)f_inc->val;
     else {

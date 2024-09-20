@@ -1491,7 +1491,7 @@ cs_parameters_define_auxiliary_fields(void)
                       3,
                       false);
 
-      cs_field_create("algo:pressure_gradient_increment",
+      cs_field_create("algo:pressure_increment_gradient",
                       0,
                       CS_MESH_LOCATION_CELLS,
                       3,

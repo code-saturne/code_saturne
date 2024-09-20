@@ -3641,7 +3641,7 @@ cs_pressure_correction_cdo_init_setup(void)
   cs_field_set_key_int(prcdo->pressure_gradient, log_key, field_post_flag);
 
   prcdo->pressure_incr_gradient =
-    cs_field_find_or_create("algo:pressure_gradient_increment",
+    cs_field_find_or_create("algo:pressure_increment_gradient",
                             CS_FIELD_INTENSIVE,
                             CS_MESH_LOCATION_CELLS,
                             3,
