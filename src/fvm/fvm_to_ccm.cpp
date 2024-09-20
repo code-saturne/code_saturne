@@ -607,7 +607,7 @@ static void
 _write_processor(fvm_to_ccm_writer_t  *w)
 {
   if (w->rank < 1) {
-    CCMIOSize_t i = 0;
+    CCMIOSize_t i = (CCMIOSize_t)0;
     CCMIOError error = kCCMIONoErr, *err = &error;
     CCMIOID processor_id;
 
@@ -728,7 +728,7 @@ _write_phase(CCMIOID              *phase_id,
              fvm_to_ccm_writer_t  *w)
 {
   if (w->rank < 1) {
-    CCMIOSize_t i = 0;
+    CCMIOSize_t i = (CCMIOSize_t)0;
     CCMIOError error = kCCMIONoErr, *err =  &error;
 
     /* Check if the current solution node already has a phase node */
@@ -761,7 +761,7 @@ _write_problem_description(fvm_to_ccm_writer_t  *w)
 {
   CCMIOID problem_id, id;
   CCMIOError error = kCCMIONoErr, *err =  &error;
-  CCMIOSize_t i = 0;
+  CCMIOSize_t i = (CCMIOSize_t)0;
 
   if (w->rank < 1) {
 
@@ -840,7 +840,7 @@ _write_restart_info(int                   time_step,
     /* Prepare solver name */
     char solver_info[128];
     sprintf(solver_info,
-            "code_saturne "VERSION" with libCCMIO %d",
+            "code_saturne " VERSION " with libCCMIO %d",
             kCCMIOVersion);
 
     /* Write node */
@@ -910,7 +910,7 @@ _write_map(const char             *name,
       /* The index of the first table of data written should be kCCMIOStart */
 
       if (start_id == 1)
-        start = kCCMIOStart;
+        start = CCMIOIndex_t(kCCMIOStart);
       else
         start = CCMIOINDEXC(start_id-1);
       end = CCMIOINDEXC(end_id);
@@ -1265,7 +1265,7 @@ _write_cells_g(const cs_mesh_t      *b_mesh,
 
   do {
 
-    _cell_gc_id_s = cs_file_serializer_advance(s, range);
+    _cell_gc_id_s = (int *)cs_file_serializer_advance(s, range);
 
     if (_cell_gc_id_s != nullptr) { /* only possible on rank 0 */
 
@@ -1406,7 +1406,7 @@ _write_face_vertices_g(const cs_mesh_t         *b_mesh,
 
   do {
 
-    _face_connect_g_s = cs_file_serializer_advance(s, range);
+    _face_connect_g_s = (cs_ccm_num_t *)cs_file_serializer_advance(s, range);
 
     if (_face_connect_g_s != nullptr) { /* only possible on rank 0 */
       CCMIOError error = kCCMIONoErr, *err = &error;
@@ -1519,7 +1519,7 @@ _write_face_cells_g(const cs_mesh_t        *b_mesh,
 
   do {
 
-    _face_cell_g_s = cs_file_serializer_advance(s, range);
+    _face_cell_g_s = (cs_ccm_num_t *)cs_file_serializer_advance(s, range);
 
     if (_face_cell_g_s != nullptr) { /* only possible on rank 0 */
       CCMIOError error = kCCMIONoErr, *err = &error;
@@ -1693,7 +1693,7 @@ _write_face_vertices_perio_g(const cs_mesh_t        *b_mesh,
 
   do {
 
-    _face_connect_g_s = cs_file_serializer_advance(s, range);
+    _face_connect_g_s = (cs_ccm_num_t *)cs_file_serializer_advance(s, range);
 
     if (_face_connect_g_s != nullptr) { /* only possible on rank 0 */
       CCMIOError error = kCCMIONoErr, *err = &error;
@@ -1809,7 +1809,7 @@ _write_face_cells_perio_g(const cs_mesh_t        *b_mesh,
 
   do {
 
-    _face_cell_g_s = cs_file_serializer_advance(s, range);
+    _face_cell_g_s = (cs_ccm_num_t *)cs_file_serializer_advance(s, range);
 
     if (_face_cell_g_s != nullptr) { /* only possible on rank 0 */
 
@@ -2814,7 +2814,7 @@ _write_field_data_g(CCMIOID                 data_id,
                       1,
                       src_shift,
                       section->n_elts + src_shift,
-                      interlace,
+                      (cs_interlace_t)interlace,
                       datatype,
                       dst_datatype,
                       n_parent_lists,
@@ -2864,7 +2864,7 @@ _write_field_data_g(CCMIOID                 data_id,
       CCMIOIndex_t  end = CCMIOINDEXC(range[1]-1);
 
       if (start == 0)
-        start = kCCMIOStart;
+        start = (CCMIOIndex_t)kCCMIOStart;
 
       /* Write integer data */
 
@@ -2874,7 +2874,7 @@ _write_field_data_g(CCMIOID                 data_id,
                              data_id,
                              map_id,
                              data_location,
-                             _field_values_s,
+                             (int *)_field_values_s,
                              start,
                              end);
 
@@ -2885,7 +2885,7 @@ _write_field_data_g(CCMIOID                 data_id,
                              data_id,
                              map_id,
                              data_location,
-                             _field_values_s,
+                             (float *)_field_values_s,
                              start,
                              end);
 
@@ -2896,7 +2896,7 @@ _write_field_data_g(CCMIOID                 data_id,
                              data_id,
                              map_id,
                              data_location,
-                             _field_values_s,
+                             (double *)_field_values_s,
                              start,
                              end);
 
@@ -3007,7 +3007,7 @@ _write_field_data_l(CCMIOID                     data_id,
                       1,
                       src_shift,
                       section->n_elts + src_shift,
-                      interlace,
+                      (cs_interlace_t)interlace,
                       datatype,
                       dst_datatype,
                       n_parent_lists,
@@ -3032,9 +3032,9 @@ _write_field_data_l(CCMIOID                     data_id,
                          data_id,
                          map_id,
                          data_location,
-                         (void *)_field_values,
-                         start,
-                         end);
+                         (int *)_field_values,
+                         CCMIOIndex_t(start),
+                         CCMIOIndex_t(end));
 
   /* Write float data */
 
@@ -3043,9 +3043,9 @@ _write_field_data_l(CCMIOID                     data_id,
                          data_id,
                          map_id,
                          data_location,
-                         (void *)_field_values,
-                         start,
-                         end);
+                         (float *)_field_values,
+                         CCMIOIndex_t(start),
+                         CCMIOIndex_t(end));
 
   /* Write double data */
 
@@ -3054,9 +3054,9 @@ _write_field_data_l(CCMIOID                     data_id,
                          data_id,
                          map_id,
                          data_location,
-                         (void *)_field_values,
-                         start,
-                         end);
+                         (double *)_field_values,
+                         CCMIOIndex_t(start),
+                         CCMIOIndex_t(end));
 
   BFT_FREE(_field_values);
 
@@ -3113,7 +3113,7 @@ _write_multidimensional_field_data(const char              *name,
   int i;
 
   CCMIOID data_id;
-  CCMIOComponent component = 0;
+  CCMIOComponent component = CCMIOComponent(0);
 
   CCMIOError error = kCCMIONoErr, *err = &error;
 
@@ -3385,7 +3385,7 @@ _write_field(const char                 *name,
 {
   CCMIOError error = kCCMIONoErr, *err = &error;
   CCMIOID field_id, map_id, data_id;
-  CCMIODataLocation data_location = 0;
+  CCMIODataLocation data_location = CCMIODataLocation(0);
 
   char short_name[15];
   strncpy(short_name, name, 4);
@@ -3770,7 +3770,7 @@ fvm_to_ccm_init_writer(const char             *name,
 void *
 fvm_to_ccm_finalize_writer(void  *this_writer_p)
 {
-  fvm_to_ccm_writer_t *w = this_writer_p;
+  fvm_to_ccm_writer_t *w = (fvm_to_ccm_writer_t *)this_writer_p;
 
   w->is_open = false;
 
@@ -3802,7 +3802,7 @@ fvm_to_ccm_set_mesh_time(void     *this_writer_p,
                          int       time_step,
                          double    time_value)
 {
-  fvm_to_ccm_writer_t *w = this_writer_p;
+  fvm_to_ccm_writer_t *w = (fvm_to_ccm_writer_t *)this_writer_p;
 
  /* Mark meshes as unset to allow re-export */
 
@@ -3829,7 +3829,7 @@ void
 fvm_to_ccm_export_nodal(void               *this_writer_p,
                         const fvm_nodal_t  *mesh)
 {
-  fvm_to_ccm_writer_t *w = this_writer_p;
+  fvm_to_ccm_writer_t *w = (fvm_to_ccm_writer_t *)this_writer_p;
 
   CCMIOError error = kCCMIONoErr, *err = &error;
 
@@ -4046,7 +4046,7 @@ fvm_to_ccm_export_field(void                   *this_writer_p,
                         double                  time_value,
                         const void       *const field_values[])
 {
-  fvm_to_ccm_writer_t *w = this_writer_p;
+  fvm_to_ccm_writer_t *w = (fvm_to_ccm_writer_t *)this_writer_p;
 
   const cs_mesh_t *b_mesh = cs_glob_mesh;
 

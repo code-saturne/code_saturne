@@ -164,7 +164,7 @@ _field_c_output(void           *context,
                 cs_gnum_t       block_end,
                 void           *buffer)
 {
-  _melissa_context_t *c = context;
+  _melissa_context_t *c = (_melissa_context_t *)context;
   fvm_to_melissa_writer_t  *w = c->writer;
 
   cs_gnum_t n_values = block_end - block_start;
