@@ -90,16 +90,16 @@ _fvm_nodal_order_parent_list(cs_lnum_t         * _list[],
 {
   size_t  i;
 
-  cs_lnum_t   *ordered_list = NULL;
+  cs_lnum_t   *ordered_list = nullptr;
 
   BFT_MALLOC(ordered_list, nb_ent, cs_lnum_t);
 
-  if (*list != NULL) {
+  if (*list != nullptr) {
 
     for (i = 0 ; i < nb_ent ; i++)
       ordered_list[i] = (*list)[order[i]];
 
-    if (*_list != NULL) {
+    if (*_list != nullptr) {
       for (i = 0 ; i < nb_ent ; i++)
         (*_list)[i] = ordered_list[i];
       BFT_FREE(ordered_list);
@@ -110,7 +110,7 @@ _fvm_nodal_order_parent_list(cs_lnum_t         * _list[],
   }
   else {
 
-    assert(*list == NULL);
+    assert(*list == nullptr);
 
     for (i = 0 ; i < nb_ent ; i++)
       ordered_list[i] = order[i];
@@ -139,7 +139,7 @@ _fvm_nodal_order_strided_connect(cs_lnum_t           connect[],
   size_t  i, j;
   cs_lnum_t   *p1, *p2;
 
-  cs_lnum_t   *tmp_connect = NULL;
+  cs_lnum_t   *tmp_connect = nullptr;
 
   BFT_MALLOC(tmp_connect, nb_ent * stride, cs_lnum_t);
 
@@ -178,7 +178,7 @@ _fvm_nodal_order_indexed_connect(cs_lnum_t           connect_idx[],
   size_t  i, j, nb_ent_max, nb_loc;
   cs_lnum_t   *p1, *p2;
 
-  cs_lnum_t   *tmp_connect = NULL;
+  cs_lnum_t   *tmp_connect = nullptr;
 
   nb_ent_max = connect_idx[nb_ent] ; /* size of connect_num */
   if (nb_ent > nb_ent_max) /* only if some entities have no connectivity */
@@ -240,7 +240,7 @@ _fvm_nodal_order_gc_id(int              gc_id[],
 {
   size_t  i;
 
-  int  *tmp_gc_id = NULL;
+  int  *tmp_gc_id = nullptr;
 
   BFT_MALLOC(tmp_gc_id, nb_ent, int);
 
@@ -267,7 +267,7 @@ _fvm_nodal_order_gc_id(int              gc_id[],
  *
  * parameters:
  *   this_nodal           <-- pointer to nodal mesh structure.
- *   parent_global_number <-- global numbers of parent cells (if NULL, a
+ *   parent_global_number <-- global numbers of parent cells (if nullptr, a
  *                            default 1 to n numbering is considered).
  *----------------------------------------------------------------------------*/
 
@@ -275,10 +275,10 @@ void
 fvm_nodal_order_cells(fvm_nodal_t       *this_nodal,
                       const cs_gnum_t    parent_global_number[])
 {
-  cs_lnum_t   *order = NULL;
-  fvm_nodal_section_t  *section = NULL;
+  cs_lnum_t   *order = nullptr;
+  fvm_nodal_section_t  *section = nullptr;
 
-  if (this_nodal == NULL)
+  if (this_nodal == nullptr)
     return;
 
   /* Order locally if necessary */
@@ -289,7 +289,7 @@ fvm_nodal_order_cells(fvm_nodal_t       *this_nodal,
 
     if (section->entity_dim == 3) {
 
-      assert(section->global_element_num == NULL);
+      assert(section->global_element_num == nullptr);
 
       if (cs_order_gnum_test(section->parent_element_id,
                              parent_global_number,
@@ -318,7 +318,7 @@ fvm_nodal_order_cells(fvm_nodal_t       *this_nodal,
                                            order,
                                            section->n_elements);
         }
-        if (section->gc_id != NULL)
+        if (section->gc_id != nullptr)
           _fvm_nodal_order_gc_id(section->gc_id,
                                  order,
                                  section->n_elements);
@@ -338,7 +338,7 @@ fvm_nodal_order_cells(fvm_nodal_t       *this_nodal,
  *
  * parameters:
  *   this_nodal           <-- pointer to nodal mesh structure.
- *   parent_global_number <-- global numbers of parent faces (if NULL, a
+ *   parent_global_number <-- global numbers of parent faces (if nullptr, a
  *                            default 1 to n numbering is considered).
  *----------------------------------------------------------------------------*/
 
@@ -347,10 +347,10 @@ fvm_nodal_order_faces(fvm_nodal_t       *this_nodal,
                       const cs_gnum_t    parent_global_number[])
 {
   cs_lnum_t   i;
-  cs_lnum_t   *order = NULL;
-  fvm_nodal_section_t  *section = NULL;
+  cs_lnum_t   *order = nullptr;
+  fvm_nodal_section_t  *section = nullptr;
 
-  if (this_nodal == NULL)
+  if (this_nodal == nullptr)
     return;
 
   /* Order locally if necessary */
@@ -361,7 +361,7 @@ fvm_nodal_order_faces(fvm_nodal_t       *this_nodal,
 
     if (section->entity_dim == 2) {
 
-      assert(section->global_element_num == NULL);
+      assert(section->global_element_num == nullptr);
 
       if (cs_order_gnum_test(section->parent_element_id,
                              parent_global_number,
@@ -390,7 +390,7 @@ fvm_nodal_order_faces(fvm_nodal_t       *this_nodal,
                                            order,
                                            section->n_elements);
         }
-        if (section->gc_id != NULL)
+        if (section->gc_id != nullptr)
           _fvm_nodal_order_gc_id(section->gc_id,
                                  order,
                                  section->n_elements);
@@ -410,7 +410,7 @@ fvm_nodal_order_faces(fvm_nodal_t       *this_nodal,
  *
  * parameters:
  *   this_nodal           <-- pointer to nodal mesh structure.
- *   parent_global_number <-- global numbers of parent vertices (if NULL, a
+ *   parent_global_number <-- global numbers of parent vertices (if nullptr, a
  *                            default 1 to n numbering is considered).
  *----------------------------------------------------------------------------*/
 
@@ -421,13 +421,13 @@ fvm_nodal_order_vertices(fvm_nodal_t       *this_nodal,
   int         i;
   size_t      j;
 
-  cs_lnum_t   *order = NULL;
-  cs_lnum_t   *renumber = NULL;
-  fvm_nodal_section_t  *section = NULL;
+  cs_lnum_t   *order = nullptr;
+  cs_lnum_t   *renumber = nullptr;
+  fvm_nodal_section_t  *section = nullptr;
 
   /* Do nothing for trivial cases */
 
-  if (this_nodal == NULL)
+  if (this_nodal == nullptr)
     return;
 
   else if (this_nodal->n_vertices < 2)

@@ -86,7 +86,7 @@ typedef struct
  * If no associated description is given, a call number will be issued.
  *
  * parameters:
- *   descr <-- optional description, or NULL
+ *   descr <-- optional description, or nullptr
  *----------------------------------------------------------------------------*/
 
 void
@@ -118,7 +118,7 @@ fvm_trace_mem_status(const char  *descr)
 
   /* Memory summary */
 
-  if (descr != NULL)
+  if (descr != nullptr)
     bft_printf(_("\nMemory use summary: %s\n\n"), descr);
   else
     bft_printf(_("\nMemory use summary (call %d):\n\n"), call_id);

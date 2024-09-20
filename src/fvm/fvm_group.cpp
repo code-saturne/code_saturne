@@ -82,7 +82,7 @@ struct _fvm_group_class_set_t {
 
   int size;                             /* Number of group classes */
 
-  fvm_group_class_t   *class;           /* Array of group classes */
+  fvm_group_class_t *gclass; /* Array of group classes */
 };
 
 /*============================================================================
@@ -129,13 +129,13 @@ _group_class_set_send(const fvm_group_class_set_t  *class_set,
   int n_chars = 0;
 
   int send_count[3];
-  int *send_ints = NULL;
-  char *send_chars = NULL;
+  int *send_ints = nullptr;
+  char *send_chars = nullptr;
 
   /* Counting pass */
 
   for (i = 0; i < class_set->size; i++) {
-    const fvm_group_class_t  *gc = class_set->class + i;
+    const fvm_group_class_t  *gc = class_set->gclass + i;
     n_ints += 2 + gc->n_groups;
     for (j = 0; j < gc->n_groups; j++)
       n_chars += strlen(gc->group_name[j]) + 1;
@@ -154,7 +154,7 @@ _group_class_set_send(const fvm_group_class_set_t  *class_set,
   n_chars = 0;
 
   for (i = 0; i < class_set->size; i++) {
-    const fvm_group_class_t  *gc = class_set->class + i;
+    const fvm_group_class_t  *gc = class_set->gclass + i;
     send_ints[n_ints++] = gc->n_groups;
     for (j = 0; j < gc->n_groups; j++) {
       strcpy(send_chars + n_chars, gc->group_name[j]);
@@ -200,10 +200,10 @@ _group_class_set_recv(fvm_group_class_set_t  *class_set,
   int n_chars = 0;
 
   int recv_count[3];
-  int *recv_ints = NULL;
-  char *recv_chars = NULL;
+  int *recv_ints = nullptr;
+  char *recv_chars = nullptr;
 
-  assert(class_set != NULL);
+  assert(class_set != nullptr);
   assert(class_set->size == 0);
 
   MPI_Recv(recv_count, 3, MPI_INT, src_rank, _GROUP_TAG, comm, &status);
@@ -225,10 +225,10 @@ _group_class_set_recv(fvm_group_class_set_t  *class_set,
   /* Decode buffers */
 
   class_set->size = recv_count[0];
-  BFT_MALLOC(class_set->class, class_set->size, fvm_group_class_t);
+  BFT_MALLOC(class_set->gclass, class_set->size, fvm_group_class_t);
 
   for (i = 0; i < class_set->size; i++) {
-    fvm_group_class_t  *gc = class_set->class + i;
+    fvm_group_class_t  *gc = class_set->gclass + i;
     gc->n_groups = recv_ints[n_ints++];
     if (gc->n_groups > 0)
       BFT_MALLOC(gc->group_name, gc->n_groups, char *);
@@ -262,9 +262,9 @@ _group_class_copy(const fvm_group_class_t  *src,
 {
   int i;
 
-  if (src == NULL) {
+  if (src == nullptr) {
     dest->n_groups = 0;
-    dest->group_name = NULL;
+    dest->group_name = nullptr;
   }
   else {
     dest->n_groups = src->n_groups;
@@ -290,7 +290,7 @@ _group_class_dump(const fvm_group_class_t  *this_group_class,
 {
   int i;
 
-  if (this_group_class == NULL) {
+  if (this_group_class == nullptr) {
     bft_printf("\n    _group_class[%d]: nil\n", id);
     return;
   }
@@ -329,7 +329,7 @@ fvm_group_class_get_n_groups(const fvm_group_class_t  *this_group_class)
 {
   int retval = 0;
 
-  if (this_group_class != NULL) {
+  if (this_group_class != nullptr) {
     retval = this_group_class->n_groups;
   }
 
@@ -349,9 +349,9 @@ fvm_group_class_get_n_groups(const fvm_group_class_t  *this_group_class)
 const char **
 fvm_group_class_get_group_names(const fvm_group_class_t  *this_group_class)
 {
-  const char **retval = NULL;
+  const char **retval = nullptr;
 
-  if (this_group_class != NULL) {
+  if (this_group_class != nullptr) {
     retval = (const char **)(this_group_class->group_name);
   }
 
@@ -374,7 +374,7 @@ fvm_group_class_set_create(void)
 
   class_set->size = 0;
 
-  class_set->class = NULL;
+  class_set->gclass = nullptr;
 
   return class_set;
 }
@@ -397,17 +397,17 @@ fvm_group_class_set_add(fvm_group_class_set_t   *this_group_class_set,
 {
   int i;
   fvm_group_class_set_t *class_set = this_group_class_set;
-  fvm_group_class_t *_class = NULL;
+  fvm_group_class_t *_class = nullptr;
 
-  assert(class_set != NULL);
+  assert(class_set != nullptr);
 
   /* Resize array of group class descriptors */
 
-  BFT_REALLOC(class_set->class, class_set->size + 1, fvm_group_class_t);
+  BFT_REALLOC(class_set->gclass, class_set->size + 1, fvm_group_class_t);
 
   /* Initialize new descriptor */
 
-  _class = class_set->class + class_set->size;
+  _class = class_set->gclass + class_set->size;
 
   _class->n_groups = n_groups;
 
@@ -435,18 +435,17 @@ fvm_group_class_set_add(fvm_group_class_set_t   *this_group_class_set,
  *   this_class_set <-- pointer to structure which should be destroyed
  *
  * returns:
- *   NULL pointer
+ *   nullptr pointer
  *----------------------------------------------------------------------------*/
 
 fvm_group_class_set_t *
 fvm_group_class_set_destroy(fvm_group_class_set_t  *this_group_class_set)
 {
-  if (this_group_class_set == NULL)
-    return NULL;
+  if (this_group_class_set == nullptr)
+    return nullptr;
 
   for (int i = 0; i < this_group_class_set->size; i++) {
-
-    fvm_group_class_t *_class = this_group_class_set->class + i;
+    fvm_group_class_t *_class = this_group_class_set->gclass + i;
 
     for (int j = 0; j < _class->n_groups; j++)
       BFT_FREE(_class->group_name[j]);
@@ -457,10 +456,10 @@ fvm_group_class_set_destroy(fvm_group_class_set_t  *this_group_class_set)
 
   }
 
-  BFT_FREE(this_group_class_set->class);
+  BFT_FREE(this_group_class_set->gclass);
   BFT_FREE(this_group_class_set);
 
-  return NULL;
+  return nullptr;
 }
 
 /*----------------------------------------------------------------------------
@@ -478,7 +477,7 @@ fvm_group_class_set_size(const fvm_group_class_set_t  *this_group_class_set)
 {
   int retval = 0;
 
-  if (this_group_class_set != NULL)
+  if (this_group_class_set != nullptr)
     retval = this_group_class_set->size;
 
   return retval;
@@ -499,11 +498,11 @@ const fvm_group_class_t *
 fvm_group_class_set_get(const fvm_group_class_set_t  *this_group_class_set,
                         int                           group_class_id)
 {
-  const fvm_group_class_t  *retval = NULL;
+  const fvm_group_class_t  *retval = nullptr;
 
-  if (this_group_class_set != NULL) {
+  if (this_group_class_set != nullptr) {
     if (group_class_id > -1 && group_class_id < this_group_class_set->size)
-      retval = this_group_class_set->class + group_class_id;
+      retval = this_group_class_set->gclass + group_class_id;
   }
 
   return retval;
@@ -515,7 +514,7 @@ fvm_group_class_set_get(const fvm_group_class_set_t  *this_group_class_set,
  * parameters:
  *   this_class_set <-- pointer to group class set to be copied
  *   n_gcs          <-- number of group classes
- *   gc_id          <-- group class list (0 to n-1), or NULL
+ *   gc_id          <-- group class list (0 to n-1), or nullptr
  *
  * returns:
  *   pointer to new copy of group class set
@@ -527,7 +526,7 @@ fvm_group_class_set_copy(const fvm_group_class_set_t  *this_group_class_set,
                          int                           gc_id[])
 {
   int i;
-  fvm_group_class_set_t  *class_set = NULL;
+  fvm_group_class_set_t  *class_set = nullptr;
 
   BFT_MALLOC(class_set, 1, fvm_group_class_set_t);
 
@@ -536,17 +535,17 @@ fvm_group_class_set_copy(const fvm_group_class_set_t  *this_group_class_set,
   else
     class_set->size = n_gcs;
 
-  BFT_MALLOC(class_set->class, class_set->size, fvm_group_class_t);
+  BFT_MALLOC(class_set->gclass, class_set->size, fvm_group_class_t);
 
   if (n_gcs == 0) {
     for (i = 0; i < class_set->size; i++)
-      _group_class_copy(this_group_class_set->class + i,
-                        class_set->class + i);
+      _group_class_copy(this_group_class_set->gclass + i,
+                        class_set->gclass + i);
   }
   else {
     for (i = 0; i < n_gcs; i++)
-      _group_class_copy(this_group_class_set->class + gc_id[i],
-                        class_set->class + i);
+      _group_class_copy(this_group_class_set->gclass + gc_id[i],
+                        class_set->gclass + i);
   }
 
   return class_set;
@@ -565,7 +564,7 @@ fvm_group_class_set_dump(const fvm_group_class_set_t  *this_group_class_set)
   int i;
   const fvm_group_class_set_t  *class_set = this_group_class_set;
 
-  if (this_group_class_set == NULL) {
+  if (this_group_class_set == nullptr) {
     bft_printf("  group_class_set: nil\n");
     return;
   }
@@ -578,7 +577,7 @@ fvm_group_class_set_dump(const fvm_group_class_set_t  *this_group_class_set)
   if (class_set->size > 0) {
     bft_printf("\n  group_classes:");
     for (i = 0; i < class_set->size; i++)
-      _group_class_dump(class_set->class + i, i);
+      _group_class_dump(class_set->gclass + i, i);
   }
 
   bft_printf("\n");

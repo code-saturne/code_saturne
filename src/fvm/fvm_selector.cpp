@@ -105,7 +105,7 @@ struct _fvm_selector_t {
 
   const int         *group_class_id;           /* Element group class ids */
   int               *_group_class_id;          /* private group_class_id,
-                                                  or NULL */
+                                                  or nullptr */
   int                group_class_id_base;      /* Starting base (usually
                                                   0 or 1) of group class ids */
 
@@ -127,10 +127,10 @@ struct _fvm_selector_t {
 
   const double      *coords;                   /* Element coordinates
                                                   (i.e. centers), interlaced */
-  double            *_coords;                  /* private coords, or NULL */
+  double            *_coords;                  /* private coords, or nullptr */
 
   const double      *normals;                  /* Element normals, interlaced */
-  double            *_normals;                 /* private normals, or NULL */
+  double            *_normals;                 /* private normals, or nullptr */
 
   _operation_list_t *_operations;              /* Array which caches all
                                                   previously interpreted
@@ -185,8 +185,8 @@ _assign_groups(fvm_selector_t               *this_selector,
                const fvm_group_class_set_t  *group_class_set)
 {
   int i, j;
-  char **_set_group_names = NULL;
-  const char **set_group_names = NULL;
+  char **_set_group_names = nullptr;
+  const char **set_group_names = nullptr;
   int n_groups_tot = 0;
 
   /* Build basic arrays which exist in any case */
@@ -207,7 +207,7 @@ _assign_groups(fvm_selector_t               *this_selector,
     if (n_groups > 0)
       BFT_MALLOC(this_selector->group_ids[i], n_groups, int);
     else
-      this_selector->group_ids[i] = NULL;
+      this_selector->group_ids[i] = nullptr;
   }
 
   if (n_groups_tot == 0)
@@ -249,7 +249,7 @@ _assign_groups(fvm_selector_t               *this_selector,
     }
   }
 
-  set_group_names = NULL;
+  set_group_names = nullptr;
   BFT_FREE(_set_group_names);
 
   this_selector->n_groups = j;
@@ -355,7 +355,7 @@ _assign_attributes(fvm_selector_t               *this_selector,
                    const fvm_group_class_set_t  *group_class_set)
 {
   int i, j, group_int;
-  int *set_attributes = NULL, *attributes = NULL;
+  int *set_attributes = nullptr, *attributes = nullptr;
   int n_attributes_tot = 0, n_attributes_max = 0;
 
   /* Build basic arrays which exist in any case */
@@ -387,7 +387,7 @@ _assign_attributes(fvm_selector_t               *this_selector,
     if (n_attributes > 0)
       BFT_MALLOC(this_selector->attribute_ids[i], n_attributes, int);
     else
-      this_selector->attribute_ids[i] = NULL;
+      this_selector->attribute_ids[i] = nullptr;
   }
 
   if (n_attributes_tot == 0)
@@ -508,8 +508,8 @@ _operation_list_allocate(void)
   BFT_MALLOC(ops->group_class_set, ops->n_max_operations, int *);
 
   for (i = 0; i < ops->n_max_operations; i++) {
-    ops->postfix[i] = NULL;
-    ops->group_class_set[i] = NULL;
+    ops->postfix[i] = nullptr;
+    ops->group_class_set[i] = nullptr;
     ops->n_calls[i] = 0;
     ops->n_group_classes[i] = 0;
   }
@@ -548,8 +548,8 @@ _operation_list_reallocate(_operation_list_t  *ops)
   BFT_REALLOC(ops->group_class_set, ops->n_max_operations, int *);
 
   for (i = old_size; i < ops->n_max_operations; i++) {
-    ops->postfix[i] = NULL;
-    ops->group_class_set[i] = NULL;
+    ops->postfix[i] = nullptr;
+    ops->group_class_set[i] = nullptr;
     ops->n_calls[i] = 0;
     ops->n_group_classes[i] = 0;
   }
@@ -562,7 +562,7 @@ _operation_list_reallocate(_operation_list_t  *ops)
  *   ops <-> operations list to be deleted
  *
  * returns:
- *   NULL pointer;
+ *   nullptr pointer;
  *----------------------------------------------------------------------------*/
 
 static _operation_list_t *
@@ -570,13 +570,13 @@ _operation_list_free(_operation_list_t  *ops)
 {
   int i = 0;
 
-  if (ops != NULL) {
+  if (ops != nullptr) {
     BFT_FREE(ops->n_calls);
     BFT_FREE(ops->n_group_classes);
     for (i = 0; i < ops->n_max_operations; i++) {
-      if (ops->group_class_set[i] != NULL)
+      if (ops->group_class_set[i] != nullptr)
         BFT_FREE(ops->group_class_set[i]);
-      if (ops->postfix[i] != NULL)
+      if (ops->postfix[i] != nullptr)
         fvm_selector_postfix_destroy(ops->postfix + i);
     }
     BFT_FREE(ops->postfix);
@@ -584,7 +584,7 @@ _operation_list_free(_operation_list_t  *ops)
     BFT_FREE(ops);
   }
 
-  return NULL;
+  return nullptr;
 }
 
 /*----------------------------------------------------------------------------
@@ -624,8 +624,8 @@ _create_operation_group_class_set(const fvm_selector_t  *this_selector,
                                   this_selector->n_class_attributes[gc_id],
                                   this_selector->group_ids[gc_id],
                                   this_selector->attribute_ids[gc_id],
-                                  NULL,
-                                  NULL))
+                                  nullptr,
+                                  nullptr))
       group_class_set[n_group_classes++] = gc_id;
   }
 
@@ -663,7 +663,7 @@ static void
 _add_new_operation(fvm_selector_t  *selector,
                    const char      *infix_string)
 {
-  fvm_selector_postfix_t *pf = NULL;
+  fvm_selector_postfix_t *pf = nullptr;
 
   /* reallocation  */
 
@@ -713,11 +713,11 @@ _get_criteria_id(fvm_selector_t  *selector,
 {
   int op = 0;
 
-  assert(teststr != NULL);
+  assert(teststr != nullptr);
 
   /* Search for teststr in the operations list */
 
-  if (selector->_operations == NULL)
+  if (selector->_operations == nullptr)
     selector->_operations = _operation_list_allocate();
 
   for (op = 0; op < selector->_operations->n_operations; op++) {
@@ -753,7 +753,7 @@ _get_criteria_id(fvm_selector_t  *selector,
  *                            element, whether vertex, face or cell center, ...
  *                            (size: n_elements * dim)
  *   normals              <-- normals (interlaced) associated with each element
- *                            if applicable (such as for face normals), or NULL
+ *                            if applicable (such as for face normals), or nullptr
  *
  * returns:
  *   pointer to new selector
@@ -780,35 +780,35 @@ fvm_selector_create(int                           dim,
   selector->n_elements = n_elements;
 
   selector->group_class_id = group_class_id;
-  selector->_group_class_id = NULL;
+  selector->_group_class_id = nullptr;
   selector->group_class_id_base = group_class_id_base;
 
   selector->n_group_classes = fvm_group_class_set_size(group_class_set);
 
   selector->n_groups = 0;
   selector->n_attributes = 0;
-  selector->group_name = NULL;
-  selector->attribute = NULL;
+  selector->group_name = nullptr;
+  selector->attribute = nullptr;
 
-  selector->n_class_groups = NULL;
-  selector->group_ids = NULL;
-  selector->n_class_attributes = NULL;
-  selector->attribute_ids = NULL;
+  selector->n_class_groups = nullptr;
+  selector->group_ids = nullptr;
+  selector->n_class_attributes = nullptr;
+  selector->attribute_ids = nullptr;
 
   selector->coords = coords;
-  selector->_coords = NULL;
+  selector->_coords = nullptr;
   selector->normals = normals;
-  selector->_normals = NULL;
+  selector->_normals = nullptr;
 
-  selector->_operations = NULL;
+  selector->_operations = nullptr;
 
-  selector->_n_group_class_elements = NULL;
-  selector->_group_class_elements = NULL;
+  selector->_n_group_class_elements = nullptr;
+  selector->_group_class_elements = nullptr;
 
   _assign_groups(selector, group_class_set);
   _assign_attributes(selector, group_class_set);
 
-  if (group_class_id != NULL && n_group_classes > 0) {
+  if (group_class_id != nullptr && n_group_classes > 0) {
 
     BFT_MALLOC(selector->_n_group_class_elements, n_group_classes, cs_lnum_t);
     BFT_MALLOC(selector->_group_class_elements, n_group_classes, cs_lnum_t *);
@@ -856,7 +856,7 @@ fvm_selector_create(int                           dim,
  *   this_selector <-> selector to destroy
  *
  * returns:
- *   NULL pointer
+ *   nullptr pointer
  *----------------------------------------------------------------------------*/
 
 fvm_selector_t *
@@ -868,9 +868,9 @@ fvm_selector_destroy(fvm_selector_t  *this_selector)
 
   _operation_list_free(this_selector->_operations);
 
-  if (this_selector->_coords != NULL)
+  if (this_selector->_coords != nullptr)
     BFT_FREE(this_selector->_coords);
-  if (this_selector->_normals != NULL)
+  if (this_selector->_normals != nullptr)
     BFT_FREE(this_selector->_normals);
 
   for (i = 0; i < this_selector->n_groups; i++)
@@ -883,16 +883,16 @@ fvm_selector_destroy(fvm_selector_t  *this_selector)
   BFT_FREE(this_selector->n_class_attributes);
 
   for (i = 0; i < this_selector->n_group_classes; i++) {
-    if (this_selector->group_ids[i] != NULL)
+    if (this_selector->group_ids[i] != nullptr)
       BFT_FREE(this_selector->group_ids[i]);
-    if (this_selector->attribute_ids[i] != NULL)
+    if (this_selector->attribute_ids[i] != nullptr)
       BFT_FREE(this_selector->attribute_ids[i]);
   }
 
   BFT_FREE(this_selector->group_ids);
   BFT_FREE(this_selector->attribute_ids);
 
-  if (this_selector->_group_class_elements != NULL) {
+  if (this_selector->_group_class_elements != nullptr) {
     for (i = 0; i < this_selector->n_group_classes; i++)
       BFT_FREE(this_selector->_group_class_elements[i]);
 
@@ -904,7 +904,7 @@ fvm_selector_destroy(fvm_selector_t  *this_selector)
 
   BFT_FREE(this_selector);
 
-  return NULL;
+  return nullptr;
 }
 
 /*----------------------------------------------------------------------------
@@ -935,11 +935,11 @@ fvm_selector_get_list(fvm_selector_t  *this_selector,
 {
   int  c_id, gc_id;
   cs_lnum_t   i;
-  const fvm_selector_postfix_t *pf = NULL;
+  const fvm_selector_postfix_t *pf = nullptr;
   fvm_selector_t  *ts = this_selector;
   double t0 = cs_timer_wtime();
 
-  assert(this_selector != NULL);
+  assert(this_selector != nullptr);
 
   *n_selected_elements = 0;
 
@@ -956,14 +956,14 @@ fvm_selector_get_list(fvm_selector_t  *this_selector,
   if (   fvm_selector_postfix_coords_dep(pf) == false
       && fvm_selector_postfix_normals_dep(pf) == false) {
 
-    if (ts->_operations->group_class_set[c_id] != NULL) {
+    if (ts->_operations->group_class_set[c_id] != nullptr) {
 
       int n_criteria_group_classes
         = ts->_operations->n_group_classes[c_id];
       const int *_criteria_group_class_set
         = ts->_operations->group_class_set[c_id];
 
-      if (ts->_n_group_class_elements != NULL) {
+      if (ts->_n_group_class_elements != nullptr) {
 
         for (gc_id = 0; gc_id < n_criteria_group_classes; gc_id++) {
           for (i = 0;
@@ -988,9 +988,9 @@ fvm_selector_get_list(fvm_selector_t  *this_selector,
 
     const int dim = ts->dim;
 
-    assert(ts->group_class_id != NULL);
+    assert(ts->group_class_id != nullptr);
 
-    if (fvm_selector_postfix_coords_dep(pf) == true && ts->coords == NULL)
+    if (fvm_selector_postfix_coords_dep(pf) == true && ts->coords == nullptr)
       bft_error(__FILE__, __LINE__, 0,
                 _("Selection criteria:\n"
                   "\"%s\"\n"
@@ -998,7 +998,7 @@ fvm_selector_get_list(fvm_selector_t  *this_selector,
                   "has no associated coordinates."),
                 str);
     else if (   fvm_selector_postfix_normals_dep(pf) == true
-             && ts->normals == NULL)
+             && ts->normals == nullptr)
       bft_error(__FILE__, __LINE__, 0,
                 _("Selection criteria:\n"
                   "\"%s\"\n"
@@ -1063,11 +1063,11 @@ fvm_selector_get_gc_list(fvm_selector_t  *this_selector,
                          int              selected_gcs[])
 {
   int  c_id, gc_id;
-  const fvm_selector_postfix_t *pf = NULL;
+  const fvm_selector_postfix_t *pf = nullptr;
   fvm_selector_t  *ts = this_selector;
   double t0 = cs_timer_wtime();
 
-  assert(this_selector != NULL);
+  assert(this_selector != nullptr);
 
   *n_selected_gcs = 0;
 
@@ -1088,7 +1088,7 @@ fvm_selector_get_gc_list(fvm_selector_t  *this_selector,
 
   /* copy group class list */
 
-  if (ts->_operations->group_class_set[c_id] != NULL) {
+  if (ts->_operations->group_class_set[c_id] != nullptr) {
 
     int n_criteria_group_classes
       = ts->_operations->n_group_classes[c_id];
@@ -1126,8 +1126,8 @@ fvm_selector_n_missing(const fvm_selector_t  *this_selector,
 {
   int retval = 0;
 
-  if (this_selector != NULL && criteria_id >= 0) {
-    if (   this_selector->_operations != NULL
+  if (this_selector != nullptr && criteria_id >= 0) {
+    if (   this_selector->_operations != nullptr
         && this_selector->_operations->n_operations > criteria_id) {
       const fvm_selector_postfix_t *pf
         = this_selector->_operations->postfix[criteria_id];
@@ -1157,10 +1157,10 @@ fvm_selector_get_missing(const fvm_selector_t  *this_selector,
                          int                    criteria_id,
                          int                    missing_id)
 {
-  const char *retval = NULL;
+  const char *retval = nullptr;
 
-  if (this_selector != NULL && criteria_id >= 0) {
-    if (   this_selector->_operations != NULL
+  if (this_selector != nullptr && criteria_id >= 0) {
+    if (   this_selector->_operations != nullptr
         && this_selector->_operations->n_operations > criteria_id) {
       const fvm_selector_postfix_t *pf
         = this_selector->_operations->postfix[criteria_id];
@@ -1177,8 +1177,8 @@ fvm_selector_get_missing(const fvm_selector_t  *this_selector,
  *
  * parameters:
  *   this_selector <-- pointer to selector
- *   n_evals       <-> number of evaluations, or NULL
- *   eval_wtime    <-> evaluation wall-clock time, or NULL
+ *   n_evals       <-> number of evaluations, or nullptr
+ *   eval_wtime    <-> evaluation wall-clock time, or nullptr
  *----------------------------------------------------------------------------*/
 
 void
@@ -1186,10 +1186,10 @@ fvm_selector_get_stats(const fvm_selector_t  *this_selector,
                        int                   *n_evals,
                        double                *eval_wtime)
 {
-  if (this_selector != NULL) {
-    if (n_evals != NULL)
+  if (this_selector != nullptr) {
+    if (n_evals != nullptr)
       *n_evals = this_selector->n_evals;
-    if (eval_wtime != NULL)
+    if (eval_wtime != nullptr)
       *eval_wtime = this_selector->eval_wtime;
   }
 }
@@ -1207,7 +1207,7 @@ fvm_selector_dump(const fvm_selector_t  *this_selector)
   int i, j;
   const fvm_selector_t  *ts = this_selector;
 
-  if (ts == NULL) {
+  if (ts == nullptr) {
     bft_printf("\n"
                "Null selector dump:\n");
     return;
@@ -1280,7 +1280,7 @@ fvm_selector_dump(const fvm_selector_t  *this_selector)
     }
   }
 
-  if (ts->_operations != NULL) {
+  if (ts->_operations != nullptr) {
 
     bft_printf("\n");
 

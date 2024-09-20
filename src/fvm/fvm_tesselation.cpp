@@ -225,13 +225,13 @@ struct _fvm_tesselation_t {
                                                      (see notes above) */
 
   fvm_tesselation_encoding_t        *_encoding;   /* encoding if owner,
-                                                     NULL if shared */
+                                                     nullptr if shared */
 
   const cs_lnum_t   *sub_elt_index[2];   /* index of sub-elements of each
                                             given type associated with
                                             each element (0 to n-1); */
   cs_lnum_t         *_sub_elt_index[2];  /* sub_elt_index if owner,
-                                            NULL if shared */
+                                            nullptr if shared */
 
 };
 
@@ -249,7 +249,7 @@ struct _fvm_tesselation_t {
  * parameters:
  *   ts             <-- tesselation structure
  *   vertex_coords  --> coordinates of added vertices
- *   n_vertices_tot --> total number of vertex references (or NULL)
+ *   n_vertices_tot --> total number of vertex references (or nullptr)
  *   element_id     <-- element index
  *----------------------------------------------------------------------------*/
 
@@ -282,7 +282,7 @@ _added_vertex_coords(const fvm_tesselation_t  *ts,
     cs_coord_t triangle_normal[3] = {0., 0., 0.};
     cs_coord_t face_surface = 0.;
     cs_coord_t triangle_surface = 0.;
-    const cs_coord_t *current_coords = NULL;
+    const cs_coord_t *current_coords = nullptr;
 
     face_id = CS_ABS(ts->face_num[i]) - 1;
 
@@ -296,7 +296,7 @@ _added_vertex_coords(const fvm_tesselation_t  *ts,
 
       vertex_id = ts->vertex_num[ts->vertex_index[face_id] + j] - 1;
 
-      if (ts->parent_vertex_id != NULL)
+      if (ts->parent_vertex_id != nullptr)
         current_coords
           = ts->vertex_coords + (ts->parent_vertex_id[vertex_id] * 3);
       else
@@ -324,7 +324,7 @@ _added_vertex_coords(const fvm_tesselation_t  *ts,
 
       vertex_id = ts->vertex_num[ts->vertex_index[face_id] + j] - 1;
 
-      if (ts->parent_vertex_id != NULL)
+      if (ts->parent_vertex_id != nullptr)
         current_coords
           = ts->vertex_coords + (ts->parent_vertex_id[vertex_id] * 3);
       else
@@ -385,7 +385,7 @@ _added_vertex_coords(const fvm_tesselation_t  *ts,
   for (k = 0; k < 3; k++)
     vertex_coords[k] = cell_center[k] / cell_center_divisor;
 
-  if (n_vertices_tot != NULL)
+  if (n_vertices_tot != nullptr)
     *n_vertices_tot = _n_vertices_tot;
 }
 
@@ -611,7 +611,7 @@ _polyhedron_vertices(const fvm_tesselation_t   *ts,
  *   src_interlace    <-- indicates if source data is interlaced
  *   src_datatype     <-- source data type (float, double, or int)
  *   dest_datatype    <-- destination data type (float, double, or int)
- *   n_parent_lists   <-- number of parent lists (if parent_num != NULL)
+ *   n_parent_lists   <-- number of parent lists (if parent_num != nullptr)
  *   parent_num_shift <-- parent number to value array index shifts;
  *                        size: n_parent_lists
  *   parent_num       <-- if n_parent_lists > 0, parent entity numbers
@@ -650,7 +650,7 @@ _vertex_field_of_real_values(const fvm_tesselation_t  *this_tesselation,
   cs_lnum_t *vertex_list = _vertex_list;
 
   const fvm_tesselation_t *ts = this_tesselation;
-  const cs_coord_t *current_coords = NULL;
+  const cs_coord_t *current_coords = nullptr;
 
   if (ts->type != FVM_CELL_POLY)
     return;
@@ -683,8 +683,8 @@ _vertex_field_of_real_values(const fvm_tesselation_t  *this_tesselation,
       if (n_vertices_tot > max_list_size) {
         max_list_size *= 2;
         if (heap == _heap) {
-          heap = NULL;
-          vertex_list = NULL;
+          heap = nullptr;
+          vertex_list = nullptr;
         }
         BFT_REALLOC(heap, max_list_size, cs_lnum_t);
         BFT_REALLOC(vertex_list, max_list_size, cs_lnum_t);
@@ -704,7 +704,7 @@ _vertex_field_of_real_values(const fvm_tesselation_t  *this_tesselation,
 
         vertex_id = vertex_list[j];
 
-        if (ts->parent_vertex_id != NULL)
+        if (ts->parent_vertex_id != nullptr)
           current_coords
             = ts->vertex_coords + (ts->parent_vertex_id[vertex_id] * 3);
         else
@@ -720,7 +720,7 @@ _vertex_field_of_real_values(const fvm_tesselation_t  *this_tesselation,
           pl = 0;
           parent_id = vertex_id;
         }
-        else if (parent_num != NULL) {
+        else if (parent_num != nullptr) {
           for (parent_id = parent_num[vertex_id] - 1, pl = n_parent_lists - 1;
                parent_id < parent_num_shift[pl];
                pl--);
@@ -871,14 +871,14 @@ _tesselate_polygons(fvm_tesselation_t  *this_tesselation,
   cs_lnum_t n_elements_tot[2] = {0, 0}; /* New triangles/quadrangles */
   cs_lnum_t n_g_elements_max[2] = {0, 0}; /* Global max triangles/quadrangles */
   cs_lnum_t n_elements_max[2] = {0, 0}; /* Max triangles/quadrangles */
-  cs_lnum_t *triangle_vertices = NULL;
-  fvm_triangulate_state_t *state = NULL;
+  cs_lnum_t *triangle_vertices = nullptr;
+  fvm_triangulate_state_t *state = nullptr;
 
   fvm_tesselation_t *ts = this_tesselation;
 
   /* Initialization */
 
-  if (error_count != NULL)
+  if (error_count != nullptr)
     *error_count = 0;
 
   if (ts->type != FVM_CELL_POLY)
@@ -891,7 +891,7 @@ _tesselate_polygons(fvm_tesselation_t  *this_tesselation,
   n_vertices_max = 0;
   n_triangles_max = 0;
 
-  if (ts->vertex_index != NULL) {
+  if (ts->vertex_index != nullptr) {
     for (i = 0 ; i < n_elements ; i++) {
       n_vertices = ts->vertex_index[i+1] - ts->vertex_index[i];
       if (n_vertices == 4)
@@ -918,8 +918,8 @@ _tesselate_polygons(fvm_tesselation_t  *this_tesselation,
 
   /* Destroy previous tesselation description if present */
 
-  ts->encoding = NULL;
-  if (ts->_encoding != NULL)
+  ts->encoding = nullptr;
+  if (ts->_encoding != nullptr)
     BFT_FREE(ts->_encoding);
 
   /* Allocate memory and state variables */
@@ -973,7 +973,7 @@ _tesselate_polygons(fvm_tesselation_t  *this_tesselation,
                                             triangle_vertices,
                                             state);
 
-      if (n_triangles != (n_vertices - 2) && error_count != NULL)
+      if (n_triangles != (n_vertices - 2) && error_count != nullptr)
         *error_count += 1;
 
       /* Encode local triangle connectivity */
@@ -1004,7 +1004,7 @@ _tesselate_polygons(fvm_tesselation_t  *this_tesselation,
 
     else {
 
-      if (ts->_encoding != NULL) {
+      if (ts->_encoding != nullptr) {
         for (j = 0; j < (n_vertices - 2); j++)
           ts->_encoding[encoding_id + j] = 0;
       }
@@ -1079,13 +1079,13 @@ _count_and_index_sub_polygons(fvm_tesselation_t  *this_tesselation,
   cs_lnum_t n_vertices, n_triangles, n_elements;
   cs_lnum_t i, j, encoding_id;
 
-  cs_lnum_t *n_sub_elements[2] = {NULL, NULL};
+  cs_lnum_t *n_sub_elements[2] = {nullptr, nullptr};
 
   fvm_tesselation_t *ts = this_tesselation;
 
   /* Initial checks */
 
-  if (ts->vertex_index == NULL)
+  if (ts->vertex_index == nullptr)
     return;
 
   /* Initialization */
@@ -1140,7 +1140,7 @@ _count_and_index_sub_polygons(fvm_tesselation_t  *this_tesselation,
       encoding_id = ts->vertex_index[i] - (i*2);
 
       for (j = 0; j < (n_vertices - 2); j++) {
-        if (ts->encoding != NULL) {
+        if (ts->encoding != nullptr) {
           if (ts->encoding[encoding_id + j] != 0)
             n_triangles += 1;
         }
@@ -1159,13 +1159,13 @@ _count_and_index_sub_polygons(fvm_tesselation_t  *this_tesselation,
   for (sub_type_id = 0; sub_type_id < ts->n_sub_types; sub_type_id++)
     ts->n_sub_glob[sub_type_id] = ts->n_sub[sub_type_id];
 
-  if (   global_count == true && ts->global_element_num != NULL
+  if (   global_count == true && ts->global_element_num != nullptr
       && cs_glob_n_ranks > 1) {
 
     for (sub_type_id = 0; sub_type_id < ts->n_sub_types; sub_type_id++) {
-      if (ts->_sub_elt_index[sub_type_id] != NULL) {
+      if (ts->_sub_elt_index[sub_type_id] != nullptr) {
         cs_lnum_t * _n_sub_elements = ts->_sub_elt_index[sub_type_id] + 1;
-        if (n_elements == 0) _n_sub_elements = NULL;
+        if (n_elements == 0) _n_sub_elements = nullptr;
         ts->n_sub_glob[sub_type_id]
           = fvm_io_num_global_sub_size(ts->global_element_num,
                                        _n_sub_elements);
@@ -1213,7 +1213,7 @@ _count_and_index_sub_polyhedra(fvm_tesselation_t  *this_tesselation,
 
   cs_gnum_t n_g_elements_tot[2] = {0, 0}; /* Global new elements count */
   cs_lnum_t n_elements_tot[2] = {0, 0}; /* New tetrahedra/pyramids */
-  cs_lnum_t *n_sub_elements[2] = {NULL, NULL};
+  cs_lnum_t *n_sub_elements[2] = {nullptr, nullptr};
   cs_lnum_t n_g_elements_max[2] = {0, 0}; /* Global max tetrahedra/pyramids */
   cs_lnum_t n_elements_max[2] = {0, 0}; /* Max tetrahedra/pyramids */
 
@@ -1221,11 +1221,11 @@ _count_and_index_sub_polyhedra(fvm_tesselation_t  *this_tesselation,
 
   /* Initial checks */
 
-  assert(ts->vertex_index != NULL);
+  assert(ts->vertex_index != nullptr);
 
   /* Initialization */
 
-  if (error_count != NULL)
+  if (error_count != nullptr)
     *error_count = 0;
 
   n_elements = ts->n_elements;
@@ -1288,13 +1288,13 @@ _count_and_index_sub_polyhedra(fvm_tesselation_t  *this_tesselation,
         encoding_id = ts->vertex_index[face_id] - (face_id*2);
 
         for (k = encoding_id; k < (encoding_id + n_vertices - 2); k++) {
-          if (ts->encoding != NULL) {
+          if (ts->encoding != nullptr) {
             if (ts->encoding[k] != 0)
               n_triangles += 1;
           }
         }
 
-        if (error_count != NULL && n_triangles < n_vertices - 2)
+        if (error_count != nullptr && n_triangles < n_vertices - 2)
           *error_count += 1;
 
         if (n_triangles > 0)
@@ -1315,10 +1315,10 @@ _count_and_index_sub_polyhedra(fvm_tesselation_t  *this_tesselation,
     if (n_pyrams > n_elements_max[1])
       n_elements_max[1] = n_pyrams;
 
-    if (n_sub_elements[0] != NULL)
+    if (n_sub_elements[0] != nullptr)
       n_sub_elements[0][i] = n_tetras;
 
-    if (n_sub_elements[1] != NULL)
+    if (n_sub_elements[1] != nullptr)
       n_sub_elements[1][i] = n_pyrams;
 
   }  /* End of loop on elements */
@@ -1354,13 +1354,13 @@ _count_and_index_sub_polyhedra(fvm_tesselation_t  *this_tesselation,
   for (sub_type_id = 0; sub_type_id < ts->n_sub_types; sub_type_id++)
     ts->n_sub_glob[sub_type_id] = ts->n_sub[sub_type_id];
 
-  if (   global_count == true && ts->global_element_num != NULL
+  if (   global_count == true && ts->global_element_num != nullptr
       && cs_glob_n_ranks > 1) {
 
     for (sub_type_id = 0; sub_type_id < ts->n_sub_types; sub_type_id++) {
-      if (ts->_sub_elt_index[sub_type_id] != NULL) {
+      if (ts->_sub_elt_index[sub_type_id] != nullptr) {
         cs_lnum_t * _n_sub_elements = ts->_sub_elt_index[sub_type_id] + 1;
-        if (n_elements == 0) _n_sub_elements = NULL;
+        if (n_elements == 0) _n_sub_elements = nullptr;
         ts->n_sub_glob[sub_type_id]
           = fvm_io_num_global_sub_size(ts->global_element_num,
                                        _n_sub_elements);
@@ -1428,7 +1428,7 @@ _decode_polygons_tesselation_g(const fvm_tesselation_t  *this_tesselation,
     /*---------------------------------------*/
 
     if (   connect_type == FVM_FACE_TRIA
-        && n_vertices > 3 && ts->encoding != NULL) {
+        && n_vertices > 3 && ts->encoding != nullptr) {
 
       /* Loop on triangles */
 
@@ -1444,7 +1444,7 @@ _decode_polygons_tesselation_g(const fvm_tesselation_t  *this_tesselation,
                                     ts->encoding[encoding_id + k],
                                     decoding_mask);
 
-          if (_global_vertex_num != NULL) {
+          if (_global_vertex_num != nullptr) {
             for (l = 0; l < 3; l++)
               vertex_num[n_sub_tot*3 + l]
                 = _global_vertex_num[ts->vertex_num[vertex_id + tv[l]] - 1];
@@ -1472,17 +1472,17 @@ _decode_polygons_tesselation_g(const fvm_tesselation_t  *this_tesselation,
       /* Check that polygon is not subdivided */
 
       k = n_vertices;
-      if (ts->encoding != NULL) {
+      if (ts->encoding != nullptr) {
         for (k = 0; k < (n_vertices - 2); k++)
           if (ts->encoding[encoding_id + k] > 0)
             break;
       }
 
-      if (k == n_vertices - 2 || ts->encoding == NULL) {
+      if (k == n_vertices - 2 || ts->encoding == nullptr) {
 
         /* Fill connectivity array */
 
-        if (_global_vertex_num != NULL) {
+        if (_global_vertex_num != nullptr) {
           for (k = 0; k < n_vertices; k++)
             vertex_num[n_sub_tot*n_vertices +k]
               = _global_vertex_num[ts->vertex_num[vertex_id + k] - 1];
@@ -1556,7 +1556,7 @@ _decode_polygons_tesselation_l(const fvm_tesselation_t  *this_tesselation,
     /*---------------------------------------*/
 
     if (   connect_type == FVM_FACE_TRIA
-        && n_vertices > 3 && ts->encoding != NULL) {
+        && n_vertices > 3 && ts->encoding != nullptr) {
 
       /* Loop on polygon vertices */
 
@@ -1596,13 +1596,13 @@ _decode_polygons_tesselation_l(const fvm_tesselation_t  *this_tesselation,
       /* Check that polygon is not subdivided */
 
       j = n_vertices;
-      if (ts->encoding != NULL) {
+      if (ts->encoding != nullptr) {
         for (j = 0; j < (n_vertices - 2); j++)
           if (ts->encoding[encoding_id + j] != 0)
             break;
       }
 
-      if (j == n_vertices - 2 || ts->encoding == NULL) {
+      if (j == n_vertices - 2 || ts->encoding == nullptr) {
 
         /* Return previous element's end index if buffer size reached */
 
@@ -1691,7 +1691,7 @@ _decode_polyhedra_tesselation_g(const fvm_tesselation_t  *this_tesselation,
       /*----------------------------------------*/
 
       if (   connect_type == FVM_CELL_TETRA
-          && n_vertices > 3 && ts->encoding != NULL) {
+          && n_vertices > 3 && ts->encoding != nullptr) {
 
         /* Loop on face vertices */
 
@@ -1710,7 +1710,7 @@ _decode_polyhedra_tesselation_g(const fvm_tesselation_t  *this_tesselation,
                                       ts->encoding[encoding_id + l],
                                       decoding_mask);
 
-            if (_global_vertex_num != NULL) {
+            if (_global_vertex_num != nullptr) {
               for (m = 0; m < 3; m++)
                 vertex_num[base_dest_id + orient*m]
                   = _global_vertex_num[ts->vertex_num[vertex_id + tv[m]] - 1];
@@ -1723,7 +1723,7 @@ _decode_polyhedra_tesselation_g(const fvm_tesselation_t  *this_tesselation,
 
             /* Add extra "top" vertex */
 
-            if (global_element_num != NULL)
+            if (global_element_num != nullptr)
               vertex_num[n_sub_tot*4 + 3] =   extra_vertex_base_num
                                             + global_element_num[i] - 1;
             else
@@ -1746,13 +1746,13 @@ _decode_polyhedra_tesselation_g(const fvm_tesselation_t  *this_tesselation,
         /* Check that face is not subdivided */
 
         l = n_vertices;
-        if (ts->encoding != NULL) {
+        if (ts->encoding != nullptr) {
           for (l = 0; l < (n_vertices - 2); l++)
             if (ts->encoding[encoding_id + l] != 0)
               break;
         }
 
-        if (l == n_vertices - 2 || ts->encoding == NULL) {
+        if (l == n_vertices - 2 || ts->encoding == nullptr) {
 
           cs_lnum_t stride = n_vertices + 1;
 
@@ -1763,7 +1763,7 @@ _decode_polyhedra_tesselation_g(const fvm_tesselation_t  *this_tesselation,
 
           /* Fill connectivity array */
 
-          if (_global_vertex_num != NULL) {
+          if (_global_vertex_num != nullptr) {
             for (l = 0; l < n_vertices; l++)
               vertex_num[base_dest_id + l*orient]
                 = _global_vertex_num[ts->vertex_num[vertex_id + l] - 1];
@@ -1776,7 +1776,7 @@ _decode_polyhedra_tesselation_g(const fvm_tesselation_t  *this_tesselation,
 
           /* Add extra "top" vertex */
 
-          if (global_element_num != NULL)
+          if (global_element_num != nullptr)
             vertex_num[n_sub_tot*stride + n_vertices]
               =   extra_vertex_base_num + global_element_num[i] - 1;
           else
@@ -1867,7 +1867,7 @@ _decode_polyhedra_tesselation_l(const fvm_tesselation_t  *this_tesselation,
       /*----------------------------------------*/
 
       if (   connect_type == FVM_CELL_TETRA
-          && n_vertices > 3 && ts->encoding != NULL) {
+          && n_vertices > 3 && ts->encoding != nullptr) {
 
         /* Loop on face vertices */
 
@@ -1916,13 +1916,13 @@ _decode_polyhedra_tesselation_l(const fvm_tesselation_t  *this_tesselation,
         /* Check that face is not subdivided */
 
         l = n_vertices;
-        if (ts->encoding != NULL) {
+        if (ts->encoding != nullptr) {
           for (l = 0; l < (n_vertices - 2); l++)
             if (ts->encoding[encoding_id + l] != 0)
               break;
         }
 
-        if (l == n_vertices - 2 || ts->encoding == NULL) {
+        if (l == n_vertices - 2 || ts->encoding == nullptr) {
 
           cs_lnum_t stride = n_vertices + 1;
 
@@ -1974,7 +1974,7 @@ _decode_polyhedra_tesselation_l(const fvm_tesselation_t  *this_tesselation,
  * (passed as arguments), which is not copied. This structure should thus
  * always be destroyed before the mesh section to which it relates.
  *
- * Unused connectivity array arguments should be set to NULL (such as
+ * Unused connectivity array arguments should be set to nullptr (such as
  * face_index[] and face_num[] for 2D or regular (strided) elements,
  * and vertex_index[] for strided elements.
  *
@@ -1988,12 +1988,12 @@ _decode_polyhedra_tesselation_l(const fvm_tesselation_t  *this_tesselation,
  *   face_num           <-- element -> face numbers (1 to n, signed,
  *                           > 0 for outwards pointing face normal
  *                           < 0 for inwards pointing face normal);
- *                          dimension: [face_index[n_elements]], or NULL
+ *                          dimension: [face_index[n_elements]], or nullptr
  *   vertex_index       <-- element face -> vertices index (O to n-1);
  *                          dimension: [n_cell_faces + 1], [n_elements + 1],
- *                          or NULL depending on face_index and vertex_index
+ *                          or nullptr depending on face_index and vertex_index
  *   vertex_num         <-- element -> vertex connectivity (1 to n)
- *   global_element_num <-- global element numbers (NULL in serial mode)
+ *   global_element_num <-- global element numbers (nullptr in serial mode)
  *
  * returns:
  *  pointer to created mesh section tesselation structure
@@ -2030,7 +2030,7 @@ fvm_tesselation_create(fvm_element_t        element_type,
     stride = 0;
     break;
   default:
-    return NULL;
+    return nullptr;
   }
 
   /* Now, create structure */
@@ -2047,8 +2047,8 @@ fvm_tesselation_create(fvm_element_t        element_type,
   this_tesselation->stride = stride;
   this_tesselation->n_faces = 0;
 
-  this_tesselation->vertex_coords = NULL;
-  this_tesselation->parent_vertex_id = NULL;
+  this_tesselation->vertex_coords = nullptr;
+  this_tesselation->parent_vertex_id = nullptr;
 
   this_tesselation->face_index = face_index;
   this_tesselation->face_num = face_num;
@@ -2059,25 +2059,25 @@ fvm_tesselation_create(fvm_element_t        element_type,
 
   /* Check argument consistency */
 
-  if (face_index != NULL || face_num != NULL) {
+  if (face_index != nullptr || face_num != nullptr) {
     if (element_type != FVM_CELL_POLY)
       bft_error(__FILE__, __LINE__, 0,
                 _("Incoherent connectivity for tesselation:\n"
-                  "Connectivity face_index or face_num non NULL,\n"
+                  "Connectivity face_index or face_num non nullptr,\n"
                   "but element type != FVM_CELL_POLY"));
   }
 
-  else if (vertex_index != NULL) {
+  else if (vertex_index != nullptr) {
     if (element_type != FVM_FACE_POLY)
       bft_error(__FILE__, __LINE__, 0,
                 _("Incoherent connectivity for tesselation:\n"
-                  "Connectivy vertex_index non NULL,\n"
+                  "Connectivy vertex_index non nullptr,\n"
                   "but element type != FVM_FACE_POLY"));
   }
 
   /* Compute number of polyhedron faces */
 
-  if (n_elements > 0 && face_index != NULL) {
+  if (n_elements > 0 && face_index != nullptr) {
     cs_lnum_t   j, k, face_id;
     cs_lnum_t   max_face_id = 0;
     for (j = 0; j < n_elements; j++) {
@@ -2102,12 +2102,12 @@ fvm_tesselation_create(fvm_element_t        element_type,
     this_tesselation->sub_type[i] = FVM_N_ELEMENT_TYPES;
   }
 
-  this_tesselation->encoding = NULL;
-  this_tesselation->_encoding = NULL;
+  this_tesselation->encoding = nullptr;
+  this_tesselation->_encoding = nullptr;
 
   for (i = 0; i < FVM_TESSELATION_N_SUB_TYPES_MAX; i++) {
-    this_tesselation->sub_elt_index[i] = NULL;
-    this_tesselation->_sub_elt_index[i] = NULL;
+    this_tesselation->sub_elt_index[i] = nullptr;
+    this_tesselation->_sub_elt_index[i] = nullptr;
   }
 
   return (this_tesselation);
@@ -2120,7 +2120,7 @@ fvm_tesselation_create(fvm_element_t        element_type,
  *   this_tesselation <-> pointer to structure that should be destroyed
  *
  * returns:
- *  NULL pointer
+ *  nullptr pointer
  *----------------------------------------------------------------------------*/
 
 fvm_tesselation_t *
@@ -2128,16 +2128,16 @@ fvm_tesselation_destroy(fvm_tesselation_t  * this_tesselation)
 {
   int i;
 
-  if (this_tesselation->_encoding != NULL)
+  if (this_tesselation->_encoding != nullptr)
     BFT_FREE(this_tesselation->_encoding);
 
   for (i = 0; i < this_tesselation->n_sub_types; i++) {
-    if (this_tesselation->_sub_elt_index[i] != NULL)
+    if (this_tesselation->_sub_elt_index[i] != nullptr)
       BFT_FREE(this_tesselation->_sub_elt_index[i]);
   }
   BFT_FREE(this_tesselation);
 
-  return NULL;
+  return nullptr;
 }
 
 /*----------------------------------------------------------------------------
@@ -2159,7 +2159,7 @@ fvm_tesselation_init(fvm_tesselation_t  *this_tesselation,
                      const cs_lnum_t     parent_vertex_id[],
                      cs_lnum_t          *error_count)
 {
-  assert(this_tesselation != NULL);
+  assert(this_tesselation != nullptr);
 
   this_tesselation->dim = dim;
 
@@ -2213,14 +2213,14 @@ fvm_tesselation_reduce(fvm_tesselation_t  * this_tesselation)
   this_tesselation->stride = 0;
   this_tesselation->n_faces = 0;
 
-  if (this_tesselation->face_index == NULL) {
-    this_tesselation->face_num = NULL;
-    this_tesselation->vertex_index = NULL;
-    this_tesselation->vertex_num = NULL;
+  if (this_tesselation->face_index == nullptr) {
+    this_tesselation->face_num = nullptr;
+    this_tesselation->vertex_index = nullptr;
+    this_tesselation->vertex_num = nullptr;
   }
 
-  this_tesselation->encoding = NULL;
-  if (this_tesselation->_encoding != NULL)
+  this_tesselation->encoding = nullptr;
+  if (this_tesselation->_encoding != nullptr)
     BFT_FREE(this_tesselation->_encoding);
 }
 
@@ -2239,7 +2239,7 @@ fvm_tesselation_n_elements(const fvm_tesselation_t  *this_tesselation)
 {
   cs_lnum_t retval = 0;
 
-  if (this_tesselation != NULL)
+  if (this_tesselation != nullptr)
     retval = this_tesselation->n_elements;
 
   return retval;
@@ -2260,11 +2260,11 @@ fvm_tesselation_n_g_vertices_add(const fvm_tesselation_t  *this_tesselation)
 {
   cs_gnum_t retval = 0;
 
-  assert(this_tesselation != NULL);
+  assert(this_tesselation != nullptr);
 
   if (this_tesselation->type == FVM_CELL_POLY) {
 
-    if (this_tesselation->global_element_num != NULL)
+    if (this_tesselation->global_element_num != nullptr)
       retval = fvm_io_num_get_global_count(this_tesselation->global_element_num);
     else
       retval = this_tesselation->n_elements;
@@ -2289,7 +2289,7 @@ fvm_tesselation_n_vertices_add(const fvm_tesselation_t  *this_tesselation)
 {
   cs_gnum_t retval = 0;
 
-  assert(this_tesselation != NULL);
+  assert(this_tesselation != nullptr);
 
   if (this_tesselation->type == FVM_CELL_POLY)
     retval = this_tesselation->n_elements;
@@ -2312,7 +2312,7 @@ fvm_tesselation_n_sub_types(const fvm_tesselation_t  *this_tesselation)
 {
   int retval = 0;
 
-  if (this_tesselation != NULL)
+  if (this_tesselation != nullptr)
     retval = this_tesselation->n_sub_types;
 
   return retval;
@@ -2335,7 +2335,7 @@ fvm_tesselation_sub_type(const fvm_tesselation_t  *this_tesselation,
 {
   fvm_element_t retval = FVM_N_ELEMENT_TYPES;
 
-  if (this_tesselation == NULL)
+  if (this_tesselation == nullptr)
     retval = FVM_N_ELEMENT_TYPES;
   else {
     assert(sub_type_id < this_tesselation->n_sub_types);
@@ -2364,7 +2364,7 @@ fvm_tesselation_n_sub_elements(const fvm_tesselation_t  *this_tesselation,
 
   cs_lnum_t retval = 0;
 
-  if (this_tesselation != NULL) {
+  if (this_tesselation != nullptr) {
     for (id = 0; id < this_tesselation->n_sub_types; id++) {
       if (this_tesselation->sub_type[id] == sub_type) {
         retval = this_tesselation->n_sub[id];
@@ -2396,18 +2396,18 @@ fvm_tesselation_get_global_size(const fvm_tesselation_t  *this_tesselation,
 {
   int id;
 
-  if (n_sub_elements_max != NULL)
+  if (n_sub_elements_max != nullptr)
     *n_sub_elements_max = 0;
 
-  if (n_sub_elements_glob != NULL)
+  if (n_sub_elements_glob != nullptr)
     *n_sub_elements_glob = 0;
 
-  if (this_tesselation != NULL) {
+  if (this_tesselation != nullptr) {
     for (id = 0; id < this_tesselation->n_sub_types; id++) {
       if (this_tesselation->sub_type[id] == sub_type) {
-        if (n_sub_elements_max != NULL)
+        if (n_sub_elements_max != nullptr)
           *n_sub_elements_max = this_tesselation->n_sub_max_glob[id];
-        if (n_sub_elements_glob != NULL)
+        if (n_sub_elements_glob != nullptr)
           *n_sub_elements_glob = this_tesselation->n_sub_glob[id];
         break;
       }
@@ -2423,15 +2423,15 @@ fvm_tesselation_get_global_size(const fvm_tesselation_t  *this_tesselation,
  *
  * returns:
  *   pointer to global numbering of added vertices for this tesselation,
- *   or NULL if no added vertices are present.
+ *   or nullptr if no added vertices are present.
  *----------------------------------------------------------------------------*/
 
 const fvm_io_num_t *
 fvm_tesselation_global_vertex_num(const fvm_tesselation_t  *this_tesselation)
 {
-  const fvm_io_num_t *retval = NULL;
+  const fvm_io_num_t *retval = nullptr;
 
-  assert(this_tesselation != NULL);
+  assert(this_tesselation != nullptr);
 
   if (this_tesselation->type == FVM_CELL_POLY)
     retval = this_tesselation->global_element_num;
@@ -2462,7 +2462,7 @@ fvm_tesselation_vertex_coords(const fvm_tesselation_t  *this_tesselation,
 
   for (i = 0; i < this_tesselation->n_elements; i++) {
 
-    _added_vertex_coords(this_tesselation, vertex_coords + i*3, NULL, i);
+    _added_vertex_coords(this_tesselation, vertex_coords + i*3, nullptr, i);
 
   }
 
@@ -2485,9 +2485,9 @@ fvm_tesselation_sub_elt_index(const fvm_tesselation_t  *this_tesselation,
                               fvm_element_t             sub_type)
 {
   int id;
-  const cs_lnum_t *retval = NULL;
+  const cs_lnum_t *retval = nullptr;
 
-  if (this_tesselation != NULL) {
+  if (this_tesselation != nullptr) {
     for (id = 0; id < this_tesselation->n_sub_types; id++) {
       if (this_tesselation->sub_type[id] == sub_type) {
         retval = this_tesselation->sub_elt_index[id];
@@ -2640,11 +2640,11 @@ fvm_tesselation_distribute(const fvm_tesselation_t  *this_tesselation,
   size_t  l;
   char  *src, *dest;
 
-  const cs_lnum_t *sub_elt_index = NULL;
+  const cs_lnum_t *sub_elt_index = nullptr;
 
   /* Find index, or return */
 
-  if (this_tesselation == NULL)
+  if (this_tesselation == nullptr)
     return;
 
   for (id = 0; id < this_tesselation->n_sub_types; id++) {
@@ -2691,7 +2691,7 @@ fvm_tesselation_distribute(const fvm_tesselation_t  *this_tesselation,
  *   src_interlace    <-- indicates if source data is interlaced
  *   src_datatype     <-- source data type (float, double, or int)
  *   dest_datatype    <-- destination data type (float, double, or int)
- *   n_parent_lists   <-- number of parent lists (if parent_num != NULL)
+ *   n_parent_lists   <-- number of parent lists (if parent_num != nullptr)
  *   parent_num_shift <-- parent number to value array index shifts;
  *                        size: n_parent_lists
  *   parent_num       <-- if n_parent_lists > 0, parent entity numbers
@@ -2723,8 +2723,7 @@ fvm_tesselation_vertex_values(const fvm_tesselation_t  *this_tesselation,
 
   if (   (src_datatype != CS_DOUBLE && src_datatype != CS_FLOAT)
       || (dest_datatype != CS_DOUBLE && dest_datatype != CS_FLOAT)) {
-
-    unsigned char *_dest_data = dest_data;
+    unsigned char *_dest_data = static_cast<unsigned char *>(dest_data);
 
     size_t data_shift =     start_id
                           * (dest_dim * cs_datatype_size[dest_datatype]);
@@ -2771,7 +2770,7 @@ fvm_tesselation_dump(const fvm_tesselation_t  *this_tesselation)
   cs_lnum_t   n_elements, j, k;
   const cs_lnum_t   *idx;
 
-  if (this_tesselation == NULL)
+  if (this_tesselation == nullptr)
     return;
 
   /* Global indicators */
@@ -2853,7 +2852,7 @@ fvm_tesselation_dump(const fvm_tesselation_t  *this_tesselation)
              (const void *)this_tesselation->encoding);
 
   for (i = 0; i < this_tesselation->n_sub_types; i++) {
-    if (this_tesselation->sub_elt_index[i] != NULL)
+    if (this_tesselation->sub_elt_index[i] != nullptr)
       bft_printf("  sub_elt_index[%s]: %p\n",
                  fvm_elements_type_name[this_tesselation->sub_type[i]],
                  (const void *)this_tesselation->sub_elt_index[i]);
@@ -2865,13 +2864,13 @@ fvm_tesselation_dump(const fvm_tesselation_t  *this_tesselation)
              (const void *)this_tesselation->_encoding);
 
   for (i = 0; i < this_tesselation->n_sub_types; i++) {
-    if (this_tesselation->sub_elt_index[i] != NULL)
+    if (this_tesselation->sub_elt_index[i] != nullptr)
       bft_printf("  _sub_elt_index[%s]: %p\n",
                  fvm_elements_type_name[this_tesselation->sub_type[i]],
                  (const void *)this_tesselation->_sub_elt_index[i]);
   }
 
-  if (this_tesselation->encoding != NULL) {
+  if (this_tesselation->encoding != nullptr) {
 
     fvm_tesselation_encoding_t decoding_mask[3] = {0, 0, 0};
     cs_lnum_t tv[3];
@@ -2912,7 +2911,7 @@ fvm_tesselation_dump(const fvm_tesselation_t  *this_tesselation)
   }
 
   for (i = 0; i < this_tesselation->n_sub_types; i++) {
-    if (this_tesselation->sub_elt_index[i] != NULL) {
+    if (this_tesselation->sub_elt_index[i] != nullptr) {
       bft_printf("\nSub-element index [%s]:\n\n",
                  fvm_elements_type_name[this_tesselation->sub_type[i]]);
       n_elements = this_tesselation->n_elements;

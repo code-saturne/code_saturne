@@ -121,7 +121,7 @@ struct _fvm_io_num_t {
   const cs_gnum_t   *global_num;      /* Global (possibly shared) entity
                                          numbers (1 to n) */
   cs_gnum_t         *_global_num;     /* Global entity numbers if owner,
-                                         NULL otherwise */
+                                         nullptr otherwise */
 
 };
 
@@ -166,7 +166,7 @@ _s_to_real(double       s,
 {
   CS_UNUSED(input);
 
-  cs_real_t  *v = elt;
+  cs_real_t *v = static_cast<cs_real_t *>(elt);
   *v = s;
 }
 
@@ -364,7 +364,7 @@ _fvm_io_num_local_max(const fvm_io_num_t  *this_io_num)
  * parameters:
  *   this_io_num    <-> pointer to structure that should be ordered
  *   n_sub_entities <-- optional number of sub-entities per initial entity,
- *                      or NULL if unused
+ *                      or nullptr if unused
  *   may_be_shared  <-- indicate if structure may be shared at this stage
  *----------------------------------------------------------------------------*/
 
@@ -373,7 +373,7 @@ _fvm_io_num_order_finalize(fvm_io_num_t     *this_io_num,
                            const cs_lnum_t   n_sub_entities[],
                            bool              may_be_shared)
 {
-  if (n_sub_entities != NULL) {
+  if (n_sub_entities != nullptr) {
 
     cs_lnum_t i, j, k;
     cs_gnum_t *_global_num;
@@ -429,7 +429,7 @@ _fvm_io_num_order_finalize(fvm_io_num_t     *this_io_num,
  * parameters:
  *   this_io_num    <-> pointer to structure that should be ordered
  *   n_sub_entities <-- optional number of sub-entities per initial entity,
- *                      or NULL if unused
+ *                      or nullptr if unused
  *----------------------------------------------------------------------------*/
 
 static void
@@ -460,7 +460,7 @@ _fvm_io_num_local_order(fvm_io_num_t     *this_io_num,
 
     BFT_MALLOC(b_order, n_ent, cs_lnum_t);
 
-    cs_order_gnum_allocated(NULL,
+    cs_order_gnum_allocated(nullptr,
                             b_gnum,
                             b_order,
                             n_ent);
@@ -472,7 +472,7 @@ _fvm_io_num_local_order(fvm_io_num_t     *this_io_num,
        such that for each block, the global number of an entity is equal to
        the cumulative number of sub-entities */
 
-    if (b_nsub != NULL) {
+    if (b_nsub != nullptr) {
 
       current_gnum = b_nsub[b_order[0]];
       num_prev = b_gnum[b_order[0]];
@@ -487,7 +487,7 @@ _fvm_io_num_local_order(fvm_io_num_t     *this_io_num,
       }
 
     }
-    else { /* if (b_n_sub == NULL) */
+    else { /* if (b_n_sub == nullptr) */
 
       current_gnum = 1;
       num_prev = b_gnum[b_order[0]];
@@ -531,7 +531,7 @@ _fvm_io_num_local_order(fvm_io_num_t     *this_io_num,
 static void
 _fvm_io_num_copy_on_write(fvm_io_num_t  *const this_io_num)
 {
-  if (this_io_num->_global_num == NULL) {
+  if (this_io_num->_global_num == nullptr) {
     cs_lnum_t i;
     BFT_MALLOC(this_io_num->_global_num,
                this_io_num->global_num_size,
@@ -557,7 +557,7 @@ static void
 _fvm_io_num_try_to_set_shared(fvm_io_num_t      *const this_io_num,
                               const cs_gnum_t          parent_global_number[])
 {
-  if (this_io_num->_global_num != NULL && parent_global_number != NULL) {
+  if (this_io_num->_global_num != nullptr && parent_global_number != nullptr) {
     cs_lnum_t i;
     for (i = 0; i < this_io_num->global_num_size; i++)
       if (this_io_num->_global_num[i] != parent_global_number[i])
@@ -646,7 +646,7 @@ _fvm_io_num_global_max_unordered(const fvm_io_num_t  *const this_io_num,
  * parameters:
  *   this_io_num    <-> pointer to structure that should be ordered
  *   n_sub_entities <-- optional number of sub-entities per initial entity,
- *                      or NULL if unused
+ *                      or nullptr if unused
  *   comm           <-- associated MPI communicator
  *----------------------------------------------------------------------------*/
 
@@ -659,7 +659,7 @@ _fvm_io_num_global_order(fvm_io_num_t       *this_io_num,
 
   bool        may_be_shared = false;
 
-  cs_lnum_t  *b_nsub = NULL;
+  cs_lnum_t  *b_nsub = nullptr;
   int         have_sub_loc = 0, have_sub_glob = 0;
 
   int         local_rank, size;
@@ -700,28 +700,24 @@ _fvm_io_num_global_order(fvm_io_num_t       *this_io_num,
                                          comm);
 
   cs_gnum_t *b_gnum = cs_all_to_all_copy_array(d,
-                                               CS_GNUM_TYPE,
                                                1,
                                                false, /* reverse */
-                                               this_io_num->global_num,
-                                               NULL);
+                                               this_io_num->global_num);
 
   cs_lnum_t b_size = cs_all_to_all_n_elts_dest(d);
 
   /* Do we have sub-entities ? */
 
-  if (n_sub_entities != NULL)
+  if (n_sub_entities != nullptr)
     have_sub_loc = 1;
 
   MPI_Allreduce(&have_sub_loc, &have_sub_glob, 1, MPI_INT, MPI_MAX, comm);
 
   if (have_sub_glob > 0)
     b_nsub = cs_all_to_all_copy_array(d,
-                                      CS_LNUM_TYPE,
                                       1,
                                       false, /* reverse */
-                                      n_sub_entities,
-                                      NULL);
+                                      n_sub_entities);
 
   if (b_size > 0) {
 
@@ -729,7 +725,7 @@ _fvm_io_num_global_order(fvm_io_num_t       *this_io_num,
 
     BFT_MALLOC(b_order, b_size, cs_lnum_t);
 
-    cs_order_gnum_allocated(NULL,
+    cs_order_gnum_allocated(nullptr,
                             b_gnum,
                             b_order,
                             b_size);
@@ -796,7 +792,6 @@ _fvm_io_num_global_order(fvm_io_num_t       *this_io_num,
   /* Return global order to all ranks */
 
   cs_all_to_all_copy_array(d,
-                           CS_GNUM_TYPE,
                            1,
                            true, /* reverse */
                            b_gnum,
@@ -843,7 +838,7 @@ _fvm_io_num_global_order_s(fvm_io_num_t       *this_io_num,
   int  local_rank, size;
   cs_gnum_t current_gnum = 0, gnum_shift = 0;
 
-  cs_gnum_t *r_gnum = NULL;
+  cs_gnum_t *r_gnum = nullptr;
 
   /* Initialization */
 
@@ -885,18 +880,16 @@ _fvm_io_num_global_order_s(fvm_io_num_t       *this_io_num,
   cs_all_to_all_t
     *d = cs_all_to_all_create(this_io_num->global_num_size,
                               0,      /* flags */
-                              NULL,  /* dest_id */
+                              nullptr,  /* dest_id */
                               dest_rank,
                               comm);
 
   cs_all_to_all_transfer_dest_rank(d, &dest_rank);
 
   cs_gnum_t *b_gnum = cs_all_to_all_copy_array(d,
-                                               CS_GNUM_TYPE,
                                                stride,
                                                false, /* reverse */
-                                               global_num,
-                                               NULL);
+                                               global_num);
 
   cs_lnum_t b_size = cs_all_to_all_n_elts_dest(d);
 
@@ -904,12 +897,12 @@ _fvm_io_num_global_order_s(fvm_io_num_t       *this_io_num,
 
   if (b_size > 0) {
 
-    cs_lnum_t *b_order = NULL;
+    cs_lnum_t *b_order = nullptr;
 
     BFT_MALLOC(r_gnum, b_size, cs_gnum_t);
     BFT_MALLOC(b_order, b_size, cs_lnum_t);
 
-    cs_order_gnum_allocated_s(NULL,
+    cs_order_gnum_allocated_s(nullptr,
                               b_gnum,
                               stride,
                               b_order,
@@ -961,7 +954,6 @@ _fvm_io_num_global_order_s(fvm_io_num_t       *this_io_num,
   /* Return global order to all ranks */
 
   cs_all_to_all_copy_array(d,
-                           CS_GNUM_TYPE,
                            1,
                            true, /* reverse */
                            r_gnum,
@@ -987,7 +979,7 @@ _fvm_io_num_global_order_s(fvm_io_num_t       *this_io_num,
  *   i2        <-- position in index for the second element
  *   index     <-- number of values to compare for each entity
  *   number    <-- pointer to numbers of entities that should be ordered.
- *                 (if NULL, a default 1 to n numbering is considered)
+ *                 (if nullptr, a default 1 to n numbering is considered)
  *
  * returns:
  *  true or false
@@ -1052,7 +1044,7 @@ _fvm_io_num_global_order_index(fvm_io_num_t       *this_io_num,
   int  local_rank, size;
 
   cs_gnum_t   current_global_num = 0, global_num_shift = 0;
-  cs_gnum_t   *block_global_num = NULL, *recv_global_num = NULL;
+  cs_gnum_t   *block_global_num = nullptr, *recv_global_num = nullptr;
 
   size_t      n_ent = this_io_num->global_num_size;
 
@@ -1096,7 +1088,7 @@ _fvm_io_num_global_order_index(fvm_io_num_t       *this_io_num,
 
   cs_all_to_all_t *d = cs_all_to_all_create(n_ent,
                                             flags,
-                                            NULL,
+                                            nullptr,
                                             dest_rank,
                                             comm);
   cs_all_to_all_transfer_dest_rank(d, &dest_rank);
@@ -1107,7 +1099,7 @@ _fvm_io_num_global_order_index(fvm_io_num_t       *this_io_num,
     = cs_all_to_all_copy_index(d,
                                false, /* reverse */
                                index,
-                               NULL);
+                               nullptr);
 
   cs_lnum_t n_ent_recv = cs_all_to_all_n_elts_dest(d);
 
@@ -1118,21 +1110,19 @@ _fvm_io_num_global_order_index(fvm_io_num_t       *this_io_num,
      avoid an extra copy to an internal buffer. */
 
   recv_global_num = cs_all_to_all_copy_indexed(d,
-                                               CS_GNUM_TYPE,
                                                false, /* reverse */
                                                index,
                                                global_num,
-                                               recv_index,
-                                               NULL);
+                                               recv_index);
 
   if (n_ent_recv > 0) { /* Order received elements of the indexed list */
 
     size_t prev_id, cur_id;
 
-    cs_lnum_t  *recv_order = NULL;
+    cs_lnum_t  *recv_order = nullptr;
     BFT_MALLOC(recv_order, n_ent_recv, cs_lnum_t);
 
-    cs_order_gnum_allocated_i(NULL,
+    cs_order_gnum_allocated_i(nullptr,
                               recv_global_num,
                               recv_index,
                               recv_order,
@@ -1188,7 +1178,6 @@ _fvm_io_num_global_order_index(fvm_io_num_t       *this_io_num,
   /* Return global order to all ranks */
 
   cs_all_to_all_copy_array(d,
-                           CS_GNUM_TYPE,
                            1,
                            true, /* reverse */
                            block_global_num,
@@ -1226,8 +1215,8 @@ _fvm_io_num_global_sub_size(const fvm_io_num_t  *this_io_num,
 {
   cs_gnum_t   global_count, num_prev, num_cur;
 
-  cs_gnum_t   *send_global_num = NULL;
-  cs_lnum_t   *recv_n_sub = NULL, *recv_order = NULL;
+  cs_gnum_t   *send_global_num = nullptr;
+  cs_lnum_t   *recv_n_sub = nullptr, *recv_order = nullptr;
   int         have_sub_loc = 0, have_sub_glob = 0;
 
   int         size, local_rank;
@@ -1266,7 +1255,7 @@ _fvm_io_num_global_sub_size(const fvm_io_num_t  *this_io_num,
      need to build an extra array, but only to send the correct parts
      of the n_sub_entities[] array to the correct processors */
 
-  if (this_io_num->_global_num != NULL)
+  if (this_io_num->_global_num != nullptr)
     send_global_num = this_io_num->_global_num;
   else {
     BFT_MALLOC(send_global_num,
@@ -1278,11 +1267,9 @@ _fvm_io_num_global_sub_size(const fvm_io_num_t  *this_io_num,
   }
 
   cs_gnum_t *recv_global_num = cs_all_to_all_copy_array(d,
-                                                        CS_GNUM_TYPE,
                                                         1,
                                                         false, /* reverse */
-                                                        send_global_num,
-                                                        NULL);
+                                                        send_global_num);
 
   cs_lnum_t n_ent_recv = cs_all_to_all_n_elts_dest(d);
 
@@ -1293,7 +1280,7 @@ _fvm_io_num_global_sub_size(const fvm_io_num_t  *this_io_num,
 
   /* Do we have sub-entities ? */
 
-  if (n_sub_entities != NULL)
+  if (n_sub_entities != nullptr)
     have_sub_loc = 1;
 
   MPI_Allreduce(&have_sub_loc, &have_sub_glob, 1, MPI_INT, MPI_MAX, comm);
@@ -1303,7 +1290,7 @@ _fvm_io_num_global_sub_size(const fvm_io_num_t  *this_io_num,
     cs_lnum_t   *send_n_sub;
     BFT_MALLOC(send_n_sub, this_io_num->global_num_size, cs_lnum_t);
 
-    if (n_sub_entities != NULL) {
+    if (n_sub_entities != nullptr) {
       for (cs_lnum_t i = 0; i < this_io_num->global_num_size; i++)
         send_n_sub[i] = n_sub_entities[i];
     }
@@ -1313,18 +1300,16 @@ _fvm_io_num_global_sub_size(const fvm_io_num_t  *this_io_num,
     }
 
     recv_n_sub = cs_all_to_all_copy_array(d,
-                                          CS_LNUM_TYPE,
                                           1,
                                           false, /* reverse */
-                                          send_n_sub,
-                                          NULL);
+                                          send_n_sub);
 
     BFT_FREE(send_n_sub);
   }
 
   if (n_ent_recv > 0) {
 
-    cs_order_gnum_allocated(NULL,
+    cs_order_gnum_allocated(nullptr,
                             recv_global_num,
                             recv_order,
                             n_ent_recv);
@@ -1443,7 +1428,7 @@ _create_from_coords_morton(const cs_coord_t  coords[],
   const int level = sizeof(fvm_morton_int_t)*8 - 1;
   const int n_ranks = cs_glob_n_ranks;
 
-  fvm_io_num_t  *this_io_num = NULL;
+  fvm_io_num_t  *this_io_num = nullptr;
 
   /* Create structure */
 
@@ -1468,9 +1453,9 @@ _create_from_coords_morton(const cs_coord_t  coords[],
 
   if (n_ranks > 1) {
 
-    int *dest_rank = NULL;
-    cs_lnum_t *order = NULL;
-    fvm_morton_code_t *m_code = NULL;
+    int *dest_rank = nullptr;
+    cs_lnum_t *order = nullptr;
+    fvm_morton_code_t *m_code = nullptr;
     int input[1] = {dim};
 
     BFT_MALLOC(m_code, n_entities, fvm_morton_code_t);
@@ -1484,7 +1469,7 @@ _create_from_coords_morton(const cs_coord_t  coords[],
                                    sizeof(fvm_morton_code_t),
                                    n_entities,
                                    m_code,
-                                   NULL, /* weight */
+                                   nullptr, /* weight */
                                    order,
                                    dest_rank,
                                    fvm_morton_s_to_code,
@@ -1498,19 +1483,16 @@ _create_from_coords_morton(const cs_coord_t  coords[],
     cs_all_to_all_t
       *d = cs_all_to_all_create(this_io_num->global_num_size,
                                 0,     /* flags */
-                                NULL,  /* dest_id */
+                                nullptr,  /* dest_id */
                                 dest_rank,
                                 comm);
 
     cs_all_to_all_transfer_dest_rank(d, &dest_rank);
 
-    cs_real_t *b_coords
-      = cs_all_to_all_copy_array(d,
-                                 CS_REAL_TYPE,
-                                 3,
-                                 false, /* reverse */
-                                 coords,
-                                 NULL);
+    cs_real_t *b_coords = cs_all_to_all_copy_array(d,
+                                                   3,
+                                                   false, /* reverse */
+                                                   coords);
 
     size_t b_size = cs_all_to_all_n_elts_dest(d);
 
@@ -1573,7 +1555,6 @@ _create_from_coords_morton(const cs_coord_t  coords[],
     /* Return global order to all ranks */
 
     cs_all_to_all_copy_array(d,
-                             CS_GNUM_TYPE,
                              1,
                              true, /* reverse */
                              b_gnum,
@@ -1587,17 +1568,15 @@ _create_from_coords_morton(const cs_coord_t  coords[],
 
     /* Get final maximum global number value */
 
-    this_io_num->global_count
-      = _fvm_io_num_global_max_unordered(this_io_num, comm);
-
+    this_io_num->global_count =
+      _fvm_io_num_global_max_unordered(this_io_num, comm);
   }
 
 #endif /* HAVE_MPI */
 
   if (n_ranks == 1) {
-
-    cs_lnum_t *order = NULL;
-    fvm_morton_code_t *m_code = NULL;
+    cs_lnum_t         *order  = nullptr;
+    fvm_morton_code_t *m_code = nullptr;
 
     BFT_MALLOC(m_code, n_entities, fvm_morton_code_t);
     BFT_MALLOC(order, n_entities, cs_lnum_t);
@@ -1610,12 +1589,11 @@ _create_from_coords_morton(const cs_coord_t  coords[],
     BFT_FREE(m_code);
 
     for (i = 0; i < n_entities; i++)
-      this_io_num->_global_num[order[i]] = i+1;
+      this_io_num->_global_num[order[i]] = i + 1;
 
     BFT_FREE(order);
 
     this_io_num->global_count = n_entities;
-
   }
 
   return this_io_num;
@@ -1640,12 +1618,12 @@ _create_from_coords_morton(const cs_coord_t  coords[],
  *----------------------------------------------------------------------------*/
 
 static fvm_io_num_t *
-_create_from_coords_hilbert(const cs_coord_t  coords[],
-                            int               dim,
-                            size_t            n_entities,
-                            int               box_to_cube)
+_create_from_coords_hilbert(const cs_coord_t coords[],
+                            int              dim,
+                            size_t           n_entities,
+                            int              box_to_cube)
 {
-  size_t i;
+  size_t     i;
   cs_coord_t extents[6];
 
 #if defined(HAVE_MPI)
@@ -1654,7 +1632,7 @@ _create_from_coords_hilbert(const cs_coord_t  coords[],
 
   const int n_ranks = cs_glob_n_ranks;
 
-  fvm_io_num_t  *this_io_num = NULL;
+  fvm_io_num_t *this_io_num = nullptr;
 
   /* Create structure */
 
@@ -1678,10 +1656,9 @@ _create_from_coords_hilbert(const cs_coord_t  coords[],
 #if defined(HAVE_MPI)
 
   if (n_ranks > 1) {
-
-    int *dest_rank = NULL;
-    cs_lnum_t *order = NULL;
-    fvm_hilbert_code_t *h_code = NULL;
+    int                *dest_rank = nullptr;
+    cs_lnum_t          *order     = nullptr;
+    fvm_hilbert_code_t *h_code    = nullptr;
 
     BFT_MALLOC(h_code, n_entities, fvm_hilbert_code_t);
     BFT_MALLOC(order, n_entities, cs_lnum_t);
@@ -1694,33 +1671,29 @@ _create_from_coords_hilbert(const cs_coord_t  coords[],
                                    sizeof(fvm_hilbert_code_t),
                                    n_entities,
                                    h_code,
-                                   NULL, /* weight */
+                                   nullptr, /* weight */
                                    order,
                                    dest_rank,
                                    fvm_hilbert_s_to_code,
                                    fvm_hilbert_compare,
-                                   NULL,
+                                   nullptr,
                                    comm);
 
     BFT_FREE(order);
     BFT_FREE(h_code);
 
-    cs_all_to_all_t
-      *d = cs_all_to_all_create(this_io_num->global_num_size,
-                                0,     /* flags */
-                                NULL,  /* dest_id */
-                                dest_rank,
-                                comm);
+    cs_all_to_all_t *d = cs_all_to_all_create(this_io_num->global_num_size,
+                                              0,       /* flags */
+                                              nullptr, /* dest_id */
+                                              dest_rank,
+                                              comm);
 
     cs_all_to_all_transfer_dest_rank(d, &dest_rank);
 
-    cs_real_t *b_coords
-      = cs_all_to_all_copy_array(d,
-                                 CS_REAL_TYPE,
-                                 3,
-                                 false, /* reverse */
-                                 coords,
-                                 NULL);
+    cs_real_t *b_coords = cs_all_to_all_copy_array(d,
+                                                   3,
+                                                   false, /* reverse */
+                                                   coords);
 
     size_t b_size = cs_all_to_all_n_elts_dest(d);
 
@@ -1772,7 +1745,6 @@ _create_from_coords_hilbert(const cs_coord_t  coords[],
     /* Return global order to all ranks */
 
     cs_all_to_all_copy_array(d,
-                             CS_GNUM_TYPE,
                              1,
                              true, /* reverse */
                              b_gnum,
@@ -1786,16 +1758,15 @@ _create_from_coords_hilbert(const cs_coord_t  coords[],
 
     /* Get final maximum global number value */
 
-    this_io_num->global_count
-      = _fvm_io_num_global_max_unordered(this_io_num, comm);
-
+    this_io_num->global_count =
+      _fvm_io_num_global_max_unordered(this_io_num, comm);
   }
 
 #endif /* HAVE_MPI */
 
   if (n_ranks == 1) {
 
-    cs_lnum_t *order = NULL;
+    cs_lnum_t *order = nullptr;
     BFT_MALLOC(order, n_entities, cs_lnum_t);
 
     fvm_hilbert_local_order_coords(dim,
@@ -1821,11 +1792,11 @@ _create_from_coords_hilbert(const cs_coord_t  coords[],
  *
  * parameters:
  *   parent_entity_id <-- optional list (0 to n-1 numbering) of selected
- *                        entities (or NULL if all n_entities are selected).
+ *                        entities (or nullptr if all n_entities are selected).
  *                        This list may contain element ids in any order
  *   number           <-- array of all entity numbers (number of entity i given
  *                        by number[i] or number[list[i] - 1]) if list exists
- *                        (if NULL, a default 1 to n numbering is considered)
+ *                        (if nullptr, a default 1 to n numbering is considered)
  *   stride           <-- stride of number array (number of values to compare)
  *   n_entities       <-- number of entities considered
  *
@@ -1844,9 +1815,9 @@ _is_gnum_ordered_s(const cs_lnum_t  parent_entity_id[],
 
   /* If numbering is explicit */
 
-  if (number != NULL) {
+  if (number != nullptr) {
 
-    if (parent_entity_id != NULL) {
+    if (parent_entity_id != nullptr) {
       for (i = 1 ; i < n_entities ; i++) {
         size_t j_prev, k;
         bool unordered = false;
@@ -1883,7 +1854,7 @@ _is_gnum_ordered_s(const cs_lnum_t  parent_entity_id[],
   }
   else {
 
-    if (parent_entity_id != NULL) {
+    if (parent_entity_id != nullptr) {
       for (i = 1 ; i < n_entities ; i++) {
         if (parent_entity_id[i] < parent_entity_id[i-1])
           break;
@@ -1913,7 +1884,7 @@ _is_gnum_ordered_s(const cs_lnum_t  parent_entity_id[],
  *
  * parameters:
  *   parent_entity_number <-- pointer to list of selected entitie's parent's
- *                            numbers, or NULL if all first n_ent entities
+ *                            numbers, or nullptr if all first n_ent entities
  *                            are used
  *   parent_global_number <-- pointer to list of global (i.e. domain splitting
  *                            independent) parent entity numbers
@@ -1931,9 +1902,9 @@ fvm_io_num_create(const cs_lnum_t   parent_entity_number[],
                   size_t            n_entities,
                   int               share_parent_global)
 {
-  cs_lnum_t *parent_entity_id = NULL;
+  cs_lnum_t *parent_entity_id = nullptr;
 
-  if (parent_entity_number != NULL) {
+  if (parent_entity_number != nullptr) {
     BFT_MALLOC(parent_entity_id, n_entities, cs_lnum_t);
     for (size_t i = 0; i < n_entities; i++)
       parent_entity_id[i] = parent_entity_number[i] - 1;
@@ -1955,7 +1926,7 @@ fvm_io_num_create(const cs_lnum_t   parent_entity_number[],
  *
  * parameters:
  *   parent_entity_id     <-- pointer to list of selected entitie's parent's
- *                            ids, or NULL if all first n_ent entities
+ *                            ids, or nullptr if all first n_ent entities
  *                            are used
  *   parent_global_number <-- pointer to list of global (i.e. domain splitting
  *                            independent) parent entity numbers
@@ -1974,14 +1945,14 @@ fvm_io_num_create_from_select(const cs_lnum_t   parent_entity_id[],
                               int               share_parent_global)
 {
   size_t  i;
-  cs_lnum_t  *order = NULL;
+  cs_lnum_t  *order = nullptr;
 
-  fvm_io_num_t  *this_io_num = NULL;
+  fvm_io_num_t  *this_io_num = nullptr;
 
   /* Initial checks */
 
-  if (cs_glob_n_ranks < 2 && parent_global_number == NULL)
-    return NULL;
+  if (cs_glob_n_ranks < 2 && parent_global_number == nullptr)
+    return nullptr;
 
   /* Create structure */
 
@@ -1996,7 +1967,7 @@ fvm_io_num_create_from_select(const cs_lnum_t   parent_entity_id[],
 
     /* Assign initial global numbers */
 
-    if (parent_entity_id != NULL) {
+    if (parent_entity_id != nullptr) {
       for (i = 0 ; i < n_entities ; i++)
         this_io_num->_global_num[i] = parent_global_number[parent_entity_id[i]];
     }
@@ -2005,11 +1976,11 @@ fvm_io_num_create_from_select(const cs_lnum_t   parent_entity_id[],
         this_io_num->_global_num[i] = parent_global_number[i];
     }
 
-    if (cs_order_gnum_test(NULL,
+    if (cs_order_gnum_test(nullptr,
                            this_io_num->_global_num,
                            n_entities) == false) {
       cs_gnum_t *tmp_num;
-      order = cs_order_gnum(NULL,
+      order = cs_order_gnum(nullptr,
                             this_io_num->_global_num,
                             n_entities);
       BFT_MALLOC(tmp_num, n_entities, cs_gnum_t);
@@ -2030,16 +2001,16 @@ fvm_io_num_create_from_select(const cs_lnum_t   parent_entity_id[],
 
   if (cs_glob_n_ranks > 1)
     _fvm_io_num_global_order(this_io_num,
-                             NULL,
+                             nullptr,
                              cs_glob_mpi_comm);
 
 #endif
 
   if (cs_glob_n_ranks == 1)
     _fvm_io_num_local_order(this_io_num,
-                            NULL);
+                            nullptr);
 
-  if (order != NULL) {
+  if (order != nullptr) {
     cs_gnum_t *tmp_num;
     BFT_MALLOC(tmp_num, n_entities, cs_gnum_t);
     for (i = 0; i < n_entities; i++)
@@ -2085,7 +2056,7 @@ fvm_io_num_create_shared(const cs_gnum_t   global_number[],
   this_io_num->global_num_size = n_entities;
 
   this_io_num->global_num = global_number;
-  this_io_num->_global_num = NULL;
+  this_io_num->_global_num = nullptr;
 
   return this_io_num;
 }
@@ -2109,12 +2080,12 @@ fvm_io_num_t *
 fvm_io_num_create_from_sub(const fvm_io_num_t  *base_io_num,
                            const cs_lnum_t      n_sub_entities[])
 {
-  fvm_io_num_t  *this_io_num = NULL;
+  fvm_io_num_t  *this_io_num = nullptr;
 
   /* Initial checks */
 
-  if (base_io_num == NULL)
-    return NULL;
+  if (base_io_num == nullptr)
+    return nullptr;
 
   /* Create structure */
 
@@ -2161,7 +2132,7 @@ fvm_io_num_create_from_sub(const fvm_io_num_t  *base_io_num,
  *
  * parameters:
  *   parent_entity_id <-- pointer to list of selected entitie's parent's ids,
- *                        or NULL if all first n_ent entities are used
+ *                        or nullptr if all first n_ent entities are used
  *   index            <-- index on entities for adjacency
  *   adjacency        <-- entity adjacency (1 to n global numbering)
  *   n_entities       <-- number of entities considered
@@ -2176,12 +2147,12 @@ fvm_io_num_create_from_adj_s(const cs_lnum_t   parent_entity_id[],
                              size_t            n_entities,
                              size_t            stride)
 {
-  fvm_io_num_t  *this_io_num = NULL;
+  fvm_io_num_t  *this_io_num = nullptr;
 
   /* Initial checks */
 
   if (cs_glob_n_ranks < 2)
-    return NULL;
+    return nullptr;
 
   assert(_is_gnum_ordered_s(parent_entity_id,
                             adjacency,
@@ -2190,7 +2161,7 @@ fvm_io_num_create_from_adj_s(const cs_lnum_t   parent_entity_id[],
 
 #if defined(HAVE_MPI)
   {
-    cs_gnum_t *_adjacency = NULL;
+    cs_gnum_t *_adjacency = nullptr;
 
     /* Create structure */
 
@@ -2209,7 +2180,7 @@ fvm_io_num_create_from_adj_s(const cs_lnum_t   parent_entity_id[],
 
       BFT_MALLOC(_adjacency, n_entities*stride, cs_gnum_t);
 
-      if (parent_entity_id != NULL) {
+      if (parent_entity_id != nullptr) {
         for (i = 0 ; i < n_entities ; i++) {
           for (j = 0; j < stride; j++)
             _adjacency[i*stride + j]
@@ -2244,7 +2215,7 @@ fvm_io_num_create_from_adj_s(const cs_lnum_t   parent_entity_id[],
  *
  * parameters:
  *   parent_entity_id <-- pointer to list of selected entitie's parent's ids,
- *                        or NULL if all first n_ent entities are used
+ *                        or nullptr if all first n_ent entities are used
  *   index            <-- index on entities for adjacency
  *   adjacency        <-- entity adjacency (1 to n global numbering)
  *   n_entities       <-- number of entities considered
@@ -2259,17 +2230,17 @@ fvm_io_num_create_from_adj_i(const cs_lnum_t   parent_entity_id[],
                              const cs_gnum_t   adjacency[],
                              cs_lnum_t         n_entities)
 {
-  fvm_io_num_t  *this_io_num = NULL;
+  fvm_io_num_t  *this_io_num = nullptr;
 
   /* Initial checks */
 
   if (cs_glob_n_ranks < 2)
-    return NULL;
+    return nullptr;
 
 #if defined(HAVE_MPI)
   {
-    cs_lnum_t   *_index = NULL;
-    cs_gnum_t *_adjacency = NULL;
+    cs_lnum_t   *_index = nullptr;
+    cs_gnum_t *_adjacency = nullptr;
 
 #if defined(DEBUG) && !defined(NDEBUG)
     const char no_adjacent_elt_msg[]
@@ -2298,7 +2269,7 @@ fvm_io_num_create_from_adj_i(const cs_lnum_t   parent_entity_id[],
 
       /* Assign initial global numbers */
 
-      if (parent_entity_id != NULL) {
+      if (parent_entity_id != nullptr) {
 
 #if defined(DEBUG) && !defined(NDEBUG)
         for (i = 0 ; i < n_entities ; i++) {
@@ -2360,9 +2331,9 @@ fvm_io_num_create_from_adj_i(const cs_lnum_t   parent_entity_id[],
                                    _adjacency,
                                    cs_glob_mpi_comm);
 
-    if (_adjacency != NULL)
+    if (_adjacency != nullptr)
       BFT_FREE(_adjacency);
-    if (_index != NULL)
+    if (_index != nullptr)
       BFT_FREE(_index);
   }
 #endif
@@ -2393,7 +2364,7 @@ fvm_io_num_create_from_sfc(const cs_coord_t  coords[],
                            size_t            n_entities,
                            fvm_io_num_sfc_t  sfc_type)
 {
-  fvm_io_num_t  *this_io_num = NULL;
+  fvm_io_num_t  *this_io_num = nullptr;
 
   switch(sfc_type) {
   case FVM_IO_NUM_SFC_MORTON_BOX:
@@ -2443,7 +2414,7 @@ fvm_io_num_create_from_real(const cs_real_t  val[],
 
   const int n_ranks = cs_glob_n_ranks;
 
-  fvm_io_num_t  *this_io_num = NULL;
+  fvm_io_num_t  *this_io_num = nullptr;
 
   /* Create structure */
 
@@ -2492,24 +2463,24 @@ fvm_io_num_create_from_real(const cs_real_t  val[],
     for (i = 0; i < n_entities; i++)
       s_val[i] = (val[i] - v_min)*scale;
 
-    int *dest_rank = NULL;
-    cs_lnum_t *order = NULL;
+    int *dest_rank = nullptr;
+    cs_lnum_t *order = nullptr;
 
     BFT_MALLOC(order, n_entities, cs_lnum_t);
     BFT_MALLOC(dest_rank, n_entities, int);
 
-    cs_order_real_allocated(NULL, s_val, order, n_entities);
+    cs_order_real_allocated(nullptr, s_val, order, n_entities);
 
     cs_sort_partition_dest_rank_id(_sampling_factors[1],
                                    sizeof(cs_real_t),
                                    n_entities,
                                    s_val,
-                                   NULL, /* weight */
+                                   nullptr, /* weight */
                                    order,
                                    dest_rank,
                                    _s_to_real,
                                    _s_compare,
-                                   NULL,
+                                   nullptr,
                                    comm);
 
     BFT_FREE(order);
@@ -2517,19 +2488,16 @@ fvm_io_num_create_from_real(const cs_real_t  val[],
     cs_all_to_all_t
       *d = cs_all_to_all_create(this_io_num->global_num_size,
                                 0,     /* flags */
-                                NULL,  /* dest_id */
+                                nullptr,  /* dest_id */
                                 dest_rank,
                                 comm);
 
     cs_all_to_all_transfer_dest_rank(d, &dest_rank);
 
-    cs_real_t *b_val
-      = cs_all_to_all_copy_array(d,
-                                 CS_REAL_TYPE,
-                                 1,
-                                 false, /* reverse */
-                                 s_val,
-                                 NULL);
+    cs_real_t *b_val = cs_all_to_all_copy_array(d,
+                                                1,
+                                                false, /* reverse */
+                                                s_val);
 
     BFT_FREE(s_val);
 
@@ -2539,7 +2507,7 @@ fvm_io_num_create_from_real(const cs_real_t  val[],
 
     BFT_MALLOC(order, b_size, cs_lnum_t);
 
-    cs_order_real_allocated(NULL, b_val, order, b_size);
+    cs_order_real_allocated(nullptr, b_val, order, b_size);
 
     BFT_FREE(b_val);
 
@@ -2576,7 +2544,6 @@ fvm_io_num_create_from_real(const cs_real_t  val[],
     /* Return global order to all ranks */
 
     cs_all_to_all_copy_array(d,
-                             CS_GNUM_TYPE,
                              1,
                              true, /* reverse */
                              b_gnum,
@@ -2599,10 +2566,10 @@ fvm_io_num_create_from_real(const cs_real_t  val[],
 
   if (n_ranks == 1) {
 
-    cs_lnum_t *order = NULL;
+    cs_lnum_t *order = nullptr;
     BFT_MALLOC(order, n_entities, cs_lnum_t);
 
-    cs_order_real_allocated(NULL, val, order, n_entities);
+    cs_order_real_allocated(nullptr, val, order, n_entities);
 
     for (i = 0; i < n_entities; i++)
       this_io_num->_global_num[order[i]] = i+1;
@@ -2630,7 +2597,7 @@ fvm_io_num_create_from_real(const cs_real_t  val[],
 fvm_io_num_t *
 fvm_io_num_create_from_scan(size_t  n_entities)
 {
-  fvm_io_num_t  *this_io_num = NULL;
+  fvm_io_num_t  *this_io_num = nullptr;
 
   /* Create structure */
 
@@ -2681,13 +2648,13 @@ fvm_io_num_create_from_scan(size_t  n_entities)
  *   this_io_num <-- pointer to structure that should be destroyed
  *
  * returns:
- *   NULL pointer
+ *   nullptr pointer
  *----------------------------------------------------------------------------*/
 
 fvm_io_num_t *
 fvm_io_num_destroy(fvm_io_num_t  * this_io_num)
 {
-  if (this_io_num != NULL) {
+  if (this_io_num != nullptr) {
     BFT_FREE(this_io_num->_global_num);
     BFT_FREE(this_io_num);
   }
@@ -2708,11 +2675,11 @@ fvm_io_num_destroy(fvm_io_num_t  * this_io_num)
 cs_gnum_t *
 fvm_io_num_transfer_global_num(fvm_io_num_t  * this_io_num)
 {
-  cs_gnum_t *retval = NULL;
+  cs_gnum_t *retval = nullptr;
 
-  if (this_io_num != NULL) {
+  if (this_io_num != nullptr) {
     retval = this_io_num->_global_num;
-    this_io_num->_global_num = NULL;
+    this_io_num->_global_num = nullptr;
   }
 
   return retval;
@@ -2732,7 +2699,7 @@ fvm_io_num_transfer_global_num(fvm_io_num_t  * this_io_num)
 cs_lnum_t
 fvm_io_num_get_local_count(const fvm_io_num_t  *const this_io_num)
 {
-  assert(this_io_num != NULL);
+  assert(this_io_num != nullptr);
 
   return this_io_num->global_num_size;
 }
@@ -2751,7 +2718,7 @@ fvm_io_num_get_local_count(const fvm_io_num_t  *const this_io_num)
 cs_gnum_t
 fvm_io_num_get_global_count(const fvm_io_num_t  *const this_io_num)
 {
-  assert(this_io_num != NULL);
+  assert(this_io_num != nullptr);
 
   return this_io_num->global_count;
 }
@@ -2770,7 +2737,7 @@ fvm_io_num_get_global_count(const fvm_io_num_t  *const this_io_num)
 const cs_gnum_t *
 fvm_io_num_get_global_num(const fvm_io_num_t  *const this_io_num)
 {
-  assert(this_io_num != NULL);
+  assert(this_io_num != nullptr);
 
   return this_io_num->global_num;
 }
@@ -2797,7 +2764,7 @@ fvm_io_num_global_sub_size(const fvm_io_num_t  *this_io_num,
 
   /* Initial checks */
 
-  if (this_io_num == NULL)
+  if (this_io_num == nullptr)
     return retval;
 
 #if defined(HAVE_MPI)
@@ -2806,7 +2773,7 @@ fvm_io_num_global_sub_size(const fvm_io_num_t  *this_io_num,
 
    /* Caution: we may have sub-entities on some ranks and not on others */
 
-   if (n_sub_entities != NULL)
+   if (n_sub_entities != nullptr)
      have_sub_loc = 1;
 
    MPI_Allreduce(&have_sub_loc, &have_sub_glob, 1, MPI_INT, MPI_MAX,
@@ -2819,7 +2786,7 @@ fvm_io_num_global_sub_size(const fvm_io_num_t  *this_io_num,
  }
 #endif
 
- if (cs_glob_n_ranks == 1 && n_sub_entities != NULL) {
+ if (cs_glob_n_ranks == 1 && n_sub_entities != nullptr) {
    for (size_t i = 0; i < (size_t)(this_io_num->global_num_size); i++)
      retval += n_sub_entities[i];
  }
@@ -2839,7 +2806,7 @@ fvm_io_num_dump(const fvm_io_num_t  *const this_io_num)
 {
   cs_lnum_t i;
 
-  if (this_io_num == NULL) {
+  if (this_io_num == nullptr) {
     bft_printf("  global numbering: nil\n");
     return;
   }

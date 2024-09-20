@@ -444,7 +444,6 @@ END_C_DECLS
  * \param[in]       stride     number of values per entity (interlaced),
  * \param[in]       reverse    if true, communicate in reverse direction
  * \param[in]       src_data   source data
- * \param[out]      dest_data  pointer to destination data, or NULL
  *
  * \return pointer to destination data (dest_buffer if non-NULL)
  */
@@ -455,15 +454,103 @@ T *
 cs_all_to_all_copy_array(cs_all_to_all_t *d,
                          int              stride,
                          bool             reverse,
-                         const T         *src_data,
-                         void            *dest_data = nullptr)
+                         const T         *src_data)
 {
   return static_cast<T *>(cs_all_to_all_copy_array(d,
                                                    cs_datatype_from_type<T>(),
                                                    stride,
                                                    reverse,
                                                    src_data,
-                                                   dest_data));
+                                                   nullptr));
+};
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Communicate array data using all-to-all distributor.
+ *
+ * If a destination buffer is provided, it should be of sufficient size for
+ * the number of elements returned by \ref cs_all_to_all_n_elts_dest
+ * (multiplied by stride and datatype size).
+ *
+ * If no buffer is provided, one is allocated automatically, and transferred
+ * to the caller (who is responsible for freeing it when no longer needed).
+ *
+ * If used in reverse mode, data is still communicated from src_data
+ * to dest_buffer or an internal buffer, but communication direction
+ * (i.e. source and destination ranks) are reversed.
+ *
+ * This is obviously a collective operation, and all ranks must provide
+ * the same datatype, stride, and reverse values.
+ *
+ * \param[in, out]  d          pointer to associated all-to-all distributor
+ * \param[in]       stride     number of values per entity (interlaced),
+ * \param[in]       reverse    if true, communicate in reverse direction
+ * \param[in]       src_data   source data
+ * \param[out]      dest_data  pointer to destination data, or NULL
+ *
+ * \return void
+ */
+/*----------------------------------------------------------------------------*/
+
+template <typename T>
+void
+cs_all_to_all_copy_array(cs_all_to_all_t *d,
+                         int              stride,
+                         bool             reverse,
+                         const T         *src_data,
+                         void            *dest_data)
+{
+  cs_all_to_all_copy_array(d,
+                           cs_datatype_from_type<T>(),
+                           stride,
+                           reverse,
+                           src_data,
+                           dest_data);
+};
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Communicate local index using all-to-all distributor.
+ *
+ * If a destination buffer is provided, it should be of sufficient size for
+ * the number of elements indicated by
+ * dest_index[\ref cs_all_to_all_n_elts_dest "cs_all_to_all_n_elts_dest(d)"];
+ *
+ * If no buffer is provided, one is allocated automatically, and transferred
+ * to the caller (who is responsible for freeing it when no longer needed).
+ *
+ * If used in reverse mode, data is still communicated from src_index
+ * to dest_index or an internal buffer, but communication direction
+ * (i.e. source and destination ranks) are reversed.
+ *
+ * This is obviously a collective operation, and all ranks must provide
+ * the same value for the reverse parameter.
+ *
+ * \param[in, out]  d           pointer to associated all-to-all distributor
+ * \param[in]       reverse     if true, communicate in reverse direction
+ * \param[in]       src_index   source index
+ * \param[in]       src_data    source data
+ * \param[in]       dest_index  destination index
+ *
+ * \return pointer to destination data
+ */
+/*----------------------------------------------------------------------------*/
+
+template <typename T>
+T *
+cs_all_to_all_copy_indexed(cs_all_to_all_t *d,
+                           bool             reverse,
+                           const cs_lnum_t *src_index,
+                           const T         *src_data,
+                           const cs_lnum_t *dest_index)
+{
+  return static_cast<T *>(cs_all_to_all_copy_indexed(d,
+                                                     cs_datatype_from_type<T>(),
+                                                     reverse,
+                                                     src_index,
+                                                     src_data,
+                                                     dest_index,
+                                                     nullptr));
 };
 
 /*----------------------------------------------------------------------------*/
@@ -491,26 +578,26 @@ cs_all_to_all_copy_array(cs_all_to_all_t *d,
  * \param[in]       dest_index  destination index
  * \param[out]      dest_data   pointer to destination data, or NULL
  *
- * \return pointer to destination data (dest_buffer if non-NULL)
+ * \return void
  */
 /*----------------------------------------------------------------------------*/
 
 template <typename T>
-T *
+void
 cs_all_to_all_copy_indexed(cs_all_to_all_t *d,
                            bool             reverse,
                            const cs_lnum_t *src_index,
                            const T         *src_data,
                            const cs_lnum_t *dest_index,
-                           void            *dest_data = nullptr)
+                           void            *dest_data)
 {
-  return static_cast<T *>(cs_all_to_all_copy_indexed(d,
-                                                     cs_datatype_from_type<T>(),
-                                                     reverse,
-                                                     src_index,
-                                                     src_data,
-                                                     dest_index,
-                                                     dest_data));
+  cs_all_to_all_copy_indexed(d,
+                             cs_datatype_from_type<T>(),
+                             reverse,
+                             src_index,
+                             src_data,
+                             dest_index,
+                             dest_data);
 };
 
 #endif //__cplusplus

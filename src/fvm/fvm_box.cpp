@@ -79,12 +79,12 @@ BEGIN_C_DECLS
  *
  * parameters:
  *   distrib          <-- pointer to the fvm_box_distrib_t structure
- *   n_quantiles      <-> number of quantiles requested (or NULL);
+ *   n_quantiles      <-> number of quantiles requested (or nullptr);
  *                        may be lower upon return
  *   quantile_start   --> start of quantile (size: n_quantiles + 1)
  *   n_quantile_boxes --> number of boxes per quantile (size: n_quantiles)
- *   imbalance        --> distribution imbalance measure (or NULL)
- *   n_ranks          --> number of ranks with boxes (or NULL)
+ *   imbalance        --> distribution imbalance measure (or nullptr)
+ *   n_ranks          --> number of ranks with boxes (or nullptr)
  *   comm             <-- associated MPI communicator
  *---------------------------------------------------------------------------*/
 
@@ -104,10 +104,10 @@ _get_distrib_statistics(const fvm_box_distrib_t  *distrib,
 
   /* Sanity checks */
 
-  assert(distrib != NULL);
-  assert(distrib->index != NULL);
+  assert(distrib != nullptr);
+  assert(distrib->index != nullptr);
 
-  if (n_quantiles != NULL) {
+  if (n_quantiles != nullptr) {
 
     cs_lnum_t _n_quantiles = 1;
 
@@ -173,10 +173,10 @@ _get_distrib_statistics(const fvm_box_distrib_t  *distrib,
 
   /* Set other return values */
 
-  if (imbalance != NULL)
+  if (imbalance != nullptr)
     *imbalance = distrib->fit;
 
-  if (n_ranks != NULL)
+  if (n_ranks != nullptr)
     *n_ranks = _n_ranks;
 }
 
@@ -230,7 +230,7 @@ fvm_box_set_create(int                dim,
   cs_gnum_t  n_g_boxes = n_boxes;
   cs_coord_t  g_min[3], g_max[3], g_extents[6];
 
-  fvm_box_set_t  *boxes = NULL;
+  fvm_box_set_t  *boxes = nullptr;
 
   /* Get global min/max coordinates */
 
@@ -274,8 +274,8 @@ fvm_box_set_create(int                dim,
     boxes->gmax[j] = g_max[j];
   }
 
-  boxes->g_num = NULL;
-  boxes->extents = NULL;
+  boxes->g_num = nullptr;
+  boxes->extents = nullptr;
 
 #if defined(HAVE_MPI)
   boxes->comm = comm;
@@ -383,11 +383,11 @@ fvm_box_set_create(int                dim,
 void
 fvm_box_set_destroy(fvm_box_set_t  **boxes)
 {
-  if (boxes != NULL) {
+  if (boxes != nullptr) {
 
     fvm_box_set_t  *_boxes = *boxes;
 
-    if (_boxes == NULL)
+    if (_boxes == nullptr)
       return;
 
     BFT_FREE(_boxes->g_num);
@@ -411,7 +411,7 @@ fvm_box_set_get_dim(const fvm_box_set_t  *boxes)
 {
   int retval = 0;
 
-  if (boxes != NULL)
+  if (boxes != nullptr)
     retval = boxes->dim;
 
   return retval;
@@ -432,7 +432,7 @@ fvm_box_set_get_size(const fvm_box_set_t  *boxes)
 {
   cs_lnum_t retval = 0;
 
-  if (boxes != NULL)
+  if (boxes != nullptr)
     retval = boxes->n_boxes;
 
   return retval;
@@ -453,7 +453,7 @@ fvm_box_set_get_global_size(const fvm_box_set_t  *boxes)
 {
   cs_gnum_t retval = 0;
 
-  if (boxes != NULL)
+  if (boxes != nullptr)
     retval = boxes->n_g_boxes;
 
   return retval;
@@ -478,7 +478,7 @@ fvm_box_set_get_global_size(const fvm_box_set_t  *boxes)
 const cs_coord_t *
 fvm_box_set_get_extents(fvm_box_set_t  *boxes)
 {
-  assert(boxes != NULL);
+  assert(boxes != nullptr);
 
   return boxes->extents;
 }
@@ -496,7 +496,7 @@ fvm_box_set_get_extents(fvm_box_set_t  *boxes)
 const cs_gnum_t *
 fvm_box_set_get_g_num(fvm_box_set_t  *boxes)
 {
-  assert(boxes != NULL);
+  assert(boxes != nullptr);
 
   return boxes->g_num;
 }
@@ -521,10 +521,10 @@ fvm_box_set_build_morton_index(const fvm_box_set_t  *boxes,
 {
 #if defined(HAVE_MPI)
 
-  cs_lnum_t   *order = NULL;
+  cs_lnum_t   *order = nullptr;
 
-  assert(distrib != NULL);
-  assert(distrib->morton_index != NULL);
+  assert(distrib != nullptr);
+  assert(distrib->morton_index != nullptr);
 
   BFT_MALLOC(order, n_leaves, cs_lnum_t);
 
@@ -569,8 +569,8 @@ fvm_box_set_redistribute(const fvm_box_distrib_t  *distrib,
 
   /* Sanity checks */
 
-  assert(distrib != NULL);
-  assert(boxes != NULL);
+  assert(distrib != nullptr);
+  assert(boxes != nullptr);
   assert(distrib->n_ranks > 1);
 
   const cs_lnum_t stride = boxes->dim * 2;
@@ -602,27 +602,21 @@ fvm_box_set_redistribute(const fvm_box_distrib_t  *distrib,
 
   cs_all_to_all_t *d = cs_all_to_all_create(n_send,
                                             0, /* flags */
-                                            NULL,
+                                            nullptr,
                                             dest_rank,
                                             boxes->comm);
 
   /* Exchange global numbers and extents */
 
-  boxes->g_num
-    = cs_all_to_all_copy_array(d,
-                               CS_GNUM_TYPE,
-                               1,
-                               false,  /* reverse */
-                               send_g_num,
-                               NULL);
+  boxes->g_num = cs_all_to_all_copy_array(d,
+                                          1,
+                                          false, /* reverse */
+                                          send_g_num);
 
-  boxes->extents
-    = cs_all_to_all_copy_array(d,
-                               CS_COORD_TYPE,
-                               boxes->dim * 2,
-                               false,  /* reverse */
-                               send_extents,
-                               NULL);
+  boxes->extents = cs_all_to_all_copy_array(d,
+                                            boxes->dim * 2,
+                                            false, /* reverse */
+                                            send_extents);
 
   /* Update dimensions */
 
@@ -653,9 +647,9 @@ fvm_box_set_dump(const fvm_box_set_t  *boxes,
 {
   cs_lnum_t   i;
 
-  const char  XYZ[3] = "XYZ";
+  const char XYZ[4] = "XYZ";
 
-  if (boxes == NULL)
+  if (boxes == nullptr)
     return;
 
   /* Print basic information */
@@ -772,10 +766,10 @@ fvm_box_distrib_create(cs_lnum_t  n_boxes,
 {
   int  i, n_ranks, gmax_level;
 
-  fvm_box_distrib_t  *new_distrib = NULL;
+  fvm_box_distrib_t  *new_distrib = nullptr;
 
   if (n_g_boxes == 0)
-    return NULL;
+    return nullptr;
 
   BFT_MALLOC(new_distrib, 1, fvm_box_distrib_t);
 
@@ -801,7 +795,7 @@ fvm_box_distrib_create(cs_lnum_t  n_boxes,
   for (i = 0; i < n_ranks + 1; i++)
     new_distrib->index[i] = 0;
 
-  new_distrib->list = NULL;
+  new_distrib->list = nullptr;
 
   return  new_distrib;
 }
@@ -816,11 +810,11 @@ fvm_box_distrib_create(cs_lnum_t  n_boxes,
 void
 fvm_box_distrib_destroy(fvm_box_distrib_t  **distrib)
 {
-  if (distrib != NULL) {
+  if (distrib != nullptr) {
 
     fvm_box_distrib_t  *d = *distrib;
 
-    if (d == NULL)
+    if (d == nullptr)
       return;
 
     BFT_FREE(d->index);
@@ -843,7 +837,7 @@ fvm_box_distrib_clean(fvm_box_distrib_t  *distrib)
 {
   int  i, rank;
 
-  cs_lnum_t   *counter = NULL, *new_index = NULL;
+  cs_lnum_t   *counter = nullptr, *new_index = nullptr;
 
   BFT_MALLOC(counter, distrib->n_boxes, cs_lnum_t);
   BFT_MALLOC(new_index, distrib->n_ranks + 1, cs_lnum_t);
@@ -910,14 +904,14 @@ fvm_box_distrib_dump_statistics(const fvm_box_distrib_t  *distrib,
 
   /* Sanity checks */
 
-  assert(distrib != NULL);
-  assert(distrib->index != NULL);
+  assert(distrib != nullptr);
+  assert(distrib->index != nullptr);
 
   _get_distrib_statistics(distrib,
                           &n_quantiles,
                           quantile_start,
                           n_boxes,
-                          NULL,
+                          nullptr,
                           &n_ranks,
                           comm);
 

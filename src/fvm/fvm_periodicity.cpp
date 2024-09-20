@@ -345,7 +345,7 @@ _component_equiv_ids(fvm_periodicity_t  *this_periodicity,
   int i;
   _transform_t  *tr;
 
-  assert(this_periodicity != NULL);
+  assert(this_periodicity != nullptr);
 
   /* Initialization */
 
@@ -412,7 +412,7 @@ _combine_transforms(fvm_periodicity_t  *this_periodicity,
 
   level = lv_1 + 1; /* lv_0 + lv_1 + 1, with lv_0 = 0 */
 
-  assert(this_periodicity != NULL);
+  assert(this_periodicity != nullptr);
 
   /* Initialize transformation */
 
@@ -534,12 +534,12 @@ fvm_periodicity_t *
 fvm_periodicity_create(double  equiv_tolerance)
 {
   int i;
-  fvm_periodicity_t  *period = NULL;
+  fvm_periodicity_t  *period = nullptr;
 
   BFT_MALLOC(period, 1, fvm_periodicity_t);
 
   period->n_transforms = 0;
-  period->transform = NULL;
+  period->transform = nullptr;
 
   period->n_levels = 1;
 
@@ -558,7 +558,7 @@ fvm_periodicity_create(double  equiv_tolerance)
  *   this_periodicity  <-> pointer to structure that should be destroyed
  *
  * returns:
- *  NULL pointer
+ *  nullptr pointer
  *---------------------------------------------------------------------------*/
 
 fvm_periodicity_t *
@@ -566,8 +566,8 @@ fvm_periodicity_destroy(fvm_periodicity_t  *this_periodicity)
 {
   int  i;
 
-  if (this_periodicity == NULL)
-    return NULL;
+  if (this_periodicity == nullptr)
+    return nullptr;
 
   for (i = 0; i < this_periodicity->n_transforms; i++)
     BFT_FREE(this_periodicity->transform[i]);
@@ -576,7 +576,7 @@ fvm_periodicity_destroy(fvm_periodicity_t  *this_periodicity)
 
   BFT_FREE(this_periodicity);
 
-  return NULL;
+  return nullptr;
 }
 
 /*----------------------------------------------------------------------------
@@ -594,7 +594,7 @@ fvm_periodicity_get_n_transforms(const fvm_periodicity_t  *this_periodicity)
 {
   int retval = 0;
 
-  if (this_periodicity != NULL)
+  if (this_periodicity != nullptr)
     retval = this_periodicity->n_transforms;
 
   return retval;
@@ -618,7 +618,7 @@ fvm_periodicity_get_n_levels(const fvm_periodicity_t  *this_periodicity)
 {
   int retval = 0;
 
-  if (this_periodicity != NULL)
+  if (this_periodicity != nullptr)
     retval = this_periodicity->n_levels;
 
   return retval;
@@ -645,7 +645,7 @@ fvm_periodicity_get_tr_level_idx(const fvm_periodicity_t  *this_periodicity,
   for (i = 0; i < 4; i++)
     tr_level_index[i] = 0;
 
-  if (this_periodicity != NULL) {
+  if (this_periodicity != nullptr) {
     for (i = 0; i < 4; i++)
       tr_level_index[i] = this_periodicity->tr_level_idx[i];
   }
@@ -678,9 +678,9 @@ fvm_periodicity_add_by_matrix(fvm_periodicity_t       *this_periodicity,
 {
   int  sub_transf, i, j, k;
 
-  _transform_t  *transform = NULL;
+  _transform_t  *transform = nullptr;
 
-  if (this_periodicity == NULL)
+  if (this_periodicity == nullptr)
     return -1;
 
   BFT_REALLOC(this_periodicity->transform,
@@ -921,7 +921,7 @@ fvm_periodicity_get_transform_id(const fvm_periodicity_t  *this_periodicity,
 
   assert(direction == 1 || direction == -1);
 
-  if (this_periodicity != NULL) {
+  if (this_periodicity != nullptr) {
 
     for (i = 0; i < this_periodicity->n_transforms; i++) {
 
@@ -955,7 +955,7 @@ fvm_periodicity_type_t
 fvm_periodicity_get_type(const fvm_periodicity_t  *this_periodicity,
                          int                       tr_id)
 {
-  if (this_periodicity == NULL)
+  if (this_periodicity == nullptr)
     return FVM_PERIODICITY_NULL;
 
   if (tr_id < 0 || tr_id >= this_periodicity->n_transforms)
@@ -981,7 +981,7 @@ fvm_periodicity_get_reverse_id(const fvm_periodicity_t  *this_periodicity,
 {
   int  retval = -1;
 
-  if (this_periodicity != NULL) {
+  if (this_periodicity != nullptr) {
 
     if (tr_id > -1 && tr_id < this_periodicity->n_transforms)
       retval = this_periodicity->transform[tr_id]->reverse_id;
@@ -1018,13 +1018,13 @@ fvm_periodicity_get_parent_ids(const fvm_periodicity_t  *this_periodicity,
 
   /* Initialization */
 
-  if (parent_ids == NULL)
+  if (parent_ids == nullptr)
     return;
 
   parent_ids[0] = -1;
   parent_ids[1] = -1;
 
-  if (this_periodicity == NULL)
+  if (this_periodicity == nullptr)
     return;
 
   if (tr_id < 0 || tr_id >= this_periodicity->n_transforms)
@@ -1067,10 +1067,10 @@ fvm_periodicity_get_components(const fvm_periodicity_t  *this_periodicity,
 
   /* Initialization */
 
-  if (component_ids == NULL)
+  if (component_ids == nullptr)
     return;
 
-  if (this_periodicity == NULL)
+  if (this_periodicity == nullptr)
     return;
 
   if (tr_id < 0 || tr_id >= this_periodicity->n_transforms)
@@ -1129,7 +1129,7 @@ fvm_periodicity_get_equiv_id(const fvm_periodicity_t  *this_periodicity,
 {
   int  retval = -1;
 
-  if (this_periodicity != NULL) {
+  if (this_periodicity != nullptr) {
 
     if (tr_id > -1 && tr_id < this_periodicity->n_transforms)
       retval = this_periodicity->transform[tr_id]->equiv_id;
@@ -1155,9 +1155,9 @@ fvm_periodicity_get_matrix(const fvm_periodicity_t  *this_periodicity,
                            double                    matrix[3][4])
 {
   int i, j;
-  _transform_t  *transform = NULL;
+  _transform_t  *transform = nullptr;
 
-  if (this_periodicity != NULL)
+  if (this_periodicity != nullptr)
     if (tr_id >= 0 && tr_id < this_periodicity->n_transforms) {
 
       transform = this_periodicity->transform[tr_id];
@@ -1168,7 +1168,7 @@ fvm_periodicity_get_matrix(const fvm_periodicity_t  *this_periodicity,
       }
     }
 
-  if (transform == NULL) {
+  if (transform == nullptr) {
     for (i = 0; i < 3; i++) {
       for (j = 0; j < 4; j++)
         matrix[i][j] = 0.0;
@@ -1192,9 +1192,9 @@ fvm_periodicity_set_matrix(const fvm_periodicity_t  *this_periodicity,
                            double                    matrix[3][4])
 {
   int i, j;
-  _transform_t  *transform = NULL;
+  _transform_t  *transform = nullptr;
 
-  if (this_periodicity != NULL)
+  if (this_periodicity != nullptr)
     if (tr_id >= 0 && tr_id < this_periodicity->n_transforms) {
 
       transform = this_periodicity->transform[tr_id];
@@ -1230,7 +1230,7 @@ fvm_periodicity_combine(fvm_periodicity_t  *this_periodicity,
   int n_transforms_max;
   int retval;
 
-  if (this_periodicity == NULL)
+  if (this_periodicity == nullptr)
     return;
 
   /* Check that only level 0 periodicities are defined */
@@ -1365,7 +1365,7 @@ fvm_periodicity_dump(const fvm_periodicity_t  *this_periodicity)
   bft_printf("\n"
              "Periodicity:          %p\n", (const void *)this_periodicity);
 
-  if (this_periodicity == NULL) {
+  if (this_periodicity == nullptr) {
     bft_printf("\n");
     return;
   }

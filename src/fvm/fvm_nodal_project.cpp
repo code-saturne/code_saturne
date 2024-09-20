@@ -104,11 +104,11 @@ _faces_to_edges(int                         dim,
   cs_lnum_t n_vertices, n_elements;
   cs_lnum_t i, j, k, vertex_id;
 
-  fvm_nodal_section_t *ret_section = NULL;
+  fvm_nodal_section_t *ret_section = nullptr;
 
   /* Initialization */
 
-  if (error_count != NULL)
+  if (error_count != nullptr)
     *error_count = 0;
 
   n_elements = base_section->n_elements;
@@ -128,7 +128,7 @@ _faces_to_edges(int                         dim,
              cs_lnum_t);
   ret_section->vertex_num = ret_section->_vertex_num;
 
-  if (base_section->parent_element_id != NULL) {
+  if (base_section->parent_element_id != nullptr) {
 
     BFT_MALLOC(ret_section->_parent_element_id,
                ret_section->n_elements,
@@ -150,7 +150,7 @@ _faces_to_edges(int                         dim,
 
     /* Compute number of vertices on each face */
 
-    if (base_section->vertex_index != NULL) {
+    if (base_section->vertex_index != nullptr) {
       n_vertices =   base_section->vertex_index[i+1]
                    - base_section->vertex_index[i];
       vertex_id = base_section->vertex_index[i];
@@ -165,7 +165,7 @@ _faces_to_edges(int                         dim,
     selected_edge[0] = base_section->vertex_num[vertex_id + n_vertices - 1] - 1;
     selected_edge[1] = base_section->vertex_num[vertex_id] - 1;
 
-    if (parent_vertex_id == NULL)
+    if (parent_vertex_id == nullptr)
       selected_edge_center = 0.5 *
         (  vertex_coords[selected_edge[0]*dim + chosen_axis]
          + vertex_coords[selected_edge[1]*dim + chosen_axis]);
@@ -188,7 +188,7 @@ _faces_to_edges(int                         dim,
       tmp_selected_edge[0] = base_section->vertex_num[vertex_id + k - 1] - 1;
       tmp_selected_edge[1] = base_section->vertex_num[vertex_id + k] - 1;
 
-      if (parent_vertex_id == NULL)
+      if (parent_vertex_id == nullptr)
         tmp_edge_center = 0.5 *
           (  vertex_coords[tmp_selected_edge[0]*dim + chosen_axis]
            + vertex_coords[tmp_selected_edge[1]*dim + chosen_axis]);
@@ -223,7 +223,7 @@ _faces_to_edges(int                         dim,
     for (j = 0; j < 2; j++)
       ret_section->_vertex_num[i*2 + j] = selected_edge[j] + 1;
 
-    if (base_section->parent_element_id != NULL)
+    if (base_section->parent_element_id != nullptr)
       ret_section->_parent_element_id[i]
         = base_section->parent_element_id[i];
 
@@ -253,17 +253,17 @@ _compact_mesh(fvm_nodal_t   *this_nodal,
 
   int idx = 0;
 
-  cs_lnum_t    *old_to_new = NULL;
-  cs_lnum_t    *new_to_old = NULL;
-  cs_lnum_t    *new_parent_vtx_id = NULL;
-  cs_coord_t  *new_coords = NULL;
-  fvm_io_num_t *new_vtx_io_num = NULL;
+  cs_lnum_t    *old_to_new = nullptr;
+  cs_lnum_t    *new_to_old = nullptr;
+  cs_lnum_t    *new_parent_vtx_id = nullptr;
+  cs_coord_t  *new_coords = nullptr;
+  fvm_io_num_t *new_vtx_io_num = nullptr;
 
   cs_lnum_t n_vertices_new = 0;
   cs_lnum_t n_vertices_old = this_nodal->n_vertices;
 
   const int dim = this_nodal->dim;
-  const cs_gnum_t *old_global_vtx_num = NULL;
+  const cs_gnum_t *old_global_vtx_num = nullptr;
 
   /* Count the new number of vertices */
 
@@ -295,15 +295,15 @@ _compact_mesh(fvm_nodal_t   *this_nodal,
     /* Adapt nodal structure if required */
     /* --------------------------------- */
 
-    if (this_nodal->_vertex_coords != NULL) {
+    if (this_nodal->_vertex_coords != nullptr) {
 
       /* generate a new coordinate array */
 
       BFT_MALLOC(new_coords, dim * n_vertices_new, cs_coord_t);
 
-      if (this_nodal->_parent_vertex_id != NULL) {
+      if (this_nodal->_parent_vertex_id != nullptr) {
         BFT_FREE(this_nodal->_parent_vertex_id);
-        this_nodal->parent_vertex_id = NULL;
+        this_nodal->parent_vertex_id = nullptr;
       }
 
       for (i = 0, idx = 0; i < n_vertices_old; i++) {
@@ -316,11 +316,11 @@ _compact_mesh(fvm_nodal_t   *this_nodal,
 
       }
 
-    } /* End if _coords != NULL */
+    } /* End if _coords != nullptr */
 
-    else { /* this_nodal->_coords == NULL */
+    else { /* this_nodal->_coords == nullptr */
 
-      if (this_nodal->parent_vertex_id != NULL) {
+      if (this_nodal->parent_vertex_id != nullptr) {
 
         /* generate a new parent_vertex_id */
 
@@ -333,16 +333,16 @@ _compact_mesh(fvm_nodal_t   *this_nodal,
 
         }
 
-        if (this_nodal->_parent_vertex_id != NULL)
+        if (this_nodal->_parent_vertex_id != nullptr)
           BFT_FREE(this_nodal->_parent_vertex_id);
 
         this_nodal->_parent_vertex_id = new_parent_vtx_id;
         this_nodal->parent_vertex_id = this_nodal->_parent_vertex_id;
 
 
-      } /* End if parent_vertex_id != NULL */
+      } /* End if parent_vertex_id != nullptr */
 
-    } /* End if this_nodal->_coords == NULL */
+    } /* End if this_nodal->_coords == nullptr */
 
     /* Adapt _vertex_num in each section */
     /* --------------------------------- */
@@ -354,7 +354,7 @@ _compact_mesh(fvm_nodal_t   *this_nodal,
 
       if (section->type == FVM_EDGE) {
 
-        if (section->_vertex_num == NULL)
+        if (section->_vertex_num == nullptr)
           BFT_MALLOC(section->_vertex_num, n_connect, cs_lnum_t);
 
         for (j = 0; j < n_connect; j++)
@@ -370,7 +370,7 @@ _compact_mesh(fvm_nodal_t   *this_nodal,
   /* Adapt global_vertex_num if required */
   /* ----------------------------------- */
 
-  if (this_nodal->global_vertex_num != NULL) {
+  if (this_nodal->global_vertex_num != nullptr) {
 
     old_global_vtx_num = fvm_io_num_get_global_num(this_nodal->global_vertex_num);
 
@@ -419,9 +419,9 @@ fvm_nodal_project(fvm_nodal_t  *this_nodal,
   cs_lnum_t n_edges = 0;
   cs_lnum_t section_error_count = 0;
 
-  bool *selected_vertices = NULL;
+  bool *selected_vertices = nullptr;
 
-  assert(this_nodal != NULL);
+  assert(this_nodal != nullptr);
 
   n_vertices = this_nodal->n_vertices;
   BFT_MALLOC(selected_vertices, n_vertices, bool);
@@ -433,7 +433,7 @@ fvm_nodal_project(fvm_nodal_t  *this_nodal,
 
   for (i = 0; i < this_nodal->n_sections; i++) {
 
-    fvm_nodal_section_t *e_section = NULL;
+    fvm_nodal_section_t *e_section = nullptr;
     fvm_nodal_section_t *_section = this_nodal->sections[i];
 
     if (_section->entity_dim == 2) {
@@ -446,14 +446,14 @@ fvm_nodal_project(fvm_nodal_t  *this_nodal,
                                   selected_vertices,
                                   &section_error_count);
 
-      if (error_count != NULL)
+      if (error_count != nullptr)
         *error_count += section_error_count;
 
       /* Transfer global numbering if present */
 
-      if (_section->global_element_num != NULL) {
+      if (_section->global_element_num != nullptr) {
         e_section->global_element_num = _section->global_element_num;
-        _section->global_element_num = NULL;
+        _section->global_element_num = nullptr;
       }
 
       fvm_nodal_section_destroy(_section);
@@ -466,7 +466,7 @@ fvm_nodal_project(fvm_nodal_t  *this_nodal,
 
       char _name[] = "-";
       const char *name = this_nodal->name;
-      if (name == NULL)
+      if (name == nullptr)
         name = _name;
       bft_error(__FILE__, __LINE__, 0,
                 _("%s: not implemented for element sections with 3D topology\n"
@@ -509,9 +509,9 @@ fvm_nodal_project_coords(fvm_nodal_t  *this_nodal,
 
   int new_dim = 0, old_dim, entity_dim = 0;
   cs_lnum_t n_vertices = 0;
-  cs_coord_t *new_coords = NULL;
+  cs_coord_t *new_coords = nullptr;
 
-  assert(this_nodal != NULL);
+  assert(this_nodal != nullptr);
 
   n_vertices = this_nodal->n_vertices;
   new_dim = this_nodal->dim - 1;
@@ -530,7 +530,7 @@ fvm_nodal_project_coords(fvm_nodal_t  *this_nodal,
 
   if (old_dim == 3) {
 
-    if (this_nodal->parent_vertex_id  == NULL) {
+    if (this_nodal->parent_vertex_id  == nullptr) {
       for (i = 0; i < n_vertices; i++) {
         const double *c = this_nodal->vertex_coords + i*3;
         new_coords[i*2]     = matrix[0]*c[0] + matrix[1]*c[1] + matrix[2]*c[2];
@@ -550,7 +550,7 @@ fvm_nodal_project_coords(fvm_nodal_t  *this_nodal,
 
   else if (old_dim == 2) {
 
-    if (this_nodal->parent_vertex_id  == NULL) {
+    if (this_nodal->parent_vertex_id  == nullptr) {
       for (i = 0; i < n_vertices; i++) {
         const double *c = this_nodal->vertex_coords + i*2;
         new_coords[i] = matrix[0]*c[0] + matrix[1]*c[1];
@@ -576,11 +576,11 @@ fvm_nodal_project_coords(fvm_nodal_t  *this_nodal,
 
   this_nodal->dim = new_dim;
 
-  if (this_nodal->_vertex_coords != NULL)
+  if (this_nodal->_vertex_coords != nullptr)
     BFT_FREE(this_nodal->_vertex_coords);
 
-  this_nodal->parent_vertex_id = NULL;
-  if (this_nodal->_parent_vertex_id != NULL)
+  this_nodal->parent_vertex_id = nullptr;
+  if (this_nodal->_parent_vertex_id != nullptr)
     BFT_FREE(this_nodal->_parent_vertex_id);
 
   this_nodal->vertex_coords = new_coords;

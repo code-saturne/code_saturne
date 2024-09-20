@@ -105,31 +105,31 @@ libfvm_a_LIBADD =
 libfvm_filters_a_LIBADD =
 
 libfvm_a_SOURCES = \
-fvm_box.c \
-fvm_box_tree.c \
-fvm_convert_array.c \
-fvm_defs.c \
-fvm_group.c \
-fvm_hilbert.c \
-fvm_interpolate.c \
-fvm_io_num.c \
-fvm_morton.c \
-fvm_neighborhood.c \
-fvm_nodal.c \
-fvm_nodal_append.c \
-fvm_nodal_extrude.c \
-fvm_nodal_from_desc.c \
-fvm_nodal_order.c \
-fvm_nodal_project.c \
-fvm_nodal_triangulate.c \
-fvm_nodal_extract.c \
-fvm_periodicity.c \
-fvm_point_location.c \
-fvm_selector.c \
-fvm_selector_postfix.c \
-fvm_tesselation.c \
-fvm_trace.c \
-fvm_triangulate.c
+fvm_box.cpp \
+fvm_box_tree.cpp \
+fvm_convert_array.cpp \
+fvm_defs.cpp \
+fvm_group.cpp \
+fvm_hilbert.cpp \
+fvm_interpolate.cpp \
+fvm_io_num.cpp \
+fvm_morton.cpp \
+fvm_neighborhood.cpp \
+fvm_nodal.cpp \
+fvm_nodal_append.cpp \
+fvm_nodal_extrude.cpp \
+fvm_nodal_from_desc.cpp \
+fvm_nodal_order.cpp \
+fvm_nodal_project.cpp \
+fvm_nodal_triangulate.cpp \
+fvm_nodal_extract.cpp \
+fvm_periodicity.cpp \
+fvm_point_location.cpp \
+fvm_selector.cpp \
+fvm_selector_postfix.cpp \
+fvm_tesselation.cpp \
+fvm_trace.cpp \
+fvm_triangulate.cpp
 
 local_libraries_add =
 

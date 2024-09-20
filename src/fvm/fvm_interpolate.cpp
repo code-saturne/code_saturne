@@ -113,12 +113,12 @@ fvm_interpolate_vtx_data(const fvm_nodal_t       *this_nodal,
                          const cs_real_t          src_data[],
                          cs_real_t                dest_data[])
 {
-  if (this_nodal == NULL || n_points == 0)
+  if (this_nodal == nullptr || n_points == 0)
     return;
 
   /* Sanity checks */
-  assert(   point_coords != NULL  && location_id != NULL
-         && src_data != NULL && dest_data != NULL);
+  assert(   point_coords != nullptr  && location_id != nullptr
+         && src_data != nullptr && dest_data != nullptr);
   assert(this_nodal->dim == 3);
 
   if (this_nodal->dim != 3)
@@ -174,7 +174,7 @@ fvm_interpolate_vtx_data(const fvm_nodal_t       *this_nodal,
                k < section->vertex_index[f_id + 1]; k++) {
 
             cs_lnum_t  v_id = section->vertex_num[k] - 1;
-            if (this_nodal->parent_vertex_id != NULL)
+            if (this_nodal->parent_vertex_id != nullptr)
               v_id = this_nodal->parent_vertex_id[v_id];
             const cs_coord_t  *v_coo = vtx_coords + 3*v_id;
 
@@ -243,7 +243,7 @@ fvm_interpolate_vtx_data(const fvm_nodal_t       *this_nodal,
         for (cs_lnum_t j = v_s_id; j < v_e_id; j++) {
 
           cs_lnum_t  v_id = section->vertex_num[j] - 1;
-          if (this_nodal->parent_vertex_id != NULL)
+          if (this_nodal->parent_vertex_id != nullptr)
             v_id = this_nodal->parent_vertex_id[v_id];
 
           const cs_coord_t  *v_coo = vtx_coords + 3*v_id;

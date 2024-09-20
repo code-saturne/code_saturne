@@ -284,7 +284,7 @@ _update_tree_stats(fvm_box_tree_t  *bt,
 static void
 _get_box_tree_stats(fvm_box_tree_t  *bt)
 {
-  if (bt == NULL)
+  if (bt == nullptr)
     return;
 
   /* Initialize statistics */
@@ -300,7 +300,7 @@ _get_box_tree_stats(fvm_box_tree_t  *bt)
 
   /* Recursively update stats, starting from root */
 
-  if (bt->nodes != NULL)
+  if (bt->nodes != nullptr)
     _update_tree_stats(bt, 0);
 }
 
@@ -710,7 +710,7 @@ _recurse_tree_build(fvm_box_tree_t       *bt,
 
   bt->n_build_loops += 1;
 
-  if (bt == NULL)
+  if (bt == nullptr)
     state = 1;
 
   /* To avoid infinite loop on tree building */
@@ -789,7 +789,7 @@ static void
 _copy_tree(fvm_box_tree_t        *dest,
            const fvm_box_tree_t  *src)
 {
-  assert(dest != NULL && src != NULL);
+  assert(dest != nullptr && src != nullptr);
 
   memcpy(dest, src, sizeof(fvm_box_tree_t));
 
@@ -818,7 +818,7 @@ _copy_tree(fvm_box_tree_t        *dest,
 static void
 _free_tree_arrays(fvm_box_tree_t  *bt)
 {
-  assert(bt != NULL);
+  assert(bt != nullptr);
 
   BFT_FREE(bt->nodes);
   BFT_FREE(bt->child_ids);
@@ -842,7 +842,7 @@ _new_node(fvm_box_tree_t     *bt,
   int  i;
   _node_t *node;
 
-  assert(bt != NULL);
+  assert(bt != nullptr);
 
   node = bt->nodes + node_id;
 
@@ -1962,7 +1962,7 @@ fvm_box_tree_create(int    max_level,
                     int    threshold,
                     float  max_box_ratio)
 {
-  fvm_box_tree_t  *bt = NULL;
+  fvm_box_tree_t  *bt = nullptr;
 
   BFT_MALLOC(bt, 1, fvm_box_tree_t);
 
@@ -2009,9 +2009,9 @@ fvm_box_tree_create(int    max_level,
   bt->n_max_nodes = 0;
   bt->n_nodes = 0;
 
-  bt->nodes = NULL;
+  bt->nodes = nullptr;
 
-  bt->box_ids = NULL;
+  bt->box_ids = nullptr;
 
   bt->n_build_loops = 0;
 
@@ -2030,7 +2030,7 @@ fvm_box_tree_destroy(fvm_box_tree_t  **bt)
 {
   fvm_box_tree_t  *_bt = *bt;
 
-  if (_bt != NULL) {
+  if (_bt != nullptr) {
 
     BFT_FREE(_bt->nodes);
     BFT_FREE(_bt->child_ids);
@@ -2089,7 +2089,7 @@ fvm_box_tree_set_boxes(fvm_box_tree_t       *bt,
 
   /* Initialization */
 
-  assert(bt != NULL);
+  assert(bt != nullptr);
 
   bt->n_build_loops = 0;
 
@@ -2208,14 +2208,14 @@ fvm_box_tree_get_distrib(fvm_box_tree_t        *bt,
 
   int  reduce_size = 0;
   cs_lnum_t   n_leaves = 0;
-  int  *reduce_ids = NULL;
-  fvm_morton_code_t  *leaf_codes = NULL, *reduce_index = NULL;
-  cs_lnum_t   *weight = NULL, *counter = NULL;
+  int  *reduce_ids = nullptr;
+  fvm_morton_code_t  *leaf_codes = nullptr, *reduce_index = nullptr;
+  cs_lnum_t   *weight = nullptr, *counter = nullptr;
 
-  fvm_box_distrib_t  *distrib = NULL;
+  fvm_box_distrib_t  *distrib = nullptr;
 
-  assert(bt != NULL);
-  assert(boxes != NULL);
+  assert(bt != nullptr);
+  assert(boxes != nullptr);
 
   /* Compute basic box distribution */
 
@@ -2224,8 +2224,8 @@ fvm_box_tree_get_distrib(fvm_box_tree_t        *bt,
                                    (bt->stats).max_level_reached,
                                    boxes->comm);
 
-  if (distrib == NULL)
-    return NULL;
+  if (distrib == nullptr)
+    return nullptr;
 
   BFT_MALLOC(leaf_codes, bt->stats.n_leaves, fvm_morton_code_t);
   BFT_MALLOC(weight, bt->stats.n_leaves, cs_lnum_t);
@@ -2349,9 +2349,9 @@ fvm_box_tree_get_intersects(fvm_box_tree_t       *bt,
 {
   cs_lnum_t  i, list_size;
 
-  cs_lnum_t  *counter = NULL;
-  cs_lnum_t  *_index = NULL;
-  cs_gnum_t  *_g_num = NULL;
+  cs_lnum_t  *counter = nullptr;
+  cs_lnum_t  *_index = nullptr;
+  cs_gnum_t  *_g_num = nullptr;
 
   /* Build index */
 
@@ -2399,10 +2399,10 @@ fvm_box_tree_get_intersects(fvm_box_tree_t       *bt,
 /*----------------------------------------------------------------------------
  * Get global box tree statistics.
  *
- * All fields returned are optional: if their argument is set to NULL,
+ * All fields returned are optional: if their argument is set to nullptr,
  * the corresponding information will not be returned.
  *
- * For each field not set to NULL, 3 values are always returned:
+ * For each field not set to nullptr, 3 values are always returned:
  * the mean on all ranks (rounded to the closest integer), the minimum,
  * and the maximum value respectively.
  *
@@ -2443,7 +2443,7 @@ fvm_box_tree_get_stats(const fvm_box_tree_t  *bt,
 
   int dim = 3;
 
-  if (bt == NULL)
+  if (bt == nullptr)
     return 0;
 
   s = bt->stats;
@@ -2545,43 +2545,43 @@ fvm_box_tree_get_stats(const fvm_box_tree_t  *bt,
 
   /* Set values already in stats */
 
-  if (depth != NULL) {
+  if (depth != nullptr) {
     depth[0] = s_mean[1];
     depth[1] = s_min[1];
     depth[2] = s_max[1];
   }
 
-  if (n_leaves != NULL) {
+  if (n_leaves != nullptr) {
     n_leaves[0] = s_mean[2];
     n_leaves[1] = s_min[2];
     n_leaves[2] = s_max[2];
   }
 
-  if (n_boxes != NULL) {
+  if (n_boxes != nullptr) {
     n_boxes[0] = s_mean[3];
     n_boxes[1] = s_min[3];
     n_boxes[2] = s_max[3];
   }
 
-  if (n_threshold_leaves != NULL) {
+  if (n_threshold_leaves != nullptr) {
     n_threshold_leaves[0] = s_mean[4];
     n_threshold_leaves[1] = s_min[4];
     n_threshold_leaves[2] = s_max[4];
   }
 
-  if (n_leaf_boxes != NULL) {
+  if (n_leaf_boxes != nullptr) {
     n_leaf_boxes[0] = s_mean[0];
     n_leaf_boxes[1] = s_min[0];
     n_leaf_boxes[2] = s_max[0];
   }
 
-  if (mem_used != NULL) {
+  if (mem_used != nullptr) {
     mem_used[0] = s_mean[5];
     mem_used[1] = s_min[5];
     mem_used[2] = s_max[5];
   }
 
-  if (mem_allocated != NULL) {
+  if (mem_allocated != nullptr) {
     mem_allocated[0] = s_mean[6];
     mem_allocated[1] = s_min[6];
     mem_allocated[2] = s_max[6];
@@ -2612,7 +2612,7 @@ fvm_box_tree_dump_statistics(const fvm_box_tree_t  *bt)
   int step = 0, delta = 0;
   const int n_steps = 5;
 
-  if (bt == NULL)
+  if (bt == nullptr)
     return;
 
   s = bt->stats;
@@ -2740,7 +2740,7 @@ fvm_box_tree_dump(fvm_box_tree_t  *bt)
 {
   fvm_box_tree_stats_t s;
 
-  if (bt == NULL) {
+  if (bt == nullptr) {
     bft_printf("\nBox tree: nil\n");
     return;
   }

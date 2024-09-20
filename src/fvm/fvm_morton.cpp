@@ -479,7 +479,7 @@ _define_rank_distrib(int                      dim,
   cs_lnum_t   i;
 
   int  bucket_id = 1;
-  cs_gnum_t   *l_distrib = NULL;
+  cs_gnum_t   *l_distrib = nullptr;
 
   const int  sampling_factor = _sampling_factors[dim];
   const int  n_samples = sampling_factor * n_ranks;
@@ -538,8 +538,8 @@ _define_rank_distrib(int                      dim,
 
   if (cs_glob_rank_id <= 0) {
 
-    FILE  *dbg_file = NULL;
-    char  *rfilename = NULL;
+    FILE  *dbg_file = nullptr;
+    char  *rfilename = nullptr;
     int  len;
     static int  loop_id1 = 0;
 
@@ -619,7 +619,7 @@ _update_sampling(int      dim,
   double  target_freq, f_high, f_low, delta;
   double  s_low, s_high;
 
-  double  *new_sampling = NULL, *_sampling = *sampling;
+  double  *new_sampling = nullptr, *_sampling = *sampling;
 
   const int  sampling_factor = _sampling_factors[dim];
   const int  n_samples = sampling_factor * n_ranks;
@@ -715,8 +715,8 @@ _bucket_sampling(int                      dim,
   double  fit, best_fit, optim;
 
   cs_gnum_t   lsum_weight = 0, gsum_weight = 0;
-  cs_gnum_t   *distrib = NULL;
-  double  *cfreq = NULL, *best_sampling = NULL;
+  cs_gnum_t   *distrib = nullptr;
+  double  *cfreq = nullptr, *best_sampling = nullptr;
   double  *_sampling = *sampling;
 
   const int  sampling_factor = _sampling_factors[dim];
@@ -1125,8 +1125,8 @@ fvm_morton_local_order(cs_lnum_t                n_codes,
   cs_lnum_t   i;
   cs_lnum_t   tmp;
 
-  assert(n_codes == 0 || morton_codes != NULL);
-  assert(n_codes == 0 || order != NULL);
+  assert(n_codes == 0 || morton_codes != nullptr);
+  assert(n_codes == 0 || order != nullptr);
 
   for (i = 0; i < n_codes; i++)
     order[i] = i;
@@ -1362,7 +1362,7 @@ fvm_morton_build_rank_index(int                      dim,
   int  i, id, rank_id, n_ranks, n_samples;
   double  best_fit;
 
-  double  *sampling = NULL;
+  double  *sampling = nullptr;
 
   const int  sampling_factor = _sampling_factors[dim];
 
@@ -1440,7 +1440,7 @@ fvm_morton_s_to_code(double       s,
   const int level = sizeof(fvm_morton_int_t)*8 - 1;
   const int dim = *((const int *)input);
 
-  fvm_morton_code_t  *hc = elt;
+  fvm_morton_code_t *hc = static_cast<fvm_morton_code_t *>(elt);
 
   *hc = _double_to_code(dim, s, level);
 }

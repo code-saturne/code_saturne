@@ -139,7 +139,7 @@ _polygon_plane_3d(const int   n_vertices,
                                      is necessary */
 
   cs_coord_t  _tmp_coords[_N_VERTICES_AUTO_MAX * 3];
-  cs_coord_t  *_tmp_coords_p = NULL;
+  cs_coord_t  *_tmp_coords_p = nullptr;
   cs_coord_t  *tmp_coords = _tmp_coords;
 
   /*xxxxxxxxxxxxxxxxxxxxxxxxxxx Instructions xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
@@ -248,9 +248,9 @@ _polygon_plane_3d(const int   n_vertices,
 
     }
 
-    if (_tmp_coords_p != NULL) {
+    if (_tmp_coords_p != nullptr) {
       BFT_FREE(_tmp_coords_p);
-      tmp_coords = NULL;
+      tmp_coords = nullptr;
     }
 
   }
@@ -807,7 +807,7 @@ _polygon_delaunay_flip(int               n_vertices,
  * diagonal. A non-convex quadrangle may only be divided along the diagonal
  * which lies inside the quadrangle.
  *
- * If the quadrangle_vertices argument is NULL, 1, 2, ...,n local numbering
+ * If the quadrangle_vertices argument is nullptr, 1, 2, ...,n local numbering
  * is implied.
  *
  * parameters:
@@ -841,8 +841,8 @@ _triangulate_quadrangle(int                    dim,
   double v1[3] = {0.0, 0.0, 0.0}, v2[3] = {0.0, 0.0, 0.0};
   double n0[3] = {0.0, 0.0, 0.0}, ni[3] = {0.0, 0.0, 0.0};
 
-  if (parent_vertex_id != NULL) {
-    if (quadrangle_vertices != NULL) {
+  if (parent_vertex_id != nullptr) {
+    if (quadrangle_vertices != nullptr) {
       for (i = 0; i < 4; i++)
         vertex_id[i] = parent_vertex_id[quadrangle_vertices[i]-base];
     }
@@ -852,9 +852,9 @@ _triangulate_quadrangle(int                    dim,
     }
 
   }
-  else { /* (if parent_vertex_id == NULL) */
+  else { /* (if parent_vertex_id == nullptr) */
 
-    if (quadrangle_vertices != NULL) {
+    if (quadrangle_vertices != nullptr) {
       for (i = 0; i < 4 ; i++)
         vertex_id[i] = quadrangle_vertices[i] - base;
     }
@@ -923,7 +923,7 @@ _triangulate_quadrangle(int                    dim,
 
   /* Now define triangulation */
 
-  if (quadrangle_vertices != NULL && mode == FVM_TRIANGULATE_MESH_DEF) {
+  if (quadrangle_vertices != nullptr && mode == FVM_TRIANGULATE_MESH_DEF) {
     if (d2_02 < d2_13) {
       triangle_vertices[0] = quadrangle_vertices[0]; /* 1st triangle */
       triangle_vertices[1] = quadrangle_vertices[1];
@@ -941,7 +941,7 @@ _triangulate_quadrangle(int                    dim,
       triangle_vertices[5] = quadrangle_vertices[1];
     }
   }
-  else { /* if (   quadrangle_vertices == NULL
+  else { /* if (   quadrangle_vertices == nullptr
                 || mode == FVM_TRIANGULATE_ELT_DEF) */
     if (d2_02 < d2_13) {
       triangle_vertices[0] = base + 0; /* 1st triangle */
@@ -985,7 +985,7 @@ _triangulate_quadrangle(int                    dim,
 fvm_triangulate_state_t *
 fvm_triangulate_state_create(const int  n_vertices_max)
 {
-  fvm_triangulate_state_t  *this_state = NULL;
+  fvm_triangulate_state_t  *this_state = nullptr;
 
   int n_edges_max = (2*n_vertices_max) - 3;
   int n_edges_tot_max = n_edges_max * (n_edges_max - 1) / 2;
@@ -1003,14 +1003,14 @@ fvm_triangulate_state_create(const int  n_vertices_max)
     BFT_MALLOC(this_state->concave, n_vertices_max, bool);
   }
   else {
-    this_state->triangle_vertices = NULL;
-    this_state->coords = NULL;
-    this_state->list_previous = NULL;
-    this_state->list_next = NULL;
-    this_state->edge_vertices = NULL;
-    this_state->edge_neighbors = NULL;
-    this_state->edge_is_delaunay = NULL;
-    this_state->concave = NULL;
+    this_state->triangle_vertices = nullptr;
+    this_state->coords = nullptr;
+    this_state->list_previous = nullptr;
+    this_state->list_next = nullptr;
+    this_state->edge_vertices = nullptr;
+    this_state->edge_neighbors = nullptr;
+    this_state->edge_is_delaunay = nullptr;
+    this_state->concave = nullptr;
   }
 
   this_state->n_vertices_max = n_vertices_max;
@@ -1025,14 +1025,14 @@ fvm_triangulate_state_create(const int  n_vertices_max)
  *   this_state  <-> pointer to structure that should be destroyed.
  *
  * returns:
- *   NULL pointer.
+ *   nullptr pointer.
  *----------------------------------------------------------------------------*/
 
 fvm_triangulate_state_t *
 fvm_triangulate_state_destroy(fvm_triangulate_state_t  *this_state)
 {
-  if (this_state != NULL) {
-    if (this_state->triangle_vertices != NULL) {
+  if (this_state != nullptr) {
+    if (this_state->triangle_vertices != nullptr) {
       BFT_FREE(this_state->triangle_vertices);
       BFT_FREE(this_state->coords);
       BFT_FREE(this_state->list_previous);
@@ -1045,7 +1045,7 @@ fvm_triangulate_state_destroy(fvm_triangulate_state_t  *this_state)
     BFT_FREE(this_state);
   }
 
-  return NULL;
+  return nullptr;
 }
 
 /*----------------------------------------------------------------------------
@@ -1053,7 +1053,7 @@ fvm_triangulate_state_destroy(fvm_triangulate_state_t  *this_state)
  *
  * For a polygon with n vertices, we should obtain a triangluation with
  * (n-2) triangles and (2n-3) edges. If the polygon_vertices argument
- * is NULL, 1, 2, ...,n local numbering is implied.
+ * is nullptr, 1, 2, ...,n local numbering is implied.
  *
  * parameters:
  *   dim               <-- spatial dimension (2 or 3).
@@ -1125,8 +1125,8 @@ fvm_triangulate_polygon(int                             dim,
   int  *const list_next = state->list_next;
   bool   *const concave = state->concave;
 
-  if (parent_vertex_id != NULL) {
-    if (polygon_vertices != NULL) {
+  if (parent_vertex_id != nullptr) {
+    if (polygon_vertices != nullptr) {
       for (i = 0; i < n_vertices; i++) {
         int vertex_id = parent_vertex_id[polygon_vertices[i]-base];
         for (j = 0; j < dim; j++)
@@ -1142,9 +1142,9 @@ fvm_triangulate_polygon(int                             dim,
     }
 
   }
-  else { /* (if parent_vertex_id == NULL) */
+  else { /* (if parent_vertex_id == nullptr) */
 
-    if (polygon_vertices != NULL) {
+    if (polygon_vertices != nullptr) {
       for (i = 0; i < n_vertices; i++) {
         for (j = 0; j < dim; j++)
           state->coords[i*dim + j] = coords[(polygon_vertices[i]-base)*dim + j];
@@ -1254,7 +1254,7 @@ fvm_triangulate_polygon(int                             dim,
 
   /* Update triangle_vertices argument */
 
-  if (polygon_vertices != NULL && mode == FVM_TRIANGULATE_MESH_DEF) {
+  if (polygon_vertices != nullptr && mode == FVM_TRIANGULATE_MESH_DEF) {
     for (i = 0; i < n_triangles * 3; i++)
       triangle_vertices[i] = polygon_vertices[state->triangle_vertices[i]];
   }
@@ -1273,7 +1273,7 @@ fvm_triangulate_polygon(int                             dim,
  * diagonal. A non-convex quadrangle may only be divided along the diagonal
  * which lies inside the quadrangle.
  *
- * If the quadrangle_vertices argument is NULL, 1, 2, ...,n local numbering
+ * If the quadrangle_vertices argument is nullptr, 1, 2, ...,n local numbering
  * is implied.
  *
  * parameters:

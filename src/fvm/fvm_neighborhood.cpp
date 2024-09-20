@@ -149,7 +149,7 @@ _init_bt_statistics(_box_tree_stats_t  *bts)
 {
   size_t i;
 
-  assert(bts != NULL);
+  assert(bts != nullptr);
 
   bts->dim = 0;
 
@@ -185,7 +185,7 @@ _update_bt_statistics(_box_tree_stats_t     *bts,
   size_t i;
   size_t mem_required[3];
 
-  assert(bts != NULL);
+  assert(bts != nullptr);
 
   dim = fvm_box_tree_get_stats(bt,
                                bts->depth,
@@ -217,12 +217,12 @@ static void
 _redistribute_boxes(fvm_neighborhood_t  *n,
                     fvm_box_set_t       *boxes)
 {
-  fvm_box_tree_t  *coarse_tree = NULL;
-  fvm_box_distrib_t  *distrib = NULL;
+  fvm_box_tree_t  *coarse_tree = nullptr;
+  fvm_box_distrib_t  *distrib = nullptr;
 
   /* Sanity checks */
 
-  assert(boxes != NULL);
+  assert(boxes != nullptr);
 
   coarse_tree = fvm_box_tree_create(n->max_tree_depth,
                                     n->leaf_threshold,
@@ -314,7 +314,7 @@ _clean_neighbor_nums(fvm_neighborhood_t  *n)
 
   cs_lnum_t   n_count = 0;
 
-  assert(n != NULL);
+  assert(n != nullptr);
 
   if (n->n_elts == 0)
     return;
@@ -367,10 +367,10 @@ _order_neighborhood(fvm_neighborhood_t  *n)
   cs_lnum_t   n_elts, n_neighbors, n_elt_neighbors;
   cs_gnum_t   prev_num, cur_num;
 
-  cs_lnum_t   *order = NULL, *old_index = NULL;
-  cs_gnum_t   *old_e_num = NULL, *old_n_num = NULL;
+  cs_lnum_t   *order = nullptr, *old_index = nullptr;
+  cs_gnum_t   *old_e_num = nullptr, *old_n_num = nullptr;
 
-  assert(n != NULL);
+  assert(n != nullptr);
 
   if (n->n_elts == 0)
     return;
@@ -389,7 +389,7 @@ _order_neighborhood(fvm_neighborhood_t  *n)
 
   /* Order elt_num */
 
-  cs_order_gnum_allocated(NULL, old_e_num, order, n_elts);
+  cs_order_gnum_allocated(nullptr, old_e_num, order, n_elts);
 
   /* Reshape according to the new ordering */
 
@@ -457,7 +457,7 @@ static void
 _sync_by_block(fvm_neighborhood_t  *n,
                cs_gnum_t            n_g_elts)
 {
-  assert(n != NULL);
+  assert(n != nullptr);
 
   if (n_g_elts == 0 || n->comm == MPI_COMM_NULL)
     return;
@@ -490,13 +490,10 @@ _sync_by_block(fvm_neighborhood_t  *n,
     send_meta[i*2+1] = n->neighbor_index[i+1] - n->neighbor_index[i];
   }
 
-  cs_gnum_t *recv_meta
-    = cs_all_to_all_copy_array(d,
-                               CS_GNUM_TYPE,
-                               2,
-                               false, /* reverse */
-                               send_meta,
-                               NULL);
+  cs_gnum_t *recv_meta = cs_all_to_all_copy_array(d,
+                                                  2,
+                                                  false, /* reverse */
+                                                  send_meta);
 
   BFT_FREE(send_meta);
 
@@ -515,14 +512,11 @@ _sync_by_block(fvm_neighborhood_t  *n,
 
   BFT_FREE(recv_meta);
 
-  cs_gnum_t *recv_neighbor
-    = cs_all_to_all_copy_indexed(d,
-                                 CS_GNUM_TYPE,
-                                 false, /* reverse */
-                                 n->neighbor_index,
-                                 n->neighbor_num,
-                                 recv_index,
-                                 NULL);
+  cs_gnum_t *recv_neighbor = cs_all_to_all_copy_indexed(d,
+                                                        false, /* reverse */
+                                                        n->neighbor_index,
+                                                        n->neighbor_num,
+                                                        recv_index);
 
   /* Build arrays corresponding to block distribution of neighborhood */
 
@@ -620,7 +614,7 @@ fvm_neighborhood_create(void)
 {
   double  w_start, w_end, cpu_start, cpu_end;
 
-  fvm_neighborhood_t *n = NULL;
+  fvm_neighborhood_t *n = nullptr;
 
   /* Timer start */
 
@@ -632,9 +626,9 @@ fvm_neighborhood_create(void)
   BFT_MALLOC(n, 1, fvm_neighborhood_t);
 
   n->n_elts = 0;
-  n->elt_num = NULL;
-  n->neighbor_index = NULL;
-  n->neighbor_num = NULL;
+  n->elt_num = nullptr;
+  n->neighbor_index = nullptr;
+  n->neighbor_num = nullptr;
 
 #if defined(HAVE_MPI)
   n->comm = comm;
@@ -674,14 +668,14 @@ fvm_neighborhood_create(void)
 void
 fvm_neighborhood_destroy(fvm_neighborhood_t  **n)
 {
-  if (n != NULL) {
+  if (n != nullptr) {
     fvm_neighborhood_t *_n = *n;
-    if (_n != NULL) {
-      if (_n->elt_num != NULL)
+    if (_n != nullptr) {
+      if (_n->elt_num != nullptr)
         BFT_FREE(_n->elt_num);
-      if (_n->neighbor_index != NULL)
+      if (_n->neighbor_index != nullptr)
         BFT_FREE(_n->neighbor_index);
-      if (_n->neighbor_num != NULL)
+      if (_n->neighbor_num != nullptr)
         BFT_FREE(_n->neighbor_num);
     }
     BFT_FREE(*n);
@@ -709,7 +703,7 @@ fvm_neighborhood_set_options(fvm_neighborhood_t  *n,
                              float                max_box_ratio,
                              float                max_box_ratio_distrib)
 {
-  if (n == NULL)
+  if (n == nullptr)
     return;
 
   n->max_tree_depth = max_tree_depth;
@@ -741,18 +735,18 @@ fvm_neighborhood_get_data(const fvm_neighborhood_t         *n,
                           cs_lnum_t                 **const neighbor_index,
                           cs_gnum_t                 **const neighbor_num)
 {
-  if (n != NULL) {
+  if (n != nullptr) {
 
-    if (n_elts != NULL)
+    if (n_elts != nullptr)
       *n_elts = n->n_elts;
 
-    if (elt_num != NULL)
+    if (elt_num != nullptr)
       *elt_num = n->elt_num;
 
-    if (neighbor_index != NULL)
+    if (neighbor_index != nullptr)
       *neighbor_index = n->neighbor_index;
 
-    if (neighbor_num != NULL)
+    if (neighbor_num != nullptr)
       *neighbor_num = n->neighbor_num;
   }
 }
@@ -782,22 +776,22 @@ fvm_neighborhood_transfer_data(fvm_neighborhood_t   *n,
                                cs_lnum_t           **neighbor_index,
                                cs_gnum_t           **neighbor_num)
 {
-  if (n != NULL) {
+  if (n != nullptr) {
 
-    if (n_elts != NULL)
+    if (n_elts != nullptr)
       *n_elts = n->n_elts;
 
-    if (elt_num != NULL) {
+    if (elt_num != nullptr) {
       *elt_num = n->elt_num;
-      n->elt_num = NULL;
+      n->elt_num = nullptr;
     }
-    if (neighbor_index != NULL) {
+    if (neighbor_index != nullptr) {
       *neighbor_index = n->neighbor_index;
-      n->neighbor_index = NULL;
+      n->neighbor_index = nullptr;
     }
-    if (neighbor_num != NULL) {
+    if (neighbor_num != nullptr) {
       *neighbor_num = n->neighbor_num;
-      n->neighbor_num = NULL;
+      n->neighbor_num = nullptr;
     }
   }
 }
@@ -810,7 +804,7 @@ fvm_neighborhood_transfer_data(fvm_neighborhood_t   *n,
  * structure: both the box_gnum and extents arguments have an "assigned"
  * variant, in which case a pointer to a pointer is provided, and the
  * argument's property is transferred to the neighborhod management structure.
- * The unused variant of an argument should be set to NULL.
+ * The unused variant of an argument should be set to nullptr.
  *
  * Boxes may be distributed among processors, so their intersections are
  * determined using a block distribution, and defined using their
@@ -828,8 +822,8 @@ fvm_neighborhood_transfer_data(fvm_neighborhood_t   *n,
  *   box_gnum          <-- global numbering of boxes
  *   extents           <-- coordinate extents (size: n_boxes*dim*2, as
  *                         xmin1, ymin1, .. xmax1, ymax1, ..., xmin2, ...)
- *   box_gnum_assigned <-> as box_gnum, ownership transferred (NULL on return)
- *   extents_assigned  <-> as extents, ownership transferred (NULL on return)
+ *   box_gnum_assigned <-> as box_gnum, ownership transferred (nullptr on return)
+ *   extents_assigned  <-> as extents, ownership transferred (nullptr on return)
  *---------------------------------------------------------------------------*/
 
 void
@@ -843,8 +837,8 @@ fvm_neighborhood_by_boxes(fvm_neighborhood_t  *n,
 {
   double  clock_start, clock_end, cpu_start, cpu_end;
 
-  fvm_box_tree_t  *bt = NULL;
-  fvm_box_set_t  *boxes = NULL;
+  fvm_box_tree_t  *bt = nullptr;
+  fvm_box_set_t  *boxes = nullptr;
 
   const cs_gnum_t   *_box_gnum = box_gnum;
   const cs_coord_t  *_extents = extents;
@@ -856,19 +850,19 @@ fvm_neighborhood_by_boxes(fvm_neighborhood_t  *n,
 
   /* Transfer data if necessary */
 
-  if (box_gnum_assigned != NULL)
+  if (box_gnum_assigned != nullptr)
     _box_gnum = *box_gnum_assigned;
-  if (extents_assigned != NULL)
+  if (extents_assigned != nullptr)
     _extents = *extents_assigned;
 
   /* Reset structure if necessary */
 
   n->n_elts = 0;
-  if (n->elt_num != NULL)
+  if (n->elt_num != nullptr)
     BFT_FREE(n->elt_num);
-  if (n->neighbor_index != NULL)
+  if (n->neighbor_index != nullptr)
     BFT_FREE(n->neighbor_index);
-  if (n->neighbor_num != NULL)
+  if (n->neighbor_num != nullptr)
     BFT_FREE(n->neighbor_num);
 
   /* Allocate fvm_box_set_t structure and initialize it */
@@ -902,13 +896,13 @@ fvm_neighborhood_by_boxes(fvm_neighborhood_t  *n,
 
   /* Free transferred data if applicable */
 
-  if (box_gnum_assigned != NULL) {
-    _box_gnum = NULL;
+  if (box_gnum_assigned != nullptr) {
+    _box_gnum = nullptr;
     BFT_FREE(*box_gnum_assigned);
   }
 
-  if (extents_assigned != NULL) {
-    _extents = NULL;
+  if (extents_assigned != nullptr) {
+    _extents = nullptr;
     BFT_FREE(*extents_assigned);
   }
 
@@ -1006,7 +1000,7 @@ fvm_neighborhood_prune(fvm_neighborhood_t  *n)
 
   cs_lnum_t   e_count = 0;
 
-  assert(n != NULL);
+  assert(n != nullptr);
 
   if (n->n_elts == 0)
     return;
@@ -1046,10 +1040,10 @@ fvm_neighborhood_prune(fvm_neighborhood_t  *n)
  * Get global statistics relative to the search structures used
  * by fvm_neighborhood_by_boxes().
  *
- * All fields returned are optional: if their argument is set to NULL,
+ * All fields returned are optional: if their argument is set to nullptr,
  * the corresponding information will not be returned.
  *
- * For each field not set to NULL, 3 values are always returned:
+ * For each field not set to nullptr, 3 values are always returned:
  * the mean on all ranks (rounded to the closest integer), the minimum,
  * and the maximum value respectively.
  *
@@ -1096,30 +1090,30 @@ fvm_neighborhood_get_box_stats(const fvm_neighborhood_t  *n,
 {
   size_t i;
 
-  if (n == NULL)
+  if (n == nullptr)
     return 0;
 
   for (i = 0; i < 3; i++) {
 
-    if (depth != NULL)
+    if (depth != nullptr)
       depth[i] = n->bt_stats.depth[i];
 
-    if (n_leaves != NULL)
+    if (n_leaves != nullptr)
       n_leaves[i] = n->bt_stats.n_leaves[i];
 
-    if (n_boxes != NULL)
+    if (n_boxes != nullptr)
       n_boxes[i] = n->bt_stats.n_boxes[i];
 
-    if (n_threshold_leaves != NULL)
+    if (n_threshold_leaves != nullptr)
       n_threshold_leaves[i] = n->bt_stats.n_threshold_leaves[i];
 
-    if (n_leaf_boxes != NULL)
+    if (n_leaf_boxes != nullptr)
       n_leaf_boxes[i] = n->bt_stats.n_leaf_boxes[i];
 
-    if (mem_final != NULL)
+    if (mem_final != nullptr)
       mem_final[i] = n->bt_stats.mem_used[i];
 
-    if (mem_required != NULL)
+    if (mem_required != nullptr)
       mem_required[i] = n->bt_stats.mem_required[i];
   }
   return n->bt_stats.dim;
@@ -1130,10 +1124,10 @@ fvm_neighborhood_get_box_stats(const fvm_neighborhood_t  *n,
  *
  * parameters:
  *   n              <-- pointer to neighborhood management structure
- *   build_wtime    --> initialization Wall-clock time (or NULL)
- *   build_cpu_time --> initialization CPU time (or NULL)
- *   query_wtime    --> query Wall-clock time (or NULL)
- *   query_cpu_time --> query CPU time (or NULL)
+ *   build_wtime    --> initialization Wall-clock time (or nullptr)
+ *   build_cpu_time --> initialization CPU time (or nullptr)
+ *   query_wtime    --> query Wall-clock time (or nullptr)
+ *   query_cpu_time --> query CPU time (or nullptr)
  *----------------------------------------------------------------------------*/
 
 void
@@ -1143,17 +1137,17 @@ fvm_neighborhood_get_times(const fvm_neighborhood_t  *n,
                            double                    *query_wtime,
                            double                    *query_cpu_time)
 {
-  if (n == NULL)
+  if (n == nullptr)
     return;
 
-  if (build_wtime != NULL)
+  if (build_wtime != nullptr)
     *build_wtime = n->wtime[0];
-  if (build_cpu_time != NULL)
+  if (build_cpu_time != nullptr)
     *build_cpu_time = n->cpu_time[0];
 
-  if (query_wtime != NULL)
+  if (query_wtime != nullptr)
     *query_wtime = n->wtime[1];
-  if (query_cpu_time != NULL)
+  if (query_cpu_time != nullptr)
     *query_cpu_time = n->cpu_time[1];
 }
 
@@ -1172,7 +1166,7 @@ fvm_neighborhood_dump(const fvm_neighborhood_t  *n)
   bft_printf("\n"
              "Neighborhood information: %p\n\n", (const void *)n);
 
-  if (n == NULL)
+  if (n == nullptr)
     return;
 
   bft_printf("number of elements: %10d\n"

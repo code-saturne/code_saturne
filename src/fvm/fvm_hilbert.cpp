@@ -528,8 +528,8 @@ fvm_hilbert_local_order(cs_lnum_t                 n_codes,
 {
   cs_lnum_t   i, tmp;
 
-  assert(n_codes == 0 || hilbert_codes != NULL);
-  assert(n_codes == 0 || order != NULL);
+  assert(n_codes == 0 || hilbert_codes != nullptr);
+  assert(n_codes == 0 || order != nullptr);
 
   for (i = 0; i < n_codes; i++)
     order[i] = i;
@@ -573,7 +573,7 @@ fvm_hilbert_local_order_coords(int                dim,
                                const cs_coord_t   coords[],
                                cs_lnum_t          order[])
 {
-  fvm_hilbert_code_t *h_code = NULL;
+  fvm_hilbert_code_t *h_code = nullptr;
 
   BFT_MALLOC(h_code, n_coords, fvm_hilbert_code_t);
 
@@ -602,7 +602,7 @@ fvm_hilbert_s_to_code(double       s,
 {
   CS_UNUSED(input);
 
-  fvm_hilbert_code_t  *hc = elt;
+  fvm_hilbert_code_t *hc = static_cast<fvm_hilbert_code_t *>(elt);
   *hc = s;
 }
 

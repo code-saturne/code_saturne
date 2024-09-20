@@ -85,7 +85,7 @@ BEGIN_C_DECLS
  *   vertex_num         <-- element -> vertex connectivity
  *   parent_element_id  <-- element -> parent element id (0 to n-1) if non
  *                          trivial (i.e. if element definitions correspond
- *                          to a subset of the parent mesh), NULL otherwise
+ *                          to a subset of the parent mesh), nullptr otherwise
  *----------------------------------------------------------------------------*/
 
 static fvm_nodal_section_t *
@@ -97,7 +97,7 @@ _transfer_to_section(cs_lnum_t       n_elements,
                      cs_lnum_t       vertex_num[],
                      cs_lnum_t       parent_element_id[])
 {
-  fvm_nodal_section_t  *this_section = NULL;
+  fvm_nodal_section_t  *this_section = nullptr;
 
   this_section = fvm_nodal_section_create(type);
 
@@ -169,7 +169,7 @@ _transfer_to_section(cs_lnum_t       n_elements,
  *   vertex_num        <-- element -> vertex connectivity
  *   parent_element_id <-- element -> parent element id (0 to n-1) if non
  *                         trivial (i.e. if element definitions correspond
- *                         to a subset of the parent mesh), NULL otherwise
+ *                         to a subset of the parent mesh), nullptr otherwise
  *----------------------------------------------------------------------------*/
 
 static fvm_nodal_section_t *
@@ -181,7 +181,7 @@ _map_to_section(cs_lnum_t       n_elements,
                 cs_lnum_t       vertex_num[],
                 cs_lnum_t       parent_element_id[])
 {
-  fvm_nodal_section_t  *this_section = NULL;
+  fvm_nodal_section_t  *this_section = nullptr;
 
   this_section = fvm_nodal_section_create(type);
 
@@ -253,7 +253,7 @@ _map_to_section(cs_lnum_t       n_elements,
  *   vertex_num        <-- element -> vertex connectivity
  *   parent_element_id <-- element -> parent element id (0 to n-1) if non
  *                         trivial (i.e. if element definitions correspond
- *                         to a subset of the parent mesh), NULL otherwise
+ *                         to a subset of the parent mesh), nullptr otherwise
  *----------------------------------------------------------------------------*/
 
 void
@@ -266,10 +266,10 @@ fvm_nodal_append_by_transfer(fvm_nodal_t    *this_nodal,
                              cs_lnum_t       vertex_num[],
                              cs_lnum_t       parent_element_id[])
 {
-  fvm_nodal_section_t  *new_section = NULL;
+  fvm_nodal_section_t  *new_section = nullptr;
   int  n_sections = 0;
 
-  assert(this_nodal != NULL);
+  assert(this_nodal != nullptr);
 
   n_sections = this_nodal->n_sections;
 
@@ -328,7 +328,7 @@ fvm_nodal_append_by_transfer(fvm_nodal_t    *this_nodal,
  *   vertex_num        <-- element -> vertex connectivity
  *   parent_element_id <-- element -> parent element id (0 to n-1) if non
  *                         trivial (i.e. if element definitions correspond
- *                         to a subset of the parent mesh), NULL otherwise
+ *                         to a subset of the parent mesh), nullptr otherwise
  *----------------------------------------------------------------------------*/
 
 void
@@ -341,10 +341,10 @@ fvm_nodal_append_shared(fvm_nodal_t    *this_nodal,
                         cs_lnum_t       vertex_num[],
                         cs_lnum_t       parent_element_id[])
 {
-  fvm_nodal_section_t  *new_section = NULL;
+  fvm_nodal_section_t  *new_section = nullptr;
   int  n_sections = 0;
 
-  assert(this_nodal != NULL);
+  assert(this_nodal != nullptr);
 
   n_sections = this_nodal->n_sections;
 

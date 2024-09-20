@@ -269,7 +269,7 @@ _nodal_cell_from_desc(const cs_lnum_t    cell_id,
 
     if (n_face_vertices == 3) {
 
-      if (cell_vtx_tria != NULL && n_trias < 4) {
+      if (cell_vtx_tria != nullptr && n_trias < 4) {
         if (cell_face_num[idx] > 0) {
           for (vtx = 0; vtx < n_face_vertices; vtx++)
             cell_vtx_tria[n_trias*3 + vtx]
@@ -287,7 +287,7 @@ _nodal_cell_from_desc(const cs_lnum_t    cell_id,
     }
     else if (n_face_vertices == 4) {
 
-      if (cell_vtx_quad != NULL && n_quads < 6) {
+      if (cell_vtx_quad != nullptr && n_quads < 6) {
         if (cell_face_num[idx] > 0) {
           for (vtx = 0; vtx < n_face_vertices; vtx++)
             cell_vtx_quad[n_quads*4 + vtx]
@@ -922,7 +922,7 @@ _fvm_nodal_extract_polyhedra(fvm_nodal_section_t  *this_section,
   cs_lnum_t    face_counter, face_id, poly_id, cell_id;
   cs_lnum_t    fl, i, idx, idx_start, idx_end, num_count;
 
-  cs_lnum_t   *local_face_num = NULL;
+  cs_lnum_t   *local_face_num = nullptr;
 
   int sgn;
 
@@ -1030,7 +1030,7 @@ _fvm_nodal_extract_polyhedra(fvm_nodal_section_t  *this_section,
   /* Faces -> Vertices Connectivity */
   /*--------------------------------*/
 
-  if (cell_face_list != NULL)
+  if (cell_face_list != nullptr)
     BFT_MALLOC(*cell_face_list, n_cell_faces, cs_lnum_t);
 
   BFT_MALLOC(this_section->_vertex_index,
@@ -1053,7 +1053,7 @@ _fvm_nodal_extract_polyhedra(fvm_nodal_section_t  *this_section,
 
     if (local_face_num[face_counter] != 0) {
 
-      if (cell_face_list != NULL)
+      if (cell_face_list != nullptr)
         (*cell_face_list)[local_face_num[face_counter] -1 ] = face_counter + 1;
 
       face_id = face_counter;
@@ -1111,7 +1111,7 @@ _fvm_nodal_extract_polyhedra(fvm_nodal_section_t  *this_section,
  *   parent_element_id <-- element -> parent element ids (0 to n-1) if
  *                         non-trivial (i.e. if element definitions
  *                         correspond to a subset of the parent mesh),
- *                         NULL otherwise.
+ *                         nullptr otherwise.
  *----------------------------------------------------------------------------*/
 
 static void
@@ -1119,13 +1119,13 @@ _raise_sections_parent_id(const int             n_sections,
                           fvm_nodal_section_t  *sections[],
                           const cs_lnum_t       parent_element_id[])
 {
-  if (parent_element_id == NULL)
+  if (parent_element_id == nullptr)
     return;
 
   for (int section_id = 0; section_id < n_sections; section_id++) {
     fvm_nodal_section_t  *section = sections[section_id];
-    if (section != NULL) {
-      if (section->_parent_element_id == NULL) {
+    if (section != nullptr) {
+      if (section->_parent_element_id == nullptr) {
         BFT_MALLOC(section->_parent_element_id,
                    section->n_elements,
                    cs_lnum_t);
@@ -1166,7 +1166,7 @@ _optimize_sections_parent_num(const int             n_sections,
 
   for (int section_id = 0; section_id < n_sections; section_id++) {
     fvm_nodal_section_t *section = sections[section_id];
-    if (section != NULL) {
+    if (section != nullptr) {
       for (element_counter = 0;
            element_counter < section->n_elements;
            element_counter++) {
@@ -1174,7 +1174,7 @@ _optimize_sections_parent_num(const int             n_sections,
           break;
       }
       if (element_counter == section->n_elements) {
-        section->parent_element_id = NULL;
+        section->parent_element_id = nullptr;
         BFT_FREE(section->_parent_element_id);
       }
     }
@@ -1186,7 +1186,7 @@ _optimize_sections_parent_num(const int             n_sections,
  * Add nodal mesh structure sections to a nodal mesh.
  *
  * Sections to add are defined by an array of section pointers,
- * which may contain NULL entries. Only the non-NULL entries are
+ * which may contain nullptr entries. Only the non-nullptr entries are
  * added to the nodal mesh structure, and they belong to that structure
  * from this point on (i.e. their lifecycle is based upon that of
  * the nodal mesh structure).
@@ -1211,7 +1211,7 @@ _fvm_nodal_add_sections(fvm_nodal_t          *this_nodal,
   section_count = 0;
   for (section_id = 0; section_id < n_sections; section_id++) {
     section = sections[section_id];
-    if (section != NULL)
+    if (section != nullptr)
       section_count++;
   }
 
@@ -1222,7 +1222,7 @@ _fvm_nodal_add_sections(fvm_nodal_t          *this_nodal,
   section_count = 0;
   for (section_id = 0; section_id < n_sections; section_id++) {
     section = sections[section_id];
-    if (section != NULL)
+    if (section != nullptr)
       this_nodal->sections[this_nodal->n_sections + section_count++]
         = section;
   }
@@ -1255,10 +1255,10 @@ _fvm_nodal_add_sections(fvm_nodal_t          *this_nodal,
  *   face_vertex     <-- face -> vertex ids (per face list)
  *   cell_face_idx   <-- cell -> face indexes (1 to n)
  *   cell_face_num   <-- cell -> face numbers (1 to n)
- *   cell_gc_id      <-- cell -> group class ids, or NULL
+ *   cell_gc_id      <-- cell -> group class ids, or nullptr
  *   parent_cell_id  <-- cell -> parent cell id (0 to n-1) if non-trivial
  *                       (i.e. if cell definitions correspond to a subset
- *                       of the parent mesh), NULL otherwise.
+ *                       of the parent mesh), nullptr otherwise.
  *   cell_face_list  --> numbers of faces defining polyhedra
  *----------------------------------------------------------------------------*/
 
@@ -1298,7 +1298,7 @@ fvm_nodal_from_desc_add_cells(fvm_nodal_t        *this_nodal,
 
   for (type_id = 0; type_id < FVM_N_ELEMENT_TYPES; type_id++) {
     n_elements_type[type_id] = 0;
-    sections[type_id] = NULL;
+    sections[type_id] = nullptr;
   }
 
   /* Guess connectivity types */
@@ -1313,8 +1313,8 @@ fvm_nodal_from_desc_add_cells(fvm_nodal_t        *this_nodal,
                                       face_vertex,
                                       cell_face_idx,
                                       cell_face_num,
-                                      NULL,
-                                      NULL);
+                                      nullptr,
+                                      nullptr);
 
     n_elements_type[cell_type] += 1;
 
@@ -1341,22 +1341,22 @@ fvm_nodal_from_desc_add_cells(fvm_nodal_t        *this_nodal,
 
   cs_parall_counter(n_g_elements_type, FVM_N_ELEMENT_TYPES);
 
-  for (cell_type = FVM_CELL_TETRA;
-       cell_type <= FVM_CELL_POLY;
-       cell_type++) {
-    if (n_g_elements_type[cell_type] > 0) {
-      sections[cell_type] = fvm_nodal_section_create(cell_type);
-      sections[cell_type]->n_elements = n_elements_type[cell_type];
-      this_nodal->n_cells += n_elements_type[cell_type];
+  for (int cell_type_i = FVM_CELL_TETRA; cell_type_i <= FVM_CELL_POLY;
+       cell_type_i++) {
+    if (n_g_elements_type[cell_type_i] > 0) {
+      cell_type             = static_cast<fvm_element_t>(cell_type_i);
+      sections[cell_type_i] = fvm_nodal_section_create(cell_type);
+      sections[cell_type_i]->n_elements = n_elements_type[cell_type_i];
+      this_nodal->n_cells += n_elements_type[cell_type_i];
     }
-    n_elements_type[cell_type] = 0;
+    n_elements_type[cell_type_i] = 0;
   }
 
   /* Main memory allocations */
 
   for (type_id = 0; type_id < FVM_N_ELEMENT_TYPES; type_id++) {
     section = sections[type_id];
-    if (section != NULL) {
+    if (section != nullptr) {
       if (   section->type != FVM_FACE_POLY
           && section->type != FVM_CELL_POLY) {
         section->stride = fvm_nodal_n_vertices_element[type_id];
@@ -1369,7 +1369,7 @@ fvm_nodal_from_desc_add_cells(fvm_nodal_t        *this_nodal,
 
   for (type_id = 0; type_id < FVM_N_ELEMENT_TYPES; type_id++) {
     section = sections[type_id];
-    if (section != NULL) {
+    if (section != nullptr) {
       BFT_MALLOC(section->_parent_element_id, section->n_elements, cs_lnum_t);
       section->parent_element_id = section->_parent_element_id;
     }
@@ -1449,7 +1449,7 @@ fvm_nodal_from_desc_add_cells(fvm_nodal_t        *this_nodal,
   /* Extraction of remaining polyhedra */
   /*-----------------------------------*/
 
-  if (sections[FVM_CELL_POLY] != NULL)
+  if (sections[FVM_CELL_POLY] != nullptr)
     _fvm_nodal_extract_polyhedra
       (sections[FVM_CELL_POLY],
        n_elements_type[FVM_CELL_POLY],
@@ -1471,14 +1471,14 @@ fvm_nodal_from_desc_add_cells(fvm_nodal_t        *this_nodal,
 
   /* Add group class ids if present */
 
-  if (cell_gc_id != NULL) {
+  if (cell_gc_id != nullptr) {
     int section_id;
     for (section_id = 0; section_id < FVM_N_ELEMENT_TYPES; section_id++) {
       section = sections[section_id];
-      if (section == NULL)
+      if (section == nullptr)
         continue;
       BFT_MALLOC(section->gc_id, section->n_elements, int);
-      if (section->parent_element_id != NULL) {
+      if (section->parent_element_id != nullptr) {
         for (cs_lnum_t cell_id = 0; cell_id < section->n_elements; cell_id++)
           section->gc_id[cell_id]
             = cell_gc_id[section->parent_element_id[cell_id]];
@@ -1496,9 +1496,9 @@ fvm_nodal_from_desc_add_cells(fvm_nodal_t        *this_nodal,
 /*----------------------------------------------------------------------------
  * Convert and add faces from an descending connectivity mesh to a nodal mesh.
  *
- * If the optional filter list extr_faces[] argument is non-NULL, faces
+ * If the optional filter list extr_faces[] argument is non-nullptr, faces
  * {extr_faces[0], extr_faces[1], extr_faces[n_extr_faces - 1]} are converted
- * and added to the nodal mesh. If this filter is set to NULL, faces
+ * and added to the nodal mesh. If this filter is set to nullptr, faces
  * {1, 2, ..., n_extr_faces} are considered.
  *
  * In addition, an optional parent_face_num[] array may also be given, in
@@ -1518,10 +1518,10 @@ fvm_nodal_from_desc_add_cells(fvm_nodal_t        *this_nodal,
  *                       size: n_face_lists
  *   face_vertex_idx <-- face -> vertex indexes (per face list)
  *   face_vertex     <-- face -> vertex ids (per face list)
- *   face_gc_id      <-- face -> group class ids, or NULL (per face list)
+ *   face_gc_id      <-- face -> group class ids, or nullptr (per face list)
  *   parent_face_id  <-- face -> parent face id (0 to n-1) if non-trivial
  *                       (i.e. if face definitions correspond to a subset
- *                       of the parent mesh), NULL otherwise.
+ *                       of the parent mesh), nullptr otherwise.
  *----------------------------------------------------------------------------*/
 
 void
@@ -1556,7 +1556,7 @@ fvm_nodal_from_desc_add_faces(fvm_nodal_t        *this_nodal,
 
   for (type_id = 0; type_id < FVM_N_ELEMENT_TYPES; type_id++) {
     n_elements_type[type_id] = 0;
-    sections[type_id] = NULL;
+    sections[type_id] = nullptr;
   }
   poly_connect_size = 0;
 
@@ -1565,7 +1565,7 @@ fvm_nodal_from_desc_add_faces(fvm_nodal_t        *this_nodal,
 
   for (face_counter = 0; face_counter < n_extr_faces; face_counter++) {
 
-    if (extr_faces != NULL)
+    if (extr_faces != nullptr)
       face_id = extr_faces[face_counter];
     else
       face_id = face_counter;
@@ -1609,14 +1609,14 @@ fvm_nodal_from_desc_add_faces(fvm_nodal_t        *this_nodal,
 
   cs_parall_counter(n_g_elements_type, FVM_N_ELEMENT_TYPES);
 
-  for (face_type = FVM_FACE_TRIA;
-       face_type <= FVM_FACE_POLY;
-       face_type++) {
-    if (n_g_elements_type[face_type] > 0) {
-      sections[face_type] = fvm_nodal_section_create(face_type);
-      sections[face_type]->n_elements = n_elements_type[face_type];
-      sections[face_type]->boundary_flag = boundary_flag;
-      this_nodal->n_faces += n_elements_type[face_type];
+  for (int face_type_i = FVM_FACE_TRIA; face_type_i <= FVM_FACE_POLY;
+       face_type_i++) {
+    if (n_g_elements_type[face_type_i] > 0) {
+      face_type             = static_cast<fvm_element_t>(face_type_i);
+      sections[face_type_i] = fvm_nodal_section_create(face_type);
+      sections[face_type_i]->n_elements    = n_elements_type[face_type_i];
+      sections[face_type_i]->boundary_flag = boundary_flag;
+      this_nodal->n_faces += n_elements_type[face_type_i];
     }
     n_elements_type[face_type] = 0;
   }
@@ -1625,7 +1625,7 @@ fvm_nodal_from_desc_add_faces(fvm_nodal_t        *this_nodal,
 
   for (type_id = 0; type_id < FVM_N_ELEMENT_TYPES; type_id++) {
     section = sections[type_id];
-    if (section != NULL) {
+    if (section != nullptr) {
       if (section->type != FVM_FACE_POLY) {
         section->stride = fvm_nodal_n_vertices_element[type_id];
         section->connectivity_size = section->stride * section->n_elements;
@@ -1646,7 +1646,7 @@ fvm_nodal_from_desc_add_faces(fvm_nodal_t        *this_nodal,
 
   for (type_id = 0; type_id < FVM_N_ELEMENT_TYPES; type_id++) {
     section = sections[type_id];
-    if (section != NULL) {
+    if (section != nullptr) {
       BFT_MALLOC(section->_parent_element_id, section->n_elements, cs_lnum_t);
       section->parent_element_id = section->_parent_element_id;
     }
@@ -1657,7 +1657,7 @@ fvm_nodal_from_desc_add_faces(fvm_nodal_t        *this_nodal,
 
   for (face_counter = 0; face_counter < n_extr_faces; face_counter++) {
 
-    if (extr_faces != NULL)
+    if (extr_faces != nullptr)
       face_id = extr_faces[face_counter];
     else
       face_id = face_counter;
@@ -1709,19 +1709,19 @@ fvm_nodal_from_desc_add_faces(fvm_nodal_t        *this_nodal,
 
   /* Add group class ids if present */
 
-  if (face_gc_id != NULL) {
+  if (face_gc_id != nullptr) {
 
     int section_id;
 
     for (section_id = 0; section_id < FVM_N_ELEMENT_TYPES; section_id++) {
 
       section = sections[section_id];
-      if (section == NULL)
+      if (section == nullptr)
         continue;
 
       BFT_MALLOC(section->gc_id, section->n_elements, int);
 
-      if (section->parent_element_id != NULL) {
+      if (section->parent_element_id != nullptr) {
         for (face_id = 0; face_id < section->n_elements; face_id++) {
           int fl;
           cs_lnum_t _face_id = section->parent_element_id[face_id];

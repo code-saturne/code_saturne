@@ -119,7 +119,7 @@ _extrude_strided_section(fvm_nodal_section_t  * this_section,
   this_section->connectivity_size = connectivity_size;
   /* Replace old connectivity */
 
-  if (this_section->_vertex_num != NULL)
+  if (this_section->_vertex_num != nullptr)
     BFT_FREE(this_section->_vertex_num);
 
   this_section->_vertex_num = vertex_num;
@@ -134,17 +134,17 @@ _extrude_strided_section(fvm_nodal_section_t  * this_section,
 
   /* Remove old parent numbering */
 
-  this_section->parent_element_id = NULL;
-  if (this_section->_parent_element_id != NULL)
+  this_section->parent_element_id = nullptr;
+  if (this_section->_parent_element_id != nullptr)
     BFT_FREE(this_section->_parent_element_id);
 
   /* Update global_numbering */
 
-  if (this_section->global_element_num != NULL) {
+  if (this_section->global_element_num != nullptr) {
 
     /* Create new global numbering */
 
-    cs_gnum_t   *global_element_num = NULL;
+    cs_gnum_t   *global_element_num = nullptr;
 
     const cs_gnum_t *old_global_element_num
       = fvm_io_num_get_global_num(this_section->global_element_num);
@@ -161,7 +161,7 @@ _extrude_strided_section(fvm_nodal_section_t  * this_section,
     /* Remplace old global number with new */
 
     fvm_io_num_destroy(this_section->global_element_num);
-    this_section->global_element_num = fvm_io_num_create(NULL,
+    this_section->global_element_num = fvm_io_num_create(nullptr,
                                                          global_element_num,
                                                          n_elements * n_layers,
                                                          0);
@@ -213,7 +213,7 @@ _extrude_strided_section(fvm_nodal_section_t  * this_section,
  *                         size: mesh_spatial_dim . n_vertices
  *   distribution      <-> optional distribution of resulting vertices
  *                         along each extrusion vector (size: n_layers + 1)
- *                         with values ranging from 0 to 1, or NULL for
+ *                         with values ranging from 0 to 1, or nullptr for
  *                         a regular distribution.
  *----------------------------------------------------------------------------*/
 
@@ -225,15 +225,15 @@ fvm_nodal_extrude(fvm_nodal_t        *this_nodal,
 {
   cs_lnum_t   n_vertices;
   cs_lnum_t   vertex_shift;
-  cs_coord_t  *_distrib = NULL;
-  cs_coord_t  *new_coords = NULL;
+  cs_coord_t  *_distrib = nullptr;
+  cs_coord_t  *new_coords = nullptr;
 
   const cs_lnum_t   n_planes = n_layers + 1;
   const cs_coord_t  *distrib = distribution;
-  const cs_coord_t  *old_coords = NULL;
+  const cs_coord_t  *old_coords = nullptr;
 
-  assert(this_nodal != NULL);
-  assert(extrusion_vectors != NULL || this_nodal->n_vertices == 0);
+  assert(this_nodal != nullptr);
+  assert(extrusion_vectors != nullptr || this_nodal->n_vertices == 0);
 
   cs_lnum_t dim = this_nodal->dim;
 
@@ -251,7 +251,7 @@ fvm_nodal_extrude(fvm_nodal_t        *this_nodal,
 
   /* Set distribution if necessary */
 
-  if (distribution == NULL) {
+  if (distribution == nullptr) {
     BFT_MALLOC(_distrib, n_planes, cs_coord_t);
     for (cs_lnum_t i = 0; i < n_planes; i++)
       _distrib[i] = ((double)i) / ((double)n_layers);
@@ -265,7 +265,7 @@ fvm_nodal_extrude(fvm_nodal_t        *this_nodal,
 
   BFT_MALLOC(new_coords, n_planes*n_vertices*dim, cs_coord_t);
 
-  if (this_nodal->_parent_vertex_id != NULL) {
+  if (this_nodal->_parent_vertex_id != nullptr) {
 
     for (cs_lnum_t i = 0; i < n_vertices; i++) {
       const double *_old_coords
@@ -298,23 +298,23 @@ fvm_nodal_extrude(fvm_nodal_t        *this_nodal,
 
   /* Replace old coords with new */
 
-  if (this_nodal->_vertex_coords != NULL)
+  if (this_nodal->_vertex_coords != nullptr)
     BFT_FREE(this_nodal->_vertex_coords);
 
   this_nodal->_vertex_coords = new_coords;
   this_nodal->vertex_coords = this_nodal->_vertex_coords;
 
-  this_nodal->parent_vertex_id = NULL;
-  if (this_nodal->_parent_vertex_id != NULL)
+  this_nodal->parent_vertex_id = nullptr;
+  if (this_nodal->_parent_vertex_id != nullptr)
     BFT_FREE(this_nodal->_parent_vertex_id);
 
   /* Update global numbering */
 
-  if (this_nodal->global_vertex_num != NULL) {
+  if (this_nodal->global_vertex_num != nullptr) {
 
     /* Create new global numbering */
 
-    cs_gnum_t   *global_vertex_num = NULL;
+    cs_gnum_t   *global_vertex_num = nullptr;
 
     const cs_gnum_t *old_global_vertex_num
       = fvm_io_num_get_global_num(this_nodal->global_vertex_num);
@@ -331,7 +331,7 @@ fvm_nodal_extrude(fvm_nodal_t        *this_nodal,
     /* Remplace old global number with new */
 
     fvm_io_num_destroy(this_nodal->global_vertex_num);
-    this_nodal->global_vertex_num = fvm_io_num_create(NULL,
+    this_nodal->global_vertex_num = fvm_io_num_create(nullptr,
                                                       global_vertex_num,
                                                       n_vertices * n_planes,
                                                       0);

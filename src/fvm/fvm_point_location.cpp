@@ -234,7 +234,7 @@ _within_extents(int               dim,
  * parameters:
  *   dim              <-- spatial (coordinates) dimension
  *   vertex_id        <-- vertex index (0 to n-1)
- *   parent_vertex_id <-- pointer to parent vertex ids (or NULL)
+ *   parent_vertex_id <-- pointer to parent vertex ids (or nullptr)
  *   vertex_coords    <-- pointer to vertex coordinates
  *   elt_extents      <-> extents associated with element:
  *                        x_min, y_min, ..., x_max, y_max, ... (size: 2*dim)
@@ -252,7 +252,7 @@ _update_elt_extents(int                dim,
 {
   cs_lnum_t   i, coord_idx;
 
-  if (parent_vertex_id == NULL)
+  if (parent_vertex_id == nullptr)
     coord_idx = vertex_id;
   else
     coord_idx = parent_vertex_id[vertex_id];
@@ -349,7 +349,7 @@ _point_extents(const int           dim,
 
   /* Compute extents */
 
-  if (point_index != NULL) {
+  if (point_index != nullptr) {
 
     for (j = 0; j < n_points; j++) {
       coord_idx = point_index[j] - 1;
@@ -383,7 +383,7 @@ _point_extents(const int           dim,
  *
  * parameters:
  *   elt_num         <-- number of element corresponding to extents
- *   elt_tag         <-- pointer to element tag, or NULL
+ *   elt_tag         <-- pointer to element tag, or nullptr
  *   extents         <-> extents associated with element:
  *                       x_min, x_max (size: 2)
  *   n_points        <-- number of points to locate
@@ -413,7 +413,7 @@ _locate_by_extents_1d(cs_lnum_t         elt_num,
 
   for (i = 0; i < n_points; i++) {
 
-    if (elt_tag != NULL && point_tag != NULL)
+    if (elt_tag != nullptr && point_tag != nullptr)
       if (*elt_tag == point_tag[i])
         continue;
 
@@ -698,7 +698,7 @@ _build_octree(cs_lnum_t         n_points,
   cs_lnum_t point_range[2];
   _octree_t _octree;
 
-  cs_lnum_t *point_ids_tmp = NULL;
+  cs_lnum_t *point_ids_tmp = nullptr;
 
   /* Initialization */
 
@@ -708,14 +708,14 @@ _build_octree(cs_lnum_t         n_points,
   _octree.n_points = n_points;
   _octree.n_nodes = 0;
   _octree.n_nodes_max = 0;
-  _octree.nodes = NULL;
-  _octree.point_ids = NULL;
+  _octree.nodes = nullptr;
+  _octree.point_ids = nullptr;
 
   if (n_points > 0) {
 
     _point_extents(3,
                    n_points,
-                   NULL,
+                   nullptr,
                    point_coords,
                    _octree.extents);
 
@@ -1074,7 +1074,7 @@ _build_quadtree(cs_lnum_t         n_points,
   cs_lnum_t point_range[2];
   _quadtree_t _quadtree;
 
-  cs_lnum_t *point_ids_tmp = NULL;
+  cs_lnum_t *point_ids_tmp = nullptr;
 
   /* Initialization */
 
@@ -1084,14 +1084,14 @@ _build_quadtree(cs_lnum_t         n_points,
   _quadtree.n_points = n_points;
   _quadtree.n_nodes = 0;
   _quadtree.n_nodes_max = 0;
-  _quadtree.nodes = NULL;
-  _quadtree.point_ids = NULL;
+  _quadtree.nodes = nullptr;
+  _quadtree.point_ids = nullptr;
 
   if (n_points > 0) {
 
     _point_extents(2,
                    n_points,
-                   NULL,
+                   nullptr,
                    point_coords,
                    _quadtree.extents);
 
@@ -1295,7 +1295,7 @@ _ignore_same_tag(int                tag,
  * parameters:
  *   elt_num             <-- number of element corresponding to extents
  *   element_vertex_num  <-- element vertex numbers
- *   parent_vertex_id    <-- pointer to parent vertex numbers (or NULL)
+ *   parent_vertex_id    <-- pointer to parent vertex numbers (or nullptr)
  *   vertex_coords       <-- pointer to vertex coordinates
  *   point_coords        <-- point coordinates
  *   n_points_in_extents <-- number of points in extents
@@ -1328,7 +1328,7 @@ _locate_on_edge_3d(cs_lnum_t           elt_num,
 
   /* vertex index of the edge studied */
 
-  if (parent_vertex_id == NULL) {
+  if (parent_vertex_id == nullptr) {
     coord_idx_0 = element_vertex_num[0] - 1;
     coord_idx_1 = element_vertex_num[1] - 1;
   }
@@ -1403,7 +1403,7 @@ _locate_on_edge_3d(cs_lnum_t           elt_num,
  * parameters:
  *   elt_num             <-- number of element corresponding to extents
  *   element_vertex_num  <-- element vertex numbers
- *   parent_vertex_id    <-- pointer to parent vertex ids (or NULL)
+ *   parent_vertex_id    <-- pointer to parent vertex ids (or nullptr)
  *   vertex_coords       <-- pointer to vertex coordinates
  *   point_coords        <-- point coordinates
  *   n_points_in_extent  <-- number of points in extents
@@ -1438,7 +1438,7 @@ _locate_on_edge_2d(cs_lnum_t           elt_num,
 
   /* vertex index of the edge studied */
 
-  if (parent_vertex_id == NULL) {
+  if (parent_vertex_id == nullptr) {
     coord_idx_0 = element_vertex_num[0] - 1;
     coord_idx_1 = element_vertex_num[1] - 1;
   }
@@ -1518,7 +1518,7 @@ _locate_on_edge_2d(cs_lnum_t           elt_num,
  *   elt_num             <-- number of element corresponding to extents
  *   n_triangles         <-- number of triangles
  *   triangle_vertices   <-- triangles connectivity; size: 2 * 3
- *   parent_vertex_id    <-- pointer to parent vertex ids (or NULL)
+ *   parent_vertex_id    <-- pointer to parent vertex ids (or nullptr)
  *   vertex_coords       <-- pointer to vertex coordinates
  *   point_coords        <-- point coordinates
  *   n_points_in_extents <-- number of points in extents
@@ -1558,7 +1558,7 @@ _locate_on_triangles_3d(cs_lnum_t           elt_num,
 
     /* vertex index of the triangle studied */
 
-    if (parent_vertex_id == NULL) {
+    if (parent_vertex_id == nullptr) {
       coord_idx_0 = triangle_vertices[tria_id*3]     - 1;
       coord_idx_1 = triangle_vertices[tria_id*3 + 1] - 1;
       coord_idx_2 = triangle_vertices[tria_id*3 + 2] - 1;
@@ -1673,7 +1673,7 @@ _locate_on_triangles_3d(cs_lnum_t           elt_num,
  *   elt_num             <-- number of element corresponding to extents
  *   n_triangles         <-- number of triangles
  *   triangle_vertices   <-- triangles connectivity; size: 2 * 3
- *   parent_vertex_id    <-- pointer to parent vertex numbers (or NULL)
+ *   parent_vertex_id    <-- pointer to parent vertex numbers (or nullptr)
  *   vertex_coords       <-- pointer to vertex coordinates
  *   point_coords        <-- point coordinates
  *   n_points_in_extent  <-- number of points in extents
@@ -1713,7 +1713,7 @@ _locate_on_triangles_2d(cs_lnum_t           elt_num,
 
     /* vertex index of the triangle studied */
 
-    if (parent_vertex_id == NULL) {
+    if (parent_vertex_id == nullptr) {
       coord_idx_0 = triangle_vertices[tria_id*3]     - 1;
       coord_idx_1 = triangle_vertices[tria_id*3 + 1] - 1;
       coord_idx_2 = triangle_vertices[tria_id*3 + 2] - 1;
@@ -1975,7 +1975,7 @@ _compute_shapef_3d(fvm_element_t  elt_type,
     shapef[6] = uvw[0] * uvw[1] * uvw[2];
     shapef[7] = (1.0 - uvw[0]) * uvw[1] * uvw[2];
 
-    if (deriv != NULL) {
+    if (deriv != nullptr) {
       deriv[0][0] = -(1.0 - uvw[1]) * (1.0 - uvw[2]);
       deriv[0][1] = -(1.0 - uvw[0]) * (1.0 - uvw[2]);
       deriv[0][2] = -(1.0 - uvw[0]) * (1.0 - uvw[1]);
@@ -2013,7 +2013,7 @@ _compute_shapef_3d(fvm_element_t  elt_type,
     shapef[4] = uvw[0] * uvw[2];
     shapef[5] = uvw[1] * uvw[2];
 
-    if (deriv != NULL) {
+    if (deriv != nullptr) {
       deriv[0][0] = -(1.0 - uvw[2]);
       deriv[0][1] = -(1.0 - uvw[2]);
       deriv[0][2] = -(1.0 - uvw[0] - uvw[1]);
@@ -2044,7 +2044,7 @@ _compute_shapef_3d(fvm_element_t  elt_type,
     shapef[3] = (1.0 - uvw[0]) * uvw[1] * (1.0 - uvw[2]);
     shapef[4] = uvw[2];
 
-    if (deriv != NULL) {
+    if (deriv != nullptr) {
       deriv[0][0] = -(1.0 - uvw[1]) * (1.0 - uvw[2]);
       deriv[0][1] = -(1.0 - uvw[0]) * (1.0 - uvw[2]);
       deriv[0][2] = -(1.0 - uvw[0]) * (1.0 - uvw[1]);
@@ -2164,7 +2164,7 @@ _compute_uvw(fvm_element_t      elt_type,
  *   elt_num             <-- element number
  *   elt_type            <-- type of element
  *   element_vertex_num  <-- element vertex numbers
- *   parent_vertex_id    <-- pointer to parent vertex ids (or NULL)
+ *   parent_vertex_id    <-- pointer to parent vertex ids (or nullptr)
  *   vertex_coords[]     <-- pointer to vertex coordinates
  *   point_coords        <-- point coordinates
  *   n_points_in_extents <-- number of points in element extents
@@ -2202,7 +2202,7 @@ _locate_in_cell_3d(cs_lnum_t          elt_num,
 
   for (vertex_id = 0; vertex_id < n_vertices; vertex_id++) {
 
-    if (parent_vertex_id == NULL)
+    if (parent_vertex_id == nullptr)
       coord_idx = element_vertex_num[vertex_id] -1;
     else
       coord_idx = parent_vertex_id[element_vertex_num[vertex_id] - 1];
@@ -2260,7 +2260,7 @@ _locate_in_cell_3d(cs_lnum_t          elt_num,
 
         else {
 
-          _compute_shapef_3d(elt_type, uvw, shapef, NULL);
+          _compute_shapef_3d(elt_type, uvw, shapef, nullptr);
 
           for (j = 0; j < n_vertices; j++){
 
@@ -2298,7 +2298,7 @@ _locate_in_cell_3d(cs_lnum_t          elt_num,
  *
  * parameters:
  *   this_section      <-- pointer to mesh section representation structure
- *   parent_vertex_id  <-- pointer to parent vertex ids (or NULL)
+ *   parent_vertex_id  <-- pointer to parent vertex ids (or nullptr)
  *   vertex_coords     <-- pointer to vertex coordinates
  *   tolerance         <-- addition to local extents of each element:
  *                         extent =   base_extent * (1 + tolerance[1])
@@ -2341,10 +2341,10 @@ _polyhedra_section_locate(const fvm_nodal_section_t  *this_section,
 
   cs_lnum_t n_vertices_max = 0;
   cs_lnum_t n_points_in_extents = 0;
-  cs_lnum_t *triangle_vertices = NULL;
-  fvm_triangulate_state_t *state = NULL;
+  cs_lnum_t *triangle_vertices = nullptr;
+  fvm_triangulate_state_t *state = nullptr;
 
-  assert(this_section->face_index != NULL);
+  assert(this_section->face_index != nullptr);
 
   /* Return immediately if nothing to do for this rank */
 
@@ -2396,7 +2396,7 @@ _polyhedra_section_locate(const fvm_nodal_section_t  *this_section,
     _elt_extents_finalize(3, 3, tolerance, elt_extents);
 
     if (base_element_num < 0) {
-      if (this_section->parent_element_id != NULL)
+      if (this_section->parent_element_id != nullptr)
         elt_num = this_section->parent_element_id[i] + 1;
       else
         elt_num = i + 1;
@@ -2410,7 +2410,7 @@ _polyhedra_section_locate(const fvm_nodal_section_t  *this_section,
                   &n_points_in_extents,
                   points_in_extents);
 
-    if (this_section->tag != NULL && point_tag != NULL)
+    if (this_section->tag != nullptr && point_tag != nullptr)
       _ignore_same_tag(this_section->tag[i],
                        point_tag,
                        &n_points_in_extents,
@@ -2479,7 +2479,7 @@ _polyhedra_section_locate(const fvm_nodal_section_t  *this_section,
         cs_lnum_t l, coord_id[3];
         cs_coord_t tetra_coords[4][3];
 
-        if (parent_vertex_id == NULL) {
+        if (parent_vertex_id == nullptr) {
           coord_id[0] = triangle_vertices[k*3    ] - 1;
           coord_id[1] = triangle_vertices[k*3 + 2] - 1;
           coord_id[2] = triangle_vertices[k*3 + 1] - 1;
@@ -2533,7 +2533,7 @@ _polyhedra_section_locate(const fvm_nodal_section_t  *this_section,
  *
  * parameters:
  *   this_section      <-- pointer to mesh section representation structure
- *   parent_vertex_id  <-- pointer to parent vertex numbers (or NULL)
+ *   parent_vertex_id  <-- pointer to parent vertex numbers (or nullptr)
  *   vertex_coords     <-- pointer to vertex coordinates
  *   tolerance         <-- addition to local extents of each element:
  *                         extent =   base_extent * (1 + tolerance[1])
@@ -2574,8 +2574,8 @@ _polygons_section_locate_3d(const fvm_nodal_section_t   *this_section,
   int n_vertices_max = 0;
   cs_lnum_t n_points_in_extents = 0;
 
-  cs_lnum_t *triangle_vertices = NULL;
-  fvm_triangulate_state_t *state = NULL;
+  cs_lnum_t *triangle_vertices = nullptr;
+  fvm_triangulate_state_t *state = nullptr;
 
   /* Return immediately if nothing to do for this rank */
 
@@ -2623,7 +2623,7 @@ _polygons_section_locate_3d(const fvm_nodal_section_t   *this_section,
     _elt_extents_finalize(3, 2, tolerance, elt_extents);
 
     if (base_element_num < 0) {
-      if (this_section->parent_element_id != NULL)
+      if (this_section->parent_element_id != nullptr)
         elt_num = this_section->parent_element_id[i] + 1;
       else
         elt_num = i + 1;
@@ -2637,7 +2637,7 @@ _polygons_section_locate_3d(const fvm_nodal_section_t   *this_section,
                   &n_points_in_extents,
                   points_in_extents);
 
-    if (this_section->tag != NULL && point_tag != NULL)
+    if (this_section->tag != nullptr && point_tag != nullptr)
       _ignore_same_tag(this_section->tag[i],
                        point_tag,
                        &n_points_in_extents,
@@ -2688,7 +2688,7 @@ _polygons_section_locate_3d(const fvm_nodal_section_t   *this_section,
  *
  * parameters:
  *   this_section      <-- pointer to mesh section representation structure
- *   parent_vertex_id  <-- pointer to parent vertex ids (or NULL)
+ *   parent_vertex_id  <-- pointer to parent vertex ids (or nullptr)
  *   vertex_coords     <-- pointer to vertex coordinates
  *   tolerance         <-- addition to local extents of each element:
  *                         extent =   base_extent * (1 + tolerance[1])
@@ -2769,7 +2769,7 @@ _nodal_section_locate_3d(const fvm_nodal_section_t  *this_section,
       bool elt_initialized = false;
 
       if (base_element_num < 0) {
-        if (this_section->parent_element_id != NULL)
+        if (this_section->parent_element_id != nullptr)
           elt_num = this_section->parent_element_id[i] + 1;
         else
           elt_num = i + 1;
@@ -2801,7 +2801,7 @@ _nodal_section_locate_3d(const fvm_nodal_section_t  *this_section,
                     &n_points_in_extents,
                     points_in_extents);
 
-      if (this_section->tag != NULL && point_tag != NULL)
+      if (this_section->tag != nullptr && point_tag != nullptr)
         _ignore_same_tag(this_section->tag[i],
                          point_tag,
                          &n_points_in_extents,
@@ -2887,7 +2887,7 @@ _nodal_section_locate_3d(const fvm_nodal_section_t  *this_section,
  *
  * parameters:
  *   this_section      <-- pointer to mesh section representation structure
- *   parent_vertex_id  <-- pointer to parent vertex ids (or NULL)
+ *   parent_vertex_id  <-- pointer to parent vertex ids (or nullptr)
  *   vertex_coords     <-- pointer to vertex coordinates
  *   tolerance         <-- addition to local extents of each element:
  *                         extent =   base_extent * (1 + tolerance[1])
@@ -2928,7 +2928,7 @@ _nodal_section_locate_2d(const fvm_nodal_section_t  *this_section,
   int n_vertices_max = 0;
   cs_lnum_t n_points_in_extents = 0;
   cs_lnum_t *triangle_vertices = _triangle_vertices;
-  fvm_triangulate_state_t *state = NULL;
+  fvm_triangulate_state_t *state = nullptr;
 
   /* Return immediately if nothing to do for this rank */
 
@@ -3009,7 +3009,7 @@ _nodal_section_locate_2d(const fvm_nodal_section_t  *this_section,
                           elt_extents);
 
     if (base_element_num < 0) {
-      if (this_section->parent_element_id != NULL)
+      if (this_section->parent_element_id != nullptr)
         elt_num = this_section->parent_element_id[i] + 1;
       else
         elt_num = i + 1;
@@ -3023,7 +3023,7 @@ _nodal_section_locate_2d(const fvm_nodal_section_t  *this_section,
                     &n_points_in_extents,
                     points_in_extents);
 
-    if (this_section->tag != NULL && point_tag != NULL)
+    if (this_section->tag != nullptr && point_tag != nullptr)
       _ignore_same_tag(this_section->tag[i],
                        point_tag,
                        &n_points_in_extents,
@@ -3118,7 +3118,7 @@ _nodal_section_locate_2d(const fvm_nodal_section_t  *this_section,
   if (triangle_vertices != _triangle_vertices)
     BFT_FREE(triangle_vertices);
 
-  if (state != NULL)
+  if (state != nullptr)
     state = fvm_triangulate_state_destroy(state);
 }
 
@@ -3130,7 +3130,7 @@ _nodal_section_locate_2d(const fvm_nodal_section_t  *this_section,
  *
  * parameters:
  *   this_section      <-- pointer to mesh section representation structure
- *   parent_vertex_id  <-- pointer to parent vertex ids (or NULL)
+ *   parent_vertex_id  <-- pointer to parent vertex ids (or nullptr)
  *   vertex_coords     <-- pointer to vertex coordinates
  *   tolerance         <-- addition to local extents of each element:
  *                         extent =   base_extent * (1 + tolerance[1])
@@ -3166,12 +3166,12 @@ _nodal_section_locate_1d(const fvm_nodal_section_t  *this_section,
   cs_coord_t  edge_coords[2];
   double delta, elt_extents[2];
 
-  int *elt_tag = NULL;
+  int *elt_tag = nullptr;
 
   for (i = 0; i < this_section->n_elements; i++) {
 
     if (base_element_num < 0) {
-      if (this_section->parent_element_id != NULL)
+      if (this_section->parent_element_id != nullptr)
         elt_num = this_section->parent_element_id[i] + 1;
       else
         elt_num = i + 1;
@@ -3183,7 +3183,7 @@ _nodal_section_locate_1d(const fvm_nodal_section_t  *this_section,
 
       vertex_id = this_section->vertex_num[i*this_section->stride + j] - 1;
 
-      if (parent_vertex_id == NULL)
+      if (parent_vertex_id == nullptr)
         edge_coords[j] = vertex_coords[vertex_id];
       else
         edge_coords[j] = vertex_coords[parent_vertex_id[vertex_id]];
@@ -3204,7 +3204,7 @@ _nodal_section_locate_1d(const fvm_nodal_section_t  *this_section,
     elt_extents[0] -= delta;
     elt_extents[1] += delta;
 
-    if (this_section->tag != NULL)
+    if (this_section->tag != nullptr)
       elt_tag = this_section->tag + i;
 
     _locate_by_extents_1d(elt_num,
@@ -3266,11 +3266,11 @@ fvm_point_location_nodal(const fvm_nodal_t  *this_nodal,
   int i;
   int max_entity_dim;
   cs_lnum_t    base_element_num;
-  cs_lnum_t   *points_in_extents = NULL;
+  cs_lnum_t   *points_in_extents = nullptr;
 
   double tolerance[2] = {tolerance_base, tolerance_fraction};
 
-  if (this_nodal == NULL)
+  if (this_nodal == nullptr)
     return;
 
   if (locate_on_parents == 1)
@@ -3424,12 +3424,12 @@ fvm_point_location_closest_vertex(const fvm_nodal_t  *this_nodal,
                                   cs_lnum_t           located_ent_num[],
                                   cs_lnum_t           located_vtx_num[])
 {
-  if (this_nodal == NULL || n_points == 0)
+  if (this_nodal == nullptr || n_points == 0)
     return;
 
   /* Sanity checks */
-  assert(   point_coords != NULL
-         && located_ent_num != NULL && located_vtx_num != NULL);
+  assert(   point_coords != nullptr
+         && located_ent_num != nullptr && located_vtx_num != nullptr);
   assert(this_nodal->dim == 3);
 
   if (this_nodal->dim != 3)
@@ -3446,8 +3446,8 @@ fvm_point_location_closest_vertex(const fvm_nodal_t  *this_nodal,
     if (this_nodal->sections[i]->entity_dim == max_entity_dim)
       n_max_dim_sections++;
 
-  size_t  *section_index = NULL;
-  int  *section_list = NULL;
+  size_t  *section_index = nullptr;
+  int  *section_list = nullptr;
 
   BFT_MALLOC(section_index, n_max_dim_sections + 1, size_t);
   BFT_MALLOC(section_list, n_max_dim_sections, int);
@@ -3569,7 +3569,7 @@ fvm_point_location_closest_vertex(const fvm_nodal_t  *this_nodal,
       located_vtx_num[p_id] = chosen_id + 1;
 
       if (locate_on_parents) {
-        if (section->parent_element_id != NULL)
+        if (section->parent_element_id != nullptr)
           located_ent_num[p_id] = section->parent_element_id[elt_id] + 1;
         else
           located_ent_num[p_id] = elt_id + 1;
@@ -3581,7 +3581,7 @@ fvm_point_location_closest_vertex(const fvm_nodal_t  *this_nodal,
 
   /* Apply parent_vertex_id if needed */
   if (locate_on_parents == 1) {
-    if (this_nodal->parent_vertex_id != NULL) {
+    if (this_nodal->parent_vertex_id != nullptr) {
       for (int p_id = 0; p_id < n_points; p_id++) {
         const cs_lnum_t  prev_id = located_vtx_num[p_id] - 1;
         if (prev_id > -1)

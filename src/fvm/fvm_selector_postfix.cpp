@@ -173,9 +173,9 @@ typedef struct {
   int     n_tokens;               /* Number of tokens in expression */
   int    *infix_id;               /* Starting id in infix for each token */
   int    *token_id;               /* Starting id for each token */
-  bool   *protected;              /* Indicates if a token was protected
-                                     by quotes or a backslash character
-                                     (and thus cannot be a keyword) */
+  bool   *is_protected;           /* Indicates if a token was protected
+                                  by quotes or a backslash character
+                                  (and thus cannot be a keyword) */
 
   int     size;                   /* Current string size */
   int     max_size;               /* Maximum string size */
@@ -271,7 +271,7 @@ struct _fvm_selector_postfix_t {
 /* Reference count and pointer to global parser object */
 
 static int _n_parser_references = 0;
-static _parser_t *_parser = NULL;
+static _parser_t *_parser = nullptr;
 
 /* Compute sizes so as to have aligned data */
 
@@ -318,7 +318,7 @@ _add_operator(_parser_t          *this_parser,
 
   /* Initial checks */
 
-  assert(this_parser != NULL);
+  assert(this_parser != nullptr);
   assert(n_keywords > 0);
 
   /* Resize structures */
@@ -414,21 +414,21 @@ _parser_create(void)
   const char *kw_ge[] = {">="};
   const char *kw_le[] = {"<="};
 
-  _parser_t *p = NULL;
+  _parser_t *p = nullptr;
 
   /* Create base structure */
 
   BFT_MALLOC(p, 1, _parser_t);
 
   p->n_operators = 0;
-  p->operators = NULL;
+  p->operators = nullptr;
 
   p->n_keywords = 0;
-  p->keyword_op_id = NULL;
-  p->keyword = NULL;
+  p->keyword_op_id = nullptr;
+  p->keyword = nullptr;
 
   p->keywords_size = 0;
-  p->keywords = NULL;
+  p->keywords = nullptr;
 
   /* Add operator definitions */
 
@@ -478,7 +478,7 @@ _parser_create(void)
 static void
 _parser_destroy(_parser_t  **this_parser)
 {
-  if (*this_parser != NULL) {
+  if (*this_parser != nullptr) {
 
     BFT_FREE((*this_parser)->operators);
     BFT_FREE((*this_parser)->keyword_op_id);
@@ -505,7 +505,7 @@ _parser_dump(const _parser_t  *this_parser)
   const char *type_name[] = {"(", ")", "unary", "binary", "function",
                              "coord condition", "definition", "math_func"};
 
-  if (this_parser == NULL)
+  if (this_parser == nullptr)
     return;
 
   /* Global indicators */
@@ -559,46 +559,46 @@ static _tokenized_t
 _tokenize(const char  *infix)
 {
   int i, l, tok_len, start_quote_id;
-  int  protected; /* 0 for unprotected, 1 for protected char, 2 for substring,
-                     3 for protected char in substring */
+  int is_protected; /* 0 for unprotected, 1 for protected char, 2 for substring,
+                    3 for protected char in substring */
 
   _tokenized_t te;
 
   /* Initialization */
 
   te.n_tokens = 0;
-  te.infix_id = NULL;
-  te.token_id = NULL;
-  te.protected = NULL;
+  te.infix_id = nullptr;
+  te.token_id = nullptr;
+  te.is_protected = nullptr;
 
   te.size = 0;
   te.max_size = 0;
-  te.tokens = NULL;
+  te.tokens = nullptr;
 
-  if (infix == NULL)
+  if (infix == nullptr)
     return te;
 
   /* Allocate tokenization structure */
 
   l = strlen(infix);
 
-  te.max_size = l*2 + 1; /* Allows for insertion of NULL chars after
+  te.max_size = l*2 + 1; /* Allows for insertion of nullptr chars after
                             each character (worst case), so no size
                             increase will be necessary */
 
   BFT_MALLOC(te.infix_id, l, int);
   BFT_MALLOC(te.token_id, l, int);
-  BFT_MALLOC(te.protected, l, bool);
+  BFT_MALLOC(te.is_protected, l, bool);
   BFT_MALLOC(te.tokens, te.max_size, char);
 
   for (i = 0; i < l; i++)
-    te.protected[i] = false;
+    te.is_protected[i] = false;
 
   i = 0;                 /* String position marker */
   start_quote_id = l;    /* Start position marker for quoted strings
                             (unset if j == j, set if j < l) */
 
-  protected = 0;
+  is_protected = 0;
   tok_len = 0;
 
   while (i < l) {
@@ -607,21 +607,20 @@ _tokenize(const char  *infix)
 
     /* Regular case, where previous character was not protected */
 
-    if (protected == 0) {
-
+    if (is_protected == 0) {
       /* Protection character */
 
       if (c == '\\') {
-        protected = 1;
-        te.protected[te.n_tokens] = true;
+        is_protected                 = 1;
+        te.is_protected[te.n_tokens] = true;
       }
 
       /* Fully protected string */
 
       else if (c == '"' || c == '\'') {
-        protected = 2;
+        is_protected                 = 2;
         start_quote_id = i;
-        te.protected[te.n_tokens] = true;
+        te.is_protected[te.n_tokens] = true;
       }
 
       /* Whitespace */
@@ -688,32 +687,28 @@ _tokenize(const char  *infix)
           te.infix_id[te.n_tokens] = i;
         tok_len++;
       }
-
     }
 
     /* Cases where previous character was protected */
 
-    else if (protected == 1) {
-
-      protected = 0;
+    else if (is_protected == 1) {
+      is_protected                 = 0;
       te.tokens[te.size + tok_len] = infix[i];
       if (tok_len == 0)
         te.infix_id[te.n_tokens] = i;
       tok_len++;
-
     }
 
-    else if (protected == 2) {
-
+    else if (is_protected == 2) {
       /* Single protection character */
 
       if (c == '\\')
-        protected = 3;
+        is_protected = 3;
 
       /* End of string protection */
 
       else if (c == infix[start_quote_id]) {
-        protected = 0;
+        is_protected   = 0;
         start_quote_id = l;
       }
 
@@ -723,7 +718,6 @@ _tokenize(const char  *infix)
           te.infix_id[te.n_tokens] = i;
         tok_len++;
       }
-
     }
 
     else { /* if (protected == 3) */
@@ -732,41 +726,45 @@ _tokenize(const char  *infix)
       if (tok_len == 0)
         te.infix_id[te.n_tokens] = i;
       tok_len++;
-      protected = 2;
-
+      is_protected = 2;
     }
 
-    i+= 1;
+    i += 1;
 
   } /* End of loop in infix string characters */
 
   if (tok_len > 0) { /* Finish previous token */
-    te.token_id[te.n_tokens] = te.size;
+    te.token_id[te.n_tokens]     = te.size;
     te.tokens[te.size + tok_len] = '\0';
     te.n_tokens += 1;
-    te.size += tok_len+1;
+    te.size += tok_len + 1;
     tok_len = 0;
   }
 
-  if (protected == 1)
-    bft_error(__FILE__, __LINE__, 0,
+  if (is_protected == 1)
+    bft_error(__FILE__,
+              __LINE__,
+              0,
               _("Error tokenizing expression:\n"
                 "%s\n"
                 "Missing character after \\\n"),
               infix);
-  else if (protected >= 2)
-    bft_error(__FILE__, __LINE__, 0,
+  else if (is_protected >= 2)
+    bft_error(__FILE__,
+              __LINE__,
+              0,
               _("Error tokenizing expression:\n"
                 "%s\n"
                 "Missing closing quote for subexpression:\n"
                 "%s\n"),
-              infix, infix + start_quote_id);
+              infix,
+              infix + start_quote_id);
 
   /* Resize to adjusted size */
 
   BFT_REALLOC(te.infix_id, te.n_tokens, int);
   BFT_REALLOC(te.token_id, te.n_tokens, int);
-  BFT_REALLOC(te.protected, te.n_tokens, bool);
+  BFT_REALLOC(te.is_protected, te.n_tokens, bool);
   BFT_REALLOC(te.tokens, te.size, char);
 
   /* Return tokenization structure */
@@ -782,14 +780,14 @@ _tokenize(const char  *infix)
  *----------------------------------------------------------------------------*/
 
 static void
-_empty_tokenized(_tokenized_t  *te)
+_empty_tokenized(_tokenized_t *te)
 {
   te->n_tokens = 0;
-  te->size = 0;
+  te->size     = 0;
   te->max_size = 0;
   BFT_FREE(te->infix_id);
   BFT_FREE(te->token_id);
-  BFT_FREE(te->protected);
+  BFT_FREE(te->is_protected);
   BFT_FREE(te->tokens);
 }
 
@@ -802,8 +800,7 @@ _empty_tokenized(_tokenized_t  *te)
  *----------------------------------------------------------------------------*/
 
 static void
-_dump_tokenized(const char          *infix,
-                const _tokenized_t   te)
+_dump_tokenized(const char *infix, const _tokenized_t te)
 {
   int i;
 
@@ -811,12 +808,13 @@ _dump_tokenized(const char          *infix,
              "Tokenization:\n\n"
              "Infix:\n%s\n"
              "Tokens: %d\n",
-             infix, te.n_tokens);
+             infix,
+             te.n_tokens);
 
   for (i = 0; i < te.n_tokens; i++) {
     bft_printf("  %3d: %-20s", i, te.tokens + te.token_id[i]);
     bft_printf(" (%d bytes from infix start", te.infix_id[i]);
-    if (te.protected[i] != 0)
+    if (te.is_protected[i] != 0)
       bft_printf(", protected)\n");
     else
       bft_printf(")\n");
@@ -833,7 +831,7 @@ _dump_tokenized(const char          *infix,
 static void
 _stack_initialize(_stack_t *stack)
 {
-  stack->size = 0;
+  stack->size     = 0;
   stack->max_size = BASE_STACK_SIZE;
   stack->elements = stack->_elements;
 }
@@ -848,7 +846,7 @@ _stack_initialize(_stack_t *stack)
 static void
 _stack_empty(_stack_t *stack)
 {
-  stack->size = 0;
+  stack->size     = 0;
   stack->max_size = BASE_STACK_SIZE;
   if (stack->elements != stack->_elements) {
     BFT_FREE(stack->elements);
@@ -865,22 +863,21 @@ _stack_empty(_stack_t *stack)
  *   token_id <-- associated token id
  *----------------------------------------------------------------------------*/
 
-
 inline static void
-_stack_push(_stack_t           *stack,
-            const _operator_t  *op,
-            int                 token_id)
+_stack_push(_stack_t *stack, const _operator_t *op, int token_id)
 {
-  _stack_entry_t  *e;
+  _stack_entry_t *e;
 
-  assert(stack != NULL);
+  assert(stack != nullptr);
 
-  if (stack->size >=  stack->max_size) {
+  if (stack->size >= stack->max_size) {
     stack->max_size *= 2;
     if (stack->max_size > BASE_STACK_SIZE) {
       if (stack->elements == stack->_elements) {
         BFT_MALLOC(stack->elements, stack->max_size, _stack_entry_t);
-        memcpy(stack->elements, stack->_elements, stack->size*sizeof(_stack_entry_t));
+        memcpy(stack->elements,
+               stack->_elements,
+               stack->size * sizeof(_stack_entry_t));
       }
       else
         BFT_REALLOC(stack->elements, stack->max_size, _stack_entry_t);
@@ -889,7 +886,7 @@ _stack_push(_stack_t           *stack,
 
   e = stack->elements + stack->size;
 
-  e->op = op;
+  e->op       = op;
   e->token_id = token_id;
 
   stack->size++;
@@ -900,19 +897,21 @@ _stack_push(_stack_t           *stack,
  *
  * parameters:
  *   stack <-> stack
- *   id    --> optional id associated with value, or NULL
+ *   id    --> optional id associated with value, or nullptr
  *
  * returns:
  *   the value on the top of the stack
  *----------------------------------------------------------------------------*/
 
 inline static _stack_entry_t
-_stack_pop(_stack_t  *stack)
+_stack_pop(_stack_t *stack)
 {
-  assert(stack != NULL);
+  assert(stack != nullptr);
 
   if (stack->size == 0)
-    bft_error(__FILE__, __LINE__, 0,
+    bft_error(__FILE__,
+              __LINE__,
+              0,
               _("Trying to pop an entry from empty stack."));
 
   return stack->elements[--(stack->size)];
@@ -929,7 +928,7 @@ _stack_pop(_stack_t  *stack)
  *----------------------------------------------------------------------------*/
 
 inline static size_t
-_stack_size(_stack_t  *stack)
+_stack_size(_stack_t *stack)
 {
   return stack->size;
 }
@@ -946,12 +945,14 @@ _stack_size(_stack_t  *stack)
  *----------------------------------------------------------------------------*/
 
 inline static const _operator_t *
-_stack_top(const _stack_t  *stack)
+_stack_top(const _stack_t *stack)
 {
-  assert(stack != NULL);
+  assert(stack != nullptr);
 
   if (stack->size == 0)
-    bft_error(__FILE__, __LINE__, 0,
+    bft_error(__FILE__,
+              __LINE__,
+              0,
               _("Querying a top value from empty stack."));
 
   return (stack->elements + stack->size - 1)->op;
@@ -970,26 +971,27 @@ _stack_top(const _stack_t  *stack)
 static fvm_selector_postfix_t *
 _postfix_create(const char *infix)
 {
-  size_t i;
-  size_t size = strlen(infix);
-  fvm_selector_postfix_t *pf = NULL;
+  size_t                  i;
+  size_t                  size = strlen(infix);
+  fvm_selector_postfix_t *pf   = nullptr;
 
   BFT_MALLOC(pf, 1, fvm_selector_postfix_t);
 
-  pf->coords_dependency = false;
+  pf->coords_dependency  = false;
   pf->normals_dependency = false;
 
-  pf->size = 0;
+  pf->size     = 0;
   pf->max_size = size * sizeof(size_t);
 
   BFT_MALLOC(pf->infix, size + 1, char);
   strcpy(pf->infix, infix);
 
   BFT_MALLOC(pf->elements, pf->max_size, unsigned char);
-  for (i = 0; i < pf->max_size; pf->elements[i++] = '\0');
+  for (i = 0; i < pf->max_size; pf->elements[i++] = '\0')
+    ;
 
   pf->n_missing_operands = 0;
-  pf->missing_operand = NULL;
+  pf->missing_operand    = nullptr;
 
   return pf;
 }
@@ -1006,8 +1008,7 @@ _postfix_destroy(fvm_selector_postfix_t **pf)
 {
   fvm_selector_postfix_t *_pf = *pf;
 
-  if (*pf != NULL) {
-
+  if (*pf != nullptr) {
     BFT_FREE(_pf->infix);
     BFT_FREE(_pf->elements);
 
@@ -1032,18 +1033,18 @@ _postfix_destroy(fvm_selector_postfix_t **pf)
  *----------------------------------------------------------------------------*/
 
 static void
-_postfix_grow(fvm_selector_postfix_t  *pf,
-              size_t                   new_size)
+_postfix_grow(fvm_selector_postfix_t *pf, size_t new_size)
 {
   size_t i;
   size_t old_max_size = pf->max_size;
-  if (old_max_size*2 > new_size)
+  if (old_max_size * 2 > new_size)
     pf->max_size *= 2;
   else
     pf->max_size = new_size;
 
   BFT_REALLOC(pf->elements, pf->max_size, unsigned char);
-  for (i = old_max_size; i < pf->max_size; pf->elements[i++] = '\0');
+  for (i = old_max_size; i < pf->max_size; pf->elements[i++] = '\0')
+    ;
 }
 
 /*----------------------------------------------------------------------------
@@ -1054,7 +1055,7 @@ _postfix_grow(fvm_selector_postfix_t  *pf,
  *----------------------------------------------------------------------------*/
 
 static void
-_postfix_adjust(fvm_selector_postfix_t  *pf)
+_postfix_adjust(fvm_selector_postfix_t *pf)
 {
   if (pf->size != pf->max_size) {
     pf->max_size = pf->size;
@@ -1071,8 +1072,7 @@ _postfix_adjust(fvm_selector_postfix_t  *pf)
  *----------------------------------------------------------------------------*/
 
 static void
-_postfix_add_opcode(fvm_selector_postfix_t  *pf,
-                    _operator_code_t         code)
+_postfix_add_opcode(fvm_selector_postfix_t *pf, _operator_code_t code)
 {
   size_t add_size = _postfix_type_size + _postfix_opcode_size;
 
@@ -1082,8 +1082,7 @@ _postfix_add_opcode(fvm_selector_postfix_t  *pf,
     _postfix_grow(pf, pf->size + add_size);
 
   *((_postfix_type_t *)(pf->elements + pf->size)) = PF_OPCODE;
-  *((_operator_code_t *)(pf->elements + pf->size + _postfix_type_size))
-    = code;
+  *((_operator_code_t *)(pf->elements + pf->size + _postfix_type_size)) = code;
 
   pf->size += add_size;
 }
@@ -1098,9 +1097,7 @@ _postfix_add_opcode(fvm_selector_postfix_t  *pf,
  *----------------------------------------------------------------------------*/
 
 static void
-_postfix_add_int(fvm_selector_postfix_t  *pf,
-                 int                      val,
-                 _postfix_type_t          type)
+_postfix_add_int(fvm_selector_postfix_t *pf, int val, _postfix_type_t type)
 {
   size_t add_size = _postfix_type_size + _postfix_int_size;
 
@@ -1109,7 +1106,7 @@ _postfix_add_int(fvm_selector_postfix_t  *pf,
   if (pf->size + add_size > pf->max_size)
     _postfix_grow(pf, pf->size + add_size);
 
-  *((_postfix_type_t *)(pf->elements + pf->size)) = type;
+  *((_postfix_type_t *)(pf->elements + pf->size))          = type;
   *((int *)(pf->elements + pf->size + _postfix_type_size)) = val;
 
   pf->size += add_size;
@@ -1124,8 +1121,7 @@ _postfix_add_int(fvm_selector_postfix_t  *pf,
  *----------------------------------------------------------------------------*/
 
 static void
-_postfix_add_float(fvm_selector_postfix_t  *pf,
-                   double                   val)
+_postfix_add_float(fvm_selector_postfix_t *pf, double val)
 {
   size_t add_size = _postfix_type_size + _postfix_float_size;
 
@@ -1134,7 +1130,7 @@ _postfix_add_float(fvm_selector_postfix_t  *pf,
   if (pf->size + add_size > pf->max_size)
     _postfix_grow(pf, pf->size + add_size);
 
-  *((_postfix_type_t *)(pf->elements + pf->size)) = PF_FLOAT;
+  *((_postfix_type_t *)(pf->elements + pf->size))             = PF_FLOAT;
   *((double *)(pf->elements + pf->size + _postfix_type_size)) = val;
 
   pf->size += add_size;
@@ -1149,8 +1145,7 @@ _postfix_add_float(fvm_selector_postfix_t  *pf,
  *----------------------------------------------------------------------------*/
 
 static void
-_postfix_add_missing(fvm_selector_postfix_t  *pf,
-                     const char              *missing)
+_postfix_add_missing(fvm_selector_postfix_t *pf, const char *missing)
 {
   int n = pf->n_missing_operands;
 
@@ -1172,13 +1167,12 @@ _postfix_add_missing(fvm_selector_postfix_t  *pf,
  *----------------------------------------------------------------------------*/
 
 static bool
-_is_int(const char  *str,
-        int         *value)
+_is_int(const char *str, int *value)
 {
   int _value;
   int retcode, int_len;
 
-  *value = 0;
+  *value  = 0;
   retcode = (bool)(sscanf(str, "%i%n", &_value, &int_len));
 
   if (retcode) {
@@ -1204,13 +1198,12 @@ _is_int(const char  *str,
  *----------------------------------------------------------------------------*/
 
 static bool
-_is_float(const char  *str,
-          double      *value)
+_is_float(const char *str, double *value)
 {
   float _value;
-  int retcode, flt_len;
+  int   retcode, flt_len;
 
-  *value = 0.0;
+  *value  = 0.0;
   retcode = (bool)(sscanf(str, "%f%n", &_value, &flt_len));
 
   if (retcode) {
@@ -1236,21 +1229,23 @@ _is_float(const char  *str,
  *----------------------------------------------------------------------------*/
 
 static bool
-_is_notebook(const char *str,
-             double     *value)
+_is_notebook(const char *str, double *value)
 {
   bool retcode = false;
-  *value = 0.0;
+  *value       = 0.0;
 
   /* Check if the provided string is a notebook parameter.
    * If it is the case return the value and correct retcode. */
 
   int dummy;
   if (cs_notebook_parameter_is_present(str, &dummy)) {
-    *value = (double)cs_notebook_parameter_value_by_name(str);
+    *value  = (double)cs_notebook_parameter_value_by_name(str);
     retcode = true;
     bft_printf("%s[L%d] - Found token \"%s\" with value = %f\n",
-               __func__, __LINE__, str, *value);
+               __func__,
+               __LINE__,
+               str,
+               *value);
   }
 
   return retcode;
@@ -1270,8 +1265,7 @@ _is_notebook(const char *str,
  *----------------------------------------------------------------------------*/
 
 static bool
-_is_float_or_notebook(const char *str,
-                      double     *value)
+_is_float_or_notebook(const char *str, double *value)
 {
   bool retcode = false;
 
@@ -1294,7 +1288,7 @@ _is_float_or_notebook(const char *str,
  *
  * parameters:
  *   err_str      <-- error string
- *   valid_syntax <-- optional valid syntax info, or NULL
+ *   valid_syntax <-- optional valid syntax info, or nullptr
  *   infix        <-- string parsed
  *   te           <-- tokenized expression
  *   token_id     <-- token id (or -1 if unknown)
@@ -1303,13 +1297,13 @@ _is_float_or_notebook(const char *str,
  *----------------------------------------------------------------------------*/
 
 static void
-_parse_error(const char               *err_str,
-             const char               *valid_syntax,
-             const char               *infix,
-             const _tokenized_t       *te,
-             int                       token_id,
-             _stack_t                 *stack,
-             fvm_selector_postfix_t  **postfix)
+_parse_error(const char              *err_str,
+             const char              *valid_syntax,
+             const char              *infix,
+             const _tokenized_t      *te,
+             int                      token_id,
+             _stack_t                *stack,
+             fvm_selector_postfix_t **postfix)
 {
   int infix_pos = -1;
 
@@ -1325,53 +1319,66 @@ _parse_error(const char               *err_str,
   }
 
   if (infix_pos > -1) {
-
-    int i;
-    char *infix_string_marker = NULL;
+    int   i;
+    char *infix_string_marker = nullptr;
 
     BFT_MALLOC(infix_string_marker, infix_pos + 2, char);
     for (i = 0; i < infix_pos; i++)
       infix_string_marker[i] = ' ';
-    infix_string_marker[infix_pos] = '^';
+    infix_string_marker[infix_pos]     = '^';
     infix_string_marker[infix_pos + 1] = '\0';
 
-    if (valid_syntax != NULL)
-      bft_error(__FILE__, __LINE__, 0,
+    if (valid_syntax != nullptr)
+      bft_error(__FILE__,
+                __LINE__,
+                0,
                 _("Error parsing expression:\n"
                   "%s\n"
                   "%s\n"
                   "%s\n\n"
                   "Valid (expected) syntax:\n\n"
                   "%s"),
-                infix, infix_string_marker, err_str, valid_syntax);
+                infix,
+                infix_string_marker,
+                err_str,
+                valid_syntax);
     else
-      bft_error(__FILE__, __LINE__, 0,
+      bft_error(__FILE__,
+                __LINE__,
+                0,
                 _("Error parsing expression:\n"
                   "%s\n"
                   "%s\n"
                   "%s"),
-                infix, infix_string_marker, err_str);
+                infix,
+                infix_string_marker,
+                err_str);
 
     BFT_FREE(infix_string_marker);
   }
 
   else {
-
-    if (valid_syntax != NULL)
-      bft_error(__FILE__, __LINE__, 0,
+    if (valid_syntax != nullptr)
+      bft_error(__FILE__,
+                __LINE__,
+                0,
                 _("Error parsing expression:\n"
                   "%s\n"
                   "%s\n"
                   "Valid (expected) syntax:\n\n"
                   "%s"),
-                infix, err_str, valid_syntax);
+                infix,
+                err_str,
+                valid_syntax);
     else
-      bft_error(__FILE__, __LINE__, 0,
+      bft_error(__FILE__,
+                __LINE__,
+                0,
                 _("Error parsing expression:\n"
                   "%s\n"
                   "%s"),
-                infix, err_str);
-
+                infix,
+                err_str);
   }
 }
 
@@ -1389,33 +1396,42 @@ _parse_error(const char               *err_str,
  *----------------------------------------------------------------------------*/
 
 static void
-_check_left_right(const char               *infix,
-                  const _tokenized_t       *te,
-                  int                       token_id,
-                  _operator_type_t          otype,
-                  bool                      has_r_operand,
-                  _stack_t                 *os,
-                  fvm_selector_postfix_t  **postfix)
+_check_left_right(const char              *infix,
+                  const _tokenized_t      *te,
+                  int                      token_id,
+                  _operator_type_t         otype,
+                  bool                     has_r_operand,
+                  _stack_t                *os,
+                  fvm_selector_postfix_t **postfix)
 {
   int i;
 
   if (otype != OT_L_PAREN && otype != OT_UNARY && otype != OT_BINARY)
     return;
 
-  i = token_id+1;
+  i = token_id + 1;
 
-  if (   i == te->n_tokens
-      || (   te->protected[i] == false
-          && te->tokens[te->token_id[i]] == ')'))
+  if (i == te->n_tokens ||
+      (te->is_protected[i] == false && te->tokens[te->token_id[i]] == ')'))
     _parse_error(_("Operator needs a right operand."),
-                 NULL, infix, te, token_id, os, postfix);
+                 nullptr,
+                 infix,
+                 te,
+                 token_id,
+                 os,
+                 postfix);
 
   if (otype == OT_BINARY && has_r_operand == false)
     _parse_error(_("Operator needs a left operand."),
-                 NULL, infix, te, token_id, os, postfix);
-  else if ((otype == OT_L_PAREN || otype == OT_UNARY) && has_r_operand == true)
+                 nullptr,
+                 infix,
+                 te,
+                 token_id,
+                 os,
+                 postfix);
+  else if ((otype == OT_L_PAREN || otype == OT_UNARY) && has_r_operand)
     _parse_error(_("Operator should not have a left operand."),
-                 NULL, infix, te, token_id, os, postfix);
+                 nullptr, infix, te, token_id, os, postfix);
 }
 
 /*----------------------------------------------------------------------------
@@ -1433,14 +1449,14 @@ _check_left_right(const char               *infix,
  *----------------------------------------------------------------------------*/
 
 static void
-_find_group_or_attribute(int          n_groups,
-                         int          n_attributes,
-                         const char  *group_name[],
-                         const int    attribute[],
-                         const char  *token,
-                         bool         protected,
-                         int         *group_id,
-                         int         *attribute_id)
+_find_group_or_attribute(int         n_groups,
+                         int         n_attributes,
+                         const char *group_name[],
+                         const int   attribute[],
+                         const char *token,
+                         bool        is_protected,
+                         int        *group_id,
+                         int        *attribute_id)
 {
   int att_cmp, start_id, end_id;
 
@@ -1451,8 +1467,7 @@ _find_group_or_attribute(int          n_groups,
 
   /* Test for attributes first */
 
-  if (protected == false) {
-
+  if (is_protected == false) {
     int val;
 
     if (_is_int(token, &val) && n_attributes > 0) {
@@ -1477,7 +1492,6 @@ _find_group_or_attribute(int          n_groups,
       }
 
     }
-
   }
 
   /* Test for groups if no attributes found */
@@ -1515,10 +1529,10 @@ _find_group_or_attribute(int          n_groups,
  *----------------------------------------------------------------------------*/
 
 static void
-_group_range(int          n_groups,
-             const char  *group_name[],
-             const char  *token[2],
-             int          group_id[2])
+_group_range(int         n_groups,
+             const char *group_name[],
+             const char *token[2],
+             int         group_id[2])
 {
   int i, att_cmp, start_id, end_id, mid_id;
 
@@ -1530,18 +1544,16 @@ _group_range(int          n_groups,
   /* Test for groups */
 
   if (n_groups > 0) {
-
     if (strcmp(token[0], token[1]) > 0) {
       const char *_tmp = token[0];
-      token[0] = token[1];
-      token[1] = _tmp;
+      token[0]         = token[1];
+      token[1]         = _tmp;
     }
 
     for (i = 0; i < 2; i++) {
-
       start_id = 0;
-      end_id = n_groups - 1;
-      mid_id = (end_id - start_id) / 2;
+      end_id   = n_groups - 1;
+      mid_id   = (end_id - start_id) / 2;
 
       /* use binary search */
 
@@ -1556,25 +1568,21 @@ _group_range(int          n_groups,
         mid_id = start_id + ((end_id - start_id) / 2);
       }
 
-      att_cmp = strcmp(group_name[mid_id], token[i]);
+      att_cmp     = strcmp(group_name[mid_id], token[i]);
       group_id[i] = mid_id;
       if (i == 0 && att_cmp < 0)
         group_id[i] = mid_id + 1;
       else if (i == 1 && att_cmp > 0)
         group_id[i] = mid_id - 1;
-
     }
 
-    if (   group_id[0] >= n_groups
-        || group_id[1] < 0) {
+    if (group_id[0] >= n_groups || group_id[1] < 0) {
       group_id[0] = -1;
       group_id[1] = -1;
     }
     else if (group_id[1] >= n_groups)
       group_id[1] -= 1;
-
   }
-
 }
 
 /*----------------------------------------------------------------------------
@@ -1588,10 +1596,10 @@ _group_range(int          n_groups,
  *----------------------------------------------------------------------------*/
 
 static void
-_attribute_range(int          n_attributes,
-                 const int    attribute[],
-                 const char  *token[2],
-                 int          attribute_id[2])
+_attribute_range(int         n_attributes,
+                 const int   attribute[],
+                 const char *token[2],
+                 int         attribute_id[2])
 {
   int i, att_cmp, start_id, end_id, mid_id;
   int val[2];
@@ -1603,20 +1611,18 @@ _attribute_range(int          n_attributes,
 
   /* Test for attributes */
 
-  if (   n_attributes > 0
-      && _is_int(token[0], val) && _is_int(token[1], val + 1)) {
-
+  if (n_attributes > 0 && _is_int(token[0], val) &&
+      _is_int(token[1], val + 1)) {
     if (val[0] > val[1]) {
       int _tmp = val[0];
-      val[0] = val[1];
-      val[1] = _tmp;
+      val[0]   = val[1];
+      val[1]   = _tmp;
     }
 
     for (i = 0; i < 2; i++) {
-
       start_id = 0;
-      end_id = n_attributes - 1;
-      mid_id = (end_id - start_id) / 2;
+      end_id   = n_attributes - 1;
+      mid_id   = (end_id - start_id) / 2;
 
       /* use binary search */
 
@@ -1636,19 +1642,15 @@ _attribute_range(int          n_attributes,
         attribute_id[i] = mid_id + 1;
       else if (i == 1 && attribute[mid_id] > val[i])
         attribute_id[i] = mid_id - 1;
-
     }
 
-    if (   attribute_id[0] >= n_attributes
-        || attribute_id[1] < 0) {
+    if (attribute_id[0] >= n_attributes || attribute_id[1] < 0) {
       attribute_id[0] = -1;
       attribute_id[1] = -1;
     }
     else if (attribute_id[1] >= n_attributes)
       attribute_id[1] -= 1;
-
   }
-
 }
 
 /*----------------------------------------------------------------------------
@@ -1665,65 +1667,68 @@ _attribute_range(int          n_attributes,
  *----------------------------------------------------------------------------*/
 
 static void
-_parse_geometric_args(_operator_code_t          opcode,
-                      const char               *infix,
-                      const _tokenized_t       *te,
-                      int                       token_start,
-                      int                       token_end,
-                      _stack_t                 *os,
-                      fvm_selector_postfix_t  **postfix)
+_parse_geometric_args(_operator_code_t         opcode,
+                      const char              *infix,
+                      const _tokenized_t      *te,
+                      int                      token_start,
+                      int                      token_end,
+                      _stack_t                *os,
+                      fvm_selector_postfix_t **postfix)
 {
   const char *tok;
-  int i = token_start;
+  int         i = token_start;
 
-  int n_vals = 0, n_opts = 0;
-  double val[13]; /* 12 values max for box(x0, dx, dy, dz),
-                      1 extra slot for error checking */
-  int inout = 0;   /* 0: undefined; -1: inside; 1: outside */
+  int    n_vals = 0, n_opts = 0;
+  double val[13];     /* 12 values max for box(x0, dx, dy, dz),
+                          1 extra slot for error checking */
+  int    inout   = 0; /* 0: undefined; -1: inside; 1: outside */
   double epsilon = 1.e-2, norm = 1.0;
-  bool  error = false;
-  bool  have_epsilon = false;
+  bool   error        = false;
+  bool   have_epsilon = false;
 
-  const char *func_syntax = NULL;
-  const char *normals_syntax
-    = N_("  normal[<x>, <y>, <z>, <epsilon>]\n"
-         "  normal[<x>, <y>, <z>, epsilon = <epsilon>]");
-  const char *plane_syntax
-    = N_("  For ax + by + cz + d = 0 form:\n\n"
-         "    plane[<a>, <b>, <c>, <d>, <epsilon>]\n"
-         "    plane[<a>, <b>, <c>, <d>, epsilon = <epsilon>]\n"
-         "    plane[<a>, <b>, <c>, <d>, inside]\n"
-         "    plane[<a>, <b>, <c>, <d>, outside]\n\n"
-         "  For {normal, point in plane} form:\n\n"
-         "    plane[<nx>, <ny>, <nz>, <x>, <y>, <z>, <epsilon>]\n"
-         "    plane[<nx>, <ny>, <nz>, <x>, <y>, <z>, epsilon = <epsilon>]\n"
-         "    plane[<nx>, <ny>, <nz>, <x>, <y>, <z>, inside]\n"
-         "    plane[<nx>, <ny>, <nz>, <x>, <y>, <z>, outside]");
-  const char *box_syntax
-    = N_("  For x_min, y_min, z_min, x_max, y_max, z_max form:\n\n"
-         "    box[<xmin>, <ymin>, <zmin>, <xmax>, <ymax>, <zmax>]\n\n"
-         "  For xyz_0, dxyz_1, dxyz_2, dxyz_3 form:\n\n"
-         "    box[<x0>, <y0>, <z0>, <dx1>, <dy1>, <dz1>\n"
-         "        <dx2>, <dy2>, <dz2>, <dx3>, <dy3>, <dz3>]");
-  const char *cylinder_syntax
-    = N_("  cylinder[<x0>, <y0>, <z0>, <x1>, <y1>, <z1>, <radius>]");
-  const char *sphere_syntax
-    = N_("  sphere[<xc>, <yc>, <zc>, <radius>]");
+  const char *func_syntax = nullptr;
+  const char *normals_syntax =
+    N_("  normal[<x>, <y>, <z>, <epsilon>]\n"
+       "  normal[<x>, <y>, <z>, epsilon = <epsilon>]");
+  const char *plane_syntax =
+    N_("  For ax + by + cz + d = 0 form:\n\n"
+       "    plane[<a>, <b>, <c>, <d>, <epsilon>]\n"
+       "    plane[<a>, <b>, <c>, <d>, epsilon = <epsilon>]\n"
+       "    plane[<a>, <b>, <c>, <d>, inside]\n"
+       "    plane[<a>, <b>, <c>, <d>, outside]\n\n"
+       "  For {normal, point in plane} form:\n\n"
+       "    plane[<nx>, <ny>, <nz>, <x>, <y>, <z>, <epsilon>]\n"
+       "    plane[<nx>, <ny>, <nz>, <x>, <y>, <z>, epsilon = <epsilon>]\n"
+       "    plane[<nx>, <ny>, <nz>, <x>, <y>, <z>, inside]\n"
+       "    plane[<nx>, <ny>, <nz>, <x>, <y>, <z>, outside]");
+  const char *box_syntax =
+    N_("  For x_min, y_min, z_min, x_max, y_max, z_max form:\n\n"
+       "    box[<xmin>, <ymin>, <zmin>, <xmax>, <ymax>, <zmax>]\n\n"
+       "  For xyz_0, dxyz_1, dxyz_2, dxyz_3 form:\n\n"
+       "    box[<x0>, <y0>, <z0>, <dx1>, <dy1>, <dz1>\n"
+       "        <dx2>, <dy2>, <dz2>, <dx3>, <dy3>, <dz3>]");
+  const char *cylinder_syntax =
+    N_("  cylinder[<x0>, <y0>, <z0>, <x1>, <y1>, <z1>, <radius>]");
+  const char *sphere_syntax = N_("  sphere[<xc>, <yc>, <zc>, <radius>]");
 
   /* First parse for floating-point values */
 
   while (i < token_end && error == false) {
-
-    tok =  te->tokens + te->token_id[i];
+    tok = te->tokens + te->token_id[i];
 
     if (_is_float_or_notebook(tok, val + n_vals)) {
-      tok =  te->tokens + te->token_id[++i];
+      tok = te->tokens + te->token_id[++i];
       n_vals++;
       if (n_vals > 12)
         error = true; /* Will be handled depending on opcode */
       else if (i < token_end && strcmp(te->tokens + te->token_id[i], ",")) {
         _parse_error(_("Missing or wrong argument separator."),
-                     NULL, infix, te, i, os, postfix);
+                     nullptr,
+                     infix,
+                     te,
+                     i,
+                     os,
+                     postfix);
         error = true;
       }
       else
@@ -1731,91 +1736,105 @@ _parse_geometric_args(_operator_code_t          opcode,
     }
     else
       break;
-
   }
 
-  if (i == token_end && *(te->tokens + te->token_id[i-1]) == ',')
+  if (i == token_end && *(te->tokens + te->token_id[i - 1]) == ',')
     _parse_error(_("Missing argument after separator."),
-                 NULL, infix, te, i, os, postfix);
+                 nullptr,
+                 infix,
+                 te,
+                 i,
+                 os,
+                 postfix);
 
   /* Initialize error reporting function syntax,
      check number of floating-point arguments,
      and normalize normals. */
 
-  switch(opcode) {
+  switch (opcode) {
+    case OC_NORMAL:
+      func_syntax = normals_syntax;
+      if (n_vals == 4) {
+        have_epsilon = true;
+        epsilon      = val[n_vals - 1];
+        n_vals--;
+      }
+      if (n_vals != 3)
+        error = true;
+      norm = sqrt(val[0] * val[0] + val[1] * val[1] + val[2] * val[2]);
+      val[0] /= norm;
+      val[1] /= norm;
+      val[2] /= norm;
+      break;
 
-  case OC_NORMAL:
-    func_syntax = normals_syntax;
-    if (n_vals == 4) {
-      have_epsilon = true;
-      epsilon = val[n_vals-1];
-      n_vals--;
-    }
-    if (n_vals != 3)
-      error = true;
-    norm = sqrt(val[0]*val[0] + val[1]*val[1] + val[2]*val[2]);
-    val[0] /= norm; val[1] /= norm; val[2] /= norm;
-    break;
+    case OC_PLANE:
+      func_syntax = plane_syntax;
+      if (n_vals == 5 || n_vals == 7) {
+        have_epsilon = true;
+        epsilon      = val[n_vals - 1];
+        n_vals--;
+      }
+      if (n_vals != 4 && n_vals != 6)
+        error = true;
+      norm = sqrt(val[0] * val[0] + val[1] * val[1] + val[2] * val[2]);
+      val[0] /= norm;
+      val[1] /= norm;
+      val[2] /= norm;
+      /* Normalize d in ax + by + cz + d form, or convert to this form */
+      if (n_vals == 4)
+        val[3] /= norm;
+      else { /* if (n_vals == 6) */
+        val[3] = -(val[0] * val[3] + val[1] * val[4] + val[2] * val[5]);
+        n_vals = 4;
+      }
+      break;
 
-  case OC_PLANE:
-    func_syntax = plane_syntax;
-    if (n_vals == 5 || n_vals == 7) {
-      have_epsilon = true;
-      epsilon = val[n_vals-1];
-      n_vals--;
-    }
-    if (n_vals != 4 && n_vals != 6)
-      error = true;
-    norm = sqrt(val[0]*val[0] + val[1]*val[1] + val[2]*val[2]);
-    val[0] /= norm; val[1] /= norm; val[2] /= norm;
-    /* Normalize d in ax + by + cz + d form, or convert to this form */
-    if (n_vals == 4)
-      val[3] /= norm;
-    else { /* if (n_vals == 6) */
-      val[3] = - (val[0]*val[3] + val[1]*val[4] + val[2]*val[5]);
-      n_vals = 4;
-    }
-    break;
+    case OC_BOX:
+      func_syntax = box_syntax;
+      if (n_vals != 6 && n_vals != 12)
+        error = true;
+      break;
 
-  case OC_BOX:
-    func_syntax = box_syntax;
-    if (n_vals != 6 && n_vals != 12)
-      error = true;
-    break;
+    case OC_CYLINDER:
+      func_syntax = cylinder_syntax;
+      if (n_vals != 7)
+        error = true;
+      break;
 
-  case OC_CYLINDER:
-    func_syntax = cylinder_syntax;
-    if (n_vals != 7)
-      error = true;
-    break;
+    case OC_SPHERE:
+      func_syntax = sphere_syntax;
+      if (n_vals != 4)
+        error = true;
+      break;
 
-  case OC_SPHERE:
-    func_syntax = sphere_syntax;
-    if (n_vals != 4)
-      error = true;
-    break;
-
-  default:
-    _parse_error(_("This geometric function is not implemented."),
-                 NULL, infix, te, token_start - 2, os, postfix);
-    break;
+    default:
+      _parse_error(_("This geometric function is not implemented."),
+                   nullptr,
+                   infix,
+                   te,
+                   token_start - 2,
+                   os,
+                   postfix);
+      break;
   }
 
-  if (error == true)
+  if (error)
     _parse_error(_("Wrong number of floating-point arguments."),
                  _(func_syntax),
-                 infix, te, token_start, os, postfix);
+                 infix,
+                 te,
+                 token_start,
+                 os,
+                 postfix);
 
   /* Check for one additional (key, value) arguments */
 
   if (i < token_end && error == false) {
-
     if ((opcode == OC_NORMAL || opcode == OC_PLANE) && have_epsilon == false) {
-
       if (strcmp(te->tokens + te->token_id[i], "epsilon") == 0) {
-        if (strcmp(te->tokens + te->token_id[i+1], "="))
+        if (strcmp(te->tokens + te->token_id[i + 1], "="))
           error = true;
-        tok =  te->tokens + te->token_id[i+2];
+        tok = te->tokens + te->token_id[i + 2];
         if (_is_float_or_notebook(tok, &epsilon)) {
           have_epsilon = true;
           i += 3;
@@ -1823,11 +1842,15 @@ _parse_geometric_args(_operator_code_t          opcode,
         else {
           _parse_error(_("Expected syntax:\n"
                          "  epsilon = <value>\n"),
-                       NULL, infix, te, i, os, postfix);
+                       nullptr,
+                       infix,
+                       te,
+                       i,
+                       os,
+                       postfix);
           error = true;
         }
       }
-
     }
 
     if (opcode == OC_PLANE && have_epsilon == false) {
@@ -1840,13 +1863,16 @@ _parse_geometric_args(_operator_code_t          opcode,
         i++;
       }
     }
-
   }
 
   if (i < token_end) {
     _parse_error(_("Unexpected argument(s)."),
                  _(func_syntax),
-                 infix, te, i, os, postfix);
+                 infix,
+                 te,
+                 i,
+                 os,
+                 postfix);
   }
 
   /* Update postfix */
@@ -1854,7 +1880,7 @@ _parse_geometric_args(_operator_code_t          opcode,
   if (opcode == OC_NORMAL) {
     (*postfix)->normals_dependency = true;
     /* sign*square of cosine compared to square of (1-epsilon) */
-    val[n_vals++] = (1 - 2*epsilon + epsilon*epsilon);
+    val[n_vals++] = (1 - 2 * epsilon + epsilon * epsilon);
     assert(n_vals == 4);
   }
   else {
@@ -1873,10 +1899,9 @@ _parse_geometric_args(_operator_code_t          opcode,
   for (i = 0; i < n_vals; i++)
     _postfix_add_float(*postfix, val[i]);
   if (n_opts == 1) {
-    assert (opcode == OC_PLANE && inout != 0);
+    assert(opcode == OC_PLANE && inout != 0);
     _postfix_add_int(*postfix, inout, PF_INT);
   }
-
 }
 
 /*----------------------------------------------------------------------------
@@ -1897,21 +1922,21 @@ _parse_geometric_args(_operator_code_t          opcode,
  *----------------------------------------------------------------------------*/
 
 static void
-_parse_for_function(const _parser_t          *this_parser,
-                    const char               *infix,
-                    const _tokenized_t       *te,
-                    int                       n_groups,
-                    int                       n_attributes,
-                    const char               *group_name[],
-                    const int                 attribute[],
-                    int                      *token_id,
-                    bool                     *has_r_operand,
-                    _stack_t                 *os,
-                    fvm_selector_postfix_t  **postfix)
+_parse_for_function(const _parser_t         *this_parser,
+                    const char              *infix,
+                    const _tokenized_t      *te,
+                    int                      n_groups,
+                    int                      n_attributes,
+                    const char              *group_name[],
+                    const int                attribute[],
+                    int                     *token_id,
+                    bool                    *has_r_operand,
+                    _stack_t                *os,
+                    fvm_selector_postfix_t **postfix)
 {
-  const char *tok;
-  int i = *token_id + 1, j = 0, k = 0;
-  const _operator_t *op = NULL;
+  const char        *tok;
+  int                i = *token_id + 1, j = 0, k = 0;
+  const _operator_t *op = nullptr;
 
   if (te->n_tokens <= i)
     return;
@@ -1920,7 +1945,7 @@ _parse_for_function(const _parser_t          *this_parser,
 
   /* Pre-check syntax */
 
-  if (te->protected[i] == true || strlen(tok) != 1)
+  if (te->is_protected[i] || strlen(tok) != 1)
     return;
 
   if (tok[0] != '[')
@@ -1931,7 +1956,7 @@ _parse_for_function(const _parser_t          *this_parser,
   k = 1;
   for (j = i + 1; j < te->n_tokens; j++) {
     tok = te->tokens + te->token_id[j];
-    if (te->protected[j] == false && strlen(tok) == 1) {
+    if (!te->is_protected[j] && strlen(tok) == 1) {
       if (tok[0] == '[')
         k++;
       else if (tok[0] == ']')
@@ -1941,8 +1966,7 @@ _parse_for_function(const _parser_t          *this_parser,
       break;
   }
   if (j == te->n_tokens) {
-    _parse_error(_("Missing closing ]."),
-                 NULL, infix, te, i, os, postfix);
+    _parse_error(_("Missing closing ]."), nullptr, infix, te, i, os, postfix);
     return;
   }
 
@@ -1950,7 +1974,7 @@ _parse_for_function(const _parser_t          *this_parser,
 
   tok = te->tokens + te->token_id[*token_id];
 
-  if (te->protected[i] == false) {
+  if (!te->is_protected[i]) {
     for (k = 0; k < this_parser->n_keywords; k++) {
       if (strcmp(tok, this_parser->keyword[k]) == 0) {
         op = this_parser->operators + this_parser->keyword_op_id[k];
@@ -1959,14 +1983,14 @@ _parse_for_function(const _parser_t          *this_parser,
     }
   }
 
-  if (op == NULL) {
+  if (op == nullptr) {
     _parse_error(_("Function arguments used with an unknown operator."),
-                 NULL, infix, te, *token_id, os, postfix);
+                 nullptr, infix, te, *token_id, os, postfix);
     return;
   }
   else if (op->type != OT_FUNCTION) {
     _parse_error(_("Operator does not accept function arguments."),
-                 NULL, infix, te, *token_id, os, postfix);
+                 nullptr, infix, te, *token_id, os, postfix);
     return;
   }
 
@@ -1978,7 +2002,7 @@ _parse_for_function(const _parser_t          *this_parser,
   if (op->code == OC_ALL || op->code == OC_NO_GROUP) {
     if (j != i+1)
       _parse_error(_("Function requires 0 arguments."),
-                   NULL, infix, te, *token_id, os, postfix);
+                   nullptr, infix, te, *token_id, os, postfix);
     else
       _postfix_add_opcode(*postfix, op->code);
   }
@@ -1987,7 +2011,7 @@ _parse_for_function(const _parser_t          *this_parser,
 
   else if (op->code == OC_RANGE) {
 
-    const char *t[3] = {NULL, NULL, NULL};
+    const char *t[3] = {nullptr, nullptr, nullptr};
     bool  force_group = false, force_attrib = false, error = false;
 
     i++;
@@ -2031,7 +2055,7 @@ _parse_for_function(const _parser_t          *this_parser,
       _postfix_type_t pf_type = PF_GROUP_ID;
       if (force_group == false)
         _attribute_range(n_attributes, attribute, t, ga_id);
-      if (force_attrib == true || ga_id[0] > -1)
+      if (force_attrib || ga_id[0] > -1)
         pf_type = PF_ATTRIBUTE_ID;
       else
         _group_range(n_groups, group_name, t, ga_id);
@@ -2052,8 +2076,7 @@ _parse_for_function(const _parser_t          *this_parser,
   /* Handle geometric operators */
 
   else
-    _parse_geometric_args(op->code, infix, te, i+1, j, os, postfix);
-
+    _parse_geometric_args(op->code, infix, te, i + 1, j, os, postfix);
 }
 
 /*----------------------------------------------------------------------------
@@ -2091,7 +2114,7 @@ _parse_for_coord_conditions(const char               *infix,
 
   /* Pre-check syntax */
 
-  if (te->protected[i] == true || t1_len == 0 || t1_len > 2)
+  if (te->is_protected[i] || t1_len == 0 || t1_len > 2)
     return;
 
   if ((t1[0] != '<' && t1[0] != '>') || (t1_len == 2 && t1[1] != '='))
@@ -2101,7 +2124,7 @@ _parse_for_coord_conditions(const char               *infix,
 
   if (te->n_tokens == i+1) {
     _parse_error(_("Operator needs a right operand."),
-                 NULL, infix, te, i, os, postfix);
+                 nullptr, infix, te, i, os, postfix);
     return;
   }
 
@@ -2172,7 +2195,7 @@ _parse_for_coord_conditions(const char               *infix,
   else {
     _parse_error(_("Operator needs a floating point operand\n"
                    "on one side, x, y, or z on the other"),
-                 NULL, infix, te, i, os, postfix);
+                 nullptr, infix, te, i, os, postfix);
     return;
   }
 
@@ -2184,7 +2207,7 @@ _parse_for_coord_conditions(const char               *infix,
     const char *t3 = te->tokens + te->token_id[i];
     size_t      t3_len = strlen(t3);
 
-    if (te->protected[i] == true || t3_len == 0 || t3_len > 2)
+    if (te->is_protected[i] || t3_len == 0 || t3_len > 2)
       return;
 
     if (   (t3[0] != '<' && t3[0] != '>')
@@ -2193,12 +2216,12 @@ _parse_for_coord_conditions(const char               *infix,
 
     if (t3[0] != t1[0]) {
       _parse_error(_("Inconsistant interval specification."),
-                   NULL, infix, te, i, os, postfix);
+                   nullptr, infix, te, i, os, postfix);
       return;
     }
     else if (te->n_tokens == i+1) {
       _parse_error(_("Operator needs a right operand."),
-                   NULL, infix, te, i, os, postfix);
+                   nullptr, infix, te, i, os, postfix);
       return;
     }
 
@@ -2238,7 +2261,7 @@ _parse_for_coord_conditions(const char               *infix,
     }
     else {
       _parse_error(_("Operator needs a floating point operand"),
-                   NULL, infix, te, i, os, postfix);
+                   nullptr, infix, te, i, os, postfix);
       return;
     }
 
@@ -2273,7 +2296,7 @@ _parse_tokenized(const _parser_t     *this_parser,
   int i, j;
   _stack_t os;
   bool  has_r_operand = false;
-  fvm_selector_postfix_t *pf = NULL;
+  fvm_selector_postfix_t *pf = nullptr;
 
   /* Initialization */
 
@@ -2288,7 +2311,7 @@ _parse_tokenized(const _parser_t     *this_parser,
   while (i < te->n_tokens) {
 
     const char *tok;
-    const _operator_t *op_1 = NULL;
+    const _operator_t *op_1 = nullptr;
 
     /* Look ahead to handle functions and "<", "<=", ">", ">=" syntax */
 
@@ -2312,7 +2335,7 @@ _parse_tokenized(const _parser_t     *this_parser,
 
     tok = te->tokens + te->token_id[i];
 
-    if (te->protected[i] == false) {
+    if (!te->is_protected[i]) {
       for (j = 0; j < this_parser->n_keywords; j++) {
         if (strcmp(tok, this_parser->keyword[j]) == 0) {
           op_1 = this_parser->operators + this_parser->keyword_op_id[j];
@@ -2323,20 +2346,20 @@ _parse_tokenized(const _parser_t     *this_parser,
 
     /* Basic check for left / right operands to operators */
 
-    if (op_1 != NULL)
+    if (op_1 != nullptr)
       _check_left_right(infix, te, i, op_1->type, has_r_operand, &os, &pf);
 
     /* Now add to postfix or stack */
 
-    if (op_1 == NULL) {
+    if (op_1 == nullptr) {
 
       int  group_id, attribute_id;
 
       /* If two operands follow each other, we have a parse error */
 
-      if (has_r_operand == true)
+      if (has_r_operand)
         _parse_error(_("Expected operator instead of operand."),
-                     NULL, infix, te, i, &os, &pf);
+                     nullptr, infix, te, i, &os, &pf);
 
       /* Now add entry to postfix */
 
@@ -2345,7 +2368,7 @@ _parse_tokenized(const _parser_t     *this_parser,
                                group_name,
                                attribute,
                                tok,
-                               te->protected[i],
+                               te->is_protected[i],
                                &group_id,
                                &attribute_id);
 
@@ -2368,7 +2391,7 @@ _parse_tokenized(const _parser_t     *this_parser,
 
       case OT_R_PAREN:
         {
-          const _operator_t *op_2 = NULL;
+          const _operator_t *op_2 = nullptr;
           bool  matched = false;
           while (_stack_size(&os) > 0) {
             _stack_entry_t e = _stack_pop(&os);
@@ -2383,7 +2406,7 @@ _parse_tokenized(const _parser_t     *this_parser,
           }
           if (matched == false)
             _parse_error(_("Parenthesis mismatch"),
-                         NULL, infix, te, i, &os, &pf);
+                         nullptr, infix, te, i, &os, &pf);
         }
         break;
 
@@ -2393,7 +2416,7 @@ _parse_tokenized(const _parser_t     *this_parser,
       case OT_COORD_CONDITION:
       case OT_FUNCTION:
         _parse_error(_("Syntax error, probably due to misplaced operands."),
-                     NULL, infix, te, i, &os, &pf);
+                     nullptr, infix, te, i, &os, &pf);
         break;
 
       default:
@@ -2416,7 +2439,7 @@ _parse_tokenized(const _parser_t     *this_parser,
     i++;
 
     has_r_operand = true;
-    if (op_1 != NULL) {
+    if (op_1 != nullptr) {
       if (op_1->type != OT_R_PAREN && op_1->type != OT_FUNCTION)
         has_r_operand = false;
     }
@@ -2430,7 +2453,7 @@ _parse_tokenized(const _parser_t     *this_parser,
 
     if (op->type == OT_L_PAREN)
       _parse_error(_("Parenthesis mismatch"),
-                   NULL, infix, te, e.token_id, &os, &pf);
+                   nullptr, infix, te, e.token_id, &os, &pf);
     else {
       _postfix_add_opcode(pf, op->code);
     }
@@ -2845,7 +2868,7 @@ fvm_selector_postfix_create(const char  *infix,
                             const int    attribute[])
 {
   _tokenized_t te = _tokenize(infix);
-  fvm_selector_postfix_t * pf = NULL;
+  fvm_selector_postfix_t * pf = nullptr;
 
   if (_n_parser_references == 0)
     _parser = _parser_create();
@@ -2876,8 +2899,8 @@ fvm_selector_postfix_create(const char  *infix,
 void
 fvm_selector_postfix_destroy(fvm_selector_postfix_t  **postfix)
 {
-  assert(postfix != NULL);
-  assert(*postfix != NULL);
+  assert(postfix != nullptr);
+  assert(*postfix != nullptr);
 
   _n_parser_references--;
   if (_n_parser_references == 0)
@@ -2899,7 +2922,7 @@ fvm_selector_postfix_destroy(fvm_selector_postfix_t  **postfix)
 const char *
 fvm_selector_postfix_get_infix(const fvm_selector_postfix_t  *pf)
 {
-  assert(pf != NULL);
+  assert(pf != nullptr);
 
   return pf->infix;
 }
@@ -2917,7 +2940,7 @@ fvm_selector_postfix_get_infix(const fvm_selector_postfix_t  *pf)
 bool
 fvm_selector_postfix_coords_dep(const fvm_selector_postfix_t  *pf)
 {
-  assert(pf != NULL);
+  assert(pf != nullptr);
 
   return pf->coords_dependency;
 }
@@ -2935,7 +2958,7 @@ fvm_selector_postfix_coords_dep(const fvm_selector_postfix_t  *pf)
 bool
 fvm_selector_postfix_normals_dep(const fvm_selector_postfix_t  *pf)
 {
-  assert(pf != NULL);
+  assert(pf != nullptr);
 
   return pf->normals_dependency;
 }
@@ -2954,7 +2977,7 @@ fvm_selector_postfix_normals_dep(const fvm_selector_postfix_t  *pf)
 int
 fvm_selector_postfix_n_missing(const fvm_selector_postfix_t  *pf)
 {
-  assert(pf != NULL);
+  assert(pf != nullptr);
 
   return pf->n_missing_operands;
 }
@@ -2975,8 +2998,8 @@ const char *
 fvm_selector_postfix_get_missing(const fvm_selector_postfix_t  *pf,
                                  int                            id)
 {
-  const char *retval = NULL;
-  assert(pf != NULL);
+  const char *retval = nullptr;
+  assert(pf != nullptr);
 
   if (id > -1 && id < pf->n_missing_operands)
     retval = pf->missing_operand[id];
@@ -2993,8 +3016,8 @@ fvm_selector_postfix_get_missing(const fvm_selector_postfix_t  *pf,
  *   n_attributes <-- number of attributes associated with group class
  *   group_id     <-- array group ids associated with group class
  *   attribute_id <-- array of attribute ids associated with group class
- *   coords       <-- coordinates associated with evaluation, or NULL
- *   normal       <-- normal associated with evaluation, or NULL
+ *   coords       <-- coordinates associated with evaluation, or nullptr
+ *   normal       <-- normal associated with evaluation, or nullptr
  *
  * returns:
  *   true or false base on expression evaluation
@@ -3070,7 +3093,7 @@ fvm_selector_postfix_eval(const fvm_selector_postfix_t  *pf,
           min_eval_size = 0;
 
         if (eval_size < min_eval_size) {
-          fvm_selector_postfix_dump(pf, 0, 0, NULL, NULL);
+          fvm_selector_postfix_dump(pf, 0, 0, nullptr, nullptr);
           bft_error(__FILE__, __LINE__, 0,
                     _("Postfix evaluation error."));
         }
@@ -3148,7 +3171,7 @@ fvm_selector_postfix_eval(const fvm_selector_postfix_t  *pf,
               }
             }
             else {
-              fvm_selector_postfix_dump(pf, 0, 0, NULL, NULL);
+              fvm_selector_postfix_dump(pf, 0, 0, nullptr, nullptr);
               bft_error(__FILE__, __LINE__, 0,
                         _("Postfix error: "
                           "range arguments of different or incorrect type."));
@@ -3198,7 +3221,7 @@ fvm_selector_postfix_eval(const fvm_selector_postfix_t  *pf,
       break;
 
     default:
-      fvm_selector_postfix_dump(pf, 0, 0, NULL, NULL);
+      fvm_selector_postfix_dump(pf, 0, 0, nullptr, nullptr);
       bft_error(__FILE__, __LINE__, 0,
                 _("Postfix evaluation error."));
     }
@@ -3216,7 +3239,7 @@ fvm_selector_postfix_eval(const fvm_selector_postfix_t  *pf,
   } /* End of loop on postfix elements */
 
   if (eval_size != 1) {
-    fvm_selector_postfix_dump(pf, 0, 0, NULL, NULL);
+    fvm_selector_postfix_dump(pf, 0, 0, nullptr, nullptr);
     bft_error(__FILE__, __LINE__, 0,
               _("Postfix evaluation error."));
   }
