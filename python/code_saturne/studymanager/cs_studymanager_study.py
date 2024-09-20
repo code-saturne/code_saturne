@@ -1859,7 +1859,7 @@ class Studies(object):
                     if self.__mem_log and mem_log_leak:
                         self.reporting('    - run %s --> Leaks in memory logs' \
                                        % (case.title))
-                        self.reporting('      * see cs_mem.log(.N) in ' \
+                        self.reporting('      * see cs_mem.log(.N) in %s' \
                                        % (case.run_dir))
                     self.__log_file.flush()
 
