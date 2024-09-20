@@ -100,11 +100,11 @@ typedef struct {
  *============================================================================*/
 
 #if defined(HAVE_PLUGIN_CATALYST)
-static void * _catalyst_plugin = NULL;
+static void * _catalyst_plugin = nullptr;
 #endif
 
 #if defined(HAVE_CATALYST)
-static fvm_to_histogram_display_t  *_fvm_to_vtk_display_histogram_png = NULL;
+static fvm_to_histogram_display_t  *_fvm_to_vtk_display_histogram_png = nullptr;
 #endif
 
 /*============================================================================
@@ -165,7 +165,7 @@ _display_histogram_txt(cs_real_t                   var_min,
   /* Open the txt file */
   w->f = fopen(w->file_name, "w");
 
-  if (w->f ==  NULL) {
+  if (w->f ==  nullptr) {
     bft_error(__FILE__, __LINE__, errno,
               _("Error opening file: \"%s\""), w->file_name);
     return;
@@ -233,7 +233,7 @@ _display_histogram_tex(cs_real_t                   var_min,
     /* Open the tex file if non-zero histogram */
     w->f = fopen(w->file_name, "w");
 
-    if (w->f ==  NULL) {
+    if (w->f ==  nullptr) {
       bft_error(__FILE__, __LINE__, errno,
                 _("Error opening file: \"%s\""), w->file_name);
       return;
@@ -330,7 +330,7 @@ _display_histograms(cs_real_t                   var_min,
 
   if (w->n_ranks > 1) {
 
-    cs_gnum_t *g_count = NULL;
+    cs_gnum_t *g_count = nullptr;
 
     BFT_MALLOC(g_count, w->n_sub, cs_gnum_t);
 
@@ -374,7 +374,7 @@ _histogram(cs_lnum_t                    n_vals,
   cs_real_t  step;
   cs_real_t  max, min, _max, _min;
 
-  cs_gnum_t *count = NULL;
+  cs_gnum_t *count = nullptr;
 
   BFT_MALLOC(count, w->n_sub, cs_gnum_t);
 
@@ -555,7 +555,7 @@ fvm_to_histogram_init_writer(const char             *name,
 {
   CS_UNUSED(time_dependency);
 
-  fvm_to_histogram_writer_t  *w = NULL;
+  fvm_to_histogram_writer_t  *w = nullptr;
 
   /* Initialize writer */
 
@@ -591,16 +591,16 @@ fvm_to_histogram_init_writer(const char             *name,
 
   w->nt = -1;
   w->t = -1;
-  w->buffer = NULL;
+  w->buffer = nullptr;
 
-  w->file_name = NULL;
-  w->f = NULL;
+  w->file_name = nullptr;
+  w->f = nullptr;
 
   w->n_sub = 5; /* default */
 
   /* Parse options */
 
-  if (options != NULL) {
+  if (options != nullptr) {
 
     int i1, i2, l_opt;
     int l_tot = strlen(options);
@@ -659,7 +659,7 @@ fvm_to_histogram_init_writer(const char             *name,
  *   writer <-- pointer to opaque histogram Gold writer structure.
  *
  * returns:
- *   NULL pointer
+ *   nullptr pointer
  *----------------------------------------------------------------------------*/
 
 void *
@@ -683,7 +683,7 @@ fvm_to_histogram_finalize_writer(void  *writer)
 
   BFT_FREE(w);
 
-  return NULL;
+  return nullptr;
 }
 
 /*----------------------------------------------------------------------------
@@ -802,7 +802,7 @@ fvm_to_histogram_export_field(void                  *writer,
                                    export_list,
                                    dimension,
                                    interlace,
-                                   NULL,
+                                   nullptr,
                                    n_parent_lists,
                                    parent_num_shift,
                                    datatype,
@@ -828,13 +828,13 @@ fvm_to_histogram_flush(void  *writer)
 {
   fvm_to_histogram_writer_t  *w = (fvm_to_histogram_writer_t *)writer;
 
-  if (w->f != NULL && w->buffer != NULL) {
+  if (w->f != nullptr && w->buffer != nullptr) {
 
     if (fclose(w->f) != 0)
       bft_error(__FILE__, __LINE__, errno,
                 _("Error closing file: \"%s\""), w->file_name);
 
-    w->f = NULL;
+    w->f = nullptr;
 
   }
 

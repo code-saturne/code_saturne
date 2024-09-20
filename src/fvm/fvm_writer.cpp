@@ -120,18 +120,18 @@ static fvm_writer_format_t _fvm_writer_format_list[10] = {
     FVM_WRITER_TRANSIENT_CONNECT,
     0,                                 /* dynamic library count */
     0,                                 /* dynamic library flags */
-    NULL,                              /* dynamic library */
-    NULL,                              /* dynamic library name */
-    NULL,                              /* dynamic library prefix */
-    NULL,                              /* n_version_strings_func */
-    NULL,                              /* version_string_func */
+    nullptr,                              /* dynamic library */
+    nullptr,                              /* dynamic library name */
+    nullptr,                              /* dynamic library prefix */
+    nullptr,                              /* n_version_strings_func */
+    nullptr,                              /* version_string_func */
     fvm_to_ensight_init_writer,        /* init_func */
     fvm_to_ensight_finalize_writer,    /* finalize_func */
     fvm_to_ensight_set_mesh_time,      /* set_mesh_time_func */
     fvm_to_ensight_needs_tesselation,  /* needs_tesselation_func */
     fvm_to_ensight_export_nodal,       /* export_nodal_func */
     fvm_to_ensight_export_field,       /* export_field_func */
-    NULL                               /* flush_func */
+    nullptr                               /* flush_func */
   },
 
   /* MED writer */
@@ -144,9 +144,9 @@ static fvm_writer_format_t _fvm_writer_format_list[10] = {
     FVM_WRITER_FIXED_MESH,
     0,                                 /* dynamic library count */
     0,                                 /* dynamic library flags */
-    NULL,                              /* dynamic library */
-    NULL,                              /* dynamic library name */
-    NULL,                              /* dynamic library prefix */
+    nullptr,                              /* dynamic library */
+    nullptr,                              /* dynamic library name */
+    nullptr,                              /* dynamic library prefix */
 #if defined(HAVE_MED)
     fvm_to_med_n_version_strings,      /* n_version_strings_func */
     fvm_to_med_version_string,         /* version_string_func */
@@ -156,17 +156,17 @@ static fvm_writer_format_t _fvm_writer_format_list[10] = {
     fvm_to_med_needs_tesselation,      /* needs_tesselation_func */
     fvm_to_med_export_nodal,           /* export_nodal_func */
     fvm_to_med_export_field,           /* export_field_func */
-    NULL                               /* flush_func */
+    nullptr                               /* flush_func */
 #else
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL
+    nullptr,
+    nullptr,
+    nullptr,
+    nullptr,
+    nullptr,
+    nullptr,
+    nullptr,
+    nullptr,
+    nullptr
 #endif
   },
 
@@ -179,9 +179,9 @@ static fvm_writer_format_t _fvm_writer_format_list[10] = {
     FVM_WRITER_TRANSIENT_COORDS,
     0,                                 /* dynamic library count */
     0,                                 /* dynamic library flags */
-    NULL,                              /* dynamic library */
-    NULL,                              /* dynamic library name */
-    NULL,                              /* dynamic library prefix */
+    nullptr,                              /* dynamic library */
+    nullptr,                              /* dynamic library name */
+    nullptr,                              /* dynamic library prefix */
 #if defined(HAVE_CGNS)
     fvm_to_cgns_n_version_strings,     /* n_version_strings_func */
     fvm_to_cgns_version_string,        /* version_string_func */
@@ -191,17 +191,17 @@ static fvm_writer_format_t _fvm_writer_format_list[10] = {
     fvm_to_cgns_needs_tesselation,     /* needs_tesselation_func */
     fvm_to_cgns_export_nodal,          /* export_nodal_func */
     fvm_to_cgns_export_field,          /* export_field_func */
-    NULL                               /* flush_func */
+    nullptr                               /* flush_func */
 #else
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL
+    nullptr,
+    nullptr,
+    nullptr,
+    nullptr,
+    nullptr,
+    nullptr,
+    nullptr,
+    nullptr,
+    nullptr
 #endif
   },
 
@@ -229,35 +229,35 @@ static fvm_writer_format_t _fvm_writer_format_list[10] = {
 #  else
     0,                                 /* dynamic library flags */
 #  endif
-    NULL,                              /* dynamic library */
+    nullptr,                              /* dynamic library */
 #if defined(HAVE_CATALYST)
     "fvm_catalyst",                    /* dynamic library name */
     "fvm_to_catalyst_",                /* dynamic library prefix */
 #else
-    NULL,
-    NULL,
+    nullptr,
+    nullptr,
 #endif
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL
+    nullptr,
+    nullptr,
+    nullptr,
+    nullptr,
+    nullptr,
+    nullptr,
+    nullptr,
+    nullptr,
+    nullptr
 #else
     0,                                 /* dynamic library count */
     0,                                 /* dynamic library flags */
-    NULL,                              /* dynamic library */
-    NULL,                              /* dynamic library name */
-    NULL,                              /* dynamic library prefix */
-    NULL,                              /* n_version_strings_func */
-    NULL,                              /* version_string_func */
+    nullptr,                              /* dynamic library */
+    nullptr,                              /* dynamic library name */
+    nullptr,                              /* dynamic library prefix */
+    nullptr,                              /* n_version_strings_func */
+    nullptr,                              /* version_string_func */
     fvm_to_catalyst_init_writer,       /* init_func */
     fvm_to_catalyst_finalize_writer,   /* finalize_func */
     fvm_to_catalyst_set_mesh_time,     /* set_mesh_time_func */
-    NULL,                              /* needs_tesselation_func */
+    nullptr,                              /* needs_tesselation_func */
     fvm_to_catalyst_export_nodal,      /* export_nodal_func */
     fvm_to_catalyst_export_field,      /* export_field_func */
     fvm_to_catalyst_flush              /* flush_func */
@@ -273,23 +273,23 @@ static fvm_writer_format_t _fvm_writer_format_list[10] = {
     FVM_WRITER_TRANSIENT_CONNECT,
     0,                                 /* dynamic library count */
     0,                                 /* dynamic library flags */
-    NULL,                              /* dynamic library */
+    nullptr,                              /* dynamic library */
 #if defined(HAVE_MEDCOUPLING)
     "fvm_medcoupling",                 /* dynamic library name */
     "fvm_to_medcoupling_",             /* dynamic library prefix */
 #else
-    NULL,
-    NULL,
+    nullptr,
+    nullptr,
 #endif
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL
+    nullptr,
+    nullptr,
+    nullptr,
+    nullptr,
+    nullptr,
+    nullptr,
+    nullptr,
+    nullptr,
+    nullptr
   },
 
   /* Built-in Melissa writer */
@@ -303,38 +303,38 @@ static fvm_writer_format_t _fvm_writer_format_list[10] = {
 #if !defined(HAVE_MELISSA) || defined(HAVE_PLUGIN_MELISSA)
     0,                                 /* dynamic library count */
     0,                                 /* dynamic library flags */
-    NULL,                              /* dynamic library */
+    nullptr,                              /* dynamic library */
 #if defined(HAVE_MELISSA)
     "fvm_melissa",                     /* dynamic library name */
     "fvm_to_melissa_",                 /* dynamic library prefix */
 #else
-    NULL,
-    NULL,
+    nullptr,
+    nullptr,
 #endif
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL
+    nullptr,
+    nullptr,
+    nullptr,
+    nullptr,
+    nullptr,
+    nullptr,
+    nullptr,
+    nullptr,
+    nullptr
 #else
     0,                                 /* dynamic library count */
     0,                                 /* dynamic library flags */
-    NULL,                              /* dynamic library */
-    NULL,                              /* dynamic library name */
-    NULL,                              /* dynamic library prefix */
-    NULL,                              /* n_version_strings_func */
-    NULL,                              /* version_string_func */
+    nullptr,                              /* dynamic library */
+    nullptr,                              /* dynamic library name */
+    nullptr,                              /* dynamic library prefix */
+    nullptr,                              /* n_version_strings_func */
+    nullptr,                              /* version_string_func */
     fvm_to_melissa_init_writer,        /* init_func */
     fvm_to_melissa_finalize_writer,    /* finalize_func */
     fvm_to_melissa_set_mesh_time,      /* set_mesh_time_func */
-    NULL,                              /* needs_tesselation_func */
+    nullptr,                              /* needs_tesselation_func */
     fvm_to_melissa_export_nodal,       /* export_nodal_func */
     fvm_to_melissa_export_field,       /* export_field_func */
-    NULL                               /* flush_func */
+    nullptr                               /* flush_func */
 #endif
   },
 
@@ -349,16 +349,16 @@ static fvm_writer_format_t _fvm_writer_format_list[10] = {
        FVM_WRITER_TRANSIENT_CONNECT,
     0,                                 /* dynamic library count */
     0,                                 /* dynamic library flags */
-    NULL,                              /* dynamic library */
-    NULL,                              /* dynamic library name */
-    NULL,                              /* dynamic library prefix */
-    NULL,                              /* n_version_strings_func */
-    NULL,                              /* version_string_func */
+    nullptr,                              /* dynamic library */
+    nullptr,                              /* dynamic library name */
+    nullptr,                              /* dynamic library prefix */
+    nullptr,                              /* n_version_strings_func */
+    nullptr,                              /* version_string_func */
     fvm_to_histogram_init_writer,      /* init_func */
     fvm_to_histogram_finalize_writer,  /* finalize_func */
     fvm_to_histogram_set_mesh_time,    /* set_mesh_time_func */
-    NULL,                              /* needs_tesselation_func */
-    NULL,                              /* export_nodal_func */
+    nullptr,                              /* needs_tesselation_func */
+    nullptr,                              /* export_nodal_func */
     fvm_to_histogram_export_field,     /* export_field_func */
     fvm_to_histogram_flush             /* flush_func */
   },
@@ -374,15 +374,15 @@ static fvm_writer_format_t _fvm_writer_format_list[10] = {
     FVM_WRITER_TRANSIENT_CONNECT,
     0,                                 /* dynamic library count */
     0,                                 /* dynamic library flags */
-    NULL,                              /* dynamic library */
-    NULL,                              /* dynamic library name */
-    NULL,                              /* dynamic library prefix */
-    NULL,                              /* n_version_strings_func */
-    NULL,                              /* version_string_func */
+    nullptr,                              /* dynamic library */
+    nullptr,                              /* dynamic library name */
+    nullptr,                              /* dynamic library prefix */
+    nullptr,                              /* n_version_strings_func */
+    nullptr,                              /* version_string_func */
     fvm_to_plot_init_writer,           /* init_func */
     fvm_to_plot_finalize_writer,       /* finalize_func */
     fvm_to_plot_set_mesh_time,         /* set_mesh_time_func */
-    NULL,                              /* needs_tesselation_func */
+    nullptr,                              /* needs_tesselation_func */
     fvm_to_plot_export_nodal,          /* export_nodal_func */
     fvm_to_plot_export_field,          /* export_field_func */
     fvm_to_plot_flush                  /* flush_func */
@@ -399,18 +399,18 @@ static fvm_writer_format_t _fvm_writer_format_list[10] = {
     FVM_WRITER_FIXED_MESH,
     0,                                 /* dynamic library count */
     0,                                 /* dynamic library flags */
-    NULL,                              /* dynamic library */
-    NULL,                              /* dynamic library name */
-    NULL,                              /* dynamic library prefix */
-    NULL,                              /* n_version_strings_func */
-    NULL,                              /* version_string_func */
+    nullptr,                              /* dynamic library */
+    nullptr,                              /* dynamic library name */
+    nullptr,                              /* dynamic library prefix */
+    nullptr,                              /* n_version_strings_func */
+    nullptr,                              /* version_string_func */
     fvm_to_time_plot_init_writer,      /* init_func */
     fvm_to_time_plot_finalize_writer,  /* finalize_func */
     fvm_to_time_plot_set_mesh_time,    /* set_mesh_time_func */
-    NULL,                              /* needs_tesselation_func */
+    nullptr,                              /* needs_tesselation_func */
     fvm_to_time_plot_export_nodal,     /* export_nodal_func */
     fvm_to_time_plot_export_field,     /* export_field_func */
-    NULL                               /* flush_func */
+    nullptr                               /* flush_func */
   },
 
   /* CCM-IO writer */
@@ -423,29 +423,29 @@ static fvm_writer_format_t _fvm_writer_format_list[10] = {
     FVM_WRITER_FIXED_MESH,
     0,                                 /* dynamic library count */
     0,                                 /* dynamic library flags */
-    NULL,                              /* dynamic library */
-    NULL,                              /* dynamic library name */
-    NULL,                              /* dynamic library prefix */
+    nullptr,                              /* dynamic library */
+    nullptr,                              /* dynamic library name */
+    nullptr,                              /* dynamic library prefix */
 #if defined(HAVE_CCM)
     fvm_to_ccm_n_version_strings,     /* n_version_strings_func */
     fvm_to_ccm_version_string,        /* version_string_func */
     fvm_to_ccm_init_writer,           /* init_func */
     fvm_to_ccm_finalize_writer,       /* finalize_func */
     fvm_to_ccm_set_mesh_time,         /* set_mesh_time_func */
-    NULL,                             /* needs_tesselation_func */
+    nullptr,                             /* needs_tesselation_func */
     fvm_to_ccm_export_nodal,          /* export_nodal_func */
     fvm_to_ccm_export_field,          /* export_field_func */
-    NULL                               /* flush_func */
+    nullptr                               /* flush_func */
 #else
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL
+    nullptr,
+    nullptr,
+    nullptr,
+    nullptr,
+    nullptr,
+    nullptr,
+    nullptr,
+    nullptr,
+    nullptr
 #endif
   }
 
@@ -491,8 +491,8 @@ _fvm_writer_option_list(const char  *const option_list)
   char *ret_list;
   int i, j, l;
 
-  if (option_list == NULL)
-    return NULL;
+  if (option_list == nullptr)
+    return nullptr;
 
   l = strlen(option_list);
 
@@ -534,12 +534,12 @@ _get_dl_function_pointer(fvm_writer_format_t  *wf,
                          const char           *name,
                          bool                  errors_are_fatal)
 {
-  void  *retval = NULL;
+  void  *retval = nullptr;
 
-  assert(wf != NULL);
-  assert(wf->dl_lib != NULL);
+  assert(wf != nullptr);
+  assert(wf->dl_lib != nullptr);
 
-  if (wf->dl_name == NULL)
+  if (wf->dl_name == nullptr)
     retval = cs_base_get_dl_function_pointer(wf->dl_lib,
                                              name,
                                              errors_are_fatal);
@@ -632,12 +632,12 @@ _close_plugin(fvm_writer_format_t  *wf)
 {
   /* Open from shared library */
 
-  if (wf->dl_lib == NULL)
+  if (wf->dl_lib == nullptr)
     return;
 
   cs_base_dlclose(wf->name, wf->dl_lib);
 
-  wf->dl_lib = NULL;
+  wf->dl_lib = nullptr;
 
   /* Decrement reference count */
 
@@ -646,15 +646,15 @@ _close_plugin(fvm_writer_format_t  *wf)
   /* Reset pointers */
 
   if (wf->dl_count == 0) {
-    wf->n_version_strings_func = NULL;
-    wf->version_string_func = NULL;
-    wf->init_func = NULL;
-    wf->finalize_func = NULL;
-    wf->set_mesh_time_func = NULL;
-    wf->needs_tesselation_func = NULL;
-    wf->export_nodal_func = NULL;
-    wf->export_field_func = NULL;
-    wf->flush_func = NULL;
+    wf->n_version_strings_func = nullptr;
+    wf->version_string_func = nullptr;
+    wf->init_func = nullptr;
+    wf->finalize_func = nullptr;
+    wf->set_mesh_time_func = nullptr;
+    wf->needs_tesselation_func = nullptr;
+    wf->export_nodal_func = nullptr;
+    wf->export_field_func = nullptr;
+    wf->flush_func = nullptr;
   }
 }
 
@@ -666,7 +666,7 @@ _close_plugin(fvm_writer_format_t  *wf)
  *
  * parameters:
  *   this_writer     <-- pointer to mesh and field output writer
- *   mesh_name       <-- optional mesh name, or NULL
+ *   mesh_name       <-- optional mesh name, or nullptr
  *
  * returns:
  *   pointer to mesh and field output writer
@@ -680,15 +680,15 @@ _format_writer_init(fvm_writer_t  *this_writer,
   const  char untitled[] = "[untitled]";
 
   char   local_dir[] = ".";
-  char  *tmp_path = NULL, *tmp_name = NULL;
+  char  *tmp_path = nullptr, *tmp_name = nullptr;
 
-  void  *format_writer = NULL;
+  void  *format_writer = nullptr;
 
   /* Determine path and create directory if needed */
 
   const char *path = local_dir;
 
-  if (this_writer->path != NULL) {
+  if (this_writer->path != nullptr) {
 
     int l = strlen(this_writer->path);
 
@@ -718,11 +718,11 @@ _format_writer_init(fvm_writer_t  *this_writer,
 
   const char *name = this_writer->name;
 
-  if (name != NULL) {
+  if (name != nullptr) {
     size_t lw = strlen(this_writer->name);
     if (lw == 0)
       name = mesh_name;
-    else if (mesh_name != NULL) {
+    else if (mesh_name != nullptr) {
       if (strlen(mesh_name) > 0) {
         size_t l = lw + 1 + strlen(mesh_name);
         BFT_MALLOC(tmp_name, l + 1, char);
@@ -738,7 +738,7 @@ _format_writer_init(fvm_writer_t  *this_writer,
   else
     name = mesh_name;
 
-  if (name == NULL) {
+  if (name == nullptr) {
     if (this_writer->format->info_mask & FVM_WRITER_FORMAT_NAME_IS_OPTIONAL)
       name = empty;
     else
@@ -749,7 +749,7 @@ _format_writer_init(fvm_writer_t  *this_writer,
 
   fvm_writer_init_t  *init_func = this_writer->format->init_func;
 
-  if (init_func != NULL) {
+  if (init_func != nullptr) {
 
     cs_fp_exception_disable_trap();
 
@@ -784,7 +784,7 @@ _format_writer_init(fvm_writer_t  *this_writer,
  *
  * parameters:
  *   this_writer     <-- pointer to mesh and field output writer
- *   mesh_name       <-- optional mesh name, or NULL
+ *   mesh_name       <-- optional mesh name, or nullptr
  *
  * returns:
  *   pointer to mesh and field output writer
@@ -794,18 +794,18 @@ static void*
 _find_or_add_format_writer(fvm_writer_t        *this_writer,
                            const fvm_nodal_t   *mesh)
 {
-  void  *format_writer = NULL;
+  void  *format_writer = nullptr;
 
-  assert(this_writer != NULL);
-  assert(this_writer->format != NULL);
+  assert(this_writer != nullptr);
+  assert(this_writer->format != nullptr);
 
   /* Find or add single-mesh writer if required */
 
   if  (   this_writer->n_format_writers == 0
-       || this_writer->mesh_names != NULL) {
+       || this_writer->mesh_names != nullptr) {
     int i;
     const char empty[] = "";
-    const char *name = (mesh->name != NULL) ? mesh->name : empty;
+    const char *name = (mesh->name != nullptr) ? mesh->name : empty;
     for (i = 0; i < this_writer->n_format_writers; i++) {
       if (strcmp(this_writer->mesh_names[i], name) == 0)
         break;
@@ -852,7 +852,7 @@ fvm_writer_get_format_id(const char  *format_name)
   char  tmp_name[32], closest_name[32];
   int i, l;
 
-  if (format_name == NULL)
+  if (format_name == nullptr)
     return _fvm_writer_n_formats;
 
   l = strlen(format_name);
@@ -922,7 +922,7 @@ fvm_writer_format_name(int format_index)
     return _fvm_writer_format_list[format_index].name;
 
   else
-    return NULL;
+    return nullptr;
 }
 
 /*----------------------------------------------------------------------------
@@ -942,11 +942,11 @@ fvm_writer_format_available(int format_index)
 
   if (format_index >= 0 && format_index < _fvm_writer_n_formats) {
 
-    if (_fvm_writer_format_list[format_index].init_func != NULL)
+    if (_fvm_writer_format_list[format_index].init_func != nullptr)
       retval = 1;
 
 #if defined(HAVE_DLOPEN)
-    else if (_fvm_writer_format_list[format_index].dl_name != NULL)
+    else if (_fvm_writer_format_list[format_index].dl_name != nullptr)
       retval = 1;
 #endif
 
@@ -975,12 +975,12 @@ int
 fvm_writer_n_version_strings(int format_index)
 {
   int retval = 0;
-  fvm_writer_n_version_strings_t  *n_version_strings_func = NULL;
+  fvm_writer_n_version_strings_t  *n_version_strings_func = nullptr;
 
   if (format_index >= 0 && format_index < _fvm_writer_n_formats) {
     n_version_strings_func
       = _fvm_writer_format_list[format_index].n_version_strings_func;
-    if (n_version_strings_func != NULL)
+    if (n_version_strings_func != nullptr)
       retval = n_version_strings_func();
   }
   return retval;
@@ -999,7 +999,7 @@ fvm_writer_n_version_strings(int format_index)
  * Setting the compile_time flag to 1, the compile-time version string
  * will be returned if this is different from the run-time version.
  * If the version is the same, or only one of the 2 version strings are
- * available, a NULL character string will be returned with this flag set.
+ * available, a nullptr character string will be returned with this flag set.
  *
  * parameters:
  *   format_index <-- index of format in known format list (0 to n-1)
@@ -1016,13 +1016,13 @@ fvm_writer_version_string(int format_index,
                           int string_index,
                           int compile_time_version)
 {
-  const char * retval = NULL;
-  fvm_writer_version_string_t  *version_string_func = NULL;
+  const char * retval = nullptr;
+  fvm_writer_version_string_t  *version_string_func = nullptr;
 
   if (format_index >= 0 && format_index < _fvm_writer_n_formats) {
     version_string_func
       = _fvm_writer_format_list[format_index].version_string_func;
-    if (version_string_func != NULL)
+    if (version_string_func != nullptr)
       retval = version_string_func(string_index,
                                    compile_time_version);
   }
@@ -1044,7 +1044,7 @@ void
 fvm_writer_filter_option(char        *format_options,
                          const char  *exclude_option)
 {
-  char  *tmp_options = NULL;
+  char  *tmp_options = nullptr;
 
   size_t l = strlen(exclude_option);
 
@@ -1056,7 +1056,7 @@ fvm_writer_filter_option(char        *format_options,
      the options string now contains options separated by a single
      whitespace. */
 
-  if (tmp_options != NULL) {
+  if (tmp_options != nullptr) {
 
     int i0 = 0, i1;
 
@@ -1131,8 +1131,8 @@ fvm_writer_init(const char             *name,
                 fvm_writer_time_dep_t   time_dependency)
 {
   int  i;
-  char  *tmp_options = NULL;
-  fvm_writer_t  *this_writer = NULL;
+  char  *tmp_options = nullptr;
+  fvm_writer_t  *this_writer = nullptr;
   bool separate_meshes = false;
 
   /* Find corresponding format and check coherency */
@@ -1160,7 +1160,7 @@ fvm_writer_init(const char             *name,
      the options string now contains options separated by a single
      whitespace. */
 
-  if (tmp_options != NULL) {
+  if (tmp_options != nullptr) {
 
     int i0 = 0, i1;
 
@@ -1212,7 +1212,7 @@ fvm_writer_init(const char             *name,
   /* Load plugin if required */
 
 #if defined(HAVE_DLOPEN)
-  if (this_writer->format->dl_name != NULL)
+  if (this_writer->format->dl_name != nullptr)
     _load_plugin(this_writer->format);
 #endif
 
@@ -1221,10 +1221,10 @@ fvm_writer_init(const char             *name,
     strcpy(this_writer->path, path);
   }
   else
-    this_writer->path = NULL;
+    this_writer->path = nullptr;
 
   this_writer->options = tmp_options;
-  tmp_options = NULL;
+  tmp_options = nullptr;
 
   this_writer->time_dep = CS_MIN(time_dependency,
                                  this_writer->format->max_time_dep);
@@ -1244,17 +1244,17 @@ fvm_writer_init(const char             *name,
   else
     this_writer->n_format_writers = 1;
 
-  this_writer->mesh_names = NULL;
+  this_writer->mesh_names = nullptr;
 
   /* Initialize format-specific writer */
 
   if  (this_writer->n_format_writers > 0) {
     BFT_MALLOC(this_writer->format_writer, 1, void *);
     this_writer->format_writer[0] = _format_writer_init(this_writer,
-                                                        NULL);
+                                                        nullptr);
   }
   else
-    this_writer->format_writer = NULL;
+    this_writer->format_writer = nullptr;
 
   /* Return pointer to initialized writer */
 
@@ -1268,16 +1268,16 @@ fvm_writer_init(const char             *name,
  *   this_writer <-- pointer to mesh and field output writer
  *
  * returns:
- *   NULL pointer
+ *   nullptr pointer
  *----------------------------------------------------------------------------*/
 
 fvm_writer_t *
 fvm_writer_finalize(fvm_writer_t  *this_writer)
 {
-  fvm_writer_finalize_t  *finalize_func = NULL;
+  fvm_writer_finalize_t  *finalize_func = nullptr;
 
-  assert(this_writer != NULL);
-  assert(this_writer->format != NULL);
+  assert(this_writer != nullptr);
+  assert(this_writer->format != nullptr);
 
   BFT_FREE(this_writer->name);
   BFT_FREE(this_writer->path);
@@ -1285,17 +1285,17 @@ fvm_writer_finalize(fvm_writer_t  *this_writer)
 
   finalize_func = this_writer->format->finalize_func;
 
-  if (finalize_func != NULL) {
+  if (finalize_func != nullptr) {
     cs_fp_exception_disable_trap();
     for (int i = 0; i < this_writer->n_format_writers; i++)
       finalize_func(this_writer->format_writer[i]);
     cs_fp_exception_restore_trap();
   }
   else
-    this_writer->format_writer = NULL;
+    this_writer->format_writer = nullptr;
   BFT_FREE(this_writer->format_writer);
 
-  if (this_writer->mesh_names != NULL) {
+  if (this_writer->mesh_names != nullptr) {
     for (int i = 0; i < this_writer->n_format_writers; i++)
       BFT_FREE(this_writer->mesh_names[i]);
   }
@@ -1304,13 +1304,13 @@ fvm_writer_finalize(fvm_writer_t  *this_writer)
   /* Unload plugin if required */
 
 #if defined(HAVE_DLOPEN)
-  if (this_writer->format->dl_lib != NULL)
+  if (this_writer->format->dl_lib != nullptr)
     _close_plugin(this_writer->format);
 #endif
 
   BFT_FREE(this_writer);
 
-  return NULL;
+  return nullptr;
 }
 
 /*----------------------------------------------------------------------------
@@ -1359,7 +1359,7 @@ const char *
 fvm_writer_get_options(const fvm_writer_t  *this_writer)
 {
   const char *retval = _empty_string;
-  if (this_writer->options != NULL)
+  if (this_writer->options != nullptr)
     retval = this_writer->options;
   return retval;
 }
@@ -1378,7 +1378,7 @@ const char *
 fvm_writer_get_path(const fvm_writer_t  *this_writer)
 {
   const char *retval = _empty_string;
-  if (this_writer->path != NULL)
+  if (this_writer->path != nullptr)
     retval = this_writer->path;
   return retval;
 }
@@ -1413,14 +1413,14 @@ fvm_writer_set_mesh_time(fvm_writer_t  *this_writer,
                          int            time_step,
                          double         time_value)
 {
-  fvm_writer_set_mesh_time_t  *set_mesh_time_func = NULL;
+  fvm_writer_set_mesh_time_t  *set_mesh_time_func = nullptr;
 
-  assert(this_writer != NULL);
-  assert(this_writer->format != NULL);
+  assert(this_writer != nullptr);
+  assert(this_writer->format != nullptr);
 
   set_mesh_time_func = this_writer->format->set_mesh_time_func;
 
-  if (set_mesh_time_func != NULL) {
+  if (set_mesh_time_func != nullptr) {
     cs_fp_exception_disable_trap();
     for (int i = 0; i < this_writer->n_format_writers; i++)
       set_mesh_time_func(this_writer->format_writer[i],
@@ -1451,12 +1451,12 @@ fvm_writer_needs_tesselation(fvm_writer_t       *this_writer,
                              fvm_element_t       element_type)
 {
   int retval = 0;
-  fvm_writer_needs_tesselation_t  *needs_tesselation_func = NULL;
+  fvm_writer_needs_tesselation_t  *needs_tesselation_func = nullptr;
 
   void  *format_writer = _find_or_add_format_writer(this_writer, mesh);
 
   needs_tesselation_func = this_writer->format->needs_tesselation_func;
-  if (needs_tesselation_func != NULL)
+  if (needs_tesselation_func != nullptr)
     retval = needs_tesselation_func(format_writer,
                                     mesh,
                                     element_type);
@@ -1477,10 +1477,10 @@ fvm_writer_export_nodal(fvm_writer_t        *this_writer,
 {
   cs_timer_t  t0, t1;
 
-  fvm_writer_export_nodal_t  *export_nodal_func = NULL;
+  fvm_writer_export_nodal_t  *export_nodal_func = nullptr;
 
-  assert(this_writer != NULL);
-  assert(this_writer->format != NULL);
+  assert(this_writer != nullptr);
+  assert(this_writer->format != nullptr);
 
   void  *format_writer = _find_or_add_format_writer(this_writer, mesh);
 
@@ -1488,7 +1488,7 @@ fvm_writer_export_nodal(fvm_writer_t        *this_writer,
 
   export_nodal_func = this_writer->format->export_nodal_func;
 
-  if (export_nodal_func != NULL) {
+  if (export_nodal_func != nullptr) {
     cs_fp_exception_disable_trap();
     export_nodal_func(format_writer, mesh);
     cs_fp_exception_restore_trap();
@@ -1540,10 +1540,10 @@ fvm_writer_export_field(fvm_writer_t                 *this_writer,
 {
   cs_timer_t  t0, t1;
 
-  fvm_writer_export_field_t  *export_field_func = NULL;
+  fvm_writer_export_field_t  *export_field_func = nullptr;
 
-  assert(this_writer != NULL);
-  assert(this_writer->format != NULL);
+  assert(this_writer != nullptr);
+  assert(this_writer->format != nullptr);
 
   void  *format_writer = _find_or_add_format_writer(this_writer, mesh);
 
@@ -1551,7 +1551,7 @@ fvm_writer_export_field(fvm_writer_t                 *this_writer,
 
   export_field_func = this_writer->format->export_field_func;
 
-  if (export_field_func != NULL) {
+  if (export_field_func != nullptr) {
     cs_fp_exception_disable_trap();
     export_field_func(format_writer,
                       mesh,
@@ -1585,14 +1585,14 @@ void
 fvm_writer_flush(fvm_writer_t  *this_writer)
 {
 
-  fvm_writer_flush_t  *flush_func = NULL;
+  fvm_writer_flush_t  *flush_func = nullptr;
 
-  assert(this_writer != NULL);
-  assert(this_writer->format != NULL);
+  assert(this_writer != nullptr);
+  assert(this_writer->format != nullptr);
 
   flush_func = this_writer->format->flush_func;
 
-  if (flush_func != NULL) {
+  if (flush_func != nullptr) {
 
     cs_timer_t  t0, t1;
 
@@ -1617,9 +1617,9 @@ fvm_writer_flush(fvm_writer_t  *this_writer)
  *
  * parameters:
  *   this_writer <-- pointer to mesh and field output writer
- *   mesh_time   --> Meshes output time (or NULL)
- *   field_time  --> Fields output time (or NULL)
- *   flush_time  --> remaining (applying output) time (or NULL)
+ *   mesh_time   --> Meshes output time (or nullptr)
+ *   field_time  --> Fields output time (or nullptr)
+ *   flush_time  --> remaining (applying output) time (or nullptr)
  *----------------------------------------------------------------------------*/
 
 void
@@ -1628,13 +1628,13 @@ fvm_writer_get_times(fvm_writer_t        *this_writer,
                      cs_timer_counter_t  *field_time,
                      cs_timer_counter_t  *flush_time)
 {
-  assert(this_writer != NULL);
+  assert(this_writer != nullptr);
 
-  if (mesh_time != NULL)
+  if (mesh_time != nullptr)
     *mesh_time = this_writer->mesh_time;
-  if (field_time != NULL)
+  if (field_time != nullptr)
     *field_time = this_writer->field_time;
-  if (flush_time != NULL)
+  if (flush_time != nullptr)
     *flush_time = this_writer->flush_time;
 }
 

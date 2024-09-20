@@ -156,10 +156,10 @@ _coords_output(void           *context,
                cs_gnum_t       block_end,
                void           *buffer)
 {
-  if (dimension > 3 || buffer == NULL)
+  if (dimension > 3 || buffer == nullptr)
     return;
 
-  _time_plot_context_t *c = context;
+  _time_plot_context_t *c = static_cast<_time_plot_context_t *>(context);
 
   fvm_to_time_plot_writer_t  *w = c->writer;
 
@@ -169,7 +169,7 @@ _coords_output(void           *context,
   char *file_name;
   FILE *_f;
 
-  const cs_real_t *coords = buffer;
+  const cs_real_t *coords = static_cast<const cs_real_t *>(buffer);
   const int n_coords = block_end - block_start;
 
   char t_stamp[32];
@@ -188,7 +188,7 @@ _coords_output(void           *context,
     sprintf(file_name, "%scoords%s.csv", w->prefix, t_stamp);
 
   _f = fopen(file_name, "w");
-  if (_f == NULL) {
+  if (_f == nullptr) {
     bft_error(__FILE__, __LINE__, errno,
               _("Error opening file: \"%s\""), file_name);
     return;
@@ -200,7 +200,7 @@ _coords_output(void           *context,
 
     const char **probe_names = fvm_nodal_get_global_vertex_labels(c->mesh);
 
-    if (probe_names != NULL) {
+    if (probe_names != nullptr) {
       fprintf(_f, "# Monitoring point names:\n");
       for (int i = 0; i < n_coords; i++)
         fprintf(_f, "#   %6i %16s\n",
@@ -303,16 +303,16 @@ _field_output(void           *context,
 
   cs_time_plot_t *p;
 
-  _time_plot_context_t       *c = context;
-  fvm_to_time_plot_writer_t  *w = c->writer;
+  _time_plot_context_t      *c = static_cast<_time_plot_context_t *>(context);
+  fvm_to_time_plot_writer_t *w = c->writer;
 
-  if (buffer == NULL) return;
+  if (buffer == nullptr) return;
 
   assert(component_id == 0);
 
   int n_vals = block_end - block_start;
 
-  cs_real_t *_vals = NULL;
+  cs_real_t *_vals = nullptr;
 
   if (dimension > 1)
     BFT_MALLOC(_vals, n_vals, cs_real_t);
@@ -359,8 +359,8 @@ _field_output(void           *context,
                                             w->flush_wtime,
                                             w->n_buf_steps,
                                             n_probes,
-                                            NULL,
-                                            NULL, /* probe_coords */
+                                            nullptr,
+                                            nullptr, /* probe_coords */
                                             probe_names);
 
     }
@@ -370,7 +370,7 @@ _field_output(void           *context,
 
     p = w->tp[p_id];
 
-    if (p != NULL) {
+    if (p != nullptr) {
       const cs_real_t *vals = (const cs_real_t *)buffer;
       if (dimension > 1) {
         for (int i = 0; i < n_vals; i++)
@@ -432,7 +432,7 @@ fvm_to_time_plot_init_writer(const char             *name,
 {
   CS_NO_WARN_IF_UNUSED(time_dependency);
 
-  fvm_to_time_plot_writer_t  *w = NULL;
+  fvm_to_time_plot_writer_t  *w = nullptr;
 
   /* Initialize writer */
 
@@ -481,12 +481,12 @@ fvm_to_time_plot_init_writer(const char             *name,
   w->t = -1;
 
   w->n_plots = 0;
-  w->f_map = (w->rank > 0) ? NULL : cs_map_name_to_id_create();
-  w->tp = NULL;
+  w->f_map = (w->rank > 0) ? nullptr : cs_map_name_to_id_create();
+  w->tp = nullptr;
 
   /* Parse options */
 
-  if (options != NULL) {
+  if (options != nullptr) {
 
     int i1, i2, l_opt;
     int l_tot = strlen(options);
@@ -537,7 +537,7 @@ fvm_to_time_plot_init_writer(const char             *name,
  *   writer <-- pointer to opaque time plot writer structure.
  *
  * returns:
- *   NULL pointer
+ *   nullptr pointer
  *----------------------------------------------------------------------------*/
 
 void *
@@ -557,7 +557,7 @@ fvm_to_time_plot_finalize_writer(void  *writer)
 
   BFT_FREE(w);
 
-  return NULL;
+  return nullptr;
 }
 
 /*----------------------------------------------------------------------------
@@ -599,7 +599,7 @@ fvm_to_time_plot_export_nodal(void               *writer,
 
     fvm_writer_field_helper_t  *helper
       = fvm_writer_field_helper_create(mesh,
-                                       NULL, /* section list */
+                                       nullptr, /* section list */
                                        mesh->dim,
                                        CS_INTERLACE,
                                        CS_REAL_TYPE,
@@ -615,9 +615,9 @@ fvm_to_time_plot_export_nodal(void               *writer,
 
     _time_plot_context_t c = {.writer = w,
                               .mesh = mesh,
-                              .name = NULL};
+                              .name = nullptr};
 
-    int n_parent_lists = (mesh->parent_vertex_id != NULL) ? 1 : 0;
+    int n_parent_lists = (mesh->parent_vertex_id != nullptr) ? 1 : 0;
     cs_lnum_t parent_num_shift[1] = {0};
     const cs_real_t  *coo_ptr[1] = {mesh->vertex_coords};
 
@@ -626,7 +626,7 @@ fvm_to_time_plot_export_nodal(void               *writer,
                                      mesh,
                                      mesh->dim,
                                      CS_INTERLACE,
-                                     NULL,
+                                     nullptr,
                                      n_parent_lists,
                                      parent_num_shift,
                                      CS_COORD_TYPE,
@@ -694,7 +694,7 @@ fvm_to_time_plot_export_field(void                  *writer,
 
   fvm_writer_field_helper_t  *helper
     = fvm_writer_field_helper_create(mesh,
-                                     NULL, /* section list */
+                                     nullptr, /* section list */
                                      dimension,
                                      CS_INTERLACE,
                                      dest_datatype,
@@ -723,7 +723,7 @@ fvm_to_time_plot_export_field(void                  *writer,
                                      mesh,
                                      dimension,
                                      interlace,
-                                     NULL,
+                                     nullptr,
                                      n_parent_lists,
                                      parent_num_shift,
                                      datatype,

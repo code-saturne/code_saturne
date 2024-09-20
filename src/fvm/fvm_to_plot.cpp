@@ -162,7 +162,7 @@ _field_output(void           *context,
   CS_UNUSED(datatype);
   CS_UNUSED(component_id);
 
-  _plot_context_t *c = context;
+  _plot_context_t *c = static_cast<_plot_context_t *>(context);
 
   fvm_to_plot_writer_t  *w = c->writer;
 
@@ -175,7 +175,7 @@ _field_output(void           *context,
     w->n_rows = n_rows;
   else if (w->n_rows != n_rows) {
     const char e[] = "";
-    const char *name = (c->name != NULL) ? c->name : e;
+    const char *name = (c->name != nullptr) ? c->name : e;
     bft_printf(_("Warning: inconsistent data size for plot \"%s\" between\n"
                  "field \"%s\" and previous outputs; values dropped.\n"),
                w->name, name);
@@ -184,7 +184,7 @@ _field_output(void           *context,
 
   /* Create file and write headers on first output */
 
-  if (w->f == NULL) {
+  if (w->f == nullptr) {
 
     char t_stamp[32];
     if (w->no_time_step || w->nt < 0)
@@ -202,7 +202,7 @@ _field_output(void           *context,
 
     w->f = fopen(w->file_name, "w");
 
-    if (w->f ==  NULL) {
+    if (w->f ==  nullptr) {
       bft_error(__FILE__, __LINE__, errno,
                 _("Error opening file: \"%s\""), w->file_name);
       return;
@@ -239,7 +239,7 @@ _field_output(void           *context,
 
     char name_buf[64];
 
-    if (c->name != NULL)
+    if (c->name != nullptr)
       strncpy(name_buf, c->name, 63);
     else
       name_buf[0] = '\0';
@@ -269,7 +269,7 @@ _field_output(void           *context,
 
     /* Update buffer */
 
-    const cs_real_t *src = buffer;
+    const cs_real_t *src = static_cast<const cs_real_t *>(buffer);
     cs_real_t *dest = w->buffer + w->n_rows*w->n_cols;
 
     for (cs_lnum_t j = 0; j < w->n_rows; j++)
@@ -283,7 +283,7 @@ _field_output(void           *context,
 /*----------------------------------------------------------------------------
  * Close the file associated with a given writer.
  *
- * This assumes w->f != NULL on entry.
+ * This assumes w->f != nullptr on entry.
  *
  * parameters:
  *   w <-- pointer to associated writer
@@ -292,13 +292,13 @@ _field_output(void           *context,
 static void
 _file_close(fvm_to_plot_writer_t  *w)
 {
-  assert(w->f != NULL);
+  assert(w->f != nullptr);
 
   if (fclose(w->f) != 0)
     bft_error(__FILE__, __LINE__, errno,
               _("Error closing file: \"%s\""), w->file_name);
 
-  w->f = NULL;
+  w->f = nullptr;
 }
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
@@ -342,7 +342,7 @@ fvm_to_plot_init_writer(const char             *name,
 {
   CS_UNUSED(time_dependency);
 
-  fvm_to_plot_writer_t  *w = NULL;
+  fvm_to_plot_writer_t  *w = nullptr;
 
   /* Initialize writer */
 
@@ -384,14 +384,14 @@ fvm_to_plot_init_writer(const char             *name,
   w->n_cols_max = 0;
   w->n_rows = 0;
 
-  w->buffer = NULL;
+  w->buffer = nullptr;
 
-  w->file_name = NULL;
-  w->f = NULL;
+  w->file_name = nullptr;
+  w->f = nullptr;
 
   /* Parse options */
 
-  if (options != NULL) {
+  if (options != nullptr) {
 
     int i1, i2, l_opt;
     int l_tot = strlen(options);
@@ -427,7 +427,7 @@ fvm_to_plot_init_writer(const char             *name,
  *   writer <-- pointer to opaque plot Gold writer structure.
  *
  * returns:
- *   NULL pointer
+ *   nullptr pointer
  *----------------------------------------------------------------------------*/
 
 void *
@@ -441,14 +441,14 @@ fvm_to_plot_finalize_writer(void  *writer)
 
   fvm_to_plot_flush(writer);
 
-  if (w->f != NULL)
+  if (w->f != nullptr)
     _file_close(w);
 
   BFT_FREE(w->file_name);
 
   BFT_FREE(w);
 
-  return NULL;
+  return nullptr;
 }
 
 /*----------------------------------------------------------------------------
@@ -470,7 +470,7 @@ fvm_to_plot_set_mesh_time(void    *writer,
   if (w->nt != time_step) {
     if (w->n_cols > 0)
       fvm_to_plot_flush(writer);
-    if (w->f != NULL)
+    if (w->f != nullptr)
       _file_close(w);
   }
   w->nt = time_step;
@@ -501,7 +501,7 @@ fvm_to_plot_export_nodal(void               *writer,
 
     fvm_writer_field_helper_t  *helper
       = fvm_writer_field_helper_create(mesh,
-                                       NULL, /* section list */
+                                       nullptr, /* section list */
                                        mesh->dim,
                                        CS_INTERLACE,
                                        CS_REAL_TYPE,
@@ -517,7 +517,7 @@ fvm_to_plot_export_nodal(void               *writer,
 
     _plot_context_t c = {.writer = w};
 
-    int n_parent_lists = (mesh->parent_vertex_num != NULL) ? 1 : 0;
+    int n_parent_lists = (mesh->parent_vertex_num != nullptr) ? 1 : 0;
     cs_lnum_t parent_num_shift[1] = {0};
     const cs_real_t  *coo_ptr[1] = {mesh->vertex_coords};
 
@@ -526,7 +526,7 @@ fvm_to_plot_export_nodal(void               *writer,
                                      mesh,
                                      mesh->dim,
                                      CS_INTERLACE,
-                                     NULL,
+                                     nullptr,
                                      n_parent_lists,
                                      parent_num_shift,
                                      CS_COORD_TYPE,
@@ -598,7 +598,7 @@ fvm_to_plot_export_field(void                  *writer,
 
   fvm_writer_field_helper_t  *helper
     = fvm_writer_field_helper_create(mesh,
-                                     NULL, /* section list */
+                                     nullptr, /* section list */
                                      dimension,
                                      CS_INTERLACE,
                                      dest_datatype,
@@ -625,7 +625,7 @@ fvm_to_plot_export_field(void                  *writer,
                                      mesh,
                                      dimension,
                                      interlace,
-                                     NULL,
+                                     nullptr,
                                      n_parent_lists,
                                      parent_num_shift,
                                      datatype,
@@ -653,7 +653,7 @@ fvm_to_plot_flush(void  *writer)
 {
   fvm_to_plot_writer_t  *w = (fvm_to_plot_writer_t *)writer;
 
-  if (w->f != NULL && w->buffer != NULL) {
+  if (w->f != nullptr && w->buffer != nullptr) {
 
     /* Transpose output on write */
 

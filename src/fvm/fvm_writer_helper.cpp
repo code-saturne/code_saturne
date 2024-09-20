@@ -147,7 +147,7 @@ _reorder_components(size_t          n_ent,
                     const int       comp_order[],
                     unsigned char   val[])
 {
-  if (comp_order != NULL && n_comp > 1) {
+  if (comp_order != nullptr && n_comp > 1) {
     size_t datatype_size = cs_datatype_size[datatype];
     assert(datatype_size <= 8);
     assert(n_comp <= 9);
@@ -182,42 +182,42 @@ _zero_values(size_t          n_ent,
   switch(datatype) {
   case CS_FLOAT:
     {
-      float *val_p = val;
+      float *val_p = static_cast<float *>(val);
       for (size_t i = 0; i < n_ent; i++)
         val_p[i] = 0.0;
     }
     break;
   case CS_DOUBLE:
     {
-      double *val_p = val;
+      double *val_p = static_cast<double *>(val);
       for (size_t i = 0; i < n_ent; i++)
         val_p[i] = 0.0;
     }
     break;
   case CS_INT32:
     {
-      int32_t *val_p = val;
+      int32_t *val_p = static_cast<int32_t *>(val);
       for (size_t i = 0; i < n_ent; i++)
         val_p[i] = 0.0;
     }
     break;
   case CS_INT64:
     {
-      int64_t *val_p = val;
+      int64_t *val_p = static_cast<int64_t *>(val);
       for (size_t i = 0; i < n_ent; i++)
         val_p[i] = 0.0;
     }
     break;
   case CS_UINT32:
     {
-      uint32_t *val_p = val;
+      uint32_t *val_p = static_cast<uint32_t *>(val);
       for (size_t i = 0; i < n_ent; i++)
         val_p[i] = 0.0;
     }
     break;
   case CS_UINT64:
     {
-      uint64_t *val_p = val;
+      uint64_t *val_p = static_cast<uint64_t *>(val);
       for (size_t i = 0; i < n_ent; i++)
         val_p[i] = 0.0;
     }
@@ -242,8 +242,8 @@ static int
 _compare_sections(const void *s1_p,
                   const void *s2_p)
 {
-  const fvm_writer_section_t *s1 = s1_p;
-  const fvm_writer_section_t *s2 = s2_p;
+  auto s1 = static_cast<const fvm_writer_section_t *>(s1_p);
+  auto s2 = static_cast<const fvm_writer_section_t *>(s2_p);
 
   return ((int)(s1->type) - (int)(s2->type));
 }
@@ -277,7 +277,7 @@ _extra_vertex_get_gnum(const fvm_nodal_t  *mesh,
       const fvm_nodal_section_t  *const  section = mesh->sections[i];
 
       if (   section->type == FVM_CELL_POLY
-          && section->tesselation != NULL) {
+          && section->tesselation != nullptr) {
 
         cs_lnum_t n_extra_vertices_section
           = fvm_tesselation_n_vertices_add(section->tesselation);
@@ -318,7 +318,7 @@ _extra_vertex_get_gnum(const fvm_nodal_t  *mesh,
  *   export_section   <-- pointer to section helper structure
  *   src_dim          <-- dimension of source data
  *   src_interlace    <-- indicates if field in memory is interlaced
- *   comp_order       <-- field component reordering array, or NULL
+ *   comp_order       <-- field component reordering array, or nullptr
  *   n_parent_lists   <-- indicates if field values are to be obtained
  *                        directly through the local entity index (when 0) or
  *                        through the parent entity numbers (when 1 or more)
@@ -352,7 +352,7 @@ _field_helper_output_eg(fvm_writer_field_helper_t          *helper,
   fvm_writer_field_helper_t *h = helper;
 
   cs_block_dist_info_t  bi;
-  cs_part_to_block_t  *d = NULL;
+  cs_part_to_block_t  *d = nullptr;
 
   int         n_sections = 0;
   bool        have_tesselation = false;
@@ -360,15 +360,15 @@ _field_helper_output_eg(fvm_writer_field_helper_t          *helper,
   cs_gnum_t   block_sub_size = 0, block_start = 0, block_end = 0;
   cs_gnum_t   n_g_elements = 0;
 
-  int  *part_n_sub = NULL, *block_n_sub = NULL;
-  unsigned char  *part_values = NULL;
-  unsigned char  *block_values = NULL, *_block_values = NULL;
+  int  *part_n_sub = nullptr, *block_n_sub = nullptr;
+  unsigned char  *part_values = nullptr;
+  unsigned char  *block_values = nullptr, *_block_values = nullptr;
 
-  cs_gnum_t         *_g_elt_num = NULL;
+  cs_gnum_t         *_g_elt_num = nullptr;
   const cs_gnum_t   *g_elt_num
     = fvm_io_num_get_global_num(export_section->section->global_element_num);
 
-  const fvm_writer_section_t  *current_section = NULL;
+  const fvm_writer_section_t  *current_section = nullptr;
 
   const size_t stride = (h->interlace == CS_INTERLACE) ? h->field_dim : 1;
   const size_t elt_size = cs_datatype_size[h->datatype];
@@ -390,7 +390,7 @@ _field_helper_output_eg(fvm_writer_field_helper_t          *helper,
 
     current_section = current_section->next;
 
-  } while (   current_section != NULL
+  } while (   current_section != nullptr
            && current_section->continues_previous == true);
 
   /* Build global numbering if necessary */
@@ -424,7 +424,7 @@ _field_helper_output_eg(fvm_writer_field_helper_t          *helper,
       current_section = current_section->next;
 
 
-    } while (   current_section != NULL
+    } while (   current_section != nullptr
              && current_section->continues_previous == true);
   }
 
@@ -458,7 +458,7 @@ _field_helper_output_eg(fvm_writer_field_helper_t          *helper,
 
       current_section = current_section->next;
 
-    } while (   current_section != NULL
+    } while (   current_section != nullptr
              && current_section->continues_previous == true);
   }
 
@@ -474,11 +474,11 @@ _field_helper_output_eg(fvm_writer_field_helper_t          *helper,
 
   d = cs_part_to_block_create_by_gnum(h->comm, bi, part_size, g_elt_num);
 
-  if (_g_elt_num != NULL)
+  if (_g_elt_num != nullptr)
     cs_part_to_block_transfer_gnum(d, _g_elt_num);
 
-  g_elt_num = NULL;
-  _g_elt_num = NULL;
+  g_elt_num = nullptr;
+  _g_elt_num = nullptr;
 
   /* Distribute sub-element info in case of tesselation */
 
@@ -539,7 +539,7 @@ _field_helper_output_eg(fvm_writer_field_helper_t          *helper,
       cs_lnum_t start_id = 0;
       cs_lnum_t src_shift = 0;
 
-      const int comp_id_in = comp_order != NULL ? comp_order[comp_id] : comp_id;
+      const int comp_id_in = comp_order != nullptr ? comp_order[comp_id] : comp_id;
 
       /* loop on sections which should be appended */
 
@@ -572,13 +572,13 @@ _field_helper_output_eg(fvm_writer_field_helper_t          *helper,
 
         current_section = current_section->next;
 
-      } while (   current_section != NULL
+      } while (   current_section != nullptr
                && current_section->continues_previous == true);
 
       /* Reorder components if required
          (for interlaced output; done though dim_loops if non-interlaced) */
 
-      if (comp_order != NULL && convert_dim > 1)
+      if (comp_order != nullptr && convert_dim > 1)
         _reorder_components(part_size,
                             convert_dim,
                             h->datatype,
@@ -631,7 +631,7 @@ _field_helper_output_eg(fvm_writer_field_helper_t          *helper,
 
   cs_part_to_block_destroy(&d);
 
-  if (block_n_sub != NULL)
+  if (block_n_sub != nullptr)
     BFT_FREE(block_n_sub);
 
   /* Return pointer to next section */
@@ -655,7 +655,7 @@ _field_helper_output_eg(fvm_writer_field_helper_t          *helper,
  *   export_section   <-- pointer to section helper structure
  *   src_dim          <-- dimension of source data
  *   src_interlace    <-- indicates if field in memory is interlaced
- *   comp_order       <-- field component reordering array, or NULL
+ *   comp_order       <-- field component reordering array, or nullptr
  *   n_parent_lists   <-- indicates if field values are to be obtained
  *                        directly through the local entity index (when 0) or
  *                        through the parent entity numbers (when 1 or more)
@@ -687,9 +687,9 @@ _field_helper_output_el(fvm_writer_field_helper_t          *helper,
   cs_lnum_t   sub_size = 0;
   cs_lnum_t   n_elements = 0;
 
-  unsigned char  *values = NULL;
+  unsigned char  *values = nullptr;
 
-  const fvm_writer_section_t  *current_section = NULL;
+  const fvm_writer_section_t  *current_section = nullptr;
 
   const size_t elt_size = cs_datatype_size[h->datatype];
 
@@ -709,7 +709,7 @@ _field_helper_output_el(fvm_writer_field_helper_t          *helper,
 
     current_section = current_section->next;
 
-  } while (   current_section != NULL
+  } while (   current_section != nullptr
            && current_section->continues_previous == true);
 
   /* Number of loops on dimension and conversion output dimension */
@@ -733,7 +733,7 @@ _field_helper_output_el(fvm_writer_field_helper_t          *helper,
       cs_lnum_t start_id = 0;
       cs_lnum_t src_shift = 0;
 
-      const int comp_id_in = comp_order != NULL ? comp_order[comp_id] : comp_id;
+      const int comp_id_in = comp_order != nullptr ? comp_order[comp_id] : comp_id;
 
       /* loop on sections which should be appended */
 
@@ -778,13 +778,13 @@ _field_helper_output_el(fvm_writer_field_helper_t          *helper,
 
         current_section = current_section->next;
 
-      } while (   current_section != NULL
+      } while (   current_section != nullptr
                && current_section->continues_previous == true);
 
       /* Reorder components if required
          (for interlaced output; done though dim_loops if non-interlaced) */
 
-      if (comp_order != NULL && convert_dim > 1)
+      if (comp_order != nullptr && convert_dim > 1)
         _reorder_components(sub_size,
                             convert_dim,
                             h->datatype,
@@ -861,8 +861,8 @@ _field_helper_output_ng(fvm_writer_field_helper_t        *helper,
   cs_block_dist_info_t  bi;
 
   cs_lnum_t       part_size = 0, block_size = 0;
-  unsigned char  *part_values = NULL, *block_values = NULL;
-  cs_part_to_block_t  *d = NULL;
+  unsigned char  *part_values = nullptr, *block_values = nullptr;
+  cs_part_to_block_t  *d = nullptr;
 
   const size_t stride = (h->interlace == CS_INTERLACE) ? h->field_dim : 1;
   const size_t elt_size = cs_datatype_size[h->datatype];
@@ -902,7 +902,7 @@ _field_helper_output_ng(fvm_writer_field_helper_t        *helper,
       cs_lnum_t start_id = 0;
       cs_lnum_t end_id = mesh->n_vertices;
 
-      const int comp_id_in = comp_order != NULL ? comp_order[comp_id] : comp_id;
+      const int comp_id_in = comp_order != nullptr ? comp_order[comp_id] : comp_id;
 
       /* Distribute partition to block values */
 
@@ -932,7 +932,7 @@ _field_helper_output_ng(fvm_writer_field_helper_t        *helper,
 
           const fvm_nodal_section_t  *section = mesh->sections[j];
 
-          if (section->type == FVM_CELL_POLY && section->tesselation != NULL) {
+          if (section->type == FVM_CELL_POLY && section->tesselation != nullptr) {
 
             cs_lnum_t   n_extra_vertices
               = fvm_tesselation_n_vertices_add(section->tesselation);
@@ -970,7 +970,7 @@ _field_helper_output_ng(fvm_writer_field_helper_t        *helper,
       /* Reorder components if required
          (for interlaced output; done though dim_loops if non-interlaced) */
 
-      if (comp_order != NULL && convert_dim > 1)
+      if (comp_order != nullptr && convert_dim > 1)
         _reorder_components(part_size,
                             convert_dim,
                             h->datatype,
@@ -1050,7 +1050,7 @@ _field_helper_output_nl(fvm_writer_field_helper_t        *helper,
   fvm_writer_field_helper_t *h = helper;
 
   cs_lnum_t       n_vertices = mesh->n_vertices + helper->n_vertices_add;
-  unsigned char  *values = NULL;
+  unsigned char  *values = nullptr;
 
   const size_t elt_size = cs_datatype_size[h->datatype];
 
@@ -1074,7 +1074,7 @@ _field_helper_output_nl(fvm_writer_field_helper_t        *helper,
       cs_lnum_t start_id = 0;
       cs_lnum_t end_id = mesh->n_vertices;
 
-      const int comp_id_in = comp_order != NULL ? comp_order[comp_id] : comp_id;
+      const int comp_id_in = comp_order != nullptr ? comp_order[comp_id] : comp_id;
 
       /* Distribute partition to block values */
 
@@ -1104,7 +1104,7 @@ _field_helper_output_nl(fvm_writer_field_helper_t        *helper,
 
           const fvm_nodal_section_t  *section = mesh->sections[i];
 
-          if (section->type == FVM_CELL_POLY && section->tesselation != NULL) {
+          if (section->type == FVM_CELL_POLY && section->tesselation != nullptr) {
 
             cs_lnum_t n_extra_vertices
               = fvm_tesselation_n_vertices_add(section->tesselation);
@@ -1142,7 +1142,7 @@ _field_helper_output_nl(fvm_writer_field_helper_t        *helper,
       /* Reorder components if required
          (for interlaced output; done though dim_loops if non-interlaced) */
 
-      if (comp_order != NULL && convert_dim > 1)
+      if (comp_order != nullptr && convert_dim > 1)
         _reorder_components(n_vertices,
                             convert_dim,
                             h->datatype,
@@ -1197,7 +1197,7 @@ _field_helper_output_nl(fvm_writer_field_helper_t        *helper,
  *
  * returns:
  *   array of section translations (must be freed by caller),
- *   or NULL if section list is completely empty
+ *   or nullptr if section list is completely empty
  *----------------------------------------------------------------------------*/
 
 fvm_writer_section_t *
@@ -1216,7 +1216,7 @@ fvm_writer_export_list(const fvm_nodal_t          *mesh,
   int  n_sections = 0;
   int  n_sub_types = 0;
   fvm_element_t sub_type[FVM_TESSELATION_N_SUB_TYPES_MAX];
-  fvm_writer_section_t *export_list = NULL;
+  fvm_writer_section_t *export_list = nullptr;
 
   cs_lnum_t   num_shift = 0;
   cs_gnum_t   extra_vertex_base = fvm_nodal_n_g_vertices(mesh) + 1;
@@ -1253,7 +1253,7 @@ fvm_writer_export_list(const fvm_nodal_t          *mesh,
        (ignore those sections if no tesselation present) */
     else if (   (section->type == FVM_FACE_POLY && divide_polygons == true)
              || (section->type == FVM_CELL_POLY && divide_polyhedra == true)) {
-      if (section->tesselation != NULL)
+      if (section->tesselation != nullptr)
         n_sections += fvm_tesselation_n_sub_types(section->tesselation);
     }
 
@@ -1265,13 +1265,13 @@ fvm_writer_export_list(const fvm_nodal_t          *mesh,
   /* If no sections are present no list is returned */
 
   if (n_sections == 0)
-    return NULL;
+    return nullptr;
 
   BFT_MALLOC(export_list, n_sections, fvm_writer_section_t);
 
   for (i = 0 ; i < n_sections - 1 ; i++)
     (export_list[i]).next = export_list + i + 1;
-  (export_list[n_sections - 1]).next = NULL;
+  (export_list[n_sections - 1]).next = nullptr;
 
   /* Build unsorted list */
 
@@ -1279,7 +1279,7 @@ fvm_writer_export_list(const fvm_nodal_t          *mesh,
 
   for (i = 0 ; i < mesh->n_sections ; i++) {
 
-    const fvm_tesselation_t    *tesselation = NULL;
+    const fvm_tesselation_t    *tesselation = nullptr;
     const fvm_nodal_section_t  *const  section = mesh->sections[i];
 
     /* Ignore sections with entity dimension outside bounds */
@@ -1307,7 +1307,7 @@ fvm_writer_export_list(const fvm_nodal_t          *mesh,
     if (   (section->type == FVM_FACE_POLY && divide_polygons == true)
         || (section->type == FVM_CELL_POLY && divide_polyhedra == true)) {
 
-      if (section->tesselation != NULL) {
+      if (section->tesselation != nullptr) {
         tesselation = section->tesselation;
         n_sub_types = fvm_tesselation_n_sub_types(section->tesselation);
         for (j = 0; j < n_sub_types; j++)
@@ -1323,7 +1323,7 @@ fvm_writer_export_list(const fvm_nodal_t          *mesh,
       (export_list[n_sections]).section = section;
       (export_list[n_sections]).type = sub_type[j];
       (export_list[n_sections]).continues_previous = false;
-      if (tesselation == NULL)
+      if (tesselation == nullptr)
         (export_list[n_sections]).extra_vertex_base = 0;
       else
         (export_list[n_sections]).extra_vertex_base = extra_vertex_base;
@@ -1333,7 +1333,7 @@ fvm_writer_export_list(const fvm_nodal_t          *mesh,
 
     }
 
-    if (tesselation != NULL)
+    if (tesselation != nullptr)
       extra_vertex_base += fvm_tesselation_n_g_vertices_add(tesselation);
 
     num_shift += section->n_elements;
@@ -1363,7 +1363,7 @@ fvm_writer_export_list(const fvm_nodal_t          *mesh,
 
   for (i = 0; i < n_sections - 1; i++)
     (export_list[i]).next = &(export_list[i+1]);
-  export_list[n_sections - 1].next = NULL;
+  export_list[n_sections - 1].next = nullptr;
 
   return export_list;
 }
@@ -1390,9 +1390,9 @@ fvm_writer_count_extra_vertices(const fvm_nodal_t  *mesh,
 
   /* Initial count and allocation */
 
-  if (n_extra_vertices_g != NULL)
+  if (n_extra_vertices_g != nullptr)
     *n_extra_vertices_g = 0;
-  if (n_extra_vertices != NULL)
+  if (n_extra_vertices != nullptr)
     *n_extra_vertices   = 0;
 
   if (divide_polyhedra) {
@@ -1407,13 +1407,13 @@ fvm_writer_count_extra_vertices(const fvm_nodal_t  *mesh,
 
       if (   section->entity_dim == export_dim
           && section->type == FVM_CELL_POLY
-          && section->tesselation != NULL) {
+          && section->tesselation != nullptr) {
 
-        if (n_extra_vertices_g != NULL)
+        if (n_extra_vertices_g != nullptr)
           *n_extra_vertices_g
             += fvm_tesselation_n_g_vertices_add(section->tesselation);
 
-        if (n_extra_vertices != NULL)
+        if (n_extra_vertices != nullptr)
           *n_extra_vertices
             += fvm_tesselation_n_vertices_add(section->tesselation);
 
@@ -1451,7 +1451,7 @@ fvm_writer_vertex_part_to_block_create(int                     min_rank_step,
   cs_gnum_t    n_g_vertices_tot = 0;
   cs_lnum_t    n_vertices_tot = 0;
 
-  cs_gnum_t   *_g_num = NULL;
+  cs_gnum_t   *_g_num = nullptr;
 
   int                    rank, n_ranks;
   cs_block_dist_info_t  _bi;
@@ -1502,10 +1502,10 @@ fvm_writer_vertex_part_to_block_create(int                     min_rank_step,
 
   /* Return initialized structures */
 
-  if (bi != NULL)
+  if (bi != nullptr)
     *bi = _bi;
 
-  if (d != NULL)
+  if (d != nullptr)
     *d = _d;
 }
 
@@ -1530,7 +1530,7 @@ fvm_writer_extra_vertex_coords(const fvm_nodal_t  *mesh,
   cs_lnum_t   n_extra_vertices_section;
 
   size_t  coord_shift = 0;
-  cs_coord_t  *coords = NULL;
+  cs_coord_t  *coords = nullptr;
 
   if (n_extra_vertices > 0) { /* This implies divide_polyhedra = true */
 
@@ -1541,7 +1541,7 @@ fvm_writer_extra_vertex_coords(const fvm_nodal_t  *mesh,
       const fvm_nodal_section_t  *const  section = mesh->sections[i];
 
       if (   section->type == FVM_CELL_POLY
-          && section->tesselation != NULL) {
+          && section->tesselation != nullptr) {
 
         n_extra_vertices_section
           = fvm_tesselation_n_vertices_add(section->tesselation);
@@ -1569,9 +1569,9 @@ fvm_writer_extra_vertex_coords(const fvm_nodal_t  *mesh,
  * (they may be initialized by calling fvm_writer_field_helper_init_g()).
  *
  * The mesh argument is not used when location is FVM_WRITER_PER_ELEMENT,
- * so NULL may be given instead in this case. The section_list
+ * so nullptr may be given instead in this case. The section_list
  * argument is used even when location is FVM_WRITER_PER_NODE to determine
- * if polyhedra are are divided (using extra vertices). Thus, NULL
+ * if polyhedra are are divided (using extra vertices). Thus, nullptr
  * may be given instead only if we are sure the corresponding exported mesh
  * does not contain divided polyhedra.
  *
@@ -1595,7 +1595,7 @@ fvm_writer_field_helper_create(const fvm_nodal_t          *mesh,
                                cs_datatype_t               datatype,
                                fvm_writer_var_loc_t        location)
 {
-  fvm_writer_field_helper_t *h = NULL;
+  fvm_writer_field_helper_t *h = nullptr;
 
   /* Initialize structure */
 
@@ -1621,7 +1621,7 @@ fvm_writer_field_helper_create(const fvm_nodal_t          *mesh,
   /* State values */
 
   h->start_id = 0;
-  h->last_section = NULL;
+  h->last_section = nullptr;
 
   h->n_ranks = 1;
 
@@ -1640,7 +1640,7 @@ fvm_writer_field_helper_create(const fvm_nodal_t          *mesh,
 
     const fvm_writer_section_t *export_section = section_list;
 
-    while (export_section != NULL) {
+    while (export_section != nullptr) {
 
       const fvm_nodal_section_t *section = export_section->section;
 
@@ -1653,7 +1653,7 @@ fvm_writer_field_helper_create(const fvm_nodal_t          *mesh,
       else { /* Tesselated section */
         fvm_tesselation_get_global_size(section->tesselation,
                                         export_section->type,
-                                        NULL,
+                                        nullptr,
                                         &n_sub_elements_max);
         n_sub_elements = fvm_tesselation_n_sub_elements(section->tesselation,
                                                         export_section->type);
@@ -1687,7 +1687,7 @@ fvm_writer_field_helper_create(const fvm_nodal_t          *mesh,
     /* Determine if polyhedra are tesselated */
 
     for (export_section = section_list;
-         export_section != NULL;
+         export_section != nullptr;
          export_section = export_section->next) {
 
       const fvm_nodal_section_t *section = export_section->section;
@@ -1741,7 +1741,7 @@ fvm_writer_field_helper_create(const fvm_nodal_t          *mesh,
 void
 fvm_writer_field_helper_destroy(fvm_writer_field_helper_t **helper)
 {
-  if (helper != NULL)
+  if (helper != nullptr)
     BFT_FREE(*helper);
 }
 
@@ -1792,9 +1792,9 @@ fvm_writer_field_helper_init_g(fvm_writer_field_helper_t   *helper,
  *
  * parameters:
  *   helper                   <-- pointer to helper structure
- *   input_size               --> Total field locations in input (or NULL)
- *   output_size              --> Total field locations in output (or NULL)
- *   min_output_buffer_size   --> Minimum required buffer size (or NULL)
+ *   input_size               --> Total field locations in input (or nullptr)
+ *   output_size              --> Total field locations in output (or nullptr)
+ *   min_output_buffer_size   --> Minimum required buffer size (or nullptr)
  *----------------------------------------------------------------------------*/
 
 void
@@ -1805,14 +1805,14 @@ fvm_writer_field_helper_get_size(const fvm_writer_field_helper_t  *helper,
 {
   const fvm_writer_field_helper_t *h = helper;
 
-  assert(h != NULL);
+  assert(h != nullptr);
 
-  if (input_size != NULL)
+  if (input_size != nullptr)
     *input_size = h->input_size;
-  if (output_size != NULL)
+  if (output_size != nullptr)
     *output_size = h->output_size;
 
-  if (min_output_buffer_size != NULL) {
+  if (min_output_buffer_size != nullptr) {
 
     size_t min_size = 0;
 
@@ -1987,7 +1987,7 @@ fvm_writer_field_helper_step_el(fvm_writer_field_helper_t   *helper,
 
       fvm_tesselation_get_global_size(section->tesselation,
                                       export_section->type,
-                                      NULL,
+                                      nullptr,
                                       &n_sub_elements_max);
 
       output_buffer_size_min = CS_MIN(output_buffer_size_min,
@@ -2172,7 +2172,7 @@ fvm_writer_field_helper_step_nl(fvm_writer_field_helper_t   *helper,
       const fvm_nodal_section_t  *const  section = mesh->sections[i];
 
       if (   section->type == FVM_CELL_POLY
-          && section->tesselation != NULL) {
+          && section->tesselation != nullptr) {
 
         cs_lnum_t n_vertices_section
           = fvm_tesselation_n_vertices_add(section->tesselation);
@@ -2258,7 +2258,7 @@ fvm_writer_field_helper_step_nl(fvm_writer_field_helper_t   *helper,
  *   export_section   <-- pointer to section helper structure
  *   src_dim          <-- dimension of source data
  *   src_interlace    <-- indicates if field in memory is interlaced
- *   comp_order       <-- field component reordering array, or NULL
+ *   comp_order       <-- field component reordering array, or nullptr
  *   n_parent_lists   <-- indicates if field values are to be obtained
  *                        directly through the local entity index (when 0) or
  *                        through the parent entity numbers (when 1 or more)
@@ -2285,7 +2285,7 @@ fvm_writer_field_helper_output_e(fvm_writer_field_helper_t   *helper,
                                  const void            *const field_values[],
                                  fvm_writer_field_output_t   *output_func)
 {
-  assert(helper != NULL);
+  assert(helper != nullptr);
 
 #if defined(HAVE_MPI)
 
@@ -2358,7 +2358,7 @@ fvm_writer_field_helper_output_n(fvm_writer_field_helper_t  *helper,
                                  const void           *const field_values[],
                                  fvm_writer_field_output_t  *output_func)
 {
-  assert(helper != NULL);
+  assert(helper != nullptr);
 
 #if defined(HAVE_MPI)
 

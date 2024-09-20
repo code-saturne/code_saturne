@@ -164,7 +164,7 @@ _open_ensight_file(const fvm_to_ensight_writer_t  *this_writer,
                    const char                     *filename,
                    bool                            append)
 {
-  _ensight_file_t f = {NULL, NULL};
+  _ensight_file_t f = {nullptr, nullptr};
 
   if (this_writer->text_mode == true) {
     if (this_writer->rank == 0) {
@@ -172,7 +172,7 @@ _open_ensight_file(const fvm_to_ensight_writer_t  *this_writer,
         f.tf = fopen(filename, "a");
       else
         f.tf = fopen(filename, "w");
-      if (f.tf == NULL)
+      if (f.tf == nullptr)
         bft_error(__FILE__, __LINE__, 0,
                   _("Error opening file \"%s\":\n\n"
                     "  %s"), filename, strerror(errno));
@@ -218,15 +218,15 @@ _open_ensight_file(const fvm_to_ensight_writer_t  *this_writer,
 static void
 _free_ensight_file(_ensight_file_t  *f)
 {
-  if (f->tf != NULL) {
+  if (f->tf != nullptr) {
     if (fclose(f->tf) != 0)
       bft_error(__FILE__, __LINE__, 0,
                 _("Error closing EnSight output file (text mode):\n\n"
                   "  %s"), strerror(errno));
-    f->tf = NULL;
+    f->tf = nullptr;
   }
 
-  else if (f->bf != NULL)
+  else if (f->bf != nullptr)
     f->bf = cs_file_free(f->bf);
 }
 
@@ -245,13 +245,13 @@ _write_string(_ensight_file_t   f,
   size_t  i;
   char  buf[82];
 
-  if (f.tf != NULL) {
+  if (f.tf != nullptr) {
     strncpy(buf, s, 80);
     buf[80] = '\0';
     fprintf(f.tf, "%s\n", buf);
   }
 
-  else if (f.bf != NULL) {
+  else if (f.bf != nullptr) {
     strncpy(buf, s, 80);
     buf[80] = '\0';
     for (i = strlen(buf); i < 80; i++)
@@ -272,10 +272,10 @@ inline static void
 _write_int(_ensight_file_t  f,
            int32_t          n)
 {
-  if (f.tf != NULL)
+  if (f.tf != nullptr)
     fprintf(f.tf, "%10d\n", (int)n);
 
-  else if (f.bf != NULL) {
+  else if (f.bf != nullptr) {
     int _n = n;
     cs_file_write_global(f.bf, &_n, sizeof(int32_t), 1);
   }
@@ -293,19 +293,19 @@ static void
 _write_geom_headers(fvm_to_ensight_writer_t  *this_writer,
                     _ensight_file_t           f)
 {
-  if (f.bf != NULL)
+  if (f.bf != nullptr)
     _write_string(f, "C Binary");
 
   /* 1st description line */
   {
     char buf[81] = "";
-    if (this_writer->name != NULL)
+    if (this_writer->name != nullptr)
       strncpy(buf, this_writer->name, 80);
     buf[80] = '\0';
     _write_string(f, buf);
   }
   /* 2nd description line */
-  _write_string(f, "Output by code_saturne version "VERSION);
+  _write_string(f, "Output by code_saturne version " VERSION);
   _write_string(f, "node id assign");
   _write_string(f, "element id assign");
 }
@@ -339,7 +339,7 @@ _write_block_floats_g(cs_gnum_t         num_start,
   /* In Binary mode, all ranks have a file structure,
      we may use use a collective call */
 
-  if (f.bf != NULL)
+  if (f.bf != nullptr)
     cs_file_write_block_buffer(f.bf,
                                values,
                                sizeof(float),
@@ -352,7 +352,7 @@ _write_block_floats_g(cs_gnum_t         num_start,
 
   else {
 
-    float *_values = NULL;
+    float *_values = nullptr;
     cs_file_serializer_t *s
       = cs_file_serializer_create(sizeof(float),
                                   1,
@@ -366,15 +366,15 @@ _write_block_floats_g(cs_gnum_t         num_start,
 
       cs_gnum_t range[2] = {num_start, num_end};
 
-      _values = cs_file_serializer_advance(s, range);
+      _values = (float *)cs_file_serializer_advance(s, range);
 
-      if (_values != NULL) { /* only possible on rank 0 */
-        assert(f.tf != NULL);
+      if (_values != nullptr) { /* only possible on rank 0 */
+        assert(f.tf != nullptr);
         for (i = 0, j = range[0]; j < range[1]; i++, j++)
           fprintf(f.tf, "%12.5e\n", _values[i]);
       }
 
-    } while (_values != NULL);
+    } while (_values != nullptr);
 
     cs_file_serializer_destroy(&s);
   }
@@ -400,11 +400,11 @@ _write_block_floats_l(size_t           n_values,
 {
   size_t  i;
 
-  if (f.tf != NULL) {
+  if (f.tf != nullptr) {
     for (i = 0; i < n_values; i++)
       fprintf(f.tf, "%12.5e\n", values[i]);
   }
-  else if (f.bf != NULL)
+  else if (f.bf != nullptr)
     cs_file_write_global(f.bf, values, sizeof(float), n_values);
 }
 
@@ -430,10 +430,10 @@ _export_vertex_coords_g(const fvm_to_ensight_writer_t  *this_writer,
 
   cs_gnum_t    n_g_extra_vertices = 0, n_g_vertices_tot = 0;
   cs_lnum_t    n_extra_vertices = 0, n_vertices_tot = 0;
-  cs_coord_t  *extra_vertex_coords = NULL;
-  float        *part_coords = NULL, *block_coords = NULL;
+  cs_coord_t  *extra_vertex_coords = nullptr;
+  float        *part_coords = nullptr, *block_coords = nullptr;
 
-  cs_part_to_block_t   *d = NULL;
+  cs_part_to_block_t   *d = nullptr;
   size_t                block_buf_size = 0;
 
   const cs_coord_t  *vertex_coords = mesh->vertex_coords;
@@ -488,7 +488,7 @@ _export_vertex_coords_g(const fvm_to_ensight_writer_t  *this_writer,
 
     if (j < mesh->dim) {
 
-      if (parent_vertex_id != NULL) {
+      if (parent_vertex_id != nullptr) {
         for (i = 0; i < n_vertices; i++)
           part_coords[i] = vertex_coords[parent_vertex_id[i]*stride + j];
       }
@@ -523,7 +523,7 @@ _export_vertex_coords_g(const fvm_to_ensight_writer_t  *this_writer,
 
   BFT_FREE(block_coords);
   BFT_FREE(part_coords);
-  if (extra_vertex_coords != NULL)
+  if (extra_vertex_coords != nullptr)
     BFT_FREE(extra_vertex_coords);
 }
 
@@ -545,8 +545,8 @@ _export_vertex_coords_l(const fvm_to_ensight_writer_t  *this_writer,
 {
   cs_lnum_t    i, j;
   cs_lnum_t    n_extra_vertices = 0;
-  cs_coord_t  *extra_vertex_coords = NULL;
-  float        *coords_tmp = NULL;
+  cs_coord_t  *extra_vertex_coords = nullptr;
+  float        *coords_tmp = nullptr;
 
   const cs_lnum_t    n_vertices = mesh->n_vertices;
   const cs_coord_t  *vertex_coords = mesh->vertex_coords;
@@ -558,7 +558,7 @@ _export_vertex_coords_l(const fvm_to_ensight_writer_t  *this_writer,
 
   fvm_writer_count_extra_vertices(mesh,
                                   this_writer->divide_polyhedra,
-                                  NULL,
+                                  nullptr,
                                   &n_extra_vertices);
 
   extra_vertex_coords = fvm_writer_extra_vertex_coords(mesh,
@@ -579,7 +579,7 @@ _export_vertex_coords_l(const fvm_to_ensight_writer_t  *this_writer,
     /* First, handle regular vertices */
 
     if (j < mesh->dim) {
-      if (parent_vertex_id != NULL) {
+      if (parent_vertex_id != nullptr) {
         for (i = 0; i < n_vertices; i++) {
           assert(parent_vertex_id[i] != -1);
           coords_tmp[i]
@@ -614,7 +614,7 @@ _export_vertex_coords_l(const fvm_to_ensight_writer_t  *this_writer,
 
   BFT_FREE(coords_tmp);
 
-  if (extra_vertex_coords != NULL)
+  if (extra_vertex_coords != nullptr)
     BFT_FREE(extra_vertex_coords);
 }
 
@@ -638,7 +638,7 @@ _write_connect_block_gt(int             stride,
 {
   cs_lnum_t   i;
 
-  assert(tf != NULL);
+  assert(tf != nullptr);
 
   switch(stride) {
 
@@ -735,7 +735,7 @@ _write_block_connect_g(int              stride,
   /* In Binary mode, all ranks have a file structure,
      we may use use a collective call */
 
-  if (f.bf != NULL)
+  if (f.bf != nullptr)
     cs_file_write_block_buffer(f.bf,
                                block_connect,
                                sizeof(int32_t),
@@ -748,7 +748,7 @@ _write_block_connect_g(int              stride,
 
   else {
 
-    int32_t *_block_connect = NULL;
+    int32_t *_block_connect = nullptr;
 
     cs_file_serializer_t *s = cs_file_serializer_create(sizeof(int32_t),
                                                         stride,
@@ -761,15 +761,15 @@ _write_block_connect_g(int              stride,
     do {
       cs_gnum_t range[2] = {num_start, num_end};
 
-      _block_connect = cs_file_serializer_advance(s, range);
+      _block_connect = (int32_t *)cs_file_serializer_advance(s, range);
 
-      if (_block_connect != NULL) /* only possible on rank 0 */
+      if (_block_connect != nullptr) /* only possible on rank 0 */
         _write_connect_block_gt(stride,
                                 (range[1] - range[0]),
                                 _block_connect,
                                 f.tf);
 
-    } while (_block_connect != NULL);
+    } while (_block_connect != nullptr);
 
     cs_file_serializer_destroy(&s);
   }
@@ -795,7 +795,7 @@ _write_connect_l(int                stride,
 {
   cs_lnum_t   i;
 
-  if (f.tf != NULL) { /* Text mode */
+  if (f.tf != nullptr) { /* Text mode */
 
     switch(stride) {
 
@@ -863,11 +863,11 @@ _write_connect_l(int                stride,
     }
 
   }
-  else if (f.bf != NULL) { /* Binary mode */
+  else if (f.bf != nullptr) { /* Binary mode */
 
     size_t  j;
     size_t  k = 0;
-    int32_t  *buffer = NULL;
+    int32_t  *buffer = nullptr;
     const size_t  n_values = n_elems*stride;
     const size_t  buffer_size = n_values >  64 ? (n_values / 8) : n_values;
 
@@ -914,18 +914,14 @@ _field_output_g(void           *context,
   CS_UNUSED(dimension);
   CS_UNUSED(component_id);
 
-  _ensight_context_t *c = context;
+  auto c = static_cast<_ensight_context_t *>(context);
 
   fvm_to_ensight_writer_t  *w = c->writer;
   _ensight_file_t          *f = c->file;
 
   assert(datatype == CS_FLOAT);
 
-  _write_block_floats_g(block_start,
-                        block_end,
-                        buffer,
-                        w->comm,
-                        *f);
+  _write_block_floats_g(block_start, block_end, (float *)buffer, w->comm, *f);
 }
 
 /*----------------------------------------------------------------------------
@@ -948,7 +944,7 @@ _export_point_elements_g(const fvm_to_ensight_writer_t  *w,
   _write_string(f, "point");
   _write_int(f, (int)n_g_vertices);
 
-  if (f.tf != NULL) { /* Text mode, rank 0 only */
+  if (f.tf != nullptr) { /* Text mode, rank 0 only */
 
     cs_gnum_t   i;
     int32_t  j = 1;
@@ -957,14 +953,14 @@ _export_point_elements_g(const fvm_to_ensight_writer_t  *w,
       fprintf(f.tf, "%10d\n", j++);
 
   }
-  else if (f.bf != NULL) { /* Binary mode */
+  else if (f.bf != nullptr) { /* Binary mode */
 
     cs_lnum_t i;
     cs_gnum_t j;
     cs_block_dist_info_t  bi;
 
     size_t min_block_size = w->min_block_size / sizeof(float);
-    int32_t  *connect = NULL;
+    int32_t  *connect = nullptr;
 
     bi = cs_block_dist_compute_sizes(w->rank,
                                      w->n_ranks,
@@ -1010,17 +1006,17 @@ _export_point_elements_l(const fvm_nodal_t  *mesh,
   if (n_vertices == 0)
     return;
 
-  if (f.tf != NULL) { /* Text mode */
+  if (f.tf != nullptr) { /* Text mode */
     int i;
     for (i = 0; i < n_vertices; i++)
       fprintf(f.tf, "%10d\n", i+1);
   }
 
-  else if (f.bf != NULL) { /* Binary mode */
+  else if (f.bf != nullptr) { /* Binary mode */
 
     int32_t  k, j_end;
     int32_t  j = 1;
-    int32_t  *buf = NULL;
+    int32_t  *buf = nullptr;
     const int32_t  bufsize = n_vertices >  64 ? (n_vertices / 8) : n_vertices;
 
     BFT_MALLOC(buf, bufsize, int32_t);
@@ -1059,10 +1055,10 @@ _write_lengths_g(const fvm_to_ensight_writer_t  *w,
   cs_lnum_t   i;
   cs_block_dist_info_t   bi;
 
-  int32_t  *part_lengths = NULL;
-  int32_t  *block_lengths = NULL;
+  int32_t  *part_lengths = nullptr;
+  int32_t  *block_lengths = nullptr;
 
-  cs_part_to_block_t  *d = NULL;
+  cs_part_to_block_t  *d = nullptr;
 
   const size_t min_block_size = w->min_block_size / sizeof(int32_t);
   const cs_lnum_t   n_elements
@@ -1148,7 +1144,7 @@ _write_block_indexed(cs_gnum_t         num_start,
   /* In Binary mode, all ranks have a file structure,
      we may use use a collective call */
 
-  if (f.bf != NULL)
+  if (f.bf != nullptr)
     cs_file_write_block_buffer(f.bf,
                                block_connect,
                                sizeof(int32_t),
@@ -1161,7 +1157,7 @@ _write_block_indexed(cs_gnum_t         num_start,
 
   else {
     cs_lnum_t   i;
-    int32_t *_block_vtx_num = NULL;
+    int32_t *_block_vtx_num = nullptr;
     cs_file_serializer_t *s = cs_file_serializer_create(sizeof(int32_t),
                                                         1,
                                                         block_start,
@@ -1173,9 +1169,9 @@ _write_block_indexed(cs_gnum_t         num_start,
     do {
       cs_gnum_t j;
       cs_gnum_t range[2] = {block_start, block_end};
-      _block_vtx_num = cs_file_serializer_advance(s, range);
-      if (_block_vtx_num != NULL) { /* only possible on rank 0 */
-        assert(f.tf != NULL);
+      _block_vtx_num     = (int32_t *)cs_file_serializer_advance(s, range);
+      if (_block_vtx_num != nullptr) { /* only possible on rank 0 */
+        assert(f.tf != nullptr);
         for (i = 0, j = range[0]; j < range[1]; i++, j++) {
           if (_block_vtx_num[i] != 0)
             fprintf(f.tf, "%10d", _block_vtx_num[i]);
@@ -1183,7 +1179,7 @@ _write_block_indexed(cs_gnum_t         num_start,
             fprintf(f.tf, "\n");
         }
       }
-    } while (_block_vtx_num != NULL);
+    } while (_block_vtx_num != nullptr);
 
     cs_file_serializer_destroy(&s);
   }
@@ -1215,9 +1211,9 @@ _write_indexed_connect_g(const fvm_to_ensight_writer_t  *w,
   cs_block_dist_info_t bi;
 
   cs_gnum_t loc_size = 0, tot_size = 0, block_size = 0;
-  cs_part_to_block_t  *d = NULL;
-  cs_lnum_t   *block_index = NULL;
-  int32_t  *block_vtx_num = NULL;
+  cs_part_to_block_t  *d = nullptr;
+  cs_lnum_t   *block_index = nullptr;
+  int32_t  *block_vtx_num = nullptr;
   size_t  min_block_size = w->min_block_size / sizeof(int32_t);
 
   const cs_gnum_t   n_g_elements
@@ -1301,7 +1297,7 @@ _export_nodal_polyhedra_g(const fvm_to_ensight_writer_t  *w,
   cs_lnum_t   face_length, cell_length;
   cs_block_dist_info_t  bi;
 
-  cs_part_to_block_t  *d = NULL;
+  cs_part_to_block_t  *d = nullptr;
   const fvm_writer_section_t  *current_section;
 
   /* Export number of faces per polyhedron */
@@ -1320,7 +1316,7 @@ _export_nodal_polyhedra_g(const fvm_to_ensight_writer_t  *w,
 
     current_section = current_section->next;
 
-  } while (   current_section != NULL
+  } while (   current_section != nullptr
            && current_section->continues_previous == true);
 
   /* Export number of vertices per face per polyhedron */
@@ -1331,10 +1327,10 @@ _export_nodal_polyhedra_g(const fvm_to_ensight_writer_t  *w,
   do { /* loop on sections which should be appended */
 
     cs_gnum_t   block_size = 0, block_start = 0, block_end = 0;
-    cs_lnum_t *block_index = NULL;
+    cs_lnum_t *block_index = nullptr;
 
     size_t  min_block_size = w->min_block_size / sizeof(int32_t);
-    int32_t  *part_face_len = NULL, *block_face_len = NULL;
+    int32_t  *part_face_len = nullptr, *block_face_len = nullptr;
 
     const fvm_nodal_section_t  *section = current_section->section;
     const cs_lnum_t   n_elements
@@ -1411,7 +1407,7 @@ _export_nodal_polyhedra_g(const fvm_to_ensight_writer_t  *w,
 
     current_section = current_section->next;
 
-  } while (   current_section != NULL
+  } while (   current_section != nullptr
            && current_section->continues_previous == true);
 
   /* Export cell->vertex connectivity by blocks */
@@ -1421,8 +1417,8 @@ _export_nodal_polyhedra_g(const fvm_to_ensight_writer_t  *w,
 
   do { /* loop on sections which should be appended */
 
-    cs_lnum_t   *part_vtx_idx = NULL;
-    int32_t  *part_vtx_num = NULL;
+    cs_lnum_t   *part_vtx_idx = nullptr;
+    int32_t  *part_vtx_num = nullptr;
 
     const fvm_nodal_section_t  *section = current_section->section;
     const cs_gnum_t   *g_vtx_num
@@ -1432,7 +1428,7 @@ _export_nodal_polyhedra_g(const fvm_to_ensight_writer_t  *w,
 
     l = 0;
 
-    if (f.bf != NULL) { /* In binary mode, build cell -> vertex connectivity */
+    if (f.bf != nullptr) { /* In binary mode, build cell -> vertex connectivity */
 
       part_vtx_idx[0] = 0;
       for (i = 0; i < section->n_elements; i++) {
@@ -1451,7 +1447,7 @@ _export_nodal_polyhedra_g(const fvm_to_ensight_writer_t  *w,
     /* In text mode, add zeroes to cell vertex connectivity to mark face
        bounds (so as to add newlines) */
 
-    else { /* we are in text mode if f.bf == NULL */
+    else { /* we are in text mode if f.bf == nullptr */
 
       part_vtx_idx[0] = 0;
       for (i = 0; i < section->n_elements; i++) {
@@ -1489,7 +1485,7 @@ _export_nodal_polyhedra_g(const fvm_to_ensight_writer_t  *w,
                k--)
             part_vtx_num[l++] = g_vtx_num[section->vertex_num[k] - 1];
         }
-        if (f.bf == NULL)
+        if (f.bf == nullptr)
           part_vtx_num[l++] = 0; /* mark face limits in text mode */
       }
 
@@ -1508,7 +1504,7 @@ _export_nodal_polyhedra_g(const fvm_to_ensight_writer_t  *w,
 
     current_section = current_section->next;
 
-  } while (   current_section != NULL
+  } while (   current_section != nullptr
            && current_section->continues_previous == true);
 
   return current_section;
@@ -1538,7 +1534,7 @@ _export_nodal_polyhedra_l(const fvm_writer_section_t  *export_section,
   cs_lnum_t   face_length, face_id;
 
   size_t    buffer_size = 0;
-  int32_t  *buffer = NULL;
+  int32_t  *buffer = nullptr;
 
   const fvm_writer_section_t  *current_section;
 
@@ -1551,7 +1547,7 @@ _export_nodal_polyhedra_l(const fvm_writer_section_t  *export_section,
 
     const fvm_nodal_section_t  *section = current_section->section;
 
-    if (f.tf != NULL) { /* Text mode */
+    if (f.tf != nullptr) { /* Text mode */
       for (i = 0; i < section->n_elements; i++)
         fprintf(f.tf, "%10d\n",
                 (int)(  section->face_index[i+1]
@@ -1586,7 +1582,7 @@ _export_nodal_polyhedra_l(const fvm_writer_section_t  *export_section,
 
     current_section = current_section->next;
 
-  } while (   current_section != NULL
+  } while (   current_section != nullptr
            && current_section->continues_previous == true);
 
   /* Write number of vertices/face */
@@ -1614,7 +1610,7 @@ _export_nodal_polyhedra_l(const fvm_writer_section_t  *export_section,
         face_length = (  section->vertex_index[face_id+1]
                        - section->vertex_index[face_id]);
 
-        if (f.tf != NULL)
+        if (f.tf != nullptr)
           fprintf(f.tf, "%10d\n",
                   (int)face_length);
         else {
@@ -1629,12 +1625,12 @@ _export_nodal_polyhedra_l(const fvm_writer_section_t  *export_section,
 
     }
 
-    if (f.bf != NULL && i_buf > 0)
+    if (f.bf != nullptr && i_buf > 0)
       cs_file_write_global(f.bf, buffer, sizeof(int32_t), i_buf);
 
     current_section = current_section->next;
 
-  } while (   current_section != NULL
+  } while (   current_section != nullptr
            && current_section->continues_previous == true);
 
   /* Write cell/vertex connectivity */
@@ -1668,7 +1664,7 @@ _export_nodal_polyhedra_l(const fvm_writer_section_t  *export_section,
         face_length = (  section->vertex_index[face_id+1]
                        - section->vertex_index[face_id]);
 
-        if (f.tf != NULL) { /* text mode */
+        if (f.tf != nullptr) { /* text mode */
           for (k = 0; k < face_length; k++) {
             l =   section->vertex_index[face_id]
                 + (face_length + (k*face_sgn))%face_length;
@@ -1692,15 +1688,15 @@ _export_nodal_polyhedra_l(const fvm_writer_section_t  *export_section,
 
     } /* End of loop on polyhedral cells */
 
-    if (f.bf != NULL && i_buf > 0)
+    if (f.bf != nullptr && i_buf > 0)
       cs_file_write_global(f.bf, buffer, sizeof(int32_t), i_buf);
 
     current_section = current_section->next;
 
-  } while (   current_section != NULL
+  } while (   current_section != nullptr
            && current_section->continues_previous == true);
 
-  if (buffer != NULL)
+  if (buffer != nullptr)
     BFT_FREE(buffer);
 
   return current_section;
@@ -1745,7 +1741,7 @@ _export_nodal_polygons_g(const fvm_to_ensight_writer_t  *w,
 
     current_section = current_section->next;
 
-  } while (   current_section != NULL
+  } while (   current_section != nullptr
            && current_section->continues_previous == true);
 
   /* Export face->vertex connectivity by blocks */
@@ -1756,21 +1752,21 @@ _export_nodal_polygons_g(const fvm_to_ensight_writer_t  *w,
   do { /* loop on sections which should be appended */
 
     cs_lnum_t   i, j, k;
-    cs_lnum_t   *_part_vtx_idx = NULL;
-    const cs_lnum_t   *part_vtx_idx = NULL;
-    int32_t  *part_vtx_num = NULL;
+    cs_lnum_t   *_part_vtx_idx = nullptr;
+    const cs_lnum_t   *part_vtx_idx = nullptr;
+    int32_t  *part_vtx_num = nullptr;
 
     const fvm_nodal_section_t  *section = current_section->section;
     const cs_gnum_t   *g_vtx_num
       = fvm_io_num_get_global_num(global_vertex_num);
 
-    if (f.bf != NULL) /* In binary mode, use existing index */
+    if (f.bf != nullptr) /* In binary mode, use existing index */
       part_vtx_idx = section->vertex_index;
 
     /* In text mode, add zeroes to cell vertex connectivity to mark face
        bounds (so as to add newlines) */
 
-    else { /* we are in text mode if f.bf == NULL */
+    else { /* we are in text mode if f.bf == nullptr */
 
       BFT_MALLOC(_part_vtx_idx, section->n_elements + 1, cs_lnum_t);
 
@@ -1786,7 +1782,7 @@ _export_nodal_polygons_g(const fvm_to_ensight_writer_t  *w,
 
     BFT_MALLOC(part_vtx_num, part_vtx_idx[section->n_elements], int32_t);
 
-    if (f.bf != NULL) { /* binary mode */
+    if (f.bf != nullptr) { /* binary mode */
       for (i = 0, k = 0; i < section->n_elements; i++) {
         for (j = section->vertex_index[i];
              j < section->vertex_index[i+1];
@@ -1814,12 +1810,12 @@ _export_nodal_polygons_g(const fvm_to_ensight_writer_t  *w,
                              f);
 
     BFT_FREE(part_vtx_num);
-    if (_part_vtx_idx != NULL)
+    if (_part_vtx_idx != nullptr)
       BFT_FREE(_part_vtx_idx);
 
     current_section = current_section->next;
 
-  } while (   current_section != NULL
+  } while (   current_section != nullptr
            && current_section->continues_previous == true);
 
   return current_section;
@@ -1848,9 +1844,9 @@ _export_nodal_polygons_l(const fvm_writer_section_t  *export_section,
   size_t  i_buf;
 
   size_t    buffer_size = 0;
-  int32_t  *buffer = NULL;
+  int32_t  *buffer = nullptr;
 
-  const fvm_writer_section_t  *current_section = NULL;
+  const fvm_writer_section_t  *current_section = nullptr;
 
   /* Print face connectivity directly, without using extra buffers */
 
@@ -1863,7 +1859,7 @@ _export_nodal_polygons_l(const fvm_writer_section_t  *export_section,
 
     const fvm_nodal_section_t  *section = current_section->section;
 
-    if (f.tf != NULL) { /* Text mode */
+    if (f.tf != nullptr) { /* Text mode */
       for (i = 0; i < section->n_elements; i++)
         fprintf(f.tf, "%10d\n", (int)(  section->vertex_index[i+1]
                                       - section->vertex_index[i]));
@@ -1896,7 +1892,7 @@ _export_nodal_polygons_l(const fvm_writer_section_t  *export_section,
 
     current_section = current_section->next;
 
-  } while (   current_section != NULL
+  } while (   current_section != nullptr
            && current_section->continues_previous == true);
 
   /* Loop on all polygonal faces */
@@ -1912,7 +1908,7 @@ _export_nodal_polygons_l(const fvm_writer_section_t  *export_section,
 
       /* Print face vertex numbers */
 
-      if (f.tf != NULL) { /* text mode */
+      if (f.tf != nullptr) { /* text mode */
         for (j = section->vertex_index[i];
              j < section->vertex_index[i+1];
              j++)
@@ -1933,15 +1929,15 @@ _export_nodal_polygons_l(const fvm_writer_section_t  *export_section,
 
     } /* End of loop on polygonal faces */
 
-    if (f.bf != NULL && i_buf > 0)
+    if (f.bf != nullptr && i_buf > 0)
       cs_file_write_global(f.bf, buffer, sizeof(int32_t), i_buf);
 
     current_section = current_section->next;
 
-  } while (   current_section != NULL
+  } while (   current_section != nullptr
            && current_section->continues_previous == true);
 
-  if (buffer != NULL)
+  if (buffer != nullptr)
     BFT_FREE(buffer);
 
   return current_section;
@@ -1979,10 +1975,10 @@ _write_tesselated_connect_g(const fvm_to_ensight_writer_t  *w,
   cs_gnum_t   n_g_sub_elements = 0;
   cs_gnum_t   block_size = 0, block_start = 0, block_end = 0;
 
-  cs_part_to_block_t  *d = NULL;
-  cs_lnum_t   *part_index, *block_index = NULL;
-  int32_t     *part_vtx_num = NULL, *block_vtx_num = NULL;
-  cs_gnum_t   *part_vtx_gnum = NULL;
+  cs_part_to_block_t  *d = nullptr;
+  cs_lnum_t   *part_index, *block_index = nullptr;
+  int32_t     *part_vtx_num = nullptr, *block_vtx_num = nullptr;
+  cs_gnum_t   *part_vtx_gnum = nullptr;
 
   size_t  min_block_size = w->min_block_size / sizeof(int32_t);
 
@@ -2002,7 +1998,7 @@ _write_tesselated_connect_g(const fvm_to_ensight_writer_t  *w,
   fvm_tesselation_get_global_size(tesselation,
                                   type,
                                   &n_g_sub_elements,
-                                  NULL);
+                                  nullptr);
 
   min_block_size /= ((n_g_sub_elements*1.)/n_g_elements) * stride;
 
@@ -2135,7 +2131,7 @@ _export_nodal_tesselated_g(const fvm_to_ensight_writer_t  *w,
 
     current_section = current_section->next;
 
-  } while (   current_section != NULL
+  } while (   current_section != nullptr
            && current_section->continues_previous == true
            &&  (   current_section->section->type
                 == export_section->section->type));
@@ -2172,7 +2168,7 @@ _export_nodal_tesselated_l(const fvm_writer_section_t  *export_section,
     cs_lnum_t   start_id, end_id;
     cs_lnum_t   n_sub_elements_max;
     cs_lnum_t   n_buffer_elements_max = section->n_elements;
-    cs_lnum_t *vertex_num = NULL;
+    cs_lnum_t *vertex_num = nullptr;
 
     const cs_lnum_t *sub_element_idx
       = fvm_tesselation_sub_elt_index(section->tesselation,
@@ -2180,7 +2176,7 @@ _export_nodal_tesselated_l(const fvm_writer_section_t  *export_section,
 
     fvm_tesselation_get_global_size(section->tesselation,
                                     export_section->type,
-                                    NULL,
+                                    nullptr,
                                     &n_sub_elements_max);
     if (n_sub_elements_max > n_buffer_elements_max)
       n_buffer_elements_max = n_sub_elements_max;
@@ -2214,7 +2210,7 @@ _export_nodal_tesselated_l(const fvm_writer_section_t  *export_section,
 
     current_section = current_section->next;
 
-  } while (   current_section != NULL
+  } while (   current_section != nullptr
            && current_section->continues_previous == true
            &&  (   current_section->section->type
                 == export_section->section->type));
@@ -2257,8 +2253,8 @@ _export_nodal_strided_g(const fvm_to_ensight_writer_t  *w,
     cs_block_dist_info_t bi;
 
     cs_lnum_t   block_size = 0;
-    cs_part_to_block_t  *d = NULL;
-    int32_t  *part_vtx_num = NULL, *block_vtx_num = NULL;
+    cs_part_to_block_t  *d = nullptr;
+    int32_t  *part_vtx_num = nullptr, *block_vtx_num = nullptr;
 
     const fvm_nodal_section_t  *section = current_section->section;
     const int  stride = fvm_nodal_n_vertices_element[section->type];
@@ -2323,7 +2319,7 @@ _export_nodal_strided_g(const fvm_to_ensight_writer_t  *w,
 
     current_section = current_section->next;
 
-  } while (   current_section != NULL
+  } while (   current_section != nullptr
            && current_section->continues_previous == true
            &&  (   current_section->section->type
                 == export_section->section->type));
@@ -2445,9 +2441,9 @@ _export_field_values_el(const fvm_writer_section_t      *export_section,
   int  i;
   size_t  input_size = 0, output_size = 0;
   size_t  min_output_buffer_size = 0, output_buffer_size = 0;
-  float  *output_buffer = NULL;
+  float  *output_buffer = nullptr;
 
-  const fvm_writer_section_t  *current_section = NULL;
+  const fvm_writer_section_t  *current_section = nullptr;
 
   int output_dim = fvm_writer_field_helper_field_dim(helper);
 
@@ -2500,7 +2496,7 @@ _export_field_values_el(const fvm_writer_section_t      *export_section,
 
       current_section = current_section->next;
 
-      if (   current_section == NULL
+      if (   current_section == nullptr
           || current_section->continues_previous == false)
         loop_on_sections = false;
 
@@ -2557,7 +2553,7 @@ fvm_to_ensight_init_writer(const char             *name,
                            fvm_writer_time_dep_t   time_dependency)
 #endif
 {
-  fvm_to_ensight_writer_t  *this_writer = NULL;
+  fvm_to_ensight_writer_t  *this_writer = nullptr;
 
   /* Initialize writer */
 
@@ -2592,7 +2588,7 @@ fvm_to_ensight_init_writer(const char             *name,
       MPI_Comm_size(this_writer->comm, &n_ranks);
       this_writer->rank = rank;
       this_writer->n_ranks = n_ranks;
-      cs_file_get_default_comm(NULL, &w_block_comm, &w_comm);
+      cs_file_get_default_comm(nullptr, &w_block_comm, &w_comm);
       if (comm == w_comm) {
         this_writer->min_block_size = min_block_size;
         this_writer->block_comm = w_block_comm;
@@ -2604,7 +2600,7 @@ fvm_to_ensight_init_writer(const char             *name,
 
   /* Parse options */
 
-  if (options != NULL) {
+  if (options != nullptr) {
 
     int i1, i2, l_opt;
     int l_tot = strlen(options);
@@ -2666,7 +2662,7 @@ fvm_to_ensight_init_writer(const char             *name,
  *   this_writer_p <-- pointer to opaque Ensight Gold writer structure.
  *
  * returns:
- *   NULL pointer
+ *   nullptr pointer
  *----------------------------------------------------------------------------*/
 
 void *
@@ -2681,7 +2677,7 @@ fvm_to_ensight_finalize_writer(void  *this_writer_p)
 
   BFT_FREE(this_writer);
 
-  return NULL;
+  return nullptr;
 }
 
 /*----------------------------------------------------------------------------
@@ -2772,11 +2768,11 @@ fvm_to_ensight_export_nodal(void               *this_writer_p,
 {
   int  part_num;
 
-  const fvm_writer_section_t  *export_section = NULL;
-  fvm_writer_section_t        *export_list = NULL;
+  const fvm_writer_section_t  *export_section = nullptr;
+  fvm_writer_section_t        *export_list = nullptr;
   fvm_to_ensight_writer_t     *this_writer
                                   = (fvm_to_ensight_writer_t *)this_writer_p;
-  _ensight_file_t  f = {NULL, NULL};
+  _ensight_file_t  f = {nullptr, nullptr};
 
   const int  rank = this_writer->rank;
   const int  n_ranks = this_writer->n_ranks;
@@ -2809,7 +2805,7 @@ fvm_to_ensight_export_nodal(void               *this_writer_p,
 
   _write_string(f, "part");
   _write_int(f, part_num);
-  if (mesh->name != NULL)
+  if (mesh->name != nullptr)
     _write_string(f, mesh->name);
   else
     _write_string(f, "unnamed");
@@ -2843,7 +2839,7 @@ fvm_to_ensight_export_nodal(void               *this_writer_p,
   /* If no sections are present (i.e. we may only have vertices),
      add  "point" elements */
 
-  if (export_list == NULL) {
+  if (export_list == nullptr) {
 
 #if defined(HAVE_MPI)
     if (n_ranks > 1)
@@ -2859,7 +2855,7 @@ fvm_to_ensight_export_nodal(void               *this_writer_p,
 
   export_section = export_list;
 
-  while (export_section != NULL) {
+  while (export_section != nullptr) {
 
     const fvm_nodal_section_t  *section = export_section->section;
 
@@ -2880,13 +2876,13 @@ fvm_to_ensight_export_nodal(void               *this_writer_p,
           fvm_tesselation_get_global_size(next_section->section->tesselation,
                                           next_section->type,
                                           &n_g_sub_elements,
-                                          NULL);
+                                          nullptr);
           n_g_elements += n_g_sub_elements;
         }
 
         next_section = next_section->next;
 
-      } while (next_section != NULL && next_section->continues_previous == true);
+      } while (next_section != nullptr && next_section->continues_previous == true);
 
       _write_string(f, _ensight_type_name[export_section->type]);
       _write_int(f, n_g_elements);
@@ -3040,11 +3036,11 @@ fvm_to_ensight_export_field(void                  *this_writer_p,
   int   output_dim, part_num;
   fvm_to_ensight_case_file_info_t  file_info;
 
-  const fvm_writer_section_t  *export_section = NULL;
-  fvm_writer_field_helper_t  *helper = NULL;
-  fvm_writer_section_t  *export_list = NULL;
+  const fvm_writer_section_t  *export_section = nullptr;
+  fvm_writer_field_helper_t  *helper = nullptr;
+  fvm_writer_section_t  *export_list = nullptr;
   fvm_to_ensight_writer_t  *w = (fvm_to_ensight_writer_t *)this_writer_p;
-  _ensight_file_t  f = {NULL, NULL};
+  _ensight_file_t  f = {nullptr, nullptr};
 
   const int  rank = w->rank;
   const int  n_ranks = w->n_ranks;
@@ -3061,7 +3057,7 @@ fvm_to_ensight_export_field(void                  *this_writer_p,
     bft_error(__FILE__, __LINE__, 0,
               _("Data of dimension %d not handled"), dimension);
 
-  const int *comp_order = (dimension == 6) ? _ensight_c_order_6 : NULL;
+  const int *comp_order = (dimension == 6) ? _ensight_c_order_6 : nullptr;
 
   /* Get part number */
 
@@ -3190,7 +3186,7 @@ fvm_to_ensight_export_field(void                  *this_writer_p,
 
     export_section = export_list;
 
-    while (export_section != NULL) {
+    while (export_section != nullptr) {
 
       /* Print header if start of corresponding EnSight section */
 

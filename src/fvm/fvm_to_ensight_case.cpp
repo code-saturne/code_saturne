@@ -150,7 +150,7 @@ struct _fvm_to_ensight_case_t {
 static fvm_to_ensight_case_time_t *
 _time_set_create(void)
 {
-  fvm_to_ensight_case_time_t   *this_time = NULL;
+  fvm_to_ensight_case_time_t   *this_time = nullptr;
 
   /* Create and initialize structure */
 
@@ -159,7 +159,7 @@ _time_set_create(void)
   this_time->n_time_values = 0;
   this_time->last_time_step = -1;
 
-  this_time->time_value = NULL;
+  this_time->time_value = nullptr;
 
   /* Return new structure */
 
@@ -173,7 +173,7 @@ _time_set_create(void)
  *   this_case  <-- time set structure
  *
  * returns:
- *   NULL pointer
+ *   nullptr pointer
  *----------------------------------------------------------------------------*/
 
 static fvm_to_ensight_case_time_t *
@@ -183,7 +183,7 @@ _time_set_destroy(fvm_to_ensight_case_time_t  *this_time)
 
   BFT_FREE(this_time);
 
-  return NULL;
+  return nullptr;
 }
 
 /*----------------------------------------------------------------------------
@@ -495,7 +495,7 @@ _del_vars(fvm_to_ensight_case_t  *const this_case)
 
 /*----------------------------------------------------------------------------
  * Initialize or update FVM to EnSight Gold geometry file name.
- * The corresponding entry in the case description should be set to NULL
+ * The corresponding entry in the case description should be set to nullptr
  * prior to first use: in this case, it it created. If a geometry file
  * name already exists, its last characters (representing its time
  * step number) may be replaced, but the string's length should not
@@ -512,7 +512,7 @@ _update_geom_file_name(fvm_to_ensight_case_t  *const this_case)
 
   /* Set first time */
 
-  if (this_case->geom_file_name == NULL) {
+  if (this_case->geom_file_name == nullptr) {
 
     char extension[16] = ".geo";
 
@@ -569,7 +569,7 @@ fvm_to_ensight_case_create(const char                   *const name,
 {
   int  i, name_len, prefix_len;
 
-  fvm_to_ensight_case_t   *this_case = NULL;
+  fvm_to_ensight_case_t   *this_case = nullptr;
 
   /* Create and initialize structure */
 
@@ -587,7 +587,7 @@ fvm_to_ensight_case_create(const char                   *const name,
       this_case->name[i] = '_';
   }
 
-  if (dir_prefix != NULL)
+  if (dir_prefix != nullptr)
     prefix_len = strlen(dir_prefix);
   else
     prefix_len = 0;
@@ -595,7 +595,7 @@ fvm_to_ensight_case_create(const char                   *const name,
   this_case->dir_name_length = prefix_len;
 
   BFT_MALLOC(this_case->case_file_name, prefix_len + name_len + 6, char);
-  if (dir_prefix != NULL)
+  if (dir_prefix != nullptr)
     strcpy(this_case->case_file_name, dir_prefix);
       else
     this_case->case_file_name[0] = '\0';
@@ -617,13 +617,13 @@ fvm_to_ensight_case_create(const char                   *const name,
   /* Initialize other members */
 
   this_case->n_parts = 0;
-  this_case->part_name = NULL;
+  this_case->part_name = nullptr;
 
   this_case->n_time_sets = 0;
   this_case->time_set = 0;
 
   this_case->n_vars = 0;
-  this_case->var = NULL;
+  this_case->var = nullptr;
 
   this_case->geom_time_set = -1; /* no time set yet */
 
@@ -631,7 +631,7 @@ fvm_to_ensight_case_create(const char                   *const name,
 
   /* Geometry file name (after time dependency) */
 
-  this_case->geom_file_name = NULL;
+  this_case->geom_file_name = nullptr;
   _update_geom_file_name(this_case);
 
   /* Status information */
@@ -652,7 +652,7 @@ fvm_to_ensight_case_create(const char                   *const name,
  *   this_case  <-- case structure
  *
  * returns:
- *   NULL pointer
+ *   nullptr pointer
  *----------------------------------------------------------------------------*/
 
 fvm_to_ensight_case_t *
@@ -688,7 +688,7 @@ fvm_to_ensight_case_destroy(fvm_to_ensight_case_t  *this_case)
 
   BFT_FREE(this_case);
 
-  return NULL;
+  return nullptr;
 }
 
 /*----------------------------------------------------------------------------
@@ -767,7 +767,7 @@ fvm_to_ensight_case_set_geom_time(fvm_to_ensight_case_t  *const this_case,
 fvm_to_ensight_case_file_info_t
 fvm_to_ensight_case_get_geom_file(fvm_to_ensight_case_t  *const this_case)
 {
-  fvm_to_ensight_case_file_info_t  retval = {NULL, false};
+  fvm_to_ensight_case_file_info_t  retval = {nullptr, false};
 
   retval.name    = this_case->geom_file_name;
   retval.queried = this_case->geom_info_queried;
@@ -796,7 +796,7 @@ fvm_to_ensight_case_add_part(fvm_to_ensight_case_t  *const this_case,
 {
   int  i;
 
-  assert(this_case != NULL);
+  assert(this_case != nullptr);
 
   for (i = 0 ; i < this_case->n_parts ; i++) {
     if (strcmp(part_name, this_case->part_name[i]) == 0)
@@ -840,7 +840,7 @@ fvm_to_ensight_case_get_part_num(fvm_to_ensight_case_t  *const this_case,
 {
   int  i;
 
-  assert(this_case != NULL);
+  assert(this_case != nullptr);
 
   for (i = 0 ; i < this_case->n_parts ; i++) {
     if (strcmp(part_name, this_case->part_name[i]) == 0)
@@ -891,8 +891,8 @@ fvm_to_ensight_case_get_var_file(fvm_to_ensight_case_t       *const this_case,
   int time_set = -1;
   int var_index = -1;
 
-  fvm_to_ensight_case_var_t  *var = NULL;
-  fvm_to_ensight_case_file_info_t  retval = {NULL, false};
+  fvm_to_ensight_case_var_t  *var = nullptr;
+  fvm_to_ensight_case_file_info_t  retval = {nullptr, false};
 
   /* First, find if variable is already defined */
 
@@ -1041,7 +1041,7 @@ fvm_to_ensight_case_write_case(fvm_to_ensight_case_t  *this_case,
 
   f = fopen(this_case->case_file_name, "w");
 
-  if (f == NULL)
+  if (f == nullptr)
     bft_error(__FILE__, __LINE__, 0,
               _("Error opening file \"%s\":\n\n"
                 "  %s"), this_case->case_file_name, strerror(errno));

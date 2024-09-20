@@ -1618,7 +1618,7 @@ fvm_nodal_from_desc_add_faces(fvm_nodal_t        *this_nodal,
       sections[face_type_i]->boundary_flag = boundary_flag;
       this_nodal->n_faces += n_elements_type[face_type_i];
     }
-    n_elements_type[face_type] = 0;
+    n_elements_type[face_type_i] = 0;
   }
 
   /* Main memory allocations */

@@ -126,7 +126,7 @@ typedef int cs_ccm_num_t;          /* CCM integer for connectivity */
 typedef struct _ccm_writer_section_t {
 
   struct _ccm_writer_section_t  *next;  /* Pointer to next element
-                                           in list (NULL at end) */
+                                           in list (nullptr at end) */
 
   cs_lnum_t   n_elts;                   /* number of asociated elements
                                            (or vertices) */
@@ -240,7 +240,7 @@ static void
 _force_adf_link(bool do_something)
 {
   if (do_something) {
-    char *version = NULL, *creation_date = NULL, *modification_date = NULL;
+    char *version = nullptr, *creation_date = nullptr, *modification_date = nullptr;
     int error_return;
     double root_id = 0;
 
@@ -276,7 +276,7 @@ _n_g_mesh_elts(const fvm_nodal_t  *mesh,
   for (i = 0; i < mesh->n_sections; i++) {
     const fvm_nodal_section_t  *const  section = mesh->sections[i];
     if (section->entity_dim == ent_dim) {
-      if (section->global_element_num != NULL)
+      if (section->global_element_num != nullptr)
         retval += fvm_io_num_get_global_count(section->global_element_num);
       else {
         retval += section->n_elements;
@@ -309,10 +309,10 @@ _build_ordered_elt_gnum(const fvm_nodal_t  *mesh,
   for (i = 0; i < mesh->n_sections; i++) {
     const fvm_nodal_section_t  *const  section = mesh->sections[i];
     if (section->entity_dim == ent_dim) {
-      if (section->global_element_num != NULL) {
+      if (section->global_element_num != nullptr) {
         const cs_gnum_t *g_num
           = fvm_io_num_get_global_num(section->global_element_num);
-        if (section->parent_element_id != NULL) {
+        if (section->parent_element_id != nullptr) {
           const cs_lnum_t *p_id = section->parent_element_id;
           for (j = 0; j < section->n_elements; j++)
             elt_gnum[p_id[j]] = g_num[j] + num_shift;
@@ -324,7 +324,7 @@ _build_ordered_elt_gnum(const fvm_nodal_t  *mesh,
         num_shift += fvm_io_num_get_global_count(section->global_element_num);
       }
       else {
-        if (section->parent_element_id != NULL) {
+        if (section->parent_element_id != nullptr) {
           const cs_lnum_t *p_id = section->parent_element_id;
           for (j = 0; j < section->n_elements; j++)
             elt_gnum[p_id[j]] = j+1 + num_shift;
@@ -355,7 +355,7 @@ static cs_gnum_t *
 _build_ordered_cell_gnum(const cs_mesh_t    *b_mesh,
                          const fvm_nodal_t  *mesh)
 {
-  cs_gnum_t *cell_gnum = NULL;
+  cs_gnum_t *cell_gnum = nullptr;
 
   /* Allocate array */
 
@@ -367,7 +367,7 @@ _build_ordered_cell_gnum(const cs_mesh_t    *b_mesh,
 
   /* Synchronize halo, blanking periodicity */
 
-  if (b_mesh->halo != NULL) {
+  if (b_mesh->halo != nullptr) {
 
     const cs_halo_t *halo = b_mesh->halo;
 
@@ -422,7 +422,7 @@ _build_ordered_cell_gnum(const cs_mesh_t    *b_mesh,
 static cs_gnum_t *
 _build_ordered_b_face_gnum(const cs_mesh_t  *b_mesh)
 {
-  cs_gnum_t *face_gnum = NULL;
+  cs_gnum_t *face_gnum = nullptr;
 
   /* Allocate array */
 
@@ -433,12 +433,12 @@ _build_ordered_b_face_gnum(const cs_mesh_t  *b_mesh)
      numberings are consistent */
 
   fvm_nodal_t *mesh = cs_mesh_connect_faces_to_nodal(b_mesh,
-                                                     NULL,
+                                                     nullptr,
                                                      false,
                                                      0,
                                                      b_mesh->n_b_faces,
-                                                     NULL,
-                                                     NULL);
+                                                     nullptr,
+                                                     nullptr);
   fvm_nodal_reduce(mesh, 0);
 
   /* Build global numbering */
@@ -455,7 +455,7 @@ _build_ordered_b_face_gnum(const cs_mesh_t  *b_mesh)
  *
  * parameters:
  *   n_elts   <-- number of elements
- *   elt_gnum <-- array of associated global numbers (or NULL)
+ *   elt_gnum <-- array of associated global numbers (or nullptr)
  *
  * returns:
  *   element ordering array
@@ -466,7 +466,7 @@ _build_order_by_gnum(cs_lnum_t         n_elts,
                      const cs_gnum_t  *elt_gnum)
 {
   cs_lnum_t i;
-  cs_lnum_t *order = NULL;
+  cs_lnum_t *order = nullptr;
 
   /* Allocate array */
 
@@ -474,7 +474,7 @@ _build_order_by_gnum(cs_lnum_t         n_elts,
 
   /* Build global numbering */
 
-  if (elt_gnum != NULL) {
+  if (elt_gnum != nullptr) {
     for (i = 0; i < n_elts; i++)
       order[elt_gnum[i] - 1] = i;
   }
@@ -495,7 +495,7 @@ _build_order_by_gnum(cs_lnum_t         n_elts,
  *
  * returns:
  *   array of section translations (must be freed by caller),
- *   or NULL if section list is completely empty
+ *   or nullptr if section list is completely empty
  *----------------------------------------------------------------------------*/
 
 static ccm_writer_section_t *
@@ -504,7 +504,7 @@ _build_export_list(const fvm_nodal_t  *mesh,
 {
   int  i;
   int  n_sections = 0;
-  ccm_writer_section_t *export_list = NULL;
+  ccm_writer_section_t *export_list = nullptr;
 
   cs_lnum_t num_shift = 0;
 
@@ -525,7 +525,7 @@ _build_export_list(const fvm_nodal_t  *mesh,
   /* If no sections are present no list is returned */
 
   if (n_sections == 0)
-    return NULL;
+    return nullptr;
 
   BFT_MALLOC(export_list, n_sections, ccm_writer_section_t);
 
@@ -552,7 +552,7 @@ _build_export_list(const fvm_nodal_t  *mesh,
 
   for (i = 0; i < n_sections - 1; i++)
     (export_list[i]).next = &(export_list[i+1]);
-  export_list[n_sections - 1].next = NULL;
+  export_list[n_sections - 1].next = nullptr;
 
   return export_list;
 }
@@ -584,7 +584,7 @@ _write_state(fvm_to_ccm_writer_t  *w)
 
     /* Write_state */
     CCMIOError error = kCCMIONoErr, *err = &error;
-    CCMIONewState(err, w->root_id, state_full_name, NULL, NULL, &state_id);
+    CCMIONewState(err, w->root_id, state_full_name, nullptr, nullptr, &state_id);
     if (error != kCCMIONoErr)
       bft_error(__FILE__, __LINE__, 0,
                 _("CCMIO error %d writing state."), (int)error);
@@ -612,9 +612,9 @@ _write_processor(fvm_to_ccm_writer_t  *w)
     CCMIOID processor_id;
 
     /* Check if the current state already has a Processor node */
-    if (   CCMIONextEntity(NULL, w->state_id, kCCMIOProcessor, &i, &processor_id)
+    if (   CCMIONextEntity(nullptr, w->state_id, kCCMIOProcessor, &i, &processor_id)
         != kCCMIONoErr)
-      CCMIONewEntity(err, w->state_id, kCCMIOProcessor, NULL, &processor_id);
+      CCMIONewEntity(err, w->state_id, kCCMIOProcessor, nullptr, &processor_id);
 
     /* Clear the node data in any case */
     CCMIOClearProcessor(err,
@@ -656,9 +656,9 @@ _finalize_processor(char                 *vertices_path,
                         &w->vertices_id,
                         topology_path,
                         &w->topology_id,
-                        NULL,
-                        NULL,
-                        NULL,
+                        nullptr,
+                        nullptr,
+                        nullptr,
                         &w->solution_id);
     if (error != kCCMIONoErr)
       bft_error(__FILE__, __LINE__, 0,
@@ -732,13 +732,13 @@ _write_phase(CCMIOID              *phase_id,
     CCMIOError error = kCCMIONoErr, *err =  &error;
 
     /* Check if the current solution node already has a phase node */
-    if (   CCMIONextEntity(NULL, w->solution_id, kCCMIOFieldPhase, &i, phase_id)
+    if (   CCMIONextEntity(nullptr, w->solution_id, kCCMIOFieldPhase, &i, phase_id)
         != kCCMIONoErr) {
       CCMIONewIndexedEntity(err,
                             w->solution_id,
                             kCCMIOFieldPhase,
                             0,
-                            NULL,
+                            nullptr,
                             phase_id);
       if (error != kCCMIONoErr)
         bft_error(__FILE__, __LINE__, 0,
@@ -765,7 +765,7 @@ _write_problem_description(fvm_to_ccm_writer_t  *w)
 
   if (w->rank < 1) {
 
-    if (CCMIONextEntity(NULL,
+    if (CCMIONextEntity(nullptr,
                         w->root_id,
                         kCCMIOProblemDescription,
                         &i,
@@ -773,7 +773,7 @@ _write_problem_description(fvm_to_ccm_writer_t  *w)
       CCMIONewEntity(err,
                      w->root_id,
                      kCCMIOProblemDescription,
-                     NULL,
+                     nullptr,
                      &problem_id);
       CCMIONewIndexedEntity(err,
                             problem_id,
@@ -784,7 +784,7 @@ _write_problem_description(fvm_to_ccm_writer_t  *w)
 
       /* TODO write additional regions here */
     }
-    CCMIOWriteState(err, w->state_id, problem_id, NULL);
+    CCMIOWriteState(err, w->state_id, problem_id, nullptr);
 
     if (error != kCCMIONoErr)
       bft_error(__FILE__, __LINE__, 0,
@@ -846,13 +846,13 @@ _write_restart_info(int                   time_step,
     /* Write node */
     CCMIOError error = kCCMIONoErr, *err = &error;
     CCMIOID restart_id;
-    CCMIONewEntity(err, w->solution_id, kCCMIORestart, NULL, &restart_id);
+    CCMIONewEntity(err, w->solution_id, kCCMIORestart, nullptr, &restart_id);
     CCMIOWriteRestartInfo(err,
                           restart_id,
                           solver_info,
                           time_step,
                           time_value,
-                          NULL,
+                          nullptr,
                           start_angle);
 
     if (error != kCCMIONoErr)
@@ -867,7 +867,7 @@ _write_restart_info(int                   time_step,
  * Create and write a map.
  *
  * parameters:
- *   name          <-- optional map name, or NULL
+ *   name          <-- optional map name, or nullptr
  *   n_g_elts      <-- global number of elements associated to this entity
  *   bi            <-- part to block info structure fo this entity
  *   map_num_shift <-- shift associated with this map
@@ -886,7 +886,7 @@ _write_map(const char             *name,
   if (w->rank < 1) {
 
     cs_ccm_num_t start_id, end_id, i, j;
-    cs_ccm_num_t *map_data = NULL;
+    cs_ccm_num_t *map_data = nullptr;
     CCMIOError error = kCCMIONoErr, *err = &error;
 
     CCMIONewEntity(err, w->root_id, kCCMIOMap, name, map_id);
@@ -989,7 +989,7 @@ _write_faces_map(const cs_mesh_t      *mesh,
                                     cs_parall_get_min_coll_buf_size(),
                                     n_g_faces);
 
-    _write_map(NULL, n_g_faces, face_bi, map_num_shift, &map_id, w);
+    _write_map(nullptr, n_g_faces, face_bi, map_num_shift, &map_id, w);
 
     w->b_face_map_id = map_id;
 
@@ -1048,7 +1048,7 @@ _count_faces_perio_g(const cs_mesh_t      *b_mesh,
   cs_lnum_t i;
   cs_gnum_t n_g_perio_faces = 0;
 
-  if (b_mesh->periodicity != NULL) {
+  if (b_mesh->periodicity != nullptr) {
 
     const cs_lnum_2_t *face_cells = (const cs_lnum_2_t *)(b_mesh->i_face_cells);
 
@@ -1081,10 +1081,10 @@ static void
 _write_vertices_g(const cs_mesh_t      *mesh,
                   fvm_to_ccm_writer_t  *w)
 {
-  cs_part_to_block_t *d = NULL;
-  cs_file_serializer_t *s = NULL;
+  cs_part_to_block_t *d = nullptr;
+  cs_file_serializer_t *s = nullptr;
 
-  void *_vtx_coords = NULL, *_vtx_coords_s = NULL;
+  void *_vtx_coords = nullptr, *_vtx_coords_s = nullptr;
 
   const cs_datatype_t real_type
     = (sizeof(cs_real_t) == 8) ? CS_DOUBLE : CS_FLOAT;
@@ -1152,7 +1152,7 @@ _write_vertices_g(const cs_mesh_t      *mesh,
 
     _vtx_coords_s = cs_file_serializer_advance(s, range);
 
-    if (_vtx_coords_s != NULL) { /* only possible on rank 0 */
+    if (_vtx_coords_s != nullptr) { /* only possible on rank 0 */
       double scale = 1.0;
       if (sizeof(cs_real_t) == 8)
         CCMIOWriteVerticesd(err,
@@ -1178,7 +1178,7 @@ _write_vertices_g(const cs_mesh_t      *mesh,
       bft_error(__FILE__, __LINE__, 0,
                 _("CCMIO error %d writing vertices."), (int)error);
 
-  } while (_vtx_coords_s != NULL);
+  } while (_vtx_coords_s != nullptr);
 
   cs_file_serializer_destroy(&s);
 
@@ -1201,10 +1201,10 @@ _write_cells_g(const cs_mesh_t      *b_mesh,
                const cs_gnum_t      *cell_gnum,
                fvm_to_ccm_writer_t  *w)
 {
-  cs_part_to_block_t *d = NULL;
-  cs_file_serializer_t *s = NULL;
+  cs_part_to_block_t *d = nullptr;
+  cs_file_serializer_t *s = nullptr;
 
-  int *_cell_gc_id = NULL, *_cell_gc_id_s = NULL;
+  int *_cell_gc_id = nullptr, *_cell_gc_id_s = nullptr;
 
   CCMIOID map_id, topology_id, cells_id;
   CCMIOError error = kCCMIONoErr, *err = &error;
@@ -1267,7 +1267,7 @@ _write_cells_g(const cs_mesh_t      *b_mesh,
 
     _cell_gc_id_s = cs_file_serializer_advance(s, range);
 
-    if (_cell_gc_id_s != NULL) { /* only possible on rank 0 */
+    if (_cell_gc_id_s != nullptr) { /* only possible on rank 0 */
 
       CCMIOWriteCells(err, cells_id, map_id, _cell_gc_id_s,
                       CCMIOINDEXC(range[0]-1), CCMIOINDEXC(range[1]-1));
@@ -1278,7 +1278,7 @@ _write_cells_g(const cs_mesh_t      *b_mesh,
 
     }
 
-  } while (_cell_gc_id_s != NULL);
+  } while (_cell_gc_id_s != nullptr);
 
   cs_file_serializer_destroy(&s);
 
@@ -1312,16 +1312,16 @@ _write_face_vertices_g(const cs_mesh_t         *b_mesh,
   cs_lnum_t i, j, k;
   cs_ccm_num_t n_face_vertices;
 
-  cs_lnum_t *face_vtx_idx = NULL, *face_vtx_lst = NULL;
-  cs_lnum_t *face_connect_idx = NULL, *_face_connect_idx = NULL;
-  cs_ccm_num_t *face_connect_g = NULL, *_face_connect_g = NULL;
+  cs_lnum_t *face_vtx_idx = nullptr, *face_vtx_lst = nullptr;
+  cs_lnum_t *face_connect_idx = nullptr, *_face_connect_idx = nullptr;
+  cs_ccm_num_t *face_connect_g = nullptr, *_face_connect_g = nullptr;
 
   cs_lnum_t n_faces = 0, face_connect_size = 0;
   cs_ccm_num_t block_size = 0;
 
-  cs_ccm_num_t *_face_connect_g_s = NULL;
+  cs_ccm_num_t *_face_connect_g_s = nullptr;
 
-  cs_file_serializer_t *s = NULL;
+  cs_file_serializer_t *s = nullptr;
 
   const cs_datatype_t ccm_num_type
     = (sizeof(cs_ccm_num_t) == 8) ? CS_INT64 : CS_INT32;
@@ -1408,7 +1408,7 @@ _write_face_vertices_g(const cs_mesh_t         *b_mesh,
 
     _face_connect_g_s = cs_file_serializer_advance(s, range);
 
-    if (_face_connect_g_s != NULL) { /* only possible on rank 0 */
+    if (_face_connect_g_s != nullptr) { /* only possible on rank 0 */
       CCMIOError error = kCCMIONoErr, *err = &error;
       CCMIOWriteFaces(err, entity_id, entity, map_id,
                       CCMIOSIZEC(g_connect_size), _face_connect_g_s,
@@ -1419,7 +1419,7 @@ _write_face_vertices_g(const cs_mesh_t         *b_mesh,
                   (int)error);
     }
 
-  } while (_face_connect_g_s != NULL);
+  } while (_face_connect_g_s != nullptr);
 
   cs_file_serializer_destroy(&s);
 
@@ -1455,10 +1455,10 @@ _write_face_cells_g(const cs_mesh_t        *b_mesh,
   cs_lnum_t n_cells_per_face = 0;
   cs_lnum_t n_faces = 0;
 
-  const cs_lnum_t *face_cells = NULL;
-  cs_ccm_num_t *face_cell_g = NULL, *_face_cell_g = NULL;
-  cs_ccm_num_t *_face_cell_g_s = NULL;
-  cs_file_serializer_t *s = NULL;
+  const cs_lnum_t *face_cells = nullptr;
+  cs_ccm_num_t *face_cell_g = nullptr, *_face_cell_g = nullptr;
+  cs_ccm_num_t *_face_cell_g_s = nullptr;
+  cs_file_serializer_t *s = nullptr;
 
   const cs_datatype_t ccm_num_type
     = (sizeof(cs_ccm_num_t) == 8) ? CS_INT64 : CS_INT32;
@@ -1521,7 +1521,7 @@ _write_face_cells_g(const cs_mesh_t        *b_mesh,
 
     _face_cell_g_s = cs_file_serializer_advance(s, range);
 
-    if (_face_cell_g_s != NULL) { /* only possible on rank 0 */
+    if (_face_cell_g_s != nullptr) { /* only possible on rank 0 */
       CCMIOError error = kCCMIONoErr, *err = &error;
       CCMIOWriteFaceCells(err, entity_id, entity, map_id,
                           _face_cell_g_s,
@@ -1532,7 +1532,7 @@ _write_face_cells_g(const cs_mesh_t        *b_mesh,
                   (int)error);
     }
 
-  } while (_face_cell_g_s != NULL);
+  } while (_face_cell_g_s != nullptr);
 
   cs_file_serializer_destroy(&s);
 
@@ -1566,16 +1566,16 @@ _write_face_vertices_perio_g(const cs_mesh_t        *b_mesh,
   cs_lnum_t i, j, k;
   cs_ccm_num_t n_face_vertices;
 
-  cs_lnum_t *face_connect_idx = NULL, *_face_connect_idx = NULL;
-  cs_ccm_num_t *face_connect_g = NULL, *_face_connect_g = NULL;
+  cs_lnum_t *face_connect_idx = nullptr, *_face_connect_idx = nullptr;
+  cs_ccm_num_t *face_connect_g = nullptr, *_face_connect_g = nullptr;
 
   cs_lnum_t n_faces = b_mesh->n_i_faces;
   cs_lnum_t face_connect_size = b_mesh->i_face_vtx_connect_size;
   cs_ccm_num_t block_size = 0;
 
-  cs_ccm_num_t *_face_connect_g_s = NULL;
+  cs_ccm_num_t *_face_connect_g_s = nullptr;
 
-  cs_file_serializer_t *s = NULL;
+  cs_file_serializer_t *s = nullptr;
 
   const cs_datatype_t ccm_num_type
     = (sizeof(cs_ccm_num_t) == 8) ? CS_INT64 : CS_INT32;
@@ -1695,7 +1695,7 @@ _write_face_vertices_perio_g(const cs_mesh_t        *b_mesh,
 
     _face_connect_g_s = cs_file_serializer_advance(s, range);
 
-    if (_face_connect_g_s != NULL) { /* only possible on rank 0 */
+    if (_face_connect_g_s != nullptr) { /* only possible on rank 0 */
       CCMIOError error = kCCMIONoErr, *err = &error;
       CCMIOWriteFaces(err, entity_id, entity, map_id,
                       CCMIOSIZEC(g_connect_size), _face_connect_g_s,
@@ -1706,7 +1706,7 @@ _write_face_vertices_perio_g(const cs_mesh_t        *b_mesh,
                   (int)error);
     }
 
-  } while (_face_connect_g_s != NULL);
+  } while (_face_connect_g_s != nullptr);
 
   cs_file_serializer_destroy(&s);
 
@@ -1742,9 +1742,9 @@ _write_face_cells_perio_g(const cs_mesh_t        *b_mesh,
   cs_lnum_t n_cells_per_face = 0;
   cs_lnum_t n_faces = b_mesh->n_i_faces;
 
-  cs_ccm_num_t *face_cell_g = NULL, *_face_cell_g = NULL;
-  cs_ccm_num_t *_face_cell_g_s = NULL;
-  cs_file_serializer_t *s = NULL;
+  cs_ccm_num_t *face_cell_g = nullptr, *_face_cell_g = nullptr;
+  cs_ccm_num_t *_face_cell_g_s = nullptr;
+  cs_file_serializer_t *s = nullptr;
 
   const cs_datatype_t ccm_num_type
     = (sizeof(cs_ccm_num_t) == 8) ? CS_INT64 : CS_INT32;
@@ -1811,7 +1811,7 @@ _write_face_cells_perio_g(const cs_mesh_t        *b_mesh,
 
     _face_cell_g_s = cs_file_serializer_advance(s, range);
 
-    if (_face_cell_g_s != NULL) { /* only possible on rank 0 */
+    if (_face_cell_g_s != nullptr) { /* only possible on rank 0 */
 
       cs_lnum_t j = 0;
       cs_lnum_t n_elts = range[1] - range[0];
@@ -1856,7 +1856,7 @@ _write_face_cells_perio_g(const cs_mesh_t        *b_mesh,
 
     }
 
-  } while (_face_cell_g_s != NULL);
+  } while (_face_cell_g_s != nullptr);
 
   cs_file_serializer_destroy(&s);
 
@@ -1888,10 +1888,10 @@ _write_faces_g(const cs_mesh_t       *b_mesh,
   cs_ccm_num_t map_num_shift = 0;
   cs_gnum_t n_g_perio_faces = _count_faces_perio_g(b_mesh, cell_gnum, w);
 
-  cs_gnum_t *_face_gnum = NULL;
-  const cs_gnum_t *face_gnum = NULL;
+  cs_gnum_t *_face_gnum = nullptr;
+  const cs_gnum_t *face_gnum = nullptr;
 
-  cs_part_to_block_t *d = NULL;
+  cs_part_to_block_t *d = nullptr;
 
   CCMIOID entity_id, map_id;
   CCMIOError error = kCCMIONoErr, *err = &error;
@@ -1939,7 +1939,7 @@ _write_faces_g(const cs_mesh_t       *b_mesh,
                                                 cs_parall_get_min_coll_buf_size(),
                                                 n_g_faces - n_g_perio_faces);
 
-    _write_map(NULL, n_g_map_faces, map_face_bi, map_num_shift, &map_id, w);
+    _write_map(nullptr, n_g_map_faces, map_face_bi, map_num_shift, &map_id, w);
 
     if (entity == kCCMIOInternalFaces)
       CCMIONewEntity(err, topology_id, entity,
@@ -1992,9 +1992,9 @@ _write_faces_g(const cs_mesh_t       *b_mesh,
 
       cs_part_to_block_destroy(&d);
 
-      if (_face_gnum != NULL) {
+      if (_face_gnum != nullptr) {
         BFT_FREE(_face_gnum);
-        face_gnum = NULL;
+        face_gnum = nullptr;
       }
 
       face_bi = cs_block_dist_compute_sizes(w->rank,
@@ -2019,7 +2019,7 @@ _write_faces_g(const cs_mesh_t       *b_mesh,
                                         cs_parall_get_min_coll_buf_size(),
                                         n_g_perio_faces);
 
-        _write_map(NULL, n_g_perio_faces, map_face_bi, map_num_shift,
+        _write_map(nullptr, n_g_perio_faces, map_face_bi, map_num_shift,
                    &map_id, w);
 
         CCMIONewIndexedEntity(err, topology_id, entity, 1,
@@ -2060,7 +2060,7 @@ _write_faces_g(const cs_mesh_t       *b_mesh,
 
   cs_part_to_block_destroy(&d);
 
-  if (_face_gnum != NULL)
+  if (_face_gnum != nullptr)
     BFT_FREE(_face_gnum);
 }
 
@@ -2144,7 +2144,7 @@ _write_cells_l(const cs_mesh_t      *b_mesh,
                fvm_to_ccm_writer_t  *w)
 {
   cs_lnum_t  i;
-  int *cell_family = NULL;
+  int *cell_family = nullptr;
   CCMIOID map_id, topology_id, cells_id;
   CCMIOError error = kCCMIONoErr, *err = &error;
 
@@ -2210,8 +2210,8 @@ _write_face_vertices_l(const cs_mesh_t         *b_mesh,
                        const cs_lnum_t         *face_order)
 {
   cs_lnum_t i, j, k;
-  cs_lnum_t *face_vtx_idx = NULL, *face_vtx_lst = NULL;
-  cs_ccm_num_t *face_connect = NULL;
+  cs_lnum_t *face_vtx_idx = nullptr, *face_vtx_lst = nullptr;
+  cs_ccm_num_t *face_connect = nullptr;
 
   cs_lnum_t n_faces = 0;
   size_t face_connect_size = 0;
@@ -2283,7 +2283,7 @@ _write_face_cells_l(const cs_mesh_t        *b_mesh,
                     const cs_gnum_t        *cell_gnum)
 {
   cs_lnum_t i;
-  cs_ccm_num_t *face_cells = NULL;
+  cs_ccm_num_t *face_cells = nullptr;
 
   /* Face -> cell connectivity */
   /*---------------------------*/
@@ -2344,7 +2344,7 @@ _write_face_vertices_perio_l(const cs_mesh_t        *b_mesh,
 
   cs_lnum_t n_faces = 0;
 
-  cs_ccm_num_t *face_connect = NULL;
+  cs_ccm_num_t *face_connect = nullptr;
 
   const cs_lnum_t *face_vtx_idx = b_mesh->i_face_vtx_idx;
   const cs_lnum_t *face_vtx_lst = b_mesh->i_face_vtx_lst;
@@ -2432,7 +2432,7 @@ _write_face_cells_perio_l(const cs_mesh_t        *b_mesh,
 
   cs_lnum_t n_cells_per_face = 0;
 
-  cs_ccm_num_t *face_cells = NULL;
+  cs_ccm_num_t *face_cells = nullptr;
 
   if (entity == kCCMIOInternalFaces)
     n_cells_per_face = 2;
@@ -2513,7 +2513,7 @@ _write_faces_l(const cs_mesh_t       *b_mesh,
   cs_ccm_num_t  map_num_shift = 0;
   cs_gnum_t n_g_perio_faces = _count_faces_perio_g(b_mesh, cell_gnum, w);
 
-  cs_lnum_t *face_order = NULL;
+  cs_lnum_t *face_order = nullptr;
 
   CCMIOID entity_id, map_id;
   CCMIOError error = kCCMIONoErr, *err = &error;
@@ -2543,7 +2543,7 @@ _write_faces_l(const cs_mesh_t       *b_mesh,
 
   /* Create map and entity */
 
-  _write_map(NULL, n_g_faces, face_bi, map_num_shift, &map_id, w);
+  _write_map(nullptr, n_g_faces, face_bi, map_num_shift, &map_id, w);
 
   if (entity == kCCMIOInternalFaces)
     CCMIONewEntity(err, topology_id, entity,
@@ -2600,7 +2600,7 @@ _write_faces_l(const cs_mesh_t       *b_mesh,
 
       map_num_shift = b_mesh->n_g_b_faces;
 
-      _write_map(NULL, n_g_perio_faces, face_bi, map_num_shift, &map_id, w);
+      _write_map(nullptr, n_g_perio_faces, face_bi, map_num_shift, &map_id, w);
 
       CCMIONewIndexedEntity(err, topology_id, entity, 1,
                             "Periodic faces", &entity_id);
@@ -2656,7 +2656,7 @@ _build_buffer_elt_gnum(const fvm_nodal_t  *mesh,
   int i;
   cs_lnum_t j, k;
   cs_gnum_t num_shift = 0;
-  cs_gnum_t *elt_gnum = NULL;
+  cs_gnum_t *elt_gnum = nullptr;
 
   BFT_MALLOC(elt_gnum, n_elts, cs_gnum_t);
 
@@ -2712,15 +2712,15 @@ _write_field_data_g(CCMIOID                 data_id,
                     const fvm_nodal_t      *mesh,
                     fvm_to_ccm_writer_t    *w)
 {
-  cs_part_to_block_t *d = NULL;
-  cs_file_serializer_t *s = NULL;
-  void *_field_values_s = NULL;
+  cs_part_to_block_t *d = nullptr;
+  cs_file_serializer_t *s = nullptr;
+  void *_field_values_s = nullptr;
 
   int ent_dim = -1;
   cs_lnum_t n_elts = 0;
   cs_ccm_num_t n_g_elts = 0;
-  cs_gnum_t *_elt_gnum = NULL;
-  const cs_gnum_t *elt_gnum = NULL;
+  cs_gnum_t *_elt_gnum = nullptr;
+  const cs_gnum_t *elt_gnum = nullptr;
 
   /* Choose if we have to write cell data or face data */
   switch (data_location) {
@@ -2760,7 +2760,7 @@ _write_field_data_g(CCMIOID                 data_id,
                                       n_elts,
                                       elt_gnum);
 
-  unsigned char *_field_values_p = NULL, *_field_values_b = NULL;
+  unsigned char *_field_values_p = nullptr, *_field_values_b = nullptr;
 
   cs_lnum_t buffer_size = elt_bi.gnum_range[1] - elt_bi.gnum_range[0];
   cs_lnum_t part_size = cs_part_to_block_get_n_part_ents(d);
@@ -2803,7 +2803,7 @@ _write_field_data_g(CCMIOID                 data_id,
   ccm_writer_section_t  *export_list = _build_export_list(mesh, ent_dim);
 
   for (ccm_writer_section_t *section = export_list;
-       section != NULL;
+       section != nullptr;
        section = section->next) {
 
     cs_lnum_t src_shift = (n_parent_lists == 0) ? section->num_shift : 0;
@@ -2857,7 +2857,7 @@ _write_field_data_g(CCMIOID                 data_id,
 
     _field_values_s = cs_file_serializer_advance(s, range);
 
-    if (_field_values_s != NULL) { /* Only possible on rank 0 */
+    if (_field_values_s != nullptr) { /* Only possible on rank 0 */
 
       CCMIOError    error = kCCMIONoErr, *err = &error;
       CCMIOIndex_t  start = CCMIOINDEXC(range[0]-1);
@@ -2907,7 +2907,7 @@ _write_field_data_g(CCMIOID                 data_id,
 
     }
 
-  } while (_field_values_s != NULL);
+  } while (_field_values_s != nullptr);
 
   /* Free allocated memory */
 
@@ -2917,7 +2917,7 @@ _write_field_data_g(CCMIOID                 data_id,
 
   cs_part_to_block_destroy(&d);
 
-  if (_elt_gnum != NULL)
+  if (_elt_gnum != nullptr)
     BFT_FREE(_elt_gnum);
 }
 
@@ -2964,7 +2964,7 @@ _write_field_data_l(CCMIOID                     data_id,
   cs_ccm_num_t end = 0;
   cs_datatype_t dst_datatype = CS_DATATYPE_NULL;
 
-  unsigned char *_field_values = NULL;
+  unsigned char *_field_values = nullptr;
 
   /* Choose if we have to write cell data or face data */
 
@@ -2996,7 +2996,7 @@ _write_field_data_l(CCMIOID                     data_id,
   ccm_writer_section_t  *export_list = _build_export_list(mesh, ent_dim);
 
   for (ccm_writer_section_t *section = export_list;
-       section != NULL;
+       section != nullptr;
        section = section->next) {
 
     cs_lnum_t src_shift = (n_parent_lists == 0) ? section->num_shift : 0;
@@ -3103,7 +3103,7 @@ _write_multidimensional_field_data(const char              *name,
 {
   /* Set up the variable names */
 
-  char *full_name = NULL;
+  char *full_name = nullptr;
   BFT_MALLOC(full_name, strlen("CS_") + strlen(name) + strlen("XX")  + 1, char);
   full_name[0] = '\0';
 
@@ -3289,7 +3289,7 @@ _write_multidimensional_field_data(const char              *name,
       CCMIONewEntity(err,
                      child_field_id,
                      kCCMIOFieldData,
-                     NULL,
+                     nullptr,
                      &data_id);
       if (error != kCCMIONoErr)
         bft_error(__FILE__, __LINE__, 0,
@@ -3444,7 +3444,7 @@ _write_field(const char                 *name,
 
   }
 
-  char *full_name = NULL;
+  char *full_name = nullptr;
   BFT_MALLOC(full_name, strlen(name) + strlen("CS_") + 1, char);
   strcpy(full_name, "CS_");
   strcat(full_name, name);
@@ -3479,7 +3479,7 @@ _write_field(const char                 *name,
   case kCCMIOScalar:
 
     if (w->rank < 1)
-      CCMIONewEntity(err, field_id, kCCMIOFieldData, NULL, &data_id);
+      CCMIONewEntity(err, field_id, kCCMIOFieldData, nullptr, &data_id);
 
     /* Write data in parallel */
 
@@ -3574,7 +3574,7 @@ fvm_to_ccm_n_version_strings(void)
  * Setting the compile_time flag to 1, the compile-time version string
  * will be returned if this is different from the run-time version.
  * If the version is the same, or only one of the 2 version strings are
- * available, a NULL character string will be returned with this flag set.
+ * available, a nullptr character string will be returned with this flag set.
  *
  * parameters:
  *   string_index <-- index in format's version string list (0 to n-1)
@@ -3637,7 +3637,7 @@ fvm_to_ccm_init_writer(const char             *name,
   int  mesh_filename_length, mesh_basename_length, name_length, path_length;
 
   int writer_index = 0;
-  fvm_to_ccm_writer_t  *writer = NULL;
+  fvm_to_ccm_writer_t  *writer = nullptr;
 
   /* Initialize writer */
 
@@ -3645,8 +3645,8 @@ fvm_to_ccm_init_writer(const char             *name,
 
   /* Mesh metadata */
 
-  writer->v_mesh = NULL;
-  writer->b_mesh = NULL;
+  writer->v_mesh = nullptr;
+  writer->b_mesh = nullptr;
 
   writer->n_g_perio_faces = 0;
 
@@ -3662,13 +3662,13 @@ fvm_to_ccm_init_writer(const char             *name,
   writer->state_counter = 1;
   writer->mesh_time.n_time_values = 0;
   writer->mesh_time.last_time_step = -1;
-  writer->mesh_time.time_value = NULL;
+  writer->mesh_time.time_value = nullptr;
 
   /* Field time dependency */
 
   writer->field_time.n_time_values = 0;
   writer->field_time.last_time_step = 0;
-  writer->field_time.time_value = NULL;
+  writer->field_time.time_value = nullptr;
 
   writer->n_time_fields[0] = 0;
   writer->n_time_fields[1] = 0;
@@ -3690,16 +3690,16 @@ fvm_to_ccm_init_writer(const char             *name,
 
   /* Writer's associated filename */
 
-  if (path != NULL)
+  if (path != nullptr)
     path_length = strlen(path);
   else
     path_length = 0;
   mesh_filename_length = path_length + name_length + strlen(".ccmg") + 1;
   BFT_MALLOC(writer->mesh_filename, mesh_filename_length, char);
 
-  writer->solution_filename = NULL;
+  writer->solution_filename = nullptr;
 
-  if (path != NULL)
+  if (path != nullptr)
     strcpy(writer->mesh_filename, path);
   else
     writer->mesh_filename[0] = '\0';
@@ -3764,7 +3764,7 @@ fvm_to_ccm_init_writer(const char             *name,
  *   this_writer_p <-- pointer to opaque CCMIO writer structure.
  *
  * returns:
- *   NULL pointer.
+ *   nullptr pointer.
  *----------------------------------------------------------------------------*/
 
 void *
@@ -3785,7 +3785,7 @@ fvm_to_ccm_finalize_writer(void  *this_writer_p)
   BFT_FREE(w->field_time.time_value);
   BFT_FREE(w);
 
-  return NULL;
+  return nullptr;
 }
 
 /*----------------------------------------------------------------------------
@@ -3807,8 +3807,8 @@ fvm_to_ccm_set_mesh_time(void     *this_writer_p,
  /* Mark meshes as unset to allow re-export */
 
   if (time_step != w->mesh_time.last_time_step) {
-    w->v_mesh = NULL;
-    w->b_mesh = NULL;
+    w->v_mesh = nullptr;
+    w->b_mesh = nullptr;
   }
 
   /* Update the current mesh time */
@@ -3846,15 +3846,15 @@ fvm_to_ccm_export_nodal(void               *this_writer_p,
   int entity_dim = fvm_nodal_get_max_entity_dim(mesh);
 
   if (entity_dim == 3) {
-    if (  w->v_mesh == NULL
+    if (  w->v_mesh == nullptr
         && _n_g_mesh_elts(mesh, entity_dim) == b_mesh->n_g_cells
-        && cs_glob_mesh_builder == NULL) {
+        && cs_glob_mesh_builder == nullptr) {
       allow_export = true;
       w->v_mesh = mesh;
     }
   }
   else if (entity_dim == 2) {
-    if (   w->b_mesh == NULL
+    if (   w->b_mesh == nullptr
         && _n_g_mesh_elts(mesh, entity_dim) == b_mesh->n_g_b_faces)
       w->b_mesh = mesh;
   }
@@ -3946,7 +3946,7 @@ fvm_to_ccm_export_nodal(void               *this_writer_p,
                           0.0,
                           w);
 
-      _finalize_processor(NULL, NULL, w);
+      _finalize_processor(nullptr, nullptr, w);
 
       BFT_FREE(cell_gnum);
     }
@@ -3986,7 +3986,7 @@ fvm_to_ccm_export_nodal(void               *this_writer_p,
                           0.0,
                           w);
 
-      _finalize_processor(NULL, NULL, w);
+      _finalize_processor(nullptr, nullptr, w);
 
       BFT_FREE(cell_gnum);
     }

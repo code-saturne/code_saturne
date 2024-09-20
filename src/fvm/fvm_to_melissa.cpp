@@ -134,7 +134,7 @@ typedef struct {
 /* Since the Melissa API specifies the field name (and communicator)
    only, only one Melissa writer can be active a a given time. */
 
-static fvm_to_melissa_writer_t  *_writer = NULL;
+static fvm_to_melissa_writer_t  *_writer = nullptr;
 
 /*============================================================================
  * Private function definitions
@@ -210,7 +210,7 @@ _field_c_output(void           *context,
 
   if (c->call_init) {
 
-    if (w->tracefile != NULL)
+    if (w->tracefile != nullptr)
       fprintf(w->tracefile, "[melissa_init] name: %s (time_step: %d)\n",
               c_name, c->time_step);
 
@@ -229,7 +229,7 @@ _field_c_output(void           *context,
 
   /* Output values */
 
-  if (w->tracefile != NULL)
+  if (w->tracefile != nullptr)
     fprintf(w->tracefile, "[melissa_send] name: %s (time_step: %d)\n",
             c_name, c->time_step);
 
@@ -291,7 +291,7 @@ fvm_to_melissa_init_writer(const char             *name,
 {
   CS_UNUSED(time_dependency);
 
-  fvm_to_melissa_writer_t  *w = NULL;
+  fvm_to_melissa_writer_t  *w = nullptr;
 
   /* Parse options */
 
@@ -299,7 +299,7 @@ fvm_to_melissa_init_writer(const char             *name,
   bool trace = false;
   bool dry_run = false;
 
-  if (options != NULL) {
+  if (options != nullptr) {
 
     int i1 = 0, i2 = 0;
     int l_tot = strlen(options);
@@ -336,12 +336,12 @@ fvm_to_melissa_init_writer(const char             *name,
     }
   }
 
-  if (dry_run == false && _writer != NULL) {
+  if (dry_run == false && _writer != nullptr) {
     bft_error(__FILE__, __LINE__, errno,
               _("Error creating Melissa writer: \"%s\":\n"
                 "only one Melissa server may be used, and is already used by\n"
                 "writer: \"%s\"."), name, _writer->name);
-    return NULL;
+    return nullptr;
   }
 
   /* Initialize writer */
@@ -352,7 +352,7 @@ fvm_to_melissa_init_writer(const char             *name,
   strcpy(w->name, name);
 
   w->dry_run = dry_run;
-  w->tracefile = NULL;
+  w->tracefile = nullptr;
 
   w->rank = 0;
   w->n_ranks = 1;
@@ -360,7 +360,7 @@ fvm_to_melissa_init_writer(const char             *name,
   w->buffer_size = 0;
 
   w->f_map = cs_map_name_to_id_create();
-  w->f_ts = NULL;
+  w->f_ts = nullptr;
 
 #if defined(HAVE_MPI)
   {
@@ -401,13 +401,13 @@ fvm_to_melissa_init_writer(const char             *name,
   if (trace && w->rank < 1) {
 
     int  path_len = 0;
-    if (path != NULL)
+    if (path != nullptr)
       path_len = strlen(path) + 1;
 
     int tracefile_path_l = path_len + strlen(name) + strlen(".log") + 1;
     char *tracefile_path;
     BFT_MALLOC(tracefile_path, tracefile_path_l, char);
-    if (path != NULL)
+    if (path != nullptr)
       strcpy(tracefile_path, path);
     else
       tracefile_path[0] = '\0';
@@ -415,7 +415,7 @@ fvm_to_melissa_init_writer(const char             *name,
     strcat(tracefile_path, ".log");
 
     w->tracefile = fopen(tracefile_path, "w");
-    if (w->tracefile ==  NULL)
+    if (w->tracefile ==  nullptr)
       bft_error(__FILE__, __LINE__, errno,
                 _("Error opening file: \"%s\""), tracefile_path);
 
@@ -437,7 +437,7 @@ fvm_to_melissa_init_writer(const char             *name,
  *   this_writer_p <-- pointer to opaque Melissa writer structure.
  *
  * returns:
- *   NULL pointer
+ *   nullptr pointer
  *----------------------------------------------------------------------------*/
 
 void *
@@ -446,9 +446,9 @@ fvm_to_melissa_finalize_writer(void  *this_writer_p)
   fvm_to_melissa_writer_t *w = (fvm_to_melissa_writer_t *)this_writer_p;
 
   if (_writer == w)
-    _writer = NULL;
+    _writer = nullptr;
 
-  if (w->tracefile != NULL) {
+  if (w->tracefile != nullptr) {
     if (fclose(w->tracefile) != 0)
       bft_error(__FILE__, __LINE__, errno,
                 _("Error closing file: \"%s.log\""), w->name);
@@ -463,7 +463,7 @@ fvm_to_melissa_finalize_writer(void  *this_writer_p)
 
   BFT_FREE(w);
 
-  return NULL;
+  return nullptr;
 }
 
 /*----------------------------------------------------------------------------
@@ -556,8 +556,8 @@ fvm_to_melissa_export_field(void                  *this_writer_p,
   c.time_step = time_step;
   c.call_init = false;
 
-  fvm_writer_field_helper_t   *helper = NULL;
-  fvm_writer_section_t        *export_list = NULL;
+  fvm_writer_field_helper_t   *helper = nullptr;
+  fvm_writer_section_t        *export_list = nullptr;
 
   const int  n_ranks = w->n_ranks;
 
@@ -567,7 +567,7 @@ fvm_to_melissa_export_field(void                  *this_writer_p,
     int n_fields = cs_map_name_to_id_size(w->f_map);
     BFT_REALLOC(w->f_ts, n_fields, int);
     c.call_init = true;
-    if (w->tracefile != NULL) {
+    if (w->tracefile != nullptr) {
       fprintf
         (w->tracefile,
          "[init] name: %s (time step: %d; location: %d; dimension: %d)\n",
@@ -577,7 +577,7 @@ fvm_to_melissa_export_field(void                  *this_writer_p,
   else {
     int prev_ts = w->f_ts[f_id];
     if (prev_ts < 0 || prev_ts >= time_step) {
-      if (w->tracefile != NULL) {
+      if (w->tracefile != nullptr) {
         fprintf
           (w->tracefile,
            "[ignore] name: %s (time step: %d; location: %d; dimension: %d)\n",
@@ -632,7 +632,7 @@ fvm_to_melissa_export_field(void                  *this_writer_p,
                                      mesh,
                                      dimension,
                                      interlace,
-                                     NULL,
+                                     nullptr,
                                      n_parent_lists,
                                      parent_num_shift,
                                      datatype,
@@ -653,7 +653,7 @@ fvm_to_melissa_export_field(void                  *this_writer_p,
                                      export_list,
                                      dimension,
                                      interlace,
-                                     NULL,
+                                     nullptr,
                                      n_parent_lists,
                                      parent_num_shift,
                                      datatype,
