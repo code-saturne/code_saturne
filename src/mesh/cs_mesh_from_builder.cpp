@@ -1155,7 +1155,8 @@ _decompose_data_g(cs_mesh_t          *mesh,
   cs_all_to_all_copy_array(d,
                            2,
                            true, /* reverse */
-                           mb->face_cells);
+                           mb->face_cells,
+                           _face_gcells);
 
   BFT_FREE(mb->face_cells);
 
