@@ -962,11 +962,18 @@ _build_parall_merge_structures(const cs_join_mesh_t    *work,
 
   /* Allocate and build send_vtx_data, receive recv_vtx_data. */
 
-  cs_join_vertex_t *recv_vtx_data =
+  /* /!\ Use non templated version since "cs_join_vertex_t" is not
+   * a base type (its a struct!)
+   */
+  cs_join_vertex_t *recv_vtx_data = static_cast<cs_join_vertex_t *>(
     cs_all_to_all_copy_array(d,
+                             CS_CHAR,
                              sizeof(cs_join_vertex_t),
                              false, /* reverse */
-                             work->vertices);
+                             work->vertices,
+                             nullptr)
+    );
+
 
   /* Build merge set */
 

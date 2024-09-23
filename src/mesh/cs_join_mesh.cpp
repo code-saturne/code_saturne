@@ -2086,12 +2086,15 @@ cs_join_mesh_exchange(cs_lnum_t              n_send,
   */
 
   size_t vtx_t_size = sizeof(cs_join_vertex_t);
+  cs_datatype_t  vtx_type = CS_CHAR;
 
   if (vtx_t_size % 8 == 0) {
     vtx_t_size /= 8;
+    vtx_type = CS_UINT64;
   }
   else if (vtx_t_size % 4 == 0) {
     vtx_t_size /= 4;
+    vtx_type = CS_UINT32;
   }
 
   /* Sanity checks */
@@ -2194,11 +2197,19 @@ cs_join_mesh_exchange(cs_lnum_t              n_send,
   for (cs_lnum_t i = 0; i < n_recv; i++)
     recv_mesh->face_vtx_idx[i+1] *= vtx_t_size;
 
-  recv_mesh->vertices = cs_all_to_all_copy_indexed(d,
-                                                   false, /* reverse */
-                                                   send_index,
-                                                   send_vbuf,
-                                                   recv_mesh->face_vtx_idx);
+  /* /!\ Use non templated version since "cs_join_vertex_t" is not
+   * a base type (its a struct!)
+   */
+  recv_mesh->vertices = static_cast<cs_join_vertex_t *>(
+      cs_all_to_all_copy_indexed(d,
+                                 vtx_type,
+                                 false, /* reverse */
+                                 send_index,
+                                 send_vbuf,
+                                 recv_mesh->face_vtx_idx,
+                                 nullptr)
+      );
+
 
   for (cs_lnum_t i = 0; i < n_recv; i++)
     recv_mesh->face_vtx_idx[i+1] /= vtx_t_size;
