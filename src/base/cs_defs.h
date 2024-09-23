@@ -726,6 +726,8 @@ cs_datatype_from_type
     retval = CS_DOUBLE;
   else if (typeid(T) == typeid(cs_coord_t))
     retval = CS_COORD_TYPE;
+  else if (typeid(T) == typeid(char))
+    retval = CS_CHAR;
 
   /* Sanity check to ensure clean error identification in debug mode */
   assert(retval != CS_DATATYPE_NULL);
