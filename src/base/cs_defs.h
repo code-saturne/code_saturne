@@ -223,6 +223,12 @@ extern "C" {
 #  define __bool_true_false_are_defined 1
 #endif
 
+/* C++ assert necessary for template */
+#if defined(__cplusplus)
+#include <typeinfo>
+#include "assert.h"
+#endif
+
 /* int32_t type */
 
 #if !defined(HAVE_INT32_T)
@@ -682,6 +688,51 @@ cs_get_thread_id(void)
 
 #ifdef __cplusplus
 }
+#endif /* __cplusplus */
+
+#ifdef __cplusplus
+
+/*=============================================================================
+ * Public C++ templates
+ *============================================================================*/
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Get the cs_datatype_t from a typename
+ *
+ * \tparam T : datatype
+ */
+/*----------------------------------------------------------------------------*/
+
+template<typename T>
+static inline cs_datatype_t
+cs_datatype_from_type
+(
+)
+{
+  cs_datatype_t retval = CS_DATATYPE_NULL;
+
+  if (typeid(T) ==  typeid(int))
+    retval = CS_INT_TYPE;
+  else if (typeid(T) ==  typeid(cs_lnum_t))
+    retval = CS_LNUM_TYPE;
+  else if (typeid(T) ==  typeid(cs_gnum_t))
+    retval = CS_GNUM_TYPE;
+  else if (typeid(T) == typeid(cs_flag_t))
+    retval = CS_UINT16;
+  else if (typeid(T) ==  typeid(cs_real_t))
+    retval = CS_REAL_TYPE;
+  else if (typeid(T) ==  typeid(double))
+    retval = CS_DOUBLE;
+  else if (typeid(T) == typeid(cs_coord_t))
+    retval = CS_COORD_TYPE;
+
+  /* Sanity check to ensure clean error identification in debug mode */
+  assert(retval != CS_DATATYPE_NULL);
+
+  return retval;
+}
+
 #endif /* __cplusplus */
 
 #endif /* __CS_DEFS_H__ */

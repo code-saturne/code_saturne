@@ -34,10 +34,6 @@
 #include "cs_defs.h"
 #include "cs_execution_context.h"
 
-#if defined(__cplusplus)
-#include <typeinfo>
-#endif
-
 /*----------------------------------------------------------------------------*/
 
 BEGIN_C_DECLS
@@ -906,41 +902,6 @@ cs_parall_thread_range(cs_lnum_t    n,
 /*=============================================================================
  * Public C++ templates
  *============================================================================*/
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Get the cs_datatype_t from a typename, necessary for MPI wrapper
- * functions
- *
- * \tparam T : datatype
- */
-/*----------------------------------------------------------------------------*/
-
-template<typename T>
-static inline cs_datatype_t
-cs_datatype_from_type
-(
-)
-{
-  cs_datatype_t retval = CS_DATATYPE_NULL;
-
-  if (typeid(T) ==  typeid(int))
-    retval = CS_INT_TYPE;
-  else if (typeid(T) ==  typeid(cs_lnum_t))
-    retval = CS_LNUM_TYPE;
-  else if (typeid(T) ==  typeid(cs_gnum_t))
-    retval = CS_GNUM_TYPE;
-  else if (typeid(T) == typeid(cs_flag_t))
-    retval = CS_UINT16;
-  else if (typeid(T) ==  typeid(cs_real_t))
-    retval = CS_REAL_TYPE;
-  else if (typeid(T) ==  typeid(double))
-    retval = CS_DOUBLE;
-  else if (typeid(T) == typeid(cs_coord_t))
-    retval = CS_COORD_TYPE;
-
-  return retval;
-}
 
 /*----------------------------------------------------------------------------*/
 /*!
