@@ -3091,7 +3091,11 @@ cs_join_merge_vertices(cs_join_param_t        param,
 
     /* Allocate send_vtx_data and exchange vtx_merge_data */
 
+    /* /!\ Use non templated version since "cs_join_vertex_t" is not
+     * a base type (its a struct!)
+     */
     cs_all_to_all_copy_array(d,
+                             CS_CHAR,
                              sizeof(cs_join_vertex_t),
                              true, /* reverse */
                              vtx_merge_data,
