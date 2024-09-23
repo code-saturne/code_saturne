@@ -765,7 +765,7 @@ _manage_error(cs_lnum_t                       failsafe_mode,
                                                  CS_LAGR_COORDS);
   cs_real_t *part_coord
     = cs_lagr_particle_attr_get_ptr<cs_real_t>(particle, attr_map,
-                                                 CS_LAGR_COORDS);
+                                               CS_LAGR_COORDS);
 
   const cs_real_t  *prev_location
     = ((const cs_lagr_tracking_info_t *)particle)->start_coords;
@@ -814,6 +814,10 @@ _internal_treatment(cs_lagr_particle_set_t  *particles,
                     cs_lnum_t                face_id,
                     double                   t_intersect)
 {
+  cs_lagr_extra_module_t *extra_i = cs_get_lagr_extra_module();
+  cs_lagr_extra_module_t *extra = extra_i;
+  int n_phases = extra->n_phases;
+
   cs_lagr_tracking_state_t  particle_state = CS_LAGR_PART_TO_SYNC;
 
   cs_lagr_internal_condition_t *internal_conditions
@@ -914,7 +918,8 @@ _internal_treatment(cs_lagr_particle_set_t  *particles,
       /* Force the particle on the intersection but in the original cell */
       for (int k = 0; k < 3; k++) {
         particle_coord[k] = intersect_pt[k] + bc_epsilon * vect_cen[k];
-        particle_velocity_seen[k] = 0.0;
+        for (int phase_id = 0; phase_id < n_phases; phase_id++)
+          particle_velocity_seen[3 * phase_id + k] = 0.0;
       }
 
       /* The particle is not treated yet: the motion is now imposed */
@@ -1029,6 +1034,10 @@ _boundary_treatment(cs_lagr_particle_set_t    *particles,
                     double                     t_intersect,
                     int                        b_z_id)
 {
+  cs_lagr_extra_module_t *extra_i = cs_get_lagr_extra_module();
+  cs_lagr_extra_module_t *extra = extra_i;
+  int n_phases = extra->n_phases;
+
   const cs_mesh_t  *mesh = cs_glob_mesh;
   const double pi = cs_math_pi;
   const double bc_epsilon = 1.e-2;
@@ -1168,7 +1177,8 @@ _boundary_treatment(cs_lagr_particle_set_t    *particles,
     if (cs_glob_lagr_model->resuspension == 0) {
 
       for (int k = 0; k < 3; k++)
-        particle_velocity_seen[k] = 0.0;
+        for (int phase_id = 0; phase_id < n_phases; phase_id++)
+          particle_velocity_seen[3 * phase_id + k] = 0.0;
 
       cs_lagr_particles_set_flag(particles, p_id, CS_LAGR_PART_FIXED);
       particle_state = CS_LAGR_PART_STUCK;
@@ -1311,7 +1321,8 @@ _boundary_treatment(cs_lagr_particle_set_t    *particles,
           for (int k = 0; k < 3; k++) {
             particle_coord[k] = intersect_pt[k] + bc_epsilon * vect_cen[k];
             particle_velocity[k] = 0.0;
-            particle_velocity_seen[k] = 0.0;
+            for (int phase_id = 0; phase_id < n_phases; phase_id++)
+              particle_velocity_seen[3 * phase_id + k] = 0.0;
           }
 
           cs_lagr_particles_set_flag(particles, p_id, CS_LAGR_PART_DEPOSITED);
@@ -1513,10 +1524,12 @@ _boundary_treatment(cs_lagr_particle_set_t    *particles,
       for (int k = 0; k < 3; k++)
         particle_velocity[k] -= tmp * face_norm[k];
 
-      tmp = 2. * cs_math_3_dot_product(particle_velocity_seen, face_norm);
+      for (int phase_id = 0; phase_id < n_phases; phase_id++) {
+        tmp = 2. * cs_math_3_dot_product(particle_velocity_seen + 3 * phase_id, face_norm);
 
-      for (int k = 0; k < 3; k++)
-        particle_velocity_seen[k] -= tmp * face_norm[k];
+        for (int k = 0; k < 3; k++)
+          particle_velocity_seen[3 * phase_id + k] -= tmp * face_norm[k];
+      }
 
       event_flag = event_flag | CS_EVENT_REBOUND;
     }
@@ -1525,7 +1538,8 @@ _boundary_treatment(cs_lagr_particle_set_t    *particles,
   /* Anelastic rebound */
   else if (b_type == CS_LAGR_REBOUND ) {
 
-    cs_lagr_extra_module_t *extra = cs_get_lagr_extra_module();
+    cs_lagr_extra_module_t *extra_i = cs_get_lagr_extra_module();
+    cs_lagr_extra_module_t *extra = extra_i;
 
     particle_state = CS_LAGR_PART_TO_SYNC;
 
@@ -1553,90 +1567,92 @@ _boundary_treatment(cs_lagr_particle_set_t    *particles,
     for (int k = 0; k < 3; k++)
       particle_velocity[k] -= tmp * face_norm[k];
 
-    tmp = 2. * cs_math_3_dot_product(particle_velocity_seen, face_norm);
+    for (int phase_id = 0; phase_id < n_phases; phase_id++) {
+      tmp = 2. * cs_math_3_dot_product(particle_velocity_seen + 3 * phase_id, face_norm);
 
-    /* Wall function */
-    if (extra->cvar_rij != nullptr) {
-      /* Reynolds stress tensor (current value) */
-      cs_real_t *r_ij = &(extra->cvar_rij->vals[0][6*cell_id]);
-      /* Component Rnn = ni Rij nj */
-      cs_real_t r_nn = cs_math_3_sym_33_3_dot_product(face_norm, r_ij, face_norm);
+      /* Wall function */
+      if (extra->cvar_rij != nullptr) {
+        /* Reynolds stress tensor (current value) */
+        cs_real_t *r_ij = &(extra_i[phase_id].cvar_rij->vals[0][6*cell_id]);
+        /* Component Rnn = ni Rij nj */
+        cs_real_t r_nn = cs_math_3_sym_33_3_dot_product(face_norm, r_ij, face_norm);
 
-      /* Vector Rij.nj */
-      cs_real_t r_in[3];
-      cs_math_sym_33_3_product(r_ij, face_norm, r_in);
+        /* Vector Rij.nj */
+        cs_real_t r_in[3];
+        cs_math_sym_33_3_product(r_ij, face_norm, r_in);
 
-      /* Modify velocity seen */
-      for (int k = 0; k < 3; k++)
-        particle_velocity_seen[k] -=  r_in[k] / r_nn * tmp ;
+        for (int k = 0; k < 3; k++)
+          particle_velocity_seen[3 * phase_id + k] -=  r_in[k] / cs_math_fmax(r_nn, 1e-5) * tmp ;
 
-      /* Modify particle fluid temperature */
-      if (   cs_glob_lagr_model->physical_model != CS_LAGR_PHYS_OFF
-          && extra->temperature != nullptr
-          && extra->temperature_turbulent_flux != nullptr) {
+        /* Modify particle fluid temperature */
+        if (   cs_glob_lagr_model->physical_model != CS_LAGR_PHYS_OFF
+            && extra->temperature != nullptr
+            && extra->temperature_turbulent_flux != nullptr) {
 
-        cs_real_t temperature_out =
-          cs_lagr_particles_get_real(particles, p_id,
-                                     CS_LAGR_FLUID_TEMPERATURE);
-        /* Normal thermal turbulent flux */
-        cs_real_t r_tn =
-          cs_math_3_dot_product(&extra->temperature_turbulent_flux->val[3*cell_id], face_norm);
-        cs_lagr_particles_set_real(particles, p_id, CS_LAGR_FLUID_TEMPERATURE,
-            temperature_out -  r_tn / r_nn * tmp);
-      }
-    }
-    /* TODO else: for EVM u*^2 / r_nn */
-    else {
-      for (int k = 0; k < 3; k++)
-        particle_velocity_seen[k] -= tmp * face_norm[k];
-      if (   cs_glob_lagr_model->physical_model != CS_LAGR_PHYS_OFF
-          && extra->temperature != nullptr
-          && extra->temperature_variance != nullptr
-          && (extra->tstar != nullptr || extra->grad_tempf != nullptr)
-          && extra->cvar_k != nullptr) {
-        cs_real_t temperature_out =
-          cs_lagr_particles_get_real(particles, p_id,
-                                     CS_LAGR_FLUID_TEMPERATURE);
-        /* Modify fluid temperature with algebraic solution from SLM--IEM model
-         * in the neutral limit (=close to walls, could be poor further away)*/
-        cs_real_t rnt_ov_rnn =
-          -sqrt(cs_turb_crij_ct * (1.5 * cs_turb_crij_c0 + 1.) /
-            (cs_turb_crij_c0 * (cs_turb_crij_ct + 0.75 * cs_turb_crij_c0 + 1.))
-              * extra->temperature_variance->val[cell_id]/extra->cvar_k->val[cell_id]);
-
-        /* Estimate the direction of the flux */
-        if (extra->grad_tempf != nullptr ) {
-          cs_real_t grad_n = cs_math_3_dot_product(extra->grad_tempf[cell_id],
-                                                   face_norm);
-          if (CS_ABS(grad_n) < cs_math_epzero)
-            rnt_ov_rnn = 0;
-          else if (grad_n < 0.)
-            rnt_ov_rnn *= -1.;
-        }
-        else if (extra->tstar != nullptr) { //define only at walls
-          if (CS_ABS(extra->tstar->val[face_id]) < cs_math_epzero)
-            rnt_ov_rnn = 0;
-          else if (extra->tstar->val[face_id] < 0.)
-            rnt_ov_rnn *= -1.;
-        }
-        else
-          rnt_ov_rnn = 0;
-
-        cs_lagr_particles_set_real(particles, p_id, CS_LAGR_FLUID_TEMPERATURE,
-                                   temperature_out -  rnt_ov_rnn * tmp);
-      }
-      else if (   cs_glob_lagr_model->physical_model != CS_LAGR_PHYS_OFF
-               && extra->temperature != nullptr
-               && extra->tstar != nullptr
-               && extra->ustar != nullptr) {
-        if (extra->ustar->val[face_id] > cs_math_epzero) {
           cs_real_t temperature_out =
             cs_lagr_particles_get_real(particles, p_id,
                                        CS_LAGR_FLUID_TEMPERATURE);
-          cs_real_t rnt_ov_rnn = - extra->tstar->val[face_id] /
-            (sqrt(cs_turb_crij_c0) * extra->ustar->val[face_id]);
+          /* Normal thermal turbulent flux */
+          cs_real_t r_tn =
+            cs_math_3_dot_product(&extra->temperature_turbulent_flux->val[3*cell_id], face_norm);
+          cs_lagr_particles_set_real(particles, p_id, CS_LAGR_FLUID_TEMPERATURE,
+              temperature_out -  r_tn / r_nn * tmp);
+        }
+      }
+      /* TODO else: for EVM u*^2 / r_nn */
+      else {
+        for (int k = 0; k < 3; k++)
+          particle_velocity_seen[3 * phase_id + k] -= tmp * face_norm[k];
+
+        if (   cs_glob_lagr_model->physical_model != CS_LAGR_PHYS_OFF
+            && extra->temperature != nullptr
+            && extra->temperature_variance != nullptr
+            && (extra->tstar != nullptr || extra->grad_tempf != nullptr)
+            && extra->cvar_k != nullptr) {
+          cs_real_t temperature_out =
+            cs_lagr_particles_get_real(particles, p_id,
+                                       CS_LAGR_FLUID_TEMPERATURE);
+          /* Modify fluid temperature with algebraic solution from SLM--IEM model
+           * in the neutral limit (=close to walls, could be poor further away)*/
+          cs_real_t rnt_ov_rnn =
+            -sqrt(cs_turb_crij_ct * (1.5 * cs_turb_crij_c0 + 1.) /
+              (cs_turb_crij_c0 * (cs_turb_crij_ct + 0.75 * cs_turb_crij_c0 + 1.))
+                * extra->temperature_variance->val[cell_id]/extra->cvar_k->val[cell_id]);
+
+          /* Estimate the direction of the flux */
+          if (extra->grad_tempf != nullptr ) {
+            cs_real_t grad_n = cs_math_3_dot_product(extra->grad_tempf[cell_id],
+                                                     face_norm);
+            if (CS_ABS(grad_n) < cs_math_epzero)
+              rnt_ov_rnn = 0;
+            else if (grad_n < 0.)
+              rnt_ov_rnn *= -1.;
+          }
+          else if (extra->tstar != nullptr) { //define only at walls
+            if (CS_ABS(extra->tstar->val[face_id]) < cs_math_epzero)
+              rnt_ov_rnn = 0;
+            else if (extra->tstar->val[face_id] < 0.)
+              rnt_ov_rnn *= -1.;
+          }
+          else
+            rnt_ov_rnn = 0;
+
           cs_lagr_particles_set_real(particles, p_id, CS_LAGR_FLUID_TEMPERATURE,
                                      temperature_out -  rnt_ov_rnn * tmp);
+        }
+        else if (   cs_glob_lagr_model->physical_model != CS_LAGR_PHYS_OFF
+                 && extra->temperature != nullptr
+                 && extra->tstar != nullptr
+                 && extra->ustar != nullptr) {
+          if (extra->ustar->val[face_id] > cs_math_epzero) {
+            cs_real_t temperature_out =
+              cs_lagr_particles_get_real(particles, p_id,
+                                         CS_LAGR_FLUID_TEMPERATURE);
+            cs_real_t rnt_ov_rnn = - extra->tstar->val[face_id] /
+              (sqrt(cs_turb_crij_c0) * extra->ustar->val[face_id]);
+            cs_lagr_particles_set_real(particles, p_id, CS_LAGR_FLUID_TEMPERATURE,
+                                       temperature_out -  rnt_ov_rnn * tmp);
+          }
         }
       }
     }
@@ -1674,10 +1690,12 @@ _boundary_treatment(cs_lagr_particle_set_t    *particles,
     for (int k = 0; k < 3; k++)
       particle_velocity[k] -= tmp * face_norm[k];
 
-    tmp = 2. * cs_math_3_dot_product(particle_velocity_seen, face_norm);
+    for (int phase_id = 0; phase_id < n_phases; phase_id++) {
+      tmp = 2. * cs_math_3_dot_product(particle_velocity_seen + 3 * phase_id, face_norm);
 
-    for (int k = 0; k < 3; k++)
-      particle_velocity_seen[k] -= tmp * face_norm[k];
+      for (int k = 0; k < 3; k++)
+        particle_velocity_seen[3 * phase_id + k] -= tmp * face_norm[k];
+    }
 
     event_flag = event_flag | CS_EVENT_REBOUND;
   }
@@ -1749,7 +1767,8 @@ _boundary_treatment(cs_lagr_particle_set_t    *particles,
         for (int k = 0; k < 3; k++) {
           particle_coord[k] = intersect_pt[k];
           particle_velocity[k] = 0.0;
-          particle_velocity_seen[k] = 0.0;
+          for (int phase_id = 0; phase_id < n_phases; phase_id++)
+            particle_velocity_seen[3 * phase_id + k] = 0.0;
         }
       }
     }
@@ -1781,12 +1800,14 @@ _boundary_treatment(cs_lagr_particle_set_t    *particles,
       for (int k = 0; k < 3; k++)
         particle_velocity[k] -= tmp * face_norm[k];
 
-      tmp = 2. * cs_math_3_dot_product(particle_velocity_seen, face_norm);
+      for (int phase_id = 0; phase_id < n_phases; phase_id++) {
+        tmp = 2. * cs_math_3_dot_product(particle_velocity_seen + 3 * phase_id, face_norm);
 
-      /*TODO set aneslastic rebound */
-      for (int k = 0; k < 3; k++) {
-        particle_velocity_seen[k] -= tmp * face_norm[k];
-        // particle_velocity_seen[k] = 0.0; //FIXME
+        /*TODO set anelastic rebound */
+        for (int k = 0; k < 3; k++) {
+          particle_velocity_seen[3 * phase_id + k] -= tmp * face_norm[k];
+          // particle_velocity_seen[k] = 0.0; //FIXME
+        }
       }
 
       event_flag = event_flag | CS_EVENT_REBOUND;
@@ -1901,10 +1922,14 @@ _local_propagation(cs_lagr_particle_set_t         *particles,
                    int                             displacement_step_id,
                    int                             failsafe_mode,
                    const int                       b_face_zone_id[],
-                   const cs_real_t                 visc_length[],
-                   const cs_field_t               *u)
+                   const cs_real_t                 visc_length[])
 {
   cs_real_t  disp[3];
+
+  cs_real_t fluid_vel[3] = {0, 0, 0};
+  cs_lagr_extra_module_t *extra_i = cs_get_lagr_extra_module();
+  cs_lagr_extra_module_t *extra = extra_i;
+  int n_phases = extra->n_phases;
 
   cs_lagr_tracking_state_t  particle_state = CS_LAGR_PART_TO_SYNC;
 
@@ -2012,25 +2037,29 @@ _local_propagation(cs_lagr_particle_set_t         *particles,
 
       if (*particle_yplus < 100.) {
 
-        cs_real_t *fluid_vel = &(u->val[cell_id*3]);
-        cs_real_t fluid_vel_proj[3];
+        for (cs_lnum_t phase_id = 0; phase_id < n_phases; phase_id++) {
+          for (int i = 0; i < 3; i++)
+            fluid_vel[i] = extra_i[phase_id].vel->val[3 * cell_id + i];
 
-        /* normal vector coordinates */
-        cs_real_3_t normal;
-        cs_math_3_normalize(b_face_normal[*neighbor_face_id], normal);
+          cs_real_t fluid_vel_proj[3];
 
-        /* (V . n) * n  */
-        cs_real_t v_dot_n = cs_math_3_dot_product(particle_velocity_seen, normal);
+          /* normal vector coordinates */
+          cs_real_3_t normal;
+          cs_math_3_normalize(b_face_normal[*neighbor_face_id], normal);
 
-        /* tangential projection to the wall:
-         * (Id -n (x) n) U */
-        cs_math_3_orthogonal_projection(normal, fluid_vel, fluid_vel_proj);
+          /* (V . n) * n  */
+          cs_real_t v_dot_n = cs_math_3_dot_product(particle_velocity_seen + 3 * phase_id, normal);
 
-        /* Update of the flow seen velocity */
+          /* tangential projection to the wall:
+           * (Id -n (x) n) U */
+          cs_math_3_orthogonal_projection(normal, fluid_vel, fluid_vel_proj);
 
-        particle_velocity_seen[0] = v_dot_n * normal[0] + fluid_vel_proj[0];
-        particle_velocity_seen[1] = v_dot_n * normal[1] + fluid_vel_proj[1];
-        particle_velocity_seen[2] = v_dot_n * normal[2] + fluid_vel_proj[2];
+          /* Update of the flow seen velocity */
+
+          particle_velocity_seen[3 * phase_id + 0] = v_dot_n * normal[0] + fluid_vel_proj[0];
+          particle_velocity_seen[3 * phase_id + 1] = v_dot_n * normal[1] + fluid_vel_proj[1];
+          particle_velocity_seen[3 * phase_id + 2] = v_dot_n * normal[2] + fluid_vel_proj[2];
+        }
       }
     }
 
@@ -2262,26 +2291,30 @@ _local_propagation(cs_lagr_particle_set_t         *particles,
 
           if (*particle_yplus < 100.) {
 
-            cs_real_t *fluid_vel = &(u->val[cell_id*3]);
-            cs_real_t fluid_vel_proj[3];
+            for (cs_lnum_t phase_id = 0; phase_id < n_phases; phase_id++) {
+              for (cs_lnum_t i = 0; i < 3; i++)
+                fluid_vel[i] = extra_i[phase_id].vel->val[3 * cell_id + i];
 
-            /* normal vector coordinates */
-            cs_real_3_t normal;
-            cs_math_3_normalize(b_face_normal[*neighbor_face_id], normal);
+              cs_real_t fluid_vel_proj[3];
 
-            /* (V . n) * n  */
-            cs_real_t v_dot_n = cs_math_3_dot_product(particle_velocity_seen,
-                                                      normal);
+              /* normal vector coordinates */
+              cs_real_3_t normal;
+              cs_math_3_normalize(b_face_normal[*neighbor_face_id], normal);
 
-            /* tangential projection to the wall:
-             * (Id -n (x) n) U */
-            cs_math_3_orthogonal_projection(normal, fluid_vel, fluid_vel_proj);
+              /* (V . n) * n  */
+              cs_real_t v_dot_n = cs_math_3_dot_product(particle_velocity_seen + 3 * phase_id,
+                  normal);
 
-            /* Update of the flow seen velocity */
+              /* tangential projection to the wall:
+               * (Id -n (x) n) U */
+              cs_math_3_orthogonal_projection(normal, fluid_vel, fluid_vel_proj);
 
-            particle_velocity_seen[0] = v_dot_n * normal[0] + fluid_vel_proj[0];
-            particle_velocity_seen[1] = v_dot_n * normal[1] + fluid_vel_proj[1];
-            particle_velocity_seen[2] = v_dot_n * normal[2] + fluid_vel_proj[2];
+              /* Update of the flow seen velocity */
+
+              particle_velocity_seen[3 * phase_id + 0] = v_dot_n * normal[0] + fluid_vel_proj[0];
+              particle_velocity_seen[3 * phase_id + 1] = v_dot_n * normal[1] + fluid_vel_proj[1];
+              particle_velocity_seen[3 * phase_id + 2] = v_dot_n * normal[2] + fluid_vel_proj[2];
+            }
           }
 
         } /* end of case for deposition model */
@@ -3150,8 +3183,6 @@ cs_lagr_tracking_particle_movement(const cs_real_t  visc_length[],
   const cs_lnum_t  failsafe_mode = 0; /* If 1 : stop as soon as an error is
                                          detected */
 
-  const cs_field_t *u = cs_glob_lagr_extra_module->vel;
-
   int t_stat_id = cs_timer_stats_id_by_name("particle_displacement_stage");
 
   int t_top_id = cs_timer_stats_switch(t_stat_id);
@@ -3194,8 +3225,7 @@ cs_lagr_tracking_particle_movement(const cs_real_t  visc_length[],
                                                         displacement_step_id,
                                                         failsafe_mode,
                                                         b_face_zone_id,
-                                                        visc_length,
-                                                        u);
+                                                        visc_length);
 
         _tracking_info(particles, i)->state = cur_part_state;
 

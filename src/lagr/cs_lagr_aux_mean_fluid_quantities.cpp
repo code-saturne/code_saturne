@@ -84,6 +84,39 @@ BEGIN_C_DECLS
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
+/*=============================================================================
+ * Private function definitions
+ *============================================================================*/
+
+ /*----------------------------------------------------------------------------*/
+   /*!
+   * \brief Create a field name based on a radical and a phase, scalar, or a
+   *        non condensable index.
+   *
+   * \param[in]  field_radical  pointer to a string containing the radical
+   * \param[in]  index  int containing an index value
+   *
+   * \return field_name  pointer to a string containing the constructed field name
+   */
+ /*----------------------------------------------------------------------------*/
+
+/* This function is also defined in cs_lagr.c ... we can define it in cs_lagr.h and
+call it here if really needed */
+
+static char *
+_field_name_aux(const char *field_radical, const int index)
+{
+  char *field_name;
+  if (index > -1) {
+    BFT_MALLOC(field_name, strlen(field_radical) + 2 + 1, char);
+    sprintf(field_name, "%s_%1d", field_radical, index + 1);
+  } else {
+    BFT_MALLOC(field_name, strlen(field_radical) + 1, char);
+    sprintf(field_name, "%s", field_radical);
+  }
+  return field_name;
+}
+
 /*============================================================================
  * Public function definitions
  *============================================================================*/
@@ -97,6 +130,7 @@ BEGIN_C_DECLS
  *  - velocity gradient
  *  - Lagragian time gradient
  *
+ * \param[in]   phase_id               carrier phase id
  * \param[out]  lagr_time              Lagragian time scale
  * \param[out]  grad_pr                pressure gradient
  * \param[out]  grad_vel               velocity gradient
@@ -106,7 +140,8 @@ BEGIN_C_DECLS
 /*----------------------------------------------------------------------------*/
 
 void
-cs_lagr_aux_mean_fluid_quantities(cs_field_t    *lagr_time,
+cs_lagr_aux_mean_fluid_quantities(int            phase_id,
+                                  cs_field_t    *lagr_time,
                                   cs_real_3_t   *grad_pr,
                                   cs_real_33_t  *grad_vel,
                                   cs_real_3_t   *grad_tempf,
@@ -115,7 +150,8 @@ cs_lagr_aux_mean_fluid_quantities(cs_field_t    *lagr_time,
   cs_lnum_t n_cells_with_ghosts = cs_glob_mesh->n_cells_with_ghosts;
   cs_lnum_t n_cells = cs_glob_mesh->n_cells;
 
-  cs_lagr_extra_module_t *extra = cs_glob_lagr_extra_module;
+  cs_lagr_extra_module_t *extra_i = cs_glob_lagr_extra_module;
+  cs_lagr_extra_module_t *extra = extra_i;
 
   const cs_real_t *grav  = cs_glob_physical_constants->gravity;
 
@@ -128,7 +164,7 @@ cs_lagr_aux_mean_fluid_quantities(cs_field_t    *lagr_time,
     turb_disp_model = true;
 
   /* Use pressure gradient of NEPTUNE_CFD if needed */
-  if (cs_field_by_name_try("velocity_1") != nullptr) {
+  if (cs_glob_lagr_model->cs_used == 0) {
     cs_real_t *cpro_pgradlagr = cs_field_by_name("lagr_pressure_gradient")->val;
 
     for (cs_lnum_t iel = 0; iel < cs_glob_mesh->n_cells; iel++)
@@ -137,8 +173,11 @@ cs_lagr_aux_mean_fluid_quantities(cs_field_t    *lagr_time,
 
     if (turb_disp_model || cs_glob_lagr_model->shape > 0) {
 
+      char *f_name = nullptr;
+      f_name = _field_name_aux("lagr_velocity_gradient", phase_id);
       cs_real_33_t *cpro_vgradlagr
-        = (cs_real_33_t *)(cs_field_by_name("lagr_velocity_gradient")->val);
+        = (cs_real_33_t *)(cs_field_by_name(f_name)->val);
+      BFT_FREE(f_name);
 
       if (cpro_vgradlagr != nullptr && grad_vel != nullptr) {
         for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
@@ -151,39 +190,39 @@ cs_lagr_aux_mean_fluid_quantities(cs_field_t    *lagr_time,
     }
   }
 
+  cs_real_t *wpres = nullptr;
+
+  /* Hydrostatic pressure algorithm? */
+  int hyd_p_flag = cs_glob_velocity_pressure_param->iphydr;
+
+  cs_real_3_t *f_ext = nullptr;
+  // Warning: with neptune_cfd we do not enter here
+  if (hyd_p_flag == 1 && cs_glob_lagr_model->cs_used == 1)
+    f_ext = (cs_real_3_t *)(cs_field_by_name("volume_forces")->val);
+
+  cs_real_t *solved_pres = extra->pressure->val;
+
+  /* retrieve 2/3 rho^{n} k^{n} from solved pressure field for EVM models */
+  assert(turb_model != nullptr);
+  if (turb_model->order <= CS_TURB_FIRST_ORDER
+      && cs_glob_turb_rans_model->igrhok == 0) {
+    BFT_MALLOC(wpres, n_cells_with_ghosts, cs_real_t);
+    int time_id = (extra->cvar_k->n_time_vals > 1) ? 1 : 0;
+    const cs_real_t *cvar_k = extra->cvar_k->vals[time_id];
+    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+      wpres[c_id] =  solved_pres[c_id]
+                   -  2./3. * extra_i[phase_id].cromf->val[c_id]
+                    * cvar_k[c_id];
+    }
+  }
   else {
+    wpres = solved_pres;
+  }
 
-    cs_real_t *wpres = nullptr;
+  /* Parameters for gradient computation
+   * =================================== */
 
-    /* Hydrostatic pressure algorithm? */
-    int hyd_p_flag = cs_glob_velocity_pressure_param->iphydr;
-
-    cs_real_3_t *f_ext = nullptr;
-    if (hyd_p_flag == 1)
-      f_ext = (cs_real_3_t *)(cs_field_by_name("volume_forces")->val);
-
-    cs_real_t *solved_pres = extra->pressure->val;
-
-    /* retrieve 2/3 rho^{n} k^{n} from solved pressure field for EVM models */
-    assert(turb_model != nullptr);
-    if (turb_model->order <= CS_TURB_FIRST_ORDER
-        && cs_glob_turb_rans_model->igrhok == 0) {
-      BFT_MALLOC(wpres, n_cells_with_ghosts, cs_real_t);
-
-      int time_id = (extra->cvar_k->n_time_vals > 1) ? 1 : 0;
-      const cs_real_t *cvar_k = extra->cvar_k->vals[time_id];
-      for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-        wpres[c_id] =  solved_pres[c_id]
-                     -  2./3. * extra->cromf->val[c_id]
-                      * cvar_k[c_id];
-      }
-    }
-    else {
-      wpres = solved_pres;
-    }
-
-    /* Parameters for gradient computation
-     * =================================== */
+  if (cs_glob_lagr_model->cs_used == 1) {
 
     cs_gradient_type_t gradient_type = CS_GRADIENT_GREEN_ITER;
     cs_halo_type_t halo_type = CS_HALO_STANDARD;
@@ -204,7 +243,7 @@ cs_lagr_aux_mean_fluid_quantities(cs_field_t    *lagr_time,
     if (eqp->iwgrec == 1) {
       /* Weighted gradient coefficients */
       int key_id = cs_field_key_id("gradient_weighting_id");
-      int diff_id = cs_field_get_key_int(extra->pressure, key_id);
+      int diff_id = cs_field_get_key_int(extra_i[phase_id].pressure, key_id);
       if (diff_id > -1) {
         cs_field_t *weight_f = cs_field_by_id(diff_id);
         weight = weight_f->val;
@@ -213,7 +252,7 @@ cs_lagr_aux_mean_fluid_quantities(cs_field_t    *lagr_time,
       /* Internal coupling structure */
       key_id = cs_field_key_id_try("coupling_entity");
       if (key_id > -1) {
-        int coupl_id = cs_field_get_key_int(extra->pressure, key_id);
+        int coupl_id = cs_field_get_key_int(extra_i[phase_id].pressure, key_id);
         if (coupl_id > -1)
           cpl = cs_internal_coupling_by_id(coupl_id);
       }
@@ -221,7 +260,7 @@ cs_lagr_aux_mean_fluid_quantities(cs_field_t    *lagr_time,
       if (eqp->idiff > 0) {
         int key_id = cs_field_key_id_try("coupling_entity");
         if (key_id > -1) {
-          int coupl_id = cs_field_get_key_int(extra->pressure, key_id);
+          int coupl_id = cs_field_get_key_int(extra_i[phase_id].pressure, key_id);
           if (coupl_id > -1)
             cpl = cs_internal_coupling_by_id(coupl_id);
         }
@@ -403,6 +442,8 @@ cs_lagr_aux_mean_fluid_quantities(cs_field_t    *lagr_time,
                                grad_vel);
     }
   }
+  if (wpres != nullptr && cs_glob_lagr_model->cs_used == 0)
+    BFT_FREE(wpres);
 
     /* Compute temperature gradient
        ========================= */
@@ -417,28 +458,31 @@ cs_lagr_aux_mean_fluid_quantities(cs_field_t    *lagr_time,
 
   /* Compute Lagrangian time gradient
      ================================ */
-  if(cs_glob_lagr_model->idistu > 0) {
+
+  if (cs_glob_lagr_model->idistu > 0) {
 
     cs_real_t cl     = 1.0 / (0.5 + 0.75 * cs_turb_crij_c0);
 
-    cs_real_t *energi = extra->cvar_k->val;
-    cs_real_t *dissip = extra->cvar_ep->val;
+    cs_real_t *energi = extra_i[phase_id].cvar_k->val;
+    cs_real_t *dissip = extra_i[phase_id].cvar_ep->val;
 
-    if (extra->itytur == 3) {
+    if (extra_i[phase_id].itytur == 3) {
       for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++)
-        energi[cell_id] = 0.5 * (  extra->cvar_rij->val[6*cell_id]
-                                 + extra->cvar_rij->val[6*cell_id+1]
-                                 + extra->cvar_rij->val[6*cell_id+2]);
+        energi[cell_id] = 0.5 * (  extra_i[phase_id].cvar_rij->val[6*cell_id]
+                                 + extra_i[phase_id].cvar_rij->val[6*cell_id+1]
+                                 + extra_i[phase_id].cvar_rij->val[6*cell_id+2]);
 
     }
-    else if (extra->iturb == CS_TURB_K_OMEGA) {
+    else if (extra_i[phase_id].iturb == CS_TURB_K_OMEGA) {
 
       for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++)
-        dissip[cell_id] = extra->cmu * energi[cell_id]
-                                     * extra->cvar_omg->val[cell_id];
+        dissip[cell_id] = extra_i[phase_id].cmu * energi[cell_id]
+                                     * extra_i[phase_id].cvar_omg->val[cell_id];
 
     }
-    else if (extra->itytur != 2 && extra->itytur != 4 && extra->itytur != 5) {
+    else if (extra_i[phase_id].itytur != 2
+          && extra_i[phase_id].itytur != 4
+          && extra_i[phase_id].itytur != 5) {
 
       bft_error
         (__FILE__, __LINE__, 0,
@@ -449,8 +493,7 @@ cs_lagr_aux_mean_fluid_quantities(cs_field_t    *lagr_time,
            " Activated turbulence model is %d, when only k-eps, LES, Rij-eps,\n"
            " V2f or k-omega are handled."),
          (int)cs_glob_lagr_model->idistu,
-         (int)extra->iturb);
-
+         (int)extra_i[phase_id].iturb);
     }
 
     /* Initialize cell Lagrangian time

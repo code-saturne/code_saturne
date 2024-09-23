@@ -1163,6 +1163,13 @@ _attr_moment_name(int                    attr_id,
 
   char _class_name[13];
   char _comp_name[13];
+  /* Warning : we can only work with at most 9 continuous carrier phases with this method */
+  char _iphas_name[1];
+  if (attr_id == CS_LAGR_VELOCITY_SEEN
+    || attr_id == CS_LAGR_PRED_VELOCITY_SEEN
+    || attr_id == CS_LAGR_VELOCITY_SEEN_VELOCITY_COV){
+    _iphas_name[0] = name[0];
+  }
 
   const char *type_name[2] = {"mean", "var"};
 
@@ -1178,14 +1185,26 @@ _attr_moment_name(int                    attr_id,
   size_t l0 =   strlen(_comp_name) + strlen(_class_name)
               + strlen(type_name[moment_type]);
 
-  snprintf(name,
-           63 - l0,
-           "%s_particle_%s",
-           type_name[moment_type],
-           cs_lagr_event_get_attr_name((cs_lagr_event_attribute_t )attr_id));
-  name[63] = '\0';
+  if (attr_id == CS_LAGR_VELOCITY_SEEN_VELOCITY_COV){
+    snprintf(name,
+             63 - l0,
+             "%s_particle_%s",
+             type_name[moment_type],
+             "cov_velocity_seen_velocity");
+  } else {
+    snprintf(name,
+             63 - l0,
+             "%s_particle_%s",
+             type_name[moment_type],
+             cs_lagr_event_get_attr_name((cs_lagr_event_attribute_t )attr_id));
+  }
 
   name[63] = '\0';
+  if (   attr_id == CS_LAGR_VELOCITY_SEEN
+      || attr_id == CS_LAGR_PRED_VELOCITY_SEEN
+      || attr_id == CS_LAGR_VELOCITY_SEEN_VELOCITY_COV){
+    strcat(name, _iphas_name);
+  }
   strcat(name, _comp_name);
   strcat(name, _class_name);
   name[63] = '\0';
@@ -2828,6 +2847,10 @@ _cs_lagr_stat_update_all(void)
   const cs_real_t *dt_val = _dt_val();
   cs_lnum_t dt_mult = (cs_glob_time_step->is_local) ? 1 : 0;
 
+  cs_lagr_extra_module_t *extra_i = cs_get_lagr_extra_module();
+  cs_lagr_extra_module_t *extra = extra_i;
+  int n_phases = extra->n_phases;
+
   /* First, update mesh-based statistics */
 
   _cs_lagr_stat_update_mesh_stats(ts);
@@ -2962,6 +2985,9 @@ _cs_lagr_stat_update_all(void)
                 const cs_real_t wa_sum_n = CS_MAX(p_weight + l_wa_sum[cell_id],
                                                   1e-100);
 
+
+                /* The carrier phase is in component id */
+                int carrier_phase = -mt->component_id - 1;
                 if (mt->m_type == CS_LAGR_MOMENT_VARIANCE) {
 
                   if (mt->dim == 6) { /* variance-covariance matrix */
@@ -2974,10 +3000,10 @@ _cs_lagr_stat_update_all(void)
 
                       cs_lnum_t jl = cell_id*6 + l;
                       cs_lnum_t jml = cell_id*3 + l;
-                      delta[l]   = pval[l] - mean_val[jml];
+                      delta[l]   = pval[3 * carrier_phase + l] - mean_val[jml];
                       r[l] = delta[l] * (p_weight / wa_sum_n);
                       m_n[l] = mean_val[jml] + r[l];
-                      delta_n[l] = pval[l] - m_n[l];
+                      delta_n[l] = pval[3 * carrier_phase + l] - m_n[l];
                       val[jl] = (  val[jl]*l_wa_sum[cell_id]
                                  + p_weight*delta[l]*delta_n[l]) / wa_sum_n;
 
@@ -3007,9 +3033,7 @@ _cs_lagr_stat_update_all(void)
                     for (cs_lnum_t l = 0; l < 3; l++)
                       mean_val[cell_id*3 + l] += r[l];
 
-                  }
-
-                  else { /* simple variance */
+                  } else { /* simple variance */
 
                     /* new weight for the cell: weight attached to
                        current particle (=dt*weight) plus old weight */
@@ -3017,18 +3041,18 @@ _cs_lagr_stat_update_all(void)
                     const cs_lnum_t dim = mt->dim;
 
                     for (cs_lnum_t l = 0; l < dim; l++) {
+                      cs_real_t delta = pval[dim * carrier_phase + l] - mean_val[cell_id * dim + l];
+                      cs_real_t r = delta * (p_weight / wa_sum_n);
+                      cs_real_t m_n = mean_val[cell_id * dim + l] + r;
 
-                      double delta = pval[l] - mean_val[cell_id*dim+l];
-                      double r = delta * (p_weight / wa_sum_n);
-                      double m_n = mean_val[cell_id*dim+l] + r;
-
+                      /* Compute and store the variance value */
                       val[cell_id*dim+l]
-                        = (  val[cell_id*dim+l]*l_wa_sum[cell_id]
-                           + (p_weight*delta*(pval[l]-m_n))) / wa_sum_n;
+                        = (  val[cell_id * dim + l]*l_wa_sum[cell_id]
+                           + (p_weight*delta*(pval[dim * carrier_phase + l]-m_n))) / wa_sum_n;
 
                       /* update mean value */
 
-                      mean_val[cell_id*dim+l] += r;
+                      mean_val[cell_id * dim + l] += r;
 
                     }
 
@@ -3040,9 +3064,10 @@ _cs_lagr_stat_update_all(void)
 
                   const cs_lnum_t dim = mt->dim;
 
-                  for (cs_lnum_t l = 0; l < dim; l++)
-                    val[cell_id*dim+l] +=   (pval[l] - val[cell_id*dim+l])
+                  for (cs_lnum_t l = 0; l < dim; l++){
+                    val[cell_id*dim+l] +=   (pval[dim * carrier_phase + l] - val[cell_id*dim+l])
                                           * p_weight / wa_sum_n;
+                  }
 
                 } /* End of test if moment is a variance or a mean */
 
@@ -3283,6 +3308,7 @@ _stat_moment_define(const char                *name,
                     cs_lagr_stat_restart_t     restart_mode)
 {
   char _name[96];
+  _name[0] = name[0];
 
   const int attr_id = cs_lagr_stat_type_to_attr_id(stat_type);
 
@@ -4397,6 +4423,9 @@ cs_lagr_stat_map_cell_dt(const cs_real_t  *dt)
 void
 cs_lagr_stat_initialize(void)
 {
+  cs_lagr_extra_module_t *extra_i = cs_get_lagr_extra_module();
+  cs_lagr_extra_module_t *extra = extra_i;
+  int n_phases = extra->n_phases;
   const cs_lagr_attribute_map_t *p_am = cs_lagr_particle_get_attr_map();
   const cs_lagr_stat_options_t *stat_options = cs_glob_lagr_stat_options;
   cs_lagr_stat_restart_t restart_mode = (stat_options->isuist) ?
@@ -4473,6 +4502,8 @@ cs_lagr_stat_initialize(void)
         else if (attr_id == CS_LAGR_SHAPE_PARAM
             || attr_id == CS_LAGR_EULER)
           dim = 4;
+        else if (attr_id == CS_LAGR_VELOCITY_SEEN_VELOCITY_COV)
+          dim = 9;
 
         for (int i_m_type = CS_LAGR_MOMENT_MEAN;
             i_m_type <= CS_LAGR_MOMENT_VARIANCE;
@@ -4506,7 +4537,8 @@ cs_lagr_stat_initialize(void)
             name[0] = '\0';
 
             int n_comp = p_am->count[0][attr_id];
-            if (n_comp == dim)
+
+            if (n_comp == dim) {
               cs_lagr_stat_particle_define(name,
                                            CS_MESH_LOCATION_CELLS,
                                            stat_type,
@@ -4521,23 +4553,49 @@ cs_lagr_stat_initialize(void)
                                            0,
                                            -1,
                                            restart_mode);
+            } else {
+              if (attr_id == CS_LAGR_VELOCITY_SEEN
+                  || attr_id == CS_LAGR_PRED_VELOCITY_SEEN
+                  || attr_id == CS_LAGR_VELOCITY_SEEN_VELOCITY_COV){
+                for (int phase_id = 0; phase_id < n_phases; phase_id ++){
+                  /* On change le nom pour qu'il tienne compte de la phase porteuse */
+                  sprintf(name, "%d", phase_id);
 
-            else {
-              for (int c_id = 0; c_id < n_comp; c_id++)
-                cs_lagr_stat_particle_define(name,
-                                             CS_MESH_LOCATION_CELLS,
-                                             stat_type,
-                                             m_type,
-                                             class_id,
-                                             1,       /* dim */
-                                             c_id,
-                                             nullptr,    /* data_func */
-                                             nullptr,    /* data_input */
-                                             nullptr,    /* w_data_func */
-                                             nullptr,    /* w_data_input */
-                                             0,
-                                             -1,
-                                             restart_mode);
+                  /* We hide the carrier phase number in component_id
+                   * In practice: component_id = -carrier_phase - 1
+                   * This helps creating all the required moment */
+                  cs_lagr_stat_particle_define(name,
+                                               CS_MESH_LOCATION_CELLS,
+                                               stat_type,
+                                               m_type,
+                                               class_id,
+                                               dim,
+                                               - phase_id - 1, /* component_id */
+                                               nullptr,        /* data_func */
+                                               nullptr,        /* data_input */
+                                               nullptr,        /* w_data_func */
+                                               nullptr,        /* w_data_input */
+                                               0,
+                                               -1,
+                                               restart_mode);
+                }
+              } else {
+                for (int c_id = 0; c_id < n_comp; c_id++)
+                  cs_lagr_stat_particle_define(name,
+                                               CS_MESH_LOCATION_CELLS,
+                                               stat_type,
+                                               m_type,
+                                               class_id,
+                                               1,       /* dim */
+                                               c_id,
+                                               nullptr,    /* data_func */
+                                               nullptr,    /* data_input */
+                                               nullptr,    /* w_data_func */
+                                               nullptr,    /* w_data_input */
+                                               0,
+                                               -1,
+                                               restart_mode);
+              }
             }
 
           }
@@ -4738,6 +4796,10 @@ cs_lagr_stat_update_event(cs_lagr_event_set_t   *events,
   cs_lagr_particle_set_t *p_set = cs_lagr_get_particle_set();
   const cs_real_t *dt_val = _dt_val();
   cs_lnum_t dt_mult = (cs_glob_time_step->is_local) ? 1 : 0;
+
+  cs_lagr_extra_module_t *extra_i = cs_get_lagr_extra_module();
+  cs_lagr_extra_module_t *extra = extra_i;
+  int n_phases = extra->n_phases;
 
   _t_prev_iter = ts->t_prev;
 

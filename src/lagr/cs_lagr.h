@@ -276,6 +276,11 @@ typedef struct {
   int  physical_model;
   int  n_temperature_layers;
 
+  /*! Activates (1) or not (0) the assumption that we are using code_saturne or not.
+    When set to 0 the lagrangian is used within neptune_cfd. When equal to 1, the Lagrangian
+    is used within code_saturne. */
+  int cs_used;
+
   /*! Activates (1) or not (0) the assumption that we have regular particles.
     When set to, 0 then the particles are assumed to be fluid particles
     (and only the turbulence dispersion model is taken into account by default,
@@ -880,10 +885,13 @@ typedef struct {
 /*-----------------------------------------------*/
 
 typedef struct {
+  /* number of carrier phases */
+  int n_phases;
 
   /* Turbulence model */
   int iturb;
   int itytur;
+  int turb_model;
 
   /* cpincl */
   int ncharb;
@@ -908,6 +916,9 @@ typedef struct {
 
   /* wall ustar */
   cs_field_t *ustar;
+
+  /* alpha: fluid volume fraction */
+  cs_field_t *alpha;
 
   /* wall tstar */
   cs_field_t *tstar;
@@ -952,6 +963,9 @@ typedef struct {
   /* Turbulent intensity */
   cs_field_t *cvar_k;
 
+  /* gradient turbulent intensity */
+  cs_field_t *cvar_gradk;
+
   /* Turbulent dissipation */
   cs_field_t *cvar_ep;
 
@@ -960,6 +974,9 @@ typedef struct {
 
   /* Reynolds Stress Tensor */
   cs_field_t *cvar_rij;
+
+  /* Reynolds gradient Stress Tensor */
+  cs_field_t *cvar_gradrij;
 
   /* Total pressure gradient */
   cs_real_3_t *grad_pr;
@@ -975,6 +992,12 @@ typedef struct {
 
   /* Lagrangian time gradient */
   cs_real_3_t *grad_lagr_time;
+
+  /* fluid seen/fluid seen covariance gradient */
+  cs_real_3_t *grad_cov_skp[9];
+
+  /* fluid seen/particle velocity covariance gradient */
+  cs_real_3_t *grad_cov_sk[6];
 
 } cs_lagr_extra_module_t;
 
@@ -1304,6 +1327,10 @@ void
 cs_lagr_finalize(void);
 
 /*----------------------------------------------------------------------------*/
+
+void
+cs_lagr_initialize_extra(cs_lnum_t n_continuous_phases);
+
 /*!
  * \brief Create additional fields needed by the Lagrangien model
  *

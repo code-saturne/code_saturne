@@ -179,8 +179,6 @@ _inlet2(cs_lagr_particle_set_t  *p_set,
  * \param[in]     bx       characteristics of the turbulence
  * \param[in]     tsfext   infos for the return coupling
  * \param[in]     vagaus   Gaussian random variables
- * \param[in]     gradpr   pressure gradient
- * \param[in]     gradvf   gradient of the flow velocity
  * \param[in,out] rho_p    particle density
  * \param[out]    fextla   user external force field (m/s^2)$
  */
@@ -189,14 +187,12 @@ _inlet2(cs_lagr_particle_set_t  *p_set,
 /*! [lagr_ef] */
 void
 cs_user_lagr_ef(cs_real_t            dt_p,
-                const cs_real_t      taup[],
-                const cs_real_3_t    tlag[],
-                const cs_real_3_t    piil[],
-                const cs_real_33_t   bx[],
+                const cs_real_t    **taup,
+                const cs_real_3_t  **tlag,
+                const cs_real_3_t  **piil,
+                const cs_real_33_t **bx,
                 const cs_real_t      tsfext[],
                 const cs_real_33_t   vagaus[],
-                const cs_real_3_t    gradpr[],
-                const cs_real_33_t   gradvf[],
                 cs_real_t            rho_p[],
                 cs_real_3_t          fextla[])
 {
@@ -528,7 +524,7 @@ cs_user_lagr_rt(cs_lnum_t        p_id,
                 cs_real_t        rho_f,
                 cs_real_t        rho_p,
                 cs_real_t        nu_f,
-                cs_real_t        taup[],
+                cs_real_t        *taup,
                 const cs_real_t  dt[])
 {
   /* Particles management */
@@ -676,8 +672,8 @@ cs_user_lagr_rt_t(cs_lnum_t        p_id,
 /*! [lagr_SDE] */
 void
 cs_user_lagr_sde(const cs_real_t  dt[],
-                 cs_real_t        taup[],
-                 cs_real_3_t      tlag[],
+                 cs_real_t        **taup,
+                 cs_real_3_t      **tlag,
                  cs_real_t        tempct[])
 {
   /* Initializations

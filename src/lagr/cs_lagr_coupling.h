@@ -69,10 +69,10 @@ BEGIN_C_DECLS
 /*----------------------------------------------------------------------------*/
 
 void
-cs_lagr_coupling(const cs_real_t     taup[],
-                 const cs_real_t     tempct[],
-                 cs_real_t           tsfext[],
-                 const cs_real_3_t  *force_p);
+cs_lagr_coupling(const cs_real_t  **taup,
+                 const cs_real_t  tempct[],
+                 cs_real_t        tsfext[],
+                 const cs_real_3_t *force_p);
 
 /*----------------------------------------------------------------------------*/
 

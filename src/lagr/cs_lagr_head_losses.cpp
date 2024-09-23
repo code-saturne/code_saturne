@@ -307,7 +307,8 @@ cs_lagr_head_losses(cs_lnum_t        n_hl_cells,
 
   cs_real_t *volume = cs_glob_mesh_quantities->cell_vol;
 
-  cs_lagr_extra_module_t *extra = cs_glob_lagr_extra_module;
+  cs_lagr_extra_module_t *extra_i = cs_glob_lagr_extra_module;
+  cs_lagr_extra_module_t *extra = extra_i;
 
   /* Check that head loss zone definitions are consistent */
   if (n_hl_cells != ncel)

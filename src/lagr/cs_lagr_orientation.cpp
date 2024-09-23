@@ -572,7 +572,8 @@ cs_lagr_orientation_dyn_spheroids(int              iprev,
   cs_lagr_particle_set_t  *p_set = cs_glob_lagr_particle_set;
   const cs_lagr_attribute_map_t  *p_am = p_set->p_am;
 
-  cs_lagr_extra_module_t *extra = cs_get_lagr_extra_module();
+  cs_lagr_extra_module_t *extra_i = cs_get_lagr_extra_module();
+  cs_lagr_extra_module_t *extra = extra_i;
 
   cs_real_t *brown = nullptr;
   BFT_MALLOC(brown, p_set->n_particles*9, cs_real_t);

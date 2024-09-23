@@ -167,6 +167,7 @@ const char *cs_lagr_attribute_name[] = {
   "coords",
   "velocity",
   "velocity_seen",
+  "velocity_seen_velocity_cov",
   "tr_truncate",
   "tr_reposition",
 
@@ -660,9 +661,11 @@ cs_lagr_particle_attr_initialize(void)
 {
   cs_lagr_model_t  *lagr_model = cs_glob_lagr_model;
   cs_lagr_time_scheme_t  *lagr_time_scheme = cs_glob_lagr_time_scheme;
-  const  cs_lagr_extra_module_t *extra = cs_glob_lagr_extra_module;
+  const cs_lagr_extra_module_t *extra_i = cs_glob_lagr_extra_module;
+  const cs_lagr_extra_module_t *extra = extra_i;
 
   int  i;
+  int n_phases = extra->n_phases;
 
   int loc_count = 0;
 
@@ -764,13 +767,16 @@ cs_lagr_particle_attr_initialize(void)
   attr_keys[CS_LAGR_VELOCITY][2] = 3;
 
   attr_keys[CS_LAGR_VELOCITY_SEEN][1] = ++loc_count;
-  attr_keys[CS_LAGR_VELOCITY_SEEN][2] = 3;
+  attr_keys[CS_LAGR_VELOCITY_SEEN][2] = 3 * n_phases;
 
   attr_keys[CS_LAGR_TR_TRUNCATE][0] = CS_LAGR_P_RPRP;
   attr_keys[CS_LAGR_TR_TRUNCATE][1] = ++loc_count;
 
   attr_keys[CS_LAGR_TR_REPOSITION][0] = CS_LAGR_P_IPRP;
   attr_keys[CS_LAGR_TR_REPOSITION][1] = ++loc_count;
+
+  attr_keys[CS_LAGR_VELOCITY_SEEN_VELOCITY_COV][1] = ++loc_count;
+  attr_keys[CS_LAGR_VELOCITY_SEEN_VELOCITY_COV][2] = 9 * n_phases;
 
   if (lagr_time_scheme->t_order > 1) {
     attr_keys[CS_LAGR_TAUP_AUX][0] = CS_LAGR_P_RPRP;

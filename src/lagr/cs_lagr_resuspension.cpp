@@ -176,7 +176,8 @@ cs_lagr_resuspension(void)
 
   cs_lnum_t n_faces = mesh->n_b_faces;
 
-  cs_lagr_extra_module_t *extra = cs_glob_lagr_extra_module;
+  cs_lagr_extra_module_t *extra_i = cs_glob_lagr_extra_module;
+  cs_lagr_extra_module_t *extra = extra_i;
 
   const cs_real_3_t *restrict i_face_normal
     = (const cs_real_3_t *restrict)fvq->i_face_normal;

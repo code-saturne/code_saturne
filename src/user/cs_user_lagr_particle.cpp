@@ -75,8 +75,6 @@ BEGIN_C_DECLS
  * \param[in]     bx       characteristics of the turbulence
  * \param[in]     tsfext   infos for the return coupling
  * \param[in]     vagaus   Gaussian random variables
- * \param[in]     gradpr   pressure gradient
- * \param[in]     gradvf   gradient of the flow velocity
  * \param[in,out] rho_p     particle density
  * \param[out]    fextla   user external force field (m/s^2)$
  */
@@ -85,14 +83,12 @@ BEGIN_C_DECLS
 #pragma weak cs_user_lagr_ef
 void
 cs_user_lagr_ef(cs_real_t            dt_p,
-                const cs_real_t      taup[],
-                const cs_real_3_t    tlag[],
-                const cs_real_3_t    piil[],
-                const cs_real_33_t   bx[],
+                const cs_real_t    **taup,
+                const cs_real_3_t  **tlag,
+                const cs_real_3_t  **piil,
+                const cs_real_33_t **bx,
                 const cs_real_t      tsfext[],
                 const cs_real_33_t   vagaus[],
-                const cs_real_3_t    gradpr[],
-                const cs_real_33_t   gradvf[],
                 cs_real_t            rho_p[],
                 cs_real_3_t          fextla[])
 {
@@ -103,8 +99,6 @@ cs_user_lagr_ef(cs_real_t            dt_p,
   CS_UNUSED(bx);
   CS_UNUSED(tsfext);
   CS_UNUSED(vagaus);
-  CS_UNUSED(gradpr);
-  CS_UNUSED(gradvf);
   CS_UNUSED(rho_p);
   CS_UNUSED(fextla);
 }
@@ -288,7 +282,7 @@ cs_user_lagr_rt(cs_lnum_t        id_p,
                 cs_real_t        rho_f,
                 cs_real_t        rho_p,
                 cs_real_t        nu_f,
-                cs_real_t        taup[],
+                cs_real_t        *taup,
                 const cs_real_t  dt[])
 {
   CS_UNUSED(id_p);
@@ -384,8 +378,8 @@ cs_user_lagr_rt_t(cs_lnum_t        id_p,
 #pragma weak cs_user_lagr_sde
 void
 cs_user_lagr_sde(const cs_real_t  dt[],
-                 cs_real_t        taup[],
-                 cs_real_3_t      tlag[],
+                 cs_real_t        **taup,
+                 cs_real_3_t      **tlag,
                  cs_real_t        tempct[])
 {
   CS_UNUSED(dt);

@@ -119,13 +119,15 @@ static const cs_lnum_t _t2v[3][3] = {{0, 3, 5},
 /*----------------------------------------------------------------------------*/
 
 void
-cs_lagr_coupling(const cs_real_t     taup[],
-                 const cs_real_t     tempct[],
-                 cs_real_t           tsfext[],
-                 const cs_real_3_t  *force_p)
+cs_lagr_coupling(const cs_real_t  **taup,
+                 const cs_real_t    tempct[],
+                 cs_real_t          tsfext[],
+                 const cs_real_3_t *force_p)
 {
   /*Note: t_* stands for temporary array, used in case of time moments */
   cs_real_t *st_p = nullptr, *t_st_p = nullptr;
+
+  /* WARNING : Only based on the first continuous phase in neptune_cfd */
   cs_real_3_t *st_vel = nullptr, *t_st_vel = nullptr;
   cs_real_t *st_imp_vel = nullptr, *t_st_imp_vel = nullptr;
   cs_real_6_t *st_rij = nullptr, *t_st_rij = nullptr;
@@ -185,7 +187,8 @@ cs_lagr_coupling(const cs_real_t     taup[],
       st_t_i = f->val;
   }
 
-  cs_lagr_extra_module_t *extra = cs_glob_lagr_extra_module;
+  cs_lagr_extra_module_t *extra_i = cs_glob_lagr_extra_module;
+  cs_lagr_extra_module_t *extra = extra_i;
   cs_lagr_source_terms_t *lag_st = cs_glob_lagr_source_terms;
 
   cs_lagr_particle_set_t  *p_set = cs_glob_lagr_particle_set;
@@ -224,19 +227,19 @@ cs_lagr_coupling(const cs_real_t     taup[],
      ======================== */
 
   /* Finalization of external forces (if the particle interacts with a
-     domain boundary, revert to order 1). */
+     domain boundary, revert to order 1). based on the first carrier phase */
 
   for (cs_lnum_t p_id = 0; p_id < nbpart; p_id++) {
 
-    cs_real_t aux1 = dtp / taup[p_id];
+    cs_real_t aux1 = dtp / taup[0][p_id];
     cs_real_t p_mass = cs_lagr_particles_get_real(p_set, p_id, CS_LAGR_MASS);
 
     if (   cs_glob_lagr_time_scheme->t_order == 1
         || cs_lagr_particles_get_lnum(p_set, p_id, CS_LAGR_REBOUND_ID) == 0)
-      tsfext[p_id] = (1.0 - exp(-aux1)) * p_mass * taup[p_id];
+      tsfext[p_id] = (1.0 - exp(-aux1)) * p_mass * taup[0][p_id];
 
     else
-      tsfext[p_id] +=  (1.0 - (1.0 - exp (-aux1)) / aux1) * taup[p_id]
+      tsfext[p_id] +=  (1.0 - (1.0 - exp (-aux1)) / aux1) * taup[0][p_id]
                     * p_mass;
 
   }
@@ -308,7 +311,7 @@ cs_lagr_coupling(const cs_real_t     taup[],
       for (cs_lnum_t i = 0; i < 3; i++)
         t_st_vel[c_id][i] -= dvol * auxl[p_id][i];
 
-      t_st_imp_vel[c_id] -= 2.0 * dvol * p_stat_w * p_mass / taup[p_id];
+      t_st_imp_vel[c_id] -= 2.0 * dvol * p_stat_w * p_mass / taup[0][p_id];
 
     }
 

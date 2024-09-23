@@ -675,7 +675,9 @@ cs_lagr_new_particle_init(const cs_lnum_t                 particle_range[2],
 
   const cs_lagr_zone_data_t  *bcs = cs_glob_lagr_boundary_conditions;
 
-  cs_lagr_extra_module_t  *extra = cs_get_lagr_extra_module();
+  cs_lagr_extra_module_t *extra_i = cs_get_lagr_extra_module();
+  cs_lagr_extra_module_t *extra = extra_i;
+  int n_phases = extra->n_phases;
   const cs_coal_model_t  *coal_model = cs_glob_coal_model;
 
   /* Non-Lagrangian fields */
@@ -690,11 +692,16 @@ cs_lagr_new_particle_init(const cs_lnum_t                 particle_range[2],
 
   cs_real_t tscl_shift = 0;
 
-  const cs_real_3_t  *vel = nullptr;
-  const cs_real_t    *cvar_k = nullptr;
-  const cs_real_6_t  *cvar_rij = nullptr;
+  const cs_real_3_t  **vel = nullptr;
+  BFT_MALLOC(vel, n_phases, const cs_real_3_t *);
+  for (int phase_id = 0; phase_id < n_phases; phase_id++){
+    vel[phase_id] = (const cs_real_3_t *)extra_i[phase_id].vel->vals[time_id];
+  }
 
-  vel = (const cs_real_3_t *)extra->vel->vals[time_id];
+  const cs_real_t **cvar_k = nullptr;
+  const cs_real_6_t **cvar_rij = nullptr;
+  BFT_MALLOC(cvar_k, n_phases, const cs_real_t *);
+  BFT_MALLOC(cvar_rij, n_phases, const cs_real_6_t *);
 
   /* Initialize pointers (used to simplify future tests) */
 
@@ -751,28 +758,29 @@ cs_lagr_new_particle_init(const cs_lnum_t                 particle_range[2],
      -------------------------------------------------- */
 
   if (cs_glob_lagr_model->idistu == 1) {
+    for (int phase_id = 0; phase_id < n_phases; phase_id ++){
+      if (extra_i[phase_id].cvar_rij != nullptr)
+        cvar_rij[phase_id] = (const cs_real_6_t *) extra_i[phase_id].cvar_rij->vals[time_id];
 
-    if (extra->cvar_rij != nullptr)
-      cvar_rij = (const cs_real_6_t *) extra->cvar_rij->vals[time_id];
+      else if (extra_i[phase_id].cvar_k != nullptr) {
+        cvar_k[phase_id] = (const cs_real_t *)extra_i[phase_id].cvar_k->vals[time_id];
+        if (extra_i[phase_id].cvar_k != nullptr)
+          cvar_k[phase_id] = (const cs_real_t *)extra_i[phase_id].cvar_k->val;
+      }
 
-    else if (extra->cvar_k != nullptr) {
-      cvar_k = (const cs_real_t *)extra->cvar_k->vals[time_id];
-      if (extra->cvar_k != nullptr)
-        cvar_k = (const cs_real_t *)extra->cvar_k->val;
-    }
-
-    else {
-      bft_error
+      else {
+        bft_error
         (__FILE__, __LINE__, 0,
-         _("The Lagrangian module is incompatible with the selected\n"
-           " turbulence model.\n\n"
-           "Turbulent dispersion is used with:\n"
-           "  cs_glob_lagr_model->idistu = %d\n"
-           "And the turbulence model is iturb = %d\n\n"
-           "The only turbulence models compatible with the Lagrangian model's\n"
-           "turbulent dispersion are k-epsilon, Rij-epsilon, v2f, and k-omega."),
-         cs_glob_lagr_model->idistu,
-         extra->iturb);
+          _("The Lagrangian module is incompatible with the selected\n"
+          " turbulence model.\n\n"
+          "Turbulent dispersion is used with:\n"
+          "  cs_glob_lagr_model->idistu = %d\n"
+          "And the turbulence model is iturb = %d\n\n"
+          "The only turbulence models compatible with the Lagrangian model's\n"
+          "turbulent dispersion are k-epsilon, Rij-epsilon, v2f, and k-omega."),
+          cs_glob_lagr_model->idistu,
+          extra_i[phase_id].iturb);
+      }
     }
 
   }
@@ -780,50 +788,55 @@ cs_lagr_new_particle_init(const cs_lnum_t                 particle_range[2],
   /* Random draws and computation of particle characteristic times */
 
   cs_lnum_t  n = particle_range[1] - particle_range[0];
-  cs_real_3_t  *vagaus;
-  cs_real_t  *temp_vagaus = nullptr;
+  cs_real_3_t  **vagaus = nullptr;
+  cs_real_t *temp_vagaus = nullptr;
 
-  BFT_MALLOC(vagaus, n, cs_real_3_t);
+  BFT_MALLOC(vagaus, n_phases, cs_real_3_t *);
+  for (int phase_id = 0; phase_id < n_phases; phase_id++)
+    BFT_MALLOC(vagaus[phase_id], n, cs_real_3_t);
 
   cs_real_3_t *temp_vel_fluc_coef = nullptr;
   cs_real_t *var_temp_corel_coef = nullptr;
 
-  if (cs_glob_lagr_model->idistu == 1 && n > 0) {
-    cs_random_normal(n*3, (cs_real_t *)vagaus);
+  for (int phase_id = 0; phase_id < n_phases; phase_id++) {
+    if (cs_glob_lagr_model->idistu == 1 && n > 0) {
+      cs_random_normal(n*3, (cs_real_t *)vagaus[phase_id]);
 
-    if (    cs_glob_lagr_model->physical_model > CS_LAGR_PHYS_OFF
-        && (extra->temperature_turbulent_flux  != nullptr
-          || extra->temperature_variance != nullptr)
-        &&  extra->temperature != nullptr) {
-      if (extra->temperature_turbulent_flux  != nullptr)
-        BFT_MALLOC(temp_vel_fluc_coef, n_cells, cs_real_3_t);
-      if (extra->temperature_variance != nullptr)
-        BFT_MALLOC(var_temp_corel_coef, n_cells, cs_real_t);
+      if (    cs_glob_lagr_model->physical_model > CS_LAGR_PHYS_OFF
+          && (extra->temperature_turbulent_flux  != nullptr
+            || extra->temperature_variance != nullptr)
+          &&  extra->temperature != nullptr) {
+        if (extra->temperature_turbulent_flux  != nullptr)
+          BFT_MALLOC(temp_vel_fluc_coef, n_cells, cs_real_3_t);
+        if (extra->temperature_variance != nullptr)
+          BFT_MALLOC(var_temp_corel_coef, n_cells, cs_real_t);
 
-      BFT_MALLOC(temp_vagaus, n, cs_real_t);
-      cs_random_normal(n, temp_vagaus);
+        BFT_MALLOC(temp_vagaus, n, cs_real_t);
+        cs_random_normal(n, temp_vagaus);
+      }
+    }
+    else {
+      for (cs_lnum_t i = 0; i < n; i++) {
+        vagaus[phase_id][i][0] = 0.0;
+        vagaus[phase_id][i][1] = 0.0;
+        vagaus[phase_id][i][2] = 0.0;
+      }
     }
   }
 
-  else {
-
-    for (cs_lnum_t i = 0; i < n; i++) {
-      vagaus[i][0] = 0.0;
-      vagaus[i][1] = 0.0;
-      vagaus[i][2] = 0.0;
-    }
-
-  }
-
-  cs_real_33_t *eig_vec;
-  cs_real_3_t *eig_val;
+  cs_real_33_t **eig_vec;
+  cs_real_3_t **eig_val;
 
   /* If no new particles, no need of calculation */
   if (n <= 0)
     return;
 
-  BFT_MALLOC(eig_vec, n_cells, cs_real_33_t);
-  BFT_MALLOC(eig_val, n_cells, cs_real_3_t);
+  BFT_MALLOC(eig_vec, n_phases, cs_real_33_t *);
+  BFT_MALLOC(eig_val, n_phases, cs_real_3_t *);
+  for (int phase_id = 0; phase_id < n_phases; phase_id ++){
+    BFT_MALLOC(eig_vec[phase_id], n_cells, cs_real_33_t);
+    BFT_MALLOC(eig_val[phase_id], n_cells, cs_real_3_t);
+  }
 
   /* First stage: compute cell values
    * Initialisation from the mean Eulerian fluid
@@ -833,52 +846,53 @@ cs_lagr_new_particle_init(const cs_lnum_t                 particle_range[2],
 
     cs_real_t tol_err = 1.0e-12;
 
-    for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
-      cs_real_33_t sym_rij;
-      if (cvar_rij != nullptr) {
-        sym_rij[0][0] = cvar_rij[cell_id][0];
-        sym_rij[1][1] = cvar_rij[cell_id][1];
-        sym_rij[2][2] = cvar_rij[cell_id][2];
-        sym_rij[0][1] = cvar_rij[cell_id][3];
-        sym_rij[1][0] = cvar_rij[cell_id][3];
-        sym_rij[1][2] = cvar_rij[cell_id][4];
-        sym_rij[2][1] = cvar_rij[cell_id][4];
-        sym_rij[0][2] = cvar_rij[cell_id][5];
-        sym_rij[2][0] = cvar_rij[cell_id][5];
+    for (int phase_id = 0; phase_id < n_phases; phase_id ++) {
+      for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
+        cs_real_33_t sym_rij;
+        if (extra_i[phase_id].cvar_rij != nullptr) {
+          sym_rij[0][0] = cvar_rij[phase_id][cell_id][0];
+          sym_rij[1][1] = cvar_rij[phase_id][cell_id][1];
+          sym_rij[2][2] = cvar_rij[phase_id][cell_id][2];
+          sym_rij[0][1] = cvar_rij[phase_id][cell_id][3];
+          sym_rij[1][0] = cvar_rij[phase_id][cell_id][3];
+          sym_rij[1][2] = cvar_rij[phase_id][cell_id][4];
+          sym_rij[2][1] = cvar_rij[phase_id][cell_id][4];
+          sym_rij[0][2] = cvar_rij[phase_id][cell_id][5];
+          sym_rij[2][0] = cvar_rij[phase_id][cell_id][5];
+        }
+        /* TODO do it better for EVM models */
+        else {
+          cs_real_t w = 0.;
+
+          if (extra_i[phase_id].cvar_k != nullptr)
+            w = d2s3 * cvar_k[phase_id][cell_id];
+
+          sym_rij[0][0] = w;
+          sym_rij[1][1] = w;
+          sym_rij[2][2] = w;
+          sym_rij[0][1] = 0.;
+          sym_rij[1][0] = 0.;
+          sym_rij[1][2] = 0.;
+          sym_rij[2][1] = 0.;
+          sym_rij[0][2] = 0.;
+          sym_rij[2][0] = 0.;
+        }
+
+        eig_vec[phase_id][cell_id][0][0] = 1;
+        eig_vec[phase_id][cell_id][0][1] = 0;
+        eig_vec[phase_id][cell_id][0][2] = 0;
+        eig_vec[phase_id][cell_id][1][0] = 0;
+        eig_vec[phase_id][cell_id][1][1] = 1;
+        eig_vec[phase_id][cell_id][1][2] = 0;
+        eig_vec[phase_id][cell_id][2][0] = 0;
+        eig_vec[phase_id][cell_id][2][1] = 0;
+        eig_vec[phase_id][cell_id][2][2] = 1;
+
+        cs_math_33_eig_val_vec(sym_rij,
+                               tol_err,
+                               eig_val[phase_id][cell_id],
+                               eig_vec[phase_id][cell_id]);
       }
-      /* TODO do it better for EVM models */
-      else {
-        cs_real_t w = 0.;
-
-        if (cvar_k != nullptr)
-          w = d2s3 * cvar_k[cell_id];
-
-        sym_rij[0][0] = w;
-        sym_rij[1][1] = w;
-        sym_rij[2][2] = w;
-        sym_rij[0][1] = 0.;
-        sym_rij[1][0] = 0.;
-        sym_rij[1][2] = 0.;
-        sym_rij[2][1] = 0.;
-        sym_rij[0][2] = 0.;
-        sym_rij[2][0] = 0.;
-      }
-
-      eig_vec[cell_id][0][0] = 1;
-      eig_vec[cell_id][0][1] = 0;
-      eig_vec[cell_id][0][2] = 0;
-      eig_vec[cell_id][1][0] = 0;
-      eig_vec[cell_id][1][1] = 1;
-      eig_vec[cell_id][1][2] = 0;
-      eig_vec[cell_id][2][0] = 0;
-      eig_vec[cell_id][2][1] = 0;
-      eig_vec[cell_id][2][2] = 1;
-
-      cs_math_33_eig_val_vec(sym_rij,
-                             tol_err,
-                             eig_val[cell_id],
-                             eig_vec[cell_id]);
-
     }
     if (    cs_glob_lagr_model->physical_model > CS_LAGR_PHYS_OFF
         && (extra->temperature_turbulent_flux  != nullptr
@@ -889,8 +903,8 @@ cs_lagr_new_particle_init(const cs_lnum_t                 particle_range[2],
           cs_real_33_t vel_fluct_coef;
           for (int i = 0; i < 3; i++) {
             for (int j = 0; j < 3; j++)
-            vel_fluct_coef[i][j] =
-              sqrt(eig_val[cell_id][j]) * eig_vec[cell_id][j][i];
+              vel_fluct_coef[i][j] =
+                sqrt(eig_val[0][cell_id][j]) * eig_vec[0][cell_id][j][i];
           }
 
           cs_real_33_t inv_vel_fluct_coef;
@@ -922,22 +936,23 @@ cs_lagr_new_particle_init(const cs_lnum_t                 particle_range[2],
         }
       }
     }
-  }
-  else {
-    for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
+  } else {
+    for (int phase_id = 0; phase_id < n_phases; phase_id ++){
+      for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
 
-      eig_vec[cell_id][0][0] = 1.;
-      eig_vec[cell_id][1][1] = 1.;
-      eig_vec[cell_id][2][2] = 1.;
-      eig_vec[cell_id][0][1] = 0.;
-      eig_vec[cell_id][0][2] = 0.;
-      eig_vec[cell_id][1][0] = 0.;
-      eig_vec[cell_id][1][2] = 0.;
-      eig_vec[cell_id][2][0] = 0.;
-      eig_vec[cell_id][2][1] = 0.;
-      eig_val[cell_id][0] = 0.;
-      eig_val[cell_id][1] = 0.;
-      eig_val[cell_id][2] = 0.;
+        eig_vec[phase_id][cell_id][0][0] = 1.;
+        eig_vec[phase_id][cell_id][1][1] = 1.;
+        eig_vec[phase_id][cell_id][2][2] = 1.;
+        eig_vec[phase_id][cell_id][0][1] = 0.;
+        eig_vec[phase_id][cell_id][0][2] = 0.;
+        eig_vec[phase_id][cell_id][1][0] = 0.;
+        eig_vec[phase_id][cell_id][1][2] = 0.;
+        eig_vec[phase_id][cell_id][2][0] = 0.;
+        eig_vec[phase_id][cell_id][2][1] = 0.;
+        eig_val[phase_id][cell_id][0] = 0.;
+        eig_val[phase_id][cell_id][1] = 0.;
+        eig_val[phase_id][cell_id][2] = 0.;
+      }
     }
   }
 
@@ -958,8 +973,23 @@ cs_lagr_new_particle_init(const cs_lnum_t                 particle_range[2],
                                                CS_LAGR_VELOCITY);
 
     if (zis->velocity_profile == CS_LAGR_IN_IMPOSED_FLUID_VALUE) {
-      for (cs_lnum_t i = 0; i < 3; i++)
-        part_vel[i] = vel[c_id][i];
+      for (cs_lnum_t i = 0; i < 3; i++) {
+        cs_real_t norm_alp = 0.;
+        part_vel[i] = 0.;
+        if (cs_glob_lagr_model->cs_used) {
+          for (int phase_id = 0; phase_id < n_phases; phase_id++)
+            part_vel[i] += extra_i[phase_id].vel->vals[time_id][c_id * 3  + i];
+        } else {
+          for (int phase_id = 0; phase_id < n_phases; phase_id++){
+            part_vel[i] += extra_i[phase_id].alpha->val[c_id]
+              * extra_i[phase_id].cromf->val[c_id]
+              * extra_i[phase_id].vel->vals[time_id][c_id * 3  + i];
+            norm_alp += extra_i[phase_id].alpha->val[c_id]
+              * extra_i[phase_id].cromf->val[c_id];
+          }
+          part_vel[i] /= norm_alp;
+        }
+      }
     }
 
     /* velocity as seen from fluid */
@@ -967,13 +997,26 @@ cs_lagr_new_particle_init(const cs_lnum_t                 particle_range[2],
     cs_real_t  *vel_seen
       = cs_lagr_particle_attr_get_ptr<cs_real_t>(particle, p_am,
                                                  CS_LAGR_VELOCITY_SEEN);
+    cs_real_t *vel_seen_vel_cov
+      = cs_lagr_particle_attr_get_ptr<cs_real_t>(particle, p_am,
+                                                 CS_LAGR_VELOCITY_SEEN_VELOCITY_COV);
 
-    for (cs_lnum_t i = 0; i < 3; i++) {
-      vel_seen[i]
-        =   vel[c_id][i]
-          + vagaus[l_id][0] * sqrt(eig_val[c_id][0]) * eig_vec[c_id][0][i]
-          + vagaus[l_id][1] * sqrt(eig_val[c_id][1]) * eig_vec[c_id][1][i]
-          + vagaus[l_id][2] * sqrt(eig_val[c_id][2]) * eig_vec[c_id][2][i];
+    /* Lagr velocity seen has to be computed for every fluid */
+    /* Lagr covariance between velocity seen and velocity
+     * has to be initialized for every fluid */
+    for (int phase_id = 0; phase_id < n_phases; phase_id ++) {
+      for (cs_lnum_t i = 0; i < 3; i++) {
+        vel_seen[phase_id*3 + i] = vel[phase_id][c_id][i]
+          + vagaus[phase_id][l_id][0] * sqrt(eig_val[phase_id][c_id][0])
+            * eig_vec[phase_id][c_id][0][i]
+          + vagaus[phase_id][l_id][1] * sqrt(eig_val[phase_id][c_id][1])
+            * eig_vec[phase_id][c_id][1][i]
+          + vagaus[phase_id][l_id][2] * sqrt(eig_val[phase_id][c_id][2])
+            * eig_vec[phase_id][c_id][2][i];
+      }
+      for (cs_lnum_t ij = 0; ij < 9; ij++) {
+        vel_seen_vel_cov[phase_id*9 + ij] = 0.;
+      }
     }
 
     /* Diameter (always set base) */
@@ -1338,7 +1381,7 @@ cs_lagr_new_particle_init(const cs_lnum_t                 particle_range[2],
       /* Fluctuations to obtain proper thermal turbulent fluxes */
       if (extra->temperature_turbulent_flux != nullptr)
         temp_seen +=
-          cs_math_3_dot_product(temp_vel_fluc_coef[c_id], vagaus[l_id]);
+          cs_math_3_dot_product(temp_vel_fluc_coef[c_id], vagaus[0][l_id]);
 
       /* Fluctuations to obtain the proper temperature variance */
       if(extra->temperature_variance != nullptr )
@@ -1458,9 +1501,10 @@ cs_lagr_new_particle_init(const cs_lnum_t                 particle_range[2],
 
       if (yplus <= cs_lagr_particle_get_real(particle, p_am, CS_LAGR_INTERF)) {
 
-        for (cs_lnum_t i = 0; i < 3; i++)
-          vel_seen[i] = vel[c_id][i];
-
+        for (int phase_id = 0; phase_id < n_phases; phase_id++){
+          for (cs_lnum_t i = 0; i < 3; i++)
+            vel_seen[phase_id * 3 + i] = vel[phase_id][c_id][i];
+        }
       }
 
       /* Initialization of additional "pointers"
@@ -1548,6 +1592,11 @@ cs_lagr_new_particle_init(const cs_lnum_t                 particle_range[2],
     }
 
   }
+  for (int phase_id = 0; phase_id < n_phases; phase_id++){
+    BFT_FREE(vagaus[phase_id]);
+    BFT_FREE(eig_vec[phase_id]);
+    BFT_FREE(eig_val[phase_id]);
+  }
 
   BFT_FREE(_cval_t);
   BFT_FREE(vagaus);
@@ -1556,6 +1605,9 @@ cs_lagr_new_particle_init(const cs_lnum_t                 particle_range[2],
   BFT_FREE(var_temp_corel_coef);
   BFT_FREE(temp_vel_fluc_coef);
   BFT_FREE(temp_vagaus);
+  BFT_FREE(vel);
+  BFT_FREE(cvar_k);
+  BFT_FREE(cvar_rij);
 }
 
 /*----------------------------------------------------------------------------*/

@@ -96,7 +96,8 @@ cs_restart_lagrangian_checkpoint_read(void)
 
   int  ierror = CS_RESTART_SUCCESS;
 
-  cs_lagr_extra_module_t *extra = cs_glob_lagr_extra_module;
+  cs_lagr_extra_module_t *extra_i = cs_glob_lagr_extra_module;
+  cs_lagr_extra_module_t *extra = extra_i;
 
   cs_lnum_t nfabor      = cs_glob_mesh->n_b_faces;
   cs_lnum_t n_cells_ext = cs_glob_mesh->n_cells_with_ghosts;
@@ -1064,7 +1065,8 @@ cs_lagr_restart_read_p(void)
 void
 cs_restart_lagrangian_checkpoint_write(void)
 {
-  cs_lagr_extra_module_t *extra = cs_glob_lagr_extra_module;
+  cs_lagr_extra_module_t *extra_i = cs_glob_lagr_extra_module;
+  cs_lagr_extra_module_t *extra = extra_i;
 
   /* Output restart file: variables related to particles */
   /*-----------------------------------------------------*/

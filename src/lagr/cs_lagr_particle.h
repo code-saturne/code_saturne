@@ -96,6 +96,7 @@ typedef enum {
   CS_LAGR_COORDS,
   CS_LAGR_VELOCITY,
   CS_LAGR_VELOCITY_SEEN,
+  CS_LAGR_VELOCITY_SEEN_VELOCITY_COV, /*!< tensor array with the covariance usk_i up_j */
 
   CS_LAGR_TR_TRUNCATE,         /*!< portion of trajectory truncated */
   CS_LAGR_TR_REPOSITION,       /*!< number of times the particle is repositioned

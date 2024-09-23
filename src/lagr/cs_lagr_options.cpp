@@ -227,7 +227,8 @@ cs_lagr_options_definition(int         is_restart,
 
   cs_lagr_model_t *lagr_model = cs_glob_lagr_model;
   cs_lagr_time_scheme_t * lagr_time_scheme = cs_glob_lagr_time_scheme;
-  cs_lagr_extra_module_t *extra = cs_glob_lagr_extra_module;
+  cs_lagr_extra_module_t *extra_i = cs_glob_lagr_extra_module;
+  cs_lagr_extra_module_t *extra = extra_i;
   cs_lagr_dim_t *lagdim = cs_glob_lagr_dim;
 
   /* Default initializations for Lagrangian module. */
@@ -730,6 +731,8 @@ cs_lagr_options_definition(int         is_restart,
     /* Velocity statistics are needed for this model */
     cs_lagr_stat_activate_attr(CS_LAGR_VELOCITY);
     cs_lagr_stat_activate_attr(CS_LAGR_VELOCITY_SEEN);
+    if (!cs_glob_lagr_model->cs_used)
+      cs_lagr_stat_activate_attr(CS_LAGR_VELOCITY_SEEN_VELOCITY_COV);
 
     /* Force immediate activation of volume statistics
        (may be adjusted later based on restart time step) */

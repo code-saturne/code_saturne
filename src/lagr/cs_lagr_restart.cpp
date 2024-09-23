@@ -296,7 +296,8 @@ _init_particle_values(cs_lagr_particle_set_t  *particles,
   case CS_LAGR_TEMPERATURE:
   case CS_LAGR_FLUID_TEMPERATURE:
     {
-      cs_lagr_extra_module_t *extra = cs_glob_lagr_extra_module;
+      cs_lagr_extra_module_t *extra_i = cs_glob_lagr_extra_module;
+      cs_lagr_extra_module_t *extra = extra_i;
       double c_kelvin = 0;
       const double *t = nullptr;
 
@@ -604,6 +605,7 @@ cs_lagr_restart_read_particle_data(cs_restart_t  *r)
 
       if (   attr == CS_LAGR_VELOCITY
           || attr == CS_LAGR_VELOCITY_SEEN
+          || attr == CS_LAGR_VELOCITY_SEEN_VELOCITY_COV
           || attr == CS_LAGR_RADII
           || attr == CS_LAGR_SHAPE_PARAM
           || attr == CS_LAGR_ORIENTATION
@@ -815,6 +817,7 @@ cs_lagr_restart_write_particle_data(cs_restart_t  *r)
 
       if (   attr == CS_LAGR_VELOCITY
           || attr == CS_LAGR_VELOCITY_SEEN
+          || attr == CS_LAGR_VELOCITY_SEEN_VELOCITY_COV
           || attr == CS_LAGR_RADII
           || attr == CS_LAGR_SHAPE_PARAM
           || attr == CS_LAGR_ORIENTATION

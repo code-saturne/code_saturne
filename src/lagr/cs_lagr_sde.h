@@ -51,8 +51,6 @@ BEGIN_C_DECLS
  * \param[in]  bx        turbulence characteristics
  * \param[out] tsfext    info for return coupling source terms
  * \param[out] force_p   forces per mass unit on particles (m/s^2)
- * \param[in]  gradpr    pressure gradient
- * \param[in]  gradvf    fluid velocity gradient
  * \param[out] terbru    Diffusion coefficient accounting for Brownian
  *                       (molecular) effect
  * \param[in]  vislen    nu/u* = y/y+
@@ -62,17 +60,15 @@ BEGIN_C_DECLS
 
 void
 cs_lagr_sde(cs_real_t           dt_p,
-            const cs_real_t     taup[],
-            const cs_real_3_t   tlag[],
-            const cs_real_3_t   piil[],
-            const cs_real_33_t  bx[],
+            const cs_real_t     **taup,
+            const cs_real_3_t   **tlag,
+            const cs_real_3_t   **piil,
+            const cs_real_33_t  **bx,
             cs_real_t           tsfext[],
             cs_real_3_t        *force_p,
-            const cs_real_3_t   gradpr[],
-            const cs_real_33_t  gradvf[],
             cs_real_t           terbru[],
             const cs_real_t     vislen[],
-            const cs_real_3_t   beta[],
+            const cs_real_3_t   **beta,
             cs_lnum_t          *nresnew);
 
 /*----------------------------------------------------------------------------*/

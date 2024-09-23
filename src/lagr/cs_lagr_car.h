@@ -51,11 +51,13 @@ BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Compute particle characteristics: Tp, TL and PI
+ * \brief Compute particle characteristics: Tp, TL and PI as well as
+ * covariance and variance tensors for the Stochastic model
  *
  * \param[in] iprev             time step indicator for fields
  *                                0: use fields at current time step
  *                                1: use fields at previous time step
+ * \param[in]  phase_id         carrier phase id
  * \param[in]  dt               time step (per cell)
  * \param[out] taup             dynamic characteristic time
  * \param[out] tlag             fluid characteristic time
@@ -71,13 +73,14 @@ BEGIN_C_DECLS
 
 void
 cs_lagr_car(int              iprev,
+            int              phase_id,
             const cs_real_t  dt[],
-            cs_real_t        taup[],
-            cs_real_3_t      tlag[],
-            cs_real_3_t      piil[],
-            cs_real_33_t     bx[],
+            cs_real_t        *taup,
+            cs_real_3_t      *tlag,
+            cs_real_3_t      *piil,
+            cs_real_33_t     *bx,
             cs_real_t        tempct[],
-            cs_real_3_t      beta[],
+            cs_real_3_t      *beta,
             cs_real_3_t      gradpr[],
             cs_real_33_t     gradvf[],
             cs_real_3_t      grad_lagr_time[]);

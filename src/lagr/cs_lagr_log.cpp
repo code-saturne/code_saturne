@@ -189,7 +189,8 @@ _log_setup_injection(cs_log_t  log)
   if (cs_glob_lagr_time_scheme->iilagr == CS_LAGR_OFF)
     return;
 
-  cs_lagr_extra_module_t *extra = cs_get_lagr_extra_module();
+  cs_lagr_extra_module_t *extra_i = cs_get_lagr_extra_module();
+  cs_lagr_extra_module_t *extra = extra_i;
 
   cs_log_printf(log,
                 _("\n"
@@ -436,7 +437,8 @@ cs_lagr_log_setup(void)
          "    fouling: %s\n"),
        _status(cs_glob_lagr_model->fouling));
 
-    const cs_lagr_extra_module_t *extra = cs_get_lagr_extra_module();
+    const cs_lagr_extra_module_t *extra_i = cs_get_lagr_extra_module();
+    const cs_lagr_extra_module_t *extra = extra_i;
 
     for (int i = 0; i < extra->ncharb; i++)
       cs_log_printf

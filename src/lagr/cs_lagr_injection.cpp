@@ -330,7 +330,8 @@ _injection_check(const cs_lagr_injection_set_t  *zis)
   int z_id = zis->zone_id;
   int set_id = zis->set_id;
 
-  cs_lagr_extra_module_t *extra = cs_get_lagr_extra_module();
+  cs_lagr_extra_module_t *extra_i = cs_get_lagr_extra_module();
+  cs_lagr_extra_module_t *extra = extra_i;
 
   /* Verification of particle classes */
 
@@ -474,7 +475,7 @@ _injection_check(const cs_lagr_injection_set_t  *zis)
                 (double)zis->temperature,
                 (double)tkelvn);
   }
-
+  /* Warning : complex models are based on the first carrier field (ind 0) */
   /* emissivity */
   if (   cs_glob_lagr_model->physical_model == CS_LAGR_PHYS_HEAT
       && cs_glob_lagr_specific_physics->itpvar == 1
@@ -840,7 +841,9 @@ cs_lagr_injection(int        time_id,
 
   cs_real_t dnbpnw_preci = 0.;
 
-  cs_lagr_extra_module_t *extra = cs_get_lagr_extra_module();
+  cs_lagr_extra_module_t *extra_i = cs_get_lagr_extra_module();
+  cs_lagr_extra_module_t *extra = extra_i;
+
   time_id = CS_MIN(time_id, extra->vel->n_time_vals -1);
 
   const cs_mesh_t  *mesh = cs_glob_mesh;

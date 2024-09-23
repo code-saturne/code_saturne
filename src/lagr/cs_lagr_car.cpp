@@ -106,11 +106,13 @@ BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Compute particle characteristics: Tp, TL and PI
+ * \brief Compute particle characteristics: Tp, TL and PI as well as
+ * covariance and variance tensors for the stochasit model
  *
  * \param[in] iprev             time step indicator for fields
  *                                0: use fields at current time step
  *                                1: use fields at previous time step
+ * \param[in]  phase_id         carrier phase id
  * \param[in]  dt               time step (per cell)
  * \param[out] taup             dynamic characteristic time
  * \param[out] tlag             fluid characteristic time
@@ -126,13 +128,14 @@ BEGIN_C_DECLS
 
 void
 cs_lagr_car(int              iprev,
+            int              phase_id,
             const cs_real_t  dt[],
-            cs_real_t        taup[],
-            cs_real_3_t      tlag[],
-            cs_real_3_t      piil[],
-            cs_real_33_t     bx[],
+            cs_real_t        *taup,
+            cs_real_3_t      *tlag,
+            cs_real_3_t      *piil,
+            cs_real_33_t     *bx,
             cs_real_t        tempct[],
-            cs_real_3_t      beta[],
+            cs_real_3_t      *beta,
             cs_real_3_t      gradpr[],
             cs_real_33_t     gradvf[],
             cs_real_3_t      grad_lagr_time[])
@@ -146,8 +149,10 @@ cs_lagr_car(int              iprev,
 
   cs_mesh_t  *mesh = cs_glob_mesh;
   cs_lnum_t n_cells = mesh->n_cells;
+  cs_lnum_t ncelet = mesh->n_cells_with_ghosts;
 
-  cs_lagr_extra_module_t *extra = cs_get_lagr_extra_module();
+  cs_lagr_extra_module_t *extra_i = cs_get_lagr_extra_module();
+  cs_lagr_extra_module_t *extra = extra_i;
   iprev = CS_MIN(iprev, extra->vel->n_time_vals -1);
 
   /* Initialization
@@ -197,25 +202,32 @@ cs_lagr_car(int              iprev,
     cs_real_t p_mass = cs_lagr_particle_get_real(particle, p_am, CS_LAGR_MASS);
     cs_real_t p_rom  = p_mass * d6spi / pow(p_diam, 3.0);
 
-    cs_real_t  rom           = extra->cromf->val[cell_id];
-    cs_real_t  xnul          = extra->viscl->val[cell_id] / rom;
-    cs_real_t *part_vel_seen =
-      (cs_real_t *)cs_lagr_particle_attr(particle, p_am,
-                                                     CS_LAGR_VELOCITY_SEEN);
-    cs_real_t *part_vel      =
-      (cs_real_t *)cs_lagr_particle_attr(particle, p_am,
-                                                     CS_LAGR_VELOCITY);
+    cs_real_t rom, xnul, rel_vel_norm = 0, rep, fdr;
+    rom = extra_i[phase_id].cromf->val[cell_id];
+    xnul = extra_i[phase_id].viscl->val[cell_id] / rom;
 
-    cs_real_t rel_vel_norm = cs_math_3_distance(part_vel_seen, part_vel);
+    cs_real_t *part_vel_seen
+      = cs_lagr_particle_attr_get_ptr<cs_real_t>(particle, p_am,
+                                                 CS_LAGR_VELOCITY_SEEN);
+    cs_real_t *part_vel
+      = cs_lagr_particle_attr_get_ptr<cs_real_t>(particle, p_am,
+                                                 CS_LAGR_VELOCITY);
+
+    for (int idim_ = 0; idim_ < 3; idim_++) {
+      rel_vel_norm += (part_vel_seen[3*phase_id + idim_] - part_vel[idim_])
+                    * (part_vel_seen[3*phase_id + idim_] - part_vel[idim_]);
+    }
+
+    rel_vel_norm = sqrt(rel_vel_norm);
 
     /* Compute the local Reynolds number */
-    cs_real_t rep = rel_vel_norm * p_diam / xnul; /* local Reynolds number */
+    rep = rel_vel_norm * p_diam / xnul;
 
     cs_real_t d2 = cs_math_sq(p_diam); /* drag coefficient */
 
-    cs_real_t fdr;
-    if (rep <= rec)
+    if (rep <= rec) {
       fdr = 18.0 * xnul * (1.0 + 0.15 * pow (rep, 0.687)) / d2;
+    }
     else
       fdr = 0.44 * 3.0 / 4.0 * rel_vel_norm / p_diam;
 
@@ -223,16 +235,17 @@ cs_lagr_car(int              iprev,
     taup[ip] = p_rom / rom / fdr;
 
     /* Added-mass term? */
-    if (cs_glob_lagr_time_scheme->iadded_mass == 1)
+    if (cs_glob_lagr_time_scheme->iadded_mass == 1){
       taup[ip] *= (  1.0
                    + 0.5 * cs_glob_lagr_time_scheme->added_mass_const
                          * rom / p_rom);
+    }
 
     /* Tp user computation */
 
     cs_user_lagr_rt(ip, rep, rel_vel_norm, rom, p_rom, xnul, taup, dt);
 
-    /* Tc computation */
+    /* Tc computation : based on the first carrier flow in ncfd */
 
     if (   (   cs_glob_lagr_model->physical_model == CS_LAGR_PHYS_HEAT
             && cs_glob_lagr_specific_physics->itpvar == 1)
@@ -273,7 +286,6 @@ cs_lagr_car(int              iprev,
       tempct[p_set->n_particles + ip]
         = fnus * cs_math_pi * p_diam * xrkl * rom;
     }
-
   }
 
   /* Compute TL
@@ -286,27 +298,28 @@ cs_lagr_car(int              iprev,
     /* Compute properties associated to the Eulerian mesh
      * used in the complete model for discrete particles
        ---------- */
-    cs_real_t *energi = extra->cvar_k->val;
+    cs_real_t *energi = nullptr;
 
-    cs_real_3_t* cell_tlag_et = nullptr;
-    cs_real_3_t* cell_grad_lagr_time_r = nullptr;
+    cs_real_3_t *cell_tlag_et = nullptr;
+    cs_real_3_t *cell_grad_lagr_time_r = nullptr;
     cs_real_3_t *cell_bbi = nullptr;
     cs_real_3_t *cell_bxi_tl = nullptr;
     cs_real_t mean_uvwdif;
     cs_real_3_t dir;
 
+    energi = extra_i[phase_id].cvar_k->val;
+
     /* Determine the quantities associated to the cell in the local ref. */
     if (turb_disp_model) {
-
       BFT_MALLOC(cell_bbi, n_cells, cs_real_3_t);
       BFT_MALLOC(cell_bxi_tl, n_cells, cs_real_3_t);
+      BFT_MALLOC(cell_tlag_et, n_cells, cs_real_3_t);
 
       /* compute grad_lagr_time in the local referential associated to the cell
        else we set bbi = {1.,1.,1.} and stay in the absolute referential */
-      if (beta != nullptr)
+      if (beta != nullptr) {
         BFT_MALLOC(cell_grad_lagr_time_r, n_cells, cs_real_3_t);
-
-      BFT_MALLOC(cell_tlag_et, n_cells, cs_real_3_t);
+      }
 
       int stat_type = cs_lagr_stat_type_from_attr_id(CS_LAGR_VELOCITY);
       cs_field_t *stat_vel
@@ -319,16 +332,18 @@ cs_lagr_car(int              iprev,
       cs_field_t *stat_w = cs_lagr_stat_get_stat_weight(0);
 
       for (cs_lnum_t cell_id = 0; cell_id < cs_glob_mesh->n_cells; cell_id++) {
+        /* Initialize cell_tlag_et : */
+        for (int i = 0; i < 3; i++)
+          cell_tlag_et[cell_id][i] = 0.;
+
         if (stat_w->val[cell_id] > cs_glob_lagr_stat_options->threshold) {
           /* compute mean relative velocity <Up> - <Uf>*/
           for (int i = 0; i < 3; i++)
             dir[i] = stat_vel->val[cell_id * 3 + i]
-                   - extra->vel->vals[iprev][cell_id * 3 + i];
+                   - extra_i[phase_id].vel->vals[iprev][cell_id * 3 + i];
 
-          /* Compute and store the mean relative velocity square
-           * |<U_r>|^2 = |<Up>-Uf|^2*/
+          /* Compute and store the mean relative velocity |<U_r>| = |<Up>-Uf|*/
           mean_uvwdif = cs_math_3_square_norm(dir);
-
           mean_uvwdif = (3.0 * mean_uvwdif) / (2.0 * energi[cell_id]);
 
           /* FIXME add proper isotropic behavior */
@@ -340,14 +355,14 @@ cs_lagr_car(int              iprev,
           at = (1.0 + 4.0 * cbcb * mean_uvwdif);
 
           cell_bbi[cell_id][0] = sqrt(an); /* First direction, n,
-                                              in the local reference frame */
+                                    in the local reference frame */
           cell_bbi[cell_id][1] = sqrt(at); /* Second and third direction,
-                                              orthogonal to n */
+                                    orthogonal to n */
           cell_bbi[cell_id][2] = sqrt(at);
 
           /* Compute the timescale in parallel and transverse directions */
           for (int id = 0; id < 3; id++)
-            cell_tlag_et[cell_id][id] = extra->lagr_time->val[cell_id]
+            cell_tlag_et[cell_id][id] = extra_i[phase_id].lagr_time->val[cell_id]
                                       / cell_bbi[cell_id][id];
 
           /* Compute the main direction in the global reference
@@ -355,9 +370,9 @@ cs_lagr_car(int              iprev,
            cs_math_3_normalize(dir, dir);
 
           /* Compute k_tilde in each cell */
-          cs_real_t ktil = 0;
-          if (extra->itytur == 3) {
-            cs_real_t *rij = &(extra->cvar_rij->vals[iprev][6*cell_id]);
+          cs_real_t ktil;
+          if (extra_i[phase_id].itytur == 3) {
+            cs_real_t *rij = &(extra_i[phase_id].cvar_rij->vals[iprev][6*cell_id]);
             /* Note that n.R.n = R : n(x)n */
             cs_real_t rnn = cs_math_3_sym_33_3_dot_product(dir, rij, dir);
             cs_real_t tr_r = cs_math_6_trace(rij);
@@ -368,13 +383,15 @@ cs_lagr_car(int              iprev,
                           + cell_bbi[cell_id][1] + cell_bbi[cell_id][2]));
             /* cell_bbi[1] == cell_bbi[2] is used */
           }
-          else if (   extra->itytur == 2 || extra->itytur == 4
-              || extra->itytur == 5 || extra->iturb == CS_TURB_K_OMEGA) {
+          else if (   extra_i[phase_id].itytur == 2
+              || extra_i[phase_id].itytur == 4
+              || extra_i[phase_id].itytur == 5
+              || extra_i[phase_id].iturb == CS_TURB_K_OMEGA) {
             ktil  = energi[cell_id];
           }
           for (int i = 0; i <3; i++) {
             cell_bxi_tl[cell_id][i] = cl * (  (c0  * ktil )
-                + ((ktil- energi[cell_id]/ cell_bbi[cell_id][i])
+                + ((ktil- energi[cell_id] / cell_bbi[cell_id][i])
                   * 2.0 / 3.0));
             cell_bxi_tl[cell_id][i] =
                 CS_MAX(cell_bxi_tl[cell_id][i], cs_math_epzero);
@@ -401,8 +418,8 @@ cs_lagr_car(int              iprev,
             //
             // cos(theta/2) = || dir + dir_r|| / 2
             cs_real_t dir_p_dir_r[3] = {dir[0] + dir_r[0],
-                                        dir[1] + dir_r[1],
-                                        dir[2] + dir_r[2]};
+              dir[1] + dir_r[1],
+              dir[2] + dir_r[2]};
             cs_real_t dir_p_dir_r_normed[3];
             cs_math_3_normalize(dir_p_dir_r, dir_p_dir_r_normed);
 
@@ -435,24 +452,30 @@ cs_lagr_car(int              iprev,
             /* transform grad(Tl) in the local
              * reference frame */
 
-            cs_math_33_3_product(trans_m, grad_lagr_time[cell_id],
+          cs_math_33_3_product(trans_m, extra_i[phase_id].grad_lagr_time[cell_id],
                                           cell_grad_lagr_time_r[cell_id]);
           }
         }
         else {
           for (int i = 0; i < 3; i++) {
             cell_bbi[cell_id][i] = 1.;
-            cell_bxi_tl[cell_id][i] = cl * c0  * energi[cell_id];
+            cell_bxi_tl[cell_id][i] = cl * c0 * energi[cell_id];
           }
           if (cell_tlag_et != nullptr) {
             for (int i = 0; i < 3; i++) {
-              cell_tlag_et[cell_id][i] = extra->lagr_time->val[cell_id];
+              cell_bbi[cell_id][i] = 1.;
+              cell_bxi_tl[cell_id][i] = cl * c0 * energi[cell_id];
             }
-          }
-          if (cell_grad_lagr_time_r != nullptr) {
-            for (int i = 0; i < 3; i++) {
-              cell_grad_lagr_time_r[cell_id][i] =
-                  grad_lagr_time[cell_id][i];
+            if (cell_tlag_et != nullptr) {
+              for (int i = 0; i < 3; i++) {
+                cell_tlag_et[cell_id][i] = extra_i[phase_id].lagr_time->val[cell_id];
+              }
+            }
+            if (cell_grad_lagr_time_r != nullptr) {
+              for (int i = 0; i < 3; i++) {
+                cell_grad_lagr_time_r[cell_id][i] =
+                    extra_i[phase_id].grad_lagr_time[cell_id][i];
+              }
             }
           }
         }
@@ -476,7 +499,7 @@ cs_lagr_car(int              iprev,
                                                     CS_LAGR_CELL_ID);
 
 
-      if (   extra->lagr_time->val[cell_id] > cs_math_epzero
+      if (   extra_i[phase_id].lagr_time->val[cell_id] > cs_math_epzero
           && energi[cell_id] > cs_math_epzero) {
         if (turb_disp_model) {
 
@@ -484,7 +507,7 @@ cs_lagr_car(int              iprev,
             tlag[ip][id] = cell_tlag_et[cell_id][id];
 
           for (cs_lnum_t id = 0; id < 3; id++) {
-            tlag[ip][id]  = CS_MAX(tlag[ip][id], cs_math_epzero);
+            tlag[ip][id] = CS_MAX(tlag[ip][id], cs_math_epzero);
             cs_real_t bxi = cell_bxi_tl[cell_id][id] / tlag[ip][id];
             if (bxi > 0.0)
               bx[ip][id][nor-1] = sqrt(bxi);
@@ -512,35 +535,36 @@ cs_lagr_car(int              iprev,
                 beta[ip][id] = 0.;
               else
                 beta[ip][id] = cell_grad_lagr_time_r[cell_id][id]
-                             / cell_bbi[cell_id][id]
-                             * cs_math_pow2(bx[ip][id][nor-1])
-                             / (tlag[ip][id]-taup[ip]);
+                               / cell_bbi[cell_id][id]
+                               * cs_math_pow2(bx[ip][id][nor-1])
+                               / (tlag[ip][id]-taup[ip]);
             }
           }
         }
         else { // fluid particles
-          tlag[ip][0] = extra->lagr_time->val[cell_id];
+          tlag[ip][0] = extra_i[phase_id].lagr_time->val[cell_id];
           tlag[ip][0] = CS_MAX(tlag[ip][0], cs_math_epzero);
 
           if (cs_glob_lagr_model->idiffl == 0) {
-            cs_real_t *part_vel_seen =
-              (cs_real_t *)cs_lagr_particle_attr(particle, p_am,
-                                       CS_LAGR_VELOCITY_SEEN);
-            cs_real_t *part_vel      =
-              (cs_real_t *)cs_lagr_particle_attr(particle, p_am,
-                                       CS_LAGR_VELOCITY);
+            cs_real_t *part_vel_seen
+              = cs_lagr_particle_attr_get_ptr<cs_real_t>(particle, p_am,
+                                                         CS_LAGR_VELOCITY_SEEN);
+            cs_real_t *part_vel
+              = cs_lagr_particle_attr_get_ptr<cs_real_t>(particle, p_am,
+                                                         CS_LAGR_VELOCITY);
 
             cs_real_t uvwdif = 0.;
             for (int i =0; i < 3; i++)
-              uvwdif += cs_math_sq(part_vel_seen[i] - part_vel[i]);
+              uvwdif += cs_math_sq(part_vel_seen[3 * phase_id + i] - part_vel[i]);
             uvwdif = sqrt((3.0 * uvwdif) / (2.0 * energi[cell_id]));
-            tlag[ip][0] = extra->lagr_time->val[cell_id] / (1.0 + cb * uvwdif);
+            tlag[ip][0] = extra_i[phase_id].lagr_time->val[cell_id] / (1.0 + cb * uvwdif);
           }
 
           tlag[ip][1] = tlag[ip][0];
           tlag[ip][2] = tlag[ip][0];
 
-          bx[ip][0][nor-1] = sqrt (c0 * cl * energi[cell_id] / tlag[ip][0]);
+          bx[ip][0][nor-1]
+            = sqrt (c0 * cl * energi[cell_id] / tlag[ip][0]);
           bx[ip][1][nor-1] = bx[ip][0][nor-1];
           bx[ip][2][nor-1] = bx[ip][0][nor-1];
 
@@ -552,7 +576,7 @@ cs_lagr_car(int              iprev,
                   < cs_math_epzero * taup[ip])
                 beta[ip][id] = 0.;
               else
-                beta[ip][id] = grad_lagr_time[cell_id][id]
+                beta[ip][id] = extra_i[phase_id].grad_lagr_time[cell_id][id]
                              * cs_math_pow2(bx[ip][id][nor-1])
                              / (tlag[ip][id]-taup[ip]);
             }
@@ -571,14 +595,14 @@ cs_lagr_car(int              iprev,
         }
         if (beta != nullptr) {
           for (int id = 0; id < 3; id++)
-              beta[ip][id] = 0.;
+            beta[ip][id] = 0.;
         }
       }
     }
 
     if ( cell_tlag_et != nullptr)
       BFT_FREE(cell_tlag_et);
-    if (turb_disp_model) {
+    if (turb_disp_model){
       BFT_FREE(cell_bbi);
       BFT_FREE(cell_bxi_tl);
     }
@@ -601,8 +625,91 @@ cs_lagr_car(int              iprev,
         for (int id = 0; id < 3; id++)
           beta[ip][id] = 0.;
       }
-
     }
+  }
+
+  /* Before computing Pii: compute gradients of covariance */
+  /* Various initializations  */
+  if (cs_glob_lagr_model->cs_used == 0) {
+    cs_var_cal_opt_t var_cal_opt;
+    int key_cal_opt_id = cs_field_key_id("var_cal_opt");
+    cs_field_get_key_struct(extra->pressure, key_cal_opt_id, &var_cal_opt);
+
+    /* Now compute the gradients */
+    cs_real_t *f_inter_cov;
+    BFT_MALLOC(f_inter_cov, ncelet, cs_real_t);
+
+    /* Get the variable we want to compute the gradients
+     * from (covariance velocity seen/velocity) */
+    int stat_type = cs_lagr_stat_type_from_attr_id(CS_LAGR_VELOCITY_SEEN_VELOCITY_COV);
+
+    cs_field_t *stat_cov_skp = cs_lagr_stat_get_moment(stat_type,
+                                                        CS_LAGR_STAT_GROUP_PARTICLE,
+                                                        CS_LAGR_MOMENT_MEAN,
+                                                        0,
+                                                        -phase_id-1);
+
+    for (int i = 0; i < 9; i++){
+      for (int iel_ = 0; iel_ < n_cells; iel_++){
+        f_inter_cov[iel_] = stat_cov_skp->val[9 * iel_ + i];
+      }
+      if (mesh->halo != nullptr)
+        cs_halo_sync_var(mesh->halo, CS_HALO_STANDARD, f_inter_cov);
+
+      cs_gradient_scalar("intermediate cov skp gradient [Lagrangian module]",
+                          CS_GRADIENT_GREEN_ITER,
+                          CS_HALO_STANDARD,
+                          1,
+                          0,
+                          0,
+                          1,
+                          var_cal_opt.verbosity,
+                          static_cast<cs_gradient_limit_t>(var_cal_opt.imligr),
+                          var_cal_opt.epsrgr,
+                          var_cal_opt.climgr,
+                          0,
+                          nullptr,
+                          f_inter_cov,
+                          nullptr,
+                          nullptr,
+                          extra_i[phase_id].grad_cov_skp[i]);
+    }
+    /* Get the variable we want to compute the gradients from (velocity seen) */
+    stat_type = cs_lagr_stat_type_from_attr_id(CS_LAGR_VELOCITY_SEEN);
+
+    cs_field_t *stat_cov_sk = cs_lagr_stat_get_moment(stat_type,
+                                                      CS_LAGR_STAT_GROUP_PARTICLE,
+                                                      CS_LAGR_MOMENT_VARIANCE,
+                                                      0,
+                                                      -phase_id-1);
+
+    for (int i = 0; i < 6; i++) {
+      for (int iel_ = 0; iel_ < n_cells; iel_++){
+        f_inter_cov[iel_] = stat_cov_sk->val[6 * iel_ + i];
+      }
+      if (mesh->halo != nullptr)
+        cs_halo_sync_var(mesh->halo, CS_HALO_STANDARD, f_inter_cov);
+
+      cs_gradient_scalar("intermediate cov sk gradient [Lagrangian module]",
+                          CS_GRADIENT_GREEN_ITER,
+                          CS_HALO_STANDARD,
+                          1,
+                          0, // n_r_sweeps (number of reconstruction sweeps)
+                          0,
+                          1,
+                          var_cal_opt.verbosity,
+                          static_cast<cs_gradient_limit_t>(var_cal_opt.imligr),
+                          var_cal_opt.epsrgr,
+                          var_cal_opt.climgr,
+                          0,
+                          nullptr,
+                          f_inter_cov,
+                          nullptr,
+                          nullptr,
+                          extra_i[phase_id].grad_cov_sk[i]);
+    }
+
+    BFT_FREE(f_inter_cov);
 
   }
 
@@ -618,41 +725,124 @@ cs_lagr_car(int              iprev,
       piil[ip][id] = - extra->grad_pr[cell_id][id] / romf + grav[id];
   }
 
-  if (turb_disp_model) {
+  if (turb_disp_model && cs_glob_lagr_model->cs_used == 0) {
     /* add grad(<Vf>)*(<Up>-<Us>) if there is enough particles*/
+    for (cs_lnum_t ip = 0; ip < p_set->n_particles; ip++) {
 
-    int stat_type = cs_lagr_stat_type_from_attr_id(CS_LAGR_VELOCITY);
+      unsigned char *particle = p_set->p_buffer + p_am->extents * ip;
 
-    cs_field_t *stat_vel
-      = cs_lagr_stat_get_moment(stat_type,
-                                CS_LAGR_STAT_GROUP_PARTICLE,
-                                CS_LAGR_MOMENT_MEAN,
-                                0,
-                                -1);
+      cs_lnum_t cell_id = cs_lagr_particle_get_lnum(particle, p_am,
+                                                    CS_LAGR_CELL_ID);
+      cs_real_t *part_vel_seen
+        = cs_lagr_particle_attr_get_ptr<cs_real_t>(particle, p_am,
+                                                   CS_LAGR_VELOCITY_SEEN);
 
-    stat_type = cs_lagr_stat_type_from_attr_id(CS_LAGR_VELOCITY_SEEN);
+      /* New piil for the fluctuation equation */
 
-    cs_field_t *stat_vel_s
-      = cs_lagr_stat_get_moment(stat_type,
-                                CS_LAGR_STAT_GROUP_PARTICLE,
-                                CS_LAGR_MOMENT_MEAN,
-                                0,
-                                -1);
+      /* Initialize piil to 0. */
+      for (cs_lnum_t id = 0; id < 3; id++){
+        piil[ip][id] = 0.;
+      }
 
+      for (cs_lnum_t id = 0; id < 3; id++) {
+        for (int j = 0; j < 3; j++){
+          if (extra_i[phase_id].iturb == CS_TURB_RIJ_EPSILON_SSG) {
+            /* Modèle Arcen & Tanière (2009) */
+            piil[ip][id] += extra_i[phase_id].grad_cov_skp[3 * id + j][cell_id][j];
+          } else if (extra_i[phase_id].iturb == CS_TURB_K_EPSILON) {
+            /* Modèle Arcen & Tanière (2009) */
+            piil[ip][id] += extra_i[phase_id].grad_cov_skp[3 * id + j][cell_id][j];
+          } else {
+            bft_error
+              (__FILE__, __LINE__, 0,
+              _("Lagrangian turbulent dispersion is not compatible with\n"
+              "the selected turbulence model.\n"
+              "\n"
+              "Turbulent dispersion is taken into account with idistu = %d\n"
+              " Activated turbulence model is %d, when only k-eps, LES, Rij-eps,\n"
+              " V2f or k-omega are handled."),
+              (int)cs_glob_lagr_model->idistu,
+              (int)extra_i[phase_id].iturb);
+          }
+        }
+        for (int j = 0; j < 3; j++){
+          /* Instantaneous velocity model */
+          piil[ip][id] -= (part_vel_seen[3 * phase_id + j]
+              - extra_i[phase_id].vel->vals[iprev][3 * cell_id + j])
+            * extra_i[phase_id].grad_vel[cell_id][id][j];
+        }
+      }
+    }
+  }
+  else if (cs_glob_lagr_model->cs_used == 0) {
+    for (cs_lnum_t ip = 0; ip < p_set->n_particles; ip++) {
 
+      unsigned char *particle = p_set->p_buffer + p_am->extents * ip;
 
-    cs_field_t *stat_w = cs_lagr_stat_get_stat_weight(0);
+      cs_lnum_t cell_id = cs_lagr_particle_get_lnum(particle, p_am,
+                                                    CS_LAGR_CELL_ID);
+      cs_real_t *part_vel_seen
+        = cs_lagr_particle_attr_get_ptr<cs_real_t>(particle, p_am,
+                                                   CS_LAGR_VELOCITY_SEEN);
 
-    /* Compute: II = ( -grad(P)/Rom(f)+grad(<Uf>)*(<Up>-<Us>) + g ) */
+      for (cs_lnum_t id = 0; id < 3; id++){
+        for (int j = 0; j < 3; j++){
+          piil[ip][id]
+            -= (part_vel_seen[3 * phase_id + j]
+                - extra_i[phase_id].vel->vals[iprev][3 * cell_id + j])
+            * extra_i[phase_id].grad_vel[cell_id][id][j];
+        }
+      }
+    }
+  }
+
+  /* Compute Pii for code_saturne models
+     ----------- */
+  else {
+    /* Compute: II = ( -grad(P)/Rom(f)+g) */
     for (cs_lnum_t ip = 0; ip < p_set->n_particles; ip++) {
       cs_lnum_t      cell_id  = cs_lagr_particles_get_lnum(p_set, ip ,
                                                            CS_LAGR_CELL_ID);
-      if (stat_w->val[cell_id] > cs_glob_lagr_stat_options->threshold) {
-        for (int i = 0; i < 3; i++) {
-          for (cs_lnum_t j = 0; j < 3; j++) {
-            cs_real_t vpm   = stat_vel->val[cell_id*3 + j];
-            cs_real_t vsm   = stat_vel_s->val[cell_id*3 + j];
-            piil[ip][i] += gradvf[cell_id][i][j] * (vpm - vsm);
+
+      cs_real_t romf = extra->cromf->val[cell_id];
+      for (int id = 0; id < 3; id++)
+        piil[ip][id] = -extra->grad_pr[cell_id][id] / romf + grav[id];
+    }
+
+    if (turb_disp_model) {
+      /* add grad(<Vf>)*(<Up>-<Us>) if there is enough particles */
+
+      int stat_type = cs_lagr_stat_type_from_attr_id(CS_LAGR_VELOCITY);
+
+      cs_field_t *stat_vel
+        = cs_lagr_stat_get_moment(stat_type,
+                                  CS_LAGR_STAT_GROUP_PARTICLE,
+                                  CS_LAGR_MOMENT_MEAN,
+                                  0,
+                                  -1);
+
+      stat_type = cs_lagr_stat_type_from_attr_id(CS_LAGR_VELOCITY_SEEN);
+
+      cs_field_t *stat_vel_s
+        = cs_lagr_stat_get_moment(stat_type,
+                                  CS_LAGR_STAT_GROUP_PARTICLE,
+                                  CS_LAGR_MOMENT_MEAN,
+                                  0,
+                                  -1);
+
+      cs_field_t *stat_w = cs_lagr_stat_get_stat_weight(0);
+
+      for (cs_lnum_t ip = 0; ip < p_set->n_particles; ip++) {
+        cs_lnum_t cell_id  = cs_lagr_particles_get_lnum(p_set, ip ,
+                                                        CS_LAGR_CELL_ID);
+
+        if (stat_w->val[cell_id] > cs_glob_lagr_stat_options->threshold) {
+          for (int i = 0; i < 3; i++) {
+            for (cs_lnum_t j = 0; j < 3; j++) {
+              cs_real_t vpm   = stat_vel->val[cell_id*3 + j];
+              cs_real_t vsm   = stat_vel_s->val[cell_id*3 + j];
+              piil[ip][i] += gradvf[cell_id][i][j] * (vpm - vsm);
+            }
           }
         }
       }
@@ -664,8 +854,8 @@ cs_lagr_car(int              iprev,
             || cs_glob_lagr_model->physical_model == CS_LAGR_PHYS_CTWR
             || (   cs_glob_lagr_model->physical_model == CS_LAGR_PHYS_HEAT
                 && cs_glob_lagr_specific_physics->itpvar == 1))
-       && cs_glob_velocity_pressure_model->idilat == 0
-       && cs_field_by_name("thermal_expansion") != nullptr) {
+       && cs_field_by_name("thermal_expansion") != nullptr
+       && cs_glob_lagr_model->cs_used == 1) {
     const cs_fluid_properties_t *phys_pro = cs_get_glob_fluid_properties();
     for (cs_lnum_t ip = 0; ip < p_set->n_particles; ip++) {
       cs_lnum_t      cell_id  = cs_lagr_particles_get_lnum(p_set, ip ,
@@ -716,7 +906,8 @@ cs_lagr_car(int              iprev,
    * (two way coupling terms)
    * ==================================================== */
   if (   cs_glob_lagr_source_terms->ltsdyn == 1
-      && cs_glob_lagr_time_scheme->iilagr == CS_LAGR_TWOWAY_COUPLING) {
+      && cs_glob_lagr_time_scheme->iilagr == CS_LAGR_TWOWAY_COUPLING
+      && cs_glob_lagr_model->cs_used == 1) {
 
     const cs_real_3_t *lagr_st_vel
       = (const cs_real_3_t *)cs_field_by_name("lagr_st_velocity")->val;
@@ -724,12 +915,12 @@ cs_lagr_car(int              iprev,
     for (cs_lnum_t ip = 0; ip < p_set->n_particles; ip++) {
       cs_lnum_t      cell_id  = cs_lagr_particles_get_lnum(p_set, ip ,
                                                            CS_LAGR_CELL_ID);
-      /* Add: II =  -alpha_p rho_p <(U_s -U_p)/tau_p> / (alpha_f rho_f)  */
+    /* Add: II =  -alpha_p rho_p <(U_s -U_p)/tau_p> / (alpha_f rho_f)  */
 
-      cs_real_t romf = extra->cromf->val[cell_id];
+    cs_real_t romf = extra->cromf->val[cell_id];
 
-      for (int i = 0; i < 3; i++)
-        piil[ip][i] += lagr_st_vel[cell_id][i] / romf;
+    for (int i = 0; i < 3; i++)
+      piil[ip][i] += lagr_st_vel[cell_id][i] / romf;
 
     }
   }
