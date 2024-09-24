@@ -174,6 +174,23 @@ public:
 #endif
   }
 
+  /*--------------------------------------------------------------------------*/
+  /*!
+   * \brief Call MPI_Barrier over the MPI communicator, do nothing if no MPI.
+   */
+  /*--------------------------------------------------------------------------*/
+
+  int
+  barrier()
+  {
+    int retval = 0;
+#if defined(HAVE_MPI)
+    if (_comm != MPI_COMM_NULL)
+      retval = MPI_Barrier(_comm);
+#endif
+    return retval;
+  }
+
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
 #if defined(HAVE_MPI)
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
