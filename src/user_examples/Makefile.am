@@ -189,7 +189,6 @@ cs_user_source_terms-turbulence.cpp \
 cs_user_time_table.cpp \
 cs_user_turbomachinery.cpp \
 cs_user_zones.cpp \
-cs_user_atmospheric_model.f90 \
 cs_user_boundary_conditions-gas_3ptchem.cpp \
 cs_user_profile.cxx \
 cs_user_profile.h \

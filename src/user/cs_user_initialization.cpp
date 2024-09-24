@@ -112,5 +112,41 @@ cs_user_initialization(cs_domain_t     *domain)
 }
 
 /*----------------------------------------------------------------------------*/
+/*!
+ * \file cs_user_initialization.c
+ *
+ * \brief Fill in vertical profiles of atmospheric properties prior to solve
+ *        1D radiative transfers.
+ *
+ * \param[in, out] preray        pressure vertical profile
+ * \param[in, out] temray        real temperature vertical profile
+ * \param[in, out] romray        density vertical profile
+ * \param[in, out] qvray         water vapor content vertical profile
+ * \param[in, out] qlray         water liquid content vertical profile
+ * \param[in, out] ncray         droplets density vertical profile
+ * \param[in, out] aeroso        aerosol concentration vertical profile
+ */
+/*----------------------------------------------------------------------------*/
+
+#pragma weak cs_user_atmo_1d_rad_prf
+void
+cs_user_atmo_1d_rad_prf(cs_real_t   preray[],
+                        cs_real_t   temray[],
+                        cs_real_t   romray[],
+                        cs_real_t   qvray[],
+                        cs_real_t   qlray[],
+                        cs_real_t   ncray[],
+                        cs_real_t   aeroso[])
+{
+  CS_UNUSED(qvray);
+  CS_UNUSED(qlray);
+  CS_UNUSED(ncray);
+  CS_UNUSED(preray);
+  CS_UNUSED(temray);
+  CS_UNUSED(romray);
+  CS_UNUSED(aeroso);
+}
+
+/*----------------------------------------------------------------------------*/
 
 END_C_DECLS

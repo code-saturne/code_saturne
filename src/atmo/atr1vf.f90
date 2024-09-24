@@ -55,7 +55,7 @@ use, intrinsic :: iso_c_binding
 
 implicit none
 
-procedure() :: grimap, gripol, cs_user_atmo_1d_rad_prf, rayir, rayso, mesmap
+procedure() :: grimap, gripol, rayir, rayso, mesmap
 
 ! Local variables
 integer k, ii, jj
@@ -126,6 +126,17 @@ data ideb/0/
       type(c_ptr), intent(out) :: p_fnvert
       type(c_ptr), intent(out) :: p_aevert
     end subroutine cs_f_atmo_rad_1d_arrays_get_pointers
+
+    subroutine cs_user_atmo_1d_rad_prf(preray, temray, &
+                                       romray, qvray,  &
+                                       qlray,  ncray, aeroso) &
+      bind(C, name='cs_user_atmo_1d_rad_prf')
+       use, intrinsic :: iso_c_binding
+       implicit none
+      real(kind=c_double), dimension(*), intent(inout) :: preray, temray
+      real(kind=c_double), dimension(*), intent(inout) :: romray, qvray
+      real(kind=c_double), dimension(*), intent(inout) :: qlray,  ncray, aeroso
+    end subroutine cs_user_atmo_1d_rad_prf
 
   end interface
 
