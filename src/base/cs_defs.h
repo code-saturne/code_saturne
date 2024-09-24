@@ -719,12 +719,18 @@ cs_datatype_from_type()
   return CS_DATATYPE_NULL;
 }
 
+/*----------------------------------------------------------------------------*/
+/* Specialized versions of the templated function */
+/*----------------------------------------------------------------------------*/
+
 template <>
 constexpr inline cs_datatype_t
 cs_datatype_from_type<char>()
 {
   return CS_CHAR;
 }
+
+/*----------------------------------------------------------------------------*/
 
 template <>
 constexpr inline cs_datatype_t
@@ -733,12 +739,16 @@ cs_datatype_from_type<float>()
   return CS_FLOAT;
 }
 
+/*----------------------------------------------------------------------------*/
+
 template <>
 constexpr inline cs_datatype_t
 cs_datatype_from_type<double>()
 {
   return CS_DOUBLE;
 }
+
+/*----------------------------------------------------------------------------*/
 
 template <>
 constexpr inline cs_datatype_t
@@ -747,12 +757,16 @@ cs_datatype_from_type<uint16_t>()
   return CS_UINT16;
 }
 
+/*----------------------------------------------------------------------------*/
+
 template <>
 constexpr inline cs_datatype_t
 cs_datatype_from_type<uint32_t>()
 {
   return CS_UINT32;
 }
+
+/*----------------------------------------------------------------------------*/
 
 template <>
 constexpr inline cs_datatype_t
@@ -761,12 +775,16 @@ cs_datatype_from_type<uint64_t>()
   return CS_UINT64;
 }
 
+/*----------------------------------------------------------------------------*/
+
 template <>
 constexpr inline cs_datatype_t
 cs_datatype_from_type<int32_t>()
 {
   return CS_INT32;
 }
+
+/*----------------------------------------------------------------------------*/
 
 template <>
 constexpr inline cs_datatype_t
@@ -775,6 +793,10 @@ cs_datatype_from_type<int64_t>()
   return CS_INT64;
 }
 
+/*----------------------------------------------------------------------------*/
+
 #endif /* __cplusplus */
+
+/*----------------------------------------------------------------------------*/
 
 #endif /* __CS_DEFS_H__ */
