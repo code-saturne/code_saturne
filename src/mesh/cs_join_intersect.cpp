@@ -2907,12 +2907,14 @@ cs_join_inter_edges_part_to_block(const cs_join_mesh_t         *mesh,
     part_index[i] = part->index[i] * sizeof(exch_inter_t);
   }
 
-  exch_inter_t *recv_inter_list =
-    cs_all_to_all_copy_indexed(d,
-                               false, /* reverse */
-                               part_index,
-                               send_inter_list,
-                               orig_index);
+  auto recv_inter_list =
+    static_cast<exch_inter_t *>(cs_all_to_all_copy_indexed(d,
+                                                           CS_CHAR,
+                                                           false, /* reverse */
+                                                           part_index,
+                                                           send_inter_list,
+                                                           orig_index,
+                                                           nullptr));
 
   BFT_FREE(part_index);
 
@@ -3169,11 +3171,14 @@ cs_join_inter_edges_block_to_part(cs_gnum_t                     n_g_edges,
     part->index[i] *= sizeof(exch_inter_t);
   }
 
-  exch_inter_t *recv_inter_list = cs_all_to_all_copy_indexed(d,
-                                                             true, /* reverse */
-                                                             block_index,
-                                                             send_inter_list,
-                                                             part->index);
+  auto recv_inter_list =
+    static_cast<exch_inter_t *>(cs_all_to_all_copy_indexed(d,
+                                                           CS_CHAR,
+                                                           true, /* reverse */
+                                                           block_index,
+                                                           send_inter_list,
+                                                           part->index,
+                                                           nullptr));
 
   for (cs_lnum_t i = 0; i < part->n_edges+1; i++) {
     part->index[i] /= sizeof(exch_inter_t);

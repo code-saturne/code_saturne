@@ -2425,11 +2425,13 @@ cs_join_mesh_sync_vertices(cs_join_mesh_t  *mesh)
 
   int stride = sizeof(cs_join_vertex_t);
 
-  cs_join_vertex_t *recv_vertices =
+  auto recv_vertices = static_cast<cs_join_vertex_t *>(
     cs_all_to_all_copy_array(d,
+                             CS_CHAR,
                              stride,
                              false, /* reverse */
-                             mesh->vertices);
+                             mesh->vertices,
+                             nullptr));
 
   cs_lnum_t n_recv = cs_all_to_all_n_elts_dest(d);
 

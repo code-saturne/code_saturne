@@ -35,6 +35,10 @@
 #  include "cs_config.h"
 #endif
 
+#ifdef __cplusplus
+#include <type_traits>
+#endif
+
 /*============================================================================
  * Internationalization
  *============================================================================*/
@@ -704,35 +708,71 @@ cs_get_thread_id(void)
  */
 /*----------------------------------------------------------------------------*/
 
-template<typename T>
+template <typename T>
+struct dependent_false : std::false_type {};
+
+template <typename T>
 static inline cs_datatype_t
-cs_datatype_from_type
-(
-)
+cs_datatype_from_type()
 {
-  cs_datatype_t retval = CS_DATATYPE_NULL;
+  static_assert(dependent_false<T>::value, "Unknown datatype");
+  return CS_DATATYPE_NULL;
+}
 
-  if (typeid(T) ==  typeid(int))
-    retval = CS_INT_TYPE;
-  else if (typeid(T) ==  typeid(cs_lnum_t))
-    retval = CS_LNUM_TYPE;
-  else if (typeid(T) ==  typeid(cs_gnum_t))
-    retval = CS_GNUM_TYPE;
-  else if (typeid(T) == typeid(cs_flag_t))
-    retval = CS_UINT16;
-  else if (typeid(T) ==  typeid(cs_real_t))
-    retval = CS_REAL_TYPE;
-  else if (typeid(T) ==  typeid(double))
-    retval = CS_DOUBLE;
-  else if (typeid(T) == typeid(cs_coord_t))
-    retval = CS_COORD_TYPE;
-  else if (typeid(T) == typeid(char))
-    retval = CS_CHAR;
+template <>
+constexpr inline cs_datatype_t
+cs_datatype_from_type<char>()
+{
+  return CS_CHAR;
+}
 
-  /* Sanity check to ensure clean error identification in debug mode */
-  assert(retval != CS_DATATYPE_NULL);
+template <>
+constexpr inline cs_datatype_t
+cs_datatype_from_type<float>()
+{
+  return CS_FLOAT;
+}
 
-  return retval;
+template <>
+constexpr inline cs_datatype_t
+cs_datatype_from_type<double>()
+{
+  return CS_DOUBLE;
+}
+
+template <>
+constexpr inline cs_datatype_t
+cs_datatype_from_type<uint16_t>()
+{
+  return CS_UINT16;
+}
+
+template <>
+constexpr inline cs_datatype_t
+cs_datatype_from_type<uint32_t>()
+{
+  return CS_UINT32;
+}
+
+template <>
+constexpr inline cs_datatype_t
+cs_datatype_from_type<uint64_t>()
+{
+  return CS_UINT64;
+}
+
+template <>
+constexpr inline cs_datatype_t
+cs_datatype_from_type<int32_t>()
+{
+  return CS_INT32;
+}
+
+template <>
+constexpr inline cs_datatype_t
+cs_datatype_from_type<int64_t>()
+{
+  return CS_INT64;
 }
 
 #endif /* __cplusplus */
