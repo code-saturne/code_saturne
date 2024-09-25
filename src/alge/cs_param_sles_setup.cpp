@@ -1348,6 +1348,10 @@ _petsc_amg_block_boomer_hook(void     *context,
   BFT_FREE(prefix);
   PetscFree(xyz_subksp);
 
+  /* User function for additional settings */
+
+  cs_user_sles_petsc_hook(context, ksp);
+
   PCSetFromOptions(pc);
   KSPSetFromOptions(ksp);
 
@@ -1548,6 +1552,10 @@ _petsc_block_hook(void     *context,
 
   BFT_FREE(prefix);
   PetscFree(xyz_subksp);
+
+  /* User function for additional settings */
+
+  cs_user_sles_petsc_hook(context, ksp);
 
   PCSetFromOptions(pc);
   KSPSetFromOptions(ksp);
@@ -3092,6 +3100,10 @@ cs_param_sles_setup_petsc_ksp(const char       *label,
   /* 2) Set the preconditioner */
 
   _petsc_set_pc_type(slesp, ksp);
+
+  // Let user brings some modifications
+
+  cs_user_sles_petsc_hook(slesp, ksp);
 }
 
 /*----------------------------------------------------------------------------*/
