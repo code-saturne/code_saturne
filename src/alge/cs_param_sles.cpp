@@ -161,23 +161,25 @@ _check_amg_type(cs_param_sles_t   *slesp)
 
   case CS_PARAM_SOLVER_CLASS_HYPRE:
 #if defined(HAVE_HYPRE)
-    if (slesp->amg_type == CS_PARAM_AMG_INHOUSE_V ||
-        slesp->amg_type == CS_PARAM_AMG_INHOUSE_K ||
-        slesp->amg_type == CS_PARAM_AMG_PETSC_PCMG ||
-        slesp->amg_type == CS_PARAM_AMG_PETSC_GAMG_V)
+    if (slesp->amg_type == CS_PARAM_AMG_INHOUSE_V    ||
+        slesp->amg_type == CS_PARAM_AMG_INHOUSE_K    ||
+        slesp->amg_type == CS_PARAM_AMG_PETSC_GAMG_V ||
+        slesp->amg_type == CS_PARAM_AMG_PETSC_HMG_V)
       slesp->amg_type = CS_PARAM_AMG_HYPRE_BOOMER_V;
-    else if (slesp->amg_type == CS_PARAM_AMG_PETSC_GAMG_W)
+    else if (slesp->amg_type == CS_PARAM_AMG_PETSC_GAMG_W ||
+             slesp->amg_type == CS_PARAM_AMG_PETSC_HMG_W)
       slesp->amg_type = CS_PARAM_AMG_HYPRE_BOOMER_W;
 #else
 #if defined(HAVE_PETSC)
     if (cs_param_sles_hypre_from_petsc()) {
 
-      if (slesp->amg_type == CS_PARAM_AMG_INHOUSE_V ||
-          slesp->amg_type == CS_PARAM_AMG_INHOUSE_K ||
-          slesp->amg_type == CS_PARAM_AMG_PETSC_PCMG ||
-          slesp->amg_type == CS_PARAM_AMG_PETSC_GAMG_V)
+      if (slesp->amg_type == CS_PARAM_AMG_INHOUSE_V    ||
+          slesp->amg_type == CS_PARAM_AMG_INHOUSE_K    ||
+          slesp->amg_type == CS_PARAM_AMG_PETSC_GAMG_V ||
+          slesp->amg_type == CS_PARAM_AMG_PETSC_HMG_V)
         slesp->amg_type = CS_PARAM_AMG_HYPRE_BOOMER_V;
-      else if (slesp->amg_type == CS_PARAM_AMG_PETSC_GAMG_W)
+      else if (slesp->amg_type == CS_PARAM_AMG_PETSC_GAMG_W ||
+               slesp->amg_type == CS_PARAM_AMG_PETSC_HMG_W)
         slesp->amg_type = CS_PARAM_AMG_HYPRE_BOOMER_W;
 
     }
@@ -197,9 +199,10 @@ _check_amg_type(cs_param_sles_t   *slesp)
     break;
 
   case CS_PARAM_SOLVER_CLASS_CS:
-    if (slesp->amg_type == CS_PARAM_AMG_PETSC_PCMG ||
-        slesp->amg_type == CS_PARAM_AMG_PETSC_GAMG_V ||
+    if (slesp->amg_type == CS_PARAM_AMG_PETSC_GAMG_V ||
         slesp->amg_type == CS_PARAM_AMG_PETSC_GAMG_W ||
+        slesp->amg_type == CS_PARAM_AMG_PETSC_HMG_V ||
+        slesp->amg_type == CS_PARAM_AMG_PETSC_HMG_W ||
         slesp->amg_type == CS_PARAM_AMG_HYPRE_BOOMER_V ||
         slesp->amg_type == CS_PARAM_AMG_HYPRE_BOOMER_W)
       slesp->amg_type = CS_PARAM_AMG_INHOUSE_K;
@@ -1199,7 +1202,7 @@ cs_param_sles_set_amg_type(const char       *keyval,
     slesp->solver_class  = CS_PARAM_SOLVER_CLASS_PETSC;
     slesp->need_flexible = true;
   }
-  else if (strcmp(keyval, "pcmg") == 0) {
+  else if (strcmp(keyval, "hmg") == 0 || strcmp(keyval, "hmg_v") == 0) {
 
     cs_param_solver_class_t  ret_class =
       cs_param_sles_check_class(CS_PARAM_SOLVER_CLASS_PETSC);
@@ -1210,7 +1213,23 @@ cs_param_sles_set_amg_type(const char       *keyval,
                 " PETSc is not available."
                 " Please check your settings.", __func__, sles_name);
 
-    slesp->amg_type = CS_PARAM_AMG_PETSC_PCMG;
+    slesp->amg_type = CS_PARAM_AMG_PETSC_HMG_V;
+    slesp->solver_class = CS_PARAM_SOLVER_CLASS_PETSC;
+    slesp->need_flexible = true;
+
+  }
+  else if (strcmp(keyval, "hmg_w") == 0) {
+
+    cs_param_solver_class_t  ret_class =
+      cs_param_sles_check_class(CS_PARAM_SOLVER_CLASS_PETSC);
+
+    if (ret_class != CS_PARAM_SOLVER_CLASS_PETSC)
+      bft_error(__FILE__, __LINE__, 0,
+                "%s: Eq. %s\n Invalid choice of AMG type.\n"
+                " PETSc is not available."
+                " Please check your settings.", __func__, sles_name);
+
+    slesp->amg_type = CS_PARAM_AMG_PETSC_HMG_W;
     slesp->solver_class = CS_PARAM_SOLVER_CLASS_PETSC;
     slesp->need_flexible = true;
   }

@@ -456,14 +456,72 @@ _petsc_pcgamg_hook(const char              *prefix,
 
   switch (slesp->amg_type) {
 
-  case CS_PARAM_AMG_PETSC_GAMG_V:
-  case CS_PARAM_AMG_PETSC_PCMG:
   case CS_PARAM_AMG_HYPRE_BOOMER_V:
+  case CS_PARAM_AMG_PETSC_GAMG_V:
+  case CS_PARAM_AMG_PETSC_HMG_V:
     PCMGSetCycleType(pc, PC_MG_CYCLE_V);
     break;
 
-  case CS_PARAM_AMG_PETSC_GAMG_W:
   case CS_PARAM_AMG_HYPRE_BOOMER_W:
+  case CS_PARAM_AMG_PETSC_GAMG_W:
+  case CS_PARAM_AMG_PETSC_HMG_W:
+    PCMGSetCycleType(pc, PC_MG_CYCLE_W);
+    break;
+
+  default:
+    bft_error(__FILE__, __LINE__, 0, "%s: Invalid type of AMG for SLES %s\n",
+              __func__, slesp->name);
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Predefined settings for HMG as a preconditioner even if another
+ *        settings have been defined. One assumes that one really wants to use
+ *        HMG
+ *
+ * \param[in]      prefix   prefix name associated to the current SLES
+ * \param[in]      slesp    pointer to a set of SLES parameters
+ * \param[in]      is_symm  the linear system to solve is symmetric
+ * \param[in, out] pc       pointer to a PETSc preconditioner
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_petsc_pchmg_hook(const char            *prefix,
+                  const cs_param_sles_t *slesp,
+                  bool                   is_symm,
+                  PC                     pc)
+{
+  assert(prefix != nullptr);
+  assert(slesp != nullptr);
+  assert(slesp->precond == CS_PARAM_PRECOND_AMG);
+
+  /* Set smoothers (general settings, i.e. not depending on the symmetry or not
+     of the linear system to solve) */
+
+  _petsc_cmd(true, prefix, "mg_levels_ksp_type", "richardson");
+  _petsc_cmd(true, prefix, "mg_levels_ksp_max_it", "1");
+
+  _petsc_cmd(true, prefix, "mg_levels_pc_type", "sor");
+  _petsc_cmd(true, prefix, "mg_levels_pc_sor_its", "1");
+
+  /* After command line options, switch to PETSc setup functions */
+
+  PCSetType(pc, PCHMG);
+  PCSetUp(pc);
+
+  switch (slesp->amg_type) {
+
+  case CS_PARAM_AMG_HYPRE_BOOMER_V:
+  case CS_PARAM_AMG_PETSC_GAMG_V:
+  case CS_PARAM_AMG_PETSC_HMG_V:
+    PCMGSetCycleType(pc, PC_MG_CYCLE_V);
+    break;
+
+  case CS_PARAM_AMG_HYPRE_BOOMER_W:
+  case CS_PARAM_AMG_PETSC_GAMG_W:
+  case CS_PARAM_AMG_PETSC_HMG_W:
     PCMGSetCycleType(pc, PC_MG_CYCLE_W);
     break;
 
@@ -1190,9 +1248,8 @@ _petsc_common_block_hook(const cs_param_sles_t    *slesp,
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Function pointer: setup hook for setting PETSc solver and
- *        preconditioner.
- *        Case of multiplicative AMG block preconditioner for a CG with GAMG
- *        as AMG type
+ *        AMG preconditioner.
+ *        Case of block preconditioner relying on GAMG
  *
  * \param[in, out] context    pointer to optional (untyped) value or structure
  * \param[in, out] ksp_struct pointer to PETSc KSP context
@@ -1244,7 +1301,7 @@ _petsc_amg_block_gamg_hook(void  *context,
 
     sprintf(prefix, "%s_fieldsplit_%c_", slesp->name, xyz[id]);
 
-    _petsc_cmd(true, prefix, "ksp_type","preonly");
+    _petsc_cmd(true, prefix, "ksp_type", "preonly");
 
     /* Predefined settings when using AMG as a preconditioner */
 
@@ -1252,6 +1309,90 @@ _petsc_amg_block_gamg_hook(void  *context,
     KSPGetPC(_ksp, &_pc);
 
     _petsc_pcgamg_hook(prefix, slesp, is_symm, _pc);
+
+    PCSetFromOptions(_pc);
+    KSPSetFromOptions(_ksp);
+
+  } /* Loop on block settings */
+
+  BFT_FREE(prefix);
+  PetscFree(xyz_subksp);
+
+  /* User function for additional settings */
+
+  cs_user_sles_petsc_hook(context, ksp);
+
+  PCSetFromOptions(pc);
+  KSPSetFromOptions(ksp);
+
+  cs_fp_exception_restore_trap(); /* Avoid trouble with a too restrictive
+                                     SIGFPE detection */
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Function pointer: setup hook for setting PETSc solver and
+ *        AMG preconditioner.
+ *        Case of block preconditioner relying on HMG
+ *
+ * \param[in, out] context    pointer to optional (untyped) value or structure
+ * \param[in, out] ksp_struct pointer to PETSc KSP context
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_petsc_amg_block_hmg_hook(void  *context,
+                          void  *ksp_struct)
+{
+  cs_param_sles_t  *slesp = (cs_param_sles_t *)context;
+  KSP               ksp   = static_cast<KSP>(ksp_struct);
+
+  cs_fp_exception_disable_trap(); /* Avoid trouble with a too restrictive
+                                     SIGFPE detection */
+
+  /* prefix will be extended with the fieldsplit */
+
+  int len = strlen(slesp->name) + 1;
+  int _len = len + strlen("_fieldsplit_x_") + 1;
+  char  *prefix = nullptr;
+  BFT_MALLOC(prefix, _len + 1, char);
+  sprintf(prefix, "%s_", slesp->name);
+  prefix[len] = '\0';
+  KSPSetOptionsPrefix(ksp, prefix);
+
+  /* Set the solver */
+
+  _petsc_set_krylov_solver(slesp, ksp);
+
+  /* Common settings to block preconditionner */
+
+  _petsc_common_block_hook(slesp, ksp);
+
+  PC  pc;
+  KSPGetPC(ksp, &pc);
+  PCSetUp(pc);
+
+  PC  _pc;
+  PetscInt  n_split;
+  KSP  *xyz_subksp;
+  const char xyz[4]  = "xyz";
+  bool  is_symm = _system_should_be_sym(slesp->solver);
+
+  PCFieldSplitGetSubKSP(pc, &n_split, &xyz_subksp);
+  assert(n_split == 3);
+
+  for (PetscInt id = 0; id < n_split; id++) {
+
+    sprintf(prefix, "%s_fieldsplit_%c_", slesp->name, xyz[id]);
+
+    _petsc_cmd(true, prefix, "ksp_type", "preonly");
+
+    /* Predefined settings when using AMG as a preconditioner */
+
+    KSP  _ksp = xyz_subksp[id];
+    KSPGetPC(_ksp, &_pc);
+
+    _petsc_pchmg_hook(prefix, slesp, is_symm, _pc);
 
     PCSetFromOptions(_pc);
     KSPSetFromOptions(_ksp);
@@ -2207,6 +2348,14 @@ _set_petsc_hypre_sles(bool                 use_field_id,
                              _petsc_amg_block_gamg_hook,
                              (void *)slesp);
 
+      else if (slesp->amg_type == CS_PARAM_AMG_PETSC_HMG_V ||
+               slesp->amg_type == CS_PARAM_AMG_PETSC_HMG_W)
+        cs_sles_petsc_define(slesp->field_id,
+                             sles_name,
+                             MATMPIAIJ,
+                             _petsc_amg_block_hmg_hook,
+                             (void *)slesp);
+
       else if (slesp->amg_type == CS_PARAM_AMG_HYPRE_BOOMER_V ||
                slesp->amg_type == CS_PARAM_AMG_HYPRE_BOOMER_W) {
 
@@ -2230,6 +2379,7 @@ _set_petsc_hypre_sles(bool                 use_field_id,
                                MATMPIAIJ,
                                _petsc_amg_block_gamg_hook,
                                (void *)slesp);
+
         }
 
       }
@@ -3129,8 +3279,12 @@ cs_param_sles_setup_petsc_pc_amg(const char       *prefix,
 
   case CS_PARAM_AMG_PETSC_GAMG_V:
   case CS_PARAM_AMG_PETSC_GAMG_W:
-  case CS_PARAM_AMG_PETSC_PCMG:
     _petsc_pcgamg_hook(prefix, slesp, is_symm, pc);
+    break;
+
+  case CS_PARAM_AMG_PETSC_HMG_V:
+  case CS_PARAM_AMG_PETSC_HMG_W:
+    _petsc_pchmg_hook(prefix, slesp, is_symm, pc);
     break;
 
   case CS_PARAM_AMG_HYPRE_BOOMER_V:

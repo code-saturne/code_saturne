@@ -91,28 +91,23 @@ cs_param_amg_get_type_name(cs_param_amg_type_t  type)
 
   case CS_PARAM_AMG_NONE:
     return  "None";
-    break;
+
   case CS_PARAM_AMG_HYPRE_BOOMER_V:
     return  "Boomer V-cycle (Hypre)";
-    break;
   case CS_PARAM_AMG_HYPRE_BOOMER_W:
     return  "Boomer W-cycle (Hypre)";
-    break;
-  case CS_PARAM_AMG_PETSC_GAMG_V:
-    return  "GAMG V-cycle (PETSc)";
-    break;
-  case CS_PARAM_AMG_PETSC_GAMG_W:
-    return  "GAMG W-cycle (PETSc)";
-    break;
-  case CS_PARAM_AMG_PETSC_PCMG:
-    return  "PCMG (PETSc)";
-    break;
-  case CS_PARAM_AMG_INHOUSE_V:
-    return  "In-house (V-cycle)";
-    break;
   case CS_PARAM_AMG_INHOUSE_K:
     return  "In-house (K-cycle)";
-    break;
+  case CS_PARAM_AMG_INHOUSE_V:
+    return  "In-house (V-cycle)";
+  case CS_PARAM_AMG_PETSC_GAMG_V:
+    return  "GAMG V-cycle (PETSc)";
+  case CS_PARAM_AMG_PETSC_GAMG_W:
+    return  "GAMG W-cycle (PETSc)";
+  case CS_PARAM_AMG_PETSC_HMG_V:
+    return  "HMG V-cycle (PETSc)";
+  case CS_PARAM_AMG_PETSC_HMG_W:
+    return  "HMG W-cycle (PETSc)";
   default:
     bft_error(__FILE__, __LINE__, 0,
               " %s: Invalid type of AMG. Stop execution.", __func__);
@@ -142,7 +137,8 @@ cs_param_amg_get_class(cs_param_amg_type_t  amg_type)
 
   case CS_PARAM_AMG_PETSC_GAMG_V:
   case CS_PARAM_AMG_PETSC_GAMG_W:
-  case CS_PARAM_AMG_PETSC_PCMG:
+  case CS_PARAM_AMG_PETSC_HMG_V:
+  case CS_PARAM_AMG_PETSC_HMG_W:
     return CS_PARAM_SOLVER_CLASS_PETSC;
 
   default:
