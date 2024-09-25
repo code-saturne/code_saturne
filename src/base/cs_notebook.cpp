@@ -608,7 +608,7 @@ cs_notebook_log_setup(void)
                        "    editable:     %d\n"
                        "    restart:      %d\n"
                        "    log:          %d\n"
-                       "    value:        %f\n"),
+                       "    value:        %5.3e\n"),
                   i,
                   _entries[i]->name,
                   _entries[i]->description,
