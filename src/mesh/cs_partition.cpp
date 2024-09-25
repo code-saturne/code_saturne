@@ -1500,7 +1500,7 @@ _part_parmetis(cs_gnum_t   n_g_cells,
   }
 
   if (sizeof(idx_t) == sizeof(int))
-    _cell_part = cell_part;
+    _cell_part = (idx_t *)cell_part;
   else
     BFT_MALLOC(_cell_part, n_cells, idx_t);
 
