@@ -522,7 +522,6 @@ cs_param_sles_set_solver(const char       *keyval,
     slesp->amg_type = CS_PARAM_AMG_INHOUSE_V;
     slesp->solver_class = CS_PARAM_SOLVER_CLASS_CS;
     slesp->precond = CS_PARAM_PRECOND_NONE;
-    slesp->precond_block_type = CS_PARAM_PRECOND_BLOCK_NONE;
 
     cs_param_sles_amg_inhouse_reset(slesp, true, false);
 
@@ -616,7 +615,6 @@ cs_param_sles_set_solver(const char       *keyval,
     slesp->solver = CS_PARAM_SOLVER_MUMPS;
     slesp->solver_class = CS_PARAM_SOLVER_CLASS_MUMPS;
     slesp->precond = CS_PARAM_PRECOND_NONE;
-    slesp->precond_block_type = CS_PARAM_PRECOND_BLOCK_NONE;
     slesp->amg_type = CS_PARAM_AMG_NONE;
     slesp->need_flexible      = false;
 
@@ -766,7 +764,6 @@ cs_param_sles_set_precond(const char       *keyval,
     slesp->solver_class = _get_petsc_or_hypre(slesp, false);
 
     slesp->precond            = CS_PARAM_PRECOND_ILU0;
-    slesp->precond_block_type = CS_PARAM_PRECOND_BLOCK_NONE;
     slesp->amg_type           = CS_PARAM_AMG_NONE;
     slesp->need_flexible      = false;
   }
@@ -777,15 +774,12 @@ cs_param_sles_set_precond(const char       *keyval,
     slesp->solver_class = _get_petsc_or_hypre(slesp, false);
 
     slesp->precond = CS_PARAM_PRECOND_ICC0;
-    slesp->precond_block_type = CS_PARAM_PRECOND_BLOCK_NONE;
     slesp->amg_type = CS_PARAM_AMG_NONE;
     slesp->need_flexible      = false;
   }
   else if (strcmp(keyval, "amg") == 0) {
 
     slesp->precond = CS_PARAM_PRECOND_AMG;
-    slesp->precond_block_type = CS_PARAM_PRECOND_BLOCK_NONE;
-
     slesp->need_flexible = true;
 
     switch (slesp->solver) {
@@ -896,7 +890,6 @@ cs_param_sles_set_precond(const char       *keyval,
 
     slesp->precond = CS_PARAM_PRECOND_MUMPS;
     slesp->amg_type = CS_PARAM_AMG_NONE;
-    slesp->precond_block_type = CS_PARAM_PRECOND_BLOCK_NONE;
 
     /* Only MUMPS is a valid choice in this situation */
 
@@ -915,7 +908,6 @@ cs_param_sles_set_precond(const char       *keyval,
            strcmp(keyval, "poly_1") == 0) {
 
     slesp->precond = CS_PARAM_PRECOND_POLY1;
-    slesp->precond_block_type = CS_PARAM_PRECOND_BLOCK_NONE;
     slesp->amg_type = CS_PARAM_AMG_NONE;
     slesp->solver_class = CS_PARAM_SOLVER_CLASS_CS;
     slesp->need_flexible      = false;
@@ -924,7 +916,6 @@ cs_param_sles_set_precond(const char       *keyval,
            strcmp(keyval, "poly_2") == 0) {
 
     slesp->precond = CS_PARAM_PRECOND_POLY2;
-    slesp->precond_block_type = CS_PARAM_PRECOND_BLOCK_NONE;
     slesp->amg_type = CS_PARAM_AMG_NONE;
     slesp->solver_class = CS_PARAM_SOLVER_CLASS_CS;
     slesp->need_flexible      = false;
@@ -932,7 +923,6 @@ cs_param_sles_set_precond(const char       *keyval,
   else if (strcmp(keyval, "ssor") == 0) {
 
     slesp->precond = CS_PARAM_PRECOND_SSOR;
-    slesp->precond_block_type = CS_PARAM_PRECOND_BLOCK_NONE;
     slesp->amg_type = CS_PARAM_AMG_NONE;
     slesp->solver_class = CS_PARAM_SOLVER_CLASS_PETSC;
     slesp->need_flexible      = false;
@@ -949,7 +939,6 @@ cs_param_sles_set_precond(const char       *keyval,
 
     slesp->precond            = CS_PARAM_PRECOND_HPDDM;
     slesp->amg_type           = CS_PARAM_AMG_NONE;
-    slesp->precond_block_type = CS_PARAM_PRECOND_BLOCK_NONE;
 
     if (cs_param_sles_check_class(CS_PARAM_SOLVER_CLASS_PETSC)
         != CS_PARAM_SOLVER_CLASS_PETSC)
