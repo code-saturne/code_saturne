@@ -324,8 +324,8 @@ _init_schur_slesp(cs_param_saddle_t  *saddlep)
 
   case CS_PARAM_SADDLE_SOLVER_SIMPLE:
     {
-    cs_param_saddle_context_uzacg_t *ctxp =
-      static_cast<cs_param_saddle_context_uzacg_t *>(saddlep->context);
+    cs_param_saddle_context_simple_t *ctxp =
+      static_cast<cs_param_saddle_context_simple_t *>(saddlep->context);
 
     if (ctxp->xtra_sles_param != nullptr)
       cs_param_sles_free(&(ctxp->xtra_sles_param));

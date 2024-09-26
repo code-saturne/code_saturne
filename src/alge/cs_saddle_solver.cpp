@@ -2277,6 +2277,18 @@ cs_saddle_solver_free(cs_saddle_solver_t  **p_solver)
     }
     break;
 
+  case CS_PARAM_SADDLE_SOLVER_SIMPLE:
+    {
+    cs_saddle_solver_context_simple_t *ctx =
+      static_cast<cs_saddle_solver_context_simple_t *>(solver->context);
+
+    cs_saddle_solver_context_simple_free(&ctx);
+
+    BFT_FREE(ctx);
+    }
+    break;
+
+
   default:
     break; /* Nothing to do */
   }
