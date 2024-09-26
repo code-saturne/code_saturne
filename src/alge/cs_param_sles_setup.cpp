@@ -339,120 +339,19 @@ _petsc_pcgamg_hook(const char              *prefix,
   assert(slesp != nullptr);
   assert(slesp->precond == CS_PARAM_PRECOND_AMG);
 
-  /* Remark: -pc_gamg_reuse_interpolation
-   *
-   * Reuse prolongation when rebuilding algebraic multigrid
-   * preconditioner. This may negatively affect the convergence rate of the
-   * method on new matrices if the matrix entries change a great deal, but
-   * allows rebuilding the preconditioner quicker. (default=false)
-   */
-
-  _petsc_cmd(true, prefix, "pc_gamg_reuse_interpolation", "true");
-
-  /* Remark: -pc_gamg_sym_graph
-   * Symmetrize the graph before computing the aggregation. Some algorithms
-   * require the graph be symmetric (default=false)
-   */
-
-  _petsc_cmd(true, prefix, "pc_gamg_sym_graph", "true");
-
   /* Set smoothers (general settings, i.e. not depending on the symmetry or not
      of the linear system to solve) */
 
   _petsc_cmd(true, prefix, "mg_levels_ksp_type", "richardson");
   _petsc_cmd(true, prefix, "mg_levels_ksp_max_it", "1");
-  _petsc_cmd(true, prefix, "mg_levels_ksp_norm_type", "none");
-  _petsc_cmd(true, prefix, "mg_levels_ksp_richardson_scale", "1.0");
 
-  /* Do not build a coarser level if one reaches the following limit */
-
-  _petsc_cmd(true, prefix, "pc_gamg_coarse_eq_limit", "100");
-
-  /* In parallel computing, migrate data to another rank if the grid has less
-     than 200 rows */
-
-  if (cs_glob_n_ranks > 1) {
-
-    _petsc_cmd(true, prefix, "pc_gamg_repartition", "true");
-    _petsc_cmd(true, prefix, "pc_gamg_process_eq_limit", "200");
-
-  }
-  else {
-
-    _petsc_cmd(true, prefix, "mg_coarse_ksp_type", "preonly");
-    _petsc_cmd(true, prefix, "mg_coarse_pc_type", "tfs");
-
-  }
-
-  /* Settings depending on the symmetry or not of the linear system to solve */
-
-  if (is_symm) {
-
-    /* Remark: -pc_gamg_square_graph
-     *
-     * Squaring the graph increases the rate of coarsening (aggressive
-     * coarsening) and thereby reduces the complexity of the coarse grids, and
-     * generally results in slower solver converge rates. Reducing coarse grid
-     * complexity reduced the complexity of Galerkin coarse grid construction
-     * considerably. (default = 1)
-     *
-     * Remark: -pc_gamg_threshold
-     *
-     * Increasing the threshold decreases the rate of coarsening. Conversely
-     * reducing the threshold increases the rate of coarsening (aggressive
-     * coarsening) and thereby reduces the complexity of the coarse grids, and
-     * generally results in slower solver converge rates. Reducing coarse grid
-     * complexity reduced the complexity of Galerkin coarse grid construction
-     * considerably. Before coarsening or aggregating the graph, GAMG removes
-     * small values from the graph with this threshold, and thus reducing the
-     * coupling in the graph and a different (perhaps better) coarser set of
-     * points. (default=0.0) */
-
-    _petsc_cmd(true, prefix, "pc_gamg_agg_nsmooths", "2");
-    _petsc_cmd(true, prefix, "pc_gamg_square_graph", "2");
-    _petsc_cmd(true, prefix, "pc_gamg_threshold", "0.08");
-
-    if (cs_glob_n_ranks > 1) {
-
-      _petsc_cmd(true, prefix, "mg_levels_pc_type", "bjacobi");
-      _petsc_cmd(true, prefix, "mg_levels_pc_jacobi_blocks", "1");
-      _petsc_cmd(true, prefix, "mg_levels_sub_ksp_type", "preonly");
-      _petsc_cmd(true, prefix, "mg_levels_sub_pc_type", "sor");
-      _petsc_cmd(true, prefix, "mg_levels_sub_pc_sor_local_symmetric", "");
-      _petsc_cmd(true, prefix, "mg_levels_sub_pc_sor_omega", "1.5");
-
-    }
-    else { /* serial run */
-
-      _petsc_cmd(true, prefix, "mg_levels_pc_type", "sor");
-      _petsc_cmd(true, prefix, "mg_levels_pc_sor_local_symmetric", "");
-      _petsc_cmd(true, prefix, "mg_levels_pc_sor_omega", "1.5");
-
-    }
-
-  }
-  else { /* Not a symmetric linear system */
-
-    /* Number of smoothing steps to use with smooth aggregation (default=1) */
-
-    _petsc_cmd(true, prefix, "pc_gamg_agg_nsmooths", "0");
-    _petsc_cmd(true, prefix, "pc_gamg_square_graph", "0");
-    _petsc_cmd(true, prefix, "pc_gamg_threshold", "0.06");
-
-    _petsc_cmd(true, prefix, "mg_levels_pc_type", "bjacobi");
-    _petsc_cmd(true, prefix, "mg_levels_pc_bjacobi_blocks", "1");
-    _petsc_cmd(true, prefix, "mg_levels_sub_ksp_type", "preonly");
-    _petsc_cmd(true, prefix, "mg_levels_sub_pc_type", "ilu");
-    _petsc_cmd(true, prefix, "mg_levels_sub_pc_factor_levels", "0");
-
-  }
+  _petsc_cmd(true, prefix, "mg_levels_pc_type", "sor");
+  _petsc_cmd(true, prefix, "mg_levels_pc_sor_local_symmetric", "");
 
   /* After command line options, switch to PETSc setup functions */
 
   PCSetType(pc, PCGAMG);
   PCGAMGSetType(pc, PCGAMGAGG);
-  PCGAMGSetNSmooths(pc, 1);
-  PCSetUp(pc);
 
   switch (slesp->amg_type) {
 
