@@ -3354,8 +3354,9 @@ cs_saddle_solver_context_simple_create(cs_lnum_t            b22_max_size,
       cs_param_sles_t  *xtra_slesp =
         cs_param_saddle_get_xtra_sles_param(saddlep);
 
+      /* Share the same sles of velocity block*/
       if (xtra_slesp != nullptr)
-        ctx->xtra_sles = cs_sles_find_or_add(-1, xtra_slesp->name);
+        ctx->xtra_sles = solver->main_sles;
     }
     break;
 
