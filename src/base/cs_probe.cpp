@@ -2242,7 +2242,8 @@ cs_probe_set_get_elt_ids(const cs_probe_set_t  *pset,
   else if (mesh_location_id == CS_MESH_LOCATION_BOUNDARY_FACES && on_boundary)
     retval = pset->elt_id;
 
-  else if (mesh_location_id == CS_MESH_LOCATION_VERTICES)
+  /* FIXME: remove: || true */
+  else if (mesh_location_id == CS_MESH_LOCATION_VERTICES || true)
     retval = pset->vtx_id;
 
   return retval;
