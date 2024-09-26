@@ -775,7 +775,7 @@ cs_param_sles_set_precond(const char       *keyval,
 
     slesp->precond = CS_PARAM_PRECOND_ICC0;
     slesp->amg_type = CS_PARAM_AMG_NONE;
-    slesp->need_flexible      = false;
+    slesp->need_flexible = false;
   }
   else if (strcmp(keyval, "amg") == 0) {
 
@@ -910,7 +910,7 @@ cs_param_sles_set_precond(const char       *keyval,
     slesp->precond = CS_PARAM_PRECOND_POLY1;
     slesp->amg_type = CS_PARAM_AMG_NONE;
     slesp->solver_class = CS_PARAM_SOLVER_CLASS_CS;
-    slesp->need_flexible      = false;
+    slesp->need_flexible  = false;
   }
   else if (strcmp(keyval, "poly2") == 0 ||
            strcmp(keyval, "poly_2") == 0) {
@@ -918,14 +918,14 @@ cs_param_sles_set_precond(const char       *keyval,
     slesp->precond = CS_PARAM_PRECOND_POLY2;
     slesp->amg_type = CS_PARAM_AMG_NONE;
     slesp->solver_class = CS_PARAM_SOLVER_CLASS_CS;
-    slesp->need_flexible      = false;
+    slesp->need_flexible = false;
   }
   else if (strcmp(keyval, "ssor") == 0) {
 
     slesp->precond = CS_PARAM_PRECOND_SSOR;
     slesp->amg_type = CS_PARAM_AMG_NONE;
     slesp->solver_class = CS_PARAM_SOLVER_CLASS_PETSC;
-    slesp->need_flexible      = false;
+    slesp->need_flexible = false;
 
     if (cs_param_sles_check_class(CS_PARAM_SOLVER_CLASS_PETSC) !=
         CS_PARAM_SOLVER_CLASS_PETSC)
@@ -937,31 +937,23 @@ cs_param_sles_set_precond(const char       *keyval,
   }
   else if (strcmp(keyval, "hpddm") == 0) {
 
-    slesp->precond            = CS_PARAM_PRECOND_HPDDM;
-    slesp->amg_type           = CS_PARAM_AMG_NONE;
+    slesp->precond  = CS_PARAM_PRECOND_HPDDM;
+    slesp->amg_type = CS_PARAM_AMG_NONE;
 
     if (cs_param_sles_check_class(CS_PARAM_SOLVER_CLASS_PETSC)
         != CS_PARAM_SOLVER_CLASS_PETSC)
-      bft_error(__FILE__,
-                __LINE__,
-                0,
+      bft_error(__FILE__, __LINE__, 0,
                 " %s(): SLES \"%s\" Error detected while setting \"%s\" key.\n"
                 " PETSc is not available with your installation.\n"
                 " Please check your installation settings.\n",
-                __func__,
-                sles_name,
-                "CS_EQKEY_PRECOND");
+                __func__, sles_name, "CS_EQKEY_PRECOND");
 
     if (slesp->solver_class != CS_PARAM_SOLVER_CLASS_PETSC)
-      bft_error(__FILE__,
-                __LINE__,
-                0,
+      bft_error(__FILE__, __LINE__, 0,
                 " %s(): SLES \"%s\" Error detected while setting \"%s\" key.\n"
                 " HPDDM is only available through PETSc \n"
                 " Please check your installation settings.\n",
-                __func__,
-                sles_name,
-                "CS_EQKEY_PRECOND");
+                __func__, sles_name, "CS_EQKEY_PRECOND");
   }
   else
     ierr = EXIT_FAILURE;
