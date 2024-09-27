@@ -2443,13 +2443,21 @@ _set_petsc_hypre_sles(bool                 use_field_id,
       else if (slesp->amg_type == CS_PARAM_AMG_HYPRE_BOOMER_V ||
                slesp->amg_type == CS_PARAM_AMG_HYPRE_BOOMER_W) {
 
-        if (cs_param_sles_hypre_from_petsc())
+        if (cs_param_sles_hypre_from_petsc()) {
+
+          cs_param_amg_boomer_t *bamgp =
+            static_cast<cs_param_amg_boomer_t *>(slesp->context_param);
+
+          if (bamgp == nullptr) /* Define a default set of parameters */
+            cs_param_sles_boomeramg_reset(slesp);
+
           cs_sles_petsc_define(slesp->field_id,
                                sles_name,
                                MATMPIAIJ,
                                _petsc_amg_block_boomer_hook,
                                (void *)slesp);
 
+        }
         else {
 
           cs_base_warn(__FILE__, __LINE__);
@@ -2853,6 +2861,16 @@ _set_hypre_sles(bool                 use_field_id,
   const  char  *sles_name = use_field_id ? nullptr : slesp->name;
   assert(slesp->field_id > -1 || sles_name != nullptr);
 
+  if (slesp->precond == CS_PARAM_PRECOND_AMG) {
+
+    cs_param_amg_boomer_t *bamgp =
+      static_cast<cs_param_amg_boomer_t *>(slesp->context_param);
+
+    if (bamgp == nullptr) /* Define a default set of parameters */
+      cs_param_sles_boomeramg_reset(slesp);
+
+  }
+
   /* Set the solver and the associated preconditioner */
 
   switch(slesp->solver) {
@@ -2879,20 +2897,12 @@ _set_hypre_sles(bool                 use_field_id,
     switch (slesp->precond) {
 
     case CS_PARAM_PRECOND_AMG:
-      {
-        cs_param_amg_boomer_t *bamgp =
-          static_cast<cs_param_amg_boomer_t *>(slesp->context_param);
-
-        if (bamgp == nullptr) /* Define a default set of parameters */
-          cs_param_sles_boomeramg_reset(slesp);
-
-        cs_sles_hypre_define(slesp->field_id,
-                             sles_name,
-                             CS_SLES_HYPRE_BICGSTAB,
-                             CS_SLES_HYPRE_BOOMERAMG,
-                             _hypre_boomeramg_hook,
-                             (void *)slesp);
-      }
+      cs_sles_hypre_define(slesp->field_id,
+                           sles_name,
+                           CS_SLES_HYPRE_BICGSTAB,
+                           CS_SLES_HYPRE_BOOMERAMG,
+                           _hypre_boomeramg_hook,
+                           (void *)slesp);
       break;
 
     case CS_PARAM_PRECOND_DIAG:
@@ -2981,20 +2991,12 @@ _set_hypre_sles(bool                 use_field_id,
     switch (slesp->precond) {
 
     case CS_PARAM_PRECOND_AMG:
-      {
-      cs_param_amg_boomer_t *bamgp =
-        static_cast<cs_param_amg_boomer_t *>(slesp->context_param);
-
-      if (bamgp == nullptr) /* Define a default set of parameters */
-        cs_param_sles_boomeramg_reset(slesp);
-
       cs_sles_hypre_define(slesp->field_id,
                            sles_name,
                            CS_SLES_HYPRE_FLEXGMRES,
                            CS_SLES_HYPRE_BOOMERAMG,
                            _hypre_boomeramg_hook,
                            (void *)slesp);
-      }
       break;
 
     case CS_PARAM_PRECOND_NONE:
@@ -3036,20 +3038,12 @@ _set_hypre_sles(bool                 use_field_id,
     switch (slesp->precond) {
 
     case CS_PARAM_PRECOND_AMG:
-      {
-      cs_param_amg_boomer_t *bamgp =
-        static_cast<cs_param_amg_boomer_t *>(slesp->context_param);
-
-      if (bamgp == nullptr) /* Define a default set of parameters */
-        cs_param_sles_boomeramg_reset(slesp);
-
       cs_sles_hypre_define(slesp->field_id,
                            sles_name,
                            CS_SLES_HYPRE_GMRES,
                            CS_SLES_HYPRE_BOOMERAMG,
                            _hypre_boomeramg_hook,
                            (void *)slesp);
-      }
       break;
 
     case CS_PARAM_PRECOND_DIAG:
