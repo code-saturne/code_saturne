@@ -411,6 +411,194 @@ cs_param_amg_boomer_log(const char                  *name,
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Create a new structure storing a set of parameters used when calling
+ *        GAMG. Set default values for all parameters.
+ *
+ * \return a pointer to a new set of GAMG parameters
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_param_amg_gamg_t *
+cs_param_amg_gamg_create(void)
+{
+  cs_param_amg_gamg_t  *gamgp = nullptr;
+
+  BFT_MALLOC(gamgp, 1, cs_param_amg_gamg_t);
+
+  /* Main options */
+
+  gamgp->n_down_iter   = 1;
+  gamgp->down_smoother = CS_PARAM_AMG_GAMG_HYBRID_SSOR;
+  gamgp->n_up_iter     = 1;
+  gamgp->up_smoother   = CS_PARAM_AMG_GAMG_HYBRID_SSOR;
+  gamgp->coarse_solver = CS_PARAM_AMG_GAMG_BJACOBI_LU;
+
+  /* Advanced options */
+
+  gamgp->threshold = 0.0;   // Threshold of small values to drop
+                            // (PETSc default = 0.)
+  gamgp->n_agg_levels = 1;  // Number of aggressive levels
+                            // (PETSc default = 1)
+  gamgp->n_smooth_agg = 1;  // Number of smoothing steps to be used in the
+                            // Smooth Aggregation (SA) algorithm.
+                            // (PETSc default = 1)
+  gamgp->use_square_graph = false; // Use square graph for aggressive
+                                   // coarsening. This was the previous default
+                                   // before PETSc v3.19
+
+  return gamgp;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Copy the given set of parameters used when calling GAMG into a
+ *        new structure
+ *
+ * \param[in] gamgp  reference set of GAMG parameters
+ *
+ * \return a pointer to a new set of GAMG parameters
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_param_amg_gamg_t *
+cs_param_amg_gamg_copy(const cs_param_amg_gamg_t  *gamgp)
+{
+  cs_param_amg_gamg_t  *cpy = cs_param_amg_gamg_create();
+
+  cpy->n_down_iter = gamgp->n_down_iter;
+  cpy->down_smoother = gamgp->down_smoother;
+
+  cpy->n_up_iter= gamgp->n_up_iter;
+  cpy->up_smoother = gamgp->up_smoother;
+
+  cpy->coarse_solver = gamgp->coarse_solver;
+
+  /* Advanced options */
+
+  cpy->threshold = gamgp->threshold;
+  cpy->n_agg_levels = gamgp->n_agg_levels;
+  cpy->n_smooth_agg = gamgp->n_smooth_agg;
+  cpy->use_square_graph = gamgp->use_square_graph;
+
+  return cpy;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Get the name of the smoother used with GAMG (PETSc library)
+ *
+ * \param[in] smoother  smoother type
+ *
+ * \return name of the given smoother type
+ */
+/*----------------------------------------------------------------------------*/
+
+const char *
+cs_param_amg_get_gamg_smoother_name(cs_param_amg_gamg_smoother_t smoother)
+{
+  switch (smoother) {
+
+  case CS_PARAM_AMG_GAMG_BACKWARD_GS:
+    return "Backward Gauss-Seidel";
+  case CS_PARAM_AMG_GAMG_CHEBYSHEV:
+    return "Chebyshev";
+  case CS_PARAM_AMG_GAMG_FORWARD_GS:
+    return "Forward Gauss-Seidel";
+  case CS_PARAM_AMG_GAMG_HYBRID_SSOR:
+    return "Hybrid Jacobi/Symmetric Gauss-Seidel";
+  case CS_PARAM_AMG_GAMG_JACOBI:
+    return "Jacobi";
+  case CS_PARAM_AMG_GAMG_L1_JACOBI:
+    return "L1-scaled Jacobi";
+
+  default:
+    return "Undefined";
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Get the name of the smoother used with GAMG (PETSc library)
+ *
+ * \param[in] coarse  type of predefined coarse solver
+ *
+ * \return name of the given type of coarse solver
+ */
+/*----------------------------------------------------------------------------*/
+
+const char *
+cs_param_amg_get_gamg_coarse_solver_name
+(
+ cs_param_amg_gamg_coarse_solver_t  coarse
+)
+{
+  switch (coarse) {
+
+  case CS_PARAM_AMG_GAMG_BJACOBI_LU:
+    return "Block-Jacobi with local LU factorization";
+  case CS_PARAM_AMG_GAMG_CG:
+    return "Conjugate Gradient";
+  case CS_PARAM_AMG_GAMG_GMRES:
+    return "GMRES";
+  case CS_PARAM_AMG_GAMG_LU:
+    return "LU factorization";
+  case CS_PARAM_AMG_GAMG_TFS:
+    return "TFS: Parallel solver for small size matrices";
+
+  default:
+    return "Undefined";
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Log the set of parameters used for setting GAMG
+ *
+ * \param[in] name   name related to the current SLES
+ * \param[in] gamgp  set of gamgAMG parameters
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_param_amg_gamg_log(const char                 *name,
+                      const cs_param_amg_gamg_t  *gamgp)
+{
+  if (gamgp == nullptr)
+    return;
+
+  char  *prefix = nullptr;
+  int  len = strlen(name) + strlen("  *  |") + 1;
+  BFT_MALLOC(prefix, len, char);
+  sprintf(prefix, "  * %s |", name);
+
+  cs_log_printf(CS_LOG_SETUP, "%s GAMG_down_smoothing: %1d it.| %s\n",
+                prefix, gamgp->n_down_iter,
+                cs_param_amg_get_gamg_smoother_name(gamgp->down_smoother));
+  cs_log_printf(CS_LOG_SETUP, "%s GAMG_up_smoothing:   %1d it.| %s\n",
+                prefix, gamgp->n_up_iter,
+                cs_param_amg_get_gamg_smoother_name(gamgp->up_smoother));
+  cs_log_printf(CS_LOG_SETUP, "%s GAMG_coarse_solver:  %s\n",
+                prefix,
+                cs_param_amg_get_gamg_coarse_solver_name(gamgp->coarse_solver));
+
+  /* Advanced parameters */
+
+  cs_log_printf(CS_LOG_SETUP, "%s   number of smooth aggr:  %d\n",
+                prefix, gamgp->n_smooth_agg);
+
+  cs_log_printf(CS_LOG_SETUP, "%s   threshold:       %f\n",
+                prefix, gamgp->threshold);
+
+  cs_log_printf(CS_LOG_SETUP, "%s   aggressive_coarsening:  %d lv.\n",
+                prefix, gamgp->n_agg_levels);
+  cs_log_printf(CS_LOG_SETUP, "%s   use graph square        %s\n",
+                prefix, cs_base_strtf(gamgp->use_square_graph));
+
+  BFT_FREE(prefix);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Create a new structure storing a set of parameters used when calling
  *        the in-house AMG algo. Set default values for all parameters.
  *
  * \param[in] used_as_solver   true or false

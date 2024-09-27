@@ -366,6 +366,13 @@ cs_param_sles_log(cs_param_sles_t   *slesp)
         cs_param_amg_boomer_log(slesp->name,
                                 static_cast<const cs_param_amg_boomer_t *>(
                                   slesp->context_param));
+
+      else if (slesp->amg_type == CS_PARAM_AMG_PETSC_GAMG_V ||
+               slesp->amg_type == CS_PARAM_AMG_PETSC_GAMG_W)
+        cs_param_amg_gamg_log(slesp->name,
+                              static_cast<const cs_param_amg_gamg_t *>
+                              (slesp->context_param));
+
     }
 
     cs_log_printf(CS_LOG_SETUP, "  * %s | SLES Solver.Precond:      %s\n",
@@ -387,6 +394,12 @@ cs_param_sles_log(cs_param_sles_t   *slesp)
         cs_param_amg_boomer_log(slesp->name,
                                 static_cast<const cs_param_amg_boomer_t *>(
                                   slesp->context_param));
+      else if (slesp->amg_type == CS_PARAM_AMG_PETSC_GAMG_V ||
+               slesp->amg_type == CS_PARAM_AMG_PETSC_GAMG_W)
+        cs_param_amg_gamg_log(slesp->name,
+                              static_cast<const cs_param_amg_gamg_t *>
+                              (slesp->context_param));
+
     }
     else if (slesp->precond == CS_PARAM_PRECOND_MUMPS)
       cs_param_mumps_log(slesp->name,
@@ -824,6 +837,7 @@ cs_param_sles_set_precond(const char       *keyval,
       break;
     case CS_PARAM_SOLVER_CLASS_PETSC:
       slesp->amg_type = CS_PARAM_AMG_PETSC_GAMG_V;
+      cs_param_sles_gamg_reset(slesp);
       break;
     case CS_PARAM_SOLVER_CLASS_HYPRE:
       slesp->amg_type = CS_PARAM_AMG_HYPRE_BOOMER_V;
@@ -1058,8 +1072,10 @@ cs_param_sles_set_solver_class(const char       *keyval,
 
     /* Check that the AMG type is correctly set */
 
-    if (slesp->precond == CS_PARAM_PRECOND_AMG)
+    if (slesp->precond == CS_PARAM_PRECOND_AMG) {
       _check_amg_type(slesp);
+      cs_param_sles_gamg_reset(slesp);
+    }
 
   }
 
@@ -1168,6 +1184,9 @@ cs_param_sles_set_amg_type(const char       *keyval,
     slesp->amg_type = CS_PARAM_AMG_PETSC_GAMG_V;
     slesp->solver_class = CS_PARAM_SOLVER_CLASS_PETSC;
     slesp->need_flexible = true;
+
+    cs_param_sles_gamg_reset(slesp);
+
   }
   else if (strcmp(keyval, "gamg_w") == 0) {
     cs_param_solver_class_t ret_class =
@@ -1182,6 +1201,9 @@ cs_param_sles_set_amg_type(const char       *keyval,
     slesp->amg_type      = CS_PARAM_AMG_PETSC_GAMG_W;
     slesp->solver_class  = CS_PARAM_SOLVER_CLASS_PETSC;
     slesp->need_flexible = true;
+
+    cs_param_sles_gamg_reset(slesp);
+
   }
   else if (strcmp(keyval, "hmg") == 0 || strcmp(keyval, "hmg_v") == 0) {
 
@@ -1580,6 +1602,107 @@ cs_param_sles_boomeramg_advanced(cs_param_sles_t                   *slesp,
   bamgp->p_max = p_max;
   bamgp->n_agg_levels = n_agg_lv;
   bamgp->n_agg_paths = n_agg_paths;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Allocate and initialize a new context structure for the GAMG
+ *        settings in PETSc.
+ *
+ * \param[in, out] slesp  pointer to a cs_param_sles_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_param_sles_gamg_reset(cs_param_sles_t  *slesp)
+{
+  if (slesp == nullptr)
+    return;
+
+  if (slesp->context_param != nullptr)
+    BFT_FREE(slesp->context_param);
+
+  slesp->context_param = cs_param_amg_gamg_create();
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Set the main members of a cs_param_amg_gamg_t structure. This
+ *        structure is allocated, initialized by default and then one sets the
+ *        main given parameters. Please refer to the PETSc user guide for more
+ *        details about the following options.
+ *
+ * \param[in, out] slesp           pointer to a cs_param_sles_t structure
+ * \param[in]      n_down_iter     number of smoothing steps for the down cycle
+ * \param[in]      down_smoother   type of smoother for the down cycle
+ * \param[in]      n_up_iter       number of smoothing steps for the up cycle
+ * \param[in]      up_smoother     type of smoother for the up cycle
+ * \param[in]      coarse_solver   solver at the coarsest level
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_param_sles_gamg(cs_param_sles_t                  *slesp,
+                   int                               n_down_iter,
+                   cs_param_amg_gamg_smoother_t      down_smoother,
+                   int                               n_up_iter,
+                   cs_param_amg_gamg_smoother_t      up_smoother,
+                   cs_param_amg_gamg_coarse_solver_t coarse_solver)
+{
+  if (slesp == nullptr)
+    return;
+
+  cs_param_sles_gamg_reset(slesp); // Free and allocate a new GAMG set
+
+  cs_param_amg_gamg_t *gamgp =
+    static_cast<cs_param_amg_gamg_t *>(slesp->context_param);
+
+  gamgp->n_down_iter = n_down_iter;
+  gamgp->down_smoother = down_smoother;
+
+  gamgp->n_up_iter = n_up_iter;
+  gamgp->up_smoother = up_smoother;
+
+  gamgp->coarse_solver = coarse_solver;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Set the members of a cs_param_amg_gamg_t structure used in
+ *        advanced settings. This structure is allocated if needed. Other
+ *        members are kept to their values. Please refer to the PETSc user
+ *        guide for more details about the following options.
+ *
+ * \param[in, out] slesp         pointer to a cs_param_sles_t structure
+ * \param[in]      threshold     value of the coarsening threshold
+ * \param[in]      n_agg_lv      aggressive coarsening (number of levels)
+ * \param[in]      use_sq_grph   use previous square graph for aggressive coa.
+ * \param[in]      n_smooth_agg  smooth aggregation (number of sweeps)
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_param_sles_gamg_advanced(cs_param_sles_t *slesp,
+                            double           threshold,
+                            int              n_agg_lv,
+                            bool             use_sq_grph,
+                            int              n_smooth_agg)
+{
+  if (slesp == nullptr)
+    return;
+
+  if (slesp->context_param == nullptr)
+    slesp->context_param = cs_param_amg_gamg_create();
+
+  /* One assumes that the existing context structure is related to PETSc GAMG */
+
+  cs_param_amg_gamg_t *gamgp =
+    static_cast<cs_param_amg_gamg_t *>(slesp->context_param);
+
+  gamgp->threshold = threshold;
+  gamgp->n_agg_levels = n_agg_lv;
+  gamgp->use_square_graph = use_sq_grph;
+  gamgp->n_smooth_agg = n_smooth_agg;
 }
 
 /*----------------------------------------------------------------------------*/

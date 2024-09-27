@@ -445,6 +445,38 @@ cs_user_parameters(cs_domain_t    *domain)
                                      2);  /* n_agg_paths */
   }
   /*! [cdo_sles_boomer] */
+
+  /*! [cdo_sles_gamg] */
+  {
+    cs_equation_param_t  *eqp = cs_equation_param_by_name("MyEq");
+
+    cs_equation_param_set(eqp, CS_EQKEY_SOLVER, "fcg");
+    cs_equation_param_set(eqp, CS_EQKEY_PRECOND, "amg");
+    cs_equation_param_set(eqp, CS_EQKEY_AMG_TYPE, "gamg");
+    cs_equation_param_set(eqp, CS_EQKEY_SOLVER_RTOL, "1e-1");
+
+    /* Set the main parameters of the GAMG algorithm */
+
+    cs_param_sles_t  *slesp = cs_equation_param_get_sles_param(eqp);
+
+    cs_param_sles_gamg(slesp,
+                       /* n_down_iter, down smoother */
+                       1, CS_PARAM_AMG_GAMG_FORWARD_GS,
+                       /* n_up_iter, up smoother */
+                       2, CS_PARAM_AMG_GAMG_BACKWARD_GS,
+                       /* coarse solver */
+                       CS_PARAM_AMG_GAMG_TFS);
+
+    /* Set advanced parameters for GAMG */
+
+    cs_param_sles_gamg_advanced(slesp,
+                                0.01, // coarsening threshold
+                                2,    // n_agg_levels
+                                true, // use older square graph algo.
+                                2);   // number of SA sweeps
+                                      // SA = smooth aggregation
+  }
+  /*! [cdo_sles_gamg] */
 }
 
 /*----------------------------------------------------------------------------*/

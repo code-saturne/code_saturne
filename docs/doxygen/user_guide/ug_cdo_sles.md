@@ -209,6 +209,17 @@ We strongly invite users to read the HYPRE documentation and especially the
 part dedicated to BoomerAMG to understand the different choices
 [BoomerAMG documentation](https://hypre.readthedocs.io/en/latest/solvers-boomeramg.html)
 
+### GAMG {#cs_ug_cdo_sles_amg_gamg}
+
+The main ingredients of the GAMG algorithm are defined thanks to the
+functions \ref cs_param_sles_gamg and \ref cs_param_sles_gamg_advanced
+for additional parameters.
+
+\snippet cs_user_parameters-cdo-linear_solvers.c cdo_sles_gamg
+
+We strongly invite users to read the PETSc documentation dedicated to algebraic multigrid to understand the different choices
+[GAMG documentation](https://petsc.org/release/manual/ksp/#algebraic-multigrid-amg-preconditioners)
+
 #### Alternative way (low-level API)
 
 HYPRE setting functions can be called thanks to a lower-level API (relying on a

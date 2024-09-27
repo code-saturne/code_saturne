@@ -412,6 +412,64 @@ cs_param_sles_boomeramg_advanced(cs_param_sles_t                   *slesp,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Allocate and initialize a new context structure for the GAMG
+ *        settings in PETSc.
+ *
+ * \param[in, out] slesp  pointer to a cs_param_sles_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_param_sles_gamg_reset(cs_param_sles_t  *slesp);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Set the main members of a cs_param_amg_gamg_t structure. This
+ *        structure is allocated and initialized and then one sets the main
+ *        given parameters. Please refer to the PETSc user guide for more
+ *        details about the following options.
+ *
+ * \param[in, out] slesp           pointer to a cs_param_sles_t structure
+ * \param[in]      n_down_iter     number of smoothing steps for the down cycle
+ * \param[in]      down_smoother   type of smoother for the down cycle
+ * \param[in]      n_up_iter       number of smoothing steps for the up cycle
+ * \param[in]      up_smoother     type of smoother for the up cycle
+ * \param[in]      coarse_solver   solver at the coarsest level
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_param_sles_gamg(cs_param_sles_t                  *slesp,
+                   int                               n_down_iter,
+                   cs_param_amg_gamg_smoother_t      down_smoother,
+                   int                               n_up_iter,
+                   cs_param_amg_gamg_smoother_t      up_smoother,
+                   cs_param_amg_gamg_coarse_solver_t coarse_solver);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Set the members of a cs_param_amg_gamg_t structure used in
+ *        advanced settings. This structure is allocated if needed. Other
+ *        members are kept to their values. Please refer to the PETSc user
+ *        guide for more details about the following options.
+ *
+ * \param[in, out] slesp         pointer to a cs_param_sles_t structure
+ * \param[in]      threshold     value of the coarsening threshold
+ * \param[in]      n_agg_lv      aggressive coarsening (number of levels)
+ * \param[in]      use_sq_grph   use previous square graph for aggressive coa.
+ * \param[in]      n_smooth_agg  smooth aggregation (number of sweeps)
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_param_sles_gamg_advanced(cs_param_sles_t *slesp,
+                            double           threshold,
+                            int              n_agg_lv,
+                            bool             use_sq_grph,
+                            int              n_smooth_agg);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Allocate and initialize a new context structure for the MUMPS
  *        settings.
  *
