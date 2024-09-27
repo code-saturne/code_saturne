@@ -110,7 +110,7 @@ static size_t _bft_mem_usage_global_max_vm = 0;
 static size_t _bft_mem_usage_global_sl = 0;
 
 #if defined(USE_SBRK)
-static void  *_bft_mem_usage_global_init_sbrk = NULL;
+static void  *_bft_mem_usage_global_init_sbrk = nullptr;
 #endif
 
 #if defined (__linux__) && defined(HAVE_SYS_STAT_H) \
@@ -154,7 +154,7 @@ static size_t _bft_mem_usage_n_frees = 0;
  * Electric Fence.
  *
  * returns:
- *   1 (NULL preferred, 1 should avoid TotalView warning).
+ *   1 (nullptr preferred, 1 should avoid TotalView warning).
  */
 
 static __malloc_ptr_t
@@ -357,13 +357,13 @@ _bft_mem_usage_pr_size_init(void)
   sprintf(buf, "/proc/%lu/status", (unsigned long) pid);
   FILE *fp = fopen(buf, "r");
 
-  if (fp != NULL) {
+  if (fp != nullptr) {
 
     int fields_read = 0;
 
     while (fields_read < 2) {
       char *s = fgets(buf, 80, fp);
-      if (s == NULL)
+      if (s == nullptr)
         break;
       if (strncmp(s, "VmSize:", 7) == 0) {
         status_has_size = true;
@@ -499,13 +499,13 @@ bft_mem_usage_pr_size(void)
     sprintf(buf, "/proc/%lu/status", (unsigned long) pid);
     FILE *fp = fopen(buf, "r");
 
-    if (fp != NULL) {
+    if (fp != nullptr) {
 
       int fields_read = 0;
 
       while (fields_read < 4) {
         char *s = fgets(buf, 80, fp);
-        if (s == NULL)
+        if (s == nullptr)
           break;
         if (strncmp(s, "VmSize:", 7) == 0) {
           sscanf (s + 7, "%lu", &val);

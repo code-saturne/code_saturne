@@ -100,7 +100,7 @@ struct _bft_backtrace_t {
  * Local static variable definitions
  *-----------------------------------------------------------------------------*/
 
-static bft_backtrace_print_t  *_bft_backtrace_print = NULL;
+static bft_backtrace_print_t  *_bft_backtrace_print = nullptr;
 
 /*-----------------------------------------------------------------------------
  * Local function definitions
@@ -115,7 +115,7 @@ static bft_backtrace_print_t  *_bft_backtrace_print = NULL;
 /*!
  * \brief Build a backtrace description structure.
  *
- * \return pointer to bft_backtrace_t backtrace descriptor (NULL in case of
+ * \return pointer to bft_backtrace_t backtrace descriptor (nullptr in case of
  *         error, or if backtracing is unavailable on this architecture).
  */
 
@@ -126,13 +126,13 @@ bft_backtrace_create(void)
 
   int  i, j, l;
 
-  bft_backtrace_t  *bt = NULL;
+  bft_backtrace_t  *bt = nullptr;
 
   /* Create backtrace structure */
 
-  bt = malloc(sizeof(bft_backtrace_t));
+  bt = static_cast<bft_backtrace_t *>(malloc(sizeof(bft_backtrace_t)));
 
-  if (bt != NULL) {
+  if (bt != nullptr) {
 
     void   *tr_array[200];
     int  tr_size = backtrace(tr_array, 200);
@@ -142,37 +142,37 @@ bft_backtrace_create(void)
      backtrace is useful mainly in case of severe errors, so we avoid
      higher level constructs as much as possible at this stage. */
 
-    if (tr_size < 2 || tr_strings == NULL) {
+    if (tr_size < 2 || tr_strings == nullptr) {
       free(bt);
-      return NULL;
+      return nullptr;
     }
 
     bt->size = tr_size - 1;
 
-    bt->s_file = malloc(tr_size * sizeof(char *));
-    bt->s_func = malloc(tr_size * sizeof(char *));
-    bt->s_addr = malloc(tr_size * sizeof(char *));
+    bt->s_file = static_cast<char **>(malloc(tr_size * sizeof(char *)));
+    bt->s_func = static_cast<char **>(malloc(tr_size * sizeof(char *)));
+    bt->s_addr = static_cast<char **>(malloc(tr_size * sizeof(char *)));
 
-    /* If allocation has failed, free other allocated arrays, and return NULL */
+    /* If allocation has failed, free other allocated arrays, and return nullptr */
 
-    if (   bt->s_file == NULL || bt->s_func == NULL || bt->s_addr == NULL) {
+    if (   bt->s_file == nullptr || bt->s_func == nullptr || bt->s_addr == nullptr) {
 
-      if (bt->s_file  != NULL)
+      if (bt->s_file  != nullptr)
         free(bt->s_file);
-      if (bt->s_func  != NULL)
+      if (bt->s_func  != nullptr)
         free(bt->s_func);
-      if (bt->s_addr  != NULL)
+      if (bt->s_addr  != nullptr)
         free(bt->s_addr);
 
       free(bt);
-      return NULL;
+      return nullptr;
 
     }
 
     for (i = 0; i < bt->size; i++) {
-      bt->s_file[i] = NULL;
-      bt->s_func[i] = NULL;
-      bt->s_addr[i] = NULL;
+      bt->s_file[i] = nullptr;
+      bt->s_func[i] = nullptr;
+      bt->s_addr[i] = nullptr;
     }
 
     /* Now parse backtrace strings and build arrays */
@@ -181,9 +181,9 @@ bft_backtrace_create(void)
 
       char *s = tr_strings[i+1]; /* Shift by 1 to ignore current function */
 
-      const char  *s_addr = NULL;
-      const char  *s_func = NULL;
-      const char  *s_file = NULL;
+      const char  *s_addr = nullptr;
+      const char  *s_func = nullptr;
+      const char  *s_file = nullptr;
 
       for (l = 0; s[l] != '\0'; l++);
 
@@ -195,8 +195,9 @@ bft_backtrace_create(void)
         for (j = l-1; j > 0 && s[j] !='['; j--);
         if (s[j] == '[') {
           s_addr = s+j+1;
-          bt->s_addr[i] = malloc((strlen(s_addr)+1) * sizeof(char));
-          if (bt->s_addr[i] != NULL)
+          bt->s_addr[i] = static_cast<char *>(
+            malloc((strlen(s_addr) + 1) * sizeof(char)));
+          if (bt->s_addr[i] != nullptr)
             strcpy(bt->s_addr[i], s_addr);
         }
       }
@@ -214,8 +215,9 @@ bft_backtrace_create(void)
           s_func = s+j+1;
           while (j > 0 && (s[j] == '(' || s[j] == ' '))
             s[j--] = '\0';
-          bt->s_func[i] = malloc((strlen(s_func)+1) * sizeof(char));
-          if (bt->s_func[i] != NULL)
+          bt->s_func[i] = static_cast<char *>(
+            malloc((strlen(s_func) + 1) * sizeof(char)));
+          if (bt->s_func[i] != nullptr)
             strcpy(bt->s_func[i], s_func);
         }
       }
@@ -224,7 +226,7 @@ bft_backtrace_create(void)
 
       /* Find executable or library name */
 
-      if (s_func == NULL) {/* With no function name found */
+      if (s_func == nullptr) {/* With no function name found */
         for (j = 0; j < l && s[j] != ' '; j++);
         if (s[j] == ' ')
           s[j] = '\0';
@@ -234,8 +236,9 @@ bft_backtrace_create(void)
         j--;
       if (j < l) {
         s_file = s+j+1;
-        bt->s_file[i] = malloc((strlen(s_file)+1) * sizeof(char));
-        if (bt->s_file[i] != NULL)
+        bt->s_file[i] = static_cast<char *>(
+          malloc((strlen(s_file) + 1) * sizeof(char)));
+        if (bt->s_file[i] != nullptr)
           strcpy(bt->s_file[i], s_file);
       }
 
@@ -251,7 +254,7 @@ bft_backtrace_create(void)
   return bt;
 
 #else /* defined(HAVE_GLIBC_BACKTRACE) */
-  return NULL;
+  return nullptr;
 #endif
 }
 
@@ -260,7 +263,7 @@ bft_backtrace_create(void)
  *
  * \param [in, out] bt pointer to backtrace description structure.
  *
- * \return NULL pointer.
+ * \return nullptr pointer.
  */
 
 bft_backtrace_t *
@@ -268,31 +271,31 @@ bft_backtrace_destroy(bft_backtrace_t  *bt)
 {
   int  i;
 
-  if (bt != NULL) {
+  if (bt != nullptr) {
 
     for (i = 0; i < bt->size; i++) {
 
-      if (bt->s_file[i] != NULL)
+      if (bt->s_file[i] != nullptr)
         free(bt->s_file[i]);
-      if (bt->s_func[i] != NULL)
+      if (bt->s_func[i] != nullptr)
         free(bt->s_func[i]);
-      if (bt->s_addr[i] != NULL)
+      if (bt->s_addr[i] != nullptr)
         free(bt->s_addr[i]);
 
     }
 
-    if (bt->s_file != NULL)
+    if (bt->s_file != nullptr)
         free(bt->s_file);
-    if (bt->s_func != NULL)
+    if (bt->s_func != nullptr)
       free(bt->s_func);
-    if (bt->s_addr != NULL)
+    if (bt->s_addr != nullptr)
       free(bt->s_addr);
 
     free(bt);
 
   }
 
-  return NULL;
+  return nullptr;
 }
 
 /*!
@@ -308,15 +311,15 @@ bft_backtrace_demangle(bft_backtrace_t  *bt)
 
   int  i, j, l;
 
-  if (bt != NULL) {
+  if (bt != nullptr) {
 
     for (i = 0; i < bt->size; i++) {
 
-      char *s_cplus_func_p = NULL;
-      char *s_cplus_func = NULL;
+      char *s_cplus_func_p = nullptr;
+      char *s_cplus_func = nullptr;
       int l2 = 0;
 
-      if (bt->s_func[i] == NULL)
+      if (bt->s_func[i] == nullptr)
         continue;
 
       for (j = 0; bt->s_func[i][j] != '\0' && bt->s_func[i][j] != '+'; j++);
@@ -329,7 +332,7 @@ bft_backtrace_demangle(bft_backtrace_t  *bt)
       s_cplus_func_p = cplus_demangle(bt->s_func[i], auto_demangling);
       printf("%s ; %s\n", bt->s_func[i], s_cplus_func_p);
 
-      if (s_cplus_func_p == NULL)
+      if (s_cplus_func_p == nullptr)
         continue;
 
       l = strlen(s_cplus_func_p);
@@ -337,9 +340,9 @@ bft_backtrace_demangle(bft_backtrace_t  *bt)
       if (l == 0)
         continue;
 
-      s_cplus_func = malloc(l + l2 + 1);
+      s_cplus_func = static_cast<char *>(malloc(l + l2 + 1));
 
-      if (s_cplus_func != NULL) {
+      if (s_cplus_func != nullptr) {
         strncpy(s_cplus_func, s_cplus_func_p, l + 1);
         if (l2 > 0) {
           bt->s_func[i][j] = '+';
@@ -382,16 +385,16 @@ bft_backtrace_size(const bft_backtrace_t  *bt)
  * \param [in] bt pointer to backtrace description structure.
  * \param [in] depth index in backtrace structure (< bft_backtrace_size(bt)).
  *
- * \return file name at the given depth, or NULL.
+ * \return file name at the given depth, or nullptr.
  */
 
 const char *
 bft_backtrace_file(bft_backtrace_t  *bt,
                    int               depth)
 {
-  const char *retval = NULL;
+  const char *retval = nullptr;
 
-  if (bt != NULL) {
+  if (bt != nullptr) {
     if (depth < bt->size)
       retval = bt->s_file[depth];
   }
@@ -405,16 +408,16 @@ bft_backtrace_file(bft_backtrace_t  *bt,
  * \param [in] bt pointer to backtrace description structure.
  * \param [in] depth index in backtrace structure (< bft_backtrace_size(bt)).
  *
- * \return function name at the given depth, or NULL.
+ * \return function name at the given depth, or nullptr.
  */
 
 const char *
 bft_backtrace_function(bft_backtrace_t  *bt,
                        int               depth)
 {
-  const char *retval = NULL;
+  const char *retval = nullptr;
 
-  if (bt != NULL) {
+  if (bt != nullptr) {
     if (depth < bt->size)
       retval = bt->s_func[depth];
   }
@@ -428,16 +431,16 @@ bft_backtrace_function(bft_backtrace_t  *bt,
  * \param [in] bt pointer to backtrace description structure.
  * \param [in] depth index in backtrace structure (< bft_backtrace_size(bt)).
  *
- * \return  address at the given depth, or NULL.
+ * \return  address at the given depth, or nullptr.
  */
 
 const char *
 bft_backtrace_address(bft_backtrace_t  *bt,
                       int               depth)
 {
-  const char *retval = NULL;
+  const char *retval = nullptr;
 
-  if (bt != NULL) {
+  if (bt != nullptr) {
     if (depth < bt->size)
       retval = bt->s_addr[depth];
   }
@@ -455,7 +458,7 @@ bft_backtrace_address(bft_backtrace_t  *bt,
 void
 bft_backtrace_print(int  start_depth)
 {
-  if (_bft_backtrace_print != NULL)
+  if (_bft_backtrace_print != nullptr)
     _bft_backtrace_print(start_depth);
 }
 

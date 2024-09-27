@@ -114,7 +114,7 @@
  * This macro calls bft_mem_free(), automatically setting the
  * allocated variable name and source file name and line arguments.
  *
- * The freed pointer is set to NULL to avoid accidental reuse.
+ * The freed pointer is set to nullptr to avoid accidental reuse.
  *
  * \param [in, out] _ptr  pointer to allocated memory.
  */
@@ -179,7 +179,7 @@ _bft_mem_error_handler_default(const char  *file_name,
 
 static int  _bft_mem_global_init_mode = 0;
 
-static FILE *_bft_mem_global_file = NULL;
+static FILE *_bft_mem_global_file = nullptr;
 
 static std::map<const void *, cs_mem_block_t> _bft_alloc_map;
 
@@ -193,8 +193,8 @@ static size_t  _bft_mem_global_n_frees = 0;
 static bft_error_handler_t  *_bft_mem_error_handler
                               = (_bft_mem_error_handler_default);
 
-static bft_mem_realloc_t   *_bft_alt_realloc_func = NULL;
-static bft_mem_free_t      *_bft_alt_free_func = NULL;
+static bft_mem_realloc_t   *_bft_alt_realloc_func = nullptr;
+static bft_mem_free_t      *_bft_alt_free_func = nullptr;
 
 #if defined(HAVE_OPENMP)
 static omp_lock_t _bft_mem_lock;
@@ -220,8 +220,8 @@ _bft_mem_basename(const char  *file_name)
 {
   int i;
 
-  if (file_name == NULL)
-    return NULL;
+  if (file_name == nullptr)
+    return nullptr;
 
   for (i = strlen(file_name) - 1;
        i > 0 && file_name[i] != DIR_SEPARATOR;
@@ -276,7 +276,7 @@ static void _bft_mem_summary(FILE  *f)
   unsigned long value[2];
   size_t mem_usage;
 
-  if (f == NULL)
+  if (f == nullptr)
     return;
 
   fprintf(f, "\n\n");
@@ -386,7 +386,7 @@ _bft_mem_error(const char  *file_name,
 {
   va_list  arg_ptr;
 
-  if (_bft_mem_global_file != NULL) {
+  if (_bft_mem_global_file != nullptr) {
     _bft_mem_summary(_bft_mem_global_file);
     fflush(_bft_mem_global_file);
   }
@@ -585,7 +585,7 @@ bft_mem_update_block_info(const char            *var_name,
 
       /* Log to file */
 
-      if (_bft_mem_global_file != NULL) {
+      if (_bft_mem_global_file != nullptr) {
 
         static const char cat_s[4][8]
           = {"  alloc", "realloc", "   free", "mapping"};
@@ -651,7 +651,7 @@ BEGIN_C_DECLS
  * be a regular, local file. If this file cannot be opened for
  * some reason, logging is silently de-activated.
  *
- * \param log_file_name name of optional log_file (if NULL, no log).
+ * \param log_file_name name of optional log_file (if nullptr, no log).
  */
 
 void
@@ -676,7 +676,7 @@ bft_mem_init(const char *log_file_name)
   _bft_mem_global_init_mode = 1;
 #endif
 
-  if (log_file_name != NULL) {
+  if (log_file_name != nullptr) {
 
     _bft_mem_global_init_mode = 2;
 
@@ -694,7 +694,7 @@ bft_mem_init(const char *log_file_name)
       is probably not worth the bother.
     */
 
-    if (_bft_mem_global_file == NULL)
+    if (_bft_mem_global_file == nullptr)
       fprintf(stderr,
               _("Failure to open memory log file \"%s\"\n"),
               log_file_name);
@@ -703,7 +703,7 @@ bft_mem_init(const char *log_file_name)
 
   /* Log file header */
 
-  if (_bft_mem_global_file != NULL) {
+  if (_bft_mem_global_file != nullptr) {
 
     fprintf(_bft_mem_global_file,
             "       :     FILE NAME              : LINE  :"
@@ -753,7 +753,7 @@ bft_mem_end(void)
 
   _bft_mem_global_init_mode = 0;
 
-  if (_bft_mem_global_file != NULL) {
+  if (_bft_mem_global_file != nullptr) {
 
     /* Memory usage summary */
 
@@ -835,17 +835,17 @@ bft_mem_malloc(size_t       ni,
   size_t      alloc_size = ni * size;
 
   if (ni == 0)
-    return NULL;
+    return nullptr;
 
   /* Allocate memory and check return */
 
   void  *p_new = malloc(alloc_size);
 
-  if (p_new == NULL) {
+  if (p_new == nullptr) {
     _bft_mem_error(file_name, line_num, errno,
                    _("Failure to allocate \"%s\" (%lu bytes)"),
                    var_name, (unsigned long)alloc_size);
-    return NULL;
+    return nullptr;
   }
   else if (_bft_mem_global_init_mode < 2)
     return p_new;
@@ -872,7 +872,7 @@ bft_mem_malloc(size_t       ni,
  * allocate the required memory.
  *
  * \param [in] ptr       pointer to previous memory location
- *                       (if NULL, bft_alloc() called).
+ *                       (if nullptr, bft_alloc() called).
  * \param [in] ni        number of elements.
  * \param [in] size      element size.
  * \param [in] var_name  allocated variable name string.
@@ -893,12 +893,12 @@ bft_mem_realloc(void        *ptr,
   size_t new_size = ni * size;
 
   /*
-    Behave as bft_mem_malloc() if the previous pointer is equal to NULL.
+    Behave as bft_mem_malloc() if the previous pointer is equal to nullptr.
     Note that the operation will then appear as a first allocation
     ('alloc') in the _bft_mem_global_file trace file.
   */
 
-  if (ptr == NULL)
+  if (ptr == nullptr)
     return bft_mem_malloc(ni,
                           size,
                           var_name,
@@ -961,16 +961,16 @@ bft_mem_realloc(void        *ptr,
  *
  * This function calls free(), but adds tracing capabilities, and
  * automatically calls the bft_error() errorhandler if it fails to
- * free the corresponding memory. In case of a NULL pointer argument,
+ * free the corresponding memory. In case of a nullptr pointer argument,
  * the function simply returns.
  *
  * \param [in] ptr       pointer to previous memory location
- *                       (if NULL, bft_alloc() called).
+ *                       (if nullptr, bft_alloc() called).
  * \param [in] var_name  allocated variable name string
  * \param [in] file_name name of calling source file
  * \param [in] line_num  line number in calling source file
  *
- * \returns NULL pointer.
+ * \returns nullptr pointer.
  */
 
 void *
@@ -979,10 +979,10 @@ bft_mem_free(void        *ptr,
              const char  *file_name,
              int          line_num)
 {
-  /* NULL pointer case (non-allocated location) */
+  /* nullptr pointer case (non-allocated location) */
 
-  if (ptr == NULL)
-    return NULL;
+  if (ptr == nullptr)
+    return nullptr;
 
   /* General case (free allocated memory) */
 
@@ -997,7 +997,7 @@ bft_mem_free(void        *ptr,
 #if defined(HAVE_ACCEL)
   if (mib_old.mode >= CS_ALLOC_HOST_DEVICE_PINNED) {
     _bft_alt_free_func(ptr, var_name, file_name, line_num);
-    return NULL;
+    return nullptr;
   }
 #endif
 
@@ -1010,7 +1010,7 @@ bft_mem_free(void        *ptr,
                               &mib_old,
                               nullptr);
 
-  return NULL;
+  return nullptr;
 }
 
 /*!
@@ -1048,7 +1048,7 @@ bft_mem_memalign(size_t       alignment,
   size_t      alloc_size = ni * size;
 
   if (ni == 0)
-    return NULL;
+    return nullptr;
 
   /* Allocate memory and check return */
 
@@ -1068,7 +1068,7 @@ bft_mem_memalign(size_t       alignment,
                      _("Failure to allocate \"%s\" (%lu bytes)"),
                      var_name, (unsigned long)alloc_size);
     }
-    return NULL;
+    return nullptr;
   }
   else if (_bft_mem_global_init_mode < 2)
     return p_loc;
@@ -1091,7 +1091,7 @@ bft_mem_memalign(size_t       alignment,
   _bft_mem_error(file_name, line_num, errno,
                  _("No aligned allocation function available on this system"));
 
-  return NULL;
+  return nullptr;
 
 #endif
 }

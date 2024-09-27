@@ -45,11 +45,11 @@ cs_bft_headers.h
 
 noinst_LIBRARIES = libbft.a
 libbft_a_SOURCES  = \
-bft_backtrace.c \
-bft_error.c \
+bft_backtrace.cpp \
+bft_error.cpp \
 bft_mem.cpp \
-bft_mem_usage.c \
-bft_printf.c
+bft_mem_usage.cpp \
+bft_printf.cpp
 
 libbft_a_LIBADD =
 
