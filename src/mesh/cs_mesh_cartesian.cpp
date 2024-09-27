@@ -261,7 +261,6 @@ _cs_mesh_cartesian_init(const char *name,
   _new_mesh->n_vtx_on_rank   = 0;
 
   _new_mesh->ndir = ndir;
-  _new_mesh->ndir = ndir;
   BFT_MALLOC(_new_mesh->params, ndir, _cs_mesh_cartesian_direction_t *);
   for (int i = 0; i < ndir; i++)
     _new_mesh->params[i] = NULL;
@@ -729,6 +728,7 @@ cs_mesh_cartesian_define_simple(const char *name,
 {
   cs_mesh_cartesian_params_t *mp = cs_mesh_cartesian_create(name);
 
+  assert(mp->ndir == 3);
   for (int idim = 0; idim < 3; idim++)
     mp->params[idim] =
       _cs_mesh_cartesian_create_direction(CS_MESH_CARTESIAN_CONSTANT_LAW,
@@ -1048,6 +1048,7 @@ cs_mesh_cartesian_define_dir_params(cs_mesh_cartesian_params_t  *mp,
     BFT_FREE(mp->params[idim]);
   }
 
+  assert(idim < mp->ndir);
   mp->params[idim] = _cs_mesh_cartesian_create_direction(_law,
                                                          ncells,
                                                          smin,
