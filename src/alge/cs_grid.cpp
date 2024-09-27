@@ -3804,6 +3804,7 @@ _automatic_aggregation_mx_msr(const cs_grid_t  *f,
   BFT_FREE(_d_val);
   BFT_FREE(_x_val);
   BFT_FREE(maxi);
+  BFT_FREE(t_c_scan);
 
   if (cs_glob_timer_kernels_flag > 0) {
     std::chrono::high_resolution_clock::time_point
@@ -3990,6 +3991,7 @@ _coarse_to_fine_adjacency_msr(cs_lnum_t         f_n_rows,
   }
 
   BFT_FREE(cf_r_shift);
+  BFT_FREE(t_c_scan);
 
   *c_f_row_index = cf_r_idx;
   *c_f_row_ids = cf_r_ids;
