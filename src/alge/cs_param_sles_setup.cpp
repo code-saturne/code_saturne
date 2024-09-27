@@ -2030,7 +2030,7 @@ _set_saturne_sles(bool                 use_field_id,
     cs_log_printf(CS_LOG_WARNINGS,
                   "%s: Switch to the GCR implementation of code_saturne\n",
                   __func__);
-    /* No break (wanted behavior) */
+    [[fallthrough]]; /* No break, pass to the following too */
   case CS_PARAM_SOLVER_GCR:
     itsol = cs_sles_it_define(slesp->field_id, sles_name,
                               CS_SLES_GCR,
