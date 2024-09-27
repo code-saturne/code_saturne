@@ -172,20 +172,20 @@ struct _cs_sles_petsc_t {
 
   /* Additional setup options */
 
-  void                        *hook_context;   /* Optional user context */
-  cs_sles_petsc_setup_hook_t  *setup_hook;     /* Post setup function */
-  bool                         log_setup;      /* PETSc setup log to do */
+  void                        *hook_context;  /* Optional user context */
+  cs_sles_petsc_setup_hook_t  *setup_hook;    /* Post setup function */
+  bool                         log_setup;     /* PETSc setup log to do */
 
-  char     *matype_r;                      /* requested PETSc matrix type */
-  MatType   matype;                        /* actual PETSc matrix type */
+  char                        *matype_r;      /* requested PETSc matrix type */
+  MatType                      matype;        /* actual PETSc matrix type */
 
   /* Setup data */
 
-  char                 *ksp_type;
-  char                 *pc_type;
-  KSPNormType           norm_type;
+  char                        *ksp_type;
+  char                        *pc_type;
+  KSPNormType                  norm_type;
 
-  cs_sles_petsc_setup_t   *setup_data;
+  cs_sles_petsc_setup_t       *setup_data;
 
 };
 
@@ -1407,11 +1407,6 @@ cs_sles_petsc_setup(void               *context,
 
   /* KSPSetUp(sd->ksp); */
 
-  if (c->log_setup) { /* PETSc log of the setup (more detailed) */
-    cs_sles_petsc_log_setup(sd->ksp);
-    c->log_setup = false;
-  }
-
   if (verbosity > 0)
     KSPView(sd->ksp, PETSC_VIEWER_STDOUT_WORLD);
 
@@ -1614,6 +1609,14 @@ cs_sles_petsc_solve(void                *context,
   KSPSolve(sd->ksp, b, x);
 
   cs_fp_exception_restore_trap();
+
+  /* PETSc log of the setup (more detailed after the solve since all structures
+     have been defined) */
+
+  if (c->log_setup) {
+    cs_sles_petsc_log_setup(sd->ksp);
+    c->log_setup = false;
+  }
 
   if (sd->share_a) {
 

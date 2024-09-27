@@ -1034,10 +1034,8 @@ cs_param_sles_set_solver_class(const char       *keyval,
     /* Check that the AMG type is correctly set */
 
     if (slesp->precond == CS_PARAM_PRECOND_AMG) {
-
       _check_amg_type(slesp);
       cs_param_sles_boomeramg_reset(slesp);
-
     }
 
   }
@@ -1189,6 +1187,7 @@ cs_param_sles_set_amg_type(const char       *keyval,
 
   }
   else if (strcmp(keyval, "gamg_w") == 0) {
+
     cs_param_solver_class_t ret_class =
       cs_param_sles_check_class(CS_PARAM_SOLVER_CLASS_PETSC);
 

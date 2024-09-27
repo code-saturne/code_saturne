@@ -2491,6 +2491,7 @@ _set_petsc_hypre_sles(bool                 use_field_id,
     if (slesp->precond == CS_PARAM_PRECOND_AMG) {
       if (slesp->amg_type == CS_PARAM_AMG_HYPRE_BOOMER_V ||
           slesp->amg_type == CS_PARAM_AMG_HYPRE_BOOMER_W) {
+
         cs_param_amg_boomer_t *bamgp =
           static_cast<cs_param_amg_boomer_t *>(slesp->context_param);
 
@@ -2869,7 +2870,7 @@ _set_hypre_sles(bool                 use_field_id,
                            CS_SLES_HYPRE_BOOMERAMG,
                            CS_SLES_HYPRE_NONE,
                            _hypre_boomeramg_hook,
-                         (void *)slesp);
+                           (void *)slesp);
     }
     break;
 
@@ -2879,18 +2880,18 @@ _set_hypre_sles(bool                 use_field_id,
 
     case CS_PARAM_PRECOND_AMG:
       {
-      cs_param_amg_boomer_t *bamgp =
-        static_cast<cs_param_amg_boomer_t *>(slesp->context_param);
+        cs_param_amg_boomer_t *bamgp =
+          static_cast<cs_param_amg_boomer_t *>(slesp->context_param);
 
-      if (bamgp == nullptr) /* Define a default set of parameters */
-        cs_param_sles_boomeramg_reset(slesp);
+        if (bamgp == nullptr) /* Define a default set of parameters */
+          cs_param_sles_boomeramg_reset(slesp);
 
-      cs_sles_hypre_define(slesp->field_id,
-                           sles_name,
-                           CS_SLES_HYPRE_BICGSTAB,
-                           CS_SLES_HYPRE_BOOMERAMG,
-                           _hypre_boomeramg_hook,
-                           (void *)slesp);
+        cs_sles_hypre_define(slesp->field_id,
+                             sles_name,
+                             CS_SLES_HYPRE_BICGSTAB,
+                             CS_SLES_HYPRE_BOOMERAMG,
+                             _hypre_boomeramg_hook,
+                             (void *)slesp);
       }
       break;
 
