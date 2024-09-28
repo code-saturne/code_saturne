@@ -2059,11 +2059,11 @@ cs_boundary_conditions_set_coeffs(int        nvar,
 
         if (icodcl_ts[f_id] == 1) {
 
-          for (cs_lnum_t k = 0; k < 6; k++)
-            pimpts[k] = rcodcl1_ts[n_b_faces*k + f_id];
+          for (cs_lnum_t ij = 0; ij < 6; ij++)
+            pimpts[ij] = rcodcl1_ts[n_b_faces*ij + f_id];
 
-          for (cs_lnum_t k = 0; k < 6; k++)
-            hextts[k] = rcodcl2_ts[n_b_faces*k + f_id];
+          for (cs_lnum_t ij = 0; ij < 6; ij++)
+            hextts[ij] = rcodcl2_ts[n_b_faces*ij + f_id];
 
           cs_boundary_conditions_set_dirichlet_tensor(coefa_ts[f_id],
                                                       cofaf_ts[f_id],
@@ -2074,9 +2074,9 @@ cs_boundary_conditions_set_coeffs(int        nvar,
                                                       hextts);
 
           /* Boundary conditions for the momentum equation */
-          for (cs_lnum_t isou = 0; isou < 6; isou++) {
-            cofad_ts[f_id][isou]       = coefa_ts[f_id][isou];
-            cofbd_ts[f_id][isou][isou] = coefb_ts[f_id][isou][isou];
+          for (cs_lnum_t ij = 0; ij < 6; ij++) {
+            cofad_ts[f_id][ij]     = coefa_ts[f_id][ij];
+            cofbd_ts[f_id][ij][ij] = coefb_ts[f_id][ij][ij];
           }
         }
 
@@ -2085,8 +2085,8 @@ cs_boundary_conditions_set_coeffs(int        nvar,
 
         else if (icodcl_ts[f_id] == 3) {
 
-          for (cs_lnum_t k = 0; k < 6; k++)
-            qimpts[k] = rcodcl3_ts[n_b_faces*k + f_id];
+          for (cs_lnum_t ij = 0; ij < 6; ij++)
+            qimpts[ij] = rcodcl3_ts[n_b_faces*ij + f_id];
 
           cs_boundary_conditions_set_neumann_tensor(coefa_ts[f_id],
                                                     cofaf_ts[f_id],
@@ -2096,9 +2096,9 @@ cs_boundary_conditions_set_coeffs(int        nvar,
                                                     hint);
 
           /* Boundary conditions for the momentum equation */
-          for (cs_lnum_t isou = 0; isou < 6; isou++) {
-            cofad_ts[f_id][isou]       = coefa_ts[f_id][isou];
-            cofbd_ts[f_id][isou][isou] = coefb_ts[f_id][isou][isou];
+          for (cs_lnum_t ij = 0; ij < 6; ij++) {
+            cofad_ts[f_id][ij]     = coefa_ts[f_id][ij];
+            cofbd_ts[f_id][ij][ij] = coefb_ts[f_id][ij][ij];
           }
         }
 
@@ -2107,11 +2107,11 @@ cs_boundary_conditions_set_coeffs(int        nvar,
 
         else if (icodcl_ts[f_id] == 2) {
 
-          for (cs_lnum_t k = 0; k < 6; k++)
-            pimpts[k] = rcodcl1_ts[n_b_faces*k + f_id];
+          for (cs_lnum_t ij = 0; ij < 6; ij++)
+            pimpts[ij] = rcodcl1_ts[n_b_faces*ij + f_id];
 
-          for (cs_lnum_t k = 0; k < 6; k++)
-            cflts[k] = rcodcl2_ts[n_b_faces*k + f_id];
+          for (cs_lnum_t ij = 0; ij < 6; ij++)
+            cflts[ij] = rcodcl2_ts[n_b_faces*ij + f_id];
 
           cs_boundary_conditions_set_convective_outlet_tensor
             (coefa_ts[f_id], cofaf_ts[f_id],
@@ -2119,9 +2119,9 @@ cs_boundary_conditions_set_coeffs(int        nvar,
              pimpts, cflts, hint);
 
           /* Boundary conditions for the momentum equation */
-          for (cs_lnum_t isou = 0; isou < 6; isou++) {
-            cofad_ts[f_id][isou]       = coefa_ts[f_id][isou];
-            cofbd_ts[f_id][isou][isou] = coefb_ts[f_id][isou][isou];
+          for (cs_lnum_t ij = 0; ij < 6; ij++) {
+            cofad_ts[f_id][ij]     = coefa_ts[f_id][ij];
+            cofbd_ts[f_id][ij][ij] = coefb_ts[f_id][ij][ij];
           }
         }
 
@@ -2131,11 +2131,11 @@ cs_boundary_conditions_set_coeffs(int        nvar,
 
         else if (icodcl_ts[f_id] == 13) {
 
-          for (cs_lnum_t k = 0; k < 6; k++)
-            pimpts[k] = rcodcl1_ts[n_b_faces*k + f_id];
+          for (cs_lnum_t ij = 0; ij < 6; ij++)
+            pimpts[ij] = rcodcl1_ts[n_b_faces*ij + f_id];
 
-          for (cs_lnum_t k = 0; k < 6; k++)
-            qimpts[k] = rcodcl3_ts[n_b_faces*k + f_id];
+          for (cs_lnum_t ij = 0; ij < 6; ij++)
+            qimpts[ij] = rcodcl3_ts[n_b_faces*ij + f_id];
 
           cs_boundary_conditions_set_dirichlet_conv_neumann_diff_tensor
             (coefa_ts[f_id], cofaf_ts[f_id],
@@ -2143,9 +2143,9 @@ cs_boundary_conditions_set_coeffs(int        nvar,
              pimpts, qimpts);
 
           /* Boundary conditions for the momentum equation */
-          for (cs_lnum_t isou = 0; isou < 6; isou++) {
-            cofad_ts[f_id][isou]       = coefa_ts[f_id][isou];
-            cofbd_ts[f_id][isou][isou] = coefb_ts[f_id][isou][isou];
+          for (cs_lnum_t ij = 0; ij < 6; ij++) {
+            cofad_ts[f_id][ij]     = coefa_ts[f_id][ij];
+            cofbd_ts[f_id][ij][ij] = coefb_ts[f_id][ij][ij];
           }
         }
 
