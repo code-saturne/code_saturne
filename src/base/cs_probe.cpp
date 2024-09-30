@@ -142,9 +142,13 @@ struct _cs_probe_set_t {
 
   cs_lnum_t    *elt_id;         /* Element ids where the probes have been
                                    located (size: n_loc_probes); -1 for
-                                   unlocated probes assigned to local domain*/
+                                   unlocated probes assigned to local domain */
+  cs_lnum_t    *cell_id;        /* Cell ids matching elements where the probes
+                                   have been located (size: n_loc_probes); -1 for
+                                   unlocated probes assigned to local domain;
+                                   Built only on demand. */
   cs_lnum_t    *vtx_id;         /* Vertex ids closest to probes; -1 for
-                                   unlocated probes assigned to local domain*/
+                                   unlocated probes assigned to local domain */
 
   char         *located;        /* 1 for located probes, 0 for unlocated */
 
@@ -304,6 +308,7 @@ _probe_set_free(cs_probe_set_t   *pset)
   BFT_FREE(pset->sel_criter);
   BFT_FREE(pset->loc_id);
   BFT_FREE(pset->elt_id);
+  BFT_FREE(pset->cell_id);
   BFT_FREE(pset->vtx_id);
   BFT_FREE(pset->located);
 
@@ -392,6 +397,7 @@ _probe_set_create(const char    *name,
 
   pset->loc_id = nullptr;
   pset->elt_id = nullptr;
+  pset->cell_id = nullptr;
   pset->vtx_id = nullptr;
   pset->located = nullptr;
 
@@ -1564,6 +1570,7 @@ cs_probe_set_locate(cs_probe_set_t     *pset,
 
   BFT_REALLOC(pset->loc_id, pset->n_probes, cs_lnum_t);
   BFT_REALLOC(pset->elt_id, pset->n_probes, cs_lnum_t);
+  BFT_FREE(pset->cell_id);
   BFT_FREE(pset->vtx_id);
 
   if (location_mesh == nullptr) {
@@ -2237,14 +2244,46 @@ cs_probe_set_get_elt_ids(const cs_probe_set_t  *pset,
 
   bool on_boundary = (pset->flags & CS_PROBE_BOUNDARY) ? true : false;
 
-  if (mesh_location_id == CS_MESH_LOCATION_CELLS && on_boundary == false)
-    retval = pset->elt_id;
-  else if (mesh_location_id == CS_MESH_LOCATION_BOUNDARY_FACES && on_boundary)
-    retval = pset->elt_id;
+  if (mesh_location_id == CS_MESH_LOCATION_CELLS) {
+    if (on_boundary) {
+      if (pset->cell_id == nullptr) {
+        const cs_mesh_t  *mesh = cs_glob_mesh;
+        cs_probe_set_t *_pset = const_cast<cs_probe_set_t *>(pset);
+        BFT_MALLOC(_pset->cell_id, _pset->n_loc_probes, cs_lnum_t);
+        for (int i = 0; i < pset->n_loc_probes; i++) {
+          int j = pset->elt_id[i];
+          if (j > -1)
+            _pset->cell_id[i] = mesh->b_face_cells[j];
+          else
+            _pset->cell_id[i] = -1;
+        }
+      }
+      retval = pset->cell_id;
+    }
+    else // at cells
+      retval = pset->elt_id;
+  }
 
-  /* FIXME: remove: || true */
-  else if (mesh_location_id == CS_MESH_LOCATION_VERTICES || true)
+  else if (mesh_location_id == CS_MESH_LOCATION_BOUNDARY_FACES) {
+    if (on_boundary)
+      retval = pset->elt_id;
+    else {
+      bft_error
+        (__FILE__, __LINE__, 0,
+         _(" Boundary face ids not available for volume probe set \"%s\"."),
+         pset->name);
+    }
+  }
+
+  else if (mesh_location_id == CS_MESH_LOCATION_VERTICES)
     retval = pset->vtx_id;
+
+  else
+    bft_error
+      (__FILE__, __LINE__, 0,
+       _("Probe set element ids only available for cell, boundary face, and\n"
+         "vertices mesh locations, not location %d (\"%s\")."),
+       mesh_location_id, cs_mesh_location_get_name(mesh_location_id));
 
   return retval;
 }

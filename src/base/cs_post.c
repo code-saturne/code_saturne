@@ -3931,23 +3931,23 @@ _cs_post_define_probe_mesh(int                    mesh_id,
   int  match_partial[2] = {-1, -1};
   bool all_elts = (strcmp(sel_criteria, _select_all) == 0) ? true : false;
 
+  if (all_elts) {
+    if (on_boundary)
+      post_mesh->location_id = CS_MESH_LOCATION_BOUNDARY_FACES;
+    else
+      post_mesh->location_id = CS_MESH_LOCATION_CELLS;
+  }
+
   for (int i = 0; i < _cs_post_n_meshes; i++) {
 
     cs_post_mesh_t *post_mesh_cmp = _cs_post_meshes + i;
 
     if (   all_elts
         && (time_varying == false || post_mesh_cmp->time_varying == true)) {
-      if (on_boundary) {
-        if (post_mesh->location_id == CS_MESH_LOCATION_BOUNDARY_FACES) {
-          post_mesh->locate_ref = i;
-          break;
-        }
+      if (post_mesh->location_id == post_mesh_cmp->location_id) {
+        post_mesh->locate_ref = i;
+        break;
       }
-      else
-        if (post_mesh->location_id == CS_MESH_LOCATION_CELLS) {
-          post_mesh->locate_ref = i;
-          break;
-        }
     }
 
     if (post_mesh_cmp->criteria[ent_flag_id] != NULL) {
@@ -4354,7 +4354,12 @@ cs_post_define_volume_mesh(int          mesh_id,
   if (cell_criteria != NULL) {
     BFT_MALLOC(post_mesh->criteria[0], strlen(cell_criteria) + 1, char);
     strcpy(post_mesh->criteria[0], cell_criteria);
+    if (!strcmp(cell_criteria, "all[]"))
+      post_mesh->location_id = CS_MESH_LOCATION_CELLS;
   }
+  else
+    post_mesh->location_id = CS_MESH_LOCATION_CELLS;
+
   post_mesh->ent_flag[0] = 1;
 
   post_mesh->add_groups = (add_groups) ? true : false;
@@ -4475,6 +4480,8 @@ cs_post_define_surface_mesh(int          mesh_id,
     BFT_MALLOC(post_mesh->criteria[2], strlen(b_face_criteria) + 1, char);
     strcpy(post_mesh->criteria[2], b_face_criteria);
     post_mesh->ent_flag[2] = 1;
+    if (!strcmp(b_face_criteria, "all[]") && i_face_criteria == NULL)
+      post_mesh->location_id = CS_MESH_LOCATION_BOUNDARY_FACES;
   }
 
   post_mesh->add_groups = (add_groups != 0) ? true : false;
@@ -7189,7 +7196,8 @@ cs_post_write_probe_function(int                              mesh_id,
     }
 
     if (_interpolate_func != NULL) {
-      const cs_lnum_t *n_p_elts = cs_mesh_location_get_n_elts(parent_location_id);
+      const cs_lnum_t *n_p_elts
+        = cs_mesh_location_get_n_elts(parent_location_id);
       cs_real_t *_p_vals;
       BFT_MALLOC(_p_vals, n_p_elts[2]*_dim, cs_real_t);
 
@@ -7642,7 +7650,8 @@ cs_post_init_meshes(int check_mask)
     int  n_writers = 0;
     int  *writer_ids = NULL;
     cs_probe_set_t  *pset = cs_probe_set_get_by_id(pset_id);
-    int  post_mesh_id = cs_post_get_free_mesh_id();
+    int  post_mesh_id = (pset_id == 0) ?
+      CS_POST_MESH_PROBES : cs_post_get_free_mesh_id();
 
     cs_probe_set_get_post_info(pset,
                                &time_varying,
