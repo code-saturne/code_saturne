@@ -104,7 +104,7 @@ typedef  cs_real_t  cs_weight_t;  /* will allow testing single precision
  *============================================================================*/
 
 bool          _set[3] = {false, false, false};
-cs_weight_t  *_weights[3][2] = {{NULL, NULL}, {NULL, NULL}, {NULL, NULL}};
+cs_weight_t  *_weights[3][2] = {{nullptr, nullptr}, {nullptr, nullptr}, {nullptr, nullptr}};
 
 /* Short names for gradient computation types */
 
@@ -164,7 +164,7 @@ _cell_to_vertex_w_unweighted(int tr_ignore)
 
   }
 
-  if (m->vtx_interfaces != NULL)
+  if (m->vtx_interfaces != nullptr)
     cs_interface_set_sum_tr(m->vtx_interfaces,
                             m->n_vertices,
                             1,
@@ -269,7 +269,7 @@ _cell_to_vertex_w_inv_distance(int  tr_ignore)
 
   }
 
-  if (m->vtx_interfaces != NULL)
+  if (m->vtx_interfaces != nullptr)
     cs_interface_set_sum_tr(m->vtx_interfaces,
                             m->n_vertices,
                             1,
@@ -389,7 +389,7 @@ _cell_to_vertex_f_lsq(int  tr_ignore)
     }
   }
 
-  if (m->vtx_interfaces != NULL)
+  if (m->vtx_interfaces != nullptr)
     cs_interface_set_sum_tr(m->vtx_interfaces,
                             m->n_vertices,
                             10,
@@ -411,21 +411,21 @@ _cell_to_vertex_f_lsq(int  tr_ignore)
  * \param[in]  verbosity    verbosity level
  * \param[in]  tr_ignore    if > 0, ignore periodicity with rotation;
  *                          if > 1, ignore all periodic transforms
- * \param[in]  c_weight     cell weight, or NULL
+ * \param[in]  c_weight     cell weight, or nullptr
  * \param[in]  c_var        base cell-based variable
- * \param[in]  b_var        base boundary-face values, or NULL
+ * \param[in]  b_var        base boundary-face values, or nullptr
  * \param[out] v_var        vertex-based variable
  */
 /*----------------------------------------------------------------------------*/
 
 static void
-_cell_to_vertex_scalar(cs_cell_to_vertex_type_t   method,
-                       int                        verbosity,
-                       int                        tr_ignore,
-                       const cs_real_t            c_weight[restrict],
-                       const cs_real_t            c_var[restrict],
-                       const cs_real_t            b_var[restrict],
-                       cs_real_t                  v_var[restrict])
+_cell_to_vertex_scalar(cs_cell_to_vertex_type_t method,
+                       int                      verbosity,
+                       int                      tr_ignore,
+                       const cs_real_t *restrict c_weight,
+                       const cs_real_t *restrict c_var,
+                       const cs_real_t *restrict b_var,
+                       cs_real_t       *restrict v_var)
 {
   CS_UNUSED(verbosity);
 
@@ -451,7 +451,7 @@ _cell_to_vertex_scalar(cs_cell_to_vertex_type_t   method,
 
   case CS_CELL_TO_VERTEX_UNWEIGHTED:
     {
-      if (c_weight == NULL) {
+      if (c_weight == nullptr) {
         for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
           cs_lnum_t s_id = c2v_idx[c_id];
           cs_lnum_t e_id = c2v_idx[c_id+1];
@@ -461,7 +461,7 @@ _cell_to_vertex_scalar(cs_cell_to_vertex_type_t   method,
           }
         }
 
-        if (m->vtx_interfaces != NULL)
+        if (m->vtx_interfaces != nullptr)
           cs_interface_set_sum_tr(m->vtx_interfaces,
                                   m->n_vertices,
                                   1,
@@ -492,7 +492,7 @@ _cell_to_vertex_scalar(cs_cell_to_vertex_type_t   method,
           }
         }
 
-        if (m->vtx_interfaces != NULL) {
+        if (m->vtx_interfaces != nullptr) {
           cs_interface_set_sum_tr(m->vtx_interfaces,
                                   n_vertices,
                                   1,
@@ -524,14 +524,14 @@ _cell_to_vertex_scalar(cs_cell_to_vertex_type_t   method,
 
       const cs_weight_t *w = _weights[CS_CELL_TO_VERTEX_SHEPARD][0];
 
-      cs_real_t *v_w = NULL;
-      if (c_weight != NULL) {
+      cs_real_t *v_w = nullptr;
+      if (c_weight != nullptr) {
         BFT_MALLOC(v_w, n_vertices, cs_real_t);
         for (cs_lnum_t v_id = 0; v_id < n_vertices; v_id++)
           v_w[v_id] = 0;
       }
 
-      if (c_weight == NULL) {
+      if (c_weight == nullptr) {
         for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
           cs_lnum_t s_id = c2v_idx[c_id];
           cs_lnum_t e_id = c2v_idx[c_id+1];
@@ -555,9 +555,9 @@ _cell_to_vertex_scalar(cs_cell_to_vertex_type_t   method,
 
       const cs_weight_t *wb = _weights[CS_CELL_TO_VERTEX_SHEPARD][1];
 
-      if (c_weight == NULL) {
+      if (c_weight == nullptr) {
 
-        if (b_var == NULL) {
+        if (b_var == nullptr) {
           for (cs_lnum_t f_id = 0; f_id < n_b_faces; f_id++) {
             cs_lnum_t c_id = m->b_face_cells[f_id];
             cs_real_t _b_var = c_var[c_id];
@@ -581,9 +581,9 @@ _cell_to_vertex_scalar(cs_cell_to_vertex_type_t   method,
         }
 
       }
-      else { /* c_weight != NULL */
+      else { /* c_weight != nullptr */
 
-        if (b_var == NULL) {
+        if (b_var == nullptr) {
           for (cs_lnum_t f_id = 0; f_id < n_b_faces; f_id++) {
             cs_lnum_t c_id = m->b_face_cells[f_id];
             cs_real_t _b_var = c_var[c_id];
@@ -610,7 +610,7 @@ _cell_to_vertex_scalar(cs_cell_to_vertex_type_t   method,
         }
       }
 
-      if (m->vtx_interfaces != NULL)
+      if (m->vtx_interfaces != nullptr)
         cs_interface_set_sum_tr(m->vtx_interfaces,
                                 m->n_vertices,
                                 1,
@@ -619,8 +619,8 @@ _cell_to_vertex_scalar(cs_cell_to_vertex_type_t   method,
                                 tr_ignore,
                                 v_var);
 
-      if (c_weight != NULL) {
-        if (m->vtx_interfaces != NULL)
+      if (c_weight != nullptr) {
+        if (m->vtx_interfaces != nullptr)
           cs_interface_set_sum_tr(m->vtx_interfaces,
                                   n_vertices,
                                   1,
@@ -665,7 +665,7 @@ _cell_to_vertex_scalar(cs_cell_to_vertex_type_t   method,
         }
       }
 
-      if (b_var == NULL) {
+      if (b_var == nullptr) {
         for (cs_lnum_t f_id = 0; f_id < n_b_faces; f_id++) {
           const cs_real_t *f_coo = mq->b_face_cog + f_id*3;
           cs_lnum_t c_id = m->b_face_cells[f_id];
@@ -705,7 +705,7 @@ _cell_to_vertex_scalar(cs_cell_to_vertex_type_t   method,
         }
       }
 
-      if (m->vtx_interfaces != NULL)
+      if (m->vtx_interfaces != nullptr)
         cs_interface_set_sum_tr(m->vtx_interfaces,
                                 m->n_vertices,
                                 4,
@@ -740,9 +740,9 @@ _cell_to_vertex_scalar(cs_cell_to_vertex_type_t   method,
  * \param[in]   var_dim     variable dimension
  * \param[in]   tr_ignore   if > 0, ignore periodicity with rotation;
  *                          if > 1, ignore all periodic transforms
- * \param[in]   c_weight    cell weight, or NULL
+ * \param[in]   c_weight    cell weight, or nullptr
  * \param[in]   c_var       base cell-based variable
- * \param[in]   b_var       base boundary-face values, or NULL
+ * \param[in]   b_var       base boundary-face values, or nullptr
  * \param[out]  v_var       vertex-based variable
  */
 /*----------------------------------------------------------------------------*/
@@ -752,10 +752,10 @@ _cell_to_vertex_strided(cs_cell_to_vertex_type_t   method,
                         int                        verbosity,
                         cs_lnum_t                  var_dim,
                         int                        tr_ignore,
-                        const cs_real_t            c_weight[restrict],
-                        const cs_real_t            c_var[restrict],
-                        const cs_real_t            b_var[restrict],
-                        cs_real_t                  v_var[restrict])
+                        const cs_real_t *restrict  c_weight,
+                        const cs_real_t *restrict  c_var,
+                        const cs_real_t *restrict  b_var,
+                        cs_real_t *restrict        v_var)
 {
   CS_UNUSED(verbosity);
 
@@ -783,7 +783,7 @@ _cell_to_vertex_strided(cs_cell_to_vertex_type_t   method,
 
   case CS_CELL_TO_VERTEX_UNWEIGHTED:
     {
-      if (c_weight == NULL) {
+      if (c_weight == nullptr) {
         for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
           cs_lnum_t s_id = c2v_idx[c_id];
           cs_lnum_t e_id = c2v_idx[c_id+1];
@@ -794,7 +794,7 @@ _cell_to_vertex_strided(cs_cell_to_vertex_type_t   method,
           }
         }
 
-        if (m->vtx_interfaces != NULL)
+        if (m->vtx_interfaces != nullptr)
           cs_interface_set_sum_tr(m->vtx_interfaces,
                                   m->n_vertices,
                                   var_dim,
@@ -828,7 +828,7 @@ _cell_to_vertex_strided(cs_cell_to_vertex_type_t   method,
           }
         }
 
-        if (m->vtx_interfaces != NULL) {
+        if (m->vtx_interfaces != nullptr) {
           cs_interface_set_sum_tr(m->vtx_interfaces,
                                   n_vertices,
                                   var_dim,
@@ -861,14 +861,14 @@ _cell_to_vertex_strided(cs_cell_to_vertex_type_t   method,
 
       const cs_weight_t *w = _weights[CS_CELL_TO_VERTEX_SHEPARD][0];
 
-      cs_real_t *v_w = NULL;
-      if (c_weight != NULL) {
+      cs_real_t *v_w = nullptr;
+      if (c_weight != nullptr) {
         BFT_MALLOC(v_w, n_vertices, cs_real_t);
         for (cs_lnum_t v_id = 0; v_id < n_vertices; v_id++)
           v_w[v_id] = 0;
       }
 
-      if (c_weight == NULL) {
+      if (c_weight == nullptr) {
         for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
           cs_lnum_t s_id = c2v_idx[c_id];
           cs_lnum_t e_id = c2v_idx[c_id+1];
@@ -895,9 +895,9 @@ _cell_to_vertex_strided(cs_cell_to_vertex_type_t   method,
 
       const cs_weight_t *wb = _weights[CS_CELL_TO_VERTEX_SHEPARD][1];
 
-      if (c_weight == NULL) {
+      if (c_weight == nullptr) {
 
-        if (b_var == NULL) {
+        if (b_var == nullptr) {
           for (cs_lnum_t f_id = 0; f_id < n_b_faces; f_id++) {
             cs_lnum_t c_id = m->b_face_cells[f_id];
             const cs_real_t *_b_var = c_var + c_id*var_dim;
@@ -923,9 +923,9 @@ _cell_to_vertex_strided(cs_cell_to_vertex_type_t   method,
         }
 
       }
-      else { /* c_weight != NULL */
+      else { /* c_weight != nullptr */
 
-        if (b_var == NULL) {
+        if (b_var == nullptr) {
           for (cs_lnum_t f_id = 0; f_id < n_b_faces; f_id++) {
             cs_lnum_t c_id = m->b_face_cells[f_id];
             const cs_real_t *_b_var = c_var + c_id*var_dim;
@@ -955,7 +955,7 @@ _cell_to_vertex_strided(cs_cell_to_vertex_type_t   method,
         }
       }
 
-      if (m->vtx_interfaces != NULL)
+      if (m->vtx_interfaces != nullptr)
         cs_interface_set_sum_tr(m->vtx_interfaces,
                                 m->n_vertices,
                                 var_dim,
@@ -964,8 +964,8 @@ _cell_to_vertex_strided(cs_cell_to_vertex_type_t   method,
                                 tr_ignore,
                                 v_var);
 
-      if (c_weight != NULL) {
-        if (m->vtx_interfaces != NULL)
+      if (c_weight != nullptr) {
+        if (m->vtx_interfaces != nullptr)
           cs_interface_set_sum_tr(m->vtx_interfaces,
                                   n_vertices,
                                   1,
@@ -1014,7 +1014,7 @@ _cell_to_vertex_strided(cs_cell_to_vertex_type_t   method,
         }
       }
 
-      if (b_var == NULL) {
+      if (b_var == nullptr) {
         for (cs_lnum_t f_id = 0; f_id < n_b_faces; f_id++) {
           const cs_real_t *f_coo = mq->b_face_cog + f_id*3;
           cs_lnum_t c_id = m->b_face_cells[f_id];
@@ -1058,7 +1058,7 @@ _cell_to_vertex_strided(cs_cell_to_vertex_type_t   method,
         }
       }
 
-      if (m->vtx_interfaces != NULL)
+      if (m->vtx_interfaces != nullptr)
         cs_interface_set_sum_tr(m->vtx_interfaces,
                                 m->n_vertices,
                                 4*var_dim,
@@ -1118,9 +1118,9 @@ cs_cell_to_vertex_free(void)
  * \param[in]       verbosity         verbosity level
  * \param[in]       var_dim           variable dimension
  * \param[in]       ignore_rot_perio  if true, ignore periodicity of rotation
- * \param[in]       c_weight          cell weight, or NULL
+ * \param[in]       c_weight          cell weight, or nullptr
  * \param[in]       c_var             base cell-based variable
- * \param[in]       b_var             base boundary-face values, or NULL
+ * \param[in]       b_var             base boundary-face values, or nullptr
  * \param[out]      v_var             vertex-based variable
  */
 /*----------------------------------------------------------------------------*/
@@ -1130,10 +1130,10 @@ cs_cell_to_vertex(cs_cell_to_vertex_type_t   method,
                   int                        verbosity,
                   cs_lnum_t                  var_dim,
                   bool                       ignore_rot_perio,
-                  const cs_real_t            c_weight[restrict],
-                  const cs_real_t            c_var[restrict],
-                  const cs_real_t            b_var[restrict],
-                  cs_real_t                  v_var[restrict])
+                  const cs_real_t *restrict  c_weight,
+                  const cs_real_t *restrict  c_var,
+                  const cs_real_t *restrict  b_var,
+                  cs_real_t *restrict        v_var)
 {
   CS_UNUSED(verbosity);
 

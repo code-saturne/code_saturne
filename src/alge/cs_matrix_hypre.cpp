@@ -194,7 +194,7 @@ _mat_vec_p_parcsr(cs_matrix_t  *matrix,
   assert(exclude_diag == false);
 
   const cs_lnum_t  n_rows = matrix->n_rows * matrix->db_size;
-  const cs_matrix_coeffs_hypre_t  *coeffs = matrix->coeffs;
+  auto coeffs = static_cast<const cs_matrix_coeffs_hypre_t *>(matrix->coeffs);
 
   /* Get pointers to structures through coefficients,
      and copy input values */
@@ -202,21 +202,21 @@ _mat_vec_p_parcsr(cs_matrix_t  *matrix,
   HYPRE_ParCSRMatrix p_a;
   HYPRE_IJMatrixGetObject(coeffs->hm, (void **)&p_a);
 
-  HYPRE_Real *_t = NULL;
+  HYPRE_Real *_t = nullptr;
 
   cs_alloc_mode_t  amode = CS_ALLOC_HOST;
   if (coeffs->memory_location != HYPRE_MEMORY_HOST)
     amode = CS_ALLOC_HOST_DEVICE_SHARED;
 
   if (sizeof(cs_real_t) == sizeof(HYPRE_Real) && amode == CS_ALLOC_HOST) {
-    HYPRE_IJVectorSetValues(coeffs->hx, n_rows, NULL, x);
+    HYPRE_IJVectorSetValues(coeffs->hx, n_rows, nullptr, x);
   }
   else {
     CS_MALLOC_HD(_t, n_rows, HYPRE_Real, amode);
     for (HYPRE_BigInt ii = 0; ii < n_rows; ii++) {
       _t[ii] = x[ii];;
     }
-    HYPRE_IJVectorSetValues(coeffs->hx, n_rows, NULL, _t);
+    HYPRE_IJVectorSetValues(coeffs->hx, n_rows, nullptr, _t);
   }
   if (sync)
     HYPRE_IJVectorAssemble(coeffs->hx);
@@ -231,11 +231,11 @@ _mat_vec_p_parcsr(cs_matrix_t  *matrix,
 
   /* Copy data back */
 
-  if (_t == NULL) {
-    HYPRE_IJVectorGetValues(coeffs->hy, n_rows, NULL, y);
+  if (_t == nullptr) {
+    HYPRE_IJVectorGetValues(coeffs->hy, n_rows, nullptr, y);
   }
   else {
-    HYPRE_IJVectorGetValues(coeffs->hy, n_rows, NULL, _t);
+    HYPRE_IJVectorGetValues(coeffs->hy, n_rows, nullptr, _t);
     for (HYPRE_BigInt ii = 0; ii < n_rows; ii++) {
       y[ii] = _t[ii];
     }
@@ -436,14 +436,14 @@ _compute_diag_sizes_assembler_b(const cs_matrix_assembler_t   *ma,
  *----------------------------------------------------------------------------*/
 
 static void
-_compute_diag_sizes_native(cs_matrix_t        *matrix,
-                           bool                have_diag,
-                           cs_lnum_t           n_edges,
-                           const cs_lnum_t     edges[restrict][2],
-                           const cs_gnum_t     g_e_id[],
-                           const cs_real_t     da[restrict],
-                           HYPRE_Int         **diag_sizes,
-                           HYPRE_Int         **offdiag_sizes)
+_compute_diag_sizes_native(cs_matrix_t *matrix,
+                           bool         have_diag,
+                           cs_lnum_t    n_edges,
+                           const cs_lnum_2_t *restrict edges,
+                           const cs_gnum_t g_e_id[],
+                           const cs_real_t *restrict da,
+                           HYPRE_Int **diag_sizes,
+                           HYPRE_Int **offdiag_sizes)
 {
   cs_lnum_t  n_rows = matrix->n_rows;
   cs_lnum_t  b_size = matrix->db_size;
@@ -475,14 +475,14 @@ _compute_diag_sizes_native(cs_matrix_t        *matrix,
     _offdiag_sizes[i] = 0;
   }
 
-  const cs_lnum_t *group_index = NULL;
-  if (matrix->numbering != NULL) {
+  const cs_lnum_t *group_index = nullptr;
+  if (matrix->numbering != nullptr) {
     if (matrix->numbering->type == CS_NUMBERING_THREADS) {
       group_index = matrix->numbering->group_index;
     }
   }
 
-  if (group_index != NULL) {
+  if (group_index != nullptr) {
 
     const int n_threads = matrix->numbering->n_threads;
     const int n_groups = matrix->numbering->n_groups;
@@ -590,7 +590,7 @@ _setup_coeffs(cs_matrix_t  *matrix,
 
   _ensure_device_setup(use_device);  /* Setup on first pass or device change */
 
-  if (matrix->coeffs == NULL) {
+  if (matrix->coeffs == nullptr) {
     cs_matrix_coeffs_hypre_t  *coeffs;
     BFT_MALLOC(coeffs, 1, cs_matrix_coeffs_hypre_t);
     memset(coeffs, 0, sizeof(cs_matrix_coeffs_hypre_t));
@@ -630,14 +630,14 @@ _assembler_values_init(void        *matrix_p,
 {
   cs_matrix_t  *matrix = (cs_matrix_t *)matrix_p;
 
-  if (matrix->coeffs == NULL)
+  if (matrix->coeffs == nullptr)
     _setup_coeffs(matrix, -1);
 
   /* Associated matrix assembler */
 
   const cs_matrix_assembler_t  *ma = matrix->assembler;
 
-  cs_matrix_coeffs_hypre_t  *coeffs = matrix->coeffs;
+  auto coeffs = static_cast<cs_matrix_coeffs_hypre_t *>(matrix->coeffs);
 
   /* Create HYPRE matrix */
 
@@ -692,7 +692,7 @@ _assembler_values_init(void        *matrix_p,
 
     HYPRE_IJMatrixSetObjectType(hm, HYPRE_PARCSR);
 
-    HYPRE_Int *diag_sizes = NULL, *offdiag_sizes = NULL;
+    HYPRE_Int *diag_sizes = nullptr, *offdiag_sizes = nullptr;
 
     if (db_size == 1)
       _compute_diag_sizes_assembler(ma,
@@ -748,7 +748,7 @@ _assembler_values_add_block_cc(cs_matrix_coeffs_hypre_t  *coeffs,
                                const cs_real_t            vals[])
 {
   HYPRE_IJMatrix hm = coeffs->hm;
-  assert(hm != NULL);
+  assert(hm != nullptr);
 
   HYPRE_BigInt h_b_size = b_size;
   HYPRE_BigInt l_b = coeffs->l_range[0];
@@ -787,7 +787,7 @@ _assembler_values_add_block_cc(cs_matrix_coeffs_hypre_t  *coeffs,
 
     HYPRE_Int hypre_ierr
       = HYPRE_IJMatrixAddToValues(hm, l*stride,
-                                  NULL, rows, cols, values);
+                                  nullptr, rows, cols, values);
 
     if (hypre_ierr != 0)
       return hypre_ierr;
@@ -824,7 +824,7 @@ _assembler_values_add_block_d_e(cs_matrix_coeffs_hypre_t  *coeffs,
                                 const cs_real_t            vals[])
 {
   HYPRE_IJMatrix hm = coeffs->hm;
-  assert(hm != NULL);
+  assert(hm != nullptr);
 
   HYPRE_BigInt h_b_size = b_size;
 
@@ -859,7 +859,7 @@ _assembler_values_add_block_d_e(cs_matrix_coeffs_hypre_t  *coeffs,
 
     HYPRE_Int hypre_ierr
       = HYPRE_IJMatrixAddToValues(hm, l*b_size,
-                                  NULL, rows, cols, values);
+                                  nullptr, rows, cols, values);
 
     if (hypre_ierr != 0)
       return hypre_ierr;
@@ -910,7 +910,7 @@ _assembler_values_add_g(void             *matrix_p,
 {
   cs_matrix_t  *matrix = (cs_matrix_t *)matrix_p;
 
-  cs_matrix_coeffs_hypre_t  *coeffs = matrix->coeffs;
+  auto coeffs = static_cast<cs_matrix_coeffs_hypre_t *>(matrix->coeffs);
 
   HYPRE_Int hypre_ierr = 0;
   HYPRE_Int nrows = n;
@@ -924,7 +924,7 @@ _assembler_values_add_g(void             *matrix_p,
   if (b_size == 1) {
 
     HYPRE_IJMatrix hm = coeffs->hm;
-    assert(hm != NULL);
+    assert(hm != nullptr);
 
     HYPRE_BigInt l_b = coeffs->l_range[0];
     HYPRE_BigInt u_b = coeffs->l_range[1];
@@ -952,7 +952,7 @@ _assembler_values_add_g(void             *matrix_p,
         }
 
         hypre_ierr
-          = HYPRE_IJMatrixAddToValues(hm, l, NULL, rows, cols, values);
+          = HYPRE_IJMatrixAddToValues(hm, l, nullptr, rows, cols, values);
 
         if (hypre_ierr != 0)
           break;
@@ -1043,10 +1043,10 @@ _assembler_values_end(void  *matrix_p)
 {
   cs_matrix_t  *matrix = (cs_matrix_t *)matrix_p;
 
-  if (matrix == NULL)
+  if (matrix == nullptr)
     return;
 
-  cs_matrix_coeffs_hypre_t  *coeffs = matrix->coeffs;
+  auto coeffs       = static_cast<cs_matrix_coeffs_hypre_t *>(matrix->coeffs);
   HYPRE_IJMatrix hm = coeffs->hm;
 
   HYPRE_IJMatrixAssemble(hm);
@@ -1114,7 +1114,7 @@ _assembler_values_create_hypre(cs_matrix_t      *matrix,
                                         extra_diag_block_size,
                                         (void *)matrix,
                                         _assembler_values_init,
-                                        NULL,
+                                        nullptr,
                                         _assembler_values_add_g,
                                         _assembler_values_begin,
                                         _assembler_values_end);
@@ -1135,19 +1135,19 @@ _assembler_values_create_hypre(cs_matrix_t      *matrix,
  *----------------------------------------------------------------------------*/
 
 static void
-_set_coeffs_ij_db(cs_matrix_t        *matrix,
-                  bool                symmetric,
-                  cs_lnum_t           n_edges,
-                  const cs_lnum_t     edges[restrict][2],
-                  const cs_real_t     da[restrict],
-                  const cs_real_t     xa[restrict])
+_set_coeffs_ij_db(cs_matrix_t *matrix,
+                  bool         symmetric,
+                  cs_lnum_t    n_edges,
+                  const cs_lnum_2_t *restrict edges,
+                  const cs_real_t *restrict da,
+                  const cs_real_t *restrict xa)
 {
   bool direct_assembly = false;
 
   const cs_lnum_t  n_rows = matrix->n_rows;
 
   const cs_gnum_t *g_id = cs_matrix_get_block_row_g_id(matrix);
-  const bool have_diag = (xa != NULL) ? true : false;
+  const bool have_diag = (xa != nullptr) ? true : false;
 
   MPI_Comm comm = cs_glob_mpi_comm;
   if (comm == MPI_COMM_NULL)
@@ -1155,7 +1155,7 @@ _set_coeffs_ij_db(cs_matrix_t        *matrix,
 
   assert(n_rows > 0);
 
-  cs_matrix_coeffs_hypre_t  *coeffs = matrix->coeffs;
+  auto coeffs = static_cast<cs_matrix_coeffs_hypre_t *>(matrix->coeffs);
 
   /* Sizes and buffers */
 
@@ -1195,9 +1195,9 @@ _set_coeffs_ij_db(cs_matrix_t        *matrix,
       }
       if (ic + b_stride > max_chunk_size) {
         if (direct_assembly)
-          HYPRE_IJMatrixSetValues(hm, ic, NULL, rows, cols, aij);
+          HYPRE_IJMatrixSetValues(hm, ic, nullptr, rows, cols, aij);
         else
-          HYPRE_IJMatrixAddToValues(hm, ic, NULL, rows, cols, aij);
+          HYPRE_IJMatrixAddToValues(hm, ic, nullptr, rows, cols, aij);
         ic = 0;
       }
 
@@ -1205,9 +1205,9 @@ _set_coeffs_ij_db(cs_matrix_t        *matrix,
 
     if (ic > 0) {
       if (direct_assembly)
-        HYPRE_IJMatrixSetValues(hm, ic, NULL, rows, cols, aij);
+        HYPRE_IJMatrixSetValues(hm, ic, nullptr, rows, cols, aij);
       else
-        HYPRE_IJMatrixAddToValues(hm, ic, NULL, rows, cols, aij);
+        HYPRE_IJMatrixAddToValues(hm, ic, nullptr, rows, cols, aij);
     }
 
   }
@@ -1253,9 +1253,9 @@ _set_coeffs_ij_db(cs_matrix_t        *matrix,
       s_e_id += ec;
 
       if (direct_assembly)
-        HYPRE_IJMatrixSetValues(hm, ic*b_size, NULL, rows, cols, aij);
+        HYPRE_IJMatrixSetValues(hm, ic*b_size, nullptr, rows, cols, aij);
       else
-        HYPRE_IJMatrixAddToValues(hm, ic*b_size, NULL, rows, cols, aij);
+        HYPRE_IJMatrixAddToValues(hm, ic*b_size, nullptr, rows, cols, aij);
     }
 
   }
@@ -1296,9 +1296,9 @@ _set_coeffs_ij_db(cs_matrix_t        *matrix,
       s_e_id += ec;
 
       if (direct_assembly)
-        HYPRE_IJMatrixSetValues(hm, ic*b_size, NULL, rows, cols, aij);
+        HYPRE_IJMatrixSetValues(hm, ic*b_size, nullptr, rows, cols, aij);
       else
-        HYPRE_IJMatrixAddToValues(hm, ic*b_size, NULL, rows, cols, aij);
+        HYPRE_IJMatrixAddToValues(hm, ic*b_size, nullptr, rows, cols, aij);
 
     }
 
@@ -1318,19 +1318,19 @@ _set_coeffs_ij_db(cs_matrix_t        *matrix,
  *----------------------------------------------------------------------------*/
 
 static void
-_set_coeffs_ij_b(cs_matrix_t        *matrix,
-                 bool                symmetric,
-                 cs_lnum_t           n_edges,
-                 const cs_lnum_t     edges[restrict][2],
-                 const cs_real_t     da[restrict],
-                 const cs_real_t     xa[restrict])
+_set_coeffs_ij_b(cs_matrix_t *matrix,
+                 bool         symmetric,
+                 cs_lnum_t    n_edges,
+                 const cs_lnum_2_t *restrict edges,
+                 const cs_real_t *restrict da,
+                 const cs_real_t *restrict xa)
 {
   bool direct_assembly = false;
 
   const cs_lnum_t  n_rows = matrix->n_rows;
 
   const cs_gnum_t *g_id = cs_matrix_get_block_row_g_id(matrix);
-  const bool have_diag = (xa != NULL) ? true : false;
+  const bool have_diag = (xa != nullptr) ? true : false;
 
   MPI_Comm comm = cs_glob_mpi_comm;
   if (comm == MPI_COMM_NULL)
@@ -1338,7 +1338,7 @@ _set_coeffs_ij_b(cs_matrix_t        *matrix,
 
   assert(n_rows > 0);
 
-  cs_matrix_coeffs_hypre_t  *coeffs = matrix->coeffs;
+  auto coeffs = static_cast<cs_matrix_coeffs_hypre_t *>(matrix->coeffs);
 
   /* Sizes and buffers */
 
@@ -1386,9 +1386,9 @@ _set_coeffs_ij_b(cs_matrix_t        *matrix,
       s_id += ic;
 
       if (direct_assembly)
-        HYPRE_IJMatrixSetValues(hm, ic*b_stride, NULL, rows, cols, aij);
+        HYPRE_IJMatrixSetValues(hm, ic*b_stride, nullptr, rows, cols, aij);
       else
-        HYPRE_IJMatrixAddToValues(hm, ic*b_stride, NULL, rows, cols, aij);
+        HYPRE_IJMatrixAddToValues(hm, ic*b_stride, nullptr, rows, cols, aij);
     }
 
   }  /* End of diagonal block addition */
@@ -1438,9 +1438,9 @@ _set_coeffs_ij_b(cs_matrix_t        *matrix,
       s_e_id += ec;
 
       if (direct_assembly)
-        HYPRE_IJMatrixSetValues(hm, ic*b_stride, NULL, rows, cols, aij);
+        HYPRE_IJMatrixSetValues(hm, ic*b_stride, nullptr, rows, cols, aij);
       else
-        HYPRE_IJMatrixAddToValues(hm, ic*b_stride, NULL, rows, cols, aij);
+        HYPRE_IJMatrixAddToValues(hm, ic*b_stride, nullptr, rows, cols, aij);
     }
 
   }
@@ -1487,9 +1487,9 @@ _set_coeffs_ij_b(cs_matrix_t        *matrix,
       s_e_id += ec;
 
       if (direct_assembly)
-        HYPRE_IJMatrixSetValues(hm, ic*b_stride, NULL, rows, cols, aij);
+        HYPRE_IJMatrixSetValues(hm, ic*b_stride, nullptr, rows, cols, aij);
       else
-        HYPRE_IJMatrixAddToValues(hm, ic*b_stride, NULL, rows, cols, aij);
+        HYPRE_IJMatrixAddToValues(hm, ic*b_stride, nullptr, rows, cols, aij);
 
     }
 
@@ -1510,13 +1510,13 @@ _set_coeffs_ij_b(cs_matrix_t        *matrix,
  *----------------------------------------------------------------------------*/
 
 static void
-_set_coeffs_ij(cs_matrix_t        *matrix,
-               bool                symmetric,
-               bool                copy,
-               cs_lnum_t           n_edges,
-               const cs_lnum_t     edges[restrict][2],
-               const cs_real_t     da[restrict],
-               const cs_real_t     xa[restrict])
+_set_coeffs_ij(cs_matrix_t *matrix,
+               bool         symmetric,
+               bool         copy,
+               cs_lnum_t    n_edges,
+               const cs_lnum_2_t *restrict edges,
+               const cs_real_t *restrict da,
+               const cs_real_t *restrict xa)
 {
   CS_UNUSED(copy);
 
@@ -1525,7 +1525,7 @@ _set_coeffs_ij(cs_matrix_t        *matrix,
   const cs_lnum_t  n_rows = matrix->n_rows;
 
   const cs_gnum_t *g_id = cs_matrix_get_block_row_g_id(matrix);
-  const bool have_diag = (xa != NULL) ? true : false;
+  const bool have_diag = (xa != nullptr) ? true : false;
 
   MPI_Comm comm = cs_glob_mpi_comm;
   if (comm == MPI_COMM_NULL)
@@ -1533,7 +1533,7 @@ _set_coeffs_ij(cs_matrix_t        *matrix,
 
   assert(n_rows > 0);
 
-  cs_matrix_coeffs_hypre_t  *coeffs = matrix->coeffs;
+  auto coeffs = static_cast<cs_matrix_coeffs_hypre_t *>(matrix->coeffs);
 
   /* Create HYPRE matrix */
 
@@ -1592,7 +1592,7 @@ _set_coeffs_ij(cs_matrix_t        *matrix,
 
     HYPRE_IJMatrixSetObjectType(hm, HYPRE_PARCSR);
 
-    HYPRE_Int *diag_sizes = NULL, *offdiag_sizes = NULL;
+    HYPRE_Int *diag_sizes = nullptr, *offdiag_sizes = nullptr;
 
     _compute_diag_sizes_native(matrix,
                                have_diag,
@@ -1643,9 +1643,9 @@ _set_coeffs_ij(cs_matrix_t        *matrix,
         s_id += ic;
 
         if (direct_assembly)
-          HYPRE_IJMatrixSetValues(hm, ic, NULL, rows, cols, aij);
+          HYPRE_IJMatrixSetValues(hm, ic, nullptr, rows, cols, aij);
         else
-          HYPRE_IJMatrixAddToValues(hm, ic, NULL, rows, cols, aij);
+          HYPRE_IJMatrixAddToValues(hm, ic, nullptr, rows, cols, aij);
       }
 
     }
@@ -1683,9 +1683,9 @@ _set_coeffs_ij(cs_matrix_t        *matrix,
         s_e_id += ec;
 
         if (direct_assembly)
-          HYPRE_IJMatrixSetValues(hm, ic, NULL, rows, cols, aij);
+          HYPRE_IJMatrixSetValues(hm, ic, nullptr, rows, cols, aij);
         else
-          HYPRE_IJMatrixAddToValues(hm, ic, NULL, rows, cols, aij);
+          HYPRE_IJMatrixAddToValues(hm, ic, nullptr, rows, cols, aij);
       }
 
     }
@@ -1723,9 +1723,9 @@ _set_coeffs_ij(cs_matrix_t        *matrix,
         s_e_id += ec;
 
         if (direct_assembly)
-          HYPRE_IJMatrixSetValues(hm, ic, NULL, rows, cols, aij);
+          HYPRE_IJMatrixSetValues(hm, ic, nullptr, rows, cols, aij);
         else
-          HYPRE_IJMatrixAddToValues(hm, ic, NULL, rows, cols, aij);
+          HYPRE_IJMatrixAddToValues(hm, ic, nullptr, rows, cols, aij);
 
       }
 
@@ -1777,9 +1777,9 @@ _set_coeffs_ij(cs_matrix_t        *matrix,
 static void
 _release_coeffs_ij(cs_matrix_t  *matrix)
 {
-  cs_matrix_coeffs_hypre_t  *coeffs = matrix->coeffs;
+  auto coeffs = static_cast<cs_matrix_coeffs_hypre_t *>(matrix->coeffs);
 
-  if (matrix->coeffs != NULL) {
+  if (matrix->coeffs != nullptr) {
 
     if (coeffs->matrix_state > 0) {
       HYPRE_IJMatrixDestroy(coeffs->hm);
@@ -1815,7 +1815,7 @@ _release_coeffs_ij(cs_matrix_t  *matrix)
 static void
 _destroy_coeffs_ij(cs_matrix_t  *matrix)
 {
-  if (matrix->coeffs != NULL) {
+  if (matrix->coeffs != nullptr) {
     _release_coeffs_ij(matrix);
     BFT_FREE(matrix->coeffs);
   }
@@ -1833,7 +1833,7 @@ static void
 _copy_diagonal_ij(const cs_matrix_t  *matrix,
                   cs_real_t          *restrict da)
 {
-  const cs_matrix_coeffs_hypre_t  *coeffs = matrix->coeffs;
+  auto coeffs = static_cast<const cs_matrix_coeffs_hypre_t *>(matrix->coeffs);
 
   const HYPRE_BigInt b_size = matrix->db_size;
 
@@ -1931,12 +1931,12 @@ cs_matrix_set_type_hypre(cs_matrix_t  *matrix,
 
   /* Release previous coefficients if present */
 
-  if (matrix->coeffs != NULL)
+  if (matrix->coeffs != nullptr)
     matrix->destroy_coefficients(matrix);
 
   _setup_coeffs(matrix, use_device);
 
-  cs_matrix_coeffs_hypre_t  *coeffs = matrix->coeffs;
+  auto coeffs = static_cast<cs_matrix_coeffs_hypre_t *>(matrix->coeffs);
 
   matrix->coeffs = coeffs;
 
@@ -1947,7 +1947,7 @@ cs_matrix_set_type_hypre(cs_matrix_t  *matrix,
   matrix->destroy_coefficients = _destroy_coeffs_ij;
   matrix->assembler_values_create = _assembler_values_create_hypre;
 
-  matrix->get_diagonal = NULL;
+  matrix->get_diagonal = nullptr;
 
   /* Remark: block values are transformed into scalar values, so SpMv products
      should be possible, (and the function pointers updated). HYPRE also seems
@@ -1956,7 +1956,7 @@ cs_matrix_set_type_hypre(cs_matrix_t  *matrix,
 
   for (int i = 0; i < CS_MATRIX_N_FILL_TYPES; i++) {
     matrix->vector_multiply[i][0] = _mat_vec_p_parcsr;
-    matrix->vector_multiply[i][1] = NULL;
+    matrix->vector_multiply[i][1] = nullptr;
   }
 
   matrix->copy_diagonal = _copy_diagonal_ij;
@@ -1971,7 +1971,7 @@ cs_matrix_set_type_hypre(cs_matrix_t  *matrix,
     int mpi_flag;
     MPI_Initialized(&mpi_flag);
     if (mpi_flag == 0)
-      MPI_Init(NULL, NULL);
+      MPI_Init(nullptr, nullptr);
   }
 
 #endif

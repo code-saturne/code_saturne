@@ -166,12 +166,12 @@ _mat_vec_p_aij(cs_matrix_t  *matrix,
   assert(exclude_diag == false);
 
   const PetscInt  n_rows = matrix->n_rows * matrix->db_size;
-  const cs_matrix_coeffs_petsc_t  *coeffs = matrix->coeffs;
+  auto coeffs = static_cast<const cs_matrix_coeffs_petsc_t *>(matrix->coeffs);
 
   /* Get pointers to structures through coefficients,
      and copy input values */
 
-  PetscReal *_x = NULL;
+  PetscReal *_x = nullptr;
 
   VecGetArray(coeffs->hx, &_x);
   for (PetscInt ii = 0; ii < n_rows; ii++) {
@@ -185,7 +185,7 @@ _mat_vec_p_aij(cs_matrix_t  *matrix,
 
   /* Copy data back */
 
-  const PetscReal *_y = NULL;
+  const PetscReal *_y = nullptr;
 
   VecGetArrayRead(coeffs->hy, &_y);
   for (PetscInt ii = 0; ii < n_rows; ii++) {
@@ -390,9 +390,9 @@ static void
 _compute_diag_sizes_native(cs_matrix_t        *matrix,
                            bool                have_diag,
                            cs_lnum_t           n_edges,
-                           const cs_lnum_t     edges[restrict][2],
+                           const cs_lnum_2_t *restrict edges,
                            const cs_gnum_t     g_e_id[],
-                           const cs_real_t     da[restrict],
+                           const cs_real_t   *restrict da,
                            PetscInt         **diag_sizes,
                            PetscInt         **offdiag_sizes)
 {
@@ -426,14 +426,14 @@ _compute_diag_sizes_native(cs_matrix_t        *matrix,
     _offdiag_sizes[i] = 0;
   }
 
-  const cs_lnum_t *group_index = NULL;
-  if (matrix->numbering != NULL) {
+  const cs_lnum_t *group_index = nullptr;
+  if (matrix->numbering != nullptr) {
     if (matrix->numbering->type == CS_NUMBERING_THREADS) {
       group_index = matrix->numbering->group_index;
     }
   }
 
-  if (group_index != NULL) {
+  if (group_index != nullptr) {
 
     const int n_threads = matrix->numbering->n_threads;
     const int n_groups = matrix->numbering->n_groups;
@@ -529,7 +529,7 @@ _compute_diag_sizes_native(cs_matrix_t        *matrix,
  *
  * \param[in, out]  matrix      pointer to matrix structure
  * \param[in]       type_name   string matching PETSc matrix type name,
- *                              defaults to "MATAIJ" if NULL
+ *                              defaults to "MATAIJ" if nullptr
  */
 /*----------------------------------------------------------------------------*/
 
@@ -537,18 +537,18 @@ static void
 _setup_coeffs(cs_matrix_t  *matrix,
               const char   *type_name)
 {
-  if (matrix->coeffs == NULL) {
+  if (matrix->coeffs == nullptr) {
     cs_matrix_petsc_ensure_init();
 
-    cs_matrix_coeffs_petsc_t  *coeffs;
+    cs_matrix_coeffs_petsc_t *coeffs;
     BFT_MALLOC(coeffs, 1, cs_matrix_coeffs_petsc_t);
     memset(coeffs, 0, sizeof(cs_matrix_coeffs_petsc_t));
     coeffs->matrix_state = 0;
 
-    MatType matype = (type_name == NULL) ? MATAIJ : type_name;
+    MatType matype = (type_name == nullptr) ? MATAIJ : type_name;
 
     PetscStrallocpy(matype, &coeffs->matype_r);
-    coeffs->matype = NULL;
+    coeffs->matype = nullptr;
 
     matrix->coeffs = coeffs;
   }
@@ -577,16 +577,16 @@ _assembler_values_init(void        *matrix_p,
 {
   cs_matrix_t  *matrix = (cs_matrix_t *)matrix_p;
 
-  if (matrix->coeffs == NULL) {
+  if (matrix->coeffs == nullptr) {
     assert(0);  /* Prefer to setup coeff earlier, to pass type */
-    _setup_coeffs(matrix, NULL);
+    _setup_coeffs(matrix, nullptr);
   }
 
   /* Associated matrix assembler */
 
   const cs_matrix_assembler_t  *ma = matrix->assembler;
 
-  cs_matrix_coeffs_petsc_t  *coeffs = matrix->coeffs;
+  auto coeffs = static_cast<cs_matrix_coeffs_petsc_t *>(matrix->coeffs);
 
   /* Create PETSc matrix */
 
@@ -621,7 +621,7 @@ _assembler_values_init(void        *matrix_p,
 
     coeffs->hm = hm;
 
-    PetscInt *diag_sizes = NULL, *offdiag_sizes = NULL;
+    PetscInt *diag_sizes = nullptr, *offdiag_sizes = nullptr;
 
     if (db_size == 1)
       _compute_diag_sizes_assembler(ma,
@@ -662,7 +662,7 @@ _assembler_values_init(void        *matrix_p,
 /*----------------------------------------------------------------------------*/
 
 static void
-_assembler_values_add_block_cc(cs_matrix_coeffs_petsc_t  *coeffs,
+_assembler_values_add_block_cc(cs_matrix_coeffs_petsc_t *coeffs,
                                PetscInt                   n,
                                PetscInt                   b_size,
                                PetscInt                   stride,
@@ -671,7 +671,7 @@ _assembler_values_add_block_cc(cs_matrix_coeffs_petsc_t  *coeffs,
                                const cs_real_t            vals[])
 {
   Mat hm = coeffs->hm;
-  assert(hm != NULL);
+  assert(hm != nullptr);
 
   PetscInt h_b_size = b_size;
   PetscInt l_b = coeffs->l_range[0];
@@ -680,10 +680,10 @@ _assembler_values_add_block_cc(cs_matrix_coeffs_petsc_t  *coeffs,
   for (PetscInt i = 0; i < n; i++) {
     PetscInt r_g_id = row_g_id[i];
     if (r_g_id >= l_b && r_g_id < u_b) {
-      for (cs_lnum_t j = 0; j < b_size; j++) {
-        for (cs_lnum_t k = 0; k < b_size; k++) {
-          PetscInt idxm[] = {row_g_id[i]*h_b_size + (PetscInt)j};
-          PetscInt idxn[] = {col_g_id[i]*h_b_size + (PetscInt)k};
+      for (PetscInt j = 0; j < b_size; j++) {
+        for (PetscInt k = 0; k < b_size; k++) {
+          PetscInt idxm[] = {(PetscInt)row_g_id[i]*h_b_size + j};
+          PetscInt idxn[] = {(PetscInt)col_g_id[i]*h_b_size + k};
           PetscScalar v[] = {vals[i*stride + j*b_size + k]};
           MatSetValues(hm, 1, idxm, 1, idxn, v, ADD_VALUES);
         }
@@ -709,7 +709,7 @@ _assembler_values_add_block_cc(cs_matrix_coeffs_petsc_t  *coeffs,
 /*----------------------------------------------------------------------------*/
 
 static void
-_assembler_values_add_block_d_e(cs_matrix_coeffs_petsc_t  *coeffs,
+_assembler_values_add_block_d_e(cs_matrix_coeffs_petsc_t *coeffs,
                                 PetscInt                  n,
                                 PetscInt                  b_size,
                                 const cs_gnum_t            row_g_id[],
@@ -717,7 +717,7 @@ _assembler_values_add_block_d_e(cs_matrix_coeffs_petsc_t  *coeffs,
                                 const cs_real_t            vals[])
 {
   Mat hm = coeffs->hm;
-  assert(hm != NULL);
+  assert(hm != nullptr);
 
   PetscInt h_b_size = b_size;
 
@@ -728,9 +728,9 @@ _assembler_values_add_block_d_e(cs_matrix_coeffs_petsc_t  *coeffs,
 
     PetscInt r_g_id = row_g_id[ i];
     if (r_g_id >= l_b && r_g_id < u_b) {
-      for (cs_lnum_t j = 0; j < b_size; j++) {
-        PetscInt idxm[] = {row_g_id[i]*h_b_size + (PetscInt)j};
-        PetscInt idxn[] = {col_g_id[i]*h_b_size + (PetscInt)j};
+      for (PetscInt j = 0; j < b_size; j++) {
+        PetscInt idxm[] = {(PetscInt)row_g_id[i]*h_b_size + j};
+        PetscInt idxn[] = {(PetscInt)col_g_id[i]*h_b_size + j};
         PetscScalar v[] = {vals[i]};
         MatSetValues(hm, 1, idxm, 1, idxn, v, ADD_VALUES);
       }
@@ -779,7 +779,7 @@ _assembler_values_add_g(void             *matrix_p,
                         const cs_real_t   vals[])
 {
   cs_matrix_t  *matrix = (cs_matrix_t *)matrix_p;
-  cs_matrix_coeffs_petsc_t  *coeffs = matrix->coeffs;
+  auto coeffs = static_cast<cs_matrix_coeffs_petsc_t *>(matrix->coeffs);
 
   PetscInt nrows = n;
   PetscInt b_size = matrix->db_size;
@@ -790,7 +790,7 @@ _assembler_values_add_g(void             *matrix_p,
   if (b_size == 1) {
 
     Mat hm = coeffs->hm;
-    assert(hm != NULL);
+    assert(hm != nullptr);
 
     PetscInt l_b = coeffs->l_range[0];
     PetscInt u_b = coeffs->l_range[1];
@@ -799,7 +799,7 @@ _assembler_values_add_g(void             *matrix_p,
       PetscInt r_g_id = row_g_id[i];
       if (r_g_id >= l_b && r_g_id < u_b) {
         PetscInt idxm[] = {r_g_id};
-        PetscInt idxn[] = {col_g_id[i]};
+        PetscInt idxn[] = {(PetscInt)col_g_id[i]};
         PetscScalar v[] = {vals[i]};
         MatSetValues(hm, 1, idxm, 1, idxn, v, ADD_VALUES);
       }
@@ -853,7 +853,7 @@ static void
 _assembler_values_begin(void  *matrix_p)
 {
   cs_matrix_t  *matrix = (cs_matrix_t *)matrix_p;
-  cs_matrix_coeffs_petsc_t  *coeffs = matrix->coeffs;
+  auto coeffs = static_cast<cs_matrix_coeffs_petsc_t *>(matrix->coeffs);
 
   MatAssemblyBegin(coeffs->hm, MAT_FINAL_ASSEMBLY);
 }
@@ -876,7 +876,7 @@ static void
 _assembler_values_end(void  *matrix_p)
 {
   cs_matrix_t  *matrix = (cs_matrix_t *)matrix_p;
-  cs_matrix_coeffs_petsc_t  *coeffs = matrix->coeffs;
+  auto coeffs = static_cast<cs_matrix_coeffs_petsc_t *>(matrix->coeffs);
 
   MatAssemblyEnd(coeffs->hm, MAT_FINAL_ASSEMBLY);
 
@@ -946,7 +946,7 @@ _assembler_values_create_petsc(cs_matrix_t      *matrix,
                                         extra_diag_block_size,
                                         (void *)matrix,
                                         _assembler_values_init,
-                                        NULL,
+                                        nullptr,
                                         _assembler_values_add_g,
                                         _assembler_values_begin,
                                         _assembler_values_end);
@@ -970,14 +970,14 @@ static void
 _set_coeffs_ij_db(cs_matrix_t        *matrix,
                   bool                symmetric,
                   cs_lnum_t           n_edges,
-                  const cs_lnum_t     edges[restrict][2],
-                  const cs_real_t     da[restrict],
-                  const cs_real_t     xa[restrict])
+                  const cs_lnum_2_t *restrict  edges,
+                  const cs_real_t  *restrict   da,
+                  const cs_real_t  *restrict   xa)
 {
   const cs_lnum_t  n_rows = matrix->n_rows;
 
   const cs_gnum_t *g_id = cs_matrix_get_block_row_g_id(matrix);
-  const bool have_diag = (xa != NULL) ? true : false;
+  const bool have_diag = (xa != nullptr) ? true : false;
 
   MPI_Comm comm = cs_glob_mpi_comm;
   if (comm == MPI_COMM_NULL)
@@ -988,7 +988,7 @@ _set_coeffs_ij_db(cs_matrix_t        *matrix,
   InsertMode insert_mode = ADD_VALUES; /* INSERT_VALUES possible
                                           with direct_assembly */
 
-  cs_matrix_coeffs_petsc_t  *coeffs = matrix->coeffs;
+  auto coeffs = static_cast<cs_matrix_coeffs_petsc_t *>(matrix->coeffs);
 
   /* Sizes and buffers */
 
@@ -1004,12 +1004,12 @@ _set_coeffs_ij_db(cs_matrix_t        *matrix,
 
     for (cs_lnum_t ii = 0; ii < n_rows; ii++) {
 
-      for (cs_lnum_t j = 0; j < b_size; j++) {
-        for (cs_lnum_t k = 0; k < b_size; k++) {
+      for (PetscInt j = 0; j < b_size; j++) {
+        for (PetscInt k = 0; k < b_size; k++) {
           cs_real_t a = da[ii*b_stride + j*b_size + k];
           if (a < -0.0 || a > 0.0) {
-            PetscInt idxm[] = {g_id[ii]*h_b_size + (PetscInt)j};
-            PetscInt idxn[] = {g_id[ii]*h_b_size + (PetscInt)k};
+            PetscInt idxm[] = {(PetscInt)g_id[ii]*h_b_size + j};
+            PetscInt idxn[] = {(PetscInt)g_id[ii]*h_b_size + k};
             PetscScalar v[] = {a};
             MatSetValues(coeffs->hm, 1, idxm, 1, idxn, v, insert_mode);
           }
@@ -1027,20 +1027,20 @@ _set_coeffs_ij_db(cs_matrix_t        *matrix,
     for (cs_lnum_t e_id = 0; e_id < n_edges; e_id++) {
       cs_lnum_t ii = edges[e_id][0];
       cs_lnum_t jj = edges[e_id][1];
-      cs_gnum_t g_ii = g_id[ii];
-      cs_gnum_t g_jj = g_id[jj];
+      PetscInt g_ii = (PetscInt)g_id[ii];
+      PetscInt g_jj = (PetscInt)g_id[jj];
       if (ii < n_rows) {
-        for (cs_lnum_t k = 0; k < b_size; k++) {
-          PetscInt idxm[] = {g_ii*h_b_size + (PetscInt)k};
-          PetscInt idxn[] = {g_jj*h_b_size + (PetscInt)k};
+        for (PetscInt k = 0; k < b_size; k++) {
+          PetscInt idxm[] = {g_ii*h_b_size + k};
+          PetscInt idxn[] = {(PetscInt)g_jj*h_b_size + k};
           PetscScalar v[] = {xa[e_id]};
           MatSetValues(coeffs->hm, 1, idxm, 1, idxn, v, insert_mode);
         }
       }
       if (jj < n_rows) {
-        for (cs_lnum_t k = 0; k < b_size; k++) {
-          PetscInt idxm[] = {g_jj*h_b_size + (PetscInt)k};
-          PetscInt idxn[] = {g_ii*h_b_size + (PetscInt)k};
+        for (PetscInt k = 0; k < b_size; k++) {
+          PetscInt idxm[] = {(PetscInt)g_jj*h_b_size + k};
+          PetscInt idxn[] = {(PetscInt)g_ii*h_b_size + k};
           PetscScalar v[] = {xa[e_id]};
           MatSetValues(coeffs->hm, 1, idxm, 1, idxn, v, insert_mode);
         }
@@ -1053,20 +1053,20 @@ _set_coeffs_ij_db(cs_matrix_t        *matrix,
     for (cs_lnum_t e_id = 0; e_id < n_edges; e_id++) {
       cs_lnum_t ii = edges[e_id][0];
       cs_lnum_t jj = edges[e_id][1];
-      cs_gnum_t g_ii = g_id[ii];
-      cs_gnum_t g_jj = g_id[jj];
+      PetscInt g_ii = (PetscInt)g_id[ii];
+      PetscInt g_jj = (PetscInt)g_id[jj];
       if (ii < n_rows) {
-        for (cs_lnum_t k = 0; k < b_size; k++) {
-          PetscInt idxm[] = {g_ii*h_b_size + (PetscInt)k};
-          PetscInt idxn[] = {g_jj*h_b_size + (PetscInt)k};
+        for (PetscInt k = 0; k < b_size; k++) {
+          PetscInt idxm[] = {g_ii*h_b_size + k};
+          PetscInt idxn[] = {g_jj*h_b_size + k};
           PetscScalar v[] = {xa[e_id*2]};
           MatSetValues(coeffs->hm, 1, idxm, 1, idxn, v, insert_mode);
         }
       }
       if (jj < n_rows) {
-        for (cs_lnum_t k = 0; k < b_size; k++) {
-          PetscInt idxm[] = {g_jj*h_b_size + (PetscInt)k};
-          PetscInt idxn[] = {g_ii*h_b_size + (PetscInt)k};
+        for (PetscInt k = 0; k < b_size; k++) {
+          PetscInt idxm[] = {g_jj*h_b_size + k};
+          PetscInt idxn[] = {g_ii*h_b_size + k};
           PetscScalar v[] = {xa[e_id*2+1]};
           MatSetValues(coeffs->hm, 1, idxm, 1, idxn, v, insert_mode);
         }
@@ -1092,14 +1092,14 @@ static void
 _set_coeffs_ij_b(cs_matrix_t        *matrix,
                  bool                symmetric,
                  cs_lnum_t           n_edges,
-                 const cs_lnum_t     edges[restrict][2],
-                 const cs_real_t     da[restrict],
-                 const cs_real_t     xa[restrict])
+                 const cs_lnum_2_t *restrict edges,
+                 const cs_real_t  *restrict   da,
+                 const cs_real_t  *restrict   xa)
 {
   const cs_lnum_t  n_rows = matrix->n_rows;
 
   const cs_gnum_t *g_id = cs_matrix_get_block_row_g_id(matrix);
-  const bool have_diag = (xa != NULL) ? true : false;
+  const bool have_diag = (xa != nullptr) ? true : false;
 
   MPI_Comm comm = cs_glob_mpi_comm;
   if (comm == MPI_COMM_NULL)
@@ -1110,7 +1110,7 @@ _set_coeffs_ij_b(cs_matrix_t        *matrix,
   InsertMode insert_mode = ADD_VALUES; /* INSERT_VALUES possible
                                           with direct_assembly */
 
-  cs_matrix_coeffs_petsc_t  *coeffs = matrix->coeffs;
+  auto coeffs = static_cast<cs_matrix_coeffs_petsc_t *>(matrix->coeffs);
 
   /* Sizes and buffers */
 
@@ -1229,9 +1229,9 @@ _set_coeffs(cs_matrix_t        *matrix,
             bool                symmetric,
             bool                copy,
             cs_lnum_t           n_edges,
-            const cs_lnum_t     edges[restrict][2],
-            const cs_real_t     da[restrict],
-            const cs_real_t     xa[restrict])
+            const cs_lnum_2_t  *restrict   edges,
+            const cs_real_t  *restrict   da,
+            const cs_real_t   *restrict  xa)
 {
   CS_UNUSED(copy);
 
@@ -1239,7 +1239,7 @@ _set_coeffs(cs_matrix_t        *matrix,
   cs_lnum_t  n_cols_ext = matrix->n_cols_ext;
 
   const cs_gnum_t *g_id = cs_matrix_get_block_row_g_id(matrix);
-  const bool have_diag = (xa != NULL) ? true : false;
+  const bool have_diag = (xa != nullptr) ? true : false;
 
   MPI_Comm comm = cs_glob_mpi_comm;
   if (comm == MPI_COMM_NULL)
@@ -1250,7 +1250,7 @@ _set_coeffs(cs_matrix_t        *matrix,
   InsertMode insert_mode = ADD_VALUES; /* INSERT_VALUES possible
                                           with direct_assembly */
 
-  cs_matrix_coeffs_petsc_t  *coeffs = matrix->coeffs;
+  auto coeffs = static_cast<cs_matrix_coeffs_petsc_t *>(matrix->coeffs);
 
   /* Create PETSc matrix */
 
@@ -1286,7 +1286,7 @@ _set_coeffs(cs_matrix_t        *matrix,
 
     MatGetType(hm, &(coeffs->matype));
 
-    PetscInt *diag_sizes = NULL, *offdiag_sizes = NULL;
+    PetscInt *diag_sizes = nullptr, *offdiag_sizes = nullptr;
 
     _compute_diag_sizes_native(matrix,
                                have_diag,
@@ -1327,14 +1327,14 @@ _set_coeffs(cs_matrix_t        *matrix,
         cs_gnum_t g_ii = g_id[ii];
         cs_gnum_t g_jj = g_id[jj];
         if (ii < n_rows) {
-          PetscInt idxm[] = {g_ii};
-          PetscInt idxn[] = {g_jj};
+          PetscInt idxm[] = {(PetscInt)g_ii};
+          PetscInt idxn[] = {(PetscInt)g_jj};
           PetscScalar v[] = {xa[e_id]};
           MatSetValues(coeffs->hm, 1, idxm, 1, idxn, v, insert_mode);
         }
         if (jj < n_rows) {
-          PetscInt idxm[] = {g_jj};
-          PetscInt idxn[] = {g_ii};
+          PetscInt idxm[] = {(PetscInt)g_jj};
+          PetscInt idxn[] = {(PetscInt)g_ii};
           PetscScalar v[] = {xa[e_id]};
           MatSetValues(coeffs->hm, 1, idxm, 1, idxn, v, insert_mode);
         }
@@ -1349,14 +1349,14 @@ _set_coeffs(cs_matrix_t        *matrix,
         cs_gnum_t g_ii = g_id[ii];
         cs_gnum_t g_jj = g_id[jj];
         if (ii < n_rows) {
-          PetscInt idxm[] = {g_ii};
-          PetscInt idxn[] = {g_jj};
+          PetscInt idxm[] = {(PetscInt)g_ii};
+          PetscInt idxn[] = {(PetscInt)g_jj};
           PetscScalar v[] = {xa[e_id*2]};
           MatSetValues(coeffs->hm, 1, idxm, 1, idxn, v, insert_mode);
         }
         if (jj < n_rows) {
-          PetscInt idxm[] = {g_jj};
-          PetscInt idxn[] = {g_ii};
+          PetscInt idxm[] = {(PetscInt)g_jj};
+          PetscInt idxn[] = {(PetscInt)g_ii};
           PetscScalar v[] = {xa[e_id*2+1]};
           MatSetValues(coeffs->hm, 1, idxm, 1, idxn, v, insert_mode);
         }
@@ -1410,9 +1410,9 @@ _set_coeffs(cs_matrix_t        *matrix,
 static void
 _release_coeffs(cs_matrix_t  *matrix)
 {
-  cs_matrix_coeffs_petsc_t  *coeffs = matrix->coeffs;
+  auto coeffs = static_cast<cs_matrix_coeffs_petsc_t *>(matrix->coeffs);
 
-  if (matrix->coeffs != NULL) {
+  if (matrix->coeffs != nullptr) {
 
     if (coeffs->matrix_state > 0) {
       MatDestroy(&(coeffs->hm));
@@ -1423,7 +1423,7 @@ _release_coeffs(cs_matrix_t  *matrix)
       coeffs->matrix_state = 0;
     }
 
-    if (coeffs->matype_r != NULL)
+    if (coeffs->matype_r != nullptr)
       PetscFree(coeffs->matype_r);
   }
 }
@@ -1447,7 +1447,7 @@ _release_coeffs(cs_matrix_t  *matrix)
 static void
 _destroy_coeffs(cs_matrix_t  *matrix)
 {
-  if (matrix->coeffs != NULL) {
+  if (matrix->coeffs != nullptr) {
     _release_coeffs(matrix);
     BFT_FREE(matrix->coeffs);
   }
@@ -1465,7 +1465,7 @@ static void
 _copy_diagonal(const cs_matrix_t  *matrix,
                cs_real_t          *restrict da)
 {
-  const cs_matrix_coeffs_petsc_t  *coeffs = matrix->coeffs;
+  auto coeffs = static_cast<const cs_matrix_coeffs_petsc_t *>(matrix->coeffs);
 
   const PetscInt b_size = matrix->db_size;
 
@@ -1476,7 +1476,7 @@ _copy_diagonal(const cs_matrix_t  *matrix,
 
   MatGetDiagonal(coeffs->hm, hd);
 
-  const PetscReal *_d = NULL;
+  const PetscReal *_d = nullptr;
 
   VecGetArrayRead(hd, &_d);
 
@@ -1518,14 +1518,14 @@ cs_matrix_petsc_ensure_init(void)
       int flag = 0;
       MPI_Initialized(&flag);
       if (!flag)
-        MPI_Init(NULL, NULL);
+        MPI_Init(nullptr, nullptr);
     }
 #endif
     PetscInitializeNoArguments();
     cs_base_signal_restore();
   }
 
-  PetscPushErrorHandler(PetscAbortErrorHandler, NULL);
+  PetscPushErrorHandler(PetscAbortErrorHandler, nullptr);
   _init_status = 1;
 }
 
@@ -1573,7 +1573,7 @@ cs_matrix_petsc_get_coeffs(const cs_matrix_t  *matrix)
  *
  * \param[in, out]  matrix      pointer to matrix structure
  * \param[in]       type_name   string matching PETSc matrix type name,
- *                              defaults to "MATAIJ" if NULL
+ *                              defaults to "MATAIJ" if nullptr
  */
 /*----------------------------------------------------------------------------*/
 
@@ -1588,7 +1588,7 @@ cs_matrix_set_type_petsc(cs_matrix_t  *matrix,
 
   /* Release previous coefficients if present */
 
-  if (matrix->coeffs != NULL)
+  if (matrix->coeffs != nullptr)
     matrix->destroy_coefficients(matrix);
 
   _setup_coeffs(matrix, type_name);
@@ -1600,7 +1600,7 @@ cs_matrix_set_type_petsc(cs_matrix_t  *matrix,
   matrix->destroy_coefficients = _destroy_coeffs;
   matrix->assembler_values_create = _assembler_values_create_petsc;
 
-  matrix->get_diagonal = NULL;
+  matrix->get_diagonal = nullptr;
 
   /* Remark: block values are transformed into scalar values, so SpMv products
      should be possible, (and the function pointers updated). PETSc also has
@@ -1609,7 +1609,7 @@ cs_matrix_set_type_petsc(cs_matrix_t  *matrix,
 
   for (int i = 0; i < CS_MATRIX_N_FILL_TYPES; i++) {
     matrix->vector_multiply[i][0] = _mat_vec_p_aij;
-    matrix->vector_multiply[i][1] = NULL;
+    matrix->vector_multiply[i][1] = nullptr;
   }
 
   matrix->copy_diagonal = _copy_diagonal;
@@ -1624,7 +1624,7 @@ cs_matrix_set_type_petsc(cs_matrix_t  *matrix,
     int mpi_flag;
     MPI_Initialized(&mpi_flag);
     if (mpi_flag == 0)
-      MPI_Init(NULL, NULL);
+      MPI_Init(nullptr, nullptr);
   }
 
 #endif

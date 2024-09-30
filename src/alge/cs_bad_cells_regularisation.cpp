@@ -177,7 +177,7 @@ cs_bad_cells_regularisation_scalar(cs_real_t *var)
     var[cell_id] = CS_MAX(var[cell_id], varmin);
   }
 
-  if (mesh->halo != NULL)
+  if (mesh->halo != nullptr)
     cs_halo_sync_var(mesh->halo, CS_HALO_STANDARD, var);
 
   /* Free solver setup */
@@ -358,7 +358,7 @@ cs_bad_cells_regularisation_vector(cs_real_3_t  *var,
   }
 #endif
 
-  if (mesh->halo != NULL) {
+  if (mesh->halo != nullptr) {
     cs_halo_sync_var_strided(mesh->halo, CS_HALO_STANDARD, (cs_real_t *)var, 3);
 
     if (mesh->n_init_perio > 0)
@@ -545,7 +545,7 @@ cs_bad_cells_regularisation_sym_tensor(cs_real_6_t  *var,
 #endif
 
   //FIXME periodicity of rotation
-  if (mesh->halo != NULL)
+  if (mesh->halo != nullptr)
     cs_halo_sync_var_strided(mesh->halo, CS_HALO_STANDARD, (cs_real_t *)var, 6);
 
   /* Free solver setup */
@@ -724,7 +724,7 @@ cs_bad_cells_regularisation_tensor(cs_real_9_t  *var,
 #endif
 
   //FIXME periodicity of rotation
-  if (mesh->halo != NULL)
+  if (mesh->halo != nullptr)
     cs_halo_sync_var_strided(mesh->halo, CS_HALO_STANDARD, (cs_real_t *)var, 9);
 
   /* Free solver setup */

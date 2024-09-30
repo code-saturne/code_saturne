@@ -137,7 +137,7 @@ _matrix_tune_test(const cs_matrix_t     *m,
   const int n_runs = (n_measure > 0) ? n_measure : 1;
 
   double test_sum = 0.0;
-  cs_real_t *x = NULL, *y = NULL;
+  cs_real_t *x = nullptr, *y = nullptr;
 
   /* Allocate and initialize  working arrays */
   /*-----------------------------------------*/
@@ -169,10 +169,12 @@ _matrix_tune_test(const cs_matrix_t     *m,
 
       spmv_cost[v_id*CS_MATRIX_SPMV_N_TYPES + op_type] = -1;
 
+      auto op = static_cast<cs_matrix_spmv_type_t>(op_type);
+
       cs_matrix_vector_product_t
         *vector_multiply = v->vector_multiply[op_type];
 
-      if (vector_multiply == NULL)
+      if (vector_multiply == nullptr)
         continue;
 
 #if defined(HAVE_ACCEL)
@@ -196,7 +198,7 @@ _matrix_tune_test(const cs_matrix_t     *m,
       if (op_type == 0)
         cs_matrix_vector_multiply(&m_t, x, y);
       else
-        cs_matrix_vector_multiply_partial(&m_t, op_type, x, y);
+        cs_matrix_vector_multiply_partial(&m_t, op, x, y);
 
       /* Now, time for a few runs */
       cs_timer_t wt0 = cs_timer_time();
@@ -206,7 +208,7 @@ _matrix_tune_test(const cs_matrix_t     *m,
         if (op_type == 0)
           cs_matrix_vector_multiply(&m_t, x, y);
         else
-          cs_matrix_vector_multiply_partial(&m_t, op_type, x, y);
+          cs_matrix_vector_multiply_partial(&m_t, op, x, y);
         test_sum += y[n-1];
       }
       cs_timer_t wt1 = cs_timer_time();
@@ -226,7 +228,7 @@ _matrix_tune_test(const cs_matrix_t     *m,
       cs_real_t wtu = wt_r0 / n_runs;
       spmv_cost[v_id*CS_MATRIX_SPMV_N_TYPES + op_type] = wtu;
 
-      if (m_t.destroy_adaptor != NULL)
+      if (m_t.destroy_adaptor != nullptr)
         m_t.destroy_adaptor(&m_t);
 
     } /* end of loop on ed_flag */
@@ -388,8 +390,8 @@ cs_matrix_variant_tuned(const cs_matrix_t  *m,
                         int                 n_measure)
 {
   int  n_variants = 0, n_r_variants = 1;
-  cs_matrix_variant_t  *r_variant = NULL;
-  cs_matrix_variant_t  *m_variant = NULL;
+  cs_matrix_variant_t  *r_variant = nullptr;
+  cs_matrix_variant_t  *m_variant = nullptr;
 
   if (cs_get_device_id() > -1)
     n_r_variants = 3;

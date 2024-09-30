@@ -6578,12 +6578,6 @@ _compute_coarse_quantities_msr_with_faces(const cs_grid_t  *fine_grid,
 
   int n_f_threads = cs_parall_n_threads(fine_grid->n_rows, CS_THR_MIN);
 
-  const cs_lnum_t db_size = fine_grid->db_size;
-  const cs_lnum_t db_stride = db_size*db_size;
-
-  const cs_lnum_t eb_size = fine_grid->eb_size;
-  const cs_lnum_t eb_stride = eb_size*eb_size;
-
   const cs_lnum_t f_n_rows = fine_grid->n_rows;
 
   const cs_lnum_t c_n_rows = coarse_grid->n_rows;

@@ -181,27 +181,27 @@ libcsalge_a_FCFLAGS = \
 $(FCMODINCLUDE)$(top_builddir)/src \
 $(FCFLAGS_DBG) $(FCFLAGS_HOT) $(FCFLAGS_SHARED)
 libcsalge_a_SOURCES = \
-cs_bad_cells_regularisation.c \
+cs_bad_cells_regularisation.cpp \
 cs_balance.cpp \
 cs_balance_by_zone.cpp \
 cs_benchmark.cpp \
 cs_benchmark_matrix.cpp \
-cs_blas.c \
+cs_blas.cpp \
 cs_bw_time_diff.c \
-cs_cell_to_vertex.c \
+cs_cell_to_vertex.cpp \
 cs_convection_diffusion.cpp \
 cs_divergence.cpp \
 cs_face_viscosity.cpp \
 cs_gradient.cpp \
 cs_gradient_boundary.cpp \
 cs_grid.cpp \
-cs_matrix.c \
-cs_matrix_assembler.c \
+cs_matrix.cpp \
+cs_matrix_assembler.cpp \
 cs_matrix_building.cpp \
-cs_matrix_default.c \
+cs_matrix_default.cpp \
 cs_matrix_spmv.cpp \
-cs_matrix_tuning.c \
-cs_matrix_util.c \
+cs_matrix_tuning.cpp \
+cs_matrix_util.cpp \
 cs_multigrid.cpp \
 cs_multigrid_smoother.cpp \
 cs_param_amg.cpp \
@@ -213,7 +213,7 @@ cs_sles_default.cpp \
 cs_sles_it.cpp \
 cs_sles_it_priv.cpp \
 cs_sles_pc.cpp \
-cs_vertex_to_cell.c
+cs_vertex_to_cell.cpp
 libcsalge_a_LIBADD =
 
 if HAVE_CUDA
@@ -239,7 +239,7 @@ libcsalge_extension_a-cs_saddle_solver_setup.$(OBJEXT)
 if HAVE_PETSC
 noinst_LIBRARIES += libcsalge_petsc.a
 libcsalge_petsc_a_SOURCES = \
-cs_matrix_petsc.c \
+cs_matrix_petsc.cpp \
 cs_sles_petsc.c
 libcsalge_a_LIBADD += \
 libcsalge_petsc_a-cs_matrix_petsc.$(OBJEXT) \
@@ -256,7 +256,7 @@ endif
 if HAVE_HYPRE
 noinst_LIBRARIES += libcsalge_hypre.a
 libcsalge_hypre_a_SOURCES = \
-cs_matrix_hypre.c \
+cs_matrix_hypre.cpp \
 cs_sles_hypre.cpp
 libcsalge_a_LIBADD += \
 libcsalge_hypre_a-cs_matrix_hypre.$(OBJEXT) \

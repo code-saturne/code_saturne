@@ -95,7 +95,7 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
- * y[i] = abs(da[i]), with da possibly NULL.
+ * y[i] = abs(da[i]), with da possibly nullptr.
  *
  * parameters:
  *   da         <-- Pointer to coefficients array (usually matrix diagonal)
@@ -112,7 +112,7 @@ _diag_dom_diag_contrib(const cs_real_t  *restrict da,
 {
   cs_lnum_t  ii;
 
-  if (da != NULL) {
+  if (da != nullptr) {
 #   pragma omp parallel for
     for (ii = 0; ii < n_rows; ii++)
       dd[ii] = fabs(da[ii]);
@@ -128,7 +128,7 @@ _diag_dom_diag_contrib(const cs_real_t  *restrict da,
 }
 
 /*----------------------------------------------------------------------------
- * Block diagonal contribution to diagonal dominance, with da possibly NULL.
+ * Block diagonal contribution to diagonal dominance, with da possibly nullptr.
  *
  * parameters:
  *   da         <-- Pointer to coefficients array (usually matrix diagonal)
@@ -154,7 +154,7 @@ _b_diag_dom_diag_contrib(const cs_real_t  *restrict da,
   for (ii = 0; ii < dd_size; ii++)
     dd[ii] = 0.0;
 
-  if (da != NULL) {
+  if (da != nullptr) {
 #   pragma omp parallel for private(jj, kk, sign)
     for (ii = 0; ii < n_rows; ii++) {
       for (jj = 0; jj < b_size; jj++)
@@ -171,7 +171,7 @@ _b_diag_dom_diag_contrib(const cs_real_t  *restrict da,
 }
 
 /*----------------------------------------------------------------------------
- * Normalize diagonal dominance, with da possibly NULL.
+ * Normalize diagonal dominance, with da possibly nullptr.
  *
  * parameters:
  *   da         <-- Pointer to coefficients array (usually matrix diagonal)
@@ -186,7 +186,7 @@ _diag_dom_diag_normalize(const cs_real_t  *restrict da,
 {
   cs_lnum_t  ii;
 
-  if (da != NULL) {
+  if (da != nullptr) {
 #   pragma omp parallel for
     for (ii = 0; ii < n_rows; ii++) {
       if (fabs(da[ii]) > 1.e-18)
@@ -209,7 +209,7 @@ _diag_dom_diag_normalize(const cs_real_t  *restrict da,
 }
 
 /*----------------------------------------------------------------------------
- * Normalize block diagonal dominance, with da possibly NULL.
+ * Normalize block diagonal dominance, with da possibly nullptr.
  *
  * parameters:
  *   da      <-- Pointer to coefficients array (usually matrix diagonal)
@@ -227,7 +227,7 @@ _b_diag_dom_diag_normalize(const cs_real_t  *restrict da,
   cs_lnum_t  ii, jj;
   double  d_val;
 
-  if (da != NULL) {
+  if (da != nullptr) {
     const cs_lnum_t b_size_2 = b_size*b_size;
 #   pragma omp parallel for private(jj, d_val)
     for (ii = 0; ii < n_rows; ii++) {
@@ -258,8 +258,9 @@ _diag_dom_native(const cs_matrix_t  *matrix,
 {
   cs_lnum_t  ii, jj, edge_id;
 
-  const cs_matrix_struct_native_t  *ms = matrix->structure;
-  const cs_matrix_coeff_dist_t  *mc = matrix->coeffs;
+  const auto ms =
+    static_cast<const cs_matrix_struct_native_t *>(matrix->structure);
+  const auto mc = static_cast<const cs_matrix_coeff_dist_t *>(matrix->coeffs);
 
   const cs_real_t  *restrict xa = mc->e_val;
 
@@ -269,7 +270,7 @@ _diag_dom_native(const cs_matrix_t  *matrix,
 
   /* non-diagonal terms */
 
-  if (mc->e_val != NULL) {
+  if (mc->e_val != nullptr) {
 
     const cs_lnum_2_t *restrict face_cel_p = ms->edges;
 
@@ -313,8 +314,9 @@ _b_diag_dom_native(const cs_matrix_t  *matrix,
 {
   cs_lnum_t  ii, jj, kk, edge_id;
 
-  const cs_matrix_struct_native_t  *ms = matrix->structure;
-  const cs_matrix_coeff_dist_t  *mc = matrix->coeffs;
+  const auto ms =
+    static_cast<const cs_matrix_struct_native_t *>(matrix->structure);
+  const auto mc = static_cast<const cs_matrix_coeff_dist_t *>(matrix->coeffs);
 
   const cs_real_t  *restrict xa = mc->e_val;
   const cs_lnum_t db_size = matrix->db_size;
@@ -325,7 +327,7 @@ _b_diag_dom_native(const cs_matrix_t  *matrix,
 
   /* non-diagonal terms */
 
-  if (mc->e_val != NULL) {
+  if (mc->e_val != nullptr) {
 
     const cs_lnum_2_t *restrict face_cel_p = ms->edges;
 
@@ -372,8 +374,9 @@ _bb_diag_dom_native(const cs_matrix_t  *matrix,
 {
   cs_lnum_t  ii, jj, kk, ll, edge_id;
 
-  const cs_matrix_struct_native_t  *ms = matrix->structure;
-  const cs_matrix_coeff_dist_t  *mc = matrix->coeffs;
+  const auto ms =
+    static_cast<const cs_matrix_struct_native_t *>(matrix->structure);
+  const auto mc = static_cast<const cs_matrix_coeff_dist_t *>(matrix->coeffs);
 
   const cs_real_t  *restrict xa = mc->e_val;
   const cs_lnum_t db_size = matrix->db_size;
@@ -386,7 +389,7 @@ _bb_diag_dom_native(const cs_matrix_t  *matrix,
 
   /* non-diagonal terms */
 
-  if (mc->e_val != NULL) {
+  if (mc->e_val != nullptr) {
 
     const cs_lnum_2_t *restrict face_cel_p = ms->edges;
 
@@ -443,8 +446,9 @@ _diag_dom_csr(const cs_matrix_t  *matrix,
   const cs_lnum_t  *restrict col_id;
   const cs_real_t  *restrict m_row;
 
-  const cs_matrix_struct_csr_t  *ms = matrix->structure;
-  const cs_matrix_coeff_csr_t  *mc = matrix->coeffs;
+  const auto ms =
+    static_cast<const cs_matrix_struct_csr_t *>(matrix->structure);
+  const auto mc = static_cast<const cs_matrix_coeff_csr_t *>(matrix->coeffs);
   cs_lnum_t  n_rows = ms->n_rows;
 
   /* Standard case */
@@ -487,8 +491,9 @@ static void
 _diag_dom_dist(const cs_matrix_t  *matrix,
               cs_real_t          *restrict dd)
 {
-  const cs_matrix_struct_dist_t  *ms = matrix->structure;
-  const cs_matrix_coeff_dist_t  *mc = matrix->coeffs;
+  const auto ms =
+    static_cast<const cs_matrix_struct_dist_t *>(matrix->structure);
+  const auto mc = static_cast<const cs_matrix_coeff_dist_t *>(matrix->coeffs);
 
   cs_lnum_t  n_rows = ms->n_rows;
 
@@ -498,7 +503,7 @@ _diag_dom_dist(const cs_matrix_t  *matrix,
 
   /* extra-diagonal contribution */
 
-  if (mc->e_val != NULL) {
+  if (mc->e_val != nullptr) {
 
     const cs_matrix_struct_csr_t  *ms_e = &(ms->e);
 
@@ -514,7 +519,7 @@ _diag_dom_dist(const cs_matrix_t  *matrix,
 
   }
 
-  if (mc->h_val != NULL) {
+  if (mc->h_val != nullptr) {
 
     const cs_matrix_struct_csr_t  *ms_h = &(ms->h);
 
@@ -545,8 +550,9 @@ static void
 _b_diag_dom_dist(const cs_matrix_t  *matrix,
                  cs_real_t          *restrict dd)
 {
-  const cs_matrix_struct_dist_t  *ms = matrix->structure;
-  const cs_matrix_coeff_dist_t  *mc = matrix->coeffs;
+  const auto ms =
+    static_cast<const cs_matrix_struct_dist_t *>(matrix->structure);
+  const auto mc = static_cast<const cs_matrix_coeff_dist_t *>(matrix->coeffs);
 
   const cs_lnum_t db_size = matrix->db_size;
   const cs_lnum_t  n_rows = ms->n_rows;
@@ -557,7 +563,7 @@ _b_diag_dom_dist(const cs_matrix_t  *matrix,
 
   /* extra-diagonal contribution */
 
-  if (mc->e_val != NULL) {
+  if (mc->e_val != nullptr) {
 
     const cs_matrix_struct_csr_t  *ms_e = &(ms->e);
 
@@ -573,7 +579,7 @@ _b_diag_dom_dist(const cs_matrix_t  *matrix,
 
   }
 
-  if (mc->h_val != NULL) {
+  if (mc->h_val != nullptr) {
 
     const cs_matrix_struct_csr_t  *ms_h = &(ms->h);
 
@@ -612,7 +618,7 @@ _pre_dump_diag_contrib(const cs_real_t  *restrict da,
 {
   cs_lnum_t  ii;
 
-  if (da != NULL) {
+  if (da != nullptr) {
 #   pragma omp parallel for
     for (ii = 0; ii < n_rows; ii++) {
       m_coo[ii*2] = g_coo_num[ii];
@@ -653,7 +659,7 @@ _b_pre_dump_diag_contrib(const cs_real_t  *restrict da,
   cs_lnum_t  ii, jj, kk;
   cs_lnum_t  b_size_2 = b_size * b_size;
 
-  if (da != NULL) {
+  if (da != nullptr) {
 #   pragma omp parallel for private(jj, kk)
     for (ii = 0; ii < n_rows; ii++) {
       for (jj = 0; jj < b_size; jj++) {
@@ -708,8 +714,9 @@ _pre_dump_native(const cs_matrix_t   *matrix,
   cs_gnum_t   *restrict _m_coo;
   cs_real_t   *restrict _m_val;
 
-  const cs_matrix_struct_native_t  *ms = matrix->structure;
-  const cs_matrix_coeff_dist_t  *mc = matrix->coeffs;
+  const auto ms =
+    static_cast<const cs_matrix_struct_native_t *>(matrix->structure);
+  const auto mc = static_cast<const cs_matrix_coeff_dist_t *>(matrix->coeffs);
 
   const cs_real_t  *restrict xa = mc->e_val;
 
@@ -731,7 +738,7 @@ _pre_dump_native(const cs_matrix_t   *matrix,
 
   dump_id = ms->n_rows;
 
-  if (mc->e_val != NULL) {
+  if (mc->e_val != nullptr) {
 
     const cs_lnum_2_t *restrict face_cel_p
       = (const cs_lnum_2_t *restrict)(ms->edges);
@@ -796,8 +803,9 @@ _b_pre_dump_native(const cs_matrix_t  *matrix,
   cs_gnum_t   *restrict _m_coo;
   cs_real_t   *restrict _m_val;
 
-  const cs_matrix_struct_native_t  *ms = matrix->structure;
-  const cs_matrix_coeff_dist_t  *mc = matrix->coeffs;
+  const auto ms =
+    static_cast<const cs_matrix_struct_native_t *>(matrix->structure);
+  const auto mc = static_cast<const cs_matrix_coeff_dist_t *>(matrix->coeffs);
 
   const cs_real_t  *restrict xa = mc->e_val;
   const cs_lnum_t db_size = matrix->db_size;
@@ -821,7 +829,7 @@ _b_pre_dump_native(const cs_matrix_t  *matrix,
 
   dump_id = ms->n_rows*db_size*db_size;
 
-  if (mc->e_val != NULL) {
+  if (mc->e_val != nullptr) {
 
     const cs_lnum_2_t *restrict face_cel_p
       = (const cs_lnum_2_t *restrict)(ms->edges);
@@ -891,8 +899,9 @@ _pre_dump_csr(const cs_matrix_t   *matrix,
   cs_gnum_t   *restrict _m_coo;
   cs_real_t   *restrict _m_val;
 
-  const cs_matrix_struct_csr_t  *ms = matrix->structure;
-  const cs_matrix_coeff_csr_t  *mc = matrix->coeffs;
+  const auto ms =
+    static_cast<const cs_matrix_struct_csr_t *>(matrix->structure);
+  const auto mc = static_cast<const cs_matrix_coeff_csr_t *>(matrix->coeffs);
   cs_lnum_t  dump_id_shift = 0;
   cs_lnum_t  n_rows = ms->n_rows;
 
@@ -961,9 +970,10 @@ _pre_dump_msr(const cs_matrix_t   *matrix,
   cs_gnum_t   *restrict _m_coo;
   cs_real_t   *restrict _m_val;
 
-  const cs_matrix_struct_dist_t  *ms = matrix->structure;
-  const cs_matrix_struct_csr_t  *ms_e = &(ms->e);
-  const cs_matrix_coeff_dist_t  *mc = matrix->coeffs;
+  const auto ms =
+    static_cast<const cs_matrix_struct_dist_t *>(matrix->structure);
+  const auto ms_e = static_cast<const cs_matrix_struct_csr_t *>(&(ms->e));
+  const auto mc = static_cast<const cs_matrix_coeff_dist_t *>(matrix->coeffs);
 
   const cs_lnum_t  n_rows = ms->n_rows;
   cs_lnum_t  n_entries = ms_e->row_index[n_rows] + ms_e->n_rows;
@@ -982,7 +992,7 @@ _pre_dump_msr(const cs_matrix_t   *matrix,
 
   /* extra-diagonal contribution */
 
-  if (mc->e_val != NULL) {
+  if (mc->e_val != nullptr) {
 #   pragma omp parallel for private(jj, dump_id, col_id, m_row, n_cols)
     for (ii = 0; ii < n_rows; ii++) {
       col_id = ms_e->col_id + ms_e->row_index[ii];
@@ -1039,9 +1049,10 @@ _b_pre_dump_msr(const cs_matrix_t   *matrix,
   cs_gnum_t   *restrict _m_coo;
   cs_real_t   *restrict _m_val;
 
-  const cs_matrix_struct_dist_t  *ms = matrix->structure;
-  const cs_matrix_struct_csr_t  *ms_e = &(ms->e);
-  const cs_matrix_coeff_dist_t  *mc = matrix->coeffs;
+  const auto ms =
+    static_cast<const cs_matrix_struct_dist_t *>(matrix->structure);
+  const auto       ms_e = static_cast<const cs_matrix_struct_csr_t *>(&(ms->e));
+  const auto mc = static_cast<const cs_matrix_coeff_dist_t *>(matrix->coeffs);
   const cs_lnum_t  db_size = matrix->db_size;
   const cs_lnum_t  n_rows = ms->n_rows;
   const cs_lnum_t  dump_id_shift = ms->n_rows*db_size*db_size;
@@ -1065,7 +1076,7 @@ _b_pre_dump_msr(const cs_matrix_t   *matrix,
 
   /* extra-diagonal contribution */
 
-  if (mc->e_val != NULL) {
+  if (mc->e_val != nullptr) {
 #   pragma omp parallel for private(jj, kk, dump_id, col_id, m_row, n_cols)
     for (ii = 0; ii < n_rows; ii++) {
       col_id = ms_e->col_id + ms_e->row_index[ii];
@@ -1151,7 +1162,7 @@ _sort_matrix_dump_data(cs_lnum_t   n_entries,
   cs_gnum_t *_m_coords;
   double *_m_vals;
 
-  cs_lnum_t *order = cs_order_gnum_s(NULL, m_coords, 2, n_entries);
+  cs_lnum_t *order = cs_order_gnum_s(nullptr, m_coords, 2, n_entries);
 
   BFT_MALLOC(_m_coords, n_entries*2, cs_gnum_t);
 
@@ -1198,9 +1209,9 @@ _prepare_matrix_dump_data(const cs_matrix_t   *m,
   cs_lnum_t _n_entries = 0;
   cs_gnum_t coo_shift = 1, n_g_rows = 0;
 
-  cs_gnum_t *g_coo_num = NULL;
-  cs_gnum_t *_m_coords = NULL;
-  double *_m_vals = NULL;
+  cs_gnum_t *g_coo_num = nullptr;
+  cs_gnum_t *_m_coords = nullptr;
+  double *_m_vals = nullptr;
 
   BFT_MALLOC(g_coo_num, m->n_cols_ext, cs_gnum_t);
 
@@ -1217,7 +1228,7 @@ _prepare_matrix_dump_data(const cs_matrix_t   *m,
   for (ii = 0; ii < m->n_rows; ii++)
     g_coo_num[ii] = ii + coo_shift;
 
-  if (m->halo != NULL)
+  if (m->halo != nullptr)
     cs_halo_sync_untyped(m->halo,
                          CS_HALO_STANDARD,
                          sizeof(cs_gnum_t),
@@ -1304,17 +1315,17 @@ _write_matrix_g(const cs_matrix_t  *m,
   cs_lnum_t  block_size = 0;
   cs_gnum_t  n_glob_ents = 0;
 
-  cs_gnum_t  *b_coords = NULL, *c_coords = NULL, *r_coords = NULL;
-  double  *b_vals = NULL;
+  cs_gnum_t  *b_coords = nullptr, *c_coords = nullptr, *r_coords = nullptr;
+  double  *b_vals = nullptr;
 
   cs_block_dist_info_t bi;
 
-  fvm_io_num_t *io_num = NULL;
-  cs_part_to_block_t *d = NULL;
+  fvm_io_num_t *io_num = nullptr;
+  cs_part_to_block_t *d = nullptr;
 
   cs_lnum_t  n_entries = 0;
-  cs_gnum_t  *m_coords = NULL;
-  double  *m_vals = NULL;
+  cs_gnum_t  *m_coords = nullptr;
+  double  *m_vals = nullptr;
 
   const cs_datatype_t gnum_type
     = (sizeof(cs_gnum_t) == 8) ? CS_UINT64 : CS_UINT32;
@@ -1325,11 +1336,11 @@ _write_matrix_g(const cs_matrix_t  *m,
 
   /* Initialization for redistribution */
 
-  io_num = fvm_io_num_create_from_adj_s(NULL, m_coords, n_entries, 2);
+  io_num = fvm_io_num_create_from_adj_s(nullptr, m_coords, n_entries, 2);
 
   n_glob_ents = fvm_io_num_get_global_count(io_num);
 
-  cs_file_get_default_comm(&block_rank_step, NULL, NULL);
+  cs_file_get_default_comm(&block_rank_step, nullptr, nullptr);
 
   bi = cs_block_dist_compute_sizes(cs_glob_rank_id,
                                    cs_glob_n_ranks,
@@ -1445,11 +1456,11 @@ _write_matrix_l(const cs_matrix_t  *m,
   cs_lnum_t  ii;
   cs_gnum_t  n_glob_ents = 0;
 
-  cs_gnum_t  *c_coords = NULL, *r_coords = NULL;
+  cs_gnum_t  *c_coords = nullptr, *r_coords = nullptr;
 
   cs_lnum_t  n_entries = 0;
-  cs_gnum_t  *m_coords = NULL;
-  double  *m_vals = NULL;
+  cs_gnum_t  *m_coords = nullptr;
+  double  *m_vals = nullptr;
 
   /* Initialization */
 
@@ -1513,12 +1524,12 @@ _write_vector_g(cs_lnum_t         n_elts,
   cs_gnum_t  coo_shift = 1;
   cs_gnum_t  local_max = 0, n_glob_ents = 0;
 
-  cs_gnum_t  *g_elt_num = NULL;
-  double  *b_vals = NULL;
+  cs_gnum_t  *g_elt_num = nullptr;
+  double  *b_vals = nullptr;
 
   cs_block_dist_info_t bi;
 
-  cs_part_to_block_t *d = NULL;
+  cs_part_to_block_t *d = nullptr;
 
   cs_gnum_t loc_shift = n_elts;
   MPI_Scan(&loc_shift, &coo_shift, 1, CS_MPI_GNUM, MPI_SUM, cs_glob_mpi_comm);
@@ -1537,7 +1548,7 @@ _write_vector_g(cs_lnum_t         n_elts,
   for (ii = 0; ii < n_elts; ii++)
     g_elt_num[ii] = ii + coo_shift + 1;
 
-  cs_file_get_default_comm(&block_rank_step, NULL, NULL);
+  cs_file_get_default_comm(&block_rank_step, nullptr, nullptr);
 
   /* Redistribution structures */
 
@@ -1564,7 +1575,7 @@ _write_vector_g(cs_lnum_t         n_elts,
     BFT_MALLOC(b_vals, block_size, double);
 
   if (sizeof(cs_real_t) != sizeof(double)) {
-    double  *p_vals = NULL;
+    double  *p_vals = nullptr;
     BFT_MALLOC(p_vals, n_elts, double);
     for (ii = 0; ii < n_elts; ii++)
       p_vals[ii] = vals[ii];
@@ -1622,7 +1633,7 @@ _write_vector_l(cs_lnum_t         n_elts,
 
   if (sizeof(cs_real_t) != sizeof(double)) {
     cs_lnum_t ii;
-    double  *p_vals = NULL;
+    double  *p_vals = nullptr;
     BFT_MALLOC(p_vals, n_elts, double);
     for (ii = 0; ii < n_elts; ii++)
       p_vals[ii] = vals[ii];
@@ -1648,7 +1659,7 @@ _frobenius_norm(const cs_matrix_t  *m)
 {
   double retval = -1.;
 
-  if (m == NULL)
+  if (m == nullptr)
     return retval;
 
   cs_matrix_fill_type_t ft = m->fill_type;
@@ -1659,8 +1670,9 @@ _frobenius_norm(const cs_matrix_t  *m)
     {
       cs_lnum_t  d_stride = m->db_size * m->db_size;
       cs_lnum_t  e_stride = m->eb_size * m->eb_size;
-      const cs_matrix_struct_native_t  *ms = m->structure;
-      const cs_matrix_coeff_dist_t  *mc = m->coeffs;
+      const auto ms =
+        static_cast<const cs_matrix_struct_native_t *>(m->structure);
+      const auto mc = static_cast<const cs_matrix_coeff_dist_t *>(m->coeffs);
       double e_mult = (m->eb_size == 1) ? m->db_size : 1;
       if (mc->symmetric)
         e_mult *= 2;
@@ -1704,8 +1716,8 @@ _frobenius_norm(const cs_matrix_t  *m)
              || ft == CS_MATRIX_SCALAR_SYM
              || ft == CS_MATRIX_BLOCK);
       cs_lnum_t  stride = m->eb_size * m->eb_size;
-      const cs_matrix_struct_csr_t  *ms = m->structure;
-      const cs_matrix_coeff_csr_t  *mc = m->coeffs;
+      const auto ms = static_cast<const cs_matrix_struct_csr_t *>(m->structure);
+      const auto *mc = static_cast<const cs_matrix_coeff_csr_t *>(m->coeffs);
       cs_lnum_t n_vals = ms->row_index[m->n_rows];
       retval = cs_dot_xx(stride*n_vals, mc->val);
       cs_parall_sum(1, CS_DOUBLE, &retval);
@@ -1716,9 +1728,10 @@ _frobenius_norm(const cs_matrix_t  *m)
     {
       cs_lnum_t  d_stride = m->db_size * m->db_size;
       cs_lnum_t  e_stride = m->eb_size * m->eb_size;
-      const cs_matrix_struct_dist_t  *ms = m->structure;
-      const cs_matrix_struct_csr_t  *ms_e = &(ms->e);
-      const cs_matrix_coeff_dist_t  *mc = m->coeffs;
+      const auto ms =
+        static_cast<const cs_matrix_struct_dist_t *>(m->structure);
+      const auto ms_e   = static_cast<const cs_matrix_struct_csr_t *>(&(ms->e));
+      const auto mc = static_cast<const cs_matrix_coeff_dist_t  *>(m->coeffs);
       cs_lnum_t n_vals = ms_e->row_index[m->n_rows];
       double d_mult = (m->eb_size == 1) ? m->db_size : 1;
       retval = cs_dot_xx(d_stride*m->n_rows, mc->d_val);
@@ -1731,10 +1744,11 @@ _frobenius_norm(const cs_matrix_t  *m)
     {
       cs_lnum_t  d_stride = m->db_size * m->db_size;
       cs_lnum_t  e_stride = m->eb_size * m->eb_size;
-      const cs_matrix_struct_dist_t  *ms = m->structure;
-      const cs_matrix_struct_csr_t  *ms_e = &(ms->e);
-      const cs_matrix_struct_csr_t  *ms_h = &(ms->h);
-      const cs_matrix_coeff_dist_t  *mc = m->coeffs;
+      const auto ms =
+        static_cast<const cs_matrix_struct_dist_t *>(m->structure);
+      const auto ms_e = static_cast<const cs_matrix_struct_csr_t *>(&(ms->e));
+      const auto ms_h = static_cast<const cs_matrix_struct_csr_t *>(&(ms->h));
+      const auto mc = static_cast<const cs_matrix_coeff_dist_t  *>(m->coeffs);
       cs_lnum_t n_e_vals = ms_e->row_index[m->n_rows];
       cs_lnum_t n_h_vals = ms_h->row_index[m->n_rows];
       double d_mult = (m->eb_size == 1) ? m->db_size : 1;
@@ -1804,7 +1818,7 @@ cs_matrix_diag_dominance(const cs_matrix_t  *matrix,
 
   /* Sync ghost rows as a precaution */
 
-  if (halo != NULL) {
+  if (halo != nullptr) {
     if (matrix->db_size == 1)
       cs_halo_sync_var(halo, CS_HALO_STANDARD, dd);
     else {
@@ -1835,7 +1849,7 @@ cs_matrix_dump_linear_system(const cs_matrix_t  *matrix,
   char filename[64];
   cs_gnum_t n_g_rows = matrix->n_rows;
 
-  cs_file_t  *f = NULL;
+  cs_file_t  *f = nullptr;
 
 #if defined(HAVE_MPI)
   if (cs_glob_n_ranks > 1) {
@@ -1886,7 +1900,7 @@ cs_matrix_dump_vector(const cs_lnum_t     n_rows,
   cs_lnum_t n_l_rows = n_rows*stride;
   cs_gnum_t n_g_rows = n_l_rows;
 
-  cs_file_t  *f = NULL;
+  cs_file_t  *f = nullptr;
 
 #if defined(HAVE_MPI)
   if (cs_glob_n_ranks > 1) {
@@ -1935,7 +1949,7 @@ cs_matrix_dump(const cs_matrix_t  *matrix,
   char filename[64];
   cs_gnum_t n_g_rows = matrix->n_rows;
 
-  cs_file_t  *f = NULL;
+  cs_file_t  *f = nullptr;
 
 #if defined(HAVE_MPI)
   if (cs_glob_n_ranks > 1) {
@@ -1985,7 +1999,7 @@ cs_matrix_log_info(const cs_matrix_t  *matrix,
 {
   cs_log_t l = CS_LOG_DEFAULT;
 
-  if (matrix == NULL)
+  if (matrix == nullptr)
     bft_error(__FILE__, __LINE__, 0,
               _("The matrix is not defined."));
 
@@ -2021,7 +2035,7 @@ cs_matrix_log_info(const cs_matrix_t  *matrix,
  *   n_edges    <-- local number of graph edges
  *   edges      <-- graph edges connectivity
  *   halo       <-- cell halo structure
- *   numbering  <-- vectorization or thread-related numbering info, or NULL
+ *   numbering  <-- vectorization or thread-related numbering info, or nullptr
  *----------------------------------------------------------------------------*/
 
 void
@@ -2035,7 +2049,7 @@ cs_matrix_dump_test(cs_lnum_t              n_rows,
   cs_lnum_t  ii;
   int  test_id;
 
-  cs_real_t  *da = NULL, *xa = NULL, *rhs = NULL;
+  cs_real_t  *da = nullptr, *xa = nullptr, *rhs = nullptr;
   cs_lnum_t  db_size = 3, db_size_2 = 3*3;
   cs_lnum_t  eb_size = 1;
 

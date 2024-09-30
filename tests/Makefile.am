@@ -57,9 +57,9 @@ BUILT_SOURCES = \
 cs_halo.cpp \
 cs_range_set.cpp \
 cs_sort.cpp \
-cs_matrix.c \
-cs_matrix_assembler.c \
-cs_blas.c \
+cs_matrix.cpp \
+cs_matrix_assembler.cpp \
+cs_blas.cpp \
 cs_random.cpp
 
 cs_halo.cpp: Makefile $(top_srcdir)/src/base/cs_halo.cpp
@@ -74,13 +74,13 @@ cs_sort.cpp: Makefile $(top_srcdir)/src/base/cs_sort.cpp
 cs_random.cpp: Makefile $(top_srcdir)/src/base/cs_random.cpp
 	cat $(top_srcdir)/src/base/$@ >$@
 
-cs_blas.c: Makefile $(top_srcdir)/src/alge/cs_blas.c
+cs_blas.cpp: Makefile $(top_srcdir)/src/alge/cs_blas.cpp
 	cat $(top_srcdir)/src/alge/$@ >$@
 
-cs_matrix.c: Makefile $(top_srcdir)/src/alge/cs_matrix.c
+cs_matrix.cpp: Makefile $(top_srcdir)/src/alge/cs_matrix.cpp
 	cat $(top_srcdir)/src/alge/$@ >$@
 
-cs_matrix_assembler.c: Makefile $(top_srcdir)/src/alge/cs_matrix_assembler.c
+cs_matrix_assembler.cpp: Makefile $(top_srcdir)/src/alge/cs_matrix_assembler.cpp
 	cat $(top_srcdir)/src/alge/$@ >$@
 
 check_PROGRAMS =
@@ -156,7 +156,7 @@ cs_all_to_all_test_LDADD    = $(LDADD_CS_TESTS)
 
 cs_blas_test_SOURCES  = \
 cs_blas_test.cpp \
-cs_blas.c
+cs_blas.cpp
 cs_blas_test_CPPFLAGS  = \
 -I$(top_srcdir)/src/alge \
 -I$(top_srcdir)/src/base \

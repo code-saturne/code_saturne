@@ -128,8 +128,8 @@ static cs_matrix_structure_t  *_matrix_struct[CS_MATRIX_N_TYPES];
 static cs_matrix_t            *_matrix[CS_MATRIX_N_TYPES];
 
 static int                     _n_ext_matrices = 0;
-static cs_matrix_t           **_ext_matrix = NULL;
-static cs_matrix_fill_type_t  *_ext_fill_type = NULL;
+static cs_matrix_t           **_ext_matrix = nullptr;
+static cs_matrix_fill_type_t  *_ext_fill_type = nullptr;
 
 /* Tuning options */
 
@@ -138,20 +138,20 @@ static int    _n_min_products = 30;
 /* Pointer to global (block-based) numbering, if used */
 
 static cs_lnum_t  _row_num_size = 0;
-static cs_gnum_t  *_global_row_id = NULL;
-static const cs_gnum_t  *_global_row_id_l_range = NULL;
-static const cs_halo_t  *_global_row_id_halo = NULL;
+static cs_gnum_t  *_global_row_id = nullptr;
+static const cs_gnum_t  *_global_row_id_l_range = nullptr;
+static const cs_halo_t  *_global_row_id_halo = nullptr;
 
 static cs_gnum_t  _l_range[2] = {0, 0};
 
 /* Pointer to default matrix structures
    currently only used for periodicity of translation with external solvers */
 
-static cs_matrix_assembler_t  *_matrix_assembler = NULL;
+static cs_matrix_assembler_t  *_matrix_assembler = nullptr;
 
 /* Pointer to internal coupling oriented matrix structures */
 
-static cs_matrix_assembler_t  **_matrix_assembler_coupled = NULL;
+static cs_matrix_assembler_t  **_matrix_assembler_coupled = nullptr;
 
 /*============================================================================
  * Private function definitions
@@ -165,11 +165,11 @@ static void
 _initialize_api(void)
 {
   if (! _initialized) {
-    for (cs_matrix_type_t t = 0; t < CS_MATRIX_N_BUILTIN_TYPES; t++) {
-      for (cs_matrix_fill_type_t mft = 0; mft < CS_MATRIX_N_FILL_TYPES; mft++)
-        _matrix_variant_tuned[t][mft] = NULL;
-      _matrix_struct[t] = NULL;
-      _matrix[t] = NULL;
+    for (int t = 0; t < CS_MATRIX_N_BUILTIN_TYPES; t++) {
+      for (int mft = 0; mft < CS_MATRIX_N_FILL_TYPES; mft++)
+        _matrix_variant_tuned[t][mft] = nullptr;
+      _matrix_struct[t] = nullptr;
+      _matrix[t] = nullptr;
     }
     _initialized = true;
   }
@@ -181,7 +181,7 @@ _initialize_api(void)
  * parameters:
  *   n_rows  <-- associated number of local rows
  *   l_range <-- associated local range
- *   halo    <-- associated halo, or NULL
+ *   halo    <-- associated halo, or nullptr
  *----------------------------------------------------------------------------*/
 
 static void
@@ -191,7 +191,7 @@ _update_block_row_g_id(cs_lnum_t         n_rows,
 {
   cs_lnum_t _n_cols_ext = n_rows;
 
-  if (halo != NULL) {
+  if (halo != nullptr) {
     assert(n_rows == halo->n_local_elts);
     _n_cols_ext += halo->n_elts[CS_HALO_EXTENDED];
   }
@@ -202,8 +202,8 @@ _update_block_row_g_id(cs_lnum_t         n_rows,
     _row_num_size = _n_cols_ext;
   }
 
-  if (l_range == NULL) {
-    cs_range_set_define(NULL,
+  if (l_range == nullptr) {
+    cs_range_set_define(nullptr,
                         halo,
                         n_rows,
                         false,
@@ -239,13 +239,13 @@ _update_matrix_struct(cs_matrix_type_t  t)
   const cs_mesh_t  *mesh = cs_glob_mesh;
   const cs_mesh_adjacencies_t  *ma = cs_glob_mesh_adjacencies;
 
-  if (_matrix_struct[t] != NULL)
+  if (_matrix_struct[t] != nullptr)
     cs_matrix_structure_destroy(&(_matrix_struct[t]));
 
   switch(t) {
   case CS_MATRIX_MSR:
     {
-      if (ma != NULL)
+      if (ma != nullptr)
         _matrix_struct[t]
           = cs_matrix_structure_create_msr_shared(ma->single_faces_to_cells,
                                                   mesh->n_cells,
@@ -293,12 +293,12 @@ _update_matrix_struct(cs_matrix_type_t  t)
 static cs_matrix_t *
 _get_matrix(cs_matrix_type_t  t)
 {
-  if (_matrix[t] != NULL)
+  if (_matrix[t] != nullptr)
     return _matrix[t];
 
   /* If structure has not been built yet, build it */
 
-  if (_matrix_struct[t] == NULL)
+  if (_matrix_struct[t] == nullptr)
     _update_matrix_struct(t);
 
   _matrix[t] = cs_matrix_create(_matrix_struct[t]);
@@ -327,9 +327,9 @@ _create_assembler(int  coupling_id)
 
   /* Global cell ids, based on range/scan */
 
-  if (   _global_row_id == NULL
-      || _global_row_id_l_range != NULL || m->halo != _global_row_id_halo)
-    _update_block_row_g_id(n_rows, NULL, m->halo);
+  if (   _global_row_id == nullptr
+      || _global_row_id_l_range != nullptr || m->halo != _global_row_id_halo)
+    _update_block_row_g_id(n_rows, nullptr, m->halo);
 
   const cs_gnum_t *r_g_id = _global_row_id;
   cs_gnum_t l_range[2] = {_l_range[0], _l_range[1]};
@@ -337,7 +337,7 @@ _create_assembler(int  coupling_id)
   /* Build matrix assembler;
      assemble by blocks to amortize overhead */
 
-  assert(edges != NULL || n_edges == 0);
+  assert(edges != nullptr || n_edges == 0);
 
   cs_matrix_assembler_t  *ma
     = cs_matrix_assembler_create(l_range, true);
@@ -473,7 +473,7 @@ cs_matrix_initialize(void)
   if (n_ic > 0) {
     BFT_MALLOC(_matrix_assembler_coupled, n_ic, cs_matrix_assembler_t *);
     for (int i = 0; i < n_ic; i++)
-      _matrix_assembler_coupled[i] = NULL;
+      _matrix_assembler_coupled[i] = nullptr;
   }
 }
 
@@ -490,19 +490,19 @@ cs_matrix_finalize(void)
 
   BFT_FREE(_global_row_id);
 
-  for (cs_matrix_type_t t = 0; t < CS_MATRIX_N_BUILTIN_TYPES; t++) {
+  for (int t = 0; t < CS_MATRIX_N_BUILTIN_TYPES; t++) {
     for (int i = 0; i < CS_MATRIX_N_FILL_TYPES; i++) {
-      if (_matrix_variant_tuned[t][i] != NULL)
+      if (_matrix_variant_tuned[t][i] != nullptr)
         cs_matrix_variant_destroy(&(_matrix_variant_tuned[t][i]));
     }
-    if (_matrix[t] != NULL)
+    if (_matrix[t] != nullptr)
       cs_matrix_destroy(&(_matrix[t]));
-    if (_matrix_struct[t] != NULL)
+    if (_matrix_struct[t] != nullptr)
       cs_matrix_structure_destroy(&(_matrix_struct[t]));
   }
 
   for (int t = 0; t < _n_ext_matrices; t++) {
-    if (_ext_matrix[t] != NULL)
+    if (_ext_matrix[t] != nullptr)
       cs_matrix_destroy(&(_ext_matrix[t]));
   }
 
@@ -536,17 +536,17 @@ cs_matrix_update_mesh(void)
 {
   const cs_mesh_t  *mesh = cs_glob_mesh;
 
-  _update_block_row_g_id(mesh->n_cells, NULL, mesh->halo);
+  _update_block_row_g_id(mesh->n_cells, nullptr, mesh->halo);
 
-  for (cs_matrix_type_t t = 0; t < CS_MATRIX_N_TYPES; t++) {
+  for (int t = 0; t < CS_MATRIX_N_TYPES; t++) {
 
-    if (_matrix[t] == NULL)
+    if (_matrix[t] == nullptr)
       continue;
 
     cs_matrix_destroy(&(_matrix[t]));
 
-    if (_matrix_struct[t] != NULL)
-      _update_matrix_struct(t);
+    if (_matrix_struct[t] != nullptr)
+      _update_matrix_struct(static_cast<cs_matrix_type_t>(t));
 
     _matrix[t] = cs_matrix_create(_matrix_struct[t]);
   }
@@ -578,7 +578,7 @@ cs_matrix_default(bool       symmetric,
                   cs_lnum_t  diag_block_size,
                   cs_lnum_t  extra_diag_block_size)
 {
-  cs_matrix_t *m = NULL;
+  cs_matrix_t *m = nullptr;
 
   cs_matrix_fill_type_t mft = cs_matrix_get_fill_type(symmetric,
                                                       diag_block_size,
@@ -673,7 +673,7 @@ cs_matrix_external(const char  *type_name,
 
   for (int i = 0; i < _n_ext_matrices; i++) {
     cs_matrix_t  *m = _ext_matrix[i];
-    if (m != NULL && _ext_fill_type[i] == mft) {
+    if (m != nullptr && _ext_fill_type[i] == mft) {
       if (strcmp(type_name, cs_matrix_get_type_name(m)) == 0)
         return m;
     }
@@ -681,9 +681,9 @@ cs_matrix_external(const char  *type_name,
 
 #if defined(HAVE_HYPRE)
   if (strncmp(type_name, "HYPRE_ParCSR", 12) == 0) {
-    cs_matrix_t *m_r = NULL;
+    cs_matrix_t *m_r = nullptr;
 
-    if (_matrix_struct[CS_MATRIX_MSR] != NULL) {
+    if (_matrix_struct[CS_MATRIX_MSR] != nullptr) {
       m_r = cs_matrix_msr(symmetric, diag_block_size, extra_diag_block_size);
     }
     else {
@@ -707,9 +707,9 @@ cs_matrix_external(const char  *type_name,
 
 #if defined(HAVE_PETSC)
   if (strncmp(type_name, "PETSc", 5) == 0) {
-    cs_matrix_t *m_r = NULL;
+    cs_matrix_t *m_r = nullptr;
 
-    if (_matrix_struct[CS_MATRIX_MSR] != NULL) {
+    if (_matrix_struct[CS_MATRIX_MSR] != nullptr) {
       m_r = cs_matrix_msr(symmetric, diag_block_size, extra_diag_block_size);
     }
     else {
@@ -722,7 +722,7 @@ cs_matrix_external(const char  *type_name,
                                                 extra_diag_block_size);
 
 
-    const char *mat_type = NULL;
+    const char *mat_type = nullptr;
     size_t l = strlen(type_name);
     if (l > 7 && strncmp(type_name, "PETSc, ", 7) == 0)
       mat_type = type_name + 7;
@@ -738,7 +738,7 @@ cs_matrix_external(const char  *type_name,
             "  no matrix of type \"%s\" and fill type \"%s\" defined.",
             __func__, type_name, cs_matrix_fill_type_name[mft]);
 
-  return NULL;
+  return nullptr;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -784,7 +784,7 @@ cs_matrix_copy_to_external(cs_matrix_t  *src,
   cs_matrix_t *m;
   BFT_MALLOC(m, 1, cs_matrix_t);
   memcpy(m, src, sizeof(cs_matrix_t));
-  m->coeffs = NULL;
+  m->coeffs = nullptr;
 
   _ext_matrix[m_id] = m;
 
@@ -809,7 +809,7 @@ cs_matrix_default_set_tuned(cs_matrix_t  *m)
       || m->fill_type < 0 || m->fill_type > CS_MATRIX_N_FILL_TYPES)
     return;
 
-  if (_matrix_variant_tuned[m->type][m->fill_type] == NULL
+  if (_matrix_variant_tuned[m->type][m->fill_type] == nullptr
       && (_n_min_products > 0)) {
 
     cs_matrix_t *m_t = _get_matrix(m->type);
@@ -828,7 +828,7 @@ cs_matrix_default_set_tuned(cs_matrix_t  *m)
 
   }
 
-  if (_matrix_variant_tuned[m->type][m->fill_type] != NULL)
+  if (_matrix_variant_tuned[m->type][m->fill_type] != nullptr)
     cs_matrix_variant_apply_tuned(m,
                                   _matrix_variant_tuned[m->type][m->fill_type]);
 }
@@ -903,14 +903,14 @@ cs_matrix_get_block_row_g_id(const cs_matrix_t  *m)
 {
   const cs_lnum_t  n_rows = m->n_rows;
   const cs_halo_t  *halo = m->halo;
-  const cs_gnum_t *l_range = NULL;
+  const cs_gnum_t *l_range = nullptr;
 
-  if (m->assembler != NULL)
+  if (m->assembler != nullptr)
     l_range = cs_matrix_assembler_get_l_range(m->assembler);
 
   const cs_gnum_t  *g_row_num = _global_row_id;
 
-  if (   _global_row_id == NULL
+  if (   _global_row_id == nullptr
       || l_range != _global_row_id_l_range || halo != _global_row_id_halo) {
     _update_block_row_g_id(n_rows, l_range, halo);
     g_row_num = _global_row_id;
@@ -926,10 +926,10 @@ cs_matrix_get_block_row_g_id(const cs_matrix_t  *m)
  * \param[in]  f                      pointer to associated field
  * \param[in]  type                   matrix type
  * \param[in]  symmetric              is matrix symmetric ?
- * \param[in]  diag_block_size        block sizes for diagonal, or NULL
- * \param[in]  extra_diag_block_size  block sizes for extra diagonal, or NULL
- * \param[in]  da                     diagonal values (NULL if zero)
- * \param[in]  xa                     extradiagonal values (NULL if zero)
+ * \param[in]  diag_block_size        block sizes for diagonal, or nullptr
+ * \param[in]  extra_diag_block_size  block sizes for extra diagonal, or nullptr
+ * \param[in]  da                     diagonal values (nullptr if zero)
+ * \param[in]  xa                     extradiagonal values (nullptr if zero)
  *                                    casts as:
  *                                      xa[n_edges]    if symmetric,
  *                                      xa[n_edges][2] if non symmetric
@@ -970,7 +970,7 @@ cs_matrix_set_coefficients_by_assembler(const cs_field_t  *f,
   cs_matrix_assembler_t  *ma = (coupling_id < 0) ?
     _matrix_assembler : _matrix_assembler_coupled[coupling_id];
 
-  if (ma == NULL) {
+  if (ma == nullptr) {
     ma = _create_assembler(coupling_id);
     if (coupling_id < 0)
       _matrix_assembler = ma;
@@ -993,9 +993,9 @@ cs_matrix_set_coefficients_by_assembler(const cs_field_t  *f,
 
   /* Make sure range is consistant with assembler creation */
 
-  if (   _global_row_id == NULL || n_cols_ext > _row_num_size
-      || _global_row_id_l_range != NULL || m->halo != _global_row_id_halo)
-    _update_block_row_g_id(n_rows, NULL, mesh->halo);
+  if (   _global_row_id == nullptr || n_cols_ext > _row_num_size
+      || _global_row_id_l_range != nullptr || m->halo != _global_row_id_halo)
+    _update_block_row_g_id(n_rows, nullptr, mesh->halo);
 
   const cs_gnum_t *r_g_id = _global_row_id;
 

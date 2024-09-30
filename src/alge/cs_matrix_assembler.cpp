@@ -69,7 +69,7 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*!
-  \file cs_matrix_assembler.c
+  \file cs_matrix_assembler.cpp
 
   \brief Incremental or general construction of matrix structure.
 
@@ -257,7 +257,7 @@ _sort_and_compact_local(cs_matrix_assembler_t  *ma)
 
   if (direct_assembly == false) {
 
-    cs_lnum_t *tmpr_idx = NULL;
+    cs_lnum_t *tmpr_idx = nullptr;
 
     BFT_MALLOC(tmpr_idx, n_rows+1, cs_lnum_t);
     memcpy(tmpr_idx, ma->_r_idx, (n_rows+1)*sizeof(cs_lnum_t));
@@ -365,7 +365,7 @@ _sort_and_compact_distant(cs_matrix_assembler_t  *ma)
 
   if (direct_assembly == false) {
 
-    cs_lnum_t *tmpr_idx = NULL;
+    cs_lnum_t *tmpr_idx = nullptr;
 
     BFT_MALLOC(tmpr_idx, n_rows+1, cs_lnum_t);
     memcpy(tmpr_idx, ma->d_r_idx, (n_rows+1)*sizeof(cs_lnum_t));
@@ -759,9 +759,9 @@ _rank_ranges_exchange(cs_rank_neighbors_t  *arn,
                       cs_gnum_t             l_range[2],
                       MPI_Comm              comm)
 {
-  MPI_Request *request = NULL;
-  MPI_Status *status = NULL;
-  cs_gnum_t *d_ranges = NULL;
+  MPI_Request *request = nullptr;
+  MPI_Status *status = nullptr;
+  cs_gnum_t *d_ranges = nullptr;
 
   BFT_MALLOC(d_ranges, arn->size*2, cs_gnum_t);
   BFT_MALLOC(request, arn->size*2, MPI_Request);
@@ -835,8 +835,8 @@ _assumed_to_true_rank(cs_rank_neighbors_t  *arn,
   int *d_rank;
   BFT_MALLOC(d_rank, n, int);
 
-  MPI_Request *request = NULL;
-  MPI_Status *status = NULL;
+  MPI_Request *request = nullptr;
+  MPI_Status *status = nullptr;
 
   const int local_rank = cs_glob_rank_id;
 
@@ -1053,7 +1053,7 @@ _assumed_to_true_rank(cs_rank_neighbors_t  *arn,
  * \param[in]   l_range       global id range [min, max[ for local rank
  * \param[in]   e_g_id        ordered unique external global ids
  * \param[out]  n_init_ranks  number of ranks in initial assumed
- *                            neighborhood (for logging), or NULL
+ *                            neighborhood (for logging), or nullptr
  * \param[in]   comm          associated communicator
  *
  * This function should be called by a single thread for a given assembler.
@@ -1076,7 +1076,7 @@ _rank_neighbors(cs_lnum_t          n_e_g_ids,
                                                      e_g_id,
                                                      comm);
 
-  if (n_init_ranks != NULL)
+  if (n_init_ranks != nullptr)
     *n_init_ranks = arn->size;
 
   cs_gnum_t *d_ranges = _rank_ranges_exchange(arn,
@@ -1135,7 +1135,7 @@ _process_assembly_data(cs_matrix_assembler_t  *ma,
   cs_gnum_t g_r_id_prev = ma->l_range[0]; /* impossible value here */
 
   cs_lnum_t  n_e_g_ids = 0;
-  cs_gnum_t *e_g_id = NULL;
+  cs_gnum_t *e_g_id = nullptr;
 
   for (cs_lnum_t i = 0; i < ma->coeff_send_size; i++) {
     cs_gnum_t g_r_id = e_g_ij[i*2];
@@ -1218,8 +1218,8 @@ _process_assembly_data(cs_matrix_assembler_t  *ma,
 
   /* Exchange counts */
 
-  MPI_Request *request = NULL;
-  MPI_Status *status = NULL;
+  MPI_Request *request = nullptr;
+  MPI_Status *status = nullptr;
 
   BFT_MALLOC(request, arn->size*2, MPI_Request);
   BFT_MALLOC(status, arn->size*2, MPI_Status);
@@ -1347,7 +1347,7 @@ _process_assembly_data(cs_matrix_assembler_t  *ma,
     if (ma->flags & CS_MATRIX_DISTANT_ROW_USE_COL_IDX) {
 
       cs_lnum_t    n_l_insert = 0, n_l_insert_max = 0;
-      cs_lnum_2_t *l_insert = NULL;
+      cs_lnum_2_t *l_insert = nullptr;
 
       BFT_MALLOC(ma->coeff_recv_col_idx, ma->coeff_recv_size, cs_lnum_t);
 
@@ -1729,7 +1729,7 @@ _matrix_assembler_compute_mpi(cs_matrix_assembler_t  *ma)
   /* Build compact external global id array */
 
   cs_lnum_t   n_e_g_ids = 0;
-  cs_gnum_t  *e_g_id = NULL;
+  cs_gnum_t  *e_g_id = nullptr;
 
   cs_lnum_t d_size = ma->d_r_idx[ma->n_rows];
 
@@ -1763,7 +1763,7 @@ _matrix_assembler_compute_mpi(cs_matrix_assembler_t  *ma)
   /* Assign array to structure */
 
   ma->n_e_g_ids = n_e_g_ids;
-  ma->e_g_id = e_g_id; e_g_id = NULL;
+  ma->e_g_id = e_g_id; e_g_id = nullptr;
 }
 
 #endif /* HAVE_MPI */
@@ -1896,7 +1896,7 @@ _matrix_assembler_compute_local(cs_matrix_assembler_t  *ma)
 static void
 _matrix_assembler_values_diag_idx(cs_matrix_assembler_values_t  *mav)
 {
-  if (mav->diag_idx != NULL)
+  if (mav->diag_idx != nullptr)
     return;
 
   const cs_matrix_assembler_t *ma = mav->ma;
@@ -2076,7 +2076,7 @@ _matrix_assembler_values_add_lg(cs_matrix_assembler_values_t  *mav,
 {
   const cs_matrix_assembler_t  *ma = mav->ma;
 
-  assert(mav->add_values != NULL);
+  assert(mav->add_values != nullptr);
 
   cs_lnum_t s_col_idx[COEFF_GROUP_SIZE];
 
@@ -2369,7 +2369,7 @@ cs_matrix_assembler_t *
 cs_matrix_assembler_create(const cs_gnum_t  l_range[2],
                            bool             separate_diag)
 {
-  cs_matrix_assembler_t *ma = NULL;
+  cs_matrix_assembler_t *ma = nullptr;
 
   BFT_MALLOC(ma, 1, cs_matrix_assembler_t);
 
@@ -2386,35 +2386,35 @@ cs_matrix_assembler_create(const cs_gnum_t  l_range[2],
   ma->size = 0;
   ma->max_size = 0;
 
-  ma->r_idx = NULL;
-  ma->c_id = NULL;
-  ma->_r_idx = NULL;
-  ma->_c_id = NULL;
+  ma->r_idx = nullptr;
+  ma->c_id = nullptr;
+  ma->_r_idx = nullptr;
+  ma->_c_id = nullptr;
 
-  ma->d_r_idx = NULL;
-  ma->d_g_c_id = NULL;
+  ma->d_r_idx = nullptr;
+  ma->d_g_c_id = nullptr;
 
-  ma->g_rc_id = NULL;
+  ma->g_rc_id = nullptr;
 
 #if defined(HAVE_MPI)
 
   ma->n_coeff_ranks = 0;
-  ma->coeff_rank = NULL;
+  ma->coeff_rank = nullptr;
 
   ma->coeff_send_size = 0;
   ma->coeff_recv_size = 0;
 
   ma->coeff_send_n_rows = 0;
-  ma->coeff_send_index = NULL;
-  ma->coeff_send_row_g_id = NULL;
-  ma->coeff_send_col_g_id = NULL;
+  ma->coeff_send_index = nullptr;
+  ma->coeff_send_row_g_id = nullptr;
+  ma->coeff_send_col_g_id = nullptr;
 
-  ma->coeff_rank_send_index = NULL;
-  ma->coeff_rank_recv_index = NULL;
+  ma->coeff_rank_send_index = nullptr;
+  ma->coeff_rank_recv_index = nullptr;
 
-  ma->coeff_recv_row_id = NULL;
-  ma->coeff_recv_col_idx = NULL;
-  ma->coeff_recv_col_g_id = NULL;
+  ma->coeff_recv_row_id = nullptr;
+  ma->coeff_recv_col_idx = nullptr;
+  ma->coeff_recv_col_g_id = nullptr;
 
   ma->comm = cs_glob_mpi_comm;
 
@@ -2423,11 +2423,11 @@ cs_matrix_assembler_create(const cs_gnum_t  l_range[2],
 
 #endif /* HAVE_MPI */
 
-  ma->halo = NULL;
-  ma->_halo = NULL;
+  ma->halo = nullptr;
+  ma->_halo = nullptr;
 
   ma->n_e_g_ids = 0;
-  ma->e_g_id = NULL;
+  ma->e_g_id = nullptr;
 
   return ma;
 }
@@ -2489,7 +2489,7 @@ cs_matrix_assembler_create_from_shared(cs_lnum_t         n_rows,
 
   /* Additional required parallel data */
 
-  if (ma->halo != NULL) {
+  if (ma->halo != nullptr) {
 
     cs_gnum_t *t_g_id;
     BFT_MALLOC(ma->e_g_id, ma->halo->n_elts[0], cs_gnum_t);
@@ -2557,12 +2557,12 @@ cs_matrix_assembler_create_from_shared(cs_lnum_t         n_rows,
 void
 cs_matrix_assembler_destroy(cs_matrix_assembler_t  **ma)
 {
-  if (ma != NULL && *ma != NULL) {
+  if (ma != nullptr && *ma != nullptr) {
     cs_matrix_assembler_t *_ma = *ma;
 
     BFT_FREE(_ma->e_g_id);
 
-    if (_ma->_halo != NULL)
+    if (_ma->_halo != nullptr)
       cs_halo_destroy(&(_ma->_halo));
 
 #if defined(HAVE_MPI)
@@ -2747,7 +2747,7 @@ cs_matrix_assembler_compute(cs_matrix_assembler_t  *ma)
 
   /* Non-null array to simplify binary search (rare diagonal-only case) */
 
-  if (ma->c_id == NULL) {
+  if (ma->c_id == nullptr) {
     BFT_MALLOC(ma->_c_id, 1, cs_lnum_t);
     ma->c_id = ma->_c_id;
     ma->_c_id[0] = -1;
@@ -2952,7 +2952,7 @@ cs_matrix_assembler_get_rank_counts(const cs_matrix_assembler_t  *ma,
                                     int                           rc[4])
 {
   rc[0] = 0;
-  if (ma->halo != NULL)
+  if (ma->halo != nullptr)
     rc[0] = ma->halo->n_c_domains;
 #if defined(HAVE_MPI)
   rc[1] = ma->n_coeff_ranks;
@@ -3072,7 +3072,7 @@ cs_matrix_assembler_values_create(const cs_matrix_assembler_t          *ma,
   mav->db_size = db_size;
   mav->eb_size = eb_size;
 
-  mav->diag_idx = NULL;
+  mav->diag_idx = nullptr;
 
   mav->matrix = matrix;
 
@@ -3100,7 +3100,7 @@ cs_matrix_assembler_values_create(const cs_matrix_assembler_t          *ma,
   if (mav->separate_diag != ma->separate_diag)
     _matrix_assembler_values_diag_idx(mav);
 
-  if (mav->init != NULL)
+  if (mav->init != nullptr)
     mav->init(mav->matrix, mav->db_size, mav->eb_size);
 
   return mav;
@@ -3121,21 +3121,21 @@ cs_matrix_assembler_values_create(const cs_matrix_assembler_t          *ma,
 void
 cs_matrix_assembler_values_finalize(cs_matrix_assembler_values_t  **mav)
 {
-  if (mav == NULL)
+  if (mav == nullptr)
     return;
 
   cs_matrix_assembler_values_t  *_mav = *mav;
-  if (_mav == NULL)
+  if (_mav == nullptr)
     return;
 
   if (_mav->final_assembly == false)
     cs_matrix_assembler_values_done(_mav);
 
-  if (_mav->assembly_end != NULL)
+  if (_mav->assembly_end != nullptr)
     _mav->assembly_end(_mav->matrix);
 
   BFT_FREE(*mav);
-  *mav = NULL;
+  *mav = nullptr;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -3188,7 +3188,7 @@ cs_matrix_assembler_values_add(cs_matrix_assembler_values_t  *mav,
 
   /* Case where we compute a column index first */
 
-  if (mav->add_values != NULL) {
+  if (mav->add_values != nullptr) {
 
     cs_lnum_t s_col_idx[COEFF_GROUP_SIZE];
 
@@ -3237,7 +3237,7 @@ cs_matrix_assembler_values_add(cs_matrix_assembler_values_t  *mav,
 
   else { /* use a global id-based function */
 
-    assert(mav->add_values_g != NULL);
+    assert(mav->add_values_g != nullptr);
 
     _matrix_assembler_values_add_ll_g(mav,
                                       n,
@@ -3358,7 +3358,7 @@ cs_matrix_assembler_values_add_g(cs_matrix_assembler_values_t  *mav,
 
     }
 
-    if (mav->add_values_g != NULL) /* global id-based assembler function */
+    if (mav->add_values_g != nullptr) /* global id-based assembler function */
       mav->add_values_g(mav->matrix,
                         b_size,
                         stride,
@@ -3366,7 +3366,7 @@ cs_matrix_assembler_values_add_g(cs_matrix_assembler_values_t  *mav,
                         s_g_col_id,
                         val + (i*stride));
 
-    else if (ma->d_r_idx != NULL) { /* local-id-based function, need to adapt */
+    else if (ma->d_r_idx != nullptr) { /* local-id-based function, need to adapt */
 
       cs_lnum_t s_row_id[COEFF_GROUP_SIZE];
       cs_lnum_t s_col_idx[COEFF_GROUP_SIZE];
@@ -3442,7 +3442,7 @@ cs_matrix_assembler_values_add_g(cs_matrix_assembler_values_t  *mav,
 
     else { /* local-only case or matrix part */
 
-      assert(ma->d_r_idx == NULL);
+      assert(ma->d_r_idx == nullptr);
 
       cs_lnum_t s_row_id[COEFF_GROUP_SIZE];
       cs_lnum_t s_col_idx[COEFF_GROUP_SIZE];
@@ -3512,7 +3512,7 @@ cs_matrix_assembler_values_add_g(cs_matrix_assembler_values_t  *mav,
 void
 cs_matrix_assembler_values_done(cs_matrix_assembler_values_t  *mav)
 {
-  if (mav == NULL)
+  if (mav == nullptr)
     return;
 
   /* Exchange row data with other ranks if required */
@@ -3523,12 +3523,12 @@ cs_matrix_assembler_values_done(cs_matrix_assembler_values_t  *mav)
 
   if (ma->n_coeff_ranks > 0) {
 
-    cs_real_t  *recv_coeffs = NULL;
+    cs_real_t  *recv_coeffs = nullptr;
 
     cs_lnum_t stride = mav->eb_size * mav->eb_size;
 
-    MPI_Request *request = NULL;
-    MPI_Status *status = NULL;
+    MPI_Request *request = nullptr;
+    MPI_Status *status = nullptr;
 
     BFT_MALLOC(recv_coeffs, ma->coeff_recv_size*stride, cs_real_t);
 
@@ -3579,14 +3579,14 @@ cs_matrix_assembler_values_done(cs_matrix_assembler_values_t  *mav)
 
       /* Using local id-based function */
 
-      if (mav->add_values != NULL) {
+      if (mav->add_values != nullptr) {
 
-        assert(ma->coeff_recv_row_id != NULL);
-        assert(ma->coeff_recv_col_idx != NULL);
+        assert(ma->coeff_recv_row_id != nullptr);
+        assert(ma->coeff_recv_col_idx != nullptr);
 
         /* Case where columns are already pre-indexed */
 
-        if (ma->coeff_recv_col_idx != NULL) {
+        if (ma->coeff_recv_col_idx != nullptr) {
           if (ma->separate_diag == mav->separate_diag)
             mav->add_values(mav->matrix,
                             ma->coeff_recv_size,
@@ -3603,7 +3603,7 @@ cs_matrix_assembler_values_done(cs_matrix_assembler_values_t  *mav)
                                                  recv_coeffs);
         }
         else {
-          assert(ma->coeff_recv_col_g_id != NULL);
+          assert(ma->coeff_recv_col_g_id != nullptr);
           _matrix_assembler_values_add_lg(mav,
                                           ma->coeff_recv_size,
                                           stride,
@@ -3617,9 +3617,9 @@ cs_matrix_assembler_values_done(cs_matrix_assembler_values_t  *mav)
       /* Using global id-based function */
 
       else {
-        assert(mav->add_values_g != NULL);
+        assert(mav->add_values_g != nullptr);
 
-        if (ma->coeff_recv_col_g_id != NULL)
+        if (ma->coeff_recv_col_g_id != nullptr)
           _matrix_assembler_values_add_lg_g(mav,
                                             ma->coeff_recv_size,
                                             stride,
@@ -3652,7 +3652,7 @@ cs_matrix_assembler_values_done(cs_matrix_assembler_values_t  *mav)
 
   mav->final_assembly = true;
 
-  if (mav->assembly_begin != NULL)
+  if (mav->assembly_begin != nullptr)
     mav->assembly_begin(mav->matrix);
 }
 

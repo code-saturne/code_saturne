@@ -104,7 +104,7 @@ typedef  cs_real_t  cs_weight_t;  /* will allow testing single precision
  *============================================================================*/
 
 bool          _set_vtc[3] = {false, false, false};
-cs_weight_t  *_weights_vtc[3] = {NULL, NULL, NULL};
+cs_weight_t  *_weights_vtc[3] = {nullptr, nullptr, nullptr};
 
 /* Short names for gradient computation types */
 
@@ -279,7 +279,7 @@ _vertex_to_cell_f_lsq(void)
  *
  * \param[in]  method       interpolation method
  * \param[in]  verbosity    verbosity level
- * \param[in]  v_weight     vertex weight, or NULL
+ * \param[in]  v_weight     vertex weight, or nullptr
  * \param[in]  v_var        base vertex-based variable
  * \param[out] c_var        cell-based variable
  */
@@ -288,9 +288,9 @@ _vertex_to_cell_f_lsq(void)
 static void
 _vertex_to_cell_scalar(cs_vertex_to_cell_type_t   method,
                        int                        verbosity,
-                       const cs_real_t            v_weight[restrict],
-                       const cs_real_t            v_var[restrict],
-                       cs_real_t                  c_var[restrict])
+                       const cs_real_t *restrict  v_weight,
+                       const cs_real_t *restrict  v_var,
+                       cs_real_t *restrict        c_var)
 {
   CS_UNUSED(verbosity);
 
@@ -311,7 +311,7 @@ _vertex_to_cell_scalar(cs_vertex_to_cell_type_t   method,
 
   case CS_VERTEX_TO_CELL_UNWEIGHTED:
     {
-      if (v_weight == NULL) {
+      if (v_weight == nullptr) {
         for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
           cs_lnum_t s_id = c2v_idx[c_id];
           cs_lnum_t e_id = c2v_idx[c_id+1];
@@ -357,14 +357,14 @@ _vertex_to_cell_scalar(cs_vertex_to_cell_type_t   method,
 
       const cs_weight_t *w = _weights_vtc[CS_VERTEX_TO_CELL_SHEPARD];
 
-      cs_real_t *c_w = NULL;
-      if (v_weight != NULL) {
+      cs_real_t *c_w = nullptr;
+      if (v_weight != nullptr) {
         BFT_MALLOC(c_w, n_cells, cs_real_t);
         for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
           c_w[c_id] = 0;
       }
 
-      if (v_weight == NULL) {
+      if (v_weight == nullptr) {
         for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
           cs_lnum_t s_id = c2v_idx[c_id];
           cs_lnum_t e_id = c2v_idx[c_id+1];
@@ -386,7 +386,7 @@ _vertex_to_cell_scalar(cs_vertex_to_cell_type_t   method,
         }
       }
 
-      if (v_weight != NULL) {
+      if (v_weight != nullptr) {
         for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
           c_var[c_id] /= c_w[c_id];
         BFT_FREE(c_w);
@@ -448,7 +448,7 @@ _vertex_to_cell_scalar(cs_vertex_to_cell_type_t   method,
  * \param[in]   method      interpolation method
  * \param[in]   verbosity   verbosity level
  * \param[in]   var_dim     variable dimension
- * \param[in]   v_weight    vertex weight, or NULL
+ * \param[in]   v_weight    vertex weight, or nullptr
  * \param[in]   v_var       base vertex-based variable
  * \param[out]  c_var       cell-based variable
  */
@@ -458,9 +458,9 @@ static void
 _vertex_to_cell_strided(cs_vertex_to_cell_type_t   method,
                         int                        verbosity,
                         cs_lnum_t                  var_dim,
-                        const cs_real_t            v_weight[restrict],
-                        const cs_real_t            v_var[restrict],
-                        cs_real_t                  c_var[restrict])
+                        const cs_real_t *restrict  v_weight,
+                        const cs_real_t *restrict  v_var,
+                        cs_real_t *restrict        c_var)
 {
   CS_UNUSED(verbosity);
 
@@ -483,7 +483,7 @@ _vertex_to_cell_strided(cs_vertex_to_cell_type_t   method,
 
   case CS_VERTEX_TO_CELL_UNWEIGHTED:
     {
-      if (v_weight == NULL) {
+      if (v_weight == nullptr) {
         for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
           cs_lnum_t s_id = c2v_idx[c_id];
           cs_lnum_t e_id = c2v_idx[c_id+1];
@@ -536,14 +536,14 @@ _vertex_to_cell_strided(cs_vertex_to_cell_type_t   method,
 
       const cs_weight_t *w = _weights_vtc[CS_VERTEX_TO_CELL_SHEPARD];
 
-      cs_real_t *c_w = NULL;
-      if (v_weight != NULL) {
+      cs_real_t *c_w = nullptr;
+      if (v_weight != nullptr) {
         BFT_MALLOC(c_w, n_cells, cs_real_t);
         for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
           c_w[c_id] = 0;
       }
 
-      if (v_weight == NULL) {
+      if (v_weight == nullptr) {
         for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
           cs_lnum_t s_id = c2v_idx[c_id];
           cs_lnum_t e_id = c2v_idx[c_id+1];
@@ -568,7 +568,7 @@ _vertex_to_cell_strided(cs_vertex_to_cell_type_t   method,
         }
       }
 
-      if (v_weight != NULL) {
+      if (v_weight != nullptr) {
         for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
           for (cs_lnum_t k = 0; k < var_dim; k++)
             c_var[c_id*var_dim+k] /= c_w[c_id];
@@ -657,7 +657,7 @@ cs_vertex_to_cell_free(void)
  * \param[in]       verbosity         verbosity level
  * \param[in]       var_dim           variable dimension
  * \param[in]       ignore_rot_perio  if true, ignore periodicity of rotation
- * \param[in]       v_weight          vertex weight, or NULL
+ * \param[in]       v_weight          vertex weight, or nullptr
  * \param[in]       v_var             base vertex-based variable
  * \param[out]      c_var             cell-based variable
  */
@@ -667,9 +667,9 @@ void
 cs_vertex_to_cell(cs_vertex_to_cell_type_t   method,
                   int                        verbosity,
                   cs_lnum_t                  var_dim,
-                  const cs_real_t            v_weight[restrict],
-                  const cs_real_t            v_var[restrict],
-                  cs_real_t                  c_var[restrict])
+                  const cs_real_t *restrict  v_weight,
+                  const cs_real_t *restrict  v_var,
+                  cs_real_t *restrict        c_var)
 {
   CS_UNUSED(verbosity);
 
