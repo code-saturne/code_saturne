@@ -2459,8 +2459,8 @@ cs_matrix_assembler_create_from_shared(cs_lnum_t         n_rows,
                                        const cs_lnum_t   col_id[],
                                        const cs_halo_t  *halo)
 {
-  cs_gnum_t l_range[2] = {0, n_rows};
-  cs_gnum_t n_g_rows = n_rows;
+  cs_gnum_t l_range[2] = {0, (cs_gnum_t)n_rows};
+  cs_gnum_t n_g_rows = (cs_gnum_t)n_rows;
 
 #if defined(HAVE_MPI)
   if (cs_glob_n_ranks > 1) {

@@ -1311,8 +1311,8 @@ _set_coeffs(cs_matrix_t        *matrix,
     if (have_diag) {
 
       for (cs_lnum_t ii = 0; ii < n_rows; ii++) {
-        PetscInt idxm[] = {g_id[ii]};
-        PetscInt idxn[] = {g_id[ii]};
+        PetscInt idxm[] = {(PetscInt)g_id[ii]};
+        PetscInt idxn[] = {(PetscInt)g_id[ii]};
         PetscScalar v[] = {da[ii]};
         MatSetValues(coeffs->hm, 1, idxm, 1, idxn, v, insert_mode);
       }
