@@ -3005,7 +3005,7 @@ cs_soil_model(void)
         soil_thermal_rad_downward->val[soil_id] = emi * foir;
       if (soil_visible_rad_absorbed != NULL)
         soil_visible_rad_absorbed->val[soil_id] =
-          (1. - boundary_albedo->val[cell_id]) * fos;
+          (1. - boundary_albedo->val[face_id]) * fos;
 
       }
 
