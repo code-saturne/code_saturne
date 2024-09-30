@@ -256,7 +256,7 @@ cs_param_sles_create(int          field_id,
   slesp->solver_class = CS_PARAM_SOLVER_CLASS_CS; // solver family
   slesp->precond = CS_PARAM_PRECOND_DIAG;         // preconditioner
   slesp->solver = CS_PARAM_SOLVER_GCR;            // iterative solver
-  slesp->need_flexible = false; // not the flexible variant
+  slesp->need_flexible = false;                   // not the flexible variant
   slesp->restart = 25;                            // restart after ? iterations
   slesp->amg_type = CS_PARAM_AMG_NONE;            // no predefined AMG type
 
@@ -345,8 +345,8 @@ cs_param_sles_log(cs_param_sles_t   *slesp)
 
   if (slesp->solver == CS_PARAM_SOLVER_MUMPS)
     cs_param_mumps_log(slesp->name,
-                       static_cast<const cs_param_mumps_t *>(
-                         slesp->context_param));
+                       static_cast<const cs_param_mumps_t *>
+                       (slesp->context_param));
 
   else { /* Iterative solvers */
 
@@ -358,14 +358,14 @@ cs_param_sles_log(cs_param_sles_t   *slesp)
       if (slesp->amg_type == CS_PARAM_AMG_INHOUSE_K ||
           slesp->amg_type == CS_PARAM_AMG_INHOUSE_V)
         cs_param_amg_inhouse_log(slesp->name,
-                                 static_cast<const cs_param_amg_inhouse_t *>(
-                                   slesp->context_param));
+                                 static_cast<const cs_param_amg_inhouse_t *>
+                                 (slesp->context_param));
 
       else if (slesp->amg_type == CS_PARAM_AMG_HYPRE_BOOMER_V ||
                slesp->amg_type == CS_PARAM_AMG_HYPRE_BOOMER_W)
         cs_param_amg_boomer_log(slesp->name,
-                                static_cast<const cs_param_amg_boomer_t *>(
-                                  slesp->context_param));
+                                static_cast<const cs_param_amg_boomer_t *>
+                                (slesp->context_param));
 
       else if (slesp->amg_type == CS_PARAM_AMG_PETSC_GAMG_V ||
                slesp->amg_type == CS_PARAM_AMG_PETSC_GAMG_W)
@@ -386,14 +386,15 @@ cs_param_sles_log(cs_param_sles_t   *slesp)
       if (slesp->amg_type == CS_PARAM_AMG_INHOUSE_K ||
           slesp->amg_type == CS_PARAM_AMG_INHOUSE_V)
         cs_param_amg_inhouse_log(slesp->name,
-                                 static_cast<const cs_param_amg_inhouse_t *>(
-                                   slesp->context_param));
+                                 static_cast<const cs_param_amg_inhouse_t *>
+                                 (slesp->context_param));
 
-      if (slesp->amg_type == CS_PARAM_AMG_HYPRE_BOOMER_V ||
-          slesp->amg_type == CS_PARAM_AMG_HYPRE_BOOMER_W)
+      else if (slesp->amg_type == CS_PARAM_AMG_HYPRE_BOOMER_V ||
+               slesp->amg_type == CS_PARAM_AMG_HYPRE_BOOMER_W)
         cs_param_amg_boomer_log(slesp->name,
-                                static_cast<const cs_param_amg_boomer_t *>(
-                                  slesp->context_param));
+                                static_cast<const cs_param_amg_boomer_t *>
+                                (slesp->context_param));
+
       else if (slesp->amg_type == CS_PARAM_AMG_PETSC_GAMG_V ||
                slesp->amg_type == CS_PARAM_AMG_PETSC_GAMG_W)
         cs_param_amg_gamg_log(slesp->name,
@@ -403,8 +404,8 @@ cs_param_sles_log(cs_param_sles_t   *slesp)
     }
     else if (slesp->precond == CS_PARAM_PRECOND_MUMPS)
       cs_param_mumps_log(slesp->name,
-                         static_cast<const cs_param_mumps_t *>(
-                           slesp->context_param));
+                         static_cast<const cs_param_mumps_t *>
+                         (slesp->context_param));
 
     cs_log_printf(CS_LOG_SETUP, "  * %s | SLES Block.Precond:       %s\n",
                   slesp->name,

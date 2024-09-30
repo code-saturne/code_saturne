@@ -595,7 +595,7 @@ cs_domain_init_cdo_structures(cs_domain_t                 *domain)
      Update mesh structure with range set structures */
 
   cs_domain_cdo_context_t  *cc = domain->cdo_context;
-  domain->connect              = cs_cdo_connect_build(domain->mesh,
+  domain->connect = cs_cdo_connect_build(domain->mesh,
                                          cc->eb_scheme_flag,
                                          cc->fb_scheme_flag,
                                          cc->cb_scheme_flag,

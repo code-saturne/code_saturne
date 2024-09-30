@@ -491,15 +491,17 @@ _cs_ksp_converged(KSP                  ksp,
  * \brief Setup HPDDM preconditionner.
  *        Create auxiliary matrix for coarse solver
  *
- * \param[in, out]  context    pointer to iterative solver info and context
- *                             (actual type: cs_sles_petsc_t  *)
- * \param[in]       name       pointer to system name
- * \param[in]       a          associated matrix
+ * \param[in, out]  context  pointer to iterative solver info and context
+ *                           (actual type: cs_sles_petsc_t  *)
+ * \param[in]       name     pointer to system name
+ * \param[in]       a        associated matrix
  */
 /*----------------------------------------------------------------------------*/
 
 static void
-_cs_sles_hpddm_setup(void *context, const char *name, const cs_matrix_t *a)
+_cs_sles_hpddm_setup(void              *context,
+                     const char        *name,
+                     const cs_matrix_t *a)
 {
 #ifdef PETSC_HAVE_HPDDM
 
@@ -552,6 +554,7 @@ _cs_sles_hpddm_setup(void *context, const char *name, const cs_matrix_t *a)
               cs_matrix_get_type_name(a),
               name);
   }
+
   if (db_size == 1 && cs_mat_type == CS_MATRIX_CSR
       && (strcmp(c->matype_r, MATMPIAIJ) == 0
           || (strcmp(c->matype_r, MATAIJ) == 0 && cs_glob_n_ranks > 1))) {

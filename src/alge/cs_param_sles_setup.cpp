@@ -1040,13 +1040,9 @@ _petsc_set_pc_type(cs_param_sles_t  *slesp,
 #if defined(PETSC_HAVE_HPDDM)
     _petsc_pchpddm_hook(prefix, slesp, pc);
 #else
-    bft_error(
-      __FILE__,
-      __LINE__,
-      0,
-      " %s: Eq. %s: Preconditioner HPDDM is not available inside PETSc.",
-      __func__,
-      slesp->name);
+    bft_error(__FILE__, __LINE__, 0,
+              "%s: Eq. %s: Preconditioner HPDDM is not available inside PETSc.",
+              __func__, slesp->name);
 #endif
     break;
 
@@ -1056,7 +1052,7 @@ _petsc_set_pc_type(cs_param_sles_t  *slesp,
 
   default:
     bft_error(__FILE__, __LINE__, 0,
-              " %s: Eq. \"%s\" (prefix: \"%s\"): Preconditioner not interfaced"
+              "%s: Eq. \"%s\" (prefix: \"%s\"): Preconditioner not interfaced"
               " with PETSc.",
               __func__, slesp->name, prefix);
   }
