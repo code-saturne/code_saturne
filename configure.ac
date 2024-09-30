@@ -54,7 +54,7 @@ m4_define([cs_version_string],
           [m4_normalize(esyscmd([build-aux/cs_version.py]))])
 
 AC_INIT([code_saturne],[cs_version_string],[saturne-support@edf.fr],[],[https://code-saturne.org])
-AC_CONFIG_SRCDIR([src/apps/cs_solver.c])
+AC_CONFIG_SRCDIR([src/apps/cs_solver.cpp])
 
 AC_CONFIG_AUX_DIR(build-aux)
 AC_CONFIG_MACRO_DIR(m4)
