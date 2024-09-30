@@ -185,14 +185,14 @@ _ptr = (_type *) _mem_realloc(_ptr, _ni, sizeof(_type), \
 /*
  * Free allocated memory.
  *
- * The freed pointer is set to NULL to avoid accidental reuse.
+ * The freed pointer is set to nullptr to avoid accidental reuse.
  *
  * parameters:
  *   _ptr  <->  pointer to allocated memory.
  */
 
 #define MEM_FREE(_ptr) \
-free(_ptr), _ptr = NULL
+free(_ptr), _ptr = nullptr
 
 /*============================================================================
  * Static global variables
@@ -308,13 +308,13 @@ _mem_malloc(size_t       ni,
   size_t  alloc_size = ni * size;
 
   if (ni == 0)
-    return NULL;
+    return nullptr;
 
   /* Allocate memory and check return */
 
   p_ret = malloc(alloc_size);
 
-  if (p_ret == NULL)
+  if (p_ret == nullptr)
     _error(file_name, line_num, errno,
            _("Failure to allocate \"%s\" (%lu bytes)"),
            var_name, (unsigned long)alloc_size);
@@ -353,7 +353,7 @@ _mem_realloc(void        *ptr,
 
   p_ret = realloc(ptr, realloc_size);
 
-  if (size != 0 && p_ret == NULL)
+  if (size != 0 && p_ret == nullptr)
     _error(file_name, line_num, errno,
            _("Failure to reallocate \"%s\" (%lu bytes)"),
            var_name, (unsigned long)realloc_size);
@@ -419,7 +419,7 @@ _file_read(void        *buf,
 {
   size_t retval = 0;
 
-  assert(inp->f != NULL);
+  assert(inp->f != nullptr);
 
   if (ni != 0)
     retval = fread(buf, size, ni, inp->f);
@@ -469,9 +469,9 @@ _file_seek(_cs_io_t   *inp,
 {
   int retval = 0;
 
-  assert(inp != NULL);
+  assert(inp != nullptr);
 
-  if (inp->f != NULL) {
+  if (inp->f != nullptr) {
 
 #if (SIZEOF_LONG < 8)
 
@@ -539,9 +539,9 @@ static long long
 _file_tell(_cs_io_t  *inp)
 {
   long long offset = 0;
-  assert(inp != NULL);
+  assert(inp != nullptr);
 
-  if (inp->f != NULL) {
+  if (inp->f != nullptr) {
 
     /* For 32-bit systems, large file support may be necessary */
 
@@ -591,31 +591,8 @@ _convert_size(unsigned char  buf[],
               size_t         val[],
               size_t         n)
 {
-  size_t i;
-
-#if (__STDC_VERSION__ >= 199901L)
-
-  for (i = 0; i < n; i++)
+  for (size_t i = 0; i < n; i++)
     val[i] = ((uint64_t *)buf)[i];
-
-#else
-
-  if (sizeof(size_t) == 8) {
-    for (i = 0; i < n; i++)
-      val[i] = ((size_t *)buf)[i];
-  }
-  else if (sizeof(unsigned long long) == 8) {
-    for (i = 0; i < n; i++)
-      val[i] = ((unsigned long long *)buf)[i];
-  }
-  else
-    _error(__FILE__, __LINE__, 0,
-           "Compilation configuration / porting error:\n"
-           "Unable to determine a 64-bit unsigned int type.\n"
-           "size_t is %d bits, unsigned long long %d bits",
-           sizeof(size_t)*8, sizeof(unsigned long long)*8);
-
-#endif
 }
 
 /*----------------------------------------------------------------------------
@@ -640,26 +617,26 @@ _open_input(const char  *filename,
   _cs_io_t inp;
 
   inp.filename = filename;
-  inp.f = NULL;
+  inp.f = nullptr;
   inp.header_size = 0;
   inp.header_align = 0;
   inp.body_align = 0;
   inp.buffer_size = 0;
-  inp.buffer = NULL;
+  inp.buffer = nullptr;
 
   inp.n_vals = 0;
   inp.location_id = 0;
   inp.index_id = 0,
   inp.n_loc_vals = 0;
   inp.type_size = 0;
-  inp.name = NULL;
-  inp.type_name = NULL;
-  inp.data = NULL;
+  inp.name = nullptr;
+  inp.type_name = nullptr;
+  inp.data = nullptr;
 
   inp.offset = 0;
   inp.swap_endian = 0;
 
-  inp.index = NULL;
+  inp.index = nullptr;
 
   /* Check if system is "big-endian" or "little-endian" */
 
@@ -677,7 +654,7 @@ _open_input(const char  *filename,
 
   inp.f = fopen(inp.filename, "rb");
 
-  if (inp.f == NULL)
+  if (inp.f == nullptr)
     _error(__FILE__, __LINE__, 0,
            _("Error opening file \"%s\":\n\n"
              "  %s"), inp.filename, strerror(errno));
@@ -737,13 +714,13 @@ static void
 _close_input(_cs_io_t  *inp,
              int        mode)
 {
-  if (inp != NULL) {
-    if (inp->f != NULL) {
+  if (inp != nullptr) {
+    if (inp->f != nullptr) {
       int retval = 0;
       if (mode == 0)
         printf(_("\nClosing input: \"%s\"\n\n"), inp->filename);
       retval = fclose(inp->f);
-      inp->f = NULL;
+      inp->f = nullptr;
       if (retval != 0)
         _error(__FILE__, __LINE__, 0,
                _("Error closing file \"%s\":\n\n"
@@ -753,7 +730,7 @@ _close_input(_cs_io_t  *inp,
     inp->header_align = 0;
     inp->body_align = 0;
     inp->buffer_size = 0;
-    inp->filename = NULL;
+    inp->filename = nullptr;
     MEM_FREE(inp->buffer);
   }
 }
@@ -770,14 +747,13 @@ _close_input(_cs_io_t  *inp,
  *   integer value
  *----------------------------------------------------------------------------*/
 
-#if (__STDC_VERSION__ >= 199901L)
 static long long
 _arg_to_int(int    arg_id,
             int    argc,
             char  *argv[])
 {
-  char  *start = NULL;
-  char  *end = NULL;
+  char  *start = nullptr;
+  char  *end = nullptr;
   long long  retval = 0;
 
   if (arg_id < argc) {
@@ -792,32 +768,6 @@ _arg_to_int(int    arg_id,
 
   return retval;
 }
-
-#else /* (__STDC_VERSION__ == 1989) */
-
-static long
-_arg_to_int(int    arg_id,
-            int    argc,
-            char  *argv[])
-{
-  char  *start = NULL;
-  char  *end = NULL;
-  long  retval = 0;
-
-  if (arg_id < argc) {
-    start = argv[arg_id];
-    end = start + strlen(start);
-    retval = strtol(start, &end, 0);
-    if (end != start + strlen(start))
-      _usage(argv[0], EXIT_FAILURE);
-  }
-  else
-    _usage(argv[0], EXIT_FAILURE);
-
-  return retval;
-}
-
-#endif /* (__STDC_VERSION__) */
 
 /*----------------------------------------------------------------------------
  * Read command line arguments.
@@ -958,7 +908,7 @@ _read_args(int          argc,
  *   n_values_shift <-- shift to second (end) series of values to echo
  *   buffer         <-- pointer to data
  *   type_name      <-- name of data type
- *   f_fmt          <-- if != NULL, format for output of floating-point values
+ *   f_fmt          <-- if != nullptr, format for output of floating-point values
  *----------------------------------------------------------------------------*/
 
 static void
@@ -973,17 +923,15 @@ _echo_values(size_t       n_values,
   /* Check type name */
 
   if (type_name[0] == 'c') {
-    const char *_buffer = buffer;
+    const char *_buffer = static_cast<const char *>(buffer);
     for (i = 0; i < n_values; i++)
       printf("    %10lu : '%c'\n",
              (unsigned long)(i + n_values_shift),
              _buffer[i]);
   }
 
-#if (__STDC_VERSION__ >= 199901L)
-
   else if (type_name[0] == 'i' && type_name[1] == '4') {
-    const int32_t *_buffer = buffer;
+    const int32_t *_buffer = static_cast<const int32_t *>(buffer);
     for (i = 0; i < n_values; i++)
       printf("    %10lu : %d\n",
              (unsigned long)(i + n_values_shift),
@@ -991,7 +939,7 @@ _echo_values(size_t       n_values,
   }
 
   else if (type_name[0] == 'i' && type_name[1] == '8') {
-    const int64_t *_buffer = buffer;
+    const int64_t *_buffer = static_cast<const int64_t *>(buffer);
     for (i = 0; i < n_values; i++)
       printf("    %10lu : %ld\n",
              (unsigned long)(i + n_values_shift),
@@ -999,7 +947,7 @@ _echo_values(size_t       n_values,
   }
 
   else if (type_name[0] == 'u' && type_name[1] == '4') {
-    const uint32_t *_buffer = buffer;
+    const uint32_t *_buffer = static_cast<const uint32_t *>(buffer);
     for (i = 0; i < n_values; i++)
       printf("    %10lu : %u\n",
              (unsigned long)(i + n_values_shift),
@@ -1007,100 +955,16 @@ _echo_values(size_t       n_values,
   }
 
   else if (type_name[0] == 'u' && type_name[1] == '8') {
-    const uint64_t *_buffer = buffer;
+    const uint64_t *_buffer = static_cast<const uint64_t *>(buffer);
     for (i = 0; i < n_values; i++)
       printf("    %10lu : %lu\n",
              (unsigned long)(i + n_values_shift),
              (unsigned long)(_buffer[i]));
   }
 
-#else /* (__STDC_VERSION__ < 199901L) */
-
-  else if (type_name[0] == 'i' && type_name[1] == '4') {
-    if (sizeof(int) == 4) {
-      const int *_buffer = buffer;
-      for (i = 0; i < n_values; i++)
-        printf("    %10lu : %d\n",
-               (unsigned long)(i + n_values_shift),
-               _buffer[i]);
-    }
-    else if (sizeof(short) == 4) {
-      const short *_buffer = buffer;
-      for (i = 0; i < n_values; i++)
-        printf("    %10lu : %d\n",
-               (unsigned long)(i + n_values_shift),
-               (int)(_buffer[i]));
-    }
-    else
-      printf("    int32_t undefined"
-             " (porting error, C99 compiler needed)\n");
-  }
-
-  else if (type_name[0] == 'i' && type_name[1] == '8') {
-    if (sizeof(long) == 8) {
-      const long *_buffer = buffer;
-      for (i = 0; i < n_values; i++)
-        printf("    %10lu : %ld\n",
-               (unsigned long)(i + n_values_shift),
-               _buffer[i]);
-    }
-    else if (sizeof(long long) == 8) {
-      const long long *_buffer = buffer;
-      for (i = 0; i < n_values; i++)
-        printf("    %10lu : %ld\n",
-               (unsigned long)(i + n_values_shift),
-               (long)(_buffer[i]));
-    }
-    else
-      printf("    int64_t undefined"
-             " (porting error, C99 compiler needed)\n");
-  }
-
-  else if (type_name[0] == 'u' && type_name[1] == '4') {
-    if (sizeof(unsigned) == 4) {
-      const unsigned *_buffer = buffer;
-      for (i = 0; i < n_values; i++)
-        printf("    %10lu : %u\n",
-               (unsigned long)(i + n_values_shift),
-               _buffer[i]);
-    }
-    else if (sizeof(unsigned short) == 4) {
-      const unsigned short *_buffer = buffer;
-      for (i = 0; i < n_values; i++)
-        printf("    %10lu : %u\n",
-               (unsigned long)(i + n_values_shift),
-               (unsigned)(_buffer[i]));
-    }
-    else
-      printf("    uint32_t undefined"
-             " (porting error, C99 compiler needed)\n");
-  }
-
-  else if (type_name[0] == 'u' && type_name[1] == '8') {
-    if (sizeof(unsigned long) == 8) {
-      const unsigned long *_buffer = buffer;
-      for (i = 0; i < n_values; i++)
-        printf("    %10lu : %lu\n",
-               (unsigned long)(i + n_values_shift),
-               (unsigned long)(_buffer[i]));
-    }
-    else if (sizeof(unsigned long long) == 8) {
-      const unsigned long long *_buffer = buffer;
-      for (i = 0; i < n_values; i++)
-        printf("    %10lu : %lu\n",
-               (unsigned long)(i + n_values_shift),
-               (unsigned long)(_buffer[i]));
-    }
-    else
-      printf("    uint64_t undefined"
-             " (porting error, C99 compiler needed)\n");
-  }
-
-#endif /* (__STDC_VERSION__) */
-
   else if (type_name[0] == 'r' && type_name[1] == '4') {
-    const float *_buffer = buffer;
-    if (f_fmt == NULL) {
+    const float *_buffer = static_cast<const float *>(buffer);
+    if (f_fmt == nullptr) {
       for (i = 0; i < n_values; i++)
         printf("    %10lu : %15.9e\n",
                (unsigned long)(i + n_values_shift),
@@ -1118,8 +982,8 @@ _echo_values(size_t       n_values,
   }
 
   else if (type_name[0] == 'r' && type_name[1] == '8') {
-    const double *_buffer = buffer;
-    if (f_fmt == NULL) {
+    const double *_buffer = static_cast<const double *>(buffer);
+    if (f_fmt == nullptr) {
       for (i = 0; i < n_values; i++)
         printf("    %10lu : %22.15e\n",
                (unsigned long)(i + n_values_shift),
@@ -1153,7 +1017,7 @@ _type_size_from_name(const char  *type_name)
 {
   size_t type_size = 0;
 
-  assert(type_name != NULL);
+  assert(type_name != nullptr);
 
   /* Check type name and compute size of data */
 
@@ -1197,9 +1061,9 @@ _read_section_header(_cs_io_t  *inp)
 
   *((char *)(&int_endian)) = '\1'; /* Determine if we are little-endian */
 
-  assert(inp != NULL);
-  assert(inp->f != NULL);
-  assert(inp->buffer != NULL);
+  assert(inp != nullptr);
+  assert(inp->f != nullptr);
+  assert(inp->buffer != nullptr);
 
   /* Position read pointer if necessary */
   /*------------------------------------*/
@@ -1243,7 +1107,7 @@ _read_section_header(_cs_io_t  *inp)
   inp->index_id = header_vals[3];
   inp->n_loc_vals = header_vals[4];
   inp->type_size = 0;
-  inp->data = NULL;
+  inp->data = nullptr;
   inp->type_name = (char *)(inp->buffer + 48);
   inp->name = (char *)(inp->buffer + 56);
 
@@ -1256,7 +1120,7 @@ _read_section_header(_cs_io_t  *inp)
 
     inp->type_size = _type_size_from_name(inp->type_name);
 
-    if (inp->data == NULL)
+    if (inp->data == nullptr)
       body_size = inp->type_size*inp->n_vals;
 
     else if (int_endian == 1 && inp->type_size > 1)
@@ -1274,7 +1138,7 @@ _read_section_header(_cs_io_t  *inp)
  * parameters:
  *   inp   <-> pointer to input object
  *   echo  <-- number of values to print
- *   f_fmt <-- if != NULL, format for output of floating-point values
+ *   f_fmt <-- if != nullptr, format for output of floating-point values
  *----------------------------------------------------------------------------*/
 
 static void
@@ -1283,12 +1147,12 @@ _read_section_values(_cs_io_t    *inp,
                      const char  *f_fmt)
 {
   size_t n_print = 0, n_skip = 0;
-  unsigned char  *buffer = NULL;
-  const unsigned char  *data = NULL;
+  unsigned char  *buffer = nullptr;
+  const unsigned char  *data = nullptr;
 
   assert(inp->n_vals > 0);
 
-  if (inp->data != NULL)
+  if (inp->data != nullptr)
     printf(_("      Values in header\n"));
 
   /* Compute number of values to skip */
@@ -1304,7 +1168,7 @@ _read_section_values(_cs_io_t    *inp,
 
   /* Position read pointer if non-embedded data is present */
 
-  if (inp->data == NULL) {
+  if (inp->data == nullptr) {
 
     long long offset = _file_tell(inp);
     size_t ba = inp->body_align;
@@ -1321,7 +1185,7 @@ _read_section_values(_cs_io_t    *inp,
   }
 
   else if (n_print > 0)
-    data = inp->data;
+    data = static_cast<const unsigned char*>(inp->data);
 
   /* Print first part of data */
 
@@ -1334,7 +1198,7 @@ _read_section_values(_cs_io_t    *inp,
 
     _echo_values(n_print,
                  1,
-                 data,
+                 static_cast<const unsigned char*>(data),
                  inp->type_name,
                  f_fmt);
 
@@ -1347,7 +1211,7 @@ _read_section_values(_cs_io_t    *inp,
 
   if (n_skip > 0) {
 
-    if (inp->data == NULL) {
+    if (inp->data == nullptr) {
 
       long long offset = _file_tell(inp) + n_skip*inp->type_size;
       _file_seek(inp, offset, SEEK_SET);
@@ -1370,7 +1234,7 @@ _read_section_values(_cs_io_t    *inp,
 
   }
 
-  if (buffer != NULL)
+  if (buffer != nullptr)
     MEM_FREE(buffer);
 }
 
@@ -1390,7 +1254,7 @@ _skip_section_values(_cs_io_t    *inp)
 
   /* Position read pointer if non-embedded data is present */
 
-  if (inp->data == NULL) {
+  if (inp->data == nullptr) {
     long long offset = _file_tell(inp);
     size_t ba = inp->body_align;
     offset += (ba - (offset % ba)) % ba + inp->n_vals*inp->type_size;
@@ -1405,7 +1269,7 @@ _skip_section_values(_cs_io_t    *inp)
  *
  * parameters:
  *   inp   <-> pointer to input object
- *   f_fmt <-- if != NULL, format for output of floating-point values
+ *   f_fmt <-- if != nullptr, format for output of floating-point values
  *----------------------------------------------------------------------------*/
 
 static void
@@ -1414,12 +1278,12 @@ _extract_section_values(_cs_io_t    *inp,
 {
   size_t i;
   size_t n_vals = inp->n_vals;
-  void *data = NULL;
+  void *data = nullptr;
   const char *type_name = inp->type_name;
 
   /* Position read pointer if non-embedded data is present */
 
-  if (inp->data == NULL) {
+  if (inp->data == nullptr) {
 
     _file_seek(inp, inp->offset, SEEK_SET);
 
@@ -1442,7 +1306,7 @@ _extract_section_values(_cs_io_t    *inp,
 
     if (type_name[0] == 'c') {
       if (inp->location_id == 0) {
-        char *_data = NULL;
+        char *_data = nullptr;
         MEM_MALLOC(_data, n_vals + 1, char);
         memcpy(_data, data, n_vals);
         for (i = 0; i < n_vals; i++)
@@ -1453,109 +1317,39 @@ _extract_section_values(_cs_io_t    *inp,
         MEM_FREE(_data);
       }
       else {
-        char *_data = data;
+        char *_data = static_cast<char *>(data);
         for (i = 0; i < n_vals; i++)
           printf("%d\n", (int)(_data[i]));
       }
     }
 
-#if (__STDC_VERSION__ >= 199901L)
-
     else if (type_name[0] == 'i' && type_name[1] == '4') {
-      const int32_t *_data = data;
+      const int32_t *_data = static_cast<const int32_t *>(data);
       for (i = 0; i < n_vals; i++)
         printf("%d\n", (int)(_data[i]));
     }
 
     else if (type_name[0] == 'i' && type_name[1] == '8') {
-      const int64_t *_data = data;
+      const int64_t *_data = static_cast< const int64_t *>(data);
       for (i = 0; i < n_vals; i++)
         printf("%ld\n", (long)(_data[i]));
     }
 
     else if (type_name[0] == 'u' && type_name[1] == '4') {
-      const uint32_t *_data = data;
+      const uint32_t *_data = static_cast<const uint32_t *>(data);
       for (i = 0; i < n_vals; i++)
         printf("%u\n", (unsigned)(_data[i]));
     }
 
     else if (type_name[0] == 'u' && type_name[1] == '8') {
-      const uint64_t *_data = data;
+      const uint64_t *_data = static_cast<const uint64_t *>(data);
       for (i = 0; i < n_vals; i++)
         printf("%lu\n", (unsigned long)(_data[i]));
     }
 
-#else /* (__STDC_VERSION__ < 199901L) */
-
-    else if (type_name[0] == 'i' && type_name[1] == '4') {
-      if (sizeof(int) == 4) {
-        const int *_data = data;
-        for (i = 0; i < n_vals; i++)
-          printf("%d\n",  _data[i]);
-      }
-      else if (sizeof(short) == 4) {
-        const short *_data = data;
-        for (i = 0; i < n_vals; i++)
-          printf("%d\n", (int)(_data[i]));
-      }
-      else
-        printf("    int32_t undefined"
-               " (porting error, C99 compiler needed)\n");
-    }
-
-    else if (type_name[0] == 'i' && type_name[1] == '8') {
-      if (sizeof(long) == 8) {
-        const long *_data = data;
-        for (i = 0; i < n_vals; i++)
-          printf("%ld\n", _data[i]);
-      }
-      else if (sizeof(long long) == 8) {
-        const long long *_data = data;
-        for (i = 0; i < n_vals; i++)
-          printf("%ld\n", (long)(_data[i]));
-      }
-      else
-        printf("    int64_t undefined"
-               " (porting error, C99 compiler needed)\n");
-    }
-
-    else if (type_name[0] == 'u' && type_name[1] == '4') {
-      if (sizeof(unsigned) == 4) {
-        const unsigned *_data = data;
-        for (i = 0; i < n_vals; i++)
-          printf("%u\n", _data[i]);
-      }
-      else if (sizeof(unsigned short) == 4) {
-        const unsigned short *_data = data;
-        for (i = 0; i < n_vals; i++)
-          printf("%u\n", (unsigned)(_data[i]));
-      }
-      else
-        printf("    uint32_t undefined"
-               " (porting error, C99 compiler needed)\n");
-    }
-
-    else if (type_name[0] == 'u' && type_name[1] == '8') {
-      if (sizeof(unsigned long) == 8) {
-        const unsigned long *_data = data;
-        for (i = 0; i < n_vals; i++)
-          printf("%lu\n", (unsigned long)(_data[i]));
-      }
-      else if (sizeof(unsigned long long) == 8) {
-        const unsigned long long *_data = data;
-        for (i = 0; i < n_vals; i++)
-          printf("%lu\n", (unsigned long)(_data[i]));
-      }
-      else
-        printf("    uint64_t undefined"
-               " (porting error, C99 compiler needed)\n");
-    }
-
-#endif /* (__STDC_VERSION__) */
-
     else if (type_name[0] == 'r' && type_name[1] == '4') {
-      const float *_data = data;
-      if (f_fmt == NULL) {
+      const float *_data = static_cast<const float *>(data);
+      if (f_fmt == nullptr) {
         for (i = 0; i < n_vals; i++)
           printf("%15.9e\n", (double)(_data[i]));
       }
@@ -1569,8 +1363,8 @@ _extract_section_values(_cs_io_t    *inp,
     }
 
     else if (type_name[0] == 'r' && type_name[1] == '8') {
-      const double *_data = data;
-      if (f_fmt == NULL) {
+      const double *_data = static_cast<const double *>(data);
+      if (f_fmt == nullptr) {
         for (i = 0; i < n_vals; i++)
           printf("%22.15e\n", _data[i]);
       }
@@ -1584,7 +1378,7 @@ _extract_section_values(_cs_io_t    *inp,
     }
   }
 
-  if (inp->data == NULL)
+  if (inp->data == nullptr)
     MEM_FREE(data);
 }
 
@@ -1595,8 +1389,8 @@ _extract_section_values(_cs_io_t    *inp,
  *   inp         <-> pointer to input object
  *   echo        <-- number of values to print
  *   location_id <-- if >= 0 location id filter
- *   sec_name    <-- if != NULL, section name filter
- *   f_fmt       <-- if != NULL, format for output of floating-point values
+ *   sec_name    <-- if != nullptr, section name filter
+ *   f_fmt       <-- if != nullptr, format for output of floating-point values
  *----------------------------------------------------------------------------*/
 
 static void
@@ -1608,15 +1402,15 @@ _read_section(_cs_io_t    *inp,
 {
   int read_section = 0;
 
-  assert(inp != NULL);
-  assert(inp->f != NULL);
+  assert(inp != nullptr);
+  assert(inp->f != nullptr);
 
   /* Read section header and print basic information */
 
   _read_section_header(inp);
 
   if (   (location_id < 0 || (unsigned)location_id == inp->location_id)
-      && (sec_name == NULL || !strcmp(sec_name, inp->name)))
+      && (sec_name == nullptr || !strcmp(sec_name, inp->name)))
     read_section = 1;
 
   if (read_section) {
@@ -1664,7 +1458,7 @@ _update_index_and_shift(_cs_io_t  *inp)
 
   _cs_io_sec_index_t  *idx = inp->index;
 
-  if (idx == NULL)
+  if (idx == nullptr)
     return;
 
   /* Reallocate if necessary */
@@ -1681,7 +1475,7 @@ _update_index_and_shift(_cs_io_t  *inp)
   new_names_size = idx->names_size + strlen(inp->name) + 1;
   new_types_size = idx->types_size + strlen(inp->type_name) + 1;
 
-  if (inp->data != NULL)
+  if (inp->data != nullptr)
     new_data_size = idx->data_size + (inp->n_vals * inp->type_size);
 
   if (new_names_size > idx->max_names_size) {
@@ -1728,7 +1522,7 @@ _update_index_and_shift(_cs_io_t  *inp)
   idx->types[new_types_size - 1] = '\0';
   idx->types_size = new_types_size;
 
-  if (inp->data == NULL) {
+  if (inp->data == nullptr) {
     long long offset = _file_tell(inp);
     long long data_shift = inp->n_vals * inp->type_size;
     if (inp->body_align > 0) {
@@ -1763,7 +1557,7 @@ static void
 _create_index(_cs_io_t  *inp,
              long long   end_offset)
 {
-  _cs_io_sec_index_t  *idx = NULL;
+  _cs_io_sec_index_t  *idx = nullptr;
 
   MEM_MALLOC(idx, 1, _cs_io_sec_index_t);
 
@@ -1814,7 +1608,7 @@ _destroy_index(_cs_io_t *inp)
 {
   _cs_io_sec_index_t *idx = inp->index;
 
-  if (idx == NULL)
+  if (idx == nullptr)
     return;
 
   MEM_FREE(idx->h_vals);
@@ -1846,7 +1640,7 @@ _set_indexed_section(_cs_io_t  *inp,
   inp->index_id = h_vals[2];
   inp->n_loc_vals = h_vals[3];
   inp->type_size = 0;
-  inp->data = NULL;
+  inp->data = nullptr;
   if (h_vals[6] != 0)
     inp->data = index->data + h_vals[6] - 1;
   inp->name = index->names + h_vals[4];
@@ -1861,8 +1655,8 @@ _set_indexed_section(_cs_io_t  *inp,
  * parameters:
  *   inp         <-> pointer to input object
  *   location_id <-- if >= 0 location id filter
- *   sec_name    <-- if != NULL, section name filter
- *   f_fmt       <-- if != NULL, format for output of floating-point values
+ *   sec_name    <-- if != nullptr, section name filter
+ *   f_fmt       <-- if != nullptr, format for output of floating-point values
  *----------------------------------------------------------------------------*/
 
 static void
@@ -1884,7 +1678,7 @@ _find_and_extract_section(_cs_io_t    *inp,
     const char *_name = index->names + h_vals[4];
     const int _location = h_vals[1];
 
-    if (sec_name != NULL && strcmp(sec_name, _name))
+    if (sec_name != nullptr && strcmp(sec_name, _name))
       match = 0;
     if (location_id >= 0 && location_id != _location)
       match = 0;
@@ -1936,122 +1730,44 @@ _copy_to_cmp(void        *dest,
   if (type_name[0] == 'c')
     memcpy(dest, buffer, n_values);
 
-#if (__STDC_VERSION__ >= 199901L)
-
   else if (type_name[0] == 'i' && type_name[1] == '4') {
-    const int32_t *_buffer = buffer;
-    long long *_dest = dest;
+    const int32_t *_buffer = static_cast<const int32_t *>(buffer);
+    long long *_dest = static_cast<long long *>(dest);
     for (i = 0; i < n_values; i++)
       _dest[i] = _buffer[i];
   }
 
   else if (type_name[0] == 'i' && type_name[1] == '8') {
-    const int64_t *_buffer = buffer;
-    long long *_dest = dest;
+    const int64_t *_buffer = static_cast<const int64_t *>(buffer);
+    long long *_dest = static_cast<long long *>(dest);
     for (i = 0; i < n_values; i++)
       _dest[i] = _buffer[i];
   }
 
   else if (type_name[0] == 'u' && type_name[1] == '4') {
-    const uint32_t *_buffer = buffer;
-    long long *_dest = dest;
+    const uint32_t *_buffer = static_cast<const uint32_t *>(buffer);
+    long long *_dest = static_cast<long long *>(dest);
     for (i = 0; i < n_values; i++)
       _dest[i] = _buffer[i];
   }
 
   else if (type_name[0] == 'u' && type_name[1] == '8') {
-    const uint64_t *_buffer = buffer;
-    long long *_dest = dest;
+    const uint64_t *_buffer = static_cast<const uint64_t *>(buffer);
+    long long *_dest = static_cast<long long *>(dest);
     for (i = 0; i < n_values; i++)
       _dest[i] = _buffer[i];
   }
-
-#else /* (__STDC_VERSION__ < 199901L) */
-
-  else if (type_name[0] == 'i' && type_name[1] == '4') {
-    if (sizeof(int) == 4) {
-      const int *_buffer = buffer;
-      long long *_dest = dest;
-      for (i = 0; i < n_values; i++)
-        _dest[i] = _buffer[i];
-    }
-    else if (sizeof(short) == 4) {
-      const short *_buffer = buffer;
-      long long *_dest = dest;
-      for (i = 0; i < n_values; i++)
-        _dest[i] = _buffer[i];
-    }
-    else
-      printf("    int32_t undefined"
-             " (porting error, C99 compiler needed)\n");
-  }
-
-  else if (type_name[0] == 'i' && type_name[1] == '8') {
-    if (sizeof(long) == 8) {
-      const long *_buffer = buffer;
-      long long *_dest = dest;
-      for (i = 0; i < n_values; i++)
-        _dest[i] = _buffer[i];
-    }
-    else if (sizeof(long long) == 8) {
-      const long long *_buffer = buffer;
-      long long *_dest = dest;
-      for (i = 0; i < n_values; i++)
-        _dest[i] = _buffer[i];
-    }
-    else
-      printf("    int64_t undefined"
-             " (porting error, C99 compiler needed)\n");
-  }
-
-  else if (type_name[0] == 'u' && type_name[1] == '4') {
-    if (sizeof(unsigned) == 4) {
-      const unsigned *_buffer = buffer;
-      long long *_dest = dest;
-      for (i = 0; i < n_values; i++)
-        _dest[i] = _buffer[i];
-    }
-    else if (sizeof(unsigned short) == 4) {
-      const unsigned short *_buffer = buffer;
-      long long *_dest = dest;
-      for (i = 0; i < n_values; i++)
-        _dest[i] = _buffer[i];
-    }
-    else
-      printf("    uint32_t undefined"
-             " (porting error, C99 compiler needed)\n");
-  }
-
-  else if (type_name[0] == 'u' && type_name[1] == '8') {
-    if (sizeof(unsigned long) == 8) {
-      const unsigned long *_buffer = buffer;
-      long long *_dest = dest;
-      for (i = 0; i < n_values; i++)
-        _dest[i] = _buffer[i];
-    }
-    else if (sizeof(unsigned long long) == 8) {
-      const unsigned long long *_buffer = buffer;
-      long long *_dest = dest;
-      for (i = 0; i < n_values; i++)
-        _dest[i] = _buffer[i];
-    }
-    else
-      printf("    uint64_t undefined"
-             " (porting error, C99 compiler needed)\n");
-  }
-
-#endif /* (__STDC_VERSION__) */
 
   else if (type_name[0] == 'r' && type_name[1] == '4') {
-    const float *_buffer = buffer;
-    double *_dest = dest;
+    const float *_buffer = static_cast<const float *>(buffer);
+    double *_dest = static_cast<double *>(dest);
     for (i = 0; i < n_values; i++)
       _dest[i] = _buffer[i];
   }
 
   else if (type_name[0] == 'r' && type_name[1] == '8') {
-    const double *_buffer = buffer;
-    double *_dest = dest;
+    const double *_buffer = static_cast<const double *>(buffer);
+    double *_dest = static_cast<double *>(dest);
     for (i = 0; i < n_values; i++)
       _dest[i] = _buffer[i];
   }
@@ -2199,7 +1915,7 @@ _compare_ints(_cs_io_t         *inp1,
  *   inp2        <-> pointer to second input object
  *   cmp1        <-- buffer with integers from first file
  *   cmp1        <-- buffer with integers from second file
- *   f_fmt       <-- if != NULL, format for output of floating-point values
+ *   f_fmt       <-- if != nullptr, format for output of floating-point values
  *   f_threshold <-- threshold above which 2 floating-point values are
  *                   considered different.
  *   block_start <-- buffer start id in total array
@@ -2248,7 +1964,7 @@ _compare_floats(_cs_io_t         *inp1,
 
     char fmt[128] = "    %12llu:  %22.15e  | %22.15e\n";
 
-    if (f_fmt != NULL) {
+    if (f_fmt != nullptr) {
       strcpy(fmt, "    %12llu:  %");
       strcat(fmt, f_fmt);
       strcat(fmt, "  |  %");
@@ -2287,7 +2003,7 @@ _compare_floats(_cs_io_t         *inp1,
  *   inp2        <-> pointer to second input object
  *   id1         <-- id of section in first input
  *   id2         <-- id of section in second input
- *   f_fmt       <-- if != NULL, format for output of floating-point values
+ *   f_fmt       <-- if != nullptr, format for output of floating-point values
  *   f_threshold <-- threshold above which 2 floating-point values are
  *                   considered different.
  *   n_echo      <-- maximum number of differences to output
@@ -2369,8 +2085,8 @@ _compare_sections(_cs_io_t    *inp1,
     long long n_echo_cur = -1;
     size_t block_size = n_vals1;
     size_t max_block_size = 2 << 16;
-    void *buf1 = NULL, *buf2 = NULL;
-    void *cmp1 = NULL, *cmp2 = NULL;
+    void *buf1 = nullptr, *buf2 = nullptr;
+    void *cmp1 = nullptr, *cmp2 = nullptr;
     double f_stats[4] = {0.0, 0.0, 0.0, 0.0};
     const size_t type_size1 = _type_size_from_name(type1);
     const size_t type_size2 = _type_size_from_name(type2);
@@ -2378,20 +2094,20 @@ _compare_sections(_cs_io_t    *inp1,
     _set_indexed_section(inp1, id1);
     _set_indexed_section(inp2, id2);
 
-    if (inp1->data == NULL && inp2->data == NULL && block_size > max_block_size)
+    if (inp1->data == nullptr && inp2->data == nullptr && block_size > max_block_size)
       block_size = max_block_size;
 
     MEM_MALLOC(cmp1, block_size*8, unsigned char);
     MEM_MALLOC(cmp2, block_size*8, unsigned char);
 
-    if (inp1->data == NULL) {
+    if (inp1->data == nullptr) {
       MEM_MALLOC(buf1, block_size*type_size1, unsigned char);
       _file_seek(inp1, inp1->offset, SEEK_SET);
     }
     else
       buf1 = inp1->data;
 
-    if (inp2->data == NULL) {
+    if (inp2->data == nullptr) {
       MEM_MALLOC(buf2, block_size*type_size2, unsigned char);
       _file_seek(inp2, inp2->offset, SEEK_SET);
     }
@@ -2403,9 +2119,9 @@ _compare_sections(_cs_io_t    *inp1,
       if (n_read + block_size > n_vals1)
         block_size = n_vals1 - n_read;
 
-      if (inp1->data == NULL)
+      if (inp1->data == nullptr)
         _file_read(buf1, inp1->type_size, block_size, inp1);
-      if (inp2->data == NULL)
+      if (inp2->data == nullptr)
         _file_read(buf2, inp2->type_size, block_size, inp2);
 
       _copy_to_cmp(cmp1, buf1, type1, block_size);
@@ -2413,17 +2129,20 @@ _compare_sections(_cs_io_t    *inp1,
 
       if (compare_type1 == 'c')
         n_diffs += _compare_chars(inp1, inp2,
-                                  cmp1, cmp2,
+                                  static_cast<const char*>(cmp1),
+                                  static_cast<const char*>(cmp2),
                                   n_read, block_size,
                                   n_echo, &n_echo_cur);
       else if (compare_type1 == 'i')
         n_diffs += _compare_ints(inp1, inp2,
-                                 cmp1, cmp2,
+                                 static_cast<const long long int*>(cmp1),
+                                 static_cast<const long long int*>(cmp2),
                                  n_read, block_size,
                                  n_echo, &n_echo_cur);
       else if (compare_type1 == 'r')
         n_diffs += _compare_floats(inp1, inp2,
-                                   cmp1, cmp2,
+                                   static_cast<const double*>(cmp1),
+                                   static_cast<const double*>(cmp2),
                                    f_fmt,
                                    f_threshold,
                                    n_read, block_size,
@@ -2487,8 +2206,8 @@ _echo_indexed_header(const _cs_io_sec_index_t  *index,
  *   inp1        <-> pointer to first input object
  *   inp2        <-> pointer to second input object
  *   location_id <-- if >= 0 location id filter
- *   sec_name    <-- if != NULL, section name filter
- *   f_fmt       <-- if != NULL, format for output of floating-point values
+ *   sec_name    <-- if != nullptr, section name filter
+ *   f_fmt       <-- if != nullptr, format for output of floating-point values
  *   f_threshold <-- threshold above which 2 floating-point values are
  *                   considered different.
  *   n_echo      <-- maximum number of differences to output
@@ -2509,7 +2228,7 @@ _compare_files(_cs_io_t    *inp1,
   size_t i, j;
   size_t n_diffs = 0;
   int has_unmatched1 = 0, has_unmatched2 = 0;
-  int *compared1 = NULL, *compared2 = NULL;
+  int *compared1 = nullptr, *compared2 = nullptr;
   _cs_io_sec_index_t *index1 = inp1->index;
   _cs_io_sec_index_t *index2 = inp2->index;
 
@@ -2536,7 +2255,7 @@ _compare_files(_cs_io_t    *inp1,
     const char *_name1 = index1->names + h_vals1[4];
     const int _location1 = h_vals1[1];
 
-    if (sec_name != NULL && strcmp(sec_name, _name1))
+    if (sec_name != nullptr && strcmp(sec_name, _name1))
       match_filter = 0;
     if (location_id >= 0 && location_id != _location1)
       match_filter = 0;
@@ -2592,7 +2311,7 @@ _compare_files(_cs_io_t    *inp1,
     const char *_name2 = index2->names + h_vals2[4];
     const int _location2 = h_vals2[1];
 
-    if (   (sec_name != NULL && strcmp(sec_name, _name2))
+    if (   (sec_name != nullptr && strcmp(sec_name, _name2))
         || (location_id >= 0 && location_id != _location2))
       compared2[i] = 1;
 
@@ -2638,9 +2357,9 @@ main (int argc, char *argv[])
 
   int retval = EXIT_SUCCESS;
 
-  const char *sec_name = NULL, *f_fmt = NULL;
+  const char *sec_name = nullptr, *f_fmt = nullptr;
 
-  if (getenv("LANG") != NULL)
+  if (getenv("LANG") != nullptr)
     setlocale(LC_ALL,"");
   else
     setlocale(LC_ALL,"C");

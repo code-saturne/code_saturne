@@ -118,7 +118,7 @@ $(top_builddir)/src/meg/libcsmeg.a \
 $(top_builddir)/src/libcsmodules.a \
 $(top_builddir)/src/bft/libbft.a
 
-cs_solver = $(top_srcdir)/src/apps/cs_solver.c
+cs_solver = $(top_srcdir)/src/apps/cs_solver.cpp
 cs_solver.$(OBJEXT): $(cs_solver)
 	$(CC) -c $(DEFS) $(DEFAULT_INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) ${cs_solver}
 
@@ -180,7 +180,7 @@ endif
 
 if HAVE_FRONTEND
 cs_io_dump_CPPFLAGS = -DLOCALEDIR=\"'$(localedir)'\" -I$(top_srcdir)/src/base
-cs_io_dump_SOURCES = cs_io_dump.c
+cs_io_dump_SOURCES = cs_io_dump.cpp
 cs_io_dump_LDADD =
 endif
 

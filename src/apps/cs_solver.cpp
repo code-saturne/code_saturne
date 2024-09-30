@@ -44,15 +44,15 @@
 #include "bft_printf.h"
 
 #include "cs_ale.h"
-#include "cs_atmo.h"
 #include "cs_all_to_all.h"
 #include "cs_ast_coupling.h"
+#include "cs_atmo.h"
 #include "cs_balance.h"
 #include "cs_base.h"
 #include "cs_base_fortran.h"
 #include "cs_benchmark.h"
-#include "cs_boundary_zone.h"
 #include "cs_boundary_conditions.h"
+#include "cs_boundary_zone.h"
 #include "cs_calcium.h"
 #include "cs_cdo_main.h"
 #include "cs_cell_to_vertex.h"
@@ -77,21 +77,21 @@
 #include "cs_gui_particles.h"
 #include "cs_gui_radiative_transfer.h"
 #include "cs_gui_util.h"
-#include "cs_io.h"
 #include "cs_ibm.h"
+#include "cs_io.h"
 #include "cs_join.h"
 #include "cs_les_inflow.h"
 #include "cs_log.h"
-#include "cs_log_setup.h"
 #include "cs_log_iteration.h"
+#include "cs_log_setup.h"
 #include "cs_matrix_default.h"
 #include "cs_mesh.h"
 #include "cs_mesh_adjacencies.h"
+#include "cs_mesh_bad_cells.h"
 #include "cs_mesh_coherency.h"
 #include "cs_mesh_location.h"
 #include "cs_mesh_quality.h"
 #include "cs_mesh_quantities.h"
-#include "cs_mesh_bad_cells.h"
 #include "cs_mesh_smoother.h"
 #include "cs_notebook.h"
 #include "cs_opts.h"
@@ -111,10 +111,10 @@
 #include "cs_restart.h"
 #include "cs_restart_map.h"
 #include "cs_runaway_check.h"
+#include "cs_sat_coupling.h"
 #include "cs_setup.h"
 #include "cs_sles.h"
 #include "cs_sles_default.h"
-#include "cs_sat_coupling.h"
 #include "cs_syr_coupling.h"
 #include "cs_sys_coupling.h"
 #include "cs_system_info.h"
@@ -227,8 +227,8 @@ _run(void)
   cs_timer_stats_initialize();
   cs_timer_stats_define_defaults();
 
-  if (cs_glob_tree == NULL)
-    cs_glob_tree = cs_tree_node_create(NULL);
+  if (cs_glob_tree == nullptr)
+    cs_glob_tree = cs_tree_node_create(nullptr);
 
   cs_gui_parallel_io();
   if (cs_glob_n_ranks > 1)
@@ -345,10 +345,10 @@ _run(void)
      may have the option of assigning a name to this instance. */
 
 #if defined(HAVE_MPI)
-  cs_coupling_discover_mpi_apps(opts.app_name, NULL);
+  cs_coupling_discover_mpi_apps(opts.app_name, nullptr);
 #endif
 
-  if (opts.app_name != NULL)
+  if (opts.app_name != nullptr)
     BFT_FREE(opts.app_name);
 
   /* Initialize couplings and communication if necessary */
@@ -723,7 +723,7 @@ main(int    argc,
 
 #if defined(_CS_ARCH_Linux)
 
-  if (getenv("LANG") != NULL)
+  if (getenv("LANG") != nullptr)
     setlocale(LC_ALL,"");
   else
     setlocale(LC_ALL, "C");
@@ -786,3 +786,5 @@ main(int    argc,
 }
 
 /*----------------------------------------------------------------------------*/
+
+END_C_DECLS
