@@ -661,7 +661,7 @@ class Case(object):
 
     #---------------------------------------------------------------------------
 
-    def build_run_cmd(self, resource_name=None, mem_log=False):
+    def build_run_cmd(self, resource_name=None, mem_log=None):
         """
         Define run command with specified options.
         """
@@ -678,7 +678,7 @@ class Case(object):
                 + " --id " + self.run_id
 
         if mem_log:
-            run_cmd += " --mem-log"
+            run_cmd += " --mem-log={}".format(str(mem_log))
 
         if self.kw_args:
             if self.kw_args.find(" ") < 0:
@@ -721,7 +721,7 @@ class Case(object):
 
     #---------------------------------------------------------------------------
 
-    def build_run_batch(self, resource_name=None, mem_log=False):
+    def build_run_batch(self, resource_name=None, mem_log=None):
         """
         Launch run in RESU/run_id subdirectory in an batch mode.
         """
@@ -736,7 +736,7 @@ class Case(object):
 
     #---------------------------------------------------------------------------
 
-    def run(self, resource_name=None, mem_log=False):
+    def run(self, resource_name=None, mem_log=None):
         """
         Launch run in RESU/run_id subdirectory.
         """
