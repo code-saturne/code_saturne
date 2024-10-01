@@ -426,8 +426,8 @@ cs_param_sles_gamg_reset(cs_param_sles_t  *slesp);
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Set the main members of a cs_param_amg_gamg_t structure. This
- *        structure is allocated and initialized and then one sets the main
- *        given parameters. Please refer to the PETSc user guide for more
+ *        structure is allocated, initialized by default and then one sets the
+ *        main given parameters. Please refer to the PETSc user guide for more
  *        details about the following options.
  *
  * \param[in, out] slesp           pointer to a cs_param_sles_t structure
@@ -468,6 +468,62 @@ cs_param_sles_gamg_advanced(cs_param_sles_t *slesp,
                             int              n_agg_lv,
                             bool             use_sq_grph,
                             int              n_smooth_agg);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Allocate and initialize a new context structure for the HMG settings
+ *        in PETSc.
+ *
+ * \param[in, out] slesp  pointer to a cs_param_sles_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_param_sles_hmg_reset(cs_param_sles_t  *slesp);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Set the main members of a cs_param_amg_hmg_t structure. This
+ *        structure is allocated, initialized by default and then one sets the
+ *        main given parameters. Please refer to the PETSc user guide for more
+ *        details about the following options.
+ *
+ * \param[in, out] slesp           pointer to a cs_param_sles_t structure
+ * \param[in]      n_down_iter     number of smoothing steps for the down cycle
+ * \param[in]      down_smoother   type of smoother for the down cycle
+ * \param[in]      n_up_iter       number of smoothing steps for the up cycle
+ * \param[in]      up_smoother     type of smoother for the up cycle
+ * \param[in]      coarse_solver   solver at the coarsest level
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_param_sles_hmg(cs_param_sles_t                   *slesp,
+                  int                                n_down_iter,
+                  cs_param_amg_gamg_smoother_t       down_smoother,
+                  int                                n_up_iter,
+                  cs_param_amg_gamg_smoother_t       up_smoother,
+                  cs_param_amg_gamg_coarse_solver_t  coarse_solver);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Set the members of a cs_param_amg_gamg_t structure used in
+ *        advanced settings. This structure is allocated if needed. Other
+ *        members are kept to their values. Please refer to the PETSc user
+ *        guide for more details about the following options.
+ *
+ * \param[in, out] slesp                 pointer to a cs_param_sles_t structure
+ * \param[in]      use_boomer_coarsening coarsening done by HYPRE ?
+ * \param[in]      reuse_interpolation   reuse interpolation for new mat. values
+ * \param[in]      subspace_coarsening   use coarsening of submatrices
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_param_sles_hmg_advanced(cs_param_sles_t *slesp,
+                           bool             use_boomer_coarsening,
+                           bool             reuse_interpolation,
+                           bool             subspace_coarsening);
 
 /*----------------------------------------------------------------------------*/
 /*!

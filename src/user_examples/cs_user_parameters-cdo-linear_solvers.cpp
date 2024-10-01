@@ -477,6 +477,44 @@ cs_user_parameters(cs_domain_t    *domain)
                                       // SA = smooth aggregation
   }
   /*! [cdo_sles_gamg] */
+
+  /*! [cdo_sles_hmg] */
+  {
+    // Example: How to set the HMG preconditioner
+    // ------------------------------------------
+
+    cs_equation_param_t  *eqp = cs_equation_param_by_name("MyEq");
+
+    cs_equation_param_set(eqp, CS_EQKEY_SOLVER, "fcg");
+    cs_equation_param_set(eqp, CS_EQKEY_PRECOND, "amg");
+    cs_equation_param_set(eqp, CS_EQKEY_AMG_TYPE, "hmg");
+    cs_equation_param_set(eqp, CS_EQKEY_SOLVER_RTOL, "1e-6");
+
+    /* Set the main parameters of the HMG algorithm:
+
+       --> HMG is a Hybrid MultiGrid in PETSc meaning that by default, if your
+       installation of PETSc relies on that of HYPRE, one can have the grid
+       building performed by HYPRE algorithms and the smoothers/coarse solver
+       relying on PETSc functions */
+
+    cs_param_sles_t  *slesp = cs_equation_param_get_sles_param(eqp);
+
+    cs_param_sles_hmg(slesp,
+                      /* n_down_iter, down smoother */
+                      2, CS_PARAM_AMG_GAMG_FORWARD_GS,
+                      /* n_up_iter, up smoother */
+                      2, CS_PARAM_AMG_GAMG_BACKWARD_GS,
+                      /* coarse solver */
+                      CS_PARAM_AMG_GAMG_TFS);
+
+    /* Set advanced parameters for HMG */
+
+    cs_param_sles_hmg_advanced(slesp,
+                               true,  // use boomeramg for building the grids
+                               true,  // reuse interpolation
+                               true); // use subspace coarsening
+  }
+  /*! [cdo_sles_hmg] */
 }
 
 /*----------------------------------------------------------------------------*/

@@ -599,6 +599,113 @@ cs_param_amg_gamg_log(const char                 *name,
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Create a new structure storing a set of parameters used when calling
+ *        HMG. Set all parameters at their default value.
+ *
+ * \return a pointer to a new set of HMG parameters
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_param_amg_hmg_t *
+cs_param_amg_hmg_create(void)
+{
+  cs_param_amg_hmg_t  *hmgp = nullptr;
+
+  BFT_MALLOC(hmgp, 1, cs_param_amg_hmg_t);
+
+  /* Main options */
+
+  hmgp->n_down_iter   = 1;
+  hmgp->down_smoother = CS_PARAM_AMG_GAMG_HYBRID_SSOR;
+  hmgp->n_up_iter     = 1;
+  hmgp->up_smoother   = CS_PARAM_AMG_GAMG_HYBRID_SSOR;
+  hmgp->coarse_solver = CS_PARAM_AMG_GAMG_BJACOBI_LU;
+
+  /* Advanced options */
+
+  hmgp->use_boomer_coarsening   = true;
+  hmgp->reuse_interpolation     = true;
+  hmgp->use_subspace_coarsening = true;
+
+  return hmgp;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Copy the given set of parameters used when calling HMG into a new
+ *        structure
+ *
+ * \param[in] hmgp  reference set of HMG parameters
+ *
+ * \return a pointer to a new set of HMG parameters
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_param_amg_hmg_t *
+cs_param_amg_hmg_copy(const cs_param_amg_hmg_t  *hmgp)
+{
+  cs_param_amg_hmg_t  *cpy = cs_param_amg_hmg_create();
+
+  cpy->n_down_iter   = hmgp->n_down_iter;
+  cpy->down_smoother = hmgp->down_smoother;
+  cpy->n_up_iter     = hmgp->n_up_iter;
+  cpy->up_smoother   = hmgp->up_smoother;
+  cpy->coarse_solver = hmgp->coarse_solver;
+
+  /* Advanced options */
+
+  cpy->use_boomer_coarsening   = hmgp->use_boomer_coarsening;
+  cpy->reuse_interpolation     = hmgp->reuse_interpolation;
+  cpy->use_subspace_coarsening = hmgp->use_subspace_coarsening;
+
+  return cpy;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Log the set of parameters used for setting HMG
+ *
+ * \param[in] name  name related to the current SLES
+ * \param[in] hmgp  set of hmgAMG parameters
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_param_amg_hmg_log(const char                *name,
+                     const cs_param_amg_hmg_t  *hmgp)
+{
+  if (hmgp == nullptr)
+    return;
+
+  char  *prefix = nullptr;
+  int  len = strlen(name) + strlen("  *  |") + 1;
+  BFT_MALLOC(prefix, len, char);
+  sprintf(prefix, "  * %s |", name);
+
+  cs_log_printf(CS_LOG_SETUP, "%s HMG_down_smoothing:     %1d it.| %s\n",
+                prefix, hmgp->n_down_iter,
+                cs_param_amg_get_gamg_smoother_name(hmgp->down_smoother));
+  cs_log_printf(CS_LOG_SETUP, "%s HMG_up_smoothing:       %1d it.| %s\n",
+                prefix, hmgp->n_up_iter,
+                cs_param_amg_get_gamg_smoother_name(hmgp->up_smoother));
+  cs_log_printf(CS_LOG_SETUP, "%s HMG_coarse_solver:      %s\n",
+                prefix,
+                cs_param_amg_get_gamg_coarse_solver_name(hmgp->coarse_solver));
+
+  /* Advanced parameters */
+
+  cs_log_printf(CS_LOG_SETUP, "%s use_boomer_coarsening   %s\n",
+                prefix, cs_base_strtf(hmgp->use_boomer_coarsening));
+  cs_log_printf(CS_LOG_SETUP, "%s reuse_interpolation     %s\n",
+                prefix, cs_base_strtf(hmgp->reuse_interpolation));
+  cs_log_printf(CS_LOG_SETUP, "%s use_subspace_coarsening %s\n",
+                prefix, cs_base_strtf(hmgp->use_subspace_coarsening));
+
+  BFT_FREE(prefix);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Create a new structure storing a set of parameters used when calling
  *        the in-house AMG algo. Set default values for all parameters.
  *
  * \param[in] used_as_solver   true or false

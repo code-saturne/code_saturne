@@ -320,20 +320,28 @@ _petsc_bssor_hook(const char  *prefix)
 /*!
  * \brief In case of PETSc solver, set solver/smoother for each level
  *
- * \param[in]      prefix  prefix name associated to the current SLES
- * \param[in]      gamgp   set of GAMGparameters
+ * \param[in] prefix         prefix name associated to the current SLES
+ * \param[in] n_down_iter    number of smoothing steps (down part)
+ * \param[in] down_smoother  type of smoother to apply (down part)
+ * \param[in] n_up_iter      number of smoothing steps (up part)
+ * \param[in] up_smoother    type of smoother to apply (up part)
+ * \param[in] coarse_solver  type of solver to apply at the coarsest level
  */
 /*----------------------------------------------------------------------------*/
 
 static void
-_set_petsc_mg_levels(const char                *prefix,
-                     const cs_param_amg_gamg_t *gamgp)
+_set_petsc_mg_levels(const char                        *prefix,
+                     int                                n_down_iter,
+                     cs_param_amg_gamg_smoother_t       down_smoother,
+                     int                                n_up_iter,
+                     cs_param_amg_gamg_smoother_t       up_smoother,
+                     cs_param_amg_gamg_coarse_solver_t  coarse_solver)
 {
   char keyval[32];
 
   // Set the coarse solver
 
-  switch (gamgp->coarse_solver) {
+  switch (coarse_solver) {
 
   case CS_PARAM_AMG_GAMG_BJACOBI_LU:
     _petsc_cmd(true, prefix, "mg_coarse_ksp_type", "preonly");
@@ -370,13 +378,12 @@ _set_petsc_mg_levels(const char                *prefix,
 
   // Set solver for other levels (smoothers)
 
-  if ((gamgp->down_smoother == gamgp->up_smoother) &&
-      (gamgp->n_down_iter == gamgp->n_up_iter)) {
+  if ((down_smoother == up_smoother) && (n_down_iter == n_up_iter)) {
 
-    sprintf(keyval, "%d", gamgp->n_down_iter);
+    sprintf(keyval, "%d", n_down_iter);
     _petsc_cmd(true, prefix, "mg_levels_ksp_max_it", keyval);
 
-    switch (gamgp->down_smoother) {
+    switch (down_smoother) {
 
     case CS_PARAM_AMG_GAMG_HYBRID_SSOR:
       _petsc_cmd(true, prefix, "mg_levels_ksp_type", "richardson");
@@ -397,10 +404,10 @@ _set_petsc_mg_levels(const char                *prefix,
 
     /* Down smoothers */
 
-    sprintf(keyval, "%d", gamgp->n_down_iter);
+    sprintf(keyval, "%d", n_down_iter);
     _petsc_cmd(true, prefix, "mg_levels_ksp_max_it", keyval);
 
-    switch (gamgp->down_smoother) {
+    switch (down_smoother) {
 
     case CS_PARAM_AMG_GAMG_FORWARD_GS:
       _petsc_cmd(true, prefix, "mg_levels_ksp_type", "richardson");
@@ -422,10 +429,10 @@ _set_petsc_mg_levels(const char                *prefix,
 
     /* Up smoothers */
 
-    sprintf(keyval, "%d", gamgp->n_up_iter);
+    sprintf(keyval, "%d", n_up_iter);
     _petsc_cmd(true, prefix, "mg_levels_up_ksp_max_it", keyval);
 
-    switch (gamgp->up_smoother) {
+    switch (up_smoother) {
 
     case CS_PARAM_AMG_GAMG_BACKWARD_GS:
       _petsc_cmd(true, prefix, "mg_levels_up_ksp_type", "richardson");
@@ -538,7 +545,10 @@ _petsc_pcgamg_hook(const char              *prefix,
 
   // Set smoothers (down/up) and the coarse solver
 
-  _set_petsc_mg_levels(prefix, gamgp);
+  _set_petsc_mg_levels(prefix,
+                       gamgp->n_down_iter, gamgp->down_smoother,
+                       gamgp->n_up_iter,   gamgp->up_smoother,
+                       gamgp->coarse_solver);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -549,7 +559,6 @@ _petsc_pcgamg_hook(const char              *prefix,
  *
  * \param[in]      prefix   prefix name associated to the current SLES
  * \param[in]      slesp    pointer to a set of SLES parameters
- * \param[in]      is_symm  the linear system to solve is symmetric
  * \param[in, out] pc       pointer to a PETSc preconditioner
  */
 /*----------------------------------------------------------------------------*/
@@ -557,45 +566,70 @@ _petsc_pcgamg_hook(const char              *prefix,
 static void
 _petsc_pchmg_hook(const char            *prefix,
                   const cs_param_sles_t *slesp,
-                  bool                   is_symm,
                   PC                     pc)
 {
   assert(prefix != nullptr);
   assert(slesp != nullptr);
   assert(slesp->precond == CS_PARAM_PRECOND_AMG);
 
-  /* Set smoothers (general settings, i.e. not depending on the symmetry or not
-     of the linear system to solve) */
+  const cs_param_amg_hmg_t *hmgp =
+    static_cast<cs_param_amg_hmg_t *>(slesp->context_param);
+  assert(hmgp != nullptr);
 
-  _petsc_cmd(true, prefix, "mg_levels_ksp_type", "richardson");
-  _petsc_cmd(true, prefix, "mg_levels_ksp_max_it", "1");
+  _petsc_cmd(true, prefix, "pc_type", "hmg");
 
-  _petsc_cmd(true, prefix, "mg_levels_pc_type", "sor");
-  _petsc_cmd(true, prefix, "mg_levels_pc_sor_its", "1");
+#if defined(PETSC_HAVE_HYPRE)
+  if (hmgp->use_boomer_coarsening)
+    _petsc_cmd(true, prefix, "hmg_inner_pc_type", "hypre");
+#else
+  if (hmgp->use_boomer_coarsening) {
+    cs_base_warn(__FILE__, __LINE__);
+    cs_log_printf(CS_LOG_WARNINGS,
+                  "%s: Boomer cannot be set as inner PC for \"%s\".\n"
+                  "%s: HYPRE is not available through PETSc.\n"
+                  "%s: Please check your installation.\n",
+                  __func__, slesp->name, __func__, __func__);
+  }
+#endif
 
-  /* After command line options, switch to PETSc setup functions */
-
-  PCSetType(pc, PCHMG);
-  PCSetUp(pc);
+  /* Type of cycle to apply */
 
   switch (slesp->amg_type) {
-
   case CS_PARAM_AMG_HYPRE_BOOMER_V:
   case CS_PARAM_AMG_PETSC_GAMG_V:
   case CS_PARAM_AMG_PETSC_HMG_V:
-    PCMGSetCycleType(pc, PC_MG_CYCLE_V);
+    _petsc_cmd(true, prefix, "pc_mg_cycle_type", "v");
     break;
 
   case CS_PARAM_AMG_HYPRE_BOOMER_W:
   case CS_PARAM_AMG_PETSC_GAMG_W:
   case CS_PARAM_AMG_PETSC_HMG_W:
-    PCMGSetCycleType(pc, PC_MG_CYCLE_W);
+    _petsc_cmd(true, prefix, "pc_mg_cycle_type", "w");
     break;
 
   default:
     bft_error(__FILE__, __LINE__, 0, "%s: Invalid type of AMG for SLES %s\n",
               __func__, slesp->name);
   }
+
+  // Settings specific to HMG algorithm
+
+  if (hmgp->reuse_interpolation)
+    _petsc_cmd(true, prefix, "pc_hmg_reuse_interpolation", "true");
+  else
+    _petsc_cmd(true, prefix, "pc_hmg_reuse_interpolation", "false");
+
+  if (hmgp->use_subspace_coarsening)
+    _petsc_cmd(true, prefix, "pc_hmg_use_subspace_coarsening", "true");
+  else
+    _petsc_cmd(true, prefix, "pc_hmg_use_subspace_coarsening", "false");
+
+  // Set smoothers (down/up) and the coarse solver
+
+  _set_petsc_mg_levels(prefix,
+                       hmgp->n_down_iter, hmgp->down_smoother,
+                       hmgp->n_up_iter,   hmgp->up_smoother,
+                       hmgp->coarse_solver);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1448,7 +1482,6 @@ _petsc_amg_block_hmg_hook(void  *context,
   PetscInt  n_split;
   KSP  *xyz_subksp;
   const char xyz[4]  = "xyz";
-  bool  is_symm = _system_should_be_sym(slesp->solver);
 
   PCFieldSplitGetSubKSP(pc, &n_split, &xyz_subksp);
   assert(n_split == 3);
@@ -1464,7 +1497,7 @@ _petsc_amg_block_hmg_hook(void  *context,
     KSP  _ksp = xyz_subksp[id];
     KSPGetPC(_ksp, &_pc);
 
-    _petsc_pchmg_hook(prefix, slesp, is_symm, _pc);
+    _petsc_pchmg_hook(prefix, slesp, _pc);
 
     PCSetFromOptions(_pc);
     KSPSetFromOptions(_ksp);
@@ -2397,8 +2430,8 @@ _set_mumps_sles(bool                 use_field_id,
 /*----------------------------------------------------------------------------*/
 
 static void
-_set_petsc_hypre_sles(bool                 use_field_id,
-                      cs_param_sles_t     *slesp)
+_set_petsc_hypre_sles(bool             use_field_id,
+                      cs_param_sles_t *slesp)
 {
   assert(slesp != nullptr);  /* Sanity checks */
 
@@ -2429,13 +2462,21 @@ _set_petsc_hypre_sles(bool                 use_field_id,
 
       }
       else if (slesp->amg_type == CS_PARAM_AMG_PETSC_HMG_V ||
-               slesp->amg_type == CS_PARAM_AMG_PETSC_HMG_W)
+               slesp->amg_type == CS_PARAM_AMG_PETSC_HMG_W) {
+
+        cs_param_amg_hmg_t *hmgp =
+          static_cast<cs_param_amg_hmg_t *>(slesp->context_param);
+
+        if (hmgp == nullptr) /* Define a default set of parameters */
+          cs_param_sles_hmg_reset(slesp);
+
         cs_sles_petsc_define(slesp->field_id,
                              sles_name,
                              MATMPIAIJ,
                              _petsc_amg_block_hmg_hook,
                              (void *)slesp);
 
+      }
       else if (slesp->amg_type == CS_PARAM_AMG_HYPRE_BOOMER_V ||
                slesp->amg_type == CS_PARAM_AMG_HYPRE_BOOMER_W) {
 
@@ -2461,6 +2502,9 @@ _set_petsc_hypre_sles(bool                 use_field_id,
                         " %s: System: %s.\n"
                         " Boomer is not available. Switch to GAMG solver.",
                         __func__, slesp->name);
+
+          // Switch a default set of parameters for GAMG
+
           cs_param_sles_gamg_reset(slesp);
 
           cs_sles_petsc_define(slesp->field_id,
@@ -3349,7 +3393,6 @@ cs_param_sles_setup_petsc_pc_amg(const char       *prefix,
 {
   PC pc = static_cast<PC>(p_pc);
   assert(pc != nullptr);
-  bool  is_symm = _system_should_be_sym(slesp->solver);
 
   switch (slesp->amg_type) {
 
@@ -3360,13 +3403,16 @@ cs_param_sles_setup_petsc_pc_amg(const char       *prefix,
 
   case CS_PARAM_AMG_PETSC_HMG_V:
   case CS_PARAM_AMG_PETSC_HMG_W:
-    _petsc_pchmg_hook(prefix, slesp, is_symm, pc);
+    _petsc_pchmg_hook(prefix, slesp, pc);
     break;
 
   case CS_PARAM_AMG_HYPRE_BOOMER_V:
   case CS_PARAM_AMG_HYPRE_BOOMER_W:
     if (cs_param_sles_hypre_from_petsc())
-      _petsc_pchypre_hook(prefix, slesp, is_symm, pc);
+      _petsc_pchypre_hook(prefix,
+                          slesp,
+                          _system_should_be_sym(slesp->solver),
+                          pc);
 
     else {
 

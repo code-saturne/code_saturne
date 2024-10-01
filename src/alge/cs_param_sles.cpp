@@ -373,6 +373,12 @@ cs_param_sles_log(cs_param_sles_t   *slesp)
                               static_cast<const cs_param_amg_gamg_t *>
                               (slesp->context_param));
 
+      else if (slesp->amg_type == CS_PARAM_AMG_PETSC_HMG_V ||
+               slesp->amg_type == CS_PARAM_AMG_PETSC_HMG_W)
+        cs_param_amg_hmg_log(slesp->name,
+                             static_cast<const cs_param_amg_hmg_t *>
+                             (slesp->context_param));
+
     }
 
     cs_log_printf(CS_LOG_SETUP, "  * %s | SLES Solver.Precond:      %s\n",
@@ -400,6 +406,12 @@ cs_param_sles_log(cs_param_sles_t   *slesp)
         cs_param_amg_gamg_log(slesp->name,
                               static_cast<const cs_param_amg_gamg_t *>
                               (slesp->context_param));
+
+      else if (slesp->amg_type == CS_PARAM_AMG_PETSC_HMG_V ||
+               slesp->amg_type == CS_PARAM_AMG_PETSC_HMG_W)
+        cs_param_amg_hmg_log(slesp->name,
+                             static_cast<const cs_param_amg_hmg_t *>
+                             (slesp->context_param));
 
     }
     else if (slesp->precond == CS_PARAM_PRECOND_MUMPS)
@@ -1703,6 +1715,102 @@ cs_param_sles_gamg_advanced(cs_param_sles_t *slesp,
   gamgp->n_agg_levels = n_agg_lv;
   gamgp->use_square_graph = use_sq_grph;
   gamgp->n_smooth_agg = n_smooth_agg;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Allocate and initialize a new context structure for the HMG settings
+ *        in PETSc.
+ *
+ * \param[in, out] slesp  pointer to a cs_param_sles_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_param_sles_hmg_reset(cs_param_sles_t  *slesp)
+{
+  if (slesp == nullptr)
+    return;
+
+  if (slesp->context_param != nullptr)
+    BFT_FREE(slesp->context_param);
+
+  slesp->context_param = cs_param_amg_hmg_create();
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Set the main members of a cs_param_amg_hmg_t structure. This
+ *        structure is allocated, initialized by default and then one sets the
+ *        main given parameters. Please refer to the PETSc user guide for more
+ *        details about the following options.
+ *
+ * \param[in, out] slesp           pointer to a cs_param_sles_t structure
+ * \param[in]      n_down_iter     number of smoothing steps for the down cycle
+ * \param[in]      down_smoother   type of smoother for the down cycle
+ * \param[in]      n_up_iter       number of smoothing steps for the up cycle
+ * \param[in]      up_smoother     type of smoother for the up cycle
+ * \param[in]      coarse_solver   solver at the coarsest level
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_param_sles_hmg(cs_param_sles_t                   *slesp,
+                  int                                n_down_iter,
+                  cs_param_amg_gamg_smoother_t       down_smoother,
+                  int                                n_up_iter,
+                  cs_param_amg_gamg_smoother_t       up_smoother,
+                  cs_param_amg_gamg_coarse_solver_t  coarse_solver)
+{
+  if (slesp == nullptr)
+    return;
+
+  cs_param_sles_hmg_reset(slesp); // Free and allocate a new GAMG set
+
+  cs_param_amg_hmg_t *hmgp =
+    static_cast<cs_param_amg_hmg_t *>(slesp->context_param);
+
+  hmgp->n_down_iter   = n_down_iter;
+  hmgp->down_smoother = down_smoother;
+  hmgp->n_up_iter     = n_up_iter;
+  hmgp->up_smoother   = up_smoother;
+  hmgp->coarse_solver = coarse_solver;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Set the members of a cs_param_amg_gamg_t structure used in
+ *        advanced settings. This structure is allocated if needed. Other
+ *        members are kept to their values. Please refer to the PETSc user
+ *        guide for more details about the following options.
+ *
+ * \param[in, out] slesp                 pointer to a cs_param_sles_t structure
+ * \param[in]      use_boomer_coarsening coarsening done by HYPRE ?
+ * \param[in]      reuse_interpolation   reuse interpolation for new mat. values
+ * \param[in]      subspace_coarsening   use coarsening of submatrices
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_param_sles_hmg_advanced(cs_param_sles_t *slesp,
+                           bool             use_boomer_coarsening,
+                           bool             reuse_interpolation,
+                           bool             subspace_coarsening)
+{
+  if (slesp == nullptr)
+    return;
+
+  if (slesp->context_param == nullptr)
+    slesp->context_param = cs_param_amg_hmg_create();
+
+  /* One assumes that the existing context structure is related to PETSc HMG */
+
+  cs_param_amg_hmg_t *hmgp =
+    static_cast<cs_param_amg_hmg_t *>(slesp->context_param);
+
+  hmgp->use_boomer_coarsening   = use_boomer_coarsening;
+  hmgp->reuse_interpolation     = reuse_interpolation;
+  hmgp->use_subspace_coarsening = subspace_coarsening;
 }
 
 /*----------------------------------------------------------------------------*/

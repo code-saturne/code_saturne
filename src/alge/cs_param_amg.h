@@ -167,10 +167,10 @@ typedef struct {
 
 } cs_param_amg_boomer_t;
 
-/* GAMG AMG algorithms */
-/* ------------------- */
+/* GAMG AMG algorithms in PETSc */
+/* ---------------------------- */
 
-/* List of predefined common smoothers for GAMG */
+/* List of predefined common smoothers for PETSc (GAMG and HMG) */
 
 typedef enum {
 
@@ -185,7 +185,7 @@ typedef enum {
 
 } cs_param_amg_gamg_smoother_t;
 
-/* List of predefined common coarse solver for GAMG */
+/* List of predefined common coarse solver for PETSc (GAMG and HMG) */
 
 typedef enum {
 
@@ -227,6 +227,37 @@ typedef struct {
   cs_param_amg_gamg_smoother_t       up_smoother;
 
 } cs_param_amg_gamg_t;
+
+/*! \struct cs_param_amg_hmg_t
+
+ *  \brief Set of the main parameters used to setup the algebraic multigrid HMG
+ *         belonging to the PETSc library. HMG means Hybrid MultiGrid since it
+ *         can rely on the coarsening of HYPRE and use solvers (smoother and
+ *         coarse solver) of PETSc. These parameters are used to define this
+ *         AMG directly in the PETSc library according to the settings.  Please
+ *         refer to the PETSc documentation for more details.
+ */
+
+typedef struct {
+
+  // Parameters related to the way to build the different levels
+
+  bool                               use_boomer_coarsening;
+  bool                               reuse_interpolation;
+  bool                               use_subspace_coarsening;
+
+  // Parameters related to solvers associated to each level (level 0 is the
+  // coarse grid). This relies on PETSc solvers.
+
+  int                                n_down_iter;
+  cs_param_amg_gamg_smoother_t       down_smoother;
+
+  cs_param_amg_gamg_coarse_solver_t  coarse_solver;
+
+  int                                n_up_iter;
+  cs_param_amg_gamg_smoother_t       up_smoother;
+
+} cs_param_amg_hmg_t;
 
 /* In-house AMG algorithms */
 /* ----------------------- */
@@ -369,6 +400,31 @@ cs_param_amg_gamg_is_needed(cs_param_solver_type_t   solver,
   if (precond == CS_PARAM_PRECOND_AMG || solver == CS_PARAM_SOLVER_AMG)
     if (amg == CS_PARAM_AMG_PETSC_GAMG_V ||
         amg == CS_PARAM_AMG_PETSC_GAMG_W)
+      return true;
+
+  return false;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Return true if the settings rely on hmg, otherwise false
+ *
+ * \param[in] solver   type of SLES solver
+ * \param[in] precond  type of preconditioner
+ * \param[in] amg      type of AMG
+ *
+ * \return true or false
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline bool
+cs_param_amg_hmg_is_needed(cs_param_solver_type_t   solver,
+                           cs_param_precond_type_t  precond,
+                           cs_param_amg_type_t      amg)
+{
+  if (precond == CS_PARAM_PRECOND_AMG || solver == CS_PARAM_SOLVER_AMG)
+    if (amg == CS_PARAM_AMG_PETSC_HMG_V ||
+        amg == CS_PARAM_AMG_PETSC_HMG_W)
       return true;
 
   return false;
@@ -548,6 +604,45 @@ cs_param_amg_get_gamg_coarse_solver_name
 void
 cs_param_amg_gamg_log(const char                 *name,
                       const cs_param_amg_gamg_t  *gamgp);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Create a new structure storing a set of parameters used when calling
+ *        HMG. Set all parameters at their default value.
+ *
+ * \return a pointer to a new set of HMG parameters
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_param_amg_hmg_t *
+cs_param_amg_hmg_create(void);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Copy the given set of parameters used when calling HMG into a new
+ *        structure
+ *
+ * \param[in] hmgp  reference set of HMG parameters
+ *
+ * \return a pointer to a new set of HMG parameters
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_param_amg_hmg_t *
+cs_param_amg_hmg_copy(const cs_param_amg_hmg_t  *hmgp);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Log the set of parameters used for setting HMG
+ *
+ * \param[in] name  name related to the current SLES
+ * \param[in] hmgp  set of hmgAMG parameters
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_param_amg_hmg_log(const char                *name,
+                     const cs_param_amg_hmg_t  *hmgp);
 
 /*----------------------------------------------------------------------------*/
 /*!
