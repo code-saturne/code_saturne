@@ -192,7 +192,9 @@ def process_cmd_line(argv, pkg):
                       help="additional sbatch arguments. use --slurm-batch-arg=<arg> to handle -- in argument.")
 
     parser.add_option("--mem-log", dest="mem_log",
-                      action="store_true", default=False,
+                      type=str, choices=['full', 'light'],
+                      nargs='?', const='full',
+                      default=None,
                       help="set CS_MEM_LOG environment variable to 'cs_mem.log' " \
                           + "and check that memory is correctly freed at the " \
                           + "end of the computation.")
