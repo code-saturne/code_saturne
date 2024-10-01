@@ -53,9 +53,9 @@ static int _bft_printf_proxy
        va_list         arg_ptr
 )
 {
-  static FILE *f = NULL;
+  static FILE *f = nullptr;
 
-  if (f == NULL) {
+  if (f == nullptr) {
     char filename[64];
     int rank = 0;
 #if defined(HAVE_MPI)
@@ -64,7 +64,7 @@ static int _bft_printf_proxy
 #endif
     sprintf (filename, "cs_all_to_all_test_out.%d", rank);
     f = fopen(filename, "w");
-    assert(f != NULL);
+    assert(f != nullptr);
   }
 
   return vfprintf(f, format, arg_ptr);
@@ -73,7 +73,7 @@ static int _bft_printf_proxy
 static int
 _bft_printf_flush_proxy(void)
 {
-  return fflush(NULL);
+  return fflush(nullptr);
 }
 
 /*----------------------------------------------------------------------------
@@ -107,7 +107,7 @@ main (int argc, char *argv[])
   int size = 1;
   int rank = 0;
 
-  int *dest_rank = NULL;
+  int *dest_rank = nullptr;
 
 #if defined(HAVE_MPI)
 
@@ -158,10 +158,10 @@ main (int argc, char *argv[])
     /* Build test array */
 
     cs_lnum_t n_elts = 0;
-    cs_lnum_t *src_index = NULL;
-    cs_gnum_t *src_val = NULL;
-    cs_gnum_t *part_gnum = NULL;
-    cs_all_to_all_t *d = NULL;
+    cs_lnum_t *src_index = nullptr;
+    cs_gnum_t *src_val = nullptr;
+    cs_gnum_t *part_gnum = nullptr;
+    cs_all_to_all_t *d = nullptr;
 
     if (test_id < 3) {
 
@@ -199,7 +199,7 @@ main (int argc, char *argv[])
 
       d = cs_all_to_all_create(n_elts,
                                flags,
-                               NULL, /* dest_id */
+                               nullptr, /* dest_id */
                                dest_rank,
                                cs_glob_mpi_comm);
 
@@ -251,7 +251,7 @@ main (int argc, char *argv[])
     cs_lnum_t *dest_index = cs_all_to_all_copy_index(d,
                                                      false, /* reverse */
                                                      src_index,
-                                                     NULL);
+                                                     nullptr);
 
     cs_gnum_t *dest_val = cs_all_to_all_copy_indexed(d,
                                                      false, /* reverse */
@@ -274,7 +274,7 @@ main (int argc, char *argv[])
 
     bft_printf("\nPrepare reverse\n\n");
 
-    cs_gnum_t *reverse_val = NULL;
+    cs_gnum_t *reverse_val = nullptr;
     BFT_MALLOC(reverse_val, dest_index[n_elts_dest] + n_elts_dest, cs_gnum_t);
 
     /* insert one value per element for return */

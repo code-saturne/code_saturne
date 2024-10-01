@@ -74,7 +74,7 @@ main (int argc, char *argv[])
   BFT_MALLOC(p2, 100000, double);
   printf("p2 = %p\n", p2);
 
-  p3 = NULL;
+  p3 = nullptr;
   BFT_REALLOC(p3, 100000, double);
   printf("p3 = %p\n", p3);
   BFT_REALLOC(p3, 10000, double);

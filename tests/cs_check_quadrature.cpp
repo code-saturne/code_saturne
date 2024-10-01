@@ -62,11 +62,11 @@ BEGIN_C_DECLS
  * Static global variables
  *============================================================================*/
 
-static cs_cdo_connect_t  *connect = NULL;
-static cs_cdo_quantities_t  *quant = NULL;
-static cs_time_step_t  *time_step = NULL;
+static cs_cdo_connect_t  *connect = nullptr;
+static cs_cdo_quantities_t  *quant = nullptr;
+static cs_time_step_t  *time_step = nullptr;
 
-static FILE  *quadrature = NULL;
+static FILE  *quadrature = nullptr;
 
 static const double non_poly_int[] = { 1.1319870772271508,  /* Hexa */
                                        0.0801351697078868}; /* Tetra */
@@ -119,7 +119,7 @@ _unity(cs_real_t         time,
   CS_UNUSED(input);
 
   for (cs_lnum_t i = 0; i < n_pts; i++) {
-    const cs_lnum_t  p = (pt_ids != NULL) ? pt_ids[i] : i;
+    const cs_lnum_t  p = (pt_ids != nullptr) ? pt_ids[i] : i;
     const cs_lnum_t  r = dense_output ? i : p;
     retval[r] = 1.0;
   }
@@ -143,7 +143,7 @@ _unity_vect(cs_real_t         time,
   CS_UNUSED(input);
 
   for (cs_lnum_t i = 0; i < n_pts; i++) {
-    const cs_lnum_t  p = (pt_ids != NULL) ? pt_ids[i] : i;
+    const cs_lnum_t  p = (pt_ids != nullptr) ? pt_ids[i] : i;
     const cs_lnum_t  r = dense_output ? i : p;
     for (int j = 0; j < 3; j++)
       retval[3*r+j] = 1.0;
@@ -168,7 +168,7 @@ _unity_tens(cs_real_t         time,
   CS_UNUSED(input);
 
   for (cs_lnum_t i = 0; i < n_pts; i++) {
-    const cs_lnum_t  p = (pt_ids != NULL) ? pt_ids[i] : i;
+    const cs_lnum_t  p = (pt_ids != nullptr) ? pt_ids[i] : i;
     const cs_lnum_t  r = dense_output ? i : p;
     for (int j = 0; j < 9; j++)
       retval[9*r+j] = 1.0;
@@ -192,7 +192,7 @@ _linear_xyz(cs_real_t          time,
   CS_UNUSED(input);
 
   for (cs_lnum_t i = 0; i < n_pts; i++) {
-    const cs_lnum_t  p = (pt_ids != NULL) ? pt_ids[i] : i;
+    const cs_lnum_t  p = (pt_ids != nullptr) ? pt_ids[i] : i;
     const cs_lnum_t  r = dense_output ? i : p;
     retval[r] = xyz[3*p] + xyz[3*p+1] + xyz[3*p+2];
   }
@@ -215,7 +215,7 @@ _linear_xyz_vect(cs_real_t          time,
   CS_UNUSED(input);
 
   for (cs_lnum_t i = 0; i < n_pts; i++) {
-    const cs_lnum_t  p = (pt_ids != NULL) ? 3*pt_ids[i] : 3*i;
+    const cs_lnum_t  p = (pt_ids != nullptr) ? 3*pt_ids[i] : 3*i;
     const cs_lnum_t  r = dense_output ? 3*i : p;
     for (int j = 0; j < 3; j++)
       retval[r+j] = (j+1) * xyz[p+j];
@@ -241,7 +241,7 @@ _linear_xyz_tens(cs_real_t          time,
   CS_UNUSED(input);
 
   for (cs_lnum_t i = 0; i < n_pts; i++) {
-    const cs_lnum_t  p = (pt_ids != NULL) ? 3*pt_ids[i] : 3*i;
+    const cs_lnum_t  p = (pt_ids != nullptr) ? 3*pt_ids[i] : 3*i;
     const cs_lnum_t  r = dense_output ? 9*i : 3*p;
     const cs_real_t  xpypz = xyz[p] + xyz[p+1] + xyz[p+2];
     for (int j = 0; j < 9; j++)
@@ -266,7 +266,7 @@ _quadratic_x2(cs_real_t          time,
   CS_UNUSED(time);
 
   for (cs_lnum_t i = 0; i < n_pts; i++) {
-    const cs_lnum_t  p = (pt_ids != NULL) ? pt_ids[i] : i;
+    const cs_lnum_t  p = (pt_ids != nullptr) ? pt_ids[i] : i;
     const cs_lnum_t  r = dense_output ? i : p;
     retval[r] = xyz[3*p]*xyz[3*p];
   }
@@ -289,7 +289,7 @@ _quadratic_x2_vect(cs_real_t          time,
   CS_UNUSED(input);
 
   for (cs_lnum_t i = 0; i < n_pts; i++) {
-    const cs_lnum_t  p = (pt_ids != NULL) ? 3*pt_ids[i] : 3*i;
+    const cs_lnum_t  p = (pt_ids != nullptr) ? 3*pt_ids[i] : 3*i;
     const cs_lnum_t  r = dense_output ? 3*i : p;
     const cs_real_t  x2 = xyz[p]*xyz[p];
     for (int j = 0; j < 3; j++)
@@ -316,7 +316,7 @@ _quadratic_x2_tens(cs_real_t          time,
   CS_UNUSED(input);
 
   for (cs_lnum_t i = 0; i < n_pts; i++) {
-    const cs_lnum_t  p = (pt_ids != NULL) ? 3*pt_ids[i] : 3*i;
+    const cs_lnum_t  p = (pt_ids != nullptr) ? 3*pt_ids[i] : 3*i;
     const cs_lnum_t  r = dense_output ? 9*i : 3*p;
     const cs_real_t  x2 = xyz[p]*xyz[p];
     for (int j = 0; j < 9; j++)
@@ -345,7 +345,7 @@ _nonpoly(cs_real_t         time,
   CS_UNUSED(time);
 
   for (cs_lnum_t i = 0; i < n_pts; i++) {
-    const cs_lnum_t  p = (pt_ids != NULL) ? pt_ids[i] : i;
+    const cs_lnum_t  p = (pt_ids != nullptr) ? pt_ids[i] : i;
     const cs_lnum_t  r = dense_output ? i : p;
     retval[r] = exp(xyz[3*p]+xyz[3*p+1]+xyz[3*p+2]-1.5);
   }
@@ -368,7 +368,7 @@ _nonpoly_vect(cs_real_t          time,
   CS_UNUSED(input);
 
   for (cs_lnum_t i = 0; i < n_pts; i++) {
-    const cs_lnum_t  p = (pt_ids != NULL) ? 3*pt_ids[i] : 3*i;
+    const cs_lnum_t  p = (pt_ids != nullptr) ? 3*pt_ids[i] : 3*i;
     const cs_lnum_t  r = dense_output ? 3*i : p;
     const cs_real_t  eval = exp(xyz[p]+xyz[p+1]+xyz[p+2]-1.5);
     for (int j = 0; j < 3; j++)
@@ -395,7 +395,7 @@ _nonpoly_tens(cs_real_t          time,
   CS_UNUSED(input);
 
   for (cs_lnum_t i = 0; i < n_pts; i++) {
-    const cs_lnum_t  p = (pt_ids != NULL) ? 3*pt_ids[i] : 3*i;
+    const cs_lnum_t  p = (pt_ids != nullptr) ? 3*pt_ids[i] : 3*i;
     const cs_lnum_t  r = dense_output ? 9*i : 3*p;
     const cs_real_t  eval = exp(xyz[p]+xyz[p+1]+xyz[p+2]-1.5);
     for (int j = 0; j < 9; j++)
@@ -446,7 +446,7 @@ static inline cs_analytic_func_t *
 _get_func_to_eval(const int                dim,
                   const _function_type_t   ftype)
 {
-  cs_analytic_func_t *_func = NULL;
+  cs_analytic_func_t *_func = nullptr;
 
   switch (dim) {
 
@@ -537,8 +537,8 @@ _define_cm_hexa_unif(double            a,
                      cs_cell_mesh_t   *cm)
 {
   short int  _v, _e, _f;
-  short int  *ids = NULL, *sgn = NULL;
-  cs_quant_t  *q = NULL;
+  short int  *ids = nullptr, *sgn = nullptr;
+  cs_quant_t  *q = nullptr;
 
   const double  ah = a/2.;
 
@@ -778,8 +778,8 @@ _define_cm_tetra_ref(double            a,
                      cs_cell_mesh_t   *cm)
 {
   short int  _v, _e, _f;
-  short int  *ids = NULL, *sgn = NULL;
-  cs_quant_t  *q = NULL;
+  short int  *ids = nullptr, *sgn = nullptr;
+  cs_quant_t  *q = nullptr;
 
   const double  ah = a/2.;
   const double  sq2 = sqrt(2.), invsq2 = 1./sq2;
@@ -994,7 +994,7 @@ _define_cm_tetra_ref(double            a,
 
   /* Compute dual face quantities */
 
-  cs_real_t  *df = NULL;
+  cs_real_t  *df = nullptr;
   BFT_MALLOC(df, 3*cm->n_ec, cs_real_t);
   memset(df, 0, 3*cm->n_ec*sizeof(cs_real_t));
 
@@ -1192,8 +1192,8 @@ _test_cdofb_source(FILE                     *out,
 
   cs_real_t  teval = time_step->t_cur;
   cs_flag_t  state_flag = 0, meta_flag = 0;
-  cs_cell_builder_t  *cb = NULL;
-  cs_cell_sys_t  *csys = NULL;
+  cs_cell_builder_t  *cb = nullptr;
+  cs_cell_sys_t  *csys = nullptr;
 
   cs_source_term_set_default_flag(CS_SPACE_SCHEME_CDOFB,
                                   &state_flag,
@@ -1204,7 +1204,7 @@ _test_cdofb_source(FILE                     *out,
   else
     cs_cdofb_vecteq_get(&csys, &cb);
 
-  cs_real_t  *st0 = NULL, *st1 = NULL, *st2 = NULL, *st3 = NULL;
+  cs_real_t  *st0 = nullptr, *st1 = nullptr, *st2 = nullptr, *st3 = nullptr;
   BFT_MALLOC(st0, totdof, cs_real_t);
   BFT_MALLOC(st1, totdof, cs_real_t);
   BFT_MALLOC(st2, totdof, cs_real_t);
@@ -1246,13 +1246,13 @@ _test_cdofb_source(FILE                     *out,
 
       case 1:
         t0 = cs_timer_time();
-        cs_source_term_fcb_pcsd_by_value(st, cm, teval, cb, NULL, st0);
+        cs_source_term_fcb_pcsd_by_value(st, cm, teval, cb, nullptr, st0);
         t1 = cs_timer_time();
         break;
 
       case 3:
         t0 = cs_timer_time();
-        cs_source_term_fb_pcvd_by_value(st, cm, teval, cb, NULL, st0);
+        cs_source_term_fb_pcvd_by_value(st, cm, teval, cb, nullptr, st0);
         t1 = cs_timer_time();
         break;
 
@@ -1283,13 +1283,13 @@ _test_cdofb_source(FILE                     *out,
      * cell-type is considered instead */
 
     cs_analytic_func_t  *_func = _get_func_to_eval(dim, ftype);
-    if (_func == NULL)
+    if (_func == nullptr)
       bft_error(__FILE__, __LINE__, 0, " %s: Invalid case.\n", __func__);
 
     cs_xdef_analytic_context_t  ac = {.z_id = 0,
                                       .func = _func,
-                                      .input = NULL,
-                                      .free_input = NULL };
+                                      .input = nullptr,
+                                      .free_input = nullptr };
 
     cs_xdef_t  *st = cs_xdef_volume_create(CS_XDEF_BY_ANALYTIC_FUNCTION,
                                            dim,
@@ -1312,31 +1312,31 @@ _test_cdofb_source(FILE                     *out,
 
       case 1:
         t0 = cs_timer_time();
-        cs_source_term_fcb_pcsd_bary_by_analytic(st, cm, teval, cb, NULL, st0);
+        cs_source_term_fcb_pcsd_bary_by_analytic(st, cm, teval, cb, nullptr, st0);
         t1 = cs_timer_time();
         cs_xdef_set_quadrature(st, CS_QUADRATURE_BARY_SUBDIV);
-        cs_source_term_fcb_pcsd_by_analytic(st, cm, teval, cb, NULL, st1);
+        cs_source_term_fcb_pcsd_by_analytic(st, cm, teval, cb, nullptr, st1);
         t2 = cs_timer_time();
         cs_xdef_set_quadrature(st, CS_QUADRATURE_HIGHER);
-        cs_source_term_fcb_pcsd_by_analytic(st, cm, teval, cb, NULL, st2);
+        cs_source_term_fcb_pcsd_by_analytic(st, cm, teval, cb, nullptr, st2);
         t3 = cs_timer_time();
         cs_xdef_set_quadrature(st, CS_QUADRATURE_HIGHEST);
-        cs_source_term_fcb_pcsd_by_analytic(st, cm, teval, cb, NULL, st3);
+        cs_source_term_fcb_pcsd_by_analytic(st, cm, teval, cb, nullptr, st3);
         t4 = cs_timer_time();
         break;
 
       case 3:
         t0 = cs_timer_time();
-        cs_source_term_fb_pcvd_bary_by_analytic(st, cm, teval, cb, NULL, st0);
+        cs_source_term_fb_pcvd_bary_by_analytic(st, cm, teval, cb, nullptr, st0);
         t1 = cs_timer_time();
         cs_xdef_set_quadrature(st, CS_QUADRATURE_BARY_SUBDIV);
-        cs_source_term_fb_pcvd_by_analytic(st, cm, teval, cb, NULL, st1);
+        cs_source_term_fb_pcvd_by_analytic(st, cm, teval, cb, nullptr, st1);
         t2 = cs_timer_time();
         cs_xdef_set_quadrature(st, CS_QUADRATURE_HIGHER);
-        cs_source_term_fb_pcvd_by_analytic(st, cm, teval, cb, NULL, st2);
+        cs_source_term_fb_pcvd_by_analytic(st, cm, teval, cb, nullptr, st2);
         t3 = cs_timer_time();
         cs_xdef_set_quadrature(st, CS_QUADRATURE_HIGHEST);
-        cs_source_term_fb_pcvd_by_analytic(st, cm, teval, cb, NULL, st3);
+        cs_source_term_fb_pcvd_by_analytic(st, cm, teval, cb, nullptr, st3);
         t4 = cs_timer_time();
         break;
 
@@ -1414,8 +1414,8 @@ _test_cdovb_source(FILE                     *out,
                                   &state_flag,
                                   &meta_flag);
 
-  cs_cell_builder_t  *cb = NULL;
-  cs_cell_sys_t  *csys = NULL;
+  cs_cell_builder_t  *cb = nullptr;
+  cs_cell_sys_t  *csys = nullptr;
 
   cs_cdovb_scaleq_get(&csys, &cb);
 
@@ -1452,7 +1452,7 @@ _test_cdovb_source(FILE                     *out,
 
       case 1:
         t0 = cs_timer_time();
-        cs_source_term_dcsd_by_value(st, cm, tcur, cb, NULL, st0);
+        cs_source_term_dcsd_by_value(st, cm, tcur, cb, nullptr, st0);
         t1 = cs_timer_time();
         break;
 
@@ -1481,8 +1481,8 @@ _test_cdovb_source(FILE                     *out,
 
     cs_xdef_analytic_context_t  ac = {.z_id = 0,
                                       .func = _get_func_to_eval(dim, ftype),
-                                      .input = NULL,
-                                      .free_input = NULL };
+                                      .input = nullptr,
+                                      .free_input = nullptr };
 
     cs_xdef_t  *st = cs_xdef_volume_create(CS_XDEF_BY_ANALYTIC_FUNCTION,
                                            dim,
@@ -1504,13 +1504,13 @@ _test_cdovb_source(FILE                     *out,
 
       case 1:
         t0 = cs_timer_time();
-        cs_source_term_dcsd_bary_by_analytic(st, cm, tcur, cb, NULL, st0);
+        cs_source_term_dcsd_bary_by_analytic(st, cm, tcur, cb, nullptr, st0);
         t1 = cs_timer_time();
-        cs_source_term_dcsd_q1o1_by_analytic(st, cm, tcur, cb, NULL, st1);
+        cs_source_term_dcsd_q1o1_by_analytic(st, cm, tcur, cb, nullptr, st1);
         t2 = cs_timer_time();
-        cs_source_term_dcsd_q10o2_by_analytic(st, cm, tcur, cb, NULL, st2);
+        cs_source_term_dcsd_q10o2_by_analytic(st, cm, tcur, cb, nullptr, st2);
         t3 = cs_timer_time();
-        cs_source_term_dcsd_q5o3_by_analytic(st, cm, tcur, cb, NULL, st3);
+        cs_source_term_dcsd_q5o3_by_analytic(st, cm, tcur, cb, nullptr, st3);
         t4 = cs_timer_time();
         break;
 
@@ -1594,10 +1594,10 @@ _test_quadratures_misc(FILE                     *out,
   const cs_real_t  time = time_step->t_cur;
 
   cs_analytic_func_t *_func = _get_func_to_eval(dim, ftype);
-  if (_func == NULL)
+  if (_func == nullptr)
     bft_error(__FILE__, __LINE__, 0, " %s: Invalid case.\n", __func__);
 
-  void * f_input = NULL;
+  void * f_input = nullptr;
   cs_real_t  *st0, *st1, *st2;
 
   BFT_MALLOC(st0, totdof, cs_real_t);
@@ -1702,13 +1702,13 @@ _test_quadratures_xdef(FILE                     *out,
   const short int totdof = dim*(nf + 1);
 
   cs_analytic_func_t  *_func = _get_func_to_eval(dim, ftype);
-  if (_func == NULL)
+  if (_func == nullptr)
     bft_error(__FILE__, __LINE__, 0, " %s: Invalid case.\n", __func__);
 
   cs_xdef_analytic_context_t  ac = {.z_id = 0,
                                     .func = _func,
-                                    .input = NULL,
-                                    .free_input = NULL };
+                                    .input = nullptr,
+                                    .free_input = nullptr };
 
   cs_real_t  *st0, *st1, *st2;
   BFT_MALLOC(st0, totdof, cs_real_t);
@@ -1725,8 +1725,8 @@ _test_quadratures_xdef(FILE                     *out,
   CS_TIMER_COUNTER_INIT(tc1);
   CS_TIMER_COUNTER_INIT(tc2);
 
-  cs_xdef_cw_eval_int_t  *cell_int = NULL;
-  cs_xdef_cw_eval_face_t  *face_int = NULL;
+  cs_xdef_cw_eval_int_t  *cell_int = nullptr;
+  cs_xdef_cw_eval_face_t  *face_int = nullptr;
 
   switch (dim) {
   case 1:
@@ -1825,13 +1825,13 @@ _test_cdofb_quadatures_avg(FILE                   *out,
   BFT_MALLOC(st2, totdof, cs_real_t);
 
   cs_analytic_func_t  *_func =  _get_func_to_eval(dim, ftype);
-  if (_func == NULL)
+  if (_func == nullptr)
     bft_error(__FILE__, __LINE__, 0, " %s: Invalid case.\n", __func__);
 
   cs_xdef_analytic_context_t  ac = {.z_id = 0,
                                     .func = _func,
-                                    .input = NULL,
-                                    .free_input = NULL };
+                                    .input = nullptr,
+                                    .free_input = nullptr };
 
   /* Reset values */
 
@@ -1839,7 +1839,7 @@ _test_cdofb_quadatures_avg(FILE                   *out,
   memset(st1, 0, totdof*sizeof(cs_real_t));
   memset(st2, 0, totdof*sizeof(cs_real_t));
 
-  cs_xdef_cw_eval_int_t  *compute = NULL;
+  cs_xdef_cw_eval_int_t  *compute = nullptr;
   switch (dim) {
 
   case 1:

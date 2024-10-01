@@ -75,7 +75,7 @@ main (int argc, char *argv[])
 #endif
   int   attributes[] = {3, 4, 5, 12, 15, 16};
 
-  fvm_selector_postfix_t  *pf = NULL;
+  fvm_selector_postfix_t  *pf = nullptr;
 
 #if 0
   const char infix[] = "all [\t] all \\all \t '\\to' '\\\\all' "

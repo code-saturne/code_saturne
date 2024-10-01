@@ -70,18 +70,18 @@ BEGIN_C_DECLS
  * Static global variables
  *============================================================================*/
 
-static FILE  *hexa = NULL;
-static FILE  *tetra = NULL;
-static FILE  *hexa_hho0 = NULL;
-static FILE  *hexa_hho1 = NULL;
-static FILE  *hexa_hho2 = NULL;
-static FILE  *tetra_hho0 = NULL;
-static FILE  *tetra_hho1 = NULL;
-static FILE  *tetra_hho2 = NULL;
+static FILE  *hexa = nullptr;
+static FILE  *tetra = nullptr;
+static FILE  *hexa_hho0 = nullptr;
+static FILE  *hexa_hho1 = nullptr;
+static FILE  *hexa_hho2 = nullptr;
+static FILE  *tetra_hho0 = nullptr;
+static FILE  *tetra_hho1 = nullptr;
+static FILE  *tetra_hho2 = nullptr;
 
-static cs_cdo_connect_t  *connect = NULL;
-static cs_cdo_quantities_t  *quant = NULL;
-static cs_time_step_t  *time_step = NULL;
+static cs_cdo_connect_t  *connect = nullptr;
+static cs_cdo_quantities_t  *quant = nullptr;
+static cs_time_step_t  *time_step = nullptr;
 
 static const double non_poly_int[] = { 1.1319870772271508,  /* Hexa */
                                        0.0801351697078868}; /* Tetra */
@@ -113,7 +113,7 @@ _unity(cs_real_t         time,
   CS_UNUSED(input);
 
   for (cs_lnum_t i = 0; i < n_pts; i++) {
-    const cs_lnum_t  p = (pt_ids != NULL) ? pt_ids[i] : i;
+    const cs_lnum_t  p = (pt_ids != nullptr) ? pt_ids[i] : i;
     const cs_lnum_t  r = dense_output ? i : p;
     retval[r] = 1.0;
   }
@@ -137,7 +137,7 @@ _unity_vect(cs_real_t         time,
   CS_UNUSED(input);
 
   for (cs_lnum_t i = 0; i < n_pts; i++) {
-    const cs_lnum_t  p = (pt_ids != NULL) ? pt_ids[i] : i;
+    const cs_lnum_t  p = (pt_ids != nullptr) ? pt_ids[i] : i;
     const cs_lnum_t  r = dense_output ? i : p;
     for (int j = 0; j < 3; j++)
       retval[3*r+j] = 1.0;
@@ -161,7 +161,7 @@ _linear_xyz(cs_real_t          time,
   CS_UNUSED(input);
 
   for (cs_lnum_t i = 0; i < n_pts; i++) {
-    const cs_lnum_t  p = (pt_ids != NULL) ? pt_ids[i] : i;
+    const cs_lnum_t  p = (pt_ids != nullptr) ? pt_ids[i] : i;
     const cs_lnum_t  r = dense_output ? i : p;
     retval[r] = xyz[3*p] + xyz[3*p+1] + xyz[3*p+2];
   }
@@ -184,7 +184,7 @@ _linear_xyz_vect(cs_real_t          time,
   CS_UNUSED(input);
 
   for (cs_lnum_t i = 0; i < n_pts; i++) {
-    const cs_lnum_t  p = (pt_ids != NULL) ? 3*pt_ids[i] : 3*i;
+    const cs_lnum_t  p = (pt_ids != nullptr) ? 3*pt_ids[i] : 3*i;
     const cs_lnum_t  r = dense_output ? 3*i : p;
     for (int j = 0; j < 3; j++)
       retval[r+j] = (j+1) * xyz[p+j];
@@ -208,7 +208,7 @@ _quadratic_x2(cs_real_t          time,
   CS_UNUSED(time);
 
   for (cs_lnum_t i = 0; i < n_pts; i++) {
-    const cs_lnum_t  p = (pt_ids != NULL) ? pt_ids[i] : i;
+    const cs_lnum_t  p = (pt_ids != nullptr) ? pt_ids[i] : i;
     const cs_lnum_t  r = dense_output ? i : p;
     retval[r] = xyz[3*p]*xyz[3*p];
   }
@@ -231,7 +231,7 @@ _quadratic_x2_vect(cs_real_t          time,
   CS_UNUSED(input);
 
   for (cs_lnum_t i = 0; i < n_pts; i++) {
-    const cs_lnum_t  p = (pt_ids != NULL) ? 3*pt_ids[i] : 3*i;
+    const cs_lnum_t  p = (pt_ids != nullptr) ? 3*pt_ids[i] : 3*i;
     const cs_lnum_t  r = dense_output ? 3*i : p;
     const cs_real_t  x2 = xyz[p]*xyz[p];
     for (int j = 0; j < 3; j++)
@@ -256,7 +256,7 @@ _quadratic_xyz2(cs_real_t          time,
   CS_UNUSED(time);
 
   for (cs_lnum_t i = 0; i < n_pts; i++) {
-    const cs_lnum_t  p = (pt_ids != NULL) ? pt_ids[i] : i;
+    const cs_lnum_t  p = (pt_ids != nullptr) ? pt_ids[i] : i;
     const cs_lnum_t  r = dense_output ? i : p;
     retval[r] = cs_math_3_square_norm(xyz + 3*p);
   }
@@ -279,7 +279,7 @@ _cubic_xyz3_vect(cs_real_t          time,
   CS_UNUSED(input);
 
   for (cs_lnum_t i = 0; i < n_pts; i++) {
-    const cs_lnum_t  p = (pt_ids != NULL) ? 3*pt_ids[i] : 3*i;
+    const cs_lnum_t  p = (pt_ids != nullptr) ? 3*pt_ids[i] : 3*i;
     const cs_lnum_t  r = dense_output ? 3*i : p;
     for (short int j = 0; j < 3; j++)
       retval[r+j] = cs_math_pow3(xyz[p+j]);
@@ -303,7 +303,7 @@ _nonpoly_vect(cs_real_t          time,
   CS_UNUSED(input);
 
   for (cs_lnum_t i = 0; i < n_pts; i++) {
-    const cs_lnum_t  p = (pt_ids != NULL) ? 3*pt_ids[i] : 3*i;
+    const cs_lnum_t  p = (pt_ids != nullptr) ? 3*pt_ids[i] : 3*i;
     const cs_lnum_t  r = dense_output ? 3*i : p;
     const cs_real_t  eval = exp(xyz[p]+xyz[p+1]+xyz[p+2]-1.5);
     for (int j = 0; j < 3; j++)
@@ -350,8 +350,8 @@ _define_cm_hexa_unif(double            a,
                      cs_cell_mesh_t   *cm)
 {
   short int  _v, _e, _f;
-  short int  *ids = NULL, *sgn = NULL;
-  cs_quant_t  *q = NULL;
+  short int  *ids = nullptr, *sgn = nullptr;
+  cs_quant_t  *q = nullptr;
 
   const double  ah = a/2.;
 
@@ -595,8 +595,8 @@ _define_cm_tetra_ref(double            a,
                      cs_cell_mesh_t   *cm)
 {
   short int  _v, _e, _f;
-  short int  *ids = NULL, *sgn = NULL;
-  cs_quant_t  *q = NULL;
+  short int  *ids = nullptr, *sgn = nullptr;
+  cs_quant_t  *q = nullptr;
 
   const double  ah = a/2.;
   const double  sq2 = sqrt(2.), invsq2 = 1./sq2;
@@ -806,7 +806,7 @@ _define_cm_tetra_ref(double            a,
 
   /* Compute dual face quantities */
 
-  cs_real_t  *df = NULL;
+  cs_real_t  *df = nullptr;
   BFT_MALLOC(df, 3*cm->n_ec, cs_real_t);
   memset(df, 0, 3*cm->n_ec*sizeof(cs_real_t));
 
@@ -931,9 +931,9 @@ _locmat_dump(FILE               *fic,
              const int          *dof_ids,
              const cs_sdm_t     *lm)
 {
-  assert(fic != NULL && lm != NULL);
+  assert(fic != nullptr && lm != nullptr);
 
-  if (msg != NULL)
+  if (msg != nullptr)
     fprintf(fic, "%s\n", msg);
 
   /* List sub-entity ids */
@@ -965,10 +965,10 @@ _locsys_dump(FILE                 *fic,
              const char           *msg,
              const cs_cell_sys_t  *csys)
 {
-  assert(fic != NULL && csys != NULL);
+  assert(fic != nullptr && csys != nullptr);
   const cs_sdm_t  *lm = csys->mat;
 
-  if (msg != NULL)
+  if (msg != nullptr)
     fprintf(fic, "%s\n", msg);
 
   /* List sub-entity ids */
@@ -1096,7 +1096,7 @@ _test_cdovb_schemes(FILE                *out,
   for (short int v = 0; v < cm->n_vc; v++)
     csys->dof_ids[v] = cm->v_ids[v];
 
-  cs_hodge_t  *hodge = NULL;
+  cs_hodge_t  *hodge = nullptr;
   cs_property_t  *property = cs_property_by_name("conductivity");
 
   /* HODGE */
@@ -1109,9 +1109,9 @@ _test_cdovb_schemes(FILE                *out,
                                  .algo = CS_HODGE_ALGO_WBS,
                                  .coef = 1.0};
 
-  /* If property is set to NULL then unity is used as default */
+  /* If property is set to nullptr then unity is used as default */
 
-  hodge = cs_hodge_create(connect, NULL, &hwbs_info,
+  hodge = cs_hodge_create(connect, nullptr, &hwbs_info,
                           true, true); /* tensor, eigen */
 
   cs_hodge_vpcd_wbs_get(cm, hodge, cb);
@@ -1140,7 +1140,7 @@ _test_cdovb_schemes(FILE                *out,
                                  .algo = CS_HODGE_ALGO_VORONOI,
                                  .coef = 1.0};
 
-  hodge = cs_hodge_create(connect, NULL, &hvor_info, true, true);
+  hodge = cs_hodge_create(connect, nullptr, &hvor_info, true, true);
   cs_hodge_vpcd_voro_get(cm, hodge, cb);
   _locmat_dump(out, "\nCDO.VB; HDG.VPCD.VORONOI; PERMEABILITY.ISO",
                csys->dof_ids, hodge->matrix);
@@ -1166,7 +1166,7 @@ _test_cdovb_schemes(FILE                *out,
 
   { /* Compute the stifness matrix (CO+ST -- DGA) */
 
-    hodge = cs_hodge_create(connect, NULL, &(eqp->diffusion_hodgep),
+    hodge = cs_hodge_create(connect, nullptr, &(eqp->diffusion_hodgep),
                             true, true); /* tensor, eigen */
 
     cs_hodge_vb_cost_get_stiffness(cm, hodge, cb);
@@ -1224,7 +1224,7 @@ _test_cdovb_schemes(FILE                *out,
     eqp->diffusion_hodgep.type = CS_HODGE_TYPE_EPFD;
     eqp->diffusion_hodgep.algo = CS_HODGE_ALGO_VORONOI;
 
-    hodge = cs_hodge_create(connect, NULL, &(eqp->diffusion_hodgep),
+    hodge = cs_hodge_create(connect, nullptr, &(eqp->diffusion_hodgep),
                             true, true); /* tensor, eigen */
 
     cs_hodge_vb_voro_get_stiffness(cm, hodge, cb);
@@ -1253,7 +1253,7 @@ _test_cdovb_schemes(FILE                *out,
     eqp->diffusion_hodgep.type = CS_HODGE_TYPE_EPFD;
     eqp->diffusion_hodgep.algo = CS_HODGE_ALGO_WBS;
 
-    hodge = cs_hodge_create(connect, NULL, &(eqp->diffusion_hodgep),
+    hodge = cs_hodge_create(connect, nullptr, &(eqp->diffusion_hodgep),
                             true, true); /* tensor, eigen */
 
     cs_hodge_vb_wbs_get_stiffness(cm, hodge, cb);
@@ -1418,8 +1418,8 @@ _test_basis_functions(FILE               *out,
 
   cbf->dump_projector(cbf);
   fprintf(out, "\n >> Inertial cell basis functions\n");
-  cs_basis_func_fprintf(out, NULL, cbf);
-  cs_sdm_fprintf(out, NULL, 1e-15, cbf->projector);
+  cs_basis_func_fprintf(out, nullptr, cbf);
+  cs_sdm_fprintf(out, nullptr, 1e-15, cbf->projector);
 
   /* Define the related gradient basis */
 
@@ -1428,7 +1428,7 @@ _test_basis_functions(FILE               *out,
   const int bsize = 3*gbf->size;
 
   fprintf(out, "\n >> Inertial cell gradient basis functions\n");
-  cs_basis_func_fprintf(out, NULL, gbf);
+  cs_basis_func_fprintf(out, nullptr, gbf);
 
   gbf->eval_all_at_point(gbf, cm->xc, g_eval);
   gbf->eval_all_at_point(gbf, cm->xv, g_eval + bsize);
@@ -1464,8 +1464,8 @@ _test_basis_functions(FILE               *out,
 
   cbf_mono->dump_projector(cbf_mono);
   fprintf(out, "\n >> Monomial cell basis functions\n");
-  cs_basis_func_fprintf(out, NULL, cbf_mono);
-  cs_sdm_fprintf(out, NULL, 1e-15, cbf_mono->projector);
+  cs_basis_func_fprintf(out, nullptr, cbf_mono);
+  cs_sdm_fprintf(out, nullptr, 1e-15, cbf_mono->projector);
 
   /* Define the related gradient basis */
 
@@ -1478,7 +1478,7 @@ _test_basis_functions(FILE               *out,
   gbf_mono->eval_all_at_point(gbf_mono, cm->xv + 3, g_eval_mono + 2*bsize);
 
   fprintf(out, "\n >> Mononial cell gradient basis functions\n");
-  cs_basis_func_fprintf(out, NULL, gbf_mono);
+  cs_basis_func_fprintf(out, nullptr, gbf_mono);
 
   /* Free basis structures */
 
@@ -1676,9 +1676,9 @@ _test_hho_schemes(FILE                *out,
   CS_UNUSED(csys);
   const double  tcur = 0.;
 
-  cs_property_data_t  *diff_pty = NULL;
+  cs_property_data_t  *diff_pty = nullptr;
   BFT_MALLOC(diff_pty, 1, cs_property_data_t);
-  cs_property_data_init(true, true, NULL, diff_pty);
+  cs_property_data_init(true, true, nullptr, diff_pty);
 
   switch (scheme_order) {
 
@@ -1699,40 +1699,40 @@ _test_hho_schemes(FILE                *out,
     cs_hho_builder_cellwise_setup(cm, cb, hhob);
 
     fprintf(out, "\n >> Inertial cell basis functions\n");
-    cs_basis_func_fprintf(out, NULL, hhob->cell_basis);
-    cs_sdm_fprintf(out, NULL, 1e-15, hhob->cell_basis->projector);
+    cs_basis_func_fprintf(out, nullptr, hhob->cell_basis);
+    cs_sdm_fprintf(out, nullptr, 1e-15, hhob->cell_basis->projector);
     for (short int f = 0; f < cm->n_fc; f++) {
       fprintf(out, "\n >> Inertial face basis functions (f = %d)\n", f);
-      cs_basis_func_fprintf(out, NULL, hhob->face_basis[f]);
-      cs_sdm_fprintf(out, NULL, 1e-15, hhob->face_basis[f]->projector);
+      cs_basis_func_fprintf(out, nullptr, hhob->face_basis[f]);
+      cs_sdm_fprintf(out, nullptr, 1e-15, hhob->face_basis[f]->projector);
     }
 
     cs_hho_builder_compute_grad_reco(cm, diff_pty, cb, hhob);
 
     fprintf(out,  "\n RHS matrix\n");
-    cs_sdm_block_fprintf(out, NULL, 1e-15, cb->aux);
+    cs_sdm_block_fprintf(out, nullptr, 1e-15, cb->aux);
 
     fprintf(out, "\n Stiffness matrix\n");
-    cs_sdm_fprintf(out, NULL, 1e-15, hhob->hdg);
+    cs_sdm_fprintf(out, nullptr, 1e-15, hhob->hdg);
 
     fprintf(out, "\n Gradient Reconstruction matrix\n");
-    cs_sdm_block_fprintf(out, NULL, 1e-15, hhob->grad_reco_op);
+    cs_sdm_block_fprintf(out, nullptr, 1e-15, hhob->grad_reco_op);
 
     cs_hho_builder_diffusion(cm, diff_pty, cb, hhob);
     fprintf(out, "\n Diffusion matrix\n");
-    cs_sdm_block_fprintf(out, NULL, 1e-15, cb->loc);
+    cs_sdm_block_fprintf(out, nullptr, 1e-15, cb->loc);
 
     fprintf(out, "\n Diffusion matrix (Mccgg)\n");
-    cs_sdm_block_fprintf(out, NULL, 1e-15, cb->aux);
+    cs_sdm_block_fprintf(out, nullptr, 1e-15, cb->aux);
 
     fprintf(out, "\n Diffusion matrix (stabilization)\n");
-    cs_sdm_block_fprintf(out, NULL, 1e-15, hhob->jstab);
+    cs_sdm_block_fprintf(out, nullptr, 1e-15, hhob->jstab);
 
     {
       cs_xdef_analytic_context_t  ac = { .z_id = 0,
                                          .func = _unity,
-                                         .input = NULL,
-                                         .free_input = NULL };
+                                         .input = nullptr,
+                                         .free_input = nullptr };
       cs_xdef_t  *uni = cs_xdef_volume_create(CS_XDEF_BY_ANALYTIC_FUNCTION,
                                               1,
                                               0, /* z_id */
@@ -1797,9 +1797,9 @@ _test_hho_schemes(FILE                *out,
           cs_real_3_t  a;
           _ortho_proj(cm->face[f], coord[ic], a);
 
-          _unity(0., 1, NULL, a, true, NULL, eval_at_coord);
-          _linear_xyz(0., 1, NULL, a, true, NULL, eval_at_coord + 1);
-          _quadratic_x2(0., 1, NULL, a, true, NULL, eval_at_coord + 2);
+          _unity(0., 1, nullptr, a, true, nullptr, eval_at_coord);
+          _linear_xyz(0., 1, nullptr, a, true, nullptr, eval_at_coord + 1);
+          _quadratic_x2(0., 1, nullptr, a, true, nullptr, eval_at_coord + 2);
 
           fprintf(out,
                   "\nface %d (%5.3e, %5.3e, %5.3e) proj(%5.3e, %5.3e, %5.3e)\n",
@@ -1825,9 +1825,9 @@ _test_hho_schemes(FILE                *out,
           f_eval_at_coord[2] += reduction_x2[shift+i]*phi_eval[i];
         }
 
-        _unity(0., 1, NULL, coord[ic], true, NULL, eval_at_coord);
-        _linear_xyz(0., 1, NULL, coord[ic], true, NULL, eval_at_coord + 1);
-        _quadratic_x2(0., 1, NULL, coord[ic], true, NULL, eval_at_coord + 2);
+        _unity(0., 1, nullptr, coord[ic], true, nullptr, eval_at_coord);
+        _linear_xyz(0., 1, nullptr, coord[ic], true, nullptr, eval_at_coord + 1);
+        _quadratic_x2(0., 1, nullptr, coord[ic], true, nullptr, eval_at_coord + 2);
 
         fprintf(out, "\ncell for (%5.3e, %5.3e, %5.3e)\n",
                 coord[ic][0], coord[ic][1], coord[ic][2]);
@@ -1877,9 +1877,9 @@ _main_hho_schemes(FILE             *out_hho,
                   cs_cell_mesh_t   *cm,
                   cs_face_mesh_t   *fm)
 {
-  cs_hho_builder_t  *hhob = NULL;
-  cs_cell_builder_t  *cb = NULL;
-  cs_cell_sys_t  *csys = NULL;
+  cs_hho_builder_t  *hhob = nullptr;
+  cs_cell_builder_t  *cb = nullptr;
+  cs_cell_sys_t  *csys = nullptr;
 
   cs_hho_scaleq_init_sharing(flag, quant, connect, time_step);
   cs_hho_scaleq_get(&csys, &cb, &hhob);
@@ -1926,8 +1926,8 @@ _main_cdovb_schemes(FILE             *out,
                     cs_cell_mesh_t   *cm,
                     cs_face_mesh_t   *fm)
 {
-  cs_cell_builder_t  *cb = NULL;
-  cs_cell_sys_t  *csys = NULL;
+  cs_cell_builder_t  *cb = nullptr;
+  cs_cell_sys_t  *csys = nullptr;
 
   cs_cdovb_scaleq_init_sharing(quant, connect, time_step);
   cs_cdovb_scaleq_get(&csys, &cb);
@@ -2047,8 +2047,8 @@ _test_divergence(FILE                     *out,
   { /* Constant */
     cs_xdef_analytic_context_t  ac = {.z_id = 0,
                                       .func = _unity_vect,
-                                      .input = NULL,
-                                      .free_input = NULL };
+                                      .input = nullptr,
+                                      .free_input = nullptr };
 
     cs_xdef_cw_eval_vect_avg_reduction_by_analytic(cm, time_step->t_cur,
                                                    (void*)(&ac),
@@ -2061,12 +2061,12 @@ _test_divergence(FILE                     *out,
   { /* Linear */
     cs_xdef_analytic_context_t  ac = {.z_id = 0,
                                       .func = _linear_xyz_vect,
-                                      .input = NULL,
-                                      .free_input = NULL };
+                                      .input = nullptr,
+                                      .free_input = nullptr };
     cs_real_t  ex_div = 0.0;
 
     cs_xdef_cw_eval_c_int_by_analytic(cm, time_step->t_cur,
-                                      _unity, NULL,
+                                      _unity, nullptr,
                                       cs_quadrature_tet_1pt_scal,
                                       &ex_div);
     ex_div *= 6. * ov;
@@ -2081,12 +2081,12 @@ _test_divergence(FILE                     *out,
   { /* Quadratic */
     cs_xdef_analytic_context_t  ac = {.z_id = 0,
                                       .func = _quadratic_x2_vect,
-                                      .input = NULL,
-                                      .free_input = NULL };
+                                      .input = nullptr,
+                                      .free_input = nullptr };
     cs_real_t ex_div = 0.0;
 
     cs_xdef_cw_eval_c_int_by_analytic(cm, time_step->t_cur,
-                                      _linear_xyz, NULL,
+                                      _linear_xyz, nullptr,
                                       cs_quadrature_tet_5pts_scal,
                                       &ex_div);
     ex_div *= 2. *ov;
@@ -2101,12 +2101,12 @@ _test_divergence(FILE                     *out,
   { /* Cubic */
     cs_xdef_analytic_context_t  ac = {.z_id = 0,
                                       .func = _cubic_xyz3_vect,
-                                      .input = NULL,
-                                      .free_input = NULL };
+                                      .input = nullptr,
+                                      .free_input = nullptr };
     cs_real_t ex_div = 0.0;
 
     cs_xdef_cw_eval_c_int_by_analytic(cm, time_step->t_cur,
-                                      _quadratic_xyz2, NULL,
+                                      _quadratic_xyz2, nullptr,
                                       cs_quadrature_tet_5pts_scal, &ex_div);
     ex_div *= 3. * ov;
     cs_xdef_cw_eval_vect_avg_reduction_by_analytic(cm, time_step->t_cur,
@@ -2120,8 +2120,8 @@ _test_divergence(FILE                     *out,
   { /* Non pol */
     cs_xdef_analytic_context_t  ac = {.z_id = 0,
                                       .func = _nonpoly_vect,
-                                      .input = NULL,
-                                      .free_input = NULL };
+                                      .input = nullptr,
+                                      .free_input = nullptr };
 
     memset(red, 0, totdof*sizeof(cs_real_t));
     cs_xdef_cw_eval_vect_avg_reduction_by_analytic(cm, time_step->t_cur,
@@ -2158,8 +2158,8 @@ static void
 _main_cdofb_schemes(FILE             *out,
                     cs_cell_mesh_t   *cm)
 {
-  cs_cell_builder_t  *cb = NULL;
-  cs_cell_sys_t  *csys = NULL;
+  cs_cell_builder_t  *cb = nullptr;
+  cs_cell_sys_t  *csys = nullptr;
 
   cs_cdofb_scaleq_init_sharing(quant, connect, time_step);
   cs_cdofb_scaleq_get(&csys, &cb);
@@ -2190,7 +2190,7 @@ _main_cdofb_schemes(FILE             *out,
                                   .algo = CS_HODGE_ALGO_COST,
                                   .coef = 1.0};
 
-  cs_hodge_t  *hodge = cs_hodge_create(connect, NULL, &hcost_info,
+  cs_hodge_t  *hodge = cs_hodge_create(connect, nullptr, &hcost_info,
                                        false, false); /* tensor, eigen */
   cs_hodge_fb_get(cm, hodge, cb);
   _locmat_dump(out, "\nCDO.FB; HDG.FB.MASS; PERMEABILITY.ISO.UNITY",
@@ -2247,7 +2247,7 @@ main(int    argc,
   cs_real_t  tensor[3][3] = {{1, 0.5, 0}, {0.5, 1, 0.5}, {0, 0.5, 1}};
   cs_property_t  *property = cs_property_add("conductivity", CS_PROPERTY_ANISO);
 
-  cs_property_def_aniso_by_value(property, NULL, tensor);
+  cs_property_def_aniso_by_value(property, nullptr, tensor);
 
   /* =========================== */
   /* TEST DISCRETIZATION SCHEMES */

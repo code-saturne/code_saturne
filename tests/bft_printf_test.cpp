@@ -50,7 +50,7 @@ bft_printf_flush_test(void)
 {
   fprintf(stdout, "test printf flush replacement start\n");
 
-  fflush(NULL);
+  fflush(nullptr);
 
   fprintf(stdout, "test printf flush replacement end\n");
 

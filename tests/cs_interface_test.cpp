@@ -53,7 +53,7 @@ _init_periodicity(void)
   /* double a1[3] = {0., 0., 1.}; */
   /* double i1[3] = {0., 0., 0.}; */
 
-  fvm_periodicity_t *p = NULL;
+  fvm_periodicity_t *p = nullptr;
 
   p = fvm_periodicity_create(0.1);
 
@@ -85,12 +85,12 @@ _periodic_is_test(int                       ordered_gnum,
   cs_gnum_t n_max = (n_elements * 3 / 4) * (comm_size-1) + n_elements;
   int periodicity_num[3] = {1, 2, 3};
 
-  cs_lnum_t *n_periodic_couples = NULL;
-  cs_gnum_t **periodic_couples = NULL;
-  cs_gnum_t *global_number = NULL;
-  cs_real_t *var = NULL;
+  cs_lnum_t *n_periodic_couples = nullptr;
+  cs_gnum_t **periodic_couples = nullptr;
+  cs_gnum_t *global_number = nullptr;
+  cs_real_t *var = nullptr;
 
-  cs_interface_set_t *ifset = NULL;
+  cs_interface_set_t *ifset = nullptr;
 
   if (comm_size > 1) {
 
@@ -116,7 +116,7 @@ _periodic_is_test(int                       ordered_gnum,
   for (ii = 0; ii < n_periodic_lists; ii++) {
 
     n_periodic_couples[ii] = 0;
-    periodic_couples[ii] = NULL;
+    periodic_couples[ii] = nullptr;
 
     if (comm_rank == 0 || comm_rank == 1) {
 
@@ -173,7 +173,7 @@ _periodic_is_test(int                       ordered_gnum,
   }
 
   ifset = cs_interface_set_create(n_elements,
-                                  NULL,
+                                  nullptr,
                                   global_number,
                                   perio,
                                   n_periodic_lists,
@@ -244,9 +244,9 @@ static int _bft_printf_proxy_o
        va_list         arg_ptr
 )
 {
-  static FILE *f = NULL;
+  static FILE *f = nullptr;
 
-  if (f == NULL) {
+  if (f == nullptr) {
     char filename[64];
     int rank = 0;
 #if defined(HAVE_MPI)
@@ -255,7 +255,7 @@ static int _bft_printf_proxy_o
 #endif
     sprintf (filename, "cs_interface_test_o_out.%d", rank);
     f = fopen(filename, "w");
-    assert(f != NULL);
+    assert(f != nullptr);
   }
 
   return vfprintf(f, format, arg_ptr);
@@ -267,9 +267,9 @@ static int _bft_printf_proxy_u
        va_list         arg_ptr
 )
 {
-  static FILE *f = NULL;
+  static FILE *f = nullptr;
 
-  if (f == NULL) {
+  if (f == nullptr) {
     char filename[64];
     int rank = 0;
 #if defined(HAVE_MPI)
@@ -278,7 +278,7 @@ static int _bft_printf_proxy_u
 #endif
     sprintf (filename, "cs_interface_test_u_out.%d", rank);
     f = fopen(filename, "w");
-    assert(f != NULL);
+    assert(f != nullptr);
   }
 
   return vfprintf(f, format, arg_ptr);
@@ -315,12 +315,12 @@ main (int argc, char *argv[])
   char mem_trace_name[32];
   int size = 1;
   int rank = 0;
-  cs_interface_set_t *ifset = NULL;
-  fvm_periodicity_t *perio = NULL;
+  cs_interface_set_t *ifset = nullptr;
+  fvm_periodicity_t *perio = nullptr;
 
   cs_lnum_t n_elements = 20;
 
-  cs_gnum_t *global_number = NULL;
+  cs_gnum_t *global_number = nullptr;
 
 #if defined(HAVE_MPI)
 
@@ -366,13 +366,13 @@ main (int argc, char *argv[])
       }
 
       ifset = cs_interface_set_create(n_elements,
-                                      NULL,
+                                      nullptr,
                                       global_number,
-                                      NULL,
+                                      nullptr,
                                       0,
-                                      NULL,
-                                      NULL,
-                                      NULL);
+                                      nullptr,
+                                      nullptr,
+                                      nullptr);
 
       BFT_FREE(global_number);
 

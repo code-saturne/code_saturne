@@ -55,9 +55,9 @@ static int _bft_printf_proxy
        va_list         arg_ptr
 )
 {
-  static FILE *f = NULL;
+  static FILE *f = nullptr;
 
-  if (f == NULL) {
+  if (f == nullptr) {
     char filename[64];
     int rank = 0;
 #if defined(HAVE_MPI)
@@ -66,7 +66,7 @@ static int _bft_printf_proxy
 #endif
     sprintf (filename, "cs_rank_neighbors_test_out.%d", rank);
     f = fopen(filename, "w");
-    assert(f != NULL);
+    assert(f != nullptr);
   }
 
   return vfprintf(f, format, arg_ptr);
@@ -206,7 +206,7 @@ _sanity_test(void)
 
   n = _build_rank_neighbors(rank, size, 0, true);
 
-  cs_rank_neighbors_t  *nr = NULL;
+  cs_rank_neighbors_t  *nr = nullptr;
   cs_lnum_t            *send_count, *recv_count;
 
   BFT_MALLOC(send_count, n->size, cs_lnum_t);
@@ -290,7 +290,7 @@ _performance_test(void)
          t_idx ++) {
 
       cs_rank_neighbors_exchange_t t = (cs_rank_neighbors_exchange_t) t_idx;
-      cs_lnum_t            *send_count = NULL, *recv_count = NULL;
+      cs_lnum_t            *send_count = nullptr, *recv_count = nullptr;
 
       double wt[3] = {0, 0, 0};
 
@@ -391,7 +391,7 @@ main (int argc, char *argv[])
     bft_printf_proxy_set(_bft_printf_proxy);
   }
   else
-    bft_mem_init(NULL);
+    bft_mem_init(nullptr);
 
   /* Performance test */
 

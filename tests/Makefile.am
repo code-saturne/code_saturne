@@ -94,15 +94,15 @@ bft_mem_usage_test \
 bft_mem_test \
 bft_printf_test
 
-bft_backtrace_test_SOURCES  = bft_backtrace_test.c
+bft_backtrace_test_SOURCES  = bft_backtrace_test.cpp
 bft_backtrace_test_LDFLAGS  = $(LDFLAGS_CS_TESTS)
 bft_backtrace_test_LDADD    = $(LDADD_CS_TESTS)
 
-bft_error_test_SOURCES  = bft_error_test.c
+bft_error_test_SOURCES  = bft_error_test.cpp
 bft_error_test_LDFLAGS  = $(LDFLAGS_CS_TESTS)
 bft_error_test_LDADD    = $(LDADD_CS_TESTS)
 
-bft_mem_usage_test_SOURCES  = bft_mem_usage_test.c
+bft_mem_usage_test_SOURCES  = bft_mem_usage_test.cpp
 bft_mem_usage_test_LDFLAGS  = $(LDFLAGS_CS_TESTS)
 bft_mem_usage_test_LDADD    = $(LDADD_CS_TESTS)
 
@@ -110,7 +110,7 @@ bft_mem_test_SOURCES  = bft_mem_test.cpp
 bft_mem_test_LDFLAGS  = $(LDFLAGS_CS_TESTS)
 bft_mem_test_LDADD    = $(LDADD_CS_TESTS)
 
-bft_printf_test_SOURCES  = bft_printf_test.c
+bft_printf_test_SOURCES  = bft_printf_test.cpp
 bft_printf_test_LDFLAGS  = $(LDFLAGS_CS_TESTS)
 bft_printf_test_LDADD    = $(LDADD_CS_TESTS)
 
@@ -169,17 +169,17 @@ cs_blas_test_LDADD    = $(BLASRUNPATH) $(BLAS_LIBS) $(LDADD_CS_TESTS)
 cs_check_cdo$(EXEEXT):
 	PYTHONPATH=$(top_srcdir)/python/code_saturne/base \
 	$(PYTHON) -B $(top_srcdir)/build-aux/cs_compile_build.py \
-	-o cs_check_cdo $(top_srcdir)/tests/cs_check_cdo.c
+	-o cs_check_cdo $(top_srcdir)/tests/cs_check_cdo.cpp
 
 cs_check_quadrature$(EXEEXT):
 	PYTHONPATH=$(top_srcdir)/python/code_saturne/base \
 	$(PYTHON) -B $(top_srcdir)/build-aux/cs_compile_build.py \
-	-o cs_check_quadrature $(top_srcdir)/tests/cs_check_quadrature.c
+	-o cs_check_quadrature $(top_srcdir)/tests/cs_check_quadrature.cpp
 
 cs_check_sdm$(EXEEXT):
 	PYTHONPATH=$(top_srcdir)/python/code_saturne/base \
 	$(PYTHON) -B $(top_srcdir)/build-aux/cs_compile_build.py \
-	-o cs_check_sdm $(top_srcdir)/tests/cs_check_sdm.c
+	-o cs_check_sdm $(top_srcdir)/tests/cs_check_sdm.cpp
 
 cs_core_test_SOURCES  = cs_core_test.cpp
 cs_core_test_LDFLAGS  = $(LDFLAGS_CS_TESTS)
@@ -227,17 +227,17 @@ cs_map_test_SOURCES  = cs_map_test.cpp
 cs_map_test_LDFLAGS  = $(LDFLAGS_CS_TESTS)
 cs_map_test_LDADD    = $(LDADD_CS_TESTS)
 
-cs_matrix_test$(EXEEXT): $(top_srcdir)/tests/cs_matrix_test.c
+cs_matrix_test$(EXEEXT): $(top_srcdir)/tests/cs_matrix_test.cpp
 	PYTHONPATH=$(top_srcdir)/python/code_saturne/base \
 	$(PYTHON) -B $(top_srcdir)/build-aux/cs_compile_build.py \
-	-o cs_matrix_test $(top_srcdir)/tests/cs_matrix_test.c
+	-o cs_matrix_test $(top_srcdir)/tests/cs_matrix_test.cpp
 
-cs_mesh_quantities_test$(EXEEXT): $(top_srcdir)/tests/cs_mesh_quantities_test.c
+cs_mesh_quantities_test$(EXEEXT): $(top_srcdir)/tests/cs_mesh_quantities_test.cpp
 	PYTHONPATH=$(top_srcdir)/python/code_saturne/base \
 	$(PYTHON) -B $(top_srcdir)/build-aux/cs_compile_build.py \
-	-o cs_mesh_quantities_test $(top_srcdir)/tests/cs_mesh_quantities_test.c
+	-o cs_mesh_quantities_test $(top_srcdir)/tests/cs_mesh_quantities_test.cpp
 
-cs_moment_test_SOURCES  = cs_moment_test.c
+cs_moment_test_SOURCES  = cs_moment_test.cpp
 cs_moment_test_LDFLAGS  = $(LDFLAGS_CS_TESTS)
 cs_moment_test_LDADD    = -lm
 
@@ -255,13 +255,13 @@ fvm_selector_test$(EXEEXT):
 	PYTHONPATH=$(top_srcdir)/python/code_saturne/base \
 	$(PYTHON) -B $(top_srcdir)/build-aux/cs_compile_build.py \
 	-o fvm_selector_postfix_test \
-	$(top_srcdir)/tests/fvm_selector_test.c
+	$(top_srcdir)/tests/fvm_selector_test.cpp
 
 fvm_selector_postfix_test$(EXEEXT):
 	PYTHONPATH=$(top_srcdir)/python/code_saturne/base \
 	$(PYTHON) -B $(top_srcdir)/build-aux/cs_compile_build.py \
 	-o fvm_selector_postfix_test \
-	$(top_srcdir)/tests/fvm_selector_postfix_test.c
+	$(top_srcdir)/tests/fvm_selector_postfix_test.cpp
 
 cs_sizes_test_SOURCES  = cs_sizes_test.cpp
 cs_sizes_test_LDFLAGS  = $(LDFLAGS_CS_TESTS)

@@ -68,7 +68,7 @@ main (int argc, char *argv[])
   CS_UNUSED(argv);
 
   double m_ref, m_y_ref, v_ref, c_ref;
-  double *xr = NULL, *yr = NULL, *wr = NULL;
+  double *xr = nullptr, *yr = nullptr, *wr = nullptr;
 
   const size_t nr = 50;
 
@@ -92,8 +92,8 @@ main (int argc, char *argv[])
   /* Reference moments */
 
   {
-    double *wx = malloc(nr*sizeof(double));
-    double *wy = malloc(nr*sizeof(double));
+    double *wx = (double *)malloc(nr*sizeof(double));
+    double *wy = (double *)malloc(nr*sizeof(double));
     for (size_t i = 0; i < nr; i++) {
       wx[i] = wr[i]*xr[i];
       wy[i] = wr[i]*yr[i];

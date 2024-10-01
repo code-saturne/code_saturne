@@ -50,7 +50,7 @@ BEGIN_C_DECLS
  * Static global variables
  *============================================================================*/
 
-static FILE  *sdm = NULL;
+static FILE  *sdm = nullptr;
 
 /*============================================================================
  * Private function prototypes
@@ -102,7 +102,7 @@ _test_sdm(FILE  *out)
     cs_sdm_33_ldlt_solve(facto, b, sol);
 
     fprintf(out, "\n3x3 matrix\n");
-    cs_sdm_fprintf(out, NULL, cs_math_zero_threshold, m);
+    cs_sdm_fprintf(out, nullptr, cs_math_zero_threshold, m);
 
     fprintf(out, " Solution l.d.l^T 33: % .4e % .4e % .4e\n",
             sol[0], sol[1], sol[2]);
@@ -137,7 +137,7 @@ _test_sdm(FILE  *out)
     cs_sdm_44_ldlt_solve(facto, b, sol);
 
     fprintf(out, "\n4x4 matrix\n");
-    cs_sdm_fprintf(out, NULL, cs_math_zero_threshold, m);
+    cs_sdm_fprintf(out, nullptr, cs_math_zero_threshold, m);
 
     fprintf(out, " Solution l.d.l^T 44: % .4e % .4e % .4e % .4e\n",
             sol[0], sol[1], sol[2], sol[3]);
@@ -169,7 +169,7 @@ _test_sdm(FILE  *out)
     cs_sdm_66_ldlt_solve(facto, b, sol);
 
     fprintf(out, "\n6x6 matrix\n");
-    cs_sdm_fprintf(out, NULL, cs_math_zero_threshold, m);
+    cs_sdm_fprintf(out, nullptr, cs_math_zero_threshold, m);
 
     fprintf(out, " Solution l.d.l^T 66: % .4e % .4e % .4e % .4e % .4e % .4e\n",
             sol[0], sol[1], sol[2], sol[3], sol[4], sol[5]);
@@ -200,7 +200,7 @@ _test_sdm(FILE  *out)
     m->val[3] =-1, m->val[4] =  2, m->val[5] =-1;
     m->val[6] = 0, m->val[7] = -1, m->val[8] = 1;
 
-    cs_sdm_fprintf(out, NULL, cs_math_zero_threshold, m);
+    cs_sdm_fprintf(out, nullptr, cs_math_zero_threshold, m);
 
     double  eval_sym = cs_sdm_test_symmetry(m);
     fprintf(out, " symmetry evaluation = %g\n", eval_sym);
@@ -210,7 +210,7 @@ _test_sdm(FILE  *out)
     m->val[3] =-3, m->val[4] =  2, m->val[5] =-1;
     m->val[6] = 0, m->val[7] = -0.5, m->val[8] = 1;
 
-    cs_sdm_fprintf(out, NULL, cs_math_zero_threshold, m);
+    cs_sdm_fprintf(out, nullptr, cs_math_zero_threshold, m);
 
     double  eval_sym2 = cs_sdm_test_symmetry(m);
     fprintf(out, " symmetry evaluation = %g\n", eval_sym2);
@@ -251,12 +251,12 @@ _test_sdm(FILE  *out)
     /* cs_sdm_block_dump(0, mb); */
 
     fprintf(out, " Reference matrix\n");
-    cs_sdm_block_fprintf(out, NULL, cs_math_zero_threshold, mb);
+    cs_sdm_block_fprintf(out, nullptr, cs_math_zero_threshold, mb);
 
     cs_sdm_t  *cpy = cs_sdm_block_create_copy(mb);
 
     fprintf(out, " Copy of the previous matrix\n");
-    cs_sdm_block_fprintf(out, NULL, cs_math_zero_threshold, cpy);
+    cs_sdm_block_fprintf(out, nullptr, cs_math_zero_threshold, cpy);
 
     fprintf(out, "\n Test symmetry (block version)\n");
     fprintf(out, " Symmetry evaluation for the reference = %g\n",
@@ -267,7 +267,7 @@ _test_sdm(FILE  *out)
     b12->val[3] = 0.25, b12->val[4] = 0.75, b12->val[5] = 0.1;
 
     fprintf(out, " Symmetric matrix defined by block\n");
-    cs_sdm_block_fprintf(out, NULL, cs_math_zero_threshold, cpy);
+    cs_sdm_block_fprintf(out, nullptr, cs_math_zero_threshold, cpy);
     fprintf(out, " Symmetry evaluation for a symmetric matrix = %g\n",
             cs_sdm_test_symmetry(cpy));
 

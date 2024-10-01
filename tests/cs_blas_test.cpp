@@ -121,13 +121,13 @@ _mpi_init(void)
 
 #elif defined(MPICH_NAME)
 
-  if (getenv("GMPI_ID") != NULL) /* In case we are using MPICH-GM */
+  if (getenv("GMPI_ID") != nullptr) /* In case we are using MPICH-GM */
     use_mpi = true;
 
 #elif defined(OPEN_MPI)
-  if (getenv("OMPI_MCA_ns_nds_vpid") != NULL)         /* OpenMPI 1.2 */
+  if (getenv("OMPI_MCA_ns_nds_vpid") != nullptr)         /* OpenMPI 1.2 */
     use_mpi = true;
-  else if (getenv("OMPI_COMM_WORLD_RANK") != NULL)    /* OpenMPI 1.3 and above */
+  else if (getenv("OMPI_COMM_WORLD_RANK") != nullptr)    /* OpenMPI 1.3 and above */
     use_mpi = true;
 
 #endif /* Tests for known MPI variants */
@@ -143,9 +143,9 @@ _mpi_init(void)
     if (!flag) {
 #if defined(MPI_VERSION) && (MPI_VERSION >= 2) && defined(HAVE_OPENMP)
       int mpi_threads;
-      MPI_Init_thread(NULL, NULL, MPI_THREAD_FUNNELED, &mpi_threads);
+      MPI_Init_thread(nullptr, nullptr, MPI_THREAD_FUNNELED, &mpi_threads);
 #else
-      MPI_Init(NULL, NULL);
+      MPI_Init(nullptr, nullptr);
 #endif
     }
 
@@ -514,8 +514,8 @@ _dot_product_1(double   t_measure,
 
   const char *type_name[] = {"X.Y", "X.X"};
 
-  cs_real_t *x = NULL;
-  cs_real_t *y = NULL;
+  cs_real_t *x = nullptr;
+  cs_real_t *y = nullptr;
 
   if (cs_glob_n_ranks == 1)
     _global = 0;
@@ -700,8 +700,8 @@ _dot_product_2(double  t_measure)
 
   double test_sum = 0.0;
 
-  cs_real_t *restrict x = NULL;
-  cs_real_t *restrict y = NULL;
+  cs_real_t *restrict x = nullptr;
+  cs_real_t *restrict y = nullptr;
 
   /* Tell IBM compiler not to alias */
 # if defined(__xlc__)
@@ -852,8 +852,8 @@ _dot_product_m(double   t_measure,
   double test_sum = 0.0;
   int _global = global;
 
-  double *x = NULL;
-  float  *y = NULL;
+  double *x = nullptr;
+  float  *y = nullptr;
 
   if (cs_glob_n_ranks == 1)
     _global = 0;
@@ -944,8 +944,8 @@ _axpy_test(double  t_measure)
   long n_ops;
   cs_lnum_t n, ii;
 
-  cs_real_t *restrict x = NULL;
-  cs_real_t *restrict y = NULL;
+  cs_real_t *restrict x = nullptr;
+  cs_real_t *restrict y = nullptr;
 
   double test_sum = 0.0;
 
@@ -1149,7 +1149,7 @@ _division_test(double  t_measure)
 
   double test_sum = 0.0;
 
-  cs_real_t  *x = NULL, *y = NULL, *z = NULL;
+  cs_real_t  *x = nullptr, *y = nullptr, *z = nullptr;
 
   /* Division of 2 vectors */
   /*-----------------------*/
@@ -1332,7 +1332,7 @@ _sqrt_test(double  t_measure)
 
   double test_sum = 0.0;
 
-  cs_real_t  *restrict x = NULL, *restrict y = NULL;
+  cs_real_t  *restrict x = nullptr, *restrict y = nullptr;
 
   for (sub_id = 0; sub_id < _n_sizes; sub_id++) {
 
@@ -1456,9 +1456,9 @@ _ad_x_test(double  t_measure)
 
   double test_sum = 0.0;
 
-  cs_real_t  *restrict da = NULL;
-  cs_real_t  *restrict x = NULL;
-  cs_real_t  *restrict y = NULL;
+  cs_real_t  *restrict da = nullptr;
+  cs_real_t  *restrict x = nullptr;
+  cs_real_t  *restrict y = nullptr;
 
   /* Tell IBM compiler not to alias */
 # if defined(__xlc__)
@@ -1798,7 +1798,7 @@ _block_ad_x_test(double  t_measure)
   int    sub_id, run_id, n_runs;
   long   n_ops;
   int    n, ii;
-  cs_real_t  *restrict da = NULL, *restrict x = NULL, *restrict y = NULL;
+  cs_real_t  *restrict da = nullptr, *restrict x = nullptr, *restrict y = nullptr;
 
   double test_sum = 0.0;
 
@@ -2013,7 +2013,7 @@ _copy_test(double  t_measure)
   int        sub_id, run_id, n_runs;
   cs_lnum_t  n, ii;
 
-  cs_real_t  *restrict x = NULL, *restrict y = NULL;
+  cs_real_t  *restrict x = nullptr, *restrict y = nullptr;
 
   double test_sum = 0.0;
 
@@ -2412,8 +2412,8 @@ _solve_33_test(double  t_measure)
   int        sub_id, run_id, n_runs;
   cs_lnum_t  n, ii;
 
-  cs_real_3_t  *restrict x = NULL, *restrict b = NULL;
-  cs_real_33_t  *restrict a = NULL;
+  cs_real_3_t  *restrict x = nullptr, *restrict b = nullptr;
+  cs_real_33_t  *restrict a = nullptr;
 
   double test_sum = 0.0;
 
@@ -2864,7 +2864,7 @@ main (int argc, char *argv[])
 
     cs_lnum_t n = _n_elts[sub_id];
     double ref_s = 165 * (n/10) * _pi;
-    double *x = NULL, *y = NULL;
+    double *x = nullptr, *y = nullptr;
 
     /* Initialize arrays */
 

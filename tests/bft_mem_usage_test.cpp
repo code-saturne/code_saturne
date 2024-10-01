@@ -52,9 +52,9 @@ main (int argc, char *argv[])
   p2 = malloc(1000000);
 
   p3 = malloc(100000);
-  if (p1 != NULL) free(p1);
-  if (p2 != NULL) free(p2);
-  if (p3 != NULL) free(p3);
+  if (p1 != nullptr) free(p1);
+  if (p2 != nullptr) free(p2);
+  if (p3 != nullptr) free(p3);
 
   printf("memory usage: %lu kB\n", (unsigned long) bft_mem_usage_pr_size());
 

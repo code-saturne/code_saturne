@@ -62,8 +62,8 @@ cs_gnum_t  _vtx_range[2];
 
 cs_lnum_t  _n_vtx = 0, _n_edges = 0;
 
-cs_gnum_t  *_g_vtx_id = NULL;
-cs_lnum_2_t  *_edges = NULL;
+cs_gnum_t  *_g_vtx_id = nullptr;
+cs_lnum_2_t  *_edges = nullptr;
 
 bool _full_connect = true;
 bool _symmetric = true;
@@ -88,11 +88,11 @@ _mpi_init(void)
   use_mpi = true;
 
 #elif defined(MPICH2) || defined(MPICH)
-  if (getenv("PMI_RANK") != NULL)
+  if (getenv("PMI_RANK") != nullptr)
     use_mpi = true;
 
 #elif defined(OPEN_MPI)
-  if (getenv("OMPI_COMM_WORLD_RANK") != NULL)    /* OpenMPI 1.3 and above */
+  if (getenv("OMPI_COMM_WORLD_RANK") != nullptr)    /* OpenMPI 1.3 and above */
     use_mpi = true;
 
 #endif /* Tests for known MPI variants */
@@ -108,9 +108,9 @@ _mpi_init(void)
     if (!flag) {
 #if defined(MPI_VERSION) && (MPI_VERSION >= 2) && defined(HAVE_OPENMP)
       int mpi_threads;
-      MPI_Init_thread(NULL, NULL, MPI_THREAD_FUNNELED, &mpi_threads);
+      MPI_Init_thread(nullptr, nullptr, MPI_THREAD_FUNNELED, &mpi_threads);
 #else
-      MPI_Init(NULL, NULL);
+      MPI_Init(nullptr, nullptr);
 #endif
     }
 
@@ -756,7 +756,7 @@ main(int argc, char *argv[])
   _mpi_init();
 #endif
 
-  if (getenv("CS_MEM_LOG") != NULL) {
+  if (getenv("CS_MEM_LOG") != nullptr) {
     char mem_log_file_name[128];
     int r_id = CS_MAX(cs_glob_rank_id, 0);
     snprintf(mem_log_file_name, 127, "%s.%d",
@@ -764,7 +764,7 @@ main(int argc, char *argv[])
     bft_mem_init(mem_log_file_name);
   }
   else
-    bft_mem_init(NULL);
+    bft_mem_init(nullptr);
 
   (void)cs_timer_wtime();
 
@@ -782,19 +782,19 @@ main(int argc, char *argv[])
     g_vtx_num[i] = _g_vtx_id[i] + 1;
   cs_interface_set_t *vtx_ifs
     = cs_interface_set_create(_n_vtx,
-                              NULL,
+                              nullptr,
                               g_vtx_num,
-                              NULL,
+                              nullptr,
                               0,
-                              NULL,
-                              NULL,
-                              NULL);
+                              nullptr,
+                              nullptr,
+                              nullptr);
 
   BFT_FREE(g_vtx_num);
 
   cs_range_set_t *rs
     = cs_range_set_create_from_shared(vtx_ifs,
-                                      NULL,
+                                      nullptr,
                                       _n_vtx,
                                       _vtx_range,
                                       _g_vtx_id);
@@ -872,7 +872,7 @@ main(int argc, char *argv[])
 
     for (int mav_id = 0; mav_id < 2; mav_id++) {
 
-      cs_matrix_assembler_values_t *mav = NULL;
+      cs_matrix_assembler_values_t *mav = nullptr;
 
       if (mav_id == 0)
         mav = cs_matrix_assembler_values_init(m_0, 1, 1);

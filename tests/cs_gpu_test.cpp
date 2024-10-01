@@ -81,9 +81,9 @@ _mpi_init(void)
   if (!flag) {
 #if defined(MPI_VERSION) && (MPI_VERSION >= 2) && defined(HAVE_OPENMP)
     int mpi_threads;
-    MPI_Init_thread(NULL, NULL, MPI_THREAD_FUNNELED, &mpi_threads);
+    MPI_Init_thread(nullptr, nullptr, MPI_THREAD_FUNNELED, &mpi_threads);
 #else
-    MPI_Init(NULL, NULL);
+    MPI_Init(nullptr, nullptr);
 #endif
   }
 
@@ -157,7 +157,7 @@ main (int argc, char *argv[])
   _mpi_init();
 #endif
 
-  if (getenv("CS_MEM_LOG") != NULL) {
+  if (getenv("CS_MEM_LOG") != nullptr) {
     char mem_log_file_name[128];
     int r_id = CS_MAX(cs_glob_rank_id, 0);
     snprintf(mem_log_file_name, 127, "%s.%d",
@@ -165,7 +165,7 @@ main (int argc, char *argv[])
     bft_mem_init(mem_log_file_name);
   }
   else
-    bft_mem_init(NULL);
+    bft_mem_init(nullptr);
 
   (void)cs_timer_wtime();
 
