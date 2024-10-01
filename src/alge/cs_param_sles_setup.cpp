@@ -461,16 +461,14 @@ _set_petsc_mg_levels(const char                        *prefix,
  *        settings have been defined. One assumes that one really wants to use
  *        GAMG
  *
- * \param[in]      prefix   prefix name associated to the current SLES
- * \param[in]      slesp    pointer to a set of SLES parameters
- * \param[in, out] pc       pointer to a PETSc preconditioner
+ * \param[in] prefix  prefix name associated to the current SLES
+ * \param[in] slesp   pointer to a set of SLES parameters
  */
 /*----------------------------------------------------------------------------*/
 
 static void
-_petsc_pcgamg_hook(const char              *prefix,
-                   const cs_param_sles_t   *slesp,
-                   PC                       pc)
+_petsc_pcgamg_hook(const char            *prefix,
+                   const cs_param_sles_t *slesp)
 {
   char keyval[32];
 
@@ -507,8 +505,6 @@ _petsc_pcgamg_hook(const char              *prefix,
   _petsc_cmd(true, prefix, "pc_gamg_threshold", keyval); /* 0 */
 
   // Aggressive coarsening
-
-  PCGAMGSetAggressiveLevels(pc, gamgp->n_agg_levels);
 
 #if PETSC_VERSION_GE(3,19,0)
   sprintf(keyval, "%2d", gamgp->n_agg_levels);
@@ -557,16 +553,14 @@ _petsc_pcgamg_hook(const char              *prefix,
  *        settings have been defined. One assumes that one really wants to use
  *        HMG
  *
- * \param[in]      prefix   prefix name associated to the current SLES
- * \param[in]      slesp    pointer to a set of SLES parameters
- * \param[in, out] pc       pointer to a PETSc preconditioner
+ * \param[in] prefix   prefix name associated to the current SLES
+ * \param[in] slesp    pointer to a set of SLES parameters
  */
 /*----------------------------------------------------------------------------*/
 
 static void
 _petsc_pchmg_hook(const char            *prefix,
-                  const cs_param_sles_t *slesp,
-                  PC                     pc)
+                  const cs_param_sles_t *slesp)
 {
   assert(prefix != nullptr);
   assert(slesp != nullptr);
@@ -636,22 +630,16 @@ _petsc_pchmg_hook(const char            *prefix,
 /*!
  * \brief Predefined settings for BoomerAMG in HYPRE as a preconditioner
  *
- * \param[in]      prefix   prefix name associated to the current SLES
- * \param[in]      slesp    pointer to a set of SLES parameters
- * \param[in]      is_symm  the linear system to solve is symmetric
- * \param[in, out] pc       pointer to a PETSc preconditioner
+ * \param[in] prefix  prefix name associated to the current SLES
+ * \param[in] slesp   pointer to a set of SLES parameters
  */
 /*----------------------------------------------------------------------------*/
 
 static void
-_petsc_pchypre_hook(const char             *prefix,
-                    const cs_param_sles_t  *slesp,
-                    bool                    is_symm,
-                    PC                      pc)
+_petsc_boomeramg_hook(const char             *prefix,
+                      const cs_param_sles_t  *slesp)
 {
 #if defined(PETSC_HAVE_HYPRE)
-  CS_UNUSED(is_symm);
-
   assert(prefix != nullptr);
   assert(slesp != nullptr);
   assert(slesp->precond == CS_PARAM_PRECOND_AMG);
@@ -660,8 +648,8 @@ _petsc_pchypre_hook(const char             *prefix,
     static_cast<cs_param_amg_boomer_t *>(slesp->context_param);
   assert(bamgp != nullptr);
 
-  PCSetType(pc, PCHYPRE);
-  PCHYPRESetType(pc, "boomeramg");
+  _petsc_cmd(true, prefix, "pc_type", "hypre");
+  _petsc_cmd(true, prefix, "pc_hypre_type", "boomeramg");
 
   switch (slesp->amg_type) {
 
@@ -1393,7 +1381,6 @@ _petsc_amg_block_gamg_hook(void  *context,
   KSPGetPC(ksp, &pc);
   PCSetUp(pc);
 
-  PC  _pc;
   PetscInt  n_split;
   KSP  *xyz_subksp;
   const char xyz[4]  = "xyz";
@@ -1411,12 +1398,9 @@ _petsc_amg_block_gamg_hook(void  *context,
     /* Predefined settings when using AMG as a preconditioner */
 
     KSP  _ksp = xyz_subksp[id];
-    KSPGetPC(_ksp, &_pc);
 
-    _petsc_pcgamg_hook(prefix, slesp, _pc);
+    _petsc_pcgamg_hook(prefix, slesp);
 
-    PCSetFromOptions(_pc);
-    //    PCSetUp(_pc);
     KSPSetFromOptions(_ksp);
 
   } /* Loop on block settings */
@@ -1428,7 +1412,6 @@ _petsc_amg_block_gamg_hook(void  *context,
 
   cs_user_sles_petsc_hook(context, ksp);
 
-  PCSetFromOptions(pc);
   KSPSetFromOptions(ksp);
 
   cs_fp_exception_restore_trap(); /* Avoid trouble with a too restrictive
@@ -1478,7 +1461,6 @@ _petsc_amg_block_hmg_hook(void  *context,
   KSPGetPC(ksp, &pc);
   PCSetUp(pc);
 
-  PC  _pc;
   PetscInt  n_split;
   KSP  *xyz_subksp;
   const char xyz[4]  = "xyz";
@@ -1495,11 +1477,9 @@ _petsc_amg_block_hmg_hook(void  *context,
     /* Predefined settings when using AMG as a preconditioner */
 
     KSP  _ksp = xyz_subksp[id];
-    KSPGetPC(_ksp, &_pc);
 
-    _petsc_pchmg_hook(prefix, slesp, _pc);
+    _petsc_pchmg_hook(prefix, slesp);
 
-    PCSetFromOptions(_pc);
     KSPSetFromOptions(_ksp);
 
   } /* Loop on block settings */
@@ -1511,7 +1491,6 @@ _petsc_amg_block_hmg_hook(void  *context,
 
   cs_user_sles_petsc_hook(context, ksp);
 
-  PCSetFromOptions(pc);
   KSPSetFromOptions(ksp);
 
   cs_fp_exception_restore_trap(); /* Avoid trouble with a too restrictive
@@ -1564,11 +1543,9 @@ _petsc_amg_block_boomer_hook(void     *context,
   KSPGetPC(ksp, &pc);
   PCSetUp(pc);
 
-  PC  _pc;
   PetscInt  n_split;
   KSP  *xyz_subksp;
   const char xyz[4]  = "xyz";
-  bool  is_symm = _system_should_be_sym(slesp->solver);
 
   PCFieldSplitGetSubKSP(pc, &n_split, &xyz_subksp);
   assert(n_split == 3);
@@ -1582,11 +1559,9 @@ _petsc_amg_block_boomer_hook(void     *context,
     /* Predefined settings when using AMG as a preconditioner */
 
     KSP  _ksp = xyz_subksp[id];
-    KSPGetPC(_ksp, &_pc);
 
-    _petsc_pchypre_hook(prefix, slesp, is_symm, _pc);
+    _petsc_boomeramg_hook(prefix, slesp);
 
-    PCSetFromOptions(_pc);
     KSPSetFromOptions(_ksp);
 
   } /* Loop on block settings */
@@ -1598,7 +1573,6 @@ _petsc_amg_block_boomer_hook(void     *context,
 
   cs_user_sles_petsc_hook(context, ksp);
 
-  PCSetFromOptions(pc);
   KSPSetFromOptions(ksp);
 
   cs_fp_exception_restore_trap(); /* Avoid trouble with a too restrictive
@@ -1803,7 +1777,6 @@ _petsc_block_hook(void     *context,
 
   cs_user_sles_petsc_hook(context, ksp);
 
-  PCSetFromOptions(pc);
   KSPSetFromOptions(ksp);
 
   cs_fp_exception_restore_trap(); /* Avoid trouble with a too restrictive
@@ -3398,21 +3371,18 @@ cs_param_sles_setup_petsc_pc_amg(const char       *prefix,
 
   case CS_PARAM_AMG_PETSC_GAMG_V:
   case CS_PARAM_AMG_PETSC_GAMG_W:
-    _petsc_pcgamg_hook(prefix, slesp, pc);
+    _petsc_pcgamg_hook(prefix, slesp);
     break;
 
   case CS_PARAM_AMG_PETSC_HMG_V:
   case CS_PARAM_AMG_PETSC_HMG_W:
-    _petsc_pchmg_hook(prefix, slesp, pc);
+    _petsc_pchmg_hook(prefix, slesp);
     break;
 
   case CS_PARAM_AMG_HYPRE_BOOMER_V:
   case CS_PARAM_AMG_HYPRE_BOOMER_W:
     if (cs_param_sles_hypre_from_petsc())
-      _petsc_pchypre_hook(prefix,
-                          slesp,
-                          _system_should_be_sym(slesp->solver),
-                          pc);
+      _petsc_boomeramg_hook(prefix, slesp);
 
     else {
 
@@ -3421,7 +3391,7 @@ cs_param_sles_setup_petsc_pc_amg(const char       *prefix,
                     "%s: prefix=\"%s\": Switch to GAMG since BoomerAMG is not"
                     " available.\n",
                     __func__, prefix);
-      _petsc_pcgamg_hook(prefix, slesp, pc);
+      _petsc_pcgamg_hook(prefix, slesp);
 
     }
     break;

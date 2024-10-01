@@ -148,7 +148,7 @@ typedef enum {
 
 typedef struct {
 
-  /* Read the function \ref _petsc_pchypre_hook or \ref _hypre_boomeramg_hook
+  /* Read the function \ref _petsc_boomeramg_hook or \ref _hypre_boomeramg_hook
      for more details and read the HYPRE user guide */
 
   double                               strong_threshold;
@@ -229,7 +229,6 @@ typedef struct {
 } cs_param_amg_gamg_t;
 
 /*! \struct cs_param_amg_hmg_t
-
  *  \brief Set of the main parameters used to setup the algebraic multigrid HMG
  *         belonging to the PETSc library. HMG means Hybrid MultiGrid since it
  *         can rely on the coarsening of HYPRE and use solvers (smoother and

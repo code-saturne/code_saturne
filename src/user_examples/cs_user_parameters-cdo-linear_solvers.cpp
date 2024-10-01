@@ -414,12 +414,15 @@ cs_user_parameters(cs_domain_t    *domain)
 
   /*! [cdo_sles_boomer] */
   {
+    // Example: How to set the boomeramg preconditioner
+    // ------------------------------------------------
+
     cs_equation_param_t  *eqp = cs_equation_param_by_name("MyEq");
 
     cs_equation_param_set(eqp, CS_EQKEY_SOLVER, "fcg");
     cs_equation_param_set(eqp, CS_EQKEY_PRECOND, "amg");
     cs_equation_param_set(eqp, CS_EQKEY_AMG_TYPE, "boomer");
-    cs_equation_param_set(eqp, CS_EQKEY_SOLVER_RTOL, "1e-1");
+    cs_equation_param_set(eqp, CS_EQKEY_SOLVER_RTOL, "1e-6");
 
     /* Set the main parameters of the BoomerAMG algorithm */
 
@@ -448,12 +451,15 @@ cs_user_parameters(cs_domain_t    *domain)
 
   /*! [cdo_sles_gamg] */
   {
+    // Example: How to set the GAMG preconditioner
+    // -------------------------------------------
+
     cs_equation_param_t  *eqp = cs_equation_param_by_name("MyEq");
 
     cs_equation_param_set(eqp, CS_EQKEY_SOLVER, "fcg");
     cs_equation_param_set(eqp, CS_EQKEY_PRECOND, "amg");
     cs_equation_param_set(eqp, CS_EQKEY_AMG_TYPE, "gamg");
-    cs_equation_param_set(eqp, CS_EQKEY_SOLVER_RTOL, "1e-1");
+    cs_equation_param_set(eqp, CS_EQKEY_SOLVER_RTOL, "1e-6");
 
     /* Set the main parameters of the GAMG algorithm */
 
