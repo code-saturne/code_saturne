@@ -4769,7 +4769,8 @@ cs_solve_navier_stokes(const int        iterns,
   CS_FREE_HD(da_uu);
   CS_FREE_HD(dfrcxt);
 
-  CS_FREE_HD(trava);
+  if (iterns == vp_param->nterup)
+    CS_FREE_HD(trava);
 
   CS_FREE_HD(secvib);
   CS_FREE_HD(secvif);
