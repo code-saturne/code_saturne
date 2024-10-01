@@ -573,7 +573,7 @@ class case:
 
         # Memory log and test
 
-        self.mem_log = False
+        self.mem_log = None
 
         # Tool hooks
 
@@ -1558,8 +1558,9 @@ class case:
         # If user asked for it, place CS_MEM_LOG variable
         if self.mem_log:
             s.write('# Memory log\n')
-            s.write('export CS_MEM_LOG=cs_mem.log')
-            s.write('\n\n')
+            s.write('export CS_MEM_LOG=cs_mem.log\n')
+            s.write('export CS_MEM_LOG_LEVEL={}\n'.format(str(self.mem_log)))
+            s.write('\n')
 
         # Add user-defined prologue if defined
 

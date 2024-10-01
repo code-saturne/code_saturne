@@ -1656,6 +1656,15 @@ cs_base_mem_init(void)
 
     if (base_name != NULL) {
 
+      /* If log file is used, check for log level if available */
+      const char *log_level = getenv("CS_MEM_LOG_LEVEL");
+
+      /* Default behavior is full log. Hence we only change the log level
+       * value if the requested level is "light"
+       */
+      if (log_level != NULL && strcmp(log_level, "light") == 0)
+        bft_mem_log_level_set(0);
+
       /* We may not use BFT_MALLOC here as memory management has
          not yet been initialized using bft_mem_init() */
 

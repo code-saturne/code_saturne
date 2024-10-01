@@ -181,6 +181,8 @@ static int  _bft_mem_global_init_mode = 0;
 
 static FILE *_bft_mem_global_file = nullptr;
 
+static int _bft_mem_global_log_level = 1;
+
 static std::map<const void *, cs_mem_block_t> _bft_alloc_map;
 
 static size_t  _bft_mem_global_alloc_cur = 0;
@@ -278,6 +280,12 @@ static void _bft_mem_summary(FILE  *f)
 
   if (f == nullptr)
     return;
+
+  if (_bft_mem_global_log_level == 0) {
+    fprintf(f, "Memory log level is minimal.\n"
+            "To access the full list of allocated and freed pointers use "
+            "the max log level.");
+  }
 
   fprintf(f, "\n\n");
   fprintf(f, "Memory allocation summary\n"
@@ -585,7 +593,8 @@ bft_mem_update_block_info(const char            *var_name,
 
       /* Log to file */
 
-      if (_bft_mem_global_file != nullptr) {
+      if (   _bft_mem_global_file != nullptr
+          && _bft_mem_global_log_level > 0) {
 
         static const char cat_s[4][8]
           = {"  alloc", "realloc", "   free", "mapping"};
@@ -703,7 +712,8 @@ bft_mem_init(const char *log_file_name)
 
   /* Log file header */
 
-  if (_bft_mem_global_file != nullptr) {
+  if (   _bft_mem_global_file != nullptr
+      && _bft_mem_global_log_level > 0) {
 
     fprintf(_bft_mem_global_file,
             "       :     FILE NAME              : LINE  :"
@@ -1189,6 +1199,24 @@ bft_mem_alternative_set(bft_mem_realloc_t   *realloc_func,
 {
   _bft_alt_realloc_func = realloc_func;
   _bft_alt_free_func = free_func;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Set the level of memory log output when a log file is used.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+bft_mem_log_level_set
+(
+  int level /*!<[in] memory log level (int). 0 for light and 1 for full. */
+)
+{
+  /* For the moment only 0 or 1 are accepted */
+  assert(level == 0 || level == 1);
+
+  _bft_mem_global_log_level = level;
 }
 
 /*----------------------------------------------------------------------------*/

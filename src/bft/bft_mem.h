@@ -483,6 +483,18 @@ bft_mem_alternative_set(bft_mem_realloc_t   *realloc_func,
                         bft_mem_free_t      *free_func);
 
 /*----------------------------------------------------------------------------*/
+/*
+ * Set the level of memory log output when a log file is used.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+bft_mem_log_level_set
+(
+  int level /*<[in] memory log level (int). 0 for light and 1 for full. */
+);
+
+/*----------------------------------------------------------------------------*/
 
 END_C_DECLS
 
