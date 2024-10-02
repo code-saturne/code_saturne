@@ -73,6 +73,8 @@ BEGIN_C_DECLS
  *
  * \brief Define initial conditions for variables.
  *
+ * This function is not yet called by code_saturne, use
+ * `cs_user_initialization` for the time being
  * This function is called before the beginning of the computation
  * allowing an overload of the GUI defined initialization (called just
  * after cs_gui_initial_conditions).
