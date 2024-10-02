@@ -84,9 +84,9 @@ cs_user_source_terms(cs_domain_t  *domain,
                      cs_real_t    *st_imp)
 {
   static cs_lnum_t n_elts = -1;    /* >= 0 after initialization */
-  static cs_lnum_t *elt_ids = NULL;
-  static cs_real_t *seg_c_len = NULL;
-  cs_real_3_t *seg_c_cen = NULL;
+  static cs_lnum_t *elt_ids = nullptr;
+  static cs_real_t *seg_c_len = nullptr;
+  cs_real_3_t *seg_c_cen = nullptr;
 
   /* x, y, z of origin, and x, y, z of destination */
   /* From North to South at the middle of the first elevation*/
@@ -116,7 +116,7 @@ cs_user_source_terms(cs_domain_t  *domain,
     for (cs_lnum_t i = 0; i < n_elts; i++) {
       len += seg_c_len[i];
       cs_lnum_t cell_id = elt_ids[i];
-      if (length != NULL)
+      if (length != nullptr)
         length->val[cell_id] = seg_c_len[i];
     }
 

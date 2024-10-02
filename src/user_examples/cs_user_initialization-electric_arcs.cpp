@@ -153,12 +153,12 @@ cs_user_initialization(cs_domain_t     *domain)
 
   cs_array_real_fill_zero(n_cells, CS_F_(potr)->val);
 
-  if (CS_F_(poti) != NULL)
+  if (CS_F_(poti) != nullptr)
     cs_array_real_fill_zero(n_cells, CS_F_(poti)->val);
 
   /* Vector potential (electric arcs, 3d) */
 
-  if (CS_F_(potva) != NULL)
+  if (CS_F_(potva) != nullptr)
     cs_array_real_fill_zero(3*n_cells, CS_F_(potva)->val);
   /*! [init2] */
 }

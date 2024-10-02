@@ -122,7 +122,7 @@ static int _build_mesh_cartesian = 0;
 
 /* Parameters for structured mesh */
 static int _n_structured_meshes = 0;
-static cs_mesh_cartesian_params_t **_mesh_params = NULL;
+static cs_mesh_cartesian_params_t **_mesh_params = nullptr;
 
 /* Flag to set a maximum number of cartesian blocks */
 static int _n_structured_meshes_max = -1;
@@ -184,7 +184,7 @@ _get_structured_mesh_by_id(const int id)
  *
  * \param[in] name  Name of mesh
  *
- * \returns pointer to corresponding mesh parameters, or NULL if mesh does
+ * \returns pointer to corresponding mesh parameters, or nullptr if mesh does
  *          not exist
  */
 /*----------------------------------------------------------------------------*/
@@ -192,11 +192,11 @@ _get_structured_mesh_by_id(const int id)
 static cs_mesh_cartesian_params_t *
 _get_structured_mesh_by_name_try(const char *name)
 {
-  cs_mesh_cartesian_params_t *retval = NULL;
+  cs_mesh_cartesian_params_t *retval = nullptr;
 
-  if (name != NULL && strlen(name) > 0) {
+  if (name != nullptr && strlen(name) > 0) {
     for (int i = 0; i < _n_structured_meshes; i++) {
-      if (_mesh_params[i]->name != NULL &&
+      if (_mesh_params[i]->name != nullptr &&
           strcmp(_mesh_params[i]->name, name) == 0) {
         retval = _mesh_params[i];
         break;
@@ -230,15 +230,15 @@ _cs_mesh_cartesian_init(const char *name,
   cs_mesh_cartesian_params_t *_new_mesh =
     _get_structured_mesh_by_name_try(name);
 
-  if (_new_mesh != NULL)
+  if (_new_mesh != nullptr)
     bft_error(__FILE__, __LINE__, 0,
               "Error: a mesh with name \"%s\" allready exists.\n",
               name);
 
   BFT_MALLOC(_new_mesh, 1, cs_mesh_cartesian_params_t);
 
-  _new_mesh->name = NULL;
-  if (name != NULL && strlen(name) > 0) {
+  _new_mesh->name = nullptr;
+  if (name != nullptr && strlen(name) > 0) {
     size_t _l = strlen(name);
     BFT_MALLOC(_new_mesh->name, _l+1, char);
     strcpy(_new_mesh->name, name);
@@ -263,7 +263,7 @@ _cs_mesh_cartesian_init(const char *name,
   _new_mesh->ndir = ndir;
   BFT_MALLOC(_new_mesh->params, ndir, _cs_mesh_cartesian_direction_t *);
   for (int i = 0; i < ndir; i++)
-    _new_mesh->params[i] = NULL;
+    _new_mesh->params[i] = nullptr;
 
   int _id = _n_structured_meshes;
   _new_mesh->id = _id;
@@ -297,7 +297,7 @@ _cs_mesh_cartesian_create_direction(cs_mesh_cartesian_law_t law,
                                     cs_real_t               smax,
                                     cs_real_t               progression)
 {
-  _cs_mesh_cartesian_direction_t *dirp = NULL;
+  _cs_mesh_cartesian_direction_t *dirp = nullptr;
 
   if (smax < smin)
     bft_error(__FILE__, __LINE__, 0,
@@ -648,7 +648,7 @@ cs_mesh_cartesian_by_id(const int id)
  *
  * \param[in] name  Name of mesh
  *
- * \returns pointer to corresponding mesh parameters, or NULL if mesh
+ * \returns pointer to corresponding mesh parameters, or nullptr if mesh
  *          does not exist.
  */
 /*----------------------------------------------------------------------------*/
@@ -676,13 +676,13 @@ cs_mesh_cartesian_params_t *
 cs_mesh_cartesian_by_name(const char *name)
 {
 
-  if (name == NULL || strlen(name) == 0)
+  if (name == nullptr || strlen(name) == 0)
     bft_error(__FILE__, __LINE__, 0,
               "Error: Empty name string.\n");
 
   cs_mesh_cartesian_params_t *retval = _get_structured_mesh_by_name_try(name);
 
-  if (retval == NULL)
+  if (retval == nullptr)
     bft_error(__FILE__, __LINE__, 0,
               "Error: cartesian mesh \"%s\" does not exist.\n",
               name);
@@ -757,14 +757,14 @@ cs_mesh_cartesian_define_dir_user(cs_mesh_cartesian_params_t *mp,
                                   int                         ncells,
                                   cs_real_t                   vtx_coord[])
 {
-  assert(mp != NULL);
+  assert(mp != nullptr);
 
-  if (mp->params[idir] != NULL)
+  if (mp->params[idir] != nullptr)
     bft_error(__FILE__, __LINE__, 0,
               "Error: %d-th component was allready defined for this mesh.\n",
               idir);
 
-  _cs_mesh_cartesian_direction_t *dirp = NULL;
+  _cs_mesh_cartesian_direction_t *dirp = nullptr;
   BFT_MALLOC(dirp, 1, _cs_mesh_cartesian_direction_t);
 
   dirp->ncells = ncells;
@@ -816,7 +816,7 @@ cs_mesh_cartesian_define_dir_geom_by_part(cs_mesh_cartesian_params_t *mp,
   if (n_parts == 0)
     return;
 
-  assert(part_coords != NULL && n_part_cells != NULL && amp_factors != NULL);
+  assert(part_coords != nullptr && n_part_cells != nullptr && amp_factors != nullptr);
 
   /* Compute the cumulated number of cells along this direction */
 
@@ -826,7 +826,7 @@ cs_mesh_cartesian_define_dir_geom_by_part(cs_mesh_cartesian_params_t *mp,
 
   /* There are n_cells + 1 coordinates to define */
 
-  cs_real_t  *vtx_coord = NULL;
+  cs_real_t  *vtx_coord = nullptr;
   BFT_MALLOC(vtx_coord, n_tot_cells + 1, cs_real_t);
 
   vtx_coord[0] = part_coords[0];
@@ -916,7 +916,7 @@ cs_mesh_cartesian_define_from_csv(const char  *name,
   int ln     = 0;
   int vtx_id = 0;
 
-  cs_real_t *s[3] = {NULL, NULL, NULL};
+  cs_real_t *s[3] = {nullptr, nullptr, nullptr};
   int nc[3] = {0,0,0};
 
   /* Read the file lines one by one */
@@ -941,13 +941,13 @@ cs_mesh_cartesian_define_from_csv(const char  *name,
     else {
       /* Fourth line and beyond contain values for vertices coordinates */
 
-      char *n = NULL;
+      char *n = nullptr;
       char *c = line;
 
       int idim = 0;
       while (true) {
         n = strchr(c, ';');
-        if (n != NULL) {
+        if (n != nullptr) {
           size_t l_c = strlen(c);
           size_t l_n = strlen(n);
 
@@ -1006,7 +1006,7 @@ cs_mesh_cartesian_define_dir_params(cs_mesh_cartesian_params_t  *mp,
                                     cs_real_t                    smax,
                                     cs_real_t                    progression)
 {
-  assert(mp != NULL);
+  assert(mp != nullptr);
 
   cs_mesh_cartesian_law_t _law = law;
   cs_real_t _p   = progression;
@@ -1040,7 +1040,7 @@ cs_mesh_cartesian_define_dir_params(cs_mesh_cartesian_params_t  *mp,
     }
   }
 
-  if (mp->params[idim] != NULL) {
+  if (mp->params[idim] != nullptr) {
     bft_printf("Warning: You are modifying parameters for direction \"%d\""
                "which was allready defined.\n",
                idim);
@@ -1276,13 +1276,13 @@ cs_mesh_cartesian_block_connectivity(int                 id,
   /* Group ids */
   /* --------- */
 
-  if (mb->cell_gc_id == NULL)
+  if (mb->cell_gc_id == nullptr)
     BFT_MALLOC(mb->cell_gc_id, n_cells, int);
 
   for (cs_gnum_t i = 0; i < mp->n_cells_on_rank; i++)
     mb->cell_gc_id[i + _rank_c_offset] = mp->gc_id_shift + 1;
 
-  if (mb->face_gc_id == NULL)
+  if (mb->face_gc_id == nullptr)
     BFT_MALLOC(mb->face_gc_id, n_faces, int);
 
   // Default face group is 8
@@ -1290,7 +1290,7 @@ cs_mesh_cartesian_block_connectivity(int                 id,
     mb->face_gc_id[i + _rank_f_offset] = 1;  /* default family */
 
   /* number of vertices per face array */
-  if (mb->face_vertices_idx == NULL) {
+  if (mb->face_vertices_idx == nullptr) {
     BFT_MALLOC(mb->face_vertices_idx, n_faces + 1, cs_lnum_t);
     /* First value is always 0 */
     mb->face_vertices_idx[0] = 0;
@@ -1301,9 +1301,9 @@ cs_mesh_cartesian_block_connectivity(int                 id,
       mb->face_vertices_idx[_rank_f_offset + i] + 4;
 
   /* Face to cell connectivity using global numbering */
-  if (mb->face_cells == NULL)
+  if (mb->face_cells == nullptr)
     BFT_MALLOC(mb->face_cells, 2*n_faces, cs_gnum_t);
-  if (mb->face_vertices == NULL)
+  if (mb->face_vertices == nullptr)
     BFT_MALLOC(mb->face_vertices, 4*n_faces, cs_gnum_t);
 
   /* Global numbering starts at 1! */
@@ -1442,7 +1442,7 @@ cs_mesh_cartesian_finalize_definition(void)
 void
 cs_mesh_cartesian_params_destroy(void)
 {
-  if (_mesh_params == NULL)
+  if (_mesh_params == nullptr)
     return;
 
   for (int i = 0; i < _n_structured_meshes; i++) {

@@ -239,7 +239,7 @@ static cs_elec_option_t  _elec_option = {.ixkabe = -1,
                                          .ielcor = -1,
                                          .modrec = -1,
                                          .idreca = -1,
-                                         .izreca = NULL,
+                                         .izreca = nullptr,
                                          .couimp = 0.,
                                          .pot_diff = 0.,
                                          .puisim = 0.,
@@ -249,20 +249,20 @@ static cs_elec_option_t  _elec_option = {.ixkabe = -1,
 
 static cs_data_elec_t  _elec_properties = {.ngaz = 0,
                                            .npoint = 0,
-                                           .th = NULL,
-                                           .ehgaz = NULL,
-                                           .rhoel = NULL,
-                                           .cpel = NULL,
-                                           .sigel = NULL,
-                                           .visel = NULL,
-                                           .xlabel = NULL,
-                                           .xkabel = NULL};
+                                           .th = nullptr,
+                                           .ehgaz = nullptr,
+                                           .rhoel = nullptr,
+                                           .cpel = nullptr,
+                                           .sigel = nullptr,
+                                           .visel = nullptr,
+                                           .xlabel = nullptr,
+                                           .xkabel = nullptr};
 
-static cs_data_joule_effect_t  *_transformer     = NULL;
+static cs_data_joule_effect_t  *_transformer     = nullptr;
 
-const cs_elec_option_t        *cs_glob_elec_option = NULL;
-const cs_data_elec_t          *cs_glob_elec_properties = NULL;
-const cs_data_joule_effect_t  *cs_glob_transformer     = NULL;
+const cs_elec_option_t        *cs_glob_elec_option = nullptr;
+const cs_data_elec_t          *cs_glob_elec_properties = nullptr;
+const cs_data_joule_effect_t  *cs_glob_transformer     = nullptr;
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
@@ -444,7 +444,7 @@ _field_pointer_properties_map_electric_arcs(void)
  *
  * \param[in]       location_id  base associated mesh location id
  * \param[in]       n_elts       number of associated elements
- * \param[in]       elt_ids      ids of associated elements, or NULL if no
+ * \param[in]       elt_ids      ids of associated elements, or nullptr if no
  *                               filtering is required
  * \param[in, out]  input        pointer to associated mesh structure
  *                               (to be cast as cs_mesh_t *) for interior
@@ -474,7 +474,7 @@ _pot_gradient_im_f(int               location_id,
 
   cs_field_gradient_scalar(f, false, 1, grad);
 
-  if (elt_ids != NULL) {
+  if (elt_ids != nullptr) {
     for (cs_lnum_t idx = 0; idx <  n_elts; idx++) {
       cs_lnum_t i = elt_ids[idx];
       for (cs_lnum_t j = 0; j < 3; j++)
@@ -498,7 +498,7 @@ _pot_gradient_im_f(int               location_id,
  *
  * \param[in]       location_id  base associated mesh location id
  * \param[in]       n_elts       number of associated elements
- * \param[in]       elt_ids      ids of associated elements, or NULL if no
+ * \param[in]       elt_ids      ids of associated elements, or nullptr if no
  *                               filtering is required
  * \param[in, out]  input        pointer to associated mesh structure
  *                               (to be cast as cs_mesh_t *) for interior
@@ -534,7 +534,7 @@ _current_im_f(int               location_id,
   if (diff_id > -1) {
     const cs_real_t *cvisii = cs_field_by_id(diff_id)->val;
 
-    if (elt_ids != NULL) {
+    if (elt_ids != nullptr) {
       for (cs_lnum_t idx = 0; idx <  n_elts; idx++) {
         cs_lnum_t i = elt_ids[idx];
         for (cs_lnum_t j = 0; j < 3; j++)
@@ -554,7 +554,7 @@ _current_im_f(int               location_id,
     const int kvisls0 = cs_field_key_id("diffusivity_ref");
     const double visls_0 = cs_field_get_key_double(f, kvisls0);
 
-    if (elt_ids != NULL) {
+    if (elt_ids != nullptr) {
       for (cs_lnum_t idx = 0; idx <  n_elts; idx++) {
         cs_lnum_t i = elt_ids[idx];
         for (cs_lnum_t j = 0; j < 3; j++)
@@ -579,7 +579,7 @@ _current_im_f(int               location_id,
  *
  * \param[in]       location_id  base associated mesh location id
  * \param[in]       n_elts       number of associated elements
- * \param[in]       elt_ids      ids of associated elements, or NULL if no
+ * \param[in]       elt_ids      ids of associated elements, or nullptr if no
  *                               filtering is required
  * \param[in, out]  input        pointer to associated mesh structure
  *                               (to be cast as cs_mesh_t *) for interior
@@ -604,7 +604,7 @@ _pot_module_f(int               location_id,
   const cs_real_t *cpotr = cs_field_by_name("elec_pot_r")->val;
   const cs_real_t *cpoti = cs_field_by_name("elec_pot_i")->val;
 
-  if (elt_ids != NULL) {
+  if (elt_ids != nullptr) {
     for (cs_lnum_t idx = 0; idx <  n_elts; idx++) {
       cs_lnum_t i = elt_ids[idx];
       v[idx] = sqrt(cpotr[i]*cpotr[i] + cpoti[i]*cpoti[i]);
@@ -624,7 +624,7 @@ _pot_module_f(int               location_id,
  *
  * \param[in]       location_id  base associated mesh location id
  * \param[in]       n_elts       number of associated elements
- * \param[in]       elt_ids      ids of associated elements, or NULL if no
+ * \param[in]       elt_ids      ids of associated elements, or nullptr if no
  *                               filtering is required
  * \param[in, out]  input        pointer to associated mesh structure
  *                               (to be cast as cs_mesh_t *) for interior
@@ -652,7 +652,7 @@ _pot_arg_f(int               location_id,
   cs_real_t pi_ov_4 = atan(1.);
 
   for (cs_lnum_t idx = 0; idx <  n_elts; idx++) {
-    cs_lnum_t i = (elt_ids != NULL) ? elt_ids[idx] : idx;
+    cs_lnum_t i = (elt_ids != nullptr) ? elt_ids[idx] : idx;
 
     if (cpotr[i] > 0.)
       v[idx] = atan(cpoti[i] / cpotr[i]);
@@ -745,7 +745,7 @@ cs_electrical_model_initialize(void)
   _elec_option.irestrike = 0;
   for (int i = 0; i < 3; i++)
     _elec_option.restrike_point[i] = 0.;
-  _elec_option.izreca    = NULL;
+  _elec_option.izreca    = nullptr;
   _elec_option.elcou     = 0.;
   _elec_option.ielcor    = 0;
   _elec_option.couimp    = 0.;
@@ -816,7 +816,7 @@ cs_electrical_model_finalize(void)
 void
 cs_electrical_model_specific_initialization(void)
 {
-  cs_field_t *f = NULL;
+  cs_field_t *f = nullptr;
   const int kvisls0 = cs_field_key_id("diffusivity_ref");
   const int ksigmas = cs_field_key_id("turbulent_schmidt");
 
@@ -924,7 +924,7 @@ cs_electrical_properties_read(void)
     int iesp = 0;
     int it = 0;
 
-    while (fgets(str, LG_MAX, file) != NULL) {
+    while (fgets(str, LG_MAX, file) != nullptr) {
       nb_line_tot++;
       if (nb_line_tot < 8)
         continue;
@@ -1021,7 +1021,7 @@ cs_electrical_properties_read(void)
 
     int iesp = 0;
     int it = 0;
-    while (fgets(str, LG_MAX, file) != NULL) {
+    while (fgets(str, LG_MAX, file) != nullptr) {
       nb_line_tot++;
       if (nb_line_tot == 1)
         sscanf(str, "%i", &(_transformer->ntfref));
@@ -1101,7 +1101,7 @@ cs_elec_physical_properties(cs_domain_t  *domain)
   const cs_lnum_t  n_cells = domain->mesh->n_cells;
   const int kivisl = cs_field_key_id("diffusivity_id");
   int diff_id = cs_field_get_key_int(CS_F_(potr), kivisl);
-  cs_field_t *c_prop = NULL;
+  cs_field_t *c_prop = nullptr;
   if (diff_id > -1)
     c_prop = cs_field_by_id(diff_id);
   ipass++;
@@ -1114,7 +1114,7 @@ cs_elec_physical_properties(cs_domain_t  *domain)
   /* Joule effect (law must be specified by user) */
 
   int ifcvsl = cs_field_get_key_int(CS_F_(h), kivisl);
-  cs_field_t *diff_th = NULL;
+  cs_field_t *diff_th = nullptr;
   if (ifcvsl >= 0)
     diff_th = cs_field_by_id(ifcvsl);
 
@@ -1166,10 +1166,10 @@ cs_elec_physical_properties(cs_domain_t  *domain)
 
     /* Map some fields */
 
-    cs_real_t *cpro_absco = NULL;
+    cs_real_t *cpro_absco = nullptr;
 
     if (cs_glob_elec_option->ixkabe == 1) {
-      if (CS_FI_(rad_cak, 0) != NULL)
+      if (CS_FI_(rad_cak, 0) != nullptr)
         cpro_absco = CS_FI_(rad_cak, 0)->val;
     }
 
@@ -1327,7 +1327,7 @@ cs_elec_physical_properties(cs_domain_t  *domain)
       }
 
       /* compute Lambda/Cp : kg/(m s) */
-      if (diff_th != NULL) {
+      if (diff_th != nullptr) {
 
         for (int iesp1 = 0; iesp1 < ngaz; iesp1++) {
           for (int iesp2 = 0; iesp2 < ngaz; iesp2++) {
@@ -1376,7 +1376,7 @@ cs_elec_physical_properties(cs_domain_t  *domain)
 
       /* compute radiative transfer : W/m3 */
       if (cs_glob_elec_option->ixkabe == 1) {
-        if (cpro_absco != NULL) { /* May be NULL if no active radiation model */
+        if (cpro_absco != nullptr) { /* May be nullptr if no active radiation model */
           double val = 0.;
           for (int iesp1 = 0; iesp1 < ngaz; iesp1++)
             val += yvol[iesp1] * xkabes[iesp1];
@@ -1459,7 +1459,7 @@ cs_elec_compute_fields(const cs_mesh_t  *mesh,
 
     /* compute current density j = sig E */
     int diff_id = cs_field_get_key_int(CS_F_(potr), kivisl);
-    cs_field_t *c_prop = NULL;
+    cs_field_t *c_prop = nullptr;
     if (diff_id > -1)
       c_prop = cs_field_by_id(diff_id);
 
@@ -1546,7 +1546,7 @@ cs_elec_compute_fields(const cs_mesh_t  *mesh,
 
       /* compute current density j = sig E */
       int diff_id_i = cs_field_get_key_int(CS_F_(poti), kivisl);
-      cs_field_t *c_propi = NULL;
+      cs_field_t *c_propi = nullptr;
       if (diff_id_i > -1)
         c_propi = cs_field_by_id(diff_id_i);
 
@@ -1631,7 +1631,7 @@ cs_elec_compute_fields(const cs_mesh_t  *mesh,
       /* compute magnetic field component B */
       cs_field_t  *fp = cs_field_by_name_try("vec_potential");
 
-      cs_real_33_t *gradv = NULL;
+      cs_real_33_t *gradv = nullptr;
       BFT_MALLOC(gradv, n_cells_ext, cs_real_33_t);
 
       cs_field_gradient_vector(fp,
@@ -1852,9 +1852,9 @@ cs_elec_add_variable_fields(void)
 
   if (e_props->ngaz > 1) {
     for (int igaz = 0; igaz < e_props->ngaz - 1; igaz++) {
-      char *name = NULL;
-      char *label = NULL;
-      char *suf = NULL;
+      char *name = nullptr;
+      char *label = nullptr;
+      char *suf = nullptr;
       BFT_MALLOC(name, strlen("esl_fraction_") + 2 + 1, char);
       BFT_MALLOC(label, strlen("YM_ESL") + 2 + 1, char);
       BFT_MALLOC(suf, 3, char);
@@ -2097,7 +2097,7 @@ cs_elec_scaling_function(const cs_mesh_t             *mesh,
       cs_gui_elec_model_rec();
       double elcou = 0.;
       cs_real_3_t *cpro_curre = (cs_real_3_t *)(CS_F_(curre)->val);
-      if (mesh->halo != NULL)
+      if (mesh->halo != nullptr)
         cs_halo_sync_var_strided(mesh->halo, CS_HALO_STANDARD,
                                  (cs_real_t *)cpro_curre, 3);
       for (cs_lnum_t ifac = 0; ifac < nfac; ifac++) {
@@ -2531,7 +2531,7 @@ cs_elec_define_functions(void)
                                    true,
                                    CS_REAL_TYPE,
                                    _pot_gradient_im_f,
-                                   NULL);
+                                   nullptr);
 
     const char label[] = "Pot_Gradient_Im";
     BFT_MALLOC(f->label, strlen(label) + 1, char);
@@ -2552,7 +2552,7 @@ cs_elec_define_functions(void)
                                    true,
                                    CS_REAL_TYPE,
                                    _current_im_f,
-                                   NULL);
+                                   nullptr);
 
     const char label[] = "Current_Im";
     BFT_MALLOC(f->label, strlen(label) + 1, char);
@@ -2572,7 +2572,7 @@ cs_elec_define_functions(void)
                                    true,
                                    CS_REAL_TYPE,
                                    _pot_module_f,
-                                   NULL);
+                                   nullptr);
 
     const char label[] = "Pot_Module";
     BFT_MALLOC(f->label, strlen(label) + 1, char);
@@ -2592,7 +2592,7 @@ cs_elec_define_functions(void)
                                    true,
                                    CS_REAL_TYPE,
                                    _pot_arg_f,
-                                   NULL);
+                                   nullptr);
 
     const char label[] = "Pot_Arg";
     BFT_MALLOC(f->label, strlen(label) + 1, char);

@@ -57,7 +57,7 @@ BEGIN_C_DECLS
  * \brief cs_dof_func_t function to compute an inlet value based
  *        on the value computed from a user defined time table.
  *
- * For the calling function, elt_ids is optional. If not NULL, array(s) should
+ * For the calling function, elt_ids is optional. If not nullptr, array(s) should
  * be accessed with an indirection. The same indirection can be applied to fill
  * retval if dense_output is set to false.
  * In the current case, retval is allocated to mesh->n_b_faces.
@@ -65,7 +65,7 @@ BEGIN_C_DECLS
  * \param[in]      n_elts        number of elements to consider
  * \param[in]      elt_ids       list of elements ids
  * \param[in]      dense_output  perform an indirection in retval or not
- * \param[in]      input         NULL or pointer to a structure cast on-the-fly
+ * \param[in]      input         nullptr or pointer to a structure cast on-the-fly
  * \param[in, out] retval        resulting value(s). Must be allocated.
  */
 /*----------------------------------------------------------------------------*/
@@ -91,7 +91,7 @@ _time_table_t_inlet(cs_lnum_t         n_elts,
   /* Apply values at selected locations */
 
   for (cs_lnum_t i = 0; i < n_elts; i++) {
-    const cs_lnum_t  face_id = (elt_ids == NULL) ? i : elt_ids[i];
+    const cs_lnum_t  face_id = (elt_ids == nullptr) ? i : elt_ids[i];
     const cs_lnum_t  j = dense_output ? i : face_id;
     retval[j] = inlet_temp;
   }
@@ -126,7 +126,7 @@ cs_user_boundary_conditions_setup(cs_domain_t  *domain)
                                  "inlet",                // zone name
                                  cs_flag_boundary_face,  // location flag
                                  _time_table_t_inlet,    // callback function
-                                 NULL);                  // input structure
+                                 nullptr);                  // input structure
   /*! [time_table_dof_inlet] */
 }
 

@@ -527,7 +527,7 @@ _assembly_by_blocks(const cs_cell_sys_t             *csys,
   /* Reset the value of the source term for the cell DoF
      Source term is only hold by the cell DoF in face-based schemes */
 
-  if (eqc->source_terms != NULL) {
+  if (eqc->source_terms != nullptr) {
     cs_real_t *st = eqc->source_terms + 3 * cm->c_id;
     for (int k = 0; k < 3; k++)
       st[k] = csys->source[3 * cm->n_fc + k];

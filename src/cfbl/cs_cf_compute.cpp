@@ -161,8 +161,8 @@ _compressible_pressure_mass_flux(int iterns, // cfmsfp en fortran
   cs_equation_param_t *eqp_vel = cs_field_get_equation_param(vel);
   cs_equation_param_t *eqp_p = cs_field_get_equation_param(CS_F_(p));
 
-  cs_real_t *i_visc = NULL, *b_visc = NULL;
-  cs_real_6_t *viscce = NULL;
+  cs_real_t *i_visc = nullptr, *b_visc = nullptr;
+  cs_real_6_t *viscce = nullptr;
   if (eqp_vel->idften & CS_ISOTROPIC_DIFFUSION) {
     CS_MALLOC_HD(i_visc, n_i_faces, cs_real_t, cs_alloc_mode);
     CS_MALLOC_HD(b_visc, n_b_faces, cs_real_t, cs_alloc_mode);
@@ -173,7 +173,7 @@ _compressible_pressure_mass_flux(int iterns, // cfmsfp en fortran
     CS_MALLOC_HD(viscce, n_cells_ext, cs_real_6_t, cs_alloc_mode);
   }
 
-  cs_real_t *secvib = NULL, *secvif = NULL;
+  cs_real_t *secvib = nullptr, *secvif = nullptr;
   if (vp_model->ivisse == 1) {
     CS_MALLOC_HD(secvif, n_i_faces, cs_real_t, cs_alloc_mode);
     CS_MALLOC_HD(secvib, n_b_faces, cs_real_t, cs_alloc_mode);
@@ -336,13 +336,13 @@ _compressible_pressure_mass_flux(int iterns, // cfmsfp en fortran
                       b_visc,
                       secvif,
                       secvib,
-                      NULL,   /* viscel */
-                      NULL,   /* weighf */ // rvoid a voir
-                      NULL,   /* weighb */
+                      nullptr,   /* viscel */
+                      nullptr,   /* weighf */ // rvoid a voir
+                      nullptr,   /* weighb */
                       0,      /* icvflb */
                       icvfli,
-                      NULL, /* i_pvar */
-                      NULL, /* b_pvar */
+                      nullptr, /* i_pvar */
+                      nullptr, /* b_pvar */
                       tsexp);
 
   }
@@ -358,10 +358,10 @@ _compressible_pressure_mass_flux(int iterns, // cfmsfp en fortran
 
     cs_array_real_set_scalar(3*n_cells, 0.0, (cs_real_t *)vel0);
 
-    int *itypsm = NULL;
+    int *itypsm = nullptr;
     cs_lnum_t ncetsm = 0;
-    const cs_lnum_t *icetsm = NULL;
-    cs_real_t *smacel_vel, *smacel_p = NULL;
+    const cs_lnum_t *icetsm = nullptr;
+    cs_real_t *smacel_vel, *smacel_p = nullptr;
 
     cs_volume_mass_injection_get_arrays(vel,
                                         &ncetsm,
@@ -464,7 +464,7 @@ _compressible_pressure_mass_flux(int iterns, // cfmsfp en fortran
   CS_FREE_HD(viscce);
   CS_FREE_HD(vel0);
 
-  coefbv = NULL;
+  coefbv = nullptr;
   cs_field_bc_coeffs_free_copy(bc_coeffs_vel, &bc_coeffs_v_loc);
 }
 
@@ -558,9 +558,9 @@ cs_cf_convective_mass_flux(int  iterns)
   cs_equation_param_t *eqp_p = cs_field_get_equation_param(f_p);
 
   cs_real_t *cvar_fracv, *cvar_fracm, *cvar_frace;
-  cvar_fracv = NULL;
-  cvar_fracm = NULL;
-  cvar_frace = NULL;
+  cvar_fracv = nullptr;
+  cvar_fracm = nullptr;
+  cvar_frace = nullptr;
 
   if (cs_glob_physical_model_flag[CS_COMPRESSIBLE] > 1) {
     cvar_fracv = CS_F_(volume_f)->val;
@@ -585,7 +585,7 @@ cs_cf_convective_mass_flux(int  iterns)
 
   const int icp = fluid_props->icp;
   const int icv = fluid_props->icv;
-  cs_real_t *cpro_cp = NULL, *cpro_cv = NULL;
+  cs_real_t *cpro_cp = nullptr, *cpro_cv = nullptr;
 
   if (icp >= 0)
     cpro_cp = CS_F_(cp)->val;
@@ -623,16 +623,16 @@ cs_cf_convective_mass_flux(int  iterns)
 
   if (eqp_p->n_volume_mass_injections > 0) {
     cs_lnum_t ncetsm = 0;
-    const cs_lnum_t *icetsm = NULL;
-    int *itpsm_p = NULL;
-    cs_real_t *smcel_p = NULL; //, *gamma = NULL;
+    const cs_lnum_t *icetsm = nullptr;
+    int *itpsm_p = nullptr;
+    cs_real_t *smcel_p = nullptr; //, *gamma = nullptr;
 
     cs_volume_mass_injection_get_arrays(f_p,
                                         &ncetsm,
                                         &icetsm,
                                         &itpsm_p,
                                         &smcel_p,
-                                        NULL);
+                                        nullptr);
 
     for (cs_lnum_t ii = 0; ii < ncetsm; ii++) {
       const cs_lnum_t c_id = icetsm[ii];
@@ -705,7 +705,7 @@ cs_cf_convective_mass_flux(int  iterns)
   cs_field_t *f_divu
     = cs_field_by_name_try("algo:predicted_velocity_divergence");
 
-  if (f_divu != NULL) {
+  if (f_divu != nullptr) {
     cs_real_t * cpro_divu = f_divu->val;
     cs_array_real_copy(n_cells, smbrs, cpro_divu);
   }
@@ -730,7 +730,7 @@ cs_cf_convective_mass_flux(int  iterns)
   cs_equation_iterative_solve_scalar(idtvar,
                                      0, /* init */
                                      f_p->id,
-                                     NULL,
+                                     nullptr,
                                      0,      /* iescap */
                                      0,      /* imucpp */
                                      -1.0,   /* normp */
@@ -740,15 +740,15 @@ cs_cf_convective_mass_flux(int  iterns)
                                      wflmas, wflmab,
                                      i_visc, b_visc,
                                      i_visc, b_visc,
-                                     NULL,   /* viscel */
-                                     NULL, NULL, /* weighf, weighb */
+                                     nullptr,   /* viscel */
+                                     nullptr, nullptr, /* weighf, weighb */
                                      0,      /* icvflb (upwind conv. flux) */
-                                     NULL,   /* icvfli */
+                                     nullptr,   /* icvfli */
                                      rovsdt,
                                      smbrs,
                                      cvar_pr, dpvar,
-                                     NULL,   /* xcpp */
-                                     NULL);  /* eswork */
+                                     nullptr,   /* xcpp */
+                                     nullptr);  /* eswork */
 
   /* Printings and clippings
      ----------------------- */
@@ -777,7 +777,7 @@ cs_cf_convective_mass_flux(int  iterns)
   /* Communication of P
      ------------------ */
 
-  if (mesh->halo != NULL)
+  if (mesh->halo != nullptr)
     cs_halo_sync_var(mesh->halo, CS_HALO_STANDARD, cvar_pr);
 
   /* Acoustic mass flux computation at the faces
@@ -805,7 +805,7 @@ cs_cf_convective_mass_flux(int  iterns)
                               eqp_p->verbosity,
                               eqp_p->epsrgr,
                               eqp_p->climgr,
-                              NULL, /* frcxt */
+                              nullptr, /* frcxt */
                               cvar_pr,
                               &bc_coeffs_loc,
                               i_visc, b_visc,
@@ -841,7 +841,7 @@ cs_cf_convective_mass_flux(int  iterns)
 
     /* Density communication */
 
-    if (mesh->halo != NULL) {
+    if (mesh->halo != nullptr) {
       cs_halo_sync_var(mesh->halo, CS_HALO_STANDARD, crom);
       cs_halo_sync_var(mesh->halo, CS_HALO_STANDARD, crom_pre);
     }
@@ -865,8 +865,8 @@ cs_cf_convective_mass_flux(int  iterns)
   CS_FREE_HD(w9);
   CS_FREE_HD(w10);
 
-  wbfa = NULL;
-  wbfb = NULL;
+  wbfa = nullptr;
+  wbfb = nullptr;
   cs_field_bc_coeffs_free_copy(f_p->bc_coeffs, &bc_coeffs_loc);
 }
 
@@ -901,9 +901,9 @@ cs_cf_cfl_compute(cs_real_t wcf[]) // before : cfdttv
   cs_real_t *crom = CS_F_(rho)->val;
   cs_real_t *cvar_pr = CS_F_(p)->val;
 
-  cs_real_t *cvar_fracv = NULL;
-  cs_real_t *cvar_fracm = NULL;
-  cs_real_t *cvar_frace = NULL;
+  cs_real_t *cvar_fracv = nullptr;
+  cs_real_t *cvar_fracm = nullptr;
+  cs_real_t *cvar_frace = nullptr;
 
   if (cs_glob_physical_model_flag[CS_COMPRESSIBLE] == 2){
     cvar_fracv = (cs_real_t *)CS_F_(volume_f)->val;
@@ -939,7 +939,7 @@ cs_cf_cfl_compute(cs_real_t wcf[]) // before : cfdttv
 
   /* Map specific heats fields for sound celerity computation */
 
-  cs_real_t *cpro_cp = NULL, *cpro_cv = NULL;
+  cs_real_t *cpro_cp = nullptr, *cpro_cv = nullptr;
   if (icp >= 0)
     cpro_cp = CS_F_(cp)->val;
 

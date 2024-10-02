@@ -115,13 +115,13 @@ cs_lagr_porosity(void)
   cs_lagr_internal_condition_t *internal_conditions
     = cs_glob_lagr_internal_conditions;
 
-  if (internal_conditions == NULL)
+  if (internal_conditions == nullptr)
     return;
 
   const cs_lnum_t n_cells_ext = mesh->n_cells_with_ghosts;
   const cs_lnum_t n_i_faces = mesh->n_i_faces;
 
-  cs_real_t *covered_surface = NULL;
+  cs_real_t *covered_surface = nullptr;
   BFT_MALLOC(covered_surface, mesh->n_cells_with_ghosts, cs_real_t);
 
   /* Initialization */
@@ -159,7 +159,7 @@ cs_lagr_porosity(void)
   }
 
   /* Synchronization */
-  if (mesh->halo != NULL)
+  if (mesh->halo != nullptr)
     cs_halo_sync_var(mesh->halo, CS_HALO_STANDARD, covered_surface);
 
   /* Compute fluid section and clip it to 0 if negative */

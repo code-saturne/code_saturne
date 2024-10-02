@@ -127,10 +127,10 @@ _activate_particle_output(void)
         cs_lagr_get_attr_info(cs_glob_lagr_particle_set,
                               0,
                               attr,
-                              NULL,
-                              NULL,
-                              NULL,
-                              NULL,
+                              nullptr,
+                              nullptr,
+                              nullptr,
+                              nullptr,
                               &count);
 
         if (count == 3) {
@@ -160,7 +160,7 @@ _activate_particle_output(void)
  * Default additional particle output of mesh and time-dependent variables
  * for the call to pstvar / cs_post_write_vars.
  *
- * Note: if the input pointer is non-NULL, it must point to valid data
+ * Note: if the input pointer is non-nullptr, it must point to valid data
  * when the output function is called, so either:
  * - that value or structure should not be temporary (i.e. local);
  * - post-processing output must be ensured using cs_post_write_var()
@@ -251,7 +251,7 @@ _write_particle_vars(cs_lagr_post_options_t  *options,
  *   cell_ids    <-- list of cells (0 to n-1) of post-processing mesh
  *   i_face_ids  <-- list of interior faces (0 to n-1) of post-processing mesh
  *   b_face_ids  <-- list of boundary faces (0 to n-1) of post-processing mesh
- *   ts          <-- time step status structure, or NULL
+ *   ts          <-- time step status structure, or nullptr
  *----------------------------------------------------------------------------*/
 
 static void
@@ -319,8 +319,8 @@ _cs_lagr_post(void                  *input,
                         true,    /* interlace */
                         false,   /* use_parent */
                         CS_POST_TYPE_cs_real_t,
-                        NULL,
-                        NULL,
+                        nullptr,
+                        nullptr,
                         val,
                         cs_glob_time_step);
 

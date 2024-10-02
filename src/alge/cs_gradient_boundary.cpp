@@ -167,14 +167,14 @@ _add_hb_faces_cocg_lsq_cell(cs_lnum_t        c_id,
  * \param[in]   fvq             pointer to associated finite volume quantities
  * \param[in]   n_faces         number of faces at which to compute values
  * \param[in]   face_ids        ids of boundary faces at which to compute
- *                              values, or NULL for all
+ *                              values, or nullptr for all
  * \param[in]   halo_type       halo (cell neighborhood) type
  * \param[in]   var_dim         variable dimension
  * \param[in]   clip_coeff      clipping (limiter) coefficient
  *                              (no limiter if < 0)
- * \param[in]   bc_coeff_a      boundary condition term a, or NULL
- * \param[in]   bc_coeff_b      boundary condition term b, or NULL
- * \param[in]   c_weight        cell variable weight, or NULL
+ * \param[in]   bc_coeff_a      boundary condition term a, or nullptr
+ * \param[in]   bc_coeff_b      boundary condition term b, or nullptr
+ * \param[in]   c_weight        cell variable weight, or nullptr
  * \param[in]   var             variable values et cell centers
  * \param[out]  var_iprime      variable values et face iprime locations
  */
@@ -234,7 +234,7 @@ _rc_var_b_faces_iprime_strided_lsq(const cs_mesh_t               *m,
   #pragma omp parallel for schedule(dynamic, CS_THR_MIN)
   for (cs_lnum_t f_idx = 0; f_idx < n_faces; f_idx++) {
 
-    cs_lnum_t f_id = (face_ids != NULL) ? face_ids[f_idx] : f_idx;
+    cs_lnum_t f_id = (face_ids != nullptr) ? face_ids[f_idx] : f_idx;
     cs_lnum_t c_id = m->b_face_cells[f_id];
 
     /* No reconstruction needed if I and I' are coincident' */
@@ -281,7 +281,7 @@ _rc_var_b_faces_iprime_strided_lsq(const cs_mesh_t               *m,
         e_id = cell_cells_idx[c_id+1];
         cell_cells_p = (const cs_lnum_t *)(cell_cells);
       }
-      else if (cell_cells_e_idx != NULL){
+      else if (cell_cells_e_idx != nullptr){
         s_id = cell_cells_e_idx[c_id];
         e_id = cell_cells_e_idx[c_id+1];
         cell_cells_p = (const cs_lnum_t *)(cell_cells_e);
@@ -289,7 +289,7 @@ _rc_var_b_faces_iprime_strided_lsq(const cs_mesh_t               *m,
       else
         break;
 
-      if (c_weight == NULL) {
+      if (c_weight == nullptr) {
 
         for (cs_lnum_t i = s_id; i < e_id; i++) {
 
@@ -362,7 +362,7 @@ _rc_var_b_faces_iprime_strided_lsq(const cs_mesh_t               *m,
 
     /* Contribution from hidden boundary faces */
 
-    if (ma->cell_hb_faces_idx != NULL)
+    if (ma->cell_hb_faces_idx != nullptr)
       _add_hb_faces_cocg_lsq_cell(c_id,
                                   ma->cell_hb_faces_idx,
                                   ma->cell_hb_faces,
@@ -806,12 +806,12 @@ _compute_ani_weighting_cocg(const cs_real_t  wi[],
  * \param[in]   fvq             pointer to associated finite volume quantities
  * \param[in]   n_faces         number of faces at which to compute values
  * \param[in]   face_ids        ids of boundary faces at which to compute
- *                              values, or NULL for all
+ *                              values, or nullptr for all
  * \param[in]   halo_type       halo (cell neighborhood) type
  * \param[in]   clip_coeff      clipping (limiter) coefficient
  *                              (no limiter if < 0)
- * \param[in]   bc_coeffs       boundary condition structure, or NULL
- * \param[in]   c_weight        cell variable weight, or NULL
+ * \param[in]   bc_coeffs       boundary condition structure, or nullptr
+ * \param[in]   c_weight        cell variable weight, or nullptr
  * \param[in]   var             variable values et cell centers
  * \param[out]  var_iprime      variable values et face iprime locations
  */
@@ -864,7 +864,7 @@ cs_gradient_boundary_iprime_lsq_s(const cs_mesh_t               *m,
   #pragma omp parallel for schedule(dynamic, CS_THR_MIN)
   for (cs_lnum_t f_idx = 0; f_idx < n_faces; f_idx++) {
 
-    cs_lnum_t f_id = (face_ids != NULL) ? face_ids[f_idx] : f_idx;
+    cs_lnum_t f_id = (face_ids != nullptr) ? face_ids[f_idx] : f_idx;
     cs_lnum_t c_id = b_face_cells[f_id];
 
     /* No reconstruction needed if I and I' are coincident' */
@@ -897,7 +897,7 @@ cs_gradient_boundary_iprime_lsq_s(const cs_mesh_t               *m,
         e_id = cell_cells_idx[c_id+1];
         cell_cells_p = (const cs_lnum_t *)(cell_cells);
       }
-      else if (cell_cells_e_idx != NULL){
+      else if (cell_cells_e_idx != nullptr){
         s_id = cell_cells_e_idx[c_id];
         e_id = cell_cells_e_idx[c_id+1];
         cell_cells_p = (const cs_lnum_t *)(cell_cells_e);
@@ -905,7 +905,7 @@ cs_gradient_boundary_iprime_lsq_s(const cs_mesh_t               *m,
       else
         break;
 
-      if (c_weight == NULL) {
+      if (c_weight == nullptr) {
 
         for (cs_lnum_t i = s_id; i < e_id; i++) {
 
@@ -970,7 +970,7 @@ cs_gradient_boundary_iprime_lsq_s(const cs_mesh_t               *m,
 
     /* Contribution from hidden boundary faces */
 
-    if (ma->cell_hb_faces_idx != NULL)
+    if (ma->cell_hb_faces_idx != nullptr)
       _add_hb_faces_cocg_lsq_cell(c_id,
                                   ma->cell_hb_faces_idx,
                                   ma->cell_hb_faces,
@@ -1082,11 +1082,11 @@ cs_gradient_boundary_iprime_lsq_s(const cs_mesh_t               *m,
  * \param[in]   fvq             pointer to associated finite volume quantities
  * \param[in]   n_faces         number of faces at which to compute values
  * \param[in]   face_ids        ids of boundary faces at which to compute
- *                              values, or NULL for all
+ *                              values, or nullptr for all
  * \param[in]   clip_coeff      clipping (limiter) coefficient
  *                              (no limiter if < 0)
  * \param[in]   bc_coeffs       boundary condition structure
- * \param[in]   c_weight        cell variable weight, or NULL
+ * \param[in]   c_weight        cell variable weight, or nullptr
  * \param[in]   var             variable values et cell centers
  * \param[out]  var_iprime      variable values et face iprime locations
  */
@@ -1138,7 +1138,7 @@ cs_gradient_boundary_iprime_lsq_s_ani(const cs_mesh_t               *m,
     = (const cs_real_3_t *)fvq->diipb;
   const cs_real_t *restrict weight = fvq->weight;
 
-  if (cell_i_faces == NULL) {
+  if (cell_i_faces == nullptr) {
     cs_mesh_adjacencies_update_cell_i_faces();
     cell_i_faces
       = (const cs_lnum_t *) ma->cell_i_faces;
@@ -1151,7 +1151,7 @@ cs_gradient_boundary_iprime_lsq_s_ani(const cs_mesh_t               *m,
   #pragma omp parallel for schedule(dynamic, CS_THR_MIN)
   for (cs_lnum_t f_idx = 0; f_idx < n_faces; f_idx++) {
 
-    cs_lnum_t f_id = (face_ids != NULL) ? face_ids[f_idx] : f_idx;
+    cs_lnum_t f_id = (face_ids != nullptr) ? face_ids[f_idx] : f_idx;
     cs_lnum_t c_id = b_face_cells[f_id];
 
     /* No reconstruction needed if I and I' are coincident' */
@@ -1175,7 +1175,7 @@ cs_gradient_boundary_iprime_lsq_s_ani(const cs_mesh_t               *m,
     cs_lnum_t s_id = cell_cells_idx[c_id];
     cs_lnum_t e_id = cell_cells_idx[c_id+1];
 
-    assert (c_weight != NULL || e_id <= s_id);
+    assert (c_weight != nullptr || e_id <= s_id);
 
     for (cs_lnum_t i = s_id; i < e_id; i++) {
 
@@ -1222,7 +1222,7 @@ cs_gradient_boundary_iprime_lsq_s_ani(const cs_mesh_t               *m,
 
     /* Contribution from hidden boundary faces */
 
-    if (ma->cell_hb_faces_idx != NULL)
+    if (ma->cell_hb_faces_idx != nullptr)
       _add_hb_faces_cocg_lsq_cell(c_id,
                                   ma->cell_hb_faces_idx,
                                   ma->cell_hb_faces,
@@ -1348,12 +1348,12 @@ cs_gradient_boundary_iprime_lsq_s_ani(const cs_mesh_t               *m,
  * \param[in]   fvq             pointer to associated finite volume quantities
  * \param[in]   n_faces         number of faces at which to compute values
  * \param[in]   face_ids        ids of boundary faces at which to compute
- *                              values, or NULL for all
+ *                              values, or nullptr for all
  * \param[in]   halo_type       halo (cell neighborhood) type
  * \param[in]   clip_coeff      clipping (limiter) coefficient
  *                              (no limiter if < 0)
- * \param[in]   bc_coeffs_v     boundary condition structure, or NULL
- * \param[in]   c_weight        cell variable weight, or NULL
+ * \param[in]   bc_coeffs_v     boundary condition structure, or nullptr
+ * \param[in]   c_weight        cell variable weight, or nullptr
  * \param[in]   var             variable values et cell centers
  * \param[out]  var_iprime      variable values et face iprime locations
  */
@@ -1412,12 +1412,12 @@ cs_gradient_boundary_iprime_lsq_v(const cs_mesh_t            *m,
  * \param[in]   fvq             pointer to associated finite volume quantities
  * \param[in]   n_faces         number of faces at which to compute values
  * \param[in]   face_ids        ids of boundary faces at which to compute
- *                              values, or NULL for all
+ *                              values, or nullptr for all
  * \param[in]   halo_type       halo (cell neighborhood) type
  * \param[in]   clip_coeff      clipping (limiter) coefficient
  *                              (no limiter if < 0)
- * \param[in]   bc_coeffs_ts    boundary condition structure, or NULL
- * \param[in]   c_weight        cell variable weight, or NULL
+ * \param[in]   bc_coeffs_ts    boundary condition structure, or nullptr
+ * \param[in]   c_weight        cell variable weight, or nullptr
  * \param[in]   var             variable values et cell centers
  * \param[out]  var_iprime      variable values et face iprime locations
  */

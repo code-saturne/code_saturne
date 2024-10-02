@@ -131,13 +131,13 @@ cs_lagr_coupling(const cs_real_t    taup[],
                  const cs_real_t    cpght[])
 {
   /*Note: t_* stands for temporary array, used in case of time moments */
-  cs_real_t *st_p = NULL, *t_st_p = NULL;
-  cs_real_3_t *st_vel = NULL, *t_st_vel = NULL;
-  cs_real_t *st_imp_vel = NULL, *t_st_imp_vel = NULL;
-  cs_real_6_t *st_rij = NULL, *t_st_rij = NULL;
-  cs_real_t *st_k = NULL, *t_st_k = NULL;
-  cs_real_t *st_t_e = NULL, *t_st_t_e = NULL;
-  cs_real_t *st_t_i = NULL, *t_st_t_i = NULL;
+  cs_real_t *st_p = nullptr, *t_st_p = nullptr;
+  cs_real_3_t *st_vel = nullptr, *t_st_vel = nullptr;
+  cs_real_t *st_imp_vel = nullptr, *t_st_imp_vel = nullptr;
+  cs_real_6_t *st_rij = nullptr, *t_st_rij = nullptr;
+  cs_real_t *st_k = nullptr, *t_st_k = nullptr;
+  cs_real_t *st_t_e = nullptr, *t_st_t_e = nullptr;
+  cs_real_t *st_t_i = nullptr, *t_st_t_i = nullptr;
 
   cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
 
@@ -151,43 +151,43 @@ cs_lagr_coupling(const cs_real_t    taup[],
 
   {
     cs_field_t *f = cs_field_by_name_try("lagr_st_pressure");
-    if (f != NULL)
+    if (f != nullptr)
       st_p = f->val;
   }
 
   {
     cs_field_t *f = cs_field_by_name_try("lagr_st_velocity");
-    if (f != NULL)
+    if (f != nullptr)
       st_vel = (cs_real_3_t *)(f->val);
   }
 
   {
     cs_field_t *f = cs_field_by_name_try("lagr_st_imp_velocity");
-    if (f != NULL)
+    if (f != nullptr)
       st_imp_vel = f->val;
   }
 
   {
     cs_field_t *f = cs_field_by_name_try("lagr_st_rij");
-    if (f != NULL)
+    if (f != nullptr)
       st_rij = (cs_real_6_t *)(f->val);
   }
 
   {
     cs_field_t *f = cs_field_by_name_try("lagr_st_k");
-    if (f != NULL)
+    if (f != nullptr)
       st_k = f->val;
   }
 
   {
     cs_field_t *f = cs_field_by_name_try("lagr_st_temperature");
-    if (f != NULL)
+    if (f != nullptr)
       st_t_e = f->val;
   }
 
   {
     cs_field_t *f = cs_field_by_name_try("lagr_st_imp_temperature");
-    if (f != NULL)
+    if (f != nullptr)
       st_t_i = f->val;
   }
 
@@ -218,7 +218,7 @@ cs_lagr_coupling(const cs_real_t    taup[],
   lag_st->vmax = 0.0;
   lag_st->tmamax = 0.0;
 
-  cs_real_t *volp = NULL, *volm = NULL;
+  cs_real_t *volp = nullptr, *volm = nullptr;
   BFT_MALLOC(volp, ncel, cs_real_t);
   BFT_MALLOC(volm, ncel, cs_real_t);
   for (cs_lnum_t c_id = 0; c_id < ncel; c_id++) {
@@ -675,29 +675,29 @@ cs_lagr_coupling(const cs_real_t    taup[],
 
       /* Note: it was not temporary array but directly st_val.
        * By consistency with st_vel, we put temporary array. */
-      if (t_st_p != NULL)
+      if (t_st_p != nullptr)
         t_st_p[c_id] = 0.0;
 
-      if (t_st_vel != NULL) {
+      if (t_st_vel != nullptr) {
         for (cs_lnum_t j = 0; j < 3; j++)
           t_st_vel[c_id][j] = 0.0;
       }
 
-      if (t_st_imp_vel != NULL)
+      if (t_st_imp_vel != nullptr)
         t_st_imp_vel[c_id] = 0.0;
 
-      if (t_st_k != NULL)
+      if (t_st_k != nullptr)
         t_st_k[c_id] = 0.0;
 
-      if (t_st_rij != NULL) {
+      if (t_st_rij != nullptr) {
         for (cs_lnum_t j = 0; j < 6; j++)
           t_st_rij[c_id][j] = 0.0;
       }
 
-      if (t_st_t_e != NULL)
+      if (t_st_t_e != nullptr)
         t_st_t_e[c_id] = 0.0;
 
-      if (t_st_t_i != NULL)
+      if (t_st_t_i != nullptr)
         t_st_t_i[c_id] = 0.0;
 
     }
@@ -712,7 +712,7 @@ cs_lagr_coupling(const cs_real_t    taup[],
 
   if (is_time_averaged) {
 
-    if (st_p != NULL) {
+    if (st_p != nullptr) {
       for (cs_lnum_t c_id = 0; c_id < ncel; c_id++) {
         st_p[c_id]
           = (t_st_p[c_id] + (lag_st->npts - 1.0) * st_p[c_id])
@@ -720,7 +720,7 @@ cs_lagr_coupling(const cs_real_t    taup[],
       }
     }
 
-    if (st_vel != NULL) {
+    if (st_vel != nullptr) {
       for (cs_lnum_t c_id = 0; c_id < ncel; c_id++) {
         for (cs_lnum_t j = 0; j < 3; j++) {
           st_vel[c_id][j]
@@ -730,7 +730,7 @@ cs_lagr_coupling(const cs_real_t    taup[],
       }
     }
 
-    if (st_imp_vel != NULL) {
+    if (st_imp_vel != nullptr) {
       for (cs_lnum_t c_id = 0; c_id < ncel; c_id++) {
         st_imp_vel[c_id]
           = (t_st_imp_vel[c_id] + (lag_st->npts - 1.0) * st_imp_vel[c_id])
@@ -738,7 +738,7 @@ cs_lagr_coupling(const cs_real_t    taup[],
       }
     }
 
-    if (st_k != NULL) {
+    if (st_k != nullptr) {
       for (cs_lnum_t c_id = 0; c_id < ncel; c_id++) {
         st_k[c_id]
           = (t_st_k[c_id] + (lag_st->npts - 1.0) * st_k[c_id])
@@ -746,7 +746,7 @@ cs_lagr_coupling(const cs_real_t    taup[],
       }
     }
 
-    if (st_rij != NULL) {
+    if (st_rij != nullptr) {
       for (cs_lnum_t c_id = 0; c_id < ncel; c_id++) {
         for (cs_lnum_t j = 0; j < 6; j++) {
           st_rij[c_id][j]
@@ -756,7 +756,7 @@ cs_lagr_coupling(const cs_real_t    taup[],
       }
     }
 
-    if (st_t_e != NULL) {
+    if (st_t_e != nullptr) {
       for (cs_lnum_t c_id = 0; c_id < ncel; c_id++) {
         st_t_e[c_id]
           = (t_st_t_e[c_id] + (lag_st->npts - 1.0) * st_t_e[c_id])
@@ -764,7 +764,7 @@ cs_lagr_coupling(const cs_real_t    taup[],
       }
     }
 
-    if (st_t_i != NULL) {
+    if (st_t_i != nullptr) {
       for (cs_lnum_t c_id = 0; c_id < ncel; c_id++) {
         st_t_i[c_id]
           = (t_st_t_i[c_id] + (lag_st->npts - 1.0) * st_t_i[c_id])

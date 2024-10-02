@@ -228,7 +228,7 @@ const char *cs_lagr_attribute_name[] = {
 
 /* Global particle attributes map */
 
-static cs_lagr_attribute_map_t  *_p_attr_map = NULL;
+static cs_lagr_attribute_map_t  *_p_attr_map = nullptr;
 
 /* Particle set reallocation parameters */
 
@@ -241,7 +241,7 @@ static  unsigned long long  _n_g_max_particles = ULLONG_MAX;
 
 /* Pointer to the main particle set */
 
-cs_lagr_particle_set_t *cs_glob_lagr_particle_set = NULL;
+cs_lagr_particle_set_t *cs_glob_lagr_particle_set = nullptr;
 
 /*=============================================================================
  * Private function definitions
@@ -324,7 +324,7 @@ _create_attr_map(cs_lnum_t attr_keys[CS_LAGR_N_ATTRIBUTES][3])
   }
   */
 
-  p_am->source_term_displ = NULL;
+  p_am->source_term_displ = nullptr;
 
   for (int i_attr = 0; i_attr < CS_LAGR_N_ATTRIBUTES; i_attr++) {
     attr = static_cast<cs_lagr_attribute_t>(i_attr);
@@ -338,7 +338,7 @@ _create_attr_map(cs_lnum_t attr_keys[CS_LAGR_N_ATTRIBUTES][3])
 
   BFT_MALLOC(order, CS_LAGR_N_ATTRIBUTES, cs_lnum_t);
 
-  cs_order_lnum_allocated_s(NULL,
+  cs_order_lnum_allocated_s(nullptr,
                             (const cs_lnum_t *)attr_keys,
                             3,
                             order,
@@ -465,7 +465,7 @@ _create_attr_map(cs_lnum_t attr_keys[CS_LAGR_N_ATTRIBUTES][3])
 static void
 _destroy_attr_map(cs_lagr_attribute_map_t  **p_am)
 {
-  if (*p_am != NULL) {
+  if (*p_am != nullptr) {
     cs_lagr_attribute_map_t  *_p_am = *p_am;
 
     BFT_FREE(_p_am->source_term_displ);
@@ -493,10 +493,10 @@ _create_particle_set(cs_lnum_t                       n_particles_max,
                      const cs_lagr_attribute_map_t  *p_am)
 
 {
-  cs_lagr_particle_set_t  *new_set = NULL;
+  cs_lagr_particle_set_t  *new_set = nullptr;
 
   if (n_particles_max == 0)
-    return NULL;
+    return nullptr;
 
   BFT_MALLOC(new_set, 1, cs_lagr_particle_set_t);
 
@@ -539,7 +539,7 @@ _create_particle_set(cs_lnum_t                       n_particles_max,
 static void
 _destroy_particle_set(cs_lagr_particle_set_t **set)
 {
-  if (set != NULL) {
+  if (set != nullptr) {
 
     cs_lagr_particle_set_t *_set = *set;
     BFT_FREE(_set->p_buffer);
@@ -983,7 +983,7 @@ cs_lagr_particle_attr_initialize(void)
 /*!
  * \brief  Return const pointer to the main particle attribute map structure.
  *
- * \return pointer to current particle attribute map, or NULL
+ * \return pointer to current particle attribute map, or nullptr
  */
 /*----------------------------------------------------------------------------*/
 
@@ -1060,14 +1060,14 @@ cs_lagr_part_copy(cs_lnum_t  dest,
  * \param[in]   particles  associated particle set
  * \param[in]   time_id    associated time id (0: current, 1: previous)
  * \param[in]   attr       particle attribute
- * \param[out]  extents    size (in bytes) of particle structure, or NULL
+ * \param[out]  extents    size (in bytes) of particle structure, or nullptr
  * \param[out]  size       size (in bytes) of attribute in particle structure,
- *                         or NULL
+ *                         or nullptr
  * \param[out]  displ      displacement (in bytes) in particle structure,
- *                         or NULL
- * \param[out]  datatype   datatype of associated attribute, or NULL
+ *                         or nullptr
+ * \param[out]  datatype   datatype of associated attribute, or nullptr
  * \param[out]  count      number of type values associated with attribute,
- *                         or NULL
+ *                         or nullptr
  */
 /*----------------------------------------------------------------------------*/
 
@@ -1117,13 +1117,13 @@ cs_lagr_check_attr_query(const cs_lagr_particle_set_t  *particles,
 {
   int retval = 0;
 
-  assert(particles != NULL);
+  assert(particles != nullptr);
 
   int _count;
   cs_datatype_t _datatype;
 
   cs_lagr_get_attr_info(particles, 0, attr,
-                        NULL, NULL, NULL, &_datatype, &_count);
+                        nullptr, nullptr, nullptr, &_datatype, &_count);
 
   if (   datatype != _datatype || stride != _count
       || component_id < -1 || component_id >= stride) {
@@ -1186,7 +1186,7 @@ cs_lagr_particle_attr_in_range(int  attr)
 /*!
  * \brief Return pointer to the main cs_lagr_particle_set_t structure.
  *
- * \return  pointer to current particle set, or NULL
+ * \return  pointer to current particle set, or nullptr
  */
 /*----------------------------------------------------------------------------*/
 
@@ -1322,7 +1322,7 @@ cs_lagr_particles_current_to_previous(cs_lagr_particle_set_t  *particles,
 void
 cs_lagr_particle_set_dump(const cs_lagr_particle_set_t  *particles)
 {
-  if (particles != NULL) {
+  if (particles != nullptr) {
 
     bft_printf("Particle set\n");
     bft_printf("------------\n");

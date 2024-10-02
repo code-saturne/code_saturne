@@ -117,7 +117,7 @@ cs_user_scaling_elec(const cs_mesh_t             *mesh,
     double *w1;
     BFT_MALLOC(w1, ncelet, double);
     int diff_id = cs_field_get_key_int(CS_FI_(curre, 0), kivisl);
-    cs_field_t *c_prop = NULL;
+    cs_field_t *c_prop = nullptr;
     c_prop = cs_field_by_id(diff_id);
 
     for (int iel = 0; iel < ncel; iel++) {

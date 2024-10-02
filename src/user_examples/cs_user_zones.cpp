@@ -61,7 +61,7 @@ BEGIN_C_DECLS
  * (using BFT_MALLOC) and defined by this function when called.
  * This list's lifecycle is then managed by the mesh location object.
  *
- * Note: if the input pointer is non-NULL, it must point to valid data
+ * Note: if the input pointer is non-nullptr, it must point to valid data
  * when the selection function is called, so that value or structure should
  * not be temporary (i.e. local);
  *
@@ -87,7 +87,7 @@ _g3_boundary_cells(void              *input,
   /* Allocate selection list */
 
   cs_lnum_t n_b_faces = 0;
-  cs_lnum_t *b_face_ids = NULL;
+  cs_lnum_t *b_face_ids = nullptr;
 
   BFT_MALLOC(b_face_ids, m->n_b_faces, cs_lnum_t);
 
@@ -190,7 +190,7 @@ cs_user_zones(void)
    * Define zone of cells neighbouring the boundary G3 */
   /*! [user_zones_volume_2] */
   {
-    cs_volume_zone_define_by_func("G3_B", _g3_boundary_cells, NULL, 0);
+    cs_volume_zone_define_by_func("G3_B", _g3_boundary_cells, nullptr, 0);
   }
   /*! [user_zones_volume_2] */
 
@@ -282,7 +282,7 @@ cs_user_zones(void)
     cs_real_t surface = 0.48 * 6540.; /* 48% of the total disc */
     cs_real_t qw = surface *  2.64; /* Water flow rate (kg/s) */
 
-    cs_ctwr_define("2 or 3", /* selection criteria (or NULL) */
+    cs_ctwr_define("2 or 3", /* selection criteria (or nullptr) */
                    -1, /* zone_id (or -1) */
                    CS_CTWR_COUNTER_CURRENT,  /* Zone type */
                    -1., /* Imposed temperature delta if positive */

@@ -108,11 +108,11 @@ cs_user_initialization(cs_domain_t     *domain)
   const char  *field_names[] = {"p", "U"};
 
   /* We request a remapper with a given name. If it does not exist,
-   * the function returns a NULL pointer. */
+   * the function returns a nullptr pointer. */
   cs_medcoupling_remapper_t *r
     = cs_medcoupling_remapper_by_name_try("init");
 
-  if (r == NULL) {
+  if (r == nullptr) {
 
     /* Space dimension of the elements (2 for faces, 3 for cells) */
     int elts_dim = 3;

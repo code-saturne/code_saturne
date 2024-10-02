@@ -104,7 +104,7 @@ BEGIN_C_DECLS
  *
  * This function is called at the end of the setup stage for a KSP solver.
  *
- * Note: if the context pointer is non-NULL, it must point to valid data
+ * Note: if the context pointer is non-nullptr, it must point to valid data
  * when the selection function is called so that value or structure should
  * not be temporary (i.e. local);
  *
@@ -181,7 +181,7 @@ _petsc_p_setup_hook_bamg(void  *context,
  *
  * This function is called the end of the setup stage for a KSP solver.
  *
- * Note: if the context pointer is non-NULL, it must point to valid data
+ * Note: if the context pointer is non-nullptr, it must point to valid data
  * when the selection function is called so that value or structure should
  * not be temporary (i.e. local);
  *
@@ -201,7 +201,7 @@ _petsc_p_setup_hook_view(void  *context,
 
   const char *p = getenv("CS_USER_PETSC_MAT_VIEW");
 
-  if (p != NULL) {
+  if (p != nullptr) {
 
     /* Get system and preconditioner matrices */
 
@@ -227,7 +227,7 @@ _petsc_p_setup_hook_view(void  *context,
 
       PetscViewer viewer;
       PetscDraw draw;
-      PetscViewerDrawOpen(PETSC_COMM_WORLD, NULL, "PETSc View",
+      PetscViewerDrawOpen(PETSC_COMM_WORLD, nullptr, "PETSc View",
                           0, 0, 600, 600, &viewer);
       PetscViewerDrawGetDraw(viewer, 0, &draw);
       PetscViewerDrawSetPause(viewer, -1);
@@ -251,7 +251,7 @@ _petsc_p_setup_hook_view(void  *context,
  * this also allows setting furthur function pointers for pre and post-solve
  * operations (see the PETSc documentation).
  *
- * Note: if the context pointer is non-NULL, it must point to valid data
+ * Note: if the context pointer is non-nullptr, it must point to valid data
  * when the selection function is called so that value or structure should
  * not be temporary (i.e. local);
  *
@@ -269,7 +269,7 @@ cs_user_sles_petsc_hook(void  *context,
   /*! [sles_petsc_cdo_hook] */
   cs_param_sles_t  *slesp = (cs_param_sles_t *)context;
 
-  if (slesp == NULL)
+  if (slesp == nullptr)
     return;
 
   /* Usually the name of the equation or the field id of the associated
@@ -280,7 +280,7 @@ cs_user_sles_petsc_hook(void  *context,
     if (slesp->precond == CS_PARAM_PRECOND_AMG) {
       if (slesp->amg_type == CS_PARAM_AMG_HYPRE_BOOMER_V) {
 
-        PetscOptionsSetValue(NULL,
+        PetscOptionsSetValue(nullptr,
                              "-pc_hypre_boomeramg_strong_threshold", "0.7");
 
       }
@@ -299,7 +299,7 @@ cs_user_sles_petsc_hook(void  *context,
  *
  * This function is called at the end of the setup stage for a KSP solver.
  *
- * Note: if the context pointer is non-NULL, it must point to valid data
+ * Note: if the context pointer is non-nullptr, it must point to valid data
  * when the selection function is called so that value or structure should
  * not be temporary (i.e. local);
  *
@@ -388,9 +388,9 @@ cs_user_linear_solvers(void)
 
   /*! [sles_user_1] */
   cs_field_t *cvar_user_1 = cs_field_by_name_try("user_1");
-  if (cvar_user_1 != NULL) {
+  if (cvar_user_1 != nullptr) {
     cs_sles_it_define(cvar_user_1->id,
-                      NULL,   /* name passed is NULL if field_id > -1 */
+                      nullptr,   /* name passed is nullptr if field_id > -1 */
                       CS_SLES_BICGSTAB2,
                       1,      /* polynomial precond. degree (default 0) */
                       10000); /* n_max_iter */
@@ -402,7 +402,7 @@ cs_user_linear_solvers(void)
 
   /*! [sles_verbosity_1] */
   {
-    cs_sles_t *sles_p = cs_sles_find_or_add(CS_F_(p)->id, NULL);
+    cs_sles_t *sles_p = cs_sles_find_or_add(CS_F_(p)->id, nullptr);
     cs_sles_set_verbosity(sles_p, 4);
   }
   /*! [sles_verbosity_1] */
@@ -412,10 +412,10 @@ cs_user_linear_solvers(void)
 
   /*! [sles_viz_1] */
   {
-    cs_sles_t *sles_p = cs_sles_find_or_add(CS_F_(p)->id, NULL);
+    cs_sles_t *sles_p = cs_sles_find_or_add(CS_F_(p)->id, nullptr);
     cs_sles_set_post_output(sles_p, CS_POST_WRITER_DEFAULT);
 
-    cs_sles_t *sles_u = cs_sles_find_or_add(CS_F_(vel)->id, NULL);
+    cs_sles_t *sles_u = cs_sles_find_or_add(CS_F_(vel)->id, nullptr);
     cs_sles_set_post_output(sles_u, CS_POST_WRITER_DEFAULT);
   }
   /*! [sles_viz_1] */
@@ -426,7 +426,7 @@ cs_user_linear_solvers(void)
   /*! [sles_mgp_1] */
   {
     cs_multigrid_t *mg = cs_multigrid_define(CS_F_(p)->id,
-                                             NULL,
+                                             nullptr,
                                              CS_MULTIGRID_V_CYCLE);
 
     cs_multigrid_set_coarsening_options(mg,
@@ -462,7 +462,7 @@ cs_user_linear_solvers(void)
   /*! [sles_mg_parall] */
   {
     cs_multigrid_t *mg = cs_multigrid_define(CS_F_(p)->id,
-                                             NULL,
+                                             nullptr,
                                              CS_MULTIGRID_V_CYCLE);
 
     cs_multigrid_set_merge_options(mg,
@@ -478,7 +478,7 @@ cs_user_linear_solvers(void)
   /*! [sles_mgp_2] */
   {
     cs_sles_it_t *c = cs_sles_it_define(CS_F_(p)->id,
-                                        NULL,
+                                        nullptr,
                                         CS_SLES_FCG,
                                         -1,
                                         10000);
@@ -576,7 +576,7 @@ cs_user_linear_solvers(void)
   /*! [sles_plot_1] */
   {
     const cs_field_t *f = CS_F_(p);
-    cs_sles_t *sles_p = cs_sles_find_or_add(f->id, NULL);
+    cs_sles_t *sles_p = cs_sles_find_or_add(f->id, nullptr);
 
     bool use_iteration = true; /* use iteration or wall clock time for axis */
 
@@ -608,8 +608,8 @@ cs_user_linear_solvers(void)
 
     /* See the PETSc documentation for the options database */
 #if PETSC_VERSION_GE(3,7,0)
-    PetscOptionsSetValue(NULL, "-ksp_type", "cg");
-    PetscOptionsSetValue(NULL, "-pc_type", "jacobi");
+    PetscOptionsSetValue(nullptr, "-ksp_type", "cg");
+    PetscOptionsSetValue(nullptr, "-pc_type", "jacobi");
 #else
     PetscOptionsSetValue("-ksp_type", "cg");
     PetscOptionsSetValue("-pc_type", "jacobi");
@@ -623,10 +623,10 @@ cs_user_linear_solvers(void)
   /*! [sles_petsc_2] */
   {
     cs_sles_petsc_define(CS_F_(p)->id,
-                         NULL,
+                         nullptr,
                          MATSHELL,
                          _petsc_p_setup_hook,
-                         NULL);
+                         nullptr);
 
   }
   /*! [sles_petsc_2] */
@@ -645,15 +645,15 @@ cs_user_linear_solvers(void)
 
     /* See the PETSc documentation for the options database */
 #if PETSC_VERSION_GE(3,7,0)
-    PetscOptionsSetValue(NULL, "-ksp_type", "cg");
-    PetscOptionsSetValue(NULL, "-pc_type", "gamg");
-    PetscOptionsSetValue(NULL, "-pc_gamg_agg_nsmooths", "1");
-    PetscOptionsSetValue(NULL, "-mg_levels_ksp_type", "richardson");
-    PetscOptionsSetValue(NULL, "-mg_levels_pc_type", "sor");
-    PetscOptionsSetValue(NULL, "-mg_levels_ksp_max_it", "1");
-    PetscOptionsSetValue(NULL, "-pc_gamg_threshold", "0.02");
-    PetscOptionsSetValue(NULL, "-pc_gamg_reuse_interpolation", "TRUE");
-    PetscOptionsSetValue(NULL, "-pc_gamg_square_graph", "4");
+    PetscOptionsSetValue(nullptr, "-ksp_type", "cg");
+    PetscOptionsSetValue(nullptr, "-pc_type", "gamg");
+    PetscOptionsSetValue(nullptr, "-pc_gamg_agg_nsmooths", "1");
+    PetscOptionsSetValue(nullptr, "-mg_levels_ksp_type", "richardson");
+    PetscOptionsSetValue(nullptr, "-mg_levels_pc_type", "sor");
+    PetscOptionsSetValue(nullptr, "-mg_levels_ksp_max_it", "1");
+    PetscOptionsSetValue(nullptr, "-pc_gamg_threshold", "0.02");
+    PetscOptionsSetValue(nullptr, "-pc_gamg_reuse_interpolation", "TRUE");
+    PetscOptionsSetValue(nullptr, "-pc_gamg_square_graph", "4");
 #else
     PetscOptionsSetValue("-ksp_type", "cg");
     PetscOptionsSetValue("-pc_type", "gamg");
@@ -674,10 +674,10 @@ cs_user_linear_solvers(void)
   /*! [sles_petsc_gamg_2] */
   {
     cs_sles_petsc_define(CS_F_(p)->id,
-                         NULL,
+                         nullptr,
                          MATMPIAIJ,
                          _petsc_p_setup_hook_gamg,
-                         NULL);
+                         nullptr);
 
   }
   /*! [sles_petsc_gamg_2] */
@@ -697,15 +697,15 @@ cs_user_linear_solvers(void)
 
     /* See the PETSc documentation for the options database */
 #if PETSC_VERSION_GE(3,7,0)
-    PetscOptionsSetValue(NULL, "-ksp_type", "cg");
-    PetscOptionsSetValue(NULL, "-pc_type", "hypre");
-    PetscOptionsSetValue(NULL, "-pc_hypre_type","boomeramg");
-    PetscOptionsSetValue(NULL, "-pc_hypre_boomeramg_coarsen_type", "HMIS");
-    PetscOptionsSetValue(NULL, "-pc_hypre_boomeramg_interp_type", "ext+i-cc");
-    PetscOptionsSetValue(NULL, "-pc_hypre_boomeramg_agg_nl","2");
-    PetscOptionsSetValue(NULL, "-pc_hypre_boomeramg_P_max","4");
-    PetscOptionsSetValue(NULL, "-pc_hypre_boomeramg_strong_threshold", "0.5");
-    PetscOptionsSetValue(NULL, "-pc_hypre_boomeramg_no_CF","");
+    PetscOptionsSetValue(nullptr, "-ksp_type", "cg");
+    PetscOptionsSetValue(nullptr, "-pc_type", "hypre");
+    PetscOptionsSetValue(nullptr, "-pc_hypre_type","boomeramg");
+    PetscOptionsSetValue(nullptr, "-pc_hypre_boomeramg_coarsen_type", "HMIS");
+    PetscOptionsSetValue(nullptr, "-pc_hypre_boomeramg_interp_type", "ext+i-cc");
+    PetscOptionsSetValue(nullptr, "-pc_hypre_boomeramg_agg_nl","2");
+    PetscOptionsSetValue(nullptr, "-pc_hypre_boomeramg_P_max","4");
+    PetscOptionsSetValue(nullptr, "-pc_hypre_boomeramg_strong_threshold", "0.5");
+    PetscOptionsSetValue(nullptr, "-pc_hypre_boomeramg_no_CF","");
 #else
     PetscOptionsSetValue("-ksp_type", "cg");
     PetscOptionsSetValue("-pc_type", "hypre");
@@ -726,10 +726,10 @@ cs_user_linear_solvers(void)
   /*! [sles_petsc_bamg_2] */
   {
     cs_sles_petsc_define(CS_F_(p)->id,
-                         NULL,
+                         nullptr,
                          MATMPIAIJ,
                          _petsc_p_setup_hook_bamg,
-                         NULL);
+                         nullptr);
 
   }
   /*! [sles_petsc_bamg_2] */
@@ -757,11 +757,11 @@ cs_user_linear_solvers(void)
   /*! [sles_hypre_2] */
   {
     cs_sles_hypre_define(CS_F_(p)->id,
-                         NULL,
+                         nullptr,
                          CS_SLES_HYPRE_PCG,            /* solver type */
                          CS_SLES_HYPRE_BOOMERAMG,      /* preconditioner type */
-                         NULL,
-                         NULL);
+                         nullptr,
+                         nullptr);
 
   }
   /*! [sles_hypre_2] */
@@ -773,11 +773,11 @@ cs_user_linear_solvers(void)
   {
     cs_sles_hypre_t *sc
       = cs_sles_hypre_define(CS_F_(p)->id,
-                             NULL,
+                             nullptr,
                              CS_SLES_HYPRE_PCG,            /* solver type */
                              CS_SLES_HYPRE_BOOMERAMG,      /* preconditioner type */
                              _hypre_p_setup_hook,
-                             NULL);
+                             nullptr);
 
     cs_sles_hypre_set_host_device(sc, 1);  /* run on GPU */
   }
@@ -791,7 +791,7 @@ cs_user_linear_solvers(void)
 #if defined(HAVE_AMGX)
   /*! [sles_amgx] */
   {
-    cs_sles_amgx_t *amgx_p = cs_sles_amgx_define(CS_F_(p)->id, NULL);
+    cs_sles_amgx_t *amgx_p = cs_sles_amgx_define(CS_F_(p)->id, nullptr);
 
     cs_sles_amgx_set_config_file(amgx_p, "PCG_CLASSICAL_V_JACOBI.json");
   }

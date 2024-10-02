@@ -130,7 +130,7 @@ cs_user_physical_properties(cs_domain_t *domain)
       /* Position of variables, coefficients
        * ----------------------------------- */
 
-      cs_real_t *cpro_taup = NULL, *cpro_taufpt = NULL, *cpro_viscls = NULL;
+      cs_real_t *cpro_taup = nullptr, *cpro_taufpt = nullptr, *cpro_viscls = nullptr;
 
       /* Scalar's diffusivity (Brownian motion) */
 
@@ -227,7 +227,7 @@ cs_user_physical_properties(cs_domain_t *domain)
                   "is computed.");
 
       /* Temperature and density */
-      if (CS_F_(t) == NULL)
+      if (CS_F_(t) == nullptr)
         bft_error(__FILE__, __LINE__, 0,
                   "The temperature field on which physical properties depend\n"
                   "does not seem to be present.");

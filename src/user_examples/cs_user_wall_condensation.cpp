@@ -374,10 +374,10 @@ cs_user_wall_condensation(int  iappel)
      *  Array of floats.
      */
 
-    if (CS_F_(cp) == NULL)
+    if (CS_F_(cp) == nullptr)
       bft_error(__FILE__, __LINE__, 0,_("error lambda not variable\n"));
 
-    if (CS_F_(h) == NULL)
+    if (CS_F_(h) == nullptr)
       bft_error(__FILE__, __LINE__, 0,_("error lambda not variable\n"));
 
     cs_real_t *cpro_cp = CS_F_(cp)->val;

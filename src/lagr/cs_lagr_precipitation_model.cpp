@@ -136,9 +136,9 @@ cs_lagr_precipitation_mass_st(cs_real_t        dtref,
 
   // TODO : move to a global initialization routine for alloc and free
 
-  if (mp_diss == NULL)
+  if (mp_diss == nullptr)
     BFT_MALLOC(mp_diss, mesh->n_cells_with_ghosts * preci->nbrclas, cs_real_t);
-  if (solub == NULL)
+  if (solub == nullptr)
     BFT_MALLOC(solub, mesh->n_cells_with_ghosts, cs_real_t);
 
   cs_real_t *mp_preci;

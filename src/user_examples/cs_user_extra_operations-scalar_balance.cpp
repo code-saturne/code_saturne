@@ -157,7 +157,7 @@ cs_user_extra_operations(cs_domain_t     *domain)
   double tot_balance = 0.;
 
   /* If the scalar enthalpy is not computed, return */
-  if (h == NULL)
+  if (h == nullptr)
     return;
 
   /* Boundary condition coefficient for h */

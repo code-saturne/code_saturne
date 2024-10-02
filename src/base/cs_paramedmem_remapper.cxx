@@ -145,10 +145,10 @@ struct _mesh_transformation_t {
 };
 
 static int                         _n_remappers = 0;
-static cs_paramedmem_remapper_t  **_remapper = NULL;
+static cs_paramedmem_remapper_t  **_remapper = nullptr;
 
 static int                      _n_transformations = 0;
-static _mesh_transformation_t **_transformations = NULL;
+static _mesh_transformation_t **_transformations = nullptr;
 
 static bool _transformations_applied = false;
 
@@ -175,7 +175,7 @@ _cs_paramedmem_create_transformation(int             type,
                                      const cs_real_t angle)
 {
 
-  _mesh_transformation_t *mt = NULL;
+  _mesh_transformation_t *mt = nullptr;
 
   BFT_MALLOC(mt, 1, _mesh_transformation_t);
 
@@ -200,7 +200,7 @@ _cs_paramedmem_create_transformation(int             type,
 static void
 _cs_paramedmem_reset_transformations(void)
 {
-  if (_transformations != NULL) {
+  if (_transformations != nullptr) {
     for (int i = 0; i < _n_transformations; i++) {
       BFT_FREE(_transformations[i]);
     }
@@ -313,7 +313,7 @@ _cs_paramedmem_get_mpi_comm_world_ranks(void)
 static cs_paramedmem_remapper_t *
 _cs_paramedmem_overlap_create(const char  *name)
 {
-  cs_paramedmem_remapper_t *r = NULL;
+  cs_paramedmem_remapper_t *r = nullptr;
 
   /* Add corresponding coupling to temporary ICoCo couplings array */
 
@@ -322,9 +322,9 @@ _cs_paramedmem_overlap_create(const char  *name)
   BFT_MALLOC(r->name, strlen(name) + 1, char);
   strcpy(r->name, name);
 
-  r->iter       = NULL;
-  r->order      = NULL;
-  r->time_steps = NULL;
+  r->iter       = nullptr;
+  r->order      = nullptr;
+  r->time_steps = nullptr;
   r->ntsteps    = -1;
 
   r->synced = 0;
@@ -360,7 +360,7 @@ _cs_paramedmem_remapper_target_mesh(cs_paramedmem_remapper_t  *r,
                                     const char                *name,
                                     const char                *select_criteria)
 {
-  assert(r != NULL);
+  assert(r != nullptr);
 
   cs_mesh_t *parent_mesh = cs_glob_mesh;
 
@@ -395,7 +395,7 @@ _cs_paramedmem_load_paramesh(cs_paramedmem_remapper_t *r,
 
   const std::string fname = file_name;
 
-  if (mesh_name != NULL) {
+  if (mesh_name != nullptr) {
     const std::string mname = mesh_name;
 
     // Mesh is stored with -1, -1 indices in MED files
@@ -500,7 +500,7 @@ cs_paramedmem_remapper_create(char       *name,
                               cs_real_t   center[3],
                               cs_real_t   radius)
 {
-  cs_paramedmem_remapper_t *r = NULL;
+  cs_paramedmem_remapper_t *r = nullptr;
 
 #if !defined(HAVE_PARAMEDMEM) || !defined(HAVE_MEDCOUPLING_LOADER)
 
@@ -517,7 +517,7 @@ cs_paramedmem_remapper_create(char       *name,
 
 #else
 
-  if (_remapper == NULL)
+  if (_remapper == nullptr)
     BFT_MALLOC(_remapper, 1, cs_paramedmem_remapper_t *);
   else
     BFT_REALLOC(_remapper, _n_remappers+1, cs_paramedmem_remapper_t *);
@@ -572,7 +572,7 @@ cs_paramedmem_remapper_by_name_try(const char *name)
 
 #endif
 
-  return NULL;
+  return nullptr;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -596,7 +596,7 @@ cs_paramedmem_remap_field_one_time(cs_paramedmem_remapper_t *r,
                                    int                       dt,
                                    int                       it)
 {
-  cs_real_t *new_vals = NULL;
+  cs_real_t *new_vals = nullptr;
 
 #if !defined(HAVE_PARAMEDMEM) || !defined(HAVE_MEDCOUPLING_LOADER)
 
@@ -711,7 +711,7 @@ cs_paramedmem_remap_field(cs_paramedmem_remapper_t *r,
                           int                       time_choice,
                           double                    tval)
 {
-  cs_real_t *new_vals = NULL;
+  cs_real_t *new_vals = nullptr;
 
 #if !defined(HAVE_PARAMEDMEM) || !defined(HAVE_MEDCOUPLING_LOADER)
   CS_NO_WARN_IF_UNUSED(r);

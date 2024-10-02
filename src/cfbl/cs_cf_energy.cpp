@@ -153,7 +153,7 @@ _cf_div(cs_real_t div[])
   cs_field_t *f_viscv = cs_field_by_name_try("volume_viscosity");
   cs_real_t *cpro_kappa;
 
-  if (f_viscv != NULL)
+  if (f_viscv != nullptr)
     cpro_kappa = f_viscv->val;
 
   /* Compute total viscosity */
@@ -172,11 +172,11 @@ _cf_div(cs_real_t div[])
 
   /* Periodicity and parallelism process */
 
-  if (cs_glob_rank_id > -1 || mesh->periodicity != NULL) {
+  if (cs_glob_rank_id > -1 || mesh->periodicity != nullptr) {
 
     cs_halo_sync_var(halo, CS_HALO_STANDARD, vistot);
 
-    if (f_viscv != NULL)
+    if (f_viscv != nullptr)
       cs_halo_sync_var(halo, CS_HALO_STANDARD, cpro_kappa);
   }
 
@@ -197,7 +197,7 @@ _cf_div(cs_real_t div[])
 # pragma omp parallel for if (n_cells > CS_THR_MIN)
   for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
 
-    const cs_real_t kappa = (f_viscv != NULL) ? cpro_kappa[c_id] : viscv0;
+    const cs_real_t kappa = (f_viscv != nullptr) ? cpro_kappa[c_id] : viscv0;
     const cs_real_t mu = vistot[c_id];
 
     const cs_real_t trgdru = cs_math_33_trace(gradv[c_id]);
@@ -226,7 +226,7 @@ _cf_div(cs_real_t div[])
 
   /* Periodicity and parallelism process */
 
-  if (cs_glob_rank_id > -1 || mesh->periodicity != NULL) {
+  if (cs_glob_rank_id > -1 || mesh->periodicity != nullptr) {
     cs_halo_sync_var_strided(halo,
                              CS_HALO_STANDARD,
                              (cs_real_t *)tempv,
@@ -371,7 +371,7 @@ cs_cf_energy(int f_sc_id)
   if (cs_glob_physical_model_flag[CS_COMPRESSIBLE] == 1) {
     cs_array_real_set_scalar(n_cells, fluid_props->eint0, energy);
 
-    if (halo != NULL) {
+    if (halo != nullptr) {
       cs_halo_sync_var(halo, CS_HALO_STANDARD, pr);
       cs_halo_sync_var(halo, CS_HALO_STANDARD, energy);
       cs_halo_sync_var(halo, CS_HALO_STANDARD, tempk);
@@ -380,7 +380,7 @@ cs_cf_energy(int f_sc_id)
     return;
   }
 
-  cs_real_t *cpro_cp = NULL, *cpro_cv = NULL;
+  cs_real_t *cpro_cp = nullptr, *cpro_cv = nullptr;
   if (icp >= 0)
     cpro_cp = CS_F_(cp)->val;
 
@@ -410,7 +410,7 @@ cs_cf_energy(int f_sc_id)
 
   const cs_real_t *visct = CS_F_(mu_t)->val;
 
-  cs_real_t *frace = NULL, *fracv = NULL, *fracm = NULL;
+  cs_real_t *frace = nullptr, *fracv = nullptr, *fracm = nullptr;
   if (cs_glob_physical_model_flag[CS_COMPRESSIBLE] == 2) {
     fracv = (cs_real_t *)CS_F_(volume_f)->val;
     fracm = (cs_real_t *)CS_F_(mass_f)->val;
@@ -424,7 +424,7 @@ cs_cf_energy(int f_sc_id)
   const cs_real_t *b_mass_flux = cs_field_by_id(iflmab)->val;
 
   const int ifcvsl = cs_field_get_key_int(f_sc, kivisl);
-  cs_real_t *viscls = NULL;
+  cs_real_t *viscls = nullptr;
   if (ifcvsl > -1)
     viscls = cs_field_by_id(ifcvsl)->val;
 
@@ -465,9 +465,9 @@ cs_cf_energy(int f_sc_id)
 
   if (eqp_e->n_volume_mass_injections > 0) {
     cs_lnum_t ncesmp = 0;
-    const cs_lnum_t *icetsm = NULL;
-    int *itpsm = NULL;
-    cs_real_t *smcel_p = NULL, *smcel_sc = NULL;
+    const cs_lnum_t *icetsm = nullptr;
+    int *itpsm = nullptr;
+    cs_real_t *smcel_p = nullptr, *smcel_sc = nullptr;
 
     cs_volume_mass_injection_get_arrays(f_sc,
                                         &ncesmp,
@@ -487,7 +487,7 @@ cs_cf_energy(int f_sc_id)
                          smcel_p,
                          rhs,
                          rovsdt,
-                         NULL);
+                         nullptr);
   }
 
   /*                         rho*volume
@@ -691,11 +691,11 @@ cs_cf_energy(int f_sc_id)
                        (cs_gradient_limit_t) eqp_vel->imligr,
                        eqp_vel->epsrgr,
                        eqp_vel->climgr,
-                       NULL,          /* f_ext */
-                       NULL,          /* bc_coeffs */
+                       nullptr,          /* f_ext */
+                       nullptr,          /* bc_coeffs */
                        w7,
-                       NULL,          /* c_weight */
-                       NULL,          /* cpl */
+                       nullptr,          /* c_weight */
+                       nullptr,          /* cpl */
                        grad);
 
     /* Internal faces */
@@ -744,7 +744,7 @@ cs_cf_energy(int f_sc_id)
 
     }
 
-    cs_real_t *i_visck = NULL, *b_visck = NULL;
+    cs_real_t *i_visck = nullptr, *b_visck = nullptr;
 
     if (cs_glob_physical_model_flag[CS_GAS_MIX] > 0) {
 
@@ -1082,7 +1082,7 @@ cs_cf_energy(int f_sc_id)
   cs_equation_iterative_solve_scalar(idtvar,
                                      0, /* init */
                                      f_sc->id,
-                                     NULL,
+                                     nullptr,
                                      0,      /* iescap */
                                      0,      /* imucpp: not a thermal scalar */
                                      -1.0,   /* normp */
@@ -1092,15 +1092,15 @@ cs_cf_energy(int f_sc_id)
                                      i_mass_flux, b_mass_flux,
                                      i_visc, b_visc,
                                      i_visc, b_visc,
-                                     NULL,   /* viscel */
-                                     NULL, NULL, /* weighf, weighb */
+                                     nullptr,   /* viscel */
+                                     nullptr, nullptr, /* weighf, weighb */
                                      icvflb,
                                      icvfli,
                                      rovsdt,
                                      rhs,
                                      energy, dpvar,
-                                     NULL,   /* xcpp */
-                                     NULL);  /* eswork */
+                                     nullptr,   /* xcpp */
+                                     nullptr);  /* eswork */
 
   BFT_FREE(dpvar);
   BFT_FREE(i_visc);
@@ -1162,7 +1162,7 @@ cs_cf_energy(int f_sc_id)
   /* Communication of pressure, energy and temperature
      ------------------------------------------------- */
 
-  if (halo != NULL) {
+  if (halo != nullptr) {
     cs_halo_sync_var(halo, CS_HALO_STANDARD, pr);
     cs_halo_sync_var(halo, CS_HALO_STANDARD, energy);
     cs_halo_sync_var(halo, CS_HALO_STANDARD, tempk);

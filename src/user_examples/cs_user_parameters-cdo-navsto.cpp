@@ -98,7 +98,7 @@ __vel(const cs_real_3_t pxyz,
 /*!
  * \brief  Function used to define the velocity value everywhere. This prototype
  *         follows the one defined for all analytic functions.
- *         elt_ids is optional. If not NULL, it enables to get an access in
+ *         elt_ids is optional. If not nullptr, it enables to get an access in
  *         coords at the right location and the same thing to fill retval if
  *         compact is set to false
  *
@@ -107,7 +107,7 @@ __vel(const cs_real_3_t pxyz,
  * \param[in]      pt_ids   list of elements ids (to access coords and fill)
  * \param[in]      coords   where ?
  * \param[in]      compact  true:no indirection, false:indirection for filling
- * \param[in]      input    pointer to a structure cast on-the-fly (may be NULL)
+ * \param[in]      input    pointer to a structure cast on-the-fly (may be nullptr)
  * \param[in, out] res      result of the function
  */
 /*----------------------------------------------------------------------------*/
@@ -124,7 +124,7 @@ _vel_def(cs_real_t           time,
   CS_UNUSED(input);
   CS_UNUSED(time);
 
-  if (pt_ids != NULL && !dense_output) {
+  if (pt_ids != nullptr && !dense_output) {
 
 #   pragma omp parallel for if(n_pts > CS_THR_MIN)
     for (cs_lnum_t p = 0; p < n_pts; p++) {
@@ -133,7 +133,7 @@ _vel_def(cs_real_t           time,
     }
 
   }
-  else if (pt_ids != NULL && dense_output) {
+  else if (pt_ids != nullptr && dense_output) {
 
 #   pragma omp parallel for if(n_pts > CS_THR_MIN)
     for (cs_lnum_t p = 0; p < n_pts; p++) {
@@ -180,7 +180,7 @@ __st(const cs_real_3_t pxyz,
 /*!
  * \brief Set the source term definition (steady case)
  *        This prototype follows the one defined for all analytic functions.
- *        pt_ids is optional. If not NULL, it enables to access the xyz array
+ *        pt_ids is optional. If not nullptr, it enables to access the xyz array
  *        at the right location and the same thing to fill the res array if
  *        compact is set to false
  *
@@ -189,7 +189,7 @@ __st(const cs_real_3_t pxyz,
  * \param[in]      pt_ids   list of elements ids (to access coords and fill)
  * \param[in]      xyz      where ?
  * \param[in]      compact  true:no indirection, false:indirection for filling
- * \param[in]      input    pointer to a structure cast on-the-fly (may be NULL)
+ * \param[in]      input    pointer to a structure cast on-the-fly (may be nullptr)
  * \param[in, out] res      result of the function
  */
 /*----------------------------------------------------------------------------*/
@@ -206,7 +206,7 @@ _src_def(cs_real_t           time,
   CS_UNUSED(input);
   CS_UNUSED(time);
 
-  if (pt_ids != NULL && !dense_output) {
+  if (pt_ids != nullptr && !dense_output) {
 
 #   pragma omp parallel for if(n_pts > CS_THR_MIN)
     for (cs_lnum_t p = 0; p < n_pts; p++) {
@@ -215,7 +215,7 @@ _src_def(cs_real_t           time,
     }
 
   }
-  else if (pt_ids != NULL && dense_output) {
+  else if (pt_ids != nullptr && dense_output) {
 
 #   pragma omp parallel for if(n_pts > CS_THR_MIN)
     for (cs_lnum_t p = 0; p < n_pts; p++) {
@@ -533,7 +533,7 @@ cs_user_finalize_setup(cs_domain_t   *domain)
     cs_navsto_set_velocity_inlet_by_analytic(nsp,
                                              "boundary_faces",
                                              _vel_def,
-                                             NULL);
+                                             nullptr);
   }
   /*! [param_cdo_navsto_bc1] */
 
@@ -544,7 +544,7 @@ cs_user_finalize_setup(cs_domain_t   *domain)
     /* Define the source term */
 
     cs_xdef_t *st_def =
-      cs_navsto_add_source_term_by_analytic(nsp, "cells", _src_def, NULL);
+      cs_navsto_add_source_term_by_analytic(nsp, "cells", _src_def, nullptr);
 
     /* Optionally, the parameters of this definition can be updated */
 

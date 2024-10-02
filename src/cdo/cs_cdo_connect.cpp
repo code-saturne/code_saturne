@@ -1121,9 +1121,9 @@ cs_cdo_connect_build(cs_mesh_t *mesh,
   }
   else {
 
-    connect->e2f    = NULL;
-    connect->f2f_ed = NULL;
-    connect->f2xf   = NULL;
+    connect->e2f    = nullptr;
+    connect->f2f_ed = nullptr;
+    connect->f2xf   = nullptr;
   }
 
   /* Members to handle assembly process and parallel sync. */

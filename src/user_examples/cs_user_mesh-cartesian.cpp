@@ -69,7 +69,7 @@ BEGIN_C_DECLS
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Define a cartesian mesh to use during computation. If a cartesian block
- * is created with a non NULL name, then all groups will be prefixed with the
+ * is created with a non nullptr name, then all groups will be prefixed with the
  * given name. For example, "X0" face group will be called "<name>_X0" instead.
  */
 /*----------------------------------------------------------------------------*/
@@ -95,7 +95,7 @@ cs_user_mesh_cartesian_define(void)
     cs_real_t xyz[6] = {0., -1., 0.5, 1., 1., 2.5};
 
     /* No name for this mesh */
-    const char *_name = NULL;
+    const char *_name = nullptr;
 
     cs_mesh_cartesian_define_simple(_name, nxyz, xyz);
   }
@@ -107,7 +107,7 @@ cs_user_mesh_cartesian_define(void)
     const int n_meshes = cs_mesh_cartesian_get_number_of_meshes();
     /* Create a mesh using simple parameters */
     if (n_meshes == 0)
-      cs_mesh_cartesian_create(NULL);
+      cs_mesh_cartesian_create(nullptr);
     cs_mesh_cartesian_params_t *mp = cs_mesh_cartesian_by_id(0);
 
     /* Constant step for X direction */
@@ -165,7 +165,7 @@ cs_user_mesh_cartesian_define(void)
      *
      */
 
-    cs_mesh_cartesian_define_from_csv("NULL", /* No defined name for this mesh */
+    cs_mesh_cartesian_define_from_csv("nullptr", /* No defined name for this mesh */
                                       "cartesian_vertex_coordinates.csv");
   }
   /*! [mesh_cartesian_3] */

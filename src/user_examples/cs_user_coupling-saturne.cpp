@@ -91,8 +91,8 @@ cs_user_saturne_coupling(void)
 
     cs_sat_coupling_define("SATURNE_01",
                            "3 or 4",
-                           NULL,
-                           NULL,
+                           nullptr,
+                           nullptr,
                            "all[]",
                            reverse,
                            verbosity);
@@ -117,7 +117,7 @@ cs_user_saturne_coupling(void)
     cs_sat_coupling_define("SATURNE_03",
                            "coupled_faces",
                            "all[]",
-                           NULL,
+                           nullptr,
                            "all[]",
                            reverse,
                            verbosity);

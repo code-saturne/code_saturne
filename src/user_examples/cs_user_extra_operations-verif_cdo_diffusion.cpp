@@ -64,7 +64,7 @@ BEGIN_C_DECLS
  * Local Macro definitions and structure definitions
  *============================================================================*/
 
-static FILE  *resume = NULL;
+static FILE  *resume = nullptr;
 
 /*============================================================================
  * Private function prototypes
@@ -74,7 +74,7 @@ static FILE  *resume = NULL;
 /*!
  * \brief  Generic function pointer for an evaluation relying on an analytic
  *         function
- *         pt_ids is optional. If not NULL, it enables to access to the coords
+ *         pt_ids is optional. If not nullptr, it enables to access to the coords
  *         array with an indirection. The same indirection can be applied to
  *         fill retval if dense_output is set to false.
  *
@@ -83,7 +83,7 @@ static FILE  *resume = NULL;
  * \param[in]      pt_ids        list of elements ids (in coords and retval)
  * \param[in]      xyz           where ? Coordinates array
  * \param[in]      dense_output  perform an indirection in retval or not
- * \param[in]      input         NULL or pointer to a structure cast on-the-fly
+ * \param[in]      input         nullptr or pointer to a structure cast on-the-fly
  * \param[in, out] retval        resulting value(s). Must be allocated.
  */
 /*----------------------------------------------------------------------------*/
@@ -103,7 +103,7 @@ _get_sol(cs_real_t          time,
   const double  pi = cs_math_pi;
   constexpr cs_real_t c_1ov3 = 1./3.;
 
-  if (pt_ids != NULL && !dense_output) {
+  if (pt_ids != nullptr && !dense_output) {
 
     for (cs_lnum_t p = 0; p < n_pts; p++) {
 
@@ -116,7 +116,7 @@ _get_sol(cs_real_t          time,
     }
 
   }
-  else if (pt_ids != NULL && dense_output) {
+  else if (pt_ids != nullptr && dense_output) {
 
     for (cs_lnum_t p = 0; p < n_pts; p++) {
       const cs_real_t  *_xyz = xyz + 3*pt_ids[p];
@@ -128,7 +128,7 @@ _get_sol(cs_real_t          time,
   }
   else {
 
-    assert(pt_ids == NULL);
+    assert(pt_ids == nullptr);
     for (cs_lnum_t p = 0; p < n_pts; p++) {
       const cs_real_t  *_xyz = xyz + 3*p;
       const double  x = _xyz[0], y = _xyz[1], z = _xyz[2];
@@ -164,8 +164,8 @@ _cdovb_post(const cs_cdo_connect_t     *connect,
 {
   int  len;
 
-  char  *postlabel = NULL;
-  double  *ddip = NULL, *rpex = NULL;
+  char  *postlabel = nullptr;
+  double  *ddip = nullptr, *rpex = nullptr;
 
   const double  tcur = time_step->t_cur;
   const cs_lnum_t  n_vertices = cdoq->n_vertices;
@@ -209,7 +209,7 @@ _cdovb_post(const cs_cdo_connect_t     *connect,
 
     BFT_MALLOC(rpex, n_vertices, double);
     BFT_MALLOC(ddip, n_vertices, double);
-    get_sol(tcur, n_vertices, NULL, cdoq->vtx_coord, true, NULL, rpex);
+    get_sol(tcur, n_vertices, nullptr, cdoq->vtx_coord, true, nullptr, rpex);
     for (int i = 0; i < n_vertices; i++)
       ddip[i] = rpex[i] - pdi[i];
 
@@ -274,13 +274,13 @@ cs_user_extra_operations(cs_domain_t          *domain)
   const char *eqname = cs_equation_get_name(eq);
   const cs_equation_param_t  *eqp = cs_equation_get_param(eq);
 
-  if (eq == NULL)
+  if (eq == nullptr)
     bft_error(__FILE__, __LINE__, 0,
               " Invalid equation name. Stop extra operations.");
 
   /* Open a file */
 
-  char  *filename = NULL;
+  char  *filename = nullptr;
   int len = strlen("Resume-.log")+strlen(eqname)+1;
 
   if (eqp->flag & CS_EQUATION_UNSTEADY) {

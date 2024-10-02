@@ -135,7 +135,7 @@ static int                          _n_remappers = 0;
 
 #if defined(HAVE_MEDCOUPLING) && defined(HAVE_MEDCOUPLING_LOADER)
 
-static cs_medcoupling_remapper_t  **_remapper = NULL;
+static cs_medcoupling_remapper_t  **_remapper = nullptr;
 
 #endif
 
@@ -221,7 +221,7 @@ _create_remapper(const char                        *name,
                  int                                iteration,
                  int                                order)
 {
-  cs_medcoupling_remapper_t *r = NULL;
+  cs_medcoupling_remapper_t *r = nullptr;
   BFT_MALLOC(r, 1, cs_medcoupling_remapper_t);
 
   r->n_fields = n_fields;
@@ -333,7 +333,7 @@ _add_remapper(const char   *name,
 
   // Check that a remapper with that name does not already exits
   cs_medcoupling_remapper_t *r = cs_medcoupling_remapper_by_name_try(name);
-  if (r != NULL)
+  if (r != nullptr)
     bft_error(__FILE__, __LINE__, 0,
               _("Error creating remapper:\n"
                 "  name:               \"%s\"\n"
@@ -350,7 +350,7 @@ _add_remapper(const char   *name,
               r->target_mesh->sel_criteria, r->medfile_path);
 
   // Allocate or reallocate if needed
-  if (_remapper == NULL)
+  if (_remapper == nullptr)
     BFT_MALLOC(_remapper, 1, cs_medcoupling_remapper_t *);
   else
     BFT_REALLOC(_remapper, _n_remappers+1, cs_medcoupling_remapper_t *);
@@ -387,7 +387,7 @@ _copy_values_no_bbox(cs_medcoupling_remapper_t  *r,
                      int                         field_id,
                      double                      default_val)
 {
-  cs_real_t *new_vals = NULL;
+  cs_real_t *new_vals = nullptr;
 
   cs_lnum_t n_elts = r->target_mesh->n_elts;
 
@@ -438,7 +438,7 @@ _copy_values_with_bbox(cs_medcoupling_remapper_t  *r,
   cs_lnum_t n_elts = r->target_mesh->n_elts;
   cs_lnum_t n_elts_loc = cs_glob_mesh->n_cells;
 
-  cs_real_t *new_vals = NULL;
+  cs_real_t *new_vals = nullptr;
 
   if (n_elts > 0) {
 
@@ -474,7 +474,7 @@ _copy_values_with_bbox(cs_medcoupling_remapper_t  *r,
 
     const cs_lnum_t *r_elt_list = r->target_mesh->elt_list;
 
-    if (r_elt_list != NULL) {
+    if (r_elt_list != nullptr) {
       const cs_lnum_t *r_new_connec = r->target_mesh->new_to_old;
 
       if (dim == 1) {
@@ -588,7 +588,7 @@ _cs_medcoupling_remapper_destroy(cs_medcoupling_remapper_t *r)
   delete r->remapper;
 
   // Mesh will deallocated afterwards since it can be shared
-  r->target_mesh = NULL;
+  r->target_mesh = nullptr;
 
   BFT_FREE(r);
 }
@@ -618,7 +618,7 @@ BEGIN_C_DECLS
 cs_medcoupling_remapper_t *
 cs_medcoupling_remapper_by_id(int  r_id)
 {
-  cs_medcoupling_remapper_t *r = NULL;
+  cs_medcoupling_remapper_t *r = nullptr;
 
 #if defined(HAVE_MEDCOUPLING) && defined(HAVE_MEDCOUPLING_LOADER)
   if (r_id < _n_remappers)
@@ -645,7 +645,7 @@ cs_medcoupling_remapper_by_id(int  r_id)
 cs_medcoupling_remapper_t *
 cs_medcoupling_remapper_by_name_try(const char  *name)
 {
-  cs_medcoupling_remapper_t *r = NULL;
+  cs_medcoupling_remapper_t *r = nullptr;
 
 #if defined(HAVE_MEDCOUPLING) && defined(HAVE_MEDCOUPLING_LOADER)
   if (_n_remappers > 0) {
@@ -766,7 +766,7 @@ cs_medcoupling_remapper_set_options(cs_medcoupling_remapper_t  *r,
             _("Error: This function cannot be called without "
               "MEDCoupling support.\n"));
 #else
-  if (key == NULL || value == NULL)
+  if (key == nullptr || value == nullptr)
     return;
 
   if (strcmp(key, "Precision") == 0) {
@@ -833,7 +833,7 @@ cs_medcoupling_remapper_setup(cs_medcoupling_remapper_t  *r)
     // List of subcells intersecting the local mesh bounding box
     const cs_real_t *rbbox = r->target_mesh->bbox;
 
-    if (rbbox == NULL) {
+    if (rbbox == nullptr) {
       _setup_no_bbox(r);
 
     } else {
@@ -863,7 +863,7 @@ cs_medcoupling_remapper_copy_values(cs_medcoupling_remapper_t  *r,
                                     int                         field_id,
                                     double                      default_val)
 {
-  cs_real_t *new_vals = NULL;
+  cs_real_t *new_vals = nullptr;
 
 #if !defined(HAVE_MEDCOUPLING) || !defined(HAVE_MEDCOUPLING_LOADER)
   bft_error(__FILE__, __LINE__, 0,

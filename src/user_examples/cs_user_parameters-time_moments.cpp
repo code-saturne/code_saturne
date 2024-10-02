@@ -125,7 +125,7 @@ _boundary_thermal_flux(const void  *input,
 
   cs_field_t *f = cs_thermal_model_field();
 
-  cs_post_boundary_flux(f->name, n_elts, NULL, vals);
+  cs_post_boundary_flux(f->name, n_elts, nullptr, vals);
 }
 
 /*! [tmom_b_thermal_flux_data] */
@@ -242,7 +242,7 @@ cs_user_time_moments(void)
    *                     CS_TIME_MOMENT_RESTART_RESET,
    *                     CS_TIME_MOMENT_RESTART_AUTO, or
    *                     CS_TIME_MOMENT_RESTART_EXACT
-   *   restart_name <--  name in previous run, NULL for default
+   *   restart_name <--  name in previous run, nullptr for default
    */
 
   /*! [tmom_u] */
@@ -261,7 +261,7 @@ cs_user_time_moments(void)
                                        1000, /* nt_start */
                                        -1,   /* t_start */
                                        CS_TIME_MOMENT_RESTART_AUTO,
-                                       NULL);
+                                       nullptr);
   }
   /*! [tmom_u] */
 
@@ -281,7 +281,7 @@ cs_user_time_moments(void)
                                        1000, /* nt_start */
                                        -1,   /* t_start */
                                        CS_TIME_MOMENT_RESTART_AUTO,
-                                       NULL);
+                                       nullptr);
   }
   /*! [tmom_variance_u] */
 
@@ -301,7 +301,7 @@ cs_user_time_moments(void)
                                        1000, /* nt_start */
                                        -1,   /* t_start */
                                        CS_TIME_MOMENT_RESTART_AUTO,
-                                       NULL);
+                                       nullptr);
   }
   /*! [tmom_rho_u] */
 
@@ -321,7 +321,7 @@ cs_user_time_moments(void)
                                        -1,     /* nt_start */
                                        20.0,   /* t_start */
                                        CS_TIME_MOMENT_RESTART_RESET,
-                                       NULL);
+                                       nullptr);
     /*! [tmom_rho_u_v] */
   }
 
@@ -339,14 +339,14 @@ cs_user_time_moments(void)
                                     1,                      /* field dimension */
                                     true,                   /* intensive*/
                                     _simple_data_sum,       /* data_func */
-                                    NULL,                   /* data_input */
-                                    NULL,                   /* w_data_func */
-                                    NULL,                   /* w_data_input */
+                                    nullptr,                   /* data_input */
+                                    nullptr,                   /* w_data_func */
+                                    nullptr,                   /* w_data_input */
                                     m_type[i],
                                     1000,                   /* nt_start */
                                     -1,                     /* t_start */
                                     CS_TIME_MOMENT_RESTART_AUTO,
-                                    NULL);
+                                    nullptr);
     }
   }
   /*! [tmom_simple_sum] */
@@ -365,14 +365,14 @@ cs_user_time_moments(void)
                                     1,                      /* field dimension */
                                     true,                   /* intensive*/
                                     _boundary_thermal_flux, /* data_func */
-                                    NULL,                   /* data_input */
-                                    NULL,                   /* w_data_func */
-                                    NULL,                   /* w_data_input */
+                                    nullptr,                   /* data_input */
+                                    nullptr,                   /* w_data_func */
+                                    nullptr,                   /* w_data_input */
                                     m_type[i],
                                     1,                      /* nt_start */
                                     -1,                     /* t_start */
                                     CS_TIME_MOMENT_RESTART_AUTO,
-                                    NULL);
+                                    nullptr);
     }
   }
   /*! [tmom_b_thermal_flux] */
@@ -395,13 +395,13 @@ cs_user_time_moments(void)
                                     true,                        /* intensive*/
                                     _velocity_moment_data,       /* data_func */
                                     &(vel_comp_input[comp_id]),  /* data_input */
-                                    NULL,                        /* w_data_func */
-                                    NULL,                        /* w_data_input */
+                                    nullptr,                        /* w_data_func */
+                                    nullptr,                        /* w_data_input */
                                     CS_TIME_MOMENT_MEAN,
                                     74000,                       /* nt_start */
                                     -1,                          /* t_start */
                                     CS_TIME_MOMENT_RESTART_AUTO,
-                                    NULL);
+                                    nullptr);
     }
   }
   /*! [tmom_velocity_rotation] */
@@ -430,7 +430,7 @@ cs_user_time_moments(void)
                                          10, /* nt_start */
                                          -1, /* t_start */
                                          CS_TIME_MOMENT_RESTART_AUTO,
-                                         NULL);
+                                         nullptr);
     }
   }
   /*! [tmom_all_variables] */

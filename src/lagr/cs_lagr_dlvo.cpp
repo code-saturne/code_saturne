@@ -144,10 +144,10 @@ cs_lagr_dlvo_init(const cs_real_t   water_permit,
 
   /* Allocate memory for the temperature and Debye length arrays */
 
-  if (cs_lagr_dlvo_param.temperature == NULL)
+  if (cs_lagr_dlvo_param.temperature == nullptr)
     BFT_MALLOC(cs_lagr_dlvo_param.temperature, mesh->n_cells, cs_real_t);
 
-  if (cs_lagr_dlvo_param.debye_length == NULL)
+  if (cs_lagr_dlvo_param.debye_length == nullptr)
     BFT_MALLOC(cs_lagr_dlvo_param.debye_length, mesh->n_cells, cs_real_t);
 
   /* Store the temperature */

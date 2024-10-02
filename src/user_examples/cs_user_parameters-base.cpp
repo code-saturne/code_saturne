@@ -1309,7 +1309,7 @@ cs_user_parameters(cs_domain_t *domain)
 
     /* GGDH for thermal scalar */
     cs_field_t *f_t = cs_thermal_model_field();
-    if (f_t != NULL)
+    if (f_t != nullptr)
       cs_field_set_key_int(f_t, kturt, turb_flux_model);
 
     /* GGDH for all user-defined scalars */
@@ -1553,19 +1553,19 @@ cs_user_parameters(cs_domain_t *domain)
     cs_field_t *f;
 
     f = cs_field_by_name_try("yplus");
-    if (f != NULL)
+    if (f != nullptr)
       cs_parameters_add_property("yplus",
                                  1,
                                  CS_MESH_LOCATION_BOUNDARY_FACES);
 
     f = cs_field_by_name_try("tplus");
-    if (f != NULL)
+    if (f != nullptr)
       cs_parameters_add_property("tplus",
                                  1,
                                  CS_MESH_LOCATION_BOUNDARY_FACES);
 
     f = cs_field_by_name_try("tstar");
-    if (f != NULL)
+    if (f != nullptr)
       cs_parameters_add_property("tstar",
                                  1,
                                  CS_MESH_LOCATION_BOUNDARY_FACES);
@@ -1882,7 +1882,7 @@ cs_user_finalize_setup(cs_domain_t     *domain)
   /* Change a property's label
      (here for specific heat, first checking if it is variable) */
   /*! [setup_label] */
-  if (CS_F_(cp) != NULL)
+  if (CS_F_(cp) != nullptr)
     cs_field_set_key_str(CS_F_(cp), cs_field_key_id("label"), "Cp");
   /*! [setup_label] */
 
@@ -1900,13 +1900,13 @@ cs_user_finalize_setup(cs_domain_t     *domain)
   /*! [setup_post_lum] */
   {
     cs_field_t *f = cs_field_by_name_try("rad_energy");
-    if (f != NULL)
+    if (f != nullptr)
       cs_field_set_key_int_bits(f,
                                 cs_field_key_id("post_vis"),
                                 CS_POST_ON_LOCATION | CS_POST_MONITOR);
 
     f = cs_field_by_name_try("radiative_flux");
-    if (f != NULL)
+    if (f != nullptr)
       cs_field_set_key_int_bits(f,
                                 cs_field_key_id("post_vis"),
                                 CS_POST_ON_LOCATION | CS_POST_MONITOR);

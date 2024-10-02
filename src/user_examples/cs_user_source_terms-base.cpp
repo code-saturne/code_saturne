@@ -189,7 +189,7 @@ cs_user_source_terms(cs_domain_t  *domain,
 
     const cs_zone_t *z = cs_volume_zone_by_name_try("heater");
 
-    if (z != NULL) {
+    if (z != nullptr) {
 
       cs_real_t pwatt = 100.0;
       cs_real_t voltf = z->f_measure;

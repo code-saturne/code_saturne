@@ -250,7 +250,7 @@ cs_lagr_car(int              iprev,
       cs_real_t xrkl;
       if (diftl0 >= 0)
         xrkl = diftl0 / rom;
-      else if (extra->cpro_viscls != NULL)
+      else if (extra->cpro_viscls != nullptr)
         xrkl = extra->cpro_viscls->val[cell_id] / (rom * xcp);
       else
         xrkl = extra->visls0 / (rom * xcp);
@@ -286,10 +286,10 @@ cs_lagr_car(int              iprev,
        ---------- */
     cs_real_t *energi = extra->cvar_k->val;
 
-    cs_real_3_t* cell_tlag_et = NULL;
-    cs_real_3_t* cell_grad_lagr_time_r = NULL;
-    cs_real_3_t *cell_bbi = NULL;
-    cs_real_3_t *cell_bxi_tl = NULL;
+    cs_real_3_t* cell_tlag_et = nullptr;
+    cs_real_3_t* cell_grad_lagr_time_r = nullptr;
+    cs_real_3_t *cell_bbi = nullptr;
+    cs_real_3_t *cell_bxi_tl = nullptr;
     cs_real_t mean_uvwdif;
     cs_real_3_t dir;
 
@@ -301,7 +301,7 @@ cs_lagr_car(int              iprev,
 
       /* compute grad_lagr_time in the local referential associated to the cell
        else we set bbi = {1.,1.,1.} and stay in the absolute referential */
-      if (beta != NULL)
+      if (beta != nullptr)
         BFT_MALLOC(cell_grad_lagr_time_r, n_cells, cs_real_3_t);
 
       BFT_MALLOC(cell_tlag_et, n_cells, cs_real_3_t);
@@ -378,7 +378,7 @@ cs_lagr_car(int              iprev,
                 CS_MAX(cell_bxi_tl[cell_id][i], cs_math_epzero);
           }
 
-          if (cell_grad_lagr_time_r != NULL) {
+          if (cell_grad_lagr_time_r != nullptr) {
             cs_real_33_t trans_m;
             /* Rotate the frame of reference with respect to the
              * mean relative velocity direction.
@@ -442,12 +442,12 @@ cs_lagr_car(int              iprev,
             cell_bbi[cell_id][i] = 1.;
             cell_bxi_tl[cell_id][i] = cl * c0  * energi[cell_id];
           }
-          if (cell_tlag_et != NULL) {
+          if (cell_tlag_et != nullptr) {
             for (int i = 0; i < 3; i++) {
               cell_tlag_et[cell_id][i] = extra->lagr_time->val[cell_id];
             }
           }
-          if (cell_grad_lagr_time_r != NULL) {
+          if (cell_grad_lagr_time_r != nullptr) {
             for (int i = 0; i < 3; i++) {
               cell_grad_lagr_time_r[cell_id][i] =
                   grad_lagr_time[cell_id][i];
@@ -502,7 +502,7 @@ cs_lagr_car(int              iprev,
            * (taking <u_pi> from the statistic "correctly" initialized)
            *
            */
-          if (beta != NULL) {
+          if (beta != nullptr) {
 
             for (cs_lnum_t id = 0; id < 3; id++) {
               if (CS_ABS(tlag[ip][id] - taup[ip])
@@ -544,7 +544,7 @@ cs_lagr_car(int              iprev,
 
           /* compute beta without in the global referential
            * under the assumption that bbi={1.,1.,1.}*/
-          if ( beta != NULL ) {
+          if ( beta != nullptr ) {
             for (cs_lnum_t id = 0; id < 3; id++) {
               if (CS_ABS(tlag[ip][id] - taup[ip])
                   < cs_math_epzero * taup[ip])
@@ -567,20 +567,20 @@ cs_lagr_car(int              iprev,
           tlag[ip][id] = cs_math_epzero;
           bx[ip][id][nor-1] = 0.0;
         }
-        if (beta != NULL) {
+        if (beta != nullptr) {
           for (int id = 0; id < 3; id++)
               beta[ip][id] = 0.;
         }
       }
     }
 
-    if ( cell_tlag_et != NULL)
+    if ( cell_tlag_et != nullptr)
       BFT_FREE(cell_tlag_et);
     if (turb_disp_model) {
       BFT_FREE(cell_bbi);
       BFT_FREE(cell_bxi_tl);
     }
-    if (cell_grad_lagr_time_r != NULL)
+    if (cell_grad_lagr_time_r != nullptr)
       BFT_FREE(cell_grad_lagr_time_r);
   }// end if idistu == 1
   else {
@@ -595,7 +595,7 @@ cs_lagr_car(int              iprev,
         tlag[ip][id] = cs_math_epzero;
         bx[ip][id][nor-1] = 0.0;
       }
-      if (beta != NULL) {
+      if (beta != nullptr) {
         for (int id = 0; id < 3; id++)
           beta[ip][id] = 0.;
       }

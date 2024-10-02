@@ -139,7 +139,7 @@ cs_user_source_terms(cs_domain_t  *domain,
   /* Example of boussinesq source term. */
 
   /*! [boussinesq_st] */
-  if (f == CS_F_(vel) && CS_F_(t) != NULL) { /* velocity and temperature */
+  if (f == CS_F_(vel) && CS_F_(t) != nullptr) { /* velocity and temperature */
 
     /* expansion coefficient and reference density */
 

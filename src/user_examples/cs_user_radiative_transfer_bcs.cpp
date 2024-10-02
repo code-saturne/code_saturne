@@ -144,7 +144,7 @@ cs_user_radiative_transfer_bcs(cs_domain_t      *domain,
 {
   /*< [loc_var]*/
   cs_real_t tkelvi = cs_physical_constants_celsius_to_kelvin;
-  const cs_zone_t *zone = NULL;
+  const cs_zone_t *zone = nullptr;
   int *izfrdp = cs_boundary_zone_face_class_id();
   /*< [loc_var]*/
 

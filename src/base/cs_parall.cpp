@@ -258,8 +258,8 @@ _get_array_distribution(MPI_Comm  comm,
                         int      *p_count[],
                         int      *p_shift[])
 {
-  int  *count = NULL;
-  int  *shift = NULL;
+  int  *count = nullptr;
+  int  *shift = nullptr;
 
   const int  n_ranks = cs_glob_n_ranks;
 
@@ -916,8 +916,8 @@ cs_parall_allgather_r(int        n_elts,
   if (cs_glob_n_ranks > 1) {
 
     int  i;
-    int  *count = NULL;
-    int  *shift = NULL;
+    int  *count = nullptr;
+    int  *shift = nullptr;
 
     const int  n_domains = cs_glob_n_ranks;
 
@@ -999,7 +999,7 @@ cs_parall_allgather_ordered_r(int        n_elts,
   cs_parall_allgather_r(n_elts, n_g_elts, o_key, g_o_key);
   cs_parall_allgather_r(n_elts, n_g_elts*stride, array, g_array);
 
-  cs_order_real_allocated(NULL, g_o_key, order, n_g_elts);
+  cs_order_real_allocated(nullptr, g_o_key, order, n_g_elts);
   cs_order_reorder_data(n_g_elts, sizeof(cs_real_t)*stride, order, g_array);
 
   BFT_FREE(order);
@@ -1039,12 +1039,12 @@ cs_parall_gather_r(int               root_rank,
 
     /* Sanity check */
 
-    if (cs_glob_rank_id == root_rank && g_array == NULL)
+    if (cs_glob_rank_id == root_rank && g_array == nullptr)
       bft_error(__FILE__, __LINE__, 0,
                 _(" %s: Global array is not allocated on the root_rank %d\n"),
                 __func__, root_rank);
 
-    int  *count = NULL, *shift = NULL;
+    int  *count = nullptr, *shift = nullptr;
 
     _get_array_distribution(cs_glob_mpi_comm, root_rank, n_elts, n_g_elts, &count, &shift);
 
@@ -1062,7 +1062,7 @@ cs_parall_gather_r(int               root_rank,
   if (cs_glob_n_ranks == 1) {
 
     assert(n_elts == n_g_elts);
-    assert(g_array != NULL || n_g_elts == 0);
+    assert(g_array != nullptr || n_g_elts == 0);
     for (int i = 0; i < n_elts; i++)
       g_array[i] = array[i];
 
@@ -1102,8 +1102,8 @@ cs_parall_gather_ordered_r(int        root_rank,
                            cs_real_t  array[],
                            cs_real_t  g_array[])
 {
-  cs_lnum_t  *order = NULL;
-  cs_real_t  *g_o_key = NULL;
+  cs_lnum_t  *order = nullptr;
+  cs_real_t  *g_o_key = nullptr;
 
   if (cs_glob_rank_id == root_rank) {
     BFT_MALLOC(g_o_key, n_g_elts, cs_real_t);
@@ -1114,7 +1114,7 @@ cs_parall_gather_ordered_r(int        root_rank,
   cs_parall_gather_r(root_rank, n_elts, n_g_elts*stride, array, g_array);
 
   if (cs_glob_rank_id == root_rank) {
-    cs_order_real_allocated(NULL, g_o_key, order, n_g_elts);
+    cs_order_real_allocated(nullptr, g_o_key, order, n_g_elts);
     cs_order_reorder_data(n_g_elts, sizeof(cs_real_t)*stride, order, g_array);
   }
 
@@ -1149,7 +1149,7 @@ cs_parall_scatter_r(int               root_rank,
                     const cs_real_t   g_array[],
                     cs_real_t         array[])
 {
-  assert(array != NULL || n_elts == 0);
+  assert(array != nullptr || n_elts == 0);
 
 #if defined(HAVE_MPI)
 
@@ -1157,12 +1157,12 @@ cs_parall_scatter_r(int               root_rank,
 
     /* Sanity check */
 
-    if (cs_glob_rank_id == root_rank && g_array == NULL)
+    if (cs_glob_rank_id == root_rank && g_array == nullptr)
       bft_error(__FILE__, __LINE__, 0,
                 _(" %s: Global array is not allocated on the root_rank %d\n"),
                 __func__, root_rank);
 
-    int  *count = NULL, *shift = NULL;
+    int  *count = nullptr, *shift = nullptr;
 
     _get_array_distribution(cs_glob_mpi_comm, root_rank, n_elts, n_g_elts, &count, &shift);
 
@@ -1179,7 +1179,7 @@ cs_parall_scatter_r(int               root_rank,
   if (cs_glob_n_ranks == 1) {
 
     assert(n_elts == n_g_elts);
-    assert(g_array != NULL || n_g_elts == 0);
+    assert(g_array != nullptr || n_g_elts == 0);
     for (int i = 0; i < n_elts; i++)
       array[i] = g_array[i];
 
@@ -1214,7 +1214,7 @@ cs_parall_gather_f(int             root_rank,
                    const float     array[],
                    float           g_array[])
 {
-  assert(array != NULL || n_elts == 0);
+  assert(array != nullptr || n_elts == 0);
 
 #if defined(HAVE_MPI)
 
@@ -1222,12 +1222,12 @@ cs_parall_gather_f(int             root_rank,
 
     /* Sanity check */
 
-    if (cs_glob_rank_id == root_rank && g_array == NULL)
+    if (cs_glob_rank_id == root_rank && g_array == nullptr)
       bft_error(__FILE__, __LINE__, 0,
                 _(" %s: Global array is not allocated on the root_rank %d\n"),
                 __func__, root_rank);
 
-    int  *count = NULL, *shift = NULL;
+    int  *count = nullptr, *shift = nullptr;
 
     _get_array_distribution(cs_glob_mpi_comm, root_rank, n_elts, n_g_elts, &count, &shift);
 
@@ -1244,7 +1244,7 @@ cs_parall_gather_f(int             root_rank,
   if (cs_glob_n_ranks == 1) {
 
     assert(n_elts == n_g_elts);
-    assert(g_array != NULL || n_g_elts == 0);
+    assert(g_array != nullptr || n_g_elts == 0);
     for (int i = 0; i < n_elts; i++)
       g_array[i] = array[i];
 
@@ -1279,7 +1279,7 @@ cs_parall_scatter_f(int           root_rank,
                     const float   g_array[],
                     float         array[])
 {
-  assert(array != NULL || n_elts == 0);
+  assert(array != nullptr || n_elts == 0);
 
 #if defined(HAVE_MPI)
 
@@ -1287,12 +1287,12 @@ cs_parall_scatter_f(int           root_rank,
 
     /* Sanity check */
 
-    if (cs_glob_rank_id == root_rank && g_array == NULL)
+    if (cs_glob_rank_id == root_rank && g_array == nullptr)
       bft_error(__FILE__, __LINE__, 0,
                 _(" %s: Global array is not allocated on the root_rank %d\n"),
                 __func__, root_rank);
 
-    int  *count = NULL, *shift = NULL;
+    int  *count = nullptr, *shift = nullptr;
 
     _get_array_distribution(cs_glob_mpi_comm, root_rank, n_elts, n_g_elts, &count, &shift);
 
@@ -1309,7 +1309,7 @@ cs_parall_scatter_f(int           root_rank,
   if (cs_glob_n_ranks == 1) {
 
     assert(n_elts == n_g_elts);
-    assert(g_array != NULL || n_g_elts == 0);
+    assert(g_array != nullptr || n_g_elts == 0);
     for (int i = 0; i < n_elts; i++)
       array[i] = g_array[i];
 

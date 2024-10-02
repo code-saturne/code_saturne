@@ -346,7 +346,7 @@ cs_lagr_head_losses(cs_lnum_t        n_hl_cells,
   cs_field_t *f_poro = cs_field_by_name_try("clogging_porosity");
 
   cs_real_t *lporo;
-  if (f_poro == NULL)
+  if (f_poro == nullptr)
     BFT_MALLOC(lporo, ncelet, cs_real_t);
   else
     lporo = f_poro->val;
@@ -385,7 +385,7 @@ cs_lagr_head_losses(cs_lnum_t        n_hl_cells,
 
   }
 
-  if (f_poro == NULL)
+  if (f_poro == nullptr)
     BFT_FREE(lporo);
 
   BFT_FREE(mdiam);

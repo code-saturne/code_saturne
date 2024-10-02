@@ -145,15 +145,15 @@ const char *_event_attribute_name[] = {
 
 /* Global particle event attributes map */
 
-static cs_lagr_event_attribute_map_t  *_e_attr_map = NULL;
+static cs_lagr_event_attribute_map_t  *_e_attr_map = nullptr;
 
 /* Quick mapping from particle attributes to event attributes
    to allow for quick copy from particle to event */
 
 static int   _n_mapped_part_attr = 0;
-static int  *_mapped_part_attr = NULL;
+static int  *_mapped_part_attr = nullptr;
 
-static cs_lagr_event_set_t  *_boundary_events = NULL;
+static cs_lagr_event_set_t  *_boundary_events = nullptr;
 
 /*============================================================================
  * Global variables
@@ -219,7 +219,7 @@ _create_attr_map(cs_lnum_t attr_keys[CS_LAGR_N_E_ATTRIBUTES][3])
 
   BFT_MALLOC(order, CS_LAGR_N_E_ATTRIBUTES, cs_lnum_t);
 
-  cs_order_lnum_allocated_s(NULL,
+  cs_order_lnum_allocated_s(nullptr,
                             (const cs_lnum_t *)attr_keys,
                             3,
                             order,
@@ -286,7 +286,7 @@ _create_attr_map(cs_lnum_t attr_keys[CS_LAGR_N_E_ATTRIBUTES][3])
 static void
 _destroy_attr_map(cs_lagr_event_attribute_map_t  **e_am)
 {
-  if (*e_am != NULL) {
+  if (*e_am != nullptr) {
     BFT_FREE(*e_am);
   }
 }
@@ -307,10 +307,10 @@ _create_event_set(cs_lnum_t                             n_events_max,
                   const cs_lagr_event_attribute_map_t  *e_am)
 
 {
-  cs_lagr_event_set_t  *new_set = NULL;
+  cs_lagr_event_set_t  *new_set = nullptr;
 
   if (n_events_max == 0)
-    return NULL;
+    return nullptr;
 
   BFT_MALLOC(new_set, 1, cs_lagr_event_set_t);
 
@@ -519,7 +519,7 @@ cs_lagr_event_initialize(void)
 void
 cs_lagr_event_finalize(void)
 {
-  if (_boundary_events != NULL)
+  if (_boundary_events != nullptr)
     cs_lagr_event_set_destroy(&_boundary_events);
 
   BFT_FREE(_mapped_part_attr);
@@ -533,7 +533,7 @@ cs_lagr_event_finalize(void)
  * \brief  Return const pointer to the main particle event attribute
  *         map structure.
  *
- * \return pointer to current particle event attrbute map, or NULL
+ * \return pointer to current particle event attrbute map, or nullptr
  */
 /*----------------------------------------------------------------------------*/
 
@@ -602,7 +602,7 @@ cs_lagr_event_set_create(void)
 void
 cs_lagr_event_set_destroy(cs_lagr_event_set_t  **events)
 {
-  if (events != NULL) {
+  if (events != nullptr) {
 
     cs_lagr_event_set_t *_set = *events;
     BFT_FREE(_set->e_buffer);
@@ -620,14 +620,14 @@ cs_lagr_event_set_destroy(cs_lagr_event_set_t  **events)
  *
  * \param[in]   events     associated event set
  * \param[in]   attr       event attribute
- * \param[out]  extents    size (in bytes) of event structure, or NULL
+ * \param[out]  extents    size (in bytes) of event structure, or nullptr
  * \param[out]  size       size (in bytes) of attribute in event structure,
- *                         or NULL
+ *                         or nullptr
  * \param[out]  displ      displacement (in bytes) in event structure,
- *                         or NULL
- * \param[out]  datatype   datatype of associated attribute, or NULL
+ *                         or nullptr
+ * \param[out]  datatype   datatype of associated attribute, or nullptr
  * \param[out]  count      number of type values associated with attribute,
- *                         or NULL
+ *                         or nullptr
  */
 /*----------------------------------------------------------------------------*/
 
@@ -705,7 +705,7 @@ cs_lagr_event_set_resize(cs_lagr_event_set_t  *event_set,
 void
 cs_lagr_event_set_dump(const cs_lagr_event_set_t  *events)
 {
-  if (events != NULL) {
+  if (events != nullptr) {
 
     bft_printf("Particle events set\n");
     bft_printf("-------------------\n");
@@ -782,7 +782,7 @@ cs_lagr_event_init_from_particle(cs_lagr_event_set_t     *events,
 cs_lagr_event_set_t  *
 cs_lagr_event_set_boundary_interaction(void)
 {
-  if (_boundary_events == NULL)
+  if (_boundary_events == nullptr)
     _boundary_events = _create_event_set(256, _e_attr_map);
 
   return _boundary_events;

@@ -384,32 +384,32 @@ cs_user_finalize_setup(cs_domain_t   *domain)
   /*! [param_cdo_solidification_properties] */
   {
     /* All the following properties are isotropic and set on all the mesh cells
-       (this implies NULL for the second argument). If the property is
-       piecewise constant, then replace NULL by the name of a volum zone. */
+       (this implies nullptr for the second argument). If the property is
+       piecewise constant, then replace nullptr by the name of a volum zone. */
 
     /* Mass density (kg.m^-3) */
 
     cs_property_t  *rho = cs_property_by_name(CS_PROPERTY_MASS_DENSITY);
     cs_real_t  rho0 = 1;
-    cs_property_def_iso_by_value(rho, NULL, rho0);
+    cs_property_def_iso_by_value(rho, nullptr, rho0);
 
     /* Laminar dynamic viscosity (Pa.s) */
 
     cs_property_t  *mu = cs_property_by_name(CS_NAVSTO_LAM_VISCOSITY);
     cs_real_t  mu0 = 1;
-    cs_property_def_iso_by_value(mu, NULL, mu0);
+    cs_property_def_iso_by_value(mu, nullptr, mu0);
 
     /* Thermal heat capacity */
 
     cs_property_t  *cp = cs_property_by_name(CS_THERMAL_CP_NAME);
     cs_real_t  cp0 = 1.;
-    cs_property_def_iso_by_value(cp, NULL, cp0);
+    cs_property_def_iso_by_value(cp, nullptr, cp0);
 
     /* Thermal conductivity */
 
     cs_property_t  *lambda = cs_property_by_name(CS_THERMAL_LAMBDA_NAME);
     cs_real_t  lambda0 = 0.001;
-    cs_property_def_iso_by_value(lambda, NULL, lambda0);
+    cs_property_def_iso_by_value(lambda, nullptr, lambda0);
   }
   /*! [param_cdo_solidification_properties] */
 
@@ -422,7 +422,7 @@ cs_user_finalize_setup(cs_domain_t   *domain)
 
     /* Set the initial value for the temperature */
 
-    cs_equation_add_ic_by_value(th_eqp, NULL, &t_ref);
+    cs_equation_add_ic_by_value(th_eqp, nullptr, &t_ref);
 
     /* Set the value of the boundary conditions.
      *
@@ -447,7 +447,7 @@ cs_user_finalize_setup(cs_domain_t   *domain)
     /* Set the initial value for the solute concentration to the reference
        value */
 
-    cs_equation_add_ic_by_value(c_eqp, NULL, &c_ref);
+    cs_equation_add_ic_by_value(c_eqp, nullptr, &c_ref);
 
   }
   /*! [param_cdo_solidification_solute_eq] */

@@ -115,8 +115,8 @@ cs_user_boundary_conditions(cs_domain_t  *domain,
   const int ielcor = cs_glob_elec_option->ielcor;
 
   cs_field_t *potr = cs_field_by_name("elec_pot_r");;
-  cs_field_t *poti = NULL;
-  cs_field_t *potva = NULL;
+  cs_field_t *poti = nullptr;
+  cs_field_t *potva = nullptr;
   if (cs_glob_physical_model_flag[CS_JOULE_EFFECT] > 1) {
     poti = cs_field_by_name("elec_pot_i");
   }
@@ -217,7 +217,7 @@ cs_user_boundary_conditions(cs_domain_t  *domain,
          * density remains very low generally far from the center of the electric
          * arc and from the electrodes (see above) */
 
-        if (potva != NULL) {
+        if (potva != nullptr) {
           potva->bc_coeffs->icodcl[face_id] = 3;
           potva->bc_coeffs->rcodcl3[face_id] = 0;
           potva->bc_coeffs->icodcl[n_b_faces + face_id] = 3;
@@ -494,7 +494,7 @@ cs_user_boundary_conditions(cs_domain_t  *domain,
 
       /* Vector potential : Zero flux */
 
-      if (potva != NULL) {
+      if (potva != nullptr) {
         potva->bc_coeffs->icodcl[n_b_faces*0 + face_id] = 3;
         potva->bc_coeffs->icodcl[n_b_faces*1 + face_id] = 3;
         potva->bc_coeffs->icodcl[n_b_faces*2 + face_id] = 3;
@@ -524,7 +524,7 @@ cs_user_boundary_conditions(cs_domain_t  *domain,
        * we can use an anti-symetry condition for the imaginary component of the
        * electrical potential depending on the electrode configuration: */
 
-      if (poti != NULL) {
+      if (poti != nullptr) {
         poti->bc_coeffs->icodcl[face_id] = 1;
         poti->bc_coeffs->rcodcl1[face_id] = 0.;
       }

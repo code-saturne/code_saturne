@@ -78,7 +78,7 @@ cs_user_mesh_boundary(cs_mesh_t  *mesh)
   /*! [mesh_thinwall] */
   {
     cs_lnum_t   n_selected_faces = 0;
-    cs_lnum_t  *selected_faces = NULL;
+    cs_lnum_t  *selected_faces = nullptr;
 
     /* example of multi-line character string */
 
@@ -105,7 +105,7 @@ cs_user_mesh_boundary(cs_mesh_t  *mesh)
   /*! [mesh_boundary_cells] */
   {
     cs_lnum_t   n_selected_cells = 0;
-    cs_lnum_t  *selected_cells = NULL;
+    cs_lnum_t  *selected_cells = nullptr;
 
     const char criteria[] = "box[0.5, 0.5, 0, 1, 1, 0.05]";
 

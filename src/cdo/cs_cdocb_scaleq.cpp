@@ -1046,9 +1046,9 @@ cs_cdocb_scaleq_init_context(cs_equation_param_t    *eqp,
     cs_array_real_fill_zero(n_faces, eqc->flux_pre);
   }
 
-  eqc->face_values = NULL;
+  eqc->face_values = nullptr;
 
-  eqc->face_values_pre = NULL;
+  eqc->face_values_pre = nullptr;
 
   bool  need_eigen =
     (eqp->default_enforcement == CS_PARAM_BC_ENFORCE_WEAK_NITSCHE ||
@@ -1228,10 +1228,10 @@ cs_cdocb_scaleq_free_context(void  *scheme_context)
   if (eqc->flux_pre != nullptr)
     BFT_FREE(eqc->flux_pre);
 
-  if (eqc->face_values != NULL)
+  if (eqc->face_values != nullptr)
     BFT_FREE(eqc->face_values);
 
-  if (eqc->face_values_pre != NULL)
+  if (eqc->face_values_pre != nullptr)
     BFT_FREE(eqc->face_values_pre);
 
   cs_hodge_free_context(&(eqc->diff_hodge));
@@ -1697,18 +1697,18 @@ cs_cdocb_scaleq_get_face_values(void        *context,
                                 bool         previous)
 {
   cs_cdocb_scaleq_t  *eqc = (cs_cdocb_scaleq_t *)context;
-  if (eqc == NULL)
-    return NULL;
+  if (eqc == nullptr)
+    return nullptr;
 
   if (previous) {
-    if (eqc->face_values_pre == NULL) {
+    if (eqc->face_values_pre == nullptr) {
       BFT_MALLOC(eqc->face_values_pre, eqc->n_faces, cs_real_t);
       cs_array_real_fill_zero(eqc->n_faces, eqc->face_values_pre);
     }
     return eqc->face_values_pre;
   }
   else {
-    if (eqc->face_values == NULL) {
+    if (eqc->face_values == nullptr) {
       BFT_MALLOC(eqc->face_values, eqc->n_faces, cs_real_t);
       cs_array_real_fill_zero(eqc->n_faces, eqc->face_values);
     }

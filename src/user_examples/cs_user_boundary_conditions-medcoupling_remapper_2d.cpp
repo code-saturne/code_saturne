@@ -80,7 +80,7 @@ cs_user_boundary_conditions(cs_domain_t  *domain,
   const int  nremapper_fields = 1;
 
   /* Names of the fields to read */
-  const char  **field_names = NULL;
+  const char  **field_names = nullptr;
   BFT_MALLOC(field_names, nremapper_fields, const char *);
   field_names[0] = "TEMPERATURE";
 
@@ -96,14 +96,14 @@ cs_user_boundary_conditions(cs_domain_t  *domain,
   /*! [remapper] */
 
   /* We request a remapper with a given name. If it does not exist,
-   * the function returns a NULL pointer. */
+   * the function returns a nullptr pointer. */
   cs_medcoupling_remapper_t *r
     = cs_medcoupling_remapper_by_name_try("scalar_bc");
 
-  /* If the returned pointer is NULL (first call), we create the
+  /* If the returned pointer is nullptr (first call), we create the
    * corresponding remapper */
 
-  if (r == NULL) {
+  if (r == nullptr) {
 
     /* Space dimension of the elements (2 for faces, 3 for cells) */
     int elts_dim = 2;

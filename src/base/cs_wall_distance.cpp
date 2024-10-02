@@ -162,7 +162,7 @@ cs_wall_distance(int iterns)
 
   cs_field_t *f_w_dist_aux_pre = cs_field_by_name_try("wall_distance_aux_pre");
 
-  cs_real_t *wall_dist_pre = (f_w_dist_aux_pre != NULL) ?
+  cs_real_t *wall_dist_pre = (f_w_dist_aux_pre != nullptr) ?
                               f_w_dist_aux_pre->val:
                               f_w_dist->val_pre;
 
@@ -257,7 +257,7 @@ cs_wall_distance(int iterns)
   const cs_real_t *c_w_dist_inv
     = (const cs_real_t *)mq->c_w_dist_inv;
 
-  if (c_w_face_surf != NULL && c_w_dist_inv != NULL) {
+  if (c_w_face_surf != nullptr && c_w_dist_inv != nullptr) {
     have_diff = 0;
 
 #   pragma omp parallel for if (n_cells > CS_THR_MIN)
@@ -355,7 +355,7 @@ cs_wall_distance(int iterns)
   cs_equation_iterative_solve_scalar(cs_glob_time_step_options->idtvar,
                                      iterns,
                                      f_w_dist->id,
-                                     NULL, /* name */
+                                     nullptr, /* name */
                                      0, /* iescap */
                                      0, /* imucpp */
                                      normp,
@@ -365,16 +365,16 @@ cs_wall_distance(int iterns)
                                      i_mass_flux, b_mass_flux,
                                      i_visc, b_visc,
                                      i_visc, b_visc,
-                                     NULL, /* viscel */
-                                     NULL, /* weightf */
-                                     NULL, /* weighb */
+                                     nullptr, /* viscel */
+                                     nullptr, /* weightf */
+                                     nullptr, /* weighb */
                                      icvflb,
-                                     NULL, /* icvfli */
+                                     nullptr, /* icvfli */
                                      rovsdt,
                                      smbrp,
                                      wall_dist, dpvar,
-                                     NULL, /* xcpp */
-                                     NULL); /* eswork */
+                                     nullptr, /* xcpp */
+                                     nullptr); /* eswork */
 
   /* Count clippings */
   cs_lnum_t mmprpl = 0;
@@ -434,7 +434,7 @@ cs_wall_distance(int iterns)
         cs_equation_iterative_solve_scalar(cs_glob_time_step_options->idtvar,
                                            iterns,
                                            f_w_dist->id,
-                                           NULL, /* name */
+                                           nullptr, /* name */
                                            0, /* iescap */
                                            0, /* imucpp */
                                            normp,
@@ -444,16 +444,16 @@ cs_wall_distance(int iterns)
                                            i_mass_flux, b_mass_flux,
                                            i_visc, b_visc,
                                            i_visc, b_visc,
-                                           NULL, /* viscel */
-                                           NULL, /* weightf */
-                                           NULL, /* weighb */
+                                           nullptr, /* viscel */
+                                           nullptr, /* weightf */
+                                           nullptr, /* weighb */
                                            icvflb,
-                                           NULL, /* icvfli */
+                                           nullptr, /* icvfli */
                                            rovsdt,
                                            smbrp,
                                            wall_dist, dpvar,
-                                           NULL, /* xcpp */
-                                           NULL); /* eswork */
+                                           nullptr, /* xcpp */
+                                           nullptr); /* eswork */
 
         /* Count clippings */
 
@@ -498,12 +498,12 @@ cs_wall_distance(int iterns)
     dpvar[c_id] = cs_math_fmax(wall_dist[c_id], 0.0);
 
     /* Save working field for the next time step */
-    if (f_w_dist_aux_pre != NULL)
+    if (f_w_dist_aux_pre != nullptr)
       wall_dist_pre[c_id] = wall_dist[c_id];
 
   }
 
-  if (f_w_dist_aux_pre != NULL)
+  if (f_w_dist_aux_pre != nullptr)
     cs_halo_sync_var(halo, CS_HALO_STANDARD, wall_dist_pre);
 
   /* Compute distance to wall
@@ -549,7 +549,7 @@ cs_wall_distance(int iterns)
   /* Compute bounds and print info
      ----------------------------- */
 
-  if (cs_glob_rank_id > -1 || mesh->periodicity != NULL)
+  if (cs_glob_rank_id > -1 || mesh->periodicity != nullptr)
     cs_halo_sync_var(halo, CS_HALO_EXTENDED, wall_dist);
 
   cs_real_t _dismax = -cs_math_big_r;
@@ -646,9 +646,9 @@ cs_wall_distance_yplus(cs_real_t visvdr[])
   cs_real_t *crom = CS_F_(rho)->val;
   const cs_real_t *viscl = CS_F_(mu)->val;
 
-  cs_real_t *b_uet = NULL;
+  cs_real_t *b_uet = nullptr;
   cs_field_t *boundary_ustar = cs_field_by_name_try("boundary_ustar");
-  if (boundary_ustar != NULL)
+  if (boundary_ustar != nullptr)
     b_uet = boundary_ustar->val;
 
   cs_field_t *f_wall_dist = cs_field_by_name("wall_distance");
@@ -820,7 +820,7 @@ cs_wall_distance_yplus(cs_real_t visvdr[])
                               eqp_yp->verbosity,
                               eqp_yp->epsrgr,
                               eqp_yp->climgr,
-                              NULL,
+                              nullptr,
                               w_dist,
                               f_wall_dist->bc_coeffs,
                               i_visc, b_visc,
@@ -861,7 +861,7 @@ cs_wall_distance_yplus(cs_real_t visvdr[])
   for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
     rovsdp[c_id] = 1.e-6 * fabs(rovsdp[c_id]);
 
-  if (halo != NULL)
+  if (halo != nullptr)
     cs_halo_sync_var(halo, CS_HALO_STANDARD, rovsdp);
 
   /* Time loop
@@ -939,7 +939,7 @@ cs_wall_distance_yplus(cs_real_t visvdr[])
 
   xnorm0 = sqrt(xnorm0 / wall_surf) * mq->tot_vol;
 
-  if (cs_glob_rank_id > -1 || mesh->periodicity != NULL)
+  if (cs_glob_rank_id > -1 || mesh->periodicity != nullptr)
     cs_halo_sync_var(halo, CS_HALO_STANDARD, dvarp);
 
   /* Right hand side
@@ -971,7 +971,7 @@ cs_wall_distance_yplus(cs_real_t visvdr[])
   cs_equation_iterative_solve_scalar(0, /* No steady state algo */
                                      -1, /* No over loops */
                                      f_yplus->id,
-                                     NULL, /* name */
+                                     nullptr, /* name */
                                      0, /* No error estimate */
                                      0, /* No error estimate */
                                      xnorm0,
@@ -982,14 +982,14 @@ cs_wall_distance_yplus(cs_real_t visvdr[])
                                      i_mass_flux, b_mass_flux,
                                      i_mass_flux, b_mass_flux,
                                      i_mass_flux, b_mass_flux,
-                                     NULL, NULL,
-                                     NULL,
+                                     nullptr, nullptr,
+                                     nullptr,
                                      icvflb,
-                                     NULL,
+                                     nullptr,
                                      rovsdp,
                                      smbdp,
                                      dvarp, dpvar,
-                                     NULL, NULL);
+                                     nullptr, nullptr);
 
   /* Warning: no diffusion so no need of other diffusive
      boundary coefficient */

@@ -147,11 +147,11 @@ cs_drift_convective_flux(cs_field_t  *f_sc,
   /* Mass fraction of gas */
 
   cs_field_t *f_xc = cs_field_by_name_try("x_c");
-  cs_real_t *x1 = NULL, *b_x1 = NULL;
-  cs_real_t *i_mass_flux_gas = NULL;
-  cs_real_t *b_mass_flux_gas = NULL;
+  cs_real_t *x1 = nullptr, *b_x1 = nullptr;
+  cs_real_t *i_mass_flux_gas = nullptr;
+  cs_real_t *b_mass_flux_gas = nullptr;
 
-  if (f_xc != NULL) {
+  if (f_xc != nullptr) {
     x1 = f_xc->val;
 
     /* Mass fraction of the gas at the boundary */
@@ -210,16 +210,16 @@ cs_drift_convective_flux(cs_field_t  *f_sc,
   cs_field_t *f_rij = CS_F_(rij);
   cs_field_t *f_k = CS_F_(k);
 
-  cs_real_6_t *rij = NULL;
-  cs_real_t *k = NULL;
+  cs_real_6_t *rij = nullptr;
+  cs_real_t *k = nullptr;
 
-  if (f_rij != NULL)
+  if (f_rij != nullptr)
     rij = (cs_real_6_t *)f_rij->val;
-  if (f_k != NULL)
+  if (f_k != nullptr)
     k = f_k->val;
 
   /* Brownian diffusivity */
-  cs_real_t *cpro_viscls = NULL;
+  cs_real_t *cpro_viscls = nullptr;
   int ifcvsl = cs_field_get_key_int(f_sc, kivisl);
   if (ifcvsl >= 0)
     cpro_viscls = cs_field_by_id(ifcvsl)->val;
@@ -263,29 +263,29 @@ cs_drift_convective_flux(cs_field_t  *f_sc,
   if (iscdri & CS_DRIFT_SCALAR_ADD_DRIFT_FLUX) {
 
     /* Index of the corresponding relaxation time */
-    cs_real_t *cpro_taup = NULL;
+    cs_real_t *cpro_taup = nullptr;
     {
       cs_field_t *f_tau
         = cs_field_by_composite_name_try(f_sc->name, "drift_tau");
 
-      if (f_tau != NULL)
+      if (f_tau != nullptr)
         cpro_taup = f_tau->val;
     }
 
     /* Index of the corresponding relaxation time (cpro_taup) */
-    cs_real_3_t *cpro_drift = NULL;
+    cs_real_3_t *cpro_drift = nullptr;
     {
       cs_field_t *f_drift_vel
         = cs_field_by_composite_name_try(f_sc->name, "drift_vel");
 
-      if (f_drift_vel != NULL)
+      if (f_drift_vel != nullptr)
         cpro_drift = (cs_real_3_t *)f_drift_vel->val;
     }
 
     /* Index of the corresponding interaction time
        particle--eddies (drift_turb_tau) */
 
-    cs_real_t *cpro_taufpt = NULL;
+    cs_real_t *cpro_taufpt = nullptr;
     if (iscdri & CS_DRIFT_SCALAR_TURBOPHORESIS) {
       cs_field_t *f_drift_turb_tau
         = cs_field_by_composite_name(f_sc->name, "drift_turb_tau");
@@ -305,7 +305,7 @@ cs_drift_convective_flux(cs_field_t  *f_sc,
        first particle "class":
        it is initialized by the mass flux of the bulk */
 
-    if (icla == 1 && f_xc != NULL) {
+    if (icla == 1 && f_xc != nullptr) {
       cs_array_real_copy(n_i_faces, i_mass_flux_mix, i_mass_flux_gas);
       cs_array_real_copy(n_b_faces, b_mass_flux_mix, b_mass_flux_gas);
     }
@@ -322,9 +322,9 @@ cs_drift_convective_flux(cs_field_t  *f_sc,
       var_name[14] = '\0';
 
       cs_field_t *f_vdp_i = cs_field_by_name_try(var_name);
-      cs_real_3_t *vdp_i = NULL;
+      cs_real_3_t *vdp_i = nullptr;
 
-      if (f_vdp_i != NULL) {
+      if (f_vdp_i != nullptr) {
         vdp_i = (cs_real_3_t *)f_vdp_i->val;
 
         for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
@@ -338,7 +338,7 @@ cs_drift_convective_flux(cs_field_t  *f_sc,
       }
     }
 
-    else if (icla >= 0 && cpro_taup != NULL && cpro_drift != NULL) {
+    else if (icla >= 0 && cpro_taup != nullptr && cpro_drift != nullptr) {
 
       for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
         const cs_real_t rho = crom[c_id];
@@ -417,7 +417,7 @@ cs_drift_convective_flux(cs_field_t  *f_sc,
       /* Face diffusivity of rho to compute rho*(Grad K . n)_face */
       cs_array_real_copy(n_cells, crom, w1);
 
-      if (mesh->halo != NULL)
+      if (mesh->halo != nullptr)
         cs_halo_sync_var(mesh->halo, CS_HALO_STANDARD, w1);
 
       cs_face_viscosity(mesh,
@@ -448,7 +448,7 @@ cs_drift_convective_flux(cs_field_t  *f_sc,
                                   eqp_sc->verbosity,
                                   eqp_sc->epsrgr,
                                   eqp_sc->climgr,
-                                  NULL, /* frcxt */
+                                  nullptr, /* frcxt */
                                   viscce,
                                   &bc_coeffs_loc,
                                   i_visc, b_visc,
@@ -508,10 +508,10 @@ cs_drift_convective_flux(cs_field_t  *f_sc,
                         bc_coeffs_vel,
                         i_mass_flux_mix, b_mass_flux_mix,
                         i_visc, b_visc,
-                        NULL, NULL, /* secvif, secvib */
-                        NULL, NULL, NULL,
-                        0, NULL, /* icvflb, icvfli */
-                        NULL, NULL,
+                        nullptr, nullptr, /* secvif, secvib */
+                        nullptr, nullptr, nullptr,
+                        0, nullptr, /* icvflb, icvfli */
+                        nullptr, nullptr,
                         dudt);
 
       /* Warning: cs_balance_vector adds "-( grad(u) . rho u)" */
@@ -638,9 +638,9 @@ cs_drift_convective_flux(cs_field_t  *f_sc,
         var_name[14] = '\0';
 
         cs_field_t *f_x_p_i = cs_field_by_name_try(var_name);
-        cs_real_t *x2 = NULL;
+        cs_real_t *x2 = nullptr;
 
-        if (f_x_p_i != NULL) {
+        if (f_x_p_i != nullptr) {
           x2 = f_x_p_i->val;
 
 #         pragma omp parallel for if (n_i_faces > CS_THR_MIN)
@@ -677,7 +677,7 @@ cs_drift_convective_flux(cs_field_t  *f_sc,
        Warning, x1 at the face must be computed so that it is consistent
        with an upwind scheme on (rho V1) */
 
-    else if (icla == -1 && f_xc != NULL) {
+    else if (icla == -1 && f_xc != nullptr) {
 
 #     pragma omp parallel for if (n_i_faces > CS_THR_MIN)
       for (cs_lnum_t face_id = 0; face_id < n_i_faces; face_id++) {

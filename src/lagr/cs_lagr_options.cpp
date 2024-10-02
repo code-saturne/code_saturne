@@ -130,13 +130,13 @@ _copy_boundary_varname(int          ipp,
 
   int nvplmx = 50+4*cs_glob_lagr_const_dim->nlayer;
 
-  if (cs_glob_lagr_boundary_interactions->nombrd == NULL) {
+  if (cs_glob_lagr_boundary_interactions->nombrd == nullptr) {
 
     BFT_MALLOC(cs_glob_lagr_boundary_interactions->nombrd,
                nvplmx,
                char *);
     for (int i = 0; i < nvplmx; i++)
-      cs_glob_lagr_boundary_interactions->nombrd[i] = NULL;
+      cs_glob_lagr_boundary_interactions->nombrd[i] = nullptr;
   }
 
   l = strlen(varname);
@@ -153,19 +153,19 @@ _copy_boundary_varname(int          ipp,
 static void
 _init_lagr_encrustation_pointers(void)
 {
-  if (cs_glob_lagr_encrustation->enc1 == NULL)
+  if (cs_glob_lagr_encrustation->enc1 == nullptr)
     BFT_MALLOC(cs_glob_lagr_encrustation->enc1,
                cs_glob_lagr_const_dim->ncharm2,
                cs_real_t);
-  if (cs_glob_lagr_encrustation->enc2 == NULL)
+  if (cs_glob_lagr_encrustation->enc2 == nullptr)
     BFT_MALLOC(cs_glob_lagr_encrustation->enc2,
                cs_glob_lagr_const_dim->ncharm2,
                cs_real_t);
-  if (cs_glob_lagr_encrustation->tprenc == NULL)
+  if (cs_glob_lagr_encrustation->tprenc == nullptr)
     BFT_MALLOC(cs_glob_lagr_encrustation->tprenc,
                cs_glob_lagr_const_dim->ncharm2,
                cs_real_t);
-  if (cs_glob_lagr_encrustation->visref == NULL)
+  if (cs_glob_lagr_encrustation->visref == nullptr)
     BFT_MALLOC(cs_glob_lagr_encrustation->visref,
                cs_glob_lagr_const_dim->ncharm2,
                cs_real_t);
@@ -261,7 +261,7 @@ cs_lagr_options_definition(int         is_restart,
   cs_glob_lagr_source_terms->ltsmas = 0;
   cs_glob_lagr_source_terms->ltsthe = 0;
 
-  cs_glob_lagr_boundary_interactions->nombrd = NULL;
+  cs_glob_lagr_boundary_interactions->nombrd = nullptr;
 
   lagr_time_scheme->t_order = 2;
   lagr_model->idistu = -1;

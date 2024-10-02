@@ -187,7 +187,7 @@ cs_intprf(int              nprofz,
  * \param[in]   profv       measured values
  * \param[in]   xz          interpolation elevation
  * \param[out]  z_lv        index of lower and upel level (optional, size 2),
- *                          or NULL
+ *                          or nullptr
  * \param[out]  var         interpolated value
  */
 /*----------------------------------------------------------------------------*/
@@ -228,7 +228,7 @@ cs_intprz(int               nprofz,
   /* Interpolation
      ------------- */
 
-  if (z_lv != NULL) {
+  if (z_lv != nullptr) {
     z_lv[0] = iz0;
     z_lv[1] = iz1;
   }

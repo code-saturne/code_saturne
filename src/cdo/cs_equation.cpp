@@ -1486,15 +1486,15 @@ cs_equation_add(const char         *eqname,
                 int                 dim,
                 cs_param_bc_type_t  default_bc)
 {
-  if (varname == NULL)
+  if (varname == nullptr)
     bft_error(__FILE__, __LINE__, 0,
               _(" %s: No variable name associated to an equation structure.\n"
                 " Check your initialization."), __func__);
-  if (eqname == NULL)
+  if (eqname == nullptr)
     bft_error(__FILE__, __LINE__, 0,
               _(" %s No equation name associated to an equation structure.\n"
                 " Check your initialization."), __func__);
-  if (cs_equation_by_name(eqname) != NULL)
+  if (cs_equation_by_name(eqname) != nullptr)
     bft_error(__FILE__, __LINE__, 0,
               _(" %s: Stop adding a new equation.\n"
                 " Equation name %s is already defined."), __func__, eqname);
@@ -2911,7 +2911,7 @@ cs_equation_define_context_structures(void)
     /* Allocate and initialize the context structures */
     /* Not initialized here if it is a restart */
 
-    if (eq->scheme_context == NULL)
+    if (eq->scheme_context == nullptr)
       eq->scheme_context = eq->init_context(eq->param,
                                             eq->field_id,
                                             eq->boundary_flux_id,

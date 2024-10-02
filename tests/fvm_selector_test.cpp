@@ -40,7 +40,7 @@
 static void
 test_1 (void)
 {
-  fvm_group_class_set_t *gcset = NULL;
+  fvm_group_class_set_t *gcset = nullptr;
 
   const char *grp_1[] = {"group_1", "g2", "g3", "12", "56"};
   const char *grp_2[] = {"group_4", "g2", "g5", "group_6"};
@@ -66,8 +66,8 @@ test_2 (void)
   int ii;
   int criteria_id, n_missing;
 
-  fvm_group_class_set_t *gcset = NULL;
-  fvm_selector_t *s = NULL;
+  fvm_group_class_set_t *gcset = nullptr;
+  fvm_selector_t *s = nullptr;
 
   cs_lnum_t n_se = 0;
   cs_lnum_t se[12];
@@ -117,7 +117,7 @@ test_2 (void)
   fvm_group_class_set_add(gcset, 1, att_05);
   fvm_group_class_set_add(gcset, 1, att_03);
   fvm_group_class_set_add(gcset, 1, att_11);
-  fvm_group_class_set_add(gcset, 0, NULL);
+  fvm_group_class_set_add(gcset, 0, nullptr);
 
   fvm_group_class_set_dump(gcset);
 
@@ -197,8 +197,8 @@ test_3 (void)
 {
   int ii;
 
-  fvm_group_class_set_t *gcset = NULL;
-  fvm_selector_t *s = NULL;
+  fvm_group_class_set_t *gcset = nullptr;
+  fvm_selector_t *s = nullptr;
 
   const int f_gc_id[] = {5, 1, 2, 7, 7, 7, 3, 3, 4, 4, 8, 6};
 

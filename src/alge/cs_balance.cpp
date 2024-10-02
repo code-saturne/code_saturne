@@ -166,9 +166,9 @@ cs_balance_initialize(void)
  * \param[in]     eqp           pointer to a cs_equation_param_t structure which
  *                              contains variable calculation options
  * \param[in]     pvar          solved variable (current time step)
- *                              may be NULL if pvara != NULL
+ *                              may be nullptr if pvara != nullptr
  * \param[in]     pvara         solved variable (previous time step)
- *                              may be NULL if pvar != NULL
+ *                              may be nullptr if pvar != nullptr
  * \param[in]     bc_coeffs     boundary condition structure for the variable
  * \param[in]     i_massflux    mass flux at interior faces
  * \param[in]     b_massflux    mass flux at boundary faces

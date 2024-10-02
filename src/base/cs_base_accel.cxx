@@ -177,7 +177,7 @@ _initialize(void)
   }
 
   const char s[] = "CS_HD_IGNORE_PREFETCH";
-  if (getenv(s) != NULL) {
+  if (getenv(s) != nullptr) {
     int i = atoi(getenv(s));
     if (i > 0)
       _ignore_prefetch = true;
@@ -1255,7 +1255,7 @@ cs_mem_advise_unset_read_mostly(void  *ptr)
 void
 cs_sync_h2d(const void  *ptr)
 {
-  if (ptr == NULL)
+  if (ptr == nullptr)
     return;
 
   cs_mem_block_t me = bft_mem_get_block_info(ptr);
@@ -1363,7 +1363,7 @@ cs_sync_h2d(const void  *ptr)
 void
 cs_sync_h2d_future(const void  *ptr)
 {
-  if (ptr == NULL)
+  if (ptr == nullptr)
     return;
 
   cs_mem_block_t me = bft_mem_get_block_info(ptr);
@@ -1433,7 +1433,7 @@ cs_sync_h2d_future(const void  *ptr)
 void
 cs_sync_d2h(void  *ptr)
 {
-  if (ptr == NULL)
+  if (ptr == nullptr)
     return;
 
   cs_mem_block_t me = bft_mem_get_block_info(ptr);
@@ -1533,7 +1533,7 @@ cs_sync_d2h(void  *ptr)
 void
 cs_sync_d2h_if_needed(void  *ptr)
 {
-  if (ptr == NULL)
+  if (ptr == nullptr)
     return;
 
   cs_mem_block_t me = bft_mem_get_block_info_try(ptr);
@@ -1598,7 +1598,7 @@ void
 cs_prefetch_h2d(void    *ptr,
                 size_t   size)
 {
-  if (ptr == NULL)
+  if (ptr == nullptr)
     return;
 
 #if defined(HAVE_CUDA)
@@ -1635,7 +1635,7 @@ void
 cs_prefetch_d2h(void    *ptr,
                 size_t   size)
 {
-  if (ptr == NULL)
+  if (ptr == nullptr)
     return;
 
 #if defined(HAVE_CUDA)
@@ -1673,7 +1673,7 @@ cs_copy_h2d(void        *dest,
             const void  *src,
             size_t       size)
 {
-  if (src == NULL)
+  if (src == nullptr)
     return;
 
 #if defined(HAVE_CUDA)
@@ -1710,7 +1710,7 @@ cs_copy_d2h(void        *dest,
             const void  *src,
             size_t       size)
 {
-  if (src == NULL)
+  if (src == nullptr)
     return;
 
 #if defined(HAVE_CUDA)
@@ -1747,7 +1747,7 @@ cs_copy_d2d(void        *dest,
             const void  *src,
             size_t       size)
 {
-  if (src == NULL)
+  if (src == nullptr)
     return;
 
 #if defined(HAVE_CUDA)

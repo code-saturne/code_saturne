@@ -80,7 +80,7 @@ static const double k1 = 1e5, k2 = 1;
  * \brief  Get the initial condition for the tracer attached to the GWF problem
  *         Generic function pointer for an evaluation relying on an analytic
  *         function.
- *         pt_ids is optional. If not NULL, it enables to access to the xyz
+ *         pt_ids is optional. If not nullptr, it enables to access to the xyz
  *         array with an indirection. The same indirection can be applied to
  *         fill retval if dense_output is set to false.
  *
@@ -89,7 +89,7 @@ static const double k1 = 1e5, k2 = 1;
  * \param[in]      pt_ids        list of elements ids (in coords and retval)
  * \param[in]      xyz           where ? Coordinates array
  * \param[in]      dense_output  perform an indirection in retval or not
- * \param[in]      input         NULL or pointer to a structure cast on-the-fly
+ * \param[in]      input         nullptr or pointer to a structure cast on-the-fly
  * \param[in, out] retval        resulting value(s). Must be allocated.
  */
 /*----------------------------------------------------------------------------*/
@@ -115,7 +115,7 @@ get_tracer_ic(cs_real_t          time,
 
   for (cs_lnum_t  i = 0; i < n_elts; i++) {
 
-    const cs_lnum_t  id = (pt_ids == NULL) ? i : pt_ids[i];
+    const cs_lnum_t  id = (pt_ids == nullptr) ? i : pt_ids[i];
     const cs_lnum_t  r_id = (dense_output) ? i : id;
     const double  x = xyz[3*id];
 
@@ -304,7 +304,7 @@ cs_user_model(void)
 
     /* s1 pointer can be used to set futher options in advanced settings */
 
-    assert(s1 != NULL);
+    assert(s1 != nullptr);
   }
   /*! [param_cdo_gwf_get_soil] */
 
@@ -333,11 +333,11 @@ cs_user_model(void)
      *
      * The parameters defining the tracer behavior can be set soil by soil
      * (thanks to the soil name as the second argument) or to all soils in one
-     * call (using NULL as the second argument)
+     * call (using nullptr as the second argument)
      */
 
     cs_gwf_tracer_set_soil_param(tr,
-                                 NULL,     /* soil name or NULL for all */
+                                 nullptr,     /* soil name or nullptr for all */
                                  0.,       /* water molecular diffusivity */
                                  1., 0.,   /* alpha (longi. and transvesal) */
                                  1e-4);    /* distribution coef. */
@@ -370,11 +370,11 @@ cs_user_model(void)
      *
      * The parameters defining the tracer behavior can be set soil by soil
      * (thanks to the soil name as the second argument) or to all soils in one
-     * call (using NULL as the second argument)
+     * call (using nullptr as the second argument)
      */
 
     cs_gwf_tracer_set_soil_param(rtr,
-                                 NULL,     /* soil name or NULL for all */
+                                 nullptr,     /* soil name or nullptr for all */
                                  0.,       /* water molecular diffusivity */
                                  1., 0.,   /* alpha (longi. and transvesal) */
                                  1e-4);    /* distribution coef. */
@@ -382,7 +382,7 @@ cs_user_model(void)
     /* Set the parameters for the precipitation model */
 
     cs_gwf_tracer_set_precip_param(rtr,
-                                   NULL,    /* soil name/NULL for all */
+                                   nullptr,    /* soil name/nullptr for all */
                                    1e-4);   /* liquid concentration threshold */
   }
   /*! [param_cdo_gwf_add_rtracer] */
@@ -439,7 +439,7 @@ cs_user_model(void)
 
       if (i == tdc->n_tracers - 1)
         cs_gwf_tracer_set_precip_param(rtr,
-                                       NULL,  /* soil name/NULL for all */
+                                       nullptr,  /* soil name/nullptr for all */
                                        1e-4); /* liquid conc. threshold */
 
     } /* Loop on tracers */
@@ -493,7 +493,7 @@ cs_user_parameters(cs_domain_t *domain)
 
     cs_gwf_tracer_decay_chain_t  *tdc =
       cs_gwf_tracer_decay_chain_by_name("my_decay_chain");
-    assert(tdc != NULL);
+    assert(tdc != nullptr);
 
     /* Set the same numerical option for all the tracer equations related to a
        decay chain */
@@ -560,7 +560,7 @@ cs_user_finalize_setup(cs_domain_t   *domain)
     /* Define the initial condition with an analytic function (if nothing is
        done, the default initialization is zero) */
 
-    cs_equation_add_ic_by_analytic(t_eqp, "cells", get_tracer_ic, NULL);
+    cs_equation_add_ic_by_analytic(t_eqp, "cells", get_tracer_ic, nullptr);
   }
   /*! [param_cdo_gwf_set_ic] */
 }

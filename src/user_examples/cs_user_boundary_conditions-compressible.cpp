@@ -112,7 +112,7 @@ cs_user_boundary_conditions(cs_domain_t  *domain,
   const cs_real_3_t *restrict b_face_normal
     = (const cs_real_3_t *)domain->mesh_quantities->b_face_normal;
 
-  const cs_zone_t  *zn = NULL;
+  const cs_zone_t  *zn = nullptr;
   const int n_fields = cs_field_n_fields();
   const cs_real_t *cpro_rho = CS_F_(rho)->val;
   const int keysca = cs_field_key_id("scalar_id");

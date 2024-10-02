@@ -123,7 +123,7 @@ cs_user_postprocess_probes(void)
  * \param[in]       cat_id       category id of the output mesh for the
  *                               current call
  * \param[in]       probes       pointer to associated probe set structure if
- *                               the mesh is a probe set, NULL otherwise
+ *                               the mesh is a probe set, nullptr otherwise
  * \param[in]       n_cells      local number of cells of post_mesh
  * \param[in]       n_i_faces    local number of interior faces of post_mesh
  * \param[in]       n_b_faces    local number of boundary faces of post_mesh
@@ -136,7 +136,7 @@ cs_user_postprocess_probes(void)
  *                               post-processing mesh
  * \param[in]       vertex_list  list of vertices (0 to n-1) of
  *                               post-processing mesh
- * \param[in]       ts           time step status structure, or NULL
+ * \param[in]       ts           time step status structure, or nullptr
  */
 /*----------------------------------------------------------------------------*/
 
@@ -159,7 +159,7 @@ cs_user_postprocess_values(const char            *mesh_name,
      each probes set */
 
   /* check if current mesh is a probes set */
-  if (probes != NULL) {
+  if (probes != nullptr) {
 
     const char *name = cs_probe_set_get_name(probes);
 
@@ -189,8 +189,8 @@ cs_user_postprocess_values(const char            *mesh_name,
          1,                              /* var_dim */
          CS_POST_TYPE_cs_real_t,
          0,                              /* parent location id */
-         NULL,                           /* default interpolation */
-         NULL,                           /* interpolation input */
+         nullptr,                           /* default interpolation */
+         nullptr,                           /* interpolation input */
          val,
          ts);
 
@@ -221,8 +221,8 @@ cs_user_postprocess_values(const char            *mesh_name,
          1,                              /* var_dim */
          CS_POST_TYPE_cs_real_t,
          0,                              /* parent location id */
-         NULL,                           /* default interpolation */
-         NULL,                           /* interpolation input */
+         nullptr,                           /* default interpolation */
+         nullptr,                           /* interpolation input */
          val,
          ts);
 

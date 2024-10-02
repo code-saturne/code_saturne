@@ -96,7 +96,7 @@ cs_user_solver(const cs_mesh_t             *mesh,
   cs_real_t   x0, xL, t0, tL;
   cs_real_t   r;
 
-  cs_real_t  *t = NULL, *t_old = NULL, *t_sol = NULL;
+  cs_real_t  *t = nullptr, *t_old = nullptr, *t_sol = nullptr;
 
   cs_restart_t    *restart, *checkpoint;
   cs_time_plot_t  *time_plot;
@@ -144,7 +144,7 @@ cs_user_solver(const cs_mesh_t             *mesh,
   /* ------- */
 
   restart = cs_restart_create("main.csc",             /* file name */
-                              NULL,                   /* force directory */
+                              nullptr,                   /* force directory */
                               CS_RESTART_MODE_READ);  /* read mode */
 
   cs_restart_read_section(restart,   /* restart file */
@@ -171,9 +171,9 @@ cs_user_solver(const cs_mesh_t             *mesh,
                                       -1.,               /* force flush */
                                       0,                 /* buffer size */
                                       1,                 /* number of probes */
-                                      NULL,              /* probes list */
-                                      NULL,              /* probes coord. */
-                                      NULL);             /* probes names */
+                                      nullptr,              /* probes list */
+                                      nullptr,              /* probes coord. */
+                                      nullptr);             /* probes names */
 
   /*! [time_monitoring] */
 
@@ -225,7 +225,7 @@ cs_user_solver(const cs_mesh_t             *mesh,
   /* --------- */
 
   checkpoint = cs_restart_create("main.csc",              /* file name */
-                                 NULL,                    /* force directory */
+                                 nullptr,                    /* force directory */
                                  CS_RESTART_MODE_WRITE);  /* write mode */
 
   cs_restart_write_section(checkpoint,        /* restart file */
@@ -256,9 +256,9 @@ cs_user_solver(const cs_mesh_t             *mesh,
                     true,                    /* define on parents */
                     CS_POST_TYPE_cs_real_t,  /* type */
                     t,                       /* value on cells */
-                    NULL,                    /* value on interior faces */
-                    NULL,                    /* value on boundary faces */
-                    NULL);                   /* time-independent output */
+                    nullptr,                    /* value on interior faces */
+                    nullptr,                    /* value on boundary faces */
+                    nullptr);                   /* time-independent output */
 
   cs_post_write_var(CS_POST_MESH_VOLUME,
                     CS_POST_WRITER_ALL_ASSOCIATED,
@@ -268,9 +268,9 @@ cs_user_solver(const cs_mesh_t             *mesh,
                     true,                    /* define on parents */
                     CS_POST_TYPE_cs_real_t,  /* type */
                     t_sol,                   /* value on cells */
-                    NULL,                    /* value on interior faces */
-                    NULL,                    /* value on boundary faces */
-                    NULL);                   /* time-independent output */
+                    nullptr,                    /* value on interior faces */
+                    nullptr,                    /* value on boundary faces */
+                    nullptr);                   /* time-independent output */
 
   /*! [post_processing] */
 

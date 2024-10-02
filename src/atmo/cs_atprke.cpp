@@ -247,7 +247,7 @@ _dry_atmosphere(const cs_real_t  cromo[],
 
   cs_real_t prdtur = 1;
 
-  if (f_thm != NULL) {
+  if (f_thm != nullptr) {
     prdtur = cs_field_get_key_double(f_thm,
                                      cs_field_key_id("turbulent_schmidt"));
   }
@@ -256,9 +256,9 @@ _dry_atmosphere(const cs_real_t  cromo[],
   cs_real_3_t *grad;
   BFT_MALLOC(grad, n_cells_ext, cs_real_3_t);
 
-  cs_real_t *cvara_k = NULL, *cvara_ep = NULL;
+  cs_real_t *cvara_k = nullptr, *cvara_ep = nullptr;
 
-  if (CS_F_(k) != NULL) {
+  if (CS_F_(k) != nullptr) {
     cvara_k  =  (cs_real_t *)CS_F_(k)->val_pre;
     cvara_ep =  (cs_real_t *)CS_F_(eps)->val_pre;
   }
@@ -304,7 +304,7 @@ _dry_atmosphere(const cs_real_t  cromo[],
     smbrk[c_id] += visct*gravke;
 
     /* Save for post processing */
-    if (f_tke_buoy != NULL)
+    if (f_tke_buoy != nullptr)
       f_tke_buoy->val[c_id] = visct*gravke/rho;
   }
 
@@ -350,7 +350,7 @@ _humid_atmosphere(const cs_real_t  cromo[],
 
   cs_real_t prdtur = 1;
 
-  if (f_thm != NULL) {
+  if (f_thm != nullptr) {
     prdtur = cs_field_get_key_double(f_thm,
                                      cs_field_key_id("turbulent_schmidt"));
   }
@@ -361,9 +361,9 @@ _humid_atmosphere(const cs_real_t  cromo[],
   cs_real_3_t *grad;
   BFT_MALLOC(grad, n_cells_ext, cs_real_3_t);
 
-  cs_real_t *cvara_k = NULL, *cvara_ep = NULL;
+  cs_real_t *cvara_k = nullptr, *cvara_ep = nullptr;
 
-  if (CS_F_(k) != NULL) {
+  if (CS_F_(k) != nullptr) {
     cvara_k  =  (cs_real_t *)CS_F_(k)->val_pre;
     cvara_ep =  (cs_real_t *)CS_F_(eps)->val_pre;
   }

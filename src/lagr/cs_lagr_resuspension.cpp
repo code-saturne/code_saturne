@@ -181,7 +181,7 @@ cs_lagr_resuspension(void)
   const cs_real_3_t *restrict i_face_normal
     = (const cs_real_3_t *restrict)fvq->i_face_normal;
 
-  cs_lagr_event_set_t  *events = NULL;
+  cs_lagr_event_set_t  *events = nullptr;
 
   if (cs_lagr_stat_is_active(CS_LAGR_STAT_GROUP_TRACKING_EVENT)) {
     events = cs_lagr_event_set_boundary_interaction();
@@ -223,7 +223,7 @@ cs_lagr_resuspension(void)
 
     cs_real_t temp;
 
-    if (extra->temperature != NULL) {
+    if (extra->temperature != nullptr) {
       temp = extra->temperature->val[iel] + xmtk;
     }
     else
@@ -346,7 +346,7 @@ cs_lagr_resuspension(void)
               p_set->n_part_resusp += 1;
               p_set->weight_resusp += p_stat_weight;
 
-              if (events != NULL)
+              if (events != nullptr)
                 _add_resuspension_event(events,
                                         p_set,
                                         ip,
@@ -412,7 +412,7 @@ cs_lagr_resuspension(void)
                 p_set->n_part_resusp += 1;
                 p_set->weight_resusp += p_stat_weight;
 
-                if (events != NULL)
+                if (events != nullptr)
                   _add_resuspension_event(events,
                                           p_set,
                                           ip,
@@ -542,7 +542,7 @@ cs_lagr_resuspension(void)
             p_set->n_part_resusp += 1;
             p_set->weight_resusp += p_stat_weight;
 
-            if (events != NULL)
+            if (events != nullptr)
               _add_resuspension_event(events,
                                       p_set,
                                       ip,

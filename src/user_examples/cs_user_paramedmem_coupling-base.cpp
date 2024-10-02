@@ -94,16 +94,16 @@ cs_user_paramedmem_define_couplings(void)
   /*! [paramedmem_coupling_define1] */
 
   /* Define a coupling using ParaMEDMEM.
-   * First parameter is set to NULL, hence app #1 is this instance.
+   * First parameter is set to nullptr, hence app #1 is this instance.
    * Second instance is the app named "PARTNER".
-   * Third parameter is NULL, hence the coupling name will be set automatically
+   * Third parameter is nullptr, hence the coupling name will be set automatically
    * to '<app1_name>_<app2_name>_cpl'
    */
   /*! [paramedmem_coupling_define2] */
   {
-    cs_paramedmem_coupling_t *c = cs_paramedmem_coupling_create(NULL,
+    cs_paramedmem_coupling_t *c = cs_paramedmem_coupling_create(nullptr,
                                                                 "PARTNER",
-                                                                NULL);
+                                                                nullptr);
   }
   /*! [paramedmem_coupling_define2] */
 

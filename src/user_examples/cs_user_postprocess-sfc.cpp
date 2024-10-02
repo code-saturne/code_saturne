@@ -61,16 +61,16 @@ _cs_post_write_sfc_serial(fvm_writer_t   *writer)
   fvm_io_num_sfc_t  sfc_id;
   cs_lnum_t  i, j, k;
 
-  cs_lnum_t *connect = NULL, *order = NULL;
-  double *coords = NULL, *val = NULL;
-  fvm_nodal_t *nm = NULL;
-  fvm_io_num_t *io_num = NULL;
+  cs_lnum_t *connect = nullptr, *order = nullptr;
+  double *coords = nullptr, *val = nullptr;
+  fvm_nodal_t *nm = nullptr;
+  fvm_io_num_t *io_num = nullptr;
 
   const cs_mesh_t *m = cs_glob_mesh;
   const cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
   const cs_lnum_t n_edges = m->n_cells - 1;
-  const cs_gnum_t *cell_gnum = NULL;
-  const double *var_ptr[1] = {NULL};
+  const cs_gnum_t *cell_gnum = nullptr;
+  const double *var_ptr[1] = {nullptr};
 
   BFT_MALLOC(order, m->n_cells, cs_lnum_t);
   BFT_MALLOC(val, m->n_cells, double);
@@ -92,7 +92,7 @@ _cs_post_write_sfc_serial(fvm_writer_t   *writer)
 
     cell_gnum = fvm_io_num_get_global_num(io_num);
 
-    cs_order_gnum_allocated(NULL, cell_gnum, order, m->n_cells);
+    cs_order_gnum_allocated(nullptr, cell_gnum, order, m->n_cells);
 
     for (i = 0; i < m->n_cells; i++) {
       j = order[i];
@@ -106,7 +106,7 @@ _cs_post_write_sfc_serial(fvm_writer_t   *writer)
       connect[i*2+1] = i+2;
     }
 
-    cell_gnum = NULL;
+    cell_gnum = nullptr;
     fvm_io_num_destroy(io_num);
 
     nm = fvm_nodal_create(fvm_io_num_sfc_type_name[sfc_id], 3);
@@ -114,11 +114,11 @@ _cs_post_write_sfc_serial(fvm_writer_t   *writer)
     fvm_nodal_append_by_transfer(nm,
                                  m->n_cells - 1,
                                  FVM_EDGE,
-                                 NULL,
-                                 NULL,
-                                 NULL,
+                                 nullptr,
+                                 nullptr,
+                                 nullptr,
                                  connect,
-                                 NULL);
+                                 nullptr);
 
     fvm_nodal_set_shared_vertices(nm, coords);
 
@@ -164,17 +164,17 @@ _cs_post_write_sfc_parall(fvm_writer_t  *writer)
   fvm_io_num_sfc_t  sfc_id;
   cs_lnum_t  i;
 
-  cs_lnum_t *connect = NULL, *order = NULL;
-  cs_gnum_t *vtx_gnum = NULL, *edge_gnum = NULL;
-  double *val = NULL;
-  cs_coord_t *coords = NULL;
-  fvm_nodal_t *nm = NULL;
-  fvm_io_num_t *io_num = NULL;
+  cs_lnum_t *connect = nullptr, *order = nullptr;
+  cs_gnum_t *vtx_gnum = nullptr, *edge_gnum = nullptr;
+  double *val = nullptr;
+  cs_coord_t *coords = nullptr;
+  fvm_nodal_t *nm = nullptr;
+  fvm_io_num_t *io_num = nullptr;
 
   const cs_mesh_t *m = cs_glob_mesh;
   const cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
-  const cs_gnum_t *cell_gnum = NULL;
-  const double  *var_ptr[1] = {NULL};
+  const cs_gnum_t *cell_gnum = nullptr;
+  const double  *var_ptr[1] = {nullptr};
 
   /* Loop on space-filling curve types */
 
@@ -186,7 +186,7 @@ _cs_post_write_sfc_parall(fvm_writer_t  *writer)
     cs_lnum_t block_size = 0;
     cs_lnum_t n_edges = 0;
     cs_block_dist_info_t bi;
-    cs_part_to_block_t *d = NULL;
+    cs_part_to_block_t *d = nullptr;
 
     io_num = fvm_io_num_create_from_sfc(mq->cell_cen,
                                         3,
@@ -226,7 +226,7 @@ _cs_post_write_sfc_parall(fvm_writer_t  *writer)
                                 mq->cell_cen,
                                 coords);
 
-    cell_gnum = NULL;
+    cell_gnum = nullptr;
     fvm_io_num_destroy(io_num);
 
     cs_part_to_block_destroy(&d);
@@ -268,13 +268,13 @@ _cs_post_write_sfc_parall(fvm_writer_t  *writer)
     fvm_nodal_append_by_transfer(nm,
                                  n_edges,
                                  FVM_EDGE,
-                                 NULL,
-                                 NULL,
-                                 NULL,
+                                 nullptr,
+                                 nullptr,
+                                 nullptr,
                                  connect,
-                                 NULL);
+                                 nullptr);
 
-    connect = NULL;
+    connect = nullptr;
 
     fvm_nodal_set_shared_vertices(nm, coords);
 
@@ -338,9 +338,9 @@ _sfc_cell_select(void        *input,
   CS_UNUSED(input);
 
   *n_cells = 0;
-  *cell_ids = NULL;
+  *cell_ids = nullptr;
 
-  fvm_writer_t *w = NULL;
+  fvm_writer_t *w = nullptr;
 
   /* Create default writer */
 
@@ -388,7 +388,7 @@ cs_user_postprocess_meshes(void)
     cs_post_define_volume_mesh_by_func(1,               /* mesh id */
                                        "SFC",
                                        _sfc_cell_select,
-                                       NULL,            /* _sfc_cell_select_input */
+                                       nullptr,            /* _sfc_cell_select_input */
                                        false,           /* time varying */
                                        false,           /* add_groups */
                                        false,           /* auto_variables */

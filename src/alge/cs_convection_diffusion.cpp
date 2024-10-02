@@ -151,7 +151,7 @@ _calc_heq(cs_real_t h1,
  *   denom_sup   --> computed denominator for the upper bound
  *
  * return:
- *   pointer to local values array, or NULL;
+ *   pointer to local values array, or nullptr;
  *----------------------------------------------------------------------------*/
 
 static void
@@ -199,10 +199,10 @@ _beta_limiter_denom(cs_field_t                 *f,
     cs_field_by_id(cs_field_get_key_int(f, kbmasf))->val;
 
   const cs_real_t *hybrid_blend;
-  if (CS_F_(hybrid_blend) != NULL)
+  if (CS_F_(hybrid_blend) != nullptr)
     hybrid_blend = CS_F_(hybrid_blend)->val;
   else
-    hybrid_blend = NULL;
+    hybrid_blend = nullptr;
 
   /* select halo type according to field gradient method */
 
@@ -218,9 +218,9 @@ _beta_limiter_denom(cs_field_t                 *f,
   const int key_lim_choice = cs_field_key_id("limiter_choice");
   cs_nvd_type_t limiter_choice = CS_NVD_N_TYPES;
 
-  cs_real_t *local_min = NULL;
-  cs_real_t *local_max = NULL;
-  cs_real_t *courant = NULL;
+  cs_real_t *local_min = nullptr;
+  cs_real_t *local_max = nullptr;
+  cs_real_t *courant = nullptr;
 
   if (ischcp == 4) {
     /* get limiter choice */
@@ -241,7 +241,7 @@ _beta_limiter_denom(cs_field_t                 *f,
     }
   }
 
-  cs_real_t *df_limiter = NULL;
+  cs_real_t *df_limiter = nullptr;
   int df_limiter_id =
     cs_field_get_key_int(f, cs_field_key_id("diffusion_limiter_id"));
   if (df_limiter_id > -1)
@@ -337,7 +337,7 @@ _beta_limiter_denom(cs_field_t                 *f,
 
     cs_real_t bldfrp = (cs_real_t) ircflp;
     /* Local limitation of the reconstruction */
-    if (df_limiter != NULL && ircflp > 0)
+    if (df_limiter != nullptr && ircflp > 0)
       bldfrp = cs_math_fmax(cs_math_fmin(df_limiter[ii], df_limiter[jj]), 0.);
 
     if (ischcp == 4) {
@@ -353,7 +353,7 @@ _beta_limiter_denom(cs_field_t                 *f,
                                 &id); /* downwind cell id */
 
       cs_real_t courant_c = -1.;
-      if (courant != NULL)
+      if (courant != nullptr)
         courant_c = courant[ic];
 
       cs_i_cd_unsteady_nvd(limiter_choice,
@@ -1372,7 +1372,7 @@ _slope_test_gradient_strided
 
   /* Handle parallelism and periodicity */
 
-  if (m->halo != NULL)
+  if (m->halo != nullptr)
     _sync_strided_gradient_halo<stride>(m,
                                         use_gpu,
                                         halo_type,
@@ -1432,7 +1432,7 @@ _slope_test_gradient_strided
  *                               at interior faces for the r.h.s.
  * \param[in]     b_visc        \f$ \mu_\fib \dfrac{S_\fib}{\ipf \centf} \f$
  *                               at border faces for the r.h.s.
- * \param[in]     xcpp          array of specific heat (\f$ C_p \f$), or NULL
+ * \param[in]     xcpp          array of specific heat (\f$ C_p \f$), or nullptr
  * \param[in,out] rhs           right hand side \f$ \vect{Rhs} \f$
  */
 /*----------------------------------------------------------------------------*/
@@ -1525,26 +1525,26 @@ _convection_diffusion_scalar_steady(const cs_field_t           *f,
   /* Default value for cp */
   cs_real_t cpi = 1.0, cpj = 1.0;
 
-  cs_real_t *coface = NULL, *cofbce = NULL;
+  cs_real_t *coface = nullptr, *cofbce = nullptr;
 
   cs_real_3_t *grad;
-  cs_real_3_t *gradup = NULL;
-  cs_real_3_t *gradst = NULL;
+  cs_real_3_t *gradup = nullptr;
+  cs_real_3_t *gradst = nullptr;
 
-  cs_real_t *df_limiter = NULL;
+  cs_real_t *df_limiter = nullptr;
 
-  cs_real_t *gweight = NULL;
+  cs_real_t *gweight = nullptr;
 
   cs_real_t  *v_slope_test = cs_get_v_slope_test(f_id,  eqp);
 
   /* Internal coupling variables */
-  cs_real_t *pvar_local = NULL;
-  cs_real_t *pvar_distant = NULL;
-  cs_real_t *df_limiter_local = NULL;
+  cs_real_t *pvar_local = nullptr;
+  cs_real_t *pvar_distant = nullptr;
+  cs_real_t *df_limiter_local = nullptr;
   int coupling_id = -1;
   cs_lnum_t n_local = 0, n_distant = 0;
-  const cs_lnum_t *faces_local = NULL, *faces_distant = NULL;
-  cs_internal_coupling_t *cpl = NULL;
+  const cs_lnum_t *faces_local = nullptr, *faces_distant = nullptr;
+  cs_internal_coupling_t *cpl = nullptr;
 
   /* Initialization */
 
@@ -1564,12 +1564,12 @@ _convection_diffusion_scalar_steady(const cs_field_t           *f,
   /* Handle cases where only the previous values (already synchronized)
      or current values are provided */
 
-  if (pvar != NULL)
+  if (pvar != nullptr)
     cs_sync_scalar_halo(m, halo_type, pvar);
-  if (pvara == NULL)
+  if (pvara == nullptr)
     pvara = (const cs_real_t *)pvar;
 
-  const cs_real_t  *restrict _pvar = (pvar != NULL) ? pvar : pvara;
+  const cs_real_t  *restrict _pvar = (pvar != nullptr) ? pvar : pvara;
 
   /* Limiters */
 
@@ -1635,8 +1635,8 @@ _convection_diffusion_scalar_steady(const cs_field_t           *f,
   */
 
   bool is_ischcp
-    = (   (xcpp != NULL && ischcp == 0)
-       || (xcpp == NULL && (ischcp == 0 || ischcp == 3 || ischcp == 4)));
+    = (   (xcpp != nullptr && ischcp == 0)
+       || (xcpp == nullptr && (ischcp == 0 || ischcp == 3 || ischcp == 4)));
 
   if (   (idiffp != 0 && ircflp == 1)
       || (   iconvp != 0 && iupwin == 0
@@ -1669,7 +1669,7 @@ _convection_diffusion_scalar_steady(const cs_field_t           *f,
                                     imligp,
                                     epsrgp,
                                     climgp,
-                                    NULL, /* f_ext exterior force */
+                                    nullptr, /* f_ext exterior force */
                                     bc_coeffs,
                                     _pvar,
                                     gweight, /* Weighted gradient */
@@ -1716,7 +1716,7 @@ _convection_diffusion_scalar_steady(const cs_field_t           *f,
     }
 
     /* Pure SOLU scheme */
-    if (ischcp == 2 || (xcpp != NULL && ischcp == 4)) {
+    if (ischcp == 2 || (xcpp != nullptr && ischcp == 4)) {
 
       BFT_MALLOC(gradup, n_cells_ext, cs_real_3_t);
 
@@ -1769,7 +1769,7 @@ _convection_diffusion_scalar_steady(const cs_field_t           *f,
           cs_lnum_t ii = i_face_cells[face_id][0];
           cs_lnum_t jj = i_face_cells[face_id][1];
 
-          if (xcpp != NULL) {
+          if (xcpp != nullptr) {
             cpi = xcpp[ii];
             cpj = xcpp[jj];
           }
@@ -1786,7 +1786,7 @@ _convection_diffusion_scalar_steady(const cs_field_t           *f,
 
           cs_real_t bldfrp = (cs_real_t) ircflp;
           /* Local limitation of the reconstruction */
-          if (df_limiter != NULL && ircflp > 0)
+          if (df_limiter != nullptr && ircflp > 0)
             bldfrp = cs_math_fmax(cs_math_fmin(df_limiter[ii], df_limiter[jj]), 0.);
 
           cs_i_cd_steady_upwind(bldfrp,
@@ -1859,7 +1859,7 @@ _convection_diffusion_scalar_steady(const cs_field_t           *f,
           cs_lnum_t ii = i_face_cells[face_id][0];
           cs_lnum_t jj = i_face_cells[face_id][1];
 
-          if (xcpp != NULL) {
+          if (xcpp != nullptr) {
             cpi = xcpp[ii];
             cpj = xcpp[jj];
           }
@@ -1871,7 +1871,7 @@ _convection_diffusion_scalar_steady(const cs_field_t           *f,
 
           cs_real_t bldfrp = (cs_real_t) ircflp;
           /* Local limitation of the reconstruction */
-          if (df_limiter != NULL && ircflp > 0)
+          if (df_limiter != nullptr && ircflp > 0)
             bldfrp = cs_math_fmax(cs_math_fmin(df_limiter[ii],
                                                df_limiter[jj]), 0.);
 
@@ -1953,7 +1953,7 @@ _convection_diffusion_scalar_steady(const cs_field_t           *f,
           cs_lnum_t ii = i_face_cells[face_id][0];
           cs_lnum_t jj = i_face_cells[face_id][1];
 
-          if (xcpp != NULL) {
+          if (xcpp != nullptr) {
             cpi = xcpp[ii];
             cpj = xcpp[jj];
           }
@@ -1966,7 +1966,7 @@ _convection_diffusion_scalar_steady(const cs_field_t           *f,
 
           cs_real_t bldfrp = (cs_real_t) ircflp;
           /* Local limitation of the reconstruction */
-          if (df_limiter != NULL && ircflp > 0)
+          if (df_limiter != nullptr && ircflp > 0)
             bldfrp = cs_math_fmax(cs_math_fmin(df_limiter[ii], df_limiter[jj]),
                                   0.);
 
@@ -2033,7 +2033,7 @@ _convection_diffusion_scalar_steady(const cs_field_t           *f,
             /* in parallel, face will be counted by one and only one rank */
             if (ii < n_cells)
               n_upwind++;
-            if (v_slope_test != NULL) {
+            if (v_slope_test != nullptr) {
               v_slope_test[ii] += std::abs(i_massflux[face_id]) / cell_vol[ii];
               v_slope_test[jj] += std::abs(i_massflux[face_id]) / cell_vol[jj];
             }
@@ -2064,7 +2064,7 @@ _convection_diffusion_scalar_steady(const cs_field_t           *f,
     ======================================================================*/
 
   /* Boundary convective flux are all computed with an upwind scheme */
-  if (icvflb == false || xcpp != NULL) {
+  if (icvflb == false || xcpp != nullptr) {
 
 #     pragma omp parallel for if(m->n_b_faces > CS_THR_MIN)
     for (int t_id = 0; t_id < n_b_threads; t_id++) {
@@ -2074,7 +2074,7 @@ _convection_diffusion_scalar_steady(const cs_field_t           *f,
 
         cs_lnum_t ii = b_face_cells[face_id];
 
-        if (xcpp != NULL)
+        if (xcpp != nullptr)
           cpi = xcpp[ii];
 
         cs_real_t fluxi = 0.;
@@ -2082,7 +2082,7 @@ _convection_diffusion_scalar_steady(const cs_field_t           *f,
 
         cs_real_t bldfrp = (cs_real_t) ircflp;
         /* Local limitation of the reconstruction */
-        if (df_limiter != NULL && ircflp > 0)
+        if (df_limiter != nullptr && ircflp > 0)
           bldfrp = cs_math_fmax(df_limiter[ii], 0.);
 
         cs_b_cd_steady(bldfrp,
@@ -2135,7 +2135,7 @@ _convection_diffusion_scalar_steady(const cs_field_t           *f,
 
         cs_real_t bldfrp = (cs_real_t) ircflp;
         /* Local limitation of the reconstruction */
-        if (df_limiter != NULL && ircflp > 0)
+        if (df_limiter != nullptr && ircflp > 0)
           bldfrp = cs_math_fmax(df_limiter[jj], 0.);
 
         cs_b_cd_steady(bldfrp,
@@ -2157,7 +2157,7 @@ _convection_diffusion_scalar_steady(const cs_field_t           *f,
                                         pvar_local);
 
       /* Exchange diffusion limiter */
-      if (df_limiter != NULL) {
+      if (df_limiter != nullptr) {
         BFT_MALLOC(df_limiter_local, n_local, cs_real_t);
         cs_internal_coupling_exchange_var(cpl,
                                           1, /* Dimension */
@@ -2166,7 +2166,7 @@ _convection_diffusion_scalar_steady(const cs_field_t           *f,
       }
 
       /* Flux contribution */
-      assert(f != NULL);
+      assert(f != nullptr);
       cs_real_t *hintp = f->bc_coeffs->hint;
       cs_real_t *hextp = f->bc_coeffs->rcodcl2;
       for (cs_lnum_t ii = 0; ii < n_local; ii++) {
@@ -2178,7 +2178,7 @@ _convection_diffusion_scalar_steady(const cs_field_t           *f,
 
         cs_real_t bldfrp = (cs_real_t) ircflp;
         /* Local limitation of the reconstruction */
-        if (df_limiter != NULL && ircflp > 0)
+        if (df_limiter != nullptr && ircflp > 0)
           bldfrp = cs_math_fmax(cs_math_fmin(df_limiter_local[ii],
                                              df_limiter[jj]),
                                 0.);
@@ -2210,14 +2210,14 @@ _convection_diffusion_scalar_steady(const cs_field_t           *f,
       BFT_FREE(pvar_local);
       /* Sending structures are no longer needed */
       BFT_FREE(pvar_distant);
-      if (df_limiter != NULL)
+      if (df_limiter != nullptr)
         BFT_FREE(df_limiter_local);
     }
 
     /* Boundary convective flux is imposed at some faces
        (tagged in icvfli array) */
   }
-  else if (icvflb && xcpp == NULL) {
+  else if (icvflb && xcpp == nullptr) {
 
     /* Retrieve the value of the convective flux to be imposed */
     if (f_id != -1) {
@@ -2242,7 +2242,7 @@ _convection_diffusion_scalar_steady(const cs_field_t           *f,
 
         cs_real_t bldfrp = (cs_real_t) ircflp;
         /* Local limitation of the reconstruction */
-        if (df_limiter != NULL && ircflp > 0)
+        if (df_limiter != nullptr && ircflp > 0)
           bldfrp = cs_math_fmax(df_limiter[ii], 0.);
 
         cs_b_cd_steady(bldfrp,
@@ -2304,7 +2304,7 @@ _convection_diffusion_scalar_steady(const cs_field_t           *f,
  * C_\ij = \dot{m}_\ij \left( \varia_\fij - \varia_\celli \right)
  * \f]
  *
- * \param[in]     f_id          pointer to field id, or NULL
+ * \param[in]     f_id          pointer to field id, or nullptr
  * \param[in]     eqp           equation parameters
  * \param[in]     icvflb        global indicator of boundary convection flux
  *                               - 0 upwind scheme at all boundary faces
@@ -2404,19 +2404,19 @@ _face_convection_scalar_steady(const cs_field_t           *f,
 
   int w_stride = 1;
 
-  cs_real_t *coface = NULL, *cofbce = NULL;
+  cs_real_t *coface = nullptr, *cofbce = nullptr;
 
   cs_real_3_t *grad;
-  cs_real_3_t *gradup = NULL;
-  cs_real_3_t *gradst = NULL;
+  cs_real_3_t *gradup = nullptr;
+  cs_real_3_t *gradst = nullptr;
 
-  cs_real_t *local_min = NULL;
-  cs_real_t *local_max = NULL;
-  cs_real_t *courant = NULL;
+  cs_real_t *local_min = nullptr;
+  cs_real_t *local_max = nullptr;
+  cs_real_t *courant = nullptr;
 
-  cs_real_t *df_limiter = NULL;
+  cs_real_t *df_limiter = nullptr;
 
-  cs_real_t *gweight = NULL;
+  cs_real_t *gweight = nullptr;
 
   const int key_lim_choice = cs_field_key_id("limiter_choice");
 
@@ -2424,7 +2424,7 @@ _face_convection_scalar_steady(const cs_field_t           *f,
 
   /* Internal coupling variables */
   int coupling_id;
-  cs_internal_coupling_t *cpl = NULL;
+  cs_internal_coupling_t *cpl = nullptr;
 
   /* Allocate work arrays */
 
@@ -2442,12 +2442,12 @@ _face_convection_scalar_steady(const cs_field_t           *f,
   /* Handle cases where only the previous values (already synchronized)
      or current values are provided */
 
-  if (pvar != NULL)
+  if (pvar != nullptr)
     cs_sync_scalar_halo(m, halo_type, pvar);
-  if (pvara == NULL)
+  if (pvara == nullptr)
     pvara = (const cs_real_t *)pvar;
 
-  const cs_real_t  *restrict _pvar = (pvar != NULL) ? pvar : pvara;
+  const cs_real_t  *restrict _pvar = (pvar != nullptr) ? pvar : pvara;
 
   /* Slope limiters */
 
@@ -2551,7 +2551,7 @@ _face_convection_scalar_steady(const cs_field_t           *f,
                                     imligp,
                                     epsrgp,
                                     climgp,
-                                    NULL, /* f_ext exterior force */
+                                    nullptr, /* f_ext exterior force */
                                     bc_coeffs,
                                     _pvar,
                                     gweight, /* Weighted gradient */
@@ -2654,7 +2654,7 @@ _face_convection_scalar_steady(const cs_field_t           *f,
 
           cs_real_t bldfrp = (cs_real_t) ircflp;
           /* Local limitation of the reconstruction */
-          if (df_limiter != NULL && ircflp > 0)
+          if (df_limiter != nullptr && ircflp > 0)
             bldfrp = cs_math_fmax(cs_math_fmin(df_limiter[ii], df_limiter[jj]), 0.);
 
           cs_i_cd_steady_upwind(bldfrp,
@@ -2719,7 +2719,7 @@ _face_convection_scalar_steady(const cs_field_t           *f,
 
             cs_real_t bldfrp = (cs_real_t) ircflp;
             /* Local limitation of the reconstruction */
-            if (df_limiter != NULL && ircflp > 0)
+            if (df_limiter != nullptr && ircflp > 0)
               bldfrp = cs_math_fmax(cs_math_fmin(df_limiter[ii], df_limiter[jj]),
                                     0.);
 
@@ -2795,7 +2795,7 @@ _face_convection_scalar_steady(const cs_field_t           *f,
 
           cs_real_t bldfrp = (cs_real_t) ircflp;
           /* Local limitation of the reconstruction */
-          if (df_limiter != NULL && ircflp > 0)
+          if (df_limiter != nullptr && ircflp > 0)
             bldfrp = cs_math_fmax(cs_math_fmin(df_limiter[ii], df_limiter[jj]),
                                   0.);
 
@@ -2853,7 +2853,7 @@ _face_convection_scalar_steady(const cs_field_t           *f,
             /* in parallel, face will be counted by one and only one rank */
             if (ii < n_cells)
               n_upwind++;
-            if (v_slope_test != NULL) {
+            if (v_slope_test != nullptr) {
               v_slope_test[ii] += std::abs(i_massflux[face_id]) / cell_vol[ii];
               v_slope_test[jj] += std::abs(i_massflux[face_id]) / cell_vol[jj];
             }
@@ -2895,7 +2895,7 @@ _face_convection_scalar_steady(const cs_field_t           *f,
 
         cs_real_t bldfrp = (cs_real_t) ircflp;
         /* Local limitation of the reconstruction */
-        if (df_limiter != NULL && ircflp > 0)
+        if (df_limiter != nullptr && ircflp > 0)
           bldfrp = cs_math_fmax(df_limiter[ii], 0.);
 
         cs_b_cd_steady(bldfrp,
@@ -2951,7 +2951,7 @@ _face_convection_scalar_steady(const cs_field_t           *f,
 
         cs_real_t bldfrp = (cs_real_t) ircflp;
         /* Local limitation of the reconstruction */
-        if (df_limiter != NULL && ircflp > 0)
+        if (df_limiter != nullptr && ircflp > 0)
           bldfrp = cs_math_fmax(df_limiter[ii], 0.);
 
         cs_b_cd_steady(bldfrp,
@@ -3035,7 +3035,7 @@ _face_convection_scalar_steady(const cs_field_t           *f,
  *                               at interior faces for the r.h.s.
  * \param[in]     b_visc        \f$ \mu_\fib \dfrac{S_\fib}{\ipf \centf} \f$
  *                               at border faces for the r.h.s.
- * \param[in]     xcpp          array of specific heat (\f$ C_p \f$), or NULL
+ * \param[in]     xcpp          array of specific heat (\f$ C_p \f$), or nullptr
  * \param[in,out] rhs           right hand side \f$ \vect{Rhs} \f$
  */
 /*----------------------------------------------------------------------------*/
@@ -3124,33 +3124,33 @@ _convection_diffusion_scalar_unsteady
   int w_stride = 1;
 
   bool pure_upwind = (blencp > 0.) ? false : true;
-  cs_real_t *coface = NULL, *cofbce = NULL;
+  cs_real_t *coface = nullptr, *cofbce = nullptr;
 
   cs_real_3_t *grad;
-  cs_real_3_t *gradup = NULL;
-  cs_real_3_t *gradst = NULL;
+  cs_real_3_t *gradup = nullptr;
+  cs_real_3_t *gradst = nullptr;
 
-  cs_real_t *local_min = NULL;
-  cs_real_t *local_max = NULL;
-  cs_real_t *courant = NULL;
+  cs_real_t *local_min = nullptr;
+  cs_real_t *local_max = nullptr;
+  cs_real_t *courant = nullptr;
 
-  cs_real_t *cv_limiter = NULL;
-  cs_real_t *df_limiter = NULL;
+  cs_real_t *cv_limiter = nullptr;
+  cs_real_t *df_limiter = nullptr;
 
-  cs_real_t *gweight = NULL;
+  cs_real_t *gweight = nullptr;
 
   const int key_lim_choice = cs_field_key_id("limiter_choice");
 
   cs_real_t  *v_slope_test = cs_get_v_slope_test(f_id,  eqp);
 
   /* Internal coupling variables */
-  cs_real_t *pvar_local = NULL;
-  cs_real_t *pvar_distant = NULL;
-  cs_real_t *df_limiter_local = NULL;
+  cs_real_t *pvar_local = nullptr;
+  cs_real_t *pvar_distant = nullptr;
+  cs_real_t *df_limiter_local = nullptr;
   int coupling_id = -1;
   cs_lnum_t n_local = 0, n_distant = 0;
-  const cs_lnum_t *faces_local = NULL, *faces_distant = NULL;
-  cs_internal_coupling_t *cpl = NULL;
+  const cs_lnum_t *faces_local = nullptr, *faces_distant = nullptr;
+  cs_internal_coupling_t *cpl = nullptr;
 
   /* Initialization */
 
@@ -3170,16 +3170,16 @@ _convection_diffusion_scalar_unsteady
   /* Handle cases where only the previous values (already synchronized)
      or current values are provided */
 
-  if (pvar != NULL)
+  if (pvar != nullptr)
     cs_sync_scalar_halo(m, halo_type, pvar);
-  if (pvara == NULL)
+  if (pvara == nullptr)
     pvara = (const cs_real_t *)pvar;
 
-  const cs_real_t  *restrict _pvar = (pvar != NULL) ? pvar : pvara;
+  const cs_real_t  *restrict _pvar = (pvar != nullptr) ? pvar : pvara;
 
   /* Limiters */
 
-  if (f != NULL) {
+  if (f != nullptr) {
 
     /* NVD/TVD limiters */
     if (ischcp == 4) {
@@ -3268,7 +3268,7 @@ _convection_diffusion_scalar_unsteady
       || (   iconvp != 0 && pure_upwind == false
           && (ircflp == 1 || isstpp == 0 || is_ischcp))) {
 
-    if (f != NULL) {
+    if (f != nullptr) {
       /* Get the calculation option from the field */
       if (f->type & CS_FIELD_VARIABLE && eqp.iwgrec == 1) {
         if (eqp.idiff > 0) {
@@ -3295,7 +3295,7 @@ _convection_diffusion_scalar_unsteady
                                     imligp,
                                     epsrgp,
                                     climgp,
-                                    NULL, /* f_ext exterior force */
+                                    nullptr, /* f_ext exterior force */
                                     bc_coeffs,
                                     _pvar,
                                     gweight, /* Weighted gradient */
@@ -3404,7 +3404,7 @@ _convection_diffusion_scalar_unsteady
       if (ircflp == 1) {
         cs_real_t bldfrp = 1.;
         /* Local limitation of the reconstruction */
-        if (df_limiter != NULL && ircflp > 0)
+        if (df_limiter != nullptr && ircflp > 0)
           bldfrp = cs_math_fmax(cs_math_fmin(df_limiter[ii], df_limiter[jj]),
                                 0.);
 
@@ -3463,7 +3463,7 @@ _convection_diffusion_scalar_unsteady
     }
 
     const cs_real_t *hybrid_blend = nullptr;
-    if (CS_F_(hybrid_blend) != NULL)
+    if (CS_F_(hybrid_blend) != nullptr)
       hybrid_blend = CS_F_(hybrid_blend)->val;
 
     ctx.parallel_for_i_faces(m, [=] CS_F_HOST_DEVICE (cs_lnum_t  face_id) {
@@ -3498,7 +3498,7 @@ _convection_diffusion_scalar_unsteady
 
       if (ircflp == 1) {
         cs_real_t bldfrp = 1.;
-        if (df_limiter != NULL)  /* Local limiter of the reconstruction */
+        if (df_limiter != nullptr)  /* Local limiter of the reconstruction */
           bldfrp = cs_math_fmax(cs_math_fmin(df_limiter[ii], df_limiter[jj]),
                                 0.);
 
@@ -3618,7 +3618,7 @@ _convection_diffusion_scalar_unsteady
         }
 
         cs_real_t courant_c = -1.;
-        if (courant != NULL && is_thermal == false)
+        if (courant != nullptr && is_thermal == false)
           courant_c = courant[ic];
 
         cs_i_cd_unsteady_nvd(limiter_choice,
@@ -3697,7 +3697,7 @@ _convection_diffusion_scalar_unsteady
 
       if (ircflp == 1) {
         cs_real_t bldfrp = 1.;
-        if (df_limiter != NULL)  /* Local limiter */
+        if (df_limiter != nullptr)  /* Local limiter */
           bldfrp = cs_math_fmax(cs_math_fmin(df_limiter[ii], df_limiter[jj]),
                                 0.);
 
@@ -3828,7 +3828,7 @@ _convection_diffusion_scalar_unsteady
         if (i_upwind != nullptr && ii < n_cells)
           i_upwind[face_id] = 1;
 
-        if (v_slope_test != NULL) {
+        if (v_slope_test != nullptr) {
           cs_dispatch_sum(&v_slope_test[ii],
                           cs_math_fabs(i_massflux[face_id]) / cell_vol[ii],
                           i_sum_type);
@@ -3892,7 +3892,7 @@ _convection_diffusion_scalar_unsteady
 
       cs_real_t bldfrp = (cs_real_t) ircflp;
       /* Local limitation of the reconstruction */
-      if (df_limiter != NULL && ircflp > 0)
+      if (df_limiter != nullptr && ircflp > 0)
         bldfrp = cs_math_fmax(df_limiter[ii], 0.);
 
       cs_b_cd_unsteady(bldfrp,
@@ -3941,7 +3941,7 @@ _convection_diffusion_scalar_unsteady
 
         cs_real_t bldfrp = (cs_real_t) ircflp;
         /* Local limitation of the reconstruction */
-        if (df_limiter != NULL && ircflp > 0)
+        if (df_limiter != nullptr && ircflp > 0)
           bldfrp = cs_math_fmax(df_limiter[jj], 0.);
 
         cs_b_cd_unsteady(bldfrp,
@@ -3960,7 +3960,7 @@ _convection_diffusion_scalar_unsteady
                                         pvar_local);
 
       /* Exchange diffusion limiter */
-      if (df_limiter != NULL) {
+      if (df_limiter != nullptr) {
         CS_MALLOC_HD(df_limiter_local, n_local, cs_real_t, cs_alloc_mode);
         cs_internal_coupling_exchange_var(cpl,
                                           1, /* Dimension */
@@ -3969,7 +3969,7 @@ _convection_diffusion_scalar_unsteady
       }
 
       /* Flux contribution */
-      assert(f != NULL);
+      assert(f != nullptr);
       cs_real_t *hintp = f->bc_coeffs->hint;
       cs_real_t *hextp = f->bc_coeffs->rcodcl2;
       for (cs_lnum_t ii = 0; ii < n_local; ii++) {
@@ -3981,7 +3981,7 @@ _convection_diffusion_scalar_unsteady
 
         cs_real_t bldfrp = (cs_real_t) ircflp;
         /* Local limitation of the reconstruction */
-        if (df_limiter != NULL && ircflp > 0)
+        if (df_limiter != nullptr && ircflp > 0)
           bldfrp = cs_math_fmax(cs_math_fmin(df_limiter_local[ii],
                                              df_limiter[jj]),
                                 0.);
@@ -4010,7 +4010,7 @@ _convection_diffusion_scalar_unsteady
       CS_FREE_HD(pvar_local);
       /* Sending structures are no longer needed */
       CS_FREE_HD(pvar_distant);
-      if (df_limiter != NULL)
+      if (df_limiter != nullptr)
         CS_FREE_HD(df_limiter_local);
     }
   }
@@ -4038,7 +4038,7 @@ _convection_diffusion_scalar_unsteady
 
       cs_real_t bldfrp = (cs_real_t) ircflp;
       /* Local limitation of the reconstruction */
-      if (df_limiter != NULL && ircflp > 0)
+      if (df_limiter != nullptr && ircflp > 0)
         bldfrp = cs_math_fmax(df_limiter[ii], 0.);
 
       cs_b_cd_unsteady(bldfrp,
@@ -4101,7 +4101,7 @@ _convection_diffusion_scalar_unsteady
  * C_\ij = \dot{m}_\ij \left( \varia_\fij - \varia_\celli \right)
  * \f]
  *
- * \param[in]     f_id          pointer to field, or NULL
+ * \param[in]     f_id          pointer to field, or nullptr
  * \param[in]     eqp           equation parameters
  * \param[in]     icvflb        global indicator of boundary convection flux
  *                               - 0 upwind scheme at all boundary faces
@@ -4198,20 +4198,20 @@ _face_convection_scalar_unsteady(const cs_field_t           *f,
 
   int w_stride = 1;
 
-  cs_real_t *coface = NULL, *cofbce = NULL;
+  cs_real_t *coface = nullptr, *cofbce = nullptr;
 
   cs_real_3_t *grad;
-  cs_real_3_t *gradup = NULL;
-  cs_real_3_t *gradst = NULL;
+  cs_real_3_t *gradup = nullptr;
+  cs_real_3_t *gradst = nullptr;
 
-  cs_real_t *local_min = NULL;
-  cs_real_t *local_max = NULL;
-  cs_real_t *courant = NULL;
+  cs_real_t *local_min = nullptr;
+  cs_real_t *local_max = nullptr;
+  cs_real_t *courant = nullptr;
 
-  cs_real_t *cv_limiter = NULL;
-  cs_real_t *df_limiter = NULL;
+  cs_real_t *cv_limiter = nullptr;
+  cs_real_t *df_limiter = nullptr;
 
-  cs_real_t *gweight = NULL;
+  cs_real_t *gweight = nullptr;
 
   const int key_lim_choice = cs_field_key_id("limiter_choice");
 
@@ -4219,7 +4219,7 @@ _face_convection_scalar_unsteady(const cs_field_t           *f,
 
   /* Internal coupling variables */
   int coupling_id;
-  cs_internal_coupling_t *cpl = NULL;
+  cs_internal_coupling_t *cpl = nullptr;
 
   /* Allocate work arrays */
 
@@ -4237,12 +4237,12 @@ _face_convection_scalar_unsteady(const cs_field_t           *f,
   /* Handle cases where only the previous values (already synchronized)
      or current values are provided */
 
-  if (pvar != NULL)
+  if (pvar != nullptr)
     cs_sync_scalar_halo(m, halo_type, pvar);
-  if (pvara == NULL)
+  if (pvara == nullptr)
     pvara = (const cs_real_t *)pvar;
 
-  const cs_real_t  *restrict _pvar = (pvar != NULL) ? pvar : pvara;
+  const cs_real_t  *restrict _pvar = (pvar != nullptr) ? pvar : pvara;
 
   /* Slope limiters */
 
@@ -4350,7 +4350,7 @@ _face_convection_scalar_unsteady(const cs_field_t           *f,
                                     imligp,
                                     epsrgp,
                                     climgp,
-                                    NULL, /* f_ext exterior force */
+                                    nullptr, /* f_ext exterior force */
                                     bc_coeffs,
                                     _pvar,
                                     gweight, /* Weighted gradient */
@@ -4450,7 +4450,7 @@ _face_convection_scalar_unsteady(const cs_field_t           *f,
       if (ircflp == 1) {
         cs_real_t bldfrp = 1.;
         /* Local limitation of the reconstruction */
-        if (df_limiter != NULL)
+        if (df_limiter != nullptr)
           bldfrp = cs_math_fmax(cs_math_fmin(df_limiter[ii], df_limiter[jj]),
                                 0.);
 
@@ -4499,7 +4499,7 @@ _face_convection_scalar_unsteady(const cs_field_t           *f,
     }
 
     const cs_real_t *hybrid_blend = nullptr;
-    if (CS_F_(hybrid_blend) != NULL)
+    if (CS_F_(hybrid_blend) != nullptr)
       hybrid_blend = CS_F_(hybrid_blend)->val;
 
     ctx.parallel_for_i_faces(m, [=] CS_F_HOST_DEVICE (cs_lnum_t  face_id) {
@@ -4520,7 +4520,7 @@ _face_convection_scalar_unsteady(const cs_field_t           *f,
 
       if (ircflp == 1) {
         cs_real_t bldfrp = 1.;
-        if (df_limiter != NULL)  /* Local limiter of the reconstruction */
+        if (df_limiter != nullptr)  /* Local limiter of the reconstruction */
           bldfrp = cs_math_fmax(cs_math_fmin(df_limiter[ii], df_limiter[jj]),
                                 0.);
 
@@ -4640,7 +4640,7 @@ _face_convection_scalar_unsteady(const cs_field_t           *f,
         }
 
         cs_real_t courant_c = -1.;
-        if (courant != NULL)
+        if (courant != nullptr)
           courant_c = courant[ic];
 
         cs_i_cd_unsteady_nvd(limiter_choice,
@@ -4700,7 +4700,7 @@ _face_convection_scalar_unsteady(const cs_field_t           *f,
 
       if (ircflp == 1) {
         cs_real_t bldfrp = 1.;
-        if (df_limiter != NULL)  /* Local limiter */
+        if (df_limiter != nullptr)  /* Local limiter */
           bldfrp = cs_math_fmax(cs_math_fmin(df_limiter[ii], df_limiter[jj]),
                                 0.);
 
@@ -4823,7 +4823,7 @@ _face_convection_scalar_unsteady(const cs_field_t           *f,
         if (i_upwind != nullptr && ii < n_cells)
           i_upwind[face_id] = 1;
 
-        if (v_slope_test != NULL) {
+        if (v_slope_test != nullptr) {
           cs_dispatch_sum(&v_slope_test[ii],
                           cs_math_fabs(i_massflux[face_id]) / cell_vol[ii],
                           i_sum_type);
@@ -4873,7 +4873,7 @@ _face_convection_scalar_unsteady(const cs_field_t           *f,
 
       cs_real_t bldfrp = (cs_real_t) ircflp;
       /* Local limitation of the reconstruction */
-      if (df_limiter != NULL && ircflp > 0)
+      if (df_limiter != nullptr && ircflp > 0)
         bldfrp = cs_math_fmax(df_limiter[ii], 0.);
 
       cs_b_cd_unsteady(bldfrp,
@@ -4921,7 +4921,7 @@ _face_convection_scalar_unsteady(const cs_field_t           *f,
 
       cs_real_t bldfrp = (cs_real_t) ircflp;
       /* Local limitation of the reconstruction */
-      if (df_limiter != NULL && ircflp > 0)
+      if (df_limiter != nullptr && ircflp > 0)
         bldfrp = cs_math_fmax(df_limiter[ii], 0.);
 
       cs_b_cd_unsteady(bldfrp,
@@ -5082,11 +5082,11 @@ _convection_diffusion_vector_steady(cs_field_t                 *f,
     = (const cs_real_3_t *)fvq->diipb;
 
   const int *bc_type = cs_glob_bc_type;
-  cs_real_2_t *i_f_face_factor = NULL;
-  cs_real_t *b_f_face_factor = NULL;
+  cs_real_2_t *i_f_face_factor = nullptr;
+  cs_real_t *b_f_face_factor = nullptr;
 
   /* Flux limiter */
-  cs_real_t *df_limiter = NULL;
+  cs_real_t *df_limiter = nullptr;
   if (f != nullptr) {
     int df_limiter_id
       = cs_field_get_key_int(f, cs_field_key_id("diffusion_limiter_id"));
@@ -5100,14 +5100,14 @@ _convection_diffusion_vector_steady(cs_field_t                 *f,
     b_f_face_factor = fvq->b_f_face_factor;
   }
 
-  const cs_real_3_t *coface = NULL;
-  const cs_real_33_t *cofbce = NULL;
+  const cs_real_3_t *coface = nullptr;
+  const cs_real_33_t *cofbce = nullptr;
 
   /* Internal coupling variables */
-  cs_real_3_t *pvar_local = NULL;
-  cs_real_3_t *pvar_distant = NULL;
-  cs_real_t *df_limiter_local = NULL;
-  const cs_lnum_t *faces_local = NULL, *faces_distant = NULL;
+  cs_real_3_t *pvar_local = nullptr;
+  cs_real_3_t *pvar_distant = nullptr;
+  cs_real_t *df_limiter_local = nullptr;
+  const cs_lnum_t *faces_local = nullptr, *faces_distant = nullptr;
   cs_lnum_t n_local = 0, n_distant = 0;
 
   cs_dispatch_context ctx;
@@ -5131,7 +5131,7 @@ _convection_diffusion_vector_steady(cs_field_t                 *f,
                              &halo_type);
 
   const cs_real_3_t  *restrict _pvar
-    = (pvar != NULL) ? (const cs_real_3_t  *)pvar : pvara;
+    = (pvar != nullptr) ? (const cs_real_3_t  *)pvar : pvara;
 
   /* Slope limiters */
 
@@ -5238,7 +5238,7 @@ _convection_diffusion_vector_steady(cs_field_t                 *f,
           }
 
           /* Scaling due to mass balance in porous modelling */
-          if (i_f_face_factor != NULL) {
+          if (i_f_face_factor != nullptr) {
             const cs_real_t *n = i_face_u_normal[face_id];
             cs_math_3_normal_scaling(n, i_f_face_factor[face_id][0], _pi);
             cs_math_3_normal_scaling(n, i_f_face_factor[face_id][0], _pia);
@@ -5248,7 +5248,7 @@ _convection_diffusion_vector_steady(cs_field_t                 *f,
 
           cs_real_t bldfrp = (cs_real_t) ircflp;
           /* Local limitation of the reconstruction */
-          if (df_limiter != NULL && ircflp > 0)
+          if (df_limiter != nullptr && ircflp > 0)
             bldfrp = cs_math_fmax(cs_math_fmin(df_limiter[ii], df_limiter[jj]),
                                   0.);
 
@@ -5343,7 +5343,7 @@ _convection_diffusion_vector_steady(cs_field_t                 *f,
           }
 
           /* Scaling due to mass balance in porous modelling */
-          if (i_f_face_factor != NULL) {
+          if (i_f_face_factor != nullptr) {
             const cs_real_t *n = i_face_u_normal[face_id];
             cs_math_3_normal_scaling(n, i_f_face_factor[face_id][0], _pi);
             cs_math_3_normal_scaling(n, i_f_face_factor[face_id][0], _pia);
@@ -5353,7 +5353,7 @@ _convection_diffusion_vector_steady(cs_field_t                 *f,
 
           cs_real_t bldfrp = (cs_real_t) ircflp;
           /* Local limitation of the reconstruction */
-          if (df_limiter != NULL && ircflp > 0)
+          if (df_limiter != nullptr && ircflp > 0)
             bldfrp = cs_math_fmax(cs_math_fmin(df_limiter[ii], df_limiter[jj]),
                                   0.);
 
@@ -5454,7 +5454,7 @@ _convection_diffusion_vector_steady(cs_field_t                 *f,
           }
 
           /* Scaling due to mass balance in porous modelling */
-          if (i_f_face_factor != NULL) {
+          if (i_f_face_factor != nullptr) {
             const cs_real_t *n = i_face_u_normal[face_id];
             cs_math_3_normal_scaling(n, i_f_face_factor[face_id][0], _pi);
             cs_math_3_normal_scaling(n, i_f_face_factor[face_id][0], _pia);
@@ -5464,7 +5464,7 @@ _convection_diffusion_vector_steady(cs_field_t                 *f,
 
           cs_real_t bldfrp = (cs_real_t) ircflp;
           /* Local limitation of the reconstruction */
-          if (df_limiter != NULL && ircflp > 0)
+          if (df_limiter != nullptr && ircflp > 0)
             bldfrp = cs_math_fmax(cs_math_fmin(df_limiter[ii], df_limiter[jj]),
                                   0.);
 
@@ -5578,7 +5578,7 @@ _convection_diffusion_vector_steady(cs_field_t                 *f,
         }
 
         /* Scaling due to mass balance in porous modelling */
-        if (b_f_face_factor != NULL) {
+        if (b_f_face_factor != nullptr) {
           const cs_real_t *n = i_face_u_normal[face_id];
           cs_math_3_normal_scaling(n, b_f_face_factor[face_id], _pi);
           cs_math_3_normal_scaling(n, b_f_face_factor[face_id], _pia);
@@ -5586,7 +5586,7 @@ _convection_diffusion_vector_steady(cs_field_t                 *f,
 
         cs_real_t bldfrp = (cs_real_t) ircflp;
         /* Local limitation of the reconstruction */
-        if (df_limiter != NULL && ircflp > 0)
+        if (df_limiter != nullptr && ircflp > 0)
           bldfrp = cs_math_fmax(df_limiter[ii], 0.);
 
         cs_b_cd_steady_strided<3>(bldfrp,
@@ -5648,11 +5648,11 @@ _convection_diffusion_vector_steady(cs_field_t                 *f,
         /* Local limitation of the reconstruction */
         /* Note: to be treated exactly as a internal face, should be a bending
          * between the two cells... */
-        if (df_limiter != NULL && ircflp > 0)
+        if (df_limiter != nullptr && ircflp > 0)
           bldfrp = cs_math_fmax(df_limiter[jj], 0.);
 
         /* Scaling due to mass balance in porous modelling */
-        if (b_f_face_factor != NULL) {
+        if (b_f_face_factor != nullptr) {
           const cs_real_t *n = b_face_u_normal[face_id];
           cs_math_3_normal_scaling(n, b_f_face_factor[face_id], _pj);
         }
@@ -5677,7 +5677,7 @@ _convection_diffusion_vector_steady(cs_field_t                 *f,
                                         (cs_real_t *)pvar_distant,
                                         (cs_real_t *)pvar_local);
 
-      if (df_limiter != NULL) {
+      if (df_limiter != nullptr) {
         BFT_MALLOC(df_limiter_local, n_local, cs_real_t);
         cs_internal_coupling_exchange_var(cpl,
                                           1, /* Dimension */
@@ -5686,7 +5686,7 @@ _convection_diffusion_vector_steady(cs_field_t                 *f,
       }
 
       /* Flux contribution */
-      assert(f != NULL);
+      assert(f != nullptr);
       cs_real_t *hintp = f->bc_coeffs->hint;
       cs_real_t *hextp = f->bc_coeffs->rcodcl2;
       for (cs_lnum_t ii = 0; ii < n_local; ii++) {
@@ -5703,14 +5703,14 @@ _convection_diffusion_vector_steady(cs_field_t                 *f,
         }
 
         /* Scaling due to mass balance in porous modelling */
-        if (b_f_face_factor != NULL) {
+        if (b_f_face_factor != nullptr) {
           const cs_real_t *n = b_face_u_normal[face_id];
           cs_math_3_normal_scaling(n, b_f_face_factor[face_id], _pj);
         }
 
         cs_real_t bldfrp = (cs_real_t) ircflp;
         /* Local limitation of the reconstruction */
-        if (df_limiter != NULL && ircflp > 0)
+        if (df_limiter != nullptr && ircflp > 0)
           bldfrp = cs_math_fmax(cs_math_fmin(df_limiter_local[ii],
                                              df_limiter[jj]),
                                 0.);
@@ -5744,7 +5744,7 @@ _convection_diffusion_vector_steady(cs_field_t                 *f,
       BFT_FREE(pvar_local);
       /* Sending structures are no longer needed */
       BFT_FREE(pvar_distant);
-      if (df_limiter != NULL) {
+      if (df_limiter != nullptr) {
         BFT_FREE(df_limiter_local);
       }
     }
@@ -5787,7 +5787,7 @@ _convection_diffusion_vector_steady(cs_field_t                 *f,
         }
 
         /* Scaling due to mass balance in porous modelling */
-        if (b_f_face_factor != NULL) {
+        if (b_f_face_factor != nullptr) {
           const cs_real_t *n = b_face_u_normal[face_id];
           cs_math_3_normal_scaling(n, b_f_face_factor[face_id], _pi);
           cs_math_3_normal_scaling(n, b_f_face_factor[face_id], _pia);
@@ -5795,7 +5795,7 @@ _convection_diffusion_vector_steady(cs_field_t                 *f,
 
         cs_real_t bldfrp = (cs_real_t) ircflp;
         /* Local limitation of the reconstruction */
-        if (df_limiter != NULL && ircflp > 0)
+        if (df_limiter != nullptr && ircflp > 0)
           bldfrp = cs_math_fmax(df_limiter[ii], 0.);
 
         cs_b_cd_steady_strided<3>(bldfrp,
@@ -5949,7 +5949,7 @@ _convection_diffusion_tensor_steady(cs_field_t                  *f,
   const int *bc_type = cs_glob_bc_type;
 
   /* Flux limiter */
-  cs_real_t *df_limiter = NULL;
+  cs_real_t *df_limiter = nullptr;
   if (f != nullptr) {
     int df_limiter_id
       = cs_field_get_key_int(f, cs_field_key_id("diffusion_limiter_id"));
@@ -5981,7 +5981,7 @@ _convection_diffusion_tensor_steady(cs_field_t                  *f,
      or current values are provided */
 
   const cs_real_6_t  *restrict _pvar
-    = (pvar != NULL) ? (const cs_real_6_t  *)pvar : pvara;
+    = (pvar != nullptr) ? (const cs_real_6_t  *)pvar : pvara;
 
   /* Logging info */
 
@@ -6061,7 +6061,7 @@ _convection_diffusion_tensor_steady(cs_field_t                  *f,
 
           cs_real_t bldfrp = (cs_real_t) ircflp;
           /* Local limitation of the reconstruction */
-          if (df_limiter != NULL && ircflp > 0)
+          if (df_limiter != nullptr && ircflp > 0)
             bldfrp = cs_math_fmax(cs_math_fmin(df_limiter[ii], df_limiter[jj]),
                                   0.);
 
@@ -6149,7 +6149,7 @@ _convection_diffusion_tensor_steady(cs_field_t                  *f,
 
           cs_real_t bldfrp = (cs_real_t) ircflp;
           /* Local limitation of the reconstruction */
-          if (df_limiter != NULL && ircflp > 0)
+          if (df_limiter != nullptr && ircflp > 0)
             bldfrp = cs_math_fmax(cs_math_fmin(df_limiter[ii], df_limiter[jj]),
                                   0.);
 
@@ -6244,7 +6244,7 @@ _convection_diffusion_tensor_steady(cs_field_t                  *f,
 
           cs_real_t bldfrp = (cs_real_t) ircflp;
           /* Local limitation of the reconstruction */
-          if (df_limiter != NULL && ircflp > 0)
+          if (df_limiter != nullptr && ircflp > 0)
             bldfrp = cs_math_fmax(cs_math_fmin(df_limiter[ii], df_limiter[jj]),
                                   0.);
 
@@ -6346,7 +6346,7 @@ _convection_diffusion_tensor_steady(cs_field_t                  *f,
 
         cs_real_t bldfrp = (cs_real_t) ircflp;
         /* Local limitation of the reconstruction */
-        if (df_limiter != NULL && ircflp > 0)
+        if (df_limiter != nullptr && ircflp > 0)
           bldfrp = cs_math_fmax(df_limiter[ii], 0.);
 
         cs_b_cd_steady_strided<6>(bldfrp,
@@ -6526,12 +6526,12 @@ _convection_diffusion_unsteady_strided
     = (const cs_real_3_t *)fvq->diipb;
 
   const int *bc_type = cs_glob_bc_type;
-  cs_real_2_t *i_f_face_factor = NULL;
-  cs_real_t *b_f_face_factor = NULL;
+  cs_real_2_t *i_f_face_factor = nullptr;
+  cs_real_t *b_f_face_factor = nullptr;
 
   /* Local variables */
 
-  cs_real_t *df_limiter = NULL;
+  cs_real_t *df_limiter = nullptr;
 
   if (f != nullptr) {
     int df_limiter_id
@@ -6548,16 +6548,16 @@ _convection_diffusion_unsteady_strided
 
   const int f_id = (f != nullptr) ? f->id : -1;
 
-  const var_t *coface = NULL;
-  const b_t *cofbce = NULL;
+  const var_t *coface = nullptr;
+  const b_t *cofbce = nullptr;
 
   cs_real_t  *v_slope_test = cs_get_v_slope_test(f_id,  eqp);
 
   /* Internal coupling variables */
-  var_t *pvar_local = NULL;
-  var_t *pvar_distant = NULL;
-  cs_real_t *df_limiter_local = NULL;
-  const cs_lnum_t *faces_local = NULL, *faces_distant = NULL;
+  var_t *pvar_local = nullptr;
+  var_t *pvar_distant = nullptr;
+  cs_real_t *df_limiter_local = nullptr;
+  const cs_lnum_t *faces_local = nullptr, *faces_distant = nullptr;
   cs_lnum_t n_local = 0, n_distant = 0;
 
   /* Parallel or device dispatch */
@@ -6577,15 +6577,15 @@ _convection_diffusion_unsteady_strided
   /* Handle cases where only the previous values (already synchronized)
      or current values are provided */
 
-  if (pvar != NULL && halo != NULL) {
+  if (pvar != nullptr && halo != nullptr) {
     cs_halo_sync_var_strided(halo, halo_type, (cs_real_t *)pvar, stride);
     if (cs_glob_mesh->n_init_perio > 0)
       cs_halo_perio_sync_var_vect(halo, halo_type, (cs_real_t *)pvar, stride);
   }
-  if (pvara == NULL)
+  if (pvara == nullptr)
     pvara = (const var_t *)pvar;
 
-  const var_t *_pvar = (pvar != NULL) ? (const var_t *)pvar : pvara;
+  const var_t *_pvar = (pvar != nullptr) ? (const var_t *)pvar : pvara;
 
   /* Slope limiters */
 
@@ -6685,7 +6685,7 @@ _convection_diffusion_unsteady_strided
 
       if (ircflp == 1) {
         cs_real_t bldfrp = 1.;
-        if (df_limiter != NULL)  /* Local limiter */
+        if (df_limiter != nullptr)  /* Local limiter */
           bldfrp = cs_math_fmax(cs_math_fmin(df_limiter[ii], df_limiter[jj]),
                                 0.);
 
@@ -6730,7 +6730,7 @@ _convection_diffusion_unsteady_strided
       }
 
       /* Saving values at faces, if needed */
-      if (i_pvar != NULL) {
+      if (i_pvar != nullptr) {
         if (i_massflux[face_id] >= 0.) {
           for (cs_lnum_t i = 0; i < stride; i++)
             i_pvar[face_id][i] += thetap * _pi[i];
@@ -6757,7 +6757,7 @@ _convection_diffusion_unsteady_strided
   else if (isstpp == 1) {
 
     const cs_real_t *hybrid_blend = nullptr;
-    if (CS_F_(hybrid_blend) != NULL)
+    if (CS_F_(hybrid_blend) != nullptr)
       hybrid_blend = CS_F_(hybrid_blend)->val;
 
     switch(ischcp) {
@@ -6798,7 +6798,7 @@ _convection_diffusion_unsteady_strided
 
         if (ircflp == 1) {
           cs_real_t bldfrp = 1.;
-          if (df_limiter != NULL)  /* Local limiter */
+          if (df_limiter != nullptr)  /* Local limiter */
             bldfrp = cs_math_fmax(cs_math_fmin(df_limiter[ii], df_limiter[jj]),
                                   0.);
 
@@ -6917,7 +6917,7 @@ _convection_diffusion_unsteady_strided
         }
 
         /* Save values at internal faces, if needed */
-        if (i_pvar != NULL) {
+        if (i_pvar != nullptr) {
           if (i_massflux[face_id] >= 0.) {
             for (cs_lnum_t i = 0; i < stride; i++)
               i_pvar[face_id][i] += thetap * pif[i];
@@ -6986,7 +6986,7 @@ _convection_diffusion_unsteady_strided
 
         if (ircflp == 1) {
           cs_real_t bldfrp = 1.;
-          if (df_limiter != NULL)  /* Local limiter */
+          if (df_limiter != nullptr)  /* Local limiter */
             bldfrp = cs_math_fmax(cs_math_fmin(df_limiter[ii], df_limiter[jj]),
                                   0.);
 
@@ -7115,7 +7115,7 @@ _convection_diffusion_unsteady_strided
             i_upwind[face_id] = 1;
           }
 
-          if (v_slope_test != NULL) {
+          if (v_slope_test != nullptr) {
             cs_dispatch_sum(&v_slope_test[ii],
                             std::abs(i_massflux[face_id]) / cell_vol[ii],
                             i_sum_type);
@@ -7126,7 +7126,7 @@ _convection_diffusion_unsteady_strided
         }
 
         /* Save values at internal faces, if needed */
-        if (i_pvar != NULL) {
+        if (i_pvar != nullptr) {
           if (i_massflux[face_id] >= 0.) {
             for (cs_lnum_t i = 0; i < stride; i++)
               i_pvar[face_id][i] += thetap * pif[i];
@@ -7207,7 +7207,7 @@ _convection_diffusion_unsteady_strided
 
       cs_real_t bldfrp = (cs_real_t) ircflp;
       /* Local limitation of the reconstruction */
-      if (df_limiter != NULL && ircflp > 0)
+      if (df_limiter != nullptr && ircflp > 0)
         bldfrp = cs_math_fmax(df_limiter[ii], 0.);
 
       cs_b_cd_unsteady_strided<stride>(bldfrp,
@@ -7230,7 +7230,7 @@ _convection_diffusion_unsteady_strided
                                        fluxi);
 
       /* Save values on boundary faces */
-      if (b_pvar != NULL) {
+      if (b_pvar != nullptr) {
         if (b_massflux[face_id] >= 0.) {
           for (cs_lnum_t i = 0; i < stride; i++)
             b_pvar[face_id][i] += thetap * _pi[i];
@@ -7280,7 +7280,7 @@ _convection_diffusion_unsteady_strided
         /* Local limitation of the reconstruction */
         /* Note: to be treated exactly as a internal face, should be a bending
          * between the two cells... */
-        if (df_limiter != NULL && ircflp > 0)
+        if (df_limiter != nullptr && ircflp > 0)
           bldfrp = cs_math_fmax(df_limiter[jj], 0.);
 
         /* Scaling due to mass balance in porous modelling */
@@ -7306,7 +7306,7 @@ _convection_diffusion_unsteady_strided
                                         (cs_real_t *)pvar_distant,
                                         (cs_real_t *)pvar_local);
 
-      if (df_limiter != NULL) {
+      if (df_limiter != nullptr) {
         CS_MALLOC_HD(df_limiter_local, n_local, cs_real_t, cs_alloc_mode);
         cs_internal_coupling_exchange_var(cpl,
                                           1, /* Dimension */
@@ -7315,7 +7315,7 @@ _convection_diffusion_unsteady_strided
       }
 
       /* Flux contribution */
-      assert(f != NULL);
+      assert(f != nullptr);
       cs_real_t *hintp = f->bc_coeffs->hint;
       cs_real_t *hextp = f->bc_coeffs->rcodcl2;
       for (cs_lnum_t ii = 0; ii < n_local; ii++) {
@@ -7338,7 +7338,7 @@ _convection_diffusion_unsteady_strided
 
         cs_real_t bldfrp = (cs_real_t) ircflp;
         /* Local limitation of the reconstruction */
-        if (df_limiter != NULL && ircflp > 0)
+        if (df_limiter != nullptr && ircflp > 0)
           bldfrp = cs_math_fmax(cs_math_fmin(df_limiter_local[ii],
                                              df_limiter[jj]),
                                 0.);
@@ -7409,7 +7409,7 @@ _convection_diffusion_unsteady_strided
 
       cs_real_t bldfrp = (cs_real_t) ircflp;
       /* Local limitation of the reconstruction */
-      if (df_limiter != NULL && ircflp > 0)
+      if (df_limiter != nullptr && ircflp > 0)
         bldfrp = cs_math_fmax(df_limiter[ii], 0.);
 
       cs_b_cd_unsteady_strided<stride>(bldfrp,
@@ -7445,7 +7445,7 @@ _convection_diffusion_unsteady_strided
                                      fluxi);
 
       /* Saving velocity on boundary faces if needed */
-      if (b_pvar != NULL) {
+      if (b_pvar != nullptr) {
         if (b_massflux[face_id] >= 0.) {
           for (cs_lnum_t i = 0; i < stride; i++)
             b_pvar[face_id][i] += thetap * _pi[i];
@@ -7498,7 +7498,7 @@ BEGIN_C_DECLS
  *   eqp   <-- equation parameters
  *
  * return:
- *   pointer to local values array, or NULL;
+ *   pointer to local values array, or nullptr;
  *----------------------------------------------------------------------------*/
 
 cs_real_t *
@@ -7509,7 +7509,7 @@ cs_get_v_slope_test(int                        f_id,
   const int isstpp = eqp.isstpc;
   const double blencp = eqp.blencv;
 
-  cs_real_t  *v_slope_test = NULL;
+  cs_real_t  *v_slope_test = nullptr;
 
   if (f_id > -1 && iconvp > 0 && blencp > 0. && isstpp == 0) {
 
@@ -7527,7 +7527,7 @@ cs_get_v_slope_test(int                        f_id,
     if (f_track_slope_test_id > -1)
       v_slope_test = (cs_field_by_id(f_track_slope_test_id))->val;
 
-    if (v_slope_test != NULL) {
+    if (v_slope_test != nullptr) {
       const cs_lnum_t n_cells_ext = cs_glob_mesh->n_cells_with_ghosts;
 #     pragma omp parallel for
       for (cs_lnum_t cell_id = 0; cell_id < n_cells_ext; cell_id++)
@@ -7633,7 +7633,7 @@ cs_beta_limiter_building(int                   f_id,
   ctx.wait();
 
   /* Synchronize variable */
-  if (halo != NULL)
+  if (halo != nullptr)
     cs_halo_sync_var(halo, CS_HALO_STANDARD, cpro_beta);
 
   CS_FREE_HD(denom_inf);
@@ -7945,7 +7945,7 @@ cs_convection_diffusion_vector(int                         idtvar,
     var_name = (const char *)(f->name);
   }
 
-  cs_internal_coupling_t *cpl = NULL;
+  cs_internal_coupling_t *cpl = nullptr;
   if (eqp.icoupl > 0) {
     assert(f_id != -1);
     const int coupling_key_id = cs_field_key_id("coupling_entity");
@@ -7972,12 +7972,12 @@ cs_convection_diffusion_vector(int                         idtvar,
   /* Handle cases where only the previous values (already synchronized)
      or current values are provided */
 
-  if (pvar != NULL && m->halo != NULL) {
+  if (pvar != nullptr && m->halo != nullptr) {
     cs_halo_sync_var_strided(m->halo, halo_type, (cs_real_t *)pvar, 3);
     if (cs_glob_mesh->n_init_perio > 0)
       cs_halo_perio_sync_var_vect(m->halo, halo_type, (cs_real_t *)pvar, 3);
   }
-  if (pvara == NULL)
+  if (pvara == nullptr)
     pvara = (const cs_real_3_t *)pvar;
 
   /* Marker for inlet/outlet cells for transpose gradient
@@ -8045,7 +8045,7 @@ cs_convection_diffusion_vector(int                         idtvar,
       || (    eqp.iconv != 0 && eqp.blencv > 0.
           && (eqp.ischcv == 0 || eqp.ircflu == 1 || eqp.isstpc == 0))) {
 
-    cs_real_t *gweight = NULL;
+    cs_real_t *gweight = nullptr;
     if (f_id != -1) {
       /* Get the calculation option from the field */
       if (f->type & CS_FIELD_VARIABLE && eqp.iwgrec == 1) {
@@ -8063,7 +8063,7 @@ cs_convection_diffusion_vector(int                         idtvar,
 
     const cs_gradient_limit_t imligp = (cs_gradient_limit_t)(eqp.imligr);
     const cs_real_3_t  *restrict _pvar
-      = (pvar != NULL) ? (const cs_real_3_t  *)pvar : pvara;
+      = (pvar != nullptr) ? (const cs_real_3_t  *)pvar : pvara;
 
     cs_gradient_vector_synced_input(var_name,
                                     gradient_type,
@@ -8355,12 +8355,12 @@ cs_convection_diffusion_tensor(int                          idtvar,
   /* Handle cases where only the previous values (already synchronized)
      or current values are provided */
 
-  if (pvar != NULL && m->halo != NULL) {
+  if (pvar != nullptr && m->halo != nullptr) {
     cs_halo_sync_var_strided(m->halo, halo_type, (cs_real_t *)pvar, 6);
     if (cs_glob_mesh->n_init_perio > 0)
       cs_halo_perio_sync_var_sym_tens(m->halo, halo_type, (cs_real_t *)pvar);
   }
-  if (pvara == NULL)
+  if (pvara == nullptr)
     pvara = (const cs_real_6_t *)pvar;
 
   /* Compute the gradient of the tensor
@@ -8384,7 +8384,7 @@ cs_convection_diffusion_tensor(int                          idtvar,
 
     const cs_gradient_limit_t imligp = (cs_gradient_limit_t)(eqp.imligr);
     const cs_real_6_t  *restrict _pvar
-      = (pvar != NULL) ? (const cs_real_6_t  *)pvar : pvara;
+      = (pvar != nullptr) ? (const cs_real_6_t  *)pvar : pvara;
 
     cs_gradient_tensor_synced_input(var_name,
                                     gradient_type,
@@ -8633,7 +8633,7 @@ cs_anisotropic_diffusion_scalar(int                         idtvar,
 
   /* Local variables */
 
-  cs_real_t *df_limiter = NULL;
+  cs_real_t *df_limiter = nullptr;
 
   char var_name[64];
 
@@ -8643,25 +8643,25 @@ cs_anisotropic_diffusion_scalar(int                         idtvar,
   cs_real_6_t *w2;
   cs_real_3_t *grad;
 
-  cs_field_t *f = NULL;
+  cs_field_t *f = nullptr;
 
-  cs_real_t *gweight = NULL;
+  cs_real_t *gweight = nullptr;
 
   /* Internal coupling variables */
-  cs_real_t *pvar_local = NULL;
-  cs_real_3_t *grad_local = NULL;
-  cs_real_t *df_limiter_local = NULL;
-  cs_real_6_t *viscce_local = NULL;
-  cs_real_t *weighb_local = NULL;
-  const cs_lnum_t *faces_local = NULL;
+  cs_real_t *pvar_local = nullptr;
+  cs_real_3_t *grad_local = nullptr;
+  cs_real_t *df_limiter_local = nullptr;
+  cs_real_6_t *viscce_local = nullptr;
+  cs_real_t *weighb_local = nullptr;
+  const cs_lnum_t *faces_local = nullptr;
   cs_lnum_t n_local = 0;
   int coupling_id = -1;
-  cs_internal_coupling_t *cpl = NULL;
+  cs_internal_coupling_t *cpl = nullptr;
 
   /* 1. Initialization */
 
-  viscce = NULL;
-  w2 = NULL;
+  viscce = nullptr;
+  w2 = nullptr;
 
   /* Allocate work arrays */
   BFT_MALLOC(grad, n_cells_ext, cs_real_3_t);
@@ -8677,12 +8677,12 @@ cs_anisotropic_diffusion_scalar(int                         idtvar,
   /* Handle cases where only the previous values (already synchronized)
      or current values are provided */
 
-  if (pvar != NULL)
+  if (pvar != nullptr)
     cs_sync_scalar_halo(m, halo_type, pvar);
-  if (pvara == NULL)
+  if (pvara == nullptr)
     pvara = (const cs_real_t *)pvar;
 
-  const cs_real_t  *restrict _pvar = (pvar != NULL) ? pvar : pvara;
+  const cs_real_t  *restrict _pvar = (pvar != nullptr) ? pvar : pvara;
 
   /* Logging */
 
@@ -8704,23 +8704,23 @@ cs_anisotropic_diffusion_scalar(int                         idtvar,
   cs_field_t *fporo = cs_field_by_name_try("porosity");
   cs_field_t *ftporo = cs_field_by_name_try("tensorial_porosity");
 
-  cs_real_t *porosi = NULL;
-  cs_real_6_t *porosf = NULL;
+  cs_real_t *porosi = nullptr;
+  cs_real_6_t *porosf = nullptr;
 
   if (cs_glob_porous_model == 1 || cs_glob_porous_model == 2) {
     porosi = fporo->val;
-    if (ftporo != NULL) {
+    if (ftporo != nullptr) {
       porosf = (cs_real_6_t *)ftporo->val;
     }
   }
 
   /* Without porosity */
-  if (porosi == NULL) {
+  if (porosi == nullptr) {
     viscce = viscel;
 
     /* With porosity */
   }
-  else if (porosi != NULL && porosf == NULL) {
+  else if (porosi != nullptr && porosf == nullptr) {
     BFT_MALLOC(w2, n_cells_ext, cs_real_6_t);
     for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
       for (int isou = 0; isou < 6; isou++) {
@@ -8731,7 +8731,7 @@ cs_anisotropic_diffusion_scalar(int                         idtvar,
 
     /* With tensorial porosity */
   }
-  else if (porosi != NULL && porosf != NULL) {
+  else if (porosi != nullptr && porosf != nullptr) {
     BFT_MALLOC(w2, n_cells_ext, cs_real_6_t);
     for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
       cs_math_sym_33_product(porosf[cell_id],
@@ -8742,7 +8742,7 @@ cs_anisotropic_diffusion_scalar(int                         idtvar,
   }
 
   /* ---> Periodicity and parallelism treatment of symmetric tensors */
-  if (halo != NULL) {
+  if (halo != nullptr) {
     cs_halo_sync_var_strided(halo, halo_type, (cs_real_t *)viscce, 6);
     if (m->n_init_perio > 0)
       cs_halo_perio_sync_var_sym_tens(halo, halo_type, (cs_real_t *)viscce);
@@ -8756,8 +8756,8 @@ cs_anisotropic_diffusion_scalar(int                         idtvar,
     cs_internal_coupling_coupled_faces(cpl,
                                        &n_local,
                                        &faces_local,
-                                       NULL,
-                                       NULL);
+                                       nullptr,
+                                       nullptr);
   }
 
   /* 2. Compute the diffusive part with reconstruction technics */
@@ -8795,7 +8795,7 @@ cs_anisotropic_diffusion_scalar(int                         idtvar,
                                     imligp,
                                     epsrgp,
                                     climgp,
-                                    NULL, /* f_ext exterior force */
+                                    nullptr, /* f_ext exterior force */
                                     bc_coeffs,
                                     _pvar,
                                     gweight, /* Weighted gradient */
@@ -8843,7 +8843,7 @@ cs_anisotropic_diffusion_scalar(int                         idtvar,
 
           cs_real_t bldfrp = (cs_real_t) ircflp;
           /* Local limitation of the reconstruction */
-          if (df_limiter != NULL && ircflp > 0)
+          if (df_limiter != nullptr && ircflp > 0)
             bldfrp = cs_math_fmax(cs_math_fmin(df_limiter[ii], df_limiter[jj]),
                                   0.);
 
@@ -8945,7 +8945,7 @@ cs_anisotropic_diffusion_scalar(int                         idtvar,
 
           cs_real_t bldfrp = (cs_real_t) ircflp;
           /* Local limitation of the reconstruction */
-          if (df_limiter != NULL && ircflp > 0)
+          if (df_limiter != nullptr && ircflp > 0)
             bldfrp = cs_math_fmax(df_limiter[jj], 0.);
 
           /* Recompute II" and JJ"
@@ -9037,7 +9037,7 @@ cs_anisotropic_diffusion_scalar(int                         idtvar,
 
         cs_real_t bldfrp = (cs_real_t) ircflp;
         /* Local limitation of the reconstruction */
-        if (df_limiter != NULL && ircflp > 0)
+        if (df_limiter != nullptr && ircflp > 0)
           bldfrp = cs_math_fmax(df_limiter[ii], 0.);
 
         /* Recompute II"
@@ -9096,7 +9096,7 @@ cs_anisotropic_diffusion_scalar(int                         idtvar,
 
         cs_real_t bldfrp = (cs_real_t) ircflp;
         /* Local limitation of the reconstruction */
-        if (df_limiter != NULL && ircflp > 0)
+        if (df_limiter != nullptr && ircflp > 0)
           bldfrp = cs_math_fmax(df_limiter[ii], 0.);
 
         /* Recompute II"
@@ -9172,7 +9172,7 @@ cs_anisotropic_diffusion_scalar(int                         idtvar,
                                                (cs_real_t *)weighb_local);
 
       /* Exchange diffusion limiter */
-      if (df_limiter != NULL) {
+      if (df_limiter != nullptr) {
         BFT_MALLOC(df_limiter_local, n_local, cs_real_t);
         cs_internal_coupling_exchange_var(cpl,
                                           1, /* Dimension */
@@ -9190,7 +9190,7 @@ cs_anisotropic_diffusion_scalar(int                         idtvar,
 
         cs_real_t bldfrp = (cs_real_t) ircflp;
         /* Local limitation of the reconstruction */
-        if (df_limiter != NULL && ircflp > 0)
+        if (df_limiter != nullptr && ircflp > 0)
           bldfrp = cs_math_fmax(cs_math_fmin(df_limiter_local[ii],
                                              df_limiter[jj]),
                                 0.);
@@ -9261,7 +9261,7 @@ cs_anisotropic_diffusion_scalar(int                         idtvar,
 
       /* Remote data no longer needed */
       BFT_FREE(pvar_local);
-      if (df_limiter != NULL)
+      if (df_limiter != nullptr)
         BFT_FREE(df_limiter_local);
       BFT_FREE(grad_local);
       BFT_FREE(viscce_local);
@@ -9381,21 +9381,21 @@ cs_anisotropic_left_diffusion_vector(int                         idtvar,
   const int *bc_type = cs_glob_bc_type;
 
   /* Internal coupling variables */
-  const cs_lnum_t *faces_local = NULL, *faces_distant = NULL;
+  const cs_lnum_t *faces_local = nullptr, *faces_distant = nullptr;
   cs_lnum_t n_local = 0, n_distant = 0;
   int coupling_id = -1;
-  cs_internal_coupling_t *cpl = NULL;
+  cs_internal_coupling_t *cpl = nullptr;
 
   /* Local variables */
 
-  cs_real_t *df_limiter = NULL;
+  cs_real_t *df_limiter = nullptr;
 
   char var_name[64];
 
   cs_real_33_t *gradv;
   cs_real_t *bndcel;
 
-  cs_field_t *f = NULL;
+  cs_field_t *f = nullptr;
 
   /* 1. Initialization */
 
@@ -9414,16 +9414,16 @@ cs_anisotropic_left_diffusion_vector(int                         idtvar,
   /* Handle cases where only the previous values (already synchronized)
      or current values are provided */
 
-  if (pvar != NULL && halo != NULL) {
+  if (pvar != nullptr && halo != nullptr) {
     cs_halo_sync_var_strided(halo, halo_type, (cs_real_t *)pvar, 3);
     if (cs_glob_mesh->n_init_perio > 0)
       cs_halo_perio_sync_var_vect(halo, halo_type, (cs_real_t *)pvar, 3);
   }
-  if (pvara == NULL)
+  if (pvara == nullptr)
     pvara = (const cs_real_3_t *)pvar;
 
   const cs_real_3_t  *restrict _pvar
-    = (pvar != NULL) ? (const cs_real_3_t  *)pvar : pvara;
+    = (pvar != nullptr) ? (const cs_real_3_t  *)pvar : pvara;
 
   /* logging info */
 
@@ -9471,7 +9471,7 @@ cs_anisotropic_left_diffusion_vector(int                         idtvar,
                                     climgp,
                                     bc_coeffs_v,
                                     _pvar,
-                                    NULL, /* weighted gradient */
+                                    nullptr, /* weighted gradient */
                                     cpl,
                                     gradv);
 
@@ -9516,7 +9516,7 @@ cs_anisotropic_left_diffusion_vector(int                         idtvar,
 
           cs_real_t bldfrp = (cs_real_t) ircflp;
           /* Local limitation of the reconstruction */
-          if (df_limiter != NULL && ircflp > 0)
+          if (df_limiter != nullptr && ircflp > 0)
             bldfrp = cs_math_fmax(cs_math_fmin(df_limiter[ii], df_limiter[jj]),
                                   0.);
 
@@ -9587,7 +9587,7 @@ cs_anisotropic_left_diffusion_vector(int                         idtvar,
 
           cs_real_t bldfrp = (cs_real_t) ircflp;
           /* Local limitation of the reconstruction */
-          if (df_limiter != NULL && ircflp > 0)
+          if (df_limiter != nullptr && ircflp > 0)
             bldfrp = cs_math_fmax(cs_math_fmin(df_limiter[ii], df_limiter[jj]),
                                   0.);
 
@@ -9645,7 +9645,7 @@ cs_anisotropic_left_diffusion_vector(int                         idtvar,
 
         cs_real_t bldfrp = (cs_real_t) ircflp;
         /* Local limitation of the reconstruction */
-        if (df_limiter != NULL && ircflp > 0)
+        if (df_limiter != nullptr && ircflp > 0)
           bldfrp = cs_math_fmax(df_limiter[cell_id], 0.);
 
         const cs_real_t *diipbv = diipb[face_id];
@@ -9692,7 +9692,7 @@ cs_anisotropic_left_diffusion_vector(int                         idtvar,
 
         cs_real_t bldfrp = (cs_real_t) ircflp;
         /* Local limitation of the reconstruction */
-        if (df_limiter != NULL && ircflp > 0)
+        if (df_limiter != nullptr && ircflp > 0)
           bldfrp = cs_math_fmax(df_limiter[cell_id], 0.);
 
         cs_real_t diipbv[3];
@@ -9751,7 +9751,7 @@ cs_anisotropic_left_diffusion_vector(int                         idtvar,
       }
     }
 
-    if (halo != NULL)
+    if (halo != nullptr)
       cs_halo_sync_var(halo, halo_type, bndcel);
 
     /* ---> Interior faces */
@@ -9918,30 +9918,30 @@ cs_anisotropic_right_diffusion_vector(int                          idtvar,
     = (const cs_real_3_t *)fvq->b_face_cog;
 
   /* Internal coupling variables */
-  cs_real_3_t *pvar_local = NULL;
-  cs_real_33_t *grad_local = NULL;
-  cs_real_t *df_limiter_local = NULL;
-  cs_real_6_t *viscce_local = NULL;
-  cs_real_t *weighb_local = NULL;
-  const cs_lnum_t *faces_local = NULL, *faces_distant = NULL;
+  cs_real_3_t *pvar_local = nullptr;
+  cs_real_33_t *grad_local = nullptr;
+  cs_real_t *df_limiter_local = nullptr;
+  cs_real_6_t *viscce_local = nullptr;
+  cs_real_t *weighb_local = nullptr;
+  const cs_lnum_t *faces_local = nullptr, *faces_distant = nullptr;
   cs_lnum_t n_local = 0, n_distant = 0;
   int coupling_id = -1;
-  cs_internal_coupling_t *cpl = NULL;
+  cs_internal_coupling_t *cpl = nullptr;
 
   /* Local variables */
 
-  cs_real_t *df_limiter = NULL;
+  cs_real_t *df_limiter = nullptr;
 
   char var_name[64];
 
   cs_real_6_t *viscce;
   cs_real_33_t *grad;
 
-  cs_field_t *f = NULL;
+  cs_field_t *f = nullptr;
 
   /* 1. Initialization */
 
-  viscce = NULL;
+  viscce = nullptr;
 
   /* Allocate work arrays */
   BFT_MALLOC(grad, n_cells_ext, cs_real_33_t);
@@ -9958,16 +9958,16 @@ cs_anisotropic_right_diffusion_vector(int                          idtvar,
   /* Handle cases where only the previous values (already synchronized)
      or current values are provided */
 
-  if (pvar != NULL && halo != NULL) {
+  if (pvar != nullptr && halo != nullptr) {
     cs_halo_sync_var_strided(halo, halo_type, (cs_real_t *)pvar, 3);
     if (cs_glob_mesh->n_init_perio > 0)
       cs_halo_perio_sync_var_vect(halo, halo_type, (cs_real_t *)pvar, 3);
   }
-  if (pvara == NULL)
+  if (pvara == nullptr)
     pvara = (const cs_real_3_t *)pvar;
 
   const cs_real_3_t  *restrict _pvar
-    = (pvar != NULL) ? (const cs_real_3_t  *)pvar : pvara;
+    = (pvar != nullptr) ? (const cs_real_3_t  *)pvar : pvara;
 
   /* logging info */
 
@@ -10016,7 +10016,7 @@ cs_anisotropic_right_diffusion_vector(int                          idtvar,
                                     climgp,
                                     bc_coeffs_v,
                                     _pvar,
-                                    NULL, /* weighted gradient */
+                                    nullptr, /* weighted gradient */
                                     cpl,
                                     grad);
 
@@ -10071,7 +10071,7 @@ cs_anisotropic_right_diffusion_vector(int                          idtvar,
 
           cs_real_t bldfrp = (cs_real_t) ircflp;
           /* Local limitation of the reconstruction */
-          if (df_limiter != NULL && ircflp > 0)
+          if (df_limiter != nullptr && ircflp > 0)
             bldfrp = cs_math_fmax(cs_math_fmin(df_limiter[ii], df_limiter[jj]),
                                   0.);
 
@@ -10175,7 +10175,7 @@ cs_anisotropic_right_diffusion_vector(int                          idtvar,
 
           cs_real_t bldfrp = (cs_real_t) ircflp;
           /* Local limitation of the reconstruction */
-          if (df_limiter != NULL && ircflp > 0)
+          if (df_limiter != nullptr && ircflp > 0)
             bldfrp = cs_math_fmax(cs_math_fmin(df_limiter[ii], df_limiter[jj]),
                                   0.);
 
@@ -10272,7 +10272,7 @@ cs_anisotropic_right_diffusion_vector(int                          idtvar,
 
         cs_real_t bldfrp = (cs_real_t) ircflp;
         /* Local limitation of the reconstruction */
-        if (df_limiter != NULL && ircflp > 0)
+        if (df_limiter != nullptr && ircflp > 0)
           bldfrp = cs_math_fmax(df_limiter[ii], 0.);
 
         /* Recompute II"
@@ -10338,7 +10338,7 @@ cs_anisotropic_right_diffusion_vector(int                          idtvar,
 
         cs_real_t bldfrp = (cs_real_t) ircflp;
         /* Local limitation of the reconstruction */
-        if (df_limiter != NULL && ircflp > 0)
+        if (df_limiter != nullptr && ircflp > 0)
           bldfrp = cs_math_fmax(df_limiter[ii], 0.);
 
         /* Recompute II"
@@ -10416,7 +10416,7 @@ cs_anisotropic_right_diffusion_vector(int                          idtvar,
                                                (cs_real_t *)weighb_local);
 
       /* Exchange diffusion limiter */
-      if (df_limiter != NULL) {
+      if (df_limiter != nullptr) {
         BFT_MALLOC(df_limiter_local, n_local, cs_real_t);
         cs_internal_coupling_exchange_var(cpl,
                                           1, /* Dimension */
@@ -10439,7 +10439,7 @@ cs_anisotropic_right_diffusion_vector(int                          idtvar,
 
         cs_real_t bldfrp = (cs_real_t) ircflp;
         /* Local limitation of the reconstruction */
-        if (df_limiter != NULL && ircflp > 0)
+        if (df_limiter != nullptr && ircflp > 0)
           bldfrp = cs_math_fmax(cs_math_fmin(df_limiter_local[ii],
                                              df_limiter[jj]),
                                 0.);
@@ -10513,7 +10513,7 @@ cs_anisotropic_right_diffusion_vector(int                          idtvar,
 
       /* Remote data no longer needed */
       BFT_FREE(pvar_local);
-      if (df_limiter != NULL)
+      if (df_limiter != nullptr)
         BFT_FREE(df_limiter_local);
       BFT_FREE(grad_local);
       BFT_FREE(viscce_local);
@@ -10624,7 +10624,7 @@ cs_anisotropic_diffusion_tensor(int                          idtvar,
 
   /* Local variables */
 
-  cs_real_t *df_limiter = NULL;
+  cs_real_t *df_limiter = nullptr;
 
   char var_name[64];
 
@@ -10636,8 +10636,8 @@ cs_anisotropic_diffusion_tensor(int                          idtvar,
 
   /* 1. Initialization */
 
-  viscce = NULL;
-  w2 = NULL;
+  viscce = nullptr;
+  w2 = nullptr;
 
   /* Allocate work arrays */
   BFT_MALLOC(grad, n_cells_ext, cs_real_63_t);
@@ -10653,16 +10653,16 @@ cs_anisotropic_diffusion_tensor(int                          idtvar,
   /* Handle cases where only the previous values (already synchronized)
      or current values are provided */
 
-  if (pvar != NULL && m->halo != NULL) {
+  if (pvar != nullptr && m->halo != nullptr) {
     cs_halo_sync_var_strided(m->halo, halo_type, (cs_real_t *)pvar, 6);
     if (cs_glob_mesh->n_init_perio > 0)
       cs_halo_perio_sync_var_sym_tens(m->halo, halo_type, (cs_real_t *)pvar);
   }
-  if (pvara == NULL)
+  if (pvara == nullptr)
     pvara = (const cs_real_6_t *)pvar;
 
   const cs_real_6_t  *restrict _pvar
-    = (pvar != NULL) ? (const cs_real_6_t  *)pvar : pvara;
+    = (pvar != nullptr) ? (const cs_real_6_t  *)pvar : pvara;
 
   /* Logging info */
 
@@ -10684,23 +10684,23 @@ cs_anisotropic_diffusion_tensor(int                          idtvar,
   cs_field_t *fporo = cs_field_by_name_try("porosity");
   cs_field_t *ftporo = cs_field_by_name_try("tensorial_porosity");
 
-  cs_real_t *porosi = NULL;
-  cs_real_6_t *porosf = NULL;
+  cs_real_t *porosi = nullptr;
+  cs_real_6_t *porosf = nullptr;
 
   if (cs_glob_porous_model == 1 || cs_glob_porous_model == 2) {
     porosi = fporo->val;
-    if (ftporo != NULL) {
+    if (ftporo != nullptr) {
       porosf = (cs_real_6_t *)ftporo->val;
     }
   }
 
   /* Without porosity */
-  if (porosi == NULL) {
+  if (porosi == nullptr) {
     viscce = viscel;
 
     /* With porosity */
   }
-  else if (porosi != NULL && porosf == NULL) {
+  else if (porosi != nullptr && porosf == nullptr) {
     BFT_MALLOC(w2, n_cells_ext, cs_real_6_t);
     for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
       for (int isou = 0; isou < 6; isou++) {
@@ -10711,7 +10711,7 @@ cs_anisotropic_diffusion_tensor(int                          idtvar,
 
     /* With tensorial porosity */
   }
-  else if (porosi != NULL && porosf != NULL) {
+  else if (porosi != nullptr && porosf != nullptr) {
     BFT_MALLOC(w2, n_cells_ext, cs_real_6_t);
     for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
       cs_math_sym_33_product(porosf[cell_id],
@@ -10722,7 +10722,7 @@ cs_anisotropic_diffusion_tensor(int                          idtvar,
   }
 
   /* ---> Periodicity and parallelism treatment of symmetric tensors */
-  if (halo != NULL) {
+  if (halo != nullptr) {
     cs_halo_sync_var_strided(halo, halo_type, (cs_real_t *)viscce, 6);
     if (m->n_init_perio > 0)
       cs_halo_perio_sync_var_sym_tens(halo, halo_type, (cs_real_t *)viscce);
@@ -10800,7 +10800,7 @@ cs_anisotropic_diffusion_tensor(int                          idtvar,
 
           cs_real_t bldfrp = (cs_real_t) ircflp;
           /* Local limitation of the reconstruction */
-          if (df_limiter != NULL && ircflp > 0)
+          if (df_limiter != nullptr && ircflp > 0)
             bldfrp = cs_math_fmax(cs_math_fmin(df_limiter[ii], df_limiter[jj]),
                                   0.);
 
@@ -10904,7 +10904,7 @@ cs_anisotropic_diffusion_tensor(int                          idtvar,
 
           cs_real_t bldfrp = (cs_real_t) ircflp;
           /* Local limitation of the reconstruction */
-          if (df_limiter != NULL && ircflp > 0)
+          if (df_limiter != nullptr && ircflp > 0)
             bldfrp = cs_math_fmax(cs_math_fmin(df_limiter[ii], df_limiter[jj]),
                                   0.);
 
@@ -10999,7 +10999,7 @@ cs_anisotropic_diffusion_tensor(int                          idtvar,
 
         cs_real_t bldfrp = (cs_real_t) ircflp;
         /* Local limitation of the reconstruction */
-        if (df_limiter != NULL && ircflp > 0)
+        if (df_limiter != nullptr && ircflp > 0)
           bldfrp = cs_math_fmax(df_limiter[ii], 0.);
 
         /* Recompute II"
@@ -11063,7 +11063,7 @@ cs_anisotropic_diffusion_tensor(int                          idtvar,
 
         cs_real_t bldfrp = (cs_real_t) ircflp;
         /* Local limitation of the reconstruction */
-        if (df_limiter != NULL && ircflp > 0)
+        if (df_limiter != nullptr && ircflp > 0)
           bldfrp = cs_math_fmax(df_limiter[ii], 0.);
 
         /* Recompute II"
@@ -11225,7 +11225,7 @@ cs_face_diffusion_potential(const int                   f_id,
   /* Local variables */
 
   int w_stride = 1;
-  cs_real_t *gweight = NULL;
+  cs_real_t *gweight = nullptr;
 
   /*===========================================================================*/
 
@@ -11261,7 +11261,7 @@ cs_face_diffusion_potential(const int                   f_id,
                              &gradient_type,
                              &halo_type);
 
-  cs_field_t *f = NULL;
+  cs_field_t *f = nullptr;
   char var_name[64];
 
   if (f_id > -1) {
@@ -11274,7 +11274,7 @@ cs_face_diffusion_potential(const int                   f_id,
 
   /* Handle parallelism and periodicity */
 
-  if (halo != NULL)
+  if (halo != nullptr)
     cs_halo_sync_var(halo, halo_type, pvar);
 
   /*==========================================================================
@@ -11319,7 +11319,7 @@ cs_face_diffusion_potential(const int                   f_id,
     /* Compute gradient */
     if (iwgrp > 0) {
       gweight = visel;
-      if (halo != NULL)
+      if (halo != nullptr)
         cs_halo_sync_var(halo, halo_type, gweight);
     }
 
@@ -11356,12 +11356,12 @@ cs_face_diffusion_potential(const int                   f_id,
                                     bc_coeffs,
                                     (const cs_real_t *)pvar,
                                     gweight, /* Weighted gradient */
-                                    NULL, /* internal coupling */
+                                    nullptr, /* internal coupling */
                                     grad);
 
     /* Handle parallelism and periodicity */
 
-    if (halo != NULL)
+    if (halo != nullptr)
       cs_halo_sync_var(halo, halo_type, visel);
 
     /* Mass flow through interior faces */
@@ -11522,14 +11522,14 @@ cs_face_anisotropic_diffusion_potential(const int                   f_id,
 
   /* Local variables */
 
-  cs_real_t *df_limiter = NULL;
+  cs_real_t *df_limiter = nullptr;
 
   char var_name[64];
   int w_stride = 6;
 
-  cs_field_t *f = NULL;
+  cs_field_t *f = nullptr;
 
-  cs_real_t *gweight = NULL;
+  cs_real_t *gweight = nullptr;
 
   /*==========================================================================
     1. Initialization
@@ -11580,19 +11580,19 @@ cs_face_anisotropic_diffusion_potential(const int                   f_id,
   cs_field_t *fporo = cs_field_by_name_try("porosity");
   cs_field_t *ftporo = cs_field_by_name_try("tensorial_porosity");
 
-  cs_real_t *porosi = NULL;
-  cs_real_6_t *porosf = NULL;
+  cs_real_t *porosi = nullptr;
+  cs_real_6_t *porosf = nullptr;
 
   if (cs_glob_porous_model == 1 || cs_glob_porous_model == 2) {
     porosi = fporo->val;
-    if (ftporo != NULL) {
+    if (ftporo != nullptr) {
       porosf = (cs_real_6_t *)ftporo->val;
     }
   }
 
   /* Handle parallelism and periodicity */
 
-  if (halo != NULL)
+  if (halo != nullptr)
     cs_halo_sync_var(halo, halo_type, pvar);
 
   /*==========================================================================
@@ -11629,16 +11629,16 @@ cs_face_anisotropic_diffusion_potential(const int                   f_id,
 
   if (nswrgp > 1) {
 
-    cs_real_6_t *viscce = NULL;
-    cs_real_6_t *w2 = NULL;
+    cs_real_6_t *viscce = nullptr;
+    cs_real_6_t *w2 = nullptr;
 
     /* Without porosity */
-    if (porosi == NULL) {
+    if (porosi == nullptr) {
       viscce = viscel;
 
       /* With porosity */
     }
-    else if (porosi != NULL && porosf == NULL) {
+    else if (porosi != nullptr && porosf == nullptr) {
       BFT_MALLOC(w2, n_cells_ext, cs_real_6_t);
       for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
         for (cs_lnum_t isou = 0; isou < 6; isou++) {
@@ -11649,7 +11649,7 @@ cs_face_anisotropic_diffusion_potential(const int                   f_id,
 
       /* With tensorial porosity */
     }
-    else if (porosi != NULL && porosf != NULL) {
+    else if (porosi != nullptr && porosf != nullptr) {
       BFT_MALLOC(w2, n_cells_ext, cs_real_6_t);
       for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
         cs_math_sym_33_product(porosf[cell_id],
@@ -11661,7 +11661,7 @@ cs_face_anisotropic_diffusion_potential(const int                   f_id,
 
     /* Periodicity and parallelism treatment of symmetric tensors */
 
-    if (halo != NULL) {
+    if (halo != nullptr) {
       cs_halo_sync_var_strided(halo, CS_HALO_STANDARD, (cs_real_t *)viscce, 6);
 
       if (m->n_init_perio > 0)
@@ -11677,7 +11677,7 @@ cs_face_anisotropic_diffusion_potential(const int                   f_id,
     /* Compute gradient */
     if (iwgrp > 0) {
       gweight = (cs_real_t *)viscce;
-      if (halo != NULL) {
+      if (halo != nullptr) {
         cs_halo_sync_var_strided(halo, halo_type, gweight, 6);
         if (cs_glob_mesh->n_init_perio > 0)
           cs_halo_perio_sync_var_sym_tens(halo, halo_type, gweight);
@@ -11718,7 +11718,7 @@ cs_face_anisotropic_diffusion_potential(const int                   f_id,
                                     bc_coeffs,
                                     pvar,
                                     gweight, /* Weighted gradient */
-                                    NULL, /* internal coupling */
+                                    nullptr, /* internal coupling */
                                     grad);
 
     /* Mass flow through interior faces */
@@ -11749,7 +11749,7 @@ cs_face_anisotropic_diffusion_potential(const int                   f_id,
 
       cs_real_t bldfrp = (cs_real_t) ircflp;
       /* Local limitation of the reconstruction */
-      if (df_limiter != NULL && ircflp > 0)
+      if (df_limiter != nullptr && ircflp > 0)
         bldfrp = cs_math_fmax(cs_math_fmin(df_limiter[ii], df_limiter[jj]), 0.);
 
       /* IF.Ki.S / ||Ki.S||^2 */
@@ -11801,7 +11801,7 @@ cs_face_anisotropic_diffusion_potential(const int                   f_id,
 
       cs_real_t bldfrp = (cs_real_t) ircflp;
       /* Local limitation of the reconstruction */
-      if (df_limiter != NULL && ircflp > 0)
+      if (df_limiter != nullptr && ircflp > 0)
         bldfrp = cs_math_fmax(df_limiter[ii], 0.);
 
       /* Recompute II"
@@ -11950,7 +11950,7 @@ cs_diffusion_potential(const int                   f_id,
   cs_real_3_t *grad;
   cs_field_t *f;
 
-  cs_real_t *gweight = NULL;
+  cs_real_t *gweight = nullptr;
 
   /*==========================================================================
     1. Initialization
@@ -11987,7 +11987,7 @@ cs_diffusion_potential(const int                   f_id,
 
   /* Handle parallelism and periodicity */
 
-  if (halo != NULL)
+  if (halo != nullptr)
     cs_halo_sync_var(halo, halo_type, pvar);
 
   /*==========================================================================
@@ -12038,7 +12038,7 @@ cs_diffusion_potential(const int                   f_id,
     /* Compute gradient */
     if (iwgrp > 0) {
       gweight = visel;
-      if (halo != NULL)
+      if (halo != nullptr)
         cs_halo_sync_var(halo, halo_type, gweight);
     }
 
@@ -12084,7 +12084,7 @@ cs_diffusion_potential(const int                   f_id,
                                     bc_coeffs,
                                     _pvar,
                                     gweight, /* Weighted gradient */
-                                    NULL, /* internal coupling */
+                                    nullptr, /* internal coupling */
                                     grad);
 
     if (_pvar != pvar)
@@ -12092,7 +12092,7 @@ cs_diffusion_potential(const int                   f_id,
 
     /* Handle parallelism and periodicity */
 
-    if (halo != NULL)
+    if (halo != nullptr)
       cs_halo_sync_var(halo, halo_type, visel);
 
     /* Mass flow through interior faces */
@@ -12271,17 +12271,17 @@ cs_anisotropic_diffusion_potential(const int                   f_id,
 
   /* Local variables */
 
-  cs_real_t *df_limiter = NULL;
+  cs_real_t *df_limiter = nullptr;
 
   char var_name[64];
   int w_stride = 6;
 
-  cs_real_6_t *viscce = NULL;
-  cs_real_6_t *w2 = NULL;
-  cs_real_3_t *grad = NULL;
-  cs_field_t *f = NULL;
+  cs_real_6_t *viscce = nullptr;
+  cs_real_6_t *w2 = nullptr;
+  cs_real_3_t *grad = nullptr;
+  cs_field_t *f = nullptr;
 
-  cs_real_t *gweight = NULL;
+  cs_real_t *gweight = nullptr;
 
   /*==========================================================================
     1. Initialization
@@ -12335,19 +12335,19 @@ cs_anisotropic_diffusion_potential(const int                   f_id,
   cs_field_t *fporo = cs_field_by_name_try("porosity");
   cs_field_t *ftporo = cs_field_by_name_try("tensorial_porosity");
 
-  cs_real_t *porosi = NULL;
-  cs_real_6_t *porosf = NULL;
+  cs_real_t *porosi = nullptr;
+  cs_real_6_t *porosf = nullptr;
 
   if (cs_glob_porous_model == 1 || cs_glob_porous_model == 2) {
     porosi = fporo->val;
-    if (ftporo != NULL) {
+    if (ftporo != nullptr) {
       porosf = (cs_real_6_t *)ftporo->val;
     }
   }
 
   /* Handle parallelism and periodicity */
 
-  if (halo != NULL)
+  if (halo != nullptr)
     cs_halo_sync_var(halo, halo_type, pvar);
 
   /*==========================================================================
@@ -12401,16 +12401,16 @@ cs_anisotropic_diffusion_potential(const int                   f_id,
 
   if (nswrgp > 1) {
 
-    viscce = NULL;
-    w2 = NULL;
+    viscce = nullptr;
+    w2 = nullptr;
 
     /* Without porosity */
-    if (porosi == NULL) {
+    if (porosi == nullptr) {
       viscce = viscel;
 
       /* With porosity */
     }
-    else if (porosi != NULL && porosf == NULL) {
+    else if (porosi != nullptr && porosf == nullptr) {
       BFT_MALLOC(w2, n_cells_ext, cs_real_6_t);
       for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
         for (int isou = 0; isou < 6; isou++) {
@@ -12421,7 +12421,7 @@ cs_anisotropic_diffusion_potential(const int                   f_id,
 
       /* With tensorial porosity */
     }
-    else if (porosi != NULL && porosf != NULL) {
+    else if (porosi != nullptr && porosf != nullptr) {
       BFT_MALLOC(w2, n_cells_ext, cs_real_6_t);
       for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
         cs_math_sym_33_product(porosf[cell_id],
@@ -12433,7 +12433,7 @@ cs_anisotropic_diffusion_potential(const int                   f_id,
 
     /* ---> Periodicity and parallelism treatment of symmetric tensors */
 
-    if (halo != NULL) {
+    if (halo != nullptr) {
       cs_halo_sync_var_strided(halo, CS_HALO_STANDARD, (cs_real_t *)viscce, 6);
 
       if (m->n_init_perio > 0)
@@ -12448,7 +12448,7 @@ cs_anisotropic_diffusion_potential(const int                   f_id,
     /* Compute gradient */
     if (iwgrp > 0) {
       gweight = (cs_real_t *)viscce;
-      if (halo != NULL) {
+      if (halo != nullptr) {
         cs_halo_sync_var_strided(halo, halo_type, gweight, 6);
         if (cs_glob_mesh->n_init_perio > 0)
           cs_halo_perio_sync_var_sym_tens(halo, halo_type, gweight);
@@ -12489,7 +12489,7 @@ cs_anisotropic_diffusion_potential(const int                   f_id,
                                     bc_coeffs,
                                     pvar,
                                     gweight, /* Weighted gradient */
-                                    NULL, /* internal coupling */
+                                    nullptr, /* internal coupling */
                                     grad);
 
     /* Mass flow through interior faces */
@@ -12509,7 +12509,7 @@ cs_anisotropic_diffusion_potential(const int                   f_id,
 
           cs_real_t bldfrp = (cs_real_t) ircflp;
           /* Local limitation of the reconstruction */
-          if (df_limiter != NULL && ircflp > 0)
+          if (df_limiter != nullptr && ircflp > 0)
             bldfrp = cs_math_fmax(cs_math_fmin(df_limiter[ii], df_limiter[jj]),
                                   0.);
 
@@ -12594,7 +12594,7 @@ cs_anisotropic_diffusion_potential(const int                   f_id,
 
         cs_real_t bldfrp = (cs_real_t) ircflp;
         /* Local limitation of the reconstruction */
-        if (df_limiter != NULL && ircflp > 0)
+        if (df_limiter != nullptr && ircflp > 0)
           bldfrp = cs_math_fmax(df_limiter[ii], 0.);
 
         /* Recompute II"
@@ -12797,7 +12797,7 @@ cs_slope_test_gradient(int                         f_id,
 
   /* Synchronization for parallelism or periodicity */
 
-  if (m->halo != NULL)
+  if (m->halo != nullptr)
     _sync_gradient_halo(m,
                         use_gpu,
                         halo_type,
@@ -12924,7 +12924,7 @@ cs_upwind_gradient(const int                     f_id,
 
   /* Synchronization for parallelism or periodicity */
 
-  if (halo != NULL) {
+  if (halo != nullptr) {
     cs_halo_sync_var_strided(halo, halo_type, (cs_real_t *)grdpa, 3);
     if (cs_glob_mesh->n_init_perio > 0)
       cs_halo_perio_sync_var_vect(halo, halo_type, (cs_real_t *)grdpa, 3);

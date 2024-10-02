@@ -137,7 +137,7 @@ cs_user_boundary_conditions(cs_domain_t  *domain,
     const cs_zone_t *z = cs_boundary_zone_by_name(name);
 
     cs_real_3_t *cpro_curre = (cs_real_3_t *)(CS_F_(curre)->val);
-    cs_real_3_t *cpro_curim = NULL;
+    cs_real_3_t *cpro_curim = nullptr;
     if (ieljou == 4)
       cpro_curim = (cs_real_3_t *)(CS_F_(curim)->val);
 
@@ -277,9 +277,9 @@ cs_user_boundary_conditions(cs_domain_t  *domain,
   cs_real_t *potr_rcodcl1 = CS_F_(potr)->bc_coeffs->rcodcl1;
   cs_real_t *potr_rcodcl3 = CS_F_(potr)->bc_coeffs->rcodcl3;
 
-  int       *poti_icodcl  = NULL;
-  cs_real_t *poti_rcodcl1 = NULL;
-  cs_real_t *poti_rcodcl3 = NULL;
+  int       *poti_icodcl  = nullptr;
+  cs_real_t *poti_rcodcl1 = nullptr;
+  cs_real_t *poti_rcodcl3 = nullptr;
 
   if (ieljou == 4) {
     poti_icodcl  = CS_F_(potr)->bc_coeffs->icodcl;

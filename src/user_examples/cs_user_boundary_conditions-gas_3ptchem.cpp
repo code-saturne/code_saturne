@@ -190,7 +190,7 @@ cs_user_boundary_conditions(cs_domain_t  *domain,
     cs_real_t *p_rcodcl1 = CS_F_(p)->bc_coeffs->rcodcl1;
     cs_real_t *fm_rcodcl1 = CS_F_(fm)->bc_coeffs->rcodcl1;
     cs_real_t *fp2m_rcodcl1 = CS_F_(fp2m)->bc_coeffs->rcodcl1;
-    cs_real_t *h_rcodcl1 = NULL;
+    cs_real_t *h_rcodcl1 = nullptr;
     if (cs_glob_physical_model_flag[CS_COMBUSTION_3PT] == 1) {
       h_rcodcl1 = CS_F_(h)->bc_coeffs->rcodcl1;
     }
@@ -237,7 +237,7 @@ cs_user_boundary_conditions(cs_domain_t  *domain,
       fp2m_rcodcl1[face_id] = 0;
 
       /* Enthalpy */
-      if (h_rcodcl1 != NULL)
+      if (h_rcodcl1 != nullptr)
         h_rcodcl1[face_id] = cm->hinoxy;
 
       /* Soot */

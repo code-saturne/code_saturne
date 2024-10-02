@@ -92,7 +92,7 @@ cs_user_extra_operations(cs_domain_t     *domain)
       = (const cs_real_3_t *)domain->mesh_quantities->b_face_cog;
     const cs_real_t *volume  = domain->mesh_quantities->cell_vol;
 
-    FILE *file = NULL;
+    FILE *file = nullptr;
 
     cs_real_3_t *vel = (cs_real_3_t *)CS_F_(vel)->val;
     const cs_fluid_properties_t *phys_pro = cs_glob_fluid_properties;
@@ -152,8 +152,8 @@ cs_user_extra_operations(cs_domain_t     *domain)
     cs_gnum_t neltg = nlelt;
     cs_parall_counter(&neltg, 1);
 
-    cs_real_t *xabs = NULL, *xabsg = NULL, *xnusselt = NULL;
-    cs_real_t *treglo = NULL;
+    cs_real_t *xabs = nullptr, *xabsg = nullptr, *xnusselt = nullptr;
+    cs_real_t *treglo = nullptr;
 
     BFT_MALLOC(xabs, nlelt, cs_real_t);
 
@@ -238,7 +238,7 @@ cs_user_extra_operations(cs_domain_t     *domain)
               xabsg[ii]*10.,
               xnusselt[ii]/(0.023*pow(30000., 0.8)*pow(0.71, 0.4)));
 
-    if (file != NULL)
+    if (file != nullptr)
       fclose(file);
 
     BFT_FREE(xnusselt);

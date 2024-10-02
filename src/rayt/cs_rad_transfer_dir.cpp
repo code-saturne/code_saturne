@@ -97,12 +97,12 @@ const int z = 2;
 static void
 _init_quadrature(void)
 {
-  if (cs_glob_rad_transfer_params->vect_s == NULL)
+  if (cs_glob_rad_transfer_params->vect_s == nullptr)
     BFT_MALLOC(cs_glob_rad_transfer_params->vect_s,
                cs_glob_rad_transfer_params->ndirs,
                cs_real_3_t);
 
-  if (cs_glob_rad_transfer_params->angsol == NULL)
+  if (cs_glob_rad_transfer_params->angsol == nullptr)
     BFT_MALLOC(cs_glob_rad_transfer_params->angsol,
                cs_glob_rad_transfer_params->ndirs,
                cs_real_t);
@@ -551,7 +551,7 @@ cs_rad_transfer_dir(void)
       _normve(cs_rp->vect_s[ii]);
 
     BFT_FREE(xyz3d);
-    xyz3d = NULL;
+    xyz3d = nullptr;
 
     /* All the directions are now known, weights will be computed */
 

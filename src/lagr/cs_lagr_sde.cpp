@@ -212,8 +212,8 @@ _lages1(cs_real_t           dtp,
 
   /* Obtain the mean particle velocity for each cell, if present */
 
-  cs_field_t *stat_vel = NULL;
-  cs_field_t *stat_vel_s = NULL;
+  cs_field_t *stat_vel = nullptr;
+  cs_field_t *stat_vel_s = nullptr;
 
   if (   cs_glob_lagr_model->shape == CS_LAGR_SHAPE_SPHERE_MODEL
       && cs_glob_lagr_model->modcpl) {
@@ -569,7 +569,7 @@ _lages1(cs_real_t           dtp,
 
       /* Additional terms when gradient of Tl is not negligible
        * */
-      if (beta != NULL) {
+      if (beta != nullptr) {
         /* particle positions term */
         cs_real_t aux5b = taup_r[id] * (1.0 - aux1);
         ter6x = beta[p_id][id] * (
@@ -653,7 +653,7 @@ _lages1(cs_real_t           dtp,
 
         /* Compute fluid temperature */
         cs_real_t tempf;
-        if (extra->temperature != NULL) {
+        if (extra->temperature != nullptr) {
           if (t_scl == CS_TEMPERATURE_SCALE_KELVIN)
             tempf = extra->temperature->val[cell_id];
           else /* if (t_scl == CS_TEMPERATURE_SCALE_CELSIUS) */
@@ -942,7 +942,7 @@ _lages2(cs_real_t           dtp,
             vagaus,
             brgaus,
             force_p,
-            NULL,
+            nullptr,
             terbru);
   }
 
@@ -1589,7 +1589,7 @@ _lagesd(cs_real_t             dtp,
           p_set->n_part_resusp += 1;
           p_set->weight_resusp += p_stat_w;
 
-          if (events != NULL) {
+          if (events != nullptr) {
             const cs_real_t *part_vel
               = cs_lagr_particles_attr_get_const_ptr<cs_real_t>(p_set, p_id,
                                                                 CS_LAGR_VELOCITY);
@@ -2003,7 +2003,7 @@ _lagesd(cs_real_t             dtp,
           p_set->n_part_resusp += 1;
           p_set->weight_resusp += p_stat_w;
 
-          if (events != NULL) {
+          if (events != nullptr) {
             const cs_real_t *part_vel
               = cs_lagr_particles_attr_get_const_ptr<cs_real_t>(p_set, p_id,
                                                                 CS_LAGR_VELOCITY);
@@ -2477,7 +2477,7 @@ _lagdep(cs_real_t           dtp,
 
   /* Tracking events if requested */
 
-  cs_lagr_event_set_t  *events = NULL;
+  cs_lagr_event_set_t  *events = nullptr;
 
   if (cs_lagr_stat_is_active(CS_LAGR_STAT_GROUP_TRACKING_EVENT))
     events = cs_lagr_event_set_boundary_interaction();
@@ -2524,11 +2524,11 @@ _lagdep(cs_real_t           dtp,
       /* Fluid temperature computation depending on the type of flow  */
       cs_real_t tempf;
 
-      if (   extra->temperature != NULL
+      if (   extra->temperature != nullptr
           && t_scl == CS_TEMPERATURE_SCALE_CELSIUS)
         tempf = extra->temperature->val[cell_id] + tkelvi;
 
-      else if (   extra->temperature != NULL
+      else if (   extra->temperature != nullptr
                && t_scl == CS_TEMPERATURE_SCALE_KELVIN)
         tempf = extra->temperature->val[cell_id];
 
@@ -2854,7 +2854,7 @@ cs_lagr_sde(cs_real_t           dt_p,
   }
 
   /* Brownian movement */
-  cs_real_t *brgaus = NULL;
+  cs_real_t *brgaus = nullptr;
 
   if (cs_glob_lagr_brownian->lamvbr == 1) {
     BFT_MALLOC(brgaus, p_set->n_particles*6, cs_real_t);
@@ -3050,7 +3050,7 @@ cs_lagr_sde_attr(cs_lagr_attribute_t   attr,
 
   int ltsvar = 0;
 
-  if (p_set->p_am->source_term_displ != NULL) {
+  if (p_set->p_am->source_term_displ != nullptr) {
     if (p_set->p_am->source_term_displ[attr] >= 0)
       ltsvar = 1;
   }

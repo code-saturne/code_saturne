@@ -113,7 +113,7 @@ cs_user_boundary_conditions(cs_domain_t  *domain,
   const cs_real_t *bpro_rho = CS_F_(rho_b)->val;
 
   const int keysca = cs_field_key_id("scalar_id");
-  const cs_zone_t  *zn = NULL;
+  const cs_zone_t  *zn = nullptr;
 
   cs_real_t *vel_rcodcl1 = CS_F_(vel)->bc_coeffs->rcodcl1;
 
@@ -261,7 +261,7 @@ cs_user_boundary_conditions(cs_domain_t  *domain,
     const cs_lnum_t face_id = zn->elt_ids[e_idx];
     bc_type[face_id] =  CS_SMOOTHWALL;
 
-    if (th_f == NULL)
+    if (th_f == nullptr)
       continue;
 
     /* If temperature prescribed to 20 with wall law */
@@ -283,12 +283,12 @@ cs_user_boundary_conditions(cs_domain_t  *domain,
   /* Assign a rough wall to boundary faces of zone "7" */
 
   /*![example_5]*/
-  cs_real_t *bpro_roughness = NULL, *bpro_roughness_t = NULL;
+  cs_real_t *bpro_roughness = nullptr, *bpro_roughness_t = nullptr;
 
-  if (cs_field_by_name_try("boundary_roughness") != NULL)
+  if (cs_field_by_name_try("boundary_roughness") != nullptr)
     bpro_roughness = cs_field_by_name_try("boundary_roughness")->val;
 
-  if (cs_field_by_name_try("boundary_thermal_roughness") != NULL)
+  if (cs_field_by_name_try("boundary_thermal_roughness") != nullptr)
     bpro_roughness_t = cs_field_by_name_try("boundary_thermal_roughness")->val;
 
   zn = cs_boundary_zone_by_name("7");
@@ -304,11 +304,11 @@ cs_user_boundary_conditions(cs_domain_t  *domain,
     bc_type[face_id] = CS_ROUGHWALL;
 
     /* Roughness for velocity: 1cm */
-    if (bpro_roughness != NULL)
+    if (bpro_roughness != nullptr)
       bpro_roughness[face_id] = 0.01;
 
     /* Roughness for temperature (if required): 1cm */
-    if (bpro_roughness_t != NULL)
+    if (bpro_roughness_t != nullptr)
       bpro_roughness_t[face_id] = 0.01;
 
     /* If sliding wall with velocity */

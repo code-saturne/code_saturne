@@ -93,7 +93,7 @@ BEGIN_C_DECLS
 
 /* Pointer to SSH-aerosol .so */
 
-static void *_aerosol_so = NULL;
+static void *_aerosol_so = nullptr;
 static const char _lib_path[] = "libssh-aerosol.so";
 
 static bool _allow_ssh_postprocess = false;
@@ -370,7 +370,7 @@ cs_atmo_aerosol_ssh_initialize(void)
     char namelist_ssh_default[] = "namelist.ssh";
     char *namelist_ssh;
 
-    if (at_chem->aero_file_name == NULL)
+    if (at_chem->aero_file_name == nullptr)
       namelist_ssh = namelist_ssh_default;
     else
       namelist_ssh = at_chem->aero_file_name;
@@ -833,7 +833,7 @@ cs_atmo_aerosol_ssh_time_advance(void)
     /* Set the relative humidity */
     if (_update_ssh_thermo) {
       cs_field_t* fld = cs_field_by_name_try("total_water");
-      if (fld != NULL) {
+      if (fld != nullptr) {
         cs_real_t totwt = fld->val[cell_id];
         cs_real_t liqwt = cs_field_by_name("liquid_water")->val[cell_id];
         if (fabs(1. - liqwt) < cs_math_epzero)

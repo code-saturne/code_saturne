@@ -301,7 +301,7 @@ _local_extrema_scalar(const cs_real_t *restrict pvar,
     }
   }
 
-  if (m->vtx_interfaces != NULL) {
+  if (m->vtx_interfaces != nullptr) {
     cs_interface_set_min(m->vtx_interfaces,
                          m->n_vertices,
                          1,
@@ -336,7 +336,7 @@ _local_extrema_scalar(const cs_real_t *restrict pvar,
   BFT_FREE(v_max);
 
   /* Synchronisation */
-  if (m->halo != NULL) {
+  if (m->halo != nullptr) {
     cs_halo_sync_var(m->halo, halo_type, local_min);
     cs_halo_sync_var(m->halo, halo_type, local_max);
   }
@@ -492,7 +492,7 @@ cs_field_gradient_scalar(const cs_field_t          *f,
   const cs_equation_param_t
     *eqp = cs_field_get_equation_param_const(parent_f);
 
-  if (eqp != NULL)
+  if (eqp != nullptr)
     imrgra = eqp->imrgra;
   else
     eqp = &eqp_default;
@@ -502,8 +502,8 @@ cs_field_gradient_scalar(const cs_field_t          *f,
                              &halo_type);
 
   int w_stride = 1;
-  cs_real_t *c_weight = NULL;
-  cs_internal_coupling_t  *cpl = NULL;
+  cs_real_t *c_weight = nullptr;
+  cs_internal_coupling_t  *cpl = nullptr;
 
   if (parent_f->type & CS_FIELD_VARIABLE && eqp->idiff > 0) {
 
@@ -536,8 +536,8 @@ cs_field_gradient_scalar(const cs_field_t          *f,
 
   cs_real_t *var = (use_previous_t) ? f->val_pre : f->val;
 
-  cs_field_bc_coeffs_t *bc_coeffs = NULL;
-  if (f->bc_coeffs != NULL) {
+  cs_field_bc_coeffs_t *bc_coeffs = nullptr;
+  if (f->bc_coeffs != nullptr) {
     bc_coeffs = f->bc_coeffs;
   }
 
@@ -552,7 +552,7 @@ cs_field_gradient_scalar(const cs_field_t          *f,
                      static_cast<cs_gradient_limit_t>(eqp->imligr),
                      eqp->epsrgr,
                      eqp->climgr,
-                     NULL, /* f_ext */
+                     nullptr, /* f_ext */
                      bc_coeffs,
                      var,
                      c_weight,
@@ -593,7 +593,7 @@ cs_field_gradient_scalar_array(int                         f_id,
                              &halo_type);
 
   /* Check if given field has internal coupling  */
-  cs_internal_coupling_t  *cpl = NULL;
+  cs_internal_coupling_t  *cpl = nullptr;
   if (f_id > -1) {
     const int key_id = cs_field_key_id_try("coupling_entity");
     if (key_id > -1) {
@@ -616,10 +616,10 @@ cs_field_gradient_scalar_array(int                         f_id,
                      (cs_gradient_limit_t)(eqp->imligr),
                      eqp->epsrgr,
                      eqp->climgr,
-                     NULL,          /* f_ext */
+                     nullptr,          /* f_ext */
                      bc_coeffs,
                      var,
-                     NULL,          /* c_weight */
+                     nullptr,          /* c_weight */
                      cpl,
                      grad);
 }
@@ -668,7 +668,7 @@ cs_field_gradient_potential(const cs_field_t          *f,
   const cs_equation_param_t
     *eqp = cs_field_get_equation_param_const(parent_f);
 
-  if (eqp != NULL)
+  if (eqp != nullptr)
     imrgra = eqp->imrgra;
   else
     eqp = &eqp_default;
@@ -686,8 +686,8 @@ cs_field_gradient_potential(const cs_field_t          *f,
   int w_stride = 1;
   cs_real_t *var = (use_previous_t) ? f->val_pre : f->val;
 
-  cs_real_t *c_weight = NULL;
-  cs_internal_coupling_t  *cpl = NULL;
+  cs_real_t *c_weight = nullptr;
+  cs_internal_coupling_t  *cpl = nullptr;
 
   if (parent_f->type & CS_FIELD_VARIABLE && eqp->idiff > 0) {
 
@@ -711,8 +711,8 @@ cs_field_gradient_potential(const cs_field_t          *f,
 
   }
 
-  const cs_field_bc_coeffs_t *bc_coeffs = NULL;
-  if (f->bc_coeffs != NULL) {
+  const cs_field_bc_coeffs_t *bc_coeffs = nullptr;
+  if (f->bc_coeffs != nullptr) {
     bc_coeffs = f->bc_coeffs;
   }
 
@@ -765,7 +765,7 @@ cs_field_gradient_vector(const cs_field_t          *f,
   /* Get the calculation option from the field */
   const cs_equation_param_t *eqp = cs_field_get_equation_param_const(f);
 
-  if (eqp != NULL)
+  if (eqp != nullptr)
     imrgra = eqp->imrgra;
   else
     eqp = &eqp_default;
@@ -774,8 +774,8 @@ cs_field_gradient_vector(const cs_field_t          *f,
                              &gradient_type,
                              &halo_type);
 
-  cs_real_t *c_weight = NULL;
-  cs_internal_coupling_t  *cpl = NULL;
+  cs_real_t *c_weight = nullptr;
+  cs_internal_coupling_t  *cpl = nullptr;
 
   if (f->type & CS_FIELD_VARIABLE && eqp->idiff > 0) {
 
@@ -807,9 +807,9 @@ cs_field_gradient_vector(const cs_field_t          *f,
   cs_real_3_t *var = (use_previous_t) ? (cs_real_3_t *)(f->val_pre)
                                       : (cs_real_3_t *)(f->val);
 
-  const cs_field_bc_coeffs_t *bc_coeffs = NULL;
+  const cs_field_bc_coeffs_t *bc_coeffs = nullptr;
 
-  if (f->bc_coeffs != NULL) {
+  if (f->bc_coeffs != nullptr) {
     /* coupled components */
     int coupled_key_id = cs_field_key_id_try("coupled");
     if (coupled_key_id > 1) {
@@ -862,7 +862,7 @@ cs_field_gradient_tensor(const cs_field_t          *f,
   /* Get the calculation option from the field */
   const cs_equation_param_t *eqp = cs_field_get_equation_param_const(f);
 
-  if (eqp != NULL)
+  if (eqp != nullptr)
     imrgra = eqp->imrgra;
   else
     eqp = &eqp_default;
@@ -881,7 +881,7 @@ cs_field_gradient_tensor(const cs_field_t          *f,
                                       : (cs_real_6_t *)(f->val);
 
   const cs_field_bc_coeffs_t *bc_coeffs_ts;
-  if (f->bc_coeffs != NULL) {
+  if (f->bc_coeffs != nullptr) {
     int coupled_key_id = cs_field_key_id_try("coupled");
     if (coupled_key_id > 1) {
       if (cs_field_get_key_int(f, coupled_key_id) > 0) {
@@ -946,7 +946,7 @@ cs_field_gradient_boundary_iprime_scalar(const cs_field_t  *f,
   const cs_equation_param_t
     *eqp = cs_field_get_equation_param_const(parent_f);
 
-  if (eqp != NULL)
+  if (eqp != nullptr)
     b_gradient_r = eqp->b_gradient_r;
   else
     eqp = &eqp_default;
@@ -956,8 +956,8 @@ cs_field_gradient_boundary_iprime_scalar(const cs_field_t  *f,
                              &halo_type);
 
   int w_stride = 1;
-  cs_real_t *c_weight = NULL;
-  cs_internal_coupling_t  *cpl = NULL;
+  cs_real_t *c_weight = nullptr;
+  cs_internal_coupling_t  *cpl = nullptr;
 
   if (parent_f->type & CS_FIELD_VARIABLE && eqp->idiff > 0) {
 
@@ -990,8 +990,8 @@ cs_field_gradient_boundary_iprime_scalar(const cs_field_t  *f,
 
   cs_real_t *var = (use_previous_t) ? f->val_pre : f->val;
 
-  const cs_field_bc_coeffs_t *bc_coeffs = NULL;
-  if (f->bc_coeffs != NULL) {
+  const cs_field_bc_coeffs_t *bc_coeffs = nullptr;
+  if (f->bc_coeffs != nullptr) {
     bc_coeffs = f->bc_coeffs;
   }
 
@@ -1036,7 +1036,7 @@ cs_field_gradient_boundary_iprime_scalar(const cs_field_t  *f,
                        static_cast<cs_gradient_limit_t>(eqp->imligr),
                        eqp->epsrgr,
                        eqp->climgr,
-                       NULL, /* f_ext */
+                       nullptr, /* f_ext */
                        bc_coeffs,
                        var,
                        c_weight,
@@ -1048,7 +1048,7 @@ cs_field_gradient_boundary_iprime_scalar(const cs_field_t  *f,
     const cs_lnum_t *restrict b_face_cells
       = (const cs_lnum_t *)m->b_face_cells;
 
-    if (face_ids != NULL) {
+    if (face_ids != nullptr) {
       for (cs_lnum_t idx = 0; idx < n_faces; idx++) {
         cs_lnum_t i = face_ids[idx];
         cs_lnum_t j = b_face_cells[i];
@@ -1113,7 +1113,7 @@ cs_field_gradient_boundary_iprime_vector(const cs_field_t  *f,
   const cs_equation_param_t
     *eqp = cs_field_get_equation_param_const(parent_f);
 
-  if (eqp != NULL)
+  if (eqp != nullptr)
     b_gradient_r = eqp->b_gradient_r;
   else
     eqp = &eqp_default;
@@ -1122,8 +1122,8 @@ cs_field_gradient_boundary_iprime_vector(const cs_field_t  *f,
                              &gradient_type,
                              &halo_type);
 
-  cs_real_t *c_weight = NULL;
-  cs_internal_coupling_t  *cpl = NULL;
+  cs_real_t *c_weight = nullptr;
+  cs_internal_coupling_t  *cpl = nullptr;
 
   if (parent_f->type & CS_FIELD_VARIABLE && eqp->idiff > 0) {
 
@@ -1143,9 +1143,9 @@ cs_field_gradient_boundary_iprime_vector(const cs_field_t  *f,
                 "so \"use_previous_t\" can not be handled."),
               __func__, f->name);
 
-  const cs_field_bc_coeffs_t *bc_coeffs_v = NULL;
+  const cs_field_bc_coeffs_t *bc_coeffs_v = nullptr;
 
-  if (f->bc_coeffs != NULL) {
+  if (f->bc_coeffs != nullptr) {
     /* coupled components */
     int coupled_key_id = cs_field_key_id_try("coupled");
     if (coupled_key_id > 1) {
@@ -1214,7 +1214,7 @@ cs_field_gradient_boundary_iprime_vector(const cs_field_t  *f,
       = (const cs_lnum_t *)m->b_face_cells;
 
     for (cs_lnum_t idx = 0; idx < n_faces; idx++) {
-      cs_lnum_t i = (face_ids != NULL) ? face_ids[idx] : idx;
+      cs_lnum_t i = (face_ids != nullptr) ? face_ids[idx] : idx;
       cs_lnum_t j = b_face_cells[i];
       for (cs_lnum_t k = 0; k < 3; k++) {
         var_iprime[idx][k] =   var[j][k]
@@ -1271,7 +1271,7 @@ cs_field_gradient_boundary_iprime_tensor(const cs_field_t  *f,
   const cs_equation_param_t
     *eqp = cs_field_get_equation_param_const(parent_f);
 
-  if (eqp != NULL)
+  if (eqp != nullptr)
     b_gradient_r = eqp->b_gradient_r;
   else
     eqp = &eqp_default;
@@ -1286,9 +1286,9 @@ cs_field_gradient_boundary_iprime_tensor(const cs_field_t  *f,
                 "so \"use_previous_t\" can not be handled."),
               __func__, f->name);
 
-  const cs_field_bc_coeffs_t *bc_coeffs_ts = NULL;
+  const cs_field_bc_coeffs_t *bc_coeffs_ts = nullptr;
 
-  if (f->bc_coeffs != NULL) {
+  if (f->bc_coeffs != nullptr) {
     /* coupled components */
     int coupled_key_id = cs_field_key_id_try("coupled");
     if (coupled_key_id > 1) {
@@ -1316,7 +1316,7 @@ cs_field_gradient_boundary_iprime_tensor(const cs_field_t  *f,
                                       halo_type,
                                       climgr,
                                       bc_coeffs_ts,
-                                      NULL,
+                                      nullptr,
                                       var,
                                       var_iprime);
 
@@ -1355,7 +1355,7 @@ cs_field_gradient_boundary_iprime_tensor(const cs_field_t  *f,
       = (const cs_lnum_t *)m->b_face_cells;
 
     for (cs_lnum_t idx = 0; idx < n_faces; idx++) {
-      cs_lnum_t i = (face_ids != NULL) ? face_ids[idx] : idx;
+      cs_lnum_t i = (face_ids != nullptr) ? face_ids[idx] : idx;
       cs_lnum_t j = b_face_cells[i];
       for (cs_lnum_t k = 0; k < 6; k++) {
         var_iprime[idx][k] =   var[j][k]
@@ -1519,7 +1519,7 @@ cs_field_synchronize(cs_field_t      *f,
 
     const cs_halo_t *halo = cs_glob_mesh->halo;
 
-    if (halo != NULL) {
+    if (halo != nullptr) {
 
       if (f->dim == 1)
         cs_halo_sync_var(halo, halo_type, f->val);

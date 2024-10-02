@@ -410,7 +410,7 @@ cs_cf_setup(void)
     if (   f->type & CS_FIELD_VARIABLE
         && !(f->type & CS_FIELD_CDO)) {
       cs_equation_param_t *eqp = cs_field_get_equation_param(f);
-      if (eqp != NULL) {
+      if (eqp != nullptr) {
         eqp->blencv = 0;
       }
     }

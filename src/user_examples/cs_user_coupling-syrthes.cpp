@@ -91,7 +91,7 @@ cs_user_syrthes_coupling(void)
 
     cs_syr_coupling_define("SYRTHES_01",
                            "3",               /* boundary criteria */
-                           NULL,              /* volume_criteria */
+                           nullptr,              /* volume_criteria */
                            ' ',               /* projection_axis */
                            allow_nonmatching,
                            tolerance,
@@ -116,7 +116,7 @@ cs_user_syrthes_coupling(void)
 
     cs_syr_coupling_define("SYRTHES_02",
                            "Wall",            /* boundary criteria */
-                           NULL,              /* volume_criteria */
+                           nullptr,              /* volume_criteria */
                            'z',               /* projection_axis */
                            allow_nonmatching,
                            tolerance,
@@ -140,7 +140,7 @@ cs_user_syrthes_coupling(void)
      *-------------------------------------------------------------------------*/
 
     cs_syr_coupling_define("Solid",
-                           NULL,                          /* boundary */
+                           nullptr,                          /* boundary */
                            "box[0., 0., 0., 1., 1., 1.]", /* volume */
                            ' ',                           /* projection */
                            allow_nonmatching,
@@ -223,10 +223,10 @@ cs_user_syrthes_coupling_volume_h(int               coupling_id,
   const cs_real_t  cp0 = cs_glob_fluid_properties->cp0;
   cs_real_t  visls_0 = -1;
 
-  const cs_real_t  *cpro_cp = NULL, *cpro_viscls = NULL;
+  const cs_real_t  *cpro_cp = nullptr, *cpro_viscls = nullptr;
   cs_lnum_t  cp_step = 0, viscls_step = 0;
 
-  if (CS_F_(cp) != NULL) {
+  if (CS_F_(cp) != nullptr) {
     cpro_cp = (const cs_real_t *)CS_F_(cp)->val;
     cp_step = 1;
   }

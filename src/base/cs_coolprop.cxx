@@ -78,7 +78,7 @@ typedef struct {
  *============================================================================*/
 
 static int  _n_states = 0;
-static cs_coolprop_state_t *_states = NULL;
+static cs_coolprop_state_t *_states = nullptr;
 
 /*============================================================================
  * Private function definitions
@@ -126,7 +126,7 @@ cs_phys_prop_coolprop(char                              *coolprop_material,
   char name1[] = "P";
 
   char backend[32];
-  if (coolprop_backend != NULL)
+  if (coolprop_backend != nullptr)
     strncpy(backend, coolprop_backend, 32);
   else
     strncpy(backend, "HEOS", 32);
@@ -249,7 +249,7 @@ cs_phys_prop_coolprop(char                              *coolprop_material,
   long output_key = get_param_index(outputs);
 
   double *prop1, *prop2, *result;
-  double *_prop1 = NULL, *_prop2 = NULL, *_result = NULL;
+  double *_prop1 = nullptr, *_prop2 = nullptr, *_result = nullptr;
 
   if (sizeof(cs_real_t) != sizeof(double)) {
     BFT_MALLOC(_prop1, n_vals, double);
@@ -340,7 +340,7 @@ cs_phys_prop_coolprop(char                              *coolprop_material,
 
   cs_fp_exception_restore_trap();
 
-  if (_result != NULL) {
+  if (_result != nullptr) {
     for (int i = 0; i < n_vals; i++)
       val[i] = result[i];
     BFT_FREE(_result);

@@ -103,7 +103,7 @@ cs_user_extra_operations(cs_domain_t     *domain)
     const char criteria[] = "zone_group";
 
     cs_lnum_t   n_selected_cells = 0;
-    cs_lnum_t  *selected_cells = NULL;
+    cs_lnum_t  *selected_cells = nullptr;
 
     cs_real_t balance[CS_BALANCE_N_TERMS];
 
@@ -141,7 +141,7 @@ cs_user_extra_operations(cs_domain_t     *domain)
     const char criteria[] = "zone_group";
 
     cs_lnum_t   n_selected_cells = 0;
-    cs_lnum_t  *selected_cells = NULL;
+    cs_lnum_t  *selected_cells = nullptr;
 
     cs_real_t balance[CS_BALANCE_P_N_TERMS];
 

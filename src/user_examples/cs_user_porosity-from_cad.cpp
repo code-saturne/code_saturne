@@ -120,17 +120,17 @@ cs_user_porosity(cs_domain_t   *domain)
                    z_poro->n_elts,
                    z_poro->elt_ids,
                    cell_porosity,
-                   NULL,  /* modified cell centers */
+                   nullptr,  /* modified cell centers */
                    i_face_porosity,
-                   NULL,  /* modified interior face centers */
+                   nullptr,  /* modified interior face centers */
                    b_face_porosity,
-                   NULL);  /* modified boundary face centers */
+                   nullptr);  /* modified boundary face centers */
   /*!< [user_poro_cad_intersect] */
 
   /*!< [user_poro_cad_quantities] */
   /* synchronize ghost cells */
 
-  if (m->halo != NULL)
+  if (m->halo != nullptr)
     cs_halo_sync_var(m->halo, CS_HALO_EXTENDED, cell_porosity);
 
   /* Set interior and boundary face values */
@@ -174,7 +174,7 @@ cs_user_porosity(cs_domain_t   *domain)
 
   /* Four set face factor */
 
-  if (mq->i_f_face_factor != NULL) {
+  if (mq->i_f_face_factor != nullptr) {
     const cs_lnum_2_t *i_face_cells
       = (const cs_lnum_2_t *)m->i_face_cells;
     const cs_real_t *i_face_surf = mq->i_face_surf;

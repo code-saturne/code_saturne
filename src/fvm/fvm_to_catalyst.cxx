@@ -163,7 +163,7 @@ typedef struct {
   int                         time_step;       /* Latest time step */
   double                      time_value;      /* Latest time value */
 
-  char                       *input_name;      /* input name, or NULL for
+  char                       *input_name;      /* input name, or nullptr for
                                                   default */
   bool                        private_comm;    /* Use private communicator */
   bool                        ensight_names;   /* Use EnSight rules for
@@ -181,9 +181,9 @@ typedef struct {
 int _n_writers = 0;
 
 int _n_scripts = 0;                         /* Number of scripts */
-char **_scripts = NULL;                     /* List of scripts */
+char **_scripts = nullptr;                     /* List of scripts */
 
-vtkCPProcessor  *_processor = NULL;         /* Co processor */
+vtkCPProcessor  *_processor = nullptr;         /* Co processor */
 
 #if defined(HAVE_MPI)
 MPI_Comm  _comm = MPI_COMM_NULL;            /* Associated communicator */
@@ -213,12 +213,12 @@ MPI_Comm  _reference_comm = MPI_COMM_NULL;  /* Reference communicator */
 static int
 _check_script_is_catalyst(const char  *path)
 {
-  assert(path != NULL);
+  assert(path != nullptr);
   int retval = 0;
 
   FILE *fp = fopen(path, "r");
 
-  if (fp == NULL)
+  if (fp == nullptr)
     return retval;
 
   int checks[] = {false, false, false};
@@ -240,7 +240,7 @@ _check_script_is_catalyst(const char  *path)
     char *e = buffer+1024;
 
     char *s = fgets(buffer, 1024, fp);
-    if (s == NULL) break;
+    if (s == nullptr) break;
 
     while (s < e && *s == ' ' && *s == '\t')  /* skip initial whitespace */
       s++;
@@ -307,7 +307,7 @@ _check_script_is_catalyst(const char  *path)
       s++;
     while (s >= e) {
       s = fgets(buffer, 1024, fp);
-      if (s == NULL) break;
+      if (s == nullptr) break;
       while (s < e && *s != '\0' && *s != '\n')
         s++;
     }
@@ -331,7 +331,7 @@ _check_script_is_catalyst(const char  *path)
 static int
 _add_v2_pipeline(const char  *path)
 {
-  assert(path != NULL);
+  assert(path != nullptr);
 
   /* Check that we did not already add this file */
 
@@ -396,7 +396,7 @@ _add_v2_pipeline(const char  *path)
 static int
 _add_script(const char         *path)
 {
-  assert(path != NULL);
+  assert(path != nullptr);
 
   int is_catalyst = 0;
   int rank = 0, n_ranks = 1;
@@ -467,10 +467,10 @@ _add_dir_scripts(const char  *dir_path)
 {
   char **dir_files = cs_file_listdir(dir_path);
 
-  for (int i = 0; dir_files[i] != NULL; i++) {
+  for (int i = 0; dir_files[i] != nullptr; i++) {
 
     const char *file_name = dir_files[i];
-    const char *ext = NULL;
+    const char *ext = nullptr;
     int l_ext = 0;
 
     /* Find extension */
@@ -481,14 +481,14 @@ _add_dir_scripts(const char  *dir_path)
         break;
       }
     }
-    if (ext == NULL) {
+    if (ext == nullptr) {
       BFT_FREE(dir_files[i]);
       continue;
     }
 
     /* Filter: Python files only */
     if (l_ext == 3 && strncmp(ext, ".py", 3) == 0) {
-      char *tmp_name = NULL;
+      char *tmp_name = nullptr;
       BFT_MALLOC(tmp_name,
                  strlen(dir_path) + 1 + strlen(file_name) + 1,
                  char);
@@ -501,7 +501,7 @@ _add_dir_scripts(const char  *dir_path)
 
     /* Filter: Catalyst V2 pipeline might be in ".zip" form */
     else if (l_ext == 4 && strncmp(ext, ".zip", 4) == 0) {
-      char *tmp_name = NULL;
+      char *tmp_name = nullptr;
       BFT_MALLOC(tmp_name,
                  strlen(dir_path) + 1 + strlen(file_name) + 1,
                  char);
@@ -550,7 +550,7 @@ _init_coprocessor(void)
 
 #endif
 
-  if (_processor == NULL) {
+  if (_processor == nullptr) {
 
     _processor = vtkCPProcessor::New();
 
@@ -601,7 +601,7 @@ _init_coprocessor(void)
 static void
 _free_coprocessor(void)
 {
-  if (_processor != NULL && _n_writers < 2) {
+  if (_processor != nullptr && _n_writers < 2) {
 
     _processor->Finalize();
 
@@ -613,7 +613,7 @@ _free_coprocessor(void)
 
     if (_n_scripts > 0) {
       const char *s = getenv("CS_PV_CP_DELETE_CRASH_WORKAROUND");
-      if (s != NULL) {
+      if (s != nullptr) {
         if (atoi(s) > 0)
           cp_delete = false;
       }
@@ -621,7 +621,7 @@ _free_coprocessor(void)
     if (cp_delete)
       _processor->Delete();
 
-    _processor = NULL;
+    _processor = nullptr;
 
     for (int i = 0; i < _n_scripts; i++)
       BFT_FREE(_scripts[i]);
@@ -657,7 +657,7 @@ _get_catalyst_mesh_id(fvm_to_catalyst_t  *writer,
   int i;
   int retval = -1;
 
-  assert(writer != NULL);
+  assert(writer != nullptr);
 
   int nb = writer->mb->GetNumberOfBlocks();
   for (i = 0; i < nb; i++) {
@@ -688,7 +688,7 @@ static int
 _add_catalyst_mesh(fvm_to_catalyst_t  *writer,
                    const fvm_nodal_t  *mesh)
 {
-  assert(writer != NULL);
+  assert(writer != nullptr);
 
   /* Add a new Catalyst mesh structure */
 
@@ -936,11 +936,11 @@ _add_catalyst_field(fvm_to_catalyst_t         *writer,
               writer->n_fields+ 1,
               fvm_catalyst_field_t *);
 
-  vtkUnstructuredGrid *f = NULL;
+  vtkUnstructuredGrid *f = nullptr;
 
   const int dest_dim = (dim == 6) ? 9 : dim;
 
-  if (writer->mb->GetMetaData(mesh_id) != NULL) {
+  if (writer->mb->GetMetaData(mesh_id) != nullptr) {
 
     f = vtkUnstructuredGrid::SafeDownCast(vtkDataSet::SafeDownCast
           (writer->mb->GetBlock(mesh_id)));
@@ -1011,7 +1011,7 @@ _export_vertex_coords(const fvm_nodal_t        *mesh,
 
   points->Allocate(mesh->n_vertices);
 
-  if (mesh->parent_vertex_id != NULL) {
+  if (mesh->parent_vertex_id != nullptr) {
     const cs_lnum_t  *parent_vertex_id = mesh->parent_vertex_id;
     for (i = 0; i < n_vertices; i++) {
       for (j = 0; j < mesh->dim; j++)
@@ -1031,7 +1031,7 @@ _export_vertex_coords(const fvm_nodal_t        *mesh,
     }
   }
 
-  if (mesh->global_vertex_num != NULL) {
+  if (mesh->global_vertex_num != nullptr) {
 
     const cs_gnum_t *g_vtx_num
       = fvm_io_num_get_global_num(mesh->global_vertex_num);
@@ -1088,7 +1088,7 @@ _write_connect_block(fvm_element_t         type,
 
   _get_vertex_order(vtk_type, vertex_order);
 
-  assert(vtk_mesh != NULL);
+  assert(vtk_mesh != nullptr);
 
   for (i = 0; i < n_elts; i++) {
     for (j = 0; j < stride; j++)
@@ -1114,7 +1114,7 @@ _export_nodal_polygons(const fvm_nodal_section_t  *section,
   cs_lnum_t   i, j;
 
   int vtx_ids_size = 8;
-  vtkIdType *vtx_ids = NULL;
+  vtkIdType *vtx_ids = nullptr;
 
   BFT_MALLOC(vtx_ids, vtx_ids_size, vtkIdType);
 
@@ -1163,9 +1163,9 @@ _export_nodal_polyhedra(cs_lnum_t                   n_vertices,
 
   cs_lnum_t  face_length, face_id;
 
-  int *vtx_marker = NULL;
-  vtkIdType *face_array = NULL;
-  vtkIdType *vtx_ids = NULL;
+  int *vtx_marker = nullptr;
+  vtkIdType *face_array = nullptr;
+  vtkIdType *vtx_ids = nullptr;
 
   BFT_MALLOC(vtx_marker, n_vertices, int);
   BFT_MALLOC(face_array, buf_size, vtkIdType);
@@ -1264,9 +1264,9 @@ _export_field_values_n(const fvm_nodal_t    *mesh,
                        const void           *const field_values[],
                        vtkUnstructuredGrid  *f)
 {
-  assert(f != NULL);
+  assert(f != nullptr);
 
-  double *values = NULL;
+  double *values = nullptr;
 
   const int dest_dim = (dim == 6) ? 9 : dim;
 
@@ -1334,10 +1334,10 @@ _export_field_values_e(const fvm_nodal_t         *mesh,
                        const void          *const field_values[],
                        vtkUnstructuredGrid       *f)
 {
-  assert(f != NULL);
+  assert(f != nullptr);
 
   int  section_id;
-  double  *values = NULL;
+  double  *values = nullptr;
 
   const int dest_dim = (dim == 6) ? 9 : dim;
 
@@ -1361,7 +1361,7 @@ _export_field_values_e(const fvm_nodal_t         *mesh,
     if (section->entity_dim < elt_dim)
       continue;
 
-    assert(values != NULL || section->n_elements == 0);
+    assert(values != nullptr || section->n_elements == 0);
 
     fvm_convert_array(dim,
                       0,
@@ -1389,7 +1389,7 @@ _export_field_values_e(const fvm_nodal_t         *mesh,
 
     cs_lnum_t n_elts = f->GetNumberOfCells();
 
-    assert(values != NULL || n_elts == 0);
+    assert(values != nullptr || n_elts == 0);
 
     for (cs_lnum_t i = 0; i < n_elts; i++) {
       values[9*i + 8] = values[9*i + 2];
@@ -1445,7 +1445,7 @@ fvm_to_catalyst_init_writer(const char             *name,
 {
   CS_UNUSED(path);
 
-  fvm_to_catalyst_t  *w = NULL;
+  fvm_to_catalyst_t  *w = nullptr;
 
   bool private_comm = false;
 
@@ -1461,17 +1461,17 @@ fvm_to_catalyst_init_writer(const char             *name,
   w->mb = vtkMultiBlockDataSet::New();
 
   w->n_fields  = 0;
-  w->fields = NULL;
+  w->fields = nullptr;
 
   w->time_step  = -1;
   w->time_value = 0.0;
 
   w->ensight_names = true;
-  w->input_name = NULL;
+  w->input_name = nullptr;
 
   /* Writer name */
 
-  if (name != NULL) {
+  if (name != nullptr) {
     BFT_MALLOC(w->name, strlen(name) + 1, char);
     strcpy(w->name, name);
   }
@@ -1483,7 +1483,7 @@ fvm_to_catalyst_init_writer(const char             *name,
 
   /* Parse options */
 
-  if (options != NULL) {
+  if (options != nullptr) {
 
     int i1, i2, l_opt;
     int l_tot = strlen(options);
@@ -1516,7 +1516,7 @@ fvm_to_catalyst_init_writer(const char             *name,
   }
 
 #if CS_PV_VERSION < 55
-  if (w->input_name == NULL) {
+  if (w->input_name == nullptr) {
     char n[] = "input";
     BFT_MALLOC(w->input_name, strlen(n)+1, char);
     strcpy(w->input_name, n);
@@ -1557,7 +1557,7 @@ fvm_to_catalyst_init_writer(const char             *name,
  *   this_writer_p <-- pointer to opaque writer structure.
  *
  * returns:
- *   NULL pointer
+ *   nullptr pointer
  *----------------------------------------------------------------------------*/
 
 void *
@@ -1567,7 +1567,7 @@ fvm_to_catalyst_finalize_writer(void  *this_writer_p)
 
   fvm_to_catalyst_t  *w = (fvm_to_catalyst_t *)this_writer_p;
 
-  assert(w != NULL);
+  assert(w != nullptr);
 
   /* Write output if not done already */
 
@@ -1587,7 +1587,7 @@ fvm_to_catalyst_finalize_writer(void  *this_writer_p)
   w->mb->Delete();
 
   for (i = 0; i < w->n_fields; i++) {
-    w->fields[i]->f = NULL; // delete w->fields[i]->f;
+    w->fields[i]->f = nullptr; // delete w->fields[i]->f;
     BFT_FREE(w->fields[i]);
   }
 
@@ -1597,7 +1597,7 @@ fvm_to_catalyst_finalize_writer(void  *this_writer_p)
 
   BFT_FREE(w);
 
-  return NULL;
+  return nullptr;
 }
 
 /*----------------------------------------------------------------------------
@@ -1623,7 +1623,7 @@ fvm_to_catalyst_set_mesh_time(void    *this_writer_p,
     if (   w->time_dependency == FVM_WRITER_TRANSIENT_CONNECT
         && _time_step > w->time_step) {
       for (int i = 0; i < w->n_fields; i++) {
-        w->fields[i]->f = NULL; // delete w->fields[i]->f;
+        w->fields[i]->f = nullptr; // delete w->fields[i]->f;
         BFT_FREE(w->fields[i]);
       }
       BFT_FREE(w->fields);
@@ -1883,7 +1883,7 @@ fvm_to_catalyst_flush(void  *this_writer_p)
   fvm_to_catalyst_t *w = (fvm_to_catalyst_t *)this_writer_p;
 
   vtkNew<vtkCPDataDescription> dataDescription;
-  if (w->input_name != NULL)
+  if (w->input_name != nullptr)
     dataDescription->AddInput(w->input_name);
   else
     dataDescription->AddInput(w->name);
@@ -1894,7 +1894,7 @@ fvm_to_catalyst_flush(void  *this_writer_p)
     if (n == 1)
       dataDescription->GetInputDescription(0)->SetGrid(w->mb);
     else {
-      if (w->input_name != NULL)
+      if (w->input_name != nullptr)
         dataDescription->GetInputDescriptionByName(w->input_name)->SetGrid(w->mb);
       else
         dataDescription->GetInputDescriptionByName(w->name)->SetGrid(w->mb);

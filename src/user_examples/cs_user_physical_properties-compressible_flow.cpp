@@ -85,9 +85,9 @@ cs_user_physical_properties(cs_domain_t   *domain)
   /*! [compressible_properties_init] */
   const cs_lnum_t n_cells = domain->mesh->n_cells;
 
-  cs_real_t *cpro_cp = NULL;
-  cs_real_t *cpro_cv = NULL;
-  cs_real_t *cpro_vtmpk = NULL;
+  cs_real_t *cpro_cp = nullptr;
+  cs_real_t *cpro_cv = nullptr;
+  cs_real_t *cpro_vtmpk = nullptr;
   cs_real_t *cpro_viscl = CS_F_(mu)->val;
   cs_real_t *cvar_t = CS_F_(t_kelvin)->val;
   cs_real_t *mix_mol_mas = cs_field_by_name("mix_mol_mas")->val;
@@ -100,10 +100,10 @@ cs_user_physical_properties(cs_domain_t   *domain)
   if (ifcvsl > -1)
     cpro_vtmpk = cs_field_by_id(ifcvsl)->val;
 
-  if (CS_F_(cp) != NULL)
+  if (CS_F_(cp) != nullptr)
     cpro_cp = CS_F_(cp)->val;
 
-  if (CS_F_(cv) != NULL)
+  if (CS_F_(cv) != nullptr)
       cpro_cv = CS_F_(cv)->val;
   /*! [compressible_properties_init] */
 
@@ -146,7 +146,7 @@ cs_user_physical_properties(cs_domain_t   *domain)
     /*! [example_2] */
 
     /* Stop if the volumetric viscosity has not been defined as variable */
-    if (cpro_viscv == NULL)
+    if (cpro_viscv == nullptr)
       bft_error(__FILE__, __LINE__, 0,
                 "%s: cpro_viscv not available.", __func__);
 
@@ -182,7 +182,7 @@ cs_user_physical_properties(cs_domain_t   *domain)
     /* Stop if the isobaric or isochoric specific heat (cpro_cp or cpro_cv)
      * has not been defined as variable */
 
-    if ((cpro_cp == NULL) || (cpro_cv == NULL))
+    if ((cpro_cp == nullptr) || (cpro_cv == nullptr))
       bft_error(__FILE__, __LINE__, 0,
                 "%s: cpro_cp or cpro_cv not available.", __func__);
 
@@ -219,7 +219,7 @@ cs_user_physical_properties(cs_domain_t   *domain)
     /* Stop if the molecular thermal conductivity has not
      * been defined as variable */
 
-    if (cpro_vtmpk == NULL)
+    if (cpro_vtmpk == nullptr)
       bft_error(__FILE__, __LINE__, 0,
                 "%s: cpro_vtmpk not available.", __func__);
 

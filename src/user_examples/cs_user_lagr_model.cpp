@@ -51,7 +51,7 @@ BEGIN_C_DECLS
 /*----------------------------------------------------------------------------
  * Compute boundary impact weight for Lagrangian statistics.
  *
- * Note: if the input pointer is non-NULL, it must point to valid data
+ * Note: if the input pointer is non-nullptr, it must point to valid data
  * when the selection function is called, so that value or structure should
  * not be temporary (i.e. local);
  *
@@ -92,7 +92,7 @@ _boundary_impact_weight(const void                 *input,
 /*----------------------------------------------------------------------------
  * Compute incident kinetic energy impact weight for Lagrangian statistics.
  *
- * Note: if the input pointer is non-NULL, it must point to valid data
+ * Note: if the input pointer is non-nullptr, it must point to valid data
  * when the selection function is called, so that value or structure should
  * not be temporary (i.e. local);
  *
@@ -730,9 +730,9 @@ cs_user_lagr_model(void)
          1,                         /* dimension */
          -1,                        /* component_id, */
          _incident_kinetic_energy,  /* data_func */
-         NULL,                      /* data_input */
+         nullptr,                      /* data_input */
          _boundary_impact_weight,   /* w_data_func */
-         NULL,                      /* w_data_input */
+         nullptr,                      /* w_data_input */
          0,
          -1,
          CS_LAGR_MOMENT_RESTART_AUTO);

@@ -138,7 +138,7 @@ cs_ctwr_add_variable_fields(void)
     {
       f = cs_field_by_name_try("ym_water");
       /* If not using the atmospheric module, we create the field */
-      if (f == NULL) {
+      if (f == nullptr) {
         int f_id = cs_variable_field_create("ym_water",
             "Mass frac water air",
             CS_MESH_LOCATION_CELLS,
@@ -178,7 +178,7 @@ cs_ctwr_add_variable_fields(void)
       /* Bulk humid air temperature */
       f = cs_field_by_name_try("temperature");
       /* If no temperature field exist, we create the field */
-      if (f == NULL) {
+      if (f == nullptr) {
         /* Thermal model - Set parameters of calculations (module optcal) */
         cs_thermal_model_t *thermal = cs_get_glob_thermal_model();
 
@@ -435,7 +435,7 @@ cs_ctwr_add_property_fields(void)
   const int post_flag = CS_POST_ON_LOCATION | CS_POST_MONITOR;
   cs_ctwr_option_t *ct_opt = cs_get_glob_ctwr_option();
 
-  if (cs_field_by_name_try("thermal_expansion") == NULL) {
+  if (cs_field_by_name_try("thermal_expansion") == nullptr) {
     /* Humid air thermal expansion coefficient */
     f = cs_field_create("thermal_expansion",
                         field_type,

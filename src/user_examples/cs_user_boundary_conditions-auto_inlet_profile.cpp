@@ -125,7 +125,7 @@ cs_user_boundary_conditions(cs_domain_t  *domain,
   const cs_real_t *bpro_rho = CS_F_(rho_b)->val;
   const cs_real_3_t *cvar_vel = (const cs_real_3_t *)CS_F_(vel)->val;
 
-  const cs_zone_t  *zn = NULL;
+  const cs_zone_t  *zn = nullptr;
   /*! [init] */
 
   /* Assign a pseudo-periodic channel type inlet to a set of boundary faces.
@@ -153,7 +153,7 @@ cs_user_boundary_conditions(cs_domain_t  *domain,
      * The loop below assumes wall conditions have been defined first
      * (in the GUI, or in this file, before the current test). */
 
-    int *mrkcel = NULL;
+    int *mrkcel = nullptr;
     if ((cs_glob_turb_model->iturb == CS_TURB_RIJ_EPSILON_EBRSM) ||
         (cs_glob_turb_model->itytur == 5)){
 

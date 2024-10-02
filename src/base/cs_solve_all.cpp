@@ -237,7 +237,7 @@ _compute_tensorial_time_step(const cs_mesh_t   *m,
     cs_math_sym_33_inv_cramer(hdls, dttens[c_id]);
   }
 
-  if (m->halo != NULL) {
+  if (m->halo != nullptr) {
     cs_mesh_sync_var_sym_tens(dttens);
   }
 }
@@ -300,7 +300,7 @@ _solve_coupled_vel_p_variables_equation(const int        n_scal,
   const int key_buoyant_id = cs_field_key_id_try("coupled_with_vel_p");
   // Correction only made for the collocated time-scheme (Li Ma phd)
   cs_field_t *rho_mass = cs_field_by_name_try("density_mass");
-  if (   rho_mass != NULL
+  if (   rho_mass != nullptr
       && cs_glob_velocity_pressure_param->itpcol == 1) {
     for (int ii = 0; ii < n_scal; ii++) {
       const cs_field_t *f = cs_field_by_id(scalar_idx[ii]);
@@ -344,7 +344,7 @@ _update_pressure_temperature(cs_lnum_t n_cells)
   if (   cs_glob_thermal_model->thermal_variable
       == CS_THERMAL_MODEL_INTERNAL_ENERGY) {
     cs_field_t *temp = cs_field_by_name_try("temperature");
-    if (temp != NULL)
+    if (temp != nullptr)
       cs_array_real_copy(n_cells, temp->val, temp->val_pre);
   }
 
@@ -392,10 +392,10 @@ _solve_most(int              n_var,
   cs_field_t *th_f = cs_thermal_model_field();
   bool _must_return = *must_return;
 
-  int *isostd = NULL;
-  cs_real_t *hbord = NULL;
-  cs_real_t *theipb = NULL;
-  cs_real_t *visvdr = NULL;
+  int *isostd = nullptr;
+  cs_real_t *hbord = nullptr;
+  cs_real_t *theipb = nullptr;
+  cs_real_t *visvdr = nullptr;
 
   CS_MALLOC_HD(isostd, n_b_faces+1, int, cs_alloc_mode);
 
@@ -417,7 +417,7 @@ _solve_most(int              n_var,
   if (isvhb > -1)
     BFT_MALLOC(hbord, n_b_faces, cs_real_t);
 
-  if (th_f != NULL)
+  if (th_f != nullptr)
     BFT_MALLOC(theipb, n_b_faces, cs_real_t);
 
   if (   cs_glob_turb_model->itytur == 4
@@ -483,7 +483,7 @@ _solve_most(int              n_var,
       if (isvhb > -1)
         cs_syr_coupling_send_boundary(hbord, theipb);
 
-      if (th_f != NULL && cs_glob_1d_wall_thermal->nfpt1t > 0) {
+      if (th_f != nullptr && cs_glob_1d_wall_thermal->nfpt1t > 0) {
         cs_boundary_conditions_coupling_t_out(hbord, theipb);
 
         if (   wall_cond->icondb == 0
@@ -526,7 +526,7 @@ _solve_most(int              n_var,
     }
 
     /* Compute y+ if needed and Van Driest damping */
-    if (visvdr != NULL)
+    if (visvdr != nullptr)
       cs_wall_distance_yplus(visvdr);
 
     if (   cs_restart_present() == 0
@@ -670,7 +670,7 @@ _solve_turbulence(cs_lnum_t   n_cells,
 
   if (   cs_glob_turb_model->itytur == 2
       || cs_glob_turb_model->itytur == 5) {
-    cs_real_t *prdv2f = NULL;
+    cs_real_t *prdv2f = nullptr;
     if (cs_glob_turb_model->itytur == 5)
       BFT_MALLOC(prdv2f, n_cells_ext, cs_real_t);
     cs_turbulence_ke(-1, prdv2f);
@@ -876,7 +876,7 @@ cs_solve_all(int  itrale)
   }
 
   /* Halo synchronization (only variables require this) */
-  if (m->halo != NULL) {
+  if (m->halo != nullptr) {
     for (int f_id = 0; f_id < n_fields; f_id++) {
       const cs_field_t *f = cs_field_by_id(f_id);
       if (!(f->type & CS_FIELD_VARIABLE))
@@ -902,7 +902,7 @@ cs_solve_all(int  itrale)
     static bool first_pass = true;
     if (first_pass) {
       if (   cs_glob_velocity_pressure_param->iphydr == 1
-          && cs_field_by_name_try("volume_forces") != NULL) {
+          && cs_field_by_name_try("volume_forces") != nullptr) {
         cs_real_t *frcxt = cs_field_by_name_try("volume_forces")->val;
         cs_halo_sync_var_strided(m->halo, CS_HALO_STANDARD, frcxt, 3);
         cs_halo_perio_sync_var_vect(m->halo,  CS_HALO_STANDARD, frcxt, 3);
@@ -965,8 +965,8 @@ cs_solve_all(int  itrale)
   const int ncpdct = cs_volume_zone_n_type_zones(CS_VOLUME_ZONE_HEAD_LOSS);
   const cs_lnum_t ncepdc = cs_volume_zone_n_type_cells(CS_VOLUME_ZONE_HEAD_LOSS);
 
-  cs_lnum_t *icepdc = NULL;
-  cs_real_6_t *ckupdc = NULL;
+  cs_lnum_t *icepdc = nullptr;
+  cs_real_6_t *ckupdc = nullptr;
 
   if (ncpdct > 0) {
     BFT_MALLOC(icepdc, ncepdc, cs_lnum_t);
@@ -1061,7 +1061,7 @@ cs_solve_all(int  itrale)
    * change (gas phase to liquid phase)
    * ---------------------------------------------------------------------- */
 
-  cs_real_t *htot_cond = NULL;
+  cs_real_t *htot_cond = nullptr;
   cs_wall_condensation_t *wall_cond = cs_get_glob_wall_condensation();
   if ((wall_cond->icondb == 0) || (wall_cond->icondv == 0)) {
     // Condensation source terms arrays initialized

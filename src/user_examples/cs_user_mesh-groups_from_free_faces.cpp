@@ -82,8 +82,8 @@ _mesh_groups_from_free_faces(cs_mesh_t  *mesh,
                              double      tolerance)
 {
   cs_lnum_t  n_free_faces = 0, n_b_faces = 0, n_no_group = 0;
-  cs_lnum_t  *free_faces_list = NULL, *no_group_list = NULL;
-  int *family_flag = NULL;
+  cs_lnum_t  *free_faces_list = nullptr, *no_group_list = nullptr;
+  int *family_flag = nullptr;
 
   if (mesh->n_g_free_faces == 0)
     return;
@@ -143,7 +143,7 @@ _mesh_groups_from_free_faces(cs_mesh_t  *mesh,
                                                            false,
                                                            0,
                                                            n_free_faces,
-                                                           NULL,
+                                                           nullptr,
                                                            free_faces_list);
 
   /* Associated PLE locator */
@@ -156,7 +156,7 @@ _mesh_groups_from_free_faces(cs_mesh_t  *mesh,
   ple_locator_t *locator = ple_locator_create();
 #endif
 
-  cs_real_t *b_face_cog = NULL, * b_face_normal = NULL;
+  cs_real_t *b_face_cog = nullptr, * b_face_normal = nullptr;
 
   cs_mesh_quantities_b_faces(mesh, &b_face_cog, &b_face_normal);
 
@@ -164,15 +164,15 @@ _mesh_groups_from_free_faces(cs_mesh_t  *mesh,
 
   ple_locator_set_mesh(locator,
                        free_faces,
-                       NULL,      /* options */
+                       nullptr,      /* options */
                        0.,        /* absolute tolerance */
                        tolerance, /* relative tolerance */
                        3,
                        n_no_group,
                        no_group_list,
-                       NULL,
+                       nullptr,
                        b_face_cog,
-                       NULL,
+                       nullptr,
                        cs_coupling_mesh_extents,
                        cs_coupling_point_in_mesh_p);
 
@@ -214,7 +214,7 @@ _mesh_groups_from_free_faces(cs_mesh_t  *mesh,
 
   const ple_lnum_t *dist_loc = ple_locator_get_dist_locations(locator);
 
-  int *dist_fm_id = NULL;
+  int *dist_fm_id = nullptr;
   BFT_MALLOC(dist_fm_id, n_dist_points, int);
 
   for (cs_lnum_t i = 0; i < n_dist_points; i++)

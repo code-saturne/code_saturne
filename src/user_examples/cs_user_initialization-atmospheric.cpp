@@ -131,13 +131,13 @@ cs_user_initialization(cs_domain_t     *domain)
 
   /* Example to initialize variables using 1-D meteo data */
 
-  cs_real_t *cvar_k = NULL;
-  cs_real_t *cvar_ep = NULL;
-  cs_real_t *cvar_fb = NULL;
-  cs_real_t *cvar_omg = NULL;
-  cs_real_t *cvar_phi = NULL;
-  cs_real_t *cvar_nusa = NULL;
-  cs_real_6_t *cvar_rij = NULL;
+  cs_real_t *cvar_k = nullptr;
+  cs_real_t *cvar_ep = nullptr;
+  cs_real_t *cvar_fb = nullptr;
+  cs_real_t *cvar_omg = nullptr;
+  cs_real_t *cvar_phi = nullptr;
+  cs_real_t *cvar_nusa = nullptr;
+  cs_real_6_t *cvar_rij = nullptr;
 
   cs_real_3_t *cvar_vel = (cs_real_3_t *)CS_F_(vel)->val;
 
@@ -233,7 +233,7 @@ cs_user_initialization(cs_domain_t     *domain)
       cvar_nusa[c_id] = cs_turb_cmu*cs_math_pow2(xkent)/xeent;
     }
 
-    if (th_f != NULL) {
+    if (th_f != nullptr) {
 
       /* Assume the scalar is a potential temperature */
       const cs_real_t tpent = cs_intprf(cs_glob_atmo_option->met_1d_nlevels_max_t,

@@ -136,41 +136,41 @@ static cs_atmo_option_t  _atmo_option = {
   .rad_1d_nlevels = 20,
   .rad_1d_nlevels_max = 0,
   .rad_1d_frequency = 1,
-  .rad_1d_xy = NULL,
-  .rad_1d_z = NULL,
-  .rad_1d_acinfe = NULL,
-  .rad_1d_dacinfe = NULL,
-  .rad_1d_aco2 = NULL,
-  .rad_1d_aco2s = NULL,
-  .rad_1d_daco2 = NULL,
-  .rad_1d_daco2s = NULL,
-  .rad_1d_acsup = NULL,
-  .rad_1d_acsups = NULL,
-  .rad_1d_dacsup = NULL,
-  .rad_1d_dacsups = NULL,
-  .rad_1d_tauzq = NULL,
-  .rad_1d_tauz = NULL,
-  .rad_1d_zq = NULL,
-  .rad_1d_zray = NULL,
-  .rad_1d_ir_div = NULL,
-  .rad_1d_sol_div = NULL,
-  .rad_1d_iru = NULL,
-  .rad_1d_ird = NULL,
-  .rad_1d_solu = NULL,
-  .rad_1d_sold = NULL,
-  .rad_1d_qw = NULL,
-  .rad_1d_ql = NULL,
-  .rad_1d_qv = NULL,
-  .rad_1d_nc = NULL,
-  .rad_1d_fn = NULL,
-  .rad_1d_aerosols = NULL,
-  .rad_1d_albedo0 = NULL,
-  .rad_1d_emissi0 = NULL,
-  .rad_1d_temp0   = NULL,
-  .rad_1d_theta0  = NULL,
-  .rad_1d_qw0     = NULL,
-  .rad_1d_p0      = NULL,
-  .rad_1d_rho0    = NULL,
+  .rad_1d_xy = nullptr,
+  .rad_1d_z = nullptr,
+  .rad_1d_acinfe = nullptr,
+  .rad_1d_dacinfe = nullptr,
+  .rad_1d_aco2 = nullptr,
+  .rad_1d_aco2s = nullptr,
+  .rad_1d_daco2 = nullptr,
+  .rad_1d_daco2s = nullptr,
+  .rad_1d_acsup = nullptr,
+  .rad_1d_acsups = nullptr,
+  .rad_1d_dacsup = nullptr,
+  .rad_1d_dacsups = nullptr,
+  .rad_1d_tauzq = nullptr,
+  .rad_1d_tauz = nullptr,
+  .rad_1d_zq = nullptr,
+  .rad_1d_zray = nullptr,
+  .rad_1d_ir_div = nullptr,
+  .rad_1d_sol_div = nullptr,
+  .rad_1d_iru = nullptr,
+  .rad_1d_ird = nullptr,
+  .rad_1d_solu = nullptr,
+  .rad_1d_sold = nullptr,
+  .rad_1d_qw = nullptr,
+  .rad_1d_ql = nullptr,
+  .rad_1d_qv = nullptr,
+  .rad_1d_nc = nullptr,
+  .rad_1d_fn = nullptr,
+  .rad_1d_aerosols = nullptr,
+  .rad_1d_albedo0 = nullptr,
+  .rad_1d_emissi0 = nullptr,
+  .rad_1d_temp0   = nullptr,
+  .rad_1d_theta0  = nullptr,
+  .rad_1d_qw0     = nullptr,
+  .rad_1d_p0      = nullptr,
+  .rad_1d_rho0    = nullptr,
   .domain_orientation = 0.,
   .compute_z_ground = false,
   .open_bcs_treatment = 0,
@@ -181,7 +181,7 @@ static cs_atmo_option_t  _atmo_option = {
   .subgrid_model = 0,
   .distribution_model = 1, /* all or nothing */
   .meteo_profile = 0, /* no meteo profile */
-  .meteo_file_name = NULL,
+  .meteo_file_name = nullptr,
   .meteo_dlmo = 0.,
   .meteo_z0 = -1.,
   .meteo_zref = -1.,
@@ -212,24 +212,24 @@ static cs_atmo_option_t  _atmo_option = {
   .meteo_phih_s = 0, /* Cheng 2005 by default */
   .meteo_phim_u = 1, /* Hogstrom 1988 by default */
   .meteo_phih_u = 1, /* Hogstrom 1988 by default */
-  .xyp_met    = NULL,
-  .u_met      = NULL,
-  .v_met      = NULL,
-  .w_met      = NULL,
-  .ek_met     = NULL,
-  .ep_met     = NULL,
-  .temp_met   = NULL,
-  .rho_met    = NULL,
-  .qw_met     = NULL,
-  .ndrop_met  = NULL,
-  .z_dyn_met  = NULL,
-  .z_temp_met = NULL,
-  .time_met   = NULL,
-  .hyd_p_met  = NULL,
-  .pot_t_met  = NULL,
-  .dpdt_met   = NULL,
-  .mom_met    = NULL,
-  .mom_cs     = NULL,
+  .xyp_met    = nullptr,
+  .u_met      = nullptr,
+  .v_met      = nullptr,
+  .w_met      = nullptr,
+  .ek_met     = nullptr,
+  .ep_met     = nullptr,
+  .temp_met   = nullptr,
+  .rho_met    = nullptr,
+  .qw_met     = nullptr,
+  .ndrop_met  = nullptr,
+  .z_dyn_met  = nullptr,
+  .z_temp_met = nullptr,
+  .time_met   = nullptr,
+  .hyd_p_met  = nullptr,
+  .pot_t_met  = nullptr,
+  .dpdt_met   = nullptr,
+  .mom_met    = nullptr,
+  .mom_cs     = nullptr,
   .soil_model = 0, /* off or user defined */
   .soil_cat = (cs_atmo_soil_cat_t) 0, /* CS_ATMO_SOIL_5_CAT */
   .soil_zone_id = -1,
@@ -248,16 +248,16 @@ static cs_atmo_option_t  _atmo_option = {
   .soil_humidity = 0.0,
   .soil_w1_ini = 0.0,
   .soil_w2_ini = 0.0,
-  .soil_cat_thermal_inertia = NULL,
-  .soil_cat_roughness = NULL,
-  .soil_cat_thermal_roughness = NULL,
-  .soil_cat_albedo = NULL,
-  .soil_cat_emissi = NULL,
-  .soil_cat_vegeta = NULL,
-  .soil_cat_w1 = NULL,
-  .soil_cat_w2 = NULL,
-  .soil_cat_r1 = NULL,
-  .soil_cat_r2 = NULL,
+  .soil_cat_thermal_inertia = nullptr,
+  .soil_cat_roughness = nullptr,
+  .soil_cat_thermal_roughness = nullptr,
+  .soil_cat_albedo = nullptr,
+  .soil_cat_emissi = nullptr,
+  .soil_cat_vegeta = nullptr,
+  .soil_cat_w1 = nullptr,
+  .soil_cat_w2 = nullptr,
+  .soil_cat_r1 = nullptr,
+  .soil_cat_r2 = nullptr,
   .hydrostatic_pressure_model = 0,
   .hydrostatic_profile = 0,
   .sigc = 0.53,
@@ -289,15 +289,15 @@ static cs_atmo_chemistry_t _atmo_chem = {
   .init_aero_with_lib = false,
   .n_layer = 0,
   .n_size = 0,
-  .spack_file_name = NULL,
-  .species_to_scalar_id = NULL,
-  .species_to_field_id = NULL,
-  .molar_mass = NULL,
-  .chempoint = NULL,
-  .reacnum = NULL,
-  .aero_file_name = NULL,
-  .chem_conc_file_name = NULL,
-  .aero_conc_file_name = NULL
+  .spack_file_name = nullptr,
+  .species_to_scalar_id = nullptr,
+  .species_to_field_id = nullptr,
+  .molar_mass = nullptr,
+  .chempoint = nullptr,
+  .reacnum = nullptr,
+  .aero_file_name = nullptr,
+  .chem_conc_file_name = nullptr,
+  .aero_conc_file_name = nullptr
 };
 
 /* atmo imbrication options structure */
@@ -611,7 +611,7 @@ _hydrostatic_pressure_compute(cs_real_3_t  f_ext[],
    *==========================================================================*/
 
   /* solving info */
-  cs_solving_info_t *sinfo = NULL;
+  cs_solving_info_t *sinfo = nullptr;
   int key_sinfo_id = cs_field_key_id("solving_info");
   if (f_id > -1) {
     f = cs_field_by_id(f_id);
@@ -690,7 +690,7 @@ _hydrostatic_pressure_compute(cs_real_3_t  f_ext[],
                            b_massflux,
                            i_viscm,
                            b_viscm,
-                           NULL,
+                           nullptr,
                            dam,
                            xam);
 
@@ -725,7 +725,7 @@ _hydrostatic_pressure_compute(cs_real_3_t  f_ext[],
   cs_real_t residu = rnorm;
 
   /* Log */
-  if (sinfo != NULL)
+  if (sinfo != nullptr)
     sinfo->rhs_norm = residu;
 
   /* Initial Right-Hand-Side */
@@ -764,7 +764,7 @@ _hydrostatic_pressure_compute(cs_real_3_t  f_ext[],
     ressol = residu;
 
     cs_sles_solve_native(f_id,
-                         NULL,
+                         nullptr,
                          symmetric,
                          1, /* db_size */
                          1, /* eb_size */
@@ -778,7 +778,7 @@ _hydrostatic_pressure_compute(cs_real_3_t  f_ext[],
                          dpvar);
 
     /* Log */
-    if (sinfo != NULL)
+    if (sinfo != nullptr)
       sinfo->n_it += niterf;
 
     /* Update variable and right-hand-side */
@@ -823,7 +823,7 @@ _hydrostatic_pressure_compute(cs_real_3_t  f_ext[],
   }
 
   /* For log */
-  if (sinfo != NULL) {
+  if (sinfo != nullptr) {
     if (rnorm > 0.)
       sinfo->res_norm = residu/rnorm;
     else
@@ -1942,7 +1942,7 @@ cs_f_atmo_get_soil_zone(cs_lnum_t         *n_elts,
                         const cs_lnum_t  **elt_ids)
 {
   *n_elts = 0;
-  *elt_ids = NULL;
+  *elt_ids = nullptr;
 
   /* Not defined */
   if (cs_glob_atmo_option->soil_zone_id < 0) {
@@ -2044,42 +2044,42 @@ cs_f_atmo_arrays_get_pointers(cs_real_t **z_dyn_met,
     n_times = CS_MAX(1, _atmo_option.met_1d_ntimes);
   }
 
-  if (_atmo_option.z_dyn_met == NULL)
+  if (_atmo_option.z_dyn_met == nullptr)
     BFT_MALLOC(_atmo_option.z_dyn_met, n_level, cs_real_t);
-  if (_atmo_option.z_temp_met == NULL)
+  if (_atmo_option.z_temp_met == nullptr)
     BFT_MALLOC(_atmo_option.z_temp_met, n_level_t, cs_real_t);
-  if (_atmo_option.xyp_met == NULL)
+  if (_atmo_option.xyp_met == nullptr)
     BFT_MALLOC(_atmo_option.xyp_met, n_times*3, cs_real_t);
-  if (_atmo_option.u_met == NULL)
+  if (_atmo_option.u_met == nullptr)
     BFT_MALLOC(_atmo_option.u_met, n_level*n_times, cs_real_t);
-  if (_atmo_option.v_met == NULL)
+  if (_atmo_option.v_met == nullptr)
     BFT_MALLOC(_atmo_option.v_met, n_level*n_times, cs_real_t);
-  if (_atmo_option.w_met == NULL)
+  if (_atmo_option.w_met == nullptr)
     BFT_MALLOC(_atmo_option.w_met, n_level*n_times, cs_real_t);
-  if (_atmo_option.time_met == NULL)
+  if (_atmo_option.time_met == nullptr)
     BFT_MALLOC(_atmo_option.time_met, n_times, cs_real_t);
-  if (_atmo_option.hyd_p_met == NULL)
+  if (_atmo_option.hyd_p_met == nullptr)
     BFT_MALLOC(_atmo_option.hyd_p_met,
                n_times * n_level_t, cs_real_t);
-  if (_atmo_option.pot_t_met == NULL)
+  if (_atmo_option.pot_t_met == nullptr)
     BFT_MALLOC(_atmo_option.pot_t_met, n_level_t*n_times, cs_real_t);
-  if (_atmo_option.ek_met == NULL)
+  if (_atmo_option.ek_met == nullptr)
     BFT_MALLOC(_atmo_option.ek_met, n_level*n_times, cs_real_t);
-  if (_atmo_option.ep_met == NULL)
+  if (_atmo_option.ep_met == nullptr)
     BFT_MALLOC(_atmo_option.ep_met, n_level*n_times, cs_real_t);
-  if (_atmo_option.temp_met == NULL)
+  if (_atmo_option.temp_met == nullptr)
     BFT_MALLOC(_atmo_option.temp_met, n_level_t*n_times, cs_real_t);
-  if (_atmo_option.rho_met == NULL)
+  if (_atmo_option.rho_met == nullptr)
     BFT_MALLOC(_atmo_option.rho_met, n_level_t*n_times, cs_real_t);
-  if (_atmo_option.qw_met == NULL)
+  if (_atmo_option.qw_met == nullptr)
     BFT_MALLOC(_atmo_option.qw_met, n_level_t*n_times, cs_real_t);
-  if (_atmo_option.ndrop_met == NULL)
+  if (_atmo_option.ndrop_met == nullptr)
     BFT_MALLOC(_atmo_option.ndrop_met, n_level_t*n_times, cs_real_t);
-  if (_atmo_option.dpdt_met == NULL)
+  if (_atmo_option.dpdt_met == nullptr)
     BFT_MALLOC(_atmo_option.dpdt_met, n_level, cs_real_t);
-  if (_atmo_option.mom_met == NULL)
+  if (_atmo_option.mom_met == nullptr)
     BFT_MALLOC(_atmo_option.mom_met, n_level, cs_real_3_t);
-  if (_atmo_option.mom_cs == NULL)
+  if (_atmo_option.mom_cs == nullptr)
     BFT_MALLOC(_atmo_option.mom_cs, n_level, cs_real_3_t);
 
   *xyp_met   = _atmo_option.xyp_met;
@@ -2109,103 +2109,103 @@ cs_f_atmo_arrays_get_pointers(cs_real_t **z_dyn_met,
     n_vert = CS_MAX(1, _atmo_option.rad_1d_nvert);
   }
 
-  if (         _atmo_option.rad_1d_xy == NULL)
+  if (         _atmo_option.rad_1d_xy == nullptr)
     BFT_MALLOC(_atmo_option.rad_1d_xy , 3*n_vert, cs_real_t);
-  if (         _atmo_option.rad_1d_z == NULL)
+  if (         _atmo_option.rad_1d_z == nullptr)
     BFT_MALLOC(_atmo_option.rad_1d_z , n_level, cs_real_t);
-  if (         _atmo_option.rad_1d_acinfe == NULL)
+  if (         _atmo_option.rad_1d_acinfe == nullptr)
     BFT_MALLOC(_atmo_option.rad_1d_acinfe , n_level, cs_real_t);
-  if (         _atmo_option.rad_1d_dacinfe == NULL)
+  if (         _atmo_option.rad_1d_dacinfe == nullptr)
     BFT_MALLOC(_atmo_option.rad_1d_dacinfe , n_level, cs_real_t);
-  if (         _atmo_option.rad_1d_aco2 == NULL)
+  if (         _atmo_option.rad_1d_aco2 == nullptr)
     BFT_MALLOC(_atmo_option.rad_1d_aco2, n_level*n_level, cs_real_t);
-  if (         _atmo_option.rad_1d_aco2s == NULL)
+  if (         _atmo_option.rad_1d_aco2s == nullptr)
     BFT_MALLOC(_atmo_option.rad_1d_aco2s, n_level*n_level, cs_real_t);
-  if (         _atmo_option.rad_1d_daco2 == NULL)
+  if (         _atmo_option.rad_1d_daco2 == nullptr)
     BFT_MALLOC(_atmo_option.rad_1d_daco2, n_level*n_level, cs_real_t);
-  if (         _atmo_option.rad_1d_daco2s == NULL)
+  if (         _atmo_option.rad_1d_daco2s == nullptr)
     BFT_MALLOC(_atmo_option.rad_1d_daco2s, n_level*n_level, cs_real_t);
-  if (         _atmo_option.rad_1d_acsup == NULL)
+  if (         _atmo_option.rad_1d_acsup == nullptr)
     BFT_MALLOC(_atmo_option.rad_1d_acsup, n_level, cs_real_t);
-  if (         _atmo_option.rad_1d_acsups == NULL)
+  if (         _atmo_option.rad_1d_acsups == nullptr)
     BFT_MALLOC(_atmo_option.rad_1d_acsups, n_level, cs_real_t);
-  if (         _atmo_option.rad_1d_dacsup == NULL)
+  if (         _atmo_option.rad_1d_dacsup == nullptr)
     BFT_MALLOC(_atmo_option.rad_1d_dacsup, n_level, cs_real_t);
-  if (         _atmo_option.rad_1d_dacsups == NULL)
+  if (         _atmo_option.rad_1d_dacsups == nullptr)
     BFT_MALLOC(_atmo_option.rad_1d_dacsups, n_level, cs_real_t);
-  if (         _atmo_option.rad_1d_tauzq == NULL)
+  if (         _atmo_option.rad_1d_tauzq == nullptr)
     BFT_MALLOC(_atmo_option.rad_1d_tauzq, n_level+1, cs_real_t);
-  if (         _atmo_option.rad_1d_tauz == NULL)
+  if (         _atmo_option.rad_1d_tauz == nullptr)
     BFT_MALLOC(_atmo_option.rad_1d_tauz, n_level+1, cs_real_t);
-  if (         _atmo_option.rad_1d_zq == NULL)
+  if (         _atmo_option.rad_1d_zq == nullptr)
     BFT_MALLOC(_atmo_option.rad_1d_zq, n_level+1, cs_real_t);
-  if (         _atmo_option.rad_1d_zray == NULL)
+  if (         _atmo_option.rad_1d_zray == nullptr)
     BFT_MALLOC(_atmo_option.rad_1d_zray, n_level, cs_real_t);
-  if (         _atmo_option.rad_1d_ir_div == NULL)
+  if (         _atmo_option.rad_1d_ir_div == nullptr)
     BFT_MALLOC(_atmo_option.rad_1d_ir_div, n_level * n_vert, cs_real_t);
-  if (         _atmo_option.rad_1d_sol_div == NULL)
+  if (         _atmo_option.rad_1d_sol_div == nullptr)
     BFT_MALLOC(_atmo_option.rad_1d_sol_div, n_level * n_vert, cs_real_t);
-  if (         _atmo_option.rad_1d_iru == NULL)
+  if (         _atmo_option.rad_1d_iru == nullptr)
     BFT_MALLOC(_atmo_option.rad_1d_iru, n_level * n_vert, cs_real_t);
-  if (         _atmo_option.rad_1d_ird == NULL) {
+  if (         _atmo_option.rad_1d_ird == nullptr) {
     BFT_MALLOC(_atmo_option.rad_1d_ird, n_level * n_vert, cs_real_t);
     cs_array_real_fill_zero(n_level * n_vert, _atmo_option.rad_1d_ird);
   }
-  if (         _atmo_option.rad_1d_solu == NULL)
+  if (         _atmo_option.rad_1d_solu == nullptr)
     BFT_MALLOC(_atmo_option.rad_1d_solu, n_level * n_vert, cs_real_t);
-  if (         _atmo_option.rad_1d_sold == NULL) {
+  if (         _atmo_option.rad_1d_sold == nullptr) {
     BFT_MALLOC(_atmo_option.rad_1d_sold, n_level * n_vert, cs_real_t);
     cs_array_real_fill_zero(n_level * n_vert, _atmo_option.rad_1d_sold);
   }
-  if (         _atmo_option.rad_1d_qw == NULL) {
+  if (         _atmo_option.rad_1d_qw == nullptr) {
     BFT_MALLOC(_atmo_option.rad_1d_qw, n_level * n_vert, cs_real_t);
     cs_array_real_fill_zero(n_level * n_vert, _atmo_option.rad_1d_qw);
   }
-  if (         _atmo_option.rad_1d_ql == NULL) {
+  if (         _atmo_option.rad_1d_ql == nullptr) {
     BFT_MALLOC(_atmo_option.rad_1d_ql, n_level * n_vert, cs_real_t);
     cs_array_real_fill_zero(n_level * n_vert, _atmo_option.rad_1d_ql);
   }
-  if (         _atmo_option.rad_1d_qv == NULL) {
+  if (         _atmo_option.rad_1d_qv == nullptr) {
     BFT_MALLOC(_atmo_option.rad_1d_qv, n_level * n_vert, cs_real_t);
     cs_array_real_fill_zero(n_level * n_vert, _atmo_option.rad_1d_qv);
   }
-  if (         _atmo_option.rad_1d_nc == NULL) {
+  if (         _atmo_option.rad_1d_nc == nullptr) {
     BFT_MALLOC(_atmo_option.rad_1d_nc, n_level * n_vert, cs_real_t);
     cs_array_real_fill_zero(n_level * n_vert, _atmo_option.rad_1d_nc);
   }
-  if (         _atmo_option.rad_1d_fn == NULL) {
+  if (         _atmo_option.rad_1d_fn == nullptr) {
     BFT_MALLOC(_atmo_option.rad_1d_fn, n_level * n_vert, cs_real_t);
     cs_array_real_fill_zero(n_level * n_vert, _atmo_option.rad_1d_fn);
   }
-  if (         _atmo_option.rad_1d_aerosols == NULL) {
+  if (         _atmo_option.rad_1d_aerosols == nullptr) {
     BFT_MALLOC(_atmo_option.rad_1d_aerosols, n_level * n_vert, cs_real_t);
     cs_array_real_fill_zero(n_level * n_vert, _atmo_option.rad_1d_aerosols);
   }
-  if (         _atmo_option.rad_1d_albedo0 == NULL) {
+  if (         _atmo_option.rad_1d_albedo0 == nullptr) {
     BFT_MALLOC(_atmo_option.rad_1d_albedo0, n_vert, cs_real_t);
     cs_array_real_fill_zero(n_vert, _atmo_option.rad_1d_albedo0);
   }
-  if (         _atmo_option.rad_1d_emissi0== NULL) {
+  if (         _atmo_option.rad_1d_emissi0== nullptr) {
     BFT_MALLOC(_atmo_option.rad_1d_emissi0, n_vert, cs_real_t);
     cs_array_real_fill_zero(n_vert, _atmo_option.rad_1d_emissi0);
   }
-  if (         _atmo_option.rad_1d_temp0 == NULL) {
+  if (         _atmo_option.rad_1d_temp0 == nullptr) {
     BFT_MALLOC(_atmo_option.rad_1d_temp0, n_vert, cs_real_t);
     cs_array_real_fill_zero(n_vert, _atmo_option.rad_1d_temp0);
   }
-  if (         _atmo_option.rad_1d_theta0 == NULL) {
+  if (         _atmo_option.rad_1d_theta0 == nullptr) {
     BFT_MALLOC(_atmo_option.rad_1d_theta0, n_vert, cs_real_t);
     cs_array_real_fill_zero(n_vert, _atmo_option.rad_1d_theta0);
   }
-  if (         _atmo_option.rad_1d_qw0 == NULL) {
+  if (         _atmo_option.rad_1d_qw0 == nullptr) {
     BFT_MALLOC(_atmo_option.rad_1d_qw0, n_vert, cs_real_t);
     cs_array_real_fill_zero(n_vert, _atmo_option.rad_1d_qw0);
   }
-  if (         _atmo_option.rad_1d_p0  == NULL) {
+  if (         _atmo_option.rad_1d_p0  == nullptr) {
     BFT_MALLOC(_atmo_option.rad_1d_p0, n_vert, cs_real_t);
     cs_array_real_fill_zero(n_vert, _atmo_option.rad_1d_p0);
   }
-  if (         _atmo_option.rad_1d_rho0 == NULL) {
+  if (         _atmo_option.rad_1d_rho0 == nullptr) {
     BFT_MALLOC(_atmo_option.rad_1d_rho0, n_vert, cs_real_t);
     cs_array_real_fill_zero(n_vert, _atmo_option.rad_1d_rho0);
   }
@@ -2282,7 +2282,7 @@ cs_f_atmo_chem_initialize_reacnum(cs_real_t **reacnum)
 {
   const cs_lnum_t n_cells = cs_glob_mesh->n_cells;
 
-  if (_atmo_chem.reacnum == NULL)
+  if (_atmo_chem.reacnum == nullptr)
     BFT_MALLOC(_atmo_chem.reacnum, _atmo_chem.n_reactions*n_cells, cs_real_t);
 
   *reacnum = _atmo_chem.reacnum;
@@ -2291,8 +2291,8 @@ cs_f_atmo_chem_initialize_reacnum(cs_real_t **reacnum)
 void
 cs_f_atmo_chem_initialize_species_to_fid(int *species_fid)
 {
-  assert(species_fid != NULL);
-  assert(_atmo_chem.species_to_field_id != NULL);
+  assert(species_fid != nullptr);
+  assert(_atmo_chem.species_to_field_id != nullptr);
 
   for (int i = 0; i < _atmo_chem.n_species; i++)
     _atmo_chem.species_to_field_id[i] = species_fid[i];
@@ -2370,32 +2370,32 @@ cs_f_atmo_soil_init_arrays(int        *n_soil_cat,
                            cs_real_t  **r1,
                            cs_real_t  **r2)
 {
-  if (_atmo_option.soil_cat_roughness == NULL)
+  if (_atmo_option.soil_cat_roughness == nullptr)
     BFT_MALLOC(_atmo_option.soil_cat_roughness, *n_soil_cat, cs_real_t);
-  if (_atmo_option.soil_cat_thermal_inertia == NULL)
+  if (_atmo_option.soil_cat_thermal_inertia == nullptr)
     BFT_MALLOC(_atmo_option.soil_cat_thermal_inertia, *n_soil_cat, cs_real_t);
-  if (_atmo_option.soil_cat_thermal_roughness == NULL)
+  if (_atmo_option.soil_cat_thermal_roughness == nullptr)
     BFT_MALLOC(_atmo_option.soil_cat_thermal_roughness, *n_soil_cat, cs_real_t);
 
-  if (_atmo_option.soil_cat_albedo == NULL)
+  if (_atmo_option.soil_cat_albedo == nullptr)
     BFT_MALLOC(_atmo_option.soil_cat_albedo, *n_soil_cat, cs_real_t);
 
-  if (_atmo_option.soil_cat_emissi == NULL)
+  if (_atmo_option.soil_cat_emissi == nullptr)
     BFT_MALLOC(_atmo_option.soil_cat_emissi, *n_soil_cat, cs_real_t);
 
-  if (_atmo_option.soil_cat_vegeta == NULL)
+  if (_atmo_option.soil_cat_vegeta == nullptr)
     BFT_MALLOC(_atmo_option.soil_cat_vegeta, *n_soil_cat, cs_real_t);
 
-  if (_atmo_option.soil_cat_w1 == NULL)
+  if (_atmo_option.soil_cat_w1 == nullptr)
     BFT_MALLOC(_atmo_option.soil_cat_w1, *n_soil_cat, cs_real_t);
 
-  if (_atmo_option.soil_cat_w2 == NULL)
+  if (_atmo_option.soil_cat_w2 == nullptr)
     BFT_MALLOC(_atmo_option.soil_cat_w2, *n_soil_cat, cs_real_t);
 
-  if (_atmo_option.soil_cat_r1 == NULL)
+  if (_atmo_option.soil_cat_r1 == nullptr)
     BFT_MALLOC(_atmo_option.soil_cat_r1, *n_soil_cat, cs_real_t);
 
-  if (_atmo_option.soil_cat_r2 == NULL)
+  if (_atmo_option.soil_cat_r2 == nullptr)
     BFT_MALLOC(_atmo_option.soil_cat_r2, *n_soil_cat, cs_real_t);
 
   *rugdyn = _atmo_option.soil_cat_roughness;
@@ -2720,7 +2720,7 @@ cs_soil_model(void)
     cs_real_t *sold = (cs_real_t *)  cs_glob_atmo_option->rad_1d_sold;
     cs_real_t *ird = (cs_real_t *) cs_glob_atmo_option->rad_1d_ird;
     /* Pointer to the spectral flux density field */
-    cs_field_t *f_qinspe = NULL;
+    cs_field_t *f_qinspe = nullptr;
     if (rt_params->atmo_model != CS_RAD_ATMO_3D_NONE)
       f_qinspe = cs_field_by_name_try("spectral_rad_incident_flux");
 
@@ -2776,9 +2776,9 @@ cs_soil_model(void)
 
       cs_real_t gcr = 0.;
       cs_real_t refl = 0.;
-      if (cover_geometry_ratio != NULL)
+      if (cover_geometry_ratio != nullptr)
         gcr = cover_geometry_ratio->val[soil_id];
-      if (cover_reflectivity != NULL)
+      if (cover_reflectivity != nullptr)
         refl = cover_reflectivity->val[soil_id];
 
       /* Infrared and Solar radiative fluxes
@@ -2990,20 +2990,20 @@ cs_soil_model(void)
        * by computing cht and chq for the ""lake model""
        * At the moment the allocation is performed ONLY for ""soil model""  */
 
-      if (soil_latent_heat != NULL)
+      if (soil_latent_heat != nullptr)
         soil_latent_heat->val[soil_id] = chq * (qvs_new
             - atm_total_water->val[cell_id]);
-      if (soil_sensible_heat != NULL)
+      if (soil_sensible_heat != nullptr)
         soil_sensible_heat->val[soil_id] = cht * ((ts_new
               * (pow(ps/pphy,(rair/cp0)
                   * (1. + (rvsra - cpvcpa) * qvs_new ))))
             - atm_temp->val[cell_id]);
-      if (soil_thermal_rad_upward != NULL)
+      if (soil_thermal_rad_upward != nullptr)
         soil_thermal_rad_upward->val[soil_id] = stephn * emi
           * cs_math_pow4(ts_new);
-      if (soil_thermal_rad_downward != NULL)
+      if (soil_thermal_rad_downward != nullptr)
         soil_thermal_rad_downward->val[soil_id] = emi * foir;
-      if (soil_visible_rad_absorbed != NULL)
+      if (soil_visible_rad_absorbed != nullptr)
         soil_visible_rad_absorbed->val[soil_id] =
           (1. - boundary_albedo->val[face_id]) * fos;
 
@@ -3387,12 +3387,12 @@ cs_atmo_compute_meteo_profiles(void)
 
   /* Variables used for clipping */
   cs_real_t ri_max = cs_math_big_r;
-  cs_real_t *dlmo_var = NULL;
+  cs_real_t *dlmo_var = nullptr;
   cs_real_t z_lim = cs_math_big_r;
   cs_real_t u_met_min= cs_math_big_r;
   cs_real_t theta_met_min= cs_math_big_r;
 
-  cs_real_t *z_ground = NULL;
+  cs_real_t *z_ground = nullptr;
   if (aopt->compute_z_ground == true) {
 
     cs_field_t *f_z_ground = cs_field_by_name("z_ground");
@@ -3401,7 +3401,7 @@ cs_atmo_compute_meteo_profiles(void)
     int has_restart = cs_restart_present();
     if (has_restart == 1) {
       cs_restart_t *rp = cs_restart_create("main.csc",
-                                           NULL,
+                                           nullptr,
                                            CS_RESTART_MODE_READ);
 
       int retval = cs_restart_read_field_vals(rp,
@@ -3434,7 +3434,7 @@ cs_atmo_compute_meteo_profiles(void)
   for (cs_lnum_t cell_id = 0; cell_id < m->n_cells; cell_id++) {
 
     cs_real_t z_grd = 0.;
-    if (z_ground != NULL)
+    if (z_ground != nullptr)
       z_grd = z_ground[cell_id];
 
     /* Local elevation */
@@ -3458,7 +3458,7 @@ cs_atmo_compute_meteo_profiles(void)
     /* TKE profile */
     cpro_met_k[cell_id] = cs_math_pow2(ustar0) / sqrt(cmu)
       * sqrt(1. - CS_MIN(ri_f, 1.));
-    if (f_axz != NULL)
+    if (f_axz != nullptr)
       f_axz->val[cell_id] = -sqrt(cmu / (1. - CS_MIN(ri_f, ri_max)));
 
     /* epsilon profile */
@@ -3480,10 +3480,10 @@ cs_atmo_compute_meteo_profiles(void)
   cs_parall_min(1, CS_REAL_TYPE, &z_lim);
   cs_parall_min(1, CS_REAL_TYPE, &u_met_min);
   cs_parall_min(1, CS_REAL_TYPE, &theta_met_min);
-  if (f_met_qw != NULL) {
+  if (f_met_qw != nullptr) {
     for (cs_lnum_t cell_id = 0; cell_id < m->n_cells; cell_id++) {
       cs_real_t z_grd = 0.;
-      if (z_ground != NULL)
+      if (z_ground != nullptr)
         z_grd = z_ground[cell_id];
       cs_real_t z = cell_cen[cell_id][2] - z_grd;
       f_met_qw->val[cell_id]
@@ -3500,7 +3500,7 @@ cs_atmo_compute_meteo_profiles(void)
     for (cs_lnum_t cell_id = 0; cell_id < m->n_cells; cell_id++) {
 
       cs_real_t z_grd = 0.;
-      if (z_ground != NULL)
+      if (z_ground != nullptr)
         z_grd = z_ground[cell_id];
 
       cs_real_t z = cell_cen[cell_id][2] - z_grd;
@@ -3528,7 +3528,7 @@ cs_atmo_compute_meteo_profiles(void)
         cpro_met_k[cell_id] = cs_math_pow2(ustar0) / sqrt(cmu)
           * sqrt(1. - CS_MIN(ri_max, 1.));
 
-        if (f_axz != NULL)
+        if (f_axz != nullptr)
           f_axz->val[cell_id] = -sqrt(cmu / (1. - CS_MIN(ri_max, 1.)));
 
         /* epsilon profile */
@@ -3661,7 +3661,7 @@ cs_atmo_z_ground_compute(void)
   /* Matrix
    * ====== */
 
-  cs_real_t *rovsdt = NULL, *dpvar = NULL;
+  cs_real_t *rovsdt = nullptr, *dpvar = nullptr;
   CS_MALLOC_HD(rovsdt, m->n_cells_with_ghosts, cs_real_t, cs_alloc_mode);
   CS_MALLOC_HD(dpvar, m->n_cells_with_ghosts, cs_real_t, cs_alloc_mode);
 
@@ -3673,7 +3673,7 @@ cs_atmo_z_ground_compute(void)
   /* Right hand side
    * =============== */
 
-  cs_real_t *rhs = NULL;
+  cs_real_t *rhs = nullptr;
   CS_MALLOC_HD(rhs, m->n_cells_with_ghosts, cs_real_t, cs_alloc_mode);
 
   for (cs_lnum_t cell_id = 0; cell_id < m->n_cells_with_ghosts; cell_id++)
@@ -3707,7 +3707,7 @@ cs_atmo_z_ground_compute(void)
     cs_equation_iterative_solve_scalar(0,   /* idtvar: no steady state algo */
                                        -1,  /* no over loops */
                                        f->id,
-                                       NULL,
+                                       nullptr,
                                        0,   /* iescap */
                                        0,   /* imucpp */
                                        norm,
@@ -3721,17 +3721,17 @@ cs_atmo_z_ground_compute(void)
                                        b_massflux, /* viscosity, not used */
                                        i_massflux, /* viscosity, not used */
                                        b_massflux, /* viscosity, not used */
-                                       NULL,
-                                       NULL,
-                                       NULL,
+                                       nullptr,
+                                       nullptr,
+                                       nullptr,
                                        0, /* icvflb (upwind) */
-                                       NULL,
+                                       nullptr,
                                        rovsdt,
                                        rhs,
                                        f->val,
                                        dpvar,
-                                       NULL,
-                                       NULL);
+                                       nullptr,
+                                       nullptr);
 
     /* Compute the L_infinity norm */
     inf_norm = 0.;
@@ -3828,7 +3828,7 @@ cs_atmo_hydrostatic_profiles_compute(void)
   int has_restart = cs_restart_present();
   if (has_restart == 1) {
     cs_restart_t *rp = cs_restart_create("main.csc",
-                                         NULL,
+                                         nullptr,
                                          CS_RESTART_MODE_READ);
 
     int retval = cs_restart_read_field_vals(rp,
@@ -3879,8 +3879,8 @@ cs_atmo_hydrostatic_profiles_compute(void)
        "Density is computed accordingly.\n");
   }
 
-  cs_real_t *i_massflux = NULL;
-  cs_real_t *b_massflux = NULL;
+  cs_real_t *i_massflux = nullptr;
+  cs_real_t *b_massflux = nullptr;
   CS_MALLOC_HD(i_massflux, m->n_i_faces, cs_real_t, cs_alloc_mode);
   CS_MALLOC_HD(b_massflux, m->n_b_faces, cs_real_t, cs_alloc_mode);
 
@@ -3890,10 +3890,10 @@ cs_atmo_hydrostatic_profiles_compute(void)
   for (cs_lnum_t face_id = 0; face_id < m->n_b_faces; face_id++)
     b_massflux[face_id] = 0.;
 
-  cs_real_t *i_viscm = NULL;
+  cs_real_t *i_viscm = nullptr;
   CS_MALLOC_HD(i_viscm, m->n_i_faces, cs_real_t, cs_alloc_mode);
 
-  cs_real_t *b_viscm = NULL;
+  cs_real_t *b_viscm = nullptr;
   CS_MALLOC_HD(b_viscm, m->n_b_faces, cs_real_t, cs_alloc_mode);
 
   for (cs_lnum_t face_id = 0; face_id < m->n_i_faces; face_id++)
@@ -3921,16 +3921,16 @@ cs_atmo_hydrostatic_profiles_compute(void)
   /* Solving
    * ======= */
 
-  cs_real_t *dam = NULL;
+  cs_real_t *dam = nullptr;
   CS_MALLOC_HD(dam, m->n_cells_with_ghosts, cs_real_t, cs_alloc_mode);
 
-  cs_real_t *xam = NULL;
+  cs_real_t *xam = nullptr;
   CS_MALLOC_HD(xam, m->n_i_faces, cs_real_t, cs_alloc_mode);
 
-  cs_real_t *rhs = NULL;
+  cs_real_t *rhs = nullptr;
   CS_MALLOC_HD(rhs, m->n_cells_with_ghosts, cs_real_t, cs_alloc_mode);
 
-  cs_real_t *dpvar = NULL;
+  cs_real_t *dpvar = nullptr;
   CS_MALLOC_HD(dpvar, m->n_cells_with_ghosts, cs_real_t, cs_alloc_mode);
 
   for (cs_lnum_t cell_id = 0; cell_id < m->n_cells; cell_id++) {
@@ -4015,11 +4015,11 @@ cs_atmo_hydrostatic_profiles_compute(void)
 void
 cs_atmo_set_meteo_file_name(const char *file_name)
 {
-  if (file_name == NULL) {
+  if (file_name == nullptr) {
     return;
   }
 
-  if (_atmo_option.meteo_file_name == NULL) {
+  if (_atmo_option.meteo_file_name == nullptr) {
     BFT_MALLOC(_atmo_option.meteo_file_name,
                strlen(file_name) + 1,
                char);
@@ -4044,11 +4044,11 @@ cs_atmo_set_meteo_file_name(const char *file_name)
 void
 cs_atmo_set_chem_conc_file_name(const char *file_name)
 {
-  if (file_name == NULL) {
+  if (file_name == nullptr) {
     return;
   }
 
-  if (_atmo_chem.chem_conc_file_name == NULL) {
+  if (_atmo_chem.chem_conc_file_name == nullptr) {
     BFT_MALLOC(_atmo_chem.chem_conc_file_name,
                strlen(file_name) + 1,
                char);
@@ -4073,14 +4073,14 @@ cs_atmo_set_chem_conc_file_name(const char *file_name)
 void
 cs_atmo_set_aero_conc_file_name(const char *file_name)
 {
-  if (file_name == NULL) {
+  if (file_name == nullptr) {
     return;
   }
   if (cs_glob_atmo_chemistry->aerosol_model == CS_ATMO_AEROSOL_OFF) {
     return;
   }
 
-  if (_atmo_chem.aero_conc_file_name == NULL) {
+  if (_atmo_chem.aero_conc_file_name == nullptr) {
     BFT_MALLOC(_atmo_chem.aero_conc_file_name,
                strlen(file_name) + 1,
                char);
@@ -4111,10 +4111,10 @@ cs_atmo_init_chemistry(void)
     _atmo_chem.n_species = 4;
     _atmo_chem.n_reactions = 5;
 
-    if (_atmo_chem.chempoint == NULL)
+    if (_atmo_chem.chempoint == nullptr)
       BFT_MALLOC(_atmo_chem.chempoint, _atmo_chem.n_species, int);
 
-    if (_atmo_chem.molar_mass == NULL)
+    if (_atmo_chem.molar_mass == nullptr)
       BFT_MALLOC(_atmo_chem.molar_mass, _atmo_chem.n_species, cs_real_t);
 
     _atmo_chem.chempoint[0] = 4;
@@ -4126,10 +4126,10 @@ cs_atmo_init_chemistry(void)
     _atmo_chem.molar_mass[2] = 48.0;
     _atmo_chem.molar_mass[3] = 16.0;
 
-    if (_atmo_chem.species_to_field_id == NULL)
+    if (_atmo_chem.species_to_field_id == nullptr)
       BFT_MALLOC(_atmo_chem.species_to_field_id, _atmo_chem.n_species, int);
 
-    if (_atmo_chem.species_to_scalar_id == NULL)
+    if (_atmo_chem.species_to_scalar_id == nullptr)
       BFT_MALLOC(_atmo_chem.species_to_scalar_id, _atmo_chem.n_species, int);
 
     const char *label[] = {"NO", "NO2", "O3", "O3P"};
@@ -4155,9 +4155,9 @@ cs_atmo_init_chemistry(void)
     _atmo_chem.n_species = 20;
     _atmo_chem.n_reactions = 34;
 
-    if (_atmo_chem.chempoint == NULL)
+    if (_atmo_chem.chempoint == nullptr)
       BFT_MALLOC(_atmo_chem.chempoint, _atmo_chem.n_species, int);
-    if (_atmo_chem.molar_mass == NULL)
+    if (_atmo_chem.molar_mass == nullptr)
       BFT_MALLOC(_atmo_chem.molar_mass, _atmo_chem.n_species, cs_real_t);
 
     _atmo_chem.chempoint[0]  = 20, _atmo_chem.chempoint[1]  = 19;
@@ -4204,9 +4204,9 @@ cs_atmo_init_chemistry(void)
          "species_co",  "species_hcho", "species_ald2","species_c2o3",
          "species_pan", "species_xo2",  "species_so2", "species_h2so4"};
 
-    if (_atmo_chem.species_to_field_id == NULL)
+    if (_atmo_chem.species_to_field_id == nullptr)
       BFT_MALLOC(_atmo_chem.species_to_field_id, _atmo_chem.n_species, int);
-    if (_atmo_chem.species_to_scalar_id == NULL)
+    if (_atmo_chem.species_to_scalar_id == nullptr)
       BFT_MALLOC(_atmo_chem.species_to_scalar_id, _atmo_chem.n_species, int);
 
     const int kscal = cs_field_key_id_try("scalar_id");
@@ -4226,9 +4226,9 @@ cs_atmo_init_chemistry(void)
     _atmo_chem.n_species = 52;
     _atmo_chem.n_reactions = 155;
 
-    if (_atmo_chem.chempoint == NULL)
+    if (_atmo_chem.chempoint == nullptr)
       BFT_MALLOC(_atmo_chem.chempoint, _atmo_chem.n_species, int);
-    if (_atmo_chem.molar_mass == NULL)
+    if (_atmo_chem.molar_mass == nullptr)
       BFT_MALLOC(_atmo_chem.molar_mass, _atmo_chem.n_species, cs_real_t);
 
     _atmo_chem.chempoint[0]  = 48, _atmo_chem.chempoint[1]  = 52;
@@ -4313,9 +4313,9 @@ cs_atmo_init_chemistry(void)
          "species_cres", "species_to2",  "species_open",  "species_cro",
          "species_mgly", "species_so2",  "species_h2so4", "species_hco3"};
 
-    if (_atmo_chem.species_to_field_id == NULL)
+    if (_atmo_chem.species_to_field_id == nullptr)
       BFT_MALLOC(_atmo_chem.species_to_field_id, _atmo_chem.n_species, int);
-    if (_atmo_chem.species_to_scalar_id == NULL)
+    if (_atmo_chem.species_to_scalar_id == nullptr)
       BFT_MALLOC(_atmo_chem.species_to_scalar_id, _atmo_chem.n_species, int);
 
     const int kscal = cs_field_key_id_try("scalar_id");
@@ -4364,7 +4364,7 @@ cs_atmo_init_chemistry(void)
 void
 cs_atmo_chemistry_set_spack_file_name(const char *file_name)
 {
-  if (file_name == NULL) {
+  if (file_name == nullptr) {
     _atmo_chem.model = 0;
     return;
   }
@@ -4389,7 +4389,7 @@ cs_atmo_chemistry_set_spack_file_name(const char *file_name)
 void
 cs_atmo_chemistry_set_aerosol_file_name(const char *file_name)
 {
-  if (file_name == NULL) {
+  if (file_name == nullptr) {
     _atmo_chem.aerosol_model = CS_ATMO_AEROSOL_OFF;
     return;
   }
@@ -4415,7 +4415,7 @@ cs_atmo_declare_chem_from_spack(void)
 {
   assert(_atmo_chem.model == 4);
 
-  if (_atmo_chem.spack_file_name == NULL)
+  if (_atmo_chem.spack_file_name == nullptr)
     bft_error(__FILE__,__LINE__, 0,
               _("Atmo chemistry from SPACK file: requires a SPACK file."));
 
@@ -4426,7 +4426,7 @@ cs_atmo_declare_chem_from_spack(void)
              _atmo_chem.spack_file_name);
 
   FILE *file = fopen(_atmo_chem.spack_file_name, "rt");
-  if (file == NULL)
+  if (file == nullptr)
     bft_error(__FILE__,__LINE__, 0,
               _("Atmo chemistry from SPACK file: Could not open file."));
 

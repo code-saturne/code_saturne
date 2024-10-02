@@ -105,7 +105,7 @@ typedef struct {
 
   char                   name[32];            /* Variant name */
 
-  char                   external_type[32];   /* External matrix type, or NULL */
+  char                   external_type[32];   /* External matrix type, or nullptr */
   cs_matrix_type_t       type;                /* Matrix type */
 
   /* Function names, with variants:
@@ -193,7 +193,7 @@ _variant_init(cs_matrix_timing_variant_t  *v)
  *
  * parameters:
  *   name                 <-- matrix variant name
- *   external_type        <-- matrix external type name if applicable, or NULL
+ *   external_type        <-- matrix external type name if applicable, or nullptr
  *   type                 <-- matrix type
  *   n_fill_types         <-- number of fill types tuned for
  *   fill_types           <-- array of fill types tuned for
@@ -238,7 +238,7 @@ _variant_add(const char                        *name,
 
   strcpy(v->name, name);
   memset(v->external_type, 0, 32);
-  if (external_type != NULL)
+  if (external_type != nullptr)
     strncpy(v->external_type, external_type, 31);
 
   v->vector_multiply_name[0][0][0] = '\0';
@@ -253,7 +253,7 @@ _variant_add(const char                        *name,
 
     case CS_MATRIX_SCALAR:
     case  CS_MATRIX_SCALAR_SYM:
-      if (vector_multiply != NULL) {
+      if (vector_multiply != nullptr) {
         for (int k = 0; k < CS_MATRIX_SPMV_N_TYPES; k++) {
           if (op_flag & (1<<k))
             strncpy(v->vector_multiply_name[mft][k], vector_multiply, 63);
@@ -264,7 +264,7 @@ _variant_add(const char                        *name,
     case CS_MATRIX_BLOCK_D:
     case CS_MATRIX_BLOCK_D_66:
     case CS_MATRIX_BLOCK_D_SYM:
-      if (b_vector_multiply != NULL) {
+      if (b_vector_multiply != nullptr) {
         for (int k = 0; k < CS_MATRIX_SPMV_N_TYPES; k++) {
           if (op_flag & (1<<k))
             strncpy(v->vector_multiply_name[mft][k], b_vector_multiply, 63);
@@ -273,7 +273,7 @@ _variant_add(const char                        *name,
       break;
 
     case CS_MATRIX_BLOCK:
-      if (bb_vector_multiply != NULL) {
+      if (bb_vector_multiply != nullptr) {
         for (int k = 0; k < CS_MATRIX_SPMV_N_TYPES; k++) {
           if (op_flag & (1<<k))
             strncpy(v->vector_multiply_name[mft][k], bb_vector_multiply, 63);
@@ -299,7 +299,7 @@ _variant_add(const char                        *name,
  * \param[in]   fill_types    array of fill types tuned for
  * \param[in]   type_filter   true for matrix types tuned for, false for others
  * \param[in]   numbering     vectorization or thread-related numbering info,
- *                            or NULL
+ *                            or nullptr
  * \param[out]  n_variants    number of variants
  * \param[out]  m_variant     array of matrix variants
  */
@@ -320,12 +320,12 @@ _variant_build_list(int                             n_fill_types,
   int op_flag_ae = op_flag_a | op_flag_e;
 
   *n_variants = 0;
-  *m_variant = NULL;
+  *m_variant = nullptr;
 
   if (type_filter[CS_MATRIX_NATIVE]) {
 
     _variant_add("Native, baseline",
-                 NULL,
+                 nullptr,
                  CS_MATRIX_NATIVE,
                  n_fill_types,
                  fill_types,
@@ -337,33 +337,33 @@ _variant_build_list(int                             n_fill_types,
                  &n_variants_max,
                  m_variant);
 
-    if (numbering != NULL) {
+    if (numbering != nullptr) {
 
 #if defined(HAVE_OPENMP)
 
       if (numbering->type == CS_NUMBERING_THREADS)
         _variant_add("Native, OpenMP",
-                     NULL,
+                     nullptr,
                      CS_MATRIX_NATIVE,
                      n_fill_types,
                      fill_types,
                      op_flag_ae,
                      "omp",
                      "omp",
-                     NULL,
+                     nullptr,
                      n_variants,
                      &n_variants_max,
                      m_variant);
 
       _variant_add("Native, OpenMP atomic",
-                   NULL,
+                   nullptr,
                    CS_MATRIX_NATIVE,
                    n_fill_types,
                    fill_types,
                    op_flag_ae,
                    "omp_atomic",
                    "omp_atomic",
-                   NULL,
+                   nullptr,
                    n_variants,
                    &n_variants_max,
                    m_variant);
@@ -372,14 +372,14 @@ _variant_build_list(int                             n_fill_types,
 
       if (numbering->type == CS_NUMBERING_VECTORIZE)
         _variant_add("Native, vectorized",
-                     NULL,
+                     nullptr,
                      CS_MATRIX_NATIVE,
                      n_fill_types,
                      fill_types,
                      op_flag_ae,
                      "vector",
-                     NULL,
-                     NULL,
+                     nullptr,
+                     nullptr,
                      n_variants,
                      &n_variants_max,
                      m_variant);
@@ -390,14 +390,14 @@ _variant_build_list(int                             n_fill_types,
 
     if (cs_get_device_id() > -1)
       _variant_add("Native, CUDA",
-                   NULL,
+                   nullptr,
                    CS_MATRIX_NATIVE,
                    n_fill_types,
                    fill_types,
                    op_flag_ae,
                    "cuda",
-                   NULL,
-                   NULL,
+                   nullptr,
+                   nullptr,
                    n_variants,
                    &n_variants_max,
                    m_variant);
@@ -408,14 +408,14 @@ _variant_build_list(int                             n_fill_types,
   if (type_filter[CS_MATRIX_CSR]) {
 
     _variant_add("CSR",
-                 NULL,
+                 nullptr,
                  CS_MATRIX_CSR,
                  n_fill_types,
                  fill_types,
                  op_flag_ae,
                  "default",
-                 NULL,
-                 NULL,
+                 nullptr,
+                 nullptr,
                  n_variants,
                  &n_variants_max,
                  m_variant);
@@ -423,28 +423,28 @@ _variant_build_list(int                             n_fill_types,
 #if defined(HAVE_MKL_SPARSE_IE)
 
     _variant_add("CSR, MKL",
-                 NULL,
+                 nullptr,
                  CS_MATRIX_CSR,
                  n_fill_types,
                  fill_types,
                  op_flag_a,
                  "mkl",
-                 NULL,
-                 NULL,
+                 nullptr,
+                 nullptr,
                  n_variants,
                  &n_variants_max,
                  m_variant);
 
 #if defined(HAVE_SYCL)
     _variant_add("CSR, MKL SYCL offload",
-                 NULL,
+                 nullptr,
                  CS_MATRIX_CSR,
                  n_fill_types,
                  fill_types,
                  op_flag_a,
                  "mkl_sycl",
-                 NULL,
-                 NULL,
+                 nullptr,
+                 nullptr,
                  n_variants,
                  &n_variants_max,
                  m_variant);
@@ -456,14 +456,14 @@ _variant_build_list(int                             n_fill_types,
 
     if (cs_get_device_id() > -1)
       _variant_add("CSR, CUDA",
-                   NULL,
+                   nullptr,
                    CS_MATRIX_CSR,
                    n_fill_types,
                    fill_types,
                    op_flag_ae,
                    "cuda",
-                   NULL,
-                   NULL,
+                   nullptr,
+                   nullptr,
                    n_variants,
                    &n_variants_max,
                    m_variant);
@@ -474,14 +474,14 @@ _variant_build_list(int                             n_fill_types,
 
     if (cs_get_device_id() > -1)
       _variant_add("CSR, cuSPARSE",
-                   NULL,
+                   nullptr,
                    CS_MATRIX_CSR,
                    n_fill_types,
                    fill_types,
                    op_flag_ae,
                    "cusparse",
-                   NULL,
-                   NULL,
+                   nullptr,
+                   nullptr,
                    n_variants,
                    &n_variants_max,
                    m_variant);
@@ -493,7 +493,7 @@ _variant_build_list(int                             n_fill_types,
   if (type_filter[CS_MATRIX_MSR]) {
 
     _variant_add("MSR",
-                 NULL,
+                 nullptr,
                  CS_MATRIX_MSR,
                  n_fill_types,
                  fill_types,
@@ -508,7 +508,7 @@ _variant_build_list(int                             n_fill_types,
 #if defined(HAVE_MKL_SPARSE_IE)
 
     _variant_add("MSR, MKL",
-                 NULL,
+                 nullptr,
                  CS_MATRIX_MSR,
                  n_fill_types,
                  fill_types,
@@ -522,14 +522,14 @@ _variant_build_list(int                             n_fill_types,
 
 #if defined(HAVE_SYCL)
     _variant_add("CSR, MKL SYCL offload",
-                 NULL,
+                 nullptr,
                  CS_MATRIX_MSR,
                  n_fill_types,
                  fill_types,
                  op_flag_ae,
                  "mkl_sycl",
                  "mkl_sycl",
-                 NULL,
+                 nullptr,
                  n_variants,
                  &n_variants_max,
                  m_variant);
@@ -541,14 +541,14 @@ _variant_build_list(int                             n_fill_types,
 
     if (cs_get_device_id() > -1)
       _variant_add("MSR, CUDA",
-                   NULL,
+                   nullptr,
                    CS_MATRIX_MSR,
                    n_fill_types,
                    fill_types,
                    op_flag_ae,
                    "cuda",
                    "cuda",
-                   NULL,
+                   nullptr,
                    n_variants,
                    &n_variants_max,
                    m_variant);
@@ -559,7 +559,7 @@ _variant_build_list(int                             n_fill_types,
 
     if (cs_get_device_id() > -1)
       _variant_add("MSR, cuSPARSE",
-                   NULL,
+                   nullptr,
                    CS_MATRIX_MSR,
                    n_fill_types,
                    fill_types,
@@ -568,7 +568,7 @@ _variant_build_list(int                             n_fill_types,
 #if defined(HAVE_CUSPARSE_GENERIC_API)
                    "cusparse",
 #else
-                   NULL,
+                   nullptr,
 #endif
                    "cusparse",
                    n_variants,
@@ -578,14 +578,14 @@ _variant_build_list(int                             n_fill_types,
 #endif /* defined(HAVE_CUSPARSE) */
 
     _variant_add("MSR, OpenMP scheduling",
-                 NULL,
+                 nullptr,
                  CS_MATRIX_MSR,
                  n_fill_types,
                  fill_types,
                  op_flag_ae,
                  "omp_sched",
-                 NULL,
-                 NULL,
+                 nullptr,
+                 nullptr,
                  n_variants,
                  &n_variants_max,
                  m_variant);
@@ -629,7 +629,7 @@ _variant_build_list(int                             n_fill_types,
   if (type_filter[CS_MATRIX_DIST]) {
 
     _variant_add("Distributed",
-                 NULL,
+                 nullptr,
                  CS_MATRIX_DIST,
                  n_fill_types,
                  fill_types,
@@ -644,28 +644,28 @@ _variant_build_list(int                             n_fill_types,
 #if defined(HAVE_MKL_SPARSE_IE)
 
     _variant_add("Distributed, MKL",
-                 NULL,
+                 nullptr,
                  CS_MATRIX_DIST,
                  n_fill_types,
                  fill_types,
                  op_flag_ae,
                  "mkl",
-                 NULL,
-                 NULL,
+                 nullptr,
+                 nullptr,
                  n_variants,
                  &n_variants_max,
                  m_variant);
 
 #if defined(HAVE_SYCL) && 0 // HD allocation not for distributed matrix yet
     _variant_add("Distributed, MKL SYCL offload",
-                 NULL,
+                 nullptr,
                  CS_MATRIX_DIST,
                  n_fill_types,
                  fill_types,
                  op_flag_ae,
                  "mkl_sycl",
-                 NULL,
-                 NULL,
+                 nullptr,
+                 nullptr,
                  n_variants,
                  &n_variants_max,
                  m_variant);
@@ -674,14 +674,14 @@ _variant_build_list(int                             n_fill_types,
 #endif /* defined(HAVE_MKL_SPARSE_IE) */
 
     _variant_add("Distributed, OpenMP scheduling",
-                 NULL,
+                 nullptr,
                  CS_MATRIX_DIST,
                  n_fill_types,
                  fill_types,
                  op_flag_ae,
                  "omp_sched",
-                 NULL,
-                 NULL,
+                 nullptr,
+                 nullptr,
                  n_variants,
                  &n_variants_max,
                  m_variant);
@@ -742,7 +742,7 @@ _matrix_check_compare(cs_lnum_t        n_elts,
  *   n_edges     <-- local number of (undirected) graph edges
  *   edges       <-- edges (symmetric row <-> column) connectivity
  *   halo        <-- cell halo structure
- *   numbering   <-- vectorization or thread-related numbering info, or NULL
+ *   numbering   <-- vectorization or thread-related numbering info, or nullptr
  *   m_variant   <-> array of matrix variants
  *----------------------------------------------------------------------------*/
 
@@ -757,10 +757,10 @@ _matrix_check(int                          n_variants,
               cs_matrix_timing_variant_t  *m_variant)
 {
   bool print_subtitle = false;
-  cs_real_t  *da = NULL, *xa = NULL, *x = NULL, *y = NULL;
-  cs_real_t  *yr0 = NULL;
-  cs_matrix_structure_t *ms = NULL;
-  cs_matrix_t *m = NULL;
+  cs_real_t  *da = nullptr, *xa = nullptr, *x = nullptr, *y = nullptr;
+  cs_real_t  *yr0 = nullptr;
+  cs_matrix_structure_t *ms = nullptr;
+  cs_matrix_t *m = nullptr;
   cs_lnum_t d_block_size = 3;
   cs_lnum_t e_block_size = 3;
 
@@ -781,9 +781,9 @@ _matrix_check(int                          n_variants,
 
   /* Initialize arrays */
 
-  cs_gnum_t *cell_gnum = NULL;
+  cs_gnum_t *cell_gnum = nullptr;
   BFT_MALLOC(cell_gnum, n_cols_ext, cs_gnum_t);
-  if (cs_glob_mesh->global_cell_num != NULL) {
+  if (cs_glob_mesh->global_cell_num != nullptr) {
     for (cs_lnum_t ii = 0; ii < n_rows; ii++)
       cell_gnum[ii] = cs_glob_mesh->global_cell_num[ii];
   }
@@ -791,7 +791,7 @@ _matrix_check(int                          n_variants,
     for (cs_lnum_t ii = 0; ii < n_rows; ii++)
       cell_gnum[ii] = ii+1;
   }
-  if (halo != NULL)
+  if (halo != nullptr)
     cs_halo_sync_untyped(halo,
                          CS_HALO_STANDARD,
                          sizeof(cs_gnum_t),
@@ -886,7 +886,7 @@ _matrix_check(int                          n_variants,
 
 #if defined(HAVE_PETSC)
         if (strcmp(v->external_type, "PETSc") == 0) {
-          cs_matrix_set_type_petsc(m, NULL);
+          cs_matrix_set_type_petsc(m, nullptr);
         }
 #endif
 
@@ -901,7 +901,7 @@ _matrix_check(int                          n_variants,
                                    da,
                                    xa);
 
-        cs_matrix_vector_product_t  *vector_multiply = NULL;
+        cs_matrix_vector_product_t  *vector_multiply = nullptr;
 
         if (strlen(v->vector_multiply_name[f_id][op_id]) > 0) {
 
@@ -920,7 +920,7 @@ _matrix_check(int                          n_variants,
 
         }
 
-        if (vector_multiply != NULL) {
+        if (vector_multiply != nullptr) {
           /* Set part of y to incorrect value (to check setting) */
 
           for (cs_lnum_t ii = 0; ii < n_cols_ext*_d_block_size; ii++)
@@ -977,10 +977,10 @@ _matrix_check(int                          n_variants,
  *   n_cells     <-- number of local cells
  *   n_cells_ext <-- number of cells including ghost cells (array size)
  *   n_faces     <-- local number of internal faces
- *   cell_num    <-- Optional global cell numbers (1 to n), or NULL
+ *   cell_num    <-- Optional global cell numbers (1 to n), or nullptr
  *   face_cell   <-- face -> cells connectivity
  *   halo        <-- cell halo structure
- *   numbering   <-- vectorization or thread-related numbering info, or NULL
+ *   numbering   <-- vectorization or thread-related numbering info, or nullptr
  *   m_variant   <-> array of matrixtiming  variants
  *----------------------------------------------------------------------------*/
 
@@ -999,9 +999,9 @@ _matrix_time_test(int                          n_time_runs,
   cs_matrix_type_t  type, type_prev;
 
   double test_sum = 0.0;
-  cs_real_t  *da = NULL, *xa = NULL, *x = NULL, *y = NULL;
-  cs_matrix_structure_t *ms = NULL;
-  cs_matrix_t *m = NULL;
+  cs_real_t  *da = nullptr, *xa = nullptr, *x = nullptr, *y = nullptr;
+  cs_matrix_structure_t *ms = nullptr;
+  cs_matrix_t *m = nullptr;
   cs_lnum_t d_block_size = 3, e_block_size = 3;
   cs_lnum_t d_block_stride = d_block_size*d_block_size;
   cs_lnum_t e_block_stride = e_block_size*e_block_size;
@@ -1048,9 +1048,9 @@ _matrix_time_test(int                          n_time_runs,
       wt0 = std::chrono::high_resolution_clock::now();
 
       for (int run_id = 0; run_id < n_time_runs; run_id++) {
-        if (m != NULL)
+        if (m != nullptr)
           cs_matrix_destroy(&m);
-        if (ms != NULL)
+        if (ms != nullptr)
           cs_matrix_structure_destroy(&ms);
         ms = cs_matrix_structure_create(type,
                                         n_cells,
@@ -1089,7 +1089,7 @@ _matrix_time_test(int                          n_time_runs,
           && strlen(v->vector_multiply_name[f_id][1]) < 1)
         continue;
 
-      if (m != NULL)
+      if (m != nullptr)
         cs_matrix_destroy(&m);
 
       m = cs_matrix_create(ms);
@@ -1126,7 +1126,7 @@ _matrix_time_test(int                          n_time_runs,
 
       for (int op_id = 0; op_id < CS_MATRIX_SPMV_N_TYPES; op_id++) {
 
-        cs_matrix_vector_product_t  *vector_multiply = NULL;
+        cs_matrix_vector_product_t  *vector_multiply = nullptr;
 
         if (is_external_type == false) {
 
@@ -1146,7 +1146,7 @@ _matrix_time_test(int                          n_time_runs,
 
         vector_multiply = m->vector_multiply[f_id][op_id];
 
-        if (vector_multiply == NULL)
+        if (vector_multiply == nullptr)
           continue;
 
         cs_lnum_t n_rows = cs_matrix_get_n_rows(m);
@@ -1233,9 +1233,9 @@ _matrix_time_test(int                          n_time_runs,
               "Test sum for matrix-vector products is a NaN,\n"
               "so at least one product was incorrect.");
 
-  if (m != NULL)
+  if (m != nullptr)
     cs_matrix_destroy(&m);
-  if (ms != NULL)
+  if (ms != nullptr)
     cs_matrix_structure_destroy(&ms);
 
   BFT_FREE(x);
@@ -1644,15 +1644,15 @@ _matrix_time_spmv_stats_ops(const cs_matrix_timing_variant_t  *m_variant,
  *   n_time_runs    <-- number of timing runs for each measure
  *   n_types        <-- number of matrix types timed, or 0
  *   n_fill_types   <-- number of fill types timed, or 0
- *   types          <-- array of matrix types timed, or NULL
- *   fill_types     <-- array of fill types timed, or NULL
+ *   types          <-- array of matrix types timed, or nullptr
+ *   fill_types     <-- array of fill types timed, or nullptr
  *   n_cells        <-- number of local cells
  *   n_cells_ext    <-- number of cells including ghost cells (array size)
  *   n_faces        <-- local number of internal faces
- *   cell_num       <-- Optional global cell numbers (1 to n), or NULL
+ *   cell_num       <-- Optional global cell numbers (1 to n), or nullptr
  *   face_cell      <-- face -> cells connectivity
  *   halo           <-- cell halo structure
- *   numbering      <-- vectorization or thread-related numbering info, or NULL
+ *   numbering      <-- vectorization or thread-related numbering info, or nullptr
  *----------------------------------------------------------------------------*/
 
 void
@@ -1686,7 +1686,7 @@ cs_benchmark_matrix(int                    n_time_runs,
   cs_matrix_fill_type_t  *_fill_types = fill_types;
 
   int  n_variants = 0;
-  cs_matrix_timing_variant_t  *m_variant = NULL;
+  cs_matrix_timing_variant_t  *m_variant = nullptr;
 
   cs_timer_t  t0, t1;
 

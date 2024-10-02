@@ -108,7 +108,7 @@ const cs_ctwr_option_t *cs_glob_ctwr_option = &_ctwr_option;
 
 static int               _n_ct_zones_max = 0;
 static int               _n_ct_zones     = 0;
-static cs_ctwr_zone_t  **_ct_zone   = NULL;
+static cs_ctwr_zone_t  **_ct_zone   = nullptr;
 
 /* Restart file */
 
@@ -186,7 +186,7 @@ _write_liquid_vars(void                  *input,
 
     /* Values may be restricted to selection */
 
-    if (cell_ids != NULL) {
+    if (cell_ids != nullptr) {
       cs_real_t *_val;
       BFT_MALLOC(_val, n_cells, cs_real_t);
       for (cs_lnum_t i = 0; i < n_cells; i++)
@@ -205,8 +205,8 @@ _write_liquid_vars(void                  *input,
                       false,  /* use_parent */
                       CS_POST_TYPE_cs_real_t,
                       val,    /* cell values */
-                      NULL,   /* internal face values */
-                      NULL,   /* boundary face values */
+                      nullptr,   /* internal face values */
+                      nullptr,   /* boundary face values */
                       ts);
 
     BFT_FREE(val);
@@ -237,7 +237,7 @@ _packing_selection(void              *input,
 
   const cs_ctwr_zone_t **cts = (const cs_ctwr_zone_t **)input;
 
-  bool  *is_packing = NULL;
+  bool  *is_packing = nullptr;
   BFT_MALLOC(is_packing, m->n_cells, bool);
 
 #   pragma omp parallel for if (m->n_cells> CS_THR_MIN)
@@ -257,7 +257,7 @@ _packing_selection(void              *input,
     const cs_lnum_t  _n_elts = cs_mesh_location_get_n_elts(ml_id)[0];
     const cs_lnum_t  *_elt_ids = cs_mesh_location_get_elt_ids(ml_id);
 
-    if (_elt_ids == NULL)
+    if (_elt_ids == nullptr)
       for (cs_lnum_t j = 0; j < _n_elts; j++) is_packing[j] = true;
     else
       for (cs_lnum_t j = 0; j < _n_elts; j++) is_packing[_elt_ids[j]] = true;
@@ -269,7 +269,7 @@ _packing_selection(void              *input,
   for (cs_lnum_t i = 0; i < m->n_cells; i++)
     if (is_packing[i]) n_pack_elts++;
 
-  cs_lnum_t *pack_elts = NULL;
+  cs_lnum_t *pack_elts = nullptr;
   if (n_pack_elts < m->n_cells) {
 
     /* Fill list  */
@@ -331,7 +331,7 @@ cs_get_glob_ctwr_n_zones(void)
 /*!
  * \brief  Define a cooling tower exchange zone
  *
- * \param[in]  zone_criteria  zone selection criteria (or NULL)
+ * \param[in]  zone_criteria  zone selection criteria (or nullptr)
  * \param[in]  z_id           z_id if zone already created (-1 otherwise)
  * \param[in]  zone_type      exchange zone type
  * \param[in]  delta_t        imposed delta temperature delta between inlet
@@ -394,8 +394,8 @@ cs_ctwr_define(const char           zone_criteria[],
 
   BFT_MALLOC(ct, 1, cs_ctwr_zone_t);
 
-  ct->criteria = NULL;
-  if (zone_criteria != NULL) {
+  ct->criteria = nullptr;
+  if (zone_criteria != nullptr) {
     BFT_MALLOC(ct->criteria, strlen(zone_criteria)+1, char);
     strcpy(ct->criteria, zone_criteria);
   }
@@ -404,8 +404,8 @@ cs_ctwr_define(const char           zone_criteria[],
 
   ct->type = zone_type;
 
-  ct->name = NULL;
-  const cs_zone_t *z = NULL;
+  ct->name = nullptr;
+  const cs_zone_t *z = nullptr;
   if (z_id > -1) {
     z = cs_volume_zone_by_id(z_id);
     length = strlen(z->name) + 1;
@@ -417,7 +417,7 @@ cs_ctwr_define(const char           zone_criteria[],
     BFT_MALLOC(ct->name, length, char);
     sprintf(ct->name, "cooling_towers_%02d", ct->num);
   }
-  ct->file_name = NULL;
+  ct->file_name = nullptr;
 
   if (ct->type != CS_CTWR_INJECTION)
     ct->delta_t = delta_t;
@@ -448,15 +448,15 @@ cs_ctwr_define(const char           zone_criteria[],
 
   ct->n_inlet_faces = 0;
   ct->n_outlet_faces = 0;
-  ct->inlet_faces_ids = NULL;
-  ct->outlet_faces_ids = NULL;
+  ct->inlet_faces_ids = nullptr;
+  ct->outlet_faces_ids = nullptr;
 
  /* Different from number of faces if split faces on cells
     Can not allow non-conformal or there could be a mix up between leaking and
     non-leaking zones. */
 
   ct->n_outlet_cells = 0;
-  ct->outlet_cells_ids = NULL;
+  ct->outlet_cells_ids = nullptr;
 
   ct->q_l_in = 0.0;
   ct->q_l_out = 0.0;
@@ -653,7 +653,7 @@ cs_ctwr_build_all(void)
        z->name,
        cs_flag_primal_cell,
        cs_ctwr_volume_mass_injection_rain_dof_func,
-       NULL);
+       nullptr);
 
     /* Rain mass fraction */
     cs_field_t *f_yp = cs_field_by_name("ym_l_r");
@@ -670,17 +670,17 @@ cs_ctwr_build_all(void)
                                                       z->name,
                                                       cs_flag_primal_cell,
                                                       cs_ctwr_volume_mass_injection_yh_rain_dof_func,
-                                                      NULL);
+                                                      nullptr);
 
   }
 
   /* Post-processing: multiply enthalpy by fraction */
 
   cs_field_t *f = cs_field_by_name_try("enthalpy_liquid");
-  if (f != NULL) {
+  if (f != nullptr) {
     const int vis_key_id = cs_field_key_id("post_vis");
     if (cs_field_get_key_int(f, vis_key_id) & CS_POST_ON_LOCATION) {
-      cs_post_add_time_mesh_dep_output(_write_liquid_vars, NULL);
+      cs_post_add_time_mesh_dep_output(_write_liquid_vars, nullptr);
       cs_field_clear_key_int_bits(f, vis_key_id, CS_POST_ON_LOCATION);
     }
   }
@@ -755,7 +755,7 @@ cs_ctwr_log_setup(void)
   for (int i = 0; i < _n_ct_zones; i++) {
     cs_ctwr_zone_t *ct = _ct_zone[i];
 
-    if (ct->criteria != NULL)
+    if (ct->criteria != nullptr)
       cs_log_printf
         (CS_LOG_SETUP,
          _("  Cooling tower zone num: %d\n"
@@ -827,7 +827,7 @@ cs_ctwr_log_balance(void)
   const cs_real_3_t *restrict i_face_normal
     = (const cs_real_3_t *restrict)cs_glob_mesh_quantities->i_face_normal;
   cs_real_t *p = (cs_real_t *)CS_F_(p)->val;        /* Pressure */
-  cs_real_t *t_h = NULL;
+  cs_real_t *t_h = nullptr;
   if (cs_glob_physical_model_flag[CS_ATMOSPHERIC] == CS_ATMO_HUMID)
     t_h = cs_field_by_name("real_temperature")->val; /* Humid air temp */
   else

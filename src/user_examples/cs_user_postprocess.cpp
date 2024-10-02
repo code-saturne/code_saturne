@@ -71,11 +71,11 @@ _i_faces_select_example(void         *input,
 
   cs_lnum_t i, face_id;
   int n_families = 0;
-  int *family_list = NULL;
-  int *family_mask = NULL;
+  int *family_list = nullptr;
+  int *family_mask = nullptr;
 
   cs_lnum_t n_i_faces = 0;
-  cs_lnum_t *i_face_ids = NULL;
+  cs_lnum_t *i_face_ids = nullptr;
 
   const cs_mesh_t *m = cs_glob_mesh;
 
@@ -156,7 +156,7 @@ _b_faces_select_example(void         *input,
   CS_UNUSED(input);
 
   cs_lnum_t n_b_faces = 0;
-  cs_lnum_t *b_face_ids = NULL;
+  cs_lnum_t *b_face_ids = nullptr;
 
   const cs_mesh_t *m = cs_glob_mesh;
 
@@ -201,20 +201,20 @@ _he_fraction_05_select(void        *input,
   CS_UNUSED(input);
 
   cs_lnum_t _n_cells = 0;
-  cs_lnum_t *_cell_ids = NULL;
+  cs_lnum_t *_cell_ids = nullptr;
 
   const cs_mesh_t *m = cs_glob_mesh;
 
   cs_field_t *f = cs_field_by_name_try("He_fraction"); /* Get access to field */
 
-  if (f == NULL)
+  if (f == nullptr)
     bft_error(__FILE__, __LINE__, 0,
               "No field with name \"He_fraction\" defined");
 
   /* Before time loop, field is defined, but has no values yet,
      so ignore that case (postprocessing mesh will be initially empty) */
 
-  if (f->val != NULL) {
+  if (f->val != nullptr) {
 
     BFT_MALLOC(_cell_ids, m->n_cells, cs_lnum_t); /* Allocate selection list */
 
@@ -367,11 +367,11 @@ cs_user_postprocess_meshes(void)
   /*! [post_define_mesh_m2] */
   {
     int n_writers = 0;
-    const int *writer_ids = NULL;
+    const int *writer_ids = nullptr;
 
     cs_post_define_surface_mesh(CS_POST_MESH_BOUNDARY,  /* mesh_id */
                                 "Boundary",  /* mesh name */
-                                NULL,        /* interior face selection criteria */
+                                nullptr,        /* interior face selection criteria */
                                 "all[]",     /* boundary face selection criteria */
                                 true,        /* add_groups */
                                 true,        /* automatic variables output */
@@ -391,7 +391,7 @@ cs_user_postprocess_meshes(void)
 
     const char *interior_criteria = "plane[0, -1, 0, 0.5, "
                                     "epsilon = 0.0001]";
-    const char *boundary_criteria = NULL;
+    const char *boundary_criteria = nullptr;
 
     cs_post_define_surface_mesh(1,               /* mesh id */
                                 "Median plane",
@@ -423,8 +423,8 @@ cs_user_postprocess_meshes(void)
                                         "Mixed surface",
                                         _i_faces_select_example,
                                         _b_faces_select_example,
-                                        NULL,            /* i_faces_sel_input */
-                                        NULL,            /* b_faces_sel_input */
+                                        nullptr,            /* i_faces_sel_input */
+                                        nullptr,            /* b_faces_sel_input */
                                         false,           /* time varying */
                                         false,           /* add_groups */
                                         false,           /* auto_variables */
@@ -447,7 +447,7 @@ cs_user_postprocess_meshes(void)
     cs_post_define_volume_mesh_by_func(4,               /* mesh id */
                                        "He_fraction_05",
                                        _he_fraction_05_select,
-                                       NULL,            /* _c_05_select_input */
+                                       nullptr,            /* _c_05_select_input */
                                        true,            /* time varying */
                                        false,           /* add_groups */
                                        false,           /* auto_variables */
@@ -639,7 +639,7 @@ cs_user_postprocess_probes(void)
  * \param[in]       cat_id       category id of the output mesh for the
  *                               current call
  * \param[in]       probes       pointer to associated probe set structure if
- *                               the mesh is a probe set, NULL otherwise
+ *                               the mesh is a probe set, nullptr otherwise
  * \param[in]       n_cells      local number of cells of post_mesh
  * \param[in]       n_i_faces    local number of interior faces of post_mesh
  * \param[in]       n_b_faces    local number of boundary faces of post_mesh
@@ -652,7 +652,7 @@ cs_user_postprocess_probes(void)
  *                               post-processing mesh
  * \param[in]       vertex_list  list of vertices (0 to n-1) of
  *                               post-processing mesh
- * \param[in]       ts           time step status structure, or NULL
+ * \param[in]       ts           time step status structure, or nullptr
  */
 /*----------------------------------------------------------------------------*/
 
@@ -703,19 +703,19 @@ cs_user_postprocess_values(const char            *mesh_name,
                         false,                          /* use_parent */
                         CS_POST_TYPE_cs_real_t,         /* var_type */
                         s_cell,                         /* cel_vals */
-                        NULL,                           /* i_face_vals */
-                        NULL,                           /* b_face_vals */
+                        nullptr,                           /* i_face_vals */
+                        nullptr,                           /* b_face_vals */
                         ts);
 
       /* Reynolds stresses invariants:
        * compute xsi and eta invariant of the Lumley triangle */
 
-      cs_real_2_t *inv = NULL;
+      cs_real_2_t *inv = nullptr;
       BFT_MALLOC(inv, n_cells, cs_real_2_t);
 
       cs_post_anisotropy_invariant(n_cells,
                                    cell_list,
-                                   NULL, /* coords */
+                                   nullptr, /* coords */
                                    inv);
 
       cs_post_write_var(mesh_id,
@@ -726,8 +726,8 @@ cs_user_postprocess_values(const char            *mesh_name,
                         false,                          /* use_parent */
                         CS_POST_TYPE_cs_real_t,         /* var_type */
                         inv,                            /* cel_vals */
-                        NULL,                           /* i_face_vals */
-                        NULL,                           /* b_face_vals */
+                        nullptr,                           /* i_face_vals */
+                        nullptr,                           /* b_face_vals */
                         ts);
 
       BFT_FREE(s_cell);
@@ -752,7 +752,7 @@ cs_user_postprocess_values(const char            *mesh_name,
 
     const cs_mesh_t *m = cs_glob_mesh;
 
-    cs_real_t *s_i_faces = NULL, *s_b_faces = NULL;
+    cs_real_t *s_i_faces = nullptr, *s_b_faces = nullptr;
 
     /* Interior faces  */
 
@@ -788,7 +788,7 @@ cs_user_postprocess_values(const char            *mesh_name,
                       true,                           /* interlace, */
                       false,                          /* use_parent */
                       CS_POST_TYPE_cs_real_t,         /* var_type */
-                      NULL,                           /* cel_vals */
+                      nullptr,                           /* cel_vals */
                       s_i_faces,                      /* i_face_vals */
                       s_b_faces,                      /* b_face_vals */
                       ts);
@@ -807,7 +807,7 @@ cs_user_postprocess_values(const char            *mesh_name,
 
     const cs_field_t *f = cs_field_by_name_try("my_field");
 
-    if (f != NULL)
+    if (f != nullptr)
       cs_post_write_var(mesh_id,
                         CS_POST_WRITER_ALL_ASSOCIATED,  /* writer id filter */
                         f->name,                        /* var_name */
@@ -816,8 +816,8 @@ cs_user_postprocess_values(const char            *mesh_name,
                         true,                           /* use_parent */
                         CS_POST_TYPE_cs_real_t,         /* var_type */
                         f->val,                         /* cel_vals */
-                        NULL,                           /* i_face_vals */
-                        NULL,                           /* b_face_vals */
+                        nullptr,                           /* i_face_vals */
+                        nullptr,                           /* b_face_vals */
                         ts);
   }
   /*< [postprocess_values_ex_3] */
@@ -830,7 +830,7 @@ cs_user_postprocess_values(const char            *mesh_name,
 
     const cs_field_t *f = cs_field_by_name_try("my_const_field");
 
-    if (f != NULL) {
+    if (f != nullptr) {
       if (ts->nt_cur == ts->nt_prev + 1) { /* before time loop */
 
         cs_time_step_t ts0 = *ts;
@@ -844,8 +844,8 @@ cs_user_postprocess_values(const char            *mesh_name,
                           true,                           /* use_parent */
                           CS_POST_TYPE_cs_real_t,         /* var_type */
                           f->val,                         /* cel_vals */
-                          NULL,                           /* i_face_vals */
-                          NULL,                           /* b_face_vals */
+                          nullptr,                           /* i_face_vals */
+                          nullptr,                           /* b_face_vals */
                           &ts0);
 
       }

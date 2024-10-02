@@ -62,7 +62,7 @@ BEGIN_C_DECLS
  * \param[in]       cat_id       category id of the output mesh for the
  *                               current call
  * \param[in]       probes       pointer to associated probe set structure if
- *                               the mesh is a probe set, NULL otherwise
+ *                               the mesh is a probe set, nullptr otherwise
  * \param[in]       n_cells      local number of cells of post_mesh
  * \param[in]       n_i_faces    local number of interior faces of post_mesh
  * \param[in]       n_b_faces    local number of boundary faces of post_mesh
@@ -75,7 +75,7 @@ BEGIN_C_DECLS
  *                               post-processing mesh
  * \param[in]       vertex_list  list of vertices (0 to n-1) of
  *                               post-processing mesh
- * \param[in]       ts           time step status structure, or NULL
+ * \param[in]       ts           time step status structure, or nullptr
  */
 /*----------------------------------------------------------------------------*/
 
@@ -105,7 +105,7 @@ cs_user_postprocess_values(const char            *mesh_name,
   CS_UNUSED(b_face_list);
   CS_UNUSED(vertex_list);
 
-  if (probes != NULL) {
+  if (probes != nullptr) {
 
 /*! [post_probes_interpolate_var_1] */
     int n_p_fields = 2;
@@ -115,7 +115,7 @@ cs_user_postprocess_values(const char            *mesh_name,
 
       cs_field_t *f = cs_field_by_name_try(p_field_names[i]);
 
-      if (f != NULL) {
+      if (f != nullptr) {
 
         /* use different name to avoid conflict with field name in case already
            present in probe set through default output */

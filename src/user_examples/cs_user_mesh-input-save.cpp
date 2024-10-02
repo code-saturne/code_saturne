@@ -106,7 +106,7 @@ cs_user_mesh_input(void)
 
     /* Read input mesh with no modification */
 
-    cs_preprocessor_data_add_file("mesh_input/mesh_01", 0, NULL, NULL);
+    cs_preprocessor_data_add_file("mesh_input/mesh_01", 0, nullptr, nullptr);
   }
   /*! [mesh_input_1] */
 
@@ -117,7 +117,7 @@ cs_user_mesh_input(void)
      * and a rotation of theta around axe z.
      * */
     const char *renames[] = {"Inlet", "Injection_2",
-                             "Group_to_remove", NULL};
+                             "Group_to_remove", nullptr};
     const double  theta = 0.1; /* radians */
     const double transf_matrix[3][4] = {{ cos(theta), sin(theta), 0., 5.},
                                         {-sin(theta), cos(theta), 0., 0.},

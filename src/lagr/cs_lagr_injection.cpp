@@ -137,10 +137,10 @@ _segment_binary_search(cs_lnum_t     n,
  *
  * \param[in]   n_g_particles     global number of particles to inject
  * \param[in]   n_elts            number of elements in region
- * \param[in]   elt_id            element ids (or NULL)
+ * \param[in]   elt_id            element ids (or nullptr)
  * \param[in]   elt_weight        parent element weights
  *                                (i.e. all local surfaces or volumes)
- * \param[in]   elt_profile       optional profile values for elements (or NULL)
+ * \param[in]   elt_profile       optional profile values for elements (or nullptr)
  * \param[out]  elt_particle_idx  start index of added particles for each
  *                                element (size: n_elts + 1)
  *
@@ -160,12 +160,12 @@ _distribute_particles(cs_gnum_t         n_g_particles,
 
   /* Compute local element weight */
 
-  cs_real_t *elt_cm_weight = NULL;
+  cs_real_t *elt_cm_weight = nullptr;
 
   BFT_MALLOC(elt_cm_weight, n_elts, cs_real_t);
 
-  if (elt_id != NULL) {
-    if (elt_profile != NULL) {
+  if (elt_id != nullptr) {
+    if (elt_profile != nullptr) {
       for (cs_lnum_t i = 0; i < n_elts; i++)
         elt_cm_weight[i] = elt_weight[elt_id[i]]*elt_profile[i];
     }
@@ -175,7 +175,7 @@ _distribute_particles(cs_gnum_t         n_g_particles,
     }
   }
   else {
-    if (elt_profile != NULL) {
+    if (elt_profile != nullptr) {
       for (cs_lnum_t i = 0; i < n_elts; i++)
         elt_cm_weight[i] = elt_weight[i]*elt_profile[i];
     }
@@ -214,8 +214,8 @@ _distribute_particles(cs_gnum_t         n_g_particles,
     int l_rank = cs_glob_rank_id;
     int r_rank = 0; /* Root rank for serialized operations */
 
-    cs_lnum_t  *n_rank_particles = NULL;
-    double     *cm_weight = NULL;
+    cs_lnum_t  *n_rank_particles = nullptr;
+    double     *cm_weight = nullptr;
 
     if (l_rank == r_rank) {
 
@@ -581,7 +581,7 @@ _get_particle_face_ids(cs_lnum_t         n_faces,
                        const cs_lnum_t   face_ids[],
                        const cs_lnum_t   face_particle_idx[])
 {
-  cs_lnum_t  *particle_face_id = NULL;
+  cs_lnum_t  *particle_face_id = nullptr;
 
   cs_lnum_t n_p_new = face_particle_idx[n_faces];
 
@@ -645,7 +645,7 @@ _init_particles(cs_lagr_particle_set_t         *p_set,
                      +  elt_particle_idx[li];
     cs_lnum_t p_e_id = p_s_id + n_e_p;
 
-    const cs_lnum_t face_id = (face_ids != NULL) ? face_ids[li] : -1;
+    const cs_lnum_t face_id = (face_ids != nullptr) ? face_ids[li] : -1;
 
     /* Loop on particles added for this face */
 
@@ -961,7 +961,7 @@ cs_lagr_injection(int        time_id,
      ------------------------ */
 
   cs_lnum_t n_elts_m = CS_MAX(mesh->n_b_faces, mesh->n_cells);
-  cs_lnum_t *elt_particle_idx = NULL;
+  cs_lnum_t *elt_particle_idx = nullptr;
   BFT_MALLOC(elt_particle_idx, n_elts_m+1, cs_lnum_t);
 
   /* Loop in injection type (boundary, volume) */
@@ -972,7 +972,7 @@ cs_lagr_injection(int        time_id,
 
     int n_zones = 0;
 
-    const cs_real_t  *elt_weight = NULL;
+    const cs_real_t  *elt_weight = nullptr;
 
     if (i_loc == 0) { /* boundary */
       elt_weight = fvq->b_face_surf;
@@ -990,7 +990,7 @@ cs_lagr_injection(int        time_id,
       /* Loop on injected sets */
 
       cs_lnum_t         n_z_elts = 0;
-      const cs_lnum_t  *z_elt_ids = NULL;
+      const cs_lnum_t  *z_elt_ids = nullptr;
 
       if (i_loc == 0) {
         const cs_zone_t  *z = cs_boundary_zone_by_id(z_id);
@@ -1007,7 +1007,7 @@ cs_lagr_injection(int        time_id,
            set_id < zd->n_injection_sets[z_id];
            set_id++) {
 
-        const cs_lagr_injection_set_t *zis = NULL;
+        const cs_lagr_injection_set_t *zis = nullptr;
 
         zis = cs_lagr_get_injection_set(zd, z_id, set_id);
 
@@ -1025,8 +1025,8 @@ cs_lagr_injection(int        time_id,
         if (ts->nt_cur % injection_frequency != 0)
           continue;
 
-        cs_real_t *elt_profile = NULL;
-        if (zis->injection_profile_func != NULL) {
+        cs_real_t *elt_profile = nullptr;
+        if (zis->injection_profile_func != nullptr) {
           BFT_MALLOC(elt_profile, n_z_elts, cs_real_t);
           zis->injection_profile_func(zis->zone_id,
                                       zis->location_id,
@@ -1082,7 +1082,7 @@ cs_lagr_injection(int        time_id,
         p_set->n_particles += n_inject;
 
         {
-          cs_lnum_t *particle_face_ids = NULL;
+          cs_lnum_t *particle_face_ids = nullptr;
 
           if (zis->location_id == CS_MESH_LOCATION_BOUNDARY_FACES)
             particle_face_ids = _get_particle_face_ids(n_z_elts,
@@ -1285,7 +1285,7 @@ cs_lagr_injection(int        time_id,
 
           /* Add particle tracking events for boundary injection */
 
-          if (   particle_face_ids != NULL
+          if (   particle_face_ids != nullptr
               && cs_lagr_stat_is_active(CS_LAGR_STAT_GROUP_TRACKING_EVENT)) {
 
             cs_lagr_event_set_t  *events

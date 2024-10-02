@@ -124,7 +124,7 @@ cs_sles_petsc_library_info(cs_log_t  log_type);
 static void
 _string_clean(char  *s)
 {
-  assert(s != NULL);
+  assert(s != nullptr);
 
   int l = strlen(s);
   int i = l - 1;
@@ -171,14 +171,14 @@ _sys_info_cpu(char      *cpu_str,
 
     fp = fopen("/proc/cpuinfo", "r");
 
-    if (fp != NULL) {
+    if (fp != nullptr) {
 
       s = fgets(cpu_str, _cpu_str_max, fp);
 
-      while (s != NULL && strncmp(s, "model name", 10) != 0)
+      while (s != nullptr && strncmp(s, "model name", 10) != 0)
         s = fgets(cpu_str, _cpu_str_max, fp);
 
-      if (s != NULL) {
+      if (s != nullptr) {
         for ( ; *s != '\0' && *s != ':' ; s++);
         if (*s == ':')
           s++;
@@ -234,7 +234,7 @@ _sys_info_release(char      *issue_str,
 
     fp = fopen("/etc/os-release", "r");
 
-    if (fp != NULL) {
+    if (fp != nullptr) {
 
       issue_str[0] = ' ';
       issue_str[1] = '(';
@@ -245,7 +245,7 @@ _sys_info_release(char      *issue_str,
 
       while (true) {
         s = fgets(buffer, 256, fp);
-        if (s == NULL)
+        if (s == nullptr)
           break;
 
         if (strncmp(s, name_string, l) == 0) {
@@ -274,11 +274,11 @@ _sys_info_release(char      *issue_str,
     else {
       fp = fopen("/etc/issue", "r");
 
-      if (fp != NULL) {
+      if (fp != nullptr) {
 
         s = fgets(issue_str + 2, _issue_str_max - 4, fp);
 
-        if (s != NULL) {
+        if (s != nullptr) {
           int l = strlen(s);
           for (int i = 0; i < l; i++)
             if (s[i] == '\\') {
@@ -411,7 +411,7 @@ _system_info(bool  log)
   struct utsname  sys_config;
 #endif
 #if defined(HAVE_GETPWUID) && defined(HAVE_GETEUID)
-  struct passwd   *pwd_user = NULL;
+  struct passwd   *pwd_user = nullptr;
 #endif
 
 #if !defined(PATH_MAX)
@@ -436,7 +436,7 @@ _system_info(bool  log)
   /* Working directory */
 
 #if defined(HAVE_GETCWD)
-  if (getcwd(str_directory, 1024) == NULL)
+  if (getcwd(str_directory, 1024) == nullptr)
     strcpy(str_directory, "");
 #endif
 
@@ -506,19 +506,19 @@ _system_info(bool  log)
      but a stub may exist, so we make sure we ignore it */
 #if   defined(_CRAYC) \
    || defined(__CRAYXT) || defined(__CRAYXE) || defined(__CRAYXC)
-  pwd_user = NULL;
+  pwd_user = nullptr;
 #else
   pwd_user = getpwuid(geteuid());
 #endif
 
-  if (pwd_user != NULL) {
+  if (pwd_user != nullptr) {
 
     size_t l_info = 0;
 
     cs_log_printf(CS_LOG_DEFAULT,
                   "  %s%s", _("User:                "), pwd_user->pw_name);
 
-    if (pwd_user->pw_gecos != NULL) {
+    if (pwd_user->pw_gecos != nullptr) {
       for (l_info = 0;
            (   pwd_user->pw_gecos[l_info] != '\0'
             && pwd_user->pw_gecos[l_info] != ',');
@@ -560,7 +560,7 @@ _system_info(bool  log)
       int appnum = -1;
 
 #     if defined(MPI_VERSION) && (MPI_VERSION >= 2)
-      void *attp = NULL;
+      void *attp = nullptr;
       int flag = 0;
       MPI_Comm_get_attr(MPI_COMM_WORLD, MPI_APPNUM, &attp, &flag);
       if (flag != 0)

@@ -267,8 +267,8 @@ const char *cs_grid_coarsening_type_name[]
 /* Select tuning options */
 
 static int _grid_tune_max_level = 0;
-static int *_grid_tune_max_fill_level = NULL;
-static cs_matrix_variant_t **_grid_tune_variant = NULL;
+static int *_grid_tune_max_fill_level = nullptr;
+static cs_matrix_variant_t **_grid_tune_variant = nullptr;
 
 /*============================================================================
  * Private function definitions
@@ -377,45 +377,45 @@ _create_grid(void)
   g->n_elts_r[0] = 0;
   g->n_elts_r[1] = 0;
 
-  g->parent = NULL;
+  g->parent = nullptr;
   g->conv_diff = false;
 
   g->relaxation = 0;
 
-  g->face_cell = NULL;
-  g->_face_cell = NULL;
+  g->face_cell = nullptr;
+  g->_face_cell = nullptr;
 
-  g->coarse_row = NULL;
-  g->coarse_face = NULL;
+  g->coarse_row = nullptr;
+  g->coarse_face = nullptr;
 
   g->cell_face = nullptr;
   g->cell_face_sgn = nullptr;
 
-  g->cell_cen = NULL;
-  g->_cell_cen = NULL;
-  g->cell_vol = NULL;
-  g->_cell_vol = NULL;
-  g->face_normal = NULL;
-  g->_face_normal = NULL;
+  g->cell_cen = nullptr;
+  g->_cell_cen = nullptr;
+  g->cell_vol = nullptr;
+  g->_cell_vol = nullptr;
+  g->face_normal = nullptr;
+  g->_face_normal = nullptr;
 
-  g->halo = NULL;
-  g->_halo = NULL;
+  g->halo = nullptr;
+  g->_halo = nullptr;
 
-  g->da = NULL;
-  g->_da = NULL;
-  g->xa = NULL;
-  g->_xa = NULL;
-  g->xa_conv = NULL;
-  g->xa_diff = NULL;
-  g->xa0 = NULL;
-  g->_xa0 = NULL;
-  g->xa0_diff = NULL;
+  g->da = nullptr;
+  g->_da = nullptr;
+  g->xa = nullptr;
+  g->_xa = nullptr;
+  g->xa_conv = nullptr;
+  g->xa_diff = nullptr;
+  g->xa0 = nullptr;
+  g->_xa0 = nullptr;
+  g->xa0_diff = nullptr;
 
-  g->xa0ij = NULL;
+  g->xa0ij = nullptr;
 
-  g->matrix_struct = NULL;
-  g->matrix = NULL;
-  g->_matrix = NULL;
+  g->matrix_struct = nullptr;
+  g->matrix = nullptr;
+  g->_matrix = nullptr;
 
 #if defined(HAVE_MPI)
 
@@ -425,7 +425,7 @@ _create_grid(void)
   g->merge_stride = 0;
   g->next_merge_stride = 1;
 
-  g->merge_cell_idx = NULL;
+  g->merge_cell_idx = nullptr;
 
   g->n_ranks = cs_glob_n_ranks;
   g->comm = cs_glob_mpi_comm;
@@ -614,13 +614,13 @@ _coarsen_faces(const cs_grid_t    *fine,
 
   cs_lnum_t  ii, jj, face_id, connect_size;
 
-  cs_lnum_t  *restrict c_cell_cell_cnt = NULL;
-  cs_lnum_t  *restrict c_cell_cell_idx = NULL;
-  cs_lnum_t  *restrict c_cell_cell_id = NULL;
-  cs_lnum_t  *restrict c_cell_cell_face = NULL;
+  cs_lnum_t  *restrict c_cell_cell_cnt = nullptr;
+  cs_lnum_t  *restrict c_cell_cell_idx = nullptr;
+  cs_lnum_t  *restrict c_cell_cell_id = nullptr;
+  cs_lnum_t  *restrict c_cell_cell_face = nullptr;
 
-  cs_lnum_t    *restrict _coarse_face = NULL;
-  cs_lnum_2_t  *restrict _c_face_cell = NULL;
+  cs_lnum_t    *restrict _coarse_face = nullptr;
+  cs_lnum_2_t  *restrict _c_face_cell = nullptr;
 
   cs_lnum_t   c_n_faces = 0;
 
@@ -900,13 +900,13 @@ _coarsen_halo(const cs_grid_t   *f,
   cs_lnum_t ii, jj;
   cs_lnum_t start_id, end_id, sub_count;
 
-  cs_lnum_t *start_end_id = NULL;
-  cs_lnum_t *sub_num = NULL;
-  cs_lnum_t  *coarse_send = NULL;
+  cs_lnum_t *start_end_id = nullptr;
+  cs_lnum_t *sub_num = nullptr;
+  cs_lnum_t  *coarse_send = nullptr;
 
   cs_lnum_t *restrict coarse_row = c->coarse_row;
 
-  cs_halo_t *c_halo = NULL;
+  cs_halo_t *c_halo = nullptr;
   const cs_halo_t *f_halo = f->halo;
 
   const cs_lnum_t c_n_rows = c->n_rows;
@@ -1317,7 +1317,7 @@ _coarsen(const cs_grid_t   *f,
 
   /* Sanity check */
 
-  if (f_face_cell != NULL) {
+  if (f_face_cell != nullptr) {
 #   pragma omp parallel for if(f_n_faces > CS_THR_MIN)
     for (cs_lnum_t face_id = 0; face_id < f_n_faces; face_id++) {
       cs_lnum_t ii = f_face_cell[face_id][0];
@@ -1356,7 +1356,7 @@ _coarsen(const cs_grid_t   *f,
   /* Prolong mesh coarsening indicator to halo rows and build
      coarse mesh halos if necessary */
 
-  if (f->halo != NULL) {
+  if (f->halo != nullptr) {
     _coarsen_halo(f, c);
     c->n_cols_ext = c->n_rows + c->halo->n_elts[0];
   }
@@ -1368,7 +1368,7 @@ _coarsen(const cs_grid_t   *f,
 
   /* Build face coarsening and coarse grid face -> cells connectivity */
 
-  if (  f->face_cell != NULL
+  if (  f->face_cell != nullptr
       && (   c->relaxation > 0
           || cs_matrix_get_type(f->matrix) == CS_MATRIX_NATIVE)) {
     _coarsen_faces(f,
@@ -1404,9 +1404,9 @@ _rebuild_halo_send_lists(cs_halo_t        *h,
   int rank_id, tr_id;
   int n_sections = 1 + h->n_transforms;
   int request_count = 0;
-  cs_lnum_t *send_buf = NULL, *recv_buf = NULL;
-  MPI_Status *status = NULL;
-  MPI_Request *request = NULL;
+  cs_lnum_t *send_buf = nullptr, *recv_buf = nullptr;
+  MPI_Status *status = nullptr;
+  MPI_Request *request = nullptr;
 
   BFT_MALLOC(status, h->n_c_domains*2, MPI_Status);
   BFT_MALLOC(request, h->n_c_domains*2, MPI_Request);
@@ -1532,7 +1532,7 @@ _rebuild_halo_send_lists(cs_halo_t        *h,
 static void
 _empty_halo(cs_halo_t  *h)
 {
-  if (h == NULL)
+  if (h == nullptr)
     return;
 
   h->n_c_domains = 0;
@@ -1585,7 +1585,7 @@ _merge_halo_data(cs_halo_t   *h,
 
   /* Order list by rank, transform, and new element number */
 
-  cs_gnum_t  *tmp_num = NULL;
+  cs_gnum_t  *tmp_num = nullptr;
   BFT_MALLOC(tmp_num, n_elts_ini*stride, cs_gnum_t);
 
   for (int rank_idx = 0; rank_idx < n_c_domains_ini; rank_idx++) {
@@ -1645,9 +1645,9 @@ _merge_halo_data(cs_halo_t   *h,
     BFT_REALLOC(h->c_domain_rank, h->n_c_domains, int);
   }
 
-  cs_lnum_t *section_idx = NULL;
+  cs_lnum_t *section_idx = nullptr;
 
-  cs_lnum_t *order = cs_order_gnum_s(NULL, tmp_num, stride, n_elts_ini);
+  cs_lnum_t *order = cs_order_gnum_s(nullptr, tmp_num, stride, n_elts_ini);
 
   for (int i = 0; i < h->n_c_domains*2 + 1; i++)
     h->index[i] = 0;
@@ -1846,8 +1846,8 @@ _append_halos(cs_grid_t   *g,
   int rank_id;
   int counts[3];
 
-  int *recv_count = NULL;
-  cs_lnum_t *new_src_cell_id = NULL, *new_halo_cell_id = NULL;
+  int *recv_count = nullptr;
+  cs_lnum_t *new_src_cell_id = nullptr, *new_halo_cell_id = nullptr;
 
   cs_halo_t *h = g->_halo;
 
@@ -1992,7 +1992,7 @@ _append_halos(cs_grid_t   *g,
 
   /* Cleanup halo and set pointer for coarsening (sub_root) ranks*/
 
-  if (h != NULL) {
+  if (h != nullptr) {
 
     /* In case of periodic transforms, transpose perio list back to its
        standard order */
@@ -2027,7 +2027,7 @@ _append_halos(cs_grid_t   *g,
 
   }
 
-  if (new_src_cell_id != NULL)
+  if (new_src_cell_id != nullptr)
     BFT_FREE(new_src_cell_id);
 
   g->halo = h;
@@ -2151,7 +2151,7 @@ _append_cell_data(cs_grid_t  *g)
 static void
 _sync_merged_cell_data(cs_grid_t  *g)
 {
-  if (g->halo != NULL) {
+  if (g->halo != nullptr) {
 
     if (g->relaxation > 0) {
       cs_halo_sync_var_strided(g->halo, CS_HALO_STANDARD, g->_cell_cen, 3);
@@ -2186,7 +2186,7 @@ _append_face_data(cs_grid_t   *g,
 {
   int rank_id;
 
-  cs_lnum_t *recv_count = NULL;
+  cs_lnum_t *recv_count = nullptr;
 
   MPI_Status status;
   MPI_Comm  comm = cs_glob_mpi_comm;
@@ -2363,8 +2363,8 @@ _merge_grids(cs_grid_t  *g,
   int base_rank = cs_glob_rank_id;
   cs_lnum_t cell_shift = 0;
   cs_lnum_t n_faces = 0;
-  cs_lnum_t *new_cell_id = NULL, *face_list = NULL;
-  bool  *halo_cell_flag = NULL;
+  cs_lnum_t *new_cell_id = nullptr, *face_list = nullptr;
+  bool  *halo_cell_flag = nullptr;
   MPI_Comm comm = cs_glob_mpi_comm;
   MPI_Status status;
 
@@ -2567,7 +2567,7 @@ static void
 _scatter_row_int(const cs_grid_t  *g,
                  int              *num)
 {
-  assert(g != NULL);
+  assert(g != nullptr);
 
   /* If grid merging has taken place, scatter coarse data */
 
@@ -2610,7 +2610,7 @@ static void
 _scatter_row_num(const cs_grid_t  *g,
                  cs_lnum_t        *num)
 {
-  assert(g != NULL);
+  assert(g != nullptr);
 
   /* If grid merging has taken place, scatter coarse data */
 
@@ -3165,7 +3165,7 @@ _automatic_aggregation_pw_msr(const cs_grid_t  *f,
 
   const cs_lnum_t  *row_index, *col_id;
   const cs_real_t  *d_val, *x_val;
-  cs_real_t *_d_val = NULL, *_x_val = NULL;
+  cs_real_t *_d_val = nullptr, *_x_val = nullptr;
 
   cs_matrix_get_msr_arrays(f->matrix,
                            &row_index,
@@ -3253,15 +3253,15 @@ _automatic_aggregation_mx_native(const cs_grid_t  *f,
   cs_lnum_t aggr_count = f_n_rows;
   cs_lnum_t c_n_rows = 0;
 
-  cs_lnum_t *c_aggr_count = NULL;
-  cs_real_t *maxi = NULL;
+  cs_lnum_t *c_aggr_count = nullptr;
+  cs_real_t *maxi = nullptr;
 
   /* Access matrix native arrays */
 
   cs_lnum_t n_edges = 0;
   const cs_lnum_2_t  *edges;
   const cs_real_t  *d_val, *x_val;
-  cs_real_t *_d_val = NULL, *_x_val = NULL;
+  cs_real_t *_d_val = nullptr, *_x_val = nullptr;
 
   bool symmetric = true;
   cs_lnum_t isym = 2;
@@ -3466,8 +3466,8 @@ _automatic_aggregation_mx_msr(const cs_grid_t  *f,
 
   const int npass_max = 10;
 
-  cs_lnum_t *c_aggr_count = NULL;
-  cs_real_t *maxi = NULL;
+  cs_lnum_t *c_aggr_count = nullptr;
+  cs_real_t *maxi = nullptr;
 
   /* Algorithm parameters */
   const cs_real_t beta = 0.25; /* 0.5 for HHO */
@@ -3485,7 +3485,7 @@ _automatic_aggregation_mx_msr(const cs_grid_t  *f,
 
   const cs_lnum_t  *row_index, *col_id;
   const cs_real_t  *d_val, *x_val;
-  cs_real_t *_d_val = NULL, *_x_val = NULL;
+  cs_real_t *_d_val = nullptr, *_x_val = nullptr;
 
   cs_matrix_get_msr_arrays(f->matrix,
                            &row_index,
@@ -4393,7 +4393,7 @@ _automatic_aggregation_fc(const cs_grid_t       *f,
   const cs_real_t *_f_da = f_da;
   const cs_real_t *_f_xa = f_xa;
 
-  cs_real_t *s_da = NULL, *s_xa = NULL;
+  cs_real_t *s_da = nullptr, *s_xa = nullptr;
 
   if (db_size > 1) {
     BFT_MALLOC(s_da, f_n_cells, cs_real_t);
@@ -4409,7 +4409,7 @@ _automatic_aggregation_fc(const cs_grid_t       *f,
 
   /* Allocate working arrays */
 
-  cs_lnum_t *i_work_array = NULL;
+  cs_lnum_t *i_work_array = nullptr;
   BFT_MALLOC(i_work_array, f_n_cells_ext*2 + f_n_faces*3, cs_lnum_t);
 
   cs_lnum_t *c_cardinality = i_work_array;
@@ -4670,7 +4670,7 @@ _automatic_aggregation_dx_msr(const cs_grid_t       *f,
 
   const cs_lnum_t  *row_index, *col_id;
   const cs_real_t  *d_val, *x_val;
-  cs_real_t *_d_val = NULL, *_x_val = NULL;
+  cs_real_t *_d_val = nullptr, *_x_val = nullptr;
 
   cs_matrix_get_msr_arrays(f->matrix,
                            &row_index,
@@ -5250,7 +5250,7 @@ _verify_coarse_quantities(const cs_grid_t  *fine_grid,
   const cs_real_t *c_xa0 = coarse_grid->_xa0;
   const cs_real_t *c_xa = coarse_grid->_xa;
 
-  cs_real_t *w1 = NULL;
+  cs_real_t *w1 = nullptr;
 
   const cs_lnum_t db_size = fine_grid->db_size;
   const cs_lnum_t db_stride = db_size*db_size;
@@ -5410,7 +5410,7 @@ _build_coarse_matrix_msr(cs_grid_t *c,
                                      &c_row_index,
                                      &c_col_id,
                                      c->halo,
-                                     NULL);
+                                     nullptr);
 
   c->matrix_struct = ms;
 
@@ -5421,7 +5421,7 @@ _build_coarse_matrix_msr(cs_grid_t *c,
 
   cs_matrix_get_msr_arrays(c->matrix,
                            &_c_row_index, &_c_col_id,
-                           NULL, NULL);
+                           nullptr, nullptr);
 
   cs_matrix_transfer_coefficients_msr(c->_matrix,
                                       symmetric,
@@ -5565,7 +5565,7 @@ _compute_coarse_quantities_native(const cs_grid_t  *fine_grid,
       c_xa0ij[3*c_face +2] = 0.;
     }
 
-    if (f_face_normal != NULL) {
+    if (f_face_normal != nullptr) {
 
       for (face_id = 0; face_id < f_n_faces; face_id++) {
 
@@ -5595,7 +5595,7 @@ _compute_coarse_quantities_native(const cs_grid_t  *fine_grid,
       }
 
     }
-    else { /* f_face_normal = NULL */
+    else { /* f_face_normal = nullptr */
 
       for (face_id = 0; face_id < f_n_faces; face_id++) {
 
@@ -5702,7 +5702,7 @@ _compute_coarse_quantities_native(const cs_grid_t  *fine_grid,
 
   /* Initialize non differential fine grid term saved in w1 */
 
-  cs_real_t *w1 = NULL;
+  cs_real_t *w1 = nullptr;
   BFT_MALLOC(w1, f_n_cells_ext*db_stride, cs_real_t);
 
   if (db_size == 1) {
@@ -5840,7 +5840,7 @@ _compute_coarse_quantities_conv_diff(const cs_grid_t  *fine_grid,
   cs_real_t *c_xa_conv = coarse_grid->xa_conv;
   cs_real_t *c_xa_diff = coarse_grid->xa_diff;
 
-  cs_real_t *w1 = NULL;
+  cs_real_t *w1 = nullptr;
 
   const cs_lnum_t db_size = fine_grid->db_size;
   const cs_lnum_t db_stride = db_size*db_size;
@@ -6538,7 +6538,7 @@ _coarse_mesh_quantities_msr(const cs_grid_t  *f,
 
   /* Synchronize grid's geometric quantities */
 
-  if (c->halo != NULL) {
+  if (c->halo != nullptr) {
     cs_halo_sync_var_strided(c->halo, CS_HALO_STANDARD, c->_cell_cen, 3);
     if (c->halo->n_transforms > 0)
       cs_halo_perio_sync_coords(c->halo, CS_HALO_STANDARD, c->_cell_cen);
@@ -6817,7 +6817,7 @@ _native_from_msr(cs_grid_t  *g)
               __func__);
 
   cs_matrix_destroy(&(g->_matrix));
-  g->matrix = NULL;
+  g->matrix = nullptr;
   cs_matrix_structure_destroy(&(g->matrix_struct));
 }
 
@@ -6842,7 +6842,7 @@ _matrix_from_native(cs_matrix_type_t   cm_type,
                                                 g->n_faces,
                                                 g->face_cell,
                                                 g->halo,
-                                                NULL);
+                                                nullptr);
 
   g->_matrix = cs_matrix_create(g->matrix_struct);
   cs_matrix_set_alloc_mode(g->_matrix, g->alloc_mode);
@@ -6879,13 +6879,13 @@ _matrix_from_native(cs_matrix_type_t   cm_type,
 static void
 _project_coarse_row_to_parent(cs_grid_t  *c)
 {
-  assert(c != NULL);
+  assert(c != nullptr);
 
   const cs_grid_t  *f = c->parent;
 
-  assert(f != NULL);
+  assert(f != nullptr);
 
-  if (f->parent != NULL) { /* level > 0*/
+  if (f->parent != nullptr) { /* level > 0*/
 
     cs_lnum_t *c_coarse_row = c->coarse_row;
     cs_lnum_t *f_coarse_row = f->coarse_row;
@@ -6918,9 +6918,9 @@ _build_coarse_matrix_null(cs_grid_t         *c,
                                  0,
                                  0,
                                  0,
-                                 NULL,
-                                 NULL,
-                                 NULL);
+                                 nullptr,
+                                 nullptr,
+                                 nullptr);
 
   c->matrix_struct = ms;
 
@@ -6934,9 +6934,9 @@ _build_coarse_matrix_null(cs_grid_t         *c,
                              c->db_size,
                              c->eb_size,
                              0,
-                             NULL,
-                             NULL,
-                             NULL);
+                             nullptr,
+                             nullptr,
+                             nullptr);
 }
 
 /*----------------------------------------------------------------------------
@@ -6960,11 +6960,11 @@ _prolong_row_int(const cs_grid_t  *c,
 
   cs_lnum_t f_n_rows = f->n_rows;
 
-  assert(f != NULL);
-  assert(c != NULL);
-  assert(c->coarse_row != NULL || f_n_rows == 0);
-  assert(f_num != NULL);
-  assert(c_num != NULL);
+  assert(f != nullptr);
+  assert(c != nullptr);
+  assert(c->coarse_row != nullptr || f_n_rows == 0);
+  assert(f_num != nullptr);
+  assert(c_num != nullptr);
 
 #if defined(HAVE_MPI)
   _scatter_row_int(c, c_num);
@@ -7021,7 +7021,7 @@ cs_grid_create_from_shared(cs_lnum_t              n_faces,
                            const cs_matrix_t     *a,
                            bool                   conv_diff)
 {
-  cs_grid_t *g = NULL;
+  cs_grid_t *g = nullptr;
 
   /* Create empty structure and map base data */
 
@@ -7060,9 +7060,9 @@ cs_grid_create_from_shared(cs_lnum_t              n_faces,
   const cs_real_3_t *cell_cen, *face_normal;
 
   cs_matrix_get_mesh_association(a,
-                                 NULL,
-                                 NULL,
-                                 NULL,
+                                 nullptr,
+                                 nullptr,
+                                 nullptr,
                                  &cell_cen,
                                  &cell_vol,
                                  &face_normal);
@@ -7080,18 +7080,18 @@ cs_grid_create_from_shared(cs_lnum_t              n_faces,
     g->xa= cs_matrix_get_extra_diagonal(a);
   }
 
-  if (g->face_cell != NULL) {
+  if (g->face_cell != nullptr) {
 
     /* Build symmetrized extra-diagonal terms if necessary,
        or point to existing terms if already symmetric */
 
     if (g->symmetric == true) {
       g->xa0 = g->xa;
-      g->_xa0 = NULL;
+      g->_xa0 = nullptr;
     }
     else if (g->conv_diff) {
       g->xa0  = g->xa;
-      g->_xa0 = NULL;
+      g->_xa0 = nullptr;
     }
     else {
       BFT_MALLOC(g->_xa0, n_faces, cs_real_t);
@@ -7140,9 +7140,9 @@ cs_grid_create_from_shared(cs_lnum_t              n_faces,
 
   }
 
-  g->matrix_struct = NULL;
+  g->matrix_struct = nullptr;
   g->matrix = a;
-  g->_matrix = NULL;
+  g->_matrix = nullptr;
 
   return g;
 }
@@ -7166,7 +7166,7 @@ cs_grid_t *
 cs_grid_create_from_parent(const cs_matrix_t  *a,
                            int                 n_ranks)
 {
-  cs_grid_t *g = NULL;
+  cs_grid_t *g = nullptr;
 
   /* Create empty structure and map base data */
 
@@ -7174,7 +7174,7 @@ cs_grid_create_from_parent(const cs_matrix_t  *a,
 
   bool local = true;
   const cs_halo_t *h = cs_matrix_get_halo(a);
-  if (h != NULL) {
+  if (h != nullptr) {
     local = false;
     if (h->n_c_domains == 1) {
       if (h->c_domain_rank[0] == cs_glob_rank_id)
@@ -7215,7 +7215,7 @@ cs_grid_create_from_parent(const cs_matrix_t  *a,
   g->n_g_rows = g->n_rows;
 
 #if defined(HAVE_MPI)
-  if (g->halo != NULL && g->comm != MPI_COMM_NULL) {
+  if (g->halo != nullptr && g->comm != MPI_COMM_NULL) {
     cs_gnum_t _g_n_rows = g->n_rows;
     MPI_Allreduce(&_g_n_rows, &(g->n_g_rows), 1, CS_MPI_GNUM, MPI_SUM, g->comm);
   }
@@ -7234,7 +7234,7 @@ cs_grid_create_from_parent(const cs_matrix_t  *a,
 void
 cs_grid_destroy(cs_grid_t **grid)
 {
-  if (grid != NULL && *grid != NULL) {
+  if (grid != nullptr && *grid != nullptr) {
 
     cs_grid_t *g = *grid;
     cs_grid_free_quantities(g);
@@ -7243,7 +7243,7 @@ cs_grid_destroy(cs_grid_t **grid)
 
     CS_FREE_HD(g->coarse_row);
 
-    if (g->_halo != NULL)
+    if (g->_halo != nullptr)
       cs_halo_destroy(&(g->_halo));
 
     BFT_FREE(g->_da);
@@ -7276,16 +7276,16 @@ cs_grid_destroy(cs_grid_t **grid)
 void
 cs_grid_free_quantities(cs_grid_t  *g)
 {
-  assert(g != NULL);
+  assert(g != nullptr);
 
   if (cs_matrix_get_type(g->matrix) != CS_MATRIX_NATIVE) {
     BFT_FREE(g->_face_cell);
-    g->face_cell = NULL;
+    g->face_cell = nullptr;
     BFT_FREE(g->_xa);
-    g->xa = NULL;
+    g->xa = nullptr;
     if (cs_matrix_get_type(g->matrix) == CS_MATRIX_CSR) {
       BFT_FREE(g->_da);
-      g->da = NULL;
+      g->da = nullptr;
     }
   }
 
@@ -7308,15 +7308,15 @@ cs_grid_free_quantities(cs_grid_t  *g)
  *
  * parameters:
  *   g          <-- Grid structure
- *   level      --> Level in multigrid hierarchy (or NULL)
- *   symmetric  --> Symmetric matrix coefficients indicator (or NULL)
- *   db_size    --> Size of the diagonal block (or NULL)
- *   eb_size    --> Size of the extra diagonal block (or NULL)
- *   n_ranks    --> number of ranks with data (or NULL)
- *   n_rows     --> Number of local rows (or NULL)
- *   n_cols_ext --> Number of columns including ghosts (or NULL)
- *   n_entries  --> Number of entries (or NULL)
- *   n_g_rows   --> Number of global rows (or NULL)
+ *   level      --> Level in multigrid hierarchy (or nullptr)
+ *   symmetric  --> Symmetric matrix coefficients indicator (or nullptr)
+ *   db_size    --> Size of the diagonal block (or nullptr)
+ *   eb_size    --> Size of the extra diagonal block (or nullptr)
+ *   n_ranks    --> number of ranks with data (or nullptr)
+ *   n_rows     --> Number of local rows (or nullptr)
+ *   n_cols_ext --> Number of columns including ghosts (or nullptr)
+ *   n_entries  --> Number of entries (or nullptr)
+ *   n_g_rows   --> Number of global rows (or nullptr)
  *----------------------------------------------------------------------------*/
 
 void
@@ -7331,21 +7331,21 @@ cs_grid_get_info(const cs_grid_t  *g,
                  cs_lnum_t        *n_entries,
                  cs_gnum_t        *n_g_rows)
 {
-  assert(g != NULL);
+  assert(g != nullptr);
 
-  if (level != NULL)
+  if (level != nullptr)
     *level = g->level;
 
-  if (symmetric != NULL)
+  if (symmetric != nullptr)
     *symmetric = g->symmetric;
 
-  if (db_size != NULL)
+  if (db_size != nullptr)
     *db_size = g->db_size;
 
-  if (eb_size != NULL)
+  if (eb_size != nullptr)
     *eb_size = g->eb_size;
 
-  if (n_ranks != NULL) {
+  if (n_ranks != nullptr) {
 #if defined(HAVE_MPI)
     *n_ranks = g->n_ranks;
 #else
@@ -7353,19 +7353,19 @@ cs_grid_get_info(const cs_grid_t  *g,
 #endif
   }
 
-  if (n_rows != NULL)
+  if (n_rows != nullptr)
     *n_rows = g->n_rows;
-  if (n_cols_ext != NULL)
+  if (n_cols_ext != nullptr)
     *n_cols_ext = g->n_cols_ext;
   assert(g->n_rows <= g->n_cols_ext);
-  if (n_entries != NULL) {
-    if (g->matrix != NULL)
+  if (n_entries != nullptr) {
+    if (g->matrix != nullptr)
       *n_entries = cs_matrix_get_n_entries(g->matrix);
     else
       *n_entries = 0;
   }
 
-  if (n_g_rows != NULL)
+  if (n_g_rows != nullptr)
     *n_g_rows = g->n_g_rows;
 }
 
@@ -7382,7 +7382,7 @@ cs_grid_get_info(const cs_grid_t  *g,
 cs_alloc_mode_t
 cs_grid_get_alloc_mode(const cs_grid_t  *g)
 {
-  assert(g != NULL);
+  assert(g != nullptr);
 
   return g->alloc_mode;
 }
@@ -7400,7 +7400,7 @@ cs_grid_get_alloc_mode(const cs_grid_t  *g)
 cs_lnum_t
 cs_grid_get_n_rows(const cs_grid_t  *g)
 {
-  assert(g != NULL);
+  assert(g != nullptr);
 
   return g->n_rows;
 }
@@ -7418,7 +7418,7 @@ cs_grid_get_n_rows(const cs_grid_t  *g)
 cs_lnum_t
 cs_grid_get_n_cols_ext(const cs_grid_t  *g)
 {
-  assert(g != NULL);
+  assert(g != nullptr);
 
   return g->n_cols_ext;
 }
@@ -7440,7 +7440,7 @@ cs_grid_get_n_cols_max(const cs_grid_t  *g)
 {
   cs_lnum_t retval = 0;
 
-  if (g != NULL)
+  if (g != nullptr)
     retval = CS_MAX(g->n_cols_ext, g->n_elts_r[1]);
 
   return retval;
@@ -7459,7 +7459,7 @@ cs_grid_get_n_cols_max(const cs_grid_t  *g)
 cs_gnum_t
 cs_grid_get_n_g_rows(const cs_grid_t  *g)
 {
-  assert(g != NULL);
+  assert(g != nullptr);
 
   return g->n_g_rows;
 }
@@ -7477,9 +7477,9 @@ cs_grid_get_n_g_rows(const cs_grid_t  *g)
 const cs_matrix_t *
 cs_grid_get_matrix(const cs_grid_t  *g)
 {
-  const cs_matrix_t *m = NULL;
+  const cs_matrix_t *m = nullptr;
 
-  assert(g != NULL);
+  assert(g != nullptr);
 
   m = g->matrix;
 
@@ -7501,7 +7501,7 @@ cs_grid_get_matrix(const cs_grid_t  *g)
 MPI_Comm
 cs_grid_get_comm(const cs_grid_t  *g)
 {
-  assert(g != NULL);
+  assert(g != nullptr);
 
   return g->comm;
 }
@@ -7586,12 +7586,12 @@ cs_grid_coarsen(const cs_grid_t      *f,
   cs_matrix_type_t fine_matrix_type = cs_matrix_get_type(f->matrix);
   cs_matrix_type_t coarse_matrix_type = CS_MATRIX_MSR;
 
-  cs_grid_t *c = NULL;
+  cs_grid_t *c = nullptr;
 
   const cs_lnum_t db_size = f->db_size;
   const cs_lnum_t db_stride = db_size * db_size;
 
-  assert(f != NULL);
+  assert(f != nullptr);
 
   /* Initialization */
 
@@ -7619,7 +7619,7 @@ cs_grid_coarsen(const cs_grid_t      *f,
   }
   else if (coarsening_type == CS_GRID_COARSENING_SPD_DX) {
     /* closest altenative */
-    if (f->face_cell == NULL)
+    if (f->face_cell == nullptr)
       coarsening_type = CS_GRID_COARSENING_SPD_MX;
   }
 
@@ -7631,7 +7631,7 @@ cs_grid_coarsen(const cs_grid_t      *f,
 
   else if (coarsening_type == CS_GRID_COARSENING_CONV_DIFF_DX) {
     /* closest altenative */
-    if (f->face_cell == NULL)
+    if (f->face_cell == nullptr)
       coarsening_type = CS_GRID_COARSENING_SPD_MX;
   }
 
@@ -7745,7 +7745,7 @@ cs_grid_coarsen(const cs_grid_t      *f,
 
     /* Synchronize grid's geometric quantities */
 
-    if (c->halo != NULL) {
+    if (c->halo != nullptr) {
 
       cs_halo_sync_var_strided(c->halo, CS_HALO_STANDARD, c->_cell_cen, 3);
       if (c->halo->n_transforms > 0)
@@ -7779,7 +7779,7 @@ cs_grid_coarsen(const cs_grid_t      *f,
 
     /* Synchronize matrix's geometric quantities */
 
-    if (c->halo != NULL)
+    if (c->halo != nullptr)
       cs_halo_sync_var_strided(c->halo, CS_HALO_STANDARD, c->_da, db_stride);
 
     _matrix_from_native(coarse_matrix_type, c);
@@ -7802,7 +7802,7 @@ cs_grid_coarsen(const cs_grid_t      *f,
       /* Create tuned variant upon first pass for this level and
          fill type */
 
-      if  (   coarse_mv == NULL
+      if  (   coarse_mv == nullptr
            && _grid_tune_max_fill_level[mft] > f->level) {
 
         cs_log_printf(CS_LOG_PERFORMANCE,
@@ -7826,13 +7826,13 @@ cs_grid_coarsen(const cs_grid_t      *f,
 
       }
 
-      if (coarse_mv != NULL)
+      if (coarse_mv != nullptr)
         cs_matrix_variant_apply_tuned(c->_matrix, coarse_mv);
     }
 
   }
 
-  if (c->matrix == NULL) {
+  if (c->matrix == nullptr) {
     assert(c->n_rows == 0);
     _build_coarse_matrix_null(c, coarse_matrix_type);
   }
@@ -7857,7 +7857,7 @@ cs_grid_coarsen(const cs_grid_t      *f,
     _project_coarse_row_to_parent(cc);
     CS_FREE_HD(cc->coarse_row);
     cc->coarse_row = c->coarse_row;
-    c->coarse_row = NULL;
+    c->coarse_row = nullptr;
 
     if (c->use_faces) {
       BFT_FREE(cc->coarse_face);
@@ -7891,7 +7891,7 @@ cs_grid_coarsen(const cs_grid_t      *f,
     cs_gnum_t  _n_mean_g_rows = c->n_g_rows / _n_ranks;
     if (   _n_mean_g_rows < (cs_gnum_t)merge_rows_mean_threshold
         || c->n_g_rows < merge_rows_glob_threshold) {
-      if (c->_xa == NULL && c->n_faces > 0)
+      if (c->_xa == nullptr && c->n_faces > 0)
         _native_from_msr(c);
       _merge_grids(c, merge_stride, verbosity);
       if (c->_matrix != nullptr) {
@@ -7907,9 +7907,9 @@ cs_grid_coarsen(const cs_grid_t      *f,
 
   if (f->use_faces)
     cs_matrix_set_mesh_association(c->_matrix,
-                                   NULL,
-                                   NULL,
-                                   NULL,
+                                   nullptr,
+                                   nullptr,
+                                   nullptr,
                                    (const cs_real_3_t *)c->cell_cen,
                                    (const cs_real_t *)c->cell_vol,
                                    (const cs_real_3_t *)c->_face_normal);
@@ -7966,12 +7966,12 @@ cs_grid_coarsen_to_single(const cs_grid_t  *f,
 
   cs_matrix_type_t fine_matrix_type = cs_matrix_get_type(f->matrix);
 
-  cs_grid_t *c = NULL;
+  cs_grid_t *c = nullptr;
 
   const cs_lnum_t db_size = f->db_size;
   const cs_lnum_t db_stride = db_size * db_size;
 
-  assert(f != NULL);
+  assert(f != nullptr);
 
   /* Initialization */
 
@@ -8016,7 +8016,7 @@ cs_grid_coarsen_to_single(const cs_grid_t  *f,
 
     /* Synchronize matrix's geometric quantities */
 
-    if (c->halo != NULL)
+    if (c->halo != nullptr)
       cs_halo_sync_var_strided(c->halo, CS_HALO_STANDARD, c->_da, db_stride);
 
     /* Merge grids if we are below the threshold */
@@ -8067,16 +8067,16 @@ cs_grid_project_row_num(const cs_grid_t  *g,
   cs_gnum_t base_shift = 1;
   cs_gnum_t _max_num = max_num;
   cs_lnum_t n_max_rows = 0;
-  cs_lnum_t *tmp_num_1 = NULL, *tmp_num_2 = NULL;
+  cs_lnum_t *tmp_num_1 = nullptr, *tmp_num_2 = nullptr;
   const cs_grid_t *_g = g;
 
-  assert(g != NULL);
-  assert(c_row_num != NULL);
+  assert(g != nullptr);
+  assert(c_row_num != nullptr);
 
   /* Initialize array */
 
   n_max_rows = g->n_rows;
-  for (_g = g; _g != NULL; _g = _g->parent) {
+  for (_g = g; _g != nullptr; _g = _g->parent) {
     if (_g->n_rows > n_max_rows)
       n_max_rows = _g->n_rows;
   }
@@ -8154,14 +8154,14 @@ cs_grid_project_row_rank(const cs_grid_t  *g,
 {
   cs_lnum_t ii;
   cs_lnum_t n_max_rows = 0;
-  int *tmp_rank_1 = NULL, *tmp_rank_2 = NULL;
+  int *tmp_rank_1 = nullptr, *tmp_rank_2 = nullptr;
   const cs_grid_t *_g = g;
 
-  assert(g != NULL);
-  assert(f_row_rank != NULL || g->n_rows == 0);
+  assert(g != nullptr);
+  assert(f_row_rank != nullptr || g->n_rows == 0);
 
   n_max_rows = g->n_rows;
-  for (_g = g; _g != NULL; _g = _g->parent) {
+  for (_g = g; _g != nullptr; _g = _g->parent) {
     if (_g->n_rows > n_max_rows)
       n_max_rows = _g->n_rows;
   }
@@ -8225,17 +8225,17 @@ cs_grid_project_var(const cs_grid_t  *g,
   cs_lnum_t ii;
   int i;
   cs_lnum_t n_max_rows = 0;
-  cs_real_t *tmp_var_1 = NULL, *tmp_var_2 = NULL;
+  cs_real_t *tmp_var_1 = nullptr, *tmp_var_2 = nullptr;
   const cs_grid_t *_g = g;
 
   const cs_lnum_t db_size = g->db_size;
 
-  assert(g != NULL);
-  assert(c_var != NULL || g->n_rows == 0);
-  assert(f_var != NULL);
+  assert(g != nullptr);
+  assert(c_var != nullptr || g->n_rows == 0);
+  assert(f_var != nullptr);
 
   n_max_rows = g->n_rows;
-  for (_g = g; _g != NULL; _g = _g->parent) {
+  for (_g = g; _g != nullptr; _g = _g->parent) {
     if (_g->n_rows > n_max_rows)
       n_max_rows = _g->n_rows;
   }
@@ -8300,12 +8300,12 @@ cs_grid_project_diag_dom(const cs_grid_t  *g,
                          cs_lnum_t         n_base_rows,
                          cs_real_t         diag_dom[])
 {
-  cs_real_t *dd = NULL;
+  cs_real_t *dd = nullptr;
   const cs_lnum_t db_size = g->db_size;
   const cs_lnum_t db_stride = db_size * db_size;
 
-  assert(g != NULL);
-  assert(diag_dom != NULL);
+  assert(g != nullptr);
+  assert(diag_dom != nullptr);
 
   if (g->level == 0)
     dd = diag_dom;
@@ -8336,7 +8336,7 @@ cs_grid_finalize(void)
     for (int i = 0; i < _grid_tune_max_level; i++) {
       for (int j = 0; j < CS_MATRIX_N_FILL_TYPES; j++) {
         int k = CS_MATRIX_N_FILL_TYPES*i + j;
-        if (_grid_tune_variant[k] != NULL)
+        if (_grid_tune_variant[k] != nullptr)
           cs_matrix_variant_destroy(&(_grid_tune_variant[k]));
       }
     }
@@ -8360,7 +8360,7 @@ cs_grid_dump(const cs_grid_t  *g)
 {
   cs_lnum_t  i;
 
-  if (g == NULL) {
+  if (g == nullptr) {
     bft_printf("\n\n  grid: null\n");
     return;
   }
@@ -8389,7 +8389,7 @@ cs_grid_dump(const cs_grid_t  *g)
              g->merge_sub_root, g->merge_sub_rank, g->merge_sub_size,
              g->merge_stride, g->next_merge_stride, g->n_ranks);
 
-  if (g->merge_cell_idx != NULL) {
+  if (g->merge_cell_idx != nullptr) {
     bft_printf("  merge_cell_idx\n");
     for (i = 0; i < g->merge_sub_size + 1; i++)
       bft_printf("    %ld: %ld\n", (long)i, (long)g->merge_cell_idx[i]);
@@ -8406,7 +8406,7 @@ cs_grid_dump(const cs_grid_t  *g)
              (const void *)g->coarse_row, (const void *)g->coarse_face,
              (const void *)g->halo);
 
-  if (g->face_cell != NULL) {
+  if (g->face_cell != nullptr) {
     bft_printf("\n"
                "  face -> cell connectivity;\n");
     for (i = 0; i < g->n_faces; i++)
@@ -8414,7 +8414,7 @@ cs_grid_dump(const cs_grid_t  *g)
                  (long)(g->face_cell[i][0]), (long)(g->face_cell[i][1]));
   }
 
-  if (g->coarse_row != NULL && g->parent != NULL) {
+  if (g->coarse_row != nullptr && g->parent != nullptr) {
     bft_printf("\n"
                "  coarse_row;\n");
     for (i = 0; i < g->parent->n_rows; i++)
@@ -8422,7 +8422,7 @@ cs_grid_dump(const cs_grid_t  *g)
                  (long)(i+1), (long)(g->coarse_row[i]));
   }
 
-  if (g->coarse_face != NULL && g->parent != NULL) {
+  if (g->coarse_face != nullptr && g->parent != nullptr) {
     bft_printf("\n"
                "  coarse_face;\n");
     for (i = 0; i < g->parent->n_faces; i++)
@@ -8468,7 +8468,7 @@ cs_grid_set_matrix_tuning(cs_matrix_fill_type_t  fill_type,
 
     for (int i = _grid_tune_max_level; i < max_level; i++) {
       for (int j = 0; j < CS_MATRIX_N_FILL_TYPES; j++) {
-        _grid_tune_variant[CS_MATRIX_N_FILL_TYPES*i + j] = NULL;
+        _grid_tune_variant[CS_MATRIX_N_FILL_TYPES*i + j] = nullptr;
       }
     }
 
@@ -8506,11 +8506,11 @@ cs_grid_restrict_row_var(cs_dispatch_context  &ctx,
   const cs_lnum_t *coarse_row;
   const cs_lnum_t db_size = f->db_size;
 
-  assert(f != NULL);
-  assert(c != NULL);
-  assert(c->coarse_row != NULL || f_n_rows == 0);
-  assert(f_var != NULL || f_n_rows == 0);
-  assert(c_var != NULL || c_n_cols_ext == 0);
+  assert(f != nullptr);
+  assert(c != nullptr);
+  assert(c->coarse_row != nullptr || f_n_rows == 0);
+  assert(f_var != nullptr || f_n_rows == 0);
+  assert(c_var != nullptr || c_n_cols_ext == 0);
 
   /* Set coarse values */
 
@@ -8622,11 +8622,11 @@ cs_grid_prolong_row_var(cs_dispatch_context  &ctx,
 
   cs_lnum_t f_n_rows = f->n_rows;
 
-  assert(f != NULL);
-  assert(c != NULL);
-  assert(c->coarse_row != NULL || f_n_rows == 0);
-  assert(f_var != NULL || f_n_rows == 0);
-  assert(c_var != NULL || c->n_cols_ext == 0);
+  assert(f != nullptr);
+  assert(c != nullptr);
+  assert(c->coarse_row != nullptr || f_n_rows == 0);
+  assert(f_var != nullptr || f_n_rows == 0);
+  assert(c_var != nullptr || c->n_cols_ext == 0);
 
 #if defined(HAVE_MPI)
 

@@ -179,7 +179,7 @@ cs_ctwr_bcond(void)
 
       y_l_r->bc_coeffs->icodcl[face_id] = 1;
       y_l_r->bc_coeffs->rcodcl1[face_id] = 0.;
-      if (yh_l_r != NULL) {
+      if (yh_l_r != nullptr) {
         yh_l_r->bc_coeffs->icodcl[face_id] = 1;
         yh_l_r->bc_coeffs->rcodcl1[face_id] = 0.;
       }

@@ -132,7 +132,7 @@ struct _cs_medcoupling_intersector_t {
 
 static int                             _n_intersects = 0;
 static int                             _writer_id    = 0;
-static cs_medcoupling_intersector_t  **_intersects   = NULL;
+static cs_medcoupling_intersector_t  **_intersects   = nullptr;
 
 #if defined(HAVE_MEDCOUPLING) && defined(HAVE_MEDCOUPLING_LOADER)
 
@@ -147,22 +147,22 @@ static cs_medcoupling_intersector_t  **_intersects   = NULL;
 static cs_medcoupling_intersector_t *
 _create_intersector(void)
 {
-  cs_medcoupling_intersector_t *mi = NULL;
+  cs_medcoupling_intersector_t *mi = nullptr;
   BFT_MALLOC(mi, 1, cs_medcoupling_intersector_t);
 
-  mi->name                 = NULL;
+  mi->name                 = nullptr;
   mi->id                   = -1;
-  mi->medfile_path         = NULL;
-  mi->interp_method        = NULL;
+  mi->medfile_path         = nullptr;
+  mi->interp_method        = nullptr;
   mi->type                 = CS_MEDCPL_INTERSECT_UKNOWN;
-  mi->local_mesh           = NULL;
-  mi->source_mesh          = NULL;
-  mi->boundary_coords      = NULL;
-  mi->init_boundary_coords = NULL;
+  mi->local_mesh           = nullptr;
+  mi->source_mesh          = nullptr;
+  mi->boundary_coords      = nullptr;
+  mi->init_boundary_coords = nullptr;
   mi->n_b_vertices         = -1;
-  mi->init_coords          = NULL;
-  mi->ext_mesh             = NULL;
-  mi->intersect_vals       = NULL;
+  mi->init_coords          = nullptr;
+  mi->ext_mesh             = nullptr;
+  mi->intersect_vals       = nullptr;
   mi->matrix_needs_update  = 1;
 
   return mi;
@@ -183,12 +183,12 @@ _allocate_intersector_external_mesh(cs_medcoupling_intersector_t *mi,
                                     const cs_lnum_t               n_vtx,
                                     const cs_lnum_t               dim)
 {
-  assert(mi != NULL);
+  assert(mi != nullptr);
 
   /* Copy med mesh boundary coordinates */
   MEDCouplingUMesh  *b_mesh = mi->source_mesh->buildBoundaryMesh(false);
 
-  assert(b_mesh != NULL);
+  assert(b_mesh != nullptr);
 
   b_mesh->convertAllToPoly();
 
@@ -218,10 +218,10 @@ _allocate_intersector_external_mesh(cs_medcoupling_intersector_t *mi,
   cs_lnum_t n_b_faces = vtx_idx->getNbOfElems()-1;
   cs_lnum_t n_elt_lst = vtx_lst->getNbOfElems()- n_b_faces;
 
-  cs_lnum_t  *vertex_num   = NULL;
-  cs_lnum_t  *vertex_idx   = NULL;
-  cs_gnum_t  *vertex_gnum  = NULL;
-  cs_gnum_t  *faces_gnum   = NULL;
+  cs_lnum_t  *vertex_num   = nullptr;
+  cs_lnum_t  *vertex_idx   = nullptr;
+  cs_gnum_t  *vertex_gnum  = nullptr;
+  cs_gnum_t  *faces_gnum   = nullptr;
   cs_lnum_t  elem = 0;
   cs_lnum_t _n_b_faces = 0;
 
@@ -259,18 +259,18 @@ _allocate_intersector_external_mesh(cs_medcoupling_intersector_t *mi,
   fvm_nodal_append_by_transfer(ext_mesh,
                                _n_b_faces,
                                FVM_FACE_POLY,
-                               NULL,
-                               NULL,
+                               nullptr,
+                               nullptr,
                                vertex_idx,
                                vertex_num,
-                               NULL);
+                               nullptr);
 
   if (cs_glob_rank_id < 1) {
     fvm_nodal_set_shared_vertices(ext_mesh,
                                   (const cs_coord_t *)mi->boundary_coords);
   }
   else {
-    fvm_nodal_set_shared_vertices(ext_mesh, NULL);
+    fvm_nodal_set_shared_vertices(ext_mesh, nullptr);
   }
 
   fvm_nodal_init_io_num(ext_mesh, faces_gnum , 2);
@@ -418,7 +418,7 @@ _add_intersector(const char                 *name,
 
   // Check that an intersector with that name does not allready exist
   cs_medcoupling_intersector_t *mi = cs_medcoupling_intersector_by_name(name);
-  if (mi != NULL)
+  if (mi != nullptr)
     bft_error(__FILE__, __LINE__, 0,
               _("Error creating intersector:\n"
                 "  name:                 \"%s\"\n"
@@ -568,7 +568,7 @@ _destroy_intersector(cs_medcoupling_intersector_t *mi)
   mi->source_mesh->decrRef();
 
   // Mesh will deallocated afterwards since it can be shared
-  mi->local_mesh = NULL;
+  mi->local_mesh = nullptr;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -774,11 +774,11 @@ _dump_medcoupling_mesh(MEDCouplingUMesh *m,
   if (cs_glob_rank_id < 1) {
 
     /* Sanity check to ensure the subdirectory is defined */
-    if (subdir != NULL) {
+    if (subdir != nullptr) {
       if (strlen(subdir) == 0)
-        subdir = NULL;
+        subdir = nullptr;
     }
-    if (subdir == NULL)
+    if (subdir == nullptr)
       subdir = _medfiles;
 
     /* Creat the subdirectory */
@@ -790,7 +790,7 @@ _dump_medcoupling_mesh(MEDCouplingUMesh *m,
     size_t lext = 0;
     if (cs_file_endswith(filename, _ext) == 0)
       lext = strlen(_ext);
-    char *fname = NULL;
+    char *fname = nullptr;
     BFT_MALLOC(fname, lsdir + lname + lext + 2, char);
 
     strcpy(fname, subdir);
@@ -969,14 +969,14 @@ cs_medcoupling_intersector_destroy_all(void)
  *
  * \param[in] id  id of the intersector
  *
- * \return pointer to the cs_medcoupling_intersector_t or NULL if not found
+ * \return pointer to the cs_medcoupling_intersector_t or nullptr if not found
  */
 /*----------------------------------------------------------------------------*/
 
 cs_medcoupling_intersector_t *
 cs_medcoupling_intersector_by_id(int id)
 {
-  cs_medcoupling_intersector_t *mi = NULL;
+  cs_medcoupling_intersector_t *mi = nullptr;
 
   if (id > -1 && id < _n_intersects)
     mi = _intersects[id];
@@ -990,14 +990,14 @@ cs_medcoupling_intersector_by_id(int id)
  *
  * \param[in] name  name of the intersector
  *
- * \return pointer to the cs_medcoupling_intersector_t or NULL if not found
+ * \return pointer to the cs_medcoupling_intersector_t or nullptr if not found
  */
 /*----------------------------------------------------------------------------*/
 
 cs_medcoupling_intersector_t *
 cs_medcoupling_intersector_by_name(const char  *name)
 {
-  cs_medcoupling_intersector_t *mi = NULL;
+  cs_medcoupling_intersector_t *mi = nullptr;
 
   if (_n_intersects > 0) {
     for (int i = 0; i < _n_intersects; i++) {
@@ -1025,7 +1025,7 @@ cs_medcoupling_intersector_by_name(const char  *name)
 cs_real_t *
 cs_medcoupling_intersect_volumes(cs_medcoupling_intersector_t  *mi)
 {
-  cs_real_t *retval = NULL;
+  cs_real_t *retval = nullptr;
 
 #if !defined(HAVE_MEDCOUPLING) || !defined(HAVE_MEDCOUPLING_LOADER)
   CS_NO_WARN_IF_UNUSED(mi);
@@ -1066,9 +1066,9 @@ cs_medcoupling_intersect_volumes(cs_medcoupling_intersector_t  *mi)
 cs_real_t *
 cs_medcoupling_intersect_surfaces(cs_medcoupling_intersector_t  *mi)
 {
-  assert(mi != NULL);
+  assert(mi != nullptr);
 
-  cs_real_t *retval = NULL;
+  cs_real_t *retval = nullptr;
 
 #if !defined(HAVE_MEDCOUPLING) || !defined(HAVE_MEDCOUPLING_LOADER)
   CS_NO_WARN_IF_UNUSED(mi);
@@ -1109,9 +1109,9 @@ cs_medcoupling_intersect_surfaces(cs_medcoupling_intersector_t  *mi)
 cs_real_t *
 cs_medcoupling_intersect_volume_and_surfaces(cs_medcoupling_intersector_t  *mi)
 {
-  assert(mi != NULL);
+  assert(mi != nullptr);
 
-  cs_real_t *retval = NULL;
+  cs_real_t *retval = nullptr;
 
 #if !defined(HAVE_MEDCOUPLING) || !defined(HAVE_MEDCOUPLING_LOADER)
   CS_NO_WARN_IF_UNUSED(mi);
@@ -1355,7 +1355,7 @@ cs_medcoupling_intersector_transform_from_init(cs_medcoupling_intersector_t  *mi
             _("Error: This function cannot be called without "
               "MEDCoupling support.\n"));
 #else
-  cs_coord_3_t *_new_coords = NULL ;
+  cs_coord_3_t *_new_coords = nullptr ;
   const cs_lnum_t n_vtx = mi->source_mesh->getNumberOfNodes();
   const cs_lnum_t n_b_vtx = mi->n_b_vertices;
 
@@ -1495,7 +1495,7 @@ cs_mi_post_add_mesh(cs_medcoupling_intersector_t  *mi)
                                1,
                                writer_ids);
 
-  cs_post_write_meshes(NULL);
+  cs_post_write_meshes(nullptr);
 }
 
 /*----------------------------------------------------------------------------*/

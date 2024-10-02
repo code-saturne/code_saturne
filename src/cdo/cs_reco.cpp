@@ -869,14 +869,14 @@ cs_reco_scalar_c2f(const cs_cdo_connect_t     *connect,
                    const double               *p_c,
                    double                     *p_reco_f)
 {
-  if (p_c == NULL || p_reco_f == NULL)
+  if (p_c == nullptr || p_reco_f == nullptr)
     return;
 
   /* Allocate arrays if necessary */
 
   const cs_adjacency_t  *c2f = connect->c2f;
 
-  assert(cdoq->pvol_fc != NULL);
+  assert(cdoq->pvol_fc != nullptr);
 
   const double *pvol_fc = cdoq->pvol_fc;
 

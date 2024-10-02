@@ -322,7 +322,7 @@ cs_atmo_add_property_fields(void)
   int field_type = CS_FIELD_INTENSIVE | CS_FIELD_PROPERTY;
   const int post_flag = CS_POST_ON_LOCATION | CS_POST_MONITOR;
 
-  cs_field_t *f = NULL;
+  cs_field_t *f = nullptr;
 
   /* Momentum source terms */
   if (cs_glob_atmo_option->open_bcs_treatment > 0) {
@@ -571,7 +571,7 @@ cs_atmo_add_property_fields(void)
     cs_field_set_key_str(f, klbl, "Albedo");
 
     f = cs_field_by_name_try("emissivity");
-    if (f == NULL)
+    if (f == nullptr)
       f = cs_field_create("emissivity",
                           field_type,
                           /* Note: as for boundary_roughness,

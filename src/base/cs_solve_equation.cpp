@@ -170,14 +170,14 @@ _init_sgdh_diff(const cs_field_t *f,
   const cs_real_t turb_schmidt = cs_field_get_key_double(f, ksigmas);
 
   /* If turbulent Schmidt is variable, id of the corresponding field */
-  cs_real_t *cpro_turb_schmidt = NULL;
+  cs_real_t *cpro_turb_schmidt = nullptr;
   const int key_turb_schmidt = cs_field_key_id("turbulent_schmidt_id");
   const int t_scd_id = cs_field_get_key_int(f, key_turb_schmidt);
   if (t_scd_id > -1)
     cpro_turb_schmidt = cs_field_by_id(t_scd_id)->val;
 
   /* Retrieve turbulent diffusivity value for current scalar */
-  cs_real_t *cpro_turb_diff = NULL;
+  cs_real_t *cpro_turb_diff = nullptr;
   const int key_turb_diff = cs_field_key_id("turbulent_diffusivity_id");
   const int t_dif_id = cs_field_get_key_int(f, key_turb_diff);
 
@@ -187,7 +187,7 @@ _init_sgdh_diff(const cs_field_t *f,
     cs_array_real_copy(cs_glob_mesh->n_cells, cpro_turb_diff, sgdh_diff);
   }
   /* Variable Schmidt number */
-  else if (cpro_turb_schmidt != NULL)
+  else if (cpro_turb_schmidt != nullptr)
     for (cs_lnum_t c_id = 0; c_id < cs_glob_mesh->n_cells; c_id++)
       sgdh_diff[c_id] =   cs_math_fmax(visct[c_id], 0.)
                         / cpro_turb_schmidt[c_id];
@@ -230,7 +230,7 @@ _production_and_dissipation_terms(const cs_field_t  *f,
          || turb_model->iturb == CS_TURB_K_OMEGA))
     return;
 
-  const cs_field_t *f_fm = NULL;  /* First moment field of
+  const cs_field_t *f_fm = nullptr;  /* First moment field of
                                      which f is the variance */
   {
     const int kscavr = cs_field_key_id("first_moment_id");
@@ -263,7 +263,7 @@ _production_and_dissipation_terms(const cs_field_t  *f,
 
   int variance_turb_flux_model = 0, variance_turb_flux_model_type = 0;
 
-  if (f_fm != NULL) {
+  if (f_fm != nullptr) {
     variance_turb_flux_model = cs_field_get_key_int(f_fm, kturt);
     variance_turb_flux_model_type = variance_turb_flux_model / 10;
   }
@@ -324,7 +324,7 @@ _production_and_dissipation_terms(const cs_field_t  *f,
       for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
         const cs_real_t prod = - 2 * cs_math_3_dot_product(grad[c_id],
                                                            xut[c_id]);
-        if (f_produc != NULL )
+        if (f_produc != nullptr )
           f_produc->val[c_id] = prod;
         cpro_st[c_id] += xcpp[c_id] * cell_f_vol[c_id] * crom[c_id]
                          *  prod;
@@ -336,7 +336,7 @@ _production_and_dissipation_terms(const cs_field_t  *f,
       for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
         const cs_real_t prod = 2. * sgdh_diff[c_id] / crom[c_id]
                          * cs_math_3_dot_product(grad[c_id], grad[c_id]);
-        if (f_produc != NULL )
+        if (f_produc != nullptr )
           f_produc->val[c_id] = prod;
         cpro_st[c_id] += xcpp[c_id] * cell_f_vol[c_id] * crom[c_id]
                          *  prod;
@@ -355,7 +355,7 @@ _production_and_dissipation_terms(const cs_field_t  *f,
         const cs_real_t cprovol = xcpp[c_id] * cell_f_vol[c_id] * crom[c_id];
         /* Special time stepping to ensure positivity of the variance */
         const cs_real_t prod = -2*cs_math_3_dot_product(grad[c_id], xut[c_id]);
-        if (f_produc != NULL )
+        if (f_produc != nullptr )
           f_produc->val[c_id] = prod;
         rhs[c_id] += cs_math_fmax(prod * cprovol, 0.);
 
@@ -373,7 +373,7 @@ _production_and_dissipation_terms(const cs_field_t  *f,
       for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
         const cs_real_t prod =   2 * sgdh_diff[c_id] / crom[c_id]
                             * cs_math_3_dot_product(grad[c_id], grad[c_id]);
-        if (f_produc != NULL )
+        if (f_produc != nullptr )
           f_produc->val[c_id] = prod;
         rhs[c_id] +=   xcpp[c_id] * cell_f_vol[c_id] * crom[c_id]
                        * prod;
@@ -396,8 +396,8 @@ _production_and_dissipation_terms(const cs_field_t  *f,
   cs_field_t *f_dissip = cs_field_by_double_composite_name_try
     ("algo:", f->name, "_dissipation");
 
-  cs_real_6_t *cvara_rij = NULL;
-  cs_real_t *cvara_k= NULL, *cvara_ep = NULL, *cvara_omg= NULL, *cvar_al = NULL;
+  cs_real_6_t *cvara_rij = nullptr;
+  cs_real_t *cvara_k= nullptr, *cvara_ep = nullptr, *cvara_omg= nullptr, *cvar_al = nullptr;
 
   const cs_real_t thetap = (st_prv_id >= 0) ? thetv : 1;
 
@@ -442,7 +442,7 @@ _production_and_dissipation_terms(const cs_field_t  *f,
       xe = cs_turb_cmu*xk*cvara_omg[c_id];
     }
 
-    if (cvar_al != NULL)
+    if (cvar_al != nullptr)
       alpha_theta = cvar_al[c_id];
 
     cs_real_t prdtl= viscl[c_id] * xcpp[c_id];
@@ -455,7 +455,7 @@ _production_and_dissipation_terms(const cs_field_t  *f,
     const cs_real_t cprovol = xcpp[c_id] * crom[c_id] * cell_f_vol[c_id];
     const cs_real_t dissip_freq = xe / (xk * xr);
     const cs_real_t dissip = dissip_freq * cvara_var[c_id];
-    if (f_dissip != NULL)
+    if (f_dissip != nullptr)
       f_dissip->val[c_id] = dissip;
     /* The diagonal receives eps/Rk, (*theta possibly) */
     fimp[c_id] += dissip_freq * cprovol * thetap;
@@ -504,9 +504,9 @@ _diffusion_terms_scalar(const cs_field_t           *f,
   cs_real_6_t *vistet;
   CS_MALLOC_HD(vistet, n_cells_ext, cs_real_6_t, cs_alloc_mode);
 
-  cs_real_t *_weighb = NULL;
-  cs_real_2_t *_weighf = NULL;
-  cs_real_6_t *_viscce = NULL;
+  cs_real_t *_weighb = nullptr;
+  cs_real_2_t *_weighf = nullptr;
+  cs_real_6_t *_viscce = nullptr;
 
   /* AFM model or DFM models: add div(Cp*rho*T'u') to rhs
    * Compute T'u' for GGDH */
@@ -521,8 +521,8 @@ _diffusion_terms_scalar(const cs_field_t           *f,
   }
 
   /* Scalar diffusivity */
-  cs_real_t *cpro_wgrec_s = NULL;
-  cs_real_6_t *cpro_wgrec_v = NULL;
+  cs_real_t *cpro_wgrec_s = nullptr;
+  cs_real_6_t *cpro_wgrec_v = nullptr;
 
   /* weighting field for gradient */
   if (eqp->iwgrec == 1) {
@@ -543,7 +543,7 @@ _diffusion_terms_scalar(const cs_field_t           *f,
     if (scalar_turb_flux_model_type == 3)
       idifftp = 0;
 
-    if (cpro_viscls == NULL)
+    if (cpro_viscls == nullptr)
       cs_array_set_value_real(n_cells, 1, visls_0, w1);
     else
       cs_array_real_copy(n_cells, cpro_viscls, w1);
@@ -555,7 +555,7 @@ _diffusion_terms_scalar(const cs_field_t           *f,
       }
     }
 
-    if (cpro_wgrec_s != NULL) {
+    if (cpro_wgrec_s != nullptr) {
       cs_array_real_copy(n_cells, w1, cpro_wgrec_s);
       cs_halo_sync_var(m->halo, CS_HALO_STANDARD, cpro_wgrec_s);
     }
@@ -576,7 +576,7 @@ _diffusion_terms_scalar(const cs_field_t           *f,
     CS_MALLOC_HD(_weighb, n_b_faces, cs_real_t, cs_alloc_mode);
     CS_MALLOC_HD(_weighf, n_i_faces, cs_real_2_t, cs_alloc_mode);
     CS_MALLOC_HD(_viscce, n_cells_ext, cs_real_6_t, cs_alloc_mode);
-    const cs_real_6_t *visten = NULL;
+    const cs_real_6_t *visten = nullptr;
     const int kctheta = cs_field_key_id("turbulent_flux_ctheta");
     const cs_real_t ctheta = cs_field_get_key_double(f, kctheta);
 
@@ -594,7 +594,7 @@ _diffusion_terms_scalar(const cs_field_t           *f,
     if (   (scalar_turb_flux_model == 11)
         || (scalar_turb_flux_model == 21)
         || (scalar_turb_flux_model == 20)) {
-      if (cpro_viscls == NULL) {
+      if (cpro_viscls == nullptr) {
 #       pragma omp parallel for if(n_cells > CS_THR_MIN)
         for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
           const cs_real_t tmp = eqp->idifft*xcpp[c_id];
@@ -616,7 +616,7 @@ _diffusion_terms_scalar(const cs_field_t           *f,
       }
     }
     else {
-      if (cpro_viscls == NULL) {
+      if (cpro_viscls == nullptr) {
 #       pragma omp parallel for if(n_cells > CS_THR_MIN)
         for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
           const cs_real_t temp = eqp->idifft*xcpp[c_id]*ctheta/cs_turb_csrij;
@@ -639,7 +639,7 @@ _diffusion_terms_scalar(const cs_field_t           *f,
     }
 
     /* Weighting for gradient */
-    if (cpro_wgrec_v != NULL) {
+    if (cpro_wgrec_v != nullptr) {
       cs_array_real_copy(n_cells*6,
                          (const cs_real_t *)_viscce,
                          (cs_real_t *)cpro_wgrec_v);
@@ -689,14 +689,14 @@ _diffusion_terms_vector(const cs_field_t            *f,
   const cs_lnum_t n_i_faces = m->n_i_faces;
   const cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
 
-  cs_real_t *_weighb = NULL;
-  cs_real_2_t *_weighf = NULL;
-  cs_real_6_t *_viscce = NULL;
+  cs_real_t *_weighb = nullptr;
+  cs_real_2_t *_weighf = nullptr;
+  cs_real_6_t *_viscce = nullptr;
 
   const cs_real_t *visct = CS_F_(mu_t)->val;
 
   /* Viscosity and diffusivity*/
-  const cs_real_t *cpro_viscls = NULL;
+  const cs_real_t *cpro_viscls = nullptr;
   const int kivisl = cs_field_key_id("diffusivity_id");
   const int kvisl0 = cs_field_key_id("diffusivity_ref");
   const int ifcvsl = cs_field_get_key_int(f, kivisl);
@@ -705,8 +705,8 @@ _diffusion_terms_vector(const cs_field_t            *f,
     cpro_viscls = cs_field_by_id(ifcvsl)->val;
 
   /* Weighting field for gradient */
-  cs_real_t *cpro_wgrec_s = NULL;
-  cs_real_6_t *cpro_wgrec_v = NULL;
+  cs_real_t *cpro_wgrec_s = nullptr;
+  cs_real_6_t *cpro_wgrec_v = nullptr;
 
   if (eqp->iwgrec == 1) {
     const int kwgrec = cs_field_key_id_try("gradient_weighting_id");
@@ -728,7 +728,7 @@ _diffusion_terms_vector(const cs_field_t            *f,
     cs_real_t *w1;
     BFT_MALLOC(w1, n_cells_ext, cs_real_t);
 
-    if (cpro_viscls == NULL) {
+    if (cpro_viscls == nullptr) {
       for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
         w1[c_id] =   visls_0
                    + idifftp * fmax(visct[c_id], 0) / turb_schmidt;
@@ -742,7 +742,7 @@ _diffusion_terms_vector(const cs_field_t            *f,
     }
 
     /* Weighting for gradient */
-    if (cpro_wgrec_s != NULL) {
+    if (cpro_wgrec_s != nullptr) {
       cs_array_real_copy(n_cells, w1, cpro_wgrec_s);
       cs_halo_sync_var(m->halo, CS_HALO_STANDARD, cpro_wgrec_s);
     }
@@ -764,7 +764,7 @@ _diffusion_terms_vector(const cs_field_t            *f,
     CS_MALLOC_HD(_weighf, n_i_faces, cs_real_2_t, cs_alloc_mode);
     CS_MALLOC_HD(_viscce, n_cells_ext, cs_real_6_t, cs_alloc_mode);
 
-    const cs_real_6_t *visten = NULL;
+    const cs_real_6_t *visten = nullptr;
     const int kctheta = cs_field_key_id("turbulent_flux_ctheta");
     const cs_real_t ctheta = cs_field_get_key_double(f, kctheta);
 
@@ -780,7 +780,7 @@ _diffusion_terms_vector(const cs_field_t            *f,
       visten = (cs_real_6_t *)f_vis->val;
     }
 
-    if (cpro_viscls == NULL) {
+    if (cpro_viscls == nullptr) {
       const cs_real_t tmp = eqp->idifft*ctheta/cs_turb_csrij;
       for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
         for (cs_lnum_t ii = 0; ii < 3; ii++)
@@ -800,7 +800,7 @@ _diffusion_terms_vector(const cs_field_t            *f,
     }
 
     /* Weighting for gradient */
-    if (cpro_wgrec_v != NULL) {
+    if (cpro_wgrec_v != nullptr) {
       cs_array_real_copy(6*n_cells,
                          (cs_real_t *)_viscce,
                          (cs_real_t *)cpro_wgrec_v);
@@ -888,7 +888,7 @@ cs_solve_equation_scalar(cs_field_t        *f,
 
   /* We might have a time step multiplier */
 
-  cs_real_t *dtr = NULL;
+  cs_real_t *dtr = nullptr;
   {
     const int keycdt = cs_field_key_id("time_step_factor");
     const cs_real_t cdtvar = cs_field_get_key_double(f, keycdt);
@@ -971,7 +971,7 @@ cs_solve_equation_scalar(cs_field_t        *f,
   /* Store the source terms for convective limiter
      or time extrapolation for buoyant scalar */
 
-  cs_real_t *cpro_scal_st = NULL, *cproa_scal_st = NULL;
+  cs_real_t *cpro_scal_st = nullptr, *cproa_scal_st = nullptr;
 
   const int kst = cs_field_key_id_try("source_term_id");
   const int kstprv = cs_field_key_id_try("source_term_prev_id");
@@ -981,7 +981,7 @@ cs_solve_equation_scalar(cs_field_t        *f,
   if (st_id > -1) {
     cpro_scal_st = cs_field_by_id(st_id)->val;
     /* Handle parallelism and periodicity */
-    if (m->halo != NULL)
+    if (m->halo != nullptr)
       cs_halo_sync_var(m->halo, CS_HALO_STANDARD, cpro_scal_st);
   }
 
@@ -1041,7 +1041,7 @@ cs_solve_equation_scalar(cs_field_t        *f,
    *     goes in rhs (no other choice). */
 
    /* Map the source term pointer depending on whether it's a bouyant scalar */
-  cs_real_t *cpro_st = NULL;
+  cs_real_t *cpro_st = nullptr;
   if (st_prv_id > -1) {
     if (iterns == -1)
       cpro_st = cproa_scal_st;
@@ -1097,8 +1097,8 @@ cs_solve_equation_scalar(cs_field_t        *f,
   const cs_thermal_model_t *th_model = cs_glob_thermal_model;
   const cs_cf_model_t *th_cf_model = cs_glob_cf_model;
 
-  const cs_real_t *temp = NULL, *tempa = NULL, *cpro_yw = NULL;
-  cs_real_t *cpro_yv = NULL, *xcvv = NULL;
+  const cs_real_t *temp = nullptr, *tempa = nullptr, *cpro_yw = nullptr;
+  cs_real_t *cpro_yv = nullptr, *xcvv = nullptr;
   if (   th_cf_model->ieos != CS_EOS_NONE
       && is_thermal_model_field
       && (   th_model->thermal_variable == CS_THERMAL_MODEL_TEMPERATURE
@@ -1109,7 +1109,7 @@ cs_solve_equation_scalar(cs_field_t        *f,
     /* Compute cv */
 
     cs_field_t *f_cv = cs_field_by_name_try("isobaric_heat_capacity");
-    if (f_cv != NULL) {
+    if (f_cv != nullptr) {
       cs_thermal_model_cv(f_cv->val);
       cs_array_real_copy(n_cells, f_cv->val, xcvv);
     }
@@ -1123,7 +1123,7 @@ cs_solve_equation_scalar(cs_field_t        *f,
 
       const cs_field_t *f_t = cs_field_by_name_try("temperature");
 
-      if (f_t != NULL) {
+      if (f_t != nullptr) {
         temp  = f_t->val;
         tempa = f_t->val_pre;
       }
@@ -1132,11 +1132,11 @@ cs_solve_equation_scalar(cs_field_t        *f,
         const cs_field_t *f_yv = cs_field_by_name_try("yv");
         const cs_field_t *f_yw = cs_field_by_name_try("yw");
 
-        if (f_yv != NULL) {
+        if (f_yv != nullptr) {
           cpro_yv = f_yv->val;
         }
 
-        if (f_yw != NULL) {
+        if (f_yw != nullptr) {
           cpro_yw = f_yw->val;
         }
       }
@@ -1201,7 +1201,7 @@ cs_solve_equation_scalar(cs_field_t        *f,
         //|| th_model->thermal_variable == CS_THERMAL_MODEL_INTERNAL_ENERGY) { TODO
       cs_field_t *f_cflt = cs_field_by_name_try("cfl_t");
 
-      if (f_cflt != NULL) {
+      if (f_cflt != nullptr) {
         cs_real_t *cflt = f_cflt->val;
 
         /* Only implemented for the ideal gas equation of state. */
@@ -1258,7 +1258,7 @@ cs_solve_equation_scalar(cs_field_t        *f,
 
   /*  Rayonnement
    *  Ordre 2 non pris en compte */
-  cs_real_t *cpro_tsscal = NULL;
+  cs_real_t *cpro_tsscal = nullptr;
   if (idilat > 3) {
     char fname[128];
     snprintf(fname, 128, "%s_dila_st", f->name); fname[127] = '\0';
@@ -1292,7 +1292,7 @@ cs_solve_equation_scalar(cs_field_t        *f,
     }
 
     /* Pulverized coal; order 2 not handled */
-    if (cs_glob_coal_model != NULL) {
+    if (cs_glob_coal_model != nullptr) {
       const int nclacp = cs_glob_coal_model->nclacp;
       const int isca_ih21 = cs_field_get_key_int(CS_FI_(h2, 0), keyvar);
       const int isca_ih2nl = cs_field_get_key_int(CS_FI_(h2, nclacp-1), keyvar);
@@ -1322,7 +1322,7 @@ cs_solve_equation_scalar(cs_field_t        *f,
    *  rho*cp*Vol*dT/dt + ... */
   int imucpp = 0, iscacp;
 
-  cs_real_t *xcpp = NULL;
+  cs_real_t *xcpp = nullptr;
   CS_MALLOC_HD(xcpp, n_cells_ext, cs_real_t, cs_alloc_mode);
 
   const int kscavr = cs_field_key_id("first_moment_id");
@@ -1342,7 +1342,7 @@ cs_solve_equation_scalar(cs_field_t        *f,
     cs_array_set_value_real(n_cells, 1, 1., xcpp);
   }
   else if (imucpp == 1) {
-    if (CS_F_(cp) != NULL)
+    if (CS_F_(cp) != nullptr)
       cs_array_real_copy(n_cells, CS_F_(cp)->val, xcpp);
     else
       cs_array_set_value_real(n_cells, 1, fluid_props->cp0, xcpp);
@@ -1389,9 +1389,9 @@ cs_solve_equation_scalar(cs_field_t        *f,
 
   if (eqp->n_volume_mass_injections > 0) {
     cs_lnum_t n_elts = 0;
-    const cs_lnum_t *elt_ids = NULL;
-    int *mst_type_sc = NULL;
-    cs_real_t *mst_val_sc = NULL, *mst_val_p = NULL;
+    const cs_lnum_t *elt_ids = nullptr;
+    int *mst_type_sc = nullptr;
+    cs_real_t *mst_val_sc = nullptr, *mst_val_p = nullptr;
 
     cs_volume_mass_injection_get_arrays(f,
                                         &n_elts,
@@ -1454,7 +1454,7 @@ cs_solve_equation_scalar(cs_field_t        *f,
   }
 
   /* viscosity and diffusivity*/
-  const cs_real_t *cpro_viscls = NULL;
+  const cs_real_t *cpro_viscls = nullptr;
   const cs_real_t *viscl = CS_F_(mu)->val;
   const int kivisl = cs_field_key_id("diffusivity_id");
   const int kvisl0 = cs_field_key_id("diffusivity_ref");
@@ -1529,9 +1529,9 @@ cs_solve_equation_scalar(cs_field_t        *f,
    * (clipping over (mu + mu_t)). We could have taken max(K + K_t, 0)
    * but this would allow negative K_t negative, which is considered
    * non-physical. */
-  cs_real_t *weighb = NULL;
-  cs_real_2_t *weighf = NULL;
-  cs_real_6_t *viscce = NULL;
+  cs_real_t *weighb = nullptr;
+  cs_real_2_t *weighf = nullptr;
+  cs_real_6_t *viscce = nullptr;
 
   if (eqp->idiff >= 1) {
     _diffusion_terms_scalar(f,
@@ -1595,7 +1595,7 @@ cs_solve_equation_scalar(cs_field_t        *f,
   /* Solve
    * ===== */
 
-  cs_real_t *cvark_var = NULL, *wcvark_var = NULL;
+  cs_real_t *cvark_var = nullptr, *wcvark_var = nullptr;
   if (iterns >= 1) {
     CS_MALLOC_HD(wcvark_var, n_cells_ext, cs_real_t, cs_alloc_mode);
     cvark_var = wcvark_var;
@@ -1617,7 +1617,7 @@ cs_solve_equation_scalar(cs_field_t        *f,
   cs_equation_iterative_solve_scalar(cs_glob_time_step_options->idtvar,
                                      iterns,
                                      f->id,
-                                     NULL,
+                                     nullptr,
                                      iescap,
                                      imucpp,
                                      normp,
@@ -1635,16 +1635,16 @@ cs_solve_equation_scalar(cs_field_t        *f,
                                      weighf,
                                      weighb,
                                      icvflb,
-                                     NULL,
+                                     nullptr,
                                      fimp,
                                      rhs,
                                      cvar_var,
                                      dpvar,
                                      xcpp,
-                                     NULL);
+                                     nullptr);
 
   CS_FREE_HD(dpvar);
-  if (weighb != NULL) {
+  if (weighb != nullptr) {
     CS_FREE_HD(weighb);
     CS_FREE_HD(weighf);
     CS_FREE_HD(viscce);
@@ -1677,7 +1677,7 @@ cs_solve_equation_scalar(cs_field_t        *f,
       cs_halo_sync_var(m->halo, CS_HALO_STANDARD, CS_F_(p)->val);
 
       cs_thermal_model_newton_t(1,
-                                NULL,
+                                nullptr,
                                 cvar_var,
                                 CS_F_(p)->val,
                                 CS_F_(p)->val_pre,
@@ -1889,7 +1889,7 @@ cs_solve_equation_vector(cs_field_t       *f,
 
   /* We might have a time step multiplier */
 
-  cs_real_t *dtr = NULL;
+  cs_real_t *dtr = nullptr;
   {
     const int keycdt = cs_field_key_id("time_step_factor");
     const cs_real_t cdtvar = cs_field_get_key_double(f, keycdt);
@@ -1906,7 +1906,7 @@ cs_solve_equation_vector(cs_field_t       *f,
   /* Physical quantities */
 
   const cs_real_t *croma = CS_F_(rho)->val;
-  if (CS_F_(rho)->val_pre != NULL)
+  if (CS_F_(rho)->val_pre != nullptr)
     croma = CS_F_(rho)->val_pre;
 
   cs_equation_param_t *eqp = cs_field_get_equation_param(f);
@@ -1943,7 +1943,7 @@ cs_solve_equation_vector(cs_field_t       *f,
                                       (cs_real_t *)fimp);
 
   /* Store the source terms for convective limiter */
-  cs_real_3_t *cpro_vect_st = NULL;
+  cs_real_3_t *cpro_vect_st = nullptr;
 
   const int kst = cs_field_key_id_try("source_term_id");
   const int kstprv = cs_field_key_id_try("source_term_prev_id");
@@ -1973,7 +1973,7 @@ cs_solve_equation_vector(cs_field_t       *f,
    *   In standard case, adapt to sign of fimp, but fimp*cvar_prev still
    *     goes in rhs (no other choice). */
 
-  cs_real_3_t *cproa_vect_st = NULL;
+  cs_real_3_t *cproa_vect_st = nullptr;
   const cs_real_t thetv = eqp->theta;
   const int kthetss = cs_field_key_id_try("st_exp_extrapolated");
   const cs_real_t thets = cs_field_get_key_double(f, kthetss);
@@ -2026,9 +2026,9 @@ cs_solve_equation_vector(cs_field_t       *f,
 
   if (eqp->n_volume_mass_injections > 0) {
     cs_lnum_t n_elts = 0;
-    const cs_lnum_t *elt_ids = NULL;
-    int *mst_type_v = NULL;
-    cs_real_t *mst_val_v = NULL, *mst_val_p = NULL;
+    const cs_lnum_t *elt_ids = nullptr;
+    int *mst_type_v = nullptr;
+    cs_real_t *mst_val_v = nullptr, *mst_val_p = nullptr;
 
     cs_volume_mass_injection_get_arrays(f,
                                         &n_elts,
@@ -2067,7 +2067,7 @@ cs_solve_equation_vector(cs_field_t       *f,
   /* Compressible algorithm
    * or Low Mach compressible algos with mass flux prediction */
 
-  const cs_real_t *pcrom = NULL;
+  const cs_real_t *pcrom = nullptr;
 
   if (   cs_glob_physical_model_flag[CS_COMPRESSIBLE] > -1
       || (   cs_glob_velocity_pressure_model->idilat > 1
@@ -2098,9 +2098,9 @@ cs_solve_equation_vector(cs_field_t       *f,
    * but this would allow negative K_t negatif, which is considered
    * non-physical. */
 
-  cs_real_t *weighb = NULL;
-  cs_real_2_t *weighf = NULL;
-  cs_real_6_t *viscce = NULL;
+  cs_real_t *weighb = nullptr;
+  cs_real_2_t *weighf = nullptr;
+  cs_real_6_t *viscce = nullptr;
 
   if (eqp->idiff >= 1) {
     _diffusion_terms_vector(f,
@@ -2183,7 +2183,7 @@ cs_solve_equation_vector(cs_field_t       *f,
   cs_equation_iterative_solve_vector(cs_glob_time_step_options->idtvar,
                                      iterns,
                                      f->id,
-                                     NULL,
+                                     nullptr,
                                      ivissv,
                                      iescap,
                                      eqp,
@@ -2196,19 +2196,19 @@ cs_solve_equation_vector(cs_field_t       *f,
                                      viscb,
                                      viscf,
                                      viscb,
-                                     NULL,
-                                     NULL,
+                                     nullptr,
+                                     nullptr,
                                      viscce,
                                      weighf,
                                      weighb,
                                      icvflb,
-                                     NULL,
+                                     nullptr,
                                      fimp,
                                      rhs,
                                      cvar_var,
-                                     NULL);
+                                     nullptr);
 
-  if (weighb != NULL) {
+  if (weighb != nullptr) {
     BFT_FREE(weighb);
     BFT_FREE(weighf);
     BFT_FREE(viscce);

@@ -70,7 +70,7 @@ BEGIN_C_DECLS
 /*!
  * \brief Set the initial temperature in the computational domain
  *
- * For the calling function, elt_ids is optional. If not NULL, the coords
+ * For the calling function, elt_ids is optional. If not nullptr, the coords
  * array should be accessed with an indirection. The same indirection can
  * be applied to fill retval if dense_output is set to false.
  *
@@ -79,7 +79,7 @@ BEGIN_C_DECLS
  * \param[in]      elt_ids       list of elements ids (in coords and retval)
  * \param[in]      coords        where ?
  * \param[in]      dense_output  perform an indirection in retval or not
- * \param[in]      input         NULL or pointer cast on-the-fly
+ * \param[in]      input         nullptr or pointer cast on-the-fly
  * \param[in, out] retval        resulting value(s). Must be allocated.
  */
 /*--------------------------------------------------------------------------*/
@@ -97,7 +97,7 @@ _initial_temperature(cs_real_t            time,
   CS_NO_WARN_IF_UNUSED(time);
   CS_NO_WARN_IF_UNUSED(input);
 
-  if (elt_ids == NULL) { /* No indirection */
+  if (elt_ids == nullptr) { /* No indirection */
 
     for (cs_lnum_t i = 0; i < n_elts; i++)
       retval[i] = -1 + 2*coords[3*i];            /* T(t=0) = -1 + 2*x */
@@ -120,7 +120,7 @@ _initial_temperature(cs_real_t            time,
 
     } /* dense_output ? */
 
-  } /* elt_ids == NULL ? */
+  } /* elt_ids == nullptr ? */
 }
 /*! [param_cdo_initial_temperature_function] */
 
@@ -226,10 +226,10 @@ cs_user_finalize_setup(cs_domain_t   *domain)
     cs_property_def_iso_by_value(lambda, "D2", 2.5);
 
     cs_property_t  *cp = cs_property_by_name(CS_THERMAL_CP_NAME);
-    cs_property_def_iso_by_value(cp, NULL, 1); /* NULL means all cells */
+    cs_property_def_iso_by_value(cp, nullptr, 1); /* nullptr means all cells */
 
     cs_property_t  *rho = cs_property_by_name(CS_PROPERTY_MASS_DENSITY);
-    cs_property_def_iso_by_value(rho, NULL, 1979);
+    cs_property_def_iso_by_value(rho, nullptr, 1979);
 
   }
   /*! [param_cdo_define_thermal_properties] */
@@ -282,9 +282,9 @@ cs_user_finalize_setup(cs_domain_t   *domain)
     /* If nothing is done, then a zero value is set by default */
 
     cs_equation_add_ic_by_analytic(eqp,
-                                   NULL,                 /* all cells */
+                                   nullptr,                 /* all cells */
                                    _initial_temperature, /* function def. */
-                                   NULL);                /* no context */
+                                   nullptr);                /* no context */
   }
   /*! [param_cdo_define_thermal_ic] */
 }

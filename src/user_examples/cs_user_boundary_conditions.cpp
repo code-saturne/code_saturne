@@ -68,7 +68,7 @@ BEGIN_C_DECLS
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Define the velocity inlet profile as an analytic function.
- *         elt_ids is optional. If not NULL, it enables to access to the coords
+ *         elt_ids is optional. If not nullptr, it enables to access to the coords
  *         array with an indirection. The same indirection can be applied to
  *         the val array if dense_output is set to false.
  *
@@ -77,7 +77,7 @@ BEGIN_C_DECLS
  * \param[in]      elt_ids       list of elements ids (in coords and retval)
  * \param[in]      coords        where ? Coordinates array
  * \param[in]      dense_output  perform an indirection in res or not
- * \param[in]      input         NULL or pointer to a structure cast on-the-fly
+ * \param[in]      input         nullptr or pointer to a structure cast on-the-fly
  * \param[in, out] val           resulting value(s). Must be allocated.
  */
 /*----------------------------------------------------------------------------*/
@@ -101,7 +101,7 @@ _vel_profile(cs_real_t           time,
 
   for (cs_lnum_t i = 0; i < n_elts; i++) {
 
-    const cs_lnum_t  elt_id = (elt_ids == NULL) ? i : elt_ids[i];
+    const cs_lnum_t  elt_id = (elt_ids == nullptr) ? i : elt_ids[i];
     const cs_lnum_t  j = dense_output ? i : elt_id;
 
     cs_real_t  y = elt_coords[elt_id][1] - 0.5;
@@ -119,7 +119,7 @@ _vel_profile(cs_real_t           time,
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Define the scalar inlet profile as an analytic function.
- *         elt_ids is optional. If not NULL, it enables to access to the coords
+ *         elt_ids is optional. If not nullptr, it enables to access to the coords
  *         array with an indirection. The same indirection can be applied to
  *         the val array if dense_output is set to false.
  *
@@ -128,7 +128,7 @@ _vel_profile(cs_real_t           time,
  * \param[in]      elt_ids       list of elements ids (in coords and retval)
  * \param[in]      coords        where ? Coordinates array
  * \param[in]      dense_output  perform an indirection in res or not
- * \param[in]      input         NULL or pointer to a structure cast on-the-fly
+ * \param[in]      input         nullptr or pointer to a structure cast on-the-fly
  * \param[in, out] val           resulting value(s). Must be allocated.
  */
 /*----------------------------------------------------------------------------*/
@@ -154,7 +154,7 @@ _scalar_inlet_profile(cs_real_t           time,
 
     for (cs_lnum_t i = 0; i < n_elts; i++) {
 
-      const cs_lnum_t  elt_id = (elt_ids == NULL) ? i : elt_ids[i];
+      const cs_lnum_t  elt_id = (elt_ids == nullptr) ? i : elt_ids[i];
       const cs_lnum_t  j = dense_output ? i : elt_id;
 
       cs_real_t  y = elt_coords[elt_id][1] - 0.5;
@@ -173,7 +173,7 @@ _scalar_inlet_profile(cs_real_t           time,
  * \brief cs_dof_func_t function to compute a profile at boundary faces
  *        using a MEG generated function for exchange coefficients.
  *
- * For the calling function, elt_ids is optional. If not NULL, array(s) should
+ * For the calling function, elt_ids is optional. If not nullptr, array(s) should
  * be accessed with an indirection. The same indirection can be applied to fill
  * retval if dense_output is set to false.
  * In the current case, retval is allocated to mesh->n_b_faces * stride.
@@ -193,7 +193,7 @@ _scalar_inlet_profile(cs_real_t           time,
  * \param[in]      n_elts        number of elements to consider
  * \param[in]      elt_ids       list of elements ids
  * \param[in]      dense_output  perform an indirection in retval or not
- * \param[in]      input         NULL or pointer to a structure cast on-the-fly
+ * \param[in]      input         nullptr or pointer to a structure cast on-the-fly
  * \param[in, out] retval        resulting value(s). Must be allocated.
  */
 /*----------------------------------------------------------------------------*/
@@ -219,7 +219,7 @@ _scalar_exchange_profile(cs_lnum_t         n_elts,
   /* Exchange coefficient first, Dirichlet values second. */
 
   for (cs_lnum_t i = 0; i < n_elts; i++) {
-    const cs_lnum_t  face_id = (elt_ids == NULL) ? i : elt_ids[i];
+    const cs_lnum_t  face_id = (elt_ids == nullptr) ? i : elt_ids[i];
     const cs_lnum_t  j = dense_output ? i : face_id;
     retval[j*stride]   = - 10.5;
     retval[j*stride+1] = 25. + 0.1*f_cog[face_id][0];
@@ -233,7 +233,7 @@ _scalar_exchange_profile(cs_lnum_t         n_elts,
  * \brief cs_dof_func_t function to compute a wall flux normalized by the
  *        associated zone's surface.
  *
- * For the calling function, elt_ids is optional. If not NULL, array(s) should
+ * For the calling function, elt_ids is optional. If not nullptr, array(s) should
  * be accessed with an indirection. The same indirection can be applied to fill
  * retval if dense_output is set to false.
  * In the current case, retval is allocated to mesh->n_b_faces.
@@ -267,7 +267,7 @@ _w_flux_top(cs_lnum_t         n_elts,
   /* Exchange coefficient first, Dirichlet values second. */
 
   for (cs_lnum_t i = 0; i < n_elts; i++) {
-    const cs_lnum_t  face_id = (elt_ids == NULL) ? i : elt_ids[i];
+    const cs_lnum_t  face_id = (elt_ids == nullptr) ? i : elt_ids[i];
     const cs_lnum_t  j = dense_output ? i : face_id;
     retval[j] = flux;
   }
@@ -279,7 +279,7 @@ _w_flux_top(cs_lnum_t         n_elts,
  * \brief cs_dof_func_t function to compute a wall flux normalized by the
  *        associated zone's surface.
  *
- * For the calling function, elt_ids is optional. If not NULL, array(s) should
+ * For the calling function, elt_ids is optional. If not nullptr, array(s) should
  * be accessed with an indirection. The same indirection can be applied to fill
  * retval if dense_output is set to false.
  * In the current case, retval is allocated to mesh->n_b_faces.
@@ -311,7 +311,7 @@ _w_flux_side(cs_lnum_t         n_elts,
   /* Exchange coefficient first, Dirichlet values second. */
 
   for (cs_lnum_t i = 0; i < n_elts; i++) {
-    const cs_lnum_t  face_id = (elt_ids == NULL) ? i : elt_ids[i];
+    const cs_lnum_t  face_id = (elt_ids == nullptr) ? i : elt_ids[i];
     const cs_lnum_t  j = dense_output ? i : face_id;
     retval[j] = flux;
   }
@@ -365,7 +365,7 @@ cs_user_boundary_conditions_setup(cs_domain_t  *domain)
                                    CS_BC_DIRICHLET,
                                    "inlet",           // zone name
                                    _vel_profile,      // callback function
-                                   NULL);             // input structure
+                                   nullptr);             // input structure
     /*! [inlet_vel_analytic] */
   }
 
@@ -430,7 +430,7 @@ cs_user_boundary_conditions_setup(cs_domain_t  *domain)
                                    "wall_top",             // zone name
                                    cs_flag_boundary_face,  // location flag
                                    _w_flux_top,            // callback function
-                                   NULL);                  // input structure
+                                   nullptr);                  // input structure
     /*! [wall_top_flux_dof] */
   }
 

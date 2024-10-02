@@ -313,7 +313,7 @@ cs_lagr_new(cs_lagr_particle_set_t  *particles,
   cs_mesh_t  *mesh = cs_glob_mesh;
   cs_mesh_quantities_t *fvq  = cs_glob_mesh_quantities;
 
-  cs_real_t  *acc_surf_r = NULL;
+  cs_real_t  *acc_surf_r = nullptr;
   cs_lnum_t   n_vertices_max = 0;
 
   /* Loop on faces */
@@ -327,7 +327,7 @@ cs_lagr_new(cs_lagr_particle_set_t  *particles,
 
     cs_lnum_t p_s_id = particles->n_particles + face_particle_idx[li];
 
-    const cs_lnum_t face_id = (face_ids != NULL) ? face_ids[li] : li;
+    const cs_lnum_t face_id = (face_ids != nullptr) ? face_ids[li] : li;
 
     cs_lnum_t n_vertices =   mesh->b_face_vtx_idx[face_id+1]
                            - mesh->b_face_vtx_idx[face_id];
@@ -408,12 +408,12 @@ cs_lagr_new_v(cs_lagr_particle_set_t  *particles,
   const cs_mesh_quantities_t *fvq  = cs_glob_mesh_quantities;
 
   const cs_mesh_adjacencies_t *ma = cs_glob_mesh_adjacencies;
-  if (ma->cell_i_faces == NULL)
+  if (ma->cell_i_faces == nullptr)
     cs_mesh_adjacencies_update_cell_i_faces();
 
-  cs_lnum_t  *cell_subface_index = NULL;
-  cs_real_t  *acc_vol_r = NULL;
-  cs_real_t  *acc_surf_r = NULL;
+  cs_lnum_t  *cell_subface_index = nullptr;
+  cs_real_t  *acc_vol_r = nullptr;
+  cs_real_t  *acc_surf_r = nullptr;
   cs_lnum_t  n_divisions_max = 0, n_faces_max = 0;
 
   /* Loop on cells */
@@ -427,7 +427,7 @@ cs_lagr_new_v(cs_lagr_particle_set_t  *particles,
 
     cs_lnum_t p_s_id = particles->n_particles +  cell_particle_idx[li];
 
-    const cs_lnum_t cell_id = (cell_ids != NULL) ? cell_ids[li] : li;
+    const cs_lnum_t cell_id = (cell_ids != nullptr) ? cell_ids[li] : li;
 
     const cs_real_t *cell_cen = fvq->cell_cen + cell_id*3;
 
@@ -439,7 +439,7 @@ cs_lagr_new_v(cs_lagr_particle_set_t  *particles,
 
     cs_lnum_t n_cell_faces = n_cell_i_faces + n_cell_b_faces;
 
-    if (ma->cell_hb_faces_idx != NULL) {
+    if (ma->cell_hb_faces_idx != nullptr) {
       n_cell_faces +=   ma->cell_hb_faces_idx[cell_id+1]
                       - ma->cell_hb_faces_idx[cell_id];
     }
@@ -488,7 +488,7 @@ cs_lagr_new_v(cs_lagr_particle_set_t  *particles,
           face_id = ma->cell_b_faces[ma->cell_b_faces_idx[cell_id] + j];
 
         else {
-          assert(ma->cell_hb_faces_idx != NULL);
+          assert(ma->cell_hb_faces_idx != nullptr);
           j -= n_cell_b_faces;
           face_id = ma->cell_hb_faces[ma->cell_hb_faces_idx[cell_id] + j];
         }
@@ -595,7 +595,7 @@ cs_lagr_new_v(cs_lagr_particle_set_t  *particles,
           face_id = ma->cell_b_faces[ma->cell_b_faces_idx[cell_id] + j];
 
         else {
-          assert(ma->cell_hb_faces_idx != NULL);
+          assert(ma->cell_hb_faces_idx != nullptr);
           j -= n_cell_b_faces;
           face_id = ma->cell_hb_faces[ma->cell_hb_faces_idx[cell_id] + j];
         }
@@ -685,14 +685,14 @@ cs_lagr_new_particle_init(const cs_lnum_t                 particle_range[2],
   const cs_real_t  *rho0ch = coal_model->rho0ch;
 
   const cs_real_t *vela = extra->vel->vals[time_id];//FIXME
-  const cs_real_t *cval_h = NULL, *cval_t = NULL, *cval_t_l = NULL;
-  cs_real_t *_cval_t = NULL;
+  const cs_real_t *cval_h = nullptr, *cval_t = nullptr, *cval_t_l = nullptr;
+  cs_real_t *_cval_t = nullptr;
 
   cs_real_t tscl_shift = 0;
 
-  const cs_real_3_t  *vel = NULL;
-  const cs_real_t    *cvar_k = NULL;
-  const cs_real_6_t  *cvar_rij = NULL;
+  const cs_real_3_t  *vel = nullptr;
+  const cs_real_t    *cvar_k = nullptr;
+  const cs_real_6_t  *cvar_rij = nullptr;
 
   vel = (const cs_real_3_t *)extra->vel->vals[time_id];
 
@@ -704,7 +704,7 @@ cs_lagr_new_particle_init(const cs_lnum_t                 particle_range[2],
       || cs_glob_lagr_model->physical_model == CS_LAGR_PHYS_CTWR) {
 
     const cs_field_t *f = cs_field_by_name_try("temperature");
-    if (f != NULL)
+    if (f != nullptr)
       cval_t = f->val;
     else if (   cs_glob_thermal_model->thermal_variable
              == CS_THERMAL_MODEL_ENTHALPY)
@@ -725,8 +725,8 @@ cs_lagr_new_particle_init(const cs_lnum_t                 particle_range[2],
 
   if (   cs_glob_lagr_model->physical_model == CS_LAGR_PHYS_HEAT
       && cs_glob_lagr_specific_physics->itpvar == 1
-      && cval_t == NULL
-      && cval_h != NULL) {
+      && cval_t == nullptr
+      && cval_h != nullptr) {
 
     BFT_MALLOC(_cval_t, cs_glob_mesh->n_cells_with_ghosts, cs_real_t);
     cs_ht_convert_h_to_t_cells(cval_h, _cval_t);
@@ -745,12 +745,12 @@ cs_lagr_new_particle_init(const cs_lnum_t                 particle_range[2],
 
   if (cs_glob_lagr_model->idistu == 1) {
 
-    if (extra->cvar_rij != NULL)
+    if (extra->cvar_rij != nullptr)
       cvar_rij = (const cs_real_6_t *) extra->cvar_rij->vals[time_id];
 
-    else if (extra->cvar_k != NULL) {
+    else if (extra->cvar_k != nullptr) {
       cvar_k = (const cs_real_t *)extra->cvar_k->vals[time_id];
-      if (extra->cvar_k != NULL)
+      if (extra->cvar_k != nullptr)
         cvar_k = (const cs_real_t *)extra->cvar_k->val;
     }
 
@@ -808,7 +808,7 @@ cs_lagr_new_particle_init(const cs_lnum_t                 particle_range[2],
     cs_real_t tol_err = 1.0e-12;
 
     for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
-      if (cvar_rij != NULL) {
+      if (cvar_rij != nullptr) {
         sym_rij[cell_id][0][0] = cvar_rij[cell_id][0];
         sym_rij[cell_id][1][1] = cvar_rij[cell_id][1];
         sym_rij[cell_id][2][2] = cvar_rij[cell_id][2];
@@ -823,7 +823,7 @@ cs_lagr_new_particle_init(const cs_lnum_t                 particle_range[2],
       else {
         cs_real_t w = 0.;
 
-        if (cvar_k != NULL)
+        if (cvar_k != nullptr)
           w = d2s3 * cvar_k[cell_id];
 
         sym_rij[cell_id][0][0] = w;
@@ -1151,7 +1151,7 @@ cs_lagr_new_particle_init(const cs_lnum_t                 particle_range[2],
           && cs_glob_lagr_specific_physics->itpvar == 1) {
 
         if (zis->temperature_profile < 1) {
-          if (cval_t != NULL)
+          if (cval_t != nullptr)
             cs_lagr_particle_set_real(particle, p_am,
                                       CS_LAGR_FLUID_TEMPERATURE,
                                       cval_t[c_id] + tscl_shift);

@@ -182,7 +182,7 @@ _set_particle_values(cs_lagr_particle_set_t  *particles,
 
   cs_lnum_t n_particles = particles->n_particles;
 
-  assert(particles != NULL);
+  assert(particles != nullptr);
 
   cs_lagr_get_attr_info(particles, 0, attr,
                         &extents, &size, &displ, &_datatype, &_count);
@@ -247,7 +247,7 @@ _init_particle_values(cs_lagr_particle_set_t  *particles,
 
   cs_lnum_t n_particles = particles->n_particles;
 
-  assert(particles != NULL);
+  assert(particles != nullptr);
 
   cs_lagr_get_attr_info(particles, 0, attr,
                         &extents, &size, &displ, &datatype, &stride);
@@ -298,9 +298,9 @@ _init_particle_values(cs_lagr_particle_set_t  *particles,
     {
       cs_lagr_extra_module_t *extra = cs_glob_lagr_extra_module;
       double c_kelvin = 0;
-      const double *t = NULL;
+      const double *t = nullptr;
 
-      if (extra->temperature != NULL)
+      if (extra->temperature != nullptr)
         t = extra->temperature->val;
       if (   cs_glob_thermal_model->temperature_scale
           == CS_TEMPERATURE_SCALE_KELVIN)
@@ -309,7 +309,7 @@ _init_particle_values(cs_lagr_particle_set_t  *particles,
       assert(datatype == CS_REAL_TYPE);
 
       /* initialize particle temperature with fluid temperature */
-      if (t != NULL) {
+      if (t != nullptr) {
         for (cs_lnum_t i = 0; i < n_particles; i++) {
           cs_lnum_t cell_id
             = cs_lagr_particles_get_lnum(particles, i, CS_LAGR_CELL_ID);
@@ -396,7 +396,7 @@ cs_lagr_restart_read_particle_data(cs_restart_t  *r)
   cs_datatype_t datatype;
   int  stride, sec_code;
   cs_restart_val_type_t restart_type;
-  unsigned char *vals = NULL;
+  unsigned char *vals = nullptr;
   size_t max_size = 0;
 
   char sec_name[128], old_name[128];
@@ -406,7 +406,7 @@ cs_lagr_restart_read_particle_data(cs_restart_t  *r)
   cs_lnum_t n_particles;
   cs_lagr_particle_set_t  *p_set = cs_lagr_get_particle_set();
 
-  if (p_set == NULL)
+  if (p_set == nullptr)
     return retval;
 
   p_set->n_particles = 0;
@@ -511,7 +511,7 @@ cs_lagr_restart_read_particle_data(cs_restart_t  *r)
 
         /* Now read global numbers (1 to n, 0 for none) */
 
-        cs_gnum_t *gnum_read = NULL;
+        cs_gnum_t *gnum_read = nullptr;
         BFT_MALLOC(gnum_read, p_set->n_particles, cs_gnum_t);
 
         snprintf(sec_name, 127, "particle_%s::vals::0", "neighbor_face_num");
@@ -534,18 +534,18 @@ cs_lagr_restart_read_particle_data(cs_restart_t  *r)
 
         /* Now assign values */
 
-        const cs_lnum_t   *cell_b_faces_idx = NULL;
-        const cs_lnum_t   *cell_b_faces = NULL;
+        const cs_lnum_t   *cell_b_faces_idx = nullptr;
+        const cs_lnum_t   *cell_b_faces = nullptr;
         const cs_mesh_adjacencies_t *ma = cs_glob_mesh_adjacencies;
 
-        if (ma != NULL) {
+        if (ma != nullptr) {
           cell_b_faces_idx = ma->cell_b_faces_idx;
           cell_b_faces = ma->cell_b_faces;
         }
 
-        if (cell_b_faces_idx != NULL) {
+        if (cell_b_faces_idx != nullptr) {
           const cs_gnum_t *g_b_face_num = cs_glob_mesh->global_b_face_num;
-          if (g_b_face_num != NULL) {
+          if (g_b_face_num != nullptr) {
             for (cs_lnum_t i = 0; i < p_set->n_particles; i++) {
               if (gnum_read[i] > 0) {
                 cs_lnum_t cell_id = cs_lagr_particles_get_lnum(p_set, i,
@@ -579,7 +579,7 @@ cs_lagr_restart_read_particle_data(cs_restart_t  *r)
           }
         }
         else {
-          assert(cell_b_faces != NULL);
+          assert(cell_b_faces != nullptr);
         }
 
         BFT_FREE(gnum_read);
@@ -684,7 +684,7 @@ cs_lagr_restart_write_particle_data(cs_restart_t  *r)
   cs_datatype_t datatype;
   int  stride;
   cs_restart_val_type_t restart_type;
-  unsigned char *vals = NULL;
+  unsigned char *vals = nullptr;
   size_t max_size = 0;
 
   char sec_name[128];
@@ -694,7 +694,7 @@ cs_lagr_restart_write_particle_data(cs_restart_t  *r)
   const cs_lnum_t n_particles = cs_lagr_get_n_particles();
   const cs_lagr_particle_set_t  *p_set = cs_lagr_get_particle_set();
 
-  if (p_set == NULL)
+  if (p_set == nullptr)
     return retval;
 
   /* Write coordinates and get mesh location */
@@ -709,10 +709,10 @@ cs_lagr_restart_write_particle_data(cs_restart_t  *r)
   BFT_MALLOC(p_coords, n_particles*3, cs_real_t);
 
   cs_lagr_get_particle_values(p_set, CS_LAGR_COORDS, CS_REAL_TYPE,
-                              3, -1, n_particles, NULL, p_coords);
+                              3, -1, n_particles, nullptr, p_coords);
 
   cs_lagr_get_particle_values(p_set, CS_LAGR_CELL_ID, CS_LNUM_TYPE,
-                              1, -1, n_particles, NULL, p_cell_id);
+                              1, -1, n_particles, nullptr, p_cell_id);
 
   const int particles_location_id
     = cs_restart_write_particles(r,
@@ -763,14 +763,14 @@ cs_lagr_restart_write_particle_data(cs_restart_t  *r)
                                     1,
                                     -1,
                                     n_particles,
-                                    NULL,
+                                    nullptr,
                                     vals);
 
-        cs_gnum_t *gnum_write = NULL;
+        cs_gnum_t *gnum_write = nullptr;
         BFT_MALLOC(gnum_write, p_set->n_particles, cs_gnum_t);
 
         const cs_gnum_t *g_b_face_num = cs_glob_mesh->global_b_face_num;
-        if (g_b_face_num != NULL) {
+        if (g_b_face_num != nullptr) {
           for (cs_lnum_t i = 0; i < p_set->n_particles; i++) {
             cs_lnum_t face_id = ((cs_lnum_t *)vals)[i];
             if (face_id < 0)
@@ -834,7 +834,7 @@ cs_lagr_restart_write_particle_data(cs_restart_t  *r)
                                     stride,
                                     comp_id,
                                     n_particles,
-                                    NULL,
+                                    nullptr,
                                     vals);
 
         _lagr_section_name(attr, comp_id, sec_name);

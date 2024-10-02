@@ -75,7 +75,7 @@ cs_user_1d_wall_thermal(int iappel)
   /*! [loc_var_dec] */
   int izone = 0, ifbt1d = 0;
   cs_lnum_t nlelt = 0;
-  cs_lnum_t *lstelt = NULL;
+  cs_lnum_t *lstelt = nullptr;
 
   cs_1d_wall_thermal_t *wall_thermal = cs_get_glob_1d_wall_thermal();
 

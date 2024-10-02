@@ -5023,7 +5023,7 @@ cs_saddle_solver_simple(cs_saddle_solver_t  *solver,
                            dx2, ctx->m21_adj, ctx->m21_val,
                            ctx->rhs);
 
-  if (rset->ifs != NULL) {
+  if (rset->ifs != nullptr) {
 
     cs_interface_set_sum(rset->ifs,
                          /* n_elts, stride, interlaced */

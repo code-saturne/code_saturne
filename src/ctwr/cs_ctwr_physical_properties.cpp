@@ -160,8 +160,8 @@ cs_ctwr_restart_field_vars(cs_real_t  rho0,
 
   /* Initialize the fields - based on map */
   cs_real_t *cp_h = (cs_real_t *)CS_F_(cp)->val;     /* Humid air (bulk) Cp */
-  cs_real_t *t_h = NULL;
-  cs_real_t *t_h_a = NULL;
+  cs_real_t *t_h = nullptr;
+  cs_real_t *t_h_a = nullptr;
   if (cs_glob_physical_model_flag[CS_ATMOSPHERIC] == CS_ATMO_HUMID) {
     t_h = cs_field_by_name("real_temperature")->val; /* Humid air temp */
     t_h_a = cs_field_by_name("real_temperature")->val_pre; /* Humid air temp */
@@ -192,8 +192,8 @@ cs_ctwr_restart_field_vars(cs_real_t  rho0,
   cs_field_t *cfld_taup = cs_field_by_name_try("ym_l_r_drift_tau");
   cs_field_t *cfld_drift_vel = cs_field_by_name_try("ym_l_r_drift_vel");
 
-  cs_real_t *cpro_taup = NULL;
-  if (cfld_taup != NULL)
+  cs_real_t *cpro_taup = nullptr;
+  if (cfld_taup != nullptr)
     cpro_taup = cfld_taup->val;
   else
     BFT_MALLOC(cpro_taup, n_cells_with_ghosts, cs_real_t);
@@ -373,12 +373,12 @@ cs_ctwr_restart_field_vars(cs_real_t  rho0,
   }
 
   /* Parallel synchronization */
-  if (halo != NULL) {
+  if (halo != nullptr) {
     cs_halo_sync_var(halo, CS_HALO_STANDARD, vel_l);
     cs_halo_sync_var(halo, CS_HALO_STANDARD, cpro_taup);
-    if (cfld_yp != NULL)
+    if (cfld_yp != nullptr)
       cs_halo_sync_var(halo, CS_HALO_STANDARD, cfld_yp->val);
-    if (cfld_drift_vel != NULL) {
+    if (cfld_drift_vel != nullptr) {
       cs_halo_sync_var_strided(halo, CS_HALO_STANDARD, cfld_drift_vel->val, 3);
       if (m->n_init_perio > 0)
         cs_halo_perio_sync_var_vect(halo, CS_HALO_STANDARD,
@@ -387,7 +387,7 @@ cs_ctwr_restart_field_vars(cs_real_t  rho0,
   }
 
   /* Free memory */
-  if (cfld_taup != NULL)
+  if (cfld_taup != nullptr)
     BFT_FREE(cpro_taup);
 }
 
@@ -433,8 +433,8 @@ cs_ctwr_phyvar_update(cs_real_t  rho0,
 
   /* Fields based on maps */
 
-  cs_real_t *t_h = NULL;
-  cs_real_t *theta_liq = NULL;
+  cs_real_t *t_h = nullptr;
+  cs_real_t *theta_liq = nullptr;
   if (cs_glob_physical_model_flag[CS_ATMOSPHERIC] == CS_ATMO_HUMID) {
     t_h = cs_field_by_name("real_temperature")->val; /* Humid air temp */
     theta_liq = cs_field_by_name("temperature")->val; /* Liq. pot. temp. */
@@ -479,8 +479,8 @@ cs_ctwr_phyvar_update(cs_real_t  rho0,
   cs_real_t *h_l_r = cs_field_by_name("h_l_r")->val; /* Rain enthalpy */
   cs_real_t *t_l_r = cs_field_by_name("temp_l_r")->val; /* Rain temperature */
 
-  cs_real_t *ym_l_r = NULL;
-  if (cfld_yp != NULL)
+  cs_real_t *ym_l_r = nullptr;
+  if (cfld_yp != nullptr)
     ym_l_r = cfld_yp->val;
 
   cs_lnum_t n_cells = cs_glob_mesh->n_cells;
@@ -507,7 +507,7 @@ cs_ctwr_phyvar_update(cs_real_t  rho0,
     }
 
     /* Clippings of rain mass fraction */
-    if (ym_l_r != NULL) {
+    if (ym_l_r != nullptr) {
       if (ym_l_r[cell_id] < 0.0) {
         ym_l_r[cell_id] = 0;
         nclip_yr_min += 1;
@@ -631,8 +631,8 @@ cs_ctwr_phyvar_update(cs_real_t  rho0,
       cs_glob_physical_constants->gravity[1],
       cs_glob_physical_constants->gravity[2]};
     cs_field_t *cfld_taup = cs_field_by_name_try("ym_l_r_drift_tau");
-    cs_real_t *cpro_taup = NULL;
-    if (cfld_taup != NULL)
+    cs_real_t *cpro_taup = nullptr;
+    if (cfld_taup != nullptr)
       cpro_taup = cfld_taup->val;
 
     /* Continuous phase drift velocity */
@@ -743,7 +743,7 @@ cs_ctwr_phyvar_update(cs_real_t  rho0,
   }
 
   /* Parallel synchronization */
-  if (halo != NULL) {
+  if (halo != nullptr) {
     cs_halo_sync_var(halo, CS_HALO_STANDARD, x);
     cs_halo_sync_var(halo, CS_HALO_STANDARD, x_s);
     cs_halo_sync_var(halo, CS_HALO_STANDARD, cpro_x1);

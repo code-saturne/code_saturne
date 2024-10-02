@@ -217,7 +217,7 @@ _bounding_box(const cs_mesh_t    *m,
 
   for (cs_lnum_t i = 0; i < m->n_cells; i++) {
 
-    cs_lnum_t c_id = (cell_ids != NULL) ? cell_ids[i] : i;
+    cs_lnum_t c_id = (cell_ids != nullptr) ? cell_ids[i] : i;
     cs_lnum_t s_id = cell_face_idx[i] -1;
     cs_lnum_t e_id = cell_face_idx[i+1] -1;
 
@@ -351,17 +351,17 @@ _build_cell(const cs_mesh_t              *m,
           fvm_triangulate_quadrangle(3, // dimension
                                      0, // base
                                      m->vtx_coord,
-                                     NULL,
+                                     nullptr,
                                      f_vtx + f_s_id,
                                      _triangle_vertices);
         else if (n_f_v > 4) {
-          if (triangulate_state == NULL)
+          if (triangulate_state == nullptr)
             triangulate_state = fvm_triangulate_state_create(n_f_v);
           n_triangles = fvm_triangulate_polygon(3, // dimension
                                                 0, // base
                                                 n_f_v,
                                                 m->vtx_coord,
-                                                NULL,
+                                                nullptr,
                                                 f_vtx + f_s_id,
                                                 FVM_TRIANGULATE_MESH_DEF,
                                                 _triangle_vertices,
@@ -435,7 +435,7 @@ _build_cell(const cs_mesh_t              *m,
     sew_error = 2;
   if (sew_error) {
     cs_gnum_t g_cell_num = cell_id+1;
-    if (m->global_cell_num != NULL)
+    if (m->global_cell_num != nullptr)
       g_cell_num = m->global_cell_num[cell_id];
     const char sew_err_str[]
       = N_("Cell %llu: error sewing shell with %d faces and %d sub-faces");
@@ -482,11 +482,11 @@ _build_cell(const cs_mesh_t              *m,
  * \param[in]       n_cells          number of selected cells
  * \param[in]       cell_ids         ids of selected cells
  * \param[in, out]  cell_porosity    cell porosity
- * \param[in, out]  cell_f_center    cell fluid center, or NULL
- * \param[in, out]  i_face_porosity  interior face porosity, or NULL
- * \param[in, out]  i_face_f_center  interior face fluid center, or NULL
- * \param[in, out]  b_face_porosity  boundary face porosity, or NULL
- * \param[in, out]  b_face_f_center  boundary face fluid center, or NULL
+ * \param[in, out]  cell_f_center    cell fluid center, or nullptr
+ * \param[in, out]  i_face_porosity  interior face porosity, or nullptr
+ * \param[in, out]  i_face_f_center  interior face fluid center, or nullptr
+ * \param[in, out]  b_face_porosity  boundary face porosity, or nullptr
+ * \param[in, out]  b_face_f_center  boundary face fluid center, or nullptr
  */
 /*----------------------------------------------------------------------------*/
 
@@ -508,16 +508,16 @@ _cad_intersect(const cs_mesh_t        *m,
 
   const cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
 
-  cs_lnum_t  *cell_face_idx = NULL, *cell_face_num = NULL;
+  cs_lnum_t  *cell_face_idx = nullptr, *cell_face_num = nullptr;
 
   /* Initialize flags */
 
   bool compute_face_quantities = false;
   bool compute_face_centers = true;
 
-  if (i_face_f_center != NULL || b_face_f_center != NULL)
+  if (i_face_f_center != nullptr || b_face_f_center != nullptr)
     compute_face_centers = true;
-  if (compute_face_centers || i_face_porosity != NULL || b_face_porosity != NULL)
+  if (compute_face_centers || i_face_porosity != nullptr || b_face_porosity != nullptr)
     compute_face_quantities = true;
 
   /* Read CAD shape */
@@ -588,7 +588,7 @@ _cad_intersect(const cs_mesh_t        *m,
 
   cs_lnum_t  *c_restrict_id;
   BFT_MALLOC(c_restrict_id, n_cells_ext, cs_lnum_t);
-  if (cell_ids != NULL) {
+  if (cell_ids != nullptr) {
     for (cs_lnum_t i = 0; i < n_cells_ext; i++)
       c_restrict_id[i] = -1;
     for (cs_lnum_t i = 0; i < n_cells; i++)
@@ -631,12 +631,12 @@ _cad_intersect(const cs_mesh_t        *m,
   std::vector<TopoDS_Shape> surfaces;
 
   cs_lnum_t    n_max_triangles = 0;
-  cs_lnum_t   *triangle_vertices = NULL;
-  fvm_triangulate_state_t  *triangulate_state = NULL;
+  cs_lnum_t   *triangle_vertices = nullptr;
+  fvm_triangulate_state_t  *triangulate_state = nullptr;
 
   for (cs_lnum_t i = 0; i < n_cells; i++) {
 
-    cs_lnum_t c_id = (cell_ids != NULL) ? cell_ids[i] : i;
+    cs_lnum_t c_id = (cell_ids != nullptr) ? cell_ids[i] : i;
     cs_lnum_t s_id = cell_face_idx[i] -1;
     cs_lnum_t e_id = cell_face_idx[i+1] -1;
 
@@ -683,7 +683,7 @@ _cad_intersect(const cs_mesh_t        *m,
       BRepGProp::VolumeProperties(fluid_cell, VProps, Standard_True);
       cs_real_t fluid_volume = VProps.Mass();
       cell_porosity[c_id] = fluid_volume / cell_volume;
-      if (cell_f_center != NULL) {
+      if (cell_f_center != nullptr) {
         gp_Pnt c_cen = VProps.CentreOfMass();
         cell_f_center[c_id][0] = c_cen.X();
         cell_f_center[c_id][1] = c_cen.Y();
@@ -692,20 +692,20 @@ _cad_intersect(const cs_mesh_t        *m,
       if (compute_face_quantities) {
         for (cs_lnum_t j = 0; j < n_cell_faces; j++) {
 
-          cs_real_t *f_porosity = NULL;
-          cs_real_t *f_f_center = NULL;
+          cs_real_t *f_porosity = nullptr;
+          cs_real_t *f_f_center = nullptr;
 
           cs_lnum_t face_num = cell_face_num[s_id + j];
           cs_lnum_t f_id = CS_ABS(face_num) - 1;
           if (f_id < m->n_b_faces) {
             f_porosity = b_face_porosity + f_id;
-            if (b_face_f_center != NULL)
+            if (b_face_f_center != nullptr)
               f_f_center = b_face_f_center[f_id];
           }
           else {
             f_id -= m->n_b_faces;
             f_porosity = i_face_porosity + f_id;
-            if (i_face_f_center != NULL)
+            if (i_face_f_center != nullptr)
               f_f_center = i_face_f_center[f_id];
           }
 
@@ -737,10 +737,10 @@ _cad_intersect(const cs_mesh_t        *m,
             BRepGProp::SurfaceProperties(fluid_face, SProps, Standard_True);
             face_porosity = SProps.Mass() / face_surface;
 
-            if (f_porosity != NULL)
+            if (f_porosity != nullptr)
               f_porosity[0] = face_porosity;
 
-            if (f_f_center != NULL) {
+            if (f_f_center != nullptr) {
               gp_Pnt f_cen = SProps.CentreOfMass();
               f_f_center[0] = f_cen.X();
               f_f_center[1] = f_cen.Y();
@@ -763,7 +763,7 @@ _cad_intersect(const cs_mesh_t        *m,
   // Cleanup
 
   BFT_FREE(triangle_vertices);
-  if (triangulate_state != NULL)
+  if (triangulate_state != nullptr)
     triangulate_state = fvm_triangulate_state_destroy(triangulate_state);
 
   BFT_FREE(c_restrict_id);
@@ -790,11 +790,11 @@ BEGIN_C_DECLS
  * \param[in]       n_cells          number of selected cells
  * \param[in]       cell_ids         ids of selected cells
  * \param[in, out]  cell_porosity    cell porosity
- * \param[in, out]  cell_f_center    cell fluid center, or NULL
- * \param[in, out]  i_face_porosity  interior face porosity, or NULL
- * \param[in, out]  i_face_f_center  interior face fluid center, or NULL
- * \param[in, out]  b_face_porosity  boundary face porosity, or NULL
- * \param[in, out]  b_face_f_center  boundary face fluid center, or NULL
+ * \param[in, out]  cell_f_center    cell fluid center, or nullptr
+ * \param[in, out]  i_face_porosity  interior face porosity, or nullptr
+ * \param[in, out]  i_face_f_center  interior face fluid center, or nullptr
+ * \param[in, out]  b_face_porosity  boundary face porosity, or nullptr
+ * \param[in, out]  b_face_f_center  boundary face fluid center, or nullptr
  */
 /*----------------------------------------------------------------------------*/
 

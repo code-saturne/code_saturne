@@ -574,19 +574,19 @@ cs_lagr_orientation_dyn_spheroids(int              iprev,
 
   cs_lagr_extra_module_t *extra = cs_get_lagr_extra_module();
 
-  cs_real_t *brown = NULL;
+  cs_real_t *brown = nullptr;
   BFT_MALLOC(brown, p_set->n_particles*9, cs_real_t);
 
-  const cs_real_t *cvar_k = NULL, *cvar_ep = NULL, *cvar_omg = NULL;
-  if (extra->cvar_k != NULL) {
+  const cs_real_t *cvar_k = nullptr, *cvar_ep = nullptr, *cvar_omg = nullptr;
+  if (extra->cvar_k != nullptr) {
     cvar_k = (extra->cvar_k->n_time_vals > 1) ?
       extra->cvar_k->vals[iprev] : extra->cvar_k->val;
   }
-  if (extra->cvar_ep != NULL) {
+  if (extra->cvar_ep != nullptr) {
     cvar_ep = (extra->cvar_ep->n_time_vals > 1) ?
       extra->cvar_ep->vals[iprev] : extra->cvar_ep->val;
   }
-  if (extra->cvar_omg != NULL) {
+  if (extra->cvar_omg != nullptr) {
     cvar_omg = (extra->cvar_omg->n_time_vals > 1) ?
       extra->cvar_omg->vals[iprev] : extra->cvar_omg->val;
   }
@@ -634,7 +634,7 @@ cs_lagr_orientation_dyn_spheroids(int              iprev,
     cs_real_t visccf = extra->viscl->val[cell_id] / romf;
 
     cs_real_t epsilon = 0;
-    if (cvar_ep != NULL) {
+    if (cvar_ep != nullptr) {
       epsilon = cvar_ep[cell_id];
     }
     else if (extra->iturb == CS_TURB_K_OMEGA) {

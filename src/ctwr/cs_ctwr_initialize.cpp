@@ -102,7 +102,7 @@ cs_ctwr_fields_init0(void)
   cs_fluid_properties_t *fp = cs_get_glob_fluid_properties();
   cs_air_fluid_props_t *air_prop = cs_glob_air_props;
 
-  cs_field_t *t_h = NULL;
+  cs_field_t *t_h = nullptr;
   if (cs_glob_physical_model_flag[CS_ATMOSPHERIC] == CS_ATMO_HUMID)
     t_h = cs_field_by_name("real_temperature"); /* Humid air temp */
   else
@@ -132,7 +132,7 @@ cs_ctwr_fields_init0(void)
       y_l_p->val[cell_id] = 0.;
 
     }
-    if (halo != NULL) {
+    if (halo != nullptr) {
       cs_halo_sync_var(halo, CS_HALO_STANDARD, t_h->val);
       cs_halo_sync_var(halo, CS_HALO_STANDARD, ym_w->val);
       cs_halo_sync_var(halo, CS_HALO_STANDARD, t_l_p->val);
@@ -186,7 +186,7 @@ cs_ctwr_fields_init1(void)
 {
   cs_halo_t *halo = cs_glob_mesh->halo;
 
-  cs_field_t *t_h = NULL;
+  cs_field_t *t_h = nullptr;
   if (cs_glob_physical_model_flag[CS_ATMOSPHERIC] == CS_ATMO_HUMID)
     t_h = cs_field_by_name("real_temperature"); /* Humid air temp */
   else
@@ -209,7 +209,7 @@ cs_ctwr_fields_init1(void)
   cs_ctwr_init_flow_vars(i_mass_flux);
 
   /* Parallel synchronization */
-  if (halo != NULL) {
+  if (halo != nullptr) {
     cs_halo_sync_var(halo, CS_HALO_STANDARD, t_h->val);
     cs_halo_sync_var(halo, CS_HALO_STANDARD, ym_w->val);
     cs_halo_sync_var(halo, CS_HALO_STANDARD, t_l_p->val);
@@ -255,9 +255,9 @@ cs_ctwr_init_field_vars(cs_real_t  rho0,
   cs_real_t *rho_m = (cs_real_t *)CS_F_(rho)->val; /* Air + rain (mixture)
                                                       density */
   cs_real_t *rho_h = cs_field_by_name("rho_humid_air")->val;
-  cs_real_t *t_h = NULL;
-  cs_real_t *t_h_a = NULL;
-  cs_real_t *theta_liq = NULL;
+  cs_real_t *t_h = nullptr;
+  cs_real_t *t_h_a = nullptr;
+  cs_real_t *theta_liq = nullptr;
   if (cs_glob_physical_model_flag[CS_ATMOSPHERIC] == CS_ATMO_HUMID) {
     t_h = cs_field_by_name("real_temperature")->val; /* Humid air temp */
     t_h_a = cs_field_by_name("real_temperature")->val_pre; /* Humid air temp */
@@ -289,7 +289,7 @@ cs_ctwr_init_field_vars(cs_real_t  rho0,
   const cs_real_3_t *vel = (const cs_real_3_t *)(CS_F_(vel)->val);
   cs_field_t *cfld_vc = cs_field_by_name_try("v_c");
   cs_real_3_t *v_c;
-  if (cfld_vc != NULL)
+  if (cfld_vc != nullptr)
     v_c = (cs_real_3_t *)cfld_vc->val;
 
   /* Phases volume fractions */
@@ -298,8 +298,8 @@ cs_ctwr_init_field_vars(cs_real_t  rho0,
 
   cs_ctwr_option_t *ct_opt = cs_get_glob_ctwr_option();
 
-  cs_real_t *cpro_taup = NULL;
-  if (cfld_taup != NULL)
+  cs_real_t *cpro_taup = nullptr;
+  if (cfld_taup != nullptr)
     cpro_taup = cfld_taup->val;
   else
     BFT_MALLOC(cpro_taup, n_cells_with_ghosts, cs_real_t);
@@ -433,14 +433,14 @@ cs_ctwr_init_field_vars(cs_real_t  rho0,
     }
 
     /* Initialize rain velocity variables */
-    if (cfld_vc != NULL) {
+    if (cfld_vc != nullptr) {
       v_c[cell_id][0] = vel[cell_id][0];
       v_c[cell_id][1] = vel[cell_id][1];
       v_c[cell_id][2] = vel[cell_id][2];
     }
   }
   /* Parallel synchronization */
-  if (halo != NULL) {
+  if (halo != nullptr) {
     cs_halo_sync_var(halo, CS_HALO_STANDARD, rho_h);
     cs_halo_sync_var(halo, CS_HALO_STANDARD, cpro_taup);
   }
@@ -482,11 +482,11 @@ cs_ctwr_init_field_vars(cs_real_t  rho0,
   }
 
   /* Parallel synchronization */
-  if (halo != NULL) {
+  if (halo != nullptr) {
     cs_halo_sync_var(halo, CS_HALO_STANDARD, vel_l);
-    if (cfld_yp != NULL)
+    if (cfld_yp != nullptr)
       cs_halo_sync_var(halo, CS_HALO_STANDARD, cfld_yp->val);
-    if (cfld_drift_vel != NULL) {
+    if (cfld_drift_vel != nullptr) {
       cs_halo_sync_var_strided(halo, CS_HALO_STANDARD, cfld_drift_vel->val, 3);
       if (m->n_init_perio > 0)
         cs_halo_perio_sync_var_vect(halo, CS_HALO_STANDARD,
@@ -495,7 +495,7 @@ cs_ctwr_init_field_vars(cs_real_t  rho0,
   }
 
   /* Free memory */
-  if (cfld_taup == NULL)
+  if (cfld_taup == nullptr)
     BFT_FREE(cpro_taup);
 }
 
@@ -572,7 +572,7 @@ cs_ctwr_init_flow_vars(cs_real_t  liq_mass_flow[])
   }
 
   /* Parallel synchronization */
-  if (halo != NULL)
+  if (halo != nullptr)
     cs_halo_sync_untyped(halo, CS_HALO_STANDARD, sizeof(int), packing_cell);
 
   /* Initialize the liquid mass flux at packing zone faces

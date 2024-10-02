@@ -1715,26 +1715,26 @@ cs_cf_thermo(const int    iccfth,
   cs_real_t *cvar_en = (cs_real_t *)CS_F_(e_tot)->val;
 
   /* Map specific heats field arrays - handle uniform cases */
-  cs_real_t *cpro_cp = NULL;
-  cs_real_t *cpro_cv = NULL;
+  cs_real_t *cpro_cp = nullptr;
+  cs_real_t *cpro_cv = nullptr;
   cs_real_t cpb = 0.;
   cs_real_t cvb = 0.;
 
-  if (CS_F_(cp) != NULL) {
+  if (CS_F_(cp) != nullptr) {
     cpro_cp = (cs_real_t *)CS_F_(cp)->val;
     if (face_id >= 0) cpb = cpro_cp[cell_id];
   }
-  if (CS_F_(cv) != NULL) {
+  if (CS_F_(cv) != nullptr) {
     cpro_cv = (cs_real_t *)CS_F_(cv)->val;
     if (face_id >= 0) cvb = cpro_cv[cell_id];
   }
 
   cs_real_t *cvar_fracv, *cvar_fracm, *cvar_frace;
-  cvar_fracv = NULL;
-  cvar_fracm = NULL;
-  cvar_frace = NULL;
+  cvar_fracv = nullptr;
+  cvar_fracm = nullptr;
+  cvar_frace = nullptr;
 
-  if (CS_F_(volume_f) != NULL){
+  if (CS_F_(volume_f) != nullptr){
     cvar_fracv = (cs_real_t *)CS_F_(volume_f)->val;
     cvar_fracm = (cs_real_t *)CS_F_(mass_f)->val;
     cvar_frace = (cs_real_t *)CS_F_(energy_f)->val;

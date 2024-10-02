@@ -102,7 +102,7 @@ _findpt_r(cs_domain_t          *domain,
 
   /*! [extra_tbm_get_rotor] */
 
-  const int *rotor_num = NULL;
+  const int *rotor_num = nullptr;
   rotor_num = cs_turbomachinery_get_cell_rotor_num();
 
   for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
@@ -165,7 +165,7 @@ cs_user_extra_operations(cs_domain_t     *domain)
 
   /* Assert there is a rotation zone */
 
-  if (cs_glob_rotation == NULL)  return;
+  if (cs_glob_rotation == nullptr)  return;
 
   /*! [extra_tbm_get_rotor_info] */
 
@@ -234,7 +234,7 @@ cs_user_extra_operations(cs_domain_t     *domain)
 
     cs_real_3_t *vel = (cs_real_3_t *)CS_F_(vel)->val;
 
-    cs_field_t *f_mom_wr = NULL, *f_mom_wt = NULL;
+    cs_field_t *f_mom_wr = nullptr, *f_mom_wt = nullptr;
 
     /* In case of transient rotor/stator computation, the moments for
        the velocity in cylindrical coordinates are assumed to be defined
@@ -248,7 +248,7 @@ cs_user_extra_operations(cs_domain_t     *domain)
       f_mom_wt = cs_time_moment_get_field(2);
     }
 
-    FILE *f1 = NULL, *f2 = NULL;
+    FILE *f1 = nullptr, *f2 = nullptr;
 
     /* Only process of rank 0 (parallel) or -1 (scalar) writes to this file. */
 

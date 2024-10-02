@@ -84,7 +84,7 @@ cs_user_extra_operations(cs_domain_t  *domain)
 {
   CS_UNUSED(domain);
 
-  FILE *file = NULL;
+  FILE *file = nullptr;
 
   const cs_lnum_t n_b_faces = cs_glob_mesh->n_b_faces;
   const cs_real_3_t *b_face_cog
@@ -107,15 +107,15 @@ cs_user_extra_operations(cs_domain_t  *domain)
     /* Compute the thermal fluxes at selected boundary faces */
     const int location_id = CS_MESH_LOCATION_BOUNDARY_FACES;
     const cs_lnum_t n_elts = cs_mesh_location_get_n_elts(location_id)[0];
-    cs_real_t *boundary_flux = NULL;
+    cs_real_t *boundary_flux = nullptr;
     BFT_MALLOC(boundary_flux, n_elts, cs_real_t);
 
-    cs_post_boundary_flux(f->name, n_elts, NULL, boundary_flux);
+    cs_post_boundary_flux(f->name, n_elts, nullptr, boundary_flux);
 
     /* Some declarations */
     cs_real_t srfbn, srfnor[3], fornor, stresses[3];
-    cs_real_t *loc_nusselt = NULL, *loc_friction = NULL, *loc_coords = NULL;
-    cs_real_t *glo_nusselt = NULL, *glo_friction = NULL, *glo_coords = NULL;
+    cs_real_t *loc_nusselt = nullptr, *loc_friction = nullptr, *loc_coords = nullptr;
+    cs_real_t *glo_nusselt = nullptr, *glo_friction = nullptr, *glo_coords = nullptr;
 
     /* Print Nusselt and friction coeff file header*/
     if (cs_glob_rank_id <= 0) {
@@ -132,7 +132,7 @@ cs_user_extra_operations(cs_domain_t  *domain)
 
     cs_lnum_t   n_selected_faces   = 0;
     cs_gnum_t   n_selected_faces_g = 0;
-    cs_lnum_t  *selected_faces = NULL;
+    cs_lnum_t  *selected_faces = nullptr;
 
     BFT_MALLOC(selected_faces, n_b_faces, cs_lnum_t);
 

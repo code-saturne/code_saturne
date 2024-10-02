@@ -71,7 +71,7 @@ BEGIN_C_DECLS
  * Private variables
  *============================================================================*/
 
-static FILE *flal = NULL; /* associated file */
+static FILE *flal = nullptr; /* associated file */
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
@@ -106,12 +106,12 @@ cs_lagr_print(cs_real_t ttcabs)
   /* Open file at first pass */
 
   if (   cs_glob_rank_id <= 0
-      && flal == NULL && _ipass == 1)
+      && flal == nullptr && _ipass == 1)
     flal = fopen("lagrangian.log","w");
 
   /* Open log file on rank 0 only */
 
-  if (flal != NULL) {
+  if (flal != nullptr) {
 
     if (cs_glob_rank_id <= 0) {
 
@@ -206,9 +206,9 @@ cs_lagr_print(cs_real_t ttcabs)
 void
 cs_lagr_print_finalize(void)
 {
-  if (flal != NULL) {
+  if (flal != nullptr) {
     fclose(flal);
-    flal = NULL;
+    flal = nullptr;
   }
 }
 

@@ -119,7 +119,7 @@ cs_user_mesh_modify(cs_mesh_t  *mesh)
     /* Select boundary faces */
 
     cs_lnum_t   n_selected_faces = 0;
-    cs_lnum_t  *selected_faces = NULL;
+    cs_lnum_t  *selected_faces = nullptr;
 
     BFT_MALLOC(selected_faces, mesh->n_b_faces, cs_lnum_t);
 
@@ -227,7 +227,7 @@ cs_user_mesh_modify(cs_mesh_t  *mesh)
     /* Select boundary faces */
 
     cs_lnum_t   n_selected_faces = 0;
-    cs_lnum_t  *selected_faces = NULL;
+    cs_lnum_t  *selected_faces = nullptr;
 
     BFT_MALLOC(selected_faces, mesh->n_b_faces, cs_lnum_t);
 
@@ -256,7 +256,7 @@ cs_user_mesh_modify(cs_mesh_t  *mesh)
     /* Among all the cells, only select the cells above
      * the initial number of cells (before extrusion). */
 
-    cs_lnum_t  *selected_elts = NULL;
+    cs_lnum_t  *selected_elts = nullptr;
     BFT_MALLOC(selected_elts, mesh->n_cells, cs_lnum_t);
 
     for(int i=0; i<n_selected_elts; i++)
@@ -277,7 +277,7 @@ cs_user_mesh_modify(cs_mesh_t  *mesh)
   /*! [mesh_modify_groups_1] */
   {
     cs_lnum_t   n_selected_elts = 0;
-    cs_lnum_t  *selected_elts = NULL;
+    cs_lnum_t  *selected_elts = nullptr;
 
     const char criteria[] = "box[0.5, 0.5, 0, 1, 1, 0.05]";
 
@@ -305,7 +305,7 @@ cs_user_mesh_modify(cs_mesh_t  *mesh)
   /*! [mesh_modify_groups_2] */
   {
     cs_lnum_t   n_selected_elts = 0;
-    cs_lnum_t  *selected_elts = NULL;
+    cs_lnum_t  *selected_elts = nullptr;
 
     const char criteria[] = "box[0.5, 0.5, 0, 1, 1, 0.05]";
 
@@ -378,7 +378,7 @@ cs_user_mesh_modify(cs_mesh_t  *mesh)
 
     cs_mesh_extrude_face_info_destroy(&efi);
 
-    cs_mesh_boundary_layer_insert(mesh, e, 0.2, false, 0, NULL);
+    cs_mesh_boundary_layer_insert(mesh, e, 0.2, false, 0, nullptr);
 
     cs_mesh_extrude_vectors_destroy(&e);
   }
@@ -391,7 +391,7 @@ cs_user_mesh_modify(cs_mesh_t  *mesh)
     const char criteria[] = "box[0, 0, 0, 0.5, 0.5, 0.5]";
 
     cs_lnum_t   n_selected_cells = 0;
-    cs_lnum_t  *selected_cells = NULL;
+    cs_lnum_t  *selected_cells = nullptr;
 
     BFT_MALLOC(selected_cells, mesh->n_cells, cs_lnum_t);
 
@@ -447,7 +447,7 @@ cs_user_mesh_modify(cs_mesh_t  *mesh)
   /*! [mesh_modify_remove_cells_2] */
   {
     cs_lnum_t   n_selected_elts = 0;
-    cs_lnum_t  *selected_elts = NULL;
+    cs_lnum_t  *selected_elts = nullptr;
 
     const char criteria[] = "box[-250, -250, 0, 250, 250, 100]";
 
@@ -497,7 +497,7 @@ cs_user_mesh_modify_partial(cs_mesh_t             *mesh,
   {
     /*! [mesh_modify_ignore_symmetry_faces] */
     cs_lnum_t   n_faces = 0;
-    cs_lnum_t  *face_ids = NULL;
+    cs_lnum_t  *face_ids = nullptr;
 
     BFT_MALLOC(face_ids, mesh->n_b_faces, cs_lnum_t);
 

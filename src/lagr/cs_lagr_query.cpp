@@ -86,7 +86,7 @@ cs_lagr_model_type(void)
 {
   int retval = 0;
 
-  if (cs_glob_lagr_time_scheme != NULL)
+  if (cs_glob_lagr_time_scheme != nullptr)
     retval = cs_glob_lagr_time_scheme->iilagr;
 
   return retval;
@@ -105,7 +105,7 @@ cs_lagr_particle_restart(void)
 {
   int retval = 0;
 
-  if (cs_glob_lagr_time_scheme != NULL)
+  if (cs_glob_lagr_time_scheme != nullptr)
     retval = cs_glob_lagr_time_scheme->isuila;
 
   return retval;

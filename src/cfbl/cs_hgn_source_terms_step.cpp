@@ -225,7 +225,7 @@ cs_hgn_source_terms_step(const cs_mesh_t *m)
 
   /* synchronize */
   const cs_halo_t  *halo = cs_glob_mesh->halo;
-  if (halo != NULL) {
+  if (halo != nullptr) {
     cs_halo_sync_var(halo, CS_HALO_STANDARD, cvar_fracv);
     cs_halo_sync_var(halo, CS_HALO_STANDARD, cvar_fracm);
     cs_halo_sync_var(halo, CS_HALO_STANDARD, cvar_frace);

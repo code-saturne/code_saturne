@@ -183,14 +183,14 @@ tracy_free_param(void         **p_soil_param)
   cs_soil_tracy_param_t  *sp = (cs_soil_tracy_param_t *)(*p_soil_param);
 
   BFT_FREE(sp);
-  *p_soil_param = NULL;
+  *p_soil_param = nullptr;
 }
 /*! [param_cdo_gwf_set_user_free_soil] */
 
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Get the boundary condition values for the Richards equation.
- *         pt_ids is optional. If not NULL, it enables to access in coords
+ *         pt_ids is optional. If not nullptr, it enables to access in coords
  *         at the right location and the same thing to fill retval if compact
  *         is set to false
  *         Rely on a generic function pointer for an analytic function
@@ -200,7 +200,7 @@ tracy_free_param(void         **p_soil_param)
  * \param[in]      pt_ids       list of elements ids (e.g. to access xyz)
  * \param[in]      xyz          where ?
  * \param[in]      dense_output true:no indirection, false:apply pt_ids
- * \param[in]      input        NULL or pointer to a structure cast on-the-fly
+ * \param[in]      input        nullptr or pointer to a structure cast on-the-fly
  * \param[in, out] retval       result of the function
  */
 /*----------------------------------------------------------------------------*/
@@ -216,9 +216,9 @@ get_bc(cs_real_t           time,
        cs_real_t          *retval)
 {
   const cs_gwf_soil_t *soil = (const cs_gwf_soil_t *)input;
-  assert(soil != NULL);
+  assert(soil != nullptr);
   const cs_soil_tracy_param_t *tp = (const cs_soil_tracy_param_t *)soil->model_param;
-  assert(tp != NULL);
+  assert(tp != nullptr);
 
   /* Physical parameters */
 
@@ -230,7 +230,7 @@ get_bc(cs_real_t           time,
 
   for (cs_lnum_t p = 0; p < n_pts; p++) {
 
-    const cs_lnum_t  id = (pt_ids == NULL) ? p : pt_ids[p];
+    const cs_lnum_t  id = (pt_ids == nullptr) ? p : pt_ids[p];
     const cs_lnum_t  r_id = dense_output ? p : id;
     const double  xll = (xyz[3*id] - tp->L)*overL, beta = xll*xll;
 
@@ -244,7 +244,7 @@ get_bc(cs_real_t           time,
 /*!
  * \brief  Get the explicit definition of the initial solution for the Richards
  *         equation. Same as get_sol but optimize for time=0.
- *         pt_ids is optional. If not NULL, it enables to access in coords
+ *         pt_ids is optional. If not nullptr, it enables to access in coords
  *         at the right location and the same thing to fill retval if compact
  *         is set to false
  *         Rely on a generic function pointer for an analytic function
@@ -254,7 +254,7 @@ get_bc(cs_real_t           time,
  * \param[in]      pt_ids       list of elements ids (e.g. to access xyz)
  * \param[in]      xyz          where ?
  * \param[in]      dense_output true:no indirection, false:apply pt_ids
- * \param[in]      input        NULL or pointer to a structure cast on-the-fly
+ * \param[in]      input        nullptr or pointer to a structure cast on-the-fly
  * \param[in, out] retval       result of the function
  */
 /*----------------------------------------------------------------------------*/
@@ -272,13 +272,13 @@ get_ic(cs_real_t           time,
   CS_UNUSED(time);
 
   cs_soil_tracy_param_t *tp = (cs_soil_tracy_param_t *)input;
-  assert(input != NULL);
+  assert(input != nullptr);
 
   const double  one6 = 1./6;
 
   for (cs_lnum_t p = 0; p < n_pts; p++) {
 
-    const cs_lnum_t  id = (pt_ids == NULL) ? p : pt_ids[p];
+    const cs_lnum_t  id = (pt_ids == nullptr) ? p : pt_ids[p];
     const cs_lnum_t  r_id = (dense_output) ? p : id;
     const double  x = xyz[3*id], xll = (x - tp->L)/tp->L;
 
@@ -347,7 +347,7 @@ cs_user_model(void)
 
   /* 2.a Create and define a structure of parameters to manage the soil */
 
-  cs_soil_tracy_param_t  *tp = NULL;
+  cs_soil_tracy_param_t  *tp = nullptr;
 
   BFT_MALLOC(tp, 1, cs_soil_tracy_param_t);
 
@@ -491,7 +491,7 @@ cs_user_finalize_setup(cs_domain_t   *domain)
   /* Set the initial condition */
 
   cs_equation_add_ic_by_analytic(eqp,
-                                 NULL,
+                                 nullptr,
                                  get_ic,
                                  tp);
 

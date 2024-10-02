@@ -183,7 +183,7 @@ _log_setup_injection(cs_log_t  log)
 {
   /* Check if this call is needed */
 
-  if (cs_glob_lagr_time_scheme == NULL)
+  if (cs_glob_lagr_time_scheme == nullptr)
     return;
 
   if (cs_glob_lagr_time_scheme->iilagr == CS_LAGR_OFF)
@@ -198,7 +198,7 @@ _log_setup_injection(cs_log_t  log)
 
   for (int i_loc = 0; i_loc < 2; i_loc++) {
 
-    cs_lagr_zone_data_t *zd = NULL;
+    cs_lagr_zone_data_t *zd = nullptr;
 
     int n_zones = 0;
 
@@ -332,7 +332,7 @@ cs_lagr_log_setup(void)
 {
   /* Check if this call is needed */
 
-  if (cs_glob_lagr_time_scheme == NULL)
+  if (cs_glob_lagr_time_scheme == nullptr)
     return;
 
   if (cs_glob_lagr_time_scheme->iilagr == CS_LAGR_OFF)
@@ -576,14 +576,14 @@ cs_lagr_log_iteration(void)
 {
   /* Check if this call is needed */
 
-  if (cs_glob_lagr_time_scheme == NULL)
+  if (cs_glob_lagr_time_scheme == nullptr)
     return;
 
   if (cs_glob_lagr_time_scheme->iilagr == CS_LAGR_OFF)
     return;
 
   /* Return silently if called before Lagrangian start */
-  if (cs_glob_lagr_particle_set == NULL)
+  if (cs_glob_lagr_particle_set == nullptr)
     return;
 
   cs_log_printf(CS_LOG_DEFAULT,

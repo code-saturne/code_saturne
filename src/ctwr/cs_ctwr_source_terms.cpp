@@ -119,7 +119,7 @@ _lewis_factor(const int        evap_model,
  * \param[in]      n_elts        number of elements to consider
  * \param[in]      elt_ids       list of elements ids
  * \param[in]      dense_output  perform an indirection in retval or not
- * \param[in]      input         NULL or pointer to a structure cast on-the-fly
+ * \param[in]      input         nullptr or pointer to a structure cast on-the-fly
  * \param[in, out] retval        resulting value(s). Must be allocated.
  */
 /*----------------------------------------------------------------------------*/
@@ -146,7 +146,7 @@ cs_ctwr_volume_mass_injection_dof_func(cs_lnum_t         n_elts,
   cs_real_t *ym_w = (cs_real_t *)CS_F_(ym_w)->val; /* Water mass fraction
                                                      in humid air */
 
-  cs_real_t *t_h = NULL;
+  cs_real_t *t_h = nullptr;
   if (cs_glob_physical_model_flag[CS_ATMOSPHERIC] == CS_ATMO_HUMID) {
     t_h = cs_field_by_name("real_temperature")->val; /* Humid air temp */
   }
@@ -179,7 +179,7 @@ cs_ctwr_volume_mass_injection_dof_func(cs_lnum_t         n_elts,
   /* Compute the bulk volume mass source terms */
 
   /* Fields for source terms post-processing */
-  cs_real_t *evap_rate_pack = NULL;
+  cs_real_t *evap_rate_pack = nullptr;
   evap_rate_pack = cs_field_by_name("evaporation_rate_packing")->val;
 
   /* Air / fluid properties */
@@ -312,7 +312,7 @@ cs_ctwr_volume_mass_injection_dof_func(cs_lnum_t         n_elts,
  * \param[in]      n_elts        number of elements to consider
  * \param[in]      elt_ids       list of elements ids
  * \param[in]      dense_output  perform an indirection in retval or not
- * \param[in]      input         NULL or pointer to a structure cast on-the-fly
+ * \param[in]      input         nullptr or pointer to a structure cast on-the-fly
  * \param[in, out] retval        resulting value(s). Must be allocated.
  */
 /*----------------------------------------------------------------------------*/
@@ -414,7 +414,7 @@ cs_ctwr_volume_mass_injection_rain_dof_func(cs_lnum_t         n_elts,
  * \param[in]      n_elts        number of elements to consider
  * \param[in]      elt_ids       list of elements ids
  * \param[in]      dense_output  perform an indirection in retval or not
- * \param[in]      input         NULL or pointer to a structure cast on-the-fly
+ * \param[in]      input         nullptr or pointer to a structure cast on-the-fly
  * \param[in, out] retval        resulting value(s). Must be allocated.
  */
 /*----------------------------------------------------------------------------*/
@@ -539,7 +539,7 @@ cs_ctwr_source_term(int              f_id,
   cs_real_t *ym_w = (cs_real_t *)CS_F_(ym_w)->val; /* Water mass fraction
                                                      in humid air */
 
-  cs_real_t *t_h = NULL;
+  cs_real_t *t_h = nullptr;
   if (cs_glob_physical_model_flag[CS_ATMOSPHERIC] == CS_ATMO_HUMID) {
     t_h = cs_field_by_name("real_temperature")->val; /* Humid air temp */
   }
@@ -596,11 +596,11 @@ cs_ctwr_source_term(int              f_id,
   /* Compute the source terms */
 
   /* Fields for source terms post-processing */
-  cs_real_t *evap_rate_rain = NULL;
+  cs_real_t *evap_rate_rain = nullptr;
   evap_rate_rain = cs_field_by_name("evaporation_rate_rain")->val;
 
-  cs_real_t *thermal_power_pack = NULL;
-  cs_real_t *thermal_power_rain = NULL;
+  cs_real_t *thermal_power_pack = nullptr;
+  cs_real_t *thermal_power_rain = nullptr;
   thermal_power_pack = cs_field_by_name("thermal_power_packing")->val;
   thermal_power_rain = cs_field_by_name("thermal_power_rain")->val;
 
@@ -852,7 +852,7 @@ cs_ctwr_source_term(int              f_id,
      *  Between the rain drops and the humid air
      * ========================================= */
 
-    if (cfld_yp != NULL) {
+    if (cfld_yp != nullptr) {
       cs_real_t *y_rain = (cs_real_t *)cfld_yp->val;
       cs_real_t *t_l_r = (cs_real_t *)cs_field_by_name("temp_l_r")->val;
 
@@ -1193,8 +1193,8 @@ cs_ctwr_source_term(int              f_id,
 
     /* Droplets velocity relaxation time */
     // cs_field_t *cfld_taup = cs_field_by_name_try("ym_l_r_drift_tau");
-    // cs_real_t *cpro_taup = NULL;
-    // if (cfld_taup != NULL)
+    // cs_real_t *cpro_taup = nullptr;
+    // if (cfld_taup != nullptr)
     //   cpro_taup = cfld_taup->val;
 
     /* Continuous phase drift velocity */

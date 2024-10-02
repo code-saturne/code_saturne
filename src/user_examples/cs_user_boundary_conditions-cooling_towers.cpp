@@ -111,7 +111,7 @@ cs_user_boundary_conditions(cs_domain_t  *domain,
   const cs_real_t *gravity = cs_glob_physical_constants->gravity;
   const cs_real_t *xyzp0 = (const cs_real_t *)cs_glob_fluid_properties->xyzp0;
 
-  const cs_zone_t  *zn = NULL;
+  const cs_zone_t  *zn = nullptr;
 
   /* Assign a free outlet for faces of group "OUTLET" */
 

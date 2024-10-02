@@ -88,7 +88,7 @@ cs_user_extra_operations(cs_domain_t     *domain)
   /* Example: set temperature to 20 in a given region starting at t = 12s
    * -------------------------------------------------------------------- */
 
-  if ((CS_F_(t) != NULL) && (t_cur >= 12.0)) {
+  if ((CS_F_(t) != nullptr) && (t_cur >= 12.0)) {
 
     cs_real_t *cvar_t = CS_F_(t)->val;
     cs_array_real_set_scalar(domain->mesh->n_cells, 20.0, cvar_t);

@@ -78,11 +78,11 @@ cs_user_physical_properties(cs_domain_t   *domain)
   /*! [example] */
 
   /* Check fields exists */
-  if (CS_F_(lambda) == NULL)
+  if (CS_F_(lambda) == nullptr)
     bft_error(__FILE__, __LINE__, 0,_("error lambda not variable\n"));
-  if (CS_F_(rho) == NULL)
+  if (CS_F_(rho) == nullptr)
     bft_error(__FILE__, __LINE__, 0,_("error rho not variable\n"));
-  if (CS_F_(cp) == NULL)
+  if (CS_F_(cp) == nullptr)
     bft_error(__FILE__, __LINE__, 0,_("error cp not variable\n"));
 
   cs_real_t *cpro_lambda = CS_F_(lambda)->val;

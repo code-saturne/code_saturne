@@ -110,7 +110,7 @@ struct _cs_time_plot_t {
  *  Global variables
  *============================================================================*/
 
-static cs_time_plot_t   *_plots_head = NULL, *_plots_tail = NULL;
+static cs_time_plot_t   *_plots_head = nullptr, *_plots_tail = nullptr;
 
 static float             _flush_wtime_default = -1;
 static int               _n_buffer_steps_default = -1;
@@ -149,9 +149,9 @@ _ensure_buffer_size(cs_time_plot_t  *p,
  * parameters:
  *   p                <-> time plot values file handler
  *   n_probes         <-- number of probes associated with this variable ?
- *   probe_list       <-- numbers (1 to n) of probes if filtered, or NULL
+ *   probe_list       <-- numbers (1 to n) of probes if filtered, or nullptr
  *   probe_coords     <-- probe coordinates
- *   probe_names      <-- probe names, or NULL
+ *   probe_names      <-- probe names, or nullptr
  *----------------------------------------------------------------------------*/
 
 static void
@@ -165,13 +165,13 @@ _write_probe_header_dat(cs_time_plot_t    *p,
   int col_id = 0;
   FILE *_f = p->f;
 
-  if (_f != NULL) {
+  if (_f != nullptr) {
     fclose(_f);
-    p->f = NULL;
+    p->f = nullptr;
   }
 
   _f = fopen(p->file_name, "w");
-  if (_f == NULL) {
+  if (_f == nullptr) {
     bft_error(__FILE__, __LINE__, errno,
               _("Error opening file: \"%s\""), p->file_name);
     return;
@@ -180,13 +180,13 @@ _write_probe_header_dat(cs_time_plot_t    *p,
   fprintf(_f, _("# Time varying values for: %s\n"
                 "#\n"), p->plot_name);
 
-  if (probe_coords != NULL) {
+  if (probe_coords != nullptr) {
     fprintf(_f, _("# Monitoring point coordinates:\n"));
     for (i = 0; i < n_probes; i++) {
       probe_id = i;
-      if (probe_list != NULL)
+      if (probe_list != nullptr)
         probe_id = probe_list[i] - 1;
-      if (probe_names != NULL)
+      if (probe_names != nullptr)
         fprintf(_f, "# %16s [%14.7e, %14.7e, %14.7e]\n",
                 probe_names[i],
                 probe_coords[probe_id*3],
@@ -201,7 +201,7 @@ _write_probe_header_dat(cs_time_plot_t    *p,
     }
     fprintf(_f, "#\n");
   }
-  else if (probe_names != NULL) {
+  else if (probe_names != nullptr) {
     fprintf(_f, _("# Monitoring points:\n"));
     for (i = 0; i < n_probes; i++)
       fprintf(_f, "# %s\n", probe_names[i]);
@@ -225,10 +225,10 @@ _write_probe_header_dat(cs_time_plot_t    *p,
     fprintf(_f, " t");
   for (i = 0; i < n_probes; i++) {
     probe_id = i;
-    if (probe_list != NULL)
+    if (probe_list != nullptr)
       probe_id = probe_list[i] - 1;
-    if (probe_names != NULL) {
-      if (probe_coords != NULL)
+    if (probe_names != nullptr) {
+      if (probe_coords != nullptr)
         fprintf(_f, " | %s [%9.5e, %9.5e, %9.5e]",
                 probe_names[i],
                 probe_coords[probe_id*3],
@@ -238,7 +238,7 @@ _write_probe_header_dat(cs_time_plot_t    *p,
         fprintf(_f, " | %s", probe_names[i]);
     }
     else {
-      if (probe_coords != NULL)
+      if (probe_coords != nullptr)
         fprintf(_f, " | %d [%9.5e, %9.5e, %9.5e]",
                 probe_id + 1,
                 probe_coords[probe_id*3],
@@ -277,7 +277,7 @@ _write_probe_header_dat(cs_time_plot_t    *p,
  *   file_prefix      <-- file name prefix
  *   plot_name        <-- plot name
  *   n_probes         <-- number of probes associated with this plot
- *   probe_list       <-- numbers (1 to n) of probes if filtered, or NULL
+ *   probe_list       <-- numbers (1 to n) of probes if filtered, or nullptr
  *   probe_coords     <-- probe coordinates
  *----------------------------------------------------------------------------*/
 
@@ -296,11 +296,11 @@ _write_probe_coords_csv(const char        *file_prefix,
              strlen(file_prefix) + strlen(plot_name) + strlen("_coords") + 4 + 1,
              char);
 
-  if (probe_coords != NULL) {
+  if (probe_coords != nullptr) {
     sprintf(file_name, "%s%s%s.csv", file_prefix, plot_name, "_coords");
 
     _f = fopen(file_name, "w");
-    if (_f == NULL) {
+    if (_f == nullptr) {
       bft_error(__FILE__, __LINE__, errno,
           _("Error opening file: \"%s\""), file_name);
       return;
@@ -309,7 +309,7 @@ _write_probe_coords_csv(const char        *file_prefix,
     fprintf(_f, "x, y, z\n");
     for (i = 0; i < n_probes; i++) {
       probe_id = i;
-      if (probe_list != NULL)
+      if (probe_list != nullptr)
         probe_id = probe_list[i] - 1;
       fprintf(_f, "%14.7e, %14.7e, %14.7e\n",
           probe_coords[probe_id*3],
@@ -334,9 +334,9 @@ _write_probe_coords_csv(const char        *file_prefix,
  * parameters:
  *   p                <-> time plot values file handler
  *   n_probes         <-- number of probes associated with this variable ?
- *   probe_list       <-- numbers (1 to n) of probes if filtered, or NULL
+ *   probe_list       <-- numbers (1 to n) of probes if filtered, or nullptr
  *   probe_coords     <-- probe coordinates
- *   probe_names      <-- probe names, or NULL
+ *   probe_names      <-- probe names, or nullptr
  *----------------------------------------------------------------------------*/
 
 static void
@@ -349,13 +349,13 @@ _write_probe_header_csv(cs_time_plot_t    *p,
   int i, probe_id;
   FILE *_f = p->f;
 
-  if (_f != NULL) {
+  if (_f != nullptr) {
     fclose(_f);
-    p->f = NULL;
+    p->f = nullptr;
   }
 
   _f = fopen(p->file_name, "w");
-  if (_f == NULL) {
+  if (_f == nullptr) {
     bft_error(__FILE__, __LINE__, errno,
               _("Error opening file: \"%s\""), p->file_name);
     return;
@@ -367,10 +367,10 @@ _write_probe_header_csv(cs_time_plot_t    *p,
     fprintf(_f, "t");
   for (i = 0; i < n_probes; i++) {
     probe_id = i;
-    if (probe_list != NULL)
+    if (probe_list != nullptr)
       probe_id = probe_list[i] - 1;
-    if (probe_coords != NULL) {
-      if (probe_names != NULL)
+    if (probe_coords != nullptr) {
+      if (probe_names != nullptr)
         fprintf(_f, ", %s [%9.5e; %9.5e; %9.5e]",
                 probe_names[i],
                 probe_coords[probe_id*3],
@@ -383,7 +383,7 @@ _write_probe_header_csv(cs_time_plot_t    *p,
                 probe_coords[probe_id*3 + 1],
                 probe_coords[probe_id*3 + 2]);
     }
-    else if (probe_names != NULL)
+    else if (probe_names != nullptr)
       fprintf(_f, ", %s", probe_names[i]);
     else
       fprintf(_f, ", %d", probe_id + 1);
@@ -425,13 +425,13 @@ _write_struct_header_dat(cs_time_plot_t    *p,
 
   const int perm_id[9] = {0, 3, 6, 1, 4, 7, 2, 5, 8};
 
-  if (_f != NULL) {
+  if (_f != nullptr) {
     fclose(_f);
-    p->f = NULL;
+    p->f = nullptr;
   }
 
   _f = fopen(p->file_name, "w");
-  if (_f == NULL) {
+  if (_f == nullptr) {
     bft_error(__FILE__, __LINE__, errno,
               _("Error opening file: \"%s\""), p->file_name);
     return;
@@ -530,13 +530,13 @@ _write_struct_header_csv(cs_time_plot_t  *p,
   int i;
   FILE *_f = p->f;
 
-  if (_f != NULL) {
+  if (_f != nullptr) {
     fclose(_f);
-    p->f = NULL;
+    p->f = nullptr;
   }
 
   _f = fopen(p->file_name, "w");
-  if (_f == NULL) {
+  if (_f == nullptr) {
     bft_error(__FILE__, __LINE__, errno,
               _("Error opening file: \"%s\""), p->file_name);
     return;
@@ -570,14 +570,14 @@ static void
 _time_plot_register(cs_time_plot_t  *p)
 {
   p->prev = _plots_tail;
-  p->next = NULL;
+  p->next = nullptr;
 
-  if (_plots_head == NULL)
+  if (_plots_head == nullptr)
     _plots_head = p;
-  else if (_plots_head->next == NULL)
+  else if (_plots_head->next == nullptr)
     _plots_head->next = p;
 
-  if (_plots_tail != NULL)
+  if (_plots_tail != nullptr)
     _plots_tail->next = p;
 
   _plots_tail = p;
@@ -595,9 +595,9 @@ _time_plot_unregister(cs_time_plot_t  *p)
   if (_plots_tail == p)
     _plots_tail = p->prev;
 
-  if (p->prev != NULL)
+  if (p->prev != nullptr)
     p->prev->next = p->next;
-  if (p->next != NULL)
+  if (p->next != nullptr)
     p->next->prev = p->prev;
 }
 
@@ -629,7 +629,7 @@ _plot_file_create(const char             *plot_name,
 {
   size_t i;
 
-  cs_time_plot_t *p = NULL;
+  cs_time_plot_t *p = nullptr;
 
   BFT_MALLOC(p, 1, cs_time_plot_t);
   BFT_MALLOC(p->plot_name, strlen(plot_name) + 1, char);
@@ -654,7 +654,7 @@ _plot_file_create(const char             *plot_name,
       p->file_name[i] = '_';
   }
 
-  p->f = NULL;
+  p->f = nullptr;
 
   p->format = format;
   p->use_iteration = use_iteration;
@@ -697,9 +697,9 @@ _plot_file_check_or_write(cs_time_plot_t  *p)
 
   /* Ensure file is open */
 
-  if (p->f == NULL) {
+  if (p->f == nullptr) {
     p->f = fopen(p->file_name, "a");
-    if (p->f == NULL) {
+    if (p->f == nullptr) {
       bft_error(__FILE__, __LINE__, errno,
                 _("Error re-opening file: \"%s\""), p->file_name);
       p->buffer_end = 0;
@@ -724,7 +724,7 @@ _plot_file_check_or_write(cs_time_plot_t  *p)
     if (fclose(p->f) != 0)
       bft_error(__FILE__, __LINE__, errno,
                   _("Error closing file: \"%s\""), p->file_name);
-    p->f = NULL;
+    p->f = nullptr;
     p->buffer_steps[1] = 0;
 
   }
@@ -760,9 +760,9 @@ _plot_file_check_or_write(cs_time_plot_t  *p)
  *   n_buffer_steps   <-- number of time steps in output buffer if
  *                        file is not to be kept open
  *   n_probes         <-- number of probes associated with this plot
- *   probe_list       <-- numbers (1 to n) of probes if filtered, or NULL
- *   probe_coords     <-- probe coordinates, or NULL
- *   probe_names      <-- probe names, or NULL
+ *   probe_list       <-- numbers (1 to n) of probes if filtered, or nullptr
+ *   probe_coords     <-- probe coordinates, or nullptr
+ *   probe_names      <-- probe names, or nullptr
  *
  * returns:
  *   pointer to new time plot writer
@@ -880,7 +880,7 @@ cs_time_plot_init_struct(const char             *plot_name,
 void
 cs_time_plot_finalize(cs_time_plot_t  **p)
 {
-  if (p != NULL) {
+  if (p != nullptr) {
 
     cs_time_plot_t *_p = *p;
 
@@ -891,7 +891,7 @@ cs_time_plot_finalize(cs_time_plot_t  **p)
 
     _plot_file_check_or_write(_p);
 
-    if (_p->f != NULL) {
+    if (_p->f != nullptr) {
       if (fclose(_p->f) != 0)
         bft_error(__FILE__, __LINE__, errno,
                   _("Error closing file: \"%s\""), _p->file_name);
@@ -927,7 +927,7 @@ cs_time_plot_vals_write(cs_time_plot_t  *p,
 {
   int i;
 
-  if (p == NULL)
+  if (p == nullptr)
     return;
 
   /* Write data to line buffer */
@@ -997,7 +997,7 @@ cs_time_plot_flush(cs_time_plot_t  *p)
     _plot_file_check_or_write(p);
   }
 
-  if (p->f != NULL) {
+  if (p->f != nullptr) {
     if (p->flush_times[0] > 0)
       p->flush_times[1] = cs_timer_wtime();
     fflush(p->f);
@@ -1011,7 +1011,7 @@ cs_time_plot_flush(cs_time_plot_t  *p)
 void
 cs_time_plot_flush_all(void)
 {
-  for (cs_time_plot_t *p = _plots_head; p != NULL; p = p->next)
+  for (cs_time_plot_t *p = _plots_head; p != nullptr; p = p->next)
     cs_time_plot_flush(p);
 }
 
@@ -1038,19 +1038,19 @@ cs_time_plot_set_flush_default(float  flush_wtime,
  *
  * parameters:
  *   flush_wtime     --> elapsed time interval between file flushes;
- *                       if < 0, no forced flush (NULL if not queried)
+ *                       if < 0, no forced flush (nullptr if not queried)
  *   n_buffer_steps  <-- number of time steps in output buffer if
- *                       file is not to be kept open (NULL if not queried)
+ *                       file is not to be kept open (nullptr if not queried)
  *----------------------------------------------------------------------------*/
 
 void
 cs_time_plot_get_flush_default(float  *flush_wtime,
                                int    *n_buffer_steps)
 {
-  if (flush_wtime != NULL)
+  if (flush_wtime != nullptr)
     *flush_wtime = _flush_wtime_default;
 
-  if (n_buffer_steps != NULL)
+  if (n_buffer_steps != nullptr)
     *n_buffer_steps = _n_buffer_steps_default;
 }
 

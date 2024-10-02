@@ -69,7 +69,7 @@ BEGIN_C_DECLS
  * \brief  Give the explicit definition of the advection field.
  *         Generic function pointer for an evaluation relying on an analytic
  *         function
- *         pt_ids is optional. If not NULL, it enables to access to the coords
+ *         pt_ids is optional. If not nullptr, it enables to access to the coords
  *         array with an indirection. The same indirection can be applied to
  *         fill retval if dense_output is set to false.
  *
@@ -78,7 +78,7 @@ BEGIN_C_DECLS
  * \param[in]      pt_ids        list of elements ids (in coords and retval)
  * \param[in]      xyz           where ? Coordinates array
  * \param[in]      dense_output  perform an indirection in res or not
- * \param[in]      input         NULL or pointer to a structure cast on-the-fly
+ * \param[in]      input         nullptr or pointer to a structure cast on-the-fly
  * \param[in, out] res           resulting value(s). Must be allocated.
  */
 /*----------------------------------------------------------------------------*/
@@ -97,7 +97,7 @@ _define_adv_field(cs_real_t           time,
 
   for (cs_lnum_t p = 0; p < n_pts; p++) {
 
-    const cs_lnum_t  id = (pt_ids == NULL) ? p : pt_ids[p];
+    const cs_lnum_t  id = (pt_ids == nullptr) ? p : pt_ids[p];
     const cs_lnum_t  ii = dense_output ? p : id;
     const cs_real_t  *pxyz = xyz + 3*id;
     cs_real_t  *pres = res + 3*ii;
@@ -114,7 +114,7 @@ _define_adv_field(cs_real_t           time,
  * \brief  Give the explicit definition of the dirichlet boundary conditions
  *         Generic function pointer for an evaluation relying on an analytic
  *         function
- *         pt_ids is optional. If not NULL, it enables to access to the coords
+ *         pt_ids is optional. If not nullptr, it enables to access to the coords
  *         array with an indirection. The same indirection can be applied to
  *         fill retval if dense_output is set to false.
  *
@@ -123,7 +123,7 @@ _define_adv_field(cs_real_t           time,
  * \param[in]      pt_ids        list of elements ids (in coords and retval)
  * \param[in]      xyz           where ? Coordinates array
  * \param[in]      dense_output  perform an indirection in res or not
- * \param[in]      input         NULL or pointer to a structure cast on-the-fly
+ * \param[in]      input         nullptr or pointer to a structure cast on-the-fly
  * \param[in, out] res           resulting value(s). Must be allocated.
  */
 /*----------------------------------------------------------------------------*/
@@ -143,7 +143,7 @@ _define_bcs(cs_real_t           time,
   const double  pi = cs_math_pi;
   for (cs_lnum_t p = 0; p < n_pts; p++) {
 
-    const cs_lnum_t  id = (pt_ids == NULL) ? p : pt_ids[p];
+    const cs_lnum_t  id = (pt_ids == nullptr) ? p : pt_ids[p];
     const cs_lnum_t  ii = dense_output ? p : id;
     const cs_real_t  *_xyz = xyz + 3*id;
     const double  x = _xyz[0], y = _xyz[1], z = _xyz[2];
@@ -156,7 +156,7 @@ _define_bcs(cs_real_t           time,
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Give the explicit definition of the source term
- *        pt_ids is optional. If not NULL, it enables to access in xyz
+ *        pt_ids is optional. If not nullptr, it enables to access in xyz
  *        at the right location and to fill the resulting array if a dense
  *        output is not requested.
  *        Rely on the generic function pointer for an analytic function
@@ -166,7 +166,7 @@ _define_bcs(cs_real_t           time,
  * \param[in]      pt_ids       list of elements ids (to access coords and fill)
  * \param[in]      coords       where ?
  * \param[in]      dense_output true:no indirection, false:apply pt_ids
- * \param[in]      input        NULL or pointer to a structure cast on-the-fly
+ * \param[in]      input        nullptr or pointer to a structure cast on-the-fly
  * \param[in, out] values       result of the function
  */
 /*----------------------------------------------------------------------------*/
@@ -189,7 +189,7 @@ _my_source_term(cs_real_t           time,
 
   for (cs_lnum_t i = 0; i < n_pts; i++) {
 
-    const cs_lnum_t  id = (pt_ids == NULL) ? i : pt_ids[i];
+    const cs_lnum_t  id = (pt_ids == nullptr) ? i : pt_ids[i];
     const cs_lnum_t  ii = dense_output ? i : id;
     const double  x = xyz[3*id], y = xyz[3*id+1], z = xyz[3*id+2];
     const double  px = pi*x, cpx = cos(px), spx = sin(px);
@@ -216,7 +216,7 @@ _my_source_term(cs_real_t           time,
  * \param[in, out] input    pointer to an input structure associated to a
  *                          context structure
  *
- * \return a NULL pointer
+ * \return a nullptr pointer
  */
 /*----------------------------------------------------------------------------*/
 
@@ -227,9 +227,9 @@ _free_input(void   *input)
   double *_input = (double *)input;
 
   BFT_FREE(_input);
-  input = NULL;
+  input = nullptr;
 
-  return NULL;
+  return nullptr;
 }
 /*! [param_cdo_condif_free_input] */
 
@@ -355,7 +355,7 @@ cs_user_model(void)
 
     cs_adv_field_t  *adv = cs_advection_field_add_user("adv_field");
 
-    assert(adv != NULL);
+    assert(adv != nullptr);
   }
   /*! [param_cdo_add_user_adv_field] */
 
@@ -694,7 +694,7 @@ cs_user_finalize_setup(cs_domain_t   *domain)
   {
     cs_adv_field_t  *adv = cs_advection_field_by_name("adv_field");
 
-    cs_advection_field_def_by_analytic(adv, _define_adv_field, NULL);
+    cs_advection_field_def_by_analytic(adv, _define_adv_field, nullptr);
   }
   /*! [param_cdo_setup_advfield] */
 
@@ -728,7 +728,7 @@ cs_user_finalize_setup(cs_domain_t   *domain)
                                    CS_BC_DIRICHLET,
                                    "boundary_faces",  // zone name
                                    _define_bcs,       // pointer to the function
-                                   NULL);             // input structure
+                                   nullptr);             // input structure
   }
   /*! [param_cdo_setup_bcs] */
 
@@ -805,7 +805,7 @@ cs_user_finalize_setup(cs_domain_t   *domain)
 
     cs_equation_param_t  *eqp2 = cs_equation_param_by_name("MyEq");
 
-    double  *input = NULL;
+    double  *input = nullptr;
     BFT_MALLOC(input, 2, double);
 
     input[0] = 0.5;            /* Value of the reaction coefficient */

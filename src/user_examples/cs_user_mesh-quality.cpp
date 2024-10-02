@@ -107,7 +107,7 @@ cs_user_mesh_smoothe(cs_mesh_t  *mesh)
   /*! [mesh_smoothing] */
 
   double feature_angle = 25; /* bounded between 0 and 90 degrees */
-  int *vtx_is_fixed = NULL;
+  int *vtx_is_fixed = nullptr;
 
   BFT_MALLOC(vtx_is_fixed, mesh->n_vertices, int);
 
@@ -160,7 +160,7 @@ cs_user_mesh_bad_cells_tag(cs_mesh_t             *mesh,
   /* User condition: check for cell volume */
   /*---------------------------------------*/
 
-  cs_lnum_t  *bad_vol_cells = NULL;
+  cs_lnum_t  *bad_vol_cells = nullptr;
 
   BFT_MALLOC(bad_vol_cells, n_cells_wghosts, cs_lnum_t);
 

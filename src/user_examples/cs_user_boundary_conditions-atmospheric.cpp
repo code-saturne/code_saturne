@@ -196,13 +196,13 @@ cs_user_boundary_conditions(cs_domain_t  *domain,
     /* Parameters for the analytical rough wall law (neutral) */
     const cs_real_t rugd = 0.10;
 
-    cs_real_t *bpro_roughness = NULL;
-    cs_real_t *bpro_roughness_t = NULL;
+    cs_real_t *bpro_roughness = nullptr;
+    cs_real_t *bpro_roughness_t = nullptr;
 
-    if (cs_field_by_name_try("boundary_roughness") != NULL)
+    if (cs_field_by_name_try("boundary_roughness") != nullptr)
       bpro_roughness = cs_field_by_name_try("boundary_roughness")->val;
 
-    if (cs_field_by_name_try("boundary_thermal_roughness") != NULL)
+    if (cs_field_by_name_try("boundary_thermal_roughness") != nullptr)
       bpro_roughness = cs_field_by_name_try("boundary_thermal_roughness")->val;
 
     const cs_zone_t *zn = cs_boundary_zone_by_name("b_5");
@@ -212,10 +212,10 @@ cs_user_boundary_conditions(cs_domain_t  *domain,
       const cs_lnum_t face_id = zn->elt_ids[e_idx];
       bc_type[face_id] = CS_ROUGHWALL;
 
-      if (bpro_roughness != NULL)
+      if (bpro_roughness != nullptr)
         bpro_roughness[face_id] = rugd;
 
-      if (bpro_roughness_t != NULL)
+      if (bpro_roughness_t != nullptr)
         bpro_roughness_t[face_id] = 0.01;
     }
   }

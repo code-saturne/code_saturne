@@ -544,8 +544,8 @@ cs_at_data_assim_source_term(int        f_id,
 
     /* if steady, first step of 3DVar mode */
 
-    int **ao_idx = NULL; /* active obs. index */
-    bool *inverse = NULL;
+    int **ao_idx = nullptr; /* active obs. index */
+    bool *inverse = nullptr;
     BFT_MALLOC(inverse, ms->dim, bool);
     int *n_active_obs = cs_at_opt_interp_get_active_obs(ms,
                                                         oi,

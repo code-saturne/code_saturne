@@ -230,13 +230,13 @@ static std::map<int, int> _integer_variable_reference_map;
 static std::map<int, int> _bool_variable_reference_map;
 static std::map<int, int> _string_variable_reference_map;
 
-int *_state_p = NULL;
+int *_state_p = nullptr;
 static std::map<fmi2FMUstate, fmi2FMUstate> _states;
 
-static double *_real_variable_values = NULL;
-static int *_integer_variable_values = NULL;
-static bool *_bool_variable_values = NULL;
-static char **_string_variable_values = NULL;
+static double *_real_variable_values = nullptr;
+static int *_integer_variable_values = nullptr;
+static bool *_bool_variable_values = nullptr;
+static char **_string_variable_values = nullptr;
 
 static int _n_iter = 0;
 static int _master_socket = -1;
@@ -247,7 +247,7 @@ static fmi2ComponentEnvironment  _component_environment = nullptr;
 static fmi2Char                  _instance_name_init[] = "[unnamed]";
 static fmi2Char *                _instance_name = _instance_name_init;
 
-static FILE *tracefile = NULL;
+static FILE *tracefile = nullptr;
 
 /* Mapping to default log categories
    categories up to "logStatusPending" are standardized, the rest are local.
@@ -283,11 +283,11 @@ static int _log_active[] = {-1, -1, -1, -1, -1, -1, -1, -1};
 
 /* Read_queue */
 
-cs_control_queue_t *_cs_glob_control_queue = NULL;
+cs_control_queue_t *_cs_glob_control_queue = nullptr;
 
 /* Structure for grouped notebook value settings */
 
-cs_variables_t *_cs_variables = NULL;
+cs_variables_t *_cs_variables = nullptr;
 
 /* Serialization (state) data */
 
@@ -430,11 +430,11 @@ _trace_buf(FILE        *f,
 static cs_control_queue_t *
 _queue_initialize(void)
 {
-  cs_control_queue_t *queue = NULL;
+  cs_control_queue_t *queue = nullptr;
 
   queue = (cs_control_queue_t *)malloc(sizeof(cs_control_queue_t));
 
-  queue->buf = NULL;
+  queue->buf = nullptr;
 
   queue->buf_idx[0] = 0;
   queue->buf_idx[1] = 0;
@@ -451,8 +451,8 @@ _queue_initialize(void)
 static void
 _queue_finalize(cs_control_queue_t  **queue)
 {
-  if (queue != NULL) {
-    if (*queue == NULL)
+  if (queue != nullptr) {
+    if (*queue == nullptr)
       return;
     cs_control_queue_t  *_queue = *queue;
     free(_queue->buf);
@@ -511,7 +511,7 @@ _send_sock(int       sock,
   if (_cs_swap_endian && size > 1)
     _swap_endian(buffer, size, ni);
 
-  if (tracefile != NULL) {
+  if (tracefile != nullptr) {
     if (size == 1) {
       fprintf(tracefile, "== send %d bytes: [", (int)n_bytes);
       _trace_buf(tracefile, buffer, n_bytes);
@@ -544,7 +544,7 @@ _send_sock(int       sock,
       _cs_log(fmi2Fatal, CS_LOG_FATAL, s0 + s2);
       exit(EXIT_FAILURE);
     }
-    else if (tracefile != NULL) {
+    else if (tracefile != nullptr) {
       fprintf(tracefile, "   sent %d bytes\n", (int)ret);
       fflush(tracefile);
     }
@@ -570,7 +570,7 @@ _send_sock_str(int          sock,
 
   size_t n = strlen(str)+1;
 
-  if (tracefile != NULL) {
+  if (tracefile != nullptr) {
     fprintf(tracefile, "== send %d bytes: [", (int)n);
     _trace_buf(tracefile, str, n);
     fprintf(tracefile, "]...\n");
@@ -586,7 +586,7 @@ _send_sock_str(int          sock,
     _cs_log(fmi2Fatal, CS_LOG_FATAL, s0 + s1 + s2);
     exit(EXIT_FAILURE);
   }
-  else if (tracefile != NULL) {
+  else if (tracefile != nullptr) {
     fprintf(tracefile, "   sent %d bytes\n", (int)ret);
     fflush(tracefile);
   }
@@ -616,7 +616,7 @@ _recv_sock(int                  socket,
 
   /* Part of the message may already have been read to queue */
 
-  if (queue != NULL) {
+  if (queue != nullptr) {
     ssize_t n_prv = queue->buf_idx[1] - queue->buf_idx[0];
     if (n_prv > 0) {
       if ((size_t)n_prv > n_bytes)
@@ -634,7 +634,7 @@ _recv_sock(int                  socket,
       end_id = n_bytes;
     size_t n_loc = end_id - start_id;
 
-    if (tracefile != NULL) {
+    if (tracefile != nullptr) {
       fprintf(tracefile, "== receiving up to %d bytes, %d of %d bytes already buffered...\n",
               (int)n_loc, (int)start_id, (int)n_bytes);
     }
@@ -651,7 +651,7 @@ _recv_sock(int                  socket,
       _cs_log(fmi2Fatal, CS_LOG_FATAL, s0 + s1);
       exit(EXIT_FAILURE);
     }
-    else if (tracefile != NULL) {
+    else if (tracefile != nullptr) {
       fprintf(tracefile, "   received %d bytes: [", (int)ret);
       if (size == 1)
         _trace_buf(tracefile, buffer, ret);
@@ -663,7 +663,7 @@ _recv_sock(int                  socket,
 
   }
 
-  if (tracefile != NULL && size > 1) {
+  if (tracefile != nullptr && size > 1) {
     for (size_t i = 0; i < ni; i++) {
       fprintf(tracefile, "    ");
       for (size_t j = 0; j < size; j++)
@@ -688,7 +688,7 @@ _recv_sock_with_queue(int                  socket,
   size_t start_id = queue->buf_idx[1] - queue->buf_idx[0];
   ssize_t cut_id = -1;
 
-  if (tracefile != NULL) {
+  if (tracefile != nullptr) {
     fprintf(tracefile, "_recv_sock_with_queue: %d %d\n", (int)start_id, (int)min_size);
   }
 
@@ -723,7 +723,7 @@ _recv_sock_with_queue(int                  socket,
       n_loc_max = queue->buf_idx[2] - start_id;
     }
 
-    if (tracefile != NULL) {
+    if (tracefile != nullptr) {
       fprintf(tracefile, "== receiving up to %d bytes...\n",
               (int)n_loc_max);
     }
@@ -747,7 +747,7 @@ _recv_sock_with_queue(int                  socket,
       exit(EXIT_FAILURE);
     }
 
-    if (tracefile != NULL) {
+    if (tracefile != nullptr) {
       fprintf(tracefile, "   received %d bytes: [", (int)ret);
       _trace_buf(tracefile, queue->buf + start_id, ret);
       fprintf(tracefile, "]\n");
@@ -816,7 +816,7 @@ _comm_with_saturne(int   key)
   magic_buffer = new char[magic_string.size()+1]();
 
   /* code_saturne socket */
-  _recv_sock(_cs_socket, key_buffer, NULL, 1, len_key);
+  _recv_sock(_cs_socket, key_buffer, nullptr, 1, len_key);
 
   if (strncmp(key_s.c_str(), key_buffer, len_key) != 0) {
     _cs_log(fmi2Fatal, CS_LOG_FATAL,
@@ -824,7 +824,7 @@ _comm_with_saturne(int   key)
     exit(EXIT_FAILURE);
   }
 
-  _recv_sock(_cs_socket, magic_buffer, NULL, 1, magic_string.size());
+  _recv_sock(_cs_socket, magic_buffer, nullptr, 1, magic_string.size());
 
   _send_sock_str(_cs_socket, magic_buffer);
 
@@ -833,7 +833,7 @@ _comm_with_saturne(int   key)
 
   /* Iteration OK */
   char buf_rcv[13];
-  _recv_sock(_cs_socket, buf_rcv, NULL,1, 13);
+  _recv_sock(_cs_socket, buf_rcv, nullptr,1, 13);
 
   delete[] key_buffer;
   delete[] magic_buffer;
@@ -1044,7 +1044,7 @@ _map_initialize(void)
 static cs_variables_t *
 _variables_initialize(void)
 {
-  cs_variables_t *v = NULL;
+  cs_variables_t *v = nullptr;
 
   v = (cs_variables_t *)malloc(sizeof(cs_variables_t));
 
@@ -1057,11 +1057,11 @@ _variables_initialize(void)
   v->input_max_size = 0;
   v->output_max_size = 0;
 
-  v->input_ids = NULL;
-  v->output_ids = NULL;
+  v->input_ids = nullptr;
+  v->output_ids = nullptr;
 
-  v->input_vals = NULL;
-  v->output_vals = NULL;
+  v->input_vals = nullptr;
+  v->output_vals = nullptr;
 
   return v;
 }
@@ -1073,8 +1073,8 @@ _variables_initialize(void)
 static void
 _variables_finalize(cs_variables_t  **v)
 {
-  if (v != NULL) {
-    if (*v == NULL)
+  if (v != nullptr) {
+    if (*v == nullptr)
       return;
     cs_variables_t  *_v = *v;
 
@@ -1193,7 +1193,7 @@ _advance(int   n)
 {
 #if CS_TIMING == 1
   struct timeval  tv_time_0, tv_time_1;
-  (void)gettimeofday(&tv_time_0, NULL);
+  (void)gettimeofday(&tv_time_0, nullptr);
 #endif
 
   cs_variables_t *v = _cs_variables;
@@ -1256,7 +1256,7 @@ _advance(int   n)
     }
 
 #if CS_TIMING == 1
-    (void)gettimeofday(&tv_time_1, NULL);
+    (void)gettimeofday(&tv_time_1, nullptr);
 
     long usec =   (tv_time_1.tv_sec - tv_time_0.tv_sec) * (long)1000000
                 + (tv_time_1.tv_usec - tv_time_0.tv_usec);
@@ -1518,7 +1518,7 @@ fmi2EnterInitializationMode(fmi2Component  component)
   /* Set tracefile if requested here */
 
   const char *p = getenv("CS_FMU_COMM_TRACE");
-  if (p != NULL) {
+  if (p != nullptr) {
     if (strcmp(p, "stdout") != 0 && strlen(p) > 0)
       tracefile = fopen(p, "w");
     else
@@ -1575,7 +1575,7 @@ fmi2EnterInitializationMode(fmi2Component  component)
 
   /* Now exchange input and output values which are already declared */
 
-  if (_cs_variables == NULL)
+  if (_cs_variables == nullptr)
     _cs_variables = _variables_initialize();
 
   for (int i = 0; i < _cs_variables->input_max; i++) {
@@ -1711,10 +1711,10 @@ fmi2Status fmi2Terminate(fmi2Component  c)
 
 #endif
 
-  if (tracefile != NULL) {
+  if (tracefile != nullptr) {
     if (tracefile != stdout && tracefile != stderr) {
       fclose(tracefile);
-      tracefile = NULL;
+      tracefile = nullptr;
     }
   }
 
@@ -1736,7 +1736,7 @@ fmi2Reset(fmi2Component  c)
 fmi2Real
 fmi2GetReal(fmi2ValueReference  reference)
 {
-  if (_cs_variables == NULL)
+  if (_cs_variables == nullptr)
     _cs_variables = _variables_initialize();
 
   string s = string(__func__) + "(" + to_string(reference) + ")";
@@ -1762,7 +1762,7 @@ void
 fmi2SetReal(fmi2ValueReference  reference,
             fmi2Real            value)
 {
-  if (_cs_variables == NULL)
+  if (_cs_variables == nullptr)
     _cs_variables = _variables_initialize();
 
   string s = string(__func__) + "(" + to_string(reference)
@@ -1861,7 +1861,7 @@ void fmi2SetString(fmi2ValueReference  reference,
   int var_index = _string_variable_reference_map[reference];
 
   char *p_var = _string_variable_values[var_index];
-  if (p_var != NULL)
+  if (p_var != nullptr)
     free(p_var);
 
   size_t l = strlen(value);
@@ -1962,7 +1962,7 @@ fmi2Status fmi2FreeFMUstate(fmi2Component  c,
 {
   CS_UNUSED(c);
 
-  if (*state == NULL)
+  if (*state == nullptr)
     return fmi2OK;
 
   char s[128];
@@ -1975,7 +1975,7 @@ fmi2Status fmi2FreeFMUstate(fmi2Component  c,
     free(csst->vals);
     free(csst);
     _states.erase(*state);
-    *state = NULL;
+    *state = nullptr;
   }
   else {
     snprintf(s, 127, "%s: called for %p, which is not present\n",
@@ -2114,7 +2114,7 @@ fmi2SetDebugLogging(fmi2Component     c,
     else {
       for (size_t i = 0; i < nCategories; i++) {
         const fmi2String s = categories[i];
-        if (s == NULL)
+        if (s == nullptr)
           continue;
         else if (strcmp(s, "logAll") == 0) {
           for (size_t k = 0; k <= _n_log_categories; k++) {

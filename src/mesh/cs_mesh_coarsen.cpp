@@ -185,7 +185,7 @@ _cell_equiv(cs_mesh_t  *m,
     }
   }
 
-  if (m->halo != NULL)
+  if (m->halo != nullptr)
     cs_halo_sync_untyped(m->halo,
                          CS_HALO_STANDARD,
                          1,
@@ -360,7 +360,7 @@ _build_n2o_indexed(cs_lnum_t          n_old,
  * parameters:
  *   n_new      <-- new number of elements
  *   n2o        <-- new to old array (same as old element ids list)
- *   global_num <-> global numbering (allocated if initially NULL)
+ *   global_num <-> global numbering (allocated if initially nullptr)
  *
  * returns:
  *   new global number of elements
@@ -373,7 +373,7 @@ _n2o_update_global_num(cs_lnum_t          n_new,
 {
   cs_gnum_t n_g_new = n_new;
 
-  if (cs_glob_n_ranks == 1 && *global_num == NULL)
+  if (cs_glob_n_ranks == 1 && *global_num == nullptr)
     return n_g_new;
 
   fvm_io_num_t *n_io_num
@@ -463,8 +463,8 @@ _update_i_face_arrays(cs_mesh_t        *m,
   m->i_face_vtx_idx = i_face_vtx_idx;
   m->i_face_vtx_lst = i_face_vtx;
 
-  i_face_vtx_idx = NULL;
-  i_face_vtx = NULL;
+  i_face_vtx_idx = nullptr;
+  i_face_vtx = nullptr;
 
   m->i_face_vtx_connect_size = m->i_face_vtx_idx[n_new];
 }
@@ -498,7 +498,7 @@ _merge_cells(cs_mesh_t       *m,
   }
   BFT_FREE(m->cell_family);
   m->cell_family = cell_family;
-  cell_family = NULL;
+  cell_family = nullptr;
 
   /* Update global numbering */
 
@@ -510,9 +510,9 @@ _merge_cells(cs_mesh_t       *m,
   /* Transfer (cell-based) halo information to (face-based) mesh builder
      in case of periodicity, before operation modifying cell numbering  */
 
-  cs_mesh_builder_t *mb = NULL;
+  cs_mesh_builder_t *mb = nullptr;
 
-  if (m->halo != NULL) {
+  if (m->halo != nullptr) {
     if (m->n_init_perio > 0) {
       const cs_gnum_t n_g_faces = m->n_g_i_faces + m->n_g_b_faces;
       int rank_id = CS_MAX(cs_glob_rank_id, 0);
@@ -568,7 +568,7 @@ _merge_cells(cs_mesh_t       *m,
 
     cs_mesh_init_halo(m, mb, m->halo_type, -1, false);
 
-    if (mb != NULL)
+    if (mb != nullptr)
       cs_mesh_builder_destroy(&mb);
   }
 
@@ -621,7 +621,7 @@ _face_merge_state_create(bool need_e2f)
   if (need_e2f)
     BFT_MALLOC(s->e2f, s->n_edges_max, cs_lnum_t);
   else
-    s->e2f = NULL;
+    s->e2f = nullptr;
 
   return s;
 }
@@ -637,7 +637,7 @@ _face_merge_state_create(bool need_e2f)
 static void
 _face_merge_state_destroy(cs_mesh_face_merge_state_t  **s)
 {
-  if (*s != NULL) {
+  if (*s != nullptr) {
     cs_mesh_face_merge_state_t  *_s = *s;
 
     BFT_FREE(_s->face_vertices);
@@ -708,7 +708,7 @@ _face_merge_state_remove_edge_e2f(cs_mesh_face_merge_state_t  *s,
  *
  * \param[in]       n_faces      number of faces to merge
  * \param[in]       face_ids     ids of faces to merge
- * \param[in]       face_orient  optional face orientation (1/-1), or NULL
+ * \param[in]       face_orient  optional face orientation (1/-1), or nullptr
  * \param[in]       f2v_idx      face->vertices index
  * \param[in]       f2v_lst      face->vertices connectivity
  * \param[in, out]  s            face merge state helper structure
@@ -735,7 +735,7 @@ _build_merged_face(cs_lnum_t                    n_faces,
     cs_lnum_t f_id = face_ids[f_i];
 
     int orient = 1;
-    if (face_orient != NULL)
+    if (face_orient != nullptr)
       orient = face_orient[f_i];
 
     cs_lnum_t s_id = f2v_idx[f_id];
@@ -968,7 +968,7 @@ _merge_i_faces(cs_mesh_t       *m,
 {
   const cs_lnum_t n_old = m->n_i_faces;
 
-  cs_lnum_t *n2o_idx = NULL, *n2o = NULL;
+  cs_lnum_t *n2o_idx = nullptr, *n2o = nullptr;
   _build_n2o_indexed(n_old, n_new, f_o2n, &n2o_idx, &n2o);
 
   cs_lnum_t *i_face_vtx_idx, *i_face_vtx;
@@ -980,7 +980,7 @@ _merge_i_faces(cs_mesh_t       *m,
   cs_mesh_face_merge_state_t *s = _face_merge_state_create(false);
 
   cs_lnum_t n_s_f_max = 0;
-  short int *f_orient = NULL;
+  short int *f_orient = nullptr;
 
   for (cs_lnum_t i_n = 0; i_n < n_new; i_n++) {
 
@@ -1057,8 +1057,8 @@ _merge_i_faces(cs_mesh_t       *m,
   m->i_face_vtx_idx = i_face_vtx_idx;
   m->i_face_vtx_lst = i_face_vtx;
 
-  i_face_vtx_idx = NULL;
-  i_face_vtx = NULL;
+  i_face_vtx_idx = nullptr;
+  i_face_vtx = nullptr;
 
   /* Transform indexed new->old array to simple array */
 
@@ -1089,15 +1089,15 @@ _merge_i_faces(cs_mesh_t       *m,
 
   BFT_FREE(m->i_face_cells);
   m->i_face_cells = i_face_cells;
-  i_face_cells = NULL;
+  i_face_cells = nullptr;
 
   BFT_FREE(m->i_face_family);
   m->i_face_family = i_face_family;
-  i_face_family = NULL;
+  i_face_family = nullptr;
 
   BFT_FREE(m->i_face_r_gen);
   m->i_face_r_gen = i_face_r_gen;
-  i_face_r_gen = NULL;
+  i_face_r_gen = nullptr;
 
   /* Update global numbering */
 
@@ -1326,7 +1326,7 @@ _merge_b_faces(cs_mesh_t       *m,
 {
   const cs_lnum_t n_old = m->n_b_faces;
 
-  cs_lnum_t *n2o_idx = NULL, *n2o = NULL;
+  cs_lnum_t *n2o_idx = nullptr, *n2o = nullptr;
   _build_n2o_indexed(n_old, n_new, f_o2n, &n2o_idx, &n2o);
 
   cs_lnum_t *b_face_vtx_idx, *b_face_vtx;
@@ -1338,7 +1338,7 @@ _merge_b_faces(cs_mesh_t       *m,
   cs_mesh_face_merge_state_t *s = _face_merge_state_create(false);
 
   cs_lnum_t n_s_f_max = 0;
-  short int *f_orient = NULL;
+  short int *f_orient = nullptr;
 
   for (cs_lnum_t i_n = 0; i_n < n_new; i_n++) {
 
@@ -1404,8 +1404,8 @@ _merge_b_faces(cs_mesh_t       *m,
   m->b_face_vtx_idx = b_face_vtx_idx;
   m->b_face_vtx_lst = b_face_vtx;
 
-  b_face_vtx_idx = NULL;
-  b_face_vtx = NULL;
+  b_face_vtx_idx = nullptr;
+  b_face_vtx = nullptr;
 
   /* Transform indexed new->old array to simple array */
 
@@ -1432,11 +1432,11 @@ _merge_b_faces(cs_mesh_t       *m,
 
   BFT_FREE(m->b_face_cells);
   m->b_face_cells = b_face_cells;
-  b_face_cells = NULL;
+  b_face_cells = nullptr;
 
   BFT_FREE(m->b_face_family);
   m->b_face_family = b_face_family;
-  b_face_family = NULL;
+  b_face_family = nullptr;
 
   /* Update global numbering */
 
@@ -1507,7 +1507,7 @@ _flag_vertices(cs_mesh_t  *m,
   }
 
   cs_interface_set_t  *ifs = m->vtx_interfaces;
-  if (ifs != NULL)
+  if (ifs != nullptr)
     cs_interface_set_max(ifs, m->n_vertices, 1, true, CS_LNUM_TYPE, v_flag);
 
   return v_flag;
@@ -1540,7 +1540,7 @@ _update_vertices(cs_mesh_t  *m,
       if (j != -1) {
         for (cs_lnum_t l = 0; l < 3; l++)
           m->vtx_coord[j*3 + l] = m->vtx_coord[i*3 + l];
-        if (m->global_vtx_num != NULL)
+        if (m->global_vtx_num != nullptr)
           m->global_vtx_num[j] = m->global_vtx_num[i];
       }
     }
@@ -1551,18 +1551,18 @@ _update_vertices(cs_mesh_t  *m,
 
     BFT_REALLOC(m->vtx_coord, n_vtx_new*3, cs_real_t);
 
-    if (m->global_vtx_num != NULL)
+    if (m->global_vtx_num != nullptr)
       BFT_REALLOC(m->global_vtx_num, n_vtx_new, cs_gnum_t);
   }
 
-  if (m->vtx_interfaces != NULL)
+  if (m->vtx_interfaces != nullptr)
     cs_interface_set_renumber(m->vtx_interfaces, v_o2n);
 
   /* Build an I/O numbering to compact the global numbering */
 
   if (cs_glob_n_ranks > 1) {
 
-    fvm_io_num_t *tmp_num = fvm_io_num_create(NULL,
+    fvm_io_num_t *tmp_num = fvm_io_num_create(nullptr,
                                               m->global_vtx_num,
                                               m->n_vertices,
                                               0);
@@ -1791,9 +1791,9 @@ cs_mesh_coarsen_simple(cs_mesh_t  *m,
   int mv_save = m->verbosity;
   m->verbosity = -1;
 
-  if ((m->n_domains > 1 || m->n_init_perio > 0) && m->halo == NULL) {
+  if ((m->n_domains > 1 || m->n_init_perio > 0) && m->halo == nullptr) {
     cs_halo_type_t halo_type = m->halo_type;
-    cs_mesh_builder_t *mb = (m == cs_glob_mesh) ? cs_glob_mesh_builder : NULL;
+    cs_mesh_builder_t *mb = (m == cs_glob_mesh) ? cs_glob_mesh_builder : nullptr;
     cs_mesh_init_halo(m, mb, halo_type, -1, true);
   }
 
@@ -1801,7 +1801,7 @@ cs_mesh_coarsen_simple(cs_mesh_t  *m,
 
   cs_mesh_free_rebuildable(m, false);
 
-  if (m->vtx_range_set != NULL)
+  if (m->vtx_range_set != nullptr)
     cs_range_set_destroy(&(m->vtx_range_set));
 
   m->verbosity = mv_save;
@@ -1828,7 +1828,7 @@ cs_mesh_coarsen_simple(cs_mesh_t  *m,
 
   /* Determine cells that should be merged and flag associated vertices */
 
-  cs_lnum_t  *c_o2n = NULL;
+  cs_lnum_t  *c_o2n = nullptr;
   cs_lnum_t  n_c_new = _cell_equiv(m, cell_flag, &c_o2n);
   cs_lnum_t *vtx_flag = _flag_vertices(m, cell_flag);
 
@@ -1836,7 +1836,7 @@ cs_mesh_coarsen_simple(cs_mesh_t  *m,
 
   /* Flag merged cells (> 0 for merged cells) */
 
-  int *c_flag_n = NULL;
+  int *c_flag_n = nullptr;
   BFT_MALLOC(c_flag_n, n_c_new, int);
 
   for (cs_lnum_t i = 0; i < n_c_new; i++)
@@ -1848,7 +1848,7 @@ cs_mesh_coarsen_simple(cs_mesh_t  *m,
 
   /* Now merge interior faces */
 
-  cs_lnum_t  *i_f_o2n = NULL;
+  cs_lnum_t  *i_f_o2n = nullptr;
   cs_lnum_t  n_i_f_new = _i_faces_equiv(m, &i_f_o2n);
 
   _merge_i_faces(m, n_i_f_new, i_f_o2n);
@@ -1858,7 +1858,7 @@ cs_mesh_coarsen_simple(cs_mesh_t  *m,
 
   /* Then merge boundary faces */
 
-  cs_lnum_t  *b_f_o2n = NULL;
+  cs_lnum_t  *b_f_o2n = nullptr;
   cs_lnum_t  n_b_f_new = _b_faces_equiv(m, c_flag_n, &b_f_o2n);
 
   _merge_b_faces(m, n_b_f_new, b_f_o2n);
@@ -1870,7 +1870,7 @@ cs_mesh_coarsen_simple(cs_mesh_t  *m,
   /* Finally remove excess vertices */
 
   cs_lnum_t *vtx_o2n = vtx_flag;   /* Rename for clarity as role changes */
-  vtx_flag = NULL;
+  vtx_flag = nullptr;
 
   _filter_vertices(m, vtx_o2n);
 
@@ -1915,7 +1915,7 @@ cs_mesh_coarsen_simple(cs_mesh_t  *m,
  * \param[in, out]  m           mesh
  * \param[in]       n_cells     number of selected cells
  * \param[in]       cells       list of selected cells (0 to n-1)
- *                              or NULL if no indirection is needed
+ *                              or nullptr if no indirection is needed
  */
 /*----------------------------------------------------------------------------*/
 
@@ -1931,7 +1931,7 @@ cs_mesh_coarsen_simple_selected(cs_mesh_t        *m,
   for (cs_lnum_t i = 0; i < n_c_ini; i++)
     cell_flag[i] = 0;
 
-  if (cells != NULL) {
+  if (cells != nullptr) {
     for (cs_lnum_t i = 0; i < n_cells; i++)
       cell_flag[cells[i]] = 1;
   }

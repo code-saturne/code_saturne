@@ -99,7 +99,7 @@ cs_porosity_ibm_opt_t *cs_glob_porosity_ibm_opt
 = &(_porosity_ibm_opt);
 
 /* Pointer to cs_ibm_t structure for the main initialization */
-cs_ibm_t  *cs_ibm = NULL;
+cs_ibm_t  *cs_ibm = nullptr;
 
 /* Names of algorithms */
 const char *_ibm_algo_names[] = {"CS_IBM_ALGO_NONE",
@@ -2116,7 +2116,7 @@ _compute_cell_cog(const cs_mesh_t            *mesh,
   cs_real_t *c_poro;
   BFT_MALLOC(c_poro, n_cells_ext, cs_real_t);
 
-  cs_vertex_to_cell(CS_VERTEX_TO_CELL_SHEPARD, 0, 1, NULL,
+  cs_vertex_to_cell(CS_VERTEX_TO_CELL_SHEPARD, 0, 1, nullptr,
                     v_poro, c_poro);
 
   cs_real_t voltot = 0.;
@@ -3061,7 +3061,7 @@ _compute_solid_surface_cog(const cs_mesh_t            *mesh,
 
   // TODO: Check
 
-  cs_real_33_t *cut = NULL;
+  cs_real_33_t *cut = nullptr;
   BFT_MALLOC(cut, n_cells_ext, cs_real_33_t);
 
   for (cs_lnum_t c_id = 0; c_id < n_cells_ext; c_id++)
@@ -3461,16 +3461,16 @@ _create_ibm_object(const char          *name,
                    cs_ibm_algo_type_t   method)
 {
 
-  cs_ibm_object_t *new_obj = NULL;
+  cs_ibm_object_t *new_obj = nullptr;
 
   BFT_MALLOC(new_obj, 1, cs_ibm_object_t);
 
   /* Set name */
-  if (name == NULL || strcmp(name, "") == 0)
+  if (name == nullptr || strcmp(name, "") == 0)
     bft_error(__FILE__, __LINE__, 0,
               _("Empty name provided for IBM object creation.\n"));
 
-  new_obj->name = NULL;
+  new_obj->name = nullptr;
   BFT_MALLOC(new_obj->name, strlen(name) + 1, char);
   strcpy(new_obj->name, name);
 
@@ -3478,15 +3478,15 @@ _create_ibm_object(const char          *name,
   new_obj->method = method;
 
   /* Pointer to medcoupling or stl mesh structures */
-  new_obj->cutcell_func = NULL;
-  new_obj->stl = NULL;
-  new_obj->mi  = NULL;
+  new_obj->cutcell_func = nullptr;
+  new_obj->stl = nullptr;
+  new_obj->mi  = nullptr;
 
   for (int i = 0; i < CS_N_IBM_OBJ_PROP_TYPES; i++)
-    new_obj->property_defs[i] = NULL;
+    new_obj->property_defs[i] = nullptr;
 
   for (int i = 0; i < CS_N_IBM_OBJ_INIT_TYPES; i++)
-    new_obj->init_vals_defs[i] = NULL;
+    new_obj->init_vals_defs[i] = nullptr;
 
   return new_obj;
 
@@ -3522,7 +3522,7 @@ _add_ibm_object(const char          *name,
   /* If object allready exists, exit the function */
   cs_ibm_object_t *obj = cs_ibm_object_by_name_try(name);
 
-  if (obj != NULL)
+  if (obj != nullptr)
     bft_error(__FILE__, __LINE__, 0,
               _("Error creating object: object \"%s\" already exists.\n"),
               name);
@@ -3556,8 +3556,8 @@ _free_ibm_object(cs_ibm_object_t *obj)
 
   BFT_FREE(obj->name);
 
-  if (obj->cutcell_func != NULL)
-    obj->cutcell_func = NULL;
+  if (obj->cutcell_func != nullptr)
+    obj->cutcell_func = nullptr;
 
   BFT_FREE(obj);
 
@@ -3584,7 +3584,7 @@ _ibm_object_define_property_def(cs_ibm_object_t               *obj,
   assert(ppty_id < CS_N_IBM_OBJ_PROP_TYPES);
   cs_xdef_t *def = obj->property_defs[ppty_id];
 
-  if (def != NULL)
+  if (def != nullptr)
     bft_error(__FILE__, __LINE__, 0,
               _("Property \"%s\" was already set for object \"%s\".\n"),
               _ibm_obj_property_names[ppty_id],
@@ -3622,7 +3622,7 @@ _ibm_object_define_initial_val_def(cs_ibm_object_t             *obj,
 
   cs_xdef_t *def = obj->init_vals_defs[p_id];
 
-  if (def != NULL)
+  if (def != nullptr)
     bft_error(__FILE__, __LINE__, 0,
               _("Initial value of \"%s\" was already set for object \"%s\".\n"),
               _ibm_obj_init_vals_names[p_id],
@@ -3694,20 +3694,20 @@ cs_ibm_object_by_id(int obj_id)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Try to get an object based on its name. Returns NULL if not found
+ * \brief Try to get an object based on its name. Returns nullptr if not found
  *
  * \param[in] name  name of the object to get
  *
- * \return pointer to object structure, NULL if not found
+ * \return pointer to object structure, nullptr if not found
  */
 /*----------------------------------------------------------------------------*/
 
 cs_ibm_object_t *
 cs_ibm_object_by_name_try(const char *name)
 {
-  assert(name != NULL);
+  assert(name != nullptr);
 
-  cs_ibm_object_t *obj = NULL;
+  cs_ibm_object_t *obj = nullptr;
 
   for (int i = 0; i < cs_ibm->n_objects; i++) {
     if (strcmp(name, cs_ibm->objects[i]->name) == 0) {
@@ -3725,16 +3725,16 @@ cs_ibm_object_by_name_try(const char *name)
  *
  * \param[in] name  name of the object to get
  *
- * \return pointer to object structure, NULL if not found
+ * \return pointer to object structure, nullptr if not found
  */
 /*----------------------------------------------------------------------------*/
 
 cs_ibm_object_t *
 cs_ibm_object_by_name(const char *name)
 {
-  assert(name != NULL);
+  assert(name != nullptr);
 
-  cs_ibm_object_t *obj = NULL;
+  cs_ibm_object_t *obj = nullptr;
 
   for (int i = 0; i < cs_ibm->n_objects; i++) {
     if (strcmp(name, cs_ibm->objects[i]->name) == 0) {
@@ -3743,7 +3743,7 @@ cs_ibm_object_by_name(const char *name)
     }
   }
 
-  if (obj == NULL)
+  if (obj == nullptr)
     bft_error(__FILE__, __LINE__, 0,
               _("Object \"%s\" does not exist.\n"),
               name);
@@ -3760,12 +3760,12 @@ cs_ibm_object_by_name(const char *name)
 cs_ibm_t *
 cs_ibm_create(void)
 {
-  cs_ibm_t  *ibm = NULL;
+  cs_ibm_t  *ibm = nullptr;
 
   BFT_MALLOC(ibm, 1, cs_ibm_t);
 
   ibm->n_objects = 0;
-  ibm->objects = NULL;
+  ibm->objects = nullptr;
 
   ibm->prob_dim       = CS_IBM_3D;
   ibm->algo_choice    = CS_IBM_ALGO_CUT_CELLS;
@@ -3773,7 +3773,7 @@ cs_ibm_create(void)
   ibm->nb_cut_cells   = 1;
   ibm->nb_cut_faces   = 1;
   ibm->porosity_user_source_term_modification = false;
-  ibm->solid_porosity = NULL;
+  ibm->solid_porosity = nullptr;
   ibm->isovol         = 0.;
   ibm->ensure_isovol  = false;
   ibm->porosity_from_nodes = false;
@@ -3792,13 +3792,13 @@ cs_ibm_create(void)
  * ibm <-- pointer to a cs_ibm_t structure
  *
  * returns:
- *   NULL
+ *   nullptr
  *----------------------------------------------------------------------------*/
 
 void
 cs_ibm_finalize(void)
 {
-  if (cs_ibm != NULL) {
+  if (cs_ibm != nullptr) {
 
   BFT_FREE(cs_ibm->solid_porosity);
 
@@ -3858,7 +3858,7 @@ void cs_immersed_boundaries(const cs_mesh_t *mesh,
   cs_real_t *bfpro_poro = cs_field_by_name("b_face_porosity")->val;
 
   /* Structure members allocation */
-  if (cs_ibm->solid_porosity == NULL)
+  if (cs_ibm->solid_porosity == nullptr)
     BFT_MALLOC(cs_ibm->solid_porosity, n_cells_ext, cs_real_t);
 
   /* First call to user function to determine the problem dimension
@@ -3887,7 +3887,7 @@ void cs_immersed_boundaries(const cs_mesh_t *mesh,
 
     int hyd_p_flag = cs_glob_velocity_pressure_param->iphydr;
     cs_real_3_t *f_ext = (hyd_p_flag == 1) ?
-      (cs_real_3_t *)cs_field_by_name_try("volume_forces")->val : NULL;
+      (cs_real_3_t *)cs_field_by_name_try("volume_forces")->val : nullptr;
 
     bool use_previous_t = false;
     int inc = 1;
@@ -3950,7 +3950,7 @@ void cs_immersed_boundaries(const cs_mesh_t *mesh,
           CS_F_(poro)->val[c_id] = 1.;
 
         /* Local declarations */
-        cs_real_t *obj_vol_f_tot = NULL;
+        cs_real_t *obj_vol_f_tot = nullptr;
         BFT_MALLOC(obj_vol_f_tot, n_cells_ext, cs_real_t);
         cs_array_real_fill_zero(n_cells_ext, obj_vol_f_tot);
 
@@ -3963,7 +3963,7 @@ void cs_immersed_boundaries(const cs_mesh_t *mesh,
                                               mesh,
                                               cell_vol,
                                               obj_vol_f_tot,
-                                              NULL);
+                                              nullptr);
 
         }
 
@@ -4024,8 +4024,8 @@ void cs_immersed_boundaries(const cs_mesh_t *mesh,
       for (cs_lnum_t c_id = 0; c_id < n_cells_ext; c_id++)
         c_poro[c_id] = 0.5*(CS_F_(poro)->val_pre[c_id] + CS_F_(poro)->val[c_id]);
 
-      cs_cell_to_vertex(CS_CELL_TO_VERTEX_SHEPARD, 0, 1, false, NULL,
-                        c_poro, NULL, v_poro);
+      cs_cell_to_vertex(CS_CELL_TO_VERTEX_SHEPARD, 0, 1, false, nullptr,
+                        c_poro, nullptr, v_poro);
 
       BFT_FREE(c_poro);
 
@@ -4551,8 +4551,8 @@ cs_ibm_object_compute_intersect_vol(cs_ibm_object_t            *obj,
 {
   CS_UNUSED(indic);
 
-  cs_real_t *wfrac = NULL;
-  cs_lnum_t *windic = NULL;
+  cs_real_t *wfrac = nullptr;
+  cs_lnum_t *windic = nullptr;
   BFT_MALLOC(wfrac, m->n_cells_with_ghosts, cs_real_t);
   BFT_MALLOC(windic, m->n_cells_with_ghosts, cs_lnum_t);
 
@@ -4645,7 +4645,7 @@ void cs_ibm_volumic_zone(const cs_mesh_quantities_t *mesh_quantities)
 
       const char *formula = cs_tree_node_get_child_value_str(tn_zp, "formula");
 
-      if (formula != NULL) {
+      if (formula != nullptr) {
         cs_field_t *f = CS_F_(poro);
         cs_meg_volume_function(z->name,
                                z->n_elts,

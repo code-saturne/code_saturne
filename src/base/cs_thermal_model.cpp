@@ -288,7 +288,7 @@ cs_thermal_model_log_setup(void)
                 temperature_scale, _(temperature_scale_value_str[temperature_scale]));
 
   cs_field_t *tf = cs_thermal_model_field();
-  if (tf != NULL)
+  if (tf != nullptr)
     cs_log_printf
       (CS_LOG_SETUP,
        _("    Thermal variable solved: %s (field id %d)\n"),

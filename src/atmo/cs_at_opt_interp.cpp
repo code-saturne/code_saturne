@@ -99,8 +99,8 @@ BEGIN_C_DECLS
 
 static int  _n_opt_interps = 0;
 static int  _n_opt_interps_max = 0;
-static cs_at_opt_interp_t  *_opt_interps = NULL;
-static cs_map_name_to_id_t *_opt_interps_map = NULL;
+static cs_at_opt_interp_t  *_opt_interps = nullptr;
+static cs_map_name_to_id_t *_opt_interps_map = nullptr;
 static int _p1_projection_needed = 0;
 
 /*============================================================================
@@ -299,7 +299,7 @@ _p1_projection(cs_measures_set_t  *ms,
 
   /* compute projection matrix coefficients */
 
-  cs_real_t *dist = NULL;
+  cs_real_t *dist = nullptr;
   BFT_MALLOC(dist, n_max_size, cs_real_t);
 
   for (cs_lnum_t ii = 0; ii < n_obs; ii++) {
@@ -524,11 +524,11 @@ _assembly_adding_obs_covariance(cs_measures_set_t  *ms,
 cs_at_opt_interp_t *
 cs_at_opt_interp_create(const char   *name)
 {
-  cs_at_opt_interp_t *oi =  NULL;
+  cs_at_opt_interp_t *oi =  nullptr;
 
   /* Initialize if necessary */
 
-  if (_opt_interps_map == NULL)
+  if (_opt_interps_map == nullptr)
     _opt_interps_map = cs_map_name_to_id_create();
 
   if (strlen(name) == 0)
@@ -566,18 +566,18 @@ cs_at_opt_interp_create(const char   *name)
   oi->ig_id = -1;
 
   if (!reall) {
-    oi->b_proj = NULL;
-    oi->relax = NULL;
-    oi->times = NULL;
-    oi->times_read = NULL;
-    oi->obs_cov = NULL;
-    oi->measures_idx = NULL;
-    oi->model_to_obs_proj = NULL;
-    oi->model_to_obs_proj_idx = NULL;
-    oi->model_to_obs_proj_c_ids = NULL;
-    oi->active_time = NULL;
-    oi->time_weights = NULL;
-    oi->time_window = NULL;
+    oi->b_proj = nullptr;
+    oi->relax = nullptr;
+    oi->times = nullptr;
+    oi->times_read = nullptr;
+    oi->obs_cov = nullptr;
+    oi->measures_idx = nullptr;
+    oi->model_to_obs_proj = nullptr;
+    oi->model_to_obs_proj_idx = nullptr;
+    oi->model_to_obs_proj_c_ids = nullptr;
+    oi->active_time = nullptr;
+    oi->time_weights = nullptr;
+    oi->time_window = nullptr;
   }
   else {
     BFT_FREE(oi->b_proj);
@@ -618,7 +618,7 @@ cs_at_opt_interp_by_id(int  id)
   else {
     bft_error(__FILE__, __LINE__, 0,
               _("Optimal interpolation with id %d is not defined."), id);
-    return NULL;
+    return nullptr;
   }
 }
 
@@ -645,7 +645,7 @@ cs_at_opt_interp_by_name(const char  *name)
   else {
     bft_error(__FILE__, __LINE__, 0,
               _("Optimal interpolation \"%s\" is not defined."), name);
-    return NULL;
+    return nullptr;
   }
 }
 
@@ -703,7 +703,7 @@ cs_at_opt_interp_read_file(char const           filename[50],
 {
   cs_real_t val;
   char line[MAX_LINE_SIZE];
-  FILE* fh = NULL;
+  FILE* fh = nullptr;
 
   BFT_MALLOC(oi->relax, f_dim, cs_real_t);
   for (int kk = 0; kk < f_dim; kk++)
@@ -722,7 +722,7 @@ cs_at_opt_interp_read_file(char const           filename[50],
 
   /* First reading - test if file exists */
   fh = fopen(filename, "r");
-  if (fh == NULL) {
+  if (fh == nullptr) {
     bft_error(__FILE__, __LINE__, 0,
               _("Error when opening file %s."), filename);
   }
@@ -883,7 +883,7 @@ cs_at_opt_interp_read_file(char const           filename[50],
 
     /* Reading relaxation time */
     if (strncmp(line, "_t_", 3) == 0) {
-      cs_real_t *tau = NULL;
+      cs_real_t *tau = nullptr;
       BFT_MALLOC(tau, ms->dim, cs_real_t);
       for (int kk = 0; kk < ms->dim-1; kk++)
         fscanf(fh, "%lf ", tau+kk);
@@ -1237,17 +1237,17 @@ cs_at_opt_interp_read_file(char const           filename[50],
 #endif
 
   /* Verifications */
-  if (ms->coords == NULL) {
+  if (ms->coords == nullptr) {
     bft_error(__FILE__, __LINE__, 0,
               _("File %s. The observation coordinates are missing"
                 " (_coordinates_)."), filename);
   }
-  if (oi->steady <= 0 && oi->times == NULL) {
+  if (oi->steady <= 0 && oi->times == nullptr) {
     bft_error(__FILE__, __LINE__, 0,
               _("File %s. The observation times are missing"
                 " (_times_)."), filename);
   }
-  if (ms->measures == NULL) {
+  if (ms->measures == nullptr) {
     bft_error(__FILE__, __LINE__, 0,
               _("File %s. The measures are missing (_measures_)."), filename);
   }
@@ -1287,7 +1287,7 @@ cs_at_opt_interp_map_values(cs_at_opt_interp_t *oi,
 
   /* Initializing remaining variables */
   /* Observations errors */
-  if (oi->obs_cov == NULL) {
+  if (oi->obs_cov == nullptr) {
     oi->obs_cov_is_diag = true;
     BFT_MALLOC(oi->obs_cov, ms->dim*n_obs, cs_real_t);
     for (int ii = 0; ii < ms->dim*n_obs; ii++)
@@ -1295,7 +1295,7 @@ cs_at_opt_interp_map_values(cs_at_opt_interp_t *oi,
   }
 
   /* Time window */
-  if (oi->time_window == NULL) {
+  if (oi->time_window == nullptr) {
     BFT_MALLOC(oi->time_window, 4, cs_real_t);
     oi->time_window[2] = 300.;
     oi->time_window[3] = 360.;
@@ -1431,7 +1431,7 @@ cs_at_opt_interp_get_active_obs(cs_measures_set_t   *ms,
   const int n_obs = ms->nb_measures;
   const int m_dim = ms->dim;
 
-  int *n_active_obs = NULL;
+  int *n_active_obs = nullptr;
   BFT_MALLOC(n_active_obs, m_dim, int);
   for (int kk = 0; kk < ms->dim; kk++)
     n_active_obs[kk] = 0;
@@ -1456,7 +1456,7 @@ cs_at_opt_interp_get_active_obs(cs_measures_set_t   *ms,
     for (int kk = 0; kk < ms->dim; kk++)
       BFT_MALLOC((*ao_idx)[kk], n_active_obs[kk], int);
 
-    int *ao_count = NULL;
+    int *ao_count = nullptr;
     BFT_MALLOC(ao_count, m_dim, int);
     for (int kk = 0; kk < ms->dim; kk++)
       ao_count[kk] = 0;
@@ -1479,13 +1479,13 @@ cs_at_opt_interp_get_active_obs(cs_measures_set_t   *ms,
     const cs_time_step_t *ts = cs_glob_time_step;
 
     BFT_MALLOC(*ao_idx, m_dim, int *);
-    int *ao_count = NULL;
+    int *ao_count = nullptr;
     BFT_MALLOC(ao_count, m_dim, int);
     for (int kk = 0; kk < ms->dim; kk++)
       ao_count[kk] = 0;
 
     /* storing previous time coefficients */
-    cs_real_t *temp = NULL;
+    cs_real_t *temp = nullptr;
     BFT_MALLOC(temp, m_dim*n_obs, cs_real_t);
     for (int ii = 0; ii < m_dim*n_obs; ii++)
       temp[ii] = oi->time_weights[ii];
@@ -1630,7 +1630,7 @@ cs_at_opt_interp_compute_analysis(cs_field_t         *f,
   int a_l_size = n_active_obs;
   int a_size = cs_math_sq(a_l_size);
 
-  cs_real_t *inc = NULL;
+  cs_real_t *inc = nullptr;
   BFT_MALLOC(inc, a_l_size, cs_real_t);
 
   for (int ii = 0; ii < n_active_obs; ii++) {
@@ -1669,7 +1669,7 @@ cs_at_opt_interp_compute_analysis(cs_field_t         *f,
   bft_printf("\n");
 #endif
 
-  cs_real_t *alu = NULL;
+  cs_real_t *alu = nullptr;
   if (inverse) {
     cs_real_t *a = _assembly_adding_obs_covariance(ms,
                                                    oi,
@@ -1698,7 +1698,7 @@ cs_at_opt_interp_compute_analysis(cs_field_t         *f,
   bft_printf("\n   * Computing (HBHT + R)^-1*I\n");
 #endif
 
-  cs_real_t *vect = NULL;
+  cs_real_t *vect = nullptr;
   BFT_MALLOC(vect, a_l_size, cs_real_t);
 
   /* Forward and backward */

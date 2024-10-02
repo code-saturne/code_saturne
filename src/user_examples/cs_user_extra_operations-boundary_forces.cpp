@@ -92,7 +92,7 @@ cs_user_extra_operations(cs_domain_t     *domain)
 
     cs_field_t *b_forces = cs_field_by_name_try("boundary_forces");
 
-    if (b_forces != NULL) {
+    if (b_forces != nullptr) {
       cs_real_3_t total_b_forces = {0., 0., 0.};
       cs_real_3_t *bpro_forces = (cs_real_3_t *) b_forces->val;
 

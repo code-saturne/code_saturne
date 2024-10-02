@@ -334,7 +334,7 @@ cs_navsto_param_create(const cs_boundary_t          *boundaries,
  *
  * \param[in, out] param  pointer to a \ref cs_navsto_param_t structure
  *
- * \return a NULL pointer
+ * \return a nullptr pointer
  */
 /*----------------------------------------------------------------------------*/
 

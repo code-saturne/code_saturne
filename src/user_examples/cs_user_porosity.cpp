@@ -170,7 +170,7 @@ cs_user_porosity(cs_domain_t   *domain)
   /*!< [set_poro_b_faces_1] */
 
   /* Four set face factor */
-  if (mq->i_f_face_factor != NULL) {
+  if (mq->i_f_face_factor != nullptr) {
     for (cs_lnum_t face_id = 0; face_id < m->n_i_faces; face_id++) {
       cs_lnum_t ii = i_face_cells[face_id][0];
       cs_lnum_t jj = i_face_cells[face_id][1];

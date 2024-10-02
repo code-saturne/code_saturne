@@ -3304,7 +3304,7 @@ cs_solidification_activate(cs_solidification_model_t       model,
 
   /* The Navier-Stokes is not solved when the frozen field is set */
 
-  cs_navsto_system_t  *ns = NULL;
+  cs_navsto_system_t  *ns = nullptr;
 
   if (solid->options & CS_SOLIDIFICATION_NO_VELOCITY_FIELD) {
 
@@ -3740,7 +3740,7 @@ cs_solidification_voller_t *
 cs_solidification_check_voller_model(void)
 {
   cs_solidification_t  *solid = cs_solidification_structure;
-  assert(solid != NULL);
+  assert(solid != nullptr);
 
   cs_solidification_voller_t  *v_model = cs_solidification_get_voller_struct();
 
@@ -3874,7 +3874,7 @@ cs_solidification_binary_alloy_t *
 cs_solidification_check_binary_alloy_model(void)
 {
   cs_solidification_t  *solid = cs_solidification_structure;
-  assert(solid != NULL);
+  assert(solid != nullptr);
 
   cs_solidification_binary_alloy_t
     *b_model = cs_solidification_get_binary_alloy_struct();

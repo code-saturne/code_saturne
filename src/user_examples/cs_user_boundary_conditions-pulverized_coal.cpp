@@ -114,7 +114,7 @@ cs_user_boundary_conditions_setup(cs_domain_t  *domain)
     for (int i = 0; i < 2; i++) {
 
       cs_equation_param_t  *eqp = cs_equation_param_by_name(names[i]);
-      if (eqp == NULL)
+      if (eqp == nullptr)
         continue;
 
       cs_real_t val[1] = {1.0};

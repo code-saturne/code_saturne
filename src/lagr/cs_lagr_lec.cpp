@@ -129,7 +129,7 @@ cs_restart_lagrangian_checkpoint_read(void)
 
     const char ficsui[] = "lagrangian_stats.csc";
     cs_restart_t
-      *lag_stat_restart = cs_restart_create(ficsui, NULL,
+      *lag_stat_restart = cs_restart_create(ficsui, nullptr,
                                             CS_RESTART_MODE_READ);
 
     cs_log_printf(CS_LOG_DEFAULT,
@@ -558,7 +558,7 @@ cs_restart_lagrangian_checkpoint_read(void)
 
         {
           cs_field_t *f = cs_field_by_name_try("lagr_st_pressure");
-          if (f != NULL) {
+          if (f != nullptr) {
             cs_restart_read_section_compat(lag_stat_restart,
                                           f->name,
                                           "terme_source_masse",
@@ -571,7 +571,7 @@ cs_restart_lagrangian_checkpoint_read(void)
 
         {
           cs_field_t *f = cs_field_by_name_try("lagr_st_velocity");
-          if (f != NULL) {
+          if (f != nullptr) {
             cs_restart_read_real_3_t_compat(lag_stat_restart,
                                             f->name,
                                             "terme_source_vitesseX",
@@ -583,7 +583,7 @@ cs_restart_lagrangian_checkpoint_read(void)
         }
         {
           cs_field_t *f = cs_field_by_name_try("lagr_st_imp_velocity");
-          if (f != NULL) {
+          if (f != nullptr) {
             cs_restart_read_section_compat(lag_stat_restart,
                                           f->name,
                                           "terme_source_vitesse_implicite",
@@ -596,7 +596,7 @@ cs_restart_lagrangian_checkpoint_read(void)
 
         {
           cs_field_t *f = cs_field_by_name_try("lagr_st_k");
-          if (f != NULL) {
+          if (f != nullptr) {
             cs_restart_read_section_compat(lag_stat_restart,
                                           f->name,
                                           "terme_source_turbulence_keps",
@@ -609,7 +609,7 @@ cs_restart_lagrangian_checkpoint_read(void)
 
         {
           cs_field_t *f = cs_field_by_name_try("lagr_st_rij");
-          if (f != NULL) {
+          if (f != nullptr) {
             cs_restart_read_real_6_t_compat(lag_stat_restart,
                                             f->name,
                                             "terme_source_turbulence_R11",
@@ -625,7 +625,7 @@ cs_restart_lagrangian_checkpoint_read(void)
 
         {
           cs_field_t *f = cs_field_by_name_try("lagr_st_temperature");
-          if (f != NULL) {
+          if (f != nullptr) {
             cs_restart_read_section_compat(lag_stat_restart,
                                           f->name,
                                           "terme_source_thermique_explicite",
@@ -638,7 +638,7 @@ cs_restart_lagrangian_checkpoint_read(void)
 
         {
           cs_field_t *f = cs_field_by_name_try("lagr_st_imp_temperature");
-          if (f != NULL) {
+          if (f != nullptr) {
             cs_restart_read_section_compat(lag_stat_restart,
                                           f->name,
                                           "terme_source_thermique_implicite",
@@ -704,7 +704,7 @@ cs_lagr_restart_read_p(void)
 
   const char ficsui[] = "lagrangian.csc";
   cs_restart_t *lag_stat_restart
-    = cs_restart_create(ficsui, NULL, CS_RESTART_MODE_READ);
+    = cs_restart_create(ficsui, nullptr, CS_RESTART_MODE_READ);
 
   cs_log_printf(CS_LOG_DEFAULT,
                 _("      Start read"));
@@ -1071,7 +1071,7 @@ cs_restart_lagrangian_checkpoint_write(void)
 
   const char ficsui[] = "lagrangian.csc";
   cs_restart_t *lag_stat_restart
-    = cs_restart_create(ficsui, NULL, CS_RESTART_MODE_WRITE);
+    = cs_restart_create(ficsui, nullptr, CS_RESTART_MODE_WRITE);
 
   cs_log_printf(CS_LOG_DEFAULT,
                 _("   ** Writing the Lagrangian restart file\n"
@@ -1187,7 +1187,7 @@ cs_restart_lagrangian_checkpoint_write(void)
 
     /* Open restart file */
     char const *ficsuist = "lagrangian_stats.csc";
-    lag_stat_restart = cs_restart_create(ficsuist, NULL, CS_RESTART_MODE_WRITE);
+    lag_stat_restart = cs_restart_create(ficsuist, nullptr, CS_RESTART_MODE_WRITE);
 
     cs_log_printf(CS_LOG_DEFAULT,
                   _("      Start writing statistics and ST\n"));
@@ -1347,7 +1347,7 @@ cs_restart_lagrangian_checkpoint_write(void)
 
       for (int st_id = 0; st_id < 4; st_id++) {
         cs_field_t *f = cs_field_by_name_try(st_names[st_id]);
-        if (f != NULL)
+        if (f != nullptr)
           cs_restart_write_field_vals(lag_stat_restart, f->id, 0);
       }
 

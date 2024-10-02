@@ -127,7 +127,7 @@ cs_lagr_aux_mean_fluid_quantities(cs_field_t    *lagr_time,
     turb_disp_model = true;
 
   /* Use pressure gradient of NEPTUNE_CFD if needed */
-  if (cs_field_by_name_try("velocity_1") != NULL) {
+  if (cs_field_by_name_try("velocity_1") != nullptr) {
     cs_real_t *cpro_pgradlagr = cs_field_by_name("lagr_pressure_gradient")->val;
 
     for (cs_lnum_t iel = 0; iel < cs_glob_mesh->n_cells; iel++)
@@ -139,7 +139,7 @@ cs_lagr_aux_mean_fluid_quantities(cs_field_t    *lagr_time,
       cs_real_33_t *cpro_vgradlagr
         = (cs_real_33_t *)(cs_field_by_name("lagr_velocity_gradient")->val);
 
-      if (cpro_vgradlagr != NULL && grad_vel != NULL) {
+      if (cpro_vgradlagr != nullptr && grad_vel != nullptr) {
         for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
           for (cs_lnum_t i = 0; i < 3; i++) {
             for (cs_lnum_t j = 0; j < 3; j++)
@@ -152,19 +152,19 @@ cs_lagr_aux_mean_fluid_quantities(cs_field_t    *lagr_time,
 
   else {
 
-    cs_real_t *wpres = NULL;
+    cs_real_t *wpres = nullptr;
 
     /* Hydrostatic pressure algorithm? */
     int hyd_p_flag = cs_glob_velocity_pressure_param->iphydr;
 
-    cs_real_3_t *f_ext = NULL;
+    cs_real_3_t *f_ext = nullptr;
     if (hyd_p_flag == 1)
       f_ext = (cs_real_3_t *)(cs_field_by_name("volume_forces")->val);
 
     cs_real_t *solved_pres = extra->pressure->val;
 
     /* retrieve 2/3 rho^{n} k^{n} from solved pressure field for EVM models */
-    assert(turb_model != NULL);
+    assert(turb_model != nullptr);
     if (turb_model->order <= CS_TURB_FIRST_ORDER
         && cs_glob_turb_rans_model->igrhok == 0) {
       BFT_MALLOC(wpres, n_cells_with_ghosts, cs_real_t);
@@ -196,8 +196,8 @@ cs_lagr_aux_mean_fluid_quantities(cs_field_t    *lagr_time,
                                &gradient_type,
                                &halo_type);
 
-    cs_real_t *weight = NULL;
-    cs_internal_coupling_t  *cpl = NULL;
+    cs_real_t *weight = nullptr;
+    cs_internal_coupling_t  *cpl = nullptr;
     int w_stride = 1;
 
     if (eqp->iwgrec == 1) {
@@ -261,7 +261,7 @@ cs_lagr_aux_mean_fluid_quantities(cs_field_t    *lagr_time,
     cs_field_t *f_grad_pr = cs_field_by_name_try("lagr_pressure_gradient");
 
     /* Store pressure gradient for postprocessing purpose */
-    if (f_grad_pr != NULL) {
+    if (f_grad_pr != nullptr) {
       for (cs_lnum_t cell_id = 0; cell_id < cs_glob_mesh->n_cells; cell_id++) {
         for (cs_lnum_t i = 0; i < 3; i++)
           f_grad_pr->val[3*cell_id + i] = grad_pr[cell_id][i];
@@ -298,8 +298,8 @@ cs_lagr_aux_mean_fluid_quantities(cs_field_t    *lagr_time,
                         i_visc,
                         b_visc);
 
-      cs_real_t *i_massflux = NULL;
-      cs_real_t *b_massflux = NULL;
+      cs_real_t *i_massflux = nullptr;
+      cs_real_t *b_massflux = nullptr;
 
       BFT_MALLOC(i_massflux, n_i_faces, cs_real_t);
       BFT_MALLOC(b_massflux, n_b_faces, cs_real_t);
@@ -308,12 +308,12 @@ cs_lagr_aux_mean_fluid_quantities(cs_field_t    *lagr_time,
 
       cs_velocity_pressure_model_t *vp_model = cs_get_glob_velocity_pressure_model();
 
-      cs_real_3_t *_div_mu_gradvel = NULL;
-      cs_real_3_t *div_mu_gradvel = NULL;
+      cs_real_3_t *_div_mu_gradvel = nullptr;
+      cs_real_3_t *div_mu_gradvel = nullptr;
       cs_field_t *f_visc_forces
         = cs_field_by_name_try("algo:viscous_shear_divergence");
 
-      if (f_visc_forces != NULL)
+      if (f_visc_forces != nullptr)
         div_mu_gradvel = (cs_real_3_t *)f_visc_forces->val;
       else {
         BFT_MALLOC(_div_mu_gradvel,m->n_cells_with_ghosts, cs_real_3_t);
@@ -322,8 +322,8 @@ cs_lagr_aux_mean_fluid_quantities(cs_field_t    *lagr_time,
 
       /* Do not consider convective terms */
       eqp_loc.iconv = 0;
-      cs_real_t *i_secvis= NULL;
-      cs_real_t *b_secvis= NULL;
+      cs_real_t *i_secvis= nullptr;
+      cs_real_t *b_secvis= nullptr;
 
       //TODO: compute it
       if (vp_model->ivisse == 1) {
@@ -349,13 +349,13 @@ cs_lagr_aux_mean_fluid_quantities(cs_field_t    *lagr_time,
                         b_visc,
                         i_secvis,
                         b_secvis,
-                        NULL,
-                        NULL,
-                        NULL,
+                        nullptr,
+                        nullptr,
+                        nullptr,
                         0,
-                        NULL,
-                        NULL,
-                        NULL,
+                        nullptr,
+                        nullptr,
+                        nullptr,
                         div_mu_gradvel);
 
       const cs_real_t  *cell_f_vol = mq->cell_vol;
@@ -455,7 +455,7 @@ cs_lagr_aux_mean_fluid_quantities(cs_field_t    *lagr_time,
 
     }
 
-    if (grad_lagr_time != NULL)
+    if (grad_lagr_time != nullptr)
       cs_field_gradient_scalar(lagr_time,
                                0, /* use_previous_t */
                                1, /* inc: not an increment */

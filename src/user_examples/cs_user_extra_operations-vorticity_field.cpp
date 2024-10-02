@@ -106,7 +106,7 @@ cs_user_extra_operations(cs_domain_t     *domain)
   /* ! [vorticity_f] */
 
   /* ! [vorticity_cv] */
-  if (vort != NULL) {
+  if (vort != nullptr) {
     for (cs_lnum_t i = 0; i < n_cells; i++) {
       vort->val[i] = gradv[i][1][0] - gradv[i][0][1];
     }

@@ -122,8 +122,8 @@ diverv (cs_real_t                  *diverg,
                      1.5,                    /* climgp */
                      bc_coeffs_v,
                      u,
-                     NULL,                   /* weighted gradient */
-                     NULL,                   /* cpl */
+                     nullptr,                   /* weighted gradient */
+                     nullptr,                   /* cpl */
                      grad);
 
   /* ====================================================================
@@ -348,17 +348,17 @@ _lageqp(cs_real_t   *vitessel,
                                      fmala, fmalb,
                                      viscf, viscb,
                                      viscf, viscb,
-                                     NULL,         /* viscel */
-                                     NULL,         /* weighf */
-                                     NULL,         /* weighb */
+                                     nullptr,         /* viscel */
+                                     nullptr,         /* weighf */
+                                     nullptr,         /* weighb */
                                      0,            /* icvflb (all upwind) */
-                                     NULL,         /* icvfli */
+                                     nullptr,         /* icvfli */
                                      rovsdt,
                                      smbrs,
                                      phi,
                                      dpvar,
-                                     NULL,         /* xcpp */
-                                     NULL);        /* eswork */
+                                     nullptr,         /* xcpp */
+                                     nullptr);        /* eswork */
 
   /* Free memory */
 
@@ -468,11 +468,11 @@ cs_lagr_poisson(const int  itypfb[])
                      CS_GRADIENT_LIMIT_NONE, /* imligp */
                      1e-8,                   /* epsrgp */
                      1.5,                    /* climgp */
-                     NULL,                   /* f_ext */
+                     nullptr,                   /* f_ext */
                      &bc_coeffs_loc,
                      phil,
-                     NULL,            /* c_weight */
-                     NULL, /* internal coupling */
+                     nullptr,            /* c_weight */
+                     nullptr, /* internal coupling */
                      grad);
 
   BFT_FREE(coefap);

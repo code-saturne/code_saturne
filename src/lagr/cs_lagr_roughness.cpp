@@ -85,9 +85,9 @@ static cs_lagr_roughness_param_t _lagr_roughness_param
    .ionic_strength = 0,
    .phi_p = 0,
    .phi_s = 0,
-   .temperature = NULL,
+   .temperature = nullptr,
    .valen = 0,
-   .debye_length = NULL,
+   .debye_length = nullptr,
    .cstham = 0,
    .lambda_vdw = 0,
    .espasg = 0,
@@ -156,10 +156,10 @@ roughness_init (const cs_real_t   *water_permit,
 
   /* Allocate memory for the temperature and Debye length arrays */
 
-  if (cs_lagr_roughness_param->temperature == NULL)
+  if (cs_lagr_roughness_param->temperature == nullptr)
     BFT_MALLOC(cs_lagr_roughness_param->temperature, mesh->n_cells, cs_real_t);
 
-  if (cs_lagr_roughness_param->debye_length == NULL)
+  if (cs_lagr_roughness_param->debye_length == nullptr)
     BFT_MALLOC(cs_lagr_roughness_param->debye_length, mesh->n_cells, cs_real_t);
 
   /* Store the temperature */

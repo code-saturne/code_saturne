@@ -234,7 +234,7 @@ cs_user_postprocess_probes(void)
  * \param[in]       cat_id       category id of the output mesh for the
  *                               current call
  * \param[in]       probes       pointer to associated probe set structure if
- *                               the mesh is a probe set, NULL otherwise
+ *                               the mesh is a probe set, nullptr otherwise
  * \param[in]       n_cells      local number of cells of post_mesh
  * \param[in]       n_i_faces    local number of interior faces of post_mesh
  * \param[in]       n_b_faces    local number of boundary faces of post_mesh
@@ -247,7 +247,7 @@ cs_user_postprocess_probes(void)
  *                               post-processing mesh
  * \param[in]       vertex_list  list of vertices (0 to n-1) of
  *                               post-processing mesh
- * \param[in]       ts           time step status structure, or NULL
+ * \param[in]       ts           time step status structure, or nullptr
  */
 /*----------------------------------------------------------------------------*/
 
@@ -273,7 +273,7 @@ cs_user_postprocess_values(const char            *mesh_name,
   CS_UNUSED(i_face_list);
   CS_UNUSED(vertex_list);
 
-  if (probes != NULL) {
+  if (probes != nullptr) {
 
 /*! [post_profile_advanced_var_0] */
     const cs_mesh_t *m = cs_glob_mesh;
@@ -289,18 +289,18 @@ cs_user_postprocess_values(const char            *mesh_name,
 
     bool is_profile = false;
     cs_probe_set_get_post_info(probes,
-                               NULL,
-                               NULL,
+                               nullptr,
+                               nullptr,
                                &is_profile,
-                               NULL,
-                               NULL,
-                               NULL,
-                               NULL,
-                               NULL);
+                               nullptr,
+                               nullptr,
+                               nullptr,
+                               nullptr,
+                               nullptr);
 
     const cs_time_step_t *ts_post = ts;
     if (is_profile && ts->nt_cur == ts->nt_max)
-      ts = NULL;
+      ts = nullptr;
 
     /* Common variables */
 
@@ -334,7 +334,7 @@ cs_user_postprocess_values(const char            *mesh_name,
 
       const cs_turb_model_t *turb_mdl = cs_glob_turb_model;
 
-      cs_real_6_t *rij = NULL;
+      cs_real_6_t *rij = nullptr;
       BFT_MALLOC(rij, n_cells, cs_real_6_t);
 
       if (   turb_mdl->itytur == 2
@@ -345,7 +345,7 @@ cs_user_postprocess_values(const char            *mesh_name,
         cs_post_evm_reynolds_stresses(interpolation_type,
                                       n_cells,
                                       cell_list,
-                                      NULL, /* coords */
+                                      nullptr, /* coords */
                                       rij);
 
       }
@@ -363,13 +363,13 @@ cs_user_postprocess_values(const char            *mesh_name,
       /* Reynolds stresses invariants:
        * compute xsi and eta invariant of the Lumley triangle */
 
-      cs_real_2_t *inv = NULL;
+      cs_real_2_t *inv = nullptr;
       BFT_MALLOC(inv, n_cells, cs_real_2_t);
 
 
       cs_post_anisotropy_invariant(n_cells,
                                    cell_list,
-                                   NULL, /* coords */
+                                   nullptr, /* coords */
                                    inv);
 
       /* Loop on columns */
@@ -474,8 +474,8 @@ cs_user_postprocess_values(const char            *mesh_name,
            1,                              /* var_dim */
            CS_POST_TYPE_cs_real_t,
            0,                              /* parent location id */
-           NULL,                           /* default interpolation */
-           NULL,                           /* interpolation input */
+           nullptr,                           /* default interpolation */
+           nullptr,                           /* interpolation input */
            val,
            ts_post);
 
@@ -599,8 +599,8 @@ cs_user_postprocess_values(const char            *mesh_name,
            1,                              /* var_dim */
            CS_POST_TYPE_cs_real_t,
            0,                              /* parent location id */
-           NULL,                           /* default interpolation */
-           NULL,                           /* interpolation input */
+           nullptr,                           /* default interpolation */
+           nullptr,                           /* interpolation input */
            val,
            ts_post);
 

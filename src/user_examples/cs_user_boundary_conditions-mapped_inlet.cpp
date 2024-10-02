@@ -120,7 +120,7 @@ cs_user_boundary_conditions(cs_domain_t  *domain,
 
   const cs_real_t *bpro_rho = CS_F_(rho_b)->val;
 
-  const cs_zone_t  *zn = NULL;
+  const cs_zone_t  *zn = nullptr;
 
   const int keysca = cs_field_key_id("scalar_id");
 
@@ -199,7 +199,7 @@ cs_user_boundary_conditions(cs_domain_t  *domain,
 
   /*![example_1_map_init]*/
 
-  ple_locator_t *inlet_l = NULL;
+  ple_locator_t *inlet_l = nullptr;
   zn = cs_boundary_zone_by_name("inlet");
 
   if (nt_cur == nt_prev) {
@@ -251,7 +251,7 @@ cs_user_boundary_conditions(cs_domain_t  *domain,
                                         interpolate,
                                         zn->n_elts,
                                         zn->elt_ids,
-                                        NULL);
+                                        nullptr);
     }
   }
   /*![example_1_map_apply] */

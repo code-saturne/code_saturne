@@ -926,9 +926,9 @@ static cs_halo_state_t *
 _pre_vector_multiply_sync_x_start(const cs_matrix_t   *matrix,
                                   cs_real_t          *restrict x)
 {
- cs_halo_state_t *hs = NULL;
+ cs_halo_state_t *hs = nullptr;
 
-  if (matrix->halo != NULL) {
+  if (matrix->halo != nullptr) {
 
     hs = cs_halo_state_get_default();
 
@@ -939,7 +939,7 @@ _pre_vector_multiply_sync_x_start(const cs_matrix_t   *matrix,
                       CS_REAL_TYPE,
                       matrix->db_size,
                       x,
-                      NULL,
+                      nullptr,
                       hs);
 
     cs_halo_sync_start(matrix->halo, x, hs);
@@ -962,9 +962,9 @@ _pre_vector_multiply_sync_x_end(const cs_matrix_t   *matrix,
                                 cs_halo_state_t     *hs,
                                 cs_real_t           *restrict x)
 {
-  if (hs != NULL) {
+  if (hs != nullptr) {
 
-    assert(matrix->halo != NULL);
+    assert(matrix->halo != nullptr);
 
     cs_halo_sync_wait(matrix->halo, x, hs);
 
@@ -1018,7 +1018,7 @@ _mat_vec_p_l_native(cs_matrix_t  *matrix,
   /* Initialize ghost cell communication */
 
   cs_halo_state_t *hs
-    = (sync) ? _pre_vector_multiply_sync_x_start(matrix, x) : NULL;
+    = (sync) ? _pre_vector_multiply_sync_x_start(matrix, x) : nullptr;
 
   /* Diagonal part of matrix.vector product */
 
@@ -1031,12 +1031,12 @@ _mat_vec_p_l_native(cs_matrix_t  *matrix,
 
   /* Finalize ghost cell comunication if overlap used */
 
-  if (hs != NULL)
+  if (hs != nullptr)
     cs_halo_sync_wait(matrix->halo, x, hs);
 
   /* non-diagonal terms */
 
-  if (mc->e_val != NULL) {
+  if (mc->e_val != nullptr) {
 
     const cs_lnum_2_t *restrict face_cel_p = ms->edges;
 
@@ -1095,7 +1095,7 @@ _b_mat_vec_p_l_native(cs_matrix_t  *matrix,
   /* Initialize ghost cell communication */
 
   cs_halo_state_t *hs
-    = (sync) ? _pre_vector_multiply_sync_x_start(matrix, x) : NULL;
+    = (sync) ? _pre_vector_multiply_sync_x_start(matrix, x) : nullptr;
 
   /* Diagonal part of matrix.vector product */
 
@@ -1108,12 +1108,12 @@ _b_mat_vec_p_l_native(cs_matrix_t  *matrix,
 
   /* Finalize ghost cell comunication if overlap used */
 
-  if (hs != NULL)
+  if (hs != nullptr)
     _pre_vector_multiply_sync_x_end(matrix, hs, x);
 
   /* non-diagonal terms */
 
-  if (mc->e_val != NULL) {
+  if (mc->e_val != nullptr) {
 
     const cs_lnum_2_t *restrict face_cel_p = ms->edges;
 
@@ -1178,7 +1178,7 @@ _bb_mat_vec_p_l_native(cs_matrix_t  *matrix,
   /* Initialize ghost cell communication */
 
   cs_halo_state_t *hs
-    = (sync) ? _pre_vector_multiply_sync_x_start(matrix, x) : NULL;
+    = (sync) ? _pre_vector_multiply_sync_x_start(matrix, x) : nullptr;
 
   /* Diagonal part of matrix.vector product */
 
@@ -1191,12 +1191,12 @@ _bb_mat_vec_p_l_native(cs_matrix_t  *matrix,
 
   /* Finalize ghost cell comunication if overlap used */
 
-  if (hs != NULL)
+  if (hs != nullptr)
     _pre_vector_multiply_sync_x_end(matrix, hs, x);
 
   /* non-diagonal terms */
 
-  if (mc->e_val != NULL) {
+  if (mc->e_val != nullptr) {
 
     const cs_lnum_2_t *restrict face_cel_p = ms->edges;
 
@@ -1258,7 +1258,7 @@ _3_3_mat_vec_p_l_native(cs_matrix_t  *matrix,
   /* Initialize ghost cell communication */
 
   cs_halo_state_t *hs
-    = (sync) ? _pre_vector_multiply_sync_x_start(matrix, x) : NULL;
+    = (sync) ? _pre_vector_multiply_sync_x_start(matrix, x) : nullptr;
 
   /* Diagonal part of matrix.vector product */
 
@@ -1271,12 +1271,12 @@ _3_3_mat_vec_p_l_native(cs_matrix_t  *matrix,
 
   /* Finalize ghost cell comunication */
 
-  if (hs != NULL)
+  if (hs != nullptr)
     _pre_vector_multiply_sync_x_end(matrix, hs, x);
 
   /* non-diagonal terms */
 
-  if (mc->e_val != NULL) {
+  if (mc->e_val != nullptr) {
 
     const cs_lnum_2_t *restrict face_cel_p = ms->edges;
 
@@ -1342,7 +1342,7 @@ _6_6_mat_vec_p_l_native(cs_matrix_t  *matrix,
   /* Initialize ghost cell communication */
 
   cs_halo_state_t *hs
-    = (sync) ? _pre_vector_multiply_sync_x_start(matrix, x) : NULL;
+    = (sync) ? _pre_vector_multiply_sync_x_start(matrix, x) : nullptr;
 
   /* Diagonal part of matrix.vector product */
 
@@ -1355,12 +1355,12 @@ _6_6_mat_vec_p_l_native(cs_matrix_t  *matrix,
 
   /* Finalize ghost cell comunication if overlap used */
 
-  if (hs != NULL)
+  if (hs != nullptr)
     _pre_vector_multiply_sync_x_end(matrix, hs, x);
 
   /* non-diagonal terms */
 
-  if (mc->e_val != NULL) {
+  if (mc->e_val != nullptr) {
 
     const cs_lnum_2_t *restrict face_cel_p = ms->edges;
 
@@ -1457,7 +1457,7 @@ _mat_vec_p_l_native_omp(cs_matrix_t  *matrix,
   /* Initialize ghost cell communication */
 
   cs_halo_state_t *hs
-    = (sync) ? _pre_vector_multiply_sync_x_start(matrix, x) : NULL;
+    = (sync) ? _pre_vector_multiply_sync_x_start(matrix, x) : nullptr;
 
   /* Diagonal part of matrix.vector product */
 
@@ -1470,12 +1470,12 @@ _mat_vec_p_l_native_omp(cs_matrix_t  *matrix,
 
   /* Finalize ghost cell comunication if overlap used */
 
-  if (hs != NULL)
+  if (hs != nullptr)
     cs_halo_sync_wait(matrix->halo, x, hs);
 
   /* non-diagonal terms */
 
-  if (mc->e_val != NULL) {
+  if (mc->e_val != nullptr) {
 
     const cs_lnum_2_t *restrict face_cel_p = ms->edges;
 
@@ -1554,7 +1554,7 @@ _b_mat_vec_p_l_native_omp(cs_matrix_t  *matrix,
   /* Initialize ghost cell communication */
 
   cs_halo_state_t *hs
-    = (sync) ? _pre_vector_multiply_sync_x_start(matrix, x) : NULL;
+    = (sync) ? _pre_vector_multiply_sync_x_start(matrix, x) : nullptr;
 
   /* Diagonal part of matrix.vector product */
 
@@ -1567,12 +1567,12 @@ _b_mat_vec_p_l_native_omp(cs_matrix_t  *matrix,
 
   /* Finalize ghost cell comunication if overlap used */
 
-  if (hs != NULL)
+  if (hs != nullptr)
     _pre_vector_multiply_sync_x_end(matrix, hs, x);
 
   /* non-diagonal terms */
 
-  if (mc->e_val != NULL) {
+  if (mc->e_val != nullptr) {
 
     const cs_lnum_2_t *restrict face_cel_p = ms->edges;
 
@@ -1649,7 +1649,7 @@ _mat_vec_p_l_native_omp_atomic(cs_matrix_t  *matrix,
   /* Initialize ghost cell communication */
 
   cs_halo_state_t *hs
-    = (sync) ? _pre_vector_multiply_sync_x_start(matrix, x) : NULL;
+    = (sync) ? _pre_vector_multiply_sync_x_start(matrix, x) : nullptr;
 
   /* Diagonal part of matrix.vector product */
 
@@ -1662,12 +1662,12 @@ _mat_vec_p_l_native_omp_atomic(cs_matrix_t  *matrix,
 
   /* Finalize ghost cell comunication if overlap used */
 
-  if (hs != NULL)
+  if (hs != nullptr)
     cs_halo_sync_wait(matrix->halo, x, hs);
 
   /* non-diagonal terms */
 
-  if (mc->e_val != NULL) {
+  if (mc->e_val != nullptr) {
 
     const cs_lnum_2_t *restrict face_cel_p = ms->edges;
 
@@ -1728,7 +1728,7 @@ _b_mat_vec_p_l_native_omp_atomic(cs_matrix_t  *matrix,
   /* Initialize ghost cell communication */
 
   cs_halo_state_t *hs
-    = (sync) ? _pre_vector_multiply_sync_x_start(matrix, x) : NULL;
+    = (sync) ? _pre_vector_multiply_sync_x_start(matrix, x) : nullptr;
 
   /* Diagonal part of matrix.vector product */
 
@@ -1741,12 +1741,12 @@ _b_mat_vec_p_l_native_omp_atomic(cs_matrix_t  *matrix,
 
   /* Finalize ghost cell comunication if overlap used */
 
-  if (hs != NULL)
+  if (hs != nullptr)
     _pre_vector_multiply_sync_x_end(matrix, hs, x);
 
   /* non-diagonal terms */
 
-  if (mc->e_val != NULL) {
+  if (mc->e_val != nullptr) {
 
     const cs_lnum_2_t *restrict face_cel_p = ms->edges;
 
@@ -1816,7 +1816,7 @@ _mat_vec_p_l_native_vector(cs_matrix_t  *matrix,
   /* Initialize ghost cell communication */
 
   cs_halo_state_t *hs
-    = (sync) ? _pre_vector_multiply_sync_x_start(matrix, x) : NULL;
+    = (sync) ? _pre_vector_multiply_sync_x_start(matrix, x) : nullptr;
 
   /* Diagonal part of matrix.vector product */
 
@@ -1829,12 +1829,12 @@ _mat_vec_p_l_native_vector(cs_matrix_t  *matrix,
 
   /* Finalize ghost cell comunication if overlap used */
 
-  if (hs != NULL)
+  if (hs != nullptr)
     cs_halo_sync_wait(matrix->halo, x, hs);
 
   /* non-diagonal terms */
 
-  if (mc->e_val != NULL) {
+  if (mc->e_val != nullptr) {
 
     const cs_lnum_2_t *restrict face_cel_p = ms->edges;
 
@@ -1903,8 +1903,8 @@ _mat_vec_p_l_csr(cs_matrix_t  *matrix,
   /* Ghost cell communication */
 
   cs_halo_state_t *hs
-    = (sync) ? _pre_vector_multiply_sync_x_start(matrix, x) : NULL;
-  if (hs != NULL)
+    = (sync) ? _pre_vector_multiply_sync_x_start(matrix, x) : nullptr;
+  if (hs != nullptr)
     cs_halo_sync_wait(matrix->halo, x, hs);
 
   /* Standard case */
@@ -1978,21 +1978,21 @@ _mat_vec_p_l_csr_mkl(cs_matrix_t  *matrix,
   /* Ghost cell communication */
 
   cs_halo_state_t *hs
-    = (sync) ? _pre_vector_multiply_sync_x_start(matrix, x) : NULL;
+    = (sync) ? _pre_vector_multiply_sync_x_start(matrix, x) : nullptr;
 
   /* Map matrix if not yet done */
 
   cs_matrix_mkl_sparse_map_t *csm
     = (cs_matrix_mkl_sparse_map_t *)matrix->ext_lib_map;
 
-  if (csm == NULL) {
+  if (csm == nullptr) {
     matrix->ext_lib_map = _set_mkl_sparse_map(matrix);
     csm = (cs_matrix_mkl_sparse_map_t *)matrix->ext_lib_map;
   }
 
   /* Finalize ghost cells communication */
 
-  if (hs != NULL)
+  if (hs != nullptr)
     cs_halo_sync_wait(matrix->halo, x, hs);
 
   /* MKL call */
@@ -2046,21 +2046,21 @@ _mat_vec_p_l_csr_mkl_sycl(cs_matrix_t  *matrix,
   /* Ghost cell communication */
 
   cs_halo_state_t *hs
-    = (sync) ? _pre_vector_multiply_sync_x_start(matrix, x) : NULL;
+    = (sync) ? _pre_vector_multiply_sync_x_start(matrix, x) : nullptr;
 
   /* Map matrix if not yet done */
 
   cs_matrix_mkl_sparse_sycl_map_t *csm
     = (cs_matrix_mkl_sparse_sycl_map_t *)matrix->ext_lib_map;
 
-  if (csm == NULL) {
+  if (csm == nullptr) {
     matrix->ext_lib_map = _set_mkl_sparse_sycl_map(matrix);
     csm = (cs_matrix_mkl_sparse_sycl_map_t *)matrix->ext_lib_map;
   }
 
   /* Finalize ghost cells communication */
 
-  if (hs != NULL)
+  if (hs != nullptr)
     cs_halo_sync_wait(matrix->halo, x, hs);
 
   /* MKL call */
@@ -2119,13 +2119,13 @@ _mat_vec_p_l_msr(cs_matrix_t  *matrix,
   /* Ghost cell communication */
 
   cs_halo_state_t *hs
-    = (sync) ? _pre_vector_multiply_sync_x_start(matrix, x) : NULL;
-  if (hs != NULL)
+    = (sync) ? _pre_vector_multiply_sync_x_start(matrix, x) : nullptr;
+  if (hs != nullptr)
     cs_halo_sync_wait(matrix->halo, x, hs);
 
   /* Standard case */
 
-  if (!exclude_diag && mc->d_val != NULL) {
+  if (!exclude_diag && mc->d_val != nullptr) {
 
 #   pragma omp parallel for  if(n_rows > CS_THR_MIN)
     for (cs_lnum_t ii = 0; ii < n_rows; ii++) {
@@ -2197,13 +2197,13 @@ _mat_vec_p_l_msr_omp_sched(cs_matrix_t  *matrix,
   /* Ghost cell communication */
 
   cs_halo_state_t *hs
-    = (sync) ? _pre_vector_multiply_sync_x_start(matrix, x) : NULL;
-  if (hs != NULL)
+    = (sync) ? _pre_vector_multiply_sync_x_start(matrix, x) : nullptr;
+  if (hs != nullptr)
     cs_halo_sync_wait(matrix->halo, x, hs);
 
   /* Standard case */
 
-  if (!exclude_diag && mc->d_val != NULL) {
+  if (!exclude_diag && mc->d_val != nullptr) {
 
 #   pragma omp parallel if(n_rows > CS_THR_MIN)
     {
@@ -2326,13 +2326,13 @@ _b_mat_vec_p_l_msr_generic(cs_matrix_t  *matrix,
   /* Ghost cell communication */
 
   cs_halo_state_t *hs
-    = (sync) ? _pre_vector_multiply_sync_x_start(matrix, x) : NULL;
-  if (hs != NULL)
+    = (sync) ? _pre_vector_multiply_sync_x_start(matrix, x) : nullptr;
+  if (hs != nullptr)
     _pre_vector_multiply_sync_x_end(matrix, hs, x);
 
   /* Standard case */
 
-  if (!exclude_diag && mc->d_val != NULL) {
+  if (!exclude_diag && mc->d_val != nullptr) {
 
 #   pragma omp parallel for  if(n_rows > CS_THR_MIN)
     for (cs_lnum_t ii = 0; ii < n_rows; ii++) {
@@ -2413,13 +2413,13 @@ _b_mat_vec_p_l_msr_3(cs_matrix_t  *matrix,
   /* Ghost cell communication */
 
   cs_halo_state_t *hs
-    = (sync) ? _pre_vector_multiply_sync_x_start(matrix, x) : NULL;
-  if (hs != NULL)
+    = (sync) ? _pre_vector_multiply_sync_x_start(matrix, x) : nullptr;
+  if (hs != nullptr)
     _pre_vector_multiply_sync_x_end(matrix, hs, x);
 
   /* Standard case */
 
-  if (!exclude_diag && mc->d_val != NULL) {
+  if (!exclude_diag && mc->d_val != nullptr) {
 
 #   pragma omp parallel for  if(n_rows > CS_THR_MIN)
     for (cs_lnum_t ii = 0; ii < n_rows; ii++) {
@@ -2496,13 +2496,13 @@ _b_mat_vec_p_l_msr_6(cs_matrix_t  *matrix,
   /* Ghost cell communication */
 
   cs_halo_state_t *hs
-    = (sync) ? _pre_vector_multiply_sync_x_start(matrix, x) : NULL;
-  if (hs != NULL)
+    = (sync) ? _pre_vector_multiply_sync_x_start(matrix, x) : nullptr;
+  if (hs != nullptr)
     _pre_vector_multiply_sync_x_end(matrix, hs, x);
 
   /* Standard case */
 
-  if (!exclude_diag && mc->d_val != NULL) {
+  if (!exclude_diag && mc->d_val != nullptr) {
 
 #   pragma omp parallel for  if(n_rows > CS_THR_MIN)
     for (cs_lnum_t ii = 0; ii < n_rows; ii++) {
@@ -2607,13 +2607,13 @@ _bb_mat_vec_p_l_msr_3(cs_matrix_t  *matrix,
   /* Ghost cell communication */
 
   cs_halo_state_t *hs
-    = (sync) ? _pre_vector_multiply_sync_x_start(matrix, x) : NULL;
-  if (hs != NULL)
+    = (sync) ? _pre_vector_multiply_sync_x_start(matrix, x) : nullptr;
+  if (hs != nullptr)
     _pre_vector_multiply_sync_x_end(matrix, hs, x);
 
   /* Standard case */
 
-  if (!exclude_diag && mc->d_val != NULL) {
+  if (!exclude_diag && mc->d_val != nullptr) {
 
 #   pragma omp parallel for  if(n_rows > CS_THR_MIN)
     for (cs_lnum_t ii = 0; ii < n_rows; ii++) {
@@ -2710,13 +2710,13 @@ _bb_mat_vec_p_l_msr_generic(cs_matrix_t  *matrix,
   /* Ghost cell communication */
 
   cs_halo_state_t *hs
-    = (sync) ? _pre_vector_multiply_sync_x_start(matrix, x) : NULL;
-  if (hs != NULL)
+    = (sync) ? _pre_vector_multiply_sync_x_start(matrix, x) : nullptr;
+  if (hs != nullptr)
     _pre_vector_multiply_sync_x_end(matrix, hs, x);
 
   /* Standard case */
 
-  if (!exclude_diag && mc->d_val != NULL) {
+  if (!exclude_diag && mc->d_val != nullptr) {
 
 #   pragma omp parallel for  if(n_rows > CS_THR_MIN)
     for (cs_lnum_t ii = 0; ii < n_rows; ii++) {
@@ -2805,7 +2805,7 @@ _bb_mat_vec_p_l_msr(cs_matrix_t  *matrix,
  * parameters:
  *   exclude_diag <-- exclude diagonal if true
  *   matrix       <-- pointer to matrix structure
- *   hs           <-- halo state: if non-NULL, call cs_halo_sync_wait
+ *   hs           <-- halo state: if non-nullptr, call cs_halo_sync_wait
  *                    locally (possibly allowing computation/communication
  *                    overlap)
  *   x            <-> multipliying vector values
@@ -2827,8 +2827,8 @@ _mat_vec_p_l_msr_mkl(cs_matrix_t  *matrix,
   /* Ghost cell communication */
 
   cs_halo_state_t *hs
-    = (sync) ? _pre_vector_multiply_sync_x_start(matrix, x) : NULL;
-  if (hs != NULL)
+    = (sync) ? _pre_vector_multiply_sync_x_start(matrix, x) : nullptr;
+  if (hs != nullptr)
     cs_halo_sync_wait(matrix->halo, x, hs);
 
   /* Call MKL function */
@@ -2838,7 +2838,7 @@ _mat_vec_p_l_msr_mkl(cs_matrix_t  *matrix,
   cs_matrix_mkl_sparse_map_t *csm
     = (cs_matrix_mkl_sparse_map_t *)matrix->ext_lib_map;
 
-  if (csm == NULL) {
+  if (csm == nullptr) {
     matrix->ext_lib_map = _set_mkl_sparse_map(matrix);
     csm = (cs_matrix_mkl_sparse_map_t *)matrix->ext_lib_map;
   }
@@ -2847,7 +2847,7 @@ _mat_vec_p_l_msr_mkl(cs_matrix_t  *matrix,
 
   cs_real_t beta = 1;
 
-  if (!exclude_diag && mc->d_val != NULL) {
+  if (!exclude_diag && mc->d_val != nullptr) {
     const cs_lnum_t n_rows = matrix->n_rows;
     const cs_real_t *restrict da = mc->d_val;
     switch (matrix->db_size) {
@@ -2967,8 +2967,8 @@ _mat_vec_p_l_msr_mkl_sycl(cs_matrix_t  *matrix,
   /* Ghost cell communication */
 
   cs_halo_state_t *hs
-    = (sync) ? _pre_vector_multiply_sync_x_start(matrix, x) : NULL;
-  if (hs != NULL)
+    = (sync) ? _pre_vector_multiply_sync_x_start(matrix, x) : nullptr;
+  if (hs != nullptr)
     cs_halo_sync_wait(matrix->halo, x, hs);
 
   /* Call MKL function */
@@ -2978,7 +2978,7 @@ _mat_vec_p_l_msr_mkl_sycl(cs_matrix_t  *matrix,
   cs_matrix_mkl_sparse_sycl_map_t *csm
     = (cs_matrix_mkl_sparse_sycl_map_t *)matrix->ext_lib_map;
 
-  if (csm == NULL) {
+  if (csm == nullptr) {
     matrix->ext_lib_map = _set_mkl_sparse_sycl_map(matrix);
     csm = (cs_matrix_mkl_sparse_sycl_map_t *)matrix->ext_lib_map;
   }
@@ -2987,7 +2987,7 @@ _mat_vec_p_l_msr_mkl_sycl(cs_matrix_t  *matrix,
 
   cs_real_t beta = 1;
 
-  if (!exclude_diag && mc->d_val != NULL) {
+  if (!exclude_diag && mc->d_val != nullptr) {
     const cs_lnum_t n_rows = matrix->n_rows;
     const cs_real_t *restrict da = mc->d_val;
     switch (matrix->db_size) {
@@ -3092,7 +3092,7 @@ _mat_vec_p_l_dist(cs_matrix_t  *matrix,
   /* Initialize halo synchronization */
 
   cs_halo_state_t *hs
-    = (sync) ? _pre_vector_multiply_sync_x_start(matrix, x) : NULL;
+    = (sync) ? _pre_vector_multiply_sync_x_start(matrix, x) : nullptr;
 
   /* Compute local part */
 
@@ -3104,7 +3104,7 @@ _mat_vec_p_l_dist(cs_matrix_t  *matrix,
 
   /* Finalize halo communication */
 
-  if (hs != NULL)
+  if (hs != nullptr)
     cs_halo_sync_wait(matrix->halo, x, hs);
 
   /* Compute distant part */
@@ -3161,7 +3161,7 @@ _mat_vec_p_l_dist_omp_sched(cs_matrix_t  *matrix,
   /* Initialize halo synchronization */
 
   cs_halo_state_t *hs
-    = (sync) ? _pre_vector_multiply_sync_x_start(matrix, x) : NULL;
+    = (sync) ? _pre_vector_multiply_sync_x_start(matrix, x) : nullptr;
 
   /* Compute local part */
 
@@ -3173,7 +3173,7 @@ _mat_vec_p_l_dist_omp_sched(cs_matrix_t  *matrix,
 
   /* Finalize halo communication */
 
-  if (hs != NULL)
+  if (hs != nullptr)
     cs_halo_sync_wait(matrix->halo, x, hs);
 
   /* Compute distant part */
@@ -3228,7 +3228,7 @@ _b_mat_vec_p_l_dist_generic(cs_matrix_t  *matrix,
   /* Initialize halo synchronization */
 
   cs_halo_state_t *hs
-    = (sync) ? _pre_vector_multiply_sync_x_start(matrix, x) : NULL;
+    = (sync) ? _pre_vector_multiply_sync_x_start(matrix, x) : nullptr;
 
   /* Compute local part */
 
@@ -3240,7 +3240,7 @@ _b_mat_vec_p_l_dist_generic(cs_matrix_t  *matrix,
 
   /* Finalize halo communication */
 
-  if (hs != NULL)
+  if (hs != nullptr)
     _pre_vector_multiply_sync_x_end(matrix, hs, x);
 
   /* Compute distant part */
@@ -3299,7 +3299,7 @@ _b_mat_vec_p_l_dist_3(cs_matrix_t  *matrix,
   /* Initialize halo synchronization */
 
   cs_halo_state_t *hs
-    = (sync) ? _pre_vector_multiply_sync_x_start(matrix, x) : NULL;
+    = (sync) ? _pre_vector_multiply_sync_x_start(matrix, x) : nullptr;
 
   /* Compute local part */
 
@@ -3311,7 +3311,7 @@ _b_mat_vec_p_l_dist_3(cs_matrix_t  *matrix,
 
   /* Finalize halo communication */
 
-  if (hs != NULL)
+  if (hs != nullptr)
     _pre_vector_multiply_sync_x_end(matrix, hs, x);
 
   /* Compute distant part */
@@ -3366,7 +3366,7 @@ _b_mat_vec_p_l_dist_6(cs_matrix_t  *matrix,
   /* Initialize halo synchronization */
 
   cs_halo_state_t *hs
-    = (sync) ? _pre_vector_multiply_sync_x_start(matrix, x) : NULL;
+    = (sync) ? _pre_vector_multiply_sync_x_start(matrix, x) : nullptr;
 
   /* Compute local part */
 
@@ -3378,7 +3378,7 @@ _b_mat_vec_p_l_dist_6(cs_matrix_t  *matrix,
 
   /* Finalize halo communication */
 
-  if (hs != NULL)
+  if (hs != nullptr)
     _pre_vector_multiply_sync_x_end(matrix, hs, x);
 
   /* Compute distant part */
@@ -3463,7 +3463,7 @@ _bb_mat_vec_p_l_dist_3(cs_matrix_t  *matrix,
   /* Initialize halo synchronization */
 
   cs_halo_state_t *hs
-    = (sync) ? _pre_vector_multiply_sync_x_start(matrix, x) : NULL;
+    = (sync) ? _pre_vector_multiply_sync_x_start(matrix, x) : nullptr;
 
   /* Compute local part */
 
@@ -3475,7 +3475,7 @@ _bb_mat_vec_p_l_dist_3(cs_matrix_t  *matrix,
 
   /* Finalize halo communication */
 
-  if (hs != NULL)
+  if (hs != nullptr)
     _pre_vector_multiply_sync_x_end(matrix, hs, x);
 
   /* Compute distant part */
@@ -3539,7 +3539,7 @@ _bb_mat_vec_p_l_dist_generic(cs_matrix_t  *matrix,
   /* Initialize halo synchronization */
 
   cs_halo_state_t *hs
-    = (sync) ? _pre_vector_multiply_sync_x_start(matrix, x) : NULL;
+    = (sync) ? _pre_vector_multiply_sync_x_start(matrix, x) : nullptr;
 
   /* Compute local part */
 
@@ -3551,7 +3551,7 @@ _bb_mat_vec_p_l_dist_generic(cs_matrix_t  *matrix,
 
   /* Finalize halo communication */
 
-  if (hs != NULL)
+  if (hs != nullptr)
     _pre_vector_multiply_sync_x_end(matrix, hs, x);
 
   /* Compute distant part */
@@ -3626,7 +3626,7 @@ _bb_mat_vec_p_l_dist(cs_matrix_t  *matrix,
  * parameters:
  *   exclude_diag <-- exclude diagonal if true
  *   matrix       <-- pointer to matrix structure
- *   hs           <-- halo state: if non-NULL, call cs_halo_sync_wait
+ *   hs           <-- halo state: if non-nullptr, call cs_halo_sync_wait
  *                    locally (possibly allowing computation/communication
  *                    overlap)
  *   x            <-> multipliying vector values
@@ -3645,7 +3645,7 @@ _mat_vec_p_l_dist_mkl(cs_matrix_t  *matrix,
   /* Initialize halo synchronization */
 
   cs_halo_state_t *hs
-    = (sync) ? _pre_vector_multiply_sync_x_start(matrix, x) : NULL;
+    = (sync) ? _pre_vector_multiply_sync_x_start(matrix, x) : nullptr;
 
   /* Compute local part */
 
@@ -3657,7 +3657,7 @@ _mat_vec_p_l_dist_mkl(cs_matrix_t  *matrix,
 
   /* Finalize halo communication */
 
-  if (hs != NULL)
+  if (hs != nullptr)
     cs_halo_sync_wait(matrix->halo, x, hs);
 
   /* Compute distant part */
@@ -3705,7 +3705,7 @@ _mat_vec_p_l_dist_mkl_sycl(cs_matrix_t  *matrix,
   /* Initialize halo synchronization */
 
   cs_halo_state_t *hs
-    = (sync) ? _pre_vector_multiply_sync_x_start(matrix, x) : NULL;
+    = (sync) ? _pre_vector_multiply_sync_x_start(matrix, x) : nullptr;
 
   /* Compute local part */
 
@@ -3717,7 +3717,7 @@ _mat_vec_p_l_dist_mkl_sycl(cs_matrix_t  *matrix,
 
   /* Finalize halo communication */
 
-  if (hs != NULL)
+  if (hs != nullptr)
     cs_halo_sync_wait(matrix->halo, x, hs);
 
   /* Compute distant part */
@@ -3786,8 +3786,8 @@ _mat_vec_p_l_dist_mkl_sycl(cs_matrix_t  *matrix,
  *   fill type   <--  matrix fill type to merge from
  *   spmv_type   <--  SpMV operation type (full or sub-matrix)
  *                    (all types if CS_MATRIX_SPMV_N_TYPES)
- *   numbering   <--  mesh numbering structure, or NULL
- *   func_name   <--  function type name, or NULL for default
+ *   numbering   <--  mesh numbering structure, or nullptr
+ *   func_name   <--  function type name, or nullptr for default
  *   spmv        <->  multiplication function array
  *
  * returns:
@@ -3844,7 +3844,7 @@ const char *default_name = s_not_impl;
  if (m_type == CS_MATRIX_NATIVE)
    default_name = default_name_native;
 
- if (_func_name == NULL)
+ if (_func_name == nullptr)
    _func_name = default_name;
  else if (!strcmp(func_name, "default"))
    _func_name = default_name;
@@ -3882,7 +3882,7 @@ cs_matrix_spmv_set_defaults(cs_matrix_t  *m)
 {
   char spmv_xy_hd[CS_MATRIX_SPMV_N_TYPES];
 
-  if (m->destroy_adaptor != NULL)
+  if (m->destroy_adaptor != nullptr)
     m->destroy_adaptor(m);
 
   for (int mft = 0; mft < CS_MATRIX_N_FILL_TYPES; mft++) {
@@ -3891,7 +3891,7 @@ cs_matrix_spmv_set_defaults(cs_matrix_t  *m)
                               (cs_matrix_fill_type_t)mft,
                               (cs_matrix_spmv_type_t)spmv_type,
                               m->numbering,
-                              NULL, /* func_name */
+                              nullptr, /* func_name */
                               m->vector_multiply[mft],
                               spmv_xy_hd);
 #if defined(HAVE_ACCEL)
@@ -3899,7 +3899,7 @@ cs_matrix_spmv_set_defaults(cs_matrix_t  *m)
                               (cs_matrix_fill_type_t)mft,
                               (cs_matrix_spmv_type_t)spmv_type,
                               m->numbering,
-                              NULL, /* func_name */
+                              nullptr, /* func_name */
                               m->vector_multiply_d[mft]);
 #endif
     }
@@ -3946,8 +3946,8 @@ cs_matrix_spmv_set_defaults(cs_matrix_t  *m)
  *   fill type   <--  matrix fill type to merge from
  *   spmv_type   <--  SpMV operation type (full or sub-matrix)
  *                    (all types if CS_MATRIX_SPMV_N_TYPES)
- *   numbering   <--  mesh numbering structure, or NULL
- *   func_name   <--  function type name, or NULL for default
+ *   numbering   <--  mesh numbering structure, or nullptr
+ *   func_name   <--  function type name, or nullptr for default
  *   spmv        <->  multiplication function array
  *   spmv_xy_hd  <->  multiplication function x and y host/device location
  *
@@ -3969,11 +3969,11 @@ cs_matrix_spmv_set_func(cs_matrix_type_t             m_type,
   int standard = 0;
 
   cs_matrix_vector_product_t *_spmv[CS_MATRIX_SPMV_N_TYPES]
-    = {NULL, NULL};
+    = {nullptr, nullptr};
 
   char _spmv_xy_hd[CS_MATRIX_SPMV_N_TYPES] = {'h', 'h'};
 
-  if (func_name == NULL)
+  if (func_name == nullptr)
     standard = 2;
   else if (!strcmp(func_name, "default"))
     standard = 2;
@@ -4017,7 +4017,7 @@ cs_matrix_spmv_set_func(cs_matrix_type_t             m_type,
         case CS_MATRIX_SCALAR:
           [[fallthrough]];
         case CS_MATRIX_SCALAR_SYM:
-          if (numbering != NULL) {
+          if (numbering != nullptr) {
 #if defined(HAVE_OPENMP)
             if (numbering->type == CS_NUMBERING_THREADS) {
               _spmv[0] = _mat_vec_p_l_native_omp;
@@ -4035,7 +4035,7 @@ cs_matrix_spmv_set_func(cs_matrix_type_t             m_type,
         case CS_MATRIX_BLOCK_D_66:
           [[fallthrough]];
         case CS_MATRIX_BLOCK_D_SYM:
-          if (numbering != NULL) {
+          if (numbering != nullptr) {
 #if defined(HAVE_OPENMP)
             if (numbering->type == CS_NUMBERING_THREADS) {
               _spmv[0] = _b_mat_vec_p_l_native_omp;
@@ -4053,7 +4053,7 @@ cs_matrix_spmv_set_func(cs_matrix_type_t             m_type,
 
     else if (!strcmp(func_name, "omp")) {
 #if defined(HAVE_OPENMP)
-      if (numbering != NULL) {
+      if (numbering != nullptr) {
         if (numbering->type == CS_NUMBERING_THREADS) {
           switch(fill_type) {
           case CS_MATRIX_SCALAR:
@@ -4419,7 +4419,7 @@ cs_matrix_spmv_set_func(cs_matrix_type_t             m_type,
   }
 
   if (spmv_type < CS_MATRIX_SPMV_N_TYPES) {
-    if (_spmv[spmv_type] != NULL) {
+    if (_spmv[spmv_type] != nullptr) {
       spmv[spmv_type] = _spmv[spmv_type];
       spmv_xy_hd[spmv_type] = _spmv_xy_hd[spmv_type];
       retcode = 0;
@@ -4427,7 +4427,7 @@ cs_matrix_spmv_set_func(cs_matrix_type_t             m_type,
   }
   else {
     for (int i = 0; i < CS_MATRIX_SPMV_N_TYPES; i++) {
-      if (_spmv[i] != NULL) {
+      if (_spmv[i] != nullptr) {
         spmv[i] = _spmv[i];
         spmv_xy_hd[i] = _spmv_xy_hd[i];
         retcode = 0;

@@ -107,7 +107,7 @@ cs_lagr_get_n_particles(void)
   cs_lnum_t retval = 0;
 
   const cs_lagr_particle_set_t  *p_set = cs_glob_lagr_particle_set;
-  if (p_set != NULL)
+  if (p_set != nullptr)
     retval = p_set->n_particles;
 
   return retval;
@@ -125,8 +125,8 @@ cs_lagr_get_n_particles(void)
  * \param[in]   cell_list        optional list of containing cells filter
  *                               (1 to n numbering)
  * \param[in]   density          if < 1, fraction of particles to select
- * \param[out]  n_particles      number of selected particles, or NULL
- * \param[out]  particle_list    particle_list (1 to n numbering), or NULL
+ * \param[out]  n_particles      number of selected particles, or nullptr
+ * \param[out]  particle_list    particle_list (1 to n numbering), or nullptr
  */
 /*----------------------------------------------------------------------------*/
 
@@ -143,13 +143,13 @@ cs_lagr_get_particle_list(cs_lnum_t         n_cells,
 
   cs_lnum_t p_count = 0;
 
-  bool *cell_flag = NULL;
+  bool *cell_flag = nullptr;
 
   const cs_mesh_t *mesh = cs_glob_mesh;
 
   const cs_lagr_particle_set_t  *p_set = cs_glob_lagr_particle_set;
 
-  assert(p_set != NULL);
+  assert(p_set != nullptr);
 
   size_t extents = p_set->p_am->extents;
 
@@ -181,7 +181,7 @@ cs_lagr_get_particle_list(cs_lnum_t         n_cells,
     for (i = 0; i < mesh->n_cells; i++)
       cell_flag[i] = false;
 
-    if (cell_list != NULL) {
+    if (cell_list != nullptr) {
       for (i = 0; i < n_cells; i++)
         cell_flag[cell_list[i] - 1] = true;
     }
@@ -215,21 +215,21 @@ cs_lagr_get_particle_list(cs_lnum_t         n_cells,
 
     /* Check for filter cell */
 
-    if (cell_flag != NULL) {
+    if (cell_flag != nullptr) {
       cs_lnum_t cur_cell_id
         = cs_lagr_particles_get_lnum(p_set, i, CS_LAGR_CELL_ID);
       if (cell_flag[cur_cell_id] == false)
         continue;
     }
 
-    if (particle_list != NULL)
+    if (particle_list != nullptr)
       particle_list[p_count] = i+1;
 
     p_count += 1;
 
   }
 
-  if (cell_flag != NULL)
+  if (cell_flag != nullptr)
     BFT_FREE(cell_flag);
 
   *n_particles = p_count;
@@ -249,7 +249,7 @@ cs_lagr_get_particle_list(cs_lnum_t         n_cells,
  * \param[in]   component_id          if -1 : extract the whole attribute
  *                                    if >0 : id of the component to extract
  * \param[in]   n_particles           number of particles in filter
- * \param[in]   particle_list         particle_list (1 to n numbering), or NULL
+ * \param[in]   particle_list         particle_list (1 to n numbering), or nullptr
  * \param[out]  values                particle values for given attribute
  *
  * \return 0 in case of success, 1 if attribute is not present
@@ -275,7 +275,7 @@ cs_lagr_get_particle_values(const cs_lagr_particle_set_t  *particles,
   int  _count;
   unsigned char *_values = static_cast<unsigned char *>(values);
 
-  assert(particles != NULL);
+  assert(particles != nullptr);
 
   cs_lagr_get_attr_info(particles, 0, attr,
                         &extents, &size, &displ, &_datatype, &_count);
@@ -304,7 +304,7 @@ cs_lagr_get_particle_values(const cs_lagr_particle_set_t  *particles,
 
   /* Case where we have no filter */
 
-  if (particle_list == NULL) {
+  if (particle_list == nullptr) {
     for (i = 0; i < n_particles; i++) {
       unsigned char *dest = _values + i*_length;
       const unsigned char
@@ -351,7 +351,7 @@ cs_lagr_get_particle_values(const cs_lagr_particle_set_t  *particles,
  * \param[in]   component_id     if -1 : extract the whole attribute
  *                               if >0 : id of the component to extract
  * \param[in]   n_particles      number of particles in filter
- * \param[in]   particle_list    particle_list (1 to n numbering), or NULL
+ * \param[in]   particle_list    particle_list (1 to n numbering), or nullptr
  * \param[out]  segment_values   particle segment values
  *
  * \return 0 in case of success, 1 if attribute is not present
@@ -377,7 +377,7 @@ cs_lagr_get_trajectory_values(const cs_lagr_particle_set_t  *particles,
   int  _count;
   unsigned char *_values = static_cast<unsigned char *>(segment_values);
 
-  assert(particles != NULL);
+  assert(particles != nullptr);
 
   const unsigned char *p_buffer = particles->p_buffer;
 
@@ -395,7 +395,7 @@ cs_lagr_get_trajectory_values(const cs_lagr_particle_set_t  *particles,
 
   if (particles->p_am->count[1][attr] > 0)
     cs_lagr_get_attr_info(particles, 1, attr,
-                          &extents, NULL, &displ_p, NULL, NULL);
+                          &extents, nullptr, &displ_p, nullptr, nullptr);
 
   /* Check consistency */
 
@@ -412,7 +412,7 @@ cs_lagr_get_trajectory_values(const cs_lagr_particle_set_t  *particles,
 
   /* Case where we have no filter */
 
-  if (particle_list == NULL) {
+  if (particle_list == nullptr) {
 
     if (particles->p_am->count[1][attr] > 0) {
 

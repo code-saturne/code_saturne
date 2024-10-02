@@ -156,7 +156,7 @@ _get_medcoupling_mesh_id(fvm_to_medcoupling_t  *writer,
   int i;
   int retval = -1;
 
-  assert(writer != NULL);
+  assert(writer != nullptr);
 
   for (i = 0; i < writer->n_med_meshes; i++) {
     if (strcmp(mesh_name, writer->med_meshes[i]->getName().c_str()) == 0)
@@ -186,11 +186,11 @@ _add_medcoupling_mesh(fvm_to_medcoupling_t  *writer,
 {
   int id;
 
-  assert(writer != NULL);
+  assert(writer != nullptr);
 
   /* Add a new MEDCoupling mesh structure */
 
-  MEDCouplingUMesh *m = NULL;
+  MEDCouplingUMesh *m = nullptr;
 
   m = MEDCouplingUMesh::New();
 
@@ -390,7 +390,7 @@ _get_medcoupling_field_id(fvm_to_medcoupling_t      *writer,
 
   TypeOfField type = (location == FVM_WRITER_PER_NODE) ? ON_NODES : ON_CELLS;
 
-  MEDCouplingFieldDouble  *f = NULL;
+  MEDCouplingFieldDouble  *f = nullptr;
 
   /* Loop on fields to know if field has already been created */
 
@@ -489,9 +489,9 @@ _add_medcoupling_field(fvm_to_medcoupling_t      *writer,
 
   /* Build ParaFIELD object if required */
 
-  MEDCouplingFieldDouble  *f = NULL;
+  MEDCouplingFieldDouble  *f = nullptr;
 
-  if (writer->med_meshes[mesh_id] != NULL) {
+  if (writer->med_meshes[mesh_id] != nullptr) {
 
     f = MEDCouplingFieldDouble::New(type, td);
 
@@ -540,7 +540,7 @@ _add_medcoupling_field(fvm_to_medcoupling_t      *writer,
  *
  * parameters:
  *   mesh        <-- pointer to nodal mesh structure
- *   med_mesh    <-- pointer to MEDCouuplingUMesh object (NULL on ranks > 0)
+ *   med_mesh    <-- pointer to MEDCouuplingUMesh object (nullptr on ranks > 0)
  *----------------------------------------------------------------------------*/
 
 static void
@@ -550,8 +550,8 @@ _export_vertex_coords_l(const fvm_nodal_t           *mesh,
   cs_lnum_t   i, j;
   size_t stride;
 
-  DataArrayDouble  *Coords = NULL;
-  double  *block_coords = NULL;
+  DataArrayDouble  *Coords = nullptr;
+  double  *block_coords = nullptr;
 
   const double  *vertex_coords = mesh->vertex_coords;
   const cs_lnum_t  n_vertices = mesh->n_vertices;
@@ -565,9 +565,9 @@ _export_vertex_coords_l(const fvm_nodal_t           *mesh,
   Coords->alloc(n_vertices, 3);
   block_coords = Coords->getPointer();
 
-  if (mesh->parent_vertex_id != NULL || mesh->dim < 3) {
+  if (mesh->parent_vertex_id != nullptr || mesh->dim < 3) {
 
-    if (mesh->parent_vertex_id != NULL) {
+    if (mesh->parent_vertex_id != nullptr) {
       const cs_lnum_t  *parent_vertex_id = mesh->parent_vertex_id;
       for (i = 0; i < n_vertices; i++) {
         for (j = 0; j < mesh->dim; j++)
@@ -604,7 +604,7 @@ _export_vertex_coords_l(const fvm_nodal_t           *mesh,
  *   type     <-- FVM element type
  *   n_elts   <-- number of elements in block
  *   connect  <-- connectivity array
- *   med_mesh <-> pointer to MEDCouuplingUMesh object (NULL on ranks > 0)
+ *   med_mesh <-> pointer to MEDCouuplingUMesh object (nullptr on ranks > 0)
  *----------------------------------------------------------------------------*/
 
 static void
@@ -623,7 +623,7 @@ _write_connect_block(fvm_element_t      type,
 
   _get_vertex_order(med_type, vertex_order);
 
-  assert(med_mesh != NULL);
+  assert(med_mesh != nullptr);
 
   for (i = 0; i < n_elts; i++) {
     for (j = 0; j < stride; j++)
@@ -637,7 +637,7 @@ _write_connect_block(fvm_element_t      type,
  *
  * parameters:
  *   export_section <-- pointer to MEDCoupling section helper structure
- *   med_mesh       <-> MEDCouuplingUMesh object (NULL on ranks > 0)
+ *   med_mesh       <-> MEDCouuplingUMesh object (nullptr on ranks > 0)
  *----------------------------------------------------------------------------*/
 
 static void
@@ -650,7 +650,7 @@ _export_nodal_polyhedra_l(const fvm_nodal_section_t  *section,
   cs_lnum_t  face_length, face_id;
 
   int elt_buf_size = 8;
-  mcIdType *elt_buf = NULL;
+  mcIdType *elt_buf = nullptr;
 
   BFT_MALLOC(elt_buf, elt_buf_size, mcIdType);
 
@@ -721,7 +721,7 @@ _export_nodal_polygons_l(const fvm_nodal_section_t  *section,
   cs_lnum_t   i, j;
 
   int elt_buf_size = 8;
-  mcIdType *elt_buf = NULL;
+  mcIdType *elt_buf = nullptr;
 
   BFT_MALLOC(elt_buf, elt_buf_size, mcIdType);
 
@@ -782,7 +782,7 @@ _export_field_values_n(const fvm_nodal_t           *mesh,
                        const void            *const field_values[],
                        MEDCouplingFieldDouble      *f)
 {
-  assert(f != NULL);
+  assert(f != nullptr);
 
   double  *values = f->getArray()->getPointer();
 
@@ -833,9 +833,9 @@ _export_field_values_e(const fvm_nodal_t               *mesh,
 {
   int  section_id;
 
-  double  *values = NULL;
+  double  *values = nullptr;
 
-  if (f != NULL)
+  if (f != nullptr)
     values = f->getArray()->getPointer();
 
   /* Distribute partition to block values */
@@ -917,7 +917,7 @@ fvm_to_medcoupling_init_writer(const char             *name,
   CS_UNUSED(path);
   CS_UNUSED(options);
 
-  fvm_to_medcoupling_t  *writer = NULL;
+  fvm_to_medcoupling_t  *writer = nullptr;
 
   /* Initialize writer */
 
@@ -928,17 +928,17 @@ fvm_to_medcoupling_init_writer(const char             *name,
 
   writer->n_med_meshes = 0;
   writer->n_fields  = 0;
-  writer->med_meshes   = NULL;
-  writer->fields = NULL;
+  writer->med_meshes   = nullptr;
+  writer->fields = nullptr;
 
   writer->n_time_steps   = 0;
-  writer->time_steps     = NULL;
-  writer->time_values    = NULL;
+  writer->time_steps     = nullptr;
+  writer->time_values    = nullptr;
   writer->time_dependency = time_dependency;
 
   /* Writer name */
 
-  if (name != NULL) {
+  if (name != nullptr) {
     BFT_MALLOC(writer->name, strlen(name) + 1, char);
     strcpy(writer->name, name);
   }
@@ -975,7 +975,7 @@ fvm_to_medcoupling_init_writer(const char             *name,
  *   this_writer_p <-- pointer to opaque writer structure.
  *
  * returns:
- *   NULL pointer
+ *   nullptr pointer
  *----------------------------------------------------------------------------*/
 
 void *
@@ -985,7 +985,7 @@ fvm_to_medcoupling_finalize_writer(void  *this_writer_p)
 
   fvm_to_medcoupling_t  *writer = (fvm_to_medcoupling_t *)this_writer_p;
 
-  assert(writer != NULL);
+  assert(writer != nullptr);
 
   /* Free structures */
 
@@ -997,11 +997,11 @@ fvm_to_medcoupling_finalize_writer(void  *this_writer_p)
      (reference counters should go to 0) */
 
   for (i = 0; i < writer->n_med_meshes; i++)
-    writer->med_meshes[i] = NULL; // delete writer->med_meshes[i];
+    writer->med_meshes[i] = nullptr; // delete writer->med_meshes[i];
   BFT_FREE(writer->med_meshes);
 
   for (i = 0; i < writer->n_fields; i++) {
-    writer->fields[i]->f = NULL; // delete writer->fields[i]->f;
+    writer->fields[i]->f = nullptr; // delete writer->fields[i]->f;
     BFT_FREE(writer->fields[i]);
   }
 
@@ -1011,7 +1011,7 @@ fvm_to_medcoupling_finalize_writer(void  *this_writer_p)
 
   BFT_FREE(writer);
 
-  return NULL;
+  return nullptr;
 }
 
 /*----------------------------------------------------------------------------
@@ -1087,14 +1087,14 @@ fvm_to_medcoupling_export_nodal(void               *this_writer_p,
     if (section->entity_dim < elt_dim)
       continue;
 
-    if (section->global_element_num != NULL)
+    if (section->global_element_num != nullptr)
       n_g_elts += fvm_io_num_get_global_count(section->global_element_num);
     else
       n_g_elts += section->n_elements;
 
   } /* End of loop on sections */
 
-  if (med_mesh != NULL)
+  if (med_mesh != nullptr)
     med_mesh->allocateCells(n_g_elts);
 
   /* Element connectivity */

@@ -95,7 +95,7 @@ struct _medcoupling_slice_t {
  *============================================================================*/
 
 static int _n_slices = 0; /* Number of defined intersections */
-static cs_medcoupling_slice_t **_slices = NULL;
+static cs_medcoupling_slice_t **_slices = nullptr;
 
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
 
@@ -108,9 +108,9 @@ static cs_medcoupling_slice_t **_slices = NULL;
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Get a slice by name. Returns NULL if not found.
+ * \brief Get a slice by name. Returns nullptr if not found.
  *
- * \return pointer to slice structure. NULL if not found.
+ * \return pointer to slice structure. nullptr if not found.
  */
 /*----------------------------------------------------------------------------*/
 
@@ -119,9 +119,9 @@ static inline cs_medcoupling_slice_t * _get_slice_try
   const char *name /*!<[in] Name of the slice */
 )
 {
-  cs_medcoupling_slice_t *retval = NULL;
+  cs_medcoupling_slice_t *retval = nullptr;
 
-  if (_n_slices > 0 && name != NULL) {
+  if (_n_slices > 0 && name != nullptr) {
     for (int i = 0; i < _n_slices; i++) {
       if (strcmp(name, _slices[i]->name) == 0) {
         retval = _slices[i];
@@ -145,11 +145,11 @@ static inline cs_medcoupling_slice_t * _allocate_new_slice
 (
 )
 {
-  cs_medcoupling_slice_t *_si = NULL;
+  cs_medcoupling_slice_t *_si = nullptr;
   BFT_MALLOC(_si, 1, cs_medcoupling_slice_t);
 
-  _si->name = NULL;
-  _si->csm  = NULL;
+  _si->name = nullptr;
+  _si->csm  = nullptr;
 
   for (int i = 0; i < 3; i++) {
     _si->normal[i] = 0.;
@@ -157,9 +157,9 @@ static inline cs_medcoupling_slice_t * _allocate_new_slice
   }
 
   _si->n_elts = 0;
-  _si->elt_ids = NULL;
+  _si->elt_ids = nullptr;
 
-  _si->surface = NULL;
+  _si->surface = nullptr;
   _si->total_surface = 0.;
 
   return _si;
@@ -185,7 +185,7 @@ static inline cs_medcoupling_slice_t * _add_slice
   cs_medcoupling_slice_t *_si =
     _get_slice_try(name);
 
-  if (_si != NULL)
+  if (_si != nullptr)
     bft_error(__FILE__, __LINE__, 0,
               _("A slice with name \"%s\" allready exists."),
               name);
@@ -244,7 +244,7 @@ static inline void _compute_slice
   const cs_lnum_t n_cells = cs_glob_mesh->n_cells;
   const cs_lnum_t n_cells_with_ghost = cs_glob_mesh->n_cells_with_ghosts;
 
-  cs_lnum_t *_flag = NULL;
+  cs_lnum_t *_flag = nullptr;
   BFT_MALLOC(_flag, n_cells_with_ghost, cs_lnum_t);
   memset(_flag, 0, n_cells_with_ghost * sizeof(cs_lnum_t));
 
@@ -284,7 +284,7 @@ static inline void _compute_slice
   // Hence we apply a "0.5" coefficient on the cell
   // ----------------------------------------------------------------------
 
-  if (cs_glob_mesh->halo != NULL)
+  if (cs_glob_mesh->halo != nullptr)
     cs_halo_sync_num(cs_glob_mesh->halo, CS_HALO_STANDARD, _flag);
 
   const cs_lnum_t n_i_faces = cs_glob_mesh->n_i_faces;
@@ -352,8 +352,8 @@ void _compute_scalar_integral_l
   cs_real_t              *w_l       /*!<[in] Local integrated weight value */
 )
 {
-  assert(si != NULL);
-  assert(scalar != NULL);
+  assert(si != nullptr);
+  assert(scalar != nullptr);
 
   cs_real_t _int_l = 0.;
   cs_real_t _w_l   = 0.;
@@ -506,7 +506,7 @@ static void _activate_slice_postprocessing
   cs_medcoupling_slice_t *slice /*!<[in] pointer to slice structure */
 )
 {
-  assert(slice != NULL);
+  assert(slice != nullptr);
 
   /* Flagged cells */
   {
@@ -594,7 +594,7 @@ cs_medcoupling_slice_t * cs_medcoupling_slice_by_name
 {
   cs_medcoupling_slice_t *retval = cs_medcoupling_slice_by_name_try(name);
 
-  if (retval == NULL)
+  if (retval == nullptr)
     bft_error(__FILE__, __LINE__, 0,
               _("%s: intersection with name \"%s\" was not found."),
               name, __func__);
@@ -604,10 +604,10 @@ cs_medcoupling_slice_t * cs_medcoupling_slice_by_name
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Get pointer to slice based on name. Returns NULL if
+ * \brief Get pointer to slice based on name. Returns nullptr if
  * not found.
  *
- * \return pointer to slice, NULL if not found.
+ * \return pointer to slice, nullptr if not found.
  */
 /*----------------------------------------------------------------------------*/
 
@@ -616,11 +616,11 @@ cs_medcoupling_slice_t * cs_medcoupling_slice_by_name_try
   const char  *name /*!<[in] name of the slice */
 )
 {
-  if (name == NULL || strcmp(name, "") == 0)
+  if (name == nullptr || strcmp(name, "") == 0)
     bft_error(__FILE__, __LINE__, 0,
               _("Error: An empty name was provided."));
 
-  cs_medcoupling_slice_t *retval = NULL;
+  cs_medcoupling_slice_t *retval = nullptr;
 
   for (int i = 0; i < _n_slices; i++) {
     if (strcmp(name, _slices[i]->name) == 0) {
@@ -921,7 +921,7 @@ cs_real_t cs_medcoupling_slice_scalar_mean
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Compute integral of a scalar over a slice using a scalar
- *        and/or vectorial weights. If NULL is provided for both weights,
+ *        and/or vectorial weights. If nullptr is provided for both weights,
  *        the non-weighted function is called.
  *
  * \return Computed integral value over entire slice (parallel)
@@ -949,7 +949,7 @@ cs_real_t cs_medcoupling_slice_scalar_integral_weighted
      _("Error: This function cannot be called without MEDCoupling support"));
 #else
   /* If no weight use simpler function */
-  if (weight_v == NULL && weight_s == NULL) {
+  if (weight_v == nullptr && weight_s == nullptr) {
     retval = cs_medcoupling_slice_scalar_integral(name, scalar);
   }
   else {
@@ -958,11 +958,11 @@ cs_real_t cs_medcoupling_slice_scalar_integral_weighted
 
     cs_medcoupling_slice_t *si = cs_medcoupling_slice_by_name(name);
 
-    if (weight_s != NULL && weight_v == NULL) {
+    if (weight_s != nullptr && weight_v == nullptr) {
       _compute_scalar_integral_l<CS_MEDCPL_INT_WEIGHT_SCALAR>
         (si, scalar, weight_s, weight_v, &_int_l, &_weight_l);
     }
-    else if (weight_s == NULL && weight_v != NULL) {
+    else if (weight_s == nullptr && weight_v != nullptr) {
       _compute_scalar_integral_l<CS_MEDCPL_INT_WEIGHT_VECTOR>
         (si, scalar, weight_s, weight_v,
          &_int_l, &_weight_l);
@@ -984,7 +984,7 @@ cs_real_t cs_medcoupling_slice_scalar_integral_weighted
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Compute mean of a scalar over a slice using a scalar and/or vectorial
- *        weights. If NULL is provided for both weights, the non-weighted
+ *        weights. If nullptr is provided for both weights, the non-weighted
  *        function is called.
  *
  * \return Computed mean value over entire slice (parallel)
@@ -1012,7 +1012,7 @@ cs_real_t cs_medcoupling_slice_scalar_mean_weighted
      _("Error: This function cannot be called without MEDCoupling support"));
 #else
   /* If no weight use simpler function */
-  if (weight_v == NULL && weight_s == NULL) {
+  if (weight_v == nullptr && weight_s == nullptr) {
     retval = cs_medcoupling_slice_scalar_mean(name, scalar);
   }
   else {
@@ -1021,11 +1021,11 @@ cs_real_t cs_medcoupling_slice_scalar_mean_weighted
 
     cs_medcoupling_slice_t *si = cs_medcoupling_slice_by_name(name);
 
-    if (weight_s != NULL && weight_v == NULL) {
+    if (weight_s != nullptr && weight_v == nullptr) {
       _compute_scalar_integral_l<CS_MEDCPL_INT_WEIGHT_SCALAR>
         (si, scalar, weight_s, weight_v, &_int_l, &_weight_l);
     }
-    else if (weight_s == NULL && weight_v != NULL) {
+    else if (weight_s == nullptr && weight_v != nullptr) {
       _compute_scalar_integral_l<CS_MEDCPL_INT_WEIGHT_VECTOR>
         (si, scalar, weight_s, weight_v, &_int_l, &_weight_l);
     }

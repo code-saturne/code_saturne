@@ -90,11 +90,11 @@ BEGIN_C_DECLS
 /* Imposed thermal flux indicator at the boundary
   (some boundary contributions of the total energy equation
   have to be cancelled) */
-static int *_ifbet = NULL;
+static int *_ifbet = nullptr;
 
 /*! boundary convection flux indicator of a Rusanov or an analytical flux
   (some boundary contributions of the momentum eq. have to be cancelled) */
-static int *_icvfli = NULL;
+static int *_icvfli = nullptr;
 
 /*============================================================================
  * Private function definitions

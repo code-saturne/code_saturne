@@ -54,7 +54,7 @@ BEGIN_C_DECLS
 /*----------------------------------------------------------------------------
  * Computation of particle injection profile.
  *
- * Note: if the input pointer is non-NULL, it must point to valid data
+ * Note: if the input pointer is non-nullptr, it must point to valid data
  * when the selection function is called, so that value or structure should
  * not be temporary (i.e. local);
  *
@@ -205,7 +205,7 @@ cs_user_lagr_boundary_conditions(const int  bc_type[])
                               absolute iteration.
 
      *   injection_profile_func: optional pointer to profile definition
-     *   injection_profile_input: associated input, or NULL
+     *   injection_profile_input: associated input, or nullptr
 
      *   cluster: number of the group to which the particle belongs
                   (only if one wishes to calculate statistics per group)
@@ -287,7 +287,7 @@ cs_user_lagr_boundary_conditions(const int  bc_type[])
     /* Assign injection profile function */
 
     zis->injection_profile_func = _injection_profile;
-    zis->injection_profile_input = NULL; /* default */
+    zis->injection_profile_input = nullptr; /* default */
 
   }
   /*! [lagr_bc_define_injection_2] */

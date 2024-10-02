@@ -209,7 +209,7 @@ cs_user_extra_operations(cs_domain_t *domain)
      */
 
     const cs_lnum_t n_cells = domain->mesh->n_cells;
-    cs_real_t *rho_cp = NULL;
+    cs_real_t *rho_cp = nullptr;
     BFT_MALLOC(rho_cp, n_cells, cs_real_t);
 
     for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)

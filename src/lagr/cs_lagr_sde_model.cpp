@@ -381,8 +381,8 @@ _lagtmp(cs_lnum_t        npt,
 
     /* Source term */
 
-    cs_real_t *part_ts_temp = NULL;
-    if (p_set->p_am->source_term_displ != NULL) {
+    cs_real_t *part_ts_temp = nullptr;
+    if (p_set->p_am->source_term_displ != nullptr) {
       if (p_set->p_am->source_term_displ[CS_LAGR_TEMPERATURE] >= 0)
         part_ts_temp = cs_lagr_particles_source_terms(p_set, npt,
                                                       CS_LAGR_TEMPERATURE);
@@ -390,7 +390,7 @@ _lagtmp(cs_lnum_t        npt,
 
     if (nor == 1) {
 
-      if (part_ts_temp != NULL)
+      if (part_ts_temp != nullptr)
         part_ts_temp[0] =  0.5 * prev_part_temp[0] * aux2
                          + ( -aux2 + (1.0 - aux2) * tpscara / dtp) * aux1;
 
@@ -455,8 +455,8 @@ _lagsec(cs_lnum_t         npt,
   cs_real_t prev_p_cp
     = cs_lagr_particle_get_real_n(particle, p_am, 1, CS_LAGR_CP);
 
-  cs_real_t *ptsvar = NULL;
-  if (p_set->p_am->source_term_displ != NULL) {
+  cs_real_t *ptsvar = nullptr;
+  if (p_set->p_am->source_term_displ != nullptr) {
     if (p_set->p_am->source_term_displ[CS_LAGR_TEMPERATURE] >= 0)
       ptsvar = cs_lagr_particles_source_terms(p_set, npt, CS_LAGR_TEMPERATURE);
   }
@@ -623,7 +623,7 @@ _lagsec(cs_lnum_t         npt,
     phith[l_id]  = 0.0;
 
   /* Save the correction array for second order */
-  if (ptsvar != NULL) {
+  if (ptsvar != nullptr) {
     for (cs_lnum_t l_id = 0; l_id < nlayer; l_id++)
       tssauv[l_id] = ptsvar[l_id];
   }
@@ -631,7 +631,7 @@ _lagsec(cs_lnum_t         npt,
   _lagtmp(npt, layer_vol, tempct, radius, mlayer, phith, temp);
 
   /* Use array for second order correction */
-  if (ptsvar != NULL) {
+  if (ptsvar != nullptr) {
     for (cs_lnum_t l_id = 0; l_id < nlayer; l_id++)
       ptsvar[l_id] = tssauv[l_id];
   }
@@ -894,7 +894,7 @@ _lagitf(cs_lagr_attribute_t  *iattr)
 
   int ltsvar = 0;
 
-  if (p_set->p_am->source_term_displ != NULL) {
+  if (p_set->p_am->source_term_displ != nullptr) {
     if (p_set->p_am->source_term_displ[*iattr] >= 0)
       ltsvar   = 1;
   }
@@ -902,7 +902,7 @@ _lagitf(cs_lagr_attribute_t  *iattr)
   /* Mean fluid temperature in degrees C
    * =================================== */
 
-  if (   extra->temperature != NULL
+  if (   extra->temperature != nullptr
       &&    cs_glob_thermal_model->temperature_scale
          == CS_TEMPERATURE_SCALE_CELSIUS) {
 
@@ -910,7 +910,7 @@ _lagitf(cs_lagr_attribute_t  *iattr)
       tempf[cell_id] = extra->temperature->val[cell_id];
 
   }
-  else if (   extra->temperature != NULL
+  else if (   extra->temperature != nullptr
            &&    cs_glob_thermal_model->temperature_scale
               == CS_TEMPERATURE_SCALE_KELVIN) {
 
@@ -1200,7 +1200,7 @@ _lagich(const cs_real_t   tempct[],
     if (   cs_glob_physical_model_flag[CS_COMBUSTION_EBU] == 0
         || cs_glob_physical_model_flag[CS_COMBUSTION_EBU] == 2)
       xrkl = diftl0 / rom;
-    else if (extra->cpro_viscls != NULL )
+    else if (extra->cpro_viscls != nullptr )
       xrkl = extra->cpro_viscls->val[cell_id] / rom;
     else
       xrkl = extra->visls0 / rom;

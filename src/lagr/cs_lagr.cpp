@@ -230,7 +230,7 @@ cs_lagr_reentrained_model_t *cs_glob_lagr_reentrained_model
 
 /* lagr precipitation model structure and associated pointer */
 static cs_lagr_precipitation_model_t _cs_glob_lagr_precipitation_model
-  = {0, 0, 0, NULL, NULL, NULL};
+  = {0, 0, 0, nullptr, nullptr, nullptr};
 cs_lagr_precipitation_model_t *cs_glob_lagr_precipitation_model
   = &_cs_glob_lagr_precipitation_model;
 
@@ -295,7 +295,7 @@ cs_lagr_source_terms_t *cs_glob_lagr_source_terms
 
 /* lagr encrustation structure and associated pointer */
 static cs_lagr_encrustation_t _cs_glob_lagr_encrustation
-  = {0, 0, NULL, NULL, NULL, NULL, 0} ;
+  = {0, 0, nullptr, nullptr, nullptr, nullptr, 0} ;
 cs_lagr_encrustation_t *cs_glob_lagr_encrustation
   = &_cs_glob_lagr_encrustation;
 
@@ -324,7 +324,7 @@ static cs_lagr_boundary_interactions_t _cs_glob_lagr_boundary_interactions
      .ihdiam = -1,
      .ihsum = -1,
      .tstatp = 0.,
-     .nombrd = NULL};
+     .nombrd = nullptr};
 
 cs_lagr_boundary_interactions_t *cs_glob_lagr_boundary_interactions
   = &_cs_glob_lagr_boundary_interactions;
@@ -340,34 +340,34 @@ static cs_lagr_extra_module_t _lagr_extra_module
      .icp = -1,
      .cmu = 0,
      .visls0 = 0,
-     .ustar = NULL,
-     .cromf = NULL,
-     .pressure = NULL,
-     .scal_t = NULL,
-     .temperature = NULL,
-     .vel = NULL,
-     .viscl = NULL,
-     .cpro_viscls = NULL,
-     .cpro_cp = NULL,
-     .rad_energy = NULL,
-     .x_oxyd = NULL,
-     .x_eau = NULL,
-     .x_m = NULL,
-     .cvar_k = NULL,
-     .cvar_ep = NULL,
-     .cvar_omg = NULL,
-     .cvar_rij = NULL,
-     .grad_pr = NULL,
-     .grad_vel = NULL,
-     .lagr_time = NULL,
-     .grad_lagr_time = NULL};
+     .ustar = nullptr,
+     .cromf = nullptr,
+     .pressure = nullptr,
+     .scal_t = nullptr,
+     .temperature = nullptr,
+     .vel = nullptr,
+     .viscl = nullptr,
+     .cpro_viscls = nullptr,
+     .cpro_cp = nullptr,
+     .rad_energy = nullptr,
+     .x_oxyd = nullptr,
+     .x_eau = nullptr,
+     .x_m = nullptr,
+     .cvar_k = nullptr,
+     .cvar_ep = nullptr,
+     .cvar_omg = nullptr,
+     .cvar_rij = nullptr,
+     .grad_pr = nullptr,
+     .grad_vel = nullptr,
+     .lagr_time = nullptr,
+     .grad_lagr_time = nullptr};
 
 cs_lagr_extra_module_t *cs_glob_lagr_extra_module = &_lagr_extra_module;
 
 /* boundary and volume condition data */
 
-static cs_lagr_zone_data_t  *_boundary_conditions = NULL;
-static cs_lagr_zone_data_t  *_volume_conditions = NULL;
+static cs_lagr_zone_data_t  *_boundary_conditions = nullptr;
+static cs_lagr_zone_data_t  *_volume_conditions = nullptr;
 
 /*============================================================================
  * Global variables
@@ -387,19 +387,19 @@ int cs_glob_lagr_log_frequency_n = 1; /* log every frequency_n time steps */
 
 cs_lagr_time_step_t *cs_glob_lagr_time_step = &_cs_glob_lagr_time_step;
 
-cs_real_t *bound_stat = NULL;
+cs_real_t *bound_stat = nullptr;
 
-const cs_lagr_zone_data_t     *cs_glob_lagr_boundary_conditions = NULL;
-const cs_lagr_zone_data_t     *cs_glob_lagr_volume_conditions = NULL;
+const cs_lagr_zone_data_t     *cs_glob_lagr_boundary_conditions = nullptr;
+const cs_lagr_zone_data_t     *cs_glob_lagr_volume_conditions = nullptr;
 
-cs_lagr_internal_condition_t  *cs_glob_lagr_internal_conditions = NULL;
+cs_lagr_internal_condition_t  *cs_glob_lagr_internal_conditions = nullptr;
 
 /* Geometry helper arrays */
 /*------------------------*/
 
 /*! Projection matrices for global to local coordinates on boundary faces */
 
-cs_real_33_t  *cs_glob_lagr_b_face_proj = NULL;
+cs_real_33_t  *cs_glob_lagr_b_face_proj = nullptr;
 
 /*=============================================================================
  * Private function definitions
@@ -423,23 +423,23 @@ _lagr_map_fields_default(void)
 
   _lagr_extra_module.cvar_k = cs_field_by_name_try("k");
   /* using LES */
-  if (_lagr_extra_module.cvar_k == NULL)
+  if (_lagr_extra_module.cvar_k == nullptr)
     _lagr_extra_module.cvar_k = cs_field_by_name_try("k_sgs");
-  if (_lagr_extra_module.cvar_k == NULL)
+  if (_lagr_extra_module.cvar_k == nullptr)
     _lagr_extra_module.cvar_k = cs_field_by_name_try("lagr_k");
 
   _lagr_extra_module.cvar_ep = cs_field_by_name_try("epsilon");
   /* using LES */
-  if (_lagr_extra_module.cvar_ep == NULL)
+  if (_lagr_extra_module.cvar_ep == nullptr)
     _lagr_extra_module.cvar_ep = cs_field_by_name_try("epsilon_sgs");
-  if (_lagr_extra_module.cvar_ep == NULL)
+  if (_lagr_extra_module.cvar_ep == nullptr)
     _lagr_extra_module.cvar_ep = cs_field_by_name_try("lagr_epsilon");
 
-  if (cs_field_by_name_try("velocity_1") != NULL) {
+  if (cs_field_by_name_try("velocity_1") != nullptr) {
     /* we are probably using neptune_cfd */
     _lagr_extra_module.vel         = cs_field_by_name_try("lagr_velocity");
 
-    _lagr_extra_module.cvar_omg    = NULL;
+    _lagr_extra_module.cvar_omg    = nullptr;
     _lagr_extra_module.cvar_rij    = cs_field_by_name_try("lagr_rij");
     _lagr_extra_module.viscl       = cs_field_by_name_try
                                        ("lagr_molecular_viscosity");
@@ -448,9 +448,9 @@ _lagr_map_fields_default(void)
                                        ("lagr_thermal_conductivity");
     _lagr_extra_module.cpro_cp     = cs_field_by_name_try("lagr_specific_heat");
     _lagr_extra_module.temperature = cs_field_by_name_try("lagr_temperature");
-    _lagr_extra_module.x_oxyd      = NULL;
-    _lagr_extra_module.x_eau       = NULL;
-    _lagr_extra_module.x_m         = NULL;
+    _lagr_extra_module.x_oxyd      = nullptr;
+    _lagr_extra_module.x_eau       = nullptr;
+    _lagr_extra_module.x_m         = nullptr;
     _lagr_extra_module.cromf       = cs_field_by_name_try("lagr_density");
     /* TODO FIXME */
     _lagr_extra_module.visls0      = 0.;
@@ -464,11 +464,11 @@ _lagr_map_fields_default(void)
     _lagr_extra_module.cvar_omg    = cs_field_by_name_try("omega");
     _lagr_extra_module.cvar_rij    = cs_field_by_name_try("rij");
     _lagr_extra_module.viscl       = cs_field_by_name_try("molecular_viscosity");
-    _lagr_extra_module.cpro_viscls = NULL;
+    _lagr_extra_module.cpro_viscls = nullptr;
 
     _lagr_extra_module.scal_t = cs_thermal_model_field();
 
-    if (_lagr_extra_module.scal_t != NULL) {
+    if (_lagr_extra_module.scal_t != nullptr) {
       _lagr_extra_module.visls0
         = cs_field_get_key_double(_lagr_extra_module.scal_t,
                                   cs_field_key_id("diffusivity_ref"));
@@ -487,7 +487,7 @@ _lagr_map_fields_default(void)
     _lagr_extra_module.x_m         = cs_field_by_name_try("xm");
 
     _lagr_extra_module.ustar  = cs_field_by_name_try("boundary_ustar");
-    if (_lagr_extra_module.ustar == NULL)
+    if (_lagr_extra_module.ustar == nullptr)
       _lagr_extra_module.ustar  = cs_field_by_name_try("ustar");
   }
 }
@@ -572,15 +572,15 @@ _update_zone_data_struct(cs_lagr_zone_data_t  **zone_data,
 {
   cs_lagr_zone_data_t  *zd = *zone_data;
 
-  if (*zone_data == NULL) {
+  if (*zone_data == nullptr) {
     BFT_MALLOC(zd, 1, cs_lagr_zone_data_t);
     zd->location_id = location_id;
     zd->n_zones = 0;
-    zd->zone_type = NULL;
-    zd->n_injection_sets = NULL;
-    zd->injection_set = NULL;
-    zd->elt_type = NULL;
-    zd->particle_flow_rate = NULL;
+    zd->zone_type = nullptr;
+    zd->n_injection_sets = nullptr;
+    zd->injection_set = nullptr;
+    zd->elt_type = nullptr;
+    zd->particle_flow_rate = nullptr;
     *zone_data = zd;
   }
 
@@ -593,7 +593,7 @@ _update_zone_data_struct(cs_lagr_zone_data_t  **zone_data,
     for (int i = zd->n_zones; i < n_zones; i++) {
       zd->zone_type[i] = -1;
       zd->n_injection_sets[i] = 0;
-      zd->injection_set[i] = NULL;
+      zd->injection_set[i] = nullptr;
     }
     for (int i = zd->n_zones*n_stats; i < n_zones*n_stats; i++)
       zd->particle_flow_rate[i] = 0;
@@ -612,7 +612,7 @@ _update_zone_data_struct(cs_lagr_zone_data_t  **zone_data,
 static cs_lagr_internal_condition_t *
 _create_internal_cond_struct(void)
 {
-  cs_lagr_internal_condition_t *internal_cond = NULL;
+  cs_lagr_internal_condition_t *internal_cond = nullptr;
   cs_mesh_t *mesh = cs_glob_mesh;
 
   BFT_MALLOC(internal_cond, 1, cs_lagr_internal_condition_t);
@@ -814,7 +814,7 @@ cs_lagr_init_arrays(void)
   cs_lnum_t  n_b_faces = cs_glob_mesh->n_b_faces;
   int   n_boundary_stats = cs_glob_lagr_dim->n_boundary_stats;
 
-  assert(bound_stat == NULL);
+  assert(bound_stat == nullptr);
 
   if (n_boundary_stats > 0)
     BFT_MALLOC(bound_stat, n_b_faces * n_boundary_stats, cs_real_t);
@@ -831,7 +831,7 @@ cs_lagr_finalize(void)
   int  n_boundary_stats = cs_glob_lagr_dim->n_boundary_stats;
 
   if (n_boundary_stats > 0) {
-    assert(bound_stat != NULL);
+    assert(bound_stat != nullptr);
     BFT_FREE(bound_stat);
   }
 
@@ -874,10 +874,10 @@ cs_lagr_finalize(void)
   /* Fluid gradients */
   cs_lagr_extra_module_t *extra = cs_glob_lagr_extra_module;
   BFT_FREE(extra->grad_pr);
-  if (extra->grad_vel != NULL)
+  if (extra->grad_vel != nullptr)
     BFT_FREE(extra->grad_vel);
 
-  if (extra->grad_lagr_time != NULL)
+  if (extra->grad_lagr_time != nullptr)
     BFT_FREE(extra->grad_lagr_time);
 }
 
@@ -904,7 +904,7 @@ cs_lagr_add_fields(void)
   const int k_log = cs_field_key_id("log");
 
   cs_lagr_extra_module_t *extra = cs_glob_lagr_extra_module;
-  cs_field_t *f = NULL;
+  cs_field_t *f = nullptr;
 
   /* Add Lagrangian integral time */
 
@@ -920,7 +920,7 @@ cs_lagr_add_fields(void)
   /* Add TKE for DRSM and LES models */
 
   f = cs_field_by_name_try("k");
-  if (f == NULL && (extra->itytur == 3 || extra->itytur == 4)) {
+  if (f == nullptr && (extra->itytur == 3 || extra->itytur == 4)) {
     char f_name[128];
     if (extra->itytur == 3)
       snprintf(f_name, 127, "%s", "k");
@@ -939,11 +939,11 @@ cs_lagr_add_fields(void)
   /* Add Dissipation for LES or k-omega */
 
   f = cs_field_by_name_try("epsilon");
-  if (f == NULL)
+  if (f == nullptr)
     f = cs_field_by_name_try("epsilon_sgs");
-  if (f == NULL)
+  if (f == nullptr)
     f = cs_field_by_name_try("lagr_epsilon");
-  if (f == NULL) {
+  if (f == nullptr) {
     char f_name[128];
     if (extra->itytur == 3)
       snprintf(f_name, 127, "%s", "epsilon");
@@ -971,7 +971,7 @@ cs_lagr_map_specific_physics(void)
 {
   cs_turb_model_t  *turb_model = cs_get_glob_turb_model();
 
-  if (turb_model == NULL)
+  if (turb_model == nullptr)
     bft_error(__FILE__, __LINE__, 0,
               "%s: Turbulence modelling is not set.", __func__);
 
@@ -1003,7 +1003,7 @@ cs_lagr_get_injection_set(cs_lagr_zone_data_t  *zone_data,
                           int                   zone_id,
                           int                   set_id)
 {
-  assert(zone_data != NULL);
+  assert(zone_data != nullptr);
   assert(zone_id >= 0 && set_id >= 0);
   assert(zone_id < zone_data->n_zones);
 
@@ -1028,13 +1028,13 @@ cs_lagr_get_injection_set(cs_lagr_zone_data_t  *zone_data,
 void
 cs_lagr_injection_set_default(cs_lagr_injection_set_t  *zis)
 {
-  assert(zis != NULL);
+  assert(zis != nullptr);
 
   zis->n_inject             =  0;
   zis->injection_frequency  =  0;
 
-  zis->injection_profile_func = NULL;
-  zis->injection_profile_input = NULL;
+  zis->injection_profile_func = nullptr;
+  zis->injection_profile_input = nullptr;
 
   /* Fluid velocity by default */
   zis->velocity_profile     = -1;
@@ -1334,10 +1334,10 @@ cs_lagr_get_internal_conditions(void)
 
   /* Define a structure with default parameters if not done yet */
 
-  if (cs_glob_lagr_internal_conditions == NULL)
+  if (cs_glob_lagr_internal_conditions == nullptr)
     cs_glob_lagr_internal_conditions = _create_internal_cond_struct();
 
-  if (cs_glob_lagr_internal_conditions->i_face_zone_id == NULL) {
+  if (cs_glob_lagr_internal_conditions->i_face_zone_id == nullptr) {
     BFT_MALLOC(cs_glob_lagr_internal_conditions->i_face_zone_id,
                cs_glob_mesh->n_i_faces,
                int);
@@ -1415,7 +1415,7 @@ cs_lagr_finalize_zone_conditions(void)
 
     cs_lagr_zone_data_t  *zd = zda[i];
 
-    if (zd != NULL) {
+    if (zd != nullptr) {
 
       BFT_FREE(zd->zone_type);
       for (int j = 0; j < zd->n_zones; j++)
@@ -1442,7 +1442,7 @@ void cs_lagr_finalize_internal_cond(void)
   cs_lagr_internal_condition_t  *internal_cond
     = cs_glob_lagr_internal_conditions;
 
-  if (internal_cond != NULL) {
+  if (internal_cond != nullptr) {
     BFT_FREE(internal_cond->i_face_zone_id);
     BFT_FREE(internal_cond);
   }
@@ -1566,7 +1566,7 @@ cs_lagr_solve_time_step(const int         itypfb[],
 
   /* Allocate arrays depending on user options */
 
-  cs_real_t *tempp = NULL;
+  cs_real_t *tempp = nullptr;
   if (   lagr_model->clogging == 1
       || lagr_model->roughness == 1
       || lagr_model->dlvo == 1)
@@ -1574,7 +1574,7 @@ cs_lagr_solve_time_step(const int         itypfb[],
 
   ipass ++;
 
-  static cs_real_t *vislen = NULL;
+  static cs_real_t *vislen = nullptr;
   if ((lagr_model->deposition == 1) && (ipass == 1)) {
     BFT_MALLOC(vislen, n_b_faces, cs_real_t);
     for (cs_lnum_t ifac = 0; ifac < n_b_faces; ifac++)
@@ -1718,7 +1718,7 @@ cs_lagr_solve_time_step(const int         itypfb[],
       || lagr_model->roughness == 1
       || lagr_model->clogging == 1) {
 
-    if (extra->temperature != NULL) {
+    if (extra->temperature != nullptr) {
 
       if (   cs_glob_thermal_model->temperature_scale
           == CS_TEMPERATURE_SCALE_CELSIUS) {
@@ -1819,7 +1819,7 @@ cs_lagr_solve_time_step(const int         itypfb[],
     iprev = 1;
 
   /* Fields at current time step if using NEPTUNE_CFD */
-  if (cs_field_by_name_try("velocity_1") != NULL)
+  if (cs_field_by_name_try("velocity_1") != nullptr)
     iprev = 0;
 
   cs_lagr_injection(iprev, itypfb, vislen);
@@ -1890,7 +1890,7 @@ cs_lagr_solve_time_step(const int         itypfb[],
     }
 
     /* First pass allocate and compute it */
-    if (extra->grad_pr == NULL) {
+    if (extra->grad_pr == nullptr) {
       BFT_MALLOC(extra->grad_pr, cs_glob_mesh->n_cells_with_ghosts, cs_real_3_t);
 
       cs_lagr_aux_mean_fluid_quantities(extra->lagr_time,
@@ -1904,7 +1904,7 @@ cs_lagr_solve_time_step(const int         itypfb[],
       if (mesh->time_dep >= CS_MESH_TRANSIENT_CONNECT) {
         cs_lnum_t n_cells_ext = cs_glob_mesh->n_cells_with_ghosts;
         BFT_REALLOC(extra->grad_pr, n_cells_ext, cs_real_3_t);
-        if (extra->grad_vel != NULL)
+        if (extra->grad_vel != nullptr)
           BFT_REALLOC(extra->grad_vel, n_cells_ext, cs_real_33_t);
       }
 
@@ -1941,15 +1941,15 @@ cs_lagr_solve_time_step(const int         itypfb[],
 
       cs_array_real_fill_zero(3 * p_set->n_particles, (cs_real_t *)force_p);
 
-      cs_real_t *tsfext = NULL;
+      cs_real_t *tsfext = nullptr;
       if (cs_glob_lagr_time_scheme->iilagr == CS_LAGR_TWOWAY_COUPLING)
         BFT_MALLOC(tsfext, p_set->n_particles, cs_real_t);
 
-      cs_real_3_t *beta = NULL;
+      cs_real_3_t *beta = nullptr;
       if (cs_glob_lagr_time_scheme->extended_t_scheme != 0)
         BFT_MALLOC(beta, p_set->n_particles, cs_real_3_t);
 
-      cs_real_t *cpgd1 = NULL, *cpgd2 = NULL, *cpght = NULL;
+      cs_real_t *cpgd1 = nullptr, *cpgd2 = nullptr, *cpght = nullptr;
       if (   cs_glob_lagr_time_scheme->iilagr == CS_LAGR_TWOWAY_COUPLING
           && lagr_model->physical_model == CS_LAGR_PHYS_COAL
           && cs_glob_lagr_source_terms->ltsthe == 1) {
@@ -1960,14 +1960,14 @@ cs_lagr_solve_time_step(const int         itypfb[],
 
       }
 
-      cs_real_t *tempct = NULL;
+      cs_real_t *tempct = nullptr;
       if (   (   lagr_model->physical_model == CS_LAGR_PHYS_HEAT
               && cs_glob_lagr_specific_physics->itpvar == 1)
           || lagr_model->physical_model == CS_LAGR_PHYS_COAL
           || lagr_model->physical_model == CS_LAGR_PHYS_CTWR )
         BFT_MALLOC(tempct, p_set->n_particles * 2, cs_real_t);
 
-      cs_real_t *terbru = NULL;
+      cs_real_t *terbru = nullptr;
       if (cs_glob_lagr_brownian->lamvbr == 1)
         BFT_MALLOC(terbru, p_set->n_particles, cs_real_t);
 
@@ -2114,8 +2114,8 @@ cs_lagr_solve_time_step(const int         itypfb[],
 
       cs_lnum_t n_occupied_cells;
 
-      cs_lnum_t *occupied_cell_ids = NULL;
-      cs_lnum_t *particle_list = NULL;
+      cs_lnum_t *occupied_cell_ids = nullptr;
+      cs_lnum_t *particle_list = nullptr;
 
       if (   cs_glob_lagr_model->agglomeration == 1
           || cs_glob_lagr_model->fragmentation == 1 ) {
@@ -2263,7 +2263,7 @@ cs_lagr_solve_time_step(const int         itypfb[],
       if (cs_glob_lagr_time_scheme->iilagr == CS_LAGR_TWOWAY_COUPLING)
         BFT_FREE(tsfext);
 
-      if (beta != NULL)
+      if (beta != nullptr)
         BFT_FREE(beta);
 
       if (   cs_glob_lagr_time_scheme->iilagr == CS_LAGR_TWOWAY_COUPLING
