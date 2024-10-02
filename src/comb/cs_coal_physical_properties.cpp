@@ -201,6 +201,8 @@ _gas_comb(cs_lnum_t        n_cells,
   const cs_real_t *wmole = cm->wmole;
   const int n_gas_sp = cm->n_gas_species;
 
+  const int nox_model = cm->ieqnox;
+
   /* Preliminary computations
      ------------------------ */
 
@@ -451,9 +453,9 @@ _gas_comb(cs_lnum_t        n_cells,
       zzs4[ico]  = 0.0;
     }
 
-    // Store de fs3, fs4 and concentrations in fs4 for the NOx model
+    // Store fs3, fs4 and concentrations in fs4 for the NOx model
 
-    if (cm->ieqnox == 1) {
+    if (nox_model == 1) {
 
       fs3no[c_id] = fs3;
 
