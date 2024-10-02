@@ -385,10 +385,29 @@ _set_petsc_mg_levels(const char                        *prefix,
 
     switch (down_smoother) {
 
+    case CS_PARAM_AMG_GAMG_CHEBYSHEV:
+      _petsc_cmd(true, prefix, "mg_levels_ksp_type", "chebyshev");
+      _petsc_cmd(true, prefix, "mg_levels_ksp_chebyshev_eigenvalues",
+                 "0.1,1");  // rough estimation of min./max. eigenvalues
+      _petsc_cmd(true, prefix, "mg_levels_pc_type", "jacobi");
+      _petsc_cmd(true, prefix, "mg_levels_pc_jacobi_type", "rowl1");
+      break;
+
     case CS_PARAM_AMG_GAMG_HYBRID_SSOR:
       _petsc_cmd(true, prefix, "mg_levels_ksp_type", "richardson");
       _petsc_cmd(true, prefix, "mg_levels_pc_type", "sor");
       _petsc_cmd(true, prefix, "mg_levels_pc_sor_local_symmetric", "");
+      break;
+
+    case CS_PARAM_AMG_GAMG_JACOBI:
+      _petsc_cmd(true, prefix, "mg_levels_ksp_type", "richardson");
+      _petsc_cmd(true, prefix, "mg_levels_pc_type", "jacobi");
+      break;
+
+    case CS_PARAM_AMG_GAMG_L1_JACOBI:
+      _petsc_cmd(true, prefix, "mg_levels_ksp_type", "richardson");
+      _petsc_cmd(true, prefix, "mg_levels_pc_type", "jacobi");
+      _petsc_cmd(true, prefix, "mg_levels_pc_jacobi_type", "rowl1");
       break;
 
     default:
@@ -409,6 +428,14 @@ _set_petsc_mg_levels(const char                        *prefix,
 
     switch (down_smoother) {
 
+    case CS_PARAM_AMG_GAMG_CHEBYSHEV:
+      _petsc_cmd(true, prefix, "mg_levels_ksp_type", "chebyshev");
+      _petsc_cmd(true, prefix, "mg_levels_ksp_chebyshev_eigenvalues",
+                 "0.1,1");  // rough estimation of min./max. eigenvalues
+      _petsc_cmd(true, prefix, "mg_levels_pc_type", "jacobi");
+      _petsc_cmd(true, prefix, "mg_levels_pc_jacobi_type", "rowl1");
+      break;
+
     case CS_PARAM_AMG_GAMG_FORWARD_GS:
       _petsc_cmd(true, prefix, "mg_levels_ksp_type", "richardson");
       _petsc_cmd(true, prefix, "mg_levels_pc_type", "sor");
@@ -419,6 +446,17 @@ _set_petsc_mg_levels(const char                        *prefix,
       _petsc_cmd(true, prefix, "mg_levels_ksp_type", "richardson");
       _petsc_cmd(true, prefix, "mg_levels_pc_type", "sor");
       _petsc_cmd(true, prefix, "mg_levels_pc_sor_local_symmetric", "");
+      break;
+
+    case CS_PARAM_AMG_GAMG_JACOBI:
+      _petsc_cmd(true, prefix, "mg_levels_ksp_type", "richardson");
+      _petsc_cmd(true, prefix, "mg_levels_pc_type", "jacobi");
+      break;
+
+    case CS_PARAM_AMG_GAMG_L1_JACOBI:
+      _petsc_cmd(true, prefix, "mg_levels_ksp_type", "richardson");
+      _petsc_cmd(true, prefix, "mg_levels_pc_type", "jacobi");
+      _petsc_cmd(true, prefix, "mg_levels_pc_jacobi_type", "rowl1");
       break;
 
     default:
@@ -434,6 +472,14 @@ _set_petsc_mg_levels(const char                        *prefix,
 
     switch (up_smoother) {
 
+    case CS_PARAM_AMG_GAMG_CHEBYSHEV:
+      _petsc_cmd(true, prefix, "mg_levels_up_ksp_type", "chebyshev");
+      _petsc_cmd(true, prefix, "mg_levels_up_ksp_chebyshev_eigenvalues",
+                 "0.1,1");  // rough estimation of min./max. eigenvalues
+      _petsc_cmd(true, prefix, "mg_levels_up_pc_type", "jacobi");
+      _petsc_cmd(true, prefix, "mg_levels_up_pc_jacobi_type", "rowl1");
+      break;
+
     case CS_PARAM_AMG_GAMG_BACKWARD_GS:
       _petsc_cmd(true, prefix, "mg_levels_up_ksp_type", "richardson");
       _petsc_cmd(true, prefix, "mg_levels_up_pc_type", "sor");
@@ -444,6 +490,17 @@ _set_petsc_mg_levels(const char                        *prefix,
       _petsc_cmd(true, prefix, "mg_levels_up_ksp_type", "richardson");
       _petsc_cmd(true, prefix, "mg_levels_up_pc_type", "sor");
       _petsc_cmd(true, prefix, "mg_levels_up_pc_sor_local_symmetric", "");
+      break;
+
+    case CS_PARAM_AMG_GAMG_JACOBI:
+      _petsc_cmd(true, prefix, "mg_levels_up_ksp_type", "richardson");
+      _petsc_cmd(true, prefix, "mg_levels_up_pc_type", "jacobi");
+      break;
+
+    case CS_PARAM_AMG_GAMG_L1_JACOBI:
+      _petsc_cmd(true, prefix, "mg_levels_up_ksp_type", "richardson");
+      _petsc_cmd(true, prefix, "mg_levels_up_pc_type", "jacobi");
+      _petsc_cmd(true, prefix, "mg_levels_up_pc_jacobi_type", "rowl1");
       break;
 
     default:
