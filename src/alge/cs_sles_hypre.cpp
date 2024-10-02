@@ -534,11 +534,11 @@ cs_sles_hypre_log(const void  *context,
     int n_calls = c->n_solves;
     int n_it_min = c->n_iterations_min;
     int n_it_max = c->n_iterations_max;
+    int long long n_it_tot = c->n_iterations_tot;
     int n_it_mean = 0;
 
     if (n_calls > 0)
-      n_it_mean = (int)(  c->n_iterations_tot
-          / ((int long long)n_calls));
+      n_it_mean = (int)( n_it_tot / ((int long long)n_calls));
 
     cs_log_printf(log_type,
                   _("\n"
@@ -556,10 +556,12 @@ cs_sles_hypre_log(const void  *context,
                     "  Number of calls:               %12d\n"
                     "  Minimum number of iterations:  %12d\n"
                     "  Maximum number of iterations:  %12d\n"
+                    "  Total number of iterations:    %12lld\n"
                     "  Mean number of iterations:     %12d\n"
                     "  Construction:                  %12.3f\n"
                     "  Resolution:                    %12.3f\n"),
-                  c->n_setups, n_calls, n_it_min, n_it_max, n_it_mean,
+                  c->n_setups, n_calls,
+                  n_it_min, n_it_max, n_it_tot, n_it_mean,
                   c->t_setup.nsec*1e-9,
                   c->t_solve.nsec*1e-9);
 
