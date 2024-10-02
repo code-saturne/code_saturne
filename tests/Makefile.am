@@ -261,8 +261,6 @@ cs_rank_neighbors_test_SOURCES  = cs_rank_neighbors_test.cpp
 cs_rank_neighbors_test_LDFLAGS  = $(LDFLAGS_CS_TESTS)
 cs_rank_neighbors_test_LDADD    = $(LDADD_CS_TESTS)
 
-cs_mesh_quantities_test_SOURCES = cs_mesh_quantities_test.cpp
-
 fvm_selector_test_SOURCES = fvm_selector_test.cpp
 
 fvm_selector_test$(EXEEXT):
