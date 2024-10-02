@@ -371,6 +371,7 @@ typedef struct {
   /*! Universal function Phi_h for unstable condition */
   int meteo_phih_u;
 
+  /* 1D meteo profiles */
   /*! meteo x, y, p at sea levels */
   cs_real_t *xyp_met;
   /*! meteo u profiles */
@@ -391,6 +392,11 @@ typedef struct {
   cs_real_t *qw_met;
   /*! meteo number of droplets profile */
   cs_real_t *ndrop_met;
+  /*! flag to compute the hydrostatic pressure by Laplace integration
+   *  in the meteo profiles
+   *  0: based on P (sea level) value by default
+   *  1: based on P computed for the standard atmosphere
+   */
 
   /*! Altitudes of the dynamic profiles */
   cs_real_t *z_dyn_met;
@@ -409,6 +415,12 @@ typedef struct {
   cs_real_3_t *mom_met;
   /*! code_saturne momentum for each level */
   cs_real_3_t *mom_cs;
+  int hydrostatic_pressure_model;
+  /*! flag for the standard atmo humidity profile
+   *  qv_profile = 0 (default)
+   *  qv_profile = 1 decreasing exponential */
+  int qv_profile;
+
   /*! Soil model (1: on, 0: off) */
   int soil_model;
   /*! Soil categories:
@@ -466,17 +478,7 @@ typedef struct {
   cs_real_t *soil_cat_r1;
   /*! Rij value for Rij2*/
   cs_real_t *soil_cat_r2;
-  /*! flag to compute the hydrostatic pressure by Laplace integration
-   *  in the meteo profiles
-   *  0: based on P (sea level) value by default
-   *  1: based on P computed for the standard atmosphere
-   */
-  int hydrostatic_pressure_model;
-  /*! flag for the standard atmo humidity profile
-   *  hydrostatic_profile = 0 (default)
-   *  hydrostatic_profile = 1 decreasing exponential */
-  int hydrostatic_profile;
-  /*! adimensional : sigc=0.53 other referenced values are 0.28, 0.15 */
+ /*! adimensional : sigc=0.53 other referenced values are 0.28, 0.15 */
   cs_real_t sigc;
   /*! 1D infrared profile */
   int infrared_1D_profile;

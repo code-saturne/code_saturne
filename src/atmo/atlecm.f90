@@ -306,7 +306,6 @@ else
     ztop = 11000.d0
     ii = nbmett
     zzmax = (int(ztmet(ii))/1000)*1000.d0
-    ii = nbmett
     do while(zzmax.le.(ztop-1000.d0))
       zzmax = zzmax + 1000.d0
       ii = ii + 1
