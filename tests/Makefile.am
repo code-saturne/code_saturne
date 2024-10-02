@@ -166,15 +166,21 @@ cs_blas_test_CFLAGS  = $(AM_CFLAGS) $(CFLAGS_HOT)
 cs_blas_test_LDFLAGS  = $(BLAS_LDFLAGS) $(LDFLAGS_CS_TESTS)
 cs_blas_test_LDADD    = $(BLASRUNPATH) $(BLAS_LIBS) $(LDADD_CS_TESTS)
 
+cs_check_cdo_SOURCES = cs_check_cdo.cpp
+
 cs_check_cdo$(EXEEXT):
 	PYTHONPATH=$(top_srcdir)/python/code_saturne/base \
 	$(PYTHON) -B $(top_srcdir)/build-aux/cs_compile_build.py \
 	-o cs_check_cdo $(top_srcdir)/tests/cs_check_cdo.cpp
 
+cs_check_quadrature_SOURCES = cs_check_quadrature.cpp
+
 cs_check_quadrature$(EXEEXT):
 	PYTHONPATH=$(top_srcdir)/python/code_saturne/base \
 	$(PYTHON) -B $(top_srcdir)/build-aux/cs_compile_build.py \
 	-o cs_check_quadrature $(top_srcdir)/tests/cs_check_quadrature.cpp
+
+cs_check_sdm_SOURCES = cs_check_sdm.cpp
 
 cs_check_sdm$(EXEEXT):
 	PYTHONPATH=$(top_srcdir)/python/code_saturne/base \
@@ -227,10 +233,14 @@ cs_map_test_SOURCES  = cs_map_test.cpp
 cs_map_test_LDFLAGS  = $(LDFLAGS_CS_TESTS)
 cs_map_test_LDADD    = $(LDADD_CS_TESTS)
 
+cs_matrix_test_SOURCES = cs_matrix_test.cpp
+
 cs_matrix_test$(EXEEXT): $(top_srcdir)/tests/cs_matrix_test.cpp
 	PYTHONPATH=$(top_srcdir)/python/code_saturne/base \
 	$(PYTHON) -B $(top_srcdir)/build-aux/cs_compile_build.py \
 	-o cs_matrix_test $(top_srcdir)/tests/cs_matrix_test.cpp
+
+cs_mesh_quantities_test_SOURCES = cs_mesh_quantities_test.cpp
 
 cs_mesh_quantities_test$(EXEEXT): $(top_srcdir)/tests/cs_mesh_quantities_test.cpp
 	PYTHONPATH=$(top_srcdir)/python/code_saturne/base \
@@ -251,11 +261,17 @@ cs_rank_neighbors_test_SOURCES  = cs_rank_neighbors_test.cpp
 cs_rank_neighbors_test_LDFLAGS  = $(LDFLAGS_CS_TESTS)
 cs_rank_neighbors_test_LDADD    = $(LDADD_CS_TESTS)
 
+cs_mesh_quantities_test_SOURCES = cs_mesh_quantities_test.cpp
+
+fvm_selector_test_SOURCES = fvm_selector_test.cpp
+
 fvm_selector_test$(EXEEXT):
 	PYTHONPATH=$(top_srcdir)/python/code_saturne/base \
 	$(PYTHON) -B $(top_srcdir)/build-aux/cs_compile_build.py \
 	-o fvm_selector_postfix_test \
 	$(top_srcdir)/tests/fvm_selector_test.cpp
+
+fvm_selector_postfix_test_SOURCES = fvm_selector_postfix_test.cpp
 
 fvm_selector_postfix_test$(EXEEXT):
 	PYTHONPATH=$(top_srcdir)/python/code_saturne/base \
