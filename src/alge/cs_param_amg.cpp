@@ -424,24 +424,27 @@ cs_param_amg_gamg_create(void)
 
   BFT_MALLOC(gamgp, 1, cs_param_amg_gamg_t);
 
+  // Default settings for GAMG
+  // -------------------------
+
   /* Main options */
 
-  gamgp->n_down_iter   = 1;
-  gamgp->down_smoother = CS_PARAM_AMG_GAMG_HYBRID_SSOR;
-  gamgp->n_up_iter     = 1;
-  gamgp->up_smoother   = CS_PARAM_AMG_GAMG_HYBRID_SSOR;
+  gamgp->n_down_iter   = 3;
+  gamgp->down_smoother = CS_PARAM_AMG_GAMG_L1_JACOBI;
+  gamgp->n_up_iter     = 3;
+  gamgp->up_smoother   = CS_PARAM_AMG_GAMG_L1_JACOBI;
   gamgp->coarse_solver = CS_PARAM_AMG_GAMG_BJACOBI_LU;
 
   /* Advanced options */
 
-  gamgp->threshold = 0.0;   // Threshold of small values to drop
-                            // (PETSc default = 0.)
+  gamgp->threshold = 0.005; // Threshold of small values to drop
+                            // (PETSc default = -1: no filtering)
   gamgp->n_agg_levels = 1;  // Number of aggressive levels
                             // (PETSc default = 1)
-  gamgp->n_smooth_agg = 1;  // Number of smoothing steps to be used in the
+  gamgp->n_smooth_agg = 2;  // Number of smoothing steps to be used in the
                             // Smooth Aggregation (SA) algorithm.
                             // (PETSc default = 1)
-  gamgp->use_square_graph = false; // Use square graph for aggressive
+  gamgp->use_square_graph = true;  // Use square graph for aggressive
                                    // coarsening. This was the previous default
                                    // before PETSc v3.19
 
@@ -611,6 +614,9 @@ cs_param_amg_hmg_create(void)
   cs_param_amg_hmg_t  *hmgp = nullptr;
 
   BFT_MALLOC(hmgp, 1, cs_param_amg_hmg_t);
+
+  // Default settings for HMG
+  // ------------------------
 
   /* Main options */
 
