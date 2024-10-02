@@ -87,6 +87,7 @@ cs_user_porosity-from_cad.cpp
 
 examplefiles = \
 cs_user_1d_wall_thermal.cpp \
+cs_user_atmo.cpp \
 cs_user_wall_condensation.cpp \
 cs_user_boundary_conditions.cpp \
 cs_user_boundary_conditions-advanced.cpp \

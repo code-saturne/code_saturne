@@ -1,5 +1,5 @@
 /*============================================================================
- * User initialization prior to solving time steps.
+ * User-defined functions specific to amospheric flow models.
  *============================================================================*/
 
 /* VERS */
@@ -57,9 +57,9 @@ BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \file cs_user_initialization.c
+ * \file cs_user_atmo.c
  *
- * \brief Initialization prior to solving time steps.
+ * \brief User-defined functions specific to amospheric flow models.
  */
 /*----------------------------------------------------------------------------*/
 
@@ -69,44 +69,36 @@ BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Define initial conditions for variables.
+ * \brief Fill in vertical profiles of atmospheric properties prior to solving
+ *        1D radiative transfers.
  *
- * This function is not yet called by code_saturne, use
- * `cs_user_initialization` for the time being
- * This function is called before the beginning of the computation
- * allowing an overload of the GUI defined initialization (called just
- * after cs_gui_initial_conditions).
- *
- * \param[in, out]  domain   pointer to a cs_domain_t structure
+ * \param[in, out] preray        pressure vertical profile
+ * \param[in, out] temray        real temperature vertical profile
+ * \param[in, out] romray        density vertical profile
+ * \param[in, out] qvray         water vapor content vertical profile
+ * \param[in, out] qlray         water liquid content vertical profile
+ * \param[in, out] ncray         droplets density vertical profile
+ * \param[in, out] aeroso        aerosol concentration vertical profile
  */
 /*----------------------------------------------------------------------------*/
 
-#pragma weak cs_user_initial_conditions
+#pragma weak cs_user_atmo_1d_rad_prf
 void
-cs_user_initial_conditions(cs_domain_t *domain)
+cs_user_atmo_1d_rad_prf(cs_real_t   preray[],
+                        cs_real_t   temray[],
+                        cs_real_t   romray[],
+                        cs_real_t   qvray[],
+                        cs_real_t   qlray[],
+                        cs_real_t   ncray[],
+                        cs_real_t   aeroso[])
 {
-  CS_UNUSED(domain);
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Initialize variables.
- *
- * This function is called at beginning of the computation
- * (restart or not) before the time step loop.
- *
- * This is intended to initialize or modify (when restarted)
- * variable and time step values.
- *
- * \param[in, out]  domain   pointer to a cs_domain_t structure
- */
-/*----------------------------------------------------------------------------*/
-
-#pragma weak cs_user_initialization
-void
-cs_user_initialization(cs_domain_t     *domain)
-{
-  CS_UNUSED(domain);
+  CS_UNUSED(qvray);
+  CS_UNUSED(qlray);
+  CS_UNUSED(ncray);
+  CS_UNUSED(preray);
+  CS_UNUSED(temray);
+  CS_UNUSED(romray);
+  CS_UNUSED(aeroso);
 }
 
 /*----------------------------------------------------------------------------*/

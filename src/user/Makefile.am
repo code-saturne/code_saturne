@@ -85,6 +85,7 @@ cs_user_parameters.f90
 
 userfiles = \
 cs_user_1d_wall_thermal.cpp \
+cs_user_atmo.cpp \
 cs_user_boundary_conditions.cpp \
 cs_user_coupling.cpp \
 cs_user_electric_scaling.cpp \
