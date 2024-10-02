@@ -399,6 +399,10 @@ _solve_most(int              n_var,
 
   CS_MALLOC_HD(isostd, n_b_faces+1, int, cs_alloc_mode);
 
+  cs_real_3_t *trava = nullptr;
+  if (cs_glob_velocity_pressure_param->nterup > 1)
+    CS_MALLOC_HD(trava, n_cells_ext, cs_real_3_t, cs_alloc_mode);
+
   /* Loop on cs_solve_navier_stokes for speed/pressure coupling
    * we stop at ntrup  or when we have converged itrfup equal zero
    * indicates that we need to redo an iteration for Syrthes, T1D or radiation. */
@@ -584,7 +588,8 @@ _solve_most(int              n_var,
                              &icvrge,
                              itrale,
                              isostd,
-                             ckupdc);
+                             ckupdc,
+                             trava);
 
       if (   cs_glob_time_scheme->istmpf == 2
           && cs_glob_velocity_pressure_param->itpcol == 1)
@@ -640,6 +645,8 @@ _solve_most(int              n_var,
   BFT_FREE(theipb);
   BFT_FREE(visvdr);
   CS_FREE_HD(isostd);
+  if (cs_glob_velocity_pressure_param->nterup > 1)
+    CS_FREE_HD(trava);
 }
 
 /*----------------------------------------------------------------------------*/

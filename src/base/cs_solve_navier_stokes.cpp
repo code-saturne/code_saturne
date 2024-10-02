@@ -817,8 +817,7 @@ _face_diff_vel(const cs_mesh_t             *m,
  * \param[in, out]   cpro_divr reynolds stress divergence
  * \param[in, out]   c_st_vel  source term of velicity
  * \param[in, out]   forbr     boundary forces
- * \param[in, out]   trava     working array for the
- *                             velocity-pressure coupling
+ * \param[in, out]   trava     work array for velocity-pressure coupling
  * \param[in, out]   trav      right hand side for the normalizing
  *                             the residual
  */
@@ -1936,7 +1935,7 @@ _log_norm(const cs_mesh_t                *m,
   * \param[in]       bc_coeffs_v   boundary condition structure for the variable
   * \param[in]       ckupdc        head loss coefficients, if present
   * \param[in]       frcxt         external forces making hydrostatic pressure
-  * \param[in]       trava         working array for the velocity-pressure coupling
+  * \param[in, out]  trava         work array for velocity-pressure coupling
   * \param[out]      dfrcxt        variation of the external forces
   *                                making the hydrostatic pressure
   * \param[in]       grdphd        hydrostatic pressure gradient to handle the
@@ -3720,12 +3719,13 @@ cs_solve_navier_stokes_update_total_pressure
  *        compressible flows for one time step. Both convection-diffusion
  *        and continuity steps are performed.
  *
- * \param[in]     iterns        index of the iteration on Navier-Stokes
- * \param[in]     icvrge        convergence indicator
- * \param[in]     itrale        number of the current ALE iteration
- * \param[in]     isostd        indicator of standard outlet
- *                              + index of the reference face
- * \param[in]     ckupdc        head loss coefficients, if present
+ * \param[in]       iterns     index of the iteration on Navier-Stokes
+ * \param[in]       icvrge     convergence indicator
+ * \param[in]       itrale     number of the current ALE iteration
+ * \param[in]       isostd     indicator of standard outlet
+ *                           + index of the reference face
+ * \param[in]       ckupdc     head loss coefficients, if present
+ * \param[in, out]  trava      work array for velocity-pressure coupling
  */
 /*----------------------------------------------------------------------------*/
 
@@ -3734,7 +3734,8 @@ cs_solve_navier_stokes(const int        iterns,
                        int             *icvrge,
                        const int        itrale,
                        const int        isostd[],
-                       const cs_real_t  ckupdc[][6])
+                       const cs_real_t  ckupdc[][6],
+                       cs_real_3_t     *trava)
 
 {
   cs_mesh_t *m = cs_glob_mesh;
@@ -3981,14 +3982,6 @@ cs_solve_navier_stokes(const int        iterns,
   cs_real_t *viscfi = nullptr, *viscbi = nullptr;
   cs_real_t *wvisbi = nullptr, *wvisfi = nullptr;
   cs_real_3_t *frcxt = nullptr;
-
-  static cs_real_3_t *trava = nullptr;  /* TODO: pass this as argument to calling
-                                        function when that is moved to C,
-                                        so as to avoid requiring a static
-                                        variable. */
-
-  if (vp_param->nterup > 1 && trava == nullptr)
-    CS_MALLOC_HD(trava, n_cells_ext, cs_real_3_t, cs_alloc_mode);
 
   if (vp_model->ivisse == 1) {
     CS_MALLOC_HD(secvif, n_i_faces, cs_real_t, cs_alloc_mode);
@@ -4781,9 +4774,6 @@ cs_solve_navier_stokes(const int        iterns,
   CS_FREE_HD(trav);
   CS_FREE_HD(da_uu);
   CS_FREE_HD(dfrcxt);
-
-  if (iterns == vp_param->nterup)
-    CS_FREE_HD(trava);
 
   CS_FREE_HD(secvib);
   CS_FREE_HD(secvif);
