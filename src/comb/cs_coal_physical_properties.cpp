@@ -453,7 +453,7 @@ _gas_comb(cs_lnum_t        n_cells,
 
     // Store de fs3, fs4 and concentrations in fs4 for the NOx model
 
-    if (cvar_yco2 != nullptr) {
+    if (cm->ieqnox == 1) {
 
       fs3no[c_id] = fs3;
 
