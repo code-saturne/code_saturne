@@ -407,7 +407,14 @@ _set_petsc_mg_levels(const char                        *prefix,
     case CS_PARAM_AMG_GAMG_L1_JACOBI:
       _petsc_cmd(true, prefix, "mg_levels_ksp_type", "richardson");
       _petsc_cmd(true, prefix, "mg_levels_pc_type", "jacobi");
+#if PETSC_VERSION_GE(3,21,0)
       _petsc_cmd(true, prefix, "mg_levels_pc_jacobi_type", "rowl1");
+#else
+      cs_base_warn(__FILE__, __LINE__);
+      cs_log_printf(CS_LOG_WARNINGS,
+                    "%s: CS_PARAM_AMG_GAMG_L1_JACOBI not set.\n"
+                    "  PETSc v3.21 or newer is requested.", __func__);
+#endif
       break;
 
     default:
@@ -456,7 +463,14 @@ _set_petsc_mg_levels(const char                        *prefix,
     case CS_PARAM_AMG_GAMG_L1_JACOBI:
       _petsc_cmd(true, prefix, "mg_levels_ksp_type", "richardson");
       _petsc_cmd(true, prefix, "mg_levels_pc_type", "jacobi");
+#if PETSC_VERSION_GE(3,21,0)
       _petsc_cmd(true, prefix, "mg_levels_pc_jacobi_type", "rowl1");
+#else
+      cs_base_warn(__FILE__, __LINE__);
+      cs_log_printf(CS_LOG_WARNINGS,
+                    "%s: CS_PARAM_AMG_GAMG_L1_JACOBI not set.\n"
+                    "  PETSc v3.21 or newer is requested.", __func__);
+#endif
       break;
 
     default:
@@ -500,7 +514,14 @@ _set_petsc_mg_levels(const char                        *prefix,
     case CS_PARAM_AMG_GAMG_L1_JACOBI:
       _petsc_cmd(true, prefix, "mg_levels_up_ksp_type", "richardson");
       _petsc_cmd(true, prefix, "mg_levels_up_pc_type", "jacobi");
-      _petsc_cmd(true, prefix, "mg_levels_up_pc_jacobi_type", "rowl1");
+#if PETSC_VERSION_GE(3,21,0)
+      _petsc_cmd(true, prefix, "mg_levels_pc_jacobi_type", "rowl1");
+#else
+      cs_base_warn(__FILE__, __LINE__);
+      cs_log_printf(CS_LOG_WARNINGS,
+                    "%s: CS_PARAM_AMG_GAMG_L1_JACOBI not set.\n"
+                    "  PETSc v3.21 or newer is requested.", __func__);
+#endif
       break;
 
     default:
