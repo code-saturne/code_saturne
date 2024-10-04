@@ -311,8 +311,9 @@ _build_shared_structures_full_system(cs_cdo_system_block_t  *block,
 /*!
  * \brief Define a diagonal scaled mass matrix
  *
- * \param[in] nsp  set of parameters for the Navier-Stokes system
- * \param[in] pty  property related to the (2,2) block
+ * \param[in] nsp    set of parameters for the Navier-Stokes system
+ * \param[in] pty    property related to the (2,2) block
+ * \param[in] gamma  scaling of the augmentation term
  *
  * \return a pointer to a newly allocated array
  */
@@ -320,7 +321,8 @@ _build_shared_structures_full_system(cs_cdo_system_block_t  *block,
 
 static cs_real_t *
 _get_scaled_diag_m22(const cs_navsto_param_t  *nsp,
-                     const cs_property_t      *pty)
+                     const cs_property_t      *pty,
+                     double                    gamma)
 {
   const cs_time_step_t  *ts = cs_glob_time_step;
   const cs_cdo_quantities_t  *cdoq = cs_shared_quant;
@@ -333,18 +335,28 @@ _get_scaled_diag_m22(const cs_navsto_param_t  *nsp,
 
   if (nsp->turbulence->model->iturb == CS_TURB_NONE) {
 
-    const cs_real_t  ref_val = pty->ref_value;
+    const cs_real_t  scaling = gamma + pty->ref_value;
 #   pragma omp parallel for if (n_cells > CS_THR_MIN)
     for (cs_lnum_t i = 0; i < n_cells; i++)
-      m22_mass_diag[i] = ref_val/cdoq->cell_vol[i];
+      m22_mass_diag[i] = scaling/cdoq->cell_vol[i];
 
   }
   else {
 
     cs_property_eval_at_cells(ts->t_cur, pty, m22_mass_diag);
-#   pragma omp parallel for if (n_cells > CS_THR_MIN)
-    for (cs_lnum_t i = 0; i < n_cells; i++)
-      m22_mass_diag[i] /= cdoq->cell_vol[i];
+
+    if (fabs(gamma) > 0) {
+#     pragma omp parallel for if (n_cells > CS_THR_MIN)
+      for (cs_lnum_t i = 0; i < n_cells; i++) {
+        m22_mass_diag[i] += gamma;
+        m22_mass_diag[i] /= cdoq->cell_vol[i];
+      }
+    }
+    else {
+#     pragma omp parallel for if (n_cells > CS_THR_MIN)
+      for (cs_lnum_t i = 0; i < n_cells; i++)
+        m22_mass_diag[i] /= cdoq->cell_vol[i];
+    }
 
   }
 
@@ -652,8 +664,9 @@ _uzawa_cg_init_context(const cs_navsto_param_t              *nsp,
     size = CS_MAX(size, connect->n_cells_with_ghosts);
   BFT_MALLOC(ctx->gk, size, cs_real_t);
 
+  // No scaling for an augmentation term with Uzawa-CG
 
-  ctx->inv_m22 = _get_scaled_diag_m22(nsp, ctx->pty_22);
+  ctx->inv_m22 = _get_scaled_diag_m22(nsp, ctx->pty_22, 0.);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1247,6 +1260,7 @@ cs_cdofb_monolithic_sles_block_krylov(const cs_navsto_param_t  *nsp,
      preconditioner. In particular, define the Schur complement approximation
      if needed */
 
+  const double  gamma = cs_param_saddle_get_augmentation_coef(saddlep);
   const cs_param_sles_t  *schur_slesp = saddlep->schur_sles_param;
   int  n_xtra_iters = 0;
 
@@ -1282,11 +1296,11 @@ cs_cdofb_monolithic_sles_block_krylov(const cs_navsto_param_t  *nsp,
     break;
 
   case CS_PARAM_SADDLE_SCHUR_MASS_SCALED:
-    ctx->m22_mass_diag = _get_scaled_diag_m22(nsp, ctx->pty_22);
+    ctx->m22_mass_diag = _get_scaled_diag_m22(nsp, ctx->pty_22, gamma);
     break;
 
   case CS_PARAM_SADDLE_SCHUR_MASS_SCALED_DIAG_INVERSE:
-    ctx->m22_mass_diag = _get_scaled_diag_m22(nsp, ctx->pty_22);
+    ctx->m22_mass_diag = _get_scaled_diag_m22(nsp, ctx->pty_22, gamma);
 
     ctx->m11_inv_diag = cs_saddle_system_b11_inv_diag(ctx->b11_max_size, sh);
 
@@ -1299,26 +1313,23 @@ cs_cdofb_monolithic_sles_block_krylov(const cs_navsto_param_t  *nsp,
     break;
 
   case CS_PARAM_SADDLE_SCHUR_MASS_SCALED_LUMPED_INVERSE:
-    {
-      ctx->m11_inv_diag =
-        cs_saddle_solver_m11_inv_lumped(solver,
+    ctx->m11_inv_diag
+      = cs_saddle_solver_m11_inv_lumped(solver,
                                         ctx->m11,
                                         ctx->b11_range_set,
                                         ctx->xtra_sles,
                                         &n_xtra_iters);
 
-      algo_ctx->n_inner_iter += n_xtra_iters;
+    algo_ctx->n_inner_iter += n_xtra_iters;
 
-      ctx->schur_matrix = _schur_approx_diag_inv_m11(schur_slesp->solver_class,
-                                                     ctx->m11_inv_diag,
-                                                     ctx->m21_adj,
-                                                     ctx->m21_val,
-                                                     &(ctx->schur_diag),
-                                                     &(ctx->schur_xtra));
+    ctx->schur_matrix = _schur_approx_diag_inv_m11(schur_slesp->solver_class,
+                                                   ctx->m11_inv_diag,
+                                                   ctx->m21_adj,
+                                                   ctx->m21_val,
+                                                   &(ctx->schur_diag),
+                                                   &(ctx->schur_xtra));
 
-      ctx->m22_mass_diag = _get_scaled_diag_m22(nsp, ctx->pty_22);
-
-    }
+    ctx->m22_mass_diag = _get_scaled_diag_m22(nsp, ctx->pty_22, gamma);
     break;
 
   default:

@@ -407,6 +407,14 @@ typedef struct {
 
 typedef struct {
 
+  /*! \var augmentation_scaling
+   *  Value of the scaling coefficient in front of the augmented system.
+   *  This is only useful when a GKB algorithm is used. By default, there is
+   *  no augmentation.
+   */
+
+  double            augmentation_scaling;
+
   /*! \var n_stored_directions
    *  Number of iterations to perform before restarting the solver. This
    *  quantity is useful when a GCR or FMGRES is used.
@@ -585,8 +593,8 @@ cs_param_saddle_set_notay_scaling(cs_param_saddle_t  *saddlep,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Set the scaling in front of the augmentation term when an ALU or a
- *        GKB algorithm is considered
+ * \brief Set the scaling in front of the augmentation term when an ALU, a GKB
+ *        or a block Krylov algorithm is considered
  *
  * \param[in, out] saddlep  set of parameters for solving a saddle-point
  * \param[in]      coef     value of the scaling coefficient
@@ -600,7 +608,7 @@ cs_param_saddle_set_augmentation_coef(cs_param_saddle_t  *saddlep,
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Get the scaling coefficient in front of the augmentation term when an
- *        ALU or a GKB algorithm is considered.
+ *        ALU, GKB or block Krylov algorithm is considered.
  *
  * \param[in] saddlep  set of parameters for solving a saddle-point
  *

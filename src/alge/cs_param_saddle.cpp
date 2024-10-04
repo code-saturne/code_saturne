@@ -512,6 +512,16 @@ cs_param_saddle_set_augmentation_coef(cs_param_saddle_t  *saddlep,
     }
     break;
 
+  case CS_PARAM_SADDLE_SOLVER_FGMRES:
+  case CS_PARAM_SADDLE_SOLVER_GCR:
+    {
+      cs_param_saddle_context_block_krylov_t *ctx =
+        static_cast<cs_param_saddle_context_block_krylov_t *>(saddlep->context);
+
+      ctx->augmentation_scaling = coef;
+    }
+    break;
+
   default: /* Not useful */
     cs_base_warn(__FILE__, __LINE__);
     cs_log_printf(CS_LOG_WARNINGS,
@@ -524,8 +534,8 @@ cs_param_saddle_set_augmentation_coef(cs_param_saddle_t  *saddlep,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Get the scaling coefficient in front of the augmentation term when an
- *        ALU or a GKB algorithm is considered.
+ * \brief Set the scaling in front of the augmentation term when an ALU, a GKB
+ *        or a block Krylov algorithm is considered
  *
  * \param[in] saddlep  set of parameters for solving a saddle-point
  *
@@ -555,6 +565,16 @@ cs_param_saddle_get_augmentation_coef(const cs_param_saddle_t  *saddlep)
         static_cast<cs_param_saddle_context_gkb_t *>(saddlep->context);
 
       return ctxp->augmentation_scaling;
+    }
+    break;
+
+  case CS_PARAM_SADDLE_SOLVER_FGMRES:
+  case CS_PARAM_SADDLE_SOLVER_GCR:
+    {
+      cs_param_saddle_context_block_krylov_t *ctx =
+        static_cast<cs_param_saddle_context_block_krylov_t *>(saddlep->context);
+
+      return ctx->augmentation_scaling;
     }
     break;
 
@@ -1364,16 +1384,17 @@ cs_param_saddle_copy(const cs_param_saddle_t  *ref,
   case CS_PARAM_SADDLE_SOLVER_FGMRES:
   case CS_PARAM_SADDLE_SOLVER_GCR:
     {
-    cs_param_saddle_context_block_krylov_t *ctxp_ref =
-      static_cast<cs_param_saddle_context_block_krylov_t *>(ref->context);
-    cs_param_saddle_context_block_krylov_t *ctxp_dest = nullptr;
+      cs_param_saddle_context_block_krylov_t *ctxp_ref =
+        static_cast<cs_param_saddle_context_block_krylov_t *>(ref->context);
+      cs_param_saddle_context_block_krylov_t *ctxp_dest = nullptr;
 
-    BFT_MALLOC(ctxp_dest, 1, cs_param_saddle_context_block_krylov_t);
+      BFT_MALLOC(ctxp_dest, 1, cs_param_saddle_context_block_krylov_t);
 
-    ctxp_ref->n_stored_directions = ctxp_ref->n_stored_directions;
+      ctxp_ref->n_stored_directions = ctxp_ref->n_stored_directions;
+      ctxp_dest->augmentation_scaling = ctxp_ref->augmentation_scaling;
 
-    ctxp_dest->xtra_sles_param =
-      _copy_xtra_slesp(ctxp_ref->xtra_sles_param, dest);
+      ctxp_dest->xtra_sles_param
+        = _copy_xtra_slesp(ctxp_ref->xtra_sles_param, dest);
     }
     break;
 
@@ -1470,29 +1491,34 @@ cs_param_saddle_log(const cs_param_saddle_t  *saddlep)
 
   case CS_PARAM_SADDLE_SOLVER_FGMRES:
     {
-    cs_param_saddle_context_block_krylov_t *ctxp =
-      static_cast<cs_param_saddle_context_block_krylov_t *>(saddlep->context);
+      cs_param_saddle_context_block_krylov_t *ctxp =
+        static_cast<cs_param_saddle_context_block_krylov_t *>(saddlep->context);
 
-    cs_log_printf(CS_LOG_SETUP, "%s Solver: Flexible GMRES (FGMRES)\n", prefix);
-    cs_log_printf(CS_LOG_SETUP,
-                  "%s FGMRES parameters: n_stored_directions=%d\n",
-                  prefix,
-                  ctxp->n_stored_directions);
+      cs_log_printf(CS_LOG_SETUP, "%s Solver: Flexible GMRES (FGMRES)\n",
+                    prefix);
+      cs_log_printf(CS_LOG_SETUP,
+                    "%s FGMRES augmentation scaling: gamma=%5.2e\n",
+                    prefix, ctxp->augmentation_scaling);
+      cs_log_printf(CS_LOG_SETUP,
+                    "%s FGMRES parameters: n_stored_directions=%d\n",
+                    prefix, ctxp->n_stored_directions);
     }
     break;
 
   case CS_PARAM_SADDLE_SOLVER_GCR:
     {
-    cs_param_saddle_context_block_krylov_t *ctxp =
-      static_cast<cs_param_saddle_context_block_krylov_t *>(saddlep->context);
+      cs_param_saddle_context_block_krylov_t *ctxp =
+        static_cast<cs_param_saddle_context_block_krylov_t *>(saddlep->context);
 
-    cs_log_printf(CS_LOG_SETUP,
-                  "%s Solver: Generalized Conjugate Residual (GCR)\n",
-                  prefix);
-    cs_log_printf(CS_LOG_SETUP,
-                  "%s GCR parameters: n_stored_directions=%d\n",
-                  prefix,
-                  ctxp->n_stored_directions);
+      cs_log_printf(CS_LOG_SETUP,
+                    "%s Solver: Generalized Conjugate Residual (GCR)\n",
+                    prefix);
+      cs_log_printf(CS_LOG_SETUP,
+                    "%s GCR augmentation scaling: gamma=%5.2e\n",
+                    prefix, ctxp->augmentation_scaling);
+      cs_log_printf(CS_LOG_SETUP,
+                    "%s GCR parameters: n_stored_directions=%d\n",
+                    prefix, ctxp->n_stored_directions);
     }
     break;
 
