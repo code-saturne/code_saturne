@@ -547,6 +547,8 @@ cs_param_saddle_get_augmentation_coef(const cs_param_saddle_t  *saddlep)
 
     return ctxp->augmentation_scaling;
     }
+    break;
+
   case CS_PARAM_SADDLE_SOLVER_GKB:
     {
     cs_param_saddle_context_gkb_t *ctxp =
@@ -554,6 +556,8 @@ cs_param_saddle_get_augmentation_coef(const cs_param_saddle_t  *saddlep)
 
     return ctxp->augmentation_scaling;
     }
+    break;
+
   default: /* Not useful */
     return 0.;
   }
