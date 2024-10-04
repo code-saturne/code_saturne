@@ -2558,6 +2558,9 @@ _additional_fields_stage_3(void)
   for (int f_id = 0; f_id < n_fld; f_id++) {
     cs_field_t *f = cs_field_by_id(f_id);
 
+    if (!(f->type & CS_FIELD_VARIABLE) || f->type & CS_FIELD_CDO)
+      continue;
+
     const int iscdri = cs_field_get_key_int(f, k_dri);
 
     if (iscdri & CS_DRIFT_SCALAR_ADD_DRIFT_FLUX) {
@@ -2666,6 +2669,23 @@ _additional_fields_stage_3(void)
         /* Set the same visualization options as the scalar */
         cs_field_set_key_int(f_ddt, k_log, ilog);
         cs_field_set_key_int(f_ddt, k_vis, iopchr);
+      }
+    }
+
+    /* Index of the class, all member of the class share the same mass flux */
+    const int icla = cs_field_get_key_int(f, k_ccl);
+    const int kromsl = cs_field_key_id("density_id");
+    int rho_id = cs_field_get_key_int(f, kromsl);
+
+    if (rho_id != -1 && icla !=0) {
+      for (int fj_id = 0; fj_id < n_fld; fj_id++) {
+        cs_field_t *fj    = cs_field_by_id(fj_id);
+        const int   iclap = cs_field_get_key_int(fj, k_ccl);
+
+        if (icla == iclap
+            && ((fj->type & CS_FIELD_VARIABLE) == CS_FIELD_VARIABLE)) {
+          cs_field_set_key_int(fj, kromsl, rho_id);
+        }
       }
     }
   }

@@ -913,7 +913,7 @@ cs_solve_equation_scalar(cs_field_t        *f,
   int icrom_scal = cs_field_get_key_int(f, kromsl);
   if (icrom_scal > 0) {
     crom = cs_field_by_id(icrom_scal)->val;
-    croma = cs_field_by_id(icrom_scal)->val_pre;
+    croma = cs_field_by_id(icrom_scal)->val;
   }
   else {
     icrom_scal = CS_F_(rho)->id;
@@ -1512,7 +1512,8 @@ cs_solve_equation_scalar(cs_field_t        *f,
    * Same algo. for Volume of Fluid method */
   else if (   (   cs_glob_velocity_pressure_model->idilat > 1
                || cs_glob_vof_parameters->vof_model > 0)
-           && fluid_props->irovar == 1) {
+           && fluid_props->irovar == 1
+           && (icrom_scal == CS_F_(rho)->id)) {
     if (iterns == 1)
       pcrom = cs_field_by_id(icrom_scal)->vals[2];
     else
