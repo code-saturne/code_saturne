@@ -69,7 +69,7 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*!
-  \file cs_all_to_all.c
+  \file cs_all_to_all.cpp
         All-to-all parallel data exchange.
 
   \typedef cs_all_to_all_t

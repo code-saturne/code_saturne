@@ -57,7 +57,7 @@ BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \file cs_user_initialization-base.c
+ * \file cs_user_initialization-base.cpp
  *
  * \brief Initialization prior to solving time steps.
  *        Basic examples

@@ -71,7 +71,7 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*!
-  \file cs_1d_wall_thermal.c
+  \file cs_1d_wall_thermal.cpp
         Modelling the thermal wall with a 1D approach.
 
   \struct cs_1d_wall_thermal_local_model_t

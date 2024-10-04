@@ -79,7 +79,7 @@
 BEGIN_C_DECLS
 
 /*!
-  \file cs_cdofb_scaleq.c
+  \file cs_cdofb_scaleq.cpp
 
   \brief Build an algebraic CDO face-based system for unsteady
          convection-diffusion-reaction of scalar-valued equations with

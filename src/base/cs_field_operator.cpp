@@ -78,7 +78,7 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*!
-  \file cs_field_operator.c
+  \file cs_field_operator.cpp
         Field based algebraic operators.
 
   \enum cs_field_interpolate_t

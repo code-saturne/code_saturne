@@ -59,7 +59,7 @@ BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \file cs_user_mesh-quality.c
+ * \file cs_user_mesh-quality.cpp
  *
  * \brief Mesh quality example
  *

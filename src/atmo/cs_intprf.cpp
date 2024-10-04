@@ -62,7 +62,7 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*!
-  \file cs_intprf.c
+  \file cs_intprf.cpp
 
   * Temporal and z-axis interpolation for meteorological profiles
  */

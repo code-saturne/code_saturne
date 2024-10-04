@@ -68,7 +68,7 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*!
-  \file cs_lagr_extract.c
+  \file cs_lagr_extract.cpp
 
   \brief Extract information from lagrangian particles.
 */

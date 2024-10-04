@@ -77,7 +77,7 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*!
-  \file cs_turbulence_init.c
+  \file cs_turbulence_init.cpp
         Turbulence variables initialization for various models.
 */
 

@@ -85,7 +85,7 @@
 BEGIN_C_DECLS
 
 /*!
-  \file cs_cdovb_scaleq.c
+  \file cs_cdovb_scaleq.cpp
 
   \brief Build an algebraic CDO vertex-based system for unsteady
          convection-diffusion-reaction of scalar-valued equations with

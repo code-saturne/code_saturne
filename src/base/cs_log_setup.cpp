@@ -92,7 +92,7 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*!
-  \file cs_log_setup.c
+  \file cs_log_setup.cpp
 
   \brief Setup info at the end of the setup stage.
 */

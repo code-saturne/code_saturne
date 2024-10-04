@@ -68,7 +68,7 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*!
-  \file cs_cdo_advection.c
+  \file cs_cdo_advection.cpp
 
   \brief Build discrete advection operators for CDO vertex-based schemes
 

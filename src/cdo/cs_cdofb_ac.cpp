@@ -92,7 +92,7 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*!
- * \file cs_cdofb_ac.c
+ * \file cs_cdofb_ac.cpp
  *
  * \brief Build an algebraic CDO face-based system for the Navier-Stokes
  * equations and solved it with an artificial compressibility algorithm

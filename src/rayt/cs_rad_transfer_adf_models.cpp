@@ -75,7 +75,7 @@ BEGIN_C_DECLS
  * Additional Doxygen documentation
  *============================================================================*/
 
-/* \file cs_rad_transfer_adf_models.c */
+/* \file cs_rad_transfer_adf_models.cpp */
 
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
 

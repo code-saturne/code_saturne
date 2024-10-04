@@ -75,7 +75,7 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*!
- * \file cs_gradient_boundary.c
+ * \file cs_gradient_boundary.cpp
  * \brief Gradient reconstruction at boundaries and associated functions.
  */
 

@@ -69,7 +69,7 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*!
- * \file cs_symmetry_faces_filter.c
+ * \file cs_symmetry_faces_filter.cpp
  * \brief Filter symmetry faces whose effects cancel out
  */
 

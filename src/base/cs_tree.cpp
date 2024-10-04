@@ -58,7 +58,7 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*!
-  \file cs_tree.c
+  \file cs_tree.cpp
         Tree structure used to store data and settings.
 */
 

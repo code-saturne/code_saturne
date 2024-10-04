@@ -57,7 +57,7 @@ BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \file cs_user_initialization-pulverized_coal.c
+ * \file cs_user_initialization-pulverized_coal.cpp
  *
  * \brief Initialization prior to solving time steps.
  *        Pulverized coal example.

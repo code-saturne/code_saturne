@@ -70,7 +70,7 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*!
-  \file cs_ht_convert.c
+  \file cs_ht_convert.cpp
         Enthalpy to and from temperature conversion.
 
         Other fields may be involved in the conversion.

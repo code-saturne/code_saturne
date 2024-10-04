@@ -51,7 +51,7 @@ BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \file cs_user_performance_tuning.c
+ * \file cs_user_performance_tuning.cpp
  *
  * \brief Definition of advanced options relative to parallelism.
  *

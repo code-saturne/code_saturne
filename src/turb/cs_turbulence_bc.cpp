@@ -71,7 +71,7 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*!
-  \file cs_turbulence_bc.c
+  \file cs_turbulence_bc.cpp
         Base turbulence boundary conditions.
 */
 

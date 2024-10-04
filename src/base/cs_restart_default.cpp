@@ -87,7 +87,7 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*!
-  \file cs_restart_default.c
+  \file cs_restart_default.cpp
         Checkpoint/restart handling for default application.
 */
 

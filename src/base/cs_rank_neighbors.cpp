@@ -64,7 +64,7 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*!
-  \file cs_rank_neighbors.c
+  \file cs_rank_neighbors.cpp
         Management of parallel rank neighbors.
 
   Algorithm names are based upon \cite Hoefler:2010 and \cite Fox:1988 .

@@ -79,7 +79,7 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*!
-  \file cs_thermal_model.c
+  \file cs_thermal_model.cpp
         base thermal model data.
 
   \struct cs_thermal_model_t

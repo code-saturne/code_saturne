@@ -58,7 +58,7 @@ BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \file cs_user_paramedmem_coupling.c
+ * \file cs_user_paramedmem_coupling.cpp
  *
  * \brief User functions for input of ParaMEDMEM coupling parameters
  *

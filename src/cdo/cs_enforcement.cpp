@@ -60,7 +60,7 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*!
-  \file cs_enforcement.c
+  \file cs_enforcement.cpp
 
   \brief Structure and functions handling the way to enforce interior degrees
          of freedom.

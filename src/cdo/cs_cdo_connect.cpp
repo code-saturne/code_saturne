@@ -65,7 +65,7 @@ BEGIN_C_DECLS
 /*----------------------------------------------------------------------------*/
 
 /*!
-  \file cs_cdo_connect.c
+  \file cs_cdo_connect.cpp
 
   \brief Build additional connectivities (or adjacencies) useful for building
          CDO or HHO schemes.

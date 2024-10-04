@@ -100,7 +100,7 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*!
-  \file cs_boundary_conditions.c
+  \file cs_boundary_conditions.cpp
         Boundary condition handling.
 */
 

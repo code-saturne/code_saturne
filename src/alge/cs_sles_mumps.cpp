@@ -84,7 +84,7 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*!
-  \file cs_sles_mumps.c
+  \file cs_sles_mumps.cpp
 
   \brief Set of functions to handle the interface with the MUMPS library
          to solve sparse linear system with a direct approach

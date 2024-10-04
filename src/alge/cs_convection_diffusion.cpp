@@ -91,7 +91,7 @@
  * Additional Doxygen documentation
  *============================================================================*/
 
-/*! \file  cs_convection_diffusion.c
+/*! \file  cs_convection_diffusion.cpp
  *
  * \brief Convection-diffusion operators.
  *

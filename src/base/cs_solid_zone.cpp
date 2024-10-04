@@ -73,7 +73,7 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*!
-  \file cs_solid_zone.c
+  \file cs_solid_zone.cpp
         Volume zone handling.
 */
 

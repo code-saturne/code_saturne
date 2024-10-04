@@ -69,7 +69,7 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*!
-  \file cs_volume_mass_injection.c
+  \file cs_volume_mass_injection.cpp
         Volume mass injection and associated source terms computation.
 
 */

@@ -62,7 +62,7 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*!
-  \file cs_atmo_profile_std.c
+  \file cs_atmo_profile_std.cpp
 
   Compute standard atmospheric profile.
 */

@@ -51,7 +51,7 @@ BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \file cs_user_performance_tuning-parallel-io.c
+ * \file cs_user_performance_tuning-parallel-io.cpp
  *
  * \brief Parallel Input/Output example.
  *

@@ -69,7 +69,7 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*!
-  \file cs_macfb_advection.c
+  \file cs_macfb_advection.cpp
 
   \brief Build discrete advection operators for MAC face-based schemes
 

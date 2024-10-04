@@ -54,7 +54,7 @@ BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \file cs_user_mesh-groups_from_free_faces.c
+ * \file cs_user_mesh-groups_from_free_faces.cpp
  *
  * \brief Mesh modification example.
  *

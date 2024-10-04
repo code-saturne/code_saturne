@@ -69,7 +69,7 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*!
-  \file cs_sles_it.c
+  \file cs_sles_it.cpp
         Iterative linear solvers
 
  \page sles_it Iterative linear solvers.

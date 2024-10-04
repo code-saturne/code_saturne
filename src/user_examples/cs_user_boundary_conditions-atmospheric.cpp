@@ -49,7 +49,7 @@ BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \file cs_user_boundary_conditions-atmospheric.c
+ * \file cs_user_boundary_conditions-atmospheric.cpp
  *
  * \brief Atmospheric example of cs_user_boundary_conditions function.
  */

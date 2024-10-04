@@ -85,7 +85,7 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*!
- * \file cs_macfb_monolithic_sles.c
+ * \file cs_macfb_monolithic_sles.cpp
  *
  * \brief Functions dedicated to to the linear algebra settings and operations
  *        in case of CDO face-based schemes with a monolithic velocity-pressure

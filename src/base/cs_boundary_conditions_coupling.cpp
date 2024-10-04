@@ -65,7 +65,7 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*!
-  \file cs_boundary_conditions_coupling.c
+  \file cs_boundary_conditions_coupling.cpp
         Update boundary conditions for thermal field..
 */
 

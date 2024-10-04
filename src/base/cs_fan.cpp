@@ -65,7 +65,7 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*!
-  \file cs_fan.c
+  \file cs_fan.cpp
         Fan modeling through velocity source terms.
 */
 

@@ -53,7 +53,7 @@ BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \file cs_user_source_terms-scalar_in_a_channel.c
+ * \file cs_user_source_terms-scalar_in_a_channel.cpp
  *
  * \brief User source terms for a scalar in a channel example.
  *

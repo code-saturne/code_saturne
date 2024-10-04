@@ -69,7 +69,7 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*!
- * \file cs_turbulence_rotation.c
+ * \file cs_turbulence_rotation.cpp
  *
  * Compute rotation/curvature correction for eddy-viscosity models.
  *

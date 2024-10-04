@@ -60,7 +60,7 @@ BEGIN_C_DECLS
  *============================================================================*/
 
  /*!
-   \file cs_xdef.c
+   \file cs_xdef.cpp
 
    \brief Functions to handle extended definitions of quantities thanks to the
           cs_xdef_t structures.

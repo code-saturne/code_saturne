@@ -53,7 +53,7 @@ BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \file cs_user_source_terms-turbulence.c
+ * \file cs_user_source_terms-turbulence.cpp
  *
  * \brief Examples for additional turbulence source terms for
  *   variable equations.

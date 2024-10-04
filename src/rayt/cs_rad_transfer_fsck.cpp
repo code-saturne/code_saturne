@@ -75,7 +75,7 @@ BEGIN_C_DECLS
  * Additional Doxygen documentation
  *============================================================================*/
 
-/* \file cs_rad_transfer_fsck.c.f90 */
+/* \file cs_rad_transfer_fsck.cpp.f90 */
 
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
 

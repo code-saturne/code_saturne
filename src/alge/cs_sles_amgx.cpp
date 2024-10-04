@@ -79,7 +79,7 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*!
-  \file cs_sles_amgx.c
+  \file cs_sles_amgx.cpp
 
   \brief handling of AmgX-based linear solvers
 

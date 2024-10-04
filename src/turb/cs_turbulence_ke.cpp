@@ -102,7 +102,7 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*!
-  \file cs_turbulence_ke.c
+  \file cs_turbulence_ke.cpp
 
   Solve the \f$ k - \varepsilon \f$  for incompressible flows
   or slightly compressible flows for one time step.

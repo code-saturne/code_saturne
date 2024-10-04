@@ -77,7 +77,7 @@
  * Additional Doxygen documentation
  *============================================================================*/
 
-/*! \file  cs_matrix_building.c
+/*! \file  cs_matrix_building.cpp
 
 */
 

@@ -62,7 +62,7 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*!
- * \file cs_param_saddle.c
+ * \file cs_param_saddle.cpp
 
  * \brief Handle the settings of saddle-point systems.
  *        These systems arise from the monolithic coupling of the Navier-Stokes

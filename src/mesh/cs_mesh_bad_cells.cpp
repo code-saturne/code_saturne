@@ -63,7 +63,7 @@
 BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
-/*! \file cs_mesh_bad_cells.c
+/*! \file cs_mesh_bad_cells.cpp
  *
  * \brief Detect bad cells within meshes.
  *

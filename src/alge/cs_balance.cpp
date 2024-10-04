@@ -83,7 +83,7 @@
 BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
-/*! \file cs_balance.c
+/*! \file cs_balance.cpp
  *
  * \brief Wrapper to the function which adds the explicit part of the
  * convection/diffusion terms of a transport equation of a field.

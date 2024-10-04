@@ -68,7 +68,7 @@
 BEGIN_C_DECLS
 
 /*!
-  \file cs_cdovb_scalsys.c
+  \file cs_cdovb_scalsys.cpp
 
   \brief Build an algebraic CDO vertex-based system for a set of coupled
          unsteady convection-diffusion-reaction of scalar-valued equations with

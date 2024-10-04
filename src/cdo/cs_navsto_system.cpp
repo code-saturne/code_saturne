@@ -76,7 +76,7 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*!
- *  \file cs_navsto_system.c
+ *  \file cs_navsto_system.cpp
  *
  *  \brief  Functions to handle the cs_navsto_system_t structure which is
  *          the high-level structure to manage the Navier-Stokes system of

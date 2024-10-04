@@ -54,7 +54,7 @@ BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \file cs_user_turbomachinery.c
+ * \file cs_user_turbomachinery.cpp
  *
  * \brief Definition of turbomachinery related options.
  *

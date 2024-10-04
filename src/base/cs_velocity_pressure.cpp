@@ -74,7 +74,7 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*!
-  \file cs_velocity_pressure.c
+  \file cs_velocity_pressure.cpp
         Velocity-pressure coupling model and parameters.
 */
 

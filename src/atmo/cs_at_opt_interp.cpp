@@ -70,7 +70,7 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*!
-  \file cs_at_opt_interp.c
+  \file cs_at_opt_interp.cpp
         Optimal interpolation functions.
 
 */

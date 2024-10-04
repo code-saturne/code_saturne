@@ -62,7 +62,7 @@ BEGIN_C_DECLS
  * Additional Doxygen documentation
  *============================================================================*/
 
-/*! \file  cs_math.c
+/*! \file  cs_math.cpp
            Mathematical base functions.
 */
 

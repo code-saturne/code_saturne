@@ -49,7 +49,7 @@ BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \file cs_user_boundary_conditions-mapped_inlet.c
+ * \file cs_user_boundary_conditions-mapped_inlet.cpp
  *
  * \brief User functions for input of calculation parameters.
  *

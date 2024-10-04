@@ -51,7 +51,7 @@ BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \file cs_user_performance_tuning-matrix.c
+ * \file cs_user_performance_tuning-matrix.cpp
  *
  * \brief Matrix tuning example.
  *

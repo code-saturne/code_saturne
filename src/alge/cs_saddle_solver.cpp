@@ -79,7 +79,7 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*!
- * \file cs_saddle_solver.c
+ * \file cs_saddle_solver.cpp
  *
  * \brief Set of functions to solve saddle-point problems
  */

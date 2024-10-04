@@ -53,7 +53,7 @@ BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \file cs_user_les_inflow-base.c
+ * \file cs_user_les_inflow-base.cpp
  *
  * \brief Generation of synthetic turbulence at LES inlets initialization.
  *

@@ -58,7 +58,7 @@ BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \file cs_user_parameters-cdo-gwf.c
+ * \file cs_user_parameters-cdo-gwf.cpp
  *
  * \brief User functions for setting a calculation using the groundwater flow
  *        module with CDO schemes

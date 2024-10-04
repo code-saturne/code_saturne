@@ -79,7 +79,7 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*!
-  \file cs_mobile_structures.c
+  \file cs_mobile_structures.cpp
         Mobile structures management.
 */
 

@@ -74,7 +74,7 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*!
-  \file cs_probe.c
+  \file cs_probe.cpp
 
   \brief Probes and profiles management.
 */

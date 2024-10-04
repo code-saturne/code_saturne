@@ -90,7 +90,7 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*!
-  \file cs_turbulence_htles.c
+  \file cs_turbulence_htles.cpp
 
   Solve the HTLES method for incompressible flows
   for one time step.

@@ -52,7 +52,7 @@ BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \file cs_user_physical_properties-coal_drift.c
+ * \file cs_user_physical_properties-coal_drift.cpp
  *
  * \brief User definition of physical properties.
  */

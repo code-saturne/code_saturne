@@ -63,7 +63,7 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*!
-  \file cs_solidification.c
+  \file cs_solidification.cpp
 
   \brief Structure and functions handling the solidification module
          (modified Navier-Stokes + thermal module + transport equations)

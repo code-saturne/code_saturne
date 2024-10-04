@@ -87,7 +87,7 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*!
-  \file cs_lagr_sde_model.c
+  \file cs_lagr_sde_model.cpp
         Integration of Lagrangian stochastic diferential equations.
 */
 

@@ -52,7 +52,7 @@ BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \file cs_user_parameters-cdo-condif.c
+ * \file cs_user_parameters-cdo-condif.cpp
  *
  * \brief User functions for input of calculation parameters.
  *

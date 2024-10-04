@@ -79,7 +79,7 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*!
-  \file cs_time_step_compute.c
+  \file cs_time_step_compute.cpp
         Local time step and CFL computation.
 */
 

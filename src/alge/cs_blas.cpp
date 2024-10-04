@@ -60,7 +60,7 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*!
-  \file cs_blas.c
+  \file cs_blas.cpp
         BLAS (Basic Linear Algebra Subroutines) type functions
 
   \enum cs_blas_reduce_t

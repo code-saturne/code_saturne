@@ -74,7 +74,7 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*!
-  \file cs_dilatable_scalar_diff_st.c
+  \file cs_dilatable_scalar_diff_st.cpp
         Weakly compressible algorithm (semi-analytic):
         Computation of scalar diffusion terms.
 */

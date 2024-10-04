@@ -65,7 +65,7 @@
 BEGIN_C_DECLS
 
 /*!
-  \file cs_gwf_soil.c
+  \file cs_gwf_soil.cpp
 
   \brief Main functions dedicated to soil management in groundwater flows when
          using CDO schemes

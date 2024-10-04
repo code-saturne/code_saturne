@@ -75,7 +75,7 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*!
-  \file cs_mesh_refine.c
+  \file cs_mesh_refine.cpp
         Mesh refinement.
 
   Cells are refined based on predefined templates for given (autodetected)

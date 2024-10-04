@@ -81,7 +81,7 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*!
-  \file cs_sles.c
+  \file cs_sles.cpp
 
   \brief Sparse linear equation solver driver.
 

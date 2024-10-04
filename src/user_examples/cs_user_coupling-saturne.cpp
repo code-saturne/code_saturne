@@ -53,7 +53,7 @@ BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \file cs_user_coupling-saturne.c
+ * \file cs_user_coupling-saturne.cpp
  *
  * \brief Code couplings definition with SYRTHES and code_saturne.
  *

@@ -58,7 +58,7 @@ BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \file cs_user_parameters-fans.c
+ * \file cs_user_parameters-fans.cpp
  *
  * \brief Fans parameters example
  *

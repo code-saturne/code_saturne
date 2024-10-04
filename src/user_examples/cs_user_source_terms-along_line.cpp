@@ -53,7 +53,7 @@ BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \file cs_user_source_terms-along_line.c
+ * \file cs_user_source_terms-along_line.cpp
  *
  * \brief Base examples for additional right-hand side source terms for
  *   variable equations (momentum, scalars, turbulence...).

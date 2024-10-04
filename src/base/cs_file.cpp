@@ -105,7 +105,7 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*!
-  \file cs_file.c
+  \file cs_file.cpp
         File and directory operations, with parallel IO.
 
   \typedef cs_file_t

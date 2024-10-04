@@ -58,7 +58,7 @@ BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \file cs_user_parameters-coupling.c
+ * \file cs_user_parameters-coupling.cpp
  *
  * \brief Code coupling parameters examples.
  *

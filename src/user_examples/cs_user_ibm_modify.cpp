@@ -49,7 +49,7 @@ BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \file cs_user_ibm_modify.c
+ * \file cs_user_ibm_modify.cpp
  *
  * \brief User function. Locally modify a given porosity to take into
  *         account erosion effect (for instance).

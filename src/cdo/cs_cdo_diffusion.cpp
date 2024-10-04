@@ -69,7 +69,7 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*!
-  \file cs_cdo_diffusion.c
+  \file cs_cdo_diffusion.cpp
 
   \brief  Build discrete stiffness matrices and handled boundary conditions for
           diffusion term in CDO vertex-based and vertex+cell schemes.

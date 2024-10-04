@@ -60,7 +60,7 @@
 BEGIN_C_DECLS
 
 /*!
-  \file cs_gwf_priv.c
+  \file cs_gwf_priv.cpp
 
   \brief Helper functions dedicated to groundwater flows when using CDO schemes
 */

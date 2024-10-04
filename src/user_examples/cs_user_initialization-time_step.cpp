@@ -57,7 +57,7 @@ BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \file cs_user_initialization-time_step.c
+ * \file cs_user_initialization-time_step.cpp
  *
  * \brief Time step example
  *

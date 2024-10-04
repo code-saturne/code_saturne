@@ -45,7 +45,7 @@ BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \file cs_user_electric_scaling.c
+ * \file cs_user_electric_scaling.cpp
  *
  * \brief Define scaling parameter for electric model.
  *

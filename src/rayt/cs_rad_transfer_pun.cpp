@@ -80,7 +80,7 @@ BEGIN_C_DECLS
  * Additional Doxygen documentation
  *============================================================================*/
 
-/*! \file cs_rad_transfer_pun.c */
+/*! \file cs_rad_transfer_pun.cpp */
 
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
 

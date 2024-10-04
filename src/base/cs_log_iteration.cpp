@@ -84,7 +84,7 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*!
-  \file cs_log_iteration.c
+  \file cs_log_iteration.cpp
 
   \brief Log field and other array statistics at relevant time steps.
 */

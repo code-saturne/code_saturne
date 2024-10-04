@@ -65,7 +65,7 @@
 BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
-/*! \file cs_porous_model.c
+/*! \file cs_porous_model.cpp
  *
  * \brief Porous model management
  */

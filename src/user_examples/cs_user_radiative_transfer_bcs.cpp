@@ -54,7 +54,7 @@ BEGIN_C_DECLS
  * Additional Doxygen documentation
  *============================================================================*/
 
-/*! \file cs_user_radiative_transfer_bcs.c */
+/*! \file cs_user_radiative_transfer_bcs.cpp */
 
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
 

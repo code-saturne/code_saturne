@@ -82,7 +82,7 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*!
-  \file cs_initialize_fields.c
+  \file cs_initialize_fields.cpp
 
   \brief Various field initializations.
 */

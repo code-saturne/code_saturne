@@ -92,7 +92,7 @@
 BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
-/*! \file cs_matrix_hypre.c
+/*! \file cs_matrix_hypre.cpp
  *
  * \brief Sparse Matrix Representation and Operations using HYPRE.
  */

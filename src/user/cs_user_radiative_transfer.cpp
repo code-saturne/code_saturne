@@ -54,7 +54,7 @@ BEGIN_C_DECLS
  * Additional Doxygen documentation
  *============================================================================*/
 
-/*! \file cs_user_radiative_transfer.c
+/*! \file cs_user_radiative_transfer.cpp
  *
  * \brief User function for input of radiative transfer parameters:
  *        absorption coefficient and net radiation flux.

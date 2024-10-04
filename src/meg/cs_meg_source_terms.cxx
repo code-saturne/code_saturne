@@ -53,7 +53,7 @@ BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \file cs_meg_source_terms.c
+ * \file cs_meg_source_terms.cxx
  *
  * \brief This function is used to compute source terms over a volume zone. The
  *        mathematical expression is defined in the GUI.

@@ -102,7 +102,7 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*!
-  \file cs_pressure_correction.c
+  \file cs_pressure_correction.cpp
         Pressure correction step.
 */
 

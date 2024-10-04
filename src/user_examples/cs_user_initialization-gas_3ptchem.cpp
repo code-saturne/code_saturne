@@ -51,7 +51,7 @@ BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \file cs_user_initialization-gas_3ptchem.c
+ * \file cs_user_initialization-gas_3ptchem.cpp
  *
  * \brief Initialization prior to solving time steps.
  */

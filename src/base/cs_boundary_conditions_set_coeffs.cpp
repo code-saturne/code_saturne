@@ -141,7 +141,7 @@ cs_f_user_boundary_conditions_wrapper(int              itypfb[],
  *============================================================================*/
 
 /*!
-  \file cs_boundary_conditions_set_coeffs.c
+  \file cs_boundary_conditions_set_coeffs.cpp
         Boundary condition management.
 */
 

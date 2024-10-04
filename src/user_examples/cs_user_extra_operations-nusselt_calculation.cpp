@@ -55,7 +55,7 @@ BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \file cs_user_extra_operations-nusselt_calculation.c
+ * \file cs_user_extra_operations-nusselt_calculation.cpp
  */
 /*----------------------------------------------------------------------------*/
 

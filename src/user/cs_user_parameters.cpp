@@ -58,7 +58,7 @@ BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \file cs_user_parameters.c
+ * \file cs_user_parameters.cpp
  *
  * \brief User functions for input of calculation parameters.
  *

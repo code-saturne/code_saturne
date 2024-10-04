@@ -87,7 +87,7 @@ BEGIN_C_DECLS
  * Additional Doxygen documentation
  *============================================================================*/
 
-/*! \file  cs_balance_by_zone.c
+/*! \file  cs_balance_by_zone.cpp
 
 */
 

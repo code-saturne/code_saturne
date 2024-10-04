@@ -56,7 +56,7 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*!
- * \file cs_saddle_system.c
+ * \file cs_saddle_system.cpp
  *
  * \brief Set of functions to manipulate saddle-point systems defined by blocks
  *        relying on the cs_cdo_system_t structures: matrix/vector

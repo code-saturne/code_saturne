@@ -61,7 +61,7 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*!
-  \file cs_geom.c
+  \file cs_geom.cpp
         Geometry utility functions.
 */
 

@@ -51,7 +51,7 @@ BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \file cs_user_1d_wall_thermal.c
+ * \file cs_user_1d_wall_thermal.cpp
  *
  * \brief Data Entry of the 1D wall thermal module.
  *

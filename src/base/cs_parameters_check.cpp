@@ -93,7 +93,7 @@ BEGIN_C_DECLS
 
 
 /*!
-  \file cs_parameters_check.c
+  \file cs_parameters_check.cpp
         Parameters and options management check.
 */
 

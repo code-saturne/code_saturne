@@ -72,7 +72,7 @@ BEGIN_C_DECLS
  * Additional Doxygen documentation
  *============================================================================*/
 
-/*! \file  cs_rad_transfer.c
+/*! \file  cs_rad_transfer.cpp
            Radiation solver operations.
 */
 

@@ -59,7 +59,7 @@ BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \file cs_user_mesh-joining.c
+ * \file cs_user_mesh-joining.cpp
  *
  * \brief Mesh joining example.
  *

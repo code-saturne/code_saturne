@@ -69,7 +69,7 @@
 BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
-/*! \file cs_mesh_quantities.c
+/*! \file cs_mesh_quantities.cpp
  *
  * \brief Management of mesh quantities.
  *

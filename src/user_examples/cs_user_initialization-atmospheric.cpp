@@ -57,7 +57,7 @@ BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \file cs_user_initialization-atmospheric.c
+ * \file cs_user_initialization-atmospheric.cpp
  *
  * \brief Initialization example for atmospheric model.
  */

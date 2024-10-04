@@ -84,7 +84,7 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*!
- * \file cs_cdocb_scaleq_sles.c
+ * \file cs_cdocb_scaleq_sles.cpp
  *
  * \brief Functions dedicated to to the linear algebra settings and operations
  *        in case of CDO cell-based schemes with a scalar-valued equations

@@ -75,7 +75,7 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*!
-  \file cs_flag_check.c
+  \file cs_flag_check.cpp
         Mesh element flag checking and error handling..
 */
 

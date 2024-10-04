@@ -88,7 +88,7 @@
 BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
-/*! \file cs_matrix_petsc.c
+/*! \file cs_matrix_petsc.cpp
  *
  * \brief Sparse Matrix Representation and Operations using PETSc.
  *

@@ -116,7 +116,7 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*!
-  \file cs_renumber.c
+  \file cs_renumber.cpp
         Optional mesh renumbering.
 
   \enum cs_renumber_cells_type_t

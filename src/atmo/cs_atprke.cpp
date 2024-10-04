@@ -77,7 +77,7 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*!
-  \file cs_atprke.c
+  \file cs_atprke.cpp
 
   Modify the \f$k-\varepsilon\f$ turbulence model formulation
   for the atmospheric module.

@@ -71,7 +71,7 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*!
-  \file cs_mesh_adjacencies.c
+  \file cs_mesh_adjacencies.cpp
         Additional mesh adjacencies.
 */
 

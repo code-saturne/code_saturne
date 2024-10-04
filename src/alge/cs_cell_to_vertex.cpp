@@ -75,7 +75,7 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*!
- * \file cs_cell_to_vertex.c
+ * \file cs_cell_to_vertex.cpp
  * \brief Cell to vertex interpolation..
  */
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */

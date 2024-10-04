@@ -105,7 +105,7 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*!
-  \file cs_solve_all.c
+  \file cs_solve_all.cpp
         Solve the Navier-Stokes equations,
         source term convection diffusion equations for scalars ... .
 */

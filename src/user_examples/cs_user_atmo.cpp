@@ -57,7 +57,7 @@ BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \file cs_user_atmo.c
+ * \file cs_user_atmo.cpp
  *
  * \brief User-defined functions specific to amospheric flow models.
  */

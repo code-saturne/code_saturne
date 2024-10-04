@@ -84,7 +84,7 @@ BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \file cs_user_parameters-linear_solvers.c
+ * \file cs_user_parameters-linear_solvers.cpp
  *
  * \brief Linear solvers examples.
  *

@@ -72,7 +72,7 @@
 /*----------------------------------------------------------------------------*/
 
 /*!
-  \file cs_domain.c
+  \file cs_domain.cpp
 
   \brief  Manage a computational domain
     - Settings, fields, connectivities and geometrical quantities

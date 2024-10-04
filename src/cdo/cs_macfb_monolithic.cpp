@@ -93,7 +93,7 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*!
- * \file cs_macfb_monolithic.c
+ * \file cs_macfb_monolithic.cpp
  *
  * \brief Build an algebraic MAC face-based system for the Navier-Stokes
  *        equations and solved it with a monolithic approach

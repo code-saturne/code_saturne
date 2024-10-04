@@ -81,7 +81,7 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*!
-  \file cs_compute_thermo_pressure_density.c
+  \file cs_compute_thermo_pressure_density.cpp
 
   Compute the thermodynamic pressure and dansity
 

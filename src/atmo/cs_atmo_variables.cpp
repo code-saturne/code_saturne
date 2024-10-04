@@ -66,7 +66,7 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*!
-  \file cs_atmo_variables.c
+  \file cs_atmo_variables.cpp
         Add atmospheric model fields.
 */
 

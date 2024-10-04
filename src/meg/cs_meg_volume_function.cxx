@@ -53,7 +53,7 @@ BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \file cs_meg_volume_function.c
+ * \file cs_meg_volume_function.cxx
  *
  * \brief This function is used to compute user defined values for fields over
  *        a given volume zone. The mathematical expression is defined in the

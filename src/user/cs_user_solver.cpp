@@ -50,7 +50,7 @@ BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \file cs_user_solver.c
+ * \file cs_user_solver.cpp
  *
  * \brief User solver setting and implementation
  *

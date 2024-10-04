@@ -76,7 +76,7 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*!
-  \file cs_turbulence_model.c
+  \file cs_turbulence_model.cpp
         Base turbulence model data.
 */
 

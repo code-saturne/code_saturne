@@ -66,7 +66,7 @@
  *============================================================================*/
 
 /*!
-  \file bft_mem.c
+  \file bft_mem.cpp
         Base memory allocation wrappers with optional tracing.
 
   The memory managment function provided here provide optional logging,

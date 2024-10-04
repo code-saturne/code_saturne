@@ -51,7 +51,7 @@ BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \file cs_user_performance_tuning-partition.c
+ * \file cs_user_performance_tuning-partition.cpp
  *
  * \brief Partitioning option setting example.
  *

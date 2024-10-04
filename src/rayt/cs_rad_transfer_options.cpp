@@ -84,7 +84,7 @@ BEGIN_C_DECLS
  * Additional Doxygen documentation
  *============================================================================*/
 
-/*! \file  cs_rad_transfer_options.c */
+/*! \file  cs_rad_transfer_options.cpp */
 
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
 

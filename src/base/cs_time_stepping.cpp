@@ -163,7 +163,7 @@ cs_f_pp_models_bc_map(void);
  *============================================================================*/
 
 /*!
-  \file cs_time_stepping.c
+  \file cs_time_stepping.cpp
         Main time loop.
 */
 

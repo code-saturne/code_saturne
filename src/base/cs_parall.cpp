@@ -124,7 +124,7 @@ BEGIN_C_DECLS
  */
 
 /*!
-  \file cs_parall.c
+  \file cs_parall.cpp
         Utility functions dealing with parallelism.
 */
 

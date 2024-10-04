@@ -65,7 +65,7 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*!
-  \file cs_time_control.c
+  \file cs_time_control.cpp
         Time dependency control for variables or properties.
 */
 

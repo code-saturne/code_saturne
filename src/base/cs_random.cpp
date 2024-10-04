@@ -54,7 +54,7 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*!
-  \file cs_random.c
+  \file cs_random.cpp
         Random number generation.
 
   Based on the uniform, gaussian, and poisson random number generation code

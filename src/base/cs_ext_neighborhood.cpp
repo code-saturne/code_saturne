@@ -76,7 +76,7 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*!
-  \file cs_ext_neighborhood.c
+  \file cs_ext_neighborhood.cpp
         Extended cell neighborhood.
 
   \enum cs_ext_neighborhood_type_t

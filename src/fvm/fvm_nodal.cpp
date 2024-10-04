@@ -65,7 +65,7 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*!
-  \file fvm_nodal.c
+  \file fvm_nodal.cpp
         Main structure for a nodal representation associated with a mesh.
 
   The \c fvm_nodal_t structure is mostly used to handle post-processing

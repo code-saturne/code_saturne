@@ -75,7 +75,7 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*!
-  \file cs_lagr_restart.c
+  \file cs_lagr_restart.cpp
         Checkpoint/restart handling for Lagrangian module.
 */
 

@@ -66,7 +66,7 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*!
-  \file cs_function.c
+  \file cs_function.cpp
 
   \brief Function objects management.
 

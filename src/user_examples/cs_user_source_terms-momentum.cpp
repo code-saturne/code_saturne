@@ -53,7 +53,7 @@ BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \file cs_user_source_terms-momentum.c
+ * \file cs_user_source_terms-momentum.cpp
  *
  * \brief Base examples for additional right-hand side source terms for
  *   momentum equations.

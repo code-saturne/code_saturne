@@ -92,7 +92,7 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*!
-  \file cs_les_balance.c
+  \file cs_les_balance.cpp
         LES balance computation and related data.
 */
 

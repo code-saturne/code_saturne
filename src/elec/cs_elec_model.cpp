@@ -83,7 +83,7 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*!
- * \file cs_elec_model.c
+ * \file cs_elec_model.cpp
  *
  * \brief Base electrical model data.
  *

@@ -91,7 +91,7 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*!
- * \file cs_cdofb_monolithic.c
+ * \file cs_cdofb_monolithic.cpp
  *
  * \brief Build an algebraic CDO face-based system for the Navier-Stokes
  *        equations and solved it with a monolithic approach

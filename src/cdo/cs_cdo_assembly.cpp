@@ -69,7 +69,7 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*!
-  \file cs_cdo_assembly.c
+  \file cs_cdo_assembly.cpp
 
   \brief Set of functions and structures to handle the assembly of cellwise
   local CDO systems into a cs_matrix_t structure through the

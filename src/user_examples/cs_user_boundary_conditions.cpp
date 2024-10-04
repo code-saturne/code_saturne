@@ -53,7 +53,7 @@ BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \file cs_user_boundary_conditions.c
+ * \file cs_user_boundary_conditions.cpp
  *
  * \brief User functions for input of calculation parameters.
  *

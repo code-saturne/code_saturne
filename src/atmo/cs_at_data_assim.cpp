@@ -72,7 +72,7 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*!
-  \file cs_at_data_assim.c
+  \file cs_at_data_assim.cpp
         Data assimilation functions.
 
 */

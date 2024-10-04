@@ -50,7 +50,7 @@ BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \file cs_user_solver-heat-equation.c
+ * \file cs_user_solver-heat-equation.cpp
  *
  * \brief Set user solver for heat equation.
  *

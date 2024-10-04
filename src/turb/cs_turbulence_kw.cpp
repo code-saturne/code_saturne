@@ -93,7 +93,7 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*!
-  \file cs_turbulence_kw.c
+  \file cs_turbulence_kw.cpp
 
   Solve the \f$ k - \omega \f$ SST for incompressible flows
   or slightly compressible flows for one time step.

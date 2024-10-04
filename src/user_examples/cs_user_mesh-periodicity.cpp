@@ -59,7 +59,7 @@ BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \file cs_user_mesh-periodicity.c
+ * \file cs_user_mesh-periodicity.cpp
  *
  * \brief Mesh periodicity example
  *

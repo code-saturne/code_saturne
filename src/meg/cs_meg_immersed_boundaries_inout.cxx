@@ -53,7 +53,7 @@ BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \file cs_meg_immersed_boundaries_inout.c
+ * \file cs_meg_immersed_boundaries_inout.cxx
  *
  * \brief This function is used to indicate whether a given point is within or
  *        outside a given solid

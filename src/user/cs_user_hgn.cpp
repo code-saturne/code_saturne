@@ -49,7 +49,7 @@ BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \file cs_user_hgn.c
+ * \file cs_user_hgn.cpp
  *
  * \brief Define user properties for two-phase homogeneous compressible model.
  *

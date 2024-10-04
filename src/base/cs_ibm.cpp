@@ -82,7 +82,7 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*!
-  \file cs_ibm.c
+  \file cs_ibm.cpp
         Define immersed boundaries based on user inputs (experimental).
         Cloud of points are dealt with porosity from scan files.
 */

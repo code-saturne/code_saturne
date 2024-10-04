@@ -88,7 +88,7 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*!
-  \file cs_turbulence_v2f.c
+  \file cs_turbulence_v2f.cpp
 
   Solve the \f$\phi\f$ and diffusion for \f$ \overline{f} \f$
   as part of the V2F phi-model.

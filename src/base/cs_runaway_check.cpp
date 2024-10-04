@@ -66,7 +66,7 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*!
-  \file cs_runaway_check.c
+  \file cs_runaway_check.cpp
 
   \brief  Runaway (diverging) computation detection.
 */

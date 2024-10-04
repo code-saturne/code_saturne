@@ -51,7 +51,7 @@ BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \file cs_user_initialization-cooling_towers.c
+ * \file cs_user_initialization-cooling_towers.cpp
  *
  * \brief Initialization prior to solving time steps.
  */

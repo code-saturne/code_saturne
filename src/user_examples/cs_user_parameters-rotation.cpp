@@ -58,7 +58,7 @@ BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \file cs_user_parameters-rotation.c
+ * \file cs_user_parameters-rotation.cpp
  *
  * \brief Rotation parameters example.
  *

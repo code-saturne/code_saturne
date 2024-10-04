@@ -80,7 +80,7 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*!
-  \file cs_function_default.c
+  \file cs_function_default.cpp
         Base predefined function objects.
 */
 

@@ -72,7 +72,7 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*!
-  \file cs_timer_stats.c
+  \file cs_timer_stats.cpp
         Application timer statistics and graphs.
 
   These statistics are intended to provide a synthetic view of the relative

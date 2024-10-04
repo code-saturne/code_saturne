@@ -76,7 +76,7 @@
 BEGIN_C_DECLS
 
 /*!
-  \file cs_gwf_tpf.c
+  \file cs_gwf_tpf.cpp
 
   \brief Main functions dedicated to the modelling of two-phase flows in a
          porous media. This media is always considered as unsaturated. Two

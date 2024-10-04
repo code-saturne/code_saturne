@@ -70,7 +70,7 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*!
-  \file cs_boundary_conditions_check.c
+  \file cs_boundary_conditions_check.cpp
         Check boundary condition code.
 */
 

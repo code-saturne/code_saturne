@@ -69,7 +69,7 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*!
-  \file cs_head_losses.c
+  \file cs_head_losses.cpp
         Head losses computation.
 */
 

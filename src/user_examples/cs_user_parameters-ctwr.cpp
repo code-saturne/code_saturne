@@ -58,7 +58,7 @@ BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \file cs_user_parameters-ctwr.c
+ * \file cs_user_parameters-ctwr.cpp
  *
  * \brief Cooling towers parameters example
  *

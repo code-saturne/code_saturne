@@ -60,7 +60,7 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*!
-  \file cs_numbering.c
+  \file cs_numbering.cpp
         Numbering information for vectorization or multithreading.
 */
 

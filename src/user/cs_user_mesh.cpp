@@ -59,7 +59,7 @@ BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \file cs_user_mesh.c
+ * \file cs_user_mesh.cpp
  *
  * \brief Definition and modification of the calculation mesh.
  *

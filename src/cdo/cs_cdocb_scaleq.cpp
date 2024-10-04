@@ -86,7 +86,7 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*!
- * \file cs_cdocb_scaleq.c
+ * \file cs_cdocb_scaleq.cpp
  *
  * \brief Build an algebraic CDO cell-based system for the diffusion
  *        equation and solved it with a monolithic approach

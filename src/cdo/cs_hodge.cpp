@@ -61,7 +61,7 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*!
-  \file cs_hodge.c
+  \file cs_hodge.cpp
 
   \brief Build discrete Hodge operators
 */

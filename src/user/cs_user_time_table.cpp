@@ -51,7 +51,7 @@ BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \file cs_user_time_table.c
+ * \file cs_user_time_table.cpp
  *
  * \brief User definitions of time tables
  *

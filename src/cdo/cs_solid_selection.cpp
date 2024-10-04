@@ -57,7 +57,7 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*!
-  \file cs_solid_selection.c
+  \file cs_solid_selection.cpp
 
   \brief Structure and functions handling the list of solid cells
          Useful for Navier-Stokes, thermal module or the solidification module

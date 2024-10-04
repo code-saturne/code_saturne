@@ -51,7 +51,7 @@ BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \file cs_user_porosity.c
+ * \file cs_user_porosity.cpp
  *
  * \brief User definitions of porous media.
  *

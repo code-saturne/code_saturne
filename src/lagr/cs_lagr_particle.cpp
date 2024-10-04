@@ -78,7 +78,7 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*!
-  \file cs_lagr_particle.c
+  \file cs_lagr_particle.cpp
         Particle structure.
 */
 

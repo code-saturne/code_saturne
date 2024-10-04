@@ -158,7 +158,7 @@ typedef struct {
  *============================================================================*/
 
 /*!
- * \file cs_control.c
+ * \file cs_control.cpp
  *
  *  \brief Handle control file usable for interactive change of stop,
  *         post-processing or checkpoint behavior.

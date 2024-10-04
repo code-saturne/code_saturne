@@ -89,7 +89,7 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*!
-  \file cs_turbulence_sa.c
+  \file cs_turbulence_sa.cpp
 
   Solving op the equation of \f$ \tilde{\nu} \f$, which is the scalar
   quantity defined by the Spalart-Allmaras model for 1 time-step.

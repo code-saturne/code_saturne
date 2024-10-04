@@ -52,7 +52,7 @@ BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \file cs_user_wall_condensation.c
+ * \file cs_user_wall_condensation.cpp
  *
  * \brief Source terms associated at the boundary faces and the neighboring
  *      cells with surface condensation.

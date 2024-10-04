@@ -77,7 +77,7 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*!
-  \file cs_mesh_coarsen.c
+  \file cs_mesh_coarsen.cpp
         Mesh coarsening.
 */
 

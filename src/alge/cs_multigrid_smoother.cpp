@@ -66,7 +66,7 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*!
-  \file cs_multigrid_smoother.c
+  \file cs_multigrid_smoother.cpp
         Iterative linear solvers used as multigrid smoothers only.
 
   These smoothers are based on iterative solvers, but are simplified so

@@ -77,7 +77,7 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*!
-  \file cs_boundary_zone.c
+  \file cs_boundary_zone.cpp
         Boundary zone handling.
 */
 

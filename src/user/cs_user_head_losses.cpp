@@ -51,7 +51,7 @@ BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \file cs_user_head_losses.c
+ * \file cs_user_head_losses.cpp
  *
  * \brief User head loss definitions.
  */

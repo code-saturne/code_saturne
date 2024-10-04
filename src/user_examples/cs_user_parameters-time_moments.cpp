@@ -58,7 +58,7 @@ BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \file cs_user_parameters-time_moments.c
+ * \file cs_user_parameters-time_moments.cpp
  *
  * \brief Time moments example
  *

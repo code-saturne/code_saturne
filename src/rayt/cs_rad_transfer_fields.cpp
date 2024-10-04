@@ -79,7 +79,7 @@ BEGIN_C_DECLS
 
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
 
-/*  \file cs_rad_transfer_fields.c
+/*  \file cs_rad_transfer_fields.cpp
  *
  * \brief Properties definitions for radiative model.
 */

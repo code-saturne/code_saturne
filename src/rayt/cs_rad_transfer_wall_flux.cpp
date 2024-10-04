@@ -76,7 +76,7 @@ BEGIN_C_DECLS
  * Additional Doxygen documentation
  *============================================================================*/
 
-/*! \file  cs_rad_transfer_wall_flux.c */
+/*! \file  cs_rad_transfer_wall_flux.cpp */
 
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
 

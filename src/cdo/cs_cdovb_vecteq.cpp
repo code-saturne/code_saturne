@@ -85,7 +85,7 @@
 BEGIN_C_DECLS
 
 /*!
- *  \file cs_cdovb_vecteq.c
+ *  \file cs_cdovb_vecteq.cpp
  *
  * \brief Build an algebraic CDO vertex-based system for unsteady
  *        convection-diffusion-reaction of vector-valued equations with

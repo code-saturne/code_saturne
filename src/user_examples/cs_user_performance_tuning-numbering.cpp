@@ -51,7 +51,7 @@ BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \file cs_user_performance_tuning-numbering.c
+ * \file cs_user_performance_tuning-numbering.cpp
  *
  * \brief Mesh numbering example.
  *

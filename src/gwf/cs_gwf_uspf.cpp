@@ -68,7 +68,7 @@
 BEGIN_C_DECLS
 
 /*!
-  \file cs_gwf_uspf.c
+  \file cs_gwf_uspf.cpp
 
   \brief Main high-level functions dedicated to groundwater flows when using
          CDO schemes for single-phase flows in an unsaturated porous media.

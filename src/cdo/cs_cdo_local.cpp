@@ -57,7 +57,7 @@
 BEGIN_C_DECLS
 
 /*!
-  \file cs_cdo_local.c
+  \file cs_cdo_local.cpp
 
   \brief  Functions to handle low-level actions related to CDO local
           quantities such as cell mesh structures or cellwise systems.

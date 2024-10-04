@@ -64,7 +64,7 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*!
- * \file cs_resource.c
+ * \file cs_resource.cpp
  *
  *  \brief Resource allocation management (available time).
  */

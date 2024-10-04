@@ -83,7 +83,7 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*!
-  \file cs_lagr_resuspension.c
+  \file cs_lagr_resuspension.cpp
         Lagrangian resuspension model.
 */
 

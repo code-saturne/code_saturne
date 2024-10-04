@@ -79,7 +79,7 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*!
-  \file cs_rad_transfer_absorption.c
+  \file cs_rad_transfer_absorption.cpp
         Absorption coefficient computation for radiative transfer
         with specific physical models.
 

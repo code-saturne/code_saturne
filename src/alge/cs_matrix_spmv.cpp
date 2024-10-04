@@ -86,7 +86,7 @@
 BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
-/*! \file cs_matrix_spmv.c
+/*! \file cs_matrix_spmv.cpp
  *
  * \brief Sparse Matrix SpMV kernels.
  */

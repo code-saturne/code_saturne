@@ -49,7 +49,7 @@ BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \file cs_user_ibm.c
+ * \file cs_user_ibm.cpp
  *
  * \brief User function. Define immersed boundaries in time and space.
  */

@@ -61,7 +61,7 @@
 BEGIN_C_DECLS
 
 /*!
-  \file cs_navsto_coupling.c
+  \file cs_navsto_coupling.cpp
 
   \brief  Functions to handle structures used as a context when solving the
           Navier-Stokes equations.

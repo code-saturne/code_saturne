@@ -53,7 +53,7 @@ BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \file cs_user_source_terms.c
+ * \file cs_user_source_terms.cpp
  *
  * \brief Additional source terms for variable equations.
  *

@@ -2431,7 +2431,7 @@ cs_lagr_solve_time_step(const int         itypfb[],
             /* FIXME */
 
             bft_printf("   ** LAGRANGIAN MODULE:\n"
-                       "   ** Error in cs_lagr.c: inclg < 0 ! \n"
+                       "   ** Error in cs_lagr.cpp: inclg < 0 ! \n"
                        "---------------------------------------------\n\n\n"
                        "** Ifac = %ld  and inclg = %g\n"
                        "-------------------------------------------------\n",

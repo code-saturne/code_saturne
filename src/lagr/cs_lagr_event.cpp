@@ -75,7 +75,7 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*!
-  \file cs_lagr_event.c
+  \file cs_lagr_event.cpp
         Particle event management.
 
 Particle events allow keeping track of particle events suh as boundary

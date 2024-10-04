@@ -61,7 +61,7 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*!
- * \file cs_iter_algo.c
+ * \file cs_iter_algo.cpp
  *
  * \brief Set of functions to manage high-level iterative algorithms such as
  *        Uzawa, Golub-Kahan Bi-orthogonalization, block preconditioner or

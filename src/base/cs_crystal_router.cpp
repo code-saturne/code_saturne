@@ -64,7 +64,7 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*!
-  \file cs_crystal_router.c
+  \file cs_crystal_router.cpp
         Crystal Router parallel exchange algorithm based operations.
 
   The Crystal Router is described in \cite Fox:1988 .

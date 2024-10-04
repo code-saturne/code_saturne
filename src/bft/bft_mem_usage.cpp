@@ -82,7 +82,7 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*!
-  \file bft_mem_usage.c
+  \file bft_mem_usage.cpp
         Base memory usage information (System and Library dependent).
 
   The memory-usage measurement functions provided here may be system-dependent.

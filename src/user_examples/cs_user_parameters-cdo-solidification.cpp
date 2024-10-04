@@ -58,7 +58,7 @@ BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \file cs_user_parameters-cdo-solidification.c
+ * \file cs_user_parameters-cdo-solidification.cpp
  *
  * \brief User functions for setting a calculation using the solidification
  *        module with CDO schemes

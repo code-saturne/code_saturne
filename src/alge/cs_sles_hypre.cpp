@@ -97,7 +97,7 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*!
-  \file cs_sles_hypre.c
+  \file cs_sles_hypre.cpp
 
   \brief handling of HYPRE-based linear solvers
 

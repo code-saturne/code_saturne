@@ -87,7 +87,7 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*!
-  \file cs_restart.c
+  \file cs_restart.cpp
         Manage checkpoint / restart files.
 */
 

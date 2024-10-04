@@ -58,7 +58,7 @@
 BEGIN_C_DECLS
 
 /*!
-  \file cs_boundary.c
+  \file cs_boundary.cpp
 
   \brief Handle the "physical" boundary conditions attached to a computational
          domain

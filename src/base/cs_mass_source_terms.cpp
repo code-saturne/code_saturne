@@ -60,7 +60,7 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*!
-  \file cs_mass_source_terms.c
+  \file cs_mass_source_terms.cpp
         Mass source terms computation.
 
 */

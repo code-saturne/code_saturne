@@ -64,7 +64,7 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*!
-  \file cs_range_set.c
+  \file cs_range_set.cpp
 
   \brief Operations related to handling of an owning rank for distributed
          entities.
