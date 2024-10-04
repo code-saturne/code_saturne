@@ -311,9 +311,6 @@ cs_rad_transfer_bcs(int bc_type[])
   /* Default initialization */
   for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++) {
     isothm[face_id] = -1;
-    f_bxlam->val[face_id] = -cs_math_big_r;
-    f_bepa->val[face_id]  = -cs_math_big_r;
-    f_beps->val[face_id]  = -cs_math_big_r;
     text[face_id] = -cs_math_big_r;
   }
 
