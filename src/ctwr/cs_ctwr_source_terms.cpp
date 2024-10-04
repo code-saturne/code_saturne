@@ -1531,7 +1531,7 @@ cs_ctwr_source_term(int              f_id,
       for (cs_lnum_t cell_id = 0; cell_id < m->n_cells; cell_id++) {
 
         /* Air / droplets interfacial area density calculation */
-        cs_real_t ai_o_yp = 6.0 * rho[cell_id] / rho_l
+        cs_real_t ai_o_yp = 6.0 * rho_h[cell_id] / rho_l
                                 * (1.0 - vol_f_r[cell_id])
                                 / droplet_diam;
 
@@ -1544,7 +1544,7 @@ cs_ctwr_source_term(int              f_id,
         for (cs_lnum_t i = 0; i < 3; i++) {
           /* Explicit source term */
           /* Gravity term */
-          _exp_st[cell_id][i] +=   rho[cell_id] * gravity[i]
+          _exp_st[cell_id][i] +=   rho_h[cell_id] * gravity[i]
                                  * cell_f_vol[cell_id];
 
           /* Drag term*/

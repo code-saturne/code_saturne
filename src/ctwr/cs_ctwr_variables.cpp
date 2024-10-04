@@ -341,7 +341,7 @@ cs_ctwr_add_variable_fields(void)
       if (ct_opt->mixture_model)
         drift = CS_DRIFT_SCALAR_ON + CS_DRIFT_SCALAR_NO_MASS_AGGREGATION;
       else
-        drift = CS_DRIFT_SCALAR_ON;
+        drift = CS_DRIFT_SCALAR_ON + CS_DRIFT_SCALAR_NO_MASS_AGGREGATION;
 
       cs_field_set_key_int(f, keydri, drift);
 
