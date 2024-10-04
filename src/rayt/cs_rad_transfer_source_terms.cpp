@@ -51,6 +51,8 @@
 
 #include "cs_field_pointer.h"
 #include "cs_parameters.h"
+#include "cs_physical_constants.h"
+#include "cs_physical_model.h"
 #include "cs_mesh.h"
 #include "cs_mesh_quantities.h"
 #include "cs_thermal_model.h"
@@ -99,31 +101,45 @@ BEGIN_C_DECLS
 /*!
  * \brief Implicit and explicit radiative source terms for thermal scalar.
  *
- * \param[in,out]  smbrs   work array for right hand side
- * \param[in,out]  rovsdt  work array for unsteady term
+ * \param[in,out]  rhs     work array for right hand side
+ * \param[in,out]  fimp    work array for unsteady term
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_rad_transfer_source_terms(cs_real_t  smbrs[],
-                             cs_real_t  rovsdt[])
+cs_rad_transfer_source_terms(cs_real_t  rhs[],
+                             cs_real_t  fimp[])
 {
   if (      cs_glob_thermal_model->thermal_variable
          == CS_THERMAL_MODEL_TEMPERATURE
       ||    cs_glob_thermal_model->thermal_variable
          == CS_THERMAL_MODEL_ENTHALPY) {
 
+    const cs_real_t *cell_vol = cs_glob_mesh_quantities->cell_vol;
+
     /* Implicit part   */
     cs_real_t *rad_st_impl = CS_FI_(rad_ist, 0)->val;
-    for (cs_lnum_t iel = 0; iel < cs_glob_mesh->n_cells; iel++) {
-      rad_st_impl[iel] = CS_MAX(-rad_st_impl[iel], 0.0);
-      rovsdt[iel] += rad_st_impl[iel] * cs_glob_mesh_quantities->cell_vol[iel];
-    }
-
     /* Explicit part   */
     cs_real_t *rad_st_expl = CS_FI_(rad_est, 0)->val;
-    for (cs_lnum_t iel = 0; iel < cs_glob_mesh->n_cells; iel++) {
-      smbrs[iel] += rad_st_expl[iel] * cs_glob_mesh_quantities->cell_vol[iel];
+
+    /* Conversion Temperature -> potential Temperature (theta) */
+    if (cs_glob_physical_model_flag[CS_ATMOSPHERIC] >= 0) {
+      const cs_real_t *pottemp = CS_F_(t)->val;
+      const cs_real_t *tempc = cs_field_by_name("real_temperature")->val;
+      const cs_real_t tkelvi = cs_physical_constants_celsius_to_kelvin;
+      for (cs_lnum_t c_id = 0; c_id < cs_glob_mesh->n_cells; c_id++) {
+        rad_st_impl[c_id] = CS_MAX(-rad_st_impl[c_id], 0.0);
+        cs_real_t cor_factor = pottemp[c_id] / (tempc[c_id] + tkelvi);
+        fimp[c_id] += cor_factor * rad_st_impl[c_id] * cell_vol[c_id];
+        rhs[c_id] += cor_factor * rad_st_expl[c_id] * cell_vol[c_id];
+      }
+    }
+    else {
+      for (cs_lnum_t c_id = 0; c_id < cs_glob_mesh->n_cells; c_id++) {
+        rad_st_impl[c_id] = CS_MAX(-rad_st_impl[c_id], 0.0);
+        fimp[c_id] += rad_st_impl[c_id] * cell_vol[c_id];
+        rhs[c_id] += rad_st_expl[c_id] * cell_vol[c_id];
+      }
     }
   }
 

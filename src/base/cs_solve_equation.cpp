@@ -1270,19 +1270,6 @@ cs_solve_equation_scalar(cs_field_t        *f,
     if (is_thermal_model_field) {
       cs_rad_transfer_source_terms(rhs, fimp);
 
-      /* Conversion Temperature -> potential Temperature (theta)
-       * TODO FIXME check rhs and fimp are correctly initialized... */
-      if (cs_glob_physical_model_flag[CS_ATMOSPHERIC] >= 0) {
-        const cs_real_t *pottemp = CS_F_(t)->val;
-        const cs_real_t *tempc = cs_field_by_name("real_temperature")->val;
-        const cs_real_t tkelvi = cs_physical_constants_celsius_to_kelvin;
-        for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-          cs_real_t cor_factor = pottemp[c_id] / (tempc[c_id] + tkelvi);
-          rhs[c_id] *= cor_factor;
-          fimp[c_id] *= cor_factor;
-        }
-      }
-
       /* Store the explicit radiative source term */
       if (idilat > 3) {
         const cs_real_t *cpro_tsre1 = cs_field_by_name("rad_st")->val;
