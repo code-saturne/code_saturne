@@ -255,10 +255,57 @@ private:
 
 };
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Get the current execution context. For the moment only global
+ * context is returned.
+ *
+ * \return pointer to current execution context.
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_execution_context * const
+cs_execution_context_get();
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Get the global execution context.
+ *
+ * \return pointer to global execution context.
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_execution_context * const
+cs_execution_context_glob_get();
+
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
 #endif /* __cplusplus */
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*----------------------------------------------------------------------------*/
+
+BEGIN_C_DECLS
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Initialize the global execution context.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_execution_context_glob_init();
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Free the global execution context pointer.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_execution_context_glob_finalize();
+
+/*----------------------------------------------------------------------------*/
+
+END_C_DECLS
 
 #endif /* __CS_EXECUTION_CONTEXT_H__ */

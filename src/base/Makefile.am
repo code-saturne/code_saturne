@@ -268,6 +268,7 @@ cs_block_dist.cpp \
 cs_block_to_part.cpp \
 cs_crystal_router.cpp \
 cs_defs.c \
+cs_execution_context.cpp \
 cs_file.cpp \
 cs_file_csv_parser.cpp \
 cs_fp_exception.cpp \

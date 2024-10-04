@@ -74,6 +74,7 @@
 #include "bft_mem.h"
 #include "bft_printf.h"
 
+#include "cs_execution_context.h"
 #include "cs_file.h"
 #include "cs_fp_exception.h"
 #include "cs_log.h"
@@ -462,6 +463,9 @@ _cs_base_exit(int status)
         status = EXIT_SUCCESS;
     }
   }
+
+  /* Clean execution context */
+  cs_execution_context_glob_finalize();
 
 #if defined(HAVE_MPI)
   {
@@ -1357,6 +1361,9 @@ cs_base_mpi_init(int    *argc,
   }
 
 #endif
+
+  /* Initialize execution context */
+  cs_execution_context_glob_init();
 }
 
 /*----------------------------------------------------------------------------
