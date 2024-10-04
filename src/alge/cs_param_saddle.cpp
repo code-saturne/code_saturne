@@ -496,19 +496,19 @@ cs_param_saddle_set_augmentation_coef(cs_param_saddle_t  *saddlep,
   switch (saddlep->solver) {
   case CS_PARAM_SADDLE_SOLVER_ALU:
     {
-    cs_param_saddle_context_alu_t *ctx =
-      static_cast<cs_param_saddle_context_alu_t *>(saddlep->context);
+      cs_param_saddle_context_alu_t *ctx =
+        static_cast<cs_param_saddle_context_alu_t *>(saddlep->context);
 
-    ctx->augmentation_scaling = coef;
+      ctx->augmentation_scaling = coef;
     }
     break;
 
   case CS_PARAM_SADDLE_SOLVER_GKB:
     {
-    cs_param_saddle_context_gkb_t *ctx =
-      static_cast<cs_param_saddle_context_gkb_t *>(saddlep->context);
+      cs_param_saddle_context_gkb_t *ctx =
+        static_cast<cs_param_saddle_context_gkb_t *>(saddlep->context);
 
-    ctx->augmentation_scaling = coef;
+      ctx->augmentation_scaling = coef;
     }
     break;
 
@@ -542,19 +542,19 @@ cs_param_saddle_get_augmentation_coef(const cs_param_saddle_t  *saddlep)
   switch (saddlep->solver) {
   case CS_PARAM_SADDLE_SOLVER_ALU:
     {
-    cs_param_saddle_context_alu_t *ctxp =
-      static_cast<cs_param_saddle_context_alu_t *>(saddlep->context);
+      cs_param_saddle_context_alu_t *ctxp =
+        static_cast<cs_param_saddle_context_alu_t *>(saddlep->context);
 
-    return ctxp->augmentation_scaling;
+      return ctxp->augmentation_scaling;
     }
     break;
 
   case CS_PARAM_SADDLE_SOLVER_GKB:
     {
-    cs_param_saddle_context_gkb_t *ctxp =
-      static_cast<cs_param_saddle_context_gkb_t *>(saddlep->context);
+      cs_param_saddle_context_gkb_t *ctxp =
+        static_cast<cs_param_saddle_context_gkb_t *>(saddlep->context);
 
-    return ctxp->augmentation_scaling;
+      return ctxp->augmentation_scaling;
     }
     break;
 
@@ -1135,7 +1135,7 @@ cs_param_saddle_set_solver(const char          *keyval,
     BFT_MALLOC(ctxp, 1, cs_param_saddle_context_block_krylov_t);
 
     ctxp->n_stored_directions = 30;    /* default value */
-    ctxp->xtra_sles_param = nullptr;      /* It depends on the type of Schur
+    ctxp->xtra_sles_param = nullptr;   /* It depends on the type of Schur
                                           approximation */
 
     saddlep->context = ctxp;
@@ -1347,17 +1347,17 @@ cs_param_saddle_copy(const cs_param_saddle_t  *ref,
 
   case CS_PARAM_SADDLE_SOLVER_ALU:
     {
-    cs_param_saddle_context_alu_t *ctxp_ref =
-      static_cast<cs_param_saddle_context_alu_t *>(ref->context);
-    cs_param_saddle_context_alu_t *ctxp_dest = nullptr;
+      cs_param_saddle_context_alu_t *ctxp_ref =
+        static_cast<cs_param_saddle_context_alu_t *>(ref->context);
+      cs_param_saddle_context_alu_t *ctxp_dest = nullptr;
 
-    BFT_MALLOC(ctxp_dest, 1, cs_param_saddle_context_alu_t);
+      BFT_MALLOC(ctxp_dest, 1, cs_param_saddle_context_alu_t);
 
-    ctxp_dest->augmentation_scaling = ctxp_ref->augmentation_scaling;
-    ctxp_dest->dedicated_init_sles  = ctxp_ref->dedicated_init_sles;
+      ctxp_dest->augmentation_scaling = ctxp_ref->augmentation_scaling;
+      ctxp_dest->dedicated_init_sles  = ctxp_ref->dedicated_init_sles;
 
-    ctxp_dest->init_sles_param =
-      _copy_init_slesp(ctxp_ref->init_sles_param, dest);
+      ctxp_dest->init_sles_param
+        = _copy_init_slesp(ctxp_ref->init_sles_param, dest);
     }
     break;
 
@@ -1379,34 +1379,34 @@ cs_param_saddle_copy(const cs_param_saddle_t  *ref,
 
   case CS_PARAM_SADDLE_SOLVER_GKB:
     {
-    cs_param_saddle_context_gkb_t *ctxp_ref =
-      static_cast<cs_param_saddle_context_gkb_t *>(ref->context);
-    cs_param_saddle_context_gkb_t *ctxp_dest = nullptr;
+      cs_param_saddle_context_gkb_t *ctxp_ref =
+        static_cast<cs_param_saddle_context_gkb_t *>(ref->context);
+      cs_param_saddle_context_gkb_t *ctxp_dest = nullptr;
 
-    BFT_MALLOC(ctxp_dest, 1, cs_param_saddle_context_gkb_t);
+      BFT_MALLOC(ctxp_dest, 1, cs_param_saddle_context_gkb_t);
 
-    ctxp_dest->augmentation_scaling = ctxp_ref->augmentation_scaling;
-    ctxp_dest->truncation_threshold = ctxp_ref->truncation_threshold;
-    ctxp_dest->dedicated_init_sles  = ctxp_ref->dedicated_init_sles;
+      ctxp_dest->augmentation_scaling = ctxp_ref->augmentation_scaling;
+      ctxp_dest->truncation_threshold = ctxp_ref->truncation_threshold;
+      ctxp_dest->dedicated_init_sles  = ctxp_ref->dedicated_init_sles;
 
-    ctxp_dest->init_sles_param =
-      _copy_init_slesp(ctxp_ref->init_sles_param, dest);
+      ctxp_dest->init_sles_param
+        = _copy_init_slesp(ctxp_ref->init_sles_param, dest);
     }
     break;
 
   case CS_PARAM_SADDLE_SOLVER_UZAWA_CG:
     {
-    cs_param_saddle_context_uzacg_t *ctxp_ref =
-      static_cast<cs_param_saddle_context_uzacg_t *>(ref->context);
-    cs_param_saddle_context_uzacg_t *ctxp_dest = nullptr;
+      cs_param_saddle_context_uzacg_t *ctxp_ref =
+        static_cast<cs_param_saddle_context_uzacg_t *>(ref->context);
+      cs_param_saddle_context_uzacg_t *ctxp_dest = nullptr;
 
-    ctxp_dest->dedicated_init_sles = ctxp_ref->dedicated_init_sles;
+      ctxp_dest->dedicated_init_sles = ctxp_ref->dedicated_init_sles;
 
-    ctxp_dest->init_sles_param =
-      _copy_init_slesp(ctxp_ref->init_sles_param, dest);
+      ctxp_dest->init_sles_param
+        = _copy_init_slesp(ctxp_ref->init_sles_param, dest);
 
-    ctxp_dest->xtra_sles_param =
-      _copy_xtra_slesp(ctxp_ref->xtra_sles_param, dest);
+      ctxp_dest->xtra_sles_param
+        = _copy_xtra_slesp(ctxp_ref->xtra_sles_param, dest);
     }
     break;
 
@@ -1453,20 +1453,18 @@ cs_param_saddle_log(const cs_param_saddle_t  *saddlep)
 
   case CS_PARAM_SADDLE_SOLVER_ALU:
     {
-    cs_param_saddle_context_alu_t *ctxp =
-      static_cast<cs_param_saddle_context_alu_t *>(saddlep->context);
+      cs_param_saddle_context_alu_t *ctxp =
+        static_cast<cs_param_saddle_context_alu_t *>(saddlep->context);
 
-    cs_log_printf(CS_LOG_SETUP,
-                  "%s Solver: Augmented Lagrangian-Uzawa (ALU)\n",
-                  prefix);
-    cs_log_printf(CS_LOG_SETUP,
-                  "%s ALU parameters: gamma=%5.2e\n",
-                  prefix,
-                  ctxp->augmentation_scaling);
-    cs_log_printf(CS_LOG_SETUP,
-                  "%s ALU parameters: dedicated_init_sles=%s\n",
-                  prefix,
-                  cs_base_strtf(ctxp->dedicated_init_sles));
+      cs_log_printf(CS_LOG_SETUP,
+                    "%s Solver: Augmented Lagrangian-Uzawa (ALU)\n",
+                    prefix);
+      cs_log_printf(CS_LOG_SETUP,
+                    "%s ALU parameters: gamma=%5.2e\n",
+                    prefix, ctxp->augmentation_scaling);
+      cs_log_printf(CS_LOG_SETUP,
+                    "%s ALU parameters: dedicated_init_sles=%s\n",
+                    prefix, cs_base_strtf(ctxp->dedicated_init_sles));
     }
     break;
 
@@ -1500,22 +1498,20 @@ cs_param_saddle_log(const cs_param_saddle_t  *saddlep)
 
   case CS_PARAM_SADDLE_SOLVER_GKB:
     {
-    cs_param_saddle_context_gkb_t *ctxp =
-      static_cast<cs_param_saddle_context_gkb_t *>(saddlep->context);
+      cs_param_saddle_context_gkb_t *ctxp =
+        static_cast<cs_param_saddle_context_gkb_t *>(saddlep->context);
 
-    cs_log_printf(CS_LOG_SETUP,
-                  "%s Solver: Golub-Kahan Bidiagonalization (GKB)\n",
-                  prefix);
-    cs_log_printf(CS_LOG_SETUP,
-                  "%s GKB parameters:"
-                  " gamma=%5.2e; trunctation_threshold=%d\n",
-                  prefix,
-                  ctxp->augmentation_scaling,
-                  ctxp->truncation_threshold);
-    cs_log_printf(CS_LOG_SETUP,
-                  "%s GKB parameters: dedicated_init_sles=%s\n",
-                  prefix,
-                  cs_base_strtf(ctxp->dedicated_init_sles));
+      cs_log_printf(CS_LOG_SETUP,
+                    "%s Solver: Golub-Kahan Bidiagonalization (GKB)\n",
+                    prefix);
+      cs_log_printf(CS_LOG_SETUP,
+                    "%s GKB parameters:"
+                    " gamma=%5.2e; trunctation_threshold=%d\n",
+                    prefix,
+                    ctxp->augmentation_scaling, ctxp->truncation_threshold);
+      cs_log_printf(CS_LOG_SETUP,
+                    "%s GKB parameters: dedicated_init_sles=%s\n",
+                    prefix, cs_base_strtf(ctxp->dedicated_init_sles));
     }
     break;
 
@@ -1529,28 +1525,27 @@ cs_param_saddle_log(const cs_param_saddle_t  *saddlep)
 
   case CS_PARAM_SADDLE_SOLVER_NOTAY_TRANSFORM:
     {
-    cs_param_saddle_context_notay_t *ctxp =
-      static_cast<cs_param_saddle_context_notay_t *>(saddlep->context);
+      cs_param_saddle_context_notay_t *ctxp =
+        static_cast<cs_param_saddle_context_notay_t *>(saddlep->context);
 
-    cs_log_printf(CS_LOG_SETUP, "%s Solver: Notay's transformation\n", prefix);
-    cs_log_printf(CS_LOG_SETUP,
-                  "%s Notay parameters: alpha=%5.3e\n",
-                  prefix,
-                  ctxp->scaling_coef);
+      cs_log_printf(CS_LOG_SETUP, "%s Solver: Notay's transformation\n",
+                    prefix);
+      cs_log_printf(CS_LOG_SETUP,
+                    "%s Notay parameters: alpha=%5.3e\n",
+                    prefix, ctxp->scaling_coef);
     }
     break;
 
   case CS_PARAM_SADDLE_SOLVER_UZAWA_CG:
     {
-    cs_param_saddle_context_uzacg_t *ctxp =
-      static_cast<cs_param_saddle_context_uzacg_t *>(saddlep->context);
+      cs_param_saddle_context_uzacg_t *ctxp =
+        static_cast<cs_param_saddle_context_uzacg_t *>(saddlep->context);
 
-    cs_log_printf(CS_LOG_SETUP, "%s Solver: Uzawa-CG\n", prefix);
+      cs_log_printf(CS_LOG_SETUP, "%s Solver: Uzawa-CG\n", prefix);
 
-    cs_log_printf(CS_LOG_SETUP,
-                  "%s Uzawa-CG parameters: dedicated_init_sles=%s\n",
-                  prefix,
-                  cs_base_strtf(ctxp->dedicated_init_sles));
+      cs_log_printf(CS_LOG_SETUP,
+                    "%s Uzawa-CG parameters: dedicated_init_sles=%s\n",
+                    prefix, cs_base_strtf(ctxp->dedicated_init_sles));
     }
     break;
 
@@ -1650,42 +1645,42 @@ cs_param_saddle_log(const cs_param_saddle_t  *saddlep)
 
   case CS_PARAM_SADDLE_SOLVER_ALU:
     {
-    cs_param_saddle_context_alu_t *ctxp =
-      static_cast<cs_param_saddle_context_alu_t *>(saddlep->context);
+      cs_param_saddle_context_alu_t *ctxp =
+        static_cast<cs_param_saddle_context_alu_t *>(saddlep->context);
 
-    if (ctxp->dedicated_init_sles)
-      cs_param_sles_log(ctxp->init_sles_param);
+      if (ctxp->dedicated_init_sles)
+        cs_param_sles_log(ctxp->init_sles_param);
     }
     break;
 
   case CS_PARAM_SADDLE_SOLVER_GCR:
     {
-    cs_param_saddle_context_block_krylov_t *ctxp =
-      static_cast<cs_param_saddle_context_block_krylov_t *>(saddlep->context);
+      cs_param_saddle_context_block_krylov_t *ctxp =
+        static_cast<cs_param_saddle_context_block_krylov_t *>(saddlep->context);
 
-    cs_param_sles_log(ctxp->xtra_sles_param);
+      cs_param_sles_log(ctxp->xtra_sles_param);
     }
     break;
 
   case CS_PARAM_SADDLE_SOLVER_GKB:
     {
-    cs_param_saddle_context_gkb_t *ctxp =
-      static_cast<cs_param_saddle_context_gkb_t *>(saddlep->context);
+      cs_param_saddle_context_gkb_t *ctxp =
+        static_cast<cs_param_saddle_context_gkb_t *>(saddlep->context);
 
-    if (ctxp->dedicated_init_sles)
-      cs_param_sles_log(ctxp->init_sles_param);
+      if (ctxp->dedicated_init_sles)
+        cs_param_sles_log(ctxp->init_sles_param);
     }
     break;
 
   case CS_PARAM_SADDLE_SOLVER_UZAWA_CG:
     {
-    cs_param_saddle_context_uzacg_t *ctxp =
-      static_cast<cs_param_saddle_context_uzacg_t *>(saddlep->context);
+      cs_param_saddle_context_uzacg_t *ctxp =
+        static_cast<cs_param_saddle_context_uzacg_t *>(saddlep->context);
 
-    if (ctxp->dedicated_init_sles)
-      cs_param_sles_log(ctxp->init_sles_param);
+      if (ctxp->dedicated_init_sles)
+        cs_param_sles_log(ctxp->init_sles_param);
 
-    cs_param_sles_log(ctxp->xtra_sles_param);
+      cs_param_sles_log(ctxp->xtra_sles_param);
     }
     break;
 

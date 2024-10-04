@@ -1215,13 +1215,13 @@ cs_cdofb_monolithic_sles_block_krylov(const cs_navsto_param_t  *nsp,
                                                    saddlep->cvg_param);
 
   cs_iter_algo_default_t *algo_ctx
-    = (cs_iter_algo_default_t *)solver->algo->context;
+    = static_cast<cs_iter_algo_default_t *>(solver->algo->context);
 
   /* 1. Build the block preconditioner */
   /* --------------------------------- */
 
   cs_saddle_solver_context_block_pcd_t *ctx
-    = (cs_saddle_solver_context_block_pcd_t *)solver->context;
+    = static_cast<cs_saddle_solver_context_block_pcd_t *>(solver->context);
   assert(ctx != nullptr);
 
   /* Update the context after the matrix building */
@@ -1264,24 +1264,21 @@ cs_cdofb_monolithic_sles_block_krylov(const cs_navsto_param_t  *nsp,
     break;
 
   case CS_PARAM_SADDLE_SCHUR_LUMPED_INVERSE:
-    {
-      ctx->m11_inv_diag =
-        cs_saddle_solver_m11_inv_lumped(solver,
+    ctx->m11_inv_diag
+      = cs_saddle_solver_m11_inv_lumped(solver,
                                         ctx->m11,
                                         ctx->b11_range_set,
                                         ctx->xtra_sles,
                                         &n_xtra_iters);
 
-      algo_ctx->n_inner_iter += n_xtra_iters;
+    algo_ctx->n_inner_iter += n_xtra_iters;
 
-      ctx->schur_matrix = _schur_approx_diag_inv_m11(schur_slesp->solver_class,
-                                                     ctx->m11_inv_diag,
-                                                     ctx->m21_adj,
-                                                     ctx->m21_val,
-                                                     &(ctx->schur_diag),
-                                                     &(ctx->schur_xtra));
-
-    }
+    ctx->schur_matrix = _schur_approx_diag_inv_m11(schur_slesp->solver_class,
+                                                   ctx->m11_inv_diag,
+                                                   ctx->m21_adj,
+                                                   ctx->m21_val,
+                                                   &(ctx->schur_diag),
+                                                   &(ctx->schur_xtra));
     break;
 
   case CS_PARAM_SADDLE_SCHUR_MASS_SCALED:
