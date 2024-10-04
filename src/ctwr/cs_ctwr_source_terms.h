@@ -62,7 +62,8 @@ cs_ctwr_source_term(int              f_id,
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief cs_dof_func_t function to compute volume mass injection for
- *   pressure (mass) equation.
+ *   pressure (mass) equation resulting from water evaporatin in the
+ *   packing zones.
  *
  * \param[in]      n_elts        number of elements to consider
  * \param[in]      elt_ids       list of elements ids
@@ -73,11 +74,32 @@ cs_ctwr_source_term(int              f_id,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_ctwr_volume_mass_injection_dof_func(cs_lnum_t         n_elts,
+cs_ctwr_volume_mass_injection_packing_dof_func(cs_lnum_t         n_elts,
                                        const cs_lnum_t  *elt_ids,
                                        bool              dense_output,
                                        void             *input,
                                        cs_real_t        *retval);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief cs_dof_func_t function to compute volume mass injection for
+ *   pressure (mass) equation resulting from evaporation of the rain.
+ *
+ * \param[in]      n_elts        number of elements to consider
+ * \param[in]      elt_ids       list of elements ids
+ * \param[in]      dense_output  perform an indirection in retval or not
+ * \param[in]      input         NULL or pointer to a structure cast on-the-fly
+ * \param[in, out] retval        resulting value(s). Must be allocated.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_ctwr_volume_mass_injection_evap_rain_dof_func(cs_lnum_t         n_elts,
+                                       const cs_lnum_t  *elt_ids,
+                                       bool              dense_output,
+                                       void             *input,
+                                       cs_real_t        *retval);
+
 
 /*----------------------------------------------------------------------------*/
 /*!

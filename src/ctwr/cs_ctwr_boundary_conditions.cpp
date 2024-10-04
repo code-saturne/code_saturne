@@ -93,12 +93,18 @@ cs_ctwr_bcond(void)
   const cs_lnum_t n_b_faces = cs_glob_mesh->n_b_faces;
   const int *bc_type = cs_glob_bc_type;
 
+  cs_ctwr_option_t *ct_opt = cs_get_glob_ctwr_option();
   /* Fluid properties and physical variables */
   cs_air_fluid_props_t *air_prop = cs_glob_air_props;
   cs_fluid_properties_t *phys_pro = cs_get_glob_fluid_properties();
 
   cs_real_t *vel_rcodcl1 = CS_F_(vel)->bc_coeffs->rcodcl1;
-  cs_field_t *y_l_r= cs_field_by_name("ym_l_r");
+  cs_field_t *ym_l_r = nullptr;
+  if (ct_opt->mixture_model)
+    ym_l_r= cs_field_by_name("x_p_01");
+  else
+    ym_l_r= cs_field_by_name("ym_l_r");
+
   cs_field_t *yh_l_r= cs_field_by_name_try("ymh_l_r");
   cs_field_t *yh_l_p= cs_field_by_name("yh_l_packing");
   cs_field_t *y_l_p = cs_field_by_name("y_l_packing");
@@ -161,7 +167,7 @@ cs_ctwr_bcond(void)
     }
 
     /* For walls -> 0 flux for previous variables
-     * Dirichlet condition y_l_r = 0 to mimic water basin drain and avoid rain
+     * Dirichlet condition ym_l_r = 0 to mimic water basin drain and avoid rain
      * accumulation on the floor */
 
     else if (   bc_type[face_id] == CS_SMOOTHWALL
@@ -177,8 +183,8 @@ cs_ctwr_bcond(void)
       y_l_p->bc_coeffs->icodcl[face_id] = 3;
       y_l_p->bc_coeffs->rcodcl3[face_id] = 0.;
 
-      y_l_r->bc_coeffs->icodcl[face_id] = 1;
-      y_l_r->bc_coeffs->rcodcl1[face_id] = 0.;
+      ym_l_r->bc_coeffs->icodcl[face_id] = 1;
+      ym_l_r->bc_coeffs->rcodcl1[face_id] = 0.;
       if (yh_l_r != nullptr) {
         yh_l_r->bc_coeffs->icodcl[face_id] = 1;
         yh_l_r->bc_coeffs->rcodcl1[face_id] = 0.;
@@ -189,7 +195,6 @@ cs_ctwr_bcond(void)
 
   /* Extra variables to load if we solve rain velocity */
 
-  const cs_ctwr_option_t *ct_opt = cs_glob_ctwr_option;
 
   if (ct_opt->solve_rain_velocity) {
     char f_name[80];

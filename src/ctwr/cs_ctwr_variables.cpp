@@ -103,11 +103,13 @@ cs_ctwr_add_variable_fields(void)
   /* Key id for the diffusivity */
   const int kivisl = cs_field_key_id("diffusivity_id");
 
+  const int key_buoyant_id = cs_field_key_id_try("coupled_with_vel_p");
   /* Fluid properties and physical variables */
   cs_fluid_properties_t *fp = cs_get_glob_fluid_properties();
 
-  /* Set fluid properties parameters */
+  cs_ctwr_option_t *ct_opt = cs_get_glob_ctwr_option();
 
+  /* Set fluid properties parameters */
   /* Variable density */
   fp->irovar = 1;
   /* Activate compressibility */
@@ -159,14 +161,16 @@ cs_ctwr_add_variable_fields(void)
       int ifcvsl = -1;
       cs_field_set_key_int(f, kivisl, ifcvsl);
 
-      /* Activate the drift for all scalars with key "drift" > 0 */
-      int drift = CS_DRIFT_SCALAR_ON + CS_DRIFT_SCALAR_ADD_DRIFT_FLUX;
+      /* If mixture model, continuous phase has drift vs. mixture phase */
+      if (ct_opt->mixture_model){
+        /* Activate the drift for all scalars with key "drift" > 0 */
+        int drift = CS_DRIFT_SCALAR_ON + CS_DRIFT_SCALAR_ADD_DRIFT_FLUX;
 
-      /* Activated drift. As it is the continuous phase class (class_id = -1),
-       * the convective flux is deduced for classes > 0
-       * and bulk class (class_id = 0) */
-      cs_field_set_key_int(f, keydri, drift);
-
+        /* Activated drift. As it is the continuous phase class (class_id = -1),
+         * the convective flux is deduced for classes > 0
+         * and bulk class (class_id = 0) */
+        cs_field_set_key_int(f, keydri, drift);
+      }
 
       /* Equation parameters */
       cs_equation_param_t *eqp = cs_field_get_equation_param(f);
@@ -214,16 +218,19 @@ cs_ctwr_add_variable_fields(void)
       int ifcvsl = 0;
       cs_field_set_key_int(f, kivisl, ifcvsl);
 
-      /* Associate temperature to continuous phase -> class_id = -1 */
-      cs_field_set_key_int(f, keyccl, class_id);
+      /* If mixture model, continuous phase has drift vs. mixture phase */
+      if (ct_opt->mixture_model){
+        /* Associate temperature to continuous phase -> class_id = -1 */
+        cs_field_set_key_int(f, keyccl, class_id);
 
-      /* Activate the drift versus the mixture velocity */
-      int drift = CS_DRIFT_SCALAR_ON + CS_DRIFT_SCALAR_ADD_DRIFT_FLUX;
+        /* Activate the drift versus the mixture velocity */
+        int drift = CS_DRIFT_SCALAR_ON + CS_DRIFT_SCALAR_ADD_DRIFT_FLUX;
 
-      /* Activated drift. As it is the continuous phase class (class_id = -1),
-       * the convective flux is deduced for classes > 0
-       * and bulk class (class_id = 0) */
-      cs_field_set_key_int(f, keydri, drift);
+        /* Activated drift. As it is the continuous phase class (class_id = -1),
+         * the convective flux is deduced for classes > 0
+         * and bulk class (class_id = 0) */
+        cs_field_set_key_int(f, keydri, drift);
+      }
     }
   }
   {
@@ -233,15 +240,30 @@ cs_ctwr_add_variable_fields(void)
     /* Associate liquid water rain with class 1 */
     int class_id = 1;
 
-    int f_id = cs_variable_field_create("ym_l_r",
-                                        "Mass frac rain",
-                                        CS_MESH_LOCATION_CELLS,
-                                        1);
+    int f_id = 0;
+    if (ct_opt->mixture_model) {
+      f_id = cs_variable_field_create("x_p_01",
+                                          "Mass frac rain",
+                                          CS_MESH_LOCATION_CELLS,
+                                          1);
+    }
+    else {
+      f_id = cs_variable_field_create("ym_l_r",
+                                          "Mass rain / mass air",
+                                          CS_MESH_LOCATION_CELLS,
+                                          1);
+    }
+
     f = cs_field_by_id(f_id);
 
-    /* Clipping of rain mass fraction 0 <= ym_l_r <=1 */
-    cs_field_set_key_double(f, kscmin, 0.e0);
-    cs_field_set_key_double(f, kscmax, 1.e0);
+    if (ct_opt->mixture_model) {
+      /* Clipping of rain mass fraction 0 <= ym_l_r <=1 */
+      cs_field_set_key_double(f, kscmin, 0.e0);
+      cs_field_set_key_double(f, kscmax, 1.e0);
+    }
+    else
+      cs_field_set_key_double(f, kscmin, 0.e0);
+
 
     /* Set the class index for the field */
     cs_field_set_key_int(f, keyccl, class_id);
@@ -301,7 +323,6 @@ cs_ctwr_add_variable_fields(void)
 
     /* Variable fields creation for rain drops velocities if we want to solve
      * rain fall velocity */
-    cs_ctwr_option_t *ct_opt = cs_get_glob_ctwr_option();
 
     if (ct_opt->solve_rain_velocity) {
       char f_name[80];
@@ -317,8 +338,15 @@ cs_ctwr_add_variable_fields(void)
       cs_add_model_field_indexes(f_id);
 
       /* Scalar with drift, but do not create an additional mass flux */
-      drift = CS_DRIFT_SCALAR_ON + CS_DRIFT_SCALAR_NO_MASS_AGGREGATION;
+      if (ct_opt->mixture_model)
+        drift = CS_DRIFT_SCALAR_ON + CS_DRIFT_SCALAR_NO_MASS_AGGREGATION;
+      else
+        drift = CS_DRIFT_SCALAR_ON;
+
       cs_field_set_key_int(f, keydri, drift);
+
+      if (ct_opt->mixture_model)
+        cs_field_set_key_int(f, key_buoyant_id, 1);
 
       /* Equation parameters */
       eqp = cs_field_get_equation_param(f);
@@ -336,7 +364,7 @@ cs_ctwr_add_variable_fields(void)
      * ====================== */
 
     /* Associate injected liquid water in packing with class 2 */
-    int class_id = 2;
+    int class_id = -2;
 
     /* Mass of injected liquid */
     int f_id = cs_variable_field_create("y_l_packing",
@@ -351,6 +379,11 @@ cs_ctwr_add_variable_fields(void)
     /* Set the class index for the field */
     cs_field_set_key_int(f, keyccl, class_id);
 
+    /* Setting different density for scalar transport of liquid water
+     * in packing */
+    const int kromsl = cs_field_key_id("density_id");
+    cs_field_set_key_int(f, kromsl, 0);
+
     /* Scalar with drift: create additional mass flux.
      * This flux will then be reused for all scalars associated to this class
      * (here : injected liquid water variables in packing)
@@ -359,7 +392,8 @@ cs_ctwr_add_variable_fields(void)
      * is nearly constant.
      * TODO : make it optional ?*/
     int drift = CS_DRIFT_SCALAR_ON + CS_DRIFT_SCALAR_ADD_DRIFT_FLUX
-                + CS_DRIFT_SCALAR_IMPOSED_MASS_FLUX;
+                + CS_DRIFT_SCALAR_IMPOSED_MASS_FLUX
+                + CS_DRIFT_SCALAR_NO_MASS_AGGREGATION;
 
     cs_field_set_key_int(f, keydri, drift);
 
@@ -393,10 +427,12 @@ cs_ctwr_add_variable_fields(void)
     f = cs_field_by_id(f_id);
     cs_field_set_key_int(f, keyccl, class_id);
 
+    cs_field_set_key_int(f, kromsl, 0);
     /* Scalar with drift, but do not create an additional mass flux for the
      * enthalpy (use ^= to reset the bit for drift flux calculation).
      * It reuses the mass flux already identified with the mass variable. */
-    drift = CS_DRIFT_SCALAR_ON + CS_DRIFT_SCALAR_IMPOSED_MASS_FLUX;
+    drift = CS_DRIFT_SCALAR_ON + CS_DRIFT_SCALAR_IMPOSED_MASS_FLUX
+            + CS_DRIFT_SCALAR_NO_MASS_AGGREGATION;
 
     cs_field_set_key_int(f, keydri, drift);
 
@@ -448,13 +484,15 @@ cs_ctwr_add_property_fields(void)
   }
   /* CONTINUOUS FIELD (HUMID AIR) PROPERTIES */
   /* NB: 'c' stands for continuous and 'p' for particles */
- {
+  /* If mixture model, create humid air density field to avoid confusion with
+   * mixture density stored in CS_F_(rho) */
+  if (ct_opt->mixture_model) {
     /* Continuous phase density (humid air) */
     f = cs_field_create("rho_humid_air",
-                        field_type,
-                        CS_MESH_LOCATION_CELLS,
-                        1,
-                        has_previous);
+        field_type,
+        CS_MESH_LOCATION_CELLS,
+        1,
+        has_previous);
     cs_field_set_key_int(f, keyvis, post_flag);
     cs_field_set_key_int(f, keylog, 1);
     cs_field_set_key_str(f, klbl, "Density humid air");
@@ -532,8 +570,9 @@ cs_ctwr_add_property_fields(void)
     cs_field_set_key_str(f, klbl, "Boundary gas mass fraction");
   }
 
-  {
-    /* Continuous phase volume fraction */
+
+  /* Continuous phase volume fraction if mixture model is on*/
+  if (ct_opt->mixture_model) {
     f = cs_field_create("vol_f_c",
                         field_type,
                         CS_MESH_LOCATION_CELLS,
@@ -543,11 +582,6 @@ cs_ctwr_add_property_fields(void)
     cs_field_set_key_int(f, keylog, 1);
     cs_field_set_key_str(f, klbl, "Vol. frac. air");
   }
-
-  /* Properties to create for rain velocity equation solving */
-  if (ct_opt->solve_rain_velocity) {
-  }
-
 
   /* RAIN FIELD PROPERTIES */
   {
@@ -600,7 +634,8 @@ cs_ctwr_add_property_fields(void)
     cs_field_set_key_int(f, keylog, 1);
     cs_field_set_key_str(f, klbl, "Drift velocity gas phase");
 
-    /* Continuous phase velocity */
+    if (ct_opt->mixture_model) {
+    /* Continuous phase velocity only if mixture model is on */
     f = cs_field_create("v_c",
         field_type,
         CS_MESH_LOCATION_CELLS,
@@ -609,6 +644,7 @@ cs_ctwr_add_property_fields(void)
     cs_field_set_key_int(f, keyvis, post_flag);
     cs_field_set_key_int(f, keylog, 1);
     cs_field_set_key_str(f, klbl, "Velocity continuous phase");
+    }
 
     char f_name[80];
     char f_label[80];
@@ -672,8 +708,6 @@ cs_ctwr_add_property_fields(void)
     cs_field_set_key_int(f, keylog, 1);
     cs_field_set_key_str(f, klbl, "Mass frac liq packing");
   }
-
-
   {
     /* Liquid vertical velocity in packing */
     f = cs_field_create("vertvel_l",
@@ -685,7 +719,6 @@ cs_ctwr_add_property_fields(void)
     cs_field_set_key_int(f, keylog, 1);
     cs_field_set_key_str(f, klbl, "Velocity liq packing");
   }
-
   {
     /* Liquid mass flux in packing */
     f = cs_field_create("mass_flux_l",
