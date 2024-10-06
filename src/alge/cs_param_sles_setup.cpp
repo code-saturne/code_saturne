@@ -515,7 +515,7 @@ _set_petsc_mg_levels(const char                        *prefix,
       _petsc_cmd(true, prefix, "mg_levels_up_ksp_type", "richardson");
       _petsc_cmd(true, prefix, "mg_levels_up_pc_type", "jacobi");
 #if PETSC_VERSION_GE(3,21,0)
-      _petsc_cmd(true, prefix, "mg_levels_pc_jacobi_type", "rowl1");
+      _petsc_cmd(true, prefix, "mg_levels_up_pc_jacobi_type", "rowl1");
 #else
       cs_base_warn(__FILE__, __LINE__);
       cs_log_printf(CS_LOG_WARNINGS,
