@@ -75,7 +75,7 @@ def process_cmd_line(argv, pkg):
     if sys.argv[0][-3:] == '.py':
         usage = "usage: %prog [options]"
     else:
-        usage = "usage: %prog compile [options]"
+        usage = "usage: %prog symbol2line [options]"
 
     parser = OptionParser(usage=usage)
 
@@ -138,7 +138,7 @@ class cs_debug_symbol_translator:
 
     #---------------------------------------------------------------------------
 
-    def get_runtime_adresse(self, symbol_name):
+    def get_runtime_address(self, symbol_name):
         """
         Get runtime address of a symbol
         """
@@ -148,7 +148,6 @@ class cs_debug_symbol_translator:
             solver_path = self.path
 
         solver_path = "/".join([solver_path, self.solver])
-
 
         cmd = "nm -D %s | grep %s" % (solver_path, symbol_name)
 
@@ -191,7 +190,7 @@ class cs_debug_symbol_translator:
     def symbol2line(self, sym_offset):
 
         sym, offset  = self.split_symbol(sym_offset)
-        runtime_addr = self.get_runtime_adresse(sym)
+        runtime_addr = self.get_runtime_address(sym)
         sym_line     = self.get_line_from_address(runtime_addr, offset)
 
         return sym_line
