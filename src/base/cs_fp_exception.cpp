@@ -115,7 +115,18 @@ cs_fp_exception_enable_trap(void)
 #if defined(CS_FPE_TRAP)
   if (_fenv_set == 0) {
     if (fegetenv(&_fenv_old) == 0) {
-      feenableexcept(FE_DIVBYZERO | FE_INVALID | FE_OVERFLOW);
+      int excepts = FE_DIVBYZERO | FE_INVALID | FE_OVERFLOW;
+      const char *s = getenv("CS_FP_TRAP");
+      if (s != nullptr) {
+        excepts = 0;
+        if (strstr(s, "DIVBYZERO"))
+          excepts = excepts | FE_DIVBYZERO;
+        if (strstr(s, "INVALID"))
+          excepts = excepts | FE_INVALID;
+        if (strstr(s, "OVERFLOW"))
+          excepts = excepts | FE_OVERFLOW;
+      }
+      feenableexcept(excepts);
       _fenv_set = 1;
       /* To revert to initial behavior: fesetenv(&_fenv_old); */
     }
