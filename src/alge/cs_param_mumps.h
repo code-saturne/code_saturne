@@ -196,6 +196,8 @@ typedef struct {
                                  automatically-defined memory workspace. Really
                                  useful for 2D cases. (Not used if < 0) */
 
+  bool    keep_ordering;    /*!< Mutualization of the ordering step */
+
   int     block_analysis;   /*!< Analysis is performed by block. Value of the
                                  block size. Not used if < 1 */
 

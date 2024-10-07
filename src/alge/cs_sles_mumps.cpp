@@ -180,6 +180,10 @@ struct _cs_sles_mumps_t {
 
   void                        *mumps_struct;
 
+  // Mutualization of the ordering
+
+  cs_lnum_t                   *ordering;
+
 };
 
 /*============================================================================
@@ -376,6 +380,40 @@ _mumps_pc_get_type(const void  *context,
   else {
     static const char t[] = N_("MUMPS preconditioner");
     return _(t);
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Check if the ordering is stored to mutualize the renumbering step
+ *
+ * \param[in] c   pointer to the context structue
+ *
+ * \return true or false if ordering is allocated on the "host rank"
+ */
+/*----------------------------------------------------------------------------*/
+
+static bool
+_ordering_is_allocated(const cs_sles_mumps_t  *c)
+{
+  if (cs_glob_n_ranks == 1)  // Sequential run
+    return (c->ordering != nullptr) ? true : false;
+
+  else {
+
+    int  root_rank = 0;
+    int is_allocated = 0;
+
+    if (cs_glob_rank_id == root_rank)
+      is_allocated = (c->ordering != nullptr) ? 1 : 0;
+
+    cs_parall_bcast(root_rank, 1, CS_INT_TYPE, &is_allocated);
+
+    if (is_allocated == 0)
+      return false;
+    else
+      return true;
+
   }
 }
 
@@ -2701,6 +2739,7 @@ cs_sles_mumps_create(const cs_param_sles_t       *slesp,
   /* Setup data structure */
 
   c->mumps_struct = nullptr;
+  c->ordering = nullptr;
 
   return c;
 }
@@ -2754,12 +2793,18 @@ cs_sles_mumps_free(void  *context)
   if (c == nullptr) /* Nothing else to do */
     return;
 
+  const cs_param_sles_t  *slesp = c->sles_param;
+  assert(slesp != NULL);
+  const cs_param_mumps_t  *mumpsp
+    = static_cast<const cs_param_mumps_t *>(slesp->context_param);
+
   cs_timer_t t0;
   t0 = cs_timer_time();
 
   if (c->mumps_struct != nullptr) {
 
     if (_is_dmumps(c)) {
+
       DMUMPS_STRUC_C *dmumps = static_cast<DMUMPS_STRUC_C *>(c->mumps_struct);
 
       dmumps->job = MUMPS_JOB_END;
@@ -2771,12 +2816,20 @@ cs_sles_mumps_free(void  *context)
         BFT_FREE(dmumps->jcn);
         BFT_FREE(dmumps->a);
 
+        if (mumpsp->keep_ordering)
+          BFT_FREE(dmumps->perm_in);
+
       }
       else {
+
+        int  root_rank = 0;
 
         BFT_FREE(dmumps->irn_loc);
         BFT_FREE(dmumps->jcn_loc);
         BFT_FREE(dmumps->a_loc);
+
+        if (mumpsp->keep_ordering && cs_glob_rank_id == root_rank)
+          BFT_FREE(dmumps->perm_in);
 
       }
 
@@ -2784,6 +2837,7 @@ cs_sles_mumps_free(void  *context)
 
     }
     else {
+
       SMUMPS_STRUC_C *smumps = static_cast<SMUMPS_STRUC_C *>(c->mumps_struct);
 
       smumps->job = MUMPS_JOB_END;
@@ -2795,12 +2849,20 @@ cs_sles_mumps_free(void  *context)
         BFT_FREE(smumps->jcn);
         BFT_FREE(smumps->a);
 
+        if (mumpsp->keep_ordering)
+          BFT_FREE(smumps->perm_in);
+
       }
       else {
+
+        int  root_rank = 0;
 
         BFT_FREE(smumps->irn_loc);
         BFT_FREE(smumps->jcn_loc);
         BFT_FREE(smumps->a_loc);
+
+        if (mumpsp->keep_ordering && cs_glob_rank_id == root_rank)
+          BFT_FREE(smumps->perm_in);
 
       }
 
@@ -2834,6 +2896,9 @@ cs_sles_mumps_destroy(void   **context)
     /* Free structure */
 
     cs_sles_mumps_free(c);
+
+    BFT_FREE(c->ordering); // This member is kept through the iterations
+
     BFT_FREE(c);
     *context = c;
 
@@ -2900,6 +2965,11 @@ cs_sles_mumps_setup(void               *context,
   /* Begin the setup */
 
   cs_sles_mumps_t *c = static_cast<cs_sles_mumps_t *>(context);
+
+  const cs_param_sles_t  *slesp = c->sles_param;
+  assert(slesp != NULL);
+  const cs_param_mumps_t  *mumpsp
+    = static_cast<const cs_param_mumps_t *>(slesp->context_param);
 
   c->mumps_struct = nullptr;
 
@@ -3138,6 +3208,7 @@ cs_sles_mumps_setup(void               *context,
   c->n_tries = 0;    /* reset the number of tries */
 
   if (_is_dmumps(c)) {
+
     DMUMPS_STRUC_C *dmumps = static_cast<DMUMPS_STRUC_C *>(c->mumps_struct);
 
     do {
@@ -3147,27 +3218,83 @@ cs_sles_mumps_setup(void               *context,
 
       dmumps->job = MUMPS_JOB_ANALYSIS;
 
-      _automatic_dmumps_settings_before_analysis(c->type, c->sles_param,
-                                                 dmumps);
+      _automatic_dmumps_settings_before_analysis(c->type, slesp, dmumps);
+
+      // Appply the ordering previously computed
+
+      if (mumpsp->keep_ordering && _ordering_is_allocated(c)) {
+
+        // Overwrite the initial settings
+
+        dmumps->ICNTL(7) = 1;  // user-defined permutation
+        dmumps->ICNTL(28) = 1; // sequential ordering
+
+        if (cs_glob_n_ranks == 1) { // Sequential run
+
+          BFT_MALLOC(dmumps->perm_in, dmumps->n, cs_lnum_t);
+          cs_array_lnum_copy(dmumps->n, c->ordering, dmumps->perm_in);
+
+        }
+        else { // Parallel computation
+
+          assert(cs_glob_n_ranks > 1);
+
+          int  root_rank = 0;
+
+          if (cs_glob_rank_id == root_rank) {
+
+            BFT_MALLOC(dmumps->perm_in, dmumps->n, cs_lnum_t);
+            cs_array_lnum_copy(dmumps->n, c->ordering, dmumps->perm_in);
+
+          }
+
+        }
+
+      } // Keep ordering is activated
 
       /* Window to enable advanced user settings (before analysis) */
 
       if (c->setup_hook != nullptr)
-        c->setup_hook(c->sles_param, c->hook_context, dmumps);
+        c->setup_hook(slesp, c->hook_context, dmumps);
 
       dmumps_c(dmumps);
+
+      if (mumpsp->keep_ordering && !_ordering_is_allocated(c)) {
+
+        if (cs_glob_n_ranks == 1) { // Sequential run
+
+          BFT_MALLOC(c->ordering, dmumps->n, cs_lnum_t);
+          cs_array_lnum_copy(dmumps->n, dmumps->sym_perm, c->ordering);
+
+        }
+        else { // Parallel computation
+
+          assert(cs_glob_n_ranks > 1);
+
+          int  root_rank = 0;
+
+          if (cs_glob_rank_id == root_rank) {
+
+            BFT_MALLOC(c->ordering, dmumps->n, cs_lnum_t);
+            cs_array_lnum_copy(dmumps->n, dmumps->sym_perm, c->ordering);
+
+          }
+
+        }
+
+      }
 
       /* Factorization step */
       /* ------------------ */
 
       dmumps->job = MUMPS_JOB_FACTORIZATION;
 
-      _automatic_dmumps_settings_before_facto(c->sles_param, dmumps);
+      _automatic_dmumps_settings_before_facto(slesp, dmumps);
 
       /* Window to enable advanced user settings (before factorization) */
 
       if (c->setup_hook != nullptr)
-        c->setup_hook(c->sles_param, c->hook_context, dmumps);
+        c->setup_hook(slesp, c->hook_context, dmumps);
 
       dmumps_c(dmumps);
 
@@ -3180,6 +3307,7 @@ cs_sles_mumps_setup(void               *context,
 
   }
   else {
+
     SMUMPS_STRUC_C *smumps = static_cast<SMUMPS_STRUC_C *>(c->mumps_struct);
 
     do {
@@ -3189,13 +3317,12 @@ cs_sles_mumps_setup(void               *context,
 
       smumps->job = MUMPS_JOB_ANALYSIS;
 
-      _automatic_smumps_settings_before_analysis(c->type, c->sles_param,
-                                                 smumps);
+      _automatic_smumps_settings_before_analysis(c->type, slesp, smumps);
 
       /* Window to enable advanced user settings (before analysis) */
 
       if (c->setup_hook != nullptr)
-        c->setup_hook(c->sles_param, c->hook_context, smumps);
+        c->setup_hook(slesp, c->hook_context, smumps);
 
       smumps_c(smumps);
 
@@ -3204,12 +3331,12 @@ cs_sles_mumps_setup(void               *context,
 
       smumps->job = MUMPS_JOB_FACTORIZATION;
 
-      _automatic_smumps_settings_before_facto(c->sles_param, smumps);
+      _automatic_smumps_settings_before_facto(slesp, smumps);
 
       /* Window to enable advanced user settings (before factorization) */
 
       if (c->setup_hook != nullptr)
-        c->setup_hook(c->sles_param, c->hook_context, smumps);
+        c->setup_hook(slesp, c->hook_context, smumps);
 
       smumps_c(smumps);
 

@@ -356,12 +356,13 @@ cs_user_parameters(cs_domain_t    *domain)
 
     cs_param_sles_mumps_advanced(slesp,
                                  CS_PARAM_MUMPS_ANALYSIS_PTSCOTCH,
-                                 3,  /* size of the block for analysis */
-                                 -1, /* pct memory increase < 0 --> not used */
-                                 0,  /* BLR compression: 0 --> not used */
-                                 0,  /* iterative refinement steps */
+                                 3,     // size of the block for analysis
+                                 false, // keep ordering
+                                 -1,    // pct memory increase < 0 --> not used
+                                 0,     // BLR compression: 0 --> not used
+                                 0,     // iterative refinement steps
                                  CS_PARAM_MUMPS_MEMORY_CONSTRAINED,
-                                 true); /* advanced optimizations */
+                                 true); // advanced optimizations
   }
   /*! [param_cdo_navsto_sles_mumps] */
 

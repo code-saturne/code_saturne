@@ -189,12 +189,13 @@ cs_user_parameters(cs_domain_t    *domain)
 
     cs_param_sles_mumps_advanced(slesp,
                                  CS_PARAM_MUMPS_ANALYSIS_QAMD,
-                                 1,  /* size of the block for analysis */
-                                 -1, /* pct memory increase < 0 --> not used */
-                                 0,  /* BLR compression: 0 --> not used */
-                                 1,  /* iterative refinement steps */
+                                 1,     // size of the block for analysis
+                                 false, // keep ordering
+                                 -1,    // pct memory increase < 0 --> not used
+                                 0,     // BLR compression: 0 --> not used
+                                 1,     // iterative refinement steps
                                  CS_PARAM_MUMPS_MEMORY_AUTO,
-                                 true); /* advanced optimizations */
+                                 true); // advanced optimizations
   }
   /*! [cdo_sles_user_mumps_advanced] */
 
@@ -245,12 +246,13 @@ cs_user_parameters(cs_domain_t    *domain)
 
     cs_param_sles_mumps_advanced(slesp,
                                  CS_PARAM_MUMPS_ANALYSIS_AUTO,
-                                 3,     /* size of the block for analysis */
-                                 -1,    /* pct memory increase < 0 = not used */
-                                 0,     /* BLR compression:  0 = not used */
-                                 0,     /* iterative refinement steps */
-                                 CS_PARAM_MUMPS_MEMORY_AUTO, /* memory usage */
-                                 true); /* advanced optimizations */
+                                 3,     // size of the block for analysis
+                                 false, // keep ordering
+                                 -1,    // pct memory increase < 0 = not used
+                                 0,     // BLR compression:  0 = not used
+                                 0,     // iterative refinement steps
+                                 CS_PARAM_MUMPS_MEMORY_AUTO,
+                                 true); // advanced optimizations
 #else
     bft_error(__FILE__, __LINE__, 0, "%s: MUMPS is not available\n", __func__);
 #endif

@@ -565,6 +565,7 @@ cs_param_sles_mumps(cs_param_sles_t             *slesp,
  * \param[in, out] slesp            pointer to a cs_param_sles_t structure
  * \param[in]      analysis_algo    algorithm used for the analysis step
  * \param[in]      block_analysis   > 1: fixed block size; otherwise do nothing
+ * \param[in]      keep_ordering    true: keep the initial ordering to save time
  * \param[in]      mem_coef         percentage increase in the memory workspace
  * \param[in]      blr_threshold    Accuracy in BLR compression (0: not used)
  * \param[in]      ir_steps         0: No, otherwise the number of iterations
@@ -577,6 +578,7 @@ void
 cs_param_sles_mumps_advanced(cs_param_sles_t                *slesp,
                              cs_param_mumps_analysis_algo_t  analysis_algo,
                              int                             block_analysis,
+                             bool                            keep_ordering,
                              double                          mem_coef,
                              double                          blr_threshold,
                              int                             ir_steps,
