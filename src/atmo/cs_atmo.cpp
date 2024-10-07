@@ -263,7 +263,9 @@ static cs_atmo_option_t  _atmo_option = {
   .soil_cat_r2 = nullptr,
   .sigc = 0.53,
   .infrared_1D_profile = -1,
-  .solar_1D_profile    = -1
+  .solar_1D_profile    = -1,
+  .aod_o3_tot = 0.2,
+  .aod_h2o_tot = 0.1
 };
 
 static const char *_univ_fn_name[] = {N_("Cheng 2005"),
@@ -415,7 +417,9 @@ cs_f_atmo_get_pointers(cs_real_t              **ps,
                        cs_real_t              **w2ini,
                        cs_real_t              **sigc,
                        int                    **idrayi,
-                       int                    **idrayst);
+                       int                    **idrayst,
+                       cs_real_t              **aod_o3_tot,
+                       cs_real_t              **aod_h2o_tot);
 
 void
 cs_f_atmo_arrays_get_pointers(cs_real_t **z_dyn_met,
@@ -1882,7 +1886,9 @@ cs_f_atmo_get_pointers(cs_real_t              **ps,
                        cs_real_t              **w2ini,
                        cs_real_t              **sigc,
                        int                    **idrayi,
-                       int                    **idrayst)
+                       int                    **idrayst,
+                       cs_real_t              **aod_o3_tot,
+                       cs_real_t              **aod_h2o_tot)
 {
   *ps        = &(_atmo_constants.ps);
   *syear     = &(_atmo_option.syear);
@@ -1935,6 +1941,8 @@ cs_f_atmo_get_pointers(cs_real_t              **ps,
   *sigc  = &(_atmo_option.sigc);
   *idrayi = &(_atmo_option.infrared_1D_profile);
   *idrayst = &(_atmo_option.solar_1D_profile);
+  *aod_o3_tot  = &(_atmo_option.aod_o3_tot);
+  *aod_h2o_tot  = &(_atmo_option.aod_h2o_tot);
 }
 
 void

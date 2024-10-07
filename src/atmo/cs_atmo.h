@@ -485,6 +485,10 @@ typedef struct {
   /*! 1D solar profile */
   int solar_1D_profile;
 
+  cs_real_t aod_o3_tot;
+
+  cs_real_t aod_h2o_tot;
+
 } cs_atmo_option_t;
 
 /*----------------------------------------------------------------------------

@@ -377,9 +377,9 @@ integer, save :: kopint
 
 ! Aerosol optical depth
 !> adimensional :  aod_o3_tot=0.2 other referenced values are  0.10, 0.16
-double precision, save:: aod_o3_tot
+real(c_double), pointer, save :: aod_o3_tot
 !> adimensional :  aod_h2o_tot=0.10 other referenced values are  0.06, 0.08
-double precision, save:: aod_h2o_tot
+real(c_double), pointer, save :: aod_h2o_tot
 
 !> Asymmetry factor for O3 (non-dimensional)
 !> climatic value gaero_o3=0.66
@@ -439,7 +439,8 @@ double precision, save:: zaero
         nbmetd, nbmett, nbmetm, iatra1, nbmaxt,                         &
         meteo_zi, iatsoil,                                              &
         nvertv, kvert, kmx, tsini, tprini, qvsini, ihpm, iqv0,          &
-        nfatr1, w1ini, w2ini, sigc, idrayi, idrayst)          &
+        nfatr1, w1ini, w2ini, sigc, idrayi, idrayst, aod_o3_tot,        &
+        aod_h2o_tot)          &
       bind(C, name='cs_f_atmo_get_pointers')
       use, intrinsic :: iso_c_binding
       implicit none
@@ -460,6 +461,7 @@ double precision, save:: zaero
       type(c_ptr), intent(out) :: meteo_zi, iqv0, w1ini, w2ini
       type(c_ptr), intent(out) :: iatsoil, tsini, tprini, qvsini
       type(c_ptr), intent(out) :: nvertv, kvert, kmx, ihpm, nfatr1
+      type(c_ptr), intent(out) :: aod_o3_tot, aod_h2o_tot
     end subroutine cs_f_atmo_get_pointers
 
     !---------------------------------------------------------------------------
@@ -748,6 +750,7 @@ contains
     type(c_ptr) :: c_meteo_zi, c_tprini, c_qvsini, c_nfatr1
     type(c_ptr) :: c_iatsoil, c_tsini, c_isepchemistry, c_w1ini, c_w2ini
     type(c_ptr) :: c_nvert, c_kvert, c_kmx, c_theo_interp, c_ihpm
+    type(c_ptr) :: c_aod_o3_tot, c_aod_h2o_tot
 
     call cs_f_atmo_get_pointers(c_ps,               &
       c_syear, c_squant, c_shour, c_smin, c_ssec,   &
@@ -767,7 +770,8 @@ contains
       c_nbmaxt, c_meteo_zi, c_iatsoil,              &
       c_nvert, c_kvert, c_kmx, c_tsini, c_tprini,   &
       c_qvsini, c_ihpm, c_iqv0, c_nfatr1, c_w1ini,  &
-      c_w2ini, c_sigc, c_idrayi, c_idrayst)
+      c_w2ini, c_sigc, c_idrayi, c_idrayst,         &
+      c_aod_o3_tot, c_aod_h2o_tot)
 
     call c_f_pointer(c_ps, ps)
     call c_f_pointer(c_syear, syear)
@@ -826,6 +830,8 @@ contains
     call c_f_pointer(c_idrayi, idrayi)
     call c_f_pointer(c_idrayst, idrayst)
 
+    call c_f_pointer(c_aod_o3_tot,  aod_o3_tot)
+    call c_f_pointer(c_aod_h2o_tot, aod_h2o_tot)
     return
 
   end subroutine atmo_init
