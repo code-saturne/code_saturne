@@ -110,10 +110,10 @@ BEGIN_C_DECLS
 
 /* Tensor to vector (t2v) and vector to tensor (v2t) mask arrays */
 
-const cs_lnum_t _t2v[3][3] = {{0, 3, 5}, {3, 1, 4}, {5, 4, 2}};
+static const cs_lnum_t _t2v[3][3] = {{0, 3, 5}, {3, 1, 4}, {5, 4, 2}};
 
-const cs_lnum_t _iv2t[6] = {0, 1, 2, 0, 1, 0};
-const cs_lnum_t _jv2t[6] = {0, 1, 2, 1, 2, 2};
+static const cs_lnum_t _iv2t[6] = {0, 1, 2, 0, 1, 0};
+static const cs_lnum_t _jv2t[6] = {0, 1, 2, 1, 2, 2};
 
 /*============================================================================
  * Private function definitions
@@ -632,9 +632,9 @@ _rij_echo(int              phase_id,
   const cs_real_t crij2 = cs_turb_crij2;
   const cs_real_t xkappa = cs_turb_xkappa;
 
-  const auto t2v = _t2v;
-  const auto iv2t = _iv2t;
-  const auto jv2t = _jv2t;
+  auto t2v = _t2v;
+  auto iv2t = _iv2t;
+  auto jv2t = _jv2t;
   const cs_real_t tdeltij[3][3] = {{1., 0., 0.}, {0., 1., 0.}, {0., 0., 1.}};
 
   ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
@@ -752,7 +752,7 @@ _gravity_st_rij(const cs_field_t  *f_rij,
   const cs_real_t o_m_crij3 = (1. - cs_turb_crij3);
   const cs_real_t crij3 = cs_turb_crij3;
 
-  const auto t2v = _t2v;
+  auto t2v = _t2v;
 
   cs_real_6_t *_buoyancy = nullptr, *cpro_buoyancy = nullptr;
   cs_field_t *f_buo = cs_field_by_name_try("algo:rij_buoyancy");
@@ -1081,6 +1081,8 @@ _pre_solve_lrr(const cs_field_t  *f_rij,
 
   const cs_real_t *cell_f_vol = fvq->cell_f_vol;
 
+  cs_dispatch_context ctx;
+
   cs_field_t *f_eps = CS_F_(eps);
   cs_field_t *f_rho = CS_F_(rho);
   cs_field_t *f_mu = CS_F_(mu);
@@ -1135,8 +1137,11 @@ _pre_solve_lrr(const cs_field_t  *f_rij,
   const cs_real_t crij1 = cs_turb_crij1;
   const cs_real_t crij2 = cs_turb_crij2;
   const cs_real_t crijeps = cs_turb_crij_eps;
+  const cs_real_t csrij  = cs_turb_csrij;
 
-  const auto t2v = _t2v;
+  auto t2v = _t2v;
+  auto iv2t = _iv2t;
+  auto jv2t = _jv2t;
   const cs_real_t tdeltij[3][3] = {{1., 0., 0.}, {0., 1., 0.}, {0., 0., 1.}};
   const cs_real_t vdeltij[6] = {1, 1, 1, 0, 0, 0};
 
@@ -1152,11 +1157,12 @@ _pre_solve_lrr(const cs_field_t  *f_rij,
   /* Production, Pressure-Strain correlation, dissipation
    * ---------------------------------------------------- */
 
-# pragma omp parallel for if(n_cells_ext > CS_THR_MIN)
-  for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+  const cs_rotation_t *rotation = cs_glob_rotation;
+
+  ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
 
     if (c_is_solid[solid_stride*c_id])
-      continue;
+      return;  /* return from lambda function == continue in loop */
 
     cs_real_t impl_lin_cst = 0, impl_id_cst = 0;
 
@@ -1216,7 +1222,7 @@ _pre_solve_lrr(const cs_field_t  *f_rij,
 
     /* Compute the maximal eigenvalue (in terms of norm!) of S */
     cs_real_t eigen_vals[3];
-    cs_math_sym_33_eigen(sym_strain, eigen_vals);
+    _sym_33_eigen(sym_strain, eigen_vals);
     cs_real_t eigen_max = cs_math_fabs(eigen_vals[0]);
     for (cs_lnum_t i = 1; i < 3; i++)
       eigen_max = cs_math_fmax(cs_math_fabs(eigen_max),
@@ -1250,7 +1256,7 @@ _pre_solve_lrr(const cs_field_t  *f_rij,
     /* Rotating frame of reference => "absolute" vorticity */
     if (icorio == 1) {
       cs_real_t matrot[3][3];
-      const cs_rotation_t *r = cs_glob_rotation + 1;
+      const cs_rotation_t *r = rotation + 1;
       cs_rotation_add_coriolis_t(r, 1., matrot);
       for (cs_lnum_t i = 0; i < 3; i++) {
         for (cs_lnum_t j = 0; j < 3; j++)
@@ -1259,8 +1265,8 @@ _pre_solve_lrr(const cs_field_t  *f_rij,
     }
 
     for (cs_lnum_t ij = 0; ij < 6; ij++) {
-      cs_lnum_t i = _iv2t[ij];
-      cs_lnum_t j = _jv2t[ij];
+      cs_lnum_t i = iv2t[ij];
+      cs_lnum_t j = jv2t[ij];
 
       /* Explicit terms */
       cs_real_t pij = (1.-crij2) * produc[c_id][t2v[j][i]];
@@ -1278,15 +1284,17 @@ _pre_solve_lrr(const cs_field_t  *f_rij,
 
         /* Implicit terms */
         fimp[c_id][ij][ij] +=   crom[c_id] * cell_f_vol[c_id] / trrij
-                                * (crij1 * cvara_ep[c_id]);
+                              * (crij1 * cvara_ep[c_id]);
 
         for (cs_lnum_t kl = 0; kl < 6; kl++)
           fimp[c_id][ij][kl] +=   crom[c_id] * cell_f_vol[c_id]
-                                  * impl_drsm[ij][kl];
+                                * impl_drsm[ij][kl];
       }
     }
 
-  } /* end loop on cells */
+  }); /* End of loop on cells */
+
+  ctx.wait();
 
   BFT_FREE(c_is_solid_zone_flag);
 
@@ -1300,24 +1308,23 @@ _pre_solve_lrr(const cs_field_t  *f_rij,
 
     const int *irotce = cs_turbomachinery_get_cell_rotor_num();
 
-#   pragma omp parallel for if(n_cells_ext > CS_THR_MIN)
-    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+    ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
 
       int rot_id = icorio;
       if (tm_model == 1) {
         rot_id = irotce[c_id];
         if (rot_id < 1)
-          continue;
+          return; // return from lambda function == continue in loop
       }
 
       cs_real_t matrot[3][3];
-      const cs_rotation_t *r = cs_glob_rotation + rot_id;
+      const cs_rotation_t *r = rotation + rot_id;
       cs_rotation_coriolis_t(r, 1., matrot);
 
       /* Compute Gij: (i,j) component of the Coriolis production */
       for (cs_lnum_t ij = 0; ij < 6; ij++) {
-        cs_lnum_t i = _iv2t[ij];
-        cs_lnum_t j = _jv2t[ij];
+        cs_lnum_t i = iv2t[ij];
+        cs_lnum_t j = jv2t[ij];
 
         w2[c_id][ij] = 0.;
         for (cs_lnum_t k = 0; k < 3; k++)
@@ -1344,7 +1351,9 @@ _pre_solve_lrr(const cs_field_t  *f_rij,
           rhs[c_id][ij] += w2[c_id][ij];
       }
 
-    } /* End of loop on cells */
+    }); /* End of loop on cells */
+
+    ctx.wait();
 
   } /* End for Coriolis */
 
@@ -1385,13 +1394,13 @@ _pre_solve_lrr(const cs_field_t  *f_rij,
       = cs_field_by_name("anisotropic_turbulent_viscosity");
     const cs_real_6_t *visten = (const cs_real_6_t *)f_a_t_visc->val;
 
-#   pragma omp parallel for if(n_cells_ext > CS_THR_MIN)
-    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+    ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
       for (cs_lnum_t i = 0; i < 3; i++)
         viscce[c_id][i] = visten[c_id][i] + viscl[c_id];
       for (cs_lnum_t i = 3; i < 6; i++)
         viscce[c_id][i] = visten[c_id][i];
-    }
+    });
+    ctx.wait();
 
     cs_face_anisotropic_viscosity_scalar(m,
                                          fvq,
@@ -1411,15 +1420,15 @@ _pre_solve_lrr(const cs_field_t  *f_rij,
     BFT_MALLOC(w1, n_cells_ext, cs_real_t);
 
     if (eqp->idifft == 1) {
-#     pragma omp parallel for if(n_cells_ext > CS_THR_MIN)
-      for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+      ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
         const cs_real_t trrij = .5 * cs_math_6_trace(cvara_var[c_id]);
 
-        const cs_real_t rctse =   crom[c_id] * cs_turb_csrij
+        const cs_real_t rctse =   crom[c_id] * csrij
                                 * cs_math_pow2(trrij) / cvara_ep[c_id];
 
         w1[c_id] = viscl[c_id] + rctse;
-      }
+      });
+      ctx.wait();
     }
     else
       cs_array_real_copy(n_cells, viscl, w1);
@@ -1475,6 +1484,8 @@ _pre_solve_lrr_sg(const cs_field_t  *f_rij,
 
   const cs_lnum_t n_cells = m->n_cells;
   const cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
+
+  cs_dispatch_context ctx;
 
   const cs_real_t *cell_f_vol = fvq->cell_f_vol;
 
@@ -1537,8 +1548,11 @@ _pre_solve_lrr_sg(const cs_field_t  *f_rij,
   const cs_real_t crij1 = cs_turb_crij1;
   const cs_real_t crij2 = cs_turb_crij2;
   const cs_real_t crijeps = cs_turb_crij_eps;
+  const cs_real_t csrij  = cs_turb_csrij;
 
-  const auto t2v = _t2v;
+  auto iv2t = _iv2t;
+  auto jv2t = _jv2t;
+  auto t2v = _t2v;
   const cs_real_t vdeltij[6] = {1, 1, 1, 0, 0, 0};
 
   cs_lnum_t solid_stride = 1;
@@ -1571,11 +1585,10 @@ _pre_solve_lrr_sg(const cs_field_t  *f_rij,
 
   if (st_prv_id > -1) {
 
-#   pragma omp parallel for if(n_cells_ext > CS_THR_MIN)
-    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+    ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
 
       if (c_is_solid[solid_stride*c_id])
-        continue;
+        return;  /* return from lambda function == continue in loop */
 
       /* Half-traces of Prod and R */
       const cs_real_t trprod = 0.5 * cs_math_6_trace(produc[c_id]);
@@ -1625,18 +1638,19 @@ _pre_solve_lrr_sg(const cs_field_t  *f_rij,
           fimp[c_id][i][i] += crom[c_id] * cell_f_vol[c_id] * t1;
         }
       }
-    }
+
+    });
+    ctx.wait();
 
   }
 
   /* If we do not extrapolate the source terms */
   else {
 
-#   pragma omp parallel for if(n_cells_ext > CS_THR_MIN)
-    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+    ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
 
       if (c_is_solid[solid_stride*c_id])
-        continue;
+        return;  /* return from lambda function == continue in loop */
 
       /* Half-traces of Prod and R */
       const cs_real_t trprod = 0.5 * cs_math_6_trace(produc[c_id]);
@@ -1651,7 +1665,7 @@ _pre_solve_lrr_sg(const cs_field_t  *f_rij,
                         * (  vdeltij[ij] * d2s3
                            * (   crij2 * trprod
                               + (crij1-crijeps) * cvara_ep[c_id])
-                           + (1-cs_turb_crij2) * produc[c_id][ij]
+                           + (1-crij2) * produc[c_id][ij]
                            - crij1 * cvara_ep[c_id]/trrij * cvara_var[c_id][ij]);
 
         /* Calculation of the implicit part coming from Phi1
@@ -1660,7 +1674,9 @@ _pre_solve_lrr_sg(const cs_field_t  *f_rij,
                                 * (1-d1s3 *vdeltij[ij]) * crij1
                                 * cvara_ep[c_id]/trrij;
       }
-    }
+
+    });
+    ctx.wait();
 
   }
 
@@ -1673,10 +1689,10 @@ _pre_solve_lrr_sg(const cs_field_t  *f_rij,
   BFT_MALLOC(w2, n_cells_ext, cs_real_6_t);
 
   if (icorio == 1 || tm_model == CS_TURBOMACHINERY_FROZEN) {
+    const cs_rotation_t *rotation = cs_glob_rotation;
     const int *irotce = cs_turbomachinery_get_cell_rotor_num();
 
-#   pragma omp parallel for if(n_cells_ext > CS_THR_MIN)
-    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+    ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
 
       cs_real_t matrot[3][3];
 
@@ -1684,16 +1700,16 @@ _pre_solve_lrr_sg(const cs_field_t  *f_rij,
       if (tm_model == CS_TURBOMACHINERY_FROZEN) {
         rot_id = irotce[c_id];
         if (rot_id < 1)
-          continue;
+          return;  /* return from lambda function == continue in loop */
       }
 
-      const cs_rotation_t *r = cs_glob_rotation + rot_id;
+      const cs_rotation_t *r = rotation + rot_id;
       cs_rotation_coriolis_t(r, 1., matrot);
 
       /* Compute Gij: (i,j) component of the Coriolis production */
       for (cs_lnum_t ij = 0; ij < 6; ij++) {
-        cs_lnum_t i = _iv2t[ij];
-        cs_lnum_t j = _jv2t[ij];
+        cs_lnum_t i = iv2t[ij];
+        cs_lnum_t j = jv2t[ij];
 
         w2[c_id][ij] = 0.;
         for (cs_lnum_t kk = 0; kk < 3; kk++)
@@ -1705,7 +1721,7 @@ _pre_solve_lrr_sg(const cs_field_t  *f_rij,
       /* Coriolis contribution in the Phi1 term: (1-C2/2)Gij */
       if (icorio == 1) {
         for (cs_lnum_t ij = 0; ij < 6; ij++)
-          w2[c_id][ij] *= crom[c_id] * cell_f_vol[c_id ]* (1.-0.5*cs_turb_crij2);
+          w2[c_id][ij] *= crom[c_id] * cell_f_vol[c_id ]* (1.-0.5*crij2);
       }
 
       /* If source terms are extrapolated */
@@ -1719,7 +1735,8 @@ _pre_solve_lrr_sg(const cs_field_t  *f_rij,
           rhs[c_id][ij] += w2[c_id][ij];
       }
 
-    } /* End of loop on cells */
+    }); /* End of loop on cells */
+    ctx.wait();
 
   }
 
@@ -1760,13 +1777,13 @@ _pre_solve_lrr_sg(const cs_field_t  *f_rij,
       = cs_field_by_name("anisotropic_turbulent_viscosity");
     const cs_real_6_t *visten = (const cs_real_6_t *)f_a_t_visc->val;
 
-#   pragma omp parallel for if(n_cells_ext > CS_THR_MIN)
-    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+    ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
       for (cs_lnum_t i = 0; i < 3; i++)
         viscce[c_id][i] = visten[c_id][i] + viscl[c_id];
       for (cs_lnum_t i = 3; i < 6; i++)
         viscce[c_id][i] = visten[c_id][i];
-    }
+    });
+    ctx.wait();
 
     cs_face_anisotropic_viscosity_scalar(m,
                                          fvq,
@@ -1786,15 +1803,15 @@ _pre_solve_lrr_sg(const cs_field_t  *f_rij,
     BFT_MALLOC(w1, n_cells_ext, cs_real_t);
 
     if (eqp->idifft == 1) {
-#     pragma omp parallel for if(n_cells_ext > CS_THR_MIN)
-      for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+      ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
         const cs_real_t trrij = .5 * cs_math_6_trace(cvara_var[c_id]);
 
-        const cs_real_t rctse =   crom[c_id] * cs_turb_csrij
+        const cs_real_t rctse =   crom[c_id] * csrij
                                 * cs_math_pow2(trrij) / cvara_ep[c_id];
 
         w1[c_id] = viscl[c_id] + rctse;
-      }
+      });
+      ctx.wait();
     }
     else
       cs_array_real_copy(n_cells, viscl, w1);
@@ -1943,9 +1960,9 @@ _pre_solve_ssg(const cs_field_t  *f_rij,
   const cs_turb_model_type_t iturb
     = (cs_turb_model_type_t)cs_glob_turb_model->iturb;
 
-  const auto t2v = _t2v;
-  const auto iv2t = _iv2t;
-  const auto jv2t = _jv2t;
+  auto t2v = _t2v;
+  auto iv2t = _iv2t;
+  auto jv2t = _jv2t;
   const cs_real_t tdeltij[3][3] = {{1., 0., 0.}, {0., 1., 0.}, {0., 0., 1.}};
   const cs_real_t vdeltij[6] = {1, 1, 1, 0, 0, 0};
 
@@ -2947,9 +2964,9 @@ cs_turbulence_rij(int phase_id)
   const cs_real_t *crom = f_rho->val;
   const cs_real_6_t *cvara_rij = (const cs_real_6_t *)f_rij->val_pre;
 
-  const auto t2v = _t2v;
-  const auto iv2t = _iv2t;
-  const auto jv2t = _jv2t;
+  auto t2v = _t2v;
+  auto iv2t = _iv2t;
+  auto jv2t = _jv2t;
   const cs_real_t tdeltij[3][3] = {{1., 0., 0.}, {0., 1., 0.}, {0., 0., 1.}};
   const cs_real_t vdeltij[6] = {1, 1, 1, 0, 0, 0};
 

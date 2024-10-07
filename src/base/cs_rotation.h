@@ -146,7 +146,7 @@ cs_rotation_velocity(const cs_rotation_t  *r,
  *   vr <-> vector to which Coriolis term is added
  *---------------------------------------------------------------------------*/
 
-static inline void
+CS_F_HOST_DEVICE static inline void
 cs_rotation_add_coriolis_v(const cs_rotation_t  *r,
                            cs_real_t             c,
                            const cs_real_t       v[3],
@@ -193,7 +193,7 @@ cs_rotation_coriolis_v(const cs_rotation_t  *r,
  *   tr <-> tensor to which dual tensor of rotation is added
  *---------------------------------------------------------------------------*/
 
-static inline void
+CS_F_HOST_DEVICE static inline void
 cs_rotation_add_coriolis_t(const cs_rotation_t  *r,
                            cs_real_t             c,
                            cs_real_t             tr[3][3])
