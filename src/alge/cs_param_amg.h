@@ -175,6 +175,7 @@ typedef struct {
 typedef enum {
 
   CS_PARAM_AMG_GAMG_BACKWARD_GS,
+  CS_PARAM_AMG_GAMG_BILU0,
   CS_PARAM_AMG_GAMG_CHEBYSHEV,
   CS_PARAM_AMG_GAMG_FORWARD_GS,
   CS_PARAM_AMG_GAMG_HYBRID_SSOR, // SGS on local rank / Jacobi at interfaces

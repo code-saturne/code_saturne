@@ -385,6 +385,13 @@ _set_petsc_mg_levels(const char                        *prefix,
 
     switch (down_smoother) {
 
+    case CS_PARAM_AMG_GAMG_BILU0:
+      _petsc_cmd(true, prefix, "mg_levels_ksp_type", "richardson");
+      _petsc_cmd(true, prefix, "mg_levels_pc_type", "bjacobi");
+      _petsc_cmd(true, prefix, "mg_levels_sub_ksp_type", "preonly");
+      _petsc_cmd(true, prefix, "mg_levels_sub_pc_type", "ilu");
+      break;
+
     case CS_PARAM_AMG_GAMG_CHEBYSHEV:
       _petsc_cmd(true, prefix, "mg_levels_ksp_type", "chebyshev");
       _petsc_cmd(true, prefix, "mg_levels_ksp_chebyshev_eigenvalues",
@@ -434,6 +441,13 @@ _set_petsc_mg_levels(const char                        *prefix,
     _petsc_cmd(true, prefix, "mg_levels_ksp_max_it", keyval);
 
     switch (down_smoother) {
+
+    case CS_PARAM_AMG_GAMG_BILU0:
+      _petsc_cmd(true, prefix, "mg_levels_ksp_type", "richardson");
+      _petsc_cmd(true, prefix, "mg_levels_pc_type", "bjacobi");
+      _petsc_cmd(true, prefix, "mg_levels_sub_ksp_type", "preonly");
+      _petsc_cmd(true, prefix, "mg_levels_sub_pc_type", "ilu");
+      break;
 
     case CS_PARAM_AMG_GAMG_CHEBYSHEV:
       _petsc_cmd(true, prefix, "mg_levels_ksp_type", "chebyshev");
@@ -485,6 +499,13 @@ _set_petsc_mg_levels(const char                        *prefix,
     _petsc_cmd(true, prefix, "mg_levels_up_ksp_max_it", keyval);
 
     switch (up_smoother) {
+
+    case CS_PARAM_AMG_GAMG_BILU0:
+      _petsc_cmd(true, prefix, "mg_levels_up_ksp_type", "richardson");
+      _petsc_cmd(true, prefix, "mg_levels_up_pc_type", "bjacobi");
+      _petsc_cmd(true, prefix, "mg_levels_up_sub_ksp_type", "preonly");
+      _petsc_cmd(true, prefix, "mg_levels_up_sub_pc_type", "ilu");
+      break;
 
     case CS_PARAM_AMG_GAMG_CHEBYSHEV:
       _petsc_cmd(true, prefix, "mg_levels_up_ksp_type", "chebyshev");

@@ -502,6 +502,8 @@ cs_param_amg_get_gamg_smoother_name(cs_param_amg_gamg_smoother_t smoother)
 
   case CS_PARAM_AMG_GAMG_BACKWARD_GS:
     return "Backward Gauss-Seidel";
+  case CS_PARAM_AMG_GAMG_BILU0:
+    return "Hybrid Jacobi/ILU0";
   case CS_PARAM_AMG_GAMG_CHEBYSHEV:
     return "Chebyshev";
   case CS_PARAM_AMG_GAMG_FORWARD_GS:
