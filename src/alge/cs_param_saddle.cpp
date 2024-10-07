@@ -300,37 +300,37 @@ _init_schur_slesp(cs_param_saddle_t  *saddlep)
 
   case CS_PARAM_SADDLE_SOLVER_GCR:
     {
-    cs_param_saddle_context_block_krylov_t *ctxp =
-      static_cast<cs_param_saddle_context_block_krylov_t *>(saddlep->context);
+      cs_param_saddle_context_block_krylov_t *ctxp =
+        static_cast<cs_param_saddle_context_block_krylov_t *>(saddlep->context);
 
-    if (ctxp->xtra_sles_param != nullptr)
-      cs_param_sles_free(&(ctxp->xtra_sles_param));
+      if (ctxp->xtra_sles_param != nullptr)
+        cs_param_sles_free(&(ctxp->xtra_sles_param));
 
-    ctxp->xtra_sles_param = xtra_slesp;
+      ctxp->xtra_sles_param = xtra_slesp;
     }
     break;
 
   case CS_PARAM_SADDLE_SOLVER_UZAWA_CG:
     {
-    cs_param_saddle_context_uzacg_t *ctxp =
-      static_cast<cs_param_saddle_context_uzacg_t *>(saddlep->context);
+      cs_param_saddle_context_uzacg_t *ctxp =
+        static_cast<cs_param_saddle_context_uzacg_t *>(saddlep->context);
 
-    if (ctxp->xtra_sles_param != nullptr)
-      cs_param_sles_free(&(ctxp->xtra_sles_param));
+      if (ctxp->xtra_sles_param != nullptr)
+        cs_param_sles_free(&(ctxp->xtra_sles_param));
 
-    ctxp->xtra_sles_param = xtra_slesp;
+      ctxp->xtra_sles_param = xtra_slesp;
     }
     break;
 
   case CS_PARAM_SADDLE_SOLVER_SIMPLE:
     {
-    cs_param_saddle_context_simple_t *ctxp =
-      static_cast<cs_param_saddle_context_simple_t *>(saddlep->context);
+      cs_param_saddle_context_simple_t *ctxp =
+        static_cast<cs_param_saddle_context_simple_t *>(saddlep->context);
 
-    if (ctxp->xtra_sles_param != nullptr)
-      cs_param_sles_free(&(ctxp->xtra_sles_param));
+      if (ctxp->xtra_sles_param != nullptr)
+        cs_param_sles_free(&(ctxp->xtra_sles_param));
 
-    ctxp->xtra_sles_param = xtra_slesp;
+      ctxp->xtra_sles_param = xtra_slesp;
     }
     break;
 
@@ -362,38 +362,38 @@ _free_context(cs_param_saddle_t  *saddlep)
 
   case CS_PARAM_SADDLE_SOLVER_ALU:
     {
-    cs_param_saddle_context_alu_t *ctxp =
-      static_cast<cs_param_saddle_context_alu_t *>(saddlep->context);
+      cs_param_saddle_context_alu_t *ctxp =
+        static_cast<cs_param_saddle_context_alu_t *>(saddlep->context);
 
-    cs_param_sles_free(&(ctxp->init_sles_param));
+      cs_param_sles_free(&(ctxp->init_sles_param));
     }
     break;
 
   case CS_PARAM_SADDLE_SOLVER_GCR:
     {
-    cs_param_saddle_context_block_krylov_t *ctxp =
-      static_cast<cs_param_saddle_context_block_krylov_t *>(saddlep->context);
+      cs_param_saddle_context_block_krylov_t *ctxp =
+        static_cast<cs_param_saddle_context_block_krylov_t *>(saddlep->context);
 
-    cs_param_sles_free(&(ctxp->xtra_sles_param));
+      cs_param_sles_free(&(ctxp->xtra_sles_param));
     }
     break;
 
   case CS_PARAM_SADDLE_SOLVER_GKB:
     {
-    cs_param_saddle_context_gkb_t *ctxp =
-      static_cast<cs_param_saddle_context_gkb_t *>(saddlep->context);
+      cs_param_saddle_context_gkb_t *ctxp =
+        static_cast<cs_param_saddle_context_gkb_t *>(saddlep->context);
 
-    cs_param_sles_free(&(ctxp->init_sles_param));
+      cs_param_sles_free(&(ctxp->init_sles_param));
     }
     break;
 
   case CS_PARAM_SADDLE_SOLVER_UZAWA_CG:
     {
-    cs_param_saddle_context_uzacg_t *ctxp =
-      static_cast<cs_param_saddle_context_uzacg_t *>(saddlep->context);
+      cs_param_saddle_context_uzacg_t *ctxp =
+        static_cast<cs_param_saddle_context_uzacg_t *>(saddlep->context);
 
-    cs_param_sles_free(&(ctxp->init_sles_param));
-    cs_param_sles_free(&(ctxp->xtra_sles_param));
+      cs_param_sles_free(&(ctxp->init_sles_param));
+      cs_param_sles_free(&(ctxp->xtra_sles_param));
     }
     break;
 
@@ -430,10 +430,10 @@ cs_param_saddle_set_restart_range(cs_param_saddle_t  *saddlep,
   case CS_PARAM_SADDLE_SOLVER_FGMRES:
   case CS_PARAM_SADDLE_SOLVER_GCR:
     {
-    cs_param_saddle_context_block_krylov_t *ctxp =
-      static_cast<cs_param_saddle_context_block_krylov_t *>(saddlep->context);
+      cs_param_saddle_context_block_krylov_t *ctxp =
+        static_cast<cs_param_saddle_context_block_krylov_t *>(saddlep->context);
 
-    ctxp->n_stored_directions = restart_range;
+      ctxp->n_stored_directions = restart_range;
     }
     break;
 
@@ -753,28 +753,28 @@ cs_param_saddle_get_xtra_sles_param(const cs_param_saddle_t  *saddlep)
 
   case CS_PARAM_SADDLE_SOLVER_GCR:
     {
-    cs_param_saddle_context_block_krylov_t *ctxp =
-      static_cast<cs_param_saddle_context_block_krylov_t *>(saddlep->context);
+      cs_param_saddle_context_block_krylov_t *ctxp =
+        static_cast<cs_param_saddle_context_block_krylov_t *>(saddlep->context);
 
-    return ctxp->xtra_sles_param;
+      return ctxp->xtra_sles_param;
     }
     break;
 
   case CS_PARAM_SADDLE_SOLVER_UZAWA_CG:
     {
-    cs_param_saddle_context_uzacg_t *ctxp =
-      static_cast<cs_param_saddle_context_uzacg_t *>(saddlep->context);
+      cs_param_saddle_context_uzacg_t *ctxp =
+        static_cast<cs_param_saddle_context_uzacg_t *>(saddlep->context);
 
-    return ctxp->xtra_sles_param;
+      return ctxp->xtra_sles_param;
     }
     break;
 
   case CS_PARAM_SADDLE_SOLVER_SIMPLE:
     {
-    cs_param_saddle_context_simple_t *ctxp =
-      static_cast<cs_param_saddle_context_simple_t *>(saddlep->context);
+      cs_param_saddle_context_simple_t *ctxp =
+        static_cast<cs_param_saddle_context_simple_t *>(saddlep->context);
 
-    return ctxp->xtra_sles_param;
+      return ctxp->xtra_sles_param;
     }
     break;
 
@@ -806,28 +806,28 @@ cs_param_saddle_get_init_sles_param(const cs_param_saddle_t  *saddlep)
 
   case CS_PARAM_SADDLE_SOLVER_ALU:
     {
-    cs_param_saddle_context_alu_t *ctxp =
-      static_cast<cs_param_saddle_context_alu_t *>(saddlep->context);
+      cs_param_saddle_context_alu_t *ctxp =
+        static_cast<cs_param_saddle_context_alu_t *>(saddlep->context);
 
-    return ctxp->init_sles_param;
+      return ctxp->init_sles_param;
     }
     break;
 
   case CS_PARAM_SADDLE_SOLVER_GKB:
     {
-    cs_param_saddle_context_gkb_t *ctxp =
-      static_cast<cs_param_saddle_context_gkb_t *>(saddlep->context);
+      cs_param_saddle_context_gkb_t *ctxp =
+        static_cast<cs_param_saddle_context_gkb_t *>(saddlep->context);
 
-    return ctxp->init_sles_param;
+      return ctxp->init_sles_param;
     }
     break;
 
   case CS_PARAM_SADDLE_SOLVER_UZAWA_CG:
     {
-    cs_param_saddle_context_uzacg_t *ctxp =
-      static_cast<cs_param_saddle_context_uzacg_t *>(saddlep->context);
+      cs_param_saddle_context_uzacg_t *ctxp =
+        static_cast<cs_param_saddle_context_uzacg_t *>(saddlep->context);
 
-    return ctxp->init_sles_param;
+      return ctxp->init_sles_param;
     }
     break;
 
