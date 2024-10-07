@@ -52,14 +52,6 @@
 
 #include "cs_headers.h"
 
-#if defined(HAVE_PETSC)
-#include "cs_sles_petsc.h"
-#endif
-
-#if defined(HAVE_MUMPS)
-#include "cs_sles_mumps.h"
-#endif
-
 /*----------------------------------------------------------------------------*/
 
 BEGIN_C_DECLS
@@ -187,10 +179,13 @@ cs_user_parameters(cs_domain_t    *domain)
                         false,                     /* single-precision ? */
                         CS_PARAM_MUMPS_FACTO_LU);  /* type of factorization */
 
+    // Keeping the ordering is valuable to save time in case of unsteady
+    // computations and when the mesh is not modified during the computation
+
     cs_param_sles_mumps_advanced(slesp,
                                  CS_PARAM_MUMPS_ANALYSIS_QAMD,
                                  1,     // size of the block for analysis
-                                 false, // keep ordering
+                                 true,  // keep ordering
                                  -1,    // pct memory increase < 0 --> not used
                                  0,     // BLR compression: 0 --> not used
                                  1,     // iterative refinement steps
@@ -583,20 +578,23 @@ cs_user_sles_mumps_hook(const cs_param_sles_t   *slesp,
   CS_UNUSED(slesp);
   CS_UNUSED(context);
 
-  DMUMPS_STRUC_C  *mumps = (DMUMPS_STRUC_C *)pmumps;
+  // Case of a factorization in double-precision
+
+  DMUMPS_STRUC_C  *mumps = static_cast<DMUMPS_STRUC_C *>(pmumps);
   assert(mumps != nullptr);
 
   /* If MUMPS is used in single-precision, one has to modify the declaration as
      follows:
 
-     SMUMPS_STRUC_C  *mumps = pmumps;
+     SMUMPS_STRUC_C  *mumps = static_cast<SMUMPS_STRUC_C *>(pmumps);
 
      All the remaining settings are identical in the single or double-precision
      case.
    */
 
-  mumps->CNTL(4) = 0.0;    /* Static pivoting */
+  // Advanced settings
 
+  mumps->CNTL(4) = 0.0;    /* Static pivoting */
   mumps->ICNTL(58) = 2;    /* Symbolic factorization {0, 1, or 2}*/
 }
 /*! [mumps_user_hook] */
