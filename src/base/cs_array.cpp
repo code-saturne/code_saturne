@@ -157,6 +157,35 @@ cs_array_lnum_fill_zero(cs_lnum_t  size,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Copy values from an array of cs_lnum_t type to another of the same
+ *        dimensions.
+ *
+ * \param[in]  size  number of elements * dimension
+ * \param[in]  src   source array values (size: n_elts*dim)
+ * \param[out] dest  destination array values (size: n_elts*dim)
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_array_lnum_copy(cs_lnum_t       size,
+                   const cs_lnum_t src[],
+                   cs_lnum_t       dest[])
+{
+  if (cs_glob_n_threads > 1) {
+
+    cs_lnum_t *restrict _dest = dest;
+
+#   pragma omp parallel for if (size > CS_THR_MIN)
+    for (cs_lnum_t ii = 0; ii < size; ii++)
+      _dest[ii] = src[ii];
+
+  }
+  else
+    memcpy(dest, src, size_of_lnum*size);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Assign the value "num" to all elements of an array. Case of a
  *        cs_lnum_t array.
  *
