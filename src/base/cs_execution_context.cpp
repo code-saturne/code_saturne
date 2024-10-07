@@ -46,8 +46,8 @@ static cs_execution_context *_glob_context = nullptr;
 /* Get the current execution context, for the moment global is returned */
 /*----------------------------------------------------------------------------*/
 
-cs_execution_context * const
-cs_execution_context_get()
+const cs_execution_context *
+cs_execution_context_get(void)
 {
   return _glob_context;
 }
@@ -56,8 +56,8 @@ cs_execution_context_get()
 /* Get the global execution context. */
 /*----------------------------------------------------------------------------*/
 
-cs_execution_context * const
-cs_execution_context_glob_get()
+const cs_execution_context *
+cs_execution_context_glob_get(void)
 {
   return _glob_context;
 }
@@ -71,7 +71,7 @@ BEGIN_C_DECLS
 /*----------------------------------------------------------------------------*/
 
 void
-cs_execution_context_glob_init()
+cs_execution_context_glob_init(void)
 {
   _glob_context = new cs_execution_context();
 #if defined(HAVE_MPI)
@@ -84,7 +84,7 @@ cs_execution_context_glob_init()
 /*----------------------------------------------------------------------------*/
 
 void
-cs_execution_context_glob_finalize()
+cs_execution_context_glob_finalize(void)
 {
   if (_glob_context != nullptr)
     delete _glob_context;

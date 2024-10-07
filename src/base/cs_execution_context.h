@@ -264,8 +264,8 @@ private:
  */
 /*----------------------------------------------------------------------------*/
 
-cs_execution_context * const
-cs_execution_context_get();
+const cs_execution_context *
+cs_execution_context_get(void);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -275,8 +275,8 @@ cs_execution_context_get();
  */
 /*----------------------------------------------------------------------------*/
 
-cs_execution_context * const
-cs_execution_context_glob_get();
+const cs_execution_context *
+cs_execution_context_glob_get(void);
 
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
 #endif /* __cplusplus */
@@ -293,7 +293,7 @@ BEGIN_C_DECLS
 /*----------------------------------------------------------------------------*/
 
 void
-cs_execution_context_glob_init();
+cs_execution_context_glob_init(void);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -302,7 +302,7 @@ cs_execution_context_glob_init();
 /*----------------------------------------------------------------------------*/
 
 void
-cs_execution_context_glob_finalize();
+cs_execution_context_glob_finalize(void);
 
 /*----------------------------------------------------------------------------*/
 
