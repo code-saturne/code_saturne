@@ -1135,6 +1135,7 @@ cs_param_saddle_set_solver(const char          *keyval,
     cs_param_saddle_context_block_krylov_t  *ctxp = nullptr;
     BFT_MALLOC(ctxp, 1, cs_param_saddle_context_block_krylov_t);
 
+    ctxp->augmentation_scaling = 0.;
     ctxp->n_stored_directions = 30;    /* default value */
     ctxp->xtra_sles_param = nullptr;      /* It should remain to nullptr */
 
@@ -1154,6 +1155,7 @@ cs_param_saddle_set_solver(const char          *keyval,
     cs_param_saddle_context_block_krylov_t  *ctxp = nullptr;
     BFT_MALLOC(ctxp, 1, cs_param_saddle_context_block_krylov_t);
 
+    ctxp->augmentation_scaling = 0.;
     ctxp->n_stored_directions = 30;    /* default value */
     ctxp->xtra_sles_param = nullptr;   /* It depends on the type of Schur
                                           approximation */
