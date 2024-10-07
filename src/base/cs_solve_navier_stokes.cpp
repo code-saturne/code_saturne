@@ -134,25 +134,11 @@ BEGIN_C_DECLS
 extern cs_real_t *cs_glob_ckupdc;
 
 /*============================================================================
- * Prototypes for Fortran functions and variables.
- *============================================================================*/
-
-/*============================================================================
- * Prototypes for functions intended for use only by Fortran wrappers.
- * (descriptions follow, with function bodies).
- *============================================================================*/
-
-/*============================================================================
  * Fortran function prototypes for subroutines from field.f90.
  *============================================================================*/
 
 void
 cs_f_navier_stokes_total_pressure(void);
-
-/*============================================================================
- * Prototypes for functions intended for use only by Fortran wrappers.
- * (descriptions follow, with function bodies).
- *============================================================================*/
 
 /*============================================================================
  * Private function definitions

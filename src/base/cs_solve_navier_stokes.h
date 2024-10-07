@@ -59,30 +59,6 @@ BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
 /*
- * \brief Solve Navier-Stokes equations for incompressible or slightly
- *        compressible flows for one time step. Both convection-diffusion
- *        and continuity steps are performed.
- *
- * \param[in]       iterns        index of the iteration on Navier-Stokes
- * \param[in]       icvrge        convergence indicator
- * \param[in]       itrale        number of the current ALE iteration
- * \param[in]       isostd        indicator of standard outlet
- *                              + index of the reference face
- * \param[in]       ckupdc        head loss coefficients, if present
- * \param[in, out]  trava         working array for velocity-pressure coupling
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_solve_navier_stokes(const int        iterns,
-                       int             *icvrge,
-                       const int        itrale,
-                       const int        isostd[],
-                       const cs_real_t  ckupdc[][6],
-                       cs_real_3_t     *trava);
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief Update total pressure (defined as a post-processed property).
  *
  * For the compressible module, the solved pressure is already
@@ -107,6 +83,30 @@ cs_solve_navier_stokes_update_total_pressure
    const cs_fluid_properties_t  *fp,
    const cs_real_t               gxyz[3],
    const cs_real_t               xyzp0[3]);
+
+/*----------------------------------------------------------------------------*/
+/*
+ * \brief Solve Navier-Stokes equations for incompressible or slightly
+ *        compressible flows for one time step. Both convection-diffusion
+ *        and continuity steps are performed.
+ *
+ * \param[in]       iterns        index of the iteration on Navier-Stokes
+ * \param[in]       icvrge        convergence indicator
+ * \param[in]       itrale        number of the current ALE iteration
+ * \param[in]       isostd        indicator of standard outlet
+ *                              + index of the reference face
+ * \param[in]       ckupdc        head loss coefficients, if present
+ * \param[in, out]  trava         working array for velocity-pressure coupling
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_solve_navier_stokes(const int        iterns,
+                       int             *icvrge,
+                       const int        itrale,
+                       const int        isostd[],
+                       const cs_real_t  ckupdc[][6],
+                       cs_real_3_t     *trava);
 
 /*----------------------------------------------------------------------------*/
 
