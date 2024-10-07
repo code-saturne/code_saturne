@@ -419,8 +419,6 @@ class UserCalculatorView(QWidget, Ui_UserCalculator):
 
         exa = "{} = 1.;".format(self.current_name)
 
-        print(exp)
-
         dialog = QMegEditorView(parent        = self,
                                 function_type = 'pca',
                                 zone_name     = 'None',
