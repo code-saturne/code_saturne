@@ -6,7 +6,7 @@
 
 import sys
 
-if sys.version_info[:2] < (2,6):
+if sys.version_info[:2] < (3, 4):
     sys.stderr.write("This script needs Python 3.4 at least\n")
 
 import platform
@@ -234,7 +234,16 @@ class Package:
     def download(self):
 
         import urllib.request
-        urllib.request.urlretrieve(self.url, self.archive)
+        try:
+            urllib.request.urlretrieve(self.url, self.archive)
+        except Exception as e:
+            import traceback
+            exc_type, exc_value, exc_traceback = sys.exc_info()
+            traceback.print_exception(exc_type, exc_value, exc_traceback,
+                                      limit=2, file=sys.stderr)
+            print("")
+            print("Failed downloading " + str(self.url))
+            pass
 
     #---------------------------------------------------------------------------
 
