@@ -417,8 +417,7 @@ fldvar.f90 \
 impini.f90 \
 iniini.f90 \
 inivar.f90 \
-majgeo.f90 \
-varpos.f90
+majgeo.f90
 
 libcsbase_a_LIBADD =
 local_libraries_add =

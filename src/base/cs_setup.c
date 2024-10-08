@@ -153,9 +153,6 @@ void
 cs_f_usipsu(int *nmodpp);
 
 void
-cs_f_varpos(void);
-
-void
 cs_f_iniini(void);
 
 void
@@ -301,6 +298,51 @@ _add_property_field_boundary
     cs_field_set_key_str(f, keylbl, f_label);
 
   return f;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Add field defining previous source term values for a given field.
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_add_source_term_prev_field(cs_field_t *f)
+{
+  const int kstprv = cs_field_key_id("source_term_prev_id");
+
+  cs_field_t *fld
+    = cs_field_create_by_composite_name(f->name,
+                                        "prev_st",
+                                        CS_FIELD_EXTENSIVE | CS_FIELD_PROPERTY,
+                                        CS_MESH_LOCATION_CELLS,
+                                        f->dim,
+                                        false);
+
+  cs_field_set_key_int(f, kstprv, fld->id);
+  _hide_field(fld);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Add field defining previous source term values for a given field.
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_add_source_term_field(cs_field_t *f)
+{
+  const int kst = cs_field_key_id("source_term_id");
+
+  cs_field_t *fld
+    = cs_field_create_by_composite_name(f->name,
+                                        "st",
+                                        CS_FIELD_EXTENSIVE | CS_FIELD_PROPERTY,
+                                        CS_MESH_LOCATION_CELLS,
+                                        f->dim,
+                                        false);
+
+  cs_field_set_key_int(f, kst, fld->id);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -831,12 +873,27 @@ _additional_fields_stage_1(void)
   const int keyvis = cs_field_key_id("post_vis");
   const int keylog = cs_field_key_id("log");
   const int keylbl = cs_field_key_id("label");
+  const int keysca = cs_field_key_id("scalar_id");
+  const int kisso2t = cs_field_key_id("scalar_time_scheme");
+  const int kturt = cs_field_key_id("turbulent_flux_model");
+  const int k_restart_id = cs_field_key_id("restart_file");
+  const int key_buoyant_id = cs_field_key_id_try("coupled_with_vel_p");
+
+  cs_field_t *f_th = cs_thermal_model_field();
+  const int n_fields = cs_field_n_fields();
 
   const int pflag = CS_POST_ON_LOCATION | CS_POST_MONITOR;
 
   const cs_turb_model_t *turb_model = cs_glob_turb_model;
   cs_turb_rans_model_t *turb_rans_model = cs_get_glob_turb_rans_model();
   cs_fluid_properties_t *fluid_props = cs_get_glob_fluid_properties();
+
+  cs_velocity_pressure_param_t *vp_p = cs_get_glob_velocity_pressure_param();
+  const cs_velocity_pressure_model_t *vp_m = cs_glob_velocity_pressure_model;
+  cs_time_scheme_t *time_scheme = cs_get_glob_time_scheme();
+
+  const cs_real_t *gxyz = cs_get_glob_physical_constants()->gravity;
+  const cs_rad_transfer_params_t *rt_params = cs_glob_rad_transfer_params;
 
   /* Determine itycor now that irccor is known (iturb/itytur known much earlier)
      type of rotation/curvature correction for turbulent viscosity models. */
@@ -893,9 +950,406 @@ _additional_fields_stage_1(void)
     cs_field_set_key_int(f, keyvis, 1);
   }
 
-  /* TODO: migrate varpos to C */
+  /*---------------------------------------------------------
+   * Time-scheme related properties
+   *---------------------------------------------------------
 
-  cs_f_varpos();
+   When using 2nd order time schemes, one needs to prepare
+   properties at time n-1. This is done during last call.
+
+   When calculating momentums, one needs to prepare the number
+   of tables needed for the cumulatated time average storage.
+   One assumes that the info located in the header of restart
+   files can help preparing (if the restart is made using non-
+   reset momentums).
+
+   Additional properties for time schemes
+   --------------------------------------
+
+   Default initialisations and verification of options
+   used thereafter to decide wether one set additionnal
+   tables for the quantities from the previous time step.
+   ------------------------------------------------------*/
+
+  /* Hydrostatic pressure */
+  if (vp_p->iphydr == 1 && vp_p->icalhy == -1) {
+    const cs_real_t gravn2 = cs_math_3_square_norm(gxyz);
+    if (gravn2 < cs_math_pow2(cs_math_epzero)) {
+      vp_p->icalhy = 0;
+    }
+    else {
+      vp_p->icalhy = 1;
+    }
+  }
+  else {
+    vp_p->icalhy = 0;
+  }
+
+  /* Global time stepping
+     For LES: 2nd order; 1st order otherwise
+     (2nd order forbidden for "coupled" k-epsilon) */
+  if (time_scheme->time_order == -1) {
+    if (turb_model->itytur == 4 || turb_model->hybrid_turb == 4) {
+      time_scheme->time_order = 2;
+    }
+    else {
+      time_scheme->time_order = 1;
+    }
+  }
+
+  /* Time schemes : deducted variables
+     Mass flux scheme */
+  if (time_scheme->istmpf == -999) {
+    if (time_scheme->time_order == 1) {
+      time_scheme->istmpf = 1;
+    }
+    else if (time_scheme->time_order == 2) {
+      time_scheme->istmpf = 2;
+    }
+  }
+
+  /* Collocated time scheme for gaz combustion */
+  if (vp_p->itpcol == -1) {
+    if (   time_scheme->time_order == 2
+        && cs_glob_physical_model_flag[CS_COMBUSTION_SLFM] >= 0) {
+      vp_p->itpcol = 1;
+    }
+    else {
+      vp_p->itpcol = 0;
+    }
+  }
+
+  /* Source terms NS */
+  if (time_scheme->isno2t == -999) {
+    if (time_scheme->time_order == 1)
+      time_scheme->isno2t = 0;
+    else if (time_scheme->time_order == 2)
+      /* 2nd order at the moment */
+      time_scheme->isno2t = 1;
+  }
+
+  /* Turbulent source terms (k-eps, Rij, v2f or k-omega)
+     ISTO2T can only be changed with Rij model
+     (otherwise issue with k-eps/omega coupling) */
+
+  if (time_scheme->isto2t == -999) {
+    if (time_scheme->time_order == 1) {
+      time_scheme->isto2t = 0;
+    }
+    else if (time_scheme->time_order == 2) {
+      /* 2nd order not taken by default */
+      time_scheme->isto2t = 0;
+    }
+  }
+  else if (   turb_model->itytur == 2
+           || turb_model->model == CS_TURB_V2F_PHI
+           || turb_model->model != CS_TURB_K_OMEGA) {
+
+    bft_error(__FILE__, __LINE__, 0,
+              _("STOP AT THE INITIAL DATA\n\n"
+                "With the chosen turbulence model = %d\n"
+                "the value of ISTO2T (extrapolation of the source terms\n"
+                "for the turbulent variables) cannot be modified\n"
+                "yet ISTO2T has been forced to %d.\n"),
+              turb_model->iturb, time_scheme->isto2t);
+  }
+
+  for (int ii = 0; ii < n_fields; ii++) {
+
+    cs_field_t *f_scal = cs_field_by_id(ii);
+
+    if (!(f_scal->type & CS_FIELD_VARIABLE))
+      continue;
+    if (cs_field_get_key_int(f_scal, keysca) <= 0)
+      continue;
+
+    /* Scalar source terms */
+    int isso2t = cs_field_get_key_int(f_scal, kisso2t);
+
+    if (isso2t == -1) {
+      if (time_scheme->time_order == 1) {
+        cs_field_set_key_int(f_scal, kisso2t, 0);
+      }
+      else if (time_scheme->time_order == 2) {
+        /* One uses order 2 for coherence with NS. Either way, order 2 implies
+           an LES simulation and thus no scalar source term to interpolate. */
+        cs_field_set_key_int(f_scal, kisso2t, 1);
+
+        if (f_scal == f_th && rt_params->type > 0) {
+          cs_field_set_key_int(f_scal, kisso2t, 0);
+        }
+      }
+    }
+
+    int turb_flux_model = cs_field_get_key_int(f_scal, kturt);
+
+    if (f_scal == f_th) {
+      cs_field_t *f_beta = cs_field_by_name_try("thermal_expansion");
+      if (turb_flux_model > 0 && fluid_props->irovar == 1 && f_beta == NULL) {
+         _add_property_field("thermal_expansion",
+                             "Beta",
+                             1,
+                             false);
+      }
+    }
+  } /* End loop on scalars */
+
+  /* Time schemes */
+
+  /* Global time scheme */
+  if (time_scheme->time_order != 1 && time_scheme->time_order != 2) {
+    bft_error(__FILE__, __LINE__, 0,
+              _("STOP AT THE INITIAL DATA VERIFICATION\n\n"
+                "Time order (ISCHTP) must be an integer equal to 1 or 2\n"
+                "Here it is %d.\n\n"
+                "Check parameters.\n"),
+              time_scheme->time_order);
+  }
+  if (time_scheme->time_order == 2 && cs_glob_time_step_options->idtvar != 0) {
+    bft_error(__FILE__, __LINE__, 0,
+              _("STOP AT THE INITIAL DATA\n\n"
+                "With a 2nd order scheme in time: TIME_ORDER = %d\n"
+                "It is necessary to use a constant and uniform time step\n"
+                "but IDTVAR = %d.\n\n"
+                "Check parameters.\n"),
+              time_scheme->time_order, cs_glob_time_step_options->idtvar);
+  }
+  if (time_scheme->time_order == 2 && turb_model->itytur == 2) {
+    bft_error(__FILE__, __LINE__, 0,
+              _("STOP AT THE INITIAL DATA\n\n"
+                "A 2nd order scheme has been selected (TIME_ORDER = %d)\n"
+                "with K-EPSILON (ITURB = %d).\n\n"
+                "The current version does not support the 2nd order with\n"
+                "coupling of the source terms of k-epsilon.\n\n"
+                "The calculation cannot be executed.\n\n"
+                "Check parameters.\n"),
+              time_scheme->time_order, turb_model->model);
+  }
+  if (time_scheme->time_order == 1 && turb_model->itytur == 4) {
+    bft_error(__FILE__, __LINE__, 0,
+              _("STOP AT THE INITIAL DATA\n\n"
+                "A 1st order scheme has been selected (TIME_ORDER = %d)\n"
+                "for LES (ITURB = %d).\n\n"
+                "The calculation cannot be executed.\n\n"
+                "Check parameters.\n"),
+              time_scheme->time_order, turb_model->model);
+  }
+  if (time_scheme->time_order == 2 && turb_model->model == CS_TURB_V2F_PHI) {
+    bft_error(__FILE__, __LINE__, 0,
+              _("STOP AT THE INITIAL DATA\n\n"
+                "A 2nd ORDER SCHEME HAS BEEN SELECTED (TIME_ORDER = %d)\n"
+                "for PHI_FBAR (ITURB = %d).\n\n"
+                "The current version does not support the 2nd order with\n"
+                "coupling of the source terms of k-epsilon\n\n"
+                "The calculation cannot be executed.\n\n"
+                "Check parameters.\n"),
+              time_scheme->time_order, turb_model->model);
+  }
+  if (   time_scheme->time_order == 2 && turb_model->model == CS_TURB_V2F_BL_V2K
+      && turb_model->hybrid_turb != 4) {
+    bft_error(__FILE__, __LINE__, 0,
+              _("STOP AT THE INITIAL DATA\n\n"
+                "A 2nd order scheme has been selected (TIME_ORDER = %d)\n"
+                "for BL-V2/K (ITURB = %d)\n\n"
+                "The current version does not support the 2nd order with\n"
+                "coupling of the source terms of k-epsilon.\n\n"
+                "The calculation cannot be executed\n\n"
+                "Check parameters.\n"),
+              time_scheme->time_order, turb_model->model);
+  }
+  if (   time_scheme->time_order == 2 && turb_model->model == CS_TURB_K_OMEGA
+      && turb_model->hybrid_turb != 4) {
+    bft_error(__FILE__, __LINE__, 0,
+              _("STOP AT THE INITIAL DATA\n\n"
+                "A 2nd order scheme has been selected (TIME_ORDER = %d)\n"
+                "for K-OMEGA (ITURB = %d)\n\n"
+                "The current version does not support the 2nd order with\n"
+                "coupling of the source terms of k-omega.\n\n"
+                "The calculation cannot be executed.\n\n"
+                "Check parameters.\n"),
+              time_scheme->time_order, turb_model->model);
+  }
+  if (time_scheme->time_order == 2 && turb_model->model == CS_TURB_SPALART_ALLMARAS) {
+    bft_error(__FILE__, __LINE__, 0,
+              _("STOP AT THE INITIAL DATA\n\n"
+                "A 2nd order scheme has been selected (TIME_ORDER = %d)\n"
+                "for SPALART (ITURB = %d)\n\n"
+                "The current version does not support the 2nd order with\n"
+                "coupling of the source terms of Spalart-Allmaras.\n\n"
+                "The calculation cannot be executed.\n\n"
+                "Check parameters.\n"),
+              time_scheme->time_order, turb_model->model);
+  }
+  /* Time scheme for mass flux */
+  if (   time_scheme->istmpf != 0 && time_scheme->istmpf != 1
+      && time_scheme->istmpf != 2) {
+    bft_error(__FILE__, __LINE__, 0,
+              _("STOP AT THE INITIAL DATA\n\n"
+                "ISTMPF must be an integer equal to 0, 1 or 2.\n"
+                "Here it is %d.\n\n"
+                "The calculation cannot be executed.\n\n"
+                "Check parameters.\n"),
+              time_scheme->istmpf);
+  }
+  /* Time scheme for NS source terms */
+  if (   time_scheme->isno2t != 0 && time_scheme->isno2t != 1
+      && time_scheme->isno2t != 2) {
+    bft_error(__FILE__, __LINE__, 0,
+              _("STOP AT THE INITIAL DATA\n\n"
+                "ISTMPF must be an integer equal to 0, 1 or 2.\n"
+                "Here it is %d.\n\n"
+                "The calculation cannot be executed.\n\n"
+                "Check parameters.\n"),
+              time_scheme->isno2t);
+  }
+  /* Time scheme for turbulent quantities source terms */
+  if (   time_scheme->isto2t != 0 && time_scheme->isto2t != 1
+      && time_scheme->isto2t != 2) {
+    bft_error(__FILE__, __LINE__, 0,
+              _("STOP AT THE INITIAL DATA\n\n"
+                "ISTMPF must be an integer equal to 0, 1 or 2.\n"
+                "Here it is %d.\n\n"
+                "The calculation cannot be executed.\n\n"
+                "Check parameters.\n"),
+              time_scheme->isto2t);
+  }
+
+  /* Time scheme for scalar source terms */
+  for (int ii = 0; ii < n_fields; ii++) {
+    cs_field_t *f_scal = cs_field_by_id(ii);
+
+    if (!(f_scal->type & CS_FIELD_VARIABLE))
+      continue;
+    if (cs_field_get_key_int(f_scal, keysca) <= 0)
+      continue;
+
+    int isso2t = cs_field_get_key_int(f_scal, kisso2t);
+    if (isso2t != 0 && isso2t != 1 && isso2t != 2) {
+      bft_error(__FILE__, __LINE__, 0,
+                _("STOP AT THE INITIAL DATA FOR THE SCALAR %s\n\n"
+                  "ISSO2T must be an integer equal to 0, 1 or 2.\n"
+                  "Here it is %d.\n\n"
+                  "Check parameters\n"),
+                f_scal->name, isso2t);
+    }
+  }
+
+  /* Add thermal expansion field for Boussinesq approximation
+     if not already added */
+  if (vp_m->idilat == 0) {
+    cs_field_t *f_beta = cs_field_by_name_try("thermal_expansion");
+    if (f_beta == NULL) {
+      _add_property_field("thermal_expansion",
+                          "Beta",
+                          1,
+                          false);
+    }
+  }
+
+  /* Source term for weakly incompressible algorithm (semi analytic scheme) */
+
+  if (vp_m->idilat >= 4) {
+    for (int ii = 0; ii < n_fields; ii++) {
+      cs_field_t *f_scal = cs_field_by_id(ii);
+
+      if (!(f_scal->type & CS_FIELD_VARIABLE))
+        continue;
+      if (cs_field_get_key_int(f_scal, keysca) <= 0)
+        continue;
+
+      char s_name[128];
+      char s_label[128];
+      snprintf(s_name, 127, "%s_dila_st", f_scal->name);
+      snprintf(s_label, 127, "%s dila source term", f_scal->name);
+      s_name[127] = '\0';
+      s_label[127] = '\0';
+
+      cs_field_t *f_dila_sc = _add_property_field(s_name,
+                                                  s_label,
+                                                  1,
+                                                  false);
+
+      /* Set restart file option for source terms */
+      cs_field_set_key_int(f_dila_sc, k_restart_id, CS_RESTART_AUXILIARY);
+    }
+
+    _add_property_field("dila_st",
+                        "dila source term",
+                        1,
+                        false);
+  }
+
+  /* One needs a table for the source terms of NS that needs to be extrapolated.
+     This table is NDIM in general and NDIM+1 if one extrapolates the source
+     terms of the void fraction equation of the VOF algorithm. */
+  if (time_scheme->isno2t > 0) {
+    _add_source_term_prev_field(CS_F_(vel));
+    if (cs_glob_vof_parameters->vof_model > 0)
+      _add_source_term_prev_field(CS_F_(void_f));
+  }
+
+  if (time_scheme->isto2t > 0) {
+    /* The dimension of this array depends on turbulence model */
+    if (turb_model->itytur == 2) {
+      _add_source_term_prev_field(CS_F_(k));
+      _add_source_term_prev_field(CS_F_(eps));
+    }
+    else if (turb_model->itytur == 3) {
+      _add_source_term_prev_field(CS_F_(rij));
+      _add_source_term_prev_field(CS_F_(eps));
+
+      if (turb_model->model == CS_TURB_RIJ_EPSILON_EBRSM)
+        _add_source_term_prev_field(CS_F_(alp_bl));
+    }
+    else if (turb_model->itytur == 5) {
+      _add_source_term_prev_field(CS_F_(k));
+      _add_source_term_prev_field(CS_F_(eps));
+      _add_source_term_prev_field(CS_F_(phi));
+
+      if (turb_model->model == CS_TURB_V2F_PHI)
+        _add_source_term_prev_field(CS_F_(f_bar));
+      else if (turb_model->model == CS_TURB_V2F_BL_V2K)
+        _add_source_term_prev_field(CS_F_(alp_bl));
+    }
+    else if (turb_model->model == CS_TURB_K_OMEGA) {
+      _add_source_term_prev_field(CS_F_(k));
+      _add_source_term_prev_field(CS_F_(omg));
+    }
+    else if (turb_model->model == CS_TURB_SPALART_ALLMARAS) {
+      _add_source_term_prev_field(CS_F_(nusa));
+    }
+  }
+
+  /* Scalar properties: source terms for theta scheme */
+
+  for (int ii = 0; ii < n_fields; ii++) {
+    cs_field_t *f_scal = cs_field_by_id(ii);
+
+    if (!(f_scal->type & CS_FIELD_VARIABLE))
+      continue;
+    if (cs_field_get_key_int(f_scal, keysca) <= 0)
+      continue;
+
+    int isso2t = cs_field_get_key_int(f_scal, kisso2t);
+
+    if (isso2t > 0) {
+      /* For buoyant scalars, save the current user source term */
+
+      const int coupled_with_vel_p_fld
+        = cs_field_get_key_int(f_scal, key_buoyant_id);
+
+      if (coupled_with_vel_p_fld == 1) {
+        _add_source_term_field(f_scal);
+      }
+
+      _add_source_term_prev_field(f_scal);
+    }
+    /* Only useful for min/max limiter */
+    cs_equation_param_t *eqp = cs_field_get_equation_param(f_scal);
+
+    if (eqp->isstpc == 2)
+      _add_source_term_field(f_scal);
+  }
 
   /* Porosity
      -------- */
