@@ -77,7 +77,7 @@
      Dirichlet for the variable if \c icodcl[face_id] = 1
      The dimension of \c rcodcl1[face_id] is in \f$m \cdot s^{-1}\f$
   - \c rcodcl2[face_id]:
-    "exterior" exchange coefficient; mmake no sense for the mesh velocity,
+    "exterior" exchange coefficient; make no sense for the mesh velocity,
     so can be ignored.
 
   - \c rcodcl3[face_id]:

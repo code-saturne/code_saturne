@@ -612,7 +612,8 @@ cs_time_stepping(void)
     cs_log_printf(CS_LOG_DEFAULT,
                   _("\n INSTANT %18.9f    ALE INITIALIZATION\n"
                     "============================================="
-                    "================="), ts->t_cur);
+                    "=================\n"),
+                  ts->t_cur);
   }
 
   /* In case of code coupling, sync status with other codes. */
