@@ -25,40 +25,35 @@
 /*-----------------------------------------------------------------------------*/
 
 /*!
-  \page cs_user_atmospheric_model Atmospheric model (cs_user_atmospheric_model.f90)
+  \page cs_user_atmospheric_model Atmospheric model
 
   \section cs_user_atmospheric_model_h_intro Introduction
 
-  User subroutine for the atmospheric model.
+  User functions for the atmospheric model.
 
-  \section cs_user_atmospheric_model_usatdv Atmospheric module
+  \section cs_user_atmospheric_model_usatdv Atmospheric definition
 
-  \c imode corresponds to the number of calls of the \ref usatdv function.
-  Depending on the value of \c imode , different operations are performed
-  in the following example.
+  \subsection cs_user_atmospheric_model_usatdv_imode0 Activate 1-D radiative transfer model
+  Is define in \ref cs_user_model function
+  \snippet cs_user_parameters-base.cpp atmo_1d_rad
 
-  \subsection cs_user_atmospheric_model_usatdv_imode0 imode = 0
-
-  \snippet cs_user_atmospheric_model.f90 imode_0
-
-  \subsection cs_user_atmospheric_model_usatdv_imode1 imode = 1
-
-  \snippet cs_user_atmospheric_model.f90 imode_1
+  \subsection cs_user_atmospheric_model_usatdv_imode1 define 1-D radiative transfer mesh
+  Is  define in \ref cs_user_parameters function
+  \snippet cs_user_parameters-base.cpp  atmo_ad_rad_def
 
   \section cs_user_atmospheric_model_usatsoil Data Entry for the atmospheric soil model
 
   To activate the model, the user has to set the and to specify the zone id
-  on which the soil model is applied in \ref cs_user_parameters.c,
+  on which the soil model is applied in \ref cs_user_parameters.cpp,
   routine \ref cs_user_model:
-  \snippet cs_user_parameters-base.c atmo_soil_set
+  \snippet cs_user_parameters-base.cpp atmo_soil_set
 
   Then the user may change default coefficient values for soil categories
-  in \ref cs_user_parameters.f90, routine \ref usipsu
-  \snippet cs_user_parameters.f90 usatsoil
+  in \ref cs_user_parameters.cpp \snippet cs_user_parameters.cpp atmo_soil_set
 
   \section cs_user_atmospheric_initialization Initialization of atmospheric
   The user has to specify the percentage of each categories for all faces of
-  the soil zone in \ref cs_user_initialization.c:
-  \snippet cs_user_initialization-atmospheric.c atmo_soil_init
+  the soil zone in \ref cs_user_initialization.cpp:
+  \snippet cs_user_initialization-atmospheric.cpp atmo_soil_init
 
 */

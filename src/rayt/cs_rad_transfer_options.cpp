@@ -195,9 +195,9 @@ cs_rad_transfer_options(void)
   /* In case of imfsck == 2, spectral radiative properties depend on
    * user provided radiation library coupled with flamelet library.
    *
-   * Spectral number must be prescribed in usppmod
+   * Spectral number must be prescribed in cs_user_model
    * if (rt_params->imfsck == 2)
-       rt_params->nwsgg = user prescribed in usppmod;
+       rt_params->nwsgg = user prescribed in cs_user_model;
   */
 
   /* Coherency check with thermal model */

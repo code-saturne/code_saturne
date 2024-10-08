@@ -157,7 +157,7 @@ if (second.lt.0d0.or.quant.gt.366) then
   call csexit (1)
 endif
 
-! --> if the date and time are not completed in usppmo / cs_user_model
+! --> if the date and time are not completed in cs_user_model
 !     the date and time of the first meteo profile are taken as the
 !     starting time of the simulation
 

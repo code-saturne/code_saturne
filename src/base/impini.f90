@@ -29,7 +29,7 @@ subroutine impini () &
 ! Purpose:
 !  ---------
 
-! Print computation parameters after user changes in cs_user_parameters.f90
+! Print computation parameters after user changes in cs_user_parameters.cpp
 
 !-------------------------------------------------------------------------------
 ! Arguments

@@ -1051,7 +1051,7 @@ cs_user_parameters(cs_domain_t *domain)
                               viscosity/diffusivity, and specific heat
 
      When a specific physics module is active
-       (coal, combustion, electric arcs, compressible: see usppmo)
+       (coal, combustion, electric arcs, compressible: see cs_user_model)
        we MUST NOT set variables 'irovar', 'ivivar', and 'icp' here, as
        they are defined automatically.
      Nonetheless, for the compressible case, ivivar may be modified
@@ -1421,7 +1421,7 @@ cs_user_parameters(cs_domain_t *domain)
    * This is the purpose of the test on iscavr(jj) in the example below.
    *
    * For non-user scalars relative to specific physics (coal, combustion,
-   * electric arcs: see usppmo) implicitly defined according to the
+   * electric arcs: see cs_user_model) implicitly defined according to the
    * model, the information is automatically set elsewhere: we
    * do not set min or max values here. */
 
@@ -1923,6 +1923,7 @@ cs_user_finalize_setup(cs_domain_t     *domain)
 
   /*! [param_var_rij_clipping] */
 
+  /*! [atmo_ad_rad_def] */
   /* Example: define 1-D radiative transfer mesh for
    * the atmospheric module */
   /*-----------------------------------------------------------------*/
@@ -2018,6 +2019,7 @@ cs_user_finalize_setup(cs_domain_t     *domain)
     at_opt->rad_1d_xy[2 * at_opt->rad_1d_nvert + i] = 1.; /* kmin in case of
                                                              non-flat terrain */
   }
+  /*! [atmo_ad_rad_def] */
 }
 
 /*----------------------------------------------------------------------------*/

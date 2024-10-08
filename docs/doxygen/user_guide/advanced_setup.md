@@ -599,7 +599,7 @@ In the framework of the gas combustion modeling, users may impose
 their own enthalpy-temperature tabulation (conversion law). The `use_janaf`
 indicator must be set to 0 in this case (the default value being 1) and the name
 of the tabulation file defined through the **ficfpp** variable (see
-[Specific physical model activation (usppmo) examples](@ref cs_f_user_parameters_h_usppmo)).
+[Specific physical model activation (cs_user_model) examples](@ref cs_user_parameters_cpp)).
 For more details, the user may refer to the following note
 (thermochemical files).
 
@@ -1509,7 +1509,7 @@ interpolation is not used (for example: temperature, turbulent kinetic energy).
 This file must follow the rules indicated previously.
 
 The following files should be put in the SRC directory:
-  - The user source file cs_user_parameters.f90. In this file, set
+  - The user source file cs_user_parameters.cpp. In this file, set
 the cressman_flag of each variable, for which the Cressman
 interpolation should be enabled, to *true*.
 
@@ -1521,9 +1521,9 @@ sufficient to set up the calculation. We provide some examples of user file for
 atmospheric application:
  - cs_user_source_terms.c: to add a source term in the prognostic equations for forest
    canopy modelling, wind turbine wake modelling... [examples](@ref user_source_terms)
- - cs_user_parameters.f90: to activate the Cressman interpolation.
+ - cs_user_parameters.cpp: to activate the Cressman interpolation.
    For example, it is used to impose inhomogeneous boundary conditions.
-   [examples](@ref cs_f_user_parameters_h_usipsu)
+   [examples](@ref cs_user_parameters)
  - cs_user_extra_operations.c to generate vertical profiles for post processing.
    [examples](@ref cs_user_extra_operations_examples_mean_profiles)
  - cs_user_boundary_conditions.f90: showq how to set up the boundary conditions and to set

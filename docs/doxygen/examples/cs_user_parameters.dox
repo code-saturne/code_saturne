@@ -340,7 +340,7 @@
   Input-output settings for fields can be applied as soon as a field is
   defined. As some fields may be defined automatically based on other
   field's options, it is recommended to define the settings in
-  \ref cs_user_finalize_setup (or \ref usipes for Fortran), where all fields
+  \ref cs_user_finalize_setup, where all fields
   should have been defined.
 
   \subsection cs_user_parameters_h_example_base Basic options

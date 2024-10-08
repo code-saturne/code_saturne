@@ -25,7 +25,7 @@
 /*-----------------------------------------------------------------------------*/
 
 /*!
-  \page cs_user_extra_operations_examples cs_user_extra_operations.f90
+  \page cs_user_extra_operations_examples cs_user_extra_operations.cpp
 
 
   \section cs_user_extra_operations_examples_intro Introduction
@@ -123,7 +123,7 @@
 
   Here is the corresponding code:
 
-  \snippet cs_user_extra_operations-balance_by_zone.c example_1
+  \snippet cs_user_extra_operations-balance_by_zone.cpp example_1
 
   \subsection cs_user_extra_operations_examples_example_2 Example 2
 
@@ -137,7 +137,7 @@
 
   Here is the corresponding code:
 
-  \snippet cs_user_extra_operations-balance_by_zone.c example_2
+  \snippet cs_user_extra_operations-balance_by_zone.cpp example_2
 
   \subsection cs_user_extra_operations_examples_example_3 Scalar balance through a surface
 
@@ -171,7 +171,7 @@
 
   The following exemple shows how to access for example the mass flow
   components of the pressure drop computation:
-  \snippet cs_user_extra_operations-balance_by_zone.c example_6
+  \snippet cs_user_extra_operations-balance_by_zone.cpp example_6
 
 */
 // __________________________________________________________________________________
@@ -187,23 +187,23 @@
 
   Define local variables
 
-  \snippet cs_user_extra_operations-scalar_balance.c local_variables
+  \snippet cs_user_extra_operations-scalar_balance.cpp local_variables
 
   Get the physical fields
 
-  \snippet cs_user_extra_operations-scalar_balance.c local_variables
+  \snippet cs_user_extra_operations-scalar_balance.cpp local_variables
 
   Initialization step
 
-  \snippet cs_user_extra_operations-scalar_balance.c init
+  \snippet cs_user_extra_operations-scalar_balance.cpp init
 
   Computation step
 
-  \snippet cs_user_extra_operations-scalar_balance.c computation
+  \snippet cs_user_extra_operations-scalar_balance.cpp computation
 
   Write the balance at time step n
 
-  \snippet cs_user_extra_operations-scalar_balance.c computation
+  \snippet cs_user_extra_operations-scalar_balance.cpp computation
 
 */
 // __________________________________________________________________________________
@@ -223,7 +223,7 @@
 
   Here is the corresponding code:
 
-  \snippet cs_user_extra_operations-force_temperature.c example_1
+  \snippet cs_user_extra_operations-force_temperature.cpp example_1
 
 */
 // __________________________________________________________________________________
@@ -241,32 +241,32 @@
   the number of standard cells. The array that will host the velocity gradient values is finally
   declared, as a 3x3 real matrix array per cell.
 
-  \snippet cs_user_extra_operations-vorticity_field.c vorticity_d
+  \snippet cs_user_extra_operations-vorticity_field.cpp vorticity_d
 
   The array hosting the gradient values has to be allocated consistantly with his type.
 
-  \snippet cs_user_extra_operations-vorticity_field.c vorticity_a
+  \snippet cs_user_extra_operations-vorticity_field.cpp vorticity_a
 
   Then the gradient of the velocity is computed. This is done as follows, by calling the appropriate
   field operator:
 
-  \snippet cs_user_extra_operations-vorticity_field.c vorticity_g
+  \snippet cs_user_extra_operations-vorticity_field.cpp vorticity_g
 
   The vorticity field has to be retrieved as follows below. Note that if it doesn't exist the pointer
   will be set to NULL (this is the behavior of the "_try" variant of the field accesser).
   The vorticity field can have been added through the GUI (menu postprocessing > additional user
   arrays) or in \ref cs_user_model.
 
-  \snippet cs_user_extra_operations-vorticity_field.c vorticity_f
+  \snippet cs_user_extra_operations-vorticity_field.cpp vorticity_f
 
   Finally the vorticity values are computed in each standard cell if the field "vorticity" has been
   well retrieved previously only. Notice the way the gradient values are accessed.
 
-  \snippet cs_user_extra_operations-vorticity_field.c vorticity_cv
+  \snippet cs_user_extra_operations-vorticity_field.cpp vorticity_cv
 
   The array holding the gradient values has to be deallocated at the end.
 
-  \snippet cs_user_extra_operations-vorticity_field.c vorticity_da
+  \snippet cs_user_extra_operations-vorticity_field.cpp vorticity_da
 
 */
 // __________________________________________________________________________________
@@ -280,11 +280,11 @@
 
   Example 1: compute total forces on a boundary zone (subset of boundary faces).
 
-  \snippet cs_user_extra_operations-boundary_forces.c boundary_forces_ex1
+  \snippet cs_user_extra_operations-boundary_forces.cpp boundary_forces_ex1
 
   Example 2: compute pressure forces on a boundary zone (subset of boundary faces).
 
-  \snippet cs_user_extra_operations-boundary_forces.c boundary_forces_ex2
+  \snippet cs_user_extra_operations-boundary_forces.cpp boundary_forces_ex2
 
 */
 // __________________________________________________________________________________
@@ -301,45 +301,45 @@
 
   Sum of an integer counter 'ii', here the number of cells.
 
-  \snippet cs_user_extra_operations-parallel_operations.c example_1
+  \snippet cs_user_extra_operations-parallel_operations.cpp example_1
 
   \subsection cs_user_extra_operations_examples_example_2_po Example 2
 
   Maximum of an integer counter 'ii', here the number of cells.
 
-  \snippet cs_user_extra_operations-parallel_operations.c example_2
+  \snippet cs_user_extra_operations-parallel_operations.cpp example_2
 
   \subsection cs_user_extra_operations_examples_example_3_po Example 3
 
   Sum of a real 'rrr', here the volume.
 
-  \snippet cs_user_extra_operations-parallel_operations.c example_3
+  \snippet cs_user_extra_operations-parallel_operations.cpp example_3
 
   \subsection cs_user_extra_operations_examples_example_4_po Example 4
 
   Minimum of a real 'rrr', here the volume.
 
-  \snippet cs_user_extra_operations-parallel_operations.c example_4
+  \snippet cs_user_extra_operations-parallel_operations.cpp example_4
 
   \subsection cs_user_extra_operations_examples_example_5_po Example 5
 
   Maximum of a real 'rrr', here the volume.
 
-  \snippet cs_user_extra_operations-parallel_operations.c example_5
+  \snippet cs_user_extra_operations-parallel_operations.cpp example_5
 
   \subsection cs_user_extra_operations_examples_example_6_po Example 6
 
   Maximum of a real and associated real values;
   here the volume and its location (3 coordinates).
 
-  \snippet cs_user_extra_operations-parallel_operations.c example_6
+  \snippet cs_user_extra_operations-parallel_operations.cpp example_6
 
   \subsection cs_user_extra_operations_examples_example_7_po Example 7
 
   Minimum of a real and associated real values;
   here the volume and its location (3 coordinates).
 
-  \snippet cs_user_extra_operations-parallel_operations.c example_7
+  \snippet cs_user_extra_operations-parallel_operations.cpp example_7
 
   \subsection cs_user_extra_operations_examples_example_8_po Example 8
 
@@ -351,14 +351,14 @@
   as on a parallel boundary, this is always true for one domain
   and false for the other.
 
-  \snippet cs_user_extra_operations-parallel_operations.c example_8
+  \snippet cs_user_extra_operations-parallel_operations.cpp example_8
 
   \subsection cs_user_extra_operations_examples_example_9_po Example 9
 
   Maxima from an array of integers;
   here, the number of cells, faces, and boundary faces.
 
-  \snippet cs_user_extra_operations-parallel_operations.c example_9
+  \snippet cs_user_extra_operations-parallel_operations.cpp example_9
 
 
   \subsection cs_user_extra_operations_examples_example_10_po Example 10
@@ -366,28 +366,28 @@
   Minima from an array of integers;
   here, the number of cells, faces, and boundary faces.
 
-  \snippet cs_user_extra_operations-parallel_operations.c example_10
+  \snippet cs_user_extra_operations-parallel_operations.cpp example_10
 
   \subsection cs_user_extra_operations_examples_example_11_po Example 11
 
   Sum of an array of reals;
   here, the 3 velocity components (so as to compute a mean for example).
 
-  \snippet cs_user_extra_operations-parallel_operations.c example_11
+  \snippet cs_user_extra_operations-parallel_operations.cpp example_11
 
   \subsection cs_user_extra_operations_examples_example_12_po Example 12
 
   Maximum of an array of reals;
   here, the 3 velocity components.
 
-  \snippet cs_user_extra_operations-parallel_operations.c example_12
+  \snippet cs_user_extra_operations-parallel_operations.cpp example_12
 
   \subsection cs_user_extra_operations_examples_example_13_po Example 13
 
   Maximum of an array of reals;
   here, the 3 velocity components.
 
-  \snippet cs_user_extra_operations-parallel_operations.c example_13
+  \snippet cs_user_extra_operations-parallel_operations.cpp example_13
 
   \subsection cs_user_extra_operations_examples_example_14_po Example 14
 
@@ -395,14 +395,14 @@
   in this example, we use the number of cells, interior faces, and boundary
   faces from process rank 0 (root_rank).
 
-  \snippet cs_user_extra_operations-parallel_operations.c example_14
+  \snippet cs_user_extra_operations-parallel_operations.cpp example_14
 
   \subsection cs_user_extra_operations_examples_example_15_po Example 15
 
   Broadcast an array of local reals to other ranks;
   in this example, we use 3 velocity values from process rank 0 (root_rank).
 
-  \snippet cs_user_extra_operations-parallel_operations.c example_15
+  \snippet cs_user_extra_operations-parallel_operations.cpp example_15
 
 */
 // __________________________________________________________________________________
@@ -423,7 +423,7 @@
   \sqrt{\int_\Omega \left| \der{\varia}{t} \right|^2 \dd \Omega / \int_\Omega \left| \varia \right|^2 \dd \Omega}
   \f]
 
-  \snippet cs_user_extra_operations-stopping_criterion.c extra_stopping_criterion
+  \snippet cs_user_extra_operations-stopping_criterion.cpp extra_stopping_criterion
 
 */
 // __________________________________________________________________________________
@@ -436,7 +436,7 @@
   This is an example of \ref cs_user_extra_operations allowing to add operations on results produced by CDO schemes. It allows to define advanced
   postprocessing.
 
-  \snippet cs_user_extra_operations-verif_cdo_diffusion.c extra_verif_cdo_diff
+  \snippet cs_user_extra_operations-verif_cdo_diffusion.cpp extra_verif_cdo_diff
 
 */
 
@@ -448,15 +448,15 @@
 
   \section cs_user_extra_operations_examples_mean_profiles Example for initialization of mean profile
 
-  \snippet cs_user_extra_operations-mean_profiles.c Initialize
+  \snippet cs_user_extra_operations-mean_profiles.cpp Initialize
 
   \section cs_user_extra_operations_examples_mean_profiles_generate  Mean profile calculation and results dumping
 
-  \snippet cs_user_extra_operations-mean_profiles.c generate
+  \snippet cs_user_extra_operations-mean_profiles.cpp generate
 
   \section cs_user_extra_operations_examples_mean_profiles_finalize Free profiles
 
-  \snippet cs_user_extra_operations-mean_profiles.c finalize
+  \snippet cs_user_extra_operations-mean_profiles.cpp finalize
 
 */
 // __________________________________________________________________________________
@@ -466,24 +466,24 @@
 
   \section cs_user_extra_operations_examples_medcoupling_slice_new Examples for the definition of a new slices
 
-  \snippet cs_user_extra_operations-medcoupling_slice.c medcpl_slice_init_1
+  \snippet cs_user_extra_operations-medcoupling_slice.cpp medcpl_slice_init_1
 
-  \snippet cs_user_extra_operations-medcoupling_slice.c medcpl_slice_init_2
+  \snippet cs_user_extra_operations-medcoupling_slice.cpp medcpl_slice_init_2
 
-  \snippet cs_user_extra_operations-medcoupling_slice.c medcpl_slice_init_3
+  \snippet cs_user_extra_operations-medcoupling_slice.cpp medcpl_slice_init_3
 
-  \snippet cs_user_extra_operations-medcoupling_slice.c medcpl_slice_activate_postprocessing
+  \snippet cs_user_extra_operations-medcoupling_slice.cpp medcpl_slice_activate_postprocessing
 
   \section cs_user_extra_operations_examples_medcoupling_slice_integral Compute the integral of a scalar
 
-  \snippet cs_user_extra_operations-medcoupling_slice.c medcpl_slice_integral
+  \snippet cs_user_extra_operations-medcoupling_slice.cpp medcpl_slice_integral
 
   \section cs_user_extra_operations_examples_medcoupling_slice_mean Compute the mean value of a scalar
 
-  \snippet cs_user_extra_operations-medcoupling_slice.c medcpl_slice_mean
+  \snippet cs_user_extra_operations-medcoupling_slice.cpp medcpl_slice_mean
 
   \section cs_user_extra_operations_examples_medcoupling_slice_Tbulk Example for the computation Tbulk over a given slice
 
-  \snippet cs_user_extra_operations-medcoupling_slice.c medcpl_slice_integral_weighted
+  \snippet cs_user_extra_operations-medcoupling_slice.cpp medcpl_slice_integral_weighted
 */
 

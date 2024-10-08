@@ -251,7 +251,7 @@ endif
 '@                                                            ',/,&
 '@    Wrong xlat and xlon coordinates.                        ',/,&
 '@                                                            ',/,&
-'@    See cs_user_parameters.f90                              ',/,&
+'@    Check your data and parameters (GUI and user functions) ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
@@ -266,7 +266,7 @@ endif
 '@                                                            ',/,&
 '@    Wrong coordinates xmet, ymet for the meteo profile.     ',/,&
 '@                                                            ',/,&
-'@    See cs_user_parameters.f90                              ',/,&
+'@    Check your data and parameters (GUI and user functions) ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
@@ -282,7 +282,7 @@ endif
 '@    Wrong xchem, ychem coordinates for the concentration    ',/,&
 '@    profiles (chemistry model).                             ',/,&
 '@                                                            ',/,&
-'@    See cs_user_parameters.f90                              ',/,&
+'@    Check your data and parameters (GUI and user functions) ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)

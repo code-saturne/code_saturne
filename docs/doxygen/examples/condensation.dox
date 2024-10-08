@@ -37,16 +37,16 @@
 
   \section condens_h_metal_structures Source terms for condensation on internal metal structures
 
-  This model can be enabled in the subroutine \ref usppmo in the file
-  \ref cs_user_parameters.f90 as follows:
-  \code{.f90}
-  if ( ippmod(igmix).ge.0 ) then
+  This model can be enabled in the \ref cs_user_model function in the file
+  \ref cs_user_parameters.cpp as follows:
+  \code{.cpp}
+  if (cs_glob_physical_model_flag[CS_GAS_MIX] > -1) {
     ! Specific condensation modelling
     !      if = -1 module not activated
     !      if =  0 condensation source terms with metal
     !                               structures activate
-    icondv = -1
-  endif
+    icondv = -1;
+  }
   \endcode
 
   The setting of the condensation source terms is then done in the subroutine

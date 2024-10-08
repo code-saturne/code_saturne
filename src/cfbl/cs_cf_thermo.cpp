@@ -74,7 +74,7 @@ BEGIN_C_DECLS
   \file cs_cf_thermo.c
         Define thermodynamic laws for the compressible flow module.
         Only the perfect gas law is available for now. The molar mass has to be
-        provided either in the GUI or in cs_user_parameters.f90.
+        provided either in the GUI or in cs_user_parameters.cpp.
 */
 
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */

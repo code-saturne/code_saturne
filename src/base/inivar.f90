@@ -497,13 +497,12 @@ endif
 '@                                                            ',/,&
 '@    Two and only two independant variables among            ',/,&
 '@    P, rho, T and E (except T and E) should be imposed at   ',/,&
-'@    the initialisation in the GUI or in the user subroutine ',/,&
-'@    of initialization (cs_user_initialization.f90) or       ',/,&
-'@    in both.                                                ',/,&
+'@    the initialisation in the GUI or in the                 ',/,&
+'@    cs_user_initialization function.                        ',/,&
 '@                                                            ',/,&
-'@    Check if iccfth has not been partially set through the  ',/,&
+'@    Check if iccfth has been partially set through the      ',/,&
 '@    GUI in a non consistant manner with                     ',/,&
-'@    cs_user_initialization.f90.                             ',/,&
+'@    cs_user_initialization.                                 ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@'                                                            ,/)
@@ -535,7 +534,7 @@ endif
 '@  Verify the initialization and the restart file.',           /,&
 '@  In the case where the values read in the restart file',     /,&
 '@    are incorrect, they may be modified with',                /,&
-'@    cs_user_initialization.f90 or with the interface.',       /,&
+'@    cs_user_initialization or with the GUI.',                 /,&
 '@  Verify the clipping values.',                               /,&
 '@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
@@ -558,7 +557,7 @@ endif
 '@  Verify the initialization and the restart file.',           /,&
 '@  In the case where the values read in the restart file',     /,&
 '@    are incorrect, they may be modified with',                /,&
-'@    cs_user_initialization.f90 or with the interface.',       /,&
+'@    cs_user_initialization or with the GUI.',                 /,&
 '@  Verify the variance definition.',                           /,&
 '@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
@@ -586,7 +585,7 @@ endif
 '@  Verify the initialization and the restart file.',           /,&
 '@  In the case where the values read in the restart file',     /,&
 '@    are incorrect, they may be modified with',                /,&
-'@    cs_user_initialization.f90 or with the interface.',       /,&
+'@    cs_user_initialization or with the GUI.',                 /,&
 '@  Verify the variance definition and the clipping mode.',     /,&
 '@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
@@ -615,7 +614,7 @@ endif
 '@  Verify the initialization and the restart file.',           /,&
 '@  In the case where the values read in the restart file',     /,&
 '@    are incorrect, they may be modified with',                /,&
-'@    cs_user_initialization.f90 or with the interface.',       /,&
+'@    cs_user_initialization or with the GUI.',                 /,&
 '@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@',                                                            /)

@@ -25,7 +25,7 @@
 /*-----------------------------------------------------------------------------*/
 
 /*!
-  \page user_initialization cs_user_initialization.f90
+  \page user_initialization cs_user_initialization.cpp
 
   \section user_initialization_intro Introduction
 
@@ -85,7 +85,7 @@
 
   ONLY done if there is no restart computation.
 
-  \snippet cs_user_initialization-base.c init
+  \snippet cs_user_initialization-base.cpp init
 
 */
 
@@ -101,7 +101,7 @@
   The following local variables need to be defined for the examples
   in this section:
 
-  \snippet cs_user_initialization-atmospheric.f90 loc_var_dec
+  \snippet cs_user_initialization-atmospheric.cpp loc_var_dec
 
   \subsection user_initialization_atmo_alloc Allocation
 
@@ -112,7 +112,7 @@
 
   The following initialization block needs to be added for the following examples:
 
-  \snippet cs_user_initialization-atmospheric.f90 init
+  \snippet cs_user_initialization-atmospheric.cpp init
 
   \subsection user_initialization_atmo_finalize Finalization
 
@@ -130,7 +130,7 @@
   below. When adapting it, it is recommended to remove all parts not needed
   or than may be handled through the GUI.
 
-  \snippet cs_user_initialization-compressible.c init_compressible
+  \snippet cs_user_initialization-compressible.cpp init_compressible
 */
 
 /*-----------------------------------------------------------------------------*/
@@ -144,7 +144,7 @@
   The following local variables need to be defined for the examples
   in this section:
 
-  \snippet cs_user_initialization-electric_arcs.c loc_var_dec
+  \snippet cs_user_initialization-electric_arcs.cpp loc_var_dec
 
   \subsection user_initialization_ea_alloc Allocation
 
@@ -155,7 +155,7 @@
 
   Classical initialization:
 
-  \snippet cs_user_initialization-electric_arcs.c init2
+  \snippet cs_user_initialization-electric_arcs.cpp init2
 */
 
 /*-----------------------------------------------------------------------------*/
@@ -168,7 +168,7 @@
 
   The following initialization block needs to be added for the following examples:
 
-  \snippet cs_user_initialization-gas_3ptchem.c init
+  \snippet cs_user_initialization-gas_3ptchem.cpp init
 
 */
 
@@ -187,7 +187,7 @@
   The following local variables need to be defined for the examples
   in this section:
 
-  \snippet cs_user_initialization-pulverized_coal.c loc_var_dec
+  \snippet cs_user_initialization-pulverized_coal.cpp loc_var_dec
 
   \subsection user_initialization_coal_s_init Initialization
 
@@ -195,7 +195,7 @@
   values (variables not set here keep their GUI-defined or
   default values):
 
-  \snippet cs_user_initialization-pulverized_coal.c init
+  \snippet cs_user_initialization-pulverized_coal.cpp init
 */
 
 /*-----------------------------------------------------------------------------*/
@@ -211,10 +211,10 @@
 
   \subsection user_initialization_time_s_init Initialization
 
-  The following block can be added to \ref cs_user_initialization.c
+  The following block can be added to \ref cs_user_initialization.cpp
   to do this:
 
-  \snippet cs_user_initialization-time_step.c init
+  \snippet cs_user_initialization-time_step.cpp init
 */
 
 /*-----------------------------------------------------------------------------*/
@@ -265,7 +265,7 @@
   INTERP_KERNEL::Triangulation, which allows for better conservation
   of quantities, but is slower.
 
-  \snippet cs_user_initialization-medcoupling_remapper_3d.c  remapper_init
+  \snippet cs_user_initialization-medcoupling_remapper_3d.cpp  remapper_init
 
   Note that we do not need to specify the field dimensions here,
   but they should match, so mapping a vector field to a scalar

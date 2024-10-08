@@ -31,7 +31,8 @@
   \section intro_poro Introduction
 
   This function computes the porosity (volume factor \f$ \epsilon \f$
-  when porosity module is activated (iporos = 1 in cs_user_parameters.f90).
+  when porosity module is activated (cs_glob_porous_model = 1 in
+  the cs_user_parameters function).
 
   \section cs_user_poro_examples Porosity setting examples
   Here is the list of examples:

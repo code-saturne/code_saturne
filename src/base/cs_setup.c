@@ -2637,7 +2637,7 @@ _init_user
 
   /* Specific physics modules
    * Note: part of what is inside ppini1 could be moved here
-   * so that usipsu / cs_user_parameters can be used by the user
+   * so that cs_user_parameters can be used by the user
    * to modify default settings */
 
   /* Atmospheric flows */
