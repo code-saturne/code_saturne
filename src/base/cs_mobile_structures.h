@@ -52,9 +52,6 @@ BEGIN_C_DECLS
  * Global variables
  *============================================================================*/
 
-/* Number of code_aster couplings */
-extern int cs_glob_ast_coupling_n_couplings;
-
 /*! Maximum number of implicitation iterations of the structure displacement */
 extern int cs_glob_mobile_structures_i_max;
 
@@ -125,6 +122,19 @@ cs_mobile_structures_get_n_structures(void);
 
 void
 cs_mobile_structures_add_n_structures(int  n_structures);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Add external mobile structures.
+ *
+ * This function may be called multiple time to change the number of
+ * mobile structures.
+ *
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_mobile_structures_add_external_structures(void);
 
 /*----------------------------------------------------------------------------*/
 /*!

@@ -125,7 +125,6 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 extern cs_real_t *cs_glob_ckupdc;
-extern int cs_glob_ast_coupling_n_couplings;
 
 /*============================================================================
  * Prototypes for Fortran functions and variables.
@@ -1007,7 +1006,7 @@ cs_solve_all(int  itrale)
 
   cs_local_time_step_compute(itrale);
   const int nalinf = cs_glob_ale_n_ini_f;
-  const int nbaste = cs_glob_ast_coupling_n_couplings;
+  const int nbaste = cs_ast_coupling_n_couplings();
   if (nbaste > 0 && itrale > nalinf)
     cs_ast_coupling_exchange_time_step(CS_F_(dt)->val);
 

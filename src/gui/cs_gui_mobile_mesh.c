@@ -810,8 +810,10 @@ cs_gui_mobile_mesh_structures_add(void)
   if (n_i_struct > 0)
     cs_mobile_structures_add_n_structures(n_i_struct);
 
-  if  (n_e_struct > 0)
+  if (n_e_struct > 0) {
     cs_ast_coupling_add();
+    cs_mobile_structures_add_external_structures();
+  }
 }
 
 /*-----------------------------------------------------------------------------
@@ -988,11 +990,11 @@ cs_gui_mobile_mesh_bc_structures(int  *idfstr)
       const cs_lnum_t *faces_list = z->elt_ids;
 
       /* Set idfstr to positive index starting at 1 */
+      i_struct++;
       for (cs_lnum_t ifac = 0; ifac < n_faces; ifac++) {
         cs_lnum_t ifbr = faces_list[ifac];
-        idfstr[ifbr] = i_struct + 1;
+        idfstr[ifbr]   = i_struct;
       }
-      i_struct++;
     }
     else if (nature == ale_boundary_nature_external_coupling) {
 
@@ -1009,11 +1011,11 @@ cs_gui_mobile_mesh_bc_structures(int  *idfstr)
                                                 "external_coupling");
 
       /* Set idfstr with negative value starting from -1 */
+      e_struct--;
       for (cs_lnum_t ifac = 0; ifac < n_faces; ifac++) {
         cs_lnum_t ifbr = faces_list[ifac];
-        idfstr[ifbr]  = -e_struct - 1;
+        idfstr[ifbr]   = e_struct;
       }
-      e_struct++;
     }
 
   }

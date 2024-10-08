@@ -875,7 +875,6 @@ cs_boundary_conditions_set_coeffs(int        nvar,
   const cs_lnum_t n_vertices  = mesh->n_vertices;
   const cs_lnum_t n_b_faces   = mesh->n_b_faces;
 
-  const cs_real_3_t *vtx_coord = (const cs_real_3_t *)mesh->vtx_coord;
   const cs_lnum_t *restrict b_face_cells
     = (const cs_lnum_t *)mesh->b_face_cells;
   const cs_real_3_t *b_face_normal  = (const cs_real_3_t *)fvq->b_face_normal;
@@ -964,6 +963,7 @@ cs_boundary_conditions_set_coeffs(int        nvar,
 
     cs_real_3_t *disale = (cs_real_3_t *)(f_displ->val);
     cs_real_3_t *xyzno0 = (cs_real_3_t *)cs_field_by_name("vtx_coord0")->val;
+    const cs_real_3_t *vtx_coord = (const cs_real_3_t *)mesh->vtx_coord;
 
     cs_array_lnum_fill_zero(n_vertices, impale);
 
