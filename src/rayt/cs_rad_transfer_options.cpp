@@ -128,15 +128,6 @@ cs_rad_transfer_options(void)
   rt_params->restart
     = (cs_restart_present()) ? 1 : 0;
 
-  /* ->  Radiation solver call frequency */
-
-  cs_time_control_init_by_time_step(&(rt_params->time_control),
-                                    - 1,     /* nt_start */
-                                    -1,      /* nt_end */
-                                    1,       /* interval */
-                                    true,    /* at start */
-                                    false);  /* at end */
-
   /* ->  Explicit radiative source term computation mode
    *            = 0 => Semi-analytic (mandatory if transparent)
    *            = 1 => Conservative
