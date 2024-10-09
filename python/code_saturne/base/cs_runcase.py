@@ -208,7 +208,7 @@ class runcase(object):
         run_cmd = enquote_arg(exec_path) + ' run'
 
         if self.mem_log:
-            run_cmd += ' --mem-log'
+            run_cmd += ' --mem-log={}'.format(str(self.mem_log))
 
         self.cmd_name = self.package.name
         self.run_cmd_line_id = len(self.lines)
