@@ -56,7 +56,7 @@ all-local: clean-local
 
 install-exec-local:
 	$(PYTHON) ${abs_top_srcdir}/python/setup.py install \
-		--prefix $(DESTDIR)$(prefix) \
+		--install-lib $(DESTDIR)/$(pythondir) \
 		--single-version-externally-managed \
 		--record $(DESTDIR)/$(pkgpythondir)/install_files.txt \
 		--version $(VERSION) \
