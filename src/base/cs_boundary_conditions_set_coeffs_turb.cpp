@@ -3031,11 +3031,11 @@ cs_boundary_conditions_set_coeffs_turb(int        isvhb,
 
       cs_real_t fcoefa[6], fcoefb[6], fcofad[6], fcofbd[6];
       cs_real_t fcofaf[6], fcofbf[6];
-      for (int isou = 0; isou < 6; isou++) {
-        fcoefa[isou] = 0.;
-        fcoefb[isou] = 0.;
-        fcofad[isou] = 0.;
-        fcofbd[isou] = 0.;
+      for (int ij = 0; ij < 6; ij++) {
+        fcoefa[ij] = 0.;
+        fcoefb[ij] = 0.;
+        fcofad[ij] = 0.;
+        fcofbd[ij] = 0.;
       }
 
       /* blending factor so that the component R(n,tau) have only
@@ -3043,10 +3043,10 @@ cs_boundary_conditions_set_coeffs_turb(int        isvhb,
       const cs_real_t bldr12 = (icodcl_vel[f_id] == 5) ?
                                 visctc / (visclc + visctc) : 1.0;
 
-      for (int isou = 0; isou < 6; isou++) {
+      for (int ij = 0; ij < 6; ij++) {
 
-        cs_lnum_t jj = _iv2t[isou];
-        cs_lnum_t kk = _jv2t[isou];
+        cs_lnum_t i = _iv2t[ij];
+        cs_lnum_t j = _jv2t[ij];
 
         /* LRR and the Standard SGG or EB-RSM + wall functions */
         if (      ((iuntur == 1)
@@ -3059,56 +3059,56 @@ cs_boundary_conditions_set_coeffs_turb(int        isvhb,
 
           if (cs_glob_turb_rans_model->irijco == 1) {
 
-            coefa_rij[f_id][isou] = - (  eloglo[0][jj]*eloglo[1][kk]
-                                       + eloglo[1][jj]*eloglo[0][kk])
+            coefa_rij[f_id][ij] = - (  eloglo[0][i]*eloglo[1][j]
+                                     + eloglo[1][i]*eloglo[0][j])
                                   * alpha_rnn * sqrt(rnnb * rttb) * cfnnk;
 
-            cofaf_rij[f_id][isou] = - hint * coefa_rij[f_id][isou];
-            cofad_rij[f_id][isou] = 0.0;
+            cofaf_rij[f_id][ij] = - hint * coefa_rij[f_id][ij];
+            cofad_rij[f_id][ij] = 0.0;
 
-            for (int ii = 0; ii < 6; ii++) {
-              coefb_rij[f_id][isou][ii] = alpha[ii][isou];
+            for (int kl = 0; kl < 6; kl++) {
+              coefb_rij[f_id][ij][kl] = alpha[kl][ij];
 
-              if (ii == isou)
-                cofbf_rij[f_id][isou][ii]
-                  = hint * (1.0 - coefb_rij[f_id][isou][ii]);
+              if (kl == ij)
+                cofbf_rij[f_id][ij][kl]
+                  = hint * (1.0 - coefb_rij[f_id][ij][kl]);
               else
-                cofbf_rij[f_id][isou][ii]
-                  = - hint * coefb_rij[f_id][isou][ii];
+                cofbf_rij[f_id][ij][kl]
+                  = - hint * coefb_rij[f_id][ij][kl];
 
-              cofbd_rij[f_id][isou][ii] = coefb_rij[f_id][isou][ii];
+              cofbd_rij[f_id][ij][kl] = coefb_rij[f_id][ij][kl];
             }
           }
           else if ((cs_glob_turb_rans_model->iclptr == 1)) {
 
-            for (int ii = 0; ii < 6; ii++) {
-              if (ii != isou)
-                fcoefa[isou] += alpha[ii][isou] * rijipb[f_id][ii];
+            for (int kl = 0; kl < 6; kl++) {
+              if (kl != ij)
+                fcoefa[ij] += alpha[kl][ij] * rijipb[f_id][kl];
             }
-            fcoefb[isou] = alpha[isou][isou];
+            fcoefb[ij] = alpha[ij][ij];
 
           }
           else {
-            for (int ii = 0; ii < 6; ii++)
-              fcoefa[isou] = fcoefa[isou] + alpha[ii][isou] * rijipb[f_id][ii];
+            for (int kl = 0; kl < 6; kl++)
+              fcoefa[ij] = fcoefa[ij] + alpha[kl][ij] * rijipb[f_id][kl];
 
-            fcoefb[isou] = 0.0;
+            fcoefb[ij] = 0.0;
           }
 
           /* Boundary conditions for the momentum equation */
-          fcofad[isou] = fcoefa[isou];
-          fcofbd[isou] = fcoefb[isou];
+          fcofad[ij] = fcoefa[ij];
+          fcofbd[ij] = fcoefb[ij];
 
-          /*fcoefa[isou] =   fcoefa[isou] - (eloglo[jj][0]*eloglo[kk][1]
-            + eloglo[jj][1]*eloglo[kk][0]) * bldr12*uet*uk*cfnnk;*/
+          /*fcoefa[ij] =   fcoefa[ij] - (eloglo[i][0]*eloglo[j][1]
+            + eloglo[i][1]*eloglo[j][0]) * bldr12*uet*uk*cfnnk;*/
 
-          fcoefa[isou] =   fcoefa[isou] - (eloglo[0][jj]*eloglo[1][kk]
-            + eloglo[1][jj]*eloglo[0][kk]) * bldr12*uet*uk*cfnnk;
+          fcoefa[ij] =   fcoefa[ij] - (eloglo[0][i]*eloglo[1][j]
+            + eloglo[1][i]*eloglo[0][j]) * bldr12*uet*uk*cfnnk;
 
           /* Translate into Diffusive flux BCs for rough wall */
           if (icodcl_vel[f_id] == 6) {
-            fcofaf[isou] = - hint * fcoefa[isou];
-            fcofbf[isou] =   hint * (1.0 - fcoefb[isou]);
+            fcofaf[ij] = - hint * fcoefa[ij];
+            fcofbf[ij] =   hint * (1.0 - fcoefb[ij]);
           }
 
         }
@@ -3117,49 +3117,49 @@ cs_boundary_conditions_set_coeffs_turb(int        isvhb,
            (only for smooth wall) */
         else {
           if (cs_glob_turb_rans_model->irijco == 1) {
-            coefa_rij[f_id][isou] = 0.;
-            cofaf_rij[f_id][isou] = 0.;
-            cofad_rij[f_id][isou] = 0.;
-            for (int ii = 0; ii < 6; ii++) {
-              coefb_rij[f_id][isou][ii]  = 0.;
+            coefa_rij[f_id][ij] = 0.;
+            cofaf_rij[f_id][ij] = 0.;
+            cofad_rij[f_id][ij] = 0.;
+            for (int kl = 0; kl < 6; kl++) {
+              coefb_rij[f_id][ij][kl]  = 0.;
 
-              if (ii == isou)
-                cofbf_rij[f_id][isou][ii] = hint;
+              if (kl == ij)
+                cofbf_rij[f_id][ij][kl] = hint;
               else
-                cofbf_rij[f_id][isou][ii] = 0.;
+                cofbf_rij[f_id][ij][kl] = 0.;
 
-              cofbd_rij[f_id][isou][ii] = 0.;
+              cofbd_rij[f_id][ij][kl] = 0.;
             }
           }
           else {
-            fcoefa[isou] = 0.;
-            fcofad[isou] = 0.;
-            fcoefb[isou] = 0.;
-            fcofbd[isou] = 0.;
+            fcoefa[ij] = 0.;
+            fcofad[ij] = 0.;
+            fcoefb[ij] = 0.;
+            fcofbd[ij] = 0.;
           }
         }
 
         /* Translate into Diffusive flux BCs */
-        fcofaf[isou] = - hint * fcoefa[isou];
-        fcofbf[isou] =   hint * (1.0 - fcoefb[isou]);
+        fcofaf[ij] = - hint * fcoefa[ij];
+        fcofbf[ij] =   hint * (1.0 - fcoefb[ij]);
 
-      } /* End loop on isou */
+      } /* End loop on ij */
 
       if (cs_glob_turb_rans_model->irijco != 1) {
 
-        for (int isou = 0; isou < 6; isou++) {
-          coefa_rij[f_id][isou] = fcoefa[isou];
-          cofaf_rij[f_id][isou] = fcofaf[isou];
-          cofad_rij[f_id][isou] = fcofad[isou];
+        for (int ij = 0; ij < 6; ij++) {
+          coefa_rij[f_id][ij] = fcoefa[ij];
+          cofaf_rij[f_id][ij] = fcofaf[ij];
+          cofad_rij[f_id][ij] = fcofad[ij];
 
-          for (int ii = 0; ii < 6; ii++) {
-            coefb_rij[f_id][isou][ii] = 0;
-            cofbd_rij[f_id][isou][ii] = 0;
+          for (int kl = 0; kl < 6; kl++) {
+            coefb_rij[f_id][ij][kl] = 0;
+            cofbd_rij[f_id][ij][kl] = 0;
           }
 
-          coefb_rij[f_id][isou][isou] = fcoefb[isou];
-          cofbf_rij[f_id][isou][isou] = fcofbf[isou];
-          cofbd_rij[f_id][isou][isou] = fcofbd[isou];
+          coefb_rij[f_id][ij][ij] = fcoefb[ij];
+          cofbf_rij[f_id][ij][ij] = fcofbf[ij];
+          cofbd_rij[f_id][ij][ij] = fcofbd[ij];
         }
 
       }
