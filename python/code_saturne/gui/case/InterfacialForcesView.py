@@ -121,7 +121,7 @@ class InterfacialForcesView(QWidget, Ui_InterfacialForces):
                         "standard": 'Standard',
                         "zuber": 'Zuber',
                         "coef_cst": 'Constant coefficient',
-                        "Tomiyama_SMD": 'Tomiyama SMD',
+                        "Tomiyama": 'Tomiyama',
                         "Zeng_Baalbaki": "Zeng and Baalbaki",
                         "Large_Interface_Model": "Large Interface Model",
                         "Large_Bubble_Model": "Large Bubble Model",
@@ -271,7 +271,7 @@ class InterfacialForcesView(QWidget, Ui_InterfacialForces):
     def lockDropletFlowOptions(self):
         self.comboBoxDispersedDrag.setEnabled(False)
 
-        self.modelLift.disableItem(str_model="Tomiyama_SMD")
+        self.modelLift.disableItem(str_model="Tomiyama")
         self.modelLift.disableItem(str_model="coef_cst")
         self.comboBoxLift.setEnabled(True)
 

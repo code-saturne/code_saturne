@@ -60,7 +60,7 @@ class InterfacialForcesModel(Variables, Model):
         self.__availableDispersedDragModelList = ["none", "ishii", "Wen_Yu", "Gobin"]
 
         self.__availableAddedMassModelsLists = ["none", "standard", "zuber"]
-        self.__availableLiftModelsLists = ["none", "coef_cst", "Tomiyama_SMD", "Zeng_Baalbaki"]
+        self.__availableLiftModelsLists = ["none", "coef_cst", "Tomiyama", "Zeng_Baalbaki"]
 
         # Init freeCouples for forces : criterion checking !
         self.__allCouples = []
@@ -174,7 +174,7 @@ class InterfacialForcesModel(Variables, Model):
 
         if flow_type == "boiling_flow":
             default['disperseddragmodel'] = "ishii"
-            default['liftmodel'] = "Tomiyama_SMD"
+            default['liftmodel'] = "Tomiyama"
             default['addedmassmodel'] = "zuber"
             default['wallforcemodel'] = "tomiyama"
             GTD_condition_1 = (self.turb_m.getTurbulenceModel("1") in
@@ -588,7 +588,7 @@ class InterfacialForcesTestCase(ModelTest):
     def checkGetAvailableLiftModels(self):
         """Check whether the InterfacialEnthalpyModel class could get the AvailableLiftModels"""
         mdl = InterfacialForcesModel(self.case)
-        assert mdl.getAvailableLiftModels() == ["none", "coef_cst", "Tomiyama_SMD", "Zeng_Baalbaki"], \
+        assert mdl.getAvailableLiftModels() == ["none", "coef_cst", "Tomiyama", "Zeng_Baalbaki"], \
             'Could not get AvailableLiftModels'
 
 
