@@ -95,6 +95,9 @@ BEGIN_C_DECLS
 
 typedef struct {
   int          root_rank; /* Application root rank in MPI_COMM_WORLD */
+  const char  *app_type;  /* Application type name (may be empty) */
+  const char  *app_name;  /* Application instance name (may be empty) */
+
 } ple_coupling_mpi_set_info_t;
 
 #endif
@@ -111,12 +114,8 @@ struct _cs_ast_coupling_t {
   cs_gnum_t    n_g_faces;     /* Global number of coupled faces */
   cs_gnum_t    n_g_vertices;  /* Global number of coupld vertices */
 
-#if defined(HAVE_PARAMEDMEM)
-
   cs_paramedmem_coupling_t  *mc_faces;
   cs_paramedmem_coupling_t  *mc_vertices;
-
-#endif
 
   int  verbosity;      /* verbosity level */
   int  visualization;  /* visualization level */
@@ -156,13 +155,9 @@ struct _cs_ast_coupling_t {
  * Static global variables
  *============================================================================*/
 
-#if defined(HAVE_PARAMEDMEM)
-
 static const char _name_f_f[] = "fluid_forces";
 static const char _name_m_d[] = "mesh_displacement";
 static const char _name_m_v[] = "mesh_velocity";
-
-#endif
 
 static int _verbosity = 1;
 static int _visualization = 1;
@@ -232,8 +227,6 @@ _allocate_arrays(cs_ast_coupling_t  *ast_cpl)
   }
 }
 
-#if defined(HAVE_PARAMEDMEM)
-
 /*----------------------------------------------------------------------------
  * Scatter values of type cs_real_3_t (tuples) based on indirection list
  *
@@ -245,10 +238,10 @@ _allocate_arrays(cs_ast_coupling_t  *ast_cpl)
  *----------------------------------------------------------------------------*/
 
 static void
-_scatter_values_r3(cs_lnum_t          n_elts,
-                   const cs_lnum_t    elt_ids[],
-                   const cs_real_3_t  v_in[],
-                   cs_real_3_t        v_out[])
+_scatter_values_r3(cs_lnum_t         n_elts,
+                   const cs_lnum_t   elt_ids[],
+                   const cs_real_3_t v_in[],
+                   cs_real_3_t       v_out[])
 {
   if (elt_ids != nullptr) {
     for (cs_lnum_t i = 0; i < n_elts; i++) {
@@ -268,8 +261,6 @@ _scatter_values_r3(cs_lnum_t          n_elts,
   }
 }
 
-#endif /* defined(HAVE_PARAMEDMEM) */
-
 /*----------------------------------------------------------------------------
  * Receive displacements and velocities from code_aster at current time step
  *----------------------------------------------------------------------------*/
@@ -277,17 +268,14 @@ _scatter_values_r3(cs_lnum_t          n_elts,
 static void
 _recv_dyn(cs_ast_coupling_t  *ast_cpl)
 {
-#if defined(HAVE_PARAMEDMEM)
-
   int verbosity = (cs_log_default_is_active()) ? ast_cpl->verbosity : 0;
 
   cs_paramedmem_attach_field_by_name(ast_cpl->mc_vertices, _name_m_d);
   cs_paramedmem_attach_field_by_name(ast_cpl->mc_vertices, _name_m_v);
 
   if (verbosity > 1) {
-    bft_printf
-      (_("code_aster: starting MEDCouping receive of values "
-         "at coupled vertices..."));
+    bft_printf(_("code_aster: starting MEDCouping receive of values "
+                 "at coupled vertices..."));
     bft_printf_flush();
   }
 
@@ -301,8 +289,6 @@ _recv_dyn(cs_ast_coupling_t  *ast_cpl)
 
   cs_paramedmem_field_import_l(ast_cpl->mc_vertices, _name_m_d, ast_cpl->xast);
   cs_paramedmem_field_import_l(ast_cpl->mc_vertices, _name_m_v, ast_cpl->xvast);
-
-#endif /* defined(HAVE_PARAMEDMEM) */
 
   /* For dry run, reset values to zero to avoid uninitialized values */
   if (ast_cpl->aci.root_rank < 0) {
@@ -487,8 +473,6 @@ static void
 _cs_ast_coupling_post_function(void                  *coupling,
                                const cs_time_step_t  *ts)
 {
-#if defined(HAVE_PARAMEDMEM)
-
   auto cpl = static_cast<const cs_ast_coupling_t  *>(coupling);
 
   if (cpl->post_mesh == nullptr)
@@ -560,8 +544,6 @@ _cs_ast_coupling_post_function(void                  *coupling,
                     ts);
 
   BFT_FREE(values);
-
-#endif /* defined(HAVE_PARAMEDMEM) */
 }
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
@@ -614,18 +596,14 @@ cs_ast_coupling_add(void)
   memset(&(cpl->aci), 0, sizeof(ple_coupling_mpi_set_info_t));
   cpl->aci.root_rank = -1;
 
-  cpl->n_faces = 0;
+  cpl->n_faces    = 0;
   cpl->n_vertices = 0;
 
-  cpl->n_g_faces = 0;
+  cpl->n_g_faces    = 0;
   cpl->n_g_vertices = 0;
-
-#if defined(HAVE_PARAMEDMEM)
 
   cpl->mc_faces = nullptr;
   cpl->mc_vertices = nullptr;
-
-#endif
 
   cpl->verbosity = _verbosity;
   cpl->visualization = _visualization;
@@ -661,8 +639,7 @@ cs_ast_coupling_add(void)
 
   /* Find root rank of coupling */
 
-#if defined(PLE_HAVE_MPI) && defined(HAVE_PARAMEDMEM)
-
+#if defined(PLE_HAVE_MPI)
   const ple_coupling_mpi_set_t *mpi_apps = cs_coupling_get_mpi_apps();
 
   if (mpi_apps != nullptr) {
@@ -706,8 +683,10 @@ cs_ast_coupling_add(void)
 
 #else
 
-  bft_error(__FILE__, __LINE__, 0,
-            "code_aster coupling requires MEDCoupling with MPI support.");
+  bft_error(__FILE__,
+            __LINE__,
+            0,
+            "code_aster coupling requires PLE with MPI support.");
 
 #endif
 }
@@ -760,8 +739,11 @@ cs_ast_coupling_initialize(int        nalimx,
   /* Calcium  (communication) initialization */
 
   if (cs_glob_rank_id <= 0) {
+    int verbosity = (cs_log_default_is_active()) ? cpl->verbosity : 0;
 
-    bft_printf(" Send calculation parameters to code_aster\n");
+    if (verbosity > 0) {
+      bft_printf("Send calculation parameters to code_aster\n");
+    }
 
     /* Send data */
 
@@ -805,15 +787,11 @@ cs_ast_coupling_finalize(void)
   if (cpl->post_mesh != nullptr)
     cpl->post_mesh = fvm_nodal_destroy(cpl->post_mesh);
 
-#if defined(HAVE_PARAMEDMEM)
-
   cs_paramedmem_coupling_destroy(cpl->mc_vertices);
   cs_paramedmem_coupling_destroy(cpl->mc_faces);
 
   cpl->mc_vertices = nullptr;
-  cpl->mc_faces = nullptr;
-
-#endif /* defined(HAVE_PARAMEDMEM) */
+  cpl->mc_faces    = nullptr;
 
   BFT_FREE(cpl);
 
@@ -836,12 +814,10 @@ cs_ast_coupling_geometry(cs_lnum_t         n_faces,
                          const cs_lnum_t  *face_ids,
                          cs_real_t         almax)
 {
-  cs_ast_coupling_t  *cpl = cs_glob_ast_coupling;
-
-#if defined(HAVE_PARAMEDMEM)
+  cs_ast_coupling_t *cpl = cs_glob_ast_coupling;
 
   if (cpl->aci.root_rank > -1) {
-    cpl->mc_faces = cs_paramedmem_coupling_create(nullptr,
+    cpl->mc_faces    = cs_paramedmem_coupling_create(nullptr,
                                                   cpl->aci.app_name,
                                                   "fsi_face_exchange");
     cpl->mc_vertices = cs_paramedmem_coupling_create(nullptr,
@@ -849,26 +825,18 @@ cs_ast_coupling_geometry(cs_lnum_t         n_faces,
                                                      "fsi_vertices_exchange");
   }
   else {
-    cpl->mc_faces
-      = cs_paramedmem_coupling_create_uncoupled("fsi_face_exchange");
-    cpl->mc_vertices
-      = cs_paramedmem_coupling_create_uncoupled("fsi_vertices_exchange");
+    cpl->mc_faces =
+      cs_paramedmem_coupling_create_uncoupled("fsi_face_exchange");
+    cpl->mc_vertices =
+      cs_paramedmem_coupling_create_uncoupled("fsi_vertices_exchange");
   }
 
-  cs_paramedmem_add_mesh_from_ids(cpl->mc_faces,
-                                  n_faces,
-                                  face_ids,
-                                  2);
+  cs_paramedmem_add_mesh_from_ids(cpl->mc_faces, n_faces, face_ids, 2);
 
-  cs_paramedmem_add_mesh_from_ids(cpl->mc_vertices,
-                                  n_faces,
-                                  face_ids,
-                                  2);
+  cs_paramedmem_add_mesh_from_ids(cpl->mc_vertices, n_faces, face_ids, 2);
 
-  cpl->n_faces = n_faces;
+  cpl->n_faces    = n_faces;
   cpl->n_vertices = cs_paramedmem_mesh_get_n_vertices(cpl->mc_faces);
-
-#endif
 
   fvm_nodal_t *fsi_mesh
     = cs_mesh_connect_faces_to_nodal(cs_glob_mesh,
@@ -886,41 +854,47 @@ cs_ast_coupling_geometry(cs_lnum_t         n_faces,
   /* Creation of the information structure for code_saturne/code_aster
      coupling */
 
-  assert(sizeof(cs_coord_t)==sizeof(cs_real_t));
+  static_assert(sizeof(cs_coord_t) == sizeof(cs_real_t),
+                "Incorrect size of cs_coord_t");
 
-  if (cpl->visualization > 0)
+  if (cpl->visualization > 0) {
     cpl->post_mesh = fsi_mesh;
-
-  else
+  }
+  else {
     fsi_mesh = fvm_nodal_destroy(fsi_mesh);
+  }
 
   _allocate_arrays(cpl);
 
-  if (almax <= 0)
-    bft_error(__FILE__, __LINE__, 0,
+  if (almax <= 0) {
+    bft_error(__FILE__,
+              __LINE__,
+              0,
               "%s: almax = %g, where a positive value is expected.",
-              __func__, almax);
+              __func__,
+              almax);
+  }
 
   cpl->lref = almax;
 
   if (cs_glob_rank_id <= 0) {
+    int verbosity = (cs_log_default_is_active()) ? cpl->verbosity : 0;
 
-    bft_printf("\n"
-               "----------------------------------\n"
-               " Geometric parameters\n"
-               "   number of coupled faces: %llu\n"
-               "   number of coupled vertices: %llu\n"
-               "   reference length (m): %4.2le\n"
-               "----------------------------------\n\n",
-               (unsigned long long)(cpl->n_g_faces),
-               (unsigned long long)(cpl->n_g_vertices),
-               cpl->lref);
-
+    if (verbosity > 0) {
+      bft_printf("\n"
+                 "----------------------------------\n"
+                 " Geometric parameters\n"
+                 "   number of coupled faces: %llu\n"
+                 "   number of coupled vertices: %llu\n"
+                 "   reference length (m): %4.2le\n"
+                 "----------------------------------\n\n",
+                 (unsigned long long)(cpl->n_g_faces),
+                 (unsigned long long)(cpl->n_g_vertices),
+                 cpl->lref);
+    }
   }
 
   /* Define coupled fields */
-
-#if defined(HAVE_PARAMEDMEM)
 
   cs_paramedmem_def_coupled_field(cpl->mc_vertices,
                                   _name_m_d,
@@ -942,8 +916,6 @@ cs_ast_coupling_geometry(cs_lnum_t         n_faces,
                                   CS_MEDCPL_FIELD_INT_CONSERVATION,
                                   CS_MEDCPL_ON_CELLS,
                                   CS_MEDCPL_LINEAR_TIME);
-
-#endif /* defined(HAVE_PARAMEDMEM) */
 
   /* Post-processing */
 
@@ -1134,15 +1106,12 @@ cs_ast_coupling_exchange_fields(void)
 
   /* Send forces */
 
-#if defined(HAVE_PARAMEDMEM)
-
   cs_paramedmem_field_export_l(cpl->mc_faces, _name_f_f, cpl->fopas);
   cs_paramedmem_attach_field_by_name(cpl->mc_faces, _name_f_f);
 
   if (verbosity > 1) {
-    bft_printf
-      (_("code_aster: starting MEDCoupling send of values "
-         "at coupled faces..."));
+    bft_printf(_("code_aster: starting MEDCoupling send of values "
+                 "at coupled faces..."));
     bft_printf_flush();
   }
 
@@ -1153,8 +1122,6 @@ cs_ast_coupling_exchange_fields(void)
     bft_printf(_("[ok]\n"));
     bft_printf_flush();
   }
-
-#endif /* defined(HAVE_PARAMEDMEM) */
 
   /* Second stage (TODO: place in another, better named function) */
   /* ------------------------------------------------------------ */
@@ -1280,17 +1247,13 @@ cs_ast_coupling_compute_displacement(cs_real_t  disp[][3])
 
   /* Set in disp the values of prescribed displacements */
 
-#if defined(HAVE_PARAMEDMEM)
-
-  const cs_lnum_t *vtx_ids
-    = cs_paramedmem_mesh_get_vertex_list(cpl->mc_vertices);
+  const cs_lnum_t *vtx_ids =
+    cs_paramedmem_mesh_get_vertex_list(cpl->mc_vertices);
 
   _scatter_values_r3(cpl->n_vertices,
                      vtx_ids,
                      (const cs_real_3_t *)cpl->xastp,
                      disp);
-
-#endif /* defined(HAVE_PARAMEDMEM) */
 }
 
 /*----------------------------------------------------------------------------*/

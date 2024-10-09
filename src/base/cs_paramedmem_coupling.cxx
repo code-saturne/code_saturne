@@ -899,6 +899,13 @@ cs_paramedmem_def_coupled_field(cs_paramedmem_coupling_t  *c,
   case CS_MEDCPL_ON_NODES:
     type = ON_NODES;
     break;
+
+  default:
+    bft_error(__FILE__,
+              __LINE__,
+              0,
+              _("%s: The type of field is not supported"),
+              __func__);
   }
 
   TypeOfTimeDiscretization td = NO_TIME;
@@ -914,6 +921,13 @@ cs_paramedmem_def_coupled_field(cs_paramedmem_coupling_t  *c,
   case CS_MEDCPL_LINEAR_TIME:
     td = LINEAR_TIME;
     break;
+
+  default:
+    bft_error(__FILE__,
+              __LINE__,
+              0,
+              _("%s: The type of time is not supported"),
+              __func__);
   }
 
   /* Build ParaFIELD object if required */
