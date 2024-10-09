@@ -2110,6 +2110,7 @@ class Studies(object):
         # fill file with batch command for state analysis
         batch_cmd += self.build_final_batch(self.__postpro,
                                             self.__compare,
+                                            self.__sheet,
                                             state_file_name)
         slurm_batch_file.write(batch_cmd)
         slurm_batch_file.flush()
@@ -2134,7 +2135,7 @@ class Studies(object):
 
     #---------------------------------------------------------------------------
 
-    def build_final_batch(self, postpro, compare, state_file_name):
+    def build_final_batch(self, postpro, compare, report, state_file_name):
         """
         Launch state option in DESTINATION
         """
@@ -2150,9 +2151,11 @@ class Studies(object):
                        + " --dest " + self.__dest \
                        + " --state-file " + state_file_name
         if postpro:
-           final_cmd += " --post"
+            final_cmd += " --post"
         if compare:
-           final_cmd += " --compare"
+            final_cmd += " --compare"
+        if report:
+            final_cmd += " --report"
 
         # add tags options
         if self.__with_tags:
