@@ -534,54 +534,36 @@ _cs_sles_hpddm_setup(void              *context,
 
   /* Check type of input matrix */
 
-  if (strncmp(cs_matrix_get_type_name(a), "PETSc", 5) == 0) {
-    bft_error(__FILE__,
-              __LINE__,
-              0,
+  if (strncmp(cs_matrix_get_type_name(a), "PETSc", 5) == 0)
+    bft_error(__FILE__, __LINE__, 0,
               _("Matrix type %s for system \"%s\"\n"
                 "is not usable by HPDDM."),
-              cs_matrix_get_type_name(a),
-              name);
-  }
-  else if (strcmp(c->matype_r, MATSHELL) == 0 || (have_perio && n_rows > 1)
-           || cs_mat_type == CS_MATRIX_NATIVE) {
+              cs_matrix_get_type_name(a), name);
 
-    bft_error(__FILE__,
-              __LINE__,
-              0,
+  else if (strcmp(c->matype_r, MATSHELL) == 0 || (have_perio && n_rows > 1)
+           || cs_mat_type == CS_MATRIX_NATIVE)
+    bft_error(__FILE__, __LINE__, 0,
               _("Matrix type %s for system \"%s\"\n"
                 "is not usable by HPDDM."),
-              cs_matrix_get_type_name(a),
-              name);
-  }
+              cs_matrix_get_type_name(a), name);
 
   if (db_size == 1 && cs_mat_type == CS_MATRIX_CSR
       && (strcmp(c->matype_r, MATMPIAIJ) == 0
-          || (strcmp(c->matype_r, MATAIJ) == 0 && cs_glob_n_ranks > 1))) {
-
-    bft_error(__FILE__,
-              __LINE__,
-              0,
+          || (strcmp(c->matype_r, MATAIJ) == 0 && cs_glob_n_ranks > 1)))
+    bft_error(__FILE__, __LINE__, 0,
               _("Matrix type %s with block size %d for system \"%s\"\n"
                 "is not usable by HPDDM."),
-              cs_matrix_get_type_name(a),
-              (int)db_size,
-              name);
-  }
+              cs_matrix_get_type_name(a), (int)db_size, name);
+
   else if (sizeof(PetscInt) == sizeof(cs_lnum_t) && db_size == 1
            && cs_mat_type == CS_MATRIX_CSR
            && (strcmp(c->matype_r, MATSEQAIJ) == 0
-               || (strcmp(c->matype_r, MATAIJ) == 0 && cs_glob_n_ranks == 1))) {
-
-    bft_error(__FILE__,
-              __LINE__,
-              0,
+               || (strcmp(c->matype_r, MATAIJ) == 0 && cs_glob_n_ranks == 1)))
+    bft_error(__FILE__, __LINE__, 0,
               _("Matrix type %s with block size %d for system \"%s\"\n"
                 "is not usable by HPDDM."),
-              cs_matrix_get_type_name(a),
-              (int)db_size,
-              name);
-  }
+              cs_matrix_get_type_name(a), (int)db_size, name);
+
   else {
 
     assert(cs_mat_type != CS_MATRIX_NATIVE);
@@ -628,21 +610,19 @@ _cs_sles_hpddm_setup(void              *context,
 
         cs_matrix_get_csr_arrays(a, &a_row_index, &a_col_id, &a_val);
 
-        for (cs_lnum_t row_id = 0; row_id < n_rows; row_id++) {
-          for (cs_lnum_t kk = 0; kk < db_size; kk++) {
+        for (cs_lnum_t row_id = 0; row_id < n_rows; row_id++)
+          for (cs_lnum_t kk = 0; kk < db_size; kk++)
             d_nnz[row_id * db_size + kk] = 0;
-          }
-        }
+
       }
       else {
 
         cs_matrix_get_msr_arrays(a, &a_row_index, &a_col_id, &d_val, &a_val);
 
-        for (cs_lnum_t row_id = 0; row_id < n_rows; row_id++) {
-          for (cs_lnum_t kk = 0; kk < db_size; kk++) {
+        for (cs_lnum_t row_id = 0; row_id < n_rows; row_id++)
+          for (cs_lnum_t kk = 0; kk < db_size; kk++)
             d_nnz[row_id * db_size + kk] = db_size;
-          }
-        }
+
       }
 
       for (cs_lnum_t row_id = 0; row_id < n_rows; row_id++) {
@@ -659,16 +639,11 @@ _cs_sles_hpddm_setup(void              *context,
         }
       }
     }
-    else {
-      bft_error(__FILE__,
-                __LINE__,
-                0,
+    else
+      bft_error(__FILE__, __LINE__, 0,
                 _("Matrix type %s with block size %d for system \"%s\"\n"
                   "is not usable by PETSc."),
-                cs_matrix_get_type_name(a),
-                (int)db_size,
-                name);
-    }
+                cs_matrix_get_type_name(a), (int)db_size, name);
 
     /* Now preallocate matrix */
 
@@ -738,6 +713,7 @@ _cs_sles_hpddm_setup(void              *context,
             }
           }
         }
+
       }
       else {
 
@@ -767,6 +743,7 @@ _cs_sles_hpddm_setup(void              *context,
             }
           }
         }
+
       }
     }
 

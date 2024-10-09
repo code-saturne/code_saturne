@@ -910,8 +910,8 @@ _solve_m11_approximation(cs_saddle_solver_t                   *solver,
                                                     &(m11_info.res_norm),
                                                     r,
                                                     z,
-                                                    0,      /* aux. size */
-                                                    nullptr);  /* aux. buffers */
+                                                    0,        /* aux. size */
+                                                    nullptr); /* aux. buffers */
 
   /* Output information about the convergence of the resolution */
 
@@ -3762,8 +3762,8 @@ cs_saddle_solver_notay(cs_saddle_solver_t  *solver,
                                                     &(sinfo.res_norm),
                                                     b,
                                                     sol,
-                                                    0,      /* aux. size */
-                                                    nullptr);  /* aux. buffers */
+                                                    0,        /* aux. size */
+                                                    nullptr); /* aux. buffers */
 
   /* Store metadata for monitoring */
 
@@ -4586,8 +4586,8 @@ cs_saddle_solver_sles_full_system(cs_saddle_solver_t  *solver,
                                                     &(sinfo.res_norm),
                                                     b,
                                                     sol,
-                                                    0,      /* aux. size */
-                                                    nullptr);  /* aux. buffers */
+                                                    0,        /* aux. size */
+                                                    nullptr); /* aux. buffers */
 
 #if 0 /* Export the saddle-point system for analysis */
   cs_dbg_binary_dump_system(saddlep->name, matrix, b, sol);
@@ -5019,6 +5019,7 @@ cs_saddle_solver_simple(cs_saddle_solver_t  *solver,
   cs_array_real_fill_zero(n1_dofs, ctx->rhs);
 
   /* Calculate Grad(dx2) */
+
   ctx->m12_vector_multiply(solver->n2_scatter_dofs,
                            dx2, ctx->m21_adj, ctx->m21_val,
                            ctx->rhs);

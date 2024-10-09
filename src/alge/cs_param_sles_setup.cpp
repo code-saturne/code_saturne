@@ -916,14 +916,16 @@ _petsc_boomeramg_hook(const char             *prefix,
  *        settings have been defined. One assumes that one really wants to use
  *        HPDDM
  *
- * \param[in]      prefix        prefix name associated to the current SLES
- * \param[in]      slesp         pointer to a set of SLES parameters
- * \param[in, out] pc            pointer to a PETSc preconditioner
+ * \param[in]      prefix  prefix name associated to the current SLES
+ * \param[in]      slesp   pointer to a set of SLES parameters
+ * \param[in, out] pc      pointer to a PETSc preconditioner
  */
 /*----------------------------------------------------------------------------*/
 
 static void
-_petsc_pchpddm_hook(const char *prefix, const cs_param_sles_t *slesp, PC pc)
+_petsc_pchpddm_hook(const char            *prefix,
+                    const cs_param_sles_t *slesp,
+                    PC                     pc)
 {
   assert(prefix != nullptr);
   assert(slesp != nullptr);
@@ -932,10 +934,13 @@ _petsc_pchpddm_hook(const char *prefix, const cs_param_sles_t *slesp, PC pc)
   char prefix_pc[128];
 
   /* Set type */
+
   PCSetType(pc, PCHPDDM);
 
   /* Symmetric matrix ? */
+
   if (slesp->mat_is_sym) {
+
     /* Define generic options */
     sprintf(prefix_pc, "%s%s", prefix, "pc_hpddm_");
 
@@ -969,8 +974,10 @@ _petsc_pchpddm_hook(const char *prefix, const cs_param_sles_t *slesp, PC pc)
     _petsc_cmd(true, prefix_pc, "mat_mumps_cntl_3", "1.e-50");
     _petsc_cmd(true, prefix_pc, "mat_mumps_cntl_5", "0.");
     _petsc_cmd(true, prefix_pc, "p", "2");
+
   }
   else {
+
     /* There is three important parameters */
     /* Left bounds: easy problem and low cost */
     /* Right bounds: hard problem and high cost */
@@ -1006,6 +1013,7 @@ _petsc_pchpddm_hook(const char *prefix, const cs_param_sles_t *slesp, PC pc)
     _petsc_cmd(true, prefix_pc, "sub_mat_mumps_icntl_14", "400");
     _petsc_cmd(true, prefix_pc, "mat_type", "baij");
     _petsc_cmd(true, prefix_pc, "p", "2");
+
   }
 }
 
@@ -2416,14 +2424,9 @@ _set_saturne_sles(bool                 use_field_id,
     break;
 
     case CS_PARAM_PRECOND_HPDDM:
-
-      bft_error(
-        __FILE__,
-        __LINE__,
-        0,
+      bft_error(__FILE__, __LINE__, 0,
         " %s: Eq. %s: Preconditioner HPDDM is not available outside PETSc.",
-        __func__,
-        slesp->name);
+        __func__, slesp->name);
       break;
 
     default: /* Nothing else to do */

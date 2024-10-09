@@ -938,6 +938,7 @@ cs_param_sles_set_precond(const char       *keyval,
     slesp->amg_type = CS_PARAM_AMG_NONE;
     slesp->solver_class = CS_PARAM_SOLVER_CLASS_CS;
     slesp->need_flexible  = false;
+
   }
   else if (strcmp(keyval, "poly2") == 0 ||
            strcmp(keyval, "poly_2") == 0) {
@@ -946,6 +947,7 @@ cs_param_sles_set_precond(const char       *keyval,
     slesp->amg_type = CS_PARAM_AMG_NONE;
     slesp->solver_class = CS_PARAM_SOLVER_CLASS_CS;
     slesp->need_flexible = false;
+
   }
   else if (strcmp(keyval, "ssor") == 0) {
 
@@ -961,6 +963,7 @@ cs_param_sles_set_precond(const char       *keyval,
                 " PETSc is not available with your installation.\n"
                 " Please check your installation settings.\n",
                 __func__, sles_name, "CS_EQKEY_PRECOND");
+
   }
   else if (strcmp(keyval, "hpddm") == 0) {
 
@@ -981,6 +984,7 @@ cs_param_sles_set_precond(const char       *keyval,
                 " HPDDM is only available through PETSc \n"
                 " Please check your installation settings.\n",
                 __func__, sles_name, "CS_EQKEY_PRECOND");
+
   }
   else
     ierr = EXIT_FAILURE;
@@ -1537,13 +1541,13 @@ cs_param_sles_boomeramg_reset(cs_param_sles_t  *slesp)
  *        given parameters. Please refer to the HYPRE user guide for more
  *        details about the following options.
  *
- * \param[in, out] slesp           pointer to a cs_param_sles_t structure
- * \param[in]      n_down_iter     number of smoothing steps for the down cycle
- * \param[in]      down_smoother   type of smoother for the down cycle
- * \param[in]      n_up_iter       number of smoothing steps for the up cycle
- * \param[in]      up_smoother     type of smoother for the up cycle
- * \param[in]      coarse_solver   solver at the coarsest level
- * \param[in]      coarsen_algo    type of algorithm to coarsen grids
+ * \param[in, out] slesp         pointer to a cs_param_sles_t structure
+ * \param[in]      n_down_iter   number of smoothing steps for the down cycle
+ * \param[in]      down_smoother type of smoother for the down cycle
+ * \param[in]      n_up_iter     number of smoothing steps for the up cycle
+ * \param[in]      up_smoother   type of smoother for the up cycle
+ * \param[in]      coarse_solver solver at the coarsest level
+ * \param[in]      coarsen_algo  type of algorithm to coarsen grids
  */
 /*----------------------------------------------------------------------------*/
 

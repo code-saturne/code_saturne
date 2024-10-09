@@ -237,7 +237,7 @@ _cs_dot_superblock(cs_lnum_t         n,
           end_id = _n;
         double cdot = 0.0;
         for (cs_lnum_t i = start_id; i < end_id; i++)
-        cdot += _x[i]*_y[i];
+          cdot += _x[i]*_y[i];
         sdot += cdot;
       }
 
