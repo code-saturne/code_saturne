@@ -81,7 +81,6 @@ else:
     _cs_opts['qtpkg'] = None
     _cs_opts['use_qt5'] = False
 
-
 # ==============================================
 # Overloading the egg-info command
 # ==============================================
