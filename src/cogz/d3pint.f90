@@ -112,6 +112,8 @@ double precision, dimension(:), pointer :: cpro_temp
 double precision, dimension(:), pointer :: cpro_ckabs, cpro_t4m, cpro_t3m
 type(pmapper_double_r1), dimension(:), pointer :: cpro_csca
 
+character(len=80) :: th_name, th_st_name
+
 !===============================================================================
 
 integer       ipass
@@ -271,11 +273,14 @@ call field_get_val_s(icrom, cpro_rho)
 
 if (idilat.ge.4) then
   call field_get_val_prev2_s(icrom, cproaa_rho)
-  call field_get_val_s(iustdy(itsrho), cpro_tsrho)
-  call field_get_val_s(iustdy(ifm  ), cpro_tsfm)
-  call field_get_val_s(iustdy(ifp2m  ), cpro_tsfp2m)
+  call field_get_val_s_by_name("dila_st", cpro_tsrho)
+  call field_get_val_s_by_name("mixture_fraction_dila_st", cpro_tsfm)
+  call field_get_val_s_by_name("mixture_fraction_variance_dila_st", cpro_tsfp2m)
+
   if (iscalt.ge.0) then
-    call field_get_val_s(iustdy(iscalt), cpro_tsscalt)
+    call field_get_name(ivarfl(isca(iscalt)), th_name)
+    th_st_name  = trim(th_name) // '_dila_st'
+    call field_get_val_s_by_name(th_st_name, cpro_tsscalt)
   endif
   call field_get_val_s(iym(3), cpro_ym3)
 endif
