@@ -1221,6 +1221,7 @@ class Studies(object):
         resource_config = cs_run_conf.get_install_config_info(pkg)
         if self.__resource_name:
             resource_config['resource_name'] = self.__resource_name
+        self.__resource_name = resource_config['resource_name']
 
         exec_env = cs_exec_environment.exec_environment(pkg,
                                                         wdir=None,
@@ -2140,9 +2141,14 @@ class Studies(object):
         Launch state option in DESTINATION
         """
 
+        final_cmd = "cd " + self.__dest + os.linesep
+
         e = os.path.join(self.__pkg.get_dir('bindir'), self.__exe)
 
-        final_cmd = "cd " + self.__dest + os.linesep
+        # hard coded installation and container fir now
+        if (self.__resource_name and 'cronos' in self.__resource_name):
+            e = os.path.join('/home/D57673/BUILD/CS_REPORT/code_saturne.install/bin/code_saturne')
+            final_cmd += "singularity exec /fscronos/containers/singularity/restricted/saturne/codesaturne-prerequisites-20240403-debian-11.sif "
 
         # final analysis after all run_cases are finished
         final_cmd += e + " smgr --state" \
