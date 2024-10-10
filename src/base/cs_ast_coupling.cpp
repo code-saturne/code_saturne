@@ -249,6 +249,8 @@ _scatter_values_r3(cs_lnum_t         n_elts,
                    const cs_real_3_t v_in[],
                    cs_real_3_t       v_out[])
 {
+  assert(v_in != nullptr && v_out != nullptr);
+
   if (elt_ids != nullptr) {
     for (cs_lnum_t i = 0; i < n_elts; i++) {
       cs_lnum_t j = elt_ids[i];
@@ -1190,7 +1192,9 @@ cs_ast_coupling_exchange_fields(void)
 void
 cs_ast_coupling_compute_displacement(cs_real_t  disp[][3])
 {
-  cs_ast_coupling_t  *cpl = cs_glob_ast_coupling;
+  assert(disp != nullptr);
+
+  cs_ast_coupling_t *cpl = cs_glob_ast_coupling;
 
   if (cpl->iteration < 0)
     return;

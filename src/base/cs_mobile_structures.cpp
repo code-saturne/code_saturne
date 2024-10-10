@@ -1278,6 +1278,9 @@ cs_mobile_structures_prediction(int  itrale,
     if (itrale > 0) {
       /* Receive predicted displacements and fill disale */
 
+      cs_field_t *f_displ = cs_field_by_name("mesh_displacement");
+      disale              = (cs_real_3_t *)(f_displ->val);
+
       cs_ast_coupling_compute_displacement(disale);
     }
   }
