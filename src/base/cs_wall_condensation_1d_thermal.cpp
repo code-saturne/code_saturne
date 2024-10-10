@@ -96,13 +96,12 @@ static cs_wall_cond_1d_thermal_t _wall_cond_1d_thermal = { .nzones = 0,
                                                            .znmur  = nullptr,
                                                            .zepais = nullptr,
                                                            .ztpar0 = nullptr,
-
                                                            .zhext  = nullptr,
                                                            .ztext  = nullptr,
                                                            .zrob   = nullptr,
                                                            .zcondb = nullptr,
                                                            .zcpb   = nullptr,
-
+                                                           .ztpar  = nullptr,
                                                            .zdxp  = nullptr,
                                                            .ztmur = nullptr };
 
