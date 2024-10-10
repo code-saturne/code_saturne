@@ -4019,14 +4019,16 @@ _structure_destroy(cs_matrix_type_t   type,
 /*!
  * \brief Create a matrix container using a given type.
  *
- * \param[in]  type  chosen matrix type
+ * \param[in]  type        chosen matrix type
+ * \param[in]  alloc_mode  allocation mode
  *
  * \return  pointer to created matrix structure;
  */
 /*----------------------------------------------------------------------------*/
 
 static cs_matrix_t *
-_matrix_create(cs_matrix_type_t  type)
+_matrix_create(cs_matrix_type_t  type,
+               cs_alloc_mode_t   alloc_mode)
 {
   cs_matrix_t *m;
 
@@ -4053,10 +4055,7 @@ _matrix_create(cs_matrix_type_t  type)
   m->db_size = 0;
   m->eb_size = 0;
 
-  m->alloc_mode = cs_alloc_mode;
-  /* Native and distributed matrix types not on accelerator yet */
-  if (m->type == CS_MATRIX_NATIVE || m->type == CS_MATRIX_DIST)
-    m->alloc_mode = CS_ALLOC_HOST;
+  m->alloc_mode = alloc_mode;
 
   m->fill_type = CS_MATRIX_N_FILL_TYPES;
 
@@ -4534,7 +4533,7 @@ cs_matrix_create(const cs_matrix_structure_t  *ms)
 {
   assert(ms != nullptr); /* Sanity check */
 
-  cs_matrix_t *m = _matrix_create(ms->type);
+  cs_matrix_t *m = _matrix_create(ms->type, ms->alloc_mode);
 
   /* Map shared structure */
 
@@ -4567,7 +4566,7 @@ cs_matrix_t *
 cs_matrix_create_from_assembler(cs_matrix_type_t        type,
                                 cs_matrix_assembler_t  *ma)
 {
-  cs_matrix_t *m = _matrix_create(type);
+  cs_matrix_t *m = _matrix_create(type, cs_alloc_mode);
 
   m->assembler = ma;
 

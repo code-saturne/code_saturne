@@ -4034,7 +4034,7 @@ _coarse_msr_struct(cs_lnum_t          f_n_rows,
                    cs_lnum_t        **c_col_ids)
 {
   cs_lnum_t *restrict c_row_idx;
-  BFT_MALLOC(c_row_idx, c_n_rows+1, cs_lnum_t);
+  CS_MALLOC_HD(c_row_idx, c_n_rows+1, cs_lnum_t, alloc_mode);
   c_row_idx[0] = 0;
 
   cs_lnum_t *t_c_scan = nullptr;
