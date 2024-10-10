@@ -177,6 +177,12 @@ cs_ast_coupling_t  *cs_glob_ast_coupling = nullptr;
  * number of points.
  *----------------------------------------------------------------------------*/
 
+static int
+_get_current_verbosity(const cs_ast_coupling_t *ast_cpl)
+{
+  return (cs_log_default_is_active()) ? ast_cpl->verbosity : 0;
+}
+
 static void
 _allocate_arrays(cs_ast_coupling_t  *ast_cpl)
 {
@@ -268,7 +274,7 @@ _scatter_values_r3(cs_lnum_t         n_elts,
 static void
 _recv_dyn(cs_ast_coupling_t  *ast_cpl)
 {
-  int verbosity = (cs_log_default_is_active()) ? ast_cpl->verbosity : 0;
+  int verbosity = _get_current_verbosity(ast_cpl);
 
   cs_paramedmem_attach_field_by_name(ast_cpl->mc_vertices, _name_m_d);
   cs_paramedmem_attach_field_by_name(ast_cpl->mc_vertices, _name_m_v);
@@ -402,7 +408,7 @@ _conv(cs_ast_coupling_t  *ast_cpl,
   int iret;
   double delast = 0.;
 
-  int verbosity = (cs_log_default_is_active()) ? ast_cpl->verbosity : 0;
+  int verbosity = _get_current_verbosity(ast_cpl);
 
   delast = _dinorm(ast_cpl->xast, ast_cpl->xastp, nb_dyn) / ast_cpl->lref;
 
@@ -739,7 +745,7 @@ cs_ast_coupling_initialize(int        nalimx,
   /* Calcium  (communication) initialization */
 
   if (cs_glob_rank_id <= 0) {
-    int verbosity = (cs_log_default_is_active()) ? cpl->verbosity : 0;
+    int verbosity = _get_current_verbosity(cpl);
 
     if (verbosity > 0) {
       bft_printf("Send calculation parameters to code_aster\n");
@@ -878,7 +884,7 @@ cs_ast_coupling_geometry(cs_lnum_t         n_faces,
   cpl->lref = almax;
 
   if (cs_glob_rank_id <= 0) {
-    int verbosity = (cs_log_default_is_active()) ? cpl->verbosity : 0;
+    int verbosity = _get_current_verbosity(cpl);
 
     if (verbosity > 0) {
       bft_printf("\n"
@@ -1023,7 +1029,7 @@ cs_ast_coupling_exchange_time_step(cs_real_t  c_dt[])
 
   cpl->dt = dttmp;
 
-  int verbosity = (cs_log_default_is_active()) ? cpl->verbosity : 0;
+  int verbosity = _get_current_verbosity(cpl);
   if (verbosity > 0)
     bft_printf("----------------------------------\n"
                "reference time step:     %4.21e\n"
@@ -1074,7 +1080,7 @@ cs_ast_coupling_exchange_fields(void)
   if (cpl->iteration < 0)
     return;
 
-  int verbosity = (cs_log_default_is_active()) ? cpl->verbosity : 0;
+  int verbosity = _get_current_verbosity(cpl);
 
   const cs_lnum_t n_faces = cpl->n_faces;
 
@@ -1226,7 +1232,7 @@ cs_ast_coupling_compute_displacement(cs_real_t  disp[][3])
           nb_dyn);
   }
 
-  int verbosity = (cs_log_default_is_active()) ? cpl->verbosity : 0;
+  int verbosity = _get_current_verbosity(cpl);
 
   if (verbosity > 0) {
 
