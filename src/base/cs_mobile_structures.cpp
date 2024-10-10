@@ -1657,8 +1657,8 @@ cs_mobile_structures_displacement(int itrale, int italim, int *itrfin)
     BFT_FREE(_bc_coeffs_save);
     BFT_FREE(_pr_save);
 
-    if (cs_time_control_is_active(&(ms->plot_time_control), ts)) {
-
+    if (n_int_structs > 0 &&
+        cs_time_control_is_active(&(ms->plot_time_control), ts)) {
       int t_top_id = cs_timer_stats_switch(_post_out_stat_id);
 
       _output_time_plots(ms, ts);
