@@ -910,8 +910,8 @@ _ale_solve_poisson_legacy(const cs_domain_t *domain,
 
   cs_real_3_t *smbr = nullptr;
   cs_real_33_t *fimp = nullptr;
-  BFT_MALLOC(smbr, n_cells_ext, cs_real_3_t);
-  BFT_MALLOC(fimp, n_cells_ext, cs_real_33_t);
+  CS_MALLOC_HD(smbr, n_cells_ext, cs_real_3_t, cs_alloc_mode);
+  CS_MALLOC_HD(fimp, n_cells_ext, cs_real_33_t, cs_alloc_mode);
 
   cs_real_3_t *mshvel = (cs_real_3_t *)CS_F_(mesh_u)->val;
   cs_real_3_t *mshvela = (cs_real_3_t *)CS_F_(mesh_u)->val_pre;
@@ -982,11 +982,10 @@ _ale_solve_poisson_legacy(const cs_domain_t *domain,
 
   cs_real_t *i_visc = nullptr, *b_visc = nullptr;
 
-  BFT_MALLOC(b_visc, n_b_faces, cs_real_t);
+  CS_MALLOC_HD(b_visc, n_b_faces, cs_real_t, cs_alloc_mode);
 
   if (idftnp & CS_ISOTROPIC_DIFFUSION) {
-
-    BFT_MALLOC(i_visc, n_i_faces, cs_real_t);
+    CS_MALLOC_HD(i_visc, n_i_faces, cs_real_t, cs_alloc_mode);
 
     cs_face_viscosity(m,
                       mq,
@@ -997,8 +996,7 @@ _ale_solve_poisson_legacy(const cs_domain_t *domain,
 
   }
   else if (idftnp & CS_ANISOTROPIC_LEFT_DIFFUSION) {
-
-    BFT_MALLOC(i_visc, 9*n_i_faces, cs_real_t);
+    CS_MALLOC_HD(i_visc, 9 * n_i_faces, cs_real_t, cs_alloc_mode);
 
     cs_face_anisotropic_viscosity_vector(m,
                                          mq,
@@ -1037,10 +1035,10 @@ _ale_solve_poisson_legacy(const cs_domain_t *domain,
                                      nullptr); /* eswork */
 
   /* Free memory */
-  BFT_FREE(smbr);
-  BFT_FREE(fimp);
-  BFT_FREE(i_visc);
-  BFT_FREE(b_visc);
+  CS_FREE_HD(smbr);
+  CS_FREE_HD(fimp);
+  CS_FREE_HD(i_visc);
+  CS_FREE_HD(b_visc);
 
   /* 3. Update nodes displacement */
 
@@ -1048,8 +1046,8 @@ _ale_solve_poisson_legacy(const cs_domain_t *domain,
   cs_real_33_t *gradm;
 
   /* Allocate a temporary array */
-  BFT_MALLOC(dproj, n_vertices, cs_real_3_t);
-  BFT_MALLOC(gradm, n_cells_ext, cs_real_33_t);
+  CS_MALLOC_HD(dproj, n_vertices, cs_real_3_t, cs_alloc_mode);
+  CS_MALLOC_HD(gradm, n_cells_ext, cs_real_33_t, cs_alloc_mode);
 
   bool use_previous_t = false;
   int inc = 1;
@@ -1078,8 +1076,8 @@ _ale_solve_poisson_legacy(const cs_domain_t *domain,
   }
 
   /* Free memory */
-  BFT_FREE(dproj);
-  BFT_FREE(gradm);
+  CS_FREE_HD(dproj);
+  CS_FREE_HD(gradm);
 }
 
 /*----------------------------------------------------------------------------*/
