@@ -53,7 +53,7 @@
 #ifdef __NVCC__
 #include "cs_base_cuda.h"
 #include "cs_blas_cuda.h"
-#include "cs_alge_cuda.cuh"
+#include "cs_math_cuda.cuh"
 #endif
 
 /*=============================================================================

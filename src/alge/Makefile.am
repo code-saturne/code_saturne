@@ -139,9 +139,6 @@ cs_sles_pc_priv.h \
 cs_vertex_to_cell.h
 
 if HAVE_CUDA
-noinst_HEADERS += \
-cs_alge_cuda.cuh
-
 pkginclude_HEADERS += \
 cs_benchmark_cuda.h \
 cs_blas_cuda.h \

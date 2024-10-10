@@ -51,7 +51,6 @@
 #include "bft_error.h"
 #include "bft_mem.h"
 
-#include "cs_alge_cuda.cuh"
 #include "cs_base_accel.h"
 #include "cs_base_cuda.h"
 #include "cs_blas.h"
