@@ -978,7 +978,7 @@ cs_solve_all(int  itrale)
     BFT_MALLOC(icepdc, ncepdc, cs_lnum_t);
     cs_volume_zone_select_type_cells(CS_VOLUME_ZONE_HEAD_LOSS, icepdc);
 
-    BFT_MALLOC(ckupdc, ncepdc, cs_real_6_t);
+    CS_MALLOC_HD(ckupdc, ncepdc, cs_real_6_t, cs_alloc_mode);
 
     cs_head_losses_compute(ckupdc);
 
@@ -1122,7 +1122,7 @@ cs_solve_all(int  itrale)
 
     if (must_return) {
       BFT_FREE(htot_cond);
-      BFT_FREE(ckupdc);
+      CS_FREE_HD(ckupdc);
       return;
     }
 
