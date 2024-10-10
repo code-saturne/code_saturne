@@ -597,11 +597,15 @@ cs_preprocess_mesh_update_device()
   const cs_lnum_t n_b_cells = m->n_b_cells;
   const cs_lnum_t n_i_faces = m->n_i_faces;
   const cs_lnum_t n_b_faces = m->n_b_faces;
+  const cs_lnum_t n_vertices = m->n_vertices;
 
   /* Mesh structures
      --------------- */
 
   {
+    CS_REALLOC_HD(m->vtx_coord, 3 * n_vertices, cs_real_t, alloc_mode);
+    cs_mem_advise_set_read_mostly(m->vtx_coord);
+
     CS_REALLOC_HD(m->i_face_cells, n_i_faces, cs_lnum_2_t, alloc_mode);
     cs_mem_advise_set_read_mostly(m->i_face_cells);
 
@@ -611,6 +615,32 @@ cs_preprocess_mesh_update_device()
     if (m->b_cells != NULL) {
       CS_REALLOC_HD(m->b_cells, n_b_cells, cs_lnum_t, alloc_mode);
       cs_mem_advise_set_read_mostly(m->b_cells);
+    }
+
+    if (m->i_face_vtx_idx != NULL) {
+      CS_REALLOC_HD(m->i_face_vtx_idx, n_i_faces + 1, cs_lnum_t, alloc_mode);
+      cs_mem_advise_set_read_mostly(m->i_face_vtx_idx);
+    }
+
+    if (m->i_face_vtx_lst != NULL) {
+      CS_REALLOC_HD(m->i_face_vtx_lst,
+                    m->i_face_vtx_connect_size,
+                    cs_lnum_t,
+                    alloc_mode);
+      cs_mem_advise_set_read_mostly(m->i_face_vtx_lst);
+    }
+
+    if (m->b_face_vtx_idx != NULL) {
+      CS_REALLOC_HD(m->b_face_vtx_idx, n_b_faces + 1, cs_lnum_t, alloc_mode);
+      cs_mem_advise_set_read_mostly(m->b_face_vtx_idx);
+    }
+
+    if (m->b_face_vtx_lst != NULL) {
+      CS_REALLOC_HD(m->b_face_vtx_lst,
+                    m->b_face_vtx_connect_size,
+                    cs_lnum_t,
+                    alloc_mode);
+      cs_mem_advise_set_read_mostly(m->b_face_vtx_lst);
     }
   }
 
