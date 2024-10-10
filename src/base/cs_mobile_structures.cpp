@@ -1248,24 +1248,29 @@ cs_mobile_structures_prediction(int  itrale,
             disale[vtx_id][k] = ms->xstp[str_id][k];
         }
       }
-
-      /* External structures (code_aster) */
-
-      else if (str_num < 0) {
-
-        cs_lnum_t s_id = b_face_vtx_idx[face_id];
-        cs_lnum_t e_id = b_face_vtx_idx[face_id+1];
-        for (cs_lnum_t j = s_id; j < e_id; j++) {
-          cs_lnum_t vtx_id = b_face_vtx[j];
-          impale[vtx_id] = 1;
-        }
-
-      }
-
     }
   }
 
+  /* External structures (code_aster) */
+
   if (n_ast_structs > 0) {
+    const cs_lnum_t *b_face_vtx_idx = m->b_face_vtx_idx;
+    const cs_lnum_t *b_face_vtx     = m->b_face_vtx_lst;
+
+    const int *idfstr = ms->idfstr;
+
+    for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++) {
+      int str_num = idfstr[face_id];
+
+      if (str_num < 0) {
+        cs_lnum_t s_id = b_face_vtx_idx[face_id];
+        cs_lnum_t e_id = b_face_vtx_idx[face_id + 1];
+        for (cs_lnum_t j = s_id; j < e_id; j++) {
+          cs_lnum_t vtx_id = b_face_vtx[j];
+          impale[vtx_id]   = 1;
+        }
+      }
+    }
 
     /* If itrale = 0, we do nothing for now, but should receive the
        initial displacements coming from code_aster. */
@@ -1275,7 +1280,6 @@ cs_mobile_structures_prediction(int  itrale,
 
       cs_ast_coupling_compute_displacement(disale);
     }
-
   }
 
   /* Displacement at previous time step and save flux and pressure.
