@@ -186,7 +186,7 @@ cs_porous_model_init_disable_flag(void)
          not mesh refinement */
       assert(m->n_cells == n_cells_prev || n_cells_prev == 0);
 
-      BFT_REALLOC(mq->c_disable_flag, n_cells_ext, int);
+      CS_REALLOC_HD(mq->c_disable_flag, n_cells_ext, int, cs_alloc_mode);
       for (cs_lnum_t cell_id = 0; cell_id < n_cells_ext; cell_id++)
         mq->c_disable_flag[cell_id] = 0;
 
@@ -194,7 +194,7 @@ cs_porous_model_init_disable_flag(void)
     }
     else {
       if (mq->has_disable_flag != 0)
-        BFT_REALLOC(mq->c_disable_flag, n_cells_ext, int);
+        CS_REALLOC_HD(mq->c_disable_flag, n_cells_ext, int, cs_alloc_mode);
       if (m->halo != nullptr)
         cs_halo_sync_untyped(m->halo, CS_HALO_STANDARD, sizeof(int),
                              mq->c_disable_flag);
@@ -202,7 +202,7 @@ cs_porous_model_init_disable_flag(void)
   }
   else {
     if (mq->c_disable_flag == nullptr)
-      BFT_MALLOC(mq->c_disable_flag, 1, int);
+      CS_MALLOC_HD(mq->c_disable_flag, 1, int, cs_alloc_mode);
     mq->c_disable_flag[0] = 0;
   }
 
