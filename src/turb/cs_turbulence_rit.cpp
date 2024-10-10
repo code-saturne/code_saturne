@@ -356,6 +356,30 @@ _turb_flux_st(const char          *name,
                   * (1.-alpha)/xttdrbw * (xxc2+xxc3*xnal[i]*xnal[i]);
 
        fimp[c_id][i][i] += cs_math_fmax(imp_term, 0);
+
+       if ((cvar_tt != nullptr) && (cpro_beta != nullptr)
+           && rans_mdl->has_buoyant_term == 1) {
+
+         /* Stable if negative w'T' */
+         cs_real_t mez[3];
+         cs_math_3_normalize(grav, mez);
+         cs_real_t wptp = -cs_math_3_dot_product(mez, xuta[c_id]);
+         cs_real_t w2 = cs_math_3_sym_33_3_dot_product(mez,
+                                                       cvar_rij[c_id],
+                                                       mez);
+
+         if (wptp < - cs_math_epzero * sqrt(cvara_tt[c_id] * w2)) {
+
+           /* Note Cauchy Schwarz implies that
+            * T'2/|w'T'| > |w'T'| / w'2
+            * */
+           imp_term =   cell_f_vol[c_id] * crom[c_id]
+             * grav[i] * cpro_beta[c_id] * cvara_tt[c_id] / wptp;
+
+           fimp[c_id][i][i] += cs_math_fmax(imp_term, 0);
+         }
+       }
+
     }
   }
 }
