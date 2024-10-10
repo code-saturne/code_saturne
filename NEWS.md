@@ -3,6 +3,8 @@ Release 8.1.2 (unreleased)
 
 ### Bug fixes:
 
+- Fix potential memory leak in multigrid.
+
 - Fix incorrect computation Rij symmetry BC coefficients.
 
 - Fix halo synchronization for periodicity in non-MPI builds.

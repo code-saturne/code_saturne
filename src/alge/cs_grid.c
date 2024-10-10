@@ -2778,8 +2778,11 @@ _pairwise_msr(cs_lnum_t         f_n_rows,
 
   }
 
-  if (m_max < 0)
+  if (m_max < 0) {
+    BFT_FREE(a_max);
+    BFT_FREE(a_m);
     return 0;
+  }
 
   /* Build pointers to lists of rows by a_m
      (to allow access to row with lowest m) */
