@@ -100,6 +100,15 @@ BEGIN_C_DECLS
  * Local Macro Definitions
  *============================================================================*/
 
+/* Tensor to vector (t2v) and vector to tensor (v2t) mask arrays */
+
+#undef _T2V
+#undef _IV2T
+#undef _JV2T
+#define _T2V {{0, 3, 5}, {3, 1, 4}, {5, 4, 2}};
+#define _IV2T {0, 1, 2, 0, 1, 0};
+#define _JV2T {0, 1, 2, 1, 2, 2};
+
 /*=============================================================================
  * Local Structure Definitions
  *============================================================================*/
@@ -107,13 +116,6 @@ BEGIN_C_DECLS
 /*============================================================================
  * Static global variables
  *============================================================================*/
-
-/* Tensor to vector (t2v) and vector to tensor (v2t) mask arrays */
-
-static const cs_lnum_t _t2v[3][3] = {{0, 3, 5}, {3, 1, 4}, {5, 4, 2}};
-
-static const cs_lnum_t _iv2t[6] = {0, 1, 2, 0, 1, 0};
-static const cs_lnum_t _jv2t[6] = {0, 1, 2, 1, 2, 2};
 
 /*============================================================================
  * Private function definitions
@@ -632,9 +634,9 @@ _rij_echo(int              phase_id,
   const cs_real_t crij2 = cs_turb_crij2;
   const cs_real_t xkappa = cs_turb_xkappa;
 
-  auto t2v = _t2v;
-  auto iv2t = _iv2t;
-  auto jv2t = _jv2t;
+  const int t2v[3][3] = _T2V;
+  const int iv2t[6] = _IV2T;
+  const int jv2t[6] = _JV2T;
   const cs_real_t tdeltij[3][3] = {{1., 0., 0.}, {0., 1., 0.}, {0., 0., 1.}};
 
   ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
@@ -752,7 +754,7 @@ _gravity_st_rij(const cs_field_t  *f_rij,
   const cs_real_t o_m_crij3 = (1. - cs_turb_crij3);
   const cs_real_t crij3 = cs_turb_crij3;
 
-  auto t2v = _t2v;
+  const int t2v[3][3] = _T2V;
 
   cs_real_6_t *_buoyancy = nullptr, *cpro_buoyancy = nullptr;
   cs_field_t *f_buo = cs_field_by_name_try("algo:rij_buoyancy");
@@ -1139,9 +1141,9 @@ _pre_solve_lrr(const cs_field_t  *f_rij,
   const cs_real_t crijeps = cs_turb_crij_eps;
   const cs_real_t csrij  = cs_turb_csrij;
 
-  auto t2v = _t2v;
-  auto iv2t = _iv2t;
-  auto jv2t = _jv2t;
+  const int t2v[3][3] = _T2V;
+  const int iv2t[6] = _IV2T;
+  const int jv2t[6] = _JV2T;
   const cs_real_t tdeltij[3][3] = {{1., 0., 0.}, {0., 1., 0.}, {0., 0., 1.}};
   const cs_real_t vdeltij[6] = {1, 1, 1, 0, 0, 0};
 
@@ -1550,9 +1552,9 @@ _pre_solve_lrr_sg(const cs_field_t  *f_rij,
   const cs_real_t crijeps = cs_turb_crij_eps;
   const cs_real_t csrij  = cs_turb_csrij;
 
-  auto iv2t = _iv2t;
-  auto jv2t = _jv2t;
-  auto t2v = _t2v;
+  const int iv2t[6] = _IV2T;
+  const int jv2t[6] = _JV2T;
+  const int t2v[3][3] = _T2V;
   const cs_real_t vdeltij[6] = {1, 1, 1, 0, 0, 0};
 
   cs_lnum_t solid_stride = 1;
@@ -1960,9 +1962,9 @@ _pre_solve_ssg(const cs_field_t  *f_rij,
   const cs_turb_model_type_t iturb
     = (cs_turb_model_type_t)cs_glob_turb_model->iturb;
 
-  auto t2v = _t2v;
-  auto iv2t = _iv2t;
-  auto jv2t = _jv2t;
+  const int t2v[3][3] = _T2V;
+  const int iv2t[6] = _IV2T;
+  const int jv2t[6] = _JV2T;
   const cs_real_t tdeltij[3][3] = {{1., 0., 0.}, {0., 1., 0.}, {0., 0., 1.}};
   const cs_real_t vdeltij[6] = {1, 1, 1, 0, 0, 0};
 
@@ -2964,9 +2966,9 @@ cs_turbulence_rij(int phase_id)
   const cs_real_t *crom = f_rho->val;
   const cs_real_6_t *cvara_rij = (const cs_real_6_t *)f_rij->val_pre;
 
-  auto t2v = _t2v;
-  auto iv2t = _iv2t;
-  auto jv2t = _jv2t;
+  const int t2v[3][3] = _T2V;
+  const int iv2t[6] = _IV2T;
+  const int jv2t[6] = _JV2T;
   const cs_real_t tdeltij[3][3] = {{1., 0., 0.}, {0., 1., 0.}, {0., 0., 1.}};
   const cs_real_t vdeltij[6] = {1, 1, 1, 0, 0, 0};
 
