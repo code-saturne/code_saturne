@@ -79,6 +79,9 @@ typedef enum {
 typedef struct {
   bool  compute_porosity_from_scan;
   char *file_names;
+  int n_headers;
+  int *header_type;
+  char **headers;
   char *output_name;
   bool  postprocess_points;
   /*! Matrix of associated transformation

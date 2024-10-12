@@ -107,6 +107,9 @@ BEGIN_C_DECLS
 static cs_porosity_from_scan_opt_t _porosity_from_scan_opt = {
   .compute_porosity_from_scan = false,
   .file_names = nullptr,
+  .n_headers = 7,
+  .header_type = nullptr,
+  .headers = nullptr,
   .output_name = nullptr,
   .postprocess_points = true,
   .transformation_matrix = {{1., 0., 0., 0.},
@@ -325,6 +328,50 @@ _prepare_porosity_from_scan(const cs_mesh_t             *m,
 
   cs_real_t *restrict cell_f_vol = mq->cell_f_vol;
 
+  int n_headers = _porosity_from_scan_opt.n_headers;
+  const char *default_headers[] = {"X", "Y", "Z", "Intensity",
+                                   "Red", "Green", "Blue"};
+
+  int default_type[] = {1, 1, 1, 0, 0, 0, 0};
+  char **headers = _porosity_from_scan_opt.headers;
+
+  /* type specifier:
+   * 0 for interger
+   * 1 for cs_real_t
+   * ...
+   * */
+  int *type = _porosity_from_scan_opt.header_type;
+
+  /* If not specified */
+  if (headers == nullptr) {
+    n_headers = 7;
+    _porosity_from_scan_opt.n_headers = n_headers;
+
+    BFT_MALLOC(headers, n_headers, char *);
+    BFT_MALLOC(type, n_headers, int);
+    // Copy each string into modifiable memory
+    for (int i = 0; i < n_headers; i++) {
+      BFT_MALLOC(headers[i], strlen(default_headers[i]) + 1, char);
+      strcpy(headers[i], default_headers[i]);
+      type[i] = default_type[i];
+    }
+  }
+
+  bft_printf("Reading .pts file headers\n");
+  for (int i = 0; i < n_headers; i++) {
+
+    /* mapping type specifier based on the header name */
+    if (strcmp(headers[i], "X") == 0 ||
+        strcmp(headers[i], "Y") == 0 ||
+        strcmp(headers[i], "Z") == 0) {
+      type[i] = 1;
+    }
+    else {
+      type[i] = 0;
+    }
+    bft_printf("header %d: %s, type: %d\n", i, headers[i], type[i]);
+  }
+
   /* Open file */
   bft_printf(_("\n\n  Compute the porosity from a scan points file:\n"
                "    %s\n\n"),
@@ -439,22 +486,46 @@ _prepare_porosity_from_scan(const cs_mesh_t             *m,
 
       /* Read points */
       for (int i = 0; i < n_points; i++ ) {
-        int num, green, red, blue;
+        int num = 0, green = 0, red = 0, blue = 0;
         cs_real_4_t xyz;
         for (int j = 0; j < 3; j++)
           point_coords[i][j] = 0.;
 
-        if (fscanf(file, "%lf", &(xyz[0])) != 1)
-          bft_error
-            (__FILE__,__LINE__, 0,
-             _("Porosity from scan: Error while reading dataset. Line %d\n"), i);
-        if (fscanf(file, "%lf", &(xyz[1])) != 1)
-          bft_error
-            (__FILE__,__LINE__, 0,
-             _("Porosity from scan: Error while reading dataset."));
-        if (fscanf(file, "%lf", &(xyz[2])) != 1)
-          bft_error(__FILE__,__LINE__, 0,
-                    _("Porosity from scan: Error while reading dataset."));
+        for (int h_id = 0; h_id < n_headers; h_id++) {
+
+          double local_double = 0.;
+          int local_int = 0.;
+
+          if (type[h_id] == 0)
+            fscanf(file, "%d", &local_int);
+          if (type[h_id] == 1)
+            fscanf(file, "%lf", &local_double);
+
+          if (h_id == (n_headers-1))
+            fscanf(file, "%*[^\n]");
+
+          if (strcmp(headers[h_id], "X") == 0)
+            xyz[0] = local_double;
+
+          else if (strcmp(headers[h_id], "Y") == 0)
+            xyz[1] = local_double;
+
+          else if (strcmp(headers[h_id], "Z") == 0)
+            xyz[2] = local_double;
+
+          else if (strcmp(headers[h_id], "Intensity") == 0)
+            num = local_int;
+
+          else if (strcmp(headers[h_id], "Red") == 0)
+            red = local_int;
+
+          else if (strcmp(headers[h_id], "Green") == 0)
+            green = local_int;
+
+          else if (strcmp(headers[h_id], "Blue") == 0)
+            blue = local_int;
+
+        } /* end loop on headers*/
 
         /* Translation and rotation */
         xyz[3] = 1.;
@@ -467,27 +538,6 @@ _prepare_porosity_from_scan(const cs_mesh_t             *m,
           min_vec[j] = CS_MIN(min_vec[j], point_coords[i][j]);
           max_vec[j] = CS_MAX(max_vec[j], point_coords[i][j]);
         }
-
-        /* Intensities */
-        if (fscanf(file, "%d", &num) != 1)
-          bft_error(__FILE__,__LINE__, 0,
-                    _("Porosity from scan: Error while reading dataset."));
-
-        /* Red */
-        if (fscanf(file, "%d", &red) != 1)
-          bft_error(__FILE__,__LINE__, 0,
-                    _("Porosity from scan: Error while reading dataset (red). "
-                      "npoints read %d\n"), i);
-        /* Green */
-        if (fscanf(file, "%d", &green) != 1)
-          bft_error(__FILE__,__LINE__, 0,
-                    _("Porosity from scan: Error while reading dataset (green). "
-                      "npoints read %d\n"), i);
-        /* Blue */
-        if (fscanf(file, "%d\n", &blue) != 1)
-          bft_error(__FILE__,__LINE__, 0,
-                    _("Porosity from scan: Error while reading dataset (blue). "
-                      "npoints read %d\n"), i);
 
         /* When colors are written as int, Paraview interprets them in [0, 255]
          * when they are written as float, Paraview interprets them in [0., 1.]
@@ -717,6 +767,11 @@ _prepare_porosity_from_scan(const cs_mesh_t             *m,
   } /* End of multiple files */
 
   /* Finalization */
+  for (int i = 0; i < n_headers; i++) {
+    BFT_FREE(headers[i]);
+  }
+  BFT_FREE(headers);
+  BFT_FREE(type);
 
   const cs_field_t *f_nb_scan = cs_field_by_name_try("nb_scan_points");
 
