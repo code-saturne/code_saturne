@@ -357,6 +357,7 @@ cs_ctwr_volume_mass_injection_packing_dof_func(cs_lnum_t         n_elts,
   }
   else {
     rho = CS_F_(rho)->val; /* Humid air density */
+    rho_h = CS_F_(rho)->val; /* Humid air density */
     vel_h = (cs_real_3_t *)CS_F_(vel)->val_pre; /* Humid air velocity*/
   }
 
@@ -511,6 +512,7 @@ cs_ctwr_volume_mass_injection_evap_rain_dof_func(cs_lnum_t         n_elts,
   }
   else {
     rho = CS_F_(rho)->val; /* Humid air density */
+    rho_h = CS_F_(rho)->val; /* Humid air density */
     vel_h = (cs_real_3_t *)CS_F_(vel)->val_pre; /* Humid air velocity*/
   }
 
