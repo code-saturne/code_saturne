@@ -7650,8 +7650,7 @@ cs_post_init_meshes(int check_mask)
     int  n_writers = 0;
     int  *writer_ids = NULL;
     cs_probe_set_t  *pset = cs_probe_set_get_by_id(pset_id);
-    int  post_mesh_id = (pset_id == 0) ?
-      CS_POST_MESH_PROBES : cs_post_get_free_mesh_id();
+    int  post_mesh_id = cs_post_get_free_mesh_id();
 
     cs_probe_set_get_post_info(pset,
                                &time_varying,
@@ -7675,19 +7674,17 @@ cs_post_init_meshes(int check_mask)
                                  writer_ids);
 
     }
-    else { /* Monitoring points and profiles*/
+    else { /* Monitoring points */
+
+      if (pset_id == 0) // Use reserved mesh id rather than next free one.
+        post_mesh_id = CS_POST_MESH_PROBES;
 
       /* Handle default writer assignment */
 
       if (n_writers < 0) {
 
-        if (! is_profile) {
-          const int  default_writer_ids[] = {CS_POST_WRITER_PROBES};
-          cs_probe_set_associate_writers(pset, 1, default_writer_ids);
-        }
-
-        else
-          cs_probe_set_associate_writers(pset, 0, NULL);
+        const int  default_writer_ids[] = {CS_POST_WRITER_PROBES};
+        cs_probe_set_associate_writers(pset, 1, default_writer_ids);
 
         cs_probe_set_get_post_info(pset, NULL, NULL, NULL,
                                    NULL, NULL, NULL,
