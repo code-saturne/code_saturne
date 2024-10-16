@@ -66,6 +66,36 @@ BEGIN_C_DECLS
  * User function definitions
  *============================================================================*/
 
+/*----------------------------------------------------------------------------
+ * Combine transformation matrixes (c = a.b)
+ *
+ * parameters:
+ *   a <-- first transformation matrix
+ *   b <-- second transformation matrix
+ *   c --> combined transformation matrix
+ *---------------------------------------------------------------------------*/
+
+static void
+_combine_tr_matrixes(const double  a[3][4],
+                     const double  b[3][4],
+                     double  c[3][4])
+{
+  c[0][0] = a[0][0]*b[0][0] + a[0][1]*b[1][0] + a[0][2]*b[2][0];
+  c[0][1] = a[0][0]*b[0][1] + a[0][1]*b[1][1] + a[0][2]*b[2][1];
+  c[0][2] = a[0][0]*b[0][2] + a[0][1]*b[1][2] + a[0][2]*b[2][2];
+  c[0][3] = a[0][0]*b[0][3] + a[0][1]*b[1][3] + a[0][2]*b[2][3] + a[0][3];
+
+  c[1][0] = a[1][0]*b[0][0] + a[1][1]*b[1][0] + a[1][2]*b[2][0];
+  c[1][1] = a[1][0]*b[0][1] + a[1][1]*b[1][1] + a[1][2]*b[2][1];
+  c[1][2] = a[1][0]*b[0][2] + a[1][1]*b[1][2] + a[1][2]*b[2][2];
+  c[1][3] = a[1][0]*b[0][3] + a[1][1]*b[1][3] + a[1][2]*b[2][3] + a[1][3];
+  
+  c[2][0] = a[2][0]*b[0][0] + a[2][1]*b[1][0] + a[2][2]*b[2][0];
+  c[2][1] = a[2][0]*b[0][1] + a[2][1]*b[1][1] + a[2][2]*b[2][1];
+  c[2][2] = a[2][0]*b[0][2] + a[2][1]*b[1][2] + a[2][2]*b[2][2];
+  c[2][3] = a[2][0]*b[0][3] + a[2][1]*b[1][3] + a[2][2]*b[2][3] + a[2][3];
+}
+
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Force preprocessing behavior in case of restart.
@@ -112,16 +142,27 @@ cs_user_mesh_input(void)
 
   /*! [mesh_input_2] */
   {
-    /* Add same mesh with transformations:
-     * Here a translation in direction x,
-     * and a rotation of theta around axe z.
-     * */
+    /* Add same mesh with transformations */
     const char *renames[] = {"Inlet", "Injection_2",
                              "Group_to_remove", nullptr};
-    const double  theta = 0.1; /* radians */
-    const double transf_matrix[3][4] = {{ cos(theta), sin(theta), 0., 5.},
-                                        {-sin(theta), cos(theta), 0., 0.},
-                                        {         0.,         0., 1., 0.}};
+
+    /* Transformation matrix in homogeneous coordinates */
+    /* Last raw is not represented */
+    double transf_matrix[3][4];
+
+    /* Here a rotation of -90° in direction z */
+    const double theta = -0.5 * cs_math_pi; /* radians */
+    const double transf_matrix_rot[3][4] = {{cos(theta), -sin(theta), 0., 0.},
+                                            {sin(theta),  cos(theta), 0., 0.},
+                                            {        0.,          0., 1., 0.}};
+
+    /* Here a translation of -4m in direction x and 6m in y */
+    const double transf_matrix_trans[3][4] = {{1., 0., 0., -4.},
+                                              {0., 1., 0.,  6.},
+                                              {0., 0., 1.,  0.}};
+
+    /* Combine transformation matrixes */
+    _combine_tr_matrixes(transf_matrix_trans, transf_matrix_rot, transf_matrix);
 
     cs_preprocessor_data_add_file("mesh_input/mesh_02",
                                   2, renames,
