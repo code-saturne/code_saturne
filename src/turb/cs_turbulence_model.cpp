@@ -498,9 +498,6 @@ double cs_turb_dpow = -1.;
  */
 double cs_turb_cmu = 0.09;
 
-/*! \f$ C_\mu^\frac{1}{4} \f$ */
-double cs_turb_cmu025 = 0.547722557; /* computed more precisely later */
-
 /*!
  * Constant \f$C_{\varepsilon 1}\f$ for all the RANS turbulence models except
  * for the v2f and the \f$k-\omega\f$ models.
@@ -1530,7 +1527,6 @@ cs_turb_compute_constants(int phase_id)
   if (cs_glob_turb_model->itytur == 5)
     cs_turb_cmu = 0.22;
 
-  cs_turb_cmu025 = pow(cs_turb_cmu, 0.25);
   cs_turb_cstlog_alpha = exp(-cs_turb_xkappa
                              * (cs_turb_cstlog_rough - cs_turb_cstlog));
 

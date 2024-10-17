@@ -383,7 +383,7 @@ cs_wall_functions_2scales_continuous(cs_real_t   rnnb,
   g = exp(-Re/11.);
 
   /* Comutation of uk*/
-  *uk = sqrt( (1.-g) * cs_turb_cmu025 * cs_turb_cmu025 * kinetic_en
+  *uk = sqrt( (1.-g) * sqrt(cs_turb_cmu) * kinetic_en
              + g * l_visc * vel/y);
 
   /* Local value of y+, estimated U+ */
@@ -492,7 +492,7 @@ cs_wall_functions_2scales_log(cs_real_t   l_visc,
   Re = sqrt(kinetic_en) * y / l_visc;
   g = exp(-Re/11.);
 
-  *uk = sqrt( (1.-g) * cs_turb_cmu025 * cs_turb_cmu025 * kinetic_en
+  *uk = sqrt( (1.-g) * sqrt(cs_turb_cmu) * kinetic_en
             + g * l_visc * vel / y);
 
   *yplus = *uk * y / l_visc;
@@ -580,13 +580,13 @@ cs_wall_functions_2scales_scalable(cs_real_t   l_visc,
   Re = sqrt(kinetic_en) * y / l_visc;
   g = exp(-Re/11.);
 
-  *uk = sqrt( (1.-g) * cs_turb_cmu025 * cs_turb_cmu025 * kinetic_en
+  *uk = sqrt( (1.-g) * sqrt(cs_turb_cmu) * kinetic_en
             + g * l_visc * vel / y);
 
   *yplus = *uk * y / l_visc;
 
   /* Compute the friction velocity ustar */
-  *uk = cs_turb_cmu025 * sqrt(kinetic_en);//FIXME
+  *uk = sqrt(sqrt(cs_turb_cmu) *kinetic_en);//FIXME
   *yplus = *uk * y / l_visc;//FIXME
 
   /* Log layer */
@@ -885,7 +885,7 @@ cs_wall_functions_2scales_smooth_rough(cs_real_t   l_visc,
   Re = sqrt(kinetic_en) * (y + y0) / l_visc;
   g = exp(-Re/11.);
 
-  *uk = sqrt( (1.-g) * cs_turb_cmu025 * cs_turb_cmu025 * kinetic_en
+  *uk = sqrt( (1.-g) * sqrt(cs_turb_cmu) * kinetic_en
             + g * l_visc * vel / (y + y0));
 
 

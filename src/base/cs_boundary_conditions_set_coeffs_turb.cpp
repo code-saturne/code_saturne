@@ -2281,7 +2281,7 @@ cs_boundary_conditions_set_coeffs_turb(int        isvhb,
     else if (icodcl_vel[f_id] == 6) {
 
       /* Neutral value, might be overwritten after */
-      uk = cs_turb_cmu025*sqrt(ek);
+      uk = sqrt(sqrt(cs_turb_cmu) * ek);
 
       /* NB: for rough walls, yplus is computed from the roughness and not uk */
       assert(rough != nullptr);
