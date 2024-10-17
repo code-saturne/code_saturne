@@ -2078,7 +2078,7 @@ cs_parameters_check(void)
       cs_parameters_is_greater_double(CS_ABORT_DELAYED,
                                       _(f_desc),
                                       "equation param climgr "
-                                      "(gradient limitation coeffcient)",
+                                      "(gradient limitation coefficient)",
                                       eqp->climgr,
                                       1.);
 
