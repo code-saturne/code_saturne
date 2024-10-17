@@ -35,6 +35,7 @@ import time
 import logging
 import fnmatch
 import math
+import configparser
 from collections import OrderedDict
 
 #-------------------------------------------------------------------------------
@@ -1221,6 +1222,7 @@ class Studies(object):
         resource_config = cs_run_conf.get_install_config_info(pkg)
         if self.__resource_name:
             resource_config['resource_name'] = self.__resource_name
+        self.__resource_name = resource_config['resource_name']
 
         exec_env = cs_exec_environment.exec_environment(pkg,
                                                         wdir=None,
@@ -2110,6 +2112,7 @@ class Studies(object):
         # fill file with batch command for state analysis
         batch_cmd += self.build_final_batch(self.__postpro,
                                             self.__compare,
+                                            self.__sheet,
                                             state_file_name)
         slurm_batch_file.write(batch_cmd)
         slurm_batch_file.flush()
@@ -2134,14 +2137,23 @@ class Studies(object):
 
     #---------------------------------------------------------------------------
 
-    def build_final_batch(self, postpro, compare, state_file_name):
+    def build_final_batch(self, postpro, compare, report, state_file_name):
         """
         Launch state option in DESTINATION
         """
 
+        final_cmd = "cd " + self.__dest + os.linesep
+
         e = os.path.join(self.__pkg.get_dir('bindir'), self.__exe)
 
-        final_cmd = "cd " + self.__dest + os.linesep
+        # To handle possible back-end issues for reports generation
+        # such as unavailable packages, we allow to define a specific
+        # back-end executable for postprocessing, which may be different from
+        # the main executable (such as one in a container with required
+        # prerequisites)
+        config = configparser.ConfigParser(self.pkg.get_configfiles())
+        if config.has_option('studymanager', 'postprocessing_exec'):
+            e = config.get('studymanager', 'postprocessing_exec')
 
         # final analysis after all run_cases are finished
         final_cmd += e + " smgr --state" \
@@ -2150,9 +2162,11 @@ class Studies(object):
                        + " --dest " + self.__dest \
                        + " --state-file " + state_file_name
         if postpro:
-           final_cmd += " --post"
+            final_cmd += " --post"
         if compare:
-           final_cmd += " --compare"
+            final_cmd += " --compare"
+        if report:
+            final_cmd += " --report"
 
         # add tags options
         if self.__with_tags:
