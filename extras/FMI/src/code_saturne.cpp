@@ -211,6 +211,8 @@ typedef struct {
   double  *input_vals;
   double  *output_vals;
 
+  bool    *input_init;
+
 } cs_variables_t;
 
 /* Save state of read and written variables */
@@ -1003,44 +1005,6 @@ static void
  *   pointer to initialized control queue
  *----------------------------------------------------------------------------*/
 
-static void
-_map_initialize(void)
-{
-  _real_variable_values = (double *)malloc(_n_real_vars*sizeof(double));
-  for (int i = 0; i < _n_real_vars; i++) {
-    int j = _real_vars[i].value_reference;
-    _real_variable_reference_map[j] = i;
-    _real_variable_values[i] = _real_vars[i].start;
-  }
-  _integer_variable_values = (int *)malloc(_n_integer_vars*sizeof(int));
-  for (int i = 0; i < _n_integer_vars; i++) {
-    int j = _integer_vars[i].value_reference;
-    _integer_variable_reference_map[j] = i;
-    _integer_variable_values[i] = _integer_vars[i].start;
-  }
-  _bool_variable_values = (bool *)malloc(_n_bool_vars*sizeof(bool));
-  for (int i = 0; i < _n_bool_vars; i++) {
-    int j = _bool_vars[i].value_reference;
-    _bool_variable_reference_map[j] = i;
-    _bool_variable_values[i] = _bool_vars[i].start;
-  }
-  _string_variable_values = (char **)malloc(_n_string_vars*sizeof(char *));
-  for (int i = 0; i < _n_string_vars; i++) {
-    int j = _string_vars[i].value_reference;
-    _string_variable_reference_map[j] = i;
-    size_t l = strlen(_string_vars[i].start);
-    _string_variable_values[i] = (char *)malloc(l + 1);
-    strncpy(_string_variable_values[i], _string_vars[i].start, l);
-  }
-}
-
-/*----------------------------------------------------------------------------
- * Initialize a variables grouping structure
- *
- * returns:
- *   pointer to initialized control queue
- *----------------------------------------------------------------------------*/
-
 static cs_variables_t *
 _variables_initialize(void)
 {
@@ -1059,6 +1023,8 @@ _variables_initialize(void)
 
   v->input_ids = nullptr;
   v->output_ids = nullptr;
+
+  v->input_init = nullptr;
 
   v->input_vals = nullptr;
   v->output_vals = nullptr;
@@ -1081,6 +1047,7 @@ _variables_finalize(cs_variables_t  **v)
     if (_v->input_max_size > 0) {
       free(_v->input_ids);
       free(_v->input_vals);
+      free(_v->input_init);
     }
     if (_v->output_max_size > 0) {
       free(_v->output_ids);
@@ -1093,17 +1060,13 @@ _variables_finalize(cs_variables_t  **v)
 
 /*----------------------------------------------------------------------------
  * Add or set a variables input;
- *
- * return 0 if variable was already present, 1 if inserted
  *----------------------------------------------------------------------------*/
 
-static int
+static void
 _variables_add_input(cs_variables_t  *v,
                      int              id,
                      double           val)
 {
-  int retval = 0;
-
   assert(id >= 0);
 
   if (id >= v->input_max) {
@@ -1120,9 +1083,13 @@ _variables_add_input(cs_variables_t  *v,
       v->input_vals = (double *)realloc(v->input_vals,
                                         v->input_max_size*sizeof(double));
 
+      v->input_init = (bool *)realloc(v->input_init,
+                                      v->input_max_size*sizeof(bool));
+
       for (int i = v->input_max; i < v->input_max_size; i++) {
         v->input_ids[i] = -1;
         v->input_vals[i] = 0;
+        v->input_init[i] = false;
       }
     }
 
@@ -1130,9 +1097,40 @@ _variables_add_input(cs_variables_t  *v,
   }
 
   if (v->input_ids[id] < 0) {
-    retval = 1;
     v->input_ids[id] = v->n_input;
     v->n_input += 1;
+  }
+
+  v->input_vals[id] = val;
+}
+
+/*----------------------------------------------------------------------------
+ * Set a variables input;
+ *----------------------------------------------------------------------------*/
+
+static int
+_variables_set_input(cs_variables_t  *v,
+                     int              id,
+                     double           val)
+{
+  int retval = 0;
+
+  assert(id >= 0);
+
+  bool unknown = false;
+  if (id >= v->input_max)
+    unknown = true;
+  else if (v->input_ids[id] < 0)
+    unknown = true;
+  if (unknown) {
+    string s = "Input variable id " + to_string(id) + " unknown in model";
+    _cs_log(fmi2Fatal, CS_LOG_FATAL, s);
+    exit(EXIT_FAILURE);
+  }
+
+  if (v->input_init[id] == false) {
+    v->input_init[id] = true;
+    retval = 1;
   }
 
   v->input_vals[id] = val;
@@ -1141,17 +1139,13 @@ _variables_add_input(cs_variables_t  *v,
 }
 
 /*----------------------------------------------------------------------------
- * Add or get a variables output;
- *
- * return 0 if variable was already present, 1 if inserted
+ * Add an output variable;
  *----------------------------------------------------------------------------*/
 
-static int
+static void
 _variables_add_output(cs_variables_t  *v,
                       int              id)
 {
-  int retval = 0;
-
   assert(id >= 0);
 
   if (id >= v->output_max) {
@@ -1178,12 +1172,73 @@ _variables_add_output(cs_variables_t  *v,
   }
 
   if (v->output_ids[id] < 0) {
-    retval = 1;
     v->output_ids[id] = v->n_output;
     v->n_output += 1;
   }
+}
 
-  return retval;
+/*----------------------------------------------------------------------------
+ * Add or get a variables output.
+ *----------------------------------------------------------------------------*/
+
+static void
+_variables_get_output_status(cs_variables_t  *v,
+                             int              id)
+{
+  assert(id >= 0);
+
+  bool unknown = false;
+  if (id >= v->output_max)
+    unknown = true;
+  else if (v->output_ids[id] < 0)
+    unknown = true;
+  if (unknown) {
+    string s = "Output variable id " + to_string(id) + " unknown in model";
+    _cs_log(fmi2Fatal, CS_LOG_FATAL, s);
+    exit(EXIT_FAILURE);
+  }
+}
+
+/*----------------------------------------------------------------------------
+ * Initialize a variables grouping structure
+ *
+ * returns:
+ *   pointer to initialized control queue
+ *----------------------------------------------------------------------------*/
+
+static void
+_map_initialize(void)
+{
+  _real_variable_values = (double *)malloc(_n_real_vars*sizeof(double));
+  for (int i = 0; i < _n_real_vars; i++) {
+    int j = _real_vars[i].value_reference;
+    _real_variable_reference_map[j] = i;
+    _real_variable_values[i] = _real_vars[i].start;
+    if (_real_vars[i].causality == input)
+      _variables_add_input(_cs_variables, j, _real_vars[i].start);
+    else
+      _variables_add_output(_cs_variables, j);
+  }
+  _integer_variable_values = (int *)malloc(_n_integer_vars*sizeof(int));
+  for (int i = 0; i < _n_integer_vars; i++) {
+    int j = _integer_vars[i].value_reference;
+    _integer_variable_reference_map[j] = i;
+    _integer_variable_values[i] = _integer_vars[i].start;
+  }
+  _bool_variable_values = (bool *)malloc(_n_bool_vars*sizeof(bool));
+  for (int i = 0; i < _n_bool_vars; i++) {
+    int j = _bool_vars[i].value_reference;
+    _bool_variable_reference_map[j] = i;
+    _bool_variable_values[i] = _bool_vars[i].start;
+  }
+  _string_variable_values = (char **)malloc(_n_string_vars*sizeof(char *));
+  for (int i = 0; i < _n_string_vars; i++) {
+    int j = _string_vars[i].value_reference;
+    _string_variable_reference_map[j] = i;
+    size_t l = strlen(_string_vars[i].start);
+    _string_variable_values[i] = (char *)malloc(l + 1);
+    strncpy(_string_variable_values[i], _string_vars[i].start, l);
+  }
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1744,15 +1799,6 @@ fmi2GetReal(fmi2ValueReference  reference)
 
   int var_index = _real_variable_reference_map[reference];
 
-  if (_real_vars[var_index].causality != input) {
-    int first = _variables_add_output(_cs_variables, reference);
-    if (first && _cs_socket >= 0) {
-      double value = _get_notebook_variable(_cs_socket,
-                                            _real_names[var_index]);
-      _real_variable_values[var_index] = value;
-    }
-  }
-
   return _real_variable_values[var_index];
 }
 
@@ -1771,10 +1817,17 @@ fmi2SetReal(fmi2ValueReference  reference,
 
   int var_index = _real_variable_reference_map[reference];
 
+  /* TODO: it should be possible to call _set_notebook_variable
+   *       for a all relevant input variables upon initialization,
+   *       just after connection. This would remove the need for the
+   *       _variables_set_input function and asociated
+   *       input_init arrays. We do need to make sure though that values
+   *       are set before a time step, and not after. */
+
   if (_real_vars[var_index].causality == input) {
     _real_variable_values[var_index] = value;
 
-    int first = _variables_add_input(_cs_variables,
+    int first = _variables_set_input(_cs_variables,
                                      reference,
                                      value);
     if (first && _cs_socket >= 0) {
