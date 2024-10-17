@@ -488,7 +488,7 @@ def run_studymanager(pkg, options):
     if options.post and not slurm_submission:
         attached_file = studies.build_reports("report_figures")
 
-    if options.sheet:
+    if options.sheet and not slurm_submission:
         studies.build_description_report()
 
     studies.reporting("\n --------------------", report=report_in_file)

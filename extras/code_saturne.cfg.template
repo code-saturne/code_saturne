@@ -68,6 +68,18 @@
 ### Set the mesh database directory.
 # meshpath =
 
+### Section for studymanager specific parameters.
+### ---------------------------------------------
+
+[studymanager]
+
+### Define an alternate executable for the postprocessing step of studymanager.
+### This may be needed in order to handle on some systems the non
+### availability of some prerequisites.
+### This command may contain the a container technology, for example :
+### postprocessing_exec = singularity exec [path_to_sif_file] [path_to_installation]
+# postprocessing_exec =
+
 ### Section for MPI parameters.
 ### ---------------------------
 
