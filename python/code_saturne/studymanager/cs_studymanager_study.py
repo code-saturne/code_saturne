@@ -35,6 +35,7 @@ import time
 import logging
 import fnmatch
 import math
+import configparser
 from collections import OrderedDict
 
 #-------------------------------------------------------------------------------
@@ -2145,10 +2146,14 @@ class Studies(object):
 
         e = os.path.join(self.__pkg.get_dir('bindir'), self.__exe)
 
-        # hard coded installation and container fir now
-        if (self.__resource_name and 'cronos' in self.__resource_name):
-            e = os.path.join('/home/D57673/BUILD/CS_REPORT/code_saturne.install/bin/code_saturne')
-            final_cmd += "singularity exec /fscronos/containers/singularity/restricted/saturne/codesaturne-prerequisites-20240403-debian-11.sif "
+        # To handle possible back-end issues for reports generation
+        # such as unavailable packages, we allow to define a specific
+        # back-end executable for postprocessing, which may be different from
+        # the main executable (such as one in a container with required
+        # prerequisites)
+        config = configparser.ConfigParser(self.pkg.get_configfiles())
+        if config.has_option('studymanager', 'postprocessing_exec'):
+            e = config.get('studymanager', 'postprocessing_exec')
 
         # final analysis after all run_cases are finished
         final_cmd += e + " smgr --state" \
