@@ -14,6 +14,14 @@ Master (not on release branches yet)
 
 ### Studymanager:
 
+- Add a specific `studymanager` section in the `code_saturne.cfg` configuration
+  file. This new section now contains an option, `postprocessing_exec`, which
+  when used, makes studymanager use another `code_saturne` executable when
+  launching the postprocessing step.
+  This was added since for some systems, such as HPC clusters, all available
+  prerequisites are not always available, hence requiring the use of a container
+  or a different loaded environment.
+
 - Only the command line `--submit` can be used to submit batches of cases using
   the SLURM resource manager on cluster. Expected times can now be set in the
   run.cfg file of a given case. Specific resources can also be specified in the
