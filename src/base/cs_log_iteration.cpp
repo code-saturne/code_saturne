@@ -1843,7 +1843,7 @@ cs_log_equation_convergence_info_write(void)
        * updated at each time step (only when logging)
        * NOTE: it should be added in the bindings again
        * if needed */
-      // sinfo.l2residual = sqrt(cs_math_fabs(varres[0]));
+      sinfo.l2residual = sqrt(cs_math_fabs(varres[0]));
     }
 
     char var_log[128];
