@@ -1752,6 +1752,17 @@ _petsc_block_hook(void     *context,
       _petsc_cmd(true, prefix, "pc_type", "jacobi");
       break;
 
+    case CS_PARAM_PRECOND_HPDDM:
+#if defined(PETSC_HAVE_HPDDM)
+      _petsc_pchpddm_hook(prefix, slesp, pc);
+#else
+      bft_error(__FILE__, __LINE__, 0,
+                "%s: Eq. %s: "
+                "Preconditioner HPDDM is not available inside PETSc.",
+                __func__, slesp->name);
+#endif
+      break;
+
     case CS_PARAM_PRECOND_ILU0:
     case CS_PARAM_PRECOND_BJACOB_ILU0:
       if (slesp->solver_class == CS_PARAM_SOLVER_CLASS_HYPRE) {
