@@ -544,7 +544,7 @@ _send_sock(int       sock,
       string s0 = "Error sending buffer ";
       string s2 = strerror(errno);
       _cs_log(fmi2Fatal, CS_LOG_FATAL, s0 + s2);
-      exit(EXIT_FAILURE);
+      throw std::runtime_error(s0 + s2);
     }
     else if (tracefile != nullptr) {
       fprintf(tracefile, "   sent %d bytes\n", (int)ret);
@@ -585,8 +585,9 @@ _send_sock_str(int          sock,
     string s0 = "Error sending ";
     string s1 = str;
     string s2 = strerror(errno);
-    _cs_log(fmi2Fatal, CS_LOG_FATAL, s0 + s1 + s2);
-    exit(EXIT_FAILURE);
+    string err_str = s0 + s1 + s2;
+    _cs_log(fmi2Fatal, CS_LOG_FATAL, err_str);
+    throw std::runtime_error(err_str);
   }
   else if (tracefile != nullptr) {
     fprintf(tracefile, "   sent %d bytes\n", (int)ret);
@@ -651,7 +652,7 @@ _recv_sock(int                  socket,
       else
         s1 = "code_saturne may have disconnected.";
       _cs_log(fmi2Fatal, CS_LOG_FATAL, s0 + s1);
-      exit(EXIT_FAILURE);
+      throw std::runtime_error(s0 + s1);
     }
     else if (tracefile != nullptr) {
       fprintf(tracefile, "   received %d bytes: [", (int)ret);
@@ -746,7 +747,7 @@ _recv_sock_with_queue(int                  socket,
       else
         s1 = "code_saturne may have disconnected.";
       _cs_log(fmi2Fatal, CS_LOG_FATAL, s0 + s1);
-      exit(EXIT_FAILURE);
+      throw std::runtime_error(s0 + s1);
     }
 
     if (tracefile != nullptr) {
@@ -821,9 +822,9 @@ _comm_with_saturne(int   key)
   _recv_sock(_cs_socket, key_buffer, nullptr, 1, len_key);
 
   if (strncmp(key_s.c_str(), key_buffer, len_key) != 0) {
-    _cs_log(fmi2Fatal, CS_LOG_FATAL,
-            "wrong key received (socket handshake)");
-    exit(EXIT_FAILURE);
+    const char err_str[] = "wrong key received (socket handshake)";
+    _cs_log(fmi2Fatal, CS_LOG_FATAL, err_str);
+    throw std::runtime_error(err_str);
   }
 
   _recv_sock(_cs_socket, magic_buffer, nullptr, 1, magic_string.size());
@@ -856,14 +857,16 @@ _configure_client(sockaddr_in  *address)
 
   /* Create a master socket */
   if ((master_socket = socket(AF_INET, SOCK_STREAM, 0)) == 0) {
-    _cs_log(fmi2Fatal, CS_LOG_FATAL, "socket() failed");
-    exit(EXIT_FAILURE);
+    const char err_str[] = "socket() failed";
+    _cs_log(fmi2Fatal, CS_LOG_FATAL, err_str);
+    throw std::runtime_error(err_str);
   }
 
   /* Set master socket to allow multiple connections */
   if (setsockopt(master_socket, SOL_SOCKET, SO_REUSEADDR, &opt, optlen) < 0) {
-    _cs_log(fmi2Fatal, CS_LOG_FATAL, "setsockopt() failed");
-    exit(EXIT_FAILURE);
+    const char err_str[] = "setsockopt() failed";
+    _cs_log(fmi2Fatal, CS_LOG_FATAL, err_str);
+    throw std::runtime_error(err_str);
   }
 
   /* Master socket configuration */
@@ -875,8 +878,9 @@ _configure_client(sockaddr_in  *address)
   if (bind(master_socket,
            (sockaddr *)address,
            sizeof(*address)) < 0) {
-    _cs_log(fmi2Fatal, CS_LOG_FATAL, "bind() failed");
-    exit(EXIT_FAILURE);
+    const char err_str[] = "bind() failed";
+    _cs_log(fmi2Fatal, CS_LOG_FATAL, err_str);
+    throw std::runtime_error(err_str);
   }
 
   return master_socket;
@@ -900,8 +904,9 @@ _write_control_file(string path,
     control_file.close();
   }
   else {
-    _cs_log(fmi2Fatal, CS_LOG_FATAL, "Error writing control_file.");
-    exit(EXIT_FAILURE);
+    const char err_str[] = "Error writing control_file.";
+    _cs_log(fmi2Fatal, CS_LOG_FATAL, err_str);
+    throw std::runtime_error(err_str);
   }
 }
 
@@ -949,8 +954,9 @@ _start_client(void *data)
   /* Try to specify maximum of 1 pending connection *
      for the master socket                          */
   if (listen(_master_socket, 1) < 0) {
-    _cs_log(fmi2Fatal, CS_LOG_FATAL, "listen() failed.");
-    exit(EXIT_FAILURE);
+    const char err_str[] = "listen() failed.";
+    _cs_log(fmi2Fatal, CS_LOG_FATAL, err_str);
+    throw std::runtime_error(err_str);
   }
 
   /* Test if system is big-endian */
@@ -965,8 +971,9 @@ _start_client(void *data)
   if ((_cs_socket = accept(_master_socket,
                            (sockaddr *)&address,
                            (socklen_t*)&addrlen)) < 0) {
-    _cs_log(fmi2Fatal, CS_LOG_FATAL, "accept() failed.");
-    exit(EXIT_FAILURE);
+    const char err_str[] = "accept() failed.";
+    _cs_log(fmi2Fatal, CS_LOG_FATAL, err_str);
+    throw std::runtime_error(err_str);
   }
 
   /* Inform user of socket number - used in send and receive commands */
@@ -1125,7 +1132,7 @@ _variables_set_input(cs_variables_t  *v,
   if (unknown) {
     string s = "Input variable id " + to_string(id) + " unknown in model";
     _cs_log(fmi2Fatal, CS_LOG_FATAL, s);
-    exit(EXIT_FAILURE);
+    throw std::runtime_error(s);
   }
 
   if (v->input_init[id] == false) {
@@ -1174,28 +1181,6 @@ _variables_add_output(cs_variables_t  *v,
   if (v->output_ids[id] < 0) {
     v->output_ids[id] = v->n_output;
     v->n_output += 1;
-  }
-}
-
-/*----------------------------------------------------------------------------
- * Add or get a variables output.
- *----------------------------------------------------------------------------*/
-
-static void
-_variables_get_output_status(cs_variables_t  *v,
-                             int              id)
-{
-  assert(id >= 0);
-
-  bool unknown = false;
-  if (id >= v->output_max)
-    unknown = true;
-  else if (v->output_ids[id] < 0)
-    unknown = true;
-  if (unknown) {
-    string s = "Output variable id " + to_string(id) + " unknown in model";
-    _cs_log(fmi2Fatal, CS_LOG_FATAL, s);
-    exit(EXIT_FAILURE);
   }
 }
 
@@ -1514,7 +1499,7 @@ exec_popen(const char* cmd)
   unique_ptr<FILE, decltype(&pclose)> pipe(popen(cmd, "r"), pclose);
 
   if (!pipe) {
-    throw runtime_error("popen() failed!");
+    throw std::runtime_error("popen() failed!");
   }
 
   while (fgets(buffer.data(), buffer.size(), pipe.get()) != nullptr) {
@@ -1541,136 +1526,147 @@ setResourceLocation(const char* fmiResourceLocation)
 fmi2Status
 fmi2EnterInitializationMode(fmi2Component  component)
 {
-  /* As the code generator used provides no other earlier entry point,
-     global pointer to component environment (for logging) here. */
+  fmi2Status  status = fmi2OK;
 
-  _component_environment = component;
+  try {
+    /* As the code generator used provides no other earlier entry point,
+       global pointer to component environment (for logging) here. */
 
-  string s_casename, s_run_id, s_code_saturne;
+    _component_environment = component;
 
-  for (int i = 0; i < _n_string_vars; i++) {
-    if (strcmp(_string_names[i], "code_saturne") == 0)
-      s_code_saturne = _string_vars[i].start;
-    else if (strcmp(_string_names[i], "casename") == 0)
-      s_casename = _string_vars[i].start;
-    else if (strcmp(_string_names[i], "run_id") == 0)
-      s_run_id = _string_vars[i].start;
-  }
+    string s_casename, s_run_id, s_code_saturne;
 
-  string resu = s_casename + "/RESU/" + s_run_id;
-  string cmd;
-  int addrlen;
-  sockaddr_in address;
-  pthread_t thread_server, thread_cs;
-  pthread_attr_t attr;
-  void *status;
+    for (int i = 0; i < _n_string_vars; i++) {
+      if (strcmp(_string_names[i], "code_saturne") == 0)
+        s_code_saturne = _string_vars[i].start;
+      else if (strcmp(_string_names[i], "casename") == 0)
+        s_casename = _string_vars[i].start;
+      else if (strcmp(_string_names[i], "run_id") == 0)
+        s_run_id = _string_vars[i].start;
+    }
 
-  _cs_log(fmi2OK, CS_LOG_TRACE, __func__);
+    string resu = s_casename + "/RESU/" + s_run_id;
+    string cmd;
+    int addrlen;
+    sockaddr_in address;
+    pthread_t thread_server, thread_cs;
+    pthread_attr_t attr;
+    void *status;
 
-  /* Just in case, to avoid comma separators */
-  setlocale(LC_NUMERIC, "C");
+    _cs_log(fmi2OK, CS_LOG_TRACE, __func__);
 
-  /* Set tracefile if requested here */
+    /* Just in case, to avoid comma separators */
+    setlocale(LC_NUMERIC, "C");
 
-  const char *p = getenv("CS_FMU_COMM_TRACE");
-  if (p != nullptr) {
-    if (strcmp(p, "stdout") != 0 && strlen(p) > 0)
-      tracefile = fopen(p, "w");
-    else
-      tracefile = stdout;
-  }
+    /* Set tracefile if requested here */
 
-  pthread_attr_init(&attr);
-  pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);
+    const char *p = getenv("CS_FMU_COMM_TRACE");
+    if (p != nullptr) {
+      if (strcmp(p, "stdout") != 0 && strlen(p) > 0)
+        tracefile = fopen(p, "w");
+      else
+        tracefile = stdout;
+    }
 
-  /* Initialize code_saturne calculation */
-  cmd = "cd " + s_casename + " && " + s_code_saturne +
-        " run --initialize --force --id='" + s_run_id + "'";
+    pthread_attr_init(&attr);
+    pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);
+
+    /* Initialize code_saturne calculation */
+    cmd = "cd " + s_casename + " && " + s_code_saturne +
+          " run --initialize --force --id='" + s_run_id + "'";
 
 #if CS_DRY_RUN == 1
 
-  _cs_log(fmi2OK, CS_LOG_LAUNCH, cmd);
-  _cs_socket = 444444;
-  _cs_glob_control_queue = _queue_initialize();
+    _cs_log(fmi2OK, CS_LOG_LAUNCH, cmd);
+    _cs_socket = 444444;
+    _cs_glob_control_queue = _queue_initialize();
 
 #else
 
-  _cs_log(fmi2OK, CS_LOG_LAUNCH, string("launch: \"") + cmd + string("\""));
-  _cs_log(fmi2OK, CS_LOG_LAUNCH,
-          string("output: \"") + exec_popen(cmd.c_str()) + string("\""));
+    _cs_log(fmi2OK, CS_LOG_LAUNCH, string("launch: \"") + cmd + string("\""));
+    _cs_log(fmi2OK, CS_LOG_LAUNCH,
+            string("output: \"") + exec_popen(cmd.c_str()) + string("\""));
 
-  int key = _init_client(resu, &address);
+    int key = _init_client(resu, &address);
 
-  /* Accept the incoming connection */
-  addrlen = sizeof(address);
+    /* Accept the incoming connection */
+    addrlen = sizeof(address);
 
-  _cs_log(component, _instance_name, fmi2OK, CS_LOG_COMM,
-          "Waiting for connection...",
-          nullptr);
+    _cs_log(component, _instance_name, fmi2OK, CS_LOG_COMM,
+            "Waiting for connection...",
+            nullptr);
 
-  struct thread_data data;
-  data.address = address;
-  data.addrlen = addrlen;
+    struct thread_data data;
+    data.address = address;
+    data.addrlen = addrlen;
 
-  pthread_create(&thread_server, nullptr, _start_client,
-                 static_cast<void*>(&data));
-  pthread_create(&thread_cs, nullptr, _start_cs,
-                 static_cast<void*>(&resu));
+    pthread_create(&thread_server, nullptr, _start_client,
+                   static_cast<void*>(&data));
+    pthread_create(&thread_cs, nullptr, _start_cs,
+                   static_cast<void*>(&resu));
 
-  pthread_attr_destroy(&attr);
-  pthread_join(thread_server, &status);
-  pthread_join(thread_cs, &status);
+    pthread_attr_destroy(&attr);
+    pthread_join(thread_server, &status);
+    pthread_join(thread_cs, &status);
 
-  _comm_with_saturne(key);
+    _comm_with_saturne(key);
 
 #endif
 
-  /* Sleep 3 seconds just to make sure the connection is well established */
-  sleep(3);
+    /* Sleep 3 seconds just to make sure the connection is well established */
+    sleep(3);
 
-  /* Now exchange input and output values which are already declared */
+    /* Now exchange input and output values which are already declared */
 
-  if (_cs_variables == nullptr)
-    _cs_variables = _variables_initialize();
+    if (_cs_variables == nullptr)
+      _cs_variables = _variables_initialize();
 
-  for (int i = 0; i < _cs_variables->input_max; i++) {
-    if (_cs_variables->input_ids[i] > -1) {
-      int var_index = _real_variable_reference_map[i];
-      _set_notebook_variable(_cs_socket,
-                             _real_names[var_index],
-                             _real_variable_values[var_index]);
+    for (int i = 0; i < _cs_variables->input_max; i++) {
+      if (_cs_variables->input_ids[i] > -1) {
+        int var_index = _real_variable_reference_map[i];
+        _set_notebook_variable(_cs_socket,
+                               _real_names[var_index],
+                               _real_variable_values[var_index]);
+      }
+    }
+    for (int i = 0; i < _cs_variables->output_max; i++) {
+      if (_cs_variables->output_ids[i] > -1) {
+        int var_index = _real_variable_reference_map[i];
+        double value
+          = _get_notebook_variable(_cs_socket,
+                                   _real_names[var_index]);
+        _real_variable_values[var_index] = value;
+      }
+    }
+
+    /* Increase the number of maximum time steps, as FMI is controlling
+       the time stepping, not the code. */
+
+    {
+      _send_sock_str(_cs_socket, "max_time_step 9999999");
+
+      char *buf_rcv = _recv_sock_with_queue(_cs_socket,
+                                            _cs_glob_control_queue,
+                                            0);
+
+      string s = string(__func__);
+      if (strcmp(buf_rcv, "0") != 0) {
+        s += ": unexpected return code: " + string(buf_rcv);
+        _cs_log(fmi2Warning, CS_LOG_WARNING, s);
+      }
+      else {
+        s += ": set max time step to 9999999 for FMI control.";
+        _cs_log(fmi2OK, CS_LOG_TRACE, s);
+      }
     }
   }
-  for (int i = 0; i < _cs_variables->output_max; i++) {
-    if (_cs_variables->output_ids[i] > -1) {
-      int var_index = _real_variable_reference_map[i];
-      double value
-        = _get_notebook_variable(_cs_socket,
-                                 _real_names[var_index]);
-      _real_variable_values[var_index] = value;
-    }
+
+  catch (const std::runtime_error& e) {
+    cout << "An exception occured: " << e.what() << "\n";
+    status = fmi2Fatal;
   }
 
-  /* Increase the number of maximum time steps, as FMI is controlling
-     the time stepping, not the code. */
-
-  {
-    _send_sock_str(_cs_socket, "max_time_step 9999999");
-
-    char *buf_rcv = _recv_sock_with_queue(_cs_socket, _cs_glob_control_queue, 0);
-
-    string s = string(__func__);
-    if (strcmp(buf_rcv, "0") != 0) {
-      s += ": unexpected return code: " + string(buf_rcv);
-      _cs_log(fmi2Warning, CS_LOG_WARNING, s);
-    }
-    else {
-      s += ": set max time step to 9999999 for FMI control.";
-      _cs_log(fmi2OK, CS_LOG_TRACE, s);
-    }
-  }
-
-  return fmi2OK;
+  return status;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1685,37 +1681,46 @@ fmi2DoStep(fmi2Component  c,
   CS_UNUSED(currentComunicationTime);
   CS_UNUSED(noSetFmuFmuStatePriorToCurrentPoint);
 
-  string s = "----- " + string(__func__) + "(" + to_string(stepSize) + ")";
-  _cs_log(fmi2OK, CS_LOG_TRACE, s);
+  fmi2Status  status = fmi2OK;
 
-  cs_variables_t *v = _cs_variables;
+  try {
+    string s = "----- " + string(__func__) + "(" + to_string(stepSize) + ")";
+    _cs_log(fmi2OK, CS_LOG_TRACE, s);
 
-  /* Update input notebook values */
+    cs_variables_t *v = _cs_variables;
 
-  for (int i = 0; i < v->input_max; i++) {
-    int id = v->input_ids[i];
-    if (id < 0)
-      continue;
-    int var_index = _real_variable_reference_map[i];
-    v->input_vals[id] = _real_variable_values[var_index];
+    /* Update input notebook values */
+
+    for (int i = 0; i < v->input_max; i++) {
+      int id = v->input_ids[i];
+      if (id < 0)
+        continue;
+      int var_index = _real_variable_reference_map[i];
+      v->input_vals[id] = _real_variable_values[var_index];
+    }
+
+    /* Advance 1 iteration */
+    _advance(1);
+
+    /* Update output notebook values */
+
+    for (int i = 0; i < v->output_max; i++) {
+      int id = v->output_ids[i];
+      if (id < 0)
+        continue;
+      int var_index = _real_variable_reference_map[i];
+      _real_variable_values[var_index] = v->output_vals[id];
+    }
+
+    _n_iter++;
   }
 
-  /* Advance 1 iteration */
-  _advance(1);
-
-  /* Update output notebook values */
-
-  for (int i = 0; i < v->output_max; i++) {
-    int id = v->output_ids[i];
-    if (id < 0)
-      continue;
-    int var_index = _real_variable_reference_map[i];
-    _real_variable_values[var_index] = v->output_vals[id];
+  catch (const std::runtime_error& e) {
+    cout << "An exception occured: " << e.what() << "\n";
+    status = fmi2Fatal;
   }
 
-  _n_iter++;
-
-  return fmi2OK;
+  return status;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1724,56 +1729,65 @@ fmi2Status fmi2Terminate(fmi2Component  c)
 {
   CS_UNUSED(c);
 
-  string s_casename, s_run_id;
+  fmi2Status  status = fmi2OK;
 
-  for (int i = 0; i < _n_string_vars; i++) {
-    if (strcmp(_string_names[i], "casename") == 0)
-      s_casename = _string_vars[i].start;
-    else if (strcmp(_string_names[i], "run_id") == 0)
-      s_run_id = _string_vars[i].start;
-  }
+  try {
+    string s_casename, s_run_id;
 
-  string resu = s_casename + "/RESU/" + s_run_id;
+    for (int i = 0; i < _n_string_vars; i++) {
+      if (strcmp(_string_names[i], "casename") == 0)
+        s_casename = _string_vars[i].start;
+      else if (strcmp(_string_names[i], "run_id") == 0)
+        s_run_id = _string_vars[i].start;
+    }
 
-  _send_sock_str(_cs_socket, "max_time_step 0");
-  _advance(0);
+    string resu = s_casename + "/RESU/" + s_run_id;
 
-  _variables_finalize(&_cs_variables);
+    _send_sock_str(_cs_socket, "max_time_step 0");
+    _advance(0);
 
-  _queue_finalize(&_cs_glob_control_queue);
+    _variables_finalize(&_cs_variables);
 
-  /* Send disconnect to the server */
-  _disconnect();
+    _queue_finalize(&_cs_glob_control_queue);
+
+    /* Send disconnect to the server */
+    _disconnect();
 
 #if CS_DRY_RUN == 1
 
-  _cs_socket = -1;
+    _cs_socket = -1;
 
 #else
 
-  shutdown(_cs_socket, SHUT_RDWR);
-  close(_cs_socket);
+    shutdown(_cs_socket, SHUT_RDWR);
+    close(_cs_socket);
 
-  /* Stop the computation manually */
-  ofstream control_file(resu + "/control_file");
-  if (control_file.is_open()) {
-    control_file << 1;
-    control_file.close();
-  }
-  else {
-    _cs_log(fmi2Error, CS_LOG_ERROR, "Error writing control_file.");
-  }
+    /* Stop the computation manually */
+    ofstream control_file(resu + "/control_file");
+    if (control_file.is_open()) {
+      control_file << 1;
+      control_file.close();
+    }
+    else {
+      _cs_log(fmi2Error, CS_LOG_ERROR, "Error writing control_file.");
+    }
 
 #endif
 
-  if (tracefile != nullptr) {
-    if (tracefile != stdout && tracefile != stderr) {
-      fclose(tracefile);
-      tracefile = nullptr;
+    if (tracefile != nullptr) {
+      if (tracefile != stdout && tracefile != stderr) {
+        fclose(tracefile);
+        tracefile = nullptr;
+      }
     }
   }
 
-  return fmi2OK;
+  catch (const std::runtime_error& e) {
+    cout << "An exception occured: " << e.what() << "\n";
+    status = fmi2Fatal;
+  }
+
+  return status;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1783,7 +1797,9 @@ fmi2Reset(fmi2Component  c)
 {
   CS_UNUSED(c);
 
-  return fmi2OK;
+  _cs_log(fmi2Error, CS_LOG_ERROR, "fmi2Reset called but not handled.");
+
+  return fmi2Error;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -2294,7 +2310,8 @@ fmi2GetReal(fmi2Component             c,
     for (size_t i = 0; i < numberOfValues; i++)
       values[i] = fmi2GetReal(valueReference[i]);
     return fmi2OK;
-  } catch (...) {
+  }
+  catch (...) {
     return fmi2Fatal;
   }
 }
@@ -2311,7 +2328,8 @@ fmi2GetInteger(fmi2Component             c,
     for (size_t i = 0; i < numberOfValues; i++)
       values[i] = fmi2GetInteger(valueReference[i]);
     return fmi2OK;
-  } catch (...) {
+  }
+  catch (...) {
     return fmi2Fatal;
   }
 }
@@ -2328,7 +2346,8 @@ fmi2GetBoolean(fmi2Component             c,
     for (size_t i = 0; i < numberOfValues; i++)
       values[i] = fmi2GetBoolean(valueReference[i]);
     return fmi2OK;
-  } catch (...) {
+  }
+  catch (...) {
     return fmi2Fatal;
   }
 }
@@ -2345,7 +2364,8 @@ fmi2GetString(fmi2Component             c,
     for (size_t i = 0; i < numberOfValues; i++)
       values[i] = fmi2GetString(valueReference[i]);
     return fmi2OK;
-  } catch (...) {
+  }
+  catch (...) {
     return fmi2Fatal;
   }
 }
@@ -2362,7 +2382,8 @@ fmi2SetReal(fmi2Component             c,
     for (size_t i = 0; i < numberOfValues; i++)
       fmi2SetReal(valueReference[i], values[i]);
     return fmi2OK;
-  } catch (...) {
+  }
+  catch (...) {
     return fmi2Fatal;
   }
 }
@@ -2379,7 +2400,8 @@ fmi2SetInteger(fmi2Component             c,
     for (size_t i = 0; i < numberOfValues; i++)
       fmi2SetInteger(valueReference[i], values[i]);
     return fmi2OK;
-  } catch (...) {
+  }
+  catch (...) {
     return fmi2Fatal;
   }
 }
@@ -2396,7 +2418,8 @@ fmi2SetBoolean(fmi2Component             c,
     for (size_t i = 0; i < numberOfValues; i++)
       fmi2SetBoolean(valueReference[i], values[i]);
     return fmi2OK;
-  } catch (...) {
+  }
+  catch (...) {
     return fmi2Fatal;
   }
 }
@@ -2413,7 +2436,8 @@ fmi2SetString(fmi2Component             c,
     for (size_t i = 0; i < numberOfValues; i++)
       fmi2SetString(valueReference[i], values[i]);
     return fmi2OK;
-  } catch (...) {
+  }
+  catch (...) {
     return fmi2Fatal;
   }
 }
