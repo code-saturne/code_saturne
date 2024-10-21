@@ -425,7 +425,13 @@ typedef struct {
    * (when \ref imrgra = 0).
    *
    * \var climgr
-   * For least squares gradients, factor of gradient limitation
+   * For least squares gradients, volumic factor of gradient limitation
+   * (high value means little limitation).\n
+   * Relevant for all the variables using least-squares gradients for which
+   * \ref imligr > CS_GRADIENT_LIMIT_NONE.
+   *
+   * \var b_climgr
+   * For least squares gradients, boundary factor of gradient limitation
    * (high value means little limitation).\n
    * Relevant for all the variables using least-squares gradients for which
    * \ref imligr > CS_GRADIENT_LIMIT_NONE.
@@ -492,6 +498,7 @@ typedef struct {
   double epsrsm;
   double epsrgr;
   double climgr;
+  cs_real_t b_climgr;
   double relaxv;
 
   int  b_gradient_r;

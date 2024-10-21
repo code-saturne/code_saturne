@@ -3252,6 +3252,7 @@ _velocity_prediction(const cs_mesh_t             *m,
                       vel,
                       vel,
                       bc_coeffs_v,
+                      nullptr, // bc_coeffs_solve
                       imasfl,
                       bmasfl,
                       viscf,

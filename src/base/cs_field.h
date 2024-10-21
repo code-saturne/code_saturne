@@ -98,6 +98,23 @@ typedef enum {
 
 } cs_field_error_type_t;
 
+/*! boundary condition descriptor when solving in increment */
+/*----------------------------------------------------------*/
+
+typedef struct {
+
+  cs_real_t          *val_ip;      /* variable computed at I' position */
+
+  cs_real_t          *val_f;       /* face value for gradient */
+  cs_real_t          *val_f_lim;   /* face value for gradient
+                                      (limited) */
+
+  cs_real_t          *val_f_d;     /* face value for diffusion */
+  cs_real_t          *val_f_d_lim; /* face value for diffusion
+                                      (limited) */
+
+} cs_bc_coeffs_solve_t;
+
 /*! Field boundary condition descriptor (for variables) */
 /*------------------------------------------------------*/
 
@@ -122,6 +139,14 @@ typedef struct {
   cs_real_t         *hint;         /* coefficient for internal coupling */
   cs_real_t         *_hext;        /* coefficient for internal coupling
                                       (maps to rcodcl2 when present) */
+
+  cs_real_t          *val_f;       /* face value for gradient */
+  cs_real_t          *val_f_lim;   /* face value for gradient
+                                      (limited) */
+
+  cs_real_t          *val_f_d;     /* face value for diffusion */
+  cs_real_t          *val_f_d_lim; /* face value for diffusion
+                                      (limited) */
 
 } cs_field_bc_coeffs_t;
 

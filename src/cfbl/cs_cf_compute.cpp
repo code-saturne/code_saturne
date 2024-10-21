@@ -330,6 +330,7 @@ _compressible_pressure_mass_flux(int iterns, // cfmsfp en fortran
                       vela,
                       (const cs_real_3_t *)vela,
                       bc_coeffs_vel,
+                      NULL, // bc_coeffs_solve
                       i_mass_flux,
                       b_mass_flux,
                       i_visc,

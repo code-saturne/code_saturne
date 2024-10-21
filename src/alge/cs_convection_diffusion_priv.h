@@ -3088,8 +3088,6 @@ cs_b_imposed_conv_flux_strided(int              iconvp,
                                const cs_real_t  pi[stride],
                                const cs_real_t  pir[stride],
                                const cs_real_t  pipr[stride],
-                               const cs_real_t  coefap[stride],
-                               const cs_real_t  coefbp[stride][stride],
                                const cs_real_t  coface[stride],
                                const cs_real_t  cofbce[stride][stride],
                                cs_real_t        b_massflux,
@@ -3111,14 +3109,10 @@ cs_b_imposed_conv_flux_strided(int              iconvp,
       flui = 0.5*(b_massflux +fabs(b_massflux));
       fluj = 0.5*(b_massflux -fabs(b_massflux));
     }
-    for (int isou = 0; isou < stride; isou++) {
-      pfac[isou]  = inc*coefap[isou];
-      for (int jsou = 0; jsou < stride; jsou++) {
-        pfac[isou] += coefbp[isou][jsou]*pipr[jsou];
-      }
+
+    for (int isou = 0; isou < stride; isou++)
       flux[isou] += iconvp*( thetap*(flui*pir[isou] + fluj*pfac[isou])
-                           - imasac*b_massflux*pi[isou]);
-    }
+                            - imasac*b_massflux*pi[isou]);
 
   /* Imposed convective flux */
 
@@ -3200,7 +3194,6 @@ cs_b_upwind_flux(const int        iconvp,
  * \param[in]     iconvp       convection flag
  * \param[in]     thetap       weighting coefficient for the theta-scheme,
  * \param[in]     imasac       take mass accumulation into account?
- * \param[in]     inc          Not an increment flag
  * \param[in]     bc_type      type of boundary face
  * \param[in]     pi           value at cell i
  * \param[in]     pir          relaxed value at cell i
@@ -3220,15 +3213,11 @@ CS_F_HOST_DEVICE inline static void
 cs_b_upwind_flux_strided(int              iconvp,
                          cs_real_t        thetap,
                          int              imasac,
-                         int              inc,
                          int              bc_type,
                          const cs_real_t  pi[stride],
                          const cs_real_t  pir[stride],
-                         const cs_real_t  pipr[stride],
-                         const cs_real_t  coefa[stride],
-                         const cs_real_t  coefb[stride][stride],
-                         cs_real_t        b_massflux,
-                         cs_real_t        pfac[stride],
+                         const cs_real_t  b_massflux,
+                         const cs_real_t  pfac[stride],
                          cs_real_t        flux[stride])
 {
   cs_real_t flui, fluj;
@@ -3241,14 +3230,10 @@ cs_b_upwind_flux_strided(int              iconvp,
     flui = 0.5*(b_massflux +fabs(b_massflux));
     fluj = 0.5*(b_massflux -fabs(b_massflux));
   }
-  for (int isou = 0; isou < stride; isou++) {
-    pfac[isou] = inc*coefa[isou];
-    for (int jsou = 0; jsou < stride; jsou++) {
-      pfac[isou] += coefb[isou][jsou]*pipr[jsou];
-    }
-    flux[isou] += iconvp*( thetap*(flui*pir[isou] + fluj*pfac[isou])
-                         - imasac*b_massflux*pi[isou]);
-  }
+
+  for (int isou = 0; isou < stride; isou++)
+    flux[isou] += iconvp*(  thetap*(flui*pir[isou] + fluj*pfac[isou])
+                          - imasac*b_massflux*pi[isou]);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -3291,8 +3276,6 @@ cs_b_diff_flux(const int        idiffp,
  * \param[in]     thetap   weighting coefficient for the theta-scheme,
  * \param[in]     inc      Not an increment flag
  * \param[in]     pipr     relaxed reconstructed value at cell i
- * \param[in]     cofaf    explicit boundary coefficient for diffusion operator
- * \param[in]     cofbf    implicit boundary coefficient for diffusion operator
  * \param[in]     b_visc   boundary face surface
  * \param[in,out] flux     flux at boundary face
  */
@@ -3302,21 +3285,12 @@ template <cs_lnum_t stride>
 CS_F_HOST_DEVICE inline static void
 cs_b_diff_flux_strided(int              idiffp,
                        cs_real_t        thetap,
-                       int              inc,
-                       const cs_real_t  pipr[stride],
-                       const cs_real_t  cofaf[stride],
-                       const cs_real_t  cofbf[stride][stride],
-                       cs_real_t         b_visc,
+                       cs_real_t        b_visc,
+                       const cs_real_t  pfacd[stride],
                        cs_real_t        flux[stride])
 {
-  cs_real_t pfacd;
-  for (int isou = 0; isou < stride; isou++) {
-    pfacd  = inc*cofaf[isou];
-    for (int jsou = 0; jsou < stride; jsou++) {
-      pfacd += cofbf[isou][jsou]*pipr[jsou];
-    }
-    flux[isou] += idiffp*thetap*b_visc*pfacd;
-  }
+  for (int isou = 0; isou < stride; isou++)
+    flux[isou] += idiffp*thetap*b_visc*pfacd[isou];
 }
 
 /*----------------------------------------------------------------------------*/

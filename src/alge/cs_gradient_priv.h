@@ -191,11 +191,7 @@ cs_gradient_scalar_lsq_cuda(const cs_mesh_t              *m,
  *   madj           <-- pointer to mesh adjacencies structure
  *   fvq            <-- pointer to associated finite volume quantities
  *   halo_type      <-- halo type (extended or not)
- *   inc            <-- if 0, solve on increment; 1 otherwise
- *   n_c_iter_max   <-- maximum number of iterations for boundary correction
- *   c_eps          <-- relative tolerance for boundary correction
- *   coefav         <-- B.C. coefficients for boundary face normals
- *   coefbv         <-- B.C. coefficients for boundary face normals
+ *   val_f          <-- face value for gradient
  *   pvar           <-- variable
  *   c_weight       <-- weighted gradient coefficient variable, or NULL
  *   cocgb          <-- saved boundary cell covariance array (on device)
@@ -211,16 +207,47 @@ cs_gradient_strided_lsq_cuda
  const cs_mesh_adjacencies_t   *madj,
  const cs_mesh_quantities_t    *fvq,
  const cs_halo_type_t           halo_type,
- int                            inc,
- int                            n_c_iter_max,
- cs_real_t                      c_eps,
- const cs_real_t                coefav[][stride],
- const cs_real_t                coefbv[][stride][stride],
+ const cs_real_t                val_f[][stride],
  const cs_real_t                pvar[][stride],
  const cs_real_t               *c_weight,
  const cs_cocg_6_t             *cocgb,
  cs_cocg_6_t                   *cocg,
  cs_real_t                      grad[][stride][3]
+);
+
+/*----------------------------------------------------------------------------
+ * Green-Gauss reconstruction of the gradient of a vector or tensor using
+ * an initial gradient of this quantity (typically lsq).
+ *
+ * parameters:
+ *   m                 <-- pointer to associated mesh structure
+ *   madj              <-- pointer to mesh adjacencies structure
+ *   fvq               <-- pointer to associated finite volume quantities
+ *   halo_type         <-- halo type (extended or not)
+ *   porous_model      <-- type of porous model used
+ *   warped_correction <-- apply warped faces correction ?
+ *   val_f             <-- face value for gradient
+ *   pvar              <-- variable
+ *   c_weight          <-- weighted gradient coefficient variable
+ *   r_grad            <-- gradient used for reconstruction
+ *   grad              --> gradient of pvar (du_i/dx_j : grad[][i][j])
+ *----------------------------------------------------------------------------*/
+
+template <cs_lnum_t stride>
+void
+cs_gradient_strided_gg_r_cuda
+(
+ const cs_mesh_t              *m,
+ const cs_mesh_adjacencies_t  *madj,
+ const cs_mesh_quantities_t   *fvq,
+ cs_halo_type_t                halo_type,
+ int                           porous_model,
+ bool                          warped_correction,
+ const cs_real_t               val_f[][stride],
+ const cs_real_t               pvar[][stride],
+ const cs_real_t              *c_weight,
+ const cs_real_t               r_grad[][stride][3],
+ cs_real_t                     grad[][stride][3]
 );
 
 /*----------------------------------------------------------------------------

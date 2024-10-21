@@ -1516,6 +1516,11 @@ cs_field_bc_coeffs_init(cs_field_bc_coeffs_t  *bc_coeffs)
   bc_coeffs->ac = nullptr;
   bc_coeffs->bc = nullptr;
 
+  bc_coeffs->val_f = nullptr;
+  bc_coeffs->val_f_lim = nullptr;
+  bc_coeffs->val_f_d = nullptr;
+  bc_coeffs->val_f_d_lim = nullptr;
+
   bc_coeffs->hint = nullptr;
   bc_coeffs->_hext = nullptr;
 }
@@ -1541,6 +1546,11 @@ cs_field_bc_coeffs_shallow_copy(const cs_field_bc_coeffs_t  *ref,
   copy->rcodcl3 = nullptr;
 
   copy->_hext = nullptr;
+
+  copy->val_f = nullptr;
+  copy->val_f_d = nullptr;
+  copy->val_f_lim = nullptr;
+  copy->val_f_d_lim = nullptr;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1573,6 +1583,15 @@ cs_field_bc_coeffs_free_copy(const cs_field_bc_coeffs_t  *ref,
     BFT_FREE(copy->ac);
   if (copy->bc != ref->bc)
     BFT_FREE(copy->bc);
+
+  if (copy->val_f != ref->val_f)
+    BFT_FREE(copy->val_f);
+  if (copy->val_f_lim != ref->val_f_lim)
+    BFT_FREE(copy->val_f_lim);
+  if (copy->val_f_d != ref->val_f_d)
+    BFT_FREE(copy->val_f_d);
+  if (copy->val_f_d_lim != ref->val_f_d_lim)
+    BFT_FREE(copy->val_f_d_lim);
 
   if (copy->hint != ref->hint)
     BFT_FREE(copy->hint);
@@ -1948,6 +1967,11 @@ cs_field_allocate_bc_coeffs(cs_field_t  *f,
       f->bc_coeffs->rcodcl1 = nullptr;
       f->bc_coeffs->rcodcl2 = nullptr;
       f->bc_coeffs->rcodcl3 = nullptr;
+
+      f->bc_coeffs->val_f = nullptr;
+      f->bc_coeffs->val_f_lim = nullptr;
+      f->bc_coeffs->val_f_d = nullptr;
+      f->bc_coeffs->val_f_d_lim = nullptr;
 
       CS_MALLOC_HD(f->bc_coeffs->a, n_elts[0]*a_mult, cs_real_t, cs_alloc_mode);
       CS_MALLOC_HD(f->bc_coeffs->b, n_elts[0]*b_mult, cs_real_t, cs_alloc_mode);
@@ -2397,6 +2421,12 @@ cs_field_destroy_all(void)
       CS_FREE_HD(f->bc_coeffs->bc);
       BFT_FREE(f->bc_coeffs->hint);
       BFT_FREE(f->bc_coeffs->_hext);
+      if (f->bc_coeffs->val_f_lim != f->bc_coeffs->val_f) {
+        CS_FREE_HD(f->bc_coeffs->val_f_lim);
+        CS_FREE_HD(f->bc_coeffs->val_f_d_lim);
+      }
+      CS_FREE_HD(f->bc_coeffs->val_f);
+      CS_FREE_HD(f->bc_coeffs->val_f_d);
       BFT_FREE(f->bc_coeffs);
     }
   }

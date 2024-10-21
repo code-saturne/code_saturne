@@ -194,6 +194,7 @@ cs_balance_scalar(int                         idtvar,
  * \param[in]     pvar          solved velocity (current time step)
  * \param[in]     pvara         solved velocity (previous time step)
  * \param[in]     bc_coeffs_v   boundary condition structure for the variable
+ * \param[in]     bc_coeffs_solve_v   sweep loop boundary conditions structure
  * \param[in]     i_massflux    mass flux at interior faces
  * \param[in]     b_massflux    mass flux at boundary faces
  * \param[in]     i_visc        \f$ \mu_\fij \dfrac{S_\fij}{\ipf \jpf} \f$
@@ -227,6 +228,7 @@ cs_balance_vector(int                         idtvar,
                   cs_real_3_t                 pvar[],
                   const cs_real_3_t           pvara[],
                   const cs_field_bc_coeffs_t *bc_coeffs_v,
+                  const cs_bc_coeffs_solve_t *bc_coeffs_solve_v,
                   const cs_real_t             i_massflux[],
                   const cs_real_t             b_massflux[],
                   const cs_real_t             i_visc[],
@@ -278,6 +280,7 @@ cs_balance_vector(int                         idtvar,
  * \param[in]     pvar          solved velocity (current time step)
  * \param[in]     pvara         solved velocity (previous time step)
  * \param[in]     bc_coeffs_ts  boundary condition structure for the variable
+ * \param[in]     bc_coeffs_solve_ts   sweep loop boundary conditions structure
  * \param[in]     i_massflux    mass flux at interior faces
  * \param[in]     b_massflux    mass flux at boundary faces
  * \param[in]     i_visc        \f$ \mu_\fij \dfrac{S_\fij}{\ipf \jpf} \f$
@@ -308,6 +311,7 @@ cs_balance_tensor(int                         idtvar,
                   cs_real_6_t                 pvar[],
                   const cs_real_6_t           pvara[],
                   const cs_field_bc_coeffs_t *bc_coeffs_ts,
+                  const cs_bc_coeffs_solve_t *bc_coeffs_solve_ts,
                   const cs_real_t             i_massflux[],
                   const cs_real_t             b_massflux[],
                   const cs_real_t             i_visc[],

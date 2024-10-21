@@ -3843,6 +3843,59 @@ cs_boundary_conditions_set_coeffs_init(void)
   }
 
   cs_field_free_bc_codes_all();
+
+  for (int ii = 0; ii < cs_field_n_fields(); ii++) {
+
+    cs_field_t *f = cs_field_by_id(ii);
+
+    if (f->bc_coeffs == nullptr) {
+      continue;
+    }
+
+    if (!(f->type & CS_FIELD_VARIABLE))
+      continue;
+
+    if (f->dim < 3) // TODO for scalars
+      continue;
+
+    cs_equation_param_t *eqp = cs_field_get_equation_param(f);
+
+    CS_MALLOC_HD(f->bc_coeffs->val_f, f->dim*n_b_faces,
+                 cs_real_t, cs_alloc_mode);
+    CS_MALLOC_HD(f->bc_coeffs->val_f_d, f->dim*n_b_faces,
+                 cs_real_t, cs_alloc_mode);
+
+    /* Allocate non reconstructed face value only if presence of limiter */
+
+    //const cs_gradient_limit_t imligp = (cs_gradient_limit_t)(eqp->imligr);
+    const int ircflp = eqp->ircflu;
+    const int ircflb = (ircflp > 0) ? eqp->b_diff_flux_rc : 0;
+
+    int df_limiter_id
+      = cs_field_get_key_int(f, cs_field_key_id("diffusion_limiter_id"));
+
+    if (df_limiter_id == -1 && ircflb == 1) {
+      f->bc_coeffs->val_f_lim = f->bc_coeffs->val_f;
+      f->bc_coeffs->val_f_d_lim = f->bc_coeffs->val_f_d;
+    }
+    else {
+      CS_MALLOC_HD(f->bc_coeffs->val_f_lim, f->dim*n_b_faces,
+                   cs_real_t, cs_alloc_mode);
+      CS_MALLOC_HD(f->bc_coeffs->val_f_d_lim, f->dim*n_b_faces,
+                   cs_real_t, cs_alloc_mode);
+    }
+
+    for (cs_lnum_t f_id = 0; f_id < f->dim*n_b_faces; f_id++) {
+      f->bc_coeffs->val_f[f_id] = 0.;
+      f->bc_coeffs->val_f_d[f_id] = 0.;
+
+      if (f->bc_coeffs->val_f_lim != f->bc_coeffs->val_f) {
+        f->bc_coeffs->val_f_lim[f_id] = 0.;
+        f->bc_coeffs->val_f_d_lim[f_id] = 0.;
+      }
+    }
+
+  } /* End loop on fields */
 }
 
 /*----------------------------------------------------------------------------*/

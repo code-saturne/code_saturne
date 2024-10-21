@@ -158,8 +158,8 @@ _free_surface(const cs_domain_t  *domain,
   const cs_mesh_t *m = domain->mesh;
   const cs_real_3_t *restrict vtx_coord = (const cs_real_3_t *)m->vtx_coord;
   const cs_mesh_quantities_t *mq = domain->mesh_quantities;
-  const cs_real_3_t *restrict b_face_normal =
-    (const cs_real_3_t *)mq->b_face_normal;
+  const cs_real_3_t *restrict b_face_normal
+    = (const cs_real_3_t *)mq->b_face_normal;
   const cs_real_3_t *restrict b_face_cog = (const cs_real_3_t *)mq->b_face_cog;
 
   /* Boundary mass flux */

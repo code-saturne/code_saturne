@@ -329,6 +329,7 @@ cs_gradient_vector_synced_input(const char                    *var_name,
                                 double                         clip_coeff,
                                 const cs_field_bc_coeffs_t    *bc_coeffs_v,
                                 const cs_real_t                var[][3],
+                                const cs_real_t                val_f[][3],
                                 const cs_real_t                c_weight[],
                                 const cs_internal_coupling_t  *cpl,
                                 cs_real_t                      grad[][3][3]);
@@ -352,7 +353,7 @@ cs_gradient_vector_synced_input(const char                    *var_name,
  * \param[in]       epsilon         precision for iterative gradient calculation
  * \param[in]       clip_coeff      clipping coefficient
  * \param[in]       bc_coeffs_ts    boundary condition structure
- * \param[in, out]  var             gradient's base variable
+ * \param[in, out]  var             gradient's base variable:
  * \param[out]      grad            gradient
                                     (\f$ \der{t_ij}{x_k} \f$ is grad[][ij][k])
  */
@@ -370,6 +371,7 @@ cs_gradient_tensor_synced_input(const char                  *var_name,
                                 double                       clip_coeff,
                                 const cs_field_bc_coeffs_t  *bc_coeffs_ts,
                                 const cs_real_t              var[][6],
+                                const cs_real_t              val_f[][6],
                                 cs_real_63_t                *grad);
 
 /*----------------------------------------------------------------------------*/

@@ -1165,16 +1165,18 @@ cs_field_gradient_boundary_iprime_vector(const cs_field_t  *f,
                                (const cs_real_3_t *)f->val_pre
                              : (const cs_real_3_t *)f->val;
 
-    cs_gradient_boundary_iprime_lsq_v(m,
-                                      fvq,
-                                      n_faces,
-                                      face_ids,
-                                      halo_type,
-                                      climgr,
-                                      bc_coeffs_v,
-                                      c_weight,
-                                      var,
-                                      var_iprime);
+    cs_gradient_boundary_iprime_lsq_strided<3>(m,
+                                               fvq,
+                                               n_faces,
+                                               face_ids,
+                                               halo_type,
+                                               climgr,
+                                               nullptr,
+                                               bc_coeffs_v,
+                                               c_weight,
+                                               var,
+                                               var_iprime,
+                                               nullptr);
 
   }
   else {
@@ -1307,16 +1309,18 @@ cs_field_gradient_boundary_iprime_tensor(const cs_field_t  *f,
                                (const cs_real_6_t *)f->val_pre
                              : (const cs_real_6_t *)f->val;
 
-    cs_gradient_boundary_iprime_lsq_t(m,
-                                      fvq,
-                                      n_faces,
-                                      face_ids,
-                                      halo_type,
-                                      climgr,
-                                      bc_coeffs_ts,
-                                      nullptr,
-                                      var,
-                                      var_iprime);
+    cs_gradient_boundary_iprime_lsq_strided<6>(m,
+                                               fvq,
+                                               n_faces,
+                                               face_ids,
+                                               halo_type,
+                                               climgr,
+                                               nullptr,
+                                               bc_coeffs_ts,
+                                               nullptr,
+                                               var,
+                                               var_iprime,
+                                               nullptr);
 
   }
   else {

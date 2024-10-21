@@ -452,29 +452,6 @@ cs_internal_coupling_update_bc_coeff_s(const cs_field_bc_coeffs_t    *bc_coeffs,
                                        const cs_real_t               *var,
                                        const cs_real_t               *c_weight);
 
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Update vector boundary condition coefficients for internal coupling.
- *
- * \param[in]     bc_coeffs        associated BC coefficients structure
- * \param[in]     cpl              structure associated with internal coupling
- * \param[in]     halo_type        halo type
- * \param[in]     clip_coeff       clipping coefficient
- * \param[out]    bc_coeffs_v      boundary condition structure
- * \param[in]     var              gradient's base variable
- * \param[in]     c_weight         weighted gradient coefficient variable,
- *                                 or null
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_internal_coupling_update_bc_coeff_v(const cs_field_bc_coeffs_t    *bc_coeffs_v,
-                                       const cs_internal_coupling_t  *cpl,
-                                       cs_halo_type_t                 halo_type,
-                                       double                         clip_coeff,
-                                       const cs_real_3_t             *var,
-                                       const cs_real_t               *c_weight);
-
 /*----------------------------------------------------------------------------
  * Addition to matrix-vector product in case of internal coupling.
  *
@@ -693,5 +670,38 @@ cs_ic_field_dist_data_by_face_id(const int         field_id,
 /*----------------------------------------------------------------------------*/
 
 END_C_DECLS
+
+#if defined(__cplusplus)
+
+/*=============================================================================
+ * Public C++ functions
+ *============================================================================*/
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Update vector boundary condition coefficients for internal coupling.
+ *
+ * \param[in]      bc_coeffs_v      boundary condition structure
+ * \param[in]      cpl              structure associated with internal coupling
+ * \param[in]      halo_type        halo type
+ * \param[in]      clip_coeff       clipping coefficient
+ * \param[in]      df_limiter       diffusion limiter array
+ * \param[in]      var              gradient's base variable
+ * \param[in]      c_weight         weighted gradient coefficient variable,
+ *                                  or nullptr
+ */
+/*----------------------------------------------------------------------------*/
+
+template <cs_lnum_t stride>
+void
+cs_internal_coupling_update_bc_coeff_strided(const cs_field_bc_coeffs_t    *bc_coeffs_v,
+                                             const cs_internal_coupling_t  *cpl,
+                                             cs_halo_type_t                 halo_type,
+                                             double                         clip_coeff,
+                                             cs_real_t                     *df_limiter,
+                                             const cs_real_t                var[][stride],
+                                             const cs_real_t               *c_weight);
+
+#endif // __cplusplus
 
 #endif /* __CS_INTERNAL_COUPLING_H__ */

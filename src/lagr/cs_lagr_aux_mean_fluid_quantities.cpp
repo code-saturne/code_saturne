@@ -356,6 +356,7 @@ cs_lagr_aux_mean_fluid_quantities(cs_field_t    *lagr_time,
                         cvar_vel,
                         cvar_vela,
                         f_vel->bc_coeffs,
+                        NULL, // bc_coeffs_solve
                         i_massflux,
                         b_massflux,
                         i_visc,

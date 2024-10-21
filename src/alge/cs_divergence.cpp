@@ -49,6 +49,7 @@
 #include "bft/bft_printf.h"
 
 #include "base/cs_dispatch.h"
+#include "alge/cs_gradient_boundary.h"
 #include "base/cs_porous_model.h"
 #include "base/cs_timer.h"
 
@@ -1021,6 +1022,39 @@ cs_tensor_face_flux(const cs_mesh_t             *m,
 
     CS_MALLOC_HD(c_grad_mvar, n_cells_ext, cs_real_63_t, amode);
 
+    /* As coefa has just been modified, face value for gradient
+       computation need to be updated. coefb is the same */
+
+    cs_real_6_t *val_f, *val_ip_g;
+    CS_MALLOC_HD(val_f, n_b_faces, cs_real_6_t, amode);
+    CS_MALLOC_HD(val_ip_g, n_b_faces, cs_real_6_t, amode);
+
+    cs_gradient_boundary_iprime_lsq_strided<6>(m,
+                                               fvq,
+                                               n_b_faces,
+                                               nullptr,
+                                               halo_type,
+                                               -1,
+                                               nullptr,
+                                               &bc_coeffs_ts_loc,
+                                               nullptr, // gweight,
+                                               (const cs_real_6_t *)c_mass_var,
+                                               (cs_real_6_t *)val_ip_g,
+                                               nullptr);
+
+    ctx.parallel_for(n_b_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t face_id) {
+      for (cs_lnum_t i = 0; i < 6; i++) {
+        val_f[face_id][i] = coefaq[face_id][i];
+        for (cs_lnum_t j = 0; j < 6; j++) {
+          val_f[face_id][i] += coefbv[face_id][j][i]*val_ip_g[face_id][j];
+        }
+      }
+    });
+
+    ctx.wait();
+
+    CS_FREE_HD(val_ip_g);
+
     /* Computation of c_mass_var gradient
        (tensor gradient, the periodicity has already been treated) */
 
@@ -1035,7 +1069,10 @@ cs_tensor_face_flux(const cs_mesh_t             *m,
                                     climgu,
                                     &bc_coeffs_ts_loc,
                                     (const cs_real_6_t *)c_mass_var,
+                                    val_f,
                                     c_grad_mvar);
+
+    CS_FREE_HD(val_f);
 
     /* Mass flow through interior faces */
 
@@ -1068,7 +1105,7 @@ cs_tensor_face_flux(const cs_mesh_t             *m,
 
       cs_lnum_t ii = b_face_cells[face_id];
 
-      cs_real_6_t f_mass_var;
+      cs_real_t f_mass_var[6];
 
       /* var_f = a + b * var_I' */
       for (int isou = 0; isou < 6; isou++)
