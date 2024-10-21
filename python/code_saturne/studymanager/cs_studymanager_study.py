@@ -2151,7 +2151,8 @@ class Studies(object):
         # back-end executable for postprocessing, which may be different from
         # the main executable (such as one in a container with required
         # prerequisites)
-        config = configparser.ConfigParser(self.pkg.get_configfiles())
+        config = configparser.ConfigParser()
+        config.read(self.__pkg.get_configfiles())
         if config.has_option('studymanager', 'postprocessing_exec'):
             e = config.get('studymanager', 'postprocessing_exec')
 
