@@ -910,6 +910,7 @@ _petsc_boomeramg_hook(const char             *prefix,
 #endif /* defined(PETSC_HAVE_HYPRE) */
 }
 
+#if defined(PETSC_HAVE_HPDDM)
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Predefined settings for HPDMM as a preconditioner even if another
@@ -1016,6 +1017,7 @@ _petsc_pchpddm_hook(const char            *prefix,
 
   }
 }
+#endif // PETSC_HAVE_HPDDM
 
 /*----------------------------------------------------------------------------*/
 /*!

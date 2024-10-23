@@ -693,25 +693,12 @@ cs_drift_convective_flux(cs_field_t  *f_sc,
 
     } /* End: not drift scalar imposed mass flux */
 
-    else if (icla == -1 && f_xc != NULL) {
+    else if (icla == -1 && f_xc != nullptr) {
 
       /* Deduce the convective flux of the continuous "class" by removing
          the flux of the current particle "class":
          (rho x1 V1)_f = (rho Vs)_f - sum_classes (rho x2 V2)_f
          ---------------------------------------------------------------- */
-
-      /* Mass fraction of gas */
-
-      cs_field_t *f_xc = cs_field_by_name_try("x_c");
-      cs_real_t *x1 = NULL, *b_x1 = NULL;
-
-      if (f_xc != NULL) {
-        x1 = f_xc->val;
-
-        /* Mass fraction of the gas at the boundary */
-        cs_field_t *f_b_xc = cs_field_by_name("b_x_c");
-        b_x1 = f_b_xc->val;
-      }
 
       /* Initialize continuous phase mass flux as mixture mass flux */
       cs_array_real_copy(n_i_faces, i_mass_flux_mix, i_mass_flux);
