@@ -446,9 +446,10 @@ cs_ctwr_phyvar_update(cs_real_t  rho0,
                                                (bulk) density */
     rho_h = cs_field_by_name("rho_humid_air")->val; /* Humid air density */
   }
-  else
+  else {
     rho = (cs_real_t *)CS_F_(rho)->val;
     rho_h = (cs_real_t *)CS_F_(rho)->val;
+  }
 
   cs_real_t rho_l = air_prop->rho_l; /* Liquid density */
   cs_real_t *cp_h = (cs_real_t *)CS_F_(cp)->val;      /* Humid air (bulk) Cp */
@@ -509,9 +510,10 @@ cs_ctwr_phyvar_update(cs_real_t  rho0,
 
   cs_real_t *ym_l_r = nullptr;
   cs_real_t *ym_l_r_pre = nullptr;
-  if (cfld_yp != nullptr)
+  if (cfld_yp != nullptr) {
     ym_l_r = cfld_yp->val;
     ym_l_r_pre = cfld_yp->val_pre;
+  }
 
   cs_real_t *rain_b_mass_flow
     = cs_field_by_composite_name("boundary_mass_flux",cfld_yp->name)->val;
