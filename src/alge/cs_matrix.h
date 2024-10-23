@@ -194,6 +194,7 @@ cs_matrix_structure_create(cs_matrix_type_t       type,
  *   type       <-- type of matrix considered
  *   transfer   <-- transfer property of row_index and col_id
  *                  if true, map them otherwise
+ *   ordered    <-- indicates if column ids are already ordered
  *   have_diag  <-- indicates if the structure includes the
  *                  diagonal (should be the same for all rows)
  *   n_rows     <-- local number of rows
@@ -211,6 +212,7 @@ cs_matrix_structure_t *
 cs_matrix_structure_create_msr(cs_matrix_type_t        type,
                                bool                    transfer,
                                bool                    have_diag,
+                               bool                    ordered,
                                cs_lnum_t               n_rows,
                                cs_lnum_t               n_cols_ext,
                                cs_lnum_t             **row_index,
@@ -558,36 +560,6 @@ cs_matrix_set_coefficients(cs_matrix_t        *matrix,
                            const cs_lnum_2_t   edges[],
                            const cs_real_t    *da,
                            const cs_real_t    *xa);
-
-/*----------------------------------------------------------------------------
- * Set matrix coefficients, copying values to private arrays.
- *
- * With private arrays, the matrix becomes independant from the
- * arrays passed as arguments.
- *
- * parameters:
- *   matrix                 <-> pointer to matrix structure
- *   symmetric              <-- indicates if matrix coefficients are symmetric
- *   diag_block_size        <-- block sizes for diagonal
- *   extra_diag_block_size  <-- block sizes for extra diagonal
- *   n_edges                <-- local number of graph edges
- *   edges                  <-- edges (row <-> column) connectivity
- *   da                     <-- diagonal values (NULL if zero)
- *   xa                     <-- extradiagonal values (NULL if zero)
- *                              casts as:
- *                                xa[n_edges]    if symmetric,
- *                                xa[n_edges][2] if non symmetric
- *----------------------------------------------------------------------------*/
-
-void
-cs_matrix_copy_coefficients(cs_matrix_t        *matrix,
-                            bool                symmetric,
-                            cs_lnum_t           diag_block_size,
-                            cs_lnum_t           extra_diag_block_size,
-                            const cs_lnum_t     n_edges,
-                            const cs_lnum_2_t   edges[],
-                            const cs_real_t    *da,
-                            const cs_real_t    *xa);
 
 /*----------------------------------------------------------------------------
  * Set matrix coefficients in an MSR format, transferring the

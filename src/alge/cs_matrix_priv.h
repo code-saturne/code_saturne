@@ -234,7 +234,11 @@ typedef struct _cs_matrix_coeff_dist_t {
   int              db_size;           /* Diagonal block size */
   int              eb_size;           /* Extra-diagonal  block size */
 
-  /* Pointers to possibly shared arrays */
+  /* Pointers to possibly shared arrays.
+     For distributed matrices, where the h_val (halo-only) coefficient array
+     is used, the e_val (extra-diagonal) array should contain only local
+     values. For other matrix types, it can contain a mix of local and
+     distant values. */
 
   const cs_real_t  *d_val;            /* D (diagonal-only) coefficients */
   const cs_real_t  *e_val;            /* E (extra-diagonal) coefficients */
@@ -249,8 +253,8 @@ typedef struct _cs_matrix_coeff_dist_t {
         (cache) diagonal values. */
 
   cs_real_t        *_d_val;          /* D (diagonal) coefficients */
-  cs_real_t        *_e_val;          /* E (local extra-diagonal) coefficients */
-  cs_real_t        *_h_val;          /* H (halo) coefficients */
+  cs_real_t        *_e_val;          /* E (extra-diagonal) coefficients */
+  cs_real_t        *_h_val;          /* H (halo-only) coefficients */
 
   /* Pointers to auxiliary matrix structure elements */
 

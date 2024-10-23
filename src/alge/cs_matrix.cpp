@@ -5126,59 +5126,6 @@ cs_matrix_set_coefficients(cs_matrix_t        *matrix,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Set matrix coefficients, copying values to private arrays.
- *
- * With private arrays, the matrix becomes independant from the
- * arrays passed as arguments.
- *
- * \param[in, out]  matrix                 pointer to matrix structure
- * \param[in]       symmetric              indicates if matrix coefficients
- *                                         are symmetric
- * \param[in]       diag_block_size        block sizes for diagonal
- * \param[in]       extra_diag_block_size  block sizes for extra diagonal
- * \param[in]       n_edges                local number of graph edges
- * \param[in]       edges                  edges (row <-> column) connectivity
- * \param[in]       da                     diagonal values (nullptr if zero)
- * \param[in]       xa                     extradiagonal values (nullptr if zero)
- *                                         casts as:
- *                                           xa[n_edges]    if symmetric,
- *                                           xa[n_edges][2] if non symmetric
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_matrix_copy_coefficients(cs_matrix_t        *matrix,
-                            bool                symmetric,
-                            cs_lnum_t           diag_block_size,
-                            cs_lnum_t           extra_diag_block_size,
-                            const cs_lnum_t     n_edges,
-                            const cs_lnum_2_t   edges[],
-                            const cs_real_t    *da,
-                            const cs_real_t    *xa)
-{
-  if (matrix == nullptr)
-    bft_error(__FILE__, __LINE__, 0, _("The matrix is not defined."));
-
-  cs_base_check_bool(&symmetric);
-
-  _set_fill_info(matrix,
-                 symmetric,
-                 diag_block_size,
-                 extra_diag_block_size);
-
-  if (matrix->set_coefficients != nullptr)
-    matrix->set_coefficients(matrix, symmetric, true, n_edges, edges, da, xa);
-  else
-    bft_error
-      (__FILE__, __LINE__, 0,
-       "Matrix format %s with fill type %s does not handle\n"
-       "coefficient assignment from native (graph-edge) coefficients.",
-       matrix->type_name,
-       cs_matrix_fill_type_name[matrix->fill_type]);
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief Set matrix coefficients in an MSR format, transferring the
  * property of those arrays to the matrix.
  *
