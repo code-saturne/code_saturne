@@ -4306,6 +4306,7 @@ cs_matrix_structure_create(cs_matrix_type_t       type,
  *                              if true, map them otherwise
  * \param[in]       have_diag   indicates if the structure includes the
  *                              diagonal (should be the same for all rows)
+ * \param[in]       ordered     indicates if column ids are already ordered
  * \param[in]       n_rows      local number of rows
  * \param[in]       n_cols_ext  local number of columns + ghosts
  * \param[in]       row_index   pointer to index on rows
@@ -4323,6 +4324,7 @@ cs_matrix_structure_t *
 cs_matrix_structure_create_msr(cs_matrix_type_t        type,
                                bool                    transfer,
                                bool                    have_diag,
+                               bool                    ordered,
                                cs_lnum_t               n_rows,
                                cs_lnum_t               n_cols_ext,
                                cs_lnum_t             **row_index,
@@ -4347,7 +4349,7 @@ cs_matrix_structure_create_msr(cs_matrix_type_t        type,
   case CS_MATRIX_CSR:
     ms->structure = _create_struct_csr_from_csr(have_diag,
                                                 transfer,
-                                                false,
+                                                ordered,
                                                 n_rows,
                                                 n_cols_ext,
                                                 row_index,
@@ -4355,7 +4357,7 @@ cs_matrix_structure_create_msr(cs_matrix_type_t        type,
     break;
   case CS_MATRIX_MSR:
     ms->structure = _create_struct_msr_from_msr(transfer,
-                                                false,
+                                                ordered,
                                                 n_rows,
                                                 n_cols_ext,
                                                 row_index,
