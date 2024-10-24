@@ -5583,6 +5583,7 @@ _compute_coarse_quantities_native(const cs_grid_t  *fine_grid,
   const cs_lnum_2_t *c_face_cell = coarse_grid->face_cell;
 
   const cs_real_t *f_face_normal = fine_grid->face_normal;
+  const cs_real_t *f_cell_cen = fine_grid->cell_cen;
   const cs_real_t *f_xa0 = fine_grid->xa0;
   const cs_real_t *f_da = fine_grid->da;
   const cs_real_t *f_xa = fine_grid->xa;
@@ -5662,7 +5663,59 @@ _compute_coarse_quantities_native(const cs_grid_t  *fine_grid,
       c_xa0ij[3*c_face +2] = 0.;
     }
 
-    if (f_face_normal != nullptr) {
+    /* With fine grid level 0, compute f_xa0 and f_xa0ij on the fly */
+
+    if (fine_grid->level == 0) {
+
+      cs_real_t *_f_xa0 = nullptr;
+      f_xa0 = fine_grid->xa;
+      if (fine_grid->symmetric == false) {
+        BFT_MALLOC(_f_xa0, f_n_faces, cs_real_t);
+        for (face_id = 0; face_id < f_n_faces; face_id++)
+          _f_xa0[face_id] = 0.5 * (f_xa[face_id*2] + f_xa[face_id*2+1]);
+        f_xa0 = _f_xa0;
+      }
+
+      for (face_id = 0; face_id < f_n_faces; face_id++) {
+
+        ii = f_face_cell[face_id][0];
+        jj = f_face_cell[face_id][1];
+        cs_real_t dij[3];
+        for (kk = 0; kk < 3; kk++)
+          dij[kk] = f_cell_cen[jj*3 + kk] - f_cell_cen[ii*3 + kk];
+
+        if (c_coarse_face[face_id] > 0 ) {
+          cs_lnum_t c_face = c_coarse_face[face_id] -1;
+
+          c_xa0[c_face] += f_xa0[face_id];
+          c_face_normal[3*c_face]    += f_face_normal[3*face_id];
+          c_face_normal[3*c_face +1] += f_face_normal[3*face_id +1];
+          c_face_normal[3*c_face +2] += f_face_normal[3*face_id +2];
+          c_xa0ij[3*c_face]    += f_xa0[face_id] * dij[0];
+          c_xa0ij[3*c_face +1] += f_xa0[face_id] * dij[1];
+          c_xa0ij[3*c_face +2] += f_xa0[face_id] * dij[2];
+        }
+        else if (c_coarse_face[face_id] < 0) {
+          cs_lnum_t c_face = -c_coarse_face[face_id] -1;
+
+          c_xa0[c_face] += f_xa0[face_id];
+          c_face_normal[3*c_face]    -= f_face_normal[3*face_id];
+          c_face_normal[3*c_face +1] -= f_face_normal[3*face_id +1];
+          c_face_normal[3*c_face +2] -= f_face_normal[3*face_id +2];
+          c_xa0ij[3*c_face]    -= f_xa0[face_id] * dij[0];
+          c_xa0ij[3*c_face +1] -= f_xa0[face_id] * dij[1];
+          c_xa0ij[3*c_face +2] -= f_xa0[face_id] * dij[2];
+        }
+
+      }
+
+      BFT_FREE(_f_xa0);
+      f_xa0 = nullptr;
+    }
+
+    /* Fine grid level > 0 */
+
+    else {
 
       for (face_id = 0; face_id < f_n_faces; face_id++) {
 
@@ -5691,41 +5744,7 @@ _compute_coarse_quantities_native(const cs_grid_t  *fine_grid,
 
       }
 
-    }
-    else { /* f_face_normal = nullptr */
-
-      for (face_id = 0; face_id < f_n_faces; face_id++) {
-
-        if (c_coarse_face[face_id] > 0 ) {
-          cs_lnum_t c_face = c_coarse_face[face_id] -1;
-          cs_lnum_t ic = c_face_cell[c_face][0];
-          cs_lnum_t jc = c_face_cell[c_face][1];
-
-          c_xa0[c_face] += f_xa0[face_id];
-          c_face_normal[3*c_face]    += c_cell_cen[3*jc]   - c_cell_cen[3*ic];
-          c_face_normal[3*c_face +1] += c_cell_cen[3*jc+1] - c_cell_cen[3*ic+1];
-          c_face_normal[3*c_face +2] += c_cell_cen[3*jc+2] - c_cell_cen[3*ic+2];
-          c_xa0ij[3*c_face]    += f_xa0ij[3*face_id];
-          c_xa0ij[3*c_face +1] += f_xa0ij[3*face_id +1];
-          c_xa0ij[3*c_face +2] += f_xa0ij[3*face_id +2];
-        }
-        else if (c_coarse_face[face_id] < 0) {
-          cs_lnum_t c_face = -c_coarse_face[face_id] -1;
-          cs_lnum_t ic = c_face_cell[c_face][0];
-          cs_lnum_t jc = c_face_cell[c_face][1];
-
-          c_xa0[c_face] += f_xa0[face_id];
-          c_face_normal[3*c_face]    -= c_cell_cen[3*jc]   - c_cell_cen[3*ic];
-          c_face_normal[3*c_face +1] -= c_cell_cen[3*jc+1] - c_cell_cen[3*ic+1];
-          c_face_normal[3*c_face +2] -= c_cell_cen[3*jc+2] - c_cell_cen[3*ic+2];
-          c_xa0ij[3*c_face]    -= f_xa0ij[3*face_id];
-          c_xa0ij[3*c_face +1] -= f_xa0ij[3*face_id +1];
-          c_xa0ij[3*c_face +2] -= f_xa0ij[3*face_id +2];
-        }
-
-      }
-
-    }
+    } /* Fine grid level */
 
     /* Matrix initialized to c_xa0 */
 
@@ -6570,6 +6589,30 @@ _coarse_quantities_msr_with_faces_stage_1(const cs_grid_t  *f,
   const cs_lnum_t db_size = c->db_size;
   const cs_lnum_t db_stride = db_size*db_size;
 
+  const bool level_0 = (f->level == 0) ? true : false;
+
+  const cs_real_t *f_x_val_0_s = f_x_val;
+
+  /* Use step based on nonzero index or face id depending on whether
+     we use direct matrix term (symmetric coefficients case), or
+     we use a symmetrized face-based array. */
+
+  cs_lnum_t l0_nnz_m = 1, l0_face_m = 0;
+
+  /* Use symmetried extra-diagonal coefficients for root level if needed */
+
+  if (level_0 && f->symmetric == false) {
+    f_x_val_0_s = f->xa0;
+    l0_nnz_m = 0, l0_face_m = 1;
+
+    if (f->xa0 == nullptr && f->n_faces > 0) {
+      bft_error(__FILE__, __LINE__, 0,
+                _("For non-symmetric matrix coarsening, "
+                  "symmetrized xa0 term must be available."));
+
+    }
+  }
+
   /* Loop on coarse rows */
 
   #pragma omp parallel for  num_threads(n_loc_threads)
@@ -6641,14 +6684,26 @@ _coarse_quantities_msr_with_faces_stage_1(const cs_grid_t  *f,
                   += sgn * f_face_normal[f_face_id][coo_id];
               }
             }
-            for (cs_lnum_t coo_id = 0; coo_id < 3; coo_id++) {
-              c_xa0ij[c_face_id][coo_id]
-                += sgn * f_xa0ij[f_face_id][coo_id];
-            }
 
-            for (cs_lnum_t l = 0; l < eb_stride; l++) {
-              c_xa0[c_face_id*eb_stride + l]
-                += f_xa0[f_face_id*eb_stride + l];
+            if (level_0 == false) {
+              c_xa0[c_face_id] += f_xa0[f_face_id];
+
+              for (cs_lnum_t coo_id = 0; coo_id < 3; coo_id++) {
+                c_xa0ij[c_face_id][coo_id]
+                  += sgn * f_xa0ij[f_face_id][coo_id];
+              }
+            }
+            else {
+              const cs_real_t f_xa0_f
+                = f_x_val_0_s[f_idx*l0_nnz_m + f_face_id*l0_face_m];
+
+              c_xa0[c_face_id] += f_xa0_f;
+
+              for (cs_lnum_t coo_id = 0; coo_id < 3; coo_id++) {
+                c_xa0ij[c_face_id][coo_id]
+                  += f_xa0_f * (  f_cell_cen[jj][coo_id]
+                                - f_cell_cen[ii][coo_id]);
+              }
             }
           }
         }
@@ -7312,30 +7367,31 @@ cs_grid_create_from_shared(cs_lnum_t              n_faces,
   if (g->face_cell != nullptr) {
 
     /* Build symmetrized extra-diagonal terms if necessary,
-       or point to existing terms if already symmetric */
+       or point to existing terms if available */
 
-    if (g->symmetric == true) {
-      g->xa0 = g->xa;
-      g->_xa0 = nullptr;
+    if (g->conv_diff == false) {
+
+      if (g->symmetric == true) {
+        g->xa0 = g->xa;
+      }
+      else {
+        BFT_MALLOC(g->_xa0, n_faces, cs_real_t);
+        for (cs_lnum_t face_id = 0; face_id < n_faces; face_id++)
+          g->_xa0[face_id] = 0.5 * (g->xa[face_id*2] + g->xa[face_id*2+1]);
+        g->xa0 = g->_xa0;
+      }
+
     }
-    else if (g->conv_diff) {
+
+    else { /* if (g->conv_diff) */
+
+      assert(g->conv_diff);
+
       g->xa0  = g->xa;
-      g->_xa0 = nullptr;
-    }
-    else {
-      BFT_MALLOC(g->_xa0, n_faces, cs_real_t);
-      for (cs_lnum_t face_id = 0; face_id < n_faces; face_id++)
-        g->_xa0[face_id] = 0.5 * (g->xa[face_id*2] + g->xa[face_id*2+1]);
-      g->xa0 = g->_xa0;
-    }
 
-    /* Compute multigrid-specific terms */
+      /* Compute multigrid-specific terms */
 
-    BFT_MALLOC(g->xa0ij, n_faces*3, cs_real_t);
-
-    const cs_real_t *restrict g_xa0 = g->xa0;
-
-    if (g->conv_diff) {
+      BFT_MALLOC(g->xa0ij, n_faces*3, cs_real_t);
       BFT_MALLOC(g->xa0_diff, n_faces, cs_real_t);
 
       /* Finest grid: we need to separate convective and diffusive coefficients.
@@ -7353,20 +7409,19 @@ cs_grid_create_from_shared(cs_lnum_t              n_faces,
         }
       }
 
-      g_xa0 = g->xa0_diff;
-    }
+      const cs_real_t *restrict g_xa0 = g->xa0_diff;
 
-#   pragma omp parallel for  if(n_faces > CS_THR_MIN)
-    for (cs_lnum_t face_id = 0; face_id < n_faces; face_id++) {
-      cs_lnum_t i0 = face_cell[face_id][0];
-      cs_lnum_t i1 = face_cell[face_id][1];
-      for (cs_lnum_t kk = 0; kk < 3; kk++) {
-        g->xa0ij[face_id*3 + kk] =   g_xa0[face_id]
-                                   * (  cell_cen[i1][kk]
-                                      - cell_cen[i0][kk]);
+#     pragma omp parallel for  if(n_faces > CS_THR_MIN)
+      for (cs_lnum_t face_id = 0; face_id < n_faces; face_id++) {
+        cs_lnum_t i0 = face_cell[face_id][0];
+        cs_lnum_t i1 = face_cell[face_id][1];
+        for (cs_lnum_t kk = 0; kk < 3; kk++) {
+          g->xa0ij[face_id*3 + kk] =   g_xa0[face_id]
+                                     * (  cell_cen[i1][kk]
+                                        - cell_cen[i0][kk]);
+        }
       }
     }
-
   }
 
   g->matrix_struct = nullptr;
@@ -7817,7 +7872,7 @@ cs_grid_coarsen(const cs_grid_t      *f,
 
   bool msr_gather = false;
   if (fine_matrix_type == CS_MATRIX_MSR) {
-    if (f->xa == nullptr)
+    if (f->xa == nullptr || f->face_normal == nullptr)
       msr_gather = true;
     else {
       const char *s_gather = getenv("CS_MG_GATHER");
