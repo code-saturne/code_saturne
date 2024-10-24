@@ -784,8 +784,8 @@ cs_mobile_structures_initialize(void)
 {
   cs_mobile_structures_t *ms = _mobile_structures;
 
-  int n_int_structs = cs_mobile_structures_get_n_structures();
-  int n_ast_structs = cs_ast_coupling_n_couplings();
+  int n_int_structs = cs_mobile_structures_get_n_int_structures();
+  int n_ast_structs = cs_mobile_structures_get_n_ext_structures();
 
   if (n_int_structs + n_ast_structs == 0)
     return;
@@ -925,8 +925,8 @@ cs_mobile_structures_log_setup(void)
 {
   cs_mobile_structures_t *ms = _mobile_structures;
 
-  int n_int_structs = cs_mobile_structures_get_n_structures();
-  int n_ast_structs = cs_ast_coupling_n_couplings();
+  int n_int_structs = cs_mobile_structures_get_n_int_structures();
+  int n_ast_structs = cs_mobile_structures_get_n_ext_structures();
 
   cs_log_t log = CS_LOG_SETUP;
 
@@ -1032,12 +1032,34 @@ cs_mobile_structures_log_setup(void)
 /*----------------------------------------------------------------------------*/
 
 int
-cs_mobile_structures_get_n_structures(void)
+cs_mobile_structures_get_n_int_structures(void)
 {
   int retval = 0;
 
   if (_mobile_structures != nullptr)
     retval = _mobile_structures->n_int_structs;
+
+  return retval;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Query number of external mobile structures defined.
+ *
+ * \return  number of external mobile structures
+ */
+/*----------------------------------------------------------------------------*/
+
+int
+cs_mobile_structures_get_n_ext_structures(void)
+{
+  int retval = 0;
+
+  if (_mobile_structures != nullptr) {
+    if (_mobile_structures->has_ext_structs) {
+      retval = 1;
+    }
+  }
 
   return retval;
 }
@@ -1154,8 +1176,8 @@ cs_mobile_structures_prediction(int  itrale,
 {
   cs_mobile_structures_t *ms = _mobile_structures;
 
-  int n_int_structs = cs_mobile_structures_get_n_structures();
-  int n_ast_structs = cs_ast_coupling_n_couplings();
+  int n_int_structs = cs_mobile_structures_get_n_int_structures();
+  int n_ast_structs = cs_mobile_structures_get_n_ext_structures();
 
   if (n_int_structs + n_ast_structs == 0)
     return;
@@ -1366,8 +1388,8 @@ cs_mobile_structures_displacement(int itrale, int italim, int *itrfin)
 
   cs_mobile_structures_t *ms = _mobile_structures;
 
-  int n_int_structs = cs_mobile_structures_get_n_structures();
-  int n_ast_structs = cs_ast_coupling_n_couplings();
+  int n_int_structs = cs_mobile_structures_get_n_int_structures();
+  int n_ast_structs = cs_mobile_structures_get_n_ext_structures();
 
   if (n_int_structs + n_ast_structs == 0)
     return;
@@ -1689,8 +1711,8 @@ cs_mobile_structures_restart_read(cs_restart_t  *r)
 
   int n_str[2] = {0, 0}, n_str_prev[2] = {0, 0};
 
-  n_str[0] = cs_mobile_structures_get_n_structures();
-  n_str[1] = cs_ast_coupling_n_couplings();
+  n_str[0] = cs_mobile_structures_get_n_int_structures();
+  n_str[1] = cs_mobile_structures_get_n_ext_structures();
 
   if (n_str[0] + n_str[1] == 0)
     return;
@@ -1813,8 +1835,8 @@ cs_mobile_structures_restart_write(cs_restart_t  *r)
 
   int n_str[2] = {0, 0};
 
-  n_str[0] = cs_mobile_structures_get_n_structures();
-  n_str[1] = cs_ast_coupling_n_couplings();
+  n_str[0] = cs_mobile_structures_get_n_int_structures();
+  n_str[1] = cs_mobile_structures_get_n_ext_structures();
 
   if (n_str[0] + n_str[1] == 0)
     return;

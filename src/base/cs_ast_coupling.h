@@ -72,19 +72,6 @@ cs_ast_coupling_n_couplings(void);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Define coupling with code_aster.
- *
- * Currently, a single coupling with code_aster is handled.
- * In case of multiple calls to the function, subsequent calls are ignored,
- * unless cs_ast_coupling_finalize has been called.
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_ast_coupling_add(void);
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief Initial exchange with code_aster.
  *
  * \param[in]  nalimx  maximum number of implicitation iterations of

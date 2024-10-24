@@ -811,7 +811,6 @@ cs_gui_mobile_mesh_structures_add(void)
     cs_mobile_structures_add_n_structures(n_i_struct);
 
   if (n_e_struct > 0) {
-    cs_ast_coupling_add();
     cs_mobile_structures_add_external_structures();
   }
 }

@@ -107,7 +107,18 @@ cs_mobile_structures_log_setup(void);
 /*----------------------------------------------------------------------------*/
 
 int
-cs_mobile_structures_get_n_structures(void);
+cs_mobile_structures_get_n_int_structures(void);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Query number of external mobile structures defined.
+ *
+ * \return  number of external mobile structures
+ */
+/*----------------------------------------------------------------------------*/
+
+int
+cs_mobile_structures_get_n_ext_structures(void);
 
 /*----------------------------------------------------------------------------*/
 /*!

@@ -1132,7 +1132,7 @@ cs_solve_all(int  itrale)
 
       /* Movement of structures in ALE and test implicit loop */
 
-      const int n_structs = cs_mobile_structures_get_n_structures();
+      const int n_structs = cs_mobile_structures_get_n_int_structures();
       if (n_structs > 0 || nbaste > 0) {
         cs_mobile_structures_displacement(itrale, italim, &itrfin);
         if (itrfin != -1) {

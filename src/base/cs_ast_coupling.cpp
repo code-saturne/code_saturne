@@ -581,19 +581,22 @@ cs_ast_coupling_n_couplings(void)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Define coupling with code_aster.
+ * \brief Initial exchange with code_aster.
  *
- * Currently, a single coupling with code_aster is handled.
- * In case of multiple calls to the function, subsequent calls are ignored,
- * unless cs_ast_coupling_finalize has been called.
+ * \param[in]  nalimx  maximum number of implicitation iterations of
+ *                     the structure displacement
+ * \param[in]  epalim  relative precision of implicitation of
+ *                     the structure displacement
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_ast_coupling_add(void)
+cs_ast_coupling_initialize(int nalimx, cs_real_t epalim)
 {
-  if (cs_glob_ast_coupling != nullptr)
-    return;
+  const cs_time_step_t *ts = cs_glob_time_step;
+
+  int    nbpdtm = ts->nt_max;
+  double ttinit = ts->t_prev;
 
   /* Allocate global coupling structure */
 
@@ -610,21 +613,25 @@ cs_ast_coupling_add(void)
   cpl->n_g_faces    = 0;
   cpl->n_g_vertices = 0;
 
-  cpl->mc_faces = nullptr;
-  cpl->mc_vertices = nullptr;
+#if defined(HAVE_PARAMEDMEM)
 
-  cpl->verbosity = _verbosity;
+  cpl->mc_faces    = NULL;
+  cpl->mc_vertices = NULL;
+
+#endif
+
+  cpl->verbosity     = _verbosity;
   cpl->visualization = _visualization;
 
-  cpl->post_mesh = nullptr;
+  cpl->post_mesh = NULL;
 
   cpl->iteration = 0; /* < 0 for disconnect */
 
-  cpl->nbssit = 1;    /* number of sub-iterations (set later) */
+  cpl->nbssit = nalimx; /* number of sub-iterations */
 
-  cpl->dt = 0.;
-  cpl->dtref = 0;         /* reference time step (set later) */
-  cpl->epsilo = 1e-5;     /* scheme convergence threshold */
+  cpl->dt     = 0.;
+  cpl->dtref  = ts->dt_ref; /* reference time step */
+  cpl->epsilo = epalim;     /* scheme convergence threshold */
 
   cpl->icv1 = 0;
   cpl->icv2 = 0;
@@ -632,14 +639,14 @@ cs_ast_coupling_add(void)
 
   cpl->s_it_id = 0; /* Sub-iteration id */
 
-  cpl->xast = nullptr;
-  cpl->xvast = nullptr;
-  cpl->xvasa = nullptr;
-  cpl->xastp = nullptr;
+  cpl->xast  = NULL;
+  cpl->xvast = NULL;
+  cpl->xvasa = NULL;
+  cpl->xastp = NULL;
 
-  cpl->foras = nullptr;
-  cpl->foaas = nullptr;
-  cpl->fopas = nullptr;
+  cpl->foras = NULL;
+  cpl->foaas = NULL;
+  cpl->fopas = NULL;
 
   cs_glob_ast_coupling = cpl;
 
@@ -660,6 +667,7 @@ cs_ast_coupling_add(void)
     for (int i = 0; i < n_apps; i++) {
       const ple_coupling_mpi_set_info_t
         ai = ple_coupling_mpi_set_get_info(mpi_apps, i);
+
       if (strncmp(ai.app_type, "code_aster", 10) == 0)
         n_ast_apps += 1;
     }
@@ -671,6 +679,7 @@ cs_ast_coupling_add(void)
       for (int i = 0; i < n_apps; i++) {
         const ple_coupling_mpi_set_info_t
           ai = ple_coupling_mpi_set_get_info(mpi_apps, i);
+
         if (strncmp(ai.app_type, "code_aster", 10) == 0)
           cpl->aci = ai;
       }
@@ -688,6 +697,9 @@ cs_ast_coupling_add(void)
                 n_ast_apps);
 
   }
+  else {
+    bft_error(__FILE__, __LINE__, 0, "No PLE application detected.");
+  }
 
 #else
 
@@ -697,52 +709,6 @@ cs_ast_coupling_add(void)
             "code_aster coupling requires PLE with MPI support.");
 
 #endif
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Initial exchange with code_aster.
- *
- * \param[in]  nalimx  maximum number of implicitation iterations of
- *                     the structure displacement
- * \param[in]  epalim  relative precision of implicitation of
- *                     the structure displacement
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_ast_coupling_initialize(int        nalimx,
-                           cs_real_t  epalim)
-{
-  const cs_time_step_t *ts = cs_glob_time_step;
-
-  int     nbpdtm = ts->nt_max;
-  double  ttinit = ts->t_prev;
-
-  /* Allocate global coupling structure */
-
-  cs_ast_coupling_t *cpl = cs_glob_ast_coupling;
-
-  assert(cpl != nullptr);
-
-  cpl->verbosity = _verbosity;
-  cpl->visualization = _visualization;
-
-  cpl->iteration = 0; /* < 0 for disconnect */
-
-  cpl->nbssit = nalimx; /* number of sub-iterations */
-
-  cpl->dt = 0.;
-  cpl->dtref = ts->dt_ref;  /* reference time step */
-  cpl->epsilo = epalim;     /* scheme convergence threshold */
-
-  cpl->icv1 = 0;
-  cpl->icv2 = 0;
-  cpl->lref = 0.;
-
-  cpl->s_it_id = 0; /* Sub-iteration id */
-
-  cs_calcium_set_verbosity(cpl->verbosity);
 
   /* Calcium  (communication) initialization */
 
