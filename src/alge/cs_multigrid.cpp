@@ -2575,11 +2575,6 @@ _setup_hierarchy(void             *context,
     _multigrid_setup_sles_k_cycle_bottom(mg, name, verbosity);
   else
     _multigrid_setup_sles(mg, name, verbosity);
-
-  /* Update timers */
-
-  t2 = cs_timer_time();
-  cs_timer_counter_add_diff(&(mg->info.t_tot[0]), &t0, &t2);
 }
 
 /*----------------------------------------------------------------------------*/
