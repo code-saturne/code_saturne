@@ -4926,7 +4926,7 @@ _automatic_aggregation_dx_msr(const cs_grid_t       *f,
             ag_queue[t_r_e_id] = ii;
             ag_queue[t_r_e_id+1] = ix0;
             if (ag_queue_stride == 3)
-              ag_queue[t_r_e_id+1] = ix1;
+              ag_queue[t_r_e_id+2] = ix1;
             t_r_e_id += ag_queue_stride;
             r_n_faces++;
           }
