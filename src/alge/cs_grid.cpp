@@ -7871,9 +7871,11 @@ cs_grid_coarsen(const cs_grid_t      *f,
   cs_matrix_type_t coarse_matrix_type = CS_MATRIX_MSR;
 
   bool msr_gather = false;
-  if (fine_matrix_type == CS_MATRIX_MSR) {
-    if (f->xa == nullptr || f->face_normal == nullptr)
-      msr_gather = true;
+  if (fine_matrix_type == CS_MATRIX_MSR && f->symmetric) {
+    if (f->xa == nullptr || f->face_normal == nullptr) {
+      if (f->n_rows > 0)
+        msr_gather = true;
+    }
     else {
       const char *s_gather = getenv("CS_MG_GATHER");
       if (s_gather != nullptr)
