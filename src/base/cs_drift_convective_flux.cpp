@@ -147,9 +147,9 @@ cs_drift_boundary_mass_flux(const cs_mesh_t             *m,
     var_name[14] = '\0';
 
     cs_field_t *f_x_p_i = cs_field_by_name_try(var_name);
-    cs_real_t *x2 = NULL;
+    cs_real_t  *x2      = nullptr;
 
-    if (f_x_p_i != NULL) {
+    if (f_x_p_i != nullptr) {
       x2 = f_x_p_i->val;
       const int iscdri = cs_field_get_key_int(f_x_p_i, keydri);
 

@@ -2794,7 +2794,7 @@ cs_sles_mumps_free(void  *context)
     return;
 
   const cs_param_sles_t  *slesp = c->sles_param;
-  assert(slesp != NULL);
+  assert(slesp != nullptr);
   const cs_param_mumps_t  *mumpsp
     = static_cast<const cs_param_mumps_t *>(slesp->context_param);
 
@@ -2967,7 +2967,7 @@ cs_sles_mumps_setup(void               *context,
   cs_sles_mumps_t *c = static_cast<cs_sles_mumps_t *>(context);
 
   const cs_param_sles_t  *slesp = c->sles_param;
-  assert(slesp != NULL);
+  assert(slesp != nullptr);
   const cs_param_mumps_t  *mumpsp
     = static_cast<const cs_param_mumps_t *>(slesp->context_param);
 

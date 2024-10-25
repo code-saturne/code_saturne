@@ -615,15 +615,15 @@ cs_ast_coupling_initialize(int nalimx, cs_real_t epalim)
 
 #if defined(HAVE_PARAMEDMEM)
 
-  cpl->mc_faces    = NULL;
-  cpl->mc_vertices = NULL;
+  cpl->mc_faces    = nullptr;
+  cpl->mc_vertices = nullptr;
 
 #endif
 
   cpl->verbosity     = _verbosity;
   cpl->visualization = _visualization;
 
-  cpl->post_mesh = NULL;
+  cpl->post_mesh = nullptr;
 
   cpl->iteration = 0; /* < 0 for disconnect */
 
@@ -639,14 +639,14 @@ cs_ast_coupling_initialize(int nalimx, cs_real_t epalim)
 
   cpl->s_it_id = 0; /* Sub-iteration id */
 
-  cpl->xast  = NULL;
-  cpl->xvast = NULL;
-  cpl->xvasa = NULL;
-  cpl->xastp = NULL;
+  cpl->xast  = nullptr;
+  cpl->xvast = nullptr;
+  cpl->xvasa = nullptr;
+  cpl->xastp = nullptr;
 
-  cpl->foras = NULL;
-  cpl->foaas = NULL;
-  cpl->fopas = NULL;
+  cpl->foras = nullptr;
+  cpl->foaas = nullptr;
+  cpl->fopas = nullptr;
 
   cs_glob_ast_coupling = cpl;
 
