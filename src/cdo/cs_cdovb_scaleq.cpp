@@ -589,8 +589,8 @@ _svb_apply_weak_bc(const cs_equation_param_t     *eqp,
  *
  * \param[in]      eqp         pointer to a cs_equation_param_t structure
  * \param[in]      cm          pointer to a cs_cell_mesh_t structure
- * \param[in]      mass_hodge  pointer to a Hodge structure or nullptr if
- * useless \param[in]      inv_dtcur   value of 1./dt for the current time step
+ * \param[in]      mass_hodge  pointer to a Hodge structure or nullptr
+ * \param[in]      inv_dtcur   value of 1./dt for the current time step
  * \param[in, out] eqb         pointer to the equation builder structure
  * \param[in, out] cb          pointer to a cs_cell_builder_t structure
  * \param[in, out] csys        pointer to a cs_cell_sys_t structure
@@ -639,8 +639,8 @@ _svb_imp_euler(const cs_equation_param_t   *eqp,
  *
  * \param[in]      eqp         pointer to a cs_equation_param_t structure
  * \param[in]      cm          pointer to a cs_cell_mesh_t structure
- * \param[in]      mass_hodge  pointer to a Hodge structure or nullptr if
- * useless \param[in]      inv_dtcur   value of 1./dt for the current time step
+ * \param[in]      mass_hodge  pointer to a Hodge structure or nullptr
+ * \param[in]      inv_dtcur   value of 1./dt for the current time step
  * \param[in, out] eqb         pointer to the equation builder structure
  * \param[in, out] cb          pointer to a cs_cell_builder_t structure
  * \param[in, out] csys        pointer to a cs_cell_sys_t structure
@@ -687,8 +687,8 @@ _svb_imp_euler_incr(const cs_equation_param_t   *eqp,
  *
  * \param[in]      eqp         pointer to a cs_equation_param_t structure
  * \param[in]      cm          pointer to a cs_cell_mesh_t structure
- * \param[in]      mass_hodge  pointer to a Hodge structure or nullptr if
- * useless \param[in]      inv_dtcur   value of 1./dt for the current time step
+ * \param[in]      mass_hodge  pointer to a Hodge structure or nullptr
+ * \param[in]      inv_dtcur   value of 1./dt for the current time step
  * \param[in, out] eqb         pointer to the equation builder structure
  * \param[in, out] cb          pointer to a cs_cell_builder_t structure
  * \param[in, out] csys        pointer to a cs_cell_sys_t structure
@@ -738,8 +738,8 @@ _svb_imp_euler_lumped(const cs_equation_param_t   *eqp,
  *
  * \param[in]      eqp         pointer to a cs_equation_param_t structure
  * \param[in]      cm          pointer to a cs_cell_mesh_t structure
- * \param[in]      mass_hodge  pointer to a Hodge structure or nullptr if
- * useless \param[in]      inv_dtcur   value of 1./dt for the current time step
+ * \param[in]      mass_hodge  pointer to a Hodge structure or nullptr
+ * \param[in]      inv_dtcur   value of 1./dt for the current time step
  * \param[in, out] eqb         pointer to the equation builder structure
  * \param[in, out] cb          pointer to a cs_cell_builder_t structure
  * \param[in, out] csys        pointer to a cs_cell_sys_t structure
@@ -787,8 +787,8 @@ _svb_imp_euler_lumped_incr(const cs_equation_param_t   *eqp,
  *
  * \param[in]      eqp         pointer to a cs_equation_param_t structure
  * \param[in]      cm          pointer to a cs_cell_mesh_t structure
- * \param[in]      mass_hodge  pointer to a Hodge structure or nullptr if
- * useless \param[in]      inv_dtcur   value of 1./dt for the current time step
+ * \param[in]      mass_hodge  pointer to a Hodge structure or nullptr
+ * \param[in]      inv_dtcur   value of 1./dt for the current time step
  * \param[in, out] eqb         pointer to the equation builder structure
  * \param[in, out] cb          pointer to a cs_cell_builder_t structure
  * \param[in, out] csys        pointer to a cs_cell_sys_t structure
@@ -837,8 +837,8 @@ _svb_imp_euler_lumped_subcell(const cs_equation_param_t   *eqp,
  *
  * \param[in]      eqp         pointer to a cs_equation_param_t structure
  * \param[in]      cm          pointer to a cs_cell_mesh_t structure
- * \param[in]      mass_hodge  pointer to a Hodge structure or nullptr if
- * useless \param[in]      inv_dtcur   value of 1./dt for the current time step
+ * \param[in]      mass_hodge  pointer to a Hodge structure or nullptr
+ * \param[in]      inv_dtcur   value of 1./dt for the current time step
  * \param[in, out] eqb         pointer to the equation builder structure
  * \param[in, out] cb          pointer to a cs_cell_builder_t structure
  * \param[in, out] csys        pointer to a cs_cell_sys_t structure
@@ -920,8 +920,8 @@ _svb_theta_scheme_begin(const cs_equation_param_t   *eqp,
  *
  * \param[in]      eqp         pointer to a cs_equation_param_t structure
  * \param[in]      cm          pointer to a cs_cell_mesh_t structure
- * \param[in]      mass_hodge  pointer to a Hodge structure or nullptr if
- * useless \param[in]      inv_dtcur   value of 1./dt for the current time step
+ * \param[in]      mass_hodge  pointer to a Hodge structure or nullptr
+ * \param[in]      inv_dtcur   value of 1./dt for the current time step
  * \param[in, out] eqb         pointer to the equation builder structure
  * \param[in, out] cb          pointer to a cs_cell_builder_t structure
  * \param[in, out] csys        pointer to a cs_cell_sys_t structure
@@ -957,8 +957,8 @@ _svb_theta_scheme(const cs_equation_param_t   *eqp,
  *
  * \param[in]      eqp         pointer to a cs_equation_param_t structure
  * \param[in]      cm          pointer to a cs_cell_mesh_t structure
- * \param[in]      mass_hodge  pointer to a Hodge structure or nullptr if
- * useless \param[in]      inv_dtcur   value of 1./dt for the current time step
+ * \param[in]      mass_hodge  pointer to a Hodge structure or nullptr
+ * \param[in]      inv_dtcur   value of 1./dt for the current time step
  * \param[in, out] eqb         pointer to the equation builder structure
  * \param[in, out] cb          pointer to a cs_cell_builder_t structure
  * \param[in, out] csys        pointer to a cs_cell_sys_t structure
@@ -993,8 +993,8 @@ _svb_theta_scheme_lumped(const cs_equation_param_t   *eqp,
  *
  * \param[in]      eqp         pointer to a cs_equation_param_t structure
  * \param[in]      cm          pointer to a cs_cell_mesh_t structure
- * \param[in]      mass_hodge  pointer to a Hodge structure or nullptr if
- * useless \param[in]      inv_dtcur   value of 1./dt for the current time step
+ * \param[in]      mass_hodge  pointer to a Hodge structure or nullptr
+ * \param[in]      inv_dtcur   value of 1./dt for the current time step
  * \param[in, out] eqb         pointer to the equation builder structure
  * \param[in, out] cb          pointer to a cs_cell_builder_t structure
  * \param[in, out] csys        pointer to a cs_cell_sys_t structure
@@ -2174,8 +2174,10 @@ cs_cdovb_scaleq_build_block_implicit(int                           t_id,
 
   /* Set the local (i.e. cellwise) structures for the current cell */
 
-  _svb_init_cell_system(
-    cm, eqp, eqb, eqc->vtx_bc_flag, f_val, nullptr, csys, cb);
+  _svb_init_cell_system(cm,
+                        eqp, eqb, eqc->vtx_bc_flag,
+                        f_val, nullptr,
+                        csys, cb);
 
   /* Build and add the diffusion/advection/reaction term to the local
      system. A mass matrix is also built if needed */
@@ -2274,7 +2276,7 @@ cs_cdovb_scaleq_build_block_implicit(int                           t_id,
   /* Apply the Neumann BCs on the diagonal block. The diagonal should have the
      value for the row (i.e. neumann induced from the extra-diagonal blocks) */
 
-  if (cb->cell_flag & CS_FLAG_BOUNDARY_CELL_BY_FACE && diag_block) {
+  if ((cb->cell_flag & CS_FLAG_BOUNDARY_CELL_BY_FACE) && diag_block) {
 
     /* Neumann boundary conditions:
      * The common practice is to define Phi_neu = - lambda * grad(u) . n_fc
@@ -2290,7 +2292,7 @@ cs_cdovb_scaleq_build_block_implicit(int                           t_id,
 
   /* Compute a norm of the RHS for the normalization of the residual of the
      linear system to solve. This is done before applying BCs to not take into
-     account it. */
+     account a possible algebraic reformulation. */
 
   double  rhs_norm = _svb_cw_rhs_normalization(eqp->sles_param->resnorm_type,
                                                cm, csys);
@@ -2715,8 +2717,8 @@ cs_cdovb_scaleq_solve_steady_state_incr(bool                        cur2prev,
 
   /* Initialize the local system: rhs, matrix and assembler values */
 
-  double  rhs_norm = 0.;
-  cs_real_t *rhs      = nullptr;
+  double rhs_norm = 0.;
+  cs_real_t *rhs  = nullptr;
 
   cs_cdo_system_helper_init_system(sh, &rhs);
 
@@ -2734,14 +2736,13 @@ cs_cdovb_scaleq_solve_steady_state_incr(bool                        cur2prev,
     /* Each thread get back its related structures:
        Get the cell-wise view of the mesh and the algebraic system */
 
-    cs_face_mesh_t  *fm = cs_cdo_local_get_face_mesh(t_id);
-    cs_cell_mesh_t  *cm = cs_cdo_local_get_cell_mesh(t_id);
-    cs_cell_sys_t  *csys = _svb_cell_system[t_id];
-    cs_cell_builder_t  *cb = _svb_cell_builder[t_id];
-    cs_cdo_assembly_t  *asb = cs_cdo_assembly_get(t_id);
-    cs_hodge_t         *diff_hodge = (eqc->diffusion_hodge == nullptr)
-                                       ? nullptr
-                                       : eqc->diffusion_hodge[t_id];
+    cs_face_mesh_t *fm = cs_cdo_local_get_face_mesh(t_id);
+    cs_cell_mesh_t *cm = cs_cdo_local_get_cell_mesh(t_id);
+    cs_cell_sys_t *csys = _svb_cell_system[t_id];
+    cs_cell_builder_t *cb = _svb_cell_builder[t_id];
+    cs_cdo_assembly_t *asb = cs_cdo_assembly_get(t_id);
+    cs_hodge_t *diff_hodge = (eqc->diffusion_hodge == nullptr) ?
+      nullptr : eqc->diffusion_hodge[t_id];
     cs_hodge_t *mass_hodge
       = (eqc->mass_hodge == nullptr) ? nullptr : eqc->mass_hodge[t_id];
 
@@ -2774,8 +2775,10 @@ cs_cdovb_scaleq_solve_steady_state_incr(bool                        cur2prev,
 
       /* Set the local (i.e. cellwise) structures for the current cell */
 
-      _svb_init_cell_system(
-        cm, eqp, eqb, eqc->vtx_bc_flag, fld->val, nullptr, csys, cb);
+      _svb_init_cell_system(cm,
+                            eqp, eqb, eqc->vtx_bc_flag,
+                            fld->val, nullptr,
+                            csys, cb);
 
       cs_equation_bc_update_for_increment(csys);
 
@@ -2878,9 +2881,9 @@ cs_cdovb_scaleq_solve_steady_state_incr(bool                        cur2prev,
                              rhs,
                              &rhs_norm);
 
-  cs_sles_t    *sles = cs_sles_find_or_add(eqp->sles_param->field_id, nullptr);
-  cs_matrix_t  *matrix = cs_cdo_system_get_matrix(sh, 0);
-  cs_range_set_t  *range_set = cs_cdo_system_get_range_set(sh, 0);
+  cs_sles_t *sles = cs_sles_find_or_add(eqp->sles_param->field_id, nullptr);
+  cs_matrix_t *matrix = cs_cdo_system_get_matrix(sh, 0);
+  cs_range_set_t *range_set = cs_cdo_system_get_range_set(sh, 0);
 
   if (eqb->increment == nullptr)
     BFT_MALLOC(eqb->increment, eqc->n_dofs, cs_real_t);
@@ -2990,9 +2993,8 @@ cs_cdovb_scaleq_solve_implicit(bool                        cur2prev,
     cs_cell_mesh_t  *cm = cs_cdo_local_get_cell_mesh(t_id);
     cs_cell_sys_t  *csys = _svb_cell_system[t_id];
     cs_cell_builder_t  *cb = _svb_cell_builder[t_id];
-    cs_hodge_t         *diff_hodge = (eqc->diffusion_hodge == nullptr)
-                                       ? nullptr
-                                       : eqc->diffusion_hodge[t_id];
+    cs_hodge_t  *diff_hodge = (eqc->diffusion_hodge == nullptr) ?
+      nullptr : eqc->diffusion_hodge[t_id];
     cs_hodge_t *mass_hodge
       = (eqc->mass_hodge == nullptr) ? nullptr : eqc->mass_hodge[t_id];
 
@@ -3028,8 +3030,10 @@ cs_cdovb_scaleq_solve_implicit(bool                        cur2prev,
 
       /* Set the local (i.e. cellwise) structures for the current cell */
 
-      _svb_init_cell_system(
-        cm, eqp, eqb, eqc->vtx_bc_flag, fld->val, nullptr, csys, cb);
+      _svb_init_cell_system(cm,
+                            eqp, eqb, eqc->vtx_bc_flag,
+                            fld->val, nullptr,
+                            csys, cb);
 
       /* Build and add the diffusion/advection/reaction term to the local
          system. A mass matrix is also built if needed */
@@ -3127,9 +3131,9 @@ cs_cdovb_scaleq_solve_implicit(bool                        cur2prev,
                              rhs,
                              &rhs_norm);
 
-  cs_sles_t    *sles = cs_sles_find_or_add(eqp->sles_param->field_id, nullptr);
-  cs_matrix_t  *matrix = cs_cdo_system_get_matrix(sh, 0);
-  cs_range_set_t  *range_set = cs_cdo_system_get_range_set(sh, 0);
+  cs_sles_t *sles = cs_sles_find_or_add(eqp->sles_param->field_id, nullptr);
+  cs_matrix_t *matrix = cs_cdo_system_get_matrix(sh, 0);
+  cs_range_set_t *range_set = cs_cdo_system_get_range_set(sh, 0);
 
   cs_cdo_solve_scalar_system(eqc->n_dofs,
                              eqp->sles_param,
@@ -3178,15 +3182,15 @@ cs_cdovb_scaleq_solve_implicit_incr(bool                        cur2prev,
                                     void                       *context)
 {
   CS_UNUSED(cur2prev);
-  cs_timer_t  t0 = cs_timer_time();
+  cs_timer_t t0 = cs_timer_time();
 
-  cs_cdovb_scaleq_t  *eqc = (cs_cdovb_scaleq_t *)context;
-  cs_cdo_system_helper_t  *sh = eqb->system_helper;
-  cs_field_t  *fld = cs_field_by_id(field_id);
+  cs_cdovb_scaleq_t *eqc = (cs_cdovb_scaleq_t *)context;
+  cs_cdo_system_helper_t *sh = eqb->system_helper;
+  cs_field_t *fld = cs_field_by_id(field_id);
 
-  const cs_time_step_t  *ts = cs_shared_time_step;
-  const cs_cdo_connect_t  *connect = cs_shared_connect;
-  const cs_cdo_quantities_t  *quant = cs_shared_quant;
+  const cs_time_step_t *ts = cs_shared_time_step;
+  const cs_cdo_connect_t *connect = cs_shared_connect;
+  const cs_cdo_quantities_t *quant = cs_shared_quant;
 
   assert(cs_equation_param_has_time(eqp) == true);
   assert(eqp->time_scheme == CS_TIME_SCHEME_EULER_IMPLICIT);
@@ -3202,8 +3206,8 @@ cs_cdovb_scaleq_solve_implicit_incr(bool                        cur2prev,
 
   /* Initialize the local system: rhs, matrix and assembler values */
 
-  double  rhs_norm = 0.;
-  cs_real_t *rhs      = nullptr;
+  double rhs_norm = 0.;
+  cs_real_t *rhs  = nullptr;
 
   cs_cdo_system_helper_init_system(sh, &rhs);
 
@@ -3221,14 +3225,13 @@ cs_cdovb_scaleq_solve_implicit_incr(bool                        cur2prev,
     /* Each thread get back its related structures:
        Get the cell-wise view of the mesh and the algebraic system */
 
-    cs_face_mesh_t  *fm = cs_cdo_local_get_face_mesh(t_id);
-    cs_cell_mesh_t  *cm = cs_cdo_local_get_cell_mesh(t_id);
-    cs_cell_sys_t  *csys = _svb_cell_system[t_id];
+    cs_face_mesh_t     *fm = cs_cdo_local_get_face_mesh(t_id);
+    cs_cell_mesh_t     *cm = cs_cdo_local_get_cell_mesh(t_id);
+    cs_cell_sys_t    *csys = _svb_cell_system[t_id];
     cs_cell_builder_t  *cb = _svb_cell_builder[t_id];
-    cs_cdo_assembly_t  *asb = cs_cdo_assembly_get(t_id);
-    cs_hodge_t         *diff_hodge = (eqc->diffusion_hodge == nullptr)
-                                       ? nullptr
-                                       : eqc->diffusion_hodge[t_id];
+    cs_cdo_assembly_t *asb = cs_cdo_assembly_get(t_id);
+    cs_hodge_t *diff_hodge = (eqc->diffusion_hodge == nullptr) ?
+      nullptr : eqc->diffusion_hodge[t_id];
     cs_hodge_t *mass_hodge
       = (eqc->mass_hodge == nullptr) ? nullptr : eqc->mass_hodge[t_id];
 

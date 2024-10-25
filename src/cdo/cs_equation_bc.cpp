@@ -2222,20 +2222,20 @@ cs_equation_bc_circulation_at_edges(cs_real_t                    t_eval,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Update the boundary conditions to fullfill the constraint when
- *         an incremental solve is set
+ * \brief Update the boundary conditions to fullfill the constraint when
+ *        an incremental solve is set
  *
- * \param[in, out] csys     pointer to the cell system structure
+ * \param[in, out] csys  pointer to the cell system structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_bc_update_for_increment(cs_cell_sys_t  *csys)
+cs_equation_bc_update_for_increment(cs_cell_sys_t *csys)
 {
   if (csys == nullptr)
     return;
 
-  if (csys->has_dirichlet) {    /* Switch to homogeneous Dirichlet BCs */
+  if (csys->has_dirichlet) { /* Switch to homogeneous Dirichlet BCs */
 
     memset(csys->dir_values, 0, csys->n_dofs*sizeof(double));
 
@@ -2266,4 +2266,5 @@ cs_equation_bc_update_for_increment(cs_cell_sys_t  *csys)
 }
 
 /*----------------------------------------------------------------------------*/
+
 END_C_DECLS

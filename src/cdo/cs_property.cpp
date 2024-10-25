@@ -3239,8 +3239,9 @@ cs_property_eval_at_cells(cs_real_t               t_eval,
   /* Apply a scaling factor is requested */
 
   if (fabs(scaling_factor - 1.0) > 10*FLT_MIN)
-    cs_array_real_scale(
-      n_cells, cs_property_get_dim(pty), nullptr, scaling_factor, array);
+    cs_array_real_scale(n_cells, cs_property_get_dim(pty),
+                        nullptr, scaling_factor,
+                        array);
 }
 
 /*----------------------------------------------------------------------------*/

@@ -522,8 +522,8 @@ _cdovb_scalsys_build_implicit(bool                           cur2prev,
       cs_equation_core_t  *block_ij = blocks[ij];
 
       const cs_equation_param_t  *eqp = block_ij->param;
-      const cs_real_t  *f_val =
-        cur2prev ? fields[j_eq]->val : fields[j_eq]->val_pre;
+      const cs_real_t  *f_val
+        = cur2prev ? fields[j_eq]->val : fields[j_eq]->val_pre;
 
       cs_equation_builder_t  *eqb = block_ij->builder;
       cs_cdovb_scaleq_t      *eqc
@@ -531,8 +531,8 @@ _cdovb_scalsys_build_implicit(bool                           cur2prev,
 
       /* Setup stage: Set useful arrays:
        * -----------
-       * -> the Dirichlet values at vertices
-       * -> the translation of the enforcement values at vertices if needed
+       * --> the Dirichlet values at vertices
+       * --> the translation of the enforcement values at vertices if needed
        */
 
       if (eqb->init_step) {
@@ -927,7 +927,7 @@ cs_cdovb_scalsys_solve_implicit(bool                           cur2prev,
   }
 
   /* Initialize the algebraic structures
-   * ->  rhs, matrix and assembler values */
+   * --> rhs, matrix and assembler values */
 
   cs_real_t *rhs = nullptr;
 

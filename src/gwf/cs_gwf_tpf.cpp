@@ -1853,7 +1853,6 @@ _check_cvg_nl(cs_param_nl_algo_t        nl_algo_type,
 
   /* Update the residual (parallel sync. done) */
 
-
   double delta_pa = cs_cdo_blas_square_norm_pvsp_diff(pa_pre_iter, pa_cur_iter);
   double delta_pb = cs_cdo_blas_square_norm_pvsp_diff(pb_pre_iter, pb_cur_iter);
 
@@ -2292,12 +2291,12 @@ _compute_segregated(const cs_mesh_t              *mesh,
 /*!
  * \brief Define the different blocks building the coupled system
  *
- * \param[in, out] tpf     model context. Point to a cs_gwf_tpf_t structure
+ * \param[in, out] tpf  model context. Point to a cs_gwf_tpf_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 static void
-_set_coupled_system(cs_gwf_tpf_t    *tpf)
+_set_coupled_system(cs_gwf_tpf_t *tpf)
 {
   /* Define the coupled system of equations */
   /* -------------------------------------- */
@@ -2311,26 +2310,26 @@ _set_coupled_system(cs_gwf_tpf_t    *tpf)
   /* Create the (0,1)-block related to the water in the gas phase */
 
   tpf->b01_w_eqp = cs_equation_param_create("block01_w_eq",
-                                           CS_EQUATION_TYPE_GROUNDWATER,
-                                           1,
-                                           CS_BC_SYMMETRY);
+                                            CS_EQUATION_TYPE_GROUNDWATER,
+                                            1,
+                                            CS_BC_SYMMETRY);
 
   _set_default_eqp_settings(tpf->b01_w_eqp);
 
   /* Create the (1,0)-block related to the hydrogen in the liquid phase */
 
   tpf->b10_h_eqp = cs_equation_param_create("block10_h_eq",
-                                           CS_EQUATION_TYPE_GROUNDWATER,
-                                           1,
-                                           CS_BC_SYMMETRY);
+                                            CS_EQUATION_TYPE_GROUNDWATER,
+                                            1,
+                                            CS_BC_SYMMETRY);
 
   _set_default_eqp_settings(tpf->b10_h_eqp);
 
   /* Add a 2x2 system of coupled equations and define each block */
 
   tpf->system = cs_equation_system_add("two_phase_flow_porous_media",
-                                      2,   /* system size */
-                                      1);  /* scalar-valued block */
+                                       2,   /* system size */
+                                       1);  /* scalar-valued block */
 
   /* Set all the blocks in the coupled system */
 
@@ -2506,17 +2505,17 @@ _finalize_setup_pcpg_coupled_solver(const cs_cdo_connect_t  *connect,
  *        Case of a two-phase flows model in porous media using a coupled
  *        solver and the couple (Pc, Pg) as main unknowns
  *
- * \param[in, out] tpf         pointer to the model context structure
- * \param[in, out] perm_type   type of permeability to handle
+ * \param[in, out] tpf        pointer to the model context structure
+ * \param[in, out] perm_type  type of permeability to handle
  */
 /*----------------------------------------------------------------------------*/
 
 static void
-_init_plpc_coupled_solver(cs_gwf_tpf_t            *tpf,
-                          cs_property_type_t       perm_type)
+_init_plpc_coupled_solver(cs_gwf_tpf_t       *tpf,
+                          cs_property_type_t  perm_type)
 {
-  /* Equations and the coupled system
-   * ================================
+  /* Coupled system of equations
+   * ===========================
    *
    * Notations are the following :
    * - Two phases: Liquid phase denoted by "l" and gaseous phase denoted by "g"
@@ -2595,14 +2594,14 @@ _init_plpc_coupled_solver(cs_gwf_tpf_t            *tpf,
  *        case of a two-phase flows model in porous media using a coupled
  *        solver and the couple (Pl, Pc) as main unknowns
  *
- * \param[in]      connect     set of additional connectivities for CDO
- * \param[in, out] tpf         pointer to the model context structure
+ * \param[in]      connect  set of additional connectivities for CDO
+ * \param[in, out] tpf      pointer to the model context structure
  */
 /*----------------------------------------------------------------------------*/
 
 static void
-_finalize_setup_plpc_coupled_solver(const cs_cdo_connect_t  *connect,
-                                    cs_gwf_tpf_t            *tpf)
+_finalize_setup_plpc_coupled_solver(const cs_cdo_connect_t *connect,
+                                    cs_gwf_tpf_t           *tpf)
 {
   const cs_lnum_t  n_cells = connect->n_cells;
 
@@ -2884,14 +2883,14 @@ cs_gwf_tpf_create(cs_gwf_model_type_t      model)
   if (model == CS_GWF_MODEL_MISCIBLE_TWO_PHASE) {
 
     tpf->is_miscible = true;
-    tpf->l_diffusivity_h = 0;      /* immiscible case */
+    tpf->l_diffusivity_h = 0;      /* as in immiscible case */
     tpf->henry_constant = 1e-7;    /* default value */
 
   }
   else { /* immiscible case */
 
     tpf->is_miscible = false;
-    tpf->l_diffusivity_h = 0;
+    tpf->l_diffusivity_h = 0;      /* immiscible case */
     tpf->henry_constant = 0;
 
   }
@@ -3636,38 +3635,42 @@ cs_gwf_tpf_compute(const cs_mesh_t               *mesh,
   case CS_GWF_TPF_SOLVER_PCPG_COUPLED:
   case CS_GWF_TPF_SOLVER_PLPC_COUPLED:
     {
-    cs_field_t *pa = nullptr, *pb = nullptr;
+      cs_field_t *pa = nullptr, *pb = nullptr;
 
-    if (tpf->solver_type == CS_GWF_TPF_SOLVER_PCPG_COUPLED)
-      pa = tpf->c_pressure, pb = tpf->g_pressure;
-    else
-      pa = tpf->l_pressure, pb = tpf->c_pressure;
+      if (tpf->solver_type == CS_GWF_TPF_SOLVER_PCPG_COUPLED)
+        pa = tpf->c_pressure, pb = tpf->g_pressure;
+      else
+        pa = tpf->l_pressure, pb = tpf->c_pressure;
 
-    switch (tpf->nl_algo_type) {
+      switch (tpf->nl_algo_type) {
 
-    case CS_PARAM_NL_ALGO_NONE:                    /* Linear case */
-      cs_equation_system_solve(true, tpf->system); /* cur2prev = true */
+      case CS_PARAM_NL_ALGO_NONE: /* Linear/Linearized case */
+        cs_equation_system_solve(true, tpf->system); /* cur2prev = true */
 
-      /* Update the variables related to the groundwater flow system */
+        /* Update the variables related to the groundwater flow system */
 
-      cs_gwf_tpf_update(mesh,
-                        connect,
-                        cdoq,
-                        time_step,
-                        CS_FLAG_CURRENT_TO_PREVIOUS,
-                        option_flag,
-                        tpf);
-      break;
+        cs_gwf_tpf_update(mesh,
+                          connect,
+                          cdoq,
+                          time_step,
+                          CS_FLAG_CURRENT_TO_PREVIOUS,
+                          option_flag,
+                          tpf);
+        break;
 
-    case CS_PARAM_NL_ALGO_PICARD:
-      _compute_coupled_picard(
-        mesh, connect, cdoq, time_step, option_flag, pa, pb, tpf);
-      break;
+      case CS_PARAM_NL_ALGO_PICARD:
+        _compute_coupled_picard(mesh, connect, cdoq, time_step,
+                                option_flag,
+                                pa, pb,
+                                tpf);
+        break;
 
-    case CS_PARAM_NL_ALGO_ANDERSON: {
-      _compute_coupled_anderson(
-        mesh, connect, cdoq, time_step, option_flag, pa, pb, tpf);
-    } break;
+      case CS_PARAM_NL_ALGO_ANDERSON:
+        _compute_coupled_anderson(mesh, connect, cdoq, time_step,
+                                  option_flag,
+                                  pa, pb,
+                                  tpf);
+        break;
 
       default:
         break; /* Nothing else to do */
@@ -4067,8 +4070,7 @@ cs_gwf_tpf_extra_post(int                         mesh_id,
         for (cs_lnum_t i = 0; i < n_cells; i++) {
 
           cs_lnum_t  c_id = (cell_ids == nullptr || n_cells == cdoq->n_cells)
-                              ? i
-                              : cell_ids[i];
+                              ? i : cell_ids[i];
           cs_real_t  tensor[3][3];
 
           cs_property_get_cell_tensor(c_id,
@@ -4097,8 +4099,7 @@ cs_gwf_tpf_extra_post(int                         mesh_id,
         for (cs_lnum_t i = 0; i < n_cells; i++) {
 
           cs_lnum_t  c_id = (cell_ids == nullptr || n_cells == cdoq->n_cells)
-                              ? i
-                              : cell_ids[i];
+                              ? i : cell_ids[i];
           cs_real_t  tensor[3][3];
 
           cs_property_get_cell_tensor(c_id,
@@ -4168,8 +4169,7 @@ cs_gwf_tpf_extra_post(int                         mesh_id,
           for (cs_lnum_t i = 0; i < n_cells; i++) {
 
             cs_lnum_t c_id = (cell_ids == nullptr || n_cells == cdoq->n_cells)
-                               ? i
-                               : cell_ids[i];
+                               ? i : cell_ids[i];
 
             permeability[i] = abs_perm_value * krl_values[c_id];
 
@@ -4181,8 +4181,7 @@ cs_gwf_tpf_extra_post(int                         mesh_id,
           for (cs_lnum_t i = 0; i < n_cells; i++) {
 
             cs_lnum_t c_id = (cell_ids == nullptr || n_cells == cdoq->n_cells)
-                               ? i
-                               : cell_ids[i];
+                               ? i : cell_ids[i];
 
             double  abs_perm_cell = cs_property_get_cell_value(c_id,
                                                                time_step->t_cur,

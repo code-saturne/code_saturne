@@ -381,15 +381,10 @@ _add_field(int            n_previous,
   else {
 
     previous = false; /* avoid a compiler warning */
-    bft_error(__FILE__,
-              __LINE__,
-              0,
+    bft_error(__FILE__, __LINE__, 0,
               "%s: Expected value for n_previous is > -1. Here %d\n"
               "%s: Eq. \"%s\"\n",
-              __func__,
-              n_previous,
-              __func__,
-              eqp->name);
+              __func__, n_previous, __func__, eqp->name);
   }
 
   /* Associate a predefined mesh_location_id to this field */
@@ -412,25 +407,18 @@ _add_field(int            n_previous,
     break;
 
   default:
-    bft_error(__FILE__,
-              __LINE__,
-              0,
+    bft_error(__FILE__, __LINE__, 0,
               "%s: Space scheme for eq. \"%s\" is incompatible with a field.\n"
               "%s: Stop adding a cs_field_t structure.\n",
-              __func__,
-              eqp->name,
-              __func__);
+              __func__, eqp->name, __func__);
     break;
   }
 
   if (location_id == -1)
-    bft_error(__FILE__,
-              __LINE__,
-              0,
+    bft_error(__FILE__, __LINE__, 0,
               "%s: Invalid mesh location id (= -1) for the field associated"
               " to Eq. \"%s\"\n",
-              __func__,
-              eqp->name);
+              __func__, eqp->name);
 
   /* Store the related field id */
 
@@ -1014,21 +1002,15 @@ cs_equation_get_source_term_array(const cs_equation_t *eq)
         return cs_cdovcb_scaleq_get_source_term_values(eq->scheme_context);
 
       default:
-        bft_error(__FILE__,
-                  __LINE__,
-                  0,
+        bft_error(__FILE__, __LINE__, 0,
                   "%s: (Eq. %s). Not implemented.",
-                  __func__,
-                  eqp->name);
+                  __func__, eqp->name);
       }
     }
     else
-      bft_error(__FILE__,
-                __LINE__,
-                0,
+      bft_error(__FILE__, __LINE__, 0,
                 "%s: Case not handled yet. Eq. \"%s\"\n",
-                __func__,
-                eqp->name);
+                __func__, eqp->name);
   }
 
   return source_term;
@@ -1384,14 +1366,11 @@ cs_equation_add_build_hook(cs_equation_t            *eq,
   assert(eqp != nullptr);
 
   if (eq->builder == nullptr)
-    bft_error(__FILE__,
-              __LINE__,
-              0,
+    bft_error(__FILE__, __LINE__, 0,
               " %s: Initialization of equation %s has not been done yet.\n"
               " Please call this operation later in"
               " cs_user_extra_operations_initialize() for instance.",
-              __func__,
-              eqp->name);
+              __func__, eqp->name);
 
   cs_equation_builder_t *eqb = eq->builder;
 
@@ -1524,9 +1503,7 @@ cs_equation_add(const char         *eqname,
     break;
 
   default:
-    bft_error(__FILE__,
-              __LINE__,
-              0,
+    bft_error(__FILE__, __LINE__, 0,
               " %s: This type of equation is not handled.\n"
               " Stop adding a new equation.",
               __func__);
@@ -1624,13 +1601,10 @@ cs_equation_add_user(const char         *eqname,
 
   if (   (default_bc != CS_BC_HMG_DIRICHLET)
       && (default_bc != CS_BC_SYMMETRY))
-    bft_error(__FILE__,
-              __LINE__,
-              0,
+    bft_error(__FILE__, __LINE__, 0,
               _(" %s: Invalid type of boundary condition by default.\n"
                 " Valid choices are CS_BC_HMG_DIRICHLET or"
-                " CS_BC_SYMMETRY"),
-              __func__);
+                " CS_BC_SYMMETRY"), __func__);
 
 
   /* Add a new user equation */
@@ -2154,12 +2128,9 @@ cs_equation_set_functions(void)
           case CS_TIME_SCHEME_CRANKNICO:
           case CS_TIME_SCHEME_BDF2:
           default:
-            bft_error(__FILE__,
-                      __LINE__,
-                      0,
+            bft_error(__FILE__, __LINE__, 0,
                       "%s: Eq. %s. This time scheme is not yet implemented",
-                      __func__,
-                      eqp->name);
+                      __func__, eqp->name);
           }
         }
         else {
@@ -2180,12 +2151,9 @@ cs_equation_set_functions(void)
 
           case CS_TIME_SCHEME_BDF2:
           default:
-            bft_error(__FILE__,
-                      __LINE__,
-                      0,
+            bft_error(__FILE__, __LINE__, 0,
                       "%s: Eq. %s. This time scheme is not yet implemented",
-                      __func__,
-                      eqp->name);
+                      __func__, eqp->name);
           }
 
         } /* Incremental solve or not */
@@ -2223,12 +2191,9 @@ cs_equation_set_functions(void)
         /* New mechanism */
 
         if (eqp->incremental_algo_type != CS_PARAM_NL_ALGO_NONE)
-          bft_error(__FILE__,
-                    __LINE__,
-                    0,
+          bft_error(__FILE__, __LINE__, 0,
                     "%s: Eq. %s. Incremental form is not available.\n",
-                    __func__,
-                    eqp->name);
+                    __func__, eqp->name);
 
         eq->solve_steady_state = cs_cdovb_vecteq_solve_steady_state;
         switch (eqp->time_scheme) {
@@ -2240,12 +2205,9 @@ cs_equation_set_functions(void)
         case CS_TIME_SCHEME_THETA:
         case CS_TIME_SCHEME_CRANKNICO:
         default:
-          bft_error(__FILE__,
-                    __LINE__,
-                    0,
+          bft_error(__FILE__, __LINE__, 0,
                     "%s: Eq. %s. This time scheme is not yet implemented",
-                    __func__,
-                    eqp->name);
+                    __func__, eqp->name);
         }
 
         eq->postprocess         = cs_cdovb_vecteq_extra_post;
@@ -2285,12 +2247,9 @@ cs_equation_set_functions(void)
         /* New mechanism */
 
         if (eqp->incremental_algo_type != CS_PARAM_NL_ALGO_NONE)
-          bft_error(__FILE__,
-                    __LINE__,
-                    0,
+          bft_error(__FILE__, __LINE__, 0,
                     "%s: Eq. %s. Incremental form is not available.\n",
-                    __func__,
-                    eqp->name);
+                    __func__, eqp->name);
 
         eq->solve_steady_state = cs_cdovcb_scaleq_solve_steady_state;
         switch (eqp->time_scheme) {
@@ -2309,12 +2268,9 @@ cs_equation_set_functions(void)
 
         case CS_TIME_SCHEME_BDF2:
         default:
-          bft_error(__FILE__,
-                    __LINE__,
-                    0,
+          bft_error(__FILE__, __LINE__, 0,
                     "%s: Eq. %s. This time scheme is not yet implemented",
-                    __func__,
-                    eqp->name);
+                    __func__, eqp->name);
         }
 
         eq->postprocess         = cs_cdovcb_scaleq_extra_post;
@@ -2354,12 +2310,9 @@ cs_equation_set_functions(void)
         /* New mechanism */
 
         if (eqp->incremental_algo_type != CS_PARAM_NL_ALGO_NONE)
-          bft_error(__FILE__,
-                    __LINE__,
-                    0,
+          bft_error(__FILE__, __LINE__, 0,
                     "%s: Eq. %s. Incremental form is not available.\n",
-                    __func__,
-                    eqp->name);
+                    __func__, eqp->name);
 
         eq->solve_steady_state = cs_cdofb_scaleq_solve_steady_state;
         switch (eqp->time_scheme) {
@@ -2378,12 +2331,9 @@ cs_equation_set_functions(void)
 
         case CS_TIME_SCHEME_BDF2:
         default:
-          bft_error(__FILE__,
-                    __LINE__,
-                    0,
+          bft_error(__FILE__, __LINE__, 0,
                     "%s: Eq. %s. This time scheme is not yet implemented",
-                    __func__,
-                    eqp->name);
+                    __func__, eqp->name);
         }
 
         eq->compute_balance     = cs_cdofb_scaleq_balance;
@@ -2419,12 +2369,9 @@ cs_equation_set_functions(void)
         /* New mechanism */
 
         if (eqp->incremental_algo_type != CS_PARAM_NL_ALGO_NONE)
-          bft_error(__FILE__,
-                    __LINE__,
-                    0,
+          bft_error(__FILE__, __LINE__, 0,
                     "%s: Eq. %s. Incremental form is not available.\n",
-                    __func__,
-                    eqp->name);
+                    __func__, eqp->name);
 
         eq->solve_steady_state = cs_cdofb_vecteq_solve_steady_state;
         switch (eqp->time_scheme) {
@@ -2443,21 +2390,15 @@ cs_equation_set_functions(void)
 
         case CS_TIME_SCHEME_BDF2:
           eq->solve = nullptr; /* cs_cdofb_vecteq_solve_bdf2 */
-          bft_error(__FILE__,
-                    __LINE__,
-                    0,
+          bft_error(__FILE__, __LINE__, 0,
                     "%s: Eq. %s. This time scheme is not yet implemented",
-                    __func__,
-                    eqp->name);
+                    __func__, eqp->name);
           break;
 
         default:
-          bft_error(__FILE__,
-                    __LINE__,
-                    0,
+          bft_error(__FILE__, __LINE__, 0,
                     "%s: Eq. %s. This time scheme is not yet implemented",
-                    __func__,
-                    eqp->name);
+                    __func__, eqp->name);
         }
 
         eq->postprocess         = cs_cdofb_vecteq_extra_post;
@@ -2497,12 +2438,9 @@ cs_equation_set_functions(void)
         /* New mechanism */
 
         if (eqp->incremental_algo_type != CS_PARAM_NL_ALGO_NONE)
-          bft_error(__FILE__,
-                    __LINE__,
-                    0,
+          bft_error(__FILE__, __LINE__, 0,
                     "%s: Eq. %s. Incremental form is not available.\n",
-                    __func__,
-                    eqp->name);
+                    __func__, eqp->name);
 
         eq->solve_steady_state = cs_cdocb_scaleq_solve_steady_state;
         switch (eqp->time_scheme) {
@@ -2511,12 +2449,9 @@ cs_equation_set_functions(void)
           break;
 
         default:
-          bft_error(__FILE__,
-                    __LINE__,
-                    0,
+          bft_error(__FILE__, __LINE__, 0,
                     "%s: Eq. %s. This time scheme is not yet implemented",
-                    __func__,
-                    eqp->name);
+                    __func__, eqp->name);
         }
 
         eq->compute_balance     = cs_cdocb_scaleq_balance;
@@ -2561,12 +2496,9 @@ cs_equation_set_functions(void)
         /* New mechanism */
 
         if (eqp->incremental_algo_type != CS_PARAM_NL_ALGO_NONE)
-          bft_error(__FILE__,
-                    __LINE__,
-                    0,
+          bft_error(__FILE__, __LINE__, 0,
                     "%s: Eq. %s. Incremental form is not available.\n",
-                    __func__,
-                    eqp->name);
+                    __func__, eqp->name);
 
         eq->solve_steady_state = cs_cdoeb_vecteq_solve_steady_state;
         switch (eqp->time_scheme) {
@@ -2575,12 +2507,9 @@ cs_equation_set_functions(void)
           break;
 
         default:
-          bft_error(__FILE__,
-                    __LINE__,
-                    0,
+          bft_error(__FILE__, __LINE__, 0,
                     "%s: Eq. %s. This time scheme is not yet implemented",
-                    __func__,
-                    eqp->name);
+                    __func__, eqp->name);
         }
 
         eq->postprocess         = cs_cdoeb_vecteq_extra_post;
@@ -2605,12 +2534,9 @@ cs_equation_set_functions(void)
 
     case CS_SPACE_SCHEME_HHO_P0:
       if (eqp->incremental_algo_type != CS_PARAM_NL_ALGO_NONE)
-        bft_error(__FILE__,
-                  __LINE__,
-                  0,
+        bft_error(__FILE__, __LINE__, 0,
                   "%s: Eq. %s. Incremental form is not available.\n",
-                  __func__,
-                  eqp->name);
+                  __func__, eqp->name);
 
       if (eqp->dim == 1) /* Set pointers of function */
         _set_scal_hho_function_pointers(eq);
@@ -2621,9 +2547,7 @@ cs_equation_set_functions(void)
 
     case CS_SPACE_SCHEME_HHO_P1:
       if (eqp->incremental_algo_type != CS_PARAM_NL_ALGO_NONE)
-        bft_error(__FILE__,
-                  __LINE__,
-                  0,
+        bft_error(__FILE__, __LINE__, 0,
                   "%s: Eq. %s. Incremental form is not available.\n",
                   __func__,
                   eqp->name);
@@ -2641,12 +2565,9 @@ cs_equation_set_functions(void)
 
     case CS_SPACE_SCHEME_HHO_P2:
       if (eqp->incremental_algo_type != CS_PARAM_NL_ALGO_NONE)
-        bft_error(__FILE__,
-                  __LINE__,
-                  0,
+        bft_error(__FILE__, __LINE__, 0,
                   "%s: Eq. %s. Incremental form is not available.\n",
-                  __func__,
-                  eqp->name);
+                  __func__, eqp->name);
 
       if (eqp->dim == 1) /* Set pointers of function */
         _set_scal_hho_function_pointers(eq);
@@ -2676,12 +2597,9 @@ cs_equation_set_functions(void)
         /* New mechanism */
 
         if (eqp->incremental_algo_type != CS_PARAM_NL_ALGO_NONE)
-          bft_error(__FILE__,
-                    __LINE__,
-                    0,
+          bft_error(__FILE__, __LINE__, 0,
                     "%s: Eq. %s. Incremental form is not available.\n",
-                    __func__,
-                    eqp->name);
+                    __func__, eqp->name);
 
         eq->solve_steady_state = cs_macfb_vecteq_solve_steady_implicit;
         switch (eqp->time_scheme) {
@@ -2700,21 +2618,15 @@ cs_equation_set_functions(void)
 
         case CS_TIME_SCHEME_BDF2:
           eq->solve = nullptr; /* cs_macfb_vecteq_solve_bdf2 */
-          bft_error(__FILE__,
-                    __LINE__,
-                    0,
+          bft_error(__FILE__, __LINE__, 0,
                     "%s: Eq. %s. This time scheme is not yet implemented",
-                    __func__,
-                    eqp->name);
+                    __func__, eqp->name);
           break;
 
         default:
-          bft_error(__FILE__,
-                    __LINE__,
-                    0,
+          bft_error(__FILE__, __LINE__, 0,
                     "%s: Eq. %s. This time scheme is not yet implemented",
-                    __func__,
-                    eqp->name);
+                    __func__, eqp->name);
         }
 
         eq->postprocess         = cs_macfb_vecteq_extra_post;
@@ -2738,13 +2650,10 @@ cs_equation_set_functions(void)
       break;
 
     default:
-      bft_error(__FILE__,
-                __LINE__,
-                0,
+      bft_error(__FILE__, __LINE__, 0,
                 _(" %s: Eq. %s. Invalid scheme for the space discretization.\n"
                   " Please check your settings."),
-                __func__,
-                eqp->name);
+                __func__, eqp->name);
       break;
     }
 
@@ -2818,14 +2727,10 @@ cs_equation_predefined_create_field(int            n_previous,
   cs_equation_param_t *eqp = eq->param;
 
   if (eqp->type == CS_EQUATION_TYPE_USER)
-    bft_error(__FILE__,
-              __LINE__,
-              0,
+    bft_error(__FILE__, __LINE__, 0,
               "%s: Only predefined equation are managed with this function.\n"
               "%s: Eq. \"%s\"\n",
-              __func__,
-              __func__,
-              eqp->name);
+              __func__, __func__, eqp->name);
 
   if (n_previous < 0)
     n_previous = (eqp->flag & CS_EQUATION_UNSTEADY) ? 1 : 0;
@@ -2994,20 +2899,14 @@ cs_equation_init_field_values(const cs_mesh_t      *mesh,
     /* Check that the main structure for an equation have been defined */
 
     if (eq->builder == nullptr)
-      bft_error(__FILE__,
-                __LINE__,
-                0,
+      bft_error(__FILE__, __LINE__, 0,
                 "%s: A builder structure is expected for eq. \"%s\"\n",
-                __func__,
-                eqp->name);
+                __func__, eqp->name);
 
     if (eq->scheme_context == nullptr)
-      bft_error(__FILE__,
-                __LINE__,
-                0,
+      bft_error(__FILE__, __LINE__, 0,
                 "%s: A context structure is expected for eq. \"%s\"\n",
-                __func__,
-                eqp->name);
+                __func__, eqp->name);
 #endif
 
     /* Assign an initial value for the variable fields */
@@ -3413,12 +3312,9 @@ cs_equation_integrate_variable(const cs_cdo_connect_t    *connect,
   const cs_equation_param_t *eqp = eq->param;
   assert(eqp != nullptr);
   if (eqp->dim > 1)
-    bft_error(__FILE__,
-              __LINE__,
-              0,
+    bft_error(__FILE__, __LINE__, 0,
               "%s: (Eq. %s) Not implemented",
-              __func__,
-              eqp->name);
+              __func__, eqp->name);
 
   /* Scalar-valued equation */
 
@@ -3487,12 +3383,9 @@ cs_equation_integrate_variable(const cs_cdo_connect_t    *connect,
   } break;
 
   default:
-    bft_error(__FILE__,
-              __LINE__,
-              0,
+    bft_error(__FILE__, __LINE__, 0,
               "%s: (Eq. %s). Not implemented.",
-              __func__,
-              eqp->name);
+              __func__, eqp->name);
 
   } /* End of switch */
 
@@ -3529,12 +3422,9 @@ cs_equation_compute_boundary_diff_flux(cs_real_t            t_eval,
 
   assert(eqp != nullptr);
   if (eqp->dim > 1)
-    bft_error(__FILE__,
-              __LINE__,
-              0,
+    bft_error(__FILE__, __LINE__, 0,
               "%s: (Eq. %s) Not implemented",
-              __func__,
-              eqp->name);
+              __func__, eqp->name);
 
   /* Scalar-valued equation */
 
@@ -3564,12 +3454,9 @@ cs_equation_compute_boundary_diff_flux(cs_real_t            t_eval,
   } break;
 
   default:
-    bft_error(__FILE__,
-              __LINE__,
-              0,
+    bft_error(__FILE__, __LINE__, 0,
               "%s: (Eq. %s). Not implemented.",
-              __func__,
-              eqp->name);
+              __func__, eqp->name);
 
   } /* End of switch */
 }
@@ -3601,13 +3488,10 @@ cs_equation_compute_flux_across_plane(const cs_equation_t *eq,
 
   const int ml_id = cs_mesh_location_get_id_by_name(ml_name);
   if (ml_id == -1)
-    bft_error(__FILE__,
-              __LINE__,
-              0,
+    bft_error(__FILE__, __LINE__, 0,
               " %s: Invalid mesh location name %s.\n"
               " This mesh location is not already defined.\n",
-              __func__,
-              ml_name);
+              __func__, ml_name);
 
   const char emsg[] = "%s: Computation of the diffusive and convective flux"
                       " across a plane\n is not available for equation %s\n";
@@ -3722,13 +3606,10 @@ cs_equation_compute_diffusive_flux(const cs_equation_t       *eq,
 
     used_eqp = eqp;
     if (used_eqp->space_scheme != eq->param->space_scheme)
-      bft_error(__FILE__,
-                __LINE__,
-                0,
+      bft_error(__FILE__, __LINE__, 0,
                 "%s: Eq. \"%s\" Stop computing the diffusive flux.\n"
                 "  Different space discretizations are considered.",
-                __func__,
-                used_eqp->name);
+                __func__, used_eqp->name);
   }
   else
     used_eqp = eq->param;
@@ -3795,9 +3676,7 @@ cs_equation_compute_diffusive_flux(const cs_equation_t       *eq,
       used_cell_values = cell_vals;
 
       if (cell_vals == nullptr)
-        bft_error(__FILE__,
-                  __LINE__,
-                  0,
+        bft_error(__FILE__, __LINE__, 0,
                   "%s: Need cell values with this set of options.",
                   __func__);
     }
@@ -3844,9 +3723,7 @@ cs_equation_compute_diffusive_flux(const cs_equation_t       *eq,
       used_cell_values = cell_vals;
 
       if (cell_vals == nullptr)
-        bft_error(__FILE__,
-                  __LINE__,
-                  0,
+        bft_error(__FILE__, __LINE__, 0,
                   "%s: Need cell values with this set of options.",
                   __func__);
     }
@@ -3927,13 +3804,10 @@ cs_equation_compute_vtx_field_gradient(const cs_equation_t *eq,
 
   case CS_SPACE_SCHEME_CDOVB: /* --> wall distance */
   default:
-    bft_error(__FILE__,
-              __LINE__,
-              0,
+    bft_error(__FILE__, __LINE__, 0,
               " %s: Invalid type of scheme for equation %s when computing"
               " the gradient at vertices",
-              __func__,
-              eqp->name);
+              __func__, eqp->name);
     break;
   }
 }
@@ -3966,21 +3840,15 @@ cs_equation_compute_peclet(const cs_equation_t  *eq,
     return;
 
   if (eqp->diffusion_property == nullptr)
-    bft_error(__FILE__,
-              __LINE__,
-              0,
+    bft_error(__FILE__, __LINE__, 0,
               "%s: Computation of the Peclet number is requested for\n"
               " equation %s but no diffusion property is set.\n",
-              __func__,
-              eqp->name);
+              __func__, eqp->name);
   if (eqp->adv_field == nullptr)
-    bft_error(__FILE__,
-              __LINE__,
-              0,
+    bft_error(__FILE__, __LINE__, 0,
               "%s: Computation of the Peclet number is requested for\n"
               " equation %s but no advection field is set.\n",
-              __func__,
-              eqp->name);
+              __func__, eqp->name);
 
   if (eq->main_ts_id > -1) /* Activate timer statistics */
     cs_timer_stats_start(eq->main_ts_id);
@@ -4072,13 +3940,10 @@ cs_equation_post_balance(const cs_mesh_t           *mesh,
       continue;
 
     if (eq->compute_balance == nullptr)
-      bft_error(__FILE__,
-                __LINE__,
-                0,
+      bft_error(__FILE__, __LINE__, 0,
                 "%s: Balance for equation %s is requested but\n"
                 " this functionality is not available yet.\n",
-                __func__,
-                eqp->name);
+                __func__, eqp->name);
 
     if (eq->main_ts_id > -1) /* Activate timer statistics */
       cs_timer_stats_start(eq->main_ts_id);
@@ -4187,18 +4052,15 @@ cs_equation_apply_stiffness(cs_equation_t       *eq,
   /* Preliminary checkings */
 
   if (pot == nullptr)
-    bft_error(
-      __FILE__, __LINE__, 0, "%s: Input array not allocated.\n", __func__);
+    bft_error(__FILE__, __LINE__, 0,
+              "%s: Input array not allocated.\n", __func__);
   if (res == nullptr)
-    bft_error(
-      __FILE__, __LINE__, 0, "%s: Resulting array not allocated.\n", __func__);
+    bft_error(__FILE__, __LINE__, 0, "%s: Resulting array not allocated.\n",
+              __func__);
   if (eq->apply_stiffness == nullptr)
-    bft_error(__FILE__,
-              __LINE__,
-              0,
+    bft_error(__FILE__, __LINE__, 0,
               "%s: Function not defined for this equation \"%s\".\n",
-              __func__,
-              cs_equation_get_name(eq));
+              __func__, cs_equation_get_name(eq));
 
   /* Perform the requested operation */
 

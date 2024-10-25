@@ -202,24 +202,24 @@ cs_equation_builder_create(const cs_equation_param_t   *eqp,
 
   eqb->enforced_values = nullptr;
 
-  /* Incremental algorithm (if a context associated has to be define for the
+  /* Incremental algorithm (if a context associated has to be defined for the
      incremental algo then this done during the initialization of the equation
      context) */
 
   eqb->increment = nullptr;
   switch(eqp->incremental_algo_type) {
   case CS_PARAM_NL_ALGO_PICARD:
-    eqb->incremental_algo =
-      cs_iter_algo_create_with_settings(CS_ITER_ALGO_DEFAULT,
-                                        eqp->verbosity,
-                                        eqp->incremental_algo_cvg);
+    eqb->incremental_algo
+      = cs_iter_algo_create_with_settings(CS_ITER_ALGO_DEFAULT,
+                                          eqp->verbosity,
+                                          eqp->incremental_algo_cvg);
     break;
 
   case CS_PARAM_NL_ALGO_ANDERSON:
-    eqb->incremental_algo =
-      cs_iter_algo_create_with_settings(CS_ITER_ALGO_ANDERSON,
-                                        eqp->verbosity,
-                                        eqp->incremental_algo_cvg);
+    eqb->incremental_algo
+      = cs_iter_algo_create_with_settings(CS_ITER_ALGO_ANDERSON,
+                                          eqp->verbosity,
+                                          eqp->incremental_algo_cvg);
     break;
 
   default:

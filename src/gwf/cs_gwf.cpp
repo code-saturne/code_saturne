@@ -377,10 +377,12 @@ cs_gwf_log_setup(void)
     cs_log_printf(CS_LOG_SETUP,
                   "  * GWF | Enforce the divergence-free constraint"
                   " for the Darcy flux\n");
+
   if (gw->flag & CS_GWF_FORCE_RICHARDS_ITERATIONS)
     cs_log_printf(CS_LOG_SETUP,
                   "  * GWF | Force to solve Richards equation"
                   " at each time step\n");
+
   if (gw->flag & CS_GWF_RESCALE_HEAD_TO_ZERO_MEAN_VALUE)
     cs_log_printf(CS_LOG_SETUP,
                   "  * GWF | Rescale head w.r.t zero mean value\n");
@@ -491,10 +493,10 @@ cs_gwf_get_two_phase_model(void)
 /*!
  * \brief Set the numerical options related to the two phase flow models
  *
- * \param[in] approx                          type of coefficient approximation
- * \param[in] solver                          type of solver
- * \param[in] use_incremental_solver          true/false
- * \param[in] use_diffusion_view_for_darcy    true/false
+ * \param[in] approx                        type of coefficient approximation
+ * \param[in] solver                        type of solver
+ * \param[in] use_incremental_solver        true/false
+ * \param[in] use_diffusion_view_for_darcy  true/false
  */
 /*----------------------------------------------------------------------------*/
 
