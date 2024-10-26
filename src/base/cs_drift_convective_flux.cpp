@@ -147,7 +147,7 @@ cs_drift_boundary_mass_flux(const cs_mesh_t             *m,
     var_name[14] = '\0';
 
     cs_field_t *f_x_p_i = cs_field_by_name_try(var_name);
-    cs_real_t  *x2      = nullptr;
+    cs_real_t *x2 = nullptr;
 
     if (f_x_p_i != nullptr) {
       x2 = f_x_p_i->val;
@@ -750,13 +750,12 @@ cs_drift_convective_flux(cs_field_t  *f_sc,
           }
         }
       }
-    }
-    /* Finalize the convective flux of the gas "class" by scaling by x1
-     (rho x1 V1)_ij = (rho Vs)_ij - sum_classes (rho x2 V2)_ij
-     Warning, x1 at the face must be computed so that it is consistent
-     with an upwind scheme on (rho V1) */
 
-    else if (icla == -1 && f_xc != nullptr) {
+      /* Finalize the convective flux of the gas "class" by scaling by x1
+         (rho x1 V1)_ij = (rho Vs)_ij - sum_classes (rho x2 V2)_ij
+         Warning, x1 at the face must be computed so that it is consistent
+         with an upwind scheme on (rho V1) */
+
 #     pragma omp parallel for if (n_i_faces > CS_THR_MIN)
       for (cs_lnum_t face_id = 0; face_id < n_i_faces; face_id++) {
 
