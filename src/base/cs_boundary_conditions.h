@@ -172,6 +172,13 @@ extern cs_boundary_condition_pm_info_t  *cs_glob_bc_pm_info;
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
+ * Define automatic turbulence values for open boundaries.
+ *----------------------------------------------------------------------------*/
+
+void
+cs_boundary_conditions_open_turb(void);
+
+/*----------------------------------------------------------------------------
  * Handling of boundary condition definition errors and associated output.
  *
  * This function checks for errors, and simply returns if no error is

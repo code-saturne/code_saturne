@@ -831,6 +831,25 @@ cs_boundary_conditions_type(bool  init,
 
   }
 
+  /* Automatic turbulence values for open boundary conditions */
+  /* TODO: specify which models do not need this instead of those who do.
+     In most cases, even if a model changes this, doing it in all cases
+     should be safe.
+
+     Also, we should compute those conditions using xdef evaluations,
+     once the velocity conditions are computed (which will required
+     looping in an at least partially specified order, and not just
+     field id order); This will allow user-defined xdefs to supercede
+     values defined here. */
+  if (   cs_glob_physical_model_flag[CS_PHYSICAL_MODEL_FLAG] == 0
+      || cs_glob_physical_model_flag[CS_COMPRESSIBLE] >= 0
+      || cs_glob_physical_model_flag[CS_COMBUSTION_COAL] >= 0
+      || cs_glob_physical_model_flag[CS_ATMOSPHERIC] >= 0
+      || cs_glob_physical_model_flag[CS_COOLING_TOWERS] >= 0
+      || cs_glob_physical_model_flag[CS_ELECTRIC_ARCS] >= 0
+      || cs_glob_physical_model_flag[CS_GAS_MIX] >= 0)
+    cs_boundary_conditions_open_turb();
+
   /* Inlet + Convective Inlet
      ------------------------ */
 
