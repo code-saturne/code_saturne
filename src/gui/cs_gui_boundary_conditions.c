@@ -2512,15 +2512,15 @@ _init_zones(const cs_lnum_t   n_b_faces,
                 _("zone's label number %i is greater than %i,"
                   " the maximum allowed \n"), zone_nbr, nozppm);
 
-    cs_lnum_t n_faces = 0;
+    cs_lnum_t n_elts = 0;
     const cs_lnum_t *face_ids
-      = _get_boundary_faces(boundaries->label[izone], &n_faces);
+      = _get_boundary_faces(boundaries->label[izone], &n_elts);
 
     /* check if faces are already marked with a zone number */
 
-    for (cs_lnum_t f_id = 0; f_id < n_faces; f_id++) {
-      cs_lnum_t ifbr = face_ids[f_id];
-      izfppp[ifbr] = zone_nbr;
+    for (cs_lnum_t elt_id = 0; elt_id < n_elts; elt_id++) {
+      cs_lnum_t f_id = face_ids[elt_id];
+      izfppp[f_id] = zone_nbr;
     }
 
   } /*  for izone */
