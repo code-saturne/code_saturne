@@ -72,7 +72,7 @@ implicit none
 
 ! Local variables
 
-integer          ifac, izone, ivar
+integer          ifac, izone
 
 integer, pointer, dimension(:,:) :: icodcl
 double precision, pointer, dimension(:,:,:) :: rcodcl

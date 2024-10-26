@@ -87,12 +87,6 @@ module mesh
   !> and it is oriented outwards
   double precision, dimension(:,:), pointer :: suffbo
 
-  ! isolid_0
-  ! integer to mark out the "solid" cells (where the fluid volume is 0).
-  ! Only available when iporos > 0.
-  ! When iporos = 0, this array has a unique value (isolid_0(1:1)=0).
-  integer, dimension(:), pointer :: isolid_0
-
   !> \anchor cdgfac
   !> coordinates of the centers of the internal faces
   double precision, dimension(:,:), pointer :: cdgfac
@@ -216,28 +210,6 @@ contains
     icel = ifabor_0(ifac) + 1
 
   end function ifabor
-
-  !=============================================================================
-
-  !> \anchor isolid
-  !> integer to mark out the "solid" cells (where the fluid volume is 0).
-  !> Only available when \ref optcal::iporos "iposros" > 0.
-  !> When \ref iporos = 0, this array has a unique value (isolid_0(1:1)=0).
-
-  elemental pure function isolid(iporos, iel) result(isol)
-
-    implicit none
-
-    ! Parameters
-
-    integer, intent(in) :: iporos, iel
-    integer             :: isol
-
-    ! Function body
-
-    isol = isolid_0(min(iporos, 1)*(iel - 1) + 1)
-
-  end function isolid
 
   !> \}
 

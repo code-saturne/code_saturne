@@ -570,9 +570,7 @@ cs_tree_node_t  *cs_glob_tree = NULL;
 
 void
 cs_f_space_disc_get_pointers(int     **imvisf,
-                             int     **imrgra,
-                             int     **iflxmw,
-                             int     **itbrrb);
+                             int     **imrgra);
 
 void
 cs_f_time_scheme_get_pointers(int     **ischtp,
@@ -785,14 +783,10 @@ _var_cal_opt_to_equation_params(const cs_f_var_cal_opt_t  *vcopt,
 
 void
 cs_f_space_disc_get_pointers(int     **imvisf,
-                             int     **imrgra,
-                             int     **iflxmw,
-                             int     **itbrrb)
+                             int     **imrgra)
 {
   *imvisf = &(_space_disc.imvisf);
   *imrgra = &(_space_disc.imrgra);
-  *iflxmw = &(_space_disc.iflxmw);
-  *itbrrb = &(_space_disc.itbrrb);
 }
 
 /*----------------------------------------------------------------------------

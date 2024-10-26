@@ -69,29 +69,6 @@ void CS_PROCF (csexit, CSEXIT)
   const int  *status
 );
 
-/*----------------------------------------------------------------------------
- * Get log name file information.
- *
- * When log file output is suppressed, it returns the name of the
- * bit buck file ("/dev/null")
- *
- * Fortran interface
- *
- * subroutine cslogname (len, name)
- * ********************
- *
- * integer          len         : <-- : maximum string length
- * character*       name        : --> : Fortran string
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF (cslogname, CSLOGNAME)
-(
- const int   *len,
- char        *dir
- CS_ARGF_SUPP_CHAINE              /*     (possible 'length' arguments added
-                                         by many Fortran compilers) */
-);
-
 /*=============================================================================
  * Public function prototypes
  *============================================================================*/

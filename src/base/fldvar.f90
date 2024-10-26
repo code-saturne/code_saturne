@@ -74,7 +74,7 @@ integer       iok
 ! Interfaces
 !===============================================================================
 
-procedure() :: add_variable_field, add_cdo_variable_field
+procedure() :: add_variable_field
 procedure() :: ppvarp, add_model_scalar_field
 procedure() :: add_user_scalar_fields, fldvar_check_nvar
 procedure() :: init_var_cal_opt
@@ -363,90 +363,6 @@ endif
 return
 
 end subroutine add_variable_field
-
-!===============================================================================
-
-!> \brief Add a field defining a general solved variable, with default options
-!>        This variable is solved with a CDO scheme.
-!
-!> It is recommended not to define variable names of more than 16
-!> characters, to get a clear execution log (some advanced writing
-!> levels take into account only the first 16 characters).
-
-!-------------------------------------------------------------------------------
-! Arguments
-!______________________________________________________________________________.
-!  mode           name          role                                           !
-!______________________________________________________________________________!
-!> \param[in]  name          field name
-!> \param[in]  label         field default label, or empty
-!> \param[in]  dim           field dimension
-!> \param[in]  location_id   id of the mesh location where the field is defined
-!> \param[in]  has_previous  if greater than 0 then stores previous state
-!> \param[out] ivar          variable number for defined field
-!_______________________________________________________________________________
-
-subroutine add_cdo_variable_field &
- ( name, label, dim, location_id, has_previous, ivar )
-
-!===============================================================================
-! Module files
-!===============================================================================
-
-use paramx
-use dimens
-use entsor
-use numvar
-use field
-use cs_c_bindings
-
-!===============================================================================
-
-implicit none
-
-procedure() :: fldvar_check_nvar, init_var_cal_opt
-
-! Arguments
-
-character(len=*), intent(in) :: name, label
-integer, intent(in)          :: dim, location_id, has_previous
-integer, intent(out)         :: ivar
-
-! Local variables
-
-integer  id, ii
-
-integer, save :: keyvar = -1
-
-! Create field
-
-call variable_cdo_field_create(name, label, location_id, dim, has_previous, id)
-
-if (keyvar.lt.0) then
-  call field_get_key_id("variable_id", keyvar)
-endif
-
-ivar = nvar + 1
-nvar = nvar + dim
-
-! Check we have enough slots
-call fldvar_check_nvar
-
-ivarfl(ivar) = id
-
-call field_set_key_int(id, keyvar, ivar)
-
-call init_var_cal_opt(id)
-
-if (dim .gt. 1) then
-  do ii = 2, dim
-    ivarfl(ivar + ii - 1) = id
-  enddo
-endif
-
-return
-
-end subroutine add_cdo_variable_field
 
 !===============================================================================
 

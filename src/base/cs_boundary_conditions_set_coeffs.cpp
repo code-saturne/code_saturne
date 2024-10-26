@@ -128,8 +128,7 @@ cs_f_ppprcl(void);
 void
 cs_f_pptycl(bool        init,
             int        *itypfb,
-            const int  *izfppp,
-            cs_real_t   dt[]);
+            const int  *izfppp);
 
 void
 cs_f_user_boundary_conditions_wrapper(int              itypfb[],
@@ -1135,8 +1134,7 @@ cs_boundary_conditions_set_coeffs(int        nvar,
         && cs_glob_physical_model_flag[CS_ELECTRIC_ARCS]       == -1) {
       cs_f_pptycl(false,
                   bc_type,
-                  izfppp,
-                  dt);
+                  izfppp);
     }
 
     if (cs_glob_ale != CS_ALE_NONE)
@@ -3825,8 +3823,7 @@ cs_boundary_conditions_set_coeffs_init(void)
 
     cs_f_pptycl(true,
                 bc_type,
-                izfppp,
-                dt);
+                izfppp);
   }
 
   int *isostd;

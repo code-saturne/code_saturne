@@ -151,15 +151,6 @@ cs_f_math_sym_33_inv_cramer(const cs_real_t s[6],
                             cs_real_t       sout[6]);
 
 void
-cs_f_math_sym_33_product(const cs_real_t  s1[6],
-                         const cs_real_t  s2[6],
-                         cs_real_t        sout[6]);
-
-void
-cs_f_math_reduce_sym_prod_33_to_66(const cs_real_t       s[3][3],
-                                   cs_real_t  (*restrict sout)[6]);
-
-void
 cs_f_math_3_normalize(const cs_real_t vin[3],
                       cs_real_t       vout[3]);
 
@@ -176,29 +167,6 @@ cs_f_math_sym_33_inv_cramer(const cs_real_t s[6],
                             cs_real_t       sout[6])
 {
   cs_math_sym_33_inv_cramer(s, sout);
-}
-
-/*----------------------------------------------------------------------------
- * Wrapper to cs_math_sym_33_product
- *----------------------------------------------------------------------------*/
-
-void
-cs_f_math_sym_33_product(const cs_real_t  s1[6],
-                         const cs_real_t  s2[6],
-                         cs_real_t        sout[6])
-{
-  cs_math_sym_33_product(s1, s2, sout);
-}
-
-/*----------------------------------------------------------------------------
- * Wrapper to cs_math_reduce_sym_prod_33_to_66
- *----------------------------------------------------------------------------*/
-
-void
-cs_f_math_reduce_sym_prod_33_to_66(const cs_real_t       s[3][3],
-                                   cs_real_t  (*restrict sout)[6])
-{
-  cs_math_reduce_sym_prod_33_to_66(s, sout);
 }
 
 /*----------------------------------------------------------------------------

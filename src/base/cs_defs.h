@@ -583,15 +583,6 @@ typedef enum {
 #define CS_PROCF(x, y) x
 #endif
 
-/*
- * Macro used to handle automatic "Fortran string length" arguments
- * (not used by code_saturne calls, but set by many compilers).
- * Some compilers may not
- * support the variable length lists in mixed C/Fortran calls.
- */
-
-#define CS_ARGF_SUPP_CHAINE , ...
-
 /*=============================================================================
  * Global variables
  *============================================================================*/

@@ -79,18 +79,6 @@ module optcal
   !> \addtogroup space_discretisation
   !> \{
 
-  !> \defgroup conv_scheme Convective scheme
-  !> \addtogroup conv_scheme
-  !> \{
-
-  !> \anchor iflxmw
-  !> method to compute interior mass flux due to ALE mesh velocity
-  !>    - 1: based on cell center mesh velocity
-  !>    - 0: based on nodes displacement
-  integer(c_int), pointer, save :: iflxmw
-
-  !> \}
-
   !> \defgroup gradient_calculation Gradient calculation
   !> \addtogroup gradient_calculation
   !> \{
@@ -551,13 +539,6 @@ module optcal
   !>    - 4: algorithm for fire
   integer(c_int), pointer, save :: idilat
 
-  !> accurate treatment of the wall temperature
-  !>    - 1: true
-  !>    - 0: false (default)
-  !> (see \ref cs_boundary_condition_set_coeffs,
-  !>  useful in case of coupling with syrthes)
-  integer(c_int), pointer, save :: itbrrb
-
   !> Improved pressure interpolation scheme.
   !> See \ref cs_velocity_pressure_param_t::iphydr.
 
@@ -585,34 +566,6 @@ module optcal
   integer(c_int), pointer, save :: ivofmt
 
   !> \}
-  !> \}
-
-  !----------------------------------------------------------------------------
-  ! Additional source terms
-  !----------------------------------------------------------------------------
-
-  !> \defgroup additional_source_terms Additional source terms
-
-  !> \addtogroup additional_source_terms
-  !> \{
-
-  !> Global head losses indicator (ie number of head loss zones)
-  integer, save :: ncpdct = 0
-
-  !> Indicateur termes sources de masse global (ie somme sur les processeurs
-  !>   de ncetsm)
-  integer, save :: nctsmt = 0
-
-  !> Global indicator of condensation source terms (ie. sum on the processors
-  !> of nfbpcd) cells associated to the face with condensation phenomenon
-  integer, save :: nftcdt = 0
-
-  !> \anchor iporos
-  !> take the porosity fomulation into account
-  !>    - 1: Taking porosity into account
-  !>    - 0: Standard algorithm (Without porosity)
-  integer(c_int), pointer, save :: iporos
-
   !> \}
 
   !----------------------------------------------------------------------------
@@ -813,15 +766,6 @@ module optcal
       type(c_ptr), intent(out) :: i_les_balance
     end subroutine cs_f_les_balance_get_pointer
 
-    ! Interface to C function retrieving pointers to mesh quantity options
-
-    subroutine cs_f_porous_model_get_pointers(iporos)  &
-      bind(C, name='cs_f_porous_model_get_pointers')
-      use, intrinsic :: iso_c_binding
-      implicit none
-      type(c_ptr), intent(out) :: iporos
-    end subroutine cs_f_porous_model_get_pointers
-
     ! Interface to C function retrieving pointers to members of the
     ! velocity pressure model options structure
 
@@ -847,11 +791,11 @@ module optcal
     ! Interface to C function retrieving pointers to members of the
     ! global spatial discretisation options structure
 
-    subroutine cs_f_space_disc_get_pointers(imvisf, imrgra, iflxmw, itbrrb)   &
+    subroutine cs_f_space_disc_get_pointers(imvisf, imrgra)   &
       bind(C, name='cs_f_space_disc_get_pointers')
       use, intrinsic :: iso_c_binding
       implicit none
-      type(c_ptr), intent(out) :: imvisf, imrgra, iflxmw, itbrrb
+      type(c_ptr), intent(out) :: imvisf, imrgra
     end subroutine cs_f_space_disc_get_pointers
 
     ! Interface to C function retrieving pointers to members of the
@@ -1155,12 +1099,7 @@ contains
 
     ! Local variables
 
-    type(c_ptr) :: c_iporos
     type(c_ptr) :: c_itpcol, c_idilat, c_iphydr, c_icalhy
-
-    call cs_f_porous_model_get_pointers(c_iporos)
-
-    call c_f_pointer(c_iporos, iporos)
 
     call cs_f_velocity_pressure_model_get_pointers(c_idilat)
 
@@ -1185,14 +1124,12 @@ contains
 
     ! Local variables
 
-    type(c_ptr) :: c_imvisf, c_imrgra, c_iflxmw, c_itbrrb
+    type(c_ptr) :: c_imvisf, c_imrgra
 
-    call cs_f_space_disc_get_pointers(c_imvisf, c_imrgra, c_iflxmw, c_itbrrb)
+    call cs_f_space_disc_get_pointers(c_imvisf, c_imrgra)
 
     call c_f_pointer(c_imvisf, imvisf)
     call c_f_pointer(c_imrgra, imrgra)
-    call c_f_pointer(c_iflxmw, iflxmw)
-    call c_f_pointer(c_itbrrb, itbrrb)
 
   end subroutine space_disc_options_init
 

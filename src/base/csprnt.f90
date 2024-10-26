@@ -20,10 +20,9 @@
 
 !-------------------------------------------------------------------------------
 
-subroutine csprnt &
-!================
-
- ( chaine , taille )
+subroutine csprnt             &
+ ( chaine , taille )          &
+  bind(C, name='cs_f_print')
 
 !===============================================================================
 !  FONCTION  :
@@ -57,8 +56,8 @@ use entsor
 
 implicit none
 
-character     chaine(*)
-integer       taille
+character      :: chaine(*)
+integer(c_int) :: taille
 
 character     chloc*16384
 integer       ii

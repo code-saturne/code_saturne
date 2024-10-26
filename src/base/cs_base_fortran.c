@@ -91,35 +91,29 @@ static FILE  *_bft_printf_file = NULL;
 
 extern void cs_f_flush_logs(void);
 
-/*----------------------------------------------------------------------------
- * Print a message to standard output.
- *----------------------------------------------------------------------------*/
+/* Print a message to standard output */
 
-extern void CS_PROCF (csprnt, CSPRNT)
-(
-  char  *cs_buf_print,
-  int   *msgsize
-);
+extern void
+cs_f_print(char  *cs_buf_print,
+           int   *msgsize);
 
-/*----------------------------------------------------------------------------
- * Initialize Fortran log files
- *----------------------------------------------------------------------------*/
+/* Gain main log file name */
 
-extern void CS_PROCF (csopli, CSOPLI)
-(
- const int  *infecr,  /* <-- value to assign to nfecra */
- const int  *isuppr,  /* <-- supress output if 1 */
- const int  *ierror   /* --> error code (0 if sucess) */
-);
+extern void
+cs_f_base_log_name(int        len,
+                   char      *path);
 
-/*----------------------------------------------------------------------------
- * Close log handled by Fortran: (CLose LIsting)
- *----------------------------------------------------------------------------*/
+/* Initialize Fortran log files */
 
-extern void CS_PROCF (csclli, CSCLLI)
-(
- void
-);
+extern void
+cs_f_open_run_log(const int  *infecr,    /* <-- value to assign to nfecra */
+                  const int  *isuppr,    /* <-- supress output if 1 */
+                  const int  *ierror);   /* --> error code (0 if sucess) */
+
+/* Close log handled by Fortran: (CLose LIsting) */
+
+extern void
+cs_f_close_run_log(void);
 
 /*============================================================================
  * Private function definitions
@@ -187,7 +181,7 @@ _bft_printf_f(const char     *const format,
 
   /* Effective output by Fortran code */
 
-  CS_PROCF (csprnt, CSPRNT) (cs_buf_print_f, &msgsize);
+  cs_f_print(cs_buf_print_f, &msgsize);
 
   return msgsize;
 }
@@ -248,28 +242,20 @@ void CS_PROCF (csexit, CSEXIT)
  * Get log name file information.
  *
  * When log file output is suppressed, it returns the name of the
- * bit buck file ("/dev/null")
+ * bit bucket file ("/dev/null")
  *
- * Fortran interface
- *
- * subroutine cslogname (len, name)
- * ********************
- *
- * integer          len         : <-- : maximum string length
- * character*       dir         : --> : Fortran string
+ * parameters:
+ *   len     <-- maximum string length
+ *   path    --> string
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF (cslogname, CSLOGNAME)
-(
- const int        *len,
- char             *dir
- CS_ARGF_SUPP_CHAINE              /*     (possible 'length' arguments added
-                                         by many Fortran compilers) */
-)
+void
+cs_f_base_log_name(int        len,
+                   char      *path)
 {
   size_t name_l;
 
-  size_t l = *len;
+  size_t l = len;
   const char *name = cs_base_bft_printf_name();
 
   if (cs_base_bft_printf_suppressed())
@@ -282,9 +268,9 @@ void CS_PROCF (cslogname, CSLOGNAME)
   name_l = strlen(name);
   if (name_l <= l) {
     size_t i;
-    memcpy(dir, name, name_l);
+    memcpy(path, name, name_l);
     for (i = name_l; i < l; i++)
-      dir[i] = ' ';
+      path[i] = '\0';
   }
   else
     bft_error(__FILE__, __LINE__, 0,
@@ -366,7 +352,7 @@ cs_base_fortran_bft_printf_set(const char  *log_name,
 #endif
   }
 
-  CS_PROCF(csopli, CSOPLI)(&infecr, &isuppr, &ierror);
+  cs_f_open_run_log(&infecr, &isuppr, &ierror);
 
   if (ierror != 0)
     bft_error(__FILE__, __LINE__, 0,
@@ -399,7 +385,7 @@ cs_base_fortran_bft_printf_to_c(void)
 
   if (name != NULL) {
 
-    CS_PROCF(csclli, CSCLLI)();
+    cs_f_close_run_log();
 
     if (_bft_printf_file == NULL) {
 
@@ -450,7 +436,7 @@ cs_base_fortran_bft_printf_to_f(void)
     if (cs_base_bft_printf_suppressed())
       isuppr = 1;
 
-    CS_PROCF(csopli, CSOPLI)(&nfecra, &isuppr, &ierror);
+    cs_f_open_run_log(&nfecra, &isuppr, &ierror);
 
     if (ierror != 0) {
       bft_error(__FILE__, __LINE__, 0,

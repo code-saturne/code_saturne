@@ -22,7 +22,7 @@
 
 subroutine majgeo &
  ( ncel2  , ncele2 , nfac2  , nfabo2 ,                            &
-   iface2 , ifabo2 , isoli2 ,                                     &
+   iface2 , ifabo2 ,                                              &
    volmn2 , volmx2 , voltt2 ,                                     &
    xyzce2 , surfa2 , surfb2 , suffa2 , suffb2 ,                   &
    cdgfa2 , cdgfb2 ,                                              &
@@ -52,7 +52,6 @@ subroutine majgeo &
 ! ifabo2           ! ia ! <-- ! boundary face->cells connectivity              !
 ! ifmfb2           ! ia ! <-- ! boundary face family number                    !
 ! ifmce2           ! ia ! <-- ! cell family number                             !
-! isoli2           ! ia ! <-- ! solid cell flag                                !
 ! volmn2           ! r  ! <-- ! Minimum control volume                         !
 ! volmx2           ! r  ! <-- ! Maximum control volume                         !
 ! voltt2           ! r  ! <-- ! Total   control volume                         !
@@ -103,7 +102,6 @@ integer(c_int), intent(in) :: ncel2, ncele2, nfac2, nfabo2
 
 integer(c_int), dimension(2,nfac2), target :: iface2
 integer(c_int), dimension(nfabo2), target :: ifabo2
-integer(c_int), dimension(*), target :: isoli2
 
 real(c_double) :: volmn2, volmx2, voltt2
 
@@ -118,24 +116,6 @@ real(c_double), dimension(nfac2), target :: srfan2, sffan2, dist2, pond2
 real(c_double), dimension(nfabo2), target :: srfbn2, sffbn2, distb2
 
 ! Local variables
-
-integer(c_int), pointer :: iporo2
-type(c_ptr) :: c_iporos
-
-!===============================================================================
-
-interface
-
-  ! Interface to C function retrieving pointers to mesh quantity options
-
-  subroutine cs_f_porous_model_get_pointers(iporos)  &
-    bind(C, name='cs_f_porous_model_get_pointers')
-    use, intrinsic :: iso_c_binding
-    implicit none
-    type(c_ptr), intent(out) :: iporos
-  end subroutine cs_f_porous_model_get_pointers
-
-end interface
 
 !===============================================================================
 ! 1. Update number of cells, faces, and vertices
@@ -166,15 +146,6 @@ xyzcen => xyzce2(1:3,1:ncelet)
 !===============================================================================
 ! 3. Define pointers on mesh quantities
 !===============================================================================
-
-call cs_f_porous_model_get_pointers(c_iporos)
-call c_f_pointer(c_iporos, iporo2)
-
-if (iporo2.eq.0) then
-  isolid_0 => isoli2(1:1)
-else
-  isolid_0 => isoli2(1:ncelet)
-endif
 
 surfac => surfa2(1:3,1:nfac)
 surfbo => surfb2(1:3,1:nfabor)

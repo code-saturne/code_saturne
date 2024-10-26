@@ -39,11 +39,10 @@
 !> \param[in,out] itypfb        boundary face types
 !> \param[in,out] izfppp        index of the zone for the boundary faces
 !>                               (for the specific physics)
-!> \param[in]     dt            time step (per cell)
 !_______________________________________________________________________________
 
-subroutine pptycl                 &
- ( init , itypfb , izfppp , dt )  &
+subroutine pptycl           &
+ ( init , itypfb , izfppp)  &
  bind(C, name='cs_f_pptycl')
 
 !===============================================================================
@@ -71,7 +70,6 @@ use mesh
 use field
 use cs_c_bindings
 use cs_c_bindings
-use dimens, only: nvar
 
 !===============================================================================
 

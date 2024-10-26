@@ -20,10 +20,9 @@
 
 !-------------------------------------------------------------------------------
 
-subroutine csopli &
-!================
-
- (infecr, isuppr, ierror)
+subroutine csopli                    &
+ (infecr, isuppr, ierror)            &
+  bind(C, name='cs_f_open_run_log')
 
 !===============================================================================
 ! Purpose:
@@ -55,17 +54,31 @@ use entsor
 
 !===============================================================================
 
+use iso_c_binding
 implicit none
 
 ! Arguments
 
-integer infecr, isuppr, ierror
+integer(c_int) :: infecr, isuppr, ierror, i
 
 ! Local variables
 
-character(len=64) :: name
+character(kind=c_char, len=1), dimension(64) :: c_path
+character(len=64) :: name, t_name
 
-procedure() :: cslogname
+!===============================================================================
+
+  interface
+
+    subroutine cs_f_base_log_name(lmax, path)     &
+      bind(C, name='cs_f_base_log_name')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      integer(c_int), value :: lmax
+      character(kind=c_char, len=1), dimension(*), intent(out) :: path
+    end subroutine cs_f_base_log_name
+
+  end interface
 
 !===============================================================================
 
@@ -75,7 +88,13 @@ nfecra = infecr
 
 if (nfecra .eq. 6) return
 
-call cslogname(len(name), name)
+call cs_f_base_log_name(64, c_path)
+t_name = " "
+do i = 1, 64
+  if (c_path(i) == c_null_char) exit
+  t_name(i:i) = c_path(i)
+enddo
+name = trim(t_name)
 
 if (isuppr .eq. 0) then
   open(file=name, unit=nfecra, form='formatted', status='old',   &

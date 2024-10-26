@@ -144,7 +144,7 @@ _cs_boundary_conditions_set_coeffs_turb_scalar(cs_field_t  *f_sc,
   const cs_mesh_quantities_t *fvq = cs_glob_mesh_quantities;
   const cs_fluid_properties_t *fluid_props = cs_glob_fluid_properties;
   const cs_turb_model_type_t   iturb =
-    static_cast<const cs_turb_model_type_t>(cs_glob_turb_model->iturb);
+    static_cast<cs_turb_model_type_t>(cs_glob_turb_model->iturb);
   const cs_real_t xkappa = cs_turb_xkappa;
 
   const cs_lnum_t n_b_faces = mesh->n_b_faces;
@@ -937,7 +937,7 @@ _cs_boundary_conditions_set_coeffs_turb_vector(cs_field_t  *f_v,
   const cs_mesh_quantities_t *fvq = cs_glob_mesh_quantities;
   const cs_fluid_properties_t *fluid_props = cs_glob_fluid_properties;
   const cs_turb_model_type_t   iturb =
-    static_cast<const cs_turb_model_type_t>(cs_glob_turb_model->iturb);
+    static_cast<cs_turb_model_type_t>(cs_glob_turb_model->iturb);
 
   const cs_lnum_t n_b_faces = mesh->n_b_faces;
   const cs_lnum_t *b_face_cells = mesh->b_face_cells;
@@ -1288,7 +1288,7 @@ _update_physical_quantities_smooth_wall(const cs_lnum_t  c_id,
   const cs_mesh_quantities_t *fvq = cs_glob_mesh_quantities;
   const cs_real_t xkappa = cs_turb_xkappa;
   const cs_turb_model_type_t  iturb =
-    static_cast<const cs_turb_model_type_t>(cs_glob_turb_model->iturb);
+    static_cast<cs_turb_model_type_t>(cs_glob_turb_model->iturb);
   const int itytur = cs_glob_turb_model->itytur;
   const int order = cs_glob_turb_model->order;
   const int type = cs_glob_turb_model->type;
@@ -1448,7 +1448,7 @@ _update_physical_quantities_rough_wall(const cs_real_t  visclc,
 {
   const cs_real_t xkappa = cs_turb_xkappa;
   const cs_turb_model_type_t iturb =
-    static_cast<const cs_turb_model_type_t>(cs_glob_turb_model->iturb);
+    static_cast<cs_turb_model_type_t>(cs_glob_turb_model->iturb);
   const int itytur = cs_glob_turb_model->itytur;
   const cs_wall_f_s_type_t iwalfs = cs_glob_wall_functions->iwalfs;
 
@@ -1829,7 +1829,7 @@ cs_boundary_conditions_set_coeffs_turb(int        isvhb,
 
   const cs_turb_model_t *turb_model = cs_get_glob_turb_model();
   const cs_turb_model_type_t iturb =
-    static_cast<const cs_turb_model_type_t>(cs_glob_turb_model->iturb);
+    static_cast<cs_turb_model_type_t>(cs_glob_turb_model->iturb);
   const int n_fields = cs_field_n_fields();
 
   const cs_lnum_t nt_cur = cs_glob_time_step->nt_cur;

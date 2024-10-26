@@ -88,17 +88,6 @@ BEGIN_C_DECLS
 /* Choice of the porous model */
 int cs_glob_porous_model = 0;
 
-/*============================================================================
- * Prototypes for functions intended for use only by Fortran wrappers.
- * (descriptions follow, with function bodies).
- *============================================================================*/
-
-void
-cs_f_porous_model_get_pointers(int   **iporos);
-
-int
-cs_f_porous_model_cell_is_active(cs_lnum_t  cell_id);
-
 /*=============================================================================
  * Private function definitions
  *============================================================================*/
@@ -110,41 +99,6 @@ cs_f_porous_model_cell_is_active(cs_lnum_t  cell_id);
  *============================================================================*/
 
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
-
-/*----------------------------------------------------------------------------
- * Get pointers to global variables.
- *
- * This function is intended for use by Fortran wrappers, and
- * enables mapping to Fortran global pointers.
- *
- * parameters:
- *   iporos  --> pointer to cs_glob_porous_model
- *----------------------------------------------------------------------------*/
-
-void
-cs_f_porous_model_get_pointers(int   **iporos)
-{
-  *iporos = &(cs_glob_porous_model);
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Return 0 if cell is disabled, 1 otherwise
- *
- * \param[in]  cell_id
- *
- * \return  0  if cell is disabled
- */
-/*----------------------------------------------------------------------------*/
-
-int
-cs_f_porous_model_cell_is_active(cs_lnum_t  cell_id)
-{
-  cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
-
-  return (1 - (mq->has_disable_flag
-          * mq->c_disable_flag[mq->has_disable_flag * cell_id]));
-}
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 

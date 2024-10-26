@@ -117,7 +117,6 @@ extern void cs_f_majgeo(const cs_lnum_t    *ncel,
                         const cs_lnum_t    *nfabor,
                         const cs_lnum_2_t   ifacel[],
                         const cs_lnum_t     ifabor[],
-                        const int           isolid_0[],
                         const cs_real_t    *volmin,
                         const cs_real_t    *volmax,
                         const cs_real_t    *voltot,
@@ -241,7 +240,7 @@ cs_preprocess_mesh_define(void)
 void
 cs_preprocess_mesh(cs_halo_type_t   halo_type)
 {
-  double t_start, t_end;
+  double t_start;
   t_start = cs_timer_wtime();
 
   int t_stat_id = cs_timer_stats_id_by_name("mesh_processing");
@@ -552,7 +551,6 @@ cs_preprocess_mesh_update_fortran(void)
               &(m->n_b_faces),
               (const cs_lnum_2_t *)(m->i_face_cells),
               m->b_face_cells,
-              mq->c_disable_flag,
               &(mq->min_vol),
               &(mq->max_vol),
               &(mq->tot_vol),
