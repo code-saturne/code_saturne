@@ -236,24 +236,26 @@ typedef struct {
  * \enum cs_gwf_tpf_solver_type_t
  * \brief Type of solver considered for a two-phase flow model
  *
- * \var CS_GWF_TPF_SOLVER_PCPG_COUPLED
- *      (Pc, Pg) is the couple of main unknowns. Pc for the conservation of the
- *      mass of water and Pg for the conservation of the mass of component
- *      mainly present in the gas phase (H2 for instance). A fully coupled
- *      approach solver is considered to solve the system of equations.
- *
  * \var CS_GWF_TPF_SOLVER_PLPC_COUPLED
  *      (Pc, Pl) is the couple of main unknowns. Pl for the conservation of the
  *      mass of water and Pc for the conservation of the mass of component
  *      mainly present in the gas phase (H2 for instance). A fully coupled
  *      approach solver is considered to solve the system of equations.
  *
+ * \var CS_GWF_TPF_SOLVER_PLPC_COUPLED_INCR
+ *      (dPc, dPl) is the couple of main unknowns. dPc and dPl represents the
+ *      increment on the capillarity pressure and liquid pressure
+ *      respectively. The two equations solved are the conservation of the mass
+ *      of water and the conservation of the mass of component mainly present
+ *      in the gas phase (H2 for instance). A fully coupled approach solver is
+ *      considered to solve the system of equations along with a modified
+ *      Picard algorithm in the spirit of Celia.
  */
 
 typedef enum {
 
-  CS_GWF_TPF_SOLVER_PCPG_COUPLED,
   CS_GWF_TPF_SOLVER_PLPC_COUPLED,
+  CS_GWF_TPF_SOLVER_PLPC_COUPLED_INCR,
 
   CS_GWF_TPF_N_SOLVERS
 
@@ -363,15 +365,10 @@ typedef struct {
    * \var g_darcy
    * Pointer to a \ref cs_gwf_darcy_flux_t structure. Darcy advective flux in
    * the gas phase
-   *
-   * \var t_darcy
-   * Pointer to a \ref cs_gwf_darcy_flux_t structure. Darcy advective flux for
-   * the total flux (linear combination of the liquid/gas Darcy flux)
    */
 
   cs_gwf_darcy_flux_t          *l_darcy;
   cs_gwf_darcy_flux_t          *g_darcy;
-  cs_gwf_darcy_flux_t          *t_darcy;
 
   /*!
    * @}
@@ -390,6 +387,14 @@ typedef struct {
    * \var lcap_pty
    * Property related to the liquid capacity (derivative of the liquid
    * saturation w.r.t. the capillarity pressure)
+   */
+
+  cs_property_t                *krl_pty;
+  cs_property_t                *krg_pty;
+  cs_property_t                *lsat_pty;
+  cs_property_t                *lcap_pty;
+
+  /* Properties associated to a discrete term in the system of equations
    *
    * \var time_wc_pty
    * Property related to the unsteady term of the water conservation equation
@@ -399,14 +404,6 @@ typedef struct {
    * Property related to the diffusion term of the water conservation equation
    * w.r.t. the pressure in the liquid phase
    *
-   * \var diff_wc_pty
-   * Property related to the diffusion term of the water conservation equation
-   * w.r.t. the capillarity
-   *
-   * \var diff_wg_pty
-   * Property related to the diffusion term of the water conservation equation
-   * w.r.t. the pressure in the gas phase
-   *
    * \var time_hc_pty
    * Property related to the unsteady term of the hydrogen conservation equation
    * w.r.t. the capillarity pressure
@@ -414,14 +411,6 @@ typedef struct {
    * \var diff_hc_pty
    * Property related to the diffusion term of the hydrogen conservation
    * equation w.r.t. the capillarity pressure
-   *
-   * \var time_hg_pty
-   * Property related to the unsteady term of the hydrogen conservation equation
-   * w.r.t. the pressure in the gas phase
-   *
-   * \var diff_hg_pty
-   * Property related to the diffusion term of the hydrogen conservation
-   * equation w.r.t. the pressure in the gas phase
    *
    * \var time_hl_pty
    * Property related to the unsteady term of the hydrogen conservation equation
@@ -431,40 +420,20 @@ typedef struct {
    * Property related to the diffusion term of the hydrogen conservation
    * equation w.r.t. the pressure in the liquid phase
    *
-   * \var reac_h_pty
-   * Property related to the reaction term of the hydrogen conservation
-   * equation w.r.t. the pressure in the gas phase. Only used when a segregated
-   * solver is considered.
-   *
    * \var diff_g_pty
    * Property used in the definition of the Darcy flux in the gas phase
    */
 
-  cs_property_t                *krl_pty;
-  cs_property_t                *krg_pty;
-  cs_property_t                *lsat_pty;
-  cs_property_t                *lcap_pty;
-
-  /* Properties associated to a discret term in the system of equations */
-
   cs_property_t                *time_wc_pty;
   cs_property_t                *diff_wl_pty;
-  cs_property_t                *diff_wc_pty;
-  cs_property_t                *diff_wg_pty;
 
   cs_property_t                *time_hc_pty;
   cs_property_t                *diff_hc_pty;
 
-  cs_property_t                *time_hg_pty;
-  cs_property_t                *diff_hg_pty;
-
   cs_property_t                *time_hl_pty;
   cs_property_t                *diff_hl_pty;
 
-  cs_property_t                *reac_h_pty;
-
   cs_property_t                *diff_g_pty;
-  cs_property_t                *diff_w_pty;
 
   /*!
    * @}
@@ -487,12 +456,26 @@ typedef struct {
    *      Pointer to a \ref cs_field_t structure. Liquid saturation at cells.
    *      This quantity is denoted by \f$ S_l \f$ and is defined by the soil
    *      model
+   *
+   * \var l_rho_h
+   *      Pointer to a \ref cs_field_t structure. Property related to the mass
+   *      density in the liquid phase of the component mainly present in the
+   *      gas phase (e.g. H2). The component present in the liquid comes from
+   *      the dissolution process (ruled by the Henry law)
+   *
+   * \var g_rho_h
+   *      Pointer to a \ref cs_field_t structure. Property related to the mass
+   *      density in the gas phase of the component mainly present in the gas
+   *      phase (e.g. H2). The component present in the gas phase is ruled by
+   *      the perfect gas law.
    */
 
   cs_field_t                   *c_pressure;
   cs_field_t                   *l_pressure;
   cs_field_t                   *g_pressure;
   cs_field_t                   *l_saturation;
+  cs_field_t                   *l_rho_h;
+  cs_field_t                   *g_rho_h;
 
   /*!
    * @}
@@ -500,18 +483,22 @@ typedef struct {
    * @{
    *
    * \var srct_w_array
-   *      Values of the source terms for the water conservation equation. Only
-   *      used if a segregated solver is considered. Size = n_cells or
-   *      c2v->idx[n_cells] if the definition relies on a submesh
+   *      Values of the source terms for the water conservation equation.
+   *      Size = n_vertices
    *
    * \var srct_h_array
    *      Values of the source terms for the hydrogen conservation equation.
-   *      Only used if a segregated solver is considered. Size = n_cells or
-   *      c2v->idx[n_cells] if the definition relies on a submesh
+   *      Size = n_vertrices
+   *
+   * \var lsat_pre_array
+   *      Values of the liquid saturation at the previous time step when an
+   *      approximation \ref CS_GWF_TPF_APPROX_VERTEX_SUBCELL has been chosen
+   *      Size = c2v index size
    */
 
   cs_real_t                    *srct_w_array;
   cs_real_t                    *srct_h_array;
+  cs_real_t                    *lsat_pre_array;
 
   /*!
    * @}
@@ -565,6 +552,13 @@ typedef struct {
    * @name Numerical parameters
    * @{
    *
+   * \var solver_type
+   * \brief Type of solver considered to solve the system of equations (choice
+   *        of main unknowns and strategy of resolution (coupled/segregated))
+   *
+   * \var enforce_pg_positivity
+   * \brief Apply a rescaling on the gas pressure to avoid a negative value
+   *
    * \var approx_type
    * \brief type of approximation used for the computation of diffusion,
    *        unsteady coefficients
@@ -581,39 +575,11 @@ typedef struct {
    *        chosen to approximate coefficients. If the value is < 0 or > 1,
    *        then the default settings is kept.
    *
-   * \var solver_type
-   * \brief Type of solver considered to solve the system of equations (choice
-   *        of main unknowns and strategy of resolution (coupled/segregated))
-   *
-   * \var use_coupled_solver
-   * \brief When a model relies on several coupled equations, there are two
-   *        main options to build and solve the system of equations. Either use
-   *        a coupled solver (and thus build a coupled system) or use a
-   *        segregated approach and an associated strategy to solve the
-   *        sequence of equations and apply sub-iterations. The latter case
-   *        (segregated solver) corresponds to the default choice.  true if a
-   *        coupled solver is used. Otherwise a segregated solver is considered
-   *
-   * \var use_incremental_solver
-   * \brief When a model includes non-linearities it can be useful to formulate
-   *        the problem using increment and to iterate on the non-linear
-   *        process (for instance whith a Picard or Anderson acceleration)
-   *
-   * \var use_diffusion_view_for_darcy
-   * \brief Use a diffusion term for the discretization of the Darcy terms in
-   *        the conservation equation for the mass of hydrogen. The default
-   *        option is to consuder an advection term since it should be more
-   *        robust as upwinding technique can be used.
-   *
    * \var nl_algo_type
    *      Type of algorithm to solve the non-linearities
    *
    * \var nl_algo_verbosity
    *      Level of verbosity for the algorithm solving the non-linearities
-   *
-   * \var nl_relax_factor
-   *      Value of the relaxation factor in the non-linear algorithm. A
-   *      classical choice is between 0.70 and 0.95
    *
    * \var nl_cvg_param
    *      Set of parameters to drive the convergence of the non-linear solver
@@ -626,17 +592,14 @@ typedef struct {
    *      Structure used to manage the non-linearities
    */
 
+  cs_gwf_tpf_solver_type_t       solver_type;
+  bool                           enforce_pg_positivity;
   cs_gwf_tpf_approx_type_t       approx_type;
   double                         cell_weight;
   double                         upwind_weight;
-  cs_gwf_tpf_solver_type_t       solver_type;
-  bool                           use_coupled_solver;
-  bool                           use_incremental_solver;
-  bool                           use_diffusion_view_for_darcy;
 
   cs_param_nl_algo_t             nl_algo_type;
   int                            nl_algo_verbosity;
-  cs_real_t                      nl_relax_factor;
   cs_param_convergence_t         nl_cvg_param;
   cs_iter_algo_param_aac_t       anderson_param;
 

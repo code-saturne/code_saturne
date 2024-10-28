@@ -3401,42 +3401,108 @@ cs_equation_integrate_variable(const cs_cdo_connect_t    *connect,
  *        resulting array differs.
  *        For Vb and VCb schemes, this array relies on the bf2v adjacency.
  *
- * \param[in]      t_eval     time at which one the property is evaluated
+ * If eqp is set to nullptr, then one uses eq->param. Otherwise, one checks that
+ * the given eqp structure is relevant (same space discretization as eq->param)
+ * Using a different eqp allows one to build a diffusive flux relying on
+ * another property associated to the diffusion term.
+ *
+ * If pty is set to nullptr then one considers the diffusion property related to
+ * the eqp structure which will be used. Otherwise, one considers the one
+ * given.
+ *
+ * If dof_vals is set to nullptr (and cell_values too), then one uses the
+ * current values of the variable associated to the given equation
+ * (cs_equation_get_*_values functions). The calling function has to ensure
+ * that the location of the values is relevant with the one expected with the
+ * given equation. Using dof_vals (and possibly cell_vals) allows one to
+ * compute the diffusive flux for an array of values which is not the one
+ * associated to the given equation.
+ *
+ * cell_values is not useful for CDO vertex-based schemes while it is mandatory
+ * for CDO vertex+cell-based schemes and CDO face-based schemes. For CDO
+ * cell-based schemes, the flux is a variable so that neither dof_vals nor
+ * cell_vals are used.
+ *
+ * Be aware that the boundary conditions are applied through the equation
+ * builder structure which has to be consistent with what is used in eqp
+ *
  * \param[in]      eq         pointer to a cs_equation_t structure
+ * \param[in]      eqp        set of equation parameters to use or nullptr
+ * \param[in]      diff_pty   diffusion property or nullptr
+ * \param[in]      dof_vals   values at the location of the degrees of freedom
+ * \param[in]      cell_vals  values at the cell centers or nullptr
+ * \param[in]      t_eval     time at which one the property is evaluated
  * \param[in, out] diff_flux  value of the diffusive part of the flux
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_compute_boundary_diff_flux(cs_real_t            t_eval,
-                                       const cs_equation_t *eq,
-                                       cs_real_t           *diff_flux)
+cs_equation_compute_boundary_diff_flux(const cs_equation_t       *eq,
+                                       const cs_equation_param_t *eqp,
+                                       const cs_property_t       *diff_pty,
+                                       const cs_real_t           *dof_vals,
+                                       const cs_real_t           *cell_vals,
+                                       cs_real_t                  t_eval,
+                                       cs_real_t                 *diff_flux)
 {
   if (diff_flux == nullptr)
     return;
 
+  const char fmsg[] = " %s: (Eq. %s) Stop computing the diffusive flux.\n"
+                      " This functionality is not available for this scheme.";
+  const char lmsg[] = " %s: (Eq. %s) Stop computing the diffusive flux.\n"
+                      " This mesh location is not available for this scheme.";
+
   if (eq == nullptr)
     bft_error(__FILE__, __LINE__, 0, _err_empty_eq, __func__);
 
-  const cs_equation_param_t *eqp = eq->param;
+  /* Which set of equation parameters to use ? */
 
-  assert(eqp != nullptr);
-  if (eqp->dim > 1)
-    bft_error(__FILE__, __LINE__, 0,
-              "%s: (Eq. %s) Not implemented",
-              __func__, eqp->name);
+  const cs_equation_param_t *used_eqp;
+  if (eqp != nullptr) {
 
-  /* Scalar-valued equation */
+    used_eqp = eqp;
+    if (used_eqp->space_scheme != eq->param->space_scheme)
+      bft_error(__FILE__, __LINE__, 0,
+                "%s: Eq. \"%s\" Stop computing the diffusive flux.\n"
+                "  Different space discretizations are considered.",
+                __func__, used_eqp->name);
 
-  switch (eqp->space_scheme) {
+  }
+  else
+    used_eqp = eq->param;
+
+  assert(used_eqp != nullptr);
+  if (used_eqp->dim > 1)
+    bft_error(__FILE__, __LINE__, 0, fmsg, __func__, used_eqp->name);
+
+  /* Which property to use ? */
+
+  const cs_property_t *used_property;
+  if (diff_pty == nullptr)
+    used_property = used_eqp->diffusion_property;
+  else
+    used_property = diff_pty;
+
+  /* Which function to call ? */
+
+  switch (used_eqp->space_scheme) {
 
   case CS_SPACE_SCHEME_CDOVB:
     {
-      const cs_real_t *p_v = cs_equation_get_vertex_values(eq, false);
+      /* Which values to consider ? */
 
-      cs_cdovb_scaleq_boundary_diff_flux(t_eval,
-                                         eqp,
-                                         p_v,
+      const cs_real_t *used_values;
+
+      if (dof_vals != nullptr)
+        used_values = dof_vals;
+      else
+        used_values = cs_equation_get_vertex_values(eq, false);
+
+      cs_cdovb_scaleq_boundary_diff_flux(used_values,
+                                         used_eqp,
+                                         used_property,
+                                         t_eval,
                                          eq->builder,
                                          eq->scheme_context,
                                          diff_flux);
@@ -3445,13 +3511,33 @@ cs_equation_compute_boundary_diff_flux(cs_real_t            t_eval,
 
   case CS_SPACE_SCHEME_CDOVCB:
     {
-      const cs_real_t *p_v = cs_equation_get_vertex_values(eq, false);
-      const cs_real_t *p_c = cs_equation_get_cell_values(eq, false);
+      /* Which values to consider ? */
 
-      cs_cdovcb_scaleq_boundary_diff_flux(t_eval,
-                                          eqp,
-                                          p_v,
-                                          p_c,
+      const cs_real_t *used_dof_values;
+      const cs_real_t *used_cell_values;
+
+      if (dof_vals != nullptr) {
+
+        used_dof_values  = dof_vals;
+        used_cell_values = cell_vals;
+
+        if (cell_vals == nullptr)
+          bft_error(__FILE__, __LINE__, 0,
+                    "%s: Need cell values with this set of options.", __func__);
+
+      }
+      else {
+
+        used_dof_values  = cs_equation_get_vertex_values(eq, false);
+        used_cell_values = cs_equation_get_cell_values(eq, false);
+
+      }
+
+      cs_cdovcb_scaleq_boundary_diff_flux(used_dof_values,
+                                          used_cell_values,
+                                          used_eqp,
+                                          used_property,
+                                          t_eval,
                                           eq->builder,
                                           eq->scheme_context,
                                           diff_flux);
@@ -3460,13 +3546,34 @@ cs_equation_compute_boundary_diff_flux(cs_real_t            t_eval,
 
   case CS_SPACE_SCHEME_CDOFB:
     {
-      const cs_real_t *p_f = cs_equation_get_face_values(eq, false);
-      const cs_real_t *p_c = cs_equation_get_cell_values(eq, false);
+      /* Which values to consider ? */
 
-      cs_cdofb_scaleq_boundary_diff_flux(t_eval,
-                                         eqp,
-                                         p_f,
-                                         p_c,
+      const cs_real_t *used_dof_values;
+      const cs_real_t *used_cell_values;
+
+      if (dof_vals != nullptr) {
+
+        used_dof_values  = dof_vals;
+        used_cell_values = cell_vals;
+
+        if (cell_vals == nullptr)
+          bft_error(__FILE__, __LINE__, 0,
+                    "%s: Need cell values with this set of options.",
+                    __func__);
+
+      }
+      else {
+
+        used_dof_values  = cs_equation_get_face_values(eq, false);
+        used_cell_values = cs_equation_get_cell_values(eq, false);
+
+      }
+
+      cs_cdofb_scaleq_boundary_diff_flux(used_dof_values,
+                                         used_cell_values,
+                                         used_eqp,
+                                         used_property,
+                                         t_eval,
                                          eq->builder,
                                          eq->scheme_context,
                                          diff_flux);
@@ -3588,7 +3695,7 @@ cs_equation_compute_flux_across_plane(const cs_equation_t *eq,
  * cell_vals are used.
  *
  * \param[in]      eq         pointer to a cs_equation_t structure
- * \param[in]      eqp        pointer to a cs_equation_param_t structure
+ * \param[in]      eqp        set of equation parameters to use or nullptr
  * \param[in]      diff_pty   diffusion property or nullptr
  * \param[in]      dof_vals   values at the location of the degrees of freedom
  * \param[in]      cell_vals  values at the cell centers or nullptr

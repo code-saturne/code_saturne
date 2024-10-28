@@ -79,6 +79,19 @@ cs_gwf_tpf_free(cs_gwf_tpf_t    **p_tpf);
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Define the relaxation property by value and set this value.
+ *
+ * \param[in] tpf  pointer to the model context structure
+ * \param[in] val  reference value used to set the relaxation property
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_gwf_tpf_define_relax_pty_by_value(cs_gwf_tpf_t *tpf,
+                                     double        val);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Log the setup related to the model context of two-phase flows.
  *        Common to the different sub-models relying on two-phase flows.
  *
@@ -177,27 +190,42 @@ cs_gwf_tpf_compute(const cs_mesh_t               *mesh,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Operate a "current to previous" step on fields or arrays which have
+ *        at least a storage of the previous step (time t^n when computing
+ *        t^{n+1})
+ *
+ * \param[in]      connect  pointer to a cs_cdo_connect_t structure
+ * \param[in, out] tpf      pointer to the casted model context
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_gwf_tpf_current_to_previous(const cs_cdo_connect_t *connect,
+                               cs_gwf_tpf_t           *tpf);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Perform the update step in the case of a two-phase flow model in
- *        porous media (miscible or immiscible)
+ *        porous media (miscible or immiscible). To operate a "current to
+ *        previous" step, one has to call the dedicated function \ref
+ *        cs_gwf_tpf_current_to_previous()
  *
  * \param[in]      mesh         pointer to a cs_mesh_t structure
  * \param[in]      connect      pointer to a cs_cdo_connect_t structure
  * \param[in]      cdoq         pointer to a cs_cdo_quantities_t structure
- * \param[in]      ts           pointer to a cs_time_step_t structure
- * \param[in]      update_flag  metadata associated to type of operation to do
+ * \param[in]      time_eval    time at which properties are evaluated if needed
  * \param[in]      option_flag  calculation option related to the GWF module
- * \param[in, out] tpf          pointer to the casted model context
+ * \param[in, out] tpf          pointer to a TPF model context
  */
 /*----------------------------------------------------------------------------*/
 
-cs_real_t
-cs_gwf_tpf_update(const cs_mesh_t             *mesh,
-                  const cs_cdo_connect_t      *connect,
-                  const cs_cdo_quantities_t   *cdoq,
-                  const cs_time_step_t        *ts,
-                  cs_flag_t                    update_flag,
-                  cs_flag_t                    option_flag,
-                  cs_gwf_tpf_t                *tpf);
+void
+cs_gwf_tpf_update(const cs_mesh_t           *mesh,
+                  const cs_cdo_connect_t    *connect,
+                  const cs_cdo_quantities_t *cdoq,
+                  double                     time_eval,
+                  cs_flag_t                  option_flag,
+                  cs_gwf_tpf_t              *tpf);
 
 /*----------------------------------------------------------------------------*/
 /*!

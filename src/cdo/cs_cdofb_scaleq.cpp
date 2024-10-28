@@ -2820,28 +2820,30 @@ cs_cdofb_scaleq_diff_flux_faces(const cs_real_t             *f_values,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Compute an approximation of the the diffusive flux across each
- *         boundary face.
- *         Case of scalar-valued CDO-Fb schemes
+ * \brief Compute an approximation of the the diffusive flux across each
+ *        boundary face.
+ *        Case of scalar-valued CDO-Fb schemes
  *
- * \param[in]       t_eval    time at which one performs the evaluation
- * \param[in]       eqp       pointer to a cs_equation_param_t structure
- * \param[in]       pot_f     array of values at faces
- * \param[in]       pot_c     array of values at cells
- * \param[in, out]  eqb       pointer to a cs_equation_builder_t structure
- * \param[in, out]  context   pointer to a scheme builder structure
- * \param[in, out]  bflux     pointer to the values of the diffusive flux
+ * \param[in]      pot_f     array of values at faces
+ * \param[in]      pot_c     array of values at cells
+ * \param[in]      eqp       pointer to a cs_equation_param_t structure
+ * \param[in]      diff_pty  pointer to the diffusion property to use
+ * \param[in]      t_eval    time at which one performs the evaluation
+ * \param[in, out] eqb       pointer to a cs_equation_builder_t structure
+ * \param[in, out] context   pointer to a scheme builder structure
+ * \param[in, out] bflux     pointer to the values of the diffusive flux
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdofb_scaleq_boundary_diff_flux(const cs_real_t              t_eval,
-                                   const cs_equation_param_t   *eqp,
-                                   const cs_real_t             *pot_f,
-                                   const cs_real_t             *pot_c,
-                                   cs_equation_builder_t       *eqb,
-                                   void                        *context,
-                                   cs_real_t                   *bflux)
+cs_cdofb_scaleq_boundary_diff_flux(const cs_real_t           *pot_f,
+                                   const cs_real_t           *pot_c,
+                                   const cs_equation_param_t *eqp,
+                                   const cs_property_t       *diff_pty,
+                                   const cs_real_t            t_eval,
+                                   cs_equation_builder_t     *eqb,
+                                   void                      *context,
+                                   cs_real_t                 *bflux)
 {
   if (bflux == nullptr)
     return;
@@ -2859,12 +2861,12 @@ cs_cdofb_scaleq_boundary_diff_flux(const cs_real_t              t_eval,
     return;
   }
 
-  cs_cdofb_scaleq_t  *eqc = (cs_cdofb_scaleq_t *)context;
+  cs_cdofb_scaleq_t *eqc = static_cast<cs_cdofb_scaleq_t *>(context);
 
   assert(eqc->diffusion_hodge != nullptr);
 
 #pragma omp parallel if (quant->n_cells > CS_THR_MIN)                   \
-  shared(quant, connect, eqp, eqb, eqc, bflux, pot_c, pot_f,            \
+  shared(quant, connect, eqp, eqb, eqc, bflux, pot_c, pot_f, diff_pty,  \
          cs_cdofb_cell_bld)                                             \
   firstprivate(t_eval)
   {
@@ -2881,11 +2883,9 @@ cs_cdofb_scaleq_boundary_diff_flux(const cs_real_t              t_eval,
 
     cs_cell_builder_t  *cb = cs_cdofb_cell_bld[t_id];
     cs_cell_mesh_t  *cm = cs_cdo_local_get_cell_mesh(t_id);
-    cs_hodge_t         *diff_hodge = (eqc->diffusion_hodge == nullptr)
-                                       ? nullptr
-                                       : eqc->diffusion_hodge[t_id];
+    cs_hodge_t *hodge = eqc->diffusion_hodge[t_id];
 
-    assert(diff_hodge != nullptr);
+    assert(hodge != nullptr);
 
     /* Set times at which one evaluates quantities if needed */
 
@@ -2894,8 +2894,21 @@ cs_cdofb_scaleq_boundary_diff_flux(const cs_real_t              t_eval,
     cs_eflag_t  msh_flag = CS_FLAG_COMP_PF | CS_FLAG_COMP_PFQ;
     cs_eflag_t  add_flag = CS_FLAG_COMP_DEQ;
 
+    /* The property data should be changed since the property may be different
+       from the initial diffusion property associated to this equation
+       context. Moreover, there is no need to have a tensor and its eigen value
+       in this function. */
+
+    bool  need_tensor = false;
+    cs_property_data_t  *saved_data = hodge->pty_data;
+    cs_property_data_t  tmp_data = cs_property_data_define(need_tensor,
+                                                           false,
+                                                           diff_pty);
+
+    hodge->pty_data = &tmp_data;
+
     if (eqb->diff_pty_uniform)  /* c_id = 0, cell_flag = 0 */
-      cs_hodge_evaluate_property(0, cb->t_pty_eval, 0, diff_hodge);
+      cs_hodge_evaluate_property(0, cb->t_pty_eval, 0, hodge);
 
 #   pragma omp for CS_CDO_OMP_SCHEDULE
     for (cs_lnum_t bf_id = 0; bf_id < quant->n_b_faces; bf_id++) {
@@ -2942,7 +2955,7 @@ cs_cdofb_scaleq_boundary_diff_flux(const cs_real_t              t_eval,
           /* Set the diffusion property */
 
           if (!(eqb->diff_pty_uniform))
-            cs_hodge_evaluate_property_cw(cm, cb->t_pty_eval, 0, diff_hodge);
+            cs_hodge_evaluate_property_cw(cm, cb->t_pty_eval, 0, hodge);
 
           /* Define a local buffer keeping the value of the discrete potential
              for the current cell */
@@ -2953,7 +2966,7 @@ cs_cdofb_scaleq_boundary_diff_flux(const cs_real_t              t_eval,
 
           /* Compute the boundary flux and store it */
 
-          cs_cdo_diffusion_sfb_cost_flux(f, cm, pot, diff_hodge,
+          cs_cdo_diffusion_sfb_cost_flux(f, cm, pot, hodge,
                                          cb, bflux + bf_id);
         }
         break;
@@ -2963,6 +2976,11 @@ cs_cdofb_scaleq_boundary_diff_flux(const cs_real_t              t_eval,
     } /* End of loop on boundary faces */
 
     BFT_FREE(pot);
+
+    /* Set the diffusion property data back to the initial pointer */
+
+    hodge->pty_data = saved_data;
+
 
   } /* End of OpenMP block */
 

@@ -87,15 +87,24 @@ typedef struct {
    *
    * \var block_var_dim
    *      Dimension of the variable in each block
+   *
+   * \var incremental_solve
+   *      true or false
+   *
+   * \var relax_pty
+   *      Pointer to a \ref cs_property_t structure to define the value of the
+   *      relaxation coefficient (by default this is a constant equal to 1 but
+   *      more advanced usage can be defined). The value shoud be > 0 and <= 1
    */
 
   char *restrict            name;
 
   int                       verbosity;
-
   cs_param_space_scheme_t   space_scheme;
-
   int                       block_var_dim;
+  bool                      incremental_solve;
+
+  cs_property_t            *relax_pty;
 
   /*!
    * @}
@@ -123,6 +132,9 @@ typedef struct {
  *  \brief List of available keys for setting the parameters of a system
  *         of equations
  *
+ * \var CS_SYSKEY_INCR_SOLVE
+ *      Incremental solve tag
+ *
  * \var CS_SYSKEY_LINEAR_SOLVER_ATOL
  *      Absolute tolerance for which the (main) linear solver stops iterating
  *
@@ -147,6 +159,7 @@ typedef struct {
 
 typedef enum {
 
+  CS_SYSKEY_INCR_SOLVE,
   CS_SYSKEY_LINEAR_SOLVER_ATOL,
   CS_SYSKEY_LINEAR_SOLVER_DTOL,
   CS_SYSKEY_LINEAR_SOLVER_RTOL,
@@ -188,34 +201,34 @@ cs_equation_system_param_create(const char       *name,
 /*----------------------------------------------------------------------------*/
 
 cs_equation_system_param_t *
-cs_equation_system_param_free(cs_equation_system_param_t    *sysp);
+cs_equation_system_param_free(cs_equation_system_param_t *sysp);
 
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Log the setup gathered in the structure cs_equation_system_param_t
  *
- * \param[in] sysp     pointer to a parameter structure to log
+ * \param[in] sysp  pointer to a parameter structure to log
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_system_param_log(const cs_equation_system_param_t    *sysp);
+cs_equation_system_param_log(const cs_equation_system_param_t *sysp);
 
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Set a parameter related to a keyname in a cs_equation_system_param_t
  *        structure
  *
- * \param[in, out] sysp     pointer to a parameter structure to set
- * \param[in]      key      key related to the member of eq to set
- * \param[in]      keyval   accessor to the value to set
+ * \param[in, out] sysp    pointer to a parameter structure to set
+ * \param[in]      key     key related to the member of eq to set
+ * \param[in]      keyval  accessor to the value to set
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_system_param_set(cs_equation_system_param_t    *sysp,
-                             cs_equation_system_key_t       key,
-                             const char                    *keyval);
+cs_equation_system_param_set(cs_equation_system_param_t *sysp,
+                             cs_equation_system_key_t    key,
+                             const char                 *keyval);
 
 /*----------------------------------------------------------------------------*/
 

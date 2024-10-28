@@ -1057,16 +1057,49 @@ cs_equation_integrate_variable(const cs_cdo_connect_t    *connect,
  *        resulting array differs.
  *        For Vb and VCb schemes, this array relies on the bf2v adjacency.
  *
- * \param[in]      t_eval     time at which one the property is evaluated
+ * If eqp is set to nullptr, then one uses eq->param. Otherwise, one checks that
+ * the given eqp structure is relevant (same space discretization as eq->param)
+ * Using a different eqp allows one to build a diffusive flux relying on
+ * another property associated to the diffusion term.
+ *
+ * If pty is set to nullptr then one considers the diffusion property related to
+ * the eqp structure which will be used. Otherwise, one considers the one
+ * given.
+ *
+ * If dof_vals is set to nullptr (and cell_values too), then one uses the
+ * current values of the variable associated to the given equation
+ * (cs_equation_get_*_values functions). The calling function has to ensure
+ * that the location of the values is relevant with the one expected with the
+ * given equation. Using dof_vals (and possibly cell_vals) allows one to
+ * compute the diffusive flux for an array of values which is not the one
+ * associated to the given equation.
+ *
+ * cell_values is not useful for CDO vertex-based schemes while it is mandatory
+ * for CDO vertex+cell-based schemes and CDO face-based schemes. For CDO
+ * cell-based schemes, the flux is a variable so that neither dof_vals nor
+ * cell_vals are used.
+ *
+ * Be aware that the boundary conditions are applied through the equation
+ * builder structure which has to be consistent with what is used in eqp
+ *
  * \param[in]      eq         pointer to a cs_equation_t structure
+ * \param[in]      eqp        set of equation parameters to use or nullptr
+ * \param[in]      diff_pty   diffusion property or nullptr
+ * \param[in]      dof_vals   values at the location of the degrees of freedom
+ * \param[in]      cell_vals  values at the cell centers or nullptr
+ * \param[in]      t_eval     time at which one the property is evaluated
  * \param[in, out] diff_flux  value of the diffusive part of the flux
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_compute_boundary_diff_flux(cs_real_t            t_eval,
-                                       const cs_equation_t *eq,
-                                       cs_real_t           *diff_flux);
+cs_equation_compute_boundary_diff_flux(const cs_equation_t       *eq,
+                                       const cs_equation_param_t *eqp,
+                                       const cs_property_t       *diff_pty,
+                                       const cs_real_t           *dof_vals,
+                                       const cs_real_t           *cell_vals,
+                                       cs_real_t                  t_eval,
+                                       cs_real_t                 *diff_flux);
 
 /*----------------------------------------------------------------------------*/
 /*!

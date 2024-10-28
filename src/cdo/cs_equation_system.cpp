@@ -582,12 +582,13 @@ cs_equation_system_set_functions(void)
         eqsys->free   = cs_cdovb_scalsys_free;
 
         eqsys->solve_steady_state_system = nullptr; /* Not used up to now */
-        eqsys->solve_system              = cs_cdovb_scalsys_solve_implicit;
+        if (sysp->incremental_solve)
+          eqsys->solve_system = cs_cdovb_scalsys_solve_implicit_incr;
+        else
+          eqsys->solve_system = cs_cdovb_scalsys_solve_implicit;
       }
       else
-        bft_error(__FILE__,
-                  __LINE__,
-                  0,
+        bft_error(__FILE__, __LINE__, 0,
                   "%s: Invalid block_var_dim (=%d) for system \"%s\".\n"
                   "%s: Only scalar-valued (=1) blocks are handled.\n",
                   __func__, sysp->block_var_dim, sysp->name, __func__);
@@ -647,11 +648,11 @@ cs_equation_system_set_sles(void)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Define the builder and scheme context structures associated to all
- *         the systems of equations which have been added.
- *         For the diagonal blocks, one relies on the builder and context of
- *         the related equations. For extra-diagonal blocks, one defines new
- *         builder and context structures.
+ * \brief Define the builder and scheme context structures associated to all
+ *        the systems of equations which have been added.
+ *        For the diagonal blocks, one relies on the builder and context of
+ *        the related equations. For extra-diagonal blocks, one defines new
+ *        builder and context structures.
  */
 /*----------------------------------------------------------------------------*/
 
@@ -708,13 +709,15 @@ cs_equation_system_define(void)
 /*!
  * \brief  Solve of a system of coupled equations. Unsteady case.
  *
+ * \param[in]      time_step  pointer to a time step structure
  * \param[in]      cur2prev   true="current to previous" operation is performed
  * \param[in, out] eqsys      pointer to the structure to solve
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_system_solve(bool                  cur2prev,
+cs_equation_system_solve(const cs_time_step_t *time_step,
+                         bool                  cur2prev,
                          cs_equation_system_t *eqsys)
 {
   if (eqsys == nullptr)
@@ -734,6 +737,7 @@ cs_equation_system_solve(bool                  cur2prev,
      has to build this structure before each solving step */
 
   eqsys->solve_system(cur2prev,
+                      time_step,
                       eqsys->n_equations,
                       eqsys->param,
                       eqsys->block_factories,
@@ -748,8 +752,8 @@ cs_equation_system_solve(bool                  cur2prev,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Assign the given equation to the diagonal block located at
- *         position (row_id, row_id) in the matrix of blocks
+ * \brief Assign the given equation to the diagonal block located at position
+ *        (row_id, row_id) in the matrix of blocks
  *
  * \param[in]      row_id  position in the block matrix
  * \param[in]      eq      pointer to the equation to add

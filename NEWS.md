@@ -35,6 +35,14 @@ Master (not on release branches yet)
   print in the std output messages a warning if memory leaks are detected
   within the log file(s) for any rank.
 
+### Physical modeling
+
+- "Groundwater flow" module: The two-phase flow model in porous media
+   has been reshaped. The way to set the numerical options has been
+   modified. A new incremental algorithm relying on a modified Picard
+   algorithm has been added. This solves some positiveness issues
+   encountered in the first introduced algorithm.
+
 ### Studymanager:
 
 - Add a specific `studymanager` section in the `code_saturne.cfg` configuration

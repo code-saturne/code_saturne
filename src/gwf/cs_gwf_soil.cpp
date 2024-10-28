@@ -607,9 +607,9 @@ _update_iso_soil_tpf(const cs_real_t            t_eval,
   if (soil == nullptr)
     return;
 
-  const cs_adjacency_t  *c2v = connect->c2v;
-  const cs_adjacency_t  *c2e = connect->c2e;
-  const cs_adjacency_t  *e2v = connect->e2v;
+  const cs_adjacency_t *c2v = connect->c2v;
+  const cs_adjacency_t *c2e = connect->c2e;
+  const cs_adjacency_t *e2v = connect->e2v;
 
   /* Retrieve the soil parameters */
 
@@ -629,8 +629,8 @@ _update_iso_soil_tpf(const cs_real_t            t_eval,
   cs_real_t *krl = cs_property_get_array(hctx->krl_pty);
   cs_real_t *krg = cs_property_get_array(hctx->krg_pty);
 
-  assert(lsat != nullptr && lcap != nullptr && krl != nullptr
-         && krg != nullptr);
+  assert(lsat != nullptr && lcap != nullptr &&
+         krl  != nullptr && krg  != nullptr);
 
   /* Main loop on cells belonging to this soil */
 
@@ -1844,7 +1844,7 @@ cs_gwf_soil_set_vgm_tpf_param(cs_gwf_soil_t         *soil,
     bft_error(__FILE__, __LINE__, 0, _(_err_empty_soil));
 
   cs_gwf_soil_vgm_tpf_param_t *soilp
-    = (cs_gwf_soil_vgm_tpf_param_t *)soil->model_param;
+    = static_cast<cs_gwf_soil_vgm_tpf_param_t *>(soil->model_param);
 
   if (soil->model != CS_GWF_SOIL_VGM_TWO_PHASE)
     bft_error(__FILE__, __LINE__, 0,
@@ -1904,7 +1904,7 @@ cs_gwf_soil_set_vgm_tpf_advanced_param(cs_gwf_soil_t             *soil,
     bft_error(__FILE__, __LINE__, 0, _(_err_empty_soil));
 
   cs_gwf_soil_vgm_tpf_param_t *soilp
-    = (cs_gwf_soil_vgm_tpf_param_t *)soil->model_param;
+    = static_cast<cs_gwf_soil_vgm_tpf_param_t *>(soil->model_param);
 
   if (soil->model != CS_GWF_SOIL_VGM_TWO_PHASE)
     bft_error(__FILE__, __LINE__, 0,

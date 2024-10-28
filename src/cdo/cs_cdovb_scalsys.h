@@ -131,6 +131,7 @@ cs_cdovb_scalsys_free(int                     n_eqs,
  *        with a CDO-Vb scheme using an implicit time scheme.
  *
  * \param[in]      cur2prev     do a "current to previous" operation ?
+ * \param[in]      time_step    pointer to a time step structure
  * \param[in]      n_equations  number of equations
  * \param[in]      sysp         set of paremeters for the system of equations
  * \param[in, out] blocks       array of the core members for an equation
@@ -140,12 +141,41 @@ cs_cdovb_scalsys_free(int                     n_eqs,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdovb_scalsys_solve_implicit(bool                           cur2prev,
-                                int                            n_equations,
-                                cs_equation_system_param_t    *sysp,
-                                cs_equation_core_t           **blocks,
-                                void                          *sys_context,
-                                cs_cdo_system_helper_t        *sh);
+cs_cdovb_scalsys_solve_implicit(bool                         cur2prev,
+                                const cs_time_step_t        *time_step,
+                                int                          n_equations,
+                                cs_equation_system_param_t  *sysp,
+                                cs_equation_core_t         **blocks,
+                                void                        *sys_context,
+                                cs_cdo_system_helper_t      *sh);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Build and solve the system of equations. The number of rows in the
+ *        system is equal to the number of equations. Thus there are
+ *        n_eqs*n_eqs blocks in the system. Each block corresponds potentially
+ *        to a scalar-valued unsteady convection/diffusion/reaction equation
+ *        with a CDO-Vb scheme using an implicit time scheme and an incremental
+ *        resolution
+ *
+ * \param[in]      cur2prev     do a "current to previous" operation ?
+ * \param[in]      time_step    pointer to a time step structure
+ * \param[in]      n_equations  number of equations
+ * \param[in]      sysp         set of paremeters for the system of equations
+ * \param[in, out] blocks       array of the core members for an equation
+ * \param[in, out] sys_context  pointer to a structure cast on-the-fly
+ * \param[in, out] sh           pointer to a system helper structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdovb_scalsys_solve_implicit_incr(bool                         cur2prev,
+                                     const cs_time_step_t        *time_step,
+                                     int                          n_equations,
+                                     cs_equation_system_param_t  *sysp,
+                                     cs_equation_core_t         **blocks,
+                                     void                        *sys_context,
+                                     cs_cdo_system_helper_t      *sh);
 
 /*----------------------------------------------------------------------------*/
 

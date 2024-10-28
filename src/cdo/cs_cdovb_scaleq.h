@@ -220,6 +220,48 @@ cs_cdovb_scaleq_build_block_implicit(int                           t_id,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Build the cell system for the given cell id when the build occurs
+ *        in a coupled system.
+ *        Case of scalar-valued CDO-Vb schemes with an incremental formulation
+ *        of the modified Picard algorithm.
+ *
+ *        Warning:
+ *        (1) The treatment of the BCs differs from the "standard" case.
+ *        Up to now, one assumes a Dirichlet or a Neumann for all equations
+ *        (i.e. all blocks) and only an algebraic treatment is performed.
+ *
+ *        (2) The increment is associated to a modified Picard algorithm
+ *        meaning that the unsteady term is treated differently.
+ *
+ *        This function may be called inside an openMP loop.
+ *
+ * \param[in]      t_id        thread id if openMP is used
+ * \param[in]      c_id        cell id
+ * \param[in]      diag_block  true if this a diagonal block in the full system
+ * \param[in]      f_val       current field values
+ * \param[in]      eqp         pointer to a cs_equation_param_t structure
+ * \param[in, out] eqb         pointer to a cs_equation_builder_t structure
+ * \param[in, out] context     pointer to a scheme context structure
+ * \param[in, out] cb          cell builder structure
+ * \param[in, out] csys        cell system structure
+ *
+ * \return the value of the rhs_norm for the cellwise system
+ */
+/*----------------------------------------------------------------------------*/
+
+double
+cs_cdovb_scaleq_build_block_implicit_incr(int                        t_id,
+                                          cs_lnum_t                  c_id,
+                                          bool                       diag_block,
+                                          const cs_real_t            f_val[],
+                                          const cs_equation_param_t *eqp,
+                                          cs_equation_builder_t     *eqb,
+                                          void                      *context,
+                                          cs_cell_builder_t         *cb,
+                                          cs_cell_sys_t             *csys);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Set the initial values of the variable field taking into account
  *         the boundary conditions.
  *         Case of scalar-valued CDO-Vb schemes.
@@ -468,28 +510,32 @@ cs_cdovb_scaleq_apply_stiffness(const cs_equation_param_t     *eqp,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Compute for each vertex of a boundary face, the portion of diffusive
- *         flux across the boundary face. The surface attached to each vertex
- *         corresponds to the intersection of its dual cell (associated to
- *         a vertex of the face) with the face.
- *         Case of scalar-valued CDO-Vb schemes
+ * \brief Compute for each vertex of a boundary face, the portion of diffusive
+ *        flux across the boundary face. The surface attached to each vertex
+ *        corresponds to the intersection of its dual cell (associated to
+ *        a vertex of the face) with the face.
+ *        Case of scalar-valued CDO-Vb schemes
  *
- * \param[in]       t_eval     time at which one performs the evaluation
- * \param[in]       eqp        pointer to a cs_equation_param_t structure
- * \param[in]       pdi        pointer to an array of field values
- * \param[in, out]  eqb        pointer to a cs_equation_builder_t structure
- * \param[in, out]  context    pointer to a scheme builder structure
- * \param[in, out]  vf_flux    pointer to the values of the diffusive flux
+ * vf_flux has to be allocated to bf2v_idx[n_b_faces]
+ *
+ * \param[in]      values    discrete values for the potential
+ * \param[in]      eqp       pointer to a cs_equation_param_t structure
+ * \param[in]      diff_pty  pointer to the diffusion property to use
+ * \param[in]      t_eval    time at which one performs the evaluation
+ * \param[in, out] eqb       pointer to a cs_equation_builder_t structure
+ * \param[in, out] context   pointer to a scheme builder structure
+ * \param[in, out] vf_flux   pointer to the values of the diffusive flux
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdovb_scaleq_boundary_diff_flux(const cs_real_t              t_eval,
-                                   const cs_equation_param_t   *eqp,
-                                   const cs_real_t             *pdi,
-                                   cs_equation_builder_t       *eqb,
-                                   void                        *context,
-                                   cs_real_t                   *vf_flux);
+cs_cdovb_scaleq_boundary_diff_flux(const cs_real_t           *values,
+                                   const cs_equation_param_t *eqp,
+                                   const cs_property_t       *diff_pty,
+                                   const cs_real_t            t_eval,
+                                   cs_equation_builder_t     *eqb,
+                                   void                      *context,
+                                   cs_real_t                 *vf_flux);
 
 /*----------------------------------------------------------------------------*/
 /*!

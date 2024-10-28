@@ -131,25 +131,25 @@ typedef void
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Solve a linear system arising for a system of equations relying on
- *         scalar-valued CDO vertex-based schemes
+ * \brief Solve a linear system arising for a system of equations relying on
+ *        scalar-valued CDO vertex-based schemes
  *
- * \param[in]      n_eqs     number of equations constituting the system
- * \param[in]      n_dofs    local number of DoFs (may be != n_gather_elts)
- * \param[in]      sysp      parameter settings
- * \param[in, out] sh        pointer to the system helper structure
- * \param[in, out] fields    array of field pointers (one for each eq.)
+ * \param[in]      n_eqs   number of equations constituting the system
+ * \param[in]      n_dofs  local number of DoFs (may be != n_gather_elts)
+ * \param[in]      sysp    parameter settings
+ * \param[in, out] sh      pointer to the system helper structure
+ * \param[in, out] vals    values to compute
  *
  * \return the number of iterations of the linear solver
  */
 /*----------------------------------------------------------------------------*/
 
 typedef int
-(cs_cdovb_scalsys_solve_t)(int                                 n_eqs,
-                           cs_lnum_t                           n_dofs,
-                           const cs_equation_system_param_t   *sysp,
-                           cs_cdo_system_helper_t             *sh,
-                           cs_field_t                        **fields);
+(cs_cdovb_scalsys_solve_t)(int                               n_eqs,
+                           cs_lnum_t                         n_dofs,
+                           const cs_equation_system_param_t *sysp,
+                           cs_cdo_system_helper_t           *sh,
+                           cs_real_t                        *vals);
 
 /*=============================================================================
  * Structure definitions
@@ -215,10 +215,10 @@ struct _cs_cdovb_scalsys_t {
 
 /* Pointer to shared structures */
 
-static const cs_mesh_t              *cs_shared_mesh;
-static const cs_cdo_quantities_t    *cs_shared_quant;
-static const cs_cdo_connect_t       *cs_shared_connect;
-static const cs_time_step_t         *cs_shared_time_step;
+static const cs_mesh_t           *cs_shared_mesh;
+static const cs_cdo_quantities_t *cs_shared_quant;
+static const cs_cdo_connect_t    *cs_shared_connect;
+static const cs_time_step_t      *cs_shared_time_step;
 
 /*============================================================================
  * Private function prototypes
@@ -226,36 +226,70 @@ static const cs_time_step_t         *cs_shared_time_step;
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Fill the dof_val array with values collected from field values
- *         If the array is not allocated then one allocates the array (one
- *         takes into account the size needed for parallel synchronizations)
+ * \brief Fill with zeros the incr_val array
+ *        If the array is not allocated then one allocates the array (one
+ *        takes into account the size needed for parallel synchronizations)
  *
- * \param[in]      n_eqs     number of equations constituting the system
- * \param[in]      sh        pointer to the system helper structure
- * \param[in]      fields    array of field pointers (one for each eq.)
- * \param[in, out] p_dof_vals  double pointer to the array to fill
+ * \param[in]      sh           pointer to the system helper structure
+ * \param[in, out] p_incr_vals  double pointer to the array to fill
  */
 /*----------------------------------------------------------------------------*/
 
 static void
-_set_dof_vals(int                                 n_eqs,
-              const cs_cdo_system_helper_t       *sh,
-              cs_field_t                       **fields,
-              cs_real_t                        **p_dof_vals)
+_set_incr_vals(const cs_cdo_system_helper_t  *sh,
+               cs_real_t                    **p_incr_vals)
 {
   assert(sh != nullptr);
   assert(sh->n_blocks == 1);
   assert(sh->blocks[0]->type == CS_CDO_SYSTEM_BLOCK_DEFAULT);
 
-  const cs_matrix_t  *matrix = cs_cdo_system_get_matrix(sh, 0);
-  const cs_lnum_t  n_cols = cs_matrix_get_n_columns(matrix);
-  const cs_lnum_t  n_vertices = cs_shared_quant->n_vertices;
+  const cs_matrix_t *matrix = cs_cdo_system_get_matrix(sh, 0);
+  const cs_lnum_t n_cols = cs_matrix_get_n_columns(matrix);
+
+  /* Initialize the solution array (scatter viewpoint) */
+
+  cs_real_t *incr_vals = *p_incr_vals;
+
+  if (incr_vals == nullptr)
+    BFT_MALLOC(incr_vals, n_cols, cs_real_t);
+
+  cs_array_real_fill_zero(n_cols, incr_vals);
+
+  *p_incr_vals = incr_vals;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Fill the dof_val array with values collected from field values
+ *        If the array is not allocated then one allocates the array (one
+ *        takes into account the size needed for parallel synchronizations)
+ *
+ * \param[in]      n_eqs       number of equations constituting the system
+ * \param[in]      sh          pointer to the system helper structure
+ * \param[in]      fields      array of field pointers (one for each eq.)
+ * \param[in, out] p_dof_vals  double pointer to the array to fill
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_set_dof_vals(int                            n_eqs,
+              const cs_cdo_system_helper_t  *sh,
+              cs_field_t                   **fields,
+              cs_real_t                    **p_dof_vals)
+{
+  assert(sh != nullptr);
+  assert(sh->n_blocks == 1);
+  assert(sh->blocks[0]->type == CS_CDO_SYSTEM_BLOCK_DEFAULT);
+
+  const cs_matrix_t *matrix = cs_cdo_system_get_matrix(sh, 0);
+  const cs_lnum_t n_cols = cs_matrix_get_n_columns(matrix);
+  const cs_lnum_t n_vertices = cs_shared_quant->n_vertices;
 
   assert(n_vertices * n_eqs <= n_cols);
 
   /* Initialize the solution array (scatter viewpoint) */
 
-  cs_real_t  *dof_vals = *p_dof_vals;
+  cs_real_t *dof_vals = *p_dof_vals;
 
   if (dof_vals == nullptr)
     BFT_MALLOC(dof_vals, n_cols, cs_real_t);
@@ -361,41 +395,30 @@ _svb_one_dblock_assemble(const cs_cell_sys_t          *csys,
  * \brief Solve a linear system arising from CDO schemes with scalar-valued
  *        degrees of freedom
  *
- * \param[in]      n_eqs     number of equations constituting the system
- * \param[in]      n_dofs    local number of DoFs (may be != n_gather_elts)
- * \param[in]      sysp      parameter settings
- * \param[in, out] sh        pointer to the system helper structure
- * \param[in, out] fields    array of field pointers (one for each eq.)
+ * \param[in]      n_eqs   number of equations constituting the system
+ * \param[in]      n_dofs  local number of DoFs (may be != n_gather_elts)
+ * \param[in]      sysp    parameter settings
+ * \param[in, out] sh      pointer to the system helper structure
+ * \param[in, out] fields  array of field pointers (one for each eq.)
  *
  * \return the number of iterations of the linear solver
  */
 /*----------------------------------------------------------------------------*/
 
 static int
-_solve_mumps(int                                   n_eqs,
-             cs_lnum_t                             n_dofs,
-             const cs_equation_system_param_t     *sysp,
-             cs_cdo_system_helper_t               *sh,
-             cs_field_t                          **fields)
+_solve_mumps(int                               n_eqs,
+             cs_lnum_t                         n_dofs,
+             const cs_equation_system_param_t *sysp,
+             cs_cdo_system_helper_t           *sh,
+             cs_real_t                        *dof_vals)
 {
   assert(sh != nullptr);
   assert(sh->n_blocks == 1);
   assert(sh->blocks[0]->type == CS_CDO_SYSTEM_BLOCK_DEFAULT);
   assert(n_dofs == sh->full_rhs_size);
 
-  const cs_matrix_t  *matrix = cs_cdo_system_get_matrix(sh, 0);
-  const cs_range_set_t  *rset = cs_cdo_system_get_range_set(sh, 0);
-
-  /* n_cols could be greater than n_dofs = n_equations*n_vertices in case of a
-     parallel computation */
-
-  assert(n_dofs <= cs_matrix_get_n_columns(matrix));
-
-  /* Initialize the solution array */
-
-  cs_real_t *dof_vals = nullptr;
-
-  _set_dof_vals(n_eqs, sh, fields, &dof_vals);
+  const cs_matrix_t *matrix = cs_cdo_system_get_matrix(sh, 0);
+  const cs_range_set_t *rset = cs_cdo_system_get_range_set(sh, 0);
 
   if (rset != nullptr) { /* parallel/periodic operations */
 
@@ -461,11 +484,6 @@ _solve_mumps(int                                   n_eqs,
                        CS_REAL_TYPE, 1, /* type and stride */
                        sh->rhs, sh->rhs);
 
-  /* dof_vals --> fields */
-
-  _set_field_vals(n_eqs, dof_vals, fields);
-
-  BFT_FREE(dof_vals);
   cs_sles_free(sles);
 
   return sinfo.n_it;
@@ -605,18 +623,150 @@ _cdovb_scalsys_build_implicit(bool                           cur2prev,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Build the linear system of equations. The number of rows in
+ *        the system is equal to the number of equations. Thus there are
+ *        n_eqs*n_eqs blocks in the system. Each block corresponds potentially
+ *        to a scalar-valued unsteady convection/diffusion/reaction equation
+ *        with a CDO-Vb scheme. An incremental build is performed.
+ *
+ * \param[in]      cur2prev  do a "current to previous" operation ?
+ * \param[in]      n_eqs     number of equations
+ * \param[in, out] blocks    array of the core members for an equation
+ * \param[in, out] scalsys   pointer to a structure cast on-the-fly
+ * \param[in, out] fields    array of pointers to the associated fields
+ * \param[in, out] sh        pointer to a system helper structure
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_cdovb_scalsys_build_implicit_incr(bool                     cur2prev,
+                                   int                      n_equations,
+                                   cs_equation_core_t     **blocks,
+                                   cs_cdovb_scalsys_t      *scalsys,
+                                   cs_field_t             **fields,
+                                   cs_cdo_system_helper_t  *sh)
+{
+  CS_NO_WARN_IF_UNUSED(cur2prev);
+
+  const cs_mesh_t  *mesh = cs_shared_mesh;
+  const cs_time_step_t  *ts = cs_shared_time_step;
+  const cs_cdo_quantities_t  *quant = cs_shared_quant;
+  const cs_lnum_t  n_vertices = cs_shared_quant->n_vertices;
+
+  /* ------------------------- */
+  /* Main OpenMP block on cell */
+  /* ------------------------- */
+
+  const cs_real_t time_eval = ts->t_cur + ts->dt[0];
+
+  double rhs_norm = 0.;
+
+  /* Default initialization of properties associated to each block of the
+     system */
+
+  for (int i_eq = 0; i_eq < n_equations; i_eq++) {
+
+    for (int j_eq = 0; j_eq < n_equations; j_eq++) {
+
+      const int ij = i_eq*n_equations + j_eq;
+      const bool diag_block = (i_eq == j_eq) ? true : false;
+
+      cs_equation_core_t *block_ij = blocks[ij];
+
+      const cs_equation_param_t *eqp = block_ij->param;
+      const cs_real_t *f_val = fields[j_eq]->val;
+
+      cs_equation_builder_t *eqb = block_ij->builder;
+      cs_cdovb_scaleq_t     *eqc
+        = static_cast<cs_cdovb_scaleq_t *>(block_ij->scheme_context);
+
+      /* Setup stage: Set useful arrays:
+       * -----------
+       * --> the Dirichlet values at vertices
+       * --> the translation of the enforcement values at vertices if needed
+       */
+
+      if (eqb->init_step) {
+
+        cs_cdovb_scaleq_setup(time_eval, mesh, eqp, eqb, eqc->vtx_bc_flag);
+        eqb->init_step = false;
+
+      }
+
+#     pragma omp parallel if (quant->n_cells > CS_THR_MIN)
+      {
+        /* Set variables and structures inside the OMP section so that each
+           thread has its own value */
+
+        const int t_id = cs_get_thread_id();
+
+        cs_cell_builder_t *cb   = nullptr;
+        cs_cell_sys_t     *csys = nullptr;
+
+        cs_cdovb_scaleq_get(&csys, &cb);
+
+        cs_cdo_assembly_t *asb = cs_cdo_assembly_get(t_id);
+
+        cs_cdo_assembly_set_shift(asb,
+                                  i_eq * n_vertices,  /* row shift */
+                                  j_eq * n_vertices); /* col shift */
+
+        cs_cdovb_scaleq_init_properties(t_id, time_eval, eqp, eqb, eqc);
+
+        /* --------------------------------------------- */
+        /* Main loop on cells to build the linear system */
+        /* --------------------------------------------- */
+
+#       pragma omp for CS_CDO_OMP_SCHEDULE reduction(+:rhs_norm)
+        for (cs_lnum_t c_id = 0; c_id < quant->n_cells; c_id++) {
+
+          /* Build the cellwise system */
+
+          rhs_norm += cs_cdovb_scaleq_build_block_implicit_incr(t_id,
+                                                                c_id,
+                                                                diag_block,
+                                                                f_val,
+                                                                eqp,
+                                                                eqb,
+                                                                eqc,
+                                                                cb, csys);
+
+#if defined(DEBUG) && !defined(NDEBUG) && CS_CDOVB_SCALSYS_DBG > 1
+          if (csys->c_id == 0) {
+            cs_log_printf(CS_LOG_DEFAULT, "%s: %s\n", __func__, eqp->name);
+            cs_cell_sys_dump("\n>> Cell system (Block system)", csys);
+          }
+#endif
+
+          /* Assembly process
+           * ================ */
+
+          scalsys->assemble(csys, sh, eqb, asb);
+
+        } /* Main loop on cells */
+
+      } /* OPENMP Block */
+
+    } /* j_eq */
+  } /* i_eq */
+
+  cs_cdo_system_helper_finalize_assembly(sh);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Create and initialize a cs_cdovb_scalsys_t structure
  *
- * \param[in]      n_eqs            number of equations
- * \param[in]      sysp             set of parameters to specify a system of eqs
+ * \param[in] n_eqs  number of equations
+ * \param[in] sysp   set of parameters to specify a system of eqs
  *
  * \return a pointer to a new allocated system context structure
  */
 /*----------------------------------------------------------------------------*/
 
 static cs_cdovb_scalsys_t *
-_create_scalsys(int                                 n_eqs,
-                const cs_equation_system_param_t   *sysp)
+_create_scalsys(int                               n_eqs,
+                const cs_equation_system_param_t *sysp)
 {
   if (n_eqs == 0)
     return nullptr;
@@ -631,7 +781,8 @@ _create_scalsys(int                                 n_eqs,
 
   /* Set pointers to function */
 
-  scalsys->build = _cdovb_scalsys_build_implicit;
+  scalsys->build = (sysp->incremental_solve) ?
+    _cdovb_scalsys_build_implicit_incr : _cdovb_scalsys_build_implicit;
   scalsys->assemble = nullptr;
   scalsys->solve    = nullptr;
 
@@ -775,6 +926,8 @@ cs_cdovb_scalsys_define(int                                 n_eqs,
 
     assert(block_jj != nullptr);
 
+    const cs_equation_param_t *eqp_jj = block_jj->param;
+
     for (int i = 0; i < n_eqs; i++) { /* Loop on rows */
 
       if (i != j) { /* Extra-diagonal block */
@@ -888,6 +1041,7 @@ cs_cdovb_scalsys_free(int                     n_eqs,
  *        with a CDO-Vb scheme using an implicit time scheme.
  *
  * \param[in]      cur2prev     do a "current to previous" operation ?
+ * \param[in]      time_step    pointer to a time step structure
  * \param[in]      n_equations  number of equations
  * \param[in]      sysp         set of paremeters for the system of equations
  * \param[in, out] blocks       array of the core members for an equation
@@ -897,12 +1051,13 @@ cs_cdovb_scalsys_free(int                     n_eqs,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdovb_scalsys_solve_implicit(bool                           cur2prev,
-                                int                            n_equations,
-                                cs_equation_system_param_t    *sysp,
-                                cs_equation_core_t           **blocks,
-                                void                          *sys_context,
-                                cs_cdo_system_helper_t        *sh)
+cs_cdovb_scalsys_solve_implicit(bool                         cur2prev,
+                                const cs_time_step_t        *time_step,
+                                int                          n_equations,
+                                cs_equation_system_param_t  *sysp,
+                                cs_equation_core_t         **blocks,
+                                void                        *sys_context,
+                                cs_cdo_system_helper_t      *sh)
 {
   assert(sysp->space_scheme == CS_SPACE_SCHEME_CDOVB);
   assert(sysp->block_var_dim == 1);
@@ -959,12 +1114,145 @@ cs_cdovb_scalsys_solve_implicit(bool                           cur2prev,
   /* Solve the linear system */
   /* ----------------------- */
 
-  scalsys->solve(n_equations, n_dofs, sysp, sh, fields);
+  /* Initialize the solution array (scatter view but allocated with a possible
+     "halo") */
+
+  cs_real_t *dof_vals = nullptr;
+
+  _set_dof_vals(n_equations, sh, fields, &dof_vals);
+
+  // Solve the system
+
+  scalsys->solve(n_equations, n_dofs, sysp, sh, dof_vals);
+
+  /* dof_vals --> fields */
+
+  _set_field_vals(n_equations, dof_vals, fields);
+
+  BFT_FREE(dof_vals);
 
   /* Free temporary buffers and structures */
 
   BFT_FREE(fields);
   cs_cdo_system_helper_reset(sh);      /* free rhs and matrix */
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Build and solve the system of equations. The number of rows in the
+ *        system is equal to the number of equations. Thus there are
+ *        n_eqs*n_eqs blocks in the system. Each block corresponds potentially
+ *        to a scalar-valued unsteady convection/diffusion/reaction equation
+ *        with a CDO-Vb scheme using an implicit time scheme and an incremental
+ *        resolution
+ *
+ * \param[in]      cur2prev     do a "current to previous" operation ?
+ * \param[in]      time_step    pointer to a time step structure
+ * \param[in]      n_equations  number of equations
+ * \param[in]      sysp         set of paremeters for the system of equations
+ * \param[in, out] blocks       array of the core members for an equation
+ * \param[in, out] sys_context  pointer to a structure cast on-the-fly
+ * \param[in, out] sh           pointer to a system helper structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdovb_scalsys_solve_implicit_incr(bool                         cur2prev,
+                                     const cs_time_step_t        *time_step,
+                                     int                          n_equations,
+                                     cs_equation_system_param_t  *sysp,
+                                     cs_equation_core_t         **blocks,
+                                     void                        *sys_context,
+                                     cs_cdo_system_helper_t      *sh)
+{
+  assert(sysp->space_scheme == CS_SPACE_SCHEME_CDOVB);
+  assert(sysp->block_var_dim == 1);
+
+  cs_cdovb_scalsys_t *scalsys = static_cast<cs_cdovb_scalsys_t *>(sys_context);
+
+  const cs_lnum_t n_dofs = scalsys->n_dofs;
+
+  /* Retrieve the field associated to each diagonal block */
+
+  cs_field_t **fields = nullptr;
+  BFT_MALLOC(fields, n_equations, cs_field_t *);
+
+  for (int i_eq = 0; i_eq < n_equations; i_eq++) {
+
+    cs_equation_core_t *block_ii = blocks[i_eq*n_equations + i_eq];
+    cs_cdovb_scaleq_t  *eqc
+      = static_cast<cs_cdovb_scaleq_t *>(block_ii->scheme_context);
+
+    fields[i_eq] = cs_field_by_id(eqc->var_field_id);
+
+  }
+
+  /* Initialize the algebraic structures
+   * --> rhs, matrix and assembler values */
+
+  cs_real_t *rhs = nullptr;
+
+  cs_cdo_system_helper_init_system(sh, &rhs);
+
+  /* Build the coupled system of equations */
+  /* ------------------------------------- */
+
+  scalsys->build(cur2prev, n_equations, blocks, scalsys, fields, sh);
+
+  /* Reset builder structures and operate a current to previous op. if needed */
+
+  for (int i_eq = 0; i_eq < n_equations; i_eq++) {
+    for (int j_eq = 0; j_eq < n_equations; j_eq++) {
+
+      cs_equation_core_t  *block_ij = blocks[i_eq*n_equations + j_eq];
+
+      cs_equation_builder_reset(block_ij->builder);
+
+    } /* Loop on blocks corresponding to the column of the system  */
+  } /* Loop on blocks corresponding to the row of the system  */
+
+  /* Copy current field values to previous values */
+
+  if (cur2prev)
+    for (int i_eq = 0; i_eq < n_equations; i_eq++)
+      cs_field_current_to_previous(fields[i_eq]);
+
+  /* Solve the linear system */
+  /* ----------------------- */
+
+  /* Initialize the solution array (scatter view but allocated with a possible
+     "halo") */
+
+  cs_real_t *incr_vals = nullptr;
+
+  _set_incr_vals(sh, &incr_vals);
+
+  // Solve the system
+
+  scalsys->solve(n_equations, n_dofs, sysp, sh, incr_vals);
+
+  /* incr_vals are used to update the values of fields */
+
+  const double relax = cs_property_get_cell_value(0,
+                                                  time_step->t_cur,
+                                                  sysp->relax_pty);
+
+  const cs_lnum_t n_vertices = cs_shared_quant->n_vertices;
+  for (int i_eq = 0; i_eq < n_equations; i_eq++) {
+
+    const cs_real_t *incr = incr_vals + i_eq*n_vertices;
+    cs_field_t *f = fields[i_eq];
+
+    for (cs_lnum_t j = 0; j < n_vertices; j++)
+      f->val[j] += relax*incr[j];
+
+  }
+
+  /* Free temporary buffers and structures */
+
+  BFT_FREE(incr_vals);
+  BFT_FREE(fields);
+  cs_cdo_system_helper_reset(sh); /* free rhs and matrix */
 }
 
 /*----------------------------------------------------------------------------*/

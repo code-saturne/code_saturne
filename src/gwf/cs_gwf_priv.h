@@ -50,31 +50,27 @@ typedef struct _gwf_darcy_flux_t  cs_gwf_darcy_flux_t;
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Update the advection field/arrays related to the Darcy flux.
- *        cell_values could be set to null when the space discretization does
- *        not request these values for the update.
+ *        The context associated to a \ref cs_gwf_darcy_flux_t have pointers
+ *        to the fields used to define the Darcy flux update
  *
- * \param[in]      connect       pointer to a cs_cdo_connect_t structure
- * \param[in]      cdoq          pointer to a cs_cdo_quantities_t structure
- * \param[in]      dof_values    values to consider for the update
- * \param[in]      cell_values   values to consider for the update or null
- * \param[in]      t_eval        time at which one performs the evaluation
- * \param[in]      cur2prev      true or false
- * \param[in, out] darcy         pointer to the darcy flux structure
+ * \param[in]      connect  pointer to a cs_cdo_connect_t structure
+ * \param[in]      cdoq     pointer to a cs_cdo_quantities_t structure
+ * \param[in]      t_eval   time at which one performs the evaluation
+ * \param[in]      cur2prev true or false
+ * \param[in, out] darcy    pointer to the darcy flux structure
  */
 /*----------------------------------------------------------------------------*/
 
 typedef void
-(cs_gwf_darcy_update_t)(const cs_cdo_connect_t      *connect,
-                        const cs_cdo_quantities_t   *cdoq,
-                        const cs_real_t             *dof_values,
-                        const cs_real_t             *cell_values,
-                        cs_real_t                    t_eval,
-                        bool                         cur2prev,
-                        cs_gwf_darcy_flux_t         *darcy);
+(cs_gwf_darcy_update_t)(const cs_cdo_connect_t    *connect,
+                        const cs_cdo_quantities_t *cdoq,
+                        cs_real_t                  t_eval,
+                        bool                       cur2prev,
+                        cs_gwf_darcy_flux_t       *darcy);
 
 /*! \struct cs_gwf_darcy_flux_t
  *
- * \brief Structure to handle the Darcy flux
+ * \brief Structure to handle a Darcy flux
  */
 
 struct _gwf_darcy_flux_t {
@@ -97,17 +93,17 @@ struct _gwf_darcy_flux_t {
    * computational domain for the liquid phase. This is an optional array.
    *
    * \var simplified_boundary_update
-   * If true, an constant approximation of the gradient is computed to define
-   * the boundary flux. Otherwise, one tries to reproduce exatcly the
+   * If true, a constant approximation of the gradient is computed to define
+   * the boundary flux. Otherwise, one tries to reproduce exactly the
    * divergence of the advection field, the difference is distributed according
-   * the area of each boundary face attached to a boundary vertex.
-   * This option is only useful for vertex-based scheme.
-   *
-   * \var update_input
-   * Context pointer for the update function or null if useless
+   * to the area of each boundary face attached to a boundary vertex. This
+   * option is only useful for vertex-based scheme.
    *
    * \var update_func
    * Pointer to the function which performs the update of the advection field
+   *
+   * \var update_input
+   * Context pointer for the update function or nullptr if useless
    */
 
   cs_adv_field_t               *adv_field;
@@ -117,8 +113,8 @@ struct _gwf_darcy_flux_t {
   cs_real_t                    *boundary_flux_val;
   bool                          simplified_boundary_update;
 
-  void                         *update_input;
   cs_gwf_darcy_update_t        *update_func;
+  void                         *update_input;
 
 };
 
@@ -138,9 +134,9 @@ struct _gwf_darcy_flux_t {
 /*----------------------------------------------------------------------------*/
 
 void
-cs_gwf_get_value_pointers(const cs_equation_t       *eq,
-                          cs_real_t                **p_dof_vals,
-                          cs_real_t                **p_cell_vals);
+cs_gwf_get_value_pointers(const cs_equation_t  *eq,
+                          cs_real_t           **p_dof_vals,
+                          cs_real_t           **p_cell_vals);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -223,20 +219,29 @@ cs_gwf_darcy_flux_balance(const cs_cdo_connect_t       *connect,
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Compute the associated Darcy flux over the boundary of the domain for
- *        each vertex of a boundary face.  Case of a vertex-based
- *        discretization and single-phase flows in porous media (saturated or
- *        not).
+ *        each vertex of a boundary face.
  *
- * \param[in]      t_eval   time at which one performs the evaluation
- * \param[in]      eq       pointer to the equation related to this Darcy flux
- * \param[in, out] adv      pointer to the Darcy advection field
+ *        Case of a vertex-based discretization and single-phase flows in
+ *        porous media (saturated or not).
+ *
+ * \param[in]      eq         pointer to the equation related to this Darcy flux
+ * \param[in]      eqp        set of equation parameters to use or nullptr
+ * \param[in]      diff_pty   diffusion property or nullptr
+ * \param[in]      dof_vals   values at the location of the degrees of freedom
+ * \param[in]      cell_vals  values at the cell centers or nullptr
+ * \param[in]      t_eval     time at which one performs the evaluation
+ * \param[in, out] adv        pointer to the Darcy advection field
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_gwf_darcy_flux_update_on_boundary(cs_real_t                t_eval,
-                                     const cs_equation_t     *eq,
-                                     cs_adv_field_t          *adv);
+cs_gwf_darcy_flux_update_on_boundary(const cs_equation_t       *eq,
+                                     const cs_equation_param_t *eqp,
+                                     const cs_property_t       *diff_pty,
+                                     const cs_real_t           *dof_vals,
+                                     const cs_real_t           *cell_vals,
+                                     cs_real_t                  t_eval,
+                                     cs_adv_field_t            *adv);
 
 /*----------------------------------------------------------------------------*/
 /*!

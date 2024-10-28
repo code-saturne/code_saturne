@@ -67,20 +67,20 @@ cs_gwf_is_activated(void);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Initialize the module dedicated to groundwater flows
+ * \brief Initialize the module dedicated to groundwater flows
  *
- * \param[in]   model           type of physical modelling
- * \param[in]   option_flag     optional flag to specify this module
- * \param[in]   post_flag       optional automatic postprocessing
+ * \param[in] model        type of physical modelling
+ * \param[in] option_flag  optional flag to specify this module
+ * \param[in] post_flag    optional automatic postprocessing
  *
  * \return a pointer to a new allocated groundwater flow structure
  */
 /*----------------------------------------------------------------------------*/
 
 cs_gwf_t *
-cs_gwf_activate(cs_gwf_model_type_t      model,
-                cs_flag_t                option_flag,
-                cs_flag_t                post_flag);
+cs_gwf_activate(cs_gwf_model_type_t model,
+                cs_flag_t           option_flag,
+                cs_flag_t           post_flag);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -108,18 +108,16 @@ cs_gwf_get_two_phase_model(void);
 /*!
  * \brief Set the numerical options related to the two phase flow models
  *
- * \param[in] approx                          type of coefficient approximation
- * \param[in] solver                          type of solver
- * \param[in] use_incremental_solver          true/false
- * \param[in] use_diffusion_view_for_darcy    true/false
+ * \param[in] approx  type of coefficient approximation
+ * \param[in] solver  type of solver
+ * \param[in] pg_pos  activate an enforcement of gas pressure >= 0
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_gwf_set_two_phase_numerical_options(cs_gwf_tpf_approx_type_t   approx,
-                                       cs_gwf_tpf_solver_type_t   solver,
-                                       bool       use_incremental_solver,
-                                       bool       use_diffusion_view_for_darcy);
+cs_gwf_set_two_phase_numerical_options(cs_gwf_tpf_approx_type_t approx,
+                                       cs_gwf_tpf_solver_type_t solver,
+                                       bool                     pg_pos);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -138,13 +136,13 @@ cs_gwf_set_two_phase_numerical_options(cs_gwf_tpf_approx_type_t   approx,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_gwf_set_miscible_two_phase_model(cs_real_t       l_mass_density,
-                                    cs_real_t       l_viscosity,
-                                    cs_real_t       g_viscosity,
-                                    cs_real_t       l_diffusivity_h,
-                                    cs_real_t       h_molar_mass,
-                                    cs_real_t       ref_temperature,
-                                    cs_real_t       henry_constant);
+cs_gwf_set_miscible_two_phase_model(cs_real_t l_mass_density,
+                                    cs_real_t l_viscosity,
+                                    cs_real_t g_viscosity,
+                                    cs_real_t l_diffusivity_h,
+                                    cs_real_t h_molar_mass,
+                                    cs_real_t ref_temperature,
+                                    cs_real_t henry_constant);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -160,11 +158,11 @@ cs_gwf_set_miscible_two_phase_model(cs_real_t       l_mass_density,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_gwf_set_immiscible_two_phase_model(cs_real_t       l_mass_density,
-                                      cs_real_t       l_viscosity,
-                                      cs_real_t       g_viscosity,
-                                      cs_real_t       h_molar_mass,
-                                      cs_real_t       ref_temperature);
+cs_gwf_set_immiscible_two_phase_model(cs_real_t l_mass_density,
+                                      cs_real_t l_viscosity,
+                                      cs_real_t g_viscosity,
+                                      cs_real_t h_molar_mass,
+                                      cs_real_t ref_temperature);
 
 /*----------------------------------------------------------------------------*/
 /*!

@@ -100,27 +100,20 @@ BEGIN_C_DECLS
  *        Case of CDO-Vb schemes and a Darcy flux defined at dual faces for an
  *        unsaturated porous media
  *
- *        cell_values could be set to nullptr when the space discretization does
- *        not request these values for the update.
- *
- * \param[in]      connect       pointer to a cs_cdo_connect_t structure
- * \param[in]      cdoq          pointer to a cs_cdo_quantities_t structure
- * \param[in]      dof_values    values to consider for the update
- * \param[in]      cell_values   values to consider for the update or nullptr
- * \param[in]      t_eval        time at which one performs the evaluation
- * \param[in]      cur2prev      true or false
- * \param[in, out] darcy         pointer to the darcy flux structure
+ * \param[in]      connect    pointer to a cs_cdo_connect_t structure
+ * \param[in]      cdoq       pointer to a cs_cdo_quantities_t structure
+ * \param[in]      t_eval     time at which one performs the evaluation
+ * \param[in]      cur2prev   true or false
+ * \param[in, out] darcy      pointer to the darcy flux structure
  */
 /*----------------------------------------------------------------------------*/
 
 static void
-_uspf_update_darcy_arrays(const cs_cdo_connect_t      *connect,
-                          const cs_cdo_quantities_t   *cdoq,
-                          const cs_real_t             *dof_values,
-                          const cs_real_t             *cell_values,
-                          cs_real_t                    t_eval,
-                          bool                         cur2prev,
-                          cs_gwf_darcy_flux_t         *darcy)
+_uspf_update_darcy_arrays(const cs_cdo_connect_t    *connect,
+                          const cs_cdo_quantities_t *cdoq,
+                          cs_real_t                  t_eval,
+                          bool                       cur2prev,
+                          cs_gwf_darcy_flux_t       *darcy)
 {
   CS_NO_WARN_IF_UNUSED(connect);
   CS_NO_WARN_IF_UNUSED(cdoq);
@@ -133,8 +126,11 @@ _uspf_update_darcy_arrays(const cs_cdo_connect_t      *connect,
     bft_error(__FILE__, __LINE__, 0,
               " %s: Invalid definition of the advection field", __func__);
 
-  cs_gwf_uspf_t  *mc = (cs_gwf_uspf_t *)darcy->update_input;
-  cs_equation_t  *eq = mc->richards;
+  cs_gwf_uspf_t *mc = static_cast<cs_gwf_uspf_t *>(darcy->update_input);
+  cs_equation_t *eq = mc->richards;
+  cs_real_t     *dof_vals = nullptr, *cell_vals = nullptr;
+
+  cs_gwf_get_value_pointers(mc->richards, &dof_vals, &cell_vals);
 
   /* Update the array of flux values associated to the advection field */
 
@@ -142,8 +138,8 @@ _uspf_update_darcy_arrays(const cs_cdo_connect_t      *connect,
   cs_equation_compute_diffusive_flux(eq,
                                      nullptr, /* eqp --> default */
                                      nullptr, /* diff_pty --> default */
-                                     dof_values,
-                                     cell_values,
+                                     dof_vals,
+                                     cell_vals,
                                      darcy->flux_location,
                                      t_eval,
                                      darcy->flux_val);
@@ -151,7 +147,7 @@ _uspf_update_darcy_arrays(const cs_cdo_connect_t      *connect,
   /* Update the velocity field at cell centers induced by the Darcy flux.
    * This field is always defined when the definition relies on a flux. */
 
-  cs_field_t  *vel = cs_advection_field_get_field(adv, CS_MESH_LOCATION_CELLS);
+  cs_field_t *vel = cs_advection_field_get_field(adv, CS_MESH_LOCATION_CELLS);
   assert(vel != nullptr);
   if (cur2prev)
     cs_field_current_to_previous(vel);
@@ -160,13 +156,18 @@ _uspf_update_darcy_arrays(const cs_cdo_connect_t      *connect,
 
   /* Update the Darcy flux at the boundary (take into account the BCs) */
 
-  cs_gwf_darcy_flux_update_on_boundary(t_eval, eq, adv);
+  cs_gwf_darcy_flux_update_on_boundary(eq,
+                                       nullptr, // eqp --> default
+                                       nullptr, // diff_pty --> default
+                                       dof_vals,
+                                       cell_vals,
+                                       t_eval,
+                                       adv);
 
-  cs_field_t  *bdy_nflx =
-    cs_advection_field_get_field(adv, CS_MESH_LOCATION_BOUNDARY_FACES);
+  cs_field_t *bdy_nflx
+    = cs_advection_field_get_field(adv, CS_MESH_LOCATION_BOUNDARY_FACES);
 
-  if (bdy_nflx
-      != nullptr) { /* Values of the Darcy flux at boundary face exist */
+  if (bdy_nflx != nullptr) { // Values of the Darcy flux at boundary face exist
 
     if (cur2prev)
       cs_field_current_to_previous(bdy_nflx);
@@ -174,6 +175,7 @@ _uspf_update_darcy_arrays(const cs_cdo_connect_t      *connect,
     /* Set the new values of the field related to the normal boundary flux */
 
     cs_advection_field_across_boundary(adv, t_eval, bdy_nflx->val);
+
   }
 }
 
@@ -496,7 +498,7 @@ cs_gwf_uspf_finalize_setup(const cs_cdo_connect_t         *connect,
 
   cs_gwf_darcy_flux_define(connect, cdoq,
                            richards_scheme,
-                           mc,                          /* context */
+                           mc,                         /* context */
                            _uspf_update_darcy_arrays,  /* update function */
                            mc->darcy);
 
@@ -588,17 +590,8 @@ cs_gwf_uspf_update(const cs_mesh_t                *mesh,
   /* Update the advection field related to the groundwater flow module */
 
   cs_gwf_darcy_flux_t  *darcy = mc->darcy;
-  cs_real_t            *dof_vals = nullptr, *cell_vals = nullptr;
 
-  cs_gwf_get_value_pointers(mc->richards, &dof_vals, &cell_vals);
-
-  darcy->update_func(connect,
-                     cdoq,
-                     dof_vals,
-                     cell_vals,
-                     time_eval,
-                     cur2prev,
-                     darcy);
+  darcy->update_func(connect, cdoq, time_eval, cur2prev, darcy);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_GWF_USPF_DBG > 2
   if (cs_flag_test(darcy->flux_location, cs_flag_dual_face_byc))

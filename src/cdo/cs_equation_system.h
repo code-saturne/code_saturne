@@ -99,6 +99,7 @@ typedef void *
  * \brief  Build and solve a linear system within the CDO framework
  *
  * \param[in]      c2p         do a "current to previous" operation performed ?
+ * \param[in]      time_step   pointer to a time step structure
  * \param[in]      n_eqs       number of equations in the system to solve
  * \param[in]      sysp        set of paremeters for the system of equations
  * \param[in, out] blocks      array of the core members for an equation
@@ -108,12 +109,13 @@ typedef void *
 /*----------------------------------------------------------------------------*/
 
 typedef void
-(cs_equation_system_solve_t)(bool                           c2p,
-                             int                            n_eqs,
-                             cs_equation_system_param_t    *sysp,
-                             cs_equation_core_t           **blocks,
-                             void                          *sys_context,
-                             cs_cdo_system_helper_t        *sh);
+(cs_equation_system_solve_t)(bool                         c2p,
+                             const cs_time_step_t        *time_step,
+                             int                          n_eqs,
+                             cs_equation_system_param_t  *sysp,
+                             cs_equation_core_t         **blocks,
+                             void                        *sys_context,
+                             cs_cdo_system_helper_t      *sh);
 
 
 /*! \struct cs_equation_system_t
@@ -370,19 +372,21 @@ cs_equation_system_define(void);
 /*!
  * \brief  Solve of a system of coupled equations. Unsteady case.
  *
+ * \param[in]      time_step  pointer to a time step structure
  * \param[in]      cur2prev   true="current to previous" operation is performed
  * \param[in, out] eqsys      pointer to the structure to solve
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_system_solve(bool                     cur2prev,
-                         cs_equation_system_t    *eqsys);
+cs_equation_system_solve(const cs_time_step_t *time_step,
+                         bool                  cur2prev,
+                         cs_equation_system_t *eqsys);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Assign the given equation to the diagonal block located at
- *         position (row_id, row_id) in the matrix of blocks
+ * \brief Assign the given equation to the diagonal block located at position
+ *        (row_id, row_id) in the matrix of blocks
  *
  * \param[in]      row_id  position in the block matrix
  * \param[in]      eq      pointer to the equation to add

@@ -108,9 +108,17 @@ cs_equation_system_param_create(const char       *name,
   assert(block_var_dim > 0);
   sysp->block_var_dim = block_var_dim;
 
-  /* Space discretization */
+  /* Default settings */
 
-  sysp->space_scheme = CS_SPACE_SCHEME_CDOVB;
+  sysp->space_scheme      = CS_SPACE_SCHEME_CDOVB;
+  sysp->incremental_solve = false;
+
+  char *pty_name = nullptr;
+  len += strlen("_relax_pty") + 1;
+  BFT_MALLOC(pty_name, len + 1, char);
+  sprintf(pty_name, "%s_relax_pty", name);
+  sysp->relax_pty = cs_property_add(pty_name, CS_PROPERTY_ISO);
+  BFT_FREE(pty_name);
 
   /* Linear algebra settings by default */
 
@@ -189,12 +197,12 @@ cs_equation_system_param_free(cs_equation_system_param_t    *sysp)
 /*!
  * \brief Log the setup gathered in the structure cs_equation_system_param_t
  *
- * \param[in] sysp     pointer to a parameter structure to log
+ * \param[in] sysp  pointer to a parameter structure to log
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_system_param_log(const cs_equation_system_param_t    *sysp)
+cs_equation_system_param_log(const cs_equation_system_param_t *sysp)
 {
   if (sysp == nullptr)
     return;
@@ -205,6 +213,8 @@ cs_equation_system_param_log(const cs_equation_system_param_t    *sysp)
   cs_log_printf(CS_LOG_SETUP, "%s Verbosity: %d\n", desc, sysp->verbosity);
   cs_log_printf(CS_LOG_SETUP, "%s Common space scheme: %s\n",
                 desc, cs_param_get_space_scheme_name(sysp->space_scheme));
+  cs_log_printf(CS_LOG_SETUP, "%s Incremental_solve: %s\n",
+                desc, cs_base_strtf(sysp->incremental_solve));
   cs_log_printf(CS_LOG_SETUP, "%s Common variable dimension: %d\n",
                 desc, sysp->block_var_dim);
 
@@ -230,16 +240,16 @@ cs_equation_system_param_log(const cs_equation_system_param_t    *sysp)
  * \brief Set a parameter related to a keyname in a cs_equation_system_param_t
  *        structure
  *
- * \param[in, out] sysp     pointer to a parameter structure to set
- * \param[in]      key      key related to the member of eq to set
- * \param[in]      keyval   accessor to the value to set
+ * \param[in, out] sysp    pointer to a parameter structure to set
+ * \param[in]      key     key related to the member of eq to set
+ * \param[in]      keyval  accessor to the value to set
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_system_param_set(cs_equation_system_param_t    *sysp,
-                             cs_equation_system_key_t       key,
-                             const char                    *keyval)
+cs_equation_system_param_set(cs_equation_system_param_t *sysp,
+                             cs_equation_system_key_t    key,
+                             const char                 *keyval)
 {
   if (sysp == nullptr)
     return;
@@ -254,6 +264,14 @@ cs_equation_system_param_set(cs_equation_system_param_t    *sysp,
   val[strlen(keyval)] = '\0';
 
   switch(key) {
+
+  case CS_SYSKEY_INCR_SOLVE:
+    if (strcmp(val, "1") == 0 || strcmp(val, "true") == 0 ||
+        strcmp(val, "yes") || strcmp(val, "y") == 0)
+      sysp->incremental_solve = true;
+    else
+      sysp->incremental_solve = false;
+    break;
 
   case CS_SYSKEY_LINEAR_SOLVER_ATOL:
     sysp->sles_param->cvg_param.atol = atof(val);

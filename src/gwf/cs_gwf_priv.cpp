@@ -113,8 +113,8 @@ _compute_v_weighted_boundary_fluxes(const cs_real_t *xv,
                                     const cs_real_t  cell_vector[3],
                                     cs_real_t        fluxes[])
 {
-  const cs_lnum_t *ids  = bf2v_ids + bf2v_idx[0];
-  const int        n_vf = bf2v_idx[1] - bf2v_idx[0];
+  const cs_lnum_t *ids = bf2v_ids + bf2v_idx[0];
+  const int       n_vf = bf2v_idx[1] - bf2v_idx[0];
 
   for (cs_lnum_t v = 0; v < n_vf; v++)
     fluxes[v] = 0.; /* Init */
@@ -139,6 +139,7 @@ _compute_v_weighted_boundary_fluxes(const cs_real_t *xv,
 
     fluxes[_v0] += tef * unflx;
     fluxes[_v1] += tef * unflx;
+
   }
 }
 
@@ -543,16 +544,24 @@ cs_gwf_darcy_flux_balance(const cs_cdo_connect_t    *connect,
  *        Case of a vertex-based discretization and single-phase flows in
  *        porous media (saturated or not).
  *
- * \param[in]      t_eval   time at which one performs the evaluation
- * \param[in]      eq       pointer to the equation related to this Darcy flux
- * \param[in, out] adv      pointer to the Darcy advection field
+ * \param[in]      eq         pointer to the equation related to this Darcy flux
+ * \param[in]      eqp        set of equation parameters to use or nullptr
+ * \param[in]      diff_pty   diffusion property or nullptr
+ * \param[in]      dof_vals   values at the location of the degrees of freedom
+ * \param[in]      cell_vals  values at the cell centers or nullptr
+ * \param[in]      t_eval     time at which one performs the evaluation
+ * \param[in, out] adv        pointer to the Darcy advection field
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_gwf_darcy_flux_update_on_boundary(cs_real_t            t_eval,
-                                     const cs_equation_t *eq,
-                                     cs_adv_field_t      *adv)
+cs_gwf_darcy_flux_update_on_boundary(const cs_equation_t       *eq,
+                                     const cs_equation_param_t *eqp,
+                                     const cs_property_t       *diff_pty,
+                                     const cs_real_t           *dof_vals,
+                                     const cs_real_t           *cell_vals,
+                                     cs_real_t                  t_eval,
+                                     cs_adv_field_t            *adv)
 {
   if (adv->n_bdy_flux_defs > 1 ||
       adv->bdy_flux_defs[0]->type != CS_XDEF_BY_ARRAY)
@@ -560,17 +569,27 @@ cs_gwf_darcy_flux_update_on_boundary(cs_real_t            t_eval,
               " %s: Invalid definition of the advection field at the boundary",
               __func__);
 
+  // Retrieve the array to update
+
   cs_xdef_t *def = adv->bdy_flux_defs[0];
   cs_xdef_array_context_t *ctx
     = static_cast<cs_xdef_array_context_t *>(def->context);
   cs_real_t *nflx_val = ctx->values;
 
-  if (cs_flag_test(cx->value_location, cs_flag_dual_closure_byf) == false)
+  if (cs_flag_test(ctx->value_location, cs_flag_dual_closure_byf) == false)
     bft_error(__FILE__, __LINE__, 0,
               " %s: Invalid definition of the advection field at the boundary",
               __func__);
 
-  cs_equation_compute_boundary_diff_flux(t_eval, eq, nflx_val);
+  // Compute the new flux across the boundary faces
+
+  cs_equation_compute_boundary_diff_flux(eq,
+                                         eqp,
+                                         diff_pty,
+                                         dof_vals,
+                                         cell_vals,
+                                         t_eval,
+                                         nflx_val);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -593,22 +612,19 @@ cs_gwf_darcy_flux_update_on_boundary_wo_eq(const cs_cdo_connect_t    *connect,
                                            cs_real_t                 *cell_vel,
                                            cs_adv_field_t            *adv)
 {
-  if (adv->n_bdy_flux_defs > 1
-      || adv->bdy_flux_defs[0]->type != CS_XDEF_BY_ARRAY)
-    bft_error(__FILE__,
-              __LINE__,
-              0,
+  if (adv->n_bdy_flux_defs > 1 ||
+      adv->bdy_flux_defs[0]->type != CS_XDEF_BY_ARRAY)
+    bft_error(__FILE__, __LINE__, 0,
               " %s: Invalid definition of the advection field at the boundary",
               __func__);
 
-  cs_xdef_t               *def      = adv->bdy_flux_defs[0];
-  cs_xdef_array_context_t *cx       = (cs_xdef_array_context_t *)def->context;
-  cs_real_t               *nflx_val = cx->values;
+  cs_xdef_t *def = adv->bdy_flux_defs[0];
+  cs_xdef_array_context_t *ctx
+    = static_cast<cs_xdef_array_context_t *>(def->context);
+  cs_real_t *nflx_val = ctx->values;
 
-  if (cs_flag_test(cx->value_location, cs_flag_dual_closure_byf) == false)
-    bft_error(__FILE__,
-              __LINE__,
-              0,
+  if (cs_flag_test(ctx->value_location, cs_flag_dual_closure_byf) == false)
+    bft_error(__FILE__, __LINE__, 0,
               " %s: Invalid definition of the advection field at the boundary",
               __func__);
 
@@ -616,7 +632,7 @@ cs_gwf_darcy_flux_update_on_boundary_wo_eq(const cs_cdo_connect_t    *connect,
   const cs_adjacency_t *f2c      = connect->f2c;
   const cs_lnum_t      *bf2c_ids = f2c->ids + f2c->idx[cdoq->n_i_faces];
 
-#pragma omp parallel for if (cdoq->n_b_faces > CS_THR_MIN)
+# pragma omp parallel for if (cdoq->n_b_faces > CS_THR_MIN)
   for (cs_lnum_t bf_id = 0; bf_id < cdoq->n_b_faces; bf_id++) {
 
     cs_lnum_t *bf2v_idx = bf2v->idx + bf_id;
