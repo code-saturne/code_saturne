@@ -3366,7 +3366,8 @@ cs_gui_linear_solvers(void)
          (otherwise, we would need to pass at least this partial
          information to cs_sles_default) */
 
-      if (sles_it_type >= CS_SLES_N_IT_TYPES) {
+      if (   sles_it_type >= CS_SLES_N_IT_TYPES
+          && multigrid == false) {
         if (   precond_choice != NULL
             && !cs_gui_strcmp(precond_choice, "automatic")) {
 
