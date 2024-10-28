@@ -170,9 +170,9 @@ _preprocess_log_performance(double  wt)
                   "  Number of boundary faces:            %llu\n"
                   "  Number of vertices:                  %llu\n"),
                 (unsigned long long)m->n_g_cells,
-                (unsigned long long)m->n_i_faces,
-                (unsigned long long)m->n_b_faces,
-                (unsigned long long)m->n_vertices);
+                (unsigned long long)m->n_g_i_faces,
+                (unsigned long long)m->n_g_b_faces,
+                (unsigned long long)m->n_g_vertices);
 
   cs_log_printf(CS_LOG_PERFORMANCE, "\n");
   cs_log_separator(CS_LOG_PERFORMANCE);
