@@ -610,9 +610,13 @@ cs_sles_hypre_setup(void               *context,
 
   sd->coeffs = cs_matrix_hypre_get_coeffs(a);
 
+#if defined(HAVE_MPI)
   MPI_Comm comm = cs_glob_mpi_comm;
   if (comm == MPI_COMM_NULL)
     comm = MPI_COMM_WORLD;
+#else
+    MPI_Comm comm = 0;
+#endif
 
   bool have_set_pc = true;
   HYPRE_PtrToParSolverFcn solve_ftn[2] = {nullptr, nullptr};

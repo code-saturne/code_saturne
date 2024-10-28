@@ -668,9 +668,13 @@ _assembler_values_init(void        *matrix_p,
     CS_MALLOC_HD(coeffs->col_buf, coeffs->max_chunk_size, HYPRE_BigInt, amode);
     CS_MALLOC_HD(coeffs->val_buf, coeffs->max_chunk_size, HYPRE_Real, amode);
 
+#if defined(HAVE_MPI)
     MPI_Comm comm = cs_glob_mpi_comm;
     if (comm == MPI_COMM_NULL)
       comm = MPI_COMM_WORLD;
+#else
+    MPI_Comm comm = 0;
+#endif
 
     const cs_gnum_t *l_range = cs_matrix_assembler_get_l_range(ma);
 
@@ -1056,9 +1060,13 @@ _assembler_values_end(void  *matrix_p)
     CS_FREE_HD(coeffs->row_buf);
     CS_FREE_HD(coeffs->col_buf);
 
+#if defined(HAVE_MPI)
     MPI_Comm comm = cs_glob_mpi_comm;
     if (comm == MPI_COMM_NULL)
       comm = MPI_COMM_WORLD;
+#else
+    MPI_Comm comm = 0;
+#endif
 
     /* Create associated vectors here also to avoid repeated creation
        (and possible overhead) where used */
@@ -1149,9 +1157,13 @@ _set_coeffs_ij_db(cs_matrix_t *matrix,
   const cs_gnum_t *g_id = cs_matrix_get_block_row_g_id(matrix);
   const bool have_diag = (xa != nullptr) ? true : false;
 
+#if defined(HAVE_MPI)
   MPI_Comm comm = cs_glob_mpi_comm;
   if (comm == MPI_COMM_NULL)
     comm = MPI_COMM_WORLD;
+#else
+    MPI_Comm comm = 0;
+#endif
 
   assert(n_rows > 0);
 
@@ -1332,9 +1344,13 @@ _set_coeffs_ij_b(cs_matrix_t *matrix,
   const cs_gnum_t *g_id = cs_matrix_get_block_row_g_id(matrix);
   const bool have_diag = (xa != nullptr) ? true : false;
 
+#if defined(HAVE_MPI)
   MPI_Comm comm = cs_glob_mpi_comm;
   if (comm == MPI_COMM_NULL)
     comm = MPI_COMM_WORLD;
+#else
+    MPI_Comm comm = 0;
+#endif
 
   assert(n_rows > 0);
 
@@ -1527,9 +1543,13 @@ _set_coeffs_ij(cs_matrix_t *matrix,
   const cs_gnum_t *g_id = cs_matrix_get_block_row_g_id(matrix);
   const bool have_diag = (xa != nullptr) ? true : false;
 
+#if defined(HAVE_MPI)
   MPI_Comm comm = cs_glob_mpi_comm;
   if (comm == MPI_COMM_NULL)
     comm = MPI_COMM_WORLD;
+#else
+    MPI_Comm comm = 0;
+#endif
 
   assert(n_rows > 0);
 
