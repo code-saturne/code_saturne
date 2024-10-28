@@ -1792,7 +1792,6 @@ cs_turbomachinery_resize_cell_fields(void)
         BFT_REALLOC(f->grad, _n_cells*f->dim*3, cs_real_t);
 
         if (halo != NULL) {
-
           cs_halo_sync_var_strided(halo,
                                    CS_HALO_EXTENDED,
                                    f->grad,
@@ -1803,10 +1802,14 @@ cs_turbomachinery_resize_cell_fields(void)
                                         CS_HALO_EXTENDED,
                                         f->grad,
                                         3);
-          else
+          else if (f->dim == 3)
             cs_halo_perio_sync_var_tens(halo,
                                         CS_HALO_EXTENDED,
                                         f->grad);
+          else if (f->dim == 6)
+            cs_halo_perio_sync_var_sym_tens_grad(halo,
+                                                 CS_HALO_EXTENDED,
+                                                 f->grad);
         }
       }
     }

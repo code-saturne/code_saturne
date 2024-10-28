@@ -3372,7 +3372,8 @@ _cs_post_output_fields(cs_post_mesh_t        *post_mesh,
         interpolate_func = cs_interpolate_from_location_p1;
         if (_field_sync != NULL) {
           if (_field_sync[f->id] == 0) {
-            cs_field_synchronize(f, CS_HALO_EXTENDED);
+            if (f->dim == 1 || f->dim == 3 || f->dim == 6 || f->dim == 9)
+              cs_field_synchronize(f, CS_HALO_EXTENDED);
             _field_sync[f->id] = 1;
           }
         }

@@ -56,6 +56,7 @@
 #include "cs_dilatable_scalar_diff_st.h"
 #include "cs_fan.h"
 #include "cs_field_default.h"
+#include "cs_field_operator.h"
 #include "cs_field_pointer.h"
 #include "cs_head_losses.h"
 #include "cs_lagr.h"
@@ -884,25 +885,14 @@ cs_solve_all(int  itrale)
   /* Halo synchronization (only variables require this) */
   if (m->halo != nullptr) {
     for (int f_id = 0; f_id < n_fields; f_id++) {
-      const cs_field_t *f = cs_field_by_id(f_id);
+      cs_field_t *f = cs_field_by_id(f_id);
       if (!(f->type & CS_FIELD_VARIABLE))
         continue;
 
       if ((f->type & CS_FIELD_CDO))
         continue;
 
-      cs_halo_sync_var_strided(m->halo, CS_HALO_STANDARD, f->val, f->dim);
-      if (m->have_rotation_perio) {
-        if (f->dim == 3)
-          cs_halo_perio_sync_var_vect(m->halo,  CS_HALO_STANDARD, f->val, 3);
-        else if (f->dim == 6)
-          cs_halo_perio_sync_var_vect(m->halo,  CS_HALO_STANDARD, f->val, 6);
-        else if (f->dim > 1)
-          bft_error(__FILE__, __LINE__, 0,
-                    _("field %s of dimension %d\n"
-                      "cannot handle rotational periodicity\n"),
-                    f->name, f->dim);
-      }
+      cs_field_synchronize(f, CS_HALO_STANDARD);
     }
 
     static bool first_pass = true;

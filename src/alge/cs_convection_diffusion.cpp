@@ -6578,9 +6578,20 @@ _convection_diffusion_unsteady_strided
      or current values are provided */
 
   if (pvar != nullptr && halo != nullptr) {
-    cs_halo_sync_var_strided(halo, halo_type, (cs_real_t *)pvar, stride);
-    if (cs_glob_mesh->n_init_perio > 0)
-      cs_halo_perio_sync_var_vect(halo, halo_type, (cs_real_t *)pvar, stride);
+#if defined(HAVE_ACCEL)
+    if (ctx.use_gpu())
+      cs_halo_sync_d(m->halo, halo_type, CS_REAL_TYPE, stride,
+                     (cs_real_t *)pvar);
+    else
+#endif
+      cs_halo_sync_var_strided(halo, halo_type, (cs_real_t *)pvar, stride);
+
+    if (cs_glob_mesh->have_rotation_perio) {
+      if (stride == 3)
+        cs_halo_perio_sync_var_vect(halo, halo_type, (cs_real_t *)pvar, stride);
+      else if (stride == 6)
+        cs_halo_perio_sync_var_sym_tens(halo, halo_type, (cs_real_t *)pvar);
+    }
   }
   if (pvara == nullptr)
     pvara = (const var_t *)pvar;
