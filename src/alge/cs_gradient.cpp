@@ -159,12 +159,12 @@ typedef struct _cs_gradient_info_t {
  *  Global variables
  *============================================================================*/
 
-static int cs_glob_gradient_n_systems = 0;      /* Current number of systems */
-static int cs_glob_gradient_n_max_systems = 0;  /* Max. number of systems for
-                                                   cs_glob_gradient_systems. */
+static int _gradient_n_systems = 0;      /* Current number of systems */
+static int _gradient_n_max_systems = 0;  /* Max. number of systems for
+                                            _gradient_systems. */
 
 /* System info array */
-static cs_gradient_info_t **cs_glob_gradient_systems = nullptr;
+static cs_gradient_info_t **_gradient_systems = nullptr;
 
 /* Short names for gradient computation types */
 
@@ -485,13 +485,13 @@ _find_or_add_system(const char          *name,
   /* Use binary search to find system */
 
   start_id = 0;
-  end_id = cs_glob_gradient_n_systems - 1;
+  end_id = _gradient_n_systems - 1;
   mid_id = start_id + ((end_id -start_id) / 2);
 
   while (start_id <= end_id) {
-    cmp_ret = strcmp((cs_glob_gradient_systems[mid_id])->name, name);
+    cmp_ret = strcmp((_gradient_systems[mid_id])->name, name);
     if (cmp_ret == 0)
-      cmp_ret = (cs_glob_gradient_systems[mid_id])->type - type;
+      cmp_ret = (_gradient_systems[mid_id])->type - type;
     if (cmp_ret < 0)
       start_id = mid_id + 1;
     else if (cmp_ret > 0)
@@ -504,33 +504,32 @@ _find_or_add_system(const char          *name,
   /* If found, return */
 
   if (cmp_ret == 0)
-    return cs_glob_gradient_systems[mid_id];
+    return _gradient_systems[mid_id];
 
   /* Reallocate global array if necessary */
 
-  if (cs_glob_gradient_n_systems >= cs_glob_gradient_n_max_systems) {
+  if (_gradient_n_systems >= _gradient_n_max_systems) {
 
-    if (cs_glob_gradient_n_max_systems == 0)
-      cs_glob_gradient_n_max_systems = 10;
+    if (_gradient_n_max_systems == 0)
+      _gradient_n_max_systems = 10;
     else
-      cs_glob_gradient_n_max_systems *= 2;
+      _gradient_n_max_systems *= 2;
 
-    BFT_REALLOC(cs_glob_gradient_systems,
-                cs_glob_gradient_n_max_systems,
+    BFT_REALLOC(_gradient_systems,
+                _gradient_n_max_systems,
                 cs_gradient_info_t *);
 
   }
 
   /* Insert in sorted list */
 
-  for (ii = cs_glob_gradient_n_systems; ii > mid_id; ii--)
-    cs_glob_gradient_systems[ii] = cs_glob_gradient_systems[ii - 1];
+  for (ii = _gradient_n_systems; ii > mid_id; ii--)
+    _gradient_systems[ii] = _gradient_systems[ii - 1];
 
-  cs_glob_gradient_systems[mid_id] = _gradient_info_create(name,
-                                                           type);
-  cs_glob_gradient_n_systems += 1;
+  _gradient_systems[mid_id] = _gradient_info_create(name, type);
+  _gradient_n_systems += 1;
 
-  return cs_glob_gradient_systems[mid_id];
+  return _gradient_systems[mid_id];
 }
 
 /*----------------------------------------------------------------------------
@@ -9903,18 +9902,18 @@ cs_gradient_finalize(void)
 
   /* Free system info */
 
-  for (int ii = 0; ii < cs_glob_gradient_n_systems; ii++) {
-    _gradient_info_dump(cs_glob_gradient_systems[ii]);
-    _gradient_info_destroy(&(cs_glob_gradient_systems[ii]));
+  for (int ii = 0; ii < _gradient_n_systems; ii++) {
+    _gradient_info_dump(_gradient_systems[ii]);
+    _gradient_info_destroy(&(_gradient_systems[ii]));
   }
 
   cs_log_printf(CS_LOG_PERFORMANCE, "\n");
   cs_log_separator(CS_LOG_PERFORMANCE);
 
-  BFT_FREE(cs_glob_gradient_systems);
+  BFT_FREE(_gradient_systems);
 
-  cs_glob_gradient_n_systems = 0;
-  cs_glob_gradient_n_max_systems = 0;
+  _gradient_n_systems = 0;
+  _gradient_n_max_systems = 0;
 }
 
 /*----------------------------------------------------------------------------*/
