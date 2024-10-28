@@ -115,20 +115,14 @@ static const cs_lnum_t _t2v[3][3] = {{0, 3, 5},
  * \param[in]   tempct  thermal characteristic time
  * \param[out]  tsfext  external forces
  * \param[in]   force_p forces per mass unit on particles (m/s^2)
- * \param[in]   cpgd1   devolatization term 1 for heterogeneous coal
- * \param[in]   cpgd2   devolatization term 2 for heterogeneous coal
- * \param[in]   cpght   combustion term for heterogeneous coal
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_lagr_coupling(const cs_real_t    taup[],
-                 const cs_real_t    tempct[],
-                 cs_real_t          tsfext[],
-                 const cs_real_3_t *force_p,
-                 const cs_real_t    cpgd1[],
-                 const cs_real_t    cpgd2[],
-                 const cs_real_t    cpght[])
+cs_lagr_coupling(const cs_real_t     taup[],
+                 const cs_real_t     tempct[],
+                 cs_real_t           tsfext[],
+                 const cs_real_3_t  *force_p)
 {
   /*Note: t_* stands for temporary array, used in case of time moments */
   cs_real_t *st_p = nullptr, *t_st_p = nullptr;

@@ -2251,7 +2251,7 @@ cs_lagr_solve_time_step(const int         itypfb[],
 
       if (   cs_glob_lagr_time_scheme->iilagr == CS_LAGR_TWOWAY_COUPLING
           && cs_glob_lagr_time_step->nor == cs_glob_lagr_time_scheme->t_order)
-        cs_lagr_coupling(taup, tempct, tsfext, force_p, cpgd1, cpgd2, cpght);
+        cs_lagr_coupling(taup, tempct, tsfext, force_p);
 
       /* Deallocate arrays whose size is based on p_set->n_particles
          (which may change next) */
