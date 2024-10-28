@@ -482,30 +482,6 @@ cs_math_3_square_norm(const cs_real_t v[3])
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Normalize a vector of 3 real values.
- *
- * \deprecated: use \ref cs_math_3_normalize instead.
- *
- * \param[in]     vin    vector
- * \param[out]    vout   normalized vector
- */
-/*----------------------------------------------------------------------------*/
-
-static inline void
-cs_math_3_normalise(const cs_real_t  vin[3],
-                    cs_real_t        vout[3])
-{
-  cs_real_t norm = cs_math_3_norm(vin);
-
-  cs_real_t inv_norm = ((norm > cs_math_zero_threshold) ?  1. / norm : 0);
-
-  vout[0] = inv_norm * vin[0];
-  vout[1] = inv_norm * vin[1];
-  vout[2] = inv_norm * vin[2];
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief  Normalise a vector of 3 real values.
  *
  * To normalize in-place, \p vin and \p vout may point to the same array.
