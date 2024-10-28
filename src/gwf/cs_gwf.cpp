@@ -539,27 +539,6 @@ cs_gwf_set_two_phase_numerical_options(cs_gwf_tpf_approx_type_t   approx,
     }
     break;
 
-  case CS_GWF_TPF_SOLVER_PLPG_SEGREGATED:
-    mc->use_coupled_solver = false;
-    mc->use_diffusion_view_for_darcy = true; /* No other choice */
-    mc->use_incremental_solver = true;       /* No other choice */
-
-    if (!use_diffusion_view_for_darcy) {
-      cs_base_warn(__FILE__, __LINE__);
-      cs_log_printf(CS_LOG_WARNINGS,
-                    "%s: Change an invalid user setting:\n"
-                    "    Use a diffusion viewpoint for the Darcy term.\n",
-                    __func__);
-    }
-
-    if (!use_incremental_solver) {
-      cs_base_warn(__FILE__, __LINE__);
-      cs_log_printf(CS_LOG_WARNINGS,
-                    "%s: Change an invalid user setting:\n"
-                    "    Force an incremental resolution.\n", __func__);
-    }
-    break;
-
   default:
     bft_error(__FILE__, __LINE__, 0, "%s: Invalid setting", __func__);
 

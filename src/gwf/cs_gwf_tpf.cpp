@@ -527,86 +527,6 @@ _rhogl_h_cell_upw(cs_lnum_t                    c_id,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Add a source term relying on the stiffness matrix of the conservation
-          equation for the hydrogen when a segregated solver is used. Case of a
-          vertex-based scheme.
- *
- *        Generic function prototype for a hook during the cellwise building
- *        of the linear system.
- *        Fit the cs_equation_build_hook_t prototype. This function may be
- *        called by different OpenMP threads
- *
- * \param[in]      eqp         pointer to a cs_equation_param_t structure
- * \param[in]      eqb         pointer to a cs_equation_builder_t structure
- * \param[in]      eqc         context to cast for this discretization
- * \param[in]      cm          pointer to a cellwise view of the mesh
- * \param[in, out] context     pointer to a context structure
- * \param[in, out] mass_hodge  pointer to a cs_hodge_t structure (mass matrix)
- * \param[in, out] diff_hodge  pointer to a cs_hodge_t structure (diffusion)
- * \param[in, out] csys        pointer to a cellwise view of the system
- * \param[in, out] cb          pointer to a cellwise builder
- */
-/*----------------------------------------------------------------------------*/
-
-static void
-_build_h_eq_diff_st(const cs_equation_param_t     *eqp,
-                    const cs_equation_builder_t   *eqb,
-                    const void                    *eq_context,
-                    const cs_cell_mesh_t          *cm,
-                    void                          *context,
-                    cs_hodge_t                    *mass_hodge,
-                    cs_hodge_t                    *diff_hodge,
-                    cs_cell_sys_t                 *csys,
-                    cs_cell_builder_t             *cb)
-{
-  CS_NO_WARN_IF_UNUSED(eqp);
-  CS_NO_WARN_IF_UNUSED(eqb);
-  CS_NO_WARN_IF_UNUSED(mass_hodge);
-
-  const cs_cdovb_scaleq_t  *eqc = (const cs_cdovb_scaleq_t *)eq_context;
-  assert(csys->n_dofs == cm->n_vc);
-
-  cs_gwf_tpf_t *tpf = (cs_gwf_tpf_t *)context;
-
-  /* Modify the property data associated to the hodge operator related to the
-     diffusion term */
-
-  cs_property_data_t  *saved = diff_hodge->pty_data;
-  cs_property_data_t  tmp = cs_property_data_define(saved->need_tensor,
-                                                    saved->need_eigen,
-                                                    tpf->diff_hl_pty);
-
-  diff_hodge->pty_data = &tmp;
-
-  /* Diffusion part of the source term to add */
-
-  cs_hodge_evaluate_property_cw(cm, cb->t_pty_eval, cb->cell_flag, diff_hodge);
-
-  /* Define the local stiffness matrix: local matrix owned by the cellwise
-     builder (store in cb->loc) */
-
-  eqc->get_stiffness_matrix(cm, diff_hodge, cb);
-
-  /* Retrieve the values pl^{k,n+1} */
-
-  double  *vec = cb->values, *matvec = cb->values + cm->n_vc;
-  for (int v = 0; v < cm->n_vc; v++)
-    vec[v] = tpf->l_pressure->val[cm->v_ids[v]];
-
-  cs_sdm_square_matvec(cb->loc, vec, matvec);
-
-  /* Update the rhs */
-
-  for (int v = 0; v < cm->n_vc; v++)
-    csys->rhs[v] -= matvec[v];
-
-  /* Set the diffusion property data back to the initial pointer */
-
-  diff_hodge->pty_data = saved;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief Update the advection field/arrays related to the Darcy flux in the
  *        liquid phase when a two-phase flow model is used.
  *        This relies on the case of CDO-Vb schemes and a Darcy flux defined
@@ -1105,33 +1025,6 @@ _update_pressures(const cs_cdo_connect_t      *connect,
         cs_array_real_copy(n_vertices, c_pr, tpf->c_pressure->val_pre);
         cs_array_real_copy(n_vertices, l_pr, tpf->l_pressure->val_pre);
         cs_field_current_to_previous(tpf->g_pressure);
-      }
-    }
-    break;
-
-  case CS_GWF_TPF_SOLVER_PLPG_SEGREGATED:
-    {
-      /* Main pressure variables: liquid and gas pressures */
-
-      const cs_real_t  *l_pr = tpf->l_pressure->val;
-      const cs_real_t  *g_pr = tpf->g_pressure->val;
-      cs_real_t  *c_pr = tpf->c_pressure->val;
-
-      if (cur2prev && !cs_flag_test(update_flag, CS_FLAG_INITIALIZATION))
-        cs_field_current_to_previous(tpf->c_pressure);
-
-      /* Compute the values of the capillarity pressure at vertices */
-
-#     pragma omp parallel for if (n_vertices > CS_THR_MIN)
-      for (cs_lnum_t i = 0; i < n_vertices; i++)
-        c_pr[i] = g_pr[i] - l_pr[i];
-
-      /* Avoid to add an unsteady contribution at the first iteration  */
-
-      if (update_flag & CS_FLAG_INITIALIZATION) {
-        cs_array_real_copy(n_vertices, c_pr, tpf->c_pressure->val_pre);
-        cs_array_real_copy(n_vertices, g_pr, tpf->g_pressure->val_pre);
-        cs_field_current_to_previous(tpf->c_pressure);
       }
     }
     break;
@@ -1729,89 +1622,6 @@ _init_non_linear_algo(const cs_field_t     *pa,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Compute the new increment on the capillarity pressure
- *
- * \param[in]      mesh     pointer to a cs_mesh_t structure
- * \param[in]      w_eq     pointer on the water equation structure
- * \param[in]      h_eq     pointer on the hydrogen equation structure
- * \param[in, out] dpc_kp1  values of the increment on the capillarity pressure
- */
-/*----------------------------------------------------------------------------*/
-
-static void
-_get_capillarity_pressure_increment(const cs_mesh_t       *mesh,
-                                    const cs_equation_t   *w_eq,
-                                    const cs_equation_t   *h_eq,
-                                    cs_real_t             *dpc_kp1)
-{
-  const cs_equation_param_t  *w_eqp = cs_equation_get_param(w_eq);
-  const cs_equation_param_t  *h_eqp = cs_equation_get_param(h_eq);
-  const cs_equation_builder_t  *wl_eqb = cs_equation_get_builder(w_eq);
-  const cs_equation_builder_t  *hg_eqb = cs_equation_get_builder(h_eq);
-  const cs_real_t  *dpl_kp1 = wl_eqb->increment;
-  const cs_real_t  *dpg_kp1 = hg_eqb->increment;
-
-  if (w_eqp->incremental_relax_factor < 1 ||
-      h_eqp->incremental_relax_factor < 1) {
-
-    assert(w_eqp->incremental_relax_factor > 0);
-    assert(h_eqp->incremental_relax_factor > 0);
-
-    for (cs_lnum_t i = 0; i < mesh->n_vertices; i++)
-      dpc_kp1[i] = h_eqp->incremental_relax_factor*dpg_kp1[i]
-                 - w_eqp->incremental_relax_factor*dpl_kp1[i];
-
-  }
-  else {
-
-    for (cs_lnum_t i = 0; i < mesh->n_vertices; i++)
-      dpc_kp1[i] = dpg_kp1[i] - dpl_kp1[i];
-
-  }
-
-#if defined(DEBUG) && !defined(NDEBUG) && CS_GWF_DBG > 0
-  cs_log_printf(CS_LOG_DEFAULT, "%s: dpl=% 6.4e; dpg=% 6.4e\n", __func__,
-                sqrt(cs_cdo_blas_square_norm_pvsp(dpl_kp1)),
-                sqrt(cs_cdo_blas_square_norm_pvsp(dpg_kp1)));
-#endif
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Check the convergence of the non-linear algorithm in case of TPF
- *        model. Work only with the capillarity pressure at vertices
- *
- * \param[in]      dpc_iter    increment values for the capillarity pressure
- * \param[in, out] algo        pointer to a cs_iter_algo_t structure
- *
- * \return the convergence state
- */
-/*----------------------------------------------------------------------------*/
-
-static cs_sles_convergence_state_t
-_check_cvg_nl_dpc(const cs_real_t          *dpc_iter,
-                  cs_iter_algo_t           *algo)
-{
-  assert(algo != nullptr);
-
-  double dpc_norm = cs_cdo_blas_square_norm_pvsp(dpc_iter);
-
-  cs_iter_algo_update_residual(algo, sqrt(dpc_norm));
-
-  /* Update the convergence members */
-
-  cs_sles_convergence_state_t
-    cvg_status = cs_iter_algo_update_cvg_tol_auto(algo);
-
-  /* Monitoring */
-
-  cs_iter_algo_log_cvg(algo, "# GWF.TPF");
-
-  return cvg_status;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief Check the convergence of the non-linear algorithm in case of TPF
  *        model
  *
@@ -2107,184 +1917,6 @@ _compute_coupled_anderson(const cs_mesh_t              *mesh,
   BFT_FREE(pa_k);
   BFT_FREE(pa_kp1);
   cs_iter_algo_release_anderson_arrays((cs_iter_algo_aac_t *)algo->context);
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Compute the new (unsteady) state for the groundwater flows module.
- *        Case of (miscible or immiscible) two-phase flows in porous media.
- *
- * \param[in]      mesh         pointer to a cs_mesh_t structure
- * \param[in]      time_step    pointer to a cs_time_step_t structure
- * \param[in]      connect      pointer to a cs_cdo_connect_t structure
- * \param[in]      cdoq         pointer to a cs_cdo_quantities_t structure
- * \param[in]      option_flag  calculation option related to the GWF module
- * \param[in, out] tpf          pointer to the casted model context
- */
-/*----------------------------------------------------------------------------*/
-
-static void
-_compute_segregated(const cs_mesh_t              *mesh,
-                    const cs_time_step_t         *time_step,
-                    const cs_cdo_connect_t       *connect,
-                    const cs_cdo_quantities_t    *cdoq,
-                    cs_flag_t                     option_flag,
-                    cs_gwf_tpf_t                 *tpf)
-{
-  assert(tpf->use_incremental_solver);
-
-  /* Copy the state for time t^n into field->val_pre */
-
-  cs_field_current_to_previous(tpf->g_pressure);
-  cs_field_current_to_previous(tpf->l_pressure);
-
-  /* Since the cur2prev operation has been done, avoid to do it again */
-
-  bool cur2prev = false;        /* Done just above */
-  cs_flag_t  update_flag = 0;   /* No current to previous operation */
-
-  /* Initialize the non-linear algorithm */
-
-  cs_iter_algo_t  *algo = tpf->nl_algo;
-  assert(algo != nullptr);
-
-  cs_iter_algo_reset(algo);
-
-  double  normalization = cs_cdo_blas_square_norm_pvsp(tpf->c_pressure->val);
-
-  if (normalization < cs_math_zero_threshold)
-    normalization = 1.0;
-  else
-    normalization = sqrt(normalization);
-
-  cs_iter_algo_set_normalization(algo, normalization);
-
-  /* First solve step:
-   * 1. Solve the equation associated to Pl --> Pl^(n+1,1) knowing
-   *    Pl^(n+1,0) = Pl^n, Pg^n and thus Pc^n and Sl^n
-   *    --> Sl^(n+1,0) - Sl^n = 0 --> no source term
-   * 2. Solve the equation associated to Pg --> Pg^(n+1,1) knowing
-   *
-   */
-
-  cs_equation_solve(cur2prev, mesh, tpf->w_eq);
-
-  cs_equation_solve(cur2prev, mesh, tpf->h_eq);
-
-  /* Update the variables related to the groundwater flow system */
-
-  cs_gwf_tpf_update(mesh, connect, cdoq, time_step,
-                    CS_FLAG_CURRENT_TO_PREVIOUS, /* Force this operation */
-                    option_flag,
-                    tpf);
-
-#if defined(DEBUG) && !defined(NDEBUG) && CS_GWF_DBG > 1
-  char  label[32];
-  int  n_iter = cs_iter_algo_get_n_iter(algo);
-
-  sprintf(label, "Pl_iter%02d", n_iter);
-  cs_post_write_vertex_var(CS_POST_MESH_VOLUME,
-                           CS_POST_WRITER_DEFAULT,
-                           label,
-                           1,
-                           false,
-                           false,
-                           CS_POST_TYPE_cs_real_t,
-                           cs_field_by_name("liquid_pressure")->val,
-                           time_step);
-
-  sprintf(label, "Pg_iter%02d", n_iter);
-  cs_post_write_vertex_var(CS_POST_MESH_VOLUME,
-                           CS_POST_WRITER_DEFAULT,
-                           label,
-                           1,
-                           false,
-                           false,
-                           CS_POST_TYPE_cs_real_t,
-                           cs_field_by_name("gas_pressure")->val,
-                           time_step);
-
-  sprintf(label, "Pc_iter%02d", n_iter);
-  cs_post_write_vertex_var(CS_POST_MESH_VOLUME,
-                           CS_POST_WRITER_DEFAULT,
-                           label,
-                           1,
-                           false,
-                           false,
-                           CS_POST_TYPE_cs_real_t,
-                           cs_field_by_name("capillarity_pressure")->val,
-                           time_step);
-#endif
-
-  cs_real_t *dpc_kp1 = nullptr;
-  BFT_MALLOC(dpc_kp1, mesh->n_vertices, cs_real_t);
-
-  _get_capillarity_pressure_increment(mesh, tpf->w_eq, tpf->h_eq, dpc_kp1);
-
-  while(_check_cvg_nl_dpc(dpc_kp1, algo) == CS_SLES_ITERATING) {
-
-    /* Solve step */
-
-    cs_equation_solve(cur2prev, mesh, tpf->w_eq);
-
-    cs_equation_solve(cur2prev, mesh, tpf->h_eq);
-
-    /* Update the variables related to the groundwater flow system */
-
-    cs_gwf_tpf_update(mesh, connect, cdoq, time_step,
-                      update_flag,
-                      option_flag,
-                      tpf);
-
-#if defined(DEBUG) && !defined(NDEBUG) && CS_GWF_DBG > 1
-    n_iter = cs_iter_algo_get_n_iter(algo);
-
-    sprintf(label, "Pl_iter%02d", n_iter);
-    cs_post_write_vertex_var(CS_POST_MESH_VOLUME,
-                             CS_POST_WRITER_DEFAULT,
-                             label,
-                             1,
-                             false,
-                             false,
-                             CS_POST_TYPE_cs_real_t,
-                             cs_field_by_name("liquid_pressure")->val,
-                             time_step);
-
-    sprintf(label, "Pg_iter%02d", n_iter);
-    cs_post_write_vertex_var(CS_POST_MESH_VOLUME,
-                             CS_POST_WRITER_DEFAULT,
-                             label,
-                             1,
-                             false,
-                             false,
-                             CS_POST_TYPE_cs_real_t,
-                             cs_field_by_name("gas_pressure")->val,
-                             time_step);
-
-    sprintf(label, "Pc_iter%02d", n_iter);
-    cs_post_write_vertex_var(CS_POST_MESH_VOLUME,
-                             CS_POST_WRITER_DEFAULT,
-                             label,
-                             1,
-                             false,
-                             false,
-                             CS_POST_TYPE_cs_real_t,
-                             cs_field_by_name("capillarity_pressure")->val,
-                             time_step);
-#endif
-
-    _get_capillarity_pressure_increment(mesh, tpf->w_eq, tpf->h_eq, dpc_kp1);
-
-  } /* while not converged */
-
-  /* If something wrong happens, write a message in the listing */
-
-  cs_iter_algo_check_warning(__func__,
-                             "Segregated incremental TPF solver",
-                             cs_param_get_nl_algo_label(tpf->nl_algo_type),
-                             algo);
-
-  BFT_FREE(dpc_kp1);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -2636,154 +2268,6 @@ _finalize_setup_plpc_coupled_solver(const cs_cdo_connect_t *connect,
   _add_pty_array(n_cells, cs_flag_primal_cell, tpf->diff_hl_pty);
 }
 
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Initialize the model context
- *
- *        Case of a two-phase flows model in porous media using a segregated
- *        solver and the couple (Pl, Pg) as main unknowns
- *
- * \param[in, out] tpf         pointer to the model context structure
- * \param[in, out] perm_type   type of permeability to handle
- */
-/*----------------------------------------------------------------------------*/
-
-static void
-_init_plpg_segregated_solver(cs_gwf_tpf_t            *tpf,
-                             cs_property_type_t       perm_type)
-{
- /* Equations
-  * =========
-  *
-  * Notations are the following :
-  * - Two phases: Liquid phase denoted by "l" and gaseous phase denoted by "g"
-  * - indice "c" refers to the capillarity pressure
-  * - Two components: water denoted by "w" and a gaseous component (let's say
-  *   hydrogen) denoted by "h". The gaseous component is present in the two
-  *   phases whereas water is only considered in the liquid phase.
-  */
-
-  tpf->w_eq = cs_equation_add("w_conservation",   /* equation name */
-                              "liquid_pressure",  /* variable name */
-                              CS_EQUATION_TYPE_GROUNDWATER,
-                              1,
-                              CS_BC_SYMMETRY);
-
-  tpf->h_eq = cs_equation_add("h_conservation",  /* equation name */
-                              "gas_pressure",    /* variable name */
-                              CS_EQUATION_TYPE_GROUNDWATER,
-                              1,
-                              CS_BC_SYMMETRY);
-
-  cs_equation_param_t  *w_eqp = cs_equation_get_param(tpf->w_eq);
-  cs_equation_param_t  *h_eqp = cs_equation_get_param(tpf->h_eq);
-
-  /* Properties
-   * ========== */
-
-  /* Conservation of the mass of water
-   * --------------------------------- */
-
-  /* used both for the unsteady term and the computation of the source term.
-   * \partial_t Pc = \partial_t Pg - \partial_t Pl */
-
-  tpf->time_wc_pty = cs_property_add("time_wl_pty", CS_PROPERTY_ISO);
-  cs_equation_add_time(h_eqp, tpf->time_wc_pty);
-
-  tpf->diff_wl_pty = cs_property_add("diff_wl_pty", perm_type);
-  cs_equation_add_diffusion(w_eqp, tpf->diff_wl_pty);
-
-  /* Conservation of the mass of component mainly present in the gas phase
-   * --------------------------------------------------------------------- */
-
-  tpf->time_hc_pty = cs_property_add("time_hc_pty", CS_PROPERTY_ISO);
-  cs_equation_add_time(h_eqp, tpf->time_hc_pty);
-
-  tpf->diff_hc_pty = cs_property_add("diff_hc_pty", perm_type);
-  cs_equation_add_diffusion(h_eqp, tpf->diff_hc_pty);
-
-  tpf->reac_h_pty = cs_property_add("reac_h_pty", CS_PROPERTY_ISO);
-  cs_equation_add_reaction(h_eqp, tpf->reac_h_pty);
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Finalize the setup stage (allocation of arrays for instance) in the
- *        case of a two-phase flows model in porous media using a segregated
- *        solver and the couple (Pl, Pg) as main unknowns
- *
- * \param[in]      connect     set of additional connectivities for CDO
- * \param[in, out] tpf         pointer to the model context structure
- */
-/*----------------------------------------------------------------------------*/
-
-static void
-_finalize_setup_plpg_segregated_solver(const cs_cdo_connect_t  *connect,
-                                       cs_gwf_tpf_t            *tpf)
-{
-  cs_equation_param_t  *w_eqp = cs_equation_get_param(tpf->w_eq);
-  cs_equation_param_t  *h_eqp = cs_equation_get_param(tpf->h_eq);
-
-  const cs_lnum_t  n_cells = connect->n_cells;
-
-  /* Conservation of the mass of water
-   * --------------------------------- */
-
-  /* Unsteady term */
-
-  _add_pty_array(n_cells, cs_flag_primal_cell, tpf->time_wc_pty);
-
-  /* Diffusion term */
-
-  _add_pty_array(n_cells, cs_flag_primal_cell, tpf->diff_wl_pty);
-
-  /* Source term */
-
-  BFT_MALLOC(tpf->srct_w_array, n_cells, cs_real_t);
-  cs_array_real_fill_zero(n_cells, tpf->srct_w_array);
-
-  cs_equation_add_source_term_by_array(w_eqp,
-                                       nullptr, /* all cells */
-                                       cs_flag_primal_cell,
-                                       tpf->srct_w_array,
-                                       false, /* xdef not owner */
-                                       true); /* full length */
-
-  /* Conservation of the mass of component mainly present in the gas phase
-   * --------------------------------------------------------------------- */
-
-  /* Unsteady term (associated to Pg in the case of a segregated solver) */
-
-  _add_pty_array(n_cells, cs_flag_primal_cell, tpf->time_hc_pty);
-
-  /* Diffusion property in the hydrogen equation (associated to Pg in the
-     case of a segregated solver) */
-
-  _add_pty_array(n_cells, cs_flag_primal_cell, tpf->diff_hc_pty);
-
-  /* Diffusion property in the hydrogen equation associated to Pl. This is
-     used to define a source term in the case of a segregated solver. */
-
-  _add_pty_array(n_cells, cs_flag_primal_cell, tpf->diff_hl_pty);
-
-  /* Reaction term */
-
-  _add_pty_array(n_cells, cs_flag_primal_cell, tpf->reac_h_pty);
-
-  /* Source term (second one; the first is associated to a stiffness term and
-     relies on a builder hook function) */
-
-  BFT_MALLOC(tpf->srct_h_array, n_cells, cs_real_t);
-  cs_array_real_fill_zero(n_cells, tpf->srct_h_array);
-
-  cs_equation_add_source_term_by_array(h_eqp,
-                                       nullptr, /* all cells */
-                                       cs_flag_primal_cell,
-                                       tpf->srct_h_array,
-                                       false, /* xdef not owner */
-                                       true); /* full length */
-}
-
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
@@ -3066,10 +2550,6 @@ cs_gwf_tpf_log_setup(cs_gwf_tpf_t          *tpf)
     cs_log_printf(CS_LOG_SETUP, "  * GWF | (Pl, Pc) coupled solver\n");
     cs_log_printf(CS_LOG_SETUP, "  * GWF | Diffusive view for Darcy terms\n");
     break;
-  case CS_GWF_TPF_SOLVER_PLPG_SEGREGATED:
-    cs_log_printf(CS_LOG_SETUP, "  * GWF | (Pl, Pg) segregated solver\n");
-    cs_log_printf(CS_LOG_SETUP, "  * GWF | Diffusive view for Darcy terms\n");
-    break;
 
   default:
     bft_error(__FILE__, __LINE__, 0, "%s: Invalid setting", __func__);
@@ -3188,10 +2668,6 @@ cs_gwf_tpf_init(cs_gwf_tpf_t            *tpf,
     _init_plpc_coupled_solver(tpf, perm_type);
     break;
 
-  case CS_GWF_TPF_SOLVER_PLPG_SEGREGATED:
-    _init_plpg_segregated_solver(tpf, perm_type);
-    break;
-
   default:
     bft_error(__FILE__, __LINE__, 0, "%s: Invalid solver type", __func__);
   }
@@ -3287,19 +2763,6 @@ cs_gwf_tpf_init_setup(cs_flag_t         post_flag,
 
     cs_field_set_key_int(tpf->g_pressure, log_key, 1);
     cs_field_set_key_int(tpf->g_pressure, post_key, 1);
-    break;
-
-  case CS_GWF_TPF_SOLVER_PLPG_SEGREGATED:
-    tpf->l_pressure = cs_equation_get_field(tpf->w_eq);
-    tpf->g_pressure = cs_equation_get_field(tpf->h_eq);
-    tpf->c_pressure = cs_field_create("capillarity_pressure",
-                                      field_mask,
-                                      loc_id,
-                                      1,
-                                      true); /* has_previous */
-
-    cs_field_set_key_int(tpf->c_pressure, log_key, 1);
-    cs_field_set_key_int(tpf->c_pressure, post_key, 1);
     break;
 
   default:
@@ -3517,10 +2980,6 @@ cs_gwf_tpf_finalize_setup(const cs_cdo_connect_t      *connect,
     _finalize_setup_plpc_coupled_solver(connect, tpf);
     break;
 
-  case CS_GWF_TPF_SOLVER_PLPG_SEGREGATED:
-    _finalize_setup_plpg_segregated_solver(connect, tpf);
-    break;
-
   default:
     bft_error(__FILE__, __LINE__, 0, "%s: Invalid solver type", __func__);
   }
@@ -3546,20 +3005,6 @@ cs_gwf_tpf_init_values(const cs_cdo_connect_t        *connect,
 
   if (tpf == nullptr)
     return;
-
-  /* Set a builder hook function if needed */
-
-  if (tpf->solver_type == CS_GWF_TPF_SOLVER_PLPG_SEGREGATED) {
-
-    /* Add a hook function to define the source term. This operation should
-       be done after that the corresponding equation has been initialized
-       (a builder structure has to be defined) */
-
-    cs_equation_add_build_hook(tpf->h_eq,
-                               tpf,                   /* hook context */
-                               _build_h_eq_diff_st); /* hook function */
-
-  }
 
   /* Define and initialize the non-linear solver */
 
@@ -3679,12 +3124,6 @@ cs_gwf_tpf_compute(const cs_mesh_t               *mesh,
     }
     break;
 
-  case CS_GWF_TPF_SOLVER_PLPG_SEGREGATED:
-    _compute_segregated(mesh, time_step, connect, cdoq,
-                        option_flag,
-                        tpf);
-    break;
-
   default:
     bft_error(__FILE__, __LINE__, 0, "%s: Invalid solver type", __func__);
 
@@ -3791,26 +3230,6 @@ cs_gwf_tpf_update(const cs_mesh_t             *mesh,
         _update_iso_mtpf_plpc_coupled(connect, cdoq, tpf);
       else
         _update_iso_itpf_plpc_coupled(connect, cdoq, tpf);
-      break;
-
-    default:
-      bft_error(__FILE__, __LINE__, 0,
-                "%s: Only the isotropic case is available up to now.",
-                __func__);
-      break;
-
-    } /* Switch on the permeability type */
-    break;
-
-    /* ================================= */
-  case CS_GWF_TPF_SOLVER_PLPG_SEGREGATED:
-    /* ================================= */
-
-    switch (cs_property_get_dim(tpf->diff_wl_pty)) {
-
-    case 1: /* Isotropic case */
-      /*       ++++++++++++++ */
-      bft_error(__FILE__, __LINE__, 0, "%s: TODO.", __func__);
       break;
 
     default:
