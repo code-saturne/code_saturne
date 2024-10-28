@@ -504,11 +504,11 @@ _update_iso_soil_vgm_spf(const cs_real_t              t_eval,
   /* Retrieve the soil parameters */
 
   cs_gwf_soil_vgm_spf_param_t *sp
-    = (cs_gwf_soil_vgm_spf_param_t *)soil->model_param;
+    = static_cast<cs_gwf_soil_vgm_spf_param_t *>(soil->model_param);
 
   /* Retrieve the hydraulic context */
 
-  cs_gwf_uspf_t *hc = (cs_gwf_uspf_t *)soil->hydraulic_context;
+  cs_gwf_uspf_t *hc = static_cast<cs_gwf_uspf_t *>(soil->hydraulic_context);
 
   /* Only isotropic values are considered in this case */
 
@@ -1325,7 +1325,7 @@ cs_gwf_soil_log_setup(void)
     case CS_GWF_SOIL_VGM_TWO_PHASE:
       {
         const cs_gwf_soil_vgm_tpf_param_t *soilp
-          = (const cs_gwf_soil_vgm_tpf_param_t *)soil->model_param;
+          = static_cast<const cs_gwf_soil_vgm_tpf_param_t *>(soil->model_param);
 
         cs_log_printf(CS_LOG_SETUP,
                       "%s Model: "
