@@ -82,8 +82,6 @@ logical(c_bool), value :: init
 integer(c_int) ::  itypfb(nfabor)
 integer(c_int) ::  izfppp(nfabor)
 
-real(c_double) :: dt(ncelet)
-
 ! Local variables
 
 integer          ifac, iok, ifvu, ii, izone, izonem

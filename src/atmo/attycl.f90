@@ -94,7 +94,6 @@ implicit none
 procedure() :: mscrss
 
 integer          itypfb(nfabor)
-integer          izfppp(nfabor)
 integer          icodcl(nfabor,nvar)
 double precision rcodcl(nfabor,nvar,3)
 
@@ -108,7 +107,6 @@ double precision d2s3, zent, vs, xuent, xvent, xwent
 double precision vel_dir(3), shear_dir(3)
 double precision xkent, xeent, tpent, qvent,ncent
 double precision xcent
-double precision viscla, uref2, rhomoy, dhy, xiturb
 double precision rscp, pp, dum
 
 integer, dimension(:), pointer :: elt_ids

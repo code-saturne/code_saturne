@@ -118,7 +118,7 @@ double precision foir, rayi(kmx)
 
 ! Local variables
 
-integer k, kk, kp1, ineb, inua, iaer, i
+integer k, kk, ineb, inua, iaer, i
 integer          ifac, iz1, iz2, f_id, c_id, iel
 double precision sig
 double precision qqcinf, cetyp, dzs8

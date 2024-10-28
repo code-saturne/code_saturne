@@ -98,7 +98,7 @@ integer(c_int), value :: iappel
 integer ierreu
 integer eau,foret,divers,minral,diffus,mixte,dense,bati
 integer n
-integer error, n_elts
+integer n_elts
 integer, dimension(:), pointer :: elt_ids
 double precision codinv
 integer inityp

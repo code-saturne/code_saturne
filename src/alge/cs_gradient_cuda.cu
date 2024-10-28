@@ -358,18 +358,18 @@ _compute_cocg_rhsv_lsq_s_i_face(cs_lnum_t           size,
 
 template <typename T>
 __global__ static void
-_compute_cocg_rhsv_lsq_s_b_face(cs_lnum_t         n_b_cells,
-                                cs_real_t         inc,
-                                const cs_lnum_t   b_cells[],
-                                const cs_lnum_t   cell_b_faces_idx[],
-                                const cs_lnum_t   cell_b_faces[],
-                                const cs_real_t   b_face_u_normal[][3],
-                                const cs_real_t   b_dist[],
-                                const cs_real_t   diipb[][3],
-                                const cs_real_t   coefap[],
-                                const cs_real_t   coefbp[],
-                                T                *cocg,
-                                cs_real_4_t      *rhsv)
+_compute_cocg_rhsv_lsq_s_b_face(cs_lnum_t          n_b_cells,
+                                cs_real_t          inc,
+                                const cs_lnum_t    b_cells[],
+                                const cs_lnum_t    cell_b_faces_idx[],
+                                const cs_lnum_t    cell_b_faces[],
+                                const cs_nreal_t   b_face_u_normal[][3],
+                                const cs_real_t    b_dist[],
+                                const cs_real_t    diipb[][3],
+                                const cs_real_t    coefap[],
+                                const cs_real_t    coefbp[],
+                                T                 *cocg,
+                                cs_real_4_t       *rhsv)
 {
   cs_lnum_t b_c_idx = blockIdx.x * blockDim.x + threadIdx.x;
 
@@ -450,17 +450,17 @@ _compute_rhsv_lsq_s_i_face(cs_lnum_t          size,
  *----------------------------------------------------------------------------*/
 
 __global__ static void
-_compute_rhsv_lsq_s_b_face(cs_lnum_t         n_b_cells,
-                           cs_real_t         inc,
-                           const cs_lnum_t   b_cells[],
-                           const cs_lnum_t   cell_b_faces_idx[],
-                           const cs_lnum_t   cell_b_faces[],
-                           const cs_real_t   b_face_u_normal[][3],
-                           const cs_real_t   b_dist[],
-                           const cs_real_t   diipb[][3],
-                           const cs_real_t   coefap[],
-                           const cs_real_t   coefbp[],
-                           cs_real_4_t      *rhsv)
+_compute_rhsv_lsq_s_b_face(cs_lnum_t          n_b_cells,
+                           cs_real_t          inc,
+                           const cs_lnum_t    b_cells[],
+                           const cs_lnum_t    cell_b_faces_idx[],
+                           const cs_lnum_t    cell_b_faces[],
+                           const cs_nreal_t   b_face_u_normal[][3],
+                           const cs_real_t    b_dist[],
+                           const cs_real_t    diipb[][3],
+                           const cs_real_t    coefap[],
+                           const cs_real_t    coefbp[],
+                           cs_real_4_t       *rhsv)
 {
   cs_lnum_t b_c_idx = blockIdx.x * blockDim.x + threadIdx.x;
 
@@ -1278,9 +1278,8 @@ cs_gradient_scalar_lsq_cuda(const cs_mesh_t              *m,
 
   const cs_real_3_t *restrict cell_cen
     = (const cs_real_3_t *)cs_get_device_ptr_const_pf(fvq->cell_cen);
-  const cs_real_3_t *restrict b_face_u_normal
-    = (const cs_real_3_t *)cs_get_device_ptr_const_pf
-                             (fvq->b_face_u_normal);
+  const cs_nreal_3_t *restrict b_face_u_normal
+    = (cs_real_3_t *)cs_get_device_ptr_const_pf(fvq->b_face_u_normal);
   const cs_real_t *restrict b_face_surf
     = cs_get_device_ptr_const_pf(fvq->b_face_surf);
   const cs_real_t *restrict b_dist

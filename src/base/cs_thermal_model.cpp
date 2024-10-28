@@ -751,8 +751,8 @@ cs_thermal_model_cflp(const cs_real_t  croma[],
 
   const cs_equation_param_t *eqp_u
     = cs_field_get_equation_param_const(f_vel);
-  const cs_real_3_t *i_face_u_normal = (const cs_real_3_t *)fvq->i_face_u_normal;
-  const cs_real_3_t *b_face_u_normal = (const cs_real_3_t *)fvq->b_face_u_normal;
+  const cs_nreal_3_t *i_face_u_normal = fvq->i_face_u_normal;
+  const cs_nreal_3_t *b_face_u_normal = fvq->b_face_u_normal;
 
   cs_real_t theta = eqp_u->theta;
 

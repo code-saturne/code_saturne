@@ -2432,8 +2432,7 @@ cs_atmo_phyvar_update()
   bool rain = at_opt->rain;
 
   if (rain == true) {
-    /* Initialisation of fields */
-    cs_air_fluid_props_t *air_prop = cs_glob_air_props;
+    /* Initialization of fields */
 
     cs_field_t *meteo_pressure = cs_field_by_name_try("meteo_pressure");
     cs_field_t *yw_liq = cs_field_by_name_try("liquid_water");
@@ -2508,8 +2507,7 @@ cs_atmo_source_term(int              f_id,
   cs_real_t *nc = cs_field_by_name_try("number_of_droplets")->val;
   cs_real_t *nr = cs_field_by_name_try("n_r")->val;
 
-  /* Fields ID */
-  int yc_id = cs_field_by_name_try("liquid_water")->id;
+  /* Field ids */
   int nc_id = cs_field_by_name_try("number_of_droplets")->id;
   int yr_id = cs_field_by_name_try("ym_l_r")->id;
   int nr_id = cs_field_by_name_try("n_r")->id;
@@ -2741,7 +2739,8 @@ cs_soil_model(void)
     /* In case of multi energy balance (MEB) models including PV */
     cs_field_t *cover_geometry_ratio = cs_field_by_name_try("cover_geometry_ratio");
     cs_field_t *cover_reflectivity = cs_field_by_name_try("cover_reflectivity");
-    cs_field_t *cover_temperature_radiative = cs_field_by_name_try("cover_temperature_radiative");
+    cs_field_t *cover_temperature_radiative
+      = cs_field_by_name_try("cover_temperature_radiative");
 
     for (cs_lnum_t soil_id = 0; soil_id < z->n_elts; soil_id++) {
       cs_real_t ray2 = 0;

@@ -396,7 +396,7 @@ _rescale_flowrate(cs_lnum_t         n_points,
   const cs_mesh_t  *mesh = cs_glob_mesh;
   const cs_mesh_quantities_t  *mq = cs_glob_mesh_quantities;
 
-  cs_real_3_t *b_face_u_normal = (cs_real_3_t * )mq->b_face_u_normal;
+  cs_nreal_3_t *b_face_u_normal = mq->b_face_u_normal;
 
   for (point_id = 0; point_id < n_points; point_id++) {
 
@@ -438,7 +438,7 @@ _rescale_flowrate(cs_lnum_t         n_points,
 
     cs_real_t tangent_unit1[3], tangent_unit2[3];
 
-    cs_real_t *normal_unit = b_face_u_normal[face_id];
+    cs_nreal_t *normal_unit = b_face_u_normal[face_id];
 
     const cs_real_t *fluct = fluctuations[point_id];
 

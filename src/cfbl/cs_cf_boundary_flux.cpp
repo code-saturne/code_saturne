@@ -114,8 +114,7 @@ cs_cf_boundary_analytical_flux(const cs_lnum_t    f_id,
 {
   cs_mesh_quantities_t *fvq = cs_glob_mesh_quantities;
   const cs_real_t *b_f_face_surf = fvq->b_f_face_surf;
-  const cs_real_3_t *b_face_u_normal
-    = (const cs_real_3_t *)fvq->b_face_u_normal;
+  const cs_nreal_3_t *b_face_u_normal = fvq->b_face_u_normal;
 
   cs_real_3_t *cofacv = (cs_real_3_t *)CS_F_(vel)->bc_coeffs->ac;
   cs_real_t *coface = CS_F_(e_tot)->bc_coeffs->ac;
@@ -178,7 +177,7 @@ cs_cf_boundary_rusanov(const cs_lnum_t  f_id,
 
   const cs_lnum_t *b_face_cells = mesh->b_face_cells;
   const cs_real_t *restrict b_f_face_surf = fvq->b_f_face_surf;
-  const cs_real_3_t *b_face_u_normal = (const cs_real_3_t *)fvq->b_face_u_normal;
+  const cs_nreal_3_t *b_face_u_normal = fvq->b_face_u_normal;
 
   const cs_fluid_properties_t *fluid_props = cs_glob_fluid_properties;
   const int icp = fluid_props->icp;
@@ -209,7 +208,7 @@ cs_cf_boundary_rusanov(const cs_lnum_t  f_id,
   /* Compute values needed for Rusanov scheme
      ---------------------------------------- */
 
-  const cs_real_t *n = b_face_u_normal[f_id];
+  const cs_nreal_t *n = b_face_u_normal[f_id];
 
   const cs_real_t b_vel_n = cs_math_3_dot_product(val_ext_v[f_id], n);
   const cs_real_t c_vel_n = cs_math_3_dot_product(vel[c_id], n);

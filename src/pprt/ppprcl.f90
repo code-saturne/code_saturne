@@ -60,7 +60,6 @@ use ppincl
 use cfpoin
 use atincl
 use pointe, only: izfppp
-use dimens, only: nvar
 use cs_c_bindings
 use mesh
 

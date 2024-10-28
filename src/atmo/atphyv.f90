@@ -68,7 +68,6 @@ double precision yw_liq, qwt, tliq, dum, beta
 
 double precision, dimension(:), pointer :: crom
 double precision, dimension(:), pointer :: cvar_vart, cvar_totwt
-double precision, dimension(:), pointer :: cvara_vart
 double precision, dimension(:), pointer :: cpro_tempc, cpro_liqwt
 double precision, dimension(:), pointer :: cpro_beta
 double precision, dimension(:), pointer :: cpro_met_p, cpro_met_rho

@@ -2394,8 +2394,7 @@ _compute_cell_cocg_lsq(const cs_mesh_t               *m,
 
   const cs_real_3_t *restrict cell_f_cen
     = (const cs_real_3_t *)fvq->cell_f_cen;
-  const cs_real_3_t *restrict b_face_u_normal
-    = (const cs_real_3_t *)fvq->b_face_u_normal;
+  const cs_nreal_3_t *restrict b_face_u_normal = fvq->b_face_u_normal;
 
   cs_cocg_6_t  *restrict cocgb = nullptr, *restrict cocg = nullptr;
 
@@ -2532,7 +2531,7 @@ _compute_cell_cocg_lsq(const cs_mesh_t               *m,
 
       cs_lnum_t ii = b_face_cells[f_id];
 
-      const cs_real_t *normal = b_face_u_normal[f_id];
+      const cs_nreal_t *normal = b_face_u_normal[f_id];
 
       cocg[ii][0] += normal[0] * normal[0];
       cocg[ii][1] += normal[1] * normal[1];
@@ -2679,8 +2678,7 @@ _recompute_lsq_scalar_cocg(const cs_mesh_t                *m,
   const cs_lnum_t *restrict cell_b_faces
     = (const cs_lnum_t *) ma->cell_b_faces;
 
-  const cs_real_3_t *restrict b_face_u_normal
-    = (const cs_real_3_t *)fvq->b_face_u_normal;
+  const cs_nreal_3_t *restrict b_face_u_normal = fvq->b_face_u_normal;
   const cs_real_t *restrict b_dist
     = (const cs_real_t *)fvq->b_dist;
   const cs_real_3_t *restrict diipb

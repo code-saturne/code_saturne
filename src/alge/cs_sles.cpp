@@ -779,7 +779,7 @@ _value_type(size_t     n_vals,
 
   for (ii = 0; ii < n_vals; ii++) {
 
-    if (val[ii] != val[ii]) { /* Test for NaN with IEEE 754 arithmetic */
+    if (isnan(val[ii])) { /* Test for NaN with IEEE 754 arithmetic */
       val[ii] = 0.;
       val_type[ii] = 2;
       retval += 1;

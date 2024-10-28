@@ -432,7 +432,7 @@ _vel_profile(int               location_id,
          == CS_MESH_LOCATION_BOUNDARY_FACES);
 
   const cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
-  const cs_real_3_t *f_n = (const cs_real_3_t *)mq->b_face_u_normal;
+  const cs_nreal_3_t *f_n = mq->b_face_u_normal;
 
   cs_boundary_conditions_open_t  *c
     = (cs_boundary_conditions_open_t *)input;
@@ -508,7 +508,7 @@ _vel_profile_by_meg_norm(int               location_id,
          == CS_MESH_LOCATION_BOUNDARY_FACES);
 
   const cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
-  const cs_real_3_t *f_n = (const cs_real_3_t *)mq->b_face_u_normal;
+  const cs_nreal_3_t *f_n = mq->b_face_u_normal;
   const cs_real_3_t *face_cen = (const cs_real_3_t *)mq->b_face_cog;
 
   cs_boundary_conditions_open_t  *c

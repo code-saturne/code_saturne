@@ -524,10 +524,8 @@ _matrix_strided(const cs_mesh_t            *m,
     = (const cs_lnum_2_t *)m->i_face_cells;
   const cs_lnum_t *restrict b_face_cells
     = (const cs_lnum_t *)m->b_face_cells;
-  const cs_real_3_t *i_face_u_normal
-    = (const cs_real_3_t *)mq->i_face_u_normal;
-  const cs_real_3_t *b_face_u_normal
-    = (const cs_real_3_t *)mq->b_face_u_normal;
+  const cs_nreal_3_t *i_face_u_normal = mq->i_face_u_normal;
+  const cs_nreal_3_t *b_face_u_normal = mq->b_face_u_normal;
   cs_real_2_t *i_f_face_factor;
   cs_real_t *b_f_face_factor;
 
@@ -614,7 +612,7 @@ _matrix_strided(const cs_mesh_t            *m,
   else {
     ctx.parallel_for_i_faces(m, [=] CS_F_HOST_DEVICE (cs_lnum_t  f_id) {
       const cs_lnum_t _p = is_p*f_id;
-      const cs_real_t *n = i_face_u_normal[f_id];
+      const cs_nreal_t *n = i_face_u_normal[f_id];
       const cs_real_t _i_massflux = i_massflux[f_id];
       cs_lnum_t ii = i_face_cells[f_id][0];
       cs_lnum_t jj = i_face_cells[f_id][1];
@@ -694,7 +692,7 @@ _matrix_strided(const cs_mesh_t            *m,
 
     ctx.parallel_for_b_faces(m, [=] CS_F_HOST_DEVICE (cs_lnum_t  f_id) {
 
-      const cs_real_t *n = b_face_u_normal[f_id];
+      const cs_nreal_t *n = b_face_u_normal[f_id];
       const cs_lnum_t _p = is_p*f_id;
       cs_lnum_t ii = b_face_cells[f_id];
 
@@ -955,10 +953,8 @@ _matrix_anisotropic_diffusion_strided
     = (const cs_lnum_2_t *)m->i_face_cells;
   const cs_lnum_t *restrict b_face_cells
     = (const cs_lnum_t *)m->b_face_cells;
-  const cs_real_3_t *i_face_u_normal
-    = (const cs_real_3_t *)mq->i_face_u_normal;
-  const cs_real_3_t *b_face_u_normal
-    = (const cs_real_3_t *)mq->b_face_u_normal;
+  const cs_nreal_3_t *i_face_u_normal = mq->i_face_u_normal;
+  const cs_nreal_3_t *b_face_u_normal = mq->b_face_u_normal;
 
   cs_real_2_t *i_f_face_factor = nullptr;
   cs_real_t *b_f_face_factor = nullptr;
@@ -997,7 +993,7 @@ _matrix_anisotropic_diffusion_strided
 
   ctx.parallel_for_i_faces(m, [=] CS_F_HOST_DEVICE (cs_lnum_t f_id) {
     const cs_lnum_t _p = is_p*f_id;
-    const cs_real_t *n = i_face_u_normal[f_id];
+    const cs_nreal_t *n = i_face_u_normal[f_id];
     cs_lnum_t ii = i_face_cells[f_id][0];
     cs_lnum_t jj = i_face_cells[f_id][1];
 
@@ -1068,7 +1064,7 @@ _matrix_anisotropic_diffusion_strided
 
     ctx.parallel_for_b_faces(m, [=] CS_F_HOST_DEVICE (cs_lnum_t  f_id) {
       const cs_lnum_t _p = is_p*f_id;
-      const cs_real_t *n = b_face_u_normal[f_id];
+      const cs_nreal_t *n = b_face_u_normal[f_id];
       cs_lnum_t ii = b_face_cells[f_id];
 
       cs_real_t flu[2] = {

@@ -371,8 +371,6 @@ _humid_atmosphere(const cs_real_t  cromo[],
   /* Compute potential temperature derivatives
      ======================================== */
 
-  const cs_fluid_properties_t *phys_pro = cs_get_glob_fluid_properties();
-
   /* compute the production term in case of humid atmosphere
    * ie. when iatmos eq 2 */
   cs_real_t *etheta, *eq, *gravke_theta, *gravke_qw;

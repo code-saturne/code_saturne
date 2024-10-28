@@ -215,7 +215,7 @@ cs_boundary_conditions_type(bool  init,
   const cs_real_t *cvara_pr = (const cs_real_t *)CS_F_(p)->val_pre;
   const cs_equation_param_t *eqp_vel
     = cs_field_get_equation_param_const(CS_F_(vel));
-  const cs_nreal_3_t *nu = (const cs_nreal_3_t *)fvq->b_face_u_normal;
+  const cs_nreal_3_t *nu = fvq->b_face_u_normal;
   const cs_real_3_t *vel = (const cs_real_3_t *)CS_F_(vel)->val;
 
   cs_real_t *b_head_loss = cs_boundary_conditions_get_b_head_loss(false);

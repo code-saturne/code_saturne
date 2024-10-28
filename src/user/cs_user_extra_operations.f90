@@ -58,7 +58,6 @@ subroutine cs_f_user_extra_operations &
 !===============================================================================
 
 use paramx
-use dimens, only: ndimfb
 use pointe
 use numvar
 use optcal

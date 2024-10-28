@@ -630,8 +630,8 @@ _init_particles(cs_lagr_particle_set_t         *p_set,
   const cs_lagr_attribute_map_t  *p_am = p_set->p_am;
 
   cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
-  const cs_real_3_t *restrict b_face_u_normal
-    = (const cs_real_3_t *restrict )mq->b_face_u_normal;
+  const cs_nreal_3_t *restrict b_face_u_normal = mq->b_face_u_normal;
+
   /* Loop on zone elements where particles are injected */
 
   for (cs_lnum_t li = 0; li < n_elts; li++) {

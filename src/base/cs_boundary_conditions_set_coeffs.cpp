@@ -163,8 +163,7 @@ _boundary_condition_mobile_mesh_rotor_stator_type(void)
   const cs_lnum_t n_b_faces = mesh->n_b_faces;
   const cs_lnum_t *b_face_cells = mesh->b_face_cells;
   const cs_real_t *b_dist = fvq->b_dist;
-  const cs_real_3_t *b_face_u_normal
-    = (const cs_real_3_t *)fvq->b_face_u_normal;
+  const cs_nreal_3_t *b_face_u_normal = fvq->b_face_u_normal;
   const cs_real_3_t *b_face_cog = (const cs_real_3_t *)fvq->b_face_cog;
 
   const int *bc_type = cs_glob_bc_type;
@@ -230,7 +229,7 @@ _boundary_condition_mobile_mesh_rotor_stator_type(void)
               rcodcl1_vel[n_b_faces * k + f_id] = 0.;
           }
 
-          const cs_real_t *rnxyz = b_face_u_normal[f_id];
+          const cs_nreal_t *rnxyz = b_face_u_normal[f_id];
           const cs_real_t rcodcl1[3] = {rcodcl1_vel[n_b_faces*0 + f_id],
                                         rcodcl1_vel[n_b_faces*1 + f_id],
                                         rcodcl1_vel[n_b_faces*2 + f_id]};
@@ -877,7 +876,7 @@ cs_boundary_conditions_set_coeffs(int        nvar,
   const cs_lnum_t *restrict b_face_cells
     = (const cs_lnum_t *)mesh->b_face_cells;
   const cs_real_3_t *b_face_normal  = (const cs_real_3_t *)fvq->b_face_normal;
-  const cs_real_3_t *b_face_u_normal = (const cs_real_3_t *)fvq->b_face_u_normal;
+  const cs_nreal_3_t *b_face_u_normal = fvq->b_face_u_normal;
   const cs_real_3_t *cell_cen = (const cs_real_3_t *)fvq->cell_cen;
   const cs_real_3_t *b_face_cog = (const cs_real_3_t *)fvq->b_face_cog;
   const cs_real_3_t *restrict diipb = (const cs_real_3_t *)fvq->diipb;

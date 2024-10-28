@@ -90,8 +90,7 @@ _boundary_conditions_set_coeffs_symmetry_scalar(cs_field_t  *f_sc)
   const cs_lnum_t n_b_faces = mesh->n_b_faces;
   const cs_lnum_t *b_face_cells = mesh->b_face_cells;
   const cs_real_t *b_dist = fvq->b_dist;
-  const cs_real_3_t *b_face_u_normal
-    = (const cs_real_3_t *)fvq->b_face_u_normal;
+  const cs_nreal_3_t *b_face_u_normal = fvq->b_face_u_normal;
 
   const cs_fluid_properties_t *fluid_props = cs_glob_fluid_properties;
   const cs_real_t cp0 = fluid_props->cp0;
@@ -157,7 +156,7 @@ _boundary_conditions_set_coeffs_symmetry_scalar(cs_field_t  *f_sc)
 
       /* Geometric quantities */
       const cs_lnum_t c_id = b_face_cells[f_id];
-      const cs_real_t *nn = b_face_u_normal[f_id];
+      const cs_nreal_t *nn = b_face_u_normal[f_id];
       const cs_real_t distbf = b_dist[f_id];
 
       /* Physical Properties */
@@ -294,8 +293,7 @@ _boundary_conditions_set_coeffs_symmetry_vector(cs_field_t  *f_v)
   const cs_lnum_t n_b_faces = mesh->n_b_faces;
   const cs_lnum_t *b_face_cells = mesh->b_face_cells;
   const cs_real_t *b_dist = fvq->b_dist;
-  const cs_real_3_t *b_face_u_normal
-    = (const cs_real_3_t *)fvq->b_face_u_normal;
+  const cs_nreal_3_t *b_face_u_normal = fvq->b_face_u_normal;
 
   const int kivisl  = cs_field_key_id("diffusivity_id");
   const int ksigmas = cs_field_key_id("turbulent_schmidt");
@@ -344,7 +342,7 @@ _boundary_conditions_set_coeffs_symmetry_vector(cs_field_t  *f_v)
 
       /* Geometric quantities */
       const cs_lnum_t c_id = b_face_cells[f_id];
-      const cs_real_t *nn = b_face_u_normal[f_id];
+      const cs_nreal_t *nn = b_face_u_normal[f_id];
       const cs_real_t distbf = b_dist[f_id];
 
       const cs_real_t rkl = (ifcvsl < 0) ? visls_0 : viscls[c_id];
@@ -473,7 +471,7 @@ cs_boundary_conditions_set_coeffs_symmetry(cs_real_t  velipb[][3],
   const cs_lnum_t n_b_faces = mesh->n_b_faces;
   const cs_lnum_t *restrict b_face_cells
     = (const cs_lnum_t *)mesh->b_face_cells;
-  const cs_real_3_t *b_face_u_normal = (const cs_real_3_t *)fvq->b_face_u_normal;
+  const cs_nreal_3_t *b_face_u_normal = fvq->b_face_u_normal;
   const cs_real_3_t *b_face_cog = (const cs_real_3_t *)fvq->b_face_cog;
   const cs_real_3_t *cell_cen = (const cs_real_3_t *)fvq->cell_cen;
   const cs_real_t   *b_dist = fvq->b_dist;
@@ -520,7 +518,7 @@ cs_boundary_conditions_set_coeffs_symmetry(cs_real_t  velipb[][3],
     isympa[f_id] = 0;
 
     /* Geometric quantities */
-    const cs_real_t *nn = b_face_u_normal[f_id];
+    const cs_nreal_t *nn = b_face_u_normal[f_id];
 
     /* Local reference frame
        --------------------- */
@@ -855,7 +853,7 @@ cs_boundary_conditions_set_coeffs_symmetry(cs_real_t  velipb[][3],
 
       /* Geometrical quantities */
       const cs_real_t distbf = b_dist[f_id];
-      const cs_real_t *nn = b_face_u_normal[f_id];
+      const cs_nreal_t *nn = b_face_u_normal[f_id];
 
       /* Physical properties */
       cs_real_6_t hintv = {0., 0., 0., 0., 0., 0.};

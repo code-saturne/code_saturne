@@ -113,11 +113,11 @@ const cs_real_t _eps_r_2 = 1e-3 * 1e-3;
  *----------------------------------------------------------------------------*/
 
 static inline void
-_add_hb_faces_cocg_lsq_cell(cs_lnum_t        c_id,
-                            const cs_lnum_t  cell_hb_faces_idx[],
-                            const cs_lnum_t  cell_hb_faces[],
-                            const cs_real_t  b_face_u_normal[][3],
-                            cs_cocg_t        cocg[6])
+_add_hb_faces_cocg_lsq_cell(cs_lnum_t         c_id,
+                            const cs_lnum_t   cell_hb_faces_idx[],
+                            const cs_lnum_t   cell_hb_faces[],
+                            const cs_nreal_t  b_face_u_normal[][3],
+                            cs_cocg_t         cocg[6])
 
 {
   cs_lnum_t s_id = cell_hb_faces_idx[c_id];
@@ -127,7 +127,7 @@ _add_hb_faces_cocg_lsq_cell(cs_lnum_t        c_id,
 
     cs_lnum_t f_id = cell_hb_faces[i];
 
-    const cs_real_t *dddij = b_face_u_normal[f_id];
+    const cs_nreal_t *dddij = b_face_u_normal[f_id];
 
     cocg[0] += dddij[0]*dddij[0];
     cocg[1] += dddij[1]*dddij[1];
@@ -366,7 +366,7 @@ _rc_var_b_faces_iprime_strided_lsq(const cs_mesh_t               *m,
       _add_hb_faces_cocg_lsq_cell(c_id,
                                   ma->cell_hb_faces_idx,
                                   ma->cell_hb_faces,
-                                  (const cs_real_3_t *)fvq->b_face_u_normal,
+                                  fvq->b_face_u_normal,
                                   cocg);
 
     /* Contribution from boundary faces. */
@@ -852,8 +852,7 @@ cs_gradient_boundary_iprime_lsq_s(const cs_mesh_t               *m,
   const cs_real_3_t *restrict cell_cen
     = (const cs_real_3_t *)fvq->cell_f_cen;
 
-  const cs_real_3_t *restrict b_face_u_normal
-    = (const cs_real_3_t *)fvq->b_face_u_normal;
+  const cs_nreal_3_t *restrict b_face_u_normal = fvq->b_face_u_normal;
   const cs_real_t *restrict b_dist
     = (const cs_real_t *)fvq->b_dist;
   const cs_real_3_t *restrict diipb
@@ -974,7 +973,7 @@ cs_gradient_boundary_iprime_lsq_s(const cs_mesh_t               *m,
       _add_hb_faces_cocg_lsq_cell(c_id,
                                   ma->cell_hb_faces_idx,
                                   ma->cell_hb_faces,
-                                  (const cs_real_3_t *)fvq->b_face_u_normal,
+                                  fvq->b_face_u_normal,
                                   cocg);
 
     /* Contribution from boundary faces. */
@@ -1130,8 +1129,7 @@ cs_gradient_boundary_iprime_lsq_s_ani(const cs_mesh_t               *m,
   const cs_real_3_t *restrict cell_cen
     = (const cs_real_3_t *)fvq->cell_f_cen;
 
-  const cs_real_3_t *restrict b_face_u_normal
-    = (const cs_real_3_t *)fvq->b_face_u_normal;
+  const cs_real_3_t *restrict b_face_u_normal = fvq->b_face_u_normal;
   const cs_real_t *restrict b_dist
     = (const cs_real_t *)fvq->b_dist;
   const cs_real_3_t *restrict diipb
@@ -1226,7 +1224,7 @@ cs_gradient_boundary_iprime_lsq_s_ani(const cs_mesh_t               *m,
       _add_hb_faces_cocg_lsq_cell(c_id,
                                   ma->cell_hb_faces_idx,
                                   ma->cell_hb_faces,
-                                  (const cs_real_3_t *)fvq->b_face_u_normal,
+                                  fvq->b_face_u_normal,
                                   cocg);
 
     /* Contribution from boundary faces. */

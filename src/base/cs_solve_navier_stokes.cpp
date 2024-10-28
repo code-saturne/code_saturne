@@ -2786,8 +2786,8 @@ _velocity_prediction(const cs_mesh_t             *m,
 
   if (cs_glob_turb_rans_model->irijnu == 2) {
 
-    const cs_real_3_t *i_face_u_normal = mq->i_face_u_normal;
-    const cs_real_3_t *b_face_u_normal = mq->b_face_u_normal;
+    const cs_nreal_3_t *i_face_u_normal = mq->i_face_u_normal;
+    const cs_nreal_3_t *b_face_u_normal = mq->b_face_u_normal;
 
     if (eqp_u->idften & CS_ISOTROPIC_DIFFUSION) {
       ctx.parallel_for(n_i_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t f_id) {
@@ -2797,7 +2797,7 @@ _velocity_prediction(const cs_mesh_t             *m,
 
     else if (eqp_u->idften & CS_ANISOTROPIC_LEFT_DIFFUSION) {
       ctx.parallel_for(n_i_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t f_id) {
-        const cs_real_t *n = i_face_u_normal[f_id];
+        const cs_nreal_t *n = i_face_u_normal[f_id];
         for (cs_lnum_t ii = 0; ii < 3; ii++) {
           for (cs_lnum_t jj = 0; jj < 3; jj++)
             viscf[9*f_id+3*jj+ii]
@@ -2809,7 +2809,7 @@ _velocity_prediction(const cs_mesh_t             *m,
 
     const cs_real_t *bpro_rusanov = cs_field_by_name("b_rusanov_diff")->val;
     ctx.parallel_for(n_b_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t f_id) {
-      const cs_real_t *n = b_face_u_normal[f_id];
+      const cs_nreal_t *n = b_face_u_normal[f_id];
       for (cs_lnum_t ii = 0; ii < 3; ii++) {
         for (cs_lnum_t jj = 0; jj < 3; jj++)
           cofbfv[f_id][ii][jj] += bpro_rusanov[f_id]*n[ii]*n[jj];
@@ -3439,7 +3439,7 @@ _hydrostatic_pressure_prediction(cs_real_t        grdphd[][3],
   /* Neumann boundary condition for the pressure increment */
 
   const cs_real_t *distb = mq->b_dist;
-  const cs_real_3_t *b_face_u_normal = (const cs_real_3_t *)mq->b_face_u_normal;
+  const cs_nreal_3_t *b_face_u_normal = mq->b_face_u_normal;
 
   ctx.parallel_for(n_b_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t f_id) {
     const cs_lnum_t c_id = b_face_cells[f_id];
@@ -4338,8 +4338,7 @@ cs_solve_navier_stokes(const int        iterns,
     cs_turbomachinery_get_wall_bc_coeffs(&coftur, &hfltur);
     const int *irotce = cs_turbomachinery_get_cell_rotor_num();
 
-    const cs_real_3_t *restrict b_face_u_normal
-      = (const cs_real_3_t *)mq->b_face_u_normal;
+    const cs_nreal_3_t *restrict b_face_u_normal = mq->b_face_u_normal;
     const cs_real_3_t *restrict b_face_cog
       = (const cs_real_3_t *)mq->b_face_cog;
 
@@ -4358,7 +4357,7 @@ cs_solve_navier_stokes(const int        iterns,
       const cs_real_t distbf = mq->b_dist[face_id];
 
       /* Unit normal */
-      const cs_real_t *ufn = b_face_u_normal[face_id];
+      const cs_nreal_t *ufn = b_face_u_normal[face_id];
 
       cs_real_t hint;
       if (cs_glob_turb_model->order == CS_TURB_SECOND_ORDER)
