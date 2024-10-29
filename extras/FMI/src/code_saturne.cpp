@@ -2311,7 +2311,7 @@ fmi2SerializeFMUstate(fmi2Component  component,
 
   c->_serialized_size = 0;
   free(c->_serialized_data);
-  c->_serialized = nullptr;
+  c->_serialized_data = nullptr;
 
   snprintf(s, 127, "%s: called for %p", __func__, (void *)state);
   c->_log(fmi2Error, CS_LOG_TRACE, s);
