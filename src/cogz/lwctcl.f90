@@ -224,69 +224,6 @@ enddo
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
 
-!===============================================================================
-! 4.  REMPLISSAGE DU TABLEAU DES CONDITIONS LIMITES
-!       ON BOUCLE SUR TOUTES LES FACES D'ENTREE
-!                     =========================
-!         ON DETERMINE LA FAMILLE ET SES PROPRIETES
-!           ON IMPOSE LES CONDITIONS AUX LIMITES
-!           POUR LA TURBULENCE
-!===============================================================================
-
-
-do ifac = 1, nfabor
-
-  izone = izfppp(ifac)
-
-!      ELEMENT ADJACENT A LA FACE DE BORD
-
-  if ( itypfb(ifac).eq.ientre ) then
-
-! ----  Traitement automatique de la turbulence
-
-    if ( icalke(izone).ne.0 ) then
-
-!       La turbulence est calculee par defaut si ICALKE different de 0
-!          - soit a partir du diametre hydraulique, d'une vitesse
-!            de reference adaptes a l'entree courante si ICALKE = 1
-!          - soit a partir du diametre hydraulique, d'une vitesse
-!            de reference et de l'intensite turvulente
-!            adaptes a l'entree courante si ICALKE = 2
-
-      uref2 = rcodcl(ifac,iu,1)**2                         &
-            + rcodcl(ifac,iv,1)**2                         &
-            + rcodcl(ifac,iw,1)**2
-      uref2 = max(uref2,epzero)
-      rhomoy = brom(ifac)
-      iel    = ifabor(ifac)
-      viscla = viscl(iel)
-      icke   = icalke(izone)
-      dhy    = dh(izone)
-      xiturb = xintur(izone)
-
-      if (icke.eq.1) then
-        !   Calculation of turbulent inlet conditions using
-        !     standard laws for a circular pipe
-        !     (their initialization is not needed here but is good practice).
-        call turbulence_bc_inlet_hyd_diam(ifac, uref2, dhy, rhomoy, viscla,  &
-                                          rcodcl)
-      else if (icke.eq.2) then
-
-        ! Calculation of turbulent inlet conditions using
-        !   the turbulence intensity and standard laws for a circular pipe
-        !   (their initialization is not needed here but is good practice)
-
-        call turbulence_bc_inlet_turb_intensity(ifac, uref2, xiturb, dhy,  &
-                                                rcodcl)
-
-
-      endif
-
-    endif
-
-  endif
-
-enddo
 
 !===============================================================================
 ! 3.  VERIFICATION DES DONNEES POUR LA FRACTION DE MELANGE

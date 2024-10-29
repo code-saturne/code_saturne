@@ -152,31 +152,6 @@ _turb_bc_id =
  *============================================================================*/
 
 void
-cs_f_turbulence_bc_inlet_hyd_diam(cs_lnum_t   face_num,
-                                  double      uref2,
-                                  double      dh,
-                                  double      rho,
-                                  double      mu);
-
-void
-cs_f_turbulence_bc_inlet_turb_intensity(cs_lnum_t   face_num,
-                                        double      uref2,
-                                        double      t_intensity,
-                                        double      dh);
-
-void
-cs_f_turbulence_bc_inlet_k_eps(cs_lnum_t   face_num,
-                               double      k,
-                               double      eps,
-                               double      vel_dir[],
-                               double      shear_dir[]);
-
-void
-cs_f_turbulence_bc_init_inlet_k_eps(cs_lnum_t   face_num,
-                                    double      k,
-                                    double      eps);
-
-void
 cs_f_turbulence_bc_set_uninit_inlet_k_eps(cs_lnum_t   face_num,
                                           double      k,
                                           double      eps,
@@ -539,78 +514,6 @@ _set_uninit_inlet_bc(cs_lnum_t   face_id,
 /*============================================================================
  * Fortran wrapper function definitions
  *============================================================================*/
-
-/*----------------------------------------------------------------------------
- * Equivalent of cs_turbulence_bc_inlet_ke_hyd_diam for Fortran calls
- * (using 1-based face number instead of id).
- *
- * parameters:
- *   face_num <-- face number
- *   uref2    <-- square of the reference flow velocity
- *   dh       <-- hydraulic diameter \f$ D_H \f$
- *   rho      <-- mass density \f$ \rho \f$
- *   mu       <-- dynamic viscosity \f$ \nu \f$
- *----------------------------------------------------------------------------*/
-
-void
-cs_f_turbulence_bc_inlet_hyd_diam(cs_lnum_t   face_num,
-                                  double      uref2,
-                                  double      dh,
-                                  double      rho,
-                                  double      mu)
-{
-  double ustar2, k, eps;
-
-  _ke_hyd_diam(uref2, dh, rho, mu, &ustar2, &k, &eps);
-
-  _inlet_bc(face_num - 1, k, eps, nullptr, nullptr);
-}
-
-/*----------------------------------------------------------------------------
- * Equivalent of cs_turbulence_bc_inlet_ke_hyd_diam for Fortran calls
- * (using 1-based face number instead of id).
- *
- * parameters:
- *   face_num    <-- face number
- *   uref2       <-- square of the reference flow velocity
- *   t_intensity <-- turbulence intensity
- *   dh          <-- hydraulic diameter \f$ D_H \f$
- *----------------------------------------------------------------------------*/
-
-void
-cs_f_turbulence_bc_inlet_turb_intensity(cs_lnum_t   face_num,
-                                        double      uref2,
-                                        double      t_intensity,
-                                        double      dh)
-{
-  double k, eps;
-
-  _ke_turb_intensity(uref2, t_intensity, dh, &k, &eps);
-
-  _inlet_bc(face_num - 1, k, eps, nullptr, nullptr);
-}
-
-/*----------------------------------------------------------------------------
- * Equivalent of cs_turbulence_bc_inlet_ke for Fortran calls
- * (using 1-based face number instead of id).
- *
- * parameters:
- *   face_num    <-- face number
- *   k           <-- turbulent kinetic energy
- *   eps         <-- turbulent dissipation
- *   vel_dir     <-- velocity direction
- *   shear_dir   <-- shear direction
- *----------------------------------------------------------------------------*/
-
-void
-cs_f_turbulence_bc_inlet_k_eps(cs_lnum_t   face_num,
-                               double      k,
-                               double      eps,
-                               double      vel_dir[],
-                               double      shear_dir[])
-{
-  _inlet_bc(face_num - 1, k, eps, vel_dir, shear_dir);
-}
 
 /*----------------------------------------------------------------------------
  * Equivalent of cs_turbulence_bc_set_uninit_inlet_ke for Fortran calls
