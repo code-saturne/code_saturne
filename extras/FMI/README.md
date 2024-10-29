@@ -107,3 +107,25 @@ to run this step in a separate directory.
 
 The generated model description must contain at least the _code_saturne_,
 _casename_, and _run_id_ ScalarVariable definitions, as in the example file.
+
+Logging and debugging
+=====================
+
+Several environment variables allow logging the FMU's behavior.
+
+On the FMU side:
+- `CS_FMU_COMM_TRACE=<file_name>` allows defining a file in which all
+   communications with the connected code_saturne instance are logged.
+- `CS_FMU_TRACE=1` allows logging all-low level FMU calls and actions
+  to the standard output, except those who are already logged using the
+  FMI environment.
+
+On the code_saturne side:
+- `CS_CONTROL_COMM_TRACE=<file_name>` allows defining a file in which all
+   communications with the connected code_saturne FMU instance are logged
+   (which allows checking that calls match those logged by the FMU using
+  `CS_FMU_COMM_TRACE`).
+- `CS_CONTROL_RECV_LOG=<file_name>` allows defining a file in which commands
+   received by the FMU are logged. This allows generating a `control_file`
+   which can be adapted or used to replay a computation in standalone mode.
+

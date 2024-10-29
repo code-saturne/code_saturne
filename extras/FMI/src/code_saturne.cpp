@@ -2147,8 +2147,9 @@ fmi2SetString(fmi2Component             component,
 
 /*----------------------------------------------------------------------------*/
 
-fmi2Status fmi2GetFMUstate(fmi2Component  component,
-                           fmi2FMUstate*  state)
+fmi2Status
+fmi2GetFMUstate(fmi2Component  component,
+                fmi2FMUstate*  state)
 {
   cs_fmu *c = static_cast<cs_fmu *>(component);
 
@@ -2195,8 +2196,9 @@ fmi2Status fmi2GetFMUstate(fmi2Component  component,
 
 /*----------------------------------------------------------------------------*/
 
-fmi2Status fmi2SetFMUstate(fmi2Component  component,
-                           fmi2FMUstate   state)
+fmi2Status
+fmi2SetFMUstate(fmi2Component  component,
+                fmi2FMUstate   state)
 {
   cs_fmu *c = static_cast<cs_fmu *>(component);
 
@@ -2230,8 +2232,9 @@ fmi2Status fmi2SetFMUstate(fmi2Component  component,
 
 /*----------------------------------------------------------------------------*/
 
-fmi2Status fmi2FreeFMUstate(fmi2Component  component,
-                            fmi2FMUstate*  state)
+fmi2Status
+fmi2FreeFMUstate(fmi2Component  component,
+                 fmi2FMUstate*  state)
 {
   cs_fmu *c = static_cast<cs_fmu *>(component);
 
@@ -2261,9 +2264,10 @@ fmi2Status fmi2FreeFMUstate(fmi2Component  component,
 
 /*----------------------------------------------------------------------------*/
 
-fmi2Status fmi2SerializedFMUstateSize(fmi2Component  component,
-                                      fmi2FMUstate   state,
-                                      size_t*        stateSize)
+fmi2Status
+fmi2SerializedFMUstateSize(fmi2Component  component,
+                           fmi2FMUstate   state,
+                           size_t*        stateSize)
 {
   cs_fmu *c = static_cast<cs_fmu *>(component);
 
@@ -2434,6 +2438,23 @@ fmi2Instantiate(fmi2String   instanceName,
     for (size_t i = 0; i < _n_log_categories; i++) {
       if (c->_log_active[i] == -2) {
         c->_log_active[i] = 1;
+      }
+    }
+  }
+
+  /* Only use low level trace if requested. */
+
+  bool trace_to_stdout = false;
+  const char s[] = "CS_FMU_TRACE";
+  if (getenv(s) != nullptr) {
+    int i = atoi(getenv(s));
+    if (i > 0)
+      trace_to_stdout = true;
+  }
+  if (trace_to_stdout == false) {
+    for (size_t i = 0; i < _n_log_categories; i++) {
+      if (c->_log_active[i] < 0) {
+        c->_log_active[i] = 0;
       }
     }
   }
