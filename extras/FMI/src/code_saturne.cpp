@@ -1442,6 +1442,7 @@ public:
     if (strncmp(buf_rcv, "get: ", 5) != 0) {
       s_log =   string(__func__) + ": unexpected reply; " + string(buf_rcv);
       _log(fmi2Error, CS_LOG_ERROR, s_log);
+      throw std::runtime_error(s_log);
     }
 
     val = strtod(buf_rcv + 5, &eptr);
@@ -1455,6 +1456,7 @@ public:
     if (strcmp(buf_rcv, "0") != 0) {
       s_log =   string(__func__) + ": unexpected return code " + string(buf_rcv);
       _log(fmi2Error, CS_LOG_ERROR, s_log);
+      throw std::runtime_error(s_log);
     }
 
 #endif
@@ -1504,6 +1506,7 @@ public:
     if (strncmp(buf_rcv, "serialized_snapshot", 19) != 0) {
       s_log =   string(__func__) + ": unexpected reply; " + string(buf_rcv);
       _log(fmi2Error, CS_LOG_ERROR, s_log);
+      throw std::runtime_error(s_log);
     }
 
     /* Data size */
@@ -1968,7 +1971,9 @@ fmi2Status fmi2Terminate(fmi2Component  component)
       control_file.close();
     }
     else {
-      c->_log(fmi2Error, CS_LOG_ERROR, "Error writing control_file.");
+      string s_log = string(__func__) + ": error writing control_file";
+      c->_log(fmi2Error, CS_LOG_ERROR, s_log);
+      throw std::runtime_error(s_log);
     }
 
 #endif
