@@ -490,8 +490,8 @@ public:
 
   ~cs_fmu() {
 
-    delete _instance_name;
-    delete _resource_location;
+    delete[] _instance_name;
+    delete[] _resource_location;
 
     _variables_finalize();
 
@@ -1512,6 +1512,7 @@ public:
 
     _serialized_size = restart_size[0] + n_add;
     _serialized_data = (char *)malloc(_serialized_size);
+    assert(_serialized_data != nullptr || _serialized_size == 0);
 
     if (restart_size[0] > 0)
       _recv_sock(_cs_socket, _serialized_data, _control_queue,
