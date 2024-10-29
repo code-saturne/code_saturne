@@ -531,6 +531,9 @@ Explicit memory allocation operations return pointers
   - Use [Valgrind](https://www.valgrind.org), the GCC and Clang
     [AddressSanitizer](https://github.com/google/sanitizers/wiki/AddressSanitizer)
     tools, or `export CS_MEM_LOG=mem.log` in your environment to check for this.
+    As a special case, with `export CS_MEM_LOG=performance.log`, only statistics,
+    including the number of non-freed pointers (if present) will be added to the usual
+    `performance.log` file.
 - Automatic allocation of variables and fixed-size arrays is done on a smaller
   memory area called the [stack](https://en.wikipedia.org/wiki/Stack_(abstract_data_type))
   - Does not incurr any overhead (fast).
