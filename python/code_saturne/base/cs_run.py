@@ -241,7 +241,9 @@ def arg_parser(argv):
                              + "ends for a lack of sufficient wall time.")
 
     parser.add_argument("--mem-log", dest="mem_log",
-                        action="store_true",
+                        type=str, choices=['full', 'light'],
+                        nargs='?', const='full',
+                        default=None,
                         help="set CS_MEM_LOG environment variable to 'cs_mem.log' " \
                             + "and check that memory is correctly freed at the " \
                             + "end of the computation.")
@@ -259,7 +261,6 @@ def arg_parser(argv):
     parser.set_defaults(nthreads=None)
     parser.set_defaults(resource=None)
     parser.set_defaults(auto_restart=False)
-    parser.set_defaults(mem_log=False)
 
     return parser
 
