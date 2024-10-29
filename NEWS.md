@@ -24,7 +24,7 @@ Master (not on release branches yet)
   the requested packages are available (HPDDM and SLEPc)
 - Add an algebraic SIMPLE algorithm for CDO schemes.
 
-### Users changes:
+### User changes:
 
 - Rename all cs_user_XXX.c functions to cs_user_XXX.cpp thus allowing calls
   to C++ functions within these functions.
@@ -51,6 +51,8 @@ Master (not on release branches yet)
   run.cfg file using the run_id `[<resource>/run_id=<run_id>]`.
 
 ### Architectural changes:
+
+- Allow memory allocaton statistics using `CS_MEM_LOG=performance.log`.
 
 - Modify the python layer (CLI and GUI) installation process to now use
   setup.py instead of Makefile scripts.

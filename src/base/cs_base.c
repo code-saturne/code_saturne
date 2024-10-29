@@ -1659,19 +1659,26 @@ cs_base_mem_init(void)
       /* We may not use BFT_MALLOC here as memory management has
          not yet been initialized using bft_mem_init() */
 
-      char  *file_name = NULL;
+      char *_file_name = NULL;
+      const char  *file_name = cs_empty_string;
 
-      /* In parallel, we will have one trace file per MPI process */
-      if (cs_glob_rank_id >= 0) {
-        int i;
-        int n_dec = 1;
-        for (i = cs_glob_n_ranks; i >= 10; i /= 10, n_dec += 1);
-        file_name = malloc((strlen(base_name) + n_dec + 2) * sizeof (char));
-        sprintf(file_name, "%s.%0*d", base_name, n_dec, cs_glob_rank_id);
-      }
-      else {
-        file_name = malloc((strlen(base_name) + 1) * sizeof (char));
-        strcpy(file_name, base_name);
+      /* If log is done to "performance.log", use log level 1 and only log
+         number of memory leaks. Otherwise, use full logging */
+
+      if (strcmp(base_name, "performance.log") != 0) {
+
+        /* In parallel, we will have one trace file per MPI process */
+        if (cs_glob_rank_id >= 0) {
+          int n_dec = 1;
+          for (int i = cs_glob_n_ranks; i >= 10; i /= 10, n_dec += 1);
+          file_name = malloc((strlen(base_name) + n_dec + 2) * sizeof (char));
+          sprintf(file_name, "%s.%0*d", base_name, n_dec, cs_glob_rank_id);
+        }
+        else {
+          file_name = malloc((strlen(base_name) + 1) * sizeof (char));
+          strcpy(file_name, base_name);
+        }
+
       }
 
       /* Actually initialize bft_mem instrumentation only when
@@ -1679,7 +1686,8 @@ cs_base_mem_init(void)
 
       bft_mem_init(file_name);
 
-      free(file_name);
+      if (_file_name != NULL)
+        free(_file_name);
 
     }
 
@@ -1846,6 +1854,41 @@ cs_base_mem_finalize(void)
 #endif
     }
 
+  }
+
+  uint64_t mstats[6] = {0, 0, 0, 0, 0, 0};
+  int have_mem_stats = bft_mem_stats(mstats, mstats+1, mstats+2,
+                                     mstats+3, mstats+4, mstats+5);
+  if (have_mem_stats) {
+
+#if defined(HAVE_MPI)
+    if (cs_glob_n_ranks > 1) {
+      uint64_t mstats_l[6];
+      memcpy(mstats_l, mstats, 6*sizeof(uint64_t));
+      MPI_Reduce(mstats_l, mstats, 6, MPI_UINT64_T, MPI_MAX,
+                 0, cs_glob_mpi_comm);
+    }
+#endif
+
+    cs_log_printf(CS_LOG_PERFORMANCE,
+                  _("\nInstrumented dynamic memory statistics:\n\n"));
+
+    cs_log_printf(CS_LOG_PERFORMANCE,
+                  _("  Allocs:       %llu\n"),
+                  (unsigned long long)mstats[2]);
+    cs_log_printf(CS_LOG_PERFORMANCE,
+                  _("  Reallocs:     %llu\n"),
+                    (unsigned long long)mstats[3]);
+    cs_log_printf(CS_LOG_PERFORMANCE,
+                  _("  Frees:        %llu\n"),
+                    (unsigned long long)mstats[4]);
+
+    if (mstats[5] > 0) {
+      cs_log_printf(CS_LOG_PERFORMANCE,
+                    _("  Non freed:    %llu (%llu bytes)\n"),
+                    (unsigned long long)mstats[5],
+                    (unsigned long long)mstats[0]);
+    }
   }
 
   cs_log_printf(CS_LOG_PERFORMANCE, "\n");

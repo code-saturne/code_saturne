@@ -651,6 +651,10 @@ BEGIN_C_DECLS
  * be a regular, local file. If this file cannot be opened for
  * some reason, logging is silently de-activated.
  *
+ * If the log file name argument is non-null but is an empty string,
+ * memory management be tracked, but not logged in detail, so only
+ * statistics will be available.
+ *
  * \param log_file_name name of optional log_file (if nullptr, no log).
  */
 
@@ -680,24 +684,28 @@ bft_mem_init(const char *log_file_name)
 
     _bft_mem_global_init_mode = 2;
 
-    _bft_mem_global_file = fopen(log_file_name, "w");
+    if (strlen(log_file_name) > 0) {
 
-    /*
-      If the file could not be opened, we do not abort, as it is not
-      absolutely necessary. We silently continue.
-      (We could warn the user, but this would require either using
-      bft_printf(), which we prefer to keep independent of the bft_mem_...()
-      functions to avoid evental crossed definitions when user-defined, or
-      "warning handling" similar to error handling, with a possibility
-      of user-defined warning handlers, as we are not sure if the calling
-      code uses stderr (especially in a distributed environment). This
-      is probably not worth the bother.
-    */
+      _bft_mem_global_file = fopen(log_file_name, "w");
 
-    if (_bft_mem_global_file == nullptr)
-      fprintf(stderr,
-              _("Failure to open memory log file \"%s\"\n"),
-              log_file_name);
+      /*
+        If the file could not be opened, we do not abort, as it is not
+        absolutely necessary. We silently continue.
+        (We could warn the user, but this would require either using
+        bft_printf(), which we prefer to keep independent of the bft_mem_...()
+        functions to avoid evental crossed definitions when user-defined, or
+        "warning handling" similar to error handling, with a possibility
+        of user-defined warning handlers, as we are not sure if the calling
+        code uses stderr (especially in a distributed environment). This
+        is probably not worth the bother.
+      */
+
+      if (_bft_mem_global_file == nullptr)
+        fprintf(stderr,
+                _("Failure to open memory log file \"%s\"\n"),
+                log_file_name);
+
+    }
 
   }
 
@@ -1118,6 +1126,51 @@ size_t
 bft_mem_size_max(void)
 {
   return (_bft_mem_global_alloc_max / 1024);
+}
+
+/*!
+ * \brief Return current theoretical dynamic memory allocated.
+ *
+ * Availability of statistics depends on the bft_mem_init options.
+ *
+ * \param [out]  alloc_cur   current allocation size, or nullptr
+ * \param [out]  alloc_max   max allocation size, or nullptr
+ * \param [out]  n_allocs    total number of allocations, or nullptr
+ * \param [out]  n_reallocs  total number of reallocations, or nullptr
+ * \param [out]  n_frees     total number of frees, or nullptr
+ * \param [out]  n_current   total number of current allocations, or nullptr
+ *
+ * \return 1 if stats are available, O otherwise.
+ */
+
+int
+bft_mem_stats(uint64_t  *alloc_cur,
+              uint64_t  *alloc_max,
+              uint64_t  *n_allocs,
+              uint64_t  *n_reallocs,
+              uint64_t  *n_frees,
+              uint64_t  *n_current)
+{
+  int retval = 0;
+
+  if (_bft_mem_global_init_mode > 1) {
+    if (alloc_cur != nullptr)
+      *alloc_cur = _bft_mem_global_alloc_cur;
+    if (alloc_max != nullptr)
+      *alloc_max = _bft_mem_global_alloc_max;
+    if (n_allocs != nullptr)
+      *n_allocs = _bft_mem_global_n_allocs;
+    if (n_reallocs != nullptr)
+      *n_reallocs = _bft_mem_global_n_reallocs;
+    if (n_frees != nullptr)
+      *n_frees = _bft_mem_global_n_frees;
+    if (n_current != nullptr)
+      *n_current = _bft_alloc_map.size();
+
+    retval = 1;
+  }
+
+  return retval;
 }
 
 /*!

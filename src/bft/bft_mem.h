@@ -254,6 +254,10 @@ BEGIN_C_DECLS
  * be a regular, local file. If this file cannot be opened for
  * some reason, logging is silently de-activated.
  *
+ * If the log file name argument is non-null but is an empty string,
+ * memory management be tracked, but not logged in detail, so only
+ * statistics will be available.
+ *
  * parameter:
  *   log_file_name <-- name of optional log_file (if NULL, no log).
  */
@@ -425,6 +429,29 @@ bft_mem_size_current(void);
 
 size_t
 bft_mem_size_max(void);
+
+/*!
+ * \brief Return memory allocation stats, if available.
+ *
+ * Availability of statistics depends on the bft_mem_init options.
+ *
+ * \param [out]  alloc_cur   current allocation size, or nullptr
+ * \param [out]  alloc_max   max allocation size, or nullptr
+ * \param [out]  n_allocs    total number of allocations, or nullptr
+ * \param [out]  n_reallocs  total number of reallocations, or nullptr
+ * \param [out]  n_frees     total number of frees, or nullptr
+ * \param [out]  n_current   total number of current allocations, or nullptr
+ *
+ * \return 1 if stats are available, O otherwise.
+ */
+
+int
+bft_mem_stats(uint64_t  *alloc_cur,
+              uint64_t  *alloc_max,
+              uint64_t  *n_allocs,
+              uint64_t  *n_reallocs,
+              uint64_t  *n_frees,
+              uint64_t  *n_current);
 
 /*
  * Indicate if a memory aligned allocation variant is available.
