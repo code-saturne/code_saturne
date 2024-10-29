@@ -348,6 +348,7 @@ _queue_finalize(cs_control_queue_t  **queue)
     cs_control_queue_t  *_queue = *queue;
     free(_queue->buf);
     free(*queue);
+    *queue = nullptr;
   }
 }
 
@@ -1480,8 +1481,10 @@ public:
     cs_variables_t *v = _cs_variables;
     size_t n_add = (v->n_input + v->n_output) * sizeof(double);
 
-    if (_serialized_data != nullptr)
+    if (_serialized_data != nullptr) {
       free(_serialized_data);
+      _serialized_data = nullptr;
+    }
 
 #if CS_DRY_RUN == 1
 
@@ -2308,6 +2311,7 @@ fmi2SerializeFMUstate(fmi2Component  component,
 
   c->_serialized_size = 0;
   free(c->_serialized_data);
+  c->_serialized = nullptr;
 
   snprintf(s, 127, "%s: called for %p", __func__, (void *)state);
   c->_log(fmi2Error, CS_LOG_TRACE, s);
