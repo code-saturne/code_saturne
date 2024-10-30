@@ -1565,7 +1565,13 @@ class mpi_environment:
             if not self.mpiexec_n_per_node[-1:].isdigit():
                 ppn = resource_info.n_procs_per_node()
                 if ppn:
-                    self.mpiexec_n_per_node += str(ppn)
+                    # Allow a syntax with replacement instead of concatenation.
+                    # This is needed for complex syntaxes of mpirun/mpiexec
+                    if '@PPN@' in self.mpiexec_n_per_node:
+                        self.mpiexec_n_per_node = \
+                                self.mpiexec_n_per_node.replace('@PPN@', str(ppn))
+                    else:
+                        self.mpiexec_n_per_node += str(ppn)
                 else:
                     self.mpiexec_n_per_node = None
 

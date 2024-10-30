@@ -104,6 +104,9 @@
 # mpiexec_n = ' -n '
 ### Option to define number of ranks per node (e.g. ' -ppn ', ' --ranks-per-node ';
 ### trailing whitespace is significant, so quotes may be used here)
+### If the @PPN@ value is set within the 'mpiexec_n_per_node' command, instead
+### of concatenating it with the value, the '@PPN@' placeholder will be replaced.
+### This is needed for complex syntaxes of mpirun/mpiexec
 # mpiexec_n_per_node =
 ### Separator after mpiexec options (':' for Blue Gene/Q without SLURM)
 # mpiexec_separator =
