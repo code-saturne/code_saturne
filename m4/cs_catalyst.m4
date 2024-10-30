@@ -63,6 +63,10 @@ AC_ARG_WITH(catalyst,
                  fi
                fi
                unset cs_salome_pv_root_dir
+               if test -z "$TBB_INCLUDE_DIR" -a -z "$TBB_DIR"; then
+                 cs_salome_tbb_dir=`(/bin/bash -c "unset LD_LIBRARY_PATH ; $SALOMEENVCMD > /dev/null 2>&1 ; env | grep ^TBB_ROOT_DIR | cut -f2 -d'='")`
+               fi
+
              fi
 
 ],
@@ -154,6 +158,11 @@ if test "x$with_catalyst" != "xno" ; then
   # Work around some detection issues on some systems
   if test "x$TBB_INCLUDE_DIR" != "x" ; then
     catalyst_cmake_options="${catalyst_cmake_options} -DTBB_INCLUDE_DIR=${TBB_INCLUDE_DIR}"
+  elif test "x$TBB_DIR" != "x" ; then
+    catalyst_cmake_options="${catalyst_cmake_options} -DTBB_DIR=${TBB_DIR}"
+  elif test "x$cs_salome_tbb_dir" != "x" ; then
+    catalyst_cmake_options="${catalyst_cmake_options} -DTBB_DIR=${cs_salome_tbb_dir}/lib/cmake/TBB"
+    unset cs_salome_tbb_dir
   fi
 
   mkdir catalyst_test && cd catalyst_test
