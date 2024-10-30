@@ -239,14 +239,15 @@ typedef struct {
  * \var CS_GWF_TPF_SOLVER_PCPG_COUPLED
  *      (Pc, Pg) is the couple of main unknowns. Pc for the conservation of the
  *      mass of water and Pg for the conservation of the mass of component
- *      mainly present in the gas phase (H2 for instance). A fully approach
- *      solver is considered to solve the system of equations.
+ *      mainly present in the gas phase (H2 for instance). A fully coupled
+ *      approach solver is considered to solve the system of equations.
  *
  * \var CS_GWF_TPF_SOLVER_PLPC_COUPLED
  *      (Pc, Pl) is the couple of main unknowns. Pl for the conservation of the
  *      mass of water and Pc for the conservation of the mass of component
- *      mainly present in the gas phase (H2 for instance). A fully approach
- *      solver is considered to solve the system of equations.
+ *      mainly present in the gas phase (H2 for instance). A fully coupled
+ *      approach solver is considered to solve the system of equations.
+ *
  */
 
 typedef enum {
