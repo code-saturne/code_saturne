@@ -1360,7 +1360,7 @@ class domain(base_domain):
 
         # Restore environment
 
-        if ld_library_path_save:
+        if ld_library_path_save is not None:
             os.environ['LD_LIBRARY_PATH'] = ld_library_path_save
 
         # Revert to initial directory
