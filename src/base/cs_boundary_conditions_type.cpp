@@ -741,7 +741,7 @@ cs_boundary_conditions_type(bool  init,
 
       if (meteo_profile > 0)  {
 
-        cs_real_t vel_dir[3];
+        cs_real_t vel_dir[3] = {0, 0, 0};
         if (meteo_profile == 1) {
           const int met_1d_nlevels_t = cs_glob_atmo_option->met_1d_nlevels_t;
           const int met_1d_ntimes = cs_glob_atmo_option->met_1d_ntimes;
