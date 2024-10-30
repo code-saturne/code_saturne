@@ -1856,44 +1856,6 @@ cs_base_mem_finalize(void)
 
   }
 
-  uint64_t mstats[6] = {0, 0, 0, 0, 0, 0};
-  int have_mem_stats = bft_mem_stats(mstats, mstats+1, mstats+2,
-                                     mstats+3, mstats+4, mstats+5);
-  if (have_mem_stats) {
-
-#if defined(HAVE_MPI)
-    if (cs_glob_n_ranks > 1) {
-      uint64_t mstats_l[6];
-      memcpy(mstats_l, mstats, 6*sizeof(uint64_t));
-      MPI_Reduce(mstats_l, mstats, 6, MPI_UINT64_T, MPI_MAX,
-                 0, cs_glob_mpi_comm);
-    }
-#endif
-
-    cs_log_printf(CS_LOG_PERFORMANCE,
-                  _("\nInstrumented dynamic memory statistics:\n\n"));
-
-    cs_log_printf(CS_LOG_PERFORMANCE,
-                  _("  Allocs:       %llu\n"),
-                  (unsigned long long)mstats[2]);
-    cs_log_printf(CS_LOG_PERFORMANCE,
-                  _("  Reallocs:     %llu\n"),
-                    (unsigned long long)mstats[3]);
-    cs_log_printf(CS_LOG_PERFORMANCE,
-                  _("  Frees:        %llu\n"),
-                    (unsigned long long)mstats[4]);
-
-    if (mstats[5] > 0) {
-      cs_log_printf(CS_LOG_PERFORMANCE,
-                    _("  Non freed:    %llu (%llu bytes)\n"),
-                    (unsigned long long)mstats[5],
-                    (unsigned long long)mstats[0]);
-    }
-  }
-
-  cs_log_printf(CS_LOG_PERFORMANCE, "\n");
-  cs_log_separator(CS_LOG_PERFORMANCE);
-
   /* Finalize extra communicators now as they use memory allocated through
      bft_mem_* API */
 
@@ -1910,9 +1872,45 @@ cs_base_mem_finalize(void)
     BFT_FREE(_cs_base_env_pkglibdir);
     BFT_FREE(_bft_printf_file_name);
 
-    bft_mem_end();
+    uint64_t mstats[6] = {0, 0, 0, 0, 0, 0};
+    int have_mem_stats = bft_mem_stats(mstats, mstats+1, mstats+2,
+                                       mstats+3, mstats+4, mstats+5);
+    if (have_mem_stats) {
+#if defined(HAVE_MPI)
+      if (cs_glob_n_ranks > 1) {
+        uint64_t mstats_l[6];
+        memcpy(mstats_l, mstats, 6*sizeof(uint64_t));
+        MPI_Reduce(mstats_l, mstats, 6, MPI_UINT64_T, MPI_MAX,
+                   0, cs_glob_mpi_comm);
+      }
+#endif
 
+      cs_log_printf(CS_LOG_PERFORMANCE,
+                    _("\nInstrumented dynamic memory statistics:\n\n"));
+
+      cs_log_printf(CS_LOG_PERFORMANCE,
+                    _("  Allocs:       %llu\n"),
+                    (unsigned long long)mstats[2]);
+      cs_log_printf(CS_LOG_PERFORMANCE,
+                    _("  Reallocs:     %llu\n"),
+                    (unsigned long long)mstats[3]);
+      cs_log_printf(CS_LOG_PERFORMANCE,
+                    _("  Frees:        %llu\n"),
+                    (unsigned long long)mstats[4]);
+
+      if (mstats[5] > 0) {
+        cs_log_printf(CS_LOG_PERFORMANCE,
+                      _("  Non freed:    %llu (%llu bytes)\n"),
+                      (unsigned long long)mstats[5],
+                      (unsigned long long)mstats[0]);
+      }
+    }
+
+    bft_mem_end();
   }
+
+  cs_log_printf(CS_LOG_PERFORMANCE, "\n");
+  cs_log_separator(CS_LOG_PERFORMANCE);
 
   /* Finalize memory usage count */
 

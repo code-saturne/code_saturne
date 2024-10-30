@@ -337,7 +337,7 @@ def get_case_state(run_dir, coupling=False, run_timeout=3600):
     if os.path.isfile(os.path.join(run_dir, 'error')):
         state = case_state.FAILED
 
-    # Now try to check elapsed time.
+    # Now try to check elapsed time and memory stats.
 
     p_log = os.path.join(run_dir, 'performance.log')
 
@@ -364,6 +364,8 @@ def get_case_state(run_dir, coupling=False, run_timeout=3600):
                 if l[:20] == '  Total memory used:':
                     c_mem_max = l[20:].strip().split()
                     t_mem = 0
+                if l[:12] == '  Non freed:':
+                    info['memory_leaks'] = int(l[12:].strip().split(' ')[0])
                 if t_mem == 2:
                     j = l.find('local maximum:')
                     if j > -1:
