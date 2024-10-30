@@ -1,10 +1,20 @@
-Release 8.2.1 (2024-10-22)
---------------------------
+Releas 8.2.1 (unreleased)
+-------------------------
 
 ### Bug fixes:
 
 - Rename postprocessing output files with ':' character to avoid issue
   with MPICH ROMIO library.
+
+### Architectural changes:
+
+- PLE library: restore PLE_MIN, PLE_MAX, and PLE_ABS macros in case they
+  are used by third-party code (i.e. Syrthes).
+
+Release 8.2.1 (2024-10-22)
+--------------------------
+
+### Bug fixes:
 
 - Major fix in velocity balance (transpose of gradient terms).
 
