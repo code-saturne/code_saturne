@@ -45,6 +45,12 @@ extern "C" {
  * Macro definitions
  *============================================================================*/
 
+/* Absolute, minimum, and maximum values */
+
+#define PLE_ABS(a)     ((a) <  0  ? -(a) : (a))  /* Absolute value of a */
+#define PLE_MIN(a,b)   ((a) > (b) ?  (b) : (a))  /* Minimum of a et b */
+#define PLE_MAX(a,b)   ((a) < (b) ?  (b) : (a))  /* Maximum of a et b */
+
 /*
  * Allocate memory for _ni items of type _type.
  *
