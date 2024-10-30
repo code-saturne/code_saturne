@@ -146,6 +146,7 @@ static const char
 cs_param_nl_algo_name[CS_PARAM_N_NL_ALGOS][CS_BASE_STRING_LEN] =
   { N_("Linear algorithm"),
     N_("Picard (or fixed-point) algorithm"),
+    N_("Modified Picard algorithm"),
     N_("Anderson acceleration algorithm")
   };
 
@@ -153,6 +154,7 @@ static const char
 cs_param_nl_algo_label[CS_PARAM_N_NL_ALGOS][CS_BASE_STRING_LEN] =
   { N_("None"),
     N_("Picard"),
+    N_("ModifiedPicard"),
     N_("Anderson")
   };
 
@@ -450,6 +452,7 @@ cs_param_get_nl_algo_name(cs_param_nl_algo_t   algo)
   switch (algo) {
   case CS_PARAM_NL_ALGO_NONE:
   case CS_PARAM_NL_ALGO_PICARD:
+  case CS_PARAM_NL_ALGO_MODIFIED_PICARD:
   case CS_PARAM_NL_ALGO_ANDERSON:
     return cs_param_nl_algo_name[algo];
 
@@ -474,6 +477,7 @@ cs_param_get_nl_algo_label(cs_param_nl_algo_t   algo)
   switch (algo) {
   case CS_PARAM_NL_ALGO_NONE:
   case CS_PARAM_NL_ALGO_PICARD:
+  case CS_PARAM_NL_ALGO_MODIFIED_PICARD:
   case CS_PARAM_NL_ALGO_ANDERSON:
     return cs_param_nl_algo_label[algo];
 

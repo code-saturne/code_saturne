@@ -209,6 +209,7 @@ cs_equation_builder_create(const cs_equation_param_t   *eqp,
   eqb->increment = nullptr;
   switch(eqp->incremental_algo_type) {
   case CS_PARAM_NL_ALGO_PICARD:
+  case CS_PARAM_NL_ALGO_MODIFIED_PICARD:
     eqb->incremental_algo
       = cs_iter_algo_create_with_settings(CS_ITER_ALGO_DEFAULT,
                                           eqp->verbosity,

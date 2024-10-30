@@ -1040,7 +1040,8 @@ cs_cdofb_ac_init_scheme_context(const cs_navsto_param_t   *nsp,
 
   cs_iter_algo_type_t  type = CS_ITER_ALGO_TWO_LEVEL;
 
-  if (nsp->nl_algo_type == CS_PARAM_NL_ALGO_PICARD) {
+  if (nsp->nl_algo_type == CS_PARAM_NL_ALGO_PICARD ||
+      nsp->nl_algo_type == CS_PARAM_NL_ALGO_MODIFIED_PICARD) {
 
     type |= CS_ITER_ALGO_DEFAULT;
     sc->nl_algo = cs_iter_algo_create_with_settings(type,

@@ -462,6 +462,8 @@ cs_navsto_param_set(cs_navsto_param_t *nsp,
   case CS_NSKEY_NL_ALGO: {
     if (strcmp(val, "picard") == 0 || strcmp(val, "fixed-point") == 0)
       nsp->nl_algo_type = CS_PARAM_NL_ALGO_PICARD;
+    else if (strcmp(val, "modified_picard") == 0)
+      nsp->nl_algo_type = CS_PARAM_NL_ALGO_MODIFIED_PICARD;
     else if (strcmp(val, "anderson") == 0)
       nsp->nl_algo_type = CS_PARAM_NL_ALGO_ANDERSON;
     else {

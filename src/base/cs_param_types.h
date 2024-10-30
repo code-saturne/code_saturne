@@ -593,6 +593,10 @@ typedef struct {
  * \var CS_PARAM_NL_ALGO_PICARD
  * Picard (also called fixed point) algorithm
  *
+ * \var CS_PARAM_NL_ALGO_MODIFIED_PICARD
+ * modified Picard algorithm where the unsteady term is treated specifically
+ * in a manner close to what is done in the Newton algorithm.
+ *
  * \var CS_PARAM_NL_ALGO_ANDERSON
  * Anderson acceleration
  *
@@ -603,6 +607,7 @@ typedef enum {
 
   CS_PARAM_NL_ALGO_NONE,
   CS_PARAM_NL_ALGO_PICARD,
+  CS_PARAM_NL_ALGO_MODIFIED_PICARD,
   CS_PARAM_NL_ALGO_ANDERSON,
   CS_PARAM_N_NL_ALGOS
 

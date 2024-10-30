@@ -881,6 +881,93 @@ _svb_imp_euler_lumped_incr_subcell(const cs_equation_param_t   *eqp,
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Apply the time scheme for a scalar-valued CDO vertex-based scheme
+ *        Case of an implicit Euler time scheme with a lumped mass matrix and
+ *        an incremental resolution relying on the modified Picard algorithm
+ *
+ * \param[in]      eqp         pointer to a cs_equation_param_t structure
+ * \param[in]      cm          pointer to a cs_cell_mesh_t structure
+ * \param[in]      mass_hodge  pointer to a Hodge structure or nullptr
+ * \param[in]      inv_dtcur   value of 1./dt for the current time step
+ * \param[in, out] eqb         pointer to the equation builder structure
+ * \param[in, out] cb          pointer to a cs_cell_builder_t structure
+ * \param[in, out] csys        pointer to a cs_cell_sys_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_svb_imp_euler_mpicard(const cs_equation_param_t *eqp,
+                       const cs_cell_mesh_t      *cm,
+                       const cs_hodge_t          *mass_hodge,
+                       const double               inv_dtcur,
+                       cs_equation_builder_t     *eqb,
+                       cs_cell_builder_t         *cb,
+                       cs_cell_sys_t             *csys)
+{
+  CS_UNUSED(mass_hodge);
+  CS_CDO_OMP_ASSERT(cs_eflag_test(eqb->msh_flag, CS_FLAG_COMP_PVQ));
+
+  if (!(eqb->time_pty_uniform))
+    cb->tpty_val = cs_property_value_in_cell(cm,
+                                             eqp->time_property,
+                                             cb->t_pty_eval);
+
+  /* |c|*wvc = |dual_cell(v) cap c| corresponds to the diagonal entry of the
+   * lumped mass matrix */
+
+  const double  ptyc = cb->tpty_val * cm->vol_c * inv_dtcur;
+
+  for (short int i = 0; i < cm->n_vc; i++)
+    csys->mat->val[i*(cm->n_vc + 1)] += ptyc * cm->wvc[i];
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Apply the time scheme for a scalar-valued CDO vertex-based scheme
+ *        Case of an implicit Euler time scheme with a lumped mass matrix and
+ *        an incremental resolution relying on the modified Picard
+ *        algorithm. The time property is defined on each part of the dual cell
+ *        intersected with a primal cell.
+ *
+ * \param[in]      eqp         pointer to a cs_equation_param_t structure
+ * \param[in]      cm          pointer to a cs_cell_mesh_t structure
+ * \param[in]      mass_hodge  pointer to a Hodge structure or nullptr
+ * \param[in]      inv_dtcur   value of 1./dt for the current time step
+ * \param[in, out] eqb         pointer to the equation builder structure
+ * \param[in, out] cb          pointer to a cs_cell_builder_t structure
+ * \param[in, out] csys        pointer to a cs_cell_sys_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_svb_imp_euler_mpicard_subcell(const cs_equation_param_t *eqp,
+                               const cs_cell_mesh_t      *cm,
+                               const cs_hodge_t          *mass_hodge,
+                               const double               inv_dtcur,
+                               cs_equation_builder_t     *eqb,
+                               cs_cell_builder_t         *cb,
+                               cs_cell_sys_t             *csys)
+{
+  CS_UNUSED(mass_hodge);
+  CS_UNUSED(eqb);
+  CS_CDO_OMP_ASSERT(cs_eflag_test(eqb->msh_flag, CS_FLAG_COMP_PVQ));
+
+  const double  coefc = cm->vol_c * inv_dtcur;
+
+  /* The value of the property in each portion of the dual cell is stored
+     inside cb->values */
+
+  cs_property_c2v_values(cm, eqp->time_property, cb->t_pty_eval, cb->values);
+
+  /* |c|*wvc = |dual_cell(v) cap c| corresponds to the diagonal entry of the
+   * lumped mass matrix */
+
+  for (short int i = 0; i < cm->n_vc; i++)
+    csys->mat->val[i*(cm->n_vc + 1)] += cb->values[i] * cm->wvc[i] * coefc;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Apply the time scheme for a scalar-valued CDO vertex-based scheme
  *        First step shared among all variant of theta time scheme
  *
  * \param[in]      eqp         pointer to a cs_equation_param_t structure
@@ -1751,16 +1838,25 @@ cs_cdovb_scaleq_init_context(cs_equation_param_t    *eqp,
 
       if (eqp->time_scheme == CS_TIME_SCHEME_EULER_IMPLICIT) {
 
-        if (eqp->incremental_algo_type != CS_PARAM_NL_ALGO_NONE) {
+        switch (eqp->incremental_algo_type) {
+        case CS_PARAM_NL_ALGO_NONE:
+          eqc->add_unsteady_term = _svb_imp_euler_lumped;
+          break;
 
+        case CS_PARAM_NL_ALGO_MODIFIED_PICARD:
+          if (cs_property_is_subcell(eqp->time_property))
+            eqc->add_unsteady_term = _svb_imp_euler_mpicard_subcell;
+          else
+            eqc->add_unsteady_term = _svb_imp_euler_mpicard;
+          break;
+
+        default:
           if (cs_property_is_subcell(eqp->time_property))
             eqc->add_unsteady_term = _svb_imp_euler_lumped_incr_subcell;
           else
             eqc->add_unsteady_term = _svb_imp_euler_lumped_incr;
-
+          break;
         }
-        else
-          eqc->add_unsteady_term = _svb_imp_euler_lumped;
 
       }
       else if (eqp->time_scheme == CS_TIME_SCHEME_CRANKNICO ||
@@ -1784,16 +1880,25 @@ cs_cdovb_scaleq_init_context(cs_equation_param_t    *eqp,
 
         if (eqp->time_scheme == CS_TIME_SCHEME_EULER_IMPLICIT) {
 
-          if (eqp->incremental_algo_type != CS_PARAM_NL_ALGO_NONE) {
+          switch (eqp->incremental_algo_type) {
+          case CS_PARAM_NL_ALGO_NONE:
+            eqc->add_unsteady_term = _svb_imp_euler_lumped;
+            break;
 
+          case CS_PARAM_NL_ALGO_MODIFIED_PICARD:
+            if (cs_property_is_subcell(eqp->time_property))
+              eqc->add_unsteady_term = _svb_imp_euler_mpicard_subcell;
+            else
+              eqc->add_unsteady_term = _svb_imp_euler_mpicard;
+            break;
+
+          default:
             if (cs_property_is_subcell(eqp->time_property))
               eqc->add_unsteady_term = _svb_imp_euler_lumped_incr_subcell;
             else
               eqc->add_unsteady_term = _svb_imp_euler_lumped_incr;
-
+            break;
           }
-          else
-            eqc->add_unsteady_term = _svb_imp_euler_lumped;
 
         }
         else if (eqp->time_scheme == CS_TIME_SCHEME_CRANKNICO ||
@@ -1813,10 +1918,20 @@ cs_cdovb_scaleq_init_context(cs_equation_param_t    *eqp,
 
         if (eqp->time_scheme == CS_TIME_SCHEME_EULER_IMPLICIT) {
 
-          if (eqp->incremental_algo_type != CS_PARAM_NL_ALGO_NONE)
-            eqc->add_unsteady_term = _svb_imp_euler_incr;
-          else
+          switch (eqp->incremental_algo_type) {
+          case CS_PARAM_NL_ALGO_NONE:
             eqc->add_unsteady_term = _svb_imp_euler;
+            break;
+
+          case CS_PARAM_NL_ALGO_MODIFIED_PICARD:
+            bft_error(__FILE__, __LINE__, 0,
+                      "%s: Invalid settings.\n", __func__);
+            break;
+
+          default:
+            eqc->add_unsteady_term = _svb_imp_euler_incr;
+            break;
+          }
 
         }
         else if (eqp->time_scheme == CS_TIME_SCHEME_CRANKNICO ||
