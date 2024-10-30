@@ -3,6 +3,9 @@ Release 8.2.1 (2024-10-22)
 
 ### Bug fixes:
 
+- Rename postprocessing output files with ':' character to avoid issue
+  with MPICH ROMIO library.
+
 - Major fix in velocity balance (transpose of gradient terms).
 
 - Fix for atmospheric model imbrication.
