@@ -1,5 +1,5 @@
-Releas 8.2.2 (unreleased)
--------------------------
+release 8.2.2 (unreleased)
+--------------------------
 
 ### Bug fixes:
 
