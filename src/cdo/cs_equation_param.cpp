@@ -1074,6 +1074,21 @@ cs_equation_param_create(const char         *name,
     .beta = 1.0,    /* No damping by default */
     .dp_type = CS_PARAM_DOTPROD_EUCLIDEAN };
 
+  eqp->time_control = (cs_time_control_t) {
+    .type = CS_TIME_CONTROL_TIME_STEP,
+    .at_start = true,
+    .at_first = true,
+    .at_end = false,
+    {.start_nt = -1},
+    {.end_nt = -1},
+    {.interval_nt = 1},
+    .control_func = nullptr,
+    .control_input = nullptr,
+    .current_state = false,
+    .current_time_step = -1,
+    .last_nt = -2,
+    .last_t = -HUGE_VAL
+  };
   return eqp;
 }
 

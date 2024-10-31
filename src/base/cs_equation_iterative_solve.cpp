@@ -1596,6 +1596,11 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
   cs_real_t epsilp = eqp->epsilo;
   cs_real_t thetap = eqp->theta;
 
+  bool _need_solve = cs_time_control_is_active(&(eqp->time_control),
+          cs_glob_time_step);
+  if (!_need_solve)
+    return;
+
   const cs_real_t  *cell_vol = cs_glob_mesh_quantities->cell_vol;
   const cs_lnum_t n_cells = m->n_cells;
   const cs_lnum_t n_i_faces = m->n_i_faces;

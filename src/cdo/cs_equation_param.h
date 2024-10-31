@@ -39,6 +39,7 @@
 #include "cdo/cs_param_cdo.h"
 #include "cdo/cs_property.h"
 #include "cdo/cs_xdef.h"
+#include "base/cs_time_control.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -821,6 +822,8 @@ typedef struct {
   cs_iter_algo_param_aac_t    incremental_anderson_param;
 
   /*! @} */
+
+  cs_time_control_t          time_control; /* Time control for equations*/
 
 } cs_equation_param_t;
 
