@@ -286,7 +286,7 @@ cs_timer.c \
 cs_tree.cpp
 
 if HAVE_ACCEL
-libcscore_a_SOURCES += cs_base_accel.cxx
+libcscore_a_SOURCES += cs_base_accel.cpp
 endif
 
 if HAVE_CUDA
