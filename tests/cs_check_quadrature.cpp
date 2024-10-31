@@ -784,6 +784,8 @@ _define_cm_tetra_ref(double            a,
   const double  ah = a/2.;
   const double  sq2 = sqrt(2.), invsq2 = 1./sq2;
 
+  constexpr double c_1ov6 = 1./6.;
+
   cm->c_id = 0;
   cm->type = FVM_CELL_TETRA;
 
@@ -794,7 +796,7 @@ _define_cm_tetra_ref(double            a,
     CS_FLAG_COMP_EV  | CS_FLAG_COMP_FEQ | CS_FLAG_COMP_DFQ | CS_FLAG_COMP_HFQ |
     CS_FLAG_COMP_FE  | CS_FLAG_COMP_SEF | CS_FLAG_COMP_DIAM;
 
-  cm->vol_c = cs_math_1ov6*a*a*a;
+  cm->vol_c = c_1ov6*a*a*a;
   cm->xc[0] = cm->xc[1] = cm->xc[2] = 0.25*a;
 
   /* VERTICES */
@@ -1019,7 +1021,7 @@ _define_cm_tetra_ref(double            a,
 
   for (short int f = 0; f < cm->n_fc; f++) {
 
-    const double  hf_coef = cs_math_1ov6 * cm->hfc[f];
+    const double  hf_coef = c_1ov6 * cm->hfc[f];
 
     for (int i = cm->f2e_idx[f]; i < cm->f2e_idx[f+1]; i++) {
 

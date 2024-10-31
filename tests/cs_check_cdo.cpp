@@ -601,6 +601,9 @@ _define_cm_tetra_ref(double            a,
   const double  ah = a/2.;
   const double  sq2 = sqrt(2.), invsq2 = 1./sq2;
 
+  constexpr cs_real_t c_1ov3 = 1./3.;
+  constexpr cs_real_t c_1ov6 = 1./6.;
+
   cm->c_id = 0;
   cm->type = FVM_CELL_TETRA;
 
@@ -611,7 +614,7 @@ _define_cm_tetra_ref(double            a,
     CS_FLAG_COMP_DFQ | CS_FLAG_COMP_HFQ | CS_FLAG_COMP_FE |CS_FLAG_COMP_SEF  |
     CS_FLAG_COMP_DIAM | CS_FLAG_COMP_PFC | CS_FLAG_COMP_PEC;
 
-  cm->vol_c = cs_math_1ov6*a*a*a;
+  cm->vol_c = c_1ov6*a*a*a;
   cm->xc[0] = cm->xc[1] = cm->xc[2] = 0.25*a;
 
   /* VERTICES */
@@ -829,14 +832,14 @@ _define_cm_tetra_ref(double            a,
 
   for (short int f = 0; f < cm->n_fc; f++) {
     cm->pvol_f[f] =  _dp3(cm->face[f].unitv, cm->dedge[f].unitv);
-    cm->pvol_f[f] *= cs_math_1ov3 * cm->face[f].meas * cm->dedge[f].meas;
+    cm->pvol_f[f] *= c_1ov3 * cm->face[f].meas * cm->dedge[f].meas;
   }
 
   /* Compute dual cell volume */
 
   for (short int f = 0; f < cm->n_fc; f++) {
 
-    const double  hf_coef = cs_math_1ov6 * cm->hfc[f];
+    const double  hf_coef = c_1ov6 * cm->hfc[f];
 
     for (int i = cm->f2e_idx[f]; i < cm->f2e_idx[f+1]; i++) {
 
@@ -906,7 +909,7 @@ _define_cm_tetra_ref(double            a,
   } /* Loop on cell faces */
 
   for (short int e = 0; e < cm->n_ec; e++) {
-    const cs_real_t  coef = cs_math_1ov3*cm->dface[e].meas*cm->edge[e].meas;
+    const cs_real_t  coef = c_1ov3*cm->dface[e].meas*cm->edge[e].meas;
     cm->pvol_e[e] =  coef * _dp3(cm->dface[e].unitv, cm->edge[e].unitv);
   }
 
