@@ -325,13 +325,7 @@ typedef enum {
 /* Global integer index or number */
 
 #if defined(HAVE_LONG_GNUM)
-  #if (SIZEOF_LONG == 8)
-    typedef unsigned long       cs_gnum_t;
-  #elif (SIZEOF_LONG_LONG == 8)
-    typedef unsigned long long  cs_gnum_t;
-  #else
-    #error
-  #endif
+  typedef uint64_t  cs_gnum_t;
 #else
   typedef unsigned  cs_gnum_t;
 #endif
@@ -339,14 +333,14 @@ typedef enum {
 /* Local integer index or number */
 
 #if defined(HAVE_LONG_LNUM)
-  typedef long  cs_lnum_t;
+  typedef int64_t  cs_lnum_t;
 #else
-  typedef int   cs_lnum_t;
+  typedef int  cs_lnum_t;
 #endif
 
 /* Other types */
 
-typedef double            cs_coord_t;  /* Real number (coordinate value) */
+typedef double             cs_coord_t;   /* Real number (coordinate value) */
 
 typedef double              cs_real_t;   /* Fortran double precision */
 typedef char                cs_byte_t;   /* Byte (untyped memory unit) */
@@ -711,7 +705,7 @@ cs_datatype_from_type()
 }
 
 /*----------------------------------------------------------------------------*/
-/* Specialized versions of the templated function */
+/* Specialized versions of the templated function                             */
 /*----------------------------------------------------------------------------*/
 
 template <>
