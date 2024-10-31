@@ -3952,6 +3952,8 @@ _convection_diffusion_scalar_unsteady
                                           df_limiter_local);
       }
 
+      ctx.wait(); // Next loop will contribute to rhs.
+
       /* Flux contribution */
       assert(f != nullptr);
       cs_real_t *hintp = f->bc_coeffs->hint;
@@ -3998,6 +4000,7 @@ _convection_diffusion_scalar_unsteady
         CS_FREE_HD(df_limiter_local);
     }
   }
+
   /* Boundary convective flux is imposed at some faces
      (tagged in icvfli array) */
 
@@ -7252,8 +7255,6 @@ _convection_diffusion_unsteady_strided
       /* Prepare data for sending */
       CS_MALLOC_HD(pvar_distant, n_distant, var_t, cs_alloc_mode);
 
-      ctx.wait();
-
       for (cs_lnum_t ii = 0; ii < n_distant; ii++) {
         cs_lnum_t face_id = faces_distant[ii];
         cs_lnum_t jj = b_face_cells[face_id];
@@ -7302,6 +7303,8 @@ _convection_diffusion_unsteady_strided
                                           df_limiter,
                                           df_limiter_local);
       }
+
+      ctx.wait(); // Next loop will contribute to rhs.
 
       /* Flux contribution */
       assert(f != nullptr);
@@ -7739,7 +7742,6 @@ cs_convection_diffusion_scalar(int                         idtvar,
       <std::chrono::microseconds>(t_stop - t_start);
     printf(", total = %ld\n", elapsed.count());
   }
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -8222,15 +8224,12 @@ cs_convection_diffusion_vector(int                         idtvar,
 
     });
 
-
-    /*Free memory */
-    CS_FREE_HD(bndcel);
-
   }
 
   ctx.wait();
 
   /* Free memory */
+  CS_FREE_HD(bndcel);
   CS_FREE_HD(grad);
 
   if (cs_glob_timer_kernels_flag > 0) {
@@ -11287,6 +11286,9 @@ cs_face_diffusion_potential(const int                   f_id,
       cs_dispatch_sum(&b_massflux[face_id], b_visc[face_id]*pfac, b_sum_type);
     });
 
+    ctx_i.wait();
+    ctx_b.wait();
+
   }
 
   /*==========================================================================
@@ -11385,11 +11387,12 @@ cs_face_diffusion_potential(const int                   f_id,
       cs_dispatch_sum(&b_massflux[face_id], b_visc[face_id]*pfac, b_sum_type);
     });
 
+    ctx_i.wait();
+    ctx_b.wait();
+
     /* Free memory */
     CS_FREE_HD(grad);
   }
-  ctx_i.wait();
-  ctx_b.wait();
 }
 
 /*----------------------------------------------------------------------------*/
@@ -11931,9 +11934,8 @@ cs_diffusion_potential(const int                   f_id,
   int mass_flux_rec_type = cs_glob_velocity_pressure_param->irecmf;
   int w_stride = 1;
 
-  cs_real_3_t *grad;
-  cs_field_t *f;
-
+  cs_field_t *f = nullptr;
+  cs_real_3_t *grad = nullptr;
   cs_real_t *gweight = nullptr;
 
   /*==========================================================================
@@ -12132,10 +12134,11 @@ cs_diffusion_potential(const int                   f_id,
 
     });
 
-    /* Free memory */
-    CS_FREE_HD(grad);
   }
   ctx.wait();
+
+  /* Free memory */
+  CS_FREE_HD(grad);
 }
 
 /*----------------------------------------------------------------------------*/

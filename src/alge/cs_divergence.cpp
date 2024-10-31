@@ -1515,10 +1515,10 @@ cs_ext_force_flux(const cs_mesh_t          *m,
 
   }
 
-  CS_FREE_HD(_f_ext);
-
   ctx.wait();
   ctx_c.wait();
+
+  CS_FREE_HD(_f_ext);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1626,10 +1626,13 @@ cs_ext_force_anisotropic_flux(const cs_mesh_t          *m,
       b_massflux[face_id] = 0.;
     });
 
-  } else if (init != 0) {
+  }
+  else if (init != 0) {
     bft_error(__FILE__, __LINE__, 0,
               _("invalid value of init"));
   }
+
+  cs_real_6_t *w2 = nullptr;
 
   /*==========================================================================
     2. Update mass flux without reconstruction technics
@@ -1679,20 +1682,21 @@ cs_ext_force_anisotropic_flux(const cs_mesh_t          *m,
     });
 
     /*========================================================================
-      3. Update mass flux with reconstruction technics
+      3. Update mass flux with reconstruction technique
       ========================================================================*/
 
-  } else {
+  }
+  else {
 
     cs_real_6_t *viscce = nullptr;
-    cs_real_6_t *w2 = nullptr;
 
     /* Without porosity */
     if (porosi == nullptr) {
       viscce = viscel;
 
       /* With porosity */
-    } else if (porosi != nullptr && porosf == nullptr) {
+    }
+    else if (porosi != nullptr && porosf == nullptr) {
       CS_MALLOC_HD(w2, n_cells_ext, cs_real_6_t, amode);
       ctx_c.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t cell_id) {
         for (int isou = 0; isou < 6; isou++) {
@@ -1822,11 +1826,12 @@ cs_ext_force_anisotropic_flux(const cs_mesh_t          *m,
 
     });
 
-    CS_FREE_HD(w2);
   }
 
   ctx.wait();
   ctx_c.wait();
+
+  CS_FREE_HD(w2);
 }
 
 /*----------------------------------------------------------------------------*/
