@@ -102,9 +102,10 @@ double precision rcodcl(nfabor,nvar,3)
 integer          ifac, iel, ilelt
 integer          ii, nbrsol, nelts
 integer          jsp, isc, ivar
-integer          fid_axz
-double precision d2s3, zent, vs, xuent, xvent, xwent
-double precision vel_dir(3), shear_dir(3)
+integer          fid_axz, fid_mrij
+double precision d2s3, zent, vs, xuent, xvent, xwent, dnorm_vel
+double precision vel_dir(3)
+double precision rij_loc(6)
 double precision xkent, xeent, tpent, qvent,ncent
 double precision xcent
 double precision rscp, pp, dum
@@ -118,7 +119,7 @@ double precision, dimension(:), pointer :: cpro_met_qv, cpro_met_nc
 double precision, dimension(:), pointer :: cpro_met_k, cpro_met_eps
 double precision, dimension(:), pointer :: cpro_met_p
 double precision, dimension(:), pointer :: cpro_met_rho
-double precision, dimension(:), pointer :: cpro_met_axz
+double precision, dimension(:,:), pointer :: cpro_met_rij
 double precision, pointer, dimension(:)   :: bvar_temp_sol
 double precision, pointer, dimension(:)   :: bvar_tempp
 double precision, pointer, dimension(:)   :: bvar_total_water
@@ -154,9 +155,9 @@ if (imeteo.ge.2) then
   endif
 
 endif
-call field_get_id_try('meteo_shear_anisotropy', fid_axz)
-if (fid_axz.ne.-1) then
-  call field_get_val_s(fid_axz, cpro_met_axz)
+call field_get_id_try('meteo_rij', fid_mrij)
+if (fid_mrij.ne.-1) then
+  call field_get_val_v(fid_mrij, cpro_met_rij)
 endif
 
 ! Soil atmosphere boundary conditions
@@ -389,15 +390,28 @@ do ifac = 1, nfabor
     vs = xuent*surfbo(1,ifac) + xvent*surfbo(2,ifac)
 
     ! Velocity direction, will be normalized afterwards
-    vel_dir(1) = xuent
-    vel_dir(2) = xvent
-    vel_dir(3) = xwent
-    shear_dir(1) = 0.d0
-    shear_dir(2) = 0.d0
-    if (fid_axz.eq.-1) then
-      shear_dir(3) = -sqrt(cmu) ! Rxz/k
+    dnorm_vel = sqrt(xuent**2 + xvent**2 + xwent**2)
+    if (dnorm_vel .gt. 0.d0) dnorm_vel = 1.d0 / dnorm_vel
+
+    vel_dir(1) = dnorm_vel * xuent
+    vel_dir(2) = dnorm_vel * xvent
+    vel_dir(3) = dnorm_vel * xwent
+
+    if (fid_mrij.eq.-1) then
+      rij_loc(1) = 2.d0 / 3.d0 * xkent
+      rij_loc(2) = 2.d0 / 3.d0 * xkent
+      rij_loc(3) = 2.d0 / 3.d0 * xkent
+      rij_loc(4) = 0.d0 ! Rxy
+      rij_loc(5) = -sqrt(cmu) * xkent * vel_dir(2) ! Ryz
+      rij_loc(6) = -sqrt(cmu) * xkent * vel_dir(1) ! Rxz
+
     else
-      shear_dir(3) = cpro_met_axz(iel) ! Rxz/k
+      rij_loc(1) = cpro_met_rij(1, iel)
+      rij_loc(2) = cpro_met_rij(2, iel)
+      rij_loc(3) = cpro_met_rij(3, iel)
+      rij_loc(4) = cpro_met_rij(4, iel)
+      rij_loc(5) = cpro_met_rij(5, iel)
+      rij_loc(6) = cpro_met_rij(6, iel)
     endif
 
     ! On met a jour le type de face de bord s'il n'a pas ete specifie
@@ -419,8 +433,7 @@ do ifac = 1, nfabor
       if (rcodcl(ifac,iv,1).gt.rinfin*0.5d0) rcodcl(ifac,iv,1) = xvent
       if (rcodcl(ifac,iw,1).gt.rinfin*0.5d0) rcodcl(ifac,iw,1) = xwent
 
-      call turbulence_bc_set_uninit_inlet_k_eps(ifac, xkent, xeent, &
-                                                vel_dir, shear_dir, rcodcl)
+      call turbulence_bc_set_uninit_inlet(ifac, xkent, rij_loc, xeent)
 
       if (iscalt.ne.-1) then
 
@@ -465,8 +478,7 @@ do ifac = 1, nfabor
         rcodcl(ifac,ipr,1) = coefap(ifac)
 
         ! Dirichlet on turbulent variables
-        call turbulence_bc_set_uninit_inlet_k_eps(ifac, xkent, xeent, &
-                                                  vel_dir, shear_dir, rcodcl)
+        call turbulence_bc_set_uninit_inlet(ifac, xkent, rij_loc, xeent)
 
         if (iautom(ifac).eq.1) then
 

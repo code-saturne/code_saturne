@@ -2265,11 +2265,23 @@ _additional_fields_stage_2(void)
                         false);
 
     /* DRSM models, store Rxz/k */
-    if (cs_glob_turb_model->itytur == 3) {
-      _add_property_field("meteo_shear_anisotropy",
-                          "Meteo shear anisotropy",
-                          1,
+    if (cs_glob_turb_model->order == CS_TURB_SECOND_ORDER) {
+      _add_property_field("meteo_rij",
+                          "Meteo Rij",
+                          6,
                           false);
+
+
+      /* For DFM for temperature */
+      cs_field_t *f_tf
+        = cs_field_by_composite_name_try("temperature", "turbulent_flux");
+
+      if (f_tf != NULL)
+        _add_property_field("meteo_temperature_turbulent_flux",
+                            "Meteo u'Theta'",
+                            3,
+                            false);
+
     }
   }
 

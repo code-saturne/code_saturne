@@ -2646,6 +2646,7 @@ cs_atmo_bcond(void)
   /* Mesh-related data */
   const cs_lnum_t n_b_faces = cs_glob_mesh->n_b_faces;
   const int *bc_type = cs_glob_bc_type;
+  const cs_lnum_t *b_face_cells = cs_glob_mesh->b_face_cells;
 
   if (rain == true) {
     cs_field_t *yr= cs_field_by_name("ym_l_r");
@@ -2659,6 +2660,33 @@ cs_atmo_bcond(void)
         yr->bc_coeffs->rcodcl1[face_id] = 0.;
       }
     }
+  }
+
+  /* Inlet BCs for thermal turbulent fluxes */
+  if (cs_glob_atmo_option->meteo_profile == 2) {
+
+    cs_field_t *f_tf
+      = cs_field_by_composite_name_try("temperature", "turbulent_flux");
+
+    if (f_tf != NULL) {
+      int *icodcl_tf = f_tf->bc_coeffs->icodcl;
+      cs_real_t *rcodcl1_tf = f_tf->bc_coeffs->rcodcl1;
+
+      cs_real_3_t *muptp =
+        (cs_real_3_t *)(cs_field_by_name("meteo_temperature_turbulent_flux")->val);
+      for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++) {
+
+        if (   bc_type[face_id] == CS_INLET
+            || bc_type[face_id] == CS_CONVECTIVE_INLET) {
+
+          cs_lnum_t cell_id = b_face_cells[face_id];
+          icodcl_tf[face_id] = 1;
+          for (cs_lnum_t k = 0; k < f_tf->dim; k++)
+            rcodcl1_tf[k*n_b_faces+face_id] = muptp[cell_id][k];
+        }
+      }
+    }
+
   }
 
 }
