@@ -408,6 +408,48 @@ _solve_steady_state_domain(cs_domain_t  *domain)
 /*----------------------------------------------------------------------------*/
 
 static void
+_initialize_time_step(cs_time_step_t         *ts,
+                      cs_time_step_options_t *ts_opt)
+{
+  assert(cs_dt_pty != nullptr);
+  assert(cs_property_is_uniform(cs_dt_pty)); // Up to now one considers thaht
+                                             // the same time step is used in
+                                             // all cells
+
+  const double t_cur = ts->t_cur;
+
+  const double dt_init = cs_property_get_cell_value(0,  // cell_id
+                                                    t_cur,
+                                                    cs_dt_pty);
+
+  ts->dt[2] = ts->dt[1] = ts->dt[0] = dt_init;
+
+  if (ts->dt_ref < 0) /* Should be the initial val. */
+    ts->dt_ref = dt_init;
+
+  if (cs_property_is_steady(cs_dt_pty) == false) { /* dt_cur may change */
+
+    /* Update time_options */
+
+    double  dtmin = CS_MIN(ts_opt->dtmin, dt_init);
+    double  dtmax = CS_MAX(ts_opt->dtmax, dt_init);
+
+    ts_opt->dtmin = dtmin;
+    ts_opt->dtmax = dtmax;
+
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Set the current time step for this new time iteration
+ *
+ * \param[in, out] ts      pointer to a cs_time_step_t structure
+ * \param[in, out] ts_opt  pointer to a cs_time_step_options_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
 _define_current_time_step(cs_time_step_t           *ts,
                           cs_time_step_options_t   *ts_opt)
 {
@@ -1071,6 +1113,8 @@ cs_cdo_main(cs_domain_t   *domain)
 
   /*  Build high-level structures and create algebraic systems
       Set the initial values of the fields and properties. */
+
+  _initialize_time_step(domain->time_step, &(domain->time_options));
 
   cs_domain_initialize_systems(domain);
 
