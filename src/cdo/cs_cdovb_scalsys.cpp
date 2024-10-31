@@ -425,14 +425,14 @@ _solve_mumps(int                                   n_eqs,
 
   /* Retrieve the SLES structure */
 
-  cs_sles_t  *sles = cs_sles_find_or_add(-1, sysp->name);
+  cs_sles_t *sles = cs_sles_find_or_add(-1, sysp->name);
 
   /* Set the input monitoring state */
 
   cs_solving_info_t sinfo = {
     .n_it = 0, .rhs_norm = 1, .res_norm = 1e16, .derive = 0., .l2residual = 0.
   };
-  cs_real_t  eps = 1e-6;        /* useless in case of a direct solver */
+  cs_real_t eps = 1e-6; /* useless in case of a direct solver */
 
   /* Solve the system as a scalar-valued system of size n_dofs */
 

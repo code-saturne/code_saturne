@@ -280,26 +280,26 @@ cs_xdef_eval_tensor_by_val(cs_lnum_t                    n_elts,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_xdef_eval_scalar_by_time_func(cs_lnum_t                   n_elts,
-                                 const cs_lnum_t            *elt_ids,
-                                 bool                        dense_output,
-                                 const cs_mesh_t            *mesh,
-                                 const cs_cdo_connect_t     *connect,
-                                 const cs_cdo_quantities_t  *quant,
-                                 cs_real_t                   time_eval,
-                                 void                       *context,
-                                 cs_real_t                  *eval)
+cs_xdef_eval_scalar_by_time_func(cs_lnum_t                  n_elts,
+                                 const cs_lnum_t           *elt_ids,
+                                 bool                       dense_output,
+                                 const cs_mesh_t           *mesh,
+                                 const cs_cdo_connect_t    *connect,
+                                 const cs_cdo_quantities_t *quant,
+                                 cs_real_t                  time_eval,
+                                 void                      *context,
+                                 cs_real_t                 *eval)
 {
   CS_UNUSED(mesh);
   CS_UNUSED(quant);
   CS_UNUSED(connect);
 
-  cs_xdef_time_func_context_t  *tfc = (cs_xdef_time_func_context_t *)context;
+  cs_xdef_time_func_context_t *tfc = (cs_xdef_time_func_context_t *)context;
   assert(tfc != nullptr);
 
   /* Evaluate the quantity only once */
 
-  cs_real_t  _eval;
+  cs_real_t _eval;
   tfc->func(time_eval, tfc->input, &_eval);
 
   if (elt_ids != nullptr && !dense_output)

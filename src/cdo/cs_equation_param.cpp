@@ -3462,7 +3462,7 @@ cs_equation_add_source_term_by_array(cs_equation_param_t *eqp,
 
   /* Define a flag according to the kind of space discretization */
 
-  cs_flag_t  state_flag = 0, meta_flag = 0;
+  cs_flag_t state_flag = 0, meta_flag = 0;
   cs_source_term_set_default_flag(eqp->space_scheme, &state_flag, &meta_flag);
 
   if (cs_flag_test(loc, cs_flag_primal_vtx) == true)

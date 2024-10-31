@@ -213,6 +213,7 @@ _svb_init_cell_system(const cs_cell_mesh_t          *cm,
       csys->dof_ids[v] = cm->v_ids[v];
       csys->val_n[v]   = field_tn[cm->v_ids[v]];
     }
+
   }
   else {
 
@@ -222,6 +223,7 @@ _svb_init_cell_system(const cs_cell_mesh_t          *cm,
       csys->val_n[v]       = field_tn[v_id];
       csys->val_nm1[v]     = field_tnm1[v_id];
     }
+
   }
 
   /* Store the local values attached to Dirichlet values if the current cell
@@ -951,7 +953,7 @@ _svb_imp_euler_mpicard_subcell(const cs_equation_param_t *eqp,
   CS_UNUSED(eqb);
   CS_CDO_OMP_ASSERT(cs_eflag_test(eqb->msh_flag, CS_FLAG_COMP_PVQ));
 
-  const double  coefc = cm->vol_c * inv_dtcur;
+  const double coefc = cm->vol_c * inv_dtcur;
 
   /* The value of the property in each portion of the dual cell is stored
      inside cb->values */

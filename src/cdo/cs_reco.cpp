@@ -101,20 +101,20 @@ _scalar_ebyc2c(cs_lnum_t                    c_id,
  *        adjacency).
  *        Case of scalar-valued array.
  *
- * \param[in] c_id       cell id
- * \param[in] c2v        cell -> vertices connectivity
- * \param[in] cdoq       pointer to the additional quantities struct.
- * \param[in] array      pointer to the array of values at (v,c)
+ * \param[in] c_id   cell id
+ * \param[in] c2v    cell -> vertices connectivity
+ * \param[in] cdoq   pointer to the additional quantities struct.
+ * \param[in] array  pointer to the array of values at (v,c)
  *
  * \return the reconstructed values at the cell center
  */
 /*----------------------------------------------------------------------------*/
 
 static inline double
-_scalar_vbyc2c(cs_lnum_t                    c_id,
-               const cs_adjacency_t        *c2v,
-               const cs_cdo_quantities_t   *cdoq,
-               const double                *array)
+_scalar_vbyc2c(cs_lnum_t                  c_id,
+               const cs_adjacency_t      *c2v,
+               const cs_cdo_quantities_t *cdoq,
+               const double              *array)
 {
   double reco_sum = 0;
   for (cs_lnum_t jv = c2v->idx[c_id]; jv < c2v->idx[c_id+1]; jv++)
@@ -587,6 +587,7 @@ cs_reco_scalar_vbyc2c(cs_lnum_t                  n_cells,
 #   pragma omp parallel for if (n_cells > CS_THR_MIN)
     for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
       reco[c_id] = _scalar_vbyc2c(c_id, c2v, cdoq, array);
+
   }
   else { /* There is a list of selected cells */
 

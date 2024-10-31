@@ -535,24 +535,24 @@ _rhogl_h_cell_upw(cs_lnum_t                    c_id,
  *        cell_values could be set to nullptr when the space discretization does
  *        not request these values for the update.
  *
- * \param[in]      connect       pointer to a cs_cdo_connect_t structure
- * \param[in]      cdoq          pointer to a cs_cdo_quantities_t structure
- * \param[in]      dof_values    values to consider for the update
- * \param[in]      cell_values   values to consider for the update or nullptr
- * \param[in]      t_eval        time at which one performs the evaluation
- * \param[in]      cur2prev      true or false
- * \param[in, out] darcy         pointer to the darcy flux structure
+ * \param[in]      connect      pointer to a cs_cdo_connect_t structure
+ * \param[in]      cdoq         pointer to a cs_cdo_quantities_t structure
+ * \param[in]      dof_values   values to consider for the update
+ * \param[in]      cell_values  values to consider for the update or nullptr
+ * \param[in]      t_eval       time at which one performs the evaluation
+ * \param[in]      cur2prev     true or false
+ * \param[in, out] darcy        pointer to the darcy flux structure
  */
 /*----------------------------------------------------------------------------*/
 
 static void
-_update_darcy_l(const cs_cdo_connect_t      *connect,
-                const cs_cdo_quantities_t   *cdoq,
-                const cs_real_t             *dof_values,
-                const cs_real_t             *cell_values,
-                cs_real_t                    t_eval,
-                bool                         cur2prev,
-                cs_gwf_darcy_flux_t         *darcy)
+_update_darcy_l(const cs_cdo_connect_t    *connect,
+                const cs_cdo_quantities_t *cdoq,
+                const cs_real_t           *dof_values,
+                const cs_real_t           *cell_values,
+                cs_real_t                  t_eval,
+                bool                       cur2prev,
+                cs_gwf_darcy_flux_t       *darcy)
 {
   CS_NO_WARN_IF_UNUSED(connect);
   CS_NO_WARN_IF_UNUSED(cdoq);
@@ -561,19 +561,21 @@ _update_darcy_l(const cs_cdo_connect_t      *connect,
   assert(darcy->flux_val != nullptr);
   assert(darcy->update_input != nullptr);
 
-  cs_adv_field_t  *adv = darcy->adv_field;
+  cs_adv_field_t *adv = darcy->adv_field;
   assert(adv != nullptr);
   if (adv->definition->type != CS_XDEF_BY_ARRAY)
     bft_error(__FILE__, __LINE__, 0,
               " %s: Invalid definition of the advection field", __func__);
 
-  cs_gwf_tpf_t  *tpf = (cs_gwf_tpf_t *)darcy->update_input;
+  cs_gwf_tpf_t *tpf = static_cast<cs_gwf_tpf_t *>(darcy->update_input);
 
   /* Update the array of flux values associated to the advection field.
    *
-   * diff_pty for the w_eq --> rho_l * abs_perm * krl / mu_l Thus, one needs to
-   * divide by rho_l for the Darcy flux. Thanks to the rescaling, there is no
-   * need to define a new property which is very close to the diff_wl_pty
+   * diff_pty for the w_eq --> rho_l * abs_perm * krl / mu_l
+   *
+   * Thus, one needs to divide by rho_l to tretrieve the Darcy flux. Thanks to
+   * the rescaling, there is no need to define a new property which is very
+   * close to the diff_wl_pty
    */
 
   if (tpf->solver_type != CS_GWF_TPF_SOLVER_PCPG_COUPLED) {
@@ -611,7 +613,7 @@ _update_darcy_l(const cs_cdo_connect_t      *connect,
 
   /* Update the velocity field at cell centers induced by the Darcy flux */
 
-  cs_field_t  *vel = cs_advection_field_get_field(adv, CS_MESH_LOCATION_CELLS);
+  cs_field_t *vel = cs_advection_field_get_field(adv, CS_MESH_LOCATION_CELLS);
   assert(vel != nullptr);
   if (cur2prev)
     cs_field_current_to_previous(vel);
@@ -3483,13 +3485,13 @@ cs_gwf_tpf_extra_post(int                         mesh_id,
 
       if (tpf->approx_type == CS_GWF_TPF_APPROX_VERTEX_SUBCELL) {
 
-        const cs_real_t  *krl_c2v = cs_property_get_array(tpf->krl_pty);
-        const cs_adjacency_t  *c2v = connect->c2v;
+        const cs_real_t *krl_c2v = cs_property_get_array(tpf->krl_pty);
+        const cs_adjacency_t *c2v = connect->c2v;
 
         for (cs_lnum_t i = 0; i < n_cells; i++) {
 
-          cs_lnum_t  c_id = (cell_ids == nullptr || n_cells == cdoq->n_cells)
-                              ? i : cell_ids[i];
+          cs_lnum_t c_id = (cell_ids == nullptr || n_cells == cdoq->n_cells) ?
+            i : cell_ids[i];
           cs_real_t  tensor[3][3];
 
           cs_property_get_cell_tensor(c_id,

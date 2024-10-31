@@ -664,14 +664,14 @@ cs_gwf_set_immiscible_two_phase_model(cs_real_t       l_mass_density,
 /*!
  * \brief Set the flag dedicated to the post-processing of the GWF module
  *
- * \param[in] post_flag             flag to set
- * \param[in] reset                 reset post flag before
+ * \param[in] post_flag  flag to set
+ * \param[in] reset      reset post flag before
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_gwf_set_post_options(cs_flag_t       post_flag,
-                        bool            reset)
+cs_gwf_set_post_options(cs_flag_t post_flag,
+                        bool      reset)
 {
   cs_gwf_t  *gw = cs_gwf_main_structure;
   if (gw == nullptr)
@@ -1353,20 +1353,14 @@ cs_gwf_hydraulic_update(const cs_mesh_t             *mesh,
   switch (gw->model) {
 
   case CS_GWF_MODEL_SATURATED_SINGLE_PHASE:
-    cs_gwf_sspf_update(mesh,
-                       connect,
-                       quant,
-                       ts,
+    cs_gwf_sspf_update(mesh, connect, quant, ts,
                        update_flag,
                        gw->flag,
                        static_cast<cs_gwf_sspf_t *>(gw->model_context));
     break;
 
   case CS_GWF_MODEL_UNSATURATED_SINGLE_PHASE:
-    cs_gwf_uspf_update(mesh,
-                       connect,
-                       quant,
-                       ts,
+    cs_gwf_uspf_update(mesh, connect, quant, ts,
                        update_flag,
                        gw->flag,
                        static_cast<cs_gwf_uspf_t *>(gw->model_context));
@@ -1374,11 +1368,7 @@ cs_gwf_hydraulic_update(const cs_mesh_t             *mesh,
 
   case CS_GWF_MODEL_MISCIBLE_TWO_PHASE:
   case CS_GWF_MODEL_IMMISCIBLE_TWO_PHASE:
-    cs_gwf_tpf_update(mesh,
-                      connect,
-                      quant,
-                      ts,
-                      update_flag,
+    cs_gwf_tpf_update(mesh, connect, quant, ts->t_cur,
                       gw->flag,
                       static_cast<cs_gwf_tpf_t *>(gw->model_context));
     break;

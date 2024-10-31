@@ -714,7 +714,8 @@ cs_equation_system_define(void)
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_system_solve(bool cur2prev, cs_equation_system_t *eqsys)
+cs_equation_system_solve(bool                  cur2prev,
+                         cs_equation_system_t *eqsys)
 {
   if (eqsys == nullptr)
     return;

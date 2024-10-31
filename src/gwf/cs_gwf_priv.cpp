@@ -305,9 +305,7 @@ cs_gwf_darcy_flux_define(const cs_cdo_connect_t    *connect,
   darcy->update_func  = update_func;
 
   if (update_func == nullptr)
-    bft_error(__FILE__,
-              __LINE__,
-              0,
+    bft_error(__FILE__, __LINE__, 0,
               "%s: Need a function pointer to apply the update.",
               __func__);
 
@@ -350,8 +348,10 @@ cs_gwf_darcy_flux_define(const cs_cdo_connect_t    *connect,
 
       /* Do not transfer the ownership (automatically on the full domain) */
 
-      cs_xdef_t *adv_def = cs_advection_field_def_by_array(
-        adv, array_location, darcy->flux_val, false);
+      cs_xdef_t *adv_def = cs_advection_field_def_by_array(adv,
+                                                           array_location,
+                                                           darcy->flux_val,
+                                                           false);
 
       cs_xdef_array_set_adjacency(adv_def, c2e);
 
@@ -376,20 +376,15 @@ cs_gwf_darcy_flux_define(const cs_cdo_connect_t    *connect,
       adv->status |= CS_ADVECTION_FIELD_TYPE_VELOCITY_VECTOR;
     }
     else
-      bft_error(__FILE__,
-                __LINE__,
-                0,
+      bft_error(__FILE__, __LINE__, 0,
                 " %s: Invalid location for the definition of the Darcy flux.",
                 __func__);
 
   } break;
 
   case CS_SPACE_SCHEME_CDOFB: /* TODO */
-    bft_error(__FILE__,
-              __LINE__,
-              0,
-              " %s: CDO-Fb space scheme not fully implemented.",
-              __func__);
+    bft_error(__FILE__, __LINE__, 0,
+              " %s: CDO-Fb space scheme not fully implemented.", __func__);
     break;
 
   default:
@@ -441,7 +436,7 @@ cs_gwf_darcy_flux_balance(const cs_cdo_connect_t    *connect,
 
   bool *is_counted = nullptr;
   BFT_MALLOC(is_counted, n_b_faces, bool);
-#pragma omp parallel for if (n_b_faces > CS_THR_MIN)
+# pragma omp parallel for if (n_b_faces > CS_THR_MIN)
   for (int i = 0; i < n_b_faces; i++)
     is_counted[i] = false;
 
@@ -475,6 +470,7 @@ cs_gwf_darcy_flux_balance(const cs_cdo_connect_t    *connect,
         for (cs_lnum_t j = bf2v->idx[bf_id]; j < bf2v->idx[bf_id + 1]; j++)
           balances[ibc] += flux_val[j];
       }
+
     }
     else {
 
@@ -542,9 +538,10 @@ cs_gwf_darcy_flux_balance(const cs_cdo_connect_t    *connect,
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Compute the associated Darcy flux over the boundary of the domain for
- *        each vertex of a boundary face.  Case of a vertex-based
- *        discretization and single-phase flows in porous media (saturated or
- *        not).
+ *        each vertex of a boundary face.
+ *
+ *        Case of a vertex-based discretization and single-phase flows in
+ *        porous media (saturated or not).
  *
  * \param[in]      t_eval   time at which one performs the evaluation
  * \param[in]      eq       pointer to the equation related to this Darcy flux
@@ -557,22 +554,19 @@ cs_gwf_darcy_flux_update_on_boundary(cs_real_t            t_eval,
                                      const cs_equation_t *eq,
                                      cs_adv_field_t      *adv)
 {
-  if (adv->n_bdy_flux_defs > 1
-      || adv->bdy_flux_defs[0]->type != CS_XDEF_BY_ARRAY)
-    bft_error(__FILE__,
-              __LINE__,
-              0,
+  if (adv->n_bdy_flux_defs > 1 ||
+      adv->bdy_flux_defs[0]->type != CS_XDEF_BY_ARRAY)
+    bft_error(__FILE__, __LINE__, 0,
               " %s: Invalid definition of the advection field at the boundary",
               __func__);
 
-  cs_xdef_t               *def      = adv->bdy_flux_defs[0];
-  cs_xdef_array_context_t *cx       = (cs_xdef_array_context_t *)def->context;
-  cs_real_t               *nflx_val = cx->values;
+  cs_xdef_t *def = adv->bdy_flux_defs[0];
+  cs_xdef_array_context_t *ctx
+    = static_cast<cs_xdef_array_context_t *>(def->context);
+  cs_real_t *nflx_val = ctx->values;
 
   if (cs_flag_test(cx->value_location, cs_flag_dual_closure_byf) == false)
-    bft_error(__FILE__,
-              __LINE__,
-              0,
+    bft_error(__FILE__, __LINE__, 0,
               " %s: Invalid definition of the advection field at the boundary",
               __func__);
 

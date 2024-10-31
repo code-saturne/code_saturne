@@ -584,22 +584,22 @@ _update_iso_soil_vgm_spf(const cs_real_t              t_eval,
  *        Case of an isotropic permeability and a two-phase flow in porous
  *        media.
  *
- * \param[in]      t_eval        time at which one performs the evaluation
- * \param[in]      mesh          pointer to a cs_mesh_t structure
- * \param[in]      connect       pointer to a cs_cdo_connect_t structure
- * \param[in]      cdoq          pointer to a cs_cdo_quantities_t structure
- * \param[in]      zone          pointer to a cs_zone_t
- * \param[in, out] soil          pointer to a soil structure
+ * \param[in]      t_eval   time at which one performs the evaluation
+ * \param[in]      mesh     pointer to a cs_mesh_t structure
+ * \param[in]      connect  pointer to a cs_cdo_connect_t structure
+ * \param[in]      cdoq     pointer to a cs_cdo_quantities_t structure
+ * \param[in]      zone     pointer to a cs_zone_t
+ * \param[in, out] soil     pointer to a soil structure
  */
 /*----------------------------------------------------------------------------*/
 
 static void
-_update_iso_soil_tpf(const cs_real_t              t_eval,
-                     const cs_mesh_t             *mesh,
-                     const cs_cdo_connect_t      *connect,
-                     const cs_cdo_quantities_t   *cdoq,
-                     const cs_zone_t             *zone,
-                     cs_gwf_soil_t               *soil)
+_update_iso_soil_tpf(const cs_real_t            t_eval,
+                     const cs_mesh_t           *mesh,
+                     const cs_cdo_connect_t    *connect,
+                     const cs_cdo_quantities_t *cdoq,
+                     const cs_zone_t           *zone,
+                     cs_gwf_soil_t             *soil)
 {
   CS_NO_WARN_IF_UNUSED(t_eval);
   CS_NO_WARN_IF_UNUSED(mesh);
@@ -620,14 +620,14 @@ _update_iso_soil_tpf(const cs_real_t              t_eval,
 
   cs_gwf_tpf_t *hctx = static_cast<cs_gwf_tpf_t *>(soil->hydraulic_context);
 
-  const cs_real_t  *pc_val = hctx->c_pressure->val;
+  const cs_real_t *pc_val = hctx->c_pressure->val;
 
   /* Retrieve arrays to update */
 
-  cs_real_t  *lsat = cs_property_get_array(hctx->lsat_pty);
-  cs_real_t  *lcap = cs_property_get_array(hctx->lcap_pty);
-  cs_real_t  *krl = cs_property_get_array(hctx->krl_pty);
-  cs_real_t  *krg = cs_property_get_array(hctx->krg_pty);
+  cs_real_t *lsat = cs_property_get_array(hctx->lsat_pty);
+  cs_real_t *lcap = cs_property_get_array(hctx->lcap_pty);
+  cs_real_t *krl = cs_property_get_array(hctx->krl_pty);
+  cs_real_t *krg = cs_property_get_array(hctx->krg_pty);
 
   assert(lsat != nullptr && lcap != nullptr && krl != nullptr
          && krg != nullptr);
@@ -786,7 +786,7 @@ _update_iso_soil_tpf(const cs_real_t              t_eval,
 #   pragma omp parallel for if (zone->n_elts > CS_THR_MIN)
     for (cs_lnum_t i = 0; i < zone->n_elts; i++) {
 
-      const cs_lnum_t  c_id = zone->elt_ids[i];
+      const cs_lnum_t c_id = zone->elt_ids[i];
       for (cs_lnum_t j = c2v->idx[c_id]; j < c2v->idx[c_id+1]; j++)
         soilp->eval_properties(soilp, pc_val[c2v->ids[j]],
                                &(lsat[j]), &(lcap[j]), &(krl[j]), &(krg[j]));
