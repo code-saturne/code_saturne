@@ -1230,7 +1230,7 @@ cs_boundary_conditions_type(bool  init,
           const cs_lnum_t f_id = itrifb[jj];
           if (icodcl_tf[f_id] == 0) {
             icodcl_tf[f_id] = wall_bc_code ;
-            for (cs_lnum_t k = 0; k < f->dim; k++)
+            for (cs_lnum_t k = 0; k < f_tf->dim; k++)
               rcodcl1_tf[k*n_b_faces+f_id] = 0.;
           }
         }
