@@ -129,9 +129,9 @@ cs_atmo_add_variable_fields(void)
 
     /* Create the concentration of rain droplets */
     f_id = cs_variable_field_create("n_r",
-                                      "Number of rain drops",
-                                      CS_MESH_LOCATION_CELLS,
-                                      1);
+                                    "Number of rain drops",
+                                    CS_MESH_LOCATION_CELLS,
+                                    1);
     f = cs_field_by_id(f_id);
     eqp = cs_field_get_equation_param(f);
 

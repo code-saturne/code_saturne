@@ -525,28 +525,6 @@ module cs_c_bindings
 
     !---------------------------------------------------------------------------
 
-    !> \brief Set inlet boundary condition values for turbulence variables based
-    !>        on given k and epsilon values only if not initialized already.
-    !>
-    !> \param[in]     face_id       boundary face id
-    !> \param[in]     k             turbulent kinetic energy
-    !> \param[in]     rij           optional Reynolds stress tensors
-    !> \param[in]     epsilon       turbulent dissipation
-    !> \param[in]     vel_dir       velocity direction
-    !> \param[in]     shear_dir     shear direction
-
-    subroutine turbulence_bc_set_uninit_inlet(face_num,                  &
-                                              k, rij, eps)               &
-      bind(C, name='cs_f_turbulence_bc_set_uninit_inlet')
-      use, intrinsic :: iso_c_binding
-      implicit none
-      integer(c_int), value :: face_num
-      real(c_double), value :: k, eps
-      real(kind=c_double), dimension(6) :: rij
-    end subroutine turbulence_bc_set_uninit_inlet
-
-    !---------------------------------------------------------------------------
-
     !> \brief Compute molar and mass fractions of elementary species Ye, Xe
     !>  (fuel, O2, CO2, H2O, N2) from global species Yg (fuel, oxidant, products)
 

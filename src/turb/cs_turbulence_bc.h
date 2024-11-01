@@ -233,6 +233,23 @@ cs_turbulence_bc_inlet_k_eps(cs_lnum_t   face_id,
 /*----------------------------------------------------------------------------*/
 /*
  * \brief Set inlet boundary condition values for turbulence variables based
+ *        on given k and epsilon or Rij values.
+ *
+ * \param[in]     face_id    boundary face id
+ * \param[in]     k          turbulent kinetic energy
+ * \param[in]     eps        turbulent dissipation
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_turbulence_bc_set_uninit_inlet(cs_lnum_t   face_num,
+                                  double      k,
+                                  double      rij[],
+                                  double      eps);
+
+/*----------------------------------------------------------------------------*/
+/*
+ * \brief Set inlet boundary condition values for turbulence variables based
  *        on a diameter \f$ D_H \f$ and the reference velocity \f$ U_{ref} \f$
  *        for a circular duct flow with smooth wall, only if not already set.
  *

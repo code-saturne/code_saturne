@@ -150,17 +150,6 @@ _turb_bc_id =
 };
 
 /*============================================================================
- * Prototypes for functions intended for use only by Fortran wrappers.
- * (descriptions follow, with function bodies).
- *============================================================================*/
-
-void
-cs_f_turbulence_bc_set_uninit_inlet(cs_lnum_t   face_num,
-                                    double      k,
-                                    double      rij[],
-                                    double      eps);
-
-/*============================================================================
  * Private function definitions
  *============================================================================*/
 
@@ -531,21 +520,19 @@ _set_uninit_inlet_bc(cs_lnum_t   face_id,
  * (using 1-based face number instead of id).
  *
  * parameters:
- *   face_num    <-- face number
+ *   face_id     <-- face id
  *   k           <-- turbulent kinetic energy
  *   rij         <-- reynolds stress components
  *   eps         <-- turbulent dissipation
- *   vel_dir     <-- velocity direction
- *   shear_dir   <-- shear direction
  *----------------------------------------------------------------------------*/
 
 void
-cs_f_turbulence_bc_set_uninit_inlet(cs_lnum_t   face_num,
-                                    double      k,
-                                    double      rij[],
-                                    double      eps)
+cs_turbulence_bc_set_uninit_inlet(cs_lnum_t   face_id,
+                                  double      k,
+                                  double      rij[],
+                                  double      eps)
 {
-  _set_uninit_inlet_bc(face_num - 1, k, rij, eps, nullptr, nullptr);
+  _set_uninit_inlet_bc(face_id, k, rij, eps, nullptr, nullptr);
 }
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
