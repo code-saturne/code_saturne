@@ -1737,7 +1737,7 @@ cs_halo_sync_start(const cs_halo_t  *halo,
 
     /* For host-based MPI, copy or prefetch buffer */
 
-    else {
+    else if (cs_glob_n_ranks > 1) {
       size_t pack_size = halo->n_send_elts[CS_HALO_EXTENDED] * elt_size;
       size_t recv_size = halo->n_elts[_hs->sync_mode] * elt_size;
 
