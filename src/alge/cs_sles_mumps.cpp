@@ -2610,6 +2610,40 @@ cs_user_sles_mumps_hook(const cs_param_sles_t   *slesp,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Modifiy the default value used as a threshold to clean matrix values
+ *        sent to MUMPS in case of factorization with "double precisiion"
+ *
+ *        If thr < 0, there is no cleaning
+ *
+ * \param[in] thr  value of the threshold to set
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_sles_mumps_set_zero_dthreshold(double thr)
+{
+  cs_sles_mumps_zero_dthreshold = thr;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Modifiy the default value used as a threshold to clean matrix values
+ *        sent to MUMPS in case of factorization in "single precisiion"
+ *
+ *        If thr < 0, there is no cleaning
+ *
+ * \param[in] thr  value of the threshold to set
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_sles_mumps_set_zero_sthreshold(double thr)
+{
+  cs_sles_mumps_zero_fthreshold = thr;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Define and associate a MUMPS linear system solver for a given field
  *        or equation name.
  *
