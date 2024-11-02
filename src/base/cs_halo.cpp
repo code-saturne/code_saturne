@@ -66,8 +66,6 @@
 
 /*----------------------------------------------------------------------------*/
 
-BEGIN_C_DECLS
-
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
 
 /* Remarks:
@@ -162,13 +160,9 @@ static cs_halo_state_t *_halo_state = nullptr;
 /* Halo communications mode */
 static cs_halo_comm_mode_t _halo_comm_mode = CS_HALO_COMM_P2P;
 
-END_C_DECLS
-
 /*============================================================================
  * Private function definitions
  *============================================================================*/
-
-BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -479,8 +473,10 @@ _halo_sync_complete_one_sided(const cs_halo_t  *halo,
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
+BEGIN_C_DECLS
+
 /*============================================================================
- * Public function definitions
+ * Public C function definitions
  *============================================================================*/
 
 /*----------------------------------------------------------------------------*/
@@ -2329,3 +2325,123 @@ cs_halo_dump(const cs_halo_t  *halo,
 /*----------------------------------------------------------------------------*/
 
 END_C_DECLS
+
+/*============================================================================
+ * Public C++ function definitions
+ *============================================================================*/
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Update array of values in case of parallelism or periodicity.
+ *
+ * This function aims at copying main values from local elements
+ * (id between 1 and n_local_elements) to ghost elements on distant ranks
+ * (id between n_local_elements + 1 to n_local_elements_with_halo).
+ *
+ * \tparam[in]      T           value type
+ *
+ * \param[in]       halo        pointer to halo structure
+ * \param[in]       sync_mode   synchronization mode (standard or extended)
+ * \param[in]       on_device   run on accelerated device if possible
+ * \param[in, out]  val         pointer to variable value array
+ */
+/*----------------------------------------------------------------------------*/
+
+template <typename T>
+void
+cs_halo_sync(const cs_halo_t  *halo,
+             cs_halo_type_t    sync_mode,
+             bool              on_device,
+             T                 val[])
+{
+  if (halo == nullptr)
+    return;
+
+  cs_datatype_t datatype = cs_datatype_from_type<T>();
+
+#if defined(HAVE_ACCEL)
+  if (on_device)
+    cs_halo_sync_pack_d(halo,
+                        sync_mode,
+                        datatype,
+                        1,
+                        val,
+                        nullptr,
+                        nullptr);
+  else
+#endif
+    cs_halo_sync_pack(halo,
+                      sync_mode,
+                      datatype,
+                      1,
+                      val,
+                      nullptr,
+                      nullptr);
+
+  cs_halo_sync_start(halo, val, nullptr);
+
+  cs_halo_sync_wait(halo, val, nullptr);
+}
+
+// Force instanciation
+
+template void
+cs_halo_sync(const cs_halo_t  *halo,
+             cs_halo_type_t    sync_mode,
+             bool              on_device,
+             cs_real_t         val[]);
+
+/*----------------------------------------------------------------------------*/
+
+template <int Stride, typename T>
+void
+cs_halo_sync(const cs_halo_t  *halo,
+             cs_halo_type_t    sync_mode,
+             bool              on_device,
+             T                 val[][Stride])
+{
+  if (halo == nullptr)
+    return;
+
+  cs_datatype_t datatype = cs_datatype_from_type<T>();
+
+#if defined(HAVE_ACCEL)
+  if (on_device)
+    cs_halo_sync_pack_d(halo,
+                        sync_mode,
+                        datatype,
+                        Stride,
+                        val,
+                        nullptr,
+                        nullptr);
+  else
+#endif
+    cs_halo_sync_pack(halo,
+                      sync_mode,
+                      datatype,
+                      Stride,
+                      val,
+                      nullptr,
+                      nullptr);
+
+  cs_halo_sync_start(halo, val, nullptr);
+
+  cs_halo_sync_wait(halo, val, nullptr);
+}
+
+// Force instanciation
+
+template void
+cs_halo_sync(const cs_halo_t  *halo,
+             cs_halo_type_t    sync_mode,
+             bool              on_device,
+             cs_real_t         val[][3]);
+
+template void
+cs_halo_sync(const cs_halo_t  *halo,
+             cs_halo_type_t    sync_mode,
+             bool              on_device,
+             cs_real_t         val[][6]);
+
+/*----------------------------------------------------------------------------*/
+

@@ -3547,7 +3547,9 @@ _convection_diffusion_scalar_unsteady
                         &pjf);
 
         }
-        else if (ischcp == 3) {
+        else {
+
+          assert(ischcp == 3);
 
           /* Centered
              -------- */
@@ -7626,7 +7628,7 @@ cs_beta_limiter_building(int                   f_id,
 
   /* Synchronize variable */
   if (halo != nullptr)
-    cs_halo_sync_var(halo, CS_HALO_STANDARD, cpro_beta);
+    cs_halo_sync(halo, CS_HALO_STANDARD, ctx.use_gpu(), cpro_beta);
 
   CS_FREE_HD(denom_inf);
   CS_FREE_HD(denom_sup);
@@ -7964,7 +7966,7 @@ cs_convection_diffusion_vector(int                         idtvar,
      or current values are provided */
 
   if (pvar != nullptr && m->halo != nullptr) {
-    cs_halo_sync_var_strided(m->halo, halo_type, (cs_real_t *)pvar, 3);
+    cs_halo_sync(m->halo, halo_type, ctx.use_gpu(), pvar);
     if (cs_glob_mesh->n_init_perio > 0)
       cs_halo_perio_sync_var_vect(m->halo, halo_type, (cs_real_t *)pvar, 3);
   }
@@ -8340,7 +8342,7 @@ cs_convection_diffusion_tensor(int                          idtvar,
      or current values are provided */
 
   if (pvar != nullptr && m->halo != nullptr) {
-    cs_halo_sync_var_strided(m->halo, halo_type, (cs_real_t *)pvar, 6);
+    cs_halo_sync(m->halo, halo_type, ctx.use_gpu(), pvar);
     if (cs_glob_mesh->n_init_perio > 0)
       cs_halo_perio_sync_var_sym_tens(m->halo, halo_type, (cs_real_t *)pvar);
   }
@@ -11258,7 +11260,7 @@ cs_face_diffusion_potential(const int                   f_id,
   /* Handle parallelism and periodicity */
 
   if (halo != nullptr)
-    cs_halo_sync_var(halo, halo_type, pvar);
+    cs_halo_sync(halo, halo_type, ctx_i.use_gpu(), pvar);
 
   /*==========================================================================
     2. Update mass flux without reconstruction
@@ -11348,7 +11350,7 @@ cs_face_diffusion_potential(const int                   f_id,
     /* Handle parallelism and periodicity */
 
     if (halo != nullptr)
-      cs_halo_sync_var(halo, halo_type, visel);
+      cs_halo_sync(halo, halo_type, ctx_i.use_gpu(), visel);
 
     /* Mass flow through interior faces */
 
@@ -11974,7 +11976,7 @@ cs_diffusion_potential(const int                   f_id,
   /* Handle parallelism and periodicity */
 
   if (halo != nullptr)
-    cs_halo_sync_var(halo, halo_type, pvar);
+    cs_halo_sync(halo, halo_type, ctx.use_gpu(), pvar);
 
   /*==========================================================================
     2. Update mass flux without reconstruction techniques
@@ -12025,7 +12027,7 @@ cs_diffusion_potential(const int                   f_id,
     if (iwgrp > 0) {
       gweight = visel;
       if (halo != nullptr)
-        cs_halo_sync_var(halo, halo_type, gweight);
+        cs_halo_sync(halo, halo_type, ctx.use_gpu(), gweight);
     }
 
     else if (f_id > -1) {
@@ -12079,7 +12081,7 @@ cs_diffusion_potential(const int                   f_id,
     /* Handle parallelism and periodicity */
 
     if (halo != nullptr)
-      cs_halo_sync_var(halo, halo_type, visel);
+      cs_halo_sync(halo, halo_type, ctx.use_gpu(), visel);
 
     /* Mass flow through interior faces */
 

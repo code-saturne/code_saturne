@@ -1,5 +1,5 @@
-#ifndef __CS_HALO_H__
-#define __CS_HALO_H__
+#ifndef CS_HALO_H
+#define CS_HALO_H
 
 /*============================================================================
  * Structure and function headers handling with ghost cells
@@ -718,4 +718,46 @@ cs_halo_dump(const cs_halo_t  *halo,
 
 END_C_DECLS
 
-#endif /* __CS_HALO_H__ */
+#if defined(__cplusplus)
+
+/*=============================================================================
+ * Public C++ functions
+ *============================================================================*/
+
+/*----------------------------------------------------------------------------*/
+/*
+ * \brief Update array of values in case of parallelism or periodicity.
+ *
+ * This function aims at copying main values from local elements
+ * (id between 1 and n_local_elements) to ghost elements on distant ranks
+ * (id between n_local_elements + 1 to n_local_elements_with_halo).
+ *
+ * \tparam[in]      Stride      number of (interlaced) values by entity
+ * \tparam[in]      T           value type
+ *
+ * \param[in]       halo        pointer to halo structure
+ * \param[in]       sync_mode   synchronization mode (standard or extended)
+ * \param[in]       on_device   run on accelerated device if possible
+ * \param[in, out]  val         pointer to variable value array
+ */
+/*----------------------------------------------------------------------------*/
+
+template <typename T>
+void
+cs_halo_sync(const cs_halo_t  *halo,
+             cs_halo_type_t    sync_mode,
+             bool              on_device,
+             T                 val[]);
+
+template <int Stride, typename T>
+void
+cs_halo_sync(const cs_halo_t  *halo,
+             cs_halo_type_t    sync_mode,
+             bool              on_device,
+             T                 val[][Stride]);
+
+/*----------------------------------------------------------------------------*/
+
+#endif // __cplusplus
+
+#endif /* CS_HALO_H */
