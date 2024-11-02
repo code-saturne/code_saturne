@@ -56,7 +56,7 @@ BEGIN_C_DECLS
  * this also allows setting further function pointers for pre and post-solve
  * operations (see the PETSc documentation).
  *
- * Note: if the context pointer is non-NULL, it must point to valid data
+ * Note: if the context pointer is non-null, it must point to valid data
  * when the selection function is called so that value or structure should
  * not be temporary (i.e. local);
  *
@@ -90,7 +90,7 @@ typedef struct _cs_sles_petsc_t  cs_sles_petsc_t;
  * this also allows setting further function pointers for pre and post-solve
  * operations (see the PETSc documentation).
  *
- * Note: if the context pointer is non-NULL, it must point to valid data
+ * Note: if the context pointer is non-null, it must point to valid data
  * when the selection function is called so that value or structure should
  * not be temporary (i.e. local);
  *
@@ -115,7 +115,7 @@ void
 cs_sles_petsc_init(void);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Define and associate a PETSc linear system solver
  *        for a given field or equation name.
  *
@@ -136,11 +136,11 @@ cs_sles_petsc_init(void);
  * \ref cs_sles_t container.
  *
  * \param[in]      f_id          associated field id, or < 0
- * \param[in]      name          associated name if f_id < 0, or NULL
+ * \param[in]      name          associated name if f_id < 0, or nullptr
  * \param[in]      matrix_type   PETSc matrix type
  * \param[in]      setup_hook    pointer to optional setup epilogue function
  * \param[in,out]  context       pointer to optional (untyped) value or
- *                               structure for setup_hook, or NULL
+ *                               structure for setup_hook, or nullptr
  *
  * \return  pointer to newly created iterative solver info object.
  */
@@ -154,7 +154,7 @@ cs_sles_petsc_define(int                          f_id,
                      void                        *context);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Create PETSc linear system solver info and context.
  *
  * In case of rotational periodicity for a block (non-scalar) matrix,
@@ -164,7 +164,7 @@ cs_sles_petsc_define(int                          f_id,
  * \param[in]      matrix_type   PETSc matrix type
  * \param[in]      setup_hook    pointer to optional setup epilogue function
  * \param[in,out]  context       pointer to optional (untyped) value or
- *                               structure for setup_hook, or NULL
+ *                               structure for setup_hook, or nullptr
  *
  * \return  pointer to associated linear system object.
  */
@@ -176,7 +176,7 @@ cs_sles_petsc_create(const char                  *matrix_type,
                      void                        *context);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Create PETSc linear system solver info and context
  *        based on existing info and context.
  *
@@ -192,7 +192,7 @@ void *
 cs_sles_petsc_copy(const void  *context);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Destroy PETSc linear system solver info and context.
  *
  * \param[in, out]  context  pointer to iterative solver info and context
@@ -204,7 +204,7 @@ void
 cs_sles_petsc_destroy(void  **context);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Setup PETSc linear equation solver.
  *
  * \param[in, out]  context    pointer to iterative solver info and context
@@ -222,7 +222,7 @@ cs_sles_petsc_setup(void               *context,
                     int                 verbosity);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Call PETSc linear equation solver.
  *
  * \param[in, out]  context        pointer to iterative solver info and context
@@ -240,7 +240,7 @@ cs_sles_petsc_setup(void               *context,
  * \param[in, out]  vx             system solution
  * \param[in]       aux_size       number of elements in aux_vectors (in bytes)
  * \param           aux_vectors    optional working area
- *                                 (internal allocation if NULL)
+ *                                 (internal allocation if nullptr)
  *
  * \return  convergence state
  */
@@ -262,7 +262,7 @@ cs_sles_petsc_solve(void                *context,
                     void                *aux_vectors);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Free PETSc linear equation solver setup context.
  *
  * This function frees resolution-related data, such as
@@ -278,7 +278,7 @@ void
 cs_sles_petsc_free(void  *context);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Error handler for PETSc solver.
  *
  * In case of divergence or breakdown, this error handler outputs an error
@@ -303,7 +303,7 @@ cs_sles_petsc_error_post_and_abort(cs_sles_t                    *sles,
                                    cs_real_t                    *vx);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Log sparse linear equation solver info.
  *
  * \param[in]  context   pointer to iterative solver info and context
@@ -317,6 +317,7 @@ cs_sles_petsc_log(const void  *context,
                   cs_log_t     log_type);
 
 /*----------------------------------------------------------------------------
+ *
  * \brief Output the settings of a KSP structure
  *
  * \param[in]  ksp     Krylov SubSpace structure
@@ -326,7 +327,7 @@ void
 cs_sles_petsc_log_setup(void  *ksp);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Set the parameters driving the termination of an iterative process
  *        associated to a KSP structure
  *
@@ -347,7 +348,7 @@ cs_sles_petsc_set_cvg_criteria(const void      *context,
                                int              max_it);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Return matrix type associated with PETSc linear system solver
  *        info and context.
  *
@@ -362,7 +363,7 @@ const char *
 cs_sles_petsc_get_mat_type(void  *context);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Print information on PETSc library.
  *
  * \param[in]  log_type  log type

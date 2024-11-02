@@ -43,7 +43,6 @@ AM_CPPFLAGS = \
 $(CPPFLAGS_PLE) \
 $(MPI_CPPFLAGS) $(BLAS_CPPFLAGS)
 
-AM_CFLAGS = $(CFLAGS_DBG) $(CFLAGS_OPT) $(CFLAGS_SHARED)
 AM_CXXFLAGS = $(CXXFLAGS_STD) $(CXXFLAGS_SYCL) $(CXXFLAGS_DBG) $(CXXFLAGS_OPT) $(CXXFLAGS_SHARED)
 
 AM_LDFLAGS =
@@ -173,10 +172,6 @@ endif
 
 noinst_LIBRARIES = libcsalge.a
 
-libcsalge_a_CFLAGS = $(CFLAGS_DBG) $(CFLAGS_HOT) $(CFLAGS_SHARED)
-libcsalge_a_FCFLAGS = \
-$(FCMODINCLUDE)$(top_builddir)/src \
-$(FCFLAGS_DBG) $(FCFLAGS_HOT) $(FCFLAGS_SHARED)
 libcsalge_a_SOURCES = \
 cs_bad_cells_regularisation.cpp \
 cs_balance.cpp \
@@ -184,7 +179,7 @@ cs_balance_by_zone.cpp \
 cs_benchmark.cpp \
 cs_benchmark_matrix.cpp \
 cs_blas.cpp \
-cs_bw_time_diff.c \
+cs_bw_time_diff.cpp \
 cs_cell_to_vertex.cpp \
 cs_convection_diffusion.cpp \
 cs_divergence.cpp \
@@ -237,7 +232,7 @@ if HAVE_PETSC
 noinst_LIBRARIES += libcsalge_petsc.a
 libcsalge_petsc_a_SOURCES = \
 cs_matrix_petsc.cpp \
-cs_sles_petsc.c
+cs_sles_petsc.cpp
 libcsalge_a_LIBADD += \
 libcsalge_petsc_a-cs_matrix_petsc.$(OBJEXT) \
 libcsalge_petsc_a-cs_sles_petsc.$(OBJEXT)
