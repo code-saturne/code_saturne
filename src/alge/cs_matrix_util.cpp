@@ -260,7 +260,7 @@ _diag_dom_native(const cs_matrix_t  *matrix,
 
   const auto ms =
     static_cast<const cs_matrix_struct_native_t *>(matrix->structure);
-  const auto mc = static_cast<const cs_matrix_coeff_dist_t *>(matrix->coeffs);
+  const auto mc = static_cast<const cs_matrix_coeff_t *>(matrix->coeffs);
 
   const cs_real_t  *restrict xa = mc->e_val;
 
@@ -316,7 +316,7 @@ _b_diag_dom_native(const cs_matrix_t  *matrix,
 
   const auto ms =
     static_cast<const cs_matrix_struct_native_t *>(matrix->structure);
-  const auto mc = static_cast<const cs_matrix_coeff_dist_t *>(matrix->coeffs);
+  const auto mc = static_cast<const cs_matrix_coeff_t *>(matrix->coeffs);
 
   const cs_real_t  *restrict xa = mc->e_val;
   const cs_lnum_t db_size = matrix->db_size;
@@ -376,7 +376,7 @@ _bb_diag_dom_native(const cs_matrix_t  *matrix,
 
   const auto ms =
     static_cast<const cs_matrix_struct_native_t *>(matrix->structure);
-  const auto mc = static_cast<const cs_matrix_coeff_dist_t *>(matrix->coeffs);
+  const auto mc = static_cast<const cs_matrix_coeff_t *>(matrix->coeffs);
 
   const cs_real_t  *restrict xa = mc->e_val;
   const cs_lnum_t db_size = matrix->db_size;
@@ -448,7 +448,7 @@ _diag_dom_csr(const cs_matrix_t  *matrix,
 
   const auto ms =
     static_cast<const cs_matrix_struct_csr_t *>(matrix->structure);
-  const auto mc = static_cast<const cs_matrix_coeff_csr_t *>(matrix->coeffs);
+  const auto mc = static_cast<const cs_matrix_coeff_t *>(matrix->coeffs);
   cs_lnum_t  n_rows = ms->n_rows;
 
   /* Standard case */
@@ -493,7 +493,7 @@ _diag_dom_dist(const cs_matrix_t  *matrix,
 {
   const auto ms =
     static_cast<const cs_matrix_struct_dist_t *>(matrix->structure);
-  const auto mc = static_cast<const cs_matrix_coeff_dist_t *>(matrix->coeffs);
+  const auto mc = static_cast<const cs_matrix_coeff_t *>(matrix->coeffs);
 
   cs_lnum_t  n_rows = ms->n_rows;
 
@@ -552,7 +552,7 @@ _b_diag_dom_dist(const cs_matrix_t  *matrix,
 {
   const auto ms =
     static_cast<const cs_matrix_struct_dist_t *>(matrix->structure);
-  const auto mc = static_cast<const cs_matrix_coeff_dist_t *>(matrix->coeffs);
+  const auto mc = static_cast<const cs_matrix_coeff_t *>(matrix->coeffs);
 
   const cs_lnum_t db_size = matrix->db_size;
   const cs_lnum_t  n_rows = ms->n_rows;
@@ -716,7 +716,7 @@ _pre_dump_native(const cs_matrix_t   *matrix,
 
   const auto ms =
     static_cast<const cs_matrix_struct_native_t *>(matrix->structure);
-  const auto mc = static_cast<const cs_matrix_coeff_dist_t *>(matrix->coeffs);
+  const auto mc = static_cast<const cs_matrix_coeff_t *>(matrix->coeffs);
 
   const cs_real_t  *restrict xa = mc->e_val;
 
@@ -805,7 +805,7 @@ _b_pre_dump_native(const cs_matrix_t  *matrix,
 
   const auto ms =
     static_cast<const cs_matrix_struct_native_t *>(matrix->structure);
-  const auto mc = static_cast<const cs_matrix_coeff_dist_t *>(matrix->coeffs);
+  const auto mc = static_cast<const cs_matrix_coeff_t *>(matrix->coeffs);
 
   const cs_real_t  *restrict xa = mc->e_val;
   const cs_lnum_t db_size = matrix->db_size;
@@ -901,7 +901,7 @@ _pre_dump_csr(const cs_matrix_t   *matrix,
 
   const auto ms =
     static_cast<const cs_matrix_struct_csr_t *>(matrix->structure);
-  const auto mc = static_cast<const cs_matrix_coeff_csr_t *>(matrix->coeffs);
+  const auto mc = static_cast<const cs_matrix_coeff_t *>(matrix->coeffs);
   cs_lnum_t  dump_id_shift = 0;
   cs_lnum_t  n_rows = ms->n_rows;
 
@@ -973,7 +973,7 @@ _pre_dump_msr(const cs_matrix_t   *matrix,
   const auto ms =
     static_cast<const cs_matrix_struct_dist_t *>(matrix->structure);
   const auto ms_e = static_cast<const cs_matrix_struct_csr_t *>(&(ms->e));
-  const auto mc = static_cast<const cs_matrix_coeff_dist_t *>(matrix->coeffs);
+  const auto mc = static_cast<const cs_matrix_coeff_t *>(matrix->coeffs);
 
   const cs_lnum_t  n_rows = ms->n_rows;
   cs_lnum_t  n_entries = ms_e->row_index[n_rows] + ms_e->n_rows;
@@ -1052,7 +1052,7 @@ _b_pre_dump_msr(const cs_matrix_t   *matrix,
   const auto ms =
     static_cast<const cs_matrix_struct_dist_t *>(matrix->structure);
   const auto       ms_e = static_cast<const cs_matrix_struct_csr_t *>(&(ms->e));
-  const auto mc = static_cast<const cs_matrix_coeff_dist_t *>(matrix->coeffs);
+  const auto mc = static_cast<const cs_matrix_coeff_t *>(matrix->coeffs);
   const cs_lnum_t  db_size = matrix->db_size;
   const cs_lnum_t  n_rows = ms->n_rows;
   const cs_lnum_t  dump_id_shift = ms->n_rows*db_size*db_size;
@@ -1672,7 +1672,7 @@ _frobenius_norm(const cs_matrix_t  *m)
       cs_lnum_t  e_stride = m->eb_size * m->eb_size;
       const auto ms =
         static_cast<const cs_matrix_struct_native_t *>(m->structure);
-      const auto mc = static_cast<const cs_matrix_coeff_dist_t *>(m->coeffs);
+      const auto mc = static_cast<const cs_matrix_coeff_t *>(m->coeffs);
       double e_mult = (m->eb_size == 1) ? m->db_size : 1;
       if (mc->symmetric)
         e_mult *= 2;
@@ -1717,7 +1717,7 @@ _frobenius_norm(const cs_matrix_t  *m)
              || ft == CS_MATRIX_BLOCK);
       cs_lnum_t  stride = m->eb_size * m->eb_size;
       const auto ms = static_cast<const cs_matrix_struct_csr_t *>(m->structure);
-      const auto *mc = static_cast<const cs_matrix_coeff_csr_t *>(m->coeffs);
+      const auto *mc = static_cast<const cs_matrix_coeff_t *>(m->coeffs);
       cs_lnum_t n_vals = ms->row_index[m->n_rows];
       retval = cs_dot_xx(stride*n_vals, mc->val);
       cs_parall_sum(1, CS_DOUBLE, &retval);
@@ -1731,7 +1731,7 @@ _frobenius_norm(const cs_matrix_t  *m)
       const auto ms =
         static_cast<const cs_matrix_struct_dist_t *>(m->structure);
       const auto ms_e   = static_cast<const cs_matrix_struct_csr_t *>(&(ms->e));
-      const auto mc = static_cast<const cs_matrix_coeff_dist_t  *>(m->coeffs);
+      const auto mc = static_cast<const cs_matrix_coeff_t  *>(m->coeffs);
       cs_lnum_t n_vals = ms_e->row_index[m->n_rows];
       double d_mult = (m->eb_size == 1) ? m->db_size : 1;
       retval = cs_dot_xx(d_stride*m->n_rows, mc->d_val);
@@ -1748,7 +1748,7 @@ _frobenius_norm(const cs_matrix_t  *m)
         static_cast<const cs_matrix_struct_dist_t *>(m->structure);
       const auto ms_e = static_cast<const cs_matrix_struct_csr_t *>(&(ms->e));
       const auto ms_h = static_cast<const cs_matrix_struct_csr_t *>(&(ms->h));
-      const auto mc = static_cast<const cs_matrix_coeff_dist_t  *>(m->coeffs);
+      const auto mc = static_cast<const cs_matrix_coeff_t  *>(m->coeffs);
       cs_lnum_t n_e_vals = ms_e->row_index[m->n_rows];
       cs_lnum_t n_h_vals = ms_h->row_index[m->n_rows];
       double d_mult = (m->eb_size == 1) ? m->db_size : 1;

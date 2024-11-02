@@ -828,8 +828,8 @@ _set_cusparse_map(cs_matrix_t   *matrix)
   if (matrix->type == CS_MATRIX_CSR) {
     const cs_matrix_struct_csr_t *ms
       = (const cs_matrix_struct_csr_t  *)matrix->structure;
-    const cs_matrix_coeff_csr_t *mc
-      = (const cs_matrix_coeff_csr_t *)matrix->coeffs;
+    const cs_matrix_coeff_t *mc
+      = (const cs_matrix_coeff_t *)matrix->coeffs;
     nnz = ms->row_index[matrix->n_rows];
     row_index = cs_get_device_ptr_const_pf
                   (const_cast<cs_lnum_t *>(ms->row_index));
@@ -841,8 +841,8 @@ _set_cusparse_map(cs_matrix_t   *matrix)
   else {
     const cs_matrix_struct_dist_t *ms
       = (const cs_matrix_struct_dist_t *)matrix->structure;
-    const cs_matrix_coeff_dist_t *mc
-      = (const cs_matrix_coeff_dist_t *)matrix->coeffs;
+    const cs_matrix_coeff_t *mc
+      = (const cs_matrix_coeff_t *)matrix->coeffs;
     nnz = ms->e.row_index[matrix->n_rows];
     row_index = cs_get_device_ptr_const_pf
                   (const_cast<cs_lnum_t *>(ms->e.row_index));
@@ -1207,8 +1207,8 @@ cs_matrix_spmv_cuda_native(const cs_matrix_t  *matrix,
   const cs_matrix_struct_native_t  *ms
     = (const cs_matrix_struct_native_t *)matrix->structure;
 
-  const cs_matrix_coeff_dist_t  *mc
-    = (const cs_matrix_coeff_dist_t *)matrix->coeffs;
+  const cs_matrix_coeff_t  *mc
+    = (const cs_matrix_coeff_t *)matrix->coeffs;
 
   const cs_real_t *__restrict__ da
     = (const cs_real_t *)cs_get_device_ptr_const_pf
@@ -1309,8 +1309,8 @@ cs_matrix_spmv_cuda_csr(cs_matrix_t  *matrix,
 {
   const cs_matrix_struct_csr_t *ms
     = (const cs_matrix_struct_csr_t *)matrix->structure;
-  const cs_matrix_coeff_csr_t *mc
-    = (const cs_matrix_coeff_csr_t  *)matrix->coeffs;
+  const cs_matrix_coeff_t *mc
+    = (const cs_matrix_coeff_t  *)matrix->coeffs;
 
   const cs_lnum_t *__restrict__ row_index
     = (const cs_lnum_t *)cs_get_device_ptr_const_pf
@@ -1471,8 +1471,8 @@ cs_matrix_spmv_cuda_csr_cusparse(cs_matrix_t  *matrix,
 
     const cs_matrix_struct_csr_t *ms
       = (const cs_matrix_struct_csr_t *)matrix->structure;
-    const cs_matrix_coeff_csr_t *mc
-      = (const cs_matrix_coeff_csr_t  *)matrix->coeffs;
+    const cs_matrix_coeff_t *mc
+      = (const cs_matrix_coeff_t *)matrix->coeffs;
     const cs_lnum_t *__restrict__ d_row_index
       = (const cs_lnum_t *)cs_get_device_ptr_const_pf
                              (const_cast<cs_lnum_t *>(ms->row_index));
@@ -1522,8 +1522,8 @@ cs_matrix_spmv_cuda_msr(cs_matrix_t  *matrix,
 {
   const cs_matrix_struct_dist_t *ms
     = (const cs_matrix_struct_dist_t *)matrix->structure;
-  const cs_matrix_coeff_dist_t *mc
-    = (const cs_matrix_coeff_dist_t *)matrix->coeffs;
+  const cs_matrix_coeff_t *mc
+    = (const cs_matrix_coeff_t *)matrix->coeffs;
 
   const cs_lnum_t *__restrict__ row_index
     = (const cs_lnum_t *)cs_get_device_ptr_const_pf
@@ -1611,8 +1611,8 @@ cs_matrix_spmv_cuda_msr_cusparse(cs_matrix_t  *matrix,
 
     const cs_matrix_struct_dist_t *ms
       = (const cs_matrix_struct_dist_t *)matrix->structure;
-    const cs_matrix_coeff_dist_t *mc
-      = (const cs_matrix_coeff_dist_t *)matrix->coeffs;
+    const cs_matrix_coeff_t *mc
+      = (const cs_matrix_coeff_t *)matrix->coeffs;
     const cs_real_t *__restrict__ d_val
       = (const cs_real_t *)cs_get_device_ptr_const_pf
                              (const_cast<cs_real_t *>(mc->d_val));
@@ -1733,8 +1733,8 @@ cs_matrix_spmv_cuda_msr_b(cs_matrix_t  *matrix,
 {
   const cs_matrix_struct_dist_t *ms
     = (const cs_matrix_struct_dist_t *)matrix->structure;
-  const cs_matrix_coeff_dist_t *mc
-    = (const cs_matrix_coeff_dist_t *)matrix->coeffs;
+  const cs_matrix_coeff_t *mc
+    = (const cs_matrix_coeff_t *)matrix->coeffs;
 
   const cs_lnum_t *__restrict__ row_index
     = (const cs_lnum_t *)cs_get_device_ptr_const_pf
@@ -1854,8 +1854,8 @@ cs_matrix_spmv_cuda_msr_b_cusparse(cs_matrix_t  *matrix,
 
     const cs_matrix_struct_dist_t *ms
       = (const cs_matrix_struct_dist_t *)matrix->structure;
-    const cs_matrix_coeff_dist_t *mc
-      = (const cs_matrix_coeff_dist_t *)matrix->coeffs;
+    const cs_matrix_coeff_t *mc
+      = (const cs_matrix_coeff_t *)matrix->coeffs;
     const cs_real_t *__restrict__ d_val
       = (const cs_real_t *)cs_get_device_ptr_const_pf
                              (const_cast<cs_real_t *>(mc->d_val));
@@ -1965,8 +1965,8 @@ cs_matrix_spmv_cuda_msr_bb_cusparse(cs_matrix_t  *matrix,
 
     const cs_matrix_struct_dist_t *ms
       = (const cs_matrix_struct_dist_t *)matrix->structure;
-    const cs_matrix_coeff_dist_t *mc
-      = (const cs_matrix_coeff_dist_t *)matrix->coeffs;
+    const cs_matrix_coeff_t *mc
+      = (const cs_matrix_coeff_t *)matrix->coeffs;
     const cs_real_t *__restrict__ d_val
       = (const cs_real_t *)cs_get_device_ptr_const_pf
                              (const_cast<cs_real_t *>(mc->d_val));

@@ -200,34 +200,12 @@ typedef struct _cs_matrix_struct_dist_t {
 
 } cs_matrix_struct_dist_t;
 
-/* CSR matrix coefficients representation */
-/*----------------------------------------*/
+/* Commmon matrix coefficients representation */
+/*--------------------------------------------*/
 
-typedef struct _cs_matrix_coeff_csr_t {
+/* Used for matrix formats except third-party */
 
-  /* Pointers to possibly shared arrays */
-
-  const cs_real_t  *val;              /* Matrix coefficients */
-
-  /* Pointers to private arrays (NULL if shared) */
-
-  cs_real_t        *_val;             /* Matrix coefficients */
-
-  /* Pointers to auxiliary arrays used for queries */
-
-  const cs_real_t  *d_val;            /* Pointer to diagonal matrix
-                                         coefficients, if queried */
-  cs_real_t        *_d_val;           /* Diagonal matrix coefficients,
-                                         if queried */
-
-} cs_matrix_coeff_csr_t;
-
-/* Distributed matrix coefficients representation */
-/*------------------------------------------------*/
-
-/* Used for native, MSR, and distributed matrices */
-
-typedef struct _cs_matrix_coeff_dist_t {
+typedef struct _cs_matrix_coeff_t {
 
   bool             symmetric;         /* Symmetry indicator */
 
@@ -240,6 +218,7 @@ typedef struct _cs_matrix_coeff_dist_t {
      values. For other matrix types, it can contain a mix of local and
      distant values. */
 
+  const cs_real_t  *val;              /* All coefficients (CSR) */
   const cs_real_t  *d_val;            /* D (diagonal-only) coefficients */
   const cs_real_t  *e_val;            /* E (extra-diagonal) coefficients */
   const cs_real_t  *h_val;            /* H (halo-only) coefficients */
@@ -249,9 +228,10 @@ typedef struct _cs_matrix_coeff_dist_t {
       * If non-NULL, d_val, e_val, and h_val should point
         to matching private array.
       * In the case of CSR storage, where diagonal values can be stored in
-        the e_val array, d_val will be NULL but _d_val may be used to store
-        (cache) diagonal values. */
+        the a_val array, d_val will be NULL but _d_val may be used to store
+        (cache) diagonal values, if queried. */
 
+  cs_real_t        *_val;            /* All coefficients (CSR) */
   cs_real_t        *_d_val;          /* D (diagonal) coefficients */
   cs_real_t        *_e_val;          /* E (extra-diagonal) coefficients */
   cs_real_t        *_h_val;          /* H (halo-only) coefficients */
@@ -261,7 +241,7 @@ typedef struct _cs_matrix_coeff_dist_t {
   cs_lnum_t        *d_idx;           /* Index for diagonal matrix coefficients
                                         in case of multiple block sizes */
 
-} cs_matrix_coeff_dist_t;
+} cs_matrix_coeff_t;
 
 /* Matrix structure (representation-independent part) */
 /*----------------------------------------------------*/

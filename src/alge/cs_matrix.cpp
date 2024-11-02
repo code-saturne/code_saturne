@@ -416,7 +416,7 @@ _set_coeffs_native(cs_matrix_t *matrix,
   CS_UNUSED(n_edges);
   CS_UNUSED(edges);
 
-  auto mc = static_cast<cs_matrix_coeff_dist_t *>(matrix->coeffs);
+  auto mc = static_cast<cs_matrix_coeff_t *>(matrix->coeffs);
   auto ms = static_cast<const cs_matrix_struct_native_t *>(matrix->structure);
 
   mc->symmetric = symmetric;
@@ -477,12 +477,12 @@ _copy_diagonal_separate(const cs_matrix_t *matrix, cs_real_t *restrict da)
 {
   const cs_real_t *_d_val = nullptr;
   if (matrix->type == CS_MATRIX_NATIVE) {
-    auto mc = static_cast<const cs_matrix_coeff_dist_t *>(matrix->coeffs);
+    auto mc = static_cast<const cs_matrix_coeff_t *>(matrix->coeffs);
     _d_val = mc->d_val;
   }
   else if (   matrix->type == CS_MATRIX_MSR
            || matrix->type == CS_MATRIX_DIST) {
-    auto mc = static_cast<const cs_matrix_coeff_dist_t *>(matrix->coeffs);
+    auto mc = static_cast<const cs_matrix_coeff_t *>(matrix->coeffs);
     _d_val = mc->d_val;
   }
   const cs_lnum_t  n_rows = matrix->n_rows;
@@ -958,50 +958,63 @@ _create_struct_csr_from_restrict_local(const cs_matrix_struct_csr_t  *src)
 }
 
 /*----------------------------------------------------------------------------
- * Destroy CSR matrix coefficients.
+ * Create matrix coefficients.
+ *
+ * returns:
+ *   pointer to allocated CSR coefficients structure.
+ *----------------------------------------------------------------------------*/
+
+static cs_matrix_coeff_t *
+_create_coeff(void)
+{
+  cs_matrix_coeff_t  *mc = nullptr;
+
+  /* Allocate */
+
+  BFT_MALLOC(mc, 1, cs_matrix_coeff_t);
+
+  /* Initialize */
+
+  mc->symmetric = false;
+  mc->db_size = 0;
+  mc->eb_size = 0;
+
+  mc->val = nullptr;
+  mc->d_val = nullptr;
+  mc->e_val = nullptr;
+  mc->h_val = nullptr;
+
+  mc->_val = nullptr;
+  mc->_d_val = nullptr;
+  mc->_e_val = nullptr;
+  mc->_h_val = nullptr;
+
+  mc->d_idx = nullptr;
+
+  return mc;
+}
+
+/*----------------------------------------------------------------------------
+ * Destroy matrix coefficients.
  *
  * parameters:
  *   m  <->  pointer to matrix structure
  *----------------------------------------------------------------------------*/
 
 static void
-_destroy_coeff_csr(cs_matrix_t  *m)
+_destroy_coeff(cs_matrix_t  *m)
 {
   if (m->coeffs != nullptr) {
-    auto mc = static_cast<cs_matrix_coeff_csr_t  *>( m->coeffs);
+    auto mc = static_cast<cs_matrix_coeff_t *>(m->coeffs);
 
-    BFT_FREE(mc->_val);
-    BFT_FREE(mc->_d_val);
+    CS_FREE(mc->_h_val);
+    CS_FREE(mc->_e_val);
+    CS_FREE(mc->_d_val);
+    CS_FREE(mc->_val);
+    CS_FREE_HD(mc->d_idx);
 
     BFT_FREE(m->coeffs);
   }
-}
-
-/*----------------------------------------------------------------------------
- * Create CSR matrix coefficients.
- *
- * returns:
- *   pointer to allocated CSR coefficients structure.
- *----------------------------------------------------------------------------*/
-
-static cs_matrix_coeff_csr_t *
-_create_coeff_csr(void)
-{
-  cs_matrix_coeff_csr_t  *mc = nullptr;
-
-  /* Allocate */
-
-  BFT_MALLOC(mc, 1, cs_matrix_coeff_csr_t);
-
-  /* Initialize */
-
-  mc->val = nullptr;
-  mc->_val = nullptr;
-
-  mc->d_val = nullptr;
-  mc->_d_val = nullptr;
-
-  return mc;
 }
 
 /*----------------------------------------------------------------------------
@@ -1069,7 +1082,7 @@ _set_xa_coeffs_csr_direct(cs_matrix_t       *matrix,
                           const cs_real_t *restrict xa)
 {
   cs_lnum_t  ii, jj, face_id;
-  auto mc = static_cast<cs_matrix_coeff_csr_t  *>( matrix->coeffs);
+  auto mc = static_cast<cs_matrix_coeff_t  *>( matrix->coeffs);
 
   auto ms = static_cast<const cs_matrix_struct_csr_t *>(matrix->structure);
 
@@ -1141,7 +1154,7 @@ _set_xa_coeffs_csr_increment(cs_matrix_t       *matrix,
                              const cs_real_t *restrict xa)
 {
   cs_lnum_t  ii, jj, face_id;
-  auto mc = static_cast<cs_matrix_coeff_csr_t  *>(matrix->coeffs);
+  auto mc = static_cast<cs_matrix_coeff_t  *>(matrix->coeffs);
 
   auto ms = static_cast<const cs_matrix_struct_csr_t *>(matrix->structure);
 
@@ -1214,7 +1227,7 @@ _set_coeffs_csr(cs_matrix_t *matrix,
 {
   CS_UNUSED(copy);
 
-  auto mc = static_cast<cs_matrix_coeff_csr_t  *>(matrix->coeffs);
+  auto mc = static_cast<cs_matrix_coeff_t  *>(matrix->coeffs);
 
   auto ms = static_cast<const cs_matrix_struct_csr_t *>(matrix->structure);
 
@@ -1292,7 +1305,7 @@ _set_coeffs_csr_from_msr(cs_matrix_t    *matrix,
                          const cs_real_t *restrict x_vals,
                          cs_real_t **x_vals_transfer)
 {
-  auto mc = static_cast<cs_matrix_coeff_csr_t  *>(matrix->coeffs);
+  auto mc = static_cast<cs_matrix_coeff_t  *>(matrix->coeffs);
 
   auto ms = static_cast<const cs_matrix_struct_csr_t *>(matrix->structure);
 
@@ -1458,7 +1471,7 @@ _set_coeffs_csr_from_msr(cs_matrix_t    *matrix,
 static void
 _release_coeffs_csr(cs_matrix_t  *matrix)
 {
-  auto mc = static_cast<cs_matrix_coeff_csr_t  *>(matrix->coeffs);
+  auto mc = static_cast<cs_matrix_coeff_t  *>(matrix->coeffs);
   if (mc != nullptr)
     mc->d_val = nullptr;
   return;
@@ -1477,7 +1490,7 @@ _copy_diagonal_csr(const cs_matrix_t  *matrix,
                    cs_real_t          *restrict da)
 {
   auto ms = static_cast<const cs_matrix_struct_csr_t *>(matrix->structure);
-  const auto mc = static_cast<cs_matrix_coeff_csr_t  *>(matrix->coeffs);
+  const auto mc = static_cast<cs_matrix_coeff_t  *>(matrix->coeffs);
   cs_lnum_t  n_rows = ms->n_rows;
 
 # pragma omp parallel for  if(n_rows > CS_THR_MIN)
@@ -1516,7 +1529,7 @@ _get_diagonal_csr(const cs_matrix_t  *matrix)
 {
   const cs_real_t  *diag = nullptr;
 
-  auto mc = static_cast<cs_matrix_coeff_csr_t *>(matrix->coeffs);
+  auto mc = static_cast<cs_matrix_coeff_t *>(matrix->coeffs);
   assert(matrix->db_size == 1);
   if (mc->_d_val == nullptr)
     CS_MALLOC_HD(mc->_d_val, matrix->n_rows, cs_real_t, matrix->alloc_mode);
@@ -1554,7 +1567,7 @@ _csr_assembler_values_init(void        *matrix_p,
 
   cs_matrix_t  *matrix = (cs_matrix_t *)matrix_p;
 
-  auto mc = static_cast<cs_matrix_coeff_csr_t  *>(matrix->coeffs);
+  auto mc = static_cast<cs_matrix_coeff_t  *>(matrix->coeffs);
 
   const cs_alloc_mode_t amode = matrix->alloc_mode;
   const cs_lnum_t n_rows = matrix->n_rows;
@@ -1614,7 +1627,7 @@ _csr_assembler_values_add(void             *matrix_p,
 {
   cs_matrix_t  *matrix = (cs_matrix_t *)matrix_p;
 
-  auto mc = static_cast<cs_matrix_coeff_csr_t  *>(matrix->coeffs);
+  auto mc = static_cast<cs_matrix_coeff_t  *>(matrix->coeffs);
 
   auto ms = static_cast<const cs_matrix_struct_csr_t *>(matrix->structure);
 
@@ -1743,7 +1756,7 @@ _set_e_coeffs_msr_direct(cs_matrix_t        *matrix,
                          const cs_real_t    *restrict xa)
 {
   cs_lnum_t  ii, jj, face_id;
-  auto       mc = static_cast<cs_matrix_coeff_dist_t *>(matrix->coeffs);
+  auto       mc = static_cast<cs_matrix_coeff_t *>(matrix->coeffs);
 
   auto ms = static_cast<const cs_matrix_struct_dist_t *>(matrix->structure);
   const cs_matrix_struct_csr_t  *ms_e = &(ms->e);
@@ -1816,7 +1829,7 @@ _set_e_coeffs_msr_direct_block(cs_matrix_t        *matrix,
                                const cs_lnum_2_t  *edges,
                                const cs_real_t    *restrict xa)
 {
-  auto mc = static_cast<cs_matrix_coeff_dist_t *>(matrix->coeffs);
+  auto mc = static_cast<cs_matrix_coeff_t *>(matrix->coeffs);
 
   auto ms = static_cast<const cs_matrix_struct_dist_t *>(matrix->structure);
   const cs_matrix_struct_csr_t  *ms_e = &(ms->e);
@@ -1898,7 +1911,7 @@ _set_e_coeffs_msr_increment(cs_matrix_t        *matrix,
                             const cs_real_t    *restrict xa)
 {
   cs_lnum_t  ii, jj, face_id;
-  auto       mc = static_cast<cs_matrix_coeff_dist_t *>(matrix->coeffs);
+  auto       mc = static_cast<cs_matrix_coeff_t *>(matrix->coeffs);
 
   auto ms = static_cast<const cs_matrix_struct_dist_t *>(matrix->structure);
   const cs_matrix_struct_csr_t  *ms_e = &(ms->e);
@@ -1973,7 +1986,7 @@ _set_e_coeffs_msr_increment_block(cs_matrix_t        *matrix,
                                   const cs_lnum_2_t  *edges,
                                   const cs_real_t    *restrict xa)
 {
-  auto mc = static_cast<cs_matrix_coeff_dist_t *>(matrix->coeffs);
+  auto mc = static_cast<cs_matrix_coeff_t *>(matrix->coeffs);
 
   auto ms = static_cast<const cs_matrix_struct_dist_t *>(matrix->structure);
   const cs_matrix_struct_csr_t  *ms_e = &(ms->e);
@@ -2046,7 +2059,7 @@ _map_or_copy_d_coeffs_msr(cs_matrix_t      *matrix,
                           bool              copy,
                           const cs_real_t  *restrict da)
 {
-  auto mc = static_cast<cs_matrix_coeff_dist_t *>(matrix->coeffs);
+  auto mc = static_cast<cs_matrix_coeff_t *>(matrix->coeffs);
 
   const cs_lnum_t n_rows = matrix->n_rows;
 
@@ -2101,7 +2114,7 @@ _map_or_copy_e_coeffs_msr(cs_matrix_t      *matrix,
                           bool              copy,
                           const cs_real_t  *restrict xa)
 {
-  auto mc = static_cast<cs_matrix_coeff_dist_t *>(matrix->coeffs);
+  auto mc = static_cast<cs_matrix_coeff_t *>(matrix->coeffs);
 
   auto ms = static_cast<const cs_matrix_struct_dist_t *>(matrix->structure);
   const cs_matrix_struct_csr_t  *ms_e = &(ms->e);
@@ -2188,7 +2201,7 @@ _set_coeffs_msr(cs_matrix_t         *matrix,
                 const cs_real_t    *restrict da,
                 const cs_real_t    *restrict xa)
 {
-  auto mc = static_cast<cs_matrix_coeff_dist_t *>(matrix->coeffs);
+  auto mc = static_cast<cs_matrix_coeff_t *>(matrix->coeffs);
 
   auto ms = static_cast<const cs_matrix_struct_dist_t *>(matrix->structure);
   const cs_matrix_struct_csr_t  *ms_e = &(ms->e);
@@ -2265,7 +2278,7 @@ _set_coeffs_msr_from_msr(cs_matrix_t       *matrix,
   CS_UNUSED(row_index);
   CS_UNUSED(col_id);
 
-  auto mc = static_cast<cs_matrix_coeff_dist_t *>(matrix->coeffs);
+  auto mc = static_cast<cs_matrix_coeff_t *>(matrix->coeffs);
 
   bool d_transferred = false, x_transferred = false;
 
@@ -2336,7 +2349,7 @@ _msr_assembler_values_init(void              *matrix_p,
 {
   cs_matrix_t  *matrix = (cs_matrix_t *)matrix_p;
 
-  auto mc = static_cast<cs_matrix_coeff_dist_t *>(matrix->coeffs);
+  auto mc = static_cast<cs_matrix_coeff_t *>(matrix->coeffs);
 
   const cs_alloc_mode_t amode = matrix->alloc_mode;
   const cs_lnum_t n_rows = matrix->n_rows;
@@ -2415,7 +2428,7 @@ _msr_assembler_values_add(void             *matrix_p,
 {
   cs_matrix_t  *matrix = (cs_matrix_t *)matrix_p;
 
-  auto mc = static_cast<cs_matrix_coeff_dist_t *>(matrix->coeffs);
+  auto mc = static_cast<cs_matrix_coeff_t *>(matrix->coeffs);
 
   auto ms = static_cast<const cs_matrix_struct_dist_t *>(matrix->structure);
   const cs_matrix_struct_csr_t  *ms_e = &(ms->e);
@@ -2562,7 +2575,7 @@ _dist_assembler_values_init(void        *matrix_p,
 {
   cs_matrix_t  *matrix = (cs_matrix_t *)matrix_p;
 
-  auto mc = static_cast<cs_matrix_coeff_dist_t *>(matrix->coeffs);
+  auto mc = static_cast<cs_matrix_coeff_t *>(matrix->coeffs);
 
   const cs_alloc_mode_t amode = matrix->alloc_mode;
   const cs_lnum_t n_rows = matrix->n_rows;
@@ -2647,7 +2660,7 @@ _dist_assembler_values_add(void             *matrix_p,
 {
   cs_matrix_t  *matrix = (cs_matrix_t *)matrix_p;
 
-  auto mc = static_cast<cs_matrix_coeff_dist_t *>(matrix->coeffs);
+  auto mc = static_cast<cs_matrix_coeff_t *>(matrix->coeffs);
 
   auto ms = static_cast<const cs_matrix_struct_dist_t *>(matrix->structure);
   const cs_matrix_struct_csr_t  *ms_e = &(ms->e);
@@ -3505,64 +3518,6 @@ _destroy_struct_dist(void  **ms)
 }
 
 /*----------------------------------------------------------------------------
- * Create distributed matrix coefficients.
- *
- * returns:
- *   pointer to allocated coefficients structure.
- *----------------------------------------------------------------------------*/
-
-static cs_matrix_coeff_dist_t *
-_create_coeff_dist(void)
-{
-  cs_matrix_coeff_dist_t  *mc;
-
-  /* Allocate */
-
-  BFT_MALLOC(mc, 1, cs_matrix_coeff_dist_t);
-
-  /* Initialize */
-
-  mc->symmetric = false;
-
-  mc->db_size = 0;
-  mc->eb_size = 0;
-
-  mc->d_val = nullptr;
-  mc->e_val = nullptr;
-  mc->h_val = nullptr;
-
-  mc->_d_val = nullptr;
-  mc->_e_val = nullptr;
-  mc->_h_val = nullptr;
-
-  mc->d_idx = nullptr;
-
-  return mc;
-}
-
-/*----------------------------------------------------------------------------
- * Destroy distributed matrix coefficients.
- *
- * parameters:
- *   m  <->  pointer to matrix structure
- *----------------------------------------------------------------------------*/
-
-static void
-_destroy_coeff_dist(cs_matrix_t  *m)
-{
-  if (m->coeffs != nullptr) {
-    auto mc = static_cast<cs_matrix_coeff_dist_t *>(m->coeffs);
-
-    CS_FREE_HD(mc->_h_val);
-    CS_FREE(mc->_e_val);
-    CS_FREE(mc->_d_val);
-    CS_FREE_HD(mc->d_idx);
-
-    BFT_FREE(m->coeffs);
-  }
-}
-
-/*----------------------------------------------------------------------------
  * Set distributed extradiagonal matrix coefficients for the case where there are
  * multiple contributions to a given coefficient.
  *
@@ -3584,7 +3539,7 @@ _set_e_coeffs_dist_increment(cs_matrix_t        *matrix,
                              const cs_lnum_2_t  *edges,
                              const cs_real_t    *restrict xa)
 {
-  auto mc = static_cast<cs_matrix_coeff_dist_t *>(matrix->coeffs);
+  auto mc = static_cast<cs_matrix_coeff_t *>(matrix->coeffs);
 
   auto ms = static_cast<const cs_matrix_struct_dist_t *>(matrix->structure);
 
@@ -3650,7 +3605,7 @@ _set_e_coeffs_dist_increment_block(cs_matrix_t        *matrix,
                                    const cs_lnum_2_t  *edges,
                                    const cs_real_t    *restrict xa)
 {
-  auto mc = static_cast<cs_matrix_coeff_dist_t *>(matrix->coeffs);
+  auto mc = static_cast<cs_matrix_coeff_t *>(matrix->coeffs);
 
   auto ms = static_cast<const cs_matrix_struct_dist_t *>(matrix->structure);
 
@@ -3720,7 +3675,7 @@ _map_or_copy_d_coeffs_dist(cs_matrix_t      *matrix,
                            bool              copy,
                            const cs_real_t  *restrict da)
 {
-  auto mc = static_cast<cs_matrix_coeff_dist_t *>(matrix->coeffs);
+  auto mc = static_cast<cs_matrix_coeff_t *>(matrix->coeffs);
 
   const cs_lnum_t n_rows = matrix->n_rows;
   const cs_lnum_t db_size = matrix->db_size;
@@ -3772,7 +3727,7 @@ _set_coeffs_dist(cs_matrix_t         *matrix,
                  const cs_real_t    *restrict da,
                  const cs_real_t    *restrict xa)
 {
-  auto mc = static_cast<cs_matrix_coeff_dist_t *>(matrix->coeffs);
+  auto mc = static_cast<cs_matrix_coeff_t *>(matrix->coeffs);
 
   auto ms = static_cast<const cs_matrix_struct_dist_t *>(matrix->structure);
   const cs_lnum_t eb_size = matrix->eb_size;
@@ -3842,7 +3797,7 @@ _get_diagonal_dist(const cs_matrix_t  *matrix)
 {
   const cs_real_t  *diag = nullptr;
 
-  auto mc = static_cast<cs_matrix_coeff_dist_t *>(matrix->coeffs);
+  auto mc = static_cast<cs_matrix_coeff_t *>(matrix->coeffs);
   if (mc->d_val == nullptr) {
     cs_lnum_t n_rows = matrix->n_rows * matrix->db_size;
     if (mc->_d_val == nullptr) {
@@ -4078,26 +4033,13 @@ _matrix_create(cs_matrix_type_t  type,
 
   /* Define coefficients */
 
-  switch(m->type) {
-  case CS_MATRIX_NATIVE:
-    m->coeffs = _create_coeff_dist();
-    break;
-  case CS_MATRIX_CSR:
-    m->coeffs = _create_coeff_csr();
-    break;
-  case CS_MATRIX_MSR:
-    m->coeffs = _create_coeff_dist();
-    break;
-  case CS_MATRIX_DIST:
-    m->coeffs = _create_coeff_dist();
-    break;
-  default:
+  if (m->type < CS_MATRIX_N_BUILTIN_TYPES)
+    m->coeffs = _create_coeff();
+  else
     bft_error(__FILE__, __LINE__, 0,
               _("Handling of matrixes in format type %d\n"
                 "is not operational yet."),
               m->type);
-    break;
-  }
 
   m->xa = nullptr;
 
@@ -4129,7 +4071,7 @@ _matrix_create(cs_matrix_type_t  type,
     m->copy_diagonal = _copy_diagonal_separate;
     m->get_diagonal = _get_diagonal_dist;
     m->destroy_structure = _destroy_struct_native;
-    m->destroy_coefficients = _destroy_coeff_dist;
+    m->destroy_coefficients = _destroy_coeff;
     m->assembler_values_create = nullptr;
  break;
 
@@ -4139,7 +4081,7 @@ _matrix_create(cs_matrix_type_t  type,
     m->copy_diagonal = _copy_diagonal_csr;
     m->get_diagonal = _get_diagonal_csr;
     m->destroy_structure = _destroy_struct_csr;
-    m->destroy_coefficients = _destroy_coeff_csr;
+    m->destroy_coefficients = _destroy_coeff;
     m->assembler_values_create = _assembler_values_create_csr;
     break;
 
@@ -4149,7 +4091,7 @@ _matrix_create(cs_matrix_type_t  type,
     m->copy_diagonal = _copy_diagonal_separate;
     m->get_diagonal = _get_diagonal_dist;
     m->destroy_structure = _destroy_struct_dist;
-    m->destroy_coefficients = _destroy_coeff_dist;
+    m->destroy_coefficients = _destroy_coeff;
     m->assembler_values_create = _assembler_values_create_msr;
     break;
 
@@ -4159,7 +4101,7 @@ _matrix_create(cs_matrix_type_t  type,
     m->copy_diagonal = _copy_diagonal_separate;
     m->get_diagonal = _get_diagonal_dist;
     m->destroy_structure = _destroy_struct_dist;
-    m->destroy_coefficients = _destroy_coeff_dist;
+    m->destroy_coefficients = _destroy_coeff;
     m->assembler_values_create = _assembler_values_create_dist;
     break;
 
@@ -4622,26 +4564,13 @@ cs_matrix_create_by_copy(cs_matrix_t   *src)
 
   /* Define coefficients */
 
-  switch(m->type) {
-  case CS_MATRIX_NATIVE:
-    m->coeffs = _create_coeff_dist();
-    break;
-  case CS_MATRIX_CSR:
-    m->coeffs = _create_coeff_csr();
-    break;
-  case CS_MATRIX_MSR:
-    m->coeffs = _create_coeff_dist();
-    break;
-  case CS_MATRIX_DIST:
-    m->coeffs = _create_coeff_dist();
-    break;
-  default:
+  if (m->type < CS_MATRIX_N_BUILTIN_TYPES)
+    m->coeffs = _create_coeff();
+  else
     bft_error(__FILE__, __LINE__, 0,
               _("Handling of matrixes in format type %d\n"
                 "is not operational yet."),
               m->type);
-    break;
-  }
 
   cs_matrix_release_coefficients(m);
 
@@ -4693,9 +4622,9 @@ cs_matrix_create_by_local_restrict(const cs_matrix_t  *src)
 
     m->_structure = _create_struct_csr_from_restrict_local(ms_src);
     m->structure  = m->_structure;
-    m->coeffs     = _create_coeff_dist();
-    auto mc       = static_cast<cs_matrix_coeff_dist_t *>(m->coeffs);
-    auto mc_src   = static_cast<cs_matrix_coeff_dist_t *>(src->coeffs);
+    m->coeffs     = _create_coeff();
+    auto mc       = static_cast<cs_matrix_coeff_t *>(m->coeffs);
+    auto mc_src   = static_cast<cs_matrix_coeff_t *>(src->coeffs);
     auto ms       = static_cast<const cs_matrix_struct_csr_t *>(m->structure);
     mc->d_val     = mc_src->d_val;
     CS_MALLOC_HD(mc->_e_val,
@@ -5493,7 +5422,7 @@ cs_matrix_get_row(const cs_matrix_t     *matrix,
   case CS_MATRIX_CSR:
     {
     auto ms = static_cast<const cs_matrix_struct_csr_t *>(matrix->structure);
-    auto mc     = static_cast<const cs_matrix_coeff_csr_t *>(matrix->coeffs);
+    auto mc     = static_cast<const cs_matrix_coeff_t *>(matrix->coeffs);
     r->row_size = (ms->row_index[row_id + 1] - ms->row_index[row_id]) * b_size;
     r->col_id   = ms->col_id + ms->row_index[row_id] * b_size;
     if (mc->val != nullptr)
@@ -5507,7 +5436,7 @@ cs_matrix_get_row(const cs_matrix_t     *matrix,
     {
       const cs_lnum_t _row_id = row_id / b_size;
       auto ms = static_cast<const cs_matrix_struct_csr_t *>(matrix->structure);
-      auto mc = static_cast<const cs_matrix_coeff_dist_t *>(matrix->coeffs);
+      auto mc = static_cast<const cs_matrix_coeff_t *>(matrix->coeffs);
       const cs_lnum_t n_ed_cols =   ms->row_index[_row_id+1]
                                   - ms->row_index[_row_id];
       if (matrix->eb_size == 1)
@@ -5587,7 +5516,7 @@ cs_matrix_get_row(const cs_matrix_t     *matrix,
     {
       const cs_lnum_t _row_id = row_id / b_size;
       auto ms = static_cast<const cs_matrix_struct_dist_t *>(matrix->structure);
-      auto mc = static_cast<const cs_matrix_coeff_dist_t *>(matrix->coeffs);
+      auto mc = static_cast<const cs_matrix_coeff_t *>(matrix->coeffs);
       const cs_lnum_t n_ed_cols =   ms->e.row_index[_row_id+1]
                                   - ms->e.row_index[_row_id];
       const cs_lnum_t n_h_cols =    ms->h.row_index[_row_id+1]
@@ -5748,7 +5677,7 @@ cs_matrix_get_native_arrays(const cs_matrix_t   *matrix,
 
   if (matrix->type == CS_MATRIX_NATIVE) {
     auto ms = static_cast<const cs_matrix_struct_native_t *>(matrix->structure);
-    auto mc = static_cast<const cs_matrix_coeff_dist_t *>(matrix->coeffs);
+    auto mc = static_cast<const cs_matrix_coeff_t *>(matrix->coeffs);
     if (n_edges != nullptr)
       *n_edges = ms->n_edges;
     if (edges != nullptr)
@@ -5796,7 +5725,7 @@ cs_matrix_get_csr_arrays(const cs_matrix_t   *matrix,
 
   if (matrix->type == CS_MATRIX_CSR) {
     auto ms = static_cast<const cs_matrix_struct_csr_t *>(matrix->structure);
-    const auto mc = static_cast<cs_matrix_coeff_csr_t  *>(matrix->coeffs);
+    const auto mc = static_cast<cs_matrix_coeff_t  *>(matrix->coeffs);
     if (row_index != nullptr)
       *row_index = ms->row_index;
     if (col_id != nullptr)
@@ -5843,7 +5772,7 @@ cs_matrix_get_msr_arrays(const cs_matrix_t   *matrix,
 
   if (matrix->type == CS_MATRIX_MSR) {
     auto ms = static_cast<const cs_matrix_struct_dist_t *>(matrix->structure);
-    auto mc = static_cast<const cs_matrix_coeff_dist_t *>(matrix->coeffs);
+    auto mc = static_cast<const cs_matrix_coeff_t *>(matrix->coeffs);
     if (row_index != nullptr)
       *row_index = ms->e.row_index;
     if (col_id != nullptr)

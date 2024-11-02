@@ -280,8 +280,8 @@ _set_mkl_sparse_map(cs_matrix_t   *matrix)
   if (matrix->type == CS_MATRIX_CSR) {
     cs_matrix_struct_csr_t *ms
       = (cs_matrix_struct_csr_t  *)matrix->structure;
-    cs_matrix_coeff_csr_t *mc
-      = (cs_matrix_coeff_csr_t *)matrix->coeffs;
+    cs_matrix_coeff_t *mc
+      = (cs_matrix_coeff_t *)matrix->coeffs;
     rows = ms->n_rows;
     cols = ms->n_cols_ext;
     row_index = ms->row_index;
@@ -291,8 +291,8 @@ _set_mkl_sparse_map(cs_matrix_t   *matrix)
   else {
     cs_matrix_struct_dist_t *ms
       = (cs_matrix_struct_dist_t *)matrix->structure;
-    cs_matrix_coeff_dist_t *mc
-      = (cs_matrix_coeff_dist_t *)matrix->coeffs;
+    cs_matrix_coeff_t *mc
+      = (cs_matrix_coeff_t *)matrix->coeffs;
     rows = ms->n_rows;
     if (matrix->type == CS_MATRIX_DIST)
       cols = ms->n_rows; /* extended cols are separate here */
@@ -467,8 +467,8 @@ _set_mkl_sparse_sycl_map(cs_matrix_t   *matrix)
   if (matrix->type == CS_MATRIX_CSR) {
     cs_matrix_struct_csr_t *ms
       = (cs_matrix_struct_csr_t  *)matrix->structure;
-    cs_matrix_coeff_csr_t *mc
-      = (cs_matrix_coeff_csr_t *)matrix->coeffs;
+    cs_matrix_coeff_t *mc
+      = (cs_matrix_coeff_t *)matrix->coeffs;
     nrows = ms->n_rows;
     ncols = ms->n_cols_ext;
     row_index = ms->row_index;
@@ -478,8 +478,8 @@ _set_mkl_sparse_sycl_map(cs_matrix_t   *matrix)
   else {
     cs_matrix_struct_dist_t *ms
       = (cs_matrix_struct_dist_t *)matrix->structure;
-    cs_matrix_coeff_dist_t *mc
-      = (cs_matrix_coeff_dist_t *)matrix->coeffs;
+    cs_matrix_coeff_t *mc
+      = (cs_matrix_coeff_t *)matrix->coeffs;
     nrows = ms->n_rows;
     if (matrix->type == CS_MATRIX_DIST)
       ncols = ms->n_rows; /* extended cols are separate here */
@@ -1010,8 +1010,8 @@ _mat_vec_p_l_native(cs_matrix_t  *matrix,
 
   const cs_matrix_struct_native_t  *ms
     = (const cs_matrix_struct_native_t *)matrix->structure;
-  const cs_matrix_coeff_dist_t  *mc
-    = (const cs_matrix_coeff_dist_t *)matrix->coeffs;
+  const cs_matrix_coeff_t  *mc
+    = (const cs_matrix_coeff_t *)matrix->coeffs;
 
   const cs_real_t  *restrict xa = mc->e_val;
 
@@ -1086,8 +1086,8 @@ _b_mat_vec_p_l_native(cs_matrix_t  *matrix,
 
   const cs_matrix_struct_native_t  *ms
     = (const cs_matrix_struct_native_t *)matrix->structure;
-  const cs_matrix_coeff_dist_t  *mc
-    = (const cs_matrix_coeff_dist_t *)matrix->coeffs;
+  const cs_matrix_coeff_t  *mc
+    = (const cs_matrix_coeff_t *)matrix->coeffs;
 
   const cs_real_t  *restrict xa = mc->e_val;
   const cs_lnum_t db_size = matrix->db_size;
@@ -1167,8 +1167,8 @@ _bb_mat_vec_p_l_native(cs_matrix_t  *matrix,
 
   const cs_matrix_struct_native_t  *ms
     = (const cs_matrix_struct_native_t *)matrix->structure;
-  const cs_matrix_coeff_dist_t  *mc
-    = (const cs_matrix_coeff_dist_t *)matrix->coeffs;
+  const cs_matrix_coeff_t  *mc
+    = (const cs_matrix_coeff_t *)matrix->coeffs;
 
   const cs_real_t  *restrict xa = mc->e_val;
   const cs_lnum_t  db_size = matrix->db_size;
@@ -1248,8 +1248,8 @@ _3_3_mat_vec_p_l_native(cs_matrix_t  *matrix,
 
   const cs_matrix_struct_native_t  *ms
     = (const cs_matrix_struct_native_t *)matrix->structure;
-  const cs_matrix_coeff_dist_t  *mc
-    = (const cs_matrix_coeff_dist_t *)matrix->coeffs;
+  const cs_matrix_coeff_t  *mc
+    = (const cs_matrix_coeff_t *)matrix->coeffs;
 
   const cs_real_t  *restrict xa = mc->e_val;
 
@@ -1332,8 +1332,8 @@ _6_6_mat_vec_p_l_native(cs_matrix_t  *matrix,
 
   const cs_matrix_struct_native_t  *ms
     = (const cs_matrix_struct_native_t *)matrix->structure;
-  const cs_matrix_coeff_dist_t  *mc
-    = (const cs_matrix_coeff_dist_t *)matrix->coeffs;
+  const cs_matrix_coeff_t  *mc
+    = (const cs_matrix_coeff_t *)matrix->coeffs;
 
   const cs_real_t  *restrict xa = mc->e_val;
 
@@ -1448,8 +1448,8 @@ _mat_vec_p_l_native_omp(cs_matrix_t  *matrix,
 
   const cs_matrix_struct_native_t  *ms
     = (const cs_matrix_struct_native_t *)matrix->structure;
-  const cs_matrix_coeff_dist_t  *mc
-    = (const cs_matrix_coeff_dist_t *)matrix->coeffs;
+  const cs_matrix_coeff_t  *mc
+    = (const cs_matrix_coeff_t *)matrix->coeffs;
   const cs_real_t  *restrict xa = mc->e_val;
 
   assert(matrix->numbering->type == CS_NUMBERING_THREADS);
@@ -1545,8 +1545,8 @@ _b_mat_vec_p_l_native_omp(cs_matrix_t  *matrix,
 
   const cs_matrix_struct_native_t  *ms
     = (const cs_matrix_struct_native_t *)matrix->structure;
-  const cs_matrix_coeff_dist_t  *mc
-    = (const cs_matrix_coeff_dist_t *)matrix->coeffs;
+  const cs_matrix_coeff_t  *mc
+    = (const cs_matrix_coeff_t *)matrix->coeffs;
   const cs_real_t  *restrict xa = mc->e_val;
 
   assert(matrix->numbering->type == CS_NUMBERING_THREADS);
@@ -1642,8 +1642,8 @@ _mat_vec_p_l_native_omp_atomic(cs_matrix_t  *matrix,
 {
   const cs_matrix_struct_native_t  *ms
     = (const cs_matrix_struct_native_t *)matrix->structure;
-  const cs_matrix_coeff_dist_t  *mc
-    = (const cs_matrix_coeff_dist_t *)matrix->coeffs;
+  const cs_matrix_coeff_t  *mc
+    = (const cs_matrix_coeff_t *)matrix->coeffs;
   const cs_real_t  *restrict xa = mc->e_val;
 
   /* Initialize ghost cell communication */
@@ -1721,8 +1721,8 @@ _b_mat_vec_p_l_native_omp_atomic(cs_matrix_t  *matrix,
 
   const cs_matrix_struct_native_t  *ms
     = (const cs_matrix_struct_native_t *)matrix->structure;
-  const cs_matrix_coeff_dist_t  *mc
-    = (const cs_matrix_coeff_dist_t *)matrix->coeffs;
+  const cs_matrix_coeff_t  *mc
+    = (const cs_matrix_coeff_t *)matrix->coeffs;
   const cs_real_t  *restrict xa = mc->e_val;
 
   /* Initialize ghost cell communication */
@@ -1807,8 +1807,8 @@ _mat_vec_p_l_native_vector(cs_matrix_t  *matrix,
   cs_lnum_t  ii, jj, face_id;
   const cs_matrix_struct_native_t  *ms
     = (const cs_matrix_struct_native_t *)matrix->structure;
-  const cs_matrix_coeff_dist_t  *mc
-    = (const cs_matrix_coeff_dist_t *)matrix->coeffs;
+  const cs_matrix_coeff_t  *mc
+    = (const cs_matrix_coeff_t *)matrix->coeffs;
   const cs_real_t  *restrict xa = mc->e_val;
 
   assert(matrix->numbering->type == CS_NUMBERING_VECTORIZE);
@@ -1896,8 +1896,8 @@ _mat_vec_p_l_csr(cs_matrix_t  *matrix,
 {
   const cs_matrix_struct_csr_t  *ms
     = (const cs_matrix_struct_csr_t *)matrix->structure;
-  const cs_matrix_coeff_csr_t  *mc
-    = (const cs_matrix_coeff_csr_t *)matrix->coeffs;
+  const cs_matrix_coeff_t  *mc
+    = (const cs_matrix_coeff_t *)matrix->coeffs;
   cs_lnum_t  n_rows = ms->n_rows;
 
   /* Ghost cell communication */
@@ -2108,8 +2108,8 @@ _mat_vec_p_l_msr(cs_matrix_t  *matrix,
 {
   const cs_matrix_struct_dist_t  *ms
     = (const cs_matrix_struct_dist_t *)matrix->structure;
-  const cs_matrix_coeff_dist_t  *mc
-    = (const cs_matrix_coeff_dist_t *)matrix->coeffs;
+  const cs_matrix_coeff_t  *mc
+    = (const cs_matrix_coeff_t *)matrix->coeffs;
 
   const cs_lnum_t  n_rows = ms->n_rows;
 
@@ -2186,8 +2186,8 @@ _mat_vec_p_l_msr_omp_sched(cs_matrix_t  *matrix,
 {
   const cs_matrix_struct_dist_t  *ms
     = (const cs_matrix_struct_dist_t *)matrix->structure;
-  const cs_matrix_coeff_dist_t  *mc
-    = (const cs_matrix_coeff_dist_t *)matrix->coeffs;
+  const cs_matrix_coeff_t  *mc
+    = (const cs_matrix_coeff_t *)matrix->coeffs;
 
   const cs_lnum_t  n_rows = ms->n_rows;
 
@@ -2313,8 +2313,8 @@ _b_mat_vec_p_l_msr_generic(cs_matrix_t  *matrix,
 {
   const cs_matrix_struct_dist_t  *ms
     = (const cs_matrix_struct_dist_t *)matrix->structure;
-  const cs_matrix_coeff_dist_t  *mc
-    = (const cs_matrix_coeff_dist_t *)matrix->coeffs;
+  const cs_matrix_coeff_t  *mc
+    = (const cs_matrix_coeff_t *)matrix->coeffs;
 
   const cs_lnum_t  n_rows = ms->n_rows;
   const cs_lnum_t  db_size = matrix->db_size;
@@ -2400,8 +2400,8 @@ _b_mat_vec_p_l_msr_3(cs_matrix_t  *matrix,
 {
   const cs_matrix_struct_dist_t  *ms
     = (const cs_matrix_struct_dist_t *)matrix->structure;
-  const cs_matrix_coeff_dist_t  *mc
-    = (const cs_matrix_coeff_dist_t *)matrix->coeffs;
+  const cs_matrix_coeff_t  *mc
+    = (const cs_matrix_coeff_t *)matrix->coeffs;
 
   const cs_lnum_t  n_rows = ms->n_rows;
 
@@ -2483,8 +2483,8 @@ _b_mat_vec_p_l_msr_6(cs_matrix_t  *matrix,
 {
   const cs_matrix_struct_dist_t  *ms
     = (const cs_matrix_struct_dist_t *)matrix->structure;
-  const cs_matrix_coeff_dist_t  *mc
-    = (const cs_matrix_coeff_dist_t *)matrix->coeffs;
+  const cs_matrix_coeff_t  *mc
+    = (const cs_matrix_coeff_t *)matrix->coeffs;
 
   const cs_lnum_t  n_rows = ms->n_rows;
 
@@ -2596,8 +2596,8 @@ _bb_mat_vec_p_l_msr_3(cs_matrix_t  *matrix,
 {
   const cs_matrix_struct_dist_t  *ms
     = (const cs_matrix_struct_dist_t *)matrix->structure;
-  const cs_matrix_coeff_dist_t  *mc
-    = (const cs_matrix_coeff_dist_t *)matrix->coeffs;
+  const cs_matrix_coeff_t  *mc
+    = (const cs_matrix_coeff_t *)matrix->coeffs;
 
   const cs_lnum_t  n_rows = ms->n_rows;
 
@@ -2695,8 +2695,8 @@ _bb_mat_vec_p_l_msr_generic(cs_matrix_t  *matrix,
 {
   const cs_matrix_struct_dist_t  *ms
     = (const cs_matrix_struct_dist_t *)matrix->structure;
-  const cs_matrix_coeff_dist_t  *mc
-    = (const cs_matrix_coeff_dist_t *)matrix->coeffs;
+  const cs_matrix_coeff_t  *mc
+    = (const cs_matrix_coeff_t *)matrix->coeffs;
 
   const cs_lnum_t  n_rows = ms->n_rows;
   const cs_lnum_t  db_size = matrix->db_size;
@@ -2821,8 +2821,8 @@ _mat_vec_p_l_msr_mkl(cs_matrix_t  *matrix,
                      cs_real_t    *restrict x,
                      cs_real_t    *restrict y)
 {
-  const cs_matrix_coeff_dist_t  *mc
-    = (const cs_matrix_coeff_dist_t  *)matrix->coeffs;
+  const cs_matrix_coeff_t  *mc
+    = (const cs_matrix_coeff_t  *)matrix->coeffs;
 
   /* Ghost cell communication */
 
@@ -2961,8 +2961,8 @@ _mat_vec_p_l_msr_mkl_sycl(cs_matrix_t  *matrix,
                           cs_real_t    *restrict x,
                           cs_real_t    *restrict y)
 {
-  const cs_matrix_coeff_dist_t  *mc
-    = (const cs_matrix_coeff_dist_t  *)matrix->coeffs;
+  const cs_matrix_coeff_t  *mc
+    = (const cs_matrix_coeff_t  *)matrix->coeffs;
 
   /* Ghost cell communication */
 
@@ -3119,8 +3119,8 @@ _mat_vec_p_l_dist(cs_matrix_t  *matrix,
 
     const cs_lnum_t  *h_col_id = ms->h.col_id;
     const cs_lnum_t  *h_row_index = ms->h.row_index;
-    const cs_matrix_coeff_dist_t  *mc
-      = (const cs_matrix_coeff_dist_t *)matrix->coeffs;
+    const cs_matrix_coeff_t  *mc
+      = (const cs_matrix_coeff_t *)matrix->coeffs;
 
 #   pragma omp parallel for  if(n_h_rows > CS_THR_MIN)
     for (cs_lnum_t ii = 0; ii < n_h_rows; ii++) {
@@ -3186,8 +3186,8 @@ _mat_vec_p_l_dist_omp_sched(cs_matrix_t  *matrix,
 
     const cs_lnum_t  *h_col_id = ms->h.col_id;
     const cs_lnum_t  *h_row_index = ms->h.row_index;
-    const cs_matrix_coeff_dist_t  *mc
-      = (const cs_matrix_coeff_dist_t *)matrix->coeffs;
+    const cs_matrix_coeff_t  *mc
+      = (const cs_matrix_coeff_t *)matrix->coeffs;
 
 #   pragma omp parallel for  if(n_h_rows > CS_THR_MIN)
     for (cs_lnum_t ii = 0; ii < n_h_rows; ii++) {
@@ -3247,8 +3247,8 @@ _b_mat_vec_p_l_dist_generic(cs_matrix_t  *matrix,
 
   const cs_matrix_struct_dist_t  *ms
     = (const cs_matrix_struct_dist_t *)matrix->structure;
-  const cs_matrix_coeff_dist_t  *mc
-    = (const cs_matrix_coeff_dist_t *)matrix->coeffs;
+  const cs_matrix_coeff_t  *mc
+    = (const cs_matrix_coeff_t *)matrix->coeffs;
 
   const cs_lnum_t  n_h_rows = ms->h.n_rows;
 
@@ -3318,8 +3318,8 @@ _b_mat_vec_p_l_dist_3(cs_matrix_t  *matrix,
 
   const cs_matrix_struct_dist_t  *ms
     = (const cs_matrix_struct_dist_t *)matrix->structure;
-  const cs_matrix_coeff_dist_t  *mc
-    = (const cs_matrix_coeff_dist_t *)matrix->coeffs;
+  const cs_matrix_coeff_t  *mc
+    = (const cs_matrix_coeff_t *)matrix->coeffs;
 
   const cs_lnum_t  n_h_rows = ms->h.n_rows;
 
@@ -3385,8 +3385,8 @@ _b_mat_vec_p_l_dist_6(cs_matrix_t  *matrix,
 
   const cs_matrix_struct_dist_t  *ms
     = (const cs_matrix_struct_dist_t *)matrix->structure;
-  const cs_matrix_coeff_dist_t  *mc
-    = (const cs_matrix_coeff_dist_t *)matrix->coeffs;
+  const cs_matrix_coeff_t  *mc
+    = (const cs_matrix_coeff_t *)matrix->coeffs;
 
   const cs_lnum_t  n_h_rows = ms->h.n_rows;
 
@@ -3482,8 +3482,8 @@ _bb_mat_vec_p_l_dist_3(cs_matrix_t  *matrix,
 
   const cs_matrix_struct_dist_t  *ms
     = (const cs_matrix_struct_dist_t *)matrix->structure;
-  const cs_matrix_coeff_dist_t  *mc
-    = (const cs_matrix_coeff_dist_t *)matrix->coeffs;
+  const cs_matrix_coeff_t  *mc
+    = (const cs_matrix_coeff_t *)matrix->coeffs;
 
   const cs_lnum_t  n_h_rows = ms->h.n_rows;
 
@@ -3558,8 +3558,8 @@ _bb_mat_vec_p_l_dist_generic(cs_matrix_t  *matrix,
 
   const cs_matrix_struct_dist_t  *ms
     = (const cs_matrix_struct_dist_t *)matrix->structure;
-  const cs_matrix_coeff_dist_t  *mc
-    = (const cs_matrix_coeff_dist_t *)matrix->coeffs;
+  const cs_matrix_coeff_t  *mc
+    = (const cs_matrix_coeff_t *)matrix->coeffs;
 
   const cs_lnum_t  n_h_rows = ms->h.n_rows;
 
@@ -3672,8 +3672,8 @@ _mat_vec_p_l_dist_mkl(cs_matrix_t  *matrix,
 
     const cs_lnum_t  *h_col_id = ms->h.col_id;
     const cs_lnum_t  *h_row_index = ms->h.row_index;
-    const cs_matrix_coeff_dist_t  *mc
-      = (const cs_matrix_coeff_dist_t *)matrix->coeffs;
+    const cs_matrix_coeff_t  *mc
+      = (const cs_matrix_coeff_t *)matrix->coeffs;
 
 #   pragma omp parallel for  if(n_h_rows > CS_THR_MIN)
     for (cs_lnum_t ii = 0; ii < n_h_rows; ii++) {
@@ -3732,8 +3732,8 @@ _mat_vec_p_l_dist_mkl_sycl(cs_matrix_t  *matrix,
 
     const cs_lnum_t  *h_col_id = ms->h.col_id;
     const cs_lnum_t  *h_row_index = ms->h.row_index;
-    const cs_matrix_coeff_dist_t  *mc
-      = (const cs_matrix_coeff_dist_t *)matrix->coeffs;
+    const cs_matrix_coeff_t  *mc
+      = (const cs_matrix_coeff_t *)matrix->coeffs;
 
 #   pragma omp parallel for  if(n_h_rows > CS_THR_MIN)
     for (cs_lnum_t ii = 0; ii < n_h_rows; ii++) {

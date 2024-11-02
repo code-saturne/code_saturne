@@ -256,8 +256,8 @@ _add_scal_values_single(const cs_cdo_assembly_row_t    *row,
 {
   assert(row->l_id > -1);
 
-  cs_matrix_t  *matrix = (cs_matrix_t *)matrix_p;
-  cs_matrix_coeff_dist_t *mc     = (cs_matrix_coeff_dist_t *)matrix->coeffs;
+  cs_matrix_t        *matrix = (cs_matrix_t *)matrix_p;
+  cs_matrix_coeff_t  *mc     = (cs_matrix_coeff_t *)matrix->coeffs;
 
   const cs_matrix_struct_dist_t *ms
     = (const cs_matrix_struct_dist_t *)matrix->structure;
@@ -301,8 +301,8 @@ _add_scal_values_atomic(const cs_cdo_assembly_row_t    *row,
 {
   assert(row->l_id > -1);
 
-  cs_matrix_t  *matrix = (cs_matrix_t *)matrix_p;
-  cs_matrix_coeff_dist_t *mc     = (cs_matrix_coeff_dist_t *)matrix->coeffs;
+  cs_matrix_t        *matrix = (cs_matrix_t *)matrix_p;
+  cs_matrix_coeff_t  *mc     = (cs_matrix_coeff_t *)matrix->coeffs;
 
   const cs_matrix_struct_dist_t *ms
     = (const cs_matrix_struct_dist_t *)matrix->structure;
@@ -349,8 +349,8 @@ _add_scal_values_critical(const cs_cdo_assembly_row_t    *row,
 {
   assert(row->l_id > -1);
 
-  cs_matrix_t  *matrix = (cs_matrix_t *)matrix_p;
-  cs_matrix_coeff_dist_t *mc     = (cs_matrix_coeff_dist_t *)matrix->coeffs;
+  cs_matrix_t        *matrix = (cs_matrix_t *)matrix_p;
+  cs_matrix_coeff_t  *mc     = (cs_matrix_coeff_t *)matrix->coeffs;
 
   const cs_matrix_struct_dist_t *ms
     = (const cs_matrix_struct_dist_t *)matrix->structure;
@@ -396,7 +396,7 @@ _add_scal_values_sys_extra_block(const cs_cdo_assembly_row_t    *row,
 {
   assert(row->l_id > -1);
 
-  cs_matrix_coeff_dist_t *mc = (cs_matrix_coeff_dist_t *)matrix->coeffs;
+  cs_matrix_coeff_t *mc = (cs_matrix_coeff_t *)matrix->coeffs;
 
   const cs_matrix_struct_dist_t *ms
     = (const cs_matrix_struct_dist_t *)matrix->structure;
@@ -650,8 +650,8 @@ _add_vect_values_single(const cs_cdo_assembly_row_t    *row,
 {
   assert(row->l_id > -1);
 
-  cs_matrix_t  *matrix = (cs_matrix_t *)matrix_p;
-  cs_matrix_coeff_dist_t *mc     = (cs_matrix_coeff_dist_t *)matrix->coeffs;
+  cs_matrix_t        *matrix = (cs_matrix_t *)matrix_p;
+  cs_matrix_coeff_t  *mc     = (cs_matrix_coeff_t *)matrix->coeffs;
 
   const cs_matrix_struct_dist_t *ms
     = (const cs_matrix_struct_dist_t *)matrix->structure;
@@ -713,8 +713,8 @@ _add_vect_values_atomic(const cs_cdo_assembly_row_t    *row,
 {
   assert(row->l_id > -1);
 
-  cs_matrix_t  *matrix = (cs_matrix_t *)matrix_p;
-  cs_matrix_coeff_dist_t *mc     = (cs_matrix_coeff_dist_t *)matrix->coeffs;
+  cs_matrix_t        *matrix = (cs_matrix_t *)matrix_p;
+  cs_matrix_coeff_t  *mc     = (cs_matrix_coeff_t *)matrix->coeffs;
 
   const cs_matrix_struct_dist_t *ms
     = (const cs_matrix_struct_dist_t *)matrix->structure;
@@ -779,8 +779,8 @@ _add_vect_values_critical(const cs_cdo_assembly_row_t    *row,
 {
   assert(row->l_id > -1);
 
-  cs_matrix_t  *matrix = (cs_matrix_t *)matrix_p;
-  cs_matrix_coeff_dist_t *mc     = (cs_matrix_coeff_dist_t *)matrix->coeffs;
+  cs_matrix_t        *matrix = (cs_matrix_t *)matrix_p;
+  cs_matrix_coeff_t  *mc     = (cs_matrix_coeff_t *)matrix->coeffs;
 
   const cs_matrix_struct_dist_t *ms
     = (const cs_matrix_struct_dist_t *)matrix->structure;
@@ -1966,8 +1966,8 @@ cs_cdo_assembly_matrix_sys_seqs(const cs_sdm_t                  *m,
         assert(row->col_idx[j] > -1);
       }
 
-      cs_matrix_t            *matrix = (cs_matrix_t *)mav->matrix;
-      cs_matrix_coeff_dist_t *mc     = (cs_matrix_coeff_dist_t *)matrix->coeffs;
+      cs_matrix_t       *matrix = (cs_matrix_t *)mav->matrix;
+      cs_matrix_coeff_t *mc     = (cs_matrix_coeff_t *)matrix->coeffs;
 
       const cs_matrix_struct_dist_t *ms
         = (const cs_matrix_struct_dist_t *)matrix->structure;
@@ -2171,8 +2171,8 @@ cs_cdo_assembly_matrix_sys_mpis(const cs_sdm_t                   *m,
 
         _set_col_idx_scal_locdist_sys_extra_block(ma, row);
 
-        cs_matrix_t            *matrix = (cs_matrix_t *)mav->matrix;
-        cs_matrix_coeff_dist_t *mc = (cs_matrix_coeff_dist_t *)matrix->coeffs;
+        cs_matrix_t       *matrix = (cs_matrix_t *)mav->matrix;
+        cs_matrix_coeff_t *mc = (cs_matrix_coeff_t *)matrix->coeffs;
 
         const cs_matrix_struct_dist_t *ms
           = (const cs_matrix_struct_dist_t *)matrix->structure;
