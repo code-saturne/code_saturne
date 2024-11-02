@@ -598,7 +598,26 @@ cs_f_equation_param_from_var_cal_opt(const cs_f_var_cal_opt_t  *vcopt);
  * Private function definitions
  *============================================================================*/
 
-/* Log values of the structure */
+/*----------------------------------------------------------------------------
+ * Free the contents of a \ref cs_equation_param_t
+ *
+ * This intermediate function is used to silence an error with
+ * undefinedBehaviorSanitizer, which excpects a function with a "void *"
+ * argument.
+ *
+ * \param[in, out] p  pointer to a \ref cs_equation_param_t
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_equation_param_clear(void *eqp)
+{
+  cs_equation_param_clear((cs_equation_param_t *)eqp);
+}
+
+/*----------------------------------------------------------------------------
+ * Log values of the structure.
+ *----------------------------------------------------------------------------*/
 
 static void
 _log_func_var_cal_opt(const void *t)
@@ -1136,7 +1155,7 @@ cs_parameters_define_field_keys(void)
      &_equation_param_default,
      _log_func_var_cal_opt,
      _log_func_default_var_cal_opt,
-     (cs_field_clear_key_struct_t *)cs_equation_param_clear,
+     _equation_param_clear,
      sizeof(cs_var_cal_opt_t),
      CS_FIELD_VARIABLE);
 
