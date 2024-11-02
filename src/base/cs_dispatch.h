@@ -48,7 +48,6 @@
  *----------------------------------------------------------------------------*/
 
 #include "cs_assert.h"
-#include "cs_mesh.h"
 
 #ifdef __NVCC__
 #include "cs_base_cuda.h"
@@ -102,16 +101,16 @@ public:
   parallel_for(cs_lnum_t n, F&& f, Args&&... args) = delete;
 
   // Assembly loop over all internal faces
-  template <class F, class... Args>
+  template <class M, class F, class... Args>
   decltype(auto)
-  parallel_for_i_faces(const cs_mesh_t*  m,
+  parallel_for_i_faces(const M*          m,
                        F&&               f,
                        Args&&...         args);
 
   // Assembly loop over all boundary faces
-  template <class F, class... Args>
+  template <class M, class F, class... Args>
   decltype(auto)
-  parallel_for_b_faces(const cs_mesh_t*  m,
+  parallel_for_b_faces(const M*          m,
                        F&&               f,
                        Args&&...         args);
 
@@ -124,23 +123,25 @@ public:
 
   // Query sum type for assembly loop over all interior faces
   // Must be redefined by the child class
+  template <class M>
   bool
-  try_get_parallel_for_i_faces_sum_type(const cs_mesh_t*         m,
+  try_get_parallel_for_i_faces_sum_type(const M*                  m,
                                         cs_dispatch_sum_type_t&  st);
 
   // Query sum type for assembly loop over all boundary faces
   // Must be redefined by the child class
+  template <class M>
   bool
-  try_get_parallel_for_b_faces_sum_type(const cs_mesh_t*         m,
+  try_get_parallel_for_b_faces_sum_type(const M*                 m,
                                         cs_dispatch_sum_type_t&  st);
 
 };
 
 // Default implementation of parallel_for_i_faces based on parallel_for
 template <class Derived>
-template <class F, class... Args>
+template <class M, class F, class... Args>
 decltype(auto) cs_dispatch_context_mixin<Derived>::parallel_for_i_faces
-  (const cs_mesh_t* m, F&& f, Args&&... args) {
+  (const M* m, F&& f, Args&&... args) {
   return static_cast<Derived*>(this)->parallel_for
                                         (m->n_i_faces,
                                          static_cast<F&&>(f),
@@ -149,9 +150,9 @@ decltype(auto) cs_dispatch_context_mixin<Derived>::parallel_for_i_faces
 
 // Default implementation of parallel_for_b_faces based on parallel_for_sum
 template <class Derived>
-template <class F, class... Args>
+template <class M, class F, class... Args>
 decltype(auto) cs_dispatch_context_mixin<Derived>::parallel_for_b_faces
-  (const cs_mesh_t* m, F&& f, Args&&... args) {
+  (const M* m, F&& f, Args&&... args) {
   return static_cast<Derived*>(this)->parallel_for
                                         (m->n_b_faces,
                                          static_cast<F&&>(f),
@@ -160,8 +161,9 @@ decltype(auto) cs_dispatch_context_mixin<Derived>::parallel_for_b_faces
 
 // Default implementation of get interior faces sum type
 template <class Derived>
+template <class M>
 bool cs_dispatch_context_mixin<Derived>::try_get_parallel_for_i_faces_sum_type
-  ([[maybe_unused]]const cs_mesh_t*  m,
+  ([[maybe_unused]]const M*          m,
    cs_dispatch_sum_type_t&           st) {
   st = CS_DISPATCH_SUM_SIMPLE;
   return true;
@@ -169,8 +171,9 @@ bool cs_dispatch_context_mixin<Derived>::try_get_parallel_for_i_faces_sum_type
 
 // Default implementation of get boundary faces sum type
 template <class Derived>
+template <class M>
 bool cs_dispatch_context_mixin<Derived>::try_get_parallel_for_b_faces_sum_type
-  ([[maybe_unused]]const cs_mesh_t*  m,
+  ([[maybe_unused]]const M*          m,
    cs_dispatch_sum_type_t&           st) {
   st = CS_DISPATCH_SUM_SIMPLE;
   return true;
@@ -220,9 +223,9 @@ public:
 
   //! Loop over the interior faces of a mesh using a specific numbering
   //! that avoids conflicts between threads.
-  template <class F, class... Args>
+  template <class M, class F, class... Args>
   bool
-  parallel_for_i_faces(const cs_mesh_t* m, F&& f, Args&&... args) {
+  parallel_for_i_faces(const M* m, F&& f, Args&&... args) {
     const int n_i_groups  = m->i_face_numbering->n_groups;
     const int n_i_threads = m->i_face_numbering->n_threads;
     const cs_lnum_t *restrict i_group_index = m->i_face_numbering->group_index;
@@ -241,9 +244,9 @@ public:
 
   //! Loop over the boundary faces of a mesh using a specific numbering
   //! that avoids conflicts between threads.
-  template <class F, class... Args>
+  template <class M, class F, class... Args>
   bool
-  parallel_for_b_faces(const cs_mesh_t* m, F&& f, Args&&... args) {
+  parallel_for_b_faces(const M* m, F&& f, Args&&... args) {
     const int n_b_threads = m->b_face_numbering->n_threads;
     const cs_lnum_t *restrict b_group_index = m->b_face_numbering->group_index;
 
@@ -274,17 +277,19 @@ public:
   }
 
   // Get interior faces sum type associated with this context
+  template <class M>
   bool
-  try_get_parallel_for_i_faces_sum_type([[maybe_unused]]const cs_mesh_t*  m,
-                                        cs_dispatch_sum_type_t&           st) {
+  try_get_parallel_for_i_faces_sum_type([[maybe_unused]]const M*   m,
+                                        cs_dispatch_sum_type_t&    st) {
     st = CS_DISPATCH_SUM_SIMPLE;
     return true;
   }
 
   // Get boundary faces sum type associated with this context
+  template <class M>
   bool
-  try_get_parallel_for_b_faces_sum_type([[maybe_unused]]const cs_mesh_t*  m,
-                                        cs_dispatch_sum_type_t&           st) {
+  try_get_parallel_for_b_faces_sum_type([[maybe_unused]]const M*   m,
+                                        cs_dispatch_sum_type_t&    st) {
     st = CS_DISPATCH_SUM_SIMPLE;
     return true;
   }
@@ -504,9 +509,9 @@ public:
   }
 
   //! Try to launch on the GPU and return false if not available
-  template <class F, class... Args>
+  template <class M, class F, class... Args>
   bool
-  parallel_for_i_faces(const cs_mesh_t* m, F&& f, Args&&... args) {
+  parallel_for_i_faces(const M* m, F&& f, Args&&... args) {
     const cs_lnum_t n = m->n_i_faces;
     if (device_ < 0 || use_gpu_ == false) {
       return false;
@@ -594,8 +599,9 @@ public:
   }
 
   // Get interior faces sum type associated with this context
+  template <class M>
   bool
-  try_get_parallel_for_i_faces_sum_type(const cs_mesh_t         *m,
+  try_get_parallel_for_i_faces_sum_type(const M                 *m,
                                         cs_dispatch_sum_type_t  &st) {
     if (device_ < 0 || use_gpu_ == false) {
       return false;
@@ -606,8 +612,9 @@ public:
   }
 
   // Get boundary faces sum type associated with this context
+  template <class M>
   bool
-  try_get_parallel_for_b_faces_sum_type(const cs_mesh_t         *m,
+  try_get_parallel_for_b_faces_sum_type(const M                 *m,
                                         cs_dispatch_sum_type_t  &st) {
     if (device_ < 0 || use_gpu_ == false) {
       return false;
@@ -690,9 +697,9 @@ public:
   }
 
   //! Try to launch on the GPU and return false if not available
-  template <class F, class... Args>
+  template <class M, class F, class... Args>
   bool
-  parallel_for_i_faces(const cs_mesh_t* m, F&& f, Args&&... args) {
+  parallel_for_i_faces(const M* m, F&& f, Args&&... args) {
     const cs_lnum_t n = m->n_i_faces;
     if (is_gpu == false || use_gpu_ == false) {
       return false;
@@ -739,8 +746,9 @@ public:
   }
 
   // Get interior faces sum type associated with this context
+  template <class M>
   bool
-  try_get_parallel_for_i_faces_sum_type(const cs_mesh_t         *m,
+  try_get_parallel_for_i_faces_sum_type(const M                 *m,
                                         cs_dispatch_sum_type_t  &st) {
     if (is_gpu == false || use_gpu_ == false) {
       return false;
@@ -751,8 +759,9 @@ public:
   }
 
   // Get interior faces sum type associated with this context
+  template <class M>
   bool
-  try_get_parallel_for_b_faces_sum_type(const cs_mesh_t         *m,
+  try_get_parallel_for_b_faces_sum_type(const M                 *m,
                                         cs_dispatch_sum_type_t  &st) {
     if (is_gpu == false || use_gpu_ == false) {
       return false;
@@ -880,8 +889,8 @@ public:
 
 public:
 
-  template <class F, class... Args>
-  auto parallel_for_i_faces(const cs_mesh_t* m, F&& f, Args&&... args) {
+  template <class M, class F, class... Args>
+  auto parallel_for_i_faces(const M* m, F&& f, Args&&... args) {
     bool launched = false;
     [[maybe_unused]] decltype(nullptr) try_execute[] = {
       (   launched = launched
@@ -889,8 +898,8 @@ public:
     };
   }
 
-  template <class F, class... Args>
-  auto parallel_for_b_faces(const cs_mesh_t* m, F&& f, Args&&... args) {
+  template <class M, class F, class... Args>
+  auto parallel_for_b_faces(const M* m, F&& f, Args&&... args) {
     bool launched = false;
     [[maybe_unused]] decltype(nullptr) try_execute[] = {
       (   launched = launched
@@ -918,8 +927,9 @@ public:
     };
   }
 
+  template <class M>
   cs_dispatch_sum_type_t
-  get_parallel_for_i_faces_sum_type(const cs_mesh_t* m) {
+  get_parallel_for_i_faces_sum_type(const M* m) {
     cs_dispatch_sum_type_t sum_type = CS_DISPATCH_SUM_ATOMIC;
     bool known = false;
     [[maybe_unused]] decltype(nullptr) try_query[] = {
@@ -930,8 +940,9 @@ public:
     return sum_type;
   }
 
+  template <class M>
   cs_dispatch_sum_type_t
-  get_parallel_for_b_faces_sum_type(const cs_mesh_t* m) {
+  get_parallel_for_b_faces_sum_type(const M* m) {
     cs_dispatch_sum_type_t sum_type = CS_DISPATCH_SUM_ATOMIC;
     bool known = false;
     [[maybe_unused]] decltype(nullptr) try_query[] = {
