@@ -247,18 +247,14 @@ _compute_tensorial_time_step(const cs_mesh_t   *m,
  * \brief solve energy and variables equations when
  *        scalar and momentum they are coupled in case of buoyancy
  *
- * \param[in]  n_scal      number of scalar
  * \param[in]  iterns      number of iteration
  * \param[in]  n_cells     number of cells
- * \param[in]  scalar_idx  idx of scalar
  */
 /*----------------------------------------------------------------------------*/
 
 static void
-_solve_coupled_vel_p_variables_equation(const int        n_scal,
-                                        const int        iterns,
-                                        const cs_lnum_t  n_cells,
-                                        const int        scalar_idx[])
+_solve_coupled_vel_p_variables_equation(const int        iterns,
+                                        const cs_lnum_t  n_cells)
 {
   if (cs_glob_velocity_pressure_model->n_buoyant_scal < 1)
     return;
@@ -298,14 +294,20 @@ _solve_coupled_vel_p_variables_equation(const int        n_scal,
   // Correct the scalar to ensure scalar conservation
   const cs_real_t *crom = CS_F_(rho)->val;
   const int key_buoyant_id = cs_field_key_id_try("coupled_with_vel_p");
+
   // Correction only made for the collocated time-scheme (Li Ma phd)
   cs_field_t *rho_mass = cs_field_by_name_try("density_mass");
   if (   rho_mass != nullptr
       && cs_glob_velocity_pressure_param->itpcol == 1) {
-    for (int ii = 0; ii < n_scal; ii++) {
-      const cs_field_t *f = cs_field_by_id(scalar_idx[ii]);
-      if ((f->type & CS_FIELD_CDO))
+    const int n_fields = cs_field_n_fields();
+
+    for (int f_id = 0; f_id < n_fields; f_id++) {
+      cs_field_t *f = cs_field_by_id(f_id);
+      if (!(f->type & CS_FIELD_VARIABLE))
         continue;
+      if (f->type & CS_FIELD_CDO)
+        continue;
+
       const int coupled_with_vel_p_fld
         = cs_field_get_key_int(f, key_buoyant_id);
       if (coupled_with_vel_p_fld != 1)
@@ -370,7 +372,6 @@ _update_pressure_temperature(cs_lnum_t n_cells)
 
 static void
 _solve_most(int              n_var,
-            int              n_scal,
             int              isvhb,
             int              itrale,
             int              vel_verbosity,
@@ -379,7 +380,6 @@ _solve_most(int              n_var,
             int             *ineefl,
             int             *itrfup,
             bool            *must_return,
-            const int        scalar_idx[],
             const cs_real_t  ckupdc[][6],
             cs_real_t        htot_cond[])
 {
@@ -571,10 +571,8 @@ _solve_most(int              n_var,
          -------------------------------- */
 
       // In case of buoyancy, scalars and momentum are coupled
-      _solve_coupled_vel_p_variables_equation(n_scal,
-                                              iterns,
-                                              n_cells,
-                                              scalar_idx);
+      _solve_coupled_vel_p_variables_equation(iterns,
+                                              n_cells);
 
       if (vel_verbosity > 0) {
         bft_printf
@@ -796,7 +794,6 @@ cs_solve_all(int  itrale)
   int n_scal = 0;
   const int n_fields = cs_field_n_fields();
 
-  int scalar_idx[n_fields];
   const int keysca = cs_field_key_id("scalar_id");
 
   {
@@ -815,7 +812,6 @@ cs_solve_all(int  itrale)
       const int sc_id = cs_field_get_key_int(f, keysca) - 1;
       if (sc_id < 0)
         continue;
-      scalar_idx[n_scal] = f_id;
       n_scal++;
       if (n_syr_couplings > 0) {
         if (cs_field_get_key_int(f, kcpsyr) == 1)
@@ -1095,7 +1091,6 @@ cs_solve_all(int  itrale)
   while (need_new_solve) {
 
     _solve_most(n_var,
-                n_scal,
                 isvhb,
                 itrale,
                 eqp_vel->verbosity,
@@ -1104,7 +1099,6 @@ cs_solve_all(int  itrale)
                 &ineefl,
                 &itrfup,
                 &must_return,
-                scalar_idx,
                 ckupdc,
                 htot_cond);
 

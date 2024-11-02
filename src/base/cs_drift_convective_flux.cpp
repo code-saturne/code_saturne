@@ -112,24 +112,12 @@ cs_drift_boundary_mass_flux(const cs_mesh_t             *m,
                             const cs_mesh_quantities_t  *mq,
                             cs_real_t                    b_mass_flux[])
 {
-  const cs_lnum_t n_i_faces = m->n_i_faces;
   const cs_lnum_t n_b_faces = m->n_b_faces;
 
-  const cs_lnum_2_t *restrict i_face_cells
-    = (const cs_lnum_2_t *)m->i_face_cells;
   const cs_lnum_t *restrict b_face_cells
     = (const cs_lnum_t *)m->b_face_cells;
 
-  const cs_real_3_t  *restrict b_face_normal
-    = (const cs_real_3_t  *) mq->b_face_normal;
-  const cs_real_3_t *restrict i_face_normal
-    = (const cs_real_3_t *) mq->i_face_normal;
   const int *bc_type = cs_glob_bc_type;
-
-  const cs_real_3_t *restrict b_face_cog
-    = (const cs_real_3_t *)mq->b_face_cog;
-  const cs_real_3_t *restrict i_face_cog
-    = (const cs_real_3_t *)mq->i_face_cog;
 
   //TODO add a return in case no addition
   const int keydri = cs_field_key_id("drift_scalar_model");
@@ -228,7 +216,6 @@ cs_drift_convective_flux(cs_field_t  *f_sc,
   const cs_real_t *dt = CS_F_(dt)->val;
   const int iturb  = cs_glob_turb_model->iturb;
   const int itytur = cs_glob_turb_model->itytur;
-  const int n_fields = cs_field_n_fields();
   const cs_real_t *gxyz = cs_get_glob_physical_constants()->gravity;
   const int idtvar = cs_glob_time_step_options->idtvar;
   const int *bc_type = cs_glob_bc_type;
@@ -820,7 +807,6 @@ cs_drift_convective_flux(cs_field_t  *f_sc,
                   divflu);
 
     const int iconvp = eqp_sc->iconv;
-    const cs_real_t thetap = eqp_sc->theta;
 
     /*  NB: if the porosity module is switched on, the porosity is already
      * taken into account in divflu */

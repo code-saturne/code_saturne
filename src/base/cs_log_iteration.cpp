@@ -1761,6 +1761,11 @@ cs_log_equation_convergence_info_write(void)
        "  ** Information on convergence\n"
        "     --------------------------\n\n"));
 
+  char _var_name_trunc[128];
+  char *var_name_trunc = _var_name_trunc;
+  if (max_name_width + 1 > 128)
+    BFT_MALLOC(var_name_trunc, max_name_width + 1, char);
+
   cs_log_printf(CS_LOG_DEFAULT, _("%s\n%s\n%s\n"), line, title, line);
 
   /* Print convergence information for each solved field */
@@ -1777,7 +1782,6 @@ cs_log_equation_convergence_info_write(void)
     char chain[128] = "c  ";
 
     const char *f_label = cs_field_get_label(f);
-    char var_name_trunc[max_name_width + 1];
     strncpy(var_name_trunc, f_label, max_name_width);
     var_name_trunc[max_name_width] = '\0';
     strcat(chain, var_name_trunc);
@@ -1859,6 +1863,9 @@ cs_log_equation_convergence_info_write(void)
   } /* End loop on fields */
 
   cs_log_printf(CS_LOG_DEFAULT, _("%s\n"), line);
+
+  if (var_name_trunc != _var_name_trunc)
+    BFT_FREE(var_name_trunc);
 
   BFT_FREE(w1);
   BFT_FREE(w2);
