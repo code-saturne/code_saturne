@@ -101,6 +101,7 @@
 
 #include "cs_base.h"
 #include "cs_blas.h"
+#include "cs_dispatch.h"
 #include "cs_halo.h"
 #include "cs_halo_perio.h"
 #include "cs_log.h"
@@ -469,37 +470,40 @@ _set_coeffs_native(cs_matrix_t *matrix,
  *
  * parameters:
  *   matrix <-- pointer to matrix structure
+ *   ctx    <-> Reference to dispatch context
  *   da     --> diagonal (pre-allocated, size: n_rows)
  *----------------------------------------------------------------------------*/
 
 static void
-_copy_diagonal_separate(const cs_matrix_t *matrix, cs_real_t *restrict da)
+_copy_diagonal_separate(const cs_matrix_t    *matrix,
+                        cs_real_t            *restrict da)
 {
   const cs_real_t *_d_val = nullptr;
-  if (matrix->type == CS_MATRIX_NATIVE) {
-    auto mc = static_cast<const cs_matrix_coeff_t *>(matrix->coeffs);
-    _d_val = mc->d_val;
-  }
-  else if (   matrix->type == CS_MATRIX_MSR
-           || matrix->type == CS_MATRIX_DIST) {
+  if (   matrix->type == CS_MATRIX_NATIVE
+      || matrix->type == CS_MATRIX_MSR
+      || matrix->type == CS_MATRIX_DIST) {
     auto mc = static_cast<const cs_matrix_coeff_t *>(matrix->coeffs);
     _d_val = mc->d_val;
   }
   const cs_lnum_t  n_rows = matrix->n_rows;
 
+  cs_dispatch_context  ctx;
+
+  if (matrix->alloc_mode == CS_ALLOC_HOST)
+    ctx.set_use_gpu(false);
+
   /* Unblocked version */
 
   if (matrix->db_size == 1) {
 
-    if (_d_val != nullptr) {
-#     pragma omp parallel for  if(n_rows > CS_THR_MIN)
-      for (cs_lnum_t ii = 0; ii < n_rows; ii++)
+    if (_d_val != nullptr)
+      ctx.parallel_for(n_rows, [=] CS_F_HOST_DEVICE (cs_lnum_t ii) {
         da[ii] = _d_val[ii];
-    }
+      });
     else {
-#     pragma omp parallel for  if(n_rows > CS_THR_MIN)
-      for (cs_lnum_t ii = 0; ii < n_rows; ii++)
+      ctx.parallel_for(n_rows, [=] CS_F_HOST_DEVICE (cs_lnum_t ii) {
         da[ii] = 0.0;
+      });
     }
 
   }
@@ -512,18 +516,20 @@ _copy_diagonal_separate(const cs_matrix_t *matrix, cs_real_t *restrict da)
     const cs_lnum_t db_size_2 = db_size * db_size;
 
     if (_d_val != nullptr) {
-#     pragma omp parallel for  if(n_rows*db_size > CS_THR_MIN)
-      for (cs_lnum_t ii = 0; ii < n_rows; ii++) {
-        for (cs_lnum_t jj = 0; jj < db_size; jj++)
-          da[ii*db_size + jj] = _d_val[ii*db_size_2 + jj*db_size + jj];
-      }
+      ctx.parallel_for(n_rows*db_size, [=] CS_F_HOST_DEVICE (cs_lnum_t idx) {
+        cs_lnum_t ii = idx / db_size;
+        cs_lnum_t jj = idx % db_size;
+        da[idx] = _d_val[ii*db_size_2 + jj*db_size + jj];
+      });
     }
     else {
-#     pragma omp parallel for  if(n_rows*db_size > CS_THR_MIN)
-      for (cs_lnum_t ii = 0; ii < n_rows*db_size; ii++)
-        da[ii] = 0.0;
+      ctx.parallel_for(n_rows*db_size, [=] CS_F_HOST_DEVICE (cs_lnum_t idx) {
+        da[idx] = 0.0;
+      });
     }
   }
+
+  ctx.wait();
 }
 
 /*----------------------------------------------------------------------------
@@ -1486,15 +1492,16 @@ _release_coeffs_csr(cs_matrix_t  *matrix)
  *----------------------------------------------------------------------------*/
 
 static void
-_copy_diagonal_csr(const cs_matrix_t  *matrix,
-                   cs_real_t          *restrict da)
+_copy_diagonal_csr(const cs_matrix_t    *matrix,
+                   cs_real_t            *restrict da)
 {
   auto ms = static_cast<const cs_matrix_struct_csr_t *>(matrix->structure);
   const auto mc = static_cast<cs_matrix_coeff_t  *>(matrix->coeffs);
   cs_lnum_t  n_rows = ms->n_rows;
 
-# pragma omp parallel for  if(n_rows > CS_THR_MIN)
-  for (cs_lnum_t ii = 0; ii < n_rows; ii++) {
+  cs_dispatch_context  ctx;
+
+  ctx.parallel_for(n_rows, [=] CS_F_HOST_DEVICE (cs_lnum_t ii) {
 
     const cs_lnum_t  *restrict col_id = ms->col_id + ms->row_index[ii];
     const cs_real_t  *restrict m_row = mc->val + ms->row_index[ii];
@@ -1508,7 +1515,9 @@ _copy_diagonal_csr(const cs_matrix_t  *matrix,
       }
     }
 
-  }
+  });
+
+  ctx.wait();
 }
 
 /*----------------------------------------------------------------------------*/
@@ -5242,8 +5251,9 @@ cs_matrix_copy_diagonal(const cs_matrix_t  *matrix,
   if (matrix == nullptr)
     bft_error(__FILE__, __LINE__, 0, _("The matrix is not defined."));
 
-  if (matrix->copy_diagonal != nullptr)
+  if (matrix->copy_diagonal != nullptr) {
     matrix->copy_diagonal(matrix, da);
+  }
 }
 
 /*----------------------------------------------------------------------------*/
