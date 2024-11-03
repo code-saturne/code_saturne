@@ -101,6 +101,31 @@ int
 cs_sles_default_get_verbosity(int          f_id,
                               const char  *name);
 
+/*----------------------------------------------------------------------------*/
+/*
+ * \brief Return pointer to matrix structure matching equation solve.
+ *
+ * Some matrix properties (such as assembly options and geometric
+ * association) are set immediately, but coefficients are not
+ * assigned at this stage.
+ *
+ * \param[in]  f_id       associated field id, or < 0
+ * \param[in]  name       associated name if f_id < 0, or nullptr
+ * \param[in]  db_size    block sizes for diagonal
+ * \param[in]  eb_size    block sizes for extra diagonal
+ * \param[in]  symmetric  indicate if matrix is symmetric
+ *
+ * \return  pointer to matrix structure
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_matrix_t *
+cs_sles_default_get_matrix(int          f_id,
+                           const char  *name,
+                           cs_lnum_t    db_size,
+                           cs_lnum_t    eb_size,
+                           bool         symmetric);
+
 /*----------------------------------------------------------------------------
  * Default finalization for sparse linear equation solver API.
  *
@@ -133,6 +158,34 @@ cs_sles_setup_native_conv_diff(int                  f_id,
                                const cs_real_t     *da,
                                const cs_real_t     *xa,
                                bool                 conv_diff);
+
+/*----------------------------------------------------------------------------*/
+/*
+ * \brief Call sparse linear equation solver for general colocated
+ *        cell-centered finite volume scheme.
+ *
+ * \param[in]       sc                     solver context
+ * \param[in]       a                      matrix
+ * \param[in]       precision              solver precision
+ * \param[in]       r_norm                 residual normalization
+ * \param[out]      n_iter                 number of "equivalent" iterations
+ * \param[out]      residual               residual
+ * \param[in]       rhs                    right hand side
+ * \param[in, out]  vx                     system solution
+ *
+ * \return  convergence state
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_sles_convergence_state_t
+cs_sles_solve_ccc_fv(cs_sles_t           *sc,
+                     cs_matrix_t         *a,
+                     double               precision,
+                     double               r_norm,
+                     int                 *n_iter,
+                     double              *residual,
+                     const cs_real_t     *rhs,
+                     cs_real_t           *vx);
 
 /*----------------------------------------------------------------------------
  * Call sparse linear equation solver using native matrix arrays.

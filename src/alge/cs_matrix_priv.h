@@ -293,6 +293,8 @@ struct _cs_matrix_t {
 
   cs_alloc_mode_t        alloc_mode;   /* Preferred allocation mode */
 
+  unsigned int           need_xa : 1;  /* Need face-based xa array */
+
   /* Pointer to shared structure */
 
   const void            *structure;    /* Possibly shared matrix structure */

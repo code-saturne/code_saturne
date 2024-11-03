@@ -3847,6 +3847,7 @@ _automatic_aggregation_mx_msr(const cs_grid_t  *f,
  * coarsening, because in that case we assume that each coarse row is
  * assigned to a single thread.
  *
+ * \param[in]   f_level        fine grid level
  * \param[in]   f_n_rows       number of rows in fine grid
  * \param[in]   c_n_rows       number of rows in fine grid
  * \param[in]   alloc_mode     allocation mode for cf_row_index and cs_row_ids
@@ -3861,7 +3862,8 @@ _automatic_aggregation_mx_msr(const cs_grid_t  *f,
 /*----------------------------------------------------------------------------*/
 
 static void
-_coarse_to_fine_adjacency_msr(cs_lnum_t         f_n_rows,
+_coarse_to_fine_adjacency_msr(int               f_level,
+                              cs_lnum_t         f_n_rows,
                               cs_lnum_t         c_n_rows,
                               cs_alloc_mode_t   alloc_mode,
                               int               n_f_threads,
@@ -3871,6 +3873,10 @@ _coarse_to_fine_adjacency_msr(cs_lnum_t         f_n_rows,
                               cs_lnum_t        **c_f_row_ids,
                               cs_lnum_t        **c_row_index_0)
 {
+  std::chrono::high_resolution_clock::time_point t_start;
+  if (cs_glob_timer_kernels_flag > 0)
+    t_start = std::chrono::high_resolution_clock::now();
+
   int n_c_threads = cs_parall_n_threads(c_n_rows, CS_THR_MIN);
 
   cs_lnum_t *cf_r_idx, *c_r_idx_0, *cf_r_shift;
@@ -4019,6 +4025,17 @@ _coarse_to_fine_adjacency_msr(cs_lnum_t         f_n_rows,
     *c_row_index_0 = c_r_idx_0;
   else
     BFT_FREE(c_r_idx_0);
+
+  if (cs_glob_timer_kernels_flag > 0) {
+    std::chrono::high_resolution_clock::time_point
+      t_stop = std::chrono::high_resolution_clock::now();
+    std::chrono::microseconds elapsed
+      = std::chrono::duration_cast
+          <std::chrono::microseconds>(t_stop - t_start);
+    printf("%d:   %s (level %d -> %d) = %ld\n",
+           cs_glob_rank_id, __func__,
+           f_level, f_level+1, elapsed.count());
+  }
 }
 
 /*----------------------------------------------------------------------------
@@ -4026,6 +4043,7 @@ _coarse_to_fine_adjacency_msr(cs_lnum_t         f_n_rows,
  * with a matrix in MSR format.
  *
  * parameters:
+ *   f_level           <-- fine grid level
  *   f_n_rows          <-- number of fine rows
  *   c_n_rows          <-- number of coarse rows
  *   alloc_mode        <-- allocation mode
@@ -4040,7 +4058,8 @@ _coarse_to_fine_adjacency_msr(cs_lnum_t         f_n_rows,
  *----------------------------------------------------------------------------*/
 
 static void
-_coarse_msr_struct(cs_lnum_t          f_n_rows,
+_coarse_msr_struct(int                f_level,
+                   cs_lnum_t          f_n_rows,
                    cs_lnum_t          c_n_rows,
                    cs_alloc_mode_t    alloc_mode,
                    const cs_lnum_t   *restrict f_row_index,
@@ -4052,6 +4071,10 @@ _coarse_msr_struct(cs_lnum_t          f_n_rows,
                    cs_lnum_t        **c_row_index,
                    cs_lnum_t        **c_col_ids)
 {
+  std::chrono::high_resolution_clock::time_point t_start;
+  if (cs_glob_timer_kernels_flag > 0)
+    t_start = std::chrono::high_resolution_clock::now();
+
   cs_lnum_t *restrict c_row_idx;
   CS_MALLOC_HD(c_row_idx, c_n_rows+1, cs_lnum_t, alloc_mode);
   c_row_idx[0] = 0;
@@ -4194,6 +4217,17 @@ _coarse_msr_struct(cs_lnum_t          f_n_rows,
 
   *c_row_index = c_row_idx;
   *c_col_ids = c_col_id;
+
+  if (cs_glob_timer_kernels_flag > 0) {
+    std::chrono::high_resolution_clock::time_point
+      t_stop = std::chrono::high_resolution_clock::now();
+    std::chrono::microseconds elapsed
+      = std::chrono::duration_cast
+        <std::chrono::microseconds>(t_stop - t_start);
+    printf("%d:   %s (level %d -> %d) = %ld\n",
+           cs_glob_rank_id, __func__,
+           f_level, f_level+1, elapsed.count());
+  }
 }
 
 /*----------------------------------------------------------------------------
@@ -4352,8 +4386,8 @@ _msr_face_adjacency(cs_grid_t        *g,
     std::chrono::microseconds elapsed
       = std::chrono::duration_cast
           <std::chrono::microseconds>(tm_stop - tm_start);
-    printf("%d: %s (level %d)", cs_glob_rank_id, __func__, g->level);
-    printf(", total = %ld\n", elapsed.count());
+    printf("%d:   %s (level %d) = %ld\n",
+           cs_glob_rank_id, __func__, g->level, elapsed.count());
   }
 }
 
@@ -6293,7 +6327,8 @@ _compute_coarse_quantities_msr(const cs_grid_t  *fine_grid,
   cs_lnum_t *c_f_row_index = nullptr, *c_f_row_ids = nullptr;
   cs_lnum_t *c_row_index_0 = nullptr;
 
-  _coarse_to_fine_adjacency_msr(f_n_rows,
+  _coarse_to_fine_adjacency_msr(fine_grid->level,
+                                f_n_rows,
                                 c_n_rows,
                                 coarse_grid->alloc_mode,
                                 n_f_threads,
@@ -6310,7 +6345,8 @@ _compute_coarse_quantities_msr(const cs_grid_t  *fine_grid,
 
   cs_lnum_t *c_row_index,  *c_col_id;
 
-  _coarse_msr_struct(f_n_rows,
+  _coarse_msr_struct(fine_grid->level,
+                     f_n_rows,
                      c_n_rows,
                      coarse_grid->alloc_mode,
                      f_row_index,
@@ -6736,7 +6772,7 @@ _coarse_quantities_msr_with_faces_stage_1(const cs_grid_t  *f,
     std::chrono::microseconds elapsed
       = std::chrono::duration_cast
           <std::chrono::microseconds>(t_1 - t_0);
-    printf("%d: %s (level %d -> %d)", cs_glob_rank_id, __func__,
+    printf("%d:   %s: (level %d -> %d)", cs_glob_rank_id, __func__,
            f->level, c->level);
     printf(", total = %ld\n", elapsed.count());
   }
@@ -6757,7 +6793,7 @@ _coarse_quantities_msr_with_faces_stage_1(const cs_grid_t  *f,
     std::chrono::microseconds elapsed
       = std::chrono::duration_cast
           <std::chrono::microseconds>(t_2 - t_1);
-    printf("%d: %s halo exchange (level %d)", cs_glob_rank_id, __func__,
+    printf("%d:   %s halo exchange (level %d)", cs_glob_rank_id, __func__,
            c->level);
     printf(", total = %ld\n", elapsed.count());
   }
@@ -6807,7 +6843,8 @@ _compute_coarse_quantities_msr_with_faces(const cs_grid_t  *f,
   cs_lnum_t *c_f_row_index = nullptr, *c_f_row_ids = nullptr;
   cs_lnum_t *c_row_index_0 = nullptr;
 
-  _coarse_to_fine_adjacency_msr(f_n_rows,
+  _coarse_to_fine_adjacency_msr(f->level,
+                                f_n_rows,
                                 c_n_rows,
                                 c->alloc_mode,
                                 n_f_threads,
@@ -6824,7 +6861,8 @@ _compute_coarse_quantities_msr_with_faces(const cs_grid_t  *f,
 
   cs_lnum_t *c_row_index,  *c_col_id;
 
-  _coarse_msr_struct(f_n_rows,
+  _coarse_msr_struct(f->level,
+                     f_n_rows,
                      c_n_rows,
                      c->alloc_mode,
                      f_row_index,
@@ -6870,6 +6908,10 @@ _compute_coarse_quantities_msr_with_faces(const cs_grid_t  *f,
 
   /* Assign values
      ------------- */
+
+  std::chrono::high_resolution_clock::time_point t_1;
+  if (cs_glob_timer_kernels_flag > 0)
+    t_1 = std::chrono::high_resolution_clock::now();
 
   const cs_real_t *c_xa0 = c->xa0;
   const cs_real_3_t *c_xa0ij
@@ -6992,6 +7034,17 @@ _compute_coarse_quantities_msr_with_faces(const cs_grid_t  *f,
         }
       }
     }
+  }
+
+  std::chrono::high_resolution_clock::time_point t_2;
+  if (cs_glob_timer_kernels_flag > 0) {
+    t_2 = std::chrono::high_resolution_clock::now();
+    std::chrono::microseconds elapsed
+      = std::chrono::duration_cast
+          <std::chrono::microseconds>(t_2 - t_1);
+    printf("%d:   %s (level %d -> %d)", cs_glob_rank_id, __func__,
+           f->level, c->level);
+    printf(", assign = %ld\n", elapsed.count());
   }
 
   /* Free working arrays */
@@ -7333,20 +7386,14 @@ cs_grid_create_from_shared(cs_lnum_t              n_faces,
   }
 #endif
 
-  if (cs_matrix_is_mapped_from_native(a)) {
-    g->face_cell = face_cell;
-    g->use_faces = true;
-  }
-
-  g->relaxation = 0;
-
+  const short int *cell_face_sgn;
   const cs_real_t *cell_vol;
   const cs_real_3_t *cell_cen, *face_normal;
 
   cs_matrix_get_mesh_association(a,
                                  nullptr,
                                  nullptr,
-                                 nullptr,
+                                 &cell_face_sgn,
                                  &cell_cen,
                                  &cell_vol,
                                  &face_normal);
@@ -7357,11 +7404,19 @@ cs_grid_create_from_shared(cs_lnum_t              n_faces,
 
   g->halo = cs_matrix_get_halo(a);
 
-  /* Set shared matrix coefficients */
+  g->relaxation = 0;
+
+  /* Set shared matrix coefficients and check face info */
 
   if (cs_matrix_is_mapped_from_native(a)) {
     g->da = cs_matrix_get_diagonal(a);
     g->xa= cs_matrix_get_extra_diagonal(a);
+    g->face_cell = face_cell;
+    g->use_faces = true;
+  }
+  else if (g->symmetric) {
+    if (cell_cen != nullptr && cell_face_sgn != nullptr)
+      g->use_faces = true;
   }
 
   if (g->face_cell != nullptr) {
@@ -7905,14 +7960,15 @@ cs_grid_coarsen(const cs_grid_t      *f,
   /* Ensure default is available */
 
   if (coarsening_type == CS_GRID_COARSENING_DEFAULT) {
-    if (f->use_faces) {
-      if (f->conv_diff == false)
-        coarsening_type = CS_GRID_COARSENING_SPD_DX;
-      else
+    if (f->conv_diff == false)
+      coarsening_type = CS_GRID_COARSENING_SPD_DX;
+    else {
+      if (f->use_faces) {
         coarsening_type = CS_GRID_COARSENING_CONV_DIFF_DX;
+      }
+      else
+        coarsening_type = CS_GRID_COARSENING_SPD_MX;
     }
-    else
-      coarsening_type = CS_GRID_COARSENING_SPD_MX;
   }
   else if (coarsening_type == CS_GRID_COARSENING_SPD_DX) {
     /* closest altenative */

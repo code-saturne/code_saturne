@@ -384,8 +384,7 @@ _schur_approx_diag_inv_m11(cs_param_solver_class_t  mat_class,
                               false, /* symmetry */
                               1, 1);
   else
-    smat = cs_matrix_msr(false, /* symmetry */
-                         1, 1);
+    smat = cs_matrix_msr();
 
   cs_matrix_set_coefficients(smat, false, /* symmetry */
                              1, 1,

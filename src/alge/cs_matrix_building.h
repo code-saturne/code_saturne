@@ -54,13 +54,51 @@ BEGIN_C_DECLS
  *  Global variables
  *============================================================================*/
 
-/*============================================================================
- * Public function prototypes for Fortran API
- *============================================================================*/
-
 /*=============================================================================
  * Public function prototypes
  *============================================================================*/
+
+/*----------------------------------------------------------------------------*/
+/*
+ * \brief Build the diagonal of the advection/diffusion matrix
+ * for determining the variable time step, flow, Fourier.
+ *
+ * \param[in, out]  a             pointer to matrix structure
+ * \param[in]       iconvp        indicator
+ *                                 - 1 advection
+ *                                 - 0 otherwise
+ * \param[in]       idiffp        indicator
+ *                                 - 1 diffusion
+ *                                 - 0 otherwise
+ * \param[in]       ndircp        number of Dirichlet BCs
+ * \param[in]       thetap        time scheme parameter
+ * \param[in]       imucp         1 for temperature (with Cp), 0 otherwise
+ * \param[in]       bc_coeffs     boundary condition structure
+ * \param[in]       i_massflux    mass flux at interior faces
+ * \param[in]       b_massflux    mass flux at border faces
+ * \param[in]       i_visc        \f$ \mu_\fij \dfrac{S_\fij}{\ipf \jpf} \f$
+ *                                 at interior faces for the matrix
+ * \param[in]       b_visc        \f$ S_\fib \f$
+ *                                 at border faces for the matrix
+ * \param[in]      xcpp           Cp per cell, or null
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_matrix_compute_coeffs_scalar(cs_matrix_t                *a,
+                                const cs_field_t           *f,
+                                int                         iconvp,
+                                int                         idiffp,
+                                int                         ndircp,
+                                double                      thetap,
+                                int                         imucpp,
+                                const cs_field_bc_coeffs_t *bc_coeffs,
+                                const cs_real_t             rovsdt[],
+                                const cs_real_t             i_massflux[],
+                                const cs_real_t             b_massflux[],
+                                const cs_real_t             i_visc[],
+                                const cs_real_t             b_visc[],
+                                const cs_real_t             xcpp[]);
 
 /*----------------------------------------------------------------------------
  * Wrapper to cs_matrix_scalar (or its counterpart for

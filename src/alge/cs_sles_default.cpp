@@ -318,9 +318,7 @@ _sles_setup_matrix_native(int                  f_id,
      constraints. */
 
   if (cs_sles_get_context(sc) == nullptr) {
-    a = cs_matrix_msr(symmetric,
-                      db_size,
-                      eb_size);
+    a = cs_matrix_msr();
 
     cs_matrix_set_coefficients(a,
                                symmetric,
@@ -398,9 +396,7 @@ _sles_setup_matrix_native(int                  f_id,
     need_msr = true;
 
   if (need_msr)
-    a = cs_matrix_msr(symmetric,
-                      db_size,
-                      eb_size);
+    a = cs_matrix_msr();
   else if (need_external) {
     a = cs_matrix_external(external_type,
                            symmetric,
@@ -648,6 +644,196 @@ cs_sles_default_get_verbosity(int          f_id,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Return pointer to matrix structure matching equation solve.
+ *
+ * Some matrix properties (such as assembly options and geometric
+ * association) are set immediately, but coefficients are not
+ * assigned at this stage.
+ *
+ * \param[in]  f_id       associated field id, or < 0
+ * \param[in]  name       associated name if f_id < 0, or nullptr
+ * \param[in]  db_size    block sizes for diagonal
+ * \param[in]  eb_size    block sizes for extra diagonal
+ * \param[in]  symmetric  indicate if matrix is symmetric
+ *
+ * \return  pointer to matrix structure
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_matrix_t *
+cs_sles_default_get_matrix(int          f_id,
+                           const char  *name,
+                           cs_lnum_t    db_size,
+                           cs_lnum_t    eb_size,
+                           bool         symmetric)
+{
+  cs_matrix_t *a = nullptr;
+
+  const cs_mesh_t *m = cs_glob_mesh;
+  const cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
+
+  /* Check if this system has already been setup */
+
+  const cs_field_t *f = nullptr;
+  cs_sles_t *sc = cs_sles_find_or_add(f_id, name);
+
+  /* If context has not been defined yet, force default definition.
+
+     The matrix type might be modified later based on solver
+     constraints. */
+
+  if (cs_sles_get_context(sc) == nullptr) {
+    _sles_default_native(f_id, name, CS_MATRIX_MSR, symmetric);
+  }
+
+  bool need_matrix_assembler = false;
+  cs_matrix_type_t mat_type = CS_MATRIX_MSR;
+
+  if (f_id > -1) {
+    f = cs_field_by_id(f_id);
+    int coupling_id
+      = cs_field_get_key_int(f, cs_field_key_id("coupling_entity"));
+    if (coupling_id > -1)
+      need_matrix_assembler = true;
+  }
+
+  const char *sles_type = cs_sles_get_type(sc);
+  if (strcmp(sles_type, "cs_sles_amgx_t") == 0) {
+    need_matrix_assembler = true;
+    mat_type = CS_MATRIX_CSR;
+  }
+
+  /* For CSR or MSR internal matrix with assembler, mesh association
+     will not contain face information as some coefficients do not
+     match faces */
+
+  if (need_matrix_assembler) {
+    a = cs_matrix_by_assembler(f, mat_type);
+
+    cs_matrix_set_mesh_association(a,
+                                   nullptr,
+                                   nullptr,
+                                   nullptr,
+                                   (const cs_real_3_t *)mq->cell_cen,
+                                   (const cs_real_t *)mq->cell_vol,
+                                   nullptr);
+
+    cs_matrix_set_need_xa(a, false);
+
+    return a;
+  }
+
+  /* For general case, the format will depend on the type of solver
+     used */
+
+  bool need_msr = false;
+  bool need_external = false;
+  char external_type[32] = "";
+
+  cs_sles_pc_t  *pc = nullptr;
+  cs_multigrid_t *mg = nullptr;
+
+  if (strcmp(cs_sles_get_type(sc), "cs_sles_it_t") == 0) {
+    cs_sles_it_t     *c = static_cast<cs_sles_it_t *>(cs_sles_get_context(sc));
+    cs_sles_it_type_t s_type = cs_sles_it_get_type(c);
+    if (   s_type >= CS_SLES_P_GAUSS_SEIDEL
+        && s_type <= CS_SLES_TS_B_GAUSS_SEIDEL) {
+      need_msr = true;
+      /* Gauss-Seidel not yet implemented with full blocks */
+      if (eb_size > 1)
+        need_msr = false;
+    }
+    pc = cs_sles_it_get_pc(c);
+    if (pc != nullptr) {
+      if (strcmp(cs_sles_pc_get_type(pc), "multigrid") == 0)
+        mg = static_cast<cs_multigrid_t *>(cs_sles_pc_get_context(pc));
+    }
+  }
+  else if (strcmp(cs_sles_get_type(sc), "cs_multigrid_t") == 0)
+    mg = static_cast<cs_multigrid_t *>(cs_sles_get_context(sc));
+
+#if defined(HAVE_HYPRE)
+  else if (strcmp(cs_sles_get_type(sc), "cs_sles_hypre_t") == 0) {
+    cs_sles_hypre_t *c =
+      static_cast<cs_sles_hypre_t *>(cs_sles_get_context(sc));
+    int use_device = cs_sles_hypre_get_host_device(c);
+    if (use_device)
+      strncpy(external_type, "HYPRE_ParCSR, device", 31);
+    else
+      strncpy(external_type, "HYPRE_ParCSR", 31);
+    need_external = true;
+  }
+#endif
+
+#if defined(HAVE_PETSC)
+  else if (   strcmp(cs_sles_get_type(sc), "cs_sles_petsc_t") == 0
+           && m->have_rotation_perio == 0) {
+    void *c = cs_sles_get_context(sc);
+    const char *mat_type_s = cs_sles_petsc_get_mat_type(c);
+    if (mat_type_s == nullptr)
+      strncpy(external_type, "PETSc", 31);
+    else {
+      snprintf(external_type, 31, "PETSc, %s", mat_type_s);
+      external_type[31] = '\0';
+    }
+    need_external = true;
+  }
+#endif
+
+  if (mg != nullptr) {
+    if (cs_multigrid_need_msr(mg))
+      need_msr = true;
+  }
+
+  /* For now, simply force MSR when running on accelerated node */
+  if (need_external == false && cs_get_device_id() > -1)
+    need_msr = true;
+
+  /* MSR is the current default; DIST could be a future option
+     if its performance can be improved, while NATIVE is deprecated. */
+  need_msr = true;
+
+  if (need_external)
+    a = cs_matrix_external(external_type,
+                           symmetric,
+                           db_size,
+                           eb_size);
+
+  else if (need_msr)
+    a = cs_matrix_msr();
+
+  else
+    a = cs_matrix_default(symmetric,
+                          db_size,
+                          eb_size);
+
+  bool need_xa = false;
+
+  if (mg != nullptr) {
+    if (symmetric == false) need_xa = true;
+
+    const cs_mesh_adjacencies_t *ma = cs_glob_mesh_adjacencies;
+
+    if (ma->cell_i_faces == nullptr)
+      cs_mesh_adjacencies_update_cell_i_faces();
+
+    cs_matrix_set_mesh_association(a,
+                                   ma->cell_cells_idx,
+                                   ma->cell_i_faces,
+                                   ma->cell_i_faces_sgn,
+                                   (const cs_real_3_t *)mq->cell_cen,
+                                   (const cs_real_t *)mq->cell_vol,
+                                   (const cs_real_3_t *)mq->i_face_normal);
+
+  }
+
+  cs_matrix_set_need_xa(a, need_xa);
+
+  return a;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Call sparse linear equation solver setup for convection-diffusion
  *        systems
  *
@@ -701,9 +887,7 @@ cs_sles_setup_native_conv_diff(int                  f_id,
 
     if (a == nullptr) {
 
-      a = cs_matrix_msr(false,
-                        diag_block_size,
-                        extra_diag_block_size);
+      a = cs_matrix_msr();
 
       cs_matrix_set_coefficients(a,
                                  false,
@@ -751,6 +935,103 @@ cs_sles_setup_native_conv_diff(int                  f_id,
 
   cs_multigrid_t *mg = static_cast<cs_multigrid_t *>(cs_sles_get_context(sc));
   cs_multigrid_setup_conv_diff(mg, name, a, conv_diff, verbosity);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Call sparse linear equation solver for general colocated
+ *        cell-centered finite volume scheme.
+ *
+ * \param[in]       sc                     solver context
+ * \param[in]       a                      matrix
+ * \param[in]       precision              solver precision
+ * \param[in]       r_norm                 residual normalization
+ * \param[out]      n_iter                 number of "equivalent" iterations
+ * \param[out]      residual               residual
+ * \param[in]       rhs                    right hand side
+ * \param[in, out]  vx                     system solution
+ *
+ * \return  convergence state
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_sles_convergence_state_t
+cs_sles_solve_ccc_fv(cs_sles_t           *sc,
+                     cs_matrix_t         *a,
+                     double               precision,
+                     double               r_norm,
+                     int                 *n_iter,
+                     double              *residual,
+                     const cs_real_t     *rhs,
+                     cs_real_t           *vx)
+{
+  cs_sles_convergence_state_t cvg = CS_SLES_ITERATING;
+
+  const cs_mesh_t *m = cs_glob_mesh;
+
+  /* If system uses specific halo (i.e. when matrix contains more than
+     face->cell nonzeroes), allocate specific buffers and synchronize
+     right hand side. */
+
+  cs_real_t *_vx = vx, *_rhs = nullptr;
+  const cs_real_t *rhs_p = rhs;
+
+  cs_lnum_t n_rows = cs_matrix_get_n_rows(a);
+  cs_lnum_t n_cols_ext = cs_matrix_get_n_columns(a);
+  cs_assert(n_rows == m->n_cells);
+
+  if (n_cols_ext > m->n_cells_with_ghosts) {
+
+    cs_alloc_mode_t amode = cs_matrix_get_alloc_mode(a);
+
+    cs_dispatch_context ctx;
+    ctx.set_use_gpu(amode >= CS_ALLOC_HOST_DEVICE_SHARED);
+
+    cs_lnum_t db_size = cs_matrix_get_diag_block_size(a);
+    assert(n_rows == m->n_cells);
+    cs_lnum_t _n_rows = n_rows*db_size;
+    CS_MALLOC_HD(_rhs, n_cols_ext*db_size, cs_real_t, amode);
+    CS_MALLOC_HD(_vx, n_cols_ext*db_size, cs_real_t, amode);
+    ctx.parallel_for(_n_rows, [=] CS_F_HOST_DEVICE (cs_lnum_t i) {
+      _rhs[i] = rhs[i];
+      _vx[i] = vx[i];
+    });
+    ctx.wait();
+    cs_matrix_pre_vector_multiply_sync(a, _rhs);
+    rhs_p = _rhs;
+
+  }
+
+  /* Solve system */
+
+  cvg = cs_sles_solve(sc,
+                      a,
+                      precision,
+                      r_norm,
+                      n_iter,
+                      residual,
+                      rhs_p,
+                      _vx,
+                      0,
+                      nullptr);
+
+  BFT_FREE(_rhs);
+  if (_vx != vx) {
+
+    cs_alloc_mode_t amode = cs_matrix_get_alloc_mode(a);
+    cs_dispatch_context ctx;
+    ctx.set_use_gpu(amode >= CS_ALLOC_HOST_DEVICE_SHARED);
+
+    cs_lnum_t db_size = cs_matrix_get_diag_block_size(a);
+    cs_lnum_t _n_rows = n_rows*db_size;
+    ctx.parallel_for(_n_rows, [=] CS_F_HOST_DEVICE (cs_lnum_t i) {
+      vx[i] = _vx[i];
+    });
+    CS_FREE(_vx);
+
+  }
+
+  return cvg;
 }
 
 /*----------------------------------------------------------------------------*/

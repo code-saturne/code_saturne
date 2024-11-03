@@ -55,6 +55,9 @@
 #include "cs_halo.h"
 #include "cs_halo_perio.h"
 #include "cs_log.h"
+#include "cs_matrix.h"
+#include "cs_matrix_default.h"
+#include "cs_mesh.h"
 #include "cs_mesh.h"
 #include "cs_field.h"
 #include "cs_gradient.h"
@@ -98,6 +101,280 @@
  *============================================================================*/
 
 #ifdef __cplusplus
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Build the diffusion matrix for a scalar field.
+ * (symmetric matrix).
+ *
+ * The diffusion is not reconstructed.
+ * The matrix is split into a diagonal block (number of cells)
+ * and an extra diagonal part (of dimension the number of internal
+ * faces).
+ *
+ * \param[in]     m             pointer to mesh structure
+ * \param[in]     ctx           dispatch context
+ * \param[in]     idiffp        indicator
+ *                               - 1 diffusion
+ *                               - 0 otherwise
+ * \param[in]     thetap        weighting coefficient for the theta-scheme,
+ *                               - thetap = 0: explicit scheme
+ *                               - thetap = 0.5: time-centered
+ *                               scheme (mix between Crank-Nicolson and
+ *                               Adams-Bashforth)
+ *                               - thetap = 1: implicit scheme
+ * \param[in]     bc_coeffs     boundary condition structure for the variable
+ *                               (implicit part)
+ * \param[in]     rovsdt        working array
+ * \param[in]     i_visc        \f$ \mu_\fij \dfrac{S_\fij}{\ipf \jpf} \f$
+ *                               at interior faces for the matrix
+ * \param[in]     b_visc        \f$ S_\fib \f$
+ *                               at border faces for the matrix
+ * \param[out]    da             diagonal part of the matrix
+ * \param[out]    ea             extra diagonal part of the matrix
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_sym_coeffs_scalar_msr(const cs_mesh_t            *m,
+                       cs_dispatch_context        &ctx,
+                       int                         idiffp,
+                       double                      thetap,
+                       const cs_field_bc_coeffs_t *bc_coeffs,
+                       const cs_real_t             rovsdt[],
+                       const cs_real_t             i_visc[],
+                       const cs_real_t             b_visc[],
+                       cs_real_t         *restrict da,
+                       cs_real_t         *restrict ea)
+{
+  const cs_lnum_t n_cells = m->n_cells;
+  const cs_lnum_t *restrict b_face_cells = m->b_face_cells;
+
+  const cs_mesh_adjacencies_t *ma = cs_glob_mesh_adjacencies;
+  cs_mesh_adjacencies_update_cell_i_faces();
+  const cs_lnum_t *c2c_idx = ma->cell_cells_idx;
+  const cs_lnum_t *cell_i_faces = ma->cell_i_faces;
+
+  if (idiffp) {
+
+    ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
+
+      cs_real_t _da = rovsdt[c_id];
+
+      /* Loop on interior faces */
+      const cs_lnum_t s_id_i = c2c_idx[c_id];
+      const cs_lnum_t e_id_i = c2c_idx[c_id + 1];
+
+      for (cs_lnum_t cidx = s_id_i; cidx < e_id_i; cidx++) {
+        const cs_lnum_t f_id = cell_i_faces[cidx];
+        cs_real_t _xa = -thetap*i_visc[f_id];
+        ea[cidx] = _xa;
+        _da -= _xa;
+      }
+
+      da[c_id] = _da;
+
+    });
+
+  }
+
+  else {
+
+    ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
+
+      da[c_id] = rovsdt[c_id];
+
+      /* Loop on interior faces */
+      const cs_lnum_t s_id_i = c2c_idx[c_id];
+      const cs_lnum_t e_id_i = c2c_idx[c_id + 1];
+      for (cs_lnum_t cidx = s_id_i; cidx < e_id_i; cidx++) {
+        ea[cidx] = 0.;
+      }
+
+    });
+
+  }
+
+  /* Contribution of border faces to the diagonal */
+
+  if (idiffp) {
+    const cs_real_t *cofbfp = (const cs_real_t *)bc_coeffs->bf;
+    cs_dispatch_sum_type_t b_sum_type = ctx.get_parallel_for_b_faces_sum_type(m);
+
+    ctx.parallel_for_b_faces(m, [=] CS_F_HOST_DEVICE (cs_lnum_t  f_id) {
+
+      cs_lnum_t ii = b_face_cells[f_id];
+
+      cs_dispatch_sum(&da[ii],
+                      thetap*b_visc[f_id]*cofbfp[f_id],
+                      b_sum_type);
+
+    });
+  }
+
+  ctx.wait();
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Build the advection/diffusion matrix for a scalar field
+ * (non-symmetric matrix).
+ *
+ * The advection is upwind, the diffusion is not reconstructed.
+ * The matrix is split into a diagonal block (number of cells)
+ * and an extra diagonal part (of dimension 2 time the number of internal
+ * faces).
+ *
+ * template parameters:
+ *   is_thermal        true for the temperature, otherwise false
+ *
+ * \param[in]     m             pointer to mesh structure
+ * \param[in]     ctx           dispatch context
+ * \param[in]     iconvp        indicator
+ *                               - 1 advection
+ *                               - 0 otherwise
+ * \param[in]     idiffp        indicator
+ *                               - 1 diffusion
+ *                               - 0 otherwise
+ * \param[in]     thetap        weighting coefficient for the theta-scheme,
+ *                               - thetap = 0: explicit scheme
+ *                               - thetap = 0.5: time-centered
+ *                               scheme (mix between Crank-Nicolson and
+ *                               Adams-Bashforth)
+ *                               - thetap = 1: implicit scheme
+ * \param[in]     imucpp        indicator
+ *                               - 0 do not multiply the convective term by Cp
+ *                               - 1 do multiply the convective term by Cp
+ * \param[in]     bc_coeffs     boundary condition structure for the variable
+ * \param[in]     rovsdt        working array
+ * \param[in]     i_massflux    mass flux at interior faces
+ * \param[in]     b_massflux    mass flux at border faces
+ * \param[in]     i_visc        \f$ \mu_\fij \dfrac{S_\fij}{\ipf \jpf} \f$
+ *                               at interior faces for the matrix
+ * \param[in]     b_visc        \f$ S_\fib \f$
+ *                               at border faces for the matrix
+ * \param[in]     xcpp          array of specific heat (Cp)
+ * \param[out]    da            diagonal part of the matrix
+ * \param[out]    ea            extra-diagonal part of the matrix
+ */
+/*----------------------------------------------------------------------------*/
+
+template <bool is_thermal>
+static void
+_coeffs_scalar_msr(const cs_mesh_t            *m,
+                   cs_dispatch_context        &ctx,
+                   int                         iconvp,
+                   int                         idiffp,
+                   double                      thetap,
+                   const cs_field_bc_coeffs_t *bc_coeffs,
+                   const cs_real_t             rovsdt[],
+                   const cs_real_t             i_massflux[],
+                   const cs_real_t             b_massflux[],
+                   const cs_real_t             i_visc[],
+                   const cs_real_t             b_visc[],
+                   const cs_real_t             xcpp[],
+                   cs_real_t         *restrict da,
+                   cs_real_t         *restrict ea)
+{
+  const cs_lnum_t n_cells = m->n_cells;
+  const cs_lnum_t *restrict b_face_cells = m->b_face_cells;
+
+  const cs_mesh_adjacencies_t *ma = cs_glob_mesh_adjacencies;
+  cs_mesh_adjacencies_update_cell_i_faces();
+  const cs_lnum_t *c2c_idx = ma->cell_cells_idx;
+  const cs_lnum_t *c2c = ma->cell_cells;
+  const short int *c2f_sgn = ma->cell_i_faces_sgn;
+  const cs_lnum_t *cell_i_faces = ma->cell_i_faces;
+
+  const cs_real_t *coefbp = bc_coeffs->b;
+  const cs_real_t *cofbfp = bc_coeffs->bf;
+
+  cs_dispatch_sum_type_t b_sum_type = ctx.get_parallel_for_b_faces_sum_type(m);
+
+  /* iconvp should always be 1 here; when it is 0, _sym_coeffs_scalar_msr
+     should be called instead */
+
+  cs_assert(iconvp);
+
+  ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
+
+    cs_real_t _da = rovsdt[c_id];
+
+    /* Loop on interior faces */
+    const cs_lnum_t s_id_i = c2c_idx[c_id];
+    const cs_lnum_t e_id_i = c2c_idx[c_id + 1];
+
+    for (cs_lnum_t cidx = s_id_i; cidx < e_id_i; cidx++) {
+      const cs_lnum_t f_id = cell_i_faces[cidx];
+
+      cs_real_t _i_massflux = i_massflux[f_id];
+
+      if (c2f_sgn[cidx] > 0) {
+
+        cs_real_t flui =  0.5*(_i_massflux - cs_math_fabs(_i_massflux));
+
+        // When solving the temperature, multiply convective part by Cp
+        cs_real_t cpi = (is_thermal) ? xcpp[c_id] : 1.0;
+
+        // Computation of extradiagonal terms
+        cs_real_t xai = thetap*(cpi*flui -idiffp*i_visc[f_id]);
+
+        // D_ii =  theta (m_ij)^+ - m_ij
+        //      = -X_ij - (1-theta)*m_ij
+
+        ea[cidx] = xai;
+        _da -= xai + (1.-thetap) * cpi * _i_massflux;
+
+      }
+      else {
+
+        cs_real_t fluj = -0.5*(_i_massflux + cs_math_fabs(_i_massflux));
+
+        // When solving the temperature, multiply convective part by Cp
+        cs_real_t cpj = (is_thermal) ? xcpp[c2c[cidx]] : 1.0;
+
+        // Computation of extradiagonal terms
+        cs_real_t xaj = thetap*(cpj*fluj -idiffp*i_visc[f_id]);
+
+        // D_jj = -theta (m_ij)^- + m_ij
+        //      = -X_ji + (1-theta)*m_ij
+
+        ea[cidx] = xaj;
+        _da -= xaj - (1.-thetap) * cpj * _i_massflux;
+
+      }
+    }
+
+    da[c_id] = _da;
+
+  });
+
+  /* Contribution of border faces to the diagonal */
+
+  ctx.parallel_for_b_faces(m, [=] CS_F_HOST_DEVICE (cs_lnum_t  f_id) {
+
+    cs_lnum_t ii = b_face_cells[f_id];
+
+    cs_real_t _b_massflux = b_massflux[f_id];
+    cs_real_t flui = 0.5*(_b_massflux - cs_math_fabs(_b_massflux));
+
+    // When solving the temperature, multiply convective part by Cp
+    cs_real_t cpi = (is_thermal) ? xcpp[ii] : 1.0;
+
+    // D_ii = theta (m_f)^+ + theta B (m_f)^- - m_f
+    //      = (theta B -1)*(m_f)^- - (1-theta)*(m_f)^+
+    //      = theta*(B -1)*(m_f)^- - (1-theta)*m_f
+
+    cs_real_t bfac =          cpi *(  flui * thetap * (coefbp[f_id] - 1.)
+                                    - (1. - thetap) * _b_massflux)
+                   + idiffp * thetap * b_visc[f_id] * cofbfp[f_id];
+
+    cs_dispatch_sum(&da[ii], bfac, b_sum_type);
+
+  });
+
+  ctx.wait();
+}
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -353,7 +630,6 @@ _matrix_scalar(const cs_mesh_t            *m,
   });
 
   ctx.wait();
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1159,6 +1435,299 @@ _matrix_anisotropic_diffusion_strided
  *============================================================================*/
 
 BEGIN_C_DECLS
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Build the diagonal of the advection/diffusion matrix
+ * for determining the variable time step, flow, Fourier.
+ *
+ * \param[in, out]  a             pointer to matrix structure
+ * \param[in]       iconvp        indicator
+ *                                 - 1 advection
+ *                                 - 0 otherwise
+ * \param[in]       idiffp        indicator
+ *                                 - 1 diffusion
+ *                                 - 0 otherwise
+ * \param[in]       ndircp        number of Dirichlet BCs
+ * \param[in]       thetap        time scheme parameter
+ * \param[in]       imucp         1 for temperature (with Cp), 0 otherwise
+ * \param[in]       bc_coeffs     boundary condition structure
+ * \param[in]       i_massflux    mass flux at interior faces
+ * \param[in]       b_massflux    mass flux at border faces
+ * \param[in]       i_visc        \f$ \mu_\fij \dfrac{S_\fij}{\ipf \jpf} \f$
+ *                                 at interior faces for the matrix
+ * \param[in]       b_visc        \f$ S_\fib \f$
+ *                                 at border faces for the matrix
+ * \param[in]      xcpp           Cp per cell, or null
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_matrix_compute_coeffs_scalar(cs_matrix_t                *a,
+                                const cs_field_t           *f,
+                                int                         iconvp,
+                                int                         idiffp,
+                                int                         ndircp,
+                                double                      thetap,
+                                int                         imucpp,
+                                const cs_field_bc_coeffs_t *bc_coeffs,
+                                const cs_real_t             rovsdt[],
+                                const cs_real_t             i_massflux[],
+                                const cs_real_t             b_massflux[],
+                                const cs_real_t             i_visc[],
+                                const cs_real_t             b_visc[],
+                                const cs_real_t             xcpp[])
+{
+  std::chrono::high_resolution_clock::time_point t_start;
+  if (cs_glob_timer_kernels_flag > 0)
+    t_start = std::chrono::high_resolution_clock::now();
+
+  const cs_mesh_t *m = cs_glob_mesh;
+  const cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
+  const cs_lnum_t n_cells = m->n_cells;
+
+  const cs_matrix_assembler_t  *ma = cs_matrix_get_assembler(a);
+
+  cs_matrix_type_t m_type = cs_matrix_get_type(a);
+  cs_alloc_mode_t amode = cs_matrix_get_alloc_mode(a);
+  bool symmetric = (iconvp == 1) ? false : true;
+
+  /* Case with matrix assembler or non-msr format;
+     we use the legacy assembly here, but should move to a row-based
+     (i.e. gather) algorithm so as to be able to call assembler in a
+     multithreaded manner (and later even a device-accelerated manner). */
+
+  if (ma != nullptr || m_type != CS_MATRIX_MSR) {
+
+    const cs_lnum_t n_edges = m->n_i_faces;
+    const cs_lnum_2_t *edges = (const cs_lnum_2_t *)(m->i_face_cells);
+
+    cs_real_t *da, *xa;
+    CS_MALLOC_HD(da, m->n_cells_with_ghosts, cs_real_t, amode);
+    CS_MALLOC_HD(xa, m->n_i_faces, cs_real_t, amode);
+
+    const int isym = (iconvp == 1) ? 2 : 1;
+
+    cs_matrix_wrapper_scalar(iconvp,
+                             idiffp,
+                             ndircp,
+                             isym,
+                             thetap,
+                             imucpp,
+                             bc_coeffs,
+                             rovsdt,
+                             i_massflux,  b_massflux,
+                             i_visc, b_visc,
+                             xcpp,
+                             da, xa);
+
+    if (ma != nullptr) {
+
+      cs_lnum_t s0 = 2;
+      cs_lnum_t s1 = 1;
+
+      if (isym == 1) {
+        s0 = 1;
+        s1 = 0;
+      }
+
+      cs_matrix_assembler_values_t *mav
+        = cs_matrix_assembler_values_init(a, 1, 1);
+      assert(n_cells == cs_matrix_get_n_rows(a));
+
+      const cs_gnum_t *r_g_id = cs_matrix_get_block_row_g_id(a);
+
+      const cs_lnum_t block_size = 800;
+      cs_gnum_t g_row_id[800];
+      cs_gnum_t g_col_id[800];
+      cs_real_t val[1600];
+
+      /* Diagonal values */
+
+      cs_matrix_assembler_values_add_g(mav, n_cells, r_g_id, r_g_id, da);
+
+      /* Extradiagonal values based on internal faces */
+
+      cs_lnum_t jj = 0;
+
+      for (cs_lnum_t ii = 0; ii < n_edges; ii++) {
+        cs_lnum_t i0 = edges[ii][0];
+        cs_lnum_t i1 = edges[ii][1];
+        if (i0 < n_cells) {
+          g_row_id[jj] = r_g_id[i0];
+          g_col_id[jj] = r_g_id[i1];
+          val[jj] = xa[ii*s0];
+          jj++;
+        }
+        if (i1 < n_cells) {
+          g_row_id[jj] = r_g_id[i1];
+          g_col_id[jj] = r_g_id[i0];
+          val[jj] = xa[ii*s0+s1];
+          jj++;
+        }
+        if (jj >= block_size - 1) {
+          cs_matrix_assembler_values_add_g(mav, jj,
+                                           g_row_id, g_col_id, val);
+          jj = 0;
+        }
+      }
+      cs_matrix_assembler_values_add_g(mav, jj,
+                                       g_row_id, g_col_id, val);
+      jj = 0;
+
+      /* Set extended contribution for domain coupling */
+
+      if (f != nullptr) {
+        int k_cpl = cs_field_key_id("coupling_entity");
+        int coupling_id = cs_field_get_key_int(f, k_cpl);
+
+        if (coupling_id > -1)
+          cs_internal_coupling_matrix_add_values(f, 1, 1, r_g_id, mav);
+      }
+
+      /* Finalize assembly */
+
+      cs_matrix_assembler_values_finalize(&mav);
+
+    }
+
+    else {
+
+      /* As arrays are transferred, we assume the array type is
+         neither "native", nor "dist", as the asscoaited formats
+         do not currently have a "transfer coefficients" method.*/
+
+      cs_assert(   m_type != CS_MATRIX_NATIVE
+                && m_type != CS_MATRIX_DIST);
+
+      cs_matrix_transfer_coefficients(a,
+                                      symmetric,
+                                      1,
+                                      1,
+                                      n_edges,
+                                      edges,
+                                      &da,
+                                      &xa);
+
+    }
+
+    /* Free remaining local (non-transferred) arrays */
+
+    CS_FREE(xa);
+    CS_FREE(da);
+
+    if (cs_glob_timer_kernels_flag > 0) {
+      std::chrono::high_resolution_clock::time_point
+        t_stop = std::chrono::high_resolution_clock::now();
+      std::chrono::microseconds elapsed
+        = std::chrono::duration_cast
+        <std::chrono::microseconds>(t_stop - t_start);
+      printf("%d: %s = %ld\n", cs_glob_rank_id, __func__,
+             elapsed.count());
+    }
+
+    return;
+  }
+
+  /* Common case: direct assigment of matrix coefficients
+     ---------------------------------------------------- */
+
+  cs_mesh_adjacencies_update_cell_i_faces();
+
+  cs_dispatch_context ctx;
+  ctx.set_use_gpu(amode >= CS_ALLOC_HOST_DEVICE_SHARED);
+
+  const cs_lnum_t n_d = cs_matrix_get_n_rows(a);
+
+  cs_real_t *da, *ea;
+  cs_matrix_get_coefficients_msr_w(a,
+                                   symmetric,
+                                   1, 1,
+                                   &da,
+                                   &ea);
+
+  /* Symmetric matrix */
+  if (symmetric) {
+    _sym_coeffs_scalar_msr(m,
+                           ctx,
+                           idiffp,
+                           thetap,
+                           bc_coeffs,
+                           rovsdt,
+                           i_visc,
+                           b_visc,
+                           da,
+                           ea);
+  }
+
+  /* Non-symmetric matrix */
+  else {
+    if (imucpp == 0)
+      _coeffs_scalar_msr<false>(m,
+                                ctx,
+                                iconvp,
+                                idiffp,
+                                thetap,
+                                bc_coeffs,
+                                rovsdt,
+                                i_massflux,
+                                b_massflux,
+                                i_visc,
+                                b_visc,
+                                xcpp,
+                                da,
+                                ea);
+    else
+      _coeffs_scalar_msr<true>(m,
+                               ctx,
+                               iconvp,
+                               idiffp,
+                               thetap,
+                               bc_coeffs,
+                               rovsdt,
+                               i_massflux,
+                               b_massflux,
+                               i_visc,
+                               b_visc,
+                               xcpp,
+                               da,
+                               ea);
+  }
+
+  /* Penalization if non invertible matrix */
+
+  /* If no Dirichlet condition, the diagonal is slightly increased in order
+     to shift the eigenvalues spectrum (if IDIRCL=0, we force NDIRCP to be at
+     least 1 in order not to shift the diagonal). */
+
+  if (ndircp <= 0) {
+    constexpr cs_real_t epsi_p1 = 1. + 1.e-7;
+
+    ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
+      da[c_id] *= epsi_p1;
+    });
+  }
+
+  /* If a whole row of the matrix is 0, the diagonal is set to 1 */
+  if (mq->has_disable_flag == 1) {
+    int *c_disable_flag = mq->c_disable_flag;
+
+    ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
+      da[c_id] += (cs_real_t)c_disable_flag[c_id];
+    });
+  }
+  ctx.wait();
+
+  if (cs_glob_timer_kernels_flag > 0) {
+    std::chrono::high_resolution_clock::time_point
+      t_stop = std::chrono::high_resolution_clock::now();
+    std::chrono::microseconds elapsed
+      = std::chrono::duration_cast
+      <std::chrono::microseconds>(t_stop - t_start);
+    printf("%d: %s = %ld\n", cs_glob_rank_id, __func__,
+           elapsed.count());
+  }
+}
 
 /*----------------------------------------------------------------------------
  * Wrapper to cs_matrix_scalar (or its counterpart for

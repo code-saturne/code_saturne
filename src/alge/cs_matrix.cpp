@@ -2213,7 +2213,6 @@ _set_coeffs_msr(cs_matrix_t         *matrix,
                 const cs_real_t    *restrict xa)
 {
   auto mc = static_cast<cs_matrix_coeff_t *>(matrix->coeffs);
-
   auto ms = static_cast<const cs_matrix_struct_dist_t *>(matrix->structure);
   const cs_matrix_struct_csr_t  *ms_e = &(ms->e);
 
@@ -4023,6 +4022,7 @@ _matrix_create(cs_matrix_type_t  type,
 
   m->alloc_mode = alloc_mode;
 
+  m->need_xa = 0;
   m->fill_type = CS_MATRIX_N_FILL_TYPES;
 
   m->structure = nullptr;
@@ -4882,6 +4882,23 @@ cs_matrix_get_extra_diag_block_size(const cs_matrix_t  *matrix)
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Return matrix assembler if present.
+ *
+ * \param[in]  matrix  pointer to matrix structure
+ */
+/*----------------------------------------------------------------------------*/
+
+const cs_matrix_assembler_t  *
+cs_matrix_get_assembler(const cs_matrix_t  *matrix)
+{
+  if (matrix == nullptr)
+    bft_error(__FILE__, __LINE__, 0, _("The matrix is not defined."));
+
+  return matrix->assembler;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Return the pointer to the halo structure for the given matrix
  *
  * \param[in] matrix  pointer to matrix structure
@@ -4953,6 +4970,46 @@ cs_matrix_set_alloc_mode(cs_matrix_t       *matrix,
                          cs_alloc_mode_t   alloc_mode)
 {
   matrix->alloc_mode = alloc_mode;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Query matrix allocation mode.
+ *
+ * \param[in]  matrix  pointer to matrix structure
+ *
+ * \return  host/device allocation mode
+ */
+/*----------------------------------------------------------------------------*/
+
+bool
+cs_matrix_get_need_xa(const cs_matrix_t  *matrix)
+{
+  bool need_xa = false;
+
+  if (matrix->need_xa == 1)
+    need_xa = true;
+
+  return need_xa;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ *\brief Indicate whether matrix will need xa coefficients.
+ *
+ * \param[in, out]  matrix      pointer to matrix structure
+ * \param[in]       need_xa     is thr face-based xa array needed ?
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_matrix_set_need_xa(cs_matrix_t  *matrix,
+                      bool          need_xa)
+{
+  if (need_xa)
+    matrix->need_xa = 1;
+  else
+    matrix->need_xa = 0;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -5082,6 +5139,58 @@ cs_matrix_set_coefficients(cs_matrix_t        *matrix,
   }
 }
 
+/*----------------------------------------------------------------------------
+ * Transfer matrix coefficients defined relative to a "native" edge graph.
+ *
+ * parameters:
+ *   matrix                 <-> pointer to matrix structure
+ *   symmetric              <-- indicates if matrix coefficients are symmetric
+ *   diag_block_size        <-- block sizes for diagonal
+ *   extra_diag_block_size  <-- block sizes for extra diagonal
+ *   n_edges                <-- local number of graph edges
+ *   edges                  <-- edges (row <-> column) connectivity
+ *   da                     <-- diagonal values (NULL if zero)
+ *   xa                     <-- extradiagonal values (NULL if zero)
+ *                              casts as:
+ *                                xa[n_edges]    if symmetric,
+ *                                xa[n_edges][2] if non symmetric
+ *----------------------------------------------------------------------------*/
+
+void
+cs_matrix_transfer_coefficients(cs_matrix_t         *matrix,
+                                bool                symmetric,
+                                cs_lnum_t           diag_block_size,
+                                cs_lnum_t           extra_diag_block_size,
+                                const cs_lnum_t     n_edges,
+                                const cs_lnum_2_t   edges[],
+                                cs_real_t          **d_val,
+                                cs_real_t          **x_val)
+{
+  cs_matrix_set_coefficients(matrix,
+                             symmetric,
+                             diag_block_size,
+                             extra_diag_block_size,
+                             n_edges,
+                             edges,
+                             *d_val,
+                             *x_val);
+
+  if (matrix->type < CS_MATRIX_N_BUILTIN_TYPES) {
+    matrix->xa = nullptr;
+    auto mc = static_cast<cs_matrix_coeff_t *>(matrix->coeffs);
+    if (   mc->d_val == *d_val
+        && mc->_d_val == nullptr) {
+      mc->_d_val = *d_val;
+      *d_val = nullptr;
+    }
+    if (   mc->e_val == *x_val
+        && mc->_e_val == nullptr) {
+      mc->_e_val = *x_val;
+      *x_val = nullptr;
+    }
+  }
+}
+
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Set matrix coefficients in an MSR format, transferring the
@@ -5159,6 +5268,72 @@ cs_matrix_transfer_coefficients_msr(cs_matrix_t         *matrix,
        matrix->type_name,
        cs_matrix_fill_type_name[matrix->fill_type]);
   }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Directly access matrix coefficients in an MSR format for writing.
+ *
+ * The matrix's fil type is also set by this function.
+ *
+ * The associated matrix must be in MSR format, and the associated row index
+ * and column ids known.
+ *
+ * \param[in, out]  matrix                 pointer to matrix structure
+ * \param[in]       symmetric              indicates if matrix coefficients
+ *                                         are symmetric
+ * \param[in]       diag_block_size        block sizes for diagonal
+ * \param[in]       extra_diag_block_size  block sizes for extra diagonal
+ * \param[in, out]  d_val                  diagonal values (nullptr if zero)
+ * \param[in, out]  e_val                  extradiagonal values (nullptr if zero)
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_matrix_get_coefficients_msr_w(cs_matrix_t         *matrix,
+                                 bool                 symmetric,
+                                 cs_lnum_t            diag_block_size,
+                                 cs_lnum_t            extra_diag_block_size,
+                                 cs_real_t          **d_val,
+                                 cs_real_t          **e_val)
+{
+  if (matrix == nullptr)
+    bft_error(__FILE__, __LINE__, 0, _("The matrix is not defined."));
+  else if (matrix->type != CS_MATRIX_MSR)
+    bft_error(__FILE__, __LINE__, 0,
+              "%s: provided matrix is not in MSR format.", __func__);
+
+  cs_base_check_bool(&symmetric);
+
+  _set_fill_info(matrix,
+                 symmetric,
+                 diag_block_size,
+                 extra_diag_block_size);
+
+  auto mc = static_cast<cs_matrix_coeff_t *>(matrix->coeffs);
+  auto ms = static_cast<const cs_matrix_struct_dist_t *>(matrix->structure);
+  const cs_matrix_struct_csr_t  *ms_e = &(ms->e);
+
+  const cs_lnum_t db_size_2 = mc->db_size * mc->db_size;
+  const cs_lnum_t eb_size_2 = mc->eb_size * mc->eb_size;
+
+  CS_FREE(mc->_d_val);
+  CS_FREE(mc->_e_val);
+
+  CS_MALLOC_HD(mc->_d_val,
+               db_size_2*ms_e->n_rows,
+               cs_real_t,
+               matrix->alloc_mode);
+  mc->d_val = mc->_d_val;
+
+  CS_MALLOC_HD(mc->_e_val,
+               eb_size_2*ms_e->row_index[ms_e->n_rows],
+               cs_real_t,
+               matrix->alloc_mode);
+  mc->e_val = mc->_e_val;
+
+  *d_val = mc->_d_val;
+  *e_val = mc->_e_val;
 }
 
 /*----------------------------------------------------------------------------*/

@@ -149,8 +149,6 @@ static cs_pressure_correction_cdo_t *cs_pressure_correction_cdo = nullptr;
  * \param[in]      bflux            work array
  * \param[in,out]  i_visc           work array
  * \param[in,out]  b_visc           work array
- * \param[in,out]  dam              work array
- * \param[in,out]  xam              work array
  * \param[in,out]  dphi             work array
  * \param[in,out]  rhs              work array
  */
@@ -168,8 +166,6 @@ _hydrostatic_pressure_compute(const cs_mesh_t       *m,
                               cs_real_t              bflux[],
                               cs_real_t              i_visc[],
                               cs_real_t              b_visc[],
-                              cs_real_t              dam[],
-                              cs_real_t              xam[],
                               cs_real_t              dphi[],
                               cs_real_t              rhs[])
 {
@@ -295,21 +291,22 @@ _hydrostatic_pressure_compute(const cs_mesh_t       *m,
                     i_visc,
                     b_visc);
 
-  cs_matrix_wrapper_scalar(eqp_pr->iconv,
-                           eqp_pr->idiff,
-                           0,
-                           1,
-                           eqp_pr->theta,
-                           0,
-                           bc_coeffs_hp,
-                           &rovsdt[0],
-                           iflux,
-                           bflux,
-                           i_visc,
-                           b_visc,
-                           nullptr,
-                           dam,
-                           xam);
+  cs_matrix_t *a = cs_sles_default_get_matrix(f->id, nullptr, 1, 1, true);
+
+  cs_matrix_compute_coeffs_scalar(a,
+                                  f,
+                                  eqp_pr->iconv,
+                                  eqp_pr->idiff,
+                                  0,     // ndircp
+                                  eqp_pr->theta,
+                                  0,
+                                  bc_coeffs_hp,
+                                  rovsdt,
+                                  iflux,
+                                  bflux,
+                                  i_visc,
+                                  b_visc,
+                                  nullptr);
 
   /* Compute right hand side
      ----------------------- */
@@ -339,6 +336,8 @@ _hydrostatic_pressure_compute(const cs_mesh_t       *m,
 
   /* Loops on non-orthogonalities (resolution)
      ----------------------------------------- */
+
+  cs_sles_t *sc = cs_sles_find_or_add(f->id, nullptr);
 
   /* Reconstruction loop */
 
@@ -396,13 +395,8 @@ _hydrostatic_pressure_compute(const cs_mesh_t       *m,
     int n_iter;
     cs_real_t ressol = residual;
 
-    cs_sles_solve_native(f->id,
-                         nullptr,
-                         true,  /* symmetric */
-                         1,     /* diag_block_size */
-                         1,     /* extra_diag_block_size */
-                         dam,
-                         xam,
+    cs_sles_solve_ccc_fv(sc,
+                         a,
                          eqp_pr->epsilo,
                          rnorm,
                          &n_iter,
@@ -436,7 +430,8 @@ _hydrostatic_pressure_compute(const cs_mesh_t       *m,
 
   /* Free Memory and solver setup */
 
-  cs_sles_free_native(f->id, nullptr);
+  cs_sles_free(sc);
+  cs_matrix_release_coefficients(a);
 
   CS_FREE_HD(viscce);
   CS_FREE_HD(rovsdt);
@@ -603,9 +598,7 @@ _pressure_correction_fv(int                   iterns,
 
   /* Allocate temporary arrays */
 
-  cs_real_t *dam, *xam, *rhs, *res;
-  CS_MALLOC_HD(dam, n_cells_ext, cs_real_t, cs_alloc_mode);
-  CS_MALLOC_HD(xam, m->n_i_faces, cs_real_t, cs_alloc_mode);
+  cs_real_t *rhs, *res;
   CS_MALLOC_HD(res, n_cells_ext, cs_real_t, cs_alloc_mode);
   CS_MALLOC_HD(rhs, n_cells_ext, cs_real_t, cs_alloc_mode);
 
@@ -874,7 +867,6 @@ _pressure_correction_fv(int                   iterns,
                                     &indhyd, iterns,
                                     frcxt, dfrcxt, cvar_hydro_pres,
                                     iflux, bflux, i_visc, b_visc,
-                                    dam, xam,
                                     dphi, rhs);
   }
 
@@ -1273,13 +1265,24 @@ _pressure_correction_fv(int                   iterns,
   ctx.wait(); // needed for rovsdt and b_visc
   ctx_c.wait(); // needed for i_visc
 
-  cs_matrix_wrapper_scalar(eqp_p->iconv, eqp_p->idiff, eqp_p->ndircl,
-                           isym,
-                           1.0, /* thetap */
-                           0,   /* imucpp */
-                           bc_coeffs_dp, rovsdt,
-                           imasfl, bmasfl, i_visc, b_visc,
-                           nullptr, dam, xam);
+  cs_matrix_t *a = cs_sles_default_get_matrix(f_p->id, nullptr, 1, 1, symmetric);
+
+  cs_matrix_compute_coeffs_scalar(a,
+                                  f_p,
+                                  eqp_p->iconv,
+                                  eqp_p->idiff,
+                                  eqp_p->ndircl,
+                                  1.0, // thetap
+                                  0,   // imucpp
+                                  bc_coeffs_dp,
+                                  rovsdt,
+                                  imasfl,
+                                  bmasfl,
+                                  i_visc,
+                                  b_visc,
+                                  nullptr);
+
+  cs_sles_t *sc = cs_sles_find_or_add(f_p->id, nullptr);
 
   /* Mass flux initialization
      ------------------------ */
@@ -2193,16 +2196,14 @@ _pressure_correction_fv(int                   iterns,
 
     cs_real_t ressol = residual;   /* solver residual */
 
-    cs_sles_solve_native(f_p->id, nullptr,
-                         symmetric, 1, 1,
-                         dam, xam,
+    cs_sles_solve_ccc_fv(sc,
+                         a,
                          eqp_p->epsilo,
                          rnormp,
                          &niterf,
                          &ressol,
                          rhs,
                          dphi);
-
 
     /* Dynamic relaxation of the system
        -------------------------------- */
@@ -2629,10 +2630,9 @@ _pressure_correction_fv(int                   iterns,
   /* Suppression of the grid hierarchy (release solver setup)
      --------------------------------- */
 
-  cs_sles_free_native(f_p->id, nullptr);
+  cs_sles_free(sc);
+  cs_matrix_release_coefficients(a);
 
-  CS_FREE_HD(dam);
-  CS_FREE_HD(xam);
   CS_FREE_HD(c2);
 
   /* Weakly compressible algorithm: semi analytic scheme

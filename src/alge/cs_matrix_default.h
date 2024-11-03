@@ -122,38 +122,24 @@ cs_matrix_default(bool       symmetric,
                   cs_lnum_t  extra_diag_block_size);
 
 /*----------------------------------------------------------------------------
- * Return MSR matrix for a given fill type
- *
- * parameters:
- *   symmetric              <-- Indicates if matrix coefficients are symmetric
- *   diag_block_size        <-- Block sizes for diagonal
- *   extra_diag_block_size  <-- Block sizes for extra diagonal
+ * Return MSR matrix
  *
  * returns:
- *   pointer to MSR matrix adapted to fill type
+ *   pointer to MSR matrix
  *----------------------------------------------------------------------------*/
 
 cs_matrix_t  *
-cs_matrix_msr(bool       symmetric,
-              cs_lnum_t  diag_block_size,
-              cs_lnum_t  extra_diag_block_size);
+cs_matrix_msr(void);
 
 /*----------------------------------------------------------------------------
- * Return native matrix for a given fill type
- *
- * parameters:
- *   symmetric              <-- Indicates if matrix coefficients are symmetric
- *   diag_block_size        <-- Block sizes for diagonal
- *   extra_diag_block_size  <-- Block sizes for extra diagonal
+ * Return native matrix
  *
  * returns:
- *   pointer to native matrix adapted to fill type
+ *   pointer to native matrix
  *----------------------------------------------------------------------------*/
 
 cs_matrix_t  *
-cs_matrix_native(bool       symmetric,
-                 cs_lnum_t  diag_block_size,
-                 cs_lnum_t  extra_diag_block_size);
+cs_matrix_native(void);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -270,6 +256,23 @@ cs_matrix_default_set_type(cs_matrix_fill_type_t  fill_type,
 
 const cs_gnum_t *
 cs_matrix_get_block_row_g_id(const cs_matrix_t  *m);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Return matrix associated wiht a matrix assembler.
+ *
+ * Coefficients are not assigned at this stage.
+ *
+ * \param[in]  f                      pointer to associated field
+ * \param[in]  type                   matrix type
+ *
+ * \return  pointer to associated matrix structure
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_matrix_t *
+cs_matrix_by_assembler(const cs_field_t  *f,
+                       cs_matrix_type_t   type);
 
 /*----------------------------------------------------------------------------*/
 /*!

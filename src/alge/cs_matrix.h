@@ -457,6 +457,17 @@ cs_lnum_t
 cs_matrix_get_extra_diag_block_size(const cs_matrix_t  *matrix);
 
 /*----------------------------------------------------------------------------*/
+/*
+ * \brief Return matrix assembler if present.
+ *
+ * \param[in]  matrix  pointer to matrix structure
+ */
+/*----------------------------------------------------------------------------*/
+
+const cs_matrix_assembler_t  *
+cs_matrix_get_assembler(const cs_matrix_t  *matrix);
+
+/*----------------------------------------------------------------------------*/
 /*!
  * \brief Return the pointer to the halo structure for the given matrix
  *
@@ -508,6 +519,32 @@ cs_matrix_get_alloc_mode(const cs_matrix_t  *matrix);
 void
 cs_matrix_set_alloc_mode(cs_matrix_t       *matrix,
                          cs_alloc_mode_t   alloc_mode);
+
+/*----------------------------------------------------------------------------*/
+/*
+ * \brief Query matrix allocation mode.
+ *
+ * \param[in]  matrix  pointer to matrix structure
+ *
+ * \return  host/device allocation mode
+ */
+/*----------------------------------------------------------------------------*/
+
+bool
+cs_matrix_get_need_xa(const cs_matrix_t  *matrix);
+
+/*----------------------------------------------------------------------------*/
+/*
+ *\brief Indicate whether matrix will need xa coefficients.
+ *
+ * \param[in, out]  matrix      pointer to matrix structure
+ * \param[in]       need_xa     is thr face-based xa array needed ?
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_matrix_set_need_xa(cs_matrix_t  *matrix,
+                      bool          need_xa);
 
 /*----------------------------------------------------------------------------
  * Get matrix fill type, depending on block sizes.
@@ -562,6 +599,33 @@ cs_matrix_set_coefficients(cs_matrix_t        *matrix,
                            const cs_real_t    *xa);
 
 /*----------------------------------------------------------------------------
+ * Transfer matrix coefficients defined relative to a "native" edge graph.
+ *
+ * parameters:
+ *   matrix                 <-> pointer to matrix structure
+ *   symmetric              <-- indicates if matrix coefficients are symmetric
+ *   diag_block_size        <-- block sizes for diagonal
+ *   extra_diag_block_size  <-- block sizes for extra diagonal
+ *   n_edges                <-- local number of graph edges
+ *   edges                  <-- edges (row <-> column) connectivity
+ *   da                     <-- diagonal values (NULL if zero)
+ *   xa                     <-- extradiagonal values (NULL if zero)
+ *                              casts as:
+ *                                xa[n_edges]    if symmetric,
+ *                                xa[n_edges][2] if non symmetric
+ *----------------------------------------------------------------------------*/
+
+void
+cs_matrix_transfer_coefficients(cs_matrix_t         *matrix,
+                                bool                symmetric,
+                                cs_lnum_t           diag_block_size,
+                                cs_lnum_t           extra_diag_block_size,
+                                const cs_lnum_t     n_edges,
+                                const cs_lnum_2_t   edges[],
+                                cs_real_t          **d_val,
+                                cs_real_t          **x_val);
+
+/*----------------------------------------------------------------------------
  * Set matrix coefficients in an MSR format, transferring the
  * property of those arrays to the matrix.
  *
@@ -591,6 +655,33 @@ cs_matrix_transfer_coefficients_msr(cs_matrix_t         *matrix,
                                     const cs_lnum_t      col_id[],
                                     cs_real_t          **d_val,
                                     cs_real_t          **x_val);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Directly access matrix coefficients in an MSR format for writing.
+ *
+ * The matrix's fil type is also set by this function.
+ *
+ * The associated matrix must be in MSR format, and the associated row index
+ * and column ids known.
+ *
+ * \param[in, out]  matrix                 pointer to matrix structure
+ * \param[in]       symmetric              indicates if matrix coefficients
+ *                                         are symmetric
+ * \param[in]       diag_block_size        block sizes for diagonal
+ * \param[in]       extra_diag_block_size  block sizes for extra diagonal
+ * \param[in, out]  d_val                  diagonal values (nullptr if zero)
+ * \param[in, out]  e_val                  extradiagonal values (nullptr if zero)
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_matrix_get_coefficients_msr_w(cs_matrix_t         *matrix,
+                                 bool                 symmetric,
+                                 cs_lnum_t            diag_block_size,
+                                 cs_lnum_t            extra_diag_block_size,
+                                 cs_real_t          **d_val,
+                                 cs_real_t          **x_val);
 
 /*----------------------------------------------------------------------------*/
 /*!
