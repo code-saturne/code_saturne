@@ -1,3 +1,12 @@
+Release 8.0.5 (unreleased)
+--------------------------
+
+### Bug fixes:
+
+- Fix crash when combining ALE and cell to vertex interpolation,
+  such as when using the dynamic Smagorinsky model without
+  and extended cell to cell neighborhood.
+
 Release 8.0.4 (2024-10-22)
 --------------------------
 
