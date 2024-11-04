@@ -96,15 +96,17 @@ BEGIN_C_DECLS
  * Local type definitions
  *============================================================================*/
 
-typedef  cs_real_t  cs_weight_t;  /* will allow testing single precision
-                                     if set to float */
+typedef  cs_real_t  cs_weight_t;  /* Will allow testing single precision
+                                     if set to float. */
 
 /*============================================================================
  *  Global variables
  *============================================================================*/
 
 bool          _set[3] = {false, false, false};
-cs_weight_t  *_weights[3][2] = {{nullptr, nullptr}, {nullptr, nullptr}, {nullptr, nullptr}};
+cs_weight_t  *_weights[3][2] = {{nullptr, nullptr},
+                                {nullptr, nullptr},
+                                {nullptr, nullptr}};
 
 /* Short names for gradient computation types */
 
