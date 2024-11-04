@@ -28,6 +28,8 @@
  * Standard C library headers
  *----------------------------------------------------------------------------*/
 
+#include <chrono>
+
 #include <assert.h>
 #include <errno.h>
 #include <stdio.h>
@@ -1180,6 +1182,10 @@ cs_matrix_wrapper_scalar(int                         iconvp,
                          cs_real_t                   da[],
                          cs_real_t                   xa[])
 {
+  std::chrono::high_resolution_clock::time_point t_start;
+  if (cs_glob_timer_kernels_flag > 0)
+    t_start = std::chrono::high_resolution_clock::now();
+
   const cs_mesh_t *m = cs_glob_mesh;
   const cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
   const cs_lnum_t n_cells = m->n_cells;
@@ -1260,6 +1266,15 @@ cs_matrix_wrapper_scalar(int                         iconvp,
   }
   ctx.wait();
 
+  if (cs_glob_timer_kernels_flag > 0) {
+    std::chrono::high_resolution_clock::time_point
+      t_stop = std::chrono::high_resolution_clock::now();
+    std::chrono::microseconds elapsed
+      = std::chrono::duration_cast
+          <std::chrono::microseconds>(t_stop - t_start);
+    printf("%d: %s = %ld\n", cs_glob_rank_id, __func__,
+           elapsed.count());
+  }
 }
 
 /*----------------------------------------------------------------------------
@@ -1284,6 +1299,10 @@ cs_matrix_wrapper_vector(int                         iconvp,
                          cs_real_t                   da[][3][3],
                          cs_real_t                   xa[])
 {
+  std::chrono::high_resolution_clock::time_point t_start;
+  if (cs_glob_timer_kernels_flag > 0)
+    t_start = std::chrono::high_resolution_clock::now();
+
   const cs_mesh_t  *m = cs_glob_mesh;
   const cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
   const cs_lnum_t n_cells = m->n_cells;
@@ -1402,6 +1421,15 @@ cs_matrix_wrapper_vector(int                         iconvp,
   }
   ctx.wait();
 
+  if (cs_glob_timer_kernels_flag > 0) {
+    std::chrono::high_resolution_clock::time_point
+      t_stop = std::chrono::high_resolution_clock::now();
+    std::chrono::microseconds elapsed
+      = std::chrono::duration_cast
+          <std::chrono::microseconds>(t_stop - t_start);
+    printf("%d: %s = %ld\n", cs_glob_rank_id, __func__,
+           elapsed.count());
+  }
 }
 
 /*----------------------------------------------------------------------------
@@ -1425,6 +1453,10 @@ cs_matrix_wrapper_tensor(int                         iconvp,
                          cs_real_t                   da[][6][6],
                          cs_real_t                   xa[])
 {
+  std::chrono::high_resolution_clock::time_point t_start;
+  if (cs_glob_timer_kernels_flag > 0)
+    t_start = std::chrono::high_resolution_clock::now();
+
   const cs_mesh_t *m = cs_glob_mesh;
   const cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
   const cs_lnum_t n_cells = m->n_cells;
@@ -1526,6 +1558,15 @@ cs_matrix_wrapper_tensor(int                         iconvp,
   }
   ctx.wait();
 
+  if (cs_glob_timer_kernels_flag > 0) {
+    std::chrono::high_resolution_clock::time_point
+      t_stop = std::chrono::high_resolution_clock::now();
+    std::chrono::microseconds elapsed
+      = std::chrono::duration_cast
+          <std::chrono::microseconds>(t_stop - t_start);
+    printf("%d: %s = %ld\n", cs_glob_rank_id, __func__,
+           elapsed.count());
+  }
 }
 
 /*----------------------------------------------------------------------------*/
