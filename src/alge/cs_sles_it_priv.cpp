@@ -46,6 +46,7 @@
  *----------------------------------------------------------------------------*/
 
 #include "cs_base_accel.h"
+#include "cs_dispatch.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
@@ -72,94 +73,89 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
- * Compute inverses of dense 3*3 matrices.
+ * LU factorization of dense 3*3 matrix.
  *
  * parameters:
- *   n_blocks <-- number of blocks
+ *   i        <-- block id
  *   ad       <-- diagonal part of linear equation matrix
  *   ad_inv   --> inverse of the diagonal part of linear equation matrix
  *----------------------------------------------------------------------------*/
 
-static void
-_fact_lu33(cs_lnum_t         n_blocks,
+CS_F_HOST_DEVICE inline void
+_fact_lu33(cs_lnum_t         i,
            const cs_real_t  *ad,
            cs_real_t        *ad_inv)
 {
-# pragma omp parallel for if(n_blocks > CS_THR_MIN)
-  for (cs_lnum_t i = 0; i < n_blocks; i++) {
+  const cs_real_t *restrict  _ad = &ad[9*i];
+  cs_real_t _ad_inv[9];
 
-    cs_real_t *restrict _ad_inv = &ad_inv[9*i];
-    const cs_real_t *restrict  _ad = &ad[9*i];
+  _ad_inv[0] = _ad[0];
+  _ad_inv[1] = _ad[1];
+  _ad_inv[2] = _ad[2];
 
-    _ad_inv[0] = _ad[0];
-    _ad_inv[1] = _ad[1];
-    _ad_inv[2] = _ad[2];
+  _ad_inv[3] = _ad[3]/_ad[0];
+  _ad_inv[4] = _ad[4] - _ad_inv[3]*_ad[1];
+  _ad_inv[5] = _ad[5] - _ad_inv[3]*_ad[2];
 
-    _ad_inv[3] = _ad[3]/_ad[0];
-    _ad_inv[4] = _ad[4] - _ad_inv[3]*_ad[1];
-    _ad_inv[5] = _ad[5] - _ad_inv[3]*_ad[2];
+  _ad_inv[6] = _ad[6]/_ad[0];
+  _ad_inv[7] = (_ad[7] - _ad_inv[6]*_ad[1])/_ad_inv[4];
+  _ad_inv[8] = _ad[8] - _ad_inv[6]*_ad[2] - _ad_inv[7]*_ad_inv[5];
 
-    _ad_inv[6] = _ad[6]/_ad[0];
-    _ad_inv[7] = (_ad[7] - _ad_inv[6]*_ad[1])/_ad_inv[4];
-    _ad_inv[8] = _ad[8] - _ad_inv[6]*_ad[2] - _ad_inv[7]*_ad_inv[5];
-
-  }
+  cs_real_t *restrict ad_inv_i = &ad_inv[9*i];
+  for (cs_lnum_t j = 0; j < 9; j++)
+    ad_inv_i[j] = _ad_inv[j];
 }
 
 /*----------------------------------------------------------------------------
- * Compute inverses of dense matrices.
+ * LU factorization of dense matrix.
  *
  * parameters:
- *   n_blocks <-- number of blocks
+ *   i        <-- block id
  *   ad       <-- diagonal part of linear equation matrix
  *   ad_inv   --> inverse of the diagonal part of linear equation matrix
  *----------------------------------------------------------------------------*/
 
-static void
-_fact_lu(cs_lnum_t         n_blocks,
+CS_F_HOST_DEVICE inline void
+_fact_lu(cs_lnum_t         i,
          const int         db_size,
          const cs_real_t  *ad,
          cs_real_t        *ad_inv)
 {
-# pragma omp parallel for if(n_blocks > CS_THR_MIN)
-  for (cs_lnum_t i = 0; i < n_blocks; i++) {
+  cs_real_t *restrict _ad_inv = &ad_inv[db_size*db_size*i];
+  const cs_real_t *restrict  _ad = &ad[db_size*db_size*i];
 
-    cs_real_t *restrict _ad_inv = &ad_inv[db_size*db_size*i];
-    const cs_real_t *restrict  _ad = &ad[db_size*db_size*i];
-
-    _ad_inv[0] = _ad[0];
-    // ad_inv(1,j) = ad(1,j)
-    // ad_inv(j,1) = ad(j,1)/a(1,1)
-    for (cs_lnum_t ii = 1; ii < db_size; ii++) {
-      _ad_inv[ii] = _ad[ii];
-      _ad_inv[ii*db_size] = _ad[ii*db_size]/_ad[0];
+  _ad_inv[0] = _ad[0];
+  // ad_inv(1,j) = ad(1,j)
+  // ad_inv(j,1) = ad(j,1)/a(1,1)
+  for (cs_lnum_t ii = 1; ii < db_size; ii++) {
+    _ad_inv[ii] = _ad[ii];
+    _ad_inv[ii*db_size] = _ad[ii*db_size]/_ad[0];
+  }
+  // ad_inv(i,i) = ad(i,i) - Sum( ad_inv(i,k)*ad_inv(k,i)) k=1 to i-1
+  for (cs_lnum_t ii = 1; ii < db_size - 1; ii++) {
+    _ad_inv[ii + ii*db_size] = _ad[ii + ii*db_size];
+    for (cs_lnum_t kk = 0; kk < ii; kk++) {
+      _ad_inv[ii + ii*db_size] -=  _ad_inv[ii*db_size + kk]
+                                  *_ad_inv[kk*db_size + ii];
     }
-    // ad_inv(i,i) = ad(i,i) - Sum( ad_inv(i,k)*ad_inv(k,i)) k=1 to i-1
-    for (cs_lnum_t ii = 1; ii < db_size - 1; ii++) {
-      _ad_inv[ii + ii*db_size] = _ad[ii + ii*db_size];
+
+    for (cs_lnum_t jj = ii + 1; jj < db_size; jj++) {
+      _ad_inv[ii*db_size + jj] = _ad[ii*db_size + jj];
+      _ad_inv[jj*db_size + ii] =   _ad[jj*db_size + ii]
+                                 / _ad_inv[ii*db_size + ii];
       for (cs_lnum_t kk = 0; kk < ii; kk++) {
-        _ad_inv[ii + ii*db_size] -= _ad_inv[ii*db_size + kk]
-                                   *_ad_inv[kk*db_size + ii];
-      }
-
-      for (cs_lnum_t jj = ii + 1; jj < db_size; jj++) {
-        _ad_inv[ii*db_size + jj] = _ad[ii*db_size + jj];
-        _ad_inv[jj*db_size + ii] =   _ad[jj*db_size + ii]
-                                   / _ad_inv[ii*db_size + ii];
-        for (cs_lnum_t kk = 0; kk < ii; kk++) {
-          _ad_inv[ii*db_size + jj] -=  _ad_inv[ii*db_size + kk]
-                                      *_ad_inv[kk*db_size + jj];
-          _ad_inv[jj*db_size + ii] -=  _ad_inv[jj*db_size + kk]
-                                      *_ad_inv[kk*db_size + ii]
-                                      /_ad_inv[ii*db_size + ii];
-        }
+        _ad_inv[ii*db_size + jj] -=  _ad_inv[ii*db_size + kk]
+                                    *_ad_inv[kk*db_size + jj];
+        _ad_inv[jj*db_size + ii] -=  _ad_inv[jj*db_size + kk]
+                                    *_ad_inv[kk*db_size + ii]
+                                    /_ad_inv[ii*db_size + ii];
       }
     }
-    _ad_inv[db_size*db_size -1] = _ad[db_size*db_size - 1];
-    for (cs_lnum_t kk = 0; kk < db_size - 1; kk++) {
-      _ad_inv[db_size*db_size - 1] -=  _ad_inv[(db_size-1)*db_size + kk]
-                                      *_ad_inv[kk*db_size + db_size -1];
-    }
+  }
+  _ad_inv[db_size*db_size -1] = _ad[db_size*db_size - 1];
+  for (cs_lnum_t kk = 0; kk < db_size - 1; kk++) {
+    _ad_inv[db_size*db_size - 1] -=  _ad_inv[(db_size-1)*db_size + kk]
+                                    *_ad_inv[kk*db_size + db_size -1];
   }
 }
 
@@ -292,28 +288,40 @@ cs_sles_it_setup_priv(cs_sles_it_t       *c,
 
       sd->ad_inv = sd->_ad_inv;
 
+      const cs_real_t  *restrict ad = cs_matrix_get_diagonal(a);
+
+      cs_dispatch_context  ctx;
+      ctx.set_use_gpu(c->on_device && amode > CS_ALLOC_HOST);
+
+      cs_real_t *ad_inv = sd->_ad_inv;
+
       if (diag_block_size == 1) {
 
-        cs_matrix_copy_diagonal(a, sd->_ad_inv);
-
-#       pragma omp parallel for if(n_rows > CS_THR_MIN)
-        for (cs_lnum_t i = 0; i < n_rows; i++)
-          sd->_ad_inv[i] = 1.0 / sd->_ad_inv[i];
+        ctx.parallel_for(n_rows, [=] CS_F_HOST_DEVICE (cs_lnum_t i) {
+          ad_inv[i] = 1.0 / ad[i];
+        });
 
       }
       else {
 
-        const cs_real_t  *restrict ad = cs_matrix_get_diagonal(a);
         const cs_lnum_t  n_blocks = sd->n_rows / diag_block_size;
 
-        if (diag_block_size == 3)
-          _fact_lu33(n_blocks, ad, sd->_ad_inv);
-        else
-          _fact_lu(n_blocks, diag_block_size, ad, sd->_ad_inv);
+        if (diag_block_size == 3) {
+          ctx.parallel_for(n_blocks, [=] CS_F_HOST_DEVICE (cs_lnum_t i) {
+            _fact_lu33(i, ad, ad_inv);
+          });
+        }
+
+        else {
+          ctx.parallel_for(n_blocks, [=] CS_F_HOST_DEVICE (cs_lnum_t i) {
+            _fact_lu(i, diag_block_size, ad, ad_inv);
+          });
+        }
 
       }
 
-      if (c->on_device)
+      ctx.wait();
+      if (c->on_device && ctx.use_gpu() == false)
         cs_sync_h2d(sd->_ad_inv);
 
     }

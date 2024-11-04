@@ -50,6 +50,7 @@
 
 #include "cs_base.h"
 #include "cs_blas.h"
+#include "cs_dispatch.h"
 #include "cs_field.h"
 #include "cs_log.h"
 #include "cs_halo.h"
@@ -394,17 +395,27 @@ _sles_pc_poly_setup(void               *context,
   }
   c->ad_inv = c->_ad_inv;
 
-  cs_matrix_copy_diagonal(a, c->_ad_inv);
+  const cs_real_t  *restrict ad = cs_matrix_get_diagonal(a);
+  cs_real_t *ad_inv = c->_ad_inv;
 
-# pragma omp parallel for if(n_rows > CS_THR_MIN)
-  for (cs_lnum_t i = 0; i < n_rows; i++)
-    c->_ad_inv[i] = 1.0 / c->_ad_inv[i];
-
-
+  cs_dispatch_context  ctx;
 #if defined(HAVE_ACCEL)
-  if (c->accelerated)
-    cs_sync_h2d_future(c->_ad_inv);
+  ctx.set_use_gpu(c->accelerated);
 #endif
+
+  if (db_size == 1) {
+    ctx.parallel_for(n_rows, [=] CS_F_HOST_DEVICE (cs_lnum_t i) {
+      ad_inv[i] = 1.0 / ad[i];
+    });
+  }
+  else {
+    ctx.parallel_for(n_rows, [=] CS_F_HOST_DEVICE (cs_lnum_t i) {
+      cs_lnum_t j = i % db_size;
+      ad_inv[i] = 1.0 / ad[i*db_size + j];
+    });
+  }
+
+  ctx.wait();
 }
 
 /*----------------------------------------------------------------------------
