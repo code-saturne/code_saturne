@@ -1109,6 +1109,7 @@ cs_cell_to_vertex_free(void)
   for (int i = 0; i < 3; i++) {
     for (int j = 0; j < 2; j++)
     BFT_FREE(_weights[i][j]);
+    _set[i] = false;
   }
 }
 
