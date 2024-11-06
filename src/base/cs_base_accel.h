@@ -230,7 +230,7 @@ cs_malloc_hd(cs_alloc_mode_t   mode,
              int               line_num)
 {
   CS_UNUSED(mode);
-  return bft_mem_malloc(ni, size, var_name, file_name, line_num);
+  return cs_mem_malloc(ni, size, var_name, file_name, line_num);
 }
 
 #endif
@@ -288,7 +288,7 @@ cs_realloc_hd(void             *ptr,
               int               line_num)
 {
   CS_UNUSED(mode);
-  return bft_mem_realloc(ptr, ni, size, var_name, file_name, line_num);
+  return cs_mem_realloc(ptr, ni, size, var_name, file_name, line_num);
 }
 
 #endif
@@ -323,7 +323,7 @@ cs_free_hd(void         *ptr,
            const char   *file_name,
            int           line_num)
 {
-  bft_mem_free(ptr, var_name, file_name, line_num);
+  cs_mem_free(ptr, var_name, file_name, line_num);
 }
 
 #endif

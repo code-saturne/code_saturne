@@ -124,9 +124,9 @@ fvm_trace_mem_status(const char  *descr)
     bft_printf(_("\nMemory use summary (call %d):\n\n"), call_id);
 
   valreal[0] = (double)bft_mem_usage_max_pr_size();
-  valreal[1] = (double)bft_mem_size_max();
+  valreal[1] = (double)cs_mem_size_max();
   valreal[2] = (double)bft_mem_usage_pr_size();
-  valreal[3] = (double)bft_mem_size_current();
+  valreal[3] = (double)cs_mem_size_current();
 
   /* Ignore inconsistent measurements */
 

@@ -46,7 +46,6 @@ noinst_LIBRARIES = libbft.a
 libbft_a_SOURCES  = \
 bft_backtrace.cpp \
 bft_error.cpp \
-bft_mem.cpp \
 bft_mem_usage.cpp \
 bft_printf.cpp
 

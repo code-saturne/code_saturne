@@ -74,6 +74,7 @@
 #include "cs_map.h"
 #include "cs_mass_source_terms.h"
 #include "cs_math.h"
+#include "cs_mem.h"
 #include "cs_measures_util.h"
 #include "cs_mobile_structures.h"
 #include "cs_notebook.h"

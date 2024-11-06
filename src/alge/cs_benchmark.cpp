@@ -54,7 +54,7 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft_mem.h"
+#include "cs_mem.h"
 #include "bft_error.h"
 #include "bft_printf.h"
 
@@ -65,6 +65,7 @@
 #include "cs_halo.h"
 #include "cs_halo_perio.h"
 #include "cs_log.h"
+#include "cs_mem.h"
 #include "cs_mesh.h"
 #include "cs_mesh_adjacencies.h"
 #include "cs_mesh_quantities.h"
@@ -784,21 +785,21 @@ _matrix_check_asmb(cs_lnum_t              n_rows,
   /* Allocate and initialize  working arrays */
 
   if (CS_MEM_ALIGN > 0) {
-    BFT_MEMALIGN(x, CS_MEM_ALIGN, n_cols_ext*a_block_size, cs_real_t);
-    BFT_MEMALIGN(y, CS_MEM_ALIGN, n_cols_ext*a_block_size, cs_real_t);
-    BFT_MEMALIGN(yr0, CS_MEM_ALIGN, n_cols_ext*a_block_size, cs_real_t);
+    CS_MEMALIGN(x, CS_MEM_ALIGN, n_cols_ext*a_block_size, cs_real_t);
+    CS_MEMALIGN(y, CS_MEM_ALIGN, n_cols_ext*a_block_size, cs_real_t);
+    CS_MEMALIGN(yr0, CS_MEM_ALIGN, n_cols_ext*a_block_size, cs_real_t);
   }
   else {
-    BFT_MALLOC(x, n_cols_ext*a_block_size, cs_real_t);
-    BFT_MALLOC(y, n_cols_ext*a_block_size, cs_real_t);
-    BFT_MALLOC(yr0, n_cols_ext*a_block_size, cs_real_t);
+    CS_MALLOC(x, n_cols_ext*a_block_size, cs_real_t);
+    CS_MALLOC(y, n_cols_ext*a_block_size, cs_real_t);
+    CS_MALLOC(yr0, n_cols_ext*a_block_size, cs_real_t);
   }
 
-  BFT_MALLOC(da, n_cols_ext*a_block_stride, cs_real_t);
-  BFT_MALLOC(xa, n_edges*2*a_block_stride, cs_real_t);
+  CS_MALLOC(da, n_cols_ext*a_block_stride, cs_real_t);
+  CS_MALLOC(xa, n_edges*2*a_block_stride, cs_real_t);
 
   cs_gnum_t *cell_gnum = nullptr;
-  BFT_MALLOC(cell_gnum, n_cols_ext, cs_gnum_t);
+  CS_MALLOC(cell_gnum, n_cols_ext, cs_gnum_t);
   if (cs_glob_mesh->global_cell_num != nullptr) {
     for (cs_lnum_t ii = 0; ii < n_rows; ii++)
       cell_gnum[ii] = cs_glob_mesh->global_cell_num[ii];
@@ -831,7 +832,7 @@ _matrix_check_asmb(cs_lnum_t              n_rows,
 #endif
 
   cs_gnum_t *r_g_id;
-  BFT_MALLOC(r_g_id, n_cols_ext, cs_gnum_t);
+  CS_MALLOC(r_g_id, n_cols_ext, cs_gnum_t);
   for (cs_lnum_t ii = 0; ii < n_rows; ii++)
     r_g_id[ii] = ii + l_range[0];
   if (halo != nullptr)
@@ -1112,16 +1113,16 @@ _matrix_check_asmb(cs_lnum_t              n_rows,
 
   } /* end of loop on fill types */
 
-  BFT_FREE(r_g_id);
-  BFT_FREE(cell_gnum);
+  CS_FREE(r_g_id);
+  CS_FREE(cell_gnum);
 
-  BFT_FREE(yr0);
+  CS_FREE(yr0);
 
-  BFT_FREE(y);
-  BFT_FREE(x);
+  CS_FREE(y);
+  CS_FREE(x);
 
-  BFT_FREE(xa);
-  BFT_FREE(da);
+  CS_FREE(xa);
+  CS_FREE(da);
 }
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
