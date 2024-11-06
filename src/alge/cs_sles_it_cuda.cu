@@ -1241,7 +1241,7 @@ cs_sles_it_cuda_jacobi(cs_sles_it_t              *c,
   stream = cs_matrix_spmv_cuda_get_stream();
   if (stream == 0) {
     local_stream = true;
-    cudaStreamCreate(&stream);
+    cs_cuda_get_stream(0);
   }
 
   const cs_lnum_t n_cols = cs_matrix_get_n_columns(a) * diag_block_size;
@@ -1431,7 +1431,6 @@ cs_sles_it_cuda_jacobi(cs_sles_it_t              *c,
 
   if (local_stream) {
     cs_matrix_spmv_cuda_set_stream(0);
-    cudaStreamDestroy(stream);
   }
 
   return cvg;
@@ -1480,7 +1479,7 @@ cs_sles_it_cuda_block_jacobi(cs_sles_it_t              *c,
   stream = cs_matrix_spmv_cuda_get_stream();
   if (stream == 0) {
     local_stream = true;
-    cudaStreamCreate(&stream);
+    cs_cuda_get_stream(0);
   }
 
   const cs_lnum_t n_cols = cs_matrix_get_n_columns(a) * diag_block_size;
@@ -1682,7 +1681,6 @@ cs_sles_it_cuda_block_jacobi(cs_sles_it_t              *c,
 
   if (local_stream) {
     cs_matrix_spmv_cuda_set_stream(0);
-    cudaStreamDestroy(stream);
   }
 
   return cvg;
@@ -1734,7 +1732,7 @@ cs_sles_it_cuda_fcg(cs_sles_it_t              *c,
   stream = cs_matrix_spmv_cuda_get_stream();
   if (stream == 0) {
     local_stream = true;
-    cudaStreamCreate(&stream);
+    cs_cuda_get_stream(0);
   }
 
   assert(c->setup_data != NULL);
@@ -1882,7 +1880,6 @@ cs_sles_it_cuda_fcg(cs_sles_it_t              *c,
   cs_blas_cuda_set_stream(0);
   if (local_stream) {
     cs_matrix_spmv_cuda_set_stream(0);
-    cudaStreamDestroy(stream);
   }
 
   return cvg;
@@ -1929,7 +1926,7 @@ cs_sles_it_cuda_gcr(cs_sles_it_t              *c,
   stream = cs_matrix_spmv_cuda_get_stream();
   if (stream == 0) {
     local_stream = true;
-    cudaStreamCreate(&stream);
+    cs_cuda_get_stream(0);
   }
 
   assert(c->setup_data != NULL);
@@ -2172,7 +2169,6 @@ cs_sles_it_cuda_gcr(cs_sles_it_t              *c,
   cs_blas_cuda_set_stream(0);
   if (local_stream) {
     cs_matrix_spmv_cuda_set_stream(0);
-    cudaStreamDestroy(stream);
   }
 
   return cvg;
