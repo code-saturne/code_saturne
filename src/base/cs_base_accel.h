@@ -652,45 +652,6 @@ cs_sync_h2d(const void  *ptr)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Initiate synchronization of data from host to device for
- *        future access.
- *
- * If separate pointers are used on the host and device,
- * the host pointer should be used with this function.
- * In this case, synchronization is started (asynchronously
- * if the allocation mode supports it).
- *
- * In other cases, synchronization will be delayed until actual use.
- * the host pointer should be used with this function.
- *
- * Depending on the allocation type, this can imply a copy, data prefetch,
- * or a no-op.
- *
- * This function assumes the provided pointer was allocated using
- * CS_MALLOC_HD or CS_REALLOC_HD, as it uses the associated mapping to
- * determine associated metadata.
- *
- * \param [in, out]  ptr  host pointer to values to copy or prefetch
- */
-/*----------------------------------------------------------------------------*/
-
-#if defined(HAVE_ACCEL)
-
-void
-cs_sync_h2d_future(const void  *ptr);
-
-#else
-
-static inline void
-cs_sync_h2d_future(const void  *ptr)
-{
-  CS_UNUSED(ptr);
-}
-
-#endif
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief Synchronize data from device to host.
  *
  * If separate allocations are used on the host and device
