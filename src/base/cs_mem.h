@@ -34,7 +34,6 @@
 /* BFT headers */
 
 #include "bft_error.h"
-#include "bft_mem.h"  // for compatibility macros
 
 /*-----------------------------------------------------------------------------*/
 
@@ -61,24 +60,6 @@ typedef enum {
 
 } cs_alloc_mode_t;
 
-/*
- * Structure defining an allocated memory block
- */
-
-typedef struct
-{
-  void  *host_ptr;          //!< host pointer
-#if defined(HAVE_ACCEL)
-  void  *device_ptr;        //!< device pointer
-#endif
-
-  size_t           size;    //! allocation size
-#if defined(HAVE_ACCEL)
-  cs_alloc_mode_t  mode;    //!< allocation mode
-#endif
-
-} cs_mem_block_t;
-
 /*============================================================================
  * Public macros
  *============================================================================*/
@@ -100,6 +81,36 @@ _ptr = (_type *) cs_mem_malloc(_ni, sizeof(_type), \
                                #_ptr, __FILE__, __LINE__)
 
 /*
+ * Allocate memory for _ni items of type _type.
+ *
+ * This macro calls cs_mem_malloc_hd(), automatically setting the
+ * allocated variable name and source file name and line arguments.
+ *
+ * If separate allocations are used on the host and device
+ * (mode == CS_ALLOC_HOST_DEVICE), the host pointer is returned.
+ *
+ * parameters:
+ *   _ptr  --> pointer to allocated memory.
+ *   _ni   <-- number of items.
+ *   _type <-- element type.
+ *   _mode <-- allocation mode.
+ */
+
+#if defined(HAVE_ACCEL)
+
+#define CS_MALLOC_HD(_ptr, _ni, _type, _mode) \
+_ptr = (_type *) cs_mem_malloc_hd(_mode, _ni, sizeof(_type), \
+                                  #_ptr, __FILE__, __LINE__)
+
+#else
+
+#define CS_MALLOC_HD(_ptr, _ni, _type, _mode) \
+_ptr = (_type *) cs_mem_malloc(_ni, sizeof(_type), \
+                               #_ptr, __FILE__, __LINE__)
+
+#endif
+
+/*
  * Reallocate memory for _ni items of type _type.
  *
  * This macro calls cs_mem_realloc(), automatically setting the
@@ -114,6 +125,55 @@ _ptr = (_type *) cs_mem_malloc(_ni, sizeof(_type), \
 #define CS_REALLOC(_ptr, _ni, _type) \
 _ptr = (_type *) cs_mem_realloc(_ptr, _ni, sizeof(_type), \
                                 #_ptr, __FILE__, __LINE__)
+
+/*
+ * Reallocate memory for _ni items of type _type.
+ *
+ * This macro calls cs_mem_realloc_hd(), automatically setting the
+ * allocated variable name and source file name and line arguments.
+ *
+ * If the allocation parameters are unchanged, no actual reallocation
+ * occurs.
+ *
+ * parameters:
+ *   _ptr  <->  pointer to allocated memory.
+ *   _ni   <-- number of items.
+ *   _type <-- element type.
+ *   _mode <-- allocation mode.
+ */
+
+#if defined(HAVE_ACCEL)
+
+#define CS_REALLOC_HD(_ptr, _ni, _type, _mode) \
+_ptr = (_type *) cs_mem_realloc_hd(_ptr, _mode, _ni, sizeof(_type), \
+                                   #_ptr, __FILE__, __LINE__)
+
+#else
+
+#define CS_REALLOC_HD(_ptr, _ni, _type, _mode) \
+_ptr = (_type *) cs_mem_realloc(_ptr, _ni, sizeof(_type), \
+                                #_ptr, __FILE__, __LINE__)
+
+#endif
+
+/*
+ * Free allocated memory.
+ *
+ * This macro calls cs_mem_free(), automatically setting the
+ * allocated variable name and source file name and line arguments.
+ *
+ * The freed pointer is set to NULL to avoid accidental reuse.
+ *
+ * If separate allocations are used on the host and device
+ * (mode == CS_ALLOC_HOST_DEVICE), the host pointer should be used with this
+ * function.
+ *
+ * parameters:
+ *   _ptr  <->  pointer to allocated memory.
+ */
+
+#define CS_FREE(_ptr) \
+cs_mem_free(_ptr, #_ptr, __FILE__, __LINE__), _ptr = NULL
 
 /*
  * Allocate aligned memory for _ni items of type _type.
@@ -132,95 +192,27 @@ _ptr = (_type *) cs_mem_realloc(_ptr, _ni, sizeof(_type), \
 _ptr = (_type *) cs_mem_memalign(_align, _ni, sizeof(_type), \
                                  #_ptr, __FILE__, __LINE__)
 
-/*----------------------------------------------------------------------------
- * Function pointer types
- *----------------------------------------------------------------------------*/
-
-typedef size_t
-(cs_mem_get_size_t)(void  *ptr);
-
-typedef void *
-(cs_mem_realloc_t)(void        *ptr,
-                   size_t       ni,
-                   size_t       size,
-                   const char  *var_name,
-                   const char  *file_name,
-                   int          line_num);
-
-typedef void
-(cs_mem_free_t)(void        *ptr,
-                const char  *var_name,
-                const char  *file_name,
-                int          line_num);
-
-/*============================================================================
- * Semi private function definitions
+/*=============================================================================
+ * Global variable definitions
  *============================================================================*/
 
-END_C_DECLS
+#if defined(HAVE_ACCEL)
 
-#ifdef __cplusplus /* only for C++ API */
+extern cs_alloc_mode_t  cs_alloc_mode;
+extern cs_alloc_mode_t  cs_alloc_mode_read_mostly;
 
-/*----------------------------------------------------------------------------*/
+#else
 
-/*----------------------------------------------------------------------------
- * Return the cs_mem_block structure corresponding to a given
- * allocated block.
- *
- * parameters:
- *   p_get: <-- allocated block's start adress.
- *
- * returns:
- *   corresponding cs_mem_block structure.
- *----------------------------------------------------------------------------*/
+#define cs_alloc_mode CS_ALLOC_HOST
+#define cs_alloc_mode_read_mostly CS_ALLOC_HOST
 
-cs_mem_block_t
-cs_mem_get_block_info(const void  *p_get);
-
-/*----------------------------------------------------------------------------
- * Return the cs_mem_block structure corresponding to a given
- * allocated block if available.
- *
- * If no block info is available, return block with null pointers
- * and zero size.
- *
- * parameters:
- *   p_get: <-- allocated block's start adress.
- *
- * returns:
- *   pointer tocorresponding cs_mem_block structure.
- *----------------------------------------------------------------------------*/
-
-cs_mem_block_t
-cs_mem_get_block_info_try(const void  *p_get);
-
-/*----------------------------------------------------------------------------
- * Update block information map if enabled.
- *
- * parameters
- *   var_name  <-- allocated variable name string.
- *   file_name <-- name of calling source file.
- *   line_num  <-- line number in calling source file.
- *   old_block <-- pointer to old block info, if present
- *   new_block <-- pointer to new block info, if present
- *----------------------------------------------------------------------------*/
-
-void
-cs_mem_update_block_info(const char            *var_name,
-                         const char            *file_name,
-                         int                    line_num,
-                         const cs_mem_block_t  *old_block,
-                         const cs_mem_block_t  *new_block);
-
-/*----------------------------------------------------------------------------*/
-
-#endif // __cplusplus
-
-BEGIN_C_DECLS
+#endif
 
 /*============================================================================
- * Public function prototypes
+ * Semi-private function prototypes
  *============================================================================*/
+
+/*! \cond DOXYGEN_SHOULD_SKIP_THIS */
 
 /*----------------------------------------------------------------------------
  * Initialize memory handling.
@@ -321,6 +313,64 @@ cs_mem_realloc(void        *ptr,
                const char  *file_name,
                int          line_num);
 
+/*----------------------------------------------------------------------------*/
+/*
+ * \brief Reallocate memory on host and device for ni elements of size bytes.
+ *
+ * This function calls the appropriate reallocation function based on
+ * the requested mode, and allows introspection of the allocated memory.
+ *
+ * If separate pointers are used on the host and device,
+ * the host pointer should be used with this function.
+ *
+ * If the allocation parameters are unchanged, no actual reallocation
+ * occurs on the host.
+ *
+ * If the device uses a separate allocation, it is freed, and a new
+ * allocation is delayed (as per initial allocation) so as to invalidate copies
+ * which will not be up to date anymore after the associated values
+ * modification.
+ *
+ * \param [in]  ptr        pointer to previously allocated memory
+ * \param [in]  mode       allocation mode
+ * \param [in]  ni         number of elements
+ * \param [in]  size       element size
+ * \param [in]  var_name   allocated variable name string
+ * \param [in]  file_name  name of calling source file
+ * \param [in]  line_num   line number in calling source file
+ *
+ * \returns pointer to allocated memory.
+ */
+/*----------------------------------------------------------------------------*/
+
+#if defined(HAVE_ACCEL)
+
+void *
+cs_mem_realloc_hd(void            *ptr,
+                  cs_alloc_mode_t  mode,
+                  size_t           ni,
+                  size_t           size,
+                  const char      *var_name,
+                  const char      *file_name,
+                  int              line_num);
+
+#else
+
+inline static void *
+cs_mem_realloc_hd(void             *ptr,
+                  cs_alloc_mode_t   mode,
+                  size_t            ni,
+                  size_t            size,
+                  const char       *var_name,
+                  const char       *file_name,
+                  int               line_num)
+{
+  CS_UNUSED(mode);
+  return cs_mem_realloc(ptr, ni, size, var_name, file_name, line_num);
+}
+
+#endif
+
 /*----------------------------------------------------------------------------
  * Free allocated memory.
  *
@@ -377,7 +427,7 @@ cs_mem_memalign(size_t       alignment,
                 int          line_num);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Return current theoretical dynamic memory allocated.
  *
  * \return current memory handled through cs_mem_...() (in kB).
@@ -387,7 +437,7 @@ size_t
 cs_mem_size_current(void);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Return maximum theoretical dynamic memory allocated.
  *
  * \return maximum memory handled through cs_mem_...() (in kB).
@@ -395,30 +445,6 @@ cs_mem_size_current(void);
 
 size_t
 cs_mem_size_max(void);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Return memory allocation stats, if available.
- *
- * Availability of statistics depends on the cs_mem_init options.
- *
- * \param [out]  alloc_cur   current allocation size, or nullptr
- * \param [out]  alloc_max   max allocation size, or nullptr
- * \param [out]  n_allocs    total number of allocations, or nullptr
- * \param [out]  n_reallocs  total number of reallocations, or nullptr
- * \param [out]  n_frees     total number of frees, or nullptr
- * \param [out]  n_current   total number of current allocations, or nullptr
- *
- * \return 1 if stats are available, O otherwise.
- *----------------------------------------------------------------------------*/
-
-int
-cs_mem_stats(uint64_t  *alloc_cur,
-             uint64_t  *alloc_max,
-             uint64_t  *n_allocs,
-             uint64_t  *n_reallocs,
-             uint64_t  *n_frees,
-             uint64_t  *n_current);
 
 /*----------------------------------------------------------------------------
  * Indicate if a memory aligned allocation variant is available.
@@ -457,25 +483,347 @@ cs_mem_error_handler_get(void);
 void
 cs_mem_error_handler_set(bft_error_handler_t *handler);
 
-/*----------------------------------------------------------------------------
- * Associates alternative functions with the cs_mem_...() functions.
+#if defined(HAVE_ACCEL)
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Allocate memory on host and device for ni elements of size bytes.
  *
- * When memory allocated with another mechanism is reallocated or
- * freed using a cs_mem_... function, this allows trying the
- * matching alternative function rather than throwing an error.
+ * This function calls the appropriate allocation function based on
+ * the requested mode, and allows introspection of the allocated memory.
  *
- * Though using matching methods is recommended, this allows handling
- * compatibility between methods which might be used in different parts
- * of the code.
+ * If separate pointers are used on the host and device,
+ * the host pointer is returned.
  *
- * parameter:
- *   realloc_func <-- pointer to alternative reallocation function.
- *   free_func    <-- pointer to alternative free function.
- *----------------------------------------------------------------------------*/
+ * \param [in]  mode       allocation mode
+ * \param [in]  ni         number of elements
+ * \param [in]  size       element size
+ * \param [in]  var_name   allocated variable name string
+ * \param [in]  file_name  name of calling source file
+ * \param [in]  line_num   line number in calling source file
+ *
+ * \returns pointer to allocated memory.
+ */
+/*----------------------------------------------------------------------------*/
+
+void *
+cs_mem_malloc_hd(cs_alloc_mode_t   mode,
+                 size_t            ni,
+                 size_t            size,
+                 const char       *var_name,
+                 const char       *file_name,
+                 int               line_num);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Reallocate memory on host and device for ni elements of size bytes.
+ *
+ * This function calls the appropriate reallocation function based on
+ * the requested mode, and allows introspection of the allocated memory.
+ *
+ * If separate pointers are used on the host and device,
+ * the host pointer should be used with this function.
+ *
+ * If the allocation parameters are unchanged, no actual reallocation
+ * occurs on the host.
+ *
+ * If the device uses a separate allocation, it is freed, and a new
+ * allocation is delayed (as per initial allocation) so as to invalidate copies
+ * which will not be up to date anymore after the associated values
+ * modification.
+ *
+ * \param [in]  ptr        pointer to previously allocated memory
+ * \param [in]  mode       allocation mode
+ * \param [in]  ni         number of elements
+ * \param [in]  size       element size
+ * \param [in]  var_name   allocated variable name string
+ * \param [in]  file_name  name of calling source file
+ * \param [in]  line_num   line number in calling source file
+ *
+ * \returns pointer to allocated memory.
+ */
+/*----------------------------------------------------------------------------*/
+
+void *
+cs_mem_realloc_hd(void            *ptr,
+                  cs_alloc_mode_t  mode,
+                  size_t           ni,
+                  size_t           size,
+                  const char      *var_name,
+                  const char      *file_name,
+                  int              line_num);
+
+#endif
+
+/*============================================================================
+ * Semi-private function definitions
+ *============================================================================*/
+
+#if defined(HAVE_OPENMP_TARGET)
+
+/*----------------------------------------------------------------------------*/
+/*
+ * \brief Set OpenMp target device id
+ *
+ * \param [in]  device_id  device id to use for OpenMP device memory handling.
+ */
+/*----------------------------------------------------------------------------*/
 
 void
-cs_mem_alternative_set(cs_mem_realloc_t   *realloc_func,
-                       cs_mem_free_t      *free_func);
+cs_mem_set_omp_target_device_id(int  device_id);
+
+#endif
+
+/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
+
+/*============================================================================
+ * Public function prototypes
+ *============================================================================*/
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Return memory allocation stats, if available.
+ *
+ * Availability of statistics depends on the cs_mem_init options.
+ *
+ * \param [out]  alloc_cur   current allocation size, or nullptr
+ * \param [out]  alloc_max   max allocation size, or nullptr
+ * \param [out]  n_allocs    total number of allocations, or nullptr
+ * \param [out]  n_reallocs  total number of reallocations, or nullptr
+ * \param [out]  n_frees     total number of frees, or nullptr
+ * \param [out]  n_current   total number of current allocations, or nullptr
+ *
+ * \return 1 if stats are available, O otherwise.
+ *----------------------------------------------------------------------------*/
+
+int
+cs_mem_stats(uint64_t  *alloc_cur,
+             uint64_t  *alloc_max,
+             uint64_t  *n_allocs,
+             uint64_t  *n_reallocs,
+             uint64_t  *n_frees,
+             uint64_t  *n_current);
+
+#if defined(HAVE_ACCEL)
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Copy data from host to device.
+ *
+ * This function should be usable on subsets of arrays allocated on the host
+ * and device.
+ *
+ * \param [out]      dest  pointer to destination data on device
+ * \param [in, out]  src   pointer to source data on host
+ * \param [in]       size  number of bytes to prefetch
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_copy_h2d(void        *dest,
+            const void  *src,
+            size_t       size);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Copy data from device to host.
+ *
+ * This function should be usable on subsets of arrays allocated on the host
+ * and device.
+ *
+ * \param [out]      dest  pointer to destination data on host
+ * \param [in, out]  src   pointer to source data on device
+ * \param [in]       size  number of bytes to prefetch
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_copy_d2h(void        *dest,
+            const void  *src,
+            size_t       size);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Copy data from device to device.
+ *
+ * This function should be usable on subsets of arrays allocated on the host
+ * and device.
+ *
+ * \param [out]      dest  pointer to destination data on host
+ * \param [in, out]  src   pointer to source data on device
+ * \param [in]       size  number of bytes to prefetch
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_copy_d2d(void        *dest,
+            const void  *src,
+            size_t       size);
+
+#endif // defined(HAVE_ACCEL)
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Synchronize data from host to device.
+ *
+ * If separate pointers are used on the host and device,
+ * the host pointer should be used with this function.
+ *
+ * Depending on the allocation type, this can imply a copy, data prefetch,
+ * or a no-op.
+ *
+ * This function assumes the provided pointer was allocated using
+ * CS_MALLOC_HD or CS_REALLOC_HD, as it uses the associated mapping to
+ * determine associated metadata.
+ *
+ * \param [in, out]  ptr  host pointer to values to copy or prefetch
+ */
+/*----------------------------------------------------------------------------*/
+
+#if defined(HAVE_ACCEL)
+
+void
+cs_sync_h2d(const void  *ptr);
+
+#else
+
+static inline void
+cs_sync_h2d(const void  *ptr)
+{
+  CS_UNUSED(ptr);
+}
+
+#endif
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Synchronize data from device to host.
+ *
+ * If separate allocations are used on the host and device
+ * (mode == CS_ALLOC_HOST_DEVICE), the host pointer should be passed to this
+ * function.
+ *
+ * Depending on the allocaton type, this can imply a copy, data prefetch,
+ * or a no-op.
+ *
+ * This function assumes the provided pointer was allocated using
+ * CS_MALLOC_HD or CS_REALLOC_HD, as it uses the associated mapping to
+ * determine associated metadata.
+ *
+ * \param [in, out]  ptr  pointer to values to copy or prefetch
+ */
+/*----------------------------------------------------------------------------*/
+
+#if defined(HAVE_ACCEL)
+
+void
+cs_sync_d2h(void  *ptr);
+
+#else
+
+static inline void
+cs_sync_d2h(void  *ptr)
+{
+  CS_UNUSED(ptr);
+}
+
+#endif
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Synchronize data from device to host, only if needed.
+ *
+ * If separate allocations are used on the host and device
+ * (mode == CS_ALLOC_HOST_DEVICE), the host pointer should be passed to this
+ * function.
+ *
+ * Depending on the allocation type, this can imply a copy, data prefetch,
+ * or a no-op.
+ *
+ * No operation occurs if the provided pointer was not allocated using
+ * CS_MALLOC_HD or CS_REALLOC_HD, as it uses the associated mapping to
+ * determine associated metadata.
+ *
+ * \param [in, out]  ptr  pointer to values to copy or prefetch
+ */
+/*----------------------------------------------------------------------------*/
+
+#if defined(HAVE_ACCEL)
+
+void
+cs_sync_d2h_if_needed(void  *ptr);
+
+#else
+
+static inline void
+cs_sync_d2h_if_needed(void  *ptr)
+{
+  CS_UNUSED(ptr);
+}
+
+#endif
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Prefetch data from host to device.
+ *
+ * This function should only be used on arrays using shared host and device
+ * memory, shuch as those allocated using CS_ALLOC_HOST_DEVICE_SHARED.
+ * It should be usable on a subset of such an array.
+ *
+ * \param [in, out]  ptr   pointer to data to prefetch
+ * \param [in]       size  number of bytes to prefetch
+ */
+/*----------------------------------------------------------------------------*/
+
+#if defined(HAVE_ACCEL)
+
+void
+cs_prefetch_h2d(void    *ptr,
+                size_t   size);
+
+#else
+
+static inline void
+cs_prefetch_h2d(void    *ptr,
+                size_t   size)
+{
+  CS_UNUSED(ptr);
+  CS_UNUSED(size);
+}
+
+#endif
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Prefetch data from device to host.
+ *
+ * This function should only be used on arrays using shared host and device
+ * memory, shuch as those allocated using CS_ALLOC_HOST_DEVICE_SHARED.
+ * It should be usable on a subset of such an array.
+ *
+ * \param [in, out]  ptr   pointer to data to prefetch
+ * \param [in]       size  number of bytes to prefetch
+ */
+/*----------------------------------------------------------------------------*/
+
+#if defined(HAVE_ACCEL)
+
+void
+cs_prefetch_d2h(void    *ptr,
+                size_t   size);
+
+#else
+
+static inline void
+cs_prefetch_d2h(void    *ptr,
+                size_t   size)
+{
+  CS_UNUSED(ptr);
+  CS_UNUSED(size);
+}
+
+#endif
 
 /*----------------------------------------------------------------------------*/
 

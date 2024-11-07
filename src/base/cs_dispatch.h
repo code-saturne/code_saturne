@@ -379,7 +379,7 @@ public:
     : grid_size_(0), block_size_(256), stream_(cs_cuda_get_stream(0)),
       device_(0), use_gpu_(true)
   {
-    device_ = cs_base_cuda_get_device();
+    device_ = cs_glob_cuda_device_id;
   }
 
   cs_device_context(long          grid_size,
@@ -415,22 +415,25 @@ public:
   }
 
   //! Change grid_size configuration, but keep the stream and device
+  //
+  // \param[in]  grid_size   CUDA grid size, or -1 for automatic choice
+  // \param[in]  block_size  CUDA block size (power of 2 if reduction is used)
 
   void
   set_cuda_grid(long  grid_size,
                 long  block_size) {
-    this->grid_size_ = grid_size;
+    this->grid_size_ = (grid_size > 0) ? grid_size : -1;
     this->block_size_ = block_size;
   }
 
-  //! Change stream, but keeps the grid and device configuration
+  //! Change stream, but keep the grid and device configuration
 
   void
   set_cuda_stream(cudaStream_t stream) {
     this->stream_ = stream;
   }
 
-  //! Change stream, but keeps the grid and device configuration
+  //! Change stream, but keep the grid and device configuration
 
   void
   set_cuda_stream(int  stream_id) {
@@ -628,6 +631,12 @@ public:
 
 #elif defined(SYCL_LANGUAGE_VERSION)
 
+/*! Default queue for SYCL */
+#if !defined(CS_GLOB_SYCL_QUEUE_IS_DEFINED)
+extern sycl::queue  cs_glob_sycl_queue;
+#define CS_GLOB_SYCL_QUEUE_IS_DEFINED 1
+#endif
+
 /*!
  * Context to execute loops with SYCL on the device
  */
@@ -773,7 +782,137 @@ public:
 
 };
 
-#endif  // __NVCC__ or SYCL
+#elif defined(HAVE_OPENMP_TARGET)
+
+/*!
+ * Context to execute loops with OpenMP target on the device
+ */
+
+class cs_device_context : public cs_dispatch_context_mixin<cs_device_context> {
+
+private:
+
+  bool              is_gpu;      /*!< Is the associated device à GPU ? */
+
+  bool              use_gpu_;    /*!< Run on GPU ? */
+
+public:
+
+  //! Constructor
+
+  cs_device_context(void)
+    : is_gpu(false), use_gpu_(true)
+  {
+    // This should be improved for any actual use of this approach
+    // beyond basic testing
+    is_gpu = (omp_get_num_devices() > 1) ? true : false;
+  }
+
+  //! Set or unset execution on GPU
+
+  void
+  set_use_gpu(bool  use_gpu) {
+    this->use_gpu_ = use_gpu;
+  }
+
+  //! Check whether we are trying to run on GPU
+
+  bool
+  use_gpu(void) {
+    return (is_gpu && use_gpu_);
+  }
+
+  //! Check preferred allocation mode depending on execution policy
+
+  cs_alloc_mode_t
+  alloc_mode(void) {
+    cs_alloc_mode_t amode
+      = (is_gpu && use_gpu_) ? CS_ALLOC_HOST_DEVICE_SHARED : CS_ALLOC_HOST;
+    return (amode);
+  }
+
+  cs_alloc_mode_t
+  alloc_mode([[maybe_unused]] bool readable_on_cpu) {
+    cs_alloc_mode_t amode
+      = (is_gpu && use_gpu_) ? CS_ALLOC_HOST_DEVICE_SHARED : CS_ALLOC_HOST;
+    return (amode);
+  }
+
+public:
+
+  //! Try to launch on the device and return false if not available
+  template <class F, class... Args>
+  bool
+  parallel_for(cs_lnum_t n, F&& f, Args&&... args) {
+    if (is_gpu == false || use_gpu_ == false) {
+      return false;
+    }
+
+    //! Distribute to device
+#   pragma omp target teams distribute parallel for
+    for (cs_lnum_t i = 0; i < n; ++i) {
+      f(i, args...);
+    }
+
+    return true;
+  }
+
+  //! Launch kernel with simple sum reduction.
+  template <class F, class... Args>
+  bool
+  parallel_for_reduce_sum(cs_lnum_t n,
+                          double&   sum,
+                          F&&       f,
+                          Args&&... args) {
+    sum = 0;
+    if (is_gpu == false || use_gpu_ == false) {
+      return false;
+    }
+
+    //! Distribute to device
+#   pragma omp target teams distribute parallel for reduction(+:sum)
+    for (cs_lnum_t i = 0; i < n; ++i) {
+      f(i, sum, args...);
+    }
+
+    return true;
+  }
+
+  //! Synchronize associated stream
+  void
+  wait(void) {
+    return;
+  }
+
+  // Get interior faces sum type associated with this context
+  template <class M>
+  bool
+  try_get_parallel_for_i_faces_sum_type(const M                 *m,
+                                        cs_dispatch_sum_type_t  &st) {
+    if (is_gpu == false || use_gpu_ == false) {
+      return false;
+    }
+
+    st = CS_DISPATCH_SUM_ATOMIC;
+    return true;
+  }
+
+  // Get interior faces sum type associated with this context
+  template <class M>
+  bool
+  try_get_parallel_for_b_faces_sum_type(const M                 *m,
+                                        cs_dispatch_sum_type_t  &st) {
+    if (is_gpu == false || use_gpu_ == false) {
+      return false;
+    }
+
+    st = CS_DISPATCH_SUM_ATOMIC;
+    return true;
+  }
+
+};
+
+#endif  // __NVCC__ or SYCL or defined(HAVE_OPENMP_TARGET)
 
 /*!
  * Context to group unused options and catch missing execution paths.
@@ -812,7 +951,9 @@ public:
 
 #endif  // __NVCC__
 
-#if !defined(__NVCC__) && !defined(SYCL_LANGUAGE_VERSION)
+#if    !defined(__NVCC__) \
+    && !defined(SYCL_LANGUAGE_VERSION) \
+    && !defined(HAVE_OPENMP_TARGET)
 
   /* Fill-in for device methods */
 
@@ -843,7 +984,7 @@ public:
   wait(void) {
   }
 
-#endif  // ! __NVCC__ && ! SYCL_LANGUAGE_VERSION
+#endif  // ! __NVCC__ && ! SYCL_LANGUAGE_VERSION && ! defined(HAVE_OPENMP_TARGET)
 
 public:
 
@@ -963,7 +1104,9 @@ public:
 /*----------------------------------------------------------------------------*/
 
 class cs_dispatch_context : public cs_combined_context<
-#if defined(__NVCC__) || defined(SYCL_LANGUAGE_VERSION)
+#if   defined(__NVCC__) \
+  || defined(SYCL_LANGUAGE_VERSION) \
+  || defined(HAVE_OPENMP_TARGET)
   cs_device_context,
 #endif
   cs_host_context,
@@ -973,7 +1116,9 @@ class cs_dispatch_context : public cs_combined_context<
 
 private:
   using base_t = cs_combined_context<
-#if defined(__NVCC__) || defined(SYCL_LANGUAGE_VERSION)
+#if   defined(__NVCC__) \
+   || defined(SYCL_LANGUAGE_VERSION) \
+   || defined(HAVE_OPENMP_TARGET)
   cs_device_context,
 #endif
   cs_host_context,

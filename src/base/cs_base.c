@@ -69,7 +69,9 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
+#include "cs_mem.h"
 #include "bft_backtrace.h"
+#include "bft_mem.h"
 #include "bft_mem_usage.h"
 #include "bft_printf.h"
 
@@ -1675,7 +1677,7 @@ cs_base_mem_init(void)
           sprintf(_file_name, "%s.%0*d", base_name, n_dec, cs_glob_rank_id);
         }
         else {
-          file_name = malloc((strlen(base_name) + 1) * sizeof (char));
+          _file_name = malloc((strlen(base_name) + 1) * sizeof (char));
           strcpy(_file_name, base_name);
         }
         file_name = _file_name;

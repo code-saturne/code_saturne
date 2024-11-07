@@ -636,11 +636,8 @@ _create_struct_csr(cs_alloc_mode_t     alloc_mode,
                    cs_lnum_t           n_rows,
                    cs_lnum_t           n_cols_ext,
                    cs_lnum_t           n_edges,
-                   const cs_lnum_2_t  *edges)
+                   const cs_lnum_2_t  *restrict edges)
 {
-  cs_lnum_t ii, jj, face_id;
-  const cs_lnum_t *restrict face_cel_p;
-
   cs_lnum_t  *ccount = nullptr;
 
   cs_matrix_struct_csr_t  *ms;
@@ -662,16 +659,15 @@ _create_struct_csr(cs_alloc_mode_t     alloc_mode,
 
   BFT_MALLOC(ccount, ms->n_rows, cs_lnum_t);
 
-  for (ii = 0; ii < ms->n_rows; ii++)  /* count starting with diagonal terms */
+  /* count starting with diagonal terms */
+  for (cs_lnum_t ii = 0; ii < ms->n_rows; ii++)
     ccount[ii] = 1;
 
   if (edges != nullptr) {
 
-    face_cel_p = (const cs_lnum_t *restrict)edges;
-
-    for (face_id = 0; face_id < n_edges; face_id++) {
-      ii = *face_cel_p++;
-      jj = *face_cel_p++;
+    for (cs_lnum_t edge_id = 0; edge_id < n_edges; edge_id++) {
+      cs_lnum_t ii = edges[edge_id][0];
+      cs_lnum_t jj = edges[edge_id][1];
       if (ii < ms->n_rows)
         ccount[ii] += 1;
       if (jj < ms->n_rows)
@@ -681,7 +677,7 @@ _create_struct_csr(cs_alloc_mode_t     alloc_mode,
   } /* if (edges != nullptr) */
 
   ms->_row_index[0] = 0;
-  for (ii = 0; ii < ms->n_rows; ii++) {
+  for (cs_lnum_t ii = 0; ii < ms->n_rows; ii++) {
     ms->_row_index[ii+1] = ms->_row_index[ii] + ccount[ii];
     ccount[ii] = 1; /* pre-count for diagonal terms */
   }
@@ -691,17 +687,15 @@ _create_struct_csr(cs_alloc_mode_t     alloc_mode,
   CS_MALLOC_HD(ms->_col_id, (ms->_row_index[ms->n_rows]), cs_lnum_t, alloc_mode);
   ms->col_id = nullptr;
 
-  for (ii = 0; ii < ms->n_rows; ii++) {    /* diagonal terms */
+  for (cs_lnum_t ii = 0; ii < ms->n_rows; ii++) {    /* diagonal terms */
     ms->_col_id[ms->_row_index[ii]] = ii;
   }
 
   if (edges != nullptr) {                   /* non-diagonal terms */
 
-    face_cel_p = (const cs_lnum_t *restrict)edges;
-
-    for (face_id = 0; face_id < n_edges; face_id++) {
-      ii = *face_cel_p++;
-      jj = *face_cel_p++;
+    for (cs_lnum_t edge_id = 0; edge_id < n_edges; edge_id++) {
+      cs_lnum_t ii = edges[edge_id][0];
+      cs_lnum_t jj = edges[edge_id][1];
       if (ii < ms->n_rows) {
         ms->_col_id[ms->_row_index[ii] + ccount[ii]] = jj;
         ccount[ii] += 1;
@@ -1086,10 +1080,9 @@ static void
 _set_xa_coeffs_csr_direct(cs_matrix_t       *matrix,
                           bool               symmetric,
                           cs_lnum_t          n_edges,
-                          const cs_lnum_2_t *edges,
-                          const cs_real_t *restrict xa)
+                          const cs_lnum_2_t *restrict edges,
+                          const cs_real_t   *restrict xa)
 {
-  cs_lnum_t  ii, jj, face_id;
   auto mc = static_cast<cs_matrix_coeff_t  *>( matrix->coeffs);
 
   auto ms = static_cast<const cs_matrix_struct_csr_t *>(matrix->structure);
@@ -1098,45 +1091,43 @@ _set_xa_coeffs_csr_direct(cs_matrix_t       *matrix,
 
   assert(edges != nullptr);
 
-  const cs_lnum_t *restrict edges_p
-    = (const cs_lnum_t *restrict)(edges);
-
   if (symmetric == false) {
 
-    for (face_id = 0; face_id < n_edges; face_id++) {
-      cs_lnum_t kk, ll;
-      ii = *edges_p++;
-      jj = *edges_p++;
+    for (cs_lnum_t edge_id = 0; edge_id < n_edges; edge_id++) {
+      cs_lnum_t ii = edges[edge_id][0];
+      cs_lnum_t jj = edges[edge_id][1];
       if (ii < ms->n_rows) {
+        cs_lnum_t kk;
         for (kk = ms->row_index[ii]; ms->col_id[kk] != jj; kk++);
-        mc->_val[kk] = xa[2*face_id];
+        mc->_val[kk] = xa[2*edge_id];
       }
       if (jj < ms->n_rows) {
+        cs_lnum_t ll;
         for (ll = ms->row_index[jj]; ms->col_id[ll] != ii; ll++);
-        mc->_val[ll] = xa[2*face_id + 1];
+        mc->_val[ll] = xa[2*edge_id + 1];
       }
     }
 
   }
   else { /* if symmetric == true */
 
-    for (face_id = 0; face_id < n_edges; face_id++) {
-      cs_lnum_t kk, ll;
-      ii = *edges_p++;
-      jj = *edges_p++;
+    for (cs_lnum_t edge_id = 0; edge_id < n_edges; edge_id++) {
+      cs_lnum_t ii = edges[edge_id][0];
+      cs_lnum_t jj = edges[edge_id][1];
       if (ii < ms->n_rows) {
+        cs_lnum_t kk;
         for (kk = ms->row_index[ii]; ms->col_id[kk] != jj; kk++);
-        mc->_val[kk] = xa[face_id];
+        mc->_val[kk] = xa[edge_id];
       }
       if (jj < ms->n_rows) {
+        cs_lnum_t ll;
         for (ll = ms->row_index[jj]; ms->col_id[ll] != ii; ll++);
-        mc->_val[ll] = xa[face_id];
+        mc->_val[ll] = xa[edge_id];
       }
 
     }
 
   } /* end of condition on coefficients symmetry */
-
 }
 
 /*----------------------------------------------------------------------------
@@ -1158,8 +1149,8 @@ static void
 _set_xa_coeffs_csr_increment(cs_matrix_t       *matrix,
                              bool               symmetric,
                              cs_lnum_t          n_edges,
-                             const cs_lnum_2_t *edges,
-                             const cs_real_t *restrict xa)
+                             const cs_lnum_2_t *restrict edges,
+                             const cs_real_t   *restrict xa)
 {
   cs_lnum_t  ii, jj, face_id;
   auto mc = static_cast<cs_matrix_coeff_t  *>(matrix->coeffs);
@@ -1170,15 +1161,12 @@ _set_xa_coeffs_csr_increment(cs_matrix_t       *matrix,
 
   assert(edges != nullptr);
 
-  const cs_lnum_t *restrict edges_p
-    = (const cs_lnum_t *restrict)(edges);
-
   if (symmetric == false) {
 
     for (face_id = 0; face_id < n_edges; face_id++) {
       cs_lnum_t kk, ll;
-      ii = *edges_p++;
-      jj = *edges_p++;
+      ii = edges[face_id][0];
+      jj = edges[face_id][1];
       if (ii < ms->n_rows) {
         for (kk = ms->row_index[ii]; ms->col_id[kk] != jj; kk++);
         mc->_val[kk] += xa[2*face_id];
@@ -1194,8 +1182,8 @@ _set_xa_coeffs_csr_increment(cs_matrix_t       *matrix,
 
     for (face_id = 0; face_id < n_edges; face_id++) {
       cs_lnum_t kk, ll;
-      ii = *edges_p++;
-      jj = *edges_p++;
+      ii = edges[face_id][0];
+      jj = edges[face_id][1];
       if (ii < ms->n_rows) {
         for (kk = ms->row_index[ii]; ms->col_id[kk] != jj; kk++);
         mc->_val[kk] += xa[face_id];
@@ -1763,7 +1751,7 @@ static void
 _set_e_coeffs_msr_direct(cs_matrix_t        *matrix,
                          bool                symmetric,
                          cs_lnum_t           n_edges,
-                         const cs_lnum_2_t  *edges,
+                         const cs_lnum_2_t  *restrict edges,
                          const cs_real_t    *restrict xa)
 {
   cs_lnum_t  ii, jj, face_id;
@@ -1778,13 +1766,10 @@ _set_e_coeffs_msr_direct(cs_matrix_t        *matrix,
 
   if (symmetric == false) {
 
-    const cs_lnum_t *restrict edges_p
-      = (const cs_lnum_t *restrict)(edges);
-
     for (face_id = 0; face_id < n_edges; face_id++) {
       cs_lnum_t kk, ll;
-      ii = *edges_p++;
-      jj = *edges_p++;
+      ii = edges[face_id][0];
+      jj = edges[face_id][1];
       if (ii < ms->n_rows) {
         for (kk = ms_e->row_index[ii]; ms_e->col_id[kk] != jj; kk++);
         mc->_e_val[kk] = xa[2*face_id];
@@ -1798,13 +1783,10 @@ _set_e_coeffs_msr_direct(cs_matrix_t        *matrix,
   }
   else { /* if symmetric == true */
 
-    const cs_lnum_t *restrict edges_p
-      = (const cs_lnum_t *restrict)(edges);
-
     for (face_id = 0; face_id < n_edges; face_id++) {
       cs_lnum_t kk, ll;
-      ii = *edges_p++;
-      jj = *edges_p++;
+      ii = edges[face_id][0];
+      jj = edges[face_id][1];
       if (ii < ms_e->n_rows) {
         for (kk = ms_e->row_index[ii]; ms_e->col_id[kk] != jj; kk++);
         mc->_e_val[kk] = xa[face_id];
@@ -1837,7 +1819,7 @@ static void
 _set_e_coeffs_msr_direct_block(cs_matrix_t        *matrix,
                                bool                symmetric,
                                cs_lnum_t           n_edges,
-                               const cs_lnum_2_t  *edges,
+                               const cs_lnum_2_t  *restrict edges,
                                const cs_real_t    *restrict xa)
 {
   auto mc = static_cast<cs_matrix_coeff_t *>(matrix->coeffs);
@@ -1853,12 +1835,9 @@ _set_e_coeffs_msr_direct_block(cs_matrix_t        *matrix,
 
   if (symmetric == false) {
 
-    const cs_lnum_t *restrict edges_p
-      = (const cs_lnum_t *restrict)(edges);
-
     for (cs_lnum_t face_id = 0; face_id < n_edges; face_id++) {
-      cs_lnum_t ii = *edges_p++;
-      cs_lnum_t jj = *edges_p++;
+      cs_lnum_t ii = edges[face_id][0];
+      cs_lnum_t jj = edges[face_id][1];
       cs_lnum_t kk, ll;
       if (ii < ms_e->n_rows) {
         for (kk = ms_e->row_index[ii]; ms_e->col_id[kk] != jj; kk++);
@@ -1875,12 +1854,9 @@ _set_e_coeffs_msr_direct_block(cs_matrix_t        *matrix,
   }
   else { /* if symmetric == true */
 
-    const cs_lnum_t *restrict edges_p
-      = (const cs_lnum_t *restrict)(edges);
-
     for (cs_lnum_t face_id = 0; face_id < n_edges; face_id++) {
-      cs_lnum_t ii = *edges_p++;
-      cs_lnum_t jj = *edges_p++;
+      cs_lnum_t ii = edges[face_id][0];
+      cs_lnum_t jj = edges[face_id][1];
       cs_lnum_t kk, ll;
       if (ii < ms_e->n_rows) {
         for (kk = ms_e->row_index[ii]; ms_e->col_id[kk] != jj; kk++);
@@ -1918,7 +1894,7 @@ static void
 _set_e_coeffs_msr_increment(cs_matrix_t        *matrix,
                             bool                symmetric,
                             cs_lnum_t           n_edges,
-                            const cs_lnum_2_t  *edges,
+                            const cs_lnum_2_t  *restrict edges,
                             const cs_real_t    *restrict xa)
 {
   cs_lnum_t  ii, jj, face_id;
@@ -1933,13 +1909,10 @@ _set_e_coeffs_msr_increment(cs_matrix_t        *matrix,
 
   if (symmetric == false) {
 
-    const cs_lnum_t *restrict edges_p
-      = (const cs_lnum_t *restrict)(edges);
-
     for (face_id = 0; face_id < n_edges; face_id++) {
       cs_lnum_t kk, ll;
-      ii = *edges_p++;
-      jj = *edges_p++;
+      ii = edges[face_id][0];
+      jj = edges[face_id][1];
       if (ii < ms_e->n_rows) {
         for (kk = ms_e->row_index[ii]; ms_e->col_id[kk] != jj; kk++);
         mc->_e_val[kk] += xa[2*face_id];
@@ -1953,13 +1926,10 @@ _set_e_coeffs_msr_increment(cs_matrix_t        *matrix,
   }
   else { /* if symmetric == true */
 
-    const cs_lnum_t *restrict edges_p
-      = (const cs_lnum_t *restrict)(edges);
-
     for (face_id = 0; face_id < n_edges; face_id++) {
       cs_lnum_t kk, ll;
-      ii = *edges_p++;
-      jj = *edges_p++;
+      ii = edges[face_id][0];
+      jj = edges[face_id][1];
       if (ii < ms_e->n_rows) {
         for (kk = ms_e->row_index[ii]; ms_e->col_id[kk] != jj; kk++);
         mc->_e_val[kk] += xa[face_id];
@@ -1994,7 +1964,7 @@ static void
 _set_e_coeffs_msr_increment_block(cs_matrix_t        *matrix,
                                   bool                symmetric,
                                   cs_lnum_t           n_edges,
-                                  const cs_lnum_2_t  *edges,
+                                  const cs_lnum_2_t  *restrict edges,
                                   const cs_real_t    *restrict xa)
 {
   auto mc = static_cast<cs_matrix_coeff_t *>(matrix->coeffs);
@@ -2010,12 +1980,9 @@ _set_e_coeffs_msr_increment_block(cs_matrix_t        *matrix,
 
   if (symmetric == false) {
 
-    const cs_lnum_t *restrict edges_p
-      = (const cs_lnum_t *restrict)(edges);
-
     for (cs_lnum_t face_id = 0; face_id < n_edges; face_id++) {
-      cs_lnum_t ii = *edges_p++;
-      cs_lnum_t jj = *edges_p++;
+      cs_lnum_t ii = edges[face_id][0];
+      cs_lnum_t jj = edges[face_id][1];
       cs_lnum_t kk, ll;
       if (ii < ms_e->n_rows) {
         for (kk = ms_e->row_index[ii]; ms_e->col_id[kk] != jj; kk++);
@@ -2032,12 +1999,9 @@ _set_e_coeffs_msr_increment_block(cs_matrix_t        *matrix,
   }
   else { /* if symmetric == true */
 
-    const cs_lnum_t *restrict edges_p
-      = (const cs_lnum_t *restrict)(edges);
-
     for (cs_lnum_t face_id = 0; face_id < n_edges; face_id++) {
-      cs_lnum_t ii = *edges_p++;
-      cs_lnum_t jj = *edges_p++;
+      cs_lnum_t ii = edges[face_id][0];
+      cs_lnum_t jj = edges[face_id][1];
       cs_lnum_t kk, ll;
       if (ii < ms_e->n_rows) {
         for (kk = ms_e->row_index[ii]; ms_e->col_id[kk] != jj; kk++);
@@ -2932,7 +2896,7 @@ _create_struct_dist(cs_alloc_mode_t     alloc_mode,
                     cs_lnum_t           n_rows,
                     cs_lnum_t           n_cols_ext,
                     cs_lnum_t           n_edges,
-                    const cs_lnum_2_t  *edges)
+                    const cs_lnum_2_t  *restrict edges)
 {
   cs_matrix_struct_dist_t  *ms;
 
@@ -2958,8 +2922,6 @@ _create_struct_dist(cs_alloc_mode_t     alloc_mode,
 
   /* Count number of nonzero elements per row */
 
-  const cs_lnum_t *restrict edges_p = (const cs_lnum_t *restrict)edges;
-
   cs_lnum_t index_size = n_rows+1;
 
   CS_MALLOC_HD(ms->h._row_index, n_rows+1, cs_lnum_t, alloc_mode);
@@ -2972,8 +2934,8 @@ _create_struct_dist(cs_alloc_mode_t     alloc_mode,
     ms->e._row_index[ii] = 0;
 
   for (cs_lnum_t edge_id = 0; edge_id < n_edges; edge_id++) {
-    cs_lnum_t ii = *edges_p++;
-    cs_lnum_t jj = *edges_p++;
+    cs_lnum_t ii = edges[edge_id][0];
+    cs_lnum_t jj = edges[edge_id][1];
     if (ii < ms->n_rows) {
       if (jj < n_rows)
         ms->e._row_index[ii+1] += 1;
@@ -3013,11 +2975,9 @@ _create_struct_dist(cs_alloc_mode_t     alloc_mode,
 
   /* Build structure */
 
-  edges_p = (const cs_lnum_t *restrict)edges;
-
   for (cs_lnum_t edge_id = 0; edge_id < n_edges; edge_id++) {
-    cs_lnum_t ii = *edges_p++;
-    cs_lnum_t jj = *edges_p++;
+    cs_lnum_t ii = edges[edge_id][0];
+    cs_lnum_t jj = edges[edge_id][1];
     if (ii < ms->n_rows) {
       if (jj < n_rows) {
         ms->e._col_id[ms->e._row_index[ii] + ccount[ii*2]] = jj;
@@ -3073,7 +3033,7 @@ _create_struct_msr(cs_alloc_mode_t     alloc_mode,
                    cs_lnum_t           n_rows,
                    cs_lnum_t           n_cols_ext,
                    cs_lnum_t           n_edges,
-                   const cs_lnum_2_t  *edges)
+                   const cs_lnum_2_t  *restrict edges)
 {
   cs_matrix_struct_dist_t  *ms;
 
@@ -3103,11 +3063,9 @@ _create_struct_msr(cs_alloc_mode_t     alloc_mode,
 
   /* Count number of nonzero elements per row */
 
-  const cs_lnum_t *restrict edges_p = (const cs_lnum_t *restrict)edges;
-
   for (cs_lnum_t edge_id = 0; edge_id < n_edges; edge_id++) {
-    cs_lnum_t ii = *edges_p++;
-    cs_lnum_t jj = *edges_p++;
+    cs_lnum_t ii = edges[edge_id][0];
+    cs_lnum_t jj = edges[edge_id][1];
     if (ii < ms->n_rows)
       ms->e._row_index[ii+1] += 1;
     if (jj < ms->n_rows)
@@ -3130,11 +3088,9 @@ _create_struct_msr(cs_alloc_mode_t     alloc_mode,
 
   /* Build structure */
 
-  edges_p = (const cs_lnum_t *restrict)edges;
-
   for (cs_lnum_t edge_id = 0; edge_id < n_edges; edge_id++) {
-    cs_lnum_t ii = *edges_p++;
-    cs_lnum_t jj = *edges_p++;
+    cs_lnum_t ii = edges[edge_id][0];
+    cs_lnum_t jj = edges[edge_id][1];
     if (ii < ms->n_rows) {
       ms->e._col_id[ms->e._row_index[ii] + ccount[ii]] = jj;
       ccount[ii] += 1;
@@ -3546,7 +3502,7 @@ static void
 _set_e_coeffs_dist_increment(cs_matrix_t        *matrix,
                              bool                symmetric,
                              cs_lnum_t           n_edges,
-                             const cs_lnum_2_t  *edges,
+                             const cs_lnum_2_t  *restrict edges,
                              const cs_real_t    *restrict xa)
 {
   auto mc = static_cast<cs_matrix_coeff_t *>(matrix->coeffs);
@@ -3560,16 +3516,13 @@ _set_e_coeffs_dist_increment(cs_matrix_t        *matrix,
 
   assert(edges != nullptr);
 
-  const cs_lnum_t *restrict edges_p
-    = (const cs_lnum_t *restrict)(edges);
-
   const cs_lnum_t xa_stride = (symmetric) ? 1 : 2;
   const cs_lnum_t xa_sj = xa_stride / 2;
 
   for (cs_lnum_t face_id = 0; face_id < n_edges; face_id++) {
     cs_lnum_t kk, ll;
-    cs_lnum_t ii = *edges_p++;
-    cs_lnum_t jj = *edges_p++;
+    cs_lnum_t ii = edges[face_id][0];
+    cs_lnum_t jj = edges[face_id][1];
     if (ii < ms->n_rows) {
       if (jj < ms->n_rows) {
         for (kk = ms_e->row_index[ii]; ms_e->col_id[kk] != jj; kk++);
@@ -3612,7 +3565,7 @@ static void
 _set_e_coeffs_dist_increment_block(cs_matrix_t        *matrix,
                                    bool                symmetric,
                                    cs_lnum_t           n_edges,
-                                   const cs_lnum_2_t  *edges,
+                                   const cs_lnum_2_t  *restrict edges,
                                    const cs_real_t    *restrict xa)
 {
   auto mc = static_cast<cs_matrix_coeff_t *>(matrix->coeffs);
@@ -3628,15 +3581,12 @@ _set_e_coeffs_dist_increment_block(cs_matrix_t        *matrix,
 
   assert(edges != nullptr);
 
-  const cs_lnum_t *restrict edges_p
-    = (const cs_lnum_t *restrict)(edges);
-
   const cs_lnum_t xa_stride = (symmetric) ? b_size_2 : 2*b_size_2;
   const cs_lnum_t xa_sj = (symmetric) ? 0 : b_size_2;
 
   for (cs_lnum_t face_id = 0; face_id < n_edges; face_id++) {
-    cs_lnum_t ii = *edges_p++;
-    cs_lnum_t jj = *edges_p++;
+    cs_lnum_t ii = edges[face_id][0];
+    cs_lnum_t jj = edges[face_id][1];
     cs_lnum_t kk, ll;
     if (ii < ms->n_rows) {
       if (jj < ms->n_rows) {
@@ -4179,7 +4129,7 @@ cs_matrix_structure_create(cs_matrix_type_t       type,
                            cs_lnum_t              n_rows,
                            cs_lnum_t              n_cols_ext,
                            cs_lnum_t              n_edges,
-                           const cs_lnum_2_t     *edges,
+                           const cs_lnum_2_t     *restrict edges,
                            const cs_halo_t       *halo,
                            const cs_numbering_t  *numbering)
 {
@@ -6597,7 +6547,8 @@ cs_matrix_variant_build_list(const cs_matrix_t       *m,
 
     if (cs_get_device_id() > -1) {
       cs_matrix_struct_dist_t *ms
-        = (cs_matrix_struct_dist_t *)m->structure;
+        = static_cast<cs_matrix_struct_dist_t *>
+            (const_cast<void *>(m->structure));
       if (ms->e.col_id != nullptr) {
         _variant_add(_("MSR, with cuSPARSE"),
                      m->type,

@@ -1279,7 +1279,7 @@ cs_gradient_scalar_lsq_cuda(const cs_mesh_t              *m,
   const cs_real_3_t *restrict cell_cen
     = (const cs_real_3_t *)cs_get_device_ptr_const_pf(fvq->cell_cen);
   const cs_nreal_3_t *restrict b_face_u_normal
-    = (cs_real_3_t *)cs_get_device_ptr_const_pf(fvq->b_face_u_normal);
+    = (const cs_real_3_t *)cs_get_device_ptr_const_pf(fvq->b_face_u_normal);
   const cs_real_t *restrict b_face_surf
     = cs_get_device_ptr_const_pf(fvq->b_face_surf);
   const cs_real_t *restrict b_dist
@@ -1855,8 +1855,7 @@ cs_gradient_strided_gg_r_cuda
   cs_sync_or_copy_h2d(c_weight, n_cells_ext, device_id, stream,
                       &c_weight_d, &_c_weight_d);
 
-  grad_t *r_grad_d = (grad_t *)cs_get_device_ptr_const((const void *)r_grad);
-
+  const grad_t *r_grad_d = cs_get_device_ptr_const(r_grad);
   const cs_lnum_2_t *restrict i_face_cells = nullptr;
   const cs_lnum_t *restrict b_face_cells = nullptr;
   const cs_lnum_t *restrict cell_cells_idx = nullptr;

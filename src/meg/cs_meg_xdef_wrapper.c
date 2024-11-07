@@ -31,6 +31,7 @@
 #include "bft_error.h"
 #include "cs_array.h"
 #include "cs_base.h"
+#include "cs_mem.h"
 #include "cs_meg_prototypes.h"
 
 /*----------------------------------------------------------------------------
@@ -62,9 +63,9 @@ static void
 _meg_xdef_wrapper_finalize(void)
 {
   for (int i = 0; i < _n_meg_defs; i++)
-    BFT_FREE(_meg_defs[i]);
+    CS_FREE(_meg_defs[i]);
 
-  BFT_FREE(_meg_defs);
+  CS_FREE(_meg_defs);
   _n_meg_defs = 0;
 }
 
@@ -101,10 +102,10 @@ cs_meg_xdef_wrapper_add_input(const cs_meg_function_type_t type,
   int new_id = _n_meg_defs;
   _n_meg_defs += 1;
 
-  BFT_REALLOC(_meg_defs, _n_meg_defs, cs_meg_xdef_input_t *);
+  CS_REALLOC(_meg_defs, _n_meg_defs, cs_meg_xdef_input_t *);
 
   cs_meg_xdef_input_t *d = NULL;
-  BFT_MALLOC(d, 1, cs_meg_xdef_input_t);
+  CS_MALLOC(d, 1, cs_meg_xdef_input_t);
 
   d->type = type;
   d->z_id = z_id;
@@ -173,7 +174,7 @@ cs_meg_xdef_wrapper(cs_real_t         time,
     if (dense_output)
       meg_vals = retval;
     else
-      BFT_MALLOC(meg_vals, cs_glob_mesh->n_cells * _input->stride, cs_real_t);
+      CS_MALLOC(meg_vals, cs_glob_mesh->n_cells * _input->stride, cs_real_t);
   }
 
   switch(_input->type) {
@@ -196,7 +197,7 @@ cs_meg_xdef_wrapper(cs_real_t         time,
                                   CS_ARRAY_SUBSET_OUT,
                                   meg_vals,
                                   retval);
-        BFT_FREE(meg_vals);
+        CS_FREE(meg_vals);
       }
     }
     break;
@@ -229,7 +230,7 @@ cs_meg_xdef_wrapper(cs_real_t         time,
                                   CS_ARRAY_SUBSET_OUT,
                                   meg_vals,
                                   retval);
-        BFT_FREE(meg_vals);
+        CS_FREE(meg_vals);
       }
     }
     break;
@@ -252,7 +253,7 @@ cs_meg_xdef_wrapper(cs_real_t         time,
                                   CS_ARRAY_SUBSET_OUT,
                                   meg_vals,
                                   retval);
-        BFT_FREE(meg_vals);
+        CS_FREE(meg_vals);
       }
     }
     break;
@@ -271,7 +272,7 @@ cs_meg_xdef_wrapper(cs_real_t         time,
                                   CS_ARRAY_SUBSET_OUT,
                                   meg_vals,
                                   retval);
-        BFT_FREE(meg_vals);
+        CS_FREE(meg_vals);
       }
     }
     break;

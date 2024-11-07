@@ -341,9 +341,9 @@ _smoothe(const cs_mesh_t              *m,
   cs_real_t *restrict volume = mq->cell_vol;
   cs_real_t *restrict surfn  = mq->i_face_surf;
 
-  cs_real_3_t *restrict surfac = (cs_real_3_t *restrict )mq->i_face_normal;
-  cs_real_3_t *restrict diipf  = (cs_real_3_t *restrict )mq->diipf;
-  cs_real_3_t *restrict djjpf  = (cs_real_3_t *restrict )mq->djjpf;
+  cs_real_3_t *restrict surfac = (cs_real_3_t *)mq->i_face_normal;
+  cs_real_3_t *restrict diipf  = (cs_real_3_t *)mq->diipf;
+  cs_real_3_t *restrict djjpf  = (cs_real_3_t *)mq->djjpf;
 
   double d_tau = 0.1; /* Sharpening interface on 5 cells (0.1 for 3 cells) */
   /* User Intialization Triple line model */
@@ -1061,7 +1061,7 @@ cs_vof_surface_tension(const cs_mesh_t             *m,
 
   const cs_real_t *restrict pond = mq->weight;
 
-  cs_real_3_t *restrict surfac = (cs_real_3_t *restrict )mq->i_face_normal;
+  cs_real_3_t *restrict surfac = (cs_real_3_t *)mq->i_face_normal;
   cs_real_3_t *restrict dofij = (cs_real_3_t *)mq->dofij;
 
   const cs_equation_param_t *eqp_volf

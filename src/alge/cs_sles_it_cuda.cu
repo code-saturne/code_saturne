@@ -984,6 +984,32 @@ _gcr_update_vx(cs_lnum_t                      n_rows,
   }
 }
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Copy data from host to device.
+ *
+ * This is simply a wrapper over cudaMemcpy.
+ *
+ * A safety check is added.
+ *
+ * \param [out]  dst        pointer to data
+ * \param [in]   size       size of data to copy
+ * \param [in]   device_id  CUDA device id
+ * \param [in]   stream     size of data to copy
+ *
+ * \returns pointer to allocated memory.
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_prefetch_h2d(const void   *dst,
+              size_t        size,
+              int           device_id,
+              cudaStream_t  stream)
+{
+  CS_CUDA_CHECK(cudaMemPrefetchAsync(dst, size, device_id, stream));
+}
+
 /*----------------------------------------------------------------------------
  * Syncronize a reduction sum globally.
  *
@@ -1251,16 +1277,19 @@ cs_sles_it_cuda_jacobi(cs_sles_it_t              *c,
   /* Prefetch in case it is needed; actually, the reported allocation
      mode may be incorrect if the array are sub-arrays of a greater allocation,
      such as for multigrid, but in this case no prefetching should be needed,
-     or it should have bed done by the caller. */
+     or it should have been done by the caller. */
   {
+    cudaStream_t stream_pf = cs_cuda_get_stream_prefetch();
     cs_alloc_mode_t amode_vx = cs_check_device_ptr(vx);
     cs_alloc_mode_t amode_rhs = cs_check_device_ptr(rhs);
+    int device_id;
+    cudaGetDevice(&device_id);
 
     if (amode_vx == CS_ALLOC_HOST_DEVICE_SHARED && vx_ini == vx)
-      cs_cuda_prefetch_h2d(vx, vec_size);
+      _prefetch_h2d(vx, vec_size, device_id, stream_pf);
 
     if (amode_rhs == CS_ALLOC_HOST_DEVICE_SHARED)
-      cs_cuda_prefetch_h2d(rhs, vec_size);
+      _prefetch_h2d(rhs, vec_size, device_id, stream_pf);
   }
 
   const cs_real_t  *__restrict__ ad
@@ -1491,14 +1520,17 @@ cs_sles_it_cuda_block_jacobi(cs_sles_it_t              *c,
      such as for multigrid, but in this case no prefetching should be needed,
      or it should have bed done by the caller. */
   {
+    cudaStream_t stream_pf = cs_cuda_get_stream_prefetch();
     cs_alloc_mode_t amode_vx = cs_check_device_ptr(vx);
     cs_alloc_mode_t amode_rhs = cs_check_device_ptr(rhs);
+    int device_id;
+    cudaGetDevice(&device_id);
 
     if (amode_vx == CS_ALLOC_HOST_DEVICE_SHARED && vx_ini == vx)
-      cs_cuda_prefetch_h2d(vx, vec_size);
+      _prefetch_h2d(vx, vec_size, device_id, stream_pf);
 
     if (amode_rhs == CS_ALLOC_HOST_DEVICE_SHARED)
-      cs_cuda_prefetch_h2d(rhs, vec_size);
+      _prefetch_h2d(rhs, vec_size, device_id, stream_pf);
   }
 
   const cs_real_t  *__restrict__ ad
@@ -1758,14 +1790,17 @@ cs_sles_it_cuda_fcg(cs_sles_it_t              *c,
      such as for multigrid, but in this case no prefetching should be needed,
      or it should have bed done by the caller. */
   {
+    cudaStream_t stream_pf = cs_cuda_get_stream_prefetch();
     cs_alloc_mode_t amode_vx = cs_check_device_ptr(vx);
     cs_alloc_mode_t amode_rhs = cs_check_device_ptr(rhs);
+    int device_id;
+    cudaGetDevice(&device_id);
 
     if (amode_vx == CS_ALLOC_HOST_DEVICE_SHARED && vx_ini == vx)
-      cs_cuda_prefetch_h2d(vx, vec_size);
+      _prefetch_h2d(vx, vec_size, device_id, stream_pf);
 
     if (amode_rhs == CS_ALLOC_HOST_DEVICE_SHARED)
-      cs_cuda_prefetch_h2d(rhs, vec_size);
+      _prefetch_h2d(rhs, vec_size, device_id, stream_pf);
   }
 
   {
@@ -1941,14 +1976,17 @@ cs_sles_it_cuda_gcr(cs_sles_it_t              *c,
      such as for multigrid, but in this case no prefetching should be needed,
      or it should have bed done by the caller. */
   {
+    cudaStream_t stream_pf = cs_cuda_get_stream_prefetch();
     cs_alloc_mode_t amode_vx = cs_check_device_ptr(vx);
     cs_alloc_mode_t amode_rhs = cs_check_device_ptr(rhs);
+    int device_id;
+    cudaGetDevice(&device_id);
 
     if (amode_vx == CS_ALLOC_HOST_DEVICE_SHARED && vx_ini == vx)
-      cs_cuda_prefetch_h2d(vx, vec_size);
+      _prefetch_h2d(vx, vec_size, device_id, stream_pf);
 
     if (amode_rhs == CS_ALLOC_HOST_DEVICE_SHARED)
-      cs_cuda_prefetch_h2d(rhs, vec_size);
+      _prefetch_h2d(rhs, vec_size, device_id, stream_pf);
   }
 
   double  residual = -1;

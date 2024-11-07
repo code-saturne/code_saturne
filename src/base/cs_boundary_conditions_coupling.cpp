@@ -37,6 +37,8 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
+#include "bft_mem.h"
+
 #include "cs_1d_wall_thermal.h"
 #include "cs_1d_wall_thermal_check.h"
 #include "cs_boundary_conditions.h"

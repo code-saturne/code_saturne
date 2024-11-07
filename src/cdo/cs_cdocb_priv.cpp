@@ -32,6 +32,7 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
+#include "bft_mem.h"
 #include "cs_param_saddle.h"
 #include "cs_param_sles.h"
 
@@ -54,7 +55,6 @@ BEGIN_C_DECLS
 
   \brief Common functions for CDO cell-based schemes which are not visible by
          default from user-defined functions
-
 */
 
 /*============================================================================

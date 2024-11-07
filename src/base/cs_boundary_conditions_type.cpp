@@ -36,6 +36,8 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
+#include "bft_mem.h"
+
 #include "cs_array.h"
 #include "cs_atmo.h"
 #include "cs_boundary_conditions.h"
@@ -129,8 +131,7 @@ cs_boundary_conditions_type(bool  init,
   const cs_mesh_t *mesh = cs_glob_mesh;
   const cs_mesh_quantities_t *fvq = cs_glob_mesh_quantities;
   const cs_lnum_t n_b_faces = mesh->n_b_faces;
-  const cs_lnum_t *restrict b_face_cells
-    = (const cs_lnum_t *restrict)mesh->b_face_cells;
+  const cs_lnum_t *restrict b_face_cells = mesh->b_face_cells;
   const cs_lnum_t n_cells_ext = mesh->n_cells_with_ghosts;
   const cs_real_3_t *cell_cen  = (const cs_real_3_t *)fvq->cell_cen;
   const cs_real_3_t *b_face_cog = (const cs_real_3_t *)fvq->b_face_cog;
@@ -616,7 +617,7 @@ cs_boundary_conditions_type(bool  init,
        As before, we chose the face closest to xyzp0 so as to
        be mesh numbering (and partitioning) independent. */
 
-    cs_lnum_t d0min = cs_math_infinite_r;
+    cs_real_t d0min = cs_math_infinite_r;
 
     cs_lnum_t ifadir = -1;
     for (cs_lnum_t f_id = 0; f_id < n_b_faces; f_id++) {

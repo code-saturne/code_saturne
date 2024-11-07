@@ -47,6 +47,8 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
+#include "bft_mem.h"
+
 #include "cs_ale.h"
 #include "cs_array.h"
 #include "cs_atmo.h"

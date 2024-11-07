@@ -35,6 +35,7 @@
 
 #if defined(__linux__) || defined(__linux) || defined(linux)
 #  define CS_FPE_TRAP
+#  undef _GNU_SOURCE
 #  define _GNU_SOURCE
 #endif
 

@@ -416,6 +416,10 @@ static cs_fluid_properties_t  _fluid_properties = {
  * Global variables
  *============================================================================*/
 
+#if   !(defined(__NVCC__) && defined(__CUDA_ARCH__)) \
+   && !defined(SYCL_LANGUAGE_VERSION) \
+   && !defined(HAVE_OPENMP_TARGET)
+
 /*! Ideal gas constant (\f$J.mol^{-1}.K^{-1}\f$) */
 
 const double cs_physical_constants_r = 8.31446261815324;
@@ -436,6 +440,8 @@ const double cs_physical_constants_stephan = 5.6703e-8;
 /*! Avogadro constant (mole definition) \f$N_A\f$ in \f$mol^{-1}\f$ */
 
 const double cs_physical_constants_avogadro = 6.02214076e23;
+
+#endif // !defined(HAVE_OPENMP_TARGET)
 
 /* Other physical constants/properties */
 

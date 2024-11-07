@@ -47,6 +47,7 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
+#include "bft_mem.h"
 #include "bft_printf.h"
 
 #include "cs_1d_wall_thermal.h"

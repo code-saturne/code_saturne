@@ -36,7 +36,9 @@
 #include <assert.h>
 #include <math.h>
 
-#if defined(__NVCC__) && defined(__CUDA_ARCH__)
+#if  (defined(__NVCC__) && defined(__CUDA_ARCH__)) \
+  || defined(SYCL_LANGUAGE_VERSION) \
+  || defined(HAVE_OPENMP_TARGET)
 #include <float.h>
 #endif
 
@@ -79,7 +81,9 @@ typedef enum {
 
 /* Numerical constants */
 
-#if defined(__NVCC__) && defined(__CUDA_ARCH__)
+#if  (defined(__NVCC__) && defined(__CUDA_ARCH__)) \
+  || defined(SYCL_LANGUAGE_VERSION) \
+  || defined(HAVE_OPENMP_TARGET)
 
 /* On GPU, global variables are usually not accessible. */
 
@@ -94,6 +98,15 @@ typedef enum {
 /* General constants accessible on CPU */
 
 extern const cs_real_t cs_math_zero_threshold;
+extern const cs_real_t cs_math_epzero;
+extern const cs_real_t cs_math_infinite_r;
+extern const cs_real_t cs_math_big_r;
+extern const cs_real_t cs_math_pi;
+
+#endif
+
+#if !(defined(__NVCC__) && defined(__CUDA_ARCH__))
+
 extern const cs_real_t cs_math_1ov3;
 extern const cs_real_t cs_math_2ov3;
 extern const cs_real_t cs_math_4ov3;
@@ -101,10 +114,6 @@ extern const cs_real_t cs_math_5ov3;
 extern const cs_real_t cs_math_1ov6;
 extern const cs_real_t cs_math_1ov12;
 extern const cs_real_t cs_math_1ov24;
-extern const cs_real_t cs_math_epzero;
-extern const cs_real_t cs_math_infinite_r;
-extern const cs_real_t cs_math_big_r;
-extern const cs_real_t cs_math_pi;
 
 /* Identity matrix in dimension 3 */
 static const cs_real_33_t cs_math_33_identity = {{1., 0., 0.,},

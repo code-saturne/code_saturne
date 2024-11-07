@@ -47,6 +47,7 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
+#include "bft_mem.h"
 #include "bft_printf.h"
 
 #include "cs_array.h"

@@ -36,11 +36,12 @@
 
 #include "assert.h"
 #include "bft_error.h"
-#include "bft_mem.h"
 #include "bft_printf.h"
 
 #include "cs_base.h"
 #include "cs_log.h"
+#include "cs_mem.h"
+#include "cs_mem_cuda_priv.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
@@ -103,12 +104,13 @@ bool cs_glob_cuda_allow_graph = false;
 static void
 finalize_streams_(void)
 {
+  cs_mem_cuda_set_prefetch_stream(0);
   cudaStreamDestroy(_cs_glob_stream_pf);
 
   for (int i = 0; i < _cs_glob_cuda_n_streams; i++)
     cudaStreamDestroy(_cs_glob_cuda_streams[i]);
 
-  BFT_FREE(_cs_glob_cuda_streams);
+  CS_FREE(_cs_glob_cuda_streams);
   _cs_glob_cuda_n_streams = 0;
 }
 
@@ -119,178 +121,6 @@ finalize_streams_(void)
  * host-device memory management functions from cs_base_accel.c, and
  * not directly by the user.
  *============================================================================*/
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Allocate n bytes of CUDA device memory.
- *
- * This function simply wraps cudaMalloc, which could probably be
- * directly called from C or C++, but whose use in such manner is not
- * well documented, and whose declaration in cuda_runtime.h requires
- * support of function attributes by compiler.
- *
- * A safety check is added.
- *
- * \param [in]  n          element size
- * \param [in]  var_name   allocated variable name string
- * \param [in]  file_name  name of calling source file
- * \param [in]  line_num   line number in calling source file
- *
- * \returns pointer to allocated memory.
- */
-/*----------------------------------------------------------------------------*/
-
-void *
-cs_cuda_mem_malloc_device(size_t        n,
-                          const char   *var_name,
-                          const char   *file_name,
-                          int           line_num)
-{
-  void *ptr = nullptr;
-
-  CS_CUDA_CHECK_CALL(cudaMalloc(&ptr, n), file_name, line_num);
-
-  return ptr;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Allocate n bytes of host memory using CUDA.
- *
- * This function simply wraps cudaMallocHost, which could probably be
- * directly called from C or C++, but whose use in such manner is not
- * well documented, and whose declaration in cuda_runtime.h requires
- * support of function attributes by compiler.
- *
- * A safety check is added.
- *
- * \param [in]  n          element size
- * \param [in]  var_name   allocated variable name string
- * \param [in]  file_name  name of calling source file
- * \param [in]  line_num   line number in calling source file
- *
- * \returns pointer to allocated memory.
- */
-/*----------------------------------------------------------------------------*/
-
-void *
-cs_cuda_mem_malloc_host(size_t        n,
-                        const char   *var_name,
-                        const char   *file_name,
-                        int           line_num)
-{
-  void *ptr = nullptr;
-
-  CS_CUDA_CHECK_CALL(cudaMallocHost(&ptr, n), file_name, line_num);
-
-  return ptr;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Allocate n bytes of CUDA managed memory.
- *
- * This function simply wraps cudaMallocManaged, which could probably be
- * directly called from C or C++, but whose use in such manner is not
- * well documented, and whose declaration in cuda_runtime.h requires
- * support of function attributes by compiler.
- *
- * A safety check is added.
- *
- * \param [in]  n          element size
- * \param [in]  var_name   allocated variable name string
- * \param [in]  file_name  name of calling source file
- * \param [in]  line_num   line number in calling source file
- *
- * \returns pointer to allocated memory.
- */
-/*----------------------------------------------------------------------------*/
-
-void *
-cs_cuda_mem_malloc_managed(size_t        n,
-                           const char   *var_name,
-                           const char   *file_name,
-                           int           line_num)
-{
-  void *ptr = nullptr;
-
-  CS_CUDA_CHECK_CALL(cudaMallocManaged(&ptr, n), file_name, line_num);
-
-#if 0
-  CS_CUDA_CHECK_CALL(cudaMemPrefetchAsync (*pointer, size, cudaCpuDeviceId, \
-                                           _cs_glob_stream_pf),             \
-                     file_name, line_num);
-  CS_CUDA_CHECK_CALL(cudaDeviceSynchronize(), file_name, line_num);
-#endif
-
-  return ptr;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Free CUDA memory associated with a given pointer.
- *
- * This function simply wraps cudaFree, which could probably be
- * directly called from C or C++, but whose use in such manner is not
- * well documented, and whose declaration in cuda_runtime.h requires
- * support of function attributes by compiler.
- *
- * A safety check is added.
- *
- * \param [in]  p          pointer to device memory
- * \param [in]  var_name   allocated variable name string
- * \param [in]  file_name  name of calling source file
- * \param [in]  line_num   line number in calling source file
- *
- * \returns pointer to allocated memory.
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_cuda_mem_free(void         *p,
-                 const char   *var_name,
-                 const char   *file_name,
-                 int           line_num)
-{
-  CS_CUDA_CHECK_CALL(cudaFree(p), file_name, line_num);
-
-#if 0
-  CS_CUDA_CHECK_CALL((cudaDeviceSynchronize(), file_name, line_num);
-#endif
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Free CUDA-allocated host memory associated with a given pointer.
- *
- * This function simply wraps cudaFreeHost, which could probably be
- * directly called from C or C++, but whose use in such manner is not
- * well documented, and whose declaration in cuda_runtime.h requires
- * support of function attributes by compiler.
- *
- * A safety check is added.
- *
- * \param [in]  p          pointer to device memory
- * \param [in]  var_name   allocated variable name string
- * \param [in]  file_name  name of calling source file
- * \param [in]  line_num   line number in calling source file
- *
- * \returns pointer to allocated memory.
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_cuda_mem_free_host(void         *p,
-                      const char   *var_name,
-                      const char   *file_name,
-                      int           line_num)
-{
-  CS_CUDA_CHECK_CALL(cudaFreeHost(p), file_name, line_num);
-
-#if 0
-  CS_CUDA_CHECK_CALL((cudaDeviceSynchronize(), file_name, line_num);
-#endif
-}
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -389,52 +219,6 @@ cs_cuda_copy_d2h_async(void        *dst,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Copy data from host to device.
- *
- * This is simply a wrapper over cudaMemcpy.
- *
- * A safety check is added.
- *
- * \param [out]  dst   pointer to data
- * \param [in]   size  size of data to copy
- *
- * \returns pointer to allocated memory.
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_cuda_prefetch_h2d(const void  *dst,
-                     size_t       size)
-{
-  CS_CUDA_CHECK(cudaMemPrefetchAsync(dst, size, cs_glob_cuda_device_id, \
-                                     _cs_glob_stream_pf));
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Copy data from device to host.
- *
- * This is simply a wrapper over cudaMemcpy.
- *
- * A safety check is added.
- *
- * \param [in]  dst   pointer to data
- * \param [in]  size  size of data to copy
- *
- * \returns pointer to allocated memory.
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_cuda_prefetch_d2h(const void  *dst,
-                     size_t       size)
-{
-  CS_CUDA_CHECK(cudaMemPrefetchAsync(dst, size, cudaCpuDeviceId, \
-                                     _cs_glob_stream_pf));
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief Copy data from device to device.
  *
  * This is simply a wrapper over cudaMemcpy.
@@ -522,44 +306,6 @@ cs_cuda_is_device_ptr(const void  *ptr)
   return false;
 }
 
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Advise memory system that a given allocation will be mostly read.
- *
- * \param [in]    ptr   pointer to allocation
- * \param [size]  size   associated data size
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_cuda_mem_set_advise_read_mostly(const void  *ptr,
-                                   size_t       size)
-{
-  CS_CUDA_CHECK(cudaMemAdvise(ptr,
-                              size,
-                              cudaMemAdviseSetReadMostly,
-                              cs_glob_cuda_device_id))
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Advise memory system that a given allocation will be mostly read.
- *
- * \param [in]    ptr   pointer to allocation
- * \param [size]  size   associated data size
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_cuda_mem_unset_advise_read_mostly(const void  *ptr,
-                                     size_t       size)
-{
-  CS_CUDA_CHECK(cudaMemAdvise(ptr,
-                              size,
-                              cudaMemAdviseUnsetReadMostly,
-                              cs_glob_cuda_device_id))
-}
-
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 END_C_DECLS
@@ -605,13 +351,29 @@ cs_cuda_get_stream(int  stream_id)
     _cs_glob_cuda_n_streams = 0;
   }
 
-  BFT_REALLOC(_cs_glob_cuda_streams, stream_id+1, cudaStream_t);
+  CS_REALLOC(_cs_glob_cuda_streams, stream_id+1, cudaStream_t);
   for (int i = _cs_glob_cuda_n_streams; i < stream_id+1; i++)
     cudaStreamCreate(&_cs_glob_cuda_streams[i]);
 
   _cs_glob_cuda_n_streams = stream_id+1;
 
   return _cs_glob_cuda_streams[stream_id];
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Return stream handle used for prefetching.
+ *
+ * By default, a single stream is created specifically for prefetching.
+ *
+ * \returns handle to prefetching stream
+ */
+/*----------------------------------------------------------------------------*/
+
+cudaStream_t
+cs_cuda_get_stream_prefetch(void)
+{
+  return _cs_glob_stream_pf;
 }
 
 #endif /* defined(__CUDACC__) */
@@ -781,8 +543,10 @@ cs_base_cuda_select_default_device(void)
   cs_glob_cuda_n_mp = prop.multiProcessorCount;
 
   /* Create default stream for prefetching */
-  if (_cs_glob_stream_pf == 0)
+  if (_cs_glob_stream_pf == 0) {
     cudaStreamCreate(&_cs_glob_stream_pf);
+    cs_mem_cuda_set_prefetch_stream(_cs_glob_stream_pf);
+  }
 
   /* Finally, determine whether we may use graphs for some kernel launches. */
 

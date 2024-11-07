@@ -46,6 +46,7 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
+#include "bft_mem.h"
 #include "bft_printf.h"
 
 #include "cs_boundary_conditions.h"

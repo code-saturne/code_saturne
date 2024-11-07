@@ -228,7 +228,8 @@ cs_base_headers.h \
 cs_headers.h
 
 noinst_HEADERS = \
-cs_boundary_conditions_priv.h
+cs_boundary_conditions_priv.h \
+cs_mem_cuda_priv.h
 
 if HAVE_CUDA
 pkginclude_HEADERS += \
@@ -294,7 +295,8 @@ endif
 if HAVE_CUDA
 libcscore_a_SOURCES += \
 cs_base_cuda.cu \
-cs_halo_cuda.cu
+cs_halo_cuda.cu \
+cs_mem_cuda_priv.cu
 endif
 
 libcsbase_a_SOURCES = \
