@@ -49,7 +49,7 @@
  *----------------------------------------------------------------------------*/
 
 #include "bft_error.h"
-#include "bft_mem.h"
+#include "cs_mem.h"
 
 #if defined(HAVE_CUDA)
 #include "cs_base_cuda.h"
@@ -167,7 +167,7 @@ _realloc_host(void            *host_ptr,
 static void
 _initialize(void)
 {
-  bft_mem_alternative_set(_realloc_host, cs_free_hd);
+  cs_mem_alternative_set(_realloc_host, cs_free_hd);
 
   _initialized = true;
 
@@ -510,7 +510,7 @@ cs_malloc_hd(cs_alloc_mode_t   mode,
     .mode = mode};
 
   if (mode < CS_ALLOC_HOST_DEVICE_PINNED) {
-    me.host_ptr = bft_mem_malloc(ni, size, var_name, nullptr, 0);
+    me.host_ptr = cs_mem_malloc(ni, size, var_name, nullptr, 0);
   }
 
   // Device allocation will be postponed later thru call to
@@ -586,8 +586,8 @@ cs_malloc_hd(cs_alloc_mode_t   mode,
 #endif
 
   if (file_name != nullptr)
-    bft_mem_update_block_info(var_name, file_name, line_num,
-                              nullptr, &me);
+    cs_mem_update_block_info(var_name, file_name, line_num,
+                             nullptr, &me);
 
   /* Return pointer to allocated memory */
 
@@ -650,7 +650,7 @@ cs_realloc_hd(void            *ptr,
     return nullptr;
   }
 
-  cs_mem_block_t me = bft_mem_get_block_info_try(ptr);
+  cs_mem_block_t me = cs_mem_get_block_info_try(ptr);
 
   if (new_size == me.size && mode == me.mode) {
     if (me.host_ptr != nullptr)
@@ -664,8 +664,8 @@ cs_realloc_hd(void            *ptr,
 
   if (   me_old.mode <= CS_ALLOC_HOST_DEVICE
       && me.mode <= CS_ALLOC_HOST_DEVICE) {
-    me.host_ptr = bft_mem_realloc(me_old.host_ptr, ni, size,
-                                  var_name, nullptr, 0);
+    me.host_ptr = cs_mem_realloc(me_old.host_ptr, ni, size,
+                                 var_name, nullptr, 0);
     me.size = new_size;
     ret_ptr = me.host_ptr;
 
@@ -716,8 +716,8 @@ cs_realloc_hd(void            *ptr,
   }
 
   if (file_name != nullptr)
-    bft_mem_update_block_info(var_name, file_name, line_num,
-                              &me_old, &me);
+    cs_mem_update_block_info(var_name, file_name, line_num,
+                             &me_old, &me);
 
   return ret_ptr;
 }
@@ -745,10 +745,10 @@ cs_free_hd(void        *ptr,
   if (ptr == nullptr)
     return;
 
-  cs_mem_block_t me = bft_mem_get_block_info_try(ptr);
+  cs_mem_block_t me = cs_mem_get_block_info_try(ptr);
 
   if (me.mode < CS_ALLOC_HOST_DEVICE_PINNED)
-    bft_mem_free(me.host_ptr, var_name, nullptr, 0);
+    cs_mem_free(me.host_ptr, var_name, nullptr, 0);
 
   else if (me.host_ptr != nullptr) {
 
@@ -790,8 +790,8 @@ cs_free_hd(void        *ptr,
   }
 
   if (file_name != nullptr)
-    bft_mem_update_block_info(var_name, file_name, line_num,
-                              &me, nullptr);
+    cs_mem_update_block_info(var_name, file_name, line_num,
+                             &me, nullptr);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -816,7 +816,7 @@ cs_get_device_ptr(void  *ptr)
   if (ptr == nullptr)
     return nullptr;
 
-  cs_mem_block_t me = bft_mem_get_block_info_try(ptr);
+  cs_mem_block_t me = cs_mem_get_block_info_try(ptr);
   if (me.mode == CS_ALLOC_HOST) {
     bft_error(__FILE__, __LINE__, 0,
               _("%s: %p has no device association."), __func__, ptr);
@@ -860,8 +860,8 @@ cs_get_device_ptr(void  *ptr)
 
 #endif
 
-      bft_mem_update_block_info("me.device_ptr", __FILE__, __LINE__,
-                                &me_old, &me);
+      cs_mem_update_block_info("me.device_ptr", __FILE__, __LINE__,
+                               &me_old, &me);
     }
   }
 
@@ -890,7 +890,7 @@ cs_get_device_ptr_const(const void  *ptr)
   if (ptr == nullptr)
     return nullptr;
 
-  cs_mem_block_t me = bft_mem_get_block_info_try(ptr);
+  cs_mem_block_t me = cs_mem_get_block_info_try(ptr);
   if (me.mode == CS_ALLOC_HOST) {
     bft_error(__FILE__, __LINE__, 0,
               _("%s: %p has no device association."), __func__, ptr);
@@ -928,8 +928,8 @@ cs_get_device_ptr_const(const void  *ptr)
 
 #endif
 
-      bft_mem_update_block_info("me.device_ptr", __FILE__, __LINE__,
-                                &me_old, &me);
+      cs_mem_update_block_info("me.device_ptr", __FILE__, __LINE__,
+                               &me_old, &me);
       cs_sync_h2d(ptr);
 
     }
@@ -961,7 +961,7 @@ cs_get_device_ptr_const_pf(const void  *ptr)
   if (ptr == nullptr)
     return nullptr;
 
-  cs_mem_block_t me = bft_mem_get_block_info_try(ptr);
+  cs_mem_block_t me = cs_mem_get_block_info_try(ptr);
   if (me.mode == CS_ALLOC_HOST) {
     bft_error(__FILE__, __LINE__, 0,
               _("%s: %p has no device association."), __func__, ptr);
@@ -999,8 +999,8 @@ cs_get_device_ptr_const_pf(const void  *ptr)
 
 #endif
 
-      bft_mem_update_block_info("me.device_ptr", __FILE__, __LINE__,
-                                &me_old, &me);
+      cs_mem_update_block_info("me.device_ptr", __FILE__, __LINE__,
+                               &me_old, &me);
       cs_sync_h2d(ptr);
 
     }
@@ -1030,7 +1030,7 @@ cs_get_device_ptr_const_pf(const void  *ptr)
 cs_alloc_mode_t
 cs_check_device_ptr(const void  *ptr)
 {
-  cs_mem_block_t me = bft_mem_get_block_info_try(ptr);
+  cs_mem_block_t me = cs_mem_get_block_info_try(ptr);
 
   return me.mode;
 }
@@ -1056,7 +1056,7 @@ cs_associate_device_ptr(void    *host_ptr,
                         size_t   ni,
                         size_t   size)
 {
-  cs_mem_block_t  me_old = bft_mem_get_block_info_try(host_ptr);
+  cs_mem_block_t  me_old = cs_mem_get_block_info_try(host_ptr);
 
   if (me_old.mode == CS_ALLOC_HOST) {
 
@@ -1066,8 +1066,8 @@ cs_associate_device_ptr(void    *host_ptr,
       .size = ni * size,
       .mode = CS_ALLOC_HOST_DEVICE};
 
-    bft_mem_update_block_info("me.host_ptr", __FILE__, __LINE__,
-                              &me_old, &me);
+    cs_mem_update_block_info("me.host_ptr", __FILE__, __LINE__,
+                             &me_old, &me);
 
   }
 
@@ -1088,7 +1088,7 @@ cs_associate_device_ptr(void    *host_ptr,
 void
 cs_disassociate_device_ptr(void  *host_ptr)
 {
-  cs_mem_block_t me = bft_mem_get_block_info_try(host_ptr);
+  cs_mem_block_t me = cs_mem_get_block_info_try(host_ptr);
 
   if (   me.device_ptr != nullptr
       && (   me.mode == CS_ALLOC_HOST_DEVICE
@@ -1113,8 +1113,8 @@ cs_disassociate_device_ptr(void  *host_ptr)
 
     me.device_ptr = nullptr;
 
-    bft_mem_update_block_info("me.device_ptr", __FILE__, __LINE__,
-                              &me_old, &me);
+    cs_mem_update_block_info("me.device_ptr", __FILE__, __LINE__,
+                             &me_old, &me);
   }
 }
 
@@ -1145,7 +1145,7 @@ cs_set_alloc_mode(void             **host_ptr,
   if (_host_ptr == nullptr)
     return;
 
-  cs_mem_block_t me = bft_mem_get_block_info(_host_ptr);
+  cs_mem_block_t me = cs_mem_get_block_info(_host_ptr);
 
   if (mode != me.mode) {
 
@@ -1194,7 +1194,7 @@ cs_mem_advise_set_read_mostly(void  *ptr)
   if (ptr == nullptr)
     return;
 
-  cs_mem_block_t me = bft_mem_get_block_info_try(ptr);
+  cs_mem_block_t me = cs_mem_get_block_info_try(ptr);
 
   if (me.mode == CS_ALLOC_HOST_DEVICE_SHARED) {
 
@@ -1221,7 +1221,7 @@ cs_mem_advise_unset_read_mostly(void  *ptr)
   if (ptr == nullptr)
     return;
 
-  cs_mem_block_t me = bft_mem_get_block_info_try(ptr);
+  cs_mem_block_t me = cs_mem_get_block_info_try(ptr);
 
   if (me.mode == CS_ALLOC_HOST_DEVICE_SHARED) {
 
@@ -1258,7 +1258,7 @@ cs_sync_h2d(const void  *ptr)
   if (ptr == nullptr)
     return;
 
-  cs_mem_block_t me = bft_mem_get_block_info(ptr);
+  cs_mem_block_t me = cs_mem_get_block_info(ptr);
 
   if (me.device_ptr == nullptr)
     me.device_ptr = const_cast<void *>(cs_get_device_ptr_const(ptr));
@@ -1361,7 +1361,7 @@ cs_sync_d2h(void  *ptr)
   if (ptr == nullptr)
     return;
 
-  cs_mem_block_t me = bft_mem_get_block_info(ptr);
+  cs_mem_block_t me = cs_mem_get_block_info(ptr);
 
   switch (me.mode) {
 
@@ -1461,7 +1461,7 @@ cs_sync_d2h_if_needed(void  *ptr)
   if (ptr == nullptr)
     return;
 
-  cs_mem_block_t me = bft_mem_get_block_info_try(ptr);
+  cs_mem_block_t me = cs_mem_get_block_info_try(ptr);
 
   switch (me.mode) {
 
