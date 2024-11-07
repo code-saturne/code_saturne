@@ -66,73 +66,19 @@ procedure() :: atlecm, atlecc, atleca
 
 integer          imode, iel
 integer          k,ii, isc
-integer          fid_axz
-double precision d2s3
-double precision zent,xuent,xvent, xwent, xkent,xeent,tpent,qvent,ncent
+double precision zent
 double precision xcent
-double precision vel_dir(3), shear_dir(3)
 
 type(var_cal_opt) :: vcopt_p, vcopt_u
 
-double precision, dimension(:,:), pointer :: vel
-double precision, dimension(:), pointer :: cvar_k, cvar_ep, cvar_phi
-double precision, dimension(:), pointer :: cvar_fb, cvar_omg, cvar_nusa
-double precision, dimension(:,:), pointer :: cvar_rij
 double precision, dimension(:), pointer :: cvar_despgi, cvar_sc
-double precision, dimension(:), pointer :: cvar_scalt, cvar_totwt, cvar_ntdrp
-double precision, dimension(:,:), pointer :: cpro_met_vel
-double precision, dimension(:), pointer :: cpro_met_potemp
-double precision, dimension(:), pointer :: cpro_met_qv, cpro_met_nc
-double precision, dimension(:), pointer :: cpro_met_k, cpro_met_eps
-double precision, dimension(:), pointer :: cpro_met_axz
-
-!===============================================================================
-
-! Map field arrays
-call field_get_val_v(ivarfl(iu), vel)
-
-call field_get_key_struct_var_cal_opt(ivarfl(iu), vcopt_u)
-call field_get_key_struct_var_cal_opt(ivarfl(ipr), vcopt_p)
-
-call field_get_id_try('meteo_shear_anisotropy', fid_axz)
-if (fid_axz.ne.-1) then
-  call field_get_val_s(fid_axz, cpro_met_axz)
-endif
 
 !===============================================================================
 ! 1.  INITIALISATION VARIABLES LOCALES
 !===============================================================================
 
-d2s3 = 2.d0/3.d0
-
-if (itytur.eq.2) then
-  call field_get_val_s(ivarfl(ik), cvar_k)
-  call field_get_val_s(ivarfl(iep), cvar_ep)
-elseif (itytur.eq.3) then
-  call field_get_val_v(ivarfl(irij), cvar_rij)
-  call field_get_val_s(ivarfl(iep), cvar_ep)
-elseif (iturb.eq.50) then
-  call field_get_val_s(ivarfl(ik), cvar_k)
-  call field_get_val_s(ivarfl(iep), cvar_ep)
-  call field_get_val_s(ivarfl(iphi), cvar_phi)
-  call field_get_val_s(ivarfl(ifb), cvar_fb)
-elseif (iturb.eq.60) then
-  call field_get_val_s(ivarfl(ik), cvar_k)
-  call field_get_val_s(ivarfl(iomg), cvar_omg)
-elseif (iturb.eq.70) then
-  call field_get_val_s(ivarfl(inusa), cvar_nusa)
-endif
-
-if (imeteo.ge.2) then
-  call field_get_val_s_by_name('meteo_pot_temperature', cpro_met_potemp)
-  call field_get_val_v_by_name('meteo_velocity', cpro_met_vel)
-  call field_get_val_s_by_name('meteo_tke', cpro_met_k)
-  call field_get_val_s_by_name('meteo_eps', cpro_met_eps)
-  if (ippmod(iatmos).eq.2) then
-    call field_get_val_s_by_name('meteo_humidity', cpro_met_qv)
-    call field_get_val_s_by_name('meteo_drop_nb', cpro_met_nc)
-  endif
-endif
+call field_get_key_struct_var_cal_opt(ivarfl(iu), vcopt_u)
+call field_get_key_struct_var_cal_opt(ivarfl(ipr), vcopt_p)
 
 !===============================================================================
 ! 2. READING THE METEO PROFILE FILE (IF IMETEO = 1 DEFAULT OPTION):
@@ -249,187 +195,9 @@ if (ichemistry.ge.1) then
   endif
 endif
 
-
-!===============================================================================
-! 3. Dry atmosphere: default initialization of potential temperature
-!===============================================================================
-
-! Only if the simulation is not a restart from another one
-if (isuite.eq.0) then
-
-  if (initmeteo.eq.1) then
-
-    if (ippmod(iatmos).eq.1) then
-      call field_get_val_s(ivarfl(isca(iscalt)), cvar_scalt)
-    else if (ippmod(iatmos).eq.2) then
-      call field_get_val_s(ivarfl(isca(iscalt)), cvar_scalt)
-      call field_get_val_s(ivarfl(isca(iymw)), cvar_totwt)
-      call field_get_val_s(ivarfl(isca(intdrp)), cvar_ntdrp)
-    endif
-
-    if (imeteo.eq.0) then
-
-      if (ippmod(iatmos).eq.1) then
-        ! The thermal scalar is potential temperature
-        do iel = 1, ncel
-          cvar_scalt(iel) = t0
-        enddo
-      endif
-
-      if (ippmod(iatmos).eq.2) then
-        ! The thermal scalar is liquid potential temperature
-        do iel = 1, ncel
-          cvar_scalt(iel) = t0
-          cvar_totwt(iel) = 0.d0
-          cvar_ntdrp(iel) = 0.d0
-        enddo
-      endif
-
-    ! Only if meteo file is present:
-    else
-
-      ! Writing
-      if (vcopt_u%iwarni.ge.1.or.vcopt_p%iwarni.ge.1) then
-        write(nfecra,2000)
-      endif
-
-      do iel = 1, ncel
-
-        zent = xyzcen(3,iel)
-
-        ! Meteo file
-        if (imeteo.eq.1) then
-          call intprf &
-            (nbmetd, nbmetm,                                               &
-            zdmet, tmmet, umet , zent  , ttcabs, xuent )
-
-          call intprf &
-            (nbmetd, nbmetm,                                               &
-            zdmet, tmmet, vmet , zent  , ttcabs, xvent )
-
-          call intprf &
-            (nbmetd, nbmetm,                                               &
-            zdmet, tmmet, ekmet, zent  , ttcabs, xkent )
-
-          call intprf &
-            (nbmetd, nbmetm,                                               &
-            zdmet, tmmet, epmet, zent  , ttcabs, xeent )
-
-          xwent = 0.d0
-        else
-          xuent = cpro_met_vel(1, iel)
-          xvent = cpro_met_vel(2, iel)
-          xwent = cpro_met_vel(3, iel)
-          xkent = cpro_met_k(iel)
-          xeent = cpro_met_eps(iel)
-        endif
-
-        vel(1,iel) = xuent
-        vel(2,iel) = xvent
-        vel(3,iel) = xwent
-
-        ! Velocity direction normalized
-        vel_dir(1) = xuent
-        vel_dir(2) = xvent
-        vel_dir(3) = xwent
-        call vector_normalize(vel_dir, vel_dir)
-        shear_dir(1) = 0.d0
-        shear_dir(2) = 0.d0
-        if (fid_axz.eq.-1) then
-          shear_dir(3) = -sqrt(cmu) ! Rxz/k
-        else
-          shear_dir(3) = cpro_met_axz(iel) ! Rxz/k
-        endif
-
-        ! ITYTUR est un indicateur qui vaut ITURB/10
-        if    (itytur.eq.2) then
-
-          cvar_k(iel)  = xkent
-          cvar_ep(iel) = xeent
-
-        elseif (itytur.eq.3) then
-
-          cvar_rij(1,iel) = d2s3*xkent
-          cvar_rij(2,iel) = d2s3*xkent
-          cvar_rij(3,iel) = d2s3*xkent
-          ! Rxy
-          cvar_rij(4,iel) = xkent * &
-             (vel_dir(1)*shear_dir(2)+vel_dir(2)*shear_dir(1))
-          ! Ryz
-          cvar_rij(5,iel) = xkent * &
-             (vel_dir(2)*shear_dir(3)+vel_dir(3)*shear_dir(2))
-          ! Rxz
-          cvar_rij(6,iel) = xkent * &
-             (vel_dir(1)*shear_dir(3)+vel_dir(3)*shear_dir(1))
-          cvar_ep(iel)  = xeent
-
-        elseif (iturb.eq.50) then
-
-          cvar_k(iel)   = xkent
-          cvar_ep(iel)  = xeent
-          cvar_phi(iel) = d2s3
-          cvar_fb(iel)  = 0.d0
-
-        elseif (iturb.eq.60) then
-
-          cvar_k(iel)   = xkent
-          cvar_omg(iel) = xeent/cmu/xkent
-
-        elseif (iturb.eq.70) then
-
-          cvar_nusa(iel) = cmu*xkent**2/xeent
-
-        endif
-
-        if (ippmod(iatmos).eq.1) then
-          if (imeteo.eq.1) then
-            ! The thermal scalar is potential temperature
-            call intprf &
-              (nbmett, nbmetm,                                               &
-              ztmet, tmmet, tpmet, zent  , ttcabs, tpent )
-          else
-            tpent = cpro_met_potemp(iel)
-          endif
-
-          cvar_scalt(iel) = tpent
-        endif
-
-        if (ippmod(iatmos).eq.2) then
-
-          if (imeteo.eq.1) then
-            ! The thermal scalar is liquid potential temperature
-            call intprf(nbmett, nbmetm,   &
-                        ztmet, tmmet, tpmet, zent, ttcabs, tpent)
-
-            call intprf(nbmett, nbmetm,   &
-                        ztmet, tmmet, qvmet, zent, ttcabs, qvent)
-
-            call intprf(nbmett, nbmetm,  &
-                        ztmet, tmmet, ncmet, zent, ttcabs, ncent)
-          else
-            tpent = cpro_met_potemp(iel)
-            qvent = cpro_met_qv(iel)
-            ncent = cpro_met_nc(iel)
-          endif
-          cvar_scalt(iel) = tpent
-          cvar_totwt(iel) = qvent
-          cvar_ntdrp(iel) = ncent
-        endif
-
-      enddo
-
-    endif
-  endif
-
-endif
-
 !--------
 ! Formats
 !--------
-
- 2000 format(/,                                                   &
-'   ** INIT DYNAMIC VARIABLES FROM METEO FILE'                ,/,&
-'      --------------------------------------'                ,/)
 
  2001 format(/,                                                   &
 '   ** INIT ATMO CHEMISTRY VARIABLE FROM FILE'                ,/,&

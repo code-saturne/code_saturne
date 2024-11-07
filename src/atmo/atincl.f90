@@ -150,10 +150,6 @@ integer(c_int), pointer, save :: nbmetm
 !> on both pressure and velocity
 integer(c_int), pointer, save :: iautom(:)
 
-!> use meteo profile for variables initialization
-!> (0: not used; 1: used (default))
-integer, save :: initmeteo
-
 !> add a momentum source term based on the meteo profile
 !> for automatic open boundaries
 integer(c_int), pointer, save :: iatmst

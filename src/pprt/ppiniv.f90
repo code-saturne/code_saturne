@@ -65,6 +65,12 @@ implicit none
 
 interface
 
+  subroutine cs_atmo_fields_init0()  &
+    bind(C, name='cs_atmo_fields_init0')
+    use, intrinsic :: iso_c_binding
+    implicit none
+  end subroutine cs_atmo_fields_init0
+
   subroutine cs_ctwr_fields_init0()  &
     bind(C, name='cs_ctwr_fields_init0')
     use, intrinsic :: iso_c_binding
@@ -108,6 +114,7 @@ endif
 ! Atmospheric flows, first stage
 if (ippmod(iatmos).ge.0) then
   call atiniv0
+  call cs_atmo_fields_init0
 endif
 
 ! ---> Cooling towers
