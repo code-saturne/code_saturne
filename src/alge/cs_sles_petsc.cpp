@@ -390,7 +390,7 @@ _shell_get_row(Mat                          a,
 
   cs_matrix_get_row(sh->a, row, &(sh->r));
 
-  *cols = sh->r.col_id;
+  *cols = reinterpret_cast<const PetscInt *>(sh->r.col_id);
   *vals = sh->r.vals;
 }
 
@@ -1136,7 +1136,7 @@ cs_sles_petsc_setup(void               *context,
         col_gid[i] = grow_id[a_col_id[i]];
     }
 
-    const PetscInt  *row_index = static_cast<const PetscInt *>(a_row_index);
+    const PetscInt  *row_index = reinterpret_cast<const PetscInt *>(a_row_index);
     const PetscScalar  *val = static_cast<const PetscScalar *>(a_val);
     PetscInt     *_row_index = nullptr;
     PetscScalar  *_val = nullptr;
@@ -1192,16 +1192,23 @@ cs_sles_petsc_setup(void               *context,
 
     cs_matrix_get_csr_arrays(a, &a_row_index, &a_col_id, &a_val);
 
+    /* Use reinterpret_cast for cases where cs_lnum_t and PetscInt
+     * are of different sizes. The code is never called in this
+     * case, but we try to keep the compiler happy. */
+
+    cs_lnum_t *row_index = const_cast<cs_lnum_t *>(a_row_index);
+    cs_lnum_t *col_id    = const_cast<cs_lnum_t *>(col_id);
+
     /* Matrix */
 
     MatCreateSeqAIJWithArrays
-      (PETSC_COMM_SELF,                       /* Communicator */
-       n_rows,                                /* Number of local rows */
-       n_rows,                                /* Number of local columns */
-       const_cast<PetscInt *>(a_row_index),   /* Row indices */
-       const_cast<PetscInt *>(a_col_id),      /* Column indices */
-       const_cast<PetscScalar *>(a_val),      /* Matrix value */
-       &(sd->a));                             /* Petsc Matrix */
+      (PETSC_COMM_SELF,                          /* Communicator */
+       n_rows,                                   /* Number of local rows */
+       n_rows,                                   /* Number of local columns */
+       reinterpret_cast<PetscInt *>(row_index),  /* Row indices */
+       reinterpret_cast<PetscInt *>(col_id),     /* Column indices */
+       const_cast<PetscScalar *>(a_val),         /* Matrix value */
+       &(sd->a));                                /* Petsc Matrix */
 
   }
 
@@ -1308,8 +1315,8 @@ cs_sles_petsc_setup(void               *context,
         for (cs_lnum_t b_id = 0; b_id < n_rows; b_id++) {
           for (cs_lnum_t ii = 0; ii < db_size; ii++) {
             for (cs_lnum_t jj = 0; jj < db_size; jj++) {
-              PetscInt idxm[] = {grow_id[b_id*db_size + ii]};
-              PetscInt idxn[] = {grow_id[b_id*db_size + jj]};
+              PetscInt idxm[] = {(PetscInt)grow_id[b_id*db_size + ii]};
+              PetscInt idxn[] = {(PetscInt)grow_id[b_id*db_size + jj]};
               PetscScalar v[] = {d_val[b_id*b_size_2 + ii*b_size + jj]};
               MatSetValues(sd->a, m, idxm, n, idxn, v, INSERT_VALUES);
             }
@@ -1327,8 +1334,8 @@ cs_sles_petsc_setup(void               *context,
           for (cs_lnum_t i = a_row_index[row_id]; i < a_row_index[row_id+1]; i++) {
             cs_lnum_t c_id = a_col_id[i];
             for (cs_lnum_t kk = 0; kk < db_size; kk++) {
-              PetscInt idxm[] = {grow_id[row_id*db_size + kk]};
-              PetscInt idxn[] = {grow_id[c_id*db_size + kk]};
+              PetscInt idxm[] = {(PetscInt)grow_id[row_id*db_size + kk]};
+              PetscInt idxn[] = {(PetscInt)grow_id[c_id*db_size + kk]};
               PetscScalar v[] = {a_val[i]};
               MatSetValues(sd->a, m, idxm, n, idxn, v, INSERT_VALUES);
             }
@@ -1342,9 +1349,9 @@ cs_sles_petsc_setup(void               *context,
           for (cs_lnum_t i = a_row_index[row_id]; i < a_row_index[row_id+1]; i++) {
             cs_lnum_t c_id = a_col_id[i];
             for (cs_lnum_t ii = 0; ii < db_size; ii++) {
-              PetscInt idxm[] = {grow_id[row_id*db_size + ii]};
+              PetscInt idxm[] = {(PetscInt)grow_id[row_id*db_size + ii]};
               for (cs_lnum_t jj = 0; jj < db_size; jj++) {
-                PetscInt idxn[] = {grow_id[c_id*db_size + jj]};
+                PetscInt idxn[] = {(PetscInt)grow_id[c_id*db_size + jj]};
                 PetscScalar v[] = {d_val[i*b_size_2 + ii*b_size + jj]};
                 MatSetValues(sd->a, m, idxm, n, idxn, v, INSERT_VALUES);
               }
