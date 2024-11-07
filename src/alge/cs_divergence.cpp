@@ -171,7 +171,6 @@ cs_mass_flux(const cs_mesh_t             *m,
              cs_real_t          *restrict i_massflux,
              cs_real_t          *restrict b_massflux)
 {
-
   cs_real_3_t *coefav = (cs_real_3_t *)bc_coeffs_v->a;
   cs_real_33_t *coefbv = (cs_real_33_t *)bc_coeffs_v->b;
 
@@ -233,10 +232,10 @@ cs_mass_flux(const cs_mesh_t             *m,
 
   char var_name[64];
 
-  cs_real_3_t *qdm, *f_momentum;
-  cs_real_33_t *grdqdm;
-
   cs_field_t *f;
+
+  cs_real_33_t *grdqdm = nullptr;
+  cs_real_3_t *qdm, *f_momentum;
 
   CS_MALLOC_HD(qdm, n_cells_ext, cs_real_3_t, amode);
   CS_MALLOC_HD(f_momentum, n_b_faces, cs_real_3_t, amode);
@@ -334,7 +333,8 @@ cs_mass_flux(const cs_mesh_t             *m,
     }
 
     /* Velocity flux */
-  } else {
+  }
+  else {
 
     /* Without porosity */
     if (porosi == nullptr) {
@@ -344,14 +344,16 @@ cs_mass_flux(const cs_mesh_t             *m,
         }
       });
       /* With porosity */
-    } else if (porosi != nullptr && porosf == nullptr) {
+    }
+    else if (porosi != nullptr && porosf == nullptr) {
       ctx_c.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t cell_id) {
         for (int isou = 0; isou < 3; isou++) {
           qdm[cell_id][isou] = vel[cell_id][isou]*porosi[cell_id];
         }
       });
       /* With anisotropic porosity */
-    } else if (porosi != nullptr && porosf != nullptr) {
+    }
+    else if (porosi != nullptr && porosf != nullptr) {
       ctx_c.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t cell_id) {
         qdm[cell_id][0] = porosf[cell_id][0]*vel[cell_id][0]
                         + porosf[cell_id][3]*vel[cell_id][1]
@@ -432,7 +434,8 @@ cs_mass_flux(const cs_mesh_t             *m,
     }
 
     /* Velocity flux */
-  } else {
+  }
+  else {
 
     /* Without porosity */
     if (porosi == nullptr) {
@@ -611,17 +614,7 @@ cs_mass_flux(const cs_mesh_t             *m,
         b_massflux[face_id] += pfac*b_f_face_normal[face_id][isou];
       }
     });
-     /* Deallocation */
-    CS_FREE_HD(grdqdm);
   }
-
-  CS_FREE_HD(qdm);
-  CS_FREE_HD(f_momentum);
-  CS_FREE_HD(_i_f_face_factor);
-  CS_FREE_HD(_b_f_face_factor);
-
-  coefaq = nullptr;
-  cs_field_bc_coeffs_free_copy(bc_coeffs_v, &bc_coeffs_v_loc);
 
   /*==========================================================================
     6. Here, we make sure that the mass flux is null at the boundary faces of
@@ -640,6 +633,15 @@ cs_mass_flux(const cs_mesh_t             *m,
 
   ctx.wait();
   ctx_c.wait();
+
+  CS_FREE_HD(grdqdm);
+  CS_FREE_HD(qdm);
+  CS_FREE_HD(f_momentum);
+  CS_FREE_HD(_i_f_face_factor);
+  CS_FREE_HD(_b_f_face_factor);
+
+  coefaq = nullptr;
+  cs_field_bc_coeffs_free_copy(bc_coeffs_v, &bc_coeffs_v_loc);
 }
 
 /*----------------------------------------------------------------------------*/
