@@ -34,6 +34,7 @@
 /* BFT headers */
 
 #include "bft_error.h"
+#include "bft_mem.h"  // for compatibility macros
 
 /*-----------------------------------------------------------------------------*/
 

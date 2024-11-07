@@ -71,12 +71,12 @@
 
 #include "bft_backtrace.h"
 #include "bft_mem_usage.h"
-#include "bft_mem.h"
 #include "bft_printf.h"
 
 #include "cs_execution_context.h"
 #include "cs_file.h"
 #include "cs_fp_exception.h"
+#include "cs_mem.h"
 #include "cs_log.h"
 #include "cs_timer.h"
 #include "cs_version.h"
@@ -129,7 +129,7 @@ typedef void (*_cs_base_sighandler_t) (int);
 
 static bft_error_handler_t  *cs_glob_base_err_handler_save = NULL;
 
-static bool  cs_glob_base_bft_mem_init = false;
+static bool  _cs_mem_initialized = false;
 
 /* Global variables associated with signal handling */
 
@@ -565,14 +565,14 @@ _error_mem_summary(void)
 
   _cs_base_err_printf
     (_("Theoretical current allocated memory:   %llu kB\n"),
-     (unsigned long long)(bft_mem_size_current()));
+     (unsigned long long)(cs_mem_size_current()));
 
-  mem_usage = bft_mem_size_max();
+  mem_usage = cs_mem_size_max();
 
   if (mem_usage > 0)
     _cs_base_err_printf
       (_("Theoretical maximum allocated memory:   %llu kB\n"),
-       (unsigned long long)(bft_mem_size_max()));
+       (unsigned long long)(cs_mem_size_max()));
 
   if (bft_mem_usage_initialized() == 1) {
 
@@ -822,9 +822,9 @@ _get_path(const char   *dir_path,
     }
 #endif /* defined(HAVE_GETCWD) */
 
-    BFT_MALLOC(*env_path,
-               strlen(cs_root_dir) + strlen(rel_path) + strlen(dir_path) + 1,
-               char);
+    CS_MALLOC(*env_path,
+              strlen(cs_root_dir) + strlen(rel_path) + strlen(dir_path) + 1,
+              char);
     strcpy(*env_path, cs_root_dir);
     strcat(*env_path, rel_path);
     strcat(*env_path, dir_path);
@@ -1123,7 +1123,7 @@ cs_base_get_app_name(int          argc,
     const char *s = argv[arg_id];
     if (strcmp(s, "--app-name") == 0) {
       if (arg_id + 1 < argc) {
-        BFT_MALLOC(app_name, strlen(argv[arg_id + 1]) + 1, char);
+        CS_MALLOC(app_name, strlen(argv[arg_id + 1]) + 1, char);
         strcpy(app_name, argv[arg_id + 1]);
       }
     }
@@ -1149,7 +1149,7 @@ cs_base_get_app_name(int          argc,
     }
 
     for (i = strlen(buf) - 1; i > 0 && buf[i-1] != '/'; i--);
-    BFT_MALLOC(app_name, strlen(buf + i) + 1, char);
+    CS_MALLOC(app_name, strlen(buf + i) + 1, char);
     strcpy(app_name, buf + i);
     BFT_FREE(buf);
   }
@@ -1633,13 +1633,13 @@ cs_base_mem_init(void)
 {
   /* Set error handler */
 
-  bft_mem_error_handler_set(_cs_mem_error_handler);
+  cs_mem_error_handler_set(_cs_mem_error_handler);
 
   /* Set PLE library memory handler */
 
-  ple_mem_functions_set(bft_mem_malloc,
-                        bft_mem_realloc,
-                        bft_mem_free);
+  ple_mem_functions_set(cs_mem_malloc,
+                        cs_mem_realloc,
+                        cs_mem_free);
 
   /* Memory usage measure initialization */
 
@@ -1647,8 +1647,8 @@ cs_base_mem_init(void)
 
   /* Memory management initialization */
 
-  if (bft_mem_initialized())
-    cs_glob_base_bft_mem_init = false;
+  if (cs_mem_initialized())
+    _cs_mem_initialized = false;
 
   else {
 
@@ -1656,8 +1656,8 @@ cs_base_mem_init(void)
 
     if (base_name != NULL) {
 
-      /* We may not use BFT_MALLOC here as memory management has
-         not yet been initialized using bft_mem_init() */
+      /* We may not use CS_MALLOC here as memory management has
+         not yet been initialized using cs_mem_init() */
 
       char *_file_name = NULL;
       const char  *file_name = cs_empty_string;
@@ -1671,20 +1671,21 @@ cs_base_mem_init(void)
         if (cs_glob_rank_id >= 0) {
           int n_dec = 1;
           for (int i = cs_glob_n_ranks; i >= 10; i /= 10, n_dec += 1);
-          file_name = malloc((strlen(base_name) + n_dec + 2) * sizeof (char));
-          sprintf(file_name, "%s.%0*d", base_name, n_dec, cs_glob_rank_id);
+          _file_name = malloc((strlen(base_name) + n_dec + 2) * sizeof (char));
+          sprintf(_file_name, "%s.%0*d", base_name, n_dec, cs_glob_rank_id);
         }
         else {
           file_name = malloc((strlen(base_name) + 1) * sizeof (char));
-          strcpy(file_name, base_name);
+          strcpy(_file_name, base_name);
         }
+        file_name = _file_name;
 
       }
 
       /* Actually initialize bft_mem instrumentation only when
          CS_MEM_LOG is defined (for better performance) */
 
-      bft_mem_init(file_name);
+      cs_mem_init(file_name);
 
       if (_file_name != NULL)
         free(_file_name);
@@ -1693,10 +1694,10 @@ cs_base_mem_init(void)
 
 #if defined(HAVE_ACCEL)
     else
-      bft_mem_init(NULL);
+      cs_mem_init(NULL);
 #endif
 
-    cs_glob_base_bft_mem_init = true;
+    _cs_mem_initialized = true;
 
   }
 }
@@ -1734,7 +1735,7 @@ cs_base_mem_finalize(void)
                 _("\nMemory use summary:\n\n"));
 
   valreal[0] = (double)bft_mem_usage_max_pr_size();
-  valreal[1] = (double)bft_mem_size_max();
+  valreal[1] = (double)cs_mem_size_max();
   valreal[2] = (double)bft_mem_usage_max_vm_size();
   valreal[3] = (double)bft_mem_usage_shared_lib_size();
   valreal[4] = 0;
@@ -1865,7 +1866,7 @@ cs_base_mem_finalize(void)
 
   /* Finalize memory handling */
 
-  if (cs_glob_base_bft_mem_init == true) {
+  if (_cs_mem_initialized == true) {
 
     BFT_FREE(_cs_base_env_localedir);
     BFT_FREE(_cs_base_env_pkgdatadir);
@@ -1873,8 +1874,8 @@ cs_base_mem_finalize(void)
     BFT_FREE(_bft_printf_file_name);
 
     uint64_t mstats[6] = {0, 0, 0, 0, 0, 0};
-    int have_mem_stats = bft_mem_stats(mstats, mstats+1, mstats+2,
-                                       mstats+3, mstats+4, mstats+5);
+    int have_mem_stats = cs_mem_stats(mstats, mstats+1, mstats+2,
+                                      mstats+3, mstats+4, mstats+5);
     if (have_mem_stats) {
 #if defined(HAVE_MPI)
       if (cs_glob_n_ranks > 1) {
@@ -1906,7 +1907,7 @@ cs_base_mem_finalize(void)
       }
     }
 
-    bft_mem_end();
+    cs_mem_end();
   }
 
   cs_log_printf(CS_LOG_PERFORMANCE, "\n");
@@ -2158,9 +2159,9 @@ cs_base_bft_printf_init(const char  *log_name,
       && log_name != NULL
       && log_to_stdout == false) {
 
-    BFT_MALLOC(_bft_printf_file_name,
-               strlen(log_name) + strlen(ext) + 1,
-               char);
+    CS_MALLOC(_bft_printf_file_name,
+              strlen(log_name) + strlen(ext) + 1,
+              char);
     strcpy(_bft_printf_file_name, log_name);
     strcat(_bft_printf_file_name, ext);
 
@@ -2175,7 +2176,7 @@ cs_base_bft_printf_init(const char  *log_name,
       if (log_to_stdout == false) {
         int n_dec = 1;
         for (int i = cs_glob_n_ranks; i >= 10; i /= 10, n_dec += 1);
-        BFT_MALLOC(_bft_printf_file_name,
+        CS_MALLOC(_bft_printf_file_name,
                    strlen(log_name) + n_dec + 3 + strlen(ext), char);
         sprintf(_bft_printf_file_name,
                 "%s_r%0*d%s",
@@ -2480,9 +2481,9 @@ cs_base_open_properties_data_file(const char  *base_name)
   if (! cs_file_isreg(file_name)) {
     const char *datadir = cs_base_get_pkgdatadir();
     const char subdir[] = "/data/thch/";
-    BFT_MALLOC(_f_name,
-               strlen(datadir) + strlen(subdir) + strlen(base_name) + 1,
-               char);
+    CS_MALLOC(_f_name,
+              strlen(datadir) + strlen(subdir) + strlen(base_name) + 1,
+              char);
     sprintf(_f_name, "%s%s%s", datadir, subdir, base_name);
     file_name = _f_name;
   }
@@ -2560,7 +2561,7 @@ cs_base_dlopen_plugin(const char *name)
 
   /* Open shared library */
 
-  BFT_MALLOC(lib_path,
+  CS_MALLOC(lib_path,
              strlen(pkglibdir) + 1 + 3 + strlen(name) + 3 + 1,
              char);
 
@@ -2863,15 +2864,15 @@ cs_base_get_run_identity(char  **run_id,
   }
 
   if (run_id != NULL && _run_id != NULL) {
-    BFT_MALLOC(*run_id, strlen(_run_id) + 1, char);
+    CS_MALLOC(*run_id, strlen(_run_id) + 1, char);
     strcpy(*run_id, _run_id);
   }
   if (case_name != NULL && _case_name != NULL) {
-    BFT_MALLOC(*case_name, strlen(_case_name) + 1, char);
+    CS_MALLOC(*case_name, strlen(_case_name) + 1, char);
     strcpy(*case_name, _case_name);
   }
   if (study_name != NULL && _study_name != NULL) {
-    BFT_MALLOC(*study_name, strlen(_study_name) + 1, char);
+    CS_MALLOC(*study_name, strlen(_study_name) + 1, char);
     strcpy(*study_name, _study_name);
   }
 
