@@ -907,6 +907,7 @@ _pressure_correction_fv(int                   iterns,
 
     if (indhyd == 1 || vp_param->iifren == 1) {
 
+      const int idften = eqp_p->idften;
       const int *auto_flag = cs_glob_bc_pm_info->iautom;
       const cs_real_t *b_head_loss
         = cs_boundary_conditions_get_b_head_loss(false);
@@ -926,11 +927,11 @@ _pressure_correction_fv(int                   iterns,
           cs_real_t hint = 0;
 
           /* Diffusive flux BCs */
-          if (eqp_p->idften & CS_ISOTROPIC_DIFFUSION)
+          if (idften & CS_ISOTROPIC_DIFFUSION)
             hint = c_visc[c_id]/b_dist[f_id];
 
           /* Symmetric tensor diffusivity */
-          else if (eqp_p->idften & CS_ANISOTROPIC_DIFFUSION) {
+          else if (idften & CS_ANISOTROPIC_DIFFUSION) {
 
             cs_real_t visci[3][3], dist[3];
             const cs_real_t *n = b_face_normal[f_id];
