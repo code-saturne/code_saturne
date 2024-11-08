@@ -959,7 +959,7 @@ _update_cusparse_map(cs_matrix_cusparse_map_t  *csm,
 
 #if defined(HAVE_CUSPARSE_GENERIC_API)
 
-#if CUSPARSE_VER_MAJOR >= 11
+#if CUSPARSE_VERSION >= 11300
   cusparseSpMVAlg_t spmv_alg_type = CUSPARSE_SPMV_ALG_DEFAULT;
 #else
   cusparseSpMVAlg_t spmv_alg_type = CUSPARSE_MV_ALG_DEFAULT;
@@ -1396,7 +1396,7 @@ cs_matrix_spmv_cuda_csr_cusparse(cs_matrix_t  *matrix,
 
 #if defined(HAVE_CUSPARSE_GENERIC_API)
 
-#if CUSPARSE_VER_MAJOR >= 11
+#if CUSPARSE_VERSION >= 11300
   cusparseSpMVAlg_t spmv_alg_type = CUSPARSE_SPMV_ALG_DEFAULT;
 #else
   cusparseSpMVAlg_t spmv_alg_type = CUSPARSE_MV_ALG_DEFAULT;
@@ -1634,7 +1634,7 @@ cs_matrix_spmv_cuda_msr_cusparse(cs_matrix_t  *matrix,
 
 #if defined(HAVE_CUSPARSE_GENERIC_API)
 
-#if CUSPARSE_VER_MAJOR >= 11
+#if CUSPARSE_VERSION >= 11300
   cusparseSpMVAlg_t spmv_alg_type = CUSPARSE_SPMV_ALG_DEFAULT;
 #else
   cusparseSpMVAlg_t spmv_alg_type = CUSPARSE_MV_ALG_DEFAULT;
