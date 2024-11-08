@@ -896,6 +896,7 @@ cs_parall_thread_range(cs_lnum_t    n,
   *e_id = (t_id+1) * t_n;
   *s_id = cs_align(*s_id, cl_m);
   *e_id = cs_align(*e_id, cl_m);
+  if (*s_id > n) *s_id = n;
   if (*e_id > n) *e_id = n;
 }
 
