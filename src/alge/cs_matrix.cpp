@@ -5264,6 +5264,10 @@ cs_matrix_get_coefficients_msr_w(cs_matrix_t         *matrix,
   auto ms = static_cast<const cs_matrix_struct_dist_t *>(matrix->structure);
   const cs_matrix_struct_csr_t  *ms_e = &(ms->e);
 
+  mc->symmetric = symmetric;
+  mc->db_size = diag_block_size;
+  mc->eb_size = extra_diag_block_size;
+
   const cs_lnum_t db_size_2 = mc->db_size * mc->db_size;
   const cs_lnum_t eb_size_2 = mc->eb_size * mc->eb_size;
 
