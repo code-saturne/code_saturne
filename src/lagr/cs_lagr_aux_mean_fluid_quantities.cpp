@@ -190,39 +190,39 @@ cs_lagr_aux_mean_fluid_quantities(int            phase_id,
     }
   }
 
-  cs_real_t *wpres = nullptr;
-
-  /* Hydrostatic pressure algorithm? */
-  int hyd_p_flag = cs_glob_velocity_pressure_param->iphydr;
-
-  cs_real_3_t *f_ext = nullptr;
-  // Warning: with neptune_cfd we do not enter here
-  if (hyd_p_flag == 1 && cs_glob_lagr_model->cs_used == 1)
-    f_ext = (cs_real_3_t *)(cs_field_by_name("volume_forces")->val);
-
-  cs_real_t *solved_pres = extra->pressure->val;
-
-  /* retrieve 2/3 rho^{n} k^{n} from solved pressure field for EVM models */
-  assert(turb_model != nullptr);
-  if (turb_model->order <= CS_TURB_FIRST_ORDER
-      && cs_glob_turb_rans_model->igrhok == 0) {
-    BFT_MALLOC(wpres, n_cells_with_ghosts, cs_real_t);
-    int time_id = (extra->cvar_k->n_time_vals > 1) ? 1 : 0;
-    const cs_real_t *cvar_k = extra->cvar_k->vals[time_id];
-    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-      wpres[c_id] =  solved_pres[c_id]
-                   -  2./3. * extra_i[phase_id].cromf->val[c_id]
-                    * cvar_k[c_id];
-    }
-  }
-  else {
-    wpres = solved_pres;
-  }
-
-  /* Parameters for gradient computation
-   * =================================== */
-
   if (cs_glob_lagr_model->cs_used == 1) {
+
+    cs_real_t *wpres = nullptr;
+
+    /* Hydrostatic pressure algorithm? */
+    int hyd_p_flag = cs_glob_velocity_pressure_param->iphydr;
+
+    cs_real_3_t *f_ext = nullptr;
+    // Warning: with neptune_cfd we do not enter here
+    if (hyd_p_flag == 1 && cs_glob_lagr_model->cs_used == 1)
+      f_ext = (cs_real_3_t *)(cs_field_by_name("volume_forces")->val);
+
+    cs_real_t *solved_pres = extra->pressure->val;
+
+    /* retrieve 2/3 rho^{n} k^{n} from solved pressure field for EVM models */
+    assert(turb_model != nullptr);
+    if (turb_model->order <= CS_TURB_FIRST_ORDER
+        && cs_glob_turb_rans_model->igrhok == 0) {
+      BFT_MALLOC(wpres, n_cells_with_ghosts, cs_real_t);
+      int time_id = (extra->cvar_k->n_time_vals > 1) ? 1 : 0;
+      const cs_real_t *cvar_k = extra->cvar_k->vals[time_id];
+      for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+        wpres[c_id] =  solved_pres[c_id]
+                     -  2./3. * extra_i[phase_id].cromf->val[c_id]
+                      * cvar_k[c_id];
+      }
+    }
+    else {
+      wpres = solved_pres;
+    }
+
+    /* Parameters for gradient computation
+     * =================================== */
 
     cs_gradient_type_t gradient_type = CS_GRADIENT_GREEN_ITER;
     cs_halo_type_t halo_type = CS_HALO_STANDARD;
@@ -442,8 +442,6 @@ cs_lagr_aux_mean_fluid_quantities(int            phase_id,
                                grad_vel);
     }
   }
-  if (wpres != nullptr && cs_glob_lagr_model->cs_used == 0)
-    BFT_FREE(wpres);
 
     /* Compute temperature gradient
        ========================= */

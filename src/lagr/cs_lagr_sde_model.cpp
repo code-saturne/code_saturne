@@ -920,7 +920,8 @@ _lagitf(cs_lagr_attribute_t  *iattr)
       cs_lnum_t cell_id = cs_lagr_particle_get_lnum(particle, p_am,
                                                     CS_LAGR_CELL_ID);
       cs_real_t loc_tempf = extra->temperature->val[cell_id] - t_shift;
-      if (cs_glob_lagr_time_scheme->interpol_field != 0) {
+      if (    cs_glob_lagr_time_scheme->interpol_field > 0
+          && extra->grad_tempf != nullptr ) {
         cs_real_t *old_part_coords =
           cs_lagr_particle_attr_n_get_ptr<cs_real_t>(particle, p_am, 1,
                                                      CS_LAGR_COORDS);
@@ -973,7 +974,8 @@ _lagitf(cs_lagr_attribute_t  *iattr)
                                                       CS_LAGR_CELL_ID);
 
         cs_real_t loc_tempf = extra->temperature->val[cell_id] - t_shift;
-        if (cs_glob_lagr_time_scheme->interpol_field != 0) {
+        if (    cs_glob_lagr_time_scheme->interpol_field > 0
+            && extra->grad_tempf != nullptr ) {
           cs_real_t *old_part_coords =
             cs_lagr_particle_attr_n_get_ptr<cs_real_t>(particle, p_am, 1,
                                                        CS_LAGR_COORDS);

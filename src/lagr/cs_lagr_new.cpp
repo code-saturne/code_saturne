@@ -426,7 +426,7 @@ cs_lagr_new_v(cs_lagr_particle_set_t  *particles,
     if (n_c_p < 1) /* ignore cells with no injected particles */
       continue;
 
-    cs_lnum_t p_s_id = particles->n_particles +  cell_particle_idx[li];
+    cs_lnum_t p_s_id = particles->n_particles + cell_particle_idx[li];
 
     const cs_lnum_t cell_id = (cell_ids != nullptr) ? cell_ids[li] : li;
 
@@ -564,7 +564,8 @@ cs_lagr_new_v(cs_lagr_particle_set_t  *particles,
       cs_lagr_particles_set_lnum(particles, p_id, CS_LAGR_CELL_ID, cell_id);
 
       cs_real_t *part_coord
-        = cs_lagr_particles_attr_get_ptr<cs_real_t>(particles, p_id, CS_LAGR_COORDS);
+        = cs_lagr_particles_attr_get_ptr<cs_real_t>(particles, p_id,
+                                                    CS_LAGR_COORDS);
 
       /* search for matching center-to-face cone */
 
@@ -735,7 +736,7 @@ cs_lagr_new_particle_init(const cs_lnum_t                 particle_range[2],
   const cs_real_t pis6 = cs_math_pi / 6.0;
   const int shape = cs_glob_lagr_model->shape;
 
-  /* Prepare  enthalpy to temperature conversion if needed */
+  /* Prepare enthalpy to temperature conversion if needed */
 
   if (   cs_glob_lagr_model->physical_model == CS_LAGR_PHYS_HEAT
       && cs_glob_lagr_specific_physics->itpvar == 1
@@ -803,10 +804,10 @@ cs_lagr_new_particle_init(const cs_lnum_t                 particle_range[2],
       cs_random_normal(n*3, (cs_real_t *)vagaus[phase_id]);
 
       if (    cs_glob_lagr_model->physical_model > CS_LAGR_PHYS_OFF
-          && (extra->temperature_turbulent_flux  != nullptr
+          && (extra->temperature_turbulent_flux != nullptr
             || extra->temperature_variance != nullptr)
           &&  extra->temperature != nullptr) {
-        if (extra->temperature_turbulent_flux  != nullptr)
+        if (extra->temperature_turbulent_flux != nullptr)
           BFT_MALLOC(temp_vel_fluc_coef, n_cells, cs_real_3_t);
         if (extra->temperature_variance != nullptr)
           BFT_MALLOC(var_temp_corel_coef, n_cells, cs_real_t);
@@ -895,10 +896,10 @@ cs_lagr_new_particle_init(const cs_lnum_t                 particle_range[2],
       }
     }
     if (    cs_glob_lagr_model->physical_model > CS_LAGR_PHYS_OFF
-        && (extra->temperature_turbulent_flux  != nullptr
+        && (extra->temperature_turbulent_flux != nullptr
           || extra->temperature_variance != nullptr)
         &&  extra->temperature != nullptr) {
-      if (extra->temperature_turbulent_flux  != nullptr) {
+      if (extra->temperature_turbulent_flux != nullptr) {
         for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
           cs_real_33_t vel_fluct_coef;
           for (int i = 0; i < 3; i++) {
@@ -936,7 +937,8 @@ cs_lagr_new_particle_init(const cs_lnum_t                 particle_range[2],
         }
       }
     }
-  } else {
+  }
+  else { /* idistu == 0 */
     for (int phase_id = 0; phase_id < n_phases; phase_id ++){
       for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
 
@@ -963,7 +965,7 @@ cs_lagr_new_particle_init(const cs_lnum_t                 particle_range[2],
 
     unsigned char *particle = p_set->p_buffer + p_am->extents * p_id;
 
-    cs_lnum_t c_id  = cs_lagr_particle_get_lnum(particle, p_am, CS_LAGR_CELL_ID);
+    cs_lnum_t c_id = cs_lagr_particle_get_lnum(particle, p_am, CS_LAGR_CELL_ID);
     cs_lnum_t l_id = p_id - particle_range[0];
 
     /* Particle velocity components */
@@ -1145,9 +1147,9 @@ cs_lagr_new_particle_init(const cs_lnum_t                 particle_range[2],
           cs_random_uniform(1, &trans_m[id][0]); /* (?,0) */
           cs_random_uniform(1, &trans_m[id][1]); /* (?,1) */
           cs_random_uniform(1, &trans_m[id][2]); /* (?,2) */
-          cs_real_3_t loc_vector =  {-1.+2*trans_m[id][0],
-            -1.+2*trans_m[id][1],
-            -1.+2*trans_m[id][2]};
+          cs_real_3_t loc_vector = {-1.+2*trans_m[id][0],
+                                    -1.+2*trans_m[id][1],
+                                    -1.+2*trans_m[id][2]};
           cs_real_t norm_trans_m = cs_math_3_norm( loc_vector );
           while ( norm_trans_m > 1 )
           {
@@ -1163,12 +1165,12 @@ cs_lagr_new_particle_init(const cs_lnum_t                 particle_range[2],
             trans_m[id][id1] = (-1.+2*trans_m[id][id1]) / norm_trans_m;
         }
         /* Correct 2nd vector (for perpendicularity to the 1st) */
-        cs_real_3_t loc_vector0 =  {trans_m[0][0],
-          trans_m[0][1],
-          trans_m[0][2]};
-        cs_real_3_t loc_vector1 =  {trans_m[1][0],
-          trans_m[1][1],
-          trans_m[1][2]};
+        cs_real_3_t loc_vector0 = {trans_m[0][0],
+                                   trans_m[0][1],
+                                   trans_m[0][2]};
+        cs_real_3_t loc_vector1 = {trans_m[1][0],
+                                   trans_m[1][1],
+                                   trans_m[1][2]};
         cs_real_t scal_prod = cs_math_3_dot_product(loc_vector0, loc_vector1);
         for (cs_lnum_t id = 0; id < 3; id++)
           trans_m[1][id] -= scal_prod * trans_m[0][id];
@@ -1184,9 +1186,9 @@ cs_lagr_new_particle_init(const cs_lnum_t                 particle_range[2],
         loc_vector1[0] = trans_m[1][0];
         loc_vector1[1] = trans_m[1][1];
         loc_vector1[2] = trans_m[1][2];
-        cs_real_3_t loc_vector2 =  {trans_m[2][0],
-          trans_m[2][1],
-          trans_m[2][2]};
+        cs_real_3_t loc_vector2 = {trans_m[2][0],
+                                   trans_m[2][1],
+                                   trans_m[2][2]};
         cs_math_3_cross_product( loc_vector0, loc_vector1, loc_vector2);
         for (cs_lnum_t id = 0; id < 3; id++)
           trans_m[2][id] = loc_vector2[id];
@@ -1233,7 +1235,7 @@ cs_lagr_new_particle_init(const cs_lnum_t                 particle_range[2],
       cs_lagr_particle_set_real(particle, p_am, CS_LAGR_HEIGHT, diam);
     }
 
-    /* Other variables (mass, ...) depending on physical model  */
+    /* Other variables (mass, ...) depending on physical model */
     cs_real_t d3 = pow(diam, 3.0);
 
     if (cs_glob_lagr_model->n_stat_classes > 0)
@@ -1370,7 +1372,7 @@ cs_lagr_new_particle_init(const cs_lnum_t                 particle_range[2],
     }
 
     if (    cs_glob_lagr_model->physical_model > CS_LAGR_PHYS_OFF
-        && (   extra->temperature_turbulent_flux  != nullptr
+        && (   extra->temperature_turbulent_flux != nullptr
             || extra->temperature_variance != nullptr)
         &&  extra->temperature != nullptr) {
       /* Initialize temperature fluctuations */
@@ -1434,7 +1436,7 @@ cs_lagr_new_particle_init(const cs_lnum_t                 particle_range[2],
             || b_type == CS_LAGR_DEPO_DLVO
             || b_type == CS_LAGR_REBOUND) {
 
-          /* Calculation of the wall units  */
+          /* Calculation of the wall units */
 
           cs_lnum_t  *neighbor_face_id;
           cs_real_t  *particle_yplus;

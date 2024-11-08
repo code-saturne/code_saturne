@@ -421,8 +421,8 @@ cs_lagr_car(int              iprev,
             //
             // cos(theta/2) = || dir + dir_r|| / 2
             cs_real_t dir_p_dir_r[3] = {dir[0] + dir_r[0],
-              dir[1] + dir_r[1],
-              dir[2] + dir_r[2]};
+                                        dir[1] + dir_r[1],
+                                        dir[2] + dir_r[2]};
             cs_real_t dir_p_dir_r_normed[3];
             cs_math_3_normalize(dir_p_dir_r, dir_p_dir_r_normed);
 
@@ -720,15 +720,6 @@ cs_lagr_car(int              iprev,
 
   /* Compute Pii
      ----------- */
-  /* Compute: II = ( -grad(P)/Rom(f) + g) */
-
-  for (cs_lnum_t ip = 0; ip < p_set->n_particles; ip++) {
-    cs_lnum_t      cell_id  = cs_lagr_particles_get_lnum(p_set, ip ,
-                                                         CS_LAGR_CELL_ID);
-    cs_real_t romf = extra->cromf->val[cell_id];
-    for (int id = 0; id < 3; id++)
-      piil[ip][id] = - extra->grad_pr[cell_id][id] / romf + grav[id];
-  }
 
   if (turb_disp_model && cs_glob_lagr_model->cs_used == 0) {
     /* add grad(<Vf>)*(<Up>-<Us>) if there are enough particles*/
@@ -795,7 +786,12 @@ cs_lagr_car(int              iprev,
         = cs_lagr_particle_attr_get_ptr<cs_real_t>(particle, p_am,
                                                    CS_LAGR_VELOCITY_SEEN);
 
+      cs_real_t romf = extra->cromf->val[cell_id];
       for (cs_lnum_t id = 0; id < 3; id++){
+        /*  Compute: II = ( -grad(P)/Rom(f)+g) */
+        piil[ip][id] = - extra_i[phase_id].grad_pr[cell_id][id] / romf + grav[id];
+
+        /* add grad(<Vf>)*(Us-<Vf>) */
         for (int j = 0; j < 3; j++){
           piil[ip][id]
             -= (part_vel_seen[3 * phase_id + j]
@@ -896,7 +892,7 @@ cs_lagr_car(int              iprev,
         piil[ip][id] += buoyancy_fac * grav[id];
 
       if (   cs_glob_lagr_time_scheme->interpol_field > 0
-          && extra->temperature != nullptr) {
+          && extra->grad_tempf != nullptr) {
         /* Interpolate the local hydrostatic pressure gradient so its is in
          * equillibrium with the interpolated temperature at the position of the
          * particle and not in the center of the cell */
@@ -925,12 +921,12 @@ cs_lagr_car(int              iprev,
     for (cs_lnum_t ip = 0; ip < p_set->n_particles; ip++) {
       cs_lnum_t      cell_id  = cs_lagr_particles_get_lnum(p_set, ip ,
                                                            CS_LAGR_CELL_ID);
-    /* Add: II =  -alpha_p rho_p <(U_s -U_p)/tau_p> / (alpha_f rho_f)  */
+      /* Add: II =  -alpha_p rho_p <(U_s -U_p)/tau_p> / (alpha_f rho_f)  */
 
-    cs_real_t romf = extra->cromf->val[cell_id];
+      cs_real_t romf = extra->cromf->val[cell_id];
 
-    for (int i = 0; i < 3; i++)
-      piil[ip][i] += lagr_st_vel[cell_id][i] / romf;
+      for (int i = 0; i < 3; i++)
+        piil[ip][i] += lagr_st_vel[cell_id][i] / romf;
 
     }
   }

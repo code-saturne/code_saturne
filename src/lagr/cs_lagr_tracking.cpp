@@ -1538,9 +1538,6 @@ _boundary_treatment(cs_lagr_particle_set_t    *particles,
   /* Anelastic rebound */
   else if (b_type == CS_LAGR_REBOUND ) {
 
-    cs_lagr_extra_module_t *extra_i = cs_get_lagr_extra_module();
-    cs_lagr_extra_module_t *extra = extra_i;
-
     particle_state = CS_LAGR_PART_TO_SYNC;
 
     cs_real_t *cell_cen = fvq->cell_cen + (3*cell_id);
@@ -1575,14 +1572,16 @@ _boundary_treatment(cs_lagr_particle_set_t    *particles,
         /* Reynolds stress tensor (current value) */
         cs_real_t *r_ij = &(extra_i[phase_id].cvar_rij->vals[0][6*cell_id]);
         /* Component Rnn = ni Rij nj */
-        cs_real_t r_nn = cs_math_3_sym_33_3_dot_product(face_norm, r_ij, face_norm);
+        cs_real_t r_nn = cs_math_fmax(
+            cs_math_3_sym_33_3_dot_product(face_norm, r_ij, face_norm), 1e-5);
 
         /* Vector Rij.nj */
         cs_real_t r_in[3];
         cs_math_sym_33_3_product(r_ij, face_norm, r_in);
 
+        /* Modify velocity seen */
         for (int k = 0; k < 3; k++)
-          particle_velocity_seen[3 * phase_id + k] -=  r_in[k] / cs_math_fmax(r_nn, 1e-5) * tmp ;
+          particle_velocity_seen[3 * phase_id + k] -= r_in[k] / r_nn * tmp ;
 
         /* Modify particle fluid temperature */
         if (   cs_glob_lagr_model->physical_model != CS_LAGR_PHYS_OFF
@@ -1593,10 +1592,10 @@ _boundary_treatment(cs_lagr_particle_set_t    *particles,
             cs_lagr_particles_get_real(particles, p_id,
                                        CS_LAGR_FLUID_TEMPERATURE);
           /* Normal thermal turbulent flux */
-          cs_real_t r_tn =
-            cs_math_3_dot_product(&extra->temperature_turbulent_flux->val[3*cell_id], face_norm);
+        cs_real_t *_rit = &extra->temperature_turbulent_flux->val[3*cell_id];
+        cs_real_t  r_tn = cs_math_3_dot_product(_rit, face_norm);
           cs_lagr_particles_set_real(particles, p_id, CS_LAGR_FLUID_TEMPERATURE,
-              temperature_out -  r_tn / r_nn * tmp);
+                                     temperature_out -  r_tn / r_nn * tmp);
         }
       }
       /* TODO else: for EVM u*^2 / r_nn */
@@ -1608,7 +1607,7 @@ _boundary_treatment(cs_lagr_particle_set_t    *particles,
             && extra->temperature != nullptr
             && extra->temperature_variance != nullptr
             && (extra->tstar != nullptr || extra->grad_tempf != nullptr)
-            && extra->cvar_k != nullptr) {
+            && extra_i[phase_id].cvar_k != nullptr) {
           cs_real_t temperature_out =
             cs_lagr_particles_get_real(particles, p_id,
                                        CS_LAGR_FLUID_TEMPERATURE);
@@ -1617,7 +1616,8 @@ _boundary_treatment(cs_lagr_particle_set_t    *particles,
           cs_real_t rnt_ov_rnn =
             -sqrt(cs_turb_crij_ct * (1.5 * cs_turb_crij_c0 + 1.) /
               (cs_turb_crij_c0 * (cs_turb_crij_ct + 0.75 * cs_turb_crij_c0 + 1.))
-                * extra->temperature_variance->val[cell_id]/extra->cvar_k->val[cell_id]);
+                * extra->temperature_variance->val[cell_id]
+                / extra_i[phase_id].cvar_k->val[cell_id]);
 
           /* Estimate the direction of the flux */
           if (extra->grad_tempf != nullptr ) {

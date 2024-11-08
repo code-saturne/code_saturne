@@ -2849,7 +2849,6 @@ _cs_lagr_stat_update_all(void)
 
   cs_lagr_extra_module_t *extra_i = cs_get_lagr_extra_module();
   cs_lagr_extra_module_t *extra = extra_i;
-  int n_phases = extra->n_phases;
 
   /* First, update mesh-based statistics */
 
@@ -4799,7 +4798,6 @@ cs_lagr_stat_update_event(cs_lagr_event_set_t   *events,
 
   cs_lagr_extra_module_t *extra_i = cs_get_lagr_extra_module();
   cs_lagr_extra_module_t *extra = extra_i;
-  int n_phases = extra->n_phases;
 
   _t_prev_iter = ts->t_prev;
 
