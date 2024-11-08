@@ -731,7 +731,7 @@ cs_tensor_face_flux(const cs_mesh_t             *m,
 
   char var_name[64];
 
-  cs_real_6_t *c_mass_var, *b_mass_var;
+  cs_real_63_t *c_grad_mvar = nullptr;
 
   cs_field_t *f;
 
@@ -745,6 +745,7 @@ cs_tensor_face_flux(const cs_mesh_t             *m,
     ctx_c.set_cuda_stream(cs_cuda_get_stream(1));
 #endif
 
+  cs_real_6_t *c_mass_var, *b_mass_var;
   CS_MALLOC_HD(c_mass_var, n_cells_ext, cs_real_6_t, amode);
   CS_MALLOC_HD(b_mass_var, m->n_b_faces, cs_real_6_t, amode);
 
@@ -1025,7 +1026,6 @@ cs_tensor_face_flux(const cs_mesh_t             *m,
 
   if (nswrgu > 1) {
 
-    cs_real_63_t *c_grad_mvar;
     CS_MALLOC_HD(c_grad_mvar, n_cells_ext, cs_real_63_t, amode);
 
     /* Computation of c_mass_var gradient
@@ -1097,16 +1097,7 @@ cs_tensor_face_flux(const cs_mesh_t             *m,
 
     });
 
-    /* Deallocation */
-    CS_FREE_HD(c_grad_mvar);
-
   }
-
-  CS_FREE_HD(c_mass_var);
-  CS_FREE_HD(b_mass_var);
-
-  coefaq = nullptr;
-  cs_field_bc_coeffs_free_copy(bc_coeffs_ts, &bc_coeffs_ts_loc);
 
   /*==========================================================================
     6. Here, we make sure that the mass flux is null at the boundary faces of
@@ -1126,6 +1117,13 @@ cs_tensor_face_flux(const cs_mesh_t             *m,
 
   ctx.wait();
   ctx_c.wait();
+
+  CS_FREE_HD(c_grad_mvar);
+  CS_FREE_HD(c_mass_var);
+  CS_FREE_HD(b_mass_var);
+
+  coefaq = nullptr;
+  cs_field_bc_coeffs_free_copy(bc_coeffs_ts, &bc_coeffs_ts_loc);
 }
 
 /*----------------------------------------------------------------------------*/
