@@ -121,32 +121,369 @@ _field_name_aux(const char *field_radical, const int index)
  * Public function definitions
  *============================================================================*/
 
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Compute gradient of particle covariance.
+ *
+ *  - particle velocity and particle velocity seen covariance
+ *  - particle velocity seen variance
+ *
+ * \param[in]  iprev           time step indicator for fields
+ *                               0: use fields at current time step
+ *                               1: use fields at previous time step
+ * \param[in]  phase_id        carrier phase id
+ * \param[out] grad_cov_skp    gradient of particle velocity and
+ *                             particle velocity seen covariance
+ *
+ * \param[out] grad_cov_sk     gradient of particle velocity seen covariance
+ */
+/*----------------------------------------------------------------------------*/
+void
+compute_particle_covariance_gradient(int iprev,
+                                     int phase_id,
+                                     cs_real_3_t *grad_cov_skp[9],
+                                     cs_real_3_t *grad_cov_sk[6])
+{
+
+  assert (cs_glob_lagr_model->cs_used == 0);
+
+  cs_lagr_extra_module_t *extra_i = cs_glob_lagr_extra_module;
+
+  const cs_mesh_t *mesh = cs_glob_mesh;
+  /* Compute gradients of covariance */
+  /* Various initializations  */
+  cs_var_cal_opt_t var_cal_opt;
+  int key_cal_opt_id = cs_field_key_id("var_cal_opt");
+  cs_field_get_key_struct(extra_i[phase_id].pressure,
+                          key_cal_opt_id,
+                          &var_cal_opt);
+
+  /* Now compute the gradients */
+  cs_real_t *f_inter_cov;
+  BFT_MALLOC(f_inter_cov, cs_glob_mesh->n_cells_with_ghosts, cs_real_t);
+
+  /* Get the variable we want to compute the gradients
+   * from (covariance velocity seen/velocity) */
+  int stat_type =
+    cs_lagr_stat_type_from_attr_id(CS_LAGR_VELOCITY_SEEN_VELOCITY_COV);
+
+  cs_field_t *stat_cov_skp =
+    cs_lagr_stat_get_moment(stat_type,
+                            CS_LAGR_STAT_GROUP_PARTICLE,
+                            CS_LAGR_MOMENT_MEAN,
+                            0,
+                            -phase_id-1);
+
+  for (int i = 0; i < 9; i++){
+    for (int iel_ = 0; iel_ < mesh->n_cells; iel_++){
+      f_inter_cov[iel_] = stat_cov_skp->val[9 * iel_ + i];
+    }
+    if (mesh->halo != nullptr)
+      cs_halo_sync_var(mesh->halo, CS_HALO_STANDARD, f_inter_cov);
+
+    cs_gradient_scalar("intermediate cov skp gradient [Lagrangian module]",
+                        CS_GRADIENT_GREEN_ITER,
+                        CS_HALO_STANDARD,
+                        1,
+                        0,
+                        0,
+                        1,
+                        var_cal_opt.verbosity,
+                        static_cast<cs_gradient_limit_t>(var_cal_opt.imligr),
+                        var_cal_opt.epsrgr,
+                        var_cal_opt.climgr,
+                        0,
+                        nullptr,
+                        f_inter_cov,
+                        nullptr,
+                        nullptr,
+                        grad_cov_skp[i]);
+  }
+  /* Get the variable we want to compute the gradients from (velocity seen) */
+  stat_type = cs_lagr_stat_type_from_attr_id(CS_LAGR_VELOCITY_SEEN);
+
+  cs_field_t *stat_cov_sk = cs_lagr_stat_get_moment(stat_type,
+                                                    CS_LAGR_STAT_GROUP_PARTICLE,
+                                                    CS_LAGR_MOMENT_VARIANCE,
+                                                    0,
+                                                    -phase_id-1);
+
+  for (int i = 0; i < 6; i++) {
+    for (int iel_ = 0; iel_ < mesh->n_cells; iel_++){
+      f_inter_cov[iel_] = stat_cov_sk->val[6 * iel_ + i];
+    }
+    if (mesh->halo != nullptr)
+      cs_halo_sync_var(mesh->halo, CS_HALO_STANDARD, f_inter_cov);
+
+    cs_gradient_scalar("intermediate cov sk gradient [Lagrangian module]",
+                        CS_GRADIENT_GREEN_ITER,
+                        CS_HALO_STANDARD,
+                        1,
+                        0, // n_r_sweeps (number of reconstruction sweeps)
+                        0,
+                        1,
+                        var_cal_opt.verbosity,
+                        static_cast<cs_gradient_limit_t>(var_cal_opt.imligr),
+                        var_cal_opt.epsrgr,
+                        var_cal_opt.climgr,
+                        0,
+                        nullptr,
+                        f_inter_cov,
+                        nullptr,
+                        nullptr,
+                        grad_cov_sk[i]);
+  }
+
+  BFT_FREE(f_inter_cov);
+  return;
+}
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Compute anisotropic fluid quantities for complete model (modpl == 1).
+ *
+ *  - Anisotropic Lagragian time
+ *  - Anisotropic Diffusion matrix
+ *  - Anisotropic gradient of Lagrangian time in the relativ basis
+ *
+ * \param[in]   iprev                  time step indicator for fields
+ *                                       0: use fields at current time step
+ *                                       1: use fields at previous time step
+ * \param[in]   phase_id               carrier phase id
+ * \param[out]  anisotropic_lagr_time  anisotropic Lagragian time scale (modcpl)
+ * \param[out]  anisotropic_bx         anisotropic diffusion term (if modcpl)
+ * \param[out]  grad_lagr_time_r_et    anisotropic Lagrangian time gradient in
+ *                                     relative basis
+ * \param[in]   grad_lagr_time         Lagrangian time gradient
+ *
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+compute_anisotropic_prop(int            iprev,
+                         int            phase_id,
+                         cs_real_3_t   *anisotropic_lagr_time,
+                         cs_real_3_t   *anisotropic_bx,
+                         cs_real_3_t   *grad_lagr_time_r_et,
+                         cs_real_3_t   *grad_lagr_time)
+
+{
+  int cell_wise_integ = cs_glob_lagr_time_scheme->cell_wise_integ;
+  cs_lagr_extra_module_t *extra_i = cs_glob_lagr_extra_module;
+
+  cs_real_t c0     = cs_turb_crij_c0;
+  cs_real_t cl     = 1.0 / (0.5 + 0.75 * c0);
+  cs_real_t cbcb   = 0.64;
+
+  cs_real_t *energi = extra_i[phase_id].cvar_k->val;
+  cs_real_t *dissip = extra_i[phase_id].cvar_ep->val;
+
+  /* Compute anisotropic value of the lagr_time and diffusion matrix */
+  /* complete model */
+  cs_real_3_t dir;
+  cs_real_3_t bbi;
+  cs_real_t mean_uvwdif;
+
+  int stat_type = cs_lagr_stat_type_from_attr_id(CS_LAGR_VELOCITY);
+  cs_field_t *stat_vel
+    = cs_lagr_stat_get_moment(stat_type,
+                              CS_LAGR_STAT_GROUP_PARTICLE,
+                              CS_LAGR_MOMENT_MEAN,
+                              0,
+                              -1);
+
+  cs_field_t *stat_w = cs_lagr_stat_get_stat_weight(0);
+
+  for (cs_lnum_t cell_id = 0; cell_id < cs_glob_mesh->n_cells; cell_id++) {
+    if (dissip[cell_id] > 0.0 && energi[cell_id] > 0.0) {
+      if (stat_w->vals[cell_wise_integ][cell_id] >
+            cs_glob_lagr_stat_options->threshold) {
+        /* compute mean relative velocity <Up> - <Uf>*/
+        /* FIXME use stat_vel_s for <Uf> such as made in term II of piil
+         * in cs_lagr_car */
+        for (int i = 0; i < 3; i++)
+          dir[i] = stat_vel->vals[cell_wise_integ][cell_id * 3 + i]
+                 - extra_i[phase_id].vel->vals[iprev][cell_id * 3 + i];
+
+          /* Compute and store the mean relative velocity square
+         * |<U_r>|^2 = |<Up>-Uf|^2*/
+        mean_uvwdif = cs_math_3_square_norm(dir);
+
+        mean_uvwdif = (3.0 * mean_uvwdif) / (2.0 * energi[cell_id]);
+
+        /* FIXME add proper isotropic behavior */
+
+        /* Crossing trajectory in the direction of "<u_f>-<u_p>"
+         * and in the span-wise direction */
+        cs_real_t an, at;
+        an = (1.0 + cbcb * mean_uvwdif);
+        at = (1.0 + 4.0 * cbcb * mean_uvwdif);
+
+        bbi[0] = sqrt(an); /* First direction, n,
+                              in the local reference frame */
+        bbi[1] = sqrt(at); /* Second and third direction,
+                              orthogonal to n */
+        bbi[2] = sqrt(at);
+
+        /* Compute the timescale in parallel and transverse directions */
+        for (int id = 0; id < 3; id++)
+          anisotropic_lagr_time[cell_id][id] = extra_i[phase_id].lagr_time->val[cell_id]
+                                    / bbi[id];
+
+        /* Compute the main direction in the global reference
+         * frame */
+         cs_math_3_normalize(dir, dir);
+
+        /* Compute k_tilde in each cell */
+        cs_real_t ktil = 0;
+        if (extra_i[phase_id].itytur == 3) {
+          cs_real_t *rij = &(extra_i[phase_id].cvar_rij->vals[iprev][6*cell_id]);
+          /* Note that n.R.n = R : n(x)n */
+          cs_real_t rnn = cs_math_3_sym_33_3_dot_product(dir, rij, dir);
+          cs_real_t tr_r = cs_math_6_trace(rij);
+          // bbn * R : n(x)n + bbt * R : (1 - n(x)n)
+          ktil = 3.0 * (rnn * bbi[0] + (tr_r -rnn) * bbi[1])
+               / (2.0 * (bbi[0] + bbi[1] + bbi[2]));
+          /* bbi[1] == bbi[2] is used */
+        }
+        else if (   extra_i[phase_id].itytur == 2
+                 || extra_i[phase_id].itytur == 4
+                 || extra_i[phase_id].itytur == 5
+                 || extra_i[phase_id].iturb == CS_TURB_K_OMEGA) {
+          ktil  = energi[cell_id];
+        }
+
+        for (int i = 0; i <3; i++) {
+          anisotropic_bx[cell_id][i] = cl * (  (c0  * ktil )
+              + ((ktil- energi[cell_id]/ bbi[i])
+                * 2.0 / 3.0)) / anisotropic_lagr_time[cell_id][i];
+          anisotropic_bx[cell_id][i] =
+              CS_MAX(anisotropic_bx[cell_id][i], cs_math_epzero);
+        }
+        if (grad_lagr_time_r_et != nullptr) {
+          cs_real_33_t trans_m;
+          /* Rotate the frame of reference with respect to the
+           * mean relative velocity direction.
+           * This referential differs the referential associated directly
+           * to the particle for non spheric particle
+           * TODO extend extended scheme to non spheric particle*/
+
+          // The rotation axis is the result of the cross product between
+          // the new direction vector and the main axis.
+          cs_real_t n_rot[3];
+          /* the direction in the local reference frame "_r" is (1, 0, 0)
+           * by convention */
+          const cs_real_t dir_r[3] = {1.0, 0.0, 0.0};
+
+          // Use quaternion (cos(theta/2), sin(theta/2) n_rot)
+          // where n_rot = dir ^ dir_r normalised
+          // so also       dir ^ (dir + dir_r)
+          //
+          // cos(theta/2) = || dir + dir_r|| / 2
+          cs_real_t dir_p_dir_r[3] = {dir[0] + dir_r[0],
+            dir[1] + dir_r[1],
+            dir[2] + dir_r[2]};
+          cs_real_t dir_p_dir_r_normed[3];
+          cs_math_3_normalize(dir_p_dir_r, dir_p_dir_r_normed);
+
+          /* dir ^(dir + dir_r) / || dir + dir_r|| = sin(theta/2) n_rot
+           * for the quaternion */
+          cs_math_3_cross_product(dir, dir_p_dir_r_normed, n_rot);
+
+          /* quaternion, could be normalized afterwards
+           *
+           * Note that the division seems stupid but is not
+           * in case of degenerated case where dir is null
+           * */
+          const cs_real_t euler[4] =
+          {  cs_math_3_norm(dir_p_dir_r)
+            / (cs_math_3_norm(dir) + cs_math_3_norm(dir_r)),
+            n_rot[0],
+            n_rot[1],
+            n_rot[2]};
+
+          trans_m[0][0] = 2.*(euler[0]*euler[0]+euler[1]*euler[1]-0.5);
+          trans_m[0][1] = 2.*(euler[1]*euler[2]+euler[0]*euler[3]);
+          trans_m[0][2] = 2.*(euler[1]*euler[3]-euler[0]*euler[2]);
+          trans_m[1][0] = 2.*(euler[1]*euler[2]-euler[0]*euler[3]);
+          trans_m[1][1] = 2.*(euler[0]*euler[0]+euler[2]*euler[2]-0.5);
+          trans_m[1][2] = 2.*(euler[2]*euler[3]+euler[0]*euler[1]);
+          trans_m[2][0] = 2.*(euler[1]*euler[3]+euler[0]*euler[2]);
+          trans_m[2][1] = 2.*(euler[2]*euler[3]-euler[0]*euler[1]);
+          trans_m[2][2] = 2.*(euler[0]*euler[0]+euler[3]*euler[3]-0.5);
+
+          /* transform grad(Tl) in the local
+           * reference frame */
+
+          cs_math_33_3_product(trans_m, grad_lagr_time[cell_id],
+                                        grad_lagr_time_r_et[cell_id]);
+          for (int i = 0; i < 3; i++)
+            grad_lagr_time_r_et[cell_id][i] /= bbi[i];
+        }
+      } /* end stat weight > treshold */
+      else {
+        if (grad_lagr_time_r_et != nullptr) {
+          for (int i = 0; i < 3; i++)
+            grad_lagr_time_r_et[cell_id][i] = grad_lagr_time[cell_id][i];
+        }
+        for (int i = 0; i < 3; i++) {
+          anisotropic_bx[cell_id][i] = cl * c0  * energi[cell_id] /
+                                     extra_i[phase_id].lagr_time->val[cell_id];
+          anisotropic_lagr_time[cell_id][i] =
+            extra_i[phase_id].lagr_time->val[cell_id];
+        }
+      }
+    } /* end k > threshold et eps  > treshold */
+    else {
+      for (int i = 0; i < 3; i++) {
+        anisotropic_bx[cell_id][i] = 0;
+        anisotropic_lagr_time[cell_id][i] = cs_math_epzero;
+      }
+    }
+  }
+}
+
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Compute auxilary mean fluid quantities.
  *
- *  - Lagragian time
+ *  - Lagrangian time (if modcpl == 1 also anisotropic values)
  *  - gradient of total pressure
  *  - velocity gradient
- *  - Lagragian time gradient
+ *  - temperature gradient
+ *  - Lagrangian time gradient (also gradient of anisotropic values if needed)
+ *  - diffusion matix
  *
+ * \param[in]   iprev                  time step indicator for fields
+ *                                      0: use fields at current time step
+ *                                      1: use fields at previous time step
  * \param[in]   phase_id               carrier phase id
  * \param[out]  lagr_time              Lagragian time scale
  * \param[out]  grad_pr                pressure gradient
  * \param[out]  grad_vel               velocity gradient
  * \param[out]  grad_tempf             fluid temperature gradient
+ * \param[out]  anisotropic_lagr_time  anisotropic Lagragian time scale (modcpl)
+ * \param[out]  anisotropic_bx         anisotropic diffusion term (if modcpl)
+ * \param[out]  grad_lagr_time_r_et    anisotropic Lagrangian time gradient in
+ *                                     relative basis
  * \param[out]  grad_lagr_time         Lagrangian time gradient
+ *
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_lagr_aux_mean_fluid_quantities(int            phase_id,
+cs_lagr_aux_mean_fluid_quantities(int            iprev, // FIXME compute at current and previous ?
+                                  int            phase_id,
                                   cs_field_t    *lagr_time,
                                   cs_real_3_t   *grad_pr,
                                   cs_real_33_t  *grad_vel,
                                   cs_real_3_t   *grad_tempf,
+                                  cs_real_3_t   *anisotropic_lagr_time,
+                                  cs_real_3_t   *anisotropic_bx,
+                                  cs_real_3_t   *grad_lagr_time_r_et,
                                   cs_real_3_t   *grad_lagr_time)
 {
+  /* TODO compute cell properties in coherence with iprev */
   cs_lnum_t n_cells_with_ghosts = cs_glob_mesh->n_cells_with_ghosts;
   cs_lnum_t n_cells = cs_glob_mesh->n_cells;
 
@@ -171,7 +508,8 @@ cs_lagr_aux_mean_fluid_quantities(int            phase_id,
       for (cs_lnum_t id = 0; id < 3; id++)
         grad_pr[iel][id] = cpro_pgradlagr[3*iel + id];
 
-    if (turb_disp_model || cs_glob_lagr_model->shape > 0) {
+    if (turb_disp_model || cs_glob_lagr_model->shape > 0
+        || cs_glob_lagr_time_scheme->interpol_field > 0) {
 
       char *f_name = nullptr;
       f_name = _field_name_aux("lagr_velocity_gradient", phase_id);
@@ -188,6 +526,10 @@ cs_lagr_aux_mean_fluid_quantities(int            phase_id,
         }
       }
     }
+    compute_particle_covariance_gradient(iprev,
+                                         phase_id,
+                                         extra_i[phase_id].grad_cov_skp,
+                                         extra_i[phase_id].grad_cov_sk);
   }
 
   if (cs_glob_lagr_model->cs_used == 1) {
@@ -230,7 +572,7 @@ cs_lagr_aux_mean_fluid_quantities(int            phase_id,
     /* Get the calculation option from the pressure field */
 
     const cs_equation_param_t *eqp =
-      cs_field_get_equation_param_const(extra->pressure);
+      cs_field_get_equation_param_const(extra_i[phase_id].pressure);
 
     cs_gradient_type_by_imrgra(eqp->imrgra,
                                &gradient_type,
@@ -282,7 +624,7 @@ cs_lagr_aux_mean_fluid_quantities(int            phase_id,
                        eqp->epsrgr,
                        eqp->climgr,
                        f_ext,
-                       extra->pressure->bc_coeffs,
+                       extra_i[phase_id].pressure->bc_coeffs,
                        wpres,
                        weight,
                        cpl,
@@ -293,7 +635,7 @@ cs_lagr_aux_mean_fluid_quantities(int            phase_id,
 
     if (cs_glob_physical_model_flag[CS_COMPRESSIBLE] < 0) {
       if(cs_glob_velocity_pressure_model->idilat == 0) {
-        cs_real_t *romf = extra->cromf->val;
+        cs_real_t *romf = extra_i[phase_id].cromf->val;
         for (cs_lnum_t cell_id = 0; cell_id < cs_glob_mesh->n_cells; cell_id++)
         {
           for (cs_lnum_t i = 0; i < 3; i++)
@@ -395,7 +737,7 @@ cs_lagr_aux_mean_fluid_quantities(int            phase_id,
                         cvar_vel,
                         cvar_vela,
                         f_vel->bc_coeffs,
-                        NULL, // bc_coeffs_solve
+                        nullptr, // bc_coeffs_solve
                         i_massflux,
                         b_massflux,
                         i_visc,
@@ -435,8 +777,8 @@ cs_lagr_aux_mean_fluid_quantities(int            phase_id,
        ========================= */
 
     if (turb_disp_model || cs_glob_lagr_model->shape > 0
-        || cs_glob_lagr_time_scheme->interpol_field) {
-      cs_field_gradient_vector(extra->vel,
+        || cs_glob_lagr_time_scheme->interpol_field > 0) {
+      cs_field_gradient_vector(extra_i[phase_id].vel,
                                0,
                                1, /* inc */
                                grad_vel);
@@ -528,6 +870,21 @@ cs_lagr_aux_mean_fluid_quantities(int            phase_id,
                                1, /* inc: not an increment */
                                grad_lagr_time);
 
+    if (turb_disp_model)
+      compute_anisotropic_prop(iprev,
+                               phase_id,
+                               anisotropic_lagr_time,
+                               anisotropic_bx,
+                               grad_lagr_time_r_et,
+                               grad_lagr_time);
+
+
+    else if (grad_lagr_time_r_et != nullptr) {
+      for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
+        for (int i = 0; i < 3; i++)
+          grad_lagr_time_r_et[cell_id][i] = grad_lagr_time[cell_id][i];
+      }
+    }
   }
   else { // idistu == 0
     for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++)

@@ -210,9 +210,8 @@ _mean_rotation_phase_spheroid(const cs_real_t  dtp,
  *
  * Principle: Euler scheme
  *
- * \param[in]  ip           particle number
  * \param[in]  dtp          time step
- * \param[in]  d_plus      reduced parameter for the (isotropic) fluctuation tensor
+ * \param[in]  d_plus       reduced parameter for the (isotropic) fluctuation tensor
  * \param[in]  orientation  spheroid orientation (vector)
  * \param[in]  Lambda       spheroid shape parameter
  * \param[in]  brown        normal random number (9 values by particles)
@@ -220,12 +219,11 @@ _mean_rotation_phase_spheroid(const cs_real_t  dtp,
 /*----------------------------------------------------------------------------*/
 
 static void
-_bm_stretching_phase_spheroid(const cs_lnum_t ip,
-                              const cs_real_t dtp,
-                              const cs_real_t d_plus,
-                                    cs_real_t orientation[3],
-                              const cs_real_t Lambda,
-                              const cs_real_t brown[])
+_bm_stretching_phase_spheroid(const cs_real_t   dtp,
+                              const cs_real_t   d_plus,
+                                    cs_real_t   orientation[3],
+                              const cs_real_t   Lambda,
+                              const cs_real_9_t brown)
 {
   /* Auxiliary parameters for calculation */
   cs_real_t aux1 = orientation[0] * orientation[1] * orientation[2];
@@ -236,15 +234,15 @@ _bm_stretching_phase_spheroid(const cs_lnum_t ip,
   cs_real_t aux5 = 1. / (1. + 0.5 * cs_math_pow2(aux4) * dtp);
 
   /* W11 W12 W13 W21 W22 W23 W31 W32 W33 */
-  cs_real_t  dw11 = sqrt(dtp) * brown[ip*9+0];
-  cs_real_t  dw12 = sqrt(dtp) * brown[ip*9+1];
-  cs_real_t  dw13 = sqrt(dtp) * brown[ip*9+2];
-  cs_real_t  dw21 = sqrt(dtp) * brown[ip*9+3];
-  cs_real_t  dw22 = sqrt(dtp) * brown[ip*9+4];
-  cs_real_t  dw23 = sqrt(dtp) * brown[ip*9+5];
-  cs_real_t  dw31 = sqrt(dtp) * brown[ip*9+6];
-  cs_real_t  dw32 = sqrt(dtp) * brown[ip*9+7];
-  cs_real_t  dw33 = sqrt(dtp) * brown[ip*9+8];
+  cs_real_t  dw11 = sqrt(dtp) * brown[0];
+  cs_real_t  dw12 = sqrt(dtp) * brown[1];
+  cs_real_t  dw13 = sqrt(dtp) * brown[2];
+  cs_real_t  dw21 = sqrt(dtp) * brown[3];
+  cs_real_t  dw22 = sqrt(dtp) * brown[4];
+  cs_real_t  dw23 = sqrt(dtp) * brown[5];
+  cs_real_t  dw31 = sqrt(dtp) * brown[6];
+  cs_real_t  dw32 = sqrt(dtp) * brown[7];
+  cs_real_t  dw33 = sqrt(dtp) * brown[8];
 
   cs_real_t orientation_new[3];
 
@@ -282,7 +280,6 @@ _bm_stretching_phase_spheroid(const cs_lnum_t ip,
  * Principle:
  *            Use of quaternions to get the rotation angle
  *
- * \param[in]  ip           particle number
  * \param[in]  dtp          time step
  * \param[in]  d_minus      reduced parameter for the (isotropic)
  *                          fluctuation tensor
@@ -292,20 +289,19 @@ _bm_stretching_phase_spheroid(const cs_lnum_t ip,
 /*----------------------------------------------------------------------------*/
 
 static void
-_bm_rotation_phase_spheroid_by_quaternion(const cs_lnum_t  ip,
-                                          const cs_real_t  dtp,
-                                          const cs_real_t  d_minus,
-                                          cs_real_t        orient_loc[3],
-                                          cs_real_t        quater_loc[4],
-                                          const cs_real_t  brown[])
+_bm_rotation_phase_spheroid_by_quaternion(const cs_real_t    dtp,
+                                          const cs_real_t    d_minus,
+                                          cs_real_t          orient_loc[3],
+                                          cs_real_t          quater_loc[4],
+                                          const cs_real_9_t  brown)
 {
   /* Define the nine Brownian increments W11 W12 W13 W21 W22 W23 W31 W32 W33 */
-  cs_real_t  dw12 = sqrt(dtp) * brown[ip*9+1];
-  cs_real_t  dw13 = sqrt(dtp) * brown[ip*9+2];
-  cs_real_t  dw21 = sqrt(dtp) * brown[ip*9+3];
-  cs_real_t  dw23 = sqrt(dtp) * brown[ip*9+5];
-  cs_real_t  dw31 = sqrt(dtp) * brown[ip*9+6];
-  cs_real_t  dw32 = sqrt(dtp) * brown[ip*9+7];
+  cs_real_t  dw12 = sqrt(dtp) * brown[1];
+  cs_real_t  dw13 = sqrt(dtp) * brown[2];
+  cs_real_t  dw21 = sqrt(dtp) * brown[3];
+  cs_real_t  dw23 = sqrt(dtp) * brown[5];
+  cs_real_t  dw31 = sqrt(dtp) * brown[6];
+  cs_real_t  dw32 = sqrt(dtp) * brown[7];
 
   /* Define the Brownian rotation dw */
   cs_real_t dw[3];
@@ -388,25 +384,25 @@ _bm_rotation_phase_spheroid_by_quaternion(const cs_lnum_t  ip,
 /*----------------------------------------------------------------------------*/
 
 static void
-_bm_rotation_phase_spheroid_by_spherical_coordinates(const cs_lnum_t ip,
-                                                     const cs_real_t dtp,
-                                                     const cs_real_t d_minus,
-                                                     cs_real_t   orient_loc[3],
-                                                     const cs_real_t brown[])
+_bm_rotation_phase_spheroid_by_spherical_coordinates(const cs_lnum_t   ip,
+                                                     const cs_real_t   dtp,
+                                                     const cs_real_t   d_minus,
+                                                     cs_real_t     orient_loc[3],
+                                                     const cs_real_9_t brown[])
 {
   /* Time factor d_minus*/
   cs_real_t half_d_minus = 0.5 * d_minus;
 
   /* Define the nine Brownian increments W11 W12 W13 W21 W22 W23 W31 W32 W33 */
-  //cs_real_t  dw11 = sqrt(dtp) * brown[ip*9+0];
-  cs_real_t  dw12 = sqrt(dtp) * brown[ip*9+1];
-  cs_real_t  dw13 = sqrt(dtp) * brown[ip*9+2];
-  cs_real_t  dw21 = sqrt(dtp) * brown[ip*9+3];
-  //cs_real_t  dw22 = sqrt(dtp) * brown[ip*9+4];
-  cs_real_t  dw23 = sqrt(dtp) * brown[ip*9+5];
-  cs_real_t  dw31 = sqrt(dtp) * brown[ip*9+6];
-  cs_real_t  dw32 = sqrt(dtp) * brown[ip*9+7];
-  //cs_real_t  dw33 = sqrt(dtp) * brown[ip*9+8];
+  //cs_real_t  dw11 = sqrt(dtp) * brown[0];
+  cs_real_t  dw12 = sqrt(dtp) * brown[1];
+  cs_real_t  dw13 = sqrt(dtp) * brown[2];
+  cs_real_t  dw21 = sqrt(dtp) * brown[3];
+  //cs_real_t  dw22 = sqrt(dtp) * brown[4];
+  cs_real_t  dw23 = sqrt(dtp) * brown[5];
+  cs_real_t  dw31 = sqrt(dtp) * brown[6];
+  cs_real_t  dw32 = sqrt(dtp) * brown[7];
+  //cs_real_t  dw33 = sqrt(dtp) * brown[8];
 
   /* Define the angles theta and phi (3d case) */
   cs_real_t theta;
@@ -552,18 +548,20 @@ _bm_rotation_phase_spheroid_by_spherical_coordinates(const cs_lnum_t ip,
  *
  * Details in publication by M. Bossy and L. Campana (INRIA)
  *
+ * \param[in] p_id      particle index
  * \param[in] iprev     time step indicator for fields
  *                        0: use fields at current time step
  *                        1: use fields at previous time step
- * \param[in] dt_p      lagrangian time step
+ * \param[in] dt_part      integration time step associated to the particle
  * \param[in] gradvf    fluid velocity gradient
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_lagr_orientation_dyn_spheroids(int              iprev,
-                                  const cs_real_t  dt_p,
-                                  const cs_real_t  gradvf[][3][3])
+cs_lagr_orientation_dyn_spheroids(cs_lnum_t                p_id,
+                                  int                      iprev,
+                                  const cs_real_t          dt_part,
+                                  const cs_real_t          gradvf[][3][3])
 {
   /*===================
    * 1. Initializations
@@ -575,8 +573,7 @@ cs_lagr_orientation_dyn_spheroids(int              iprev,
   cs_lagr_extra_module_t *extra_i = cs_get_lagr_extra_module();
   cs_lagr_extra_module_t *extra = extra_i;
 
-  cs_real_t *brown = nullptr;
-  BFT_MALLOC(brown, p_set->n_particles*9, cs_real_t);
+  cs_real_9_t brown;
 
   const cs_real_t *cvar_k = nullptr, *cvar_ep = nullptr, *cvar_omg = nullptr;
   if (extra->cvar_k != nullptr) {
@@ -610,139 +607,135 @@ cs_lagr_orientation_dyn_spheroids(int              iprev,
    *===============================================*/
 
   /* Loop on particles */
-  for (cs_lnum_t p_id = 0; p_id < p_set->n_particles; p_id++) {
 
-    unsigned char *particle = p_set->p_buffer + p_am->extents * p_id;
+  unsigned char *particle = p_set->p_buffer + p_am->extents * p_id;
 
-    /* Generation of random numbers */
-    /* 9 gaussian increments numered as 3x3 tensor */
-    /* W11 W12 W13 W21 W22 W23 W31 W32 W33 */
-    cs_random_normal(9, &(brown[9 * p_id]));
+  /* Generation of random numbers */
+  /* 9 gaussian increments numered as 3x3 tensor */
+  /* W11 W12 W13 W21 W22 W23 W31 W32 W33 */
+  cs_random_normal(9, brown);
 
-    /* Get local flow properties
-       cell_id :    id of the cell
-       romf    :    fluid density
-       visccf  :    kinematic viscosity
-       epsilon :    dissipation rate of turbulent kinetic energy
-       tau_eta :    Kolmogorov timescale
-    */
+  /* Get local flow properties
+     cell_id :    id of the cell
+     romf    :    fluid density
+     visccf  :    kinematic viscosity
+     epsilon :    dissipation rate of turbulent kinetic energy
+     tau_eta :    Kolmogorov timescale
+  */
 
-    cs_lnum_t cell_id
-      = cs_lagr_particle_get_lnum(particle, p_am, CS_LAGR_CELL_ID);
+  cs_lnum_t cell_id
+    = cs_lagr_particle_get_lnum(particle, p_am, CS_LAGR_CELL_ID);
 
-    cs_real_t romf = extra->cromf->val[cell_id];
+  cs_real_t romf = extra->cromf->val[cell_id];
 
-    cs_real_t visccf = extra->viscl->val[cell_id] / romf;
+  cs_real_t visccf = extra->viscl->val[cell_id] / romf;
 
-    cs_real_t epsilon = 0;
-    if (cvar_ep != nullptr) {
-      epsilon = cvar_ep[cell_id];
-    }
-    else if (extra->iturb == CS_TURB_K_OMEGA) {
-      epsilon = extra->cmu * cvar_k[cell_id] * cvar_omg[cell_id];
-    }
-
-    cs_real_t tau_eta = sqrt(visccf / epsilon);
-    /*
-      Parameters for the (isotropic) fluctuation tensor (d_1,....,d_9)
-      Assuming isotropy, the only non zero components are :
-      d_1 = -1.0 / (sqrt(3.0 * tau_eta);
-      d_2 = 0.5 * (sqrt(3.0/tau_eta) + sqrt(5.0/tau_eta));
-      d_3 = 0.5 * (sqrt(3.0/tau_eta) - sqrt(5.0/tau_eta));
-      Only this reduced information is needed :
-      d_plus = d_2 + d_3
-    */
-    cs_real_t d_1 = -1.0 / sqrt(3.0 * tau_eta);
-
-    cs_real_t d_plus = sqrt(3.0/tau_eta);
-    cs_real_t d_minus = sqrt(5.0/tau_eta);
-
-    /* Get particle orientation*/
-    auto *orientation =
-      cs_lagr_particles_attr_get_ptr<cs_real_t>(p_set, p_id,
-                                                CS_LAGR_ORIENTATION);
-
-    /* Get particle quaternion*/
-    auto *quaternion =
-      cs_lagr_particles_attr_get_ptr<cs_real_t>(p_set, p_id,
-                                                CS_LAGR_QUATERNION);
-
-    /* Get particle shape_param*/
-    auto *radii = cs_lagr_particles_attr_get_ptr<cs_real_t>(p_set, p_id,
-                                                            CS_LAGR_RADII);
-    cs_real_t Lambda = (cs_math_pow2(radii[2]/radii[1]) - 1.0)
-                     / (cs_math_pow2(radii[2]/radii[1]) + 1.0);
-
-    /* Extract symmetric and anti-symmetric parts
-     * of the velocity gradients (matrix) */
-    cs_real_t gradvf_sym[3][3];
-    cs_real_t gradvf_ant[3][3];
-    cs_math_33_extract_sym_ant(gradvf[cell_id], gradvf_sym, gradvf_ant);
-
-    /* First step:
-       Stretching of spheroids by the mean velocity gradient */
-    // Add a value to the diagonal elements (if needed)
-    cs_real_t beta = 0.5 * cs_math_pow2(Lambda) *
-                    (2. * cs_math_pow2(d_1) +
-                     cs_math_pow2(d_plus)  +
-                     cs_math_pow2(d_1+d_plus))
-                   + 0.5 * cs_math_pow2(d_minus);
-
-    _mean_stretching_phase_spheroid(dt_p,
-                                    orientation,
-                                    Lambda,
-                                    beta,
-                                    gradvf_sym);
-
-    /* Second step:
-       Rotation of spheroids by the mean velocity gradient */
-    _mean_rotation_phase_spheroid(dt_p,
-                                  orientation,
-                                  gradvf_ant);
-
-    /* Third step:
-       Stretching of spheroids by Brownian motion */
-    _bm_stretching_phase_spheroid(p_id,
-                                  dt_p,
-                                  d_plus,
-                                  orientation,
-                                  Lambda,
-                                  brown);
-
-    /* Fourth step:
-       Rotation of spheroids by Brownian motion and renormalisation */
-    /*
-    _bm_rotation_phase_spheroid_by_spherical_coordinates(p_id,
-                                                         dt_p,
-                                                         d_minus,
-                                                         orientation,
-                                                         brown);
-    */
-    _bm_rotation_phase_spheroid_by_quaternion(p_id,
-                                              dt_p,
-                                              d_minus,
-                                              orientation,
-                                              quaternion,
-                                              brown);
-
-    cs_math_3_normalize(orientation, orientation);
+  cs_real_t epsilon = 0;
+  if (cvar_ep != nullptr) {
+    epsilon = cvar_ep[cell_id];
+  }
+  else if (extra->iturb == CS_TURB_K_OMEGA) {
+    epsilon = extra->cmu * cvar_k[cell_id] * cvar_omg[cell_id];
   }
 
-  /* Free memory */
-  BFT_FREE(brown);
+  cs_real_t tau_eta = sqrt(visccf / epsilon);
+  /*
+    Parameters for the (isotropic) fluctuation tensor (d_1,....,d_9)
+    Assuming isotropy, the only non zero components are :
+    d_1 = -1.0 / (sqrt(3.0 * tau_eta);
+    d_2 = 0.5 * (sqrt(3.0/tau_eta) + sqrt(5.0/tau_eta));
+    d_3 = 0.5 * (sqrt(3.0/tau_eta) - sqrt(5.0/tau_eta));
+    Only this reduced information is needed :
+    d_plus = d_2 + d_3
+  */
+  cs_real_t d_1 = -1.0 / sqrt(3.0 * tau_eta);
+
+  cs_real_t d_plus = sqrt(3.0/tau_eta);
+  cs_real_t d_minus = sqrt(5.0/tau_eta);
+
+  /* Get particle orientation*/
+  auto *orientation =
+    cs_lagr_particles_attr_get_ptr<cs_real_t>(p_set, p_id,
+                                              CS_LAGR_ORIENTATION);
+
+  /* Get particle quaternion*/
+  auto *quaternion =
+    cs_lagr_particles_attr_get_ptr<cs_real_t>(p_set, p_id,
+                                              CS_LAGR_QUATERNION);
+
+  /* Get particle shape_param*/
+  auto *radii = cs_lagr_particles_attr_get_ptr<cs_real_t>(p_set, p_id,
+                                                          CS_LAGR_RADII);
+  cs_real_t Lambda = (cs_math_pow2(radii[2]/radii[1]) - 1.0)
+                   / (cs_math_pow2(radii[2]/radii[1]) + 1.0);
+
+  /* Extract symmetric and anti-symmetric parts
+   * of the velocity gradients (matrix) */
+  cs_real_t gradvf_sym[3][3];
+  cs_real_t gradvf_ant[3][3];
+  cs_math_33_extract_sym_ant(gradvf[cell_id], gradvf_sym, gradvf_ant);
+
+  /* First step:
+     Stretching of spheroids by the mean velocity gradient */
+  // Add a value to the diagonal elements (if needed)
+  cs_real_t beta = 0.5 * cs_math_pow2(Lambda) *
+                  (2. * cs_math_pow2(d_1) +
+                   cs_math_pow2(d_plus)  +
+                   cs_math_pow2(d_1+d_plus))
+                 + 0.5 * cs_math_pow2(d_minus);
+
+  _mean_stretching_phase_spheroid(dt_part,
+                                  orientation,
+                                  Lambda,
+                                  beta,
+                                  gradvf_sym);
+
+  /* Second step:
+     Rotation of spheroids by the mean velocity gradient */
+  _mean_rotation_phase_spheroid(dt_part,
+                                orientation,
+                                gradvf_ant);
+
+  /* Third step:
+     Stretching of spheroids by Brownian motion */
+  _bm_stretching_phase_spheroid(dt_part,
+                                d_plus,
+                                orientation,
+                                Lambda,
+                                brown);
+
+  /* Fourth step:
+     Rotation of spheroids by Brownian motion and renormalisation */
+  /*
+  _bm_rotation_phase_spheroid_by_spherical_coordinates(p_id,
+                                                       dt_part,
+                                                       d_minus,
+                                                       orientation,
+                                                       brown);
+  */
+  _bm_rotation_phase_spheroid_by_quaternion(dt_part,
+                                            d_minus,
+                                            orientation,
+                                            quaternion,
+                                            brown);
+
+  cs_math_3_normalize(orientation, orientation);
+
 }
 
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Integration of the Jeffey equations in DNS mode
  *
- * \param[in] dt_p      lagrangian time step
+ * \param[in] p_id      particle index
+ * \param[in] dt_part   integration time step associated to the particle
  * \param[in] gradvf    fluid velocity gradient
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_lagr_orientation_dyn_jeffery(cs_real_t        dt_p,
+cs_lagr_orientation_dyn_jeffery(cs_lnum_t        p_id,
+                                cs_real_t        dt_part,
                                 const cs_real_t  gradvf[][3][3])
 {
   /* 1. Initializations
@@ -756,121 +749,119 @@ cs_lagr_orientation_dyn_jeffery(cs_real_t        dt_p,
 
   /* Loop on particles */
 
-  for (cs_lnum_t p_id = 0; p_id < p_set->n_particles; p_id++) {
+  unsigned char *particle = p_set->p_buffer + p_am->extents * p_id;
 
-    unsigned char *particle = p_set->p_buffer + p_am->extents * p_id;
+  /* Get local flow properties
+     cell_id :    id of the cell
+     romf    :    fluid density
+     visccf  :    kinematic viscosity
+     epsilon :    dissipation rate of turbulent kinetic energy
+     tau_eta :    Kolmogorov timescale
+  */
 
-    /* Get local flow properties
-       cell_id :    id of the cell
-       romf    :    fluid density
-       visccf  :    kinematic viscosity
-       epsilon :    dissipation rate of turbulent kinetic energy
-       tau_eta :    Kolmogorov timescale
-    */
+  cs_lnum_t cell_id = cs_lagr_particle_get_lnum(particle, p_am, CS_LAGR_CELL_ID);
 
-    cs_lnum_t cell_id = cs_lagr_particle_get_lnum(particle, p_am, CS_LAGR_CELL_ID);
+  /* Euler parameters */
+  auto *euler = cs_lagr_particle_attr_get_ptr<cs_real_t>(particle, p_am,
+                                                         CS_LAGR_EULER);
 
-    /* Euler parameters */
-    auto *euler = cs_lagr_particle_attr_get_ptr<cs_real_t>(particle, p_am,
-                                                           CS_LAGR_EULER);
+  cs_real_33_t trans_m = {
+    {2.*(euler[0]*euler[0]+euler[1]*euler[1]-0.5),   /* (0,0) */
+     2.*(euler[1]*euler[2]+euler[0]*euler[3])    ,   /* (0,1) */
+     2.*(euler[1]*euler[3]-euler[0]*euler[2])    },  /* (0,2) */
 
-    cs_real_33_t trans_m = {
-      {2.*(euler[0]*euler[0]+euler[1]*euler[1]-0.5),   /* (0,0) */
-       2.*(euler[1]*euler[2]+euler[0]*euler[3])    ,   /* (0,1) */
-       2.*(euler[1]*euler[3]-euler[0]*euler[2])    },  /* (0,2) */
+    {2.*(euler[1]*euler[2]-euler[0]*euler[3])    ,  /* (1,0) */
+     2.*(euler[0]*euler[0]+euler[2]*euler[2]-0.5),  /* (1,1) */
+     2.*(euler[2]*euler[3]+euler[0]*euler[1])    }, /* (1,2) */
 
-      {2.*(euler[1]*euler[2]-euler[0]*euler[3])    ,  /* (1,0) */
-       2.*(euler[0]*euler[0]+euler[2]*euler[2]-0.5),  /* (1,1) */
-       2.*(euler[2]*euler[3]+euler[0]*euler[1])    }, /* (1,2) */
+    {2.*(euler[1]*euler[3]+euler[0]*euler[2])    ,  /* (2,0) */
+     2.*(euler[2]*euler[3]-euler[0]*euler[1])    ,  /* (2,1) */
+     2.*(euler[0]*euler[0]+euler[3]*euler[3]-0.5)}  /* (2,2) */
+  };
 
-      {2.*(euler[1]*euler[3]+euler[0]*euler[2])    ,  /* (2,0) */
-       2.*(euler[2]*euler[3]-euler[0]*euler[1])    ,  /* (2,1) */
-       2.*(euler[0]*euler[0]+euler[3]*euler[3]-0.5)}  /* (2,2) */
-    };
+  /* Fluid velocity gradient in the relative reference frame of the particle */
+  cs_real_t grad_vf_r[3][3];
 
-    /* Fluid velocity gradient in the relative reference frame of the particle */
-    cs_real_t grad_vf_r[3][3];
+  cs_math_33_transform_a_to_r(gradvf[cell_id], trans_m, grad_vf_r);
 
-    cs_math_33_transform_a_to_r(gradvf[cell_id], trans_m, grad_vf_r);
+  /* Ellipsoid radii */
+  auto *radii = cs_lagr_particle_attr_get_ptr<cs_real_t>(particle, p_am,
+                                                         CS_LAGR_RADII);
 
-    /* Ellipsoid radii */
-    auto *radii = cs_lagr_particle_attr_get_ptr<cs_real_t>(particle, p_am,
-                                                           CS_LAGR_RADII);
+  /* Corresponding shape parameters */
+  auto *s_p = cs_lagr_particle_attr_get_ptr<cs_real_t>(particle, p_am,
+                                                       CS_LAGR_SHAPE_PARAM);
 
-    /* Corresponding shape parameters */
-    auto *s_p = cs_lagr_particle_attr_get_ptr<cs_real_t>(particle, p_am,
-                                                         CS_LAGR_SHAPE_PARAM);
+  /* Tau_p */
+  cs_real_t taup = dt_part; //FIXME: need of small time steps !! (e-8 in dns)
 
-    /* Tau_p */
-    cs_real_t taup = dt_p; //FIXME: need of small time steps !! (e-8 in dns)
+  /* Inverse of a time scale for angular velocity
+   * in the relative reference frame */
+  cs_real_t zeta[3] =
+    {   (40.0/9.0)*pow(radii[0]*radii[1]*radii[2], 2.0/3.0)
+      / (radii[1]*radii[1]*s_p[1]+radii[2]*radii[2]*s_p[2])/taup,
+        (40.0/9.0)*pow(radii[0]*radii[1]*radii[2],2.0/3.0)
+      / (radii[0]*radii[0]*s_p[0]+radii[2]*radii[2]*s_p[2])/taup,
+        (40.0/9.0)*pow(radii[0]*radii[1]*radii[2],2.0/3.0)
+      / (radii[0]*radii[0]*s_p[0]+radii[1]*radii[1]*s_p[1])/taup};
 
-    /* Inverse of a time scale for angular velocity
-     * in the relative reference frame */
-    cs_real_t zeta[3] =
-      {   (40.0/9.0)*pow(radii[0]*radii[1]*radii[2], 2.0/3.0)
-        / (radii[1]*radii[1]*s_p[1]+radii[2]*radii[2]*s_p[2])/taup,
-          (40.0/9.0)*pow(radii[0]*radii[1]*radii[2],2.0/3.0)
-        / (radii[0]*radii[0]*s_p[0]+radii[2]*radii[2]*s_p[2])/taup,
-          (40.0/9.0)*pow(radii[0]*radii[1]*radii[2],2.0/3.0)
-        / (radii[0]*radii[0]*s_p[0]+radii[1]*radii[1]*s_p[1])/taup};
+  cs_real_t ezeta[3] = {exp(-dt_part * zeta[0]),
+                        exp(-dt_part * zeta[1]),
+                        exp(-dt_part * zeta[2])};
 
-    cs_real_t ezeta[3] = {exp(-dt_p * zeta[0]),
-                          exp(-dt_p * zeta[1]),
-                          exp(-dt_p * zeta[2])};
+  /* Shape factors (diagonal matrix) */
+  cs_real_t aom[3] = {
+    (radii[2]*radii[2]-radii[1]*radii[1])/(radii[2]*radii[2]+radii[1]*radii[1]),
+    (radii[0]*radii[0]-radii[2]*radii[2])/(radii[0]*radii[0]+radii[2]*radii[2]),
+    (radii[1]*radii[1]-radii[0]*radii[0])/(radii[1]*radii[1]+radii[0]*radii[0])};
 
-    /* Shape factors (diagonal matrix) */
-    cs_real_t aom[3] = {
-      (radii[2]*radii[2]-radii[1]*radii[1])/(radii[2]*radii[2]+radii[1]*radii[1]),
-      (radii[0]*radii[0]-radii[2]*radii[2])/(radii[0]*radii[0]+radii[2]*radii[2]),
-      (radii[1]*radii[1]-radii[0]*radii[0])/(radii[1]*radii[1]+radii[0]*radii[0])};
+  /* 3. Integration of the (S)DE on the Euler parameters and angular velocity
+     ======================================================================== */
 
-    /* 3. Integration of the (S)DE on the Euler parameters and angular velocity
-       ======================================================================== */
+    auto *ang_vel =
+      cs_lagr_particle_attr_get_ptr<cs_real_t>(particle, p_am,
+                                               CS_LAGR_ANGULAR_VEL);
 
-    auto *ang_vel = cs_lagr_particle_attr_get_ptr<cs_real_t>(particle, p_am,
-                                                             CS_LAGR_ANGULAR_VEL);
+  /* Integration of the Euler parameters:
+   * Equation (26) of P. H. Mortensen (2008)*/
+  cs_real_t d_euler[4] = {
+    0.5 * (-ang_vel[0]*euler[1] - ang_vel[1]*euler[2] - ang_vel[2]*euler[3]),
+    0.5 * ( ang_vel[0]*euler[0] - ang_vel[1]*euler[3] + ang_vel[2]*euler[2]),
+    0.5 * ( ang_vel[0]*euler[3] + ang_vel[1]*euler[0] - ang_vel[2]*euler[1]),
+    0.5 * (-ang_vel[0]*euler[2] + ang_vel[1]*euler[1] + ang_vel[2]*euler[0]),
+  };
 
-    /* Integration of the Euler parameters:
-     * Equation (26) of P. H. Mortensen (2008)*/
-    cs_real_t d_euler[4] = {
-      0.5 * (-ang_vel[0]*euler[1] - ang_vel[1]*euler[2] - ang_vel[2]*euler[3]),
-      0.5 * ( ang_vel[0]*euler[0] - ang_vel[1]*euler[3] + ang_vel[2]*euler[2]),
-      0.5 * ( ang_vel[0]*euler[3] + ang_vel[1]*euler[0] - ang_vel[2]*euler[1]),
-      0.5 * (-ang_vel[0]*euler[2] + ang_vel[1]*euler[1] + ang_vel[2]*euler[0]),
-    };
+  for (int dim = 0; dim < 4; dim++)
+    euler[dim] += dt_part * d_euler[dim];
 
-    for (int dim = 0; dim < 4; dim++)
-      euler[dim] += dt_p * d_euler[dim];
+  cs_real_t euler_norm = sqrt( cs_math_pow2(euler[0])
+                             + cs_math_pow2(euler[1])
+                             + cs_math_pow2(euler[2])
+                             + cs_math_pow2(euler[3]) );
 
-    cs_real_t euler_norm = sqrt( cs_math_pow2(euler[0])
-                               + cs_math_pow2(euler[1])
-                               + cs_math_pow2(euler[2])
-                               + cs_math_pow2(euler[3]) );
+  for (int dim = 0; dim < 4; dim++)
+    euler[dim] = euler[dim] / euler_norm;
 
-    for (int dim = 0; dim < 4; dim++)
-      euler[dim] = euler[dim] / euler_norm;
+  /* Time integration for the angular velocity
+   * (correspond to equation (9) of C. Siewert et al 2013) */
 
-    /* Time integration for the angular velocity
-     * (correspond to equation (9) of C. Siewert et al 2013) */
+  /* Angular velocity, exponential scheme */
+  cs_real_3_t d_ang_vel = {
+    aom[0]*(  ang_vel[1]*ang_vel[2]/zeta[0]
+            - 0.5*(grad_vf_r[2][1] + grad_vf_r[1][2]))
+    +  0.5*(grad_vf_r[2][1] - grad_vf_r[1][2]),
 
-    /* Angular velocity, exponential scheme */
-    cs_real_3_t d_ang_vel = {
-      aom[0]*(  ang_vel[1]*ang_vel[2]/zeta[0]
-              - 0.5*(grad_vf_r[2][1] + grad_vf_r[1][2]))
-      +  0.5*(grad_vf_r[2][1] - grad_vf_r[1][2]),
+    aom[1]*(  ang_vel[0]*ang_vel[2]/zeta[1]
+            - 0.5*(grad_vf_r[0][2] + grad_vf_r[2][0]))
+    + 0.5*(grad_vf_r[0][2] - grad_vf_r[2][0]),
 
-      aom[1]*(  ang_vel[0]*ang_vel[2]/zeta[1]
-              - 0.5*(grad_vf_r[0][2] + grad_vf_r[2][0]))
-      + 0.5*(grad_vf_r[0][2] - grad_vf_r[2][0]),
+    aom[2]*(  ang_vel[0]*ang_vel[1]/zeta[2]
+            - 0.5*(grad_vf_r[1][0] + grad_vf_r[0][1]))
+    + 0.5*(grad_vf_r[1][0] - grad_vf_r[0][1])};
 
-      aom[2]*(  ang_vel[0]*ang_vel[1]/zeta[2]
-              - 0.5*(grad_vf_r[1][0] + grad_vf_r[0][1]))
-      + 0.5*(grad_vf_r[1][0] - grad_vf_r[0][1])};
-
-    for (int dim = 0; dim < 3; dim++)
-      ang_vel[dim] = ezeta[dim] * ang_vel[dim]
-        + (1. - ezeta[dim]) * d_ang_vel[dim];
-  }
+  for (int dim = 0; dim < 3; dim++)
+    ang_vel[dim] = ezeta[dim] * ang_vel[dim]
+      + (1. - ezeta[dim]) * d_ang_vel[dim];
 }
 
 /*----------------------------------------------------------------------------*/

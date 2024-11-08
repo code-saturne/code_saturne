@@ -1184,9 +1184,12 @@ cs_lagr_injection(int        time_id,
 
           cs_parall_max(1, CS_INT_TYPE, &is_displaced);
 
-          /* Tracking step to determine the cell_id of the new location */
+          /* Apply a Tracking step to determine the cell_id associated to
+           * the new particle locations without integrating the SDEs */
           if (is_displaced)
-            cs_lagr_tracking_particle_movement(visc_length, particle_range);
+            cs_lagr_integ_track_particles(visc_length,
+                                          particle_range,
+                                          false);
 
           /* The number of particles injected in each rank may have been modify
            * in the tracking step within cs_user_lagr_in_force_coords */

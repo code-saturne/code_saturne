@@ -58,29 +58,35 @@ BEGIN_C_DECLS
  * By default gravity and drag force are the only forces acting on the particles
  * (the gravity components gx gy gz are assigned in the GUI or in
  * cs_user_parameters)
+ * Note that taup, tlag, piil and bx are associated to the particle and
+ * their value for all phases is provided
  *
  * \param[in]      dt_p     time step (for the cell)
+ * \param[in]      p_id     particle id
  * \param[in]      taup     particle relaxation time
  * \param[in]      tlag     relaxation time for the flow
  * \param[in]      piil     term in the integration of the sde
  * \param[in]      bx       characteristics of the turbulence
  * \param[in]      tsfext   infos for the return coupling
  * \param[in]      vagaus   Gaussian random variables
- * \param[in,out]  rho_p     particle density
+ * \param[in,out]  rho_p    particle density
  * \param[out]     fextla   user external force field (m/s^2)$
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_user_lagr_ef(cs_real_t            dt_p,
-                const cs_real_t    **taup,
-                const cs_real_3_t  **tlag,
-                const cs_real_3_t  **piil,
-                const cs_real_33_t **bx,
-                const cs_real_t      tsfext[],
-                const cs_real_33_t   vagaus[],
-                cs_real_t            rho_p[],
-                cs_real_3_t          fextla[]);
+                const cs_lnum_t      p_id,
+                const cs_real_t     *taup,
+                const cs_real_3_t   *tlag,
+                const cs_real_3_t   *piil,
+                const cs_real_33_t  *bx,
+                const cs_real_t      tsfext,
+                const cs_real_3_t   *vagaus,
+                const cs_real_3_t    gradpr,
+                const cs_real_33_t   gradvf,
+                cs_real_t            rho_p,
+                cs_real_3_t          fextla);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -163,18 +169,43 @@ cs_user_lagr_model(void);
  *
  * This function is called in a loop on the particles, so be careful
  * to avoid too costly operations.
+ *
+ *      \f$\tau_c = \frac{m_p{C_p}_p}{PId_p^2h_e}\f$
+ *
+ *      \f$\tau_c\f$  : Thermal relaxation time (value to be computed)
+ *
+ *      \f$m_p\f$     : Particle mass
+ *
+ *      \f${C_p}_p\f$ : Particle specific heat
+ *
+ *      \f$d_p\f$     : Particle diameter
+ *
+ *      \f$h_e\f$     : Coefficient of thermal exchange
+ *
+ *  The coefficient of thermal exchange is calculated from a Nusselt number,
+ *  itself evaluated by a correlation (Ranz-Marshall by default)
+ *
+ *      \f$\nu = \frac{h_ed_p}{\lambda} = 2 + 0.55{\Re_e}_p^{0.5}P_{rt}^{0.33}\f$
+ *
+ *      \f$\lambda\f$ : Thermal conductivity of the carrier field
+ *
+ *      \f${\Re_e}_p\f$     : Particle Reynolds number
+ *
+ *     \f$ P_{rt}\f$    : Prandtl number
+ *
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_user_lagr_rt(cs_lnum_t        id_p,
+cs_user_lagr_rt(int              phase_id,
+                cs_lnum_t        id_p,
                 cs_real_t        re_p,
                 cs_real_t        uvwr,
                 cs_real_t        rho_f,
                 cs_real_t        rho_p,
                 cs_real_t        nu_f,
-                cs_real_t        *taup,
-                const cs_real_t  dt[]);
+                cs_real_t       *taup,
+                const cs_real_t  dt);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -195,8 +226,8 @@ cs_user_lagr_rt_t(cs_lnum_t        id_p,
                   cs_real_t        nu_f,
                   cs_real_t        cp_f,
                   cs_real_t        k_f,
-                  cs_real_t        tauc[],
-                  const cs_real_t  dt[]);
+                  cs_real_2_t      tempct,
+                  const cs_real_t  dt);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -257,19 +288,26 @@ cs_user_lagr_extra_operations(const cs_real_t  dt[]);
  *      (nor=2) pip is expressed as a function of the quantities of the
  *      current time step.
  *
+ * Note that taup, tlag are associated to the particle and their value for
+ * all phases is provided
+ *
  * \param[in]  dt      time step (per cell)
+ * \param[in]  p_id    particle id
  * \param[in]  taup    particle relaxation time
  * \param[in]  tlag    relaxation time for the flow
  * \param[in]  tempct  characteristic thermal time and implicit source
  *                     term of return coupling
+ * \param[in]  nor     current step id (for 2nd order scheme)
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_user_lagr_sde(const cs_real_t  dt[],
-                 cs_real_t        **taup,
-                 cs_real_3_t      **tlag,
-                 cs_real_t        tempct[]);
+cs_user_lagr_sde(const cs_real_t         dt,
+                 const cs_lnum_t         p_id,
+                 const cs_real_t        *taup,
+                 const cs_real_3_t      *tlag,
+                 const cs_real_2_t       tempct,
+                 const int               nor);
 
 /*----------------------------------------------------------------------------*/
 /*!

@@ -97,226 +97,65 @@ static const cs_lnum_t _jv2t[6] = {0, 1, 2, 1, 2, 2};
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Compute source terms for Lagrangian 2-way coupling.
+ * \brief  Prepare source terms for Lagrangian 2-way coupling.
  *
- * \remark  Source terms are computed for the starting cell of a particle
- *          during a given iteration. Even if particle exits the domain,
- *          it s necessary to compute a source term matching the exchange
- *          between the carrier fluid and the particle at the beginning
- *          of the time step. If cs_glob_lagr_time_step->nor == 2 and the
- *          particle interacts with a boundary, then the source terms
- *          are computed as if nor == 1.
- *
- * \param[in]   taup    dynamic characteristic time
- * \param[in]   tempct  thermal characteristic time
- * \param[out]  tsfext  external forces
- * \param[in]   force_p forces per mass unit on particles (m/s^2)
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_lagr_coupling(const cs_real_t  **taup,
-                 const cs_real_t    tempct[],
-                 cs_real_t          tsfext[],
-                 const cs_real_3_t *force_p)
+cs_lagr_coupling_initialize(void)
 {
-  /*Note: t_* stands for temporary array, used in case of time moments */
-  cs_real_t *st_p = nullptr, *t_st_p = nullptr;
-
-  /* WARNING : Only based on the first continuous phase in neptune_cfd */
-  cs_real_3_t *st_vel = nullptr, *t_st_vel = nullptr;
-  cs_real_t *st_imp_vel = nullptr, *t_st_imp_vel = nullptr;
-  cs_real_6_t *st_rij = nullptr, *t_st_rij = nullptr;
-  cs_real_t *st_k = nullptr, *t_st_k = nullptr;
-  cs_real_t *st_t_e = nullptr, *t_st_t_e = nullptr;
-  cs_real_t *st_t_i = nullptr, *t_st_t_i = nullptr;
-
-  cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
-
-  cs_real_t *cell_f_vol = mq->cell_vol;
-
-  const int *restrict c_disable_flag = mq->c_disable_flag;
-  cs_lnum_t has_dc = mq->has_disable_flag; /* Has cells disabled? */
-
-  /* Initialization
-     ============== */
-
-  {
-    cs_field_t *f = cs_field_by_name_try("lagr_st_pressure");
-    if (f != nullptr)
-      st_p = f->val;
-  }
-
-  {
-    cs_field_t *f = cs_field_by_name_try("lagr_st_velocity");
-    if (f != nullptr)
-      st_vel = (cs_real_3_t *)(f->val);
-  }
-
-  {
-    cs_field_t *f = cs_field_by_name_try("lagr_st_imp_velocity");
-    if (f != nullptr)
-      st_imp_vel = f->val;
-  }
-
-  {
-    cs_field_t *f = cs_field_by_name_try("lagr_st_rij");
-    if (f != nullptr)
-      st_rij = (cs_real_6_t *)(f->val);
-  }
-
-  {
-    cs_field_t *f = cs_field_by_name_try("lagr_st_k");
-    if (f != nullptr)
-      st_k = f->val;
-  }
-
-  {
-    cs_field_t *f = cs_field_by_name_try("lagr_st_temperature");
-    if (f != nullptr)
-      st_t_e = f->val;
-  }
-
-  {
-    cs_field_t *f = cs_field_by_name_try("lagr_st_imp_temperature");
-    if (f != nullptr)
-      st_t_i = f->val;
-  }
-
-  cs_lagr_extra_module_t *extra_i = cs_glob_lagr_extra_module;
-  cs_lagr_extra_module_t *extra = extra_i;
+  cs_lnum_t n_cells_ext = cs_glob_mesh->n_cells_with_ghosts;
+  cs_lagr_extra_module_t *extra = cs_glob_lagr_extra_module;
   cs_lagr_source_terms_t *lag_st = cs_glob_lagr_source_terms;
 
-  cs_lagr_particle_set_t  *p_set = cs_glob_lagr_particle_set;
-  const cs_lagr_attribute_map_t  *p_am = p_set->p_am;
+  /*Note: t_* stands for temporary array, used in case of time moments */
+  cs_real_t    *t_st_p = nullptr;
+  cs_real_3_t  *t_st_vel= nullptr;
+  cs_real_t    *t_st_imp_vel = nullptr;
+  cs_real_6_t  *t_st_rij = nullptr;
+  cs_real_t    *t_st_k = nullptr;
+  cs_real_t    *t_st_t_e = nullptr;
+  cs_real_t    *t_st_t_i = nullptr;
+  cs_real_t    *volp = nullptr;
+  cs_real_t    *volm = nullptr;
 
-  cs_lnum_t n_cells_ext = cs_glob_mesh->n_cells_with_ghosts;
-  cs_lnum_t ncel = cs_glob_mesh->n_cells;
-  cs_lnum_t nbpart = p_set->n_particles;
-
-  cs_real_t dtp = cs_glob_lagr_time_step->dtp;
-
-  cs_real_3_t *auxl;
-  BFT_MALLOC(auxl, nbpart, cs_real_3_t);
-
-  /* Number of passes for steady source terms */
-  if (   cs_glob_lagr_time_scheme->isttio == 1
-      && cs_glob_time_step->nt_cur >= lag_st->nstits)
-    lag_st->npts += 1;
+  cs_field_t *f_st_p = cs_field_by_name_try("lagr_st_pressure");
+  cs_field_t *f_st_vel = cs_field_by_name_try("lagr_st_velocity");
+  cs_field_t *f_st_imp_vel = cs_field_by_name_try("lagr_st_imp_velocity");
+  cs_field_t *f_st_rij = cs_field_by_name_try("lagr_st_rij");
+  cs_field_t *f_st_k = cs_field_by_name_try("lagr_st_k");
+  cs_field_t *f_st_t_e = cs_field_by_name_try("lagr_st_temperature");
+  cs_field_t *f_st_t_i = cs_field_by_name_try("lagr_st_imp_temperature");
 
   bool is_time_averaged = (   cs_glob_lagr_time_scheme->isttio == 1
                            && lag_st->npts > 0);
 
-  lag_st->ntxerr = 0;
-  lag_st->vmax = 0.0;
-  lag_st->tmamax = 0.0;
-
-  cs_real_t *volp = nullptr, *volm = nullptr;
-  BFT_MALLOC(volp, ncel, cs_real_t);
-  BFT_MALLOC(volm, ncel, cs_real_t);
-  for (cs_lnum_t c_id = 0; c_id < ncel; c_id++) {
-    volp[c_id] = 0.0;
-    volm[c_id] = 0.0;
-  }
-
-  /* Preliminary computations
-     ======================== */
-
-  /* Finalization of external forces (if the particle interacts with a
-     domain boundary, revert to order 1). based on the first carrier phase */
-
-  for (cs_lnum_t p_id = 0; p_id < nbpart; p_id++) {
-
-    cs_real_t aux1 = dtp / taup[0][p_id];
-    cs_real_t p_mass = cs_lagr_particles_get_real(p_set, p_id, CS_LAGR_MASS);
-
-    if (   cs_glob_lagr_time_scheme->t_order == 1
-        || cs_lagr_particles_get_lnum(p_set, p_id, CS_LAGR_REBOUND_ID) == 0)
-      tsfext[p_id] = (1.0 - exp(-aux1)) * p_mass * taup[0][p_id];
-
-    else
-      tsfext[p_id] +=  (1.0 - (1.0 - exp (-aux1)) / aux1) * taup[0][p_id]
-                    * p_mass;
-
-  }
-
-  for (cs_lnum_t p_id = 0; p_id < nbpart; p_id++) {
-
-    cs_real_t  p_stat_w = cs_lagr_particles_get_real(p_set, p_id,
-                                                     CS_LAGR_STAT_WEIGHT);
-    cs_real_t  p_mass   = cs_lagr_particles_get_real(p_set, p_id, CS_LAGR_MASS);
-    cs_real_t *p_vel    =
-      cs_lagr_particles_attr_get_ptr<cs_real_t>(p_set, p_id, CS_LAGR_VELOCITY);
-
-    cs_real_t  prev_p_mass = cs_lagr_particles_get_real_n(p_set, p_id, 1,
-                                                          CS_LAGR_MASS);
-    cs_real_t *prev_p_vel  =
-      cs_lagr_particles_attr_n_get_ptr<cs_real_t>(p_set, p_id, 1,
-                                                  CS_LAGR_VELOCITY);
-
-    //TODO tsfext should be computed elsewhere (in sde) and the mass of particle
-    // may be the previous mass.
-    for (cs_lnum_t i = 0; i < 3; i++)
-      auxl[p_id][i] = p_stat_w * (p_mass * p_vel[i] - prev_p_mass * prev_p_vel[i]
-                                 - force_p[p_id][i] * tsfext[p_id]) / dtp;
-
-  }
-
-  /* Momentum source terms
-     ===================== */
+  /* Init particle volume and mass in cell */
+  BFT_MALLOC(volp, n_cells_ext, cs_real_t);
+  BFT_MALLOC(volm, n_cells_ext, cs_real_t);
+  cs_array_real_fill_zero(n_cells_ext, volp);
+  cs_array_real_fill_zero(n_cells_ext, volm);
 
   if (lag_st->ltsdyn == 1) {
-
+    /* Momentum source terms
+       ===================== */
     if (is_time_averaged) {
       BFT_MALLOC(t_st_vel, n_cells_ext, cs_real_3_t);
       BFT_MALLOC(t_st_imp_vel, n_cells_ext, cs_real_t);
     }
     else {
-      t_st_vel = st_vel;
-      t_st_imp_vel = st_imp_vel;
+      if (f_st_vel != nullptr)
+        t_st_vel = (cs_real_3_t *)(f_st_vel->val);
+      if (f_st_imp_vel != nullptr)
+        t_st_imp_vel = f_st_imp_vel->val;
     }
 
     cs_array_real_fill_zero(3 * n_cells_ext, (cs_real_t *) t_st_vel);
-    cs_array_real_fill_zero(n_cells_ext,  t_st_imp_vel);
-
-    for (cs_lnum_t p_id = 0; p_id < nbpart; p_id++) {
-
-      unsigned char *particle = p_set->p_buffer + p_am->extents * p_id;
-
-      cs_real_t  p_stat_w = cs_lagr_particle_get_real(particle, p_am,
-                                                      CS_LAGR_STAT_WEIGHT);
-
-      cs_real_t  prev_p_diam = cs_lagr_particle_get_real_n(particle, p_am, 1,
-                                                           CS_LAGR_DIAMETER);
-      cs_real_t  prev_p_mass = cs_lagr_particle_get_real_n(particle, p_am, 1,
-                                                           CS_LAGR_MASS);
-      cs_real_t  p_mass = cs_lagr_particle_get_real(particle, p_am,
-                                                    CS_LAGR_MASS);
-
-      int t_order = cs_glob_lagr_time_scheme->t_order;
-      cs_lnum_t c_id = cs_lagr_particle_get_lnum_n(particle, p_am, t_order - 1,
-                                                   CS_LAGR_CELL_ID);
-
-      /* Volume and mass of particles in cell */
-      volp[c_id] += p_stat_w * cs_math_pi * pow(prev_p_diam, 3) / 6.0;
-      volm[c_id] += p_stat_w * prev_p_mass;
-
-      /* Momentum source term */
-      cs_real_t dvol = 0.;
-      if (has_dc * c_disable_flag[has_dc * c_id] == 0)
-        dvol = 1. / cell_f_vol[c_id];
-
-      for (cs_lnum_t i = 0; i < 3; i++)
-        t_st_vel[c_id][i] -= dvol * auxl[p_id][i];
-
-      t_st_imp_vel[c_id] -= 2.0 * dvol * p_stat_w * p_mass / taup[0][p_id];
-
-    }
+    cs_array_real_fill_zero(n_cells_ext, t_st_imp_vel);
 
   /* Turbulence source terms
      ======================= */
-
-    cs_real_3_t *vel = (cs_real_3_t *)extra->vel->val;
 
     if (extra->itytur == 2 || extra->itytur == 4 ||
         extra->itytur == 5 || extra->iturb == CS_TURB_K_OMEGA) {
@@ -324,100 +163,220 @@ cs_lagr_coupling(const cs_real_t  **taup,
       /* In v2f the Lagrangian STs only influence k and epsilon
          (difficult to write something for v2, which loses its meaning as
          "Rij component") */
-
       if (is_time_averaged)
         BFT_MALLOC(t_st_k, n_cells_ext, cs_real_t);
-      else
-        t_st_k = st_k;
-
+      else if (f_st_k != nullptr)
+        t_st_k = f_st_k->val;
       cs_array_real_fill_zero(n_cells_ext, t_st_k);
-
-      for (cs_lnum_t p_id = 0; p_id < nbpart; p_id++) {
-
-        unsigned char *particle = p_set->p_buffer + p_am->extents * p_id;
-
-        int t_order = cs_glob_lagr_time_scheme->t_order;
-        cs_lnum_t c_id = cs_lagr_particle_get_lnum_n(particle, p_am, t_order - 1,
-                                                     CS_LAGR_CELL_ID);
-        cs_real_t *prev_f_vel  =
-          (cs_real_t *)cs_lagr_particle_attr_n(particle, p_am, 1,
-                                               CS_LAGR_VELOCITY_SEEN);
-        cs_real_t *f_vel       =
-          (cs_real_t *)cs_lagr_particle_attr(particle, p_am,
-                                             CS_LAGR_VELOCITY_SEEN);
-
-        cs_real_3_t vel_s =
-        { 0.5 * (prev_f_vel[0] + f_vel[0]),
-          0.5 * (prev_f_vel[1] + f_vel[1]),
-          0.5 * (prev_f_vel[2] + f_vel[2])};
-
-        cs_real_t dvol = 0.;
-        if (has_dc * c_disable_flag[has_dc * c_id] == 0)
-          dvol = 1. / cell_f_vol[c_id];
-        t_st_k[c_id] -= dvol * cs_math_3_dot_product(vel_s, auxl[p_id]);
-
-      }
-
-      for (cs_lnum_t c_id = 0; c_id < ncel; c_id++)
-        t_st_k[c_id] -= cs_math_3_dot_product(vel[c_id], t_st_vel[c_id]);
-
     }
     else if (extra->itytur == 3) {
-
       if (is_time_averaged)
         BFT_MALLOC(t_st_rij, n_cells_ext, cs_real_6_t);
-      else
-        t_st_rij = st_rij;
-
+      else if (f_st_rij != nullptr)
+        t_st_rij = (cs_real_6_t*)(f_st_rij->val);
       cs_array_real_fill_zero(n_cells_ext * 6, (cs_real_t *)t_st_rij);
-
-      for (cs_lnum_t p_id = 0; p_id < nbpart; p_id++) {
-
-        unsigned char *particle = p_set->p_buffer + p_am->extents * p_id;
-
-        int t_order = cs_glob_lagr_time_scheme->t_order;
-        cs_lnum_t c_id = cs_lagr_particle_get_lnum_n(particle, p_am, t_order - 1,
-                                                     CS_LAGR_CELL_ID);
-
-        cs_real_t *prev_f_vel  =
-          (cs_real_t *)cs_lagr_particle_attr_n(particle, p_am, 1,
-                                               CS_LAGR_VELOCITY_SEEN);
-        cs_real_t *f_vel       =
-          (cs_real_t *)cs_lagr_particle_attr(particle, p_am,
-                                             CS_LAGR_VELOCITY_SEEN);
-
-        cs_real_3_t vel_s =
-        { 0.5 * (prev_f_vel[0] + f_vel[0]),
-          0.5 * (prev_f_vel[1] + f_vel[1]),
-          0.5 * (prev_f_vel[2] + f_vel[2])};
-
-        cs_real_t dvol = 0.;
-        if (has_dc * c_disable_flag[has_dc * c_id] == 0)
-          dvol = 1. / cell_f_vol[c_id];
-
-        for (cs_lnum_t ij = 0; ij < 6; ij++) {
-          cs_lnum_t i = _iv2t[ij];
-          cs_lnum_t j = _jv2t[ij];
-
-          t_st_rij[c_id][ij] -= ( vel_s[i] * auxl[p_id][j]
-                                + vel_s[j] * auxl[p_id][i])*dvol;
-        }
-
-
-      }
-      for (cs_lnum_t c_id = 0; c_id < ncel; c_id++) {
-        for (cs_lnum_t ij = 0; ij < 6; ij++) {
-          cs_lnum_t i = _iv2t[ij];
-          cs_lnum_t j = _jv2t[ij];
-
-          t_st_rij[c_id][ij] -= ( vel[c_id][i] * t_st_vel[c_id][j]
-                                + vel[c_id][j] * t_st_vel[c_id][i]);
-
-        }
-      }
-
     }
+  }
 
+  /* Mass source terms
+     ================= */
+  if (    lag_st->ltsmas == 1
+      && (   cs_glob_lagr_specific_physics->impvar == 1
+          || cs_glob_lagr_specific_physics->idpvar == 1
+          || cs_glob_lagr_model->physical_model == CS_LAGR_PHYS_CTWR )) {
+    if (t_st_p == nullptr) {
+      if (is_time_averaged)
+        BFT_MALLOC(t_st_p, n_cells_ext, cs_real_t);
+      else if (f_st_p != nullptr)
+        t_st_p = f_st_p->val;
+    }
+    cs_array_real_fill_zero(n_cells_ext, t_st_p);
+  }
+
+  /* Thermal source terms
+     ==================== */
+
+  if (lag_st->ltsthe == 1) {
+    if (   cs_glob_lagr_model->physical_model == CS_LAGR_PHYS_COAL
+        && cs_glob_lagr_const_dim->nlayer > 1)
+      bft_error(__FILE__, __LINE__, 0,
+                _("Thermal coupling not implemented in multi-layer case"));
+
+    if (  (   cs_glob_lagr_model->physical_model == CS_LAGR_PHYS_HEAT
+           && cs_glob_lagr_specific_physics->itpvar == 1)
+        || cs_glob_lagr_model->physical_model == CS_LAGR_PHYS_COAL
+        || cs_glob_lagr_model->physical_model == CS_LAGR_PHYS_CTWR) {
+
+      if (is_time_averaged) {
+        BFT_MALLOC(t_st_t_e, n_cells_ext, cs_real_t);
+        BFT_MALLOC(t_st_t_i, n_cells_ext, cs_real_t);
+      }
+      else {
+        t_st_t_e = f_st_t_e->val;
+        t_st_t_i = f_st_t_i->val;
+      }
+
+      cs_array_real_fill_zero(n_cells_ext, t_st_t_e);
+      cs_array_real_fill_zero(n_cells_ext, t_st_t_i);
+    }
+  }
+  lag_st->t_st_p = t_st_p;
+  lag_st->t_st_vel= t_st_vel;
+  lag_st->t_st_imp_vel = t_st_imp_vel;
+  lag_st->t_st_rij = t_st_rij;
+  lag_st->t_st_k = t_st_k;
+  lag_st->t_st_t_e = t_st_t_e;
+  lag_st->t_st_t_i = t_st_t_i;
+  lag_st->volp = volp;
+  lag_st->volm = volm;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Increment the source terms for Lagrangian 2-way coupling with
+ *         quantites attached to a given particle.
+ *
+ * \remark  Source terms are computed for the starting cell of a particle
+ *          during a given iteration. Even if particle exits the domain,
+ *          it s necessary to compute a source term matching the exchange
+ *          between the carrier fluid and the particle at the beginning
+ *          of the time step. If nor == 2 and the particle interacts with a
+ *          boundary, then the source terms are computed as if nor == 1.
+ *
+ * \param[in]   p_set   pointer to particle set
+ * \param[in]   p_id    particle id
+ * \param[in]   dt_part remaining time step associated to the particle
+ * \param[in]   rebound true if a rebound occured over last trajectory step
+ * \param[in]   taup    dynamic characteristic time
+ * \param[in]   force_p forces per mass unit on particles (m/s^2)
+ * \param[in]   tempct  thermal characteristic time
+ *
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_lagr_coupling_increment_part_contrib(cs_lagr_particle_set_t       *p_set,
+                                        const cs_lnum_t               p_id,
+                                        const cs_real_t               dt_part,
+                                        const bool                    rebound,
+                                        const cs_real_t               taup,
+                                        const cs_real_3_t             force_p,
+                                        const cs_real_2_t             tempct)
+{
+  /* WARNING : Only based on the first continuous phase */
+  int t_order = cs_glob_lagr_time_scheme->t_order;
+  cs_lnum_t c_id = cs_lagr_particles_get_lnum_n(p_set, p_id, t_order - 1,
+                                               CS_LAGR_CELL_ID);
+  cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
+  cs_real_t *cell_f_vol = mq->cell_vol;
+  const int *restrict c_disable_flag = mq->c_disable_flag;
+  cs_lnum_t has_dc = mq->has_disable_flag; /* Has cells disabled? */
+
+  cs_real_t dvol = 0.;
+  if (has_dc * c_disable_flag[has_dc * c_id] != 0)
+    return;
+  else
+    dvol = 1. / cell_f_vol[c_id];
+
+  cs_lagr_extra_module_t *extra = cs_glob_lagr_extra_module;
+  cs_lagr_source_terms_t *lag_st = cs_glob_lagr_source_terms;
+
+  /*Note: t_* stands for temporary array, used in case of time moments */
+  cs_real_t    *t_st_p = lag_st->t_st_p;
+  cs_real_3_t  *t_st_vel= lag_st->t_st_vel;
+  cs_real_t    *t_st_imp_vel = lag_st->t_st_imp_vel;
+  cs_real_6_t  *t_st_rij = lag_st->t_st_rij;
+  cs_real_t    *t_st_k = lag_st->t_st_k;
+  cs_real_t    *t_st_t_e = lag_st->t_st_t_e;
+  cs_real_t    *t_st_t_i = lag_st->t_st_t_i;
+  cs_real_t    *volp = lag_st->volp;
+  cs_real_t    *volm = lag_st->volm;
+
+  cs_real_t  p_stat_w = cs_lagr_particles_get_real(p_set, p_id,
+                                                   CS_LAGR_STAT_WEIGHT);
+  cs_real_t *p_vel    =
+    cs_lagr_particles_attr_get_ptr<cs_real_t>(p_set, p_id, CS_LAGR_VELOCITY);
+  cs_real_t *prev_p_vel  =
+    cs_lagr_particles_attr_n_get_ptr<cs_real_t>(p_set, p_id, 1,
+                                                CS_LAGR_VELOCITY);
+
+  cs_real_t  p_mass = cs_lagr_particles_get_real(p_set, p_id, CS_LAGR_MASS);
+  cs_real_t  prev_p_mass = cs_lagr_particles_get_real_n(p_set, p_id, 1,
+                                                        CS_LAGR_MASS);
+
+  cs_real_t dtp = cs_glob_lagr_time_step->dtp;
+
+  cs_real_t rel_dt = dt_part / dtp;
+
+  /* Preliminary computations
+     ======================== */
+
+  /* Finalization of external forces (if the particle interacts with a
+     domain boundary, revert to order 1). based on the first carrier phase */
+
+  cs_real_t aux1 = dt_part / taup;
+
+  cs_real_t tsfext;
+  if (   cs_glob_lagr_time_scheme->t_order == 1 || rebound)
+    tsfext = (1.0 - exp(-aux1)) * p_mass * taup;
+
+  else
+    tsfext =  (1.0 - (1.0 - exp (-aux1)) / aux1) * taup * p_mass;
+
+    //TODO tsfext should be computed elsewhere (in sde) and the mass of particle
+    // may be the previous mass.
+  cs_real_3_t auxl;
+  for (cs_lnum_t i = 0; i < 3; i++)
+    auxl[i] = p_stat_w * ((p_mass * p_vel[i] - prev_p_mass * prev_p_vel[i])
+                           - force_p[i] * tsfext) / dtp;
+
+  /* Momentum source terms
+     ===================== */
+
+  if (lag_st->ltsdyn == 1) {
+
+    cs_real_t  prev_p_diam = cs_lagr_particles_get_real_n(p_set, p_id, 1,
+                                                          CS_LAGR_DIAMETER);
+    volp[c_id] += p_stat_w * cs_math_pi * pow(prev_p_diam, 3) / 6.0 * rel_dt;
+    volm[c_id] += p_stat_w * prev_p_mass * rel_dt;
+
+    /* Momentum source term */
+
+    for (cs_lnum_t i = 0; i < 3; i++)
+      t_st_vel[c_id][i] -= dvol * auxl[i];
+
+    t_st_imp_vel[c_id] -= 2.0 * dvol * p_stat_w * p_mass / taup * rel_dt;
+
+    /* Turbulence source terms
+       ======================= */
+
+    cs_real_t *prev_vel_s  =
+      cs_lagr_particles_attr_n_get_ptr<cs_real_t>(p_set, p_id, 1,
+                                                  CS_LAGR_VELOCITY_SEEN);
+    cs_real_t *new_vel_s   =
+      cs_lagr_particles_attr_get_ptr<cs_real_t>(p_set, p_id,
+                                                CS_LAGR_VELOCITY_SEEN);
+
+    cs_real_3_t vel_s= {0.5 * (prev_vel_s[0] + new_vel_s[0]),
+                        0.5 * (prev_vel_s[1] + new_vel_s[1]),
+                        0.5 * (prev_vel_s[2] + new_vel_s[2])};
+
+    if (extra->itytur == 2 || extra->itytur == 4 ||
+        extra->itytur == 5 || extra->iturb == CS_TURB_K_OMEGA)
+      /* In v2f the Lagrangian STs only influence k and epsilon
+         (difficult to write something for v2, which loses its meaning as
+         "Rij component") */
+      t_st_k[c_id] -= dvol * cs_math_3_dot_product(vel_s, auxl);
+
+    else if (extra->itytur == 3) {
+      for (cs_lnum_t ij = 0; ij < 6; ij++) {
+        cs_lnum_t i = _iv2t[ij];
+        cs_lnum_t j = _jv2t[ij];
+
+        t_st_rij[c_id][ij] -= ( vel_s[i] * auxl[j]
+                              + vel_s[j] * auxl[i])*dvol;
+      }
+    }
   }
 
   /* Mass source terms
@@ -428,246 +387,120 @@ cs_lagr_coupling(const cs_real_t  **taup,
           || cs_glob_lagr_specific_physics->idpvar == 1
           || cs_glob_lagr_model->physical_model == CS_LAGR_PHYS_CTWR )) {
 
-    if (is_time_averaged)
-      BFT_MALLOC(t_st_p, n_cells_ext, cs_real_t);
-    else
-      t_st_p = st_p;
-
-    cs_array_real_fill_zero(n_cells_ext, t_st_p);
-
-    for (cs_lnum_t p_id = 0; p_id < nbpart; p_id++) {
-
-      unsigned char *particle = p_set->p_buffer + p_am->extents * p_id;
-
-      cs_real_t  p_stat_w
-        = cs_lagr_particle_get_real(particle, p_am, CS_LAGR_STAT_WEIGHT);
-      cs_real_t  prev_p_mass
-        = cs_lagr_particle_get_real_n(particle, p_am, 1, CS_LAGR_MASS);
-      cs_real_t  p_mass
-        = cs_lagr_particle_get_real_n(particle, p_am, 0, CS_LAGR_MASS);
-
-      /* Fluid mass source term > 0 -> add mass to fluid */
-      int t_order = cs_glob_lagr_time_scheme->t_order;
-      cs_lnum_t c_id = cs_lagr_particle_get_lnum_n(particle, p_am, t_order - 1,
-                                                   CS_LAGR_CELL_ID);
-
-      cs_real_t dvol = 0.;
-      if (has_dc * c_disable_flag[has_dc * c_id] == 0)
-        dvol = 1. / cell_f_vol[c_id];
-
       t_st_p[c_id] += - p_stat_w * (p_mass - prev_p_mass) / dtp * dvol;
-
-    }
-
   }
 
   /* Thermal source terms
      ==================== */
 
-  if (lag_st->ltsthe == 1) {
+  if (   lag_st->ltsthe == 1
+      && (  (    cs_glob_lagr_model->physical_model == CS_LAGR_PHYS_HEAT
+            && cs_glob_lagr_specific_physics->itpvar == 1)
+          || cs_glob_lagr_model->physical_model == CS_LAGR_PHYS_COAL
+          || cs_glob_lagr_model->physical_model == CS_LAGR_PHYS_CTWR)) {
+
+    cs_real_t  p_cp = cs_lagr_particles_get_real_n(p_set, p_id, 0,
+                                                  CS_LAGR_CP);
+    cs_real_t  prev_p_cp = cs_lagr_particles_get_real_n(p_set, p_id, 1,
+                                                       CS_LAGR_CP);
+    cs_real_t  p_tmp = cs_lagr_particles_get_real_n(p_set, p_id, 0,
+                                                   CS_LAGR_TEMPERATURE);
+    cs_real_t  prev_p_tmp = cs_lagr_particles_get_real_n(p_set, p_id, 1,
+                                                        CS_LAGR_TEMPERATURE);
+
+
+      t_st_t_e[c_id] += - (p_mass * p_tmp * p_cp
+                          - prev_p_mass * prev_p_tmp * prev_p_cp
+                          ) / dtp * p_stat_w * dvol;
+      t_st_t_i[c_id] += p_stat_w * p_mass * p_cp * dvol
+                      / tempct[1];
 
     if (   cs_glob_lagr_model->physical_model == CS_LAGR_PHYS_HEAT
-        && cs_glob_lagr_specific_physics->itpvar == 1) {
+        && cs_glob_lagr_specific_physics->itpvar == 1
+        && extra->radiative_model > 0) {
 
-      if (is_time_averaged) {
-        BFT_MALLOC(t_st_t_e, n_cells_ext, cs_real_t);
-        BFT_MALLOC(t_st_t_i, n_cells_ext, cs_real_t);
-      }
-      else {
-        t_st_t_e = st_t_e;
-        t_st_t_i = st_t_i;
-      }
-
-      cs_array_real_fill_zero(n_cells_ext, t_st_t_e);
-      cs_array_real_fill_zero(n_cells_ext, t_st_t_i);
-
-      for (cs_lnum_t p_id = 0; p_id < nbpart; p_id++) {
-
-        unsigned char *particle = p_set->p_buffer + p_am->extents * p_id;
-        int t_order = cs_glob_lagr_time_scheme->t_order;
-        cs_lnum_t c_id = cs_lagr_particle_get_lnum_n(particle, p_am, t_order - 1,
-                                                     CS_LAGR_CELL_ID);
-        cs_real_t  p_mass = cs_lagr_particle_get_real_n(particle, p_am, 0,
-                                                        CS_LAGR_MASS);
-        cs_real_t  prev_p_mass = cs_lagr_particle_get_real_n(particle, p_am, 1,
-                                                             CS_LAGR_MASS);
-        cs_real_t  p_cp = cs_lagr_particle_get_real_n(particle, p_am, 0,
-                                                      CS_LAGR_CP);
-        cs_real_t  prev_p_cp = cs_lagr_particle_get_real_n(particle, p_am, 1,
-                                                           CS_LAGR_CP);
-        cs_real_t  p_tmp = cs_lagr_particle_get_real_n(particle, p_am, 0,
-                                                       CS_LAGR_TEMPERATURE);
-        cs_real_t  prev_p_tmp = cs_lagr_particle_get_real_n(particle, p_am, 1,
-                                                            CS_LAGR_TEMPERATURE);
-        cs_real_t  p_stat_w = cs_lagr_particle_get_real(particle, p_am,
-                                                        CS_LAGR_STAT_WEIGHT);
-
-        cs_real_t dvol = 0.;
-        if (has_dc * c_disable_flag[has_dc * c_id] == 0)
-          dvol = 1. / cell_f_vol[c_id];
-
-        t_st_t_e[c_id] += - (p_mass * p_tmp * p_cp
-                            - prev_p_mass * prev_p_tmp * prev_p_cp
-                            ) / dtp * p_stat_w * dvol;
-        t_st_t_i[c_id] += tempct[nbpart + p_id] * p_stat_w; //FIXME not homogeneous
-
-      }
-      if (extra->radiative_model > 0) {
-
-        for (cs_lnum_t p_id = 0; p_id < nbpart; p_id++) {
-
-          unsigned char *particle = p_set->p_buffer + p_am->extents * p_id;
-          int t_order = cs_glob_lagr_time_scheme->t_order;
-          cs_lnum_t c_id =
-            cs_lagr_particle_get_lnum_n(particle, p_am, t_order - 1,
-                                        CS_LAGR_CELL_ID);
-          cs_real_t  p_diam = cs_lagr_particle_get_real_n(particle, p_am, 0,
-                                                          CS_LAGR_DIAMETER);
-          cs_real_t  p_eps = cs_lagr_particle_get_real_n(particle, p_am, 0,
-                                                         CS_LAGR_EMISSIVITY);
-          cs_real_t  p_tmp = cs_lagr_particle_get_real_n(particle, p_am, 0,
-                                                         CS_LAGR_TEMPERATURE);
-          cs_real_t  p_stat_w = cs_lagr_particle_get_real(particle, p_am,
-                                                          CS_LAGR_STAT_WEIGHT);
-
-          cs_real_t dvol = 0.;
-          if (has_dc * c_disable_flag[has_dc * c_id] == 0)
-            dvol = 1. / cell_f_vol[c_id];
-
-          cs_real_t aux1 = cs_math_pi * p_diam * p_diam * p_eps * dvol
-                          * (extra->rad_energy->val[c_id]
-                             - 4.0 * _c_stephan * cs_math_pow4(p_tmp));
-
-          t_st_t_e[c_id] += aux1 * p_stat_w;
-
-        }
-
-      }
+      cs_real_t  p_diam = cs_lagr_particles_get_real_n(p_set, p_id, 0,
+                                                      CS_LAGR_DIAMETER);
+      cs_real_t  p_eps = cs_lagr_particles_get_real_n(p_set, p_id, 0,
+                                                     CS_LAGR_EMISSIVITY);
+      cs_real_t aux2 = cs_math_pi * p_diam * p_diam * p_eps * dvol
+                      * (extra->rad_energy->val[c_id]
+                         - 4.0 * _c_stephan * cs_math_pow4(p_tmp)) * rel_dt;
+      t_st_t_e[c_id] += aux2 * p_stat_w * rel_dt;
 
     }
-    else if (cs_glob_lagr_model->physical_model == CS_LAGR_PHYS_COAL) {
-      if (cs_glob_lagr_const_dim->nlayer > 1)
-        bft_error(__FILE__, __LINE__, 0,
-                  _("Thermal coupling not implemented in multi-layer case"));
-
-      else {
-
-        if (is_time_averaged) {
-          BFT_MALLOC(t_st_t_e, n_cells_ext, cs_real_t);
-          BFT_MALLOC(t_st_t_i, n_cells_ext, cs_real_t);
-        }
-        else {
-          t_st_t_e = st_t_e;
-          t_st_t_i = st_t_i;
-        }
-
-        cs_array_real_fill_zero(n_cells_ext, t_st_t_e);
-        cs_array_real_fill_zero(n_cells_ext, t_st_t_i);
-
-        for (cs_lnum_t p_id = 0; p_id < nbpart; p_id++) {
-
-          unsigned char *particle = p_set->p_buffer + p_am->extents * p_id;
-
-          int t_order = cs_glob_lagr_time_scheme->t_order;
-          cs_lnum_t c_id =
-            cs_lagr_particle_get_lnum_n(particle, p_am, t_order - 1,
-                                        CS_LAGR_CELL_ID);
-
-          cs_real_t  p_mass = cs_lagr_particle_get_real_n(particle, p_am, 0,
-                                                          CS_LAGR_MASS);
-          cs_real_t  p_tmp = cs_lagr_particle_get_real(particle, p_am,
-                                                       CS_LAGR_TEMPERATURE);
-          cs_real_t  p_cp = cs_lagr_particle_get_real_n(particle, p_am, 0,
-                                                        CS_LAGR_CP);
-
-          cs_real_t  prev_p_mass = cs_lagr_particle_get_real_n
-                                     (particle, p_am, 1, CS_LAGR_MASS);
-          cs_real_t  prev_p_tmp  = cs_lagr_particle_get_real_n
-                                     (particle, p_am, 1, CS_LAGR_TEMPERATURE);
-          cs_real_t  prev_p_cp   = cs_lagr_particle_get_real_n
-                                     (particle, p_am, 1, CS_LAGR_CP);
-
-          cs_real_t  p_stat_w = cs_lagr_particle_get_real
-                                  (particle, p_am, CS_LAGR_STAT_WEIGHT);
-
-          cs_real_t dvol = 0.;
-          if (has_dc * c_disable_flag[has_dc * c_id] == 0)
-            dvol = 1. / cell_f_vol[c_id];
-
-          t_st_t_e[c_id] += - (  p_mass * p_tmp * p_cp
-                              - prev_p_mass * prev_p_tmp * prev_p_cp
-                              ) / dtp * p_stat_w * dvol;
-          t_st_t_i[c_id] += p_stat_w * p_mass * p_cp * dvol
-                          / tempct[nbpart + p_id];
-
-        }
-
-      }
-
-    }
-    else if (cs_glob_lagr_model->physical_model == CS_LAGR_PHYS_CTWR) {
-
-      if (is_time_averaged) {
-        BFT_MALLOC(t_st_t_e, n_cells_ext, cs_real_t);
-        BFT_MALLOC(t_st_t_i, n_cells_ext, cs_real_t);
-      }
-      else {
-        t_st_t_e = st_t_e;
-        t_st_t_i = st_t_i;
-      }
-
-      cs_array_real_fill_zero(n_cells_ext, t_st_t_e);
-      cs_array_real_fill_zero(n_cells_ext, t_st_t_i);
-
-      for (cs_lnum_t p_id = 0; p_id < nbpart; p_id++) {
-
-        unsigned char *particle = p_set->p_buffer + p_am->extents * p_id;
-
-        int t_order = cs_glob_lagr_time_scheme->t_order;
-        cs_lnum_t c_id = cs_lagr_particle_get_lnum_n(particle, p_am, t_order - 1,
-                                                     CS_LAGR_CELL_ID);
-
-        cs_real_t  p_mass = cs_lagr_particle_get_real_n(particle, p_am, 0,
-                                                        CS_LAGR_MASS);
-        cs_real_t  p_tmp = cs_lagr_particle_get_real(particle, p_am,
-                                                     CS_LAGR_TEMPERATURE);
-        cs_real_t  p_cp = cs_lagr_particle_get_real_n(particle, p_am, 0,
-                                                      CS_LAGR_CP);
-
-        cs_real_t  prev_p_mass = cs_lagr_particle_get_real_n
-                                   (particle, p_am, 1, CS_LAGR_MASS);
-        cs_real_t  prev_p_tmp  = cs_lagr_particle_get_real_n
-                                   (particle, p_am, 1, CS_LAGR_TEMPERATURE);
-        cs_real_t  prev_p_cp   = cs_lagr_particle_get_real_n
-                                   (particle, p_am, 1, CS_LAGR_CP);
-
-        cs_real_t  p_stat_w = cs_lagr_particle_get_real
-                                (particle, p_am, CS_LAGR_STAT_WEIGHT);
-
-        cs_real_t dvol = 0.;
-        if (has_dc * c_disable_flag[has_dc * c_id] == 0)
-          dvol = 1. / cell_f_vol[c_id];
-
-        t_st_t_e[c_id] += - (  p_mass * p_tmp * p_cp
-                             - prev_p_mass * prev_p_tmp * prev_p_cp
-                             ) / dtp * p_stat_w * dvol;
-        t_st_t_i[c_id] += p_stat_w * p_mass * p_cp * dvol
-                          / tempct[nbpart + p_id];
-
-      }
-
-    }
-
   }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Finalize source terms for Lagrangian 2-way coupling by treating
+ *         cell-attached properties.
+ *
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_lagr_coupling_finalize(void)
+{
+  cs_lagr_extra_module_t *extra = cs_glob_lagr_extra_module;
+  cs_lnum_t ncel = cs_glob_mesh->n_cells;
+
+  cs_lagr_source_terms_t *lag_st = cs_glob_lagr_source_terms;
+  bool is_time_averaged = (   cs_glob_lagr_time_scheme->isttio == 1
+                           && lag_st->npts > 0);
+
+  /*Note: t_* stands for temporary array, used in case of time moments */
+  cs_real_t    *t_st_p = lag_st->t_st_p;
+  cs_real_3_t  *t_st_vel = lag_st->t_st_vel;
+  cs_real_t    *t_st_imp_vel = lag_st->t_st_imp_vel;
+  cs_real_6_t  *t_st_rij = lag_st->t_st_rij;
+  cs_real_t    *t_st_k = lag_st->t_st_k;
+  cs_real_t    *t_st_t_e = lag_st->t_st_t_e;
+  cs_real_t    *t_st_t_i = lag_st->t_st_t_i;
+  cs_real_t    *volp = lag_st->volp;
+  cs_real_t    *volm = lag_st->volm;
+
+  /* Number of passes for steady source terms */
+  if (   cs_glob_lagr_time_scheme->isttio == 1
+      && cs_glob_time_step->nt_cur >= cs_glob_lagr_source_terms->nstits)
+    lag_st->npts += 1;
+
+  lag_st->ntxerr = 0;
+  lag_st->vmax = 0.0;
+  lag_st->tmamax = 0.0;
 
   /* Check that the maximum admissible volume fraction of particles
      is not exceeded in some cells.
      ============================================================== */
 
-
   const cs_real_t tvmax = 0.8;
   const cs_real_t *cell_vol = cs_glob_mesh_quantities->cell_vol;
 
+  if (cs_glob_lagr_source_terms->ltsdyn == 1) {
+    cs_real_3_t *vel = (cs_real_3_t *)extra->vel->val;
+    if (extra->itytur == 2 || extra->itytur == 4 ||
+        extra->itytur == 5 || extra->iturb == CS_TURB_K_OMEGA) {
+
+      /* In v2f the Lagrangian STs only influence k and epsilon
+         (difficult to write something for v2, which loses its meaning as
+       "Rij component") */
+
+      for (cs_lnum_t c_id = 0; c_id < ncel; c_id++)
+        t_st_k[c_id] -= cs_math_3_dot_product(vel[c_id], t_st_vel[c_id]);
+    }
+    else if (extra->itytur == 3) {
+      for (cs_lnum_t c_id = 0; c_id < ncel; c_id++) {
+        for (cs_lnum_t ij = 0; ij < 6; ij++) {
+          cs_lnum_t i = _iv2t[ij];
+          cs_lnum_t j = _jv2t[ij];
+
+          t_st_rij[c_id][ij] -= ( vel[c_id][i] * t_st_vel[c_id][j]
+                                + vel[c_id][j] * t_st_vel[c_id][i]);
+        }
+      }
+    }
+  }
   for (cs_lnum_t c_id = 0; c_id < ncel; c_id++) {
 
     cs_real_t mf   = cell_vol[c_id] * extra->cromf->val[c_id];
@@ -676,11 +509,7 @@ cs_lagr_coupling(const cs_real_t  **taup,
 
     if (tauv > tvmax) {
       lag_st->ntxerr++;
-
-      /* Note: it was not temporary array but directly st_val.
-       * By consistency with st_vel, we put temporary array. */
-      if (t_st_p != nullptr)
-        t_st_p[c_id] = 0.0;
+      cs_glob_lagr_source_terms->ntxerr++;;
 
       if (t_st_vel != nullptr) {
         for (cs_lnum_t j = 0; j < 3; j++)
@@ -703,20 +532,33 @@ cs_lagr_coupling(const cs_real_t  **taup,
 
       if (t_st_t_i != nullptr)
         t_st_t_i[c_id] = 0.0;
-
     }
-
     lag_st->vmax = CS_MAX(tauv, lag_st->vmax);
     lag_st->tmamax = CS_MAX(taum, lag_st->tmamax);
-
   }
 
   /* Time average of source terms
      ============================ */
 
-  if (is_time_averaged) {
+  cs_real_t   *st_p       = nullptr;
+  cs_real_3_t *st_vel     = nullptr;
+  cs_real_t   *st_imp_vel = nullptr;
+  cs_real_6_t *st_rij     = nullptr;
+  cs_real_t   *st_k       =  nullptr;
+  cs_real_t   *st_t_e     =  nullptr;
+  cs_real_t   *st_t_i     =  nullptr;
 
-    if (st_p != nullptr) {
+  if (is_time_averaged) {
+    cs_field_t *f_st_p = cs_field_by_name_try("lagr_st_pressure");
+    cs_field_t *f_st_vel = cs_field_by_name_try("lagr_st_velocity");
+    cs_field_t *f_st_imp_vel = cs_field_by_name_try("lagr_st_imp_velocity");
+    cs_field_t *f_st_rij = cs_field_by_name_try("lagr_st_rij");
+    cs_field_t *f_st_k = cs_field_by_name_try("lagr_st_k");
+    cs_field_t *f_st_t_e = cs_field_by_name_try("lagr_st_temperature");
+    cs_field_t *f_st_t_i = cs_field_by_name_try("lagr_st_imp_temperature");
+
+    if (f_st_p != nullptr) {
+      st_p = f_st_p->val;
       for (cs_lnum_t c_id = 0; c_id < ncel; c_id++) {
         st_p[c_id]
           = (t_st_p[c_id] + (lag_st->npts - 1.0) * st_p[c_id])
@@ -724,7 +566,8 @@ cs_lagr_coupling(const cs_real_t  **taup,
       }
     }
 
-    if (st_vel != nullptr) {
+    if (f_st_vel != nullptr) {
+      st_vel = (cs_real_3_t*)(f_st_vel->val);
       for (cs_lnum_t c_id = 0; c_id < ncel; c_id++) {
         for (cs_lnum_t j = 0; j < 3; j++) {
           st_vel[c_id][j]
@@ -734,7 +577,8 @@ cs_lagr_coupling(const cs_real_t  **taup,
       }
     }
 
-    if (st_imp_vel != nullptr) {
+    if (f_st_imp_vel != nullptr) {
+      st_imp_vel = f_st_imp_vel->val;
       for (cs_lnum_t c_id = 0; c_id < ncel; c_id++) {
         st_imp_vel[c_id]
           = (t_st_imp_vel[c_id] + (lag_st->npts - 1.0) * st_imp_vel[c_id])
@@ -742,7 +586,8 @@ cs_lagr_coupling(const cs_real_t  **taup,
       }
     }
 
-    if (st_k != nullptr) {
+    if (f_st_k != nullptr) {
+      st_k = f_st_k->val;
       for (cs_lnum_t c_id = 0; c_id < ncel; c_id++) {
         st_k[c_id]
           = (t_st_k[c_id] + (lag_st->npts - 1.0) * st_k[c_id])
@@ -750,7 +595,8 @@ cs_lagr_coupling(const cs_real_t  **taup,
       }
     }
 
-    if (st_rij != nullptr) {
+    if (f_st_rij != nullptr) {
+      st_rij = (cs_real_6_t*)f_st_rij->val;
       for (cs_lnum_t c_id = 0; c_id < ncel; c_id++) {
         for (cs_lnum_t j = 0; j < 6; j++) {
           st_rij[c_id][j]
@@ -760,7 +606,8 @@ cs_lagr_coupling(const cs_real_t  **taup,
       }
     }
 
-    if (st_t_e != nullptr) {
+    if (f_st_t_e != nullptr) {
+      st_t_e = f_st_t_e->val;
       for (cs_lnum_t c_id = 0; c_id < ncel; c_id++) {
         st_t_e[c_id]
           = (t_st_t_e[c_id] + (lag_st->npts - 1.0) * st_t_e[c_id])
@@ -768,7 +615,8 @@ cs_lagr_coupling(const cs_real_t  **taup,
       }
     }
 
-    if (st_t_i != nullptr) {
+    if (f_st_t_i != nullptr) {
+      st_t_i = f_st_t_i->val;
       for (cs_lnum_t c_id = 0; c_id < ncel; c_id++) {
         st_t_i[c_id]
           = (t_st_t_i[c_id] + (lag_st->npts - 1.0) * st_t_i[c_id])
@@ -776,33 +624,30 @@ cs_lagr_coupling(const cs_real_t  **taup,
       }
     }
 
+    if (t_st_p != st_p)
+      BFT_FREE(t_st_p);
+
+    if (t_st_vel != st_vel)
+      BFT_FREE(t_st_vel);
+
+    if (t_st_imp_vel != st_imp_vel)
+      BFT_FREE(t_st_imp_vel);
+
+    if (t_st_k != st_k)
+      BFT_FREE(t_st_k);
+
+    if (t_st_rij != st_rij)
+      BFT_FREE(t_st_rij);
+
+    if (t_st_t_e != st_t_e)
+      BFT_FREE(t_st_t_e);
+
+    if (t_st_t_i != st_t_i)
+      BFT_FREE(t_st_t_i);
   }
-
-  if (t_st_p != st_p)
-    BFT_FREE(t_st_p);
-
-  if (t_st_vel != st_vel)
-    BFT_FREE(t_st_vel);
-
-  if (t_st_imp_vel != st_imp_vel)
-    BFT_FREE(t_st_imp_vel);
-
-  if (t_st_k != st_k)
-    BFT_FREE(t_st_k);
-
-  if (t_st_rij != st_rij)
-    BFT_FREE(t_st_rij);
-
-  if (t_st_t_e != st_t_e)
-    BFT_FREE(t_st_t_e);
-
-  if (t_st_t_i != st_t_i)
-    BFT_FREE(t_st_t_i);
 
   BFT_FREE(volp);
   BFT_FREE(volm);
-
-  BFT_FREE(auxl);
 }
 
 /*----------------------------------------------------------------------------*/

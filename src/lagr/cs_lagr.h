@@ -254,6 +254,17 @@ typedef struct {
   /*! Added-mass constant (\f$ C_A = 1\f$) */
   cs_real_t        added_mass_const;
 
+  /*! 0 no reintegration in the trajecto
+   *  1 Use cell-wise alogorithm (see Balvet et al. 2023)*/
+  int cell_wise_integ;
+
+  /* maximum number of tracking in _local_propagation for each particle
+   * (without change of rank or periodicity)*/
+  cs_lnum_t max_track_propagation_loops;
+
+  /* maximum number of change of rank or periodicity crossing over a time step*/
+  int max_perio_or_rank_crossed;
+
 } cs_lagr_time_scheme_t;
 
 /*! Main physical model parameters for the Lagrangian module */
@@ -561,9 +572,6 @@ typedef struct {
 
 typedef struct {
 
-  /* current step id (for 2nd order scheme) */
-  int    nor;
-
   /* duration of a Lagrangian iteration */
   cs_real_t          dtp;
 
@@ -700,6 +708,33 @@ typedef struct {
 
   /*! maximum mass concentration reached */
   cs_real_t      tmamax;
+
+  /* volume occupied by the particles in each cell*/
+  cs_real_t     *volp;
+
+  /* mass of particle in each cell*/
+  cs_real_t     *volm;
+
+  /* Langrangian source term for the pressure over one time step */
+  cs_real_t     *t_st_p;
+
+  /* explicit Langrangian source term for the velocity over one time step */
+  cs_real_3_t   *t_st_vel;
+
+  /* implicit Langrangian source term for the velocity over one time step */
+  cs_real_t     *t_st_imp_vel;
+
+  /* Langrangian source term for the TKE over one time step */
+  cs_real_t     *t_st_k;
+
+  /* Langrangian source term for the Reynolds tensor over one time step */
+  cs_real_6_t   *t_st_rij;
+
+  /* explicit Langrangian source term for the temperature over one time step */
+  cs_real_t     *t_st_t_e;
+
+  /* implicit Langrangian source term for the temperature over one time step */
+  cs_real_t     *t_st_t_i;
 
 } cs_lagr_source_terms_t;
 
@@ -997,7 +1032,7 @@ typedef struct {
   /* Lagrangian time field */
   cs_field_t *lagr_time;
 
-  /* Lagrangian time gradient */
+  /* (if extended_t_scheme) gradient of Lagrangien time */
   cs_real_3_t *grad_lagr_time;
 
   /* fluid seen/fluid seen covariance gradient */
@@ -1005,6 +1040,16 @@ typedef struct {
 
   /* fluid seen/particle velocity covariance gradient */
   cs_real_3_t *grad_cov_sk[6];
+
+  /* (if modcpl) anistropic Lagrangian time gradient tlag / bbi */
+  cs_real_3_t *anisotropic_lagr_time;
+
+  /* (if modcpl) anistropic diffusion term */
+  cs_real_3_t *anisotropic_bx;
+
+  /* (if extended_t_scheme && modcpl) gradient of anistropic Lagrangien time
+   * int the relative basis used to compute beta */
+  cs_real_3_t *grad_lagr_time_r_et;
 
 } cs_lagr_extra_module_t;
 

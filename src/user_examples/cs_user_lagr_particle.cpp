@@ -170,9 +170,14 @@ _inlet2(cs_lagr_particle_set_t  *p_set,
  *
  * It must be prescribed in every cell and be homogeneous to gravity (m/s^2)
  * By default gravity and drag force are the only forces acting on the particles
- * (the gravity components gx gy gz are assigned in the GUI or in usipsu)
+ * (the gravity components gx gy gz are assigned in the GUI or in
+ * cs_user_parameters)
+ * Note that taup, tlag, piil and bx are associated to the particle and
+ * their value for all phases is provided
  *
  * \param[in]     dt_p     time step (for the cell)
+ * \param[in]     tlag     relaxation time for the flow
+ * \param[in]     piil     term in the integration of the sde
  * \param[in]     taup     particle relaxation time
  * \param[in]     tlag     relaxation time for the flow
  * \param[in]     piil     term in the integration of the sde
@@ -187,22 +192,33 @@ _inlet2(cs_lagr_particle_set_t  *p_set,
 /*! [lagr_ef] */
 void
 cs_user_lagr_ef(cs_real_t            dt_p,
-                const cs_real_t    **taup,
-                const cs_real_3_t  **tlag,
-                const cs_real_3_t  **piil,
-                const cs_real_33_t **bx,
-                const cs_real_t      tsfext[],
-                const cs_real_33_t   vagaus[],
-                cs_real_t            rho_p[],
-                cs_real_3_t          fextla[])
+                const cs_lnum_t      p_id,
+                const cs_real_t     *taup,
+                const cs_real_3_t   *tlag,
+                const cs_real_3_t   *piil,
+                const cs_real_33_t  *bx,
+                const cs_real_t      tsfext,
+                const cs_real_3_t   *vagaus,
+                const cs_real_3_t    gradpr,
+                const cs_real_33_t   gradvf,
+                cs_real_t            rho_p,
+                cs_real_3_t          fextla)
 {
-  cs_lagr_particle_set_t  *p_set = cs_lagr_get_particle_set();
+  CS_UNUSED(dt_p);
+  CS_UNUSED(p_id);
+  CS_UNUSED(taup);
+  CS_UNUSED(tlag);
+  CS_UNUSED(piil);
+  CS_UNUSED(bx);
+  CS_UNUSED(tsfext);
+  CS_UNUSED(vagaus);
+  CS_UNUSED(gradpr);
+  CS_UNUSED(gradvf);
+  CS_UNUSED(rho_p);
 
-  for (cs_lnum_t p_id = 0; p_id < p_set->n_particles; p_id++){
-    fextla[p_id][0] = 0;
-    fextla[p_id][1] = 0;
-    fextla[p_id][2] = 0;
-  }
+  fextla[0] = 0;
+  fextla[1] = 0;
+  fextla[2] = 0;
 
 }
 /*! [lagr_ef] */
@@ -502,6 +518,7 @@ cs_user_lagr_in(cs_lagr_particle_set_t         *particles,
  *
  *      P_{rt}    : Prandtl number
  *
+ * \param[in]   phase_id   carrier phase_id
  * \param[in]   p_id   particle id
  * \param[in]   re_p   particle Reynolds number
  * \param[in]   uvwr   relative velocity of the particle
@@ -512,21 +529,24 @@ cs_user_lagr_in(cs_lagr_particle_set_t         *particles,
  * \param[in]   cp_f   specific heat of the fluid at particle position
  * \param[in]   k_f    diffusion coefficient of the fluid at particle position
  * \param[out]  taup   thermal relaxation time
- * \param[in]   dt     time step (per cell)
+ * \param[in]   dt     time step associated to the particle
  */
 /*----------------------------------------------------------------------------*/
 
 /*! [lagr_particle_relax_time] */
 void
-cs_user_lagr_rt(cs_lnum_t        p_id,
+cs_user_lagr_rt(int              phase_id,
+                cs_lnum_t        p_id,
                 cs_real_t        re_p,
                 cs_real_t        uvwr,
                 cs_real_t        rho_f,
                 cs_real_t        rho_p,
                 cs_real_t        nu_f,
                 cs_real_t        *taup,
-                const cs_real_t  dt[])
+                const cs_real_t  dt)
 {
+  CS_UNUSED(dt);
+  CS_UNUSED(phase_id);
   /* Particles management */
   cs_lagr_particle_set_t  *p_set = cs_lagr_get_particle_set();
 
@@ -549,7 +569,7 @@ cs_user_lagr_rt(cs_lnum_t        p_id,
   else
     fdr = (0.44 * 3.0 / 4.0) * uvwr / p_diam;
 
-  taup[p_id] = rho_p / rho_f / fdr;
+  *taup = rho_p / rho_f / fdr;
 
   /*===============================================================================
    * Computation of the relaxation time with the drag coefficient of
@@ -578,7 +598,7 @@ cs_user_lagr_rt(cs_lnum_t        p_id,
   else
     fdr = (0.44 * 3.0 / 4.0) * uvwr / p_diam;
 
-  taup[p_id] = rho_p / rho_f / fdr;
+  *taup = rho_p / rho_f / fdr;
 }
 /*! [lagr_particle_relax_time] */
 
@@ -601,7 +621,7 @@ cs_user_lagr_rt(cs_lnum_t        p_id,
  * \param[in]   cp_f   specific heat of the fluid at particle position
  * \param[in]   k_f    diffusion coefficient of the fluid at particle position
  * \param[out]  tauc   thermal relaxation time
- * \param[in]   dt     time step (per cell)
+ * \param[in]   dt     time step associated to the particle
  */
 /*----------------------------------------------------------------------------*/
 
@@ -615,9 +635,11 @@ cs_user_lagr_rt_t(cs_lnum_t        p_id,
                   cs_real_t        nu_f,
                   cs_real_t        cp_f,
                   cs_real_t        k_f,
-                  cs_real_t        tauc[],
-                  const cs_real_t  dt[])
+                  cs_real_2_t      tempct,
+                  const cs_real_t  dt)
 {
+  CS_UNUSED(dt);
+  CS_UNUSED(uvwr);
   /* 1. Initializations: Particles management */
   cs_lagr_particle_set_t  *p_set = cs_lagr_get_particle_set();
 
@@ -633,7 +655,7 @@ cs_user_lagr_rt_t(cs_lnum_t        p_id,
   cs_real_t diam = cs_lagr_particles_get_real(p_set, p_id, CS_LAGR_DIAMETER);
   cs_real_t cp_p = cs_lagr_particles_get_real(p_set, p_id, CS_LAGR_CP);
 
-  tauc[p_id]= diam * diam * rho_p * cp_p  / ( fnus * 6.0 * rho_f * cp_f * k_f);
+  tempct[0] = diam * diam * rho_p * cp_p  / ( fnus * 6.0 * rho_f * cp_f * k_f);
 }
 /*! [lagr_thermal_relax_time] */
 
@@ -661,29 +683,42 @@ cs_user_lagr_rt_t(cs_lnum_t        p_id,
  *      (nor=2) pip is expressed as a function of the quantities of the
  *      current time step.
  *
+ * Note that taup, tlag are associated to the particle and their value for
+ * all phases is provided
+ *
  * \param[in]  dt      time step (per cell)
+ * \param[in]  p_id    particle id
  * \param[in]  taup    particle relaxation time
  * \param[in]  tlag    relaxation time for the flow
  * \param[in]  tempct  characteristic thermal time and implicit source
  *                     term of return coupling
+ * \param[in]  nor     current step id (for 2nd order scheme)
  */
 /*----------------------------------------------------------------------------*/
 
 /*! [lagr_SDE] */
 void
-cs_user_lagr_sde(const cs_real_t  dt[],
-                 cs_real_t        **taup,
-                 cs_real_3_t      **tlag,
-                 cs_real_t        tempct[])
+cs_user_lagr_sde(const cs_real_t         dt,
+                 const cs_lnum_t         p_id,
+                 const cs_real_t        *taup,
+                 const cs_real_3_t      *tlag,
+                 const cs_real_2_t       tempct,
+                 const int               nor)
 {
+  /* Note: taup and tlag are associated to the particle and its value
+   * for all phase is provided */
+  CS_UNUSED(tempct);
+  CS_UNUSED(tlag);
+  CS_UNUSED(taup);
   /* Initializations
      --------------- */
 
   cs_lagr_particle_set_t  *p_set = cs_lagr_get_particle_set();
-  cs_real_t *tcarac, *pip;
+  const cs_lagr_attribute_map_t *p_am = p_set->p_am;
+  unsigned char *part = p_set->p_buffer + p_am->extents * p_id;
 
-  CS_MALLOC(tcarac, p_set->n_particles, cs_real_t);
-  CS_MALLOC(pip   , p_set->n_particles, cs_real_t);
+  cs_real_t tcarac;
+  cs_real_t pip;
 
   /* Characteristic time of the current SDE
      -------------------------------------- */
@@ -694,38 +729,31 @@ cs_user_lagr_sde(const cs_real_t  dt[],
        i < cs_glob_lagr_model->n_user_variables;
        i++) {
 
-    for (cs_lnum_t p_id = 0; p_id < p_set->n_particles; p_id++) {
+    cs_real_t *usr_var
+      = cs_lagr_particle_attr_n_get_ptr<cs_real_t>(part, p_am, 0, CS_LAGR_USER);
+    cs_real_t *prev_usr_var
+      = cs_lagr_particle_attr_n_get_ptr<cs_real_t>(part, p_am, 1, CS_LAGR_USER);
 
-      cs_real_t *usr_var
-        = (cs_real_t *)cs_lagr_particles_attr_n(p_set, p_id, 0, CS_LAGR_USER);
-      cs_real_t *prev_usr_var
-        = (cs_real_t *)cs_lagr_particles_attr_n(p_set, p_id, 1, CS_LAGR_USER);
+    /* Characteristic time tca of the differential equation,
+       This example must be adapted to the case */
+    tcarac = 1.0;
 
-      /* Characteristic time tca of the differential equation,
-         This example must be adapted to the case */
-      tcarac[p_id] = 1.0;
+    /* Prediction at the first substep;
+       This example must be adapted to the case */
+    if (nor == 1)
+      pip = prev_usr_var[i];
 
-      /* Prediction at the first substep;
-         This example must be adapted to the case */
-      if (cs_glob_lagr_time_step->nor == 1)
-        pip[p_id] = prev_usr_var[i];
-
-      /* Correction at the second substep;
-         This example must be adapted to the case */
-      else
-        pip[p_id] = usr_var[i];
-
-    }
+    /* Correction at the second substep;
+       This example must be adapted to the case */
+    else
+      pip = usr_var[i];
 
     /* Integration of the variable ipl
        ------------------------------- */
 
-    cs_lagr_sde_attr(CS_LAGR_USER, tcarac, pip);
+    cs_lagr_sde_attr(CS_LAGR_USER, p_id, nor, dt, tcarac, pip);
 
   }
-
-  CS_FREE(tcarac);
-  CS_FREE(pip);
 }
 /*! [lagr_SDE] */
 

@@ -174,6 +174,7 @@ typedef enum {
   CS_LAGR_AGGLO_CLASS_ID,
   CS_LAGR_AGGLO_FRACTAL_DIM,
 
+  CS_LAGR_REMAINING_INTEG_TIME,
   /* User attributes */
 
   CS_LAGR_USER,

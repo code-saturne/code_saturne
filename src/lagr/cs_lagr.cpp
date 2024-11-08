@@ -55,6 +55,7 @@
 #include "base/cs_base.h"
 
 #include "base/cs_field.h"
+#include "base/cs_field_operator.h"
 #include "base/cs_field_pointer.h"
 
 #include "base/cs_math.h"
@@ -89,7 +90,6 @@
 #include "lagr/cs_lagr_clogging.h"
 #include "lagr/cs_lagr_injection.h"
 #include "lagr/cs_lagr_aux_mean_fluid_quantities.h"
-#include "lagr/cs_lagr_car.h"
 #include "lagr/cs_lagr_coupling.h"
 #include "lagr/cs_lagr_new.h"
 #include "lagr/cs_lagr_particle.h"
@@ -164,7 +164,11 @@ static cs_lagr_time_scheme_t _lagr_time_scheme
      .interpol_field = 1,
      .ilapoi = 0,
      .iadded_mass = 0,
-     .added_mass_const = 0};
+     .added_mass_const = 0,
+     .cell_wise_integ = 0,
+     .max_track_propagation_loops = 100,
+     .max_perio_or_rank_crossed = 100
+  };
 
 /* Main Lagrangian physical model parameters */
 
@@ -276,8 +280,7 @@ cs_lagr_consolidation_model_t *cs_glob_lagr_consolidation_model
 /*! current time step status */
 
 static cs_lagr_time_step_t _cs_glob_lagr_time_step
-  = {.nor = 0,
-     .dtp = 0.,
+  = {.dtp = 0.,
      .ttclag = 0.};
 
 /* Lagrangian source terms structure and associated pointer */
@@ -289,7 +292,17 @@ static cs_lagr_source_terms_t _cs_glob_lagr_source_terms
      .npts = 0,
      .ntxerr = 0,
      .vmax = 0,
-     .tmamax = 0};
+     .tmamax = 0,
+     .volp = nullptr,
+     .volm = nullptr,
+     .t_st_p = nullptr,
+     .t_st_vel = nullptr,
+     .t_st_imp_vel = nullptr,
+     .t_st_k = nullptr,
+     .t_st_rij = nullptr,
+     .t_st_t_e = nullptr,
+     .t_st_t_i = nullptr
+  };
 
 cs_lagr_source_terms_t *cs_glob_lagr_source_terms
 = &_cs_glob_lagr_source_terms;
@@ -378,6 +391,9 @@ static void _lagr_map_field_initialize(cs_lnum_t n_phases)
     _lagr_extra_module[phase_id].grad_tempf = nullptr;
     _lagr_extra_module[phase_id].lagr_time = nullptr;
     _lagr_extra_module[phase_id].grad_lagr_time = nullptr;
+    _lagr_extra_module[phase_id].anisotropic_lagr_time = nullptr;
+    _lagr_extra_module[phase_id].anisotropic_bx = nullptr;
+    _lagr_extra_module[phase_id].grad_lagr_time_r_et = nullptr;
     for (int i = 0; i < 9; i++)
       _lagr_extra_module[phase_id].grad_cov_skp[i] = nullptr;
     for (int i = 0; i < 6; i++)
@@ -1024,6 +1040,9 @@ cs_lagr_finalize(void)
     }
     BFT_FREE(extra[phase_id].grad_lagr_time);
     BFT_FREE(extra[phase_id].grad_tempf);
+    BFT_FREE(extra[phase_id].grad_lagr_time_r_et);
+    BFT_FREE(extra[phase_id].anisotropic_lagr_time);
+    BFT_FREE(extra[phase_id].anisotropic_bx);
   }
   BFT_FREE(cs_glob_lagr_extra_module);
 }
@@ -2011,7 +2030,9 @@ cs_lagr_solve_time_step(const int         itypfb[],
       if (rebound_id >= 0)
         cs_lagr_particles_set_lnum(p_set, ip, CS_LAGR_REBOUND_ID,
                                    rebound_id + 1);
-
+      if (cs_glob_lagr_time_scheme->cell_wise_integ == 1)
+        cs_lagr_particles_set_real(p_set, ip,
+                                   CS_LAGR_REMAINING_INTEG_TIME, 1.);
     }
 
     /* Compute the Lagrangian time */
@@ -2039,7 +2060,7 @@ cs_lagr_solve_time_step(const int         itypfb[],
 
       /* First pass allocate and compute it */
       if (extra_i[phase_id].grad_pr == nullptr) {
-        cs_lnum_t ncelet = cs_glob_mesh->n_cells_with_ghosts;
+        const cs_lnum_t ncelet = cs_glob_mesh->n_cells_with_ghosts;
         BFT_MALLOC(extra_i[phase_id].grad_pr, ncelet, cs_real_3_t);
 
         // TODO : check if the pressure and velocity allocs can be removed
@@ -2065,11 +2086,26 @@ cs_lagr_solve_time_step(const int         itypfb[],
         for (int i = 0; i < 6; i++)
           BFT_MALLOC(extra_i[phase_id].grad_cov_sk[i], ncelet, cs_real_3_t);
 
-        cs_lagr_aux_mean_fluid_quantities(phase_id,
+        if (   cs_glob_lagr_time_scheme->extended_t_scheme !=0
+            && cs_glob_lagr_model->idistu == 1) {
+            BFT_MALLOC(extra_i[phase_id].grad_lagr_time, ncelet, cs_real_3_t);
+            if (cs_glob_lagr_model->modcpl == 1)
+              BFT_MALLOC(extra_i[phase_id].grad_lagr_time_r_et, ncelet, cs_real_3_t);
+        }
+
+        if (cs_glob_lagr_model->modcpl > 0) {
+          BFT_MALLOC(extra_i[phase_id].anisotropic_lagr_time, ncelet, cs_real_3_t);
+          BFT_MALLOC(extra_i[phase_id].anisotropic_bx, ncelet, cs_real_3_t);
+        }
+        cs_lagr_aux_mean_fluid_quantities(0,
+                                          phase_id,
                                           extra_i[phase_id].lagr_time,
                                           extra_i[phase_id].grad_pr,
                                           extra_i[phase_id].grad_vel,
                                           extra_i[phase_id].grad_tempf,
+                                          extra_i[phase_id].anisotropic_lagr_time,
+                                          extra_i[phase_id].anisotropic_bx,
+                                          extra_i[phase_id].grad_lagr_time_r_et,
                                           extra_i[phase_id].grad_lagr_time);
       }
       else if (cs_glob_lagr_time_scheme->iilagr
@@ -2082,596 +2118,361 @@ cs_lagr_solve_time_step(const int         itypfb[],
             BFT_REALLOC(extra_i[phase_id].grad_vel, n_cells_ext, cs_real_33_t);
           if (extra_i[phase_id].grad_tempf != nullptr)
             BFT_REALLOC(extra_i[phase_id].grad_tempf, n_cells_ext, cs_real_3_t);
-          if (extra->grad_lagr_time != nullptr)
+        if (extra_i[phase_id].anisotropic_lagr_time != nullptr)
+          BFT_REALLOC(extra_i[phase_id].anisotropic_lagr_time, n_cells_ext, cs_real_3_t);
+        if (extra_i[phase_id].anisotropic_bx != nullptr)
+          BFT_REALLOC(extra_i[phase_id].anisotropic_bx, n_cells_ext, cs_real_3_t);
+        if (extra_i[phase_id].grad_lagr_time_r_et != nullptr)
+          BFT_REALLOC(extra_i[phase_id].grad_lagr_time_r_et, n_cells_ext, cs_real_3_t);
+          if (extra_i[phase_id].grad_lagr_time != nullptr)
             BFT_REALLOC(extra_i[phase_id].grad_lagr_time, n_cells_ext, cs_real_3_t);
         }
 
-        cs_lagr_aux_mean_fluid_quantities(phase_id,
+        /* TODO compute carrier field at current and previous time step
+         * for 2nd order scheme */
+        cs_lagr_aux_mean_fluid_quantities(1, // iprev
+                                          phase_id,
                                           extra_i[phase_id].lagr_time,
                                           extra_i[phase_id].grad_pr,
                                           extra_i[phase_id].grad_vel,
                                           extra_i[phase_id].grad_tempf,
+                                          extra_i[phase_id].anisotropic_lagr_time,
+                                          extra_i[phase_id].anisotropic_bx,
+                                          extra_i[phase_id].grad_lagr_time_r_et,
                                           extra_i[phase_id].grad_lagr_time);
+      }
+      else {
+        if (   cs_glob_lagr_model->modcpl > 0
+            && cs_glob_time_step->nt_cur > cs_glob_lagr_model->modcpl
+            && cs_glob_time_step->nt_cur > cs_glob_lagr_stat_options->idstnt)
+        compute_anisotropic_prop(0,
+                                 phase_id,
+                                 extra_i[phase_id].anisotropic_lagr_time,
+                                 extra_i[phase_id].anisotropic_bx,
+                                 extra_i[phase_id].grad_lagr_time_r_et,
+                                 extra_i[phase_id].grad_lagr_time);
+
+        if (cs_glob_lagr_model->cs_used == 0)
+          compute_particle_covariance_gradient(iprev,
+                                               phase_id,
+                                               extra_i[phase_id].grad_cov_skp,
+                                               extra_i[phase_id].grad_cov_sk);
       }
     }
 
     /* Particles progression
        --------------------- */
 
-    bool go_on = true;
     cs_lnum_t n_particles_prev = p_set->n_particles - p_set->n_part_new;
-    while (go_on) {
 
-      cs_glob_lagr_time_step->nor
-        = cs_glob_lagr_time_step->nor % cs_glob_lagr_time_scheme->t_order;
-      cs_glob_lagr_time_step->nor++;
+    /* Current to previous but not on new particles at the first time
+     * because the user may have changed their position */
+    for (cs_lnum_t ip = 0; ip < n_particles_prev; ip++)
+      cs_lagr_particles_current_to_previous(p_set, ip);
 
-      /* Allocations     */
+    n_particles_prev = p_set->n_particles;
 
-      cs_lnum_t nresnew = 0;
+    /* Agglomeration and fragmentation preparation */
 
-      cs_real_t **taup;
-      cs_real_33_t **bx;
-      cs_real_3_t **tlag;
-      cs_real_3_t **piil;
-      cs_real_3_t *force_p;
-      BFT_MALLOC(force_p, p_set->n_particles, cs_real_3_t);
-      BFT_MALLOC(taup, n_phases, cs_real_t *);
-      BFT_MALLOC(tlag, n_phases, cs_real_3_t *);
-      BFT_MALLOC(piil, n_phases, cs_real_3_t *);
-      BFT_MALLOC(bx, n_phases, cs_real_33_t *);
-      for (int phase_id = 0; phase_id < n_phases; phase_id ++){
-        BFT_MALLOC(taup[phase_id], p_set->n_particles, cs_real_t);
-        BFT_MALLOC(tlag[phase_id], p_set->n_particles, cs_real_3_t);
-        BFT_MALLOC(piil[phase_id], p_set->n_particles, cs_real_3_t);
-        BFT_MALLOC(bx[phase_id], p_set->n_particles, cs_real_33_t);
-      }
+    /* Preparation: find cells occupied by particles (number)
+                    generate lists of these cells
+                    generate list particles indexes (sublists within a cell) */
 
-      cs_array_real_fill_zero(3 * p_set->n_particles, (cs_real_t *)force_p);
+    cs_lnum_t n_occupied_cells;
 
-      cs_real_t *tsfext = nullptr;
-      if (cs_glob_lagr_time_scheme->iilagr == CS_LAGR_TWOWAY_COUPLING)
-        BFT_MALLOC(tsfext, p_set->n_particles, cs_real_t);
+    cs_lnum_t *occupied_cell_ids = nullptr;
+    cs_lnum_t *particle_list = nullptr;
 
-      cs_real_3_t **beta = nullptr;
-      BFT_MALLOC(beta, n_phases, cs_real_3_t *);
-      if (cs_glob_lagr_time_scheme->extended_t_scheme != 0){
-        for (int phase_id = 0; phase_id < n_phases; phase_id++) {
-          BFT_MALLOC(beta[phase_id], p_set->n_particles, cs_real_3_t);
-        }
-      } else {
-        for (int phase_id = 0; phase_id < n_phases; phase_id++) {
-          beta[phase_id] = nullptr;
-        }
-      }
+    if (   cs_glob_lagr_model->agglomeration == 1
+        || cs_glob_lagr_model->fragmentation == 1 ) {
 
-      cs_real_t *cpgd1 = nullptr, *cpgd2 = nullptr, *cpght = nullptr;
-      if (   cs_glob_lagr_time_scheme->iilagr == CS_LAGR_TWOWAY_COUPLING
-          && lagr_model->physical_model == CS_LAGR_PHYS_COAL
-          && cs_glob_lagr_source_terms->ltsthe == 1) {
+      n_occupied_cells
+        = _get_n_occupied_cells(p_set, 0, p_set->n_particles);
 
-        BFT_MALLOC(cpgd1, p_set->n_particles, cs_real_t);
-        BFT_MALLOC(cpgd2, p_set->n_particles, cs_real_t);
-        BFT_MALLOC(cpght, p_set->n_particles, cs_real_t);
+      BFT_MALLOC(occupied_cell_ids, n_occupied_cells, cs_lnum_t);
+      BFT_MALLOC(particle_list, n_occupied_cells+1, cs_lnum_t);
 
-      }
-
-      cs_real_t *tempct = nullptr;
-      if (   (   lagr_model->physical_model == CS_LAGR_PHYS_HEAT
-              && cs_glob_lagr_specific_physics->itpvar == 1)
-          || lagr_model->physical_model == CS_LAGR_PHYS_COAL
-          || lagr_model->physical_model == CS_LAGR_PHYS_CTWR )
-        BFT_MALLOC(tempct, p_set->n_particles * 2, cs_real_t);
-
-      cs_real_t *terbru = nullptr;
-      if (cs_glob_lagr_brownian->lamvbr == 1)
-        BFT_MALLOC(terbru, p_set->n_particles, cs_real_t);
-
-      /* Copy results from previous step */
-
-      if (cs_glob_lagr_time_step->nor == 1) {
-        /* Current to previous but not on new particles at the first time
-         * because the user may have changed their position */
-        for (cs_lnum_t ip = 0; ip < n_particles_prev; ip++)
-          cs_lagr_particles_current_to_previous(p_set, ip);
-
-        n_particles_prev = p_set->n_particles;
-      }
-
-      /* Computation of the fluid's pressure and velocity gradient
-         at n+1 (with values at current time step) */
-      for (int phase_id = 0; phase_id < n_phases; phase_id ++){
-        if (   cs_glob_lagr_time_step->nor == 2
-            && cs_glob_lagr_time_scheme->iilagr != CS_LAGR_FROZEN_CONTINUOUS_PHASE)
-          cs_lagr_aux_mean_fluid_quantities(phase_id,
-                                            extra_i[phase_id].lagr_time,
-                                            extra_i[phase_id].grad_pr,
-                                            extra_i[phase_id].grad_vel,
-                                            extra_i[phase_id].grad_tempf,
-                                            extra_i[phase_id].grad_lagr_time);
-      }
-
-      /* use fields at previous or current time step */
-      if (cs_glob_lagr_time_step->nor == 1)
-        /* Use fields at previous time step    */
-        iprev = 1;
-
-      else
-        iprev = 0;
-
-      /* Retrieve bx values associated with particles from previous pass */
-
-      if (   cs_glob_lagr_time_scheme->t_order == 2
-          && cs_glob_lagr_time_step->nor == 2) {
-
-        for (int phase_id = 0; phase_id < n_phases; phase_id ++) {
-          for (cs_lnum_t ip = 0; ip < p_set->n_particles; ip++) {
-
-            cs_real_t *jbx1 =
-              cs_lagr_particles_attr_get_ptr<cs_real_t>(p_set, ip,
-                                                        CS_LAGR_TURB_STATE_1);
-
-            for (cs_lnum_t ii = 0; ii < 3; ii++) {
-
-              bx[phase_id][ip][ii][0] = jbx1[ii];
-
-            }
-          }
-        }
-      }
-
-      /* piil defined in the cells for code_saturne and on the particles for neptune_cfd
-       * -> because in the multiphase models we need the particle properties in piil.
-       *  Not necessary anymore since in code_saturne we switched to piil[p_id] as well
-      for (int phase_id = 0; phase_id < n_phases; phase_id++) {
-        if (cs_glob_lagr_model->cs_used) {
-          piil[phase_id] = piil_c[phase_id];
-        } else {
-          piil[phase_id] = piil_p[phase_id];
-        }
-      }
-      */
-
-      for (int phase_id = 0; phase_id < n_phases; phase_id++) {
-        cs_lagr_car(iprev,
-                    phase_id,
-                    dt,
-                    taup[phase_id],
-                    tlag[phase_id],
-                    piil[phase_id],
-                    bx[phase_id],
-                    tempct,
-                    beta[phase_id],
-                    extra->grad_vel);
-      }
-
-      /* Integration of SDEs: position, fluid and particle velocity */
-
-      cs_lagr_sde(cs_glob_lagr_time_step->dtp,
-                  const_cast<const cs_real_t **>(taup),
-                  const_cast<const cs_real_3_t **>(tlag),
-                  const_cast<const cs_real_3_t **>(piil),
-                  const_cast<const cs_real_33_t **>(bx),
-                  tsfext,
-                  force_p,
-                  terbru,
-                  (const cs_real_t *)vislen,
-                  const_cast<const cs_real_3_t **>(beta),
-                  &nresnew);
-
-      /* Integration of SDEs for orientation of spheroids without inertia */
-      if (lagr_model->shape == CS_LAGR_SHAPE_SPHEROID_STOC_MODEL) {
-        cs_lagr_orientation_dyn_spheroids(iprev,
-                                          cs_glob_lagr_time_step->dtp,
-                                          (const cs_real_33_t *)extra->grad_vel);
-      }
-      /* Integration of Jeffrey equations for ellipsoids */
-      else if (lagr_model->shape == CS_LAGR_SHAPE_SPHEROID_JEFFERY_MODEL) {
-        cs_lagr_orientation_dyn_jeffery(cs_glob_lagr_time_step->dtp,
-                                        (const cs_real_33_t *)extra->grad_vel);
-      }
-
-
-      /* Save bx values associated with particles for next pass */
-
-      if (   cs_glob_lagr_time_scheme->t_order == 2
-          && cs_glob_lagr_time_step->nor == 1) {
-        for (int phase_id = 0; phase_id < n_phases; phase_id ++) {
-          for (cs_lnum_t ip = 0; ip < p_set->n_particles; ip++) {
-
-            cs_real_t *jbx1 =
-              cs_lagr_particles_attr_get_ptr<cs_real_t>(p_set,
-                                                        ip, CS_LAGR_TURB_STATE_1);
-
-            //TODO adapt for mulptiphase
-            for (int  ii = 0; ii < 3; ii++)
-              jbx1[ii] = bx[phase_id][ip][ii][0];
-
-          }
-        }
-      }
-
-      /* Integration of SDE related to physical models */
-
-      if (lagr_model->physical_model == CS_LAGR_PHYS_HEAT
-          || lagr_model->physical_model == CS_LAGR_PHYS_COAL
-          || lagr_model->physical_model == CS_LAGR_PHYS_CTWR) {
-
-        if (cs_glob_lagr_time_step->nor == 1)
-          /* Use fields at previous time step    */
-          iprev   = 1;
-
-        else
-          /* Use fields at current time step     */
-          iprev   = 0;
-
-        cs_lagr_sde_model(tempct, cpgd1, cpgd2, cpght);
-
-      }
-
-      /* Integration of additional user variables
-         -----------------------------------------*/
-
-      if (cs_glob_lagr_model->n_user_variables > 0)
-        cs_user_lagr_sde(dt, taup, tlag, tempct);
-
-      /* Integration of agglomeration and fragmentation
-         ----------------------------------------------*/
-
-      /* Agglomeration and fragmentation preparation */
-
-      /* Preparation: find cells occupied by particles (number)
-                      generate lists of these cells
-                      generate list particles indexes (sublists within a cell) */
-
-      cs_lnum_t n_occupied_cells;
-
-      cs_lnum_t *occupied_cell_ids = nullptr;
-      cs_lnum_t *particle_list = nullptr;
-
-      if (   cs_glob_lagr_model->agglomeration == 1
-          || cs_glob_lagr_model->fragmentation == 1 ) {
-
-        n_occupied_cells
-          = _get_n_occupied_cells(p_set, 0, p_set->n_particles);
-
-        BFT_MALLOC(occupied_cell_ids, n_occupied_cells, cs_lnum_t);
-        BFT_MALLOC(particle_list, n_occupied_cells+1, cs_lnum_t);
-
-        _occupied_cells(p_set, 0, p_set->n_particles,
-                        n_occupied_cells,
-                        occupied_cell_ids,
-                        particle_list);
-
-      }
-
-      /* Compute agglomeration and fragmentation
-         (avoid second pass if second order scheme is used) */
-      if (   cs_glob_lagr_time_step->nor == 1
-          && ((cs_glob_lagr_model->agglomeration == 1) ||
-              (cs_glob_lagr_model->fragmentation == 1))) {
-
-        /* Initialize lists (ids of cells and particles) */
-        cs_lnum_t *cell_particle_idx;
-
-        BFT_MALLOC(cell_particle_idx, n_occupied_cells+1, cs_lnum_t);
-        cell_particle_idx[0] = 0;
-
-        cs_lnum_t enter_parts = p_set->n_particles;
-
-        /* Loop on all cells that contain at least one particle */
-        for (cs_lnum_t icell = 0; icell < n_occupied_cells; ++icell) {
-
-          cs_lnum_t cell_id = occupied_cell_ids[icell];
-
-          /* Particle indices: between start_part and end_part (list) */
-          cs_lnum_t start_part = particle_list[icell];
-          cs_lnum_t end_part = particle_list[icell+1];
-
-          cs_lnum_t init_particles = p_set->n_particles;
-
-          /* Treat agglomeration */
-          if (cs_glob_lagr_model->agglomeration == 1) {
-
-            cs_lagr_agglomeration(cell_id,
-                                  dt[0],
-                                  minimum_particle_diam,
-                                  start_part,
-                                  end_part);
-          }
-
-          /* Save number of created particles */
-
-          cs_lnum_t inserted_parts_agglo = p_set->n_particles - init_particles;
-
-          /* Create local buffer (deleted particles at the end) */
-
-          cs_lnum_t local_size = end_part - start_part;
-          cs_lnum_t deleted_parts = _get_n_deleted(p_set, start_part, end_part);
-          size_t swap_buffer_size =   p_set->p_am->extents
-                                    * (local_size - deleted_parts);
-          size_t swap_buffer_deleted = p_set->p_am->extents * deleted_parts;
-
-          /* Create buffers for deleted particles */
-          unsigned char * swap_buffer, *deleted_buffer;
-          BFT_MALLOC(swap_buffer, swap_buffer_size, unsigned char);
-          BFT_MALLOC(deleted_buffer, swap_buffer_deleted, unsigned char);
-
-          /* Update buffer for existing particles */
-          cs_lnum_t count_del = 0, count_swap = 0;
-          for (cs_lnum_t i = start_part; i < end_part; ++i) {
-            if (cs_lagr_particles_get_flag(p_set, i,
-                                           CS_LAGR_PART_TO_DELETE)) {
-              memcpy(deleted_buffer + p_set->p_am->extents * count_del,
-                     p_set->p_buffer + p_set->p_am->extents * i,
-                     p_set->p_am->extents);
-              count_del++;
-            }
-            else {
-              memcpy(swap_buffer + p_set->p_am->extents * count_swap,
-                     p_set->p_buffer + p_set->p_am->extents * i,
-                     p_set->p_am->extents);
-              count_swap++;
-            }
-          }
-
-          memcpy(p_set->p_buffer + p_set->p_am->extents * start_part,
-                 swap_buffer, swap_buffer_size);
-          memcpy(  p_set->p_buffer
-                 + p_set->p_am->extents * (local_size-deleted_parts+start_part),
-                 deleted_buffer, swap_buffer_deleted);
-
-          BFT_FREE(deleted_buffer);
-          BFT_FREE(swap_buffer);
-
-          /* Treat fragmentation */
-          init_particles = p_set->n_particles;
-
-          if (cs_glob_lagr_model->fragmentation == 1) {
-            cs_lagr_fragmentation(dt[0],
-                                  minimum_particle_diam,
-                                  start_part,
-                                  end_part - deleted_parts,
-                                  init_particles,
-                                  p_set->n_particles);
-          }
-          cs_lnum_t inserted_parts_frag = p_set->n_particles - init_particles;
-
-          cell_particle_idx[icell+1] =   cell_particle_idx[icell]
-                                     + inserted_parts_agglo + inserted_parts_frag;
-        }
-
-        p_set->n_particles = enter_parts;
-
-        /* Introduce new particles (uniformly in the cell) */
-        cs_lagr_new_v(p_set,
+      _occupied_cells(p_set, 0, p_set->n_particles,
                       n_occupied_cells,
                       occupied_cell_ids,
-                      cell_particle_idx);
-        p_set->n_particles += cell_particle_idx[n_occupied_cells];
-
-        BFT_FREE(cell_particle_idx);
-      }
-
-      BFT_FREE(occupied_cell_ids);
-      BFT_FREE(particle_list);
-
-      /* Reverse coupling: compute source terms
-         -------------------------------------- */
-
-      if (   cs_glob_lagr_time_scheme->iilagr == CS_LAGR_TWOWAY_COUPLING
-          && cs_glob_lagr_time_step->nor == cs_glob_lagr_time_scheme->t_order)
-        cs_lagr_coupling(const_cast<const cs_real_t **>(taup),
-                         tempct,
-                         tsfext,
-                         force_p);
-
-      for (int phase_id = 0; phase_id < n_phases; phase_id ++){
-        BFT_FREE(tlag[phase_id]);
-        BFT_FREE(taup[phase_id]);
-        BFT_FREE(piil[phase_id]);
-        BFT_FREE(bx[phase_id]);
-      }
-      BFT_FREE(tlag);
-      BFT_FREE(force_p);
-      BFT_FREE(taup);
-      BFT_FREE(piil);
-      BFT_FREE(bx);
-
-      if (cs_glob_lagr_time_scheme->iilagr == CS_LAGR_TWOWAY_COUPLING)
-        BFT_FREE(tsfext);
-
-      if (beta != nullptr)
-        BFT_FREE(beta);
-
-      if (   cs_glob_lagr_time_scheme->iilagr == CS_LAGR_TWOWAY_COUPLING
-          && lagr_model->physical_model == CS_LAGR_PHYS_COAL
-          && cs_glob_lagr_source_terms->ltsthe == 1) {
-        BFT_FREE(cpgd1);
-        BFT_FREE(cpgd2);
-        BFT_FREE(cpght);
-      }
-
-      BFT_FREE(tempct);
-
-      if (cs_glob_lagr_brownian->lamvbr == 1)
-        BFT_FREE(terbru);
-
-      p_set->n_particles += nresnew;
-
-      /* Location of particles - boundary conditions for particle positions
-         ------------------------------------------------------------------ */
-
-      if (cs_glob_lagr_time_step->nor == 1) {
-
-        /* In unsteady case, reset boundary statistics */
-
-        if (   cs_glob_lagr_time_scheme->isttio == 0
-            || (   cs_glob_lagr_time_scheme->isttio == 1
-                &&    cs_glob_time_step->nt_cur
-                   <= cs_glob_lagr_stat_options->nstist)) {
-
-          lag_bdi->tstatp = 0.0;
-          lag_bdi->npstf  = 0;
-
-          for (int  ii = 0; ii < cs_glob_lagr_dim->n_boundary_stats; ii++) {
-
-            for (cs_lnum_t ifac = 0; ifac < n_b_faces; ifac++)
-              bound_stat[ii * n_b_faces + ifac] = 0.0;
-
-          }
-
-        }
-
-        lag_bdi->tstatp += cs_glob_lagr_time_step->dtp;
-        lag_bdi->npstf++;
-        lag_bdi->npstft++;
-
-        cs_lnum_t particle_range[2] = {0, p_set->n_particles};
-        cs_lagr_tracking_particle_movement(vislen, particle_range);
-      }
-
-      /* Update residence time */
-
-      if (cs_glob_lagr_time_step->nor == cs_glob_lagr_time_scheme->t_order) {
-
-        for (cs_lnum_t npt = 0; npt < p_set->n_particles; npt++) {
-
-          if (cs_lagr_particles_get_lnum(p_set, npt, CS_LAGR_CELL_ID) >= 0) {
-            cs_real_t res_time
-              = cs_lagr_particles_get_real(p_set, npt,
-                                           CS_LAGR_RESIDENCE_TIME)
-                + cs_glob_lagr_time_step->dtp;
-            cs_lagr_particles_set_real
-              (p_set, npt, CS_LAGR_RESIDENCE_TIME, res_time);
-          }
-
-        }
-
-      }
-
-      /* Compute adhesion for reentrainement model
-         ----------------------------------------- */
-
-      if (lagr_model->resuspension > 0)
-        cs_lagr_resuspension();
-
-      /* Compute statistics
-         ------------------ */
-
-      /* Calculation of consolidation:
-       * linear increase of the consolidation height with deposit time */
-
-      if (cs_glob_lagr_consolidation_model->iconsol > 0) {
-
-        for (cs_lnum_t npt = 0; npt < p_set->n_particles; npt++) {
-
-          if (cs_lagr_particles_get_flag(p_set, npt, deposition_mask)) {
-
-            cs_real_t p_depo_time
-              = cs_lagr_particles_get_real(p_set, npt, CS_LAGR_DEPO_TIME);
-            cs_real_t p_consol_height
-              = CS_MIN(cs_lagr_particles_get_real(p_set, npt, CS_LAGR_HEIGHT),
-                       cs_glob_lagr_consolidation_model->rate_consol * p_depo_time);
-            cs_lagr_particles_set_real(p_set, npt,
-                                       CS_LAGR_CONSOL_HEIGHT, p_consol_height);
-            cs_lagr_particles_set_real(p_set, npt, CS_LAGR_DEPO_TIME,
-                                       p_depo_time + cs_glob_lagr_time_step->dtp);
-          }
-          else {
-            cs_lagr_particles_set_real(p_set, npt, CS_LAGR_CONSOL_HEIGHT, 0.0);
-          }
-
-        }
-
-      }
-
-      if (   cs_glob_lagr_time_step->nor == cs_glob_lagr_time_scheme->t_order
-          && cs_glob_time_step->nt_cur >= cs_glob_lagr_stat_options->idstnt)
-        cs_lagr_stat_update();
-
-      /* Statistics for clogging */
-
-      if (   cs_glob_lagr_time_step->nor == cs_glob_lagr_time_scheme->t_order
-          && lagr_model->clogging == 1
-          && cs_glob_lagr_consolidation_model->iconsol == 1) {
-
-        /* Height and time of deposit     */
-
-        for (cs_lnum_t ifac = 0; ifac < n_b_faces; ifac++) {
-          bound_stat[lag_bdi->iclogt * n_b_faces + ifac] = 0.0;
-          bound_stat[lag_bdi->iclogh * n_b_faces + ifac] = 0.0;
-          bound_stat[lag_bdi->ihdiam * n_b_faces + ifac] = 0.0;
-        }
-
-        for (cs_lnum_t npt = 0; npt < p_set->n_particles; npt++) {
-
-          if (cs_lagr_particles_get_flag(p_set, npt, deposition_mask)) {
-
-            cs_lnum_t face_id = cs_lagr_particles_get_lnum
-                                  (p_set, npt, CS_LAGR_NEIGHBOR_FACE_ID);
-
-            cs_real_t p_diam = cs_lagr_particles_get_real
-                                 (p_set, npt, CS_LAGR_DIAMETER);
-
-            bound_stat[lag_bdi->iclogt * n_b_faces + face_id]
-              += cs_lagr_particles_get_real(p_set, npt, CS_LAGR_DEPO_TIME);
-            bound_stat[lag_bdi->iclogh * n_b_faces + face_id]
-              +=  cs_lagr_particles_get_real(p_set, npt, CS_LAGR_CONSOL_HEIGHT)
-                  * cs_math_pi * cs_math_sq(p_diam) * 0.25 / b_face_surf[face_id];
-
-          }
-
-        }
-
-        for (cs_lnum_t ifac = 0; ifac < n_b_faces; ifac++) {
-
-          if (bound_stat[lag_bdi->inclg * n_b_faces + ifac] > 0) {
-
-            bound_stat[lag_bdi->iclogt * n_b_faces + ifac]
-              /=  bound_stat[lag_bdi->inclg * n_b_faces + ifac];
-            bound_stat[lag_bdi->ihdiam * n_b_faces + ifac]
-              =   bound_stat[lag_bdi->ihsum  * n_b_faces + ifac]
-                / bound_stat[lag_bdi->inclgt * n_b_faces + ifac];
-
-          }
-          else if (bound_stat[lag_bdi->inclg * n_b_faces + ifac] <= 0) {
-
-            bound_stat[lag_bdi->iclogt * n_b_faces + ifac] = 0.0;
-            bound_stat[lag_bdi->ihdiam * n_b_faces + ifac] = 0.0;
-
-          }
-          else {
-
-            /* FIXME */
-
-            bft_printf("   ** LAGRANGIAN MODULE:\n"
-                       "   ** Error in cs_lagr.cpp: inclg < 0 ! \n"
-                       "---------------------------------------------\n\n\n"
-                       "** Ifac = %ld  and inclg = %g\n"
-                       "-------------------------------------------------\n",
-                       (long)ifac, bound_stat[lag_bdi->inclg * n_b_faces + ifac]);
-          }
-
-        }
-
-      }
-
-      /* Poisson equation
-         ---------------- */
-
-      if (   cs_glob_lagr_time_step->nor == cs_glob_lagr_time_scheme->t_order
-          && cs_glob_lagr_time_scheme->ilapoi == 1)
-        cs_lagr_poisson(itypfb);
-
-      /* Loop again ?
-         ---------- */
-
-      if (   cs_glob_lagr_time_scheme->t_order != 2
-          || cs_glob_lagr_time_step->nor != 1)
-        go_on = false; //exit the while loop
+                      particle_list);
 
     }
+
+    /* Compute agglomeration and fragmentation
+       (avoid second pass if second order scheme is used) */
+    if (   cs_glob_lagr_model->agglomeration == 1
+        || cs_glob_lagr_model->fragmentation == 1) {
+
+      /* Initialize lists (ids of cells and particles) */
+      cs_lnum_t *cell_particle_idx;
+
+      BFT_MALLOC(cell_particle_idx, n_occupied_cells+1, cs_lnum_t);
+      cell_particle_idx[0] = 0;
+
+      cs_lnum_t enter_parts = p_set->n_particles;
+
+      /* Loop on all cells that contain at least one particle */
+      for (cs_lnum_t icell = 0; icell < n_occupied_cells; ++icell) {
+
+        cs_lnum_t cell_id = occupied_cell_ids[icell];
+
+        /* Particle indices: between start_part and end_part (list) */
+        cs_lnum_t start_part = particle_list[icell];
+        cs_lnum_t end_part = particle_list[icell+1];
+
+        cs_lnum_t init_particles = p_set->n_particles;
+
+        /* Treat agglomeration */
+        if (cs_glob_lagr_model->agglomeration == 1) {
+
+          cs_lagr_agglomeration(cell_id,
+                                dt[0],
+                                minimum_particle_diam,
+                                start_part,
+                                end_part);
+        }
+
+        /* Save number of created particles */
+
+        cs_lnum_t inserted_parts_agglo = p_set->n_particles - init_particles;
+
+        /* Create local buffer (deleted particles at the end) */
+
+        cs_lnum_t local_size = end_part - start_part;
+        cs_lnum_t deleted_parts = _get_n_deleted(p_set, start_part, end_part);
+        size_t swap_buffer_size =   p_set->p_am->extents
+                                  * (local_size - deleted_parts);
+        size_t swap_buffer_deleted = p_set->p_am->extents * deleted_parts;
+
+        /* Create buffers for deleted particles */
+        unsigned char * swap_buffer, *deleted_buffer;
+        BFT_MALLOC(swap_buffer, swap_buffer_size, unsigned char);
+        BFT_MALLOC(deleted_buffer, swap_buffer_deleted, unsigned char);
+
+        /* Update buffer for existing particles */
+        cs_lnum_t count_del = 0, count_swap = 0;
+        for (cs_lnum_t i = start_part; i < end_part; ++i) {
+          if (cs_lagr_particles_get_flag(p_set, i,
+                                         CS_LAGR_PART_TO_DELETE)) {
+            memcpy(deleted_buffer + p_set->p_am->extents * count_del,
+                   p_set->p_buffer + p_set->p_am->extents * i,
+                   p_set->p_am->extents);
+            count_del++;
+          }
+          else {
+            memcpy(swap_buffer + p_set->p_am->extents * count_swap,
+                   p_set->p_buffer + p_set->p_am->extents * i,
+                   p_set->p_am->extents);
+            count_swap++;
+          }
+        }
+
+        memcpy(p_set->p_buffer + p_set->p_am->extents * start_part,
+               swap_buffer, swap_buffer_size);
+        memcpy(  p_set->p_buffer
+               + p_set->p_am->extents * (local_size-deleted_parts+start_part),
+               deleted_buffer, swap_buffer_deleted);
+
+        BFT_FREE(deleted_buffer);
+        BFT_FREE(swap_buffer);
+
+        /* Treat fragmentation */
+        init_particles = p_set->n_particles;
+
+        if (cs_glob_lagr_model->fragmentation == 1) {
+          cs_lagr_fragmentation(dt[0],
+                                minimum_particle_diam,
+                                start_part,
+                                end_part - deleted_parts,
+                                init_particles,
+                                p_set->n_particles);
+        }
+        cs_lnum_t inserted_parts_frag = p_set->n_particles - init_particles;
+
+        cell_particle_idx[icell+1] =   cell_particle_idx[icell]
+                                   + inserted_parts_agglo + inserted_parts_frag;
+      }
+
+      p_set->n_particles = enter_parts;
+
+      /* Introduce new particles (uniformly in the cell) */
+      cs_lagr_new_v(p_set,
+                    n_occupied_cells,
+                    occupied_cell_ids,
+                    cell_particle_idx);
+      p_set->n_particles += cell_particle_idx[n_occupied_cells];
+
+      BFT_FREE(cell_particle_idx);
+    }
+
+    BFT_FREE(occupied_cell_ids);
+    BFT_FREE(particle_list);
+
+    /* Reverse coupling: initialize source terms
+       -------------------------------------- */
+
+    if (   cs_glob_lagr_time_scheme->iilagr == CS_LAGR_TWOWAY_COUPLING
+        && cs_glob_lagr_time_scheme->cell_wise_integ == 1)
+      cs_lagr_coupling_initialize();
+
+    /* Location of particles - boundary conditions for particle positions
+       ------------------------------------------------------------------ */
+
+    /* In unsteady case, reset boundary statistics */
+
+    if (   cs_glob_lagr_time_scheme->isttio == 0
+        || (   cs_glob_lagr_time_scheme->isttio == 1
+            &&    cs_glob_time_step->nt_cur
+               <= cs_glob_lagr_stat_options->nstist)) {
+
+      lag_bdi->tstatp = 0.0;
+      lag_bdi->npstf  = 0;
+
+      for (int  ii = 0; ii < cs_glob_lagr_dim->n_boundary_stats; ii++) {
+
+        for (cs_lnum_t ifac = 0; ifac < n_b_faces; ifac++)
+          bound_stat[ii * n_b_faces + ifac] = 0.0;
+
+      }
+
+    }
+
+    lag_bdi->tstatp += cs_glob_lagr_time_step->dtp;
+    lag_bdi->npstf++;
+    lag_bdi->npstft++;
+
+    cs_lnum_t particle_range[2] = {0, p_set->n_particles};
+    cs_lagr_integ_track_particles(vislen, particle_range, true);
+
+    if (cs_glob_lagr_time_scheme->iilagr == CS_LAGR_TWOWAY_COUPLING)
+      cs_lagr_coupling_finalize();
+
+    /* Update residence time */
+
+    for (cs_lnum_t npt = 0; npt < p_set->n_particles; npt++) {
+
+      if (cs_lagr_particles_get_lnum(p_set, npt, CS_LAGR_CELL_ID) >= 0) {
+        cs_real_t res_time
+          = cs_lagr_particles_get_real(p_set, npt,
+                                       CS_LAGR_RESIDENCE_TIME)
+            + cs_glob_lagr_time_step->dtp;
+        cs_lagr_particles_set_real
+          (p_set, npt, CS_LAGR_RESIDENCE_TIME, res_time);
+      }
+
+    }
+
+    /* Compute adhesion for reentrainement model
+       ----------------------------------------- */
+
+    if (lagr_model->resuspension > 0)
+      cs_lagr_resuspension();
+
+    /* Compute statistics
+       ------------------ */
+
+    /* Calculation of consolidation:
+     * linear increase of the consolidation height with deposit time */
+
+    if (cs_glob_lagr_consolidation_model->iconsol > 0) {
+
+      for (cs_lnum_t npt = 0; npt < p_set->n_particles; npt++) {
+
+        if (cs_lagr_particles_get_flag(p_set, npt, deposition_mask)) {
+
+          cs_real_t p_depo_time
+            = cs_lagr_particles_get_real(p_set, npt, CS_LAGR_DEPO_TIME);
+          cs_real_t p_consol_height
+            = CS_MIN(cs_lagr_particles_get_real(p_set, npt, CS_LAGR_HEIGHT),
+                     cs_glob_lagr_consolidation_model->rate_consol * p_depo_time);
+          cs_lagr_particles_set_real(p_set, npt,
+                                     CS_LAGR_CONSOL_HEIGHT, p_consol_height);
+          cs_lagr_particles_set_real(p_set, npt, CS_LAGR_DEPO_TIME,
+                                     p_depo_time + cs_glob_lagr_time_step->dtp);
+        }
+        else {
+          cs_lagr_particles_set_real(p_set, npt, CS_LAGR_CONSOL_HEIGHT, 0.0);
+        }
+
+      }
+
+    }
+
+    if (cs_glob_time_step->nt_cur >= cs_glob_lagr_stat_options->idstnt)
+      cs_lagr_stat_update();
+
+    /* Statistics for clogging */
+
+    if (   lagr_model->clogging == 1
+        && cs_glob_lagr_consolidation_model->iconsol == 1) {
+
+      /* Height and time of deposit     */
+
+      for (cs_lnum_t ifac = 0; ifac < n_b_faces; ifac++) {
+        bound_stat[lag_bdi->iclogt * n_b_faces + ifac] = 0.0;
+        bound_stat[lag_bdi->iclogh * n_b_faces + ifac] = 0.0;
+        bound_stat[lag_bdi->ihdiam * n_b_faces + ifac] = 0.0;
+      }
+
+      for (cs_lnum_t npt = 0; npt < p_set->n_particles; npt++) {
+
+        if (cs_lagr_particles_get_flag(p_set, npt, deposition_mask)) {
+
+          cs_lnum_t face_id = cs_lagr_particles_get_lnum
+                                (p_set, npt, CS_LAGR_NEIGHBOR_FACE_ID);
+
+          cs_real_t p_diam = cs_lagr_particles_get_real
+                               (p_set, npt, CS_LAGR_DIAMETER);
+
+          bound_stat[lag_bdi->iclogt * n_b_faces + face_id]
+            += cs_lagr_particles_get_real(p_set, npt, CS_LAGR_DEPO_TIME);
+          bound_stat[lag_bdi->iclogh * n_b_faces + face_id]
+            +=  cs_lagr_particles_get_real(p_set, npt, CS_LAGR_CONSOL_HEIGHT)
+                * cs_math_pi * cs_math_sq(p_diam) * 0.25 / b_face_surf[face_id];
+
+        }
+
+      }
+
+      for (cs_lnum_t ifac = 0; ifac < n_b_faces; ifac++) {
+
+        if (bound_stat[lag_bdi->inclg * n_b_faces + ifac] > 0) {
+
+          bound_stat[lag_bdi->iclogt * n_b_faces + ifac]
+            /=  bound_stat[lag_bdi->inclg * n_b_faces + ifac];
+          bound_stat[lag_bdi->ihdiam * n_b_faces + ifac]
+            =   bound_stat[lag_bdi->ihsum  * n_b_faces + ifac]
+              / bound_stat[lag_bdi->inclgt * n_b_faces + ifac];
+
+        }
+        else if (bound_stat[lag_bdi->inclg * n_b_faces + ifac] <= 0) {
+
+          bound_stat[lag_bdi->iclogt * n_b_faces + ifac] = 0.0;
+          bound_stat[lag_bdi->ihdiam * n_b_faces + ifac] = 0.0;
+
+        }
+        else {
+
+          /* FIXME */
+
+          bft_printf("   ** LAGRANGIAN MODULE:\n"
+                     "   ** Error in cs_lagr.cpp: inclg < 0 ! \n"
+                     "---------------------------------------------\n\n\n"
+                     "** Ifac = %ld  and inclg = %g\n"
+                     "-------------------------------------------------\n",
+                     (long)ifac, bound_stat[lag_bdi->inclg * n_b_faces + ifac]);
+        }
+
+      }
+
+    }
+
+    /* Poisson equation
+       ---------------- */
+
+    if (cs_glob_lagr_time_scheme->ilapoi == 1)
+      cs_lagr_poisson(itypfb);
 
   }  /* end if number of particles > 0 */
 

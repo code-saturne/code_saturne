@@ -80,17 +80,22 @@ cs_lagr_tracking_initialize(void);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Apply one particle movement step.
+ * \brief Integrate or not SDEs associated tot the particle and apply one
+ * trajectography step to track the displacement.
  *
- * \param[in]       visc_length     viscous layer thickness
- * \param[in, out]  particle_range  start and past-the-end ids of tracked
- *                                                              particles
+ * \param[in]     visc_length     viscous layer thickness
+ * \param[in,out] particle_range  start and past-the-end ids of tracked
+ * \param[in,out] particle_range  start and past-the-end ids of tracked
+ * \param[in]     resol_sde       true  the sdes will be resolved
+ *                                false only the trajectography step is done
+ *
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_lagr_tracking_particle_movement(const cs_real_t  visc_length[],
-                                   cs_lnum_t        particle_range[2]);
+cs_lagr_integ_track_particles(const cs_real_t  visc_length[],
+                              cs_lnum_t        particle_range[2],
+                              const bool       resol_sde);
 
 /*----------------------------------------------------------------------------*/
 /*!

@@ -136,6 +136,10 @@ typedef struct {
 
   int        state;                 /* current state (actually an enum) */
 
+  int        integ_tracked_loc;     /* usefull when using cell_wise_integ
+                                       0 : determnistic virtual partner tracked
+                                       1 : stochastic particle tracked
+                                       2 : particle tracking finished*/
 } cs_lagr_tracking_info_t;
 
 /* Particle data value */
@@ -224,6 +228,7 @@ const char *cs_lagr_attribute_name[] = {
   "agglo_class_id",
   "agglo_fractal_dim",
 
+  "remaining_integration_time",
   "user",
   "<none>"};
 
@@ -795,7 +800,7 @@ cs_lagr_particle_attr_initialize(void)
     if (cs_glob_lagr_model->idistu == 1) {
       attr_keys[CS_LAGR_V_GAUSS][0] = CS_LAGR_P_RPRP;
       attr_keys[CS_LAGR_V_GAUSS][1] = ++pepa_loc_add;
-      attr_keys[CS_LAGR_V_GAUSS][2] = 9;
+      attr_keys[CS_LAGR_V_GAUSS][2] = 3 * (n_phases + 2);
     }
 
     if (cs_glob_lagr_brownian->lamvbr == 1) {
@@ -944,6 +949,9 @@ cs_lagr_particle_attr_initialize(void)
     attr_keys[CS_LAGR_AGGLO_FRACTAL_DIM][0] = CS_LAGR_P_RPRP;
     attr_keys[CS_LAGR_AGGLO_FRACTAL_DIM][1] = ++loc_count;
   }
+
+  if (lagr_time_scheme->cell_wise_integ == 1)
+    attr_keys[CS_LAGR_REMAINING_INTEG_TIME][1] = ++loc_count;
 
   if (lagr_model->n_user_variables > 0) {
     attr_keys[CS_LAGR_USER][1] = ++loc_count;

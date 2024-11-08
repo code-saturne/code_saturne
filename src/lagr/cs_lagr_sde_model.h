@@ -60,7 +60,10 @@ BEGIN_C_DECLS
  * - particle mass
  * - variables related to coal grains (Temp, MCH, MCK)
  * - additional user parameters
- *
+
+ * \param[in]  ip           particle id
+ * \param[in]  dt_part      time step associated to the particle
+ * \param[in]  nor          current step id (for 2nd order scheme)
  * \param[in]  tempct       thermal characteristic time
  * \param[out] cpgd1,cpgd2  devolatilisation terms 1 and 2
  * \param[out] cpght        heterogeneos combusion terms (coal with thermal
@@ -69,10 +72,13 @@ BEGIN_C_DECLS
 /*------------------------------------------------------------------------- */
 
 void
-cs_lagr_sde_model(const cs_real_t  tempct[],
-                  cs_real_t        cpgd1[],
-                  cs_real_t        cpgd2[],
-                  cs_real_t        cpght[]);
+cs_lagr_sde_model(const cs_lnum_t    ip,
+                  const cs_real_t    dt_part,
+                  int                nor,
+                  const cs_real_2_t  tempct,
+                  cs_real_t          *cpgd1,
+                  cs_real_t          *cpgd2,
+                  cs_real_t          *cpght);
 
 /*----------------------------------------------------------------------------*/
 

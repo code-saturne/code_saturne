@@ -2184,12 +2184,15 @@ _find_or_add_wa(cs_lagr_moment_p_data_t  *p_data_func,
       name[l+4] = '\0';
     }
 
+    /* if cell_wise_integ is used save the stats at previous time */
+    bool have_previous = (cs_glob_lagr_time_scheme->cell_wise_integ == 1);
+
     cs_field_t *f
       = cs_field_create(name,
                         CS_FIELD_POSTPROCESS | CS_FIELD_ACCUMULATOR,
                         location_id,
                         1,
-                        false);
+                        have_previous);
     mwa->f_id = f->id;
 
   }
@@ -2855,21 +2858,33 @@ _location_attr(int location_id)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Update all particle-based moment and time moment accumulators.
+ * \brief Increment particle contibution on moment and time moment accumulators.
+ *
+ * \param[in]   p_set     pointer to particle set
+ * \param[in]   p_id      particle index in set
+ * \param[in]   rel_time  relative time spent by the particle in the cell during
+ *                        current iteration
  */
 /*----------------------------------------------------------------------------*/
 
-static void
-_cs_lagr_stat_update_all(void)
+void
+cs_lagr_stat_update_all_incr(cs_lagr_particle_set_t *p_set,
+                             const cs_lnum_t         p_id,
+                             const cs_real_t         rel_time)
 {
   const cs_time_step_t  *ts = cs_glob_time_step;
-  cs_lagr_particle_set_t *p_set = cs_lagr_get_particle_set();
+  unsigned char *particle
+    = p_set->p_buffer + p_set->p_am->extents * p_id;
   const cs_real_t *dt_val = _dt_val();
   cs_lnum_t dt_mult = (cs_glob_time_step->is_local) ? 1 : 0;
 
-  /* First, update mesh-based statistics */
-
-  _cs_lagr_stat_update_mesh_stats(ts);
+  cs_lnum_t cell_id = cs_lagr_particle_get_lnum(particle, p_set->p_am,
+                                                CS_LAGR_CELL_ID);
+  int p_class = 0;
+  if (p_set->p_am->displ[0][CS_LAGR_STAT_CLASS] > 0)
+    p_class = cs_lagr_particle_get_lnum(particle,
+                                        p_set->p_am,
+                                        CS_LAGR_STAT_CLASS);
 
   /* Outer loop in weight accumulators, to avoid recomputing weights
      too many times */
@@ -2885,21 +2900,36 @@ _cs_lagr_stat_update_all(void)
       continue;
 
     /* Here, only active accumulators are considered */
+    const cs_lnum_t n_w_elts = _n_w_elts(mwa);
 
-    _ensure_init_wa(mwa);
     cs_real_t *g_wa_sum = _mwa_val(mwa);
+    bool incr_weight = false;
+    cs_real_t prev_wa_sum;
+    cs_real_t new_wa_sum;
 
-    const cs_lnum_t n_w_elts = cs_mesh_location_get_n_elts(mwa->location_id)[0];
-
-    /* Local weight array allocation */
-
-    cs_real_t *restrict l_wa_sum = nullptr;
-
-    /* Compute mesh-based weight now if applicable
+    /* compute mesh-based weight now if applicable
        (possibly sharing it across moments) */
 
     cs_real_t m_w0[1];
     cs_real_t *restrict m_weight = _compute_current_weight_m(mwa, dt_val, m_w0);
+
+
+    /* weight associated to current particle */
+
+    cs_real_t p_weight;
+
+    if (mwa->p_data_func == nullptr)
+      p_weight = cs_lagr_particle_get_real(particle,
+                                           p_set->p_am,
+                                           CS_LAGR_STAT_WEIGHT);
+    else
+      mwa->p_data_func(mwa->data_input,
+                       particle,
+                       p_set->p_am,
+                       &p_weight);
+
+    p_weight *= dt_val[cell_id*dt_mult] * rel_time;
+
 
     /* Loop on variances first, then means */
 
@@ -2914,271 +2944,250 @@ _cs_lagr_stat_update_all(void)
         if (   (int)mt->m_type == m_type
             && mt->wa_id == wa_id
             && mwa->nt_start > -1
-            && mwa->nt_start <= ts->nt_cur
-            && mt->nt_cur < ts->nt_cur) {
+            && mwa->nt_start <= ts->nt_cur) {
+          /* Check if the mean is not already computed */
+          if (mt->nt_cur > ts->nt_cur) {
+            assert(mt->m_type == CS_LAGR_MOMENT_MEAN);
+            mt->nt_cur = ts->nt_cur;
+            continue;
+          }
 
           cs_lagr_attribute_t attr_id =
             (cs_lagr_attribute_t) cs_lagr_stat_type_to_attr_id(mt->stat_type);
 
-          _ensure_init_moment(mt);
 
-          /* Copy weight sum content to a local array
-             for every new moment inside the current class */
-
-          if (m_weight == nullptr && l_wa_sum == nullptr)
-            BFT_MALLOC(l_wa_sum, n_w_elts, cs_real_t);
-
-          for (cs_lnum_t j = 0; j < n_w_elts; j++)
-            l_wa_sum[j] = g_wa_sum[j];
+          if (n_w_elts == 1) {
+            prev_wa_sum = g_wa_sum[0];
+            new_wa_sum = prev_wa_sum;
+          }
 
           /* Case where data is particle-based */
           /*-----------------------------------*/
 
           if (mt->m_data_func == nullptr) {
+            incr_weight = true;
+            prev_wa_sum = g_wa_sum[cell_id];
+            new_wa_sum = prev_wa_sum;
 
-            cs_field_t *f = cs_field_by_id(mt->f_id);
-            cs_real_t *restrict val = f->val;
+            if (cell_id >= 0 && (p_class == mt->class_id || mt->class_id == 0))
+            {
+              cs_field_t *f = cs_field_by_id(mt->f_id);
+              cs_real_t *restrict val = f->val;
 
-            /* prepare submoment definition */
+              /* prepare submoment definition */
 
-            cs_lagr_moment_t *mt_mean = nullptr;
-            cs_real_t *restrict mean_val = nullptr;
+              cs_lagr_moment_t *mt_mean = nullptr;
+              cs_real_t *restrict mean_val = nullptr;
 
-            /* Check if lower moment is defined and attached */
+              /* Check if lower moment is defined and attached */
 
-            if (mt->m_type == CS_LAGR_MOMENT_VARIANCE) {
-              assert(mt->l_id > -1);
-              mt_mean = _lagr_moments + mt->l_id;
-              _ensure_init_moment(mt_mean);
+              if (mt->m_type == CS_LAGR_MOMENT_VARIANCE) {
+                assert(mt->l_id > -1);
+                mt_mean = _lagr_moments + mt->l_id;
+                cs_field_t *f_mean = cs_field_by_id(mt_mean->f_id);
+                mean_val = f_mean->val;
+              }
 
-              cs_field_t *f_mean = cs_field_by_id(mt_mean->f_id);
-              mean_val = f_mean->val;
-            }
+              cs_real_t *pval = nullptr;
+              if (mt->p_data_func != nullptr) {
+                BFT_MALLOC(pval, mt->data_dim, cs_real_t);
+                mt->p_data_func(mt->data_input, particle, p_set->p_am, pval);
+              }
+              else
+                pval = cs_lagr_particle_attr_get_ptr<cs_real_t>(particle,
+                                                                p_set->p_am,
+                                                                attr_id);
 
-            cs_real_t *pval = nullptr;
-            if (mt->p_data_func != nullptr)
-              BFT_MALLOC(pval, mt->data_dim, cs_real_t);
+              /* update weight sum with new particle weight */
+              new_wa_sum = prev_wa_sum + p_weight;
+              const cs_real_t wa_sum_n = CS_MAX(new_wa_sum, 1e-100);
 
-            for (cs_lnum_t part = 0; part < p_set->n_particles; part++) {
+              /* The carrier phase is in component id */
+              int carrier_phase = -mt->component_id - 1;
 
-              unsigned char *particle
-                = p_set->p_buffer + p_set->p_am->extents * part;
+              if (mt->m_type == CS_LAGR_MOMENT_VARIANCE) {
 
-              cs_lnum_t cell_id = cs_lagr_particle_get_lnum(particle, p_set->p_am,
-                                                            CS_LAGR_CELL_ID);
+                if (mt->dim == 6) { /* variance-covariance matrix */
 
-              int p_class = 0;
-              if (p_set->p_am->displ[0][CS_LAGR_STAT_CLASS] > 0)
-                p_class = cs_lagr_particle_get_lnum(particle,
-                                                    p_set->p_am,
-                                                    CS_LAGR_STAT_CLASS);
+                  assert(mt->data_dim == 3);
 
-              if (cell_id >= 0 && (p_class == mt->class_id || mt->class_id == 0)) {
+                  double delta[3], delta_n[3], r[3], m_n[3];
 
-                /* weight associated to current particle */
+                  for (int l = 0; l < 3; l++) {
 
-                cs_real_t p_weight;
+                    cs_lnum_t jl = cell_id*6 + l;
+                    cs_lnum_t jml = cell_id*3 + l;
+                    delta[l]   = pval[3 * carrier_phase + l] - mean_val[jml];
+                    r[l] = delta[l] * (p_weight / wa_sum_n);
+                    m_n[l] = mean_val[jml] + r[l];
+                    delta_n[l] = pval[3 * carrier_phase + l] - m_n[l];
+                    val[jl] = (  val[jl]*prev_wa_sum
+                               + p_weight*delta[l]*delta_n[l]) / wa_sum_n;
+                  }
 
-                if (mwa->p_data_func == nullptr)
-                  p_weight = cs_lagr_particle_get_real(particle,
-                                                       p_set->p_am,
-                                                       CS_LAGR_STAT_WEIGHT);
-                else
-                  mwa->p_data_func(mwa->data_input,
-                                   particle,
-                                   p_set->p_am,
-                                   &p_weight);
-                p_weight *= dt_val[cell_id*dt_mult];
+                  /* Covariance terms.
+                     Note we could have a symmetric formula using
+                     0.5*(delta[i]*delta_n[j] + delta[j]*delta_n[i])
+                     instead of
+                     delta[i]*delta_n[j]
+                     but unit tests in cs_moment_test.c do not seem to favor
+                     one variant over the other; we use the simplest one.  */
 
-                if (mt->p_data_func == nullptr)
-                  pval = cs_lagr_particle_attr_get_ptr<cs_real_t>(particle,
-                                                                  p_set->p_am,
-                                                                  attr_id);
-                else
-                  mt->p_data_func(mt->data_input, particle, p_set->p_am, pval);
+                  cs_lnum_t j3 = cell_id*6 + 3,
+                            j4 = cell_id*6 + 4,
+                            j5 = cell_id*6 + 5;
 
-                /* update weight sum with new particle weight */
-                const cs_real_t wa_sum_n = CS_MAX(p_weight + l_wa_sum[cell_id],
-                                                  1e-100);
+                  val[j3] = (  val[j3]*prev_wa_sum
+                             + p_weight*delta[0]*delta_n[1]) / wa_sum_n;
+                  val[j4] = (  val[j4]*prev_wa_sum
+                             + p_weight*delta[1]*delta_n[2]) / wa_sum_n;
+                  val[j5] = (  val[j5]*prev_wa_sum
+                             + p_weight*delta[0]*delta_n[2]) / wa_sum_n;
 
+                  /* update mean value */
 
-                /* The carrier phase is in component id */
-                int carrier_phase = -mt->component_id - 1;
-                if (mt->m_type == CS_LAGR_MOMENT_VARIANCE) {
+                  for (cs_lnum_t l = 0; l < 3; l++)
+                    mean_val[cell_id*3 + l] += r[l];
 
-                  if (mt->dim == 6) { /* variance-covariance matrix */
+                  /* Indicates that tower order statistics have been computed*/
+                  mt_mean->nt_cur = ts->nt_cur + 1;
 
-                    assert(mt->data_dim == 3);
+                }
 
-                    double delta[3], delta_n[3], r[3], m_n[3];
+                else { /* simple variance */
 
-                    for (int l = 0; l < 3; l++) {
+                  /* new weight for the cell: weight attached to
+                     current particle (=dt*weight) plus old weight */
 
-                      cs_lnum_t jl = cell_id*6 + l;
-                      cs_lnum_t jml = cell_id*3 + l;
-                      delta[l]   = pval[3 * carrier_phase + l] - mean_val[jml];
-                      r[l] = delta[l] * (p_weight / wa_sum_n);
-                      m_n[l] = mean_val[jml] + r[l];
-                      delta_n[l] = pval[3 * carrier_phase + l] - m_n[l];
-                      val[jl] = (  val[jl]*l_wa_sum[cell_id]
-                                 + p_weight*delta[l]*delta_n[l]) / wa_sum_n;
+                  const cs_lnum_t dim = mt->dim;
 
-                    }
+                  for (cs_lnum_t l = 0; l < dim; l++) {
+                    cs_real_t delta =   pval[dim * carrier_phase + l]
+                                      - mean_val[cell_id * dim + l];
+                    cs_real_t r = delta * (p_weight / wa_sum_n);
+                    cs_real_t m_n = mean_val[cell_id * dim + l] + r;
 
-                    /* Covariance terms.
-                       Note we could have a symmetric formula using
-                       0.5*(delta[i]*delta_n[j] + delta[j]*delta_n[i])
-                       instead of
-                       delta[i]*delta_n[j]
-                       but unit tests in cs_moment_test.c do not seem to favor
-                       one variant over the other; we use the simplest one.  */
-
-                    cs_lnum_t j3 = cell_id*6 + 3,
-                              j4 = cell_id*6 + 4,
-                              j5 = cell_id*6 + 5;
-
-                    val[j3] = (  val[j3]*l_wa_sum[cell_id]
-                               + p_weight*delta[0]*delta_n[1]) / wa_sum_n;
-                    val[j4] = (  val[j4]*l_wa_sum[cell_id]
-                               + p_weight*delta[1]*delta_n[2]) / wa_sum_n;
-                    val[j5] = (  val[j5]*l_wa_sum[cell_id]
-                               + p_weight*delta[0]*delta_n[2]) / wa_sum_n;
+                    /* Compute and store the variance value */
+                    val[cell_id*dim+l]
+                      = (  val[cell_id * dim + l] * prev_wa_sum
+                         + (p_weight*delta*(pval[dim * carrier_phase + l]-m_n)))
+                        / wa_sum_n;
 
                     /* update mean value */
 
-                    for (cs_lnum_t l = 0; l < 3; l++)
-                      mean_val[cell_id*3 + l] += r[l];
+                    mean_val[cell_id * dim + l] += r;
 
-                  } else { /* simple variance */
-
-                    /* new weight for the cell: weight attached to
-                       current particle (=dt*weight) plus old weight */
-
-                    const cs_lnum_t dim = mt->dim;
-
-                    for (cs_lnum_t l = 0; l < dim; l++) {
-                      cs_real_t delta = pval[dim * carrier_phase + l] - mean_val[cell_id * dim + l];
-                      cs_real_t r = delta * (p_weight / wa_sum_n);
-                      cs_real_t m_n = mean_val[cell_id * dim + l] + r;
-
-                      /* Compute and store the variance value */
-                      val[cell_id*dim+l]
-                        = (  val[cell_id * dim + l]*l_wa_sum[cell_id]
-                           + (p_weight*delta*(pval[dim * carrier_phase + l]-m_n))) / wa_sum_n;
-
-                      /* update mean value */
-
-                      mean_val[cell_id * dim + l] += r;
-
-                    }
+                    /* Indicates that tower order statistics have been computed*/
+                    mt_mean->nt_cur = ts->nt_cur + 1;
 
                   }
 
                 }
 
-                else if (mt->m_type == CS_LAGR_MOMENT_MEAN) {
+              }
 
-                  const cs_lnum_t dim = mt->dim;
+              else if (mt->m_type == CS_LAGR_MOMENT_MEAN) {
 
-                  for (cs_lnum_t l = 0; l < dim; l++){
-                    val[cell_id*dim+l] +=   (pval[dim * carrier_phase + l] - val[cell_id*dim+l])
-                                          * p_weight / wa_sum_n;
-                  }
+                const cs_lnum_t dim = mt->dim;
 
-                } /* End of test if moment is a variance or a mean */
+                for (cs_lnum_t l = 0; l < dim; l++)
+                  val[cell_id*dim+l] += p_weight / wa_sum_n
+                    * (pval[dim * carrier_phase + l] - val[cell_id*dim+l]);
 
-                /* update local weight associated to current moment and class */
+              } /* End of test if moment is a variance or a mean */
 
-                l_wa_sum[cell_id] += p_weight;
+              if (mt->p_data_func != nullptr)
+                BFT_FREE(pval);
+            } /* End of test if particle is in a cell
+                 and if particle class corresponds to moment class */
 
-              } /* End of test if particle is in a cell
-                   and if particle class corresponds to moment class */
-
-            } /* end of loop on particles */
-
-            if (mt->p_data_func != nullptr)
-              BFT_FREE(pval);
-
-            mt->nt_cur = ts->nt_cur;
-            if (mt->m_type == CS_LAGR_MOMENT_VARIANCE)
-              mt_mean->nt_cur = ts->nt_cur;
           }
+        } /* end of test if moment is for the current class */
+      } /* end of loop on different moments */
+    } /* end of loop on variances then means */
 
-          /* Case where data is mesh-based */
-          /*-------------------------------*/
+    if (mwa->f_id >= 0) {
+      if (incr_weight)
+        g_wa_sum[cell_id] = new_wa_sum;
+      else if (m_weight == nullptr && n_w_elts > 0) {
+        /* Case where accumulator has no moments */
+        if (cell_id >= 0 && (p_class == mwa->class_id || mwa->class_id == 0)) {
+          /* update accumulator weight */
+          if (p_weight > 1e-100)
+            g_wa_sum[cell_id] += p_weight;
+        }
+      }
+    }
+  } /* end loop on weight accumulators */
+}
 
-          else
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Update all particle-based moment and time moment accumulators.
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_cs_lagr_stat_update_all_mesh_moments(void)
+{
+  const cs_time_step_t  *ts = cs_glob_time_step;
+  const cs_real_t *dt_val = _dt_val();
+
+  for (int wa_id = 0; wa_id < _n_lagr_moments_wa; wa_id++) {
+
+    cs_lagr_moment_wa_t *mwa = _lagr_moments_wa + wa_id;
+
+    /* Check if accumulator and associated moments are active here */
+
+    if (   mwa->group != CS_LAGR_STAT_GROUP_PARTICLE
+        || mwa->nt_start > ts->nt_cur)
+      continue;
+
+    const cs_lnum_t n_w_elts = cs_mesh_location_get_n_elts(mwa->location_id)[0];
+
+    /* Local weight array allocation */
+
+    /* Compute mesh-based weight now if applicable
+       (possibly sharing it across moments) */
+
+    cs_real_t m_w0[1];
+    cs_real_t *restrict m_weight = _compute_current_weight_m(mwa, dt_val, m_w0);
+
+    bool is_incremented_wa_sum = (m_weight == nullptr && n_w_elts > 0);
+
+    for (int m_type = CS_LAGR_MOMENT_VARIANCE;
+         m_type >= (int)CS_LAGR_MOMENT_MEAN;
+         m_type--) {
+      for (int i = 0; i < _n_lagr_moments; i++) {
+        cs_lagr_moment_t *mt = _lagr_moments + i;
+
+        if (   (int)mt->m_type == m_type
+            && mt->wa_id == wa_id
+            && mwa->nt_start > -1
+            && mwa->nt_start <= ts->nt_cur
+            && mt->nt_cur < ts->nt_cur) {
+          if (m_weight == nullptr)
+            is_incremented_wa_sum = true;
+          if (mt->m_data_func != nullptr)
             _cs_lagr_stat_update_mesh_moment(mt,
                                              mwa,
                                              m_weight,
                                              ts->nt_cur);
-
         } /* end of test if moment is for the current class */
 
-      } /* End of loop on moment types */
 
-    } /* End of loop on moments */
+      } /* End of loop on moments */
+    } /* End of loop on moment types */
 
     /* At end of loop on moments inside a class, update
-       global class weight array */
-
-    if (l_wa_sum != nullptr) {
-      for (cs_lnum_t i = 0; i < n_w_elts; i++)
-        g_wa_sum[i] = l_wa_sum[i];
-      BFT_FREE(l_wa_sum);
-    }
-    else if (m_weight != nullptr) {
+       global class weight array here if no increments due to particle weight*/
+    if (is_incremented_wa_sum == false && m_weight != nullptr) {
       _update_wa_m(mwa, m_weight);
       if (m_weight != m_w0)
         BFT_FREE(m_weight);
     }
-    else if (n_w_elts > 0) { /* Case where accumulator has no moments */
-
-      for (cs_lnum_t part = 0; part < p_set->n_particles; part++) {
-
-        unsigned char *particle
-          = p_set->p_buffer + p_set->p_am->extents * part;
-
-        cs_lnum_t cell_id = cs_lagr_particle_get_lnum(particle, p_set->p_am,
-                                                      CS_LAGR_CELL_ID);
-
-        int p_class = 0;
-        if (p_set->p_am->displ[0][CS_LAGR_STAT_CLASS] > 0)
-          p_class = cs_lagr_particle_get_lnum(particle,
-                                              p_set->p_am,
-                                              CS_LAGR_STAT_CLASS);
-
-        if (cell_id >= 0 && (p_class == mwa->class_id || mwa->class_id == 0)) {
-
-          /* weight associated to current particle */
-
-          cs_real_t p_weight;
-
-          if (mwa->p_data_func == nullptr)
-            p_weight = cs_lagr_particle_get_real(particle,
-                                                 p_set->p_am,
-                                                 CS_LAGR_STAT_WEIGHT);
-          else
-            mwa->p_data_func(mwa->data_input,
-                             particle,
-                             p_set->p_am,
-                             &p_weight);
-          p_weight *= dt_val[cell_id*dt_mult];
-
-          /* update accumulator weight */
-
-          if (p_weight > 1e-100)
-            g_wa_sum[cell_id] += p_weight;
-
-        }
-
-      } /* end of loop on particles */
-
-    }
-
   } /* End of loop on active weight accumulators */
 }
-
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Modify current time for active event-based moment accumulators.
@@ -3450,6 +3459,14 @@ _stat_moment_define(const char                *name,
   /* matching field */
 
   bool have_previous = stat_group > CS_LAGR_STAT_GROUP_PARTICLE ? true : false;
+
+  /* If the cell_wise_integ is used with the complete integration model
+   * save the previous state for <Up> et <Uf> */
+   if (   (attr_id == CS_LAGR_VELOCITY || attr_id == CS_LAGR_VELOCITY_SEEN)
+      &&  cs_glob_lagr_model->modcpl > 0
+      &&  cs_glob_lagr_time_scheme->cell_wise_integ == 1
+      &&  m_type == CS_LAGR_MOMENT_MEAN)
+    have_previous = true;
 
   f = _cs_lagr_moment_associate_field(_name, location_id, mt->dim, have_previous);
 
@@ -4704,6 +4721,12 @@ cs_lagr_stat_prepare(void)
      copying values to those of the previous time step */
 
   const cs_time_step_t  *ts = cs_glob_time_step;
+  /* if unsteady statistics, reset stats, wa, and durations */
+  if (   (   cs_glob_lagr_time_scheme->isttio == 0
+          || (   cs_glob_lagr_time_scheme->isttio == 1
+              && ts->nt_cur <= cs_glob_lagr_stat_options->nstist))
+      && cs_glob_lagr_time_scheme->cell_wise_integ == 1)
+    _cs_lagr_stat_reset_unsteady(CS_LAGR_STAT_GROUP_PARTICLE, ts);
 
   bool reset_stats = false;
   if (   cs_glob_lagr_time_scheme->isttio == 0
@@ -4733,6 +4756,26 @@ cs_lagr_stat_prepare(void)
     if (   mwa->nt_start <= ts->nt_cur
         && mwa->group < CS_LAGR_STAT_GROUP_N_GROUPS)
       _is_active[mwa->group] = true;
+
+    /* if cell_wise_integ reset particle moment and weight accumulator */
+    if ( cs_glob_lagr_time_scheme->cell_wise_integ == 1) {
+      if (   mwa->group != CS_LAGR_STAT_GROUP_PARTICLE
+          || mwa->nt_start > ts->nt_cur) {
+
+        for (int j = 0; j < _n_lagr_moments; j++) {
+
+          cs_lagr_moment_t *mt = _lagr_moments + j;
+          _ensure_init_moment(mt);
+          if (mt->m_data_func == nullptr)
+            mt->nt_cur = ts->nt_cur;
+        }
+        continue;
+      }
+      /* Here, only active accumulators are considered */
+
+      _ensure_init_wa(mwa);
+    }
+
   }
 
   for (int i = 0; i < _n_lagr_moments; i++) {
@@ -4742,7 +4785,6 @@ cs_lagr_stat_prepare(void)
 
     if (f->n_time_vals > 1)
       cs_field_current_to_previous(f);
-
   }
 
   if (reset_stats)
@@ -4778,13 +4820,59 @@ cs_lagr_stat_update(void)
 
   const cs_time_step_t  *ts = cs_glob_time_step;
 
-  /* if unsteady statistics, reset stats, wa, and durations */
-  if (   cs_glob_lagr_time_scheme->isttio == 0
-      || (   cs_glob_lagr_time_scheme->isttio == 1
-          && ts->nt_cur <= cs_glob_lagr_stat_options->nstist))
+  /* if unsteady statistics and no cell_wise_integ,
+   * reset stats, wa, and durations */
+  if (   (   cs_glob_lagr_time_scheme->isttio == 0
+          || (   cs_glob_lagr_time_scheme->isttio == 1
+              && ts->nt_cur <= cs_glob_lagr_stat_options->nstist))
+      && cs_glob_lagr_time_scheme->cell_wise_integ == 0)
     _cs_lagr_stat_reset_unsteady(CS_LAGR_STAT_GROUP_PARTICLE, ts);
 
-  _cs_lagr_stat_update_all();
+  /* First, update mesh-based statistics */
+  _cs_lagr_stat_update_mesh_stats(ts);
+
+  if (cs_glob_lagr_time_scheme->cell_wise_integ == 0) {
+    for (int wa_id = 0; wa_id < _n_lagr_moments_wa; wa_id++) {
+
+      cs_lagr_moment_wa_t *mwa = _lagr_moments_wa + wa_id;
+
+      /* Check if accumulator and associated moments are active here */
+
+      if (   mwa->group != CS_LAGR_STAT_GROUP_PARTICLE
+          || mwa->nt_start > ts->nt_cur)
+        continue;
+      /* Here, only active accumulators are considered */
+
+      _ensure_init_wa(mwa);
+
+      for (int m_type = CS_LAGR_MOMENT_VARIANCE;
+           m_type >= (int)CS_LAGR_MOMENT_MEAN;
+           m_type--) {
+
+        for (int i = 0; i < _n_lagr_moments; i++) {
+
+          cs_lagr_moment_t *mt = _lagr_moments + i;
+
+          if (   (int)mt->m_type == m_type
+              && mt->wa_id == wa_id
+              && mwa->nt_start > -1
+              && mwa->nt_start <= ts->nt_cur) {
+
+            _ensure_init_moment(mt);
+
+          }
+        }
+      }
+    }
+
+    cs_lagr_particle_set_t *p_set = cs_glob_lagr_particle_set;
+    /* Increment statistics over whole integration time */
+    for (cs_lnum_t p_id = 0; p_id < p_set->n_particles; p_id ++)
+      cs_lagr_stat_update_all_incr(p_set, p_id, 1.);
+  }
+  /* Case where data is mesh-based */
+  /*-------------------------------*/
+  _cs_lagr_stat_update_all_mesh_moments();
 
   /* Update current time step for active event moments */
 

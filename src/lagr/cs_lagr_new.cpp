@@ -992,23 +992,24 @@ cs_lagr_new_particle_init(const cs_lnum_t                 particle_range[2],
     }
 
     if (zis->velocity_profile == CS_LAGR_IN_IMPOSED_FLUID_VALUE) {
-      for (cs_lnum_t i = 0; i < 3; i++) {
+      if (cs_glob_lagr_model->cs_used) {
+        for (cs_lnum_t i = 0; i < 3; i++)
+          part_vel[i] += loc_fluid_vel[0][i];
+      }
+      else { /* neptune is used */
         cs_real_t norm_alp = 0.;
-        part_vel[i] = 0.;
-        if (cs_glob_lagr_model->cs_used) {
-          for (int phase_id = 0; phase_id < n_phases; phase_id++)
-            part_vel[i] += loc_fluid_vel[0][i];
-        }
-        else {
-          for (int phase_id = 0; phase_id < n_phases; phase_id++) {
+        for (cs_lnum_t i = 0; i < 3; i++)
+          part_vel[i] = 0.;
+        for (int phase_id = 0; phase_id < n_phases; phase_id++) {
+          norm_alp += extra_i[phase_id].alpha->val[c_id]
+            * extra_i[phase_id].cromf->val[c_id];
+          for (cs_lnum_t i = 0; i < 3; i++)
             part_vel[i] += extra_i[phase_id].alpha->val[c_id]
               * extra_i[phase_id].cromf->val[c_id]
               * loc_fluid_vel[phase_id][i];
-            norm_alp += extra_i[phase_id].alpha->val[c_id]
-              * extra_i[phase_id].cromf->val[c_id];
-          }
-          part_vel[i] /= norm_alp;
         }
+        for (cs_lnum_t i = 0; i < 3; i++)
+          part_vel[i] /= norm_alp;
       }
     }
 
@@ -1324,7 +1325,6 @@ cs_lagr_new_particle_init(const cs_lnum_t                 particle_range[2],
           cs_lagr_particle_set_real(particle, p_am, CS_LAGR_EMISSIVITY,
                                     zis->emissivity);
       }
-
     }
 
     else if (cs_glob_lagr_model->physical_model == CS_LAGR_PHYS_COAL) {
@@ -1437,6 +1437,7 @@ cs_lagr_new_particle_init(const cs_lnum_t                 particle_range[2],
         cs_lagr_particle_get_real(particle, p_am, CS_LAGR_FLUID_TEMPERATURE);
 
       /* Fluctuations to obtain proper thermal turbulent fluxes */
+      /* TODO adapt the value of the draws based not only on the first phase */
       if (extra->temperature_turbulent_flux != nullptr)
         temp_seen +=
           cs_math_3_dot_product(temp_vel_fluc_coef[c_id], vagaus[0][l_id]);

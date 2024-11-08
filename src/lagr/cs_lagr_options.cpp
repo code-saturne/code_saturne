@@ -94,14 +94,16 @@ BEGIN_C_DECLS
 /*!
  * \brief Create source term fields for lagrangian module
  *
- * \param[in]  name  source term field name
- * \param[in]  name  source term field dimension
+ * \param[in]  name            source term field name
+ * \param[in]  dim             source term field dimension
+ * \param[in]  have_previous   source term field dimension
  */
 /*----------------------------------------------------------------------------*/
 
 static void
 _define_st_field(const char  *name,
-                 int          dim)
+                 int          dim,
+                 bool         have_previous)
 {
   int field_type = CS_FIELD_INTENSIVE | CS_FIELD_PROPERTY;
   int location_id = CS_MESH_LOCATION_CELLS;
@@ -110,7 +112,7 @@ _define_st_field(const char  *name,
                   field_type,
                   location_id,
                   dim,
-                  false);
+                  have_previous);
 }
 
 /*-----------------------------------------------------------------------------
@@ -816,9 +818,6 @@ cs_lagr_options_definition(int         is_restart,
   /* Return coupling */
   cs_glob_lagr_source_terms->npts = 0;
 
-  /* Sub-step initialization */
-  cs_glob_lagr_time_step->nor = 0;
-
   /* Definition of pointers related to boundary statistics
    * has_part_impact_nbr: activate stats on particle/boundary interaction
 
@@ -883,20 +882,21 @@ cs_lagr_options_definition(int         is_restart,
   /* Dynamics: velocity + turbulence */
   if (cs_glob_lagr_source_terms->ltsdyn == 1) {
 
-    _define_st_field("lagr_st_velocity", 3);
+    bool have_previous = (lagr_time_scheme->cell_wise_integ == 1);
+    _define_st_field("lagr_st_velocity", 3, have_previous);
 
-    _define_st_field("lagr_st_imp_velocity", 1);
+    _define_st_field("lagr_st_imp_velocity", 1, false);
 
     /* K-eps, LES, v2f and k-omega */
     if (   extra->itytur == 2
         || extra->itytur == 4
         || extra->itytur == 5
         || extra->iturb == CS_TURB_K_OMEGA)
-      _define_st_field("lagr_st_k", 1);
+      _define_st_field("lagr_st_k", 1, false);
 
     /* Rij */
     else if (extra->itytur == 3)
-      _define_st_field("lagr_st_rij", 6);
+      _define_st_field("lagr_st_rij", 6, false);
 
     else
       cs_parameters_error
@@ -922,7 +922,7 @@ cs_lagr_options_definition(int         is_restart,
 
   /* Mass: associated to pressure equation  */
   if (cs_glob_lagr_source_terms->ltsmas == 1)
-    _define_st_field("lagr_st_pressure", 1);
+    _define_st_field("lagr_st_pressure", 1, false);
 
   /* Thermal model */
   if (cs_glob_lagr_source_terms->ltsthe == 1) {
@@ -934,8 +934,8 @@ cs_lagr_options_definition(int         is_restart,
        || lagr_model->physical_model == CS_LAGR_PHYS_CTWR
         ) {
 
-      _define_st_field("lagr_st_temperature", 1);
-      _define_st_field("lagr_st_imp_temperature", 1);
+      _define_st_field("lagr_st_temperature", 1, false);
+      _define_st_field("lagr_st_imp_temperature", 1, false);
 
     }
   }

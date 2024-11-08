@@ -66,33 +66,41 @@ BEGIN_C_DECLS
  *
  * It must be prescribed in every cell and be homogeneous to gravity (m/s^2)
  * By default gravity and drag force are the only forces acting on the particles
- * (the gravity components gx gy gz are assigned in the GUI or in usipsu)
+ * (the gravity components gx gy gz are assigned in the GUI or in
+ * cs_user_parameters)
+ * Note that taup, tlag, piil and bx are associated to the particle and
+ * their value for all phases is provided
  *
- * \param[in]     dt_p     time step (for the cell)
- * \param[in]     taup     particle relaxation time
- * \param[in]     tlag     relaxation time for the flow
- * \param[in]     piil     term in the integration of the sde
- * \param[in]     bx       characteristics of the turbulence
- * \param[in]     tsfext   infos for the return coupling
- * \param[in]     vagaus   Gaussian random variables
- * \param[in,out] rho_p     particle density
- * \param[out]    fextla   user external force field (m/s^2)$
+ * \param[in]      dt_p     time step (for the cell)
+ * \param[in]      p_id     particle id
+ * \param[in]      taup     particle relaxation time
+ * \param[in]      tlag     relaxation time for the flow
+ * \param[in]      piil     term in the integration of the sde
+ * \param[in]      bx       characteristics of the turbulence
+ * \param[in]      tsfext   infos for the return coupling
+ * \param[in]      vagaus   Gaussian random variables
+ * \param[in,out]  rho_p     particle density
+ * \param[out]     fextla   user external force field (m/s^2)$
  */
 /*----------------------------------------------------------------------------*/
 
 #pragma weak cs_user_lagr_ef
 void
 cs_user_lagr_ef(cs_real_t            dt_p,
-                const cs_real_t    **taup,
-                const cs_real_3_t  **tlag,
-                const cs_real_3_t  **piil,
-                const cs_real_33_t **bx,
-                const cs_real_t      tsfext[],
-                const cs_real_33_t   vagaus[],
-                cs_real_t            rho_p[],
-                cs_real_3_t          fextla[])
+                const cs_lnum_t      p_id,
+                const cs_real_t     *taup,
+                const cs_real_3_t   *tlag,
+                const cs_real_3_t   *piil,
+                const cs_real_33_t  *bx,
+                const cs_real_t      tsfext,
+                const cs_real_3_t   *vagaus,
+                const cs_real_3_t    gradpr,
+                const cs_real_33_t   gradvf,
+                cs_real_t            rho_p,
+                cs_real_3_t          fextla)
 {
   CS_UNUSED(dt_p);
+  CS_UNUSED(p_id);
   CS_UNUSED(taup);
   CS_UNUSED(tlag);
   CS_UNUSED(piil);
@@ -100,6 +108,8 @@ cs_user_lagr_ef(cs_real_t            dt_p,
   CS_UNUSED(tsfext);
   CS_UNUSED(vagaus);
   CS_UNUSED(rho_p);
+  CS_UNUSED(gradpr);
+  CS_UNUSED(gradvf);
   CS_UNUSED(fextla);
 }
 
@@ -262,29 +272,32 @@ cs_user_lagr_in(cs_lagr_particle_set_t         *particles,
  *
  *     \f$ P_{rt}\f$    : Prandtl number
  *
- * \param[in]   id_p   particle id
- * \param[in]   re_p   particle Reynolds number
- * \param[in]   uvwr   relative velocity of the particle
- *                     (flow-seen velocity - part. velocity)
- * \param[in]   rho_f  fluid density at  particle position
- * \param[in]   rho_p  particle density
- * \param[in]   nu_f   kinematic viscosity of the fluid at particle position
- * \param[out]  taup   thermal relaxation time
- * \param[in]   dt     time step (per cell)
+ * \param[in]   phase_id   carrier phase_id
+ * \param[in]   id_p       particle id
+ * \param[in]   re_p       particle Reynolds number
+ * \param[in]   uvwr       relative velocity of the particle
+ *                         (flow-seen velocity - part. velocity)
+ * \param[in]   rho_f      fluid density at  particle position
+ * \param[in]   rho_p      particle density
+ * \param[in]   nu_f       kinematic viscosity of the fluid at particle position
+ * \param[out]  taup       thermal relaxation time
+ * \param[in]   dt         time step associated to the particle
  */
 /*----------------------------------------------------------------------------*/
 
 #pragma weak cs_user_lagr_rt
 void
-cs_user_lagr_rt(cs_lnum_t        id_p,
+cs_user_lagr_rt(int              phase_id,
+                cs_lnum_t        id_p,
                 cs_real_t        re_p,
                 cs_real_t        uvwr,
                 cs_real_t        rho_f,
                 cs_real_t        rho_p,
                 cs_real_t        nu_f,
-                cs_real_t        *taup,
-                const cs_real_t  dt[])
+                cs_real_t       *taup,
+                const cs_real_t  dt)
 {
+  CS_UNUSED(phase_id);
   CS_UNUSED(id_p);
   CS_UNUSED(re_p);
   CS_UNUSED(uvwr);
@@ -314,7 +327,7 @@ cs_user_lagr_rt(cs_lnum_t        id_p,
  * \param[in]   cp_f   specific heat of the fluid at particle position
  * \param[in]   k_f    diffusion coefficient of the fluid at particle position
  * \param[out]  tauc   thermal relaxation time
- * \param[in]   dt     time step (per cell)
+ * \param[in]   dt     time step associated to the particle
  */
 /*----------------------------------------------------------------------------*/
 
@@ -328,8 +341,8 @@ cs_user_lagr_rt_t(cs_lnum_t        id_p,
                   cs_real_t        nu_f,
                   cs_real_t        cp_f,
                   cs_real_t        k_f,
-                  cs_real_t        tauc[],
-                  const cs_real_t  dt[])
+                  cs_real_2_t      tempct,
+                  const cs_real_t  dt)
 {
   CS_UNUSED(id_p);
   CS_UNUSED(re_p);
@@ -339,7 +352,7 @@ cs_user_lagr_rt_t(cs_lnum_t        id_p,
   CS_UNUSED(nu_f);
   CS_UNUSED(cp_f);
   CS_UNUSED(k_f);
-  CS_UNUSED(tauc);
+  CS_UNUSED(tempct);
   CS_UNUSED(dt);
 }
 
@@ -367,25 +380,34 @@ cs_user_lagr_rt_t(cs_lnum_t        id_p,
  *      (nor=2) pip is expressed as a function of the quantities of the
  *      current time step.
  *
+ * Note that taup, tlag are associated to the particle and their value for
+ * all phases is provided
+ *
  * \param[in]  dt      time step (per cell)
+ * \param[in]  p_id    particle id
  * \param[in]  taup    particle relaxation time
  * \param[in]  tlag    relaxation time for the flow
  * \param[in]  tempct  characteristic thermal time and implicit source
  *                     term of return coupling
+ * \param[in]  nor     current step id (for 2nd order scheme)
  */
 /*----------------------------------------------------------------------------*/
 
 #pragma weak cs_user_lagr_sde
 void
-cs_user_lagr_sde(const cs_real_t  dt[],
-                 cs_real_t        **taup,
-                 cs_real_3_t      **tlag,
-                 cs_real_t        tempct[])
+cs_user_lagr_sde(const cs_real_t         dt,
+                 const cs_lnum_t         p_id,
+                 const cs_real_t        *taup,
+                 const cs_real_3_t      *tlag,
+                 const cs_real_2_t       tempct,
+                 const int               nor)
 {
   CS_UNUSED(dt);
+  CS_UNUSED(p_id);
   CS_UNUSED(taup);
   CS_UNUSED(tlag);
   CS_UNUSED(tempct);
+  CS_UNUSED(nor);
 }
 
 /*----------------------------------------------------------------------------*/
