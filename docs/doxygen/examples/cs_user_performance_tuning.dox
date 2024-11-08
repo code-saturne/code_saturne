@@ -36,32 +36,32 @@
 
   \section cs_user_performance_tuning_h_cs_user_performance_tuning_numbering  Advanced mesh numbering
 
-  \snippet cs_user_performance_tuning-numbering.c performance_tuning_numbering
+  \snippet cs_user_performance_tuning-numbering.cpp performance_tuning_numbering
 
   \section cs_user_performance_tuning_h_cs_user_performance_tuning_partition  Advanced partitioning
 
   \subsection cs_user_performance_tuning_h_cs_user_performance_tuning_partition_1 Example 1
 
-  \snippet cs_user_performance_tuning-partition.c performance_tuning_partition_1
+  \snippet cs_user_performance_tuning-partition.cpp performance_tuning_partition_1
 
   \subsection cs_user_performance_tuning_h_cs_user_performance_tuning_partition_2 Example 2
 
-  \snippet cs_user_performance_tuning-partition.c performance_tuning_partition_2
+  \snippet cs_user_performance_tuning-partition.cpp performance_tuning_partition_2
 
   \subsection cs_user_performance_tuning_h_cs_user_performance_tuning_partition_3 Example 3
 
-  \snippet cs_user_performance_tuning-partition.c performance_tuning_partition_3
+  \snippet cs_user_performance_tuning-partition.cpp performance_tuning_partition_3
 
   \subsection cs_user_performance_tuning_h_cs_user_performance_tuning_partition_4 Example 4
 
-  \snippet cs_user_performance_tuning-partition.c performance_tuning_partition_4
+  \snippet cs_user_performance_tuning-partition.cpp performance_tuning_partition_4
 
   \section cs_user_performance_tuning_h_cs_user_performance_tuning_parallel_io  Parallel IO
 
-  \snippet cs_user_performance_tuning-parallel-io.c perfomance_tuning_parallel_io
+  \snippet cs_user_performance_tuning-parallel-io.cpp perfomance_tuning_parallel_io
 
   \section cs_user_performance_tuning_h_cs_user_performance_tuning_matrix  Matrix tuning
 
-  \snippet cs_user_performance_tuning-matrix.c performance_tuning_matrix
+  \snippet cs_user_performance_tuning-matrix.cpp performance_tuning_matrix
 
 */

@@ -26,10 +26,10 @@
 
 /*!
 
-  \page cs_user_zones_examples Volume and boundary zone definitions (cs_user_zones.c)
+  \page cs_user_zones_examples Volume and boundary zone definitions (cs_user_zones.cpp)
 
   Volume and boundary zones may be defined using the GUI, or through
-  the \ref cs_user_zones (in cs_user_zones.c).
+  the \ref cs_user_zones (in cs_user_zones.cpp).
 
   \section cs_user_zones_volume_simple Simple volume zone example
 
@@ -37,12 +37,12 @@
   \ref sec_selection_criteria "selection criteria", such as in the following
   example:
 
-  \snippet cs_user_zones.c user_zones_head_loss_1
+  \snippet cs_user_zones.cpp user_zones_head_loss_1
 
   Or you can define 3 spherical source term zones based on geometrical criteria
   described by a rule.
 
-  \snippet cs_user_zones.c user_zones_volume_1
+  \snippet cs_user_zones.cpp user_zones_volume_1
 
   \section cs_user_zones_volume_advanced Advanced volume zone examples
 
@@ -50,15 +50,15 @@
   function. For example, to select cells adjacent to boundary faces belonging
   to a group named "G3", the following selection function must first be defined:
 
-  \snippet cs_user_zones.c select_func_vol2
+  \snippet cs_user_zones.cpp select_func_vol2
 
   It can then simply be used in a zone definition:
 
-  \snippet cs_user_zones.c user_zones_volume_2
+  \snippet cs_user_zones.cpp user_zones_volume_2
 
   \remark If defined as "static", as in this example, an with no function
           prototype, the selection function must be defined in the same file
-          (i.e. cs_user_zones.c), and appear before the definition of
+          (i.e. cs_user_zones.cpp), and appear before the definition of
           \ref cs_user_zones. If a appropriate selection function is
           available in another source file, it must have non-static linkage
           an a function prototype must be provided (usually through an
@@ -69,11 +69,11 @@
   You can define simple boundary zones, allowing all faces not in the
   "INLET" or "OUTLET" groups to be considered as walls
 
-  \snippet cs_user_zones.c user_zones_boundary_1
+  \snippet cs_user_zones.cpp user_zones_boundary_1
 
   Or simply allow overlapping for an existing zone:
 
-  \snippet cs_user_zones.c user_zones_boundary_2
+  \snippet cs_user_zones.cpp user_zones_boundary_2
 
 */
 // _____________________________________________________________________________

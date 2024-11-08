@@ -26,7 +26,7 @@
 
 /*!
 
-  \page cs_user_boundary_conditions_examples_ale Examples of data settings for ALE boundary conditions (cs_user_boundary_conditions.c)
+  \page cs_user_boundary_conditions_examples_ale Examples of data settings for ALE boundary conditions (cs_user_boundary_conditions.cpp)
 
  \brief User subroutine dedicated the use of ALE (Arbitrary Lagrangian
  Eulerian) Method:
@@ -117,7 +117,7 @@ Here is the list of examples:
 
   \section loc_var Mapping relative to ALE
 
-  \snippet  cs_user_boundary_conditions_ale-base.c loc_var
+  \snippet  cs_user_boundary_conditions_ale-base.cpp loc_var
 
   \section assign_ale Assign boundary conditions to boundary faces
 
@@ -127,26 +127,26 @@ Here is the list of examples:
 
   \subsection calculation_ale Calculation of displacement at current time step
 
-  \snippet  cs_user_boundary_conditions_ale-base.c calcul
+  \snippet  cs_user_boundary_conditions_ale-base.cpp calcul
 
   \subsection example1_ale Example 1
   Example : For boundary faces of color 4 assign a fixed velocity
 
-  \snippet  cs_user_boundary_conditions_ale-base.c example_1
+  \snippet  cs_user_boundary_conditions_ale-base.cpp example_1
 
   \subsection example2_ale Example 2
   Example: For boundary face of color 5 assign a fixed displacement on nodes
 
-  \snippet  cs_user_boundary_conditions_ale-base.c example_2
+  \snippet  cs_user_boundary_conditions_ale-base.cpp example_2
 
   \subsection  example3_ale Example 3
   Example : For boundary faces of color 6 assign a sliding boundary
 
-  \snippet  cs_user_boundary_conditions_ale-base.c  example_3
+  \snippet  cs_user_boundary_conditions_ale-base.cpp  example_3
 
   \subsection  example4_ale Example 4
   Example : Prescribe elsewhere a fixed boundary
 
-  \snippet  cs_user_boundary_conditions_ale-base.c example_4
+  \snippet  cs_user_boundary_conditions_ale-base.cpp example_4
 
 */

@@ -41,7 +41,7 @@
 
   The \ref cs_user_physical_properties_h_to_t and
   \ref cs_user_physical_properties_t_to_h functions (in
-  \ref cs_user_physical_properties.c) can be used to define an
+  \ref cs_user_physical_properties.cpp) can be used to define an
   enthalpy-temperature conversion law and its inverse.
 
   If can be defined on a "per-zone" basis if needed in case different
@@ -58,17 +58,17 @@
   The following block is added either outside
   \ref cs_user_physical_properties_h_to_t and
   \ref cs_user_physical_properties_t_to_h functions (before all function
-  definitions in \ref cs_user_physical_properties.c), or in both
+  definitions in \ref cs_user_physical_properties.cpp), or in both
   of these functions:
 
-  \snippet cs_user_physical_properties.c tabulation
+  \snippet cs_user_physical_properties.cpp tabulation
 
   \subsection user_ht_convert_h_to_t Enthalpy to temperature
 
   The following block is then used in \ref cs_user_physical_properties_h_to_t
   to convert enthalpy to temperature:
 
-  \snippet cs_user_physical_properties.c z_h_to_t
+  \snippet cs_user_physical_properties.cpp z_h_to_t
 
   Note that \c z->name or \c z->location_id can be used as a filter
   if "per-zone" properties are needed (such as with solid zones).
@@ -79,7 +79,7 @@
   \ref cs_user_physical_properties_t_to_h for the matching
   temperature to Enthalpy conversion:
 
-  \snippet cs_user_physical_properties.c z_t_to_h
+  \snippet cs_user_physical_properties.cpp z_t_to_h
 
   Note that temperature to enthalpy conversion is only needed
   when solving the Enthalpy and using radiative tranfers or

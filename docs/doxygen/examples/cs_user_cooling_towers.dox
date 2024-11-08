@@ -31,18 +31,18 @@
 
   As with other predefined physical models, the cooling tower module may
   be activated by setting the matching value in \ref cs_glob_physical_model_flag,
-  in the \ref cs_user_model function (cs_user_parameters.c):
+  in the \ref cs_user_model function (cs_user_parameters.cpp):
 
-  \snippet cs_user_parameters-ctwr.c ctwr_user_model_1
+  \snippet cs_user_parameters-ctwr.cpp ctwr_user_model_1
 
   \section cs_user_cooling_towers_h_ex Define exchange zones
 
   Cooling tower exchange zones and their parameters may be defined in the
-  general \ref cs_user_parameters function  (cs_user_parameters.c).
+  general \ref cs_user_parameters function  (cs_user_parameters.cpp).
 
   The following code block shows an example of definition of a cooling tower
   exchange zone.
 
-  \snippet cs_user_zones.c ctwr_user_1
+  \snippet cs_user_zones.cpp ctwr_user_1
 
 */

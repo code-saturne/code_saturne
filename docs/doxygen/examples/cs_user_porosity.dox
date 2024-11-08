@@ -26,7 +26,7 @@
 
 /*!
   \page cs_porosity Examples of data settings for porous media
-  (cs_user_porosity.c)
+  (cs_user_porosity.cpp)
 
   \section intro_poro Introduction
 
@@ -54,13 +54,13 @@
   It may be useful to access some mesh adjacencies and  quantities,
   in which case local pointers allow for more readable code:
 
-  \snippet cs_user_porosity.c init_poro_mq
+  \snippet cs_user_porosity.cpp init_poro_mq
 
   \subsection properties Associated properties
 
   Accessing cell porosity property values is required so values may be set:
 
-  \snippet cs_user_porosity.c init_poro_pro
+  \snippet cs_user_porosity.cpp init_poro_pro
 
   \section example_porosity Example: define porosity by geometric zones
 
@@ -68,17 +68,17 @@
   they may be based on groups, geometric criteria, or any other
   time-independent functions:
 
-  \snippet cs_user_porosity.c set_poro_cells_1
+  \snippet cs_user_porosity.cpp set_poro_cells_1
 
   When using the integral porosity model (cs_glob_porous_model == 3),
   the matching face equivalent surfaces can also be assigned in a
   corresponding manner, for interior faces:
 
-  \snippet cs_user_porosity.c set_poro_i_faces_1
+  \snippet cs_user_porosity.cpp set_poro_i_faces_1
 
   and for boundary faces:
 
-  \snippet cs_user_porosity.c set_poro_b_faces_1
+  \snippet cs_user_porosity.cpp set_poro_b_faces_1
 
   When not defined in this way, face porosities will match the lowest
   adjacent cell porosity.
@@ -131,14 +131,14 @@
   \c cs_cad_intersect.h header in the Local headers section of
   the cs_user_porosity.c file:
 
-  \snippet cs_user_porosity-from_cad.c user_poro_cad_proto
+  \snippet cs_user_porosity-from_cad.cpp user_poro_cad_proto
 
   \section user_poro_cad_zone Zone selection
 
   It is recommended to use the standard zone selection mechanism
   to select cells which may be intersected by the CAD shape, for example:
 
-  \snippet cs_user_porosity-from_cad.c user_poro_cad_zone
+  \snippet cs_user_porosity-from_cad.cpp user_poro_cad_zone
 
   \section user_poro_cad_init Local variables and initialization
 
@@ -146,14 +146,14 @@
   optional face porosity arrays may be declared as temporary work arrays
   if face factors are required::
 
-  \snippet cs_user_porosity-from_cad.c user_poro_cad_init
+  \snippet cs_user_porosity-from_cad.cpp user_poro_cad_init
 
   \section user_poro_cad_intersect CAD intersection operation
 
   The actual CAD intersection is done using the following call
   (adapting the file path to the actual file):
 
-  \snippet cs_user_porosity-from_cad.c user_poro_cad_intersect
+  \snippet cs_user_porosity-from_cad.cpp user_poro_cad_intersect
 
   \section user_poro_cad_quantities Computing porous quantities
 
@@ -161,7 +161,7 @@
   face quantities may be computed from the face porosities.
   The following code also handles the cleanup op local arrays.
 
-  \snippet cs_user_porosity-from_cad.c user_poro_cad_quantities
+  \snippet cs_user_porosity-from_cad.cpp user_poro_cad_quantities
 */
 
 /*-----------------------------------------------------------------------------*/

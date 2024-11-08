@@ -146,7 +146,7 @@ BEGIN_C_DECLS
  *                        for ivar=ipr.
  *
  * \remarks
- *  - For each face where a condensation source terms is imposed ielscd
+ *  - For each face where a condensation source term is imposed ielscd
  *    in [1;nfbpcd]), ifbpcd(ielscd) is the global index number of the
  *    corresponding face (ifbpcd(ieltcd) in [1;ncel]).
  *  - if itypcd(ieltcd,ivar)=0, spcond(ielpcd,ivar) is not used.
@@ -213,8 +213,6 @@ cs_user_wall_condensation(int  iappel)
 
   int iz = 0; // Monozone
 
-  /*! [model_settings] */
-
   /*! [cells_selection] */
 
   /*--------------------------------------------------------------------------
@@ -240,6 +238,8 @@ cs_user_wall_condensation(int  iappel)
    * model can be used with a constant wall temperature specified by the user
    * (at iappel=3 tpar=ztpar0(iz) in this case).
    *--------------------------------------------------------------------------*/
+
+  /*! [model_settings] */
 
   if (iappel == 2) {
     if (wall_cond->icondb == 0) {

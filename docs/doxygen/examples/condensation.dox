@@ -49,39 +49,31 @@
   }
   \endcode
 
-  The setting of the condensation source terms is then done in the subroutine
-  \ref cs_user_metal_structures_source_terms as follows below.
+  The setting of the condensation source terms is then done in the
+  \ref cs_user_wall_consensation function, in addition to the
+  other settings.
 
-  The following variables need to be declared:
+  The cells which are associated with the metal structures volume are
+  defined on second call as follows:
 
-  \snippet cs_user_metal_structures_source_terms-condensation.f90 loc_var_dec
-
-  Necessary species physical properties can be retrieved as follows:
-
-  \snippet cs_user_metal_structures_source_terms-condensation.f90 init
-
-  The zones on which the condensation mass source term will be imposed can be
-  defined as follows:
-
-  \snippet cs_user_metal_structures_source_terms-condensation.f90 cells_selection
+  \snippet cs_user_wall_condensation.cpp cells_selection
 
   Modelling of the metal side (wall thermal model and metal properties can then
   be specified as follows:
 
-  \snippet cs_user_metal_structures_source_terms-condensation.f90 model_settings
+  \snippet cs_user_wall_condensation.cpp  model_settings
 
   Finally the source term type and values have to be set
-  (in cs_user_wallcondensation.c) as follows:
+  (in cs_user_wall_condensation.cpp) as follows:
 
-  \snippet cs_user_metal_structures_source_terms-condensation.c source_term_values
-
+  \snippet cs_user_wall_condensation.cpp source_term_values
 
   \section condens_h_boundary Boundary source terms for condensation
 
   The condensation of steam on surfaces can be activated by adding the following lines
   in function \ref cs_user_model of file \ref cs_user_parameters.c :
 
-  \snippet cs_user_parameters-base.c wall_condensation
+  \snippet cs_user_parameters-base.cpp wall_condensation
 
   The subroutine \ref cs_user_wall_condensation is called three times.
 
@@ -91,20 +83,20 @@
 
   In this example, all faces with tag "60" in the mesh are gathered in a single
   condensation zone.
-  \snippet cs_user_wall_condensation.c zones_definition
+  \snippet cs_user_wall_condensation.cpp zones_definition
 
   At the second call, connectivity tables are built between the global mesh numbering
   and the one dedicated to wall condensation (see snippet above).
   In addition, parameters related to the condensation model are set.
 
-  \snippet cs_user_wall_condensation.c model_settings
+  \snippet cs_user_wall_condensation.cpp model_settings
 
   At the third call, properties related to the solid wall are set.
 
-  \snippet cs_user_wall_condensation.c solid_wall
+  \snippet cs_user_wall_condensation.cpp solid_wall
 
   Finally, the source terms associated with the condensation phenomenon are defined.
 
-  \snippet cs_user_wall_condensation.c source_term_values
+  \snippet cs_user_wall_condensation.cpp source_term_values
 
 */

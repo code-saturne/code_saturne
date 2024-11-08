@@ -41,7 +41,7 @@
   allows defining the time step
   synchronization policy:
 
-  \snippet cs_user_parameters-coupling.c coupling_ts
+  \snippet cs_user_parameters-coupling.cpp coupling_ts
 
   A time step multiplier between coupled tools may also be defined.
   The apparent time step for the current instance times (as viewed by
@@ -52,7 +52,7 @@
   so as to allow for more advanced combinations if necessary, so the user
   should ensure this when using a time step multiplier). For example:
 
-  \snippet cs_user_parameters-coupling.c coupling_1
+  \snippet cs_user_parameters-coupling.cpp coupling_1
 
   \section cs_user_coupling_h_cs_user_syrthes_coupling Code coupling with SYRTHES
 
@@ -64,15 +64,15 @@
 
   \subsection cs_user_coupling_h_cs_user_syrthes_coupling_example_1 Example 1
 
-  \snippet cs_user_coupling-syrthes.c coupling_syrthes_1
+  \snippet cs_user_coupling-syrthes.cpp coupling_syrthes_1
 
   \subsection cs_user_coupling_h_cs_user_syrthes_coupling_example_2 Example 2
 
-  \snippet cs_user_coupling-syrthes.c coupling_syrthes_2
+  \snippet cs_user_coupling-syrthes.cpp coupling_syrthes_2
 
   \subsection cs_user_coupling_h_cs_user_syrthes_coupling_example_3 Example 3
 
-  \snippet cs_user_coupling-syrthes.c coupling_syrthes_3
+  \snippet cs_user_coupling-syrthes.cpp coupling_syrthes_3
 
   \section cs_user_coupling_h_cs_user_saturne_coupling Code coupling with other instances of code_saturne
 
@@ -84,10 +84,10 @@
 
   \subsection cs_user_coupling_h_cs_user_saturne_coupling_example_1 Example 1
 
-  \snippet cs_user_coupling-saturne.c coupling_saturne_1
+  \snippet cs_user_coupling-saturne.cpp coupling_saturne_1
 
   \subsection cs_user_coupling_h_cs_user_saturne_coupling_example_2 Example 2
 
-  \snippet cs_user_coupling-saturne.c coupling_saturne_2
+  \snippet cs_user_coupling-saturne.cpp coupling_saturne_2
 
 */

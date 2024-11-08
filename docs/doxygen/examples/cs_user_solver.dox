@@ -25,7 +25,7 @@
 /*-----------------------------------------------------------------------------*/
 
 /*!
-  \page user_solver Solving a heat equation with a user solver (cs_user_solver.c)
+  \page user_solver Solving a heat equation with a user solver (cs_user_solver.cpp)
 
   \section cs_user_solver_h_intro Introduction
 
@@ -41,7 +41,7 @@
   If the function \ref cs_user_solver_set returns 1, the code_saturne
   solver is replaced by the solver defined in \ref cs_user_solver .
 
-  \snippet cs_user_solver-heat-equation.c set_solver
+  \snippet cs_user_solver-heat-equation.cpp set_solver
 
   \section cs_user_solver_h_cs_user_solver User solver implementation
 
@@ -52,7 +52,7 @@
   and will stand for the temperature at the time steps n and n-1, and
   for the analytical solution of the heat equation;
 
-  \snippet cs_user_solver-heat-equation.c local_variables
+  \snippet cs_user_solver-heat-equation.cpp local_variables
 
   \subsection cs_user_solver_h_initialization Initialization
 
@@ -63,20 +63,20 @@
     t_{old}(x = i*dx) = sin\frac{pi(0.5+i)}{n};
   \f]
 
-  \snippet cs_user_solver-heat-equation.c initialization
+  \snippet cs_user_solver-heat-equation.cpp initialization
 
   \subsection cs_user_solver_h_restart Restart creation
 
   One can define a restart computation, as for the real code_saturne solver.
 
-  \snippet cs_user_solver-heat-equation.c restart
+  \snippet cs_user_solver-heat-equation.cpp restart
 
   \subsection cs_user_solver_h_time_monitoring Time monitoring
 
   Monitoring points can equally be created in order to plot the evolution
   of the temperature over the time.
 
-  \snippet cs_user_solver-heat-equation.c time_monitoring
+  \snippet cs_user_solver-heat-equation.cpp time_monitoring
 
   \subsection cs_user_solver_h_calculation Heat equation solving
 
@@ -100,22 +100,22 @@
   t_old is then updated and t_sol computed. Finally, the temperature at \f$ x = \frac{L}{2} \f$ and
   at the current iteration is plotted.
 
-  \snippet cs_user_solver-heat-equation.c calculation
+  \snippet cs_user_solver-heat-equation.cpp calculation
 
   \subsection cs_user_solver_h_checkpoint Checkpoint creation
 
   A checkpoint can be created in order to restart the computation later on.
 
-  \snippet cs_user_solver-heat-equation.c checkpoint
+  \snippet cs_user_solver-heat-equation.cpp checkpoint
 
   \subsection cs_user_solver_h_post_processing Post-processing
 
   Finally, t and t_sol are postprocessed in order to be compared.
 
-  \snippet cs_user_solver-heat-equation.c post_processing
+  \snippet cs_user_solver-heat-equation.cpp post_processing
 
   \subsection cs_user_solver_h_post_finalization Finalization
 
-  \snippet cs_user_solver-heat-equation.c finalization
+  \snippet cs_user_solver-heat-equation.cpp finalization
 
 */

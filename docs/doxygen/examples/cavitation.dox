@@ -43,7 +43,7 @@
 
   The module can be activated in \ref cs_user_model in
   \ref cs_user_parameters.c as show below:
-  \snippet cs_user_parameters-base.c enable_cavit
+  \snippet cs_user_parameters-base.cpp enable_cavit
 
   Data structure is defined in \ref vof, \ref vof_mixture_properties and
   \ref cavitation.
@@ -61,12 +61,12 @@
   The reference density, in \f$ kg/m^3\f$ , and molecular viscosity, \f$ kg/(m\cdot s)\f$,
   of the liquid phase and the gas phase should be set. For instance:
 
-  \snippet cs_user_parameters-base.c phprop
+  \snippet cs_user_parameters-base.cpp phprop
 
   Other parameters, specific to cavitation are stored in \ref cs_cavitation_parameters_t
   structure. A pointer to this structure should be retrieved as follows:
 
-  \snippet cs_user_parameters-base.c cavit_param
+  \snippet cs_user_parameters-base.cpp cavit_param
 
   \subsection cavit_source Model parameters of the vaporization term (Merkle model)
 
@@ -76,12 +76,12 @@
   in \f$ kg/(m\cdot s^2)\f$. For instance, the saturation pressure of the water at twenty
   celcius degrees is set below:
 
-  \snippet cs_user_parameters-base.c presat
+  \snippet cs_user_parameters-base.cpp presat
 
   Merkle's model also requires a reference length scale and velocity of the flow.
   For instance:
 
-  \snippet cs_user_parameters-base.c scales_inf
+  \snippet cs_user_parameters-base.cpp scales_inf
 
   These scales are integral scales. For instance, considering the cavitating
   flow across a foil in a duct, the reference velocity should be the bulk
@@ -92,7 +92,7 @@
   The mixture eddy-viscosity correction proposed by Reboud can be accounted for
   as shown below:
 
-  \snippet cs_user_parameters-base.c reboud_activ
+  \snippet cs_user_parameters-base.cpp reboud_activ
 
   Using an eddy-viscosity model (see \ref turbulence), this option is
   recommended and is hence a default setting. Of course, this option has no

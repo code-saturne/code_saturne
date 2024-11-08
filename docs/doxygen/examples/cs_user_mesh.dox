@@ -67,7 +67,7 @@
   For example, to always ignore the mesh definitions in the restart folder,
   we may use:
 
-  \snippet cs_user_mesh-input-save.c mesh_restart_1
+  \snippet cs_user_mesh-input-save.cpp mesh_restart_1
 
   \section cs_user_mesh_h_cs_user_mesh_modifiy  General mesh modifications
 
@@ -79,7 +79,7 @@
   For example, to modify coordinates, the
   following code can be added:
 
-  \snippet cs_user_mesh-modify.c mesh_modify_coords
+  \snippet cs_user_mesh-modify.cpp mesh_modify_coords
 
   \subsection cs_user_mesh_h_cs_user_mesh_modifiy_extrude_1 Boundary mesh patch extrusion
 
@@ -90,17 +90,17 @@
 
   The example which follows illustrates the use of the simplified function.
 
-  \snippet cs_user_mesh-modify.c mesh_modify_extrude_1
+  \snippet cs_user_mesh-modify.cpp mesh_modify_extrude_1
 
   The example which follows illustrates the use of the advanced function to impose
   the vector of extrusion.
 
-  \snippet cs_user_mesh-modify.c mesh_modify_extrude_2
+  \snippet cs_user_mesh-modify.cpp mesh_modify_extrude_2
 
   The example which follows illustrates how to tag the extruded cells with a
   user defined criteria.
 
-  \snippet cs_user_mesh-modify.c mesh_modify_extrude_3
+  \snippet cs_user_mesh-modify.cpp mesh_modify_extrude_3
 
   \subsection cs_user_mesh_h_cs_user_mesh_modifiy_boundary_layer_1 Boundary layer insertion
 
@@ -113,7 +113,7 @@
   as a ratio relative to the mean adjacent cell size, allowing for automatic
   and adapted local thickness definition.
 
-  \snippet cs_user_mesh-modify.c mesh_modify_boundary_layer
+  \snippet cs_user_mesh-modify.cpp mesh_modify_boundary_layer
 
   Groups of cells, interior, and boundary faces may be created or
   modified, using the \ref cs_mesh_group_cells_set, \ref cs_mesh_group_i_faces_set,
@@ -126,16 +126,16 @@
   The mesh is not marked as modified by default for this "light" modification,
   so the user may force this using a modification flag, as in the example here:
 
-  \snippet cs_user_mesh-modify.c mesh_modify_groups_1
+  \snippet cs_user_mesh-modify.cpp mesh_modify_groups_1
 
   The user can also add groups for boundary faces:
 
-  \snippet cs_user_mesh-modify.c mesh_modify_groups_2
+  \snippet cs_user_mesh-modify.cpp mesh_modify_groups_2
 
   \subsection cs_user_mesh_h_cs_user_mesh_modifiy_refine_1 Mesh refinement
 
   Cells may be refined automatically, using templates adapted to each cell
-  type (see \ref cs_mesh_refine.c").
+  type (see \ref cs_mesh_refine.cpp").
 
   This simply required selecting the cells to refine and whether the
   refinement should be partially propagated to neighboring cells
@@ -143,12 +143,12 @@
 
   The following code shows an example of mesh refinement for a given region.
 
-  \snippet cs_user_mesh-modify.c mesh_modify_refine_1
+  \snippet cs_user_mesh-modify.cpp mesh_modify_refine_1
 
   The following code shows an example of mesh refinement based on the
   intersection with a CAD defined in an STL file.
 
-  \snippet cs_user_mesh-modify.c mesh_modify_refine_2
+  \snippet cs_user_mesh-modify.cpp mesh_modify_refine_2
 
   \subsection  cs_user_mesh_h_cs_user_mesh_input Mesh reading and modification
 
@@ -158,7 +158,7 @@
 
   The following code shows an example of mesh reading with no transformation.
 
-  \snippet cs_user_mesh-input-save.c mesh_input_1
+  \snippet cs_user_mesh-input-save.cpp mesh_input_1
 
   Multiple inputs read through this function are automatically concatenated, and
   may be later joined using the mesh joining options.
@@ -166,7 +166,7 @@
   A mesh can also be read while its groups are renamed, and its geometry
   transformed.
 
-  \snippet cs_user_mesh-input-save.c mesh_input_2
+  \snippet cs_user_mesh-input-save.cpp mesh_input_2
 
   Geometric transformations are defined using a homogeneous coordinates
   transformation matrix. Such a matrix has 3 lines and 4 columns, with the
@@ -179,11 +179,11 @@
 
   Cells from a selection can also be removed using a simple selection criteria
 
-  \snippet cs_user_mesh-modify.c mesh_modify_remove_cells_1
+  \snippet cs_user_mesh-modify.cpp mesh_modify_remove_cells_1
 
   or a user defined flag array
 
-  \snippet cs_user_mesh-modify.c mesh_modify_remove_cells
+  \snippet cs_user_mesh-modify.cpp mesh_modify_remove_cells
 
   \subsection  cs_user_mesh_h_cs_user_mesh_save Mesh saving
 
@@ -191,7 +191,7 @@
   By default, mesh is saved when modified. The following code shows an example
   of disabled saving.
 
-  \snippet cs_user_mesh-input-save.c mesh_save
+  \snippet cs_user_mesh-input-save.cpp mesh_save
 
   \section cs_user_mesh_h_cs_user_mesh_quality  Mesh quality modifications
 
@@ -201,7 +201,7 @@
   faces of his mesh using the \ref cs_mesh_warping_set_defaults function to
   define the maximum warped angle.
 
-  \snippet cs_user_mesh-quality.c mesh_warping
+  \snippet cs_user_mesh-quality.cpp mesh_warping
 
   \subsection cs_user_mesh_h_cs_user_mesh_smoothing Mesh smoothing
 
@@ -217,7 +217,7 @@
   user and \ref cs_mesh_smoother_unwarp which reduces face warping in the calculation
   mesh.
 
-  \snippet cs_user_mesh-quality.c mesh_smoothing
+  \snippet cs_user_mesh-quality.cpp mesh_smoothing
 
   \subsection cs_user_mesh_h_cs_user_mesh_tag_bad_cells Bad cells tagging
 
@@ -226,7 +226,7 @@
   certain value and then post-process the tagged cells. This is done using the
   \ref cs_user_mesh_bad_cells_tag function.
 
-  \snippet cs_user_mesh-quality.c mesh_tag_bad_cells
+  \snippet cs_user_mesh-quality.cpp mesh_tag_bad_cells
 
   \section cs_user_mesh_h_cs_user_mesh_joining  Mesh joining
 
@@ -236,7 +236,7 @@
   \ref cs_user_join user function. For a simple mesh joining, the
   \ref cs_join_add subroutine is sufficient.
 
-  \snippet cs_user_mesh-joining.c mesh_add_simple_joining
+  \snippet cs_user_mesh-joining.cpp mesh_add_simple_joining
 
   \subsection cs_user_mesh_h_cs_user_mesh_add_advanced_joining Advanced mesh joining
 
@@ -245,7 +245,7 @@
   the \ref cs_join_set_advanced_param function refering to a defined joning
   allows finer control (see the function reference for parameter details).
 
-  \snippet cs_user_mesh-joining.c mesh_add_advanced_joining
+  \snippet cs_user_mesh-joining.cpp mesh_add_advanced_joining
 
   \section cs_user_mesh_h_cs_user_mesh_periodicity  Mesh periodicity
 
@@ -256,14 +256,14 @@
   The following example illustrates the periodicity of translation case using the
   \ref cs_join_perio_add_translation subroutine.
 
-  \snippet cs_user_mesh-periodicity.c mesh_periodicity_1
+  \snippet cs_user_mesh-periodicity.cpp mesh_periodicity_1
 
   \subsection cs_user_mesh_h_cs_user_mesh_rotation_perio Periodicity of rotation
 
   The following example illustrates the periodicity of rotation case using the
   \ref cs_join_perio_add_rotation subroutine.
 
-  \snippet cs_user_mesh-periodicity.c mesh_periodicity_2
+  \snippet cs_user_mesh-periodicity.cpp mesh_periodicity_2
 
   \subsection cs_user_mesh_h_cs_user_mesh_mixed_perio General periodicity
 
@@ -271,7 +271,7 @@
   combines different kinds of transformation. The function \ref cs_join_perio_add_mixed
   is used.
 
-  \snippet cs_user_mesh-periodicity.c mesh_periodicity_3
+  \snippet cs_user_mesh-periodicity.cpp mesh_periodicity_3
 
   \subsection cs_user_mesh_h_cs_user_mesh_advanced_perio Periodicity advanced parameters
 
@@ -279,7 +279,7 @@
   a more complex periodicity can be defined using the \ref cs_join_set_advanced_param
   subroutine.
 
-  \snippet cs_user_mesh-periodicity.c mesh_periodicity_4
+  \snippet cs_user_mesh-periodicity.cpp mesh_periodicity_4
 
   \section cs_user_mesh_h_cs_user_mesh_boundary  Mesh boundary insertion
 
@@ -291,12 +291,12 @@
   Boundaries can be directly inserted based on a selection of interior faces,
   such as shown here:
 
-  \snippet cs_user_mesh-boundary.c mesh_thinwall
+  \snippet cs_user_mesh-boundary.cpp mesh_thinwall
 
   Boundaries can also be inserted between a set of selected cells and the
   rest of the mesh. In this case, a mesh group name can be assigned to
   the added boundary faces.
 
-  \snippet cs_user_mesh-boundary.c mesh_boundary_cells
+  \snippet cs_user_mesh-boundary.cpp mesh_boundary_cells
 
 */

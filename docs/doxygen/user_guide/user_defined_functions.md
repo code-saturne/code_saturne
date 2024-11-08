@@ -134,7 +134,7 @@ functions which will be able to access those elements.
 
 ### For all physical models
 
-- \ref cs_user_model (in \ref cs_user_parameters.c)
+- \ref cs_user_model (in \ref cs_user_parameters.cpp)
 
   Allows defining user scalars (species), variances, or activating
   a specific physical model (by setting \ref cs_physical_model_type_t
@@ -160,7 +160,7 @@ functions which will be able to access those elements.
 
   It is called before all physical or numerical oriented user functions.
 
-- \ref cs_user_parameters (in \ref cs_user_parameters.c)
+- \ref cs_user_parameters (in \ref cs_user_parameters.cpp)
 
   Allows defining most general settings, such as reference physical properties
   model and numerical settings  for main variable and property fields, etc.
@@ -178,18 +178,18 @@ functions which will be able to access those elements.
   stepping or the log output frequency) is also handled at this stage.
 
 - \ref cs_user_postprocess_writers, \ref cs_user_postprocess_meshes,
-  and \ref cs_user_postprocess_probes (in \ref cs_user_postprocess.c)
+  and \ref cs_user_postprocess_probes (in \ref cs_user_postprocess.cpp)
 
   May be used to define or modify postprocessing extracts using the
   supported output formats, using the
   [mesh and writer](@ref cs_ug_postprocess_intro) concepts.
 
-- \ref cs_user_boundary_conditions_setup (in \ref cs_user_boundary_conditions.c)
+- \ref cs_user_boundary_conditions_setup (in \ref cs_user_boundary_conditions.cpp)
 
   May be used to define advanced boundary conditions using zone-based
   definitions.
 
-- \ref cs_user_finalize_setup (in \ref cs_user_parameters.c)
+- \ref cs_user_finalize_setup (in \ref cs_user_parameters.cpp)
 
   May be used for additionl definitions, or as an alternative or extension
   to \ref cs_user_boundary_conditions_setup.
@@ -223,7 +223,7 @@ Functions called before time stepping
   In case of computation restart, the values from the restart files are loaded before
   this function is called, so can be either further modified or left alone.
 
-- \ref cs_user_extra_operations_initialize (in \ref cs_user_extra_operations.c)
+- \ref cs_user_extra_operations_initialize (in \ref cs_user_extra_operations.cpp)
 
   Called just after \ref cs_user_initialization (with only a few updates
   for some specific models in between), this function is used for more
@@ -251,7 +251,7 @@ Functions called during time stepping
 
   Allows defining complex source terms.
 
-- \ref cs_user_postprocess_values (in \ref cs_user_postprocess.c)
+- \ref cs_user_postprocess_values (in \ref cs_user_postprocess.cpp)
 
   May be used to output locally-computed volume or surface values,
   such as formulas involving fields, or for fine grained association
@@ -272,7 +272,7 @@ Functions called during time stepping
 Functions called during after time stepping
 -------------------------------------------
 
-- \ref cs_user_extra_operations_finalize (in \ref cs_user_extra_operations.c)
+- \ref cs_user_extra_operations_finalize (in \ref cs_user_extra_operations.cpp)
 
   Called just after the time stepping/resolution stage, this function
   allows handling operations required only at the end of the computation (such

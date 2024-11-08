@@ -126,7 +126,7 @@ Activate the solidification module {#cs_ug_cdo_solidification_activate}
 The first step when settings a solidification model relying on CDO
 schemes is to set the CDO mode to \ref CS_PARAM_CDO_MODE_ONLY
 
-\snippet cs_user_parameters-cdo-condif.c param_cdo_activation
+\snippet cs_user_parameters-cdo-condif.cpp param_cdo_activation
 
 This is done at the begining of the function \ref cs_user_model.
 
@@ -169,17 +169,17 @@ module according to the model and its related options.
 **Ex. 1** The first example describes how to set a "binary alloy"
 model with several related options.
 
-\snippet cs_user_parameters-cdo-solidification.c param_cdo_activate_solidification_binary
+\snippet cs_user_parameters-cdo-solidification.cpp param_cdo_activate_solidification_binary
 
 **Ex. 2** The second example describes how to set a "Voller" model
 with several related options.
 
-  \snippet cs_user_parameters-cdo-solidification.c param_cdo_activate_solidification_voller
+  \snippet cs_user_parameters-cdo-solidification.cpp param_cdo_activate_solidification_voller
 
 **Ex. 3** The third example describes how to set a "Voller" model
 without a velocity field in the "liquid" area.
 
-\snippet cs_user_parameters-cdo-solidification.c param_cdo_activate_solidification_voller_no_vel
+\snippet cs_user_parameters-cdo-solidification.cpp param_cdo_activate_solidification_voller_no_vel
 
 
 Model settings {#cs_ug_cdo_solidification_set_model}
@@ -206,7 +206,7 @@ for more details). The default strategy is \ref CS_SOLIDIFICATION_STRATEGY_LEGAC
 
 Here is an example to set the strategy:
 
-\snippet cs_user_parameters-cdo-solidification.c param_cdo_solidification_set_strategy
+\snippet cs_user_parameters-cdo-solidification.cpp param_cdo_solidification_set_strategy
 
 
 Stefan model {#cs_ug_cdo_solidification_set_stefan}
@@ -235,13 +235,13 @@ located in \ref cs_user_model after calling \ref cs_solidification_activate
   be constant) and the secondary dendrite arm spacing (a model parameter
   taking into account micro-segregation phenomena).
 
-\snippet cs_user_parameters-cdo-solidification.c param_cdo_solidification_set_voller
+\snippet cs_user_parameters-cdo-solidification.cpp param_cdo_solidification_set_voller
 
 Please notice that a simplified version of the function exists in case of
 purely thermal model (activated when the flag \ref
 CS_SOLIDIFICATION_NO_VELOCITY_FIELD has been set).
 
-\snippet cs_user_parameters-cdo-solidification.c param_cdo_solidification_set_voller_no_vel
+\snippet cs_user_parameters-cdo-solidification.cpp param_cdo_solidification_set_voller_no_vel
 
 Non-linear Voller and Prakash model {#cs_ug_cdo_solidification_set_voller_nl}
 -----------------------------------
@@ -257,7 +257,7 @@ To access more settings, it is possible to retrieve the structure managing
 the voller model and to specify advanced parameter settings in order to set
 the non-linear iterative algorithm for instance.
 
-\snippet cs_user_parameters-cdo-solidification.c param_cdo_solidification_nl_voller_advanced
+\snippet cs_user_parameters-cdo-solidification.cpp param_cdo_solidification_nl_voller_advanced
 
 
 Binary alloy model {#cs_ug_cdo_solidification_set_binary}
@@ -291,7 +291,7 @@ located inside \ref cs_user_model after calling \ref cs_solidification_activate
   to be constant) and the secondary dendrite arm spacing (a model parameter
   taking into account micro-segregation phenomena).
 
-\snippet cs_user_parameters-cdo-solidification.c param_cdo_solidification_set_binary_alloy
+\snippet cs_user_parameters-cdo-solidification.cpp param_cdo_solidification_set_binary_alloy
 
 ###  Advanced usage {#cs_ug_cdo_solidification_set_binary_x}
 
@@ -299,7 +299,7 @@ To access more settings, it is possible to retrieve the structure
 managing the binary alloy model and to specify advanced parameter
 settings.
 
-\snippet cs_user_parameters-cdo-solidification.c param_cdo_solidification_binary_advanced
+\snippet cs_user_parameters-cdo-solidification.cpp param_cdo_solidification_binary_advanced
 
 
 
@@ -327,7 +327,7 @@ that predefined properties have a macro to store their name. Here are used:
  \ref CS_THERMAL_LAMBDA_NAME for the thermal conductivity which corresponds
  to the property named "thermal_conductivity".
 
-snippet cs_user_parameters-cdo-solidification.c param_cdo_solidification_properties
+snippet cs_user_parameters-cdo-solidification.cpp param_cdo_solidification_properties
 
 
 Equation settings {#cs_ug_cdo_solidification_set_eq}
@@ -340,7 +340,7 @@ boundary condition is applied. For the thermal equation, the default
 boundary condition is a no flux (i.e. a homogeneous Neumann boundary
 condition).
 
-\snippet cs_user_parameters-cdo-solidification.c param_cdo_solidification_thermal_eq
+\snippet cs_user_parameters-cdo-solidification.cpp param_cdo_solidification_thermal_eq
 
 When a solute transport equation is added (this done automatically when
 calling the function \ref cs_solidification_set_binary_alloy_model), the
@@ -348,7 +348,7 @@ default boundary condition for this equation is a no flux condition as well.
 
 Here is an example how to set the initial solute concentration in the domain.
 
-\snippet cs_user_parameters-cdo-solidification.c param_cdo_solidification_solute_eq
+\snippet cs_user_parameters-cdo-solidification.cpp param_cdo_solidification_solute_eq
 
 For the Navier-Stokes equation, the default boundary condition is defined when
 the domain boundaries are defined in the function \ref cs_user_model using the

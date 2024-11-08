@@ -27,7 +27,7 @@
 
 /*!
 
-  \page user_source_terms Examples of data settings for source terms (cs_user_source_terms.c)
+  \page user_source_terms Examples of data settings for source terms (cs_user_source_terms.cpp)
 
    See also the \ref cs_user_source_terms reference documentation.
 
@@ -49,7 +49,7 @@
 
    \section loc_var1 Local variables and initialization
 
-   \snippet cs_user_source_terms-momentum.c st_meta
+   \snippet cs_user_source_terms-momentum.cpp st_meta
 
    \section example_source_terms_1  Example
 
@@ -73,7 +73,7 @@ which yields:
 
  \section body1 Body
 
- \snippet cs_user_source_terms-momentum.c st_momentum_e_1
+ \snippet cs_user_source_terms-momentum.cpp st_momentum_e_1
 
  \section example_source_terms_2 Example of a boussinesq momentum source term
 
@@ -81,7 +81,7 @@ which yields:
 
  \section body2 Body
 
- \snippet cs_user_source_terms-momentum.c boussinesq_st
+ \snippet cs_user_source_terms-momentum.cpp boussinesq_st
 */
 
 //_________________________________________________________________________________________________
@@ -95,11 +95,11 @@ user-defined function.
 
 The following initialization block or portions thereof needs to be added for the
 following examples:
-   \snippet cs_user_source_terms-base.c st_meta
+   \snippet cs_user_source_terms-base.cpp st_meta
 
  Indicator of variance scalars:
 To determine whether a scalar is a variance, the following info can be accessed:
-   \snippet  cs_user_source_terms-base.c field_is_variance
+   \snippet  cs_user_source_terms-base.cpp field_is_variance
 
  - If <tt> var_f_id == -1 </tt>,
    the scalar is not a variance
@@ -108,7 +108,7 @@ To determine whether a scalar is a variance, the following info can be accessed:
 
  Density
 
-  \snippet cs_user_source_terms-base.c density_2
+  \snippet cs_user_source_terms-base.cpp density_2
 
   \section examplesource_2_1 Example 1
 
@@ -136,7 +136,7 @@ which yields:
 
  <b> Source term applied to second scalar</b>
 
-  \snippet cs_user_source_terms-base.c src_term_applied
+  \snippet cs_user_source_terms-base.cpp src_term_applied
 
   \section examplesource2_2 Example 2
 
@@ -163,7 +163,7 @@ with  <tt> pwatt = 100.0 </tt>
 
    \subsection cs_user_st_3_apply Apply source term
 
-   \snippet cs_user_source_terms-base.c ex_3_apply
+   \snippet cs_user_source_terms-base.cpp ex_3_apply
 
 */
 //________________________________________________________________________________________________
@@ -178,17 +178,17 @@ with  <tt> pwatt = 100.0 </tt>
 
   \section loc_var3 Local variables
 
-  \snippet cs_user_source_terms-turbulence.c st_meta
+  \snippet cs_user_source_terms-turbulence.cpp st_meta
 
   <b> Remaining initialization</b>
 
   Get the density array in \c cpro_rom
 
-  \snippet cs_user_source_terms-turbulence.c dens_array_3
+  \snippet cs_user_source_terms-turbulence.cpp dens_array_3
 
   Get the array of the current turbulent variable and its name
 
-  \snippet cs_user_source_terms-turbulence.c  current_turb_3
+  \snippet cs_user_source_terms-turbulence.cpp  current_turb_3
 
   \section example3_1 Example
 
@@ -213,5 +213,5 @@ with  <tt> pwatt = 100.0 </tt>
 
   \subsection cal_exp_imp3 Calculation of the explicit and implicit source terms
 
-  \snippet cs_user_source_terms-turbulence.c rem_code_3
+  \snippet cs_user_source_terms-turbulence.cpp rem_code_3
 */

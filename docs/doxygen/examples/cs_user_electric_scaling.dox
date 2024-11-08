@@ -25,7 +25,7 @@
 /*-----------------------------------------------------------------------------*/
 
 /*!
-  \page cs_user_electric_scaling Scaling parameters definition for electric model (cs_user_electric_scaling.c)
+  \page cs_user_electric_scaling Scaling parameters definition for electric model (cs_user_electric_scaling.cpp)
 
   \section cs_user_electric_scaling_h_intro Introduction
 
@@ -33,6 +33,6 @@
 
   \section cs_user_electric_scaling_h_cs_user_electric_scaling  Scaling parameters definition for electric model
 
-  \snippet cs_user_electric_scaling.c electric_scaling
+  \snippet cs_user_electric_scaling.cpp electric_scaling
 
 */

@@ -29,9 +29,9 @@
 
   This page provides several examples that may be used or adapted
   to perform extra or advanced post-processing data extraction in
-  in \ref cs_user_postprocess.c.
+  in \ref cs_user_postprocess.cpp.
 
-  The functions defined in \ref cs_user_postprocess.c, namely
+  The functions defined in \ref cs_user_postprocess.cpp, namely
   \ref cs_user_postprocess_writers, \ref cs_user_postprocess_meshes,
   \ref cs_user_postprocess_probes and
   \ref cs_user_postprocess_activate allow for the definition of post-processing
@@ -60,23 +60,23 @@
 
   The following local variable definitions can shared beween several examples:
 
-  \snippet cs_user_postprocess.c post_define_writer_freq
+  \snippet cs_user_postprocess.cpp post_define_writer_freq
 
   In the following example, the default writer is redefined, so as to modify
   some parameters which have been set by default or by the GUI:
 
-  \snippet cs_user_postprocess.c post_define_writer_m1
+  \snippet cs_user_postprocess.cpp post_define_writer_m1
 
   Polygons and polyhedra may also be divided into simpler elements, as in
   the example below (only for polyhedra here), using MED format output:
 
-  \snippet cs_user_postprocess.c post_define_writer_1
+  \snippet cs_user_postprocess.cpp post_define_writer_1
 
   In the next example, the defined writer discards polyhedra, and
   allows for transient mesh connectivity (i.e. meshes changing with
   time); text output is also forced:
 
-  \snippet cs_user_postprocess.c post_define_writer_2
+  \snippet cs_user_postprocess.cpp post_define_writer_2
 
   \section cs_user_postprocess_h_writers_probe Probe and profile plotting writers
 
@@ -91,13 +91,13 @@
   (probes may be output to 3D formats, but plot and time plot
   outputs drop cell or face-based ouptut).
 
-  \snippet cs_user_postprocess.c post_define_writer_3
+  \snippet cs_user_postprocess.cpp post_define_writer_3
 
   In the next example, the default profile output writer is redefined so
   as to modify its defaults, including the output format (.dat instead
   of the default CSV).
 
-  \snippet cs_user_postprocess-profiles.c post_writer_profile
+  \snippet cs_user_postprocess-profiles.cpp post_writer_profile
 
   \subsection cs_user_postprocess_h_writers_probe_flush Forcing plot output updates
 
@@ -111,7 +111,7 @@
   forced. This behavior may be modified, as in the following example.
   The default settings should be changed before time plots are defined.
 
-  \snippet cs_user_postprocess.c post_set_tp_flush
+  \snippet cs_user_postprocess.cpp post_set_tp_flush
 
   \section cs_user_postprocess_h_histo Histogram output
 
@@ -120,7 +120,7 @@
   Here the format is tex (resulting tex file can be input in any tex document
   with package tikz and pgfplots), and the number of subdivisions is 10.
 
-  \snippet cs_user_postprocess.c post_define_writer_4
+  \snippet cs_user_postprocess.cpp post_define_writer_4
 
   \page cs_user_postprocess_h_mesh_p Definition of post-processing and mesh zones
 
@@ -166,10 +166,10 @@
   In the example below, the default boundary mesh output is suppressed by
   redefining it, with no writer association:
 
-  \snippet cs_user_postprocess.c post_define_mesh_m2
+  \snippet cs_user_postprocess.cpp post_define_mesh_m2
 
   Note that the default behavior for meshes -1 and -2 is:
-  \code{.C}
+  \code{.cpp}
   int n_writers = 1;
   const int writer_ids[] = {-1});
   \endcode
@@ -179,7 +179,7 @@
   In the following example, we use a geometric criteria to output only a subset of the
   main mesh, and associate the resulting mesh with user-defined writers 1 and 4:
 
-  \snippet cs_user_postprocess.c post_define_mesh_1
+  \snippet cs_user_postprocess.cpp post_define_mesh_1
 
   \section cs_user_postprocess_h_mesh_atach Associating with writers
 
@@ -198,12 +198,12 @@
   histogram writer. The format of this writer is txt (text files) and it writes
   only at the end of the calculation.
 
-  \snippet cs_user_postprocess.c post_attach_mesh_1
+  \snippet cs_user_postprocess.cpp post_attach_mesh_1
 
   In the following example, the default volume mesh is now associated to a user
   defined writer of Id 6.
 
-  \snippet cs_user_postprocess.c post_attach_mesh_2
+  \snippet cs_user_postprocess.cpp post_attach_mesh_2
 
   \page cs_user_postprocess_h_mesh_advanced_p Advanced definitions of post-processing and mesh zones
 
@@ -243,18 +243,18 @@
   to build a mask allowing direct checking of this criterion when comparing
   cells adjacent to a given face:
 
-  \snippet cs_user_postprocess.c post_select_func_1
+  \snippet cs_user_postprocess.cpp post_select_func_1
 
   The function for selection of boundary faces is simpler, as it simply
   needs to apply the selection criterion for boundary faces:
 
-  \snippet cs_user_postprocess.c post_select_func_2
+  \snippet cs_user_postprocess.cpp post_select_func_2
 
   Given these two functions, the mesh can be defined using the
   \ref cs_post_define_surface_mesh_by_func function, passing it the
   user-defined selection functions (actually, function pointers):
 
-  \snippet cs_user_postprocess.c post_define_mesh_3
+  \snippet cs_user_postprocess.cpp post_define_mesh_3
 
   \subsection cs_user_postprocess_h_mesh_a2 Example: time-varying mesh
 
@@ -272,12 +272,12 @@
 
   First, we define the selection function:
 
-  \snippet cs_user_postprocess.c post_select_func_3
+  \snippet cs_user_postprocess.cpp post_select_func_3
 
   Then, we simply define matching volume mesh passing the associated
   selection function pointer:
 
-  \snippet cs_user_postprocess.c post_define_mesh_4
+  \snippet cs_user_postprocess.cpp post_define_mesh_4
 
   The matching function will be called at all time steps requiring
   output of this mesh.
@@ -300,7 +300,7 @@
   In the following example, we build such a mesh (with id 5), based on the
   faces of a mesh with id 1:
 
-  \snippet cs_user_postprocess.c post_define_mesh_5
+  \snippet cs_user_postprocess.cpp post_define_mesh_5
 
   \subsection cs_user_postprocess_h_sfc Output of various space-filling curves
 
@@ -310,16 +310,16 @@
   First the below functions write the various space-filling curves either in
   serial or parallel.
 
-  \snippet cs_user_postprocess-sfc.c sfc_fvm_writer_def
+  \snippet cs_user_postprocess-sfc.cpp sfc_fvm_writer_def
 
   Then a fake cell selection function is used to call the writing of the
   space-filling curves at the correct step.
 
-  \snippet cs_user_postprocess-sfc.c sfc_cells_selection
+  \snippet cs_user_postprocess-sfc.cpp sfc_cells_selection
 
   Finally edge meshes are defined to illustrate the various possibilities.
 
-  \snippet cs_user_postprocess-sfc.c sfc_def
+  \snippet cs_user_postprocess-sfc.cpp sfc_def
 
   \page cs_user_postprocess_h_probes_p Probes and profiles
 
@@ -343,11 +343,11 @@
 
   The following example shows how probes may be added using that function.
 
-  \snippet cs_user_postprocess.c post_define_probes_1
+  \snippet cs_user_postprocess.cpp post_define_probes_1
 
   The same set could also be defined using predifined arrays:
 
-  \snippet cs_user_postprocess.c post_define_probes_2
+  \snippet cs_user_postprocess.cpp post_define_probes_2
 
   In both cases, labels are optional (NULL may be used instead).
 
@@ -377,7 +377,7 @@
   The following example shows how to simply define a profile on a given
   segment, and associate it to writer 2:
 
-  \snippet cs_user_postprocess.c post_define_profile_1
+  \snippet cs_user_postprocess.cpp post_define_profile_1
 
   Probe sets (including profiles) may also be located along the domain
   boundary, if this is specified. In the following example, we set the
@@ -390,7 +390,7 @@
   probes to cell centers or vertices is useful mainly when the values to
   plot are located on those points.
 
-  \snippet cs_user_postprocess.c post_define_profile_2
+  \snippet cs_user_postprocess.cpp post_define_profile_2
 
   \section cs_user_postprocess_h_profile_vars Defining output on a probe set
 
@@ -413,7 +413,7 @@
 
   This last example illustrates a combination of those possibilities:
 
-  \snippet cs_user_postprocess.c post_define_profile_2
+  \snippet cs_user_postprocess.cpp post_define_profile_2
 
   \section cs_user_postprocess_h_profile_advanced Advanced profile definitions
 
@@ -426,7 +426,7 @@
   x coordinate (as a text string) is defined. The code then loops
   along these array values to define the series:
 
-  \snippet cs_user_postprocess-profiles.c post_profile_advanced_1
+  \snippet cs_user_postprocess-profiles.cpp post_profile_advanced_1
 
   \subsection cs_user_postprocess_h_profile_a2 Boundary profiles
 
@@ -437,24 +437,24 @@
   \ref cs_b_face_criterion_probes_define (which assumes curvilinear coordinates
   based on the "x" direction):
 
-  \snippet cs_user_postprocess-boundary_pressure_profile.c post_profile_def
+  \snippet cs_user_postprocess-boundary_pressure_profile.cpp post_profile_def
 
   and in the below example using an array of 2 selection criteria:
 
-  \snippet cs_user_postprocess-profiles.c post_profile_advanced_2
+  \snippet cs_user_postprocess-profiles.cpp post_profile_advanced_2
 
   In this example, we provide a local selection function (which may be defined
   in the private function definitions section near the beginning of the file)
   and whose code is shown below:
 
-  \snippet cs_user_postprocess-profiles.c post_profile_advanced_df_2
+  \snippet cs_user_postprocess-profiles.cpp post_profile_advanced_df_2
 
   \page cs_user_postprocess_h_var_p Definition of the variables to post-process
 
   \section cs_user_postprocess_h_var Additional post-processing variables
 
-  For the mesh parts defined using the GUI or in \ref cs_user_postprocess.c,
-  the \ref cs_user_postprocess_values function  of the \ref cs_user_postprocess.c
+  For the mesh parts defined using the GUI or in \ref cs_user_postprocess.cpp,
+  the \ref cs_user_postprocess_values function  of the \ref cs_user_postprocess.cpp
   file may be used to specify the variables to post-process (called for each
   postprocess output mesh, at every active time step of an associated \em writer).
 
@@ -474,12 +474,12 @@
   In the following example, the pressure is output on mesh *4*, for
   all associated writers:
 
-  \snippet cs_user_postprocess.c post_attach_field_1
+  \snippet cs_user_postprocess.cpp post_attach_field_1
 
   In this second example, the velocity's z component is ouput on mesh 4,
   only for writer 1:
 
-  \snippet cs_user_postprocess.c post_attach_field_2
+  \snippet cs_user_postprocess.cpp post_attach_field_2
 
   If the mesh has the \c auto_variables option enabled, and a field is already
   selected for "standard" postprocessing (i.e. selected for output in the GUI,
@@ -492,7 +492,7 @@
   One can define, compute and post-process the turbulent kinetic energy for the Rij-Epsilon
   as shown in the following example:
 
-  \snippet cs_user_postprocess.c postprocess_values_ex_1
+  \snippet cs_user_postprocess.cpp postprocess_values_ex_1
 
   \subsection cs_user_postprocess_h_value_boundary_p Output of a variable on a surface mesh
 
@@ -501,7 +501,7 @@
   In the following example, we simply average or project adjacent cell values
   on faces, but more precise techniques could be used:
 
-  \snippet cs_user_postprocess.c postprocess_values_ex_2
+  \snippet cs_user_postprocess.cpp postprocess_values_ex_2
 
   \subsection cs_user_postprocess_h_value_volume_simple Simple output of an existing field or array
 
@@ -510,7 +510,7 @@
   the values on the parent (i.e. full) mesh when requesting an output.
   Note that the example below can also be used with probes or profiles:
 
-  \snippet cs_user_postprocess.c postprocess_values_ex_3
+  \snippet cs_user_postprocess.cpp postprocess_values_ex_3
 
   \subsection cs_user_postprocess_h_value_single_t Single output of time-independent values
 
@@ -519,7 +519,7 @@
   used for time-dependent fields without requiring multiple outputs
   of those values:
 
-  \snippet cs_user_postprocess.c postprocess_values_ex_4
+  \snippet cs_user_postprocess.cpp postprocess_values_ex_4
 
   \section cs_user_postprocess_h_var_profile Additional profile variables
 
@@ -528,28 +528,28 @@
 
   The first section is common to both profile series:
 
-  \snippet cs_user_postprocess-profiles.c post_profile_advanced_var_0
+  \snippet cs_user_postprocess-profiles.cpp post_profile_advanced_var_0
 
   For the profiles along fixed x, the following code is used. Note that
   this code's complexity is mainly due to extracting Reynolds stresses
   for different turbulence models and options. Specific values
   are then computed for each colum, in the switch statement:
 
-  \snippet cs_user_postprocess-profiles.c post_profile_advanced_var_1
+  \snippet cs_user_postprocess-profiles.cpp post_profile_advanced_var_1
 
   For the profile defined all around a foil, the following code is used to
   compute the pressure coefficient and output its values:
 
-  \snippet cs_user_postprocess-boundary_pressure_profile.c variables_def
+  \snippet cs_user_postprocess-boundary_pressure_profile.cpp variables_def
 
-  \snippet cs_user_postprocess-boundary_pressure_profile.c profile_variables
+  \snippet cs_user_postprocess-boundary_pressure_profile.cpp profile_variables
 
   For the last profiles series, values for each column are also computed,
   requiring a reference pressure based on the mesh point closest to
   a given point, and computation of tangential stresses, so as to
   determine drag coefficients.
 
-  \snippet cs_user_postprocess-profiles.c post_profile_advanced_var_2
+  \snippet cs_user_postprocess-profiles.cpp post_profile_advanced_var_2
 
   \page cs_user_postprocess_h_interpolate_p Interpolation
 
@@ -580,7 +580,7 @@
   as shown on the following example. The "probes" set configured here
   is the default probe set defined using the GUI:
 
-  \snippet cs_user_postprocess.c post_set_probes_interpolate
+  \snippet cs_user_postprocess.cpp post_set_probes_interpolate
 
   If a finer control is needed, such as applying a different interpolation
   option to selected fields, or providing a more precice (but usually
@@ -592,7 +592,7 @@
   "P1" interpolation described above) by passing its pointer to the
   to \ref cs_post_write_probe_values outout function.
 
-  \snippet cs_user_postprocess-probes-interpolate.c post_probes_interpolate_var_1
+  \snippet cs_user_postprocess-probes-interpolate.cpp post_probes_interpolate_var_1
 
   In this case, selected outputs are named by appending "_p" to the
   field name to allow combining default probe outputs with
@@ -624,5 +624,5 @@
   In the following example, all output is deactivated until time step 1000
   is reached, at which time the normal behavior resumes:
 
-  \snippet cs_user_postprocess.c post_activate
+  \snippet cs_user_postprocess.cpp post_activate
 */

@@ -38,10 +38,10 @@ framework.  This simple example is performed in three steps:
 * Define a mesh and its boundary zones (done in the GUI)
 * Activate the CDO and create the equation to solve (done in the
   function \ref cs_user_model of the user source file \ref
-  cs_user_parameters.c)
+  cs_user_parameters.cpp)
 * Define the equation to solve and set the boundary conditions (done
   in the function \ref cs_user_finalize_setup of the user source file \ref
-  cs_user_parameters.c)
+  cs_user_parameters.cpp)
 
 For a very beginner, one strongly advises to read the page [Case directory structure](@ref cs_ug_case_structure).
 

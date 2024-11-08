@@ -36,20 +36,20 @@
   Faces can be selected either using a selector (as is done here) or directly
   using boundary zone element ids if an appropriate zone has been defined.
 
-  \snippet cs_user_extra_operations-nusselt_calculation.c loc_var_f_user
+  \snippet cs_user_extra_operations-nusselt_calculation.cpp loc_var_f_user
 
   \subsection compute_nusselt Reconstruct value at selected boundary faces
 
   Allocate a local array for the selected boundary faces.
-  \snippet cs_user_extra_operations-nusselt_calculation.c compute_nusselt
+  \snippet cs_user_extra_operations-nusselt_calculation.cpp compute_nusselt
 
   \subsection general_nusselt General case (for non-orthogonal meshes)
-  \snippet cs_user_extra_operations-nusselt_calculation.c gen_nusselt
+  \snippet cs_user_extra_operations-nusselt_calculation.cpp gen_nusselt
 
   \subsection orthogonal_nusselt Case of orthogonal meshes
 
   Compute boundary value without reconstruction
-  \snippet cs_user_extra_operations-nusselt_calculation.c else_nusselt
+  \snippet cs_user_extra_operations-nusselt_calculation.cpp else_nusselt
 
   \note Here, we assign the non-reconstructed value.
 
@@ -58,11 +58,11 @@
   values provided to the \ref cs_parall_allgather_ordered_r, so this function
   is needed even when not running in parallel.
 
-  \snippet  cs_user_extra_operations-nusselt_calculation.c value_ortho_nusselt
+  \snippet  cs_user_extra_operations-nusselt_calculation.cpp value_ortho_nusselt
 
   Compute the bulk temperature, finalize the Nusselt number, print it and
   free memory not already freed before:
 
-  \snippet cs_user_extra_operations-nusselt_calculation.c  bulk_nusselt
+  \snippet cs_user_extra_operations-nusselt_calculation.cpp  bulk_nusselt
 
 */

@@ -124,19 +124,19 @@ Examples of activation of the GWF module
 **Example 1:** _Activate the GWF model with a fully saturated single-phase
 flow model and no other option._
 
-\snippet cs_user_parameters-cdo-gwf.c param_cdo_activate_gwf
+\snippet cs_user_parameters-cdo-gwf.cpp param_cdo_activate_gwf
 
 **Example 2:** _Second example: Activate the GWF model with an unsaturated
 single-phase flow model without any additional option._
 
-\snippet cs_user_parameters-cdo-gwf_user_soil.c param_cdo_activate_gwf_uspf
+\snippet cs_user_parameters-cdo-gwf_user_soil.cpp param_cdo_activate_gwf_uspf
 
 **Example 3:** _Activate the GWF model with an unsaturated single-phase flow
 model. Moreover, one takes into account the gravity effect and the
 postprocessing of the soil permeability as well as the Darcy flux across domain
 boundaries._
 
-\snippet cs_user_parameters-cdo-gwf.c param_cdo_activate_gwf_b
+\snippet cs_user_parameters-cdo-gwf.cpp param_cdo_activate_gwf_b
 
 
 
@@ -191,12 +191,12 @@ The saturated model is the simplest model.
 **Example 1:** _A saturated soils defined by an isotropic permeability on all
 the computational domain._
 
-\snippet cs_user_parameters-cdo-gwf.c param_cdo_gwf_add_define_iso_saturated_soil
+\snippet cs_user_parameters-cdo-gwf.cpp param_cdo_gwf_add_define_iso_saturated_soil
 
 **Example 2:** _Two saturated soils defined by an anisotropic (saturated)
 permeability_
 
-\snippet cs_user_parameters-cdo-gwf.c param_cdo_gwf_add_define_aniso_saturated_soil
+\snippet cs_user_parameters-cdo-gwf.cpp param_cdo_gwf_add_define_aniso_saturated_soil
 
 
 ### Case of a Van Genuchten-Mualen model (single-phase)
@@ -209,7 +209,7 @@ this model.
 **Example 3:** _Soil relying on a Van Genuchten-Mualen and considering a
 isotropic permeability_
 
-\snippet cs_user_parameters-cdo-gwf.c param_cdo_gwf_add_define_genuchten_soil
+\snippet cs_user_parameters-cdo-gwf.cpp param_cdo_gwf_add_define_genuchten_soil
 
 
 Example of settings for a user-defined soil
@@ -236,14 +236,14 @@ since it has been designed by F. T. Tracy in [this article](https://doi.org/10.1
 
 _Example of the structure used to handle the soil model parameters_
 
-\snippet cs_user_parameters-cdo-gwf_user_soil.c param_cdo_gwf_tracy_struct
+\snippet cs_user_parameters-cdo-gwf_user_soil.cpp param_cdo_gwf_tracy_struct
 
 ### Add a user-defined soil
 
-\snippet cs_user_parameters-cdo-gwf_user_soil.c param_cdo_gwf_add_user_soil
+\snippet cs_user_parameters-cdo-gwf_user_soil.cpp param_cdo_gwf_add_user_soil
 
 with the two requested functions (defined for instance as a static function in
-the file cs_user_parameters.c). These functions have to fullfill the prototype
+the file cs_user_parameters.cpp). These functions have to fullfill the prototype
 defined in \ref cs_gwf_soil_update_t (for the update of the soil properties)
 and in \ref cs_gwf_soil_free_param_t (for the free of the soil parameter
 structure).
@@ -251,12 +251,12 @@ structure).
 Here is an example of how to update soil properties (function called
 _tracy_update_)
 
-\snippet cs_user_parameters-cdo-gwf_user_soil.c param_cdo_gwf_set_user_update_soil
+\snippet cs_user_parameters-cdo-gwf_user_soil.cpp param_cdo_gwf_set_user_update_soil
 
 and an example of how to free the soil parameter structure (function called
 _tracy_free_param_)
 
-\snippet cs_user_parameters-cdo-gwf_user_soil.c param_cdo_gwf_set_user_free_soil
+\snippet cs_user_parameters-cdo-gwf_user_soil.cpp param_cdo_gwf_set_user_free_soil
 
 ### Further settings (initial and boundary conditions)
 
@@ -265,7 +265,7 @@ used to further set the problem for instance to specify the initial and
 boundary conditions.
 This step is made in the function \ref cs_user_finalize_setup
 
-\snippet cs_user_parameters-cdo-gwf_user_soil.c param_cdo_gwf_get_user_soil
+\snippet cs_user_parameters-cdo-gwf_user_soil.cpp param_cdo_gwf_get_user_soil
 
 where the two functions used to define either the boundary condition (called
 "get_bc") in the example or the initial condition (called "get_ic") in the
@@ -273,9 +273,9 @@ example follow a predefined prototype (see \ref cs_analytic_func_t)
 
 Here are collected two examples of such functions:
 
-\snippet cs_user_parameters-cdo-gwf_user_soil.c param_cdo_gwf_set_bc_analytic
+\snippet cs_user_parameters-cdo-gwf_user_soil.cpp param_cdo_gwf_set_bc_analytic
 
-\snippet cs_user_parameters-cdo-gwf_user_soil.c param_cdo_set_ic_by_analytic
+\snippet cs_user_parameters-cdo-gwf_user_soil.cpp param_cdo_set_ic_by_analytic
 
 
 
@@ -311,17 +311,17 @@ Predefined tracers
 Here is a simple example for a standard tracer which can be added in the
 function \ref cs_user_model
 
-\snippet cs_user_parameters-cdo-gwf.c param_cdo_gwf_add_tracer
+\snippet cs_user_parameters-cdo-gwf.cpp param_cdo_gwf_add_tracer
 
 Here is another example for a radioactive tracer taking into account
 precipitation effects. The two types of definition can be mixed in the same
 setting.
 
-\snippet cs_user_parameters-cdo-gwf.c param_cdo_gwf_add_rtracer
+\snippet cs_user_parameters-cdo-gwf.cpp param_cdo_gwf_add_rtracer
 
 Remark: Get a tracer structure.
 
-\snippet cs_user_parameters-cdo-gwf.c param_cdo_gwf_get_tracer
+\snippet cs_user_parameters-cdo-gwf.cpp param_cdo_gwf_get_tracer
 
 Decay chain
 -----------
@@ -339,13 +339,13 @@ The two possibilities for the unit associated to a tracer is:
 Here is a complete example to define the physical parameters associated to a
 decay chain
 
-\snippet cs_user_parameters-cdo-gwf.c param_cdo_gwf_add_decay_chain
+\snippet cs_user_parameters-cdo-gwf.cpp param_cdo_gwf_add_decay_chain
 
 It is possible to retrieve the structure associated to a decay chain
 in another user-defined function such as \ref cs_user_parameters
 thanks to its name and perform additional settings as follows:
 
-\snippet cs_user_parameters-cdo-gwf.c param_cdo_gwf_get_equation_param_from_decay_chain
+\snippet cs_user_parameters-cdo-gwf.cpp param_cdo_gwf_get_equation_param_from_decay_chain
 
 
 User-defined tracers
@@ -370,7 +370,7 @@ to activate through the usage of \ref cs_gwf_set_post_options
   - \ref CS_GWF_POST_DARCY_FLUX_DIVERGENCE
   - \ref CS_GWF_POST_DARCY_FLUX_AT_BOUNDARY
 
-\snippet cs_user_parameters-cdo-gwf.c param_cdo_post_gwf
+\snippet cs_user_parameters-cdo-gwf.cpp param_cdo_post_gwf
 
 
 
@@ -382,7 +382,7 @@ Helper functions for soils {#sec_cdo_gwf_helper_soil}
 
 Get a soil structure from its name.
 
-\snippet cs_user_parameters-cdo-gwf.c param_cdo_gwf_get_soil
+\snippet cs_user_parameters-cdo-gwf.cpp param_cdo_gwf_get_soil
 
 There is a similar which retrieve the soil structure from its id (see \ref
 cs_gwf_soil_by_id).
@@ -392,4 +392,4 @@ Helper functions for tracers {#sec_cdo_gwf_helper_tracer}
 
 Get a tracer structure from its name.
 
-\snippet cs_user_parameters-cdo-gwf.c param_cdo_gwf_get_tracer
+\snippet cs_user_parameters-cdo-gwf.cpp param_cdo_gwf_get_tracer

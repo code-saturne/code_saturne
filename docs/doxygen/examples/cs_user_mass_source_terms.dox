@@ -65,9 +65,9 @@ Two options are available:
 
 When using constant values per zone, an inlet condition can easily be
 defined adding code similar to the following snipped in the
-\ref cs_user_finalize_setup function (in \ref cs_user_parameters.c):
+\ref cs_user_finalize_setup function (in \ref cs_user_parameters.cpp):
 
-\snippet cs_user_parameters-volume_mass_injection.c inlet_cal
+\snippet cs_user_parameters-volume_mass_injection.cpp inlet_cal
 
 The value assigned to the pressure is the mass injection rate.
 For other variables, it is the injected value itself.
@@ -81,7 +81,7 @@ It is also possible to define more complex injection mass flows using
 an analytical function. This first requires defining a function
 matching the \ref cs_analytic_func_t template, such as the one below:
 
-\snippet cs_user_parameters-volume_mass_injection.c inlet_cal_analytic_func
+\snippet cs_user_parameters-volume_mass_injection.cpp inlet_cal_analytic_func
 
 Note that this function injects mass uniformly, but also computes
 and logs the mass rate generated in the domain.
@@ -89,7 +89,7 @@ and logs the mass rate generated in the domain.
 To use this function for a given volume injection, we define
 the injection as follows:
 
-\snippet cs_user_parameters-volume_mass_injection.c inlet_cal_analytic
+\snippet cs_user_parameters-volume_mass_injection.cpp inlet_cal_analytic
 
 In this example, we have assigned the field pointer to the function
 input, so the function can query the field used for a given call, and
@@ -109,7 +109,7 @@ instance) with a total rate of 80 000 kg/s.
 The suction rate is supposed to be uniformly distributed
 on all the cells in the "suction_pump" zone.
 
-\snippet cs_user_parameters-volume_mass_injection.c suction_pump
+\snippet cs_user_parameters-volume_mass_injection.cpp suction_pump
 
 As mass is removed, there is no need to define the values for variables
 other than pressure. Using \ref cs_equation_add_volume_mass_injection_by_qov,

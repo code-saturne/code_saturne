@@ -39,7 +39,7 @@
   The following local variables and associated initializations
   need to be defined for the examples in this section:
 
-  \snippet cs_user_physical_properties-scalar_drift.c init
+  \snippet cs_user_physical_properties-scalar_drift.cpp init
 
   \subsection drift_scalars_body Body
 
@@ -48,5 +48,5 @@
 
   Here is the corresponding code:
 
-  \snippet cs_user_physical_properties-scalar_drift.c example_1
+  \snippet cs_user_physical_properties-scalar_drift.cpp example_1
 */

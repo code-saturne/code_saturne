@@ -36,21 +36,21 @@ user-defined function.
 
 \section loc_var_scal Local variables and initialization
 
-\snippet cs_user_source_terms-scalar_in_a_channel.c st_meta
+\snippet cs_user_source_terms-scalar_in_a_channel.cpp st_meta
 
 \section thermal_scalar_only Only apply to thermal scalar
 
-\snippet cs_user_source_terms-scalar_in_a_channel.c thermal_scalar_only
+\snippet cs_user_source_terms-scalar_in_a_channel.cpp thermal_scalar_only
 
 \section func_body Function body
 
  Map required fields
-\snippet cs_user_source_terms-scalar_in_a_channel.c map_fields
+\snippet cs_user_source_terms-scalar_in_a_channel.cpp map_fields
 
 Compute bulk mean velocity
-\snippet cs_user_source_terms-scalar_in_a_channel.c bulk_mean_velocity
+\snippet cs_user_source_terms-scalar_in_a_channel.cpp bulk_mean_velocity
 
 Compute source terms; we want to impose a total flux of 1 Watt.
- \snippet cs_user_source_terms-scalar_in_a_channel.c scalar_st
+ \snippet cs_user_source_terms-scalar_in_a_channel.cpp scalar_st
 
 */

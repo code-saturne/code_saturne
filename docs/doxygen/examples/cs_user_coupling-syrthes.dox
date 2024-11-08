@@ -39,7 +39,7 @@
 
   The first example corresponds to a constant volume exchange coefficient:
 
-  \snippet cs_user_coupling-syrthes.c example_1
+  \snippet cs_user_coupling-syrthes.cpp example_1
 
   \subsection cs_user_syrthes_coupling_volume_h_2 Example 2
 
@@ -55,11 +55,11 @@
   First, the values of the different fields that will be needed for the
   computation of the volume exchange coefficient are retrieved.
 
-  \snippet cs_user_coupling-syrthes.c example_2_init
+  \snippet cs_user_coupling-syrthes.cpp example_2_init
 
   Then the coefficient can be computed and assigned to all cells.
 
-  \snippet cs_user_coupling-syrthes.c example_2
+  \snippet cs_user_coupling-syrthes.cpp example_2
 
   Not that in this example, no test is done on the coupling id
   or Syrthes instance name. The corresponding arguments

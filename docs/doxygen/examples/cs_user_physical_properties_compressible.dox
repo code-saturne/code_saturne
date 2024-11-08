@@ -50,7 +50,7 @@
    - This function is called at the beginning of each time step
      Thus, <b> AT THE FIRST TIME STEP </b> (non-restart case), the only
      values initialized before this call are those defined
-       - in the GUI or \ref cs_user_parametersu (cs_user_parameters.c)
+       - in the GUI or \ref cs_user_parametersu (cs_user_parameters.cpp)
           - density    (initialized at \c ro0)
           - viscosity  (initialized at \c viscl0)
        - in the GUI or \ref cs_user_initialization
@@ -84,7 +84,7 @@
 
   \ref cs_user_physical_properties and are not to be modified here.
 
-  \snippet cs_user_physical_properties-compressible.c compressible_properties_init
+  \snippet cs_user_physical_properties-compressible.cpp compressible_properties_init
 
   \section example1_comp Molecular viscosity varying with temperature
 
@@ -93,7 +93,7 @@
 
   Here is the corresponding code:
 
-  \snippet cs_user_physical_properties-compressible_flow.c example_1
+  \snippet cs_user_physical_properties-compressible_flow.cpp example_1
 
 
   \section example2_comp Molecular volumetric viscosity varying with temperature
@@ -103,7 +103,7 @@
 
   Here is the corresponding code:
 
-  \snippet cs_user_physical_properties-compressible_flow.c example_2
+  \snippet cs_user_physical_properties-compressible_flow.cpp example_2
 
 
   \section example3_comp Isobaric specific heat varying with temperature
@@ -113,7 +113,7 @@
 
   Here is the corresponding code:
 
-  \snippet cs_user_physical_properties-compressible_flow.c example_3
+  \snippet cs_user_physical_properties-compressible_flow.cpp example_3
 
 
   \section example4_comp Molecular thermal conductivity varying with temperature
@@ -123,7 +123,7 @@
 
   Here is the corresponding code:
 
-  \snippet cs_user_physical_properties-compressible_flow.c example_4
+  \snippet cs_user_physical_properties-compressible_flow.cpp example_4
 
 
   \section example5_comp Molecular dynamic diffusivity of user-defined scalars varying with temperature
@@ -140,7 +140,7 @@
 
   Here is the corresponding code:
 
-  \snippet cs_user_physical_properties-compressible_flow.c example_5
+  \snippet cs_user_physical_properties-compressible_flow.cpp example_5
 
 
 */

@@ -1096,13 +1096,13 @@ The values of potential and its constituents are initialized if required.
 It should be noted that the enthalpy is relevant.
 
  - For the _electric arcs_ module, the _enthalpy_ value is taken from the temperature
- of reference \ref t0 (given in \ref cs_user_parameters.c)
+ of reference \ref t0 (given in \ref cs_user_parameters.cpp)
  from the temperature-enthalpy tables supplied in the data file **dp_ELE**.
  The user must not intervene here.
 
 - For the _Joule effect_ module, the value of enthalpy must be specified by the user.
  Examples of temperature to enthalpy conversion are given in
- \ref cs_user_physical_properties.c). If not defined, a simple default
+ \ref cs_user_physical_properties.cpp). If not defined, a simple default
  law is used (\f$H = C_p T\f$).
 
 Variable physical properties

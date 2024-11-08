@@ -49,7 +49,7 @@ related to a linear solver.
 
 ## A first example
 
-\snippet cs_user_parameters-cdo-linear_solvers.c cdo_sles_user_simple
+\snippet cs_user_parameters-cdo-linear_solvers.cpp cdo_sles_user_simple
 
 - More details about the available solvers are gathered [in this section](@ref cs_ug_cdo_sles_solver)
 - More details about the available preconditioners are gathered [in this section](@ref cs_ug_cdo_sles_precond)
@@ -66,7 +66,7 @@ and/or HYPRE libraries). Please refer to [this section](@ref cs_ug_cdo_sles_amg)
 for more details about AMG techniques.
 
 Here is a second example:
-\snippet cs_user_parameters-cdo-condif.c param_cdo_sles_settings1
+\snippet cs_user_parameters-cdo-condif.cpp param_cdo_sles_settings1
 
 If the external library [PETSc](https://petsc.org) is available, one uses its
 algebraic multigrid, otherwise one uses the in-house solver. Here a flexible
@@ -90,7 +90,7 @@ the PETSc library;
 - using the MUMPS solver either directly from the MUMPS library or
 through the PETSc library.
 
-\snippet cs_user_parameters-cdo-linear_solvers.c cdo_sles_solver_family
+\snippet cs_user_parameters-cdo-linear_solvers.cpp cdo_sles_solver_family
 
 
 ## Set the linear solver {#cs_ug_cdo_sles_solver}
@@ -176,7 +176,7 @@ The in-house multigrid algorithms can be easily tuned thanks to the function
 \ref cs_param_sles_amg_inhouse More advanced settings can also be added using
 the function \ref cs_param_sles_amg_inhouse_advanced
 
-\snippet cs_user_parameters-linear_solvers.c sles_kamg_momentum
+\snippet cs_user_parameters-linear_solvers.cpp sles_kamg_momentum
 
 In the case of an advanced settings, it is possible to keep the default
 settings associated to a parameter using the value \ref CS_CDO_KEEP_DEFAULT
@@ -185,16 +185,16 @@ It is also possible to access directly the structures and set the
 parameters in the function \ref cs_user_linear_solvers . Here is an
 example of a such usage:
 
-\snippet cs_user_parameters-linear_solvers.c sles_mgp_1
+\snippet cs_user_parameters-linear_solvers.cpp sles_mgp_1
 
 or
 
-\snippet cs_user_parameters-linear_solvers.c sles_mgp_2
+\snippet cs_user_parameters-linear_solvers.cpp sles_mgp_2
 
 In order to get the best efficiency in case of HPC computations, parallel grid
 merging can be optimized as follows:
 
-\snippet cs_user_parameters-linear_solvers.c sles_mg_parall
+\snippet cs_user_parameters-linear_solvers.cpp sles_mg_parall
 
 
 ### BoomerAMG {#cs_ug_cdo_sles_amg_boomer}
@@ -203,7 +203,7 @@ The main ingredients of the BoomerAMG algorithm are defined thanks to the
 functions \ref cs_param_sles_boomeramg and \ref cs_param_sles_boomeramg_advanced
 for additional parameters.
 
-\snippet cs_user_parameters-cdo-linear_solvers.c cdo_sles_boomer
+\snippet cs_user_parameters-cdo-linear_solvers.cpp cdo_sles_boomer
 
 We strongly invite users to read the HYPRE documentation and especially the
 part dedicated to BoomerAMG to understand the different choices
@@ -215,7 +215,7 @@ The main ingredients of the GAMG algorithm are defined thanks to the
 functions \ref cs_param_sles_gamg and \ref cs_param_sles_gamg_advanced
 for additional parameters.
 
-\snippet cs_user_parameters-cdo-linear_solvers.c cdo_sles_gamg
+\snippet cs_user_parameters-cdo-linear_solvers.cpp cdo_sles_gamg
 
 We strongly invite users to read the PETSc documentation dedicated to algebraic multigrid to understand the different choices
 [GAMG documentation](https://petsc.org/release/manual/ksp/#algebraic-multigrid-amg-preconditioners)
@@ -227,11 +227,11 @@ setup hook function). Here is an example of a such usage
 
 In the function \ref cs_user_linear_solvers,
 
-\snippet cs_user_parameters-linear_solvers.c sles_hypre_3
+\snippet cs_user_parameters-linear_solvers.cpp sles_hypre_3
 
 where the function `_hypre_p_setup_hook` is defined as follows:
 
-\snippet cs_user_parameters-linear_solvers.c sles_hypre_hook_1
+\snippet cs_user_parameters-linear_solvers.cpp sles_hypre_hook_1
 
 
 ### GAMG {#cs_ug_cdo_sles_amg_gamg}
@@ -239,7 +239,7 @@ where the function `_hypre_p_setup_hook` is defined as follows:
 Up to now, the advanced settings of GAMG is possible inside \ref cs_user_linear_solvers
 Here is an example of a such usage
 
-\snippet cs_user_parameters-linear_solvers.c sles_petsc_gamg_1
+\snippet cs_user_parameters-linear_solvers.cpp sles_petsc_gamg_1
 
 
 ## Sparse direct solver: MUMPS {#cs_ug_cdo_sles_mumps}
@@ -249,7 +249,7 @@ numerical scheme, it may be useful to solve the linear systems with a
 direct solver. In code_saturne, this is possible using the MUMPS
 library.
 
-\snippet cs_user_parameters-cdo-linear_solvers.c cdo_sles_user_mumps
+\snippet cs_user_parameters-cdo-linear_solvers.cpp cdo_sles_user_mumps
 
 ### Additional options
 
@@ -258,7 +258,7 @@ direct solver. Please refer to the MUMPS documentation to know more
 about the different options.
 
 
-\snippet cs_user_parameters-cdo-linear_solvers.c cdo_sles_user_mumps_advanced
+\snippet cs_user_parameters-cdo-linear_solvers.cpp cdo_sles_user_mumps_advanced
 
 The function \ref cs_param_sles_mumps allows one to set the two
 following main parameters:
@@ -342,7 +342,7 @@ This function is called before the main stages:
 1. Before the analysis step
 2. Before the factorization step
 
-\snippet cs_user_parameters-cdo-linear_solvers.c mumps_user_hook
+\snippet cs_user_parameters-cdo-linear_solvers.cpp mumps_user_hook
 
 According to the configuration *single* or *double* precision, the
 structure storing the MUMPS solver differs. In case of a *single*
@@ -408,7 +408,7 @@ the external library MUMPS has been installed and has been configured
 with code_saturne (see the installation guide for more details
 [here](@ref cs_dg_build_system)).
 
-\snippet cs_user_parameters-cdo-navsto.c param_cdo_navsto_sles_alu
+\snippet cs_user_parameters-cdo-navsto.cpp param_cdo_navsto_sles_alu
 
 Since the velocity block is _augmented_ by the term
 \f$\underline{\mathsf{grad}}\,\mathsf{div}\f$ (with a scaling coefficient given
@@ -421,14 +421,14 @@ settings.
 Additional options may be set to improve the performance of the sparse
 direct solver.
 
-\snippet cs_user_parameters-cdo-navsto.c param_cdo_navsto_sles_mumps
+\snippet cs_user_parameters-cdo-navsto.cpp param_cdo_navsto_sles_mumps
 
 Since the velocity block is vector-valued, one can benefit from a
 block analysis (the third parameter is set to 3).
 
 Here is a second example.
 
-\snippet cs_user_parameters-cdo-linear_solvers.c cdo_sles_navsto_alu_mumps
+\snippet cs_user_parameters-cdo-linear_solvers.cpp cdo_sles_navsto_alu_mumps
 
 
 ## Block preconditioners with a Krylov solver
@@ -446,7 +446,7 @@ These two algorithms are optimized to handle saddle-point problems in
 code_saturne since the (1,2) and (2,1) which are transposed is stored only
 once. Moreover, this block is stored in an unassembled way.
 
-\snippet cs_user_parameters-cdo-linear_solvers.c cdo_sles_navsto_minres
+\snippet cs_user_parameters-cdo-linear_solvers.cpp cdo_sles_navsto_minres
 
 ### PETSc solvers
 
@@ -464,23 +464,23 @@ One uses the `FIELDSPLIT` functionnality to set the block preconditioning strate
 
 ## Golub-Kahan Bidiagonalization algorithm (GKB)
 
-\snippet cs_user_parameters-cdo-linear_solvers.c cdo_sles_navsto_gkb_kcycle
+\snippet cs_user_parameters-cdo-linear_solvers.cpp cdo_sles_navsto_gkb_kcycle
 
 The linear system may be augmented to improve the convergence rate of the
 algorithm (but the system is harder to solve). Here is another example:
 
-\snippet cs_user_parameters-cdo-linear_solvers.c cdo_sles_navsto_gkb_mumps
+\snippet cs_user_parameters-cdo-linear_solvers.cpp cdo_sles_navsto_gkb_mumps
 
 ## Notay's algebraic transformation (Experimental)
 
 Here is an example in the case of a saddle-point system stemming from the
 Navier-Stokes equations.
 
-\snippet cs_user_parameters-cdo-navsto.c param_cdo_navsto_sles_notay
+\snippet cs_user_parameters-cdo-navsto.cpp param_cdo_navsto_sles_notay
 
 ## Uzawa algorithm with a CG acceleration
 
-\snippet cs_user_parameters-cdo-linear_solvers.c cdo_sles_navsto_uzacg
+\snippet cs_user_parameters-cdo-linear_solvers.cpp cdo_sles_navsto_uzacg
 
 
 
@@ -539,7 +539,7 @@ well-suited for solving the Stokes problem since the pressure mass
 matrix is a rather good approximation (in terms of spectral behavior)
 of the Schur complement.
 
-\snippet cs_user_parameters-cdo-navsto.c param_cdo_navsto_schur_mass_scaled
+\snippet cs_user_parameters-cdo-navsto.cpp param_cdo_navsto_schur_mass_scaled
 
 
 ### Example 2: "mass_scaled_diag_inv"
@@ -549,7 +549,7 @@ associated to the structure \cs_equation_param_t nammed `mom_eqp`. One
 now considers a more elaborated approximation which needs to solve a
 system implying the Schur complement approximation.
 
-\snippet cs_user_parameters-cdo-navsto.c param_cdo_navsto_schur_mass_scaled_diag_inv
+\snippet cs_user_parameters-cdo-navsto.cpp param_cdo_navsto_schur_mass_scaled_diag_inv
 
 
 ### Example 3: "lumped_inv"
@@ -561,7 +561,7 @@ system implying the Schur complement approximation and an additional
 system to build the Schur complement approximation (the system related
 to \f$\mathsf{A\,L = 1}\f$).
 
-\snippet cs_user_parameters-cdo-navsto.c param_cdo_navsto_schur_lumped_inv
+\snippet cs_user_parameters-cdo-navsto.cpp param_cdo_navsto_schur_lumped_inv
 
 
 # Additional settings
@@ -574,7 +574,7 @@ can specify a stronger criterion to trigger the immediate exit. In the
 function \ref cs_user_linear_solvers, add the following lines for
 instance:
 
-\snippet cs_user_parameters-cdo-linear_solvers.c linear_solver_immediate_exit
+\snippet cs_user_parameters-cdo-linear_solvers.cpp linear_solver_immediate_exit
 
 ## Allow no operation
 
@@ -583,4 +583,4 @@ right-hand side is equal to zero or very close to zero (\ref cs_sles_set_epzero)
 To allow this kind of behavior for the SLES associated to an equation, one has
 to set the key `CS_EQKEY_SOLVER_NO_OP` to `true`.
 
-\snippet cs_user_parameters-cdo-linear_solvers.c cdo_sles_allow_no_op
+\snippet cs_user_parameters-cdo-linear_solvers.cpp cdo_sles_allow_no_op

@@ -39,12 +39,12 @@
   The following initialization block needs to be added for the
   following examples:
 
-  \snippet cs_user_physical_properties-coal_drift.c init
+  \snippet cs_user_physical_properties-coal_drift.cpp init
 
   \subsection drift_coal_scalars_body Body
 
   Here is the corresponding code:
 
-  \snippet cs_user_physical_properties-coal_drift.c example_1
+  \snippet cs_user_physical_properties-coal_drift.cpp example_1
 
 */

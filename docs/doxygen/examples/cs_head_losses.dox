@@ -29,14 +29,14 @@
 /*!
 
   \page cs_head_losses Examples of data settings for head losses
-  (cs_user_zones.c and cs_user_head_losses.c)
+  (cs_user_zones.c and cs_user_head_losses.cpp)
 
   \brief the \ref cs_user_head_losses function is used to compute
   the values of the head loss term, and is called at each time step
   for each previously defined head loss volume zone.
 
   Volume zones may be defined using the GUI, or through
-  the \ref cs_user_zones (in cs_user_zones.c).
+  the \ref cs_user_zones (in cs_user_zones.cpp).
 
   cku is the local head loss term.
 
@@ -79,7 +79,7 @@
   It is useful to map a field array to a local pointer for a clear and concise
   access, such as done here for the velocity:
 
-  \snippet cs_user_head_losses.c map_field_arrays
+  \snippet cs_user_head_losses.cpp map_field_arrays
 
   Otherwise, the zone entries (see \ref cs_volume_zone_t) should contain
   the necessary information with no additional preparation.
@@ -89,10 +89,10 @@
   \subsection beginning Defining a volume zone
 
   A volume zone may be defined using the GUI, or in the \ref cs_user_zones
-  user function (in cs_user_zones.c), such as the following zone determined
+  user function (in cs_user_zones.cpp), such as the following zone determined
   by a geometric criterion:
 
-  \snippet cs_user_zones.c user_zones_head_loss_1
+  \snippet cs_user_zones.cpp user_zones_head_loss_1
 
   Note that if the \ref CS_VOLUME_ZONE_HEAD_LOSS flag is not set
   (or the matching type set through the GUI), calls to \ref cs_user_head_losses
@@ -118,7 +118,7 @@
 
   Using the previously defined zone, we define head losses in direction \c x
 
-  \snippet cs_user_head_losses.c head_loss_1
+  \snippet cs_user_head_losses.cpp head_loss_1
 
   \subsection alpha_tensor Example 2: head losses along a direction at 45 degrees
 
@@ -130,7 +130,7 @@
   In the present example, it is chosen to set a head loss representing friction along \c X and to model a vane in Y direction
   by setting <tt> ck1 = 0 </tt>.
 
-  \snippet cs_user_head_losses.c head_loss_2
+  \snippet cs_user_head_losses.cpp head_loss_2
 
 */
 // _____________________________________________________________________________

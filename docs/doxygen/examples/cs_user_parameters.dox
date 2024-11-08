@@ -25,7 +25,7 @@
 /*----------------------------------------------------------------------------*/
 
 /*!
-  \page csdoc::parameters Input of calculation parameters (C functions in cs_user_parameters.c)
+  \page csdoc::parameters Input of calculation parameters (C functions in cs_user_parameters.cpp)
 
   \section cs_user_parameters_h_intro Introduction
 
@@ -55,56 +55,56 @@
 
   Activate user models (such as atmospheric flow module)
 
-  \snippet cs_user_parameters-base.c activate_user_model
+  \snippet cs_user_parameters-base.cpp activate_user_model
 
   Choose a turbulent model among the available models
 
-  \snippet cs_user_parameters-base.c turbulence_model_choice
+  \snippet cs_user_parameters-base.cpp turbulence_model_choice
 
   Coupled solver for Rij components (when Rij is used), and other RANS
   model specific settings:
 
-  \snippet cs_user_parameters-base.c turb_rans_model_settings
+  \snippet cs_user_parameters-base.cpp turb_rans_model_settings
 
   To set a thermal model (CS_THERMAL_MODEL_NONE: none,
   CS_THERMAL_MODEL_TEMPERATURE: temperature, CS_THERMAL_MODEL_ENTHALPY:
   enthalpy, CS_THERMAL_MODEL_TOTAL_ENERGY: total energy)
 
-  \snippet cs_user_parameters-base.c thermal_model_choice
+  \snippet cs_user_parameters-base.cpp thermal_model_choice
 
   Volume of Fluid model with mass transfer Merkle model to take into account
   vaporization / condensation
 
-  \snippet cs_user_parameters-base.c enable_cavit
+  \snippet cs_user_parameters-base.cpp enable_cavit
 
   \subsection cs_user_parameters_h_cs_user_ale ALE activation
 
   To activate ALE (Arbitrary Lagrangian Eulerian) method
   (CS_ALE_NONE: switch off, CS_ALE_LEGACY: legacy solver, CS_ALE_CDO: CDO solver)
 
-  \snippet cs_user_parameters-base.c ALE_activation
+  \snippet cs_user_parameters-base.cpp ALE_activation
 
   The user can add a scalar to be solved
 
-  \snippet cs_user_parameters-base.c scalars_addition
+  \snippet cs_user_parameters-base.cpp scalars_addition
 
   After adding a scalar, the user can add the variance of this scalar
 
-  \snippet cs_user_parameters-base.c scalars_variance_addition
+  \snippet cs_user_parameters-base.cpp scalars_variance_addition
 
   Add a user property defined on a mesh location
   (cells, interior faces, boundary faces or vertices).
 
-  \snippet cs_user_parameters-base.c user_property_addition
+  \snippet cs_user_parameters-base.cpp user_property_addition
 
   Define the gravity direction and acceleration (no gravity forces if zero).
 
-  \snippet cs_user_parameters-base.c user_model_gravity
+  \snippet cs_user_parameters-base.cpp user_model_gravity
 
   Indicate the computation will use a rotating reference frame (with Coriolis forces)
   and specify the associated rotation.
 
-  \snippet cs_user_parameters-base.c user_model_coriolis
+  \snippet cs_user_parameters-base.cpp user_model_coriolis
 
   \section cs_user_parameters_h_cs_user_parameters_general General options (cs_user_parameters)
 
@@ -112,28 +112,28 @@
 
   Choose a time step option
 
-  \snippet cs_user_parameters-base.c time_stepping_options
+  \snippet cs_user_parameters-base.cpp time_stepping_options
 
   Choose a reference time step
 
-  \snippet cs_user_parameters-base.c ref_time_step
+  \snippet cs_user_parameters-base.cpp ref_time_step
 
   To set a duration
 
-  \snippet cs_user_parameters-base.c duration
+  \snippet cs_user_parameters-base.cpp duration
 
   To run a computation with a frozen velocity field (only for a restart):
 
-  \snippet cs_user_parameters-base.c param_iccvfg
+  \snippet cs_user_parameters-base.cpp param_iccvfg
 
   For example, to change the log (run_solver.log) verbosity of all the variables:
 
-  \snippet cs_user_parameters-base.c param_log_verbosity
+  \snippet cs_user_parameters-base.cpp param_log_verbosity
 
   Change the required linear-solver precision required for each increment
   of the solution on the solved fields:
 
-  \snippet cs_user_parameters-base.c param_linear_solver_epsilo
+  \snippet cs_user_parameters-base.cpp param_linear_solver_epsilo
 
   To compute a dynamic relaxation for the reconstruction sweeps used to
   handle non-orthogonalities (for any variable):
@@ -142,13 +142,13 @@
   - iswdyn = 2: (default) means that the last two increments are used
                 to relax.
 
-  \snippet cs_user_parameters-base.c param_iswydn
+  \snippet cs_user_parameters-base.cpp param_iswydn
 
   For difficult cases, a stabilization may be obtained by not
   reconstructing the convective and diffusive flux for variables
   of the turbulence model, that is for k-epsilon models:
 
-  \snippet cs_user_parameters-base.c param_ircflu
+  \snippet cs_user_parameters-base.cpp param_ircflu
 
   Choice of turbulent flux model u'T' for the scalar T:
   - Algebraic Models
@@ -161,7 +161,7 @@
     - 30) 30 DFM
     - 31) EB-DFM (Elliptic Blending)
 
-  \snippet cs_user_parameters-base.c param_iturt
+  \snippet cs_user_parameters-base.cpp param_iturt
 
   The following snippet shows how to blend 1st-order upwind and 2nd-order
   centered convective schemes:
@@ -173,25 +173,25 @@
   instead of relying on the defaults (usually pure centered or upwind
   depending on the variable type):
 
-  \snippet cs_user_parameters-base.c param_convective_scheme
+  \snippet cs_user_parameters-base.cpp param_convective_scheme
 
   To change limiters for the convective scheme for a given scalar:
 
-  \snippet cs_user_parameters-base.c param_var_limiter_choice
+  \snippet cs_user_parameters-base.cpp param_var_limiter_choice
 
   One can also choose the percentage of upwind blending when using the slope test
 
-  \snippet cs_user_parameters-base.c param_var_blend_st
+  \snippet cs_user_parameters-base.cpp param_var_blend_st
 
   If one wants to declare a scalar as buoyant (i.e. the density depends on this scalar
   through a given equation of state) and add it in the velocity-pressure optional
   inner-iterations, one can set the dedicated keyword:
 
-  \snippet cs_user_parameters-base.c param_var_coupled_with_vel_p
+  \snippet cs_user_parameters-base.cpp param_var_coupled_with_vel_p
 
   If one wants to activate drift terms on a transported scalar:
 
-  \snippet cs_user_parameters-base.c param_var_drift
+  \snippet cs_user_parameters-base.cpp param_var_drift
 
   To set model and parameter options for the velocity-pressure coupling and
   resolution, see the \ref cs_velocity_pressure_model_t and
@@ -199,11 +199,11 @@
 
   For example, to set the Rhie and Chow multiplication factor:
 
-  \snippet cs_user_parameters-base.c param_vp_arak
+  \snippet cs_user_parameters-base.cpp param_vp_arak
 
   To set the optional number of velocity-pressure inner iterations:
 
-  \snippet cs_user_parameters-base.c param_vp_netrup
+  \snippet cs_user_parameters-base.cpp param_vp_netrup
 
   The temperature scale may be chosen when solving with temperature
   (except for predefined physical models), as shown below. When coupling
@@ -211,13 +211,13 @@
   radiative model, be careful with conversions, as radiation boundary conditions
   are always defined in Kelvin.
 
-  \snippet cs_user_parameters-base.c param_itpscl
+  \snippet cs_user_parameters-base.cpp param_itpscl
 
   If a user-defined scalar behaves like a temperature (relative to Cp):
   we neeed to set its "is_temperature" keyword to 1 (this is already done
   for the actual temperature):
 
-  \snippet cs_user_parameters-base.c param_kscacp
+  \snippet cs_user_parameters-base.cpp param_kscacp
 
   \subsection cs_user_parameters_h_param_fluid_properties Fluid properties.
 
@@ -225,7 +225,7 @@
   \ref cs_glob_fluid_properties structure, whose members can
   be modified as illustrated here:
 
-  \snippet cs_user_parameters-base.c param_fluid_properties
+  \snippet cs_user_parameters-base.cpp param_fluid_properties
 
   \subsubsection Variable_diffusivity Variable diffusivity and density
 
@@ -256,7 +256,7 @@
   Caution: do not forget to complete cs_user_physical_properties with the
   law defining the diffusivity if `ifcvsl` >= 0 has been set here.
 
-  \snippet cs_user_parameters-base.c param_diffusivity_id
+  \snippet cs_user_parameters-base.cpp param_diffusivity_id
 
   Variable associated density fields may be defined in a similar manner
   when a scalar's density is variable and different from the bulk density,
@@ -266,12 +266,12 @@
 
   The logic is similar to that of variable diffusivity fields above:
 
-  \snippet cs_user_parameters-base.c param_density_id
+  \snippet cs_user_parameters-base.cpp param_density_id
 
   For compressible flows, specific physical property settings may be
   defined if needed:
 
-  \snippet cs_user_parameters-base.c param_compressible
+  \snippet cs_user_parameters-base.cpp param_compressible
 
   By default, the auxiliary restart file is read if present, but it may be
   useful to deactivate its use when restarting after a preprocessing stage
@@ -281,24 +281,24 @@
   Writing of auxiliary restart files may also be deactivated setting
   \ref cs_glob_restart_auxiliary::write_auxiliary to 0,
 
-  \snippet cs_user_parameters-base.c deactivate_aux_checkpoint_write
+  \snippet cs_user_parameters-base.cpp deactivate_aux_checkpoint_write
 
   \subsection cs_user_parameters_h_cs_user_parameters_fields Special fields and activate some automatic post-processings
 
   For example, to force the presence of a boundary temperature field, which
   may be useful for postprocessing:
 
-  \snippet cs_user_parameters-base.c param_force_b_temperature
+  \snippet cs_user_parameters-base.cpp param_force_b_temperature
 
   To add boundary values for all scalars, the
   following code can be added:
 
-  \snippet cs_user_parameters-base.c param_var_boundary_vals_1
+  \snippet cs_user_parameters-base.cpp param_var_boundary_vals_1
 
   To add handling (storage) of previous values for a field, the following
   following code can be added:
 
-  \snippet cs_user_parameters-base.c user_field_n_time_vals
+  \snippet cs_user_parameters-base.cpp user_field_n_time_vals
 
   Enforce existence of 'tplus' and 'tstar' fields, so that
   a Nusselt number may be computed using the
@@ -309,12 +309,12 @@
   forcing the definition of these fields to save the values computed
   for the boundary layer is necessary.
 
-  \snippet cs_user_parameters-base.c param_force_yplus
+  \snippet cs_user_parameters-base.cpp param_force_yplus
 
   You can activate the post-processing of the Q-criterion on the whole domain
   mesh with:
 
-  \snippet cs_user_parameters-base.c param_var_q_criterion
+  \snippet cs_user_parameters-base.cpp param_var_q_criterion
 
   Save contribution of slope test for variables in special fields.
   These fields are automatically created, with postprocessing output enabled,
@@ -323,17 +323,17 @@
   variable's field is automatically set to the matching postprocessing field's
   id, or -1 if not applicable).
 
-  \snippet cs_user_parameters-base.c param_post_slop_test
+  \snippet cs_user_parameters-base.cpp param_post_slop_test
 
   You can activate the post-processing of clipping on turbulent quantities
   on the whole domain mesh with:
 
-  \snippet cs_user_parameters-base.c param_var_rij_clipping
+  \snippet cs_user_parameters-base.cpp param_var_rij_clipping
 
   Error indicators may be activated by creating one of the \ref est_error_pre_2,
   \ref est_error_der_2, \ref est_error_cor_2, or est_error_tot_2 fields.
 
-  \snippet cs_user_parameters-basec error_indicators
+  \snippet cs_user_parameters-base.cpp error_indicators
 
   \section cs_user_parameters_h_finalize_setup Input-output related examples
 
@@ -347,23 +347,23 @@
 
   Frequency of log output.
 
-  \snippet cs_user_parameters-base.c setup_log
+  \snippet cs_user_parameters-base.cpp setup_log
 
   Change a property's label (here for density, first checking if it
   is variable). A field's name cannot be changed, but its label,
   used for logging and postprocessing output, may be redefined.
 
-  \snippet cs_user_parameters-base.c setup_label
+  \snippet cs_user_parameters-base.cpp setup_label
 
   \subsection cs_user_parameters_h_example_post Postprocessing output
 
   Activate or deactivate probes output.
 
-  \snippet cs_user_parameters-base.c setup_post
+  \snippet cs_user_parameters-base.cpp setup_post
 
   Probes for Radiative Transfer (Luminance and radiative density flux vector).
 
-  \snippet cs_user_parameters-base.c setup_post_lum
+  \snippet cs_user_parameters-base.cpp setup_post_lum
 
   \section cs_user_parameters_h_cs_user_model_cdo Base model for CDO/HHO schemes
 
@@ -380,7 +380,7 @@
 
   CDO/HHO schemes can be activated within this function as follows:
 
-  \snippet cs_user_parameters-cdo-condif.c param_cdo_activation
+  \snippet cs_user_parameters-cdo-condif.cpp param_cdo_activation
 
   \subsection cs_user_parameters_h_cdo_domain_boundary Domain boundary with CDO/HHO schemes
 
@@ -388,46 +388,46 @@
   The definition of the domain boundaries for CDO/HHO schemes can be specified
   as follows:
 
-  \snippet cs_user_parameters-cdo-condif.c param_cdo_domain_boundary
+  \snippet cs_user_parameters-cdo-condif.cpp param_cdo_domain_boundary
 
   \subsection cs_user_parameters_h_cdo_domain_output Output with CDO/HHO schemes
 
   The management of the level and frequency of details written by the code
   can be specified for CDO/HHO schemes as follows:
 
-  \snippet cs_user_parameters-cdo-condif.c param_cdo_domain_output
+  \snippet cs_user_parameters-cdo-condif.cpp param_cdo_domain_output
 
   \subsection cs_user_parameters_h_cdo_time_step Time step with CDO/HHO schemes
 
   The management of the time step with CDO/HHO schemes can be specified as
   follows:
 
-  \snippet cs_user_parameters-cdo-condif.c param_cdo_time_step
+  \snippet cs_user_parameters-cdo-condif.cpp param_cdo_time_step
 
   \subsection cs_user_parameters_h_cdo_walldistance Wall distance with CDO/HHO schemes
 
   The computation of the wall distance with CDO schemes is performed as follows:
 
-  \snippet cs_user_parameters-cdo-condif.c param_cdo_wall_distance
+  \snippet cs_user_parameters-cdo-condif.cpp param_cdo_wall_distance
 
   \subsection cs_user_parameters_h_cdo_add_user_eq Add a user-defined equation with CDO/HHO schemes
 
   The add of a user-defined equation solved by CDO/HHO schemes is specified as
   follows:
 
-  \snippet cs_user_parameters-cdo-condif.c param_cdo_add_user_equation
+  \snippet cs_user_parameters-cdo-condif.cpp param_cdo_add_user_equation
 
   \subsection cs_user_parameters_h_cdo_add_user_pty Add user-defined properties with CDO/HHO schemes
 
   The add of a new user-defined property with CDO/HHO schemes is specified as
   follows:
 
-  \snippet cs_user_parameters-cdo-condif.c param_cdo_add_user_properties
+  \snippet cs_user_parameters-cdo-condif.cpp param_cdo_add_user_properties
 
   If you want to compute the Fourier number related to a given property in an
   unsteady simulation
 
-  \snippet cs_user_parameters-cdo-condif.c param_cdo_add_user_properties_opt
+  \snippet cs_user_parameters-cdo-condif.cpp param_cdo_add_user_properties_opt
 
   \subsection cs_user_parameters_h_cdo_add_user_adv_field Add user-defined advection field with CDO/HHO schemes
 
@@ -436,17 +436,17 @@
   Navier-Stokes system. The add of a new user-defined advection field with
   CDO/HHO schemes is specified as follows:
 
-  \snippet cs_user_parameters-cdo-condif.c param_cdo_add_user_adv_field
+  \snippet cs_user_parameters-cdo-condif.cpp param_cdo_add_user_adv_field
 
   If you need to activate advanced options related to advection fields, you can also
   specify a user-defined advection field as follows:
 
-  \snippet cs_user_parameters-cdo-condif.c param_cdo_add_user_adv_field
+  \snippet cs_user_parameters-cdo-condif.cpp param_cdo_add_user_adv_field
 
   When an advection field is defined, it is possible to retrieve it and then
   set a post-processing operation as follows:
 
-  \snippet cs_user_parameters-cdo-condif.c param_cdo_add_user_adv_field_post
+  \snippet cs_user_parameters-cdo-condif.cpp param_cdo_add_user_adv_field_post
 
 
   \section cs_user_parameters_h_cs_user_parameters Define or modify general numerical and physical user parameters
@@ -455,7 +455,7 @@
 
   Modifiy the numerical parameters related to a given equation.
 
-  \snippet cs_user_parameters-cdo-condif.c param_cdo_numerics
+  \snippet cs_user_parameters-cdo-condif.cpp param_cdo_numerics
 
   \section cs_user_parameters_h_cs_user_cdo_finalize_setup Finalize the set-up for CDO/HHO schemes
 
@@ -465,24 +465,24 @@
   of property (isotropic, orthotropic or anisotropic) definitions differ.
   Here are two examples:
 
-  \snippet cs_user_parameters-cdo-condif.c param_cdo_setup_property
+  \snippet cs_user_parameters-cdo-condif.cpp param_cdo_setup_property
 
   \subsection cs_user_parameters_h_cdo_set_advfield Set up user-defined advection field with CDO/HHO schemes
 
   When an advection field has been added, the second step is to define this advection field.
   Here are is an example of definition using an anlytic function and the activation of optional features:
 
-  \snippet cs_user_parameters-cdo-condif.c param_cdo_setup_advfield
+  \snippet cs_user_parameters-cdo-condif.cpp param_cdo_setup_advfield
 
   \subsection cs_user_parameters_h_cdo_set_bcs Set up the boundary conditions for an equation
 
-  \snippet cs_user_parameters-cdo-condif.c param_cdo_setup_bcs
+  \snippet cs_user_parameters-cdo-condif.cpp param_cdo_setup_bcs
 
   \subsection cs_user_parameters_h_cdo_add_eq_terms Add terms to an equation
 
   Add terms like diffusion term, advection term, unsteady term, reaction terms or source terms.
 
-  \snippet cs_user_parameters-cdo-condif.c param_cdo_add_terms
+  \snippet cs_user_parameters-cdo-condif.cpp param_cdo_add_terms
 
   \section cs_user_parameters_h_cs_user_linear_solvers  Linear solver related options
 
@@ -518,7 +518,7 @@
   The following example shows how to use a multigrid solver for this
   quantity (useful especially if computed repeatedly, such as for ALE).
 
-  \snippet cs_user_parameters-linear_solvers.c sles_wall_dist
+  \snippet cs_user_parameters-linear_solvers.cpp sles_wall_dist
 
   \subsection cs_user_parameters_h_sles_user_1 Example: user variable
 
@@ -526,7 +526,7 @@
   user variable field so as to use a BiCGStab solver with polynomial
   preconditioning of degree 1.
 
-  \snippet cs_user_parameters-linear_solvers.c sles_user_1
+  \snippet cs_user_parameters-linear_solvers.cpp sles_user_1
 
   \subsection cs_user_parameters_h_sles_verbosity_1 Changing the verbosity
 
@@ -535,21 +535,21 @@
   may be specifically set for linear system resolution, as shown in
   the following example:
 
-  \snippet cs_user_parameters-linear_solvers.c sles_verbosity_1
+  \snippet cs_user_parameters-linear_solvers.cpp sles_verbosity_1
 
   \subsection cs_user_parameters_h_sles_viz_1 Example: error visualization
 
   The following example shows how to activate local error visualization
   output (here for velocity and pressure).
 
-  \snippet cs_user_parameters-linear_solvers.c sles_viz_1
+  \snippet cs_user_parameters-linear_solvers.cpp sles_viz_1
 
   \subsection cs_user_parameters_h_sles_mgp_1 Example: advanced multigrid settings
 
   The following example shows how to set advanced settings for the
   multigrid solver used for the pressure solution.
 
-  \snippet cs_user_parameters-linear_solvers.c sles_mgp_1
+  \snippet cs_user_parameters-linear_solvers.cpp sles_mgp_1
 
   \subsection cs_user_parameters_h_sles_mgp_2 Example: multigrid preconditioner settings
 
@@ -557,7 +557,7 @@
   conjugate gradient solver (for the pressure correction), and set advanced
   settings for that multigrid preconditioner.
 
-  \snippet cs_user_parameters-linear_solvers.c sles_mgp_2
+  \snippet cs_user_parameters-linear_solvers.cpp sles_mgp_2
 
   \subsection cs_user_parameters_h_sles_mg_parall Multigrid parallel settings
 
@@ -567,7 +567,7 @@
   Depending on the architecture and processor/network performance
   ratios, this may increase or decrease performance.
 
-  \snippet cs_user_parameters-linear_solvers.c sles_mg_parall
+  \snippet cs_user_parameters-linear_solvers.cpp sles_mg_parall
 
   \subsection cs_user_parameters_h_sles_rad_dom Example: DOM radiation settings
 
@@ -580,14 +580,14 @@
   is used (if more solvers than directions are specified, the extra
   definitions will be unused, but this causes no further issues).
 
-  \snippet cs_user_parameters-linear_solvers.c sles_rad_dom_1
+  \snippet cs_user_parameters-linear_solvers.cpp sles_rad_dom_1
 
   \subsection cs_user_parameters_h_sles_plot Plotting solver convergence
 
   The following example shows how to activate convergence plotting
   for built-in iterative or multigrid solvers.
 
-  \snippet cs_user_parameters-linear_solvers.c sles_plot_1
+  \snippet cs_user_parameters-linear_solvers.cpp sles_plot_1
 
   Plots will appear as CSV (comma-separated value) files in the
   monitoring subdirectory.
@@ -600,18 +600,18 @@
   General options (those passed to PETSc through command line options)
   may be defined directly in \ref cs_user_linear_solvers, for example:
 
-  \snippet cs_user_parameters-linear_solvers.c sles_petsc_1
+  \snippet cs_user_parameters-linear_solvers.cpp sles_petsc_1
 
   A specific system may be set up to use PETsc, as is shown
   here for the pressure variable:
 
-  \snippet cs_user_parameters-linear_solvers.c sles_petsc_2
+  \snippet cs_user_parameters-linear_solvers.cpp sles_petsc_2
 
   The basic matrix format to be used by PETSc is defined at this stage, using
   a PETSc MatType string (see PETSc documentation).
   Further options may be defined in a setup hook function, as follows:
 
-  \snippet cs_user_parameters-linear_solvers.c sles_petsc_hook_1
+  \snippet cs_user_parameters-linear_solvers.cpp sles_petsc_hook_1
 
   If no additional settings are required, the matching parameter
   in \ref cs_sles_petsc_define may be set to NULL.
@@ -621,36 +621,36 @@
   To use PETSc's GAMG (geometric-algebraic multigrid) preconditioner,
   the following general options should be set:
 
-  \snippet cs_user_parameters-linear_solvers.c sles_petsc_gamg_1
+  \snippet cs_user_parameters-linear_solvers.cpp sles_petsc_gamg_1
 
   Setting GAMG-preconditioned PCG for the pressure may be done as in
   the previous option, ensuring here that a matrix structure
   native to PETSc is used (SEQAIJ, MPIAIJ, or some other AIJ variant),
   so all required matrix operations are available:
 
-  \snippet cs_user_parameters-linear_solvers.c sles_petsc_gamg_2
+  \snippet cs_user_parameters-linear_solvers.cpp sles_petsc_gamg_2
 
   With the associated setup hook function:
 
-  \snippet cs_user_parameters-linear_solvers.c sles_petsc_hook_gamg
+  \snippet cs_user_parameters-linear_solvers.cpp sles_petsc_hook_gamg
 
   \subsubsection cs_user_parameters_h_sles_petsc_bamg Using PETSc with HYPRE
 
   To use HYPRE's Boomer AMG as a PETSc preconditioner,
   the following general options should be set:
 
-  \snippet cs_user_parameters-linear_solvers.c sles_petsc_bamg_1
+  \snippet cs_user_parameters-linear_solvers.cpp sles_petsc_bamg_1
 
   Setting BoomerAMG-preconditioned PCG for the pressure may be done as in
   the previous option, ensuring here that a matrix structure
   native to PETSc is used (SEQAIJ, MPIAIJ, or some other AIJ variant),
   so all required matrix operations are available:
 
-  \snippet cs_user_parameters-linear_solvers.c sles_petsc_bamg_2
+  \snippet cs_user_parameters-linear_solvers.cpp sles_petsc_bamg_2
 
   With the associated setup hook function:
 
-  \snippet cs_user_parameters-linear_solvers.c sles_petsc_hook_bamg
+  \snippet cs_user_parameters-linear_solvers.cpp sles_petsc_hook_bamg
 
   \subsubsection cs_user_parameters_h_sles_petsc_add Additional PETSc features
 
@@ -659,7 +659,7 @@
   on an environment variable, \c CS_USER_PETSC_MAT_VIEW, which may
   take values \c DEFAULT, \c DRAW_WORLD, or \c DRAW:
 
-  \snippet cs_user_parameters-linear_solvers.c sles_petsc_hook_view
+  \snippet cs_user_parameters-linear_solvers.cpp sles_petsc_hook_view
 
   \subsection cs_user_parameters_h_sles_amgx Using AmgX
 
@@ -674,7 +674,7 @@
   a configuration file (which must be present in the case's \c DATA
   directory) is used.
 
-  \snippet cs_user_parameters-linear_solvers.c sles_amgx
+  \snippet cs_user_parameters-linear_solvers.cpp sles_amgx
 
   To set options using a string, the \ref cs_sles_amgx_set_config
   function may be used intead of \ref cs_sles_amgx_set_config_file.
@@ -717,13 +717,13 @@
   All components are used (component -1 means all components),
   so the moment is a vector.
 
-  \snippet cs_user_parameters-time_moments.c tmom_u
+  \snippet cs_user_parameters-time_moments.cpp tmom_u
 
   In the next example, we define the variance of the vector velocity.
   All components are used again (component -1 means all components),
   so the moment is a tensor.
 
-  \snippet cs_user_parameters-time_moments.c tmom_variance_u
+  \snippet cs_user_parameters-time_moments.cpp tmom_variance_u
 
   \subsection cs_user_parameters_h_example_2 Example 2
 
@@ -731,7 +731,7 @@
   As the density is of dimension 1, and the velocity of dimension 3,
   the resulting moment is of dimension 3.
 
-  \snippet cs_user_parameters-time_moments.c tmom_rho_u
+  \snippet cs_user_parameters-time_moments.cpp tmom_rho_u
 
   \subsection cs_user_parameters_h_example_3 Example 3
 
@@ -742,7 +742,7 @@
 
   This moment's computation is also restarted at each time step.
 
-  \snippet cs_user_parameters-time_moments.c tmom_rho_u_v
+  \snippet cs_user_parameters-time_moments.cpp tmom_rho_u_v
 
   \subsection cs_user_parameters_h_example_4 Example 4
 
@@ -758,12 +758,12 @@
 
   Note also that we compute both means and variances here.
 
-  \snippet cs_user_parameters-time_moments.c tmom_simple_sum_data
+  \snippet cs_user_parameters-time_moments.cpp tmom_simple_sum_data
 
   In \ref cs_user_time_moments, we can now assign that function to a moments
   definition:
 
-  \snippet cs_user_parameters-time_moments.c tmom_simple_sum
+  \snippet cs_user_parameters-time_moments.cpp tmom_simple_sum
 
   \subsection cs_user_parameters_h_example_5 Example 5
 
@@ -771,12 +771,12 @@
   to evaluate expressions. Here, we compute the moment of the thermal flux
   at the boundary. We also that we compute both means and variances here.
 
-  \snippet cs_user_parameters-time_moments.c tmom_b_thermal_flux_data
+  \snippet cs_user_parameters-time_moments.cpp tmom_b_thermal_flux_data
 
   In \ref cs_user_time_moments, we assign that function to a moments
   definition:
 
-  \snippet cs_user_parameters-time_moments.c tmom_b_thermal_flux
+  \snippet cs_user_parameters-time_moments.cpp tmom_b_thermal_flux
 
   \subsection cs_user_parameters_h_example_6 Example 6
 
@@ -791,7 +791,7 @@
   an input array is defined, with a different key (here a simple
   character) used for each call.
 
-  \snippet cs_user_parameters-time_moments.c tmom_velocity_rotation_data
+  \snippet cs_user_parameters-time_moments.cpp tmom_velocity_rotation_data
 
   Note that the input arrays must be accessible when updating moments at
   each time step, so the array of inputs is declared static
@@ -799,35 +799,35 @@
   an array of inputs here; in this simple case, we could pass a simple
   call id as the input, casting from point to integer.
 
-  \snippet cs_user_parameters-time_moments.c tmom_velocity_rotation
+  \snippet cs_user_parameters-time_moments.cpp tmom_velocity_rotation
 
   To activate means for all variables:
-  \snippet cs_user_parameters-time_moments.c tmom_all_variables
+  \snippet cs_user_parameters-time_moments.cpp tmom_all_variables
 
   \section cs_user_parameters_h_atmo  Calculation options for the atmospheric module
 
   In the following example, options for the atmospheric module are set in \ref cs_user_model.
 
   Atmospheric options are available in the following structure:
-  \snippet cs_user_parameters-base.c atmo_options
+  \snippet cs_user_parameters-base.cpp atmo_options
 
   One can set the microphysics parameterization opitons as follows:
-  \snippet cs_user_parameters-base.c atmo_mircophysiscs
+  \snippet cs_user_parameters-base.cpp atmo_mircophysiscs
 
   One can set information relative to meteo profiles:
-  \snippet cs_user_parameters-base.c atmo_profiles
+  \snippet cs_user_parameters-base.cpp atmo_profiles
 
   One can set information relative to large scale imbrication:
-  \snippet cs_user_parameters-base.c atmo_imbr
+  \snippet cs_user_parameters-base.cpp atmo_imbr
 
   One can set information relative to meteo chemistry:
-  \snippet cs_user_parameters-base.c atmo_chem
+  \snippet cs_user_parameters-base.cpp atmo_chem
 
   One can set information relative to soil modelling:
-  \snippet cs_user_parameters-base.c atmo_soil_set
+  \snippet cs_user_parameters-base.cpp atmo_soil_set
 
   One can set information relative to 1D radiative transfer:
-  \snippet cs_user_parameters-base.c atmo_1d_rad
+  \snippet cs_user_parameters-base.cpp atmo_1d_rad
 
   \section cs_user_parameters_h_cs_user_fans  Fan modelling options
 
@@ -842,6 +842,6 @@
 
   The following example shows how a fan may be defined:
 
-  \snippet cs_user_parameters-fans.c fan_user_1
+  \snippet cs_user_parameters-fans.cpp fan_user_1
 
 */

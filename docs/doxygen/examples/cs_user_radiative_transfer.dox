@@ -52,7 +52,7 @@
   Radiative transfer parameters may be defined using the
   \ref cs_user_radiative_transfer_parameters function.
 
-  \snippet cs_user_radiative_transfer.c cs_user_radiative_transfer_parameters
+  \snippet cs_user_radiative_transfer.cpp cs_user_radiative_transfer_parameters
 
   \section cs_user_radiative_transfer_h_boundary_conditions Radiative transfer boundary conditions
 
@@ -98,19 +98,19 @@ Therefore :
 The following declaration and initialization block needs to be added
 for the following examples:
 
-\snippet cs_user_radiative_transfer_bcs.c loc_var
+\snippet cs_user_radiative_transfer_bcs.cpp loc_var
 
 <b> Remaining initialization</b>
 
 ivar: number of the thermal variable
 
-\snippet cs_user_radiative_transfer_bcs.c ivar
+\snippet cs_user_radiative_transfer_bcs.cpp ivar
 
 Min and Max values for the wall temperatures (clipping otherwise)
 
 \f$ T_{min} \f$ and \f$T_{max} \f$ are given in Kelvin.
 
-\snippet  cs_user_radiative_transfer_bcs.c temp
+\snippet  cs_user_radiative_transfer_bcs.cpp temp
 
 \subsection assign2 Assign boundary conditions to boundary wall
 
@@ -159,21 +159,21 @@ Here is a list of examples:
 
   For wall boundary faces, selection criteria: color 1  \n
 
-  \snippet   cs_user_radiative_transfer_bcs.c  example_1
+  \snippet   cs_user_radiative_transfer_bcs.cpp  example_1
 
 
   \subsubsection ex2 Gray or black wall with fixed outside temperature \f$ T_{ext} \f$
 
   For wall boundary faces, selection criteria: color 2  \n
 
-  \snippet  cs_user_radiative_transfer_bcs.c example_2
+  \snippet  cs_user_radiative_transfer_bcs.cpp example_2
 
 
   \subsubsection ex3 Reflecting wall (\f$ epsp = 0 \f$) with fixed outside temperature \f$ T_{ext} \f$
 
   For wall boundary faces, selection criteria: color 3 \n
 
-  \snippet  cs_user_radiative_transfer_bcs.c example_3
+  \snippet  cs_user_radiative_transfer_bcs.cpp example_3
 
 
   \subsubsection ex4 Gray or black wall and fixed conduction flux through the wall
@@ -197,7 +197,7 @@ Flux density (< 0 if gain for the fluid)
  - For enthalpy \f$h\f$, in \f$ W.m^{-2} \f$:
  \f[ RCODC(IFAC,IVAR,3)=(viscls+\frac{visct}{\sigma})\cdot \grad{H} \cdot \vect{n}\f]
 
-\snippet  cs_user_radiative_transfer_bcs.c example_4
+\snippet  cs_user_radiative_transfer_bcs.cpp example_4
 
 
 \subsubsection ex5 Reflecting wall and fixed conduction flux through the wall
@@ -216,7 +216,7 @@ If the conduction flux is zero then the wall is adiabatic.
   - For enthalpies \f$h\f$,      in \f$ W.m^{-2} \f$:
     \f[  rcodcl(ifac,ivar,3) =    (viscls+\frac{visct}{\sigma})  \cdot \grad{H} \cdot \vect{n} \f]
 
-\snippet  cs_user_radiative_transfer_bcs.c example_5
+\snippet  cs_user_radiative_transfer_bcs.cpp example_5
 
 \section abso_flux Absorption coefficient and net radiation flux
 
@@ -231,7 +231,7 @@ The absorption coefficient is defined in \ref cs_user_rad_transfer_absorption.
 
 \subsubsection abso_coeff_computation Computation of the absorption coefficient
 
-\snippet cs_user_radiative_transfer.c abso_coeff
+\snippet cs_user_radiative_transfer.cpp abso_coeff
 
 \subsection cs_user_rad_transfer_net_flux Net radiation flux
 
@@ -239,17 +239,17 @@ The net radiation flux is computed in \ref cs_user_rad_transfer_net_flux.
 
 \subsubsection var2 Local variables to be added
 
-\snippet cs_user_radiative_transfer.c loc_var_dec_2
+\snippet cs_user_radiative_transfer.cpp loc_var_dec_2
 
 \subsubsection init Initialization
 
 At the end of the subroutine, if \c iok is different from zero, some faces
 have been forgotten and the calculation stops.
 
-\snippet cs_user_radiative_transfer.c init
+\snippet cs_user_radiative_transfer.cpp init
 
 \subsubsection net_flux_computation Computation of the net radiation flux
 
-\snippet cs_user_radiative_transfer.c net_flux
+\snippet cs_user_radiative_transfer.cpp net_flux
 
 */

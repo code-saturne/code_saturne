@@ -58,7 +58,7 @@
 
   The preferred method for defining boundary conditions (besides using the GUI)
   is to assign zone-based definitions in the \ref cs_user_boundary_conditions_setup
-  function (\ref cs_user_boundary_conditions.c).
+  function (\ref cs_user_boundary_conditions.cpp).
 
   As an alternative, the same definitions may be defined in
   \ref cs_user_finalize_setup_wrapper (\ref cs_user_parameters), which is called
@@ -78,7 +78,7 @@
   dimension as the variable, as shown here for a velocity vector (1.5, 0, 0)
   at a zone named "inlet":
 
-  \snippet cs_user_boundary_conditions.c inlet_vel_value
+  \snippet cs_user_boundary_conditions.cpp inlet_vel_value
 
   Simple Neuman conditions can be defined in a simular manner, replacing
   \ref CS_PARAM_BC_DIRICHLET with \ref CS_PARAM_BC_NEUMANN.
@@ -97,14 +97,14 @@
   value of 0.1 is appplied to a scalar (named "scalar1") on a zone named
   "exchanger_wall":
 
-  \snippet cs_user_boundary_conditions.c wall_scalar_exchange_const
+  \snippet cs_user_boundary_conditions.cpp wall_scalar_exchange_const
 
   \section base_xdef_callback Common boundary conditions types with local values.
 
   The following examples illustrate how slightly more advanced boundary conditions
   can be assigned with user-defined callback functions. Here, we use "static"
   (i.e. local) functions that must be defined in the same file
-  (i.e. \ref cs_user_boundary_conditions.c) prior to being referenced in
+  (i.e. \ref cs_user_boundary_conditions.cpp) prior to being referenced in
   \ref cs_user_boundary_conditions_setup. It is of course possible to use functions
   with global linkage, which can be defined in any file, as log as the matching
   function prototypes are defined or included at the calling point.
@@ -125,19 +125,19 @@
   In this example, analytic functions are used to define the velocity and a scalar.
   Here, the following functions are first defined, for the velocity:
 
-  \snippet cs_user_boundary_conditions.c inlet_vel_analytic_func
+  \snippet cs_user_boundary_conditions.cpp inlet_vel_analytic_func
 
   And for the scalar:
 
-  \snippet cs_user_boundary_conditions.c inlet_scalar_analytic_func
+  \snippet cs_user_boundary_conditions.cpp inlet_scalar_analytic_func
 
   They are then associated to the matching zone in \ref cs_user_boundary_conditions_setup :
 
-  \snippet cs_user_boundary_conditions.c inlet_vel_analytic
+  \snippet cs_user_boundary_conditions.cpp inlet_vel_analytic
 
   and
 
-  \snippet cs_user_boundary_conditions.c inlet_scalar_analytic
+  \snippet cs_user_boundary_conditions.cpp inlet_scalar_analytic
 
   \subsection base_xdef_dof Boundary-face-based functions.
 
@@ -159,11 +159,11 @@
   with interleaved storage. This can be seen in the definition of the
   associated function:
 
-  \snippet cs_user_boundary_conditions.c wall_exchange_dof_func
+  \snippet cs_user_boundary_conditions.cpp wall_exchange_dof_func
 
   As usual, the function is then used as a callback for for Robin condition:
 
-  \snippet cs_user_boundary_conditions.c wall_scalar_exchange_dof
+  \snippet cs_user_boundary_conditions.cpp wall_scalar_exchange_dof
 
   \subsection base_xdef_dof_const Scaling by zone surface.
 
@@ -177,16 +177,16 @@
   has value 1, we can simply divide it by a zone's measure, such as in the following
   function for a zone named "wall_top":
 
-  \snippet cs_user_boundary_conditions.c wall_top_flux_dof_func
+  \snippet cs_user_boundary_conditions.cpp wall_top_flux_dof_func
 
   which we associate to the given zone and variable:
 
-  \snippet cs_user_boundary_conditions.c wall_top_flux_dof
+  \snippet cs_user_boundary_conditions.cpp wall_top_flux_dof
 
   A similar definition is done for zone "wall_side", with a slightly improved
   function definition:
 
-  \snippet cs_user_boundary_conditions.c wall_side_flux_dof_func
+  \snippet cs_user_boundary_conditions.cpp wall_side_flux_dof_func
 
   This function is similar to the one used for "wall_top", but assumes the associated
   input pointer is a pointer to the associated zone, which can thus be obtained
@@ -195,7 +195,7 @@
   In this case, the matching zone pointer must be passed as the associated input
   when assigning the condition:
 
-  \snippet cs_user_boundary_conditions.c wall_side_flux_dof
+  \snippet cs_user_boundary_conditions.cpp wall_side_flux_dof
 
   Note that a structure passed as a callback input must still point to valid
   data when the callback is executed. This is the case for zone pointers,
@@ -213,7 +213,7 @@
   a callback function of the type  of type \ref cs_dof_func_t can be defined,
   such as the following (for a notebook variable named "t_inlet"):
 
-  \snippet cs_user_boundary_conditions-notebook.c notebook_dof_func
+  \snippet cs_user_boundary_conditions-notebook.cpp notebook_dof_func
 
   Note that accessing the notebook value in the function above is done through
   the call to \ref cs_notebook_parameter_value_by_name.
@@ -222,7 +222,7 @@
   for variable "scalar1" in the usual way
   (in \ref cs_user_boundary_conditions_setup):
 
-  \snippet cs_user_boundary_conditions-notebook.c notebook_dof_inlet
+  \snippet cs_user_boundary_conditions-notebook.cpp notebook_dof_inlet
 */
 
 /*-----------------------------------------------------------------------------*/
@@ -236,7 +236,7 @@
   a callback function of the type  of type \ref cs_dof_func_t can be defined,
   such as the following (for a time table named "inlet_temperature"):
 
-  \snippet cs_user_boundary_conditions-time_table.c time_table_dof_func
+  \snippet cs_user_boundary_conditions-time_table.cpp time_table_dof_func
 
   Note that accessing the time table value in the function above is done
   through the call to \ref cs_time_table_compute_time_value.
@@ -245,7 +245,7 @@
   for variable "scalar1" in the usual way
   (in \ref cs_user_boundary_conditions_setup):
 
-  \snippet cs_user_boundary_conditions-time_table.c time_table_dof_inlet
+  \snippet cs_user_boundary_conditions-time_table.cpp time_table_dof_inlet
 */
 
 /*-----------------------------------------------------------------------------*/
@@ -254,7 +254,7 @@
 
   The preferred method for defining boundary conditions (besides using the GUI)
   is to assign zone-based definitions in the \ref cs_user_boundary_conditions_setup
-  function (\ref cs_user_boundary_conditions.c).
+  function (\ref cs_user_boundary_conditions.cpp).
 
   As an alternative, the same definitions may be defined in
   \ref cs_user_finalize_setup_wrapper (\ref cs_user_parameters), which is called
@@ -265,7 +265,7 @@
 
   The following initialization block needs to be added for the following examples:
 
-  \snippet cs_user_boundary_conditions-base.c init
+  \snippet cs_user_boundary_conditions-base.cpp init
 
   \section base_body_bc Body
 
@@ -299,7 +299,7 @@
   it is consistent with the processing in \ref cs_user_physical_properties,
   in case of variable density).
 
-  \snippet cs_user_boundary_conditions-base.c example_1
+  \snippet cs_user_boundary_conditions-base.cpp example_1
 
   \section base_example_2_bc Inlet example with turbulence intensity
 
@@ -319,7 +319,7 @@
   the turbulence intensity and standard laws for a circular pipe
   (their initialization is not needed here but is good practice)
 
-  \snippet cs_user_boundary_conditions-base.c example_2
+  \snippet cs_user_boundary_conditions-base.cpp example_2
 
   \section base_example_3_bc Assign an outlet to boundary faces of zone 'outlet'
 
@@ -328,7 +328,7 @@
   - Note that the pressure will be set to P0 at the first
   - free outlet face (CS_OUTLET)
 
-  \snippet cs_user_boundary_conditions-base.c example_3
+  \snippet cs_user_boundary_conditions-base.cpp example_3
 
   \section base_example_4_bc Wall example
 
@@ -339,7 +339,7 @@
   - friction for velocities (+ turbulent variables)
   - zero flux for scalars
 
-  \snippet cs_user_boundary_conditions-base.c example_4
+  \snippet cs_user_boundary_conditions-base.cpp example_4
 
   \section base_example_5_bc Rough wall example
 
@@ -350,13 +350,13 @@
   - rough friction for velocities (+ turbulent variables)
   - zero flux for scalars
 
-  \snippet cs_user_boundary_conditions-base.c example_5
+  \snippet cs_user_boundary_conditions-base.cpp example_5
 
   \section base_example_6_bc Symmetry example
 
   Assign a symmetry condition to boundary faces of zone '4'
 
-  \snippet cs_user_boundary_conditions-base.c example_6
+  \snippet cs_user_boundary_conditions-base.cpp example_6
 */
 
 /*-----------------------------------------------------------------------------*/
@@ -389,7 +389,7 @@
   which will ensure the appropriate initialization before entering the
   user function.
 
-  \snippet cs_user_boundary_conditions-mapped_inlet.c example_1_base
+  \snippet cs_user_boundary_conditions-mapped_inlet.cpp example_1_base
 
   \section channel_inlet_mapped_example_1_map_init Mapping definition
 
@@ -404,7 +404,7 @@
   shift is used for all inlet points, but it is possible to define a
   specific shift for each face.
 
-  \snippet cs_user_boundary_conditions-mapped_inlet.c example_1_map_init
+  \snippet cs_user_boundary_conditions-mapped_inlet.cpp example_1_map_init
 
   In general, when defining a pseudo-periodic boundary condition, it is assumed
   that the mesh is not moving, so the mapping may be defined once and for
@@ -422,14 +422,14 @@
   is recommended for the velocity, and possibly scalars, but not for
   turbulent quantities, which should adapt to the velocity.
 
-  \snippet cs_user_boundary_conditions-mapped_inlet.c example_1_map_apply
+  \snippet cs_user_boundary_conditions-mapped_inlet.cpp example_1_map_apply
 
   \section channel_inlet_mapped_example_1_map_clean Finalization
 
   At the end of the computation, it is good practice to free the mapping
   structure:
 
-  \snippet cs_user_boundary_conditions-mapped_inlet.c example_1_map_free
+  \snippet cs_user_boundary_conditions-mapped_inlet.cpp example_1_map_free
 */
 
 /*-----------------------------------------------------------------------------*/
@@ -448,7 +448,7 @@
 
   Initialization and finalization is similar to that of the base examples
 
-  \snippet cs_user_boundary_conditions-auto_inlet_profile.c init
+  \snippet cs_user_boundary_conditions-auto_inlet_profile.cpp init
 
   \section channel_inlet_auto_example_1_bc Body
 
@@ -470,7 +470,7 @@
   as to ensure a velocity gradient and turbulent production. Otherwise, the initialization
   may fail.
 
-  \snippet cs_user_boundary_conditions-auto_inlet_profile.c example_1
+  \snippet cs_user_boundary_conditions-auto_inlet_profile.cpp example_1
 */
 
 /*-----------------------------------------------------------------------------*/
@@ -482,7 +482,7 @@
   The following declaration and initialization block is required used for
   the examples of this section:
 
-  \snippet cs_user_boundary_conditions-advanced.c loc_var_dec
+  \snippet cs_user_boundary_conditions-advanced.cpp loc_var_dec
 
   \section base_init_be Initialization and finalization
 
@@ -498,7 +498,7 @@
   - a Dirichlet condition on velocity (sliding wall with no-slip condition)
   - a Dirichlet condition on the first scalar.
 
-  \snippet cs_user_boundary_conditions-advanced.c example_1
+  \snippet cs_user_boundary_conditions-advanced.cpp example_1
 
   \section advanced_ex_2 Example 2
 
@@ -508,14 +508,14 @@
   We prescribe at zone 'surf_h' a homogeneous Neumann condition for
   all variables.
 
-  \snippet cs_user_boundary_conditions-advanced.c example_2
+  \snippet cs_user_boundary_conditions-advanced.cpp example_2
 
   \section advanced_ex_3 Example 3
 
   Example of wall boundary condition with automatic continuous switch
   between rough and smooth.
 
-  \snippet cs_user_boundary_conditions-advanced.c example_3
+  \snippet cs_user_boundary_conditions-advanced.cpp example_3
 */
 
 /*-----------------------------------------------------------------------------*/
@@ -537,7 +537,7 @@
   meteo profile with automatic choice between inlet/ outlet according to
   the meteo profile.
 
-  \snippet cs_user_boundary_conditions-atmospheric.c example_1
+  \snippet cs_user_boundary_conditions-atmospheric.cpp example_1
 
   \section atmospheric_ex_3 Example 3
 
@@ -546,13 +546,13 @@
   are assumed to be managed by the GUI, except for
   dynamic variables which are prescribed with a rough log law.
 
-  \snippet cs_user_boundary_conditions-atmospheric.c example_3
+  \snippet cs_user_boundary_conditions-atmospheric.cpp example_3
 
   \section atmospheric_ex_4 Example 4
 
   Define a rough wall at boundary faces of zone 'b_5'.
 
-  \snippet cs_user_boundary_conditions-atmospheric.c example_4
+  \snippet cs_user_boundary_conditions-atmospheric.cpp example_4
 
 */
 
@@ -562,7 +562,7 @@
 
   \section advanced_loc_var_ce Local variables to be added
 
-  \snippet cs_user_boundary_conditions-compressible.c loc_var_dec
+  \snippet cs_user_boundary_conditions-compressible.cpp loc_var_dec
 
   \section base_init_ce Initialization and finalization
 
@@ -579,7 +579,7 @@
   If the speed is outgoing, an homogenous Neumann is imposed
   on turbulence and user scalars.
 
-  \snippet cs_user_boundary_conditions-compressible.c example_1
+  \snippet cs_user_boundary_conditions-compressible.cpp example_1
 
   \section compressible_ex_2 Example 2
 
@@ -606,7 +606,7 @@
   Note that for turbulence, `rcodcl` should be set for all turbulent variables
   (otherwise, we apply a zero flux).
 
-  \snippet cs_user_boundary_conditions-compressible.c example_2
+  \snippet cs_user_boundary_conditions-compressible.cpp example_2
 
   \section compressible_ex_3 Example 3
 
@@ -623,7 +623,7 @@
   in the domain.
   Here, whe choose to give (rho, U).
 
-  \snippet cs_user_boundary_conditions-compressible.c example_3
+  \snippet cs_user_boundary_conditions-compressible.cpp example_3
 
   \section compressible_ex_4 Example 4
 
@@ -635,13 +635,13 @@
 
   Turbulence and user scalars take a zero flux.
 
-  \snippet cs_user_boundary_conditions-compressible.c example_4
+  \snippet cs_user_boundary_conditions-compressible.cpp example_4
 
   \section compressible_ex_5 Example 5
 
   Wall example
 
-  \snippet cs_user_boundary_conditions-compressible.c example_5
+  \snippet cs_user_boundary_conditions-compressible.cpp example_5
 */
 
 /*-----------------------------------------------------------------------------*/
@@ -657,41 +657,41 @@
   For boundary faces of zone "1" assign an inlet
   and assign a cathode for "electric" variables.
 
-  \snippet cs_user_boundary_conditions-electric_arcs.c example_1
+  \snippet cs_user_boundary_conditions-electric_arcs.cpp example_1
 
   \section electric_arcs_ex_2 Example 2
 
   For boundary faces of zone "2" assign an free outlet
   and example of electrode for Joule Effect by direct conduction.
 
-  \snippet cs_user_boundary_conditions-electric_arcs.c example_2
+  \snippet cs_user_boundary_conditions-electric_arcs.cpp example_2
 
   \section electric_arcs_ex_3 Example 3
 
    For boundary faces of zone "2" assign a free outlet
    and example of anode for electric arc.
 
-  \snippet cs_user_boundary_conditions-electric_arcs.c example_3
+  \snippet cs_user_boundary_conditions-electric_arcs.cpp example_3
 
   \section electric_arcs_ex_4 Example 4
 
   For boundary faces of zone "2" assign a wall
   and example of potential vector Dirichlet condition
 
-  \snippet cs_user_boundary_conditions-electric_arcs.c example_4
+  \snippet cs_user_boundary_conditions-electric_arcs.cpp example_4
 
   \section electric_arcs_ex_5 Example 5
 
    For boundary faces of zone "51" assign a wall
    and restriking model for electric arc (anode boundaray condition).
 
-  \snippet cs_user_boundary_conditions-electric_arcs.c example_5
+  \snippet cs_user_boundary_conditions-electric_arcs.cpp example_5
 
   \section electric_arcs_ex_6 Example 6
 
   For boundary faces of zone "4" assign a symmetry.
 
-  \snippet cs_user_boundary_conditions-electric_arcs.c example_6
+  \snippet cs_user_boundary_conditions-electric_arcs.cpp example_6
 */
 
 /*-----------------------------------------------------------------------------*/
@@ -700,43 +700,43 @@
 
   \section elec2_loc_var Local variables to be added
 
-  \snippet cs_user_boundary_conditions-electric_arcs_ieljou_3_or_4.c loc_var_dec
+  \snippet cs_user_boundary_conditions-electric_arcs_ieljou_3_or_4.cpp loc_var_dec
 
   \section elec2_init Initialization and finalization
 
   Initialization and finalization is similar to that of the base examples
 
-  \snippet cs_user_boundary_conditions-electric_arcs_ieljou_3_or_4.c init
+  \snippet cs_user_boundary_conditions-electric_arcs_ieljou_3_or_4.cpp init
 
   \section elec2_step1 Computation of intensity (A/m2) for each electrode
 
   Pre initialization
 
-  \snippet cs_user_boundary_conditions-electric_arcs_ieljou_3_or_4.c pre_init
+  \snippet cs_user_boundary_conditions-electric_arcs_ieljou_3_or_4.cpp pre_init
 
-  \snippet cs_user_boundary_conditions-electric_arcs_ieljou_3_or_4.c step_1
+  \snippet cs_user_boundary_conditions-electric_arcs_ieljou_3_or_4.cpp step_1
 
   \section elec2_step2 Definition of Voltage on each termin of transformers
 
   Computation of Intensity on each termin of transformers:
-  \snippet cs_user_boundary_conditions-electric_arcs_ieljou_3_or_4.c step_2_1
+  \snippet cs_user_boundary_conditions-electric_arcs_ieljou_3_or_4.cpp step_2_1
 
   RVoltage on each termin:
-  \snippet cs_user_boundary_conditions-electric_arcs_ieljou_3_or_4.c step_2_2
+  \snippet cs_user_boundary_conditions-electric_arcs_ieljou_3_or_4.cpp step_2_2
 
   Total intensity for a transformer (zero valued WHEN Offset established):
-  \snippet cs_user_boundary_conditions-electric_arcs_ieljou_3_or_4.c step_2_3
+  \snippet cs_user_boundary_conditions-electric_arcs_ieljou_3_or_4.cpp step_2_3
 
   Take in account of Offset:
-  \snippet cs_user_boundary_conditions-electric_arcs_ieljou_3_or_4.c step_2_4
+  \snippet cs_user_boundary_conditions-electric_arcs_ieljou_3_or_4.cpp step_2_4
 
   Take in account of Boundary Conditions
-  \snippet cs_user_boundary_conditions-electric_arcs_ieljou_3_or_4.c step_2_5
+  \snippet cs_user_boundary_conditions-electric_arcs_ieljou_3_or_4.cpp step_2_5
 
   \section elec2_step3 Finalization step
 
   Test, if not any reference transformer a piece of wall may be at ground:
-  \snippet cs_user_boundary_conditions-electric_arcs_ieljou_3_or_4.c step_3
+  \snippet cs_user_boundary_conditions-electric_arcs_ieljou_3_or_4.cpp step_3
 */
 
 /*-----------------------------------------------------------------------------*/
@@ -756,7 +756,7 @@
   in \ref cs_user_boundary_conditions_setup, as follows for a zone
   named "inlet":
 
-  \snippet cs_user_boundary_conditions-gas_3ptchem.c setup_inlet
+  \snippet cs_user_boundary_conditions-gas_3ptchem.cpp setup_inlet
 
   Note that we have used a notebook variable here, allowing parametrization
   of the computation, but the mass flow should be fixed. For a variable
@@ -773,7 +773,7 @@
   The following aliases (for conciseness of the downstream code)
   and initializations are used here:
 
-  \snippet cs_user_boundary_conditions-gas_3ptchem.c loc_var_dec
+  \snippet cs_user_boundary_conditions-gas_3ptchem.cpp loc_var_dec
 
   \subsection advanced_inlet_ptchem Inlet definitions
 
@@ -782,7 +782,7 @@
   the module, but matches an inlet, so we choose to (re)set it here.
   These settings will be handled in the setup stage in a future version.
 
-  \snippet cs_user_boundary_conditions-gas_3ptchem.c inlet
+  \snippet cs_user_boundary_conditions-gas_3ptchem.cpp inlet
 
   \subsection advanced_open_bc_ptchem Open boundary definition
 
@@ -791,7 +791,7 @@
   setup stage), the following example illustrates have this can
   be managed, on an example zone named "open":
 
-  \snippet cs_user_boundary_conditions-gas_3ptchem.c open
+  \snippet cs_user_boundary_conditions-gas_3ptchem.cpp open
 */
 
 /*-----------------------------------------------------------------------------*/
@@ -818,13 +818,13 @@
   the base pulverized coal model or the
   pulverized coal with moisture model (with Lagrangian particle tracking).
 
-  \snippet cs_user_boundary_conditions-pulverized_coal.c example_1
+  \snippet cs_user_boundary_conditions-pulverized_coal.cpp example_1
 
   \section pulverized_coal_ex_2 Example 2
 
   Primary air and coal inlet, for zone 'primary_inlet'.
 
-  \snippet cs_user_boundary_conditions-pulverized_coal.c example_2
+  \snippet cs_user_boundary_conditions-pulverized_coal.cpp example_2
 */
 
 /*-----------------------------------------------------------------------------*/
@@ -833,26 +833,26 @@
 
   Local definitions
 
-  \snippet cs_user_boundary_conditions-medcoupling_remapper_2d.c loc_var_def
+  \snippet cs_user_boundary_conditions-medcoupling_remapper_2d.cpp loc_var_def
 
   Initialization of some variables
 
-  \snippet cs_user_boundary_conditions-medcoupling_remapper_2d.c init
+  \snippet cs_user_boundary_conditions-medcoupling_remapper_2d.cpp init
 
   Create a medcoupling remapper
 
-  \snippet cs_user_boundary_conditions-medcoupling_remapper_2d.c remapper
+  \snippet cs_user_boundary_conditions-medcoupling_remapper_2d.cpp remapper
 
   Translate or rotate med data if needed
 
-  \snippet cs_user_boundary_conditions-medcoupling_remapper_2d.c trans_rota
+  \snippet cs_user_boundary_conditions-medcoupling_remapper_2d.cpp trans_rota
 
   We retrieve an array containing the interpolated values.
 
-  \snippet cs_user_boundary_conditions-medcoupling_remapper_2d.c copy_values
+  \snippet cs_user_boundary_conditions-medcoupling_remapper_2d.cpp copy_values
 
   We prescribe for the inlet a Dirichlet condition on the scalar "scalar1":
 
-  \snippet cs_user_boundary_conditions-medcoupling_remapper_2d.c dirichlet_condition
+  \snippet cs_user_boundary_conditions-medcoupling_remapper_2d.cpp dirichlet_condition
 
 */

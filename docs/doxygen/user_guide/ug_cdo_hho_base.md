@@ -155,7 +155,7 @@ The very first step is to activate the CDO module in the function
 
 CDO/HHO schemes can be activated within this function as follows:
 
-\snippet cs_user_parameters-cdo-condif.c param_cdo_activation
+\snippet cs_user_parameters-cdo-condif.cpp param_cdo_activation
 
 Domain boundaries {#ug_cdo_sec_domain_boundaries}
 -------------------
@@ -170,11 +170,11 @@ steps: (1) set the default boundary and then add other boundaries which do not
 fit the default one. The two possible default domain boundaries are
 \ref CS_BOUNDARY_WALL or \ref CS_BOUNDARY_SYMMETRY Here is a first example.
 
-\snippet cs_user_parameters-cdo-condif.c param_cdo_domain_boundary
+\snippet cs_user_parameters-cdo-condif.cpp param_cdo_domain_boundary
 
 Here is a second example.
 
-\snippet cs_user_parameters-cdo-navsto.c param_cdo_navsto_boundary
+\snippet cs_user_parameters-cdo-navsto.cpp param_cdo_navsto_boundary
 
 
 Activate predefined equations
@@ -211,7 +211,7 @@ For the thermal equation, the default boundary condition is a no flux
 (i.e. a homogeneous Neumann boundary condition).  Here is the simplest
 example to activate the thermal module.
 
-\snippet cs_user_parameters-cdo-thermal-solver.c param_cdo_activate_thermal_solver
+\snippet cs_user_parameters-cdo-thermal-solver.cpp param_cdo_activate_thermal_solver
 
 The first parameter is a flag to describe the thermal model to consider. This
 flag can be built from the following tags (\ref cs_thermal_model_type_bit_t)
@@ -244,7 +244,7 @@ post-processings.
 It is possible to activate the computation of the distance to the wall using CDO
 schemes (CDO vertex-based schemes are used) as follows:
 
-\snippet cs_user_parameters-cdo-condif.c param_cdo_wall_distance
+\snippet cs_user_parameters-cdo-condif.cpp param_cdo_wall_distance
 
 
 
@@ -254,7 +254,7 @@ Add a property
 User-defined properties are added thanks to a call to the function
 \ref cs_property_add in \ref cs_user_model Here are several examples:
 
-\snippet cs_user_parameters-cdo-condif.c param_cdo_add_user_properties
+\snippet cs_user_parameters-cdo-condif.cpp param_cdo_add_user_properties
 
 The function \ref cs_property_add returns a pointer to a \ref cs_property_t
 structure which can be used to set advanced parameters. If the pointer to a \ref
@@ -264,7 +264,7 @@ call to the function \ref cs_property_by_name
 To enable the computation of the **Fourier number** related to a given property in
 an unsteady simulation proceed as follows:
 
-\snippet cs_user_parameters-cdo-condif.c param_cdo_add_user_properties_opt
+\snippet cs_user_parameters-cdo-condif.cpp param_cdo_add_user_properties_opt
 
 
 Add an advection field
@@ -275,13 +275,13 @@ velocity field or the transport of scalar quantities without solving the
 Navier-Stokes system. The add of a new user-defined advection field with CDO/HHO
 schemes is specified as follows:
 
-\snippet cs_user_parameters-cdo-condif.c param_cdo_add_user_adv_field
+\snippet cs_user_parameters-cdo-condif.cpp param_cdo_add_user_adv_field
 
 When an advection field is defined, it is possible to retrieve it and then set
 a post-processing operation. For instance, to activate the post-processing of
 the **CFL number** proceed as follows:
 
-\snippet cs_user_parameters-cdo-condif.c param_cdo_add_user_adv_field_post
+\snippet cs_user_parameters-cdo-condif.cpp param_cdo_add_user_adv_field_post
 
 
 Add a user-defined equation
@@ -291,7 +291,7 @@ User-defined equation with CDO/HHO schemes are added thanks to a call to the
 function \ref cs_equation_add_user in \ref cs_user_model Here are several
 examples:
 
-\snippet cs_user_parameters-cdo-condif.c param_cdo_add_user_equation
+\snippet cs_user_parameters-cdo-condif.cpp param_cdo_add_user_equation
 
 There is an other way to add a user-defined equation relying on the
 function \ref cs_equation_add_user_tracer which combines (1) the add
@@ -299,7 +299,7 @@ of a user-defined equation and (2) its association with properties for
 the unsteady and/or the diffusion term along with the association with
 an advection field.
 
-\snippet cs_user_parameters-cdo-condif.c param_cdo_add_user_tracer
+\snippet cs_user_parameters-cdo-condif.cpp param_cdo_add_user_tracer
 
 
 Settings done in cs_user_finalize_setup()
@@ -310,14 +310,14 @@ Boundary conditions
 
 ### User-defined equations
 
-\snippet cs_user_parameters-cdo-condif.c param_cdo_setup_bcs
+\snippet cs_user_parameters-cdo-condif.cpp param_cdo_setup_bcs
 
 ### Thermal system
 
 The mechanism is the same as for user-defined equations. The name of the
 equation is defined in the macro \ref CS_THERMAL_EQNAME
 
-\snippet cs_user_parameters-cdo-thermal-solver.c param_cdo_define_thermal_bc
+\snippet cs_user_parameters-cdo-thermal-solver.cpp param_cdo_define_thermal_bc
 
 
 Initial conditions
@@ -329,12 +329,12 @@ The mechanism is detailed for the thermal system but the same mechanism can be
 used for user-defined equations. In our example, the name of the equation is
 defined in the macro \ref CS_THERMAL_EQNAME
 
-\snippet cs_user_parameters-cdo-thermal-solver.c param_cdo_define_thermal_ic
+\snippet cs_user_parameters-cdo-thermal-solver.cpp param_cdo_define_thermal_ic
 
 where the function `_initial_temperature` has a predefined prototype (cf. the
 definition of the function pointer \ref cs_analytic_func_t)
 
-\snippet cs_user_parameters-cdo-thermal-solver.c param_cdo_initial_temperature_function
+\snippet cs_user_parameters-cdo-thermal-solver.cpp param_cdo_initial_temperature_function
 
 
 ### GWF module
@@ -342,12 +342,12 @@ definition of the function pointer \ref cs_analytic_func_t)
 Here is another example extracted from the file `cs_user_parameters-cdo-gwf.c`
 (in src/user_examples) but this is readily applicable to any equation.
 
-\snippet cs_user_parameters-cdo-gwf.c param_cdo_gwf_set_ic
+\snippet cs_user_parameters-cdo-gwf.cpp param_cdo_gwf_set_ic
 
 where the function `get_tracer_ic` has a predefined prototype (cf. the
 definition of the function pointer \ref cs_analytic_func_t)
 
-\snippet cs_user_parameters-cdo-gwf.c param_cdo_gwf_get_tracer_ic
+\snippet cs_user_parameters-cdo-gwf.cpp param_cdo_gwf_get_tracer_ic
 
 
 Definition of properties
@@ -359,7 +359,7 @@ When a property has been added, the second step is to define this
 property. According to the type of property (isotropic, orthotropic or
 anisotropic) definitions differ.  Here are two examples:
 
-\snippet cs_user_parameters-cdo-condif.c param_cdo_setup_property
+\snippet cs_user_parameters-cdo-condif.cpp param_cdo_setup_property
 
 ### Thermal system
 
@@ -371,7 +371,7 @@ predefined and associated to the following macros:
 - \ref CS_PROPERTY_MASS_DENSITY for the mass density. This property is also used
   when the NavSto module is activated.
 
-\snippet cs_user_parameters-cdo-thermal-solver.c param_cdo_define_thermal_properties
+\snippet cs_user_parameters-cdo-thermal-solver.cpp param_cdo_define_thermal_properties
 
 
 Definition of an advection field
@@ -381,7 +381,7 @@ When an advection field has been added, the second step is to define this
 advection field. Here are is an example of definition using an anlytic function
 and the activation of optional features:
 
-\snippet cs_user_parameters-cdo-condif.c param_cdo_setup_advfield
+\snippet cs_user_parameters-cdo-condif.cpp param_cdo_setup_advfield
 
 
 Definition of source terms {#cs_ug_cdo_hho_base_source_term}
@@ -391,20 +391,20 @@ Definition of source terms {#cs_ug_cdo_hho_base_source_term}
 
 A first simple example.
 
-\snippet cs_user_parameters-cdo-condif.c param_cdo_add_simple_source_terms
+\snippet cs_user_parameters-cdo-condif.cpp param_cdo_add_simple_source_terms
 
 The second example shows an advanced usage relying on an analytic function and
 an input structure. Moreover, a more accurate quadrature rule is specified.
 
-\snippet cs_user_parameters-cdo-condif.c param_cdo_add_source_terms
+\snippet cs_user_parameters-cdo-condif.cpp param_cdo_add_source_terms
 
 The user-defined function to compute the source term is specified as follows
 
-\snippet cs_user_parameters-cdo-condif.c param_cdo_condif_analytic_st
+\snippet cs_user_parameters-cdo-condif.cpp param_cdo_condif_analytic_st
 
 and the function for the memory management of a \ref cs_xdef_t structure is
 
-\snippet cs_user_parameters-cdo-condif.c param_cdo_condif_free_input
+\snippet cs_user_parameters-cdo-condif.cpp param_cdo_condif_free_input
 
 
 
@@ -415,14 +415,14 @@ Add diffusion, advection, etc. to a user-defined equation
 Add terms to an equation like a diffusion term, an advection term,
 unsteady term, reaction terms.
 
-\snippet cs_user_parameters-cdo-condif.c param_cdo_add_terms
+\snippet cs_user_parameters-cdo-condif.cpp param_cdo_add_terms
 
 In some cases, one can also add less common terms such as a
 \f$\mathsf{\underline{grad}\cdot div}\f$ or
 \f$\mathsf{\underline{curl}\cdot\underline{curl} }\f$ (only available
 with **CDO edge_based** schemes).
 
-\snippet cs_user_parameters-cdo-condif.c param_cdo_add_terms_2
+\snippet cs_user_parameters-cdo-condif.cpp param_cdo_add_terms_2
 
 
 
@@ -439,7 +439,7 @@ Logging options
 The management of the level and frequency of details written by the solver can
 be specified for CDO/HHO schemes as follows:
 
-\snippet cs_user_parameters-cdo-condif.c param_cdo_domain_output
+\snippet cs_user_parameters-cdo-condif.cpp param_cdo_domain_output
 
 
 Time stepping strategy
@@ -448,7 +448,7 @@ Time stepping strategy
 The management of the time step with CDO/HHO schemes can be specified as
 follows:
 
-\snippet cs_user_parameters-cdo-condif.c param_cdo_time_step
+\snippet cs_user_parameters-cdo-condif.cpp param_cdo_time_step
 
 This can be completed with numerical options to specify the time scheme. See
 the next section)
@@ -495,7 +495,7 @@ key_value | description
 
 An example of usage:
 
-\snippet cs_user_parameters-cdo-condif.c param_cdo_numerics
+\snippet cs_user_parameters-cdo-condif.cpp param_cdo_numerics
 
 More details can be found in \cite Bonel14 for CDO-Vb, CDO-Fb, CDO-Cb and
 CDO-Eb. CDO-Fb are also detailed in \cite Mila20. CDO-VCb are detailed in
@@ -504,7 +504,7 @@ CDO-Eb. CDO-Fb are also detailed in \cite Mila20. CDO-VCb are detailed in
 
 ### Set the advection scheme {#cs_ug_cdo_hho_base_adv_scheme}
 
-\snippet cs_user_parameters-cdo-condif.c param_cdo_conv_numerics
+\snippet cs_user_parameters-cdo-condif.cpp param_cdo_conv_numerics
 
 The available advection schemes are listed in the description of the key
 \ref CS_EQKEY_ADV_SCHEME
@@ -522,7 +522,7 @@ key value | description | type | available with
 
 Here is a second set of examples
 
-\snippet cs_user_parameters-cdo-condif.c param_cdo_conv_schemes
+\snippet cs_user_parameters-cdo-condif.cpp param_cdo_conv_schemes
 
 There is no advection scheme available with `HHO` schemes or `CDO cb` and `CDO eb`
 schemes up to now.
@@ -535,13 +535,13 @@ the key \ref CS_EQKEY_TIME_SCHEME
 By default, a first order implicit Euler scheme is used. To modify this default
 settings, please proceed as follows:
 
-\snippet cs_user_parameters-cdo-condif.c param_cdo_time_schemes
+\snippet cs_user_parameters-cdo-condif.cpp param_cdo_time_schemes
 
 The mass matrix associated to the unsteady term is also a parameter. One can
 use either a mass matrix like in FV scheme using a `"voronoi"` algorithm
 (default) or the `"wbs"` algorithm like in Finite Element (FE) schemes.
 
-\snippet cs_user_parameters-cdo-condif.c param_cdo_time_hodge
+\snippet cs_user_parameters-cdo-condif.cpp param_cdo_time_hodge
 
 ### Modify the numerical scheme for the diffusion term
 
@@ -551,7 +551,7 @@ to \cite Bonel14 for more details In the case of the `cost` (or `ocs`), one can
 specify the value of the scaling coefficient in front of the stabilization
 part. This is done using the key \ref CS_EQKEY_HODGE_DIFF_COEF
 
-\snippet cs_user_parameters-cdo-condif.c param_cdo_diff_numerics
+\snippet cs_user_parameters-cdo-condif.cpp param_cdo_diff_numerics
 
 
 Linear algebra settings {#cs_ug_cdo_hho_base_linalg}

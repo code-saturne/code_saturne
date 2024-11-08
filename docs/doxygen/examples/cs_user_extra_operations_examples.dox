@@ -144,7 +144,7 @@
   This example computes the balance relative to a scalar named "scalar1".
   Here is the corresponding code:
 
-  \snippet cs_user_extra_operations-balance_by_zone.c example_3
+  \snippet cs_user_extra_operations-balance_by_zone.cpp example_3
 
   \subsection cs_user_extra_operations_examples_example_4 Specific terms of a scalar balance
 
@@ -154,14 +154,14 @@
 
   The following exemple shows how to access for example the mass flow
   components of the scalar balance:
-  \snippet cs_user_extra_operations-balance_by_zone.c example_4
+  \snippet cs_user_extra_operations-balance_by_zone.cpp example_4
 
   \section cs_user_extra_operations_examples_head_balance_by_zone Head loss balance by zone
 
   This example computes the head balance for a volume zone.
   Here is the corresponding code:
 
-  \snippet cs_user_extra_operations-balance_by_zone.c example_5
+  \snippet cs_user_extra_operations-balance_by_zone.cpp example_5
 
   \subsection cs_user_extra_operations_examples_example_6 Specific terms of a head balance
 
