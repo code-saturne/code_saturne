@@ -559,6 +559,11 @@ double cs_turb_crij2 = 0.60;
 double cs_turb_crij_c0 = 3.5;
 
 /*!
+ * Monin constant \f$C_T\f$ for the \f$DFM\f$ model on temperature.
+ * Useful for the Lagrangian model.  */
+double cs_turb_crij_ct = 1.;
+
+/*!
  * Constant \f$C_3\f$ for the \f$R_{ij}-\varepsilon\f$ models.
  * Value is 0.55 for SSG and LRR, 0.6 for EBRSM.
  */
