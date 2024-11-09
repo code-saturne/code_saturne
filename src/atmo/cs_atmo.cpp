@@ -2647,8 +2647,8 @@ cs_atmo_source_term(int              f_id,
  *----------------------------------------------------------------------------*/
 
 void
-cs_atmo_fields_init0(void) {
-
+cs_atmo_fields_init0(void)
+{
   int has_restart = cs_restart_present();
 
   /* Only if the simulation is not a restart from another one */
@@ -2657,8 +2657,7 @@ cs_atmo_fields_init0(void) {
 
   cs_mesh_t *m = cs_glob_domain->mesh;
   cs_mesh_quantities_t *mq = cs_glob_domain->mesh_quantities;
-  const cs_real_3_t *cell_cen =
-    (const cs_real_3_t *)mq->cell_cen;
+  const cs_real_3_t *cell_cen = (const cs_real_3_t *)mq->cell_cen;
 
   /* Meteo large scale fields */
   cs_real_3_t *cpro_met_vel = nullptr;
@@ -2765,7 +2764,7 @@ cs_atmo_fields_init0(void) {
                  "      --------------------------------------\n");
 
     /* Meteo profile or meteo data */
-    for (cs_lnum_t cell_id; cell_id < m->n_cells; cell_id++) {
+    for (cs_lnum_t cell_id = 0; cell_id < m->n_cells; cell_id++) {
 
       cs_real_t k_in, eps_in;
       cs_real_6_t rij_loc;
@@ -3319,8 +3318,8 @@ cs_atmo_bcond(void)
     }
 
   }
-
 }
+
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Deardorff force restore model
