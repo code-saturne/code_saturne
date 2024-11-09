@@ -96,19 +96,9 @@ _ptr = (_type *) cs_mem_malloc(_ni, sizeof(_type), \
  *   _mode <-- allocation mode.
  */
 
-#if defined(HAVE_ACCEL)
-
 #define CS_MALLOC_HD(_ptr, _ni, _type, _mode) \
 _ptr = (_type *) cs_mem_malloc_hd(_mode, _ni, sizeof(_type), \
                                   #_ptr, __FILE__, __LINE__)
-
-#else
-
-#define CS_MALLOC_HD(_ptr, _ni, _type, _mode) \
-_ptr = (_type *) cs_mem_malloc(_ni, sizeof(_type), \
-                               #_ptr, __FILE__, __LINE__)
-
-#endif
 
 /*
  * Reallocate memory for _ni items of type _type.
@@ -142,19 +132,9 @@ _ptr = (_type *) cs_mem_realloc(_ptr, _ni, sizeof(_type), \
  *   _mode <-- allocation mode.
  */
 
-#if defined(HAVE_ACCEL)
-
 #define CS_REALLOC_HD(_ptr, _ni, _type, _mode) \
 _ptr = (_type *) cs_mem_realloc_hd(_ptr, _mode, _ni, sizeof(_type), \
                                    #_ptr, __FILE__, __LINE__)
-
-#else
-
-#define CS_REALLOC_HD(_ptr, _ni, _type, _mode) \
-_ptr = (_type *) cs_mem_realloc(_ptr, _ni, sizeof(_type), \
-                                #_ptr, __FILE__, __LINE__)
-
-#endif
 
 /*
  * Free allocated memory.
@@ -284,6 +264,53 @@ cs_mem_malloc(size_t       ni,
               const char  *var_name,
               const char  *file_name,
               int          line_num);
+
+#if defined(HAVE_ACCEL)
+
+/*----------------------------------------------------------------------------*/
+/*
+ * \brief Allocate memory on host and device for ni elements of size bytes.
+ *
+ * This function calls the appropriate allocation function based on
+ * the requested mode, and allows introspection of the allocated memory.
+ *
+ * If separate pointers are used on the host and device,
+ * the host pointer is returned.
+ *
+ * \param [in]  mode       allocation mode
+ * \param [in]  ni         number of elements
+ * \param [in]  size       element size
+ * \param [in]  var_name   allocated variable name string
+ * \param [in]  file_name  name of calling source file
+ * \param [in]  line_num   line number in calling source file
+ *
+ * \returns pointer to allocated memory.
+ */
+/*----------------------------------------------------------------------------*/
+
+void *
+cs_mem_malloc_hd(cs_alloc_mode_t   mode,
+                 size_t            ni,
+                 size_t            size,
+                 const char       *var_name,
+                 const char       *file_name,
+                 int               line_num);
+
+#else
+
+inline static void *
+cs_mem_malloc_hd(cs_alloc_mode_t   mode,
+                 size_t            ni,
+                 size_t            size,
+                 const char       *var_name,
+                 const char       *file_name,
+                 int               line_num)
+{
+  CS_UNUSED(mode);
+  return cs_mem_malloc(ni, size, var_name, file_name, line_num);
+}
+
+#endif
 
 /*----------------------------------------------------------------------------
  * Reallocate memory for ni items of size bytes.
@@ -482,78 +509,6 @@ cs_mem_error_handler_get(void);
 
 void
 cs_mem_error_handler_set(bft_error_handler_t *handler);
-
-#if defined(HAVE_ACCEL)
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Allocate memory on host and device for ni elements of size bytes.
- *
- * This function calls the appropriate allocation function based on
- * the requested mode, and allows introspection of the allocated memory.
- *
- * If separate pointers are used on the host and device,
- * the host pointer is returned.
- *
- * \param [in]  mode       allocation mode
- * \param [in]  ni         number of elements
- * \param [in]  size       element size
- * \param [in]  var_name   allocated variable name string
- * \param [in]  file_name  name of calling source file
- * \param [in]  line_num   line number in calling source file
- *
- * \returns pointer to allocated memory.
- */
-/*----------------------------------------------------------------------------*/
-
-void *
-cs_mem_malloc_hd(cs_alloc_mode_t   mode,
-                 size_t            ni,
-                 size_t            size,
-                 const char       *var_name,
-                 const char       *file_name,
-                 int               line_num);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Reallocate memory on host and device for ni elements of size bytes.
- *
- * This function calls the appropriate reallocation function based on
- * the requested mode, and allows introspection of the allocated memory.
- *
- * If separate pointers are used on the host and device,
- * the host pointer should be used with this function.
- *
- * If the allocation parameters are unchanged, no actual reallocation
- * occurs on the host.
- *
- * If the device uses a separate allocation, it is freed, and a new
- * allocation is delayed (as per initial allocation) so as to invalidate copies
- * which will not be up to date anymore after the associated values
- * modification.
- *
- * \param [in]  ptr        pointer to previously allocated memory
- * \param [in]  mode       allocation mode
- * \param [in]  ni         number of elements
- * \param [in]  size       element size
- * \param [in]  var_name   allocated variable name string
- * \param [in]  file_name  name of calling source file
- * \param [in]  line_num   line number in calling source file
- *
- * \returns pointer to allocated memory.
- */
-/*----------------------------------------------------------------------------*/
-
-void *
-cs_mem_realloc_hd(void            *ptr,
-                  cs_alloc_mode_t  mode,
-                  size_t           ni,
-                  size_t           size,
-                  const char      *var_name,
-                  const char      *file_name,
-                  int              line_num);
-
-#endif
 
 /*============================================================================
  * Semi-private function definitions
