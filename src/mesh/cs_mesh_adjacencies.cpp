@@ -745,6 +745,9 @@ cs_mesh_adjacencies_update_mesh(void)
 
   cs_mesh_adjacencies_update_cell_cells_e();
 
+  if (ma->cell_i_faces != nullptr)
+    _update_cell_i_faces(ma);
+
   /* (re)build cell -> boundary face connectivities */
 
   _update_cell_b_faces(ma);
