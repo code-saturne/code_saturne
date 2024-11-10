@@ -109,7 +109,7 @@ class BoundaryConditionsMeteoView(QWidget, Ui_BoundaryConditionsMeteoForm):
         """
         self.__b = b
         if self.__model.getAtmosphericFlowsModel() != "off":
-            isMeteoChecked = self.__model.getMeteoDataStatus() == "on" \
+            isMeteoChecked = self.__model.getMeteoDataStatus() == 'on' \
                     or self.__model.getLargeScaleMeteoStatus() == 'on'
             if isMeteoChecked:
                 self.show()

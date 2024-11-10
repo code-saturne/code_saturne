@@ -1590,7 +1590,7 @@ cs_mo_psih(cs_real_t              z,
  * \param[in]  z0
  * \param[in]  du            velocity difference
  * \param[in]  dt            thermal difference
- * \param[in]  tm
+ * \param[in]  beta          thermal expansion
  * \param[in]  gredu
  * \param[out] dlmo          Inverse Monin Obukhov length
  * \param[out] ustar         friction velocity
@@ -1602,7 +1602,7 @@ cs_mo_compute_from_thermal_diff(cs_real_t   z,
                                 cs_real_t   z0,
                                 cs_real_t   du,
                                 cs_real_t   dt,
-                                cs_real_t   tm,
+                                cs_real_t   beta,
                                 cs_real_t   gredu,
                                 cs_real_t   *dlmo,
                                 cs_real_t   *ustar)
@@ -1641,8 +1641,8 @@ cs_mo_compute_from_thermal_diff(cs_real_t   z,
     coef_moh_old = coef_moh;
 
     /* Update LMO */
-    cs_real_t num = cs_math_pow2(coef_mom) * gredu * dt;
-    cs_real_t denom = cs_math_pow2(du) * tm * coef_moh;
+    cs_real_t num = beta * cs_math_pow2(coef_mom) * gredu * dt;
+    cs_real_t denom = cs_math_pow2(du) * coef_moh;
     if (fabs(denom) > (cs_math_epzero * fabs(num)))
       *dlmo = num / denom;
     else
@@ -1674,7 +1674,7 @@ cs_mo_compute_from_thermal_diff(cs_real_t   z,
  * \param[in]  z0
  * \param[in]  du            velocity difference
  * \param[in]  flux          thermal flux
- * \param[in]  tm
+ * \param[in]  beta          thermal expansion
  * \param[in]  gredu
  * \param[out] dlmo          Inverse Monin Obukhov length
  * \param[out] ustar         friction velocity
@@ -1686,7 +1686,7 @@ cs_mo_compute_from_thermal_flux(cs_real_t   z,
                                 cs_real_t   z0,
                                 cs_real_t   du,
                                 cs_real_t   flux,
-                                cs_real_t   tm,
+                                cs_real_t   beta,
                                 cs_real_t   gredu,
                                 cs_real_t   *dlmo,
                                 cs_real_t   *ustar)
@@ -1720,8 +1720,8 @@ cs_mo_compute_from_thermal_flux(cs_real_t   z,
     coef_mom_old = coef_mom;
 
     /* Update LMO */
-    cs_real_t num = cs_math_pow3(coef_mom) * gredu * flux;
-    cs_real_t denom = cs_math_pow3(du) * cs_math_pow2(kappa) * tm;
+    cs_real_t num = beta * cs_math_pow3(coef_mom) * gredu * flux;
+    cs_real_t denom = cs_math_pow3(du) * cs_math_pow2(kappa);
 
     if (fabs(denom) > (cs_math_epzero * fabs(num)))
       *dlmo = num / denom;
@@ -2748,8 +2748,17 @@ cs_atmo_fields_init0(void)
 
   if (cs_glob_atmo_option->meteo_profile == 0) {
 
+    cs_atmo_option_t *aopt = &_atmo_option;
     if (f_th != nullptr) {
-      const cs_real_t theta0 = phys_pro->t0; //TODO T to theta conversion
+      /* Reference fluid properties set from meteo values */
+      cs_real_t ps = cs_glob_atmo_constants->ps;
+      cs_real_t rair = phys_pro->r_pg_cnst;
+      cs_real_t cp0 = phys_pro->cp0;
+      cs_real_t rscp = rair/cp0;
+      cs_real_t clatev = phys_pro->clatev;
+      cs_real_t theta0 = (phys_pro->t0 - clatev/cp0 * aopt->meteo_ql0)
+                       * pow(ps/ phys_pro->p0, rscp);
+
       cs_array_real_set_value(m->n_cells_with_ghosts, 1, &theta0, f_th->val);
     }
 
@@ -3298,7 +3307,7 @@ cs_atmo_bcond(void)
     cs_field_t *f_tf
       = cs_field_by_composite_name_try("temperature", "turbulent_flux");
 
-    if (f_tf != NULL) {
+    if (f_tf != nullptr) {
       int *icodcl_tf = f_tf->bc_coeffs->icodcl;
       cs_real_t *rcodcl1_tf = f_tf->bc_coeffs->rcodcl1;
 
@@ -3700,7 +3709,7 @@ cs_atmo_init_meteo_profiles(void)
   cs_fluid_properties_t *phys_pro = cs_get_glob_fluid_properties();
 
   /* potential temp at ref */
-  cs_real_t pref = cs_glob_atmo_constants->ps;
+  cs_real_t ps = cs_glob_atmo_constants->ps;
   cs_real_t rair = phys_pro->r_pg_cnst;
   cs_real_t cp0 = phys_pro->cp0;
   cs_real_t rscp = rair/cp0;
@@ -3723,8 +3732,7 @@ cs_atmo_init_meteo_profiles(void)
   phys_pro->ro0 = phys_pro->p0/(rhum * aopt->meteo_t0); /* ref density T0 */
   cs_real_t clatev = phys_pro->clatev;
   cs_real_t theta0 = (aopt->meteo_t0 - clatev/cp0 * aopt->meteo_ql0)
-                   * pow(pref/ aopt->meteo_psea, rscp);
-
+                   * pow(ps/ aopt->meteo_psea, rscp);
 
   cs_real_t z0 = aopt->meteo_z0;
   cs_real_t zref = aopt->meteo_zref;
@@ -4023,11 +4031,11 @@ cs_atmo_compute_meteo_profiles(void)
 
   const cs_fluid_properties_t *phys_pro = cs_get_glob_fluid_properties();
   /* potential temp at ref */
-  cs_real_t pref = cs_glob_atmo_constants->ps;
+  cs_real_t ps = cs_glob_atmo_constants->ps;
   cs_real_t rair = phys_pro->r_pg_cnst;
   cs_real_t cp0 = phys_pro->cp0;
   cs_real_t rscp = rair/cp0;
-  cs_real_t theta0 = aopt->meteo_t0 * pow(pref/ aopt->meteo_psea, rscp);
+  cs_real_t theta0 = aopt->meteo_t0 * pow(ps/ aopt->meteo_psea, rscp);
 
   /* LMO inverse, ustar at ground */
   cs_real_t dlmo = aopt->meteo_dlmo;
@@ -4482,7 +4490,7 @@ cs_atmo_hydrostatic_profiles_compute(void)
 
   const cs_fluid_properties_t *phys_pro = cs_get_glob_fluid_properties();
   /* potential temp at ref */
-  cs_real_t pref = cs_glob_atmo_constants->ps;
+  cs_real_t ps = cs_glob_atmo_constants->ps;
   cs_real_t rair = phys_pro->r_pg_cnst;
   cs_real_t cp0 = phys_pro->cp0;
   cs_real_t rscp = rair/cp0; /* Around 2/7 */
@@ -4542,7 +4550,7 @@ cs_atmo_hydrostatic_profiles_compute(void)
 
     if (idilat > 0)
       temp->val[cell_id] =   potemp->val[cell_id]
-                           * pow((f->val[cell_id]/pref), rscp);
+                           * pow((f->val[cell_id]/ps), rscp);
     if (cs_glob_physical_model_flag[CS_ATMOSPHERIC]
         != CS_ATMO_CONSTANT_DENSITY)
       density->val[cell_id] = f->val[cell_id] / (rair * temp->val[cell_id]);
@@ -4649,12 +4657,12 @@ cs_atmo_hydrostatic_profiles_compute(void)
     /* L infinity residual computation and forcing update */
     inf_norm = 0.;
     for (cs_lnum_t cell_id = 0; cell_id < m->n_cells; cell_id++) {
-      inf_norm = fmax(fabs(f->val[cell_id] - f->val_pre[cell_id])/pref, inf_norm);
+      inf_norm = fmax(fabs(f->val[cell_id] - f->val_pre[cell_id])/ps, inf_norm);
 
       /* Boussinesq hypothesis: do not update adiabatic temperature profile */
       if (idilat > 0) {
         temp->val[cell_id] =   potemp->val[cell_id]
-                             * pow((f->val[cell_id]/pref), rscp);
+                             * pow((f->val[cell_id]/ps), rscp);
       }
 
       /* f_ext = rho^k * g */

@@ -2089,9 +2089,11 @@ cs_boundary_conditions_set_coeffs_turb(int        isvhb,
   cs_real_t *cvar_t = nullptr;
   cs_real_t *cvar_totwt = nullptr;
   cs_real_t *cpro_liqwt = nullptr;
+  cs_real_t *cpro_beta = nullptr;
+  cs_field_t *f_beta = cs_field_by_name_try("thermal_expansion");
 
-  const cs_real_t theta0 = (cs_glob_physical_model_flag[CS_ATMOSPHERIC] >= 1) ?
-                            tref * pow(pref/p0, r_pg_cnst/cp0) : 0.0;
+  if (f_beta != nullptr)
+    cpro_beta = f_beta->val;
 
   if (cs_glob_physical_model_flag[CS_ATMOSPHERIC] >= 1) {
     cvar_t = f_th->val;
@@ -2252,8 +2254,7 @@ cs_boundary_conditions_set_coeffs_turb(int        isvhb,
 
       cs_wall_f_type_t iwallf_loc = cs_glob_wall_functions->iwallf;
       if (fvq->has_disable_flag) {
-        cs_lnum_t cell_id = cs_glob_mesh->b_face_cells[f_id];
-        if (fvq->c_disable_flag[cell_id])
+        if (fvq->c_disable_flag[c_id])
           iwallf_loc = CS_WALL_F_DISABLED;
       }
 
@@ -2426,6 +2427,9 @@ cs_boundary_conditions_set_coeffs_turb(int        isvhb,
       /* Compute local LMO */
       if (cs_glob_physical_model_flag[CS_ATMOSPHERIC] >= 1) {
 
+        cs_real_t _beta = 0.;
+        if (cpro_beta != nullptr)
+          _beta = cpro_beta[c_id];
         const cs_real_t gredu = cs_math_3_dot_product(gxyz, n);
 
         const int *icodcl_th = f_th->bc_coeffs->icodcl;
@@ -2440,7 +2444,7 @@ cs_boundary_conditions_set_coeffs_turb(int        isvhb,
                                           rough_d,
                                           utau,
                                           dt,
-                                          theta0,
+                                          _beta,
                                           gredu,
                                           &dlmo,
                                           &uet);
@@ -2456,7 +2460,7 @@ cs_boundary_conditions_set_coeffs_turb(int        isvhb,
                                           rough_d,
                                           utau,
                                           flux,
-                                          theta0,
+                                          _beta,
                                           gredu,
                                           &dlmo,
                                           &uet);
@@ -2466,13 +2470,13 @@ cs_boundary_conditions_set_coeffs_turb(int        isvhb,
       else {
 
         /* No temperature delta: neutral */
-        const cs_real_t dt = 0., _theta0 = 0., gredu = 0.;
+        const cs_real_t dt = 0., _beta = 0., gredu = 0.;
 
         cs_mo_compute_from_thermal_diff(distbf,
                                         rough_d,
                                         utau,
                                         dt,
-                                        _theta0,
+                                        _beta,
                                         gredu,
                                         &dlmo,
                                         &uet);

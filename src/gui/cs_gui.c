@@ -326,7 +326,7 @@ _property_formula(const char *property_name,
 }
 
 /*----------------------------------------------------------------------------
- * Return 0 if default value is needed
+ * Return 1 if thermal_law
  *
  * parameters:
  *   name        <--  name of the property

@@ -2635,15 +2635,6 @@ _init_user
 
   cs_gui_laminar_viscosity();
 
-  /* Specific physics modules
-   * Note: part of what is inside ppini1 could be moved here
-   * so that cs_user_parameters can be used by the user
-   * to modify default settings */
-
-  /* Atmospheric flows */
-  if (cs_glob_physical_model_flag[CS_ATMOSPHERIC] != -1)
-    cs_f_atini1();
-
   /* Compressible flows */
   cs_gui_hydrostatic_equ_param();
   const cs_field_t *f_id = cs_field_by_name_try("velocity");
@@ -2652,13 +2643,6 @@ _init_user
       cs_runaway_check_define_field_max(f_id->id, 1.e5);
     else
       cs_runaway_check_define_field_max(f_id->id, 1.e4);
-  }
-
-  /* Atmospheric module */
-  if (cs_glob_physical_model_flag[CS_ATMOSPHERIC] != -1) {
-    /* Advanced init/allocation for the soil model */
-    if (cs_glob_atmo_option->soil_cat >= 0)
-      cs_f_solcat(1);
   }
 
   /* Initialization of global parameters */
@@ -2704,6 +2688,24 @@ _init_user
 
   /* Initialize base evaluation functions */
   cs_function_default_define();
+
+
+  /* Specific physics modules
+   * Note: part of what is inside ppini1 could be moved here
+   * so that cs_user_parameters can be used by the user
+   * to modify default settings */
+
+  /* Atmospheric flows */
+  if (cs_glob_physical_model_flag[CS_ATMOSPHERIC] != -1) {
+    cs_f_atini1();
+
+    if (cs_glob_atmo_option->meteo_profile == 2)
+      cs_atmo_init_meteo_profiles();
+
+    /* Advanced init/allocation for the soil model */
+    if (cs_glob_atmo_option->soil_cat >= 0)
+      cs_f_solcat(1);
+  }
 
   /* User functions */
   cs_f_usipsu(nmodpp);

@@ -430,10 +430,15 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
         self.groupBoxMassMolar.hide()
 
         isLargeScaleMeteoChecked = AtmosphericFlowsModel(self.case).getLargeScaleMeteoStatus() == 'on'
-        if mdl_atmo != "off" and isLargeScaleMeteoChecked:
+        hasMeteoFile = AtmosphericFlowsModel(self.case).getMeteoDataStatus() == "on"
+        isMeteoChecked = hasMeteoFile or isLargeScaleMeteoChecked
+        if mdl_atmo != "off" and isMeteoChecked:
             self.groupBoxTemperature.setEnabled(False)
-            t = AtmosphericFlowsModel(self.case).getMeteoT0()
-            self.lineEditT0.setText(str(t))
+            if isLargeScaleMeteoChecked:
+                t = AtmosphericFlowsModel(self.case).getMeteoT0()
+                self.lineEditT0.setText(str(t))
+            elif hasMeteoFile:
+                self.groupBoxTemperature.hide()
 
         elif mdl_comp != "off" or mdl_coal != "off":
             m = self.mdl.getMassemol()
@@ -464,14 +469,19 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
         darc = GroundwaterModel(self.case).getGroundwaterModel()
         if darc != 'off':
             self.groupBoxPressure.hide()
-        elif mdl_atmo != 'off' and isLargeScaleMeteoChecked:
-            self.groupBoxPressure.setEnabled(False)
-            p = AtmosphericFlowsModel(self.case).getMeteoPsea()
-            self.lineEditP0.setText(str(p))
-            self.groupBoxPressure.setEnabled(False)
+        elif mdl_atmo != 'off' and isMeteoChecked:
+            if isLargeScaleMeteoChecked:
+                self.groupBoxPressure.setEnabled(False)
+                p = AtmosphericFlowsModel(self.case).getMeteoPsea()
+                self.lineEditP0.setText(str(p))
+                self.groupBoxPressure.setEnabled(False)
+            elif hasMeteoFile:
+                self.groupBoxPressure.hide()
 
         else:
             p = self.mdl.getPressure()
+            if p is None:
+                p = self.defaultFluidCharacteristicsValues()['reference_pressure']
             self.lineEditP0.setText(str(p))
 
         if self.mdl.tables == 0 or mdl_joule != 'off' or mdl_comp != 'off':
@@ -499,7 +509,7 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
             self.widgetRefMu.hide()
             self.widgetVofMu.setVisible(is_main_zone)
             self.groupBoxSigma.setVisible(is_main_zone)
-        elif mdl_atmo != 'off' and isLargeScaleMeteoChecked:
+        elif mdl_atmo != 'off' and isMeteoChecked:
             self.widgetRefRho.hide()
             self.widgetVofRho.hide()
             self.widgetRefMu.setVisible(is_main_zone)

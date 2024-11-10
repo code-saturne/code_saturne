@@ -518,16 +518,6 @@ double precision, save:: zaero
 
     !---------------------------------------------------------------------------
 
-    !> \brief Initialize meteo profiles if no meteo file is given
-
-    subroutine cs_atmo_init_meteo_profiles() &
-        bind(C, name='cs_atmo_init_meteo_profiles')
-      use, intrinsic :: iso_c_binding
-      implicit none
-    end subroutine cs_atmo_init_meteo_profiles
-
-    !---------------------------------------------------------------------------
-
     !> \brief Compute meteo profiles if no meteo file is given
 
     subroutine cs_atmo_compute_meteo_profiles() &
@@ -874,9 +864,6 @@ integer(c_int), dimension(2) :: dim_xyvert, dim_kmx2, dim_kmx_nvert
 if (imeteo.eq.1) then
   call atlecm(0)
 endif
-if (imeteo.eq.2) then
-  call cs_atmo_init_meteo_profiles()
-endif
 
 call cs_f_atmo_arrays_get_pointers(c_z_dyn_met, c_z_temp_met,     &
                                    c_xyp_met,                     &
@@ -972,9 +959,9 @@ implicit none
 
 procedure() :: mestcr, gridcr, mestde
 
-! Prepare interpolation for 1D radiative model
 if (imeteo.gt.0) then
 
+  ! Prepare interpolation for 1D radiative model
   if (iatra1.eq.1) then
     call mestcr("rayi"//c_null_char, 1, 0, idrayi)
     call mestcr("rayst"//c_null_char, 1, 0, idrayst)
