@@ -129,9 +129,6 @@ void
 cs_f_init_chemistry_reacnum(void);
 
 void
-cs_f_atmo_models_boundary_conditions_map(void);
-
-void
 cs_f_combustion_models_boundary_conditions_map(void);
 
 void
@@ -479,9 +476,6 @@ cs_time_stepping(void)
       || cs_glob_physical_model_flag[CS_COMBUSTION_EBU] >= 0
       || cs_glob_physical_model_flag[CS_COMBUSTION_LW] >= 0)
     cs_f_combustion_models_boundary_conditions_map();
-
-  if (cs_glob_physical_model_flag[CS_ATMOSPHERIC] >= 0)
-    cs_f_atmo_models_boundary_conditions_map();
 
   cs_f_initialization_variables();
 

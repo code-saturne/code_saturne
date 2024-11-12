@@ -142,14 +142,6 @@ integer(c_int), pointer, save :: nbmett
 !> numbers of time steps for the meteo profiles
 integer(c_int), pointer, save :: nbmetm
 
-!> automatic inlet/outlet boundary condition flag
-!> (0: not auto (default); 1,2: auto)
-!> When meteo momentum source terms are activated (iatmst > 0),
-!> iautom = 1 corresponds to a Dirichlet on the pressure and a
-!> Neumann on the velocity, whereas iautom = 2 imposes a Dirichlet
-!> on both pressure and velocity
-integer(c_int), pointer, save :: iautom(:)
-
 !> add a momentum source term based on the meteo profile
 !> for automatic open boundaries
 integer(c_int), pointer, save :: iatmst
@@ -619,35 +611,10 @@ double precision, save:: zaero
       type(c_ptr), intent(out) :: face_ids
     end subroutine cs_f_atmo_get_soil_zone
 
-    subroutine cs_f_boundary_conditions_get_atincl_pointers(p_iautom) &
-      bind(C, name='cs_f_boundary_conditions_get_atincl_pointers')
-      use, intrinsic :: iso_c_binding
-      implicit none
-      type(c_ptr), intent(out) :: p_iautom
-    end subroutine cs_f_boundary_conditions_get_atincl_pointers
-
   end interface
 
 contains
 
-  !=============================================================================
-
-  subroutine at_models_bc_map() &
-    bind(C, name='cs_f_atmo_models_boundary_conditions_map')
-
-    use, intrinsic :: iso_c_binding
-    use mesh, only: nfabor
-    implicit none
-
-    ! Arguments
-
-    ! Local variables
-    type(c_ptr) :: p_iautom
-
-    call cs_f_boundary_conditions_get_atincl_pointers(p_iautom)
-    call c_f_pointer(p_iautom, iautom, [nfabor])
-
-  end subroutine at_models_bc_map
 
   !=============================================================================
 

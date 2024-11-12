@@ -194,9 +194,6 @@ cs_f_boundary_conditions_get_coincl_pointers(int     **ientfu,
                                              double  **tgf,
                                              double  **frmel);
 
-void
-cs_f_boundary_conditions_get_atincl_pointers(int **iautom);
-
 /*============================================================================
  * Private function definitions
  *============================================================================*/
@@ -1588,15 +1585,6 @@ cs_f_boundary_conditions_get_coincl_pointers(int     **ientfu,
 
   *tgf    = &(cs_glob_bc_pm_info->tgf);
   *frmel  = &(cs_glob_bc_pm_info->frmel);
-}
-
-void
-cs_f_boundary_conditions_get_atincl_pointers(int **iautom)
-{
-  if (cs_glob_physical_model_flag[CS_ATMOSPHERIC] > -1)
-    *iautom = cs_glob_bc_pm_info->iautom;
-  else
-    *iautom = nullptr;
 }
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
