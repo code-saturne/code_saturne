@@ -317,6 +317,7 @@ struct _cs_matrix_t {
      code first. */
 
   const cs_real_t       *xa;           /* Extra-diagonal terms */
+  cs_real_t             *_xa;          /* Extra-diagonal terms, private copy */
 
   /* Pointer to associated connectivity and geometric data needed by
      multigrid smoothing. At least cell centers and volumes are needed for

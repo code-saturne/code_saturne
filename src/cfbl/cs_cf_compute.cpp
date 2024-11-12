@@ -955,19 +955,15 @@ cs_cf_cfl_compute(cs_real_t wcf[]) // before : cfdttv
 
   /* Summation at each cell taking only outward flux */
 
-  int iconvp = 1;
-  int idiffp = 0;
-  int isym   = 2;
-
   cs_array_real_set_scalar(n_i_faces, 0.0, i_visc);
   cs_array_real_set_scalar(n_b_faces, 0.0, coefbt);
   cs_array_real_set_scalar(n_b_faces, 0.0, cofbft);
   cs_array_real_set_scalar(n_b_faces, 0.0, b_visc);
 
   cs_matrix_time_step(mesh,
-                      iconvp,
-                      idiffp,
-                      isym,
+                      1, // iconvp,
+                      0, // idiffp,
+                      2,
                       &bc_coeffs_loc,
                       i_mass_flux,
                       b_mass_flux,

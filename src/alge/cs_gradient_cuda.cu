@@ -1157,7 +1157,6 @@ _gg_gradient_rescale(cs_lnum_t                       n_cells,
     grad[c_id][i][j] *= dvol;
   }
 
-
   if (warped_correction) {
     cs_real_t gradpa[3];
     for (cs_lnum_t j = 0; j < 3; j++) {

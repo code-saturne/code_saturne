@@ -40,8 +40,6 @@
 
 /*----------------------------------------------------------------------------*/
 
-BEGIN_C_DECLS
-
 /*=============================================================================
  * Local Macro definitions
  *============================================================================*/
@@ -58,12 +56,15 @@ BEGIN_C_DECLS
  * Public function prototypes
  *============================================================================*/
 
+#if defined(__cplusplus)
+
 /*----------------------------------------------------------------------------*/
 /*
  * \brief Build the diagonal of the advection/diffusion matrix
  * for determining the variable time step, flow, Fourier.
  *
  * \param[in, out]  a             pointer to matrix structure
+ * \param[in]       f             pointer to field, or null
  * \param[in]       iconvp        indicator
  *                                 - 1 advection
  *                                 - 0 otherwise
@@ -74,96 +75,132 @@ BEGIN_C_DECLS
  * \param[in]       thetap        time scheme parameter
  * \param[in]       imucp         1 for temperature (with Cp), 0 otherwise
  * \param[in]       bc_coeffs     boundary condition structure
+ * \param[in]       rovsdt        implicit terms (rho / dt)
  * \param[in]       i_massflux    mass flux at interior faces
  * \param[in]       b_massflux    mass flux at border faces
  * \param[in]       i_visc        \f$ \mu_\fij \dfrac{S_\fij}{\ipf \jpf} \f$
  *                                 at interior faces for the matrix
  * \param[in]       b_visc        \f$ S_\fib \f$
  *                                 at border faces for the matrix
- * \param[in]      xcpp           Cp per cell, or null
+ * \param[in]       xcpp          Cp per cell, or null
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_matrix_compute_coeffs_scalar(cs_matrix_t                *a,
-                                const cs_field_t           *f,
-                                int                         iconvp,
-                                int                         idiffp,
-                                int                         ndircp,
-                                double                      thetap,
-                                int                         imucpp,
-                                const cs_field_bc_coeffs_t *bc_coeffs,
-                                const cs_real_t             rovsdt[],
-                                const cs_real_t             i_massflux[],
-                                const cs_real_t             b_massflux[],
-                                const cs_real_t             i_visc[],
-                                const cs_real_t             b_visc[],
-                                const cs_real_t             xcpp[]);
+cs_matrix_compute_coeffs(cs_matrix_t                 *a,
+                         const cs_field_t            *f,
+                         int                          iconvp,
+                         int                          idiffp,
+                         int                          ndircp,
+                         double                       thetap,
+                         int                          imucpp,
+                         const cs_field_bc_coeffs_t  *bc_coeffs,
+                         const cs_real_t              rovsdt[],
+                         const cs_real_t              i_massflux[],
+                         const cs_real_t              b_massflux[],
+                         const cs_real_t              i_visc[],
+                         const cs_real_t              b_visc[],
+                         const cs_real_t              xcpp[]);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Build the diagonal of the advection/diffusion matrix
+ * for determining the variable time step, flow, Fourier.
+ *
+ * \tparam  stride 3 for vectors, 6 for tensors
+ *
+ * \param[in, out]  a                   pointer to matrix structure
+ * \param[in]       f                    pointer to field, or null
+ * \param[in]       iconvp               indicator
+ *                                         - 1 advection
+ *                                         - 0 otherwise
+ * \param[in]       idiffp               indicator
+ *                                         - 1 diffusion
+ *                                         - 0 otherwise
+ * \param[in]       tensorial_diffusion  indicator
+ * \param[in]       ndircp               number of Dirichlet BCs
+ * \param[in]       thetap               time scheme parameter
+ * \param[in]       eb_size              extra-diagonal block size
+ *                                       (1 or 3 for stride 3, 1 for stride 6)
+ * \param[in]       bc_coeffs            boundary conditions structure
+ * \param[in]       fimp                 implicit terms, or null
+ * \param[in]       i_massflux           mass flux at interior faces
+ * \param[in]       b_massflux           mass flux at border faces
+ * \param[in]       i_visc        \f$ \mu_\fij \dfrac{S_\fij}{\ipf \jpf} \f$
+ *                                 at interior faces for the matrix
+ * \param[in]       b_visc        \f$ S_\fib \f$
+ *                                 at boundary faces for the matrix
+ */
+/*----------------------------------------------------------------------------*/
+
+template <cs_lnum_t stride>
+void
+cs_matrix_compute_coeffs
+(
+  cs_matrix_t                 *a,
+  const cs_field_t            *f,
+  int                          iconvp,
+  int                          idiffp,
+  int                          tensorial_diffusion,
+  int                          ndircp,
+  cs_lnum_t                    eb_size,
+  double                       thetap,
+  const cs_field_bc_coeffs_t  *bc_coeffs,
+  const cs_real_t              fimp[][stride][stride],
+  const cs_real_t              i_massflux[],
+  const cs_real_t              b_massflux[],
+  const cs_real_t              i_visc[],
+  const cs_real_t              b_visc[]
+);
 
 /*----------------------------------------------------------------------------
- * Wrapper to cs_matrix_scalar (or its counterpart for
- * symmetric matrices)
+ * Compute legacy matrix coefficients
  *----------------------------------------------------------------------------*/
 
 void
-cs_matrix_wrapper_scalar(int                         iconvp,
-                         int                         idiffp,
-                         int                         ndircp,
-                         int                         isym,
-                         double                      thetap,
-                         int                         imucpp,
-                         const cs_field_bc_coeffs_t *bc_coeffs,
-                         const cs_real_t             rovsdt[],
-                         const cs_real_t             i_massflux[],
-                         const cs_real_t             b_massflux[],
-                         const cs_real_t             i_visc[],
-                         const cs_real_t             b_visc[],
-                         const cs_real_t             xcpp[],
-                         cs_real_t                   da[],
-                         cs_real_t                   xa[]);
+cs_matrix_wrapper(int                         iconvp,
+                  int                         idiffp,
+                  int                         ndircp,
+                  int                         isym,
+                  double                      thetap,
+                  int                         imucpp,
+                  const cs_field_bc_coeffs_t *bc_coeffs,
+                  const cs_real_t             rovsdt[],
+                  const cs_real_t             i_massflux[],
+                  const cs_real_t             b_massflux[],
+                  const cs_real_t             i_visc[],
+                  const cs_real_t             b_visc[],
+                  const cs_real_t             xcpp[],
+                  cs_real_t                   da[],
+                  cs_real_t                   xa[]);
 
 /*----------------------------------------------------------------------------
- * Wrapper to cs_matrix_vector (or its counterpart for
- * symmetric matrices)
+ * Compute legacy matrix coefficients
  *----------------------------------------------------------------------------*/
 
+template <cs_lnum_t stride>
 void
-cs_matrix_wrapper_vector(int                         iconvp,
-                         int                         idiffp,
-                         int                         tensorial_diffusion,
-                         int                         ndircp,
-                         int                         isym,
-                         cs_lnum_t                   eb_size,
-                         double                      thetap,
-                         const cs_field_bc_coeffs_t *bc_coeffs_v,
-                         const cs_real_t             fimp[][3][3],
-                         const cs_real_t             i_massflux[],
-                         const cs_real_t             b_massflux[],
-                         const cs_real_t             i_visc[],
-                         const cs_real_t             b_visc[],
-                         cs_real_t                   da[][3][3],
-                         cs_real_t                   xa[]);
+cs_matrix_wrapper(int                         iconvp,
+                  int                         idiffp,
+                  int                         tensorial_diffusion,
+                  int                         ndircp,
+                  int                         isym,
+                  cs_lnum_t                   eb_size,
+                  double                      thetap,
+                  const cs_field_bc_coeffs_t *bc_coeffs_v,
+                  const cs_real_t             fimp[][stride][stride],
+                  const cs_real_t             i_massflux[],
+                  const cs_real_t             b_massflux[],
+                  const cs_real_t             i_visc[],
+                  const cs_real_t             b_visc[],
+                  cs_real_t                   da[][stride][stride],
+                  cs_real_t                   xa[]);
 
-/*----------------------------------------------------------------------------
- * Wrapper to cs_matrix_tensor (or its counterpart for
- * symmetric matrices)
- *----------------------------------------------------------------------------*/
+/*----------------------------------------------------------------------------*/
 
-void
-cs_matrix_wrapper_tensor(int                         iconvp,
-                         int                         idiffp,
-                         int                         tensorial_diffusion,
-                         int                         ndircp,
-                         int                         isym,
-                         double                      thetap,
-                         const cs_field_bc_coeffs_t *bc_coeffs_ts,
-                         const cs_real_66_t          fimp[],
-                         const cs_real_t             i_massflux[],
-                         const cs_real_t             b_massflux[],
-                         const cs_real_t             i_visc[],
-                         const cs_real_t             b_visc[],
-                         cs_real_66_t                da[],
-                         cs_real_t                   xa[]);
+#endif //defined(__cplusplus)
+
+BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
 /*

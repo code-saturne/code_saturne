@@ -4003,6 +4003,7 @@ _matrix_create(cs_matrix_type_t  type,
               m->type);
 
   m->xa = nullptr;
+  m->_xa = nullptr;
 
   m->c2f_idx = nullptr;
   m->c2f = nullptr;
@@ -5126,7 +5127,7 @@ cs_matrix_transfer_coefficients(cs_matrix_t         *matrix,
                              *x_val);
 
   if (matrix->type < CS_MATRIX_N_BUILTIN_TYPES) {
-    matrix->xa = nullptr;
+    matrix->xa = (matrix->need_xa) ? *x_val : nullptr;
     auto mc = static_cast<cs_matrix_coeff_t *>(matrix->coeffs);
     if (   mc->d_val == *d_val
         && mc->_d_val == nullptr) {
@@ -5137,6 +5138,12 @@ cs_matrix_transfer_coefficients(cs_matrix_t         *matrix,
         && mc->_e_val == nullptr) {
       mc->_e_val = *x_val;
       *x_val = nullptr;
+    }
+    else {
+      if (matrix->need_xa)
+        matrix->_xa = *x_val;
+      else
+        CS_FREE(*x_val);
     }
   }
 }
@@ -5318,6 +5325,7 @@ cs_matrix_release_coefficients(cs_matrix_t  *matrix)
 
   if (matrix->release_coefficients != nullptr) {
     matrix->xa = nullptr;
+    BFT_FREE(matrix->_xa);
     matrix->release_coefficients(matrix);
   }
   else {

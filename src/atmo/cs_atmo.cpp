@@ -683,21 +683,21 @@ _hydrostatic_pressure_compute(cs_real_3_t  f_ext[],
 
   cs_face_viscosity(m, mq, eqp_p->imvisf, c_visc, i_viscm, b_viscm);
 
-  cs_matrix_wrapper_scalar(eqp_p->iconv,
-                           eqp_p->idiff,
-                           eqp_p->ndircl,
-                           isym,
-                           eqp_p->theta,
-                           0,
-                           f->bc_coeffs,
-                           rovsdt,
-                           i_massflux,
-                           b_massflux,
-                           i_viscm,
-                           b_viscm,
-                           nullptr,
-                           dam,
-                           xam);
+  cs_matrix_wrapper(eqp_p->iconv,
+                    eqp_p->idiff,
+                    eqp_p->ndircl,
+                    isym,
+                    eqp_p->theta,
+                    0,
+                    f->bc_coeffs,
+                    rovsdt,
+                    i_massflux,
+                    b_massflux,
+                    i_viscm,
+                    b_viscm,
+                    nullptr,
+                    dam,
+                    xam);
 
   /* Right hand side
    *================*/
@@ -2721,7 +2721,7 @@ cs_atmo_fields_init0(void)
     cs_equation_param_t *eqp_vel = cs_field_get_equation_param(CS_F_(vel));
 
     if (eqp_vel->verbosity > 0)
-      bft_printf("   ** INIT DYNAMIC VARIABLES FROM METEO FILE\n",
+      bft_printf("   ** INIT DYNAMIC VARIABLES FROM METEO FILE\n"
                  "      --------------------------------------\n");
 
     /* Meteo profile or meteo data */
@@ -2739,14 +2739,14 @@ cs_atmo_fields_init0(void)
             vel_met = cs_glob_atmo_option->u_met;
           if (i == 1)
             vel_met = cs_glob_atmo_option->v_met;
-            cvar_vel[cell_id][i] = cs_intprf(
-                cs_glob_atmo_option->met_1d_nlevels_d,
-                cs_glob_atmo_option->met_1d_ntimes,
-                cs_glob_atmo_option->z_dyn_met,
-                cs_glob_atmo_option->time_met,
-                vel_met,
-                z_in,
-                cs_glob_time_step->t_cur);
+          cvar_vel[cell_id][i]
+            = cs_intprf(cs_glob_atmo_option->met_1d_nlevels_d,
+                        cs_glob_atmo_option->met_1d_ntimes,
+                        cs_glob_atmo_option->z_dyn_met,
+                        cs_glob_atmo_option->time_met,
+                        vel_met,
+                        z_in,
+                        cs_glob_time_step->t_cur);
         }
 
         /* Turbulence TKE and dissipation */

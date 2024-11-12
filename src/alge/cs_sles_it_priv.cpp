@@ -30,6 +30,8 @@
  * Standard C library headers
  *----------------------------------------------------------------------------*/
 
+#include <chrono>
+
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -288,6 +290,10 @@ cs_sles_it_setup_priv(cs_sles_it_t       *c,
 
       sd->ad_inv = sd->_ad_inv;
 
+      std::chrono::high_resolution_clock::time_point t_start;
+      if (cs_glob_timer_kernels_flag > 0)
+        t_start = std::chrono::high_resolution_clock::now();
+
       const cs_real_t  *restrict ad = cs_matrix_get_diagonal(a);
 
       cs_dispatch_context  ctx;
@@ -323,6 +329,17 @@ cs_sles_it_setup_priv(cs_sles_it_t       *c,
       ctx.wait();
       if (c->on_device && ctx.use_gpu() == false)
         cs_sync_h2d(sd->_ad_inv);
+
+      if (cs_glob_timer_kernels_flag > 0) {
+        std::chrono::high_resolution_clock::time_point
+          t_stop = std::chrono::high_resolution_clock::now();
+        std::chrono::microseconds elapsed
+          = std::chrono::duration_cast
+          <std::chrono::microseconds>(t_stop - t_start);
+        printf("%d: %s (fact lu, %d)", cs_glob_rank_id, __func__,
+               diag_block_size);
+        printf(", total = %ld\n", elapsed.count());
+      }
 
     }
 

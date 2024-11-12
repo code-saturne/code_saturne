@@ -293,20 +293,20 @@ _hydrostatic_pressure_compute(const cs_mesh_t       *m,
 
   cs_matrix_t *a = cs_sles_default_get_matrix(f->id, nullptr, 1, 1, true);
 
-  cs_matrix_compute_coeffs_scalar(a,
-                                  f,
-                                  eqp_pr->iconv,
-                                  eqp_pr->idiff,
-                                  0,     // ndircp
-                                  eqp_pr->theta,
-                                  0,
-                                  bc_coeffs_hp,
-                                  rovsdt,
-                                  iflux,
-                                  bflux,
-                                  i_visc,
-                                  b_visc,
-                                  nullptr);
+  cs_matrix_compute_coeffs(a,
+                           f,
+                           eqp_pr->iconv,
+                           eqp_pr->idiff,
+                           0,     // ndircp
+                           eqp_pr->theta,
+                           0,
+                           bc_coeffs_hp,
+                           rovsdt,
+                           iflux,
+                           bflux,
+                           i_visc,
+                           b_visc,
+                           nullptr);
 
   /* Compute right hand side
      ----------------------- */
@@ -1268,20 +1268,20 @@ _pressure_correction_fv(int                   iterns,
 
   cs_matrix_t *a = cs_sles_default_get_matrix(f_p->id, nullptr, 1, 1, symmetric);
 
-  cs_matrix_compute_coeffs_scalar(a,
-                                  f_p,
-                                  eqp_p->iconv,
-                                  eqp_p->idiff,
-                                  eqp_p->ndircl,
-                                  1.0, // thetap
-                                  0,   // imucpp
-                                  bc_coeffs_dp,
-                                  rovsdt,
-                                  imasfl,
-                                  bmasfl,
-                                  i_visc,
-                                  b_visc,
-                                  nullptr);
+  cs_matrix_compute_coeffs(a,
+                           f_p,
+                           eqp_p->iconv,
+                           eqp_p->idiff,
+                           eqp_p->ndircl,
+                           1.0, // thetap
+                           0,   // imucpp
+                           bc_coeffs_dp,
+                           rovsdt,
+                           imasfl,
+                           bmasfl,
+                           i_visc,
+                           b_visc,
+                           nullptr);
 
   cs_sles_t *sc = cs_sles_find_or_add(f_p->id, nullptr);
 

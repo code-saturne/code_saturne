@@ -1197,7 +1197,7 @@ cs_sles_petsc_setup(void               *context,
      * case, but we try to keep the compiler happy. */
 
     cs_lnum_t *row_index = const_cast<cs_lnum_t *>(a_row_index);
-    cs_lnum_t *col_id    = const_cast<cs_lnum_t *>(col_id);
+    cs_lnum_t *col_id    = const_cast<cs_lnum_t *>(a_col_id);
 
     /* Matrix */
 

@@ -95,11 +95,11 @@ BEGIN_C_DECLS
 /*----------------------------------------------------------------------------*/
 
 void
-cs_user_lagr_in(cs_lagr_particle_set_t         *particles,
-                const cs_lagr_injection_set_t  *zis,
-                const cs_lnum_t                 particle_range[2],
-                const cs_lnum_t                 particle_face_id[],
-                const cs_real_t                 visc_length[])
+cs_user_lagr_in(cs_lagr_particle_set_t             *particles,
+                const cs_lagr_injection_set_t      *zis,
+                const cs_lnum_t                     particle_range[2],
+                [[maybe_unused]] const cs_lnum_t    particle_face_id[],
+                [[maybe_unused]] const cs_real_t    visc_length[])
 {
 
   /*! [lagr_inj_example_coal] */

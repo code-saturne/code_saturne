@@ -1473,7 +1473,7 @@ _write_section(cs_restart_t           *restart,
                                        ent_global_num,
                                        _n_location_vals,
                                        val_type,
-                                       (cs_byte_t *)val);
+                                       (const cs_byte_t *)val);
     cs_io_write_global(sec_name,
                        n_tot_vals,
                        location_id,

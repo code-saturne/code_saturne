@@ -303,14 +303,13 @@ _cs_mass_flux_prediction(const cs_mesh_t       *m,
     cs_arrays_set_value<cs_real_t, 1>(n_b_faces, 0., b_visc);
   }
 
-  cs_real_t *dam, *xam;
-  CS_MALLOC_HD(dam, n_cells_ext, cs_real_t, cs_alloc_mode);
-  CS_MALLOC_HD(xam, n_i_faces, cs_real_t, cs_alloc_mode);
+  cs_matrix_t *a = cs_sles_default_get_matrix(CS_F_(p)->id, nullptr, 1, 1, true);
 
-  cs_matrix_wrapper_scalar(eqp->iconv,
+  cs_matrix_compute_coeffs(a,
+                           CS_F_(p),
+                           eqp->iconv,
                            eqp->idiff,
                            0,   /* strengthen diagonal */
-                           1,   /* isym */
                            1.,  /* thetap */
                            0.,  /* imucpp */
                            &bc_coeffs_pot,
@@ -319,9 +318,7 @@ _cs_mass_flux_prediction(const cs_mesh_t       *m,
                            bmasfl,
                            i_visc,
                            b_visc,
-                           nullptr,
-                           dam,
-                           xam);
+                           nullptr);
 
   /* Solving (Loop over the non-orthogonalities)
      ------------------------------------------- */
@@ -353,6 +350,8 @@ _cs_mass_flux_prediction(const cs_mesh_t       *m,
                   " %s: sweep = %d, RHS norm = %14.6e, relaxp = %f\n",
                   name, isweep, residual, eqp->relaxv);
 
+  cs_sles_t *sc = cs_sles_find_or_add(-1, name);
+
   while (isweep <= eqp->nswrsm && residual > tcrite) {
 
     /* Solving on the increment dpot */
@@ -361,10 +360,8 @@ _cs_mass_flux_prediction(const cs_mesh_t       *m,
 
     int n_iter = 0;
 
-    cs_sles_solve_native(-1, name,
-                         true, /* symmetric */
-                         1, 1, /* blocks sizes */
-                         dam, xam,
+    cs_sles_solve_ccc_fv(sc,
+                         a,
                          eqp->epsilo,
                          rnorm,
                          &n_iter, &residual,
@@ -372,15 +369,15 @@ _cs_mass_flux_prediction(const cs_mesh_t       *m,
 
     /* Update the increment of potential */
 
-    cs_real_t a;
+    cs_real_t ap;
     if (idtvar >= 0 && isweep <= eqp->nswrsm && residual > tcrite)
-      a = eqp->relaxv;
+      ap = eqp->relaxv;
     else
-      a = 1.; /* total increment fo last time step */
+      ap = 1.; /* total increment for last time step */
 
     ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t cell_id) {
       pota[cell_id] = pot[cell_id];
-      pot[cell_id]  = pota[cell_id] + a*dpot[cell_id];
+      pot[cell_id]  = pota[cell_id] + ap*dpot[cell_id];
     });
 
     isweep += 1;
@@ -517,10 +514,8 @@ _cs_mass_flux_prediction(const cs_mesh_t       *m,
   /* Free solver setup
      ----------------- */
 
-  cs_sles_free_native(-1, name);
-
-  CS_FREE_HD(dam);
-  CS_FREE_HD(xam);
+  cs_sles_free(sc);
+  cs_matrix_release_coefficients(a);
 
   CS_FREE_HD(divu);
   CS_FREE_HD(rhs);
