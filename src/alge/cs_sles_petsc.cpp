@@ -508,8 +508,8 @@ _cs_sles_hpddm_setup([[maybe_unused]] void               *context,
   PetscLogStagePush(_log_stage[0]);
 
   cs_sles_petsc_t *c = static_cast<cs_sles_petsc_t *>(context);
-  cs_sles_petsc_setup_t
-    *sd = static_cast<cs_sles_petsc_setup_t *>c->setup_data;
+  cs_sles_petsc_setup_t *sd =
+    static_cast<cs_sles_petsc_setup_t *>(c->setup_data);
 
   assert(sd != nullptr);
 
