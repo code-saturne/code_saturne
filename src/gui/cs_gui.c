@@ -344,6 +344,25 @@ _thermal_table_needed(const char *name)
   return choice;
 }
 
+/*----------------------------------------------------------------------------
+ * Return 1 if predefined_law
+ *
+ * parameters:
+ *   name        <--  name of the property
+ *----------------------------------------------------------------------------*/
+
+static int
+_thermal_predefined_law(const char *name)
+{
+  int choice = 0;
+
+  const char *prop_choice = _properties_choice(name, NULL);
+  if (cs_gui_strcmp(prop_choice, "predefined_law"))
+    choice = 1;
+
+  return choice;
+}
+
 /*-----------------------------------------------------------------------------
  * Compute a physical property based on a thermal law.
  *----------------------------------------------------------------------------*/
@@ -3997,14 +4016,14 @@ cs_gui_physical_properties(void)
 
   cs_vof_parameters_t *vof_param = cs_get_glob_vof_parameters();
 
-  if (_thermal_table_needed("density") == 0) {
+  if (_thermal_predefined_law("density") == 0)
     cs_gui_properties_value("density", &phys_pp->ro0);
-    if (vof_param->vof_model & CS_VOF_ENABLED) {
-      cs_gui_properties_value_by_fluid_id(0, "density", &vof_param->rho1);
-      cs_gui_properties_value_by_fluid_id(1, "density", &vof_param->rho2);
-    }
+  else if (_thermal_predefined_law("density") == 1
+      && (vof_param->vof_model & CS_VOF_ENABLED)) {
+    cs_gui_properties_value_by_fluid_id(0, "density", &vof_param->rho1);
+    cs_gui_properties_value_by_fluid_id(1, "density", &vof_param->rho2);
   }
-  else {
+  else if (_thermal_table_needed("density") == 1) {
     cs_phys_prop_compute(CS_PHYS_PROP_DENSITY,
                          1,
                          0,

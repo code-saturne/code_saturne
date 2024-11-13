@@ -200,16 +200,16 @@ _rho_mu_is_constant(const char       *name,
                     const cs_real_t  val[],
                     const cs_real_t  val_ref)
 {
-  bool is_constant = false;
+  bool is_constant = true;
 
   for (cs_lnum_t ii = 0; ii < n_elts; ii++) {
     if (fabs(val[ii] - val_ref) <= cs_math_epzero)
       continue;
-    is_constant = true;
+    is_constant = false;
     break;
   }
 
-  if (is_constant)
+  if (!is_constant) {
     bft_error(__FILE__, __LINE__, 0,
               _("Error: abort in the physical quantities computation\n"
                 "=====\n"

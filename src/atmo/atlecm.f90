@@ -74,6 +74,7 @@ double precision rap,rscp,tmoy, rhmoy
 double precision ztop, zzmax, tlkelv, pptop, dum
 double precision rhum,q0,q1
 double precision cpvcpa
+double precision pres, temp, qv
 
 character(len=80) :: ccomnt,oneline
 character(len=1)  :: csaute
@@ -102,16 +103,10 @@ rewind(unit=impmet, err=99)
 
 itp=0
 ih2o = 0
+!--> flag to take into account the humidity
+if (ippmod(iatmos).eq.2) ih2o=1
 
 cpvcpa = cp_v / cp_a
-
-if (imode.eq.1) then
-  rscp=rair/cp0
-
-  !--> flag to take into account the humidity
-  if (ippmod(iatmos).eq.2) ih2o=1
-
-endif
 
 !===============================================================================
 ! 1. Loop on time
@@ -225,10 +220,15 @@ endif
 if (ccomnt(1:1).eq.csaute) go to 103
 backspace(impmet)
 
-if (imode.eq.0) then
-  read(impmet, *, err=999, end=999)
-else
-  read(impmet, *, err=999, end=999) xyp_met(3, itp) ! pmer = p0
+read(impmet, *, err=999, end=999) pres
+
+! p_sea = p0
+if (itp.eq.1) then
+  p0 = pres
+endif
+
+if (imode.eq.1) then
+  xyp_met(3, itp) = pres
 endif
 
 !===============================================================================
@@ -246,11 +246,15 @@ if (imode.eq.0) then
   if (nbmett.le.1) then
     write(nfecra, 8001)
     call csexit (1)
-    !==========
   endif
 
   do ii = 1, nbmett
-    read (impmet,*,err=999,end=999) zzmax
+    read (impmet,*,err=999,end=999) zzmax, temp, qv
+    if (ii.eq.1 .and. itp.eq.1) then
+      t0 = temp + tkelvi
+      rhum = rair*(1.d0+(rvsra-1.d0)*qv*ih2o)
+      ro0 = p0 / t0 /rhum
+    endif
   enddo
 
   !-->  Computes nbmaxt:
@@ -330,12 +334,7 @@ endif
 if (imode.eq.1.and.itp.eq.1) then
   p0 = xyp_met(3, itp)
   t0 = ttmet(1,itp)+tkelvi
-  ! Humid atmosphere
-  if (ippmod(iatmos).eq.2) then
-    rhum = rair*(1.d0+(rvsra-1.d0)*qvmet(1,itp)*ih2o)
-  else
-    rhum = rair
-  endif
+  rhum = rair*(1.d0+(rvsra-1.d0)*qvmet(1,itp)*ih2o)
   ro0 = p0 / t0 /rhum
 endif
 
