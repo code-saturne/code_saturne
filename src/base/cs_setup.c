@@ -2689,7 +2689,6 @@ _init_user
   /* Initialize base evaluation functions */
   cs_function_default_define();
 
-
   /* Specific physics modules
    * Note: part of what is inside ppini1 could be moved here
    * so that cs_user_parameters can be used by the user

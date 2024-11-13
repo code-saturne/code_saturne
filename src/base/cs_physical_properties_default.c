@@ -185,7 +185,7 @@ _cavitation_correct_visc_turb(const cs_lnum_t  n_cells,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Return error if density or molecular viscosity are  not constante
+ * \brief  Return error if density or molecular viscosity are  not constant
  *
  * \param[in]  name      name of density or molecular viscosity
  * \param[in]  n_elts    number of elements (face or cells)
@@ -203,7 +203,7 @@ _rho_mu_is_constant(const char       *name,
   bool is_constant = false;
 
   for (cs_lnum_t ii = 0; ii < n_elts; ii++) {
-    if ( fabs(val[ii] - val_ref) <= cs_math_epzero)
+    if (fabs(val[ii] - val_ref) <= cs_math_epzero)
       continue;
     is_constant = true;
     break;
@@ -211,17 +211,15 @@ _rho_mu_is_constant(const char       *name,
 
   if (is_constant)
     bft_error(__FILE__, __LINE__, 0,
-              _("Warning: abort in the physical quantities computation\n"
-                "========\n"
-                "Incoherency betwenn parameters for %s.\n"
+              _("Error: abort in the physical quantities computation\n"
+                "=====\n"
+                "Incoherency between parameters for %s.\n"
                 "%s has been declared constant\n"
                 "but its value has been modified\n"
                 "in cells or at boundary faces.\n"
                 "The calculation will not be run.\n"
                 "Check the interface, cs_user_parameters\n"
-                "and cs_user_physical_properties\n"
-                "In the compressible module, the molecular viscosity is"
-                "constant by default (IVIVAR=0)\n"), name, name);
+                "and cs_user_physical_properties."), name, name);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -936,12 +934,12 @@ cs_physical_properties_update(int   iterns)
   if (cs_glob_time_step->nt_cur == cs_glob_time_step->nt_prev + 1) {
     if (cs_glob_fluid_properties->irovar == 0) {
       const cs_real_t ro0 = cs_glob_fluid_properties->ro0;
-      _rho_mu_is_constant("the molecular viscosity",
+      _rho_mu_is_constant("the density",
                           n_cells,
                           CS_F_(rho)->val,
                           ro0);
 
-      _rho_mu_is_constant("the boundaries molecular viscosity",
+      _rho_mu_is_constant("the density at the boundary",
                           n_b_faces,
                           CS_F_(rho_b)->val,
                           ro0);
