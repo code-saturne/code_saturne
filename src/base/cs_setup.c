@@ -3157,6 +3157,138 @@ _additional_fields_stage_3(void)
     }
   }
 
+  /* Fan id visualization */
+
+  cs_fan_field_create();
+
+  /* VOF */
+
+  cs_vof_field_create();
+
+  /* Turbulent anisotropic viscosity or user defined tensor diffusivity
+   * for a scalar (exclusive or).*/
+
+  if (idfm == 1 || iggafm == 1
+      || (cs_glob_turb_model->order == CS_TURB_SECOND_ORDER
+          && cs_glob_turb_rans_model->idirsm == 1)) {
+
+    cs_field_t *f_atv = cs_field_create("anisotropic_turbulent_viscosity",
+                                        CS_FIELD_INTENSIVE | CS_FIELD_PROPERTY,
+                                        CS_MESH_LOCATION_CELLS,
+                                        6,
+                                        false);
+
+    cs_field_set_key_int(f_atv, k_log, 0);
+
+    if (cs_glob_turb_model->iturb == CS_TURB_RIJ_EPSILON_EBRSM && iggafm == 1) {
+      cs_field_t *f_atvs
+        = cs_field_create("anisotropic_turbulent_viscosity_scalar",
+                          CS_FIELD_INTENSIVE | CS_FIELD_PROPERTY,
+                          CS_MESH_LOCATION_CELLS,
+                          6,
+                          false);
+
+      cs_field_set_key_int(f_atvs, k_log, 0);
+    }
+  }
+
+  /* Change some field settings
+     -------------------------- */
+
+  if (cs_glob_ale > 0) {
+    cs_field_t *f_imasf
+      = cs_field_by_id(cs_field_get_key_int(CS_F_(p), k_imasf));
+    cs_field_set_n_time_vals(f_imasf, 2);
+    cs_field_t *f_bmasf
+      = cs_field_by_id(cs_field_get_key_int(CS_F_(p), k_bmasf));
+    cs_field_set_n_time_vals(f_bmasf, 2);
+  }
+
+  /* Set some field keys
+     ------------------- */
+
+  /* Copy imrgra into the field structure if still at default */
+
+  for (int f_id = 0; f_id < n_fld; f_id++) {
+    cs_field_t *f = cs_field_by_id(f_id);
+    if (!(f->type & CS_FIELD_VARIABLE) || f->type & CS_FIELD_CDO)
+      continue;
+
+    cs_equation_param_t *eqp_f = cs_field_get_equation_param(f);
+
+    if (eqp_f->imrgra < 0) {
+      eqp_f->imrgra = cs_glob_space_disc->imrgra;
+    }
+  }
+
+  /* Check if scalars are buoyant and set n_buoyant_scal accordingly.
+   * It is then used in tridim to update buoyant scalars and density
+   * in U-P loop */
+
+  cs_velocity_pressure_set_n_buoyant_scalars();
+
+  /* For Low Mach and compressible (increment) algorithms, particular care
+   * must be taken when dealing with density in the unsteady term in the
+   * velocity pressure loop */
+
+  if (cs_glob_fluid_properties->irovar == 1
+      && (cs_glob_velocity_pressure_model->idilat > 1
+          || cs_glob_vof_parameters->vof_model > 0
+          || cs_glob_physical_model_flag[CS_COMPRESSIBLE] == 3)) {
+
+    /* EOS density, imposed after the correction step, so we need
+     * to keep the previous one, which is in balance with the mass */
+
+    cs_field_t *f_dm = cs_field_create("density_mass",
+                                       CS_FIELD_PROPERTY,
+                                       CS_MESH_LOCATION_CELLS,
+                                       1,
+                                       false);
+    cs_field_set_key_int(f_dm, k_log, 0);
+    cs_field_set_key_int(f_dm, k_vis, 0);
+
+    cs_field_t *f_bdm = cs_field_create("boundary_density_mass",
+                                        CS_FIELD_PROPERTY,
+                                        CS_MESH_LOCATION_BOUNDARY_FACES,
+                                        1,
+                                        false);
+    cs_field_set_key_int(f_bdm, k_log, 0);
+    cs_field_set_key_int(f_bdm, k_vis, 0);
+  }
+
+  /* Update field pointer mappings
+     ----------------------------- */
+  cs_field_pointer_map_base();
+  cs_field_pointer_map_boundary();
+}
+
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Create some additional fields which depend on main field options.
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_additional_fields_stage_4(void)
+{
+   /* Get ids */
+  const int k_log = cs_field_key_id("log");
+  const int k_vis = cs_field_key_id("post_vis");
+
+  // Key id for gradient weighting
+  const int k_wgrec = cs_field_key_id("gradient_weighting_id");
+
+  // Key id for limiter
+  const int k_cvlim = cs_field_key_id("convection_limiter_id");
+  const int k_dflim = cs_field_key_id("diffusion_limiter_id");
+
+  // Key id for slope test
+  const int k_slts = cs_field_key_id("slope_test_upwind_id");
+
+  // Get number of fields
+  const int n_fld = cs_field_n_fields();
+ 
   /* Add various associated fields for variables */
 
   for (int f_id = 0; f_id < n_fld; f_id++) {
@@ -3263,110 +3395,6 @@ _additional_fields_stage_3(void)
     }
 
   } /* End of loop on fields */
-
-  /* Fan id visualization */
-
-  cs_fan_field_create();
-
-  /* VOF */
-
-  cs_vof_field_create();
-
-  /* Turbulent anisotropic viscosity or user defined tensor diffusivity
-   * for a scalar (exclusive or).*/
-
-  if (idfm == 1 || iggafm == 1
-      || (cs_glob_turb_model->order == CS_TURB_SECOND_ORDER
-          && cs_glob_turb_rans_model->idirsm == 1)) {
-
-    cs_field_t *f_atv = cs_field_create("anisotropic_turbulent_viscosity",
-                                        CS_FIELD_INTENSIVE | CS_FIELD_PROPERTY,
-                                        CS_MESH_LOCATION_CELLS,
-                                        6,
-                                        false);
-
-    cs_field_set_key_int(f_atv, k_log, 0);
-
-    if (cs_glob_turb_model->iturb == CS_TURB_RIJ_EPSILON_EBRSM && iggafm == 1) {
-      cs_field_t *f_atvs
-        = cs_field_create("anisotropic_turbulent_viscosity_scalar",
-                          CS_FIELD_INTENSIVE | CS_FIELD_PROPERTY,
-                          CS_MESH_LOCATION_CELLS,
-                          6,
-                          false);
-
-      cs_field_set_key_int(f_atvs, k_log, 0);
-    }
-  }
-
-  /* Change some field settings
-     -------------------------- */
-
-  if (cs_glob_ale > 0) {
-    cs_field_t *f_imasf
-      = cs_field_by_id(cs_field_get_key_int(CS_F_(p), k_imasf));
-    cs_field_set_n_time_vals(f_imasf, 2);
-    cs_field_t *f_bmasf
-      = cs_field_by_id(cs_field_get_key_int(CS_F_(p), k_bmasf));
-    cs_field_set_n_time_vals(f_bmasf, 2);
-  }
-
-  /* Set some field keys
-     ------------------- */
-
-  /* Copy imrgra into the field structure if still at default */
-
-  for (int f_id = 0; f_id < n_fld; f_id++) {
-    cs_field_t *f = cs_field_by_id(f_id);
-    if (!(f->type & CS_FIELD_VARIABLE) || f->type & CS_FIELD_CDO)
-      continue;
-
-    cs_equation_param_t *eqp_f = cs_field_get_equation_param(f);
-
-    if (eqp_f->imrgra < 0) {
-      eqp_f->imrgra = cs_glob_space_disc->imrgra;
-    }
-  }
-
-  /* Check if scalars are buoyant and set n_buoyant_scal accordingly.
-   * It is then used in tridim to update buoyant scalars and density
-   * in U-P loop */
-
-  cs_velocity_pressure_set_n_buoyant_scalars();
-
-  /* For Low Mach and compressible (increment) algorithms, particular care
-   * must be taken when dealing with density in the unsteady term in the
-   * velocity pressure loop */
-
-  if (cs_glob_fluid_properties->irovar == 1
-      && (cs_glob_velocity_pressure_model->idilat > 1
-          || cs_glob_vof_parameters->vof_model > 0
-          || cs_glob_physical_model_flag[CS_COMPRESSIBLE] == 3)) {
-
-    /* EOS density, imposed after the correction step, so we need
-     * to keep the previous one, which is in balance with the mass */
-
-    cs_field_t *f_dm = cs_field_create("density_mass",
-                                       CS_FIELD_PROPERTY,
-                                       CS_MESH_LOCATION_CELLS,
-                                       1,
-                                       false);
-    cs_field_set_key_int(f_dm, k_log, 0);
-    cs_field_set_key_int(f_dm, k_vis, 0);
-
-    cs_field_t *f_bdm = cs_field_create("boundary_density_mass",
-                                        CS_FIELD_PROPERTY,
-                                        CS_MESH_LOCATION_BOUNDARY_FACES,
-                                        1,
-                                        false);
-    cs_field_set_key_int(f_bdm, k_log, 0);
-    cs_field_set_key_int(f_bdm, k_vis, 0);
-  }
-
-  /* Update field pointer mappings
-     ----------------------------- */
-  cs_field_pointer_map_base();
-  cs_field_pointer_map_boundary();
 }
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
@@ -3431,6 +3459,11 @@ cs_setup(void)
   }
 
   cs_parameters_eqp_complete();
+
+  /* Those additional fields have to be called after 
+   * cs_parameters_eqp_complete  */
+  if (cs_glob_param_cdo_mode != CS_PARAM_CDO_MODE_ONLY)
+    _additional_fields_stage_4();
 
   /* Time moments called after additional creation */
   cs_gui_time_moments();
