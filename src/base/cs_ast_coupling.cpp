@@ -345,9 +345,9 @@ _pred(double    *valpre,
 
   /* Update prediction array */
   for (cs_lnum_t i = 0; i < n; i++) {
-    valpre[3*i]     = c1*val1[3*i]     + c2*val2[3*i]     + c3*val3[3*i];
-    valpre[(3*i)+1] = c1*val1[(3*i)+1] + c2*val2[(3*i)+1] + c3*val3[(3*i)+1];
-    valpre[(3*i)+2] = c1*val1[(3*i)+2] + c2*val2[(3*i)+2] + c3*val3[(3*i)+2];
+    valpre[3*i]   = c1*val1[3*i]   + c2*val2[3*i]   + c3*val3[3*i];
+    valpre[3*i+1] = c1*val1[3*i+1] + c2*val2[3*i+1] + c3*val3[3*i+1];
+    valpre[3*i+2] = c1*val1[3*i+2] + c2*val2[3*i+2] + c3*val3[3*i+2];
   }
 }
 
@@ -401,13 +401,12 @@ _dinorm(double  *vect1,
  *----------------------------------------------------------------------------*/
 
 static int
-_conv(cs_ast_coupling_t  *ast_cpl,
-      int                *icv)
+_conv(cs_ast_coupling_t  *ast_cpl)
 {
   const cs_lnum_t  nb_dyn = ast_cpl->n_vertices;
 
   /* Local variables */
-  int iret;
+  int icv = 0;
   double delast = 0.;
 
   int verbosity = _get_current_verbosity(ast_cpl);
@@ -421,25 +420,24 @@ _conv(cs_ast_coupling_t  *ast_cpl,
                delast);
 
   if (delast <= ast_cpl->epsilo) {
-    *icv = 1;
+    icv = 1;
 
     if (verbosity > 0)
       bft_printf("icv = %d\n"
                  "convergence of sub iteration\n"
                  "----------------------------\n",
-                 *icv);
+                 icv);
   }
   else {
+    icv = 0;
     if (verbosity > 0)
       bft_printf("icv = %i\n"
                  "non convergence of sub iteration\n"
                  "--------------------------------\n",
-                 *icv);
+                 icv);
   }
 
-  iret = 0;
-
-  return iret;
+  return icv;
 }
 
 /*----------------------------------------------------------------------------
@@ -449,7 +447,7 @@ _conv(cs_ast_coupling_t  *ast_cpl,
  *----------------------------------------------------------------------------*/
 
 static void
-_val_ant(cs_ast_coupling_t  *ast_cpl)
+_val_ant(cs_ast_coupling_t *ast_cpl)
 {
   const cs_lnum_t  nb_dyn = ast_cpl->n_vertices;
   const cs_lnum_t  nb_for = ast_cpl->n_faces;
@@ -923,7 +921,7 @@ cs_ast_coupling_geometry(cs_lnum_t         n_faces,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_ast_coupling_exchange_time_step(cs_real_t  c_dt[])
+cs_ast_coupling_exchange_time_step(cs_real_t c_dt[])
 {
   cs_ast_coupling_t  *cpl = cs_glob_ast_coupling;
 
@@ -1100,7 +1098,7 @@ cs_ast_coupling_exchange_fields(void)
   /* Second stage (TODO: place in another, better named function) */
   /* ------------------------------------------------------------ */
 
-  /* explicit case: no need fo a convergence test */
+  /* explicit case: no need for a convergence test */
 
   int icv = 1;
 
@@ -1124,20 +1122,17 @@ cs_ast_coupling_exchange_fields(void)
 
     /* compute icv */
 
-    int ierr = _conv(cpl, &icv);
+    icv = _conv(cpl);
     cpl->icv1 = icv;
     icv = cpl->icv2;
     _send_icv2(cpl, icv);
 
     if ((cpl->s_it_id +1 >= cpl->nbssit) || (icv == 1)) {
-      /* receive displacements  computed by code_aster */
-      if (ierr >= 0) _recv_dyn(cpl);
+      /* receive displacements computed by code_aster */
+      _recv_dyn(cpl);
 
       /* then use with code_saturne ? the question remains open... */
       /* if (ierr >= 0) _send2_dyn(); */
-
-      /* receive displacements from code_aster */
-      if (ierr >= 0)  _recv_dyn(cpl);
     }
     else {
       cpl->s_it_id += 1;
@@ -1156,7 +1151,7 @@ cs_ast_coupling_exchange_fields(void)
 /*----------------------------------------------------------------------------*/
 
 void
-cs_ast_coupling_compute_displacement(cs_real_t  disp[][3])
+cs_ast_coupling_compute_displacement(cs_real_t disp[][3])
 {
   assert(disp != nullptr);
 
@@ -1265,7 +1260,7 @@ cs_ast_coupling_get_ext_cvg(void)
 /*----------------------------------------------------------------------------*/
 
 void
-cs_ast_coupling_send_cvg(int  icved)
+cs_ast_coupling_send_cvg(int icved)
 {
   cs_ast_coupling_t  *cpl = cs_glob_ast_coupling;
 
@@ -1295,7 +1290,7 @@ cs_ast_coupling_get_verbosity(void)
 /*----------------------------------------------------------------------------*/
 
 void
-cs_ast_coupling_set_verbosity(int   verbosity)
+cs_ast_coupling_set_verbosity(int verbosity)
 {
   _verbosity = verbosity;
 
@@ -1328,7 +1323,7 @@ cs_ast_coupling_get_visualization(void)
 /*----------------------------------------------------------------------------*/
 
 void
-cs_ast_coupling_set_visualization(int   visualization)
+cs_ast_coupling_set_visualization(int visualization)
 {
   _visualization = visualization;
 
