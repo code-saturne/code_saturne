@@ -694,6 +694,21 @@ cs_lagr_car(int              iprev,
 
       for (int id = 0; id < 3; id++)
         piil[ip][id] += buoyancy_fac * grav[id];
+
+      if (   cs_glob_lagr_time_scheme->interpol_field > 0
+          && extra->temperature != nullptr) {
+        /* Interpolate the local hydrostatic pressure gradient so its is in
+         * equillibrium with the interpolated temperature at the position of the
+         * particle and not in the center of the cell */
+        cs_real_t *part_coord =
+          cs_lagr_particles_attr_get_ptr<cs_real_t>(p_set, ip, CS_LAGR_COORDS);
+        cs_real_t *cell_cen = cs_glob_mesh_quantities->cell_cen+(3*cell_id);
+        for (int id = 0; id < 3; id++) {
+          for (int i = 0; i < 3; i++)
+            piil[ip][id] += expansion_coef * grav[id]
+              * extra->grad_tempf[cell_id][i] * (part_coord[i] - cell_cen[i]);
+        }
+      }
     }
   }
 

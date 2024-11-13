@@ -958,6 +958,9 @@ typedef struct {
   /* velocity gradient */
   cs_real_33_t *grad_vel;
 
+  /* fluid temperature gradient */
+  cs_real_3_t *grad_tempf;
+
   /* Lagrangian time field */
   cs_field_t *lagr_time;
 

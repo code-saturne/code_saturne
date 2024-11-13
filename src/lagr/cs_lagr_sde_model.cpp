@@ -882,9 +882,6 @@ _lagitf(cs_lagr_attribute_t  *iattr)
 
   int nor = cs_glob_lagr_time_step->nor;
 
-  cs_real_t *tempf;
-  BFT_MALLOC(tempf, mesh->n_cells_with_ghosts, cs_real_t);
-
   /* Initialize variables to avoid compiler warnings */
 
   int ltsvar = 0;
@@ -896,29 +893,17 @@ _lagitf(cs_lagr_attribute_t  *iattr)
 
   /* Mean fluid temperature in degrees C
    * =================================== */
+  cs_real_t t_shift = 0.;
 
   if (   extra->temperature != nullptr
-      &&    cs_glob_thermal_model->temperature_scale
-         == CS_TEMPERATURE_SCALE_CELSIUS) {
-
-    for (cs_lnum_t cell_id = 0; cell_id < mesh->n_cells; cell_id++)
-      tempf[cell_id] = extra->temperature->val[cell_id];
-
-  }
-  else if (   extra->temperature != nullptr
            &&    cs_glob_thermal_model->temperature_scale
-              == CS_TEMPERATURE_SCALE_KELVIN) {
-
-    for (cs_lnum_t cell_id = 0; cell_id < mesh->n_cells; cell_id++)
-      tempf[cell_id] = extra->temperature->val[cell_id] - _tkelvi;
-
-  }
-  else {
+              == CS_TEMPERATURE_SCALE_KELVIN)
+    t_shift = cs_physical_constants_celsius_to_kelvin;
+  else if (extra->temperature == nullptr) {
 
     bft_error(__FILE__, __LINE__, 0,
               _("%s (Lagrangian module):\n\n"
                 "Temperature field is not defined or mapped."), __func__);
-
   }
 
   /* Integration of the SDE over particles
@@ -935,6 +920,17 @@ _lagitf(cs_lagr_attribute_t  *iattr)
       unsigned char *particle = p_set->p_buffer + p_am->extents * ip;
       cs_lnum_t cell_id = cs_lagr_particle_get_lnum(particle, p_am,
                                                     CS_LAGR_CELL_ID);
+      cs_real_t loc_tempf = extra->temperature->val[cell_id] - t_shift;
+      if (cs_glob_lagr_time_scheme->interpol_field != 0) {
+        cs_real_t *old_part_coords =
+          cs_lagr_particle_attr_n_get_ptr<cs_real_t>(particle, p_am, 1,
+                                                     CS_LAGR_COORDS);
+        cs_real_3_t *cell_cen = (cs_real_3_t*) cs_glob_mesh_quantities->cell_cen;
+        /* linear interpolation */
+        for (int i = 0; i < 3; i++)
+          loc_tempf += extra->grad_tempf[cell_id][i]
+            * (old_part_coords[i] - cell_cen[cell_id][i]);
+      }
 
       cs_real_t daux1 = (0.5 + 0.75 * cs_turb_crij_c0) / cs_turb_crij_ct
                       * extra->lagr_time->val[cell_id]
@@ -945,7 +941,7 @@ _lagitf(cs_lagr_attribute_t  *iattr)
 
       cs_real_t ter1 = cs_lagr_particle_get_real_n(particle, p_am, 1,
                                                    CS_LAGR_FLUID_TEMPERATURE) * aux2;
-      cs_real_t ter2 = tempf[cell_id] * (1.0 - aux2);
+      cs_real_t ter2 = loc_tempf * (1.0 - aux2);
 
       cs_lagr_particle_set_real(particle, p_am, CS_LAGR_FLUID_TEMPERATURE, ter1 + ter2);
 
@@ -955,7 +951,7 @@ _lagitf(cs_lagr_attribute_t  *iattr)
         cs_real_t *part_ts_fluid_t
           = cs_lagr_particles_source_terms(p_set, ip,
                                            CS_LAGR_FLUID_TEMPERATURE);
-        *part_ts_fluid_t = 0.5 * ter1 - tempf[cell_id]
+        *part_ts_fluid_t = 0.5 * ter1 - loc_tempf
                                * (aux2 + (aux2 - 1.0) * daux1);
 
       }
@@ -978,6 +974,18 @@ _lagitf(cs_lagr_attribute_t  *iattr)
         cs_lnum_t cell_id = cs_lagr_particle_get_lnum(particle, p_am,
                                                       CS_LAGR_CELL_ID);
 
+        cs_real_t loc_tempf = extra->temperature->val[cell_id] - t_shift;
+        if (cs_glob_lagr_time_scheme->interpol_field != 0) {
+          cs_real_t *old_part_coords =
+            cs_lagr_particle_attr_n_get_ptr<cs_real_t>(particle, p_am, 1,
+                                                       CS_LAGR_COORDS);
+          cs_real_3_t *cell_cen = (cs_real_3_t*) cs_glob_mesh_quantities->cell_cen;
+          /* linear interpolation */
+          for (int i = 0; i < 3; i++)
+            loc_tempf += extra->grad_tempf[cell_id][i]
+              * (old_part_coords[i] - cell_cen[cell_id][i]);
+        }
+
         cs_real_t daux1 = (0.5 + 0.75 * cs_turb_crij_c0) / cs_turb_crij_ct
           * extra->lagr_time->val[cell_id]
           / cs_glob_lagr_time_step->dtp;
@@ -988,7 +996,7 @@ _lagitf(cs_lagr_attribute_t  *iattr)
         cs_real_t ter1
           = 0.5 * cs_lagr_particle_get_real_n(particle, p_am, 1,
                                               CS_LAGR_FLUID_TEMPERATURE) * aux2;
-        cs_real_t ter2   = tempf[cell_id] * (1.0 + (aux2 - 1.0) * daux1);
+        cs_real_t ter2   = loc_tempf * (1.0 + (aux2 - 1.0) * daux1);
         cs_real_t *part_ts_fluid_t
           = cs_lagr_particles_source_terms(p_set, ip, CS_LAGR_FLUID_TEMPERATURE);
 
@@ -1000,9 +1008,6 @@ _lagitf(cs_lagr_attribute_t  *iattr)
     }
 
   }
-
-  /* Free memory */
-  BFT_FREE(tempf);
 }
 
 /*----------------------------------------------------------------------------

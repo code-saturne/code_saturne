@@ -100,6 +100,7 @@ BEGIN_C_DECLS
  * \param[out]  lagr_time              Lagragian time scale
  * \param[out]  grad_pr                pressure gradient
  * \param[out]  grad_vel               velocity gradient
+ * \param[out]  grad_tempf             fluid temperature gradient
  * \param[out]  grad_lagr_time         Lagrangian time gradient
  */
 /*----------------------------------------------------------------------------*/
@@ -108,6 +109,7 @@ void
 cs_lagr_aux_mean_fluid_quantities(cs_field_t    *lagr_time,
                                   cs_real_3_t   *grad_pr,
                                   cs_real_33_t  *grad_vel,
+                                  cs_real_3_t   *grad_tempf,
                                   cs_real_3_t   *grad_lagr_time)
 {
   cs_lnum_t n_cells_with_ghosts = cs_glob_mesh->n_cells_with_ghosts;
@@ -400,6 +402,17 @@ cs_lagr_aux_mean_fluid_quantities(cs_field_t    *lagr_time,
                                grad_vel);
     }
   }
+
+    /* Compute temperature gradient
+       ========================= */
+
+  if (   cs_glob_lagr_model->physical_model != CS_LAGR_PHYS_OFF
+      && extra->temperature != nullptr
+      && cs_glob_lagr_time_scheme->interpol_field > 0)
+    cs_field_gradient_scalar(extra->temperature,
+                             0,
+                             1, /* inc */
+                             grad_tempf);
 
   /* Compute Lagrangian time gradient
      ================================ */

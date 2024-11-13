@@ -361,6 +361,7 @@ static cs_lagr_extra_module_t _lagr_extra_module
      .cvar_rij = nullptr,
      .grad_pr = nullptr,
      .grad_vel = nullptr,
+     .grad_tempf = nullptr,
      .lagr_time = nullptr,
      .grad_lagr_time = nullptr};
 
@@ -881,6 +882,8 @@ cs_lagr_finalize(void)
 
   if (extra->grad_lagr_time != nullptr)
     BFT_FREE(extra->grad_lagr_time);
+  if (extra->grad_tempf != nullptr)
+    BFT_FREE(extra->grad_tempf);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1487,18 +1490,6 @@ cs_lagr_solve_initialize(const cs_real_t  *dt)
 {
   CS_UNUSED(dt);
 
-  /* Allocate pressure and velocity gradients */
-  cs_lagr_extra_module_t *extra = cs_glob_lagr_extra_module;
-  cs_lnum_t ncelet = cs_glob_mesh->n_cells_with_ghosts;
-
-  if (   cs_glob_lagr_time_scheme->extended_t_scheme !=0
-      && cs_glob_lagr_model->idistu == 1)
-      BFT_MALLOC(extra->grad_lagr_time, ncelet, cs_real_3_t);
-
-  if (   cs_glob_lagr_model->modcpl > 0
-      || cs_glob_lagr_model->shape > 0
-      || cs_glob_lagr_time_scheme->interpol_field != 0)
-      BFT_MALLOC(extra->grad_vel, ncelet, cs_real_33_t);
 
   /* For frozen field:
      values at previous time step = values at current time step */
@@ -1521,6 +1512,24 @@ cs_lagr_solve_initialize(const cs_real_t  *dt)
      ---------------------------- */
 
   _lagr_map_fields_default();
+
+  /* Allocate pressure and velocity gradients */
+  cs_lagr_extra_module_t *extra = cs_glob_lagr_extra_module;
+  cs_lnum_t ncelet = cs_glob_mesh->n_cells_with_ghosts;
+
+  if (   cs_glob_lagr_time_scheme->extended_t_scheme !=0
+      && cs_glob_lagr_model->idistu == 1)
+      BFT_MALLOC(extra->grad_lagr_time, ncelet, cs_real_3_t);
+
+  if (   cs_glob_lagr_model->modcpl > 0
+      || cs_glob_lagr_model->shape > 0
+      || cs_glob_lagr_time_scheme->interpol_field != 0)
+      BFT_MALLOC(extra->grad_vel, ncelet, cs_real_33_t);
+
+  if (   cs_glob_lagr_model->physical_model != CS_LAGR_PHYS_OFF
+      && extra->temperature != nullptr
+      && cs_glob_lagr_time_scheme->interpol_field > 0)
+    BFT_MALLOC(extra->grad_tempf, ncelet, cs_real_3_t);
 
   cs_lagr_tracking_initialize();
 
@@ -1898,6 +1907,7 @@ cs_lagr_solve_time_step(const int         itypfb[],
       cs_lagr_aux_mean_fluid_quantities(extra->lagr_time,
                                         extra->grad_pr,
                                         extra->grad_vel,
+                                        extra->grad_tempf,
                                         extra->grad_lagr_time);
     }
     else if (   cs_glob_lagr_time_scheme->iilagr
@@ -1908,11 +1918,16 @@ cs_lagr_solve_time_step(const int         itypfb[],
         BFT_REALLOC(extra->grad_pr, n_cells_ext, cs_real_3_t);
         if (extra->grad_vel != nullptr)
           BFT_REALLOC(extra->grad_vel, n_cells_ext, cs_real_33_t);
+        if (extra->grad_tempf != nullptr)
+          BFT_REALLOC(extra->grad_tempf, n_cells_ext, cs_real_3_t);
+        if (extra->grad_lagr_time != nullptr)
+          BFT_REALLOC(extra->grad_lagr_time, n_cells_ext, cs_real_3_t);
       }
 
       cs_lagr_aux_mean_fluid_quantities(extra->lagr_time,
                                         extra->grad_pr,
                                         extra->grad_vel,
+                                        extra->grad_tempf,
                                         extra->grad_lagr_time);
     }
 
@@ -1991,6 +2006,7 @@ cs_lagr_solve_time_step(const int         itypfb[],
         cs_lagr_aux_mean_fluid_quantities(extra->lagr_time,
                                           extra->grad_pr,
                                           extra->grad_vel,
+                                          extra->grad_tempf,
                                           extra->grad_lagr_time);
 
       /* use fields at previous or current time step */
