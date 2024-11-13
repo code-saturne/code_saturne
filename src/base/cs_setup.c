@@ -2780,16 +2780,6 @@ _additional_fields_stage_3(void)
   const int k_imasf = cs_field_key_id("inner_mass_flux_id");
   const int k_bmasf = cs_field_key_id("boundary_mass_flux_id");
 
-  // Key id for gradient weighting
-  const int k_wgrec = cs_field_key_id("gradient_weighting_id");
-
-  // Key id for limiter
-  const int k_cvlim = cs_field_key_id("convection_limiter_id");
-  const int k_dflim = cs_field_key_id("diffusion_limiter_id");
-
-  // Key id for slope test
-  const int k_slts = cs_field_key_id("slope_test_upwind_id");
-
   // Key id of the coal scalar class
   const int k_ccl = cs_field_key_id("scalar_class");
 
@@ -3288,7 +3278,7 @@ _additional_fields_stage_4(void)
 
   // Get number of fields
   const int n_fld = cs_field_n_fields();
- 
+
   /* Add various associated fields for variables */
 
   for (int f_id = 0; f_id < n_fld; f_id++) {
@@ -3460,7 +3450,7 @@ cs_setup(void)
 
   cs_parameters_eqp_complete();
 
-  /* Those additional fields have to be called after 
+  /* Those additional fields have to be called after
    * cs_parameters_eqp_complete  */
   if (cs_glob_param_cdo_mode != CS_PARAM_CDO_MODE_ONLY)
     _additional_fields_stage_4();
