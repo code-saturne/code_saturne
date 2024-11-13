@@ -3,6 +3,8 @@ Release 8.0.5 (unreleased)
 
 ### Bug fixes:
 
+- Fix array access (indirection) error in `cs_post_anisotropy_invariant`.
+
 - Fix crash when combining ALE and cell to vertex interpolation,
   such as when using the dynamic Smagorinsky model without
   and extended cell to cell neighborhood.
