@@ -3,6 +3,8 @@ release 8.2.2 (unreleased)
 
 ### Bug fixes:
 
+- Fix array access (indirection) error in `cs_post_anisotropy_invariant`.
+
 - Rename postprocessing output files with ':' character to avoid issue
   with MPICH ROMIO library.
 
