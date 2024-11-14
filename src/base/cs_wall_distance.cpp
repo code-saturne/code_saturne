@@ -157,7 +157,7 @@ cs_wall_distance(int iterns)
 
   cs_real_t *wall_dist = f_w_dist->val;
 
-  /* Previous value is stored in a specific field beacause
+  /* Previous value is stored in a specific field because
      the solved field is not directly the wall distance */
 
   cs_field_t *f_w_dist_aux_pre = cs_field_by_name_try("wall_distance_aux_pre");
