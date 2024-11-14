@@ -2429,54 +2429,6 @@ cs_f_atmo_soil_init_arrays(int        *n_soil_cat,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Update the thermo physical properties fields for the humid air and
- *        the liquid.
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_atmo_phyvar_update()
-{
-  cs_atmo_option_t *at_opt = cs_glob_atmo_option;
-  bool rain = at_opt->rain;
-
-  if (rain == true) {
-    /* Initialization of fields */
-
-    cs_field_t *meteo_pressure = cs_field_by_name_try("meteo_pressure");
-    cs_field_t *yw_liq = cs_field_by_name_try("liquid_water");
-    cs_field_t *real_temp = cs_field_by_name_try("real_temperature");
-    cs_field_t *beta_h = cs_field_by_name_try("thermal_expansion");
-    cs_real_t *theta_liq = cs_field_by_name("temperature")->val; /* Liq. pot. temp. */
-
-    cs_real_t *rho_m = (cs_real_t *)CS_F_(rho)->val;    /* Humid air + rain
-                                                           (bulk) density */
-    cs_real_t *rho_h = cs_field_by_name("rho_humid_air")->val; /* Humid air
-                                                                  density */
-    cs_real_t *yr = cs_field_by_name_try("ym_l_r")->val;   /* Rain mass fraction */
-    cs_real_t *ym_w = (cs_real_t *)CS_F_(ym_w)->val;     /* Water mass fraction*/
-
-    /*Iterations on cells */
-    cs_lnum_t n_cells = cs_glob_mesh->n_cells;
-    for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
-      cs_rho_humidair(ym_w[cell_id],
-                      theta_liq[cell_id],
-                      meteo_pressure->val[cell_id],
-                      &(yw_liq->val[cell_id]),
-                      &(real_temp->val[cell_id]),
-                      &(rho_h[cell_id]),
-                      &(beta_h->val[cell_id]));
-      /* Homogeneous mixture density */
-      rho_m[cell_id] = 1. / ((1.-yr[cell_id])/rho_h[cell_id]
-                                + yr[cell_id]/1000);
-    }
-  }
-}
-
-
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief Phase change source terms - Exchange terms between the injected
  *        liquid and the water vapor phase in the bulk, humid air
  *

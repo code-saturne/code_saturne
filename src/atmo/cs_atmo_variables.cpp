@@ -44,14 +44,20 @@
 
 #include "cs_atmo.h"
 #include "cs_atmo_aerosol.h"
+#include "cs_atmo_profile_std.h"
+#include "cs_air_props.h"
 #include "cs_field_default.h"
 #include "cs_field_pointer.h"
+#include "cs_field_operator.h"
+#include "cs_intprf.h"
 #include "cs_physical_constants.h"
 #include "cs_physical_model.h"
 #include "cs_physical_properties.h"
 #include "cs_post.h"
 #include "cs_prototypes.h"
 #include "cs_thermal_model.h"
+#include "cs_turbulence_model.h"
+#include "cs_velocity_pressure.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
@@ -84,6 +90,181 @@ BEGIN_C_DECLS
 
 /*============================================================================
  * Global variables
+ *============================================================================*/
+
+/*============================================================================
+ * Private function definitions
+ *============================================================================*/
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Internal function -
+ *        subgrid condensation scheme assuming
+ *        a gaussian distribution for the
+ *        fluctuations of both qw and thetal.
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_gaussian(const cs_mesh_t             *m,
+          const cs_mesh_quantities_t  *mq,
+          const cs_atmo_option_t      *at_opt,
+          const cs_fluid_properties_t *fluid_props,
+          cs_real_t                   *crom,
+          cs_real_t                   *cpro_tempc,
+          cs_real_t                   *cpro_liqwt,
+          const cs_real_t             *cpro_met_p,
+          const cs_real_t             *cvar_totwt)
+{
+  const cs_lnum_t n_cells = m->n_cells;
+  const cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
+  const cs_real_3_t *cell_cen = (const cs_real_3_t *)mq->cell_cen;
+
+  const cs_real_6_t *cvar_rij = nullptr;
+  const cs_real_t *cvar_k = nullptr, *cvar_ep = nullptr;
+  const cs_real_t *cvar_omg = nullptr, *cvar_nusa = nullptr;
+
+  const cs_field_t *th_f = cs_thermal_model_field();
+  const cs_turb_model_t *turb_model = cs_glob_turb_model;
+
+  if (turb_model->itytur == 2 || turb_model->model == CS_TURB_V2F_PHI) {
+    cvar_k = CS_F_(k)->val;
+    cvar_ep = CS_F_(eps)->val;
+  }
+  else if (turb_model->order == CS_TURB_SECOND_ORDER) {
+    cvar_ep = CS_F_(eps)->val;
+    cvar_rij = (const cs_real_6_t *)(CS_F_(rij)->val);
+  }
+  else if (turb_model->model == CS_TURB_K_OMEGA) {
+    cvar_k = CS_F_(k)->val;
+    cvar_omg = CS_F_(omg)->val;
+  }
+  else if (turb_model->model == CS_TURB_SPALART_ALLMARAS)
+    cvar_nusa = CS_F_(nusa)->val;
+
+  cs_real_t *nn = cs_field_by_name("nebulosity_frac")->val;
+  cs_real_t *nebdia = cs_field_by_name("nebulosity_diag")->val;
+
+  /* Gradients are used for estimating standard
+     deviations of the subgrid fluctuations */
+
+  cs_real_t a_coeff = 0.0;
+  const cs_real_t cp0 = fluid_props->cp0;
+  const cs_real_t rvsra = fluid_props->rvsra;
+  const cs_real_t clatev = fluid_props->clatev;
+  const cs_real_t rair = fluid_props->r_pg_cnst;
+  const cs_real_t ps = cs_glob_atmo_constants->ps;
+  const cs_real_t a_const = 2.0*cs_turb_cmu/2.3;
+  const cs_real_t rscp = fluid_props->r_pg_cnst/fluid_props->cp0;
+  const cs_real_t rvap = fluid_props->r_pg_cnst*fluid_props->rvsra;
+  const cs_real_t tkelvi = cs_physical_constants_celsius_to_kelvin;
+
+  const cs_real_t *cvar_vart = th_f->val;
+
+  cs_real_3_t *dqsd = nullptr, *dtlsd = nullptr;
+  CS_MALLOC_HD(dqsd, n_cells_ext, cs_real_3_t, cs_alloc_mode);
+  CS_MALLOC_HD(dtlsd, n_cells_ext, cs_real_3_t, cs_alloc_mode);
+
+  cs_field_gradient_scalar(th_f, true, 1, dtlsd);
+  cs_field_gradient_scalar(cs_field_by_name("ym_water"), true, 1, dqsd);
+
+  for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+
+    // coeff = 2 cmu/c2 * k^3 / eps^2
+    if (turb_model->itytur == 2 || turb_model->model == CS_TURB_V2F_PHI)
+      a_coeff = a_const*cs_math_pow3(cvar_k[c_id])
+              / cs_math_pow2(cvar_ep[c_id]);
+    else if (turb_model->order == CS_TURB_SECOND_ORDER) {
+      const cs_real_t ek = 0.5*cs_math_6_trace(cvar_rij[c_id]);
+      a_coeff = a_const*cs_math_pow3(ek)/cs_math_pow2(cvar_ep[c_id]);
+    }
+    else if (turb_model->model == CS_TURB_K_OMEGA) {
+      const cs_real_t ep = cvar_omg[c_id]*cvar_k[c_id]*cs_turb_cmu;
+      a_coeff = a_const*cs_math_pow3(cvar_k[c_id])/cs_math_pow2(ep);
+    }
+    else if (cvar_nusa != nullptr)
+      /* using cvar_nusa[c_id] = cmu*xkent^2/xeent
+       * FIXME: There is no good way to calculate tke and eps from nusa.
+       * For the moment we use tke^4/eps^2 instead of tk^3/eps^2
+       * Need to return WARNING that in case of Spalart-Allmaras we use bad assumpltion
+       * or RETURN error for this case. */
+      a_coeff = a_const*cs_math_pow2(cvar_nusa[c_id])/cs_math_pow2(cs_turb_cmu);
+
+    cs_real_t pp = 0.0, dum = 0.0;
+    const cs_real_t zent = cell_cen[c_id][2];
+    if (at_opt->meteo_profile == 0)
+      cs_atmo_profile_std(zent, &pp, &dum, &dum);
+    else if (at_opt->meteo_profile == 1)
+      pp = cs_intprf(at_opt->met_1d_nlevels_t,
+                     at_opt->met_1d_ntimes,
+                     at_opt->z_temp_met,
+                     at_opt->time_met,
+                     at_opt->hyd_p_met,
+                     zent,
+                     cs_glob_time_step->t_cur);
+    else
+      pp = cpro_met_p[c_id];
+
+     const cs_real_t xvart = cvar_vart[c_id]; // thermal scalar: liquid potential temperature
+     const cs_real_t tliq = xvart*pow(pp/ps, rscp); // liquid temperature
+     const cs_real_t qsl = cs_air_yw_sat(tliq-tkelvi, pp); // saturated vapor content
+     const cs_real_t alpha = (clatev*qsl/(rvap*pow(tliq,2)))*pow(pp/ps, rscp);
+     const cs_real_t var_q_tl = a_coeff *
+                                (  pow(dqsd[c_id][0] - alpha * dtlsd[c_id][0], 2)
+                                 + pow(dqsd[c_id][1] - alpha * dtlsd[c_id][1], 2)
+                                 + pow(dqsd[c_id][2] - alpha * dtlsd[c_id][2], 2)  );
+
+     const cs_real_t sig_flu = fmax(sqrt(var_q_tl), 1e-30);
+     const cs_real_t qwt = cvar_totwt[c_id]; // total water content
+     cs_real_t deltaq = qwt - qsl;
+     const cs_real_t q1 = deltaq/sig_flu;
+
+     nebdia[c_id] = 0.5*(1.0 + erf(q1/sqrt(2.0)));
+
+     // FIXME MF : put in input of the global function...
+     cs_real_t yw_liq = (sig_flu /(1.0 + qsl*pow(clatev, 2)/(rvap*cp0*pow(tliq, 2))))
+                      * (nebdia[c_id]*q1 + exp(-pow(q1, 2)/2.0)/sqrt(2.0*cs_math_pi));
+     yw_liq   = fmax(yw_liq, 0.0);
+     nn[c_id] = nebdia[c_id] - (  nebdia[c_id]*q1
+                                + exp(-pow(q1, 2)/2.0)/sqrt(2.0*cs_math_pi))
+                                * exp(-pow(q1, 2)/2.0)/sqrt(2.0*cs_math_pi);
+
+     // go back to all or nothing
+     if (qwt < yw_liq) {
+       nn[c_id] = 0.0;
+       // deltaq set to 0 if unsaturted air parcel
+       if (deltaq < 0.0) {
+         deltaq = 0.0;
+         nebdia[c_id] = 0.0;
+       }
+       else {
+         nebdia[c_id] = 1.0;
+       }
+
+       /* TODO input ?
+        * 0 if unsaturated air parcel */
+       yw_liq = deltaq / (1.0 + qsl*pow(clatev, 2)/(rvap*cp0*pow(tliq, 2)));
+     }
+
+     //Celcius temperature of the air parcel
+     cpro_tempc[c_id] = tliq + (clatev/cp0)*yw_liq - tkelvi;
+     // liquid water content
+     cpro_liqwt[c_id] = yw_liq;
+     //density
+     const cs_real_t lrhum = rair*(1.0 - yw_liq + (rvsra - 1.0)*(qwt - yw_liq));
+     crom[c_id] = pp/(lrhum*(tliq + (clatev/cp0)*yw_liq));
+
+  } // end loop on cells
+
+  CS_FREE_HD(dqsd);
+  CS_FREE_HD(dtlsd);
+
+}
+
+/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
+
+/*============================================================================
+ * Public function definitions
  *============================================================================*/
 
 /*----------------------------------------------------------------------------*/
@@ -729,6 +910,184 @@ cs_atmo_add_property_fields(void)
     }
 
   }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Update the thermo physical properties fields for the humid air and
+ *        the liquid \n
+ *        Remarques :
+ *        This function  is called at the beginning of each time step
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_atmo_physical_properties_update(void)
+{
+  const cs_mesh_t *m = cs_glob_mesh;
+  const cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
+  const cs_fluid_properties_t *fluid_props = cs_glob_fluid_properties;
+
+  const cs_lnum_t n_cells = m->n_cells;
+  const cs_real_3_t *cell_cen = (const cs_real_3_t *)mq->cell_cen;
+
+  const cs_atmo_option_t *at_opt = cs_glob_atmo_option;
+
+  cs_real_t *cpro_beta = nullptr;
+  cs_real_t *cpro_met_p = nullptr;
+  cs_real_t *cpro_met_rho = nullptr;
+
+  if (cs_field_by_name_try("thermal_expansion") != nullptr)
+    cpro_beta = cs_field_by_name_try("thermal_expansion")->val;
+
+  if (at_opt->meteo_profile > 1) {
+    cpro_met_p = cs_field_by_name_try("meteo_pressure")->val;
+    cpro_met_rho = cs_field_by_name_try("meteo_density")->val;
+  }
+
+  /* This routine computes the density and the thermodynamic temperature.
+     The computations may require the pressure profile which is here taken from
+     the meteo file. If no meteo file is used, the user can
+     give the laws for RHO and T in cs_user_physical_properties */
+
+  if (cs_thermal_model_field() == nullptr)
+    bft_error(__FILE__, __LINE__, 0,
+              "@                                                            \n"
+              "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
+              "@                                                            \n"
+              "@ @@ WARNING : STOP WHEN CALCULATING PHYSICAL QUANTITIES     \n"
+              "@    =========                                               \n"
+              "@    The thermal field is not defined check its definition in"
+              "@    the GUI, cs_user_parameters or cs_user_physical_properties"
+              "@                                                            \n"
+              "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
+              "@                                                            \n");
+
+  cs_real_t *cvar_totwt = nullptr, *cpro_liqwt = nullptr;
+  if (cs_glob_physical_model_flag[CS_ATMOSPHERIC] == CS_ATMO_HUMID) {
+    cvar_totwt = cs_field_by_name("ym_water")->val;
+    cpro_liqwt = cs_field_by_name("liquid_water")->val;
+  }
+  cs_real_t *crom = CS_F_(rho)->val;
+  const cs_real_t *cvar_vart = cs_thermal_model_field()->val;
+  cs_real_t *cpro_tempc = cs_field_by_name("real_temperature")->val;
+
+  /* From potential temperature, compute:
+   * - Temperature in Celsius
+   * - Density
+   * -------------------------------------
+   * Computes the perfect gas constants according to the physics */
+
+  const cs_real_t rscp = fluid_props->r_pg_cnst/fluid_props->cp0;
+  const cs_real_t tkelvi = cs_physical_constants_celsius_to_kelvin;
+  // Adiabatic (constant) potential temperature
+  const cs_real_t theta0
+    = fluid_props->t0 * pow(fluid_props->p0/cs_glob_atmo_constants->ps, rscp);
+
+  for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+
+    cs_real_t pp = 0.0, dum = 0.0, qwt = 0.0;
+    const cs_real_t zent = cell_cen[c_id][2];
+
+    if (at_opt->meteo_profile == 0)
+      cs_atmo_profile_std(zent, &pp, &dum, &dum);
+    else if (at_opt->meteo_profile == 1)
+      pp = cs_intprf(at_opt->met_1d_nlevels_t,
+                     at_opt->met_1d_ntimes,
+                     at_opt->z_temp_met,
+                     at_opt->time_met,
+                     at_opt->hyd_p_met,
+                     zent,
+                     cs_glob_time_step->t_cur);
+    else
+      pp = cpro_met_p[c_id];
+
+    // Potential temperature
+    // or liquid potential temperature for humid atmosphere
+    const cs_real_t xvart = cvar_vart[c_id];
+
+    /* (liquid) temperature
+     * law: T = theta * (p/ps) ** (Rair/Cp0) */
+    const cs_real_t tliq = xvart*pow(pp/cs_glob_atmo_constants->ps, rscp);
+
+    if (cvar_totwt != nullptr)
+      qwt = cvar_totwt[c_id];
+
+    /*  Density in cell centers:
+     * ------------------------
+     * law: rho = P / ( R_mixture * T_mixture(K) )
+     * Boussinesq / anelastic approximation */
+    if (cs_glob_velocity_pressure_model->idilat == 0) {
+      // Compute T in Celisus
+      cpro_tempc[c_id] = tliq - tkelvi;
+
+      //  Boussinesq with respect to the adiabatic density
+      //  (so called anelastic approximation)
+      if (cpro_met_rho != nullptr)
+        crom[c_id] = cpro_met_rho[c_id];
+      else
+        crom[c_id] = fluid_props->ro0;
+      /* "delta rho = - beta0 rho_a delta theta" gives
+         "beta0 = 1 / theta0" */
+      cpro_beta[c_id] = 1.0 / theta0;
+    }
+    else {
+      cs_real_t beta = 0.0, yw_liq = 0.0;
+      cs_rho_humidair(qwt,
+                      xvart,
+                      pp,
+                      &yw_liq,
+                      &cpro_tempc[c_id],
+                      &crom[c_id],
+                      &beta);
+      // Humid atmosphere
+      if (cpro_liqwt != nullptr)
+        cpro_liqwt[c_id] = yw_liq;
+      /* Thermal expansion for turbulent production
+       * "delta rho = - beta rho delta theta" gives
+       *"beta = 1 / theta_v", theta_v the virtual temperature */
+      if (cpro_beta != nullptr)
+        cpro_beta[c_id] = beta;
+    }
+
+  } // end loop
+
+  if (   at_opt->distribution_model == 2
+      && cs_glob_physical_model_flag[CS_ATMOSPHERIC] == CS_ATMO_HUMID  )
+    _gaussian(m,
+              mq,
+              at_opt,
+              fluid_props,
+              crom,
+              cpro_tempc,
+              cpro_liqwt,
+              cpro_met_p,
+              cvar_totwt);
+
+  /* Update the thermo physical properties
+     fields for the humid air and he liquid.
+     -----------------------------------------*/
+
+  if (!at_opt->rain)
+    return;
+
+  cs_real_t *ym_w = (cs_real_t *)CS_F_(ym_w)->val;     // Water mass fraction
+  cs_real_t *yr = cs_field_by_name_try("ym_l_r")->val;   // Rain mass fraction
+  cs_real_t *rho_h = cs_field_by_name("rho_humid_air")->val; // Humid air density
+  cs_real_t *theta_liq = cs_field_by_name("temperature")->val; // Liq. pot. temp.
+
+  for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+    cs_rho_humidair(ym_w[c_id],
+                    theta_liq[c_id],
+                    cpro_met_p[c_id],
+                    &(cpro_liqwt[c_id]),
+                    &(cpro_tempc[c_id]),
+                    &(rho_h[c_id]),
+                    &(cpro_beta[c_id]));
+    /* Homogeneous mixture density */
+    crom[c_id] = 1.0 / ((1.0 - yr[c_id])/rho_h[c_id] + yr[c_id]/1000);
+  }
+
 }
 
 /*----------------------------------------------------------------------------*/

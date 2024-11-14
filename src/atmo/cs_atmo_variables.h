@@ -52,6 +52,18 @@ void
 cs_atmo_add_property_fields(void);
 
 /*----------------------------------------------------------------------------*/
+/*!
+ * \brief Update the thermo physical properties fields for the humid air and
+ *        the liquid \n
+ *        Remarques :
+ *        This function  is called at the beginning of each time step
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_atmo_physical_properties_update(void);
+
+/*----------------------------------------------------------------------------*/
 
 END_C_DECLS
 

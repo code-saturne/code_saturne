@@ -520,22 +520,6 @@ double precision, save:: zaero
 
     !---------------------------------------------------------------------------
 
-    !> \brief Calculation of the specific enthalpy of liquid water
-
-    !> \return specific enthalpy of liquid water
-
-    !> \param[in]  t_l  liquid water temperature (in Celsius)
-
-    function cs_liq_t_to_h(t_l) result(h_l) &
-        bind(C, name='cs_liq_t_to_h')
-      use, intrinsic :: iso_c_binding
-      implicit none
-      real(c_double), value :: t_l
-      real(c_double) :: h_l
-    end function cs_liq_t_to_h
-
-    !---------------------------------------------------------------------------
-
     !> \brief Calculation of the air water mass fraction at saturation
     !>        for a given temperature.
 
@@ -551,56 +535,6 @@ double precision, save:: zaero
     end function cs_air_yw_sat
 
     !---------------------------------------------------------------------------
-
-    !> \brief Convert the absolute humidity of humid air to the
-    !>        air water mass fraction.
-
-    !> \param[in]  x  absolute humidity of humid air
-
-    function cs_air_x_to_yw(x) result(qw) &
-        bind(C, name='cs_air_x_to_yw')
-      use, intrinsic :: iso_c_binding
-      implicit none
-      real(c_double), value :: x
-      real(c_double) :: qw
-    end function cs_air_x_to_yw
-
-    !---------------------------------------------------------------------------
-
-    !> \brief Convert the air water mass fraction to the
-    !>        absolute humidity of humid air.
-
-    !> \param[in]  qw  air water mass fraction
-
-    function cs_air_yw_to_x(qw) result(x) &
-        bind(C, name='cs_air_yw_to_x')
-      use, intrinsic :: iso_c_binding
-      implicit none
-      real(c_double), value :: qw
-      real(c_double) :: x
-    end function cs_air_yw_to_x
-
-    !---------------------------------------------------------------------------
-
-    !> \brief Calculation of the density of humid air.
-
-    !> \param[in]  ywm           air water mass fraction
-    !> \param[in]  theta_l       potential liquide temperature
-    !> \param[in]  p             pressure
-    !> \param[out] yw_liq        liquid water mass fraction
-    !> \param[out] t_h           temperature of humid air in Celsius
-    !> \param[out] rho_h         density of humid air
-    !> \param[out] beta_h
-
-    subroutine cs_rho_humidair(ywm, theta_l, p, yw_liq, t_h, rho_h, beta_h) &
-        bind(C, name='cs_rho_humidair')
-      use, intrinsic :: iso_c_binding
-      implicit none
-      real(c_double), value :: ywm, theta_l, p
-      real(c_double), intent(out) :: yw_liq, t_h, rho_h, beta_h
-    end subroutine cs_rho_humidair
-
-    !=============================================================================
 
     subroutine cs_f_atmo_get_soil_zone(n_faces, n_soil_cat, face_ids)  &
         bind(C, name='cs_f_atmo_get_soil_zone')

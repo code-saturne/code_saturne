@@ -94,6 +94,20 @@ integer          mbrom
 
 ! Local variables
 
+interface
+
+  !---------------------------------------------------------------------------
+
+  subroutine cs_atmo_physical_properties_update()  &
+    bind(C, name='cs_atmo_physical_properties_update')
+    use, intrinsic :: iso_c_binding
+    implicit none
+  end subroutine cs_atmo_physical_properties_update
+
+  !---------------------------------------------------------------------------
+
+end interface
+
 !===============================================================================
 ! 1. Fill properties depending on the model
 !===============================================================================
@@ -149,8 +163,7 @@ if (ippmod(iaeros).ge.0) then
 
 ! ---> Atmospheric Flows (except constant density: ippmod(iatmos) = 0)
 else if (ippmod(iatmos).ge.1) then
-  call atphyv
-  call cs_atmo_phyvar_update()
+  call cs_atmo_physical_properties_update()
 endif
 
 !----

@@ -994,16 +994,6 @@ module cs_c_bindings
 
     !---------------------------------------------------------------------------
 
-    ! Interface to C function for atmospheric module
-
-    subroutine cs_atmo_phyvar_update()             &
-      bind(C, name='cs_atmo_phyvar_update')
-      use, intrinsic :: iso_c_binding
-      implicit none
-    end subroutine cs_atmo_phyvar_update
-
-    !---------------------------------------------------------------------------
-
     ! Interface to C function cs_math_3_normalize
 
     subroutine vector_normalize(vin, vout)                   &
