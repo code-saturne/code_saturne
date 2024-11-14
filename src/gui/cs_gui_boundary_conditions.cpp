@@ -2138,7 +2138,7 @@ _init_boundaries(void)
   if (cs_glob_physical_model_flag[CS_COMBUSTION_COAL] > -1)
     solid_fuels = true;
   bool gas_combustion = false;
-  for (cs_physical_model_type_t m_type = CS_COMBUSTION_3PT;
+  for (int m_type = CS_COMBUSTION_3PT;
        m_type <= CS_COMBUSTION_LW;
        m_type++) {
     if (cs_glob_physical_model_flag[m_type] > -1)
@@ -2550,7 +2550,7 @@ cs_gui_boundary_conditions_processing(int  *itypfb)
   cs_boundary_condition_pm_info_t *bc_pm_info = cs_glob_bc_pm_info;
 
   bool gas_combustion = false;
-  for (cs_physical_model_type_t m_type = CS_COMBUSTION_3PT;
+  for (int m_type = CS_COMBUSTION_3PT;
        m_type <= CS_COMBUSTION_LW;
        m_type++) {
     if (cs_glob_physical_model_flag[m_type] > -1)
@@ -2677,7 +2677,7 @@ cs_gui_boundary_conditions_processing(int  *itypfb)
 
       cs_turb_model_type_t iturb = CS_TURB_NONE;
       if (cs_glob_turb_model != NULL)
-        iturb = cs_glob_turb_model->iturb;
+        iturb = (cs_turb_model_type_t)(cs_glob_turb_model->iturb);
 
       if (iturb != CS_TURB_NONE) {
 

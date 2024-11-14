@@ -80,17 +80,17 @@ noinst_LIBRARIES = libcsgui.a
 ###
 
 libcsgui_a_SOURCES = \
-cs_gui.c \
-cs_gui_boundary_conditions.c \
-cs_gui_conjugate_heat_transfer.c \
-cs_gui_mesh.c \
-cs_gui_mobile_mesh.c \
-cs_gui_output.c \
-cs_gui_particles.c \
-cs_gui_radiative_transfer.c \
-cs_gui_specific_physics.c \
-cs_gui_util.c \
-cs_tree_xml.c
+cs_gui.cpp \
+cs_gui_boundary_conditions.cpp \
+cs_gui_conjugate_heat_transfer.cpp \
+cs_gui_mesh.cpp \
+cs_gui_mobile_mesh.cpp \
+cs_gui_output.cpp \
+cs_gui_particles.cpp \
+cs_gui_radiative_transfer.cpp \
+cs_gui_specific_physics.cpp \
+cs_gui_util.cpp \
+cs_tree_xml.cpp
 
 # Rules for CUDA (not known by Automake)
 

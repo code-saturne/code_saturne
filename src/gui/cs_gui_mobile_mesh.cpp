@@ -447,7 +447,7 @@ cs_gui_ale_params(void)
 
   int ale_status = cs_glob_ale;  /* use copy to avoid any int/enum issues */
   cs_gui_node_get_status_int(tn, &ale_status);
-  cs_glob_ale = ale_status;
+  cs_glob_ale = (cs_ale_type_t)ale_status;
 
   if (cs_glob_ale > CS_ALE_NONE) {
     cs_gui_node_get_child_int(tn, "fluid_initialization_sub_iterations",

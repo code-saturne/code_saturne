@@ -579,7 +579,8 @@ _physical_property(cs_field_t          *c_prop,
   }
   else if (cs_gui_strcmp(prop_choice, "thermal_law") &&
            cs_gui_strcmp(z->name, "all_cells")) {
-    cs_phys_prop_type_t property = -1;
+    // initialize to silence warning
+    cs_phys_prop_type_t property = CS_PHYS_PROP_TEMPERATURE;
 
     if (cs_gui_strcmp(c_prop->name, "density"))
       property = CS_PHYS_PROP_DENSITY;
@@ -1694,7 +1695,7 @@ _read_diffusivity(void)
     cs_field_set_key_double(tf, kvisls0, visls_0);
 
     /* Special case/keyword for Enthalpy diffusivity for combustion */
-    for (cs_physical_model_type_t m_type = CS_COMBUSTION_3PT;
+    for (int m_type = CS_COMBUSTION_3PT;
          m_type <= CS_COMBUSTION_COAL;
          m_type++) {
       if (cs_glob_physical_model_flag[m_type] > -1) {
@@ -1879,9 +1880,11 @@ cs_gui_dt(void)
 {
   cs_time_step_options_t *time_opt = cs_get_glob_time_step_options();
 
+  int idtvar = (int)time_opt->idtvar;
   cs_tree_node_t *tn
     = cs_tree_get_node(cs_glob_tree, "analysis_control/time_parameters");
-  cs_gui_node_get_child_int(tn, "time_passing", &time_opt->idtvar);
+  cs_gui_node_get_child_int(tn, "time_passing", &idtvar);
+  time_opt->idtvar = (cs_time_step_type_t)idtvar;
 
 #if _XML_DEBUG_
   bft_printf("==> %s\n", __func__);
