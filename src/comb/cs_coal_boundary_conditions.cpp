@@ -51,6 +51,7 @@
 #include "cs_combustion_model.h"
 #include "cs_field.h"
 #include "cs_field_pointer.h"
+#include "cs_log.h"
 #include "cs_math.h"
 #include "cs_mesh.h"
 #include "cs_mesh_quantities.h"
@@ -202,8 +203,8 @@ _recompute_inlet_state(void)
 
     const cs_zone_t *z = cs_boundary_zone_by_id(bdy->zone_ids[bdy_idx]);
 
-    cs_coal_bc_inlet_t *ci
-      = cs_boundary_conditions_get_model_inlet(z);
+    auto ci = reinterpret_cast<cs_coal_bc_inlet_t *>
+                (cs_boundary_conditions_get_model_inlet(z));
 
     /* An input ientre must be of type ientat = 1 or ientcp = 1
        -------------------------------------------------------- */
@@ -263,8 +264,8 @@ _recompute_inlet_state(void)
 cs_coal_bc_inlet_t *
 cs_coal_boundary_conditions_get_inlet(const  cs_zone_t   *zone)
 {
-  cs_coal_bc_inlet_t *ci
-    = cs_boundary_conditions_get_model_inlet(zone);
+  auto ci = reinterpret_cast<cs_coal_bc_inlet_t *>
+              (cs_boundary_conditions_get_model_inlet(zone));
 
   /* Add and initialize coal inlet if not present */
 
@@ -298,7 +299,9 @@ cs_coal_boundary_conditions_get_inlet(const  cs_zone_t   *zone)
 
     /* Now register in high-level boundary conditions mechanism */
 
-    cs_boundary_conditions_assign_model_inlet(zone, ci, _destroy_inlet);
+    cs_boundary_conditions_assign_model_inlet(zone,
+                                              (void *)ci,
+                                              (void *)_destroy_inlet);
 
     /* Link with boundary mechanism;
        This will allow simplifying later loops */
@@ -494,8 +497,8 @@ cs_coal_boundary_conditions(int  bc_type[])
     const cs_lnum_t n_elts = z->n_elts;
     const cs_lnum_t *elt_ids = z->elt_ids;
 
-    cs_coal_bc_inlet_t *ci
-      = cs_boundary_conditions_get_model_inlet(z);
+    auto ci = reinterpret_cast<cs_coal_bc_inlet_t *>
+                (cs_boundary_conditions_get_model_inlet(z));
 
     cs_real_t xsolid[CS_COMBUSTION_COAL_MAX_SOLIDS];
     for (int isol = 0; isol < CS_COMBUSTION_COAL_MAX_SOLIDS; isol++)
@@ -527,7 +530,7 @@ cs_coal_boundary_conditions(int  bc_type[])
         if (fabs(totcp - 100) > cs_math_epzero) {
           cs_parameters_error_header(CS_ABORT_DELAYED,
                                      "in pulverized coal inlet definitions");
-          int log = CS_LOG_DEFAULT;
+          cs_log_t log = CS_LOG_DEFAULT;
           cs_log_printf(log,
                         _("\n"
                           "  zone: %s\n"
@@ -960,8 +963,8 @@ cs_coal_boundary_conditions_inlet_density(void)
 
     const cs_zone_t *z = cs_boundary_zone_by_id(bdy->zone_ids[bdy_idx]);
 
-    cs_coal_bc_inlet_t *ci
-      = cs_boundary_conditions_get_model_inlet(z);
+    auto ci = reinterpret_cast<cs_coal_bc_inlet_t *>
+                (cs_boundary_conditions_get_model_inlet(z));
 
     /* An input ientre must be of type ientat = 1 or ientcp = 1
        -------------------------------------------------------- */

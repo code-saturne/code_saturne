@@ -1536,7 +1536,9 @@ cs_coal_source_terms_scalar(int        fld_id,
     } /* loop on cells */
 
     if (log_active) {
-      cs_gnum_t cpt[] = {nberic, nbarre, nbpass};
+      cs_gnum_t cpt[] = {(cs_gnum_t)nberic,
+                         (cs_gnum_t)nbarre,
+                         (cs_gnum_t)nbpass};
       cs_parall_counter(cpt, 3);
 
       cs_parall_max(1, CS_INT_TYPE, &nbimax);

@@ -45,7 +45,6 @@ AM_CPPFLAGS = \
 $(CPPFLAGS_PLE) \
 $(MPI_CPPFLAGS)
 
-AM_CFLAGS = $(CFLAGS_DBG) $(CFLAGS_OPT) $(CFLAGS_SHARED)
 AM_CXXFLAGS = $(CXXFLAGS_STD) $(CXXFLAGS_SYCL) $(CXXFLAGS_DBG) $(CXXFLAGS_OPT) $(CXXFLAGS_SHARED)
 
 AM_FCFLAGS = \
@@ -82,19 +81,19 @@ cs_comb_headers.h
 
 noinst_LIBRARIES = libcscomb.a
 libcscomb_a_SOURCES = \
-cs_coal.c \
-cs_coal_boundary_conditions.c \
+cs_coal.cpp \
+cs_coal_boundary_conditions.cpp \
 cs_coal_bt2h.f90 \
-cs_coal_ht_convert.c \
+cs_coal_ht_convert.cpp \
 cs_coal_masstransfer.f90 \
-cs_coal_noxst.c \
+cs_coal_noxst.cpp \
 cs_coal_param.f90 \
 cs_coal_physical_properties.cpp \
 cs_coal_physprop2.f90 \
 cs_coal_physprop.f90 \
 cs_coal_prop.f90 \
-cs_coal_read_data.c \
-cs_coal_source_terms.c \
+cs_coal_read_data.cpp \
+cs_coal_source_terms.cpp \
 cs_coal_varini.f90 \
 cs_coal_varpos.f90 \
 cs_coal_verify.f90 \

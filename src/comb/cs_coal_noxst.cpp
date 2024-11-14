@@ -345,12 +345,12 @@ cs_coal_noxst(const  int        indpdf[],
 
   BFT_FREE(xmx2);
 
-  cs_lnum_t inok = 0;
-  cs_lnum_t i300 = 0, i000 = 0, imini= 0;
-  cs_lnum_t i2500= 0, i2600= 0, i2700= 0, i2800= 0;
-  cs_lnum_t i3000= 0, i3500= 0, i4000= 0, i5000= 0;
-  cs_lnum_t imaxi= 0, nbpt = 0, nbclip1 = 0, nbclip2 = 0;
-  cs_lnum_t nbclip30 = 0, nbclip31 = 0;
+  cs_gnum_t inok = 0;
+  cs_gnum_t i300 = 0, i000 = 0, imini= 0;
+  cs_gnum_t i2500= 0, i2600= 0, i2700= 0, i2800= 0;
+  cs_gnum_t i3000= 0, i3500= 0, i4000= 0, i5000= 0;
+  cs_gnum_t imaxi= 0, nbpt = 0, nbclip1 = 0, nbclip2 = 0;
+  cs_gnum_t nbclip30 = 0, nbclip31 = 0;
 
   cs_real_t ts4min = 1.e+20, ts4max = -1.e+20;
   cs_real_t summin = 1.e+20, summax = -1.e+20;
