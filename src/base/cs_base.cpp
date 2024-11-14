@@ -1355,11 +1355,12 @@ cs_base_mpi_init(int    *argc,
 
   if (use_mpi == true) {
 
-    char *app_name = cs_base_get_app_name(*argc, (const char **)(*argv));
+    char *app_name = cs_base_get_app_name(*argc,
+                                          const_cast<const char **>(*argv));
 
     _cs_base_mpi_setup(app_name);
 
-    BFT_FREE(app_name);
+    CS_FREE(app_name);
   }
 
 #endif
@@ -1673,11 +1674,12 @@ cs_base_mem_init(void)
         if (cs_glob_rank_id >= 0) {
           int n_dec = 1;
           for (int i = cs_glob_n_ranks; i >= 10; i /= 10, n_dec += 1);
-          _file_name = malloc((strlen(base_name) + n_dec + 2) * sizeof (char));
+          _file_name
+            = (char *)malloc((strlen(base_name) + n_dec + 2) * sizeof (char));
           sprintf(_file_name, "%s.%0*d", base_name, n_dec, cs_glob_rank_id);
         }
         else {
-          _file_name = malloc((strlen(base_name) + 1) * sizeof (char));
+          _file_name = (char *)malloc((strlen(base_name) + 1) * sizeof (char));
           strcpy(_file_name, base_name);
         }
         file_name = _file_name;

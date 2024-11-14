@@ -632,11 +632,11 @@ _check_restart(const char                     *name,
 
   if (prev_id > -1) {
 
-    for (cs_time_moment_type_t m_type = type;
+    for (int m_type = (cs_time_moment_type_t)type;
          m_type > CS_TIME_MOMENT_MEAN;
          m_type--) {
 
-      cs_time_moment_type_t s_type = m_type -1;
+      cs_time_moment_type_t s_type = (cs_time_moment_type_t)(m_type -1);
       int l_dim = (dim == 6 && m_type == CS_TIME_MOMENT_VARIANCE) ? 3 : dim;
 
       int l_id = ri->l_id[prev_id];
@@ -945,7 +945,7 @@ static void
 _sd_moment_data(const void  *input,
                 cs_real_t   *vals)
 {
-  const int *msd = input;
+  const int *msd = reinterpret_cast<const int *>(input);
 
   const cs_lnum_t dim = msd[1];
   const int stride = 2 + dim;
@@ -1709,7 +1709,7 @@ cs_time_moment_define_by_func(const char                *name,
 
   /* Define sub moments */
 
-  for (cs_time_moment_type_t m_type = type;
+  for (int m_type = type;
        m_type > CS_TIME_MOMENT_MEAN;
        m_type--) {
 
@@ -1717,7 +1717,7 @@ cs_time_moment_define_by_func(const char                *name,
 
     int s_prev_id = (ri != NULL && prev_id != -1) ? ri->l_id[prev_id] : prev_id;
 
-    cs_time_moment_type_t s_type = m_type -1;
+    cs_time_moment_type_t s_type = (cs_time_moment_type_t)(m_type -1);
 
     int l_id = _find_or_add_moment(location_id,
                                    dim,

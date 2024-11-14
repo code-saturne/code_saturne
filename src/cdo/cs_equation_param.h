@@ -106,7 +106,6 @@ BEGIN_C_DECLS
 #define CS_EQUATION_BUILD_HOOK     (1 <<  9)  /*  512 */
 #define CS_EQUATION_USER_TRIGGERED (1 << 10)  /* 1024 */
 
-
 /*!
  * @}
  * @name Flags specifying which extra operation related to an equation is

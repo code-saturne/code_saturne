@@ -353,7 +353,7 @@ cs_f_time_step_get_pointers(int      **nt_prev,
 void
 cs_f_time_step_options_get_pointers(int  **idtvar)
 {
-  *idtvar = &(_time_step_options.idtvar);
+  *idtvar = reinterpret_cast<int *>(&(_time_step_options.idtvar));
 }
 
 /*=============================================================================

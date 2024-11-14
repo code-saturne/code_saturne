@@ -343,7 +343,7 @@ cs_field_allocate_values(cs_field_t  *f);
  * parameters:
  *   f           <-> pointer to field structure
  *   val         <-- pointer to array of values
- *   val_pre     <-- pointer to array of previous values, or NULL
+ *   val_pre     <-- pointer to array of previous values, or nullptr
  *----------------------------------------------------------------------------*/
 
 void
@@ -489,13 +489,13 @@ cs_field_by_name(const char *name);
 /*----------------------------------------------------------------------------
  * Return a pointer to a field based on its name if present.
  *
- * If no field of the given name is defined, NULL is returned.
+ * If no field of the given name is defined, nullptr is returned.
  *
  * parameters:
  *   name <-- field name
  *
  * returns:
- *   pointer to the field structure, or NULL
+ *   pointer to the field structure, or nullptr
  *----------------------------------------------------------------------------*/
 
 cs_field_t  *
@@ -510,7 +510,7 @@ cs_field_by_name_try(const char *name);
  * \param[in]  name_prefix  first part of field name
  * \param[in]  name_suffix  second part of field name
  *
- * \return  pointer to the field structure, or NULL
+ * \return  pointer to the field structure, or nullptr
  */
 /*----------------------------------------------------------------------------*/
 
@@ -523,7 +523,7 @@ cs_field_by_composite_name(const char  *name_prefix,
  * \brief Return a pointer to a field based on a composite name if present.
  *
  * The name is expected to be of the form <name_prefix>_<name_suffix>.
- * If no field of the given name is defined, NULL is returned.
+ * If no field of the given name is defined, nullptr is returned.
  *
  * \remark: in C++, we could simply have a cs_field_by_name_try template
  *          with a variable number of arguments.
@@ -531,7 +531,7 @@ cs_field_by_composite_name(const char  *name_prefix,
  * \param[in]  name_prefix  first part of field name
  * \param[in]  name_suffix  second part of field name
  *
- * \return  pointer to the field structure, or NULL
+ * \return  pointer to the field structure, or nullptr
  */
 /*----------------------------------------------------------------------------*/
 
@@ -543,7 +543,7 @@ cs_field_by_composite_name_try(const char  *name_prefix,
 /*!
  * \brief Return pointer to a field based on a double composite name if present.
  *
- * If no field of the given name is defined, NULL is returned.
+ * If no field of the given name is defined, nullptr is returned.
  *
  * Contrary to \ref cs_field_by_composite_name_try, this function
  * does not automatically add '_' characters between component names.
@@ -556,7 +556,7 @@ cs_field_by_composite_name_try(const char  *name_prefix,
  * \param[in]  name_part_2  second part of field name
  * \param[in]  name_part_3  second part of field name
  *
- * \return  pointer to the field structure, or NULL
+ * \return  pointer to the field structure, or nullptr
  */
 /*----------------------------------------------------------------------------*/
 
@@ -1047,7 +1047,7 @@ cs_field_get_key_struct(const cs_field_t  *f,
                         void              *s);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Return a pointer to a simple structure for a given key to a field.
  *
  * If the key id is not valid, the value type or field category is not
@@ -1060,7 +1060,8 @@ cs_field_get_key_struct(const cs_field_t  *f,
  * \param[in]  f       pointer to field structure
  * \param[in]  key_id  id of associated key
  *
- * \return  pointer to key structure in case of success, NULL in case of error
+ * \return  pointer to key structure in case of success,
+ *          nullptr in case of error
  */
 /*----------------------------------------------------------------------------*/
 
@@ -1069,7 +1070,7 @@ cs_field_get_key_struct_ptr(cs_field_t  *f,
                             int          key_id);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Return a read-only pointer to a simple structure for a given key
  *        to a field.
  *
@@ -1079,7 +1080,8 @@ cs_field_get_key_struct_ptr(cs_field_t  *f,
  * \param[in]  f       pointer to field structure
  * \param[in]  key_id  id of associated key
  *
- * \return  pointer to key structure in case of success, NULL in case of error
+ * \return  pointer to key structure in case of success,
+ *          nullptr in case of error
  */
 /*----------------------------------------------------------------------------*/
 

@@ -252,7 +252,9 @@ _compute_mac_adams(cs_real_t theta,
                    cs_real_t grashof,
                    cs_real_t schmidt_or_prandtl)
 {
-  return theta * 0.13 * pow(grashof * schmidt_or_prandtl, cs_math_1ov3);
+  constexpr cs_real_t c_1ov3 = 1./3.;
+
+  return theta * 0.13 * pow(grashof * schmidt_or_prandtl, c_1ov3);
 }
 
 /*----------------------------------------------------------------------------
@@ -264,8 +266,10 @@ _compute_schlichting(cs_real_t theta,
                      cs_real_t reynolds,
                      cs_real_t schmidt_or_prandtl)
 {
+  constexpr cs_real_t c_1ov3 = 1./3.;
+
   return   theta * 0.0296 * pow(reynolds, 0.8)
-         * pow(schmidt_or_prandtl, cs_math_1ov3);
+         * pow(schmidt_or_prandtl, c_1ov3);
 }
 
 /*----------------------------------------------------------------------------
@@ -468,6 +472,8 @@ _compute_exchange_natural_convection(cs_lnum_t  ieltcd,
                                      cs_real_t *hconv,
                                      cs_real_t *hcond)
 {
+  constexpr cs_real_t c_2ov3 = 2./3.;
+
   cs_lnum_t *     ifabor   = cs_glob_mesh->b_face_cells;
   const cs_real_t pressure =   (cs_glob_velocity_pressure_model->idilat == 3)
                              ? cs_glob_fluid_properties->pther
@@ -513,7 +519,7 @@ _compute_exchange_natural_convection(cs_lnum_t  ieltcd,
   cs_real_t hcd_over_hcv = 0.0; // default : no condensation
   if (fabs(delta_temp) > cs_math_epzero)
     hcd_over_hcv
-      = 1.0 / cp * pow(Pr / Sc, cs_math_2ov3) * lcond / delta_temp * spalding;
+      = 1.0 / cp * pow(Pr / Sc, c_2ov3) * lcond / delta_temp * spalding;
 
   // h_conv computation
   cs_real_t       theta   = 1.0;
@@ -676,6 +682,8 @@ static void
 _compute_exchange_natural_convection_volume_structure(cs_real_t   *hcond,
                                                       cs_real_t   *hconv)
 {
+  constexpr cs_real_t c_2ov3 = 2./3.;
+
   const cs_real_t pressure =   (cs_glob_velocity_pressure_model->idilat == 3)
                              ? cs_glob_fluid_properties->pther
                              : cs_glob_fluid_properties->p0;
@@ -736,7 +744,7 @@ _compute_exchange_natural_convection_volume_structure(cs_real_t   *hcond,
     cs_real_t hcd_over_hcv = 0.0; // default : no condensation
     if (fabs(delta_temp) > cs_math_epzero)
       hcd_over_hcv
-        = 1.0 / cp * pow(Pr / Sc, cs_math_2ov3) * lcond / delta_temp * spalding;
+        = 1.0 / cp * pow(Pr / Sc, c_2ov3) * lcond / delta_temp * spalding;
 
     /* h_conv computation */
     cs_real_t theta = 1.0;
@@ -1283,8 +1291,7 @@ cs_wall_condensation_source_terms(const cs_field_t  *f,
 {
   const cs_lnum_t *b_face_cells = cs_glob_mesh->b_face_cells;
 
-  const cs_real_t *restrict b_face_surf
-    = (const cs_real_t *restrict)cs_glob_mesh_quantities->b_face_surf;
+  const cs_real_t *restrict b_face_surf = cs_glob_mesh_quantities->b_face_surf;
 
   const cs_wall_condensation_t *wall_cond = cs_glob_wall_condensation;
   const cs_lnum_t nfbpcd = wall_cond->nfbpcd;

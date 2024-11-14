@@ -1446,7 +1446,8 @@ _control_notebook(const cs_time_step_t   *ts,
     char *name;
     double val = 0.;
     _read_next_string(true, s, &name);
-    if (_read_next_double(false, cur_line, (const char **)s, &val) == 1) {
+    if (_read_next_double(false, cur_line, const_cast<const char **>(s),
+                          &val) == 1) {
       int editable;
       cs_notebook_parameter_is_present(name, &editable);
       if (editable) {
@@ -1503,7 +1504,8 @@ _control_notebook(const cs_time_step_t   *ts,
                  "an editable notebook variable\n",
                  "notebook", name);
 
-    if (_read_next_double(false, cur_line, (const char **)s, &val) == 1) {
+    if (_read_next_double(false, cur_line, const_cast<const char **>(s),
+                          &val) == 1) {
       if (id > -1) {
         cs_notebook_parameter_set_value(name, val);
         bft_printf("  %-32s \"%s\" set to %12.5g\n",
@@ -1693,11 +1695,13 @@ _parse_control_buffer(const char          *name,
     if (sscanf(s, "%i", &nt_max) > 0)
       nt_max = CS_MAX(nt_max, 0);
     else if (strncmp(s, "max_time_step ", 14) == 0) {
-      if (_read_next_int(cur_line, (const char **)&s, &nt_max) > 0)
+      if (_read_next_int(cur_line, const_cast<const char **>(&s),
+                         &nt_max) > 0)
         nt_max = CS_MAX(nt_max, 0);
     }
     else if (strncmp(s, "time_step_limit ", 16) == 0) {
-      if (_read_next_int(cur_line, (const char **)&s, &nt_max) > 0) {
+      if (_read_next_int(cur_line, const_cast<const char **>(&s),
+                         &nt_max) > 0) {
         nt_max = CS_MAX(nt_max, 0);
         if (ts->nt_max > -1)
           nt_max = CS_MIN(nt_max + ts->nt_prev, ts->nt_max);
@@ -1714,7 +1718,8 @@ _parse_control_buffer(const char          *name,
     }
     else if (strncmp(s, "max_time_value ", 15) == 0) {
       double t_max;
-      if (_read_next_double(true, cur_line, (const char **)&s, &t_max) > 0)
+      if (_read_next_double(true, cur_line, const_cast<const char **>(&s),
+                            &t_max) > 0)
         t_max = CS_MAX(t_max, ts->t_cur);
       cs_time_step_define_t_max(t_max);
       bft_printf("  %-32s %12.5g (%s %12.5g)\n",
@@ -1722,7 +1727,8 @@ _parse_control_buffer(const char          *name,
     }
     else if (strncmp(s, "max_wall_time ", 14) == 0) {
       double wt_max;
-      if (_read_next_double(true, cur_line, (const char **)&s, &wt_max) > 0)
+      if (_read_next_double(true, cur_line, const_cast<const char **>(&s),
+                            &wt_max) > 0)
         wt_max = CS_MAX(wt_max, cs_timer_wtime());
       bft_printf("  %-32s %12.5g (%s %12.5g)\n",
                  "max_wall_time", wt_max, _("current:"),
@@ -1734,28 +1740,30 @@ _parse_control_buffer(const char          *name,
 
     else if (strncmp(s, "control_file_wtime_interval ", 28) == 0) {
       double wt;
-      if (_read_next_double(true, cur_line, (const char **)&s, &wt) > 0)
+      if (_read_next_double(true, cur_line, const_cast<const char **>(&s),
+                            &wt) > 0)
         _control_file_wt_interval = wt;
     }
 
     /* Checkpointing options */
 
     else if (strncmp(s, "checkpoint_", 11) == 0)
-      _control_checkpoint(cur_line, (const char **)&s);
+      _control_checkpoint(cur_line, const_cast<const char **>(&s));
 
     /* Snapshot options */
 
 #if defined(HAVE_SOCKET)
 
     else if (strncmp(s, "snapshot_", 9) == 0)
-      _control_snapshot(cur_line, (const char **)&s, control_comm, queue);
+      _control_snapshot(cur_line, const_cast<const char **>(&s),
+                        control_comm, queue);
 
 #endif
 
     /* Postprocessing options */
 
     else if (strncmp(s, "postprocess_", 12) == 0)
-      _control_postprocess(ts, cur_line, (const char **)&s);
+      _control_postprocess(ts, cur_line, const_cast<const char **>(&s));
 
     /* Notebook options */
 
@@ -1766,7 +1774,7 @@ _parse_control_buffer(const char          *name,
 
     else if (strncmp(s, "flush", 5) == 0) {
       int nt = -1;
-      if (_read_next_int(cur_line, (const char **)&s, &nt) > 0) {
+      if (_read_next_int(cur_line, const_cast<const char **>(&s), &nt) > 0) {
         if (nt > -1)
           _flush_nt = CS_MAX(nt, ts->nt_cur);
         else
@@ -1798,7 +1806,7 @@ _parse_control_buffer(const char          *name,
     else if (strncmp(s, "advance ", 8) == 0) {
 
       int n = -1;
-      if (_read_next_opt_int((const char **)&s, &n) == 0)
+      if (_read_next_opt_int(const_cast<const char **>(&s), &n) == 0)
         n = 1;
       if (_control_advance_steps <= 0)
         _control_advance_steps = n;

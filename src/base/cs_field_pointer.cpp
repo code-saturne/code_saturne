@@ -112,7 +112,7 @@ BEGIN_C_DECLS
 /* Number of pointers (initially fixed, but extensible in case
    user fields should be added after the model fields) */
 
-static cs_field_pointer_id_t             _n_pointers = 0;
+static int                               _n_pointers = 0;
 static struct cs_field_pointer_array_t  *_field_pointer = NULL;
 
 /* Handling of sublists */
@@ -148,7 +148,7 @@ _init_pointers(void)
   BFT_MALLOC(_field_pointer, _n_pointers, struct cs_field_pointer_array_t);
   BFT_MALLOC(_sublist_size, _n_pointers, short int);
 
-  for (cs_field_pointer_id_t i = 0; i < _n_pointers; i++) {
+  for (int i = 0; i < _n_pointers; i++) {
     _field_pointer[i].f = NULL;
     _field_pointer[i].p = &(_field_pointer[i].f);
     _sublist_size[i] = 0;
@@ -185,7 +185,7 @@ cs_field_pointer_ensure_init(void)
 void
 cs_field_pointer_destroy_all(void)
 {
-  for (cs_field_pointer_id_t i = 0; i < _n_pointers; i++) {
+  for (int i = 0; i < _n_pointers; i++) {
     if (_sublist_size[i] > 1)
       BFT_FREE(_field_pointer[i].p);
   }

@@ -282,14 +282,15 @@ cs_equation_param_t *
 cs_field_get_equation_param(cs_field_t  *f)
 {
   assert(f != NULL);
-  cs_equation_param_t *eqp = NULL;
+  cs_equation_param_t *eqp = nullptr;
 
   static int k_id = -1;
   if (k_id < 0)
     k_id = cs_field_key_id_try("var_cal_opt");
 
   if (k_id >= 0 && (f->type & CS_FIELD_VARIABLE))
-    eqp = cs_field_get_key_struct_ptr(f, k_id);
+    eqp = reinterpret_cast<cs_equation_param_t *>
+            (cs_field_get_key_struct_ptr(f, k_id));
 
   return eqp;
 }
@@ -315,14 +316,15 @@ const cs_equation_param_t *
 cs_field_get_equation_param_const(const cs_field_t  *f)
 {
   assert(f != NULL);
-  const cs_equation_param_t *eqp = NULL;
+  const cs_equation_param_t *eqp = nullptr;
 
   static int k_id = -1;
   if (k_id < 0)
     k_id = cs_field_key_id_try("var_cal_opt");
 
   if (k_id >= 0 && (f->type & CS_FIELD_VARIABLE))
-    eqp = cs_field_get_key_struct_const_ptr(f, k_id);
+    eqp = reinterpret_cast<const cs_equation_param_t *>
+            (cs_field_get_key_struct_const_ptr(f, k_id));
 
   return eqp;
 }

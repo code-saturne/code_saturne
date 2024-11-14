@@ -79,7 +79,7 @@ AM_LDFLAGS =
 # added to distribution.
 
 EXTRA_DIST = \
-cs_base.c \
+cs_base.cpp \
 cs_coolprop.cxx \
 cs_version.h.in
 
@@ -249,7 +249,7 @@ libcscore.a \
 libcsbase.a libcsrenumber.a
 
 # Core library.
-# We use a specific rule for cs_base.c, so as to pass
+# We use a specific rule for cs_base.cpp, so as to pass
 # it localedir and pkgdatadir info.
 
 cs_base_CPPFLAGS = \
@@ -258,9 +258,14 @@ cs_base_CPPFLAGS = \
 -DPKGLIBDIR=\"'$(pkglibdir)'\" \
 $(AM_CPPFLAGS)
 
-cs_base = $(top_srcdir)/src/base/cs_base.c
+cs_base = $(top_srcdir)/src/base/cs_base.cpp
+if HAVE_CUDA_CPP
 cs_base.$(OBJEXT): $(cs_base)
-	$(CC) -c $(DEFS) $(DEFAULT_INCLUDES) $(cs_base_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) $(cs_base)
+	$(NVCC) -c $(DEFS) $(DEFAULT_INCLUDES) $(cs_base_CPPFLAGS) $(NVCCFLAGS) $(NVCFLAGS_DBG) $(NVCCFLAGS_OPT) $(NVCCFLAGS_CPP) $(cs_base)
+else
+cs_base.$(OBJEXT): $(cs_base)
+	$(CC) -c $(DEFS) $(DEFAULT_INCLUDES) $(cs_base_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CXXFLAGS) $(cs_base)
+endif
 
 libcscore_a_LIBADD = cs_base.$(OBJEXT)
 
@@ -269,7 +274,7 @@ cs_all_to_all.cpp \
 cs_block_dist.cpp \
 cs_block_to_part.cpp \
 cs_crystal_router.cpp \
-cs_defs.c \
+cs_defs.cpp \
 cs_execution_context.cpp \
 cs_file.cpp \
 cs_file_csv_parser.cpp \
@@ -285,7 +290,7 @@ cs_order.cpp \
 cs_part_to_block.cpp \
 cs_rank_neighbors.cpp \
 cs_system_info.cxx \
-cs_timer.c \
+cs_timer.cpp \
 cs_tree.cpp
 
 if HAVE_ACCEL
@@ -327,10 +332,10 @@ cs_equation_iterative_solve.cpp \
 cs_ext_library_info.c \
 cs_ext_neighborhood.cpp \
 cs_fan.cpp \
-cs_field.c \
-cs_field_default.c \
+cs_field.cpp \
+cs_field_default.cpp \
 cs_field_operator.cpp \
-cs_field_pointer.c \
+cs_field_pointer.cpp \
 cs_flag_check.cpp \
 cs_function.cpp \
 cs_function_default.cpp \
@@ -341,7 +346,7 @@ cs_head_losses.cpp \
 cs_ibm.cpp \
 cs_initialize_fields.cpp \
 cs_internal_coupling.cpp \
-cs_interpolate.c \
+cs_interpolate.cpp \
 cs_log_iteration.cpp \
 cs_log_setup.cpp \
 cs_mass_source_terms.cpp \
@@ -352,17 +357,17 @@ cs_numbering.cpp \
 cs_opts.cpp \
 cs_parall.cpp \
 cs_param_types.cpp \
-cs_parameters.c \
+cs_parameters.cpp \
 cs_parameters_check.cpp \
-cs_physical_constants.c \
-cs_physical_properties.c \
-cs_physical_properties_default.c \
+cs_physical_constants.cpp \
+cs_physical_properties.cpp \
+cs_physical_properties_default.cpp \
 cs_porosity_from_scan.cpp \
 cs_porous_model.cpp \
 cs_post.cpp \
 cs_post_default.cpp \
 cs_post_util.cpp \
-cs_preprocess.c \
+cs_preprocess.cpp \
 cs_preprocessor_data.cpp \
 cs_pressure_correction.cpp \
 cs_probe.cpp \
@@ -380,7 +385,7 @@ cs_scalar_clipping.cpp \
 cs_search.cpp \
 cs_selector.cpp \
 cs_selector_f2c.f90 \
-cs_setup.c \
+cs_setup.cpp \
 cs_solid_zone.cpp \
 cs_solve_all.cpp \
 cs_solve_equation.cpp \
@@ -393,10 +398,10 @@ cs_sys_coupling.cpp \
 cs_thermal_model.cpp \
 cs_theta_scheme.cpp \
 cs_time_control.cpp \
-cs_time_moment.c \
+cs_time_moment.cpp \
 cs_time_plot.cpp \
 cs_time_step_compute.cpp \
-cs_time_step.c \
+cs_time_step.cpp \
 cs_time_stepping.cpp \
 cs_time_table.cpp \
 cs_timer_stats.cpp \
@@ -406,10 +411,10 @@ cs_velocity_pressure.cpp \
 cs_vof.cpp \
 cs_volume_mass_injection.cpp \
 cs_volume_zone.cpp \
-cs_wall_condensation.c \
+cs_wall_condensation.cpp \
 cs_wall_condensation_1d_thermal.cpp \
 cs_wall_distance.cpp \
-cs_wall_functions.c \
+cs_wall_functions.cpp \
 cs_xdef_eval_at_zone.cpp \
 csclli.f90 \
 csinit.f90 \

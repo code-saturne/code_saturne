@@ -247,7 +247,7 @@ private:
   int _thread_id;    /*!< Thread id */
 
 #if defined(__NVCC__)
-  cudaStream_t _stream; /*!< Cuda stream */
+  cudaStream_t _stream; /*!< CUDA stream */
 
 #elif defined(SYCL_LANGUAGE_VERSION)
   sycl::queue _queue; /*!< SYCL queue */

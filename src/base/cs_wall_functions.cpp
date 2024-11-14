@@ -159,8 +159,8 @@ BEGIN_C_DECLS
 
 static cs_wall_functions_t  _wall_functions =
 {
-  .iwallf = -999,
-  .iwalfs = -999,
+  .iwallf = CS_WALL_F_UNSET,
+  .iwalfs = CS_WALL_F_S_UNSET,
   .ypluli = -1e13
 };
 
@@ -510,8 +510,9 @@ cs_immersed_boundary_wall_functions(int         f_id,
                                     cs_real_t  *st_exp,
                                     cs_real_t  *st_imp)
 {
-  const cs_domain_t *domain = cs_glob_domain;
+  const cs_real_t m_identity[3][3] = {{1., 0., 0.,}, {0., 1., 0.}, {0., 0., 1.}};
 
+  const cs_domain_t *domain = cs_glob_domain;
   const cs_field_t  *f = cs_field_by_id(f_id);
 
   /* mesh quantities */
@@ -521,12 +522,10 @@ cs_immersed_boundary_wall_functions(int         f_id,
   const cs_real_t  *cell_f_vol = mq->cell_f_vol;
 
   /*  Wall */
-  const cs_real_t *c_w_face_surf
-    = (const cs_real_t *restrict)mq->c_w_face_surf;
+  const cs_real_t *c_w_face_surf = mq->c_w_face_surf;
   const cs_real_3_t *c_w_face_normal
-    = (const cs_real_3_t *restrict)mq->c_w_face_normal;
-  const cs_real_t *c_w_dist_inv
-    = (const cs_real_t *restrict)mq->c_w_dist_inv;
+    = (const cs_real_3_t *)mq->c_w_face_normal;
+  const cs_real_t *c_w_dist_inv = mq->c_w_dist_inv;
 
   cs_real_t *cpro_roughness = NULL;
   if (cs_field_by_name_try("immersed_boundary_roughness") != NULL)
@@ -667,7 +666,7 @@ cs_immersed_boundary_wall_functions(int         f_id,
         for (cs_lnum_t i = 0; i < 3; i++) {
           //TODO add moving walls contibution
           for (cs_lnum_t j = 0; j < 3; j++) {
-            _st_imp[c_id][i][j] -= ( hflui * cs_math_33_identity[i][j]
+            _st_imp[c_id][i][j] -= ( hflui * m_identity[i][j]
                                     + (hint - hflui) * nw[i] * nw[j] )
                                     * solid_surf;
           }

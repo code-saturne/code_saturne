@@ -556,7 +556,8 @@ _create_variable_fields(void)
   /* Turbulence */
 
   const int itytur = cs_glob_turb_model->itytur;
-  const cs_turb_model_type_t iturb = cs_glob_turb_model->iturb;
+  const cs_turb_model_type_t iturb
+    = (cs_turb_model_type_t)cs_glob_turb_model->iturb;
 
   if (itytur == 2) {
     cs_field_pointer_map(CS_ENUMF_(k),

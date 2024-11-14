@@ -168,11 +168,6 @@ void
 _cs_timer_cpu_getrusage(cs_timer_t  *timer);
 #endif
 
-#if defined(_POSIX_SOURCE)
-void
-_cs_timer_cpu_times(cs_timer_t  *timer);
-#endif
-
 void
 _cs_timer_cpu_stdc_clock(cs_timer_t  *timer);
 
@@ -191,10 +186,6 @@ static _cs_timer_cpu_func_t *_cs_timer_cpu = _cs_timer_cpu_null;
 static time_t _cs_timer_stdc_time_start;
 
 /* CPU time */
-
-#if defined(_POSIX_SOURCE)
-static long _cs_timer_unit = 0;
-#endif
 
 static clock_t _cs_timer_clock_start;
 
@@ -340,28 +331,6 @@ _cs_timer_cpu_getrusage(cs_timer_t  *timer)
 
 #endif /* defined (HAVE_GETRUSAGE) */
 
-#if defined(_POSIX_SOURCE)
-
-/*----------------------------------------------------------------------------
- * Get CPU time using times().
- *
- * parameters:
- *   timer  <-- pointer to timing structure
- *----------------------------------------------------------------------------*/
-
-void
-_cs_timer_cpu_times(cs_timer_t  *timer)
-{
-  struct tms  ptimer;
-  clock_t ticks;
-  times(&ptimer);
-  ticks = ptimer.tms_utime + ptimer.tms_stime;
-  timer->cpu_sec = ticks / _cs_timer_unit;
-  timer->cpu_nsec = (double)(ticks % _cs_timer_unit)*1.e+9 / _cs_timer_unit;
-}
-
-#endif /* defined(_POSIX_SOURCE) */
-
 /*----------------------------------------------------------------------------
  * Get CPU time using clock().
  *
@@ -449,19 +418,6 @@ _cs_timer_initialize(void)
   }
 
 #endif
-
-#if defined(_POSIX_SOURCE)
-
-  if (_cs_timer_cpu_method == CS_TIMER_DISABLE) {
-    static struct tms  ptimer;
-    _cs_timer_unit = sysconf(_SC_CLK_TCK);
-    if (_cs_timer_unit != -1 && times(&ptimer) != -1) {
-      _cs_timer_cpu_method = CS_TIMER_TIMES;
-      _cs_timer_cpu = _cs_timer_cpu_times;
-    }
-  }
-
-#endif /* defined(_POSIX_SOURCE) */
 
   /* Use minimal C library functions */
 

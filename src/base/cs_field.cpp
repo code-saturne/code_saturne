@@ -211,21 +211,21 @@ typedef struct {
 
 static int  _n_fields = 0;
 static int  _n_fields_max = 0;
-static cs_field_t  **_fields = NULL;
-static cs_map_name_to_id_t  *_field_map = NULL;
+static cs_field_t  **_fields = nullptr;
+static cs_map_name_to_id_t  *_field_map = nullptr;
 
 /* Key definitions */
 
 static int  _n_keys = 0;
 static int  _n_keys_max = 0;
-static cs_field_key_def_t  *_key_defs = NULL;
-static cs_map_name_to_id_t  *_key_map = NULL;
+static cs_field_key_def_t  *_key_defs = nullptr;
+static cs_map_name_to_id_t  *_key_map = nullptr;
 
 static int _k_label = -1;
 
 /* Key values : _key_vals[field_id*_n_keys_max + key_id] */
 
-static cs_field_key_val_t  *_key_vals = NULL;
+static cs_field_key_val_t  *_key_vals = nullptr;
 
 /* Names for logging */
 
@@ -407,7 +407,7 @@ _field_create(const char   *name,
 
   /* Check this name was not already used */
 
-  if (f != NULL)
+  if (f != nullptr)
     bft_error(__FILE__, __LINE__, 0,
               _("Error creating field:\n"
                 "  name:        \"%s\"\n"
@@ -421,7 +421,7 @@ _field_create(const char   *name,
 
   /* Initialize if necessary */
 
-  if (_field_map == NULL)
+  if (_field_map == nullptr)
     _field_map = cs_map_name_to_id_create();
 
   if (l == 0)
@@ -490,13 +490,13 @@ _field_create(const char   *name,
   f->location_id = location_id;
   f->n_time_vals = 1;
 
-  f->vals = NULL;
-  f->val = NULL;
-  f->val_pre = NULL;
+  f->vals = nullptr;
+  f->val = nullptr;
+  f->val_pre = nullptr;
 
-  f->grad = NULL;
+  f->grad = nullptr;
 
-  f->bc_coeffs = NULL;
+  f->bc_coeffs = nullptr;
 
   f->is_owner = true;
 
@@ -520,7 +520,7 @@ _field_create(const char   *name,
  *   n_elts  <-- number of associated elements
  *   dim     <-- associated dimension
  *   val_old <-- pointer to previous array in case of reallocation
- *               (usually NULL)
+ *               (usually nullptr)
  *
  * returns  pointer to new field values.
  *----------------------------------------------------------------------------*/
@@ -564,7 +564,7 @@ _find_or_add_key(const char  *name)
 
   /* Initialize if necessary */
 
-  if (_key_map == NULL)
+  if (_key_map == nullptr)
     _key_map = cs_map_name_to_id_create();
 
   /* Find or insert entry in map */
@@ -647,7 +647,7 @@ _cs_field_free_str(void)
         BFT_FREE(kv->val.v_p);
       }
 
-      if (kd->def_val.v_p != NULL)
+      if (kd->def_val.v_p != nullptr)
         BFT_FREE(kd->def_val.v_p);
 
     } /* If the key is a "string" key */
@@ -670,12 +670,12 @@ _cs_field_free_struct(void)
 
       for (int f_id = 0; f_id < _n_fields; f_id++) {
         cs_field_key_val_t *kv = _key_vals + (f_id*_n_keys_max + key_id);
-        if (kd->clear_func != NULL)
+        if (kd->clear_func != nullptr)
           kd->clear_func(kv->val.v_p);
         BFT_FREE(kv->val.v_p);
       }
 
-      if (kd->def_val.v_p != NULL)
+      if (kd->def_val.v_p != nullptr)
         BFT_FREE(kd->def_val.v_p);
 
     } /* If the key is a "structure" key */
@@ -701,7 +701,7 @@ static int
 _check_key(const cs_field_t  *f,
            int                key_id)
 {
-  if (f == NULL)
+  if (f == nullptr)
     return CS_FIELD_INVALID_FIELD;
 
   int errcode = CS_FIELD_OK;
@@ -813,7 +813,7 @@ cs_f_field_id_by_name_try(const char *name)
   int retval;
   cs_field_t  *f = cs_field_by_name_try(name);
 
-  if (f != NULL)
+  if (f != nullptr)
     retval = f->id;
   else
     retval = -1;
@@ -968,7 +968,7 @@ cs_f_field_set_n_previous(int  id,
  *   p            --> returned pointer
  *
  * returns:
- *   pointer to the field structure, or NULL
+ *   pointer to the field structure, or nullptr
  *----------------------------------------------------------------------------*/
 
 void
@@ -983,19 +983,19 @@ cs_f_field_var_ptr_by_id_try(int          id,
 
   dim[0] = 0;
   dim[1] = 0;
-  *p = NULL;
+  *p = nullptr;
 
   if (pointer_type == 1 || pointer_type == 2) {
 
     const cs_lnum_t *n_elts = cs_mesh_location_get_n_elts(f->location_id);
     cs_lnum_t _n_elts = n_elts[2];
 
-    if (pointer_type == 1 || f->val_pre == NULL)
+    if (pointer_type == 1 || f->val_pre == nullptr)
       *p = f->val;
     else
       *p = f->val_pre;
 
-    if (*p == NULL) /* Adjust dimensions to assist Fortran bounds-checking */
+    if (*p == nullptr) /* Adjust dimensions to assist Fortran bounds-checking */
       _n_elts = 0;
 
     if (f->dim == 1)
@@ -1030,7 +1030,7 @@ cs_f_field_var_ptr_by_id_try(int          id,
  *   p            --> returned pointer
  *
  * returns:
- *   pointer to the field structure, or NULL
+ *   pointer to the field structure, or nullptr
  *----------------------------------------------------------------------------*/
 
 void
@@ -1045,7 +1045,7 @@ cs_f_field_var_ptr_by_id(int          id,
 
   dim[0] = 0;
   dim[1] = 0;
-  *p = NULL;
+  *p = nullptr;
 
   if (pointer_type > f->n_time_vals)
     bft_error
@@ -1063,7 +1063,7 @@ cs_f_field_var_ptr_by_id(int          id,
 
     *p = f->vals[pointer_type - 1];
 
-    if (*p == NULL) /* Adjust dimensions to assist Fortran bounds-checking */
+    if (*p == nullptr) /* Adjust dimensions to assist Fortran bounds-checking */
       _n_elts = 0;
 
     /* If dimension 1 is asked and field is of dimension one */
@@ -1102,7 +1102,7 @@ cs_f_field_var_ptr_by_id(int          id,
  *   p            <-- returned pointer
  *
  * returns:
- *   pointer to the field structure, or NULL
+ *   pointer to the field structure, or nullptr
  *----------------------------------------------------------------------------*/
 
 void
@@ -1118,7 +1118,7 @@ cs_f_field_bc_coeffs_ptr_by_id(int          id,
   dim[0] = 0;
   dim[1] = 0;
   dim[2] = 0;
-  *p = NULL;
+  *p = nullptr;
 
   const int location_id = CS_MESH_LOCATION_BOUNDARY_FACES;
   const cs_lnum_t *n_elts = cs_mesh_location_get_n_elts(location_id);
@@ -1126,13 +1126,13 @@ cs_f_field_bc_coeffs_ptr_by_id(int          id,
 
   assert(f->location_id == CS_MESH_LOCATION_CELLS);
 
-  if (f->bc_coeffs == NULL)
+  if (f->bc_coeffs == nullptr)
     bft_error(__FILE__, __LINE__, 0,
               _("Field \"%s\"\n"
                 " does not have associated BC coefficients."),
               f->name);
 
-  if (f->bc_coeffs != NULL) {
+  if (f->bc_coeffs != nullptr) {
 
     if (pointer_type == 1)
       *p = f->bc_coeffs->a;
@@ -1151,7 +1151,7 @@ cs_f_field_bc_coeffs_ptr_by_id(int          id,
     else if (pointer_type == 8)
       *p = f->bc_coeffs->bc;
 
-    if (*p == NULL) /* Adjust dimensions to assist Fortran bounds-checking */
+    if (*p == nullptr) /* Adjust dimensions to assist Fortran bounds-checking */
       _n_elts = 0;
 
     if (f->dim == 1 || pointer_type == 9 || pointer_type == 10)
@@ -1380,7 +1380,7 @@ cs_f_field_get_key_str(int           f_id,
   const cs_field_t *f = cs_field_by_id(f_id);
   *str = cs_field_get_key_str(f, key_id);
 
-  if (str != NULL)
+  if (str != nullptr)
     *str_len = strlen(*str);
   else
     *str_len = 0;
@@ -1502,22 +1502,22 @@ cs_field_bc_coeffs_init(cs_field_bc_coeffs_t  *bc_coeffs)
 {
   bc_coeffs->location_id = 0.0;
 
-  bc_coeffs->icodcl = NULL;
-  bc_coeffs->rcodcl1 = NULL;
-  bc_coeffs->rcodcl2 = NULL;
-  bc_coeffs->rcodcl3 = NULL;
+  bc_coeffs->icodcl = nullptr;
+  bc_coeffs->rcodcl1 = nullptr;
+  bc_coeffs->rcodcl2 = nullptr;
+  bc_coeffs->rcodcl3 = nullptr;
 
-  bc_coeffs->a = NULL;
-  bc_coeffs->b = NULL;
-  bc_coeffs->af = NULL;
-  bc_coeffs->bf = NULL;
-  bc_coeffs->ad = NULL;
-  bc_coeffs->bd = NULL;
-  bc_coeffs->ac = NULL;
-  bc_coeffs->bc = NULL;
+  bc_coeffs->a = nullptr;
+  bc_coeffs->b = nullptr;
+  bc_coeffs->af = nullptr;
+  bc_coeffs->bf = nullptr;
+  bc_coeffs->ad = nullptr;
+  bc_coeffs->bd = nullptr;
+  bc_coeffs->ac = nullptr;
+  bc_coeffs->bc = nullptr;
 
-  bc_coeffs->hint = NULL;
-  bc_coeffs->_hext = NULL;
+  bc_coeffs->hint = nullptr;
+  bc_coeffs->_hext = nullptr;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1535,12 +1535,12 @@ cs_field_bc_coeffs_shallow_copy(const cs_field_bc_coeffs_t  *ref,
 {
   memcpy(copy, ref, sizeof(cs_field_bc_coeffs_t));
 
-  copy->icodcl  = NULL;
-  copy->rcodcl1 = NULL;
-  //copy->rcodcl2 = NULL;
-  copy->rcodcl3 = NULL;
+  copy->icodcl  = nullptr;
+  copy->rcodcl1 = nullptr;
+  //copy->rcodcl2 = nullptr;
+  copy->rcodcl3 = nullptr;
 
-  copy->_hext = NULL;
+  copy->_hext = nullptr;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1627,7 +1627,7 @@ cs_field_create(const char   *name,
 
   BFT_MALLOC(f->vals, f->n_time_vals, cs_real_t *);
   for (int i = 0; i < f->n_time_vals; i++)
-    f->vals[i] = NULL;
+    f->vals[i] = nullptr;
 
   return f;
 }
@@ -1712,7 +1712,7 @@ cs_field_find_or_create(const char   *name,
 {
   cs_field_t *f = cs_field_by_name_try(name);
 
-  if (f != NULL) {
+  if (f != nullptr) {
 
     if (   type_flag != f->type || location_id != f->location_id
         || dim != f->dim) {
@@ -1745,7 +1745,7 @@ cs_field_find_or_create(const char   *name,
 
     BFT_MALLOC(f->vals, f->n_time_vals, cs_real_t *);
     for (int i = 0; i < f->n_time_vals; i++)
-      f->vals[i] = NULL;
+      f->vals[i] = nullptr;
 
   }
 
@@ -1767,8 +1767,8 @@ void
 cs_field_set_n_time_vals(cs_field_t  *f,
                          int          n_time_vals)
 {
-  assert(f != NULL);
-  if (f == NULL)
+  assert(f != nullptr);
+  if (f == nullptr)
     return;
 
   int _n_time_vals = n_time_vals;
@@ -1795,17 +1795,17 @@ cs_field_set_n_time_vals(cs_field_t  *f,
 
   BFT_REALLOC(f->vals, f->n_time_vals, cs_real_t *);
   for (int i = n_time_vals_ini; i < f->n_time_vals; i++)
-    f->vals[i] = NULL;
+    f->vals[i] = nullptr;
 
   /* If allocation or mapping has already been done */
 
-  if (f->val != NULL) {
+  if (f->val != nullptr) {
     if (n_time_vals_ini > _n_time_vals) {
       assert(n_time_vals_ini == 2 && _n_time_vals == 1);
       if (f->is_owner)
         BFT_FREE(f->val_pre);
       else
-        f->val_pre = NULL;
+        f->val_pre = nullptr;
     }
     else { /* if (n_time_vals_ini < _n_time_vals) */
       if (f->is_owner) {
@@ -1827,7 +1827,7 @@ cs_field_set_n_time_vals(cs_field_t  *f,
 void
 cs_field_allocate_values(cs_field_t  *f)
 {
-  assert(f != NULL);
+  assert(f != nullptr);
 
   if (f->is_owner) {
 
@@ -1849,9 +1849,9 @@ cs_field_allocate_values(cs_field_t  *f)
 /*!
  * \brief  Map existing value arrays to field descriptor.
  *
- * \param[in, out]  f            pointer to field structure
- * \param[in]       val          pointer to array of values
- * \param[in]       val_pre      pointer to array of previous values, or NULL
+ * \param[in, out]  f        pointer to field structure
+ * \param[in]       val      pointer to array of values
+ * \param[in]       val_pre  pointer to array of previous values, or nullptr
  */
 /*----------------------------------------------------------------------------*/
 
@@ -1860,8 +1860,8 @@ cs_field_map_values(cs_field_t   *f,
                     cs_real_t    *val,
                     cs_real_t    *val_pre)
 {
-  assert(f != NULL);
-  if (f == NULL)
+  assert(f != nullptr);
+  if (f == nullptr)
     return;
 
   if (f->is_owner) {
@@ -1938,16 +1938,16 @@ cs_field_allocate_bc_coeffs(cs_field_t  *f,
     const int location_id = CS_MESH_LOCATION_BOUNDARY_FACES;
     const cs_lnum_t *n_elts = cs_mesh_location_get_n_elts(location_id);
 
-    if (f->bc_coeffs == NULL) {
+    if (f->bc_coeffs == nullptr) {
 
       BFT_MALLOC(f->bc_coeffs, 1, cs_field_bc_coeffs_t);
 
       f->bc_coeffs->location_id = location_id;
 
-      f->bc_coeffs->icodcl = NULL;
-      f->bc_coeffs->rcodcl1 = NULL;
-      f->bc_coeffs->rcodcl2 = NULL;
-      f->bc_coeffs->rcodcl3 = NULL;
+      f->bc_coeffs->icodcl = nullptr;
+      f->bc_coeffs->rcodcl1 = nullptr;
+      f->bc_coeffs->rcodcl2 = nullptr;
+      f->bc_coeffs->rcodcl3 = nullptr;
 
       CS_MALLOC_HD(f->bc_coeffs->a, n_elts[0]*a_mult, cs_real_t, cs_alloc_mode);
       CS_MALLOC_HD(f->bc_coeffs->b, n_elts[0]*b_mult, cs_real_t, cs_alloc_mode);
@@ -1959,8 +1959,8 @@ cs_field_allocate_bc_coeffs(cs_field_t  *f,
                      cs_alloc_mode);
       }
       else {
-        f->bc_coeffs->af = NULL;
-        f->bc_coeffs->bf = NULL;
+        f->bc_coeffs->af = nullptr;
+        f->bc_coeffs->bf = nullptr;
       }
 
       if (have_mom_bc) {
@@ -1968,8 +1968,8 @@ cs_field_allocate_bc_coeffs(cs_field_t  *f,
         CS_MALLOC_HD(f->bc_coeffs->bd, n_elts[0]*b_mult, cs_real_t, cs_alloc_mode);
       }
       else {
-        f->bc_coeffs->ad = NULL;
-        f->bc_coeffs->bd = NULL;
+        f->bc_coeffs->ad = nullptr;
+        f->bc_coeffs->bd = nullptr;
       }
 
       if (have_conv_bc) {
@@ -1977,8 +1977,8 @@ cs_field_allocate_bc_coeffs(cs_field_t  *f,
         CS_MALLOC_HD(f->bc_coeffs->bc, n_elts[0]*b_mult, cs_real_t, cs_alloc_mode);
       }
       else {
-        f->bc_coeffs->ac = NULL;
-        f->bc_coeffs->bc = NULL;
+        f->bc_coeffs->ac = nullptr;
+        f->bc_coeffs->bc = nullptr;
       }
 
       if (have_exch_bc) {
@@ -1986,8 +1986,8 @@ cs_field_allocate_bc_coeffs(cs_field_t  *f,
         BFT_MALLOC(f->bc_coeffs->_hext, n_elts[0], cs_real_t);
       }
       else {
-        f->bc_coeffs->hint = NULL;
-        f->bc_coeffs->_hext = NULL;
+        f->bc_coeffs->hint = nullptr;
+        f->bc_coeffs->_hext = nullptr;
       }
 
     }
@@ -2093,20 +2093,20 @@ cs_field_init_bc_coeffs(cs_field_t  *f)
         f->bc_coeffs->b[ifac] = 1.;
       }
 
-      if (f->bc_coeffs->af != NULL)
+      if (f->bc_coeffs->af != nullptr)
         for (ifac = 0; ifac < n_elts[0]; ifac++) {
           f->bc_coeffs->af[ifac] = 0.;
           f->bc_coeffs->bf[ifac] = 0.;
         }
 
-      if (f->bc_coeffs->ad != NULL) {
+      if (f->bc_coeffs->ad != nullptr) {
         for (ifac = 0; ifac < n_elts[0]; ifac++) {
           f->bc_coeffs->ad[ifac] = 0.;
           f->bc_coeffs->bd[ifac] = 1.;
         }
       }
 
-      if (f->bc_coeffs->ac != NULL) {
+      if (f->bc_coeffs->ac != nullptr) {
         for (ifac = 0; ifac < n_elts[0]; ifac++) {
           f->bc_coeffs->ac[ifac] = 0.;
           f->bc_coeffs->bc[ifac] = 0.;
@@ -2133,7 +2133,7 @@ cs_field_init_bc_coeffs(cs_field_t  *f)
         f->bc_coeffs->b[ifac*dim*dim + 8] = 1.;
       }
 
-      if (f->bc_coeffs->af != NULL)
+      if (f->bc_coeffs->af != nullptr)
         for (ifac = 0; ifac < n_elts[0]; ifac++) {
           f->bc_coeffs->af[ifac*dim] = 0.;
           f->bc_coeffs->af[ifac*dim + 1] = 0.;
@@ -2149,7 +2149,7 @@ cs_field_init_bc_coeffs(cs_field_t  *f)
           f->bc_coeffs->bf[ifac*dim*dim + 8] = 0.;
         }
 
-      if (f->bc_coeffs->ad != NULL)
+      if (f->bc_coeffs->ad != nullptr)
         for (ifac = 0; ifac < n_elts[0]; ifac++) {
           f->bc_coeffs->ad[ifac*dim] = 0.;
           f->bc_coeffs->ad[ifac*dim + 1] = 0.;
@@ -2165,7 +2165,7 @@ cs_field_init_bc_coeffs(cs_field_t  *f)
           f->bc_coeffs->bd[ifac*dim*dim + 8] = 1.;
         }
 
-      if (f->bc_coeffs->ac != NULL)
+      if (f->bc_coeffs->ac != nullptr)
         for (ifac = 0; ifac < n_elts[0]; ifac++) {
           f->bc_coeffs->ac[ifac*dim] = 0.;
           f->bc_coeffs->ac[ifac*dim + 1] = 0.;
@@ -2194,7 +2194,7 @@ cs_field_init_bc_coeffs(cs_field_t  *f)
         }
       }
 
-      if (f->bc_coeffs->af != NULL) {
+      if (f->bc_coeffs->af != nullptr) {
         for (ifac = 0; ifac < n_elts[0]; ifac++) {
           for (int isou = 0; isou < dim ; isou++) {
             f->bc_coeffs->af[ifac*dim + isou] = 0.;
@@ -2205,7 +2205,7 @@ cs_field_init_bc_coeffs(cs_field_t  *f)
         }
       }
 
-      if (f->bc_coeffs->ad != NULL) {
+      if (f->bc_coeffs->ad != nullptr) {
         for (ifac = 0; ifac < n_elts[0]; ifac++) {
           for (int isou = 0; isou < dim ; isou++) {
             f->bc_coeffs->ad[ifac*dim + isou] = 0.;
@@ -2219,7 +2219,7 @@ cs_field_init_bc_coeffs(cs_field_t  *f)
         }
       }
 
-      if (f->bc_coeffs->ac != NULL) {
+      if (f->bc_coeffs->ac != nullptr) {
         for (ifac = 0; ifac < n_elts[0]; ifac++) {
           for (int isou = 0; isou < dim ; isou++) {
             f->bc_coeffs->ac[ifac*dim + isou] = 0.;
@@ -2231,13 +2231,13 @@ cs_field_init_bc_coeffs(cs_field_t  *f)
       }
     }
 
-    if (f->bc_coeffs->hint != NULL) {
+    if (f->bc_coeffs->hint != nullptr) {
       for (ifac = 0; ifac < n_elts[0]; ifac++) {
         f->bc_coeffs->hint[ifac] = 0.;
       }
     }
 
-    if (f->bc_coeffs->_hext != NULL) {
+    if (f->bc_coeffs->_hext != nullptr) {
       for (ifac = 0; ifac < n_elts[0]; ifac++) {
         f->bc_coeffs->_hext[ifac] = 0.;
       }
@@ -2263,7 +2263,7 @@ cs_field_init_bc_coeffs(cs_field_t  *f)
 void
 cs_field_allocate_gradient(cs_field_t  *f)
 {
-  assert(f != NULL);
+  assert(f != nullptr);
 
   if (f->is_owner) {
 
@@ -2288,8 +2288,8 @@ void
 cs_field_set_values(cs_field_t  *f,
                     cs_real_t    c)
 {
-  assert(f != NULL);
-  if (f == NULL)
+  assert(f != nullptr);
+  if (f == nullptr)
     return;
 
   const cs_lnum_t *n_elts = cs_mesh_location_get_n_elts(f->location_id);
@@ -2314,7 +2314,7 @@ cs_field_set_values(cs_field_t  *f,
 void
 cs_field_current_to_previous(cs_field_t  *f)
 {
-  assert(f != NULL);
+  assert(f != nullptr);
 
   if (f->n_time_vals > 1) {
 
@@ -2375,7 +2375,7 @@ cs_field_destroy_all(void)
   for (int i = 0; i < _n_fields; i++) {
     cs_field_t  *f = _fields[i];
     if (f->is_owner) {
-      if (f->vals != NULL) {
+      if (f->vals != nullptr) {
         int ii;
         for (ii = 0; ii < f->n_time_vals; ii++)
           BFT_FREE(f->vals[ii]);
@@ -2383,10 +2383,10 @@ cs_field_destroy_all(void)
     }
     BFT_FREE(f->vals);
 
-    if (f->grad != NULL)
+    if (f->grad != nullptr)
       BFT_FREE(f->grad);
 
-    if (f->bc_coeffs != NULL) {
+    if (f->bc_coeffs != nullptr) {
       CS_FREE_HD(f->bc_coeffs->a);
       CS_FREE_HD(f->bc_coeffs->b);
       CS_FREE_HD(f->bc_coeffs->af);
@@ -2440,7 +2440,7 @@ cs_field_allocate_or_map_all(void)
     if (f->is_owner)
       cs_field_allocate_values(f);
     else {
-      if (f->val == NULL)
+      if (f->val == nullptr)
         bft_error(__FILE__, __LINE__, 0,
                   _("Field \"%s\"\n"
                     " requires mapped values which have not been set."),
@@ -2469,7 +2469,7 @@ cs_field_by_id(int  id)
   else {
     bft_error(__FILE__, __LINE__, 0,
               _("Field with id %d is not defined."), id);
-    return NULL;
+    return nullptr;
   }
 }
 
@@ -2495,7 +2495,7 @@ cs_field_by_name(const char  *name)
   else {
     bft_error(__FILE__, __LINE__, 0,
               _("Field \"%s\" is not defined."), name);
-    return NULL;
+    return nullptr;
   }
 }
 
@@ -2503,11 +2503,11 @@ cs_field_by_name(const char  *name)
 /*!
  * \brief Return a pointer to a field based on its name if present.
  *
- * If no field of the given name is defined, NULL is returned.
+ * If no field of the given name is defined, nullptr is returned.
  *
  * \param[in]  name  field name
  *
- * \return  pointer to the field structure, or NULL
+ * \return  pointer to the field structure, or nullptr
  */
 /*----------------------------------------------------------------------------*/
 
@@ -2519,7 +2519,7 @@ cs_field_by_name_try(const char  *name)
   if (id > -1)
     return _fields[id];
   else
-    return NULL;
+    return nullptr;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -2531,7 +2531,7 @@ cs_field_by_name_try(const char  *name)
  * \param[in]  name_prefix  first part of field name
  * \param[in]  name_suffix  second part of field name
  *
- * \return  pointer to the field structure, or NULL
+ * \return  pointer to the field structure, or nullptr
  */
 /*----------------------------------------------------------------------------*/
 
@@ -2542,7 +2542,7 @@ cs_field_by_composite_name(const char  *name_prefix,
   cs_field_t *f = cs_field_by_composite_name_try(name_prefix,
                                                  name_suffix);
 
-  if (f == NULL)
+  if (f == nullptr)
     bft_error(__FILE__, __LINE__, 0,
               _("Field \"%s_%s\" is not defined."), name_prefix, name_suffix);
 
@@ -2554,7 +2554,7 @@ cs_field_by_composite_name(const char  *name_prefix,
  * \brief Return a pointer to a field based on a composite name if present.
  *
  * The name is expected to be of the form <name_prefix>_<name_suffix>.
- * If no field of the given name is defined, NULL is returned.
+ * If no field of the given name is defined, nullptr is returned.
  *
  * \remark: in C++, we could simply have a cs_field_by_name_try template
  *          with a variable number of arguments.
@@ -2562,7 +2562,7 @@ cs_field_by_composite_name(const char  *name_prefix,
  * \param[in]  name_prefix  first part of field name
  * \param[in]  name_suffix  second part of field name
  *
- * \return  pointer to the field structure, or NULL
+ * \return  pointer to the field structure, or nullptr
  */
 /*----------------------------------------------------------------------------*/
 
@@ -2593,14 +2593,14 @@ cs_field_by_composite_name_try(const char  *name_prefix,
   if (id > -1)
     return _fields[id];
   else
-    return NULL;
+    return nullptr;
 }
 
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Return pointer to a field based on a double composite name if present.
  *
- * If no field of the given name is defined, NULL is returned.
+ * If no field of the given name is defined, nullptr is returned.
  *
  * Contrary to \ref cs_field_by_composite_name_try, this function
  * does not automatically add '_' characters between component names.
@@ -2613,7 +2613,7 @@ cs_field_by_composite_name_try(const char  *name_prefix,
  * \param[in]  name_part_2  second part of field name
  * \param[in]  name_part_3  second part of field name
  *
- * \return  pointer to the field structure, or NULL
+ * \return  pointer to the field structure, or nullptr
  */
 /*----------------------------------------------------------------------------*/
 
@@ -2652,7 +2652,7 @@ cs_field_by_double_composite_name_try(const char  *name_part_1,
   if (id > -1)
     return _fields[id];
   else
-    return NULL;
+    return nullptr;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -2731,9 +2731,9 @@ cs_field_component_id_by_name(const char  *name,
           c_name = cs_glob_field_comp_name_9;
           break;
         default:
-          c_name = NULL;
+          c_name = nullptr;
         }
-        if (c_name != NULL) {
+        if (c_name != nullptr) {
           for (int _c_id = 0; *c_id < 0 &&_c_id < f->dim; _c_id++) {
             if (strcmp(name0 + l0 + 1, c_name[_c_id]) == 0)
               *c_id = _c_id;
@@ -2782,7 +2782,7 @@ cs_field_key_id(const char  *name)
 {
   int id = -1;
 
-  if (_key_map != NULL)
+  if (_key_map != nullptr)
     id = cs_map_name_to_id_try(_key_map, name);
 
   if (id < 0)
@@ -2809,7 +2809,7 @@ cs_field_key_id_try(const char  *name)
 {
   int id = -1;
 
-  if (_key_map != NULL)
+  if (_key_map != nullptr)
     id = cs_map_name_to_id_try(_key_map, name);
 
   return id;
@@ -2842,7 +2842,7 @@ cs_field_define_key_int(const char  *name,
   cs_field_key_def_t *kd = _key_defs + key_id;
 
   kd->def_val.v_int = default_value;
-  kd->log_func = NULL;
+  kd->log_func = nullptr;
   kd->type_size = 0;
   kd->type_flag = type_flag;
   kd->type_id = 'i';
@@ -2879,7 +2879,7 @@ cs_field_define_key_double(const char  *name,
   cs_field_key_def_t *kd = _key_defs + key_id;
 
   kd->def_val.v_double = default_value;
-  kd->log_func = NULL;
+  kd->log_func = nullptr;
   kd->type_size = 0;
   kd->type_flag = type_flag;
   kd->type_id = 'd';
@@ -2921,13 +2921,13 @@ cs_field_define_key_str(const char  *name,
   if (n_keys_init == _n_keys)
     BFT_FREE(kd->def_val.v_p);
 
-  if (default_value != NULL) {
+  if (default_value != nullptr) {
     BFT_MALLOC(kd->def_val.v_p, strlen(default_value) + 1, char);
-    strcpy(kd->def_val.v_p, default_value);
+    strcpy(reinterpret_cast<char *>(kd->def_val.v_p), default_value);
   }
   else
-    kd->def_val.v_p = NULL;
-  kd->log_func = NULL;
+    kd->def_val.v_p = nullptr;
+  kd->log_func = nullptr;
   kd->type_size = 0;
   kd->type_flag = type_flag;
   kd->type_id = 's';
@@ -2977,12 +2977,12 @@ cs_field_define_key_struct(const char                   *name,
   if (n_keys_init == _n_keys)
     BFT_FREE(kd->def_val.v_p);
 
-  if (default_value != NULL) {
+  if (default_value != nullptr) {
     BFT_MALLOC(kd->def_val.v_p, size, unsigned char);
     memcpy(kd->def_val.v_p, default_value, size);
   }
   else
-    kd->def_val.v_p = NULL;
+    kd->def_val.v_p = nullptr;
   kd->log_func = log_func;
   kd->log_func_default = log_func_default;
   kd->clear_func = clear_func;
@@ -3184,7 +3184,7 @@ cs_field_lock_key(cs_field_t  *f,
 {
   int retval = CS_FIELD_OK;
 
-  if (f == NULL)
+  if (f == nullptr)
     return CS_FIELD_INVALID_FIELD;
 
   assert(f->id >= 0 && f->id < _n_fields);
@@ -3230,7 +3230,7 @@ cs_field_set_key_int(cs_field_t  *f,
 {
   int retval = CS_FIELD_OK;
 
-  if (f == NULL)
+  if (f == nullptr)
     return CS_FIELD_INVALID_FIELD;
   assert(f->id >= 0 && f->id < _n_fields);
 
@@ -3277,7 +3277,7 @@ cs_field_get_key_int(const cs_field_t  *f,
 {
   int errcode = CS_FIELD_OK;
 
-  if (f == NULL)
+  if (f == nullptr)
     return CS_FIELD_INVALID_FIELD;
   assert(f->id >= 0 && f->id < _n_fields);
 
@@ -3410,7 +3410,7 @@ cs_field_set_key_double(cs_field_t  *f,
 {
   int retval = CS_FIELD_OK;
 
-  if (f == NULL)
+  if (f == nullptr)
     return CS_FIELD_INVALID_FIELD;
   assert(f->id >= 0 && f->id < _n_fields);
 
@@ -3457,7 +3457,7 @@ cs_field_get_key_double(const cs_field_t  *f,
 {
   int errcode = CS_FIELD_OK;
 
-  if (f == NULL)
+  if (f == nullptr)
     bft_error(__FILE__, __LINE__, 0,
               "%s: Field is not defined.", __func__);
   assert(f->id >= 0 && f->id < _n_fields);
@@ -3528,7 +3528,7 @@ cs_field_set_key_str(cs_field_t  *f,
 {
   int retval = CS_FIELD_OK;
 
-  if (f == NULL)
+  if (f == nullptr)
     return CS_FIELD_INVALID_FIELD;
   assert(f->id >= 0 && f->id < _n_fields);
 
@@ -3545,9 +3545,9 @@ cs_field_set_key_str(cs_field_t  *f,
         retval = CS_FIELD_LOCKED;
       else {
         if (kv->is_set == 0)
-          kv->val.v_p = NULL;
+          kv->val.v_p = nullptr;
         BFT_REALLOC(kv->val.v_p, strlen(str) + 1, char);
-        strcpy(kv->val.v_p, str);
+        strcpy(reinterpret_cast<char *>(kv->val.v_p), str);
         kv->is_set = 1;
       }
     }
@@ -3579,8 +3579,8 @@ cs_field_get_key_str(const cs_field_t  *f,
 {
   int errcode = CS_FIELD_OK;
 
-  if (f == NULL)
-    return NULL;
+  if (f == nullptr)
+    return nullptr;
   assert(f->id >= 0 && f->id < _n_fields);
 
   if (key_id > -1 && key_id < _n_keys) {
@@ -3592,13 +3592,13 @@ cs_field_get_key_str(const cs_field_t  *f,
       errcode = CS_FIELD_INVALID_TYPE;
     else {
       cs_field_key_val_t *kv = _key_vals + (f->id*_n_keys_max + key_id);
-      const char *str = NULL;
+      const char *str = nullptr;
       if (kv->is_set)
-        str = kv->val.v_p;
+        str = reinterpret_cast<char *>(kv->val.v_p);
       else if (kd->is_sub)
         str = cs_field_get_key_str(f, kd->def_val.v_int);
       else
-        str = kd->def_val.v_p;
+        str = reinterpret_cast<char *>(kd->def_val.v_p);
       return str;
     }
   }
@@ -3623,7 +3623,7 @@ cs_field_get_key_str(const cs_field_t  *f,
                 key_id);
   }
 
-  return NULL;
+  return nullptr;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -3649,7 +3649,7 @@ cs_field_set_key_struct(cs_field_t  *f,
 {
   int retval = CS_FIELD_OK;
 
-  if (f == NULL)
+  if (f == nullptr)
     return CS_FIELD_INVALID_FIELD;
   assert(f->id >= 0 && f->id < _n_fields);
 
@@ -3699,8 +3699,8 @@ cs_field_get_key_struct(const cs_field_t  *f,
                         const int          key_id,
                         void              *s)
 {
-  if (f == NULL)
-    return NULL;
+  if (f == nullptr)
+    return nullptr;
   assert(f->id >= 0 && f->id < _n_fields);
 
   int errcode = CS_FIELD_OK;
@@ -3714,7 +3714,7 @@ cs_field_get_key_struct(const cs_field_t  *f,
       errcode = CS_FIELD_INVALID_TYPE;
     else {
       cs_field_key_val_t *kv = _key_vals + (f->id*_n_keys_max + key_id);
-      const unsigned char *p = NULL;
+      const void *p = nullptr;
       if (kv->is_set)
         p = kv->val.v_p;
       else if (kd->is_sub)
@@ -3746,7 +3746,7 @@ cs_field_get_key_struct(const cs_field_t  *f,
                 key_id);
   }
 
-  return NULL;
+  return nullptr;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -3763,7 +3763,8 @@ cs_field_get_key_struct(const cs_field_t  *f,
  * \param[in]  f       pointer to field structure
  * \param[in]  key_id  id of associated key
  *
- * \return  pointer to key structure in case of success, NULL in case of error
+ * \return  pointer to key structure in case of success,
+ *          nullptr in case of error
  */
 /*----------------------------------------------------------------------------*/
 
@@ -3771,8 +3772,8 @@ void *
 cs_field_get_key_struct_ptr(cs_field_t  *f,
                             int          key_id)
 {
-  if (f == NULL)
-    return NULL;
+  if (f == nullptr)
+    return nullptr;
   assert(f->id >= 0 && f->id < _n_fields);
 
   int errcode = CS_FIELD_OK;
@@ -3786,7 +3787,7 @@ cs_field_get_key_struct_ptr(cs_field_t  *f,
       errcode = CS_FIELD_INVALID_TYPE;
     else {
       cs_field_key_val_t *kv = _key_vals + (f->id*_n_keys_max + key_id);
-      void *p = NULL;
+      void *p = nullptr;
       if (kv->is_locked)
         errcode = CS_FIELD_LOCKED;
       else {
@@ -3827,7 +3828,7 @@ cs_field_get_key_struct_ptr(cs_field_t  *f,
                 key_id);
   }
 
-  return NULL;
+  return nullptr;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -3841,7 +3842,8 @@ cs_field_get_key_struct_ptr(cs_field_t  *f,
  * \param[in]  f       pointer to field structure
  * \param[in]  key_id  id of associated key
  *
- * \return  pointer to key structure in case of success, NULL in case of error
+ * \return  pointer to key structure in case of success,
+ *          nullptr in case of error
  */
 /*----------------------------------------------------------------------------*/
 
@@ -3849,8 +3851,8 @@ const void *
 cs_field_get_key_struct_const_ptr(const cs_field_t  *f,
                                   int                key_id)
 {
-  if (f == NULL)
-    return NULL;
+  if (f == nullptr)
+    return nullptr;
   assert(f->id >= 0 && f->id < _n_fields);
 
   int errcode = CS_FIELD_OK;
@@ -3864,7 +3866,7 @@ cs_field_get_key_struct_const_ptr(const cs_field_t  *f,
       errcode = CS_FIELD_INVALID_TYPE;
     else {
       cs_field_key_val_t *kv = _key_vals + (f->id*_n_keys_max + key_id);
-      const unsigned char *p = NULL;
+      const void *p = nullptr;
       if (kv->is_set)
         p = kv->val.v_p;
       else if (kd->is_sub)
@@ -3895,7 +3897,7 @@ cs_field_get_key_struct_const_ptr(const cs_field_t  *f,
                 key_id);
   }
 
-  return NULL;
+  return nullptr;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -4046,7 +4048,7 @@ void
 cs_field_log_info(const cs_field_t  *f,
                   int                log_keywords)
 {
-  if (f == NULL)
+  if (f == nullptr)
     return;
 
   /* Global indicators */
@@ -4126,14 +4128,14 @@ cs_field_log_info(const cs_field_t  *f,
         else if (kd->type_id == 's') {
           const char *s;
           if (kv->is_set) {
-            s = kv->val.v_p;
-            if (s == NULL)
+            s = reinterpret_cast<const char *>(kv->val.v_p);
+            if (s == nullptr)
               s = null_str;
             cs_log_printf(CS_LOG_SETUP, _("      %-24s %-10s\n"), key, s);
           }
           else if (log_keywords > 1) {
-            s = kd->def_val.v_p;
-            if (s == NULL)
+            s = reinterpret_cast<const char *>(kd->def_val.v_p);
+            if (s == nullptr)
               s = null_str;
             cs_log_printf(CS_LOG_SETUP, _("      %-24s %-10s (default)\n"),
                           key, s);
@@ -4143,7 +4145,7 @@ cs_field_log_info(const cs_field_t  *f,
           const void *t;
           if (kv->is_set) {
             t = kv->val.v_p;
-            if (kd->log_func != NULL) {
+            if (kd->log_func != nullptr) {
               cs_log_printf(CS_LOG_SETUP, _("      %-24s:\n"), key);
               kd->log_func(t);
             }
@@ -4153,7 +4155,7 @@ cs_field_log_info(const cs_field_t  *f,
           }
           else if (log_keywords > 1) {
             t = kd->def_val.v_p;
-            if (kd->log_func != NULL) {
+            if (kd->log_func != nullptr) {
               cs_log_printf(CS_LOG_SETUP, _("      %-24s: (default)\n"), key);
               kd->log_func(t);
             }
@@ -4373,7 +4375,7 @@ cs_field_log_key_defs(void)
     if (kd->type_id == 't') {
       t = kd->def_val.v_p;
 
-      if (kd->log_func_default != NULL)
+      if (kd->log_func_default != nullptr)
         kd->log_func_default(t);
     }
 
@@ -4471,14 +4473,14 @@ cs_field_log_key_vals(int   key_id,
           else if (kd->type_id == 's') {
             const char *s;
             if (kv->is_set) {
-              s = kv->val.v_p;
-              if (s == NULL)
+              s = reinterpret_cast<const char *>(kv->val.v_p);
+              if (s == nullptr)
                 s = null_str;
               cs_log_printf(CS_LOG_SETUP, _("    %s %s\n"), name_s, s);
             }
             else if (log_defaults) {
-              s = kd->def_val.v_p;
-              if (s == NULL)
+              s = reinterpret_cast<const char *>(kd->def_val.v_p);
+              if (s == nullptr)
                 s = null_str;
               cs_log_printf(CS_LOG_SETUP, _("    %s %-10s (default)\n"),
                             name_s, s);
@@ -4487,12 +4489,12 @@ cs_field_log_key_vals(int   key_id,
           else if (kd->type_id == 't') {
             if (kv->is_set) {
               cs_log_printf(CS_LOG_SETUP, _("\n    %s\n"), name_s);
-              if (kd->log_func != NULL)
+              if (kd->log_func != nullptr)
                 kd->log_func(kv->val.v_p);
             }
             else if (log_defaults) {
               cs_log_printf(CS_LOG_SETUP, _("\n    %s (default)\n"), name_s);
-              if (kd->log_func != NULL)
+              if (kd->log_func != nullptr)
                 kd->log_func(kd->def_val.v_p);
             }
           }
@@ -4549,7 +4551,7 @@ cs_field_log_all_key_vals(bool  log_defaults)
 void
 cs_field_define_keys_base(void)
 {
-  cs_field_define_key_str("label", NULL, 0);
+  cs_field_define_key_str("label", nullptr, 0);
   _k_label = cs_field_key_id("label");
 
   cs_field_define_key_int("log", 0, 0);
@@ -4577,7 +4579,7 @@ cs_field_get_label(const cs_field_t  *f)
 {
   const char *label = cs_field_get_key_str(f, _k_label);
 
-  if (label == NULL)
+  if (label == nullptr)
     label = f->name;
 
   return label;

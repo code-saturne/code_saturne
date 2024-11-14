@@ -2349,10 +2349,10 @@ END_C_DECLS
 
 template <typename T>
 void
-cs_halo_sync(const cs_halo_t  *halo,
-             cs_halo_type_t    sync_mode,
-             bool              on_device,
-             T                 val[])
+cs_halo_sync(const cs_halo_t        *halo,
+             cs_halo_type_t          sync_mode,
+             [[maybe_unused]] bool   on_device,
+             T                       val[])
 {
   if (halo == nullptr)
     return;
@@ -2395,10 +2395,10 @@ cs_halo_sync(const cs_halo_t  *halo,
 
 template <int Stride, typename T>
 void
-cs_halo_sync(const cs_halo_t  *halo,
-             cs_halo_type_t    sync_mode,
-             bool              on_device,
-             T                 val[][Stride])
+cs_halo_sync(const cs_halo_t       *halo,
+             cs_halo_type_t         sync_mode,
+             [[maybe_unused]] bool  on_device,
+             T                      val[][Stride])
 {
   if (halo == nullptr)
     return;

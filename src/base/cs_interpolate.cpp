@@ -135,7 +135,7 @@ cs_interpolate_from_location_p0(void                *input,
   case CS_INT32:
     {
       const int32_t *l_vals = (const int32_t *)location_vals;
-      int32_t *p_vals = point_vals;
+      int32_t *p_vals = reinterpret_cast<int32_t *>(point_vals);
       for (cs_lnum_t i = 0; i < n_points; i++) {
         cs_lnum_t e_id = point_location[i];
         if (e_id > -1) {
@@ -153,7 +153,7 @@ cs_interpolate_from_location_p0(void                *input,
   case CS_INT64:
     {
       const int64_t *l_vals = (const int64_t *)location_vals;
-      int64_t *p_vals = point_vals;
+      int64_t *p_vals = reinterpret_cast<int64_t *>(point_vals);
       for (cs_lnum_t i = 0; i < n_points; i++) {
         cs_lnum_t e_id = point_location[i];
         if (e_id > -1) {
@@ -171,7 +171,7 @@ cs_interpolate_from_location_p0(void                *input,
   case CS_DOUBLE:
     {
       const cs_real_t *l_vals = (const cs_real_t *)location_vals;
-      cs_real_t *p_vals = point_vals;
+      cs_real_t *p_vals = reinterpret_cast<cs_real_t *>(point_vals);
       for (cs_lnum_t i = 0; i < n_points; i++) {
         cs_lnum_t e_id = point_location[i];
         if (e_id > -1) {
@@ -263,7 +263,7 @@ cs_interpolate_from_location_p1(void                *input,
   cs_field_bc_coeffs_t *bc_coeffs = NULL;
 
   if (input != NULL) {
-    const char *name = input;
+    const char *name = reinterpret_cast<const char *>(input);
     f = cs_field_by_name_try(name);
     if (f != NULL) {
       int kbf = cs_field_key_id_try("boundary_value_id");

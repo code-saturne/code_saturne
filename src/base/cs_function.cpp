@@ -237,7 +237,7 @@ _function_create(const char    *name,
        .func_input = nullptr};
 
   f = _functions[function_id];
-  memcpy(f, &f_ini, sizeof(cs_function_t));
+  memcpy(reinterpret_cast<void *>(f), &f_ini, sizeof(cs_function_t));
 
   f->type = (is_intensive) ? CS_FUNCTION_INTENSIVE : CS_FUNCTION_EXTENSIVE;
   f->type |= CS_FUNCTION_USER;  /* to be unset explicitely for predefined

@@ -398,7 +398,7 @@ typedef struct {
 
 static cs_equation_param_t _equation_param_default
 = {
-   .name = NULL,
+   .name = nullptr,
    .type = CS_EQUATION_N_TYPES,
    .dim = 1,
    .verbosity = 0,
@@ -428,6 +428,7 @@ static cs_equation_param_t _equation_param_default
    .ircflu = 1,
    .iwgrec = 0,
    .icoupl = -1,
+   .theta = 1,
    .blencv = 1.,
    .blend_st = 0.,
    .epsilo = 1.e-5,
@@ -439,27 +440,26 @@ static cs_equation_param_t _equation_param_default
 
    .default_bc = CS_BC_SYMMETRY,
    .n_bc_defs = 0,
-   .bc_defs = NULL,
+   .bc_defs = nullptr,
 
    .default_enforcement = CS_PARAM_BC_ENFORCE_ALGEBRAIC,
    .strong_pena_bc_coeff = -1,
    .weak_pena_bc_coeff = -1,
 
    .n_ic_defs = 0,
-   .ic_defs = NULL,
+   .ic_defs = nullptr,
 
    .do_lumping = false,
    .time_hodgep = _CS_HODGE_LEGACY_INIT,
-   .time_property = NULL,
+   .time_property = nullptr,
    .time_scheme = CS_TIME_SCHEME_EULER_IMPLICIT,
-   .theta = 1,
 
    .diffusion_hodgep = _CS_HODGE_LEGACY_INIT,
-   .diffusion_property = NULL,
+   .diffusion_property = nullptr,
    .curlcurl_hodgep = _CS_HODGE_LEGACY_INIT,
-   .curlcurl_property = NULL,
+   .curlcurl_property = nullptr,
    .graddiv_hodgep = _CS_HODGE_LEGACY_INIT,
-   .graddiv_property = NULL,
+   .graddiv_property = nullptr,
 
    .adv_formulation = CS_PARAM_ADVECTION_FORM_CONSERV,
    .adv_scheme = CS_PARAM_N_ADVECTION_SCHEMES,
@@ -467,23 +467,23 @@ static cs_equation_param_t _equation_param_default
    .adv_extrapol = CS_PARAM_N_ADVECTION_EXTRAPOLATIONS,
    .upwind_portion = 0.,
    .cip_scaling_coef = -1.0,
-   .adv_field = NULL,
-   .adv_scaling_property = NULL,
+   .adv_field = nullptr,
+   .adv_scaling_property = nullptr,
 
    .reaction_hodgep = _CS_HODGE_LEGACY_INIT,
    .n_reaction_terms = 0,
-   .reaction_properties = NULL,
+   .reaction_properties = nullptr,
 
    .n_source_terms = 0,
-   .source_terms = NULL,
+   .source_terms = nullptr,
    .n_volume_mass_injections = 0,
-   .volume_mass_injections = NULL,
+   .volume_mass_injections = nullptr,
 
    .n_enforcements = 0,
-   .enforcement_params = NULL,
+   .enforcement_params = nullptr,
 
-   .sles_param = NULL,
-   .saddle_param = NULL,
+   .sles_param = nullptr,
+   .saddle_param = nullptr,
 
    .incremental_algo_type = CS_PARAM_N_NL_ALGOS,
    .incremental_algo_cvg =
@@ -588,8 +588,8 @@ cs_f_field_get_key_struct_var_cal_opt(int                  f_id,
                                       cs_f_var_cal_opt_t  *vcopt);
 
 void
-cs_f_field_set_key_struct_var_cal_opt(int                        f_id,
-                                      const cs_f_var_cal_opt_t  *vcopt);
+cs_f_field_set_key_struct_var_cal_opt(int                  f_id,
+                                      cs_f_var_cal_opt_t  *vcopt);
 
 void *
 cs_f_equation_param_from_var_cal_opt(const cs_f_var_cal_opt_t  *vcopt);
@@ -624,7 +624,7 @@ _log_func_var_cal_opt(const void *t)
 {
   const char fmt_i[] = N_("      %-19s  %d\n");
   const char fmt_r[] = N_("      %-19s  %-12.3g\n");
-  const cs_var_cal_opt_t *_t = (const void *)t;
+  auto _t = reinterpret_cast<const cs_equation_param_t *>(t);
   cs_log_printf(CS_LOG_SETUP, fmt_i, "verbosity", _t->verbosity);
   cs_log_printf(CS_LOG_SETUP, fmt_i, "iconv ", _t->iconv );
   cs_log_printf(CS_LOG_SETUP, fmt_i, "istat ", _t->istat );
@@ -665,7 +665,7 @@ _log_func_default_var_cal_opt(const void *t)
   const char fmt_i[] = "      %-19s  %-12d %s\n";
   const char fmt_r[] = "      %-19s  %-12.3g %s\n";
   const char fmt_c[] = "      %-19s  %-12s %s\n";
-  const cs_equation_param_t *_t = (const void *)t;
+  auto _t = reinterpret_cast<const cs_equation_param_t *>(t);
   cs_log_printf(CS_LOG_SETUP,"  var_cal_opt\n");
 
   cs_log_printf(CS_LOG_SETUP,_("    Printing\n"));
@@ -868,9 +868,8 @@ cs_f_field_get_key_struct_var_cal_opt(int                  f_id,
   if (c_k_id < 0)
     c_k_id = cs_field_key_id("var_cal_opt");
 
-  const cs_equation_param_t *eqp
-    = cs_field_get_key_struct_const_ptr(cs_field_by_id(f_id),
-                                        c_k_id);
+  auto eqp = reinterpret_cast<const cs_equation_param_t *>
+               (cs_field_get_key_struct_const_ptr(cs_field_by_id(f_id), c_k_id));
 
   vcopt->iwarni = eqp->verbosity;
   vcopt->iconv  = eqp->iconv;
@@ -916,15 +915,15 @@ cs_f_field_get_key_struct_var_cal_opt(int                  f_id,
  *----------------------------------------------------------------------------*/
 
 void
-cs_f_field_set_key_struct_var_cal_opt(int                        f_id,
-                                      const cs_f_var_cal_opt_t  *vcopt)
+cs_f_field_set_key_struct_var_cal_opt(int                  f_id,
+                                      cs_f_var_cal_opt_t  *vcopt)
 {
   static int c_k_id = -1;
   if (c_k_id < 0)
     c_k_id = cs_field_key_id("var_cal_opt");
 
-  cs_equation_param_t *eqp
-    = cs_field_get_key_struct_ptr(cs_field_by_id(f_id), c_k_id);
+  auto eqp = reinterpret_cast<cs_equation_param_t *>
+               (cs_field_get_key_struct_ptr(cs_field_by_id(f_id), c_k_id));
 
   _var_cal_opt_to_equation_params(vcopt, eqp);
 }
@@ -1156,7 +1155,7 @@ cs_parameters_define_field_keys(void)
      _log_func_var_cal_opt,
      _log_func_default_var_cal_opt,
      _equation_param_clear,
-     sizeof(cs_var_cal_opt_t),
+     sizeof(cs_equation_param_t),
      CS_FIELD_VARIABLE);
 
   /* Structure containing the solving info of the field variables

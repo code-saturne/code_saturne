@@ -124,8 +124,8 @@ typedef void
 (cs_phys_prop_eos_t)(cs_phys_prop_thermo_plane_type_t   thermo_plane,
                      cs_phys_prop_type_t                property,
                      const cs_lnum_t                    n_vals,
-                     double                             var1[],
-                     double                             var2[],
+                     const double                       var1[],
+                     const double                       var2[],
                      cs_real_t                          val[]);
 
 typedef void
@@ -370,7 +370,7 @@ cs_thermal_table_set(const char                        *material,
         cs_base_get_dl_function_pointer(_cs_eos_dl_lib, "cs_phys_prop_eos", true);
 
       _cs_eos_create(cs_glob_thermal_table->method,
-                     _reference);
+                     const_cast<char *>(_reference));
     }
 #else
     bft_error(__FILE__, __LINE__, 0,
