@@ -939,7 +939,8 @@ cs_paramedmem_def_coupled_field(cs_paramedmem_coupling_t  *c,
   pf->setMesh(c->mesh->med_mesh);
   c->mesh->med_mesh->decrRef();
   DataArrayDouble *arr = DataArrayDouble::New();
-  arr->alloc(c->mesh->n_elts, dim);
+  int n_elts = (type == ON_CELLS) ? c->mesh->n_elts : cs_paramedmem_mesh_get_n_vertices(c);
+  arr->alloc(n_elts, dim);
   pf->setArray(arr);
   pf->getArray()->decrRef();
 #endif
@@ -1103,16 +1104,16 @@ cs_paramedmem_field_export(cs_paramedmem_coupling_t  *c,
 
   /* Assign element values */
 
-  cs_lnum_t n_elts = c->mesh->n_elts;
   cs_lnum_t *elt_list = c->mesh->elt_list;
   if (elt_list == nullptr) {
-    const cs_lnum_t  n_vals = c->mesh->n_elts * (cs_lnum_t)dim;
-    assert(f->getNumberOfValues() == n_vals);
+    const cs_lnum_t n_vals = (cs_lnum_t)f->getNumberOfValues();
     for (cs_lnum_t i = 0; i < n_vals; i++)
       val_ptr[i] = values[i];
   }
   else {
+    cs_lnum_t n_elts = c->mesh->n_elts;
     const cs_lnum_t _dim = dim;
+    assert(n_elts * _dim <= f->getNumberOfValues());
     for (cs_lnum_t i = 0; i < n_elts; i++) {
       cs_lnum_t c_id = elt_list[i];
       for (cs_lnum_t j = 0; j < _dim; j++) {
@@ -1174,13 +1175,9 @@ cs_paramedmem_field_export_l(cs_paramedmem_coupling_t  *c,
               _("Error: Could not find field '%s'."), name);
 
   double  *val_ptr = f->getArray()->getPointer();
-  const int dim = f->getNumberOfComponents();
+  const cs_lnum_t n_vals = (cs_lnum_t)f->getNumberOfValues();
 
   /* Assign element values */
-
-  const cs_lnum_t  n_vals = c->mesh->n_elts * (cs_lnum_t)dim;
-  assert(f->getNumberOfValues() == n_vals);
-
   for (cs_lnum_t i = 0; i < n_vals; i++)
     val_ptr[i] = values[i];
 
@@ -1234,10 +1231,11 @@ cs_paramedmem_field_import(cs_paramedmem_coupling_t  *c,
   /* Import element values */
 
   cs_lnum_t *connec = c->mesh->new_to_old;
-  cs_lnum_t  n_elts = c->mesh->n_elts;
 
   if (connec != nullptr) {
     cs_lnum_t  _dim = dim;
+    cs_lnum_t  n_elts = c->mesh->n_elts;
+    assert(n_elts * _dim <= f->getNumberOfValues());
     for (cs_lnum_t i = 0; i < n_elts; i++) {
       cs_lnum_t c_id = connec[i];
       for (cs_lnum_t j = 0; j < dim; j++) {
@@ -1246,8 +1244,7 @@ cs_paramedmem_field_import(cs_paramedmem_coupling_t  *c,
     }
   }
   else {
-    const cs_lnum_t  n_vals = c->mesh->n_elts * (cs_lnum_t)dim;
-    assert(f->getNumberOfValues() == n_vals);
+    const cs_lnum_t n_vals = (cs_lnum_t)f->getNumberOfValues();
     for (cs_lnum_t i = 0; i < n_vals; i++) {
       values[i] = val_ptr[i];
     }
@@ -1302,11 +1299,7 @@ cs_paramedmem_field_import_l(cs_paramedmem_coupling_t  *c,
   }
 
   const double  *val_ptr = f->getArray()->getConstPointer();
-  const int dim = f->getNumberOfComponents();
-
-
-  const cs_lnum_t  n_vals = c->mesh->n_elts * (cs_lnum_t)dim;
-  assert(f->getNumberOfValues() == n_vals);
+  const cs_lnum_t n_vals = (cs_lnum_t)f->getNumberOfValues();
 
   /* Import element values */
 
