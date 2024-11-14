@@ -359,7 +359,7 @@ cs_physical_properties.c \
 cs_physical_properties_default.c \
 cs_porosity_from_scan.cpp \
 cs_porous_model.cpp \
-cs_post.c \
+cs_post.cpp \
 cs_post_default.cpp \
 cs_post_util.cpp \
 cs_preprocess.c \
@@ -373,10 +373,10 @@ cs_restart.cpp \
 cs_restart_default.cpp \
 cs_restart_main_and_aux.cpp \
 cs_restart_map.cpp \
-cs_rotation.c \
+cs_rotation.cpp \
 cs_runaway_check.cpp \
 cs_sat_coupling.cpp \
-cs_scalar_clipping.c\
+cs_scalar_clipping.cpp \
 cs_search.cpp \
 cs_selector.cpp \
 cs_selector_f2c.f90 \
@@ -400,7 +400,7 @@ cs_time_step.c \
 cs_time_stepping.cpp \
 cs_time_table.cpp \
 cs_timer_stats.cpp \
-cs_turbomachinery.c \
+cs_turbomachinery.cpp \
 cs_utilities.cpp \
 cs_velocity_pressure.cpp \
 cs_vof.cpp \

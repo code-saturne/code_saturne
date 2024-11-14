@@ -1450,7 +1450,7 @@ _define_export_mesh(cs_post_mesh_t  *post_mesh,
       exp_mesh = fvm_nodal_create(post_mesh->name, 3);
 
       fvm_nodal_define_vertex_list(exp_mesh, n_elts, elt_ids);
-      fvm_nodal_set_shared_vertices(exp_mesh, (cs_coord_t *)elt_coords);
+      fvm_nodal_set_shared_vertices(exp_mesh, elt_coords);
 
       fvm_nodal_init_io_num(exp_mesh, elt_gnum, 0);
 
@@ -6258,14 +6258,15 @@ cs_post_write_var(int                    mesh_id,
                       +  post_mesh->n_b_faces) * var_dim,
                      cs_real_t);
 
-          _cs_post_assmb_var_faces(post_mesh->exp_mesh,
-                                   post_mesh->n_i_faces,
-                                   post_mesh->n_b_faces,
-                                   var_dim,
-                                   _interlace,
-                                   i_face_vals,
-                                   b_face_vals,
-                                   var_tmp);
+          _cs_post_assmb_var_faces
+            (post_mesh->exp_mesh,
+             post_mesh->n_i_faces,
+             post_mesh->n_b_faces,
+             var_dim,
+             _interlace,
+             reinterpret_cast<const cs_real_t *>(i_face_vals),
+             reinterpret_cast<const cs_real_t *>(b_face_vals),
+             var_tmp);
 
           _interlace = CS_NO_INTERLACE;
 
@@ -6848,7 +6849,7 @@ cs_post_write_particle_values(int                    mesh_id,
   cs_post_mesh_t  *post_mesh;
   cs_post_writer_t  *writer;
 
-  cs_lagr_attribute_t  attr = attr_id;
+  cs_lagr_attribute_t  attr = (cs_lagr_attribute_t)attr_id;
 
   cs_lnum_t    n_particles = 0, n_pts = 0;
   cs_lnum_t    parent_num_shift[1]  = {0};

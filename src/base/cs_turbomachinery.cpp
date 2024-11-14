@@ -199,7 +199,7 @@ _post_error_faces_select(void         *input,
   cs_lnum_t _n_faces = 0;
   cs_lnum_t *_face_ids = NULL;
 
-  const cs_lnum_t  *count = input;
+  const cs_lnum_t  *count = reinterpret_cast<cs_lnum_t *>(input);
 
   BFT_MALLOC(_face_ids, count[1], cs_lnum_t);
 
@@ -236,7 +236,8 @@ _turbomachinery_coupling_tag(void            *context,
                              const cs_lnum_t  point_list[],
                              int             *point_tag)
 {
-  const cs_turbomachinery_t *tbm = context;
+  const cs_turbomachinery_t *tbm
+    = reinterpret_cast<cs_turbomachinery_t *>(context);
   const cs_mesh_t *m = cs_glob_mesh;
 
   /* Tag elements (boundary faces) */
@@ -1227,7 +1228,7 @@ _relative_pressure_f(int               location_id,
 
   const cs_turbomachinery_t *tbm = _turbomachinery;
 
-  cs_real_t *p_rel = vals;
+  cs_real_t *p_rel = reinterpret_cast<cs_real_t *>(vals);
 
   const cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
   const cs_real_3_t *cell_cen = (const cs_real_3_t *)(mq->cell_cen);
@@ -1292,7 +1293,7 @@ _relative_velocity_f(int               location_id,
 
   const cs_turbomachinery_t *tbm = _turbomachinery;
 
-  cs_real_3_t *v_rel = vals;
+  cs_real_3_t *v_rel = reinterpret_cast<cs_real_3_t *>(vals);
 
   const cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
   const cs_real_3_t *cell_cen = (const cs_real_3_t *)(mq->cell_cen);
