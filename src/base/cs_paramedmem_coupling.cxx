@@ -1107,6 +1107,7 @@ cs_paramedmem_field_export(cs_paramedmem_coupling_t  *c,
   cs_lnum_t *elt_list = c->mesh->elt_list;
   if (elt_list == nullptr) {
     const cs_lnum_t  n_vals = c->mesh->n_elts * (cs_lnum_t)dim;
+    assert(f->getNumberOfValues() == n_vals);
     for (cs_lnum_t i = 0; i < n_vals; i++)
       val_ptr[i] = values[i];
   }
@@ -1178,6 +1179,7 @@ cs_paramedmem_field_export_l(cs_paramedmem_coupling_t  *c,
   /* Assign element values */
 
   const cs_lnum_t  n_vals = c->mesh->n_elts * (cs_lnum_t)dim;
+  assert(f->getNumberOfValues() == n_vals);
 
   for (cs_lnum_t i = 0; i < n_vals; i++)
     val_ptr[i] = values[i];
@@ -1245,6 +1247,7 @@ cs_paramedmem_field_import(cs_paramedmem_coupling_t  *c,
   }
   else {
     const cs_lnum_t  n_vals = c->mesh->n_elts * (cs_lnum_t)dim;
+    assert(f->getNumberOfValues() == n_vals);
     for (cs_lnum_t i = 0; i < n_vals; i++) {
       values[i] = val_ptr[i];
     }
@@ -1301,7 +1304,9 @@ cs_paramedmem_field_import_l(cs_paramedmem_coupling_t  *c,
   const double  *val_ptr = f->getArray()->getConstPointer();
   const int dim = f->getNumberOfComponents();
 
+
   const cs_lnum_t  n_vals = c->mesh->n_elts * (cs_lnum_t)dim;
+  assert(f->getNumberOfValues() == n_vals);
 
   /* Import element values */
 
@@ -1512,6 +1517,46 @@ cs_paramedmem_send_field_vals(cs_paramedmem_coupling_t *c,
   cs_paramedmem_attach_field_by_name(c, name);
 
   /* Send data */
+  cs_paramedmem_sync_dec(c);
+  cs_paramedmem_send_data(c);
+
+#else
+
+  CS_NO_WARN_IF_UNUSED(c);
+  CS_NO_WARN_IF_UNUSED(name);
+  CS_NO_WARN_IF_UNUSED(vals);
+
+#endif
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Send values of a field. If vals pointer is non-null,
+ * values are updated before send
+ *
+ * \param[in] c     pointer to cs_paramedmem_coupling_t structure
+ * \param[in] name  name of field
+ * \param[in] vals  array of values to write
+ *
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_paramedmem_send_field_vals_l(cs_paramedmem_coupling_t *c,
+                                const char               *name,
+                                const double             *vals)
+{
+#if defined(HAVE_PARAMEDMEM)
+
+  /* If provided, export data to DEC */
+  if (vals != nullptr)
+    cs_paramedmem_field_export_l(c, name, vals);
+
+  /* Attach field to DEC for sending */
+  cs_paramedmem_attach_field_by_name(c, name);
+
+  /* Send data */
+  cs_paramedmem_sync_dec(c);
   cs_paramedmem_send_data(c);
 
 #else
@@ -1545,10 +1590,48 @@ cs_paramedmem_recv_field_vals(cs_paramedmem_coupling_t *c,
   cs_paramedmem_attach_field_by_name(c, name);
 
   /* Recieve data */
+  cs_paramedmem_sync_dec(c);
   cs_paramedmem_recv_data(c);
 
   /* Read values */
   cs_paramedmem_field_import(c, name, vals);
+
+#else
+
+  CS_NO_WARN_IF_UNUSED(c);
+  CS_NO_WARN_IF_UNUSED(name);
+  CS_NO_WARN_IF_UNUSED(vals);
+
+#endif
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Recieve values of a field.
+ *
+ * \param[in] c     pointer to cs_paramedmem_coupling_t structure
+ * \param[in] name  name of field
+ * \param[in] vals  array of values to read
+ *
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_paramedmem_recv_field_vals_l(cs_paramedmem_coupling_t *c,
+                                const char               *name,
+                                double                   *vals)
+{
+#if defined(HAVE_PARAMEDMEM)
+
+  /* Attach field to DEC for receiving */
+  cs_paramedmem_attach_field_by_name(c, name);
+
+  /* Recieve data */
+  cs_paramedmem_sync_dec(c);
+  cs_paramedmem_recv_data(c);
+
+  /* Read values */
+  cs_paramedmem_field_import_l(c, name, vals);
 
 #else
 

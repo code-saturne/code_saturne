@@ -457,6 +457,22 @@ cs_paramedmem_send_field_vals(cs_paramedmem_coupling_t *c,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Send values of a field. If vals pointer is non-null,
+ * values are updated before send
+ *
+ * \param[in] c     pointer to cs_paramedmem_coupling_t structure
+ * \param[in] name  name of field
+ * \param[in] vals  array of values to write
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_paramedmem_send_field_vals_l(cs_paramedmem_coupling_t *c,
+                                const char               *name,
+                                const double             *vals);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Recieve values of a field.
  *
  * \param[in] c     pointer to cs_paramedmem_coupling_t structure
@@ -469,6 +485,21 @@ void
 cs_paramedmem_recv_field_vals(cs_paramedmem_coupling_t *c,
                               const char               *name,
                               double                   *vals);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Recieve values of a field.
+ *
+ * \param[in] c     pointer to cs_paramedmem_coupling_t structure
+ * \param[in] name  name of field
+ * \param[in] vals  array of values to read
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_paramedmem_recv_field_vals_l(cs_paramedmem_coupling_t *c,
+                                const char               *name,
+                                double                   *vals);
 
 /*----------------------------------------------------------------------------*/
 /*!

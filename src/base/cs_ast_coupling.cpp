@@ -278,25 +278,20 @@ _recv_dyn(cs_ast_coupling_t  *ast_cpl)
 {
   int verbosity = _get_current_verbosity(ast_cpl);
 
-  cs_paramedmem_attach_field_by_name(ast_cpl->mc_vertices, _name_m_d);
-  cs_paramedmem_attach_field_by_name(ast_cpl->mc_vertices, _name_m_v);
-
   if (verbosity > 1) {
     bft_printf(_("code_aster: starting MEDCouping receive of values "
                  "at coupled vertices..."));
     bft_printf_flush();
   }
 
-  cs_paramedmem_sync_dec(ast_cpl->mc_vertices);
-  cs_paramedmem_recv_data(ast_cpl->mc_vertices);
+  /* Received discplacement and velocity field */
+  cs_paramedmem_recv_field_vals_l(ast_cpl->mc_vertices, _name_m_d, ast_cpl->xast);
+  cs_paramedmem_recv_field_vals_l(ast_cpl->mc_vertices, _name_m_v, ast_cpl->xvast);
 
   if (verbosity > 1) {
     bft_printf(_("[ok]\n"));
     bft_printf_flush();
   }
-
-  cs_paramedmem_field_import_l(ast_cpl->mc_vertices, _name_m_d, ast_cpl->xast);
-  cs_paramedmem_field_import_l(ast_cpl->mc_vertices, _name_m_v, ast_cpl->xvast);
 
   /* For dry run, reset values to zero to avoid uninitialized values */
   if (ast_cpl->aci.root_rank < 0) {
@@ -1078,17 +1073,13 @@ cs_ast_coupling_exchange_fields(void)
 
   /* Send forces */
 
-  cs_paramedmem_field_export_l(cpl->mc_faces, _name_f_f, cpl->fopas);
-  cs_paramedmem_attach_field_by_name(cpl->mc_faces, _name_f_f);
-
   if (verbosity > 1) {
     bft_printf(_("code_aster: starting MEDCoupling send of values "
                  "at coupled faces..."));
     bft_printf_flush();
   }
 
-  cs_paramedmem_sync_dec(cpl->mc_faces);
-  cs_paramedmem_send_data(cpl->mc_faces);
+  cs_paramedmem_send_field_vals_l(cpl->mc_faces, _name_f_f, cpl->fopas);
 
   if (verbosity > 1) {
     bft_printf(_("[ok]\n"));
