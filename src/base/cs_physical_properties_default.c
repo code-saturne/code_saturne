@@ -209,7 +209,7 @@ _rho_mu_is_constant(const char       *name,
     break;
   }
 
-  if (!is_constant) {
+  if (!is_constant)
     bft_error(__FILE__, __LINE__, 0,
               _("Error: abort in the physical quantities computation\n"
                 "=====\n"
