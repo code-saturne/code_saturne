@@ -4808,7 +4808,7 @@ _automatic_aggregation_dx_msr(const cs_grid_t       *f,
         cs_lnum_t t_r_s_id = row_index[ii];
         cs_lnum_t t_r_e_id = row_index[ii+1];
 
-        c_cardinality[ii] = t_r_e_id - t_r_s_id + 1;
+        c_cardinality[ii] = t_r_e_id - t_r_s_id;
         c_aggr_count[ii] = 1;
 
         cs_real_t  sum = 0.0;
@@ -4829,12 +4829,12 @@ _automatic_aggregation_dx_msr(const cs_grid_t       *f,
     }
     else {
       for (cs_lnum_t ii = t_s_id; ii < t_e_id; ii++) {
-        c_cardinality[ii] = row_index[ii+1] - row_index[ii] + 1;
+        c_cardinality[ii] = row_index[ii+1] - row_index[ii];
         c_aggr_count[ii] = 1;
       }
     }
 
-    /* Indexes and counterss */
+    /* Indexes and counters */
 
     const cs_lnum_t t_r_s_id = row_index[t_s_id] * ag_queue_stride;
     cs_lnum_t t_r_e_id = t_r_s_id;
@@ -4993,8 +4993,8 @@ _automatic_aggregation_dx_msr(const cs_grid_t       *f,
         _max_aggregation++;
 
       if (verbosity > 3) {
-        log_counts[t_id*(npass-1)*2] = r_n_faces;
-        log_counts[t_id*(npass-1)*2 + 1] = aggr_count;
+        log_counts[n_loc_threads*(npass-1)*2 + t_id] = r_n_faces;
+        log_counts[n_loc_threads*(npass-1)*2 + t_id + 1] = aggr_count;
       }
 
       /* Re-initialize non-eliminated faces */
@@ -5127,8 +5127,8 @@ _automatic_aggregation_dx_msr(const cs_grid_t       *f,
   if (verbosity > 3) {
     for (int npass = 2; npass <= npass_max; npass++) {
       for (int t_id = 0; t_id < n_loc_threads; t_id++) {
-        cs_lnum_t r_n_faces = log_counts[t_id*(npass-1)*2];
-        cs_lnum_t aggr_count = log_counts[t_id*(npass-1)*2 + 1];
+        cs_lnum_t r_n_faces = log_counts[n_loc_threads*(npass-1)*2 + t_id];
+        cs_lnum_t aggr_count = log_counts[n_loc_threads*(npass-1)*2 + t_id + 1];
         if (r_n_faces > 0 && aggr_count > 0)
           bft_printf("       pass %d, thread %d; r_n_faces = %ld;"
                      " aggr_count = %ld\n",
