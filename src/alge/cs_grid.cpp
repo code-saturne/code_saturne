@@ -6979,7 +6979,7 @@ _compute_coarse_quantities_msr_with_faces(const cs_grid_t  *f,
 
           c_x_val[r_idx] = c_x_val_c;
           for (cs_lnum_t kk = 0; kk < db_size; kk++) {
-            c_d_val[ic*db_stride + kk] -= c_x_val_c;
+            c_d_val[ic*db_stride + db_size*kk + kk] -= c_x_val_c;
           }
         }
       }
@@ -7029,7 +7029,7 @@ _compute_coarse_quantities_msr_with_faces(const cs_grid_t  *f,
 
           c_x_val[r_idx] = c_x_val_c;
           for (cs_lnum_t kk = 0; kk < db_size; kk++) {
-            c_d_val[ic*db_stride + kk] -= c_x_val_c;
+            c_d_val[ic*db_stride + db_size*kk + kk] -= c_x_val_c;
           }
         }
       }
