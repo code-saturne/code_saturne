@@ -57,7 +57,7 @@ BEGIN_C_DECLS
  * \brief cs_dof_func_t function to compute an inlet value based
  *        on the value computed from a user defined time table.
  *
- * For the calling function, elt_ids is optional. If not nullptr, array(s) should
+ * For the calling function, elt_ids is optional. If non-null, array(s) should
  * be accessed with an indirection. The same indirection can be applied to fill
  * retval if dense_output is set to false.
  * In the current case, retval is allocated to mesh->n_b_faces.
@@ -65,7 +65,7 @@ BEGIN_C_DECLS
  * \param[in]      n_elts        number of elements to consider
  * \param[in]      elt_ids       list of elements ids
  * \param[in]      dense_output  perform an indirection in retval or not
- * \param[in]      input         nullptr or pointer to a structure cast on-the-fly
+ * \param[in]      input         null or pointer to a structure cast on-the-fly
  * \param[in, out] retval        resulting value(s). Must be allocated.
  */
 /*----------------------------------------------------------------------------*/

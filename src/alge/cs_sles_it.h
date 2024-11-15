@@ -421,7 +421,7 @@ cs_sles_it_set_shareable(cs_sles_it_t        *context,
 /*!
  * \brief Set MPI communicator for global reductions.
  *
- * The system is solved only on ranks with a non-NULL communicator or
+ * The system is solved only on ranks with a non-null communicator or
  * if the caller communicator has less than 2 ranks. convergence info
  * is broadcast across the caller communicator.
  *

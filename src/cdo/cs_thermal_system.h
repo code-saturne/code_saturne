@@ -147,10 +147,10 @@ typedef struct {
   cs_property_t  *lambda;            /* Thermal conductivity */
   cs_property_t  *cp;                /* Heat capacity */
   cs_property_t  *rho;               /* Mass density (may be shared) */
-  cs_property_t  *kappa;             /* lambda/cp may be NULL*/
+  cs_property_t  *kappa;             /* lambda/cp may be null*/
 
   /* value of lambda/cp in each cell (allocated if the related property kappa
-   * is not NULL and defined by array) */
+   * is non-null and defined by array) */
   cs_real_t      *kappa_array;
 
   /* Fields associated to this module */

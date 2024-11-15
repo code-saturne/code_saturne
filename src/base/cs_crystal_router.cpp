@@ -1138,14 +1138,14 @@ _get_data_s(cs_crystal_router_t   *cr,
  *
  * If the general case, dest_id is applied to all the other
  * extracted arrays. If some ids appear multiple times, and dest_id, src_rank,
- * and src_id are all non-nullptr (with the matching flags
+ * and src_id are all non-null (with the matching flags
  * CS_CRYSTAL_ROUTER_USE_DEST_ID, CS_CRYSTAL_ROUTER_ADD_SRC_ID, and
  * CS_CRYSTAL_ROUTER_ADD_SRC_RANK set), it is applied only to the data, and
  * src_rank and src_id are kept in buffer order.
  *
  * With this behavior, for reverse exchange, src_id and src_rank can be
  * used as dest_id and dest_rank respectively in the call to
- * \ref cs_crystal_router_create_s, while nullptr is passed to elt_id
+ * \ref cs_crystal_router_create_s, while null is passed to elt_id
  * with single ids, and dest_id passed in case of multiple ids.
  *
  * parameters:
@@ -1370,14 +1370,14 @@ _get_data_i(cs_crystal_router_t   *cr,
  *
  * If the general case, dest_id is applied to all the other
  * extracted arrays. If some ids appear multiple times, and dest_id, src_rank,
- * and src_id are all non-nullptr (with the matching flags
+ * and src_id are all non-null (with the matching flags
  * CS_CRYSTAL_ROUTER_USE_DEST_ID, CS_CRYSTAL_ROUTER_ADD_SRC_ID, and
  * CS_CRYSTAL_ROUTER_ADD_SRC_RANK set), it is applied only to the data and
  * index, while src_rank and src_id are kept in buffer order.
  *
  * With this behavior, for reverse exchange, src_id and src_rank can be
  * used as dest_id and dest_rank respectively in the call to
- * \ref cs_crystal_router_create_s, while nullptr is passed to elt_id
+ * \ref cs_crystal_router_create_s, while null is passed to elt_id
  * with single ids, and dest_id passed in case of multiple ids.
  *
  * parameters:
@@ -2012,7 +2012,7 @@ cs_crystal_router_n_recv_elts(const cs_crystal_router_t  *cr)
  * Depending on the creation options, some elements may be available or not.
  *
  * For each element type, a pointer to a pointer to a buffer is provided.
- * If the pointer to the buffer is non-nullptr, the buffer must be of sufficient
+ * If the pointer to the buffer is non-null, the buffer must be of sufficient
  * size for the number of elements returned by \ref cs_crystal_router_n_elts.
  *
  * If no buffer is provided, one is allocated automatically, and transferred
@@ -2022,7 +2022,7 @@ cs_crystal_router_n_recv_elts(const cs_crystal_router_t  *cr)
  * it will be applied automatically to the data and data_index arrays. The
  * dest_id array itself is always in receive order. If the Crystal
  * Router does not contain destination id info but the \c dest_id
- * argument points to a non-nullptr value, the provided id will be used to
+ * argument points to a non-null value, the provided id will be used to
  * order extracted data. This allows saving the destination id on the receive
  * side, and not re-sending it (saving bandwidth) for subsequent calls
  * with a similar Crystal Router.
@@ -2035,7 +2035,7 @@ cs_crystal_router_n_recv_elts(const cs_crystal_router_t  *cr)
  *
  * With this behavior, for reverse exchange, src_id and src_rank can be
  * used as dest_id and dest_rank respectively in the call to
- * \ref cs_crystal_router_create_s, while nullptr is passed to elt_id
+ * \ref cs_crystal_router_create_s, while null is passed to elt_id
  * with single ids, and dest_id passed in case of duplicate ids.
  *
  * \param[in]       cr          pointer to associated Crystal Router

@@ -2725,7 +2725,7 @@ _set_hypre_solver(cs_param_sles_t    *slesp,
  *         This function is called at the end of the setup stage for a KSP
  *         solver.
  *
- *         Note: if the context pointer is non-nullptr, it must point to valid
+ *         Note: if the context pointer is non-null, it must point to valid
  *         data when the selection function is called so that value or
  *         structure should not be temporary (i.e. local);
  *

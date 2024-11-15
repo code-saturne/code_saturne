@@ -228,7 +228,7 @@ cs_boundary_zone_by_name(const char  *name);
 /*!
  * \brief Return a pointer to a boundary zone based on its name if present.
  *
- * If no boundary zone of the given name is defined, NULL is returned.
+ * If no boundary zone of the given name is defined, returned pointer is null.
  *
  * \param[in]  name  boundary zone name
  *

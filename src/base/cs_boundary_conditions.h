@@ -515,7 +515,7 @@ cs_boundary_conditions_open_set_velocity_by_normal_value(const  cs_zone_t  *z,
 /*!
  * \brief Assign a normal velocity to an inlet using a provided function.
  *
- * Reminder: if the input pointer is non-NULL, it must point to valid data
+ * Reminder: if the input pointer is non-null, it must point to valid data
  * when the selection function is called, so either:
  * - that value or structure should not be temporary (i.e. local);
  * - when a single integer identifier is needed, the input pointer can be
@@ -594,7 +594,7 @@ cs_boundary_conditions_open_set_mass_flow_rate_by_value(const  cs_zone_t  *z,
  * must be aware that values from the previous time step or update will
  * be used, handle this in another manner.
  *
- * Reminder: if the input pointer is non-NULL, it must point to valid data
+ * Reminder: if the input pointer is non-null, it must point to valid data
  * when the selection function is called, so either:
  * - that value or structure should not be temporary (i.e. local);
  * - when a single integer identifier is needed, the input pointer can be
@@ -652,7 +652,7 @@ cs_boundary_conditions_open_set_volume_flow_rate_by_value(const  cs_zone_t  *z,
  * must be aware that values from the previous time step or update will
  * be used, handle this in another manner.
  *
- * Reminder: if the input pointer is non-NULL, it must point to valid data
+ * Reminder: if the input pointer is non-null, it must point to valid data
  * when the selection function is called, so either:
  * - that value or structure should not be temporary (i.e. local);
  * - when a single integer identifier is needed, the input pointer can be

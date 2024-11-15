@@ -534,7 +534,7 @@ _init_all_mpi_sat(void)
  *   cpl <-> pointer to coupling structure to destroy
  *
  * returns:
- *   nullptr pointer
+ *   null pointer
  *----------------------------------------------------------------------------*/
 
 static cs_sat_coupling_t *

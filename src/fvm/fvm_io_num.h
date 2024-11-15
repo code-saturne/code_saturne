@@ -289,7 +289,7 @@ fvm_io_num_create_from_scan(size_t  n_entities);
  *   this_io_num <-- pointer to structure that should be destroyed
  *
  * returns:
- *   NULL pointer
+ *   null pointer
  *----------------------------------------------------------------------------*/
 
 fvm_io_num_t *

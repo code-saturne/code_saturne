@@ -84,10 +84,10 @@ cs_mesh_warping_set_defaults(double  max_warp_angle,
  * Get defaults for cutting of warped faces.
  *
  * parameters:
- *   max_warp_angle --> if non NULL, returns maximum warp angle (in degrees)
+ *   max_warp_angle --> if non-null, returns maximum warp angle (in degrees)
  *                      over which faces will be cut, or -1 if faces should
  *                      not be cut
- *   postprocess    --> if non NULL, returns 1 if postprocessing should be
+ *   postprocess    --> if non-null, returns 1 if postprocessing should be
  *                      activated when cutting warped faces, 0 otherwise
  *----------------------------------------------------------------------------*/
 

@@ -355,7 +355,7 @@ cs_cdo_quantities_build(const cs_mesh_t             *m,
  *
  * \param[in]  cdoq    pointer to structure to free
  *
- * \return a NULL pointer
+ * \return a null pointer
  */
 /*----------------------------------------------------------------------------*/
 
@@ -487,7 +487,7 @@ cs_cdo_quantities_get_dual_volumes(cs_cdo_quantities_t      *cdoq,
  * \param[in]      cdoq         additional quantities for CDO schemes
  * \param[in]      connect      additional connectivities for CDO schemes
  * \param[in, out] p_dual_vol   double pointer to the dual volumes related to
- *                              each vertex. Allocated if NULL.
+ *                              each vertex. Allocated if null.
  */
 /*----------------------------------------------------------------------------*/
 
@@ -720,7 +720,7 @@ cs_quant_set_dedge_nvec(cs_lnum_t                     shift,
 /*!
  * \brief Dump a cs_quant_t structure
  *
- * \param[in]  f         FILE struct (stdout if NULL)
+ * \param[in]  f         FILE struct (stdout if null)
  * \param[in]  num       entity number related to this quantity struct.
  * \param[in]  q         cs_quant_t structure to dump
  */

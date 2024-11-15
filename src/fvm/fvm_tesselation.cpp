@@ -2063,7 +2063,7 @@ fvm_tesselation_create(fvm_element_t        element_type,
     if (element_type != FVM_CELL_POLY)
       bft_error(__FILE__, __LINE__, 0,
                 _("Incoherent connectivity for tesselation:\n"
-                  "Connectivity face_index or face_num non nullptr,\n"
+                  "Connectivity face_index or face_num non-null,\n"
                   "but element type != FVM_CELL_POLY"));
   }
 
@@ -2071,7 +2071,7 @@ fvm_tesselation_create(fvm_element_t        element_type,
     if (element_type != FVM_FACE_POLY)
       bft_error(__FILE__, __LINE__, 0,
                 _("Incoherent connectivity for tesselation:\n"
-                  "Connectivy vertex_index non nullptr,\n"
+                  "Connectivy vertex_index non-null,\n"
                   "but element type != FVM_FACE_POLY"));
   }
 
@@ -2120,7 +2120,7 @@ fvm_tesselation_create(fvm_element_t        element_type,
  *   this_tesselation <-> pointer to structure that should be destroyed
  *
  * returns:
- *  nullptr pointer
+ *  null pointer
  *----------------------------------------------------------------------------*/
 
 fvm_tesselation_t *

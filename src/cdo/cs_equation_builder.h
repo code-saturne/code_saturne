@@ -126,7 +126,7 @@ struct _equation_builder_t {
    * @{
    */
 
-  cs_mask_t   *source_mask;  /*!< NULL if no source term or one source term
+  cs_mask_t   *source_mask;  /*!< null if no source term or one source term
                               * is defined. Allocated to n_cells in order to
                               * know in each cell which source term has to be
                               * computed */

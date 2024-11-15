@@ -60,7 +60,7 @@ BEGIN_C_DECLS
  *
  * \param[in]      eqp         pointer to a cs_equation_param_t structure
  * \param[in]      cm          pointer to a cs_cell_mesh_t structure
- * \param[in]      mass_hodge  pointer to a Hodge structure or NULL if useless
+ * \param[in]      mass_hodge  pointer to a Hodge structure or null if useless
  * \param[in, out] eqb         pointer to the equation builder structure
  * \param[in, out] cb          pointer to a cs_cell_builder_t structure
  * \param[in, out] csys        pointer to a cs_cell_sys_t structure
@@ -81,7 +81,7 @@ typedef void
  *
  * \param[in]      eqp         pointer to a cs_equation_param_t structure
  * \param[in]      cm          pointer to a cs_cell_mesh_t structure
- * \param[in]      mass_hodge  pointer to a Hodge structure or NULL if useless
+ * \param[in]      mass_hodge  pointer to a Hodge structure or null if useless
  * \param[in]      inv_dtcur   value of 1./dt for the current time step
  * \param[in, out] eqb         pointer to the equation builder structure
  * \param[in, out] cb          pointer to a cs_cell_builder_t structure
@@ -122,7 +122,7 @@ struct _cs_cdovb_t {
 
   /* Array for extra-operations */
 
-  cs_real_t   *cell_values;     /* NULL if not requested */
+  cs_real_t   *cell_values;     /* null if not requested */
 
   /* Boundary conditions */
 

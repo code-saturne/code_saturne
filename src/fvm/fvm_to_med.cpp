@@ -4312,7 +4312,7 @@ fvm_to_med_init_writer(const char                   *name,
  *   this_writer_p <-- pointer to opaque MED writer structure.
  *
  * returns:
- *   nullptr pointer.
+ *   null pointer.
  *----------------------------------------------------------------------------*/
 
 void *

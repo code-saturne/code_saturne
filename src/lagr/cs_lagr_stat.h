@@ -125,7 +125,7 @@ typedef enum {
  * Function pointer for computation of particle data values for
  * Lagrangian statistics.
  *
- * Note: if the input pointer is non-NULL, it must point to valid data
+ * Note: if the input pointer is non-null, it must point to valid data
  * when the selection function is called, so that value or structure should
  * not be temporary (i.e. local);
  *
@@ -146,7 +146,7 @@ typedef void
  * Function pointer for computation of event data values for
  * Lagrangian statistics.
  *
- * Note: if the input pointer is non-NULL, it must point to valid data
+ * Note: if the input pointer is non-null, it must point to valid data
  * when the selection function is called, so that value or structure should
  * not be temporary (i.e. local);
  *
@@ -169,7 +169,7 @@ typedef void
  *
  * If the matching values are multidimensional, they must be interleaved.
  *
- * Note: if the input pointer is non-NULL, it must point to valid data
+ * Note: if the input pointer is non-null, it must point to valid data
  * when the selection function is called, so that value or structure should
  * not be temporary (i.e. local);
  *

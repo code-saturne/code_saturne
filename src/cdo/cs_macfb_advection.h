@@ -64,7 +64,7 @@ BEGIN_C_DECLS
  * \param[in]      cm       pointer to a cs_cell_mesh_t structure
  * \param[in]      macb    pointer to a cs_macfb_builder_t structure
  * \param[in]      csys     pointer to a cs_cell_sys_t structure
- * \param[in, out] input    NULL or pointer to a structure cast on-the-fly
+ * \param[in, out] input    null or pointer to a structure cast on-the-fly
  * \param[in, out] cb       pointer to a cs_cell_builder_t structure
  */
 /*----------------------------------------------------------------------------*/
@@ -158,7 +158,7 @@ typedef void(cs_macfb_adv_close_hook_t)(const cs_cell_mesh_t     *cm,
  * \param[in]      cm       pointer to a cs_cell_mesh_t structure
  * \param[in]      macb     pointer to a cs_macfb_builder_t structure
  * \param[in]      csys     pointer to a cs_cell_sys_t structure
- * \param[in, out] input    NULL or pointer to a structure cast on-the-fly
+ * \param[in, out] input    null or pointer to a structure cast on-the-fly
  * \param[in, out] cb       pointer to a cs_cell_builder_t structure
  */
 /*----------------------------------------------------------------------------*/

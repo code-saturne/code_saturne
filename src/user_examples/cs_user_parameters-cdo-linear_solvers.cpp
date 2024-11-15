@@ -559,7 +559,7 @@ cs_user_linear_solvers(void)
  * One can recover the MUMPS step through the "job" member.
  * MUMPS_JOB_ANALYSIS or MUMPS_JOB_FACTORIZATION
  *
- * Note: if the context pointer is non-nullptr, it must point to valid data
+ * Note: if the context pointer is non-null, it must point to valid data
  * when the selection function is called so that structure should
  * not be temporary (i.e. local);
  *

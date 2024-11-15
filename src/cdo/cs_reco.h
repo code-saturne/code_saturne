@@ -150,7 +150,7 @@ cs_reco_cell_vectors_by_face_dofs(const cs_adjacency_t       *c2f,
  *        Case of scalar-valued array.
  *
  * \param[in]      n_cells       number of selected cells
- * \param[in]      cell_ids      list of cell ids or NULL
+ * \param[in]      cell_ids      list of cell ids or null
  * \param[in]      c2v           cell -> vertices connectivity
  * \param[in]      cdoq          pointer to the additional quantities struct.
  * \param[in]      array         pointer to the array of values at vertices
@@ -176,7 +176,7 @@ cs_reco_scalar_v2c(cs_lnum_t                    n_cells,
  *        Case of scalar-valued array.
  *
  * \param[in]      n_cells       number of selected cells
- * \param[in]      cell_ids      list of cell ids or NULL
+ * \param[in]      cell_ids      list of cell ids or null
  * \param[in]      c2v           cell -> vertices connectivity
  * \param[in]      cdoq          pointer to the additional quantities struct.
  * \param[in]      array         pointer to the array of values at (v,c)
@@ -202,7 +202,7 @@ cs_reco_scalar_vbyc2c(cs_lnum_t                    n_cells,
  *        Case of scalar-valued array.
  *
  * \param[in]      n_cells       number of selected cells
- * \param[in]      cell_ids      list of cell ids or NULL
+ * \param[in]      cell_ids      list of cell ids or null
  * \param[in]      c2e           cell -> edges connectivity
  * \param[in]      cdoq          pointer to the additional quantities struct.
  * \param[in]      array         pointer to the array of values at (e,c)
@@ -227,7 +227,7 @@ cs_reco_scalar_ebyc2c(cs_lnum_t                    n_cells,
  *        Case of vector-valued fields.
  *
  * \param[in]      n_cells       number of selected cells
- * \param[in]      cell_ids      list of cell ids or NULL
+ * \param[in]      cell_ids      list of cell ids or null
  * \param[in]      c2v           cell -> vertices connectivity
  * \param[in]      cdoq          pointer to the additional quantities struct.
  * \param[in]      array         pointer to the array of values at vertices
@@ -252,7 +252,7 @@ cs_reco_vector_v2c(cs_lnum_t                    n_cells,
  *        Case of scalar-valued arrays.
  *
  * \param[in]      n_faces      number of faces
- * \param[in]      face_ids     list of face ids (interior/border faces) or NULL
+ * \param[in]      face_ids     list of face ids (interior/border faces) or null
  * \param[in]      connect      pointer to a cs_cdo_connect_t structure
  * \param[in]      cdoq         pointer to the additional quantities struct.
  * \param[in]      array        pointer to the array of values at vertices
@@ -453,7 +453,7 @@ cs_reco_ccen_edge_dofs(const cs_cdo_connect_t     *connect,
  * \param[in]      quant    pointer to the additional quantities struct.
  * \param[in]      circ     pointer to the array of circulations at edges
  * \param[in, out] p_curl   pointer to value of the reconstructed curl inside
- *                          cells (allocated if set to NULL)
+ *                          cells (allocated if set to null)
  */
 /*----------------------------------------------------------------------------*/
 

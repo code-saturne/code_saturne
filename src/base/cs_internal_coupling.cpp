@@ -2012,10 +2012,10 @@ cs_internal_coupling_exchange_by_face_id(const cs_internal_coupling_t  *cpl,
  *
  * parameters:
  *   cpl             <-- pointer to coupling entity
- *   n_local         --> nullptr or pointer to component n_local
- *   faces_local     --> nullptr or pointer to component faces_local
- *   n_distant       --> nullptr or pointer to component n_distant
- *   faces_distant   --> nullptr or pointer to component faces_distant
+ *   n_local         --> null or pointer to component n_local
+ *   faces_local     --> null or pointer to component faces_local
+ *   n_distant       --> null or pointer to component n_distant
+ *   faces_distant   --> null or pointer to component faces_distant
  *----------------------------------------------------------------------------*/
 
 void

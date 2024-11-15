@@ -269,7 +269,7 @@ _find_node(cs_tree_node_t   *parent,
  * \param[in]  root      pointer to the root node where we start searching
  * \param[in]  sub_path  string describing the path access
  *
- * \return  pointer to the first matching node, or nullptr if not found
+ * \return  pointer to the first matching node, or null if not found
  */
 /*----------------------------------------------------------------------------*/
 
@@ -302,7 +302,7 @@ _find_sub_node(cs_tree_node_t  *root,
  * \param[in]  root  pointer to the root node where we start searching
  * \param[in]  name  node name searched for
  *
- * \return  pointer to the first matching node, or nullptr if not found
+ * \return  pointer to the first matching node, or null if not found
  */
 /*----------------------------------------------------------------------------*/
 
@@ -1131,7 +1131,7 @@ cs_tree_node_get_child_values_real(cs_tree_node_t  *node,
  * \param[in]  tag        name of the required "tag" child
  * \param[in]  tag_value  value of the required "tag" child
  *
- * \return  pointer to the node, or nullptr if not found
+ * \return  pointer to the node, or null if not found
  */
 /*----------------------------------------------------------------------------*/
 
@@ -1350,7 +1350,7 @@ cs_tree_add_node(cs_tree_node_t  *node,
  * \param[in]  node  pointer to the node where we start searching
  * \param[in]  path  string describing the path access
  *
- * \return  pointer to the node, or nullptr if not found
+ * \return  pointer to the node, or null if not found
  */
 /*----------------------------------------------------------------------------*/
 
@@ -1491,7 +1491,7 @@ cs_tree_add_sibling(cs_tree_node_t  *sibling,
  * \param[in]  root      pointer to the root node where we start searching
  * \param[in]  sub_path  string describing the path access
  *
- * \return  pointer to the first matching node, or nullptr if not found
+ * \return  pointer to the first matching node, or null if not found
  */
 /*----------------------------------------------------------------------------*/
 
@@ -1523,7 +1523,7 @@ cs_tree_find_node(cs_tree_node_t  *root,
  * \param[in]  current   pointer to the current node
  * \param[in]  sub_path  string describing the path access
  *
- * \return  pointer to the next matching node, or nullptr if not found
+ * \return  pointer to the next matching node, or null if not found
  */
 /*----------------------------------------------------------------------------*/
 
@@ -1607,7 +1607,7 @@ cs_tree_find_node_next(cs_tree_node_t  *root,
  * \param[in]  root  pointer to the root node where we start searching
  * \param[in]  name      node name searched for
  *
- * \return  pointer to the first matching node, or nullptr if not found
+ * \return  pointer to the first matching node, or null if not found
  */
 /*----------------------------------------------------------------------------*/
 
@@ -1640,7 +1640,7 @@ cs_tree_find_node_simple(cs_tree_node_t  *root,
  * \param[in]  current   pointer to the current node
  * \param[in]  name      node name searched for
  *
- * \return  pointer to the next matching node, or nullptr if not found
+ * \return  pointer to the next matching node, or null if not found
  */
 /*----------------------------------------------------------------------------*/
 

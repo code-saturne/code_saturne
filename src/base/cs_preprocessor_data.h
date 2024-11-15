@@ -98,7 +98,7 @@ CS_PROCF(ledevi, LEDEVI)(int  *iperio);
  *   n_group_renames <-- number of groups to rename
  *   group_rename    <-- old (group_rename[i*2]) to new (group_rename[i*2 + 1])
  *                       group names array (size: n_group_renames*2)
- *   transf_matrix   <-- coordinate transformation matrix (or NULL)
+ *   transf_matrix   <-- coordinate transformation matrix (or null)
  *----------------------------------------------------------------------------*/
 
 void

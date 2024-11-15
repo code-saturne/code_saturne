@@ -2069,7 +2069,7 @@ cs_mesh_create(void)
  * mesh       <->  pointer to a mesh structure
  *
  * returns:
- *   nullptr pointer
+ *   null pointer
  *----------------------------------------------------------------------------*/
 
 cs_mesh_t *

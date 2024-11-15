@@ -1371,7 +1371,7 @@ _cs_io_convert_read(void           *buffer,
  *   inp              --> input kernel IO structure
  *
  * returns:
- *   elts if non nullptr, or pointer to allocated array otherwise
+ *   elts if non-null, or pointer to allocated array otherwise
  *----------------------------------------------------------------------------*/
 
 static void *
@@ -2778,7 +2778,7 @@ cs_io_assert_cs_real(const cs_io_sec_header_t  *header,
  *   cs_io            --> kernel IO structure
  *
  * returns:
- *   elts if non nullptr, or pointer to allocated array otherwise
+ *   elts if non-null, or pointer to allocated array otherwise
  *----------------------------------------------------------------------------*/
 
 void *
@@ -2812,7 +2812,7 @@ cs_io_read_global(const cs_io_sec_header_t  *header,
  *   cs_io            --> kernel IO structure
  *
  * returns:
- *   elts if non nullptr, or pointer to allocated array otherwise
+ *   elts if non-null, or pointer to allocated array otherwise
  *----------------------------------------------------------------------------*/
 
 void *
@@ -2861,7 +2861,7 @@ cs_io_read_block(const cs_io_sec_header_t  *header,
  *   cs_io            --> kernel IO structure
  *
  * returns:
- *   elts if non nullptr, or pointer to allocated array otherwise
+ *   elts if non-null, or pointer to allocated array otherwise
  *----------------------------------------------------------------------------*/
 
 void *

@@ -113,11 +113,11 @@ BEGIN_C_DECLS
    user fields should be added after the model fields) */
 
 static int                               _n_pointers = 0;
-static struct cs_field_pointer_array_t  *_field_pointer = NULL;
+static struct cs_field_pointer_array_t  *_field_pointer = nullptr;
 
 /* Handling of sublists */
 
-static short int  *_sublist_size = NULL;
+static short int  *_sublist_size = nullptr;
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
@@ -127,7 +127,7 @@ static short int  *_sublist_size = NULL;
 
 /* Pointers */
 
-struct cs_field_pointer_array_t  *cs_glob_field_pointers = NULL;
+struct cs_field_pointer_array_t  *cs_glob_field_pointers = nullptr;
 
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
 
@@ -142,14 +142,14 @@ struct cs_field_pointer_array_t  *cs_glob_field_pointers = NULL;
 static void
 _init_pointers(void)
 {
-  assert(_field_pointer == NULL);
+  assert(_field_pointer == nullptr);
 
   _n_pointers = CS_FIELD_N_POINTERS;
   BFT_MALLOC(_field_pointer, _n_pointers, struct cs_field_pointer_array_t);
   BFT_MALLOC(_sublist_size, _n_pointers, short int);
 
   for (int i = 0; i < _n_pointers; i++) {
-    _field_pointer[i].f = NULL;
+    _field_pointer[i].f = nullptr;
     _field_pointer[i].p = &(_field_pointer[i].f);
     _sublist_size[i] = 0;
   }
@@ -172,7 +172,7 @@ _init_pointers(void)
 void
 cs_field_pointer_ensure_init(void)
 {
-  if (_field_pointer == NULL)
+  if (_field_pointer == nullptr)
     _init_pointers();
 }
 
@@ -192,7 +192,7 @@ cs_field_pointer_destroy_all(void)
   BFT_FREE(_field_pointer);
   BFT_FREE(_sublist_size);
 
-  cs_glob_field_pointers = NULL;
+  cs_glob_field_pointers = nullptr;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -235,7 +235,7 @@ cs_field_pointer_map_indexed(cs_field_pointer_id_t   e,
 {
   assert(index >= 0);
 
-  if (_field_pointer == NULL)
+  if (_field_pointer == nullptr)
     _init_pointers();
 
   assert(e < _n_pointers);
@@ -257,7 +257,7 @@ cs_field_pointer_map_indexed(cs_field_pointer_id_t   e,
       _field_pointer[e].p[0] = _field_pointer[e].f;
 
       for (int i = _sublist_size[e]; i < n_sub; i++)
-        _field_pointer[e].p[i] = NULL;
+        _field_pointer[e].p[i] = nullptr;
 
       _sublist_size[e] = n_sub;
 

@@ -108,8 +108,8 @@ cs_matrix_spmv_set_defaults(cs_matrix_t  *m);
  *   fill type   <--  matrix fill type to merge from
  *   spmv_type   <--  SpMV operation type (full or sub-matrix)
  *                    (all types if CS_MATRIX_SPMV_N_TYPES)
- *   numbering   <--  mesh numbering structure, or NULL
- *   func_name   <--  function type name, or NULL for default
+ *   numbering   <--  mesh numbering structure, or nullptr
+ *   func_name   <--  function type name, or nullptr for default
  *   spmv        <->  multiplication function array
  *   spmv_xy_hd  <->  multiplication function x and y host/device location
  *

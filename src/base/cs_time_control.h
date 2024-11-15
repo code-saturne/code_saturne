@@ -61,7 +61,7 @@ BEGIN_C_DECLS
  * set of operations (such as variable or property updates) should
  * be done at the current time step.
  *
- * \remark: if the input pointer is non-NULL, it must point to valid data
+ * \remark: if the input pointer is non-null, it must point to valid data
  *          when the control function is called, so that value or structure
  *          should not be temporary (i.e. local);
  *
@@ -202,7 +202,7 @@ cs_time_control_init_by_time(cs_time_control_t  *tc,
  *!
  * \brief Simple time control initialization based on external function.
  *
- * \remark: if the input pointer is non-NULL, it must point to valid data
+ * \remark: if the input pointer is non-null, it must point to valid data
  *          when the control function is called, so that value or structure
  *          should not be temporary (i.e. local);
  *

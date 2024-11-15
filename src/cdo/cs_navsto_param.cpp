@@ -334,7 +334,7 @@ cs_navsto_param_create(const cs_boundary_t          *boundaries,
  *
  * \param[in, out] param  pointer to a \ref cs_navsto_param_t structure
  *
- * \return a nullptr pointer
+ * \return a null pointer
  */
 /*----------------------------------------------------------------------------*/
 
@@ -961,7 +961,7 @@ cs_navsto_param_set_quadrature_to_all(cs_navsto_param_t    *nsp,
  *         Here the initial value is set to a constant value
  *
  * \param[in]      nsp       pointer to a \ref cs_navsto_param_t structure
- * \param[in]      z_name    name of the associated zone (if nullptr or "" if
+ * \param[in]      z_name    name of the associated zone (if null or "" if
  *                           all cells are considered)
  * \param[in]      val       pointer to the value
  *
@@ -1023,10 +1023,10 @@ cs_navsto_add_velocity_ic_by_value(cs_navsto_param_t    *nsp,
  *         Here the initial value is set according to an analytical function
  *
  * \param[in]      nsp       pointer to a \ref cs_navsto_param_t structure
- * \param[in]      z_name    name of the associated zone (if nullptr or "" if
+ * \param[in]      z_name    name of the associated zone (if null or "" if
  *                           all cells are considered)
  * \param[in]      analytic  pointer to an analytic function
- * \param[in]      input     nullptr or pointer to a structure cast on-the-fly
+ * \param[in]      input     null or pointer to a structure cast on-the-fly
  *
  * \return a pointer to the new \ref cs_xdef_t structure
  */
@@ -1089,7 +1089,7 @@ cs_navsto_add_velocity_ic_by_analytic(cs_navsto_param_t  *nsp,
  *         Here the initial value is set to a constant value
  *
  * \param[in]      nsp       pointer to a \ref cs_navsto_param_t structure
- * \param[in]      z_name    name of the associated zone (if nullptr or "" if
+ * \param[in]      z_name    name of the associated zone (if null or "" if
  *                           all cells are considered)
  * \param[in]      val       pointer to the value
  *
@@ -1138,10 +1138,10 @@ cs_navsto_add_pressure_ic_by_value(cs_navsto_param_t    *nsp,
  *         Here the initial value is set according to an analytical function
  *
  * \param[in]      nsp       pointer to a \ref cs_navsto_param_t structure
- * \param[in]      z_name    name of the associated zone (if nullptr or "" if
+ * \param[in]      z_name    name of the associated zone (if null or "" if
  *                           all cells are considered)
  * \param[in]      analytic  pointer to an analytic function
- * \param[in]      input     nullptr or pointer to a structure cast on-the-fly
+ * \param[in]      input     null or pointer to a structure cast on-the-fly
  *
  * \return a pointer to the new \ref cs_xdef_t structure
  */
@@ -1339,7 +1339,7 @@ cs_navsto_set_outlets(cs_navsto_param_t    *nsp)
  * \brief  Set the pressure field on a boundary using a uniform value.
  *
  * \param[in] nsp       pointer to a \ref cs_navsto_param_t structure
- * \param[in] z_name    name of the associated zone (if nullptr or "" all
+ * \param[in] z_name    name of the associated zone (if null or "" all
  *                      boundary faces are considered)
  * \param[in] values    value to set
  *
@@ -1418,7 +1418,7 @@ cs_navsto_set_pressure_bc_by_value(cs_navsto_param_t    *nsp,
  *         uniform value
  *
  * \param[in]      nsp       pointer to a \ref cs_navsto_param_t structure
- * \param[in]      z_name    name of the associated zone (if nullptr or "" all
+ * \param[in]      z_name    name of the associated zone (if null or "" all
  *                           boundary faces are considered)
  * \param[in]      values    array of three real values
  *
@@ -1479,7 +1479,7 @@ cs_navsto_set_velocity_wall_by_value(cs_navsto_param_t    *nsp,
  *         value
  *
  * \param[in]      nsp       pointer to a \ref cs_navsto_param_t structure
- * \param[in]      z_name    name of the associated zone (if nullptr or "" all
+ * \param[in]      z_name    name of the associated zone (if null or "" all
  *                           boundary faces are considered)
  * \param[in]      values    array of three real values
  *
@@ -1541,10 +1541,10 @@ cs_navsto_set_velocity_inlet_by_value(cs_navsto_param_t    *nsp,
  *         function
  *
  * \param[in]      nsp       pointer to a \ref cs_navsto_param_t structure
- * \param[in]      z_name    name of the associated zone (if nullptr or "" all
+ * \param[in]      z_name    name of the associated zone (if null or "" all
  *                           boundary faces are considered)
  * \param[in]      ana       pointer to an analytical function
- * \param[in]      input     nullptr or pointer to a structure cast on-the-fly
+ * \param[in]      input     null or pointer to a structure cast on-the-fly
  *
  * \return a pointer to the new \ref cs_xdef_t structure
  */
@@ -1606,7 +1606,7 @@ cs_navsto_set_velocity_inlet_by_analytic(cs_navsto_param_t    *nsp,
  *         of values
  *
  * \param[in]  nsp          pointer to a \ref cs_navsto_param_t structure
- * \param[in]  z_name       name of the associated zone (if nullptr or "" all
+ * \param[in]  z_name       name of the associated zone (if null or "" all
  *                          boundary faces are considered)
  * \param[in]  loc          information to know where are located values
  * \param[in]  array        pointer to an array
@@ -1692,11 +1692,11 @@ cs_navsto_set_velocity_inlet_by_array(cs_navsto_param_t    *nsp,
  * \brief  Define the velocity field for an inlet boundary using a DoF function
  *
  * \param[in]  nsp         pointer to a \ref cs_navsto_param_t structure
- * \param[in]  z_name      name of the associated zone (if nullptr or "" all
+ * \param[in]  z_name      name of the associated zone (if null or "" all
  *                         boundary faces are considered)
  * \param[in]  dof_loc     where are located DoFs
  * \param[in]  func        pointer to a cs_dof_function_t
- * \param[in]  func_input  nullptr or pointer to a structure cast on-the-fly
+ * \param[in]  func_input  null or pointer to a structure cast on-the-fly
  *
  * \return a pointer to the new \ref cs_xdef_t structure
  */
@@ -1761,10 +1761,10 @@ cs_navsto_set_velocity_inlet_by_dof_func(cs_navsto_param_t    *nsp,
  * \brief  Define a new source term structure defined by an analytical function
  *
  * \param[in]      nsp       pointer to a \ref cs_navsto_param_t structure
- * \param[in]      z_name    name of the associated zone (if nullptr or "" all
+ * \param[in]      z_name    name of the associated zone (if null or "" all
  *                           cells are considered)
  * \param[in]      ana       pointer to an analytical function
- * \param[in]      input     nullptr or pointer to a structure cast on-the-fly
+ * \param[in]      input     null or pointer to a structure cast on-the-fly
  *
  * \return a pointer to the new \ref cs_xdef_t structure
  */
@@ -1791,7 +1791,7 @@ cs_navsto_add_source_term_by_analytic(cs_navsto_param_t    *nsp,
  * \brief  Define a new source term structure defined by a constant value
  *
  * \param[in]      nsp       pointer to a \ref cs_navsto_param_t structure
- * \param[in]      z_name    name of the associated zone (if nullptr or "" all
+ * \param[in]      z_name    name of the associated zone (if null or "" all
  *                           cells are considered)
  * \param[in]      val       pointer to the value to set
  *
@@ -1817,7 +1817,7 @@ cs_navsto_add_source_term_by_val(cs_navsto_param_t    *nsp,
  * \brief  Define a new source term structure defined by an array
  *
  * \param[in] nsp           pointer to a \ref cs_navsto_param_t structure
- * \param[in] z_name        name of the associated zone (if nullptr or "" all
+ * \param[in] z_name        name of the associated zone (if null or "" all
  *                          cells are considered)
  * \param[in] loc           information to know where are located values
  * \param[in] array         pointer to an array

@@ -363,7 +363,7 @@ cs_sdm_map_array(int         n_max_rows,
  *
  * \param[in] mat  pointer to a cs_sdm_t struct. to free
  *
- * \return a NULL pointer
+ * \return a null pointer
  */
 /*----------------------------------------------------------------------------*/
 
@@ -1295,8 +1295,8 @@ cs_sdm_simple_dump(const cs_sdm_t     *mat);
  * \brief   Dump a small dense matrix
  *
  * \param[in]  parent_id   id of the related parent entity
- * \param[in]  row_ids     list of ids related to associated entities (or NULL)
- * \param[in]  col_ids     list of ids related to associated entities (or NULL)
+ * \param[in]  row_ids     list of ids related to associated entities (or null)
+ * \param[in]  col_ids     list of ids related to associated entities (or null)
  * \param[in]  mat         pointer to the cs_sdm_t structure
  */
 /*----------------------------------------------------------------------------*/
@@ -1315,8 +1315,8 @@ cs_sdm_dump(cs_lnum_t           parent_id,
  *          The usage of threshold allows one to compare more easier matrices
  *          without taking into account numerical roundoff.
  *
- * \param[in]  fp         pointer to a file structure or NULL
- * \param[in]  fname      filename or NULL
+ * \param[in]  fp         pointer to a file structure or null
+ * \param[in]  fname      filename or null
  * \param[in]  thd        threshold (below this value --> set 0)
  * \param[in]  m          pointer to the cs_sdm_t structure
  */
@@ -1349,8 +1349,8 @@ cs_sdm_block_dump(cs_lnum_t           parent_id,
  *          The usage of threshold allows one to compare more easier matrices
  *          without taking into account numerical roundoff.
  *
- * \param[in]  fp         pointer to a file structure or NULL
- * \param[in]  fname      filename or NULL
+ * \param[in]  fp         pointer to a file structure or null
+ * \param[in]  fname      filename or null
  * \param[in]  thd        threshold (below this value --> set 0)
  * \param[in]  m          pointer to the cs_sdm_t structure
  */

@@ -247,7 +247,7 @@ cs_all_to_all_n_elts_dest(cs_all_to_all_t  *d);
  * \param[in]       src_data   source data
  * \param[out]      dest_data  pointer to destination data, or NULL
  *
- * \return pointer to destination data (dest_buffer if non-NULL)
+ * \return pointer to destination data (dest_buffer if non-null)
  */
 /*----------------------------------------------------------------------------*/
 
@@ -281,7 +281,7 @@ cs_all_to_all_copy_array(cs_all_to_all_t   *d,
  * \param[in]       src_index   source index
  * \param[out]      dest_index  pointer to destination index, or NULL
  *
- * \return pointer to destination data (dest_buffer if non-NULL)
+ * \return pointer to destination data (dest_buffer if non-null)
  */
 /*----------------------------------------------------------------------------*/
 
@@ -317,7 +317,7 @@ cs_all_to_all_copy_index(cs_all_to_all_t  *d,
  * \param[in]       dest_index  destination index
  * \param[out]      dest_data   pointer to destination data, or NULL
  *
- * \return pointer to destination data (dest_buffer if non-NULL)
+ * \return pointer to destination data (dest_buffer if non-null)
  */
 /*----------------------------------------------------------------------------*/
 
@@ -445,7 +445,7 @@ END_C_DECLS
  * \param[in]       reverse    if true, communicate in reverse direction
  * \param[in]       src_data   source data
  *
- * \return pointer to destination data (dest_buffer if non-NULL)
+ * \return pointer to destination data (dest_buffer if non-null)
  */
 /*----------------------------------------------------------------------------*/
 

@@ -120,9 +120,9 @@ cs_cdo_finalize(cs_domain_t    *domain);
  * \brief Check if CDO has been initialized.
  *
  * \param[in, out] setup       indicator if setup has been initialized,
- *                             or NULL if not queried
+ *                             or null if not queried
  * \param[in, out] structures  indicator if structures have been initialized,
- *                             or NULL if not queried
+ *                             or null if not queried
  */
 /*----------------------------------------------------------------------------*/
 

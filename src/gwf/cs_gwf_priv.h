@@ -50,13 +50,13 @@ typedef struct _gwf_darcy_flux_t  cs_gwf_darcy_flux_t;
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Update the advection field/arrays related to the Darcy flux.
- *        cell_values could be set to NULL when the space discretization does
+ *        cell_values could be set to null when the space discretization does
  *        not request these values for the update.
  *
  * \param[in]      connect       pointer to a cs_cdo_connect_t structure
  * \param[in]      cdoq          pointer to a cs_cdo_quantities_t structure
  * \param[in]      dof_values    values to consider for the update
- * \param[in]      cell_values   values to consider for the update or NULL
+ * \param[in]      cell_values   values to consider for the update or null
  * \param[in]      t_eval        time at which one performs the evaluation
  * \param[in]      cur2prev      true or false
  * \param[in, out] darcy         pointer to the darcy flux structure
@@ -104,7 +104,7 @@ struct _gwf_darcy_flux_t {
    * This option is only useful for vertex-based scheme.
    *
    * \var update_input
-   * Context pointer for the update function or NULL if useless
+   * Context pointer for the update function or null if useless
    *
    * \var update_func
    * Pointer to the function which performs the update of the advection field
@@ -181,14 +181,14 @@ cs_gwf_darcy_flux_log(cs_gwf_darcy_flux_t    *darcy);
 /*!
  * \brief Set the definition of the advection field attached to a
  *        \ref cs_gwf_darcy_flux_t structure
- *        If the function pointer is set to NULL, then an automatic settings
+ *        If the function pointer is set to null, then an automatic settings
  *        is done.
  *
  * \param[in]      connect         pointer to a cs_cdo_connect_t structure
  * \param[in]      cdoq            pointer to a cs_cdo_quantities_t structure
  * \param[in]      space_scheme    space discretization using this structure
  * \param[in]      update_context  pointer to the context for the update step
- * \param[in]      update_func     pointer to an update function or NULL
+ * \param[in]      update_func     pointer to an update function or null
  * \param[in, out] darcy           pointer to the darcy structure
  */
 /*----------------------------------------------------------------------------*/

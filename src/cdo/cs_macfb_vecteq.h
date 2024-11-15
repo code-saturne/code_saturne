@@ -149,7 +149,7 @@ void *cs_macfb_vecteq_init_context(cs_equation_param_t   *eqp,
  *
  * \param[in, out]  data   pointer to a cs_macfb_vecteq_t structure
  *
- * \return a NULL pointer
+ * \return a null pointer
  */
 /*----------------------------------------------------------------------------*/
 
@@ -189,7 +189,7 @@ void cs_macfb_vecteq_init_values(cs_real_t                  t_eval,
  * \param[in]      eqp         pointer to a cs_equation_param_t structure
  * \param[in]      eqb         pointer to a cs_equation_builder_t structure
  * \param[in]      val_f_n     face DoFs at time step n
- * \param[in]      val_f_nm1   face DoFs at time step n-1 or NULL
+ * \param[in]      val_f_nm1   face DoFs at time step n-1 or null
  * \param[in, out] macb        pointer to a cs_macfb_builder_t structure
  * \param[in, out] csys        pointer to a cellwise view of the system
  * \param[in, out] cb          pointer to a cellwise builder
@@ -344,7 +344,7 @@ void cs_macfb_vecteq_advection(const cs_equation_param_t *eqp,
 /*!
  * \brief   Build the local matrices arising from the convection, diffusion,
  *          reaction terms in vector-valued MAC-Fb schemes.
- *          mass_hodge could be set to NULL if a Voronoi algo. is used.
+ *          mass_hodge could be set to null if a Voronoi algo. is used.
  *          Otherwise, the mass matrix should be pre-computed.
  *
  * \param[in]      eqp         pointer to a cs_equation_param_t structure

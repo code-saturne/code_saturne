@@ -129,7 +129,7 @@ _solid_zone_n_zones(void)
 /*!
  * \brief build solid flag for mesh cells.
  *
- * If no solid cells are present, nullptr is returned.
+ * If no solid cells are present, returned pointer is null.
 
  * If non-empty, the caller is responsible for freeing the flag
  *

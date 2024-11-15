@@ -581,7 +581,7 @@ typedef enum {
  * Global variables
  *============================================================================*/
 
-/* Empty but non-NULL string */
+/* Empty but non-null string */
 
 extern const char     cs_empty_string[];
 
@@ -625,7 +625,7 @@ extern MPI_Comm       cs_glob_mpi_comm;      /* Main MPI intra-communicator */
  *
  * \param[in, out]  s  pointer to a structure cast on-the-fly
  *
- * \return a NULL pointer
+ * \return a null pointer
  */
 /*----------------------------------------------------------------------------*/
 

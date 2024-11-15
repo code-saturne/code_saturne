@@ -276,7 +276,7 @@ _svb_init_cell_system(const cs_cell_mesh_t          *cm,
  *
  * \param[in]      eqp         pointer to a cs_equation_param_t structure
  * \param[in]      cm          pointer to a cs_cell_mesh_t structure
- * \param[in]      mass_hodge  pointer to a Hodge structure or nullptr if
+ * \param[in]      mass_hodge  pointer to a Hodge structure or null if
  * useless \param[in]      eqb         pointer to the equation builder structure
  * \param[in, out] cb          pointer to a cs_cell_builder_t structure
  * \param[in, out] csys        pointer to a cs_cell_sys_t structure
@@ -314,7 +314,7 @@ _svb_reaction(const cs_equation_param_t    *eqp,
  *
  * \param[in]      eqp         pointer to a cs_equation_param_t structure
  * \param[in]      cm          pointer to a cs_cell_mesh_t structure
- * \param[in]      mass_hodge  pointer to a Hodge structure or nullptr if
+ * \param[in]      mass_hodge  pointer to a Hodge structure or null if
  * useless \param[in]      eqb         pointer to the equation builder structure
  * \param[in, out] cb          pointer to a cs_cell_builder_t structure
  * \param[in, out] csys        pointer to a cs_cell_sys_t structure
@@ -357,7 +357,7 @@ _svb_reaction_lumped(const cs_equation_param_t    *eqp,
  *
  * \param[in]      eqp         pointer to a cs_equation_param_t structure
  * \param[in]      cm          pointer to a cs_cell_mesh_t structure
- * \param[in]      mass_hodge  pointer to a Hodge structure or nullptr if
+ * \param[in]      mass_hodge  pointer to a Hodge structure or null if
  * useless \param[in]      eqb         pointer to the equation builder structure
  * \param[in, out] cb          pointer to a cs_cell_builder_t structure
  * \param[in, out] csys        pointer to a cs_cell_sys_t structure
@@ -394,7 +394,7 @@ _svb_reaction_lumped_subcell(const cs_equation_param_t    *eqp,
 /*!
  * \brief  Build the local matrices arising from the diffusion, advection,
  *         reaction terms.
- *         mass_hodge could be set to nullptr if a Voronoi algo. is used.
+ *         mass_hodge could be set to null if a Voronoi algo. is used.
  *         Otherwise, the mass matrix is computed.
  *         Case of scalar-valued CDO-Vb schemes
  *
@@ -1989,7 +1989,7 @@ cs_cdovb_scaleq_init_context(cs_equation_param_t    *eqp,
  *
  * \param[in, out]  scheme_context   pointer to a cs_cdovb_scaleq_t structure
  *
- * \return a nullptr pointer
+ * \return a null pointer
  */
 /*----------------------------------------------------------------------------*/
 

@@ -74,7 +74,7 @@ static FILE  *resume = nullptr;
 /*!
  * \brief  Generic function pointer for an evaluation relying on an analytic
  *         function
- *         pt_ids is optional. If not nullptr, it enables to access to the coords
+ *         pt_ids is optional. If non-null, it enables to access to the coords
  *         array with an indirection. The same indirection can be applied to
  *         fill retval if dense_output is set to false.
  *
@@ -83,7 +83,7 @@ static FILE  *resume = nullptr;
  * \param[in]      pt_ids        list of elements ids (in coords and retval)
  * \param[in]      xyz           where ? Coordinates array
  * \param[in]      dense_output  perform an indirection in retval or not
- * \param[in]      input         nullptr or pointer to a structure cast on-the-fly
+ * \param[in]      input         null or pointer to a structure cast on-the-fly
  * \param[in, out] retval        resulting value(s). Must be allocated.
  */
 /*----------------------------------------------------------------------------*/

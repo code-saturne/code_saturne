@@ -437,7 +437,7 @@ fvm_to_melissa_init_writer(const char             *name,
  *   this_writer_p <-- pointer to opaque Melissa writer structure.
  *
  * returns:
- *   nullptr pointer
+ *   null pointer
  *----------------------------------------------------------------------------*/
 
 void *

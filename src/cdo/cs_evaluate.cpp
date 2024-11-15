@@ -562,7 +562,7 @@ _pvcsp_by_qov(const cs_real_t    quantity_val,
  *
  * \param[in]      time_eval      physical time at which one evaluates the term
  * \param[in]      ana               pointer to the analytic function
- * \param[in]      input             nullptr or pointer cast on-the-fly
+ * \param[in]      input             null or pointer cast on-the-fly
  * \param[in]      n_elts            number of elements to consider
  * \param[in]      elt_ids           pointer to the list of selected ids
  * \param[in]      compute_integral  function pointer
@@ -626,7 +626,7 @@ _dcsd_by_analytic(cs_real_t                        time_eval,
  *
  * \param[in]      time_eval      physical time at which one evaluates the term
  * \param[in]      ana               pointer to the analytic function
- * \param[in]      input             nullptr or pointer cast on-the-fly
+ * \param[in]      input             null or pointer cast on-the-fly
  * \param[in]      n_elts            number of elements to consider
  * \param[in]      elt_ids           pointer to the list of selected ids
  * \param[in]      compute_integral  function pointer
@@ -692,7 +692,7 @@ _dcvd_by_analytic(cs_real_t                        time_eval,
  *
  * \param[in]      time_eval     physical time at which one evaluates the term
  * \param[in]      ana               pointer to the analytic function
- * \param[in]      input             nullptr or pointer cast on-the-fly
+ * \param[in]      input             null or pointer cast on-the-fly
  * \param[in]      n_elts            number of elements to consider
  * \param[in]      elt_ids           pointer to the list of selected ids
  * \param[in]      compute_integral  function pointer
@@ -784,7 +784,7 @@ _pcsd_by_analytic(cs_real_t                        time_eval,
  *
  * \param[in]      time_eval     physical time at which one evaluates the term
  * \param[in]      ana               pointer to the analytic function
- * \param[in]      input             nullptr or pointer cast on-the-fly
+ * \param[in]      input             null or pointer cast on-the-fly
  * \param[in]      n_elts            number of elements to consider
  * \param[in]      elt_ids           pointer to the list of selected ids
  * \param[in]      compute_integral  function pointer
@@ -875,7 +875,7 @@ _pcvd_by_analytic(cs_real_t                        time_eval,
  *
  * \param[in]      time_eval      physical time at which one evaluates the term
  * \param[in]      ana               pointer to the analytic function
- * \param[in]      input             nullptr or pointer cast on-the-fly
+ * \param[in]      input             null or pointer cast on-the-fly
  * \param[in]      n_loc_elts        number of elements to consider
  * \param[in]      elt_ids           pointer to the list of selected ids
  * \param[in]      compute_integral  function pointer
@@ -970,7 +970,7 @@ _pcsa_by_analytic(cs_real_t                        time_eval,
  *
  * \param[in]      time_eval     physical time at which one evaluates the term
  * \param[in]      ana               pointer to the analytic function
- * \param[in]      input             nullptr or pointer cast on-the-fly
+ * \param[in]      input             null or pointer cast on-the-fly
  * \param[in]      n_loc_elts        number of elements to consider
  * \param[in]      elt_ids           pointer to the list of selected ids
  * \param[in]      compute_integral  function pointer
@@ -1162,7 +1162,7 @@ _dcvd_by_value(const cs_real_t  const_vec[3],
  *
  * \param[in]      time_eval      physical time at which one evaluates the term
  * \param[in]      ana               pointer to the analytic function
- * \param[in]      input             nullptr or pointer cast on-the-fly
+ * \param[in]      input             null or pointer cast on-the-fly
  * \param[in]      n_loc_elts        number of elements to consider
  * \param[in]      elt_ids           pointer to the list of selected ids
  * \param[in]      compute_integral  function pointer
@@ -1236,7 +1236,7 @@ _pfsa_by_analytic(cs_real_t                        time_eval,
  *
  * \param[in]      time_eval  physical time at which one evaluates the term
  * \param[in]      ana                 pointer to the analytic function
- * \param[in]      input               nullptr or pointer cast on-the-fly
+ * \param[in]      input               null or pointer cast on-the-fly
  * \param[in]      n_loc_elts          number of elements to consider
  * \param[in]      elt_ids             pointer to the list of selected ids
  * \param[in]      compute_integral    function pointer
@@ -1311,7 +1311,7 @@ _pfva_by_analytic(cs_real_t                       time_eval,
  *
  * \param[in]      n_elts     number of elements
  * \param[in]      stride     number of values for each element
- * \param[in]      elt_ids    nullptr or list of element ids
+ * \param[in]      elt_ids    null or list of element ids
  * \param[in]      ref_val    value(s) to set
  * \param[in, out] retval     pointer to the computed values
  */

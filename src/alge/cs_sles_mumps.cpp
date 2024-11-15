@@ -98,7 +98,7 @@ BEGIN_C_DECLS
 
   This function is called the end of the setup stage.
 
-  Note: if the context pointer is non-nullptr, it must point to valid data
+  Note: if the context pointer is non-null, it must point to valid data
   when the selection function is called so that value or structure should
   not be temporary (i.e. local);
 
@@ -2584,7 +2584,7 @@ _automatic_smumps_settings_before_facto(const cs_param_sles_t   *slesp,
  * One can recover the MUMPS step through the "job" member.
  * MUMPS_JOB_ANALYSIS or MUMPS_JOB_FACTORIZATION
  *
- * Note: if the context pointer is non-nullptr, it must point to valid data
+ * Note: if the context pointer is non-null, it must point to valid data
  * when the selection function is called so that structure should
  * not be temporary (i.e. local);
  *

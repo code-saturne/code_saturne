@@ -3317,7 +3317,7 @@ cs_array_reduce_sum_l(cs_lnum_t         n_elts,
  *                          are defined, or nullptr
  * \param[in]   w_elt_list  optional list of parent elements on which weights
  *                          are defined, or nullptr; if v_elt_list is defined
- *                          (ie. non-nullptr),then w_elt_list = v_elt_list is
+ *                          (ie. non-null),then w_elt_list = v_elt_list is
  *                          assumed, so this parameter is ignored
  * \param[in]   v           pointer to array values
  * \param[in]   w           pointer to weights
@@ -3397,7 +3397,7 @@ cs_array_reduce_wsum_l(cs_lnum_t         n_elts,
  *                          are defined, or nullptr
  * \param[in]   w_elt_list  optional list of parent elements on which weights
  *                          are defined, or nullptr; if v_elt_list is defined
- *                          (ie. non-nullptr),then w_elt_list = v_elt_list is
+ *                          (ie. non-null),then w_elt_list = v_elt_list is
  *                          assumed, so this parameter is ignored
  * \param[in]   v           pointer to array values
  * \param[in]   w           pointer to weights
@@ -3595,7 +3595,7 @@ cs_array_reduce_simple_stats_l(cs_lnum_t         n_elts,
  *                          are defined, or nullptr
  * \param[in]   w_elt_list  optional list of parent elements on which weights
  *                          are defined, or nullptr; if v_elt_list is defined
- *                          (ie. non-nullptr),then w_elt_list = v_elt_list is
+ *                          (ie. non-null),then w_elt_list = v_elt_list is
  *                          assumed, so this parameter is ignored
  * \param[in]   v     pointer to array values
  * \param[in]   w     pointer to weights
@@ -3681,7 +3681,7 @@ cs_array_reduce_simple_stats_l_w(cs_lnum_t         n_elts,
  *                  are defined, or nullptr
  *   w_elt_list <-- optional list of parent elements on which weights
  *                  are defined, or nullptr; if v_elt_list is defined
- *                  (ie. non-nullptr),then w_elt_list = v_elt_list is assumed,
+ *                  (ie. non-null),then w_elt_list = v_elt_list is assumed,
  *                  so this parameter is ignored
  *   v          <-- pointer to array values
  *   w          <-- pointer to weights

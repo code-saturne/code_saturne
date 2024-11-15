@@ -145,26 +145,26 @@ typedef void
  * Static global variables
  *============================================================================*/
 
-cs_thermal_table_t *cs_glob_thermal_table = NULL;
+cs_thermal_table_t *cs_glob_thermal_table = nullptr;
 
 static cs_timer_counter_t   _physprop_lib_t_tot;   /* Total time in physical
                                                       property library calls */
 
 #if defined(HAVE_DLOPEN) && defined(HAVE_EOS)
 
-static void                     *_cs_eos_dl_lib = NULL;
-static cs_eos_create_t          *_cs_eos_create = NULL;
-static cs_eos_destroy_t         *_cs_eos_destroy = NULL;
-static cs_phys_prop_eos_t       *_cs_phys_prop_eos = NULL;
+static void                     *_cs_eos_dl_lib = nullptr;
+static cs_eos_create_t          *_cs_eos_create = nullptr;
+static cs_eos_destroy_t         *_cs_eos_destroy = nullptr;
+static cs_phys_prop_eos_t       *_cs_phys_prop_eos = nullptr;
 
 #endif
 
 #if defined(HAVE_COOLPROP)
 
-static char                     *_cs_coolprop_backend = NULL;
-static cs_phys_prop_coolprop_t  *_cs_phys_prop_coolprop = NULL;
+static char                     *_cs_coolprop_backend = nullptr;
+static cs_phys_prop_coolprop_t  *_cs_phys_prop_coolprop = nullptr;
 #if defined(HAVE_PLUGINS)
-static void                     *_cs_coolprop_dl_lib = NULL;
+static void                     *_cs_coolprop_dl_lib = nullptr;
 #endif
 
 #endif
@@ -180,12 +180,12 @@ static void                     *_cs_coolprop_dl_lib = NULL;
 static cs_thermal_table_t *
 _thermal_table_create(void)
 {
-  cs_thermal_table_t  *tt = NULL;
+  cs_thermal_table_t  *tt = nullptr;
 
   BFT_MALLOC(tt, 1, cs_thermal_table_t);
 
-  tt->material     = NULL;
-  tt->method       = NULL;
+  tt->material     = nullptr;
+  tt->method       = nullptr;
   tt->type         = CS_PHYS_PROP_TABLE_USER;
   tt->temp_scale   = CS_TEMPERATURE_SCALE_NONE;
   tt->thermo_plane = CS_PHYS_PROP_PLANE_PH;
@@ -198,7 +198,7 @@ _thermal_table_create(void)
  * \brief Get xdef of a property on a given zone.
  *
  * \param[in] pty    pointer to cs_property_t
- * \param[in] zname  name of the zone. Can be NULL for 'all_cells'
+ * \param[in] zname  name of the zone. Can be null for 'all_cells'
  *
  * \return pointer to corresponding cs_xdef_t
  *
@@ -209,7 +209,7 @@ static cs_xdef_t *
 _get_property_def_on_zone(const cs_property_t   *pty,
                           const char            *zname)
 {
-  cs_xdef_t *def = NULL;
+  cs_xdef_t *def = nullptr;
 
   const int z_id = cs_volume_zone_id_by_name(zname);
   for (int i = 0; i < pty->n_definitions; i++) {
@@ -261,7 +261,7 @@ _physical_property_create(const char      *name,
                           const cs_real_t  refval)
 {
   cs_property_t *pty = cs_property_by_name(name);
-  if (pty != NULL)
+  if (pty != nullptr)
     bft_error(__FILE__, __LINE__, 0,
               _("Error: property '%s' is already defined.\n"),
                 name);
@@ -303,7 +303,7 @@ cs_thermal_table_set(const char                        *material,
                      cs_phys_prop_thermo_plane_type_t   thermo_plane,
                      cs_temperature_scale_t             temp_scale)
 {
-  if (cs_glob_thermal_table == NULL) {
+  if (cs_glob_thermal_table == nullptr) {
     cs_glob_thermal_table = _thermal_table_create();
     CS_TIMER_COUNTER_INIT(_physprop_lib_t_tot);
   }
@@ -352,7 +352,8 @@ cs_thermal_table_set(const char                        *material,
 #if defined(HAVE_DLOPEN)
     {
       const char _reference_default[] = "";
-      const char *_reference = (reference != NULL) ? reference : _reference_default;
+      const char *_reference = (reference != nullptr) ?
+                                 reference : _reference_default;
 
       /* Open from shared library */
       _cs_eos_dl_lib = cs_base_dlopen_plugin("cs_eos");
@@ -393,9 +394,9 @@ cs_thermal_table_set(const char                        *material,
 void
 cs_thermal_table_finalize(void)
 {
-  if (cs_glob_thermal_table != NULL) {
+  if (cs_glob_thermal_table != nullptr) {
 
-    if (cs_glob_thermal_table->method != NULL)
+    if (cs_glob_thermal_table->method != nullptr)
       cs_log_printf(CS_LOG_PERFORMANCE,
                     _("\n"
                       "Physical property computations:\n"
@@ -407,9 +408,9 @@ cs_thermal_table_finalize(void)
     if (cs_glob_thermal_table->type == CS_PHYS_PROP_TABLE_EOS) {
       _cs_eos_destroy();
       cs_base_dlclose("cs_eos", _cs_eos_dl_lib);
-      _cs_eos_create = NULL;
-      _cs_eos_destroy = NULL;
-      _cs_phys_prop_eos = NULL;
+      _cs_eos_create = nullptr;
+      _cs_eos_destroy = nullptr;
+      _cs_phys_prop_eos = nullptr;
     }
 #endif
 #if defined(HAVE_COOLPROP) && defined(HAVE_PLUGINS)
@@ -421,7 +422,7 @@ cs_thermal_table_finalize(void)
                                              true);
       coolprop_finalize();
       cs_base_dlclose("cs_coolprop", _cs_coolprop_dl_lib);
-      _cs_phys_prop_coolprop = NULL;
+      _cs_phys_prop_coolprop = nullptr;
     }
     BFT_FREE(_cs_coolprop_backend);
 #endif
@@ -435,7 +436,7 @@ cs_thermal_table_finalize(void)
 /*!
  * \brief Get backend set for CoolProp.
  *
- * Returns NULL if CoolProp is not used or backend not set yet.
+ * Returns null if CoolProp is not used or backend not set yet.
  *
  * \return  pointer to CoolProp backend.
  */
@@ -447,7 +448,7 @@ cs_physical_properties_get_coolprop_backend(void)
 #if defined(HAVE_COOLPROP)
   return _cs_coolprop_backend;
 #else
-  return NULL;
+  return nullptr;
 #endif
 }
 
@@ -474,7 +475,7 @@ cs_physical_properties_get_coolprop_backend(void)
  * - "BICUBIC&XXXX": Bicubic backend, with tables generated using the XXXX
  *   backend where XXXX is one of the base backends("HEOS", "REFPROP", etc.)
  *
- * \param[in]  backend  backend name; "HEOS" used if NULL.
+ * \param[in]  backend  backend name; "HEOS" used if nullptr.
  */
 /*----------------------------------------------------------------------------*/
 
@@ -483,14 +484,14 @@ cs_physical_properties_set_coolprop_backend(const char  *backend)
 {
 #if defined(HAVE_COOLPROP)
 
-  if (backend == NULL)
+  if (backend == nullptr)
     backend = "HEOS";
 
   size_t l = strlen(backend);
   BFT_REALLOC(_cs_coolprop_backend, l+1, char);
   strcpy(_cs_coolprop_backend, backend);
 
-  if (cs_glob_thermal_table != NULL) {
+  if (cs_glob_thermal_table != nullptr) {
 
     BFT_REALLOC(cs_glob_thermal_table->method,
                 strlen("CoolProp ()") + strlen(_cs_coolprop_backend) + 3,
@@ -536,7 +537,7 @@ cs_phys_prop_compute(cs_phys_prop_type_t          property,
 {
   cs_lnum_t        _n_vals = n_vals;
   cs_real_t         _var2_c_single[1];
-  cs_real_t        *_var1_c = NULL, *_var2_c = NULL;
+  cs_real_t        *_var1_c = nullptr, *_var2_c = nullptr;
   const cs_real_t  *var1_c = var1, *var2_c = var2;
 
   if (n_vals < 1)
@@ -635,7 +636,7 @@ cs_physical_property_get_ref_value(const char  *name)
 {
 
   const cs_property_t *pty = cs_property_by_name(name);
-  if (pty == NULL)
+  if (pty == nullptr)
     bft_error(__FILE__, __LINE__, 0,
               _("Error: property '%s' does not exist\n"),
               name);
@@ -658,7 +659,7 @@ cs_physical_property_set_ref_value(const char      *name,
                                    const cs_real_t  val)
 {
   cs_property_t *pty = cs_property_by_name(name);
-  if (pty == NULL)
+  if (pty == nullptr)
     bft_error(__FILE__, __LINE__, 0,
               _("Error: property '%s' does not exist\n"),
               name);
@@ -682,13 +683,13 @@ cs_physical_property_get_zone_values(const char  *name,
                                      cs_real_t    retval[])
 {
   const cs_property_t *pty = cs_property_by_name(name);
-  if (pty == NULL)
+  if (pty == nullptr)
     bft_error(__FILE__, __LINE__, 0,
               _("Error: property '%s' does not exist\n"),
               name);
 
   cs_xdef_t *def = _get_property_def_on_zone(pty, zname);
-  if (def == NULL)
+  if (def == nullptr)
     bft_error(__FILE__, __LINE__, 0,
               _("Error: property '%s' does not have a definition for "
                 "zone '%s'\n"),
@@ -755,7 +756,7 @@ cs_physical_property_define_from_value(const char       *name,
                                        const cs_real_t   val)
 {
   cs_property_t *pty = cs_property_by_name(name);
-  if (pty == NULL)
+  if (pty == nullptr)
     pty = _physical_property_create(name, dim, 0.);
 
   if (dim == 1) {
@@ -793,11 +794,11 @@ cs_physical_property_define_from_values(const char  *name,
                                         const int    dim,
                                         cs_real_t    vals[])
 {
-  assert(dim > 1 && vals != NULL);
+  assert(dim > 1 && vals != nullptr);
 
   cs_property_t *pty = cs_property_by_name(name);
 
-  if (pty == NULL)
+  if (pty == nullptr)
     pty = _physical_property_create(name, dim, 0.);
 
   if (dim == 3)
@@ -832,11 +833,11 @@ cs_physical_property_define_from_field(const char  *name,
                                        bool         has_previous)
 {
   cs_property_t *pty = cs_property_by_name(name);
-  if (pty == NULL)
+  if (pty == nullptr)
     pty = _physical_property_create(name, dim, 0.);
 
   cs_field_t *f = cs_field_by_name_try(name);
-  if (f == NULL)
+  if (f == nullptr)
     f = cs_field_create(name, type_flag, location_id, dim, has_previous);
 
   cs_property_def_by_field(pty, f);
@@ -859,7 +860,7 @@ cs_physical_property_field_id_by_name(const char  *name)
 
   cs_field_t *f = cs_field_by_name_try(name);
 
-  if (f != NULL)
+  if (f != nullptr)
     retval = f->id;
 
   return retval;

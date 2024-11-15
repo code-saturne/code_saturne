@@ -227,7 +227,7 @@ cs_volume_zone_by_name(const char  *name);
 /*!
  * \brief Return a pointer to a volume zone based on its name if present.
  *
- * If no volume zone of the given name is defined, NULL is returned.
+ * If no volume zone of the given name is defined, returned pointer is null.
  *
  * \param[in]  name  volume zone name
  *

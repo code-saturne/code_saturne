@@ -695,8 +695,8 @@ cs_post_b_total_pressure(cs_lnum_t         n_b_faces,
  *                                energy field
  * \param[in]  n_cells            number of points
  * \param[in]  cell_ids           cell location of points
- *                                 (indexed from 0 to n-1, or nullptr if 1-to-1)
- * \param[in]  coords             point coordinates (or nullptr for cell centers)
+ *                                 (indexed from 0 to n-1, or null if 1-to-1)
+ * \param[in]  coords             point coordinates (or null for cell centers)
  * \param[out] rst                Reynolds stresses stored as vector
  *                                [r11, r22, r33, r12, r23, r13]
  */

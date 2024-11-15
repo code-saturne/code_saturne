@@ -177,7 +177,7 @@ cs_navsto_ac_create_context(cs_param_bc_type_t    bc,
  *
  * \param[in, out] context  pointer to a context structure cast on-the-fly
  *
- * \return a NULL pointer
+ * \return a null pointer
  */
 /*----------------------------------------------------------------------------*/
 
@@ -251,7 +251,7 @@ cs_navsto_monolithic_create_context(cs_param_bc_type_t    bc,
  *
  * \param[in, out] context  pointer to a context structure cast on-the-fly
  *
- * \return a NULL pointer
+ * \return a null pointer
  */
 /*----------------------------------------------------------------------------*/
 
@@ -325,7 +325,7 @@ cs_navsto_projection_create_context(cs_param_bc_type_t    bc,
  *
  * \param[in, out] context  pointer to a context structure cast on-the-fly
  *
- * \return a NULL pointer
+ * \return a null pointer
  */
 /*----------------------------------------------------------------------------*/
 

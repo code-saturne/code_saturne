@@ -449,7 +449,7 @@ _clip_rho_mu_cp(bool                         first_pass,
     = {CS_F_(rho)->name, CS_F_(mu)->name, CS_F_(mu_t)->name, ""};
 
   char tmp_s[64] = "";
-  if (CS_F_(cp) != NULL) {
+  if (CS_F_(cp) != nullptr) {
     f_names[3] = CS_F_(cp)->name;
     n_fields = 4;
     const int kscacp  = cs_field_key_id("is_temperature");
@@ -564,7 +564,7 @@ _check_log_scalar_diff(const bool        first_pass,
   char tmp_s[64] = "";
   for (int s_id = 0; s_id < n_scal; s_id++) {
 
-    const cs_real_t *cpro_vis = NULL;
+    const cs_real_t *cpro_vis = nullptr;
     const cs_field_t *f = cs_field_by_id(scalar_idx[s_id]);
 
     const int ifcvsl = cs_field_get_key_int(f, kivisl);
@@ -576,7 +576,7 @@ _check_log_scalar_diff(const bool        first_pass,
     vismax[s_id] = -cs_math_big_r;
     vismin[s_id] =  cs_math_big_r;
 
-    if (cpro_vis != NULL) {
+    if (cpro_vis != nullptr) {
       for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
         vismax[s_id] = cs_math_fmax(vismax[s_id], cpro_vis[c_id]);
         vismin[s_id] = cs_math_fmin(vismin[s_id], cpro_vis[c_id]);
@@ -629,7 +629,7 @@ _check_log_scalar_diff(const bool        first_pass,
   }
 
   const cs_field_t *th_f = cs_field_by_name_try("thermal_expansion");
-  if (th_f == NULL)
+  if (th_f == nullptr)
     return;
 
   const cs_real_t *cpro_beta = th_f->val;
@@ -768,13 +768,13 @@ _init_boundary_temperature(void)
   const cs_lnum_t n_b_faces = m->n_b_faces;
   const cs_lnum_t *b_face_cells = m->b_face_cells;
 
-  if (cs_field_by_name_try("boundary_temperature") == NULL)
+  if (cs_field_by_name_try("boundary_temperature") == nullptr)
     return;
 
   cs_field_t *fld = cs_field_by_name_try("temperature");
   cs_real_t *field_s_b = cs_field_by_name_try("boundary_temperature")->val;
 
-  if (fld != NULL) {
+  if (fld != nullptr) {
 
     const cs_real_t *field_s_v = fld->val;
 #   pragma omp parallel for if (n_b_faces > CS_THR_MIN)
@@ -788,11 +788,11 @@ _init_boundary_temperature(void)
            == CS_THERMAL_MODEL_ENTHALPY) {
 
     fld = cs_field_by_name_try("enthalpy");
-    if (fld != NULL) {
+    if (fld != nullptr) {
 
       const cs_real_t *field_s_v = fld->val;
 
-      cs_real_t *ttmp = NULL;   /* n_cells should be sufficient ? */
+      cs_real_t *ttmp = nullptr;   /* n_cells should be sufficient ? */
       BFT_MALLOC(ttmp, n_cells_ext, cs_real_t);
       cs_ht_convert_h_to_t_cells(field_s_v, ttmp);
 
@@ -809,7 +809,7 @@ _init_boundary_temperature(void)
   } /* Enthalpy */
 
   // Last resort
-  if (fld != NULL) {
+  if (fld != nullptr) {
 #   pragma omp parallel for if (n_b_faces > CS_THR_MIN)
     for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++) {
       if (field_s_b[face_id] <= -cs_math_big_r)
@@ -892,7 +892,7 @@ cs_physical_properties_update(int   iterns)
      ---------------------- */
   cs_gui_physical_variable();
 
-  if (mbrom == 0 && n_b_faces > 0 && rho_b_f != NULL)
+  if (mbrom == 0 && n_b_faces > 0 && rho_b_f != nullptr)
     rho_b_f->val[0] = -cs_math_big_r;
 
   if (cs_glob_thermal_model->thermal_variable == CS_THERMAL_MODEL_ENTHALPY)
@@ -900,7 +900,7 @@ cs_physical_properties_update(int   iterns)
 
   cs_user_physical_properties(cs_glob_domain);
 
-  if (mbrom == 0 && n_b_faces > 0 && rho_b_f != NULL) {
+  if (mbrom == 0 && n_b_faces > 0 && rho_b_f != nullptr) {
     if (rho_b_f->val[0] > -cs_math_big_r)
       mbrom = 1;
   }
@@ -914,8 +914,8 @@ cs_physical_properties_update(int   iterns)
     cs_cf_physical_properties();
 
   // Boundary density based on adjacent cell value if not explicitly set.
-  if (mbrom == 0 && rho_b_f != NULL) {
-    assert(CS_F_(rho) != NULL);
+  if (mbrom == 0 && rho_b_f != nullptr) {
+    assert(CS_F_(rho) != nullptr);
     const cs_real_t  *crom = CS_F_(rho)->val;
 #   pragma omp parallel for if (n_b_faces > CS_THR_MIN)
     for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++)
@@ -962,7 +962,7 @@ cs_physical_properties_update(int   iterns)
   const int n_fields = cs_field_n_fields();
 
   int n_scal = 0;
-  int *scalar_idx = NULL;
+  int *scalar_idx = nullptr;
   BFT_MALLOC(scalar_idx, n_fields, int);
 
   for (int f_id = 0; f_id < n_fields; f_id++) {
@@ -1006,7 +1006,7 @@ cs_physical_properties_update(int   iterns)
   cs_turbulence_rij_compute_rusanov();
 
   // Physical value checks
-  if (rho_b_f != NULL)
+  if (rho_b_f != nullptr)
     _clip_rho_mu_cp(first_pass, n_cells, n_b_faces, n_scal, scalar_idx, mq,
                     rho_b_f->val);
 

@@ -794,7 +794,7 @@ cs_cdoeb_vecteq_init_context(cs_equation_param_t    *eqp,
  *
  * \param[in, out]  builder   pointer to a cs_cdoeb_vecteq_t structure
  *
- * \return a nullptr pointer
+ * \return a null pointer
  */
 /*----------------------------------------------------------------------------*/
 

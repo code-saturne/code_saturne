@@ -153,7 +153,7 @@ bft_backtrace_create(void)
     bt->s_func = static_cast<char **>(malloc(tr_size * sizeof(char *)));
     bt->s_addr = static_cast<char **>(malloc(tr_size * sizeof(char *)));
 
-    /* If allocation has failed, free other allocated arrays, and return nullptr */
+    /* If allocation has failed, free other allocated arrays, and return null */
 
     if (   bt->s_file == nullptr || bt->s_func == nullptr || bt->s_addr == nullptr) {
 
@@ -263,7 +263,7 @@ bft_backtrace_create(void)
  *
  * \param [in, out] bt pointer to backtrace description structure.
  *
- * \return nullptr pointer.
+ * \return null pointer.
  */
 
 bft_backtrace_t *

@@ -894,7 +894,7 @@ cs_solidification_set_strategy(cs_solidification_strategy_t  strategy);
  *         and/or the way to perform the coupling between the thermal equation
  *         and the bulk concentration computation. All this setting defines
  *         the way to compute the solidification process of a binary alloy.
- *         If a function is set to NULL then the automatic settings are kept.
+ *         If a function is set to null then the automatic settings are kept.
  *
  *         --Advanced usage-- This enables to finely control the numerical or
  *         physical modelling aspects.
@@ -916,7 +916,7 @@ cs_solidification_set_segr_functions(cs_solidification_func_t  *vel_forcing,
 /*!
  * \brief  Free the main structure related to the solidification module
  *
- * \return a NULL pointer
+ * \return a null pointer
  */
 /*----------------------------------------------------------------------------*/
 

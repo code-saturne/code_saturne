@@ -139,11 +139,10 @@ typedef struct {
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Generic function pointer for defining a quantity at known locations
- *         Here at cells with a function.  elt_ids is optional. If not nullptr,
+ *         Here at cells with a function.  elt_ids is optional. If non-null,
  *         the function works on a sub-list of elements. Moreover, it enables
  *         to fill retval with an indirection if dense_output is set to false
  *         Case of k-epsilon model
- *
  */
 /*----------------------------------------------------------------------------*/
 
@@ -719,7 +718,7 @@ cs_turb_init_k_eps_context(const cs_turb_model_t      *tbm)
  *
  * \param[in, out]  tbc   pointer to a structure context cast on-the-fly
  *
- * \return a nullptr pointer
+ * \return a null pointer
  */
 /*----------------------------------------------------------------------------*/
 

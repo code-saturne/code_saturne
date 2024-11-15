@@ -112,7 +112,7 @@ typedef void(cs_macfb_monolithic_assemble_t)(
  *
  * \param[in]      nsp          pointer to a \ref cs_navsto_param_t structure
  * \param[in]      vel_f_n      velocity face DoFs at time step n
- * \param[in]      vel_f_nm1    velocity face DoFs at time step n-1 or NULL
+ * \param[in]      vel_f_nm1    velocity face DoFs at time step n-1 or null
  * \param[in, out] sc           pointer to the scheme context
  */
 /*----------------------------------------------------------------------------*/

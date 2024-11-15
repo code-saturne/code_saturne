@@ -167,7 +167,7 @@ typedef void
  * \param[in]      v2       second point of the edge
  * \param[in]      len      length of the edge
  * \param[in]      ana      pointer to the analytic function
- * \param[in]      input    NULL or pointer to a structure cast on-the-fly
+ * \param[in]      input    null or pointer to a structure cast on-the-fly
  * \param[in, out] results  array of double
  */
 /*----------------------------------------------------------------------------*/
@@ -192,7 +192,7 @@ typedef void
  * \param[in]      v3       third point of the triangle
  * \param[in]      area     area of the triangle
  * \param[in]      ana      pointer to the analytic function
- * \param[in]      input    NULL or pointer to a structure cast on-the-fly
+ * \param[in]      input    null or pointer to a structure cast on-the-fly
  * \param[in, out] results  array of double
  */
 /*----------------------------------------------------------------------------*/
@@ -219,7 +219,7 @@ typedef void
  * \param[in]      v4       fourth point of the tetrahedron
  * \param[in]      vol      volume of the tetrahedron
  * \param[in]      ana      pointer to the analytic function
- * \param[in]      input    NULL or pointer to a structure cast on-the-fly
+ * \param[in]      input    null or pointer to a structure cast on-the-fly
  * \param[in, out] results  array of double
  */
 /*----------------------------------------------------------------------------*/
@@ -246,7 +246,7 @@ typedef void
  * \param[in]      hy       length along y-dir
  * \param[in]      hz       length along z-dir
  * \param[in]      ana      pointer to the analytic function
- * \param[in]      input    NULL or pointer to a structure cast on-the-fly
+ * \param[in]      input    null or pointer to a structure cast on-the-fly
  * \param[in, out] results  array of double
  */
 /*----------------------------------------------------------------------------*/
@@ -637,7 +637,7 @@ cs_quadrature_tet_15pts(const cs_real_3_t   v1,
  * \param[in]      v2           second point of the edge
  * \param[in]      len          length of the edge
  * \param[in]      ana          pointer to the analytic function
- * \param[in]      input        NULL or pointer to a structure cast on-the-fly
+ * \param[in]      input        null or pointer to a structure cast on-the-fly
  * \param[in, out] results      array of double
  */
 /*----------------------------------------------------------------------------*/
@@ -677,7 +677,7 @@ cs_quadrature_edge_1pt_scal(double                 tcur,
  * \param[in]      v2           second point of the edge
  * \param[in]      len          length of the edge
  * \param[in]      ana          pointer to the analytic function
- * \param[in]      input        NULL or pointer to a structure cast on-the-fly
+ * \param[in]      input        null or pointer to a structure cast on-the-fly
  * \param[in, out] results      array of double
  */
 /*----------------------------------------------------------------------------*/
@@ -715,7 +715,7 @@ cs_quadrature_edge_2pts_scal(double                tcur,
  * \param[in]      v2           second point of the edge
  * \param[in]      len          length of the edge
  * \param[in]      ana          pointer to the analytic function
- * \param[in]      input        NULL or pointer to a structure cast on-the-fly
+ * \param[in]      input        null or pointer to a structure cast on-the-fly
  * \param[in, out] results      array of double
  */
 /*----------------------------------------------------------------------------*/
@@ -753,7 +753,7 @@ cs_quadrature_edge_3pts_scal(double                tcur,
  * \param[in]      v2          2nd point of the triangle
  * \param[in]      len         length of the edge
  * \param[in]      ana         pointer to the analytic function
- * \param[in]      input       NULL or pointer to a structure cast on-the-fly
+ * \param[in]      input       null or pointer to a structure cast on-the-fly
  * \param[in, out] results     array of double
  */
 /*----------------------------------------------------------------------------*/
@@ -795,7 +795,7 @@ cs_quadrature_edge_1pt_vect(double                 tcur,
  * \param[in]      v2          2nd point of the triangle
  * \param[in]      len         length of the edge
  * \param[in]      ana         pointer to the analytic function
- * \param[in]      input       NULL or pointer to a structure cast on-the-fly
+ * \param[in]      input       null or pointer to a structure cast on-the-fly
  * \param[in, out] results     array of double
  */
 /*----------------------------------------------------------------------------*/
@@ -835,7 +835,7 @@ cs_quadrature_edge_2pts_vect(double                 tcur,
  * \param[in]      v2           second point of the edge
  * \param[in]      len          length of the edge
  * \param[in]      ana          pointer to the analytic function
- * \param[in]      input        NULL or pointer to a structure cast on-the-fly
+ * \param[in]      input        null or pointer to a structure cast on-the-fly
  * \param[in, out] results      array of double
  */
 /*----------------------------------------------------------------------------*/
@@ -878,7 +878,7 @@ cs_quadrature_edge_3pts_vect(double                tcur,
  * \param[in]      v3           third point of the triangle
  * \param[in]      area         area of the triangle
  * \param[in]      ana          pointer to the analytic function
- * \param[in]      input        NULL or pointer to a structure cast on-the-fly
+ * \param[in]      input        null or pointer to a structure cast on-the-fly
  * \param[in, out] results      array of double
  */
 /*----------------------------------------------------------------------------*/
@@ -925,7 +925,7 @@ cs_quadrature_tria_1pt_scal(double                 tcur,
  * \param[in]      v3           third point of the triangle
  * \param[in]      area         area of the triangle
  * \param[in]      ana          pointer to the analytic function
- * \param[in]      input        NULL or pointer to a structure cast on-the-fly
+ * \param[in]      input        null or pointer to a structure cast on-the-fly
  * \param[in, out] results      array of double
  */
 /*----------------------------------------------------------------------------*/
@@ -965,7 +965,7 @@ cs_quadrature_tria_3pts_scal(double                tcur,
  * \param[in]      v3           third point of the triangle
  * \param[in]      area         area of the triangle
  * \param[in]      ana          pointer to the analytic function
- * \param[in]      input        NULL or pointer to a structure cast on-the-fly
+ * \param[in]      input        null or pointer to a structure cast on-the-fly
  * \param[in, out] results      array of double
  */
 /*----------------------------------------------------------------------------*/
@@ -1004,7 +1004,7 @@ cs_quadrature_tria_4pts_scal(double                tcur,
  * \param[in]      v3           third point of the triangle
  * \param[in]      area         area of the triangle
  * \param[in]      ana          pointer to the analytic function
- * \param[in]      input        NULL or pointer to a structure cast on-the-fly
+ * \param[in]      input        null or pointer to a structure cast on-the-fly
  * \param[in, out] results      array of double
  */
 /*----------------------------------------------------------------------------*/
@@ -1045,7 +1045,7 @@ cs_quadrature_tria_7pts_scal(double                tcur,
  * \param[in]      v3           3rd point of the triangle
  * \param[in]      area         area of the triangle
  * \param[in]      ana          pointer to the analytic function
- * \param[in]      input        NULL or pointer to a structure cast on-the-fly
+ * \param[in]      input        null or pointer to a structure cast on-the-fly
  * \param[in, out] results      array of double
  */
 /*----------------------------------------------------------------------------*/
@@ -1094,7 +1094,7 @@ cs_quadrature_tria_1pt_vect(double                 tcur,
  * \param[in]      v3           third point of the triangle
  * \param[in]      area         area of the triangle
  * \param[in]      ana          pointer to the analytic function
- * \param[in]      input        NULL or pointer to a structure cast on-the-fly
+ * \param[in]      input        null or pointer to a structure cast on-the-fly
  * \param[in, out] results      array of double
  */
 /*----------------------------------------------------------------------------*/
@@ -1136,7 +1136,7 @@ cs_quadrature_tria_3pts_vect(double                tcur,
  * \param[in]      v3           third point of the triangle
  * \param[in]      area         area of the triangle
  * \param[in]      ana          pointer to the analytic function
- * \param[in]      input        NULL or pointer to a structure cast on-the-fly
+ * \param[in]      input        null or pointer to a structure cast on-the-fly
  * \param[in, out] results      array of double
  */
 /*----------------------------------------------------------------------------*/
@@ -1178,7 +1178,7 @@ cs_quadrature_tria_4pts_vect(double                tcur,
  * \param[in]      v3           third point of the triangle
  * \param[in]      area         area of the triangle
  * \param[in]      ana          pointer to the analytic function
- * \param[in]      input        NULL or pointer to a structure cast on-the-fly
+ * \param[in]      input        null or pointer to a structure cast on-the-fly
  * \param[in, out] results      array of double
  */
 /*----------------------------------------------------------------------------*/
@@ -1220,7 +1220,7 @@ cs_quadrature_tria_7pts_vect(double                tcur,
  * \param[in]      v3           third point of the triangle
  * \param[in]      area         area of the triangle
  * \param[in]      ana          pointer to the analytic function
- * \param[in]      input        NULL or pointer to a structure cast on-the-fly
+ * \param[in]      input        null or pointer to a structure cast on-the-fly
  * \param[in, out] results      array of double
  */
 /*----------------------------------------------------------------------------*/
@@ -1268,7 +1268,7 @@ cs_quadrature_tria_1pt_tens(double                 tcur,
  * \param[in]      v3           third point of the triangle
  * \param[in]      area         area of the triangle
  * \param[in]      ana          pointer to the analytic function
- * \param[in]      input        NULL or pointer to a structure cast on-the-fly
+ * \param[in]      input        null or pointer to a structure cast on-the-fly
  * \param[in, out] results      array of double
  */
 /*----------------------------------------------------------------------------*/
@@ -1311,7 +1311,7 @@ cs_quadrature_tria_3pts_tens(double                tcur,
  * \param[in]      v3           third point of the triangle
  * \param[in]      area         area of the triangle
  * \param[in]      ana          pointer to the analytic function
- * \param[in]      input        NULL or pointer to a structure cast on-the-fly
+ * \param[in]      input        null or pointer to a structure cast on-the-fly
  * \param[in, out] results      array of double
  */
 /*----------------------------------------------------------------------------*/
@@ -1354,7 +1354,7 @@ cs_quadrature_tria_4pts_tens(double                tcur,
  * \param[in]      v3           third point of the triangle
  * \param[in]      area         area of the triangle
  * \param[in]      ana          pointer to the analytic function
- * \param[in]      input        NULL or pointer to a structure cast on-the-fly
+ * \param[in]      input        null or pointer to a structure cast on-the-fly
  * \param[in, out] results      array of double
  */
 /*----------------------------------------------------------------------------*/
@@ -1398,7 +1398,7 @@ cs_quadrature_tria_7pts_tens(double                tcur,
  * \param[in]      v4           fourth point of the tetrahedron
  * \param[in]      vol          volume of the tetrahedron
  * \param[in]      ana          pointer to the analytic function
- * \param[in]      input        NULL or pointer to a structure cast on-the-fly
+ * \param[in]      input        null or pointer to a structure cast on-the-fly
  * \param[in, out] results      array of double
  */
 /*----------------------------------------------------------------------------*/
@@ -1440,7 +1440,7 @@ cs_quadrature_tet_1pt_scal(double                 tcur,
  * \param[in]      v4           fourth point of the tetrahedron
  * \param[in]      vol          volume of the tetrahedron
  * \param[in]      ana          pointer to the analytic function
- * \param[in]      input        NULL or pointer to a structure cast on-the-fly
+ * \param[in]      input        null or pointer to a structure cast on-the-fly
  * \param[in, out] results      array of double
  */
 /*----------------------------------------------------------------------------*/
@@ -1482,7 +1482,7 @@ cs_quadrature_tet_4pts_scal(double                tcur,
  * \param[in]      v4           fourth point of the tetrahedron
  * \param[in]      vol          volume of the tetrahedron
  * \param[in]      ana          pointer to the analytic function
- * \param[in]      input        NULL or pointer to a structure cast on-the-fly
+ * \param[in]      input        null or pointer to a structure cast on-the-fly
  * \param[in, out] results      array of double
  */
 /*----------------------------------------------------------------------------*/
@@ -1524,7 +1524,7 @@ cs_quadrature_tet_5pts_scal(double                tcur,
  * \param[in]      v4           fourth point of the tetrahedron
  * \param[in]      vol          volume of the tetrahedron
  * \param[in]      ana          pointer to the analytic function
- * \param[in]      input        NULL or pointer to a structure cast on-the-fly
+ * \param[in]      input        null or pointer to a structure cast on-the-fly
  * \param[in, out] results      array of double
  */
 /*----------------------------------------------------------------------------*/
@@ -1568,7 +1568,7 @@ cs_quadrature_tet_1pt_vect(double                 tcur,
  * \param[in]      v4           fourth point of the tetrahedron
  * \param[in]      vol          volume of the tetrahedron
  * \param[in]      ana          pointer to the analytic function
- * \param[in]      input        NULL or pointer to a structure cast on-the-fly
+ * \param[in]      input        null or pointer to a structure cast on-the-fly
  * \param[in, out] results      array of double
  */
 /*----------------------------------------------------------------------------*/
@@ -1612,7 +1612,7 @@ cs_quadrature_tet_4pts_vect(double                tcur,
  * \param[in]      v4           fourth point of the tetrahedron
  * \param[in]      vol          volume of the tetrahedron
  * \param[in]      ana          pointer to the analytic function
- * \param[in]      input        NULL or pointer to a structure cast on-the-fly
+ * \param[in]      input        null or pointer to a structure cast on-the-fly
  * \param[in, out] results      array of double
  */
 /*----------------------------------------------------------------------------*/
@@ -1656,7 +1656,7 @@ cs_quadrature_tet_5pts_vect(double                tcur,
  * \param[in]      v4           fourth point of the tetrahedron
  * \param[in]      vol          volume of the tetrahedron
  * \param[in]      ana          pointer to the analytic function
- * \param[in]      input        NULL or pointer to a structure cast on-the-fly
+ * \param[in]      input        null or pointer to a structure cast on-the-fly
  * \param[in, out] results      array of double
  */
 /*----------------------------------------------------------------------------*/
@@ -1699,7 +1699,7 @@ cs_quadrature_tet_1pt_tens(double                 tcur,
  * \param[in]      v4           fourth point of the tetrahedron
  * \param[in]      vol          volume of the tetrahedron
  * \param[in]      ana          pointer to the analytic function
- * \param[in]      input        NULL or pointer to a structure cast on-the-fly
+ * \param[in]      input        null or pointer to a structure cast on-the-fly
  * \param[in, out] results      array of double
  */
 /*----------------------------------------------------------------------------*/
@@ -1744,7 +1744,7 @@ cs_quadrature_tet_4pts_tens(double                tcur,
  * \param[in]      v4           fourth point of the tetrahedron
  * \param[in]      vol          volume of the tetrahedron
  * \param[in]      ana          pointer to the analytic function
- * \param[in]      input        NULL or pointer to a structure cast on-the-fly
+ * \param[in]      input        null or pointer to a structure cast on-the-fly
  * \param[in, out] results      array of double
  */
 /*----------------------------------------------------------------------------*/
@@ -1788,7 +1788,7 @@ cs_quadrature_tet_5pts_tens(double                tcur,
  * \param[in]      hy           length along y-dir
  * \param[in]      hz           length along z-dir
  * \param[in]      ana          pointer to the analytic function
- * \param[in]      input        NULL or pointer to a structure cast on-the-fly
+ * \param[in]      input        null or pointer to a structure cast on-the-fly
  * \param[in, out] results      array of double
  */
 /*----------------------------------------------------------------------------*/
@@ -1828,7 +1828,7 @@ cs_quadrature_hex_1pt_vect(double              tcur,
  * \param[in]      hy           length along y-dir
  * \param[in]      hz           length along z-dir
  * \param[in]      ana          pointer to the analytic function
- * \param[in]      input        NULL or pointer to a structure cast on-the-fly
+ * \param[in]      input        null or pointer to a structure cast on-the-fly
  * \param[in, out] results      array of double
  */
 /*----------------------------------------------------------------------------*/
@@ -1870,7 +1870,7 @@ cs_quadrature_hex_8pts_vect(double              tcur,
  * \param[in]      hy           length along y-dir
  * \param[in]      hz           length along z-dir
  * \param[in]      ana          pointer to the analytic function
- * \param[in]      input        NULL or pointer to a structure cast on-the-fly
+ * \param[in]      input        null or pointer to a structure cast on-the-fly
  * \param[in, out] results      array of double
  */
 /*----------------------------------------------------------------------------*/

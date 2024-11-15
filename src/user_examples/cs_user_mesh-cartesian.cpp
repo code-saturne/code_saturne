@@ -69,7 +69,7 @@ BEGIN_C_DECLS
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Define a cartesian mesh to use during computation. If a cartesian block
- * is created with a non nullptr name, then all groups will be prefixed with the
+ * is created with a non-null name, then all groups will be prefixed with the
  * given name. For example, "X0" face group will be called "<name>_X0" instead.
  */
 /*----------------------------------------------------------------------------*/

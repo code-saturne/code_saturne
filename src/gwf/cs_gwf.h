@@ -86,7 +86,7 @@ cs_gwf_activate(cs_gwf_model_type_t      model,
 /*!
  * \brief  Free all structures related to groundwater flows
  *
- * \return a NULL pointer
+ * \return a null pointer
  */
 /*----------------------------------------------------------------------------*/
 
@@ -193,7 +193,7 @@ cs_gwf_set_post_options(cs_flag_t       post_flag,
  * \brief  Retrieve the advection field related to the Darcy flux in the liquid
  *         phase
  *
- * \return a pointer to a cs_adv_field_t structure or NULL
+ * \return a pointer to a cs_adv_field_t structure or null
  */
 /*----------------------------------------------------------------------------*/
 

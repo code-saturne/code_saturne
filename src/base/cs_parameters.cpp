@@ -543,8 +543,8 @@ cs_restart_auxiliary_t  *cs_glob_restart_auxiliary = &_restart_auxiliary;
 
 int                      _n_user_variables = 0;
 int                      _n_user_properties = 0;
-cs_user_variable_def_t  *_user_variable_defs = NULL;
-cs_user_property_def_t  *_user_property_defs = NULL;
+cs_user_variable_def_t  *_user_variable_defs = nullptr;
+cs_user_property_def_t  *_user_property_defs = nullptr;
 
 static cs_solving_info_t _solving_info =
 {
@@ -561,7 +561,7 @@ static cs_solving_info_t _solving_info =
 
 /*! Global parameters tree structure */
 
-cs_tree_node_t  *cs_glob_tree = NULL;
+cs_tree_node_t  *cs_glob_tree = nullptr;
 
 /*============================================================================
  * Prototypes for functions intended for use only by Fortran wrappers.
@@ -1159,12 +1159,12 @@ cs_parameters_define_field_keys(void)
      CS_FIELD_VARIABLE);
 
   /* Structure containing the solving info of the field variables
-     (used for log, not setup, so set NULL setup logging function) */
+     (used for log, not setup, so set nullptr setup logging function) */
   cs_field_define_key_struct("solving_info",
                              &_solving_info,
-                             NULL,
-                             NULL,
-                             NULL,
+                             nullptr,
+                             nullptr,
+                             nullptr,
                              sizeof(cs_solving_info_t),
                              CS_FIELD_VARIABLE);
   cs_field_key_disable_setup_log(cs_field_key_id("solving_info"));
@@ -1373,7 +1373,7 @@ cs_parameters_create_added_variables(void)
       const char *ref_name = (_user_variable_defs + i)->ref_name;
       const cs_field_t *f_ref = cs_field_by_name_try(ref_name);
 
-      if (f_ref == NULL)
+      if (f_ref == nullptr)
         bft_error(__FILE__, __LINE__, 0,
                   _("Error defining user variance \"%s\";\n"
                     "which refers to yet undefined variable \"%s\"."),
@@ -1621,14 +1621,14 @@ cs_parameters_create_added_properties(void)
  *
  * \param[in, out]  f  pointer to field structure
  *
- * \return  pointer to boundary values field, or NULL if not applicable
+ * \return  pointer to boundary values field, or null if not applicable
  */
 /*----------------------------------------------------------------------------*/
 
 cs_field_t *
 cs_parameters_add_boundary_values(cs_field_t  *f)
 {
-  cs_field_t *bf = NULL;
+  cs_field_t *bf = nullptr;
 
   /* Check we are on cells and don't already have such value */
 
@@ -1666,7 +1666,7 @@ cs_parameters_add_boundary_values(cs_field_t  *f)
 
   bf = cs_field_by_name_try(b_name);
 
-  if (bf == NULL) {
+  if (bf == nullptr) {
 
     int type_flag =   (f->type & (CS_FIELD_INTENSIVE | CS_FIELD_EXTENSIVE))
                     | CS_FIELD_POSTPROCESS;
@@ -1731,43 +1731,43 @@ cs_parameters_add_boundary_values(cs_field_t  *f)
  * When such a variable does not exist but we have an Enthalpy variables,
  * an associated temperature boundary field is returned.
  *
- * \return  pointer to boundary values field, or NULL if not applicable
+ * \return  pointer to boundary values field, or null if not applicable
  */
 /*----------------------------------------------------------------------------*/
 
 cs_field_t *
 cs_parameters_add_boundary_temperature(void)
 {
-  cs_field_t *bf = NULL;
+  cs_field_t *bf = nullptr;
 
   /* Check if we already have a temperature variable field
     (temperature or enthalpy) */
 
   cs_field_t *f = cs_field_by_name_try("temperature");
 
-  if (f != NULL) //FIXME it might be not a variable as in Cooling towers
+  if (f != nullptr) //FIXME it might be not a variable as in Cooling towers
     bf = cs_parameters_add_boundary_values(f);
 
   else {
 
     f = cs_field_by_name_try("enthalpy");
 
-    if (f != NULL) {
+    if (f != nullptr) {
       if (   f->location_id != CS_MESH_LOCATION_CELLS
           || (f->type & CS_FIELD_VARIABLE) == 0)
-        f = NULL;
+        f = nullptr;
     }
 
     /* If we have a compatible cell enthalpy field,
        use if to define default output options */
 
-    if (f != NULL) {
+    if (f != nullptr) {
 
       char b_name[] = "boundary_temperature";
 
       bf = cs_field_by_name_try(b_name);
 
-      if (bf == NULL) {
+      if (bf == nullptr) {
 
         int type_flag =   (f->type & (CS_FIELD_INTENSIVE | CS_FIELD_EXTENSIVE))
                            | CS_FIELD_POSTPROCESS;
@@ -1844,7 +1844,7 @@ cs_parameters_need_extended_neighborhood(void)
       cs_field_t *f = cs_field_by_id(f_id);
       if (f->type & CS_FIELD_VARIABLE) {
         const cs_equation_param_t *eqp = cs_field_get_equation_param_const(f);
-        if (eqp != NULL) {
+        if (eqp != nullptr) {
           cs_gradient_type_by_imrgra(eqp->imrgra,
                                      &gradient_type,
                                      &halo_type);
@@ -2082,9 +2082,9 @@ cs_parameters_eqp_complete(void)
   cs_field_t *f_p = CS_F_(p);
   cs_field_t *f_t = cs_thermal_model_field();
   cs_equation_param_t *eqp_vel
-    = (f_vel != NULL) ? cs_field_get_equation_param(f_vel) : NULL;
+    = (f_vel != nullptr) ? cs_field_get_equation_param(f_vel) : nullptr;
   cs_equation_param_t *eqp_p
-    = (f_p != NULL) ? cs_field_get_equation_param(f_p) : NULL;
+    = (f_p != nullptr) ? cs_field_get_equation_param(f_p) : nullptr;
   cs_time_step_t *ts = cs_get_glob_time_step();
   cs_time_step_options_t *time_opt = cs_get_glob_time_step_options();
   cs_velocity_pressure_param_t *vp_param
@@ -2104,7 +2104,7 @@ cs_parameters_eqp_complete(void)
 
     if (f->type & CS_FIELD_VARIABLE) {
       cs_equation_param_t *eqp = cs_field_get_equation_param(f);
-      if (eqp != NULL) {
+      if (eqp != nullptr) {
         if (eqp->dim != f->dim)
           eqp->dim = f->dim;
 
@@ -2141,7 +2141,7 @@ cs_parameters_eqp_complete(void)
                GGDH on the variance of the thermal scalar set here. */
 
             cs_field_t *f_v = cs_field_get_variance(f);
-            if (f_v != NULL) {
+            if (f_v != nullptr) {
               cs_equation_param_t *eqp_v = cs_field_get_equation_param(f_v);
               eqp_v->idften = CS_ANISOTROPIC_RIGHT_DIFFUSION;
               cs_field_set_key_double(f_v, kctheta, cs_turb_csrij);
@@ -2217,7 +2217,7 @@ cs_parameters_eqp_complete(void)
    *           0 (i.e. with) otherwise */
 
   if (cs_glob_turb_model->itytur == 4) {
-    if (eqp_vel != NULL) {
+    if (eqp_vel != nullptr) {
       if (eqp_vel->isstpc == -999)
         eqp_vel->isstpc = 1;
     }
@@ -2250,7 +2250,7 @@ cs_parameters_eqp_complete(void)
    * For the cavitation model, we force in all cases the void fraction in upwind
    * and e display a message if the user has specified something else. */
 
-  if (eqp_vel != NULL) {
+  if (eqp_vel != nullptr) {
     if (fabs(eqp_vel->blencv + 1.) < cs_math_epzero)
       eqp_vel->blencv = 1.;
   }
@@ -2280,7 +2280,7 @@ cs_parameters_eqp_complete(void)
     }
   }
 
-  if (f_t != NULL) {
+  if (f_t != nullptr) {
     cs_equation_param_t *eqp_t = cs_field_get_equation_param(f_t);
     if (fabs(eqp_t->blencv + 1.) < cs_math_epzero) eqp_t->blencv = 1.;
   }
@@ -2321,14 +2321,14 @@ cs_parameters_eqp_complete(void)
    */
 
   if (cs_glob_time_scheme->time_order == 2) {
-    if (eqp_p != NULL) {
+    if (eqp_p != nullptr) {
       if (eqp_p->nswrsm == -1) eqp_p->nswrsm = 5;
       if (fabs(eqp_p->epsilo + 1.) < cs_math_epzero)
       eqp_p->epsilo = 1.e-5;
       if (fabs(eqp_p->epsrsm + 1.) < cs_math_epzero)
         eqp_p->epsrsm = 10.*eqp_p->epsilo;
     }
-    if (eqp_vel != NULL) {
+    if (eqp_vel != nullptr) {
       if (eqp_vel->nswrsm == -1) eqp_vel->nswrsm = 10;
       if (fabs(eqp_vel->epsilo + 1.) < cs_math_epzero)
         eqp_vel->epsilo = 1.e-5;
@@ -2351,7 +2351,7 @@ cs_parameters_eqp_complete(void)
 
   /* For the pressure, default solver precision 1e-8
    * because the mass conservation is up to this precision. */
-  if (eqp_p != NULL) {
+  if (eqp_p != nullptr) {
     if (eqp_p->nswrsm == -1)
       eqp_p->nswrsm = 2;
     if (fabs(eqp_p->epsilo + 1.) < cs_math_epzero)
@@ -2475,7 +2475,7 @@ cs_parameters_eqp_complete(void)
       /* If the user has not coupled any scalar */
       if (nscacp == 0) {
         /* We couple the temperature scalar of the phase */
-        if (f_t != NULL)
+        if (f_t != nullptr)
           cs_field_set_key_int(f_t, kcpsyr, 1);
       }
     }
@@ -2543,7 +2543,7 @@ cs_parameters_eqp_complete(void)
   if (time_opt->idtvar < 0) {
     cs_real_t relxsp = 1.-time_opt->relxst;
     if (relxsp <= cs_math_epzero) relxsp = time_opt->relxst;
-    if (eqp_p != NULL) {
+    if (eqp_p != nullptr) {
       if (fabs(eqp_p->relaxv+1.) <= cs_math_epzero)
         eqp_p->relaxv = relxsp;
     }
@@ -2580,7 +2580,7 @@ cs_parameters_eqp_complete(void)
         eqp->istat = 0;
       }
     }
-    if (eqp_vel != NULL)
+    if (eqp_vel != nullptr)
       vp_param->arak = vp_param->arak/CS_MAX(eqp_vel->relaxv, cs_math_epzero);
   }
 
@@ -2690,7 +2690,7 @@ cs_parameters_eqp_complete(void)
     }
 
     /* VOF algorithm: continuity of the flux across internal faces */
-    if (eqp_p != NULL)
+    if (eqp_p != nullptr)
       eqp_p->imvisf = 1;
   }
 
@@ -2762,7 +2762,7 @@ cs_parameters_output_complete(void)
   if (n_moments > 0) {
     for (int m_id = 0; m_id < n_moments; m_id++) {
       cs_field_t *f = cs_time_moment_get_field(m_id);
-      if (f != NULL) {
+      if (f != nullptr) {
         if (cs_field_is_key_set(f, k_vis) == false) {
           int flag = CS_POST_ON_LOCATION | CS_POST_MONITOR;
           cs_field_set_key_int(f, k_vis, flag);
@@ -2888,7 +2888,7 @@ cs_time_scheme_log_setup(void)
   {
     int iviext = 0;
     const cs_field_t *f = cs_field_by_name_try("molecular_viscosity");
-    if (f != NULL)
+    if (f != nullptr)
       iviext = cs_field_get_key_int(f, key_t_ext_id);
     if (iviext > 0)
       cs_log_printf
@@ -2900,7 +2900,7 @@ cs_time_scheme_log_setup(void)
   {
     int icpext = 0;
     const cs_field_t *f = cs_field_by_name_try("specific_heat");
-    if (f != NULL)
+    if (f != nullptr)
       icpext = cs_field_get_key_int(f, key_t_ext_id);
     if (icpext > 0)
       cs_log_printf

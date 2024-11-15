@@ -98,7 +98,7 @@ fvm_to_plot_init_writer(const char             *name,
  *   writer <-- pointer to opaque plot writer structure.
  *
  * returns:
- *   NULL pointer.
+ *   null pointer.
  *----------------------------------------------------------------------------*/
 
 void *

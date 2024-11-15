@@ -109,7 +109,7 @@ BEGIN_C_DECLS
  * \brief  Generic function pointer for an evaluation relying on an analytic
  *         function.
  *
- * For the calling function, elt_ids is optional. If not NULL, the coords
+ * For the calling function, elt_ids is optional. If non-null, the coords
  * array should be accessed with an indirection. The same indirection can
  * be applied to fill retval if dense_output is set to false.
  *
@@ -118,7 +118,7 @@ BEGIN_C_DECLS
  * \param[in]      elt_ids       list of elements ids (in coords and retval)
  * \param[in]      coords        where ?
  * \param[in]      dense_output  perform an indirection in retval or not
- * \param[in]      input         NULL or pointer to a structure cast on-the-fly
+ * \param[in]      input         null or pointer to a structure cast on-the-fly
  * \param[in, out] retval        resulting value(s). Must be allocated.
  */
 /*----------------------------------------------------------------------------*/
@@ -138,14 +138,14 @@ typedef void
  *         locations such as degrees of freedom (DoF): cells, faces, edges or
  *         or vertices.
  *
- * For the calling function, elt_ids is optional. If not NULL, array(s) should
+ * For the calling function, elt_ids is optional. If non-null, array(s) should
  * be accessed with an indirection. The same indirection can be applied to fill
  * retval if dense_output is set to false.
  *
  * \param[in]      n_elts        number of elements to consider
  * \param[in]      elt_ids       list of elements ids
  * \param[in]      dense_output  perform an indirection in retval or not
- * \param[in]      input         NULL or pointer to a structure cast on-the-fly
+ * \param[in]      input         null or pointer to a structure cast on-the-fly
  * \param[in, out] retval        resulting value(s). Must be allocated.
  */
 /*----------------------------------------------------------------------------*/
@@ -163,7 +163,7 @@ typedef void
  *         current time and any structure given as a parameter
  *
  * \param[in]   time        value of the time at the end of the last iteration
- * \param[in]   input       NULL or pointer to a structure cast on-the-fly
+ * \param[in]   input       null or pointer to a structure cast on-the-fly
  * \param[in]   retval      result of the evaluation
  */
 /*----------------------------------------------------------------------------*/

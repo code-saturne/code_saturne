@@ -2805,7 +2805,7 @@ _bb_mat_vec_p_l_msr(cs_matrix_t  *matrix,
  * parameters:
  *   exclude_diag <-- exclude diagonal if true
  *   matrix       <-- pointer to matrix structure
- *   hs           <-- halo state: if non-nullptr, call cs_halo_sync_wait
+ *   hs           <-- halo state: if non-null, call cs_halo_sync_wait
  *                    locally (possibly allowing computation/communication
  *                    overlap)
  *   x            <-> multipliying vector values
@@ -3626,7 +3626,7 @@ _bb_mat_vec_p_l_dist(cs_matrix_t  *matrix,
  * parameters:
  *   exclude_diag <-- exclude diagonal if true
  *   matrix       <-- pointer to matrix structure
- *   hs           <-- halo state: if non-nullptr, call cs_halo_sync_wait
+ *   hs           <-- halo state: if non-null, call cs_halo_sync_wait
  *                    locally (possibly allowing computation/communication
  *                    overlap)
  *   x            <-> multipliying vector values

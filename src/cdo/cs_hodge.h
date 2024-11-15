@@ -972,7 +972,7 @@ cs_hodge_edfp_bubble_get(const cs_cell_mesh_t     *cm,
  * \param[in]      connect   pointer to a cs_cdo_connect_t structure
  * \param[in]      quant     pointer to a cs_cdo_quantities_t structure
  * \param[in]      hodgep    cs_hodge_param_t structure
- * \param[in]      pty       pointer to a cs_property_t structure or NULL
+ * \param[in]      pty       pointer to a cs_property_t structure or null
  * \param[in]      in_vals   vector to multiply with the discrete Hodge op.
  * \param[in]      t_eval    time at which one performs the evaluation
  * \param[in, out] result    array storing the resulting matrix-vector product
@@ -997,7 +997,7 @@ cs_hodge_matvec(const cs_cdo_connect_t       *connect,
  * \param[in]      quant     pointer to a cs_cdo_quantities_t structure
  * \param[in]      t_eval    time at which one performs the evaluation
  * \param[in]      hodgep    cs_hodge_param_t structure
- * \param[in]      pty       pointer to a cs_property_t structure or NULL
+ * \param[in]      pty       pointer to a cs_property_t structure or null
  * \param[in]      flux      vector to multiply with the discrete Hodge op.
  * \param[in, out] circul    array storing the resulting matrix-vector product
  */

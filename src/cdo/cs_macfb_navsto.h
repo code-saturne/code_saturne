@@ -631,7 +631,7 @@ void cs_macfb_navsto_boussinesq_by_part(const cs_navsto_param_t         *nsp,
  * \param[in]      n_elts        number of elements to consider
  * \param[in]      elt_ids       list of elements ids
  * \param[in]      dense_output  perform an indirection in retval or not
- * \param[in]      input         NULL or pointer to a structure cast on-the-fly
+ * \param[in]      input         null or pointer to a structure cast on-the-fly
  * \param[in, out] retval        result of the function. Must be allocated.
  */
 /*----------------------------------------------------------------------------*/

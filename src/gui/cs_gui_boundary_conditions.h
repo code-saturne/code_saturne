@@ -125,7 +125,7 @@ cs_gui_boundary_add_meg_context(const  cs_zone_t   *zone,
  * \brief cs_dof_func_t function to compute a boundary profiles
  *        using a MEG generated function.
  *
- * For the calling function, elt_ids is optional. If not NULL, array(s) should
+ * For the calling function, elt_ids is optional. If non-null, array(s) should
  * be accessed with an indirection. The same indirection can be applied to fill
  * retval if dense_output is set to false.
  * In the current case, retval is allocated to mesh->n_b_faces

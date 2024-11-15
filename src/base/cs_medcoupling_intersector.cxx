@@ -969,7 +969,7 @@ cs_medcoupling_intersector_destroy_all(void)
  *
  * \param[in] id  id of the intersector
  *
- * \return pointer to the cs_medcoupling_intersector_t or nullptr if not found
+ * \return pointer to the cs_medcoupling_intersector_t or null if not found
  */
 /*----------------------------------------------------------------------------*/
 
@@ -990,7 +990,7 @@ cs_medcoupling_intersector_by_id(int id)
  *
  * \param[in] name  name of the intersector
  *
- * \return pointer to the cs_medcoupling_intersector_t or nullptr if not found
+ * \return pointer to the cs_medcoupling_intersector_t or null if not found
  */
 /*----------------------------------------------------------------------------*/
 
@@ -1355,7 +1355,7 @@ cs_medcoupling_intersector_transform_from_init(cs_medcoupling_intersector_t  *mi
             _("Error: This function cannot be called without "
               "MEDCoupling support.\n"));
 #else
-  cs_coord_3_t *_new_coords = nullptr ;
+  cs_coord_3_t *_new_coords = nullptr;
   const cs_lnum_t n_vtx = mi->source_mesh->getNumberOfNodes();
   const cs_lnum_t n_b_vtx = mi->n_b_vertices;
 

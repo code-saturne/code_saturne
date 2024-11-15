@@ -68,7 +68,7 @@ BEGIN_C_DECLS
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Define the velocity inlet profile as an analytic function.
- *         elt_ids is optional. If not nullptr, it enables to access to the coords
+ *         elt_ids is optional. If non-null, it enables to access to the coords
  *         array with an indirection. The same indirection can be applied to
  *         the val array if dense_output is set to false.
  *
@@ -77,7 +77,7 @@ BEGIN_C_DECLS
  * \param[in]      elt_ids       list of elements ids (in coords and retval)
  * \param[in]      coords        where ? Coordinates array
  * \param[in]      dense_output  perform an indirection in res or not
- * \param[in]      input         nullptr or pointer to a structure cast on-the-fly
+ * \param[in]      input         null or pointer to a structure cast on-the-fly
  * \param[in, out] val           resulting value(s). Must be allocated.
  */
 /*----------------------------------------------------------------------------*/
@@ -119,7 +119,7 @@ _vel_profile(cs_real_t           time,
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Define the scalar inlet profile as an analytic function.
- *         elt_ids is optional. If not nullptr, it enables to access to the coords
+ *         elt_ids is optional. If non-null, it enables to access to the coords
  *         array with an indirection. The same indirection can be applied to
  *         the val array if dense_output is set to false.
  *
@@ -128,7 +128,7 @@ _vel_profile(cs_real_t           time,
  * \param[in]      elt_ids       list of elements ids (in coords and retval)
  * \param[in]      coords        where ? Coordinates array
  * \param[in]      dense_output  perform an indirection in res or not
- * \param[in]      input         nullptr or pointer to a structure cast on-the-fly
+ * \param[in]      input         null or pointer to a structure cast on-the-fly
  * \param[in, out] val           resulting value(s). Must be allocated.
  */
 /*----------------------------------------------------------------------------*/
@@ -173,7 +173,7 @@ _scalar_inlet_profile(cs_real_t           time,
  * \brief cs_dof_func_t function to compute a profile at boundary faces
  *        using a MEG generated function for exchange coefficients.
  *
- * For the calling function, elt_ids is optional. If not nullptr, array(s) should
+ * For the calling function, elt_ids is optional. If non-null, array(s) should
  * be accessed with an indirection. The same indirection can be applied to fill
  * retval if dense_output is set to false.
  * In the current case, retval is allocated to mesh->n_b_faces * stride.
@@ -193,7 +193,7 @@ _scalar_inlet_profile(cs_real_t           time,
  * \param[in]      n_elts        number of elements to consider
  * \param[in]      elt_ids       list of elements ids
  * \param[in]      dense_output  perform an indirection in retval or not
- * \param[in]      input         nullptr or pointer to a structure cast on-the-fly
+ * \param[in]      input         null or pointer to a structure cast on-the-fly
  * \param[in, out] retval        resulting value(s). Must be allocated.
  */
 /*----------------------------------------------------------------------------*/
@@ -233,7 +233,7 @@ _scalar_exchange_profile(cs_lnum_t         n_elts,
  * \brief cs_dof_func_t function to compute a wall flux normalized by the
  *        associated zone's surface.
  *
- * For the calling function, elt_ids is optional. If not nullptr, array(s) should
+ * For the calling function, elt_ids is optional. If non-null, array(s) should
  * be accessed with an indirection. The same indirection can be applied to fill
  * retval if dense_output is set to false.
  * In the current case, retval is allocated to mesh->n_b_faces.
@@ -279,7 +279,7 @@ _w_flux_top(cs_lnum_t         n_elts,
  * \brief cs_dof_func_t function to compute a wall flux normalized by the
  *        associated zone's surface.
  *
- * For the calling function, elt_ids is optional. If not nullptr, array(s) should
+ * For the calling function, elt_ids is optional. If non-null, array(s) should
  * be accessed with an indirection. The same indirection can be applied to fill
  * retval if dense_output is set to false.
  * In the current case, retval is allocated to mesh->n_b_faces.

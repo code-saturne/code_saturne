@@ -114,7 +114,7 @@ typedef cs_datatype_t cs_post_type_t;
  * function when called. This list's lifecycle is then managed by the
  * postprocessing subsystem.
  *
- * Note: if the input pointer is non-NULL, it must point to valid data
+ * Note: if the input pointer is non-null, it must point to valid data
  * when the selection function is called, so either:
  * - that value or structure should not be temporary (i.e. local);
  * - post-processing output must be ensured using cs_post_write_meshes()
@@ -138,7 +138,7 @@ typedef void
  * and all registered functions are automatically called by
  * cs_post_write_vars().
  *
- * Note: if the input pointer is non-NULL, it must point to valid data
+ * Note: if the input pointer is non-null, it must point to valid data
  * when the output function is called, so either:
  * - that value or structure should not be temporary (i.e. local);
  * - post-processing output must be ensured using cs_post_write_var()
@@ -161,7 +161,7 @@ typedef void
  * and all registered functions are automatically called by
  * cs_post_write_vars().
  *
- * Note: if the input pointer is non-NULL, it must point to valid data
+ * Note: if the input pointer is non-null, it must point to valid data
  * when the output function is called, so either:
  * - that value or structure should not be temporary (i.e. local);
  * - post-processing output must be ensured using cs_post_write_var()
@@ -335,7 +335,7 @@ cs_post_define_volume_mesh(int          mesh_id,
  * flag is set to true and the mesh is only associated with writers defined
  * with the FVM_WRITER_TRANSIENT_CONNECT option.
  *
- * Note: if the cell_select_input pointer is non-NULL, it must point
+ * Note: if the cell_select_input pointer is non-null, it must point
  * to valid data when the selection function is called, so either:
  * - that value or structure should not be temporary (i.e. local);
  * - post-processing output must be ensured using cs_post_write_meshes()
@@ -401,7 +401,7 @@ cs_post_define_surface_mesh(int          mesh_id,
  * flag is set to true and the mesh is only associated with writers defined
  * with the FVM_WRITER_TRANSIENT_CONNECT option.
  *
- * Note: if i_face_select_input or b_face_select_input pointer is non-NULL,
+ * Note: if i_face_select_input or b_face_select_input pointer is non-null,
  * it must point to valid data when the selection function is called,
  * so either:
  * - that value or structure should not be temporary (i.e. local);
@@ -516,7 +516,7 @@ cs_post_define_particles_mesh(int          mesh_id,
  * trajectory segments for the current time step will be added to
  * the output at each output time step.
  *
- * Note: if the p_select_input pointer is non-NULL, it must point
+ * Note: if the p_select_input pointer is non-null, it must point
  * to valid data when the selection function is called, so
  * that value or structure should not be temporary (i.e. local);
  *
@@ -1548,7 +1548,7 @@ cs_post_init_error_writer_cells(void);
  * \brief Register a processing of time-dependent variables to the call to
  * cs_post_write_vars().
  *
- * Note: if the input pointer is non-NULL, it must point to valid data
+ * Note: if the input pointer is non-null, it must point to valid data
  * when the output function is called, so either:
  * - that value or structure should not be temporary (i.e. local);
  * - post-processing output must be ensured using cs_post_write_var()
@@ -1568,7 +1568,7 @@ cs_post_add_time_dep_output(cs_post_time_dep_output_t  *function,
  * \brief Register a processing of time-dependent variables than can be output
  * on different meshes to the call to cs_post_write_vars().
  *
- * Note: if the input pointer is non-NULL, it must point to valid data
+ * Note: if the input pointer is non-null, it must point to valid data
  * when the output function is called, so either:
  * - that value or structure should not be temporary (i.e. local);
  * - post-processing output must be ensured using cs_post_write_var()

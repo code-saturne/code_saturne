@@ -792,7 +792,7 @@ cs_param_saddle_get_schur_sles_param(const cs_param_saddle_t  *saddlep);
 /*!
  * \brief Get the pointer to the set of parameters to handle a SLES. This SLES
  *        is associated to an extra-operation specific to a saddle-point solver
- *        It returns a non NULL pointer only for some sadlle-point solver
+ *        It returns a non-null pointer only for some sadlle-point solver
  *        relying on a more elaborated Schur complement approximation.
  *
  * \param[in] saddlep  pointer to a \ref cs_param_saddle_t structure
@@ -808,7 +808,7 @@ cs_param_saddle_get_xtra_sles_param(const cs_param_saddle_t  *saddlep);
 /*!
  * \brief Get the pointer to the set of parameters to handle a SLES. This SLES
  *        is associated to the initial saddle-point problem. It returns a non
- *        NULL pointer only for some sadlle-point solver.
+ *        null pointer only for some sadlle-point solver.
  *
  * \param[in] saddlep  pointer to a \ref cs_param_saddle_t structure
  *

@@ -402,7 +402,7 @@ struct _gwf_soil_t {
    * \var model_param
    *      Pointer to a structure cast on-the-fly (it depends on the type of
    *      soil model). This structure contains the set of parameters describing
-   *      a soil. Can be set to NULL in the case of a saturated single-phase
+   *      a soil. Can be set to null in the case of a saturated single-phase
    *      model.
    *
    * @}
@@ -414,12 +414,12 @@ struct _gwf_soil_t {
    *      describing the porous media or used in associated equations
    *      (diffusion terms for instance). These functions depend on the model
    *      of soil and the type of model used in the groundwater flow
-   *      module. May be set to NULL if there is no need to update soil
+   *      module. May be set to null if there is no need to update soil
    *      properties.
    *
    * \var free_model_param
    *      Pointer to a function which free the param structure if needed. May
-   *      be set to NULL if there is nothing to free inside the param
+   *      be set to null if there is nothing to free inside the param
    *      structure.
    *
    * @}
@@ -526,7 +526,7 @@ cs_gwf_soil_by_name(const char    *name);
  *
  * \param[in] soil_id      id to look for
  *
- * \return a pointer to a zone structure or NULL
+ * \return a pointer to a zone structure or null
  */
 /*----------------------------------------------------------------------------*/
 
@@ -668,7 +668,7 @@ cs_gwf_soil_get_cell2soil(void);
 /*!
  * \brief Get the array storing the soil state associated to each cell
  *
- * \return a pointer to the array (may be NULL)
+ * \return a pointer to the array (may be null)
  */
 /*----------------------------------------------------------------------------*/
 

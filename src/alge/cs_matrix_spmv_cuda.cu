@@ -144,7 +144,7 @@ static cudaStream_t _stream = 0;
 
 #if defined(HAVE_CUSPARSE)
 
-static cusparseHandle_t  _handle = NULL;
+static cusparseHandle_t  _handle = nullptr;
 
 #endif
 
@@ -715,9 +715,9 @@ static cs_halo_state_t *
 _pre_vector_multiply_sync_x_start(const cs_matrix_t   *matrix,
                                   cs_real_t            d_x[])
 {
-  cs_halo_state_t *hs = NULL;
+  cs_halo_state_t *hs = nullptr;
 
-  if (matrix->halo != NULL) {
+  if (matrix->halo != nullptr) {
 
     if (_stream != 0)
       cudaStreamSynchronize(_stream);
@@ -729,7 +729,7 @@ _pre_vector_multiply_sync_x_start(const cs_matrix_t   *matrix,
                         CS_REAL_TYPE,
                         matrix->db_size,
                         d_x,
-                        NULL,
+                        nullptr,
                         hs);
 
     cs_halo_sync_start(matrix->halo, d_x, hs);
@@ -754,7 +754,7 @@ _unset_cusparse_map(cs_matrix_t   *matrix)
   cs_matrix_cusparse_map_t *csm
     = (cs_matrix_cusparse_map_t *)matrix->ext_lib_map;
 
-  if (csm == NULL)
+  if (csm == nullptr)
     return;
 
 #if defined(HAVE_CUSPARSE_GENERIC_API)
@@ -762,27 +762,27 @@ _unset_cusparse_map(cs_matrix_t   *matrix)
   cusparseDestroySpMat(csm->matA);
 
   if (csm->block_diag == false) {
-    if (csm->vecXValues != NULL)
+    if (csm->vecXValues != nullptr)
       cusparseDestroyDnVec(csm->vecX);
-    if (csm->vecYValues != NULL)
+    if (csm->vecYValues != nullptr)
       cusparseDestroyDnVec(csm->vecY);
   }
   else {
-    if (csm->vecXValues != NULL)
+    if (csm->vecXValues != nullptr)
       cusparseDestroyDnMat(csm->matX);
-    if (csm->vecYValues != NULL)
+    if (csm->vecYValues != nullptr)
       cusparseDestroyDnMat(csm->matY);
   }
 
-  if (csm->dBuffer != NULL) {
+  if (csm->dBuffer != nullptr) {
     CS_CUDA_CHECK(cudaFree(csm->dBuffer));
-    csm->dBuffer = NULL;
+    csm->dBuffer = nullptr;
   }
 
   csm->block_diag = false;
 
-  csm->vecXValues = NULL;
-  csm->vecYValues = NULL;
+  csm->vecXValues = nullptr;
+  csm->vecYValues = nullptr;
 
 #else
 
@@ -791,12 +791,12 @@ _unset_cusparse_map(cs_matrix_t   *matrix)
 #endif
 
   csm->nnz = 0;
-  csm->d_row_index = NULL;
-  csm->d_col_id = NULL;
-  csm->d_e_val = NULL;
+  csm->d_row_index = nullptr;
+  csm->d_col_id = nullptr;
+  csm->d_e_val = nullptr;
 
   BFT_FREE(matrix->ext_lib_map);
-  matrix->destroy_adaptor = NULL;
+  matrix->destroy_adaptor = nullptr;
 }
 
 /*----------------------------------------------------------------------------
@@ -812,7 +812,7 @@ _set_cusparse_map(cs_matrix_t   *matrix)
   cs_matrix_cusparse_map_t *csm
     = (cs_matrix_cusparse_map_t *)matrix->ext_lib_map;
 
-  if (csm != NULL) {
+  if (csm != nullptr) {
     _unset_cusparse_map(matrix);
   }
   else {
@@ -854,7 +854,7 @@ _set_cusparse_map(cs_matrix_t   *matrix)
 
   cusparseStatus_t status = CUSPARSE_STATUS_SUCCESS;
 
-  if (_handle == NULL)
+  if (_handle == nullptr)
     status = cusparseCreate(&_handle);
 
 #if defined(HAVE_CUSPARSE_GENERIC_API)
@@ -868,13 +868,13 @@ _set_cusparse_map(cs_matrix_t   *matrix)
     bft_error(__FILE__, __LINE__, 0, _("%s: %s."),
               __func__, cusparseGetErrorString(status));
 
-  csm->vecXValues = NULL;  /* Pointer to vector values */
-  csm->vecYValues = NULL;  /* Pointer to vector values */
-  csm->dBuffer = NULL;
+  csm->vecXValues = nullptr;  /* Pointer to vector values */
+  csm->vecYValues = nullptr;  /* Pointer to vector values */
+  csm->dBuffer = nullptr;
 
-  csm->d_e_val = NULL;
-  csm->d_row_index = NULL;
-  csm->d_col_id = NULL;
+  csm->d_e_val = nullptr;
+  csm->d_row_index = nullptr;
+  csm->d_col_id = nullptr;
 
   if (matrix->eb_size == 1) {
 
@@ -955,7 +955,7 @@ _update_cusparse_map(cs_matrix_cusparse_map_t  *csm,
                      void                      *d_x,
                      void                      *d_y)
 {
-  assert(csm != NULL);
+  assert(csm != nullptr);
 
 #if defined(HAVE_CUSPARSE_GENERIC_API)
 
@@ -970,7 +970,7 @@ _update_cusparse_map(cs_matrix_cusparse_map_t  *csm,
     = (sizeof(cs_real_t) == 8) ? CUDA_R_64F : CUDA_R_32F;
 
   if (d_x != csm->vecXValues) {
-    if (csm->vecXValues != NULL)
+    if (csm->vecXValues != nullptr)
       cusparseDestroyDnVec(csm->vecX);
 
     status = cusparseCreateDnVec(&(csm->vecX),
@@ -986,7 +986,7 @@ _update_cusparse_map(cs_matrix_cusparse_map_t  *csm,
   }
 
   if (d_y != csm->vecYValues) {
-    if (csm->vecYValues != NULL)
+    if (csm->vecYValues != nullptr)
       cusparseDestroyDnVec(csm->vecY);
 
     status = cusparseCreateDnVec(&(csm->vecY),
@@ -1001,7 +1001,7 @@ _update_cusparse_map(cs_matrix_cusparse_map_t  *csm,
     csm->vecYValues = d_y;
   }
 
-  if (csm->dBuffer == NULL) {
+  if (csm->dBuffer == nullptr) {
     size_t bufferSize = 0;
     cs_real_t alpha = 1.0;
     cs_real_t beta = 1.0;  /* 0 should be enough for SmPV, 1 needed for
@@ -1044,14 +1044,14 @@ _update_cusparse_map_block_diag(cs_matrix_cusparse_map_t  *csm,
                                 void                      *d_x,
                                 void                      *d_y)
 {
-  assert(csm != NULL);
+  assert(csm != nullptr);
 
   cusparseStatus_t status = CUSPARSE_STATUS_SUCCESS;
   cudaDataType_t val_dtype
     = (sizeof(cs_real_t) == 8) ? CUDA_R_64F : CUDA_R_32F;
 
   if (d_x != csm->vecXValues) {
-    if (csm->vecXValues != NULL)
+    if (csm->vecXValues != nullptr)
       cusparseDestroyDnMat(csm->matX);
 
     status = cusparseCreateDnMat(&(csm->matX),
@@ -1070,7 +1070,7 @@ _update_cusparse_map_block_diag(cs_matrix_cusparse_map_t  *csm,
   }
 
   if (d_y != csm->vecYValues) {
-    if (csm->vecYValues != NULL)
+    if (csm->vecYValues != nullptr)
       cusparseDestroyDnMat(csm->matY);
 
     status = cusparseCreateDnMat(&(csm->matY),
@@ -1088,7 +1088,7 @@ _update_cusparse_map_block_diag(cs_matrix_cusparse_map_t  *csm,
     csm->vecYValues = d_y;
   }
 
-  if (csm->dBuffer == NULL) {
+  if (csm->dBuffer == nullptr) {
     size_t bufferSize = 0;
     cs_real_t alpha = 1.0;
     cs_real_t beta = 1.0;  /* 0 should be enough for SmPV, 1 needed for
@@ -1144,9 +1144,9 @@ cs_matrix_spmv_cuda_finalize(void)
 
 #if defined(HAVE_CUSPARSE)
 
-  if (_handle != NULL) {
+  if (_handle != nullptr) {
     cusparseDestroy(_handle);
-    _handle = NULL;
+    _handle = nullptr;
   }
 
 #endif
@@ -1219,7 +1219,7 @@ cs_matrix_spmv_cuda_native(const cs_matrix_t  *matrix,
 
   /* Ghost cell communication */
 
-  cs_halo_state_t *hs = NULL;
+  cs_halo_state_t *hs = nullptr;
   if (sync)
     hs = _pre_vector_multiply_sync_x_start(matrix, d_x);
 
@@ -1237,14 +1237,14 @@ cs_matrix_spmv_cuda_native(const cs_matrix_t  *matrix,
 
   /* Finalize ghost cell comunication if overlap used */
 
-  if (hs != NULL)
+  if (hs != nullptr)
     cs_halo_sync_wait(matrix->halo, d_x, hs);
 
   cudaStreamSynchronize(_stream);
 
   /* Non-diagonal terms */
 
-  if (xa != NULL) {
+  if (xa != nullptr) {
     gridsize = cs_cuda_grid_size(ms->n_edges, blocksize);
 
     const cs_lnum_2_t *restrict edges
@@ -1372,7 +1372,7 @@ cs_matrix_spmv_cuda_csr_cusparse(cs_matrix_t  *matrix,
   cs_matrix_cusparse_map_t *csm
     = (cs_matrix_cusparse_map_t *)matrix->ext_lib_map;
 
-  if (csm == NULL) {
+  if (csm == nullptr) {
     matrix->ext_lib_map = _set_cusparse_map(matrix);
     csm = (cs_matrix_cusparse_map_t *)matrix->ext_lib_map;
   }
@@ -1589,7 +1589,7 @@ cs_matrix_spmv_cuda_msr_cusparse(cs_matrix_t  *matrix,
   cs_matrix_cusparse_map_t *csm
     = (cs_matrix_cusparse_map_t *)matrix->ext_lib_map;
 
-  if (csm == NULL) {
+  if (csm == nullptr) {
     matrix->ext_lib_map = _set_cusparse_map(matrix);
     csm = (cs_matrix_cusparse_map_t *)matrix->ext_lib_map;
   }
@@ -1832,7 +1832,7 @@ cs_matrix_spmv_cuda_msr_b_cusparse(cs_matrix_t  *matrix,
   cs_matrix_cusparse_map_t *csm
     = (cs_matrix_cusparse_map_t *)matrix->ext_lib_map;
 
-  if (csm == NULL) {
+  if (csm == nullptr) {
     matrix->ext_lib_map = _set_cusparse_map(matrix);
     csm = (cs_matrix_cusparse_map_t *)matrix->ext_lib_map;
   }
@@ -1942,7 +1942,7 @@ cs_matrix_spmv_cuda_msr_bb_cusparse(cs_matrix_t  *matrix,
   cs_matrix_cusparse_map_t *csm
     = (cs_matrix_cusparse_map_t *)matrix->ext_lib_map;
 
-  if (csm == NULL) {
+  if (csm == nullptr) {
     matrix->ext_lib_map = _set_cusparse_map(matrix);
     csm = (cs_matrix_cusparse_map_t *)matrix->ext_lib_map;
   }

@@ -66,7 +66,7 @@ BEGIN_C_DECLS
  *
  * \param[in] str1  Longest string which should contain the token at its
  *                  beginning
- * \param[in] str2  Shortest string. If nullptr treated as 0 length string.
+ * \param[in] str2  Shortest string. If null treated as 0 length string.
  *
  * \returns token
  */

@@ -97,7 +97,7 @@ fvm_to_medcoupling_init_writer(const char             *name,
  *   this_writer_p <-- pointer to opaque MEDCoupling writer structure.
  *
  * returns:
- *   NULL pointer.
+ *   null pointer.
  *----------------------------------------------------------------------------*/
 
 void *

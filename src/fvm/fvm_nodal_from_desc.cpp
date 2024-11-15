@@ -1186,7 +1186,7 @@ _optimize_sections_parent_num(const int             n_sections,
  * Add nodal mesh structure sections to a nodal mesh.
  *
  * Sections to add are defined by an array of section pointers,
- * which may contain nullptr entries. Only the non-nullptr entries are
+ * which may contain nullptr entries. Only the non-null entries are
  * added to the nodal mesh structure, and they belong to that structure
  * from this point on (i.e. their lifecycle is based upon that of
  * the nodal mesh structure).
@@ -1496,7 +1496,7 @@ fvm_nodal_from_desc_add_cells(fvm_nodal_t        *this_nodal,
 /*----------------------------------------------------------------------------
  * Convert and add faces from an descending connectivity mesh to a nodal mesh.
  *
- * If the optional filter list extr_faces[] argument is non-nullptr, faces
+ * If the optional filter list extr_faces[] argument is non-null, faces
  * {extr_faces[0], extr_faces[1], extr_faces[n_extr_faces - 1]} are converted
  * and added to the nodal mesh. If this filter is set to nullptr, faces
  * {1, 2, ..., n_extr_faces} are considered.

@@ -183,7 +183,7 @@ cs_equation_system_param_create(const char       *name,
  *
  * \param[in, out] sysp     pointer to the structure to free
  *
- * \return a NULL pointer
+ * \return a null pointer
  */
 /*----------------------------------------------------------------------------*/
 

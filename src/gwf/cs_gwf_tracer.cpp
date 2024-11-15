@@ -116,7 +116,7 @@ static cs_real_t *cs_shared_liquid_saturation = nullptr;
  * \param[in]      connect       pointer to a cs_cdo_connect_t structure
  * \param[in]      quant         pointer to a cs_cdo_quantities_t structure
  * \param[in]      t_eval        time at which one performs the evaluation
- * \param[in]      context       nullptr or pointer to a structure cast
+ * \param[in]      context       null or pointer to a structure cast
  * on-the_fly \param[in, out] result        array storing the result (must be
  * allocated)
  */
@@ -204,7 +204,7 @@ _get_time_pty4std_sat_tracer_cw(const cs_cell_mesh_t    *cm,
  * \param[in]      connect       pointer to a cs_cdo_connect_t structure
  * \param[in]      quant         pointer to a cs_cdo_quantities_t structure
  * \param[in]      t_eval        time at which one performs the evaluation
- * \param[in]      context       nullptr or pointer to a structure cast
+ * \param[in]      context       null or pointer to a structure cast
  * on-the_fly \param[in, out] result        array storing the result (must be
  * allocated)
  */
@@ -291,7 +291,7 @@ _get_time_pty4std_tracer_cw(const cs_cell_mesh_t    *cm,
  * \param[in]      connect       pointer to a cs_cdo_connect_t structure
  * \param[in]      quant         pointer to a cs_cdo_quantities_t structure
  * \param[in]      t_eval        time at which one performs the evaluation
- * \param[in]      context       nullptr or pointer to a structure cast
+ * \param[in]      context       null or pointer to a structure cast
  * on-the_fly \param[in, out] result        array storing the result (must be
  * allocated)
  */
@@ -340,7 +340,7 @@ _get_reaction_pty4std_sat_tracer(cs_lnum_t                    n_elts,
  *
  * \param[in]      cm       pointer to a cs_cell_mesh_t structure
  * \param[in]      t_eval   time at which one performs the evaluation
- * \param[in]      context  nullptr or pointer to a structure cast on-the_fly
+ * \param[in]      context  null or pointer to a structure cast on-the_fly
  * \param[in, out] result   array storing the result (must be allocated)
  */
 /*----------------------------------------------------------------------------*/
@@ -377,7 +377,7 @@ _get_reaction_pty4std_sat_tracer_cw(const cs_cell_mesh_t     *cm,
  * \param[in]      connect       pointer to a cs_cdo_connect_t structure
  * \param[in]      quant         pointer to a cs_cdo_quantities_t structure
  * \param[in]      t_eval        time at which one performs the evaluation
- * \param[in]      context       nullptr or pointer to a structure cast
+ * \param[in]      context       null or pointer to a structure cast
  * on-the_fly \param[in, out] result        array storing the result (must be
  * allocated)
  */
@@ -434,7 +434,7 @@ _get_reaction_pty4std_tracer(cs_lnum_t                    n_elts,
  *
  * \param[in]      cm       pointer to a cs_cell_mesh_t structure
  * \param[in]      t_eval   time at which one performs the evaluation
- * \param[in]      context  nullptr or pointer to a structure cast on-the_fly
+ * \param[in]      context  null or pointer to a structure cast on-the_fly
  * \param[in, out] result   array storing the result (must be allocated)
  */
 /*----------------------------------------------------------------------------*/
@@ -467,7 +467,7 @@ _get_reaction_pty4std_tracer_cw(const cs_cell_mesh_t *cm,
  *         Generic function relying on the prototype cs_gwf_tracer_update_t
  *
  * \param[in, out] tracer     pointer to a cs_gwf_tracer_structure
- * \param[in, out] context    nullptr or pointer to a structure cast on-the-fly
+ * \param[in, out] context    null or pointer to a structure cast on-the-fly
  * \param[in]      ts         pointer to a cs_time_step_t structure
  * \param[in]      mesh       pointer to a cs_mesh_t structure
  * \param[in]      connect    pointer to a cs_cdo_connect_t structure
@@ -531,7 +531,7 @@ _update_diff_value(cs_gwf_tracer_t           *tracer,
  *         Generic function relying on the prototype cs_gwf_tracer_update_t
  *
  * \param[in, out] tracer     pointer to a cs_gwf_tracer_structure
- * \param[in, out] context    nullptr or pointer to a structure cast on-the-fly
+ * \param[in, out] context    null or pointer to a structure cast on-the-fly
  * \param[in]      ts         pointer to a cs_time_step_t structure
  * \param[in]      mesh       pointer to a cs_mesh_t structure
  * \param[in]      connect    pointer to a cs_cdo_connect_t structure
@@ -619,7 +619,7 @@ _update_diff_tensor(cs_gwf_tracer_t             *tracer,
  *        Generic function relying on the prototype cs_gwf_tracer_update_t
  *
  * \param[in, out] tracer     pointer to a cs_gwf_tracer_structure
- * \param[in, out] context    nullptr or pointer to a structure cast on-the-fly
+ * \param[in, out] context    null or pointer to a structure cast on-the-fly
  * \param[in]      ts         pointer to a cs_time_step_t structure
  * \param[in]      mesh       pointer to a cs_mesh_t structure
  * \param[in]      connect    pointer to a cs_cdo_connect_t structure
@@ -1533,7 +1533,7 @@ _create_tracer(cs_gwf_tracer_model_t    tr_model,
  *        Generic function relying on the prototype cs_gwf_tracer_update_t
  *
  * \param[in, out] tracer     pointer to a cs_gwf_tracer_structure
- * \param[in, out] context    nullptr or pointer to a structure cast on-the-fly
+ * \param[in, out] context    null or pointer to a structure cast on-the-fly
  * \param[in]      ts         pointer to a cs_time_step_t structure
  * \param[in]      mesh       pointer to a cs_mesh_t structure
  * \param[in]      connect    pointer to a cs_cdo_connect_t structure
@@ -1625,7 +1625,7 @@ _vb_sat_decay_chain_molar_st(cs_gwf_tracer_t             *tracer,
  *        Generic function relying on the prototype cs_gwf_tracer_update_t
  *
  * \param[in, out] tracer     pointer to a cs_gwf_tracer_structure
- * \param[in, out] context    nullptr or pointer to a structure cast on-the-fly
+ * \param[in, out] context    null or pointer to a structure cast on-the-fly
  * \param[in]      ts         pointer to a cs_time_step_t structure
  * \param[in]      mesh       pointer to a cs_mesh_t structure
  * \param[in]      connect    pointer to a cs_cdo_connect_t structure
@@ -1716,7 +1716,7 @@ _vb_decay_chain_molar_st(cs_gwf_tracer_t             *tracer,
  *        Generic function relying on the prototype cs_gwf_tracer_update_t
  *
  * \param[in, out] tracer     pointer to a cs_gwf_tracer_structure
- * \param[in, out] context    nullptr or pointer to a structure cast on-the-fly
+ * \param[in, out] context    null or pointer to a structure cast on-the-fly
  * \param[in]      ts         pointer to a cs_time_step_t structure
  * \param[in]      mesh       pointer to a cs_mesh_t structure
  * \param[in]      connect    pointer to a cs_cdo_connect_t structure
@@ -1810,7 +1810,7 @@ _vb_sat_decay_chain_becqu_st(cs_gwf_tracer_t             *tracer,
  *        Generic function relying on the prototype cs_gwf_tracer_update_t
  *
  * \param[in, out] tracer     pointer to a cs_gwf_tracer_structure
- * \param[in, out] context    nullptr or pointer to a structure cast on-the-fly
+ * \param[in, out] context    null or pointer to a structure cast on-the-fly
  * \param[in]      ts         pointer to a cs_time_step_t structure
  * \param[in]      mesh       pointer to a cs_mesh_t structure
  * \param[in]      connect    pointer to a cs_cdo_connect_t structure
@@ -2240,7 +2240,7 @@ cs_gwf_tracer_get_time_theta_max(void)
  *        tracer transport equation for a specified soil
  *
  * \param[in, out] tracer          pointer to a cs_gwf_tracer_t structure
- * \param[in]      soil_name       name of the related soil (or nullptr if all
+ * \param[in]      soil_name       name of the related soil (or null if all
  *                                 soils are selected)
  * \param[in]      wmd             value of the water molecular diffusivity
  * \param[in]      alpha_l         value of the longitudinal dispersivity
@@ -2309,7 +2309,7 @@ cs_gwf_tracer_set_soil_param(cs_gwf_tracer_t   *tracer,
  *         precipitation modelling of a tracer transport
  *
  * \param[in, out] tracer          pointer to a cs_gwf_tracer_t structure
- * \param[in]      soil_name       name of the related soil (or nullptr if all
+ * \param[in]      soil_name       name of the related soil (or null if all
  *                                 soils are selected)
  * \param[in]      conc_l_star     value of the saturated concentration in the
  *                                 liquid phase
@@ -3137,7 +3137,7 @@ cs_gwf_tracer_unsat_finalize_setup(const cs_cdo_connect_t      *connect,
  * \param[in]    cdoq      pointer to a \ref cs_cdo_quantities_t structure
  * \param[in]    tracer    pointer to a \ref cs_gwf_tracer_t structure
  * \param[in]    z_name    name of the volumic zone where the integral is done
- *                         (if nullptr or "" all cells are considered)
+ *                         (if null or "" all cells are considered)
  *
  * \return the value of the integral (number of moles in the zone)
  *         parallel synchronization is done
@@ -3191,7 +3191,7 @@ cs_gwf_tracer_integrate(const cs_cdo_connect_t     *connect,
  * \param[in]      cdoq      pointer to a \ref cs_cdo_quantities_t structure
  * \param[in]      tracer    pointer to a \ref cs_gwf_tracer_t structure
  * \param[in]      z_name    name of the volume zone where the integral is
- *                           done (if nullptr or "" all cells are considered)
+ *                           done (if null or "" all cells are considered)
  * \param[in, out] results   array of values. [0]= the quantity of moles
  *                           in the liquid phase, [1]= the quantity of
  *                           moles inside the precipitation state
@@ -3289,7 +3289,7 @@ cs_gwf_tracer_create_decay_chain(int                      n_tracers,
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Retrieve the decay chain structure associated to the given id
- *        If not found, it returns the nullptr pointer.
+ *        If not found, it returns the null pointer.
  *
  * \param[in] id   id of the decay chain to retrieve
  *
@@ -3313,7 +3313,7 @@ cs_gwf_tracer_decay_chain_by_id(int        id)
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Retrieve the decay chain structure associated to the name given as
- *        parameter. If not found, it returns the nullptr pointer.
+ *        parameter. If not found, it returns the null pointer.
  *
  * \param[in] chain_name   name of the decay chain
  *

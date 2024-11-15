@@ -1362,7 +1362,7 @@ cs_mem_realloc(void        *ptr,
  *
  * This function calls free(), but adds tracing capabilities, and
  * automatically calls the bft_error() errorhandler if it fails to
- * free the corresponding memory. In case of a nullptr pointer argument,
+ * free the corresponding memory. In case of a null pointer argument,
  * the function simply returns.
  *
  * \param [in] ptr       pointer to previous memory location
@@ -1371,7 +1371,7 @@ cs_mem_realloc(void        *ptr,
  * \param [in] file_name name of calling source file
  * \param [in] line_num  line number in calling source file
  *
- * \returns nullptr pointer.
+ * \returns null pointer.
  */
 /*----------------------------------------------------------------------------*/
 
@@ -1381,7 +1381,7 @@ cs_mem_free(void        *ptr,
             const char  *file_name,
             int          line_num)
 {
-  /* nullptr pointer case (non-allocated location) */
+  /* null pointer case (non-allocated location) */
 
   if (ptr == nullptr)
     return nullptr;

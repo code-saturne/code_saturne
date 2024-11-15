@@ -137,7 +137,7 @@ void *cs_macfb_monolithic_init_scheme_context(const cs_navsto_param_t *nsp,
  *
  * \param[in] scheme_context   pointer to a scheme context structure to free
  *
- * \return a NULL pointer
+ * \return a null pointer
  */
 /*----------------------------------------------------------------------------*/
 

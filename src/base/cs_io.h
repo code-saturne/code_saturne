@@ -97,7 +97,7 @@ extern int       cs_glob_io_hints;
 /*----------------------------------------------------------------------------
  * Initialize a kernel IO file structure.
  *
- * The magic string may be NULL only in read mode;
+ * The magic string may be null only in read mode;
  *
  * If the position of section bodies is already known (after initial
  * analysis for example), the file may be opened for reading section bodies
@@ -148,7 +148,7 @@ cs_io_initialize(const char        *file_name,
 /*----------------------------------------------------------------------------
  * Initialize a kernel IO file structure in read mode, building an index.
  *
- * The magic string may be NULL, if we choose to ignore it.
+ * The magic string may be null, if we choose to ignore it.
  *
  * parameters:
  *   name         <-- file name
@@ -190,7 +190,7 @@ cs_io_initialize_with_index(const char        *file_name,
  * Initialize a kernel IO file structure with in-memory data,
  * building an index.
  *
- * The magic string may be NULL, if we choose to ignore it.
+ * The magic string may be null, if we choose to ignore it.
  *
  * parameters:
  *   name         <-- file name
@@ -270,7 +270,7 @@ cs_io_get_index_size(const cs_io_t  *inp);
  *   id  <-- id of section in index (0 to n-1 numbering)
  *
  * returns:
- *   pointer to section name if id in index range, NULL otherwise
+ *   pointer to section name if id in index range, null otherwise
  *----------------------------------------------------------------------------*/
 
 const char *
@@ -411,17 +411,17 @@ cs_io_assert_cs_real(const cs_io_sec_header_t  *header,
  *
  * If the array intended to receive the data already exists, we pass an
  * "elt" pointer to this array; this same pointer is then returned.
- * Otherwise, if this pointer is passed as NULL, memory is allocated
+ * Otherwise, if this pointer is passed as null, memory is allocated
  * by this function, and the corresponding pointer is returned. It is
  * the caller's responsibility to free this array.
  *
  * parameters:
  *   header           <-- header structure
- *   elts             <-> pointer to data array, or NULL
+ *   elts             <-> pointer to data array, or null
  *   pp_io            --> kernel IO structure
  *
  * returns:
- *   elts if non NULL, or pointer to allocated array otherwise
+ *   elts if non-null, or pointer to allocated array otherwise
  *----------------------------------------------------------------------------*/
 
 void *
@@ -439,7 +439,7 @@ cs_io_read_global(const cs_io_sec_header_t  *header,
  *
  * If the array intended to receive the data already exists, we pass an
  * "elt" pointer to this array; this same pointer is then returned.
- * Otherwise, if this pointer is passed as NULL, memory is allocated
+ * Otherwise, if this pointer is passed as null, memory is allocated
  * by this function, and the corresponding pointer is returned. It is
  * the caller's responsibility to free this array.
  *
@@ -448,11 +448,11 @@ cs_io_read_global(const cs_io_sec_header_t  *header,
  *   global_num_start <-- global number of first block item (1 to n numbering)
  *   global_num_end   <-- global number of past-the end block item
  *                        (1 to n numbering)
- *   elts             <-> pointer to data array, or NULL
+ *   elts             <-> pointer to data array, or null
  *   pp_io            --> kernel IO structure
  *
  * returns:
- *   elts if non NULL, or pointer to allocated array otherwise
+ *   elts if non-null, or pointer to allocated array otherwise
  *----------------------------------------------------------------------------*/
 
 void *
@@ -478,7 +478,7 @@ cs_io_read_block(const cs_io_sec_header_t  *header,
  *
  * If the array intended to receive the data already exists, we pass an
  * "elt" pointer to this array; this same pointer is then returned.
- * Otherwise, if this pointer is passed as NULL, memory is allocated
+ * Otherwise, if this pointer is passed as null, memory is allocated
  * by this function, and the corresponding pointer is returned. It is
  * the caller's responsibility to free this array.
  *
@@ -487,11 +487,11 @@ cs_io_read_block(const cs_io_sec_header_t  *header,
  *   global_num_start <-- global number of first block item (1 to n numbering)
  *   global_num_end   <-- global number of past-the end block item
  *                        (1 to n numbering)
- *   elts             <-> pointer to data array, or NULL
+ *   elts             <-> pointer to data array, or null
  *   pp_io            --> kernel IO structure
  *
  * returns:
- *   elts if non NULL, or pointer to allocated array otherwise
+ *   elts if non-null, or pointer to allocated array otherwise
  *----------------------------------------------------------------------------*/
 
 void *

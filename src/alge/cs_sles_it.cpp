@@ -2779,8 +2779,8 @@ _bicgstab2(cs_sles_it_t              *c,
  *   givens_coeff   <-> pre-allocated vector of a_size elements
  *                      input: previous Givens coefficients
  *                      output: updated Givens coefficients
- *   update_rank    <-- rank of first non null coefficient on lower diagonal
- *   end_update     <-- rank of last non null coefficient on lower diagonal
+ *   update_rank    <-- rank of first non-null coefficient on lower diagonal
+ *   end_update     <-- rank of last non-null coefficient on lower diagonal
  *----------------------------------------------------------------------------*/
 
 static void
@@ -5211,7 +5211,7 @@ cs_sles_it_set_shareable(cs_sles_it_t        *context,
 /*!
  * \brief Set MPI communicator for global reductions.
  *
- * The system is solved only on ranks with a non-nullptr communicator or
+ * The system is solved only on ranks with a non-null communicator or
  * if the caller communicator has less than 2 ranks. convergence info
  * is the broadcast across the caller communicator.
  *

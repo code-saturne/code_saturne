@@ -348,7 +348,7 @@ cs_sles_log(cs_log_t  log_type);
  * \brief Return pointer to linear system object, based on matching field id or
  *        system name.
  *
- * If this system did not previously exist, NULL is returned.
+ * If this system did not previously exist, nullptr is returned.
  *
  * \param[in]  f_id  associated field id, or < 0
  * \param[in]  name  associated name if f_id < 0, or NULL

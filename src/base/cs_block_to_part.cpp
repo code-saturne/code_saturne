@@ -100,7 +100,7 @@ BEGIN_C_DECLS
  * The returned all to all distributor should be used in reverse
  * mode to copy data from the block to partition distribution.
  *
- * If the part_gnum array is requested (i.e. passed an non-nullptr pointer),
+ * If the part_gnum array is requested (i.e. passed an non-null pointer),
  * the caller is responsible for freeing it.
  *
  * \param[in]   comm               communicator
@@ -109,11 +109,12 @@ BEGIN_C_DECLS
  * \param[in]   stride             stride of adjacency array (1 or 2)
  * \param[in]   adjacency          entity adjacency (1 to n numbering)
  * \param[in]   adjacent_ent_rank  destination rank for adjacent entities, or
- *                                 nullptr if based on block size and range
- * only. \param[in]   default_rank       default rank in case there is no
- * adjacency, or nullptr \param[out]  n_part_elts        number of elements in
- * partition, or nullptr \param[out]  part_gnum          global elements numbers
- * in partition, or nullptr
+ *                                 null if based on block size and range only.
+ * \param[in]   default_rank       default rank in case there is no adjacency,
+ *                                 or null.
+ * \param[out]  n_part_elts        number of elements in partition, or null
+ * \param[out]  part_gnum          global elements numbers in partition,
+ *                                 or null
  *
  * \return  initialized all to all block to partition distributor
  */

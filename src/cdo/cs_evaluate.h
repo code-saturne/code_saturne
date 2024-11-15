@@ -80,7 +80,7 @@ cs_evaluate_init_sharing(const cs_cdo_quantities_t    *quant,
  * \param[in]      dim     local array dimension (max: 3)
  * \param[in]      n_x     number of elements
  * \param[in]      array   array to analyze
- * \param[in]      w_x     weight to apply (may be set to  NULL)
+ * \param[in]      w_x     weight to apply (may be set to  null)
  * \param[in, out] min     resulting min array (size: dim, or 4 if dim = 3)
  * \param[in, out] max     resulting max array (size: dim, or 4 if dim = 3)
  * \param[in, out] wsum    (weighted) sum array (size: dim, or 4 if dim = 3)
@@ -112,7 +112,7 @@ cs_evaluate_array_reduction(int                     dim,
  * \param[in]      n_x     number of elements
  * \param[in]      array   array to analyze
  * \param[in]      c2x     pointer to the associated cs_adjacency_t structure
- * \param[in]      w_x     weight to apply (may be set to  NULL)
+ * \param[in]      w_x     weight to apply (may be set to  null)
  * \param[in, out] min     resulting min array (size: dim, or 4 if dim = 3)
  * \param[in, out] max     resulting max array (size: dim, or 4 if dim = 3)
  * \param[in, out] wsum    (weighted) sum array (size: dim, or 4 if dim = 3)
@@ -327,7 +327,7 @@ cs_evaluate_potential_at_cells_by_dof_func(const cs_xdef_t   *def,
  * \brief  Define a value to each DoF in the case of a potential field in order
  *         to put a given quantity inside the volume associated to the zone
  *         related to the given definition
- *         wvals may be NULL.
+ *         wvals may be null.
  *
  * \param[in]      dof_flag  indicate where the evaluation has to be done
  * \param[in]      def       pointer to a cs_xdef_t pointer

@@ -77,7 +77,7 @@ bft_backtrace_create(void);
  *   bt: <-> pointer to backtrace description structure.
  *
  * returns:
- *   NULL pointer.
+ *   null pointer.
  */
 
 bft_backtrace_t *

@@ -116,7 +116,7 @@ fvm_tesselation_create(fvm_element_t        element_type,
  *   this_tesselation <-> pointer to structure that should be destroyed
  *
  * returns:
- *  NULL pointer
+ *  null pointer
  *----------------------------------------------------------------------------*/
 
 fvm_tesselation_t *

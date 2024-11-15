@@ -101,7 +101,7 @@ typedef void
  *         This function depends on a numerical scheme and a physical model.
  *
  * \param[in, out] tracer     pointer to a cs_gwf_tracer_structure
- * \param[in, out] context    NULL or pointer to a structure cast on-the-fly
+ * \param[in, out] context    null or pointer to a structure cast on-the-fly
  * \param[in]      ts         pointer to a cs_time_step_t structure
  * \param[in]      mesh       pointer to a cs_mesh_t structure
  * \param[in]      connect    pointer to a cs_cdo_connect_t structure
@@ -204,7 +204,7 @@ struct _gwf_tracer_default_context_t {
 
   double    *wmd;           /* Water molecular diffusivity (m^2.s^-1) */
 
-  /* Precipitation members (set to NULL if not used) */
+  /* Precipitation members (set to null if not used) */
   /* ----------------------------------------------- */
 
   double       *conc_l_star;    /* maximal value of the concentration of
@@ -226,7 +226,7 @@ struct _gwf_tracer_default_context_t {
                                  * in mol/kg in each cell.
                                  */
 
-  /* Sorption members (set to NULL if not used) */
+  /* Sorption members (set to null if not used) */
   /* ------------------------------------------ */
 
   double       *k0_plus;        /* kinetic coefficient towards site 2 locations
@@ -269,7 +269,7 @@ struct _gwf_tracer_t {
 
   /*! \var diffusivity
    *       Field related to the property associated to the diffusion term.
-   *       NULL if no diffusion term is build in the tracer equation.
+   *       null if no diffusion term is build in the tracer equation.
    */
 
   cs_field_t             *diffusivity;
@@ -457,7 +457,7 @@ cs_gwf_tracer_get_time_theta_max(void);
  *        tracer transport equation for a specified soil
  *
  * \param[in, out] tracer          pointer to a cs_gwf_tracer_t structure
- * \param[in]      soil_name       name of the related soil (or NULL if all
+ * \param[in]      soil_name       name of the related soil (or null if all
  *                                 soils are selected)
  * \param[in]      wmd             value of the water molecular diffusivity
  * \param[in]      alpha_l         value of the longitudinal dispersivity
@@ -480,7 +480,7 @@ cs_gwf_tracer_set_soil_param(cs_gwf_tracer_t   *tracer,
  *         precipitation modelling of a tracer transport
  *
  * \param[in, out] tracer          pointer to a cs_gwf_tracer_t structure
- * \param[in]      soil_name       name of the related soil (or NULL if all
+ * \param[in]      soil_name       name of the related soil (or null if all
  *                                 soils are selected)
  * \param[in]      conc_l_star     value of the saturated concentration in the
  *                                 liquid phase
@@ -641,7 +641,7 @@ cs_gwf_tracer_unsat_finalize_setup(const cs_cdo_connect_t      *connect,
  * \param[in]    cdoq      pointer to a \ref cs_cdo_quantities_t structure
  * \param[in]    tracer    pointer to a \ref cs_gwf_tracer_t structure
  * \param[in]    z_name    name of the volumic zone where the integral is done
- *                         (if NULL or "" all cells are considered)
+ *                         (if null or "" all cells are considered)
  *
  * \return the value of the integral (number of moles in the zone)
  *         parallel synchronization is done
@@ -667,7 +667,7 @@ cs_gwf_tracer_integrate(const cs_cdo_connect_t     *connect,
  * \param[in]      cdoq      pointer to a \ref cs_cdo_quantities_t structure
  * \param[in]      tracer    pointer to a \ref cs_gwf_tracer_t structure
  * \param[in]      z_name    name of the volume zone where the integral is
- *                           done (if NULL or "" all cells are considered)
+ *                           done (if null or "" all cells are considered)
  * \param[in, out] results   array of values. [0]= the quantity of moles
  *                           in the liquid phase, [1]= the quantity of
  *                           moles inside the precipitation state
@@ -701,11 +701,11 @@ cs_gwf_tracer_create_decay_chain(int                      n_tracers,
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Retrieve the decay chain structure associated to the given id
- *        If not found, it returns the NULL pointer.
+ *        If not found, it returns the null pointer.
  *
  * \param[in] id   id of the decay chain to retrieve
  *
- * \return a pointer to a new cs_gwf_tracer_decay_chain_t structure or NULL
+ * \return a pointer to a new cs_gwf_tracer_decay_chain_t structure or null
  */
 /*----------------------------------------------------------------------------*/
 
@@ -715,11 +715,11 @@ cs_gwf_tracer_decay_chain_by_id(int        id);
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Retrieve the decay chain structure associated to the name given as
- *        parameter. If not found, it returns the NULL pointer.
+ *        parameter. If not found, it returns the null pointer.
  *
  * \param[in] chain_name   name of the decay chain
  *
- * \return a pointer to a new cs_gwf_tracer_decay_chain_t structure or NULL
+ * \return a pointer to a new cs_gwf_tracer_decay_chain_t structure or null
  */
 /*----------------------------------------------------------------------------*/
 
@@ -729,13 +729,13 @@ cs_gwf_tracer_decay_chain_by_name(const char      *chain_name);
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Retrieve the tracer structure for the tracer at the position "id"
- *        in the decay chain structure. If "id" is not valid, then a NULL
+ *        in the decay chain structure. If "id" is not valid, then a null
  *        pointer is returned.
  *
  * \param[in] tdc   pointer to a decay chain structure
  * \param[in] id    position of the tracer in the decay chain
  *
- * \return a pointer to a cs_gwf_tracer_t structure or NULL
+ * \return a pointer to a cs_gwf_tracer_t structure or null
  */
 /*----------------------------------------------------------------------------*/
 
@@ -746,13 +746,13 @@ cs_gwf_tracer_decay_chain_get_tracer(cs_gwf_tracer_decay_chain_t  *tdc,
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Retrieve the equation structure for the tracer at the position "id"
- *        in the decay chain structure. If "id" is not valid, then a NULL
+ *        in the decay chain structure. If "id" is not valid, then a null
  *        pointer is returned.
  *
  * \param[in] tdc   pointer to a decay chain structure
  * \param[in] id    position of the tracer in the decay chain
  *
- * \return a pointer to a cs_equation_t structure or NULL
+ * \return a pointer to a cs_equation_t structure or null
  */
 /*----------------------------------------------------------------------------*/
 
@@ -763,13 +763,13 @@ cs_gwf_tracer_decay_chain_get_equation(cs_gwf_tracer_decay_chain_t  *tdc,
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Retrieve the equation parameters for the tracer at the position "id"
- *        in the decay chain structure. If "id" is not valid, then a NULL
+ *        in the decay chain structure. If "id" is not valid, then a null
  *        pointer is returned.
  *
  * \param[in] tdc   pointer to a decay chain structure
  * \param[in] id    position of the tracer in the decay chain
  *
- * \return a pointer to a cs_equation_param_t structure or NULL
+ * \return a pointer to a cs_equation_param_t structure or null
  */
 /*----------------------------------------------------------------------------*/
 

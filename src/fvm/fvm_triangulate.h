@@ -94,7 +94,7 @@ fvm_triangulate_state_create(const int  n_vertices_max);
  *   this_state  <-> pointer to structure that should be destroyed.
  *
  * returns:
- *   NULL pointer.
+ *   null pointer.
  *----------------------------------------------------------------------------*/
 
 fvm_triangulate_state_t *

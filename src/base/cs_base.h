@@ -211,7 +211,7 @@ cs_exit(int  status);
  * Initialize error and signal handlers.
  *
  * parameters:
- *   signal_defaults <-- leave default signal handlers in place if true.
+ *   signal_defaults <-- leave default signal handlers in place if true
  *----------------------------------------------------------------------------*/
 
 void
@@ -251,9 +251,9 @@ cs_base_time_summary(void);
 /*!
  * \brief Update status file.
  *
- * If the format string is NULL, the file is removed.
+ * If the format string is null, the file is removed.
 
- * \param[in]  format  format string, or NULL
+ * \param[in]  format  format string, or nullptr
  * \param[in]  ...     format arguments
  */
 /*----------------------------------------------------------------------------*/
@@ -265,12 +265,15 @@ cs_base_update_status(const char  *format,
 /*----------------------------------------------------------------------------
  * Set tracing of progress on or off.
  *
+ * This function should be called before cs_base_bft_printf_set() if tracing
+ * is activated.
+ *
  * parameters:
  *   trace  <-- trace progress to stdout
  *----------------------------------------------------------------------------*/
 
 void
-cs_base_trace_set(bool trace);
+cs_base_trace_set(bool  trace);
 
 
 /*----------------------------------------------------------------------------
@@ -280,7 +283,6 @@ cs_base_trace_set(bool trace);
  *
  * parameters:
  *   log_name    <-- base file name for log
- *   rn_log_flag <-- redirection for ranks > 0 log:
  *   rn_log_flag <-- redirection for ranks > 0 log:
  *                   false: to "/dev/null" (suppressed)
  *                   true: to <log_name>_r*.log" file;
@@ -297,6 +299,9 @@ cs_base_bft_printf_init(const char  *log_name,
  *
  * parameters:
  *   log_name    <-- base file name for log
+ *   rn_log_flag <-- redirection for ranks > 0 log:
+ *                   false: to "/dev/null" (suppressed)
+ *                   true: to <log_name>_r*.log" file;
  *----------------------------------------------------------------------------*/
 
 void
@@ -457,7 +462,7 @@ cs_base_open_properties_data_file(const char  *base_name);
 /*!
  * \brief Load a dynamic library.
  *
- * \param[in]  filename  path to shared library file.
+ * \param[in]  filename  path to shared library file
  *
  * \return  handle to shared library
  */
@@ -514,7 +519,7 @@ cs_base_dlopen_set_flags(int flags);
  * the same number of times as \ref cs_base_dlopen.
  *
  * \param[in]  filename  optional path to shared library file name for error
- *                       logging, or NULL
+ *                       logging, or nullptr
  * \param[in]  handle    handle to shared library
  */
 /*----------------------------------------------------------------------------*/
@@ -586,7 +591,7 @@ cs_base_finalize_sequence(void);
 /*!
  * \brief Query run-time directory info, using working directory names.
  *
- * Returned names are allocated if non-NULL, so should be deallocated by
+ * Returned names are allocated if non-null, so should be deallocated by
  * the caller when no longer needed.
  *
  * Names are extracted from the working directory structure, which is expected
@@ -596,11 +601,11 @@ cs_base_finalize_sequence(void);
  * or, in the case of a coupled run:
  * <prefix>/study_name/RESU_COUPLING/run_id/case_name
  *
- * If some names cannot be queried, NULL is returned.
+ * If some names cannot be queried, nullptr is returned.
  *
- * \param[out]  run_id      run_id, or NULL
- * \param[out]  case_name   case name, or NULL
- * \param[out]  study_name  study name, or NULL
+ * \param[out]  run_id      run_id, or nullptr
+ * \param[out]  case_name   case name, or nullptr
+ * \param[out]  study_name  study name, or nullptr
  */
 /*----------------------------------------------------------------------------*/
 

@@ -156,7 +156,7 @@ fvm_to_histogram_init_writer(const char             *name,
  *   writer <-- pointer to opaque histogram writer structure.
  *
  * returns:
- *   NULL pointer.
+ *   null pointer.
  *----------------------------------------------------------------------------*/
 
 void *

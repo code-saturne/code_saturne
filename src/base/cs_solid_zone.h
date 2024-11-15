@@ -63,13 +63,13 @@ BEGIN_C_DECLS
 /*!
  * \brief build solid flag for mesh cells.
  *
- * If no solid cells are present, NULL is returned.
+ * If no solid cells are present, returned pointer is null.
 
  * If non-empty, the caller is responsible for freeing the flag
  *
  * \param[in]   m         pointer to mesh
  *
- * \return  solid cell flag array (0 is fluid, 1 if solid), or NULL
+ * \return  solid cell flag array (0 is fluid, 1 if solid), or null
  */
 /*----------------------------------------------------------------------------*/
 

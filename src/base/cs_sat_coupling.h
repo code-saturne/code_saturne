@@ -62,7 +62,7 @@ typedef struct _cs_sat_coupling_t cs_sat_coupling_t;
  * Each function of this sort may be used to tag a mesh and associated
  * points for mocatin exclusion.
  *
- * Note: if the context pointer is non-NULL, it must point to valid data
+ * Note: if the context pointer is non-null, it must point to valid data
  * when the selection function is called, so that value or structure
  * should not be temporary (i.e. local);
  *

@@ -4212,7 +4212,7 @@ cs_solidification_set_segr_functions(cs_solidification_func_t  *vel_forcing,
 /*!
  * \brief  Free the main structure related to the solidification module
  *
- * \return a nullptr pointer
+ * \return a null pointer
  */
 /*----------------------------------------------------------------------------*/
 

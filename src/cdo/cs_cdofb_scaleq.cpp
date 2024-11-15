@@ -1094,7 +1094,7 @@ cs_cdofb_scaleq_init_context(cs_equation_param_t    *eqp,
  *
  * \param[in, out]  data   pointer to a cs_cdofb_scaleq_t structure
  *
- * \return a nullptr pointer
+ * \return a null pointer
  */
 /*----------------------------------------------------------------------------*/
 

@@ -415,14 +415,14 @@ _create_assembler(int  coupling_id)
  *----------------------------------------------------------------------------*/
 
 void
-cs_matrix_vector_native_multiply(bool                symmetric,
-                                 cs_lnum_t           db_size,
-                                 cs_lnum_t           eb_size,
-                                 int                 f_id,
-                                 const cs_real_t    *dam,
-                                 const cs_real_t    *xam,
-                                 cs_real_t          *vx,
-                                 cs_real_t          *vy)
+cs_matrix_vector_native_multiply(bool              symmetric,
+                                 cs_lnum_t         db_size,
+                                 cs_lnum_t         eb_size,
+                                 int               f_id,
+                                 const cs_real_t  *dam,
+                                 const cs_real_t  *xam,
+                                 cs_real_t        *vx,
+                                 cs_real_t        *vy)
 {
   const cs_mesh_t *m = cs_glob_mesh;
   cs_matrix_t *a;

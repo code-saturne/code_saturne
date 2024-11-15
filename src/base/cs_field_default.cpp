@@ -92,8 +92,8 @@ BEGIN_C_DECLS
 
 static cs_lnum_t    _n_vars_bc = 0;
 static cs_lnum_t    _n_b_faces = 0;
-static int         *_icodcl = NULL;
-static cs_real_t   *_rcodcl = NULL;
+static int         *_icodcl = nullptr;
+static cs_real_t   *_rcodcl = nullptr;
 
 /*============================================================================
  * Global variables
@@ -201,7 +201,7 @@ cs_variable_cdo_field_create(const char  *name,
     cs_field_set_key_int(f, cs_field_key_id("log"), 1);
     cs_field_set_key_int(f, cs_field_key_id("post_vis"), post_flag);
 
-    if (label != NULL) {
+    if (label != nullptr) {
       if (strlen(label) > 0)
         cs_field_set_key_str(f, cs_field_key_id("label"), label);
     }
@@ -250,7 +250,7 @@ cs_variable_field_create(const char  *name,
   cs_field_set_key_int(f, cs_field_key_id("log"), 1);
   cs_field_set_key_int(f, cs_field_key_id("post_vis"), post_flag);
 
-  if (label != NULL) {
+  if (label != nullptr) {
     if (strlen(label) > 0)
       cs_field_set_key_str(f, cs_field_key_id("label"), label);
   }
@@ -270,18 +270,18 @@ cs_variable_field_create(const char  *name,
  *
  * If the field does not have associated equation paremeters (i.e. is not
  * a variable field or is a CDO field (which is referenced by but does not
- * directly reference equations), NULL is returned.
+ * directly reference equations), nullptr is returned.
  *
  * \param[in, out]  f  pointer to associated field
  *
- * \return  pointer to field's equation parameters, or NULL
+ * \return  pointer to field's equation parameters, or nullptr
  */
 /*----------------------------------------------------------------------------*/
 
 cs_equation_param_t *
 cs_field_get_equation_param(cs_field_t  *f)
 {
-  assert(f != NULL);
+  assert(f != nullptr);
   cs_equation_param_t *eqp = nullptr;
 
   static int k_id = -1;
@@ -304,18 +304,18 @@ cs_field_get_equation_param(cs_field_t  *f)
  *
  * If the field does not have associated equation parameters (i.e. is not
  * a variable field or is a CDO field (which is referenced by but does not
- * directly reference equations), NULL is returned.
+ * directly reference equations), nullptr is returned.
  *
  * \param[in]  f  pointer to associated field
  *
- * \return  const-qualified pointer to field's equation parameters, or NULL
+ * \return  const-qualified pointer to field's equation parameters, or nullptr
  */
 /*----------------------------------------------------------------------------*/
 
 const cs_equation_param_t *
 cs_field_get_equation_param_const(const cs_field_t  *f)
 {
-  assert(f != NULL);
+  assert(f != nullptr);
   const cs_equation_param_t *eqp = nullptr;
 
   static int k_id = -1;
@@ -335,7 +335,7 @@ cs_field_get_equation_param_const(const cs_field_t  *f)
  *
  * \param[in]  f  field
  *
- * \return  pointer to matching variance (variable) field, or NULL.
+ * \return  pointer to matching variance (variable) field, or nullptr.
  */
 /*----------------------------------------------------------------------------*/
 
@@ -360,7 +360,7 @@ cs_field_get_variance(const cs_field_t  *f)
     }
   }
 
-  return NULL;
+  return nullptr;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -401,8 +401,8 @@ cs_field_build_bc_codes_all(void)
   /* Allocate or remap only if needed */
 
   if (n_vars == _n_vars_bc && n_b_faces == _n_b_faces) {
-    if (   (_icodcl != NULL && n_b_faces > 0)
-        || (_icodcl == NULL && n_b_faces == 0))
+    if (   (_icodcl != nullptr && n_b_faces > 0)
+        || (_icodcl == nullptr && n_b_faces == 0))
       return;
   }
 
@@ -428,7 +428,7 @@ cs_field_build_bc_codes_all(void)
       cs_real_t *rcodcl2 = _rcodcl + n_b_faces*(n_vars+var_id);
       cs_real_t *rcodcl3 = _rcodcl + n_b_faces*(2*n_vars+var_id);
 
-      if (f->bc_coeffs != NULL) {
+      if (f->bc_coeffs != nullptr) {
 
         f->bc_coeffs->icodcl  = icodcl;
         f->bc_coeffs->rcodcl1 = rcodcl1;
@@ -486,17 +486,17 @@ cs_field_free_bc_codes_all(void)
     int var_id = (f->type & CS_FIELD_VARIABLE) ?
       cs_field_get_key_int(f, kv) : -1;
 
-    if (var_id > -1 && f->bc_coeffs != NULL) {
-      f->bc_coeffs->icodcl = NULL;
-      f->bc_coeffs->rcodcl1 = NULL;
-      if (f->bc_coeffs->_hext != NULL) {
+    if (var_id > -1 && f->bc_coeffs != nullptr) {
+      f->bc_coeffs->icodcl = nullptr;
+      f->bc_coeffs->rcodcl1 = nullptr;
+      if (f->bc_coeffs->_hext != nullptr) {
         const cs_real_t *rcodcl2 = f->bc_coeffs->rcodcl2;
         cs_real_t *_hext = f->bc_coeffs->_hext;
         for (cs_lnum_t i = 0; i < _n_b_faces; i++)
           _hext[i] = rcodcl2[i];
       }
       f->bc_coeffs->rcodcl2 = f->bc_coeffs->_hext;
-      f->bc_coeffs->rcodcl3 = NULL;
+      f->bc_coeffs->rcodcl3 = nullptr;
     }
 
   }
@@ -543,7 +543,7 @@ cs_field_map_and_init_bcs(void)
   const char *sp_names[] = {"pressure_increment", "lagr_time"};
   for (int i = 0; i < 2; i++) {
     const cs_field_t *f = cs_field_by_name_try(sp_names[i]);
-    if (f != NULL) {
+    if (f != nullptr) {
       if (! (f->type & CS_FIELD_USER))
         bc_flags[f->id * 4] = true;
     }

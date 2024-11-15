@@ -68,7 +68,7 @@ BEGIN_C_DECLS
  * \brief Function pointer for user settings of a MUMPS solver.
  *        This function is called at the end of the setup stage.
  *
- * Note: if the context pointer is non-NULL, it must point to valid data
+ * Note: if the context pointer is non-null, it must point to valid data
  * when the selection function is called so that value or structure should
  * not be temporary (i.e. local);
  *
@@ -105,7 +105,7 @@ typedef struct _cs_sles_mumps_t  cs_sles_mumps_t;
  * One can recover the MUMPS step through the "job" member.
  * MUMPS_JOB_ANALYSIS or MUMPS_JOB_FACTORIZATION
  *
- * Note: if the context pointer is non-NULL, it must point to valid data
+ * Note: if the context pointer is non-null, it must point to valid data
  * when the selection function is called so that structure should
  * not be temporary (i.e. local);
  *

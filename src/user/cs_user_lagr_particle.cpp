@@ -175,7 +175,7 @@ cs_user_lagr_imposed_motion(const cs_lagr_particle_set_t *particles,
  * \param[in]      particle_range    start and past-the-end ids of new particles
  *                                   for this zone and class
  * \param[in]      particle_face_id  face ids of new particles if zone is
- *                                   a boundary,  nullptr otherwise
+ *                                   a boundary,  null otherwise
  * \param[in]      visc_length       viscous layer thickness
  *                                   (size: number of mesh boundary faces)
  */
@@ -216,7 +216,7 @@ cs_user_lagr_in_force_coords(cs_lagr_particle_set_t         *particles,
  * \param[in]      particle_range    start and past-the-end ids of new particles
  *                                   for this zone and class
  * \param[in]      particle_face_id  face ids of new particles if zone is
- *                                   a boundary,  nullptr otherwise
+ *                                   a boundary,  null otherwise
  * \param[in]      visc_length       viscous layer thickness
  *                                   (size: number of mesh boundary faces)
  */

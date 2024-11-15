@@ -251,7 +251,7 @@ cs_mesh_create(void);
  * mesh       <->  pointer to a mesh structure
  *
  * returns:
- *   NULL pointer
+ *   null pointer
  *----------------------------------------------------------------------------*/
 
 cs_mesh_t *

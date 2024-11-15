@@ -1654,7 +1654,7 @@ _restart_multiwriter_create(void)
  * \brief   Get a multiwriter using its id.
  *
  * Returns a pointer to the writer object. If no writer has that id,
- * a nullptr pointer is returned.
+ * a null pointer is returned.
  *
  * \param[in] id  id of the multiwriter (int)
  *
@@ -1695,7 +1695,7 @@ _add_restart_multiwriter(const char  name[],
       return i;
   }
 
-  /* Check that the file name is neither nullptr or empty ("") */
+  /* Check that the file name is neither null or empty ("") */
   if (name == nullptr)
     bft_error(__FILE__, __LINE__, 0,
               _("Null pointer provided as file name.\n"));
@@ -1724,7 +1724,7 @@ _add_restart_multiwriter(const char  name[],
   BFT_MALLOC(new_writer->name, lname, char);
   strcpy(new_writer->name, name);
 
-  /* Set path to subdir, which can be nullptr */
+  /* Set path to subdir, which can be null */
   const char *_path = path;
   if (_path != nullptr) {
     if (strlen(_path) == 0)
@@ -1785,14 +1785,14 @@ _restart_multiwriter_increment(_restart_multiwriter_t  *mw,
 /*!
  * \brief  Query checkpoint intervals.
  *
- * \param[out]  nt_interval  if non-nullptr, time-step interval for checkpoint
+ * \param[out]  nt_interval  if non-null, time-step interval for checkpoint
  *                             if > 0 time step interval for checkpoint
  *                             if 0, default of 4 checkpoints per run
  *                             if -1, checkpoint at end
  *                             if -2, no checkpointing
- * \param[out]  t_interval   if non nullptr, time value checkpoint interval;
+ * \param[out]  t_interval   if non-null, time value checkpoint interval;
  *                           has priority over nt_interval if > -1
- * \param[out]  wt_interval  if non nullptr, wall-clock interval for checkpoints;
+ * \param[out]  wt_interval  if non-null, wall-clock interval for checkpoints;
  *                           has priority over nt_interval if > -1
  */
 /*----------------------------------------------------------------------------*/
@@ -2186,7 +2186,7 @@ cs_restart_present(void)
  * \brief  Initialize a restart file.
  *
  * \param[in]  name  file name
- * \param[in]  path  optional directory name for output, or nullptr for default
+ * \param[in]  path  optional directory name for output, or null for default
  *                   (directory automatically created if necessary)
  * \param[in]  mode  read or write
  *

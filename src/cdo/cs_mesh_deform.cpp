@@ -110,7 +110,7 @@ static cs_real_3_t  *_fixed_vtx_values = nullptr;
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Give the explicit definition of the dirichlet boundary conditions
- *         pt_ids is optional. If not nullptr, it enables to access in coords
+ *         pt_ids is optional. If non-null, it enables to access in coords
  *         at the right location and the same thing to fill retval if compact
  *         is set to false
  *         Rely on a generic function pointer for an analytic function

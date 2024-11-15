@@ -56,7 +56,7 @@ BEGIN_C_DECLS
 /*!
  * \brief Function pointer for computation of particle injection profile.
  *
- * Note: if the input pointer is non-NULL, it must point to valid data
+ * Note: if the input pointer is non-null, it must point to valid data
  * when the selection function is called, so that value or structure should
  * not be temporary (i.e. local);
  *

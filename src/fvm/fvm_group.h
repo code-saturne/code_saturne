@@ -124,7 +124,7 @@ fvm_group_class_set_add(fvm_group_class_set_t   *this_group_class_set,
  *   this_class_set <-- pointer to structure which should be destroyed
  *
  * returns:
- *   NULL pointer
+ *   null pointer
  *----------------------------------------------------------------------------*/
 
 fvm_group_class_set_t *

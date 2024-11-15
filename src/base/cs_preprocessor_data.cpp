@@ -351,7 +351,7 @@ _mesh_reader_create(int                 *n_mesh_files,
  *   mr <-> pointer to a mesh reader helper
  *
  * returns:
- *   nullptr pointer
+ *   null pointer
  *----------------------------------------------------------------------------*/
 
 static void

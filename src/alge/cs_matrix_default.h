@@ -142,7 +142,7 @@ cs_matrix_t  *
 cs_matrix_native(void);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Return matrix wrapper for external library for a given fill type.
  *
  * \param[in]  type_name              Matrix type name
@@ -161,7 +161,7 @@ cs_matrix_external(const char  *type_name,
                    cs_lnum_t    extra_diag_block_size);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Copy base matrix to external library matrix type for given fill type.
  *
  * Note that the matrix containers share the same assigned structure,
@@ -258,7 +258,7 @@ const cs_gnum_t *
 cs_matrix_get_block_row_g_id(const cs_matrix_t  *m);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Return matrix associated wiht a matrix assembler.
  *
  * Coefficients are not assigned at this stage.
@@ -275,16 +275,16 @@ cs_matrix_by_assembler(const cs_field_t  *f,
                        cs_matrix_type_t   type);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Assign coefficients to a matrix using a matrix assembler.
  *
  * \param[in]  f                      pointer to associated field
  * \param[in]  type                   matrix type
  * \param[in]  symmetric              is matrix symmetric ?
- * \param[in]  diag_block_size        block sizes for diagonal
- * \param[in]  extra_diag_block_size  block sizes for extra diagonal
- * \param[in]  da                     diagonal values (NULL if zero)
- * \param[in]  xa                     extradiagonal values (NULL if zero)
+ * \param[in]  diag_block_size        block sizes for diagonal, or nullptr
+ * \param[in]  extra_diag_block_size  block sizes for extra diagonal, or nullptr
+ * \param[in]  da                     diagonal values (nullptr if zero)
+ * \param[in]  xa                     extradiagonal values (nullptr if zero)
  *                                    casts as:
  *                                      xa[n_edges]    if symmetric,
  *                                      xa[n_edges][2] if non symmetric

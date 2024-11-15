@@ -61,7 +61,7 @@ BEGIN_C_DECLS
  * (using BFT_MALLOC) and defined by this function when called.
  * This list's lifecycle is then managed by the mesh location object.
  *
- * Note: if the input pointer is non-nullptr, it must point to valid data
+ * Note: if the input pointer is non-null, it must point to valid data
  * when the selection function is called, so that value or structure should
  * not be temporary (i.e. local);
  *

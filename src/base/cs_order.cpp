@@ -777,7 +777,7 @@ _order_real(const cs_real_t   value[],
  * \brief Test if an array of global numbers is ordered.
  *
  * \param[in]  list    optional list (0 to n-1 numbering) of selected entities
- *                     (or nullptr if all nb_ent are selected). This list may
+ *                     (or null if all nb_ent are selected). This list may
  *                     contain element numbers in any order
  * \param[in]  number  array of all entity numbers (number of entity i given
  *                     by number[i] or number[list[i]]) if list exists
@@ -837,7 +837,7 @@ cs_order_gnum_test(const cs_lnum_t  list[],
  * \brief Return an ordering table associated with an array of global numbers.
  *
  * \param[in]  list    optional list (0 to n-1 numbering) of selected entities
- *                     (or nullptr if all nb_ent are selected). This list may
+ *                     (or null if all nb_ent are selected). This list may
  *                     contain element numbers in any order
  * \param[in]  number  array of all entity numbers (number of entity i given
  *                     by number[i] or number[list[i]]) if list exists
@@ -873,7 +873,7 @@ cs_order_gnum(const cs_lnum_t  list[],
  * array of global numbers.
  *
  * \param[in]  list    optional list (0 to n-1 numbering) of selected entities
- *                     (or nullptr if all nb_ent are selected). This list may
+ *                     (or null if all nb_ent are selected). This list may
  *                     contain element numbers in any order
  * \param[in]  number  array of all entity numbers (number of entity i
  *                     given by number[i] or number[list[i]]) if list
@@ -913,7 +913,7 @@ cs_order_gnum_s(const cs_lnum_t  list[],
  * array of global numbers.
  *
  * \param[in]  list    optional list (0 to n-1 numbering) of selected entities
- *                     (or nullptr if all nb_ent are selected). This list may
+ *                     (or null if all nb_ent are selected). This list may
  *                     contain element numbers in any order
  * \param[in]  number  array of all entity numbers (numbers of entity i start
  *                     at index[i] or _index[i] (reduced index) if list exists).
@@ -947,7 +947,7 @@ cs_order_gnum_i(const cs_lnum_t  list[],
  * \brief Compute an ordering table associated with an array of global numbers.
  *
  * \param[in]   list    optional list (0 to n-1 numbering) of selected entities
- *                      (or nullptr if all nb_ent are selected). This list may
+ *                      (or null if all nb_ent are selected). This list may
  *                      contain element numbers in any order
  * \param[in]   number  array of all entity numbers (number of entity i given
  *                      by number[i] or number[list[i]]) if list exists
@@ -1010,7 +1010,7 @@ cs_order_gnum_allocated(const cs_lnum_t  list[],
  * strided global numbers.
  *
  * \param[in]   list    optional list (0 to n-1 numbering) of selected entities
- *                      (or nullptr if all nb_ent are selected). This list may
+ *                      (or null if all nb_ent are selected). This list may
  *                      contain element numbers in any order
  * \param[in]   number  array of all entity numbers (numbers of entity i start
  *                      at number[i*stride] or number[list[i]*stride])
@@ -1064,7 +1064,7 @@ cs_order_gnum_allocated_s(const cs_lnum_t  list[],
  *        array of global numbers.
  *
  * \param[in]   list    optional list (0 to n-1 numbering) of selected entities
- *                      (or nullptr if all nb_ent are selected). This list may
+ *                      (or null if all nb_ent are selected). This list may
  *                      contain element numbers in any order
  * \param[in]   number  array of all entity numbers (numbers of entity i start
  *                      at index[i] or _index[i] (reduced index) if list
@@ -1151,7 +1151,7 @@ cs_order_gnum_allocated_i(const cs_lnum_t  list[],
  * \brief Compute an ordering table associated with an array of local numbers.
  *
  * \param[in]   list    optional list (0 to n-1 numbering) of selected entities
- *                      (or nullptr if all nb_ent are selected). This list may
+ *                      (or null if all nb_ent are selected). This list may
  *                      contain element numbers in any order
  * \param[in]   number  array of all entity numbers (number of entity i given
  *                      by number[i] or number[list[i]]) if list exists
@@ -1218,7 +1218,7 @@ cs_order_lnum_allocated(const cs_lnum_t  list[],
  * strided local numbers.
  *
  * \param[in]   list    optional list (0 to n-1 numbering) of selected entities
- *                      (or nullptr if all nb_ent are selected). This list may
+ *                      (or null if all nb_ent are selected). This list may
  *                      contain element numbers in any order
  * \param[in]   number  array of all entity numbers (numbers of entity i start
  *                      at number[i*stride] or number[list[i]*stride])
@@ -1280,7 +1280,7 @@ cs_order_lnum_allocated_s(const cs_lnum_t  list[],
  * \brief Compute an ordering table associated with an array of local values.
  *
  * \param[in]   list    optional list (0 to n-1 numbering) of selected entities
- *                      (or nullptr if all nb_ent are selected). This list may
+ *                      (or null if all nb_ent are selected). This list may
  *                      contain element numbers in any order
  * \param[in]   val     array of all entity values (value of entity i given
  *                      by value[i] or value[list[i]]) if list exists

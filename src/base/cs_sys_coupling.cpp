@@ -514,7 +514,7 @@ cs_sys_coupling_by_id(const int cpl_id)
  *
  * \param[in] sys_name  name of the requested coupling
  *
- * \return pointer to coupling structure if found, nullptr if not found.
+ * \return pointer to coupling structure if found, null if not found.
  */
 /*----------------------------------------------------------------------------*/
 

@@ -120,38 +120,38 @@ static cs_wall_condensation_t _wall_cond
      // Mesh related quantities
      // TODO: clean unnecessary quantities
      .nfbpcd                    = 0,
-     .ifbpcd                    = NULL,
-     .itypcd                    = NULL,
-     .izzftcd                   = NULL,
-     .spcond                    = NULL,
-     .hpcond                    = NULL,
-     .twall_cond                = NULL,
-     .thermal_condensation_flux = NULL,
-     .convective_htc            = NULL,
-     .condensation_htc          = NULL,
-     .total_htc                 = NULL,
-     .flthr                     = NULL,
-     .dflthr                    = NULL,
+     .ifbpcd                    = nullptr,
+     .itypcd                    = nullptr,
+     .izzftcd                   = nullptr,
+     .spcond                    = nullptr,
+     .hpcond                    = nullptr,
+     .twall_cond                = nullptr,
+     .thermal_condensation_flux = nullptr,
+     .convective_htc            = nullptr,
+     .condensation_htc          = nullptr,
+     .total_htc                 = nullptr,
+     .flthr                     = nullptr,
+     .dflthr                    = nullptr,
 
      // Zone related quantities
      .nzones    = -1,
-     .izcophc   = NULL,
-     .izcophg   = NULL,
-     .iztag1d   = NULL,
-     .ztpar     = NULL,
-     .zxrefcond = NULL,
-     .zprojcond = NULL,
+     .izcophc   = nullptr,
+     .izcophg   = nullptr,
+     .iztag1d   = nullptr,
+     .ztpar     = nullptr,
+     .zxrefcond = nullptr,
+     .zprojcond = nullptr,
 
      /* Volumetric wall condensation */
 
      .ncmast                    = 0,
      .nvolumes                  = -1,
-     .ltmast                    = NULL,
-     .itypst                    = NULL,
-     .izmast                    = NULL,
-     .svcond                    = NULL,
-     .flxmst                    = NULL,
-     .itagms                    = NULL};
+     .ltmast                    = nullptr,
+     .itypst                    = nullptr,
+     .izmast                    = nullptr,
+     .svcond                    = nullptr,
+     .flxmst                    = nullptr,
+     .itagms                    = nullptr};
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
@@ -412,7 +412,7 @@ _compute_exchange_forced_convection(cs_lnum_t   ieltcd,
       const cs_real_t   rough_t = 0.0;
       cs_real_t         uk      = 0.0;
       const cs_field_t *f_ustar = cs_field_by_name_try("boundary_ustar");
-      if (f_ustar != NULL) {
+      if (f_ustar != nullptr) {
         uk = f_ustar->val[ifac];
       }
       const cs_real_t          dplus  = 0.0;
@@ -1132,7 +1132,7 @@ cs_wall_condensation_compute(cs_real_t  total_htc[])
 
   }
 
-  cs_real_t *vol_hcond = NULL, *vol_hconv = NULL;
+  cs_real_t *vol_hcond = nullptr, *vol_hconv = nullptr;
   BFT_MALLOC(vol_hcond, _wall_cond.ncmast, cs_real_t);
   BFT_MALLOC(vol_hconv, _wall_cond.ncmast, cs_real_t);
 
@@ -1339,7 +1339,7 @@ cs_wall_condensation_source_terms(const cs_field_t  *f,
     /* Compute condensation source terms associated to volume zones
        with the metal mass structures modelling */
 
-    cs_real_t *surfbm = NULL;
+    cs_real_t *surfbm = nullptr;
     BFT_MALLOC(surfbm, ncmast, cs_real_t);
 
     cs_wall_condensation_volume_exchange_surf_at_cells(surfbm);

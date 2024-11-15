@@ -2314,7 +2314,7 @@ _count_new_sub_edge_elts(cs_lnum_t                     edge_id,
 
 /*----------------------------------------------------------------------------
  * Update a cs_join_inter_edges_t structure after the merge operation.
- * cs_join_inter_edges_t structure should be not nullptr.
+ * cs_join_inter_edges_t structure should be non-null.
  *
  * parameters:
  *   param          <-- user-defined parameters for the joining algorithm

@@ -257,7 +257,7 @@ _interpolate_vtx(ple_locator_t          *locator,
 /*!
  * \brief Read a section with interpolation.
  *
- * Note: if the context pointer is non-nullptr, it must point to valid data
+ * Note: if the context pointer is non-null, it must point to valid data
  * when the selection function is called, so that value or structure should
  * in general not be temporary.
  *

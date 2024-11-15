@@ -104,11 +104,11 @@ cs_variable_field_create(const char  *name,
  *
  * If the field does not have associated equation paremeters (i.e. is not
  * a variable field or is a CDO field (which is referenced by but does not
- * directly reference equations), NULL is returned.
+ * directly reference equations), nullptr is returned.
  *
  * \param[in, out]  f  pointer to associated field
  *
- * \return  pointer to field's equation parameters, or NULL
+ * \return  pointer to field's equation parameters, or nullptr
  */
 /*----------------------------------------------------------------------------*/
 
@@ -124,11 +124,11 @@ cs_field_get_equation_param(cs_field_t  *f);
  *
  * If the field does not have associated equation parameters (i.e. is not
  * a variable field or is a CDO field (which is referenced by but does not
- * directly reference equations), NULL is returned.
+ * directly reference equations), nullptr is returned.
  *
  * \param[in]  f  pointer to associated field
  *
- * \return  const-qualified pointer to field's equation parameters, or NULL
+ * \return  const-qualified pointer to field's equation parameters, or nullptr
  */
 /*----------------------------------------------------------------------------*/
 
@@ -141,7 +141,7 @@ cs_field_get_equation_param_const(const cs_field_t  *f);
  *
  * \param[in]  f  field
  *
- * \return  pointer to matching variance (variable) field, or NULL.
+ * \return  pointer to matching variance (variable) field, or nullptr.
  */
 /*----------------------------------------------------------------------------*/
 

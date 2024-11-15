@@ -224,11 +224,11 @@ typedef struct _cs_matrix_coeff_t {
   const cs_real_t  *h_val;            /* H (halo-only) coefficients */
 
    /* Pointers to private arrays.
-      NULL if shared:
-      * If non-NULL, d_val, e_val, and h_val should point
+      nullptr if shared:
+      * If non-null, d_val, e_val, and h_val should point
         to matching private array.
       * In the case of CSR storage, where diagonal values can be stored in
-        the a_val array, d_val will be NULL but _d_val may be used to store
+        the a_val array, d_val will be null but _d_val may be used to store
         (cache) diagonal values, if queried. */
 
   cs_real_t        *_val;            /* All coefficients (CSR) */

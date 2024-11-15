@@ -5099,8 +5099,8 @@ cs_matrix_set_coefficients(cs_matrix_t        *matrix,
  *   extra_diag_block_size  <-- block sizes for extra diagonal
  *   n_edges                <-- local number of graph edges
  *   edges                  <-- edges (row <-> column) connectivity
- *   da                     <-- diagonal values (NULL if zero)
- *   xa                     <-- extradiagonal values (NULL if zero)
+ *   da                     <-- diagonal values (nullptr if zero)
+ *   xa                     <-- extradiagonal values (nullptr if zero)
  *                              casts as:
  *                                xa[n_edges]    if symmetric,
  *                                xa[n_edges][2] if non symmetric

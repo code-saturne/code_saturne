@@ -270,7 +270,7 @@ _set_block_assembly_func(void)
  *
  * \param[in] bi         block info structure to consider
  *
- * \return a pointer to a function or nullptr if useless
+ * \return a pointer to a function or null if useless
  */
 /*----------------------------------------------------------------------------*/
 
@@ -291,7 +291,7 @@ _assign_slave_assembly_func(const cs_cdo_system_block_info_t   bi)
  *
  * \param[in] bi         block info structure to consider
  *
- * \return a pointer to a function or nullptr if useless
+ * \return a pointer to a function or null if useless
  */
 /*----------------------------------------------------------------------------*/
 
@@ -1612,7 +1612,7 @@ cs_cdo_system_get_range_set(const cs_cdo_system_helper_t  *sh,
 /*!
  * \brief Retrieve the matrix associated to the given block_id. If the type of
  *        block is either CS_CDO_SYSTEM_BLOCK_DEFAULT or
- *        CS_CDO_SYSTEM_BLOCK_EXT. In other cases, a nullptr pointer is
+ *        CS_CDO_SYSTEM_BLOCK_EXT. In other cases, a null pointer is
  *        returned. The unassembled block has no matrix and to get a matrix of
  *        a split block, one should use cs_cdo_system_get_sub_matrix(sh,
  *        block_id, sub_id)
@@ -1666,7 +1666,7 @@ cs_cdo_system_get_matrix(const cs_cdo_system_helper_t  *sh,
  *        to block_id. sub_id is the id in the list of matrices of size equal
  *        to stride*stride.
  *        If the type of the block is not CS_CDO_SYSTEM_BLOCK_SPLIT, then a
- *        nullptr pointer is returned.
+ *        null pointer is returned.
  *
  * \param[in, out]  sh         pointer to the system_helper structure to update
  * \param[in]       block_id   id of the block to consider
@@ -1797,7 +1797,7 @@ cs_cdo_system_build_block(cs_cdo_system_helper_t  *sh,
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Allocate and initialize the matrix, rhs and the matrix assembler
- *        values. If p_rhs is nullptr then one allocates the rhs inside this
+ *        values. If p_rhs is null then one allocates the rhs inside this
  *        function. The ownership is transfered to this structure in that case.
  *
  * \param[in, out] sh       pointer to a system helper structure

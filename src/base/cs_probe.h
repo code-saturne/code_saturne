@@ -74,7 +74,7 @@ typedef enum {
  * Those list's lifecycle is then managed automatically by the
  * probe set object.
  *
- * Note: if the input pointer is non-NULL, it must point to valid data
+ * Note: if the input pointer is non-null, it must point to valid data
  * when the selection function is called, so that value or structure should
  * not be temporary (i.e. local);
  *
@@ -151,7 +151,7 @@ cs_probe_get_n_sets(void);
  *
  * \param[in]   name        name of the set of probes to find
  *
- * \return a pointer to a cs_probes_t structure or NULL if not found
+ * \return a pointer to a cs_probes_t structure or null if not found
  */
 /*----------------------------------------------------------------------------*/
 
@@ -164,7 +164,7 @@ cs_probe_set_get(const char    *name);
  *
  * \param[in]   pset_id       id related to the set of probes to find
  *
- * \return a pointer to a cs_probes_t structure or NULL if not found
+ * \return a pointer to a cs_probes_t structure or null if not found
  */
 /*----------------------------------------------------------------------------*/
 
@@ -177,7 +177,7 @@ cs_probe_set_get_by_id(int   pset_id);
  *
  * \param[in]   pset       pointer to a cs_probe_set_t structure
  *
- * \return the name of the cs_probes_t structure or NULL if not found
+ * \return the name of the cs_probes_t structure or null if not found
  */
 /*----------------------------------------------------------------------------*/
 
@@ -188,7 +188,7 @@ cs_probe_set_get_name(cs_probe_set_t   *pset);
 /*!
  * \brief  Retrieve information useful for the postprocessing step.
  *
- * Output arguments may be set to NULL if we do not need to query them.
+ * Output arguments may be set to null if we do not need to query them.
  *
  * \param[in]  pset            pointer to a cs_probe_set_t structure
  * \param[out] time_varying    true if probe locations may change with time
@@ -221,7 +221,7 @@ cs_probe_set_get_post_info(const cs_probe_set_t   *pset,
  *
  * \param[in]   pset       pointer to a cs_probe_set_t structure
  *
- * \return selection criteria string, or NULL if no filter defined
+ * \return selection criteria string, or null if no filter defined
  */
 /*----------------------------------------------------------------------------*/
 
@@ -264,7 +264,7 @@ cs_probe_set_create(const char    *name);
  * \param[in]       x       x coordinate  of the point to add
  * \param[in]       y       y coordinate  of the point to add
  * \param[in]       z       z coordinate  of the point to add
- * \param[in]       label   NULL or the name of the point (optional)
+ * \param[in]       label   null or the name of the point (optional)
  */
 /*----------------------------------------------------------------------------*/
 
@@ -330,7 +330,7 @@ cs_probe_set_create_from_segment(const char        *name,
  * is called just before locating probes on the parent mesh, so this allows
  * building probe sets based on subsets of the computational mesh.
  *
- * Note: if the p_define_input pointer is non-NULL, it must point to valid data
+ * Note: if the p_define_input pointer is non-null, it must point to valid data
  * when the selection function is called, so that value or structure should
  * not be temporary (i.e. local);
  *
@@ -373,11 +373,11 @@ cs_probe_set_allow_overwrite(const char  *name);
  * \ref cs_probe_set_create_from_local.
  *
  * If provided, the array of curvilinear absicssa must match the size of the
- * probe set. If set to NULL, it is assumed a uniform spacing is provided
+ * probe set. If set to null, it is assumed a uniform spacing is provided
  * between points.
  *
  * \param[in]  pset  pointer to a cs_probe_set_t structure
- * \param[in]  s     array of curvilinear abscissa, or NULL
+ * \param[in]  s     array of curvilinear abscissa, or null
  */
 /*----------------------------------------------------------------------------*/
 
@@ -519,7 +519,7 @@ cs_probe_set_option(cs_probe_set_t   *pset,
  *
  * \param[in, out]  pset           pointer to a cs_probe_set_t structure
  * \param[in]       location_mesh  optional pointer to mesh relative to which
- *                                 probe set should be located, or NULL
+ *                                 probe set should be located, or null
  */
 /*----------------------------------------------------------------------------*/
 
@@ -604,7 +604,7 @@ cs_probe_set_get_n_local(const cs_probe_set_t   *pset);
  *
  * \param[in]  pset              pointer to a cs_probe_set_t structure
  *
- * \return NULL or the pointer to the array of abscissa
+ * \return null or the pointer to the array of abscissa
  */
 /*----------------------------------------------------------------------------*/
 
@@ -620,7 +620,7 @@ cs_probe_set_get_curvilinear_abscissa(const cs_probe_set_t   *pset);
  *
  * \param[in]  pset              pointer to a cs_probe_set_t structure
  *
- * \return NULL or the pointer to the array of abscissa
+ * \return null or the pointer to the array of abscissa
  */
 /*----------------------------------------------------------------------------*/
 

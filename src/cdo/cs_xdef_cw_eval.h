@@ -61,7 +61,7 @@ BEGIN_C_DECLS
  *
  * \param[in]  cm         pointer to a \ref cs_cell_mesh_t structure
  * \param[in]  time_eval  physical time at which one evaluates the term
- * \param[in]  input      NULL or pointer to an input structure
+ * \param[in]  input      null or pointer to an input structure
  * \param[out] eval       result of the evaluation
  */
 /*----------------------------------------------------------------------------*/

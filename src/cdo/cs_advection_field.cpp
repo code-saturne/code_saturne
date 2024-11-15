@@ -382,7 +382,7 @@ cs_advection_field_get_n_fields(void)
  *
  * \param[in]  name        name of the advection field
  *
- * \return a pointer to a cs_adv_field_t structure or nullptr if not found
+ * \return a pointer to a cs_adv_field_t structure or null if not found
  */
 /*----------------------------------------------------------------------------*/
 
@@ -409,7 +409,7 @@ cs_advection_field_by_name(const char *name)
  *
  * \param[in]  id        identification number
  *
- * \return a pointer to a cs_adv_field_t structure or nullptr if not found
+ * \return a pointer to a cs_adv_field_t structure or null if not found
  */
 /*----------------------------------------------------------------------------*/
 
@@ -538,7 +538,7 @@ cs_advection_field_add(const char                  *name,
 /*!
  * \brief  Free all allocated cs_adv_field_t structures and its related array
  *
- * \return a nullptr pointer
+ * \return a null pointer
  */
 /*----------------------------------------------------------------------------*/
 
@@ -760,7 +760,7 @@ cs_advection_field_def_by_value(cs_adv_field_t *adv, cs_real_t *values)
  *
  * \param[in, out]  adv     pointer to a cs_adv_field_t structure
  * \param[in]       func    pointer to a function
- * \param[in]       input   nullptr or pointer to a structure cast on-the-fly
+ * \param[in]       input   null or pointer to a structure cast on-the-fly
  */
 /*----------------------------------------------------------------------------*/
 
@@ -778,7 +778,7 @@ cs_advection_field_def_by_analytic(cs_adv_field_t     *adv,
   cs_xdef_analytic_context_t ac         = { .z_id       = 0, /* all cells */
                                             .func       = func,
                                             .input      = input,
-                                            .free_input = nullptr };
+                                            .free_input = nullptr};
 
   adv->definition = cs_xdef_volume_create(CS_XDEF_BY_ANALYTIC_FUNCTION,
                                           dim,
@@ -795,7 +795,7 @@ cs_advection_field_def_by_analytic(cs_adv_field_t     *adv,
  * \param[in, out] adv           pointer to a cs_adv_field_t structure
  * \param[in]      dof_location  location where values are computed
  * \param[in]      func          pointer to a cs_dof_func_t function
- * \param[in]      input         nullptr or pointer to a structure cast
+ * \param[in]      input         null or pointer to a structure cast
  * on-the-fly
  */
 /*----------------------------------------------------------------------------*/
@@ -974,7 +974,7 @@ cs_advection_field_def_boundary_flux_by_value(cs_adv_field_t *adv,
  * \param[in, out]  adv     pointer to a cs_adv_field_t structure
  * \param[in]       zname   name of the boundary zone to consider
  * \param[in]       func    pointer to a function
- * \param[in]       input   nullptr or pointer to a structure cast on-the-fly
+ * \param[in]       input   null or pointer to a structure cast on-the-fly
  */
 /*----------------------------------------------------------------------------*/
 

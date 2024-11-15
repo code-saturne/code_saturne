@@ -87,7 +87,7 @@ fvm_nodal_from_desc_add_cells(fvm_nodal_t        *this_nodal,
 /*----------------------------------------------------------------------------
  * Convert and add faces from an descending connectivity mesh to a nodal mesh.
  *
- * If the optional filter list extr_faces[] argument is non-NULL, faces
+ * If the optional filter list extr_faces[] argument is non-null, faces
  * {extr_faces[0], extr_faces[1], extr_faces[n_extr_faces - 1]} are converted
  * and added to the nodal mesh. If this filter is set to NULL, faces
  * {1, 2, ..., n_extr_faces} are considered.

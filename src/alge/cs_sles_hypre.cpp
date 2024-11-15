@@ -112,7 +112,7 @@ BEGIN_C_DECLS
   When first called, the solver argument is nullptr, and must be created
   using HYPRE functions.
 
-  Note: if the context pointer is non-nullptr, it must point to valid data
+  Note: if the context pointer is non-null, it must point to valid data
   when the selection function is called so that value or structure should
   not be temporary (i.e. local);
 

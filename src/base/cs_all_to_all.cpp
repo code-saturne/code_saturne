@@ -219,11 +219,11 @@ struct _cs_all_to_all_t {
 
   const int                 *dest_rank;    /* optional element destination
                                               rank (possibly shared) */
-  int                       *_dest_rank;   /* dest_rank if owner, or nullptr */
+  int                       *_dest_rank;   /* dest_rank if owner, or null */
 
   const cs_lnum_t           *dest_id;      /* optional element destination id
                                               (possibly shared) */
-  cs_lnum_t                 *_dest_id;     /* dest_id if owner, or nullptr */
+  cs_lnum_t                 *_dest_id;     /* dest_id if owner, or null */
 
   /* Receive metadata */
 
@@ -2789,7 +2789,7 @@ cs_all_to_all_n_elts_dest(cs_all_to_all_t  *d)
  * \param[in]       src_data   source data
  * \param[out]      dest_data  pointer to destination data, or nullptr
  *
- * \return pointer to destination data (dest_buffer if non-nullptr)
+ * \return pointer to destination data (dest_buffer if non-null)
  */
 /*----------------------------------------------------------------------------*/
 
@@ -3061,7 +3061,7 @@ cs_all_to_all_copy_array(cs_all_to_all_t   *d,
  * \param[in]       src_index   source index
  * \param[out]      dest_index  pointer to destination index, or nullptr
  *
- * \return pointer to destination data (dest_buffer if non-nullptr)
+ * \return pointer to destination data (dest_buffer if non-null)
  */
 /*----------------------------------------------------------------------------*/
 
@@ -3162,7 +3162,7 @@ cs_all_to_all_copy_index(cs_all_to_all_t  *d,
  * \param[in]       dest_index  destination index
  * \param[out]      dest_data   pointer to destination data, or nullptr
  *
- * \return pointer to destination data (dest_buffer if non-nullptr)
+ * \return pointer to destination data (dest_buffer if non-null)
  */
 /*----------------------------------------------------------------------------*/
 

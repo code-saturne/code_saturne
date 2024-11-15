@@ -1202,7 +1202,7 @@ cs_cdo_connect_build(cs_mesh_t *mesh,
  * \param[in]      mesh        pointer to a mesh structure
  * \param[in, out] connect     pointer to additional CDO connectivities
  *
- * \return a nullptr pointer
+ * \return a null pointer
  */
 /*----------------------------------------------------------------------------*/
 

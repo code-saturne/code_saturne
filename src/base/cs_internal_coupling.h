@@ -313,7 +313,7 @@ cs_internal_coupling_initialize(void);
  * calculation
  *
  * \param[in]       cpl      pointer to coupling entity
- * \param[in]       c_weight weighted gradient coefficient variable, or NULL
+ * \param[in]       c_weight weighted gradient coefficient variable, or null
  * \param[in]       grad     pointer to gradient
  * \param[in]       pvar     pointer to variable
  * \param[in, out]  rhs      pointer to rhs contribution
@@ -336,7 +336,7 @@ cs_internal_coupling_iterative_scalar_gradient
  * calculation
  *
  * \param[in]       cpl      pointer to coupling entity
- * \param[in]       c_weight weighted gradient coefficient variable, or NULL
+ * \param[in]       c_weight weighted gradient coefficient variable, or null
  * \param[in]       grad     pointer to gradient
  * \param[in]       pvar     pointer to variable
  * \param[in, out]  rhs      pointer to rhs contribution
@@ -359,7 +359,7 @@ cs_internal_coupling_iterative_vector_gradient
  * calculation
  *
  * \param[in]       cpl      pointer to coupling entity
- * \param[in]       c_weight weighted gradient coefficient variable, or NULL
+ * \param[in]       c_weight weighted gradient coefficient variable, or null
  * \param[in]       grad     pointer to gradient
  * \param[in]       pvar     pointer to variable
  * \param[in, out]  rhs      pointer to rhs contribution
@@ -439,7 +439,7 @@ cs_internal_coupling_reconstruct_tensor_gradient(
  * \param[out]    bc_coeffs        boundary condition structure
  * \param[in]     var              gradient's base variable
  * \param[in]     c_weight         weighted gradient coefficient variable,
- *                                 or NULL
+ *                                 or null
  */
 /*----------------------------------------------------------------------------*/
 
@@ -463,7 +463,7 @@ cs_internal_coupling_update_bc_coeff_s(const cs_field_bc_coeffs_t    *bc_coeffs,
  * \param[out]    bc_coeffs_v      boundary condition structure
  * \param[in]     var              gradient's base variable
  * \param[in]     c_weight         weighted gradient coefficient variable,
- *                                 or NULL
+ *                                 or null
  */
 /*----------------------------------------------------------------------------*/
 
@@ -528,10 +528,10 @@ cs_internal_coupling_matrix_add_values(const cs_field_t              *f,
  *
  * parameters:
  *   cpl             <-- pointer to coupling entity
- *   n_local         --> NULL or pointer to component n_local
- *   faces_local     --> NULL or pointer to component faces_local
- *   n_distant       --> NULL or pointer to component n_distant
- *   faces_distant   --> NULL or pointer to component faces_distant
+ *   n_local         --> null or pointer to component n_local
+ *   faces_local     --> null or pointer to component faces_local
+ *   n_distant       --> null or pointer to component n_distant
+ *   faces_distant   --> null or pointer to component faces_distant
  *----------------------------------------------------------------------------*/
 
 void
@@ -601,7 +601,7 @@ cs_internal_coupling_add_entity(int        f_id);
  * initialisation for iterative scalar gradient calculation.
  *
  * \param[in]      cpl       pointer to coupling entity
- * \param[in]      c_weight  weighted gradient coefficient variable, or NULL
+ * \param[in]      c_weight  weighted gradient coefficient variable, or null
  * \param[in]      pvar      variable
  * \param[in, out] grad      gradient
  */
@@ -622,7 +622,7 @@ cs_internal_coupling_initialize_scalar_gradient
  * initialisation for iterative vector gradient calculation
  *
  * \param[in]       cpl       pointer to coupling entity
- * \param[in]       c_weight  weighted gradient coefficient variable, or NULL
+ * \param[in]       c_weight  weighted gradient coefficient variable, or null
  * \param[in]       pvar      variable
  * \param[in, out]  grad      gradient
  */
@@ -643,7 +643,7 @@ cs_internal_coupling_initialize_vector_gradient
  * initialisation for iterative symmetric tensor gradient calculation
  *
  * \param[in]       cpl       pointer to coupling entity
- * \param[in]       c_weight  weighted gradient coefficient variable, or NULL
+ * \param[in]       c_weight  weighted gradient coefficient variable, or null
  * \param[in, out]  pvar      variable
  * \param[in, out]  grad      gradient
  */

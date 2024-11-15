@@ -68,7 +68,7 @@ BEGIN_C_DECLS
  * \param[in, out]  input   pointer to an input structure associated to a
  *                          context structure
  *
- * \return a NULL pointer
+ * \return a null pointer
  */
 /*----------------------------------------------------------------------------*/
 
@@ -186,7 +186,7 @@ typedef struct {
    *
    * \var context
    * Pointer to a structure cast on-the-fly according to the type of description
-   * May be set to NULL or \ref cs_xdef_array_context_t or
+   * May be set to null or \ref cs_xdef_array_context_t or
    * \ref cs_xdef_analytic_context_t or \ref cs_xdef_time_func_context_t or
    * \ref cs_xdef_dof_context_t
    */
@@ -304,14 +304,14 @@ typedef struct {
   cs_analytic_func_t    *func;
 
   /*! \var input
-   * NULL or pointer to a structure cast on-the-fly for additional information
+   * null or pointer to a structure cast on-the-fly for additional information
    * used in the function
    */
 
   void                  *input;
 
   /*! \var free_input
-   * NULL or pointer to a function to free a given input structure
+   * null or pointer to a function to free a given input structure
    */
 
   cs_xdef_free_input_t  *free_input;
@@ -345,14 +345,14 @@ typedef struct {
   cs_dof_func_t         *func;
 
   /*! \var input
-   * NULL or pointer to a structure cast on-the-fly for additional information
+   * null or pointer to a structure cast on-the-fly for additional information
    * used in the function
    */
 
   void                  *input;
 
   /*! \var free_input
-   * NULL or pointer to a function to free a given input structure
+   * null or pointer to a function to free a given input structure
    */
 
   cs_xdef_free_input_t  *free_input;
@@ -379,14 +379,14 @@ typedef struct {
   cs_time_func_t        *func;
 
   /*! \var input
-   * NULL or pointer to a structure cast on-the-fly for additional information
+   * null or pointer to a structure cast on-the-fly for additional information
    * used in the function
    */
 
   void                  *input;
 
   /*! \var free_input
-   * NULL or pointer to a function to free a given input structure
+   * null or pointer to a function to free a given input structure
    */
 
   cs_xdef_free_input_t  *free_input;
@@ -546,7 +546,7 @@ cs_xdef_timestep_create(cs_xdef_type_t       type,
  *
  * \param[in, out] d    pointer to a cs_xdef_t structure
  *
- * \return NULL
+ * \return null pointer
  */
 /*----------------------------------------------------------------------------*/
 

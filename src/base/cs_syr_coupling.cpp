@@ -125,7 +125,7 @@ typedef struct {
   float             *flux;           /* Flux (calculated) */
   float             *tfluid_tmp;     /* Fluid temperature (points to flux in
                                         transient stage where solid_temp and
-                                        fluid_temp are known, nullptr once
+                                        fluid_temp are known, null once
                                         flux is calculated) */
 
   /* Saved array for volume coupling. Will be used to build source term. */
@@ -271,7 +271,7 @@ _finalize_comm(cs_syr_coupling_t  *syr_coupling)
  *   syr_coupling  <--  Syrthes coupling structure
  *   op_name_send  <--  operation name to send, or nullptr. Only the 32
  *                      first characters are sent if the nae is longer.
- *   op_name_recv  <--  operation name to receive, or nullptr (size: 33)
+ *   op_name_recv  <--  operation name to receive, or null (size: 33)
  *----------------------------------------------------------------------------*/
 
 static void

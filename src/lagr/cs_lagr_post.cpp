@@ -160,7 +160,7 @@ _activate_particle_output(void)
  * Default additional particle output of mesh and time-dependent variables
  * for the call to pstvar / cs_post_write_vars.
  *
- * Note: if the input pointer is non-nullptr, it must point to valid data
+ * Note: if the input pointer is non-null, it must point to valid data
  * when the output function is called, so either:
  * - that value or structure should not be temporary (i.e. local);
  * - post-processing output must be ensured using cs_post_write_var()

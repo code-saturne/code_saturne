@@ -559,7 +559,7 @@ cs_navsto_system_destroy(void)
  * \brief Retrieve the structure storing the parameters for the Navier--Stokes
  *        system
  *
- * \return nullptr or the pointer to a \ref cs_navsto_param_t structure
+ * \return null or the pointer to a \ref cs_navsto_param_t structure
  */
 /*----------------------------------------------------------------------------*/
 
@@ -578,7 +578,7 @@ cs_navsto_system_get_param(void)
 /*!
  * \brief Retrieve a pointer to the equation related to the momentum equation
  *
- * \return nullptr or the pointer
+ * \return null or the pointer
  */
 /*----------------------------------------------------------------------------*/
 

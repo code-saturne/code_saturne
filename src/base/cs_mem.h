@@ -403,7 +403,7 @@ cs_mem_realloc_hd(void             *ptr,
  *
  * This function calls free(), but adds tracing capabilities, and
  * automatically calls the cs_error() errorhandler if it fails to
- * free the corresponding memory. In case of a NULL pointer argument,
+ * free the corresponding memory. In case of a null pointer argument,
  * the function simply returns.
  *
  * parameters:
@@ -414,7 +414,7 @@ cs_mem_realloc_hd(void             *ptr,
  *   line_num  <-- line number in calling source file.
  *
  * returns:
- *   NULL pointer.
+ *   null pointer.
  *----------------------------------------------------------------------------*/
 
 void *

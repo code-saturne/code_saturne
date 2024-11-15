@@ -58,7 +58,7 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Build a matrix variant tuned matrix.vector product operations.
  *
  * The variant may later be applied to matrices of the same type and fill type.

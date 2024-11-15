@@ -99,7 +99,7 @@ typedef struct _cs_restart_t cs_restart_t;
  * \brief Function pointer for modifying behavior when checking a section's
  *        presence.
  *
- * Note: if the context pointer is non-NULL, it must point to valid data
+ * Note: if the context pointer is non-null, it must point to valid data
  * when the selection function is called, so that value or structure should
  * in general not be temporary.
  *
@@ -128,7 +128,7 @@ typedef int
 /*!
  * \brief Function pointer for modifying behavior when reading a section.
  *
- * Note: if the context pointer is non-NULL, it must point to valid data
+ * Note: if the context pointer is non-null, it must point to valid data
  * when the selection function is called, so that value or structure should
  * in general not be temporary.
  *
@@ -159,7 +159,7 @@ typedef int
 /*!
  * \brief Function pointer for modifying behavior when writing a section.
  *
- * Note: if the context pointer is non-NULL, it must point to valid data
+ * Note: if the context pointer is non-null, it must point to valid data
  * when the selection function is called, so that value or structure should
  * in general not be temporary.
  *
@@ -195,14 +195,14 @@ typedef void
 /*!
  * \brief  Query checkpoint intervals.
  *
- * \param[out]  nt_interval  if non-NULL, time-step interval for checkpoint
+ * \param[out]  nt_interval  if non-null, time-step interval for checkpoint
  *                             if > 0 time step interval for checkpoint
  *                             if 0, default of 4 checkpoints per run
  *                             if -1, checkpoint at end
  *                             if -2, no checkpointing
- * \param[out]  t_interval   if non NULL, time value checkpoint interval;
+ * \param[out]  t_interval   if non-null, time value checkpoint interval;
  *                           has priority over nt_interval if > -1
- * \param[out]  wt_interval  if non NULL, wall-clock interval for checkpoints;
+ * \param[out]  wt_interval  if non-null, wall-clock interval for checkpoints;
  *                           has priority over nt_interval if > -1
  */
 /*----------------------------------------------------------------------------*/
@@ -383,7 +383,7 @@ cs_restart_present(void);
  * \brief  Initialize a restart file.
  *
  * \param[in]  name  file name
- * \param[in]  path  optional directory name for output, or NULL for default
+ * \param[in]  path  optional directory name for output, or null for default
  *                   (directory automatically created if necessary)
  * \param[in]  mode  read or write
  *
@@ -438,7 +438,7 @@ cs_restart_check_base_location(const cs_restart_t  *restart,
  * \param[in]  location_name   name associated with the location
  * \param[in]  n_glob_ents     global number of entities
  * \param[in]  n_ents          local number of entities
- * \param[in]  ent_global_num  global entity numbers, or NULL
+ * \param[in]  ent_global_num  global entity numbers, or null
  *
  * \return  the location id assigned, or -1 in case of error
  */
@@ -458,7 +458,7 @@ cs_restart_add_location(cs_restart_t      *restart,
  * \param[in]  location_name   name associated with the location
  * \param[in]  n_glob_ents     global number of entities
  * \param[in]  n_ents          local number of entities
- * \param[in]  ent_global_num  global entity numbers, or NULL
+ * \param[in]  ent_global_num  global entity numbers, or null
  *
  * \return  the location id assigned, or -1 in case of error
  */
@@ -491,7 +491,7 @@ cs_restart_clear_locations_ref(void);
  * (and the pointer must remain valid until the matching restart structure
  * is destroyed.
  *
- * \param[in]  context  pointer to associated data, or NULL
+ * \param[in]  context  pointer to associated data, or null
  */
 /*----------------------------------------------------------------------------*/
 
@@ -660,7 +660,7 @@ cs_restart_write_section(cs_restart_t           *restart,
  *
  * \param[in]   restart      associated restart file pointer
  * \param[in]   name         name of particles set
- * \param[out]  n_particles  number of particles, or NULL
+ * \param[out]  n_particles  number of particles, or null
  *
  * \return  the location id assigned to the particles, or -1 in case of error
  */

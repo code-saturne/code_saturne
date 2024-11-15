@@ -110,10 +110,10 @@ BEGIN_C_DECLS
 /*!
  * \brief Evaluate the associated rank based on a mesh location's range set.
  *
- * \param[in]       rs           pointer to range set structure, or nullptr
+ * \param[in]       rs           pointer to range set structure, or null
  * \param[in]       location_id  base associated mesh location idà
  * \param[in]       n_elts       number of associated elements
- * \param[in]       elt_ids      ids of associated elements, or nullptr if no
+ * \param[in]       elt_ids      ids of associated elements, or null if no
  *                               filtering is required
  * \param[in, out]  vals         pointer to output values
  *                               (size: n_elts*dimension)
@@ -178,7 +178,7 @@ _range_set_mpi_rank_id(const cs_range_set_t  *rs,
  *
  * \param[in]       location_id  base associated mesh location id
  * \param[in]       n_elts       number of associated elements
- * \param[in]       elt_ids      ids of associated elements, or nullptr if no
+ * \param[in]       elt_ids      ids of associated elements, or null if no
  *                               filtering is required
  * \param[in, out]  input        pointer to associated mesh structure
  *                               (to be cast as cs_mesh_t *) for interior
@@ -266,7 +266,7 @@ _location_mpi_rank_id(int               location_id,
  *
  * \param[in]       location_id  base associated mesh location id
  * \param[in]       n_elts       number of associated elements
- * \param[in]       elt_ids      ids of associated elements, or nullptr if no
+ * \param[in]       elt_ids      ids of associated elements, or null if no
  *                               filtering is required
  * \param[in, out]  input        pointer to associated mesh structure
  *                               (to be cast as cs_mesh_t *)
@@ -375,7 +375,7 @@ _location_r_gen(int               location_id,
  *
  * \param[in]       location_id  base associated mesh location id
  * \param[in]       n_elts       number of associated elements
- * \param[in]       elt_ids      ids of associated elements, or nullptr if no
+ * \param[in]       elt_ids      ids of associated elements, or null if no
  *                               filtering is required
  * \param[in, out]  input        pointer to associated mesh structure
  *                               (to be cast as cs_mesh_t *) for interior
@@ -438,7 +438,7 @@ _absolute_pressure_f(int               location_id,
  *
  * \param[in]       location_id  base associated mesh location id
  * \param[in]       n_elts       number of associated elements
- * \param[in]       elt_ids      ids of associated elements, or nullptr if no
+ * \param[in]       elt_ids      ids of associated elements, or null if no
  *                               filtering is required
  * \param[in, out]  input        pointer to associated mesh structure
  *                               (to be cast as cs_mesh_t *) for interior
@@ -503,7 +503,7 @@ _absolute_velocity_f(int               location_id,
  *        turbomachinery models (absolute_pressure, absolute_velocity).
  *
  * \return  pointer to the associated function object if turbomachinery model
- *          is active, or nullptr
+ *          is active, or null
  */
 /*----------------------------------------------------------------------------*/
 
@@ -621,7 +621,7 @@ cs_function_default_define(void)
  * \param[in]   location_id  base associated mesh location id
  *
  * \return  pointer to the associated function object in case of success,
- *          or nullptr in case of error
+ *          or null in case of error
  */
 /*----------------------------------------------------------------------------*/
 
@@ -684,7 +684,7 @@ cs_function_define_mpi_rank_id(cs_mesh_location_type_t  location_id)
  * \param[in]   location_id  base associated mesh location id
  *
  * \return  pointer to the associated function object in case of success,
- *          or nullptr in case of error
+ *          or null in case of error
  */
 /*----------------------------------------------------------------------------*/
 
@@ -739,7 +739,7 @@ cs_function_define_refinement_generation(cs_mesh_location_type_t  location_id)
  * \brief Define function object for computation of boundary stress.
  *
  * \return  pointer to the associated function object in case of success,
- *          or nullptr in case of error
+ *          or null in case of error
  */
 /*----------------------------------------------------------------------------*/
 
@@ -773,7 +773,7 @@ cs_function_define_boundary_stress(void)
  * \brief Define function object for computation of normal boundary stress.
  *
  * \return  pointer to the associated function object in case of success,
- *          or nullptr in case of error
+ *          or null in case of error
  */
 /*----------------------------------------------------------------------------*/
 
@@ -807,7 +807,7 @@ cs_function_define_boundary_stress_normal(void)
  * \brief Define function object for computation of tangential boundary stress.
  *
  * \return  pointer to the associated function object in case of success,
- *          or nullptr in case of error
+ *          or null in case of error
  */
 /*----------------------------------------------------------------------------*/
 
@@ -841,7 +841,7 @@ cs_function_define_boundary_stress_tangential(void)
  * \brief Define function object for computation of boundary thermal flux.
  *
  * \return  pointer to the associated function object in case of success,
- *          or nullptr in case of error
+ *          or null in case of error
  */
 /*----------------------------------------------------------------------------*/
 
@@ -895,7 +895,7 @@ cs_function_define_boundary_thermal_flux(void)
  * \brief Define function for computation of boundary layer Nusselt.
  *
  * \return  pointer to the associated function object in case of success,
- *          or nullptr in case of error
+ *          or null in case of error
  */
 /*----------------------------------------------------------------------------*/
 
@@ -955,7 +955,7 @@ cs_function_define_boundary_nusselt(void)
  * \brief Define function for computation of cell Q criterion.
  *
  * \return  pointer to the associated function object in case of success,
- *          or nullptr in case of error
+ *          or null in case of error
  */
 /*----------------------------------------------------------------------------*/
 
@@ -993,7 +993,7 @@ cs_function_define_q_criterion(void)
  *
  * \param[in]       location_id  base associated mesh location id
  * \param[in]       n_elts       number of associated elements
- * \param[in]       elt_ids      ids of associated elements, or nullptr if no
+ * \param[in]       elt_ids      ids of associated elements, or null if no
  *                               filtering is required
  * \param[in, out]  input        pointer to field
  * \param[in, out]  vals         pointer to output values
@@ -1043,7 +1043,7 @@ cs_function_class_or_zone_id(int               location_id,
  *
  * \param[in]       location_id  base associated mesh location id
  * \param[in]       n_elts       number of associated elements
- * \param[in]       elt_ids      ids of associated elements, or nullptr if no
+ * \param[in]       elt_ids      ids of associated elements, or null if no
  *                               filtering is required
  * \param[in, out]  input        pointer to field
  * \param[in, out]  vals         pointer to output values
@@ -1193,7 +1193,7 @@ cs_function_field_boundary_nr(int               location_id,
  *
  * \param[in]       location_id  base associated mesh location id
  * \param[in]       n_elts       number of associated elements
- * \param[in]       elt_ids      ids of associated elements, or nullptr if no
+ * \param[in]       elt_ids      ids of associated elements, or null if no
  *                               filtering is required
  * \param[in, out]  input        ignored
  * \param[in, out]  vals         pointer to output values
@@ -1245,7 +1245,7 @@ cs_function_boundary_stress(int               location_id,
  *
  * \param[in]       location_id  base associated mesh location id
  * \param[in]       n_elts       number of associated elements
- * \param[in]       elt_ids      ids of associated elements, or nullptr if no
+ * \param[in]       elt_ids      ids of associated elements, or null if no
  *                               filtering is required
  * \param[in, out]  input        ignored
  * \param[in, out]  vals         pointer to output values
@@ -1301,7 +1301,7 @@ cs_function_boundary_stress_normal(int               location_id,
  *
  * \param[in]       location_id  base associated mesh location id
  * \param[in]       n_elts       number of associated elements
- * \param[in]       elt_ids      ids of associated elements, or nullptr if no
+ * \param[in]       elt_ids      ids of associated elements, or null if no
  *                               filtering is required
  * \param[in, out]  input        ignored
  * \param[in, out]  vals         pointer to output values
@@ -1363,7 +1363,7 @@ cs_function_boundary_stress_tangential(int               location_id,
  *
  * \param[in]       location_id  base associated mesh location id
  * \param[in]       n_elts       number of associated elements
- * \param[in]       elt_ids      ids of associated elements, or nullptr if no
+ * \param[in]       elt_ids      ids of associated elements, or null if no
  *                               filtering is required
  * \param[in, out]  input        ignored
  * \param[in, out]  vals         pointer to output values
@@ -1432,7 +1432,7 @@ cs_function_boundary_thermal_flux(int               location_id,
  *
  * \param[in]       location_id  base associated mesh location id
  * \param[in]       n_elts       number of associated elements
- * \param[in]       elt_ids      ids of associated elements, or nullptr if no
+ * \param[in]       elt_ids      ids of associated elements, or null if no
  *                               filtering is required
  * \param[in, out]  input        ignored
  * \param[in, out]  vals         pointer to output values
@@ -1656,7 +1656,7 @@ cs_function_boundary_nusselt(int               location_id,
  *
  * \param[in]       location_id  base associated mesh location id
  * \param[in]       n_elts       number of associated elements
- * \param[in]       elt_ids      ids of associated elements, or nullptr if no
+ * \param[in]       elt_ids      ids of associated elements, or null if no
  *                               filtering is required
  * \param[in, out]  input        ignored
  * \param[in, out]  vals         pointer to output values

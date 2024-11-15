@@ -846,7 +846,7 @@ fvm_nodal_section_create(const fvm_element_t  type)
  *   this_section <-> pointer to structure that should be destroyed
  *
  * returns:
- *   nullptr pointer
+ *   null pointer
  *----------------------------------------------------------------------------*/
 
 fvm_nodal_section_t *
@@ -1187,7 +1187,7 @@ fvm_nodal_create(const char  *name,
  *   this_nodal  <-> pointer to structure that should be destroyed
  *
  * returns:
- *  nullptr pointer
+ *   null pointer
  *----------------------------------------------------------------------------*/
 
 fvm_nodal_t *

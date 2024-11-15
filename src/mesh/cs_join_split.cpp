@@ -576,7 +576,7 @@ _create_face_builder(cs_lnum_t  n_faces)
  *   builder <-- pointer to the structure to delete
  *
  * returns:
- *   a nullptr pointer.
+ *   a null pointer.
  *---------------------------------------------------------------------------*/
 
 static face_builder_t *

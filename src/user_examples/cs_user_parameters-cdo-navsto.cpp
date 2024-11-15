@@ -98,7 +98,7 @@ __vel(const cs_real_3_t pxyz,
 /*!
  * \brief  Function used to define the velocity value everywhere. This prototype
  *         follows the one defined for all analytic functions.
- *         elt_ids is optional. If not nullptr, it enables to get an access in
+ *         elt_ids is optional. If non-null, it enables to get an access in
  *         coords at the right location and the same thing to fill retval if
  *         compact is set to false
  *
@@ -180,7 +180,7 @@ __st(const cs_real_3_t pxyz,
 /*!
  * \brief Set the source term definition (steady case)
  *        This prototype follows the one defined for all analytic functions.
- *        pt_ids is optional. If not nullptr, it enables to access the xyz array
+ *        pt_ids is optional. If non-null, it enables to access the xyz array
  *        at the right location and the same thing to fill the res array if
  *        compact is set to false
  *

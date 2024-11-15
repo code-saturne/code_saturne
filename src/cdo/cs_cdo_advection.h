@@ -62,7 +62,7 @@ BEGIN_C_DECLS
  * \param[in]      eqp      pointer to a cs_equation_param_t structure
  * \param[in]      cm       pointer to a cs_cell_mesh_t structure
  * \param[in]      csys     pointer to a cs_cell_sys_t structure
- * \param[in, out] input    NULL or pointer to a structure cast on-the-fly
+ * \param[in, out] input    null or pointer to a structure cast on-the-fly
  * \param[in, out] cb       pointer to a cs_cell_builder_t structure
  */
 /*----------------------------------------------------------------------------*/
@@ -204,7 +204,7 @@ typedef void
  * \param[in]      eqp      pointer to a cs_equation_param_t structure
  * \param[in]      cm       pointer to a cs_cell_mesh_t structure
  * \param[in]      csys     pointer to a cs_cell_sys_t structure
- * \param[in, out] input    NULL or pointer to a structure cast on-the-fly
+ * \param[in, out] input    null or pointer to a structure cast on-the-fly
  * \param[in, out] cb       pointer to a cs_cell_builder_t structure
  */
 /*----------------------------------------------------------------------------*/

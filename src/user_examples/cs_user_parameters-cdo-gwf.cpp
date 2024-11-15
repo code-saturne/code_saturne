@@ -80,7 +80,7 @@ static const double k1 = 1e5, k2 = 1;
  * \brief  Get the initial condition for the tracer attached to the GWF problem
  *         Generic function pointer for an evaluation relying on an analytic
  *         function.
- *         pt_ids is optional. If not nullptr, it enables to access to the xyz
+ *         pt_ids is optional. If non-null, it enables to access to the xyz
  *         array with an indirection. The same indirection can be applied to
  *         fill retval if dense_output is set to false.
  *
@@ -89,7 +89,7 @@ static const double k1 = 1e5, k2 = 1;
  * \param[in]      pt_ids        list of elements ids (in coords and retval)
  * \param[in]      xyz           where ? Coordinates array
  * \param[in]      dense_output  perform an indirection in retval or not
- * \param[in]      input         nullptr or pointer to a structure cast on-the-fly
+ * \param[in]      input         null or pointer to a structure cast on-the-fly
  * \param[in, out] retval        resulting value(s). Must be allocated.
  */
 /*----------------------------------------------------------------------------*/
@@ -337,7 +337,7 @@ cs_user_model(void)
      */
 
     cs_gwf_tracer_set_soil_param(tr,
-                                 nullptr,     /* soil name or nullptr for all */
+                                 nullptr,  /* soil name or nullptr for all */
                                  0.,       /* water molecular diffusivity */
                                  1., 0.,   /* alpha (longi. and transvesal) */
                                  1e-4);    /* distribution coef. */
@@ -374,7 +374,7 @@ cs_user_model(void)
      */
 
     cs_gwf_tracer_set_soil_param(rtr,
-                                 nullptr,     /* soil name or nullptr for all */
+                                 nullptr,  /* soil name or nullptr for all */
                                  0.,       /* water molecular diffusivity */
                                  1., 0.,   /* alpha (longi. and transvesal) */
                                  1e-4);    /* distribution coef. */

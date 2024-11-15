@@ -304,7 +304,7 @@ cs_basis_func_copy_setup(const cs_basis_func_t   *ref,
  *
  * \param[in, out]  pbf   pointer to the cs_basis_func_t structure to free
  *
- * \return a NULL pointer
+ * \return a null pointer
  */
 /*----------------------------------------------------------------------------*/
 
@@ -354,8 +354,8 @@ cs_basis_func_dump(const cs_basis_func_t  *pbf);
  *         Print into the file f if given otherwise open a new file named
  *         fname if given otherwise print into the standard output
  *
- * \param[in]  fp      pointer to a file structure or NULL
- * \param[in]  fname   filename or NULL
+ * \param[in]  fp      pointer to a file structure or null
+ * \param[in]  fname   filename or null
  * \param[in]  pbf     pointer to the cs_basis_func_t structure to dump
  */
 /*----------------------------------------------------------------------------*/

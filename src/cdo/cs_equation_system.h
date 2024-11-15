@@ -85,7 +85,7 @@ typedef void *
  * \param[in, out] core_array   array of the core structures for an equation
  * \param[in, out] sys_context  pointer to a context structure cast on-the-fly
  *
- * \return a NULL pointer
+ * \return a null pointer
  */
 /*----------------------------------------------------------------------------*/
 
@@ -182,7 +182,7 @@ typedef struct {
    * dealing with the crossed terms (i.e. the coupling between variables) are
    * owned by this structure.
    *
-   * By default, there is no crossed term (i.e. params[1] = NULL)
+   * By default, there is no crossed term (i.e. params[1] = nullptr)
    *
    * The same rationale applies to builder structures and scheme context
    * structures. All these structures are contained in the structure \ref

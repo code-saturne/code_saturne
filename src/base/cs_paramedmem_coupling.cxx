@@ -352,7 +352,7 @@ cs_paramedmem_coupling_by_id(int  cpl_id)
  *
  * \param[in] name  name of the coupling
  *
- * \return pointer to cs_paramedmem_coupling_t struct or nullptr if not found.
+ * \return pointer to cs_paramedmem_coupling_t struct or null if not found.
  *
  */
 /*----------------------------------------------------------------------------*/
@@ -388,10 +388,10 @@ cs_paramedmem_coupling_by_name(const char *name)
 /*!
  * \brief Create a new ParaMEDMEM coupling
  *
- * \param[in] app1_name  Name of app n°1 or nullptr if calling app is app1
- * \param[in] app2_name  Name of app n°2 or nullptr if calling app is app2
+ * \param[in] app1_name  Name of app n°1 or null if calling app is app1
+ * \param[in] app2_name  Name of app n°2 or null if calling app is app2
  * \param[in] cpl_name   Name of the coupling.
- *                       If nullptr an automatic name is generated.
+ *                       If null an automatic name is generated.
  *
  * \return pointer to newly created cs_paramedmem_coupling_t structure.
  */
@@ -490,10 +490,10 @@ cs_paramedmem_coupling_create(const char  *app1_name,
  *
  * In this case, data "received" matches the initialized values.
  *
- * \param[in] app1_name  Name of app n°1 or nullptr if calling app is app1
- * \param[in] app2_name  Name of app n°2 or nullptr if calling app is app2
+ * \param[in] app1_name  Name of app n°1 or null if calling app is app1
+ * \param[in] app2_name  Name of app n°2 or null if calling app is app2
  * \param[in] cpl_name   Name of the coupling.
- *                       If nullptr an automatic name is generated.
+ *                       If null an automatic name is generated.
  *
  * \return pointer to newly created cs_paramedmem_coupling_t structure.
  */
@@ -824,7 +824,7 @@ cs_paramedmem_mesh_get_n_vertices(const cs_paramedmem_coupling_t  *coupling)
  *
  * \param[in] coupling  pointer to cs_paramedmem_coupling_t struct
  *
- * \return pointer to indirection list; nullptr if locally contiguous or empty
+ * \return pointer to indirection list; null if locally contiguous or empty
  */
 /*----------------------------------------------------------------------------*/
 

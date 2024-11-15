@@ -77,7 +77,7 @@ typedef void *
  *
  * \param[in, out] scheme_context    pointer to a structure cast on-the-fly
  *
- * \return a NULL pointer
+ * \return a null pointer
  */
 /*----------------------------------------------------------------------------*/
 

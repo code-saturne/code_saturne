@@ -324,7 +324,7 @@ cs_sdm_block33_create(int      n_max_blocks_by_row,
  *
  * \param[in] mat  pointer to a cs_sdm_t struct. to free
  *
- * \return a nullptr pointer
+ * \return a null pointer
  */
 /*----------------------------------------------------------------------------*/
 
@@ -2192,7 +2192,7 @@ cs_sdm_dump(cs_lnum_t           parent_id,
 {
   if (mat == nullptr) {
     cs_log_printf(CS_LOG_DEFAULT,
-                  "<< MATRIX is set to nullptr (parent id: %ld)>>\n",
+                  "<< MATRIX is set to null (parent id: %ld)>>\n",
                   (long)parent_id);
     return;
   }

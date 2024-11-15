@@ -91,7 +91,7 @@ BEGIN_C_DECLS
  * \c n_elts * <value dimension> for the associated data type, in the same
  * order as \c elt_ids if present.)
  *
- * Note: if the input pointer is non-NULL, it must point to valid data
+ * Note: if the input pointer is non-null, it must point to valid data
  * when the selection function is called, so either:
  * - that value or structure should not be temporary (i.e. local);
  * - when a single integer identifier is needed, the input pointer can be
@@ -313,7 +313,7 @@ cs_function_by_name(const char  *name);
 /*!
  * \brief Return a pointer to a function object based on its name if present.
  *
- * If no function of the given name is defined, NULL is returned.
+ * If no function of the given name is defined, nullptr is returned.
  *
  * \param[in]  name  function name
  *

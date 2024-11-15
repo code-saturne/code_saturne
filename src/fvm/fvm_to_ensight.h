@@ -103,7 +103,7 @@ fvm_to_ensight_init_writer(const char             *name,
  *   this_writer_p <-- pointer to opaque Ensight Gold writer structure.
  *
  * returns:
- *   NULL pointer.
+ *   null pointer.
  *----------------------------------------------------------------------------*/
 
 void *

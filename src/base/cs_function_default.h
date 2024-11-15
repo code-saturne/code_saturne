@@ -79,7 +79,7 @@ cs_function_default_define(void);
  * \param[in]   location_id  base associated mesh location id
  *
  * \return  pointer to the associated function object in case of success,
- *          or NULL in case of error
+ *          or null in case of error
  */
 /*----------------------------------------------------------------------------*/
 
@@ -94,7 +94,7 @@ cs_function_define_mpi_rank_id(cs_mesh_location_type_t  location_id);
  * \param[in]   location_id  base associated mesh location id
  *
  * \return  pointer to the associated function object in case of success,
- *          or NULL in case of error
+ *          or null in case of error
  */
 /*----------------------------------------------------------------------------*/
 
@@ -106,7 +106,7 @@ cs_function_define_refinement_generation(cs_mesh_location_type_t  location_id);
  * \brief Define function object for computation of boundary stress.
  *
  * \return  pointer to the associated function object in case of success,
- *          or NULL in case of error
+ *          or null in case of error
  */
 /*----------------------------------------------------------------------------*/
 
@@ -118,7 +118,7 @@ cs_function_define_boundary_stress(void);
  * \brief Define function object for computation of normal boundary stress.
  *
  * \return  pointer to the associated function object in case of success,
- *          or NULL in case of error
+ *          or null in case of error
  */
 /*----------------------------------------------------------------------------*/
 
@@ -130,7 +130,7 @@ cs_function_define_boundary_stress_normal(void);
  * \brief Define function object for computation of tangential boundary stress.
  *
  * \return  pointer to the associated function object in case of success,
- *          or NULL in case of error
+ *          or null in case of error
  */
 /*----------------------------------------------------------------------------*/
 
@@ -142,7 +142,7 @@ cs_function_define_boundary_stress_tangential(void);
  * \brief Define function object for computation of boundary thermal flux.
  *
  * \return  pointer to the associated function object in case of success,
- *          or NULL in case of error
+ *          or null in case of error
  */
 /*----------------------------------------------------------------------------*/
 
@@ -154,7 +154,7 @@ cs_function_define_boundary_thermal_flux(void);
  * \brief Define function for computation of cell Q criterion.
  *
  * \return  pointer to the associated function object in case of success,
- *          or NULL in case of error
+ *          or null in case of error
  */
 /*----------------------------------------------------------------------------*/
 
@@ -174,7 +174,7 @@ cs_function_define_q_criterion(void);
  *
  * \param[in]       location_id  base associated mesh location id
  * \param[in]       n_elts       number of associated elements
- * \param[in]       elt_ids      ids of associated elements, or NULL if no
+ * \param[in]       elt_ids      ids of associated elements, or null if no
  *                               filtering is required
  * \param[in, out]  input        pointer to field
  * \param[in, out]  vals         pointer to output values
@@ -197,7 +197,7 @@ cs_function_class_or_zone_id(int               location_id,
  *
  * \param[in]       location_id  base associated mesh location id
  * \param[in]       n_elts       number of associated elements
- * \param[in]       elt_ids      ids of associated elements, or NULL if no
+ * \param[in]       elt_ids      ids of associated elements, or null if no
  *                               filtering is required
  * \param[in, out]  input        pointer to field
  * \param[in, out]  vals         pointer to output values
@@ -220,7 +220,7 @@ cs_function_field_boundary_nr(int               location_id,
  *
  * \param[in]       location_id  base associated mesh location id
  * \param[in]       n_elts       number of associated elements
- * \param[in]       elt_ids      ids of associated elements, or NULL if no
+ * \param[in]       elt_ids      ids of associated elements, or null if no
  *                               filtering is required
  * \param[in, out]  input        ignored
  * \param[in, out]  vals         pointer to output values
@@ -243,7 +243,7 @@ cs_function_boundary_stress(int               location_id,
  *
  * \param[in]       location_id  base associated mesh location id
  * \param[in]       n_elts       number of associated elements
- * \param[in]       elt_ids      ids of associated elements, or NULL if no
+ * \param[in]       elt_ids      ids of associated elements, or null if no
  *                               filtering is required
  * \param[in, out]  input        ignored
  * \param[in, out]  vals         pointer to output values
@@ -266,7 +266,7 @@ cs_function_boundary_stress_normal(int               location_id,
  *
  * \param[in]       location_id  base associated mesh location id
  * \param[in]       n_elts       number of associated elements
- * \param[in]       elt_ids      ids of associated elements, or NULL if no
+ * \param[in]       elt_ids      ids of associated elements, or null if no
  *                               filtering is required
  * \param[in, out]  input        ignored
  * \param[in, out]  vals         pointer to output values
@@ -286,7 +286,7 @@ cs_function_boundary_stress_tangential(int               location_id,
  * \brief Define function for computation of boundary layer Nusselt.
  *
  * \return  pointer to the associated function object in case of success,
- *          or NULL in case of error
+ *          or null in case of error
  */
 /*----------------------------------------------------------------------------*/
 
@@ -301,7 +301,7 @@ cs_function_define_boundary_nusselt(void);
  *
  * \param[in]       location_id  base associated mesh location id
  * \param[in]       n_elts       number of associated elements
- * \param[in]       elt_ids      ids of associated elements, or NULL if no
+ * \param[in]       elt_ids      ids of associated elements, or null if no
  *                               filtering is required
  * \param[in, out]  input        ignored
  * \param[in, out]  vals         pointer to output values
@@ -324,7 +324,7 @@ cs_function_boundary_thermal_flux(int               location_id,
  *
  * \param[in]       location_id  base associated mesh location id
  * \param[in]       n_elts       number of associated elements
- * \param[in]       elt_ids      ids of associated elements, or NULL if no
+ * \param[in]       elt_ids      ids of associated elements, or null if no
  *                               filtering is required
  * \param[in, out]  input        ignored
  * \param[in, out]  vals         pointer to output values
@@ -356,7 +356,7 @@ cs_function_boundary_nusselt(int               location_id,
  *
  * \param[in]       location_id  base associated mesh location id
  * \param[in]       n_elts       number of associated elements
- * \param[in]       elt_ids      ids of associated elements, or NULL if no
+ * \param[in]       elt_ids      ids of associated elements, or null if no
  *                               filtering is required
  * \param[in, out]  input        ignored
  * \param[in, out]  vals         pointer to output values

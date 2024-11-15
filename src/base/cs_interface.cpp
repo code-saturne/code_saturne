@@ -191,7 +191,7 @@ _cs_interface_create(void)
  *   itf <-> pointer to pointer to structure to destroy
  *
  * returns:
- *   nullptr pointer
+ *   null pointer
  *----------------------------------------------------------------------------*/
 
 static void
@@ -3492,7 +3492,7 @@ cs_interface_get_tr_index(const cs_interface_t  *itf)
  *                                    (interlaced, using global numberings)
  *                                    for each list
  *
- * \return  pointer to list of interfaces (possibly nullptr in serial mode)
+ * \return  pointer to list of interfaces (possibly null in serial mode)
  */
 /*----------------------------------------------------------------------------*/
 

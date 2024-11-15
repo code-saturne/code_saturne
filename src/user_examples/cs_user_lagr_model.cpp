@@ -51,7 +51,7 @@ BEGIN_C_DECLS
 /*----------------------------------------------------------------------------
  * Compute boundary impact weight for Lagrangian statistics.
  *
- * Note: if the input pointer is non-nullptr, it must point to valid data
+ * Note: if the input pointer is non-null, it must point to valid data
  * when the selection function is called, so that value or structure should
  * not be temporary (i.e. local);
  *
@@ -92,7 +92,7 @@ _boundary_impact_weight(const void                 *input,
 /*----------------------------------------------------------------------------
  * Compute incident kinetic energy impact weight for Lagrangian statistics.
  *
- * Note: if the input pointer is non-nullptr, it must point to valid data
+ * Note: if the input pointer is non-null, it must point to valid data
  * when the selection function is called, so that value or structure should
  * not be temporary (i.e. local);
  *

@@ -427,7 +427,7 @@ fvm_to_plot_init_writer(const char             *name,
  *   writer <-- pointer to opaque plot Gold writer structure.
  *
  * returns:
- *   nullptr pointer
+ *   null pointer
  *----------------------------------------------------------------------------*/
 
 void *

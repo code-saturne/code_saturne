@@ -1257,7 +1257,7 @@ cs_cdo_quantities_build(const cs_mesh_t            *m,
  *
  * \param[in]  cdoq    pointer to structure to free
  *
- * \return a nullptr pointer
+ * \return a null pointer
  */
 /*----------------------------------------------------------------------------*/
 

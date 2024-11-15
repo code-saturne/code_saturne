@@ -659,7 +659,7 @@ fvm_to_histogram_init_writer(const char             *name,
  *   writer <-- pointer to opaque histogram Gold writer structure.
  *
  * returns:
- *   nullptr pointer
+ *   null pointer
  *----------------------------------------------------------------------------*/
 
 void *

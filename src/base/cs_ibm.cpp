@@ -3694,11 +3694,11 @@ cs_ibm_object_by_id(int obj_id)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Try to get an object based on its name. Returns nullptr if not found
+ * \brief Try to get an object based on its name. Returns null if not found
  *
  * \param[in] name  name of the object to get
  *
- * \return pointer to object structure, nullptr if not found
+ * \return pointer to object structure, null if not found
  */
 /*----------------------------------------------------------------------------*/
 
@@ -3725,7 +3725,7 @@ cs_ibm_object_by_name_try(const char *name)
  *
  * \param[in] name  name of the object to get
  *
- * \return pointer to object structure, nullptr if not found
+ * \return pointer to object structure, null if not found
  */
 /*----------------------------------------------------------------------------*/
 

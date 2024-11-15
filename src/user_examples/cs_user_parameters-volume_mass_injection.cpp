@@ -66,10 +66,10 @@ BEGIN_C_DECLS
  *
  * \param[in]      time          when ?
  * \param[in]      n_elts        number of elements to consider
- * \param[in]      elt_ids       nullptr or indirection list of elements
+ * \param[in]      elt_ids       null or indirection list of elements
  * \param[in]      xyz           where ?
  * \param[in]      dense_output  perform an indirection in retval or not
- * \param[in]      input         nullptr or pointer to a structure cast on-the-fly
+ * \param[in]      input         null or pointer to a structure cast on-the-fly
  * \param[in, out] res           result of the function. Must be allocated.
  */
 /*----------------------------------------------------------------------------*/

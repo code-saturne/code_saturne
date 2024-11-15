@@ -3764,7 +3764,7 @@ fvm_to_ccm_init_writer(const char             *name,
  *   this_writer_p <-- pointer to opaque CCMIO writer structure.
  *
  * returns:
- *   nullptr pointer.
+ *   null pointer.
  *----------------------------------------------------------------------------*/
 
 void *

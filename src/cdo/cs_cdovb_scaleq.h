@@ -132,7 +132,7 @@ cs_cdovb_scaleq_init_context(cs_equation_param_t    *eqp,
  *
  * \param[in, out]  scheme_context   pointer to a cs_cdovb_scaleq_t structure
  *
- * \return a NULL pointer
+ * \return a null pointer
  */
 /*----------------------------------------------------------------------------*/
 

@@ -281,7 +281,7 @@ END_C_DECLS
  *   stream         <-- associated stream (for async prefetch only)
  *   val_d          --> matching pointer on device
  *   buf_d          --> matching allocation pointer on device (should be freed
- *                      after use if non-NULL)
+ *                      after use if non-null)
  *----------------------------------------------------------------------------*/
 
 template <typename T>

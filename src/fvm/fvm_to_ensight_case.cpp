@@ -173,7 +173,7 @@ _time_set_create(void)
  *   this_case  <-- time set structure
  *
  * returns:
- *   nullptr pointer
+ *   null pointer
  *----------------------------------------------------------------------------*/
 
 static fvm_to_ensight_case_time_t *
@@ -652,7 +652,7 @@ fvm_to_ensight_case_create(const char                   *const name,
  *   this_case  <-- case structure
  *
  * returns:
- *   nullptr pointer
+ *   null pointer
  *----------------------------------------------------------------------------*/
 
 fvm_to_ensight_case_t *

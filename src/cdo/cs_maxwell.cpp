@@ -447,7 +447,7 @@ cs_maxwell_activate(cs_flag_t     model,
 /*!
  * \brief  Free the main structure related to the Maxwell module
  *
- * \return a nullptr pointer
+ * \return a null pointer
  */
 /*----------------------------------------------------------------------------*/
 

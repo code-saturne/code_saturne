@@ -65,11 +65,11 @@ typedef enum {
  * \param[in]       n_cells          number of selected cells
  * \param[in]       cell_ids         ids of selected cells
  * \param[in, out]  cell_porosity    cell porosity
- * \param[in, out]  cell_f_center    cell fluid center, or NULL
- * \param[in, out]  i_face_porosity  interior face porosity, or NULL
- * \param[in, out]  i_face_f_center  interior face fluid center, or NULL
- * \param[in, out]  b_face_porosity  boundary face porosity, or NULL
- * \param[in, out]  b_face_f_center  boundary face fluid center, or NULL
+ * \param[in, out]  cell_f_center    cell fluid center, or null
+ * \param[in, out]  i_face_porosity  interior face porosity, or null
+ * \param[in, out]  i_face_f_center  interior face fluid center, or null
+ * \param[in, out]  b_face_porosity  boundary face porosity, or null
+ * \param[in, out]  b_face_f_center  boundary face fluid center, or null
  */
 /*----------------------------------------------------------------------------*/
 

@@ -90,7 +90,7 @@ fvm_nodal_create(const char  *name,
  *   this_nodal  <-> pointer to structure that should be destroyed
  *
  * returns:
- *  NULL pointer
+ *  null pointer
  *----------------------------------------------------------------------------*/
 
 fvm_nodal_t *

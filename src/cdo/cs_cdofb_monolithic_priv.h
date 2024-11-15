@@ -114,8 +114,8 @@ typedef void
  * \param[in]      nsp          pointer to a \ref cs_navsto_param_t structure
  * \param[in]      vel_f_n      velocity face DoFs at time step n
  * \param[in]      vel_c_n      velocity cell DoFs at time step n
- * \param[in]      vel_f_nm1    velocity face DoFs at time step n-1 or NULL
- * \param[in]      vel_c_nm1    velocity cell DoFs at time step n-1 or NULL
+ * \param[in]      vel_f_nm1    velocity face DoFs at time step n-1 or null
+ * \param[in]      vel_c_nm1    velocity cell DoFs at time step n-1 or null
  * \param[in, out] sc           pointer to the scheme context
  */
 /*----------------------------------------------------------------------------*/

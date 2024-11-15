@@ -185,7 +185,7 @@ _volume_mass_injection_get_field_arrays(const cs_field_t *f,
  * \param[in]      connect       pointer to a cs_cdo_connect_t structure
  * \param[in]      quant         pointer to a cs_cdo_quantities_t structure
  * \param[in]      time_eval     physical time at which one evaluates the term
- * \param[in]      context       nullptr or pointer to a context structure
+ * \param[in]      context       null or pointer to a context structure
  * \param[in, out] eval          array storing the result (must be allocated)
  */
 /*----------------------------------------------------------------------------*/
@@ -247,7 +247,7 @@ _eval_sym_tensor_by_val(cs_lnum_t        n_elts,
  * \param[in]      connect       pointer to a cs_cdo_connect_t structure
  * \param[in]      quant         pointer to a cs_cdo_quantities_t structure
  * \param[in]      time_eval     physical time at which one evaluates the term
- * \param[in]      context       nullptr or pointer to a context structure
+ * \param[in]      context       null or pointer to a context structure
  * \param[in, out] eval          array storing the result (must be allocated)
  */
 /*----------------------------------------------------------------------------*/

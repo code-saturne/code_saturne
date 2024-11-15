@@ -2479,7 +2479,7 @@ cs_source_term_fb_pcvd_by_value(const cs_xdef_t           *source,
  * \param[in]      cm         pointer to a cs_cell_mesh_t structure
  * \param[in]      time_eval  physical time at which one evaluates the term
  * \param[in, out] cb         pointer to a cs_cell_builder_t structure
- * \param[in]      input      nullptr or pointer to a structure cast on-the-fly
+ * \param[in]      input      null or pointer to a structure cast on-the-fly
  * \param[in, out] values     pointer to the computed values
  */
 /*----------------------------------------------------------------------------*/
@@ -2697,7 +2697,7 @@ cs_source_term_fcb_pcsd_by_array(const cs_xdef_t           *source,
  * \param[in]      cm         pointer to a cs_cell_mesh_t structure
  * \param[in]      time_eval  physical time at which one evaluates the term
  * \param[in, out] cb         pointer to a cs_cell_builder_t structure
- * \param[in]      input      nullptr or pointer to a structure cast on-the-fly
+ * \param[in]      input      null or pointer to a structure cast on-the-fly
  * \param[in, out] values     pointer to the computed values
  */
 /*----------------------------------------------------------------------------*/
@@ -2752,7 +2752,7 @@ cs_source_term_fb_pcvd_bary_by_analytic(const cs_xdef_t           *source,
  * \param[in]      cm         pointer to a cs_cell_mesh_t structure
  * \param[in]      time_eval  physical time at which one evaluates the term
  * \param[in, out] cb         pointer to a cs_cell_builder_t structure
- * \param[in]      input      nullptr or pointer to a structure cast on-the-fly
+ * \param[in]      input      null or pointer to a structure cast on-the-fly
  * \param[in, out] values     pointer to the computed values
  */
 /*----------------------------------------------------------------------------*/

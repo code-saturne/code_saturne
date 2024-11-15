@@ -69,7 +69,7 @@ BEGIN_C_DECLS
  * \brief  Give the explicit definition of the advection field.
  *         Generic function pointer for an evaluation relying on an analytic
  *         function
- *         pt_ids is optional. If not nullptr, it enables to access to the coords
+ *         pt_ids is optional. If non-null, it enables to access to the coords
  *         array with an indirection. The same indirection can be applied to
  *         fill retval if dense_output is set to false.
  *
@@ -78,7 +78,7 @@ BEGIN_C_DECLS
  * \param[in]      pt_ids        list of elements ids (in coords and retval)
  * \param[in]      xyz           where ? Coordinates array
  * \param[in]      dense_output  perform an indirection in res or not
- * \param[in]      input         nullptr or pointer to a structure cast on-the-fly
+ * \param[in]      input         null or pointer to a structure cast on-the-fly
  * \param[in, out] res           resulting value(s). Must be allocated.
  */
 /*----------------------------------------------------------------------------*/
@@ -114,7 +114,7 @@ _define_adv_field(cs_real_t           time,
  * \brief  Give the explicit definition of the dirichlet boundary conditions
  *         Generic function pointer for an evaluation relying on an analytic
  *         function
- *         pt_ids is optional. If not nullptr, it enables to access to the coords
+ *         pt_ids is optional. If non-null, it enables to access to the coords
  *         array with an indirection. The same indirection can be applied to
  *         fill retval if dense_output is set to false.
  *
@@ -123,7 +123,7 @@ _define_adv_field(cs_real_t           time,
  * \param[in]      pt_ids        list of elements ids (in coords and retval)
  * \param[in]      xyz           where ? Coordinates array
  * \param[in]      dense_output  perform an indirection in res or not
- * \param[in]      input         nullptr or pointer to a structure cast on-the-fly
+ * \param[in]      input         null or pointer to a structure cast on-the-fly
  * \param[in, out] res           resulting value(s). Must be allocated.
  */
 /*----------------------------------------------------------------------------*/
@@ -156,7 +156,7 @@ _define_bcs(cs_real_t           time,
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Give the explicit definition of the source term
- *        pt_ids is optional. If not nullptr, it enables to access in xyz
+ *        pt_ids is optional. If non-null, it enables to access in xyz
  *        at the right location and to fill the resulting array if a dense
  *        output is not requested.
  *        Rely on the generic function pointer for an analytic function
@@ -166,7 +166,7 @@ _define_bcs(cs_real_t           time,
  * \param[in]      pt_ids       list of elements ids (to access coords and fill)
  * \param[in]      coords       where ?
  * \param[in]      dense_output true:no indirection, false:apply pt_ids
- * \param[in]      input        nullptr or pointer to a structure cast on-the-fly
+ * \param[in]      input        null or pointer to a structure cast on-the-fly
  * \param[in, out] values       result of the function
  */
 /*----------------------------------------------------------------------------*/
@@ -216,7 +216,7 @@ _my_source_term(cs_real_t           time,
  * \param[in, out] input    pointer to an input structure associated to a
  *                          context structure
  *
- * \return a nullptr pointer
+ * \return a null pointer
  */
 /*----------------------------------------------------------------------------*/
 

@@ -67,8 +67,8 @@ typedef struct {
   cs_gnum_t        *_g_id;          /*!< global id assigned to elements
                                          (private) */
 
-  const cs_interface_set_t  *ifs;   /*!< Associated interface set, or NULL */
-  const cs_halo_t           *halo;  /*!< Associated halo, or NULL */
+  const cs_interface_set_t  *ifs;   /*!< Associated interface set, or nullptr */
+  const cs_halo_t           *halo;  /*!< Associated halo, or nullptr */
 
 } cs_range_set_t;
 
@@ -111,8 +111,8 @@ typedef struct {
  * Elements and their periodic matches will have identical or distinct
  * global ids depending on the tr_ignore argument.
  *
- * \param[in]   ifs          pointer to interface set structure, or NULL
- * \param[in]   halo         pointer to halo structure, or NULL
+ * \param[in]   ifs          pointer to interface set structure, or nullptr
+ * \param[in]   halo         pointer to halo structure, or nullptr
  * \param[in]   n_elts       number of elements
  * \param[in]   balance      try to balance shared elements across ranks ?
  *                           (for elements shared across an interface set)
@@ -156,8 +156,8 @@ cs_range_set_define(const cs_interface_set_t  *ifs,
  * structures, but does not copy them, so those structures should have a
  * lifetime at least as long as the returned range set.
  *
- * \param[in]   ifs          pointer to interface set structure, or NULL
- * \param[in]   halo         pointer to halo structure, or NULL
+ * \param[in]   ifs          pointer to interface set structure, or nullptr
+ * \param[in]   halo         pointer to halo structure, or nullptr
  * \param[in]   n_elts       number of elements
  * \param[in]   balance      try to balance shared elements across ranks?
  *                           (for elements shared across an interface set)
@@ -189,8 +189,8 @@ cs_range_set_create(const cs_interface_set_t  *ifs,
  * shared by the range set, not copied, so they should have a lifetime at
  * least as long as the returned range set.
  *
- * \param[in]  ifs      pointer to interface set structure, or NULL
- * \param[in]  halo     pointer to halo structure, or NULL
+ * \param[in]  ifs      pointer to interface set structure, or nullptr
+ * \param[in]  halo     pointer to halo structure, or nullptr
  * \param[in]  n_elts   number of elements
  * \param[in]  l_range  global id range assigned to local rank:
  *                      [start, past-the-end[
@@ -227,7 +227,7 @@ cs_range_set_destroy(cs_range_set_t  **rs);
  * used to accelerate this operation, as only elements on that interface need
  * to be checked.
  *
- * \param[in]       rs        pointer to range set structure, or NULL
+ * \param[in]       rs        pointer to range set structure, or nullptr
  * \param[in]       datatype  type of data considered
  * \param[in]       stride    number of values per entity (interlaced)
  * \param[in, out]  val       pointer to array values
@@ -245,7 +245,7 @@ cs_range_set_zero_out_of_range(const cs_range_set_t  *rs,
  * \brief Synchronize values elements associated with a range set, using
  *        either a halo or an interface set.
  *
- * \param[in]       rs        pointer to range set structure, or NULL
+ * \param[in]       rs        pointer to range set structure, or nullptr
  * \param[in]       datatype  type of data considered
  * \param[in]       stride    number of values per entity (interlaced)
  * \param[in, out]  val       values buffer
@@ -262,7 +262,7 @@ cs_range_set_sync(const cs_range_set_t  *rs,
 /*!
  * \brief Gather element values associated with a range set to a compact set.
  *
- * \param[in]   rs        pointer to range set structure, or NULL
+ * \param[in]   rs        pointer to range set structure, or nullptr
  * \param[in]   datatype  type of data considered
  * \param[in]   stride    number of values per entity (interlaced)
  * \param[in]   src_val   source values buffer
@@ -285,7 +285,7 @@ cs_range_set_gather(const cs_range_set_t  *rs,
  * This includes parallel synchronization when the range set is associated
  * with a halo or interface set structure.
  *
- * \param[in]   rs        pointer to range set structure, or NULL
+ * \param[in]   rs        pointer to range set structure, or nullptr
  * \param[in]   datatype  type of data considered
  * \param[in]   stride    number of values per entity (interlaced)
  * \param[in]   src_val   source values buffer

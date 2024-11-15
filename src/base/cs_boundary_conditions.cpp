@@ -796,7 +796,7 @@ _compute_robin_bc(const cs_mesh_t            *mesh,
  * \brief cs_dof_func_t function to compute the velocity at boundary faces
  *        using a uniform norm.
  *
- * For the calling function, elt_ids is optional. If not nullptr, array(s) should
+ * For the calling function, elt_ids is optional. If non-null, array(s) should
  * be accessed with an indirection. The same indirection can be applied to fill
  * retval if dense_output is set to false.
  * In the current case, retval is allocated to mesh->n_b_faces * stride
@@ -855,7 +855,7 @@ _dof_vel_const_uniform_normal(cs_lnum_t         n_elts,
  * \brief cs_dof_func_t function to compute the velocity at boundary faces
  *        using a vector per face.
  *
- * For the calling function, elt_ids is optional. If not nullptr, array(s) should
+ * For the calling function, elt_ids is optional. If non-null, array(s) should
  * be accessed with an indirection. The same indirection can be applied to fill
  * retval if dense_output is set to false.
  * In the current case, retval is allocated to mesh->n_b_faces * stride
@@ -899,7 +899,7 @@ _dof_vel_from_buffer(cs_lnum_t         n_elts,
  * \brief cs_dof_func_t function to compute the velocity at boundary faces
  *        using a vector per face.
  *
- * For the calling function, elt_ids is optional. If not nullptr, array(s) should
+ * For the calling function, elt_ids is optional. If non-null, array(s) should
  * be accessed with an indirection. The same indirection can be applied to fill
  * retval if dense_output is set to false.
  * In the current case, retval is allocated to mesh->n_b_faces * stride
@@ -971,7 +971,7 @@ _clear_inlet_outlet_vel(cs_boundary_conditions_open_t *c)
  * \brief cs_eval_at_location_t function to compute the velocity at
  *        boundary faces using a constant uniform vector value.
  *
- * For the calling function, elt_ids is optional. If not nullptr, array(s) should
+ * For the calling function, elt_ids is optional. If non-null, array(s) should
  * be accessed with an indirection.
  *
  * \param[in]       location_id   base associated mesh location id
@@ -1014,7 +1014,7 @@ _vel_profile_constant_uniform(int               location_id,
  * \brief cs_eval_at_location_t function to compute the velocity at
  *        boundary faces using a constant uniform normal value.
  *
- * For the calling function, elt_ids is optional. If not nullptr, array(s) should
+ * For the calling function, elt_ids is optional. If non-null, array(s) should
  * be accessed with an indirection.
  *
  * \param[in]       location_id   base associated mesh location id
@@ -1133,7 +1133,7 @@ _compute_mass_flow_rate(const cs_zone_t  *zone)
  * \brief cs_eval_at_location_t function to scale the velocity at boundary
  *        faces so as to obtain the requested mass flow rate.
  *
- * For the calling function, elt_ids is optional. If not nullptr, array(s) should
+ * For the calling function, elt_ids is optional. If non-null, array(s) should
  * be accessed with an indirection.
  *
  * \param[in]       location_id   base associated mesh location id
@@ -1241,7 +1241,7 @@ _scale_vel_mass_flow_rate(int               location_id,
  * \brief cs_eval_at_location_t function to scale the velocity at boundary
  *        faces so as to obtain the requested volume flow rate.
  *
- * For the calling function, elt_ids is optional. If not nullptr, array(s) should
+ * For the calling function, elt_ids is optional. If non-null, array(s) should
  * be accessed with an indirection.
  *
  * \param[in]       location_id   base associated mesh location id
@@ -3128,7 +3128,7 @@ cs_boundary_conditions_open_set_velocity_by_normal_value(const  cs_zone_t  *z,
 /*!
  * \brief Assign a normal velocity to an inlet using a provided function.
  *
- * Reminder: if the input pointer is non-nullptr, it must point to valid data
+ * Reminder: if the input pointer is non-null, it must point to valid data
  * when the selection function is called, so either:
  * - that value or structure should not be temporary (i.e. local);
  * - when a single integer identifier is needed, the input pointer can be
@@ -3326,7 +3326,7 @@ cs_boundary_conditions_open_set_mass_flow_rate_by_value(const  cs_zone_t  *z,
  * must be aware that values from the previous time step or update will
  * be used, handle this in another manner.
  *
- * Reminder: if the input pointer is non-nullptr, it must point to valid data
+ * Reminder: if the input pointer is non-null, it must point to valid data
  * when the selection function is called, so either:
  * - that value or structure should not be temporary (i.e. local);
  * - when a single integer identifier is needed, the input pointer can be
@@ -3496,7 +3496,7 @@ cs_boundary_conditions_open_set_volume_flow_rate_by_value(const  cs_zone_t  *z,
  * must be aware that values from the previous time step or update will
  * be used, handle this in another manner.
  *
- * Reminder: if the input pointer is non-nullptr, it must point to valid data
+ * Reminder: if the input pointer is non-null, it must point to valid data
  * when the selection function is called, so either:
  * - that value or structure should not be temporary (i.e. local);
  * - when a single integer identifier is needed, the input pointer can be

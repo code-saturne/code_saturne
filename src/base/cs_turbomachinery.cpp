@@ -215,7 +215,7 @@ _post_error_faces_select(void         *input,
  *
  * We use the rotor number as a tag
  *
- * Note: if the context pointer is non-NULL, it must point to valid data
+ * Note: if the context pointer is non-null, it must point to valid data
  * when the selection function is called, so that value or structure
  * should not be temporary (i.e. local);
  *

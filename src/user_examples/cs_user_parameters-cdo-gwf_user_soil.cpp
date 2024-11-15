@@ -190,7 +190,7 @@ tracy_free_param(void         **p_soil_param)
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Get the boundary condition values for the Richards equation.
- *         pt_ids is optional. If not nullptr, it enables to access in coords
+ *         pt_ids is optional. If non-null, it enables to access in coords
  *         at the right location and the same thing to fill retval if compact
  *         is set to false
  *         Rely on a generic function pointer for an analytic function
@@ -200,7 +200,7 @@ tracy_free_param(void         **p_soil_param)
  * \param[in]      pt_ids       list of elements ids (e.g. to access xyz)
  * \param[in]      xyz          where ?
  * \param[in]      dense_output true:no indirection, false:apply pt_ids
- * \param[in]      input        nullptr or pointer to a structure cast on-the-fly
+ * \param[in]      input        null or pointer to a structure cast on-the-fly
  * \param[in, out] retval       result of the function
  */
 /*----------------------------------------------------------------------------*/
@@ -244,7 +244,7 @@ get_bc(cs_real_t           time,
 /*!
  * \brief  Get the explicit definition of the initial solution for the Richards
  *         equation. Same as get_sol but optimize for time=0.
- *         pt_ids is optional. If not nullptr, it enables to access in coords
+ *         pt_ids is optional. If non-null, it enables to access in coords
  *         at the right location and the same thing to fill retval if compact
  *         is set to false
  *         Rely on a generic function pointer for an analytic function
@@ -254,7 +254,7 @@ get_bc(cs_real_t           time,
  * \param[in]      pt_ids       list of elements ids (e.g. to access xyz)
  * \param[in]      xyz          where ?
  * \param[in]      dense_output true:no indirection, false:apply pt_ids
- * \param[in]      input        nullptr or pointer to a structure cast on-the-fly
+ * \param[in]      input        null or pointer to a structure cast on-the-fly
  * \param[in, out] retval       result of the function
  */
 /*----------------------------------------------------------------------------*/

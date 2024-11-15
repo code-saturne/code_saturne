@@ -96,11 +96,11 @@ cs_user_boundary_conditions(cs_domain_t  *domain,
   /*! [remapper] */
 
   /* We request a remapper with a given name. If it does not exist,
-   * the function returns a nullptr pointer. */
+   * the function returns a null pointer. */
   cs_medcoupling_remapper_t *r
     = cs_medcoupling_remapper_by_name_try("scalar_bc");
 
-  /* If the returned pointer is nullptr (first call), we create the
+  /* If the returned pointer is null (first call), we create the
    * corresponding remapper */
 
   if (r == nullptr) {

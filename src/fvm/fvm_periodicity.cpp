@@ -558,7 +558,7 @@ fvm_periodicity_create(double  equiv_tolerance)
  *   this_periodicity  <-> pointer to structure that should be destroyed
  *
  * returns:
- *  nullptr pointer
+ *  null pointer
  *---------------------------------------------------------------------------*/
 
 fvm_periodicity_t *

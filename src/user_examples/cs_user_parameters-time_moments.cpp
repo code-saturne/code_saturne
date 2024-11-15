@@ -242,7 +242,7 @@ cs_user_time_moments(void)
    *                     CS_TIME_MOMENT_RESTART_RESET,
    *                     CS_TIME_MOMENT_RESTART_AUTO, or
    *                     CS_TIME_MOMENT_RESTART_EXACT
-   *   restart_name <--  name in previous run, nullptr for default
+   *   restart_name <--  name in previous run, null for default
    */
 
   /*! [tmom_u] */

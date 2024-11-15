@@ -94,7 +94,7 @@ typedef struct _cs_mesh_location_t cs_mesh_location_t;
  * (using BFT_MALLOC) and defined by this function when called.
  * This list's lifecycle is then managed by the mesh location object.
  *
- * Note: if the input pointer is non-NULL, it must point to valid data
+ * Note: if the input pointer is non-null, it must point to valid data
  * when the selection function is called, so that value or structure should
  * not be temporary (i.e. local);
  *
@@ -329,7 +329,7 @@ cs_mesh_location_get_elt_list(int id);
  * \brief  Get a mesh location's element ids, if present.
  *
  * An array of element ids is returned if the location is a subset of a main
- * main location type, and NULL is returned when the id array would map to
+ * main location type, and nullptr is returned when the id array would map to
  * the identity function (i.e. {0, 1, 2, ..., n_elts-1}).
  *
  * \param[in]  id  id of mesh location

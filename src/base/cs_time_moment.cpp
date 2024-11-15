@@ -135,7 +135,7 @@ typedef struct {
   int                     location_id;  /* Associated mesh location id */
 
   cs_time_moment_data_t  *data_func;    /* Associated data value computation
-                                           function (1 assumed if NULL) */
+                                           function (1 assumed if null) */
   const void             *data_input;   /* pointer to optional (untyped)
                                            value or structure */
 
@@ -164,7 +164,7 @@ typedef struct {
   int                     location_id;  /* Associated mesh location id */
 
   cs_time_moment_data_t  *data_func;    /* Associated data elements computation
-                                           function, or NULL */
+                                           function, or null */
   const void             *data_input;   /* pointer to optional (untyped)
                                            value or structure */
 
@@ -219,18 +219,18 @@ static int  _n_moment_wa_max = 0;
 static int  _n_moments = 0;
 static int  _n_moments_max = 0;
 
-static int **_moment_sd_defs = NULL;
+static int **_moment_sd_defs = nullptr;
 
-static cs_time_moment_wa_t *_moment_wa = NULL;
-static cs_time_moment_t *_moment = NULL;
+static cs_time_moment_wa_t *_moment_wa = nullptr;
+static cs_time_moment_t *_moment = nullptr;
 
 static  bool _restart_info_checked = false;
 static  bool _restart_uses_main = false;
-static  cs_time_moment_restart_info_t *_restart_info = NULL;
+static  cs_time_moment_restart_info_t *_restart_info = nullptr;
 
 static double _t_prev_iter = 0.;
 
-static const cs_real_t *_p_dt = NULL; /* Mapped cell time step */
+static const cs_real_t *_p_dt = nullptr; /* Mapped cell time step */
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
@@ -331,7 +331,7 @@ _restart_info_read_auxiliary(cs_restart_t  *r)
   BFT_MALLOC(ri->wa_location_id, ri->n_wa, int);
   BFT_MALLOC(ri->wa_nt_start, ri->n_wa, int);
   BFT_MALLOC(ri->wa_t_start, ri->n_wa, cs_real_t);
-  ri->wa_val0 = NULL;
+  ri->wa_val0 = nullptr;
 
   cs_restart_read_section(r,
                           "time_moments:wa:location_id",
@@ -435,7 +435,7 @@ _restart_info_read(void)
   if (ts->nt_prev < 1 && !cs_restart_present())
     return;
 
-  cs_restart_t *r = NULL;
+  cs_restart_t *r = nullptr;
 
   /* Read previous time step if not already done */
 
@@ -448,11 +448,11 @@ _restart_info_read(void)
 
   /* Now read time-moment specific data */
 
-  if (r == NULL) {
+  if (r == nullptr) {
     if (_restart_uses_main)
-      r = cs_restart_create("main.csc", NULL, CS_RESTART_MODE_READ);
+      r = cs_restart_create("main.csc", nullptr, CS_RESTART_MODE_READ);
     else
-      r = cs_restart_create("auxiliary.csc", NULL, CS_RESTART_MODE_READ);
+      r = cs_restart_create("auxiliary.csc", nullptr, CS_RESTART_MODE_READ);
   }
 
   _restart_info_read_auxiliary(r);
@@ -473,7 +473,7 @@ _restart_info_free(void)
 {
   cs_time_moment_restart_info_t  *ri = _restart_info;
 
-  if (ri != NULL) {
+  if (ri != nullptr) {
 
     BFT_FREE(ri->l_id);
     BFT_FREE(ri->wa_id);
@@ -512,7 +512,7 @@ _restart_info_free(void)
  *   nt_start       <-> starting time step
  *   t_start        <-> starting time
  *   restart_mode   <-- behavior in case of restart (reset, automatic, strict)
- *   restart_name   <-- if not NULL, previous name in case of restart
+ *   restart_name   <-- if non-null, previous name in case of restart
  *
  * returns:
  *   id of matching restart moment id, or -1 if none matches
@@ -553,7 +553,7 @@ _check_restart(const char                     *name,
      info if moment should be restarted, or if available data does
      not match and we do not require exact mode. */
 
-  const char *_r_name = (restart_name != NULL) ? restart_name : name;
+  const char *_r_name = (restart_name != nullptr) ? restart_name : name;
   for (i = 0; i < ri->n_moments; i++) {
     if (strcmp(ri->name[i], _r_name) == 0) {
       bool matching_restart = true;
@@ -1024,7 +1024,7 @@ _sd_moment_data(const void  *input,
  * (this weight will be multiplied by the time step).
  *
  * Note that if the data_input associated with a data_func pointer is not
- * NULL, the lifecycle of the data pointed to must be handled separately
+ * null, the lifecycle of the data pointed to must be handled separately
  * (and the pointer must remain valid throughout the time moment updates).
  *
  * parameters:
@@ -1051,7 +1051,7 @@ _find_or_add_wa(cs_time_moment_data_t  *data_func,
   int _nt_start = nt_start;
   double _t_start = t_start;
 
-  cs_time_moment_wa_t *mwa = NULL;
+  cs_time_moment_wa_t *mwa = nullptr;
 
   /* Reduce number of possible options */
 
@@ -1108,7 +1108,7 @@ _find_or_add_wa(cs_time_moment_data_t  *data_func,
   if (prev_wa_id > -1 && mwa->location_id == CS_MESH_LOCATION_NONE)
     mwa->val0 = _restart_info->wa_val0[prev_wa_id];
 
-  mwa->val = NULL;
+  mwa->val = nullptr;
 
   /* Structure is now initialized */
 
@@ -1139,7 +1139,7 @@ _free_all_wa(void)
  * Add or find moment structure.                 .
  *
  * parameters:
- *   name        <-- name of associated moment, or NULL
+ *   name        <-- name of associated moment, or null
  *   location_id <-- id of associated mesh location
  *   dim         <-- dimension associated with element data
  *   data_func   <-- function used to define data values
@@ -1162,7 +1162,7 @@ _find_or_add_moment(int                     location_id,
                     int                     wa_id,
                     int                     prev_id)
 {
-  cs_time_moment_t *mt = NULL;
+  cs_time_moment_t *mt = nullptr;
   int moment_id = -1;
 
   /* Check if this moment is already defined;
@@ -1212,8 +1212,8 @@ _find_or_add_moment(int                     location_id,
 
   mt->l_id = -1;
 
-  mt->name = NULL;
-  mt->val = NULL;
+  mt->name = nullptr;
+  mt->val = nullptr;
 
   mt->nt_cur = -1;
 
@@ -1280,7 +1280,7 @@ _compute_current_weight(cs_time_moment_wa_t  *mwa,
 
   /* Base weight */
 
-  if (mwa->data_func != NULL)
+  if (mwa->data_func != nullptr)
     mwa->data_func(mwa->data_input, w);
   else {
     for (cs_lnum_t i = 0; i < n_w_elts; i++)
@@ -1315,7 +1315,7 @@ _compute_current_weight(cs_time_moment_wa_t  *mwa,
     switch(loc_type) {
     case CS_MESH_LOCATION_CELLS:
       {
-        if (elt_list == NULL) {
+        if (elt_list == nullptr) {
           for (cs_lnum_t c_id = 0; c_id < n_w_elts; c_id++)
             w[c_id] *= dt[c_id];
         }
@@ -1331,7 +1331,7 @@ _compute_current_weight(cs_time_moment_wa_t  *mwa,
       {
         const cs_lnum_2_t *i_face_cells
           = (const cs_lnum_2_t *)mesh->i_face_cells;
-        if (elt_list == NULL) {
+        if (elt_list == nullptr) {
           for (cs_lnum_t f_id = 0; f_id < mesh->n_i_faces; f_id++) {
             cs_lnum_t c_id_0 = i_face_cells[f_id][0];
             cs_lnum_t c_id_1 = i_face_cells[f_id][1];
@@ -1351,7 +1351,7 @@ _compute_current_weight(cs_time_moment_wa_t  *mwa,
     case CS_MESH_LOCATION_BOUNDARY_FACES:
       {
         const cs_lnum_t *b_face_cells = (const cs_lnum_t *)mesh->b_face_cells;
-        if (elt_list == NULL) {
+        if (elt_list == nullptr) {
           for (cs_lnum_t f_id = 0; f_id < mesh->n_b_faces; f_id++) {
             cs_lnum_t c_id = b_face_cells[f_id];
             w[f_id] *= dt[c_id];
@@ -1388,7 +1388,7 @@ _compute_current_weight(cs_time_moment_wa_t  *mwa,
 static void
 _ensure_init_weight_accumulator(cs_time_moment_wa_t  *mwa)
 {
-  if (mwa->location_id != CS_MESH_LOCATION_NONE && mwa->val == NULL) {
+  if (mwa->location_id != CS_MESH_LOCATION_NONE && mwa->val == nullptr) {
     cs_lnum_t n_w_elts = cs_mesh_location_get_n_elts(mwa->location_id)[0];
     BFT_MALLOC(mwa->val, n_w_elts, cs_real_t);
     for (cs_lnum_t i = 0; i < n_w_elts; i++)
@@ -1408,7 +1408,7 @@ _reset_weight_accumulator(cs_time_moment_wa_t  *mwa)
 {
   if (mwa->location_id == CS_MESH_LOCATION_NONE)
     mwa->val0 = 0.;
-  else if (mwa->val != NULL) { /* NULL possible if not active yet */
+  else if (mwa->val != nullptr) { /* null possible if not active yet */
     cs_lnum_t n_w_elts = cs_mesh_location_get_n_elts(mwa->location_id)[0];
     for (cs_lnum_t i = 0; i < n_w_elts; i++)
       mwa->val[i] = 0.;
@@ -1446,7 +1446,7 @@ _update_weight_accumulator(cs_time_moment_wa_t  *mwa,
 static void
 _ensure_init_moment(cs_time_moment_t  *mt)
 {
-  if (mt->f_id < 0 && mt->val == NULL) {
+  if (mt->f_id < 0 && mt->val == nullptr) {
     cs_lnum_t n_elts = cs_mesh_location_get_n_elts(mt->location_id)[2];
     cs_lnum_t n_d_elts = n_elts*(cs_lnum_t)(mt->dim);
     BFT_MALLOC(mt->val, n_d_elts, cs_real_t);
@@ -1476,7 +1476,7 @@ cs_f_time_moment_field_id(int m_num)
   int retval = -1;
 
   const cs_field_t *f = cs_time_moment_get_field(m_num - 1);
-  if (f != NULL)
+  if (f != nullptr)
     retval = f->id;
 
   return retval;
@@ -1501,7 +1501,7 @@ cs_time_moment_destroy_all(void)
   _free_all_wa();
   _free_all_sd_defs();
 
-  _p_dt = NULL;
+  _p_dt = nullptr;
   _restart_info_checked = false;
 }
 
@@ -1523,7 +1523,7 @@ cs_time_moment_destroy_all(void)
  * \param[in]  t_start        starting time
  * \param[in]  restart_mode   behavior in case of restart (reset,
  *                            automatic, or strict)
- * \param[in]  restart_name   if not NULL, previous name in case of restart
+ * \param[in]  restart_name   if non-null, previous name in case of restart
  *
  * \return id of new moment in case of success, -1 in case of error.
  */
@@ -1553,8 +1553,8 @@ cs_time_moment_define_by_field_ids(const char                *name,
                                        is_intensive,
                                        _sd_moment_data,
                                        msd,
-                                       NULL,
-                                       NULL,
+                                       nullptr,
+                                       nullptr,
                                        type,
                                        nt_start,
                                        t_start,
@@ -1584,7 +1584,7 @@ cs_time_moment_define_by_field_ids(const char                *name,
  * \param[in]  t_start        starting time
  * \param[in]  restart_mode   behavior in case of restart (reset,
  *                            automatic, or strict)
- * \param[in]  restart_name   if not NULL, previous name in case of restart
+ * \param[in]  restart_name   if non-null, previous name in case of restart
  *
  * \return id of new moment in case of success, -1 in case of error.
  */
@@ -1610,7 +1610,7 @@ cs_time_moment_define_by_func(const char                *name,
 
   int wa_location_id = location_id;
 
-  cs_time_moment_t *mt = NULL;
+  cs_time_moment_t *mt = nullptr;
 
   int moment_dim = (   dim == 3
                     && type == CS_TIME_MOMENT_VARIANCE) ? 6 : dim;
@@ -1621,7 +1621,7 @@ cs_time_moment_define_by_func(const char                *name,
 
   const cs_time_step_t  *ts = cs_glob_time_step;
 
-  if (w_data_func == NULL && ts->is_local == 0)
+  if (w_data_func == nullptr && ts->is_local == 0)
     wa_location_id = 0;
 
   /* If this is the first moment to be defined, ensure
@@ -1634,7 +1634,7 @@ cs_time_moment_define_by_func(const char                *name,
      info if moment should be restarted, or if available data does
      not match and we do not require exact mode. */
 
-  if (_restart_info != NULL) {
+  if (_restart_info != nullptr) {
     cs_time_moment_restart_info_t  *ri = _restart_info;
     prev_id = _check_restart(name,
                              ts,
@@ -1671,7 +1671,7 @@ cs_time_moment_define_by_func(const char                *name,
   /* Check for possible previous definition */
 
   f = cs_field_by_name_try(name);
-  if (f != NULL) {
+  if (f != nullptr) {
     for (i = 0; i < _n_moments; i++) {
       mt = _moment + i;
       if (mt->f_id == f->id) {
@@ -1715,7 +1715,7 @@ cs_time_moment_define_by_func(const char                *name,
 
     const cs_time_moment_restart_info_t  *ri = _restart_info;
 
-    int s_prev_id = (ri != NULL && prev_id != -1) ? ri->l_id[prev_id] : prev_id;
+    int s_prev_id = (ri != nullptr && prev_id != -1) ? ri->l_id[prev_id] : prev_id;
 
     cs_time_moment_type_t s_type = (cs_time_moment_type_t)(m_type -1);
 
@@ -1779,7 +1779,7 @@ cs_time_moment_n_moments_restart(void)
   if (_restart_info_checked == false)
     _restart_info_read();
 
-  if (_restart_info != NULL)
+  if (_restart_info != nullptr)
     n_restart_moments = _restart_info->n_moments;
 
   return n_restart_moments;
@@ -1805,7 +1805,7 @@ cs_time_moment_restart_options_by_id(int                         restart_id,
                                      cs_time_moment_restart_t   *restart_mode,
                                      const char                **restart_name)
 {
-  *restart_name = NULL;
+  *restart_name = nullptr;
   if (restart_id < -1) {
     *restart_mode = CS_TIME_MOMENT_RESTART_AUTO;
     if (_restart_info_checked == false)
@@ -1826,19 +1826,19 @@ cs_time_moment_restart_options_by_id(int                         restart_id,
  *
  * \param[in]  restart_id  id of time moment in restart data
  *
- * \return  name of defined moment in restart file, or NULL
+ * \return  name of defined moment in restart file, or null
  */
 /*----------------------------------------------------------------------------*/
 
 const char *
 cs_time_moment_restart_name(int  restart_id)
 {
-  const char *retval = NULL;
+  const char *retval = nullptr;
 
   if (_restart_info_checked == false)
     _restart_info_read();
 
-  if (_restart_info != NULL) {
+  if (_restart_info != nullptr) {
     if (restart_id >= 0 && restart_id < _restart_info->n_moments)
       retval = _restart_info->name[restart_id];
   }
@@ -1850,12 +1850,12 @@ cs_time_moment_restart_name(int  restart_id)
 /*!
  * \brief Return pointer to field associated with a given moment.
  *
- * For moments defined automatically to assist computation of higher
- * order moments, which do not have an associated field, NULL is returned.
+ * For moments defined automatically to assist computation of higher order
+ * moments, which do not have an associated field, a null pointer is returned.
  *
  * \param[in]  moment_id  id of associated moment
  *
- * \return  pointer to field associated with given moment, or NULL
+ * \return  pointer to field associated with given moment, or null
  */
 /*----------------------------------------------------------------------------*/
 
@@ -1870,7 +1870,7 @@ cs_time_moment_get_field(int  moment_id)
     return f;
   }
 
-  return NULL;
+  return nullptr;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -2002,7 +2002,7 @@ cs_time_moment_update_all(void)
 
   const cs_time_step_t  *ts = cs_glob_time_step;
 
-  const cs_real_t *dt_val = (_p_dt != NULL) ? _p_dt : CS_F_(dt)->val;
+  const cs_real_t *dt_val = (_p_dt != nullptr) ? _p_dt : CS_F_(dt)->val;
 
   /* Prepare accumulators */
 
@@ -2044,7 +2044,7 @@ cs_time_moment_update_all(void)
                                                wa_cur_data0 + i);
     }
     else
-      wa_cur_data[i] = NULL;
+      wa_cur_data[i] = nullptr;
   }
 
   /* Loop on variances first */
@@ -2176,7 +2176,7 @@ cs_time_moment_update_all(void)
 
         if (mt->location_id == CS_MESH_LOCATION_CELLS) {
           const cs_halo_t *halo = cs_glob_mesh->halo;
-          if (halo != NULL) {
+          if (halo != nullptr) {
             if (mt->dim == 1)
               cs_halo_sync_var(halo, CS_HALO_EXTENDED, val);
             else {
@@ -2200,7 +2200,7 @@ cs_time_moment_update_all(void)
   /* Update and free weight data */
 
   for (i = 0; i < _n_moment_wa; i++) {
-    if (wa_cur_data[i] != NULL) {
+    if (wa_cur_data[i] != nullptr) {
       _update_weight_accumulator(_moment_wa + i, wa_cur_data[i]);
       if (wa_cur_data[i] != wa_cur_data0 + i)
         BFT_FREE(wa_cur_data[i]);
@@ -2274,7 +2274,7 @@ cs_time_moment_log_setup(void)
         snprintf(s, 17, "nt %d", mwa->nt_start);
       cs_log_strpad(tmp_s[2], s, 16, 64);
 
-      if (mwa->data_func != NULL)
+      if (mwa->data_func != nullptr)
         cs_log_strpad(tmp_s[3], _("user"), 16, 64);
       else
         cs_log_strpad(tmp_s[3], "-", 16, 64);
@@ -2517,7 +2517,7 @@ cs_time_moment_log_iteration(void)
         _ensure_init_weight_accumulator(mwa);
         cs_array_reduce_simple_stats_l(n_elts,
                                        1,
-                                       NULL,
+                                       nullptr,
                                        mwa->val,
                                        vmin + n_active_wa[1],
                                        vmax + n_active_wa[1],
@@ -2609,10 +2609,10 @@ cs_time_moment_restart_read(cs_restart_t  *restart)
   const cs_time_step_t  *ts = cs_glob_time_step;
   _t_prev_iter = ts->t_prev;
 
-  if (_restart_info == NULL)
+  if (_restart_info == nullptr)
     _restart_info_read_auxiliary(restart);
 
-  if (_restart_info == NULL)
+  if (_restart_info == nullptr)
     return;
 
   cs_time_moment_restart_info_t  *ri = _restart_info;
@@ -2674,7 +2674,7 @@ cs_time_moment_restart_write(cs_restart_t  *restart)
   cs_real_t *t_start, *val0;
 
   int n_active_wa = 0, n_active_moments = 0;
-  int *active_wa_id = NULL, *active_moment_id = NULL;
+  int *active_wa_id = nullptr, *active_moment_id = nullptr;
 
   if (_n_moments < 1)
     return;
@@ -2732,7 +2732,7 @@ cs_time_moment_restart_write(cs_restart_t  *restart)
     if (j > -1) {
 
       cs_time_moment_t *mt = _moment + i;
-      const char *name = NULL;
+      const char *name = nullptr;
       if (mt->f_id > -1) {
         const cs_field_t *f = cs_field_by_id(mt->f_id);
         name = f->name;

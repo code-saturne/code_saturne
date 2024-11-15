@@ -577,7 +577,7 @@ cs_hho_stokes_init_context(const cs_equation_param_t   *eqp,
  *
  * \param[in, out]  data    pointer to a cs_hho_stokes_t structure
  *
- * \return a nullptr pointer
+ * \return a null pointer
  */
 /*----------------------------------------------------------------------------*/
 

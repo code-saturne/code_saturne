@@ -543,7 +543,7 @@ cs_field_by_composite_name_try(const char  *name_prefix,
 /*!
  * \brief Return pointer to a field based on a double composite name if present.
  *
- * If no field of the given name is defined, nullptr is returned.
+ * If no field of the given name is defined, a null pointer is returned.
  *
  * Contrary to \ref cs_field_by_composite_name_try, this function
  * does not automatically add '_' characters between component names.

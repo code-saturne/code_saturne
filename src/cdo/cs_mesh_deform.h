@@ -120,7 +120,7 @@ cs_mesh_deform_setup(cs_domain_t  *domain);
  * \param[in]  n_vertices         number of vertices at which to prescribe
  *                                displacements
  * \param[in]  vertex_ids         ids of vertices at which to prescribe
- *                                displacements, or NULL if
+ *                                displacements, or null if
  *                                [0, ... n_vertices-1]
  * \param[in]  displacement       pointer to prescribed displacements
  */
@@ -145,10 +145,10 @@ cs_mesh_deform_prescribe_displacement(cs_lnum_t          n_vertices,
  * \param[in]  n_vertices         number of vertices at which to prescribe
  *                                displacements
  * \param[in]  vertex_ids         ids of vertices at which to prescribe
- *                                displacements, or NULL if
+ *                                displacements, or null if
  *                                [0, ... n_vertices-1]
  * \param[in]  displacement       pointer to prescribed displacements,
- *                                or NULL for no displacement
+ *                                or null for no displacement
  */
 /*----------------------------------------------------------------------------*/
 

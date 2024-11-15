@@ -383,7 +383,7 @@ cs_cdo_bc_face_define(cs_param_bc_type_t    default_bc,
  *
  * \param[in, out]  face_bc   pointer to a cs_cdo_bc_face_t structure
  *
- * \return a NULL pointer
+ * \return a null pointer
  */
 /*----------------------------------------------------------------------------*/
 

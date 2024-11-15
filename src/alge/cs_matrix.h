@@ -154,7 +154,7 @@ extern const char  *cs_matrix_spmv_type_name[];
  * main diagonal, and that the extra-diagonal structure is always
  * symmetric (though the coefficients my not be, and we may choose a
  * matrix format that does not exploit this symmetry). If the edges
- * connectivity argument is NULL, the matrix will be purely diagonal.
+ * connectivity argument is null, the matrix will be purely diagonal.
  *
  * parameters:
  *   type        <-- type of matrix considered
@@ -162,8 +162,8 @@ extern const char  *cs_matrix_spmv_type_name[];
  *   n_cols_ext  <-- number of columns + ghosts
  *   n_edges     <-- local number of (undirected) graph edges
  *   edges       <-- edges (symmetric row <-> column) connectivity
- *   halo        <-- halo structure associated with cells, or NULL
- *   numbering   <-- vectorization or thread-related numbering info, or NULL
+ *   halo        <-- halo structure associated with cells, or nullptr
+ *   numbering   <-- vectorization or thread-related numbering info, or nullptr
  *
  * returns:
  *   pointer to created matrix structure;
@@ -186,7 +186,7 @@ cs_matrix_structure_create(cs_matrix_type_t       type,
  * col_id is sorted row by row during the creation of this structure.
  *
  * In case the property of the row index and col_id arrays are transferred
- * to the structure, the arrays pointers passed as arguments are set to NULL,
+ * to the structure, the arrays pointers passed as arguments are set to nullptr,
  * to help ensure the caller does not use the original arrays directly after
  * this call.
  *
@@ -201,8 +201,8 @@ cs_matrix_structure_create(cs_matrix_type_t       type,
  *   n_cols_ext <-- local number of columns + ghosts
  *   row_index  <-> pointer to index on rows
  *   col_id     <-> pointer to array of colum ids related to the row index
- *   halo       <-- halo structure for synchronization, or NULL
- *   numbering  <-- vectorization or thread-related numbering info, or NULL
+ *   halo       <-- halo structure for synchronization, or nullptr
+ *   numbering  <-- vectorization or thread-related numbering info, or nullptr
  *
  * returns:
  *   a pointer to a created matrix structure
@@ -234,9 +234,9 @@ cs_matrix_structure_create_msr(cs_matrix_type_t        type,
  *   n_cols_ext       <-- local number of columns + ghosts
  *   row_index        <-- pointer to index on rows
  *   col_id           <-- pointer to array of colum ids related to the row index
- *   halo             <-- halo structure for synchronization, or NULL
+ *   halo             <-- halo structure for synchronization, or nullptr
  *   numbering        <-- vectorization or thread-related numbering
- *                        info, or NULL
+ *                        info, or nullptr
  *
  * returns:
  *   a pointer to a created matrix structure
@@ -487,7 +487,7 @@ cs_matrix_get_halo(const cs_matrix_t  *matrix);
  *
  * \param[in] matrix   pointer to matrix structure
  *
- * \return pointer to local range, or NULL
+ * \return pointer to local range, or nullptr
  */
 /*----------------------------------------------------------------------------*/
 
@@ -581,8 +581,8 @@ cs_matrix_get_fill_type(bool       symmetric,
  *   extra_diag_block_size  <-- block sizes for extra diagonal
  *   n_edges                <-- local number of graph edges
  *   edges                  <-- edges (row <-> column) connectivity
- *   da                     <-- diagonal values (NULL if zero)
- *   xa                     <-- extradiagonal values (NULL if zero)
+ *   da                     <-- diagonal values (nullptr if zero)
+ *   xa                     <-- extradiagonal values (nullptr if zero)
  *                              casts as:
  *                                xa[n_edges]    if symmetric,
  *                                xa[n_edges][2] if non symmetric
@@ -608,8 +608,8 @@ cs_matrix_set_coefficients(cs_matrix_t        *matrix,
  *   extra_diag_block_size  <-- block sizes for extra diagonal
  *   n_edges                <-- local number of graph edges
  *   edges                  <-- edges (row <-> column) connectivity
- *   da                     <-- diagonal values (NULL if zero)
- *   xa                     <-- extradiagonal values (NULL if zero)
+ *   da                     <-- diagonal values (nullptr if zero)
+ *   xa                     <-- extradiagonal values (nullptr if zero)
  *                              casts as:
  *                                xa[n_edges]    if symmetric,
  *                                xa[n_edges][2] if non symmetric
@@ -632,7 +632,7 @@ cs_matrix_transfer_coefficients(cs_matrix_t         *matrix,
  * If the matrix is also in MSR format, this avoids an extra copy.
  * If it is in a different format, values are copied to the structure,
  * and the original arrays freed. In any case, the arrays pointers passed as
- * arguments are set to NULL, to help ensure the caller does not use the
+ * arguments are set to nullptr, to help ensure the caller does not use the
  * original arrays directly after this call.
  *
  * parameters:
@@ -642,8 +642,8 @@ cs_matrix_transfer_coefficients(cs_matrix_t         *matrix,
  *   extra_diag_block_size  <-- block sizes for extra diagonal
  *   row_index              <-- MSR row index (0 to n-1)
  *   col_id                 <-- MSR column id (0 to n-1)
- *   d_val                  <-> diagonal values (NULL if zero)
- *   x_val                  <-> extradiagonal values (NULL if zero)
+ *   d_val                  <-> diagonal values (nullptr if zero)
+ *   x_val                  <-> extradiagonal values (nullptr if zero)
  *----------------------------------------------------------------------------*/
 
 void
@@ -706,7 +706,7 @@ cs_matrix_assembler_values_init(cs_matrix_t  *matrix,
 /*----------------------------------------------------------------------------
  * Release shared matrix coefficients.
  *
- * Pointers to mapped coefficients are set to NULL, while
+ * Pointers to mapped coefficients are set to nullptr, while
  * coefficient copies owned by the matrix are not modified.
  *
  * This simply ensures the matrix does not maintain pointers
@@ -930,12 +930,12 @@ cs_matrix_get_msr_arrays(const cs_matrix_t   *matrix,
  * at least as long as the matrix.
  *
  * \param[in, out]   matrix       pointer to matrix structure
- * \param[in]        c2f_idx      cell to faces index, or NULL
- * \param[in]        c2f          cell to faces adjacency, or NULL
- * \param[in]        c2f_sgn      cell to faces adjacency sign, or NULL
+ * \param[in]        c2f_idx      cell to faces index, or nullptr
+ * \param[in]        c2f          cell to faces adjacency, or nullptr
+ * \param[in]        c2f_sgn      cell to faces adjacency sign, or nullptr
  * \param[in]        cell_cen     cell center coordinates
  * \param[in]        cell_vol     cell volumes
- * \param[in]        face_normal  face normal, or NULL
+ * \param[in]        face_normal  face normal, or nullptr
  */
 /*----------------------------------------------------------------------------*/
 
@@ -955,12 +955,12 @@ cs_matrix_set_mesh_association(cs_matrix_t         *matrix,
  * This may be useful for multigrid smoothing.
  *
  * \param[in]   matrix       pointer to matrix structure
- * \param[out]  c2f_idx      cell to faces index, or NULL
- * \param[out]  c2f          cell to faces adjacency, or NULL
- * \param[out]  c2f_sgn      cell to faces adjacency sign, or NULL
- * \param[out]  cell_cen     cell center coordinates, or NULL
- * \param[out]  cell_vol     cell volumes, or NULL
- * \param[out]  face_normal  face normas, or NULL
+ * \param[out]  c2f_idx      cell to faces index, or nullptr
+ * \param[out]  c2f          cell to faces adjacency, or nullptr
+ * \param[out]  c2f_sgn      cell to faces adjacency sign, or nullptr
+ * \param[out]  cell_cen     cell center coordinates, or nullptr
+ * \param[out]  cell_vol     cell volumes, or nullptr
+ * \param[out]  face_normal  face normas, or nullptr
  */
 /*----------------------------------------------------------------------------*/
 
@@ -1198,7 +1198,7 @@ cs_matrix_variant_apply_tuned(cs_matrix_t          *m,
  *
  * parameters:
  *   mv         <->  pointer to matrix variant
- *   numbering  <--  mesh numbering info, or NULL
+ *   numbering  <--  mesh numbering info, or nullptr
  *   fill type  <--  matrix fill type to merge from
  *   spmv_type  <--  SpMV operation type (full or sub-matrix)
  *                   (all types if CS_MATRIX_SPMV_N_TYPES)

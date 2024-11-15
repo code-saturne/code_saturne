@@ -569,7 +569,7 @@ cs_cdo_local_finalize(void);
  * \param[in]   n_max_dofbyc    max. number of DoFs at a cell-wise level
  * \param[in]   n_max_fbyc      max. number of faces in a cell
  * \param[in]   n_blocks        number of blocks in a row/column
- * \param[in]   block_sizes     size of each block or NULL.
+ * \param[in]   block_sizes     size of each block or null.
  *                              Specific treatment n_blocks = 1.
  *
  * \return a pointer to a new allocated \ref cs_cell_sys_t structure

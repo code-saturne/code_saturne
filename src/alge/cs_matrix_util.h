@@ -111,7 +111,7 @@ cs_matrix_log_info(const cs_matrix_t  *matrix,
  *   n_edges    <-- local number of graph edges
  *   edges      <-- graph edges connectivity
  *   halo       <-- cell halo structure
- *   numbering  <-- vectorization or thread-related numbering info, or NULL
+ *   numbering  <-- vectorization or thread-related numbering info, or nullptr
  *----------------------------------------------------------------------------*/
 
 void

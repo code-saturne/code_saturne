@@ -1171,7 +1171,7 @@ cs_property_add_as_product(const char             *name,
  *
  * \param[in] name    name of the property to find
  *
- * \return nullptr if not found otherwise the associated pointer
+ * \return null if not found otherwise the associated pointer
  */
 /*----------------------------------------------------------------------------*/
 
@@ -1198,7 +1198,7 @@ cs_property_by_name(const char   *name)
  *
  * \param[in] id      id of the property to find
  *
- * \return nullptr if not found otherwise the associated pointer
+ * \return null if not found otherwise the associated pointer
  */
 /*----------------------------------------------------------------------------*/
 
@@ -1586,7 +1586,7 @@ cs_property_get_array(const cs_property_t     *pty)
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Define a \ref cs_property_data_t structure (not a pointer to this
- *         structure). If property is nullptr then one considers that this is a
+ *         structure). If property is null then one considers that this is a
  *         unitary property
  *
  * \param[in]   need_tensor  true if one needs a tensor-valued evaluation
@@ -1649,7 +1649,7 @@ cs_property_data_define(bool                     need_tensor,
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Initialize a \ref cs_property_data_t structure. If property is
- * nullptr then one considers that this is a unitary property
+ * null then one considers that this is a unitary property
  *
  * \param[in]      need_tensor  true if one needs a tensor-valued evaluation
  * \param[in]      need_eigen   true if one needs an evaluation of eigen values
@@ -1771,7 +1771,7 @@ cs_property_def_constant_value(cs_property_t    *pty,
  *         related to a volume zone
  *
  * \param[in, out]  pty      pointer to a cs_property_t structure
- * \param[in]       zname    name of the associated zone (if nullptr or "" all
+ * \param[in]       zname    name of the associated zone (if null or "" all
  *                           cells are considered)
  * \param[in]       val      value to set
  *
@@ -1828,7 +1828,7 @@ cs_property_def_iso_by_value(cs_property_t    *pty,
  *        faces associated to the boundary zone named zname
  *
  * \param[in, out]  pty      pointer to a cs_property_t structure
- * \param[in]       zname    name of the associated zone (if nullptr or "" all
+ * \param[in]       zname    name of the associated zone (if null or "" all
  *                           boundary faces are considered)
  * \param[in]       val      value to set
  *
@@ -1871,7 +1871,7 @@ cs_property_boundary_def_iso_by_value(cs_property_t    *pty,
  *         related to a volume zone
  *
  * \param[in, out]  pty      pointer to a cs_property_t structure
- * \param[in]       zname    name of the associated zone (if nullptr or "" all
+ * \param[in]       zname    name of the associated zone (if null or "" all
  *                           cells are considered)
  * \param[in]       val      values to set (vector of size 3)
  *
@@ -1923,7 +1923,7 @@ cs_property_def_ortho_by_value(cs_property_t    *pty,
  *        faces associated to the boundary zone named zname
  *
  * \param[in, out]  pty      pointer to a cs_property_t structure
- * \param[in]       zname    name of the associated zone (if nullptr or "" all
+ * \param[in]       zname    name of the associated zone (if null or "" all
  *                           boundary faces are considered)
  * \param[in]       vals     values to set
  *
@@ -1966,7 +1966,7 @@ cs_property_boundary_def_ortho_by_value(cs_property_t    *pty,
  *         related to a volume zone
  *
  * \param[in, out]  pty      pointer to a cs_property_t structure
- * \param[in]       zname    name of the associated zone (if nullptr or "" all
+ * \param[in]       zname    name of the associated zone (if null or "" all
  *                           cells are considered)
  * \param[in]       tens     values to set (3x3 tensor)
  *
@@ -2027,7 +2027,7 @@ cs_property_def_aniso_by_value(cs_property_t    *pty,
  *        faces associated to the boundary zone named zname
  *
  * \param[in, out]  pty      pointer to a cs_property_t structure
- * \param[in]       zname    name of the associated zone (if nullptr or "" all
+ * \param[in]       zname    name of the associated zone (if null or "" all
  *                           boundary faces are considered)
  * \param[in]       tens     values to set given as a 3x3 tensor
  *
@@ -2077,7 +2077,7 @@ cs_property_boundary_def_aniso_by_value(cs_property_t    *pty,
  *        Optimized case with a symmetric storage.
  *
  * \param[in, out] pty       pointer to a cs_property_t structure
- * \param[in]      zname     name of the associated zone (if nullptr or "" all
+ * \param[in]      zname     name of the associated zone (if null or "" all
  *                           boundary faces are considered)
  * \param[in]      symtens   symmetric tensor given as an array of 6 values
  *
@@ -2131,7 +2131,7 @@ cs_property_def_aniso_sym_by_value(cs_property_t    *pty,
  *        Optimized case with a symmetric storage.
  *
  * \param[in, out]  pty      pointer to a cs_property_t structure
- * \param[in]       zname    name of the associated zone (if nullptr or "" all
+ * \param[in]       zname    name of the associated zone (if null or "" all
  *                           boundary faces are considered)
  * \param[in]       tens     tensor to set given as an array of 6 values
  *
@@ -2175,10 +2175,10 @@ cs_property_boundary_def_aniso_sym_by_value(cs_property_t    *pty,
  *        cells associated to the zone named zname
  *
  * \param[in, out]  pty      pointer to a cs_property_t structure
- * \param[in]       zname    name of the associated zone (if nullptr or "" all
+ * \param[in]       zname    name of the associated zone (if null or "" all
  *                           cells are considered)
  * \param[in]       func     pointer to a cs_time_func_t function
- * \param[in]       input    nullptr or pointer to a structure cast on-the-fly
+ * \param[in]       input    null or pointer to a structure cast on-the-fly
  *
  * \return a pointer to the resulting cs_xdef_t structure
  */
@@ -2251,10 +2251,10 @@ cs_property_def_by_time_func(cs_property_t      *pty,
  *        to a time function in a subdomain attached to a zone named zname
  *
  * \param[in, out]  pty      pointer to a cs_property_t structure
- * \param[in]       zname    name of the associated zone (if nullptr or "" all
+ * \param[in]       zname    name of the associated zone (if null or "" all
  *                           boundary faces are considered)
  * \param[in]       func     pointer to a cs_time_func_t function
- * \param[in]       input    nullptr or pointer to a structure cast on-the-fly
+ * \param[in]       input    null or pointer to a structure cast on-the-fly
  *
  * \return a pointer to the resulting cs_xdef_t structure
  */
@@ -2303,10 +2303,10 @@ cs_property_boundary_def_by_time_func(cs_property_t      *pty,
  *        all cells associated to the zone named zname
  *
  * \param[in, out]  pty      pointer to a cs_property_t structure
- * \param[in]       zname    name of the associated zone (if nullptr or "" all
+ * \param[in]       zname    name of the associated zone (if null or "" all
  *                           cells are considered)
  * \param[in]       func     pointer to a cs_analytic_func_t function
- * \param[in]       input    nullptr or pointer to a structure cast on-the-fly
+ * \param[in]       input    null or pointer to a structure cast on-the-fly
  *
  * \return a pointer to the resulting cs_xdef_t structure
  */
@@ -2350,10 +2350,10 @@ cs_property_def_by_analytic(cs_property_t        *pty,
  *        named zname
  *
  * \param[in, out]  pty      pointer to a cs_property_t structure
- * \param[in]       zname    name of the associated zone (if nullptr or "" all
+ * \param[in]       zname    name of the associated zone (if null or "" all
  *                           boundary faces are considered)
  * \param[in]       func     pointer to a cs_analytic_func_t function
- * \param[in]       input    nullptr or pointer to a structure cast on-the-fly
+ * \param[in]       input    null or pointer to a structure cast on-the-fly
  *
  * \return a pointer to the resulting cs_xdef_t structure
  */
@@ -2397,7 +2397,7 @@ cs_property_boundary_def_by_analytic(cs_property_t        *pty,
  *        associated to the zone named zname
  *
  * \param[in, out] pty           pointer to a cs_property_t structure
- * \param[in]      zname         name of the zone (if nullptr or "" then all
+ * \param[in]      zname         name of the zone (if null or "" then all
  * cells are selected) \param[in]      context       pointer to a structure (may
  * be nullptr) \param[in]      get_eval_at_cell      pointer to a function
  * \param[in]      get_eval_at_cell_cw   pointer to a function
@@ -2444,7 +2444,7 @@ cs_property_def_by_func(cs_property_t         *pty,
  *        cs_xdef_array_set_adjacency and/or \ref cs_xdef_array_set_sublist
  *
  * \param[in, out] pty           pointer to a cs_property_t structure
- * \param[in]      zname         name of the zone (if nullptr or "" then all
+ * \param[in]      zname         name of the zone (if null or "" then all
  * cells are selected) \param[in]      val_location  information to know where
  * are located values \param[in]      array         pointer to an array
  * \param[in]      is_owner      transfer the lifecycle to the cs_xdef_t struc.
@@ -2546,7 +2546,7 @@ cs_property_def_by_array(cs_property_t      *pty,
  *        cs_xdef_array_set_sublist
  *
  * \param[in, out] pty          pointer to a cs_property_t structure
- * \param[in]      zname        nullptr or name of the boundary zone
+ * \param[in]      zname        null or name of the boundary zone
  * \param[in]      val_loc      information to know where are located values
  * \param[in]      array        pointer to an array
  * \param[in]      is_owner     transfer the lifecycle to the cs_xdef_t struct.

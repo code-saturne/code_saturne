@@ -58,7 +58,7 @@ BEGIN_C_DECLS
  * \param[in]   sync_mode     synchronization mode (standard or extended)
  * \param[in]   stride        number of (interlaced) values by entity
  * \param[in]   var           pointer to value array (device)
- * \param[out]  send_buffer   pointer to send buffer, NULL for global buffer
+ * \param[out]  send_buffer   pointer to send buffer, null for global buffer
  */
 /*----------------------------------------------------------------------------*/
 

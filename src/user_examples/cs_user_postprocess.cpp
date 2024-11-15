@@ -639,7 +639,7 @@ cs_user_postprocess_probes(void)
  * \param[in]       cat_id       category id of the output mesh for the
  *                               current call
  * \param[in]       probes       pointer to associated probe set structure if
- *                               the mesh is a probe set, nullptr otherwise
+ *                               the mesh is a probe set, null otherwise
  * \param[in]       n_cells      local number of cells of post_mesh
  * \param[in]       n_i_faces    local number of interior faces of post_mesh
  * \param[in]       n_b_faces    local number of boundary faces of post_mesh

@@ -70,7 +70,7 @@ BEGIN_C_DECLS
 /*!
  * \brief Set the initial temperature in the computational domain
  *
- * For the calling function, elt_ids is optional. If not nullptr, the coords
+ * For the calling function, elt_ids is optional. If non-null, the coords
  * array should be accessed with an indirection. The same indirection can
  * be applied to fill retval if dense_output is set to false.
  *
@@ -79,7 +79,7 @@ BEGIN_C_DECLS
  * \param[in]      elt_ids       list of elements ids (in coords and retval)
  * \param[in]      coords        where ?
  * \param[in]      dense_output  perform an indirection in retval or not
- * \param[in]      input         nullptr or pointer cast on-the-fly
+ * \param[in]      input         null or pointer cast on-the-fly
  * \param[in, out] retval        resulting value(s). Must be allocated.
  */
 /*--------------------------------------------------------------------------*/
@@ -226,7 +226,7 @@ cs_user_finalize_setup(cs_domain_t   *domain)
     cs_property_def_iso_by_value(lambda, "D2", 2.5);
 
     cs_property_t  *cp = cs_property_by_name(CS_THERMAL_CP_NAME);
-    cs_property_def_iso_by_value(cp, nullptr, 1); /* nullptr means all cells */
+    cs_property_def_iso_by_value(cp, nullptr, 1); /* null means all cells */
 
     cs_property_t  *rho = cs_property_by_name(CS_PROPERTY_MASS_DENSITY);
     cs_property_def_iso_by_value(rho, nullptr, 1979);

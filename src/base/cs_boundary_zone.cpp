@@ -99,7 +99,7 @@ BEGIN_C_DECLS
 
 typedef struct {
   cs_lnum_t         n_elts;   /*!< local number of associated elements */
-  const cs_lnum_t  *max_id;   /*!< local face ids, or nullptr if trivial */
+  const cs_lnum_t  *max_id;   /*!< local face ids, or null if trivial */
 } cs_boundary_zone_id_t;
 
 /*============================================================================
@@ -135,7 +135,7 @@ static int *_zone_class_id = nullptr;
 /*!
  * \brief Return a pointer to a boundary zone based on its name if present.
  *
- * If no boundary zone of the given name is defined, nullptr is returned.
+ * If no boundary zone of the given name is defined, returned pointer is null.
  *
  * \param[in]  name  boundary zone name
  *
@@ -725,7 +725,7 @@ cs_boundary_zone_by_name(const char  *name)
 /*!
  * \brief Return a pointer to a boundary zone based on its name if present.
  *
- * If no boundary zone of the given name is defined, nullptr is returned.
+ * If no boundary zone of the given name is defined, returned pointer is null.
  *
  * \param[in]  name  boundary zone name
  *
@@ -748,10 +748,10 @@ cs_boundary_zone_by_name_try(const char  *name)
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Retrieve the boundary zone id from its zone name.
- *         If the zone name is equal to nullptr or has an empty length, then
+ *         If the zone name is equal to null or has an empty length, then
  *         the default zone id (=0) corresponding to all entities is returned
  *
- * \param[in] z_name        name of the zone or nullptr or ""
+ * \param[in] z_name        name of the zone or null or ""
  *
  * \return the id of the boundary zone
  */

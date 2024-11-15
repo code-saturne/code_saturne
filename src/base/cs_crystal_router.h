@@ -93,8 +93,8 @@ typedef struct _cs_crystal_router_t  cs_crystal_router_t;
  * \param[in]  flags             add destination id ?
  * \param[in]  elt               element values
  * \param[in]  src_id            optional parent element id (indirection
- *                               for elt array), or NULL
- * \param[in]  dest_id           element destination id, or NULL
+ *                               for elt array), or null
+ * \param[in]  dest_id           element destination id, or null
  * \param[in]  dest_rank         destination rank for each element
  * \param[in]  comm              associated MPI communicator
  *
@@ -133,8 +133,8 @@ cs_crystal_router_create_s(size_t            n_elts,
  * \param[in]  elt_idx           element values start and past-the-last index
  * \param[in]  elt               element values
  * \param[in]  src_id            optional parent element id (indirection
- *                               for elt and elt_idx arrays), or NULL
- * \param[in]  dest_id           element destination id, or NULL
+ *                               for elt and elt_idx arrays), or null
+ * \param[in]  dest_id           element destination id, or null
  * \param[in]  dest_rank         destination rank for each element
  * \param[in]  comm              associated MPI communicator
  *
@@ -229,7 +229,7 @@ cs_crystal_router_n_recv_elts(const cs_crystal_router_t  *cr);
  * it will be applied automatically to the data and data_index arrays. The
  * dest_id array itself is always in receive order. If the Crystal
  * Router does not contain destination id info but the \c dest_id
- * argument points to a non-NULL value, the provided id will be used to
+ * argument points to a non-null value, the provided id will be used to
  * order extracted data. This allows saving the destination id on the receive
  * side, and not re-sending it (saving bandwidth) for subsequent calls
  * with a similar Crystal Router.
@@ -242,19 +242,19 @@ cs_crystal_router_n_recv_elts(const cs_crystal_router_t  *cr);
  *
  * With this behavior, for reverse exchange, src_id and src_rank can be
  * used as dest_id and dest_rank respectively in the call to
- * \ref cs_crystal_router_create_s, while NULL is passed to elt_id
+ * \ref cs_crystal_router_create_s, while null is passed to elt_id
  * with single ids, and dest_id passed in case of duplicate ids.
  *
  * \param[in]       cr          pointer to associated Crystal Router
  * \param[out]      src_rank    pointer to (pointer to) source rank array,
- *                              or NULL
+ *                              or null
  * \param[in, out]  dest_id     pointer to (pointer to) destination id array,
- *                              or NULL
- * \param[out]      src_id      pointer to (pointer to) source id array, or NULL
+ *                              or null
+ * \param[out]      src_id      pointer to (pointer to) source id array, or null
  * \param[out]      data_index  pointer to (pointer to) destination index,
- *                              or NULL
+ *                              or null
  * \param[out]      data        pointer to (pointer to) destination data,
- *                              or NULL
+ *                              or null
  */
 /*----------------------------------------------------------------------------*/
 
@@ -274,7 +274,7 @@ cs_crystal_router_get_data(cs_crystal_router_t   *cr,
  *
  * \param[in]   cr      pointer to associated Crystal Router
  * \param[out]  max_sizes   pointer to maximum local/receive (max_sizes[0])
- *                          and send (max_sizes[1]) sizes, or NULL
+ *                          and send (max_sizes[1]) sizes, or null
  *
  * \return  maximum total allocated buffer memory
  */

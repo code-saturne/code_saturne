@@ -120,7 +120,7 @@ _print_time_table(cs_time_table_t *t)
  *
  * \param[in] name  name of the time table
  *
- * \return pointer to corresponding time table. nullptr if not found
+ * \return pointer to corresponding time table. null if not found
  */
 /*----------------------------------------------------------------------------*/
 
@@ -285,7 +285,7 @@ _time_table_compute_value(cs_time_table_t *table,
  *
  * \param[in] name Name of time table
  *
- * \returns pointer to time table, nullptr if not found.
+ * \returns pointer to time table, null if not found.
  */
 /*----------------------------------------------------------------------------*/
 

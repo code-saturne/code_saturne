@@ -101,7 +101,7 @@ fvm_to_time_plot_init_writer(const char             *name,
  *   writer <-- pointer to opaque time plot writer structure.
  *
  * returns:
- *   NULL pointer.
+ *   null pointer.
  *----------------------------------------------------------------------------*/
 
 void *

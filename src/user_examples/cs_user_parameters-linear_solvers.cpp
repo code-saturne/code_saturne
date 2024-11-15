@@ -104,7 +104,7 @@ BEGIN_C_DECLS
  *
  * This function is called at the end of the setup stage for a KSP solver.
  *
- * Note: if the context pointer is non-nullptr, it must point to valid data
+ * Note: if the context pointer is non-null, it must point to valid data
  * when the selection function is called so that value or structure should
  * not be temporary (i.e. local);
  *
@@ -181,7 +181,7 @@ _petsc_p_setup_hook_bamg(void  *context,
  *
  * This function is called the end of the setup stage for a KSP solver.
  *
- * Note: if the context pointer is non-nullptr, it must point to valid data
+ * Note: if the context pointer is non-null, it must point to valid data
  * when the selection function is called so that value or structure should
  * not be temporary (i.e. local);
  *
@@ -251,7 +251,7 @@ _petsc_p_setup_hook_view(void  *context,
  * this also allows setting furthur function pointers for pre and post-solve
  * operations (see the PETSc documentation).
  *
- * Note: if the context pointer is non-nullptr, it must point to valid data
+ * Note: if the context pointer is non-null, it must point to valid data
  * when the selection function is called so that value or structure should
  * not be temporary (i.e. local);
  *
@@ -299,7 +299,7 @@ cs_user_sles_petsc_hook(void  *context,
  *
  * This function is called at the end of the setup stage for a KSP solver.
  *
- * Note: if the context pointer is non-nullptr, it must point to valid data
+ * Note: if the context pointer is non-null, it must point to valid data
  * when the selection function is called so that value or structure should
  * not be temporary (i.e. local);
  *
@@ -390,7 +390,7 @@ cs_user_linear_solvers(void)
   cs_field_t *cvar_user_1 = cs_field_by_name_try("user_1");
   if (cvar_user_1 != nullptr) {
     cs_sles_it_define(cvar_user_1->id,
-                      nullptr,   /* name passed is nullptr if field_id > -1 */
+                      nullptr,   /* name passed is null if field_id > -1 */
                       CS_SLES_BICGSTAB2,
                       1,      /* polynomial precond. degree (default 0) */
                       10000); /* n_max_iter */

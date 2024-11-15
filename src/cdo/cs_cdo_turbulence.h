@@ -126,7 +126,7 @@ typedef void *
  *
  * \param[in, out]  tbc       pointer to a structure cast on-the-fly to free
  *
- * \return a NULL pointer
+ * \return a null pointer
  */
 /*----------------------------------------------------------------------------*/
 
@@ -414,7 +414,7 @@ cs_turb_init_k_eps_context(const cs_turb_model_t      *tbm);
  *
  * \param[in, out]  tbc   pointer to a structure context cast on-the-fly
  *
- * \return a NULL pointer
+ * \return a null pointer
  */
 /*----------------------------------------------------------------------------*/
 

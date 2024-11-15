@@ -1,5 +1,5 @@
 /*============================================================================
- * Low-level functions and global variables definition.
+ * Definitions, global variables, and base functions
  *============================================================================*/
 
 /*
@@ -177,32 +177,32 @@ static int _cs_dlopen_flags = RTLD_LAZY;
 static const char _cs_base_build_localedir[] = LOCALEDIR;
 static const char _cs_base_build_pkgdatadir[] = PKGDATADIR;
 static const char _cs_base_build_pkglibdir[] = PKGLIBDIR;
-static char *_cs_base_env_localedir = NULL;
-static char *_cs_base_env_pkgdatadir = NULL;
-static char *_cs_base_env_pkglibdir = NULL;
+static char *_cs_base_env_localedir = nullptr;
+static char *_cs_base_env_pkgdatadir = nullptr;
+static char *_cs_base_env_pkglibdir = nullptr;
 
 /* Log file */
 
-static FILE  *_bft_printf_file = NULL;
-static char  *_bft_printf_file_name = NULL;
+static FILE  *_bft_printf_file = nullptr;
+static char  *_bft_printf_file_name = nullptr;
 static bool   _bft_printf_suppress = false;
 static bool   _cs_trace = false;
 
 /* Additional finalization steps */
 
 static int                 _cs_base_n_finalize = 0;
-static cs_base_atexit_t  **_cs_base_finalize = NULL;
+static cs_base_atexit_t  **_cs_base_finalize = nullptr;
 
-static cs_base_atexit_t   *_cs_base_atexit = NULL;
+static cs_base_atexit_t   *_cs_base_atexit = nullptr;
 
-static cs_base_sigint_handler_t  * _cs_base_sigint_handler = NULL;
+static cs_base_sigint_handler_t  * _cs_base_sigint_handler = nullptr;
 
 /* Additional MPI communicators */
 
 #if defined(HAVE_MPI)
 static int        _n_step_comms = 0;
-static int       *_step_ranks = NULL;
-static MPI_Comm  *_step_comm = NULL;
+static int       *_step_ranks = nullptr;
+static MPI_Comm  *_step_comm = nullptr;
 #endif
 
 /*============================================================================
@@ -425,8 +425,8 @@ _set_atexit_crash_workaround(void)
     sa.sa_handler = *_cs_base_sig_exit_crash_workaround;
     sigfillset(&sa.sa_mask);
     sa.sa_flags = 0;
-    sa.sa_restorer = NULL;
-    if (sigaction(SIGSEGV, &sa, NULL) == -1 && cs_glob_rank_id <= 0)
+    sa.sa_restorer = nullptr;
+    if (sigaction(SIGSEGV, &sa, nullptr) == -1 && cs_glob_rank_id <= 0)
       perror("sigaction");
 
     int i = setjmp(_cs_exit_jmp_buf);
@@ -448,7 +448,7 @@ static void
 _cs_base_exit(int status)
 {
   if (status == EXIT_SUCCESS)
-    cs_base_update_status(NULL);
+    cs_base_update_status(nullptr);
 
   if (status != 0) {
     /* When running under cs_debug_wrapper with a filter
@@ -460,7 +460,7 @@ _cs_base_exit(int status)
        launcher to kill remaining ranks also). */
 
     const char exit_on_error[] = "CS_EXIT_ON_ERROR";
-    if (getenv(exit_on_error) != NULL) {
+    if (getenv(exit_on_error) != nullptr) {
       if (strcmp(exit_on_error, "ignore") == 0)
         status = EXIT_SUCCESS;
     }
@@ -491,7 +491,7 @@ _cs_base_exit(int status)
        * due to a SIGTERM received from another rank's MPI_Abort,
        * make sure we avoid ill-defined behavior) */
 
-      fflush(NULL);
+      fflush(nullptr);
 
       if (status != EXIT_SUCCESS)
         MPI_Abort(cs_glob_mpi_comm, EXIT_FAILURE);
@@ -527,9 +527,9 @@ _cs_base_error_handler(const char  *nom_fic,
                        const char  *format,
                        va_list      arg_ptr)
 {
-  if (_cs_base_atexit != NULL) {
+  if (_cs_base_atexit != nullptr) {
     _cs_base_atexit();
-    _cs_base_atexit = NULL;
+    _cs_base_atexit = nullptr;
   }
 
   bft_printf_flush();
@@ -633,11 +633,11 @@ _cs_mem_error_handler(const char  *file_name,
 static void
 _cs_base_backtrace_print(int  lv_start)
 {
-  bft_backtrace_t  *tr = NULL;
+  bft_backtrace_t  *tr = nullptr;
 
   tr = bft_backtrace_create();
 
-  if (tr != NULL) {
+  if (tr != nullptr) {
 
     char s_func_buf[67];
 
@@ -660,16 +660,16 @@ _cs_base_backtrace_print(int  lv_start)
       s_func = bft_backtrace_function(tr, ind);
       s_addr = bft_backtrace_address(tr, ind);
 
-      if (s_file == NULL)
+      if (s_file == nullptr)
         s_file = s_unknown;
-      if (s_func == NULL)
+      if (s_func == nullptr)
         strcpy(s_func_buf, "?");
       else {
         s_func_buf[0] = '<';
         strncpy(s_func_buf + 1, s_func, 64);
         strcat(s_func_buf, ">");
       }
-      if (s_addr == NULL)
+      if (s_addr == nullptr)
         s_addr = s_unknown;
 
       _cs_base_err_printf("%s%4d: %-12s %-32s (%s)\n", s_prefix,
@@ -692,15 +692,15 @@ _cs_base_backtrace_print(int  lv_start)
 static void
 _cs_base_sig_fatal(int  signum)
 {
-  if (_cs_base_sigint_handler != NULL && signum == SIGTERM) {
+  if (_cs_base_sigint_handler != nullptr && signum == SIGTERM) {
     _cs_base_sigint_handler(signum);
-    _cs_base_sigint_handler = NULL;
+    _cs_base_sigint_handler = nullptr;
     return;
   }
 
-  if (_cs_base_atexit != NULL) {
+  if (_cs_base_atexit != nullptr) {
     _cs_base_atexit();
-    _cs_base_atexit = NULL;
+    _cs_base_atexit = nullptr;
   }
 
   bft_printf_flush();
@@ -776,24 +776,24 @@ _get_path(const char   *dir_path,
 {
 #if defined(HAVE_RELOCATABLE)
   {
-    const char *cs_root_dir = NULL;
-    const char *rel_path = NULL;
+    const char *cs_root_dir = nullptr;
+    const char *rel_path = nullptr;
 
     /* Allow for displaceable install */
 
-    if (*env_path != NULL)
+    if (*env_path != nullptr)
       return *env_path;
 
     /* First try with an environment variable CS_ROOT_DIR */
 
-    if (getenv("CS_ROOT_DIR") != NULL) {
+    if (getenv("CS_ROOT_DIR") != nullptr) {
       cs_root_dir = getenv("CS_ROOT_DIR");
       rel_path = "/";
     }
 
     /* Second try with an environment variable CFDSTUDY_ROOT_DIR */
 
-    else if (getenv("CFDSTUDY_ROOT_DIR") != NULL) {
+    else if (getenv("CFDSTUDY_ROOT_DIR") != nullptr) {
       cs_root_dir = getenv("CFDSTUDY_ROOT_DIR");
       rel_path = "/";
     }
@@ -808,13 +808,13 @@ _get_path(const char   *dir_path,
     else {
 
       int buf_size = 128;
-      char *buf = NULL;
+      char *buf = nullptr;
 
-      while (cs_root_dir == NULL) {
+      while (cs_root_dir == nullptr) {
         buf_size *= 2;
         BFT_REALLOC(buf, buf_size, char);
         cs_root_dir = getcwd(buf, buf_size);
-        if (cs_root_dir == NULL && errno != ERANGE)
+        if (cs_root_dir == nullptr && errno != ERANGE)
           bft_error(__FILE__, __LINE__, errno,
                     _("Error querying working directory.\n"));
       }
@@ -903,9 +903,9 @@ _cs_base_mpi_error(MPI_Comm  *comm,
   char comm_name[MPI_MAX_OBJECT_NAME + 1];
 #endif
 
-  if (_cs_base_atexit != NULL) {
+  if (_cs_base_atexit != nullptr) {
     _cs_base_atexit();
-    _cs_base_atexit = NULL;
+    _cs_base_atexit = nullptr;
   }
 
   bft_printf_flush();
@@ -1114,7 +1114,7 @@ char *
 cs_base_get_app_name(int          argc,
                      const char  *argv[])
 {
-  char *app_name = NULL;
+  char *app_name = nullptr;
   int arg_id = 0;
 
   /* Loop on command line arguments */
@@ -1135,17 +1135,17 @@ cs_base_get_app_name(int          argc,
 
 #if defined(HAVE_GETCWD)
 
-  if (app_name == NULL) {
+  if (app_name == nullptr) {
 
     int i;
     int buf_size = 128;
-    char *wd = NULL, *buf = NULL;
+    char *wd = nullptr, *buf = nullptr;
 
-    while (wd == NULL) {
+    while (wd == nullptr) {
       buf_size *= 2;
       BFT_REALLOC(buf, buf_size, char);
       wd = getcwd(buf, buf_size);
-      if (wd == NULL && errno != ERANGE)
+      if (wd == nullptr && errno != ERANGE)
         bft_error(__FILE__, __LINE__, errno,
                   _("Error querying working directory.\n"));
     }
@@ -1276,7 +1276,7 @@ cs_base_mpi_init(int    *argc,
   int arg_id = 0, flag = 0;
   int use_mpi = false;
 
-  if (getenv("PMIX_RANK") != NULL)
+  if (getenv("PMIX_RANK") != nullptr)
     use_mpi = true;
 
 #if defined(__CRAYXT_COMPUTE_LINUX_TARGET)
@@ -1289,22 +1289,22 @@ cs_base_mpi_init(int    *argc,
 
   /* Notes: Microsoft MPI is based on MPICH */
 
-  if (getenv("PMI_RANK") != NULL)
+  if (getenv("PMI_RANK") != nullptr)
     use_mpi = true;
 
-  else if (getenv("PCMPI") != NULL) /* IBM Platform MPI */
+  else if (getenv("PCMPI") != nullptr) /* IBM Platform MPI */
     use_mpi = true;
 
 #elif defined(OPEN_MPI)
   /* OpenMPI 1.3+ ; 1.4 also defines PMIX_RANK */
-  else if (getenv("OMPI_COMM_WORLD_RANK") != NULL)
+  else if (getenv("OMPI_COMM_WORLD_RANK") != nullptr)
     use_mpi = true;
 
 #endif /* Tests for known MPI variants */
 
   /* Test for run through SLURM's srun */
 
-  if (getenv("SLURM_SRUN_COMM_HOST") != NULL)
+  if (getenv("SLURM_SRUN_COMM_HOST") != nullptr)
     use_mpi = true;
 
   /* If we have determined from known environment variables
@@ -1544,9 +1544,9 @@ cs_base_get_rank_step_comm_recursive(MPI_Comm  parent_comm,
 void
 cs_exit(int  status)
 {
-  if (_cs_base_atexit != NULL) {
+  if (_cs_base_atexit != nullptr) {
     _cs_base_atexit();
-    _cs_base_atexit = NULL;
+    _cs_base_atexit = nullptr;
   }
 
   if (status == EXIT_FAILURE) {
@@ -1657,12 +1657,12 @@ cs_base_mem_init(void)
 
     const char  *base_name  = getenv("CS_MEM_LOG");
 
-    if (base_name != NULL) {
+    if (base_name != nullptr) {
 
       /* We may not use CS_MALLOC here as memory management has
          not yet been initialized using cs_mem_init() */
 
-      char *_file_name = NULL;
+      char *_file_name = nullptr;
       const char  *file_name = cs_empty_string;
 
       /* If log is done to "performance.log", use log level 1 and only log
@@ -1691,14 +1691,14 @@ cs_base_mem_init(void)
 
       cs_mem_init(file_name);
 
-      if (_file_name != NULL)
+      if (_file_name != nullptr)
         free(_file_name);
 
     }
 
 #if defined(HAVE_ACCEL)
     else
-      cs_mem_init(NULL);
+      cs_mem_init(nullptr);
 #endif
 
     _cs_mem_initialized = true;
@@ -2035,9 +2035,9 @@ cs_base_time_summary(void)
 /*!
  * \brief Update status file.
  *
- * If the format string is NULL, the file is removed.
+ * If the format string is null, the file is removed.
 
- * \param[in]  format  format string, or NULL
+ * \param[in]  format  format string, or nullptr
  * \param[in]  ...     format arguments
  */
 /*----------------------------------------------------------------------------*/
@@ -2047,14 +2047,14 @@ cs_base_update_status(const char  *format,
                       ...)
 {
   static const char _status_file_name[] = "run_status.running";
-  static FILE *_status_file = NULL;
+  static FILE *_status_file = nullptr;
 
   if (cs_glob_rank_id < 1) {
 
-    if (format == NULL) {
-      if (_status_file != NULL) {
+    if (format == nullptr) {
+      if (_status_file != nullptr) {
         if (fclose(_status_file) == 0) {
-          _status_file = NULL;
+          _status_file = nullptr;
           remove(_status_file_name);
         }
       }
@@ -2068,7 +2068,7 @@ cs_base_update_status(const char  *format,
       /* Output to trace */
 
 #if defined(va_copy) || defined(__va_copy)
-      if (_cs_trace && format != NULL) {
+      if (_cs_trace && format != nullptr) {
         va_list arg_ptr_2;
 #if defined(va_copy)
         va_copy(arg_ptr_2, arg_ptr);
@@ -2082,10 +2082,10 @@ cs_base_update_status(const char  *format,
 
       /* Status file */
 
-      if (_status_file == NULL)
+      if (_status_file == nullptr)
         _status_file = fopen(_status_file_name, "w");
 
-      if (_status_file != NULL) {
+      if (_status_file != nullptr) {
         long p_size = ftell(_status_file);
         fseek(_status_file, 0, SEEK_SET);
         vfprintf(_status_file, format, arg_ptr);
@@ -2122,7 +2122,7 @@ cs_base_update_status(const char  *format,
 void
 cs_base_trace_set(bool  trace)
 {
-  if (_bft_printf_file_name == NULL)
+  if (_bft_printf_file_name == nullptr)
     _cs_trace = trace;
 }
 
@@ -2152,7 +2152,7 @@ cs_base_bft_printf_init(const char  *log_name,
 
   bool log_to_stdout = false;
   const char *p = getenv("CS_LOG_TO_STDOUT");
-  if (p != NULL) {
+  if (p != nullptr) {
     if (atoi(p) > 0)
       log_to_stdout = true;
   }
@@ -2160,7 +2160,7 @@ cs_base_bft_printf_init(const char  *log_name,
   /* Rank 0 */
 
   if (   cs_glob_rank_id < 1
-      && log_name != NULL
+      && log_name != nullptr
       && log_to_stdout == false) {
 
     CS_MALLOC(_bft_printf_file_name,
@@ -2175,7 +2175,7 @@ cs_base_bft_printf_init(const char  *log_name,
 
   else if (cs_glob_rank_id > 0) {
 
-    if (log_name != NULL && rn_log_flag > 0) { /* Non-suppressed logs */
+    if (log_name != nullptr && rn_log_flag > 0) { /* Non-suppressed logs */
 
       if (log_to_stdout == false) {
         int n_dec = 1;
@@ -2222,11 +2222,11 @@ cs_base_bft_printf_set(const char  *log_name,
 {
   cs_base_bft_printf_init(log_name, rn_log_flag);
 
-  if (_bft_printf_file_name != NULL && _bft_printf_suppress == false) {
+  if (_bft_printf_file_name != nullptr && _bft_printf_suppress == false) {
 
     /* Redirect log */
 
-    if (_bft_printf_file_name != NULL) {
+    if (_bft_printf_file_name != nullptr) {
 
       bft_printf_proxy_set(vprintf);
       bft_printf_flush_proxy_set(_cs_base_bft_printf_flush);
@@ -2236,7 +2236,7 @@ cs_base_bft_printf_set(const char  *log_name,
 
         FILE *fp = freopen(_bft_printf_file_name, "w", stdout);
 
-        if (fp == NULL)
+        if (fp == nullptr)
           bft_error(__FILE__, __LINE__, errno,
                     _("It is impossible to redirect the standard output "
                       "to file:\n%s"), _bft_printf_file_name);
@@ -2252,7 +2252,7 @@ cs_base_bft_printf_set(const char  *log_name,
       else {
 
         _bft_printf_file = fopen(_bft_printf_file_name, "w");
-        if (_bft_printf_file == NULL)
+        if (_bft_printf_file == nullptr)
           bft_error(__FILE__, __LINE__, errno,
                     _("Error opening log file:\n%s"),
                     _bft_printf_file_name);
@@ -2292,7 +2292,7 @@ cs_base_bft_printf_name(void)
  * been called before this.
  *
  * returns:
- *   name of default log file
+ *   output suppression flag
  *----------------------------------------------------------------------------*/
 
 bool
@@ -2364,7 +2364,7 @@ cs_base_sigint_handler_set(cs_base_sigint_handler_t  *const h)
 void
 cs_base_option_string_clean(char  *s)
 {
-  if (s != NULL) {
+  if (s != nullptr) {
 
     int i, j;
 
@@ -2387,6 +2387,9 @@ cs_base_option_string_clean(char  *s)
 /*----------------------------------------------------------------------------
  * Return a string providing locale path information.
  *
+ * This is normally the path determined upon configuration, but may be
+ * adapted for movable installs using the CS_ROOT_DIR environment variable.
+ *
  * returns:
  *   locale path
  *----------------------------------------------------------------------------*/
@@ -2401,6 +2404,9 @@ cs_base_get_localedir(void)
 
 /*----------------------------------------------------------------------------
  * Return a string providing package data path information.
+ *
+ * This is normally the path determined upon configuration, but may be
+ * adapted for movable installs using the CS_ROOT_DIR environment variable.
  *
  * returns:
  *   package data path
@@ -2475,9 +2481,9 @@ cs_base_check_bool(bool *b)
 FILE *
 cs_base_open_properties_data_file(const char  *base_name)
 {
-  FILE *f = NULL;
+  FILE *f = nullptr;
 
-  char *_f_name = NULL;
+  char *_f_name = nullptr;
   const char *file_name = base_name;
 
   /* choose local file if present, default otherwise */
@@ -2494,7 +2500,7 @@ cs_base_open_properties_data_file(const char  *base_name)
 
   f = fopen(file_name, "r");
 
-  if (f == NULL)
+  if (f == nullptr)
     bft_error(__FILE__, __LINE__, errno,
               _("Error opening data file \"%s\""), file_name);
 
@@ -2506,7 +2512,7 @@ cs_base_open_properties_data_file(const char  *base_name)
 #if defined(HAVE_DLOPEN)
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Load a dynamic library.
  *
  * \param[in]  filename  path to shared library file
@@ -2518,7 +2524,7 @@ cs_base_open_properties_data_file(const char  *base_name)
 void*
 cs_base_dlopen(const char *filename)
 {
-  void *retval = NULL;
+  void *retval = nullptr;
 
   /* Disable floating-point traps as the initialization of some libraries
      may interfere with this (for example, embree, and optional ParaView
@@ -2530,7 +2536,7 @@ cs_base_dlopen(const char *filename)
 
   retval = dlopen(filename, _cs_dlopen_flags);
 
-  if (retval == NULL)
+  if (retval == nullptr)
     bft_error(__FILE__, __LINE__, 0,
               _("Error loading %s: %s."), filename, dlerror());
 
@@ -2542,7 +2548,7 @@ cs_base_dlopen(const char *filename)
 }
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Load a plugin's dynamic library
  *
  * This function is similar to \ref cs_base_dlopen, except that only
@@ -2558,9 +2564,9 @@ cs_base_dlopen(const char *filename)
 void *
 cs_base_dlopen_plugin(const char *name)
 {
-  void *retval = NULL;
+  void *retval = nullptr;
 
-  char  *lib_path = NULL;
+  char  *lib_path = nullptr;
   const char *pkglibdir = cs_base_get_pkglibdir();
 
   /* Open shared library */
@@ -2579,7 +2585,7 @@ cs_base_dlopen_plugin(const char *name)
 }
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Get flags for dlopen.
  *
  * \return  flags used for dlopen.
@@ -2593,7 +2599,7 @@ cs_base_dlopen_get_flags(void)
 }
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Set flags for dlopen.
  *
  * \param[in]  flags  flags to set
@@ -2607,7 +2613,7 @@ cs_base_dlopen_set_flags(int flags)
 }
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Unload a dynamic library.
  *
  * Note that the dlopen underlying mechanism uses a reference count, so
@@ -2615,7 +2621,7 @@ cs_base_dlopen_set_flags(int flags)
  * the same number of times as \ref cs_base_dlopen.
  *
  * \param[in]  filename  optional path to shared library file name for error
- *                       logging, or NULL
+ *                       logging, or nullptr
  * \param[in]  handle    handle to shared library
  */
 /*----------------------------------------------------------------------------*/
@@ -2626,11 +2632,11 @@ cs_base_dlclose(const char  *filename,
 {
   int retval = 0;
 
-  if (handle != NULL)
+  if (handle != nullptr)
     retval = dlclose(handle);
 
   if (retval != 0) {
-    if (filename != NULL)
+    if (filename != nullptr)
       bft_error(__FILE__, __LINE__, 0,
                 _("Error decrementing count or unloading %s: %s."),
                 filename, dlerror());
@@ -2642,7 +2648,7 @@ cs_base_dlclose(const char  *filename,
 }
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Get a shared library function pointer
  *
  * \param[in]  handle            handle to shared library
@@ -2658,15 +2664,15 @@ cs_base_get_dl_function_pointer(void        *handle,
                                 const char  *name,
                                 bool         errors_are_fatal)
 {
-  void  *retval = NULL;
-  char  *error = NULL;
+  void  *retval = nullptr;
+  char  *error = nullptr;
 
   dlerror();    /* Clear any existing error */
 
   retval = dlsym(handle, name);
   error = dlerror();
 
-  if (error != NULL && errors_are_fatal)
+  if (error != nullptr && errors_are_fatal)
     bft_error(__FILE__, __LINE__, 0,
               _("Error calling dlsym for %s: %s\n"), name, error);
 
@@ -2676,7 +2682,7 @@ cs_base_get_dl_function_pointer(void        *handle,
 #endif /* defined(HAVE_DLOPEN) */
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Dump a stack trace to a file
  *
  * \param[in]  f         pointer to file in which to dump trace
@@ -2688,11 +2694,11 @@ void
 cs_base_backtrace_dump(FILE  *f,
                        int    lv_start)
 {
-  bft_backtrace_t  *tr = NULL;
+  bft_backtrace_t  *tr = nullptr;
 
   tr = bft_backtrace_create();
 
-  if (tr != NULL) {
+  if (tr != nullptr) {
 
     char s_func_buf[67];
 
@@ -2715,16 +2721,16 @@ cs_base_backtrace_dump(FILE  *f,
       s_func = bft_backtrace_function(tr, ind);
       s_addr = bft_backtrace_address(tr, ind);
 
-      if (s_file == NULL)
+      if (s_file == nullptr)
         s_file = s_unknown;
-      if (s_func == NULL)
+      if (s_func == nullptr)
         strcpy(s_func_buf, "?");
       else {
         s_func_buf[0] = '<';
         strncpy(s_func_buf + 1, s_func, 64);
         strcat(s_func_buf, ">");
       }
-      if (s_addr == NULL)
+      if (s_addr == nullptr)
         s_addr = s_unknown;
 
       fprintf(f, "%s%4d: %-12s %-32s (%s)\n", s_prefix,
@@ -2740,7 +2746,7 @@ cs_base_backtrace_dump(FILE  *f,
 }
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Register a function to be called at the finalization stage.
  *
  * The finalization is done in the reverse (first in, last out) sequence
@@ -2762,7 +2768,7 @@ cs_base_at_finalize(cs_base_atexit_t  *func)
 }
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Call sequence of finalization functions.
  *
  * The finalization is done in the reverse (first in, last out) sequence
@@ -2773,7 +2779,7 @@ cs_base_at_finalize(cs_base_atexit_t  *func)
 void
 cs_base_finalize_sequence(void)
 {
-  if (_cs_base_finalize != NULL) {
+  if (_cs_base_finalize != nullptr) {
     for (int i = _cs_base_n_finalize - 1; i > -1; i--)
       _cs_base_finalize[i]();
     BFT_FREE(_cs_base_finalize);
@@ -2782,10 +2788,10 @@ cs_base_finalize_sequence(void)
 }
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Query run-time directory info, using working directory names.
  *
- * Returned names are allocated if non-NULL, so should be deallocated by
+ * Returned names are allocated if non-null, so should be deallocated by
  * the caller when no longer needed.
  *
  * Names are extracted from the working directory structure, which is expected
@@ -2795,11 +2801,11 @@ cs_base_finalize_sequence(void)
  * or, in the case of a coupled run:
  * <prefix>/study_name/RESU_COUPLING/run_id/case_name
  *
- * If some names cannot be queried, NULL is returned.
+ * If some names cannot be queried, nullptr is returned.
  *
- * \param[out]  run_id      run_id, or NULL
- * \param[out]  case_name   case name, or NULL
- * \param[out]  study_name  study name, or NULL
+ * \param[out]  run_id      run_id, or nullptr
+ * \param[out]  case_name   case name, or nullptr
+ * \param[out]  study_name  study name, or nullptr
  */
 /*----------------------------------------------------------------------------*/
 
@@ -2810,25 +2816,25 @@ cs_base_get_run_identity(char  **run_id,
 {
   /* Use execution directory if name is unavailable */
 
-  const char *c[4] = {NULL, NULL, NULL, NULL};
+  const char *c[4] = {nullptr, nullptr, nullptr, nullptr};
 
-  if (run_id != NULL)
-    *run_id = NULL;
-  if (case_name != NULL)
-    *case_name = NULL;
-  if (study_name != NULL)
-    *study_name = NULL;
+  if (run_id != nullptr)
+    *run_id = nullptr;
+  if (case_name != nullptr)
+    *case_name = nullptr;
+  if (study_name != nullptr)
+    *study_name = nullptr;
 
 #if defined(HAVE_GETCWD)
 
   int buf_size = 128;
-  char *wd = NULL, *buf = NULL;
+  char *wd = nullptr, *buf = nullptr;
 
-  while (wd == NULL) {
+  while (wd == nullptr) {
     buf_size *= 2;
     BFT_REALLOC(buf, buf_size, char);
     wd = getcwd(buf, buf_size);
-    if (wd == NULL && errno != ERANGE)
+    if (wd == nullptr && errno != ERANGE)
       bft_error(__FILE__, __LINE__, errno,
                 _("Error querying working directory.\n"));
   }
@@ -2850,15 +2856,15 @@ cs_base_get_run_identity(char  **run_id,
   }
 
   const char *_run_id = c[0];
-  const char *_case_name = NULL;
-  const char *_study_name = NULL;
+  const char *_case_name = nullptr;
+  const char *_study_name = nullptr;
 
-  if (c[1] != NULL) {
+  if (c[1] != nullptr) {
     if (strcmp(c[1], "RESU") == 0) {
       _case_name = c[2];
       _study_name = c[3];
     }
-    else if (c[2] != NULL) {
+    else if (c[2] != nullptr) {
       if (strcmp(c[2], "RESU_COUPLING") == 0) {
         _run_id = c[1];
         _case_name = c[0];
@@ -2867,15 +2873,15 @@ cs_base_get_run_identity(char  **run_id,
     }
   }
 
-  if (run_id != NULL && _run_id != NULL) {
+  if (run_id != nullptr && _run_id != nullptr) {
     CS_MALLOC(*run_id, strlen(_run_id) + 1, char);
     strcpy(*run_id, _run_id);
   }
-  if (case_name != NULL && _case_name != NULL) {
+  if (case_name != nullptr && _case_name != nullptr) {
     CS_MALLOC(*case_name, strlen(_case_name) + 1, char);
     strcpy(*case_name, _case_name);
   }
-  if (study_name != NULL && _study_name != NULL) {
+  if (study_name != nullptr && _study_name != nullptr) {
     CS_MALLOC(*study_name, strlen(_study_name) + 1, char);
     strcpy(*study_name, _study_name);
   }

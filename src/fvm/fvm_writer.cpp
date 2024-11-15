@@ -1268,7 +1268,7 @@ fvm_writer_init(const char             *name,
  *   this_writer <-- pointer to mesh and field output writer
  *
  * returns:
- *   nullptr pointer
+ *   null pointer
  *----------------------------------------------------------------------------*/
 
 fvm_writer_t *

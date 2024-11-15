@@ -109,7 +109,7 @@ struct _cs_coal_bc_inlet_state_t {
  *
  * \param[ci_p]  pointer to associated structure
  *
- * \return: NULL pointer
+ * \return: null pointer
  */
 /*----------------------------------------------------------------------------*/
 
@@ -133,7 +133,7 @@ _destroy_inlet(void  *ci_p)
  * \brief cs_eval_at_location_t function to compute the flow rate at
  *        boundary faces based on given air and coal flow rates.
  *
- * For the calling function, elt_ids is optional. If not NULL, array(s) should
+ * For the calling function, elt_ids is optional. If non-null, array(s) should
  * be accessed with an indirection.
  *
  * \param[in]       location_id   base associated mesh location id

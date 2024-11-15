@@ -146,7 +146,7 @@ static const char *_type_flag_name[] = {N_("initialization"),
 /*!
  * \brief Return a pointer to a volume zone based on its name if present.
  *
- * If no volume zone of the given name is defined, nullptr is returned.
+ * If no volume zone of the given name is defined, returned pointer is null.
  *
  * \param[in]  name  volume zone name
  *

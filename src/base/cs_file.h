@@ -213,7 +213,7 @@ cs_file_open_serial(const char      *name,
  *   f <-> file descriptor to destroy
  *
  * returns:
- *   NULL pointer
+ *   null pointer
  *----------------------------------------------------------------------------*/
 
 cs_file_t *
@@ -510,9 +510,9 @@ cs_file_tell(cs_file_t  *f);
  * \param [out]      s     buffer to which string is to be read.
  * \param [in]       size  maximum number of characters to be read plus one.
  * \param [in]       f     ecs_file_t descriptor.
- * \param [in, out]  line  file line number if available, or NULL.
+ * \param [in, out]  line  file line number if available, or null.
  *
- * \return s on success, NULL on error or when end of file occurs and
+ * \return s on success, null on error or when end of file occurs and
  *         no characters have been read.
  */
 /*----------------------------------------------------------------------------*/
@@ -535,9 +535,9 @@ cs_file_gets(char             *s,
  * \param [out]      s     buffer to which string is to be read.
  * \param [in]       size  maximum number of characters to be read plus one.
  * \param [in]       f     cs_file_t descriptor.
- * \param [in, out]  line  file line number if available, or NULL.
+ * \param [in, out]  line  file line number if available, or null.
  *
- * \return s on success, NULL on error or when end of file occurs and
+ * \return s on success, null on error or when end of file occurs and
  *         no characters have been read.
  */
 /*----------------------------------------------------------------------------*/
@@ -571,8 +571,8 @@ cs_file_free_defaults(void);
  * parameters:
  *   mode   <-- file mode for which the default is queried (write and
  *              append use the same method, and are interchangeable here)
- *   access --> default file access method, or NULL
- *   hints  --> MPI-IO hints, or NULL
+ *   access --> default file access method, or null
+ *   hints  --> MPI-IO hints, or null
  *----------------------------------------------------------------------------*/
 
 #if defined(HAVE_MPI)
@@ -632,10 +632,10 @@ cs_file_set_default_access(cs_file_mode_t    mode,
  *
  * parameters:
  *   block_rank_step --> MPI rank stepping between non-empty distributed blocks,
- *                       or NULL
+ *                       or null
  *   block_comm      --> Handle to MPI communicator used for distributed
- *                       file block access, or NULL
- *   comm            --> Handle to main MPI communicator, or NULL
+ *                       file block access, or null
+ *   comm            --> Handle to main MPI communicator, or null
  *----------------------------------------------------------------------------*/
 
 void
@@ -781,17 +781,17 @@ cs_file_serializer_destroy(cs_file_serializer_t  **s);
  * initializing the serializer, or to an aditional buffer if the former is
  * too small to receive data from all ranks.
  *
- * Note also that for ranks > 0, this function always returns NULL,
+ * Note also that for ranks > 0, this function always returns null,
  * as only one call is needed for those ranks.
  *
  * parameters:
  *   s         <-- pointer to serializer structure
  *   cur_range --> optional start and past-the end global numbers for the
- *                 current block (size: 2), or NULL; only on rank 0
+ *                 current block (size: 2), or null; only on rank 0
  *
  * returns:
  *   a pointer to the buffer containing new data (first call counts as new),
- *   or NULL if we are finished; always NULL on ranks > 0
+ *   or null if we are finished; always null on ranks > 0
  *----------------------------------------------------------------------------*/
 
 void *
@@ -866,9 +866,9 @@ cs_file_isdir(const char  *path);
  *   path <-- name of directory.
  *
  * returns:
- *   an array of file names in a directory. The last entry is set to NULL.
+ *   an array of file names in a directory. The last entry is set to null.
  *   If no means to list the directory or an error occured, the return
- *    value is simply NULL.
+ *   value is simply null.
  *----------------------------------------------------------------------------*/
 
 char **

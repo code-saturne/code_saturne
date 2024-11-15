@@ -75,7 +75,7 @@ typedef enum {
  *
  * If the matching values are multidimensional, they must be interleaved.
  *
- * Note: if the input pointer is non-NULL, it must point to valid data
+ * Note: if the input pointer is non-null, it must point to valid data
  * when the selection function is called, so either:
  * - that value or structure should not be temporary (i.e. local);
  * - when a single integer identifier is needed, the input pointer can be
@@ -158,7 +158,7 @@ cs_time_moment_is_active(int moment_id);
  *   nt_start     <-- starting time step (or -1 to use t_start)
  *   t_start      <-- starting time
  *   restart_mode <-- behavior in case of restart (reset, auto, or strict)
- *   restart_name <-- if not NULL, previous name in case of restart
+ *   restart_name <-- if non-null, previous name in case of restart
  *
  * returns:
  *   id of new moment in case of success, -1 in case of error.
@@ -196,7 +196,7 @@ cs_time_moment_define_by_field_ids(const char                *name,
  *   nt_start     <-- starting time step (or -1 to use t_start)
  *   t_start      <-- starting time
  *   restart_mode <-- behavior in case of restart (reset, auto, or strict)
- *   restart_name <-- if not NULL, previous name in case of restart
+ *   restart_name <-- if non-null, previous name in case of restart
  *
  * returns:
  *   id of new moment in case of success, -1 in case of error.
@@ -264,7 +264,7 @@ cs_time_moment_restart_options_by_id(int                         restart_id,
  *   restart_id <-- id of time moment in restart data
  *
  * returns:
- *   name of defined moment in restart file, or NULL
+ *   name of defined moment in restart file, or null
  *----------------------------------------------------------------------------*/
 
 const char *
@@ -273,14 +273,14 @@ cs_time_moment_restart_name(int  restart_id);
 /*----------------------------------------------------------------------------
  * Return pointer to field associated with a given moment.
  *
- * For moments defined automatically to assist computation of higher
- * order moments, which do not have an associated field, NULL is returned.
+ * For moments defined automatically to assist computation of higher order
+ * moments, which do not have an associated field, a null pointer is returned.
  *
  * parameters:
  *   moment_id <-- id of associated moment
  *
  * returns:
- *   pointer to field associated with given moment, or NULL
+ *   pointer to field associated with given moment, or null
  *----------------------------------------------------------------------------*/
 
 cs_field_t *

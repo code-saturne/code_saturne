@@ -2667,7 +2667,7 @@ cs_basis_func_copy_setup(const cs_basis_func_t   *ref,
  *
  * \param[in, out]  pbf   pointer to the cs_basis_func_t structure to free
  *
- * \return a nullptr pointer
+ * \return a null pointer
  */
 /*----------------------------------------------------------------------------*/
 

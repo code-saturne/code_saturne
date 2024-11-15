@@ -90,7 +90,7 @@ fvm_selector_create(int                           dim,
  *   this_selector <-> selector to destroy
  *
  * returns:
- *   NULL pointer
+ *   null pointer
  *----------------------------------------------------------------------------*/
 
 fvm_selector_t *

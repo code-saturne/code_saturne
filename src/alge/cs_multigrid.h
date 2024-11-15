@@ -528,7 +528,7 @@ cs_multigrid_set_merge_options(cs_multigrid_t  *mg,
  *        setup and level.
  *
  * If the multigrid hierarchy is not set up, or a level coarser than the
- * coarsest level is requested, NULL is returned.
+ * coarsest level is requested, nullptr is returned.
 
  * \param[in]  mg     pointer to multigrid info and context
  * \param[in]  level  level of the requested grid (or -1 for coarsest)

@@ -323,9 +323,9 @@ struct _cs_multigrid_t {
 
   cs_multigrid_level_info_t  *lv_info;      /* Info for each level */
   cs_multigrid_t             *lv_mg[3];     /* Optional recursive multigrid
-                                               descent, ascent, or nullptr */
+                                               descent, ascent, or null */
   cs_multigrid_t             *p_mg;         /* Optional parent multigrid,
-                                               or nullptr */
+                                               or null */
 
   cs_multigrid_info_t         info;         /* Base multigrid info */
 

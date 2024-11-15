@@ -92,7 +92,7 @@ fvm_to_ensight_case_create(const char                   *const name,
  *   this_case  <-- case structure
  *
  * returns:
- *   NULL pointer
+ *   null pointer
  *----------------------------------------------------------------------------*/
 
 fvm_to_ensight_case_t *

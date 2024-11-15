@@ -2554,7 +2554,7 @@ cs_field_by_composite_name(const char  *name_prefix,
  * \brief Return a pointer to a field based on a composite name if present.
  *
  * The name is expected to be of the form <name_prefix>_<name_suffix>.
- * If no field of the given name is defined, nullptr is returned.
+ * If no field of the given name is defined, a null pointer is returned.
  *
  * \remark: in C++, we could simply have a cs_field_by_name_try template
  *          with a variable number of arguments.
@@ -3764,7 +3764,7 @@ cs_field_get_key_struct(const cs_field_t  *f,
  * \param[in]  key_id  id of associated key
  *
  * \return  pointer to key structure in case of success,
- *          nullptr in case of error
+ *          null in case of error
  */
 /*----------------------------------------------------------------------------*/
 
@@ -3843,7 +3843,7 @@ cs_field_get_key_struct_ptr(cs_field_t  *f,
  * \param[in]  key_id  id of associated key
  *
  * \return  pointer to key structure in case of success,
- *          nullptr in case of error
+ *          null in case of error
  */
 /*----------------------------------------------------------------------------*/
 

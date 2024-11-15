@@ -208,11 +208,11 @@ cs_array_lnum_set_value(cs_lnum_t  size,
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Assign the value "num" to an array on a selected subset of elements.
- *        if elt_ids = nullptr, then one recovers the function
+ *        if elt_ids is null, then one recovers the function
  *        \ref cs_array_lnum_set_value
  *
  * \param[in]      n_elts   number of elements
- * \param[in]      elt_ids  list of ids in the subset or nullptr (size: n_elts)
+ * \param[in]      elt_ids  list of ids in the subset or null (size: n_elts)
  * \param[in]      num      value to set
  * \param[in, out] a        array to set
  */
@@ -280,11 +280,11 @@ cs_array_int_set_value(cs_lnum_t  size,
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Assign the value "num" to an array on a selected subset of elements.
- *        if elt_ids = nullptr, then one recovers the function
+ *        if elt_ids is null, then one recovers the function
  *        \ref cs_array_int_set_value
  *
  * \param[in]      n_elts   number of elements
- * \param[in]      elt_ids  list of ids in the subset or nullptr (size: n_elts)
+ * \param[in]      elt_ids  list of ids in the subset or null (size: n_elts)
  * \param[in]      num      value to set
  * \param[in, out] a        array to set
  */
@@ -318,7 +318,7 @@ cs_array_int_set_value_on_subset(cs_lnum_t        n_elts,
  *        - Only the "dest" array if mode = 1 (CS_ARRAY_SUBSET_OUT)
  *        - Both "ref" and "dest" arrays if mode = 2 (CS_ARRAY_SUBSET_INOUT)
  *
- *        It elt_ids = nullptr or mode < 0 (CS_ARRAY_SUBSET_NULL), then the
+ *        It elt_ids is null or mode < 0 (CS_ARRAY_SUBSET_NULL), then the
  *        behavior is as \ref cs_array_real_copy
  *
  *        One assumes that all arrays are allocated with a correct size.
@@ -326,7 +326,7 @@ cs_array_int_set_value_on_subset(cs_lnum_t        n_elts,
  * \param[in]      n_elts   number of elements in the array
  * \param[in]      stride   number of values for each element
  * \param[in]      mode     apply the subset ids to which array(s)
- * \param[in]      elt_ids  list of ids in the subset or nullptr (size: n_elts)
+ * \param[in]      elt_ids  list of ids in the subset or null (size: n_elts)
  * \param[in]      ref      reference values to copy
  * \param[in, out] dest     array storing values after applying the indirection
  */
@@ -474,12 +474,12 @@ cs_array_real_copy(cs_lnum_t         size,
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Multiply each value by a scaling factor s.t. dest *= scaling_factor
- *        If elt_ids is not nullptr, one applies an indirection.
+ *        If elt_ids is non-null, one applies an indirection.
  *        A stride can also be applied. One assumes an interlaced array.
  *
  * \param[in]  n_elts          number of elements
  * \param[in]  stride          number of values for each element
- * \param[in]  elt_ids         list of ids in the subset or nullptr (size: n_elts)
+ * \param[in]  elt_ids         list of ids in the subset or null (size: n_elts)
  * \param[in]  scaling_factor  value of the scaling factor
  * \param[out] dest            destination array values
  */
@@ -626,12 +626,12 @@ cs_array_real_set_wvalue(cs_lnum_t        n_elts,
 /*!
  * \brief Assign a constant value of dim "stride" to an interlaced array
  *        sharing the same stride. Only a subset of elements are considered.
- *        If elt_ids = nullptr, then one recovers the function
+ *        If elt_ids is null, then one recovers the function
  *        \ref cs_array_real_set_value
  *
  * \param[in]      n_elts    number of elements
  * \param[in]      stride    number of values for each element
- * \param[in]      elt_ids   list of ids in the subset or nullptr (size: n_elts)
+ * \param[in]      elt_ids   list of ids in the subset or null (size: n_elts)
  * \param[in]      ref_val   list of values to assign (size: stride)
  * \param[in, out] a         array to set (size >= n_elts * stride)
  */
@@ -665,13 +665,13 @@ cs_array_real_set_value_on_subset(cs_lnum_t        n_elts,
 /*!
  * \brief Assign a weighted constant value of dim "stride" to an interlaced
  *        array sharing the same stride. Only a subset of elements are
- *        considered.  If elt_ids = nullptr, then one recovers the function \ref
+ *        considered.  If elt_ids is null, then one recovers the function \ref
  *        cs_array_real_set_wvalue Apply a weight for each element. This
  *        weight is constant for each component of an element.
  *
  * \param[in]      n_elts   number of elements
  * \param[in]      stride   number of values for each element
- * \param[in]      elt_ids  list of ids in the subset or nullptr (size: n_elts)
+ * \param[in]      elt_ids  list of ids in the subset or null (size: n_elts)
  * \param[in]      ref_val  list of values to assign (size: stride)
  * \param[in]      weight   values of the weight to apply (size >= n_elts)
  * \param[in, out] a        array to set (size >= n_elts*stride)
@@ -752,11 +752,11 @@ cs_array_real_set_wscalar(cs_lnum_t        n_elts,
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Assign a constant scalar value to an array on a selected subset of
- *        elements. If elt_ids = nullptr, then one recovers the function
+ *        elements. If elt_ids is null, then one recovers the function
  *        cs_array_real_set_scalar
  *
  * \param[in]      n_elts   number of elements
- * \param[in]      elt_ids  list of ids in the subset or nullptr (size: n_elts)
+ * \param[in]      elt_ids  list of ids in the subset or null (size: n_elts)
  * \param[in]      ref_val  value to assign
  * \param[in, out] a        array to set
  */
@@ -784,11 +784,11 @@ cs_array_real_set_scalar_on_subset(cs_lnum_t        n_elts,
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Assign a weighted constant scalar value to an array on a selected
- *        subset of elements. If elt_ids = nullptr, then one recovers the function
+ *        subset of elements. If elt_ids is null, then one recovers the function
  *        cs_array_real_set_wscalar
  *
  * \param[in]      n_elts   number of elements
- * \param[in]      elt_ids  list of ids in the subset or nullptr (size: n_elts)
+ * \param[in]      elt_ids  list of ids in the subset or null (size: n_elts)
  * \param[in]      ref_val  value to assign
  * \param[in]      weight   values of weights to apply
  * \param[in, out] a        array to set
@@ -867,11 +867,11 @@ cs_array_real_set_wvector(cs_lnum_t        n_elts,
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Assign a constant vector to an interlaced array (of stride 3) on a
- *        selected subset of elements. If elt_ids = nullptr, then one recovers the
+ *        selected subset of elements. If elt_ids is null, then one recovers the
  *        function cs_array_real_set_vector
  *
  * \param[in]      n_elts   number of elements
- * \param[in]      elt_ids  list of ids in the subset or nullptr (size: n_elts)
+ * \param[in]      elt_ids  list of ids in the subset or null (size: n_elts)
  * \param[in]      ref_val  vector to assign
  * \param[in, out] a        array to set
  */
@@ -900,12 +900,12 @@ cs_array_real_set_vector_on_subset(cs_lnum_t        n_elts,
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Assign a weighted constant vector value to an interlaced array (of
- *        stride 3). The subset selection is given by elt_ids. If nullptr, then
+ *        stride 3). The subset selection is given by elt_ids. If null, then
  *        one recovers the function \ref cs_array_real_set_wvector
  *        The array of weights has the same size as the array "a".
  *
  * \param[in]      n_elts   number of elements
- * \param[in]      elt_ids  list of ids in the subset or nullptr (size: n_elts)
+ * \param[in]      elt_ids  list of ids in the subset or null (size: n_elts)
  * \param[in]      ref_val  vector to assign
  * \param[in]      weight   values of the weight to apply
  * \param[in, out] a        array to set
@@ -971,7 +971,7 @@ cs_array_real_set_tensor(cs_lnum_t        n_elts,
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Assign a constant 3x3 tensor to an interlaced array (of stride 9) on
- *        a subset of elements. If elt_ids = nullptr, then one recovers the
+ *        a subset of elements. If elt_ids is null, then one recovers the
  *        function cs_array_real_set_tensor
  *
  * \param[in]      n_elts    number of elements

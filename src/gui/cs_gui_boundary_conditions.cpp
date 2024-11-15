@@ -356,7 +356,7 @@ _check_and_add_mapped_inlet(const char       *label,
  * \brief cs_eval_at_location_t function to compute the flow rate at
  *        boundary faces using a MEG generated value.
  *
- * For the calling function, elt_ids is optional. If not NULL, array(s) should
+ * For the calling function, elt_ids is optional. If non-null, array(s) should
  * be accessed with an indirection.
  *
  * \param[in]       location_id   base associated mesh location id
@@ -410,7 +410,7 @@ _meg_flow_rate(int               location_id,
  * \brief cs_eval_at_location_t function to compute the velocity at
  *        boundary faces using a MEG generated norm and direction.
  *
- * For the calling function, elt_ids is optional. If not NULL, array(s) should
+ * For the calling function, elt_ids is optional. If non-null, array(s) should
  * be accessed with an indirection.
  *
  * \param[in]       location_id   base associated mesh location id
@@ -486,7 +486,7 @@ _vel_profile(int               location_id,
  * \brief cs_eval_at_location_t function to compute the velocity at
  *        boundary faces using a MEG generated norm and possibly direction.
  *
- * For the calling function, elt_ids is optional. If not NULL, array(s) should
+ * For the calling function, elt_ids is optional. If non-null, array(s) should
  * be accessed with an indirection.
  *
  * \param[in]       location_id   base associated mesh location id
@@ -583,7 +583,7 @@ _vel_profile_by_meg_norm(int               location_id,
  * \brief cs_eval_at_location_t function to compute the velocity at
  *        boundary faces using a MEG generated direction and uniform norm.
  *
- * For the calling function, elt_ids is optional. If not NULL, array(s) should
+ * For the calling function, elt_ids is optional. If non-null, array(s) should
  * be accessed with an indirection.
  *
  * \param[in]       location_id   base associated mesh location id
@@ -867,7 +867,7 @@ _set_vel_profile(cs_tree_node_t    *tn_vp,
  * \brief cs_dof_func_t function to compute the Enthalpy at boundary faces
  *        using a constant zone temperature.
  *
- * For the calling function, elt_ids is optional. If not NULL, array(s) should
+ * For the calling function, elt_ids is optional. If non-null, array(s) should
  * be accessed with an indirection. The same indirection can be applied to fill
  * retval if dense_output is set to false.
  * In the current case, retval is allocated to mesh->n_b_faces
@@ -931,7 +931,7 @@ _dof_const_t2h(cs_lnum_t         n_elts,
  * \brief cs_dof_func_t function to compute the Enthalpy at boundary faces
  *        using a temperature MEG generated profile.
  *
- * For the calling function, elt_ids is optional. If not NULL, array(s) should
+ * For the calling function, elt_ids is optional. If non-null, array(s) should
  * be accessed with an indirection. The same indirection can be applied to fill
  * retval if dense_output is set to false.
  * In the current case, retval is allocated to mesh->n_b_faces
@@ -1002,7 +1002,7 @@ _dof_meg_t2h(cs_lnum_t         n_elts,
  * \brief cs_dof_func_t function to compute a rescaled electric potential
  *        at boundary faces using a constant zone value.
  *
- * For the calling function, elt_ids is optional. If not NULL, array(s) should
+ * For the calling function, elt_ids is optional. If non-null, array(s) should
  * be accessed with an indirection. The same indirection can be applied to fill
  * retval if dense_output is set to false.
  * In the current case, retval is allocated to mesh->n_b_faces
@@ -1048,7 +1048,7 @@ _dof_const_elec_rescaled(cs_lnum_t         n_elts,
  * \brief cs_dof_func_t function to compute a rescaled electric potential
  *        at boundary faces using a MEG generated profile.
  *
- * For the calling function, elt_ids is optional. If not NULL, array(s) should
+ * For the calling function, elt_ids is optional. If non-null, array(s) should
  * be accessed with an indirection. The same indirection can be applied to fill
  * retval if dense_output is set to false.
  * In the current case, retval is allocated to mesh->n_b_faces
@@ -1109,7 +1109,7 @@ _dof_meg_elec_rescaled(cs_lnum_t         n_elts,
  * \brief cs_dof_func_t function to compute the electic potential using an
  *        implicitely-defined Dirichlet value.
  *
- * For the calling function, elt_ids is optional. If not NULL, array(s) should
+ * For the calling function, elt_ids is optional. If non-null, array(s) should
  * be accessed with an indirection. The same indirection can be applied to fill
  * retval if dense_output is set to false.
  * In the current case, retval is allocated to mesh->n_b_faces
@@ -1149,7 +1149,7 @@ _dof_dirichlet_implicit_elec_pot(cs_lnum_t         n_elts,
  * \brief cs_dof_func_t function to compute field values at boundary faces
  *        using an implicit Neumann condition (converted to Dirichlet)
  *
- * For the calling function, elt_ids is optional. If not NULL, array(s) should
+ * For the calling function, elt_ids is optional. If non-null, array(s) should
  * be accessed with an indirection. The same indirection can be applied to fill
  * retval if dense_output is set to false.
  * In the current case, retval is allocated to mesh->n_b_faces
@@ -1287,7 +1287,7 @@ _inlet_turbulence(cs_tree_node_t  *tn_bc,
  * \brief cs_dof_func_t function to compute a profile at boundary faces
  *        using a MEG generated function for exchange coefficients.
  *
- * For the calling function, elt_ids is optional. If not NULL, array(s) should
+ * For the calling function, elt_ids is optional. If non-null, array(s) should
  * be accessed with an indirection. The same indirection can be applied to fill
  * retval if dense_output is set to false.
  * In the current case, retval is allocated to mesh->n_b_faces
@@ -3475,7 +3475,7 @@ cs_gui_boundary_add_meg_context(const  cs_zone_t   *zone,
  * \brief cs_dof_func_t function to compute boundary condition values
  *        using a MEG generated function.
  *
- * For the calling function, elt_ids is optional. If not NULL, array(s) should
+ * For the calling function, elt_ids is optional. If non-null, array(s) should
  * be accessed with an indirection. The same indirection can be applied to fill
  * retval if dense_output is set to false.
  * In the current case, retval is allocated to mesh->n_b_faces

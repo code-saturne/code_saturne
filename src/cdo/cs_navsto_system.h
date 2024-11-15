@@ -89,7 +89,7 @@ typedef void *
  *
  * \param[in, out]  scheme_context   pointer to a structure cast on-the-fly
  *
- * \return a NULL pointer
+ * \return a null pointer
  */
 /*----------------------------------------------------------------------------*/
 
@@ -438,7 +438,7 @@ cs_navsto_system_destroy(void);
  * \brief  Retrieve the structure storing the parameters for the Navier--Stokes
  *         system
  *
- * \return NULL or the pointer to a \ref cs_navsto_param_t structure
+ * \return nullptr or the pointer to a \ref cs_navsto_param_t structure
  */
 /*----------------------------------------------------------------------------*/
 
@@ -449,7 +449,7 @@ cs_navsto_system_get_param(void);
 /*!
  * \brief  Retrieve a pointer to the equation related to the momentum equation
  *
- * \return NULL or the pointer
+ * \return nullptr or the pointer
  */
 /*----------------------------------------------------------------------------*/
 

@@ -633,7 +633,7 @@ _assign_empty_mesh(cs_medcoupling_mesh_t *pmmesh)
  * \param[in] selection_criteria  selection criteria (entire mesh or part of it)
  * \param[in] elt_dim             dimension of elements. 2: faces, 3: cells
  *
- * \return pointer to found mesh instance, nullptr if none found.
+ * \return pointer to found mesh instance, null if none found.
  */
 /*----------------------------------------------------------------------------*/
 
@@ -665,7 +665,7 @@ _get_mesh_from_criteria(const char  *selection_criteria,
  * \param[in]  name     name
  * \param[in]  elt_dim  dimension of elements. 2: faces, 3: cells
  *
- * \return pointer to found mesh instance, nullptr if none found.
+ * \return pointer to found mesh instance, null if none found.
  */
 /*----------------------------------------------------------------------------*/
 
@@ -1115,8 +1115,8 @@ cs_medcoupling_mesh_get_n_vertices(cs_medcoupling_mesh_t  *m)
  *
  * \param[in] mesh  cs_medcoupling_mesh_t pointer
  *
- * \return ids of associated vertices, or nullptr if all or no local vertices
- *         o parent mesh are present.
+ * \return ids of associated vertices, or null if all or no local vertices
+ *         of parent mesh are present.
  */
 /*----------------------------------------------------------------------------*/
 

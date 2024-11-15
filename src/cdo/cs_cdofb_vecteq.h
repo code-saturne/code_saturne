@@ -77,7 +77,7 @@ typedef struct _cs_cdofb_t cs_cdofb_vecteq_t;
 /*!
  * \brief  Compute the source term for a vector-valued CDO-Fb scheme
  *         and add it to the local rhs
- *         Mass matrix is optional. It can be set to NULL.
+ *         Mass matrix is optional. It can be set to null.
  *
  * \param[in]      cm          pointer to a \ref cs_cell_mesh_t structure
  * \param[in]      eqp         pointer to a \ref cs_equation_param_t structure
@@ -204,7 +204,7 @@ cs_cdofb_vecteq_init_context(cs_equation_param_t    *eqp,
  *
  * \param[in, out]  data   pointer to a cs_cdofb_vecteq_t structure
  *
- * \return a NULL pointer
+ * \return a null pointer
  */
 /*----------------------------------------------------------------------------*/
 
@@ -247,8 +247,8 @@ cs_cdofb_vecteq_init_values(cs_real_t                     t_eval,
  * \param[in]      eqb         pointer to a cs_equation_builder_t structure
  * \param[in]      val_f_n     face DoFs at time step n
  * \param[in]      val_c_n     cell DoFs at time step n
- * \param[in]      val_f_nm1   face DoFs at time step n-1 or NULL
- * \param[in]      val_c_nm1   cell DoFs at time step n-1 or NULL
+ * \param[in]      val_f_nm1   face DoFs at time step n-1 or null
+ * \param[in]      val_c_nm1   cell DoFs at time step n-1 or null
  * \param[in, out] csys        pointer to a cellwise view of the system
  * \param[in, out] cb          pointer to a cellwise builder
  */
@@ -312,7 +312,7 @@ cs_cdofb_vecteq_diffusion(const cs_equation_param_t     *eqp,
 /*!
  * \brief   Build the local matrices arising from the convection, diffusion,
  *          reaction terms in vector-valued CDO-Fb schemes.
- *          mass_hodge could be set to NULL if a Voronoi algo. is used.
+ *          mass_hodge could be set to null if a Voronoi algo. is used.
  *          Otherwise, the mass matrix should be pre-computed.
  *
  * \param[in]      eqp         pointer to a cs_equation_param_t structure

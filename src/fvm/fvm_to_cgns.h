@@ -149,7 +149,7 @@ fvm_to_cgns_init_writer(const char             *name,
  *   this_writer_p <-- pointer to opaque CGNS writer structure.
  *
  * returns:
- *   NULL pointer.
+ *   null pointer.
  *----------------------------------------------------------------------------*/
 
 void *

@@ -166,7 +166,7 @@ cs_matrix_wrapper_tensor(int                         iconvp,
                          cs_real_t                   xa[]);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Build the diagonal of the advection/diffusion matrix
  * for determining the variable time step, flow, Fourier.
  *

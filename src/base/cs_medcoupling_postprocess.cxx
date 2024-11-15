@@ -108,7 +108,7 @@ static cs_medcoupling_slice_t **_slices = nullptr;
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Get a slice by name. Returns nullptr if not found.
+ * \brief Get a slice by name. Returns null if not found.
  *
  * \return pointer to slice structure. nullptr if not found.
  */

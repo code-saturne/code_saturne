@@ -295,7 +295,7 @@ cs_gwf_activate(cs_gwf_model_type_t      model,
 /*!
  * \brief  Free all structures related to groundwater flows
  *
- * \return a nullptr pointer
+ * \return a null pointer
  */
 /*----------------------------------------------------------------------------*/
 

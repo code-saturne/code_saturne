@@ -125,11 +125,11 @@ struct _cs_probe_set_t {
 
   cs_real_3_t  *coords;         /* Coordinates of the set of probes
                                    Initially allocated to n_max_probes. */
-  cs_real_t    *s_coords;       /* nullptr or curvilinear coordinates
+  cs_real_t    *s_coords;       /* null or curvilinear coordinates
                                    for a profile */
 
   char        **labels;         /* List of labels for each probe (optional)
-                                   By default, this is set to nullptr */
+                                   By default, this is set to null */
 
   cs_probe_set_define_local_t  *p_define_func;   /* Advanced local definition
                                                     function */
@@ -448,7 +448,7 @@ _check_probe_set_name(const cs_probe_set_t   *pset,
 /*!
  * \brief Build probes based on a function-definition
  *
- * Note: if the p_define_input pointer is non-nullptr, it must point to valid data
+ * Note: if the p_define_input pointer is non-null, it must point to valid data
  * when the selection function is called, so that value or structure should
  * not be temporary (i.e. local);
  *
@@ -788,7 +788,7 @@ cs_probe_get_n_sets(void)
  *
  * \param[in]   name        name of the set of probes to find
  *
- * \return a pointer to a cs_probes_t structure or nullptr if not found
+ * \return a pointer to a cs_probes_t structure or null if not found
  */
 /*----------------------------------------------------------------------------*/
 
@@ -818,7 +818,7 @@ cs_probe_set_get(const char  *name)
  *
  * \param[in]   pset_id       id related to the set of probes to find
  *
- * \return a pointer to a cs_probes_t structure or nullptr if not found
+ * \return a pointer to a cs_probes_t structure or null if not found
  */
 /*----------------------------------------------------------------------------*/
 
@@ -838,7 +838,7 @@ cs_probe_set_get_by_id(int   pset_id)
  *
  * \param[in]   pset       pointer to a cs_probe_set_t structure
  *
- * \return the name of the cs_probes_t structure or nullptr if not found
+ * \return the name of the cs_probes_t structure or null if not found
  */
 /*----------------------------------------------------------------------------*/
 
@@ -855,7 +855,7 @@ cs_probe_set_get_name(cs_probe_set_t   *pset)
 /*!
  * \brief  Retrieve information useful for the postprocessing step.
  *
- * Output arguments may be set to nullptr if we do not need to query them.
+ * Output arguments may be set to null if we do not need to query them.
  *
  * \param[in]  pset            pointer to a cs_probe_set_t structure
  * \param[out] time_varying    true if probe locations may change with time
@@ -910,7 +910,7 @@ cs_probe_set_get_post_info(const cs_probe_set_t   *pset,
  *
  * \param[in]   pset       pointer to a cs_probe_set_t structure
  *
- * \return selection criteria string, or nullptr if no filter defined
+ * \return selection criteria string, or null if no filter defined
  */
 /*----------------------------------------------------------------------------*/
 
@@ -973,7 +973,7 @@ cs_probe_set_create(const char  *name)
  * \param[in]       x       x coordinate  of the point to add
  * \param[in]       y       y coordinate  of the point to add
  * \param[in]       z       z coordinate  of the point to add
- * \param[in]       label   nullptr or the name of the point (optional)
+ * \param[in]       label   null or the name of the point (optional)
  */
 /*----------------------------------------------------------------------------*/
 
@@ -1151,7 +1151,7 @@ cs_probe_set_create_from_segment(const char        *name,
  * is called just before locating probes on the parent mesh, so this allows
  * building probe sets based on subsets of the computational mesh.
  *
- * Note: if the p_define_input pointer is non-nullptr, it must point to valid data
+ * Note: if the p_define_input pointer is non-null, it must point to valid data
  * when the selection function is called, so that value or structure should
  * not be temporary (i.e. local);
  *
@@ -2176,7 +2176,7 @@ cs_probe_set_get_n_local(const cs_probe_set_t   *pset)
  *
  * \param[in]  pset              pointer to a cs_probe_set_t structure
  *
- * \return nullptr or the pointer to the array of abscissa
+ * \return null or the pointer to the array of abscissa
  */
 /*----------------------------------------------------------------------------*/
 
@@ -2200,7 +2200,7 @@ cs_probe_set_get_curvilinear_abscissa(const cs_probe_set_t   *pset)
  *
  * \param[in]  pset              pointer to a cs_probe_set_t structure
  *
- * \return nullptr or the pointer to the array of abscissa
+ * \return null or the pointer to the array of abscissa
  */
 /*----------------------------------------------------------------------------*/
 

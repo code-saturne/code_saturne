@@ -257,15 +257,15 @@ cs_interpolate_from_location_p1(void                *input,
     = (const cs_real_3_t *)fvq->cell_cen;
 
   cs_halo_type_t halo_type
-    = (m->cell_cells_idx != NULL) ? CS_HALO_EXTENDED : CS_HALO_STANDARD;
+    = (m->cell_cells_idx != nullptr) ? CS_HALO_EXTENDED : CS_HALO_STANDARD;
 
-  cs_field_t *f = NULL;
-  cs_field_bc_coeffs_t *bc_coeffs = NULL;
+  cs_field_t *f = nullptr;
+  cs_field_bc_coeffs_t *bc_coeffs = nullptr;
 
-  if (input != NULL) {
+  if (input != nullptr) {
     const char *name = reinterpret_cast<const char *>(input);
     f = cs_field_by_name_try(name);
-    if (f != NULL) {
+    if (f != nullptr) {
       int kbf = cs_field_key_id_try("boundary_value_id");
       int bf_id = cs_field_get_key_int(f, kbf);
       if (bf_id > -1) {
@@ -275,9 +275,9 @@ cs_interpolate_from_location_p1(void                *input,
         BFT_MALLOC(bc_coeffs->a, m->n_b_faces, cs_real_t);
         const cs_field_t *bf = cs_field_by_id(bf_id);
         cs_array_real_copy(m->n_b_faces, bf->val, bc_coeffs->a);
-        bc_coeffs->b = NULL;
+        bc_coeffs->b = nullptr;
       }
-      else if (f->bc_coeffs != NULL) {
+      else if (f->bc_coeffs != nullptr) {
         bc_coeffs = f->bc_coeffs;
         if (f->dim > 1 && f->type & CS_FIELD_VARIABLE) {
           int coupled = 0;
@@ -285,7 +285,7 @@ cs_interpolate_from_location_p1(void                *input,
           if (coupled_key_id > -1)
             coupled = cs_field_get_key_int(f, coupled_key_id);
           if (coupled == 0) {   /* not handled in this case */
-            bc_coeffs = NULL;
+            bc_coeffs = nullptr;
           }
         }
       }
@@ -316,7 +316,7 @@ cs_interpolate_from_location_p1(void                *input,
                                   halo_type,
                                   bc_coeffs,
                                   c_vals,
-                                  NULL,
+                                  nullptr,
                                   grad);
 
           cs_real_t d[3] = {point_coords[i][0] - cell_cen[c_id][0],
@@ -349,7 +349,7 @@ cs_interpolate_from_location_p1(void                *input,
                                   halo_type,
                                   bc_coeffs,
                                   c_vals,
-                                  NULL,
+                                  nullptr,
                                   grad);
 
           cs_real_t d[3] = {point_coords[i][0] - cell_cen[c_id][0],
@@ -385,7 +385,7 @@ cs_interpolate_from_location_p1(void                *input,
                                   halo_type,
                                   bc_coeffs,
                                   c_vals,
-                                  NULL,
+                                  nullptr,
                                   grad);
           cs_real_t d[3] = {point_coords[i][0] - cell_cen[c_id][0],
                             point_coords[i][1] - cell_cen[c_id][1],
@@ -410,7 +410,7 @@ cs_interpolate_from_location_p1(void                *input,
     assert(0);
   }
 
-  if (bc_coeffs != NULL && bc_coeffs != f->bc_coeffs) {
+  if (bc_coeffs != nullptr && bc_coeffs != f->bc_coeffs) {
     BFT_FREE(bc_coeffs->a);
     BFT_FREE(bc_coeffs->b);
     BFT_FREE(bc_coeffs);

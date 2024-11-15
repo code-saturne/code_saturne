@@ -144,7 +144,7 @@ cs_cdocb_scaleq_init_context(cs_equation_param_t    *eqp,
  *
  * \param[in, out] scheme_context  pointer to a scheme context to free
  *
- * \return a NULL pointer
+ * \return a null pointer
  */
 /*----------------------------------------------------------------------------*/
 

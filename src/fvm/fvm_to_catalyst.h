@@ -101,7 +101,7 @@ fvm_to_catalyst_init_writer(const char             *name,
  *   this_writer_p <-- pointer to opaque Catalyst writer structure.
  *
  * returns:
- *   NULL pointer.
+ *   null pointer.
  *----------------------------------------------------------------------------*/
 
 void *

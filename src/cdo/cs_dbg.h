@@ -109,8 +109,8 @@ cs_dbg_cw_test(const cs_equation_param_t   *eqp,
  *          The usage of threshold allows one to compare more easier arrays.
  *          without taking into account numerical roundoff.
  *
- * \param[in]  fp         pointer to a file structure or NULL
- * \param[in]  fname      filename or NULL
+ * \param[in]  fp         pointer to a file structure or null
+ * \param[in]  fname      filename or null
  * \param[in]  thd        threshold (below this value --> set 0)
  * \param[in]  n_elts     size of the array
  * \param[in]  array      list of values to dump
@@ -243,8 +243,8 @@ cs_dbg_dump_msr_system(const char        *eqname,
  *
  * \param[in] basename  name of the system
  * \param[in] matrix    matrix to dump
- * \param[in] b         right-hand side to dump or NULL
- * \param[in] x         solution array to dump or NULL
+ * \param[in] b         right-hand side to dump or null
+ * \param[in] x         solution array to dump or null
  */
 /*----------------------------------------------------------------------------*/
 

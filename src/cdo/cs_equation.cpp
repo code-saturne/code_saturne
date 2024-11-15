@@ -152,7 +152,7 @@ _init_context_do_nothing(cs_equation_param_t   *eqp,
  *
  * \param[in, out] scheme_context    pointer to a structure cast on-the-fly
  *
- * \return a nullptr pointer
+ * \return a null pointer
  */
 /*----------------------------------------------------------------------------*/
 
@@ -491,11 +491,11 @@ cs_equation_get_n_equations(void)
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Find the cs_equation_t structure with name eqname
- *        Return nullptr if not find
+ *        Return null if not find
  *
  * \param[in] eqname     name of the equation to find
  *
- * \return a pointer to a cs_equation_t structure or nullptr if not found
+ * \return a pointer to a cs_equation_t structure or null if not found
  */
 /*----------------------------------------------------------------------------*/
 
@@ -528,7 +528,7 @@ cs_equation_by_name(const char *eqname)
  *
  * \param[in] field_name       name of the field
  *
- * \return a pointer to a cs_equation_t structure or nullptr if not found
+ * \return a pointer to a cs_equation_t structure or null if not found
  */
 /*----------------------------------------------------------------------------*/
 
@@ -592,7 +592,7 @@ cs_equation_has_field_name(const cs_equation_t *eq,
  *
  * \param[in] eqname       name of the equation
  *
- * \return a cs_equation_param_t structure or nullptr if not found
+ * \return a cs_equation_param_t structure or null if not found
  */
 /*----------------------------------------------------------------------------*/
 
@@ -625,7 +625,7 @@ cs_equation_param_by_name(const char *eqname)
  *
  * \param[in] field_name       name of the field
  *
- * \return a cs_equation_param_t structure or nullptr if not found
+ * \return a cs_equation_param_t structure or null if not found
  */
 /*----------------------------------------------------------------------------*/
 
@@ -650,7 +650,7 @@ cs_equation_param_by_field_name(const char *field_name)
  *
  * \param[in] eq       pointer to a cs_equation_t structure
  *
- * \return a cs_equation_param_t structure or nullptr if not found
+ * \return a cs_equation_param_t structure or null if not found
  */
 /*----------------------------------------------------------------------------*/
 
@@ -666,11 +666,11 @@ cs_equation_get_param(const cs_equation_t *eq)
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Find the \ref cs_equation_t structure with id eq_id
- *        Return nullptr if not find
+ *        Return null if not find
  *
  * \param[in] eq_id    id of the equation to find
  *
- * \return a pointer to a \ref cs_equation_t structure or nullptr if not found
+ * \return a pointer to a \ref cs_equation_t structure or null if not found
  */
 /*----------------------------------------------------------------------------*/
 
@@ -689,7 +689,7 @@ cs_equation_by_id(int eq_id)
  *
  * \param[in] eq       pointer to a cs_equation_t structure
  *
- * \return a name or nullptr if not found
+ * \return a name or null if not found
  */
 /*----------------------------------------------------------------------------*/
 
@@ -728,7 +728,7 @@ cs_equation_get_id(const cs_equation_t *eq)
  *
  * \param[in] eq       pointer to a cs_equation_t structure
  *
- * \return a cs_field_t structure or nullptr if not found
+ * \return a cs_field_t structure or null if not found
  */
 /*----------------------------------------------------------------------------*/
 
@@ -770,7 +770,7 @@ cs_equation_get_field_id(const cs_equation_t *eq)
  *
  * \param[in] eq       pointer to a cs_equation_t structure
  *
- * \return a cs_range_set_t structure or nullptr if not found
+ * \return a cs_range_set_t structure or null if not found
  */
 /*----------------------------------------------------------------------------*/
 
@@ -904,7 +904,7 @@ cs_equation_get_boundary_flux(const cs_equation_t *eq)
  *
  * \param[in] eq       pointer to a cs_equation_t structure
  *
- * \return a cs_equation_builder_t structure or nullptr if not found
+ * \return a cs_equation_builder_t structure or null if not found
  */
 /*----------------------------------------------------------------------------*/
 
@@ -924,7 +924,7 @@ cs_equation_get_builder(const cs_equation_t *eq)
  *
  * \param[in] eq       pointer to a cs_equation_t structure
  *
- * \return a pointer to a structure to cast on-the-fly or nullptr if not found
+ * \return a pointer to a structure to cast on-the-fly or null if not found
  */
 /*----------------------------------------------------------------------------*/
 
@@ -1069,7 +1069,7 @@ cs_equation_get_time_property(const cs_equation_t *eq)
  * \param[in] eq             pointer to a cs_equation_t structure
  * \param[in] reaction_id    id related to this reaction term
  *
- * \return a pointer to a cs_property_t structure or nullptr if not found
+ * \return a pointer to a cs_property_t structure or null if not found
  */
 /*----------------------------------------------------------------------------*/
 
@@ -1345,7 +1345,7 @@ cs_equation_set_flag(cs_equation_t *eq,
 /*!
  * \brief Add a hook function to enable an advanced control during the
  *        cellwise system building.
- *        Only for an advanced usage. The context may be set to nullptr if there
+ *        Only for an advanced usage. The context may be set to null if there
  *        is no need to get additional information.
  *
  * \param[in, out] eq        pointer to the cs_equation_t stucture to update
@@ -3551,11 +3551,11 @@ cs_equation_compute_flux_across_plane(const cs_equation_t *eq,
  * Using a different eqp allows one to build a diffusive flux relying on
  * another property associated to the diffusion term.
  *
- * If pty is set to nullptr then one considers the diffusion property related to
+ * If pty is set to null then one considers the diffusion property related to
  * the eqp structure which will be used. Otherwise, one considers the one
  * given.
  *
- * If dof_vals is set to nullptr (and cell_values too), then one uses the
+ * If dof_vals is set to null (and cell_values too), then one uses the
  * current values of the variable associated to the given equation
  * (cs_equation_get_*_values functions). The calling function has to ensure
  * that the location of the values is relevant with the one expected with the

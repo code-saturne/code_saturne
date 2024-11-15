@@ -57,7 +57,7 @@ BEGIN_C_DECLS
  * \param[in]      connect       pointer to a cs_cdo_connect_t structure
  * \param[in]      quant         pointer to a cs_cdo_quantities_t structure
  * \param[in]      time_eval     physical time at which one evaluates the term
- * \param[in]      context       NULL or pointer to a context structure
+ * \param[in]      context       nullptr or pointer to a context structure
  * \param[in, out] eval          array storing the result (must be allocated)
  */
 /*----------------------------------------------------------------------------*/
@@ -90,7 +90,7 @@ typedef void
  * \param[in]      connect       pointer to a cs_cdo_connect_t structure
  * \param[in]      quant         pointer to a cs_cdo_quantities_t structure
  * \param[in]      time_eval     physical time at which one evaluates the term
- * \param[in]      context       NULL or pointer to a context structure
+ * \param[in]      context       nullptr or pointer to a context structure
  * \param[in, out] eval          array storing the result (must be allocated)
  */
 /*----------------------------------------------------------------------------*/
@@ -119,7 +119,7 @@ cs_xdef_eval_scalar_by_val(cs_lnum_t                    n_elts,
  * \param[in]      connect       pointer to a cs_cdo_connect_t structure
  * \param[in]      quant         pointer to a cs_cdo_quantities_t structure
  * \param[in]      time_eval     physical time at which one evaluates the term
- * \param[in]      context       NULL or pointer to a context structure
+ * \param[in]      context       nullptr or pointer to a context structure
  * \param[in, out] eval          array storing the result (must be allocated)
  */
 /*----------------------------------------------------------------------------*/
@@ -149,7 +149,7 @@ cs_xdef_eval_vector_by_val(cs_lnum_t                    n_elts,
  * \param[in]      connect       pointer to a cs_cdo_connect_t structure
  * \param[in]      quant         pointer to a cs_cdo_quantities_t structure
  * \param[in]      time_eval     physical time at which one evaluates the term
- * \param[in]      context       NULL or pointer to a context structure
+ * \param[in]      context       nullptr or pointer to a context structure
  * \param[in, out] eval          array storing the result (must be allocated)
  */
 /*----------------------------------------------------------------------------*/
@@ -178,7 +178,7 @@ cs_xdef_eval_symtens_by_val(cs_lnum_t                    n_elts,
  * \param[in]      connect       pointer to a cs_cdo_connect_t structure
  * \param[in]      quant         pointer to a cs_cdo_quantities_t structure
  * \param[in]      time_eval     physical time at which one evaluates the term
- * \param[in]      context       NULL or pointer to a context structure
+ * \param[in]      context       nullptr or pointer to a context structure
  * \param[in, out] eval          array storing the result (must be allocated)
  */
 /*----------------------------------------------------------------------------*/
@@ -208,7 +208,7 @@ cs_xdef_eval_tensor_by_val(cs_lnum_t                    n_elts,
  * \param[in]      connect       pointer to a cs_cdo_connect_t structure
  * \param[in]      quant         pointer to a cs_cdo_quantities_t structure
  * \param[in]      time_eval     physical time at which one evaluates the term
- * \param[in]      context       NULL or pointer to a context structure
+ * \param[in]      context       nullptr or pointer to a context structure
  * \param[in, out] eval          array storing the result (must be allocated)
  */
 /*----------------------------------------------------------------------------*/
@@ -238,7 +238,7 @@ cs_xdef_eval_scalar_by_time_func(cs_lnum_t                   n_elts,
  * \param[in]      connect       pointer to a cs_cdo_connect_t structure
  * \param[in]      quant         pointer to a cs_cdo_quantities_t structure
  * \param[in]      time_eval     physical time at which one evaluates the term
- * \param[in]      context       NULL or pointer to a context structure
+ * \param[in]      context       nullptr or pointer to a context structure
  * \param[in, out] eval          array storing the result (must be allocated)
  */
 /*----------------------------------------------------------------------------*/
@@ -268,7 +268,7 @@ cs_xdef_eval_vector_by_time_func(cs_lnum_t                   n_elts,
  * \param[in]      connect       pointer to a cs_cdo_connect_t structure
  * \param[in]      quant         pointer to a cs_cdo_quantities_t structure
  * \param[in]      time_eval     physical time at which one evaluates the term
- * \param[in]      context       NULL or pointer to a context structure
+ * \param[in]      context       nullptr or pointer to a context structure
  * \param[in, out] eval          array storing the result (must be allocated)
  */
 /*----------------------------------------------------------------------------*/
@@ -298,7 +298,7 @@ cs_xdef_eval_symtens_by_time_func(cs_lnum_t                   n_elts,
  * \param[in]      connect       pointer to a cs_cdo_connect_t structure
  * \param[in]      quant         pointer to a cs_cdo_quantities_t structure
  * \param[in]      time_eval     physical time at which one evaluates the term
- * \param[in]      context       NULL or pointer to a context structure
+ * \param[in]      context       nullptr or pointer to a context structure
  * \param[in, out] eval          array storing the result (must be allocated)
  */
 /*----------------------------------------------------------------------------*/
@@ -327,7 +327,7 @@ cs_xdef_eval_tensor_by_time_func(cs_lnum_t                   n_elts,
  * \param[in]      connect       pointer to a cs_cdo_connect_t structure
  * \param[in]      quant         pointer to a cs_cdo_quantities_t structure
  * \param[in]      time_eval     physical time at which one evaluates the term
- * \param[in]      context       NULL or pointer to a context structure
+ * \param[in]      context       nullptr or pointer to a context structure
  * \param[in, out] eval          array storing the result (must be allocated)
  */
 /*----------------------------------------------------------------------------*/
@@ -357,7 +357,7 @@ cs_xdef_eval_at_cells_by_analytic(cs_lnum_t                    n_elts,
  * \param[in]      connect       pointer to a cs_cdo_connect_t structure
  * \param[in]      quant         pointer to a cs_cdo_quantities_t structure
  * \param[in]      time_eval     physical time at which one evaluates the term
- * \param[in]      context       NULL or pointer to a context structure
+ * \param[in]      context       nullptr or pointer to a context structure
  * \param[in, out] eval          array storing the result (must be allocated)
  */
 /*----------------------------------------------------------------------------*/
@@ -387,7 +387,7 @@ cs_xdef_eval_at_i_faces_by_analytic(cs_lnum_t                    n_elts,
  * \param[in]      connect       pointer to a cs_cdo_connect_t structure
  * \param[in]      quant         pointer to a cs_cdo_quantities_t structure
  * \param[in]      time_eval     physical time at which one evaluates the term
- * \param[in]      context       NULL or pointer to a context structure
+ * \param[in]      context       nullptr or pointer to a context structure
  * \param[in, out] eval          array storing the result (must be allocated)
  */
 /*----------------------------------------------------------------------------*/
@@ -416,7 +416,7 @@ cs_xdef_eval_at_b_faces_by_analytic(cs_lnum_t                    n_elts,
  * \param[in]      connect       pointer to a cs_cdo_connect_t structure
  * \param[in]      quant         pointer to a cs_cdo_quantities_t structure
  * \param[in]      time_eval     physical time at which one evaluates the term
- * \param[in]      context       NULL or pointer to a context structure
+ * \param[in]      context       nullptr or pointer to a context structure
  * \param[in, out] eval          array storing the result (must be allocated)
  */
 /*----------------------------------------------------------------------------*/
@@ -446,7 +446,7 @@ cs_xdef_eval_at_vertices_by_analytic(cs_lnum_t                    n_elts,
  * \param[in]      connect       pointer to a cs_cdo_connect_t structure
  * \param[in]      quant         pointer to a cs_cdo_quantities_t structure
  * \param[in]      time_eval     physical time at which one evaluates the term
- * \param[in]      context       NULL or pointer to a context structure
+ * \param[in]      context       nullptr or pointer to a context structure
  * \param[in, out] eval          array storing the result (must be allocated)
  */
 /*----------------------------------------------------------------------------*/
@@ -476,7 +476,7 @@ cs_xdef_eval_at_cells_by_dof_func(cs_lnum_t                    n_elts,
  * \param[in]      connect       pointer to a cs_cdo_connect_t structure
  * \param[in]      quant         pointer to a cs_cdo_quantities_t structure
  * \param[in]      time_eval     physical time at which one evaluates the term
- * \param[in]      context       NULL or pointer to a context structure
+ * \param[in]      context       nullptr or pointer to a context structure
  * \param[in, out] eval          array storing the result (must be allocated)
  */
 /*----------------------------------------------------------------------------*/
@@ -506,7 +506,7 @@ cs_xdef_eval_at_vertices_by_dof_func(cs_lnum_t                    n_elts,
  * \param[in]      connect       pointer to a cs_cdo_connect_t structure
  * \param[in]      quant         pointer to a cs_cdo_quantities_t structure
  * \param[in]      time_eval     physical time at which one evaluates the term
- * \param[in]      context       NULL or pointer to a context structure
+ * \param[in]      context       nullptr or pointer to a context structure
  * \param[in, out] eval          array storing the result (must be allocated)
  */
 /*----------------------------------------------------------------------------*/
@@ -536,7 +536,7 @@ cs_xdef_eval_at_b_faces_by_dof_func(cs_lnum_t                    n_elts,
  * \param[in]      connect       pointer to a cs_cdo_connect_t structure
  * \param[in]      quant         pointer to a cs_cdo_quantities_t structure
  * \param[in]      time_eval     physical time at which one evaluates the term
- * \param[in]      context       NULL or pointer to a context structure
+ * \param[in]      context       nullptr or pointer to a context structure
  * \param[in, out] eval          array storing the result (must be allocated)
  */
 /*----------------------------------------------------------------------------*/
@@ -566,7 +566,7 @@ cs_xdef_eval_scalar_at_cells_by_array(cs_lnum_t                    n_elts,
  * \param[in]      connect       pointer to a cs_cdo_connect_t structure
  * \param[in]      quant         pointer to a cs_cdo_quantities_t structure
  * \param[in]      time_eval     physical time at which one evaluates the term
- * \param[in]      context       NULL or pointer to a context structure
+ * \param[in]      context       nullptr or pointer to a context structure
  * \param[in, out] eval          array storing the result (must be allocated)
  */
 /*----------------------------------------------------------------------------*/
@@ -595,7 +595,7 @@ cs_xdef_eval_nd_at_cells_by_array(cs_lnum_t                    n_elts,
  * \param[in]      connect       pointer to a cs_cdo_connect_t structure
  * \param[in]      quant         pointer to a cs_cdo_quantities_t structure
  * \param[in]      time_eval     physical time at which one evaluates the term
- * \param[in]      context       NULL or pointer to a context structure
+ * \param[in]      context       nullptr or pointer to a context structure
  * \param[in, out] eval          array storing the result (must be allocated)
  */
 /*----------------------------------------------------------------------------*/
@@ -624,7 +624,7 @@ cs_xdef_eval_at_vertices_by_array(cs_lnum_t                    n_elts,
  * \param[in]      connect       pointer to a cs_cdo_connect_t structure
  * \param[in]      quant         pointer to a cs_cdo_quantities_t structure
  * \param[in]      time_eval     physical time at which one evaluates the term
- * \param[in]      context       NULL or pointer to a context structure
+ * \param[in]      context       nullptr or pointer to a context structure
  * \param[in, out] eval          array storing the result (must be allocated)
  */
 /*----------------------------------------------------------------------------*/
@@ -653,7 +653,7 @@ cs_xdef_eval_at_b_faces_by_array(cs_lnum_t                    n_elts,
  * \param[in]      connect       pointer to a cs_cdo_connect_t structure
  * \param[in]      quant         pointer to a cs_cdo_quantities_t structure
  * \param[in]      time_eval     physical time at which one evaluates the term
- * \param[in]      context       NULL or pointer to a context structure
+ * \param[in]      context       nullptr or pointer to a context structure
  * \param[in, out] eval          array storing the result (must be allocated)
  */
 /*----------------------------------------------------------------------------*/
@@ -681,7 +681,7 @@ cs_xdef_eval_cell_by_field(cs_lnum_t                    n_elts,
  * \param[in]      connect       pointer to a cs_cdo_connect_t structure
  * \param[in]      quant         pointer to a cs_cdo_quantities_t structure
  * \param[in]      time_eval     physical time at which one evaluates the term
- * \param[in]      context       NULL or pointer to a context structure
+ * \param[in]      context       nullptr or pointer to a context structure
  * \param[in]      qtype         quadrature type
  * \param[in]      dim           dimension of the analytic function return
  * \param[in, out] eval          array storing the result (must be allocated)

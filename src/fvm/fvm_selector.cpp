@@ -562,7 +562,7 @@ _operation_list_reallocate(_operation_list_t  *ops)
  *   ops <-> operations list to be deleted
  *
  * returns:
- *   nullptr pointer;
+ *   null pointer;
  *----------------------------------------------------------------------------*/
 
 static _operation_list_t *
@@ -856,7 +856,7 @@ fvm_selector_create(int                           dim,
  *   this_selector <-> selector to destroy
  *
  * returns:
- *   nullptr pointer
+ *   null pointer
  *----------------------------------------------------------------------------*/
 
 fvm_selector_t *
