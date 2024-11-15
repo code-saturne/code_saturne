@@ -673,6 +673,7 @@ cs_lagr_new_particle_init(const cs_lnum_t                 particle_range[2],
   const cs_mesh_adjacencies_t  *ma = cs_glob_mesh_adjacencies;
 
   cs_lnum_t n_cells = cs_glob_mesh->n_cells;
+  const cs_real_3_t *cell_cen = (cs_real_3_t*)cs_glob_mesh_quantities->cell_cen;
 
   const cs_lagr_zone_data_t  *bcs = cs_glob_lagr_boundary_conditions;
 
@@ -960,6 +961,8 @@ cs_lagr_new_particle_init(const cs_lnum_t                 particle_range[2],
 
   /* Second stage: initialize particle attributes
      ------------------------------------------- */
+  cs_real_3_t *loc_fluid_vel = nullptr;
+  BFT_MALLOC(loc_fluid_vel, n_phases, cs_real_3_t);
 
   for (cs_lnum_t p_id = particle_range[0]; p_id < particle_range[1]; p_id++) {
 
@@ -974,18 +977,39 @@ cs_lagr_new_particle_init(const cs_lnum_t                 particle_range[2],
       cs_lagr_particle_attr_get_ptr<cs_real_t>(particle, p_am,
                                                CS_LAGR_VELOCITY);
 
+    for (int phase_id = 0; phase_id < n_phases; phase_id++){
+      for (int i = 0; i < 3; i++)
+        loc_fluid_vel[phase_id][i] =
+          extra_i[phase_id].vel->vals[time_id][c_id * 3  + i];
+
+      if (   cs_glob_lagr_time_scheme->interpol_field > 0
+          && extra_i[phase_id].grad_vel != nullptr) { /* gradient have been computed*/
+        /* TODO compute gradient before injection */
+        cs_real_t *part_coord
+          = cs_lagr_particle_attr_get_ptr<cs_real_t>(particle, p_am,
+                                                     CS_LAGR_COORDS);
+        for (int i = 0; i < 3; i++) {
+          for (int j = 0; j < 3; j++)
+            loc_fluid_vel[phase_id][i] +=
+              extra_i[phase_id].grad_vel[c_id][i][j]
+                              * (part_coord[j] - cell_cen[c_id][j]);
+        }
+      }
+    }
+
     if (zis->velocity_profile == CS_LAGR_IN_IMPOSED_FLUID_VALUE) {
       for (cs_lnum_t i = 0; i < 3; i++) {
         cs_real_t norm_alp = 0.;
         part_vel[i] = 0.;
         if (cs_glob_lagr_model->cs_used) {
           for (int phase_id = 0; phase_id < n_phases; phase_id++)
-            part_vel[i] += extra_i[phase_id].vel->vals[time_id][c_id * 3  + i];
-        } else {
+            part_vel[i] += loc_fluid_vel[0][i];
+        }
+        else {
           for (int phase_id = 0; phase_id < n_phases; phase_id++){
             part_vel[i] += extra_i[phase_id].alpha->val[c_id]
               * extra_i[phase_id].cromf->val[c_id]
-              * extra_i[phase_id].vel->vals[time_id][c_id * 3  + i];
+              * loc_fluid_vel[phase_id][i];
             norm_alp += extra_i[phase_id].alpha->val[c_id]
               * extra_i[phase_id].cromf->val[c_id];
           }
@@ -1008,7 +1032,7 @@ cs_lagr_new_particle_init(const cs_lnum_t                 particle_range[2],
      * has to be initialized for every fluid */
     for (int phase_id = 0; phase_id < n_phases; phase_id ++) {
       for (cs_lnum_t i = 0; i < 3; i++) {
-        vel_seen[phase_id*3 + i] = vel[phase_id][c_id][i]
+        vel_seen[phase_id*3 + i] = loc_fluid_vel[phase_id][i]
           + vagaus[phase_id][l_id][0] * sqrt(eig_val[phase_id][c_id][0])
             * eig_vec[phase_id][c_id][0][i]
           + vagaus[phase_id][l_id][1] * sqrt(eig_val[phase_id][c_id][1])
@@ -1268,11 +1292,27 @@ cs_lagr_new_particle_init(const cs_lnum_t                 particle_range[2],
       if (   cs_glob_lagr_model->physical_model == CS_LAGR_PHYS_HEAT
           && cs_glob_lagr_specific_physics->itpvar == 1) {
 
-        if (zis->temperature_profile < 1) {
-          if (cval_t != nullptr)
+        /* Set Seen temperature */
+        if (cval_t != nullptr) {
+          cs_real_t loc_fluid_temp = cval_t[c_id] + tscl_shift;
+          if (   cs_glob_lagr_time_scheme->interpol_field > 0
+              && extra->grad_tempf != nullptr) {
+            cs_real_t *part_coord
+              = cs_lagr_particle_attr_get_ptr<cs_real_t>(particle, p_am,
+                                                         CS_LAGR_COORDS);
+            for (int i = 0; i < 3; i++)
+              loc_fluid_temp += extra->grad_tempf[c_id][i]
+                * (part_coord[i] - cell_cen[c_id][i]);
+          }
+          cs_lagr_particle_set_real(particle, p_am,
+                                    CS_LAGR_FLUID_TEMPERATURE,
+                                    loc_fluid_temp);
+          /* Set particle temperature to fluid one if require */
+          if (zis->temperature_profile < 1) {
             cs_lagr_particle_set_real(particle, p_am,
-                                      CS_LAGR_FLUID_TEMPERATURE,
-                                      cval_t[c_id] + tscl_shift);
+                                      CS_LAGR_TEMPERATURE,
+                                      loc_fluid_temp);
+          }
         }
 
         /* constant temperature set, may be modified later by user function */
@@ -1295,8 +1335,18 @@ cs_lagr_new_particle_init(const cs_lnum_t                 particle_range[2],
       int coal_id = zis->coal_number - 1;
 
       cs_lagr_particle_set_lnum(particle, p_am, CS_LAGR_COAL_ID, coal_id);
+      cs_real_t loc_fluid_temp = cval_t[c_id] + tscl_shift;
+      if (   cs_glob_lagr_time_scheme->interpol_field > 0
+          && extra->grad_tempf != nullptr) { /* gradient have been computed*/
+        cs_real_t *part_coord
+          = cs_lagr_particle_attr_get_ptr<cs_real_t>(particle, p_am,
+                                                     CS_LAGR_COORDS);
+        for (int i = 0; i < 3; i++)
+            loc_fluid_temp += extra->grad_tempf[c_id][i]
+              * (part_coord[i] - cell_cen[c_id][i]);
+      }
       cs_lagr_particle_set_real(particle, p_am, CS_LAGR_FLUID_TEMPERATURE,
-                                cval_t[c_id] + tscl_shift);
+                                loc_fluid_temp);
 
       auto *particle_temp
         = cs_lagr_particle_attr_get_ptr<cs_real_t>(particle, p_am,
@@ -1367,8 +1417,18 @@ cs_lagr_new_particle_init(const cs_lnum_t                 particle_range[2],
       cs_lagr_particle_set_real(particle, p_am, CS_LAGR_TEMPERATURE,
                                 cval_t_l[c_id]);
 
+      cs_real_t loc_fluid_temp = cval_t[c_id] + tscl_shift;
+      if (   cs_glob_lagr_time_scheme->interpol_field > 0
+          && extra->grad_tempf != nullptr) { /* gradient have been computed*/
+        cs_real_t *part_coord
+          = cs_lagr_particle_attr_get_ptr<cs_real_t>(particle, p_am,
+                                                     CS_LAGR_COORDS);
+        for (int i = 0; i < 3; i++)
+            loc_fluid_temp += extra->grad_tempf[c_id][i]
+              * (part_coord[i] - cell_cen[c_id][i]);
+      }
       cs_lagr_particle_set_real(particle, p_am, CS_LAGR_FLUID_TEMPERATURE,
-                                cval_t[c_id]+tscl_shift);
+                                loc_fluid_temp);
     }
 
     if (    cs_glob_lagr_model->physical_model > CS_LAGR_PHYS_OFF
@@ -1505,7 +1565,7 @@ cs_lagr_new_particle_init(const cs_lnum_t                 particle_range[2],
 
         for (int phase_id = 0; phase_id < n_phases; phase_id++){
           for (cs_lnum_t i = 0; i < 3; i++)
-            vel_seen[phase_id * 3 + i] = vel[phase_id][c_id][i];
+            vel_seen[phase_id * 3 + i] = loc_fluid_vel[phase_id][i];
         }
       }
 
@@ -1550,6 +1610,7 @@ cs_lagr_new_particle_init(const cs_lnum_t                 particle_range[2],
 
   } /* End loop over new particles */
 
+  BFT_FREE(loc_fluid_vel);
 
   /* Update weights to have the correct flow rate
      -------------------------------------------- */
