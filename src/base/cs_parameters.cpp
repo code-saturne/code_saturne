@@ -401,7 +401,7 @@ static cs_equation_param_t _equation_param_default
    .name = nullptr,
    .type = CS_EQUATION_N_TYPES,
    .dim = 1,
-   .verbosity = 0,
+   {.verbosity = 0},
 
    .flag = 0,
    .post_flag = 0,
@@ -428,7 +428,7 @@ static cs_equation_param_t _equation_param_default
    .ircflu = 1,
    .iwgrec = 0,
    .icoupl = -1,
-   .theta = 1,
+   {.theta = 1},
    .blencv = 1.,
    .blend_st = 0.,
    .epsilo = 1.e-5,
