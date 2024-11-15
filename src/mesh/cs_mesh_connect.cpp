@@ -178,16 +178,17 @@ _add_faces_to_nodal(const cs_mesh_t  *mesh,
   face_vertices_num[0] = mesh->b_face_vtx_lst;
   face_vertices_num[1] = mesh->i_face_vtx_lst;
 
-  fvm_nodal_from_desc_add_faces(extr_mesh,
-                                boundary_flag,
-                                extr_face_count,
-                                extr_face_list,
-                                2,
-                                face_num_shift,
-                                (const cs_lnum_t **)face_vertices_idx,
-                                (const cs_lnum_t **)face_vertices_num,
-                                face_families,
-                                nullptr);
+  fvm_nodal_from_desc_add_faces
+    (extr_mesh,
+     boundary_flag,
+     extr_face_count,
+     extr_face_list,
+     2,
+     face_num_shift,
+     const_cast<const cs_lnum_t **>(face_vertices_idx),
+     const_cast<const cs_lnum_t **>(face_vertices_num),
+     face_families,
+     nullptr);
 
   BFT_FREE(extr_face_list);
 }
@@ -599,17 +600,18 @@ cs_mesh_connect_cells_to_nodal(const cs_mesh_t  *mesh,
   if (include_families)
     cell_family = mesh->cell_family;
 
-  fvm_nodal_from_desc_add_cells(extr_mesh,
-                                extr_cell_count,
-                                2,
-                                face_num_shift,
-                                (const cs_lnum_t **)face_vertices_idx,
-                                (const cs_lnum_t **)face_vertices_num,
-                                cell_face_idx,
-                                cell_face_num,
-                                cell_family,
-                                extr_cell_ids,
-                                &polyhedra_faces);
+  fvm_nodal_from_desc_add_cells
+    (extr_mesh,
+     extr_cell_count,
+     2,
+     face_num_shift,
+     const_cast<const cs_lnum_t **>(face_vertices_idx),
+     const_cast<const cs_lnum_t **>(face_vertices_num),
+     cell_face_idx,
+     cell_face_num,
+     cell_family,
+     extr_cell_ids,
+     &polyhedra_faces);
 
   BFT_FREE(extr_cell_ids);
 

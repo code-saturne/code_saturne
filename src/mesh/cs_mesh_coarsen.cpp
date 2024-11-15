@@ -851,7 +851,7 @@ _i_faces_equiv(cs_mesh_t  *m,
   const cs_lnum_t n_i_faces = m->n_i_faces;
 
   const cs_lnum_2_t *restrict i_face_cells
-    = (const cs_lnum_2_t *restrict)m->i_face_cells;
+    = (cs_lnum_2_t *)m->i_face_cells;
 
   /* Initialize arrays */
 
