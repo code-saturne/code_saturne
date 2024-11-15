@@ -2076,6 +2076,7 @@ cs_parameters_eqp_complete(void)
   const int kclvfl = cs_field_key_id("variance_clipping");
   const int kscmin = cs_field_key_id("min_scalar_clipping");
   const int kscmax = cs_field_key_id("max_scalar_clipping");
+  const int kclipp = cs_field_key_id("is_clipped");
 
   cs_field_t *f_vel = CS_F_(vel);
   cs_field_t *f_p = CS_F_(p);
@@ -2730,6 +2731,17 @@ cs_parameters_eqp_complete(void)
     cs_field_set_key_double(CS_F_(void_f), kscmin, clvfmn);
     cs_field_set_key_double(CS_F_(void_f), kscmax, clvfmx);
   }
+
+  /* Setup clippings for turbulence models
+   * Some fields (Rij, Epsilon, ..) are clipped by default, but 
+   * those clippings can be removed by user */
+  
+  const int itytur = cs_glob_turb_model->itytur;
+  if (itytur == 3) {
+    cs_field_set_key_int(CS_F_(rij), kclipp, 1);
+    cs_field_set_key_int(CS_F_(eps), kclipp, 1);
+  }
+
 }
 
 /*----------------------------------------------------------------------------*/
