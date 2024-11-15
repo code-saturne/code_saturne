@@ -2736,8 +2736,7 @@ cs_parameters_eqp_complete(void)
    * Some fields (Rij, Epsilon, ..) are clipped by default, but
    * those clippings can be removed by user */
 
-  const int itytur = cs_glob_turb_model->itytur;
-  if (itytur == 3) {
+  if (cs_glob_turb_model->order == CS_TURB_SECOND_ORDER) {
     cs_field_set_key_int(CS_F_(rij), kclipp, 1);
     cs_field_set_key_int(CS_F_(eps), kclipp, 1);
   }
