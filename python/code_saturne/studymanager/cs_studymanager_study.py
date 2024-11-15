@@ -2298,7 +2298,7 @@ class Studies(object):
             t += "<td style=\"background-color:" + colors[state] + "\">" + m + "</td>"
             t += "<td align=\"right\">" + str(info['compute_time']) + "</td>"
             t += "<td align=\"right\">" + str(info['compute_time_usage']) + "</td>"
-            t += "<td align=\"right\">" + '{:g}'.format(info['preprocess_time']) + "</td>"
+            t += "<td align=\"right\">" + '{:g}'.format(float(info['preprocess_time'])) + "</td>"
             t += "<td align=\"right\">" + mem_s + "</td>"
             t += "<td align=\"right\">" + str(info['mpi_ranks']) + "</td>"
             t += "<td align=\"right\">" + str(info['omp_threads']) + "</td>"
