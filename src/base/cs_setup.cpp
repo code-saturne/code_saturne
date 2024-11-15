@@ -406,7 +406,7 @@ _init_variable_fields(void)
 {
   /* Set turbulence model type to allow for simpler tests */
   cs_turb_model_t *turb_model = cs_get_glob_turb_model();
-  turb_model->itytur = turb_model->iturb / 10;
+  turb_model->itytur = turb_model->model / 10;
 
   /* Check models compatibility (this test should be improved,
      as allowed ranges vary from one model to another). */
@@ -556,8 +556,9 @@ _create_variable_fields(void)
   /* Turbulence */
 
   const int itytur = cs_glob_turb_model->itytur;
-  const cs_turb_model_type_t iturb
-    = (cs_turb_model_type_t)cs_glob_turb_model->iturb;
+  const int order = cs_glob_turb_model->order;
+  const cs_turb_model_type_t model
+    = (cs_turb_model_type_t)cs_glob_turb_model->model;
 
   if (itytur == 2) {
     cs_field_pointer_map(CS_ENUMF_(k),
@@ -565,7 +566,7 @@ _create_variable_fields(void)
     cs_field_pointer_map(CS_ENUMF_(eps),
                          _add_variable_field("epsilon", "Turb Dissipation", 1));
   }
-  else if (itytur == 3) {
+  else if (order == CS_TURB_SECOND_ORDER) {
     cs_field_pointer_map(CS_ENUMF_(rij),
                          _add_variable_field("rij", "Rij", 6));
     cs_field_set_key_int(CS_F_(rij), keycpl, 1);
@@ -573,7 +574,7 @@ _create_variable_fields(void)
     cs_field_pointer_map(CS_ENUMF_(eps),
                          _add_variable_field("epsilon", "Turb Dissipation", 1));
 
-    if (iturb == CS_TURB_RIJ_EPSILON_EBRSM) {
+    if (model == CS_TURB_RIJ_EPSILON_EBRSM) {
       cs_field_pointer_map(CS_ENUMF_(alp_bl),
                            _add_variable_field("alpha", "Alphap", 1));
 
@@ -592,7 +593,7 @@ _create_variable_fields(void)
                          _add_variable_field("epsilon", "Turb Dissipation", 1));
     cs_field_pointer_map(CS_ENUMF_(phi),
                          _add_variable_field("phi", "Phi", 1));
-    if (iturb == CS_TURB_V2F_PHI) {
+    if (model == CS_TURB_V2F_PHI) {
       cs_field_pointer_map(CS_ENUMF_(f_bar),
                            _add_variable_field("f_bar", "f_bar", 1));
       cs_equation_param_t *eqp = cs_field_get_equation_param(CS_F_(f_bar));
@@ -602,7 +603,7 @@ _create_variable_fields(void)
       // For f_bar, we always have a diagonal term, so do not shift the diagonal
       eqp->idircl = 0;
     }
-    else if (iturb == CS_TURB_V2F_BL_V2K) {
+    else if (model == CS_TURB_V2F_BL_V2K) {
       cs_field_pointer_map(CS_ENUMF_(alp_bl),
                            _add_variable_field("alpha", "Alpha", 1));
       cs_equation_param_t *eqp = cs_field_get_equation_param(CS_F_(alp_bl));
@@ -613,13 +614,13 @@ _create_variable_fields(void)
       eqp->idircl = 0;
     }
   }
-  else if (iturb == CS_TURB_K_OMEGA) {
+  else if (model == CS_TURB_K_OMEGA) {
     cs_field_pointer_map(CS_ENUMF_(k),
                          _add_variable_field("k", "Turb Kinetic Energy", 1));
     cs_field_pointer_map(CS_ENUMF_(omg),
                          _add_variable_field("omega", "Omega", 1));
   }
-  else if (iturb == CS_TURB_SPALART_ALLMARAS) {
+  else if (model == CS_TURB_SPALART_ALLMARAS) {
     cs_field_pointer_map(CS_ENUMF_(nusa),
                          _add_variable_field("nu_tilda", "NuTilda", 1));
   }
@@ -710,7 +711,7 @@ _create_property_fields(void)
     f = _add_property_field("turbulent_viscosity", "Turb Viscosity",
                             1, false);
     cs_field_pointer_map(CS_ENUMF_(mu_t), f);
-    if (turb_model->iturb == CS_TURB_NONE)
+    if (turb_model->model == CS_TURB_NONE)
       _hide_field(f);
   }
 
@@ -734,7 +735,7 @@ _create_property_fields(void)
       _add_property_field("k_mod",   "Modelised Energy", 1, false);
       _add_property_field("k_res",   "Resolved Energy",  1, false);
       _add_property_field("eps_mod", "Mean Dissipation", 1, false);
-      if (turb_model->iturb == CS_TURB_K_OMEGA) {
+      if (turb_model->model == CS_TURB_K_OMEGA) {
         _add_property_field("omg_mod",  "Mean Specific Dissipation", 1, false);
         _add_property_field("f1_kwsst", "Function F1 of k-omg SST",  1, false);
       }
@@ -754,7 +755,7 @@ _create_property_fields(void)
     }
   }
 
-  if (turb_model->iturb == CS_TURB_K_OMEGA) {
+  if (turb_model->model == CS_TURB_K_OMEGA) {
     // Square of the norm of the deviatoric part of the deformation rate
     // tensor (\f$S^2=2S_{ij}^D S_{ij}^D\f$).
     f = _add_property_field("s2", "S2", 1, false);
@@ -799,7 +800,7 @@ _create_property_fields(void)
   }
 
   //! Cs^2 for dynamic LES model
-  if (turb_model->iturb == CS_TURB_LES_SMAGO_DYN) {
+  if (turb_model->model == CS_TURB_LES_SMAGO_DYN) {
     _add_property_field("smagorinsky_constant^2", "Csdyn2", 1, false);
   }
 
@@ -896,14 +897,14 @@ _additional_fields_stage_1(void)
   const cs_real_t *gxyz = cs_get_glob_physical_constants()->gravity;
   const cs_rad_transfer_params_t *rt_params = cs_glob_rad_transfer_params;
 
-  /* Determine itycor now that irccor is known (iturb/itytur known much earlier)
+  /* Determine itycor now that irccor is known (model/itytur known much earlier)
      type of rotation/curvature correction for turbulent viscosity models. */
 
   if (turb_rans_model->irccor == 1) {
     if (turb_model->itytur == 2 || turb_model->itytur == 5)
       turb_rans_model->itycor = 1;
-    else if (   turb_model->iturb == CS_TURB_K_OMEGA
-             || turb_model->iturb == CS_TURB_SPALART_ALLMARAS)
+    else if (   turb_model->model == CS_TURB_K_OMEGA
+             || turb_model->model == CS_TURB_SPALART_ALLMARAS)
       turb_rans_model->itycor = 2;
   }
 
@@ -990,7 +991,7 @@ _additional_fields_stage_1(void)
      For LES: 2nd order; 1st order otherwise
      (2nd order forbidden for "coupled" k-epsilon) */
   if (time_scheme->time_order == -1) {
-    if (turb_model->itytur == 4 || turb_model->hybrid_turb == 4) {
+    if (turb_model->type == CS_TURB_LES || turb_model->hybrid_turb == CS_HYBRID_HTLES) {
       time_scheme->time_order = 2;
     }
     else {
@@ -1052,7 +1053,7 @@ _additional_fields_stage_1(void)
                 "the value of ISTO2T (extrapolation of the source terms\n"
                 "for the turbulent variables) cannot be modified\n"
                 "yet ISTO2T has been forced to %d.\n"),
-              turb_model->iturb, time_scheme->isto2t);
+              turb_model->model, time_scheme->isto2t);
   }
 
   for (int ii = 0; ii < n_fields; ii++) {
@@ -1126,7 +1127,7 @@ _additional_fields_stage_1(void)
                 "Check parameters.\n"),
               time_scheme->time_order, turb_model->model);
   }
-  if (time_scheme->time_order == 1 && turb_model->itytur == 4) {
+  if (time_scheme->time_order == 1 && turb_model->type == CS_TURB_LES) {
     bft_error(__FILE__, __LINE__, 0,
               _("STOP AT THE INITIAL DATA\n\n"
                 "A 1st order scheme has been selected (TIME_ORDER = %d)\n"
@@ -1147,7 +1148,7 @@ _additional_fields_stage_1(void)
               time_scheme->time_order, turb_model->model);
   }
   if (   time_scheme->time_order == 2 && turb_model->model == CS_TURB_V2F_BL_V2K
-      && turb_model->hybrid_turb != 4) {
+      && turb_model->hybrid_turb != CS_HYBRID_HTLES) {
     bft_error(__FILE__, __LINE__, 0,
               _("STOP AT THE INITIAL DATA\n\n"
                 "A 2nd order scheme has been selected (TIME_ORDER = %d)\n"
@@ -1159,7 +1160,7 @@ _additional_fields_stage_1(void)
               time_scheme->time_order, turb_model->model);
   }
   if (   time_scheme->time_order == 2 && turb_model->model == CS_TURB_K_OMEGA
-      && turb_model->hybrid_turb != 4) {
+      && turb_model->hybrid_turb != CS_HYBRID_HTLES) {
     bft_error(__FILE__, __LINE__, 0,
               _("STOP AT THE INITIAL DATA\n\n"
                 "A 2nd order scheme has been selected (TIME_ORDER = %d)\n"
@@ -1295,7 +1296,7 @@ _additional_fields_stage_1(void)
       _add_source_term_prev_field(CS_F_(k));
       _add_source_term_prev_field(CS_F_(eps));
     }
-    else if (turb_model->itytur == 3) {
+    else if (turb_model->order == CS_TURB_SECOND_ORDER) {
       _add_source_term_prev_field(CS_F_(rij));
       _add_source_term_prev_field(CS_F_(eps));
 
@@ -1928,7 +1929,7 @@ _additional_fields_stage_2(void)
       cs_field_set_key_int(f, key_turb_diff, ifcdep);
   }
 
-  if (cs_glob_turb_model->iturb == CS_TURB_LES_SMAGO_DYN) {
+  if (cs_glob_turb_model->model == CS_TURB_LES_SMAGO_DYN) {
     /* Add a subgrid-scale scalar flux coefficient field */
     for (int f_id = 0; f_id < n_fields; f_id++) {
       cs_field_t *f = cs_field_by_id(f_id);
@@ -2105,23 +2106,23 @@ _additional_fields_stage_2(void)
 
   /* Van Driest damping */
   if (cs_glob_turb_les_model->idries == -1) {
-    if (cs_glob_turb_model->iturb == 40)
+    if (cs_glob_turb_model->model == 40)
       turb_les_param->idries = 1;
-    else if (   cs_glob_turb_model->iturb == CS_TURB_LES_SMAGO_DYN
-             || cs_glob_turb_model->iturb == CS_TURB_LES_WALE)
+    else if (   cs_glob_turb_model->model == CS_TURB_LES_SMAGO_DYN
+             || cs_glob_turb_model->model == CS_TURB_LES_WALE)
       turb_les_param->idries = 0;
   }
 
   /* Wall distance for some turbulence models
    * and for Lagrangian multilayer deposition for DRSM models, needed for inlets */
   cs_wall_distance_options_t *wdo = cs_get_glob_wall_distance_options();
-  if (   cs_glob_turb_model->iturb == CS_TURB_K_EPSILON_QUAD
+  if (   cs_glob_turb_model->model == CS_TURB_K_EPSILON_QUAD
       || cs_glob_turb_model->itytur == 3
-      || (   cs_glob_turb_model->iturb == CS_TURB_RIJ_EPSILON_LRR
+      || (   cs_glob_turb_model->model == CS_TURB_RIJ_EPSILON_LRR
           && cs_glob_turb_rans_model->irijec == 1)
       || (cs_glob_turb_model->itytur == 4 && cs_glob_turb_les_model->idries == 1)
-      || cs_glob_turb_model->iturb == CS_TURB_K_OMEGA
-      || cs_glob_turb_model->iturb == CS_TURB_SPALART_ALLMARAS
+      || cs_glob_turb_model->model == CS_TURB_K_OMEGA
+      || cs_glob_turb_model->model == CS_TURB_SPALART_ALLMARAS
       || cs_glob_lagr_reentrained_model->iflow == 1
       || cs_glob_turb_model->hybrid_turb == 4)
     wdo->need_compute = 1;
@@ -2328,7 +2329,7 @@ _additional_fields_stage_2(void)
                                     3,
                                     false);
 
-    if (cs_glob_turb_model->iturb != 0) {
+    if (cs_glob_turb_model->model != 0) {
       f = cs_field_create("immersed_boundary_uk",
                           CS_FIELD_EXTENSIVE | CS_FIELD_POSTPROCESS,
                           CS_MESH_LOCATION_CELLS,
@@ -3171,7 +3172,7 @@ _additional_fields_stage_3(void)
 
     cs_field_set_key_int(f_atv, k_log, 0);
 
-    if (cs_glob_turb_model->iturb == CS_TURB_RIJ_EPSILON_EBRSM && iggafm == 1) {
+    if (cs_glob_turb_model->model == CS_TURB_RIJ_EPSILON_EBRSM && iggafm == 1) {
       cs_field_t *f_atvs
         = cs_field_create("anisotropic_turbulent_viscosity_scalar",
                           CS_FIELD_INTENSIVE | CS_FIELD_PROPERTY,

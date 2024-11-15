@@ -287,7 +287,7 @@ _boundary_conditions_set_coeffs_symmetry_vector(cs_field_t  *f_v)
 {
   const cs_mesh_t *mesh = cs_glob_mesh;
   const cs_mesh_quantities_t *fvq = cs_glob_mesh_quantities;
-  const cs_turb_model_type_t iturb
+  const cs_turb_model_type_t model
     = (cs_turb_model_type_t)cs_glob_turb_model->model;
 
   const cs_lnum_t n_b_faces = mesh->n_b_faces;
@@ -307,7 +307,7 @@ _boundary_conditions_set_coeffs_symmetry_vector(cs_field_t  *f_v)
 
   cs_real_6_t *visten = nullptr;
   if (eqp_v->idften & CS_ANISOTROPIC_DIFFUSION) {
-    if (iturb != CS_TURB_RIJ_EPSILON_EBRSM) {
+    if (model != CS_TURB_RIJ_EPSILON_EBRSM) {
       cs_field_t *f_a_t_visc = cs_field_by_name("anisotropic_turbulent_viscosity");
       visten = (cs_real_6_t *)f_a_t_visc->val;
     }

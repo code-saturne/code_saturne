@@ -1424,7 +1424,7 @@ _boundary_elec_potential(cs_tree_node_t       *tn_s,
     return special_case;
 
   cs_param_bc_type_t bc_wall_prescribed
-    = (cs_glob_turb_model->iturb > CS_TURB_NONE) ?
+    = (cs_glob_turb_model->model > CS_TURB_NONE) ?
       CS_BC_WALL_MODELLED : CS_BC_DIRICHLET;
 
   /* BC definition type ? */
@@ -1573,7 +1573,7 @@ _boundary_scalar(cs_tree_node_t   *tn_bc,
     return;
 
   cs_param_bc_type_t bc_wall_prescribed
-    = (cs_glob_turb_model->iturb > CS_TURB_NONE) ?
+    = (cs_glob_turb_model->model > CS_TURB_NONE) ?
       CS_BC_WALL_MODELLED : CS_BC_DIRICHLET;
 
   /* Now handle standard scalar BC types */
@@ -2675,11 +2675,11 @@ cs_gui_boundary_conditions_processing(int  *itypfb)
 
       /* turbulent inlet, with formula */
 
-      cs_turb_model_type_t iturb = CS_TURB_NONE;
+      cs_turb_model_type_t model = CS_TURB_NONE;
       if (cs_glob_turb_model != NULL)
-        iturb = (cs_turb_model_type_t)(cs_glob_turb_model->iturb);
+        model = (cs_turb_model_type_t)(cs_glob_turb_model->model);
 
-      if (iturb != CS_TURB_NONE) {
+      if (model != CS_TURB_NONE) {
 
         cs_tree_node_t *tn_t = cs_tree_node_get_child(tn_bc, "turbulence");
         const char *formula = cs_tree_node_get_child_value_str(tn_t, "formula");

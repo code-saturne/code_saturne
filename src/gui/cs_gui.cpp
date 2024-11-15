@@ -4588,34 +4588,34 @@ cs_gui_turb_model(void)
   cs_turb_rans_model_t *rans_mdl = cs_get_glob_turb_rans_model();
 
   if (cs_gui_strcmp(model, "off"))
-    turb_mdl->iturb = CS_TURB_NONE;
+    turb_mdl->model = CS_TURB_NONE;
   else if (cs_gui_strcmp(model, "mixing_length")) {
-    turb_mdl->iturb = CS_TURB_MIXING_LENGTH;
+    turb_mdl->model = CS_TURB_MIXING_LENGTH;
     cs_gui_node_get_child_real(tn_t, "mixing_length_scale", &(rans_mdl->xlomlg));
   }
   else if (cs_gui_strcmp(model, "k-epsilon")) {
-    turb_mdl->iturb = CS_TURB_K_EPSILON;
+    turb_mdl->model = CS_TURB_K_EPSILON;
     cs_gui_node_get_child_int(tn_t, "wall_function", &iwallf);
     cs_gui_node_get_child_status_int(tn_t,
                                      "gravity_terms",
                                      &(rans_mdl->has_buoyant_term));
   }
   else if (cs_gui_strcmp(model, "k-epsilon-PL")) {
-    turb_mdl->iturb = CS_TURB_K_EPSILON_LIN_PROD;
+    turb_mdl->model = CS_TURB_K_EPSILON_LIN_PROD;
     cs_gui_node_get_child_int(tn_t, "wall_function", &iwallf);
     cs_gui_node_get_child_status_int(tn_t,
                                      "gravity_terms",
                                      &(rans_mdl->has_buoyant_term));
   }
   else if (cs_gui_strcmp(model, "Rij-epsilon")) {
-    turb_mdl->iturb = CS_TURB_RIJ_EPSILON_LRR;
+    turb_mdl->model = CS_TURB_RIJ_EPSILON_LRR;
     cs_gui_node_get_child_int(tn_t, "wall_function", &iwallf);
     cs_gui_node_get_child_status_int(tn_t,
                                      "gravity_terms",
                                      &(rans_mdl->has_buoyant_term));
   }
   else if (cs_gui_strcmp(model, "Rij-SSG")) {
-    turb_mdl->iturb = CS_TURB_RIJ_EPSILON_SSG;
+    turb_mdl->model = CS_TURB_RIJ_EPSILON_SSG;
     cs_gui_node_get_child_int(tn_t, "wall_function", &iwallf);
     cs_gui_node_get_child_status_int(tn_t,
                                      "gravity_terms",
@@ -4623,7 +4623,7 @@ cs_gui_turb_model(void)
     cs_gui_node_get_child_status_int(tn_t, "coupled_rij", &(rans_mdl->irijco));
   }
   else if (cs_gui_strcmp(model, "Rij-EBRSM")) {
-    turb_mdl->iturb = CS_TURB_RIJ_EPSILON_EBRSM;
+    turb_mdl->model = CS_TURB_RIJ_EPSILON_EBRSM;
     cs_gui_node_get_child_int(tn_t, "wall_function", &iwallf);
     cs_gui_node_get_child_status_int(tn_t,
                                      "gravity_terms",
@@ -4631,37 +4631,37 @@ cs_gui_turb_model(void)
     cs_gui_node_get_child_status_int(tn_t, "coupled_rij", &(rans_mdl->irijco));
   }
   else if (cs_gui_strcmp(model, "LES_Smagorinsky")) {
-    turb_mdl->iturb = CS_TURB_LES_SMAGO_CONST;
+    turb_mdl->model = CS_TURB_LES_SMAGO_CONST;
   }
   else if (cs_gui_strcmp(model, "LES_dynamique")) {
-    turb_mdl->iturb = CS_TURB_LES_SMAGO_DYN;
+    turb_mdl->model = CS_TURB_LES_SMAGO_DYN;
   }
   else if (cs_gui_strcmp(model, "LES_WALE")) {
-    turb_mdl->iturb = CS_TURB_LES_WALE;
+    turb_mdl->model = CS_TURB_LES_WALE;
   }
   else if (cs_gui_strcmp(model, "v2f-phi")) {
-    turb_mdl->iturb = CS_TURB_V2F_PHI;
+    turb_mdl->model = CS_TURB_V2F_PHI;
     cs_gui_node_get_child_int(tn_t, "wall_function", &iwallf);
     cs_gui_node_get_child_status_int(tn_t,
                                      "gravity_terms",
                                      &(rans_mdl->has_buoyant_term));
   }
   else if (cs_gui_strcmp(model, "v2f-BL-v2/k")) {
-    turb_mdl->iturb = CS_TURB_V2F_BL_V2K;
+    turb_mdl->model = CS_TURB_V2F_BL_V2K;
     cs_gui_node_get_child_int(tn_t, "wall_function", &iwallf);
     cs_gui_node_get_child_status_int(tn_t,
                                      "gravity_terms",
                                      &(rans_mdl->has_buoyant_term));
   }
   else if (cs_gui_strcmp(model, "k-omega-SST")) {
-    turb_mdl->iturb = CS_TURB_K_OMEGA;
+    turb_mdl->model = CS_TURB_K_OMEGA;
     cs_gui_node_get_child_int(tn_t, "wall_function", &iwallf);
     cs_gui_node_get_child_status_int(tn_t,
                                      "gravity_terms",
                                      &(rans_mdl->has_buoyant_term));
   }
   else if (cs_gui_strcmp(model, "Spalart-Allmaras")) {
-    turb_mdl->iturb = CS_TURB_SPALART_ALLMARAS;
+    turb_mdl->model = CS_TURB_SPALART_ALLMARAS;
   }
   else
     bft_error(__FILE__, __LINE__, 0,
@@ -4672,8 +4672,8 @@ cs_gui_turb_model(void)
     wall_fnt->iwallf = (cs_wall_f_type_t)iwallf;
   }
 
-  if (   turb_mdl->iturb >= CS_TURB_RIJ_EPSILON_LRR
-      && turb_mdl->iturb <= CS_TURB_RIJ_EPSILON_EBRSM) {
+  if (   turb_mdl->model >= CS_TURB_RIJ_EPSILON_LRR
+      && turb_mdl->model <= CS_TURB_RIJ_EPSILON_EBRSM) {
     const char *s
       = cs_tree_node_get_child_value_str(tn_t, "turbulent_diffusion_model");
     if (s != NULL) {
@@ -4687,7 +4687,7 @@ cs_gui_turb_model(void)
 #if _XML_DEBUG_
   bft_printf("==> %s\n", __func__);
   bft_printf("--model: %s\n", model);
-  bft_printf("--iturb = %i\n", turb_mdl->iturb);
+  bft_printf("--model = %i\n", turb_mdl->model);
   bft_printf("--has_buoyant_term = %i\n", rans_mdl->has_buoyant_term);
   bft_printf("--iwallf = %i\n", wall_fnt->iwallf);
   bft_printf("--xlomlg = %f\n", rans_mdl->xlomlg);
@@ -4708,7 +4708,7 @@ cs_gui_turb_ref_values(void)
 
   cs_turb_model_t *turb_mdl = cs_get_glob_turb_model();
 
-  if (turb_mdl->iturb != 0) {
+  if (turb_mdl->model != 0) {
     const char* length_choice = NULL;
     cs_turb_ref_values_t *ref_values = cs_get_glob_turb_ref_values();
 

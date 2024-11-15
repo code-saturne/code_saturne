@@ -101,19 +101,19 @@ BEGIN_C_DECLS
         - CS_WALL_F_2SCALES_SMOOTH_ROUGH: wall function unifying rough and smooth
           friction regimes
         - CS_WALL_F_2SCALES_CONTINUOUS: All \f$ y^+ \f$  for low Reynolds models\n
-        \ref iwallf is initialised to CS_WALL_F_1SCALE_LOG for \ref iturb = 10,
+        \ref iwallf is initialised to CS_WALL_F_1SCALE_LOG for \ref model = 10,
           40, 41 or 70
         (mixing length, LES and Spalart Allmaras).\n
-        \ref iwallf is initialised to CS_WALL_F_DISABLED for \ref iturb = 0, 32,
+        \ref iwallf is initialised to CS_WALL_F_DISABLED for \ref model = 0, 32,
           50 or 51\n
-        \ref iwallf is initialised to CS_WALL_F_2SCALES_LOG for \ref iturb = 20,
+        \ref iwallf is initialised to CS_WALL_F_2SCALES_LOG for \ref model = 20,
           21, 30, 31 or 60
         (\f$k-\epsilon\f$, \f$R_{ij}-\epsilon\f$ LRR, \f$R_{ij}-\epsilon\f$ SSG
           and \f$k-\omega\f$ SST models).\n
-        The v2f model (\ref iturb=50) is not designed to use wall functions
+        The v2f model (\ref model=50) is not designed to use wall functions
         (the mesh must be low Reynolds).\n
         The value \ref iwallf = CS_WALL_F_2SCALES_LOG is not compatible with
-          \ref iturb=0, 10, 40
+          \ref model=0, 10, 40
         or 41 (laminar, mixing length and LES).\n
         Concerning the \f$k-\epsilon\f$ and \f$R_{ij}-\epsilon\f$ models, the
         two-scales model is usually at least as satisfactory as the one-scale
@@ -122,7 +122,7 @@ BEGIN_C_DECLS
         necessary in order to be always in a logarithmic layer. It is used to make up for
         the problems related to the use of High-Reynolds models on very refined
         meshes.\n
-        Useful if \ref iturb is different from 50.
+        Useful if \ref model is different from 50.
   \var  cs_wall_functions_t::iwalfs
         wall functions for scalar
         - CS_WALL_F_S_ARPACI_LARSEN: three layers (Arpaci and Larsen) or two layers (Prandtl-Taylor) for

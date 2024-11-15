@@ -214,7 +214,7 @@ cs_drift_convective_flux(cs_field_t  *f_sc,
   class_id_max = CS_MAX(icla, class_id_max);
 
   const cs_real_t *dt = CS_F_(dt)->val;
-  const int iturb  = cs_glob_turb_model->iturb;
+  const int model  = cs_glob_turb_model->model;
   const int itytur = cs_glob_turb_model->itytur;
   const cs_real_t *gxyz = cs_get_glob_physical_constants()->gravity;
   const int idtvar = cs_glob_time_step_options->idtvar;
@@ -407,7 +407,7 @@ cs_drift_convective_flux(cs_field_t  *f_sc,
     /* Initialized to 0 */
     cs_array_real_fill_zero(n_cells, viscce);
 
-    if ((iscdri & CS_DRIFT_SCALAR_TURBOPHORESIS) && iturb != CS_TURB_NONE) {
+    if ((iscdri & CS_DRIFT_SCALAR_TURBOPHORESIS) && model != CS_TURB_NONE) {
 
       /* The diagonal part is easy to implicit (Grad (K) . n = (K_j - K_i)/IJ)
          Compute the K=1/3*trace(R) coefficient (diffusion of Zaichik) */
@@ -425,7 +425,7 @@ cs_drift_convective_flux(cs_field_t  *f_sc,
         }
 
       }
-      else if (itytur == 2 || itytur == 5 || iturb == CS_TURB_K_OMEGA) {
+      else if (itytur == 2 || itytur == 5 || model == CS_TURB_K_OMEGA) {
 
 #       pragma omp parallel for if (n_cells > CS_THR_MIN)
         for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {

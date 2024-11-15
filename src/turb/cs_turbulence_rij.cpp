@@ -943,8 +943,8 @@ _gravity_st_epsilon(int              phase_id,
   const cs_real_t *crom = f_rho->val;
   const cs_real_t *viscl = f_mu->val;
 
-  const cs_turb_model_type_t iturb
-    = (cs_turb_model_type_t)cs_glob_turb_model->iturb;
+  const cs_turb_model_type_t model
+    = (cs_turb_model_type_t)cs_glob_turb_model->model;
   int dissip_buo_mdl = cs_glob_turb_rans_model->dissip_buo_mdl;
 
   const cs_real_t xct = cs_turb_xct;
@@ -1002,7 +1002,7 @@ _gravity_st_epsilon(int              phase_id,
 
     cs_real_t buoyancy_constant = ce1;
 
-    if (iturb == CS_TURB_RIJ_EPSILON_EBRSM) {
+    if (model == CS_TURB_RIJ_EPSILON_EBRSM) {
 
       /* Calculation of the Durbin time scale */
       const cs_real_t xttkmg
@@ -1896,7 +1896,7 @@ _pre_solve_ssg(const cs_field_t  *f_rij,
   const cs_real_6_t *cvara_var = (const cs_real_6_t *)f_rij->val_pre;
 
   cs_real_t *cvar_al = nullptr;
-  if (cs_glob_turb_model->iturb != CS_TURB_RIJ_EPSILON_SSG)
+  if (cs_glob_turb_model->model != CS_TURB_RIJ_EPSILON_SSG)
     cvar_al = f_alpbl->val;
 
   const cs_equation_param_t *eqp
@@ -1959,8 +1959,8 @@ _pre_solve_ssg(const cs_field_t  *f_rij,
   const cs_real_t cssgs1 = cs_turb_cssgs1;
   const cs_real_t cssgs2 = cs_turb_cssgs2;
 
-  const cs_turb_model_type_t iturb
-    = (cs_turb_model_type_t)cs_glob_turb_model->iturb;
+  const cs_turb_model_type_t model
+    = (cs_turb_model_type_t)cs_glob_turb_model->model;
 
   const int t2v[3][3] = _T2V;
   const int iv2t[6] = _IV2T;
@@ -1979,7 +1979,7 @@ _pre_solve_ssg(const cs_field_t  *f_rij,
    *  -2/3*epsilon*deltaij */
 
   cs_real_3_t *grad_al = nullptr;
-  if (cs_glob_turb_model->iturb == CS_TURB_RIJ_EPSILON_EBRSM) {
+  if (cs_glob_turb_model->model == CS_TURB_RIJ_EPSILON_EBRSM) {
     CS_MALLOC_HD(grad_al, n_cells_ext, cs_real_3_t, cs_alloc_mode);
     cs_field_gradient_scalar(f_alpbl, true, 1, grad_al);
   }
@@ -2019,7 +2019,7 @@ _pre_solve_ssg(const cs_field_t  *f_rij,
 
     /* EBRSM: compute the magnitude of the Alpha gradient */
 
-    if (iturb == CS_TURB_RIJ_EPSILON_EBRSM) {
+    if (model == CS_TURB_RIJ_EPSILON_EBRSM) {
       cs_math_3_normalize(grad_al[c_id], xnal);
     }
 
@@ -2144,7 +2144,7 @@ _pre_solve_ssg(const cs_field_t  *f_rij,
       /* Constant for the dissipation */
       const cs_real_t ceps_impl = d1s3 * cvara_ep[c_id];
 
-      if (iturb == CS_TURB_RIJ_EPSILON_SSG) {
+      if (model == CS_TURB_RIJ_EPSILON_SSG) {
 
         /* Identity constant for phi3 */
         const cs_real_t cphi3impl = cs_math_fabs(cssgr2 - cssgr3*sqrt(aii));
@@ -2174,7 +2174,7 @@ _pre_solve_ssg(const cs_field_t  *f_rij,
         cs_math_reduce_sym_prod_33_to_66(implmat2add, impl_drsm);
 
       }
-      else { /* iturb == CS_TURB_RIJ_EPSILON_EBRSM */
+      else { /* model == CS_TURB_RIJ_EPSILON_EBRSM */
 
         const cs_real_t alpha3 = cs_math_pow3(cvar_al[c_id]);
 
@@ -2254,7 +2254,7 @@ _pre_solve_ssg(const cs_field_t  *f_rij,
        * the RHS but not in the prev. ST and by using ipcrom ....
        * to be modified if needed. */
 
-      if (iturb == CS_TURB_RIJ_EPSILON_SSG) {
+      if (model == CS_TURB_RIJ_EPSILON_SSG) {
 
         /* Explicit terms */
         const cs_real_t pij =     xprod[j][i];
@@ -2278,7 +2278,7 @@ _pre_solve_ssg(const cs_field_t  *f_rij,
                      + cssgr1 * cs_math_fmax(trprod, 0));
 
       }
-      else { /* cs_glob_turb_model->iturb == CS_TURB_RIJ_EPSILON_EBRSM */
+      else { /* cs_glob_turb_model->model == CS_TURB_RIJ_EPSILON_EBRSM */
 
         /* Compute the explicit term
          * Compute the terms near the walls and almost homogeneous
@@ -2425,9 +2425,9 @@ _pre_solve_ssg(const cs_field_t  *f_rij,
  *
  * \param[in]   phase_id  turbulent phase id (-1 for single phase flow)
  * \param[in]   gradv     work array for the term grad
- *                        of velocity only for iturb=31
+ *                        of velocity only for model=31
  * \param[in]   produc    work array for production (without
- *                        rho volume) only for iturb=30
+ *                        rho volume) only for model=30
  * \param[in]   up_rhop   work array for \f$ \vect{u}'\rho' \f$
  *                        source terms or mass rate
  * \param[in]   grav      gravity
@@ -2487,7 +2487,7 @@ _solve_epsilon(int              phase_id,
   const cs_real_6_t *cvara_rij = (const cs_real_6_t *)f_rij->val_pre;
 
   const cs_real_t *cvar_al = nullptr;
-  if (cs_glob_turb_model->iturb == CS_TURB_RIJ_EPSILON_EBRSM)
+  if (cs_glob_turb_model->model == CS_TURB_RIJ_EPSILON_EBRSM)
     cvar_al = (const cs_real_t *)(f_alpbl->val);
 
   cs_real_t *cvar_ep = f_eps->val;
@@ -2661,7 +2661,7 @@ _solve_epsilon(int              phase_id,
   /* Calculation the production trace, depending we are in standard
    * Rij or in SSG (use of produc or grdvit) */
 
-  if (cs_glob_turb_model->iturb == CS_TURB_RIJ_EPSILON_LRR) {
+  if (cs_glob_turb_model->model == CS_TURB_RIJ_EPSILON_LRR) {
     ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
       cprod[c_id] = 0.5*(produc[c_id][0] + produc[c_id][1] + produc[c_id][2]);
     });
@@ -2681,7 +2681,7 @@ _solve_epsilon(int              phase_id,
   }
 
   /* EBRSM */
-  if (cs_glob_turb_model->iturb == CS_TURB_RIJ_EPSILON_EBRSM) {
+  if (cs_glob_turb_model->model == CS_TURB_RIJ_EPSILON_EBRSM) {
 
     const cs_real_t xa1 = cs_turb_xa1;
 
@@ -3051,7 +3051,7 @@ cs_turbulence_rij(int phase_id)
 
   if (eqp->verbosity >= 1) {
     const char *f_label = cs_field_get_label(f_rij);
-    switch(turb_model->iturb) {
+    switch(turb_model->model) {
       case CS_TURB_RIJ_EPSILON_LRR:
         bft_printf(" ** Solving Rij-EPSILON LRR %s\n"
                    "    -----------------------\n", f_label);
@@ -3127,7 +3127,7 @@ cs_turbulence_rij(int phase_id)
   /* TODO FIXME Are the BCs uncompatible ? */
   if (   time_step->nt_cur == 1
       && turb_rans_model->reinit_turb == 1
-      && turb_model->iturb == CS_TURB_RIJ_EPSILON_EBRSM) {
+      && turb_model->model == CS_TURB_RIJ_EPSILON_EBRSM) {
     cs_real_t *cvar_al = f_alpbl->val;
     cs_real_3_t *vel = (cs_real_3_t *)f_vel->val;
 
@@ -3361,7 +3361,7 @@ cs_turbulence_rij(int phase_id)
   CS_MALLOC_HD(weighf, n_i_faces, cs_real_2_t, cs_alloc_mode);
   CS_MALLOC_HD(viscce, n_cells_ext, cs_real_6_t, cs_alloc_mode);
 
-  if (turb_model->iturb == CS_TURB_RIJ_EPSILON_LRR) {
+  if (turb_model->model == CS_TURB_RIJ_EPSILON_LRR) {
     if (turb_rans_model->irijco == 1)
       _pre_solve_lrr(f_rij, phase_id, gradv,
                      produc, up_rhop, grav,
@@ -3376,8 +3376,8 @@ cs_turbulence_rij(int phase_id)
                         weighf, weighb);
 
   }
-  else { /* if (   turb_model->iturb == CS_TURB_RIJ_EPSILON_SSG
-                || turb_model->iturb == CS_TURB_RIJ_EPSILON_EBRSM) */
+  else { /* if (   turb_model->model == CS_TURB_RIJ_EPSILON_SSG
+                || turb_model->model == CS_TURB_RIJ_EPSILON_EBRSM) */
     _pre_solve_ssg(f_rij, phase_id, gradv,
                    produc, up_rhop, grav,
                    viscf, viscb, viscce,
@@ -3855,7 +3855,7 @@ cs_turbulence_rij_init_by_ref_quantities(cs_real_t  uref,
 
   /* For EBRSM, initialize alpha */
 
-  if (cs_glob_turb_model->iturb == CS_TURB_RIJ_EPSILON_EBRSM) {
+  if (cs_glob_turb_model->model == CS_TURB_RIJ_EPSILON_EBRSM) {
     cs_real_t *cvar_al = CS_F_(alp_bl)->val;
     cs_arrays_set_value<cs_real_t, 1>(n_cells, 1., cvar_al);
   }
@@ -4166,7 +4166,7 @@ cs_turbulence_rij_mu_t(int  phase_id)
 
   /* EBRSM case */
 
-  if (cs_glob_turb_model->iturb == CS_TURB_RIJ_EPSILON_EBRSM) {
+  if (cs_glob_turb_model->model == CS_TURB_RIJ_EPSILON_EBRSM) {
 
     cs_real_3_t *grad_al = nullptr;
     CS_MALLOC_HD(grad_al, n_cells_ext, cs_real_3_t, cs_alloc_mode);

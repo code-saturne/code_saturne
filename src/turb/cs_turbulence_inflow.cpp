@@ -108,7 +108,7 @@ cs_turbulence_inflow_volume_mass_injection_k_eps(const char  *zone_name,
                                                  double       k,
                                                  double       eps)
 {
-  auto iturb = static_cast<cs_turb_model_type_t>(cs_glob_turb_model->iturb);
+  auto model = static_cast<cs_turb_model_type_t>(cs_glob_turb_model->model);
   int                   itytur = cs_glob_turb_model->itytur;
 
   if (itytur == 2) {
@@ -127,7 +127,7 @@ cs_turbulence_inflow_volume_mass_injection_k_eps(const char  *zone_name,
       (cs_field_get_equation_param(CS_F_(rij)), zone_name, val);
 
   }
-  else if (iturb == CS_TURB_V2F_PHI) {
+  else if (model == CS_TURB_V2F_PHI) {
 
     double twothirds = 2./3.;
 
@@ -143,7 +143,7 @@ cs_turbulence_inflow_volume_mass_injection_k_eps(const char  *zone_name,
     /* There is no mass source term in the equation for f_bar */
 
   }
-  else if (iturb == CS_TURB_K_OMEGA) {
+  else if (model == CS_TURB_K_OMEGA) {
 
     double omega_in = eps / cs_turb_cmu / k;
 

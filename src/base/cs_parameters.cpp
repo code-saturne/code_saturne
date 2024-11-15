@@ -223,7 +223,7 @@ BEGIN_C_DECLS
              \ref isto2t = 1, but with \f$\theta\f$= \ref thetst = 1.\n
              Due to certain specific couplings between the turbulence equations,
              \ref isto2t is allowed the value 1 or 2 only for the
-             \f$R_{ij}\f$ models (\ref iturb = 30 or 31);
+             \f$R_{ij}\f$ models (\ref model = 30 or 31);
              hence, it is always initialised to 0.
 
   \var  cs_time_scheme_t::thetsn
@@ -2194,7 +2194,7 @@ cs_parameters_eqp_complete(void)
   }
 
   /* Diffusivity model */
-  if (cs_glob_turb_model->itytur == 3) {
+  if (cs_glob_turb_model->order == CS_TURB_SECOND_ORDER) {
     cs_field_t *f_rij = CS_F_(rij);
     cs_field_t *f_eps = CS_F_(eps);
     cs_equation_param_t *eqp_rij = cs_field_get_equation_param(f_rij);
@@ -2216,7 +2216,7 @@ cs_parameters_eqp_complete(void)
    * We impose 1 (i.e. without) for the velocity for LES
    *           0 (i.e. with) otherwise */
 
-  if (cs_glob_turb_model->itytur == 4) {
+  if (cs_glob_turb_model->type == CS_TURB_LES) {
     if (eqp_vel != nullptr) {
       if (eqp_vel->isstpc == -999)
         eqp_vel->isstpc = 1;
@@ -2381,16 +2381,16 @@ cs_parameters_eqp_complete(void)
 
   cs_wall_functions_t *wall_fns = cs_get_glob_wall_functions();
   if (wall_fns->iwallf == CS_WALL_F_UNSET) {
-    if (   cs_glob_turb_model->iturb == CS_TURB_MIXING_LENGTH
-        || cs_glob_turb_model->iturb == CS_TURB_SPALART_ALLMARAS
-        || cs_glob_turb_model->itytur == 4) {
+    if (   cs_glob_turb_model->model == CS_TURB_MIXING_LENGTH
+        || cs_glob_turb_model->model == CS_TURB_SPALART_ALLMARAS
+        || cs_glob_turb_model->type == CS_TURB_LES) {
       wall_fns->iwallf = CS_WALL_F_1SCALE_LOG;
     }
-    else if (   cs_glob_turb_model->iturb == CS_TURB_NONE
+    else if (   cs_glob_turb_model->model == CS_TURB_NONE
              || cs_glob_turb_model->itytur == 5) {
       wall_fns->iwallf = CS_WALL_F_DISABLED;
     }
-    else if (cs_glob_turb_model->iturb == CS_TURB_RIJ_EPSILON_EBRSM) {
+    else if (cs_glob_turb_model->model == CS_TURB_RIJ_EPSILON_EBRSM) {
       wall_fns->iwallf = CS_WALL_F_2SCALES_CONTINUOUS;
     }
     else {
@@ -2429,11 +2429,11 @@ cs_parameters_eqp_complete(void)
 
   if (wall_fns->ypluli < -cs_math_big_r) {
     if (   wall_fns->iwallf == CS_WALL_F_SCALABLE_2SCALES_LOG
-        || cs_glob_turb_model->itytur == 4
-        || cs_glob_turb_model->iturb == CS_TURB_SPALART_ALLMARAS
+        || cs_glob_turb_model->type == CS_TURB_LES
+        || cs_glob_turb_model->model == CS_TURB_SPALART_ALLMARAS
         || wall_fns->iwallf == CS_WALL_F_2SCALES_SMOOTH_ROUGH
-        || cs_glob_turb_model->iturb == CS_TURB_K_OMEGA
-        || cs_glob_turb_model->iturb == CS_TURB_K_EPSILON_LS) {
+        || cs_glob_turb_model->model == CS_TURB_K_OMEGA
+        || cs_glob_turb_model->model == CS_TURB_K_EPSILON_LS) {
       wall_fns->ypluli = 10.88;
     }
     else {
@@ -2733,9 +2733,9 @@ cs_parameters_eqp_complete(void)
   }
 
   /* Setup clippings for turbulence models
-   * Some fields (Rij, Epsilon, ..) are clipped by default, but 
+   * Some fields (Rij, Epsilon, ..) are clipped by default, but
    * those clippings can be removed by user */
-  
+
   const int itytur = cs_glob_turb_model->itytur;
   if (itytur == 3) {
     cs_field_set_key_int(CS_F_(rij), kclipp, 1);

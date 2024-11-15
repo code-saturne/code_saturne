@@ -227,7 +227,7 @@ _production_and_dissipation_terms(const cs_field_t  *f,
   if (! (   turb_model->itytur == 2
          || turb_model->itytur == 3
          || turb_model->itytur == 5
-         || turb_model->iturb == CS_TURB_K_OMEGA))
+         || turb_model->model == CS_TURB_K_OMEGA))
     return;
 
   const cs_field_t *f_fm = nullptr;  /* First moment field of
@@ -414,7 +414,7 @@ _production_and_dissipation_terms(const cs_field_t  *f,
       cvar_al = cs_field_by_composite_name(f_fm->name, "alpha")->val;
     }
   }
-  else if (turb_model->iturb == CS_TURB_K_OMEGA) {
+  else if (turb_model->model == CS_TURB_K_OMEGA) {
     cvara_k = CS_F_(k)->val_pre;
     cvara_omg = CS_F_(omg)->val_pre;
   }
@@ -437,7 +437,7 @@ _production_and_dissipation_terms(const cs_field_t  *f,
        * with - R = 0.5
        *      - alpha_T = 1.0 for GGDH/DFM/AFM */
     }
-    else if (turb_model->iturb == CS_TURB_K_OMEGA) {
+    else if (turb_model->model == CS_TURB_K_OMEGA) {
       xk = cvara_k[c_id];
       xe = cs_turb_cmu*xk*cvara_omg[c_id];
     }
@@ -580,7 +580,7 @@ _diffusion_terms_scalar(const cs_field_t           *f,
     const int kctheta = cs_field_key_id("turbulent_flux_ctheta");
     const cs_real_t ctheta = cs_field_get_key_double(f, kctheta);
 
-    if (turb_model->iturb != CS_TURB_RIJ_EPSILON_EBRSM) {
+    if (turb_model->model != CS_TURB_RIJ_EPSILON_EBRSM) {
       cs_field_t * f_vis = cs_field_by_name("anisotropic_turbulent_viscosity");
       visten = (cs_real_6_t *)f_vis->val;
     }
@@ -768,7 +768,7 @@ _diffusion_terms_vector(const cs_field_t            *f,
     const int kctheta = cs_field_key_id("turbulent_flux_ctheta");
     const cs_real_t ctheta = cs_field_get_key_double(f, kctheta);
 
-    if (turb_model->iturb != CS_TURB_RIJ_EPSILON_EBRSM) {
+    if (turb_model->model != CS_TURB_RIJ_EPSILON_EBRSM) {
       cs_field_t * f_vis = cs_field_by_name("anisotropic_turbulent_viscosity");
       visten = (cs_real_6_t *)f_vis->val;
     }
@@ -1761,7 +1761,7 @@ cs_solve_equation_scalar(cs_field_t        *f,
         xe = CS_F_(eps)->val_pre[c_id];
         xk = 0.5*(cvara_rij[c_id][0] + cvara_rij[c_id][1] + cvara_rij[c_id][2]);
       }
-      else if (turb_model->iturb == CS_TURB_K_OMEGA) {
+      else if (turb_model->model == CS_TURB_K_OMEGA) {
         xk = CS_F_(k)->val_pre[c_id];
         xe = cs_turb_cmu*CS_F_(omg)->val_pre[c_id];
       }

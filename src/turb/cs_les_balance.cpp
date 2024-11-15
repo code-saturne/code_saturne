@@ -1640,7 +1640,7 @@ _les_balance_time_moment_rij(void)
 
   if (_les_balance.type & CS_LES_BALANCE_RIJ_BASE) {
 
-    if (cs_glob_turb_model->iturb == 41) {
+    if (cs_glob_turb_model->model == CS_TURB_LES_SMAGO_DYN) {
 
       /* smagorinsky variance */
       cs_time_moment_define_by_func("smag_v",

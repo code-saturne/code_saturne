@@ -80,12 +80,12 @@ BEGIN_C_DECLS
  *                 destruction term of dissipation equation)
  *               - default correction for \f$ k - \epsilon \f$ type models,
  *                 including elliptic relaxation/blending models
- *                 (iturb = 20, 21, 50 or 51)
+ *                 (model = 20, 21, 50 or 51)
  *
  * - itycor = 2: - Spalart-Shur correction (production terms are multiplied
  *                 by a rotation function)
  *               - default correction for \f$ k - \omega \f$ SST or
- *                  Spalart-Allmaras (iturb = 60 or 70)
+ *                  Spalart-Allmaras
  */
 
 /*----------------------------------------------------------------------------*/
@@ -148,7 +148,7 @@ cs_turbulence_rotation_correction(const cs_real_t   dt[],
     cvara_ep = (const cs_real_t *)CS_F_(eps)->val_pre;
   }
   else if (cs_glob_turb_rans_model->itycor == 2){
-    if (cs_glob_turb_model->iturb == 60){
+    if (cs_glob_turb_model->model == CS_TURB_K_OMEGA){
       cvara_omg = (const cs_real_t *)CS_F_(omg)->val_pre;
     }
   }
@@ -288,10 +288,10 @@ cs_turbulence_rotation_correction(const cs_real_t   dt[],
 
   if (   cs_glob_turb_model->itytur == 2
       || cs_glob_turb_model->itytur == 5
-      || cs_glob_turb_model->iturb == CS_TURB_K_OMEGA) {
+      || cs_glob_turb_model->model == CS_TURB_K_OMEGA) {
     eqp = cs_field_get_equation_param_const(CS_F_(k));
   }
-  else if (cs_glob_turb_model->iturb == CS_TURB_SPALART_ALLMARAS){
+  else if (cs_glob_turb_model->model == CS_TURB_SPALART_ALLMARAS){
     eqp = cs_field_get_equation_param_const(CS_F_(nusa));
   }
 
@@ -418,7 +418,7 @@ cs_turbulence_rotation_correction(const cs_real_t   dt[],
 
       cs_real_t echtm2 = stilde;
 
-      if (cs_glob_turb_model->iturb == CS_TURB_K_OMEGA)
+      if (cs_glob_turb_model->model == CS_TURB_K_OMEGA)
         echtm2 = CS_MAX(echtm2, cs_turb_cmu*cs_math_pow2(cvara_omg[c_id]));
 
       brtild[c_id] = brtild[c_id] / sqrt(wtilde*cs_math_pow3(echtm2));

@@ -169,19 +169,19 @@ cs_user_boundary_conditions(cs_domain_t  *domain,
         CS_F_(eps)->bc_coeffs->rcodcl1[face_id] = xeent;
       }
 
-      else if (cs_glob_turb_model->iturb == CS_TURB_V2F_PHI) {
+      else if (cs_glob_turb_model->model == CS_TURB_V2F_PHI) {
         CS_F_(k)->bc_coeffs->rcodcl1[face_id] = xkent;
         CS_F_(eps)->bc_coeffs->rcodcl1[face_id] = xeent;
         CS_F_(phi)->bc_coeffs->rcodcl1[face_id] = d2o3;
         CS_F_(f_bar)->bc_coeffs->rcodcl1[face_id] = 0.0;
       }
 
-      else if (cs_glob_turb_model->iturb == CS_TURB_K_OMEGA) {
+      else if (cs_glob_turb_model->model == CS_TURB_K_OMEGA) {
         CS_F_(k)->bc_coeffs->rcodcl1[face_id] = xkent;
         CS_F_(omg)->bc_coeffs->rcodcl1[face_id] = xeent/cs_turb_cmu/xkent;
       }
 
-      else if (cs_glob_turb_model->iturb ==  CS_TURB_SPALART_ALLMARAS) {
+      else if (cs_glob_turb_model->model ==  CS_TURB_SPALART_ALLMARAS) {
         CS_F_(nusa)->bc_coeffs->rcodcl1[face_id]
           = cs_turb_cmu*cs_math_pow2(xkent)/xeent;
       }

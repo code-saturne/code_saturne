@@ -339,7 +339,7 @@ _get_m22_scaled_diag_mass_matrix(const cs_navsto_param_t *nsp,
 
   /* Compute scaling coefficients */
 
-  if (nsp->turbulence->model->iturb == CS_TURB_NONE) {
+  if (nsp->turbulence->model->model == CS_TURB_NONE) {
 
     const cs_real_t visc_val = nsp->lam_viscosity->ref_value;
 #pragma omp parallel for if (n_cells > CS_THR_MIN)
@@ -392,7 +392,7 @@ _get_scaled_diag_m22(const cs_navsto_param_t *nsp, const cs_property_t *pty)
 
   /* Compute scaling coefficients */
 
-  if (nsp->turbulence->model->iturb == CS_TURB_NONE) {
+  if (nsp->turbulence->model->model == CS_TURB_NONE) {
 
     const cs_real_t ref_val = pty->ref_value;
 #pragma omp parallel for if (n_cells > CS_THR_MIN)
@@ -958,7 +958,7 @@ cs_macfb_monolithic_sles_init_solver(const cs_navsto_param_t *nsp,
     ctx->m12_vector_multiply = cs_saddle_solver_m12_multiply_scalar;
     ctx->m21_vector_multiply = cs_saddle_solver_m21_multiply_scalar;
 
-    if (nsp->turbulence->model->iturb == CS_TURB_NONE)
+    if (nsp->turbulence->model->model == CS_TURB_NONE)
       ctx->pty_22 = nsp->lam_viscosity;
     else
       ctx->pty_22 = nsp->tot_viscosity;
@@ -988,7 +988,7 @@ cs_macfb_monolithic_sles_init_solver(const cs_navsto_param_t *nsp,
     ctx->m12_vector_multiply = cs_saddle_solver_m12_multiply_scalar;
     ctx->m21_vector_multiply = cs_saddle_solver_m21_multiply_scalar;
 
-    if (nsp->turbulence->model->iturb == CS_TURB_NONE)
+    if (nsp->turbulence->model->model == CS_TURB_NONE)
       ctx->pty_22 = nsp->lam_viscosity;
     else
       ctx->pty_22 = nsp->tot_viscosity;

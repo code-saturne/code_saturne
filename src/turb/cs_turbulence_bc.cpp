@@ -322,7 +322,7 @@ _inlet_bc(cs_lnum_t   face_id,
     }
     _turb_bc_id.bc_eps->rcodcl1[face_id] = eps;
 
-    if (turb_model->iturb == CS_TURB_RIJ_EPSILON_EBRSM)
+    if (turb_model->model == CS_TURB_RIJ_EPSILON_EBRSM)
       _turb_bc_id.bc_alp_bl->rcodcl1[face_id] = 1.;
 
     /* Initialization of the turbulent fluxes to 0 if DFM or
@@ -353,21 +353,21 @@ _inlet_bc(cs_lnum_t   face_id,
     _turb_bc_id.bc_eps->rcodcl1[face_id] = eps;
 
     _turb_bc_id.bc_phi->rcodcl1[face_id] = 2./3.;
-    if (turb_model->iturb == CS_TURB_V2F_PHI) {
+    if (turb_model->model == CS_TURB_V2F_PHI) {
       _turb_bc_id.bc_f_bar->rcodcl1[face_id] = 0.;
     }
-    else if (turb_model->iturb == CS_TURB_V2F_BL_V2K) {
+    else if (turb_model->model == CS_TURB_V2F_BL_V2K) {
       _turb_bc_id.bc_alp_bl->rcodcl1[face_id] = 0.;
     }
 
   }
-  else if (turb_model->iturb == CS_TURB_K_OMEGA) {
+  else if (turb_model->model == CS_TURB_K_OMEGA) {
 
     _turb_bc_id.bc_k->rcodcl1[face_id] = k;
     _turb_bc_id.bc_omg->rcodcl1[face_id] = eps/cs_turb_cmu/k;
 
   }
-  else if (turb_model->iturb == CS_TURB_SPALART_ALLMARAS) {
+  else if (turb_model->model == CS_TURB_SPALART_ALLMARAS) {
 
     _turb_bc_id.bc_nusa->rcodcl1[face_id] = cs_turb_cmu*k*k/eps;
 
@@ -447,7 +447,7 @@ _set_uninit_inlet_bc(cs_lnum_t   face_id,
     if (_turb_bc_id.bc_eps->rcodcl1[face_id] > 0.5*cs_math_infinite_r)
       _turb_bc_id.bc_eps->rcodcl1[face_id] = eps;
 
-    if (turb_model->iturb == CS_TURB_RIJ_EPSILON_EBRSM)
+    if (turb_model->model == CS_TURB_RIJ_EPSILON_EBRSM)
       if (_turb_bc_id.bc_alp_bl->rcodcl1[face_id] > 0.5*cs_math_infinite_r)
         _turb_bc_id.bc_alp_bl->rcodcl1[face_id] = 1.;
 
@@ -486,17 +486,17 @@ _set_uninit_inlet_bc(cs_lnum_t   face_id,
 
     if (_turb_bc_id.bc_phi->rcodcl1[face_id] > 0.5*cs_math_infinite_r)
       _turb_bc_id.bc_phi->rcodcl1[face_id] = 2./3.;
-    if (turb_model->iturb == CS_TURB_V2F_PHI) {
+    if (turb_model->model == CS_TURB_V2F_PHI) {
       if (_turb_bc_id.bc_f_bar->rcodcl1[face_id] > 0.5*cs_math_infinite_r)
         _turb_bc_id.bc_f_bar->rcodcl1[face_id] = 0.;
     }
-    else if (turb_model->iturb == CS_TURB_V2F_BL_V2K) {
+    else if (turb_model->model == CS_TURB_V2F_BL_V2K) {
       if (_turb_bc_id.bc_alp_bl->rcodcl1[face_id] > 0.5*cs_math_infinite_r)
         _turb_bc_id.bc_alp_bl->rcodcl1[face_id] = 0.;
     }
 
   }
-  else if (turb_model->iturb == CS_TURB_K_OMEGA) {
+  else if (turb_model->model == CS_TURB_K_OMEGA) {
 
     if (_turb_bc_id.bc_k->rcodcl1[face_id] > 0.5*cs_math_infinite_r)
       _turb_bc_id.bc_k->rcodcl1[face_id] = k;
@@ -504,7 +504,7 @@ _set_uninit_inlet_bc(cs_lnum_t   face_id,
       _turb_bc_id.bc_omg->rcodcl1[face_id] = eps/cs_turb_cmu/k;
 
   }
-  else if (turb_model->iturb == CS_TURB_SPALART_ALLMARAS) {
+  else if (turb_model->model == CS_TURB_SPALART_ALLMARAS) {
     if (_turb_bc_id.bc_nusa->rcodcl1[face_id] > 0.5*cs_math_infinite_r)
       _turb_bc_id.bc_nusa->rcodcl1[face_id] = cs_turb_cmu*k*k/eps;
 
@@ -864,7 +864,7 @@ cs_turbulence_bc_set_hmg_neumann(cs_lnum_t   face_id)
     _turb_bc_id.bc_eps->icodcl[face_id] = 3;
     _turb_bc_id.bc_eps->rcodcl3[face_id] = 0;
 
-    if (turb_model->iturb == CS_TURB_RIJ_EPSILON_EBRSM) {
+    if (turb_model->model == CS_TURB_RIJ_EPSILON_EBRSM) {
       _turb_bc_id.bc_alp_bl->icodcl[face_id] = 0.;
       _turb_bc_id.bc_alp_bl->rcodcl3[face_id] = 0.;
     }
@@ -901,17 +901,17 @@ cs_turbulence_bc_set_hmg_neumann(cs_lnum_t   face_id)
     _turb_bc_id.bc_eps->rcodcl3[face_id] = 0;
 
     _turb_bc_id.bc_phi->rcodcl3[face_id] = 0.;
-    if (turb_model->iturb == CS_TURB_V2F_PHI) {
+    if (turb_model->model == CS_TURB_V2F_PHI) {
       _turb_bc_id.bc_f_bar->icodcl[face_id] = 3.;
       _turb_bc_id.bc_f_bar->rcodcl3[face_id] = 0.;
     }
-    else if (turb_model->iturb == CS_TURB_V2F_BL_V2K) {
+    else if (turb_model->model == CS_TURB_V2F_BL_V2K) {
       _turb_bc_id.bc_alp_bl->icodcl[face_id] = 3.;
       _turb_bc_id.bc_alp_bl->rcodcl3[face_id] = 0.;
     }
 
   }
-  else if (turb_model->iturb == CS_TURB_K_OMEGA) {
+  else if (turb_model->model == CS_TURB_K_OMEGA) {
 
     _turb_bc_id.bc_k->icodcl[face_id] = 3.;
     _turb_bc_id.bc_k->rcodcl3[face_id] = 0.;
@@ -920,7 +920,7 @@ cs_turbulence_bc_set_hmg_neumann(cs_lnum_t   face_id)
     _turb_bc_id.bc_omg->rcodcl3[face_id] = 0.;
 
   }
-  else if (turb_model->iturb == CS_TURB_SPALART_ALLMARAS) {
+  else if (turb_model->model == CS_TURB_SPALART_ALLMARAS) {
 
     _turb_bc_id.bc_nusa->icodcl[face_id] = 3.;
     _turb_bc_id.bc_nusa->rcodcl3[face_id] = 0.;

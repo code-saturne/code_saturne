@@ -235,44 +235,44 @@ _compute_turbulence_mu(const cs_lnum_t  n_cells)
 {
 
   // Laminar
-  if (cs_glob_turb_model->iturb == CS_TURB_NONE)
+  if (cs_glob_turb_model->model == CS_TURB_NONE)
     cs_array_real_fill_zero(n_cells, CS_F_(mu_t)->val);
 
   // Mixing length model
-  else if (cs_glob_turb_model->iturb == CS_TURB_MIXING_LENGTH)
+  else if (cs_glob_turb_model->model == CS_TURB_MIXING_LENGTH)
     cs_turbulence_ml_mu_t();
 
   // k-epsilon
   else if (cs_glob_turb_model->itytur == 2)
     cs_turbulence_ke_mu_t(-1);
 
-  else if (cs_glob_turb_model->itytur == 3)
+  else if (cs_glob_turb_model->order == CS_TURB_SECOND_ORDER)
     cs_turbulence_rij_mu_t(-1);
 
   // LES (Smagorinsky, dynamic Smagorinsky, or Wale)
-  else if (cs_glob_turb_model->itytur == 4) {
-    if (cs_glob_turb_model->iturb == CS_TURB_LES_SMAGO_CONST)
+  else if (cs_glob_turb_model->type == CS_TURB_LES) {
+    if (cs_glob_turb_model->model == CS_TURB_LES_SMAGO_CONST)
       cs_les_mu_t_smago_const();
-    else if (cs_glob_turb_model->iturb == CS_TURB_LES_SMAGO_DYN)
+    else if (cs_glob_turb_model->model == CS_TURB_LES_SMAGO_DYN)
       cs_les_mu_t_smago_dyn();
-    else if (cs_glob_turb_model->iturb == CS_TURB_LES_WALE)
+    else if (cs_glob_turb_model->model == CS_TURB_LES_WALE)
       cs_les_mu_t_wale();
   }
 
   // v2f (phi-model and BL-v2/k)
   else if (cs_glob_turb_model->itytur == 5) {
-    if (cs_glob_turb_model->iturb == CS_TURB_V2F_PHI)
+    if (cs_glob_turb_model->model == CS_TURB_V2F_PHI)
       cs_turbulence_v2f_phi_mu_t();
-     else if (cs_glob_turb_model->iturb == CS_TURB_V2F_BL_V2K)
+     else if (cs_glob_turb_model->model == CS_TURB_V2F_BL_V2K)
        cs_turbulence_v2f_bl_v2k_mu_t();
   }
 
   // k-omega SST
-  else if (cs_glob_turb_model->iturb == CS_TURB_K_OMEGA)
+  else if (cs_glob_turb_model->model == CS_TURB_K_OMEGA)
     cs_turbulence_kw_mu_t(-1);
 
   // Spalart-Allmaras
-  else if (cs_glob_turb_model->iturb == CS_TURB_SPALART_ALLMARAS)
+  else if (cs_glob_turb_model->model == CS_TURB_SPALART_ALLMARAS)
     cs_turbulence_sa_mu_t();
 
 }
@@ -330,7 +330,7 @@ _compute_anisotropic_turbulent_viscosity(cs_lnum_t                   n_cells,
     const cs_real_t *cvar_ep = CS_F_(eps)->val;
     const cs_real_6_t *cvar_rij = (const cs_real_6_t *)CS_F_(rij)->val;
 
-    if (cs_glob_turb_model->iturb == CS_TURB_RIJ_EPSILON_EBRSM) {
+    if (cs_glob_turb_model->model == CS_TURB_RIJ_EPSILON_EBRSM) {
 #     pragma omp parallel for if (n_cells > CS_THR_MIN)
       for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
         const cs_real_t trrij
@@ -495,7 +495,7 @@ _clip_rho_mu_cp(bool                         first_pass,
                " Property           Min. value  Max. value\n"
                " -----------------------------------------\n");
     for (int ii = 0; ii < n_fields; ii++) {
-      if (ii != 2 || cs_glob_turb_model->iturb != CS_TURB_NONE) {
+      if (ii != 2 || cs_glob_turb_model->model != CS_TURB_NONE) {
         int width = 16;
         cs_log_strpad(tmp_s, f_names[ii], width, 64);
         bft_printf(" %s   %10.04e  %10.04e\n", tmp_s, varmn[ii], varmx[ii]);
@@ -512,7 +512,7 @@ _clip_rho_mu_cp(bool                         first_pass,
     /* we do not clip turbulent viscosity
        in dynamic LES model, because we have
        done clipping on the total viscosity */
-    if (ii == 2 &&  cs_glob_turb_model->iturb == CS_TURB_LES_SMAGO_DYN)
+    if (ii == 2 &&  cs_glob_turb_model->model == CS_TURB_LES_SMAGO_DYN)
       continue;
 
     // for specific heat
@@ -987,8 +987,8 @@ cs_physical_properties_update(int   iterns)
   if (i_vof_mass_transfer != 0 && cavit_param->icvevm == 1) {
     if (   (cs_glob_turb_model->itytur == 2)
         || (cs_glob_turb_model->itytur == 5)
-        || (cs_glob_turb_model->iturb  ==  CS_TURB_K_OMEGA)
-        || (cs_glob_turb_model->iturb  ==  CS_TURB_SPALART_ALLMARAS) ) {
+        || (cs_glob_turb_model->model  ==  CS_TURB_K_OMEGA)
+        || (cs_glob_turb_model->model  ==  CS_TURB_SPALART_ALLMARAS) ) {
     _cavitation_correct_visc_turb(n_cells,
                                   cs_glob_vof_parameters->rho1,
                                   cs_glob_vof_parameters->rho2,

@@ -1216,7 +1216,7 @@ _read_turb_array_1d_compat(cs_restart_t   *r,
 static int
 _read_turbulence_model(cs_restart_t  *r)
 {
-  cs_lnum_t iturb_old = 0;
+  cs_lnum_t model_old = 0;
 
   /* Determine previous turbulence model */
 
@@ -1225,12 +1225,12 @@ _read_turbulence_model(cs_restart_t  *r)
                                              "modele_turbulence_phase01",
                                              1,
                                              1,
-                                             &iturb_old);
+                                             &model_old);
 
   if (n_opt_vals != 1)
-    iturb_old = -999;
+    model_old = -999;
 
-  return iturb_old;
+  return model_old;
 }
 
 /*----------------------------------------------------------------------------
@@ -1243,8 +1243,8 @@ _read_turbulence_model(cs_restart_t  *r)
  *
  * parameters:
  *   r         <-- associated restart file pointer
- *   iturb_cur <-- current turbulence model number
- *   iturb_old <-- previous turbulence model number
+ *   model_cur <-- current turbulence model number
+ *   model_old <-- previous turbulence model number
  *   t_id      <-- associated time id
  *   read_flag <-> flag to track fields read, or nullptr;
  *                 set to 1 for fields read, -1 for fields
@@ -1253,19 +1253,19 @@ _read_turbulence_model(cs_restart_t  *r)
 
 static void
 _read_and_convert_turb_variables(cs_restart_t  *r,
-                                 int            iturb_cur,
-                                 int            iturb_old,
+                                 int            model_cur,
+                                 int            model_old,
                                  int            t_id,
                                  int            read_flag[])
 {
   int   err_sum = 0, warn_sum = 0;
 
-  const int itytur_cur = iturb_cur/10;
-  const int itytur_old = iturb_old/10;
+  const int itytur_cur = model_cur/10;
+  const int itytur_old = model_old/10;
 
   /* If the turbulence model has not changed, nothing to do */
 
-  if (iturb_cur == iturb_old)
+  if (model_cur == model_old)
     return;
 
   /* Warn user that turbulence model has changed */
@@ -1277,7 +1277,7 @@ _read_and_convert_turb_variables(cs_restart_t  *r,
        "  current model:  %d\n"
        "  previous model: %d\n\n"
        "  The computation continues, with a partial an/or adapted restart.\n"),
-     iturb_cur, (int)iturb_old);
+     model_cur, (int)model_old);
 
   const cs_lnum_t n_cells = cs_glob_mesh->n_cells;
 
@@ -1314,7 +1314,7 @@ _read_and_convert_turb_variables(cs_restart_t  *r,
         read_flag[CS_F_(k)->id] += t_mask;
 
     }
-    else if (iturb_old == 60) { /* k-omega to k-epsilon (k already read) */
+    else if (model_old == 60) { /* k-omega to k-epsilon (k already read) */
 
       cs_real_t *v_eps = CS_F_(eps)->vals[t_id];
       const cs_real_t *v_k = CS_F_(eps)->vals[t_id];
@@ -1333,7 +1333,7 @@ _read_and_convert_turb_variables(cs_restart_t  *r,
   }
   else if (itytur_cur == 3) { /* New computation is in Rij-epsilon */
 
-    if (itytur_old == 2 || iturb_old == 50) { /* k-epsilon or v2f
+    if (itytur_old == 2 || model_old == 50) { /* k-epsilon or v2f
                                                  (phi-fbar or BL-v2/k) to-> Rij
                                                  (epsilon already read) */
 
@@ -1366,7 +1366,7 @@ _read_and_convert_turb_variables(cs_restart_t  *r,
      *                      (when switching to EBRSM to another model,
      *                      keep alpha to default initialization) */
 
-    else if (iturb_old == 60) { /* k-omega to Rij */
+    else if (model_old == 60) { /* k-omega to Rij */
 
       cs_real_6_t *v_rij = (cs_real_6_t *)(CS_F_(rij)->vals[t_id]);
       cs_real_t *v_eps = CS_F_(eps)->vals[t_id];
@@ -1432,7 +1432,7 @@ _read_and_convert_turb_variables(cs_restart_t  *r,
      *                      and phi already read; keep default initialization
      *                      for f_bar or alpha */
 
-    else if (iturb_old == 60) { /* Switch from k-omega to v2f;
+    else if (model_old == 60) { /* Switch from k-omega to v2f;
                                    k already read; keep default initialization
                                    for f_bar or alpha */
 
@@ -1450,9 +1450,9 @@ _read_and_convert_turb_variables(cs_restart_t  *r,
         read_flag[CS_F_(eps)->id] += t_mask;
     }
 
-  } else if (iturb_cur == 60) { /* New computation is in k-omega */
+  } else if (model_cur == 60) { /* New computation is in k-omega */
 
-    if (itytur_old == 2 || iturb_old == 50) { /* k-epsilon or v2f to k-omega;
+    if (itytur_old == 2 || model_old == 50) { /* k-epsilon or v2f to k-omega;
                                                  k already read */
 
       cs_real_t *v_omg = CS_F_(omg)->vals[t_id];
@@ -1497,7 +1497,7 @@ _read_and_convert_turb_variables(cs_restart_t  *r,
 
     }
 
-  } else if (iturb_cur == 70) { /* current computation with the
+  } else if (model_cur == 70) { /* current computation with the
                                    Spalart Allmaras (SA) model */
 
     /* TODO perform the conversion from other models to SA. */
@@ -1529,7 +1529,7 @@ _read_and_convert_turb_variables(cs_restart_t  *r,
                                inc,
                                gradv); /* Calculate velocity gradient */
 
-      if (iturb_old != 60) {
+      if (model_old != 60) {
         warn_sum += _read_turb_array_1d_compat(r, "epsilon", "epsilon",
                                                t_id, v_eps);
       }
@@ -1541,7 +1541,7 @@ _read_and_convert_turb_variables(cs_restart_t  *r,
 
         warn_sum += _read_turb_array_1d_compat(r, "k", "k", t_id, v_k);
 
-        if (iturb_old == 60) { /* transform omega to epsilon */
+        if (model_old == 60) { /* transform omega to epsilon */
           err_sum += _read_turb_array_1d_compat(r, "omega", "omega", t_id,
                                                 v_eps);
 
@@ -2068,11 +2068,11 @@ cs_restart_read_variables(cs_restart_t               *r,
 
   const cs_turb_model_t  *turb_model = cs_get_glob_turb_model();
   assert(turb_model != nullptr);
-  const int iturb_cur = turb_model->iturb;
-  const int iturb_old = _read_turbulence_model(r);
+  const int model_cur = turb_model->model;
+  const int model_old = _read_turbulence_model(r);
 
-  if (iturb_cur != iturb_old)
-    _read_and_convert_turb_variables(r, iturb_cur, iturb_old, 0, _read_flag);
+  if (model_cur != model_old)
+    _read_and_convert_turb_variables(r, model_cur, model_old, 0, _read_flag);
 
   /* Warning or error for main unread variables */
 

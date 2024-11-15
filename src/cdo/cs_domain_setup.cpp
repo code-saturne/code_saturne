@@ -545,7 +545,7 @@ cs_domain_initialize_setup(cs_domain_t    *domain)
 
       cs_turb_model_t  *turb = cs_get_glob_turb_model();
 
-      turb->iturb = CS_TURB_NONE;          /* laminar flow */
+      turb->model = CS_TURB_NONE;          /* laminar flow */
       turb->itytur = 0;                    /* deprecated */
       turb->hybrid_turb = CS_HYBRID_NONE;
       turb->type = CS_TURB_NONE;

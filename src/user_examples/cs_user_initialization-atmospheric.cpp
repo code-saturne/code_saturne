@@ -148,21 +148,21 @@ cs_user_initialization(cs_domain_t     *domain)
     cvar_k = CS_F_(k)->val;
     cvar_ep = CS_F_(eps)->val;
   }
-  else if (cs_glob_turb_model->itytur == 3) {
+  else if (cs_glob_turb_model->order == CS_TURB_SECOND_ORDER) {
     cvar_ep = CS_F_(eps)->val;
     cvar_rij = (cs_real_6_t *)(CS_F_(rij)->val);
   }
-  else if (cs_glob_turb_model->iturb == CS_TURB_V2F_PHI) {
+  else if (cs_glob_turb_model->model == CS_TURB_V2F_PHI) {
     cvar_k = CS_F_(k)->val;
     cvar_ep = CS_F_(eps)->val;
     cvar_phi = CS_F_(phi)->val;
     cvar_fb = CS_F_(f_bar)->val;
   }
-  else if (cs_glob_turb_model->iturb ==  CS_TURB_K_OMEGA) {
+  else if (cs_glob_turb_model->model ==  CS_TURB_K_OMEGA) {
     cvar_k = CS_F_(k)->val;
     cvar_omg = CS_F_(omg)->val;
   }
-  else if (cs_glob_turb_model->iturb ==  CS_TURB_SPALART_ALLMARAS) {
+  else if (cs_glob_turb_model->model ==  CS_TURB_SPALART_ALLMARAS) {
     cvar_nusa = CS_F_(nusa)->val;
   }
 
@@ -210,24 +210,24 @@ cs_user_initialization(cs_domain_t     *domain)
       cvar_k[c_id] = xkent;
       cvar_ep[c_id] = xeent;
     }
-    else if (cs_glob_turb_model->itytur == 3) {
+    else if (cs_glob_turb_model->order == CS_TURB_SECOND_ORDER) {
       cvar_ep[c_id] = xeent;
       for (int ii = 0; ii < 3; ii++)
         cvar_rij[c_id][ii] = d2s3*xkent;
       for (int ii = 3; ii < 6; ii++)
         cvar_rij[c_id][ii] = 0;
     }
-    else if (cs_glob_turb_model->iturb == CS_TURB_V2F_PHI) {
+    else if (cs_glob_turb_model->model == CS_TURB_V2F_PHI) {
       cvar_fb[c_id] = 0;
       cvar_k[c_id] = xkent;
       cvar_ep[c_id] = xeent;
       cvar_phi[c_id] = d2s3;
     }
-    else if (cs_glob_turb_model->iturb == CS_TURB_K_OMEGA) {
+    else if (cs_glob_turb_model->model == CS_TURB_K_OMEGA) {
       cvar_k[c_id] = xkent;
       cvar_omg[c_id] = xeent/cs_turb_cmu/xkent;
     }
-    else if (cs_glob_turb_model->iturb == CS_TURB_SPALART_ALLMARAS) {
+    else if (cs_glob_turb_model->model == CS_TURB_SPALART_ALLMARAS) {
       cvar_nusa[c_id] = cs_turb_cmu*cs_math_pow2(xkent)/xeent;
     }
 

@@ -1035,7 +1035,7 @@ cs_parameters_check(void)
       _raise_turb_error("in the k-epsilon turbulence model");
   }
 
-  if (   cs_glob_turb_model->iturb == CS_TURB_V2F_PHI
+  if (   cs_glob_turb_model->model == CS_TURB_V2F_PHI
       && cs_glob_turb_rans_model->ikecou == 1) {
     cs_equation_param_t *eqp_k = cs_field_get_equation_param(CS_F_(k));
     cs_equation_param_t *eqp_eps = cs_field_get_equation_param(CS_F_(eps));
@@ -1051,7 +1051,7 @@ cs_parameters_check(void)
       _raise_turb_error("in the v2f-phi turbulence model");
   }
 
-  if (   cs_glob_turb_model->iturb == CS_TURB_V2F_BL_V2K
+  if (   cs_glob_turb_model->model == CS_TURB_V2F_BL_V2K
       && cs_glob_turb_rans_model->ikecou == 1) {
     cs_equation_param_t *eqp_k = cs_field_get_equation_param(CS_F_(k));
     cs_equation_param_t *eqp_eps = cs_field_get_equation_param(CS_F_(eps));
@@ -1067,7 +1067,7 @@ cs_parameters_check(void)
       _raise_turb_error("in the v2f-Blv2k turbulence model");
   }
 
-  if (   cs_glob_turb_model->iturb == CS_TURB_K_OMEGA
+  if (   cs_glob_turb_model->model == CS_TURB_K_OMEGA
       && cs_glob_turb_rans_model->ikecou == 1) {
     cs_equation_param_t *eqp_k = cs_field_get_equation_param(CS_F_(k));
     cs_equation_param_t *eqp_omg = cs_field_get_equation_param(CS_F_(omg));
@@ -1079,7 +1079,7 @@ cs_parameters_check(void)
       _raise_turb_error("in the k-omega turbulence model");
   }
 
-  if (   cs_glob_turb_model->iturb == CS_TURB_SPALART_ALLMARAS
+  if (   cs_glob_turb_model->model == CS_TURB_SPALART_ALLMARAS
       && cs_glob_turb_rans_model->ikecou == 1) {
     cs_equation_param_t *eqp_nusa = cs_field_get_equation_param(CS_F_(nusa));
 
@@ -2044,8 +2044,8 @@ cs_parameters_check(void)
                                      _("The steady algorithm is not compatible "
                                        "with L.E.S. turbulence modelling "
                                        "which is time-dependant by nature"),
-                                     "cs_glob_turb_model->iturb",
-                                     turb_model->iturb,
+                                     "cs_glob_turb_model->model",
+                                     turb_model->model,
                                      3,
                                      les_iturb,
                                      nullptr);
@@ -2191,8 +2191,8 @@ cs_parameters_check(void)
 
   cs_parameters_is_in_list_int(CS_ABORT_DELAYED,
                                _("while reading input data"),
-                               "cs_glob_turb_model->iturb",
-                               turb_model->iturb,
+                               "cs_glob_turb_model->model",
+                               turb_model->model,
                                16,
                                iturb_vals,
                                nullptr);
@@ -2220,8 +2220,8 @@ cs_parameters_check(void)
                                    "rotation curvature correction is only "
                                    "compatible with eddy viscosity turbulence "
                                    "models"),
-                                 "cs_glob_turb_model->iturb",
-                                 turb_model->iturb,
+                                 "cs_glob_turb_model->model",
+                                 turb_model->model,
                                  6,
                                  iturb_evm_vals,
                                  nullptr);
@@ -2236,9 +2236,9 @@ cs_parameters_check(void)
                                  _("while reading input data,\n"
                                    "Hybrid RANS/LES model is only "
                                    "compatible with k-omega SST model "
-                                   "(iturb=CS_TURB_K_OMEGA)"),
-                                 "cs_glob_turb_model->iturb",
-                                 turb_model->iturb,
+                                   "(model=CS_TURB_K_OMEGA)"),
+                                 "cs_glob_turb_model->model",
+                                 turb_model->model,
                                  1,
                                  iturb_ddes_vals,
                                  nullptr);
@@ -2252,10 +2252,10 @@ cs_parameters_check(void)
     cs_parameters_is_in_list_int(CS_ABORT_DELAYED,
                                  _("while reading input data,\n"
                                    "HTLES model is only compatible"
-                                   "with k-omega SST model (iturb=CS_TURB_K_OMEGA)"
-                                   "and BL-v2/k model (iturb=CS_TURB_V2F_BL_V2K)"),
-                                 "cs_glob_turb_model->iturb",
-                                 turb_model->iturb,
+                                   "with k-omega SST model (model=CS_TURB_K_OMEGA)"
+                                   "and BL-v2/k model (model=CS_TURB_V2F_BL_V2K)"),
+                                 "cs_glob_turb_model->model",
+                                 turb_model->model,
                                  2,
                                  iturb_htles_vals,
                                  nullptr);
@@ -2270,8 +2270,8 @@ cs_parameters_check(void)
                                      "two way coupling in Lagrangian modelling "
                                      "is not compatible with k-omega SST "
                                      "turbulence model"),
-                                   "cs_glob_turb_model->iturb",
-                                   turb_model->iturb,
+                                   "cs_glob_turb_model->model",
+                                   turb_model->model,
                                    CS_TURB_K_OMEGA);
   }
 
@@ -2337,7 +2337,7 @@ cs_parameters_check(void)
       || turb_model->itytur == 5
       || turb_model->itytur == 6) {
     /* iclkep option not available in k-omega */
-    if (turb_model->iturb != CS_TURB_K_OMEGA) {
+    if (turb_model->model != CS_TURB_K_OMEGA) {
       cs_parameters_is_in_range_int(CS_ABORT_DELAYED,
                                     _("while reading input data"),
                                     "cs_glob_turb_rans_model->iclkep",
@@ -2352,17 +2352,17 @@ cs_parameters_check(void)
                                   0, 2);
 
     /* In k-eps with lin prod/LS/Quad and in v2f we force ikecou to 0 */
-    if (   turb_model->iturb == CS_TURB_K_EPSILON_LIN_PROD
-        || turb_model->iturb == CS_TURB_K_EPSILON_LS
-        || turb_model->iturb == CS_TURB_K_EPSILON_QUAD
+    if (   turb_model->model == CS_TURB_K_EPSILON_LIN_PROD
+        || turb_model->model == CS_TURB_K_EPSILON_LS
+        || turb_model->model == CS_TURB_K_EPSILON_QUAD
         || turb_model->itytur == 5) {
       cs_parameters_is_equal_int
         (CS_ABORT_DELAYED,
          _("while reading input data,\n"
-           "with k-epsilon LP (iturb=CS_TURB_K_EPSILON_LIN_PROD),\n"
-           "k-epsilon LS (iturb=CS_TURB_K_EPSILON_LS),\n"
-           "k-epislon quadratic (iturb=CS_TURB_K_EPSILON_QUAD),\n"
-           "or v2f model (iturb=CS_TURB_V2F_PHI, CS_TURB_V2F_BL_V2K)."),
+           "with k-epsilon LP (model=CS_TURB_K_EPSILON_LIN_PROD),\n"
+           "k-epsilon LS (model=CS_TURB_K_EPSILON_LS),\n"
+           "k-epislon quadratic (model=CS_TURB_K_EPSILON_QUAD),\n"
+           "or v2f model (model=CS_TURB_V2F_PHI, CS_TURB_V2F_BL_V2K)."),
          "cs_glob_turb_rans_model->ikecou",
          cs_glob_turb_rans_model->ikecou,
          0);
@@ -2399,7 +2399,7 @@ cs_parameters_check(void)
    * the user if idtvar >= 0 */
 
   if (   (   turb_model->itytur == 2
-          || turb_model->iturb == CS_TURB_K_OMEGA)
+          || turb_model->model == CS_TURB_K_OMEGA)
       && cs_glob_time_step_options->idtvar >= 0) {
     cs_field_t *f_eo = (turb_model->itytur == 2) ? CS_F_(eps) : CS_F_(omg);
     int f_ids[2] = {CS_F_(k)->id, f_eo->id};
@@ -2438,7 +2438,7 @@ cs_parameters_check(void)
 
   /* Check that relaxv is in [0,1] for Spallart-Allmaras nu variable
      (already done for steady) */
-  if (   turb_model->iturb == CS_TURB_SPALART_ALLMARAS
+  if (   turb_model->model == CS_TURB_SPALART_ALLMARAS
       && cs_glob_time_step_options->idtvar >= 0) {
       cs_field_t *f = CS_F_(nusa);
       cs_equation_param_t *eqp = cs_field_get_equation_param(f);
@@ -2470,7 +2470,7 @@ cs_parameters_check(void)
 
     /* wall echo and specific implicitation of the diffusion of epsilon only
        in Rij LRR */
-    if (turb_model->iturb == CS_TURB_RIJ_EPSILON_LRR) {
+    if (turb_model->model == CS_TURB_RIJ_EPSILON_LRR) {
       cs_parameters_is_in_range_int(CS_ABORT_DELAYED,
                                     _("while reading input data"),
                                     "cs_glob_turb_rans_model->irijec",
@@ -2506,8 +2506,8 @@ cs_parameters_check(void)
                                   0, 2);
 
 
-    if (   turb_model->iturb == CS_TURB_LES_SMAGO_DYN
-        || turb_model->iturb == CS_TURB_LES_WALE) {
+    if (   turb_model->model == CS_TURB_LES_SMAGO_DYN
+        || turb_model->model == CS_TURB_LES_WALE) {
       cs_parameters_is_equal_int(CS_ABORT_DELAYED,
                                  _("while reading input data,\n"
                                    "Van Driest near wall damping not "
@@ -2520,8 +2520,8 @@ cs_parameters_check(void)
 
     /* The reduction of the extended neighborhood can degrade the results of the
        LES dynamic model */
-    if (turb_model->iturb == CS_TURB_LES_SMAGO_DYN) {
-      int imrgra_cmp = CS_ABS(turb_model->iturb);
+    if (turb_model->model == CS_TURB_LES_SMAGO_DYN) {
+      int imrgra_cmp = CS_ABS(turb_model->model);
       switch(imrgra_cmp) {
       case 3:
       case 6:
@@ -2926,7 +2926,7 @@ cs_parameters_check(void)
                                     0.);
   }
 
-  if (turb_model->iturb == CS_TURB_MIXING_LENGTH) {
+  if (turb_model->model == CS_TURB_MIXING_LENGTH) {
     cs_parameters_is_greater_double(CS_ABORT_DELAYED,
                                     _("while reading input data"),
                                     "cs_glob_turb_rans_model->xlomlg "
@@ -2975,7 +2975,7 @@ cs_parameters_check(void)
                                       0.);
     }
 
-    if (turb_model->iturb == CS_TURB_LES_SMAGO_DYN) {
+    if (turb_model->model == CS_TURB_LES_SMAGO_DYN) {
       cs_parameters_is_greater_double(CS_ABORT_DELAYED,
                                       _("LES dynamic model constant"),
                                       "cs_turb_xlesfd",

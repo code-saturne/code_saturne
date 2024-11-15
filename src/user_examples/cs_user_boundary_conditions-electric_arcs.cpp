@@ -157,9 +157,9 @@ cs_user_boundary_conditions(cs_domain_t  *domain,
 
       if (   (cs_glob_turb_model->itytur == 2)
           || (cs_glob_turb_model->itytur == 3)
-          || (cs_glob_turb_model->iturb == CS_TURB_V2F_PHI)
-          || (cs_glob_turb_model->iturb == CS_TURB_K_OMEGA)
-          || (cs_glob_turb_model->iturb == CS_TURB_SPALART_ALLMARAS)) {
+          || (cs_glob_turb_model->model == CS_TURB_V2F_PHI)
+          || (cs_glob_turb_model->model == CS_TURB_K_OMEGA)
+          || (cs_glob_turb_model->model == CS_TURB_SPALART_ALLMARAS)) {
 
         cs_real_t uref2 =  0;
         for(int ii = 0; ii < 3; ii++)

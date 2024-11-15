@@ -183,7 +183,7 @@ _prepare_ke(const cs_mesh_t            *mesh,
 
   /* Production term */
 
-  if (tbp->model->iturb == CS_TURB_K_EPSILON) {
+  if (tbp->model->model == CS_TURB_K_EPSILON) {
 #   pragma omp parallel for if (mesh->n_cells > CS_THR_MIN)
     for (cs_lnum_t c_id = 0; c_id < mesh->n_cells; c_id++) {
 
@@ -210,7 +210,7 @@ _prepare_ke(const cs_mesh_t            *mesh,
       tke_source_term[c_id] = mu_t[c_id] * strain_sq;
     }
   }
-  else if (tbp->model->iturb == CS_TURB_K_EPSILON_LIN_PROD) {
+  else if (tbp->model->model == CS_TURB_K_EPSILON_LIN_PROD) {
 #   pragma omp parallel for if (mesh->n_cells > CS_THR_MIN)
     for (cs_lnum_t c_id = 0; c_id < mesh->n_cells; c_id++) {
 
@@ -438,7 +438,7 @@ cs_turbulence_init_setup(cs_turbulence_t     *tbs,
 
   /* Set function pointers and initialize the context structure */
 
-  switch (model->iturb) {
+  switch (model->model) {
 
   case CS_TURB_K_EPSILON:
   case CS_TURB_K_EPSILON_LIN_PROD:
@@ -508,7 +508,7 @@ cs_turbulence_finalize_setup(const cs_mesh_t            *mesh,
 
   /* Last setup for each turbulence model */
 
-  switch (model->iturb) {
+  switch (model->model) {
 
   case CS_TURB_K_EPSILON:
   case CS_TURB_K_EPSILON_LIN_PROD:
@@ -607,7 +607,7 @@ cs_turbulence_init_values(const cs_mesh_t             *mesh,
   const cs_turbulence_param_t  *tbp = tbs->param;
   const cs_turb_model_t  *model = tbp->model;
 
-  if (model->iturb == CS_TURB_NONE)
+  if (model->model == CS_TURB_NONE)
     return; /* Nothing to do */
 
   tbs->update(mesh, connect, quant, time_step, tbs);
@@ -630,8 +630,8 @@ cs_turb_init_k_eps_context(const cs_turb_model_t      *tbm)
   if (tbm == nullptr)
     return nullptr;
 
-  assert((tbm->iturb == CS_TURB_K_EPSILON) ||
-         (tbm->iturb == CS_TURB_K_EPSILON_LIN_PROD));
+  assert((tbm->model == CS_TURB_K_EPSILON) ||
+         (tbm->model == CS_TURB_K_EPSILON_LIN_PROD));
   assert(tbm->type == CS_TURB_RANS);
   assert(tbm->order == CS_TURB_FIRST_ORDER);
 

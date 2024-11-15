@@ -153,13 +153,13 @@ cs_turbulence_init_by_ref_quantities(void)
     if (uref >= 0.)
       cs_turbulence_ke_clip(-1, n_cells, 1);
 
-    if (turb_model->iturb == CS_TURB_V2F_PHI) {
+    if (turb_model->model == CS_TURB_V2F_PHI) {
       cs_real_t *cvar_phi = CS_F_(phi)->val;
       cs_real_t *cvar_fb = CS_F_(f_bar)->val;
       cs_array_real_set_scalar(n_cells_ext, 2./3., cvar_phi);
       cs_array_real_set_scalar(n_cells_ext, 0., cvar_fb);
     }
-    else if (turb_model->iturb == CS_TURB_V2F_BL_V2K) {
+    else if (turb_model->model == CS_TURB_V2F_BL_V2K) {
       cs_real_t *cvar_phi = CS_F_(phi)->val;
       cs_real_t *cvar_al = CS_F_(alp_bl)->val;
       cs_array_real_set_scalar(n_cells_ext, 2./3., cvar_phi);
@@ -167,10 +167,10 @@ cs_turbulence_init_by_ref_quantities(void)
     }
 
   }
-  else if (turb_model->itytur == 3)
+  else if (turb_model->order == CS_TURB_SECOND_ORDER)
     cs_turbulence_rij_init_by_ref_quantities(uref, almax);
 
-  else if (turb_model->iturb == CS_TURB_K_OMEGA) {
+  else if (turb_model->model == CS_TURB_K_OMEGA) {
 
     cs_real_t *cvar_k = CS_F_(k)->val;
     cs_real_t *cvar_omg = CS_F_(omg)->val;
@@ -189,7 +189,7 @@ cs_turbulence_init_by_ref_quantities(void)
 
   }
 
-  else if (turb_model->iturb == CS_TURB_SPALART_ALLMARAS) {
+  else if (turb_model->model == CS_TURB_SPALART_ALLMARAS) {
 
     cs_real_t *cvar_nusa = CS_F_(nusa)->val;
 
@@ -275,7 +275,7 @@ cs_turbulence_init_clip_and_verify(void)
         v_min[0] = cs_math_fmin(v_min[0], cvar_phi[c_id]);
         v_max[0] = cs_math_fmax(v_max[0], cvar_phi[c_id]);
       }
-      if (turb_model->iturb == CS_TURB_V2F_BL_V2K) {
+      if (turb_model->model == CS_TURB_V2F_BL_V2K) {
         cs_real_t *cvar_al = CS_F_(alp_bl)->val;
         for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
           v_min[1] = cs_math_fmin(v_min[1], cvar_al[c_id]);
@@ -304,7 +304,7 @@ cs_turbulence_init_clip_and_verify(void)
 
       /* For v2-f, BL-v2/k, also check that alpha is between 0 and 1. */
 
-      if (turb_model->iturb == CS_TURB_V2F_BL_V2K) {
+      if (turb_model->model == CS_TURB_V2F_BL_V2K) {
         if (v_min[1] < 0. || v_max[1] > 1.) {
           n_errors += 1;
           cs_log_warning
@@ -323,7 +323,7 @@ cs_turbulence_init_clip_and_verify(void)
 
   }
 
-  else if (turb_model->itytur == 3) {
+  else if (turb_model->order == CS_TURB_SECOND_ORDER) {
 
     cs_real_t v_min[5] = {HUGE_VAL, HUGE_VAL, HUGE_VAL, HUGE_VAL, HUGE_VAL};
     cs_real_t al_max[1] = {-HUGE_VAL};
@@ -340,7 +340,7 @@ cs_turbulence_init_clip_and_verify(void)
       v_min[3] = cs_math_fmin(v_min[3], cvar_ep[c_id]);
     }
 
-    if (turb_model->iturb == CS_TURB_RIJ_EPSILON_EBRSM) {
+    if (turb_model->model == CS_TURB_RIJ_EPSILON_EBRSM) {
       cs_real_t *cvar_al = CS_F_(alp_bl)->val;
       for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
         v_min[4] = cs_math_fmin(v_min[4], cvar_al[c_id]);
@@ -371,7 +371,7 @@ cs_turbulence_init_clip_and_verify(void)
          v_min[0], v_min[1], v_min[3], v_min[3]);
     }
 
-    if (turb_model->iturb == CS_TURB_RIJ_EPSILON_EBRSM) {
+    if (turb_model->model == CS_TURB_RIJ_EPSILON_EBRSM) {
       cs_parall_max(1, CS_REAL_TYPE, al_max);
 
       if (v_min[4] < 0. || al_max[0] > 1.) {
@@ -389,7 +389,7 @@ cs_turbulence_init_clip_and_verify(void)
     }
 
   }
-  else if (turb_model->iturb == CS_TURB_K_OMEGA) {
+  else if (turb_model->model == CS_TURB_K_OMEGA) {
 
     cs_real_t *cvar_k = CS_F_(k)->val;
     cs_real_t *cvar_omg = CS_F_(omg)->val;
@@ -416,7 +416,7 @@ cs_turbulence_init_clip_and_verify(void)
     }
 
   }
-  else if (turb_model->iturb == CS_TURB_SPALART_ALLMARAS) {
+  else if (turb_model->model == CS_TURB_SPALART_ALLMARAS) {
 
     cs_real_t *cvar_nusa = CS_F_(nusa)->val;
 

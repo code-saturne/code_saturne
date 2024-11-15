@@ -445,7 +445,7 @@ cs_user_model(void)
    *   CS_TURB_SPALART_ALLMARAS: Spalart-Allmaras model */
 
   cs_turb_model_t *turb_model = cs_get_glob_turb_model();
-  turb_model->iturb = CS_TURB_K_EPSILON_LIN_PROD;
+  turb_model->model = CS_TURB_K_EPSILON_LIN_PROD;
 
   /*! [turbulence_model_choice] */
 

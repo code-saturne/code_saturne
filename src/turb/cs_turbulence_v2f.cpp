@@ -135,7 +135,7 @@ _clip_v2f(cs_lnum_t  n_cells,
   }
 
   cs_real_t *cvar_al = nullptr, *cpro_a_clipped = nullptr;
-  if (cs_glob_turb_model->iturb == CS_TURB_V2F_BL_V2K) {
+  if (cs_glob_turb_model->model == CS_TURB_V2F_BL_V2K) {
     cvar_al = CS_F_(alp_bl)->val;
     int  clip_a_id = cs_field_get_key_int(CS_F_(alp_bl), kclipp);
     if (clip_a_id > -1) {
@@ -155,7 +155,7 @@ _clip_v2f(cs_lnum_t  n_cells,
     vmax[0] = cs_math_fmax(vmax[0], var);
   }
 
-  if (cs_glob_turb_model->iturb == CS_TURB_V2F_BL_V2K) {
+  if (cs_glob_turb_model->model == CS_TURB_V2F_BL_V2K) {
     vmin[1] = cs_math_big_r;
     vmax[1] = -cs_math_big_r;
     for (cs_lnum_t i = 0; i < n_cells; i++) {
@@ -210,7 +210,7 @@ _clip_v2f(cs_lnum_t  n_cells,
      and a 1 for values ​​greater than 1.
      --------------------------------------------------------------------- */
 
-  if (cs_glob_turb_model->iturb == CS_TURB_V2F_BL_V2K) {
+  if (cs_glob_turb_model->model == CS_TURB_V2F_BL_V2K) {
 
     nclp[0] = 0; nclp[1] = 0;
 
@@ -331,10 +331,10 @@ _solve_eq_fbr_al(const int         istprv,
 
   cs_field_t *f = nullptr;
 
-  if (cs_glob_turb_model->iturb == CS_TURB_V2F_PHI) {
+  if (cs_glob_turb_model->model == CS_TURB_V2F_PHI) {
     f = CS_F_(f_bar);
   }
-  else if (cs_glob_turb_model->iturb == CS_TURB_V2F_BL_V2K) {
+  else if (cs_glob_turb_model->model == CS_TURB_V2F_BL_V2K) {
     f = CS_F_(alp_bl);
   }
 
@@ -485,7 +485,7 @@ _solve_eq_fbr_al(const int         istprv,
 
   const cs_real_t d2s3 = 2.0/3.0;
 
-  if (cs_glob_turb_model->iturb == CS_TURB_V2F_PHI) {
+  if (cs_glob_turb_model->model == CS_TURB_V2F_PHI) {
 
     for (cs_lnum_t i = 0; i < n_cells; i++) {
       /* Compute the time scale*/
@@ -505,7 +505,7 @@ _solve_eq_fbr_al(const int         istprv,
     }
 
   }
-  else if (cs_glob_turb_model->iturb == CS_TURB_V2F_BL_V2K) {
+  else if (cs_glob_turb_model->model == CS_TURB_V2F_BL_V2K) {
 
     /* FIXME the computed terms are not used */
 
@@ -553,13 +553,13 @@ _solve_eq_fbr_al(const int         istprv,
     const cs_real_t x_e = cvara_ep[i];
     const cs_real_t x_nu = viscl[i]/crom[i];
 
-    if (cs_glob_turb_model->iturb == CS_TURB_V2F_PHI) {
+    if (cs_glob_turb_model->model == CS_TURB_V2F_PHI) {
       const cs_real_t ll_ke = pow(x_k, 1.5)/x_e;
       const cs_real_t ll_min
         = cs_turb_cv2fet*pow(cs_math_pow3(x_nu)/x_e, 0.25);
       l2 = cs_math_pow2(cs_turb_cv2fcl*cs_math_fmax(ll_ke, ll_min));
     }
-    else if (cs_glob_turb_model->iturb == CS_TURB_V2F_BL_V2K) {
+    else if (cs_glob_turb_model->model == CS_TURB_V2F_BL_V2K) {
       if (cs_glob_turb_model->hybrid_turb == 4) {
       /* HTLES method */
         const cs_real_t x_psi  = htles_psi[i];
@@ -825,7 +825,7 @@ _solve_eq_phi(const int           istprv,
   cs_real_t sigmak = cs_field_get_key_double
                        (CS_F_(k), cs_field_key_id("turbulent_schmidt"));
 
-  if (cs_glob_turb_model->iturb == CS_TURB_V2F_PHI) {
+  if (cs_glob_turb_model->model == CS_TURB_V2F_PHI) {
     const cs_real_t *cvar_fb = CS_F_(f_bar)->val;
 
     for (cs_lnum_t i = 0; i < n_cells; i++) {
@@ -841,7 +841,7 @@ _solve_eq_phi(const int           istprv,
                                + 2./x_k*cpro_pcvto[i]/sigmak*grad_pk[i]);
     }
   }
-  else if (cs_glob_turb_model->iturb == CS_TURB_V2F_BL_V2K) {
+  else if (cs_glob_turb_model->model == CS_TURB_V2F_BL_V2K) {
     const cs_real_t *cvara_al = CS_F_(alp_bl)->val_pre;
 
     for (cs_lnum_t i = 0; i < n_cells; i++) {
@@ -898,7 +898,7 @@ _solve_eq_phi(const int           istprv,
 
   /* Implict term (rhs) and matrix (rovsdt) */
 
-  if (cs_glob_turb_model->iturb == CS_TURB_V2F_PHI) {
+  if (cs_glob_turb_model->model == CS_TURB_V2F_PHI) {
 
     for (cs_lnum_t i = 0; i < n_cells; i++) {
       const cs_real_t prdv2f_m = cs_math_fmax(prdv2f[i], 0.0);
@@ -907,7 +907,7 @@ _solve_eq_phi(const int           istprv,
     }
   }
 
-  else if (cs_glob_turb_model->iturb == CS_TURB_V2F_BL_V2K) {
+  else if (cs_glob_turb_model->model == CS_TURB_V2F_BL_V2K) {
     const cs_real_t *cvara_al = CS_F_(alp_bl)->val_pre;
 
     for (cs_lnum_t i = 0; i < n_cells; i++) {
@@ -959,12 +959,12 @@ _solve_eq_phi(const int           istprv,
 
   if (eqp->idiff >= 1) {
 
-    if (cs_glob_turb_model->iturb == CS_TURB_V2F_PHI) {
+    if (cs_glob_turb_model->model == CS_TURB_V2F_PHI) {
       for (cs_lnum_t i = 0; i < n_cells; i++) {
         w2[i] = viscl[i] + visct[i]/sigmak;
       }
     }
-    else if (cs_glob_turb_model->iturb == CS_TURB_V2F_BL_V2K) {
+    else if (cs_glob_turb_model->model == CS_TURB_V2F_BL_V2K) {
       for (cs_lnum_t i = 0; i < n_cells; i++) {
         w2[i] = viscl[i]/2. + visct[i]/sigmak; /* FIXME */
       }
@@ -1125,13 +1125,13 @@ cs_turbulence_v2f(const cs_real_t   prdv2f[])
 
   if (istprv >= 0) {
     c_st_phi_p = cs_field_by_id(istprv)->val;
-    if (cs_glob_turb_model->iturb == CS_TURB_V2F_PHI) {
+    if (cs_glob_turb_model->model == CS_TURB_V2F_PHI) {
       istprv = cs_field_get_key_int(CS_F_(f_bar), kstprv);
       if (istprv >= 0)
         c_st_a_p = cs_field_by_id(istprv)->val;
     }
   }
-  else if (cs_glob_turb_model->iturb == CS_TURB_V2F_BL_V2K) {
+  else if (cs_glob_turb_model->model == CS_TURB_V2F_BL_V2K) {
     istprv = cs_field_get_key_int(CS_F_(alp_bl), kstprv);
     if (istprv >= 0)
       c_st_a_p = cs_field_by_id(istprv)->val;

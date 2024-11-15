@@ -154,7 +154,7 @@ cs_user_boundary_conditions(cs_domain_t  *domain,
      * (in the GUI, or in this file, before the current test). */
 
     int *mrkcel = nullptr;
-    if ((cs_glob_turb_model->iturb == CS_TURB_RIJ_EPSILON_EBRSM) ||
+    if ((cs_glob_turb_model->model == CS_TURB_RIJ_EPSILON_EBRSM) ||
         (cs_glob_turb_model->itytur == 5)){
 
       BFT_MALLOC(mrkcel, n_cells_ext, int);
@@ -283,7 +283,7 @@ cs_user_boundary_conditions(cs_domain_t  *domain,
 
         CS_F_(eps)->bc_coeffs->rcodcl1[face_id] = CS_F_(eps)->val[c_id];
 
-        if (cs_glob_turb_model->iturb == CS_TURB_RIJ_EPSILON_EBRSM)
+        if (cs_glob_turb_model->model == CS_TURB_RIJ_EPSILON_EBRSM)
           CS_F_(alp_bl)->bc_coeffs->rcodcl1[face_id] = CS_F_(alp_bl)->val[c_id];
       }
 
@@ -293,20 +293,20 @@ cs_user_boundary_conditions(cs_domain_t  *domain,
         CS_F_(eps)->bc_coeffs->rcodcl1[face_id] = CS_F_(eps)->val[c_id];
         CS_F_(phi)->bc_coeffs->rcodcl1[face_id] = CS_F_(phi)->val[c_id];
 
-        if (cs_glob_turb_model->iturb == CS_TURB_V2F_PHI)
+        if (cs_glob_turb_model->model == CS_TURB_V2F_PHI)
           CS_F_(f_bar)->bc_coeffs->rcodcl1[face_id] = CS_F_(f_bar)->val[c_id];
-        else if (cs_glob_turb_model->iturb == CS_TURB_V2F_BL_V2K)
+        else if (cs_glob_turb_model->model == CS_TURB_V2F_BL_V2K)
           CS_F_(alp_bl)->bc_coeffs->rcodcl1[face_id] = CS_F_(alp_bl)->val[c_id];
 
       }
 
-      else if (cs_glob_turb_model->iturb == CS_TURB_K_OMEGA) {
+      else if (cs_glob_turb_model->model == CS_TURB_K_OMEGA) {
 
         CS_F_(k)->bc_coeffs->rcodcl1[face_id] = CS_F_(k)->val[c_id];
         CS_F_(omg)->bc_coeffs->rcodcl1[face_id] = CS_F_(omg)->val[c_id];
       }
 
-      else if (cs_glob_turb_model->iturb ==  CS_TURB_SPALART_ALLMARAS) {
+      else if (cs_glob_turb_model->model ==  CS_TURB_SPALART_ALLMARAS) {
 
         CS_F_(nusa)->bc_coeffs->rcodcl1[face_id] = CS_F_(nusa)->val[c_id];
 

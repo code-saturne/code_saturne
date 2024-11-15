@@ -764,13 +764,10 @@ _solve_rit(const cs_field_t     *f,
            const cs_real_3_t     gradt[],
            const cs_real_3_t     grad_al[])
 {
-  if (   cs_glob_turb_model->itytur == 2
-      || cs_glob_turb_model->itytur == 5
-      || cs_glob_turb_model->iturb == CS_TURB_K_OMEGA) {
+  if (cs_glob_turb_model->order == CS_TURB_FIRST_ORDER)
     bft_error(__FILE__, __LINE__, 0,
               _("%s: use an Rij model with thermal model."),
               __func__);
-  }
 
   const cs_mesh_t *m = cs_glob_mesh;
   const cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;

@@ -424,7 +424,7 @@ _solve_most(int              n_var,
   if (th_f != nullptr)
     BFT_MALLOC(theipb, n_b_faces, cs_real_t);
 
-  if (   cs_glob_turb_model->itytur == 4
+  if (   cs_glob_turb_model->type == CS_TURB_LES
       && cs_glob_turb_les_model->idries == 1)
     BFT_MALLOC(visvdr, n_cells_ext, cs_real_t);
 
@@ -666,7 +666,7 @@ _solve_turbulence(cs_lnum_t   n_cells,
       && (   cs_glob_turb_model->itytur == 2
           || cs_glob_turb_model->itytur == 3
           || cs_glob_turb_model->itytur == 5
-          || cs_glob_turb_model->iturb == CS_TURB_K_OMEGA)) {
+          || cs_glob_turb_model->model == CS_TURB_K_OMEGA)) {
     bft_printf
       (_(" ------------------------------------------------------------\n\n"
          "  SOLVING TURBULENT VARIABLES EQUATIONS\n"
@@ -710,11 +710,11 @@ _solve_turbulence(cs_lnum_t   n_cells,
 
   }
   else if (cs_glob_turb_model->itytur == 3) {
-    if (cs_glob_turb_model->iturb == CS_TURB_RIJ_EPSILON_EBRSM)
+    if (cs_glob_turb_model->model == CS_TURB_RIJ_EPSILON_EBRSM)
       cs_turbulence_rij_solve_alpha(CS_F_(alp_bl)->id, -1, cs_turb_xcl);
     cs_turbulence_rij(-1);
   }
-  else if (cs_glob_turb_model->iturb == CS_TURB_K_OMEGA) {
+  else if (cs_glob_turb_model->model == CS_TURB_K_OMEGA) {
     cs_turbulence_kw(-1);
     cs_real_t *cvar_k = CS_F_(k)->val;
     cs_real_t *cvar_omg = CS_F_(omg)->val;
@@ -734,10 +734,10 @@ _solve_turbulence(cs_lnum_t   n_cells,
     }
 
     // HTLES
-    if (cs_glob_turb_model->hybrid_turb == 4)
+    if (cs_glob_turb_model->hybrid_turb == CS_HYBRID_HTLES)
       cs_turbulence_htles();
   }
-  else if (cs_glob_turb_model->iturb == CS_TURB_SPALART_ALLMARAS) {
+  else if (cs_glob_turb_model->model == CS_TURB_SPALART_ALLMARAS) {
     cs_turbulence_sa();
     cs_real_t *cvar_nusa = CS_F_(nusa)->val;
     const cs_real_t *cvara_nusa = CS_F_(nusa)->val_pre;

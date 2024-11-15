@@ -378,7 +378,7 @@ cs_turbulence_ke(int              phase_id,
      ============== */
 
   const cs_turb_model_type_t turb_model_type
-    = (cs_turb_model_type_t)(cs_glob_turb_model->iturb);
+    = (cs_turb_model_type_t)(cs_glob_turb_model->model);
 
   /* Allocate temporary arrays for the turbulence resolution */
 

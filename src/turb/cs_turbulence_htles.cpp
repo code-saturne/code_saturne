@@ -143,7 +143,7 @@ cs_turbulence_htles(void)
   cs_real_t *cvar_k   = (cs_real_t *)CS_F_(k)->val;
   cs_real_t *cvar_omg = nullptr;
   cs_real_t *cvar_eps = nullptr;
-  if (turb_model->iturb == CS_TURB_K_OMEGA) {
+  if (turb_model->model == CS_TURB_K_OMEGA) {
     cvar_omg = (cs_real_t *)CS_F_(omg)->val;
   }
   else {
@@ -163,7 +163,7 @@ cs_turbulence_htles(void)
   cs_real_t *mean_km  = cs_field_by_name("k_mod")->val;
   cs_real_t *mean_kr  = cs_field_by_name("k_res")->val;
   cs_real_t *mean_eps = cs_field_by_name("eps_mod")->val;
-  if (turb_model->iturb == CS_TURB_K_OMEGA) {
+  if (turb_model->model == CS_TURB_K_OMEGA) {
     mean_omg = cs_field_by_name("omg_mod")->val;
     kwsst_f1 = cs_field_by_name("f1_kwsst")->val;
   }
@@ -216,7 +216,7 @@ cs_turbulence_htles(void)
     mean_k[c_id] = mean_km[c_id] + mean_kr[c_id];
 
     /* Time averaged turbulent dissipation */
-    if (turb_model->iturb == CS_TURB_K_OMEGA) {
+    if (turb_model->model == CS_TURB_K_OMEGA) {
       mean_omg[c_id] += factor * (cvar_omg[c_id] - mean_omg[c_id]);
       mean_eps[c_id] = xcmu*mean_km[c_id]*mean_omg[c_id];
     }
@@ -279,13 +279,13 @@ cs_turbulence_htles(void)
 
     /* Hybridation function psi */
     cs_real_t xpsi = 0;
-    if (turb_model->iturb == CS_TURB_K_OMEGA) {
+    if (turb_model->model == CS_TURB_K_OMEGA) {
       cs_real_t xxf1   = kwsst_f1[c_id];
       cs_real_t xgamma = xxf1 * cs_turb_ckwgm1 + (1. - xxf1)*cs_turb_ckwgm2;
       cs_real_t xbeta  = xxf1 * cs_turb_ckwbt1 + (1. - xxf1)*cs_turb_ckwbt2;
       xpsi   = xbeta/(xcmu*xgamma + xr*(xbeta - xcmu*xgamma));
     }
-    else if (turb_model->iturb == CS_TURB_V2F_BL_V2K) {
+    else if (turb_model->model == CS_TURB_V2F_BL_V2K) {
       cs_real_t xce1 = cs_turb_cpale1;
       cs_real_t xce2 = cs_turb_cpale2;
       xpsi   = xce2/(xce1 + xr*(xce2 - xce1));
@@ -293,9 +293,9 @@ cs_turbulence_htles(void)
 
     /* Modeled time scale T */
     cs_real_t xt = 0;
-    if (turb_model->iturb == CS_TURB_K_OMEGA)
+    if (turb_model->model == CS_TURB_K_OMEGA)
       xt = xr/xpsi*(xkm+xicc*xkr)/(xcmu * mean_omg[c_id] * xkm);
-    else if (turb_model->iturb == CS_TURB_V2F_BL_V2K)
+    else if (turb_model->model == CS_TURB_V2F_BL_V2K)
       xt = xr/xpsi*(xkm+xicc*xkr)/(xepsm);
 
     /* Save fields */
@@ -331,7 +331,7 @@ cs_htles_initialization(void) {
   cs_real_t *cvar_k   = (cs_real_t *)CS_F_(k)->val;
   cs_real_t *cvar_omg = nullptr;
   cs_real_t *cvar_eps = nullptr;
-  if (turb_model->iturb == CS_TURB_K_OMEGA) {
+  if (turb_model->model == CS_TURB_K_OMEGA) {
     cvar_omg = (cs_real_t *)CS_F_(omg)->val;
   }
   else {
@@ -349,7 +349,7 @@ cs_htles_initialization(void) {
   cs_real_t *mean_omg = nullptr;
   cs_real_t *kwsst_f1 = nullptr;
 
-  if (turb_model->iturb == CS_TURB_K_OMEGA) {
+  if (turb_model->model == CS_TURB_K_OMEGA) {
     mean_omg = cs_field_by_name("omg_mod")->val;
     kwsst_f1 = cs_field_by_name("f1_kwsst")->val;
   }
@@ -377,7 +377,7 @@ cs_htles_initialization(void) {
     hyb_r[c_id]   = 1.0;
     hyb_icc[c_id] = 1.0;
     hyb_fs[c_id]  = 1.0;
-    if (turb_model->iturb == CS_TURB_K_OMEGA) {
+    if (turb_model->model == CS_TURB_K_OMEGA) {
       hyb_t[c_id] = 1.0/(xcmu*cvar_omg[c_id]);
     }
     else {
@@ -399,7 +399,7 @@ cs_htles_initialization(void) {
     mean_k[c_id]  = mean_km[c_id] + mean_kr[c_id];
 
     /* Time averaged turbulent dissipation */
-    if (turb_model->iturb == CS_TURB_K_OMEGA) {
+    if (turb_model->model == CS_TURB_K_OMEGA) {
       mean_omg[c_id] = cvar_omg[c_id];
       mean_eps[c_id] = xcmu*mean_km[c_id]*mean_omg[c_id];
       kwsst_f1[c_id] = 1.0;

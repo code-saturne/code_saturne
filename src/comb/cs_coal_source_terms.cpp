@@ -160,7 +160,7 @@ _coal_fp2st(const cs_field_t  *fld_scal,
     cvara_rij = (const cs_real_6_t *)(CS_F_(k)->val_pre);
     cvara_ep = CS_F_(eps)->val_pre;
   }
-  else if (cs_glob_turb_model->iturb == CS_TURB_K_OMEGA) {
+  else if (cs_glob_turb_model->model == CS_TURB_K_OMEGA) {
     cvara_k = CS_F_(k)->val_pre;
     cvara_omg = CS_F_(omg)->val_pre;
   }
@@ -171,7 +171,7 @@ _coal_fp2st(const cs_field_t  *fld_scal,
   if (   cs_glob_turb_model->itytur == 2
       || cs_glob_turb_model->itytur == 3
       || cs_glob_turb_model->itytur == 5
-      || cs_glob_turb_model->iturb == CS_TURB_K_OMEGA) {
+      || cs_glob_turb_model->model == CS_TURB_K_OMEGA) {
 
     // For lack of information on F1M+F2M, we take the same options as for F1M[0].
 

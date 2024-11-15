@@ -144,8 +144,8 @@ _cs_boundary_conditions_set_coeffs_turb_scalar(cs_field_t  *f_sc,
   const cs_mesh_t *mesh = cs_glob_mesh;
   const cs_mesh_quantities_t *fvq = cs_glob_mesh_quantities;
   const cs_fluid_properties_t *fluid_props = cs_glob_fluid_properties;
-  const cs_turb_model_type_t   iturb =
-    static_cast<cs_turb_model_type_t>(cs_glob_turb_model->iturb);
+  const cs_turb_model_type_t   model =
+    static_cast<cs_turb_model_type_t>(cs_glob_turb_model->model);
   const cs_real_t xkappa = cs_turb_xkappa;
 
   const cs_lnum_t n_b_faces = mesh->n_b_faces;
@@ -206,7 +206,7 @@ _cs_boundary_conditions_set_coeffs_turb_scalar(cs_field_t  *f_sc,
   if (   eqp_sc->idften & CS_ANISOTROPIC_DIFFUSION
       || turb_flux_model_type == CS_TURB_HYBRID) {
 
-    if (   iturb != CS_TURB_RIJ_EPSILON_EBRSM
+    if (   model != CS_TURB_RIJ_EPSILON_EBRSM
         || turb_flux_model_type == CS_TURB_HYBRID) {
       cs_field_t *f_a_t_visc
         = cs_field_by_name("anisotropic_turbulent_viscosity");
@@ -452,7 +452,7 @@ _cs_boundary_conditions_set_coeffs_turb_scalar(cs_field_t  *f_sc,
     cs_real_t hflui = 0.0;
 
     /* Wall function and Dirichlet or Neumann on the scalar */
-    if (   iturb != CS_TURB_NONE
+    if (   model != CS_TURB_NONE
         && (   icodcl_sc[f_id] == 5
             || icodcl_sc[f_id] == 6
             || icodcl_sc[f_id] == 15
@@ -584,7 +584,7 @@ _cs_boundary_conditions_set_coeffs_turb_scalar(cs_field_t  *f_sc,
       }
 
       /* Dirichlet on the scalar, with wall function */
-      if (iturb != CS_TURB_NONE && icodcl_sc[f_id] == 6) {
+      if (model != CS_TURB_NONE && icodcl_sc[f_id] == 6) {
         /* 1/T+ */
         const cs_real_t dtplus = 1.0 / tplus;
         /* FIXME apparently buet should be buk */
@@ -630,7 +630,7 @@ _cs_boundary_conditions_set_coeffs_turb_scalar(cs_field_t  *f_sc,
 
         if (turb_flux_model_type >= 1) {
           /* In the log layer */
-          if (yplus >= ypth && iturb != CS_TURB_NONE) {
+          if (yplus >= ypth && model != CS_TURB_NONE) {
             const cs_real_t xmutlm = xkappa * visclc * yplus;
 
             const cs_real_t mut_lm_dmut
@@ -936,8 +936,8 @@ _cs_boundary_conditions_set_coeffs_turb_vector(cs_field_t  *f_v,
   const cs_mesh_t *mesh = cs_glob_mesh;
   const cs_mesh_quantities_t *fvq = cs_glob_mesh_quantities;
   const cs_fluid_properties_t *fluid_props = cs_glob_fluid_properties;
-  const cs_turb_model_type_t   iturb =
-    static_cast<cs_turb_model_type_t>(cs_glob_turb_model->iturb);
+  const cs_turb_model_type_t   model =
+    static_cast<cs_turb_model_type_t>(cs_glob_turb_model->model);
 
   const cs_lnum_t n_b_faces = mesh->n_b_faces;
   const cs_lnum_t *b_face_cells = mesh->b_face_cells;
@@ -1056,7 +1056,7 @@ _cs_boundary_conditions_set_coeffs_turb_vector(cs_field_t  *f_v,
     cs_real_t hflui = 0.0;
 
     /* Wall function and Dirichlet or Neumann on the scalar */
-    if (iturb != CS_TURB_NONE && (icodcl_v[f_id] == 5 || icodcl_v[f_id] == 3)) {
+    if (model != CS_TURB_NONE && (icodcl_v[f_id] == 5 || icodcl_v[f_id] == 3)) {
 
       const cs_real_t rough_t = (f_rough != nullptr) ? bpro_rough_t[f_id] : 0;
 
@@ -1152,7 +1152,7 @@ _cs_boundary_conditions_set_coeffs_turb_vector(cs_field_t  *f_v,
 
       if (turb_flux_model_type >= 1) {
         /* In the log layer */
-        if (yplus >= ypth && iturb != CS_TURB_NONE) {
+        if (yplus >= ypth && model != CS_TURB_NONE) {
           const cs_real_t xmutlm = cs_turb_xkappa * visclc * (yplus + dplus);
           const cs_real_t rcprod
             = cs_math_fmin(cs_turb_xkappa,
@@ -1286,8 +1286,8 @@ _update_physical_quantities_smooth_wall(const cs_lnum_t  c_id,
 {
   const cs_mesh_quantities_t *fvq = cs_glob_mesh_quantities;
   const cs_real_t xkappa = cs_turb_xkappa;
-  const cs_turb_model_type_t  iturb =
-    static_cast<cs_turb_model_type_t>(cs_glob_turb_model->iturb);
+  const cs_turb_model_type_t  model =
+    static_cast<cs_turb_model_type_t>(cs_glob_turb_model->model);
   const int itytur = cs_glob_turb_model->itytur;
   const int order = cs_glob_turb_model->order;
   const int type = cs_glob_turb_model->type;
@@ -1307,7 +1307,7 @@ _update_physical_quantities_smooth_wall(const cs_lnum_t  c_id,
     /* k-epsilon and k-omega
        --------------------- */
 
-    if (itytur == 2 || iturb == CS_TURB_K_OMEGA) {
+    if (itytur == 2 || model == CS_TURB_K_OMEGA) {
 
       const cs_real_t xmutlm = xkappa * visclc * (yplus + dplus);
       /* FIXME should be efvisc... */
@@ -1337,14 +1337,14 @@ _update_physical_quantities_smooth_wall(const cs_lnum_t  c_id,
     /* No turbulence, mixing length or Rij-espilon
        -------------------------------------------*/
 
-    else if (   iturb == CS_TURB_NONE || iturb == CS_TURB_MIXING_LENGTH
+    else if (   model == CS_TURB_NONE || model == CS_TURB_MIXING_LENGTH
              || order == CS_TURB_SECOND_ORDER) {
 
       /* In the case of elliptic weighting, we should ignore the wall laws.
          So we use a test on the turbulence model:
          With LRR or SSG use wall laws, with EBRSM, use no-slip condition. */
 
-      if (iturb == CS_TURB_RIJ_EPSILON_EBRSM || iturb ==  CS_TURB_NONE) {
+      if (model == CS_TURB_RIJ_EPSILON_EBRSM || model ==  CS_TURB_NONE) {
         *uiptn = 0.;
 
       }
@@ -1364,7 +1364,7 @@ _update_physical_quantities_smooth_wall(const cs_lnum_t  c_id,
     /* LES and Spalart Allmaras
        ------------------------ */
 
-    else if (type == CS_TURB_LES || iturb == CS_TURB_SPALART_ALLMARAS) {
+    else if (type == CS_TURB_LES || model == CS_TURB_SPALART_ALLMARAS) {
 
       *uiptn  = utau - 1.5 * uet / xkappa;
 
@@ -1446,8 +1446,8 @@ _update_physical_quantities_rough_wall(const cs_real_t  visclc,
                                        cs_real_t       *uiptn)
 {
   const cs_real_t xkappa = cs_turb_xkappa;
-  const cs_turb_model_type_t iturb =
-    static_cast<cs_turb_model_type_t>(cs_glob_turb_model->iturb);
+  const cs_turb_model_type_t model =
+    static_cast<cs_turb_model_type_t>(cs_glob_turb_model->model);
   const int itytur = cs_glob_turb_model->itytur;
   const cs_wall_f_s_type_t iwalfs = cs_glob_wall_functions->iwalfs;
 
@@ -1457,12 +1457,12 @@ _update_physical_quantities_rough_wall(const cs_real_t  visclc,
      All turbulence models (except v2f and EBRSM)
     -------------------------------------------- */
 
-  if (   iturb == CS_TURB_NONE || itytur == 2 || itytur == 4
-      || iturb == CS_TURB_K_OMEGA
-      || iturb == CS_TURB_MIXING_LENGTH
-      || iturb == CS_TURB_RIJ_EPSILON_LRR
-      || iturb == CS_TURB_RIJ_EPSILON_SSG
-      || iturb == CS_TURB_SPALART_ALLMARAS) {
+  if (   model == CS_TURB_NONE || itytur == 2 || itytur == 4
+      || model == CS_TURB_K_OMEGA
+      || model == CS_TURB_MIXING_LENGTH
+      || model == CS_TURB_RIJ_EPSILON_LRR
+      || model == CS_TURB_RIJ_EPSILON_SSG
+      || model == CS_TURB_SPALART_ALLMARAS) {
 
     if (visctc > cs_math_epzero) {
 
@@ -1826,8 +1826,8 @@ cs_boundary_conditions_set_coeffs_turb(int        isvhb,
   const cs_real_t xkappa = cs_turb_xkappa;
 
   const cs_turb_model_t *turb_model = cs_get_glob_turb_model();
-  const cs_turb_model_type_t iturb =
-    static_cast<cs_turb_model_type_t>(cs_glob_turb_model->iturb);
+  const cs_turb_model_type_t model =
+    static_cast<cs_turb_model_type_t>(cs_glob_turb_model->model);
   const int n_fields = cs_field_n_fields();
 
   const cs_lnum_t nt_cur = cs_glob_time_step->nt_cur;
@@ -1949,11 +1949,11 @@ cs_boundary_conditions_set_coeffs_turb(int        isvhb,
   if (itytur == 2 || itytur == 5) {
     f_eps = CS_F_(eps);
     f_k = CS_F_(k);
-    if (iturb == CS_TURB_V2F_PHI) {
+    if (model == CS_TURB_V2F_PHI) {
       f_phi = CS_F_(phi);
       f_f_bar = CS_F_(f_bar);
     }
-    else if (iturb == CS_TURB_V2F_BL_V2K) {
+    else if (model == CS_TURB_V2F_BL_V2K) {
       f_phi = CS_F_(phi);
       f_alpha = CS_F_(alp_bl);
     }
@@ -1961,16 +1961,16 @@ cs_boundary_conditions_set_coeffs_turb(int        isvhb,
   else if (order == CS_TURB_SECOND_ORDER) {
     f_eps = CS_F_(eps);
     f_rij = CS_F_(rij);
-    if (iturb == CS_TURB_RIJ_EPSILON_EBRSM)
+    if (model == CS_TURB_RIJ_EPSILON_EBRSM)
       f_alpha = CS_F_(alp_bl);
     eqp_eps = cs_field_get_equation_param(f_eps);
     eqp_rij = cs_field_get_equation_param(f_rij);
   }
-  else if (iturb == CS_TURB_K_OMEGA) {
+  else if (model == CS_TURB_K_OMEGA) {
     f_k = CS_F_(k);
     f_omg = CS_F_(omg);
   }
-  else if (iturb == CS_TURB_SPALART_ALLMARAS) {
+  else if (model == CS_TURB_SPALART_ALLMARAS) {
     f_nusa = CS_F_(nusa);
     eqp_nusa = cs_field_get_equation_param(f_nusa);
   }
@@ -2042,7 +2042,7 @@ cs_boundary_conditions_set_coeffs_turb(int        isvhb,
   cs_lnum_t iuiptn = 0;
 
   cs_real_t alpha_rnn;
-  if (   iturb == CS_TURB_RIJ_EPSILON_LRR
+  if (   model == CS_TURB_RIJ_EPSILON_LRR
       && cs_math_fabs(cs_turb_crij2) <= cs_math_epzero
       && cs_turb_crij1 > 1.0) {
     /* Alpha constant for a realisable BC for R12 with the Rotta model */
@@ -2709,7 +2709,7 @@ cs_boundary_conditions_set_coeffs_turb(int        isvhb,
       /* Launder Sharma boundary conditions
          ================================== */
 
-      if (iturb == CS_TURB_K_EPSILON_LS && icodcl_vel[f_id] == 5) {
+      if (model == CS_TURB_K_EPSILON_LS && icodcl_vel[f_id] == 5) {
 
         /* Dirichlet Boundary Condition on k
            --------------------------------- */
@@ -2798,7 +2798,7 @@ cs_boundary_conditions_set_coeffs_turb(int        isvhb,
       /* Quadratic Baglietto k-epsilon model
          =================================== */
 
-      else if (iturb == CS_TURB_K_EPSILON_QUAD && icodcl_vel[f_id] == 5) {
+      else if (model == CS_TURB_K_EPSILON_QUAD && icodcl_vel[f_id] == 5) {
 
         /* Dirichlet Boundary Condition on k
            --------------------------------- */
@@ -3052,9 +3052,9 @@ cs_boundary_conditions_set_coeffs_turb(int        isvhb,
 
         /* LRR and the Standard SGG or EB-RSM + wall functions */
         if (      ((iuntur == 1)
-               && (   iturb == CS_TURB_RIJ_EPSILON_LRR
-                   || iturb == CS_TURB_RIJ_EPSILON_SSG))
-            || (   iturb == CS_TURB_RIJ_EPSILON_EBRSM
+               && (   model == CS_TURB_RIJ_EPSILON_LRR
+                   || model == CS_TURB_RIJ_EPSILON_SSG))
+            || (   model == CS_TURB_RIJ_EPSILON_EBRSM
                 && cs_glob_wall_functions->iwallf != 0
                 && yplus > cs_math_epzero)
             || icodcl_vel[f_id] == 6) {
@@ -3215,7 +3215,7 @@ cs_boundary_conditions_set_coeffs_turb(int        isvhb,
         hint = (visclc + visctc / sigmae) / distbf;
       }
 
-      if (iturb == CS_TURB_RIJ_EPSILON_LRR || iturb == CS_TURB_RIJ_EPSILON_SSG
+      if (model == CS_TURB_RIJ_EPSILON_LRR || model == CS_TURB_RIJ_EPSILON_SSG
           || (order == CS_TURB_SECOND_ORDER && icodcl_vel[f_id] == 6)) {
 
         /* Si yplus=0, on met coefa a 0 directement pour eviter une division
@@ -3312,7 +3312,7 @@ cs_boundary_conditions_set_coeffs_turb(int        isvhb,
       }
 
       /* process only for smooth wall here after */
-      else if (iturb == CS_TURB_RIJ_EPSILON_EBRSM && icodcl_vel[f_id] == 5) {
+      else if (model == CS_TURB_RIJ_EPSILON_EBRSM && icodcl_vel[f_id] == 5) {
 
         cs_real_t pimp = 0.0;
 
@@ -3428,7 +3428,7 @@ cs_boundary_conditions_set_coeffs_turb(int        isvhb,
     /* Boundary conditions on k, epsilon, f_bar and phi in the phi_Fbar model
        ====================================================================== */
 
-    else if (iturb == CS_TURB_V2F_PHI) {
+    else if (model == CS_TURB_V2F_PHI) {
 
       /* Dirichlet Boundary Condition on k
          --------------------------------- */
@@ -3498,7 +3498,7 @@ cs_boundary_conditions_set_coeffs_turb(int        isvhb,
     /* Boundary conditions on k, epsilon, phi and alpha in the Bl-v2/k model
        ===================================================================== */
 
-    else if (iturb == CS_TURB_V2F_BL_V2K) {
+    else if (model == CS_TURB_V2F_BL_V2K) {
 
       /* Dirichlet Boundary Condition on k
          --------------------------------- */
@@ -3569,7 +3569,7 @@ cs_boundary_conditions_set_coeffs_turb(int        isvhb,
     /* Boundary conditions on k and omega
        ================================== */
 
-    else if (iturb == CS_TURB_K_OMEGA) {
+    else if (model == CS_TURB_K_OMEGA) {
 
       /* Dirichlet Boundary Condition on k
          --------------------------------- */
@@ -3701,7 +3701,7 @@ cs_boundary_conditions_set_coeffs_turb(int        isvhb,
     /* Boundary conditions on the Spalart Allmaras turbulence model
        ============================================================ */
 
-    else if (iturb == CS_TURB_SPALART_ALLMARAS) {
+    else if (model == CS_TURB_SPALART_ALLMARAS) {
 
       /* Dirichlet Boundary Condition on nusa
          ------------------------------------ */
@@ -3860,7 +3860,7 @@ cs_boundary_conditions_set_coeffs_turb(int        isvhb,
 
     bool warn_refine = false;
 
-    if (   (iturb == CS_TURB_NONE && n_per_layer[0] != 0)
+    if (   (model == CS_TURB_NONE && n_per_layer[0] != 0)
         ||  (itytur == 5 && n_per_layer[0] != 0)
         || ((itytur == 2 || order == CS_TURB_SECOND_ORDER) && n_per_layer[1] > 0))
       _ntlast = nt_cur;
@@ -3922,7 +3922,7 @@ cs_boundary_conditions_set_coeffs_turb(int        isvhb,
 
       bool need_close = false;
 
-      if (iturb == CS_TURB_NONE) {
+      if (model == CS_TURB_NONE) {
         cs_log_printf
           (CS_LOG_DEFAULT,
            _("@\n"
@@ -3974,9 +3974,9 @@ cs_boundary_conditions_set_coeffs_turb(int        isvhb,
       }
 
       /* No warnings in EBRSM */
-      if (   (itytur ==  2 && iturb != CS_TURB_K_EPSILON_LS)
-          || iturb == CS_TURB_RIJ_EPSILON_LRR
-          || iturb == CS_TURB_RIJ_EPSILON_SSG) {
+      if (   (itytur ==  2 && model != CS_TURB_K_EPSILON_LS)
+          || model == CS_TURB_RIJ_EPSILON_LRR
+          || model == CS_TURB_RIJ_EPSILON_SSG) {
         cs_log_printf
           (CS_LOG_DEFAULT,
            _("@\n"
@@ -4002,8 +4002,8 @@ cs_boundary_conditions_set_coeffs_turb(int        isvhb,
       }
 
       if (   eqp_vel->verbosity < 2
-          && (   iturb !=  CS_TURB_RIJ_EPSILON_EBRSM
-              && iturb !=  CS_TURB_K_EPSILON_LS)) {
+          && (   model !=  CS_TURB_RIJ_EPSILON_EBRSM
+              && model !=  CS_TURB_K_EPSILON_LS)) {
         cs_log_printf
           (CS_LOG_DEFAULT,
            _("@\n"

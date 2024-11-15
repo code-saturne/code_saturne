@@ -177,7 +177,7 @@ cs_steady_laminar_flamelet_source_terms(int        fld_id,
   cs_field_t *f_fp2m = CS_F_(fp2m);
 
   cs_real_t *turb_diff = NULL;
-  if (cs_glob_turb_model->iturb == 41) {
+  if (cs_glob_turb_model->model == 41) {
     /* Retrieve turbulent diffusivity value for the mixture fraction */
     const int t_dif_id = cs_field_get_key_int(f_fm, key_turb_diff);
     if (t_dif_id > -1)
@@ -280,7 +280,7 @@ cs_steady_laminar_flamelet_source_terms(int        fld_id,
       }
     }
 
-  } /* End test on iturb = 41 */
+  } /* End test on model = 41 */
 
   if (cs_glob_physical_model_flag[CS_COMBUSTION_SLFM] >= 2) {
 

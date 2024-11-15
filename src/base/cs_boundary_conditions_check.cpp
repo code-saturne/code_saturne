@@ -134,7 +134,7 @@ cs_boundary_conditions_check(int  bc_type[],
   const cs_lnum_t n_b_faces = mesh->n_b_faces;
   const int n_fields = cs_field_n_fields();
 
-  const cs_turb_model_type_t iturb
+  const cs_turb_model_type_t model
     = (cs_turb_model_type_t)cs_glob_turb_model->model;
   int itytur = cs_glob_turb_model->itytur;
 
@@ -376,7 +376,7 @@ cs_boundary_conditions_check(int  bc_type[],
 
   cs_gnum_t n_ebrsm_rough_errors = 0;
 
-  if (iturb == CS_TURB_RIJ_EPSILON_EBRSM) {
+  if (model == CS_TURB_RIJ_EPSILON_EBRSM) {
 
     for (int jj = 0; jj < n_fields; jj++) {
 
