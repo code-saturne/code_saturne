@@ -539,11 +539,11 @@ _compute_rhs_lsq_strided_cells(cs_lnum_t             n_cells,
   // size_t i = (c_id / 3) % 3;
   // size_t j = c_id % 3;
 
-  __shared__ cs_real_t _rhs[blocksize][stride][3];
+  cs_real_t _rhs[stride][3];
 
   for (cs_lnum_t i = 0; i < stride; i++) {
     for (cs_lnum_t j = 0; j < 3; j++) {
-      _rhs[lidx][i][j] = 0.0;
+      _rhs[i][j] = 0.0;
     }
   }
 
@@ -587,7 +587,7 @@ _compute_rhs_lsq_strided_cells(cs_lnum_t             n_cells,
       cs_real_t pfac = (pvar2[i] - pvar1[i]) * ddc;
       for (cs_lnum_t j = 0; j < 3; j++) {
         fctb[j] = dc[j] * pfac;
-        _rhs[lidx][i][j] += lweight * fctb[j];
+        _rhs[i][j] += lweight * fctb[j];
       }
     }
 
@@ -615,17 +615,17 @@ _compute_rhs_lsq_strided_cells(cs_lnum_t             n_cells,
       for (cs_lnum_t i = 0; i < stride; i++) {
         cs_real_t pfac = (pvar2[i] - pvar1[i]) * ddc;
         for (cs_lnum_t j = 0; j < 3; j++) {
-          _rhs[lidx][i][j] += dc[j] * pfac;
+          _rhs[i][j] += dc[j] * pfac;
         }
       }
     }
   }
 
-  /* Copy from shared memory */
+  /* Copy from local memory */
 
   for (cs_lnum_t i = 0; i < stride; i++) {
     for (cs_lnum_t j = 0; j < 3; j++) {
-      rhs[c_id1][i][j] = _rhs[lidx][i][j];
+      rhs[c_id1][i][j] = _rhs[i][j];
     }
   }
 }
@@ -666,11 +666,11 @@ _compute_rhs_lsq_strided_b_face(cs_lnum_t             n_b_cells,
   cs_lnum_t s_id = cell_b_faces_idx[c_id];
   cs_lnum_t e_id = cell_b_faces_idx[c_id + 1];
 
-  __shared__ cs_real_t _rhs[blocksize][stride][3];
+  cs_real_t _rhs[stride][3];
 
   for (cs_lnum_t i = 0; i < stride; i++){
     for (cs_lnum_t j = 0; j < 3; j++){
-      _rhs[lidx][i][j] = rhs[c_id][i][j];
+      _rhs[i][j] = rhs[c_id][i][j];
     }
   }
 
@@ -707,7 +707,7 @@ _compute_rhs_lsq_strided_b_face(cs_lnum_t             n_b_cells,
       cs_real_t pfac = (var_f[kk] - pvar_c[kk]) * ddif;
 
       for (cs_lnum_t ll = 0; ll < 3; ll++)
-        _rhs[lidx][kk][ll] += dif[ll] * pfac;
+        _rhs[kk][ll] += dif[ll] * pfac;
     }
 
   } /* loop on boundary faces */
@@ -716,7 +716,7 @@ _compute_rhs_lsq_strided_b_face(cs_lnum_t             n_b_cells,
 
   for (cs_lnum_t i = 0; i < stride; i++){
     for (cs_lnum_t j = 0; j < 3; j++){
-      rhs[c_id][i][j] = _rhs[lidx][i][j];
+      rhs[c_id][i][j] = _rhs[i][j];
     }
   }
 }
@@ -1003,11 +1003,11 @@ _gg_with_r_gradient_cell_cells(cs_lnum_t           n_cells,
   cs_lnum_t s_id = cell_cells_idx[c_id1];
   cs_lnum_t e_id = cell_cells_idx[c_id1 + 1];
 
-  __shared__ cs_real_t _grad[blocksize][stride][3];
+  cs_real_t _grad[stride][3];
 
   for (cs_lnum_t i = 0; i < stride; i++){
     for (cs_lnum_t j = 0; j < 3; j++){
-      _grad[lidx][i][j] = 0;
+      _grad[i][j] = 0;
     }
   }
 
@@ -1044,14 +1044,14 @@ _gg_with_r_gradient_cell_cells(cs_lnum_t           n_cells,
                                            + _r_grad2[i][2]));
 
       for (cs_lnum_t j = 0; j < 3; j++) {
-        _grad[lidx][i][j] += f_sgn * (pfaci + rfac) * _i_f_face_normal[j];
+        _grad[i][j] += f_sgn * (pfaci + rfac) * _i_f_face_normal[j];
       }
     }
   }
 
   for (cs_lnum_t i = 0; i < stride; i++){
     for (cs_lnum_t j = 0; j < 3; j++){
-      grad[c_id1][i][j] = _grad[lidx][i][j];
+      grad[c_id1][i][j] = _grad[i][j];
     }
   }
 }
