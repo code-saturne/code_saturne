@@ -235,6 +235,19 @@ cs_medcoupling_mesh_get_connectivity(cs_medcoupling_mesh_t  *m);
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Export a medcoupling_mesh
+ *
+ * \param[in] mesh  cs_medcoupling_mesh_t pointer
+ * \param[in] name  name of the file
+ *
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_medcoupling_mesh_export(cs_medcoupling_mesh_t *m, const std::string name);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Returns a pointer to a MEDCouplingUMesh of a plane.
  *
  * \param[in] origin   Plane origin coordinates

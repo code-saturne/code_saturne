@@ -980,15 +980,21 @@ cs_paramedmem_def_coupled_field(cs_paramedmem_coupling_t  *c,
     break;
 
   default:
-    assert(0);
+    bft_error(__FILE__,
+              __LINE__,
+              0,
+              _("%s: The nature of field is not supported"),
+              __func__);
   }
 
 #if USE_PARAFIELD == 1
   pf->getField()->setNature(nature);
   pf->getField()->setName(name);
+  pf->getField()->getArray()->fillWithZero();
 #else
   pf->setNature(nature);
   pf->setName(name);
+  pf->getArray()->fillWithZero();
 #endif
 
 #endif
@@ -1099,8 +1105,7 @@ cs_paramedmem_field_export(cs_paramedmem_coupling_t  *c,
     bft_error(__FILE__, __LINE__, 0,
               _("Error: Could not find field '%s'."), name);
 
-  double  *val_ptr = f->getArray()->getPointer();
-  const int dim = f->getNumberOfComponents();
+  double *val_ptr = f->getArray()->getPointer();
 
   /* Assign element values */
 
@@ -1112,6 +1117,7 @@ cs_paramedmem_field_export(cs_paramedmem_coupling_t  *c,
   }
   else {
     cs_lnum_t n_elts = c->mesh->n_elts;
+    const int       dim    = f->getNumberOfComponents();
     const cs_lnum_t _dim = dim;
     assert(n_elts * _dim <= f->getNumberOfValues());
     for (cs_lnum_t i = 0; i < n_elts; i++) {
@@ -1225,14 +1231,14 @@ cs_paramedmem_field_import(cs_paramedmem_coupling_t  *c,
     }
   }
 
-  const double  *val_ptr = f->getArray()->getConstPointer();
-  const int dim = f->getNumberOfComponents();
+  const double *val_ptr = f->getArray()->getConstPointer();
 
   /* Import element values */
 
   cs_lnum_t *connec = c->mesh->new_to_old;
 
   if (connec != nullptr) {
+    const int  dim    = f->getNumberOfComponents();
     cs_lnum_t  _dim = dim;
     cs_lnum_t  n_elts = c->mesh->n_elts;
     assert(n_elts * _dim <= f->getNumberOfValues());

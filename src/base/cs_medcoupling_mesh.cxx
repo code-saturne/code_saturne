@@ -75,6 +75,7 @@
 // Medloader
 #if defined(HAVE_MEDCOUPLING_LOADER)
 #include <MEDFileMesh.hxx>
+#include <MEDLoader.hxx>
 #endif
 
 using namespace MEDCoupling;
@@ -840,8 +841,7 @@ _copy_mesh_from_base(cs_mesh_t              *csmesh,
         pmmesh->med_mesh->getBoundingBox(pmmesh->bbox);
       }
     }
-      else if (pmmesh->elt_dim == 2) {
-
+    else if (pmmesh->elt_dim == 2) {
       /* Creation of a new nodal mesh from selected border faces */
 
       if (pmmesh->sel_criteria != nullptr) {
@@ -857,7 +857,6 @@ _copy_mesh_from_base(cs_mesh_t              *csmesh,
       BFT_MALLOC(pmmesh->new_to_old, pmmesh->n_elts, cs_lnum_t);
 
       _assign_face_mesh(csmesh, pmmesh);
-
     }
   } /* if n_etls == 0 */
 #endif
@@ -1150,6 +1149,33 @@ cs_medcoupling_mesh_get_connectivity(cs_medcoupling_mesh_t  *m)
     retval = m->new_to_old;
 
   return retval;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Export a medcoupling_mesh
+ *
+ * \param[in] mesh  cs_medcoupling_mesh_t pointer
+ * \param[in] name  name of the file
+ *
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_medcoupling_mesh_export(cs_medcoupling_mesh_t *m, const std::string name)
+{
+#if defined(HAVE_MEDCOUPLING)
+  WriteUMesh(name, m->med_mesh, true);
+#else
+  CS_UNUSED(m);
+  CS_UNUSED(name);
+
+  bft_error(__FILE__,
+            __LINE__,
+            0,
+            _("Error: this funnction cannot be called without "
+              "MEDCoupling support\n"));
+#endif
 }
 
 /*----------------------------------------------------------------------------*/
