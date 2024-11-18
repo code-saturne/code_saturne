@@ -1910,7 +1910,7 @@ cs_gui_hydrostatic_pressure(void)
 
 #if _XML_DEBUG_
   bft_printf("==> %s\n", __func__);
-  bft_printf("--iphydr = %i\n", vp_model->iphydr);
+  bft_printf("--iphydr = %i\n", vp_param->iphydr);
 #endif
 }
 
@@ -2004,7 +2004,7 @@ cs_gui_dt_param(void)
   bft_printf("--idtvar = %i\n", time_opt->idtvar);
   bft_printf("--iptlro = %i\n", time_opt->iptlro);
   bft_printf("--ntmabs = %i\n", time_stp->nt_max);
-  bft_printf("--dtref = %f\n",  time_opt->dtref);
+  bft_printf("--dtref = %f\n",  time_stp->dt_ref);
   bft_printf("--dtmin = %f\n",  time_opt->dtmin);
   bft_printf("--dtmax = %f\n",  time_opt->dtmax);
   bft_printf("--coumax = %f\n", time_opt->coumax);
@@ -2214,9 +2214,10 @@ cs_gui_equation_parameters(void)
   const int var_key_id = cs_field_key_id("variable_id");
   bft_printf("==> %s\n", __func__);
   for (int f_id = 0; f_id < n_fields; f_id++) {
-    const cs_field_t  *f = cs_field_by_id(f_id);
+    cs_field_t  *f = cs_field_by_id(f_id);
     if (f->type & CS_FIELD_VARIABLE) {
-      j = cs_field_get_key_int(f, var_key_id) -1;
+      cs_equation_param_t *eqp = cs_field_get_equation_param(f);
+      int j = cs_field_get_key_int(f, var_key_id) -1;
       bft_printf("-->variable[%i] = %s\n", j, f->name);
       bft_printf("--blencv = %f\n", eqp->blencv);
       bft_printf("--epsilo = %g\n", eqp->epsilo);
@@ -2226,6 +2227,7 @@ cs_gui_equation_parameters(void)
       bft_printf("--nswrsm = %i\n", eqp->nswrsm);
       if (cs_field_get_key_int(f, keysca) > 0) {
         double cdtvar = cs_field_get_key_double(f, k_ts_fact);
+        cs_tree_node_t *tn_v = _find_node_variable(f->name);
         cs_gui_node_get_child_real(tn_v, "time_step_factor", &cdtvar);
         bft_printf("--cdtvar = %g\n", cdtvar);
       }
@@ -3709,8 +3711,8 @@ cs_gui_numerical_options(void)
   _numerical_int_parameters("velocity_pressure_coupling", &(vp_param->ipucou));
   _numerical_int_parameters("piso_sweep_number", &(vp_param->nterup));
 
+  double _relaxp = -1.;
   if (cs_glob_time_step_options->idtvar > -1) {
-    double _relaxp = -1.;
     _numerical_double_parameters("pressure_relaxation", &_relaxp);
     if (_relaxp > -1.0 && CS_F_(p) != NULL) {
       cs_equation_param_t *eqp = cs_field_get_equation_param(CS_F_(p));
@@ -3721,8 +3723,8 @@ cs_gui_numerical_options(void)
 #if _XML_DEBUG_
   bft_printf("==> %s\n", __func__);
   bft_printf("--ivisse = %i\n", vp_model->ivisse);
-  bft_printf("--ipucou = %i\n", vp_model->ipucou);
-  bft_printf("--imrgra = %i\n", *imrgra);
+  bft_printf("--ipucou = %i\n", vp_param->ipucou);
+  bft_printf("--imrgra = %i\n", _imrgra);
   bft_printf("--nterup = %i\n", vp_param->nterup);
   bft_printf("--relaxp = %f\n", _relaxp);
 #endif
@@ -3950,7 +3952,7 @@ cs_gui_physical_constants(void)
   bft_printf("--gx = %f \n", phys_cst->gravity[0]);
   bft_printf("--gy = %f \n", phys_cst->gravity[1]);
   bft_printf("--gz = %f \n", phys_cst->gravity[2]);
-  bft_printf("--icorio = %i \n", phy_cst->icorio);
+  bft_printf("--icorio = %d \n", phys_cst->icorio);
 #endif
 }
 
@@ -4108,7 +4110,7 @@ cs_gui_physical_properties(void)
   bft_printf("--T0 = %f \n", cs_glob_fluid_properties->t0);
   bft_printf("--P0 = %f \n", cs_glob_fluid_properties->p0);
   if (cs_glob_physical_model_flag[CS_COMPRESSIBLE] > -1) {
-    bft_printf("--viscv0 = %g \n", *viscv0);
+    bft_printf("--viscv0 = %g \n", phys_pp->viscv0);
     bft_printf("--xmasmr = %f \n", cs_glob_fluid_properties->xmasmr);
   }
 #endif
@@ -4667,10 +4669,9 @@ cs_gui_turb_model(void)
     bft_error(__FILE__, __LINE__, 0,
         _("Invalid turbulence model: %s.\n"), model);
 
-  if (iwallf != -1) {
-    cs_wall_functions_t *wall_fnt = cs_get_glob_wall_functions();
+  cs_wall_functions_t *wall_fnt = cs_get_glob_wall_functions();
+  if (iwallf != -1)
     wall_fnt->iwallf = (cs_wall_f_type_t)iwallf;
-  }
 
   if (   turb_mdl->model >= CS_TURB_RIJ_EPSILON_LRR
       && turb_mdl->model <= CS_TURB_RIJ_EPSILON_EBRSM) {
@@ -4687,11 +4688,11 @@ cs_gui_turb_model(void)
 #if _XML_DEBUG_
   bft_printf("==> %s\n", __func__);
   bft_printf("--model: %s\n", model);
-  bft_printf("--model = %i\n", turb_mdl->model);
+  bft_printf("--model = %d\n", turb_mdl->model);
   bft_printf("--has_buoyant_term = %i\n", rans_mdl->has_buoyant_term);
-  bft_printf("--iwallf = %i\n", wall_fnt->iwallf);
+  bft_printf("--iwallf = %d\n", wall_fnt->iwallf);
   bft_printf("--xlomlg = %f\n", rans_mdl->xlomlg);
-  bft_printf("--idirsm = %f\n", rans_mdl->idirsm);
+  bft_printf("--idirsm = %d\n", rans_mdl->idirsm);
 #endif
 }
 
@@ -4708,9 +4709,9 @@ cs_gui_turb_ref_values(void)
 
   cs_turb_model_t *turb_mdl = cs_get_glob_turb_model();
 
+  cs_turb_ref_values_t *ref_values = cs_get_glob_turb_ref_values();
   if (turb_mdl->model != 0) {
     const char* length_choice = NULL;
-    cs_turb_ref_values_t *ref_values = cs_get_glob_turb_ref_values();
 
     ref_values->uref = 1.; /* default if not specified */
 
