@@ -50,6 +50,7 @@
 
 #include "cs_all_to_all.h"
 #include "cs_array.h"
+#include "cs_atmo.h"
 #include "cs_base.h"
 #include "cs_boundary.h"
 #include "cs_boundary_zone.h"
@@ -3970,7 +3971,12 @@ cs_gui_physical_properties(void)
   const int thermal_variable = cs_glob_thermal_model->thermal_variable;
 
   cs_fluid_properties_t *phys_pp = cs_get_glob_fluid_properties();
-  cs_gui_fluid_properties_value("reference_pressure", &(phys_pp->p0));
+
+  /* do not read reference pressure for atmo with meteo data.
+   * Would be cleaner to NOT write it in the xml file... */
+  if (!(   cs_glob_physical_model_flag[CS_ATMOSPHERIC] != -1
+        && cs_glob_atmo_option->meteo_profile >= 1))
+      cs_gui_fluid_properties_value("reference_pressure", &(phys_pp->p0));
 
   /* Variable rho and viscl */
   if (_properties_choice_id("density", &choice))
@@ -3983,7 +3989,11 @@ cs_gui_physical_properties(void)
       phys_pp->ivivar = choice;
 
   /* Read T0 in each case for user */
-  cs_gui_fluid_properties_value("reference_temperature", &(phys_pp->t0));
+  /* do not read reference temperature for atmo with meteo data.
+   * Would be cleaner to NOT write it in the xml file... */
+  if (!(   cs_glob_physical_model_flag[CS_ATMOSPHERIC] != -1
+        && cs_glob_atmo_option->meteo_profile >= 1))
+    cs_gui_fluid_properties_value("reference_temperature", &(phys_pp->t0));
 
   if (cs_glob_physical_model_flag[CS_COMPRESSIBLE] > -1)
     cs_gui_fluid_properties_value("reference_molar_mass", &(phys_pp->xmasmr));

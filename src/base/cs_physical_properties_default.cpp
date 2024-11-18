@@ -195,14 +195,15 @@ _cavitation_correct_visc_turb(const cs_lnum_t  n_cells,
 /*----------------------------------------------------------------------------*/
 
 static void
-_rho_mu_is_constant(const char       *name,
-                    const cs_lnum_t  n_elts,
-                    const cs_real_t  val[],
-                    const cs_real_t  val_ref)
+_field_is_constant(const char       *name,
+                   const cs_lnum_t  n_elts,
+                   const cs_real_t  val[],
+                   const cs_real_t  val_ref)
 {
   bool is_constant = true;
 
-  for (cs_lnum_t ii = 0; ii < n_elts; ii++) {
+  cs_lnum_t ii = 0;
+  for (ii = 0; ii < n_elts; ii++) {
     if (fabs(val[ii] - val_ref) <= cs_math_epzero)
       continue;
     is_constant = false;
@@ -215,11 +216,12 @@ _rho_mu_is_constant(const char       *name,
                 "=====\n"
                 "Incoherency between parameters for %s.\n"
                 "%s has been declared constant\n"
-                "but its value has been modified\n"
-                "in cells or at boundary faces.\n"
+                "but the field value has been modified\n"
+                "and is not equal to the ref value anymore.\n"
+                "ref=%e, value=%e.\n"
                 "The calculation will not be run.\n"
                 "Check the interface, cs_user_parameters\n"
-                "and cs_user_physical_properties."), name, name);
+                "and cs_user_physical_properties."), name, name, val_ref, val[ii]);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -934,19 +936,19 @@ cs_physical_properties_update(int   iterns)
   if (cs_glob_time_step->nt_cur == cs_glob_time_step->nt_prev + 1) {
     if (cs_glob_fluid_properties->irovar == 0) {
       const cs_real_t ro0 = cs_glob_fluid_properties->ro0;
-      _rho_mu_is_constant("the density",
+      _field_is_constant("the density",
                           n_cells,
                           CS_F_(rho)->val,
                           ro0);
 
-      _rho_mu_is_constant("the density at the boundary",
+      _field_is_constant("the density at the boundary",
                           n_b_faces,
                           CS_F_(rho_b)->val,
                           ro0);
     }
     if (cs_glob_fluid_properties->ivivar == 0) {
       const cs_real_t viscl0 = cs_glob_fluid_properties->viscl0;
-      _rho_mu_is_constant("The molecular viscosity",
+      _field_is_constant("The molecular viscosity",
                           n_cells,
                           (const cs_real_t *)CS_F_(mu)->val,
                           viscl0);
