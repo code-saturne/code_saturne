@@ -761,10 +761,10 @@ main(int argc, char *argv[])
     int r_id = CS_MAX(cs_glob_rank_id, 0);
     snprintf(mem_log_file_name, 127, "%s.%d",
              getenv("CS_MEM_LOG"), r_id);
-    bft_mem_init(mem_log_file_name);
+    cs_mem_init(mem_log_file_name);
   }
   else
-    bft_mem_init(nullptr);
+    cs_mem_init(nullptr);
 
   (void)cs_timer_wtime();
 
@@ -1068,7 +1068,7 @@ main(int argc, char *argv[])
 
   _free_base_data();
 
-  bft_mem_end();
+  cs_mem_end();
 
 #if defined(HAVE_MPI)
   {

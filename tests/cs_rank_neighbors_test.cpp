@@ -387,11 +387,11 @@ main (int argc, char *argv[])
       sprintf(mem_trace_name, "cs_rank_neighbors_test_mem.%d", rank);
     else
       strcpy(mem_trace_name, "cs_rank_neighbors_test_mem");
-    bft_mem_init(mem_trace_name);
+    cs_mem_init(mem_trace_name);
     bft_printf_proxy_set(_bft_printf_proxy);
   }
   else
-    bft_mem_init(nullptr);
+    cs_mem_init(nullptr);
 
   /* Performance test */
 
@@ -407,7 +407,7 @@ main (int argc, char *argv[])
   else
     bft_printf("rank neighborhoods only make sense for MPI\n");
 
-  bft_mem_end();
+  cs_mem_end();
 
   if (mpi_flag != 0)
     MPI_Finalize();

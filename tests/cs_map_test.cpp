@@ -178,7 +178,7 @@ main (int argc, char *argv[])
   CS_UNUSED(argc);
   CS_UNUSED(argv);
 
-  bft_mem_init(getenv("CS_MEM_LOG"));
+  cs_mem_init(getenv("CS_MEM_LOG"));
 
   /* Cont elements */
 
@@ -247,7 +247,7 @@ main (int argc, char *argv[])
   cs_map_name_to_id_destroy(&k_map);
   cs_map_name_to_id_destroy(&f_map);
 
-  bft_mem_end();
+  cs_mem_end();
 
   exit (EXIT_SUCCESS);
 }

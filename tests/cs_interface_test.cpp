@@ -341,7 +341,7 @@ main (int argc, char *argv[])
     sprintf(mem_trace_name, "cs_interface_test_mem.%d", rank);
   else
     strcpy(mem_trace_name, "cs_interface_test_mem");
-  bft_mem_init(mem_trace_name);
+  cs_mem_init(mem_trace_name);
 
   for (int ordered = 1; ordered >= 0; ordered--) {
 
@@ -410,7 +410,7 @@ main (int argc, char *argv[])
 
   }
 
-  bft_mem_end();
+  cs_mem_end();
 
 #if defined(HAVE_MPI)
   {

@@ -469,7 +469,7 @@ main (int argc, char *argv[])
   CS_UNUSED(argc);
   CS_UNUSED(argv);
 
-  bft_mem_init(getenv("CS_MEM_LOG"));
+  cs_mem_init(getenv("CS_MEM_LOG"));
 
   test_1();
 
@@ -477,7 +477,7 @@ main (int argc, char *argv[])
 
   test_3();
 
-  bft_mem_end();
+  cs_mem_end();
 
   exit (EXIT_SUCCESS);
 }

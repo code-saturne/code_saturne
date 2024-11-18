@@ -62,55 +62,55 @@ main (int argc, char *argv[])
 
   bft_mem_usage_init();
 
-  bft_mem_init("bft_mem_log_file");
+  cs_mem_init("bft_mem_log_file");
 
-  errhandler_save = bft_mem_error_handler_get();
+  errhandler_save = cs_mem_error_handler_get();
 
-  bft_mem_error_handler_set(bft_mem_error_handler_test);
+  cs_mem_error_handler_set(bft_mem_error_handler_test);
   printf("test memory error handler set\n");
 
-  BFT_MALLOC(p1, 100000, long);
+  CS_MALLOC(p1, 100000, long);
   printf("p1 = %p\n", p1);
-  BFT_MALLOC(p2, 100000, double);
+  CS_MALLOC(p2, 100000, double);
   printf("p2 = %p\n", p2);
 
   p3 = nullptr;
-  BFT_REALLOC(p3, 100000, double);
+  CS_REALLOC(p3, 100000, double);
   printf("p3 = %p\n", p3);
-  BFT_REALLOC(p3, 10000, double);
+  CS_REALLOC(p3, 10000, double);
   printf("p3 = %p\n", p3);
 
-  BFT_MALLOC(p4, 5000000000, double);
+  CS_MALLOC(p4, 5000000000, double);
   printf("p4 = %p\n", p4);
 
   printf("default memory error handler set\n");
-  bft_mem_error_handler_set(errhandler_save);
+  cs_mem_error_handler_set(errhandler_save);
 
-  BFT_FREE(p1);
-  BFT_FREE(p2);
-  BFT_MALLOC(p2, 100000, double);
+  CS_FREE(p1);
+  CS_FREE(p2);
+  CS_MALLOC(p2, 100000, double);
   printf("p2 = %p\n", p2);
-  BFT_FREE(p2);
-  BFT_REALLOC(p3, 0, double);
+  CS_FREE(p2);
+  CS_REALLOC(p3, 0, double);
   printf("p3 = %p\n", p3);
 
-  if (bft_mem_have_memalign() == 1) {
+  if (cs_mem_have_memalign() == 1) {
     void *pa;
-    BFT_MEMALIGN(pa, 128, 100, double);
+    CS_MEMALIGN(pa, 128, 100, double);
     printf("pa (aligned 128) = %p\n", pa);
-    BFT_FREE(pa);
+    CS_FREE(pa);
   }
 
-  bft_mem_end();
+  cs_mem_end();
 
   printf("max memory usage: %lu kB\n",
          (unsigned long) bft_mem_usage_max_pr_size());
 
-  BFT_MALLOC(p1, 10000, long);
+  CS_MALLOC(p1, 10000, long);
   printf("p1 = %p\n", p1);
-  BFT_FREE(p1);
+  CS_FREE(p1);
   printf("p1 = %p\n", p1);
-  BFT_MALLOC(p1, 1000000000, double);
+  CS_MALLOC(p1, 1000000000, double);
   printf("p1 = %p\n", p1);
 
   /* End */

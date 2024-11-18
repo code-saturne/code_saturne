@@ -130,7 +130,7 @@ main (int argc, char *argv[])
   bft_printf_flush_proxy_set(_bft_printf_flush_proxy);
 
   sprintf(mem_trace_name, "cs_all_to_all_test_mem.%d", rank);
-  bft_mem_init(mem_trace_name);
+  cs_mem_init(mem_trace_name);
 
 #if defined(HAVE_MPI)
 
@@ -342,7 +342,7 @@ main (int argc, char *argv[])
 
 #endif /* defined(HAVE_MPI) */
 
-  bft_mem_end();
+  cs_mem_end();
 
 #if defined(HAVE_MPI)
   {
