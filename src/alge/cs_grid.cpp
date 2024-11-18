@@ -1286,7 +1286,7 @@ _coarsen_halo(const cs_grid_t   *f,
     std::chrono::microseconds elapsed
       = std::chrono::duration_cast
           <std::chrono::microseconds>(t_stop - t_start);
-    printf("%d: %s (level %d -> %d)", cs_glob_rank_id, __func__,
+    printf("%d:   %s (level %d -> %d)", cs_glob_rank_id, __func__,
            f->level, c->level);
     printf(", total = %ld\n", elapsed.count());
   }
@@ -3233,7 +3233,7 @@ _automatic_aggregation_pw_msr(const cs_grid_t  *f,
     std::chrono::microseconds elapsed
       = std::chrono::duration_cast
           <std::chrono::microseconds>(t_stop - t_start);
-    printf("%d: %s (level %d -> %d)", cs_glob_rank_id, __func__,
+    printf("%d:   %s (level %d -> %d)", cs_glob_rank_id, __func__,
            f->level, f->level+1);
     printf(", total = %ld\n", elapsed.count());
   }
@@ -3832,7 +3832,7 @@ _automatic_aggregation_mx_msr(const cs_grid_t  *f,
     std::chrono::microseconds elapsed
       = std::chrono::duration_cast
           <std::chrono::microseconds>(t_stop - t_start);
-    printf("%d: %s (level %d -> %d)", cs_glob_rank_id, __func__,
+    printf("%d:   %s (level %d -> %d)", cs_glob_rank_id, __func__,
            f->level, f->level+1);
     printf(", total = %ld\n", elapsed.count());
   }
@@ -4033,7 +4033,7 @@ _coarse_to_fine_adjacency_msr(int               f_level,
     std::chrono::microseconds elapsed
       = std::chrono::duration_cast
           <std::chrono::microseconds>(t_stop - t_start);
-    printf("%d:   %s (level %d -> %d) = %ld\n",
+    printf("%d:     %s (level %d -> %d) = %ld\n",
            cs_glob_rank_id, __func__,
            f_level, f_level+1, elapsed.count());
   }
@@ -4225,7 +4225,7 @@ _coarse_msr_struct(int                f_level,
     std::chrono::microseconds elapsed
       = std::chrono::duration_cast
         <std::chrono::microseconds>(t_stop - t_start);
-    printf("%d:   %s (level %d -> %d) = %ld\n",
+    printf("%d:     %s (level %d -> %d) = %ld\n",
            cs_glob_rank_id, __func__,
            f_level, f_level+1, elapsed.count());
   }
@@ -4387,7 +4387,7 @@ _msr_face_adjacency(cs_grid_t        *g,
     std::chrono::microseconds elapsed
       = std::chrono::duration_cast
           <std::chrono::microseconds>(tm_stop - tm_start);
-    printf("%d:   %s (level %d) = %ld\n",
+    printf("%d:     %s (level %d) = %ld\n",
            cs_glob_rank_id, __func__, g->level, elapsed.count());
   }
 }
@@ -4669,7 +4669,7 @@ _automatic_aggregation_fc(const cs_grid_t       *f,
     std::chrono::microseconds elapsed
       = std::chrono::duration_cast
           <std::chrono::microseconds>(t_stop - t_start);
-    printf("%d: %s (level %d -> %d)", cs_glob_rank_id, __func__,
+    printf("%d:   %s (level %d -> %d)", cs_glob_rank_id, __func__,
            f->level, f->level+1);
     printf(", total = %ld\n", elapsed.count());
   }
@@ -5173,7 +5173,7 @@ _automatic_aggregation_dx_msr(const cs_grid_t       *f,
     std::chrono::microseconds elapsed
       = std::chrono::duration_cast
           <std::chrono::microseconds>(t_stop - t_start);
-    printf("%d: %s (level %d -> %d)", cs_glob_rank_id, __func__,
+    printf("%d:   %s (level %d -> %d)", cs_glob_rank_id, __func__,
            f->level, f->level+1);
     printf(", total = %ld\n", elapsed.count());
   }
@@ -6509,7 +6509,7 @@ _compute_coarse_quantities_msr(const cs_grid_t  *fine_grid,
     std::chrono::microseconds elapsed
       = std::chrono::duration_cast
           <std::chrono::microseconds>(t_stop - t_start);
-    printf("%d: %s (level %d -> %d)", cs_glob_rank_id, __func__,
+    printf("%d:   %s (level %d -> %d)", cs_glob_rank_id, __func__,
            fine_grid->level, coarse_grid->level);
     printf(", total = %ld\n", elapsed.count());
   }
@@ -6786,7 +6786,7 @@ _coarse_quantities_msr_with_faces_stage_1(const cs_grid_t  *f,
     std::chrono::microseconds elapsed
       = std::chrono::duration_cast
           <std::chrono::microseconds>(t_1 - t_0);
-    printf("%d:   %s: (level %d -> %d)", cs_glob_rank_id, __func__,
+    printf("%d:     %s: (level %d -> %d)", cs_glob_rank_id, __func__,
            f->level, c->level);
     printf(", total = %ld\n", elapsed.count());
   }
@@ -6807,7 +6807,7 @@ _coarse_quantities_msr_with_faces_stage_1(const cs_grid_t  *f,
     std::chrono::microseconds elapsed
       = std::chrono::duration_cast
           <std::chrono::microseconds>(t_2 - t_1);
-    printf("%d:   %s halo exchange (level %d)", cs_glob_rank_id, __func__,
+    printf("%d:     %s halo exchange (level %d)", cs_glob_rank_id, __func__,
            c->level);
     printf(", total = %ld\n", elapsed.count());
   }
@@ -7070,7 +7070,7 @@ _compute_coarse_quantities_msr_with_faces(const cs_grid_t  *f,
     std::chrono::microseconds elapsed
       = std::chrono::duration_cast
           <std::chrono::microseconds>(t_2 - t_1);
-    printf("%d:   %s (level %d -> %d)", cs_glob_rank_id, __func__,
+    printf("%d:     %s (level %d -> %d)", cs_glob_rank_id, __func__,
            f->level, c->level);
     printf(", assign = %ld\n", elapsed.count());
   }
@@ -7092,7 +7092,7 @@ _compute_coarse_quantities_msr_with_faces(const cs_grid_t  *f,
     std::chrono::microseconds elapsed
       = std::chrono::duration_cast
           <std::chrono::microseconds>(t_stop - t_start);
-    printf("%d: %s (level %d -> %d)", cs_glob_rank_id, __func__,
+    printf("%d:   %s (level %d -> %d)", cs_glob_rank_id, __func__,
            f->level, c->level);
     printf(", total = %ld\n", elapsed.count());
   }
