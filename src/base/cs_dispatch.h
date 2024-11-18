@@ -187,34 +187,56 @@ class cs_host_context : public cs_dispatch_context_mixin<cs_host_context> {
 
 private:
 
-  cs_lnum_t  n_min_for_threads;  /*!< Run on single thread
-                                   under this threshold */
+  cs_lnum_t  n_min_per_thread;  /*!< Minimum number of elements per thread */
+  int        n_threads_;        /*!< If defined, force number of threads */
 
 public:
 
   cs_host_context()
-    : n_min_for_threads(CS_THR_MIN)
+    : n_min_per_thread(CS_THR_MIN), n_threads_(-1)
   {}
 
 public:
 
   //! Set minimum number of elements threshold for CPU multithread execution.
   void
-  set_n_min_for_cpu_threads(cs_lnum_t  n) {
-    this->n_min_for_threads = n;
+  set_n_min_per_cpu_thread(cs_lnum_t  n) {
+    this->n_min_per_thread = n;
   }
 
   //! Get minimum number of elements threshold for CPU multithread execution.
   cs_lnum_t
-  n_min_for_cpu_threads(void) {
-    return this->n_min_for_threads;
+  n_min_per_cpu_thread(void) {
+    return this->n_min_per_thread;
+  }
+
+  //! Set number of threads for CPU multithread execution.
+  void
+  set_n_cpu_threads(int  n) {
+    this->n_threads_ = n;
+  }
+
+  //! Get number of threads for CPU multithread execution (-1 if automatic)
+  int
+  n_cpu_threads(void) {
+    return this->n_threads_;
   }
 
   //! Iterate using a plain omp parallel for
   template <class F, class... Args>
   bool
   parallel_for(cs_lnum_t n, F&& f, Args&&... args) {
-#   pragma omp parallel for  if (n >= n_min_for_threads)
+    int n_t = n_threads_;
+    if (n_t < 0) {
+      n_t = cs_glob_n_threads;
+      int n_t_l = n / n_min_per_thread;
+      if (n_t_l < n_t)
+        n_t = n_t_l;
+      if (n_t < 1)
+        n_t = 1;
+    }
+
+#   pragma omp parallel for  num_threads(n_t)
     for (cs_lnum_t i = 0; i < n; ++i) {
       f(i, args...);
     }
@@ -268,8 +290,19 @@ public:
                           double&   sum,
                           F&&       f,
                           Args&&... args) {
+    int n_t = n_threads_;
+    if (n_t < 0) {
+      n_t = cs_glob_n_threads;
+      int n_t_l = n / n_min_per_thread;
+      if (n_t_l < n_t)
+        n_t = n_t_l;
+      if (n_t < 1)
+        n_t = 1;
+    }
+
     sum = 0;
-#   pragma omp parallel for reduction(+:sum) if (n >= n_min_for_threads)
+
+#   pragma omp parallel for reduction(+:sum) num_threads(n_t)
     for (cs_lnum_t i = 0; i < n; ++i) {
       f(i, sum, args...);
     }

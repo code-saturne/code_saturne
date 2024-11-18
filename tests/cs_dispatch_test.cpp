@@ -92,7 +92,7 @@ cs_dispatch_test(void)
 
     if (i == 1) {
       ctx.set_use_gpu(false);
-      ctx.set_n_min_for_cpu_threads(20);
+      ctx.set_n_min_per_cpu_thread(20);
     }
     else if (i == 2) {
       ctx.set_use_gpu(true);

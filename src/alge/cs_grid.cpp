@@ -63,6 +63,7 @@
 #include "bft_printf.h"
 
 #include "cs_base.h"
+#include "cs_dispatch.h"
 #include "cs_halo.h"
 #include "cs_halo_perio.h"
 #include "cs_log.h"
@@ -289,7 +290,7 @@ static cs_matrix_variant_t **_grid_tune_variant = nullptr;
  */
 /*----------------------------------------------------------------------------*/
 
-static inline cs_lnum_t
+CS_F_HOST_DEVICE static inline cs_lnum_t
 _l_id_binary_search(cs_lnum_t        l_id_array_size,
                     cs_lnum_t        l_id,
                     const cs_lnum_t  l_id_array[])
@@ -4734,6 +4735,15 @@ _automatic_aggregation_dx_msr(const cs_grid_t       *f,
 
   const cs_lnum_t f_nnz = row_index[f_n_rows];
 
+#if defined(HAVE_ACCEL)
+  if (cs_matrix_get_alloc_mode(f->matrix) > CS_ALLOC_HOST) {
+    cs_real_t  *d_val_p = const_cast<cs_real_t *>(d_val);
+    cs_real_t  *x_val_p = const_cast<cs_real_t *>(x_val);
+    cs_prefetch_d2h(d_val_p, f_n_rows*db_size*db_size*sizeof(cs_real_t));
+    cs_prefetch_d2h(x_val_p, f_nnz*sizeof(cs_real_t));
+  }
+#endif
+
   if (db_size > 1) {
     BFT_MALLOC(_d_val, f_n_rows, cs_real_t);
     _reduce_block(f_n_rows, db_size, d_val, _d_val);
@@ -6587,6 +6597,12 @@ _coarse_quantities_msr_with_faces_stage_1(const cs_grid_t  *f,
 
   int n_loc_threads = cs_parall_n_threads(f_n_rows, CS_THR_MIN);
 
+  cs_dispatch_context ctx;
+  if (alloc_mode == CS_ALLOC_HOST) {
+    ctx.set_use_gpu(false);
+    ctx.set_n_cpu_threads(n_loc_threads);
+  }
+
   cs_real_3_t  *c_face_normal = nullptr;
   cs_real_3_t  *c_cell_cen;
   cs_real_t    *c_cell_vol;
@@ -6601,8 +6617,7 @@ _coarse_quantities_msr_with_faces_stage_1(const cs_grid_t  *f,
   if (f_face_normal != nullptr) {
     CS_MALLOC_HD(c_face_normal, c_n_faces, cs_real_3_t, alloc_mode);
 
-    #pragma omp parallel num_threads(n_loc_threads)
-    for (cs_lnum_t i = 0; i < c_n_faces; i++) {
+    ctx.parallel_for(c_n_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t i) {
       c_face_normal[i][0] = 0.;
       c_face_normal[i][1] = 0.;
       c_face_normal[i][2] = 0.;
@@ -6610,16 +6625,15 @@ _coarse_quantities_msr_with_faces_stage_1(const cs_grid_t  *f,
       c_xa0ij[i][0] = 0.;
       c_xa0ij[i][1] = 0.;
       c_xa0ij[i][2] = 0.;
-    }
+    });
   }
   else {
-    #pragma omp parallel num_threads(n_loc_threads)
-    for (cs_lnum_t i = 0; i < c_n_faces; i++) {
+    ctx.parallel_for(c_n_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t i) {
       c_xa0[i] = 0.;
       c_xa0ij[i][0] = 0.;
       c_xa0ij[i][1] = 0.;
       c_xa0ij[i][2] = 0.;
-    }
+    });
   }
 
   const cs_lnum_t db_size = c->db_size;
@@ -6651,8 +6665,7 @@ _coarse_quantities_msr_with_faces_stage_1(const cs_grid_t  *f,
 
   /* Loop on coarse rows */
 
-  #pragma omp parallel for  num_threads(n_loc_threads)
-  for (cs_lnum_t ii_c = 0; ii_c < c_n_rows; ii_c++) {
+  ctx.parallel_for(c_n_rows, [=] CS_F_HOST_DEVICE (cs_lnum_t ii_c) {
 
     const cs_lnum_t c_s_idx = c_row_index[ii_c];
     const cs_lnum_t n_c_cols = c_row_index[ii_c+1] - c_s_idx;
@@ -6750,7 +6763,8 @@ _coarse_quantities_msr_with_faces_stage_1(const cs_grid_t  *f,
     for (cs_lnum_t coo_id = 0; coo_id < 3; coo_id++)
       _c_cell_cen[coo_id] /= c_cell_vol[ii_c];
 
-  } /* OpenMP Loop on coarse rows */
+  }); /* Loop on coarse rows */
+  ctx.wait();
 
   /* Add to coarse grid */
 
@@ -6925,11 +6939,19 @@ _compute_coarse_quantities_msr_with_faces(const cs_grid_t  *f,
   const cs_real_3_t *c_cell_cen
     = reinterpret_cast<const cs_real_3_t *>(c->cell_cen);
 
-  cs_lnum_t n_clips_min = 0, n_clips_max = 0;
-
   const cs_real_t relax_param = c->relaxation;
 
+  int *n_clips = nullptr;
+  if (verbosity > 3)
+    CS_MALLOC_HD(n_clips, c_n_rows*2, int, f->alloc_mode);
+
   int n_c_threads = cs_parall_n_threads(c_n_rows, CS_THR_MIN);
+
+  cs_dispatch_context ctx;
+  if (f->alloc_mode == CS_ALLOC_HOST) {
+    ctx.set_use_gpu(false);
+    ctx.set_n_cpu_threads(n_c_threads);
+  }
   {
     /* Matrix initialized to c_xa0 */
 
@@ -6937,13 +6959,15 @@ _compute_coarse_quantities_msr_with_faces(const cs_grid_t  *f,
     const short int *c_cell_face_sgn = c->cell_face_sgn;
 
     if (c_face_normal != nullptr) {
-      #pragma omp parallel for  num_threads(n_c_threads) \
-        reduction(+:n_clips_min, n_clips_max)
-      for (cs_lnum_t ic = 0; ic < c_n_rows; ic++) {
+      ctx.parallel_for(c_n_rows, [=] CS_F_HOST_DEVICE (cs_lnum_t ic) {
         const cs_lnum_t c_s_idx = c_row_index[ic];
         const cs_lnum_t c_e_idx = c_row_index[ic+1];
 
         const cs_real_t *cen_ic = c_cell_cen[ic];
+
+        if (n_clips != nullptr) {
+          n_clips[ic*2] = 0, n_clips[ic*2+1] = 0;
+        }
 
         for (cs_lnum_t r_idx = c_s_idx; r_idx < c_e_idx; r_idx++) {
           const cs_lnum_t jc = c_col_id[r_idx];
@@ -6964,12 +6988,12 @@ _compute_coarse_quantities_msr_with_faces(const cs_grid_t  *f,
                                       c_face_normal[c_face_id]);
             const cs_real_t agij = dsxaij/dsigjg;
 
-            if (agij < c_x_val_c || agij > 0.) {  // Clipped matrix
-              if (agij < c_x_val_c) n_clips_min++;
-              if (agij > 0.) n_clips_max++;
-            }
-            else {
+            if (agij >= c_x_val_c && agij <= 0.) {
               c_x_val_c = agij;
+            }
+            else if (n_clips != nullptr) { // clipped matrix
+              if (agij < c_x_val_c) n_clips[ic*2] += 1;  // clip to min
+              if (agij > 0.) n_clips[ic*2+1] += 1;       // clip to max
             }
           }
 
@@ -6982,17 +7006,20 @@ _compute_coarse_quantities_msr_with_faces(const cs_grid_t  *f,
             c_d_val[ic*db_stride + db_size*kk + kk] -= c_x_val_c;
           }
         }
-      }
+      });
+      ctx.wait();
     }
 
     else { // c_face_normal == nullptr
-      #pragma omp parallel for  num_threads(n_c_threads) \
-        reduction(+:n_clips_min, n_clips_max)
-      for (cs_lnum_t ic = 0; ic < c_n_rows; ic++) {
+      ctx.parallel_for(c_n_rows, [=] CS_F_HOST_DEVICE (cs_lnum_t ic) {
         const cs_lnum_t c_s_idx = c_row_index[ic];
         const cs_lnum_t c_e_idx = c_row_index[ic+1];
 
         const cs_real_t *cen_ic = c_cell_cen[ic];
+
+        if (n_clips != nullptr) {
+          n_clips[ic*2] = 0, n_clips[ic*2+1] = 0;
+        }
 
         for (cs_lnum_t r_idx = c_s_idx; r_idx < c_e_idx; r_idx++) {
           const cs_lnum_t jc = c_col_id[r_idx];
@@ -7014,12 +7041,12 @@ _compute_coarse_quantities_msr_with_faces(const cs_grid_t  *f,
                                       c_face_normal[c_face_id]);
             const cs_real_t agij = dsxaij/dsigjg;
 
-            if (agij < c_x_val_c || agij > 0.) {  // Clipped matrix
-              if (agij < c_x_val_c) n_clips_min++;
-              if (agij > 0.) n_clips_max++;
-            }
-            else {
+            if (agij >= c_x_val_c && agij <= 0.) {
               c_x_val_c = agij;
+            }
+            else if (n_clips != nullptr) { // clipped matrix
+              if (agij < c_x_val_c) n_clips[ic*2] += 1;  // clip to min
+              if (agij > 0.) n_clips[ic*2+1] += 1;       // clip to max
             }
           }
 
@@ -7032,7 +7059,8 @@ _compute_coarse_quantities_msr_with_faces(const cs_grid_t  *f,
             c_d_val[ic*db_stride + db_size*kk + kk] -= c_x_val_c;
           }
         }
-      }
+      });
+      ctx.wait();
     }
   }
 
@@ -7071,11 +7099,22 @@ _compute_coarse_quantities_msr_with_faces(const cs_grid_t  *f,
 
   /* Optional verification */
 
-  if (verbosity > 3)
+  if (verbosity > 3) {
+    cs_lnum_t n_clips_min = 0, n_clips_max = 0;
+    #pragma omp parallel for num_threads(n_c_threads) \
+      reduction(+:n_clips_min, n_clips_max)
+    for (cs_lnum_t ic = 0; ic < c_n_rows; ic++) {
+      n_clips_min += n_clips[ic*2];
+      n_clips_max += n_clips[ic*2 + 1];
+    }
+
     _verify_grid_quantities_msr(c,
                                 n_clips_min,
                                 n_clips_max,
                                 1);
+
+    CS_FREE(n_clips);
+  }
 }
 
 /*----------------------------------------------------------------------------
@@ -8880,7 +8919,7 @@ cs_grid_restrict_row_var(cs_dispatch_context  &ctx,
   if (ctx.use_gpu())
     sum_type = CS_DISPATCH_SUM_ATOMIC;
 #if defined(HAVE_OPENMP)
-  else if (ctx.n_min_for_cpu_threads() <= f_n_rows)
+  else if (ctx.n_min_per_cpu_thread() <= f_n_rows)
     sum_type = CS_DISPATCH_SUM_ATOMIC;
 #endif
 
