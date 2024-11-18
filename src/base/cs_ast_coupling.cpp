@@ -61,6 +61,7 @@
 #include "fvm_nodal_extract.h"
 
 #include "cs_all_to_all.h"
+#include "cs_array.h"
 #include "cs_calcium.h"
 #include "cs_coupling.h"
 #include "cs_interface.h"
@@ -129,26 +130,25 @@ struct _cs_ast_coupling_t {
 
   int  nbssit;         /* number of sub-iterations */
 
-  double  dt;
-  double  dtref;       /* reference time step */
-  double  epsilo;      /* scheme convergence threshold */
+  cs_real_t dt;
+  cs_real_t dtref;  /* reference time step */
+  cs_real_t epsilo; /* scheme convergence threshold */
 
   int     icv1;        /* Convergence indicator */
   int     icv2;        /* Convergence indicator (final) */
 
-  double  lref;        /* Characteristic macroscopic domain length */
+  cs_real_t lref; /* Characteristic macroscopic domain length */
 
   int     s_it_id;     /* Sub-iteration id */
 
-  double  *xast;       /* Mesh displacement last received (current iteration) */
-  double  *xvast;      /* Mesh velocity last received (current iteration) */
-  double  *xvasa;      /* Mesh displacement at previous sub-iteration */
-  double  *xastp;      /* Mesh velocity at previous sub-iteration */
+  cs_real_t *xast;  /* Mesh displacement last received (current iteration) */
+  cs_real_t *xvast; /* Mesh velocity last received (current iteration) */
+  cs_real_t *xvasa; /* Mesh displacement at previous sub-iteration */
+  cs_real_t *xastp; /* Mesh velocity at previous sub-iteration */
 
-  double  *foras;      /* Fluid forces at current sub-iteration */
-  double  *foaas;      /* Fluid forces at previous sub-iteration */
-  double  *fopas;      /* Predicted fluid forces */
-
+  cs_real_t *foras; /* Fluid forces at current sub-iteration */
+  cs_real_t *foaas; /* Fluid forces at previous sub-iteration */
+  cs_real_t *fopas; /* Predicted fluid forces */
 };
 
 /*============================================================================
@@ -173,7 +173,7 @@ cs_ast_coupling_t  *cs_glob_ast_coupling = nullptr;
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
- * Allocate and initialize dynamic vectors (double) based on the 'nb_dyn'
+ * Allocate and initialize dynamic vectors (cs_real_t) based on the 'nb_dyn'
  * number of points.
  *----------------------------------------------------------------------------*/
 
@@ -189,48 +189,27 @@ _allocate_arrays(cs_ast_coupling_t  *ast_cpl)
   const cs_lnum_t  nb_dyn = ast_cpl->n_vertices;
   const cs_lnum_t  nb_for = ast_cpl->n_faces;
 
-  BFT_MALLOC(ast_cpl->xast, 3*nb_dyn, double);
-  BFT_MALLOC(ast_cpl->xvast, 3*nb_dyn, double);
-  BFT_MALLOC(ast_cpl->xvasa, 3*nb_dyn, double);
-  BFT_MALLOC(ast_cpl->xastp, 3*nb_dyn, double);
+  BFT_MALLOC(ast_cpl->xast, 3 * nb_dyn, cs_real_t);
+  BFT_MALLOC(ast_cpl->xvast, 3 * nb_dyn, cs_real_t);
+  BFT_MALLOC(ast_cpl->xvasa, 3 * nb_dyn, cs_real_t);
+  BFT_MALLOC(ast_cpl->xastp, 3 * nb_dyn, cs_real_t);
 
-  for (cs_lnum_t k = 0; k < nb_dyn; k++) {
+  cs_arrays_set_value<cs_real_t, 1>(3 * nb_dyn,
+                                    0.,
+                                    ast_cpl->xast,
+                                    ast_cpl->xvast,
+                                    ast_cpl->xvasa,
+                                    ast_cpl->xastp);
 
-    ast_cpl->xast[3*k]   = 0.;
-    ast_cpl->xast[3*k+1] = 0.;
-    ast_cpl->xast[3*k+2] = 0.;
+  BFT_MALLOC(ast_cpl->foras, 3 * nb_for, cs_real_t);
+  BFT_MALLOC(ast_cpl->foaas, 3 * nb_for, cs_real_t);
+  BFT_MALLOC(ast_cpl->fopas, 3 * nb_for, cs_real_t);
 
-    ast_cpl->xvast[3*k]   = 0.;
-    ast_cpl->xvast[3*k+1] = 0.;
-    ast_cpl->xvast[3*k+2] = 0.;
-
-    ast_cpl->xvasa[3*k]   = 0.;
-    ast_cpl->xvasa[3*k+1] = 0.;
-    ast_cpl->xvasa[3*k+2] = 0.;
-
-    ast_cpl->xastp[3*k]   = 0.;
-    ast_cpl->xastp[3*k+1] = 0.;
-    ast_cpl->xastp[3*k+2] = 0.;
-  }
-
-  BFT_MALLOC(ast_cpl->foras, 3*nb_for, double);
-  BFT_MALLOC(ast_cpl->foaas, 3*nb_for, double);
-  BFT_MALLOC(ast_cpl->fopas, 3*nb_for, double);
-
-  for (cs_lnum_t k = 0; k < nb_for; k++) {
-
-    ast_cpl->foras[3*k]   = 0.;
-    ast_cpl->foras[3*k+1] = 0.;
-    ast_cpl->foras[3*k+2] = 0.;
-
-    ast_cpl->foaas[3*k]   = 0.;
-    ast_cpl->foaas[3*k+1] = 0.;
-    ast_cpl->foaas[3*k+2] = 0.;
-
-    ast_cpl->fopas[3*k]   = 0.;
-    ast_cpl->fopas[3*k+1] = 0.;
-    ast_cpl->fopas[3*k+2] = 0.;
-  }
+  cs_arrays_set_value<cs_real_t, 1>(3 * nb_for,
+                                    0.,
+                                    ast_cpl->foras,
+                                    ast_cpl->foaas,
+                                    ast_cpl->fopas);
 }
 
 /*----------------------------------------------------------------------------
@@ -296,10 +275,10 @@ _recv_dyn(cs_ast_coupling_t  *ast_cpl)
   /* For dry run, reset values to zero to avoid uninitialized values */
   if (ast_cpl->aci.root_rank < 0) {
     const cs_lnum_t  nb_dyn = ast_cpl->n_vertices * 3;
-    for (cs_lnum_t k = 0; k < nb_dyn; k++) {
-      ast_cpl->xast[k]  = 0.;
-      ast_cpl->xvast[k] = 0.;
-    }
+    cs_arrays_set_value<cs_real_t, 1>(nb_dyn,
+                                      0.,
+                                      ast_cpl->xast,
+                                      ast_cpl->xvast);
   }
 }
 
@@ -326,23 +305,23 @@ _send_icv2(cs_ast_coupling_t  *ast_cpl,
  *----------------------------------------------------------------------------*/
 
 static void
-_pred(double    *valpre,
-      double    *val1,
-      double    *val2,
-      double    *val3,
-      double     c1,
-      double     c2,
-      double     c3,
+_pred(cs_real_t *valpre,
+      cs_real_t *val1,
+      cs_real_t *val2,
+      cs_real_t *val3,
+      cs_real_t  c1,
+      cs_real_t  c2,
+      cs_real_t  c3,
       cs_lnum_t  n)
 {
   if (n < 1)
     return;
 
   /* Update prediction array */
-  for (cs_lnum_t i = 0; i < n; i++) {
-    valpre[3*i]   = c1*val1[3*i]   + c2*val2[3*i]   + c3*val3[3*i];
-    valpre[3*i+1] = c1*val1[3*i+1] + c2*val2[3*i+1] + c3*val3[3*i+1];
-    valpre[3*i+2] = c1*val1[3*i+2] + c2*val2[3*i+2] + c3*val3[3*i+2];
+  const cs_lnum_t size = 3 * n;
+#pragma omp parallel for if (size > CS_THR_MIN)
+  for (cs_lnum_t i = 0; i < size; i++) {
+    valpre[i] = c1 * val1[i] + c2 * val2[i] + c3 * val3[i];
   }
 }
 
@@ -351,20 +330,18 @@ _pred(double    *valpre,
  *
  * dinorm = sqrt(sum on nbpts i
  *                 (sum on component j
- *                    ((vect1[i,j]-vect2[i,j])^2)))
+ *                    ((vect1[i,j]-vect2[i,j])^2)))/nbpts
  *----------------------------------------------------------------------------*/
 
-static double
-_dinorm(double  *vect1,
-        double  *vect2,
-        double   nbpts)
+static cs_real_t
+_dinorm(cs_real_t *vect1, cs_real_t *vect2, cs_lnum_t nbpts)
 {
   /* Compute the norm of the difference */
-  double norm = 0.;
-  for (cs_lnum_t i = 0; i < nbpts; i++) {
-    norm += (vect1[3*i]-vect2[3*i])*(vect1[3*i]-vect2[3*i]);
-    norm += (vect1[3*i+1]-vect2[3*i+1])*(vect1[3*i+1]-vect2[3*i+1]);
-    norm += (vect1[3*i+2]-vect2[3*i+2])*(vect1[3*i+2]-vect2[3*i+2]);
+  cs_real_t       norm = 0.;
+  const cs_lnum_t size = 3 * nbpts;
+#pragma omp parallel for reduction(+ : norm) if (size > CS_THR_MIN)
+  for (cs_lnum_t i = 0; i < size; i++) {
+    norm += (vect1[i] - vect2[i]) * (vect1[i] - vect2[i]);
   }
 
   /* Note that for vertices, vertices at shared parallel boundaries
@@ -372,18 +349,17 @@ _dinorm(double  *vect1,
      others, but the effect on the global norm should be minor,
      so we avoid a more complex test here */
 
+  cs_real_t rescale = (cs_real_t)nbpts;
+
 #if defined(HAVE_MPI)
   if (cs_glob_n_ranks > 1) {
-    double _norm = norm;
-    int    _nbpts = nbpts;
-    MPI_Allreduce(&_norm, &norm, 1, MPI_DOUBLE, MPI_SUM,
-                  cs_glob_mpi_comm);
-    MPI_Allreduce(&_nbpts, &nbpts, 1, MPI_DOUBLE, MPI_SUM,
-                  cs_glob_mpi_comm);
+    cs_real_t _val[2] = { norm, rescale }, val[2] = { 0., 0. };
+    MPI_Allreduce(&_val, &val, 2, MPI_DOUBLE, MPI_SUM, cs_glob_mpi_comm);
+    norm = val[0], rescale = val[1];
   }
 #endif
 
-  norm = sqrt(norm/nbpts);
+  norm = sqrt(norm / rescale);
   return norm;
 }
 
@@ -402,7 +378,7 @@ _conv(cs_ast_coupling_t  *ast_cpl)
 
   /* Local variables */
   int icv = 0;
-  double delast = 0.;
+  cs_real_t delast = 0.;
 
   int verbosity = _get_current_verbosity(ast_cpl);
 
@@ -448,18 +424,10 @@ _val_ant(cs_ast_coupling_t *ast_cpl)
   const cs_lnum_t  nb_for = ast_cpl->n_faces;
 
   /* record efforts */
-  for (cs_lnum_t i = 0; i< nb_for; i++) {
-    ast_cpl->foaas[3*i]   = ast_cpl->foras[3*i];
-    ast_cpl->foaas[3*i+1] = ast_cpl->foras[3*i+1];
-    ast_cpl->foaas[3*i+2] = ast_cpl->foras[3*i+2];
-  }
+  cs_array_copy(3 * nb_for, ast_cpl->foras, ast_cpl->foaas);
 
   /* record dynamic data */
-  for (cs_lnum_t i = 0; i< nb_dyn; i++) {
-    ast_cpl->xvasa[3*i]   = ast_cpl->xvast[3*i];
-    ast_cpl->xvasa[3*i+1] = ast_cpl->xvast[3*i+1];
-    ast_cpl->xvasa[3*i+2] = ast_cpl->xvast[3*i+2];
-  }
+  cs_array_copy(3 * nb_dyn, ast_cpl->xvast, ast_cpl->xvasa);
 }
 
 /*----------------------------------------------------------------------------
@@ -488,14 +456,11 @@ _cs_ast_coupling_post_function(void                  *coupling,
   const cs_lnum_t *vtx_ids
     = cs_paramedmem_mesh_get_vertex_list(cpl->mc_vertices);
 
-  cs_real_t *values;
-  {
-    const cs_mesh_t *m = cs_glob_mesh;
-    cs_lnum_t n_vals = CS_MAX(m->n_b_faces, m->n_vertices) * 3;
-    BFT_MALLOC(values, n_vals, cs_real_t);
-    for (cs_lnum_t i = 0; i < n_vals; i++)
-      values[i] = 0.;
-  }
+  cs_real_t       *values;
+  const cs_mesh_t *m      = cs_glob_mesh;
+  cs_lnum_t        n_vals = CS_MAX(m->n_b_faces, m->n_vertices) * 3;
+  BFT_MALLOC(values, n_vals, cs_real_t);
+  cs_arrays_set_value<cs_real_t, 1>(n_vals, 0., values);
 
   _scatter_values_r3(cpl->n_vertices,
                      vtx_ids,
@@ -589,7 +554,7 @@ cs_ast_coupling_initialize(int nalimx, cs_real_t epalim)
   const cs_time_step_t *ts = cs_glob_time_step;
 
   int    nbpdtm = ts->nt_max;
-  double ttinit = ts->t_prev;
+  cs_real_t ttinit = ts->t_prev;
 
   /* Allocate global coupling structure */
 
@@ -715,16 +680,11 @@ cs_ast_coupling_initialize(int nalimx, cs_real_t epalim)
     /* Send data */
 
     cs_calcium_write_int(cpl->aci.root_rank, 0, "NBPDTM", 1, &nbpdtm);
-    cs_calcium_write_int(cpl->aci.root_rank, 0, "NBSSIT", 1,
-                         &(cpl->nbssit));
+    cs_calcium_write_int(cpl->aci.root_rank, 0, "NBSSIT", 1, &(cpl->nbssit));
 
-    cs_calcium_write_double(cpl->aci.root_rank, 0, "EPSILO", 1,
-                            &(cpl->epsilo));
-
+    cs_calcium_write_double(cpl->aci.root_rank, 0, "EPSILO", 1, &(cpl->epsilo));
     cs_calcium_write_double(cpl->aci.root_rank, 0, "TTINIT", 1, &ttinit);
-    cs_calcium_write_double(cpl->aci.root_rank, 0, "PDTREF", 1,
-                            &(cpl->dtref));
-
+    cs_calcium_write_double(cpl->aci.root_rank, 0, "PDTREF", 1, &(cpl->dtref));
   }
 }
 
@@ -924,7 +884,7 @@ cs_ast_coupling_exchange_time_step(cs_real_t c_dt[])
     return;
 
   cs_real_t  dttmp = cpl->dtref;
-  double  dt_ast = dttmp;
+  cs_real_t  dt_ast = dttmp;
 
   if (cpl->iteration < 0)
     return;
@@ -934,14 +894,17 @@ cs_ast_coupling_exchange_time_step(cs_real_t c_dt[])
   cpl->iteration += 1;
 
   if (cs_glob_rank_id <= 0) {
-
-    double  dt_sat = c_dt[0];
+    cs_real_t dt_sat     = c_dt[0];
     int  n_val_read = 0;
 
     /* Receive time step sent by code_aster */
 
-    err_code = cs_calcium_read_double(cpl->aci.root_rank, &(cpl->iteration),
-                                      "DTAST", 1, &n_val_read, &dt_ast);
+    err_code = cs_calcium_read_double(cpl->aci.root_rank,
+                                      &(cpl->iteration),
+                                      "DTAST",
+                                      1,
+                                      &n_val_read,
+                                      &dt_ast);
 
     if (err_code >= 0) {
 
@@ -954,9 +917,11 @@ cs_ast_coupling_exchange_time_step(cs_real_t c_dt[])
       if (dt_sat < dttmp)
         dttmp = dt_sat;
 
-      err_code = cs_calcium_write_double(cpl->aci.root_rank, cpl->iteration,
-                                         "DTCALC", 1, &dttmp);
-
+      err_code = cs_calcium_write_double(cpl->aci.root_rank,
+                                         cpl->iteration,
+                                         "DTCALC",
+                                         1,
+                                         &dttmp);
     }
     else {
 
@@ -984,9 +949,8 @@ cs_ast_coupling_exchange_time_step(cs_real_t c_dt[])
 
 #endif
 
-  cs_lnum_t n_cells_ext = cs_glob_mesh->n_cells_with_ghosts;
-  for (cs_lnum_t i = 0; i < n_cells_ext; i++)
-    c_dt[i] = dttmp;
+  const cs_lnum_t n_cells_ext = cs_glob_mesh->n_cells_with_ghosts;
+  cs_arrays_set_value<cs_real_t, 1>(n_cells_ext, dttmp, c_dt);
 
   cpl->dt = dttmp;
 
