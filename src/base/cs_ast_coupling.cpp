@@ -66,8 +66,8 @@
 #include "cs_interface.h"
 #include "cs_log.h"
 #include "cs_mesh.h"
-#include "cs_mesh_quantities.h"
 #include "cs_mesh_connect.h"
+#include "cs_mesh_quantities.h"
 #include "cs_parall.h"
 #include "cs_paramedmem_coupling.h"
 #include "cs_part_to_block.h"
@@ -868,21 +868,21 @@ cs_ast_coupling_geometry(cs_lnum_t         n_faces,
                                   3,
                                   CS_MEDCPL_FIELD_INT_MAXIMUM,
                                   CS_MEDCPL_ON_NODES,
-                                  CS_MEDCPL_LINEAR_TIME);
+                                  CS_MEDCPL_ONE_TIME);
 
   cs_paramedmem_def_coupled_field(cpl->mc_vertices,
                                   _name_m_v,
                                   3,
                                   CS_MEDCPL_FIELD_INT_MAXIMUM,
                                   CS_MEDCPL_ON_NODES,
-                                  CS_MEDCPL_LINEAR_TIME);
+                                  CS_MEDCPL_ONE_TIME);
 
   cs_paramedmem_def_coupled_field(cpl->mc_faces,
                                   _name_f_f,
                                   3,
                                   CS_MEDCPL_FIELD_INT_CONSERVATION,
                                   CS_MEDCPL_ON_CELLS,
-                                  CS_MEDCPL_LINEAR_TIME);
+                                  CS_MEDCPL_ONE_TIME);
 
   /* Post-processing */
 
