@@ -92,6 +92,23 @@ cs_gwf_tpf_define_relax_pty_by_value(cs_gwf_tpf_t *tpf,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Define the relaxation property by value and set this value.
+ *
+ * \param[in] tpf          pointer to the model context structure
+ * \param[in] func         function pointer to a time function
+ * \param[in] func_context context related to this function
+ *
+ * \return a pointer to the created definition (\ref cs_xdef_t structure)
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_xdef_t *
+cs_gwf_tpf_define_relax_pty_by_time_func(cs_gwf_tpf_t   *tpf,
+                                         cs_time_func_t *func,
+                                         void           *func_context);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Log the setup related to the model context of two-phase flows.
  *        Common to the different sub-models relying on two-phase flows.
  *
