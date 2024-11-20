@@ -894,7 +894,7 @@ cs_mobile_structures_initialize(void)
     idfstr = nullptr;
   }
 
-  if (n_int_structs && ms->plot > 0)
+  if (n_int_structs > 0 && ms->plot > 0)
     _init_time_plot(ms);
 }
 
@@ -1215,7 +1215,6 @@ cs_mobile_structures_prediction(int  itrale,
           ms->xstr[i][j] = ms->xstp[i][j];
       }
     }
-
     else {
 
       /* Explicit coupling scheme */
@@ -1360,10 +1359,7 @@ cs_mobile_structures_prediction(int  itrale,
         const cs_real_t *cvara_pr = CS_F_(p)->val_pre;
 
         BFT_REALLOC(_pr_save, n_b_faces, cs_real_t);
-        cs_real_t *xprale = _pr_save;
-
-        for (cs_lnum_t i = 0; i < n_vals; i++)
-          xprale[i] = cvara_pr[i];
+        cs_array_copy(n_vals, cvara_pr, _pr_save);
       }
 
     } /* ineefl */
@@ -1448,16 +1444,18 @@ cs_mobile_structures_displacement(int itrale, int italim, int *itrfin)
     }
   }
 
-  cs_parall_sum(n_int_structs * 3, CS_REAL_TYPE, (cs_real_t *)ms->forstr);
+  if (n_int_structs > 0) {
+    cs_parall_sum(n_int_structs * 3, CS_REAL_TYPE, (cs_real_t *)ms->forstr);
 
-  /* Compute effort sent to internal structures */
+    /* Compute effort sent to internal structures */
 
-  const cs_real_t cfopre = ms->cfopre;
+    const cs_real_t cfopre = ms->cfopre;
 
-  for (int i = 0; i < n_int_structs; i++) {
-    for (int j = 0; j < 3; j++) {
-      ms->forstp[i][j] =          cfopre * ms->forstr[i][j]
-                         + (1.0 - cfopre) * ms->forsta[i][j];
+    for (int i = 0; i < n_int_structs; i++) {
+      for (int j = 0; j < 3; j++) {
+        ms->forstp[i][j] =
+          cfopre * ms->forstr[i][j] + (1.0 - cfopre) * ms->forsta[i][j];
+      }
     }
   }
 
@@ -1510,13 +1508,13 @@ cs_mobile_structures_displacement(int itrale, int italim, int *itrfin)
      ---------------- */
 
   int icvext = 0, icvint = 0, icved  = 0;
-  double delta = 0.;
-
-  for (int i = 0; i < n_int_structs; i++) {
-    delta += cs_math_3_square_distance(ms->xstr[i], ms->xstp[i]);
-  }
+  cs_real_t delta = 0.;
 
   if (n_int_structs > 0) {
+    for (int i = 0; i < n_int_structs; i++) {
+      delta += cs_math_3_square_distance(ms->xstr[i], ms->xstp[i]);
+    }
+
     const cs_real_t almax = cs_glob_turb_ref_values->almax;
 
     delta = sqrt(delta) / almax / n_int_structs;
@@ -1596,24 +1594,19 @@ cs_mobile_structures_displacement(int itrale, int italim, int *itrfin)
 
     for (int field_id = 0; field_id < n_fields; field_id++) {
       cs_field_t *f = cs_field_by_id(field_id);
-      if (   f->type & CS_FIELD_VARIABLE
-          && f->location_id == CS_MESH_LOCATION_CELLS
-          && (f->type & CS_FIELD_CDO) == 0) {
-
+      if (f->type & CS_FIELD_VARIABLE &&
+          f->location_id == CS_MESH_LOCATION_CELLS &&
+          (f->type & CS_FIELD_CDO) == 0) {
         cs_real_t *cvar_var = f->val;
         cs_real_t *cvara_var = f->val_pre;
         cs_lnum_t n_vals = (cs_lnum_t)f->dim*n_cells_ext;
 
         if (   f == CS_F_(p)
             && cs_glob_velocity_pressure_param->nterup > 1) {
-          cs_real_t *xprale = _pr_save;
-          for (cs_lnum_t i = 0; i < n_vals; i++)
-            cvara_var[i] = xprale[i];
+          cs_array_copy(n_vals, _pr_save, cvara_var);
         }
 
-        for (cs_lnum_t i = 0; i < n_vals; i++)
-          cvar_var[i] = cvara_var[i];
-
+        cs_array_copy(n_vals, cvara_var, cvar_var);
       }
     }
 
@@ -1630,11 +1623,8 @@ cs_mobile_structures_displacement(int itrale, int italim, int *itrfin)
     cs_real_t *imasfl_pre = f_i->val_pre;
     cs_real_t *bmasfl_pre = f_b->val_pre;
 
-    for (cs_lnum_t face_id = 0; face_id < n_i_faces; face_id++)
-      imasfl[face_id] = imasfl_pre[face_id];
-
-    for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++)
-      bmasfl[face_id] = bmasfl_pre[face_id];
+    cs_array_copy(n_i_faces, imasfl_pre, imasfl);
+    cs_array_copy(n_b_faces, bmasfl_pre, bmasfl);
 
     /* Restore BC coefficients.
 

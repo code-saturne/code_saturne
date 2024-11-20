@@ -364,7 +364,7 @@ cs_initialize_fields_stage_0(void)
   /* ALE
      --- */
 
-  if (cs_glob_ale > 0) {
+  if (cs_glob_ale > CS_ALE_NONE) {
     cs_field_t *f_coord0 = cs_field_by_name("vtx_coord0");
     cs_array_real_copy(m->n_vertices*3, m->vtx_coord, f_coord0->val);
   }

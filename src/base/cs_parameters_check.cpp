@@ -1402,7 +1402,7 @@ cs_parameters_check(void)
    * Verification in the ALE method
    *--------------------------------------------------------------------------*/
 
-  if (cs_glob_ale >= 1) {
+  if (cs_glob_ale > CS_ALE_NONE) {
     if (cs_glob_ale_n_ini_f < 0)
       cs_parameters_error
         (CS_ABORT_DELAYED,

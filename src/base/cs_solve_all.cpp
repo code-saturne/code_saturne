@@ -363,7 +363,7 @@ _update_pressure_temperature(cs_lnum_t n_cells)
  *
  * \param[out] vel_verbosity  verbosity for velocity
  * \param[out] italim         implicit coupling iteration number
- * \param[out] itrfin         indicator for last iteration of implicit couplin
+ * \param[out] itrfin         indicator for last iteration of implicit coupling
  * \param[out] ineefl         for ALE
  * \param[out] itrfup         indication of iteration
  * \param[out] must_return    if it is done
@@ -1029,9 +1029,8 @@ cs_solve_all(int  itrale)
   int itrfin = 1;
   int ineefl = 0;
 
-  if (   cs_glob_ale >  CS_ALE_NONE
-      && itrale > nalinf
-      && cs_glob_mobile_structures_i_max > 1) {
+  if (cs_glob_ale != CS_ALE_NONE && itrale > nalinf &&
+      cs_glob_mobile_structures_i_max > 1) {
     /* Indicate if we need to return to the initial state at the end
        of an  ALE iteration. */
     ineefl = 1;
@@ -1112,8 +1111,7 @@ cs_solve_all(int  itrale)
 
     /* Computation on non-frozen velocity field, continued */
 
-    if (_active_dyn && cs_glob_ale > CS_ALE_NONE) {
-
+    if (_active_dyn && cs_glob_ale != CS_ALE_NONE) {
       /* Movement of structures in ALE and test implicit loop */
 
       const int n_structs = cs_mobile_structures_get_n_int_structures();
@@ -1124,7 +1122,6 @@ cs_solve_all(int  itrale)
           need_new_solve = true;
         }
       }
-
     }
 
   } // End loop on need_new_solve (_solve_most)

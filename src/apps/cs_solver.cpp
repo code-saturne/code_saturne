@@ -311,7 +311,7 @@ _run(void)
     if (cs_parameters_need_extended_neighborhood())
       halo_type = CS_HALO_EXTENDED;
 
-    if (cs_glob_ale > CS_ALE_NONE) {
+    if (cs_glob_ale != CS_ALE_NONE) {
       cs_restart_map_set_locations(true, true);
       cs_gui_mobile_mesh_get_boundaries(cs_glob_domain);
       if (cs_glob_mesh->time_dep < CS_MESH_TRANSIENT_COORDS)

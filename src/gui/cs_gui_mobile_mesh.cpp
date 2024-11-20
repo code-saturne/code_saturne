@@ -449,7 +449,7 @@ cs_gui_ale_params(void)
   cs_gui_node_get_status_int(tn, &ale_status);
   cs_glob_ale = (cs_ale_type_t)ale_status;
 
-  if (cs_glob_ale > CS_ALE_NONE) {
+  if (cs_glob_ale != CS_ALE_NONE) {
     cs_gui_node_get_child_int(tn, "fluid_initialization_sub_iterations",
                               &cs_glob_ale_n_ini_f);
     cs_gui_node_get_child_int(tn, "max_iterations_implicitation",

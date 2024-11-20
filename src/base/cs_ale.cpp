@@ -1113,10 +1113,13 @@ cs_ale_allocate(void)
 
   BFT_MALLOC(cs_glob_ale_data->impale, cs_glob_mesh->n_vertices, int);
   BFT_MALLOC(cs_glob_ale_data->bc_type, cs_glob_mesh->n_b_faces, int);
-  for (cs_lnum_t ii = 0; ii < cs_glob_mesh->n_b_faces; ii++)
-    cs_glob_ale_data->bc_type[ii] = 0;
-  for (cs_lnum_t ii = 0; ii < cs_glob_mesh->n_vertices; ii++)
-    cs_glob_ale_data->impale[ii] = 0;
+
+  cs_arrays_set_value<int, 1>(cs_glob_mesh->n_b_faces,
+                              0,
+                              cs_glob_ale_data->bc_type);
+  cs_arrays_set_value<int, 1>(cs_glob_mesh->n_vertices,
+                              0,
+                              cs_glob_ale_data->impale);
 
   cs_base_at_finalize(_ale_free);
 }
@@ -1249,13 +1252,11 @@ cs_ale_project_displacement(const int           ale_bc_type[],
 
           for (int i = 0; i < 3; i++) {
             disp_proj[vtx_id][i] +=
-              dt_dvol1*(meshv[cell_id1][i] + gradm[cell_id1][i][0]*cen1_node[0]
-                                           + gradm[cell_id1][i][1]*cen1_node[1]
-                                           + gradm[cell_id1][i][2]*cen1_node[2])
-
-            + dt_dvol2*(meshv[cell_id2][i] + gradm[cell_id2][i][0]*cen2_node[0]
-                                           + gradm[cell_id2][i][1]*cen2_node[1]
-                                           + gradm[cell_id2][i][2]*cen2_node[2]);
+              dt_dvol1 *
+                (meshv[cell_id1][i] +
+                 cs_math_3_dot_product(gradm[cell_id1][i], cen1_node)) +
+              dt_dvol2 * (meshv[cell_id2][i] +
+                          cs_math_3_dot_product(gradm[cell_id2][i], cen2_node));
           }
 
           vtx_counter[vtx_id] += dvol1 + dvol2;
@@ -1294,18 +1295,16 @@ cs_ale_project_displacement(const int           ale_bc_type[],
 
         cs_real_3_t vel_node;
         for (int i = 0; i < 3; i++)
-          vel_node[i] = claale[face_id][i]
-                      + gradm[cell_id][i][0]*face_node[0]
-                      + gradm[cell_id][i][1]*face_node[1]
-                      + gradm[cell_id][i][2]*face_node[2];
+          vel_node[i] = claale[face_id][i] +
+                        cs_math_3_dot_product(gradm[cell_id][i], face_node);
 
         const cs_real_t dsurf = 1./mq->b_face_surf[face_id];
 
         for (int i = 0; i < 3; i++)
-          disp_proj[vtx_id][i] += dsurf * dt[cell_id] *
-            (vel_node[i] + clbale[face_id][i][0]*meshv[cell_id][0]
-                         + clbale[face_id][i][1]*meshv[cell_id][1]
-                         + clbale[face_id][i][2]*meshv[cell_id][2]);
+          disp_proj[vtx_id][i] +=
+            dsurf * dt[cell_id] *
+            (vel_node[i] +
+             cs_math_3_dot_product(clbale[face_id][i], meshv[cell_id]));
 
         vtx_counter[vtx_id] += dsurf;
 
@@ -1352,15 +1351,12 @@ cs_ale_project_displacement(const int           ale_bc_type[],
 
         const cs_lnum_t  vtx_id = m->b_face_vtx_lst[j];
 
-        disp_proj[vtx_id][0] =   clbale[face_id][0][0]*disp_proj[vtx_id][0]
-                               + clbale[face_id][0][1]*disp_proj[vtx_id][1]
-                               + clbale[face_id][0][2]*disp_proj[vtx_id][2];
-        disp_proj[vtx_id][1] =   clbale[face_id][1][0]*disp_proj[vtx_id][0]
-                               + clbale[face_id][1][1]*disp_proj[vtx_id][1]
-                               + clbale[face_id][1][2]*disp_proj[vtx_id][2];
-        disp_proj[vtx_id][2] =   clbale[face_id][2][0]*disp_proj[vtx_id][0]
-                               + clbale[face_id][2][1]*disp_proj[vtx_id][1]
-                               + clbale[face_id][2][2]*disp_proj[vtx_id][2];
+        disp_proj[vtx_id][0] =
+          cs_math_3_dot_product(clbale[face_id][0], disp_proj[vtx_id]);
+        disp_proj[vtx_id][1] =
+          cs_math_3_dot_product(clbale[face_id][1], disp_proj[vtx_id]);
+        disp_proj[vtx_id][2] =
+          cs_math_3_dot_product(clbale[face_id][2], disp_proj[vtx_id]);
 
       } /* End of loop on vertices of the face */
 
@@ -1415,7 +1411,7 @@ cs_ale_update_mesh(int  itrale)
   for (cs_lnum_t v_id = 0; v_id < n_vertices; v_id++) {
     for (cs_lnum_t idim = 0; idim < ndim; idim++) {
       vtx_coord[v_id][idim] = xyzno0[v_id][idim] + disale[v_id][idim];
-      disala[v_id][idim] = vtx_coord[v_id][idim] - xyzno0[v_id][idim];
+      disala[v_id][idim]    = disale[v_id][idim];
     }
   }
 
@@ -1433,17 +1429,24 @@ cs_ale_update_mesh(int  itrale)
 
     cs_field_t *f = cs_field_by_name("mesh_velocity");
     if (f->location_id == CS_MESH_LOCATION_VERTICES) {
-
-      for (cs_lnum_t v_id = 0; v_id < n_vertices; v_id++)
-        for (int idim = 0; idim < ndim; idim++)
-          f->val[3*v_id+idim] = f->val_pre[3*v_id+idim];
-
+      if (ndim == 3) {
+        cs_array_copy(3 * n_vertices, f->val_pre, f->val);
+      }
+      else {
+        for (cs_lnum_t v_id = 0; v_id < n_vertices; v_id++)
+          for (int idim = 0; idim < ndim; idim++)
+            f->val[3 * v_id + idim] = f->val_pre[3 * v_id + idim];
+      }
     }
     else if (f->location_id == CS_MESH_LOCATION_CELLS) {
-
-      for (cs_lnum_t cell_id = 0; cell_id < n_cells_ext; cell_id++)
-        for (int idim = 0; idim < ndim; idim++)
-          f->val[3*cell_id+idim] = f->val_pre[3*cell_id+idim];
+      if (ndim == 3) {
+        cs_array_copy(3 * n_cells_ext, f->val_pre, f->val);
+      }
+      else {
+        for (cs_lnum_t cell_id = 0; cell_id < n_cells_ext; cell_id++)
+          for (int idim = 0; idim < ndim; idim++)
+            f->val[3 * cell_id + idim] = f->val_pre[3 * cell_id + idim];
+      }
 
     } /* Field located at cells */
 
@@ -1865,7 +1868,7 @@ cs_ale_destroy_all(void)
 void
 cs_ale_restart_read(cs_restart_t  *r)
 {
-  if (cs_glob_ale < 1)
+  if (cs_glob_ale == CS_ALE_NONE)
     return;
 
   cs_field_t *f_displ = cs_field_by_name("mesh_displacement");
@@ -1926,7 +1929,7 @@ cs_ale_restart_read(cs_restart_t  *r)
 void
 cs_ale_restart_write(cs_restart_t  *r)
 {
-  if (cs_glob_ale < 1)
+  if (cs_glob_ale == CS_ALE_NONE)
     return;
 
   cs_field_t *f_displ = cs_field_by_name("mesh_displacement");

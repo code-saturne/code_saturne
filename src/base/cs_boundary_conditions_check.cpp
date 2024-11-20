@@ -492,8 +492,7 @@ cs_boundary_conditions_check(int  bc_type[],
 
   /* Check if the gravity is non zero in case of free-surface */
   int iok_ale = 0;
-  if (cs_glob_ale >= CS_ALE_LEGACY) {
-
+  if (cs_glob_ale == CS_ALE_LEGACY || cs_glob_ale == CS_ALE_CDO) {
     const cs_real_t grav2 = cs_math_3_dot_product(gxyz, gxyz);
     if (grav2 <= cs_math_pow2(cs_math_epzero)) {
 
@@ -511,7 +510,6 @@ cs_boundary_conditions_check(int  bc_type[],
                     "Check parameters or modify the gravity."));
       }
     }
-
   }
 
   /* Inter-variable consistency check

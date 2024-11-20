@@ -305,14 +305,14 @@ _send_icv2(cs_ast_coupling_t  *ast_cpl,
  *----------------------------------------------------------------------------*/
 
 static void
-_pred(cs_real_t *valpre,
-      cs_real_t *val1,
-      cs_real_t *val2,
-      cs_real_t *val3,
-      cs_real_t  c1,
-      cs_real_t  c2,
-      cs_real_t  c3,
-      cs_lnum_t  n)
+_pred(cs_real_t       *valpre,
+      const cs_real_t *val1,
+      const cs_real_t *val2,
+      const cs_real_t *val3,
+      const cs_real_t  c1,
+      const cs_real_t  c2,
+      const cs_real_t  c3,
+      const cs_lnum_t  n)
 {
   if (n < 1)
     return;
@@ -322,6 +322,32 @@ _pred(cs_real_t *valpre,
 #pragma omp parallel for if (size > CS_THR_MIN)
   for (cs_lnum_t i = 0; i < size; i++) {
     valpre[i] = c1 * val1[i] + c2 * val2[i] + c3 * val3[i];
+  }
+}
+
+/*----------------------------------------------------------------------------
+ * Predict displacement or forces based on values of the current and
+ * previous time step(s)
+ *
+ * valpre = c1 * val1 + c2 * val2
+ *----------------------------------------------------------------------------*/
+
+static void
+_pred2(cs_real_t       *valpre,
+       const cs_real_t *val1,
+       const cs_real_t *val2,
+       const cs_real_t  c1,
+       const cs_real_t  c2,
+       const cs_lnum_t  n)
+{
+  if (n < 1)
+    return;
+
+  /* Update prediction array */
+  const cs_lnum_t size = 3 * n;
+#pragma omp parallel for if (size > CS_THR_MIN)
+  for (cs_lnum_t i = 0; i < size; i++) {
+    valpre[i] = c1 * val1[i] + c2 * val2[i];
   }
 }
 
@@ -763,7 +789,7 @@ cs_ast_coupling_geometry(cs_lnum_t         n_faces,
   cs_paramedmem_add_mesh_from_ids(cpl->mc_vertices, n_faces, face_ids, 2);
 
   cpl->n_faces    = n_faces;
-  cpl->n_vertices = cs_paramedmem_mesh_get_n_vertices(cpl->mc_faces);
+  cpl->n_vertices = cs_paramedmem_mesh_get_n_vertices(cpl->mc_vertices);
 
   fvm_nodal_t *fsi_mesh
     = cs_mesh_connect_faces_to_nodal(cs_glob_mesh,
@@ -1012,28 +1038,20 @@ cs_ast_coupling_exchange_fields(void)
   /* Send prediction
      (no difference between explicit and implicit cases for forces) */
 
-  cs_real_t alpha = 2.0;
-  cs_real_t c1    = alpha;
-  cs_real_t c2    = 1-alpha;
-  cs_real_t c3    = 0.;
+  constexpr cs_real_t alpha = 2.0;
+  constexpr cs_real_t c1    = alpha;
+  constexpr cs_real_t c2    = 1 - alpha;
 
-  _pred(cpl->fopas,
-        cpl->foras,
-        cpl->foaas,
-        cpl->foaas,
-        c1,
-        c2,
-        c3,
-        n_faces);
+  _pred2(cpl->fopas, cpl->foras, cpl->foaas, c1, c2, n_faces);
 
   if (verbosity > 0)
     bft_printf("--------------------------------------\n"
                "Forces prediction coefficients\n"
                " C1: %4.2le\n"
                " C2: %4.2le\n"
-               " C3: %4.2le\n"
                "--------------------------------------\n\n",
-               c1, c2, c3);
+               c1,
+               c2);
 
   /* Send forces */
 
@@ -1142,14 +1160,7 @@ cs_ast_coupling_compute_displacement(cs_real_t disp[][3])
     c1    = alpha;
     c2    = 1. - alpha;
     c3    = 0.;
-    _pred(cpl->xastp,
-          cpl->xast,
-          cpl->xastp,
-          cpl->xast,
-          c1,
-          c2,
-          c3,
-          nb_dyn);
+    _pred2(cpl->xastp, cpl->xast, cpl->xastp, c1, c2, nb_dyn);
   }
 
   int verbosity = _get_current_verbosity(cpl);

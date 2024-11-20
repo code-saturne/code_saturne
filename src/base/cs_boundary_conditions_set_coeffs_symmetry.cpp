@@ -529,14 +529,12 @@ cs_boundary_conditions_set_coeffs_symmetry(cs_real_t  velipb[][3],
        not important for symmetry). */
 
     cs_real_t rcodcn = 0.0;
-    if (cs_glob_ale > CS_ALE_NONE) {
-
+    if (cs_glob_ale == CS_ALE_LEGACY || cs_glob_ale == CS_ALE_CDO) {
       const cs_real_t rcodclxyz[3] = {rcodcl1_vel[n_b_faces*0 + f_id],
                                       rcodcl1_vel[n_b_faces*1 + f_id],
                                       rcodcl1_vel[n_b_faces*2 + f_id]};
 
       rcodcn = cs_math_3_dot_product(rcodclxyz, nn);
-
     }
 
     const cs_real_t upxyz[3] = {velipb[f_id][0],

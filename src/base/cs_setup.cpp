@@ -2144,7 +2144,7 @@ _additional_fields_stage_2(void)
     /* Working field to store value of the solved variable at the previous time step
      * if needed (ALE) */
     int model = cs_turbomachinery_get_model();
-    if (cs_glob_ale != 0 || model > 0) {
+    if (cs_glob_ale != CS_ALE_NONE || model > 0) {
       cs_field_t *f_wd_aux_pre = _add_property_field("wall_distance_aux_pre",
                                                      NULL,
                                                      1,
@@ -2353,7 +2353,7 @@ _additional_fields_stage_2(void)
   }
 
   /* In case of ALE or postprocessing, ensure boundary forces are tracked */
-  if (cs_glob_ale >= 1) {
+  if (cs_glob_ale > CS_ALE_NONE) {
     cs_field_find_or_create("boundary_forces",
                             CS_FIELD_EXTENSIVE | CS_FIELD_POSTPROCESS,
                             CS_MESH_LOCATION_BOUNDARY_FACES,
@@ -3187,7 +3187,7 @@ _additional_fields_stage_3(void)
   /* Change some field settings
      -------------------------- */
 
-  if (cs_glob_ale > 0) {
+  if (cs_glob_ale > CS_ALE_NONE) {
     cs_field_t *f_imasf
       = cs_field_by_id(cs_field_get_key_int(CS_F_(p), k_imasf));
     cs_field_set_n_time_vals(f_imasf, 2);

@@ -298,7 +298,8 @@ cs_math_pow3(cs_real_t  x)
 CS_F_HOST_DEVICE static inline cs_real_t
 cs_math_pow4(cs_real_t  x)
 {
-  return (x*x)*(x*x);
+  cs_real_t x2 = x * x;
+  return x2 * x2;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -314,7 +315,8 @@ cs_math_pow4(cs_real_t  x)
 CS_F_HOST_DEVICE static inline cs_real_t
 cs_math_pow5(cs_real_t  x)
 {
-  return x*(x*x)*(x*x);
+  cs_real_t x2 = x * x;
+  return x * x2 * x2;
 }
 
 /*----------------------------------------------------------------------------*/

@@ -52,6 +52,7 @@
 #include "cs_1d_wall_thermal.h"
 #include "cs_1d_wall_thermal_check.h"
 #include "cs_ale.h"
+#include "cs_array.h"
 #include "cs_at_data_assim.h"
 #include "cs_atmo.h"
 #include "cs_boundary_conditions.h"
@@ -65,7 +66,6 @@
 #include "cs_field_pointer.h"
 #include "cs_gas_mix.h"
 #include "cs_gui.h"
-#include "cs_turbulence_htles.h"
 #include "cs_ibm.h"
 #include "cs_initialize_fields.h"
 #include "cs_lagr.h"
@@ -92,17 +92,18 @@
 #include "cs_restart_default.h"
 #include "cs_restart_main_and_aux.h"
 #include "cs_restart_map.h"
+#include "cs_runaway_check.h"
 #include "cs_sat_coupling.h"
 #include "cs_solve_all.h"
-#include "cs_runaway_check.h"
 #include "cs_time_moment.h"
 #include "cs_time_step.h"
 #include "cs_timer_stats.h"
 #include "cs_turbomachinery.h"
 #include "cs_turbulence_bc.h"
+#include "cs_turbulence_htles.h"
 #include "cs_turbulence_model.h"
-#include "cs_volume_mass_injection.h"
 #include "cs_vof.h"
+#include "cs_volume_mass_injection.h"
 #include "cs_wall_condensation.h"
 #include "cs_wall_condensation_1d_thermal.h"
 
@@ -547,7 +548,7 @@ cs_time_stepping(void)
 
   /* ALE mobile structures */
 
-  if (cs_glob_ale > CS_ALE_NONE)
+  if (cs_glob_ale != CS_ALE_NONE)
     cs_mobile_structures_initialize();
 
   /* Lagrangian initialization */
@@ -630,8 +631,7 @@ cs_time_stepping(void)
                             &(ts->nt_max),
                             &(ts->dt_ref));
 
-      for (cs_lnum_t c_id = 0; c_id < n_cells_ext; c_id++)
-        dt[c_id] = ts->dt_ref;
+      cs_arrays_set_value<cs_real_t, 1>(n_cells_ext, ts->dt_ref, dt);
     }
 
     if (ts->nt_max == ts->nt_cur && ts->nt_max > ts->nt_prev)
@@ -751,11 +751,9 @@ cs_time_stepping(void)
     /* Update mesh (ALE)
        ----------------- */
 
-    if (cs_glob_ale > CS_ALE_NONE && ts->nt_max > ts->nt_prev) {
-
+    if (cs_glob_ale != CS_ALE_NONE && ts->nt_max > ts->nt_prev) {
       if (itrale == 0 || itrale > cs_glob_ale_n_ini_f)
         cs_ale_update_mesh(itrale);
-
     }
 
     /* Optional processing by user
@@ -952,7 +950,7 @@ cs_time_stepping(void)
   if (cs_glob_physical_model_flag[CS_GAS_MIX] >= 0)
     cs_gas_mix_finalize();
 
-  if (cs_glob_ale >= 1)
+  if (cs_glob_ale != CS_ALE_NONE)
     cs_mobile_structures_finalize();
 
   if (   cs_glob_1d_wall_thermal->nfpt1d > 0
