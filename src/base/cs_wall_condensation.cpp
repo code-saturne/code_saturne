@@ -1067,6 +1067,36 @@ cs_wall_condensation_volume_exchange_surf_at_cells(cs_real_t  *surf)
 }
 
 /*----------------------------------------------------------------------------*/
+/*
+ * \brief Reset values
+ *
+ * \param[in]  wall_cond  wall_condensation strucutre
+ * \param[in]  n_var number of variable
+ *
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_wall_condensation_reset(cs_wall_condensation_t *wall_cond, const int n_var)
+{
+  for (int ii = 0; ii < wall_cond->nfbpcd; ii++) {
+    wall_cond->hpcond[ii] = 0.0;
+    for (int ivar = 0; ivar < n_var; ivar++) {
+      wall_cond->itypcd[ivar * wall_cond->nfbpcd + ii] = 0;
+      wall_cond->spcond[ivar * wall_cond->nfbpcd + ii] = 0.0;
+    }
+  }
+
+  for (cs_lnum_t ii = 0; ii < wall_cond->ncmast; ii++) {
+    wall_cond->flxmst[ii] = 0.0;
+    for (int ivar = 0; ivar < n_var; ivar++) {
+      wall_cond->itypst[ivar * wall_cond->ncmast + ii] = 0;
+      wall_cond->svcond[ivar * wall_cond->ncmast + ii] = 0.0;
+    }
+  }
+}
+
+/*----------------------------------------------------------------------------*/
 /*!
  * \brief Compute the wall condensation source terms.
  */

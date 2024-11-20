@@ -269,6 +269,19 @@ cs_wall_condensation_initialize(void);
 
 /*----------------------------------------------------------------------------*/
 /*
+ * \brief Reset values
+ *
+ * \param[in]  wall_cond  wall_condensation strucutre
+ * \param[in]  n_var number of variable
+ *
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_wall_condensation_reset(cs_wall_condensation_t *wall_cond, const int n_var);
+
+/*----------------------------------------------------------------------------*/
+/*
  * \brief Return condensing volume structures surface at each cell.
  *
  * \param[out]  surf  array of volume structure surfaces at each cell

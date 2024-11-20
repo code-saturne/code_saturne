@@ -1056,21 +1056,7 @@ cs_solve_all(int  itrale)
   cs_wall_condensation_t *wall_cond = cs_get_glob_wall_condensation();
   if ((wall_cond->icondb == 0) || (wall_cond->icondv == 0)) {
     // Condensation source terms arrays initialized
-    for (int ii = 0; ii < wall_cond->nfbpcd; ii++) {
-      wall_cond->hpcond[ii] = 0.0;
-      for (int ivar = 0; ivar < n_var; ivar++) {
-        wall_cond->itypcd[ivar*wall_cond->nfbpcd + ii] = 0;
-        wall_cond->spcond[ivar*wall_cond->nfbpcd + ii] = 0.0;
-      }
-    }
-
-    for (cs_lnum_t ii = 0; ii < wall_cond->ncmast; ii++) {
-      wall_cond->flxmst[ii] = 0.0;
-      for (int ivar = 0; ivar < n_var; ivar++) {
-        wall_cond->itypst[ivar*wall_cond->ncmast + ii] = 0;
-        wall_cond->svcond[ivar*wall_cond->ncmast + ii] = 0.0;
-      }
-    }
+    cs_wall_condensation_reset(wall_cond, n_var);
 
     cs_user_wall_condensation(3);
 
