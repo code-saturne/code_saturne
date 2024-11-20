@@ -543,7 +543,7 @@ cs_rho_humidair(cs_real_t   yw_h,
  * \param[in]     x             absolute humidity of humid air
  * \param[in]     rho0          reference density of humid air
  * \param[in]     p0            reference pressure
- * \param[in]     t0            reference temperature of humid air
+ * \param[in]     t0            reference temperature of humid air (Kelvin)
  * \param[in]     molmassrat    dry air to water vapor molecular mass ratio
  * \param[in]     t_h           temperature of humid air in Celsius
  */

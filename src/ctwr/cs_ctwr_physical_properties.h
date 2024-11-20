@@ -46,14 +46,14 @@ BEGIN_C_DECLS
  * \param[in]     cell_id       Cell index
  * \param[in]     p0            Fluid properties reference pressure
  * \param[in]     ref_ressure   Atmospheric reference pressure
- * \return        pphy            Reference pressure
+ * \return        pphy          Reference pressure
  */
 /*----------------------------------------------------------------------------*/
 
 cs_real_t
 cs_ctwr_compute_reference_pressure(cs_lnum_t  cell_id,
-                                   cs_real_t   p0,
-                                   cs_field_t  *ref_pressure);
+                                   cs_real_t  p0,
+                                   cs_field_t *ref_pressure);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -61,7 +61,7 @@ cs_ctwr_compute_reference_pressure(cs_lnum_t  cell_id,
  *        the liquid
  *
  * \param[in]     rho0        Reference density of humid air
- * \param[in]     t0          Reference temperature of humid air
+ * \param[in]     t0          Reference temperature of humid air (Kelvin)
  * \param[in]     p0          Reference pressure
  */
 /*----------------------------------------------------------------------------*/
@@ -76,7 +76,7 @@ cs_ctwr_phyvar_update(cs_real_t  rho0,
  * \brief Reset the field variables based on the restart values
  *
  * \param[in]     rho0        Reference density of humid air
- * \param[in]     t0          Reference temperature of humid air
+ * \param[in]     t0          Reference temperature of humid air (Kelvin)
  * \param[in]     p0          Reference pressure
  * \param[in]     humidity0   Reference humidity
  * \param[in]     molmassrat  Dry air to water vapor molecular mass ratio

@@ -139,7 +139,7 @@ cs_ctwr_compute_reference_pressure(cs_lnum_t  cell_id,
  * \brief Reset the field variables based on the restart values
  *
  * \param[in]     rho0        Reference density of humid air
- * \param[in]     t0          Reference temperature of humid air
+ * \param[in]     t0          Reference temperature of humid air (Kelvin)
  * \param[in]     p0          Reference pressure
  * \param[in]     humidity0   Reference humidity
  * \param[in]     molmassrat  Dry air to water vapor molecular mass ratio
@@ -405,7 +405,7 @@ cs_ctwr_restart_field_vars(cs_real_t  rho0,
  *        the liquid.
  *
  * \param[in]     rho0        Reference density of humid air
- * \param[in]     t0          Reference temperature of humid air
+ * \param[in]     t0          Reference temperature of humid air (Kelvin)
  * \param[in]     p0          Reference pressure
  */
 /*----------------------------------------------------------------------------*/

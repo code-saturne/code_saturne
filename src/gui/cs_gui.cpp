@@ -3991,9 +3991,17 @@ cs_gui_physical_properties(void)
   /* Read T0 in each case for user */
   /* do not read reference temperature for atmo with meteo data.
    * Would be cleaner to NOT write it in the xml file... */
+  cs_real_t _t0 = -999.;
   if (!(   cs_glob_physical_model_flag[CS_ATMOSPHERIC] != -1
         && cs_glob_atmo_option->meteo_profile >= 1))
-    cs_gui_fluid_properties_value("reference_temperature", &(phys_pp->t0));
+    cs_gui_fluid_properties_value("reference_temperature", &_t0);
+
+  if (_t0 > -998) {
+    if (cs_glob_thermal_model->temperature_scale == CS_TEMPERATURE_SCALE_CELSIUS)
+      _t0 += cs_physical_constants_celsius_to_kelvin;
+
+    phys_pp->t0 = _t0;
+  }
 
   if (cs_glob_physical_model_flag[CS_COMPRESSIBLE] > -1)
     cs_gui_fluid_properties_value("reference_molar_mass", &(phys_pp->xmasmr));

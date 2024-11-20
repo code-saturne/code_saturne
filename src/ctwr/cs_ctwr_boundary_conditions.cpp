@@ -113,7 +113,7 @@ cs_ctwr_bcond(void)
   cs_real_t tkelvin = cs_physical_constants_celsius_to_kelvin;
 
   const cs_real_t xhum = air_prop->humidity0;
-  cs_real_t ref_temp = phys_pro->t0;
+  cs_real_t ref_temp = phys_pro->t0; /* In Kelvin */
 
   if (cs_glob_physical_model_flag[CS_ATMOSPHERIC] == CS_ATMO_HUMID) {
     cs_atmo_option_t *aopt = cs_glob_atmo_option;
@@ -130,6 +130,9 @@ cs_ctwr_bcond(void)
     ref_temp = (aopt->meteo_t0 - clatev/cp0 * aopt->meteo_ql0)
                    * pow(pref/ aopt->meteo_psea, rscp);
   }
+
+  if (cs_glob_thermal_model->temperature_scale == CS_TEMPERATURE_SCALE_CELSIUS)
+    ref_temp -= cs_physical_constants_celsius_to_kelvin;
 
   for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++) {
 

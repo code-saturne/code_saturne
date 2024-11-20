@@ -233,7 +233,7 @@ cs_ctwr_fields_init1(void)
  * \brief Initialize the field variables
  *
  * \param[in]     rho0        Reference density of humid air
- * \param[in]     t0          Reference temperature of humid air
+ * \param[in]     t0          Reference temperature of humid air (Kelvin)
  * \param[in]     p0          Reference pressure
  * \param[in]     molmassrat  Dry air to water vapor molecular mass ratio
  */
@@ -404,7 +404,7 @@ cs_ctwr_init_field_vars(cs_real_t  rho0,
     }
     else {
 
-      /* Bulk humid air temperature */
+      /* Bulk humid air temperature in Celsius, t0 in Kelvin */
       t_h[cell_id] = t0 - cs_physical_constants_celsius_to_kelvin;
       t_h_a[cell_id] = t_h[cell_id];
 
