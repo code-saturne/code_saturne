@@ -197,6 +197,36 @@ static int _use_legacy_strided_lsq_gradient = false;
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Inverse a 3x3 symmetric matrix (with symmetric storage)
+ *         using Cramer's rule
+ *
+ * \param[in, out]  a   matrix to inverse
+ */
+/*----------------------------------------------------------------------------*/
+
+CS_F_HOST_DEVICE static inline void
+_math_6_inv_cramer_sym(cs_cocg_t  a[6],
+                       cs_cocg_t  cocg[6])
+{
+  cs_real_t a00 = a[1]*a[2] - a[4]*a[4];
+  cs_real_t a01 = a[4]*a[5] - a[3]*a[2];
+  cs_real_t a02 = a[3]*a[4] - a[1]*a[5];
+  cs_real_t a11 = a[0]*a[2] - a[5]*a[5];
+  cs_real_t a12 = a[3]*a[5] - a[0]*a[4];
+  cs_real_t a22 = a[0]*a[1] - a[3]*a[3];
+
+  double det_inv = 1. / (a[0]*a00 + a[3]*a01 + a[5]*a02);
+
+  cocg[0] = a00 * det_inv;
+  cocg[1] = a11 * det_inv;
+  cocg[2] = a22 * det_inv;
+  cocg[3] = a01 * det_inv;
+  cocg[4] = a12 * det_inv;
+  cocg[5] = a02 * det_inv;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Inverse a 3x3 symmetric matrix (with symmetric storage)
  *         in place, using Cramer's rule
  *
  * \param[in, out]  a   matrix to inverse
@@ -2659,6 +2689,7 @@ _get_cell_cocg_lsq(const cs_mesh_t               *m,
  *   m              <-- pointer to associated mesh structure
  *   fvq            <-- pointer to associated finite volume quantities
  *   bc_coeffs      <-- B.C. structure for boundary face normals
+ *   ctx            <-- Reference to dispatch context
  *   cocgb          <-- saved B.C. coefficients for boundary cells
  *   cocgb          <-> B.C. coefficients, updated at boundary cells
  *----------------------------------------------------------------------------*/
@@ -2667,6 +2698,7 @@ static void
 _recompute_lsq_scalar_cocg(const cs_mesh_t                *m,
                            const cs_mesh_quantities_t     *fvq,
                            const cs_field_bc_coeffs_t     *bc_coeffs,
+                           cs_dispatch_context            &ctx,
                            const cs_cocg_t               (*restrict cocgb)[6],
                            cs_cocg_t                     (*restrict cocg)[6])
 {
@@ -2685,11 +2717,12 @@ _recompute_lsq_scalar_cocg(const cs_mesh_t                *m,
 
   /* Recompute cocg at boundaries, using saved cocgb */
 
-# pragma omp parallel for
-  for (cs_lnum_t ii = 0; ii < m->n_b_cells; ii++) {
+  ctx.parallel_for(m->n_b_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t ii) {
     cs_lnum_t c_id = m->b_cells[ii];
+
+    cs_cocg_t _cocg[6];
     for (cs_lnum_t ll = 0; ll < 6; ll++)
-      cocg[c_id][ll] = cocgb[ii][ll];
+      _cocg[ll] = cocgb[ii][ll];
 
     cs_lnum_t s_id = cell_b_faces_idx[c_id];
     cs_lnum_t e_id = cell_b_faces_idx[c_id+1];
@@ -2705,18 +2738,18 @@ _recompute_lsq_scalar_cocg(const cs_mesh_t                *m,
         dddij[ll] =   b_face_u_normal[f_id][ll]
                     + umcbdd * diipb[f_id][ll];
 
-      cocg[c_id][0] += dddij[0]*dddij[0];
-      cocg[c_id][1] += dddij[1]*dddij[1];
-      cocg[c_id][2] += dddij[2]*dddij[2];
-      cocg[c_id][3] += dddij[0]*dddij[1];
-      cocg[c_id][4] += dddij[1]*dddij[2];
-      cocg[c_id][5] += dddij[0]*dddij[2];
+      _cocg[0] += dddij[0]*dddij[0];
+      _cocg[1] += dddij[1]*dddij[1];
+      _cocg[2] += dddij[2]*dddij[2];
+      _cocg[3] += dddij[0]*dddij[1];
+      _cocg[4] += dddij[1]*dddij[2];
+      _cocg[5] += dddij[0]*dddij[2];
 
     } /* loop on boundary faces */
 
-    _math_6_inv_cramer_sym_in_place(cocg[c_id]);
+    _math_6_inv_cramer_sym(_cocg, cocg[c_id]);
 
-  } /* loop on boundary cells */
+  }); /* loop on boundary cells */
 }
 
 /*----------------------------------------------------------------------------
@@ -2815,12 +2848,17 @@ _lsq_scalar_gradient(const cs_mesh_t                *m,
 
   /* Compute cocg and save contribution at boundaries */
 
-  if (recompute_cocg)
+  if (recompute_cocg) {
+    cs_dispatch_context ctx;
+    ctx.set_use_gpu(false);
     _recompute_lsq_scalar_cocg(m,
                                fvq,
                                bc_coeffs,
+                               ctx,
                                cocgb,
                                cocg);
+    ctx.wait();
+  }
 
   /* Compute Right-Hand Side */
   /*-------------------------*/
@@ -3084,12 +3122,16 @@ _lsq_scalar_gradient_hyd_p(const cs_mesh_t                *m,
 
   /* Compute cocg and save contribution at boundaries */
 
-  if (recompute_cocg)
+  if (recompute_cocg) {
+    cs_dispatch_context ctx;
+    ctx.set_use_gpu(false);
     _recompute_lsq_scalar_cocg(m,
                                fvq,
                                bc_coeffs,
+                               ctx,
                                cocgb,
                                cocg);
+  }
 
   /* Compute Right-Hand Side */
   /*-------------------------*/
@@ -3490,7 +3532,7 @@ static void
 _lsq_scalar_gradient_hyd_p_gather(const cs_mesh_t                *m,
                                   const cs_mesh_quantities_t     *fvq,
                                   cs_halo_type_t                  halo_type,
-                                  [[maybe_unused]] bool           recompute_cocg,
+                                  bool                            recompute_cocg,
                                   cs_real_t                       inc,
                                   const cs_real_3_t               f_ext[],
                                   const cs_field_bc_coeffs_t     *bc_coeffs,
@@ -3515,6 +3557,8 @@ _lsq_scalar_gradient_hyd_p_gather(const cs_mesh_t                *m,
     = (const cs_real_3_t *)fvq->diipb;
   const cs_real_t *restrict weight = fvq->weight;
 
+  cs_dispatch_context ctx;
+
   /* Additional terms due to porosity */
   cs_field_t *f_i_poro_duq_0 = cs_field_by_name_try("i_poro_duq_0");
 
@@ -3530,26 +3574,27 @@ _lsq_scalar_gradient_hyd_p_gather(const cs_mesh_t                *m,
     b_poro_duq = cs_field_by_name("b_poro_duq")->val;
   }
 
-#if 0
   cs_cocg_6_t  *restrict cocgb = nullptr;
   cs_cocg_6_t  *restrict cocg = nullptr;
 
   _get_cell_cocg_lsq(m,
                      halo_type,
-                     false, /* accel, not yet handled */
+                     ctx.use_gpu(),
                      fvq,
                      &cocg,
                      &cocgb);
 
   /* Compute cocg and save contribution at boundaries */
 
-  if (recompute_cocg)
+  if (recompute_cocg) {
     _recompute_lsq_scalar_cocg(m,
                                fvq,
                                bc_coeffs,
+                               ctx,
                                cocgb,
                                cocg);
-#endif
+    ctx.wait();
+  }
 
   /* Reconstruct gradients using least squares for non-orthogonal meshes */
   /*---------------------------------------------------------------------*/
@@ -3570,17 +3615,12 @@ _lsq_scalar_gradient_hyd_p_gather(const cs_mesh_t                *m,
     c2c_e_idx = ma->cell_cells_e_idx;
     c2c_e = ma->cell_cells_e;
   }
-  const cs_lnum_t *restrict c2hb_idx = ma->cell_hb_faces_idx;
-  const cs_lnum_t *restrict c2hb = ma->cell_hb_faces;
   const cs_lnum_t *restrict c2b_idx = ma->cell_b_faces_idx;
   const cs_lnum_t *restrict c2b = ma->cell_b_faces;
-
-  cs_dispatch_context ctx;
 
   ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t ii) {
 
     cs_real_t rhsv[3] = {0, 0, 0};
-    cs_cocg_t cocg[6] = {0., 0., 0., 0., 0., 0.};
 
     /* Contribution from interior faces
        -------------------------------- */
@@ -3608,13 +3648,6 @@ _lsq_scalar_gradient_hyd_p_gather(const cs_mesh_t                *m,
           dc[ll] = cell_f_cen[jj][ll] - cell_f_cen[ii][ll];
 
         cs_real_t ddc = 1. / cs_math_3_square_norm(dc);
-
-        cocg[0] += dc[0]*dc[0]*ddc;
-        cocg[1] += dc[1]*dc[1]*ddc;
-        cocg[2] += dc[2]*dc[2]*ddc;
-        cocg[3] += dc[0]*dc[1]*ddc;
-        cocg[4] += dc[1]*dc[2]*ddc;
-        cocg[5] += dc[0]*dc[2]*ddc;
 
         cs_real_t pfac =   (  pvar[jj] - pvar[ii]
                             + cs_math_3_distance_dot_product(i_f_face_cog[f_id],
@@ -3658,13 +3691,6 @@ _lsq_scalar_gradient_hyd_p_gather(const cs_mesh_t                *m,
           dc[ll] = cell_f_cen[jj][ll] - cell_f_cen[ii][ll];
 
         cs_real_t ddc = 1. / cs_math_3_square_norm(dc);
-
-        cocg[0] += dc[0]*dc[0]*ddc;
-        cocg[1] += dc[1]*dc[1]*ddc;
-        cocg[2] += dc[2]*dc[2]*ddc;
-        cocg[3] += dc[0]*dc[1]*ddc;
-        cocg[4] += dc[1]*dc[2]*ddc;
-        cocg[5] += dc[0]*dc[2]*ddc;
 
         cs_real_t pfac =   (  pvar[jj] - pvar[ii]
                             + cs_math_3_distance_dot_product(i_f_face_cog[f_id],
@@ -3717,13 +3743,6 @@ _lsq_scalar_gradient_hyd_p_gather(const cs_mesh_t                *m,
 
         cs_real_t ddc = 1. / cs_math_3_square_norm(dc);
 
-        cocg[0] += dc[0]*dc[0]*ddc;
-        cocg[1] += dc[1]*dc[1]*ddc;
-        cocg[2] += dc[2]*dc[2]*ddc;
-        cocg[3] += dc[0]*dc[1]*ddc;
-        cocg[4] += dc[1]*dc[2]*ddc;
-        cocg[5] += dc[0]*dc[2]*ddc;
-
         pfac =   (  pvar[jj] - pvar[ii]
                   - 0.5 * cs_math_3_dot_product(dc, f_ext[ii])
                   - 0.5 * cs_math_3_dot_product(dc, f_ext[jj]))
@@ -3741,13 +3760,6 @@ _lsq_scalar_gradient_hyd_p_gather(const cs_mesh_t                *m,
 
     /* Contribution from boundary faces */
 
-    if (c2hb_idx != nullptr)
-      _add_hb_faces_cocg_lsq_cell(ii,
-                                  c2hb_idx,
-                                  c2hb,
-                                  b_face_u_normal,
-                                  cocg);
-
     s_id = c2b_idx[ii];
     e_id = c2b_idx[ii+1];
 
@@ -3763,13 +3775,6 @@ _lsq_scalar_gradient_hyd_p_gather(const cs_mesh_t                *m,
       for (cs_lnum_t ll = 0; ll < 3; ll++)
         dddij[ll] =   b_face_u_normal[f_id][ll]
                     + umcbdd * diipb[f_id][ll];
-
-      cocg[0] += dddij[0]*dddij[0];
-      cocg[1] += dddij[1]*dddij[1];
-      cocg[2] += dddij[2]*dddij[2];
-      cocg[3] += dddij[0]*dddij[1];
-      cocg[4] += dddij[1]*dddij[2];
-      cocg[5] += dddij[0]*dddij[2];
 
       cs_real_t pfac
         =   (coefap[f_id]*inc
@@ -3790,19 +3795,17 @@ _lsq_scalar_gradient_hyd_p_gather(const cs_mesh_t                *m,
     /* Compute gradient */
     /*------------------*/
 
-    _math_6_inv_cramer_sym_in_place(cocg);
-
-    grad[ii][0] =   cocg[0] *rhsv[0]
-                  + cocg[3] *rhsv[1]
-                  + cocg[5] *rhsv[2]
+    grad[ii][0] =   cocg[ii][0] *rhsv[0]
+                  + cocg[ii][3] *rhsv[1]
+                  + cocg[ii][5] *rhsv[2]
                   + f_ext[ii][0];
-    grad[ii][1] =   cocg[3] *rhsv[0]
-                  + cocg[1] *rhsv[1]
-                  + cocg[4] *rhsv[2]
+    grad[ii][1] =   cocg[ii][3] *rhsv[0]
+                  + cocg[ii][1] *rhsv[1]
+                  + cocg[ii][4] *rhsv[2]
                   + f_ext[ii][1];
-    grad[ii][2] =   cocg[5] *rhsv[0]
-                  + cocg[4] *rhsv[1]
-                  + cocg[2] *rhsv[2]
+    grad[ii][2] =   cocg[ii][5] *rhsv[0]
+                  + cocg[ii][4] *rhsv[1]
+                  + cocg[ii][2] *rhsv[2]
                   + f_ext[ii][2];
 
   }); /* loop on cells */
