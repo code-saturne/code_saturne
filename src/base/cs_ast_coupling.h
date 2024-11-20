@@ -135,13 +135,39 @@ cs_ast_coupling_get_fluid_forces_pointer(void);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Send stresses acting on the fluid/structure interface
- *        and receive displacements.
+ * \brief Send stresses acting on the fluid/structure interface.
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_ast_coupling_exchange_fields(void);
+cs_ast_coupling_send_fluid_forces(void);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Receive displacements of the fluid/structure interface.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_ast_coupling_recv_displacement(void);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Evaluate convergence of the coupling
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_ast_coupling_evaluate_cvg(void);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Save previous values
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_ast_coupling_save_values(void);
 
 /*----------------------------------------------------------------------------*/
 /*!

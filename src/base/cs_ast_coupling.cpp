@@ -249,55 +249,6 @@ _scatter_values_r3(cs_lnum_t         n_elts,
 }
 
 /*----------------------------------------------------------------------------
- * Receive displacements and velocities from code_aster at current time step
- *----------------------------------------------------------------------------*/
-
-static void
-_recv_dyn(cs_ast_coupling_t  *ast_cpl)
-{
-  int verbosity = _get_current_verbosity(ast_cpl);
-
-  if (verbosity > 1) {
-    bft_printf(_("code_aster: starting MEDCouping receive of values "
-                 "at coupled vertices..."));
-    bft_printf_flush();
-  }
-
-  /* Received discplacement and velocity field */
-  cs_paramedmem_recv_field_vals_l(ast_cpl->mc_vertices, _name_m_d, ast_cpl->xast);
-  cs_paramedmem_recv_field_vals_l(ast_cpl->mc_vertices, _name_m_v, ast_cpl->xvast);
-
-  if (verbosity > 1) {
-    bft_printf(_("[ok]\n"));
-    bft_printf_flush();
-  }
-
-  /* For dry run, reset values to zero to avoid uninitialized values */
-  if (ast_cpl->aci.root_rank < 0) {
-    const cs_lnum_t  nb_dyn = ast_cpl->n_vertices * 3;
-    cs_arrays_set_value<cs_real_t, 1>(nb_dyn,
-                                      0.,
-                                      ast_cpl->xast,
-                                      ast_cpl->xvast);
-  }
-}
-
-/*----------------------------------------------------------------------------
- * Send convergence indicator to code_aster
- *----------------------------------------------------------------------------*/
-
-static void
-_send_icv2(cs_ast_coupling_t  *ast_cpl,
-           int                 icv)
-{
-  if (cs_glob_rank_id > 0)
-    return;
-
-  cs_calcium_write_int(ast_cpl->aci.root_rank, ast_cpl->iteration,
-                       "ICVAST", 1, &icv);
-}
-
-/*----------------------------------------------------------------------------
  * Predict displacement or forces based on values of the current and
  * previous time step(s)
  *
@@ -438,25 +389,6 @@ _conv(cs_ast_coupling_t  *ast_cpl)
 }
 
 /*----------------------------------------------------------------------------
- * Overwrites data from sub-iteration k-1 with data from sub-iteration k
- * dynamic data: velocities
- * efforts:      forces
- *----------------------------------------------------------------------------*/
-
-static void
-_val_ant(cs_ast_coupling_t *ast_cpl)
-{
-  const cs_lnum_t  nb_dyn = ast_cpl->n_vertices;
-  const cs_lnum_t  nb_for = ast_cpl->n_faces;
-
-  /* record efforts */
-  cs_array_copy(3 * nb_for, ast_cpl->foras, ast_cpl->foaas);
-
-  /* record dynamic data */
-  cs_array_copy(3 * nb_dyn, ast_cpl->xvast, ast_cpl->xvasa);
-}
-
-/*----------------------------------------------------------------------------
  * Post process variables associated with code_aster couplings
  *
  * parameters:
@@ -465,10 +397,9 @@ _val_ant(cs_ast_coupling_t *ast_cpl)
  *----------------------------------------------------------------------------*/
 
 static void
-_cs_ast_coupling_post_function(void                  *coupling,
-                               const cs_time_step_t  *ts)
+_cs_ast_coupling_post_function(void *coupling, const cs_time_step_t *ts)
 {
-  auto cpl = static_cast<const cs_ast_coupling_t  *>(coupling);
+  auto cpl = static_cast<const cs_ast_coupling_t *>(coupling);
 
   if (cpl->post_mesh == nullptr)
     return;
@@ -477,10 +408,9 @@ _cs_ast_coupling_post_function(void                  *coupling,
      element type) may not align with the selection order, we need to project
      values on parent faces first */
 
-  const cs_lnum_t *face_ids
-    = cs_paramedmem_mesh_get_elt_list(cpl->mc_faces);
-  const cs_lnum_t *vtx_ids
-    = cs_paramedmem_mesh_get_vertex_list(cpl->mc_vertices);
+  const cs_lnum_t *face_ids = cs_paramedmem_mesh_get_elt_list(cpl->mc_faces);
+  const cs_lnum_t *vtx_ids =
+    cs_paramedmem_mesh_get_vertex_list(cpl->mc_vertices);
 
   cs_real_t       *values;
   const cs_mesh_t *m      = cs_glob_mesh;
@@ -527,11 +457,11 @@ _cs_ast_coupling_post_function(void                  *coupling,
                     CS_POST_WRITER_ALL_ASSOCIATED,
                     "Stress",
                     3,
-                    true,  /* interlaced */
-                    true,  /* on parent */
+                    true, /* interlaced */
+                    true, /* on parent */
                     CS_POST_TYPE_cs_real_t,
-                    nullptr,  /* cell values */
-                    nullptr,  /* interior face values */
+                    nullptr, /* cell values */
+                    nullptr, /* interior face values */
                     values,
                     ts);
 
@@ -579,7 +509,7 @@ cs_ast_coupling_initialize(int nalimx, cs_real_t epalim)
 {
   const cs_time_step_t *ts = cs_glob_time_step;
 
-  int    nbpdtm = ts->nt_max;
+  int       nbpdtm = ts->nt_max;
   cs_real_t ttinit = ts->t_prev;
 
   /* Allocate global coupling structure */
@@ -642,15 +572,14 @@ cs_ast_coupling_initialize(int nalimx, cs_real_t epalim)
   const ple_coupling_mpi_set_t *mpi_apps = cs_coupling_get_mpi_apps();
 
   if (mpi_apps != nullptr) {
-
-    int n_apps = ple_coupling_mpi_set_n_apps(mpi_apps);
+    int n_apps     = ple_coupling_mpi_set_n_apps(mpi_apps);
     int n_ast_apps = 0;
 
     /* First pass to count available code_aster couplings */
 
     for (int i = 0; i < n_apps; i++) {
-      const ple_coupling_mpi_set_info_t
-        ai = ple_coupling_mpi_set_get_info(mpi_apps, i);
+      const ple_coupling_mpi_set_info_t ai =
+        ple_coupling_mpi_set_get_info(mpi_apps, i);
 
       if (strncmp(ai.app_type, "code_aster", 10) == 0)
         n_ast_apps += 1;
@@ -659,15 +588,13 @@ cs_ast_coupling_initialize(int nalimx, cs_real_t epalim)
     /* In single-coupling mode, no identification necessary */
 
     if (n_ast_apps == 1) {
-
       for (int i = 0; i < n_apps; i++) {
-        const ple_coupling_mpi_set_info_t
-          ai = ple_coupling_mpi_set_get_info(mpi_apps, i);
+        const ple_coupling_mpi_set_info_t ai =
+          ple_coupling_mpi_set_get_info(mpi_apps, i);
 
         if (strncmp(ai.app_type, "code_aster", 10) == 0)
           cpl->aci = ai;
       }
-
     }
     else if (n_ast_apps == 0) {
       bft_printf("\n"
@@ -676,10 +603,11 @@ cs_ast_coupling_initialize(int nalimx, cs_real_t epalim)
       bft_printf_flush();
     }
     else
-      bft_error(__FILE__, __LINE__, 0,
+      bft_error(__FILE__,
+                __LINE__,
+                0,
                 "Detected %d code_aster instances; can handle exactly 1.",
                 n_ast_apps);
-
   }
   else {
     bft_error(__FILE__, __LINE__, 0, "No PLE application detected.");
@@ -723,7 +651,7 @@ cs_ast_coupling_initialize(int nalimx, cs_real_t epalim)
 void
 cs_ast_coupling_finalize(void)
 {
-  cs_ast_coupling_t  *cpl = cs_glob_ast_coupling;
+  cs_ast_coupling_t *cpl = cs_glob_ast_coupling;
 
   if (cpl == nullptr)
     return;
@@ -763,9 +691,9 @@ cs_ast_coupling_finalize(void)
 /*----------------------------------------------------------------------------*/
 
 void
-cs_ast_coupling_geometry(cs_lnum_t         n_faces,
-                         const cs_lnum_t  *face_ids,
-                         cs_real_t         almax)
+cs_ast_coupling_geometry(cs_lnum_t        n_faces,
+                         const cs_lnum_t *face_ids,
+                         cs_real_t        almax)
 {
   cs_ast_coupling_t *cpl = cs_glob_ast_coupling;
 
@@ -791,14 +719,14 @@ cs_ast_coupling_geometry(cs_lnum_t         n_faces,
   cpl->n_faces    = n_faces;
   cpl->n_vertices = cs_paramedmem_mesh_get_n_vertices(cpl->mc_vertices);
 
-  fvm_nodal_t *fsi_mesh
-    = cs_mesh_connect_faces_to_nodal(cs_glob_mesh,
-                                     "FSI_mesh_1",
-                                     true, /* include families */
-                                     0,
-                                     n_faces,
-                                     nullptr,
-                                     face_ids);
+  fvm_nodal_t *fsi_mesh =
+    cs_mesh_connect_faces_to_nodal(cs_glob_mesh,
+                                   "FSI_mesh_1",
+                                   true, /* include families */
+                                   0,
+                                   n_faces,
+                                   nullptr,
+                                   face_ids);
 
   cpl->n_g_faces = n_faces;
   cs_parall_counter(&(cpl->n_g_faces), 1);
@@ -873,21 +801,18 @@ cs_ast_coupling_geometry(cs_lnum_t         n_faces,
   /* Post-processing */
 
   if (cpl->visualization > 0) {
-
-    const int writer_ids[] = {CS_POST_WRITER_DEFAULT};
-    cpl->post_mesh_id = cs_post_get_free_mesh_id();
+    const int writer_ids[] = { CS_POST_WRITER_DEFAULT };
+    cpl->post_mesh_id      = cs_post_get_free_mesh_id();
 
     cs_post_define_existing_mesh(cpl->post_mesh_id,
                                  cpl->post_mesh,
-                                 0,      /* dim_shift */
-                                 false,  /* transfer */
-                                 false,  /* auto variables */
-                                 1,      /* number of associated writers */
+                                 0,     /* dim_shift */
+                                 false, /* transfer */
+                                 false, /* auto variables */
+                                 1,     /* number of associated writers */
                                  writer_ids);
 
-    cs_post_add_time_dep_output(_cs_ast_coupling_post_function,
-                              (void *)cpl);
-
+    cs_post_add_time_dep_output(_cs_ast_coupling_post_function, (void *)cpl);
   }
   else
     cpl->post_mesh_id = 0;
@@ -904,13 +829,13 @@ cs_ast_coupling_geometry(cs_lnum_t         n_faces,
 void
 cs_ast_coupling_exchange_time_step(cs_real_t c_dt[])
 {
-  cs_ast_coupling_t  *cpl = cs_glob_ast_coupling;
+  cs_ast_coupling_t *cpl = cs_glob_ast_coupling;
 
   if (cpl->iteration < 0)
     return;
 
-  cs_real_t  dttmp = cpl->dtref;
-  cs_real_t  dt_ast = dttmp;
+  cs_real_t dttmp  = cpl->dtref;
+  cs_real_t dt_ast = dttmp;
 
   if (cpl->iteration < 0)
     return;
@@ -921,7 +846,7 @@ cs_ast_coupling_exchange_time_step(cs_real_t c_dt[])
 
   if (cs_glob_rank_id <= 0) {
     cs_real_t dt_sat     = c_dt[0];
-    int  n_val_read = 0;
+    int       n_val_read = 0;
 
     /* Receive time step sent by code_aster */
 
@@ -933,7 +858,6 @@ cs_ast_coupling_exchange_time_step(cs_real_t c_dt[])
                                       &dt_ast);
 
     if (err_code >= 0) {
-
       assert(n_val_read == 1);
 
       /* Choose smallest time step */
@@ -950,7 +874,6 @@ cs_ast_coupling_exchange_time_step(cs_real_t c_dt[])
                                          &dttmp);
     }
     else {
-
       /* In case of error (probably disconnect) stop at next iteration */
 
       const cs_time_step_t *ts = cs_glob_time_step;
@@ -963,9 +886,7 @@ cs_ast_coupling_exchange_time_step(cs_real_t c_dt[])
                  "code_aster coupling: disconnected (finished) or error\n"
                  "--> stop at end of next time step\n"
                  "----------------------------------\n\n");
-
     }
-
   }
 
 #if defined(HAVE_MPI)
@@ -1009,9 +930,9 @@ cs_ast_coupling_exchange_time_step(cs_real_t c_dt[])
 cs_real_3_t *
 cs_ast_coupling_get_fluid_forces_pointer(void)
 {
-  cs_real_3_t  *f_forces = nullptr;
+  cs_real_3_t *f_forces = nullptr;
 
-  cs_ast_coupling_t  *cpl = cs_glob_ast_coupling;
+  cs_ast_coupling_t *cpl = cs_glob_ast_coupling;
 
   if (cpl != nullptr)
     f_forces = (cs_real_3_t *)cpl->foras;
@@ -1021,15 +942,14 @@ cs_ast_coupling_get_fluid_forces_pointer(void)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Send stresses acting on the fluid/structure interface
- *        and receive displacements.
+ * \brief Send stresses acting on the fluid/structure interface.
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_ast_coupling_exchange_fields(void)
+cs_ast_coupling_send_fluid_forces(void)
 {
-  cs_ast_coupling_t  *cpl = cs_glob_ast_coupling;
+  cs_ast_coupling_t *cpl = cs_glob_ast_coupling;
 
   if (cpl->iteration < 0)
     return;
@@ -1070,46 +990,98 @@ cs_ast_coupling_exchange_fields(void)
     bft_printf(_("[ok]\n"));
     bft_printf_flush();
   }
+}
 
-  /* Second stage (TODO: place in another, better named function) */
-  /* ------------------------------------------------------------ */
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Evaluate convergence of the coupling
+ */
+/*----------------------------------------------------------------------------*/
 
-  int icv = 1;
+void
+cs_ast_coupling_evaluate_cvg(void)
+{
+  cs_ast_coupling_t *cpl = cs_glob_ast_coupling;
 
-  if (cpl->nbssit <= 1) {
-    /* explicit case: no need for a convergence test */
+  int icv   = 1;
+  cpl->icv1 = icv;
 
-    /* handle convergence even when no test is done */
-    cpl->icv1 = icv;
-    _send_icv2(cpl, icv);
-
-    /* receive displacements from code_aster */
-    _recv_dyn(cpl);
-
-    /* save previous values */
-    _val_ant(cpl);
-  }
-  else {
+  if (cpl->nbssit > 1) {
     /* implicit case: requires a convergence test */
 
     /* compute icv */
+    cpl->icv1 = _conv(cpl);
+    icv       = cpl->icv2;
+  }
 
-    icv = _conv(cpl);
-    cpl->icv1 = icv;
-    icv = cpl->icv2;
-    _send_icv2(cpl, icv);
+  if (cs_glob_rank_id > 0)
+    return;
 
-    if ((cpl->s_it_id +1 >= cpl->nbssit) || (icv == 1)) {
-      /* receive displacements computed by code_aster */
-      _recv_dyn(cpl);
+  cs_calcium_write_int(cpl->aci.root_rank, cpl->iteration, "ICVAST", 1, &icv);
+}
 
-      /* then use with code_saturne ? the question remains open... */
-      /* if (ierr >= 0) _send2_dyn(); */
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Receive displacements of the fluid/structure interface.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_ast_coupling_recv_displacement(void)
+{
+  cs_ast_coupling_t *cpl = cs_glob_ast_coupling;
+
+  if ((cpl->s_it_id + 1 >= cpl->nbssit) || (cpl->icv1 == 1)) {
+    int verbosity = _get_current_verbosity(cpl);
+
+    if (verbosity > 1) {
+      bft_printf(_("code_aster: starting MEDCouping receive of values "
+                   "at coupled vertices..."));
+      bft_printf_flush();
     }
-    else {
-      cpl->s_it_id += 1;
+
+    /* Received discplacement and velocity field */
+    cs_paramedmem_recv_field_vals_l(cpl->mc_vertices, _name_m_d, cpl->xast);
+    cs_paramedmem_recv_field_vals_l(cpl->mc_vertices, _name_m_v, cpl->xvast);
+
+    if (verbosity > 1) {
+      bft_printf(_("[ok]\n"));
+      bft_printf_flush();
+    }
+
+    /* For dry run, reset values to zero to avoid uninitialized values */
+    if (cpl->aci.root_rank < 0) {
+      const cs_lnum_t nb_dyn = cpl->n_vertices * 3;
+      cs_arrays_set_value<cs_real_t, 1>(nb_dyn, 0., cpl->xast, cpl->xvast);
     }
   }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Save previous values
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_ast_coupling_save_values(void)
+{
+  cs_ast_coupling_t *cpl = cs_glob_ast_coupling;
+
+  if (cpl->nbssit <= 1) {
+    const cs_lnum_t nb_dyn = cpl->n_vertices;
+    const cs_lnum_t nb_for = cpl->n_faces;
+
+    /* record efforts */
+    cs_array_copy(3 * nb_for, cpl->foras, cpl->foaas);
+
+    /* record dynamic data */
+    cs_array_copy(3 * nb_dyn, cpl->xvast, cpl->xvasa);
+  }
+
+  cpl->s_it_id += 1;
+
+  /* TODO: why nothing in implicit*/
 }
 
 /*----------------------------------------------------------------------------*/

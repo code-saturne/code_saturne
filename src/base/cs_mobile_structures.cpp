@@ -1419,8 +1419,6 @@ cs_mobile_structures_displacement(int itrale, int italim, int *itrfin)
   if (n_ast_structs > 0)
     forast = cs_ast_coupling_get_fluid_forces_pointer();
 
-  /* Allocate a temporary array */
-
   int *idfstr = ms->idfstr;
 
   cs_lnum_t indast = 0;
@@ -1462,7 +1460,10 @@ cs_mobile_structures_displacement(int itrale, int italim, int *itrfin)
   /* Send effort applied to external structures */
 
   if (n_ast_structs > 0) {
-    cs_ast_coupling_exchange_fields();
+    cs_ast_coupling_send_fluid_forces();
+    cs_ast_coupling_evaluate_cvg();
+    cs_ast_coupling_recv_displacement();
+    cs_ast_coupling_save_values();
   }
 
   /* Structure characteristics defined by the user
