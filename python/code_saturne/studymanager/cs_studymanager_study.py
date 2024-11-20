@@ -2294,12 +2294,14 @@ class Studies(object):
             t = ""
             if s != s_prev:
                 t += "<tr class=\"top\"><td>" + s + "</td>"
-            else:
-                t += "<tr><td> </td>\n"
-            if c != c_prev:
                 t += "<td>" + c + "</td>"
             else:
-                t += "<td> </td>\n"
+                t += "<tr><td> </td>\n"
+                if c != c_prev:
+                    t += "<td>" + c + "</td>"
+                else:
+                    t += "<td> </td>\n"
+
             t += "<td>" + case.run_id + "</td>"
             t += "<td style=\"background-color:" + colors[state] + "\">" + m + "</td>"
             t += "<td align=\"right\">" + str(info['compute_time']) + "</td>"
