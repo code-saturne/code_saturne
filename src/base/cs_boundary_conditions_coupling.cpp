@@ -118,7 +118,7 @@ cs_boundary_conditions_coupling_t_in(void)
         continue;
 
       b_temp[face_id] = tppt1d[ii];
-      if (cs_glob_thermal_model->itpscl == CS_TEMPERATURE_SCALE_CELSIUS)
+      if (cs_glob_thermal_model->temperature_scale == CS_TEMPERATURE_SCALE_CELSIUS)
         b_temp[face_id] -= cs_physical_constants_celsius_to_kelvin;
     }
 
