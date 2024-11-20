@@ -452,8 +452,9 @@ cs_gui_ale_params(void)
   if (cs_glob_ale != CS_ALE_NONE) {
     cs_gui_node_get_child_int(tn, "fluid_initialization_sub_iterations",
                               &cs_glob_ale_n_ini_f);
-    cs_gui_node_get_child_int(tn, "max_iterations_implicitation",
-                              &cs_glob_mobile_structures_i_max);
+    cs_gui_node_get_child_int(tn,
+                              "max_iterations_implicitation",
+                              &cs_glob_mobile_structures_n_iter_max);
     cs_gui_node_get_child_real(tn, "implicitation_precision",
                                &cs_glob_mobile_structures_i_eps);
 

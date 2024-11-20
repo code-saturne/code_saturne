@@ -142,9 +142,9 @@ struct _cs_ast_coupling_t {
   int     s_it_id;     /* Sub-iteration id */
 
   cs_real_t *xast;  /* Mesh displacement last received (current iteration) */
+  cs_real_t *xastp; /* Mesh velocity at previous sub-iteration */
   cs_real_t *xvast; /* Mesh velocity last received (current iteration) */
   cs_real_t *xvasa; /* Mesh displacement at previous sub-iteration */
-  cs_real_t *xastp; /* Mesh velocity at previous sub-iteration */
 
   cs_real_t *foras; /* Fluid forces at current sub-iteration */
   cs_real_t *foaas; /* Fluid forces at previous sub-iteration */
@@ -611,7 +611,7 @@ cs_ast_coupling_initialize(int nalimx, cs_real_t epalim)
 
   cpl->iteration = 0; /* < 0 for disconnect */
 
-  cpl->nbssit = nalimx; /* number of sub-iterations */
+  cpl->nbssit = nalimx; /* maximum number of sub-iterations */
 
   cpl->dt     = 0.;
   cpl->dtref  = ts->dt_ref; /* reference time step */
@@ -716,7 +716,7 @@ cs_ast_coupling_initialize(int nalimx, cs_real_t epalim)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Finalize exchange with code_aster.
+ * \brief Finalize coupling with code_aster.
  */
 /*----------------------------------------------------------------------------*/
 
@@ -983,12 +983,15 @@ cs_ast_coupling_exchange_time_step(cs_real_t c_dt[])
   int verbosity = _get_current_verbosity(cpl);
   if (verbosity > 0)
     bft_printf("----------------------------------\n"
-               "reference time step:     %4.21e\n"
+               "reference time step:     %4.2le\n"
                "code_saturne time step:  %4.2le\n"
                "code_aster time step:    %4.2le\n"
                "selected time step:      %4.2le \n"
                "----------------------------------\n\n",
-               cpl->dtref, c_dt[0], dt_ast, cpl->dt);
+               cpl->dtref,
+               c_dt[0],
+               dt_ast,
+               cpl->dt);
 
   /* Reset sub-iteration count */
   cpl->s_it_id = 0;
@@ -1071,11 +1074,10 @@ cs_ast_coupling_exchange_fields(void)
   /* Second stage (TODO: place in another, better named function) */
   /* ------------------------------------------------------------ */
 
-  /* explicit case: no need for a convergence test */
-
   int icv = 1;
 
   if (cpl->nbssit <= 1) {
+    /* explicit case: no need for a convergence test */
 
     /* handle convergence even when no test is done */
     cpl->icv1 = icv;
@@ -1086,12 +1088,9 @@ cs_ast_coupling_exchange_fields(void)
 
     /* save previous values */
     _val_ant(cpl);
-
   }
-
-  /* implicit case: requires a convergence test */
-
-  else if (cpl->nbssit > 1) {
+  else {
+    /* implicit case: requires a convergence test */
 
     /* compute icv */
 
@@ -1110,7 +1109,6 @@ cs_ast_coupling_exchange_fields(void)
     else {
       cpl->s_it_id += 1;
     }
-
   }
 }
 

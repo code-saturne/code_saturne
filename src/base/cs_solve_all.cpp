@@ -991,9 +991,9 @@ cs_solve_all(int  itrale)
   }
 
   cs_local_time_step_compute(itrale);
-  const int nalinf = cs_glob_ale_n_ini_f;
-  const int nbaste = cs_ast_coupling_n_couplings();
-  if (nbaste > 0 && itrale > nalinf)
+  const int n_init_f_ale  = cs_glob_ale_n_ini_f;
+  const int nb_ext_struct = cs_ast_coupling_n_couplings();
+  if (nb_ext_struct > 0 && itrale > n_init_f_ale)
     cs_ast_coupling_exchange_time_step(CS_F_(dt)->val);
 
   if (eqp_p->idften & CS_ANISOTROPIC_DIFFUSION)
@@ -1029,10 +1029,10 @@ cs_solve_all(int  itrale)
   int itrfin = 1;
   int ineefl = 0;
 
-  if (cs_glob_ale != CS_ALE_NONE && itrale > nalinf &&
-      cs_glob_mobile_structures_i_max > 1) {
+  if (cs_glob_ale != CS_ALE_NONE && itrale > n_init_f_ale &&
+      cs_glob_mobile_structures_n_iter_max > 1) {
     /* Indicate if we need to return to the initial state at the end
-       of an  ALE iteration. */
+       of an ALE iteration. */
     ineefl = 1;
 
     if (   cs_syr_coupling_n_couplings() > 0
@@ -1115,7 +1115,7 @@ cs_solve_all(int  itrale)
       /* Movement of structures in ALE and test implicit loop */
 
       const int n_structs = cs_mobile_structures_get_n_int_structures();
-      if (n_structs > 0 || nbaste > 0) {
+      if (n_structs > 0 || nb_ext_struct > 0) {
         cs_mobile_structures_displacement(itrale, italim, &itrfin);
         if (itrfin != -1) {
           italim++;

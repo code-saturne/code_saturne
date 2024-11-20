@@ -191,7 +191,7 @@ static int _post_out_stat_id = -1;
  *============================================================================*/
 
 /*! Maximum number of implicitation iterations of the structure displacement */
-int cs_glob_mobile_structures_i_max = 1;
+int cs_glob_mobile_structures_n_iter_max = 1;
 
 /*! Relative precision of implicitation of the structure displacement */
 double cs_glob_mobile_structures_i_eps = 1e-5;
@@ -764,7 +764,7 @@ cs_mobile_structures_setup(void)
     ms->aexxst = 0.5;
   if (ms->bexxst < -0.5*cs_math_big_r)
     ms->bexxst = 0.;
-  if (cs_glob_mobile_structures_i_max == 1) {
+  if (cs_glob_mobile_structures_n_iter_max == 1) {
     if (ms->cfopre < -0.5*cs_math_big_r)
       ms->cfopre = 2.0;
   }
@@ -873,7 +873,7 @@ cs_mobile_structures_initialize(void)
     const cs_real_t almax = cs_glob_turb_ref_values->almax;
 
     /* Exchange code_aster coupling parameters */
-    cs_ast_coupling_initialize(cs_glob_mobile_structures_i_max,
+    cs_ast_coupling_initialize(cs_glob_mobile_structures_n_iter_max,
                                cs_glob_mobile_structures_i_eps);
 
     /* Send geometric information to code_aster */
@@ -888,7 +888,7 @@ cs_mobile_structures_initialize(void)
      displacement will be needed. */
 
   if (n_int_structs + n_ast_structs == 0) {
-    cs_glob_mobile_structures_i_max = 1;
+    cs_glob_mobile_structures_n_iter_max = 1;
 
     BFT_FREE(ms->idfstr);
     idfstr = nullptr;
@@ -991,7 +991,7 @@ cs_mobile_structures_log_setup(void)
                   ms->plot_time_control.interval_nt,
                   ms->plot_time_control.interval_t);
 
-    if (cs_glob_mobile_structures_i_max == 1) {
+    if (cs_glob_mobile_structures_n_iter_max == 1) {
       cs_log_printf(log,
                     ("\n"
                      "  Explicit coupling scheme\n"
@@ -1009,7 +1009,7 @@ cs_mobile_structures_log_setup(void)
                      "  Implicit coupling scheme\n"
                      "    maximum number of inner iterations: %d\n"
                      "    convergence threshold:              %g\n\n"),
-                    cs_glob_mobile_structures_i_max,
+                    cs_glob_mobile_structures_n_iter_max,
                     cs_glob_mobile_structures_i_eps);
     }
   }
@@ -1218,7 +1218,7 @@ cs_mobile_structures_prediction(int  itrale,
     else {
 
       /* Explicit coupling scheme */
-      if (cs_glob_mobile_structures_i_max == 1) {
+      if (cs_glob_mobile_structures_n_iter_max == 1) {
         cs_real_t aexxst = ms->aexxst;
         cs_real_t bexxst = ms->bexxst;
 
@@ -1556,13 +1556,13 @@ cs_mobile_structures_displacement(int itrale, int italim, int *itrfin)
       icved = 0;
     }
   }
-  else if (*itrfin == 0  &&  italim == cs_glob_mobile_structures_i_max-1) {
+  else if (*itrfin == 0 && italim == cs_glob_mobile_structures_n_iter_max - 1) {
     /* this will be the last iteration */
     *itrfin = 1;
   }
-  else if (italim == cs_glob_mobile_structures_i_max) {
+  else if (italim == cs_glob_mobile_structures_n_iter_max) {
     /* we have itrfin=1 and are finished */
-    if (cs_glob_mobile_structures_i_max > 1)
+    if (cs_glob_mobile_structures_n_iter_max > 1)
       bft_printf(_("@\n"
                    "@ @@ Warning: implicit ALE'\n"
                    "@    =======\n"

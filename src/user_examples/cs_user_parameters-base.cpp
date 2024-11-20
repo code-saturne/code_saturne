@@ -592,9 +592,10 @@ cs_user_model(void)
   /* Maximum number of iterations in case of implicit Fluid Structure Coupling
      with structural calculations (internal and/or external
      (i.e. using code_aster).
-     For an explicit FSI scheme, set cs_glob_mobile_structures_i_max = 1; */
+     For an explicit FSI scheme, set cs_glob_mobile_structures_n_iter_max = 1;
+   */
 
-  cs_glob_mobile_structures_i_max = 15;
+  cs_glob_mobile_structures_n_iter_max = 15;
 
   /* Relative precision of sub-cycling Fluid Structure Coupling algorithm */
 

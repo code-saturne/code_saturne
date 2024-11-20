@@ -1411,13 +1411,12 @@ cs_parameters_check(void)
            "must be a positive integer but it has value %d\n"),
          cs_glob_ale_n_ini_f);
 
-    if (cs_glob_mobile_structures_i_max <= 0)
-      cs_parameters_error
-        (CS_ABORT_DELAYED,
-         _("in ALE module"),
-         _("Max number of iterations for implicit ALE\n"
-           "must be a positive integer but it has value %d\n"),
-         cs_glob_mobile_structures_i_max);
+    if (cs_glob_mobile_structures_n_iter_max <= 0)
+      cs_parameters_error(CS_ABORT_DELAYED,
+                          _("in ALE module"),
+                          _("Max number of iterations for implicit ALE\n"
+                            "must be a positive integer but it has value %d\n"),
+                          cs_glob_mobile_structures_n_iter_max);
 
     if (cs_glob_mobile_structures_i_eps <= 0)
       cs_parameters_error
