@@ -1508,10 +1508,11 @@ cs_mobile_structures_displacement(int itrale, int italim, int *itrfin)
   /* Convergence test
      ---------------- */
 
-  int icvext = 0, icvint = 0, icved  = 0;
-  cs_real_t delta = 0.;
+  int icvext = 0, icvint = 0, icved = 0;
 
   if (n_int_structs > 0) {
+    cs_real_t delta = 0.;
+
     for (int i = 0; i < n_int_structs; i++) {
       delta += cs_math_3_square_distance(ms->xstr[i], ms->xstp[i]);
     }

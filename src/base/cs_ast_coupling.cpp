@@ -1031,29 +1031,27 @@ cs_ast_coupling_recv_displacement(void)
 {
   cs_ast_coupling_t *cpl = cs_glob_ast_coupling;
 
-  if ((cpl->s_it_id + 1 >= cpl->nbssit) || (cpl->icv1 == 1)) {
-    int verbosity = _get_current_verbosity(cpl);
+  int verbosity = _get_current_verbosity(cpl);
 
-    if (verbosity > 1) {
-      bft_printf(_("code_aster: starting MEDCouping receive of values "
-                   "at coupled vertices..."));
-      bft_printf_flush();
-    }
+  if (verbosity > 1) {
+    bft_printf(_("code_aster: starting MEDCouping receive of values "
+                 "at coupled vertices..."));
+    bft_printf_flush();
+  }
 
-    /* Received discplacement and velocity field */
-    cs_paramedmem_recv_field_vals_l(cpl->mc_vertices, _name_m_d, cpl->xast);
-    cs_paramedmem_recv_field_vals_l(cpl->mc_vertices, _name_m_v, cpl->xvast);
+  /* Received discplacement and velocity field */
+  cs_paramedmem_recv_field_vals_l(cpl->mc_vertices, _name_m_d, cpl->xast);
+  cs_paramedmem_recv_field_vals_l(cpl->mc_vertices, _name_m_v, cpl->xvast);
 
-    if (verbosity > 1) {
-      bft_printf(_("[ok]\n"));
-      bft_printf_flush();
-    }
+  if (verbosity > 1) {
+    bft_printf(_("[ok]\n"));
+    bft_printf_flush();
+  }
 
-    /* For dry run, reset values to zero to avoid uninitialized values */
-    if (cpl->aci.root_rank < 0) {
-      const cs_lnum_t nb_dyn = cpl->n_vertices * 3;
-      cs_arrays_set_value<cs_real_t, 1>(nb_dyn, 0., cpl->xast, cpl->xvast);
-    }
+  /* For dry run, reset values to zero to avoid uninitialized values */
+  if (cpl->aci.root_rank < 0) {
+    const cs_lnum_t nb_dyn = cpl->n_vertices * 3;
+    cs_arrays_set_value<cs_real_t, 1>(nb_dyn, 0., cpl->xast, cpl->xvast);
   }
 }
 
