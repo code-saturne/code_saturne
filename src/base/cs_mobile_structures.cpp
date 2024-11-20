@@ -1510,9 +1510,9 @@ cs_mobile_structures_displacement(int itrale, int italim, int *itrfin)
 
   int icvext = 0, icvint = 0, icved = 0;
 
-  if (n_int_structs > 0) {
-    cs_real_t delta = 0.;
+  cs_real_t delta = 0.;
 
+  if (n_int_structs > 0) {
     for (int i = 0; i < n_int_structs; i++) {
       delta += cs_math_3_square_distance(ms->xstr[i], ms->xstp[i]);
     }
@@ -1524,8 +1524,10 @@ cs_mobile_structures_displacement(int itrale, int italim, int *itrfin)
       icvint = 1;
   }
 
-  if (n_ast_structs > 0)
+  if (n_ast_structs > 0) {
+    delta  = cs_ast_coupling_get_ext_residual();
     icvext = cs_ast_coupling_get_ext_cvg();
+  }
 
   if (n_int_structs > 0) {
     if (n_ast_structs > 0)
@@ -1566,12 +1568,13 @@ cs_mobile_structures_displacement(int itrale, int italim, int *itrfin)
     /* we have itrfin=1 and are finished */
     if (cs_glob_mobile_structures_n_iter_max > 1)
       bft_printf(_("@\n"
-                   "@ @@ Warning: implicit ALE'\n"
-                   "@    =======\n"
+                   "@  Warning: implicit ALE'\n"
+                   "@  ======================\n"
                    "@  Maximum number of iterations (%d) reached\n"
                    "@  Normed drift: %12.5e\n"
                    "@\n"),
-                 italim, delta);
+                 italim,
+                 delta);
     *itrfin = -1;
     /* Set icved to 1 so code_aster also stops. */
     icved = 1;
@@ -1579,7 +1582,7 @@ cs_mobile_structures_displacement(int itrale, int italim, int *itrfin)
 
   /* Return the final convergence indicator to code_aster */
   if (n_ast_structs > 0)
-    cs_ast_coupling_send_cvg(icved);
+    cs_ast_coupling_set_final_cvg(icved);
 
   /* Restore previous values if required
      ----------------------------------- */

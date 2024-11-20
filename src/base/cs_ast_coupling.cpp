@@ -137,6 +137,8 @@ struct _cs_ast_coupling_t {
   int     icv1;        /* Convergence indicator */
   int     icv2;        /* Convergence indicator (final) */
 
+  cs_real_t rcv1; /* Value of the residual */
+
   cs_real_t lref; /* Characteristic macroscopic domain length */
 
   int     s_it_id;     /* Sub-iteration id */
@@ -166,7 +168,7 @@ static int _visualization = 1;
  * Global variables
  *============================================================================*/
 
-cs_ast_coupling_t  *cs_glob_ast_coupling = nullptr;
+cs_ast_coupling_t *cs_glob_ast_coupling = nullptr;
 
 /*============================================================================
  * Private function definitions
@@ -184,7 +186,7 @@ _get_current_verbosity(const cs_ast_coupling_t *ast_cpl)
 }
 
 static void
-_allocate_arrays(cs_ast_coupling_t  *ast_cpl)
+_allocate_arrays(cs_ast_coupling_t *ast_cpl)
 {
   const cs_lnum_t  nb_dyn = ast_cpl->n_vertices;
   const cs_lnum_t  nb_for = ast_cpl->n_faces;
@@ -338,54 +340,6 @@ _dinorm(cs_real_t *vect1, cs_real_t *vect2, cs_lnum_t nbpts)
 
   norm = sqrt(norm / rescale);
   return norm;
-}
-
-/*----------------------------------------------------------------------------
- * Convergence test for implicit calculation case
- *
- * returns:
- *   0 if not converged
- *   1 if     converged
- *----------------------------------------------------------------------------*/
-
-static int
-_conv(cs_ast_coupling_t  *ast_cpl)
-{
-  const cs_lnum_t  nb_dyn = ast_cpl->n_vertices;
-
-  /* Local variables */
-  int icv = 0;
-  cs_real_t delast = 0.;
-
-  int verbosity = _get_current_verbosity(ast_cpl);
-
-  delast = _dinorm(ast_cpl->xast, ast_cpl->xastp, nb_dyn) / ast_cpl->lref;
-
-  if (verbosity > 0)
-    bft_printf("--------------------------------\n"
-               "convergence test:\n"
-               "delast = %4.2le\n",
-               delast);
-
-  if (delast <= ast_cpl->epsilo) {
-    icv = 1;
-
-    if (verbosity > 0)
-      bft_printf("icv = %d\n"
-                 "convergence of sub iteration\n"
-                 "----------------------------\n",
-                 icv);
-  }
-  else {
-    icv = 0;
-    if (verbosity > 0)
-      bft_printf("icv = %i\n"
-                 "non convergence of sub iteration\n"
-                 "--------------------------------\n",
-                 icv);
-  }
-
-  return icv;
 }
 
 /*----------------------------------------------------------------------------
@@ -1003,6 +957,8 @@ cs_ast_coupling_evaluate_cvg(void)
 {
   cs_ast_coupling_t *cpl = cs_glob_ast_coupling;
 
+  int verbosity = _get_current_verbosity(cpl);
+
   int icv   = 1;
   cpl->icv1 = icv;
 
@@ -1010,7 +966,34 @@ cs_ast_coupling_evaluate_cvg(void)
     /* implicit case: requires a convergence test */
 
     /* compute icv */
-    cpl->icv1 = _conv(cpl);
+
+    cpl->rcv1 = _dinorm(cpl->xast, cpl->xastp, cpl->n_vertices) / cpl->lref;
+
+    if (verbosity > 0)
+      bft_printf("--------------------------------\n"
+                 "convergence test:\n"
+                 "residual = %4.2le\n",
+                 cpl->rcv1);
+
+    if (cpl->rcv1 <= cpl->epsilo) {
+      icv = 1;
+
+      if (verbosity > 0)
+        bft_printf("icv = %d\n"
+                   "convergence of sub iteration\n"
+                   "----------------------------\n",
+                   icv);
+    }
+    else {
+      icv = 0;
+      if (verbosity > 0)
+        bft_printf("icv = %i\n"
+                   "non convergence of sub iteration\n"
+                   "--------------------------------\n",
+                   icv);
+    }
+
+    cpl->icv1 = icv;
     icv       = cpl->icv2;
   }
 
@@ -1173,16 +1156,25 @@ cs_ast_coupling_compute_displacement(cs_real_t disp[][3])
 int
 cs_ast_coupling_get_ext_cvg(void)
 {
-  cs_ast_coupling_t  *cpl = cs_glob_ast_coupling;
-
-#if defined(HAVE_MPI)
-
-  if (cs_glob_n_ranks > 1)
-    MPI_Bcast(&(cpl->icv1), 1, MPI_INT, 0, cs_glob_mpi_comm);
-
-#endif
+  cs_ast_coupling_t *cpl = cs_glob_ast_coupling;
 
   return cpl->icv1;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Receive convergence value of code_saturne/code_aster coupling
+ *
+ * \return  residual of the convergence
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_real_t
+cs_ast_coupling_get_ext_residual(void)
+{
+  cs_ast_coupling_t *cpl = cs_glob_ast_coupling;
+
+  return cpl->rcv1;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1194,9 +1186,9 @@ cs_ast_coupling_get_ext_cvg(void)
 /*----------------------------------------------------------------------------*/
 
 void
-cs_ast_coupling_send_cvg(int icved)
+cs_ast_coupling_set_final_cvg(int icved)
 {
-  cs_ast_coupling_t  *cpl = cs_glob_ast_coupling;
+  cs_ast_coupling_t *cpl = cs_glob_ast_coupling;
 
   cpl->icv2 = icved;
 }

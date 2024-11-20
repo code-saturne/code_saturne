@@ -195,6 +195,17 @@ cs_ast_coupling_get_ext_cvg(void);
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Receive convergence value of code_saturne/code_aster coupling
+ *
+ * \return  residual of the convergence
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_real_t
+cs_ast_coupling_get_ext_residual(void);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Send global convergence value of FSI calculations
  *
  * \param[in]  icved  convergence indicator (1: converged, 0: not converged)
@@ -202,7 +213,7 @@ cs_ast_coupling_get_ext_cvg(void);
 /*----------------------------------------------------------------------------*/
 
 void
-cs_ast_coupling_send_cvg(int  icved);
+cs_ast_coupling_set_final_cvg(int icved);
 
 /*----------------------------------------------------------------------------*/
 /*!
