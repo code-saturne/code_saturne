@@ -2832,7 +2832,7 @@ cs_cdovcb_scaleq_boundary_diff_flux(const cs_real_t           *pot_v,
        context. Moreover, there is no need to have a tensor and its eigen value
        in this function. */
 
-    bool need_tensor = false;
+    bool need_tensor = true;
     cs_property_data_t *saved_data = hodge->pty_data;
     cs_property_data_t tmp_data = cs_property_data_define(need_tensor,
                                                           false,

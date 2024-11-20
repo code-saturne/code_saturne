@@ -99,9 +99,6 @@ BEGIN_C_DECLS
  *        Case of CDO-Vb schemes and a Darcy flux defined at dual faces for
  *        a saturated porous media.
  *
- *        cell_values could be set to nullptr when the space discretization does
- *        not request these values for the update.
- *
  * \param[in]      connect       pointer to a cs_cdo_connect_t structure
  * \param[in]      cdoq          pointer to a cs_cdo_quantities_t structure
  * \param[in]      t_eval        time at which one performs the evaluation
@@ -132,20 +129,28 @@ _sspf_update_darcy_arrays(const cs_cdo_connect_t    *connect,
   cs_equation_t *eq = mc->richards;
   assert(eq != nullptr);
 
-  /* Update the array of flux values associated to the advection field.
-     One assumes a CDO-Vb scheme. */
+  // Current head values are used to build the new Darcy fluxes Vertex and/or
+  // cell values are used according to the space discretization associated to
+  // the Richards equation (arrays are stored in the equation context so need
+  // to perform a FREE after usage)
+
+  cs_real_t  *h_v_values = nullptr, *h_c_values = nullptr;
+
+  cs_gwf_get_value_pointers(eq, &h_v_values, &h_c_values);
+
+  // Update the array of flux values associated to the advection field.
 
   cs_equation_compute_diffusive_flux(eq,
                                      nullptr, // eqp --> default
                                      nullptr, // diff_pty --> default
-                                     cs_equation_get_vertex_values(eq, false),
-                                     nullptr, // cell values
+                                     h_v_values,
+                                     h_c_values,
                                      darcy->flux_location,
                                      t_eval,
                                      darcy->flux_val);
 
-  /* Update the velocity field at cell centers induced by the Darcy flux.
-   * This field is always defined when the definition relies on a flux. */
+  // Update the velocity field at cell centers induced by the Darcy flux.
+  // This field is always defined when the definition relies on a flux.
 
   cs_field_t *vel = cs_advection_field_get_field(adv, CS_MESH_LOCATION_CELLS);
   assert(vel != nullptr);
@@ -154,13 +159,13 @@ _sspf_update_darcy_arrays(const cs_cdo_connect_t    *connect,
 
   cs_advection_field_in_cells(adv, t_eval, vel->val);
 
-  /* Update the Darcy flux at the boundary (take into account the BCs) */
+  // Update the Darcy flux at the boundary (take into account the BCs)
 
   cs_gwf_darcy_flux_update_on_boundary(eq,
                                        nullptr, // eqp --> default
                                        nullptr, // diff_pty --> default
-                                       cs_equation_get_vertex_values(eq, false),
-                                       nullptr, // cell values
+                                       h_v_values,
+                                       h_c_values,
                                        t_eval,
                                        adv);
 
@@ -172,7 +177,7 @@ _sspf_update_darcy_arrays(const cs_cdo_connect_t    *connect,
     if (cur2prev)
       cs_field_current_to_previous(bdy_nflx);
 
-    /* Set the new values of the field related to the normal boundary flux */
+    // Set the new values of the field related to the normal boundary flux
 
     cs_advection_field_across_boundary(adv, t_eval, bdy_nflx->val);
 
