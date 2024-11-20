@@ -433,50 +433,52 @@ _solve_most(int              n_var,
 
   while (iterns <= cs_glob_velocity_pressure_param->nterup) {
 
-    // Call user BCs and computes BC coefficients
-    cs_boundary_conditions_set_coeffs(n_var,
-                                      iterns,
-                                      isvhb,
-                                      itrale,
-                                      *italim,
-                                      *itrfin,
-                                      *ineefl,
-                                      *itrfup,
-                                      isostd,
-                                      visvdr,
-                                      hbord,
-                                      theipb,
-                                      nftcdt);
+    if (cs_glob_lagr_time_scheme->iilagr != CS_LAGR_FROZEN_CONTINUOUS_PHASE) {
+      // Call user BCs and computes BC coefficients
+      cs_boundary_conditions_set_coeffs(n_var,
+                                        iterns,
+                                        isvhb,
+                                        itrale,
+                                        *italim,
+                                        *itrfin,
+                                        *ineefl,
+                                        *itrfup,
+                                        isostd,
+                                        visvdr,
+                                        hbord,
+                                        theipb,
+                                        nftcdt);
 
-    if (nftcdt > 0) {
-      cs_real_t *coefap = th_f->bc_coeffs->a;
-      cs_real_t *cofafp = th_f->bc_coeffs->af;
-      cs_real_t *cofbfp = th_f->bc_coeffs->bf;
+      if (nftcdt > 0) {
+        cs_real_t *coefap = th_f->bc_coeffs->a;
+        cs_real_t *cofafp = th_f->bc_coeffs->af;
+        cs_real_t *cofbfp = th_f->bc_coeffs->bf;
 
-      /* Pass the heat transfer computed by the Empiric laws
-       * of the COPAIN condensation to impose the heat transfer
-       * at the wall due to condensation for the enthalpy scalar. */
-      for (cs_lnum_t ii = 0 ; ii < wall_cond->nfbpcd; ii++) {
-        const cs_lnum_t iz = wall_cond->izzftcd[ii];
-        const cs_lnum_t face_id = wall_cond->ifbpcd[ii];
+        /* Pass the heat transfer computed by the Empiric laws
+         * of the COPAIN condensation to impose the heat transfer
+         * at the wall due to condensation for the enthalpy scalar. */
+        for (cs_lnum_t ii = 0 ; ii < wall_cond->nfbpcd; ii++) {
+          const cs_lnum_t iz = wall_cond->izzftcd[ii];
+          const cs_lnum_t face_id = wall_cond->ifbpcd[ii];
 
-        /* Enthalpy Boundary condition associated
-           to the heat transfer due to condensation. */
-        cofafp[face_id] = -wall_cond->hpcond[ii]*coefap[face_id];
-        cofbfp[face_id] =  wall_cond->hpcond[ii];
-        if (wall_cond->iztag1d[iz] == 2)
-          hbord[face_id] = htot_cond[ii];
+          /* Enthalpy Boundary condition associated
+             to the heat transfer due to condensation. */
+          cofafp[face_id] = -wall_cond->hpcond[ii]*coefap[face_id];
+          cofbfp[face_id] =  wall_cond->hpcond[ii];
+          if (wall_cond->iztag1d[iz] == 2)
+            hbord[face_id] = htot_cond[ii];
+        }
       }
+
+      /* Ground-atmosphere interface
+         --------------------------- */
+
+      /* FIXME why only we have atmo humid ?
+         Deardorff force-restore model */
+      if (   cs_glob_atmo_option->soil_model == 1
+          && cs_glob_physical_model_flag[CS_ATMOSPHERIC] == CS_ATMO_HUMID)
+        cs_soil_model();
     }
-
-    /* Ground-atmosphere interface
-       --------------------------- */
-
-    /* FIXME why only we have atmo humid ?
-       Deardorff force-restore model */
-    if (   cs_glob_atmo_option->soil_model == 1
-        && cs_glob_physical_model_flag[CS_ATMOSPHERIC] == CS_ATMO_HUMID)
-      cs_soil_model();
 
     /* After coefficient are computed, we can easily deduce the terms
        to send for boundaries coupling (such as with Syrthes) */
