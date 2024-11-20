@@ -814,7 +814,7 @@ cs_atmo_aerosol_ssh_time_advance(void)
         temp = cs_field_by_name("temperature")->val[cell_id];
         if (   cs_glob_thermal_model->temperature_scale
             == CS_TEMPERATURE_SCALE_CELSIUS)
-          temp -= cs_physical_constants_celsius_to_kelvin;
+          temp += cs_physical_constants_celsius_to_kelvin;
       }
       else {
         /* We have enthalpy, use reference temperature */
