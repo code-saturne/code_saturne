@@ -96,6 +96,17 @@ cs_ast_coupling_finalize(void);
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Set coefficient for prediction
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_ast_coupling_set_coefficients(cs_real_t aexxst,
+                                 cs_real_t bexxst,
+                                 cs_real_t cfopre);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Extract and exchange mesh information for surfaces coupled with
  *        code_aster.
  *
@@ -106,9 +117,9 @@ cs_ast_coupling_finalize(void);
 /*----------------------------------------------------------------------------*/
 
 void
-cs_ast_coupling_geometry(cs_lnum_t         n_faces,
-                         const cs_lnum_t  *face_ids,
-                         cs_real_t         almax);
+cs_ast_coupling_geometry(cs_lnum_t        n_faces,
+                         const cs_lnum_t *face_ids,
+                         cs_real_t        almax);
 
 /*----------------------------------------------------------------------------*/
 /*!

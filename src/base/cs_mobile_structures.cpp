@@ -876,6 +876,9 @@ cs_mobile_structures_initialize(void)
     cs_ast_coupling_initialize(cs_glob_mobile_structures_n_iter_max,
                                cs_glob_mobile_structures_i_eps);
 
+    /* Set coefficient for prediction */
+    cs_ast_coupling_set_coefficients(ms->aexxst, ms->bexxst, ms->cfopre);
+
     /* Send geometric information to code_aster */
     cs_ast_coupling_geometry(n_ast_faces, face_ids, almax);
 
@@ -1199,7 +1202,7 @@ cs_mobile_structures_prediction(int  itrale,
    * - The displacement used for the previous computation if restarted with no
    *   modification by user.
    *
-   * Its value must be transferred to xstr (which is used by  Newmark).
+   * Its value must be transferred to xstr (which is used by Newmark).
    * In the following iterations (itrale>0) we use the standard computation
    * schemes for xstp. */
 
@@ -1221,13 +1224,13 @@ cs_mobile_structures_prediction(int  itrale,
       if (cs_glob_mobile_structures_n_iter_max == 1) {
         cs_real_t aexxst = ms->aexxst;
         cs_real_t bexxst = ms->bexxst;
+        cs_real_t abexst = aexxst + bexxst;
 
         for (int i = 0; i < n_int_structs; i++) {
           cs_real_t dt = ms->dtstr[i];
           for (int j= 0; j < 3; j++) {
-            ms->xstp[i][j] =   ms->xstr[i][j]
-                             + aexxst*dt*ms->xpstr[i][j]
-                             + bexxst*dt*(ms->xpstr[i][j]-ms->xpsta[i][j]);
+            ms->xstp[i][j] = ms->xstr[i][j] + abexst * dt * ms->xpstr[i][j] +
+                             bexxst * dt * ms->xpsta[i][j];
           }
         }
       }

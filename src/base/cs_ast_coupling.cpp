@@ -152,6 +152,12 @@ struct _cs_ast_coupling_t {
   cs_real_t *forc_curr; /* Fluid forces at current sub-iteration */
   cs_real_t *forc_prev; /* Fluid forces at previous time step */
   cs_real_t *forc_pred; /* Predicted fluid forces at current sub-iteration */
+
+  cs_real_t aexxst; /*!< coefficient for the predicted displacement */
+  cs_real_t bexxst; /*!< coefficient for the predicted displacement */
+  cs_real_t rexxst; /*!< coefficient for the relaxation displacement */
+
+  cs_real_t cfopre; /*!< coefficient for the predicted force */
 };
 
 /*============================================================================
@@ -277,35 +283,18 @@ _pred(cs_real_t       *valpre,
 
   /* Update prediction array */
   const cs_lnum_t size = 3 * n;
+
+  if (val3 != nullptr) {
 #pragma omp parallel for if (size > CS_THR_MIN)
-  for (cs_lnum_t i = 0; i < size; i++) {
-    valpre[i] = c1 * val1[i] + c2 * val2[i] + c3 * val3[i];
+    for (cs_lnum_t i = 0; i < size; i++) {
+      valpre[i] = c1 * val1[i] + c2 * val2[i] + c3 * val3[i];
+    }
   }
-}
-
-/*----------------------------------------------------------------------------
- * Predict displacement or forces based on values of the current and
- * previous time step(s)
- *
- * valpre = c1 * val1 + c2 * val2
- *----------------------------------------------------------------------------*/
-
-static void
-_pred2(cs_real_t       *valpre,
-       const cs_real_t *val1,
-       const cs_real_t *val2,
-       const cs_real_t  c1,
-       const cs_real_t  c2,
-       const cs_lnum_t  n)
-{
-  if (n < 1)
-    return;
-
-  /* Update prediction array */
-  const cs_lnum_t size = 3 * n;
+  else {
 #pragma omp parallel for if (size > CS_THR_MIN)
-  for (cs_lnum_t i = 0; i < size; i++) {
-    valpre[i] = c1 * val1[i] + c2 * val2[i];
+    for (cs_lnum_t i = 0; i < size; i++) {
+      valpre[i] = c1 * val1[i] + c2 * val2[i];
+    }
   }
 }
 
@@ -506,6 +495,11 @@ cs_ast_coupling_initialize(int nalimx, cs_real_t epalim)
   cpl->dtref  = ts->dt_ref; /* reference time step */
   cpl->epsilo = epalim;     /* scheme convergence threshold */
 
+  cpl->aexxst = 1.0;
+  cpl->bexxst = 0.5;
+  cpl->rexxst = 0.5;
+  cpl->cfopre = 2.0;
+
   cpl->icv1 = 0;
   cpl->icv2 = 0;
   cpl->lref = 0.;
@@ -640,6 +634,27 @@ cs_ast_coupling_finalize(void)
   BFT_FREE(cpl);
 
   cs_glob_ast_coupling = cpl;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Set coefficient for prediction
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_ast_coupling_set_coefficients(cs_real_t aexxst,
+                                 cs_real_t bexxst,
+                                 cs_real_t cfopre)
+{
+  cs_ast_coupling_t *cpl = cs_glob_ast_coupling;
+
+  if (cpl == nullptr)
+    return;
+
+  cpl->aexxst = aexxst;
+  cpl->bexxst = bexxst;
+  cpl->cfopre = cfopre;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -925,9 +940,16 @@ cs_ast_coupling_send_fluid_forces(void)
   cs_real_t c1, c2;
   if (cpl->s_it_id == 0) {
     /* Explicit synchrone prediction */
-    c1 = 2.0;
-    c2 = -1.0;
-    _pred2(cpl->forc_pred, cpl->forc_curr, cpl->forc_prev, c1, c2, n_faces);
+    c1 = cpl->cfopre;
+    c2 = 1.0 - cpl->cfopre;
+    _pred(cpl->forc_pred,
+          cpl->forc_curr,
+          cpl->forc_prev,
+          nullptr,
+          c1,
+          c2,
+          0.0,
+          n_faces);
   }
   else {
     /* Implicit prediction */
@@ -1055,6 +1077,8 @@ cs_ast_coupling_recv_displacement(void)
                                       cpl->xast_curr,
                                       cpl->vast_curr);
   }
+
+  cpl->s_it_id += 1;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1068,22 +1092,16 @@ cs_ast_coupling_save_values(void)
 {
   cs_ast_coupling_t *cpl = cs_glob_ast_coupling;
 
-  if (cpl->nbssit <= 1) {
-    const cs_lnum_t nb_dyn = cpl->n_vertices;
-    const cs_lnum_t nb_for = cpl->n_faces;
+  const cs_lnum_t nb_dyn = cpl->n_vertices;
+  const cs_lnum_t nb_for = cpl->n_faces;
 
-    /* record efforts */
-    cs_array_copy(3 * nb_for, cpl->forc_pred, cpl->forc_prev);
+  /* record efforts */
+  cs_array_copy(3 * nb_for, cpl->forc_pred, cpl->forc_prev);
 
-    /* record dynamic data */
-    cs_array_copy(3 * nb_dyn, cpl->xast_curr, cpl->xast_prev);
-    cs_array_copy(3 * nb_dyn, cpl->vast_prev, cpl->vast_pprev);
-    cs_array_copy(3 * nb_dyn, cpl->vast_curr, cpl->vast_prev);
-  }
-
-  cpl->s_it_id += 1;
-
-  /* TODO: why nothing in implicit*/
+  /* record dynamic data */
+  cs_array_copy(3 * nb_dyn, cpl->xast_curr, cpl->xast_prev);
+  cs_array_copy(3 * nb_dyn, cpl->vast_prev, cpl->vast_pprev);
+  cs_array_copy(3 * nb_dyn, cpl->vast_curr, cpl->vast_prev);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1109,17 +1127,15 @@ cs_ast_coupling_compute_displacement(cs_real_t disp[][3])
 
   /* Predict displacements */
 
-  cs_real_t c1, c2, c3, alpha, beta;
+  cs_real_t c1, c2, c3;
 
   /* Prediction ared defined in Fabien Huvelin PhD*/
 
   /* separate prediction for explicit/implicit cases */
   if (cpl->s_it_id == 0) {
-    alpha = 1.0;
-    beta  = 0.5;
     c1    = 1.;
-    c2    = (alpha + beta) * cs_glob_time_step->dt[0];
-    c3    = -beta * cs_glob_time_step->dt[1];
+    c2    = (cpl->aexxst + cpl->bexxst) * cs_glob_time_step->dt[0];
+    c3    = -cpl->bexxst * cs_glob_time_step->dt[1];
     _pred(cpl->xsat_pred,
           cpl->xast_prev,
           cpl->vast_prev,
@@ -1129,13 +1145,19 @@ cs_ast_coupling_compute_displacement(cs_real_t disp[][3])
           c3,
           nb_dyn);
   }
-  else { /* if (cpl->s_it_id > 0) */
-    /* alpha could be defined differently to have a better convergence */
-    alpha = 0.5;
-    c1    = alpha;
-    c2    = 1. - alpha;
+  else {
+    /* rexxst could be defined differently to have a better convergence */
+    c1    = cpl->rexxst;
+    c2    = 1. - cpl->rexxst;
     c3    = 0.;
-    _pred2(cpl->xsat_pred, cpl->xast_curr, cpl->xsat_pred, c1, c2, nb_dyn);
+    _pred(cpl->xsat_pred,
+          cpl->xast_curr,
+          cpl->xsat_pred,
+          nullptr,
+          c1,
+          c2,
+          c3,
+          nb_dyn);
   }
 
   int verbosity = _get_current_verbosity(cpl);
