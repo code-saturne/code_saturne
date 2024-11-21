@@ -206,7 +206,7 @@ _allocate_arrays(cs_ast_coupling_t *ast_cpl)
                                     ast_cpl->xsat_pred,
                                     ast_cpl->vast_curr,
                                     ast_cpl->vast_prev,
-                                    ast_cpl->vast_pprev, );
+                                    ast_cpl->vast_pprev);
 
   BFT_MALLOC(ast_cpl->forc_curr, 3 * nb_for, cs_real_t);
   BFT_MALLOC(ast_cpl->forc_prev, 3 * nb_for, cs_real_t);
@@ -921,14 +921,20 @@ cs_ast_coupling_send_fluid_forces(void)
 
   const cs_lnum_t n_faces = cpl->n_faces;
 
-  /* Send prediction
-     (no difference between explicit and implicit cases for forces) */
-
-  constexpr cs_real_t alpha = 2.0;
-  constexpr cs_real_t c1    = alpha;
-  constexpr cs_real_t c2    = 1 - alpha;
-
-  _pred2(cpl->forc_pred, cpl->forc_curr, cpl->forc_prev, c1, c2, n_faces);
+  /* Prediction ared defined in Fabien Huvelin PhD*/
+  cs_real_t c1, c2;
+  if (cpl->s_it_id == 0) {
+    /* Explicit synchrone prediction */
+    c1 = 2.0;
+    c2 = -1.0;
+    _pred2(cpl->forc_pred, cpl->forc_curr, cpl->forc_prev, c1, c2, n_faces);
+  }
+  else {
+    /* Implicit prediction */
+    c1 = 1.0;
+    c2 = 0.0;
+    cs_array_copy(3 * n_faces, cpl->forc_curr, cpl->forc_pred);
+  }
 
   if (verbosity > 0)
     bft_printf("--------------------------------------\n"
@@ -977,7 +983,7 @@ cs_ast_coupling_evaluate_cvg(void)
     /* compute icv */
 
     cpl->rcv1 =
-      _dinorm(cpl->xast_curr, cpl->xast_prev, cpl->n_vertices) / cpl->lref;
+      _dinorm(cpl->xast_curr, cpl->xsat_pred, cpl->n_vertices) / cpl->lref;
 
     if (verbosity > 0)
       bft_printf("--------------------------------\n"
@@ -1073,7 +1079,6 @@ cs_ast_coupling_save_values(void)
     cs_array_copy(3 * nb_dyn, cpl->xast_curr, cpl->xast_prev);
     cs_array_copy(3 * nb_dyn, cpl->vast_prev, cpl->vast_pprev);
     cs_array_copy(3 * nb_dyn, cpl->vast_curr, cpl->vast_prev);
-    cs_array_copy(3 * nb_dyn, cpl->xast_curr, cpl->xast_prev);
   }
 
   cpl->s_it_id += 1;
@@ -1106,28 +1111,31 @@ cs_ast_coupling_compute_displacement(cs_real_t disp[][3])
 
   cs_real_t c1, c2, c3, alpha, beta;
 
+  /* Prediction ared defined in Fabien Huvelin PhD*/
+
   /* separate prediction for explicit/implicit cases */
   if (cpl->s_it_id == 0) {
-    alpha = 0.5;
-    beta  = 0.;
+    alpha = 1.0;
+    beta  = 0.5;
     c1    = 1.;
     c2    = (alpha + beta) * cs_glob_time_step->dt[0];
     c3    = -beta * cs_glob_time_step->dt[1];
-    _pred(cpl->xast_prev,
-          cpl->xast_curr,
-          cpl->vast_curr,
+    _pred(cpl->xsat_pred,
+          cpl->xast_prev,
           cpl->vast_prev,
+          cpl->vast_pprev,
           c1,
           c2,
           c3,
           nb_dyn);
   }
   else { /* if (cpl->s_it_id > 0) */
+    /* alpha could be defined differently to have a better convergence */
     alpha = 0.5;
     c1    = alpha;
     c2    = 1. - alpha;
     c3    = 0.;
-    _pred2(cpl->xast_prev, cpl->xast_curr, cpl->xast_prev, c1, c2, nb_dyn);
+    _pred2(cpl->xsat_pred, cpl->xast_curr, cpl->xsat_pred, c1, c2, nb_dyn);
   }
 
   int verbosity = _get_current_verbosity(cpl);
@@ -1156,7 +1164,7 @@ cs_ast_coupling_compute_displacement(cs_real_t disp[][3])
 
   _scatter_values_r3(cpl->n_vertices,
                      vtx_ids,
-                     (const cs_real_3_t *)cpl->xast_prev,
+                     (const cs_real_3_t *)cpl->xsat_pred,
                      disp);
 }
 
