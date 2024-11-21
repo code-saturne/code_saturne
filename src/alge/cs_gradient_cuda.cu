@@ -1238,7 +1238,12 @@ cs_gradient_scalar_lsq_cuda(const cs_mesh_t              *m,
   cudaStream_t stream1 = cs_cuda_get_stream(1);
 
   cs_real_3_t *rhsv;
+#if CUDA_VERSION >= 11200
+  CS_CUDA_CHECK(cudaMallocAsync(&rhsv, n_cells_ext * sizeof(cs_real_3_t),
+                                stream));
+#else
   CS_CUDA_CHECK(cudaMalloc(&rhsv, n_cells_ext * sizeof(cs_real_3_t)));
+#endif
 
   void *_pvar_d = nullptr, *_coefa_d = nullptr, *_coefb_d = nullptr;
   const cs_real_t *pvar_d = nullptr, *coefa_d = nullptr, *coefb_d = nullptr;
@@ -1454,7 +1459,11 @@ cs_gradient_scalar_lsq_cuda(const cs_mesh_t              *m,
   if (_coefb_d != nullptr)
     CS_CUDA_CHECK(cudaFree(_coefb_d));
 
+#if CUDA_VERSION >= 11200
+  CS_CUDA_CHECK(cudaFreeAsync(rhsv, stream));
+#else
   CS_CUDA_CHECK(cudaFree(rhsv));
+#endif
 }
 
 /*----------------------------------------------------------------------------
@@ -1599,7 +1608,12 @@ cs_gradient_strided_lsq_cuda
     CS_CUDA_CHECK(cudaEventRecord(e_h2d, stream));
 
   decltype(grad) rhs_d;
+#if CUDA_VERSION >= 11200
+  CS_CUDA_CHECK(cudaMallocAsync(&rhs_d, n_cells * sizeof(cs_real_t)*stride*3,
+                                stream));
+#else
   CS_CUDA_CHECK(cudaMalloc(&rhs_d, n_cells * sizeof(cs_real_t)*stride*3));
+#endif
 
   // rhs set to 0 in first kernel called, no need for cudaMemset.
   // cudaMemset(rhs_d, 0, n_cells*sizeof(grad));
@@ -1748,7 +1762,11 @@ cs_gradient_strided_lsq_cuda
     CS_CUDA_CHECK(cudaEventDestroy(e_stop));
   }
 
+#if CUDA_VERSION >= 11200
+  CS_CUDA_CHECK(cudaFreeAsync(rhs_d, stream));
+#else
   CS_CUDA_CHECK(cudaFree(rhs_d));
+#endif
 
   if (_pvar_d != nullptr)
     CS_CUDA_CHECK(cudaFree(_pvar_d));
