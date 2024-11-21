@@ -30,12 +30,12 @@
  * Standard C library headers
  *----------------------------------------------------------------------------*/
 
+#include <assert.h>
+#include <math.h>
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <assert.h>
-#include <math.h>
 
 #if defined(HAVE_MPI)
 #include <mpi.h>
@@ -45,15 +45,15 @@
  * PLE library headers
  *----------------------------------------------------------------------------*/
 
-#include <ple_defs.h>
 #include <ple_coupling.h>
+#include <ple_defs.h>
 
 /*----------------------------------------------------------------------------
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft_mem.h"
 #include "bft_error.h"
+#include "bft_mem.h"
 #include "bft_printf.h"
 
 #include "fvm_io_num.h"
@@ -95,9 +95,9 @@ BEGIN_C_DECLS
 /* Fake structure for compilation without MPI (unusable in current form) */
 
 typedef struct {
-  int          root_rank; /* Application root rank in MPI_COMM_WORLD */
-  const char  *app_type;  /* Application type name (may be empty) */
-  const char  *app_name;  /* Application instance name (may be empty) */
+  int         root_rank; /* Application root rank in MPI_COMM_WORLD */
+  const char *app_type;  /* Application type name (may be empty) */
+  const char *app_name;  /* Application instance name (may be empty) */
 
 } ple_coupling_mpi_set_info_t;
 
@@ -106,51 +106,52 @@ typedef struct {
 /* Main code_aster coupling structure */
 
 struct _cs_ast_coupling_t {
+  ple_coupling_mpi_set_info_t aci; /* code_aster coupling info */
 
-  ple_coupling_mpi_set_info_t  aci;  /* code_aster coupling info */
+  cs_lnum_t n_faces;    /* Local number of coupled faces */
+  cs_lnum_t n_vertices; /* Local number of coupled vertices */
 
-  cs_lnum_t    n_faces;       /* Local number of coupled faces */
-  cs_lnum_t    n_vertices;    /* Local number of coupled vertices */
+  cs_gnum_t n_g_faces;    /* Global number of coupled faces */
+  cs_gnum_t n_g_vertices; /* Global number of coupld vertices */
 
-  cs_gnum_t    n_g_faces;     /* Global number of coupled faces */
-  cs_gnum_t    n_g_vertices;  /* Global number of coupld vertices */
+  cs_paramedmem_coupling_t *mc_faces;
+  cs_paramedmem_coupling_t *mc_vertices;
 
-  cs_paramedmem_coupling_t  *mc_faces;
-  cs_paramedmem_coupling_t  *mc_vertices;
+  int verbosity;     /* verbosity level */
+  int visualization; /* visualization level */
 
-  int  verbosity;      /* verbosity level */
-  int  visualization;  /* visualization level */
+  fvm_nodal_t *post_mesh;    /* Optional mesh for post-processing output */
+  int          post_mesh_id; /* 0 if post-processing is not active,
+                                or post-processing mesh_id (< 0) */
 
-  fvm_nodal_t  *post_mesh;     /* Optional mesh for post-processing output */
-  int           post_mesh_id;  /* 0 if post-processing is not active,
-                                  or post-processing mesh_id (< 0) */
+  int iteration; /* 0 for initialization, < 0 for disconnect,
+                    iteration from (re)start otherwise */
 
-  int  iteration;      /* 0 for initialization, < 0 for disconnect,
-                          iteration from (re)start otherwise */
-
-  int  nbssit;         /* number of sub-iterations */
+  int nbssit; /* number of sub-iterations */
 
   cs_real_t dt;
   cs_real_t dtref;  /* reference time step */
   cs_real_t epsilo; /* scheme convergence threshold */
 
-  int     icv1;        /* Convergence indicator */
-  int     icv2;        /* Convergence indicator (final) */
+  int icv1; /* Convergence indicator */
+  int icv2; /* Convergence indicator (final) */
 
   cs_real_t rcv1; /* Value of the residual */
 
   cs_real_t lref; /* Characteristic macroscopic domain length */
 
-  int     s_it_id;     /* Sub-iteration id */
+  int s_it_id; /* Sub-iteration id */
 
-  cs_real_t *xast;  /* Mesh displacement last received (current iteration) */
-  cs_real_t *xastp; /* Mesh velocity at previous sub-iteration */
-  cs_real_t *xvast; /* Mesh velocity last received (current iteration) */
-  cs_real_t *xvasa; /* Mesh displacement at previous sub-iteration */
+  cs_real_t *xast_curr; /* Mesh displacement last received (current iteration)*/
+  cs_real_t *xsat_pred; /* Predicted mesh displacement at current iteration*/
+  cs_real_t *xast_prev; /* Mesh displacement at previous time step */
+  cs_real_t *vast_curr; /* Mesh velocity last received (current iteration) */
+  cs_real_t *vast_prev; /* Mesh velocity at previous time step n-1 */
+  cs_real_t *vast_pprev; /* Mesh velocity at previous time step n-2 */
 
-  cs_real_t *foras; /* Fluid forces at current sub-iteration */
-  cs_real_t *foaas; /* Fluid forces at previous sub-iteration */
-  cs_real_t *fopas; /* Predicted fluid forces */
+  cs_real_t *forc_curr; /* Fluid forces at current sub-iteration */
+  cs_real_t *forc_prev; /* Fluid forces at previous time step */
+  cs_real_t *forc_pred; /* Predicted fluid forces at current sub-iteration */
 };
 
 /*============================================================================
@@ -161,7 +162,7 @@ static const char _name_f_f[] = "fluid_forces";
 static const char _name_m_d[] = "mesh_displacement";
 static const char _name_m_v[] = "mesh_velocity";
 
-static int _verbosity = 1;
+static int _verbosity     = 1;
 static int _visualization = 1;
 
 /*============================================================================
@@ -188,30 +189,34 @@ _get_current_verbosity(const cs_ast_coupling_t *ast_cpl)
 static void
 _allocate_arrays(cs_ast_coupling_t *ast_cpl)
 {
-  const cs_lnum_t  nb_dyn = ast_cpl->n_vertices;
-  const cs_lnum_t  nb_for = ast_cpl->n_faces;
+  const cs_lnum_t nb_dyn = ast_cpl->n_vertices;
+  const cs_lnum_t nb_for = ast_cpl->n_faces;
 
-  BFT_MALLOC(ast_cpl->xast, 3 * nb_dyn, cs_real_t);
-  BFT_MALLOC(ast_cpl->xvast, 3 * nb_dyn, cs_real_t);
-  BFT_MALLOC(ast_cpl->xvasa, 3 * nb_dyn, cs_real_t);
-  BFT_MALLOC(ast_cpl->xastp, 3 * nb_dyn, cs_real_t);
+  BFT_MALLOC(ast_cpl->xast_curr, 3 * nb_dyn, cs_real_t);
+  BFT_MALLOC(ast_cpl->xast_prev, 3 * nb_dyn, cs_real_t);
+  BFT_MALLOC(ast_cpl->xsat_pred, 3 * nb_dyn, cs_real_t);
+  BFT_MALLOC(ast_cpl->vast_curr, 3 * nb_dyn, cs_real_t);
+  BFT_MALLOC(ast_cpl->vast_prev, 3 * nb_dyn, cs_real_t);
+  BFT_MALLOC(ast_cpl->vast_pprev, 3 * nb_dyn, cs_real_t);
 
   cs_arrays_set_value<cs_real_t, 1>(3 * nb_dyn,
                                     0.,
-                                    ast_cpl->xast,
-                                    ast_cpl->xvast,
-                                    ast_cpl->xvasa,
-                                    ast_cpl->xastp);
+                                    ast_cpl->xast_curr,
+                                    ast_cpl->xast_prev,
+                                    ast_cpl->xsat_pred,
+                                    ast_cpl->vast_curr,
+                                    ast_cpl->vast_prev,
+                                    ast_cpl->vast_pprev, );
 
-  BFT_MALLOC(ast_cpl->foras, 3 * nb_for, cs_real_t);
-  BFT_MALLOC(ast_cpl->foaas, 3 * nb_for, cs_real_t);
-  BFT_MALLOC(ast_cpl->fopas, 3 * nb_for, cs_real_t);
+  BFT_MALLOC(ast_cpl->forc_curr, 3 * nb_for, cs_real_t);
+  BFT_MALLOC(ast_cpl->forc_prev, 3 * nb_for, cs_real_t);
+  BFT_MALLOC(ast_cpl->forc_pred, 3 * nb_for, cs_real_t);
 
   cs_arrays_set_value<cs_real_t, 1>(3 * nb_for,
                                     0.,
-                                    ast_cpl->foras,
-                                    ast_cpl->foaas,
-                                    ast_cpl->fopas);
+                                    ast_cpl->forc_curr,
+                                    ast_cpl->forc_prev,
+                                    ast_cpl->forc_pred);
 }
 
 /*----------------------------------------------------------------------------
@@ -374,7 +379,7 @@ _cs_ast_coupling_post_function(void *coupling, const cs_time_step_t *ts)
 
   _scatter_values_r3(cpl->n_vertices,
                      vtx_ids,
-                     (const cs_real_3_t *)cpl->xast,
+                     (const cs_real_3_t *)cpl->xast_curr,
                      (cs_real_3_t *)values);
 
   cs_post_write_vertex_var(cpl->post_mesh_id,
@@ -389,7 +394,7 @@ _cs_ast_coupling_post_function(void *coupling, const cs_time_step_t *ts)
 
   _scatter_values_r3(cpl->n_vertices,
                      vtx_ids,
-                     (const cs_real_3_t *)cpl->xvast,
+                     (const cs_real_3_t *)cpl->vast_curr,
                      (cs_real_3_t *)values);
 
   cs_post_write_vertex_var(cpl->post_mesh_id,
@@ -404,7 +409,7 @@ _cs_ast_coupling_post_function(void *coupling, const cs_time_step_t *ts)
 
   _scatter_values_r3(cpl->n_faces,
                      face_ids,
-                     (const cs_real_3_t *)cpl->foras,
+                     (const cs_real_3_t *)cpl->forc_curr,
                      (cs_real_3_t *)values);
 
   cs_post_write_var(cpl->post_mesh_id,
@@ -507,14 +512,16 @@ cs_ast_coupling_initialize(int nalimx, cs_real_t epalim)
 
   cpl->s_it_id = 0; /* Sub-iteration id */
 
-  cpl->xast  = nullptr;
-  cpl->xvast = nullptr;
-  cpl->xvasa = nullptr;
-  cpl->xastp = nullptr;
+  cpl->xast_curr  = nullptr;
+  cpl->xsat_pred  = nullptr;
+  cpl->xast_prev  = nullptr;
+  cpl->vast_curr  = nullptr;
+  cpl->vast_prev  = nullptr;
+  cpl->vast_pprev = nullptr;
 
-  cpl->foras = nullptr;
-  cpl->foaas = nullptr;
-  cpl->fopas = nullptr;
+  cpl->forc_curr = nullptr;
+  cpl->forc_prev = nullptr;
+  cpl->forc_pred = nullptr;
 
   cs_glob_ast_coupling = cpl;
 
@@ -610,14 +617,16 @@ cs_ast_coupling_finalize(void)
   if (cpl == nullptr)
     return;
 
-  BFT_FREE(cpl->xast);
-  BFT_FREE(cpl->xvast);
-  BFT_FREE(cpl->xvasa);
-  BFT_FREE(cpl->xastp);
+  BFT_FREE(cpl->xast_curr);
+  BFT_FREE(cpl->xast_prev);
+  BFT_FREE(cpl->xsat_pred);
+  BFT_FREE(cpl->vast_curr);
+  BFT_FREE(cpl->vast_prev);
+  BFT_FREE(cpl->vast_pprev);
 
-  BFT_FREE(cpl->foras);
-  BFT_FREE(cpl->foaas);
-  BFT_FREE(cpl->fopas);
+  BFT_FREE(cpl->forc_curr);
+  BFT_FREE(cpl->forc_prev);
+  BFT_FREE(cpl->forc_pred);
 
   if (cpl->post_mesh != nullptr)
     cpl->post_mesh = fvm_nodal_destroy(cpl->post_mesh);
@@ -889,7 +898,7 @@ cs_ast_coupling_get_fluid_forces_pointer(void)
   cs_ast_coupling_t *cpl = cs_glob_ast_coupling;
 
   if (cpl != nullptr)
-    f_forces = (cs_real_3_t *)cpl->foras;
+    f_forces = (cs_real_3_t *)cpl->forc_curr;
 
   return f_forces;
 }
@@ -919,7 +928,7 @@ cs_ast_coupling_send_fluid_forces(void)
   constexpr cs_real_t c1    = alpha;
   constexpr cs_real_t c2    = 1 - alpha;
 
-  _pred2(cpl->fopas, cpl->foras, cpl->foaas, c1, c2, n_faces);
+  _pred2(cpl->forc_pred, cpl->forc_curr, cpl->forc_prev, c1, c2, n_faces);
 
   if (verbosity > 0)
     bft_printf("--------------------------------------\n"
@@ -938,7 +947,7 @@ cs_ast_coupling_send_fluid_forces(void)
     bft_printf_flush();
   }
 
-  cs_paramedmem_send_field_vals_l(cpl->mc_faces, _name_f_f, cpl->fopas);
+  cs_paramedmem_send_field_vals_l(cpl->mc_faces, _name_f_f, cpl->forc_pred);
 
   if (verbosity > 1) {
     bft_printf(_("[ok]\n"));
@@ -967,7 +976,8 @@ cs_ast_coupling_evaluate_cvg(void)
 
     /* compute icv */
 
-    cpl->rcv1 = _dinorm(cpl->xast, cpl->xastp, cpl->n_vertices) / cpl->lref;
+    cpl->rcv1 =
+      _dinorm(cpl->xast_curr, cpl->xast_prev, cpl->n_vertices) / cpl->lref;
 
     if (verbosity > 0)
       bft_printf("--------------------------------\n"
@@ -1023,8 +1033,8 @@ cs_ast_coupling_recv_displacement(void)
   }
 
   /* Received discplacement and velocity field */
-  cs_paramedmem_recv_field_vals_l(cpl->mc_vertices, _name_m_d, cpl->xast);
-  cs_paramedmem_recv_field_vals_l(cpl->mc_vertices, _name_m_v, cpl->xvast);
+  cs_paramedmem_recv_field_vals_l(cpl->mc_vertices, _name_m_d, cpl->xast_curr);
+  cs_paramedmem_recv_field_vals_l(cpl->mc_vertices, _name_m_v, cpl->vast_curr);
 
   if (verbosity > 1) {
     bft_printf(_("[ok]\n"));
@@ -1034,7 +1044,10 @@ cs_ast_coupling_recv_displacement(void)
   /* For dry run, reset values to zero to avoid uninitialized values */
   if (cpl->aci.root_rank < 0) {
     const cs_lnum_t nb_dyn = cpl->n_vertices * 3;
-    cs_arrays_set_value<cs_real_t, 1>(nb_dyn, 0., cpl->xast, cpl->xvast);
+    cs_arrays_set_value<cs_real_t, 1>(nb_dyn,
+                                      0.,
+                                      cpl->xast_curr,
+                                      cpl->vast_curr);
   }
 }
 
@@ -1054,10 +1067,13 @@ cs_ast_coupling_save_values(void)
     const cs_lnum_t nb_for = cpl->n_faces;
 
     /* record efforts */
-    cs_array_copy(3 * nb_for, cpl->foras, cpl->foaas);
+    cs_array_copy(3 * nb_for, cpl->forc_pred, cpl->forc_prev);
 
     /* record dynamic data */
-    cs_array_copy(3 * nb_dyn, cpl->xvast, cpl->xvasa);
+    cs_array_copy(3 * nb_dyn, cpl->xast_curr, cpl->xast_prev);
+    cs_array_copy(3 * nb_dyn, cpl->vast_prev, cpl->vast_pprev);
+    cs_array_copy(3 * nb_dyn, cpl->vast_curr, cpl->vast_prev);
+    cs_array_copy(3 * nb_dyn, cpl->xast_curr, cpl->xast_prev);
   }
 
   cpl->s_it_id += 1;
@@ -1084,7 +1100,7 @@ cs_ast_coupling_compute_displacement(cs_real_t disp[][3])
   if (cpl->iteration < 0)
     return;
 
-  const cs_lnum_t  nb_dyn = cpl->n_vertices;
+  const cs_lnum_t nb_dyn = cpl->n_vertices;
 
   /* Predict displacements */
 
@@ -1097,10 +1113,10 @@ cs_ast_coupling_compute_displacement(cs_real_t disp[][3])
     c1    = 1.;
     c2    = (alpha + beta) * cs_glob_time_step->dt[0];
     c3    = -beta * cs_glob_time_step->dt[1];
-    _pred(cpl->xastp,
-          cpl->xast,
-          cpl->xvast,
-          cpl->xvasa,
+    _pred(cpl->xast_prev,
+          cpl->xast_curr,
+          cpl->vast_curr,
+          cpl->vast_prev,
           c1,
           c2,
           c3,
@@ -1111,13 +1127,12 @@ cs_ast_coupling_compute_displacement(cs_real_t disp[][3])
     c1    = alpha;
     c2    = 1. - alpha;
     c3    = 0.;
-    _pred2(cpl->xastp, cpl->xast, cpl->xastp, c1, c2, nb_dyn);
+    _pred2(cpl->xast_prev, cpl->xast_curr, cpl->xast_prev, c1, c2, nb_dyn);
   }
 
   int verbosity = _get_current_verbosity(cpl);
 
   if (verbosity > 0) {
-
     bft_printf("*********************************\n"
                "*     sub - iteration %i        *\n"
                "*********************************\n\n",
@@ -1129,8 +1144,9 @@ cs_ast_coupling_compute_displacement(cs_real_t disp[][3])
                " C2: %4.2le\n"
                " C3: %4.2le\n"
                "--------------------------------------------\n\n",
-               c1, c2, c3);
-
+               c1,
+               c2,
+               c3);
   }
 
   /* Set in disp the values of prescribed displacements */
@@ -1140,7 +1156,7 @@ cs_ast_coupling_compute_displacement(cs_real_t disp[][3])
 
   _scatter_values_r3(cpl->n_vertices,
                      vtx_ids,
-                     (const cs_real_3_t *)cpl->xastp,
+                     (const cs_real_3_t *)cpl->xast_prev,
                      disp);
 }
 
