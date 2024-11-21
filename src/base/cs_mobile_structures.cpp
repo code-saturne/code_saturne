@@ -1463,7 +1463,6 @@ cs_mobile_structures_displacement(int itrale, int italim, int *itrfin)
     cs_ast_coupling_send_fluid_forces();
     cs_ast_coupling_evaluate_cvg();
     cs_ast_coupling_recv_displacement();
-    cs_ast_coupling_save_values();
   }
 
   /* Structure characteristics defined by the user

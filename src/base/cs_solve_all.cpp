@@ -1107,6 +1107,9 @@ cs_solve_all(int  itrale)
           italim++;
           need_new_solve = true;
         }
+        else if (nb_ext_structs > 0) {
+          cs_ast_coupling_save_values();
+        }
       }
     }
 
