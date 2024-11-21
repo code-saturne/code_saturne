@@ -126,12 +126,14 @@
   The use of these coefficients is reminded here:
   - predicted displacement
     \f[
-    \vect{X_{n+1}} = \vect{X_n} + aexxst \Delta t \vect{X^{\prime}_n} +
-    bexxst \Delta t (\vect{X^{\prime}_n}-\vect{X^{\prime}_{n-1}})
+    \vect{X}_{n+1} = \vect{X}_n + aexxst \Delta t_{n+1} \vect{X}^{\prime}_n +
+    bexxst \frac{(\Delta t_{n+1})^2}{\Delta t_n} (\vect{X}^{\prime}_n-\vect{X}^{\prime}_{n-1})
     \f]
-    with \f$ \vect{X_n} \f$ standing for the displacement at iteration \f$ n \f$,
-    \f$ \vect{X^{\prime}_n} \f$ and \f$ \vect{X^{\prime}_{n-1}} \f$ representing the internal
+    with \f$ \vect{X}_n \f$ standing for the displacement at iteration \f$ n \f$,
+    \f$ \vect{X}^{\prime}_n \f$ and \f$ \vect{X}^{\prime}_{n-1} \f$ representing the internal
     structure velocity respectively at iteration \f$ n \f$ and \f$ n-1 \f$.
+    The choice \f$ aexxst=1, bexxst=0 \f$ is the Euler explicit scheme (order 1) and the choice
+    \f$ aexxst=1, bexxst=0.5 \f$ is the Adams-Bashforth scheme (order 2).
   - fluid force sent to structure internal solver
     \f[
     \vect{F_{n+1}} = cfopre \vect{F_n} + (1-cfopre) \vect{F_{n-1}}

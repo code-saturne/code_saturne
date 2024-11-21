@@ -1133,11 +1133,14 @@ cs_ast_coupling_compute_displacement(cs_real_t disp[][3])
 
   /* separate prediction for explicit/implicit cases */
   if (cpl->s_it_id == 0) {
-    const cs_real_t dt = cs_glob_time_step->dt[0];
+    /* Adams-Bashforth scheme of order 2 if aexxst = 1, bexxst = 0.5 */
+    /* Euler explicit scheme of order 1 if aexxst = 1, bexxst = 0 */
+    const cs_real_t dt_curr = cs_glob_time_step->dt[0];
+    const cs_real_t dt_prev = cs_glob_time_step->dt[1];
 
     c1 = 1.;
-    c2 = (cpl->aexxst + cpl->bexxst) * dt;
-    c3 = -cpl->bexxst * dt;
+    c2 = dt_curr * (cpl->aexxst + cpl->bexxst * dt_curr / dt_prev);
+    c3 = -cpl->bexxst * dt_curr * dt_curr / dt_prev;
     _pred(cpl->xsat_pred,
           cpl->xast_prev,
           cpl->vast_prev,

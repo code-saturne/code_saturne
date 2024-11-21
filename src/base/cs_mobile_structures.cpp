@@ -151,6 +151,7 @@ typedef struct {
   cs_real_3_t  *forstp;      /*!< predicted force vectors (N) */
 
   cs_real_t  *dtstr;         /*!< time step used to solve structure movements */
+  cs_real_t *dtsta; /*!< previous time step used to solve structure movements */
 
   /* Association with mesh */
 
@@ -256,6 +257,7 @@ _mobile_structures_create(void)
   ms->forstp = nullptr;
 
   ms->dtstr = nullptr;
+  ms->dtsta = nullptr;
 
   /* Plot info */
 
@@ -309,6 +311,7 @@ _mobile_structures_destroy(cs_mobile_structures_t  **ms)
   BFT_FREE(_ms->forstp);
 
   BFT_FREE(_ms->dtstr);
+  BFT_FREE(_ms->dtsta);
 
   /* Plot info */
 
@@ -379,9 +382,11 @@ _init_internal_structures(cs_mobile_structures_t *ms,
   BFT_REALLOC(ms->forstp, n_structures, cs_real_3_t);
 
   BFT_REALLOC(ms->dtstr, n_structures, cs_real_t);
+  BFT_REALLOC(ms->dtsta, n_structures, cs_real_t);
 
   for (int i = n_int_structs_prev; i < n_structures; i++) {
     ms->dtstr[i] = 0;
+    ms->dtsta[i] = 0;
     for (int j = 0; j < 3; j++) {
       ms->xstr[i][j]   = 0;
       ms->xpstr[i][j]  = 0;
@@ -760,10 +765,11 @@ cs_mobile_structures_setup(void)
                                ms->xpstr,
                                ms->xstreq);
 
+  /* Coefficents are given in Fabien Huvelin PhD (pp 19, sect 2.2)*/
   if (ms->aexxst < -0.5*cs_math_big_r)
-    ms->aexxst = 0.5;
+    ms->aexxst = 1.0;
   if (ms->bexxst < -0.5*cs_math_big_r)
-    ms->bexxst = 0.;
+    ms->bexxst = 0.5;
   if (cs_glob_mobile_structures_n_iter_max == 1) {
     if (ms->cfopre < -0.5*cs_math_big_r)
       ms->cfopre = 2.0;
@@ -848,8 +854,10 @@ cs_mobile_structures_initialize(void)
   }
 
   if (n_int_structs > 0) {
-    for (int i = 0; i < n_int_structs; i++)
+    for (int i = 0; i < n_int_structs; i++) {
       ms->dtstr[i] = cs_glob_time_step->dt[0];
+      ms->dtsta[i] = cs_glob_time_step->dt[1];
+    }
   }
 
   /* Prepare and exchange mesh info with code_aster
@@ -1207,9 +1215,11 @@ cs_mobile_structures_prediction(int  itrale,
    * schemes for xstp. */
 
   if (n_int_structs > 0) {
-    cs_real_t dt_ref = cs_glob_time_step->dt[0];
+    cs_real_t dt_curr = cs_glob_time_step->dt[0];
+    cs_real_t dt_prev = cs_glob_time_step->dt[1];
     for (int i = 0; i < ms->n_int_structs; i++) {
-      ms->dtstr[i] = dt_ref;
+      ms->dtstr[i] = dt_curr;
+      ms->dtsta[i] = dt_prev;
     }
 
     if (itrale == 0) {
@@ -1224,13 +1234,17 @@ cs_mobile_structures_prediction(int  itrale,
       if (cs_glob_mobile_structures_n_iter_max == 1) {
         cs_real_t aexxst = ms->aexxst;
         cs_real_t bexxst = ms->bexxst;
-        cs_real_t abexst = aexxst + bexxst;
 
         for (int i = 0; i < n_int_structs; i++) {
-          cs_real_t dt = ms->dtstr[i];
-          for (int j= 0; j < 3; j++) {
-            ms->xstp[i][j] = ms->xstr[i][j] + abexst * dt * ms->xpstr[i][j] -
-                             bexxst * dt * ms->xpsta[i][j];
+          /* Adams-Bashforth scheme of order 2 if aexxst = 1, bexxst = 0.5 */
+          /* Euler explicit scheme of order 1 if aexxst = 1, bexxst = 0 */
+          cs_real_t dt_curr = ms->dtstr[i];
+          cs_real_t dt_prev = ms->dtsta[i];
+          cs_real_t b_curr  = dt_curr * (aexxst + bexxst * dt_curr / dt_prev);
+          cs_real_t b_prev  = -bexxst * dt_curr * dt_curr / dt_prev;
+          for (int j = 0; j < 3; j++) {
+            ms->xstp[i][j] = ms->xstr[i][j] + b_curr * ms->xpstr[i][j] +
+                             b_prev * ms->xpsta[i][j];
           }
         }
       }
