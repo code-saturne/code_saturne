@@ -1133,9 +1133,11 @@ cs_ast_coupling_compute_displacement(cs_real_t disp[][3])
 
   /* separate prediction for explicit/implicit cases */
   if (cpl->s_it_id == 0) {
-    c1    = 1.;
-    c2    = (cpl->aexxst + cpl->bexxst) * cs_glob_time_step->dt[0];
-    c3    = -cpl->bexxst * cs_glob_time_step->dt[1];
+    const cs_real_t dt = cs_glob_time_step->dt[0];
+
+    c1 = 1.;
+    c2 = (cpl->aexxst + cpl->bexxst) * dt;
+    c3 = -cpl->bexxst * dt;
     _pred(cpl->xsat_pred,
           cpl->xast_prev,
           cpl->vast_prev,

@@ -1229,7 +1229,7 @@ cs_mobile_structures_prediction(int  itrale,
         for (int i = 0; i < n_int_structs; i++) {
           cs_real_t dt = ms->dtstr[i];
           for (int j= 0; j < 3; j++) {
-            ms->xstp[i][j] = ms->xstr[i][j] + abexst * dt * ms->xpstr[i][j] +
+            ms->xstp[i][j] = ms->xstr[i][j] + abexst * dt * ms->xpstr[i][j] -
                              bexxst * dt * ms->xpsta[i][j];
           }
         }
