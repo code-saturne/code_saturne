@@ -1267,7 +1267,7 @@ class Studies(object):
             if error:
                 msg = "Error: can not create smgr xml file\n"
                 self.reporting(msg, report=False, exit=False)
-                self.reporting(error, report=False, exit=True)
+                self.reporting(error, stdout=False, report=False, exit=True)
             else:
                 init_xml_file_with_study(smgr, studyp, pkg)
                 self.reporting(" ", report=False)
@@ -1281,7 +1281,7 @@ class Studies(object):
                 + " for studymanager to run.\n" \
                 + "See help message and use '--file' or '--create-xml'" \
                 + " option."
-            self.reporting(msg, report=False, exit=True)
+            self.reporting(msg, stdout=False, report=False, exit=True)
 
         # create a first smgr parser only for
         #   the repository verification and
@@ -1290,7 +1290,7 @@ class Studies(object):
         if not os.path.isfile(filename):
             msg = "Error: specified XML parameter file for studymanager does" \
                 + " not exist."
-            self.reporting(msg, report=False, exit=True)
+            self.reporting(msg, stdout=False, report=False, exit=True)
 
         # call smgr xml backward compatibility
 
@@ -1326,7 +1326,7 @@ class Studies(object):
         if self.__repo:
             if not os.path.isdir(self.__repo):
                 msg = "Error: repository path is not valid: " + self.__repo
-                self.reporting(msg, report=False, exit=True)
+                self.reporting(msg, stdout=False, report=False, exit=True)
         else: # default value
             # if current directory is a study
             # set repository as directory containing the study
@@ -1334,13 +1334,22 @@ class Studies(object):
                 studyd = os.path.basename(studyp)
                 self.__parser.setRepository(os.path.join(studyp,".."))
                 self.__repo = self.__parser.getRepository()
+
+                # check consistency of the study name
+                label = self.__parser.getStudiesLabel()
+                if (len(label) == 1) and (studyd != label[0]):
+                    msg = "The name of the current repository directory " \
+                        + "differs from the name in the smgr xml file.\n" \
+                        + "Please check consistency.\n"
+                    self.reporting(msg, stdout=False, report=False, exit=True)
+
             else:
                 msg = "Can not set a default repository directory:\n" \
                     + "current directory is apparently not a study (no smgr" \
                     + " xml file).\n" \
                     + "Add a repository path to the parameter file or use" \
                     + " the command line option (--repo=..)."
-                self.reporting(msg, report=False, exit=True)
+                self.reporting(msg, stdout=False, report=False, exit=True)
 
         # set destination
         self.__dest = None
@@ -1360,7 +1369,7 @@ class Studies(object):
                     + " xml file).\n" \
                     + "Add a destination path to the parameter file or use" \
                     + " the command line option (--dest=..).\n"
-                self.reporting(msg, report=False, exit=True)
+                self.reporting(msg, stdout=False, report=False, exit=True)
 
         if options.runcase or options.compare or options.post or options.sheet:
 
@@ -1524,7 +1533,7 @@ class Studies(object):
                                report=False)
                 error = case.update()
                 if error:
-                   self.reporting(error, report=False, exit=True)
+                   self.reporting(error, stdout=False, report=False, exit=True)
 
         self.reporting('',report=False)
 
