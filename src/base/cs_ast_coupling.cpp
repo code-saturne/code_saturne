@@ -62,6 +62,7 @@
 
 #include "cs_all_to_all.h"
 #include "cs_array.h"
+#include "cs_blas.h"
 #include "cs_calcium.h"
 #include "cs_coupling.h"
 #include "cs_interface.h"
@@ -142,12 +143,11 @@ struct _cs_ast_coupling_t {
 
   int s_it_id; /* Sub-iteration id */
 
-  cs_real_t *xast_curr; /* Mesh displacement last received (current iteration)*/
-  cs_real_t *xsat_pred; /* Predicted mesh displacement at current iteration*/
-  cs_real_t *xast_prev; /* Mesh displacement at previous time step */
-  cs_real_t *vast_curr; /* Mesh velocity last received (current iteration) */
-  cs_real_t *vast_prev; /* Mesh velocity at previous time step n-1 */
-  cs_real_t *vast_pprev; /* Mesh velocity at previous time step n-2 */
+  cs_real_t *xast_curr[2]; /* Mesh displacement at iteration k+1, k, k-1*/
+  cs_real_t *xsat_pred[2]; /* Predicted mesh at iteration k+1, k, k-1*/
+  cs_real_t *vast_curr;    /* Mesh velocity last received (current iteration) */
+  cs_real_t *vast_prev;    /* Mesh velocity at previous time step n-1 */
+  cs_real_t *vast_pprev;   /* Mesh velocity at previous time step n-2 */
 
   cs_real_t *forc_curr; /* Fluid forces at current sub-iteration */
   cs_real_t *forc_prev; /* Fluid forces at previous time step */
@@ -158,6 +158,8 @@ struct _cs_ast_coupling_t {
   cs_real_t rexxst; /*!< coefficient for the relaxation displacement */
 
   cs_real_t cfopre; /*!< coefficient for the predicted force */
+
+  cs_real_t *tmp[3]; /* Temporary array */
 };
 
 /*============================================================================
@@ -170,6 +172,8 @@ static const char _name_m_v[] = "mesh_velocity";
 
 static int _verbosity     = 1;
 static int _visualization = 1;
+
+#define DEBUG_LEVEL_CPL 0
 
 /*============================================================================
  * Global variables
@@ -198,18 +202,21 @@ _allocate_arrays(cs_ast_coupling_t *ast_cpl)
   const cs_lnum_t nb_dyn = ast_cpl->n_vertices;
   const cs_lnum_t nb_for = ast_cpl->n_faces;
 
-  BFT_MALLOC(ast_cpl->xast_curr, 3 * nb_dyn, cs_real_t);
-  BFT_MALLOC(ast_cpl->xast_prev, 3 * nb_dyn, cs_real_t);
-  BFT_MALLOC(ast_cpl->xsat_pred, 3 * nb_dyn, cs_real_t);
+  for (int i = 0; i < 2; i++) {
+    BFT_MALLOC(ast_cpl->xast_curr[i], 3 * nb_dyn, cs_real_t);
+    BFT_MALLOC(ast_cpl->xsat_pred[i], 3 * nb_dyn, cs_real_t);
+  }
+
   BFT_MALLOC(ast_cpl->vast_curr, 3 * nb_dyn, cs_real_t);
   BFT_MALLOC(ast_cpl->vast_prev, 3 * nb_dyn, cs_real_t);
   BFT_MALLOC(ast_cpl->vast_pprev, 3 * nb_dyn, cs_real_t);
 
   cs_arrays_set_value<cs_real_t, 1>(3 * nb_dyn,
                                     0.,
-                                    ast_cpl->xast_curr,
-                                    ast_cpl->xast_prev,
-                                    ast_cpl->xsat_pred,
+                                    ast_cpl->xast_curr[0],
+                                    ast_cpl->xast_curr[1],
+                                    ast_cpl->xsat_pred[0],
+                                    ast_cpl->xsat_pred[1],
                                     ast_cpl->vast_curr,
                                     ast_cpl->vast_prev,
                                     ast_cpl->vast_pprev);
@@ -223,6 +230,10 @@ _allocate_arrays(cs_ast_coupling_t *ast_cpl)
                                     ast_cpl->forc_curr,
                                     ast_cpl->forc_prev,
                                     ast_cpl->forc_pred);
+
+  for (int i = 0; i < 3; i++) {
+    BFT_MALLOC(ast_cpl->tmp[i], 3 * CS_MAX(nb_dyn, nb_for), cs_real_t);
+  }
 }
 
 /*----------------------------------------------------------------------------
@@ -309,13 +320,11 @@ _pred(cs_real_t       *valpre,
 static cs_real_t
 _dinorm(cs_real_t *vect1, cs_real_t *vect2, cs_lnum_t nbpts)
 {
+  cs_ast_coupling_t *cpl = cs_glob_ast_coupling;
+
   /* Compute the norm of the difference */
-  cs_real_t       norm = 0.;
-  const cs_lnum_t size = 3 * nbpts;
-#pragma omp parallel for reduction(+ : norm) if (size > CS_THR_MIN)
-  for (cs_lnum_t i = 0; i < size; i++) {
-    norm += (vect1[i] - vect2[i]) * (vect1[i] - vect2[i]);
-  }
+  cs_array_difference(3 * nbpts, vect1, vect2, cpl->tmp[0]);
+  cs_real_t norm = cs_dot_xx(3 * nbpts, cpl->tmp[0]);
 
   /* Note that for vertices, vertices at shared parallel boundaries
      will appear multiple tiles, so have a higher "weight" than
@@ -326,14 +335,50 @@ _dinorm(cs_real_t *vect1, cs_real_t *vect2, cs_lnum_t nbpts)
 
 #if defined(HAVE_MPI)
   if (cs_glob_n_ranks > 1) {
-    cs_real_t _val[2] = { norm, rescale }, val[2] = { 0., 0. };
-    MPI_Allreduce(&_val, &val, 2, MPI_DOUBLE, MPI_SUM, cs_glob_mpi_comm);
+    cs_real_t val[2] = { norm, rescale };
+    cs_parall_sum(2, CS_DOUBLE, &val);
+
     norm = val[0], rescale = val[1];
   }
 #endif
 
   norm = sqrt(norm / rescale);
   return norm;
+}
+
+/*----------------------------------------------------------------------------
+ * Compute coefficient for aitken acceleration
+ *----------------------------------------------------------------------------*/
+
+static cs_real_t
+_aitken(const cs_real_t *dp_k,
+        const cs_real_t *dp_km,
+        const cs_real_t *d_kp,
+        const cs_real_t *d_k)
+{
+  cs_ast_coupling_t *cpl  = cs_glob_ast_coupling;
+  const cs_lnum_t    size = 3 * cpl->n_vertices;
+
+  cs_real_t *tmp1 = cpl->tmp[1], *tmp2 = cpl->tmp[2];
+
+  /* Note that for vertices, vertices at shared parallel boundaries
+   will appear multiple tiles, so have a higher "weight" than
+   others, but the effect on the global direction should be minor,
+   so we avoid a more complex test here */
+
+  /* difference */
+  cs_array_difference(size, dp_k, dp_km, cpl->tmp[0]);
+  cs_array_difference(size, d_kp, dp_k, tmp1);
+  cs_array_difference(size, d_k, dp_km, tmp2);
+
+#pragma omp parallel for if (size > CS_THR_MIN)
+  for (cs_lnum_t ii = 0; ii < size; ii++)
+    tmp1[ii] += tmp2[ii];
+
+  cs_real_t xx, xy;
+  cs_gdot_xx_xy(size, tmp1, cpl->tmp[0], &xx, &xy);
+
+  return xy / xx;
 }
 
 /*----------------------------------------------------------------------------
@@ -368,7 +413,7 @@ _cs_ast_coupling_post_function(void *coupling, const cs_time_step_t *ts)
 
   _scatter_values_r3(cpl->n_vertices,
                      vtx_ids,
-                     (const cs_real_3_t *)cpl->xast_curr,
+                     (const cs_real_3_t *)cpl->xast_curr[0],
                      (cs_real_3_t *)values);
 
   cs_post_write_vertex_var(cpl->post_mesh_id,
@@ -506,9 +551,10 @@ cs_ast_coupling_initialize(int nalimx, cs_real_t epalim)
 
   cpl->s_it_id = 0; /* Sub-iteration id */
 
-  cpl->xast_curr  = nullptr;
-  cpl->xsat_pred  = nullptr;
-  cpl->xast_prev  = nullptr;
+  for (int i = 0; i < 2; i++) {
+    cpl->xast_curr[i] = nullptr;
+    cpl->xsat_pred[i] = nullptr;
+  }
   cpl->vast_curr  = nullptr;
   cpl->vast_prev  = nullptr;
   cpl->vast_pprev = nullptr;
@@ -516,6 +562,10 @@ cs_ast_coupling_initialize(int nalimx, cs_real_t epalim)
   cpl->forc_curr = nullptr;
   cpl->forc_prev = nullptr;
   cpl->forc_pred = nullptr;
+
+  for (int i = 0; i < 3; i++) {
+    cpl->tmp[i] = nullptr;
+  }
 
   cs_glob_ast_coupling = cpl;
 
@@ -611,9 +661,11 @@ cs_ast_coupling_finalize(void)
   if (cpl == nullptr)
     return;
 
-  BFT_FREE(cpl->xast_curr);
-  BFT_FREE(cpl->xast_prev);
-  BFT_FREE(cpl->xsat_pred);
+  for (int i = 0; i < 2; i++) {
+    BFT_FREE(cpl->xast_curr[i]);
+    BFT_FREE(cpl->xsat_pred[i]);
+  }
+
   BFT_FREE(cpl->vast_curr);
   BFT_FREE(cpl->vast_prev);
   BFT_FREE(cpl->vast_pprev);
@@ -621,6 +673,10 @@ cs_ast_coupling_finalize(void)
   BFT_FREE(cpl->forc_curr);
   BFT_FREE(cpl->forc_prev);
   BFT_FREE(cpl->forc_pred);
+
+  for (int i = 0; i < 3; i++) {
+    BFT_FREE(cpl->tmp[i]);
+  }
 
   if (cpl->post_mesh != nullptr)
     cpl->post_mesh = fvm_nodal_destroy(cpl->post_mesh);
@@ -807,6 +863,11 @@ cs_ast_coupling_geometry(cs_lnum_t        n_faces,
 void
 cs_ast_coupling_exchange_time_step(cs_real_t c_dt[])
 {
+  if (DEBUG_LEVEL_CPL > 0) {
+    bft_printf(_("cs_ast_coupling_exchange_time_step function\n"));
+    bft_printf_flush();
+  }
+
   cs_ast_coupling_t *cpl = cs_glob_ast_coupling;
 
   if (cpl->iteration < 0)
@@ -927,6 +988,11 @@ cs_ast_coupling_get_fluid_forces_pointer(void)
 void
 cs_ast_coupling_send_fluid_forces(void)
 {
+  if (DEBUG_LEVEL_CPL > 0) {
+    bft_printf(_("cs_ast_coupling_send_fluid_forces function\n"));
+    bft_printf_flush();
+  }
+
   cs_ast_coupling_t *cpl = cs_glob_ast_coupling;
 
   if (cpl->iteration < 0)
@@ -992,6 +1058,11 @@ cs_ast_coupling_send_fluid_forces(void)
 void
 cs_ast_coupling_evaluate_cvg(void)
 {
+  if (DEBUG_LEVEL_CPL > 0) {
+    bft_printf(_("cs_ast_coupling_evaluate_cvg function\n"));
+    bft_printf_flush();
+  }
+
   cs_ast_coupling_t *cpl = cs_glob_ast_coupling;
 
   int verbosity = _get_current_verbosity(cpl);
@@ -1004,8 +1075,8 @@ cs_ast_coupling_evaluate_cvg(void)
 
     /* compute icv */
 
-    cpl->rcv1 =
-      _dinorm(cpl->xast_curr, cpl->xsat_pred, cpl->n_vertices) / cpl->lref;
+    cpl->rcv1 = _dinorm(cpl->xast_curr[0], cpl->xsat_pred[0], cpl->n_vertices) /
+                cpl->lref;
 
     if (verbosity > 0)
       bft_printf("--------------------------------\n"
@@ -1060,8 +1131,16 @@ cs_ast_coupling_recv_displacement(void)
     bft_printf_flush();
   }
 
+  /* Update values */
+  const cs_lnum_t nb_dyn = cpl->n_vertices;
+
+  cs_array_copy(3 * nb_dyn, cpl->xast_curr[1], cpl->xast_curr[2]);
+  cs_array_copy(3 * nb_dyn, cpl->xast_curr[0], cpl->xast_curr[1]);
+
   /* Received discplacement and velocity field */
-  cs_paramedmem_recv_field_vals_l(cpl->mc_vertices, _name_m_d, cpl->xast_curr);
+  cs_paramedmem_recv_field_vals_l(cpl->mc_vertices,
+                                  _name_m_d,
+                                  cpl->xast_curr[0]);
   cs_paramedmem_recv_field_vals_l(cpl->mc_vertices, _name_m_v, cpl->vast_curr);
 
   if (verbosity > 1) {
@@ -1071,10 +1150,9 @@ cs_ast_coupling_recv_displacement(void)
 
   /* For dry run, reset values to zero to avoid uninitialized values */
   if (cpl->aci.root_rank < 0) {
-    const cs_lnum_t nb_dyn = cpl->n_vertices * 3;
-    cs_arrays_set_value<cs_real_t, 1>(nb_dyn,
+    cs_arrays_set_value<cs_real_t, 1>(3 * nb_dyn,
                                       0.,
-                                      cpl->xast_curr,
+                                      cpl->xast_curr[0],
                                       cpl->vast_curr);
   }
 
@@ -1099,9 +1177,14 @@ cs_ast_coupling_save_values(void)
   cs_array_copy(3 * nb_for, cpl->forc_pred, cpl->forc_prev);
 
   /* record dynamic data */
-  cs_array_copy(3 * nb_dyn, cpl->xast_curr, cpl->xast_prev);
   cs_array_copy(3 * nb_dyn, cpl->vast_prev, cpl->vast_pprev);
   cs_array_copy(3 * nb_dyn, cpl->vast_curr, cpl->vast_prev);
+
+  cs_arrays_set_value<cs_real_t, 1>(3 * nb_dyn,
+                                    0.,
+                                    cpl->xast_curr[1],
+                                    cpl->xsat_pred[0],
+                                    cpl->xsat_pred[1]);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1116,6 +1199,11 @@ cs_ast_coupling_save_values(void)
 void
 cs_ast_coupling_compute_displacement(cs_real_t disp[][3])
 {
+  if (DEBUG_LEVEL_CPL > 0) {
+    bft_printf(_("cs_ast_coupling_compute_displacement function\n"));
+    bft_printf_flush();
+  }
+
   assert(disp != nullptr);
 
   cs_ast_coupling_t *cpl = cs_glob_ast_coupling;
@@ -1141,8 +1229,8 @@ cs_ast_coupling_compute_displacement(cs_real_t disp[][3])
     c1 = 1.;
     c2 = dt_curr * (cpl->aexxst + cpl->bexxst * dt_curr / dt_prev);
     c3 = -cpl->bexxst * dt_curr * dt_curr / dt_prev;
-    _pred(cpl->xsat_pred,
-          cpl->xast_prev,
+    _pred(cpl->xsat_pred[0],
+          cpl->xast_curr[0],
           cpl->vast_prev,
           cpl->vast_pprev,
           c1,
@@ -1152,12 +1240,25 @@ cs_ast_coupling_compute_displacement(cs_real_t disp[][3])
   }
   else {
     /* rexxst could be defined differently to have a better convergence */
-    c1    = cpl->rexxst;
-    c2    = 1. - cpl->rexxst;
-    c3    = 0.;
-    _pred(cpl->xsat_pred,
-          cpl->xast_curr,
-          cpl->xsat_pred,
+    cs_real_t rexxst;
+    if (cpl->rexxst < 0.) {
+      rexxst = _aitken(cpl->xsat_pred[0],
+                       cpl->xsat_pred[1],
+                       cpl->xast_curr[0],
+                       cpl->xast_curr[1]);
+    }
+    else {
+      rexxst = cpl->rexxst;
+    }
+    c1 = rexxst;
+    c2 = 1. - rexxst;
+    c3 = 0.;
+
+    cs_array_copy(3 * nb_dyn, cpl->xsat_pred[0], cpl->xsat_pred[1]);
+
+    _pred(cpl->xsat_pred[0],
+          cpl->xast_curr[0],
+          cpl->xsat_pred[1],
           nullptr,
           c1,
           c2,
@@ -1191,7 +1292,7 @@ cs_ast_coupling_compute_displacement(cs_real_t disp[][3])
 
   _scatter_values_r3(cpl->n_vertices,
                      vtx_ids,
-                     (const cs_real_3_t *)cpl->xsat_pred,
+                     (const cs_real_3_t *)cpl->xsat_pred[0],
                      disp);
 }
 

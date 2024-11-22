@@ -316,6 +316,34 @@ cs_array_copy(const cs_lnum_t  size,
   for (cs_lnum_t ii = 0; ii < size; ii++)
     dest[ii] = src[ii];
 }
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Compute the difference diff = x - y. All arrays have the same
+ * dimension.
+ *
+ *
+ * Template parmeters.
+ *                 T       type name
+ *
+ * \param[in]   size    number of elements * dimension
+ * \param[in]   x       x array values
+ * \param[in]   y       y array values
+ * \param[out]  diff    difference array values
+ */
+/*----------------------------------------------------------------------------*/
+
+template <typename T>
+void
+cs_array_difference(const cs_lnum_t size, const T *x, const T *y, T *diff)
+{
+  cs_array_copy(size, x, diff);
+
+#pragma omp parallel for if (size > CS_THR_MIN)
+  for (cs_lnum_t ii = 0; ii < size; ii++)
+    diff[ii] -= y[ii];
+}
+
 #endif // __cplusplus
 
 BEGIN_C_DECLS

@@ -312,6 +312,48 @@ cs_gdot(cs_lnum_t         n,
         const cs_real_t  *y);
 
 /*----------------------------------------------------------------------------
+ * Return the global dot product of a vector: x.x
+ *
+ * In parallel mode, the local results are summed on the default
+ * global communicator.
+ *
+ * parameters:
+ *   n <-- size of arrays x and y
+ *   x <-- array of floating-point values
+ *
+ * returns:
+ *   dot product
+ *----------------------------------------------------------------------------*/
+
+double
+cs_gdot_xx(cs_lnum_t n, const cs_real_t *x);
+
+/*----------------------------------------------------------------------------
+ * Return the global double dot product of 2 vectors: x.x, and x.y
+ *
+ * The products could be computed separately, but computing them
+ * simultaneously adds more optimization opportunities and possibly better
+ * cache behavior.
+ *
+ * In parallel mode, the local results are summed on the default
+ * global communicator.
+ *
+ * parameters:
+ *   n  <-- size of arrays x and y
+ *   x  <-- array of floating-point values
+ *   y  <-- array of floating-point values
+ *   xx --> x.x dot product
+ *   xy --> x.y dot product
+ *----------------------------------------------------------------------------*/
+
+void
+cs_gdot_xx_xy(cs_lnum_t        n,
+              const cs_real_t *x,
+              const cs_real_t *y,
+              double          *xx,
+              double          *xy);
+
+/*----------------------------------------------------------------------------
  * Return the global residual of 2 intensive vectors:
  *  1/sum(vol) . sum(vol.x.y)
  *
