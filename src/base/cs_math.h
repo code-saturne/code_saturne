@@ -123,6 +123,300 @@ static const cs_real_6_t cs_math_sym_33_identity  = {1., 1., 1., 0. ,0., 0.};
 
 #endif
 
+/*----------------------------------------------------------------------------*/
+
+END_C_DECLS
+
+/*=============================================================================
+ * Templated inline functions
+ *============================================================================*/
+
+#if defined(__cplusplus)
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Compute \f$ (\vect{x}_b - \vect{x}_a) \cdot \vect{x}_c \f$
+ *
+ * \tparam T input value type
+ * \tparam U input value type
+ *
+ * \param[in]  xa   first coordinate
+ * \param[in]  xb   second coordinate
+ * \param[in]  xc   third coordinate
+ *
+ * \return the dot product
+ */
+/*----------------------------------------------------------------------------*/
+
+template <typename T, typename U>
+CS_F_HOST_DEVICE inline cs_real_t
+cs_math_3_distance_dot_product(const T  xa[3],
+                               const T  xb[3],
+                               const U  xc[3])
+{
+  return ((xb[0] - xa[0])*xc[0]+(xb[1] - xa[1])*xc[1]+(xb[2] - xa[2])*xc[2]);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Compute the dot product of two vectors of 3 real values.
+ *
+ * \tparam T input value type
+ * \tparam U input value type
+ *
+ * \param[in]   u   vector of 3 real values
+ * \param[in]   v   vector of 3 real values
+ *
+ * \return the resulting dot product u.v.
+ */
+/*----------------------------------------------------------------------------*/
+
+template <typename T, typename U>
+CS_F_HOST_DEVICE inline cs_real_t
+cs_math_3_dot_product(const T  u[3],
+                      const U  v[3])
+{
+  double uv = u[0]*v[0] + u[1]*v[1] + u[2]*v[2];
+
+  return uv;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Compute the euclidean norm of a vector of dimension 3
+ *
+ * \tparam T  input value type
+ *
+ * \param[in]  v
+ *
+ * \return the value of the norm
+ */
+/*----------------------------------------------------------------------------*/
+
+template <typename T>
+CS_F_HOST_DEVICE inline cs_real_t
+cs_math_3_norm(const T  v[3])
+{
+  return sqrt(v[0]*v[0] + v[1]*v[1] + v[2]*v[2]);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Compute the dot product of a symmetric tensor t with two vectors,
+ *        n1 and n2.
+ *
+ * \tparam T input value type
+ * \tparam U input value type
+ * \tparam V input value type
+ *
+ * \param[in]     n1    vector of 3 real values
+ * \param[in]     t     tensor of 6 real values
+ *                      [ 0 3 5 ]
+ *                      [ 3 1 4 ]
+ *                      [ 5 4 2 ]
+ * \param[in]     n2    vector of 3 real values
+ *
+ * \return the resulting dot product n1.t.n2.
+ */
+/*----------------------------------------------------------------------------*/
+
+template <typename T, typename U, typename V>
+CS_F_HOST_DEVICE inline cs_real_t
+cs_math_3_sym_33_3_dot_product(const T  n1[3],
+                               const U  t[6],
+                               const V  n2[3])
+{
+  return (  n1[0] * (t[0]*n2[0] + t[3]*n2[1] + t[5]*n2[2])
+          + n1[1] * (t[3]*n2[0] + t[1]*n2[1] + t[4]*n2[2])
+          + n1[2] * (t[5]*n2[0] + t[4]*n2[1] + t[2]*n2[2]));
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Compute the square norm of a vector of 3 real values.
+ *
+ * \tparam T  input value type
+ *
+ * \param[in]     v             vector of 3 real values
+ *
+ * \return square norm of v.
+ */
+/*----------------------------------------------------------------------------*/
+
+template <typename T>
+CS_F_HOST_DEVICE inline cs_real_t
+cs_math_3_square_norm(const T v[3])
+{
+  cs_real_t v2 = v[0]*v[0] + v[1]*v[1] + v[2]*v[2];
+
+  return v2;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Normalise a vector of 3 real values.
+ *
+ * \tparam T input value type
+ * \tparam U input value type
+ *
+ * To normalize in-place, \p vin and \p vout may point to the same array.
+ *
+ * \param[in]     vin           vector
+ * \param[out]    vout          normalized vector
+ */
+/*----------------------------------------------------------------------------*/
+
+template <typename T, typename U>
+CS_F_HOST_DEVICE static inline void
+cs_math_3_normalize(const T  vin[3],
+                    U        vout[3])
+{
+  cs_real_t norm = cs_math_3_norm(vin);
+
+  cs_real_t inv_norm = ((norm > cs_math_zero_threshold) ?  1. / norm : 0);
+
+  vout[0] = inv_norm * vin[0];
+  vout[1] = inv_norm * vin[1];
+  vout[2] = inv_norm * vin[2];
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Compute the product of a symmetric matrix of 3x3 real values by
+ * a vector of 3 real values.
+ * NB: Symmetric matrix are stored as follows (s11, s22, s33, s12, s23, s13)
+ *
+ * \tparam T input value type
+ * \tparam U input value type
+ * \tparam V input value type
+ *
+ * \param[in]     m             matrix of 3x3 real values
+ * \param[in]     v             vector of 3 real values
+ * \param[out]    mv            vector of 3 real values
+ */
+/*----------------------------------------------------------------------------*/
+
+template <typename T, typename U, typename V>
+CS_F_HOST_DEVICE inline void
+cs_math_sym_33_3_product(const T       m[6],
+                         const U       v[3],
+                         V  *restrict  mv)
+{
+  mv[0] = m[0]*v[0] + m[3]*v[1] + m[5]*v[2];
+  mv[1] = m[3]*v[0] + m[1]*v[1] + m[4]*v[2];
+  mv[2] = m[5]*v[0] + m[4]*v[1] + m[2]*v[2];
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Add the dot product with a normal vector to the normal direction
+ *        to a vector.
+ *
+ * \tparam T input value type
+ * \tparam U input value type
+ * \tparam V input value type
+ *
+ * \param[in]       n       normalised face normal vector
+ * \param[in]       factor  factor
+ * \param[in, out]  v       vector to be scaled
+ */
+/*----------------------------------------------------------------------------*/
+
+template <typename T, typename U, typename V>
+CS_F_HOST_DEVICE inline void
+cs_math_3_normal_scaling(const T  n[3],
+                         U        factor,
+                         V        v[3])
+{
+  cs_real_t v_dot_n = (factor -1.) * cs_math_3_dot_product(v, n);
+  for (int i = 0; i < 3; i++)
+    v[i] += v_dot_n * n[i];
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Compute the dot product of a tensor t with two vectors, n1 and n2.
+ *
+ * \tparam T input value type
+ * \tparam U input value type
+ * \tparam V input value type
+ *
+ * \param[in]     n1    vector of 3 real values
+ * \param[in]     t     tensor of 3x3 real values
+ * \param[in]     n2    vector of 3 real values
+ *
+ * \return the resulting dot product n1.t.n2.
+ */
+/*----------------------------------------------------------------------------*/
+
+template <typename T, typename U, typename V>
+CS_F_HOST_DEVICE inline cs_real_t
+cs_math_3_33_3_dot_product(const T  n1[3],
+                           const U  t[3][3],
+                           const V  n2[3])
+{
+  cs_real_t n_t_n
+    = (  n1[0]*t[0][0]*n2[0] + n1[1]*t[1][0]*n2[0] + n1[2]*t[2][0]*n2[0]
+       + n1[0]*t[0][1]*n2[1] + n1[1]*t[1][1]*n2[1] + n1[2]*t[2][1]*n2[1]
+       + n1[0]*t[0][2]*n2[2] + n1[1]*t[1][2]*n2[2] + n1[2]*t[2][2]*n2[2]);
+  return n_t_n;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Orthogonal projection of a vector with respect to a normalised
+ *        vector.
+ *
+ * \tparam T input value type
+ * \tparam U input value type
+ * \tparam V input value type
+ *
+ * \param[in]   n     normal vector direction
+ * \param[in]   v     vector to be projected
+ * \param[out]  vout  projection
+ */
+/*----------------------------------------------------------------------------*/
+
+template <typename T, typename U, typename V>
+CS_F_HOST_DEVICE inline void
+cs_math_3_orthogonal_projection(const T      n[3],
+                                const U      v[3],
+                                V  *restrict vout)
+{
+  vout[0] =  v[0]*(1.-n[0]*n[0])- v[1]*    n[1]*n[0] - v[2]*    n[2]*n[0];
+  vout[1] = -v[0]*    n[0]*n[1] + v[1]*(1.-n[1]*n[1])- v[2]*    n[2]*n[1];
+  vout[2] = -v[0]*    n[0]*n[2] - v[1]*    n[1]*n[2] + v[2]*(1.-n[2]*n[2]);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Compute the cross product of two vectors of 3 real values.
+ *
+ * \tparam T input value type
+ * \tparam U input value type
+ * \tparam V input value type
+ *
+ * \param[in]     u    vector of 3 real values
+ * \param[in]     v    vector of 3 real values
+ * \param[out]    uv   cross-product of u an v
+ */
+/*----------------------------------------------------------------------------*/
+
+template <typename T, typename U, typename V>
+CS_F_HOST_DEVICE static inline void
+cs_math_3_cross_product(const T       u[3],
+                        const U       v[3],
+                        V  *restrict  uv)
+{
+  uv[0] = u[1]*v[2] - u[2]*v[1];
+  uv[1] = u[2]*v[0] - u[0]*v[2];
+  uv[2] = u[0]*v[1] - u[1]*v[0];
+}
+
+#endif // defined(__cplusplus)
+
+BEGIN_C_DECLS
+
 /*=============================================================================
  * Inline static functions
  *============================================================================*/
