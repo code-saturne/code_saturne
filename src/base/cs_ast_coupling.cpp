@@ -504,6 +504,7 @@ cs_ast_coupling_initialize(int nalimx, cs_real_t epalim)
 
   int       nbpdtm = ts->nt_max;
   cs_real_t ttinit = ts->t_prev;
+  int       idtvar = cs_glob_time_step_options->idtvar;
 
   /* Allocate global coupling structure */
 
@@ -640,6 +641,7 @@ cs_ast_coupling_initialize(int nalimx, cs_real_t epalim)
 
     cs_calcium_write_int(cpl->aci.root_rank, 0, "NBPDTM", 1, &nbpdtm);
     cs_calcium_write_int(cpl->aci.root_rank, 0, "NBSSIT", 1, &(cpl->nbssit));
+    cs_calcium_write_int(cpl->aci.root_rank, 0, "TADAPT", 1, &idtvar);
 
     cs_calcium_write_double(cpl->aci.root_rank, 0, "EPSILO", 1, &(cpl->epsilo));
     cs_calcium_write_double(cpl->aci.root_rank, 0, "TTINIT", 1, &ttinit);
@@ -1067,8 +1069,7 @@ cs_ast_coupling_evaluate_cvg(void)
 
   int verbosity = _get_current_verbosity(cpl);
 
-  int icv   = 1;
-  cpl->icv1 = icv;
+  int icv = 1;
 
   if (cpl->nbssit > 1) {
     /* implicit case: requires a convergence test */
@@ -1101,15 +1102,9 @@ cs_ast_coupling_evaluate_cvg(void)
                    "--------------------------------\n",
                    icv);
     }
-
-    cpl->icv1 = icv;
-    icv       = cpl->icv2;
   }
 
-  if (cs_glob_rank_id > 0)
-    return;
-
-  cs_calcium_write_int(cpl->aci.root_rank, cpl->iteration, "ICVAST", 1, &icv);
+  cpl->icv1 = icv;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1306,7 +1301,7 @@ cs_ast_coupling_compute_displacement(cs_real_t disp[][3])
 /*----------------------------------------------------------------------------*/
 
 int
-cs_ast_coupling_get_ext_cvg(void)
+cs_ast_coupling_get_current_cvg(void)
 {
   cs_ast_coupling_t *cpl = cs_glob_ast_coupling;
 
@@ -1322,7 +1317,7 @@ cs_ast_coupling_get_ext_cvg(void)
 /*----------------------------------------------------------------------------*/
 
 cs_real_t
-cs_ast_coupling_get_ext_residual(void)
+cs_ast_coupling_get_current_residual(void)
 {
   cs_ast_coupling_t *cpl = cs_glob_ast_coupling;
 
@@ -1343,6 +1338,15 @@ cs_ast_coupling_set_final_cvg(int icved)
   cs_ast_coupling_t *cpl = cs_glob_ast_coupling;
 
   cpl->icv2 = icved;
+
+  if (cs_glob_rank_id > 0)
+    return;
+
+  cs_calcium_write_int(cpl->aci.root_rank,
+                       cpl->iteration,
+                       "ICVAST",
+                       1,
+                       &cpl->icv2);
 }
 
 /*----------------------------------------------------------------------------*/

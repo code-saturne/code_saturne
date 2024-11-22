@@ -202,7 +202,7 @@ cs_ast_coupling_compute_displacement(cs_real_t  disp[][3]);
 /*----------------------------------------------------------------------------*/
 
 int
-cs_ast_coupling_get_ext_cvg(void);
+cs_ast_coupling_get_current_cvg(void);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -213,7 +213,7 @@ cs_ast_coupling_get_ext_cvg(void);
 /*----------------------------------------------------------------------------*/
 
 cs_real_t
-cs_ast_coupling_get_ext_residual(void);
+cs_ast_coupling_get_current_residual(void);
 
 /*----------------------------------------------------------------------------*/
 /*!

@@ -197,7 +197,7 @@ cs_time_stepping(void)
   cs_time_step_t *ts = cs_get_glob_time_step();
   const cs_turb_model_t *turb_model = cs_get_glob_turb_model();
 
-  int idtvar = cs_glob_time_step_options->idtvar;
+  cs_time_step_type_t       idtvar = cs_glob_time_step_options->idtvar;
   cs_turbomachinery_model_t iturbo = cs_turbomachinery_get_model();
 
   /* Initialization
@@ -406,7 +406,8 @@ cs_time_stepping(void)
 
   cs_control_check_file();
 
-  if (idtvar == 1 && ntmsav > ts->nt_max && ts->nt_max == ts->nt_cur) {
+  if (idtvar == CS_TIME_STEP_ADAPTIVE && ntmsav > ts->nt_max &&
+      ts->nt_max == ts->nt_cur) {
     if (cs_coupling_is_sync_active())
       ts->nt_max++;
   }
@@ -614,16 +615,16 @@ cs_time_stepping(void)
   /* In case of code coupling, sync status with other codes. */
 
   if (itrale > 0) {
-
-    /* Synchronization in dttvar if idtvar = 1
+    /* Synchronization in dttvar if idtvar = CS_TIME_STEP_ADAPTIVE
        (i.e. keep coupled codes waiting until time step is computed
        only when needed).
        In case the coupling modifies the reference time step, make sure
        the matching field is updated. Do not do this after initialization.
-       except for the adaptive time step (idtvar = 1), handled in dttvar.
+       except for the adaptive time step (idtvar = CS_TIME_STEP_ADAPTIVE),
+       handled in dttvar.
     */
 
-    if (idtvar != 1) {
+    if (idtvar == CS_TIME_STEP_ADAPTIVE) {
       cs_real_t *dt = CS_F_(dt)->val;
 
       cs_coupling_sync_apps(0,      /* flags */
@@ -665,8 +666,8 @@ cs_time_stepping(void)
 
     if (itrale > 0 && ts->nt_max > ts->nt_prev) {
       cs_timer_stats_increment_time_step();
-      /* Time step computed in dttvar if idtvar = 1. */
-      if (idtvar != 1)
+      /* Time step computed in dttvar if idtvar = CS_TIME_STEP_ADAPTIVE. */
+      if (idtvar != CS_TIME_STEP_ADAPTIVE)
         cs_time_step_increment(ts->dt_ref);
       else
         cs_time_step_increment(ts->dt[0]);
@@ -678,7 +679,8 @@ cs_time_stepping(void)
     /* Test presence of control_file to modify nt_max if required */
     cs_control_check_file();
 
-    if ((idtvar == 0 || idtvar == 1) && (ts->t_max > 0)) {
+    if ((idtvar == CS_TIME_STEP_CONSTANT || idtvar == CS_TIME_STEP_ADAPTIVE) &&
+        (ts->t_max > 0)) {
       if (ts->t_cur >= ts->t_max)
         ts->nt_max = ts->nt_cur;
       else if (ts->nt_max < 0)   /* Changed by control_file */
@@ -691,7 +693,8 @@ cs_time_stepping(void)
     /* Set default logging */
     cs_log_iteration_set_active();
 
-    if (idtvar != 1 && ts->nt_max > ts->nt_prev && itrale > 0) {
+    if (idtvar != CS_TIME_STEP_ADAPTIVE && ts->nt_max > ts->nt_prev &&
+        itrale > 0) {
       if (cs_log_default_is_active())
         cs_log_printf
           (CS_LOG_DEFAULT,
@@ -788,14 +791,14 @@ cs_time_stepping(void)
 
     /* Stop test for couplings */
 
-    if (idtvar != 1) {  /* synchronization in dttvar if idtvar = 1 */
+    if (idtvar == CS_TIME_STEP_ADAPTIVE || itrale == 0) {
+      /* synchronization in dttvar if idtvar = 1 */
       dt_cpl = ts->dt_ref;
 
-      cs_coupling_sync_apps(0,      /* flags */
+      cs_coupling_sync_apps(0, /* flags */
                             ts->nt_cur,
                             &(ts->nt_max),
                             &dt_cpl);
-
     }
 
     /* Possible output of checkpoint files

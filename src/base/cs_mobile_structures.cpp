@@ -1479,7 +1479,6 @@ cs_mobile_structures_displacement(int itrale, int italim, int *itrfin)
   if (n_ast_structs > 0) {
     cs_ast_coupling_send_fluid_forces();
     cs_ast_coupling_evaluate_cvg();
-    cs_ast_coupling_recv_displacement();
   }
 
   /* Structure characteristics defined by the user
@@ -1541,8 +1540,8 @@ cs_mobile_structures_displacement(int itrale, int italim, int *itrfin)
   }
 
   if (n_ast_structs > 0) {
-    delta  = cs_ast_coupling_get_ext_residual();
-    icvext = cs_ast_coupling_get_ext_cvg();
+    delta  = cs_ast_coupling_get_current_residual();
+    icvext = cs_ast_coupling_get_current_cvg();
   }
 
   if (n_int_structs > 0) {
@@ -1596,9 +1595,12 @@ cs_mobile_structures_displacement(int itrale, int italim, int *itrfin)
     icved = 1;
   }
 
-  /* Return the final convergence indicator to code_aster */
-  if (n_ast_structs > 0)
+  /* Return the final convergence indicator to code_aster
+   * and received displacement */
+  if (n_ast_structs > 0) {
     cs_ast_coupling_set_final_cvg(icved);
+    cs_ast_coupling_recv_displacement();
+  }
 
   /* Restore previous values if required
      ----------------------------------- */
