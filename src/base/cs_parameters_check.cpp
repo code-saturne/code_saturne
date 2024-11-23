@@ -2516,34 +2516,6 @@ cs_parameters_check(void)
                                  cs_glob_turb_les_model->idries,
                                  0);
     }
-
-    /* The reduction of the extended neighborhood can degrade the results of the
-       LES dynamic model */
-    if (turb_model->model == CS_TURB_LES_SMAGO_DYN) {
-      int imrgra_cmp = CS_ABS(turb_model->model);
-      switch(imrgra_cmp) {
-      case 3:
-      case 6:
-      case 9:
-        cs_parameters_error
-          (CS_WARNING,
-           _("while reading input data"),
-           _("A reduction of the extended neighborhood was selected for the\n"
-             "calculation of the gradients by least squares.\n"
-             "This will also be applied to the averaging in the "
-             "selected LES Dynamic model.\n"
-             "The computation will run, but the averaging of the Smagorinsky\n"
-             "constant can be degraded, "
-             "as it uses the same reduced neighborhood.\n"
-             "Use fully extended neighborhood or directly "
-             "define the averaging of the\n"
-             "dynamic Smagorinsky constant via the\n"
-             "cs_user_physical_properties_turb_viscosity function."));
-        break;
-      default:
-        break;
-      }
-    }
   }
 
   /* Stokes */
