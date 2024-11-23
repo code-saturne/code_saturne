@@ -239,12 +239,12 @@ cs_medcoupling_mesh_get_connectivity(cs_medcoupling_mesh_t  *m);
  *
  * \param[in] mesh  cs_medcoupling_mesh_t pointer
  * \param[in] name  name of the file
- *
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_medcoupling_mesh_export(cs_medcoupling_mesh_t *m, const std::string name);
+cs_medcoupling_mesh_export(cs_medcoupling_mesh_t  *m,
+                           const std::string       name);
 
 /*----------------------------------------------------------------------------*/
 /*!

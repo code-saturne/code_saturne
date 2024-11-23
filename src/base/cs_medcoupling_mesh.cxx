@@ -1015,7 +1015,6 @@ cs_medcoupling_mesh_destroy(cs_medcoupling_mesh_t  *mesh)
 void
 cs_medcoupling_mesh_destroy_all(void)
 {
-
   for (int i = 0; i < _n_sub_meshes; i++) {
     cs_medcoupling_mesh_destroy(_sub_meshes[i]);
     _sub_meshes[i] = nullptr;
@@ -1025,8 +1024,8 @@ cs_medcoupling_mesh_destroy_all(void)
 
   _sub_meshes   = nullptr;
   _n_sub_meshes = 0;
-
 }
+
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Return a cs_medcoupling_mesh_t structure's spatial dimension
@@ -1157,14 +1156,14 @@ cs_medcoupling_mesh_get_connectivity(cs_medcoupling_mesh_t  *m)
  *
  * \param[in] mesh  cs_medcoupling_mesh_t pointer
  * \param[in] name  name of the file
- *
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_medcoupling_mesh_export(cs_medcoupling_mesh_t *m, const std::string name)
+cs_medcoupling_mesh_export(cs_medcoupling_mesh_t  *m,
+                           const std::string       name)
 {
-#if defined(HAVE_MEDCOUPLING)
+#if defined(HAVE_MEDCOUPLING_LOADER)
   WriteUMesh(name, m->med_mesh, true);
 #else
   CS_UNUSED(m);
@@ -1174,7 +1173,7 @@ cs_medcoupling_mesh_export(cs_medcoupling_mesh_t *m, const std::string name)
             __LINE__,
             0,
             _("Error: this funnction cannot be called without "
-              "MEDCoupling support\n"));
+              "MEDCoupling loader support\n"));
 #endif
 }
 
