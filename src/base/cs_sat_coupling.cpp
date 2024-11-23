@@ -1594,7 +1594,7 @@ _sat_interpolate_bc_from_b_face_data
 
   /* Mesh quantities */
   cs_lnum_t *b_face_cells = cs_glob_mesh->b_face_cells;
-  cs_real_t *diipb = cs_glob_mesh_quantities->diipb;
+  const cs_rreal_3_t *diipb = cs_glob_mesh_quantities->diipb;
   cs_real_t *b_face_cog = cs_glob_mesh_quantities->b_face_cog;
   cs_real_t *cell_cen = cs_glob_mesh_quantities->cell_cen;
 
@@ -1641,7 +1641,7 @@ _sat_interpolate_bc_from_b_face_data
       cs_lnum_t f_id = b_faces_loc_ids[e_id];
       cs_lnum_t c_id = b_face_cells[f_id];
 
-      cs_real_t *xyziip = diipb + 3 * f_id;
+      const cs_rreal_t *xyziip = diipb[f_id];
 
       /* Compute bnd face value using gradient projection */
 
@@ -1713,7 +1713,7 @@ _sat_interpolate_bc_from_b_face_data
       if (cs_glob_physical_model_flag[CS_ATMOSPHERIC] > CS_ATMO_OFF)
         cs_glob_bc_pm_info->iautom[f_id] = 1;
 
-      cs_real_t *xyziip = diipb + 3 * f_id;
+      const cs_rreal_t *xyziip = diipb[f_id];
 
       cs_real_3_t xyzif = {b_face_cog[3 * f_id]     - cell_cen[3 * c_id],
                            b_face_cog[3 * f_id + 1] - cell_cen[3 * c_id + 1],

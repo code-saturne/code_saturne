@@ -399,27 +399,6 @@ cs_math_abs_cuda(float  x)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Compute the dot product of two vectors of 3 real values.
- *
- * \param[in]   u   vector of 3 real values
- * \param[in]   v   vector of 3 real values
- *
- * \return the resulting dot product u.v.
- */
-/*----------------------------------------------------------------------------*/
-
-template <typename T>
-__device__ static cs_real_t
-cs_math_3_dot_product_cuda(const T  u[3],
-                           const T  v[3])
-{
-  T prod = u[0]*v[0] + u[1]*v[1] + u[2]*v[2];
-
-  return prod;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief  Normalise a vector of 3 real values.
  *
  * To normalize in-place, \p vin and \p vout may point to the same array.

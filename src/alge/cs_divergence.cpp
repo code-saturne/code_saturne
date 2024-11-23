@@ -225,8 +225,7 @@ cs_mass_flux(const cs_mesh_t             *m,
     b_f_face_factor[0] = 1.0;
   }
 
-  const cs_real_3_t *restrict diipb
-    = (const cs_real_3_t *)fvq->diipb;
+  const cs_rreal_3_t *restrict diipb = fvq->diipb;
   const cs_real_3_t *restrict dofij
     = (const cs_real_3_t *)fvq->dofij;
 
@@ -587,9 +586,6 @@ cs_mass_flux(const cs_mesh_t             *m,
 
     ctx_c.parallel_for_b_faces(m, [=] CS_F_HOST_DEVICE (cs_lnum_t  face_id) {
       cs_lnum_t ii = b_face_cells[face_id];
-      double diipbx = diipb[face_id][0];
-      double diipby = diipb[face_id][1];
-      double diipbz = diipb[face_id][2];
       cs_lnum_t _p = is_p*face_id;
 
       /* Terms along U, V, W */
@@ -601,9 +597,9 @@ cs_mass_flux(const cs_mesh_t             *m,
         for (int jsou = 0; jsou < 3; jsou++) {
 
           double pip = f_momentum[face_id][jsou]
-                     + grdqdm[ii][jsou][0]*diipbx
-                     + grdqdm[ii][jsou][1]*diipby
-                     + grdqdm[ii][jsou][2]*diipbz;
+                     + grdqdm[ii][jsou][0]*diipb[face_id][0]
+                     + grdqdm[ii][jsou][1]*diipb[face_id][1]
+                     + grdqdm[ii][jsou][2]*diipb[face_id][2];
 
           pfac += coefbv[face_id][jsou][isou]*pip;
 
@@ -722,8 +718,7 @@ cs_tensor_face_flux(const cs_mesh_t             *m,
     = (const cs_real_3_t *)fvq->i_f_face_normal;
   const cs_real_3_t *restrict b_f_face_normal
     = (const cs_real_3_t *)fvq->b_f_face_normal;
-  const cs_real_3_t *restrict diipb
-    = (const cs_real_3_t *)fvq->diipb;
+  const cs_rreal_3_t *restrict diipb = fvq->diipb;
   const cs_real_3_t *restrict dofij
     = (const cs_real_3_t *)fvq->dofij;
 
@@ -1334,10 +1329,8 @@ cs_ext_force_flux(const cs_mesh_t          *m,
                   const cs_real_t           visely[],
                   const cs_real_t           viselz[])
 {
-  const cs_lnum_2_t *restrict i_face_cells
-    = (const cs_lnum_2_t *)m->i_face_cells;
-  const cs_lnum_t *restrict b_face_cells
-    = (const cs_lnum_t *)m->b_face_cells;
+  const cs_lnum_2_t *restrict i_face_cells = m->i_face_cells;
+  const cs_lnum_t *restrict b_face_cells = m->b_face_cells;
   const cs_real_t *restrict i_dist = fvq->i_dist;
   const cs_real_t *restrict b_dist = fvq->b_dist;
   const cs_real_t *restrict i_f_face_surf = fvq->i_f_face_surf;
@@ -1347,10 +1340,8 @@ cs_ext_force_flux(const cs_mesh_t          *m,
     = (const cs_real_3_t *)fvq->b_face_normal;
   const cs_real_3_t *restrict i_face_cog
     = (const cs_real_3_t *)fvq->i_face_cog;
-  const cs_real_3_t *restrict diipf
-    = (const cs_real_3_t *)fvq->diipf;
-  const cs_real_3_t *restrict djjpf
-    = (const cs_real_3_t *)fvq->djjpf;
+  const cs_rreal_3_t *restrict diipf = fvq->diipf;
+  const cs_rreal_3_t *restrict djjpf = fvq->djjpf;
 
   const cs_lnum_t n_i_faces = m->n_i_faces;
   const cs_lnum_t n_b_faces = m->n_b_faces;

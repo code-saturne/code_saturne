@@ -174,10 +174,8 @@ _beta_limiter_denom(cs_field_t                 *f,
   const cs_nreal_3_t *restrict i_face_u_normal = fvq->i_face_u_normal;
   const cs_real_3_t *restrict i_face_cog
     = (const cs_real_3_t *)fvq->i_face_cog;
-  const cs_real_3_t *restrict diipf
-    = (const cs_real_3_t *)fvq->diipf;
-  const cs_real_3_t *restrict djjpf
-    = (const cs_real_3_t *)fvq->djjpf;
+  const cs_rreal_3_t *restrict diipf = fvq->diipf;
+  const cs_rreal_3_t *restrict djjpf = fvq->djjpf;
 
   const cs_real_t *restrict pvar  = f->val;
   const cs_real_t *restrict pvara = f->val_pre;
@@ -750,16 +748,13 @@ _slope_test_gradient_h
   const cs_real_t *restrict cell_vol = fvq->cell_vol;
   const cs_real_3_t *restrict cell_cen
     = (const cs_real_3_t *)fvq->cell_cen;
-  const cs_real_t *restrict i_face_surf
-    = (const cs_real_t *)fvq->i_face_surf;
-  const cs_real_t *restrict b_face_surf
-    = (const cs_real_t *)fvq->b_face_surf;
+  const cs_real_t *restrict i_face_surf = fvq->i_face_surf;
+  const cs_real_t *restrict b_face_surf = fvq->b_face_surf;
   const cs_nreal_3_t *restrict i_face_u_normal = fvq->i_face_u_normal;
   const cs_nreal_3_t *restrict b_face_u_normal = fvq->b_face_u_normal;
   const cs_real_3_t *restrict i_face_cog
     = (const cs_real_3_t *)fvq->i_face_cog;
-  const cs_real_3_t *restrict diipb
-    = (const cs_real_3_t *)fvq->diipb;
+  const cs_rreal_3_t *restrict diipb = fvq->diipb;
 
   /* Cast to the parent class to obtain info on the parent class.
      On host, we know this is not necessary and we use a simple
@@ -868,16 +863,13 @@ _slope_test_gradient_d
   const cs_real_t *restrict cell_vol = fvq->cell_vol;
   const cs_real_3_t *restrict cell_cen
     = (const cs_real_3_t *)fvq->cell_cen;
-  const cs_real_t *restrict i_face_surf
-    = (const cs_real_t *)fvq->i_face_surf;
-  const cs_real_t *restrict b_face_surf
-    = (const cs_real_t *)fvq->b_face_surf;
+  const cs_real_t *restrict i_face_surf = fvq->i_face_surf;
+  const cs_real_t *restrict b_face_surf = fvq->b_face_surf;
   const cs_nreal_3_t *restrict i_face_u_normal = fvq->i_face_u_normal;
   const cs_nreal_3_t *restrict b_face_u_normal = fvq->b_face_u_normal;
   const cs_real_3_t *restrict i_face_cog
     = (const cs_real_3_t *)fvq->i_face_cog;
-  const cs_real_3_t *restrict diipb
-    = (const cs_real_3_t *)fvq->diipb;
+  const cs_rreal_3_t *restrict diipb = fvq->diipb;
 
   const cs_mesh_adjacencies_t *ma = cs_glob_mesh_adjacencies;
   cs_mesh_adjacencies_update_cell_i_faces();
@@ -1017,8 +1009,7 @@ _slope_test_gradient_strided_h
   const cs_real_t *restrict b_f_face_surf = fvq->b_f_face_surf;
   const cs_real_3_t *restrict i_face_cog
     = (const cs_real_3_t *)fvq->i_face_cog;
-  const cs_real_3_t *restrict diipb
-    = (const cs_real_3_t *)fvq->diipb;
+  const cs_rreal_3_t *restrict diipb = fvq->diipb;
 
   /* Cast to the parent class to obtain info on the parent class.
      On host, we know this is not necessary and we use a simple
@@ -1079,7 +1070,7 @@ _slope_test_gradient_strided_h
 
   ctx.parallel_for_b_faces(m, [=] CS_F_HOST_DEVICE (cs_lnum_t  face_id) {
 
-    cs_real_t diipbv[3];
+    cs_rreal_t diipbv[3];
     cs_lnum_t ii = b_face_cells[face_id];
 
     for (cs_lnum_t jsou = 0; jsou < 3; jsou++)
@@ -1173,8 +1164,7 @@ _slope_test_gradient_strided_d
   const cs_real_t *restrict b_f_face_surf = fvq->b_f_face_surf;
   const cs_real_3_t *restrict i_face_cog
     = (const cs_real_3_t *)fvq->i_face_cog;
-  const cs_real_3_t *restrict diipb
-    = (const cs_real_3_t *)fvq->diipb;
+  const cs_rreal_3_t *restrict diipb = fvq->diipb;
 
   const cs_mesh_adjacencies_t *ma = cs_glob_mesh_adjacencies;
   cs_mesh_adjacencies_update_cell_i_faces();
@@ -1254,7 +1244,7 @@ _slope_test_gradient_strided_d
 
     cs_lnum_t ii = b_face_cells[face_id];
 
-    cs_real_t diipbv[3];
+    cs_rreal_t diipbv[3];
     for (cs_lnum_t jsou = 0; jsou < 3; jsou++)
       diipbv[jsou] = diipb[face_id][jsou];
 
@@ -1487,12 +1477,9 @@ _convection_diffusion_scalar_steady(const cs_field_t           *f,
   const cs_nreal_3_t *restrict i_face_u_normal = fvq->i_face_u_normal;
   const cs_real_3_t *restrict i_face_cog
     = (const cs_real_3_t *)fvq->i_face_cog;
-  const cs_real_3_t *restrict diipf
-    = (const cs_real_3_t *)fvq->diipf;
-  const cs_real_3_t *restrict djjpf
-    = (const cs_real_3_t *)fvq->djjpf;
-  const cs_real_3_t *restrict diipb
-    = (const cs_real_3_t *)fvq->diipb;
+  const cs_rreal_3_t *restrict diipf = fvq->diipf;
+  const cs_rreal_3_t *restrict djjpf = fvq->djjpf;
+  const cs_rreal_3_t *restrict diipb = fvq->diipb;
 
   const int *bc_type = cs_glob_bc_type;
 
@@ -2357,10 +2344,8 @@ _face_convection_scalar_steady(const cs_field_t           *f,
   const cs_lnum_t *restrict i_group_index = m->i_face_numbering->group_index;
   const cs_lnum_t *restrict b_group_index = m->b_face_numbering->group_index;
 
-  const cs_lnum_2_t *restrict i_face_cells
-    = (const cs_lnum_2_t *)m->i_face_cells;
-  const cs_lnum_t *restrict b_face_cells
-    = (const cs_lnum_t *)m->b_face_cells;
+  const cs_lnum_2_t *restrict i_face_cells = m->i_face_cells;
+  const cs_lnum_t *restrict b_face_cells = m->b_face_cells;
   const cs_real_t *restrict weight = fvq->weight;
   const cs_real_t *restrict i_dist = fvq->i_dist;
   const cs_real_t *restrict cell_vol = fvq->cell_vol;
@@ -2369,12 +2354,9 @@ _face_convection_scalar_steady(const cs_field_t           *f,
   const cs_nreal_3_t *restrict i_face_u_normal  = fvq->i_face_u_normal;
   const cs_real_3_t *restrict i_face_cog
     = (const cs_real_3_t *)fvq->i_face_cog;
-  const cs_real_3_t *restrict diipf
-    = (const cs_real_3_t *)fvq->diipf;
-  const cs_real_3_t *restrict djjpf
-    = (const cs_real_3_t *)fvq->djjpf;
-  const cs_real_3_t *restrict diipb
-    = (const cs_real_3_t *)fvq->diipb;
+  const cs_rreal_3_t *restrict diipf = fvq->diipf;
+  const cs_rreal_3_t *restrict djjpf = fvq->djjpf;
+  const cs_rreal_3_t *restrict diipb = fvq->diipb;
 
   const int *bc_type = cs_glob_bc_type;
 
@@ -3071,12 +3053,10 @@ _convection_diffusion_scalar_unsteady
 
   const cs_lnum_t n_cells = m->n_cells;
   const cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
-  const int n_i_faces = m->n_i_faces;
+  const cs_lnum_t n_i_faces = m->n_i_faces;
 
-  const cs_lnum_2_t *restrict i_face_cells
-    = (const cs_lnum_2_t *)m->i_face_cells;
-  const cs_lnum_t *restrict b_face_cells
-    = (const cs_lnum_t *)m->b_face_cells;
+  const cs_lnum_2_t *restrict i_face_cells = m->i_face_cells;
+  const cs_lnum_t *restrict b_face_cells = m->b_face_cells;
   const cs_real_t *restrict weight = fvq->weight;
   const cs_real_t *restrict i_dist = fvq->i_dist;
   const cs_real_t *restrict b_face_surf = fvq->b_face_surf;
@@ -3086,12 +3066,9 @@ _convection_diffusion_scalar_unsteady
   const cs_nreal_3_t *restrict i_face_u_normal = fvq->i_face_u_normal;
   const cs_real_3_t *restrict i_face_cog
     = (const cs_real_3_t *)fvq->i_face_cog;
-  const cs_real_3_t *restrict diipf
-    = (const cs_real_3_t *)fvq->diipf;
-  const cs_real_3_t *restrict djjpf
-    = (const cs_real_3_t *)fvq->djjpf;
-  const cs_real_3_t *restrict diipb
-    = (const cs_real_3_t *)fvq->diipb;
+  const cs_rreal_3_t *restrict diipf = fvq->diipf;
+  const cs_rreal_3_t *restrict djjpf = fvq->djjpf;
+  const cs_rreal_3_t *restrict diipb = fvq->diipb;
 
   const int *bc_type = cs_glob_bc_type;
 
@@ -4154,10 +4131,8 @@ _face_convection_scalar_unsteady(const cs_field_t           *f,
   const cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
   const int n_i_faces = m->n_i_faces;
 
-  const cs_lnum_2_t *restrict i_face_cells
-    = (const cs_lnum_2_t *)m->i_face_cells;
-  const cs_lnum_t *restrict b_face_cells
-    = (const cs_lnum_t *)m->b_face_cells;
+  const cs_lnum_2_t *restrict i_face_cells = m->i_face_cells;
+  const cs_lnum_t *restrict b_face_cells = m->b_face_cells;
   const cs_real_t *restrict weight = fvq->weight;
   const cs_real_t *restrict i_dist = fvq->i_dist;
   const cs_real_t *restrict cell_vol = fvq->cell_vol;
@@ -4166,12 +4141,9 @@ _face_convection_scalar_unsteady(const cs_field_t           *f,
   const cs_nreal_3_t *restrict i_face_u_normal = fvq->i_face_u_normal;
   const cs_real_3_t *restrict i_face_cog
     = (const cs_real_3_t *)fvq->i_face_cog;
-  const cs_real_3_t *restrict diipf
-    = (const cs_real_3_t *)fvq->diipf;
-  const cs_real_3_t *restrict djjpf
-    = (const cs_real_3_t *)fvq->djjpf;
-  const cs_real_3_t *restrict diipb
-    = (const cs_real_3_t *)fvq->diipb;
+  const cs_rreal_3_t *restrict diipf = fvq->diipf;
+  const cs_rreal_3_t *restrict djjpf = fvq->djjpf;
+  const cs_rreal_3_t *restrict diipb = fvq->diipb;
 
   const int *bc_type = cs_glob_bc_type;
 
@@ -5047,10 +5019,8 @@ _convection_diffusion_vector_steady(cs_field_t                 *f,
   const cs_lnum_t *restrict i_group_index = m->i_face_numbering->group_index;
   const cs_lnum_t *restrict b_group_index = m->b_face_numbering->group_index;
 
-  const cs_lnum_2_t *restrict i_face_cells
-    = (const cs_lnum_2_t *)m->i_face_cells;
-  const cs_lnum_t *restrict b_face_cells
-    = (const cs_lnum_t *)m->b_face_cells;
+  const cs_lnum_2_t *restrict i_face_cells = m->i_face_cells;
+  const cs_lnum_t *restrict b_face_cells = m->b_face_cells;
   const cs_real_t *restrict weight = fvq->weight;
   const cs_real_t *restrict i_dist = fvq->i_dist;
   const cs_real_t *restrict b_face_surf = fvq->b_face_surf;
@@ -5060,12 +5030,9 @@ _convection_diffusion_vector_steady(cs_field_t                 *f,
   const cs_nreal_3_t *restrict b_face_u_normal = fvq->b_face_u_normal;
   const cs_real_3_t *restrict i_face_cog
     = (const cs_real_3_t *)fvq->i_face_cog;
-  const cs_real_3_t *restrict diipf
-    = (const cs_real_3_t *)fvq->diipf;
-  const cs_real_3_t *restrict djjpf
-    = (const cs_real_3_t *)fvq->djjpf;
-  const cs_real_3_t *restrict diipb
-    = (const cs_real_3_t *)fvq->diipb;
+  const cs_rreal_3_t *restrict diipf = fvq->diipf;
+  const cs_rreal_3_t *restrict djjpf = fvq->djjpf;
+  const cs_rreal_3_t *restrict diipb = fvq->diipb;
 
   const int *bc_type = cs_glob_bc_type;
   cs_real_2_t *i_f_face_factor = nullptr;
@@ -5330,7 +5297,7 @@ _convection_diffusion_vector_steady(cs_field_t                 *f,
 
           /* Scaling due to mass balance in porous modelling */
           if (i_f_face_factor != nullptr) {
-            const cs_real_t *n = i_face_u_normal[face_id];
+            const cs_nreal_t *n = i_face_u_normal[face_id];
             cs_math_3_normal_scaling(n, i_f_face_factor[face_id][0], _pi);
             cs_math_3_normal_scaling(n, i_f_face_factor[face_id][0], _pia);
             cs_math_3_normal_scaling(n, i_f_face_factor[face_id][1], _pj);
@@ -5441,7 +5408,7 @@ _convection_diffusion_vector_steady(cs_field_t                 *f,
 
           /* Scaling due to mass balance in porous modelling */
           if (i_f_face_factor != nullptr) {
-            const cs_real_t *n = i_face_u_normal[face_id];
+            const cs_nreal_t *n = i_face_u_normal[face_id];
             cs_math_3_normal_scaling(n, i_f_face_factor[face_id][0], _pi);
             cs_math_3_normal_scaling(n, i_f_face_factor[face_id][0], _pia);
             cs_math_3_normal_scaling(n, i_f_face_factor[face_id][1], _pj);
@@ -5913,10 +5880,8 @@ _convection_diffusion_tensor_steady(cs_field_t                  *f,
   const cs_lnum_t *restrict i_group_index = m->i_face_numbering->group_index;
   const cs_lnum_t *restrict b_group_index = m->b_face_numbering->group_index;
 
-  const cs_lnum_2_t *restrict i_face_cells
-    = (const cs_lnum_2_t *)m->i_face_cells;
-  const cs_lnum_t *restrict b_face_cells
-    = (const cs_lnum_t *)m->b_face_cells;
+  const cs_lnum_2_t *restrict i_face_cells = m->i_face_cells;
+  const cs_lnum_t *restrict b_face_cells = m->b_face_cells;
   const cs_real_t *restrict weight = fvq->weight;
   const cs_real_t *restrict i_dist = fvq->i_dist;
   const cs_real_3_t *restrict cell_cen
@@ -5924,12 +5889,9 @@ _convection_diffusion_tensor_steady(cs_field_t                  *f,
   const cs_nreal_3_t *restrict i_face_u_normal = fvq->i_face_u_normal;
   const cs_real_3_t *restrict i_face_cog
     = (const cs_real_3_t *)fvq->i_face_cog;
-  const cs_real_3_t *restrict diipf
-    = (const cs_real_3_t *)fvq->diipf;
-  const cs_real_3_t *restrict djjpf
-    = (const cs_real_3_t *)fvq->djjpf;
-  const cs_real_3_t *restrict diipb
-    = (const cs_real_3_t *)fvq->diipb;
+  const cs_rreal_3_t *restrict diipf = fvq->diipf;
+  const cs_rreal_3_t *restrict djjpf = fvq->djjpf;
+  const cs_rreal_3_t *restrict diipb = fvq->diipb;
 
   const int *bc_type = cs_glob_bc_type;
 
@@ -6485,12 +6447,10 @@ _convection_diffusion_unsteady_strided
 
   const cs_lnum_t n_cells = m->n_cells;
   const cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
-  const int n_i_faces = m->n_i_faces;
+  const cs_lnum_t n_i_faces = m->n_i_faces;
 
-  const cs_lnum_2_t *restrict i_face_cells
-    = (const cs_lnum_2_t *)m->i_face_cells;
-  const cs_lnum_t *restrict b_face_cells
-    = (const cs_lnum_t *)m->b_face_cells;
+  const cs_lnum_2_t *restrict i_face_cells = m->i_face_cells;
+  const cs_lnum_t *restrict b_face_cells = m->b_face_cells;
   const cs_real_t *restrict weight = fvq->weight;
   const cs_real_t *restrict i_dist = fvq->i_dist;
   const cs_real_t *restrict cell_vol = fvq->cell_vol;
@@ -6501,12 +6461,9 @@ _convection_diffusion_unsteady_strided
   const cs_nreal_3_t *restrict b_face_u_normal = fvq->b_face_u_normal;
   const cs_real_3_t *restrict i_face_cog
     = (const cs_real_3_t *)fvq->i_face_cog;
-  const cs_real_3_t *restrict diipf
-    = (const cs_real_3_t *)fvq->diipf;
-  const cs_real_3_t *restrict djjpf
-    = (const cs_real_3_t *)fvq->djjpf;
-  const cs_real_3_t *restrict diipb
-    = (const cs_real_3_t *)fvq->diipb;
+  const cs_rreal_3_t *restrict diipf = fvq->diipf;
+  const cs_rreal_3_t *restrict djjpf = fvq->djjpf;
+  const cs_rreal_3_t *restrict diipb = fvq->diipb;
 
   const int *bc_type = cs_glob_bc_type;
   cs_real_2_t *i_f_face_factor = nullptr;
@@ -9356,12 +9313,9 @@ cs_anisotropic_left_diffusion_vector(int                         idtvar,
     = (const cs_real_3_t *)fvq->i_f_face_normal;
   const cs_nreal_3_t *restrict i_face_u_normal = fvq->i_face_u_normal;
   const cs_real_t *restrict i_dist = fvq->i_dist;
-  const cs_real_3_t *restrict diipf
-    = (const cs_real_3_t *)fvq->diipf;
-  const cs_real_3_t *restrict djjpf
-    = (const cs_real_3_t *)fvq->djjpf;
-  const cs_real_3_t *restrict diipb
-    = (const cs_real_3_t *)fvq->diipb;
+  const cs_rreal_3_t *restrict diipf = fvq->diipf;
+  const cs_rreal_3_t *restrict djjpf = fvq->djjpf;
+  const cs_rreal_3_t *restrict diipb = fvq->diipb;
 
   const int *bc_type = cs_glob_bc_type;
 
@@ -9633,7 +9587,7 @@ cs_anisotropic_left_diffusion_vector(int                         idtvar,
         if (df_limiter != nullptr && ircflp > 0)
           bldfrp = cs_math_fmax(df_limiter[cell_id], 0.);
 
-        const cs_real_t *diipbv = diipb[face_id];
+        const cs_rreal_t *diipbv = diipb[face_id];
         cs_real_t pipr[3];
 
         for (int k = 0; k < 3; k++) {
@@ -9680,7 +9634,7 @@ cs_anisotropic_left_diffusion_vector(int                         idtvar,
         if (df_limiter != nullptr && ircflp > 0)
           bldfrp = cs_math_fmax(df_limiter[cell_id], 0.);
 
-        cs_real_t diipbv[3];
+        cs_rreal_t diipbv[3];
 
         for (int k = 0; k < 3; k++)
           diipbv[k] = diipb[face_id][k];
@@ -11191,12 +11145,9 @@ cs_face_diffusion_potential(const int                   f_id,
     = (const cs_lnum_t *)m->b_face_cells;
   const cs_real_t *restrict i_dist = fvq->i_dist;
   const cs_real_t *restrict i_f_face_surf = fvq->i_f_face_surf;
-  const cs_real_3_t *restrict diipf
-    = (const cs_real_3_t *)fvq->diipf;
-  const cs_real_3_t *restrict djjpf
-    = (const cs_real_3_t *)fvq->djjpf;
-  const cs_real_3_t *restrict diipb
-    = (const cs_real_3_t *)fvq->diipb;
+  const cs_rreal_3_t *restrict diipf = fvq->diipf;
+  const cs_rreal_3_t *restrict djjpf = fvq->djjpf;
+  const cs_rreal_3_t *restrict diipb = fvq->diipb;
 
   /* Parallel or device dispatch */
   cs_dispatch_context ctx_i, ctx_b;
@@ -11918,12 +11869,9 @@ cs_diffusion_potential(const int                   f_id,
     = (const cs_lnum_t *)m->b_face_cells;
   const cs_real_t *restrict i_dist = fvq->i_dist;
   const cs_real_t *restrict i_f_face_surf = fvq->i_f_face_surf;
-  const cs_real_3_t *restrict diipf
-    = (const cs_real_3_t *)fvq->diipf;
-  const cs_real_3_t *restrict djjpf
-    = (const cs_real_3_t *)fvq->djjpf;
-  const cs_real_3_t *restrict diipb
-    = (const cs_real_3_t *)fvq->diipb;
+  const cs_rreal_3_t *restrict diipf = fvq->diipf;
+  const cs_rreal_3_t *restrict djjpf = fvq->djjpf;
+  const cs_rreal_3_t *restrict diipb = fvq->diipb;
 
   /* Parallel or device dispatch */
   cs_dispatch_context ctx;
@@ -12669,8 +12617,7 @@ cs_cell_courant_number(const cs_field_t    *f,
   const cs_lnum_t *cell_b_faces_idx = ma->cell_b_faces_idx;
   const cs_lnum_t *cell_b_faces = ma->cell_b_faces;
 
-  const cs_real_t *restrict vol
-    = (cs_real_t *)fvq->cell_vol;
+  const cs_real_t *restrict vol = fvq->cell_vol;
 
   const int kimasf = cs_field_key_id("inner_mass_flux_id");
   const int kbmasf = cs_field_key_id("boundary_mass_flux_id");
@@ -12679,8 +12626,7 @@ cs_cell_courant_number(const cs_field_t    *f,
   const cs_real_t *restrict b_massflux
     = cs_field_by_id( cs_field_get_key_int(f, kbmasf) )->val;
 
-  const cs_real_t *restrict dt
-    = (const cs_real_t *)CS_F_(dt)->val;
+  const cs_real_t *restrict dt = CS_F_(dt)->val;
 
   /* ---> Contribution from interior and boundary faces */
 
@@ -12844,15 +12790,11 @@ cs_upwind_gradient(const int                     f_id,
 
   const cs_lnum_t n_cells = m->n_cells;
 
-  const cs_lnum_2_t *restrict i_face_cells
-    = (const cs_lnum_2_t *)m->i_face_cells;
-  const cs_lnum_t *restrict b_face_cells
-    = (const cs_lnum_t *)m->b_face_cells;
+  const cs_lnum_2_t *restrict i_face_cells = m->i_face_cells;
+  const cs_lnum_t *restrict b_face_cells = m->b_face_cells;
   const cs_real_t *restrict cell_vol = fvq->cell_vol;
-  const cs_real_t *restrict i_face_surf
-    = (const cs_real_t *)fvq->i_face_surf;
-  const cs_real_t *restrict b_face_surf
-    = (const cs_real_t *)fvq->b_face_surf;
+  const cs_real_t *restrict i_face_surf = fvq->i_face_surf;
+  const cs_real_t *restrict b_face_surf = fvq->b_face_surf;
   const cs_nreal_3_t *restrict i_face_u_normal = fvq->i_face_u_normal;
   const cs_nreal_3_t *restrict b_face_u_normal = fvq->b_face_u_normal;
 

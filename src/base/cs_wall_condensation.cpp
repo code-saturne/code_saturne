@@ -111,6 +111,7 @@ static const cs_real_t lcond = 2278.0e+3;
 static cs_wall_condensation_t _wall_cond
   = {.icondb             = -1,
      .icondv             = -1,
+     .nztag1d            = -1,
      .natural_conv_model = CS_WALL_COND_MODEL_COPAIN,
      .forced_conv_model  = CS_WALL_COND_MODEL_WALL_LAW, // fixed for now
      .mixed_conv_model   = CS_WALL_COND_MIXED_MAX,      // fixed for now

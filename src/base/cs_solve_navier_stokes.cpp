@@ -1972,7 +1972,7 @@ _velocity_prediction(const cs_mesh_t             *m,
   const cs_lnum_t *b_face_cells = m->b_face_cells;
 
   const cs_real_t *cell_f_vol = mq->cell_f_vol;
-  const cs_real_3_t *restrict diipb = (const cs_real_3_t *)mq->diipb;
+  const cs_rreal_3_t *restrict diipb = mq->diipb;
 
   const cs_real_3_t  *restrict b_face_normal
     = (const cs_real_3_t  *) mq->b_face_normal;

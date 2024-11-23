@@ -880,7 +880,7 @@ cs_boundary_conditions_set_coeffs(int        nvar,
   const cs_nreal_3_t *b_face_u_normal = fvq->b_face_u_normal;
   const cs_real_3_t *cell_cen = (const cs_real_3_t *)fvq->cell_cen;
   const cs_real_3_t *b_face_cog = (const cs_real_3_t *)fvq->b_face_cog;
-  const cs_real_3_t *restrict diipb = (const cs_real_3_t *)fvq->diipb;
+  const cs_rreal_3_t *restrict diipb = fvq->diipb;
   const cs_real_t   *b_face_surf    = fvq->b_face_surf;
   const cs_real_t   *b_dist         = fvq->b_dist;
   int               *isympa         = fvq->b_sym_flag;
@@ -3907,7 +3907,7 @@ cs_boundary_conditions_set_generalized_sym_vector_aniso
    const cs_real_t        pimpv[3],
    const cs_real_t        qimpv[3],
    const cs_real_t        hint[6],
-   const cs_real_t        normal[3])
+   const cs_nreal_t       normal[3])
 {
   cs_real_3_t  *a = (cs_real_3_t *)bc_coeffs->a;
   cs_real_33_t *b = (cs_real_33_t *)bc_coeffs->b;
@@ -3990,7 +3990,7 @@ cs_boundary_conditions_set_generalized_dirichlet_vector_aniso
    const cs_real_t        pimpv[3],
    const cs_real_t        qimpv[3],
    const cs_real_t        hint[6],
-   const cs_real_t        normal[3])
+   const cs_nreal_t       normal[3])
 {
   cs_real_3_t  *a = (cs_real_3_t *)bc_coeffs->a;
   cs_real_33_t *b = (cs_real_33_t *)bc_coeffs->b;

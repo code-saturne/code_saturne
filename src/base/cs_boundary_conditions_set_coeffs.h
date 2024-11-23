@@ -620,7 +620,7 @@ cs_boundary_conditions_set_generalized_sym_vector
    const cs_real_t        pimpv[3],
    const cs_real_t        qimpv[3],
    cs_real_t              hint,
-   const cs_real_t        normal[3])
+   const cs_nreal_t       normal[3])
 {
   cs_real_3_t  *a = (cs_real_3_t *)bc_coeffs->a;
   cs_real_33_t *b = (cs_real_33_t *)bc_coeffs->b;
@@ -677,7 +677,7 @@ cs_boundary_conditions_set_generalized_sym_vector_aniso
    const cs_real_t        pimpv[3],
    const cs_real_t        qimpv[3],
    const cs_real_t        hint[6],
-   const cs_real_t        normal[3]);
+   const cs_nreal_t       normal[3]);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -700,7 +700,7 @@ cs_boundary_conditions_set_generalized_dirichlet_vector
    const cs_real_t        pimpv[3],
    const cs_real_t        qimpv[3],
    cs_real_t              hint,
-   const cs_real_t        normal[3])
+   const cs_nreal_t       normal[3])
 {
   cs_real_3_t  *a = (cs_real_3_t *)bc_coeffs->a;
   cs_real_33_t *b = (cs_real_33_t *)bc_coeffs->b;
@@ -758,7 +758,7 @@ cs_boundary_conditions_set_generalized_dirichlet_vector_aniso
    const cs_real_t        pimpv[3],
    const cs_real_t        qimpv[3],
    const cs_real_t        hint[6],
-   const cs_real_t        normal[3]);
+   const cs_nreal_t       normal[3]);
 
 /*----------------------------------------------------------------------------*/
 /*!

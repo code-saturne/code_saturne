@@ -104,8 +104,7 @@ static void
 _update_cell_cells(cs_mesh_adjacencies_t  *ma)
 {
   const cs_mesh_t *m = cs_glob_mesh;
-  const cs_lnum_2_t *restrict face_cells
-    = (const cs_lnum_2_t *restrict)m->i_face_cells;
+  const cs_lnum_2_t *restrict face_cells = m->i_face_cells;
   const cs_lnum_t n_cells = m->n_cells;
   const cs_lnum_t n_faces = m->n_i_faces;
 
@@ -219,8 +218,7 @@ _update_cell_i_faces(cs_mesh_adjacencies_t  *ma)
   assert(ma->cell_cells_idx != nullptr);
 
   const cs_mesh_t *m = cs_glob_mesh;
-  const cs_lnum_2_t *restrict face_cells
-    = (const cs_lnum_2_t *restrict)m->i_face_cells;
+  const cs_lnum_2_t *restrict face_cells = m->i_face_cells;
   const cs_lnum_t n_cells = m->n_cells;
   const cs_lnum_t n_faces = m->n_i_faces;
 
@@ -300,8 +298,7 @@ static void
 _update_cell_b_faces(cs_mesh_adjacencies_t  *ma)
 {
   const cs_mesh_t *m = cs_glob_mesh;
-  const cs_lnum_t *restrict b_face_cells
-    = (const cs_lnum_t *restrict)m->b_face_cells;
+  const cs_lnum_t *restrict b_face_cells = m->b_face_cells;
   const cs_lnum_t n_cells = m->n_cells;
   const cs_lnum_t n_b_faces = m->n_b_faces;
 
@@ -360,8 +357,7 @@ static void
 _update_cell_hb_faces(cs_mesh_adjacencies_t  *ma)
 {
   const cs_mesh_t *m = cs_glob_mesh;
-  const cs_lnum_t *restrict b_face_cells
-    = (const cs_lnum_t *restrict)m->b_face_cells;
+  const cs_lnum_t *restrict b_face_cells = m->b_face_cells;
   const cs_lnum_t n_cells = m->n_cells;
   const cs_lnum_t n_b_faces = m->n_b_faces;
   const cs_lnum_t n_b_faces_all = m->n_b_faces_all;

@@ -535,17 +535,17 @@ cs_slope_test_strided(const cs_real_t    pi[stride],
 /*----------------------------------------------------------------------------*/
 
 CS_F_HOST_DEVICE inline static void
-cs_i_compute_quantities(const cs_real_t    bldfrp,
-                        const cs_real_3_t  diipf,
-                        const cs_real_3_t  djjpf,
-                        const cs_real_3_t  gradi,
-                        const cs_real_3_t  gradj,
-                        const cs_real_t    pi,
-                        const cs_real_t    pj,
-                        cs_real_t         *recoi,
-                        cs_real_t         *recoj,
-                        cs_real_t         *pip,
-                        cs_real_t         *pjp)
+cs_i_compute_quantities(const cs_real_t     bldfrp,
+                        const cs_rreal_3_t  diipf,
+                        const cs_rreal_3_t  djjpf,
+                        const cs_real_3_t   gradi,
+                        const cs_real_3_t   gradj,
+                        const cs_real_t     pi,
+                        const cs_real_t     pj,
+                        cs_real_t          *recoi,
+                        cs_real_t          *recoj,
+                        cs_real_t          *pip,
+                        cs_real_t          *pjp)
 {
   cs_real_t gradpf[3] = {0.5*(gradi[0] + gradj[0]),
                          0.5*(gradi[1] + gradj[1]),
@@ -581,17 +581,17 @@ cs_i_compute_quantities(const cs_real_t    bldfrp,
 
 template <cs_lnum_t stride>
 CS_F_HOST_DEVICE inline static void
-cs_i_compute_quantities_strided(const cs_real_t  bldfrp,
-                                const cs_real_t  diipf[3],
-                                const cs_real_t  djjpf[3],
-                                const cs_real_t  gradi[stride][3],
-                                const cs_real_t  gradj[stride][3],
-                                const cs_real_t  pi[stride],
-                                const cs_real_t  pj[stride],
-                                cs_real_t        recoi[stride],
-                                cs_real_t        recoj[stride],
-                                cs_real_t        pip[stride],
-                                cs_real_t        pjp[stride])
+cs_i_compute_quantities_strided(const cs_real_t   bldfrp,
+                                const cs_rreal_t  diipf[3],
+                                const cs_rreal_t  djjpf[3],
+                                const cs_real_t   gradi[stride][3],
+                                const cs_real_t   gradj[stride][3],
+                                const cs_real_t   pi[stride],
+                                const cs_real_t   pj[stride],
+                                cs_real_t         recoi[stride],
+                                cs_real_t         recoj[stride],
+                                cs_real_t         pip[stride],
+                                cs_real_t         pjp[stride])
 {
   cs_real_t dpvf[3];
 
@@ -1079,8 +1079,8 @@ cs_i_diff_flux_strided(int             idiffp,
 CS_F_HOST_DEVICE inline static void
 cs_i_cd_steady_upwind(const cs_real_t   bldfrp,
                       const cs_real_t   relaxp,
-                      const cs_real_t   diipf[3],
-                      const cs_real_t   djjpf[3],
+                      const cs_rreal_t  diipf[3],
+                      const cs_rreal_t  djjpf[3],
                       const cs_real_t   gradi[3],
                       const cs_real_t   gradj[3],
                       const cs_real_t   pi,
@@ -1164,24 +1164,24 @@ cs_i_cd_steady_upwind(const cs_real_t   bldfrp,
 
 template <cs_lnum_t stride>
 CS_F_HOST_DEVICE inline static void
-cs_i_cd_steady_upwind_strided(const cs_real_t  bldfrp,
-                              const cs_real_t  relaxp,
-                              const cs_real_t  diipf[3],
-                              const cs_real_t  djjpf[3],
-                              const cs_real_t  gradi[stride][3],
-                              const cs_real_t  gradj[stride][3],
-                              const cs_real_t  pi[stride],
-                              const cs_real_t  pj[stride],
-                              const cs_real_t  pia[stride],
-                              const cs_real_t  pja[stride],
-                              cs_real_t        pifri[stride],
-                              cs_real_t        pifrj[stride],
-                              cs_real_t        pjfri[stride],
-                              cs_real_t        pjfrj[stride],
-                              cs_real_t        pip[stride],
-                              cs_real_t        pjp[stride],
-                              cs_real_t        pipr[stride],
-                              cs_real_t        pjpr[stride])
+cs_i_cd_steady_upwind_strided(const cs_real_t   bldfrp,
+                              const cs_real_t   relaxp,
+                              const cs_rreal_t  diipf[3],
+                              const cs_rreal_t  djjpf[3],
+                              const cs_real_t   gradi[stride][3],
+                              const cs_real_t   gradj[stride][3],
+                              const cs_real_t   pi[stride],
+                              const cs_real_t   pj[stride],
+                              const cs_real_t   pia[stride],
+                              const cs_real_t   pja[stride],
+                              cs_real_t         pifri[stride],
+                              cs_real_t         pifrj[stride],
+                              cs_real_t         pjfri[stride],
+                              cs_real_t         pjfrj[stride],
+                              cs_real_t         pip[stride],
+                              cs_real_t         pjp[stride],
+                              cs_real_t         pipr[stride],
+                              cs_real_t         pjpr[stride])
 {
   cs_real_t pir[stride], pjr[stride];
   cs_real_t recoi[stride], recoj[stride];
@@ -1237,8 +1237,8 @@ cs_i_cd_steady_upwind_strided(const cs_real_t  bldfrp,
 
 CS_F_HOST_DEVICE inline static void
 cs_i_cd_unsteady_upwind(const cs_real_t   bldfrp,
-                        const cs_real_t   diipf[3],
-                        const cs_real_t   djjpf[3],
+                        const cs_rreal_t  diipf[3],
+                        const cs_rreal_t  djjpf[3],
                         const cs_real_t   gradi[3],
                         const cs_real_t   gradj[3],
                         const cs_real_t   pi,
@@ -1290,17 +1290,17 @@ cs_i_cd_unsteady_upwind(const cs_real_t   bldfrp,
 
 template <cs_lnum_t stride>
 CS_F_HOST_DEVICE inline static void
-cs_i_cd_unsteady_upwind_strided(const cs_real_t  bldfrp,
-                                const cs_real_t  diipf[3],
-                                const cs_real_t  djjpf[3],
-                                const cs_real_t  gradi[stride][3],
-                                const cs_real_t  gradj[stride][3],
-                                const cs_real_t  pi[stride],
-                                const cs_real_t  pj[stride],
-                                cs_real_t        pif[stride],
-                                cs_real_t        pjf[stride],
-                                cs_real_t        pip[stride],
-                                cs_real_t        pjp[stride])
+cs_i_cd_unsteady_upwind_strided(const cs_real_t   bldfrp,
+                                const cs_rreal_t  diipf[3],
+                                const cs_rreal_t  djjpf[3],
+                                const cs_real_t   gradi[stride][3],
+                                const cs_real_t   gradj[stride][3],
+                                const cs_real_t   pi[stride],
+                                const cs_real_t   pj[stride],
+                                cs_real_t         pif[stride],
+                                cs_real_t         pjf[stride],
+                                cs_real_t         pip[stride],
+                                cs_real_t         pjp[stride])
 {
   cs_real_t recoi[stride], recoj[stride];
 
@@ -1364,8 +1364,8 @@ cs_i_cd_steady(const cs_real_t   bldfrp,
                const cs_real_t   cell_ceni[3],
                const cs_real_t   cell_cenj[3],
                const cs_real_t   i_face_cog[3],
-               const cs_real_t   diipf[3],
-               const cs_real_t   djjpf[3],
+               const cs_rreal_t  diipf[3],
+               const cs_rreal_t  djjpf[3],
                const cs_real_t   gradi[3],
                const cs_real_t   gradj[3],
                const cs_real_t   gradupi[3],
@@ -1541,30 +1541,30 @@ cs_i_cd_steady(const cs_real_t   bldfrp,
 
 template <cs_lnum_t stride>
 CS_F_HOST_DEVICE inline static void
-cs_i_cd_steady_strided(cs_real_t        bldfrp,
-                       int              ischcp,
-                       double           relaxp,
-                       double           blencp,
-                       cs_real_t        weight,
-                       const cs_real_t  cell_ceni[3],
-                       const cs_real_t  cell_cenj[3],
-                       const cs_real_t  i_face_cog[3],
-                       const cs_real_t  diipf[3],
-                       const cs_real_t  djjpf[3],
-                       const cs_real_t  gradi[stride][3],
-                       const cs_real_t  gradj[stride][3],
-                       const cs_real_t  pi[stride],
-                       const cs_real_t  pj[stride],
-                       const cs_real_t  pia[stride],
-                       const cs_real_t  pja[stride],
-                       cs_real_t        pifri[stride],
-                       cs_real_t        pifrj[stride],
-                       cs_real_t        pjfri[stride],
-                       cs_real_t        pjfrj[stride],
-                       cs_real_t        pip[stride],
-                       cs_real_t        pjp[stride],
-                       cs_real_t        pipr[stride],
-                      cs_real_t         pjpr[stride])
+cs_i_cd_steady_strided(cs_real_t         bldfrp,
+                       int               ischcp,
+                       double            relaxp,
+                       double            blencp,
+                       cs_real_t         weight,
+                       const cs_real_t   cell_ceni[3],
+                       const cs_real_t   cell_cenj[3],
+                       const cs_real_t   i_face_cog[3],
+                       const cs_rreal_t  diipf[3],
+                       const cs_rreal_t  djjpf[3],
+                       const cs_real_t   gradi[stride][3],
+                       const cs_real_t   gradj[stride][3],
+                       const cs_real_t   pi[stride],
+                       const cs_real_t   pj[stride],
+                       const cs_real_t   pia[stride],
+                       const cs_real_t   pja[stride],
+                       cs_real_t         pifri[stride],
+                       cs_real_t         pifrj[stride],
+                       cs_real_t         pjfri[stride],
+                       cs_real_t         pjfrj[stride],
+                       cs_real_t         pip[stride],
+                       cs_real_t         pjp[stride],
+                       cs_real_t         pipr[stride],
+                      cs_real_t          pjpr[stride])
 
 {
   cs_real_t pir[stride], pjr[stride];
@@ -1675,27 +1675,27 @@ cs_i_cd_steady_strided(cs_real_t        bldfrp,
 /*----------------------------------------------------------------------------*/
 
 CS_F_HOST_DEVICE inline static void
-cs_i_cd_unsteady(const cs_real_t    bldfrp,
-                 const int          ischcp,
-                 const double       blencp,
-                 const cs_real_t    weight,
-                 const cs_real_3_t  cell_ceni,
-                 const cs_real_3_t  cell_cenj,
-                 const cs_real_3_t  i_face_cog,
-                 const cs_real_t    hybrid_blend_i,
-                 const cs_real_t    hybrid_blend_j,
-                 const cs_real_3_t  diipf,
-                 const cs_real_3_t  djjpf,
-                 const cs_real_3_t  gradi,
-                 const cs_real_3_t  gradj,
-                 const cs_real_3_t  gradupi,
-                 const cs_real_3_t  gradupj,
-                 const cs_real_t    pi,
-                 const cs_real_t    pj,
-                 cs_real_t         *pif,
-                 cs_real_t         *pjf,
-                 cs_real_t         *pip,
-                 cs_real_t         *pjp)
+cs_i_cd_unsteady(const cs_real_t     bldfrp,
+                 const int           ischcp,
+                 const double        blencp,
+                 const cs_real_t     weight,
+                 const cs_real_3_t   cell_ceni,
+                 const cs_real_3_t   cell_cenj,
+                 const cs_real_3_t   i_face_cog,
+                 const cs_real_t     hybrid_blend_i,
+                 const cs_real_t     hybrid_blend_j,
+                 const cs_rreal_3_t  diipf,
+                 const cs_rreal_3_t  djjpf,
+                 const cs_real_3_t   gradi,
+                 const cs_real_3_t   gradj,
+                 const cs_real_3_t   gradupi,
+                 const cs_real_3_t   gradupj,
+                 const cs_real_t     pi,
+                 const cs_real_t     pj,
+                 cs_real_t          *pif,
+                 cs_real_t          *pjf,
+                 cs_real_t          *pip,
+                 cs_real_t          *pjp)
 {
   cs_real_t recoi, recoj;
 
@@ -1838,25 +1838,25 @@ cs_i_cd_unsteady(const cs_real_t    bldfrp,
 
 template <cs_lnum_t stride>
 CS_F_HOST_DEVICE inline static void
-cs_i_cd_unsteady_strided(cs_real_t        bldfrp,
-                         int              ischcp,
-                         double           blencp,
-                         cs_real_t        weight,
-                         const cs_real_t  cell_ceni[3],
-                         const cs_real_t  cell_cenj[3],
-                         const cs_real_t  i_face_cog[3],
-                         const cs_real_t  hybrid_blend_i,
-                         const cs_real_t  hybrid_blend_j,
-                         const cs_real_t  diipf[3],
-                         const cs_real_t  djjpf[3],
-                         const cs_real_t  gradi[stride][3],
-                         const cs_real_t  gradj[stride][3],
-                         const cs_real_t  pi[stride],
-                         const cs_real_t  pj[stride],
-                         cs_real_t        pif[stride],
-                         cs_real_t        pjf[stride],
-                         cs_real_t        pip[stride],
-                         cs_real_t        pjp[stride])
+cs_i_cd_unsteady_strided(cs_real_t         bldfrp,
+                         int               ischcp,
+                         double            blencp,
+                         cs_real_t         weight,
+                         const cs_real_t   cell_ceni[3],
+                         const cs_real_t   cell_cenj[3],
+                         const cs_real_t   i_face_cog[3],
+                         const cs_real_t   hybrid_blend_i,
+                         const cs_real_t   hybrid_blend_j,
+                         const cs_rreal_t  diipf[3],
+                         const cs_rreal_t  djjpf[3],
+                         const cs_real_t   gradi[stride][3],
+                         const cs_real_t   gradj[stride][3],
+                         const cs_real_t   pi[stride],
+                         const cs_real_t   pj[stride],
+                         cs_real_t         pif[stride],
+                         cs_real_t         pjf[stride],
+                         cs_real_t         pip[stride],
+                         cs_real_t         pjp[stride])
 
 {
   cs_real_t recoi[stride], recoj[stride];
@@ -1998,8 +1998,8 @@ cs_i_cd_steady_slope_test(bool              *upwind_switch,
                           const cs_real_t    cell_cenj[3],
                           const cs_nreal_t   i_face_u_normal[3],
                           const cs_real_t    i_face_cog[3],
-                          const cs_real_t    diipf[3],
-                          const cs_real_t    djjpf[3],
+                          const cs_rreal_t   diipf[3],
+                          const cs_rreal_t   djjpf[3],
                           const cs_real_t    i_massflux,
                           const cs_real_t    gradi[3],
                           const cs_real_t    gradj[3],
@@ -2251,8 +2251,8 @@ cs_i_cd_steady_slope_test_strided(bool             *upwind_switch,
                                   const cs_real_t   cell_cenj[3],
                                   const cs_nreal_t  i_face_u_normal[3],
                                   const cs_real_t   i_face_cog[3],
-                                  const cs_real_t   diipf[3],
-                                  const cs_real_t   djjpf[3],
+                                  const cs_rreal_t  diipf[3],
+                                  const cs_rreal_t  djjpf[3],
                                   cs_real_t         i_massflux,
                                   const cs_real_t   gradi[stride][3],
                                   const cs_real_t   gradj[stride][3],
@@ -2429,8 +2429,8 @@ cs_i_cd_unsteady_slope_test(bool               *upwind_switch,
                             const cs_real_3_t   cell_cenj,
                             const cs_nreal_3_t  i_face_u_normal,
                             const cs_real_3_t   i_face_cog,
-                            const cs_real_3_t   diipf,
-                            const cs_real_3_t   djjpf,
+                            const cs_rreal_3_t  diipf,
+                            const cs_rreal_3_t  djjpf,
                             const cs_real_t     i_massflux,
                             const cs_real_3_t   gradi,
                             const cs_real_3_t   gradj,
@@ -2763,8 +2763,8 @@ cs_i_cd_unsteady_slope_test_strided(bool             *upwind_switch,
                                     const cs_real_t   cell_cenj[3],
                                     const cs_nreal_t  i_face_u_normal[3],
                                     const cs_real_t   i_face_cog[3],
-                                    const cs_real_t   diipf[3],
-                                    const cs_real_t   djjpf[3],
+                                    const cs_rreal_t  diipf[3],
+                                    const cs_rreal_t  djjpf[3],
                                     cs_real_t         i_massflux,
                                     const cs_real_t   gradi[stride][3],
                                     const cs_real_t   gradj[stride][3],
@@ -2884,8 +2884,8 @@ cs_i_cd_unsteady_slope_test_strided(bool             *upwind_switch,
 /*----------------------------------------------------------------------------*/
 
 CS_F_HOST_DEVICE inline static void
-cs_b_compute_quantities(const cs_real_3_t  diipb,
-                        const cs_real_3_t  gradi,
+cs_b_compute_quantities(const cs_rreal_t   diipb[3],
+                        const cs_real_t    gradi[3],
                         const cs_real_t    bldfrp,
                         cs_real_t         *recoi)
 {
@@ -2910,10 +2910,10 @@ cs_b_compute_quantities(const cs_real_3_t  diipb,
 
 template <cs_lnum_t stride>
 CS_F_HOST_DEVICE inline static void
-cs_b_compute_quantities_strided(const cs_real_t  diipb[3],
-                                const cs_real_t  gradi[stride][3],
-                                const cs_real_t  bldfrp,
-                                cs_real_t        recoi[stride])
+cs_b_compute_quantities_strided(const cs_rreal_t  diipb[3],
+                                const cs_real_t   gradi[stride][3],
+                                const cs_real_t   bldfrp,
+                                cs_real_t         recoi[stride])
 {
   for (int isou = 0; isou < stride; isou++) {
     recoi[isou] = bldfrp * (  gradi[isou][0]*diipb[0]
@@ -3336,14 +3336,14 @@ cs_b_diff_flux_strided(int              idiffp,
 /*----------------------------------------------------------------------------*/
 
 CS_F_HOST_DEVICE inline static void
-cs_b_cd_steady(const cs_real_t    bldfrp,
-               const double       relaxp,
-               const cs_real_3_t  diipb,
-               const cs_real_3_t  gradi,
-               const cs_real_t    pi,
-               const cs_real_t    pia,
-               cs_real_t         *pir,
-               cs_real_t         *pipr)
+cs_b_cd_steady(const cs_real_t     bldfrp,
+               const double        relaxp,
+               const cs_rreal_3_t  diipb,
+               const cs_real_3_t   gradi,
+               const cs_real_t     pi,
+               const cs_real_t     pia,
+               cs_real_t          *pir,
+               cs_real_t          *pipr)
 {
   cs_real_t recoi;
 
@@ -3381,14 +3381,14 @@ cs_b_cd_steady(const cs_real_t    bldfrp,
 
 template <cs_lnum_t stride>
 CS_F_HOST_DEVICE inline static void
-cs_b_cd_steady_strided(cs_real_t        bldfrp,
-                       double           relaxp,
-                       const cs_real_t  diipb[3],
-                       const cs_real_t  gradi[stride][3],
-                       const cs_real_t  pi[stride],
-                       const cs_real_t  pia[stride],
-                       cs_real_t        pir[stride],
-                       cs_real_t        pipr[stride])
+cs_b_cd_steady_strided(cs_real_t         bldfrp,
+                       double            relaxp,
+                       const cs_rreal_t  diipb[3],
+                       const cs_real_t   gradi[stride][3],
+                       const cs_real_t   pi[stride],
+                       const cs_real_t   pia[stride],
+                       cs_real_t         pir[stride],
+                       cs_real_t         pipr[stride])
 {
   cs_real_t recoi[stride];
 
@@ -3420,8 +3420,8 @@ cs_b_cd_steady_strided(cs_real_t        bldfrp,
 
 CS_F_HOST_DEVICE inline static void
 cs_b_cd_unsteady(const cs_real_t    bldfrp,
-                 const cs_real_3_t  diipb,
-                 const cs_real_3_t  gradi,
+                 const cs_rreal_t   diipb[3],
+                 const cs_real_t    gradi[3],
                  const cs_real_t    pi,
                  cs_real_t         *pip)
 {
@@ -3453,11 +3453,11 @@ cs_b_cd_unsteady(const cs_real_t    bldfrp,
 
 template <cs_lnum_t stride>
 CS_F_HOST_DEVICE inline static void
-cs_b_cd_unsteady_strided(cs_real_t        bldfrp,
-                         const cs_real_t  diipb[3],
-                         const cs_real_t  gradi[stride][3],
-                         const cs_real_t  pi[stride],
-                         cs_real_t        pip[stride])
+cs_b_cd_unsteady_strided(cs_real_t         bldfrp,
+                         const cs_rreal_t  diipb[3],
+                         const cs_real_t   gradi[stride][3],
+                         const cs_real_t   pi[stride],
+                         cs_real_t         pip[stride])
 {
   cs_real_t recoi[stride];
 

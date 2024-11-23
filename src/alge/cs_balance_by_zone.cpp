@@ -127,27 +127,27 @@ BEGIN_C_DECLS
  *----------------------------------------------------------------------------*/
 
 inline static void
-_balance_boundary_faces(const int          icvflf,
-                        const int          idtvar,
-                        const int          iconvp,
-                        const int          idiffp,
-                        const int          ircflp,
-                        const cs_real_t    relaxp,
-                        const cs_real_3_t  diipb,
-                        const cs_real_3_t  gradi,
-                        const cs_real_t    pi,
-                        const cs_real_t    pia,
-                        const int          bc_type,
-                        const cs_real_t    b_visc,
-                        const cs_real_t    a_F,
-                        const cs_real_t    b_F,
-                        const cs_real_t    af_F,
-                        const cs_real_t    bf_F,
-                        const cs_real_t    ac_F,
-                        const cs_real_t    bc_F,
-                        const cs_real_t    b_mass_flux,
-                        const cs_real_t    xcppi,
-                        cs_real_t         *term_balance)
+_balance_boundary_faces(const int           icvflf,
+                        const int           idtvar,
+                        const int           iconvp,
+                        const int           idiffp,
+                        const int           ircflp,
+                        const cs_real_t     relaxp,
+                        const cs_rreal_3_t  diipb,
+                        const cs_real_3_t   gradi,
+                        const cs_real_t     pi,
+                        const cs_real_t     pia,
+                        const int           bc_type,
+                        const cs_real_t     b_visc,
+                        const cs_real_t     a_F,
+                        const cs_real_t     b_F,
+                        const cs_real_t     af_F,
+                        const cs_real_t     bf_F,
+                        const cs_real_t     ac_F,
+                        const cs_real_t     bc_F,
+                        const cs_real_t     b_mass_flux,
+                        const cs_real_t     xcppi,
+                        cs_real_t          *term_balance)
 {
   /* Steady */
   if (idtvar < 0) {
@@ -309,8 +309,8 @@ _balance_internal_faces(int               iupwin,
                         const cs_real_t   i_face_cog[3],
                         cs_real_t         hybrid_blend_i,
                         cs_real_t         hybrid_blend_j,
-                        const cs_real_t   diipf[3],
-                        const cs_real_t   djjpf[3],
+                        const cs_rreal_t  diipf[3],
+                        const cs_rreal_t  djjpf[3],
                         const cs_real_t   gradi[3],
                         const cs_real_t   gradj[3],
                         const cs_real_t   gradc[3],
@@ -786,16 +786,12 @@ cs_balance_by_zone_compute(const char      *scalar_name,
   const cs_real_t *restrict cell_vol = fvq->cell_vol;
   const cs_real_3_t *restrict cell_cen
     = (const cs_real_3_t *)fvq->cell_cen;
-  const cs_nreal_3_t *restrict i_face_u_normal
-    = (const cs_nreal_3_t *)fvq->i_face_u_normal;
+  const cs_nreal_3_t *restrict i_face_u_normal = fvq->i_face_u_normal;
   const cs_real_3_t *restrict i_face_cog
     = (const cs_real_3_t *)fvq->i_face_cog;
-  const cs_real_3_t *restrict diipf
-    = (const cs_real_3_t *)fvq->diipf;
-  const cs_real_3_t *restrict djjpf
-    = (const cs_real_3_t *)fvq->djjpf;
-  const cs_real_3_t *restrict diipb
-    = (const cs_real_3_t *)fvq->diipb;
+  const cs_rreal_3_t *restrict diipf = fvq->diipf;
+  const cs_rreal_3_t *restrict djjpf = fvq->djjpf;
+  const cs_rreal_3_t *restrict diipb = fvq->diipb;
 
   const int *bc_type = cs_glob_bc_type;
 
@@ -1782,12 +1778,9 @@ cs_pressure_drop_by_zone_compute(cs_lnum_t        n_cells_sel,
     = (const cs_real_3_t *)fvq->i_face_cog;
   const cs_real_3_t *restrict b_face_cog
     = (const cs_real_3_t *)fvq->b_face_cog;
-  const cs_real_3_t *restrict diipf
-    = (const cs_real_3_t *)fvq->diipf;
-  const cs_real_3_t *restrict djjpf
-    = (const cs_real_3_t *)fvq->djjpf;
-  const cs_real_3_t *restrict diipb
-    = (const cs_real_3_t *)fvq->diipb;
+  const cs_rreal_3_t *restrict diipf = fvq->diipf;
+  const cs_rreal_3_t *restrict djjpf = fvq->djjpf;
+  const cs_rreal_3_t *restrict diipb = fvq->diipb;
 
   const int *bc_type = cs_glob_bc_type;
 
@@ -2547,25 +2540,19 @@ cs_flux_through_surface(const char         *scalar_name,
   const cs_lnum_t n_i_faces = m->n_i_faces;
   const cs_lnum_t n_b_faces = m->n_b_faces;
 
-  const cs_lnum_2_t *restrict i_face_cells
-    = (const cs_lnum_2_t *)m->i_face_cells;
-  const cs_lnum_t *restrict b_face_cells
-    = (const cs_lnum_t *)m->b_face_cells;
+  const cs_lnum_2_t *restrict i_face_cells = m->i_face_cells;
+  const cs_lnum_t *restrict b_face_cells = m->b_face_cells;
   const cs_real_t *restrict weight = fvq->weight;
   const cs_real_t *restrict i_dist = fvq->i_dist;
   const cs_real_t *restrict b_face_surf = fvq->b_face_surf;
   const cs_real_3_t *restrict cell_cen
     = (const cs_real_3_t *)fvq->cell_cen;
-  const cs_real_3_t *restrict i_face_normal
-    = (const cs_real_3_t *)fvq->i_face_normal;
+  const cs_nreal_3_t *restrict i_face_u_normal = fvq->i_face_u_normal;
   const cs_real_3_t *restrict i_face_cog
     = (const cs_real_3_t *)fvq->i_face_cog;
-  const cs_real_3_t *restrict diipf
-    = (const cs_real_3_t *)fvq->diipf;
-  const cs_real_3_t *restrict djjpf
-    = (const cs_real_3_t *)fvq->djjpf;
-  const cs_real_3_t *restrict diipb
-    = (const cs_real_3_t *)fvq->diipb;
+  const cs_rreal_3_t *restrict diipf = fvq->diipf;
+  const cs_rreal_3_t *restrict djjpf = fvq->djjpf;
+  const cs_rreal_3_t *restrict diipb = fvq->diipb;
 
   /* Parallel or device dispatch */
   cs_dispatch_context ctx;
@@ -2815,10 +2802,10 @@ cs_flux_through_surface(const char         *scalar_name,
       cs_lnum_t c_id1 = i_face_cells[f_id_sel][0];
       cs_lnum_t c_id2 = i_face_cells[f_id_sel][1];
 
-      cs_real_t dot_pro = cs_math_3_dot_product(normal, i_face_normal[f_id_sel]);
+      cs_real_t dot_pro = cs_math_3_dot_product(normal, i_face_u_normal[f_id_sel]);
       if (fabs(dot_pro) < 1.0e-14)//FIXME
         dot_pro = 0;
-      if(dot_pro > 0.)
+      if (dot_pro > 0.)
         bi_face_cells[f_id_sel][0] = c_id1;
       else if (dot_pro < 0.)
         bi_face_cells[f_id_sel][1] = c_id2;
@@ -3084,7 +3071,7 @@ cs_flux_through_surface(const char         *scalar_name,
                             cell_cen[c_id2],
                             cell_cen[ic],
                             cell_cen[id],
-                            i_face_normal[f_id_sel],
+                            i_face_u_normal[f_id_sel],
                             i_face_cog[f_id_sel],
                             hybrid_coef_ii,
                             hybrid_coef_jj,

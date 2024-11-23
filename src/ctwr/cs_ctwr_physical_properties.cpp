@@ -336,7 +336,7 @@ cs_ctwr_restart_field_vars(cs_real_t  rho0,
 
     /* Initialize rain variable */
     if (ct_opt->has_rain) {//FIXME useless
-      cs_real_3_t *drift_vel = (cs_real_3_t *restrict)(cfld_drift_vel->val);
+      cs_real_3_t *drift_vel = (cs_real_3_t *)(cfld_drift_vel->val);
       drift_vel[cell_id][0] = cpro_taup[cell_id] * gravity[0];
       drift_vel[cell_id][1] = cpro_taup[cell_id] * gravity[1];
       drift_vel[cell_id][2] = cpro_taup[cell_id] * gravity[2];

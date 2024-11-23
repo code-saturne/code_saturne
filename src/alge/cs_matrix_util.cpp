@@ -740,8 +740,7 @@ _pre_dump_native(const cs_matrix_t   *matrix,
 
   if (mc->e_val != nullptr) {
 
-    const cs_lnum_2_t *restrict face_cel_p
-      = (const cs_lnum_2_t *restrict)(ms->edges);
+    const cs_lnum_2_t *restrict face_cel_p = ms->edges;
 
     if (mc->symmetric) {
 
@@ -831,8 +830,7 @@ _b_pre_dump_native(const cs_matrix_t  *matrix,
 
   if (mc->e_val != nullptr) {
 
-    const cs_lnum_2_t *restrict face_cel_p
-      = (const cs_lnum_2_t *restrict)(ms->edges);
+    const cs_lnum_2_t *restrict face_cel_p = ms->edges;
 
     if (mc->symmetric) {
 

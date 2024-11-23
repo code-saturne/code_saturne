@@ -342,8 +342,8 @@ _smoothe(const cs_mesh_t              *m,
   cs_real_t *restrict surfn  = mq->i_face_surf;
 
   cs_real_3_t *restrict surfac = (cs_real_3_t *)mq->i_face_normal;
-  cs_real_3_t *restrict diipf  = (cs_real_3_t *)mq->diipf;
-  cs_real_3_t *restrict djjpf  = (cs_real_3_t *)mq->djjpf;
+  cs_rreal_3_t *restrict diipf  = mq->diipf;
+  cs_rreal_3_t *restrict djjpf  = mq->djjpf;
 
   double d_tau = 0.1; /* Sharpening interface on 5 cells (0.1 for 3 cells) */
   /* User Intialization Triple line model */

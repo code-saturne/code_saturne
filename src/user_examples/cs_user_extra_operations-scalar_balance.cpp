@@ -91,12 +91,12 @@ cs_user_extra_operations(cs_domain_t     *domain)
   const cs_lnum_t n_i_faces = m->n_i_faces;
   const cs_lnum_t n_b_faces = m->n_b_faces;
 
-  const cs_lnum_2_t *i_face_cells = (const cs_lnum_2_t *)m->i_face_cells;
-  const cs_lnum_t *b_face_cells = (const cs_lnum_t *)m->b_face_cells;
+  const cs_lnum_2_t *i_face_cells = m->i_face_cells;
+  const cs_lnum_t *b_face_cells = m->b_face_cells;
 
   const cs_real_t *cell_vol = mq->cell_vol;
-  const cs_real_3_t *diipb = (const cs_real_3_t *)mq->diipb;
-  const cs_real_t *b_face_surf = (const cs_real_t *)mq->b_face_surf;
+  const cs_rreal_3_t *diipb = mq->diipb;
+  const cs_real_t *b_face_surf = mq->b_face_surf;
 
   /*! [local_variables] */
 

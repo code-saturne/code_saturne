@@ -1016,8 +1016,7 @@ cs_field_gradient_boundary_iprime_scalar(const cs_field_t  *f,
   }
   else {
 
-    const cs_real_3_t *restrict diipb
-      = (const cs_real_3_t *)fvq->diipb;
+    const cs_rreal_3_t *restrict diipb = fvq->diipb;
 
     cs_real_3_t *grad;
     CS_MALLOC_HD(grad,
@@ -1184,8 +1183,7 @@ cs_field_gradient_boundary_iprime_vector(const cs_field_t  *f,
                          (cs_real_3_t *)f->val_pre
                        : (cs_real_3_t *)f->val;
 
-    const cs_real_3_t *restrict diipb
-      = (const cs_real_3_t *)fvq->diipb;
+    const cs_rreal_3_t *restrict diipb = fvq->diipb;
 
     cs_real_33_t *grad;
     CS_MALLOC_HD(grad,
@@ -1327,8 +1325,7 @@ cs_field_gradient_boundary_iprime_tensor(const cs_field_t  *f,
                          (cs_real_6_t *)f->val_pre
                        : (cs_real_6_t *)f->val;
 
-    const cs_real_3_t *restrict diipb
-      = (const cs_real_3_t *)fvq->diipb;
+    const cs_rreal_3_t *restrict diipb = fvq->diipb;
 
     cs_real_63_t *grad;
     CS_MALLOC_HD(grad,

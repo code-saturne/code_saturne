@@ -1808,11 +1808,7 @@ cs_boundary_conditions_set_coeffs_turb(int        isvhb,
   const cs_real_t *gxyz = cs_get_glob_physical_constants()->gravity;
   cs_field_t *f_th = cs_thermal_model_field();
 
-  const cs_real_t pref = cs_glob_atmo_constants->ps;
-  const cs_real_t p0 = fluid_props->p0;
-  const cs_real_t r_pg_cnst = fluid_props->r_pg_cnst;
   const cs_real_t cp0 = fluid_props->cp0;
-  const cs_real_t tref = fluid_props->t0;
   const int icp = fluid_props->icp;
 
   const int keysca  = cs_field_key_id("scalar_id");

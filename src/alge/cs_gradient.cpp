@@ -1886,8 +1886,7 @@ _iterative_scalar_gradient(const cs_mesh_t                *m,
     = (const cs_real_3_t *)fvq->i_f_face_cog;
   const cs_real_3_t *restrict b_f_face_cog
     = (const cs_real_3_t *)fvq->b_f_face_cog;
-  const cs_real_3_t *restrict diipb
-    = (const cs_real_3_t *)fvq->diipb;
+  const cs_rreal_3_t *restrict diipb = fvq->diipb;
   const cs_real_3_t *restrict dofij
     = (const cs_real_3_t *)fvq->dofij;
 
@@ -2704,16 +2703,12 @@ _recompute_lsq_scalar_cocg(const cs_mesh_t                *m,
 {
   const cs_real_t *coefbp = bc_coeffs->b;
   const cs_mesh_adjacencies_t *ma = cs_glob_mesh_adjacencies;
-  const cs_lnum_t *restrict cell_b_faces_idx
-    = (const cs_lnum_t *) ma->cell_b_faces_idx;
-  const cs_lnum_t *restrict cell_b_faces
-    = (const cs_lnum_t *) ma->cell_b_faces;
+  const cs_lnum_t *restrict cell_b_faces_idx = ma->cell_b_faces_idx;
+  const cs_lnum_t *restrict cell_b_faces = ma->cell_b_faces;
 
   const cs_nreal_3_t *restrict b_face_u_normal = fvq->b_face_u_normal;
-  const cs_real_t *restrict b_dist
-    = (const cs_real_t *)fvq->b_dist;
-  const cs_real_3_t *restrict diipb
-    = (const cs_real_3_t *)fvq->diipb;
+  const cs_real_t *restrict b_dist = fvq->b_dist;
+  const cs_rreal_3_t *restrict diipb = fvq->diipb;
 
   /* Recompute cocg at boundaries, using saved cocgb */
 
@@ -2802,11 +2797,10 @@ _lsq_scalar_gradient(const cs_mesh_t                *m,
 
   const cs_real_3_t *restrict cell_f_cen
     = (const cs_real_3_t *)fvq->cell_f_cen;
-  const cs_real_3_t *restrict b_face_u_normal = fvq->b_face_u_normal;
+  const cs_nreal_3_t *restrict b_face_u_normal = fvq->b_face_u_normal;
   const cs_real_t *restrict b_dist
     = (const cs_real_t *)fvq->b_dist;
-  const cs_real_3_t *restrict diipb
-    = (const cs_real_3_t *)fvq->diipb;
+  const cs_rreal_3_t *restrict diipb = fvq->diipb;
   const cs_real_t *restrict weight = fvq->weight;
 
   cs_cocg_6_t  *restrict cocgb = nullptr;
@@ -3070,8 +3064,7 @@ _lsq_scalar_gradient_hyd_p(const cs_mesh_t                *m,
     = (const cs_real_3_t *)fvq->i_f_face_cog;
   const cs_real_3_t *restrict b_f_face_cog
     = (const cs_real_3_t *)fvq->b_f_face_cog;
-  const cs_real_3_t *restrict diipb
-    = (const cs_real_3_t *)fvq->diipb;
+  const cs_rreal_3_t *restrict diipb = fvq->diipb;
   const cs_real_t *restrict weight = fvq->weight;
 
   cs_dispatch_context ctx;
@@ -3407,8 +3400,7 @@ _lsq_scalar_gradient_hyd_p_gather(const cs_mesh_t                *m,
     = (const cs_real_3_t *)fvq->i_f_face_cog;
   const cs_real_3_t *restrict b_f_face_cog
     = (const cs_real_3_t *)fvq->b_f_face_cog;
-  const cs_real_3_t *restrict diipb
-    = (const cs_real_3_t *)fvq->diipb;
+  const cs_rreal_3_t *restrict diipb = fvq->diipb;
   const cs_real_t *restrict weight = fvq->weight;
 
   cs_dispatch_context ctx;
@@ -3723,8 +3715,7 @@ _lsq_scalar_gradient_ani(const cs_mesh_t               *m,
     = (const cs_real_t *)fvq->b_face_surf;
   const cs_real_t *restrict b_dist
     = (const cs_real_t *)fvq->b_dist;
-  const cs_real_3_t *restrict diipb
-    = (const cs_real_3_t *)fvq->diipb;
+  const cs_rreal_3_t *restrict diipb = fvq->diipb;
   const cs_real_t *restrict weight = fvq->weight;
 
   cs_lnum_t   cpl_stride = 0;
@@ -3965,8 +3956,7 @@ _reconstruct_scalar_gradient(const cs_mesh_t                 *m,
 
   const cs_real_3_t *restrict dofij
     = (const cs_real_3_t *)fvq->dofij;
-  const cs_real_3_t *restrict diipb
-    = (const cs_real_3_t *)fvq->diipb;
+  const cs_rreal_3_t *restrict diipb = fvq->diipb;
 
   const cs_real_33_t *restrict corr_grad_lin
     = (const cs_real_33_t *)fvq->corr_grad_lin;
@@ -4345,8 +4335,7 @@ _lsq_scalar_b_face_val(const cs_mesh_t             *m,
   const cs_lnum_t *restrict cell_b_faces
     = (const cs_lnum_t *) ma->cell_b_faces;
 
-  const cs_real_3_t *restrict diipb
-    = (const cs_real_3_t *)fvq->diipb;
+  const cs_rreal_3_t *restrict diipb = fvq->diipb;
 
   cs_field_bc_coeffs_t *bc_coeffs_loc = nullptr;
 
@@ -4460,8 +4449,7 @@ _lsq_scalar_b_face_val_phyd(const cs_mesh_t             *m,
     = (const cs_real_3_t *)fvq->b_face_normal;
   const cs_real_t *restrict b_dist
     = (const cs_real_t *)fvq->b_dist;
-  const cs_real_3_t *restrict diipb
-    = (const cs_real_3_t *)fvq->diipb;
+  const cs_rreal_3_t *restrict diipb = fvq->diipb;
 
   /*Additional terms due to porosity */
 
@@ -5677,8 +5665,7 @@ _reconstruct_strided_gradient
     = (const cs_real_3_t *)fvq->i_f_face_normal;
   const cs_real_3_t *restrict b_f_face_normal
     = (const cs_real_3_t *)fvq->b_f_face_normal;
-  const cs_real_3_t *restrict diipb
-    = (const cs_real_3_t *)fvq->diipb;
+  const cs_rreal_3_t *restrict diipb = fvq->diipb;
   const cs_real_3_t *restrict dofij
     = (const cs_real_3_t *)fvq->dofij;
   const cs_real_33_t *restrict corr_grad_lin
@@ -5988,8 +5975,7 @@ _iterative_vector_gradient(const cs_mesh_t               *m,
     = (const cs_real_3_t *)fvq->i_f_face_normal;
   const cs_real_3_t *restrict b_f_face_normal
     = (const cs_real_3_t *)fvq->b_f_face_normal;
-  const cs_real_3_t *restrict diipb
-    = (const cs_real_3_t *)fvq->diipb;
+  const cs_rreal_3_t *restrict diipb = fvq->diipb;
   const cs_real_3_t *restrict dofij
     = (const cs_real_3_t *)fvq->dofij;
 
@@ -6278,8 +6264,7 @@ _iterative_tensor_gradient(const cs_mesh_t              *m,
     = (const cs_real_3_t *)fvq->i_f_face_normal;
   const cs_real_3_t *restrict b_f_face_normal
     = (const cs_real_3_t *)fvq->b_f_face_normal;
-  const cs_real_3_t *restrict diipb
-    = (const cs_real_3_t *)fvq->diipb;
+  const cs_rreal_3_t *restrict diipb = fvq->diipb;
   const cs_real_3_t *restrict dofij
     = (const cs_real_3_t *)fvq->dofij;
 
@@ -6580,8 +6565,7 @@ _compute_cocgb_rhsb_lsq_v(cs_lnum_t                     c_id,
   const cs_real_3_t *coefav = (const cs_real_3_t *)bc_coeffs_v->a;
   const cs_real_33_t *coefbv = (const cs_real_33_t *)bc_coeffs_v->b;
 
-  const cs_real_3_t *restrict diipb
-    = (const cs_real_3_t *)fvq->diipb;
+  const cs_rreal_3_t *restrict diipb = fvq->diipb;
 
   const cs_real_3_t *restrict b_face_normal
     = (const cs_real_3_t *)fvq->b_face_normal;
@@ -6630,7 +6614,7 @@ _compute_cocgb_rhsb_lsq_v(cs_lnum_t                     c_id,
 
     /* build cocgb_v matrix */
 
-    const cs_real_t *restrict iipbf = diipb[f_id];
+    const cs_rreal_t *restrict iipbf = diipb[f_id];
 
     cs_real_3_t nb;
     /* Normal is vector 0 if the b_face_normal norm is too small */
@@ -6739,8 +6723,7 @@ _compute_cocgb_rhsb_lsq_t(cs_lnum_t                     c_id,
   const cs_real_6_t  *coefat = (const cs_real_6_t  *)bc_coeffs_ts->a;
   const cs_real_66_t *coefbt = (const cs_real_66_t *)bc_coeffs_ts->b;
 
-  const cs_real_3_t *restrict diipb
-    = (const cs_real_3_t *)fvq->diipb;
+  const cs_rreal_3_t *restrict diipb = fvq->diipb;
 
   const cs_real_3_t *restrict b_face_normal
     = (const cs_real_3_t *)fvq->b_face_normal;
@@ -6792,7 +6775,7 @@ _compute_cocgb_rhsb_lsq_t(cs_lnum_t                     c_id,
     /* build cocgb_v matrix */
 
     cs_real_t udbfs = 1. / b_face_surf[f_id];
-    const cs_real_t *restrict iipbf = diipb[f_id];
+    const cs_rreal_t *restrict iipbf = diipb[f_id];
 
     /* db = I'F / ||I'F|| */
     cs_real_t  nb[3];
@@ -7247,8 +7230,7 @@ _lsq_strided_gradient(const cs_mesh_t             *m,
   const cs_real_t *restrict weight = fvq->weight;
   const cs_real_3_t *restrict b_face_cog
     = (const cs_real_3_t *)fvq->b_f_face_cog;
-  const cs_real_3_t *restrict diipb
-    = (const cs_real_3_t *)fvq->diipb;
+  const cs_rreal_3_t *restrict diipb = fvq->diipb;
 
   std::chrono::high_resolution_clock::time_point t_start, t_init, t_i_faces, \
     t_ext_n, t_b_faces, t_gradient, t_b_correction, t_halo, t_stop;
@@ -9537,8 +9519,7 @@ _gradient_strided_cell(const cs_mesh_t             *m,
     = (const cs_real_3_t *)fvq->cell_f_cen;
   const cs_real_3_t *restrict b_face_cog
     = (const cs_real_3_t *)fvq->b_f_face_cog;
-  const cs_real_3_t *restrict diipb
-    = (const cs_real_3_t *)fvq->diipb;
+  const cs_rreal_3_t *restrict diipb = fvq->diipb;
 
   /* Compute covariance matrix and Right-Hand Side */
 
@@ -10812,23 +10793,16 @@ cs_gradient_scalar_cell(const cs_mesh_t             *m,
 
   for (cs_lnum_t i = s_id; i < e_id; i++) {
 
-    const cs_real_3_t *restrict b_face_normal
-      = (const cs_real_3_t *)fvq->b_face_normal;
-    const cs_real_t *restrict b_face_surf
-      = (const cs_real_t *)fvq->b_face_surf;
-    const cs_real_t *restrict b_dist
-      = (const cs_real_t *)fvq->b_dist;
-    const cs_real_3_t *restrict diipb
-      = (const cs_real_3_t *)fvq->diipb;
+    const cs_nreal_3_t *restrict b_face_u_normal = fvq->b_face_u_normal;
+    const cs_real_t *restrict b_dist = fvq->b_dist;
+    const cs_rreal_3_t *restrict diipb = fvq->diipb;
 
     cs_real_t  dsij[3];
 
     cs_lnum_t f_id = cell_b_faces[i];
 
-    cs_real_t udbfs = 1. / b_face_surf[f_id];
-
     for (cs_lnum_t ll = 0; ll < 3; ll++)
-      dsij[ll] = udbfs * b_face_normal[f_id][ll];
+      dsij[ll] = b_face_u_normal[f_id][ll];
 
     if (bc_coeff_a != nullptr && bc_coeff_b != nullptr) { /* Known face BC's */
 

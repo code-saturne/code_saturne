@@ -119,11 +119,10 @@ cs_symmetry_faces_filter_cancel(const cs_mesh_t             *m,
 {
   cs_lnum_t _n_faces = *n_faces;
 
-  const cs_lnum_t *restrict b_face_cells
-    = (const cs_lnum_t *restrict)m->b_face_cells;
+  const cs_lnum_t *restrict b_face_cells = m->b_face_cells;
 
-  const cs_real_3_t *restrict b_face_normal
-    = (const cs_real_3_t *restrict)mq->b_face_normal;
+  const cs_nreal_3_t *restrict b_face_u_normal = mq->b_face_u_normal;
+  const cs_real_t *restrict b_face_surf = mq->b_face_surf;
 
   /* Flag selected faces */
 
@@ -148,9 +147,10 @@ cs_symmetry_faces_filter_cancel(const cs_mesh_t             *m,
 
   for (cs_lnum_t f_id = 0; f_id < m->n_b_faces; f_id++) {
     cs_lnum_t c_id = b_face_cells[f_id];
+    cs_real_t s = b_face_surf[f_id];
     for (cs_lnum_t j = 0; j < 3; j++)
-      sum[c_id][j] += b_face_normal[f_id][j];
-    sum[c_id][3] += cs_math_3_norm(b_face_normal[f_id]);
+      sum[c_id][j] += s*b_face_u_normal[f_id][j];
+    sum[c_id][3] += s;
   }
 
   /* Now filter flag */

@@ -1795,8 +1795,6 @@ void
 cs_elec_add_variable_fields(void)
 {
   cs_field_t *f;
-  int dim1 = 1;
-  int dim3 = 3;
 
   const int kscmin = cs_field_key_id("min_scalar_clipping");
   const int kscmax = cs_field_key_id("max_scalar_clipping");
@@ -1809,7 +1807,7 @@ cs_elec_add_variable_fields(void)
 
   {
     int f_id = cs_variable_field_create("enthalpy", "Enthalpy",
-                                        CS_MESH_LOCATION_CELLS, dim1);
+                                        CS_MESH_LOCATION_CELLS, 1);
     f = cs_field_by_id(f_id);
     cs_field_set_key_double(f, kscmin, -cs_math_big_r);
     cs_field_set_key_int(f, kivisl, 0);
@@ -1822,7 +1820,7 @@ cs_elec_add_variable_fields(void)
 
   {
     int f_id = cs_variable_field_create("elec_pot_r", "POT_EL_R",
-                                        CS_MESH_LOCATION_CELLS, dim1);
+                                        CS_MESH_LOCATION_CELLS, 1);
     f = cs_field_by_id(f_id);
     cs_field_set_key_double(f, kscmin, -cs_math_big_r);
     cs_field_set_key_double(f, kscmax,  cs_math_big_r);
@@ -1832,7 +1830,7 @@ cs_elec_add_variable_fields(void)
 
   if (ieljou == 2 || ieljou == 4) {
     int f_id = cs_variable_field_create("elec_pot_i", "POT_EL_I",
-                                        CS_MESH_LOCATION_CELLS, dim1);
+                                        CS_MESH_LOCATION_CELLS, 1);
     f = cs_field_by_id(f_id);
     cs_field_set_key_double(f, kscmin, -cs_math_big_r);
     cs_field_set_key_double(f, kscmax,  cs_math_big_r);
@@ -1842,7 +1840,7 @@ cs_elec_add_variable_fields(void)
 
   if (ielarc > 1) {
     int f_id = cs_variable_field_create("vec_potential", "POT_VEC",
-                                        CS_MESH_LOCATION_CELLS, dim3);
+                                        CS_MESH_LOCATION_CELLS, 3);
     f = cs_field_by_id(f_id);
     //cs_field_set_key_double(f, kscmin, -cs_math_big_r);
     //cs_field_set_key_double(f, kscmax,  cs_math_big_r);
@@ -1865,7 +1863,7 @@ cs_elec_add_variable_fields(void)
       strcat(label, suf);
 
       int f_id = cs_variable_field_create(name, label,
-                                          CS_MESH_LOCATION_CELLS, dim1);
+                                          CS_MESH_LOCATION_CELLS, 1);
       f = cs_field_by_id(f_id);
 
       cs_field_set_key_double(f, kscmin, 0.);

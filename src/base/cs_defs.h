@@ -347,6 +347,8 @@ typedef char                cs_byte_t;   /* Byte (untyped memory unit) */
 typedef unsigned short int  cs_flag_t;   /* Flag storing metadata */
 
 typedef double              cs_nreal_t;  /* Real number (normalized value) */
+typedef double              cs_dreal_t;  /* Local distance */
+typedef double              cs_rreal_t;  /* Reconstruction distance */
 
 /* Vector or array block types */
 
@@ -385,6 +387,8 @@ typedef cs_real_66_t  cs_real_662_t[2];     /* vector of 2 6x6 matrices
 
 typedef cs_nreal_t  cs_nreal_3_t[3];        /* Vector of normalized real values
                                                (i.e. unit vector) */
+typedef cs_dreal_t  cs_dreal_3_t[3];        /* Vector joining 2 local coordinates */
+typedef cs_rreal_t  cs_rreal_3_t[3];        /* Reconstruction distance Vector */
 
 typedef struct {
 

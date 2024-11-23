@@ -90,8 +90,8 @@ cs_bad_cells_regularisation_scalar(cs_real_t *var)
   const cs_lnum_2_t *i_face_cells = (const cs_lnum_2_t *)mesh->i_face_cells;
 
   const cs_real_t *surfn = mq->i_face_surf;
-  double *dist = mq->i_dist;
-  double *volume  = mq->cell_vol;
+  auto *dist = mq->i_dist;
+  auto *volume  = mq->cell_vol;
 
   cs_real_t *xam, *dam, *rhs;
 

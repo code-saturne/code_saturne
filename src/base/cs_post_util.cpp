@@ -591,7 +591,7 @@ cs_post_b_pressure(cs_lnum_t         n_b_faces,
 {
   const cs_mesh_t *m = cs_glob_mesh;
   const cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
-  const cs_real_3_t *diipb = (const cs_real_3_t *)mq->diipb;
+  const cs_rreal_3_t *diipb = mq->diipb;
   cs_real_3_t *gradp;
 
   BFT_MALLOC(gradp, m->n_cells_with_ghosts, cs_real_3_t);
@@ -913,8 +913,7 @@ cs_post_field_cell_to_b_face_values(const cs_field_t  *f,
   const cs_lnum_t *restrict b_face_cells
     = (const cs_lnum_t *restrict)m->b_face_cells;
 
-  const cs_real_3_t *restrict diipb
-    = (const cs_real_3_t *restrict)fvq->diipb;
+  const cs_rreal_3_t *restrict diipb = fvq->diipb;
 
   const cs_lnum_t dim = f->dim;
   const cs_lnum_t n_cells_ext = cs_glob_mesh->n_cells_with_ghosts;

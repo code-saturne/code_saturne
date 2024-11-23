@@ -331,8 +331,6 @@ cs_ctwr_volume_mass_injection_packing_dof_func(cs_lnum_t         n_elts,
                                        void             *input,
                                        cs_real_t        *retval)
 {
-  const cs_mesh_t *m = cs_glob_mesh;
-
   cs_fluid_properties_t *fp = cs_get_glob_fluid_properties();
   cs_air_fluid_props_t *air_prop = cs_glob_air_props;
 

@@ -862,10 +862,8 @@ cs_ctwr_log_balance(void)
   if (_n_ct_zones < 1)
     return;
 
-  const cs_lnum_2_t *i_face_cells
-    = (const cs_lnum_2_t *)(cs_glob_mesh->i_face_cells);
-  const cs_real_3_t *restrict i_face_normal
-    = (const cs_real_3_t *restrict)cs_glob_mesh_quantities->i_face_normal;
+  const cs_lnum_2_t *i_face_cells = cs_glob_mesh->i_face_cells;
+  const cs_real_t *restrict i_face_surf = cs_glob_mesh_quantities->i_face_surf;
   cs_real_t *p = (cs_real_t *)CS_F_(p)->val;        /* Pressure */
   cs_real_t *t_h = nullptr;
   if (cs_glob_physical_model_flag[CS_ATMOSPHERIC] == CS_ATMO_HUMID)
@@ -912,7 +910,7 @@ cs_ctwr_log_balance(void)
 
       cs_lnum_t face_id = ct->inlet_faces_ids[i];
       cs_lnum_t cell_id_l, cell_id_h;
-      cs_real_t face_surf = cs_math_3_norm(i_face_normal[face_id]);
+      cs_real_t face_surf = i_face_surf[face_id];
 
       /* Convention: inlet is negative mass flux
        * Then upwind cell for liquid is i_face_cells[][1] */
@@ -968,7 +966,7 @@ cs_ctwr_log_balance(void)
 
       cs_lnum_t face_id = ct->outlet_faces_ids[i];
       cs_lnum_t cell_id_l, cell_id_h;
-      cs_real_t face_surf = cs_math_3_norm(i_face_normal[face_id]);
+      cs_real_t face_surf = i_face_surf[face_id];
 
       /* Convention: outlet is positive mass flux
        * Then upwind cell for liquid is i_face_cells[][0] */

@@ -366,7 +366,7 @@ _compute_cocg_rhsv_lsq_s_b_face(cs_lnum_t          n_b_cells,
                                 const cs_lnum_t    cell_b_faces[],
                                 const cs_nreal_t   b_face_u_normal[][3],
                                 const cs_real_t    b_dist[],
-                                const cs_real_t    diipb[][3],
+                                const cs_rreal_t   diipb[][3],
                                 const cs_real_t    pvar[],
                                 const cs_real_t    coefap[],
                                 const cs_real_t    coefbp[],
@@ -460,7 +460,7 @@ _compute_rhsv_lsq_s_b_face(cs_lnum_t          n_b_cells,
                            const cs_lnum_t    cell_b_faces[],
                            const cs_nreal_t   b_face_u_normal[][3],
                            const cs_real_t    b_dist[],
-                           const cs_real_t    diipb[][3],
+                           const cs_rreal_t   diipb[][3],
                            const cs_real_t    pvar[],
                            const cs_real_t    coefap[],
                            const cs_real_t    coefbp[],
@@ -532,7 +532,6 @@ _compute_rhs_lsq_strided_cells(cs_lnum_t             n_cells,
                                cs_real_t           (*restrict rhs)[stride][3])
 {
   cs_lnum_t c_id1 = blockIdx.x * blockDim.x + threadIdx.x;
-  cs_lnum_t lidx = threadIdx.x;
 
   if (c_id1 >= n_cells) {
     return;
@@ -655,7 +654,6 @@ _compute_rhs_lsq_strided_b_face(cs_lnum_t             n_b_cells,
                                 cs_real_t           (*restrict rhs)[stride][3])
 {
   cs_lnum_t c_idx = blockIdx.x * blockDim.x + threadIdx.x;
-  cs_lnum_t lidx = threadIdx.x;
 
   if (c_idx >= n_b_cells) {
     return;
@@ -776,19 +774,19 @@ _compute_gradient_lsq_strided(cs_lnum_t          n_cells,
 
 template <cs_lnum_t stride>
 __global__ static void
-_correct_gradient_b_strided(const cs_lnum_t              n_b_cells,
-                            const int                    n_c_iter_max,
-                            const cs_real_t              c_eps,
-                            const cs_real_t              epzero,
-                            const cs_lnum_t    *restrict b_cells,
-                            const cs_lnum_t    *restrict cell_b_faces_idx,
-                            const cs_lnum_t    *restrict cell_b_faces,
-                            const cs_real_3_t  *restrict b_face_cog,
-                            const cs_real_3_t  *restrict cell_cen,
-                            const cs_real_3_t  *restrict diipb,
-                            const cs_real_t   (*restrict coefbv)[stride][stride],
-                            cs_cocg_6_t        *restrict cocg,
-                            cs_real_t         (*restrict grad)[stride][3])
+_correct_gradient_b_strided(const cs_lnum_t               n_b_cells,
+                            const int                     n_c_iter_max,
+                            const cs_real_t               c_eps,
+                            const cs_real_t               epzero,
+                            const cs_lnum_t     *restrict b_cells,
+                            const cs_lnum_t     *restrict cell_b_faces_idx,
+                            const cs_lnum_t     *restrict cell_b_faces,
+                            const cs_real_3_t   *restrict b_face_cog,
+                            const cs_real_3_t   *restrict cell_cen,
+                            const cs_rreal_3_t  *restrict diipb,
+                            const cs_real_t    (*restrict coefbv)[stride][stride],
+                            cs_cocg_6_t         *restrict cocg,
+                            cs_real_t          (*restrict grad)[stride][3])
 {
   size_t t_id = blockIdx.x * blockDim.x + threadIdx.x;
   if (t_id >= n_b_cells)
@@ -843,7 +841,7 @@ _correct_gradient_b_strided(const cs_lnum_t              n_b_cells,
       cs_real_t ddif = 1. / cs_math_3_square_norm_cuda(dif);
 
       for (cs_lnum_t ll = 0; ll < stride; ll++) {
-        var_ip_f[ll] = cs_math_3_dot_product_cuda(c_grad[ll], diipb[f_id]);
+        var_ip_f[ll] = cs_math_3_dot_product(c_grad[ll], diipb[f_id]);
       }
 
       auto b = coefbv[f_id];
@@ -997,7 +995,6 @@ _gg_with_r_gradient_cell_cells(cs_lnum_t           n_cells,
                                cs_real_t         (*restrict grad)[stride][3])
 {
   cs_lnum_t c_id1 = blockIdx.x * blockDim.x + threadIdx.x;
-  cs_lnum_t lidx = threadIdx.x;
 
   if (c_id1 >= n_cells) {
     return;
@@ -1068,16 +1065,16 @@ _gg_with_r_gradient_cell_cells(cs_lnum_t           n_cells,
 
 template <cs_lnum_t stride>
 __global__ static void
-_gg_with_r_gradient_b_faces(cs_lnum_t                    n_b_faces,
-                            int                          inc,
-                            const cs_real_3_t  *restrict b_f_face_normal,
-                            const cs_lnum_t    *restrict b_face_cells,
-                            const cs_real_3_t  *restrict diipb,
-                            const cs_real_t   (*restrict coefav)[stride],
-                            const cs_real_t   (*restrict coefbv)[stride][stride],
-                            const cs_real_t   (*restrict pvar)[stride],
-                            const cs_real_t   (*restrict r_grad)[stride][3],
-                            cs_real_t         (*restrict grad)[stride][3])
+_gg_with_r_gradient_b_faces(cs_lnum_t                     n_b_faces,
+                            int                           inc,
+                            const cs_real_3_t   *restrict b_f_face_normal,
+                            const cs_lnum_t     *restrict b_face_cells,
+                            const cs_rreal_3_t  *restrict diipb,
+                            const cs_real_t    (*restrict coefav)[stride],
+                            const cs_real_t    (*restrict coefbv)[stride][stride],
+                            const cs_real_t    (*restrict pvar)[stride],
+                            const cs_real_t    (*restrict r_grad)[stride][3],
+                            cs_real_t          (*restrict grad)[stride][3])
 {
   cs_lnum_t f_idx = blockIdx.x * blockDim.x + threadIdx.x;
 
@@ -1286,13 +1283,12 @@ cs_gradient_scalar_lsq_cuda(const cs_mesh_t              *m,
   const cs_real_3_t *restrict cell_cen
     = (const cs_real_3_t *)cs_get_device_ptr_const_pf(fvq->cell_cen);
   const cs_nreal_3_t *restrict b_face_u_normal
-    = (const cs_real_3_t *)cs_get_device_ptr_const_pf(fvq->b_face_u_normal);
+    = (const cs_nreal_3_t *)cs_get_device_ptr_const_pf(fvq->b_face_u_normal);
   const cs_real_t *restrict b_face_surf
     = cs_get_device_ptr_const_pf(fvq->b_face_surf);
   const cs_real_t *restrict b_dist
     = cs_get_device_ptr_const_pf(fvq->b_dist);
-  const cs_real_3_t *restrict diipb
-    = (const cs_real_3_t *)cs_get_device_ptr_const_pf(fvq->diipb);
+  const cs_rreal_3_t *restrict diipb = cs_get_device_ptr_const_pf(fvq->diipb);
   const cs_real_t *restrict weight
     = cs_get_device_ptr_const_pf(fvq->weight);
 
@@ -1601,8 +1597,8 @@ cs_gradient_strided_lsq_cuda
     = cs_get_device_ptr_const_pf(fvq->b_dist);
   const cs_real_3_t *restrict b_f_face_cog
     = cs_get_device_ptr_const_pf((cs_real_3_t *)fvq->b_f_face_cog);
-  const cs_real_3_t *restrict diipb
-    = cs_get_device_ptr_const_pf((cs_real_3_t *)fvq->diipb);
+  const cs_rreal_3_t *restrict diipb
+    = cs_get_device_ptr_const_pf(fvq->diipb);
 
   if (cs_glob_timer_kernels_flag > 0)
     CS_CUDA_CHECK(cudaEventRecord(e_h2d, stream));
@@ -1911,8 +1907,8 @@ cs_gradient_strided_gg_r_cuda
     = cs_get_device_ptr_const_pf((cs_real_3_t *)fvq->i_f_face_normal);
   const cs_real_3_t *restrict b_f_face_normal
     = cs_get_device_ptr_const_pf((cs_real_3_t *)fvq->b_f_face_normal);
-  const cs_real_3_t *restrict diipb
-    = cs_get_device_ptr_const_pf((cs_real_3_t *)fvq->diipb);
+  const cs_rreal_3_t *restrict diipb
+    = cs_get_device_ptr_const_pf(fvq->diipb);
   const cs_real_3_t *restrict dofij
     = cs_get_device_ptr_const_pf((cs_real_3_t *)fvq->dofij);
   const cs_real_33_t *restrict corr_grad_lin

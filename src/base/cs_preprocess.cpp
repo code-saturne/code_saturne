@@ -136,8 +136,8 @@ extern void cs_f_majgeo(const cs_lnum_t    *ncel,
                         const cs_real_t     dist[],
                         const cs_real_t     distb[],
                         const cs_real_t     pond[],
-                        const cs_real_t     dijpf[],
-                        const cs_real_t     diipb[],
+                        const cs_real_t     dijpf[][3],
+                        const cs_rreal_t    diipb[][3],
                         const cs_real_t     dofij[]);
 
 /*============================================================================

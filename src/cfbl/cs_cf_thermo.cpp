@@ -940,11 +940,8 @@ cs_cf_thermo_wall_bc(cs_real_t *wbfa,
   const cs_mesh_t  *m = cs_glob_mesh;
   cs_mesh_quantities_t  *fvq = cs_glob_mesh_quantities;
 
-  const cs_lnum_t *restrict b_face_cells
-    = (const cs_lnum_t *restrict)m->b_face_cells;
-  const cs_real_3_t *restrict b_face_normal
-    = (const cs_real_3_t *restrict)fvq->b_face_normal;
-  const cs_real_t *restrict b_face_surf = fvq->b_face_surf;
+  const cs_lnum_t *restrict b_face_cells = m->b_face_cells;
+  const cs_nreal_3_t *restrict b_face_u_normal = fvq->b_face_u_normal;
 
   /*  Map field arrays */
   cs_real_3_t *vel = (cs_real_3_t *)CS_F_(vel)->val;
@@ -973,8 +970,8 @@ cs_cf_thermo_wall_bc(cs_real_t *wbfa,
 
     /*  Calculation of the Mach number at the boundary face, using the
         cell center velocity projected on the vector normal to the boundary */
-    cs_real_t uni =  cs_math_3_dot_product(vel[cell_id],b_face_normal[face_id])
-                   / b_face_surf[face_id];
+    cs_real_t uni =  cs_math_3_dot_product(vel[cell_id],
+                                           b_face_u_normal[face_id]);
     cs_real_t xmach =  uni
                      / sqrt(gamma * (cvar_pr[cell_id]+psginf) / crom[cell_id]);
 
@@ -1044,11 +1041,8 @@ cs_cf_thermo_subsonic_outlet_bc(cs_real_t   *bc_en,
   const cs_mesh_t  *m = cs_glob_mesh;
   cs_mesh_quantities_t  *fvq = cs_glob_mesh_quantities;
 
-  const cs_lnum_t *restrict b_face_cells
-    = (const cs_lnum_t *restrict)m->b_face_cells;
-  const cs_real_3_t *restrict b_face_normal
-    = (const cs_real_3_t *restrict)fvq->b_face_normal;
-  const cs_real_t *restrict b_face_surf = fvq->b_face_surf;
+  const cs_lnum_t *restrict b_face_cells = m->b_face_cells;
+  const cs_nreal_3_t *restrict b_face_u_normal = fvq->b_face_u_normal;
 
   cs_real_t gamma, yp;
   cs_real_t roi, ro1, pri, uni, un1, uns;
@@ -1087,8 +1081,7 @@ cs_cf_thermo_subsonic_outlet_bc(cs_real_t   *bc_en,
     roi  = crom[cell_id];
 
     ci   = sqrt(gamma * pri / roi);
-    uni = cs_math_3_dot_product(vel[cell_id],b_face_normal[face_id])
-         /b_face_surf[face_id];
+    uni = cs_math_3_dot_product(vel[cell_id], b_face_u_normal[face_id]);
 
     cs_real_t deltap = pinf-pri;
     cs_real_t res = CS_ABS(deltap/(pinf+psginf));
@@ -1113,12 +1106,12 @@ cs_cf_thermo_subsonic_outlet_bc(cs_real_t   *bc_en,
         /*  Density */
         brom[face_id] = ro1;
         /*  Velocity */
-        bc_vel[face_id][0] =  vel[cell_id][0]
-                       + a * b_face_normal[face_id][0] / b_face_surf[face_id];
-        bc_vel[face_id][1] =  vel[cell_id][1]
-                       + a * b_face_normal[face_id][1] / b_face_surf[face_id];
-        bc_vel[face_id][2] =  vel[cell_id][2]
-                       + a * b_face_normal[face_id][2] / b_face_surf[face_id];
+        bc_vel[face_id][0] =   vel[cell_id][0]
+                             + a * b_face_u_normal[face_id][0];
+        bc_vel[face_id][1] =   vel[cell_id][1]
+                             + a * b_face_u_normal[face_id][1];
+        bc_vel[face_id][2] =   vel[cell_id][2]
+                             + a * b_face_u_normal[face_id][2];
         /*  Total energy */
         bc_en[face_id] =  (pinf+gamma*psginf) / ((gamma - 1.) * ro1)
                         + 0.5 * cs_math_3_square_norm(bc_vel[face_id]);
@@ -1137,11 +1130,11 @@ cs_cf_thermo_subsonic_outlet_bc(cs_real_t   *bc_en,
           brom[face_id] = ro1;
           /*  Velocity */
           bc_vel[face_id][0] =  vel[cell_id][0]
-                         + a * b_face_normal[face_id][0] / b_face_surf[face_id];
+                         + a * b_face_u_normal[face_id][0];
           bc_vel[face_id][1] =  vel[cell_id][1]
-                         + a * b_face_normal[face_id][1] / b_face_surf[face_id];
+                         + a * b_face_u_normal[face_id][1];
           bc_vel[face_id][2] =  vel[cell_id][2]
-                         + a * b_face_normal[face_id][2] / b_face_surf[face_id];
+                         + a * b_face_u_normal[face_id][2];
           /*  Total energy */
           bc_en[face_id] =  (pinf+gamma*psginf) / ((gamma - 1.) * ro1)
                           + 0.5 * cs_math_3_square_norm(bc_vel[face_id]);
@@ -1161,9 +1154,9 @@ cs_cf_thermo_subsonic_outlet_bc(cs_real_t   *bc_en,
           brom[face_id] = roi * pow(b, 2. / (gamma - 1.));
           /*  Sonic state velocity */
           uns = b * ci;
-          bc_vel[face_id][0] = uns * b_face_normal[face_id][0] / b_face_surf[face_id];
-          bc_vel[face_id][1] = uns * b_face_normal[face_id][1] / b_face_surf[face_id];
-          bc_vel[face_id][2] = uns * b_face_normal[face_id][2] / b_face_surf[face_id];
+          bc_vel[face_id][0] = uns * b_face_u_normal[face_id][0];
+          bc_vel[face_id][1] = uns * b_face_u_normal[face_id][1];
+          bc_vel[face_id][2] = uns * b_face_u_normal[face_id][2];
           /*  Sonic state energy */
           bc_en[face_id] =   (bc_pr[face_id]+gamma*psginf)
                             /((gamma - 1.)*brom[face_id])
@@ -1210,12 +1203,9 @@ cs_cf_thermo_subsonic_outlet_bc(cs_real_t   *bc_en,
         /*  Density */
         brom[face_id] = ro1;
         /*  Velocity */
-        bc_vel[face_id][0] =  vel[cell_id][0] - a * b_face_normal[face_id][0]
-                                                  / b_face_surf[face_id];
-        bc_vel[face_id][1] =  vel[cell_id][1] - a * b_face_normal[face_id][1]
-                                                  / b_face_surf[face_id];
-        bc_vel[face_id][2] =  vel[cell_id][2] - a * b_face_normal[face_id][2]
-                                                  / b_face_surf[face_id];
+        bc_vel[face_id][0] =  vel[cell_id][0] - a * b_face_u_normal[face_id][0];
+        bc_vel[face_id][1] =  vel[cell_id][1] - a * b_face_u_normal[face_id][1];
+        bc_vel[face_id][2] =  vel[cell_id][2] - a * b_face_u_normal[face_id][2];
         /*  Total energy */
         bc_en[face_id] =  (pinf+gamma*psginf) / ((gamma-1.) * brom[face_id])
                         + 0.5 * cs_math_3_square_norm(bc_vel[face_id]);
@@ -1234,11 +1224,11 @@ cs_cf_thermo_subsonic_outlet_bc(cs_real_t   *bc_en,
           brom[face_id] = ro1;
           /*  Velocity */
           bc_vel[face_id][0] =  vel[cell_id][0]
-                              - a * b_face_normal[face_id][0] / b_face_surf[face_id];
+                              - a * b_face_u_normal[face_id][0];
           bc_vel[face_id][1] =  vel[cell_id][1]
-                              - a * b_face_normal[face_id][1] / b_face_surf[face_id];
+                              - a * b_face_u_normal[face_id][1];
           bc_vel[face_id][2] =  vel[cell_id][2]
-                              - a * b_face_normal[face_id][2] / b_face_surf[face_id];
+                              - a * b_face_u_normal[face_id][2];
         /*  Total energy */
           bc_en[face_id] =  (pinf+gamma*psginf) / ((gamma-1.) * brom[face_id])
                           + 0.5 * cs_math_3_square_norm(bc_vel[face_id]);
@@ -1289,11 +1279,8 @@ cs_cf_thermo_ph_inlet_bc(cs_real_t   *bc_en,
   const cs_mesh_t  *m = cs_glob_mesh;
   cs_mesh_quantities_t  *fvq = cs_glob_mesh_quantities;
 
-  const cs_lnum_t *restrict b_face_cells
-    = (const cs_lnum_t *restrict)m->b_face_cells;
-  const cs_real_3_t *restrict b_face_normal
-    = (const cs_real_3_t *restrict)fvq->b_face_normal;
-  const cs_real_t *restrict b_face_surf = fvq->b_face_surf;
+  const cs_lnum_t *restrict b_face_cells = m->b_face_cells;
+  const cs_nreal_3_t *restrict b_face_u_normal = fvq->b_face_u_normal;
 
   int niter, nitermax;
   cs_real_t gamma, bMach, eps, pstat, old_pstat, ptot, res, rhotot;
@@ -1352,8 +1339,7 @@ cs_cf_thermo_ph_inlet_bc(cs_real_t   *bc_en,
     dir[2] = bc_vel[face_id][2] / norm;
 
     /*  Angle between the imposed direction and the inlet normal */
-    cosalp =  cs_math_3_dot_product(dir,b_face_normal[face_id])
-            / b_face_surf[face_id];
+    cosalp =  cs_math_3_dot_product(dir, b_face_u_normal[face_id]);
 
     /*  If direction vector is outward, warn the user */
     if (cosalp > cs_math_epzero)
@@ -1368,17 +1354,13 @@ cs_cf_thermo_ph_inlet_bc(cs_real_t   *bc_en,
     /*  Computation of the sound speed inside the domain */
     ci = sqrt(gamma * (pri+psginf) / roi);
 
-    uni =  cs_math_3_dot_product(vel[cell_id],b_face_normal[face_id])
-         / b_face_surf[face_id];
+    uni =  cs_math_3_dot_product(vel[cell_id], b_face_u_normal[face_id]);
 
     bMach = uni / ci;
 
-    utxi =  vel[cell_id][0] - uni * b_face_normal[face_id][0]
-          * b_face_surf[face_id];
-    utyi =  vel[cell_id][1] - uni * b_face_normal[face_id][1]
-          * b_face_surf[face_id];
-    utzi =  vel[cell_id][2] - uni * b_face_normal[face_id][2]
-          * b_face_surf[face_id];
+    utxi =  vel[cell_id][0] - uni * b_face_u_normal[face_id][0];
+    utyi =  vel[cell_id][1] - uni * b_face_u_normal[face_id][1];
+    utzi =  vel[cell_id][2] - uni * b_face_u_normal[face_id][2];
 
     cs_real_t v2 = cs_math_3_square_norm(vel[cell_id]);
     ei   = cvar_en[cell_id] - 0.5 * v2;
@@ -1436,12 +1418,9 @@ cs_cf_thermo_ph_inlet_bc(cs_real_t   *bc_en,
           if (sigma1 <= 0.) {
 
             /*  unb = u1 */
-            bc_vel[face_id][0] =  utxi + un1 * b_face_normal[face_id][0]
-                                / b_face_surf[face_id];
-            bc_vel[face_id][1] =  utyi + un1 * b_face_normal[face_id][1]
-                                / b_face_surf[face_id];
-            bc_vel[face_id][2] =  utzi + un1 * b_face_normal[face_id][2]
-                                / b_face_surf[face_id];
+            bc_vel[face_id][0] =  utxi + un1 * b_face_u_normal[face_id][0];
+            bc_vel[face_id][1] =  utyi + un1 * b_face_u_normal[face_id][1];
+            bc_vel[face_id][2] =  utzi + un1 * b_face_u_normal[face_id][2];
             /*  rob = ro1 */
             brom[face_id] = ro1;
             /*  eb = e1 */
@@ -1505,12 +1484,9 @@ cs_cf_thermo_ph_inlet_bc(cs_real_t   *bc_en,
           if ((un1 - c1) < 0.) {
 
             /*  unb = u1 */
-            bc_vel[face_id][0] =  utxi + un1 * b_face_normal[face_id][0]
-                                / b_face_surf[face_id];
-            bc_vel[face_id][1] =  utyi + un1 * b_face_normal[face_id][1]
-                                / b_face_surf[face_id];
-            bc_vel[face_id][2] =  utzi + un1 * b_face_normal[face_id][2]
-                                / b_face_surf[face_id];
+            bc_vel[face_id][0] =  utxi + un1 * b_face_u_normal[face_id][0];
+            bc_vel[face_id][1] =  utyi + un1 * b_face_u_normal[face_id][1];
+            bc_vel[face_id][2] =  utzi + un1 * b_face_u_normal[face_id][2];
             /*  rob = ro1 */
             brom[face_id] = ro1;
             /*  eb = e1 */
@@ -1547,12 +1523,9 @@ cs_cf_thermo_ph_inlet_bc(cs_real_t   *bc_en,
             brom[face_id] = roi * pow(a,2./(gamma-1.));
             /*  Sonic state velocity */
             uns = a * ci;
-            bc_vel[face_id][0] =  uns * b_face_normal[face_id][0]
-                                / b_face_surf[face_id];
-            bc_vel[face_id][1] =  uns * b_face_normal[face_id][1]
-                                / b_face_surf[face_id];
-            bc_vel[face_id][2] =  uns * b_face_normal[face_id][2]
-                                / b_face_surf[face_id];
+            bc_vel[face_id][0] = uns * b_face_u_normal[face_id][0];
+            bc_vel[face_id][1] = uns * b_face_u_normal[face_id][1];
+            bc_vel[face_id][2] = uns * b_face_u_normal[face_id][2];
             /*  Sonic state energy */
             bc_en[face_id] =  (pstat+gamma*psginf) / ((gamma-1.)*brom[face_id])
                             + 0.5 * uns*uns;
@@ -1565,8 +1538,8 @@ cs_cf_thermo_ph_inlet_bc(cs_real_t   *bc_en,
 
 
       bc = sqrt(gamma * (pstat+psginf) / brom[face_id]);
-      bMach = cs_math_3_dot_product(bc_vel[face_id],b_face_normal[face_id])
-              / b_face_surf[face_id] / bc;
+      bMach =   cs_math_3_dot_product(bc_vel[face_id], b_face_u_normal[face_id])
+              / bc;
 
       bc_pr[face_id] = pstat;
 
@@ -1697,8 +1670,7 @@ cs_cf_thermo(const int    iccfth,
 {
   const cs_mesh_t  *m = cs_glob_mesh;
   const cs_lnum_t n_cells = m->n_cells;
-  const cs_lnum_t *restrict b_face_cells
-    = (const cs_lnum_t *restrict)m->b_face_cells;
+  const cs_lnum_t *restrict b_face_cells = m->b_face_cells;
 
   /* Local variables */
   cs_lnum_t cell_id = -1;
