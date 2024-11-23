@@ -127,7 +127,7 @@ cs_local_time_step_compute(int  itrale)
 
   const cs_real_t *gxyz = cs_get_glob_physical_constants()->gravity;
 
-  const int idtvar = cs_glob_time_step_options->idtvar;
+  const cs_time_step_type_t  idtvar = cs_glob_time_step_options->idtvar;
 
   /* Initialization
      -------------- */
@@ -149,7 +149,7 @@ cs_local_time_step_compute(int  itrale)
            && (eqp_vel->verbosity >= 2 || log_is_active))
       && !(   cs_glob_physical_model_flag[CS_COMPRESSIBLE] >= 0
            && (eqp_vel->verbosity >= 2 || log_is_active))
-      && !(   idtvar == -1 || idtvar == 1 || idtvar == 2
+      && !(   idtvar != CS_TIME_STEP_CONSTANT
            || (   (eqp_vel->verbosity >= 2 || log_is_active)
                && (   eqp_vel->idiff >= 1
                    || eqp_vel->iconv >= 1
@@ -282,12 +282,12 @@ cs_local_time_step_compute(int  itrale)
   /* Steady algorithm
      ---------------- */
 
-  if (idtvar >= 0) {
+  if (idtvar != CS_TIME_STEP_STEADY) {
 
     /* Variable time step from imposed Courant and Fourier */
 
     /* We compute the max thermal time step
-       (also when IDTVAR=0, for display)
+       (also with constant step, for display)
        dttmax = 1/sqrt(max(0+,gradRO.g/RO) -> w3 */
 
     if (cs_glob_time_step_options->iptlro == 1) {
@@ -344,7 +344,7 @@ cs_local_time_step_compute(int  itrale)
 
     }
 
-    if (idtvar == 1 || idtvar == 2) {
+    if (idtvar == CS_TIME_STEP_ADAPTIVE || idtvar == CS_TIME_STEP_LOCAL) {
 
       int icou = 0;
       int ifou = 0;
@@ -415,7 +415,7 @@ cs_local_time_step_compute(int  itrale)
         }
 
         /* Uniform time step: we take the minimum of the constraint */
-        if (idtvar == 1)  {
+        if (idtvar == CS_TIME_STEP_ADAPTIVE)  {
           cs_real_t w1min = cs_math_big_r;
           for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
             w1min = cs_math_fmin(w1min, w1[c_id]);
@@ -499,7 +499,7 @@ cs_local_time_step_compute(int  itrale)
 
         /* Uniform time step: we take the minimum of ther constraint */
 
-        if (idtvar == 1) {
+        if (idtvar == CS_TIME_STEP_ADAPTIVE) {
           cs_real_t w3min = cs_math_big_r;
           for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
             w3min = cs_math_fmin(w3min, dam[c_id]);
@@ -592,7 +592,7 @@ cs_local_time_step_compute(int  itrale)
 
         /* Uniform time step: we reuniform the time step */
 
-        if (idtvar == 1) {
+        if (idtvar == CS_TIME_STEP_ADAPTIVE) {
           cs_real_t w3min = cs_math_big_r;
           for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
             w3min = cs_math_fmin(w3min, dt[c_id]);
@@ -613,7 +613,7 @@ cs_local_time_step_compute(int  itrale)
       const cs_real_t dtmax = cs_glob_time_step_options->dtmax;
       const cs_real_t dtmin = cs_glob_time_step_options->dtmin;
 
-      if (idtvar == 1) {
+      if (idtvar == CS_TIME_STEP_ADAPTIVE) {
 
         cs_real_t dtloc = dt[0];
         if (dtloc > dtmax) {
@@ -805,7 +805,7 @@ cs_local_time_step_compute(int  itrale)
 
     /* Steady algorithm
        ---------------- */
-}
+  }
   else { /* if idtvar < 0 */
 
     int isym = 1;
@@ -890,7 +890,7 @@ cs_courant_fourier_compute(void)
            && (eqp_vel->verbosity >= 2 || log_is_active))
       && !(   cs_glob_physical_model_flag[CS_COMPRESSIBLE] >= 0
            && (eqp_vel->verbosity >= 2 || log_is_active))
-      && !(   idtvar == -1 || idtvar == 1 || idtvar == 2
+      && !(   idtvar != CS_TIME_STEP_CONSTANT
            || (   (eqp_vel->verbosity >= 2 || log_is_active)
                && (   eqp_vel->idiff >= 1
                    || eqp_vel->iconv >= 1
