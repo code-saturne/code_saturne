@@ -2005,11 +2005,11 @@ cs_matrix_compute_coeffs(cs_matrix_t                 *a,
     const cs_lnum_t n_edges = m->n_i_faces;
     const cs_lnum_2_t *edges = (const cs_lnum_2_t *)(m->i_face_cells);
 
+    const int isym = (iconvp == 1) ? 2 : 1;
+
     cs_real_t *da, *xa;
     CS_MALLOC_HD(da, m->n_cells_with_ghosts, cs_real_t, amode);
-    CS_MALLOC_HD(xa, m->n_i_faces, cs_real_t, amode);
-
-    const int isym = (iconvp == 1) ? 2 : 1;
+    CS_MALLOC_HD(xa, m->n_i_faces*(cs_lnum_t)isym, cs_real_t, amode);
 
     cs_matrix_wrapper(iconvp,
                       idiffp,
