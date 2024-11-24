@@ -2357,7 +2357,7 @@ cs_matrix_compute_coeffs
       }
 
       cs_matrix_assembler_values_t *mav
-        = cs_matrix_assembler_values_init(a, 1, 1);
+        = cs_matrix_assembler_values_init(a, stride, eb_size);
       assert(n_cells == cs_matrix_get_n_rows(a));
 
       const cs_gnum_t *r_g_id = cs_matrix_get_block_row_g_id(a);
@@ -2407,7 +2407,9 @@ cs_matrix_compute_coeffs
         int coupling_id = cs_field_get_key_int(f, k_cpl);
 
         if (coupling_id > -1)
-          cs_internal_coupling_matrix_add_values(f, 1, 1, r_g_id, mav);
+          cs_internal_coupling_matrix_add_values(f,
+                                                 stride, eb_size,
+                                                 r_g_id, mav);
       }
 
       /* Finalize assembly */
