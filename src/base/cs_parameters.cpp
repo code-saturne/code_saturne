@@ -128,12 +128,11 @@ BEGIN_C_DECLS
         - 1: based on cell center mesh velocity
 
   \var  cs_space_disc_t::itbrrb
-        accurate treatment of the wall temperature
-        (reconstruction of wall temperature)
+        reconstruction of boundary scalars
         - 1: true
         - 0: false (default)
         (see \ref cs_boundary_condition_set_coeffs,
-        useful in case of coupling with syrthes)
+        useful in case of wall conditions and/or coupling with Syrthes)
 */
 
 /*----------------------------------------------------------------------------*/
@@ -437,6 +436,7 @@ static cs_equation_param_t _equation_param_default
    .climgr = 1.5,
    .relaxv = 1.,
    .b_gradient_r = 2,
+   .b_diff_flux_rc = 1,
 
    .default_bc = CS_BC_SYMMETRY,
    .n_bc_defs = 0,
@@ -655,6 +655,7 @@ _log_func_var_cal_opt(const void *t)
   cs_log_printf(CS_LOG_SETUP, fmt_r, "relaxv", _t->relaxv);
 
   cs_log_printf(CS_LOG_SETUP, fmt_i, "b_gradient_r", _t->b_gradient_r);
+  cs_log_printf(CS_LOG_SETUP, fmt_i, "b_diff_flux_rc", _t->b_diff_flux_rc);
 }
 
 /* Log default values of the structure */

@@ -1257,7 +1257,8 @@ cs_boundary_conditions_set_coeffs(int        nvar,
 
       if (f_scal->dim == 1) {
 
-        if (cs_glob_space_disc->itbrrb == 1 && eqp_scal->ircflu == 1) {
+        if (   cs_glob_space_disc->itbrrb == 1
+            && eqp_scal->ircflu == 1 && eqp_scal->b_diff_flux_rc > 0) {
           cs_real_t *var_iprime = theipb;
           if (f_scal_b != nullptr)
             var_iprime = bvar_s;
@@ -1268,7 +1269,7 @@ cs_boundary_conditions_set_coeffs(int        nvar,
                                                    nullptr,
                                                    var_iprime);
         }
-        else { /* itbrrb, ircflu */
+        else { /* itbrrb, ircflu, b_diff_flux_rc */
           const cs_real_t *cvara_s = f_scal->val_pre;
 
           if (f_scal_b != nullptr) {
@@ -1335,7 +1336,8 @@ cs_boundary_conditions_set_coeffs(int        nvar,
         }
         else if (f_scal->dim == 6) {
 
-          if (cs_glob_space_disc->itbrrb == 1 && eqp_scal->ircflu == 1) {
+          if (   cs_glob_space_disc->itbrrb == 1
+              && eqp_scal->ircflu == 1 && eqp_scal->b_diff_flux_rc > 0) {
             const cs_real_6_t *cvar_t
               = (const cs_real_6_t *)f_scal->val;
 

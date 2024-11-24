@@ -2088,6 +2088,13 @@ cs_parameters_check(void)
                                     eqp->ircflu,
                                     0, 2);
 
+      cs_parameters_is_in_range_int(CS_ABORT_DELAYED,
+                                    _(f_desc),
+                                    "equation param b_diff_flux_rc (boundary "
+                                    "diffusion fluxes reconstruction)",
+                                    eqp->b_diff_flux_rc,
+                                    0, 2);
+
       BFT_FREE(f_desc);
 
       if (   eqp->ischcv == 0

@@ -450,6 +450,17 @@ typedef struct {
    * Type of boundary gradient reconstruction
    * Same codes as for \ref imrgra
    * (default is 2: least-squares, using extended neighborhood if available)
+   *
+   * \var b_diff_flux_rc
+   * Indicate whether the fluxes (convective and diffusive) and boundary conditions
+   * at the faces should be reconstructed:
+   * - 0: no reconstruction
+   * - 1: reconstruction
+   * - Finer-grained limiters may be added in the future.
+   * Deactivating the reconstruction of the fluxes can have a stabilizing
+   * effect on the calculation, and help follow the maximum principal, with less
+   * degradation of the global precision than deactivating the reconstruction
+   * on the volume mesh.
   */
 
   int iconv;
@@ -484,6 +495,7 @@ typedef struct {
   double relaxv;
 
   int  b_gradient_r;
+  int  b_diff_flux_rc;
 
   /*!
    * @}

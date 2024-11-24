@@ -2158,6 +2158,17 @@ cs_gui_equation_parameters(void)
       cs_gui_node_get_child_real(tn_v, "solver_precision", &(eqp->epsilo));
       cs_gui_node_get_child_status_int(tn_v, "flux_reconstruction",
                                        &(eqp->ircflu));
+
+      {
+        cs_tree_node_t *tn
+          = cs_tree_get_node(tn_v, "boundary_diffusion_flux_reconstruction");
+        if (tn != nullptr) {
+          const char *b_diff_flux_rc_mode = cs_tree_node_get_tag(tn, "mode");
+          if (cs_gui_strcmp(b_diff_flux_rc_mode, "off"))
+            eqp->b_diff_flux_rc = 0;
+        }
+      }
+
       cs_gui_node_get_child_int(tn_v, "rhs_reconstruction",
                                 &(eqp->nswrsm));
       cs_gui_node_get_child_int(tn_v, "verbosity", &(eqp->verbosity));
@@ -2487,7 +2498,7 @@ cs_gui_groundwater_property_laws(int  permeability,
 
       }
       else {
-      /* user law for permeability */
+        /* user law for permeability */
         const char *formula
           = cs_tree_node_get_child_value_str(tn_zl, "formula");
 

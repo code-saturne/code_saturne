@@ -907,6 +907,7 @@ cs_equation_param_create(const char         *name,
   eqp->climgr = 1.5;
   eqp->relaxv = 1.;
   eqp->b_gradient_r = 2;
+  eqp->b_diff_flux_rc = 1;
 
   /* Boundary conditions structure.
      One assigns a boundary condition by default */

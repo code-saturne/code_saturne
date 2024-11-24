@@ -3,25 +3,33 @@ Master (not on release branches yet)
 
 ### Numerics:
 
+- Add `b_diff_flux_rc` equation parameter, to allow disabling of
+  diffusion flux reconstruction at boundaries only.
+
 - Add several interfaces for AMG (algebraic multigrid methods)
   including the in-house version of the V-cycle, K-cycle, GAMG if
   PETSc is available and BoomerAMG if HYPRE is available in a
   stand-alone mode or through PETSc. These interfaces make easier the
-  setings of the (many) options available to tune an AMG method.
+  settings of the (many) options available to tune an AMG method.
+
 - Add the support of HMG (Hybrid multigrid methods) when PETSc is
   available. This allows one to use HYPRE boomerAMG (if available) for
   the grid coarsening and PETSc solver/smoothers as well as the
   Fieldsplit preconditioners.
+
 - Saddle-point solvers for the resolution of the Navier-Stokes
   equations with CDO schemes: Add the possibility to add an
   augmentation term when a (tuned) GCR algorithm is used in
   combination of a block preconditioning strategy. The settings of the
   velocity block can benefit from the AMG interfaces along with a
   second level of block preconditioning when used with PETSc solvers.
+
 - Add new option settings for MUMPS including the possibility to share
   the initial ordering during the computation to save CPU time.
+
 - Add the possibility to use HPDDM through the PETSc library if all
   the requested packages are available (HPDDM and SLEPc)
+
 - Add an algebraic SIMPLE algorithm for CDO schemes.
 
 ### User changes:

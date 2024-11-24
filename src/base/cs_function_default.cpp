@@ -1511,7 +1511,8 @@ cs_function_boundary_nusselt(int               location_id,
 
     /* Reconstructed fluxes */
 
-    if (eqp->ircflu > 0 && cs_glob_space_disc->itbrrb == 1) {
+    if (   eqp->ircflu > 0 && eqp->b_diff_flux_rc > 0
+        && cs_glob_space_disc->itbrrb == 1) {
 
       cs_field_gradient_boundary_iprime_scalar(f_t,
                                                false, /* use_previous_t */

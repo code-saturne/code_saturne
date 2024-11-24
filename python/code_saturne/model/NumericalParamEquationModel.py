@@ -123,6 +123,7 @@ class NumericalParamEquationModel(Model):
             default['slope_test'] = 'on'
             default['nvd_limiter'] = 'gamma'
         default['flux_reconstruction'] = 'on'
+        default['boundary_diffusion_flux_reconstruction'] = 'all'
 
         default['solver_choice'] = 'automatic'
         default['preconditioning_choice'] = 'automatic'
@@ -601,6 +602,27 @@ class NumericalParamEquationModel(Model):
         else:
             n = node.xmlInitNode('flux_reconstruction')
             n['status']=value
+
+
+    @Variables.noUndo
+    def getBoundaryDiffFluxReconstruction(self, name):
+        """ Return  boundary diffusion flux reconstruction mode for specified variable """
+        node = self._getSchemeNameNode(name)
+        value = self._defaultValues()['boundary_diffusion_flux_reconstruction']
+        if node.xmlGetNode('boundary_diffusion_flux_reconstruction'):
+            value = node.xmlGetNode('boundary_diffusion_flux_reconstruction')['mode']
+        return value
+
+
+    @Variables.undoLocal
+    def setBoundaryDiffFluxReconstruction(self, name, value):
+        """ Put status of flux reconstruction for specified variable """
+        node = self._getSchemeNameNode(name)
+        if value == self._defaultValues()['boundary_diffusion_flux_reconstruction']:
+            node.xmlRemoveChild('boundary_diffusion_flux_reconstruction')
+        else:
+            n = node.xmlInitNode('boundary_diffusion_flux_reconstruction')
+            n['mode']=value
 
 
     @Variables.noUndo

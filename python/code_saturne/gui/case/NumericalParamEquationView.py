@@ -438,6 +438,47 @@ class SchemeNVDLimiterDelegate(QItemDelegate):
                 model.setData(idx, value)
 
 #-------------------------------------------------------------------------------
+# Combo box delegate for b_diff_flux_rc
+#-------------------------------------------------------------------------------
+
+class SchemeBoundaryDiffFluxDelegate(QItemDelegate):
+    """
+    Use of a combo box in the table.
+    """
+    def __init__(self, parent=None, xml_model=None):
+        super(SchemeBoundaryDiffFluxDelegate, self).__init__(parent)
+        self.parent = parent
+        self.mdl = xml_model
+
+
+    def createEditor(self, parent, option, index):
+        editor = QComboBox(parent)
+        row = index.row()
+        category = index.model().dataScheme[row]['category']
+        if category > 0:
+            if index.model().dataScheme[row]['ircflu'] != 'off':
+                editor.addItem("Enabled")
+            editor.addItem("Disabled")
+        editor.installEventFilter(self)
+        return editor
+
+
+    def setEditorData(self, comboBox, index):
+        dico = {"all": 0, "off": 1}
+        row = index.row()
+        string = index.model().dataScheme[row]['b_diff_flux_rc']
+        idx = dico[string]
+        comboBox.setCurrentIndex(idx)
+
+
+    def setModelData(self, comboBox, model, index):
+        value = comboBox.currentText()
+        selectionModel = self.parent.selectionModel()
+        for idx in selectionModel.selectedIndexes():
+            if idx.column() == index.column():
+                model.setData(idx, value)
+
+#-------------------------------------------------------------------------------
 # Scheme class
 #-------------------------------------------------------------------------------
 
@@ -459,15 +500,16 @@ class StandardItemModelScheme(QStandardItemModel):
                         self.tr("Slope\nTest"),
                         self.tr("NVD\nLimiter"),
                         self.tr("Flux\nReconstruction"),
+                        self.tr("Boundary Flux\nReconstruction"),
                         self.tr("RHS Sweep\nReconstruction")]
         self.keys = ['name', 'ischcv', 'blencv', 'isstpc', 'nvd_limiter',
-                     'ircflu', 'nswrsm']
+                     'ircflu', 'b_diff_flux_rc', 'nswrsm']
         self.setColumnCount(len(self.headers))
 
         # Initialize the flags
         for row in range(self.rowCount()):
             for column in range(self.columnCount()):
-                if column in (1, 2, 3, 4, 6):
+                if column in (1, 2, 3, 4, 6, 7):
                     role = Qt.DisplayRole
                 else:
                     role = Qt.CheckStateRole
@@ -493,10 +535,18 @@ class StandardItemModelScheme(QStandardItemModel):
                     "and diffusive fluxes at the faces should be reconstructed\n"
                     "at non-orthogonal mesh faces.\n"
                     "Deactivating this reconstruction can have a stabilizing\n"
-                    "effect on the calculation.\n"
+                    "effect on the calculation.\n\n"
                     "It is sometimes useful with the k−ε model, if the mesh\n"
                     "is strongly non-orthogonal in the near-wall region,\n"
                     " where the gradients of k and ε are strong"),
+            self.tr("Equation parameter: 'b_diff_flux_rc'\n\n"
+                    "Flux reconstruction: indicate whether the diffusiv fluxes\n"
+                    "should be reconstructed at non-orthogonal boundary faces.\n"
+                    "Deactivating this reconstruction can have a stabilizing\n"
+                    "effect on the calculation, with less precision loss than\n"
+                    "deactiving fluxes in the volume (i.e. ircflu = 0).\n\n"
+                    "It can be useful if the mesh is strongly non-orthogonal\n"
+                    "in the near-wall region, where gradients are strong"),
             self.tr("Equation parameter: 'nswrsm'\n\n"
                     "RHS Sweep Reconstruction: number of iterations for the\n"
                     "reconstruction of the right-hand sides of the equation")
@@ -523,6 +573,11 @@ class StandardItemModelScheme(QStandardItemModel):
                                'off': "Disabled",
                                'beta_limiter': "Beta limiter"}
 
+        self.dicoV2M_b_diff_flux_rc = {"Enabled": 'all',
+                                       "Disabled": 'off'}
+        self.dicoM2V_b_diff_flux_rc = {'all': "Enabled",
+                                       'off': "Disabled"}
+
         for v in self.NPE.getSchemeList():
             name = v[0]
             dico           = {}
@@ -534,6 +589,7 @@ class StandardItemModelScheme(QStandardItemModel):
             dico['isstpc'] = self.NPE.getSlopeTest(name)
             dico['nvd_limiter'] = self.NPE.getNVDLimiter(name)
             dico['ircflu'] = self.NPE.getFluxReconstruction(name)
+            dico['b_diff_flux_rc'] = self.NPE.getBoundaryDiffFluxReconstruction(name)
             dico['nswrsm'] = self.NPE.getRhsReconstruction(name)
             dico['category'] = v[1]
             self.dataScheme.append(dico)
@@ -556,7 +612,7 @@ class StandardItemModelScheme(QStandardItemModel):
 
         if role == Qt.ToolTipRole:
             col = index.column()
-            if col > 0 and col < 7:
+            if col > 0 and col < 8:
                 return self.tooltips[col-1]
             elif col > 0:
                 return self.tr("code_saturne keyword: " + key)
@@ -575,6 +631,11 @@ class StandardItemModelScheme(QStandardItemModel):
                     return v.upper()
                 else:
                     return v
+            elif key == 'b_diff_flux_rc':
+                if self.dataScheme[row]['ircflu'] != 'off':
+                    return self.dicoM2V_b_diff_flux_rc[dico[key]]
+                else:
+                    return ""
             else:
                 return dico[key]
 
@@ -619,6 +680,11 @@ class StandardItemModelScheme(QStandardItemModel):
                 return Qt.NoItemFlags
         elif column == 5:
             return Qt.ItemIsEnabled | Qt.ItemIsSelectable | Qt.ItemIsUserCheckable
+        elif column == 6:
+            if self.dataScheme[row]['ircflu'] != 'off':
+                return Qt.ItemIsEnabled | Qt.ItemIsSelectable | Qt.ItemIsEditable
+            else:
+                return Qt.NoItemFlags
         else:
             return Qt.ItemIsEnabled | Qt.ItemIsSelectable | Qt.ItemIsEditable
 
@@ -695,9 +761,16 @@ class StandardItemModelScheme(QStandardItemModel):
             else:
                 self.dataScheme[row]['ircflu'] = "on"
             self.NPE.setFluxReconstruction(name, self.dataScheme[row]['ircflu'])
+            e_index = self.index(row, column+1)
+            self.dataChanged.emit(index, e_index)
+
+        # set b_diff_flux_rc
+        elif column == 6:
+            self.dataScheme[row]['b_diff_flux_rc'] = self.dicoV2M_b_diff_flux_rc[str(from_qvariant(value, to_text_string))]
+            self.NPE.setBoundaryDiffFluxReconstruction(name, self.dataScheme[row]['b_diff_flux_rc'])
 
         # set NSWRSM
-        elif column == 6:
+        elif column == 7:
             self.dataScheme[row]['nswrsm'] = from_qvariant(value, int)
             self.NPE.setRhsReconstruction(name, self.dataScheme[row]['nswrsm'])
 
@@ -1499,8 +1572,11 @@ class NumericalParamEquationView(QWidget, Ui_NumericalParamEquationForm):
         delegateNVDLIM = SchemeNVDLimiterDelegate(self.tableViewScheme)
         self.tableViewScheme.setItemDelegateForColumn(4, delegateNVDLIM)
 
+        delegateBDiffFluxRC = SchemeBoundaryDiffFluxDelegate(self.tableViewScheme)
+        self.tableViewScheme.setItemDelegateForColumn(6, delegateBDiffFluxRC)
+
         delegateNSWRSM = RhsReconstructionDelegate(self.tableViewScheme, self.turb)
-        self.tableViewScheme.setItemDelegateForColumn(6, delegateNSWRSM)
+        self.tableViewScheme.setItemDelegateForColumn(7, delegateNSWRSM)
 
         # Solver
         self.modelSolver = StandardItemModelSolver(self.NPE)

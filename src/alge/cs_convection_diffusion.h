@@ -753,6 +753,9 @@ cs_face_diffusion_potential(const int                   f_id,
  * \param[in]     ircflp        indicator
  *                               - 1 flux reconstruction,
  *                               - 0 otherwise
+ * \param[in]     ircflb        indicator
+ *                               - 1 boundary flux reconstruction,
+ *                               - 0 otherwise
  * \param[in]     iphydp        indicator
  *                               - 1 hydrostatic pressure taken into account
  *                               - 0 otherwise
@@ -791,6 +794,7 @@ cs_face_anisotropic_diffusion_potential(const int                   f_id,
                                         int                         nswrgp,
                                         int                         imligp,
                                         int                         ircflp,
+                                        int                         ircflb,
                                         int                         iphydp,
                                         int                         iwgrp,
                                         int                         iwarnp,
@@ -913,6 +917,9 @@ cs_diffusion_potential(const int                   f_id,
  * \param[in]     ircflp        indicator
  *                               - 1 flux reconstruction,
  *                               - 0 otherwise
+ * \param[in]     ircflb        indicator
+ *                               - 1 boundary flux reconstruction,
+ *                               - 0 otherwise
  * \param[in]     iphydp        indicator
  *                               - 1 hydrostatic pressure taken into account
  *                               - 0 otherwise
@@ -950,6 +957,7 @@ cs_anisotropic_diffusion_potential(const int                   f_id,
                                    int                         nswrgp,
                                    int                         imligp,
                                    int                         ircflp,
+                                   int                         ircflb,
                                    int                         iphydp,
                                    int                         iwgrp,
                                    int                         iwarnp,
