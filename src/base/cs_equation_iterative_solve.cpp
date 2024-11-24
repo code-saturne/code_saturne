@@ -619,14 +619,24 @@ _equation_iterative_solve_strided(int                   idtvar,
      for ghost values. */
 
   /* Allocate a temporary array */
+
+  // Number of local ghost cells may be different from that of mesh
+  // in case of internal coupling.
+  cs_lnum_t n_cols = cs_matrix_get_n_columns(a);
+
   var_t *w1, *w2;
-  CS_MALLOC_HD(w1, n_cells_ext, var_t, amode);
-  CS_MALLOC_HD(w2, n_cells_ext, var_t, amode);
+  CS_MALLOC_HD(w1, n_cols, var_t, amode);
+  CS_MALLOC_HD(w2, n_cols, var_t, amode);
 
   cs_real_t *pvar_i;
-  CS_MALLOC_HD(pvar_i, n_cells_ext, cs_real_t, amode);
+  CS_MALLOC_HD(pvar_i, n_cols, cs_real_t, amode);
 
   /* Compute the L2 norm of the variable */
+
+  // FIXME: use cs_array_reduce_wsum_components_l or similar function
+  //        to avoid looping on dimension and extra copy.
+  //        We also need to run this computation on GPU.
+
   for (cs_lnum_t i = 0; i < stride; i++) {
 
     for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
@@ -1539,10 +1549,15 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
        for ghost values. */
 
     /* Allocate a temporary array */
-    CS_MALLOC_HD(w1, n_cells_ext, cs_real_t, cs_alloc_mode);
+
+    // Number of local ghost cells may be different from that of mesh
+    // in case of internal coupling.
+    cs_lnum_t n_cols = cs_matrix_get_n_columns(a);
+
+    CS_MALLOC_HD(w1, n_cols, cs_real_t, cs_alloc_mode);
 
     cs_real_t *w2;
-    CS_MALLOC_HD(w2, n_cells_ext, cs_real_t, cs_alloc_mode);
+    CS_MALLOC_HD(w2, n_cols, cs_real_t, cs_alloc_mode);
 
     cs_real_t p_mean = cs_gmean(n_cells, mq->cell_vol, pvar);
 
