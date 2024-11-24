@@ -108,7 +108,7 @@ static int _ajust_face_cog_compat_v11_v52 = 0;
  * are set as default options
  * */
 unsigned cs_glob_mesh_quantities_flag =
-  CS_BAD_CELLS_WARPED_CORRECTION + CS_FACE_DISTANCE_CLIP;
+  CS_BAD_CELLS_WARPED_CORRECTION | CS_FACE_DISTANCE_CLIP;
 
 /* Number of computation updates */
 
