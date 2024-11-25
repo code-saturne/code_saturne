@@ -324,7 +324,7 @@ _lages1(cs_real_t           dtp,
                                 loc_fluid_vel[1],
                                 loc_fluid_vel[2]};
     cs_real_t force_p_r[3] = {force_p[p_id][0], force_p[p_id][1], force_p[p_id][2]};
-    cs_real_t piil_r[3] = {piil[cell_id][0], piil[cell_id][1], piil[cell_id][2]};
+    cs_real_t piil_r[3] = {piil[p_id][0], piil[p_id][1], piil[p_id][2]};
     cs_real_t tlag_r[3] = {tlag[p_id][0], tlag[p_id][1], tlag[p_id][2]};
     cs_real_t taup_r[3] = {taup[p_id], taup[p_id], taup[p_id]};
 
@@ -479,7 +479,7 @@ _lages1(cs_real_t           dtp,
 
       /* 1.6 - "piil" term    */
 
-      cs_math_33_3_product(trans_m, piil[cell_id], piil_r);
+      cs_math_33_3_product(trans_m, piil[p_id], piil_r);
 
       /* 1.7 - taup  */
 
@@ -840,10 +840,10 @@ _lages2(cs_real_t           dtp,
       auxl[p_id * 6 + id] = force_p[p_id][id] * taup[p_id];
 
       if (nor == 1)
-        auxl[p_id * 6 + id + 3] =   piil[cell_id][id] * tlag[p_id][id]
+        auxl[p_id * 6 + id + 3] =   piil[p_id][id] * tlag[p_id][id]
                                 + extra->vel->vals[1][cell_id * 3 + id];
       else
-        auxl[p_id * 6 + id + 3] =   piil[cell_id][id] * tlag[p_id][id]
+        auxl[p_id * 6 + id + 3] =   piil[p_id][id] * tlag[p_id][id]
                                 + extra->vel->vals[0][cell_id * 3 + id];
 
     }
@@ -1277,7 +1277,7 @@ _lagesd(cs_real_t             dtp,
 
   cs_real_t piilp[3];
 
-  cs_math_33_3_product(rot_m, piil[cell_id], piilp);
+  cs_math_33_3_product(rot_m, piil[p_id], piilp);
 
   /* 2.7 - tlag */
 
@@ -2566,7 +2566,7 @@ _lagdep(cs_real_t           dtp,
              ------------------------
              compute II*TL+<u> and [(grad<P>/rhop+g)*tau_p+<Uf>] ?  */
 
-          cs_real_t tci = piil[cell_id][id] * tlag[p_id][id] + vitf;
+          cs_real_t tci = piil[p_id][id] * tlag[p_id][id] + vitf;
           cs_real_t v_lim = force_p[p_id][id] * taup[p_id];
 
           /* Compute deterministic coefficients/terms

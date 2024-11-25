@@ -52,6 +52,7 @@
 
 #include "fvm_periodicity.h"
 
+#include "cs_atmo.h"
 #include "cs_base.h"
 #include "cs_defs.h"
 #include "cs_math.h"
@@ -67,6 +68,7 @@
 #include "cs_timer_stats.h"
 #include "cs_thermal_model.h"
 #include "cs_turbulence_model.h"
+#include "cs_velocity_pressure.h"
 
 #include "cs_field.h"
 
@@ -606,8 +608,18 @@ cs_lagr_car(int              iprev,
 
   /* Compute Pii
      ----------- */
+  /* Compute: II = ( -grad(P)/Rom(f) + g) */
+
+  for (cs_lnum_t ip = 0; ip < p_set->n_particles; ip++) {
+    cs_lnum_t      cell_id  = cs_lagr_particles_get_lnum(p_set, ip ,
+                                                         CS_LAGR_CELL_ID);
+    cs_real_t romf = extra->cromf->val[cell_id];
+    for (int id = 0; id < 3; id++)
+      piil[ip][id] = - extra->grad_pr[cell_id][id] / romf + grav[id];
+  }
 
   if (turb_disp_model) {
+    /* add grad(<Vf>)*(<Up>-<Us>) if there is enough particles*/
 
     int stat_type = cs_lagr_stat_type_from_attr_id(CS_LAGR_VELOCITY);
 
@@ -631,39 +643,60 @@ cs_lagr_car(int              iprev,
 
     cs_field_t *stat_w = cs_lagr_stat_get_stat_weight(0);
 
-    for (cs_lnum_t cell_id= 0; cell_id < cs_glob_mesh->n_cells ; cell_id++) {
-      /* Compute: II = ( -grad(P)/Rom(f)+grad(<Uf>)*(<Up>-<Us>) + g ) */
-
-      cs_real_t romf = extra->cromf->val[cell_id];
-
-      for (int i = 0; i < 3; i++) {
-
-        piil[cell_id][i] = -gradpr[cell_id][i] / romf + grav[i];
-
-        if (stat_w->val[cell_id] > cs_glob_lagr_stat_options->threshold) {
-
+    /* Compute: II = ( -grad(P)/Rom(f)+grad(<Uf>)*(<Up>-<Us>) + g ) */
+    for (cs_lnum_t ip = 0; ip < p_set->n_particles; ip++) {
+      cs_lnum_t      cell_id  = cs_lagr_particles_get_lnum(p_set, ip ,
+                                                           CS_LAGR_CELL_ID);
+      if (stat_w->val[cell_id] > cs_glob_lagr_stat_options->threshold) {
+        for (int i = 0; i < 3; i++) {
           for (cs_lnum_t j = 0; j < 3; j++) {
             cs_real_t vpm   = stat_vel->val[cell_id*3 + j];
             cs_real_t vsm   = stat_vel_s->val[cell_id*3 + j];
-            piil[cell_id][i] += gradvf[cell_id][i][j] * (vpm - vsm);
+            piil[ip][i] += gradvf[cell_id][i][j] * (vpm - vsm);
           }
-
         }
       }
     }
   }
-  else {
 
-    for (cs_lnum_t cell_id= 0; cell_id < cs_glob_mesh->n_cells ; cell_id++) {
-      /* Compute: II = ( -grad(P)/Rom(f) + g) */
+  /* Add buoyancy effects based on Boussinesq approximation */
+  if (    cs_glob_lagr_model->physical_model != CS_LAGR_PHYS_OFF
+       && cs_glob_velocity_pressure_model->idilat == 0
+       && cs_field_by_name("thermal_expansion") != nullptr
+       && extra->temperature != nullptr) {
+    const cs_fluid_properties_t *phys_pro = cs_get_glob_fluid_properties();
+    for (cs_lnum_t ip = 0; ip < p_set->n_particles; ip++) {
+      cs_lnum_t      cell_id  = cs_lagr_particles_get_lnum(p_set, ip ,
+                                                           CS_LAGR_CELL_ID);
+      cs_real_t temp_ref = phys_pro->t0;
+      cs_real_t temp_s   =
+        cs_lagr_particles_get_real(p_set, ip, CS_LAGR_FLUID_TEMPERATURE);
 
-      cs_real_t romf = extra->cromf->val[cell_id];
+      cs_real_t expansion_coef =
+        cs_field_by_name("thermal_expansion")->val[cell_id];
+
+      cs_real_t  _tkelvi = cs_physical_constants_celsius_to_kelvin;
+      if (cs_glob_physical_model_flag[CS_ATMOSPHERIC] > -1) {
+        /* potential temp at ref */
+        cs_real_t pref = cs_glob_atmo_constants->ps;
+        cs_real_t rair = phys_pro->r_pg_cnst;
+        cs_real_t cp0 = phys_pro->cp0;
+        cs_real_t rscp = rair/cp0;
+        /* FIXME GB  to bebug */
+        //temp_ref = 1. / expansion_coef;
+        temp_ref = cs_glob_atmo_option->meteo_t0 *
+          pow(pref/ cs_glob_atmo_option->meteo_psea, rscp) - _tkelvi;
+      }
+      else if (   cs_glob_thermal_model->itpscl == CS_TEMPERATURE_SCALE_KELVIN
+               && cs_glob_lagr_specific_physics->itpvar == 1) {
+          temp_ref -= _tkelvi;
+      }
+
+      cs_real_t buoyancy_fac = - expansion_coef * (temp_s - temp_ref);
 
       for (int id = 0; id < 3; id++)
-        piil[cell_id][id] = -gradpr[cell_id][id] / romf + grav[id];
-
+        piil[ip][id] += buoyancy_fac * grav[id];
     }
-
   }
 
   /* Add particle back effect seen by mean fluid velocity
@@ -675,17 +708,18 @@ cs_lagr_car(int              iprev,
     const cs_real_3_t *lagr_st_vel
       = (const cs_real_3_t *)cs_field_by_name("lagr_st_velocity")->val;
 
-    for (cs_lnum_t cell_id= 0; cell_id < cs_glob_mesh->n_cells ; cell_id++) {
+    for (cs_lnum_t ip = 0; ip < p_set->n_particles; ip++) {
+      cs_lnum_t      cell_id  = cs_lagr_particles_get_lnum(p_set, ip ,
+                                                           CS_LAGR_CELL_ID);
       /* Add: II =  -alpha_p rho_p <(U_s -U_p)/tau_p> / (alpha_f rho_f)  */
 
       cs_real_t romf = extra->cromf->val[cell_id];
 
       for (int i = 0; i < 3; i++)
-        piil[cell_id][i] += lagr_st_vel[cell_id][i] / romf;
+        piil[ip][i] += lagr_st_vel[cell_id][i] / romf;
 
     }
   }
-
 }
 
 /*----------------------------------------------------------------------------*/

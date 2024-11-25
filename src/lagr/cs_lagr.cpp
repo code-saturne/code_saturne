@@ -1938,7 +1938,7 @@ cs_lagr_solve_time_step(const int         itypfb[],
       BFT_MALLOC(taup, p_set->n_particles, cs_real_t);
       BFT_MALLOC(tlag, p_set->n_particles, cs_real_3_t);
       BFT_MALLOC(force_p, p_set->n_particles, cs_real_3_t);
-      BFT_MALLOC(piil, cs_glob_mesh->n_cells, cs_real_3_t);
+      BFT_MALLOC(piil, p_set->n_particles, cs_real_3_t);
       BFT_MALLOC(bx, p_set->n_particles, cs_real_33_t);
 
       cs_array_real_fill_zero(3 * p_set->n_particles, (cs_real_t *)force_p);
