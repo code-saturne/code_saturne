@@ -5140,8 +5140,10 @@ cs_matrix_transfer_coefficients(cs_matrix_t         *matrix,
       *x_val = nullptr;
     }
     else {
-      if (matrix->need_xa)
+      if (matrix->need_xa) {
         matrix->_xa = *x_val;
+        *x_val = nullptr;
+      }
       else
         CS_FREE(*x_val);
     }
