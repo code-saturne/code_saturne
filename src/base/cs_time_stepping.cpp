@@ -790,7 +790,7 @@ cs_time_stepping(void)
 
     /* Stop test for couplings */
 
-    if (idtvar != CS_TIME_STEP_ADAPTIVE || itrale == 0) {
+    if (idtvar != CS_TIME_STEP_ADAPTIVE) {
       /* synchronization in cs_time_step_compute for adaptive time step */
       dt_cpl = ts->dt_ref;
 
