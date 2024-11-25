@@ -742,7 +742,10 @@ cs_mobile_structures_setup(void)
 
   int monitor = 1;
 
-  cs_gui_mobile_mesh_init_structures(ms->n_int_structs,
+  const cs_time_step_t *ts         = cs_glob_time_step;
+  int                   is_restart = (ts->nt_prev > 0) ? 1 : 0;
+
+  cs_gui_mobile_mesh_init_structures(is_restart,
                                      &(ms->aexxst),
                                      &(ms->bexxst),
                                      &(ms->cfopre),
@@ -750,9 +753,6 @@ cs_mobile_structures_setup(void)
                                      (cs_real_t *)ms->xstp,
                                      (cs_real_t *)ms->xstreq,
                                      (cs_real_t *)ms->xpstr);
-
-  const cs_time_step_t *ts = cs_glob_time_step;
-  int is_restart = (ts->nt_prev > 0) ? 1 : 0;
 
   cs_user_fsi_structure_define(is_restart,
                                ms->n_int_structs,
@@ -1022,6 +1022,25 @@ cs_mobile_structures_log_setup(void)
                      "    convergence threshold:              %g\n\n"),
                     cs_glob_mobile_structures_n_iter_max,
                     cs_glob_mobile_structures_i_eps);
+    }
+
+    for (int i = 0; i < n_int_structs; i++) {
+      cs_log_printf(log,
+                    ("  Parameters for internal structure %d:\n"
+                     "\n"
+                     "    Initial displacement: (%g, %g, %g) \n"
+                     "    Initial velocity: (%g, %g, %g) \n"
+                     "    Equilibirum displacement: (%g, %g, %g) \n"),
+                    i,
+                    ms->xstp[i][0],
+                    ms->xstp[i][1],
+                    ms->xstp[i][2],
+                    ms->xpstr[i][0],
+                    ms->xpstr[i][1],
+                    ms->xpstr[i][2],
+                    ms->xstreq[i][0],
+                    ms->xstreq[i][1],
+                    ms->xstreq[i][2]);
     }
   }
 

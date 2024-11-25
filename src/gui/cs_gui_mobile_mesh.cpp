@@ -81,7 +81,7 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /* debugging switch */
-#define _XML_DEBUG_ 0
+#define _XML_DEBUG_ 1
 
 /*============================================================================
  * Static variables
@@ -125,7 +125,7 @@ _ale_visc_type(cs_tree_node_t  *tn_ale)
   cs_tree_node_t *tn_mv = cs_tree_get_node(tn_ale, "mesh_viscosity");
 
   const char *type = cs_tree_node_get_tag(tn_mv, "type");
-  if (type != NULL) {
+  if (type != nullptr) {
     if (strcmp(type, "isotrop") != 0) {
       if (strcmp(type, "orthotrop") == 0)
         mvisc_type = 1;
@@ -187,7 +187,7 @@ _uialcl_fixed_displacement(cs_tree_node_t   *tn_w,
               cs_gui_node_get_tag(tn_w, "label"));
 
   /* Evaluate formula using meg */
-  cs_real_t *bc_vals = NULL;
+  cs_real_t *bc_vals = nullptr;
   BFT_MALLOC(bc_vals, 3 * z->n_elts, cs_real_t);
   cs_meg_boundary_function(z->name,
                            z->n_elts,
@@ -247,7 +247,7 @@ _uialcl_fixed_velocity(cs_tree_node_t  *tn_w,
               cs_gui_node_get_tag(tn_w, "label"));
 
   /* Evaluate formula using meg */
-  cs_real_t *bc_vals = NULL;
+  cs_real_t *bc_vals = nullptr;
   BFT_MALLOC(bc_vals, 3 * z->n_elts, cs_real_t);
   cs_meg_boundary_function(z->name,
                            z->n_elts,
@@ -388,6 +388,15 @@ _get_internal_coupling_xyz_values(cs_tree_node_t  *tn_ic,
   cs_gui_node_get_child_real(tn, "X", xyz);
   cs_gui_node_get_child_real(tn, "Y", xyz+1);
   cs_gui_node_get_child_real(tn, "Z", xyz+2);
+
+#if _XML_DEBUG_
+  bft_printf("==> %s\n", __func__);
+  bft_printf("Values of %s: (X: %g, Y: %g, Z: %g)\n",
+             name,
+             xyz[0],
+             xyz[1],
+             xyz[2]);
+#endif
 }
 
 /*-----------------------------------------------------------------------------
@@ -412,11 +421,11 @@ _get_uistr2_data(const char   *label,
 {
   /* Get mass matrix, damping matrix and stiffness matrix */
 
-  cs_meg_fsi_struct("mass_matrix", label, NULL,
+  cs_meg_fsi_struct("mass_matrix", label, nullptr,
                     (cs_real_t *)xmstru[istruc]);
-  cs_meg_fsi_struct("damping_matrix", label, NULL,
+  cs_meg_fsi_struct("damping_matrix", label, nullptr,
                     (cs_real_t *)xcstru[istruc]);
-  cs_meg_fsi_struct("stiffness_matrix", label, NULL,
+  cs_meg_fsi_struct("stiffness_matrix", label, nullptr,
                     (cs_real_t *)xkstru[istruc]);
 
   /* Set variable for fluid force vector */
@@ -461,7 +470,7 @@ cs_gui_ale_params(void)
     /* code_aster coupling */
 
     tn = cs_tree_get_node(tn, "code_aster_coupling");
-    if (tn != NULL) {
+    if (tn != nullptr) {
       int verbosity = cs_ast_coupling_get_verbosity();
       int visualization = cs_ast_coupling_get_visualization();
       cs_gui_node_get_child_int(tn, "verbosity", &verbosity);
@@ -473,11 +482,11 @@ cs_gui_ale_params(void)
 
 #if _XML_DEBUG_
   bft_printf("==> %s\n", __func__);
-  bft_printf("--cs_glob_ale_info->type = %i\n", cs_glob_ale_info->type);
-  if (cs_glob_ale_info->type > 0) {
-    bft_printf("--nalinf = %i\n", *nalinf);
-    bft_printf("--nalimx = %i\n", *nalimx);
-    bft_printf("--epalim = %g\n", *epalim);
+  bft_printf("--cs_glob_ale_info->type = %i\n", ale_status);
+  if (ale_status > 0) {
+    bft_printf("--nalinf = %i\n", cs_glob_ale_n_ini_f);
+    bft_printf("--nalimx = %i\n", cs_glob_mobile_structures_n_iter_max);
+    bft_printf("--epalim = %g\n", cs_glob_mobile_structures_i_eps);
   }
 #endif
 }
@@ -540,7 +549,7 @@ cs_gui_mesh_viscosity(void)
   /* Get formula */
   const char *mvisc_expr = cs_tree_node_get_child_value_str(tn0, "formula");
 
-  if (mvisc_expr == NULL)
+  if (mvisc_expr == nullptr)
     return;
 
   /* Compute mesh viscosity using the MEG function.
@@ -571,7 +580,7 @@ cs_gui_mesh_viscosity(void)
 void
 cs_gui_mobile_mesh_get_boundaries(cs_domain_t  *domain)
 {
-  assert(domain != NULL);
+  assert(domain != nullptr);
 
   /* Only add xdef-based BC's for legacy fields for now, as CDO
      uses in intermediate mechanism so as to ensure face-based to
@@ -589,12 +598,12 @@ cs_gui_mobile_mesh_get_boundaries(cs_domain_t  *domain)
   /* Loop on boundary zones */
 
   for (cs_tree_node_t *tn_bndy = cs_tree_node_get_child(tn_b0, "boundary");
-       tn_bndy != NULL;
+       tn_bndy != nullptr;
        tn_bndy = cs_tree_node_get_next_of_name(tn_bndy)) {
 
     const char *label = cs_tree_node_get_tag(tn_bndy, "label");
     const cs_zone_t *z = cs_boundary_zone_by_name_try(label);
-    if (z == NULL)  /* possible in case of old XML file with "dead" nodes */
+    if (z == nullptr)  /* possible in case of old XML file with "dead" nodes */
       continue;
 
     cs_boundary_type_t ale_bdy = _get_ale_boundary_type(tn_bndy);
@@ -606,12 +615,12 @@ cs_gui_mobile_mesh_get_boundaries(cs_domain_t  *domain)
                     ale_bdy,
                     z->name);
 
-    if (eqp == NULL)
+    if (eqp == nullptr)
       continue;
 
     /* Ignore if already set (priority) */
 
-    if (cs_equation_find_bc(eqp, z->name) != NULL)
+    if (cs_equation_find_bc(eqp, z->name) != nullptr)
       continue;
 
     /* TODO */
@@ -660,13 +669,13 @@ cs_gui_mobile_mesh_boundary_conditions(int          *const ialtyb,
   /* Loop on boundary zones */
 
   for (cs_tree_node_t *tn_bndy = cs_tree_node_get_child(tn_b0, "boundary");
-       tn_bndy != NULL;
+       tn_bndy != nullptr;
        tn_bndy = cs_tree_node_get_next_of_name(tn_bndy)) {
 
     const char *label = cs_tree_node_get_tag(tn_bndy, "label");
 
     const cs_zone_t *z = cs_boundary_zone_by_name_try(label);
-    if (z == NULL)  /* possible in case of old XML file with "dead" nodes */
+    if (z == nullptr)  /* possible in case of old XML file with "dead" nodes */
       continue;
 
     cs_lnum_t n_faces = z->n_elts;
@@ -733,7 +742,7 @@ cs_gui_mobile_mesh_get_fixed_velocity(const char  *label)
   /* Loop on boundary zones */
 
   for (cs_tree_node_t *tn_bndy = cs_tree_node_get_child(tn_b0, "boundary");
-       tn_bndy != NULL;
+       tn_bndy != nullptr;
        tn_bndy = cs_tree_node_get_next_of_name(tn_bndy)) {
 
     const char *nat_bndy = cs_tree_node_get_tag(tn_bndy, "nature");
@@ -758,7 +767,7 @@ cs_gui_mobile_mesh_get_fixed_velocity(const char  *label)
       const cs_zone_t *bz = cs_boundary_zone_by_name(label);
 
       /* Evaluate formula using meg */
-      cs_real_t *retvals = NULL;
+      cs_real_t *retvals = nullptr;
       BFT_MALLOC(retvals, 3 * bz->n_elts, cs_real_t);
       cs_meg_boundary_function(bz->name,
                                bz->n_elts,
@@ -772,7 +781,7 @@ cs_gui_mobile_mesh_get_fixed_velocity(const char  *label)
     }
   }
 
-  return NULL; /* avoid a compilation warning */
+  return nullptr; /* avoid a compilation warning */
 }
 
 /*----------------------------------------------------------------------------*/
@@ -789,13 +798,13 @@ cs_gui_mobile_mesh_structures_add(void)
   cs_tree_node_t *tn_b0 = cs_tree_get_node(cs_glob_tree, "boundary_conditions");
 
   for (cs_tree_node_t *tn_bndy = cs_tree_node_get_child(tn_b0, "boundary");
-       tn_bndy != NULL;
+       tn_bndy != nullptr;
        tn_bndy = cs_tree_node_get_next_of_name(tn_bndy)) {
 
     const char *label = cs_tree_node_get_tag(tn_bndy, "label");
 
     const cs_zone_t *z = cs_boundary_zone_by_name_try(label);
-    if (z == NULL)  /* possible in case of old XML file with "dead" nodes */
+    if (z == nullptr)  /* possible in case of old XML file with "dead" nodes */
       continue;
 
     enum ale_boundary_nature nature = _get_ale_boundary_nature(tn_bndy);
@@ -820,7 +829,7 @@ cs_gui_mobile_mesh_structures_add(void)
  * Retrieve data for internal coupling. Called once at initialization
  *
  * parameters:
- *   mbstru   <-- number of previous structures (-999 or by restart)
+ *   is_restart <-- restart or not ?
  *   aexxst   --> Displacement prediction alpha
  *   bexxst   --> Displacement prediction beta
  *   cfopre   --> Stress prediction alpha
@@ -831,14 +840,14 @@ cs_gui_mobile_mesh_structures_add(void)
  *----------------------------------------------------------------------------*/
 
 void
-cs_gui_mobile_mesh_init_structures(int         mbstru,
-                                   double     *aexxst,
-                                   double     *bexxst,
-                                   double     *cfopre,
-                                   int        *ihistr,
-                                   double     *xstr0,
-                                   double     *xstreq,
-                                   double     *vstr0)
+cs_gui_mobile_mesh_init_structures(bool    is_restart,
+                                   double *aexxst,
+                                   double *bexxst,
+                                   double *cfopre,
+                                   int    *ihistr,
+                                   double *xstr0,
+                                   double *xstreq,
+                                   double *vstr0)
 {
   int  istruct = 0;
 
@@ -851,48 +860,51 @@ cs_gui_mobile_mesh_init_structures(int         mbstru,
   cs_gui_node_get_child_real(tn0, "stress_prediction_alpha", cfopre);
   cs_gui_node_get_child_status_int(tn0, "monitor_point_synchronisation", ihistr);
 
-  cs_tree_node_t *tn = cs_tree_get_node(cs_glob_tree, "boundary_conditions");
+  /* Do not overwrite restart data */
+  if (!is_restart) {
+    cs_tree_node_t *tn = cs_tree_get_node(cs_glob_tree, "boundary_conditions");
 
-  cs_tree_node_t *tn_b0 = cs_tree_node_get_child(tn, "boundary");
-  cs_tree_node_t *tn_w0 = cs_tree_node_get_child(tn, "boundary");//FIXME
+    cs_tree_node_t *tn_b0 = cs_tree_node_get_child(tn, "boundary");
 
-  /* At each time-step, loop on boundary faces */
+    /* At each time-step, loop on boundary faces */
+    int izone = 0;
 
-  int izone = 0;
+    for (tn = tn_b0; tn != nullptr;
+         tn = cs_tree_node_get_next_of_name(tn), izone++) {
+      const char *label = cs_tree_node_get_tag(tn, "label");
 
-  for (tn = tn_b0;
-       tn != NULL;
-       tn = cs_tree_node_get_next_of_name(tn), izone++) {
+      ale_boundary_nature nature = _get_ale_boundary_nature(tn);
 
-    const char *label = cs_tree_node_get_tag(tn, "label");
+      /* Keep only internal coupling */
+      if (nature == ale_boundary_nature_internal_coupling) {
+        /* get the matching BC node */
+        const char     *nat_bndy = cs_tree_node_get_tag(tn, "nature");
+        cs_tree_node_t *tn_bc    = cs_tree_node_get_child(tn->parent, nat_bndy);
+        tn_bc = cs_tree_node_get_sibling_with_tag(tn_bc, "label", label);
 
-    cs_tree_node_t *tn_w
-      = cs_tree_node_get_sibling_with_tag(tn_w0, "label", label);
+        const cs_zone_t *z = cs_boundary_zone_by_name_try(label);
+        /* possible in case of old XML file with "dead" nodes */
+        if (z == nullptr)
+          continue;
 
-    /* Keep only internal coupling */
-    if (  _get_ale_boundary_nature(tn_w)
-        == ale_boundary_nature_internal_coupling) {
-
-      if (istruct+1 > mbstru) { /* Do not overwrite restart data */
         /* Read initial_displacement, equilibrium_displacement
            and initial_velocity */
-        cs_tree_node_t *tn_ic = cs_tree_get_node(tn_w, "ale");
-        tn_ic = cs_tree_node_get_sibling_with_tag(tn_ic,
+        cs_tree_node_t *tn_ic = cs_tree_get_node(tn_bc, "ale");
+        tn_ic                 = cs_tree_node_get_sibling_with_tag(tn_ic,
                                                   "choice",
                                                   "internal_coupling");
-        _get_internal_coupling_xyz_values(tn_ic, "initial_displacement",
+        _get_internal_coupling_xyz_values(tn_ic,
+                                          "initial_displacement",
                                           &xstr0[3 * istruct]);
-        _get_internal_coupling_xyz_values(tn_ic, "equilibrium_displacement",
+        _get_internal_coupling_xyz_values(tn_ic,
+                                          "equilibrium_displacement",
                                           &xstreq[3 * istruct]);
-        _get_internal_coupling_xyz_values(tn_ic, "initial_velocity",
+        _get_internal_coupling_xyz_values(tn_ic,
+                                          "initial_velocity",
                                           &vstr0[3 * istruct]);
+
+        istruct++;
       }
-
-      const cs_zone_t *z = cs_boundary_zone_by_name_try(label);
-      if (z == NULL)  /* possible in case of old XML file with "dead" nodes */
-        continue;
-
-      istruct++;
     }
   }
 }
@@ -920,7 +932,7 @@ cs_gui_mobile_mesh_internal_structures(cs_real_t  xmstru[][3][3],
   /* At each time-step, loop on boundary faces */
 
   for (cs_tree_node_t *tn_bndy = cs_tree_node_get_child(tn_b0, "boundary");
-       tn_bndy != NULL;
+       tn_bndy != nullptr;
        tn_bndy = cs_tree_node_get_next_of_name(tn_bndy)) {
 
     const char *label = cs_tree_node_get_tag(tn_bndy, "label");
@@ -971,7 +983,7 @@ cs_gui_mobile_mesh_bc_structures(int  *idfstr)
 
   /* Loop on boundary faces */
 
-  for (tn = tn_b0; tn != NULL; tn = cs_tree_node_get_next_of_name(tn)) {
+  for (tn = tn_b0; tn != nullptr; tn = cs_tree_node_get_next_of_name(tn)) {
 
     const char *label = cs_tree_node_get_tag(tn, "label");
 
@@ -983,7 +995,7 @@ cs_gui_mobile_mesh_bc_structures(int  *idfstr)
     if (  _get_ale_boundary_nature(tn_w)
         == ale_boundary_nature_internal_coupling) {
       const cs_zone_t *z = cs_boundary_zone_by_name_try(label);
-      if (z == NULL)  /* possible in case of old XML file with "dead" nodes */
+      if (z == nullptr)  /* possible in case of old XML file with "dead" nodes */
         continue;
 
       cs_lnum_t n_faces = z->n_elts;
@@ -999,7 +1011,7 @@ cs_gui_mobile_mesh_bc_structures(int  *idfstr)
     else if (nature == ale_boundary_nature_external_coupling) {
 
       const cs_zone_t *z = cs_boundary_zone_by_name_try(label);
-      if (z == NULL)  /* possible in case of old XML file with "dead" nodes */
+      if (z == nullptr)  /* possible in case of old XML file with "dead" nodes */
         continue;
 
       cs_lnum_t n_faces = z->n_elts;

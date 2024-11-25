@@ -130,7 +130,7 @@ cs_gui_mobile_mesh_structures_add(void);
  * Retrieve data for internal coupling. Called once at initialization
  *
  * parameters:
- *   mbstru   <-- number of previous structures (-999 or by restart)
+ *   is_restart <-- restart or not ?
  *   aexxst   --> Displacement prediction alpha
  *   bexxst   --> Displacement prediction beta
  *   cfopre   --> Stress prediction alpha
@@ -141,14 +141,14 @@ cs_gui_mobile_mesh_structures_add(void);
  *----------------------------------------------------------------------------*/
 
 void
-cs_gui_mobile_mesh_init_structures(int         mbstru,
-                                   double     *aexxst,
-                                   double     *bexxst,
-                                   double     *cfopre,
-                                   int        *ihistr,
-                                   double     *xstr0,
-                                   double     *xstreq,
-                                   double     *vstr0);
+cs_gui_mobile_mesh_init_structures(bool    is_restart,
+                                   double *aexxst,
+                                   double *bexxst,
+                                   double *cfopre,
+                                   int    *ihistr,
+                                   double *xstr0,
+                                   double *xstreq,
+                                   double *vstr0);
 
 /*-----------------------------------------------------------------------------
  * Retrieve data for internal coupling. Called at each step
