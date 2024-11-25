@@ -2429,8 +2429,8 @@ cs_matrix_compute_coeffs
 
       cs_matrix_transfer_coefficients(a,
                                       symmetric,
-                                      1,
-                                      1,
+                                      stride,
+                                      eb_size,
                                       n_edges,
                                       edges,
                                       &(da_p),

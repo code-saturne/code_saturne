@@ -345,11 +345,7 @@ _equation_iterative_solve_strided(int                   idtvar,
       conv_diff_mg = true;
   }
 
-  /*  be careful here, xam is interleaved*/
-
   cs_lnum_t eb_stride = eb_size*eb_size;
-  cs_real_t *xam;
-  CS_MALLOC_HD(xam, eb_stride*isym*n_faces, cs_real_t, amode);
 
   /*==========================================================================
    * Building of the "simplified" matrix
@@ -733,14 +729,12 @@ _equation_iterative_solve_strided(int                   idtvar,
     /*  Solver residual */
     ressol = residu;
 
-    if (conv_diff_mg)
-      cs_sles_setup_native_conv_diff(f_id,
-                                     var_name,
-                                     db_size,
-                                     eb_size,
-                                     (cs_real_t *)dam,
-                                     xam,
-                                     true);
+    if (conv_diff_mg) {
+      cs_multigrid_t *mg
+        = static_cast<cs_multigrid_t *>(cs_sles_get_context(sc));
+      cs_multigrid_setup_conv_diff(mg, var_name, a, true,
+                                   cs_sles_get_verbosity(sc));
+    }
 
     cs_sles_solve_ccc_fv(sc,
                          a,
@@ -1122,7 +1116,6 @@ _equation_iterative_solve_strided(int                   idtvar,
 
   /* Free memory */
   CS_FREE_HD(dam);
-  CS_FREE_HD(xam);
   CS_FREE_HD(smbini);
   CS_FREE_HD(dpvar);
   if (iswdyp >= 1) {
