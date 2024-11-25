@@ -1718,6 +1718,7 @@ cs_log_equation_convergence_info_write(void)
 
   const int n_fields = cs_field_n_fields();
   const int keylog = cs_field_key_id("log");
+  const int si_k_id = cs_field_key_id("solving_info");
   const cs_real_t *cell_vol = cs_glob_mesh_quantities->cell_vol;
   const cs_lnum_t n_cells = cs_glob_mesh->n_cells;
 
@@ -1790,9 +1791,9 @@ cs_log_equation_convergence_info_write(void)
       strcat(chain, " ");
 
     /* Check if the variable was solved in the current time step */
-    cs_solving_info_t sinfo;
-    cs_field_get_key_struct(f, cs_field_key_id("solving_info"), &sinfo);
-    if (sinfo.n_it < 0)
+    auto *sinfo = static_cast<cs_solving_info_t *>(
+        cs_field_get_key_struct_ptr(f, si_k_id));
+    if (sinfo->n_it < 0)
       continue;
 
     /* Compute the time drift */
@@ -1802,7 +1803,7 @@ cs_log_equation_convergence_info_write(void)
       cs_real_t *dt = CS_F_(dt)->val;
 
       /* Pressure time drift (computed in cs_pressure_correction.c) */
-      dervar[0] = sinfo.derive;
+      dervar[0] = sinfo->derive;
 
         /* Time drift for cell based variables (except pressure) */
       if (   cs_glob_physical_model_flag[CS_COMPRESSIBLE] > -1
@@ -1847,12 +1848,12 @@ cs_log_equation_convergence_info_write(void)
        * updated at each time step (only when logging)
        * NOTE: it should be added in the bindings again
        * if needed */
-      sinfo.l2residual = sqrt(cs_math_fabs(varres[0]));
+      sinfo->l2residual = sqrt(cs_math_fabs(varres[0]));
     }
 
     char var_log[128];
     snprintf(var_log, 127, "%12.5e %7d   %12.5e %12.5e %12.5e",
-             sinfo.rhs_norm, sinfo.n_it, sinfo.res_norm,
+             sinfo->rhs_norm, sinfo->n_it, sinfo->res_norm,
              dervar[0], sqrt(cs_math_fabs(varres[0])));
 
     strcat(chain, var_log);
