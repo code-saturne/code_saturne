@@ -27,7 +27,7 @@
 #include "cs_defs.h"
 
 /*----------------------------------------------------------------------------
- * Standard C library headers
+ * Standard library headers
  *----------------------------------------------------------------------------*/
 
 #include <stdarg.h>
@@ -93,11 +93,11 @@ BEGIN_C_DECLS
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
 
 /*=============================================================================
- * Local Macro Definitions
+ * Local macro definitions
  *============================================================================*/
 
 /*=============================================================================
- * Local Type Definitions
+ * Local type definitions
  *============================================================================*/
 
 /*============================================================================
@@ -858,8 +858,11 @@ cs_matrix_default_set_type(cs_matrix_fill_type_t  fill_type,
  * \brief Return a (0-based) global block row numbering for a given matrix.
  *
  * The numbering is built or updated if not previously used, or if the
- * previous call considered a different matrix, and is simply returned
- * otherwise. In other words, this works as a matrix global numbering cache.
+ * previous call considered a different matrix or halo, and is simply
+ * returned otherwise.
+ * In other words, this works as a matrix global numbering cache.
+ *
+ * The matrix's halo is used for the update.
  *
  * \param[in]  m  associated matrix
  *
@@ -870,8 +873,33 @@ cs_matrix_default_set_type(cs_matrix_fill_type_t  fill_type,
 const cs_gnum_t *
 cs_matrix_get_block_row_g_id(const cs_matrix_t  *m)
 {
+  return cs_matrix_get_block_row_g_id(m, m->halo);
+}
+
+END_C_DECLS
+#ifdef __cplusplus
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Return a (0-based) global block row numbering for a given matrix.
+ *
+ * The numbering is built or updated if not previously used, or if the
+ * previous call considered a different matrix or halo, and is simply
+ * returned otherwise.
+ * In other words, this works as a matrix global numbering cache.
+ *
+ * \param[in]  m     associated matrix
+ * \param[in]  halo  associated halo
+ *
+ * \return  pointer to requested global numbering
+ */
+/*----------------------------------------------------------------------------*/
+
+const cs_gnum_t *
+cs_matrix_get_block_row_g_id(const cs_matrix_t  *m,
+                             const cs_halo_t    *halo)
+{
   const cs_lnum_t  n_rows = m->n_rows;
-  const cs_halo_t  *halo = m->halo;
   const cs_gnum_t *l_range = nullptr;
 
   if (m->assembler != nullptr)
@@ -887,6 +915,9 @@ cs_matrix_get_block_row_g_id(const cs_matrix_t  *m)
 
   return g_row_num;
 }
+
+#endif /* cplusplus */
+BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -1071,6 +1102,32 @@ cs_matrix_set_coefficients_by_assembler(const cs_field_t  *f,
   cs_matrix_assembler_values_finalize(&mav);
 
   return m;
+}
+
+/*----------------------------------------------------------------------------
+ * Release of destroy matrix depending on whether is is cached or not.
+ *
+ * Matrices built by assembler are destroyed.
+ *
+ * parameters:
+ *   matrix <-> pointer to matrix structure pointer
+ *----------------------------------------------------------------------------*/
+
+void
+cs_matrix_release(cs_matrix_t  **m)
+{
+  if (m == nullptr)
+    return;
+
+  cs_matrix_t *_m = *m;
+
+  if (_m == nullptr)
+    return;
+
+  cs_matrix_release_coefficients(_m);
+
+  if (_m != _matrix[cs_matrix_get_type(_m)])
+    cs_matrix_destroy(m);
 }
 
 /*----------------------------------------------------------------------------*/

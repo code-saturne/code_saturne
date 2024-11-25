@@ -832,6 +832,21 @@ cs_sles_default_get_matrix(int          f_id,
   return a;
 }
 
+/*----------------------------------------------------------------------------
+ * Release of destroy matrix depending on whether is is cached or not.
+ *
+ * Matrices built by assembler are destroyed.
+ *
+ * parameters:
+ *   matrix <-> pointer to matrix structure pointer
+ *----------------------------------------------------------------------------*/
+
+void
+cs_sles_default_release_matrix(cs_matrix_t  **m)
+{
+  cs_matrix_release(m);
+}
+
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Call sparse linear equation solver setup for convection-diffusion
@@ -981,7 +996,6 @@ cs_sles_solve_ccc_fv(cs_sles_t           *sc,
   cs_assert(n_rows == m->n_cells);
 
   if (n_cols_ext > m->n_cells_with_ghosts) {
-
     cs_alloc_mode_t amode = cs_matrix_get_alloc_mode(a);
 
     cs_dispatch_context ctx;
@@ -990,16 +1004,25 @@ cs_sles_solve_ccc_fv(cs_sles_t           *sc,
     cs_lnum_t db_size = cs_matrix_get_diag_block_size(a);
     assert(n_rows == m->n_cells);
     cs_lnum_t _n_rows = n_rows*db_size;
-    CS_MALLOC_HD(_rhs, n_cols_ext*db_size, cs_real_t, amode);
     CS_MALLOC_HD(_vx, n_cols_ext*db_size, cs_real_t, amode);
     ctx.parallel_for(_n_rows, [=] CS_F_HOST_DEVICE (cs_lnum_t i) {
-      _rhs[i] = rhs[i];
       _vx[i] = vx[i];
     });
-    ctx.wait();
-    cs_matrix_pre_vector_multiply_sync(a, _rhs);
-    rhs_p = _rhs;
 
+    if (cs_matrix_get_type(a) == CS_MATRIX_NATIVE) {
+      CS_MALLOC_HD(_rhs, n_cols_ext*db_size, cs_real_t, amode);
+      rhs_p = _rhs;
+
+      cs_lnum_t _n_ext = (n_cols_ext - n_rows)*db_size;
+      ctx.parallel_for(_n_rows, [=] CS_F_HOST_DEVICE (cs_lnum_t i) {
+        _rhs[i] = rhs[i];
+      });
+      ctx.parallel_for(_n_ext, [=] CS_F_HOST_DEVICE (cs_lnum_t i) {
+        _rhs[_n_rows + i] = 0;
+      });
+    };
+
+    ctx.wait();
   }
 
   /* Solve system */

@@ -228,7 +228,7 @@ int
 cs_matrix_get_tuning_runs(void);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Set default matrix type for a given fill type.
  *
  * \param[in] fill type  Fill type for which tuning behavior is set
@@ -241,12 +241,15 @@ cs_matrix_default_set_type(cs_matrix_fill_type_t  fill_type,
                            cs_matrix_type_t       type);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Return a (0-based) global block row numbering for a given matrix.
  *
  * The numbering is built or updated if not previously used, or if the
- * previous call considered a differeent matrix, and is simply returned
- * otherwise. In other words, this works as a matrix global numbering cache.
+ * previous call considered a different matrix or halo, and is simply
+ * returned otherwise.
+ * In other words, this works as a matrix global numbering cache.
+ *
+ * The matrix's halo is used for the update.
  *
  * \param[in]  m  associated matrix
  *
@@ -256,6 +259,32 @@ cs_matrix_default_set_type(cs_matrix_fill_type_t  fill_type,
 
 const cs_gnum_t *
 cs_matrix_get_block_row_g_id(const cs_matrix_t  *m);
+
+END_C_DECLS
+#ifdef __cplusplus
+
+/*----------------------------------------------------------------------------*/
+/*
+ * \brief Return a (0-based) global block row numbering for a given matrix.
+ *
+ * The numbering is built or updated if not previously used, or if the
+ * previous call considered a different matrix or halo, and is simply
+ * returned otherwise.
+ * In other words, this works as a matrix global numbering cache.
+ *
+ * \param[in]  m     associated matrix
+ * \param[in]  halo  associated halo
+ *
+ * \return  pointer to requested global numbering
+ */
+/*----------------------------------------------------------------------------*/
+
+const cs_gnum_t *
+cs_matrix_get_block_row_g_id(const cs_matrix_t  *m,
+                             const cs_halo_t    *halo);
+
+#endif /* cplusplus */
+BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
 /*
@@ -301,6 +330,18 @@ cs_matrix_set_coefficients_by_assembler(const cs_field_t  *f,
                                         cs_lnum_t          extra_diag_block_size,
                                         const cs_real_t   *da,
                                         const cs_real_t   *xa);
+
+/*----------------------------------------------------------------------------
+ * Release of destroy matrix depending on whether is is cached or not.
+ *
+ * Matrices built by assembler are destroyed.
+ *
+ * parameters:
+ *   matrix <-> pointer to matrix structure pointer
+ *----------------------------------------------------------------------------*/
+
+void
+cs_matrix_release(cs_matrix_t  **m);
 
 /*----------------------------------------------------------------------------*/
 

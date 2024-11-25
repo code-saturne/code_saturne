@@ -2038,7 +2038,7 @@ cs_matrix_compute_coeffs(cs_matrix_t                 *a,
         = cs_matrix_assembler_values_init(a, 1, 1);
       assert(n_cells == cs_matrix_get_n_rows(a));
 
-      const cs_gnum_t *r_g_id = cs_matrix_get_block_row_g_id(a);
+      const cs_gnum_t *r_g_id = cs_matrix_get_block_row_g_id(a, m->halo);
 
       const cs_lnum_t block_size = 800;
       cs_gnum_t g_row_id[800];
@@ -2360,7 +2360,7 @@ cs_matrix_compute_coeffs
         = cs_matrix_assembler_values_init(a, stride, eb_size);
       assert(n_cells == cs_matrix_get_n_rows(a));
 
-      const cs_gnum_t *r_g_id = cs_matrix_get_block_row_g_id(a);
+      const cs_gnum_t *r_g_id = cs_matrix_get_block_row_g_id(a, m->halo);
 
       const cs_lnum_t block_size = 800;
       cs_gnum_t g_row_id[800];
