@@ -94,6 +94,7 @@ BEGIN_C_DECLS
 static cs_ctwr_option_t  _ctwr_option = {
   .evap_model = CS_CTWR_NONE,
   .has_rain = false,
+  .rain_evap = false,
   .mixture_model = false,
   .solve_rain_velocity = false,
   .air_rain_friction = false,
