@@ -660,10 +660,12 @@ cs_lagr_car(int              iprev,
   }
 
   /* Add buoyancy effects based on Boussinesq approximation */
-  if (    cs_glob_lagr_model->physical_model != CS_LAGR_PHYS_OFF
+  if (    (    cs_glob_lagr_model->physical_model == CS_LAGR_PHYS_COAL
+            || cs_glob_lagr_model->physical_model == CS_LAGR_PHYS_CTWR
+            || (   cs_glob_lagr_model->physical_model == CS_LAGR_PHYS_HEAT
+                && cs_glob_lagr_specific_physics->itpvar == 1))
        && cs_glob_velocity_pressure_model->idilat == 0
-       && cs_field_by_name("thermal_expansion") != nullptr
-       && extra->temperature != nullptr) {
+       && cs_field_by_name("thermal_expansion") != nullptr) {
     const cs_fluid_properties_t *phys_pro = cs_get_glob_fluid_properties();
     for (cs_lnum_t ip = 0; ip < p_set->n_particles; ip++) {
       cs_lnum_t      cell_id  = cs_lagr_particles_get_lnum(p_set, ip ,
@@ -682,15 +684,11 @@ cs_lagr_car(int              iprev,
         cs_real_t rair = phys_pro->r_pg_cnst;
         cs_real_t cp0 = phys_pro->cp0;
         cs_real_t rscp = rair/cp0;
-        /* FIXME GB  to bebug */
-        //temp_ref = 1. / expansion_coef;
         temp_ref = cs_glob_atmo_option->meteo_t0 *
           pow(pref/ cs_glob_atmo_option->meteo_psea, rscp) - _tkelvi;
       }
-      else if (   cs_glob_thermal_model->itpscl == CS_TEMPERATURE_SCALE_KELVIN
-               && cs_glob_lagr_specific_physics->itpvar == 1) {
+      else if (cs_glob_thermal_model->itpscl == CS_TEMPERATURE_SCALE_KELVIN)
           temp_ref -= _tkelvi;
-      }
 
       cs_real_t buoyancy_fac = - expansion_coef * (temp_s - temp_ref);
 
