@@ -190,12 +190,32 @@ class Plot(object):
         j = 0
         error = ""
 
-        for line in self.f.readlines():
+        lines = self.f.readlines()
+        separator = ' '
+        if len(lines) > 1:
+            line_test = lines[1]
+        elif len(lines) > 0:
+            line_test = lines[0]
+        else:
+            line_test = ''
+        if line_test.find(';') > -1:
+            separator = ';'
+        if line_test.find(':') > -1:
+            separator = ';'
+        elif line_test.find(', ') > -1:
+            separator = ', '
+        elif line_test.find(' ') > -1:
+            separator = ' '
+        elif line_test.find('\t') > -1:
+            separator = '\t'
+        elif line_test.find(',') > -1:
+            separator = ','
+
+        for line in lines:
             line = line.lstrip()
             if line and line[0] != '#':
                 j += 1
-                line = line.replace(", ", " ") # compatibility with CSV
-                line = line.replace(";", " ") # compatibility with CSV
+                line = line.replace(separator, " ") # compatibility with CSV
                 line = line.lstrip()
 
                 # for CSV files, try to detect a header to skip it
