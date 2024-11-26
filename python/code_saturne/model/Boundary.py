@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-#-------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------
 
 # This file is part of code_saturne, a general-purpose CFD tool.
 #
@@ -20,17 +20,17 @@
 # this program; if not, write to the Free Software Foundation, Inc., 51 Franklin
 # Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-#-------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------
 
-#-------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------
 # Library modules import
-#-------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------
 
 import sys, unittest
 
-#-------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------
 # Application modules import
-#-------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------
 
 from code_saturne.model.Common import GuiParam
 from code_saturne.model.XMLvariables import Model, Variables
@@ -43,17 +43,17 @@ from code_saturne.model.HgnModel import HgnModel
 from code_saturne.model.TurbulenceModel import TurbulenceModel
 from code_saturne.model.ConjugateHeatTransferModel import ConjugateHeatTransferModel
 
-#-------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------
 # log config
-#-------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------
 
 logging.basicConfig()
 log = logging.getLogger("Boundary")
 log.setLevel(GuiParam.DEBUG)
 
-#-------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------
 # Main class
-#-------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------
 
 class Boundary(object) :
     """
@@ -97,7 +97,6 @@ class Boundary(object) :
             return GroundwaterBoundary.__new__(GroundwaterBoundary, label, case)
         else :
             raise ValueError("Unknown boundary nature: " + nature)
-
 
     def __init__(self, nature, label, case) :
         """
@@ -154,7 +153,6 @@ class Boundary(object) :
         self._initBoundary()
         self._initALEBoundary()
 
-
     def _initBoundary(self):
         """
         Initialize the boundary, add nodes in the boundary node (vitual method)
@@ -184,7 +182,6 @@ class Boundary(object) :
         self._defaultValues[formula_velocity] = 'mesh_velocity[0] = 0;\nmesh_velocity[1] = 0;\nmesh_velocity[2] = 0;'
         self._defaultValues[formula_displacement] = 'mesh_displacement[0] = 0;\nmesh_displacement[1] = 0;\nmesh_displacement[2] = 0;'
 
-
     @Variables.noUndo
     def getALEChoice(self):
         """
@@ -199,7 +196,6 @@ class Boundary(object) :
             self.setALEChoice(choice)
 
         return choice
-
 
     @Variables.undoGlobal
     def setALEChoice(self, value):
@@ -217,7 +213,6 @@ class Boundary(object) :
             else:
                 node.xmlRemoveChild('formula')
 
-
     @Variables.noUndo
     def getALEFormula(self):
         """
@@ -233,7 +228,6 @@ class Boundary(object) :
 
         return value
 
-
     @Variables.undoLocal
     def setFormula(self, value):
         """
@@ -241,7 +235,6 @@ class Boundary(object) :
         """
         node = self.boundNode.xmlInitChildNode('ale')
         node.xmlSetData('formula', value)
-
 
     def _getDefaultFormula(self):
         """
@@ -252,7 +245,6 @@ class Boundary(object) :
             return self._defaultValues[ 'ale_formula_' + aleChoice ]
         else:
             return ''
-
 
     def updateScalarTypeAndName(self, scalarNode, scalarName):
         """
@@ -266,7 +258,6 @@ class Boundary(object) :
             scalarNode['type'] = self.sca_model.getElectricalScalarType(scalarName)
         else:
             scalarNode['type'] = self.sca_model.getScalarTypeByName(scalarName)
-
 
     @Variables.noUndo
     def getLabel(self):
@@ -309,7 +300,6 @@ class Boundary(object) :
                     l.append((name, choice, formula))
         return l
 
-
     @Variables.noUndo
     def getScalarConvert(self, scalarName):
         """
@@ -321,7 +311,6 @@ class Boundary(object) :
             return scalarNode['convert']
         else:
             return None
-
 
     @Variables.undoGlobal
     def setScalarConvert(self, scalarName, convert=None):
@@ -335,16 +324,15 @@ class Boundary(object) :
         else:
             del(scalarNode['convert'])
 
-
     def delete(self):
         """
         Delete Boundary
         """
         self.boundNode.xmlRemoveNode()
 
-#-------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------
 # Inlet boundary
-#-------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------
 
 class InletBoundary(Boundary):
     """
@@ -354,7 +342,6 @@ class InletBoundary(Boundary):
         Constructor
         """
         return object.__new__(cls)
-
 
     def _initBoundary(self):
         """
@@ -415,7 +402,6 @@ class InletBoundary(Boundary):
             if CompressibleModel(self.case).getCompressibleModel() == "off":
                 self.boundNode.xmlRemoveChild('temperature')
 
-
     def __defaultValues(self):
         """
         Default values
@@ -465,7 +451,6 @@ class InletBoundary(Boundary):
 
         return dico
 
-
     def __initChoiceForVelocityAndDirection(self):
         """
         Get the choice of velocity and direction.
@@ -480,7 +465,6 @@ class InletBoundary(Boundary):
             dir = self.__defaultValues()['directionChoice']
             self.setDirectionChoice(dir)
         return choice, dir
-
 
     def __getscalarList(self):
         """
@@ -497,7 +481,6 @@ class InletBoundary(Boundary):
 
         return scalar_list
 
-
     def __deleteScalarNodes(self, name, tag):
         """
         Delete nodes of scalars
@@ -510,7 +493,6 @@ class InletBoundary(Boundary):
             if tt != tag:
                 scalarNode.xmlRemoveChild(tt)
 
-
     @Variables.noUndo
     def getVelocityChoice(self):
         """
@@ -519,7 +501,6 @@ class InletBoundary(Boundary):
         choice, dir = self.__initChoiceForVelocityAndDirection()
         return choice
 
-
     @Variables.noUndo
     def getDirectionChoice(self):
         """
@@ -527,7 +508,6 @@ class InletBoundary(Boundary):
         """
         choice, dir = self.__initChoiceForVelocityAndDirection()
         return dir
-
 
     @Variables.noUndo
     def getVelocity(self):
@@ -549,7 +529,6 @@ class InletBoundary(Boundary):
 
         return value
 
-
     @Variables.undoGlobal
     def setVelocity(self, value):
         """
@@ -563,7 +542,6 @@ class InletBoundary(Boundary):
 
         XMLVelocityNode = self.boundNode.xmlInitNode('velocity_pressure')
         XMLVelocityNode.xmlSetData(choice, value)
-
 
     @Variables.noUndo
     def getDirection(self, component):
@@ -586,7 +564,6 @@ class InletBoundary(Boundary):
             self.setDirection(component, value)
         return value
 
-
     @Variables.undoLocal
     def setDirection(self, component, value):
         """
@@ -598,7 +575,6 @@ class InletBoundary(Boundary):
 
         XMLVelocityNode = self.boundNode.xmlInitNode('velocity_pressure')
         XMLVelocityNode.xmlSetData(component, value)
-
 
     @Variables.undoGlobal
     def setVelocityChoice(self, value):
@@ -620,7 +596,6 @@ class InletBoundary(Boundary):
         for tag in self.__velocityChoices:
             if tag != value:
                 XMLVelocityNode.xmlRemoveChild(tag)
-
 
     @Variables.undoGlobal
     def setDirectionChoice(self, value):
@@ -649,7 +624,6 @@ class InletBoundary(Boundary):
             for tag in ('direction_x', 'direction_y', 'direction_z'):
                 XMLVelocityNode.xmlRemoveChild(tag)
 
-
     @Variables.noUndo
     def getTurbulenceChoice(self):
         """
@@ -663,7 +637,6 @@ class InletBoundary(Boundary):
             self.setTurbulenceChoice(choice)
 
         return choice
-
 
     @Variables.undoGlobal
     def setTurbulenceChoice(self, value):
@@ -692,7 +665,6 @@ class InletBoundary(Boundary):
         elif value == 'formula' :
             self.getTurbFormula()
 
-
     @Variables.noUndo
     def getHydraulicDiameter(self):
         """
@@ -706,7 +678,6 @@ class InletBoundary(Boundary):
             self.setHydraulicDiameter(value)
         return value
 
-
     @Variables.undoLocal
     def setHydraulicDiameter(self, value):
         """
@@ -717,7 +688,6 @@ class InletBoundary(Boundary):
         XMLTurbulenceNode = self.boundNode.xmlInitNode('turbulence')
         Model().isInList(XMLTurbulenceNode['choice'], self.__turbulenceChoices)
         XMLTurbulenceNode.xmlSetData('hydraulic_diameter', value)
-
 
     @Variables.undoLocal
     def setTurbFormula(self, formula):
@@ -732,7 +702,6 @@ class InletBoundary(Boundary):
         n = XMLTurbulenceNode.xmlInitChildNode('formula')
         n.xmlSetTextNode(formula)
 
-
     @Variables.noUndo
     def getTurbFormula(self):
         """
@@ -743,7 +712,6 @@ class InletBoundary(Boundary):
 
         formula = XMLTurbulenceNode.xmlGetString('formula')
         return formula
-
 
     @Variables.noUndo
     def getDefaultTurbFormula(self, turb_model):
@@ -788,7 +756,6 @@ omega = 0.;"""
 
         return formula
 
-
     @Variables.noUndo
     def getTurbulentIntensity(self):
         """
@@ -803,7 +770,6 @@ omega = 0.;"""
 
         return value
 
-
     @Variables.undoLocal
     def setTurbulentIntensity(self, value):
         """
@@ -815,7 +781,6 @@ omega = 0.;"""
         Model().isInList(XMLTurbulenceNode['choice'], ('turbulent_intensity',))
         XMLTurbulenceNode.xmlSetData('turbulent_intensity', value)
 
-
     @Variables.noUndo
     def getScalarChoice(self, scalarName):
         """
@@ -825,7 +790,7 @@ omega = 0.;"""
 
         scalarNode = self.boundNode.xmlInitNode('scalar', name=scalarName)
 
-        #update type of scalar
+        # update type of scalar
         self.updateScalarTypeAndName(scalarNode, scalarName)
 
         choice = scalarNode['choice']
@@ -834,7 +799,6 @@ omega = 0.;"""
             self.setScalarChoice(scalarName, choice)
 
         return choice
-
 
     @Variables.undoGlobal
     def setScalarChoice(self, scalarName, choice) :
@@ -846,7 +810,7 @@ omega = 0.;"""
 
         scalarNode = self.boundNode.xmlInitNode('scalar', name=scalarName)
 
-        #update name and type of scalar
+        # update name and type of scalar
         self.updateScalarTypeAndName(scalarNode, scalarName)
 
         if scalarNode['choice'] == choice:
@@ -854,7 +818,6 @@ omega = 0.;"""
 
         scalarNode['choice'] = choice
         self.__deleteScalarNodes(scalarName, choice)
-
 
     @Variables.noUndo
     def getScalarValue(self, scalarName, choice) :
@@ -866,7 +829,7 @@ omega = 0.;"""
 
         scalarNode = self.boundNode.xmlInitNode('scalar', name=scalarName)
 
-        #update name and type of scalar
+        # update name and type of scalar
         self.updateScalarTypeAndName(scalarNode, scalarName)
 
         value = scalarNode.xmlGetChildDouble(choice)
@@ -874,7 +837,6 @@ omega = 0.;"""
             value = self.__defaultValues()['scalar']
             self.setScalarValue(scalarName, choice, value)
         return value
-
 
     @Variables.undoGlobal
     def setScalarValue(self, scalarName, choice, value):
@@ -887,11 +849,10 @@ omega = 0.;"""
 
         scalarNode = self.boundNode.xmlInitNode('scalar', name=scalarName)
 
-        #update name and type of scalar
+        # update name and type of scalar
         self.updateScalarTypeAndName(scalarNode, scalarName)
 
         scalarNode.xmlSetData(choice, value)
-
 
     @Variables.noUndo
     def getDefaultScalarFormula(self, scalarName, scalar_model):
@@ -906,7 +867,6 @@ omega = 0.;"""
             formula = scalarName+""" = 0;\nhc = 0;\n"""
 
         return formula
-
 
     @Variables.noUndo
     def getScalarFormula(self, scalarName, choice):
@@ -924,7 +884,6 @@ omega = 0.;"""
 
         return formula
 
-
     @Variables.undoLocal
     def setScalarFormula(self, scalarName, choice, formula):
         """
@@ -936,7 +895,6 @@ omega = 0.;"""
         scalarNode = self.boundNode.xmlInitNode('scalar', name=scalarName)
 
         n = scalarNode.xmlSetData(choice, formula)
-
 
     @Variables.noUndo
     def getInletType(self):
@@ -951,7 +909,6 @@ omega = 0.;"""
             self.setInletType(type)
         return type
 
-
     @Variables.noUndo
     def getThermoStatus(self, var):
         """
@@ -965,7 +922,6 @@ omega = 0.;"""
             self.setThermoStatus(var, status)
         return status
 
-
     @Variables.undoLocal
     def setThermoStatus(self, var, status):
         """
@@ -976,7 +932,6 @@ omega = 0.;"""
             node.xmlRemoveChild(var)
         n = node.xmlInitNode(var, 'status')
         n['status'] = status
-
 
     @Variables.undoLocal
     def setInletType(self, type):
@@ -998,7 +953,6 @@ omega = 0.;"""
 
         n['choice'] = type
 
-
     @Variables.noUndo
     def getThermoValue(self, var):
         """
@@ -1012,7 +966,6 @@ omega = 0.;"""
 
         return value
 
-
     @Variables.undoLocal
     def setThermoValue(self, var, value):
         """
@@ -1021,7 +974,6 @@ omega = 0.;"""
         Model().isFloat(value)
         node = self.boundNode.xmlInitNode('velocity_pressure')
         node.xmlSetData(var, value)
-
 
     @Variables.noUndo
     def getCheckedBoxList(self):
@@ -1043,7 +995,6 @@ omega = 0.;"""
         if status == 'on':
             box_list.append('Energy')
         return box_list
-
 
     @Variables.noUndo
     def getListValue(self):
@@ -1067,7 +1018,6 @@ omega = 0.;"""
 
         return value_list
 
-
     def deleteCompressibleInlet(self):
         """
         Delete all information of compressible model in boundary conditions.
@@ -1080,7 +1030,6 @@ omega = 0.;"""
         n.xmlRemoveChild('energy')
         n.xmlRemoveChild('total_pressure')
         n.xmlRemoveChild('enthalpy')
-
 
     @Variables.noUndo
     def getInletGasCombustionType(self):
@@ -1097,7 +1046,6 @@ omega = 0.;"""
 
         return type
 
-
     @Variables.undoLocal
     def setInletGasCombustionType(self, type):
         """
@@ -1108,7 +1056,6 @@ omega = 0.;"""
         node = self.boundNode.xmlGetNode('velocity_pressure')
         n= node.xmlInitNode('gas_type')
         n['choice'] = type
-
 
     @Variables.noUndo
     def getGasCombustionTemperature(self):
@@ -1123,7 +1070,6 @@ omega = 0.;"""
 
         return temperature
 
-
     @Variables.undoLocal
     def setGasCombustionTemperature(self, value):
         """
@@ -1131,7 +1077,6 @@ omega = 0.;"""
         """
         Model().isFloat(value)
         self.boundNode.xmlInitNode('velocity_pressure').xmlSetData('temperature',value)
-
 
     @Variables.noUndo
     def getMeanMixtureFraction(self):
@@ -1145,7 +1090,6 @@ omega = 0.;"""
             self.setMeanMixtureFraction(fraction)
         return fraction
 
-
     @Variables.undoLocal
     def setMeanMixtureFraction(self, value):
         """
@@ -1155,7 +1099,6 @@ omega = 0.;"""
         Model().isLowerOrEqual(value, 1.0)
         self.boundNode.xmlInitNode('velocity_pressure').xmlSetData('fraction',value)
 
-
     def deleteGas(self):
         """
         Delete all information of coal combustion in boundary conditions.
@@ -1164,7 +1107,6 @@ omega = 0.;"""
         n.xmlRemoveChild('gas_type')
         n.xmlRemoveChild('fraction')
         n.xmlRemoveChild('temperature')
-
 
     @Variables.noUndo
     def getHydraulicHeadValue(self):
@@ -1178,7 +1120,6 @@ omega = 0.;"""
 
         return hydraulic_head
 
-
     @Variables.undoLocal
     def setHydraulicHeadValue(self, value):
         """
@@ -1187,7 +1128,6 @@ omega = 0.;"""
         Model().isFloat(value)
         node = self.boundNode.xmlInitNode('dirichlet', name='hydraulic_head')
         self.boundNode.xmlSetData('dirichlet', value, name='hydraulic_head')
-
 
     @Variables.noUndo
     def getHydraulicHeadFlux(self):
@@ -1201,7 +1141,6 @@ omega = 0.;"""
 
         return hydraulic_head
 
-
     @Variables.undoLocal
     def setHydraulicHeadFlux(self, value):
         """
@@ -1210,7 +1149,6 @@ omega = 0.;"""
         Model().isFloat(value)
         node = self.boundNode.xmlInitNode('neumann', name='hydraulic_head')
         self.boundNode.xmlSetData('neumann', value, name='hydraulic_head')
-
 
     @Variables.noUndo
     def getHydraulicHeadChoice(self):
@@ -1224,7 +1162,6 @@ omega = 0.;"""
             choice = self.__defaultValues()['hydraulicHeadChoice']
             self.setHydraulicHeadChoice(choice)
         return choice
-
 
     @Variables.undoGlobal
     def setHydraulicHeadChoice(self, choice) :
@@ -1244,7 +1181,6 @@ omega = 0.;"""
         if old_choice == 'dirichlet':
             self.boundNode.xmlRemoveChild(old_choice)
 
-
     @Variables.noUndo
     def getHydraulicHeadFormula(self):
         """
@@ -1259,7 +1195,6 @@ omega = 0.;"""
 
         return formula
 
-
     @Variables.undoLocal
     def setHydraulicHeadFormula(self, formula):
         """
@@ -1269,7 +1204,6 @@ omega = 0.;"""
         scalarNode = self.boundNode.xmlInitNode('dirichlet_formula', name='hydraulicHead')
 
         n = scalarNode.xmlSetData('formula', formula)
-
 
     @Variables.noUndo
     def getConvectiveInletStatus(self):
@@ -1284,7 +1218,6 @@ omega = 0.;"""
             status = 'off'
         return status
 
-
     @Variables.undoLocal
     def setConvectiveInletStatus(self, status):
         """
@@ -1297,7 +1230,6 @@ omega = 0.;"""
             self.boundNode.xmlRemoveChild('convective_inlet')
         else:
             n['status'] = status
-
 
     @Variables.noUndo
     def getMappedInletStatus(self):
@@ -1312,7 +1244,6 @@ omega = 0.;"""
             status = 'off'
         return status
 
-
     @Variables.undoLocal
     def setMappedInletStatus(self, status):
         """
@@ -1325,7 +1256,6 @@ omega = 0.;"""
             self.boundNode.xmlRemoveChild('mapped_inlet')
         else:
             n['status'] = status
-
 
     @Variables.noUndo
     def getMappedInletTranslation(self, component):
@@ -1342,7 +1272,6 @@ omega = 0.;"""
             value = 0.0
         return value
 
-
     @Variables.undoLocal
     def setMappedInletTranslation(self, component, value):
         """
@@ -1356,9 +1285,9 @@ omega = 0.;"""
         n.xmlSetData(component, value)
 
 
-#-------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------
 # Atmospheric flow inlet/outlet boundary.
-#-------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------
 
 class MeteoBoundary(Boundary) :
     """
@@ -1370,7 +1299,6 @@ class MeteoBoundary(Boundary) :
         """
         return object.__new__(cls)
 
-
     def __defaultValues(self):
         """
         Default values
@@ -1381,7 +1309,6 @@ class MeteoBoundary(Boundary) :
 
         return dico
 
-
     @Variables.noUndo
     def getMeteoDataStatus(self):
         """
@@ -1391,7 +1318,6 @@ class MeteoBoundary(Boundary) :
         if node['status'] is None:
             self.setMeteoDataStatus (self.__defaultValues()['meteo_data'])
         return node['status']
-
 
     @Variables.undoLocal
     def setMeteoDataStatus(self, status):
@@ -1404,7 +1330,6 @@ class MeteoBoundary(Boundary) :
                 if n:
                     n.xmlRemoveNode()
 
-
     @Variables.noUndo
     def getAutomaticNatureStatus(self):
         """
@@ -1415,7 +1340,6 @@ class MeteoBoundary(Boundary) :
             self.setAutomaticNatureStatus(self.__defaultValues()['meteo_automatic'])
         return node['status']
 
-
     @Variables.undoLocal
     def setAutomaticNatureStatus(self, status):
         """
@@ -1424,9 +1348,9 @@ class MeteoBoundary(Boundary) :
         Model().isOnOff(status)
         self.boundNode.xmlInitNode('velocity_pressure').xmlInitNode('meteo_automatic')['status'] = status
 
-#-------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------
 # Joule effects inlet/outlet/wall boundary.
-#-------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------
 
 class JouleBoundary(Boundary) :
     """
@@ -1438,7 +1362,6 @@ class JouleBoundary(Boundary) :
         """
         return object.__new__(cls)
 
-
     def __defaultValues(self):
         """
         Default values
@@ -1449,7 +1372,6 @@ class JouleBoundary(Boundary) :
         dico['scalar']        = 0.
 
         return dico
-
 
     def __getscalarList(self):
         """
@@ -1463,7 +1385,6 @@ class JouleBoundary(Boundary) :
 
         return scalar_list
 
-
     def scalarChoicesList(self):
         """
         Return choice list for boundary conditions
@@ -1472,7 +1393,6 @@ class JouleBoundary(Boundary) :
                              'dirichlet_formula', 'neumann_formula', 'exchange_coefficient_formula',
                              'dirichlet_implicit', 'neumann_implicit']
         return scalarChoicesList
-
 
     def __deleteScalarNodes(self, name, tag):
         """
@@ -1486,7 +1406,6 @@ class JouleBoundary(Boundary) :
             if tt != tag:
                 scalarNode.xmlRemoveChild(tt)
 
-
     def getPotentialVectorChoice(self, name):
         """
         Get potential vector choice
@@ -1495,7 +1414,7 @@ class JouleBoundary(Boundary) :
 
         scalarNode = self.boundNode.xmlInitNode('scalar', name=name)
 
-        #update type and name of scalar
+        # update type and name of scalar
         self.updateScalarTypeAndName(scalarNode, name)
 
         choice = scalarNode['choice']
@@ -1505,7 +1424,6 @@ class JouleBoundary(Boundary) :
 
         return choice
 
-
     def setPotentialVectorChoice(self, name, choice):
         """
         Set potential vector choice
@@ -1514,7 +1432,7 @@ class JouleBoundary(Boundary) :
         Model().isInList(choice, self.scalarChoicesList())
 
         scalarNode = self.boundNode.xmlInitNode('scalar', name=name)
-        #update name and type of scalar
+        # update name and type of scalar
         self.updateScalarTypeAndName(scalarNode, name)
 
         if scalarNode['choice'] == choice:
@@ -1525,7 +1443,6 @@ class JouleBoundary(Boundary) :
             self.__deleteScalarNodes(name, 'dirichlet')
         else:
             self.__deleteScalarNodes(name, choice)
-
 
     def getElecScalarChoice(self, name):
         """
@@ -1535,7 +1452,7 @@ class JouleBoundary(Boundary) :
 
         scalarNode = self.boundNode.xmlInitNode('scalar', name=name)
 
-        #update type and name of scalar
+        # update type and name of scalar
         self.updateScalarTypeAndName(scalarNode, name)
 
         choice = scalarNode['choice']
@@ -1545,7 +1462,6 @@ class JouleBoundary(Boundary) :
 
         return choice
 
-
     def setElecScalarChoice(self, name, choice) :
         """
         Set scalar choice
@@ -1554,7 +1470,7 @@ class JouleBoundary(Boundary) :
         Model().isInList(choice, self.scalarChoicesList())
 
         scalarNode = self.boundNode.xmlInitNode('scalar', name=name)
-        #update name and type of scalar
+        # update name and type of scalar
         self.updateScalarTypeAndName(scalarNode, name)
 
         if scalarNode['choice'] == choice:
@@ -1565,7 +1481,6 @@ class JouleBoundary(Boundary) :
             self.__deleteScalarNodes(name, 'dirichlet')
         else:
             self.__deleteScalarNodes(name, choice)
-
 
     def getElecScalarValue(self, scalarName, choice) :
         """
@@ -1576,7 +1491,7 @@ class JouleBoundary(Boundary) :
 
         scalarNode = self.boundNode.xmlInitNode('scalar', name=scalarName)
 
-        #update type and name of scalar
+        # update type and name of scalar
         self.updateScalarTypeAndName(scalarNode, scalarName)
 
         value = scalarNode.xmlGetChildDouble(choice)
@@ -1584,7 +1499,6 @@ class JouleBoundary(Boundary) :
             value = self.__defaultValues()['scalar']
             self.setElecScalarValue(scalarName, choice, value)
         return value
-
 
     def setElecScalarValue(self, scalarName, choice, value):
         """
@@ -1596,11 +1510,10 @@ class JouleBoundary(Boundary) :
 
         scalarNode = self.boundNode.xmlInitNode('scalar', name=scalarName)
 
-        #update type and name of scalar
+        # update type and name of scalar
         self.updateScalarTypeAndName(scalarNode, scalarName)
 
         scalarNode.xmlSetData(choice, value)
-
 
     def getElecScalarFormula(self, scalarName, choice):
         """
@@ -1613,7 +1526,6 @@ class JouleBoundary(Boundary) :
         formula = scalarNode.xmlGetChildString(choice)
         return formula
 
-
     def setElecScalarFormula(self, scalarName, choice, formula):
         """
         Public method.
@@ -1625,9 +1537,9 @@ class JouleBoundary(Boundary) :
 
         n = scalarNode.xmlSetData(choice, formula)
 
-#-------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------
 # free inlet outlet boundary
-#-------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------
 
 class InletOutletBoundary(Boundary) :
     """
@@ -1638,13 +1550,11 @@ class InletOutletBoundary(Boundary) :
         """
         return object.__new__(cls)
 
-
     def _initBoundary(self):
         """
         Initialize the boundary, add nodes in the boundary node
         """
         pass
-
 
     @Variables.noUndo
     def getHeadLossesFormula(self):
@@ -1656,7 +1566,6 @@ class InletOutletBoundary(Boundary) :
 
         formula = XMLHeadLossNode.xmlGetString('formula')
         return formula
-
 
     @Variables.undoLocal
     def setHeadLossesFormula(self, formula):
@@ -1671,9 +1580,9 @@ class InletOutletBoundary(Boundary) :
         n = XMLHeadLossNode.xmlInitChildNode('formula')
         n.xmlSetTextNode(formula)
 
-#-------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------
 # imposed pressure outlet boundary
-#-------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------
 
 class ImposedPressureOutletBoundary(Boundary) :
     """
@@ -1684,13 +1593,11 @@ class ImposedPressureOutletBoundary(Boundary) :
         """
         return object.__new__(cls)
 
-
     def _initBoundary(self):
         """
         Initialize the boundary, add nodes in the boundary node
         """
         pass
-
 
     def __defaultValues(self):
         """
@@ -1700,7 +1607,6 @@ class ImposedPressureOutletBoundary(Boundary) :
         dico['pressure']    = 101300.
 
         return dico
-
 
     @Variables.noUndo
     def getPressureValue(self):
@@ -1714,7 +1620,6 @@ class ImposedPressureOutletBoundary(Boundary) :
 
         return pressure
 
-
     @Variables.undoLocal
     def setPressureValue(self, value):
         """
@@ -1725,9 +1630,9 @@ class ImposedPressureOutletBoundary(Boundary) :
         self.boundNode.xmlSetData('dirichlet', value, name='pressure')
 
 
-#-------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------
 # Coal flow inlet boundary
-#-------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------
 
 class CoalInletBoundary(InletBoundary) :
     """
@@ -1737,7 +1642,6 @@ class CoalInletBoundary(InletBoundary) :
         Constructor
         """
         return object.__new__(cls)
-
 
     def _initBoundary(self):
         """
@@ -1752,7 +1656,6 @@ class CoalInletBoundary(InletBoundary) :
         tpe = self.getInletType()
         self.setInletType(tpe)
 
-
     def __updateCoalInfo(self):
         from code_saturne.model.CoalCombustionModel import CoalCombustionModel
         CoalCombustionModel = CoalCombustionModel(self.case)
@@ -1763,7 +1666,6 @@ class CoalInletBoundary(InletBoundary) :
             self.coalClassesNumber.append(CoalCombustionModel.getClassNumber(str(c+1)))
             log.debug("__updateCoalInfo number of classes: %i " % self.coalClassesNumber[c])
 
-
     def __deleteCoalNodes(self):
         """
         Delete all nodes udes for coal. Private method
@@ -1771,7 +1673,6 @@ class CoalInletBoundary(InletBoundary) :
         node = self.boundNode.xmlGetNode('velocity_pressure')
         for n in node.xmlGetChildNodeList('coal'):
             n.xmlRemoveNode()
-
 
     def __getClassCoalRatio(self, coal, classe):
         """
@@ -1788,7 +1689,7 @@ class CoalInletBoundary(InletBoundary) :
         if nratio:
             ratio = nc.xmlGetChildDouble('ratio', name="class"+num)
         else:
-            #self.__updateCoalInfo()
+            # self.__updateCoalInfo()
             if self.coalClassesNumber[coal] > 1:
                 if classe == 0:
                     ratio = 100.
@@ -1801,7 +1702,6 @@ class CoalInletBoundary(InletBoundary) :
                 self.__setClassCoalRatio(ratio, coal, classe)
 
         return ratio
-
 
     def __setClassCoalRatio(self, value, coal, classe):
         """
@@ -1818,7 +1718,6 @@ class CoalInletBoundary(InletBoundary) :
         num = '%2.2i' % (classe+1)
         nc.xmlSetData('ratio', value, name="class"+ num)
 
-
     def __defaultValues(self):
         """
         Default values
@@ -1832,7 +1731,6 @@ class CoalInletBoundary(InletBoundary) :
 
         return dico
 
-
     @Variables.noUndo
     def getInletType(self):
         """
@@ -1843,7 +1741,6 @@ class CoalInletBoundary(InletBoundary) :
         else:
             type = "oxydantFlow"
         return type
-
 
     @Variables.undoGlobal
     def setInletType(self, type):
@@ -1862,7 +1759,6 @@ class CoalInletBoundary(InletBoundary) :
                 self.getCoalTemperature(coal_idx)
                 self.getCoalRatios(coal_idx)
 
-
     @Variables.noUndo
     def getCoalFlow(self, coal_idx):
         """
@@ -1880,7 +1776,6 @@ class CoalInletBoundary(InletBoundary) :
 
         return flow
 
-
     @Variables.undoLocal
     def setCoalFlow(self, value, coal):
         """
@@ -1892,7 +1787,6 @@ class CoalInletBoundary(InletBoundary) :
         num = '%2.2i' % (coal+1)
         n = self.boundNode.xmlGetNode('velocity_pressure')
         n.xmlInitNode('coal', name = "coal"+num).xmlSetData('flow1', value)
-
 
     @Variables.noUndo
     def getOxydantTemperature(self):
@@ -1907,7 +1801,6 @@ class CoalInletBoundary(InletBoundary) :
 
         return temperature
 
-
     @Variables.undoLocal
     def setOxydantNumber(self, value):
         """
@@ -1915,7 +1808,6 @@ class CoalInletBoundary(InletBoundary) :
         """
         Model().isInt(value)
         self.boundNode.xmlInitNode('velocity_pressure').xmlSetData('oxydant',value)
-
 
     @Variables.noUndo
     def getOxydantNumber(self):
@@ -1930,7 +1822,6 @@ class CoalInletBoundary(InletBoundary) :
 
         return oxydant
 
-
     @Variables.undoLocal
     def setOxydantTemperature(self, value):
         """
@@ -1938,7 +1829,6 @@ class CoalInletBoundary(InletBoundary) :
         """
         Model().isFloat(value)
         self.boundNode.xmlInitNode('velocity_pressure').xmlSetData('temperature',value)
-
 
     @Variables.noUndo
     def getCoalTemperature(self, coal):
@@ -1957,7 +1847,6 @@ class CoalInletBoundary(InletBoundary) :
 
         return temperature
 
-
     @Variables.undoLocal
     def setCoalTemperature(self, value, coal_idx):
         """
@@ -1969,7 +1858,6 @@ class CoalInletBoundary(InletBoundary) :
         num = '%2.2i' % (coal_idx+1)
         n = self.boundNode.xmlInitNode('velocity_pressure')
         n.xmlInitNode('coal', name="coal"+ num).xmlSetData('temperature',value)
-
 
     @Variables.noUndo
     def getCoalRatios(self, coal_idx):
@@ -1991,7 +1879,6 @@ class CoalInletBoundary(InletBoundary) :
 
         return lst
 
-
     @Variables.undoLocal
     def setCoalRatios(self, coal, lst):
         """
@@ -2012,7 +1899,6 @@ class CoalInletBoundary(InletBoundary) :
             num = '%2.2i' % (i+1)
             nc.xmlSetData('ratio', lst[i], name="class"+ num)
 
-
     def deleteCoalFlow(self, coal, nbCoals):
         """
         Delete coal with name = coal.
@@ -2032,7 +1918,6 @@ class CoalInletBoundary(InletBoundary) :
                 for icoal in range(coal+1, nbCoals):
                     self.__renameCoalFlow(icoal)
 
-
     def __renameCoalFlow(self, coal):
         """
         coaln become coaln-1.
@@ -2047,7 +1932,6 @@ class CoalInletBoundary(InletBoundary) :
             n2 = n.xmlGetNode('coal', name="coal"+ num)
             if n2:
                 n2['name'] = "coal"+newNum
-
 
     def updateCoalRatios(self, coal):
         """
@@ -2065,7 +1949,6 @@ class CoalInletBoundary(InletBoundary) :
             coal_idx = coal-1
             self.getCoalRatios(coal_idx)
 
-
     def deleteCoals(self):
         """
         Delete all information of coal combustion in boundary conditions.
@@ -2075,9 +1958,9 @@ class CoalInletBoundary(InletBoundary) :
         n.xmlRemoveChild('coal')
         n.xmlRemoveChild('temperature')
 
-#-------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------
 # Compressible flow outlet boundary
-#-------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------
 
 class CompressibleOutletBoundary(Boundary) :
     """
@@ -2087,7 +1970,6 @@ class CompressibleOutletBoundary(Boundary) :
         Constructor
         """
         return object.__new__(cls)
-
 
     def _initBoundary(self):
         """
@@ -2099,7 +1981,6 @@ class CompressibleOutletBoundary(Boundary) :
         type = self.getOutletType()
         self.setOutletType(type)
 
-
     def __defaultValues(self):
         """
         Default values
@@ -2109,7 +1990,6 @@ class CompressibleOutletBoundary(Boundary) :
         dico['compressible_type']   = 'supersonic_outlet'
 
         return dico
-
 
     @Variables.noUndo
     def getOutletType(self):
@@ -2123,7 +2003,6 @@ class CompressibleOutletBoundary(Boundary) :
             self.setOutletType(type)
         return type
 
-
     @Variables.undoLocal
     def setOutletType(self, type):
         """
@@ -2135,7 +2014,6 @@ class CompressibleOutletBoundary(Boundary) :
         node['choice'] = type
         if type == 'supersonic_outlet':
             self.boundNode.xmlRemoveChild('dirichlet', name='pressure')
-
 
     @Variables.noUndo
     def getPressureValue(self):
@@ -2149,7 +2027,6 @@ class CompressibleOutletBoundary(Boundary) :
 
         return pressure
 
-
     @Variables.undoLocal
     def setPressureValue(self, value):
         """
@@ -2158,7 +2035,6 @@ class CompressibleOutletBoundary(Boundary) :
         Model().isFloat(value)
         node = self.boundNode.xmlInitNode('dirichlet', name='pressure')
         self.boundNode.xmlSetData('dirichlet', value, name='pressure')
-
 
     def deleteCompressibleOutlet(self):
         """
@@ -2169,9 +2045,9 @@ class CompressibleOutletBoundary(Boundary) :
         n.xmlRemoveChild('pressure')
 
 
-#-------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------
 # Outlet boundary
-#-------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------
 
 class OutletBoundary(Boundary) :
     """
@@ -2181,7 +2057,6 @@ class OutletBoundary(Boundary) :
         Constructor
         """
         return object.__new__(cls)
-
 
     def _initBoundary(self):
         """
@@ -2195,7 +2070,6 @@ class OutletBoundary(Boundary) :
             if self.getScalarChoice(name) == 'dirichlet' or \
                self.getScalarChoice(name) == 'neumann':
                 self.getScalarValue(name, self.getScalarChoice(name))
-
 
     def __getscalarList(self):
         """
@@ -2212,7 +2086,6 @@ class OutletBoundary(Boundary) :
 
         return scalar_list
 
-
     def __deleteScalarNodes(self, name, tag):
         """
         Delete nodes of scalars
@@ -2225,7 +2098,6 @@ class OutletBoundary(Boundary) :
         for tt in self._scalarChoicesList:
             if tt != tag:
                 scalarNode.xmlRemoveChild(tt)
-
 
     def __defaultValues(self):
         """
@@ -2242,7 +2114,6 @@ class OutletBoundary(Boundary) :
 
         return dico
 
-
     @Variables.noUndo
     def getScalarChoice(self, name):
         """
@@ -2252,7 +2123,7 @@ class OutletBoundary(Boundary) :
 
         scalarNode = self.boundNode.xmlInitNode('scalar', name=name)
 
-        #update type and name of scalar
+        # update type and name of scalar
         self.updateScalarTypeAndName(scalarNode, name)
 
         choice = scalarNode['choice']
@@ -2261,7 +2132,6 @@ class OutletBoundary(Boundary) :
             self.setScalarChoice(name, choice)
 
         return choice
-
 
     @Variables.undoLocal
     def setScalarChoice(self, name, choice) :
@@ -2273,7 +2143,7 @@ class OutletBoundary(Boundary) :
 
         scalarNode = self.boundNode.xmlInitNode('scalar', name=name)
 
-        #update name and type of scalar
+        # update name and type of scalar
         self.updateScalarTypeAndName(scalarNode, name)
 
         if scalarNode['choice'] == choice:
@@ -2286,7 +2156,6 @@ class OutletBoundary(Boundary) :
             self.getScalarValue(name, choice)
             self.__deleteScalarNodes(name, choice)
 
-
     @Variables.noUndo
     def getScalarValue(self, name, choice) :
         """
@@ -2297,7 +2166,7 @@ class OutletBoundary(Boundary) :
 
         scalarNode = self.boundNode.xmlInitNode('scalar', name=name)
 
-        #update name and type of scalar
+        # update name and type of scalar
         self.updateScalarTypeAndName(scalarNode, name)
 
         choice = self.getScalarChoice(name)
@@ -2307,7 +2176,6 @@ class OutletBoundary(Boundary) :
             value = self.__defaultValues()['scalar']
             self.setScalarValue(name, choice, value)
         return value
-
 
     @Variables.undoLocal
     def setScalarValue(self, name, choice, value) :
@@ -2320,12 +2188,11 @@ class OutletBoundary(Boundary) :
 
         scalarNode = self.boundNode.xmlInitNode('scalar', name=name)
 
-        #update name and type of scalar
+        # update name and type of scalar
         self.updateScalarTypeAndName(scalarNode, name)
 
         choice = self.getScalarChoice(name)
         scalarNode.xmlSetData(choice, value)
-
 
     @Variables.undoLocal
     def setScalarFormula(self, name, choice, formula):
@@ -2338,7 +2205,6 @@ class OutletBoundary(Boundary) :
         scalarNode = self.boundNode.xmlInitNode('scalar', name=name)
 
         n = scalarNode.xmlSetData(choice, formula)
-
 
     @Variables.noUndo
     def getDefaultScalarFormula(self, scalarName, scalar_model):
@@ -2353,7 +2219,6 @@ class OutletBoundary(Boundary) :
             formula = scalarName+""" = 0;\nhc = 0;\n"""
 
         return formula
-
 
     @Variables.noUndo
     def getScalarFormula(self, name, choice):
@@ -2371,7 +2236,6 @@ class OutletBoundary(Boundary) :
 
         return formula
 
-
     @Variables.noUndo
     def getPressureChoice(self) :
         """
@@ -2382,7 +2246,6 @@ class OutletBoundary(Boundary) :
             choice = "on"
 
         return choice
-
 
     @Variables.undoGlobal
     def setPressureChoice(self, choice) :
@@ -2396,7 +2259,6 @@ class OutletBoundary(Boundary) :
             if node.xmlGetDouble('dirichlet', name='pressure') is None:
                 self.setReferencePressure(self.__defaultValues()['pressure'])
 
-
     @Variables.noUndo
     def getReferencePressure(self) :
         """
@@ -2407,7 +2269,6 @@ class OutletBoundary(Boundary) :
             return 0
 
         return pressure
-
 
     @Variables.undoLocal
     def setReferencePressure(self, value) :
@@ -2422,7 +2283,6 @@ class OutletBoundary(Boundary) :
         else:
             self.boundNode.xmlSetData('dirichlet', value, name='pressure')
 
-
     @Variables.noUndo
     def getHydraulicHeadValue(self):
         """
@@ -2435,7 +2295,6 @@ class OutletBoundary(Boundary) :
 
         return hydraulic_head
 
-
     @Variables.undoLocal
     def setHydraulicHeadValue(self, value):
         """
@@ -2444,7 +2303,6 @@ class OutletBoundary(Boundary) :
         Model().isFloat(value)
         node = self.boundNode.xmlInitNode('dirichlet', name='hydraulic_head')
         self.boundNode.xmlSetData('dirichlet', value, name='hydraulic_head')
-
 
     @Variables.noUndo
     def getHydraulicHeadFlux(self):
@@ -2458,7 +2316,6 @@ class OutletBoundary(Boundary) :
 
         return hydraulic_head
 
-
     @Variables.undoLocal
     def setHydraulicHeadFlux(self, value):
         """
@@ -2467,7 +2324,6 @@ class OutletBoundary(Boundary) :
         Model().isFloat(value)
         node = self.boundNode.xmlInitNode('neumann', name='hydraulic_head')
         self.boundNode.xmlSetData('neumann', value, name='hydraulic_head')
-
 
     @Variables.noUndo
     def getHydraulicHeadChoice(self):
@@ -2481,7 +2337,6 @@ class OutletBoundary(Boundary) :
             choice = self.__defaultValues()['hydraulicHeadChoice']
             self.setHydraulicHeadChoice(choice)
         return choice
-
 
     @Variables.undoGlobal
     def setHydraulicHeadChoice(self, choice) :
@@ -2501,7 +2356,6 @@ class OutletBoundary(Boundary) :
         if old_choice == 'dirichlet':
             self.boundNode.xmlRemoveChild(old_choice)
 
-
     @Variables.noUndo
     def getHydraulicHeadFormula(self):
         """
@@ -2516,7 +2370,6 @@ class OutletBoundary(Boundary) :
 
         return formula
 
-
     @Variables.undoLocal
     def setHydraulicHeadFormula(self, formula):
         """
@@ -2528,9 +2381,9 @@ class OutletBoundary(Boundary) :
         n = scalarNode.xmlSetData('formula', formula)
 
 
-#-------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------
 # Symmetry boundary
-#-------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------
 
 class SymmetryBoundary(Boundary) :
     """
@@ -2541,7 +2394,6 @@ class SymmetryBoundary(Boundary) :
         """
         return object.__new__(cls)
 
-
     def _initBoundary(self):
         """
         Initialize the boundary, add nodes in the boundary node
@@ -2549,9 +2401,9 @@ class SymmetryBoundary(Boundary) :
         pass
 
 
-#-------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------
 # free surface boundary
-#-------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------
 
 class FreeSurfaceBoundary(Boundary) :
     """
@@ -2562,13 +2414,11 @@ class FreeSurfaceBoundary(Boundary) :
         """
         return object.__new__(cls)
 
-
     def _initBoundary(self):
         """
         Initialize the boundary, add nodes in the boundary node
         """
         pass
-
 
     def deleteFreeSurface(self):
         """
@@ -2577,9 +2427,9 @@ class FreeSurfaceBoundary(Boundary) :
         self.boundNode.xmlRemoveNode()
 
 
-#-------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------
 # GroundwaterBoundary boundary
-#-------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------
 
 class GroundwaterBoundary(Boundary) :
     """
@@ -2589,7 +2439,6 @@ class GroundwaterBoundary(Boundary) :
         Constructor
         """
         return object.__new__(cls)
-
 
     def _initBoundary(self):
         """
@@ -2602,7 +2451,6 @@ class GroundwaterBoundary(Boundary) :
                                     'neumann_formula',
                                     'exchange_coefficient_formula']
         pass
-
 
     def __defaultValues(self):
         """
@@ -2617,7 +2465,6 @@ class GroundwaterBoundary(Boundary) :
 
         return dico
 
-
     @Variables.noUndo
     def getHydraulicHeadValue(self):
         """
@@ -2630,7 +2477,6 @@ class GroundwaterBoundary(Boundary) :
 
         return hydraulic_head
 
-
     @Variables.undoLocal
     def setHydraulicHeadValue(self, value):
         """
@@ -2639,7 +2485,6 @@ class GroundwaterBoundary(Boundary) :
         Model().isFloat(value)
         node = self.boundNode.xmlInitNode('dirichlet', name='hydraulic_head')
         self.boundNode.xmlSetData('dirichlet', value, name='hydraulic_head')
-
 
     @Variables.noUndo
     def getHydraulicHeadFlux(self):
@@ -2653,7 +2498,6 @@ class GroundwaterBoundary(Boundary) :
 
         return hydraulic_head
 
-
     @Variables.undoLocal
     def setHydraulicHeadFlux(self, value):
         """
@@ -2662,7 +2506,6 @@ class GroundwaterBoundary(Boundary) :
         Model().isFloat(value)
         node = self.boundNode.xmlInitNode('neumann', name='hydraulic_head')
         self.boundNode.xmlSetData('neumann', value, name='hydraulic_head')
-
 
     @Variables.noUndo
     def getHydraulicHeadChoice(self):
@@ -2676,7 +2519,6 @@ class GroundwaterBoundary(Boundary) :
             choice = self.__defaultValues()['hydraulicHeadChoice']
             self.setHydraulicHeadChoice(choice)
         return choice
-
 
     @Variables.undoGlobal
     def setHydraulicHeadChoice(self, choice) :
@@ -2696,7 +2538,6 @@ class GroundwaterBoundary(Boundary) :
         if old_choice == 'dirichlet':
             self.boundNode.xmlRemoveChild(old_choice)
 
-
     @Variables.noUndo
     def getHydraulicHeadFormula(self):
         """
@@ -2711,7 +2552,6 @@ class GroundwaterBoundary(Boundary) :
 
         return formula
 
-
     @Variables.undoLocal
     def setHydraulicHeadFormula(self, formula):
         """
@@ -2721,7 +2561,6 @@ class GroundwaterBoundary(Boundary) :
         scalarNode = self.boundNode.xmlInitNode('dirichlet_formula', name='hydraulicHead')
 
         n = scalarNode.xmlSetData('formula', formula)
-
 
     def __getscalarList(self):
         """
@@ -2738,7 +2577,6 @@ class GroundwaterBoundary(Boundary) :
 
         return scalar_list
 
-
     def __deleteScalarNodes(self, name, tag):
         """
         Delete nodes of scalars
@@ -2751,7 +2589,6 @@ class GroundwaterBoundary(Boundary) :
             if tt != tag:
                 scalarNode.xmlRemoveChild(tt)
 
-
     @Variables.noUndo
     def getScalarChoice(self, scalarName):
         """
@@ -2761,7 +2598,7 @@ class GroundwaterBoundary(Boundary) :
 
         scalarNode = self.boundNode.xmlInitNode('scalar', name=scalarName)
 
-        #update type of scalar
+        # update type of scalar
         self.updateScalarTypeAndName(scalarNode, scalarName)
 
         choice = scalarNode['choice']
@@ -2770,7 +2607,6 @@ class GroundwaterBoundary(Boundary) :
             self.setScalarChoice(scalarName, choice)
 
         return choice
-
 
     @Variables.undoGlobal
     def setScalarChoice(self, scalarName, choice) :
@@ -2782,7 +2618,7 @@ class GroundwaterBoundary(Boundary) :
 
         scalarNode = self.boundNode.xmlInitNode('scalar', name=scalarName)
 
-        #update name and type of scalar
+        # update name and type of scalar
         self.updateScalarTypeAndName(scalarNode, scalarName)
 
         if scalarNode['choice'] == choice:
@@ -2790,7 +2626,6 @@ class GroundwaterBoundary(Boundary) :
 
         scalarNode['choice'] = choice
         self.__deleteScalarNodes(scalarName, choice)
-
 
     @Variables.noUndo
     def getScalarValue(self, scalarName, choice) :
@@ -2802,7 +2637,7 @@ class GroundwaterBoundary(Boundary) :
 
         scalarNode = self.boundNode.xmlInitNode('scalar', name=scalarName)
 
-        #update name and type of scalar
+        # update name and type of scalar
         self.updateScalarTypeAndName(scalarNode, scalarName)
 
         value = scalarNode.xmlGetChildDouble(choice)
@@ -2810,7 +2645,6 @@ class GroundwaterBoundary(Boundary) :
             value = self.__defaultValues()['scalar']
             self.setScalarValue(scalarName, choice, value)
         return value
-
 
     @Variables.undoGlobal
     def setScalarValue(self, scalarName, choice, value):
@@ -2823,11 +2657,10 @@ class GroundwaterBoundary(Boundary) :
 
         scalarNode = self.boundNode.xmlInitNode('scalar', name=scalarName)
 
-        #update name and type of scalar
+        # update name and type of scalar
         self.updateScalarTypeAndName(scalarNode, scalarName)
 
         scalarNode.xmlSetData(choice, value)
-
 
     @Variables.noUndo
     def getDefaultScalarFormula(self, scalarName, scalar_model):
@@ -2842,7 +2675,6 @@ class GroundwaterBoundary(Boundary) :
             formula = scalarName+""" = 0;\nhc = 0;\n"""
 
         return formula
-
 
     @Variables.noUndo
     def getScalarFormula(self, scalarName, choice):
@@ -2860,7 +2692,6 @@ class GroundwaterBoundary(Boundary) :
 
         return formula
 
-
     @Variables.undoLocal
     def setScalarFormula(self, scalarName, choice, formula):
         """
@@ -2874,9 +2705,9 @@ class GroundwaterBoundary(Boundary) :
         n = scalarNode.xmlSetData(choice, formula)
 
 
-#-------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------
 # Wall boundary
-#-------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------
 
 class WallBoundary(Boundary) :
     """
@@ -2886,7 +2717,6 @@ class WallBoundary(Boundary) :
         Constructor
         """
         return object.__new__(cls)
-
 
     def _initBoundary(self):
         """
@@ -2910,7 +2740,6 @@ class WallBoundary(Boundary) :
         # Syrthes conjugate heat transfer model
         self._syrthesModel = ConjugateHeatTransferModel(self.case)
 
-
     def __deleteVelocities(self, node):
         """
         Delete nodes of velocity
@@ -2918,7 +2747,6 @@ class WallBoundary(Boundary) :
         node.xmlRemoveChild('dirichlet', name='velocity', component="0")
         node.xmlRemoveChild('dirichlet', name='velocity', component="1")
         node.xmlRemoveChild('dirichlet', name='velocity', component="2")
-
 
     def __getscalarList(self):
         """
@@ -2934,7 +2762,6 @@ class WallBoundary(Boundary) :
             scalar_list.append(self.hgn_model.getHgnName())
 
         return scalar_list
-
 
     def __deleteScalarNodes(self, name, tag):
         """
@@ -2977,7 +2804,6 @@ class WallBoundary(Boundary) :
         dico['flux'] = 0
         return dico
 
-
     @Variables.noUndo
     def getVelocityChoice(self):
         """
@@ -2989,7 +2815,6 @@ class WallBoundary(Boundary) :
             choice = self.__defaultValues()['velocityChoice']
             self.setVelocityChoice(choice)
         return node['choice']
-
 
     @Variables.undoGlobal
     def setVelocityChoice(self, choice):
@@ -3014,7 +2839,6 @@ class WallBoundary(Boundary) :
         else:
             # Delete 'flow1', 'flow2' and 'direction' nodes
             self.__deleteVelocities(XMLVelocityNode)
-
 
     @Variables.noUndo
     def getVelocities(self):
@@ -3043,7 +2867,6 @@ class WallBoundary(Boundary) :
 
         return u, v, w
 
-
     @Variables.undoLocal
     def setVelocities(self, u, v, w):
         """
@@ -3060,7 +2883,6 @@ class WallBoundary(Boundary) :
         node.xmlSetData('dirichlet', v, name='velocity', component="1")
         node.xmlSetData('dirichlet', w, name='velocity', component="2")
 
-
     @Variables.undoLocal
     def setVelocityComponent(self, val, component):
         """
@@ -3072,7 +2894,6 @@ class WallBoundary(Boundary) :
         Model().isInList(node['choice'], ('on', 'off'))
 
         node.xmlSetData('dirichlet', val, name="velocity", component=component)
-
 
     @Variables.noUndo
     def getRoughnessChoice(self):
@@ -3090,7 +2911,6 @@ class WallBoundary(Boundary) :
 
         return choice
 
-
     @Variables.undoGlobal
     def setRoughnessChoice(self, choice):
         """
@@ -3104,7 +2924,6 @@ class WallBoundary(Boundary) :
             if node.xmlGetDouble('roughness') is None:
                 self.setRoughness(self.__defaultValues()['roughness'])
 
-
     @Variables.noUndo
     def getRoughness(self):
         """
@@ -3117,7 +2936,6 @@ class WallBoundary(Boundary) :
             return 0
 
         return val
-
 
     @Variables.undoLocal
     def setRoughness(self, value):
@@ -3161,7 +2979,7 @@ class WallBoundary(Boundary) :
             choice = self.__defaultValues()['scalarChoice']
             return choice
 
-        #update type and name of scalar
+        # update type and name of scalar
         self.updateScalarTypeAndName(scalarNode, name)
 
         choice = scalarNode['choice']
@@ -3170,7 +2988,6 @@ class WallBoundary(Boundary) :
             self.setScalarChoice(name, choice)
 
         return choice
-
 
     @Variables.undoGlobal
     def setScalarChoice(self, name, choice) :
@@ -3182,7 +2999,7 @@ class WallBoundary(Boundary) :
 
         scalarNode = self.boundNode.xmlInitNode('scalar', name=name)
 
-        #update name and type of scalar
+        # update name and type of scalar
         self.updateScalarTypeAndName(scalarNode, name)
 
         if scalarNode['choice'] == choice:
@@ -3204,7 +3021,6 @@ class WallBoundary(Boundary) :
         if scalarNode['type'] == 'thermal' and choice != "syrthes_coupling":
             self.__deleteSyrthesNodes()
 
-
     @Variables.noUndo
     def getScalarValue(self, name, choice) :
         """
@@ -3215,7 +3031,7 @@ class WallBoundary(Boundary) :
 
         scalarNode = self.boundNode.xmlInitNode('scalar', name=name)
 
-        #update name and type of scalar
+        # update name and type of scalar
         self.updateScalarTypeAndName(scalarNode, name)
 
         value = scalarNode.xmlGetChildDouble(choice)
@@ -3223,7 +3039,6 @@ class WallBoundary(Boundary) :
             value = self.__defaultValues()['scalarValue']
             self.setScalarValue(name, choice, value)
         return value
-
 
     @Variables.undoLocal
     def setScalarValue(self, name, choice, value) :
@@ -3236,11 +3051,10 @@ class WallBoundary(Boundary) :
 
         scalarNode = self.boundNode.xmlInitNode('scalar', name=name)
 
-        #update name and type of scalar
+        # update name and type of scalar
         self.updateScalarTypeAndName(scalarNode, name)
 
         scalarNode.xmlSetData(choice, value)
-
 
     @Variables.undoLocal
     def setScalarFormula(self, name, choice, formula):
@@ -3253,7 +3067,6 @@ class WallBoundary(Boundary) :
         scalarNode = self.boundNode.xmlInitNode('scalar', name=name)
 
         scalarNode.xmlSetData(choice, formula)
-
 
     @Variables.noUndo
     def getDefaultScalarFormula(self, scalarName, scalar_model):
@@ -3268,7 +3081,6 @@ class WallBoundary(Boundary) :
             formula = scalarName+""" = 0;\nhc = 0;\n"""
 
         return formula
-
 
     @Variables.noUndo
     def getScalarFormula(self, name, choice):
@@ -3287,9 +3099,9 @@ class WallBoundary(Boundary) :
         return formula
 
 
-#-------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------
 # Radiative wall boundary
-#-------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------
 
 class RadiativeWallBoundary(Boundary) :
     """
@@ -3299,7 +3111,6 @@ class RadiativeWallBoundary(Boundary) :
         Constructor
         """
         return object.__new__(cls)
-
 
     def _initBoundary(self):
         """
@@ -3312,7 +3123,6 @@ class RadiativeWallBoundary(Boundary) :
                           'thickness', 'flux',
                           'external_temperature_profile',
                           'internal_temperature_profile']
-
 
     def _getListValRay(self, choice):
         """
@@ -3331,7 +3141,6 @@ class RadiativeWallBoundary(Boundary) :
 
         return lst
 
-
     def __defaultValues(self):
         """
         Default values
@@ -3346,7 +3155,6 @@ class RadiativeWallBoundary(Boundary) :
         dico['choice_condition'] = 'itpimp'
         return dico
 
-
     @Variables.noUndo
     def getRadiativeChoice(self):
         """
@@ -3358,7 +3166,6 @@ class RadiativeWallBoundary(Boundary) :
             choice = self.__defaultValues()['choice_condition']
             self.setRadiativeChoice(choice)
         return choice
-
 
     @Variables.undoLocal
     def setRadiativeChoice(self, choice):
@@ -3374,7 +3181,6 @@ class RadiativeWallBoundary(Boundary) :
             if not nod_ray_cond.xmlGetChildNode(i):
                 nod_ray_cond.xmlSetData(i, self.__defaultValues()[i])
 
-
     @Variables.noUndo
     def getEmissivity(self):
         """
@@ -3388,7 +3194,6 @@ class RadiativeWallBoundary(Boundary) :
 
         return val
 
-
     @Variables.undoLocal
     def setEmissivity(self, val):
         """
@@ -3399,7 +3204,6 @@ class RadiativeWallBoundary(Boundary) :
 
         nod_ray_cond = self.boundNode.xmlInitChildNode('radiative_data')
         nod_ray_cond.xmlSetData('emissivity', val)
-
 
     @Variables.noUndo
     def getThermalConductivity(self):
@@ -3414,7 +3218,6 @@ class RadiativeWallBoundary(Boundary) :
 
         return val
 
-
     @Variables.undoLocal
     def setThermalConductivity(self, val):
         """
@@ -3424,7 +3227,6 @@ class RadiativeWallBoundary(Boundary) :
 
         nod_ray_cond = self.boundNode.xmlInitChildNode('radiative_data')
         nod_ray_cond.xmlSetData('wall_thermal_conductivity', val)
-
 
     @Variables.noUndo
     def getThickness(self):
@@ -3439,7 +3241,6 @@ class RadiativeWallBoundary(Boundary) :
 
         return val
 
-
     @Variables.undoLocal
     def setThickness(self, val):
         """
@@ -3449,7 +3250,6 @@ class RadiativeWallBoundary(Boundary) :
 
         nod_ray_cond = self.boundNode.xmlInitChildNode('radiative_data')
         nod_ray_cond.xmlSetData('thickness', val)
-
 
     @Variables.noUndo
     def getExternalTemperatureProfile(self):
@@ -3464,7 +3264,6 @@ class RadiativeWallBoundary(Boundary) :
 
         return val
 
-
     @Variables.undoLocal
     def setExternalTemperatureProfile(self, val):
         """
@@ -3474,7 +3273,6 @@ class RadiativeWallBoundary(Boundary) :
 
         nod_ray_cond = self.boundNode.xmlInitChildNode('radiative_data')
         nod_ray_cond.xmlSetData('external_temperature_profile',val)
-
 
     @Variables.noUndo
     def getInternalTemperatureProfile(self):
@@ -3489,7 +3287,6 @@ class RadiativeWallBoundary(Boundary) :
 
         return val
 
-
     @Variables.undoLocal
     def setInternalTemperatureProfile(self, val):
         """
@@ -3500,7 +3297,6 @@ class RadiativeWallBoundary(Boundary) :
         nod_ray_cond = self.boundNode.xmlInitChildNode('radiative_data')
         nod_ray_cond.xmlSetData('internal_temperature_profile',val)
 
-
     @Variables.noUndo
     def getFlux(self):
         """
@@ -3510,7 +3306,6 @@ class RadiativeWallBoundary(Boundary) :
 
         return val
 
-
     @Variables.undoGlobal
     def setFlux(self, val):
         """
@@ -3519,7 +3314,6 @@ class RadiativeWallBoundary(Boundary) :
         Model().isGreaterOrEqual(val, 0.)
 
         self.setValRay(val, 'flux')
-
 
     @Variables.noUndo
     def getValRay(self, rayvar):
@@ -3539,7 +3333,6 @@ class RadiativeWallBoundary(Boundary) :
 
         return val
 
-
     @Variables.undoLocal
     def setValRay(self, val, rayvar):
         """
@@ -3553,9 +3346,9 @@ class RadiativeWallBoundary(Boundary) :
         nod_ray_cond = self.boundNode.xmlInitChildNode('radiative_data')
         nod_ray_cond.xmlSetData(rayvar, val)
 
-#-------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------
 # CouplingMobilBoundary
-#-------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------
 
 class CouplingMobilBoundary(Boundary) :
     """
@@ -3568,7 +3361,6 @@ class CouplingMobilBoundary(Boundary) :
         boundary = object.__new__(cls)
         boundary.label = label
         return boundary
-
 
     def _initBoundary(self):
         """
@@ -3589,16 +3381,15 @@ class CouplingMobilBoundary(Boundary) :
         defaultMatrix = '%(t)s11=0;\n%(t)s22=0;\n%(t)s33=0;\n'
         defaultMatrix += '%(t)s12=0;\n%(t)s13=0;\n%(t)s23=0;\n'
         defaultMatrix += '%(t)s21=0;\n%(t)s31=0;\n%(t)s32=0;'
-        defaultFluidMatrix = "fx = fluid_fx;\nfy = fluid_fy;\nfz = fluid_fz;"
+        defaultFluidForces = "fx = fluid_fx;\nfy = fluid_fy;\nfz = fluid_fz;"
 
         self._defaultValues['mass_matrix_formula'       ] = defaultMatrix % {'t':'m'}
         self._defaultValues['damping_matrix_formula'    ] = defaultMatrix % {'t':'c'}
         self._defaultValues['stiffness_matrix_formula'  ] = defaultMatrix % {'t':'k'}
-        self._defaultValues['fluid_force_matrix_formula'] = defaultFluidMatrix
-
+        self._defaultValues["fluid_force_formula"] = defaultFluidForces
 
     # Accessors
-    #----------
+    # ----------
 
     def _setData(self, nodeName, subNodeName, value):
         """
@@ -3607,7 +3398,6 @@ class CouplingMobilBoundary(Boundary) :
         aleNode = self.boundNode.xmlGetNode('ale')
         node = aleNode.xmlInitChildNode(nodeName)
         node.xmlSetData(subNodeName, value)
-
 
     def _getDoubleData(self, nodeName, subNodeName, setter ):
         """
@@ -3621,7 +3411,6 @@ class CouplingMobilBoundary(Boundary) :
             setter(value)
         return value
 
-
     def _getStringData(self, nodeName, subNodeName, setter ):
         """
         Get value from xml file.
@@ -3634,9 +3423,8 @@ class CouplingMobilBoundary(Boundary) :
             setter(value)
         return value
 
-
     # Label
-    #------
+    # ------
 
     @Variables.noUndo
     def getZoneName(self):
@@ -3645,9 +3433,8 @@ class CouplingMobilBoundary(Boundary) :
         """
         return self.label
 
-
     # InitialDisplacement
-    #--------------------
+    # --------------------
 
     @Variables.undoLocal
     def setInitialDisplacementX(self, value):
@@ -3656,14 +3443,12 @@ class CouplingMobilBoundary(Boundary) :
         """
         self._setData('initial_displacement', 'X', value)
 
-
     @Variables.noUndo
     def getInitialDisplacementX(self):
         """
         Get value of initial displacement X from xml file.
         """
         return self._getDoubleData('initial_displacement', 'X', self.setInitialDisplacementX)
-
 
     @Variables.undoLocal
     def setInitialDisplacementY(self, value ):
@@ -3672,14 +3457,12 @@ class CouplingMobilBoundary(Boundary) :
         """
         self._setData('initial_displacement', 'Y', value)
 
-
     @Variables.noUndo
     def getInitialDisplacementY(self ):
         """
         Get value of initial displacement Y from xml file.
         """
         return self._getDoubleData('initial_displacement', 'Y', self.setInitialDisplacementY)
-
 
     @Variables.undoLocal
     def setInitialDisplacementZ(self, value ):
@@ -3688,7 +3471,6 @@ class CouplingMobilBoundary(Boundary) :
         """
         self._setData('initial_displacement', 'Z', value)
 
-
     @Variables.noUndo
     def getInitialDisplacementZ(self ):
         """
@@ -3696,9 +3478,8 @@ class CouplingMobilBoundary(Boundary) :
         """
         return self._getDoubleData('initial_displacement', 'Z', self.setInitialDisplacementZ)
 
-
     # EquilibriumDisplacement
-    #------------------------
+    # ------------------------
 
     @Variables.undoLocal
     def setEquilibriumDisplacementX(self, value):
@@ -3707,14 +3488,12 @@ class CouplingMobilBoundary(Boundary) :
         """
         self._setData('equilibrium_displacement', 'X', value)
 
-
     @Variables.noUndo
     def getEquilibriumDisplacementX(self):
         """
         Get value of equilibrium displacement X from xml file.
         """
         return self._getDoubleData('equilibrium_displacement', 'X', self.setEquilibriumDisplacementX)
-
 
     @Variables.undoLocal
     def setEquilibriumDisplacementY(self, value):
@@ -3723,14 +3502,12 @@ class CouplingMobilBoundary(Boundary) :
         """
         self._setData('equilibrium_displacement', 'Y', value)
 
-
     @Variables.noUndo
     def getEquilibriumDisplacementY(self):
         """
         Get value of equilibrium displacement Y from xml file.
         """
         return self._getDoubleData('equilibrium_displacement', 'Y', self.setEquilibriumDisplacementY)
-
 
     @Variables.undoLocal
     def setEquilibriumDisplacementZ(self, value):
@@ -3739,7 +3516,6 @@ class CouplingMobilBoundary(Boundary) :
         """
         self._setData('equilibrium_displacement', 'Z', value)
 
-
     @Variables.noUndo
     def getEquilibriumDisplacementZ(self):
         """
@@ -3747,9 +3523,8 @@ class CouplingMobilBoundary(Boundary) :
         """
         return self._getDoubleData('equilibrium_displacement', 'Z', self.setEquilibriumDisplacementZ)
 
-
     # InitialDisplacement
-    #--------------------
+    # --------------------
 
     @Variables.undoLocal
     def setInitialVelocityX(self, value):
@@ -3758,14 +3533,12 @@ class CouplingMobilBoundary(Boundary) :
         """
         self._setData('initial_velocity', 'X', value)
 
-
     @Variables.noUndo
     def getInitialVelocityX(self):
         """
         Get value of initial velocity X from xml file.
         """
         return self._getDoubleData('initial_velocity', 'X', self.setInitialVelocityX)
-
 
     @Variables.undoLocal
     def setInitialVelocityY(self, value):
@@ -3774,14 +3547,12 @@ class CouplingMobilBoundary(Boundary) :
         """
         self._setData('initial_velocity', 'Y', value)
 
-
     @Variables.noUndo
     def getInitialVelocityY(self):
         """
         Get value of initial velocity Y from xml file.
         """
         return self._getDoubleData('initial_velocity', 'Y', self.setInitialVelocityY)
-
 
     @Variables.undoLocal
     def setInitialVelocityZ(self, value):
@@ -3790,7 +3561,6 @@ class CouplingMobilBoundary(Boundary) :
         """
         self._setData('initial_velocity', 'Z', value)
 
-
     @Variables.noUndo
     def getInitialVelocityZ(self):
         """
@@ -3798,9 +3568,8 @@ class CouplingMobilBoundary(Boundary) :
         """
         return self._getDoubleData('initial_velocity', 'Z', self.setInitialVelocityZ)
 
-
     # Matrix
-    #-------
+    # -------
 
     @Variables.undoLocal
     def setMassMatrix(self, value):
@@ -3809,14 +3578,12 @@ class CouplingMobilBoundary(Boundary) :
         """
         self._setData('mass_matrix', 'formula', value)
 
-
     @Variables.noUndo
     def getMassMatrix(self):
         """
         Get values of massMatrix from xml file.
         """
         return self._getStringData('mass_matrix', 'formula', self.setMassMatrix)
-
 
     @Variables.undoLocal
     def setStiffnessMatrix(self, value):
@@ -3825,14 +3592,12 @@ class CouplingMobilBoundary(Boundary) :
         """
         self._setData('stiffness_matrix', 'formula', value)
 
-
     @Variables.noUndo
     def getStiffnessMatrix(self):
         """
         Get values of stiffnessMatrix from xml file.
         """
         return self._getStringData('stiffness_matrix', 'formula', self.setStiffnessMatrix)
-
 
     @Variables.undoLocal
     def setDampingMatrix(self, value):
@@ -3841,7 +3606,6 @@ class CouplingMobilBoundary(Boundary) :
         """
         self._setData('damping_matrix', 'formula', value)
 
-
     @Variables.noUndo
     def getDampingMatrix(self):
         """
@@ -3849,24 +3613,22 @@ class CouplingMobilBoundary(Boundary) :
         """
         return self._getStringData('damping_matrix', 'formula', self.setDampingMatrix)
 
-
     @Variables.undoLocal
-    def setFluidForceMatrix(self, value):
+    def setFluidForce(self, value):
         """
-        Set values of fluid force matrix into xml file.
+        Set values of fluid force into xml file.
         """
-        self._setData('fluid_force_matrix', 'formula', value)
-
+        self._setData("fluid_force", "formula", value)
 
     @Variables.noUndo
-    def getFluidForceMatrix(self):
+    def getFluidForce(self):
         """
-        Get values of fluid force matrix from xml file.
+        Get values of fluid force from xml file.
         """
-        return self._getStringData('fluid_force_matrix', 'formula', self.setFluidForceMatrix)
+        return self._getStringData("fluid_force", "formula", self.setFluidForce)
 
     # DOF
-    #----
+    # ----
 
     def _setChoice(self, nodeName, value):
         """
@@ -3876,7 +3638,6 @@ class CouplingMobilBoundary(Boundary) :
         aleNode = self.boundNode.xmlGetNode('ale')
         node = aleNode.xmlInitNode(nodeName)
         node['choice'] = value
-
 
     def _getChoice(self, nodeName, setter):
         """
@@ -3894,9 +3655,9 @@ class CouplingMobilBoundary(Boundary) :
         return choice
 
 
-#-------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------
 # InletBoundaryModel test case for inlet boundaries conditions
-#-------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------
 
 
 class InletBoundaryTestCase(ModelTest):
@@ -4134,9 +3895,9 @@ def runTest():
     runner.run(suite())
 
 
-#-------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------
 # CoalInletBoundaryModel test case for coal inlet boundaries conditions
-#-------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------
 
 
 class CoalInletBoundaryTestCase(ModelTest):
@@ -4292,9 +4053,9 @@ def runTest2():
     runner = unittest.TextTestRunner()
     runner.run(suite2())
 
-#-------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------
 # WallBoundaryModel test case for wall boundaries conditions
-#-------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------
 
 
 class WallBoundaryTestCase(ModelTest):
@@ -4506,9 +4267,9 @@ def runTest3():
     runner.run(suite3())
 
 
-#-------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------
 # RadiativeWallBoundaryModel test case for radiative boundaries conditions
-#-------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------
 
 
 class RadiativeWallBoundaryTestCase(ModelTest):
@@ -4751,9 +4512,9 @@ def runTest4():
     runner = unittest.TextTestRunner()
     runner.run(suite4())
 
-#-------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------
 # OutletBoundaryModel test case for outlet boundaries conditions
-#-------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------
 
 class OutletBoundaryTestCase(ModelTest):
     """
@@ -4830,9 +4591,9 @@ def runTest5():
     runner.run(suite5())
 
 
-#-------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------
 # CouplingMobilBoundary test case for coupling mobil wall boundary
-#-------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------
 
 class CouplingMobilBoundaryTestCase(ModelTest):
     """
@@ -4845,7 +4606,6 @@ class CouplingMobilBoundaryTestCase(ModelTest):
         model = None
         model = Boundary("coupling_mobile_boundary", "Wall_1", self.case)
         assert model != None, 'Could not instantiate '
-
 
     def checkSetAndGetInitialDisplacement(self):
         """Check whether coupling mobil wall boundary could be set and get initial displacement."""
@@ -4875,7 +4635,6 @@ class CouplingMobilBoundaryTestCase(ModelTest):
            'Could not get initial displacement Y for coupling mobil wall boundary'
         assert model.getInitialDisplacementZ() == 3,\
            'Could not get initial displacement Z for coupling mobil wall boundary'
-
 
     def checkSetAndGetEquilibriumDisplacement(self):
         """Check whether coupling mobil wall boundary could be set and get equilibrium displacement."""
@@ -4907,7 +4666,6 @@ class CouplingMobilBoundaryTestCase(ModelTest):
         assert model.getEquilibriumDisplacementZ() == 3,\
            'Could not get equilibrium displacement Z for coupling mobil wall boundary'
 
-
     def checkSetAndGetInitialVelocity(self):
         """Check whether coupling mobil wall boundary could be set and get initial velocity."""
         model = Boundary("coupling_mobile_boundary", "Wall_1", self.case)
@@ -4938,7 +4696,6 @@ class CouplingMobilBoundaryTestCase(ModelTest):
         assert model.getInitialVelocityZ() == 3,\
           'Could not get initial velocity Z for coupling mobil wall boundary'
 
-
     def checkSetAndGetMatrix(self):
         """Check whether coupling mobil wall boundary could be set and get matrix."""
         model = Boundary("coupling_mobile_boundary", "Wall_1", self.case)
@@ -4946,10 +4703,10 @@ class CouplingMobilBoundaryTestCase(ModelTest):
         model.setMassMatrix('MassMatrix')
         model.setStiffnessMatrix('StiffnessMatrix')
         model.setDampingMatrix('DampingMatrix')
-        model.setFluidForceMatrix('FluidForceMatrix')
+        model.setFluidForce("FluidForce")
 
         node =  model._XMLBoundaryConditionsNode
-        doc = '''<boundary_conditions>
+        doc = """<boundary_conditions>
                     <wall label="Wall_1">
                         <ale>
                             <mass_matrix>
@@ -4961,13 +4718,12 @@ class CouplingMobilBoundaryTestCase(ModelTest):
                             <damping_matrix>
                                 <formula>DampingMatrix</formula>
                             </damping_matrix>
-                            <fluid_force_matrix>
-                                <formula>FluidForceMatrix</formula>
-                            </fluid_force_matrix>
+                            <fluid_force>
+                                <formula>FluidForce</formula>
+                            </fluid_force>
                         </ale>
                     </wall>
-                </boundary_conditions>'''
-
+                </boundary_conditions>"""
 
         assert node == self.xmlNodeFromString(doc),\
            'Could not set matrix for coupling mobil wall boundary'
@@ -4977,8 +4733,9 @@ class CouplingMobilBoundaryTestCase(ModelTest):
            'Could not get stiffness matrix for coupling mobil wall boundary'
         assert model.getDampingMatrix() == 'DampingMatrix',\
            'Could not get damping matrix for coupling mobil wall boundary'
-        assert model.getFluidForceMatrix() == 'FluidForceMatrix',\
-           'Could not get fluid force matrix for coupling mobil wall boundary'
+        assert (
+            model.getFluidForce() == "FluidForce"
+        ), "Could not get fluid force for coupling mobil wall boundary"
 
 
 def suite7():
@@ -4991,6 +4748,6 @@ def runTest7():
     runner = unittest.TextTestRunner()
     runner.run(suite7())
 
-#-------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------
 # End
-#-------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------

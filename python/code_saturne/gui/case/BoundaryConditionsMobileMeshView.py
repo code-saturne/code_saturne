@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-#-------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------
 
 # This file is part of code_saturne, a general-purpose CFD tool.
 #
@@ -20,7 +20,7 @@
 # this program; if not, write to the Free Software Foundation, Inc., 51 Franklin
 # Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-#-------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------
 
 """
 This module contains the following classes:
@@ -30,48 +30,47 @@ This module contains the following classes:
 - BoundaryConditionsMobileMeshView
 """
 
-#-------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------
 # Standard modules
-#-------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------
 
 import logging
 
-#-------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------
 # Third-party modules
-#-------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------
 
 from code_saturne.gui.base.QtCore    import *
 from code_saturne.gui.base.QtGui     import *
 from code_saturne.gui.base.QtWidgets import *
 
-#-------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------
 # Application modules import
-#-------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------
 
 from code_saturne.model.Common import GuiParam
 from code_saturne.gui.base.QtPage import ComboModel
-from code_saturne.gui.base.QtPage import DoubleValidator, IntValidator
+from code_saturne.gui.base.QtPage import DoubleValidator
 
 from code_saturne.gui.case.BoundaryConditionsMobileMeshForm import Ui_BoundaryConditionsMobileMeshForm
 from code_saturne.model.MobileMeshModel import MobileMeshModel
-from code_saturne.model.LocalizationModel import LocalizationModel, Zone
 from code_saturne.model.Boundary import Boundary
 
 from code_saturne.gui.case.QMegEditorView import QMegEditorView
 from code_saturne.model.NotebookModel import NotebookModel
 from code_saturne.model.TimeTablesModel import TimeTablesModel
 
-#-------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------
 # log config
-#-------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------
 
 logging.basicConfig()
 log = logging.getLogger("BoundaryConditionsMobileMeshView")
 log.setLevel(GuiParam.DEBUG)
 
-#-------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------
 # Coupling base class
-#-------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------
 
 class Coupling:
     """
@@ -147,9 +146,9 @@ class Coupling:
         return getattr(self.__boundary, "getZoneName")()
 
 
-#-------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------
 # LineEdit Coupling class
-#-------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------
 
 class LineEditCoupling(Coupling):
     """
@@ -187,9 +186,9 @@ class LineEditCoupling(Coupling):
         """
         self.setBoundaryDefinedValue(text)
 
-#-------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------
 # Coupling Formula class
-#-------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------
 
 class FormulaCoupling(Coupling):
     """
@@ -216,11 +215,10 @@ class FormulaCoupling(Coupling):
             self.object_type = 'stiffness_matrix'
         elif getter == 'getDampingMatrix':
             self.object_type = 'damping_matrix'
-        elif getter == 'getFluidForceMatrix':
+        elif getter == "getFluidForce":
             self.object_type = 'fluid_force'
 
         button.clicked.connect(self.__slotFormula)
-
 
     def onBoundarySet(self):
         """
@@ -228,7 +226,6 @@ class FormulaCoupling(Coupling):
         """
         # call getter to create default value if needed
         self.getBoundaryDefinedValue()
-
 
     # NOTE: as above, do not use decorator to avoid crash in PyQt5.
 
@@ -258,9 +255,9 @@ class FormulaCoupling(Coupling):
             log.debug("FormulaCoupling -> %s" % str(result))
             self.setBoundaryDefinedValue(result)
 
-#-------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------
 # CouplingManager class
-#-------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------
 
 class CouplingManager:
     """
@@ -279,7 +276,6 @@ class CouplingManager:
         self.__initLineEditCouplings(mainView)
         self.__initFormulaCouplings (mainView)
         self.case.undoStartGlobal()
-
 
     def __initLineEditCouplings(self, mainView):
         """
@@ -317,7 +313,6 @@ class CouplingManager:
                                           "getInitialVelocityZ",
                                           "setInitialVelocityZ"))
         self.__internalCouplings.extend(couplings)
-
 
     def __initFormulaCouplings(self, mainView):
         """
@@ -393,7 +388,7 @@ k11 = 2;\nk22 = 2;\nk33 = 2;\nk12 = 0;\nk13 = 0;\nk23 = 0;\nk21 = 0;\nk31 = 0;\n
         requiredFluidForce = [('fx', 'force applied to the structure along X'),
                               ('fy', 'force applied to the structure along Y'),
                               ('fz', 'force applied to the structure along Z')]
-        symbolsFluidForce = symbols[:];
+        symbolsFluidForce = symbols[:]
         symbolsFluidForce.append(('fluid_fx', 'force of flow along X'))
         symbolsFluidForce.append(('fluid_fy', 'force of flow along Y'))
         symbolsFluidForce.append(('fluid_fz', 'force of flow along Z'))
@@ -401,16 +396,19 @@ k11 = 2;\nk22 = 2;\nk33 = 2;\nk12 = 0;\nk13 = 0;\nk23 = 0;\nk21 = 0;\nk31 = 0;\n
         examplesFluidForce = """# The fluid force is zero in the Y direction.
 #
 fx = fluid_fx;\nfy = 0;\nfz = fluid_fz;"""
-        couplings.append(FormulaCoupling(mainView.pushButtonFluidForce,
-                                         mainView,
-                                         "getFluidForceMatrix",
-                                         "setFluidForceMatrix",
-                                         defaultFluidForce,
-                                         requiredFluidForce,
-                                         symbolsFluidForce,
-                                         examplesFluidForce))
+        couplings.append(
+            FormulaCoupling(
+                mainView.pushButtonFluidForce,
+                mainView,
+                "getFluidForce",
+                "setFluidForce",
+                defaultFluidForce,
+                requiredFluidForce,
+                symbolsFluidForce,
+                examplesFluidForce,
+            )
+        )
         self.__internalCouplings.extend(couplings)
-
 
     def setBoundary(self, boundary):
         """
@@ -421,9 +419,9 @@ fx = fluid_fx;\nfy = 0;\nfz = fluid_fz;"""
             coupling.setBoundary(boundary)
 
 
-#-------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------
 # Main class
-#-------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------
 
 class BoundaryConditionsMobileMeshView(QWidget,
                                        Ui_BoundaryConditionsMobileMeshForm):
@@ -597,6 +595,6 @@ class BoundaryConditionsMobileMeshView(QWidget,
         self.hide()
 
 
-#-------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------
 # End
-#-------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------

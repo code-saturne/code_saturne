@@ -81,7 +81,7 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /* debugging switch */
-#define _XML_DEBUG_ 1
+#define _XML_DEBUG_ 0
 
 /*============================================================================
  * Static variables
@@ -436,6 +436,14 @@ _get_uistr2_data(const char   *label,
   /* Get fluid force matrix */
   cs_meg_fsi_struct("fluid_force", label, fluid_f,
                     forstr[istruc]);
+
+#if _XML_DEBUG_
+  bft_printf("==> %s\n", __func__);
+  bft_printf("--fluid_force = (%g, %g, %g)\n",
+             forstr[istruc][0],
+             forstr[istruc][1],
+             forstr[istruc][2]);
+#endif
 }
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */

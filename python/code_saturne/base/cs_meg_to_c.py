@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-#-------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------
 
 # This file is part of code_saturne, a general-purpose CFD tool.
 #
@@ -21,7 +21,7 @@
 # this program; if not, write to the Free Software Foundation, Inc., 51 Franklin
 # Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-#-------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------
 
 import os
 import re
@@ -32,11 +32,11 @@ from code_saturne.model.NotebookModel import NotebookModel
 from code_saturne.model.TimeTablesModel import TimeTablesModel
 from code_saturne.model.SolutionDomainModel import getRunType
 
-#===============================================================================
+# ===============================================================================
 # Code block templates
-#===============================================================================
+# ===============================================================================
 
-#-------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------
 
 _file_header = \
 """/*----------------------------------------------------------------------------*/
@@ -192,7 +192,7 @@ _func_short_to_long = {'vol': 'volume zone',
                        'pwa': 'Writer activation',
                        'pca': 'Postprocessing calculator'}
 
-#-------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------
 
 _pkg_fluid_prop_dict = {}
 _pkg_fluid_prop_dict['code_saturne'] = {'rho0':'ro0',
@@ -211,7 +211,7 @@ _pkg_fluid_prop_dict['neptune_cfd'] = {'rho0':'ro0',
 _pkg_glob_struct = {'code_saturne':'cs_glob_fluid_properties',
                     'neptune_cfd':'nc_phases->p_ini[PHASE_ID]'}
 
-#---------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
 
 _base_tokens = {'dt':'const cs_real_t dt = cs_glob_time_step->dt[0];',
                 't':'const cs_real_t t = cs_glob_time_step->t_cur;',
@@ -226,7 +226,7 @@ _base_tokens = {'dt':'const cs_real_t dt = cs_glob_time_step->dt[0];',
                 'gx':'const cs_real_t gx = cs_glob_physical_constants->gravity[0];',
                 'gy':'const cs_real_t gy = cs_glob_physical_constants->gravity[1];',
                 'gz':'const cs_real_t gz = cs_glob_physical_constants->gravity[2];'}
-#---------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
 
 def _error_and_exit(msg):
 
@@ -235,7 +235,7 @@ def _error_and_exit(msg):
     print(msg, file=sys.stderr)
     sys.exit(1)
 
-#---------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
 
 def parse_gui_expression(expression,
                          req,
@@ -277,9 +277,9 @@ def parse_gui_expression(expression,
 
     return usr_code, usr_defs
 
-#===============================================================================
+# ===============================================================================
 # Utility functions
-#===============================================================================
+# ===============================================================================
 
 def break_expression(exp):
 
@@ -295,13 +295,13 @@ def break_expression(exp):
 
     return expression_lines
 
-#===============================================================================
+# ===============================================================================
 # Main class
-#===============================================================================
+# ===============================================================================
 
 class meg_to_c_interpreter:
 
-    #---------------------------------------------------------------------------
+    # ---------------------------------------------------------------------------
 
     def __init__(self,
                  case,
@@ -350,7 +350,6 @@ class meg_to_c_interpreter:
                 self.time_tables[_k] = ['{}_{}'.format(tab_name,_h),
                                         'CS_TIME_TABLE("{}","{}")'.format(tab_name, _h)]
 
-
         if create_functions and getRunType(self.case) == 'standard':
 
             from code_saturne.model.LocalizationModel import LocalizationModel
@@ -385,14 +384,14 @@ class meg_to_c_interpreter:
             # Postprocessing calculator
             self.generate_post_calculator_code()
 
-    #---------------------------------------------------------------------------
+    # ---------------------------------------------------------------------------
 
     def update_block_expression(self, func_type, key, new_exp):
 
         self.funcs[func_type][key]['exp']   = new_exp
         self.funcs[func_type][key]['lines'] = break_expression(new_exp)
 
-    #---------------------------------------------------------------------------
+    # ---------------------------------------------------------------------------
 
     def init_block(self,
                    ftype,
@@ -426,7 +425,7 @@ class meg_to_c_interpreter:
 
         self.funcs[ftype][fkey]['lines'] = break_expression(expression)
 
-    #---------------------------------------------------------------------------
+    # ---------------------------------------------------------------------------
 
     def write_cell_block(self, func_key):
 
@@ -560,7 +559,7 @@ class meg_to_c_interpreter:
 
         return usr_blck
 
-    #---------------------------------------------------------------------------
+    # ---------------------------------------------------------------------------
 
     def write_bnd_block(self, func_key):
 
@@ -678,7 +677,7 @@ class meg_to_c_interpreter:
 
         return usr_blck
 
-    #---------------------------------------------------------------------------
+    # ---------------------------------------------------------------------------
 
     def write_src_block(self, func_key):
 
@@ -794,7 +793,7 @@ class meg_to_c_interpreter:
 
         return usr_blck
 
-    #---------------------------------------------------------------------------
+    # ---------------------------------------------------------------------------
 
     def write_ini_block(self, func_key):
 
@@ -901,7 +900,7 @@ class meg_to_c_interpreter:
 
         return usr_blck
 
-    #---------------------------------------------------------------------------
+    # ---------------------------------------------------------------------------
 
     def write_ibm_block(self, func_key):
 
@@ -980,7 +979,7 @@ class meg_to_c_interpreter:
 
         return usr_blck
 
-    #---------------------------------------------------------------------------
+    # ---------------------------------------------------------------------------
 
     def write_fsi_block(self, func_key):
 
@@ -1084,7 +1083,7 @@ class meg_to_c_interpreter:
 
         return usr_blck
 
-    #---------------------------------------------------------------------------
+    # ---------------------------------------------------------------------------
 
     def write_profile_coo_block(self, func_key):
 
@@ -1160,7 +1159,7 @@ class meg_to_c_interpreter:
 
         return usr_blck
 
-    #---------------------------------------------------------------------------
+    # ---------------------------------------------------------------------------
 
     def write_writer_activation_block(self, func_key):
 
@@ -1235,7 +1234,7 @@ class meg_to_c_interpreter:
 
         return usr_blck
 
-    #---------------------------------------------------------------------------
+    # ---------------------------------------------------------------------------
 
     def write_post_calculator_block(self, func_key):
 
@@ -1350,7 +1349,7 @@ class meg_to_c_interpreter:
 
         return usr_blck
 
-    #---------------------------------------------------------------------------
+    # ---------------------------------------------------------------------------
 
     def write_block(self, func_type, key):
 
@@ -1379,7 +1378,7 @@ class meg_to_c_interpreter:
         else:
             return None
 
-    #---------------------------------------------------------------------------
+    # ---------------------------------------------------------------------------
 
     def generate_volume_code(self, vol_zones=None):
         # Ground water model enabled ?
@@ -1389,8 +1388,8 @@ class meg_to_c_interpreter:
         from code_saturne.model.GroundwaterLawModel import GroundwaterLawModel
 
         if vol_zones == None:
-          vlm = LocalizationModel('VolumicZone', self.case)
-          vol_zones = vlm.getZones()
+            vlm = LocalizationModel('VolumicZone', self.case)
+            vol_zones = vlm.getZones()
 
         if self.module_name == 'code_saturne':
             from code_saturne.model.FluidCharacteristicsModel \
@@ -1546,7 +1545,6 @@ class meg_to_c_interpreter:
                                 tm.getMethod(id_b) == "user_properties":
                             user_gas_liq_fields = True
 
-
             if user_gas_liq_fields:
                 for fk in gas_liq_fields:
                     for zone in vol_zones:
@@ -1556,7 +1554,6 @@ class meg_to_c_interpreter:
                             exp, req, sca, sym = tm.getFormulaComponents('none', fk, zone=z_id)
                             self.init_block('vol', zname, fk,
                                             exp, req, sym, sca)
-
 
         # Porosity for both solvers
         from code_saturne.model.PorosityModel import PorosityModel
@@ -1578,7 +1575,7 @@ class meg_to_c_interpreter:
                         self.init_block('vol', zone_name, fname,
                                         exp, req, sym, known_fields)
 
-    #---------------------------------------------------------------------------
+    # ---------------------------------------------------------------------------
 
     def generate_boundary_code(self):
 
@@ -1938,7 +1935,7 @@ class meg_to_c_interpreter:
                                                 [],
                                                 condition=c)
 
-    #---------------------------------------------------------------------------
+    # ---------------------------------------------------------------------------
 
     def generate_source_terms_code(self, vol_zones=None):
 
@@ -1974,7 +1971,6 @@ class meg_to_c_interpreter:
                             self.init_block('src', zone_name, 'richards',
                                             exp, req, sym, [],
                                             source_type="momentum_source_term")
-
 
                 if 'scalar_source_term' in nature_list:
                     if zone.getNature()['scalar_source_term'] == 'on':
@@ -2026,7 +2022,7 @@ class meg_to_c_interpreter:
                                             exp, req, sym, knf,
                                             source_type='thermal_source_term')
 
-    #---------------------------------------------------------------------------
+    # ---------------------------------------------------------------------------
 
     def generate_initialize_code(self, vol_zones=None):
 
@@ -2196,7 +2192,6 @@ class meg_to_c_interpreter:
                                             ncm.getNonCondLabel(nc),
                                             exp, req, sym, [])
 
-
                     # Species are treated apart since they can be phase-independent
                     for fId in mfm.getFieldIdList(include_none=True):
                         for s in spm.getScalarByFieldId(fId):
@@ -2208,7 +2203,7 @@ class meg_to_c_interpreter:
                                             spm.getScalarLabelByName(s),
                                             exp, req, sym, [])
 
-    #---------------------------------------------------------------------------
+    # ---------------------------------------------------------------------------
 
     def generate_immersed_boundaries_code(self):
 
@@ -2226,7 +2221,7 @@ class meg_to_c_interpreter:
                     self.init_block('ibm', object_name, 'porosity',
                                     exp, req, sym, [])
 
-    #---------------------------------------------------------------------------
+    # ---------------------------------------------------------------------------
 
     def generate_fsi_ic_code(self):
         # ALE enabled ?
@@ -2256,7 +2251,7 @@ class meg_to_c_interpreter:
             m_mat = boundary.getMassMatrix()
             k_mat = boundary.getStiffnessMatrix()
             c_mat = boundary.getDampingMatrix()
-            f_force = boundary.getFluidForceMatrix()
+            f_force = boundary.getFluidForce()
 
             sym = ['t', 'dt', 'iter']
             for (name, val) in NotebookModel(self.case).getNotebookList():
@@ -2282,7 +2277,7 @@ class meg_to_c_interpreter:
             self.init_block('fsi', zone._label, 'fluid_force',
                             f_force, req, sym, known_fields=[])
 
-    #---------------------------------------------------------------------------
+    # ---------------------------------------------------------------------------
 
     def generate_post_profile_code(self):
         # Output writer activation
@@ -2310,7 +2305,7 @@ class meg_to_c_interpreter:
             self.init_block('pfl', l, 'coordinates',
                             formula, req, sym, known_fields=[])
 
-    #---------------------------------------------------------------------------
+    # ---------------------------------------------------------------------------
 
     def generate_writer_activation_code(self):
         # Output writer activation
@@ -2339,10 +2334,8 @@ class meg_to_c_interpreter:
             self.init_block('pwa', str(writer_id), 'activation',
                             formula, req, sym, known_fields=[])
 
-
     def generate_post_calculator_code(self):
         # Postprocessing calculator
-
 
         from code_saturne.model.UserCalculatorModel import UserCalculatorModel
         calculator = UserCalculatorModel(self.case)
@@ -2351,7 +2344,7 @@ class meg_to_c_interpreter:
             exp, req, known_fields, sym = calculator.getFunctionFormulaComponents(name)
             self.init_block('pca', 'None', name, exp, req, sym, known_fields)
 
-    #---------------------------------------------------------------------------
+    # ---------------------------------------------------------------------------
 
     def check_meg_code_syntax(self, function_name):
 
@@ -2404,7 +2397,7 @@ class meg_to_c_interpreter:
 
         return compilation_test, msg, n_errors
 
-    #---------------------------------------------------------------------------
+    # ---------------------------------------------------------------------------
 
     def clean_tmp_dir(self):
 
@@ -2414,7 +2407,7 @@ class meg_to_c_interpreter:
                 self.delete_file(f, self.tmp_path)
             os.rmdir(self.tmp_path)
 
-    #---------------------------------------------------------------------------
+    # ---------------------------------------------------------------------------
 
     def has_meg_code(self):
 
@@ -2428,7 +2421,7 @@ class meg_to_c_interpreter:
 
         return retcode
 
-    #---------------------------------------------------------------------------
+    # ---------------------------------------------------------------------------
 
     def __file_path__(self, c_file_name, hard_path=None):
 
@@ -2442,7 +2435,7 @@ class meg_to_c_interpreter:
 
         return fpath
 
-    #---------------------------------------------------------------------------
+    # ---------------------------------------------------------------------------
 
     def delete_file(self, c_file_name, hard_path=None):
 
@@ -2452,7 +2445,7 @@ class meg_to_c_interpreter:
         if os.path.isfile(fpath):
             os.remove(fpath)
 
-    #---------------------------------------------------------------------------
+    # ---------------------------------------------------------------------------
 
     def clean_lines(self, code_to_write):
 
@@ -2464,7 +2457,7 @@ class meg_to_c_interpreter:
 
         return '\n'.join(lines)
 
-    #---------------------------------------------------------------------------
+    # ---------------------------------------------------------------------------
 
     def save_file(self, c_file_name, code_to_write, hard_path=None):
 
@@ -2486,7 +2479,7 @@ class meg_to_c_interpreter:
         else:
             return 0
 
-    #---------------------------------------------------------------------------
+    # ---------------------------------------------------------------------------
 
     def save_function(self, func_type, hard_path = None):
 
@@ -2502,8 +2495,8 @@ class meg_to_c_interpreter:
         code_to_write = ''
         if len(self.funcs[func_type].keys()) > 0:
             code_to_write = _file_header
-#            if self.module_name != "code_saturne":
-#                code_to_write += _file_header2
+            #            if self.module_name != "code_saturne":
+            #                code_to_write += _file_header2
             code_to_write += _file_header3
             code_to_write += _function_header[func_type]
             k_count = 0
@@ -2537,7 +2530,7 @@ class meg_to_c_interpreter:
 
         return save_status
 
-    #---------------------------------------------------------------------------
+    # ---------------------------------------------------------------------------
 
     def save_all_functions(self):
 
@@ -2575,6 +2568,6 @@ class meg_to_c_interpreter:
 
         return ret
 
-#-------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------
 # End
-#-------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------
