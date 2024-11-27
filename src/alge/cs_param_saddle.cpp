@@ -1268,7 +1268,7 @@ cs_param_saddle_set_solver(const char          *keyval,
     saddlep->solver = CS_PARAM_SADDLE_SOLVER_SIMPLE;
     saddlep->solver_class = CS_PARAM_SOLVER_CLASS_CS;
     saddlep->precond = CS_PARAM_SADDLE_PRECOND_NONE;
-    saddlep->schur_approx = CS_PARAM_SADDLE_SCHUR_DIAG_INVERSE;
+    saddlep->schur_approx = CS_PARAM_SADDLE_SCHUR_LUMPED_INVERSE;
 
     /* Context structure dedicated to this algorithm */
 
@@ -1574,6 +1574,15 @@ cs_param_saddle_log(const cs_param_saddle_t  *saddlep)
       cs_log_printf(CS_LOG_SETUP,
                     "%s Uzawa-CG parameters: dedicated_init_sles=%s\n",
                     prefix, cs_base_strtf(ctxp->dedicated_init_sles));
+    }
+    break;
+
+  case CS_PARAM_SADDLE_SOLVER_SIMPLE:
+    {
+      cs_param_saddle_context_simple_t *ctxp =
+        static_cast<cs_param_saddle_context_simple_t *>(saddlep->context);
+
+      cs_log_printf(CS_LOG_SETUP, "%s Solver: SIMPLE\n", prefix);
     }
     break;
 
