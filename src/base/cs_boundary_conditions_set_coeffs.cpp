@@ -387,9 +387,23 @@ _boundary_condition_ale_type(const cs_mesh_t            *m,
   }
 
   if (cs_glob_ale == CS_ALE_CDO) {
-    const int size_uma = (CS_F_(mesh_u)->dim + 1) * n_b_faces;
+    const int size_uma = CS_F_(mesh_u)->dim * n_b_faces;
     BFT_MALLOC(_rcodcl1_mesh_u, size_uma, cs_real_t);
     rcodcl1_mesh_u = _rcodcl1_mesh_u;
+
+    cs_real_3_t *b_fluid_vel = nullptr;
+    BFT_MALLOC(b_fluid_vel, n_b_faces, cs_real_3_t);
+
+    cs_array_real_fill_zero(3 * n_b_faces, (cs_real_t *)b_fluid_vel);
+
+    cs_ale_update_bcs(ale_bc_type, b_fluid_vel);
+
+    for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++) {
+      for (cs_lnum_t ii = 0; ii < 3; ii++)
+        rcodcl1_mesh_u[n_b_faces * ii + face_id] = b_fluid_vel[face_id][ii];
+    }
+
+    BFT_FREE(b_fluid_vel);
   }
 
   assert(rcodcl1_mesh_u != nullptr);
@@ -405,22 +419,7 @@ _boundary_condition_ale_type(const cs_mesh_t            *m,
    * --------------------------------- */
 
   /* When using CDO solver, no need for checks. */
-  if (cs_glob_ale == CS_ALE_CDO) {
-    cs_real_3_t *b_fluid_vel = nullptr;
-    BFT_MALLOC(b_fluid_vel, n_b_faces, cs_real_3_t);
-
-    cs_array_real_fill_zero(3 * n_b_faces, (cs_real_t *)b_fluid_vel);
-
-    cs_ale_update_bcs(ale_bc_type, b_fluid_vel);
-
-    for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++) {
-      for (cs_lnum_t ii = 0; ii < 3; ii++)
-        rcodcl1_mesh_u[n_b_faces * ii + face_id] = b_fluid_vel[face_id][ii];
-    }
-
-    BFT_FREE(b_fluid_vel);
-  }
-  else { /* cs_glob_ale != CS_ALE_CDO */
+  if (!(cs_glob_ale == CS_ALE_CDO)) {
 
     int ierror = 0;
 
