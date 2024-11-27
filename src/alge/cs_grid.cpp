@@ -4243,13 +4243,15 @@ _coarse_msr_struct(int                f_level,
  * of the code where summing on faces may be done).
  *
  * parameters:
+ *   f             <-- pointer to parent structure.
  *   g             <-- pointer to grid structure.
  *   row_index     <-- matrix row index
  *   col_id        <-- matrix column ids
  *----------------------------------------------------------------------------*/
 
 static void
-_msr_face_adjacency(cs_grid_t        *g,
+_msr_face_adjacency(const cs_grid_t  *f,
+                    cs_grid_t        *g,
                     const cs_lnum_t  *restrict row_index,
                     const cs_lnum_t  *restrict col_id)
 {
@@ -4262,8 +4264,8 @@ _msr_face_adjacency(cs_grid_t        *g,
 
   cs_lnum_t *cell_to_face;
   short int *cell_to_face_sgn;
-  CS_MALLOC_HD(cell_to_face, c_nnz, cs_lnum_t, g->alloc_mode);
-  CS_MALLOC_HD(cell_to_face_sgn, c_nnz, short int, g->alloc_mode);
+  CS_MALLOC_HD(cell_to_face, c_nnz, cs_lnum_t, f->alloc_mode);
+  CS_MALLOC_HD(cell_to_face_sgn, c_nnz, short int, f->alloc_mode);
 
   cs_lnum_t *t_f_scan = nullptr;
   int n_loc_threads = cs_parall_n_threads(c_nnz, CS_THR_MIN);
@@ -5714,7 +5716,7 @@ _compute_coarse_quantities_native(const cs_grid_t  *fine_grid,
       cs_real_t *_f_xa0 = nullptr;
       f_xa0 = fine_grid->xa;
       if (fine_grid->symmetric == false) {
-        BFT_MALLOC(_f_xa0, f_n_faces, cs_real_t);
+        CS_MALLOC(_f_xa0, f_n_faces, cs_real_t);
         for (face_id = 0; face_id < f_n_faces; face_id++)
           _f_xa0[face_id] = 0.5 * (f_xa[face_id*2] + f_xa[face_id*2+1]);
         f_xa0 = _f_xa0;
@@ -6340,7 +6342,7 @@ _compute_coarse_quantities_msr(const cs_grid_t  *fine_grid,
   _coarse_to_fine_adjacency_msr(fine_grid->level,
                                 f_n_rows,
                                 c_n_rows,
-                                coarse_grid->alloc_mode,
+                                fine_grid->alloc_mode,
                                 n_f_threads,
                                 f_c_row,
                                 f_row_index,
@@ -6532,6 +6534,7 @@ _compute_coarse_quantities_msr(const cs_grid_t  *fine_grid,
  *
  * \param[in]       f              fine grid structure
  * \param[in, out]  c              coarse grid structure
+ * \param[in, out]  ctx             reference to dispatch context
  * \param[in]       f_row_index    fine matrix row index
  * \param[in]       f_col_id       fine matrix column ids
  * \param[in]       f_d_val        fine matrix diagonal values
@@ -6546,17 +6549,18 @@ _compute_coarse_quantities_msr(const cs_grid_t  *fine_grid,
 /*----------------------------------------------------------------------------*/
 
 static void
-_coarse_quantities_msr_with_faces_stage_1(const cs_grid_t  *f,
-                                          cs_grid_t        *c,
-                                          const cs_lnum_t  *f_row_index,
-                                          const cs_lnum_t  *f_col_id,
-                                          const cs_real_t  *f_d_val,
-                                          const cs_real_t  *f_x_val,
-                                          const cs_lnum_t  *c_f_row_index,
-                                          const cs_lnum_t  *c_f_row_ids,
-                                          const cs_lnum_t  *c_row_index,
-                                          const cs_lnum_t  *c_col_id,
-                                          cs_real_t        *c_d_val)
+_coarse_quantities_msr_with_faces_stage_1(const cs_grid_t      *f,
+                                          cs_grid_t            *c,
+                                          cs_dispatch_context  &ctx,
+                                          const cs_lnum_t      *f_row_index,
+                                          const cs_lnum_t      *f_col_id,
+                                          const cs_real_t      *f_d_val,
+                                          const cs_real_t      *f_x_val,
+                                          const cs_lnum_t      *c_f_row_index,
+                                          const cs_lnum_t      *c_f_row_ids,
+                                          const cs_lnum_t      *c_row_index,
+                                          const cs_lnum_t      *c_col_id,
+                                          cs_real_t            *c_d_val)
 {
   std::chrono::high_resolution_clock::time_point t_0;
   std::chrono::high_resolution_clock::time_point t_1;
@@ -6597,11 +6601,8 @@ _coarse_quantities_msr_with_faces_stage_1(const cs_grid_t  *f,
 
   int n_loc_threads = cs_parall_n_threads(f_n_rows, CS_THR_MIN);
 
-  cs_dispatch_context ctx;
-  if (alloc_mode == CS_ALLOC_HOST) {
-    ctx.set_use_gpu(false);
+  if (ctx.use_gpu() == false)
     ctx.set_n_cpu_threads(n_loc_threads);
-  }
 
   cs_real_3_t  *c_face_normal = nullptr;
   cs_real_3_t  *c_cell_cen;
@@ -6860,7 +6861,7 @@ _compute_coarse_quantities_msr_with_faces(const cs_grid_t  *f,
   _coarse_to_fine_adjacency_msr(f->level,
                                 f_n_rows,
                                 c_n_rows,
-                                c->alloc_mode,
+                                f->alloc_mode,
                                 n_f_threads,
                                 f_c_row,
                                 f_row_index,
@@ -6895,30 +6896,59 @@ _compute_coarse_quantities_msr_with_faces(const cs_grid_t  *f,
 
   cs_lnum_t c_nnz = c_row_index[c_n_rows];
 
-  cs_real_t *restrict c_d_val, *restrict c_x_val;
+  cs_real_t *c_d_val, *c_x_val;
   CS_MALLOC_HD(c_d_val, c_n_rows*db_stride, cs_real_t, c->alloc_mode);
   CS_MALLOC_HD(c_x_val, c_nnz, cs_real_t, c->alloc_mode);
 
   /* Compute face adjacency
      ---------------------- */
 
-  _msr_face_adjacency(c,
+  _msr_face_adjacency(f,
+                      c,
                       c_row_index,
                       c_col_id);
+
+  const cs_lnum_t *_c_row_index = c_row_index;
+  const cs_lnum_t *_c_col_id = c_col_id;
+  cs_real_t *restrict _c_d_val = c_d_val;
+  cs_real_t *restrict _c_x_val = c_x_val;
+
+  if (   f->alloc_mode > CS_ALLOC_HOST
+      && c->alloc_mode == CS_ALLOC_HOST) {
+    CS_REALLOC_HD(c_row_index, c_n_rows+1, cs_lnum_t, CS_ALLOC_HOST_DEVICE);
+    cs_sync_h2d(c_row_index);
+    _c_row_index = (const cs_lnum_t *)cs_get_device_ptr(c_row_index);
+
+    CS_REALLOC_HD(c_col_id, c_nnz, cs_lnum_t, CS_ALLOC_HOST_DEVICE);
+    cs_sync_h2d(c_col_id);
+    _c_col_id = (const cs_lnum_t *)cs_get_device_ptr(c_col_id);
+
+    CS_REALLOC_HD(c_d_val, c_n_rows*db_stride, cs_real_t, CS_ALLOC_HOST_DEVICE);
+    _c_d_val = (cs_real_t *)cs_get_device_ptr(c_d_val);
+
+    CS_REALLOC_HD(c_x_val, c_nnz, cs_real_t, CS_ALLOC_HOST_DEVICE);
+    _c_x_val = (cs_real_t *)cs_get_device_ptr(c_x_val);
+  }
+
+  cs_dispatch_context ctx;
+  if (f->alloc_mode == CS_ALLOC_HOST) {
+    ctx.set_use_gpu(false);
+  }
 
   /* Compute coarse quantities, first pass */
 
   _coarse_quantities_msr_with_faces_stage_1(f,
                                             c,
+                                            ctx,
                                             f_row_index,
                                             f_col_id,
                                             f_d_val,
                                             f_x_val,
                                             c_f_row_index,
                                             c_f_row_ids,
-                                            c_row_index,
-                                            c_col_id,
-                                            c_d_val);
+                                            _c_row_index,
+                                            _c_col_id,
+                                            _c_d_val);
 
   /* Assign values
      ------------- */
@@ -6947,11 +6977,9 @@ _compute_coarse_quantities_msr_with_faces(const cs_grid_t  *f,
 
   int n_c_threads = cs_parall_n_threads(c_n_rows, CS_THR_MIN);
 
-  cs_dispatch_context ctx;
-  if (f->alloc_mode == CS_ALLOC_HOST) {
-    ctx.set_use_gpu(false);
+  if (ctx.use_gpu() == false)
     ctx.set_n_cpu_threads(n_c_threads);
-  }
+
   {
     /* Matrix initialized to c_xa0 */
 
@@ -6960,8 +6988,8 @@ _compute_coarse_quantities_msr_with_faces(const cs_grid_t  *f,
 
     if (c_face_normal != nullptr) {
       ctx.parallel_for(c_n_rows, [=] CS_F_HOST_DEVICE (cs_lnum_t ic) {
-        const cs_lnum_t c_s_idx = c_row_index[ic];
-        const cs_lnum_t c_e_idx = c_row_index[ic+1];
+        const cs_lnum_t c_s_idx = _c_row_index[ic];
+        const cs_lnum_t c_e_idx = _c_row_index[ic+1];
 
         const cs_real_t *cen_ic = c_cell_cen[ic];
 
@@ -6970,7 +6998,7 @@ _compute_coarse_quantities_msr_with_faces(const cs_grid_t  *f,
         }
 
         for (cs_lnum_t r_idx = c_s_idx; r_idx < c_e_idx; r_idx++) {
-          const cs_lnum_t jc = c_col_id[r_idx];
+          const cs_lnum_t jc = _c_col_id[r_idx];
           const cs_lnum_t c_face_id = c_cell_face[r_idx];
           const cs_real_t sgn = (cs_real_t)c_cell_face_sgn[r_idx];
           const cs_real_t *cen_jc = c_cell_cen[jc];
@@ -7001,9 +7029,9 @@ _compute_coarse_quantities_msr_with_faces(const cs_grid_t  *f,
           c_x_val_c =         relax_param *c_x_val_c
                       + (1. - relax_param)*c_xa0[c_face_id];
 
-          c_x_val[r_idx] = c_x_val_c;
+          _c_x_val[r_idx] = c_x_val_c;
           for (cs_lnum_t kk = 0; kk < db_size; kk++) {
-            c_d_val[ic*db_stride + db_size*kk + kk] -= c_x_val_c;
+            _c_d_val[ic*db_stride + db_size*kk + kk] -= c_x_val_c;
           }
         }
       });
@@ -7012,8 +7040,8 @@ _compute_coarse_quantities_msr_with_faces(const cs_grid_t  *f,
 
     else { // c_face_normal == nullptr
       ctx.parallel_for(c_n_rows, [=] CS_F_HOST_DEVICE (cs_lnum_t ic) {
-        const cs_lnum_t c_s_idx = c_row_index[ic];
-        const cs_lnum_t c_e_idx = c_row_index[ic+1];
+        const cs_lnum_t c_s_idx = _c_row_index[ic];
+        const cs_lnum_t c_e_idx = _c_row_index[ic+1];
 
         const cs_real_t *cen_ic = c_cell_cen[ic];
 
@@ -7022,7 +7050,7 @@ _compute_coarse_quantities_msr_with_faces(const cs_grid_t  *f,
         }
 
         for (cs_lnum_t r_idx = c_s_idx; r_idx < c_e_idx; r_idx++) {
-          const cs_lnum_t jc = c_col_id[r_idx];
+          const cs_lnum_t jc = _c_col_id[r_idx];
           const cs_lnum_t c_face_id = c_cell_face[r_idx];
           const cs_real_t sgn = (cs_real_t)c_cell_face_sgn[r_idx];
           const cs_real_t *cen_jc = c_cell_cen[jc];
@@ -7054,9 +7082,9 @@ _compute_coarse_quantities_msr_with_faces(const cs_grid_t  *f,
           c_x_val_c =         relax_param *c_x_val_c
                       + (1. - relax_param)*c_xa0[c_face_id];
 
-          c_x_val[r_idx] = c_x_val_c;
+          _c_x_val[r_idx] = c_x_val_c;
           for (cs_lnum_t kk = 0; kk < db_size; kk++) {
-            c_d_val[ic*db_stride + db_size*kk + kk] -= c_x_val_c;
+            _c_d_val[ic*db_stride + db_size*kk + kk] -= c_x_val_c;
           }
         }
       });
@@ -7076,6 +7104,21 @@ _compute_coarse_quantities_msr_with_faces(const cs_grid_t  *f,
   }
 
   /* Free working arrays */
+
+  if (   f->alloc_mode > CS_ALLOC_HOST
+      && c->alloc_mode == CS_ALLOC_HOST) {
+    CS_REALLOC_HD(c_row_index, c_n_rows+1, cs_lnum_t, CS_ALLOC_HOST);
+    CS_REALLOC_HD(c_col_id, c_nnz, cs_lnum_t, CS_ALLOC_HOST);
+    _c_row_index = nullptr;
+    _c_col_id = nullptr;
+
+    cs_sync_d2h(c_d_val);
+    cs_sync_d2h(c_x_val);
+    CS_REALLOC_HD(c_d_val, c_n_rows*db_stride, cs_real_t, CS_ALLOC_HOST);
+    CS_REALLOC_HD(c_x_val, c_nnz, cs_real_t, CS_ALLOC_HOST);
+    _c_d_val = nullptr;
+    _c_x_val = nullptr;
+  }
 
   CS_FREE(c_f_row_ids);
   CS_FREE(c_f_row_index);
@@ -8648,6 +8691,7 @@ cs_grid_project_var(const cs_grid_t  *g,
     cs_dispatch_context ctx;
     if (amode == CS_ALLOC_HOST)
       ctx.set_use_gpu(false);
+    ctx.set_use_gpu(false);
 
     /* Allocate temporary arrays */
 
