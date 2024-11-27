@@ -2766,22 +2766,29 @@ class Studies(object):
         """
         Copy input in POST for later description report generation
         """
+
+        # list of accepted formats
+        input_format = ['.png', '.jpg', '.pdf', '.tex', '.jpeg']
+
         for i_node in i_nodes:
-            fig_name, run_id, repo, tex = self.__parser.getInput(i_node)
-            fig = os.path.join(self.__dest, s_label, c_label, r_label, run_id,
-                               fig_name)
+            file_name, run_id, repo, tex = self.__parser.getInput(i_node)
+            input_file = os.path.join(self.__dest, s_label, c_label, r_label,
+                                      run_id, file_name)
 
-            # Figure copied in POST/"CURRENT"/CASE/run_id folder
-            # fig_name can include another folder (ex: datasets/fig.png)
-            fig_dest = os.path.join(self.__dest, s_label, 'POST', 'CURRENT',
-                                    c_label, run_id, fig_name)
-            dest_folder = os.path.dirname(fig_dest)
+            # Input copied in POST/"CURRENT"/CASE/run_id folder
+            # file_name can include another folder (ex: datasets/fig.png)
+            file_dest = os.path.join(self.__dest, s_label, 'POST', 'CURRENT',
+                                     c_label, run_id, file_name)
+            dest_folder = os.path.dirname(file_dest)
 
-            if os.path.isfile(fig):
-                if fig[-4:] in ('.png', '.jpg', '.pdf') or fig[-5:] == '.jpeg':
+            if os.path.isfile(input_file):
+                file_format = input_file[-4:]
+                if input_file[-5] == ".":
+                    file_format = input_file[-5:]
+                if file_format in input_format:
                     if not os.path.exists(dest_folder):
                         os.makedirs(dest_folder)
-                    shutil.copyfile(fig, fig_dest)
+                    shutil.copyfile(input_file, file_dest)
 
     #---------------------------------------------------------------------------
 
