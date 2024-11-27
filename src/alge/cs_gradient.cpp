@@ -2705,6 +2705,7 @@ _recompute_lsq_scalar_cocg(const cs_mesh_t                *m,
   const cs_mesh_adjacencies_t *ma = cs_glob_mesh_adjacencies;
   const cs_lnum_t *restrict cell_b_faces_idx = ma->cell_b_faces_idx;
   const cs_lnum_t *restrict cell_b_faces = ma->cell_b_faces;
+  const cs_lnum_t *restrict b_cells = m->b_cells;
 
   const cs_nreal_3_t *restrict b_face_u_normal = fvq->b_face_u_normal;
   const cs_real_t *restrict b_dist = fvq->b_dist;
@@ -2713,7 +2714,7 @@ _recompute_lsq_scalar_cocg(const cs_mesh_t                *m,
   /* Recompute cocg at boundaries, using saved cocgb */
 
   ctx.parallel_for(m->n_b_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t ii) {
-    cs_lnum_t c_id = m->b_cells[ii];
+    cs_lnum_t c_id = b_cells[ii];
 
     cs_cocg_t _cocg[6];
     for (cs_lnum_t ll = 0; ll < 6; ll++)
@@ -8874,7 +8875,7 @@ _gradient_scalar(const char                    *var_name,
       if (gradient_type == CS_GRADIENT_GREEN_LSQ) {
         cs_alloc_mode_t amode = CS_ALLOC_HOST;
 #if defined(HAVE_ACCEL)
-        if (cs_get_device_id() > -1 && hyd_p_flag == 0)
+        if (cs_get_device_id() > -1)
           amode = CS_ALLOC_DEVICE;
 #endif
         CS_MALLOC_HD(r_grad, n_cells_ext, cs_real_3_t, amode);
