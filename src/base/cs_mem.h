@@ -657,7 +657,7 @@ inline const T *
 cs_get_device_ptr_const(T *ptr)
 {
   const void *ptr_v
-    = cs_get_device_ptr(reinterpret_cast<void *>(ptr));
+    = cs_get_device_ptr_const(reinterpret_cast<void *>(ptr));
 
   return (const T *)ptr_v;
 }
