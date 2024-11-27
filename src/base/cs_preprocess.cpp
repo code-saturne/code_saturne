@@ -594,7 +594,7 @@ cs_preprocess_mesh_update_device()
   const cs_lnum_t n_cells = m->n_cells;
   const cs_lnum_t n_b_cells = m->n_b_cells;
   const cs_lnum_t n_i_faces = m->n_i_faces;
-  const cs_lnum_t n_b_faces = m->n_b_faces;
+  const cs_lnum_t n_b_faces = m->n_b_faces_all;
   const cs_lnum_t n_vertices = m->n_vertices;
 
   /* Mesh structures
