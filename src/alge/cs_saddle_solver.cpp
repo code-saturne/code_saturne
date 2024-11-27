@@ -952,7 +952,7 @@ _solve_m11_approximation(cs_saddle_solver_t                   *solver,
  * \param[in, out] solver       pointer to a saddle-point solver structure
  * \param[in, out] schur_sles   SLES related to the Schur complement (if needed)
  * \param[in]      schur_mat    matrix for the Schur complement (if needed)
- * \param[in       inv_m22      diagonal inverseof the M22 mass matrix
+ * \param[in]      inv_m22      diagonal inverseof the M22 mass matrix
  * \param[in]      scaling      scaling to apply in case of hybrid approx.
  * \param[in]      r_schur      rhs of the Schur system (size = n2_scatter_dofs)
  * \param[in, out] z_schur      array to compute (size = n2_scatter_dofs)
@@ -2458,7 +2458,7 @@ cs_saddle_solver_m11_inv_lumped(cs_saddle_solver_t     *solver,
 
   cs_real_t  *rhs = nullptr;
   BFT_MALLOC(rhs, b11_size, cs_real_t);
-  cs_array_real_set_scalar(b11_size, 1., rhs);
+  cs_array_real_set_scalar(b11_size, 1, rhs);
 
   cs_param_sles_t  *slesp = cs_param_saddle_get_xtra_sles_param(solver->param);
   assert(slesp != nullptr);
@@ -3408,7 +3408,6 @@ cs_saddle_solver_context_simple_clean(cs_saddle_solver_context_simple_t *ctx)
   /* Remove the setup data in SLES. The pointer to the following SLES will be
      still valid */
 
-  cs_sles_free(ctx->schur_sles);
   cs_sles_free(ctx->xtra_sles);
   cs_sles_free(ctx->init_sles);
 
@@ -4914,6 +4913,7 @@ cs_saddle_solver_simple(cs_saddle_solver_t  *solver,
   assert(solver != nullptr);
 
   const cs_param_saddle_t  *saddlep = solver->param;
+  const cs_param_convergence_t cvg_param = saddlep->cvg_param;
 
   cs_iter_algo_t  *algo = solver->algo;
   cs_cdo_system_helper_t  *sh = solver->system_helper;
@@ -4937,38 +4937,56 @@ cs_saddle_solver_simple(cs_saddle_solver_t  *solver,
   const cs_range_set_t  *rset = ctx->b11_range_set;
   const cs_matrix_t  *m11 = ctx->m11;
 
+  const cs_real_t alpha = 1;
+
   cs_real_t  *rhs1 = sh->rhs_array[0];
   cs_real_t  *rhs2 = sh->rhs_array[1];
+  cs_real_t  *dx = nullptr, *r = nullptr;
 
-  /* Compute the first RHS: A.u0 = rhs = b_f - B^t.p_0 to solve */
+  BFT_MALLOC(dx, ctx->b11_max_size + ctx->b22_max_size, cs_real_t);
+  BFT_MALLOC(r, ctx->b11_max_size + ctx->b22_max_size, cs_real_t);
+  cs_array_real_fill_zero(ctx->b11_max_size + ctx->b22_max_size, dx);
 
-  cs_array_real_fill_zero(n1_dofs, ctx->rhs);
-  ctx->m12_vector_multiply(n2_elts, x2, ctx->m21_adj, ctx->m21_val,
-                           ctx->rhs);
+  /* Set pointers used in this algorithm */
+  cs_real_t *dx1 = dx, *dx2 = dx + ctx->b11_max_size;
 
-  if (rset->ifs != nullptr) {
+  cs_real_t *m12x2 = nullptr;
+  BFT_MALLOC(m12x2, n1_dofs, cs_real_t);
+  cs_array_real_fill_zero(n1_dofs, m12x2);
 
+  if (rset->ifs != nullptr)
     cs_interface_set_sum(rset->ifs,
-                         /* n_elts, stride, interlaced */
-                         n1_dofs, 1, false, CS_REAL_TYPE,
-                         ctx->rhs);
-
-    cs_interface_set_sum(rset->ifs,
-                         /* n_elts, stride, interlaced */
+                       /* n_elts, stride, interlaced */
                          n1_dofs, 1, false, CS_REAL_TYPE,
                          rhs1);
 
-  }
+  /* Compute the first RHS: A.u0 = rhs = b_f - B^t.p_0 to solve */
+
+  ctx->m12_vector_multiply(n2_elts, x2, ctx->m21_adj, ctx->m21_val,
+                           m12x2);
+
+  if (rset->ifs != nullptr)
+    cs_interface_set_sum(rset->ifs,
+                         /* n_elts, stride, interlaced */
+                         n1_dofs, 1, false, CS_REAL_TYPE,
+                         m12x2);
 
 # pragma omp parallel for if (n1_dofs > CS_THR_MIN)
   for (cs_lnum_t i1 = 0; i1 < n1_dofs; i1++)
-    ctx->rhs[i1] = rhs1[i1] - ctx->rhs[i1];
+    ctx->rhs[i1] = rhs1[i1] - m12x2[i1];
 
   /* Initial normalization from the newly computed rhs */
 
   double  normalization = ctx->square_norm_b11(ctx->rhs);
 
   normalization = (fabs(normalization) > FLT_MIN) ? sqrt(normalization) : 1.0;
+
+  /* Compute the residual in Incremental formulation */
+  _m11_vector_multiply_allocated(rset, m11, x1, r);
+
+# pragma omp parallel for if (n1_dofs > CS_THR_MIN)
+  for (cs_lnum_t i1 = 0; i1 < n1_dofs; i1++)
+    ctx->rhs[i1] -= r[i1];
 
   /* Compute the first velocity guess
    * Modify the tolerance in order to be more accurate on this step */
@@ -4984,64 +5002,253 @@ cs_saddle_solver_simple(cs_saddle_solver_t  *solver,
                                            normalization,
                                            false, /* rhs_redux */
                                            init_sles,
-                                           x1,
+                                           dx1,
                                            ctx->rhs);
 
   cs_iter_algo_update_inner_iters(algo, n_iter);
 
-  /* Set pointers used in this algorithm */
+# pragma omp parallel for if (n1_dofs > CS_THR_MIN)
+  for (cs_lnum_t i1 = 0; i1 < n1_dofs; i1++)
+    x1[i1] += dx1[i1];
 
-  cs_real_t  *rk = ctx->m21x1;
+  /* Compute the residual  (in fact the negative velocity divergence) */
 
-  /* Compute the residual rk (in fact the negative velocity divergence) */
-
-  ctx->m21_vector_multiply(n2_dofs, x1, ctx->m21_adj, ctx->m21_val, rk);
+  ctx->m21_vector_multiply(n2_dofs, x1, ctx->m21_adj, ctx->m21_val, ctx->m21x1);
 
 # pragma omp parallel for if (n2_dofs > CS_THR_MIN)
   for (cs_lnum_t i2 = 0; i2 < n2_dofs; i2++)
-    rk[i2] = rhs2[i2] + rk[i2];
+    ctx->m21x1[i2] -= rhs2[i2];
 
-  /* Solve S.dx2 = rk */
-
-  cs_real_t *dx2 = nullptr;
-  BFT_MALLOC(dx2, n2_elts, cs_real_t);
+  /* Solve S.dx2 = m21x1 */
 
   n_iter = _solve_schur_approximation(solver,
                                       ctx->schur_sles,
                                       ctx->schur_matrix,
                                       ctx->inv_m22,
                                       1.0,
-                                      rk,
+                                      ctx->m21x1,
                                       dx2);
 
-  /* Update x1 and x2 */
-
-  cs_array_real_fill_zero(n1_dofs, ctx->rhs);
+  cs_iter_algo_update_inner_iters(algo, n_iter);
 
   /* Calculate Grad(dx2) */
-
-  ctx->m12_vector_multiply(solver->n2_scatter_dofs,
+  cs_array_real_fill_zero(n1_dofs, m12x2);
+  ctx->m12_vector_multiply(n2_elts,
                            dx2, ctx->m21_adj, ctx->m21_val,
-                           ctx->rhs);
+                           m12x2);
 
-  if (rset->ifs != nullptr) {
+  if (rset->ifs != NULL) {
 
     cs_interface_set_sum(rset->ifs,
                          /* n_elts, stride, interlaced */
                          n1_dofs, 1, false, CS_REAL_TYPE,
-                         ctx->rhs);
+                         m12x2);
   }
 
   cs_real_t *m11_inv = ctx->m11_inv_diag;
 
 # pragma omp parallel for if (n1_dofs > CS_THR_MIN)
-  for (cs_lnum_t i1 = 0; i1 < n1_dofs; i1++)
-    x1[i1] -= m11_inv[i1]*ctx->rhs[i1];
+  for (cs_lnum_t i1 = 0; i1 < n1_dofs; i1++) {
+    dx1[i1] = - m11_inv[i1]*m12x2[i1];
+    x1[i1] += dx1[i1];
+  }
 # pragma omp parallel for if (n2_dofs > CS_THR_MIN)
-  for (cs_lnum_t i2 = 0; i2 < n2_dofs; i2++)
+  for (cs_lnum_t i2 = 0; i2 < n2_dofs; i2++) {
     x2[i2] += dx2[i2];
+  }
 
-  BFT_FREE(dx2);
+  int iterup = 0;
+
+  /* Norm for the r1 DoFs (those shared among processes) */
+
+  double  _nrhs1_square = 0;
+
+  if (rset != nullptr) { /* Switch to a gather view to avoid summing an element
+                       twice */
+
+    cs_range_set_gather(rset,
+                        CS_REAL_TYPE,/* type */
+                        1,           /* stride (treated as scalar up to now) */
+                        rhs1,          /* in: size = n_sles_scatter_elts */
+                        rhs1);         /* out: size = n_sles_gather_elts */
+
+    /* n_elts[0] corresponds to the number of element in the gather view */
+
+    _nrhs1_square = cs_dot_xx(rset->n_elts[0], rhs1);
+
+    cs_range_set_scatter(rset,
+                         CS_REAL_TYPE,
+                         1,
+                         rhs1,
+                         rhs1);
+
+  }
+  else
+    _nrhs1_square = cs_dot_xx(n1_dofs, rhs1);
+
+  /* Norm for the x2 DoFs (not shared so that there is no need to
+       synchronize) */
+
+  double  _nrhs2_square = cs_dot_xx(n2_dofs, rhs2);
+
+  double rhs_norm = _nrhs1_square + _nrhs2_square;
+
+  cs_parall_sum(1, CS_DOUBLE, &rhs_norm);
+  rhs_norm = sqrt(rhs_norm);
+  if (rhs_norm < cs_math_zero_threshold) rhs_norm = 1.0;
+
+  double residual_norm = FLT_MAX;
+
+  while (  iterup < cvg_param.n_max_iter
+        && residual_norm > cvg_param.rtol) {
+
+    /* Matrix splitting handled in rhs */
+
+    _m11_vector_multiply_allocated(rset, m11, dx1, ctx->rhs);
+
+    cs_real_t norm_m11x1 = cs_dot_xx(n1_dofs, ctx->rhs);
+    cs_parall_sum(1, CS_DOUBLE, &norm_m11x1);
+
+#   pragma omp parallel for if (n1_dofs > CS_THR_MIN)
+    for (cs_lnum_t i1 = 0; i1 < n1_dofs; i1++)
+      ctx->rhs[i1] = -m12x2[i1] - ctx->rhs[i1];
+
+    cs_real_t norm_split = cs_dot_xx(n1_dofs, ctx->rhs);
+    cs_parall_sum(1, CS_DOUBLE, &norm_split);
+
+    /* Initial normalization from the newly computed rhs */
+
+    double  normalization = ctx->square_norm_b11(ctx->rhs);
+
+    normalization = (fabs(normalization) > FLT_MIN) ? sqrt(normalization) : 1.0;
+
+    /* Compute the first velocity guess
+     * Modify the tolerance in order to be more accurate on this step */
+
+    cs_sles_t  *init_sles =
+      (ctxp->dedicated_init_sles) ? ctx->init_sles : solver->main_sles;
+    assert(init_sles != nullptr);
+
+    int  n_iter = cs_cdo_solve_scalar_system(n1_dofs,
+                                             init_slesp,
+                                             m11,
+                                             rset,
+                                             normalization,
+                                             false, /* rhs_redux */
+                                             init_sles,
+                                             dx1,
+                                             ctx->rhs);
+
+    cs_iter_algo_update_inner_iters(algo, n_iter);
+
+#   pragma omp parallel for if (n1_dofs > CS_THR_MIN)
+    for (cs_lnum_t i1 = 0; i1 < n1_dofs; i1++)
+      x1[i1] += dx1[i1];
+
+    /* Compute the residual (in fact the negative velocity divergence) */
+
+    ctx->m21_vector_multiply(n2_dofs, x1, ctx->m21_adj, ctx->m21_val, ctx->m21x1);
+
+#   pragma omp parallel for if (n2_dofs > CS_THR_MIN)
+    for (cs_lnum_t i2 = 0; i2 < n2_dofs; i2++)
+      ctx->m21x1[i2] -= rhs2[i2];
+
+    /* Solve S.dx2 = m21x1 */
+
+    n_iter = _solve_schur_approximation(solver,
+                                        ctx->schur_sles,
+                                        ctx->schur_matrix,
+                                        ctx->inv_m22,
+                                        1.0,
+                                        ctx->m21x1,
+                                        dx2);
+
+    cs_iter_algo_update_inner_iters(algo, n_iter);
+
+    /* Calculate Grad(dx2) */
+
+    cs_array_real_fill_zero(n1_dofs, m12x2);
+    ctx->m12_vector_multiply(n2_elts,
+                             dx2, ctx->m21_adj, ctx->m21_val,
+                             m12x2);
+
+    if (rset->ifs != NULL) {
+
+      cs_interface_set_sum(rset->ifs,
+                           /* n_elts, stride, interlaced */
+                           n1_dofs, 1, false, CS_REAL_TYPE,
+                           m12x2);
+    }
+
+#   pragma omp parallel for if (n1_dofs > CS_THR_MIN)
+    for (cs_lnum_t i1 = 0; i1 < n1_dofs; i1++) {
+      dx1[i1] = - m11_inv[i1]*m12x2[i1];
+      x1[i1] += dx1[i1];
+    }
+
+#   pragma omp parallel for if (n2_dofs > CS_THR_MIN)
+    for (cs_lnum_t i2 = 0; i2 < n2_dofs; i2++) {
+      x2[i2] += dx2[i2];
+    }
+
+    /* Compute the residual and its norm */
+
+    cs_saddle_system_residual(sh, x1, x2,
+                              r,                      /* r1 */
+                              r + ctx->b11_max_size); /* r2 */
+
+  /* Norm for the r1 DoFs (those shared among processes) */
+
+    double  _nr1_square = 0;
+
+    if (rset != nullptr) { /* Switch to a gather view to avoid summing an element
+                         twice */
+
+      cs_range_set_gather(rset,
+                          CS_REAL_TYPE,/* type */
+                          1,           /* stride (treated as scalar up to now) */
+                          r,          /* in: size = n_sles_scatter_elts */
+                          r);         /* out: size = n_sles_gather_elts */
+
+      /* n_elts[0] corresponds to the number of element in the gather view */
+
+      _nr1_square = cs_dot_xx(rset->n_elts[0], r);
+
+      cs_range_set_scatter(rset,
+                           CS_REAL_TYPE,
+                           1,
+                           r,
+                           r);
+
+    }
+    else
+      _nr1_square = cs_dot_xx(solver->n1_scatter_dofs, r);
+
+    /* Norm for the x2 DoFs (not shared so that there is no need to
+       synchronize) */
+
+    double  _nr2_square = cs_dot_xx(n2_dofs, r + ctx->b11_max_size);
+
+    residual_norm = _nr1_square + _nr2_square;
+    cs_parall_sum(1, CS_DOUBLE, &residual_norm);
+    residual_norm = sqrt(residual_norm)/rhs_norm;
+
+    iterup += 1;
+
+    if (saddlep->verbosity > 0 && cs_log_default_is_active()) {
+
+      cs_log_printf(CS_LOG_DEFAULT, "%s in Simple algo: nterup:%d | residual:% -8.4e"
+                    "| splitting magnitude: %-8.4e",
+                    __func__,
+                    iterup, residual_norm, sqrt(norm_split/norm_m11x1));
+
+      cs_log_printf(CS_LOG_DEFAULT, "\n");
+    }
+  }
+
+  BFT_FREE(dx);
+  BFT_FREE(r);
+  BFT_FREE(m12x2);
 
   /* --- ALGO END --- */
   /* ---------------- */
