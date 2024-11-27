@@ -228,12 +228,10 @@ _equation_iterative_solve_strided(int                   idtvar,
   int ndircp = eqp->ndircl;
   double epsrsp = eqp->epsrsm;
   double epsilp = eqp->epsilo;
-  double relaxp = eqp->relaxv;
   double thetap = eqp->theta;
 
   const cs_real_t  *cell_vol = cs_glob_mesh_quantities->cell_vol;
   const cs_lnum_t n_cells = cs_glob_mesh->n_cells;
-  const cs_lnum_t n_faces = cs_glob_mesh->n_i_faces;
   const cs_lnum_t n_i_faces = cs_glob_mesh->n_i_faces;
   const cs_lnum_t n_b_faces = cs_glob_mesh->n_b_faces;
   const cs_lnum_t n_cells_ext = cs_glob_mesh->n_cells_with_ghosts;
@@ -263,7 +261,6 @@ _equation_iterative_solve_strided(int                   idtvar,
     bft_printf("Equation iterative solve of: %s\n", var_name);
 
   /* Matrix block size */
-  cs_lnum_t db_size = stride;
   cs_lnum_t eb_size = 1; /* CS_ISOTROPIC_DIFFUSION
                             or CS_ANISOTROPIC_RIGHT_DIFFUSION */
   if (idftnp & CS_ANISOTROPIC_LEFT_DIFFUSION) eb_size = stride;
@@ -345,8 +342,6 @@ _equation_iterative_solve_strided(int                   idtvar,
       conv_diff_mg = true;
   }
 
-  cs_lnum_t eb_stride = eb_size*eb_size;
-
   /*==========================================================================
    * Building of the "simplified" matrix
    *==========================================================================*/
@@ -354,27 +349,13 @@ _equation_iterative_solve_strided(int                   idtvar,
   cs_matrix_t *a = cs_sles_default_get_matrix
                      (f_id, var_name, stride, eb_size, symmetric);
 
-  using diag_t = cs_real_t[stride][stride];
-  const diag_t *fimp_r = fimp;
-  diag_t *_fimp_r = nullptr;
-
-  /*  For steady computations, the diagonal is relaxed */
-  if (idtvar < 0) {
-    CS_MALLOC_HD(_fimp_r, n_cells, diag_t, cs_alloc_mode);
-    cs_real_t rf = 1. / relaxp;
-
-    ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
-      for (cs_lnum_t i = 0; i < stride; i++) {
-        for (cs_lnum_t j = 0; j < stride; j++)
-          _fimp_r[c_id][i][j] = fimp_r[c_id][i][j] * rf;
-      }
-    });
-  }
-
   int tensorial_diffusion = 1;
 
   if (idftnp & CS_ANISOTROPIC_LEFT_DIFFUSION)
     tensorial_diffusion = 2;
+
+  /* For steady computations, the diagonal is relaxed */
+  cs_real_t relaxp = (idtvar < 0) ? eqp->relaxv : 1.;
 
   cs_matrix_compute_coeffs(a,
                            f,
@@ -384,14 +365,13 @@ _equation_iterative_solve_strided(int                   idtvar,
                            ndircp,
                            eb_size,
                            thetap,
+                           relaxp,
                            bc_coeffs,
-                           fimp_r,
+                           fimp,
                            i_massflux,
                            b_massflux,
                            i_viscm,
                            b_viscm);
-
-  CS_FREE_HD(_fimp_r);
 
   /*===========================================================================
    * Iterative process to handle non orthogonlaities (starting from the
@@ -1277,7 +1257,6 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
   int ndircp = eqp->ndircl;
   cs_real_t epsrsp = eqp->epsrsm;
   cs_real_t epsilp = eqp->epsilo;
-  cs_real_t relaxp = eqp->relaxv;
   cs_real_t thetap = eqp->theta;
 
   const cs_real_t  *cell_vol = cs_glob_mesh_quantities->cell_vol;
@@ -1364,19 +1343,8 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
 
   cs_matrix_t *a = cs_sles_default_get_matrix(f_id, var_name, 1, 1, symmetric);
 
-  const cs_real_t *rovsdt_c = rovsdt;
-  cs_real_t *_rovsdt_c = nullptr;
-
   /* For steady computations, the diagonal is relaxed */
-  if (idtvar < 0) {
-    CS_MALLOC_HD(_rovsdt_c, n_cells, cs_real_t, cs_alloc_mode);
-    cs_real_t rf = 1. / relaxp;
-    ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t cell_id) {
-      _rovsdt_c[cell_id] = rovsdt[cell_id] * rf;
-    });
-    ctx.wait();
-    rovsdt_c = _rovsdt_c;
-  }
+  cs_real_t relaxp = (idtvar < 0) ? eqp->relaxv : 1.;
 
   cs_matrix_compute_coeffs(a,
                            f,
@@ -1384,16 +1352,15 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
                            idiffp,
                            ndircp,
                            thetap,
+                           relaxp,
                            imucpp,
                            bc_coeffs,
-                           rovsdt_c,
+                           rovsdt,
                            i_massflux,
                            b_massflux,
                            i_viscm,
                            b_viscm,
                            xcpp);
-
-  CS_FREE_HD(_rovsdt_c);
 
   /*==========================================================================
    * 2. Iterative process to handle non orthogonalities (starting from the

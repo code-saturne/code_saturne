@@ -311,6 +311,7 @@ _cs_mass_flux_prediction(const cs_mesh_t       *m,
                            eqp->idiff,
                            0,   /* strengthen diagonal */
                            1.,  /* thetap */
+                           1.,  /* relaxp */
                            0.,  /* imucpp */
                            &bc_coeffs_pot,
                            pot,

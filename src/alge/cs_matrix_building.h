@@ -73,6 +73,7 @@
  *                                 - 0 otherwise
  * \param[in]       ndircp        number of Dirichlet BCs
  * \param[in]       thetap        time scheme parameter
+ * \param[in]       relaxp        relaxation coefficient (if < 1)
  * \param[in]       imucp         1 for temperature (with Cp), 0 otherwise
  * \param[in]       bc_coeffs     boundary condition structure
  * \param[in]       rovsdt        implicit terms (rho / dt)
@@ -93,6 +94,7 @@ cs_matrix_compute_coeffs(cs_matrix_t                 *a,
                          int                          idiffp,
                          int                          ndircp,
                          double                       thetap,
+                         double                       relaxp,
                          int                          imucpp,
                          const cs_field_bc_coeffs_t  *bc_coeffs,
                          const cs_real_t              rovsdt[],
@@ -120,6 +122,7 @@ cs_matrix_compute_coeffs(cs_matrix_t                 *a,
  * \param[in]       tensorial_diffusion  indicator
  * \param[in]       ndircp               number of Dirichlet BCs
  * \param[in]       thetap               time scheme parameter
+ * \param[in]       relaxp               relaxation coefficient (if < 1)
  * \param[in]       eb_size              extra-diagonal block size
  *                                       (1 or 3 for stride 3, 1 for stride 6)
  * \param[in]       bc_coeffs            boundary conditions structure
@@ -145,6 +148,7 @@ cs_matrix_compute_coeffs
   int                          ndircp,
   cs_lnum_t                    eb_size,
   double                       thetap,
+  double                       relaxp,
   const cs_field_bc_coeffs_t  *bc_coeffs,
   const cs_real_t              fimp[][stride][stride],
   const cs_real_t              i_massflux[],

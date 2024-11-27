@@ -299,6 +299,7 @@ _hydrostatic_pressure_compute(const cs_mesh_t       *m,
                            eqp_pr->idiff,
                            0,     // ndircp
                            eqp_pr->theta,
+                           1,     // relaxp
                            0,
                            bc_coeffs_hp,
                            rovsdt,
@@ -1274,6 +1275,7 @@ _pressure_correction_fv(int                   iterns,
                            eqp_p->idiff,
                            eqp_p->ndircl,
                            1.0, // thetap
+                           1.0, // relaxp
                            0,   // imucpp
                            bc_coeffs_dp,
                            rovsdt,
