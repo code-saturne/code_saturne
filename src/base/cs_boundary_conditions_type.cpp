@@ -715,8 +715,8 @@ cs_boundary_conditions_type(bool  init,
     }
 
     /* Allocate a work array for the gradient calculation */
-    cs_real_3_t *grad;
-    BFT_MALLOC(grad, n_cells_ext, cs_real_3_t);
+    cs_real_3_t *grad = nullptr;
+    CS_MALLOC_HD(grad, n_cells_ext, cs_real_3_t, cs_alloc_mode);
 
     cs_gradient_porosity_balance(1);
 
@@ -796,7 +796,7 @@ cs_boundary_conditions_type(bool  init,
                                                            grad[c_id]);
     }
 
-    BFT_FREE(grad);
+    CS_FREE(grad);
 
     if (cs_glob_rank_id == _irangd)
       pref = pripb[_ifrslb];
