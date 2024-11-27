@@ -112,7 +112,7 @@ if (ichemistry.ge.1) then
         zent = xyzcen(3,iel)
         call intprf                                                         &
         (nbchmz, nbchim,                                                    &
-         zproc, tchem, espnum(1+(k-1)*nbchim*nbchmz), zent  , ttcabs, xcent )
+         zproc, tchem, espnum, zent  , ttcabs, xcent )
         ! The first nespg user scalars are supposed to be chemical species
         cvar_despgi(iel) = xcent
       enddo

@@ -558,6 +558,27 @@ typedef struct {
    *  conditions on aerosol species */
   char *aero_conc_file_name;
 
+  // option for chemestry profiles file
+
+  /*! number of time steps for the concentration profiles file */
+  int nt_step_profiles;
+  /*! number of altitudes for the concentration profiles file */
+  int n_z_profiles;
+  /*! number of initialized chemical species
+      in the concentration profiles file */
+  int n_species_profiles;
+
+  /*! concentration profiles */
+  cs_real_t *conc_profiles;
+  /*! altitudes of the concentration profiles*/
+  cs_real_t *z_conc_profiles;
+  /*! time steps of the concentration profiles */
+  cs_real_t *t_conc_profiles;
+  /*! X coordinates of concentration profiles */
+  cs_real_t *x_conc_profiles;
+  /*! Y coordinates of concentration profiles */
+  cs_real_t *y_conc_profiles;
+
 } cs_atmo_chemistry_t;
 
 /*----------------------------------------------------------------------------

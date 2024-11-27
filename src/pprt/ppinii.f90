@@ -236,9 +236,6 @@ init_at_chem = 1
 
 ! --> Initialisation for the gaseous chemistry model:
 
-nbchim = 0
-nbchmz = 0
-nespgi = 0
 dtchemmax = 10.d0
 
 ! --> Initialisation for the aerosol chemistry model:

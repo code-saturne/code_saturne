@@ -24,7 +24,7 @@
 !>   (based on meteo file)
 
 !> \brief Automatically compute the boundary conditions from the meteo file
-!>      or from the imbrication profiles
+!>        or from the imbrication profiles
 !-------------------------------------------------------------------------------
 ! Arguments
 !______________________________________________________________________________.
@@ -103,24 +103,16 @@ integer          ifac, iel, ilelt
 integer          ii, nbrsol, nelts
 integer          jsp, isc, ivar
 integer          fid_axz, fid_mrij
-double precision d2s3, zent, vs, xuent, xvent, xwent, dnorm_vel
+double precision zent, vs, xwent, dnorm_vel
 double precision vel_dir(3)
 double precision rij_loc(6)
-double precision xkent, xeent, tpent, qvent,ncent
+double precision tpent, qvent,ncent
 double precision xcent
-double precision rscp, pp, dum
+double precision pp, dum
 
 integer, dimension(:), pointer :: elt_ids
 
-double precision, dimension(:), pointer :: brom, coefap, viscl
-double precision, dimension(:,:), pointer :: cpro_met_vel
-double precision, dimension(:), pointer :: cpro_met_potemp
-double precision, dimension(:), pointer :: cpro_met_qv, cpro_met_nc
-double precision, dimension(:), pointer :: cpro_met_k, cpro_met_eps
-double precision, dimension(:), pointer :: cpro_met_p
-double precision, dimension(:), pointer :: cpro_met_rho
-double precision, dimension(:,:), pointer :: cpro_met_rij
-double precision, pointer, dimension(:)   :: bvar_temp_sol
+double precision, dimension(:), pointer :: coefap
 double precision, pointer, dimension(:)   :: bvar_tempp
 double precision, pointer, dimension(:)   :: bvar_total_water
 
@@ -128,42 +120,10 @@ double precision, pointer, dimension(:)   :: bvar_total_water
 ! 1.  INITIALISATIONS
 !===============================================================================
 
-d2s3 = 2.d0/3.d0
-
-xuent = 0.d0
-xvent = 0.d0
-xkent = 0.d0
-xeent = 0.d0
-tpent = 0.d0
-
-rscp = rair/cp0
-
-call field_get_val_s(ibrom, brom)
-call field_get_val_s(iviscl, viscl)
-
-if (imeteo.ge.2) then
-  call field_get_val_s_by_name('meteo_pot_temperature', cpro_met_potemp)
-  call field_get_val_v_by_name('meteo_velocity', cpro_met_vel)
-  call field_get_val_s_by_name('meteo_tke', cpro_met_k)
-  call field_get_val_s_by_name('meteo_eps', cpro_met_eps)
-  call field_get_val_s_by_name('meteo_pressure', cpro_met_p)
-  call field_get_val_s_by_name('meteo_density', cpro_met_rho)
-
-  if (ippmod(iatmos).eq.2) then
-    call field_get_val_s_by_name('meteo_humidity', cpro_met_qv)
-    call field_get_val_s_by_name('meteo_drop_nb', cpro_met_nc)
-  endif
-
-endif
-call field_get_id_try('meteo_rij', fid_mrij)
-if (fid_mrij.ne.-1) then
-  call field_get_val_v(fid_mrij, cpro_met_rij)
-endif
 
 ! Soil atmosphere boundary conditions
 !------------------------------------
 if (iatsoil.ge.1) then
-  call field_get_val_s_by_name("soil_temperature", bvar_temp_sol)
   call field_get_val_s_by_name("soil_pot_temperature", bvar_tempp)
   call field_get_val_s_by_name("soil_total_water", bvar_total_water)
   call atmo_get_soil_zone(nelts, nbrsol, elt_ids)
@@ -306,7 +266,7 @@ if (ichemistry.ge.1) then
         if (rcodcl(ifac,isca(isca_chem(idespgi(ii))),1).gt.0.5d0*rinfin) then
           call intprf &
             (nbchmz, nbchim,                                               &
-            zproc, tchem, espnum(1+(ii-1)*nbchim*nbchmz), zent  , ttcabs, xcent )
+            zproc, tchem, espnum, zent  , ttcabs, xcent )
           ! The first nespg user scalars are supposed to be chemical species
           rcodcl(ifac,isca(isca_chem(idespgi(ii))),1) = xcent
         endif

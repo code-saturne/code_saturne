@@ -300,7 +300,15 @@ static cs_atmo_chemistry_t _atmo_chem = {
   .reacnum = nullptr,
   .aero_file_name = nullptr,
   .chem_conc_file_name = nullptr,
-  .aero_conc_file_name = nullptr
+  .aero_conc_file_name = nullptr,
+  .nt_step_profiles   = 0,
+  .n_z_profiles       = 0,
+  .n_species_profiles = 0,
+  .conc_profiles   = nullptr,
+  .z_conc_profiles = nullptr,
+  .t_conc_profiles = nullptr,
+  .x_conc_profiles = nullptr,
+  .y_conc_profiles = nullptr
 };
 
 /* atmo imbrication options structure */
@@ -541,6 +549,17 @@ cs_f_atmo_soil_init_arrays(int       *n_soil_cat,
                            cs_real_t **c2w,
                            cs_real_t **r1,
                            cs_real_t **r2);
+
+void
+cs_f_atmo_get_chem_conc_profiles(int **nbchim,
+                                 int **nbchmz,
+                                 int **nespgi);
+void
+cs_f_atmo_get_arrays_chem_conc_profiles(cs_real_t **espnum,
+                                       cs_real_t **zproc,
+                                       cs_real_t **tchem,
+                                       cs_real_t **xchem,
+                                       cs_real_t **ychem);
 
 /*============================================================================
  * Private function definitions
@@ -2308,6 +2327,49 @@ cs_f_atmo_chem_initialize_species_to_fid(int *species_fid)
 }
 
 void
+cs_f_atmo_get_chem_conc_profiles(int **nbchim,
+                                 int **nbchmz,
+                                 int **nespgi)
+{
+  *nbchmz = &(_atmo_chem.n_z_profiles);
+  *nbchim = &(_atmo_chem.nt_step_profiles);
+  *nespgi = &(_atmo_chem.n_species_profiles);
+}
+
+void
+cs_f_atmo_get_arrays_chem_conc_profiles(cs_real_t **espnum,
+                                        cs_real_t **zproc,
+                                        cs_real_t **tchem,
+                                        cs_real_t **xchem,
+                                        cs_real_t **ychem)
+{
+  const int _nbchmz = _atmo_chem.n_z_profiles;
+  const int _nbchim = _atmo_chem.nt_step_profiles;
+  const int size = _atmo_chem.n_species*_nbchmz*_nbchim;
+
+  if (_atmo_chem.conc_profiles == nullptr)
+    BFT_MALLOC(_atmo_chem.conc_profiles, size, cs_real_t);
+
+  if (_atmo_chem.z_conc_profiles == nullptr)
+    BFT_MALLOC(_atmo_chem.z_conc_profiles, _nbchmz, cs_real_t);
+
+  if (_atmo_chem.t_conc_profiles == nullptr)
+    BFT_MALLOC(_atmo_chem.t_conc_profiles, _nbchim, cs_real_t);
+
+  if (_atmo_chem.x_conc_profiles == nullptr)
+    BFT_MALLOC(_atmo_chem.x_conc_profiles, _nbchim, cs_real_t);
+
+  if (_atmo_chem.y_conc_profiles == nullptr)
+    BFT_MALLOC(_atmo_chem.y_conc_profiles, _nbchim, cs_real_t);
+
+  *espnum = _atmo_chem.conc_profiles;
+  *zproc  = _atmo_chem.z_conc_profiles;
+  *tchem  = _atmo_chem.t_conc_profiles;
+  *xchem  = _atmo_chem.x_conc_profiles;
+  *ychem  = _atmo_chem.y_conc_profiles;
+}
+
+void
 cs_f_atmo_chem_finalize(void)
 {
   if (_atmo_chem.aerosol_model != CS_ATMO_AEROSOL_OFF)
@@ -2321,6 +2383,11 @@ cs_f_atmo_chem_finalize(void)
   BFT_FREE(_atmo_chem.spack_file_name);
   BFT_FREE(_atmo_chem.aero_file_name);
   BFT_FREE(_atmo_chem.chem_conc_file_name);
+  BFT_FREE(_atmo_chem.conc_profiles);
+  BFT_FREE(_atmo_chem.z_conc_profiles);
+  BFT_FREE(_atmo_chem.t_conc_profiles);
+  BFT_FREE(_atmo_chem.x_conc_profiles);
+  BFT_FREE(_atmo_chem.y_conc_profiles);
 }
 
 void

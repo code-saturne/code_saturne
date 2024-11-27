@@ -78,24 +78,24 @@ module atchem
   double precision dtchemmax
 
   !> number of time steps for the concentration profiles file
-  integer, save         ::  nbchim
+  integer(c_int), save, pointer :: nbchim
   !> number of altitudes for the concentration profiles file
-  integer, save         ::  nbchmz
+  integer(c_int), save, pointer :: nbchmz
   !> number of initialized chemical species in the concentration profiles file
-  integer, save         ::  nespgi = 0
+  integer(c_int), save, pointer :: nespgi
 
   !> indices of chemical species in the concentration profiles file
   integer, allocatable, dimension(:)          :: idespgi
   !> concentration profiles
-  double precision, allocatable, dimension(:) :: espnum
+  double precision, dimension(:), pointer :: espnum
   !> altitudes of the concentration profiles
-  double precision, allocatable, dimension(:) :: zproc
+  double precision, dimension(:), pointer :: zproc
   !> time steps of the concentration profiles
-  double precision, allocatable, dimension(:) :: tchem
+  double precision, dimension(:), pointer :: tchem
   !> X coordinates of concentration profiles
-  double precision, allocatable, dimension(:) :: xchem
+  double precision, dimension(:), pointer :: xchem
   !> Y coordinates of concentration profiles
-  double precision, allocatable, dimension(:) :: ychem
+  double precision, dimension(:), pointer :: ychem
 
   !> \}
 
@@ -151,6 +151,24 @@ module atchem
       type(c_ptr), intent(out) :: reacnum
 
     end subroutine cs_f_atmo_chem_initialize_reacnum
+
+    !---------------------------------------------------------------------------
+
+    subroutine cs_f_atmo_get_chem_conc_profiles(nbchim, nbchmz, nespgi) &
+      bind(C, name='cs_f_atmo_get_chem_conc_profiles')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      type(c_ptr), intent(out) :: nbchim, nbchmz, nespgi
+    end subroutine cs_f_atmo_get_chem_conc_profiles
+
+    subroutine cs_f_atmo_get_arrays_chem_conc_profiles(espnum, zproc,  tchem,   &
+                                                       xchem, ychem)            &
+      bind(C, name='cs_f_atmo_get_arrays_chem_conc_profiles')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      type(c_ptr), intent(out) :: espnum, zproc,  tchem
+      type(c_ptr), intent(out) :: xchem, ychem
+    end subroutine cs_f_atmo_get_arrays_chem_conc_profiles
 
     !---------------------------------------------------------------------------
 
@@ -240,27 +258,39 @@ contains
 
   !> \brief Allocate some atmoshperic chemistry arrays
   subroutine init_chemistry
+    use, intrinsic :: iso_c_binding
 
     implicit none
 
     procedure() :: atlecc
 
     integer imode
+    type(c_ptr) :: p_nbchim, p_nbchmz, p_nespgi
+    type(c_ptr) :: p_espnum, p_zproc,  p_tchem
+    type(c_ptr) :: p_xchem, p_ychem
 
     ! First reading of concentration profiles file
     imode = 0
+    call cs_f_atmo_get_chem_conc_profiles(p_nbchim, p_nbchmz, p_nespgi)
+    call c_f_pointer(p_nbchim, nbchim)
+    call c_f_pointer(p_nbchmz, nbchmz)
+    call c_f_pointer(p_nespgi, nespgi)
 
     call atlecc(imode)
 
     ! Dynamical allocations
 
+    call cs_f_atmo_get_arrays_chem_conc_profiles(p_espnum, p_zproc,  p_tchem,  &
+                                                 p_xchem,  p_ychem)
+
+    call c_f_pointer(p_zproc, zproc, [nbchmz])
+    call c_f_pointer(p_tchem, tchem, [nbchim])
+    call c_f_pointer(p_xchem, xchem, [nbchim])
+    call c_f_pointer(p_ychem, ychem, [nbchim])
+    call c_f_pointer(p_espnum, espnum, [nespg*nbchim*nbchmz])
+
     allocate(conv_factor_jac(nespg*nespg))
     allocate(idespgi(nespgi))
-    allocate(espnum(nespg*nbchim*nbchmz))
-    allocate(zproc(nbchmz))
-    allocate(tchem(nbchim))
-    allocate(xchem(nbchim))
-    allocate(ychem(nbchim))
 
   end subroutine init_chemistry
 
@@ -348,11 +378,6 @@ contains
 
     deallocate(conv_factor_jac)
     deallocate(idespgi)
-    deallocate(espnum)
-    deallocate(zproc)
-    deallocate(tchem)
-    deallocate(xchem)
-    deallocate(ychem)
 
   end subroutine finalize_chemistry
 
