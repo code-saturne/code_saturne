@@ -298,6 +298,7 @@ static cs_atmo_chemistry_t _atmo_chem = {
   .molar_mass = nullptr,
   .chempoint = nullptr,
   .reacnum = nullptr,
+  .dlconc0 = nullptr,
   .aero_file_name = nullptr,
   .chem_conc_file_name = nullptr,
   .aero_conc_file_name = nullptr,
@@ -560,6 +561,9 @@ cs_f_atmo_get_arrays_chem_conc_profiles(cs_real_t **espnum,
                                        cs_real_t **tchem,
                                        cs_real_t **xchem,
                                        cs_real_t **ychem);
+
+void
+cs_f_atmo_chem_initialize_dlconc0(cs_real_t **dlconc0);
 
 /*============================================================================
  * Private function definitions
@@ -2370,6 +2374,19 @@ cs_f_atmo_get_arrays_chem_conc_profiles(cs_real_t **espnum,
 }
 
 void
+cs_f_atmo_chem_initialize_dlconc0(cs_real_t **dlconc0)
+{
+  const int n_aer = _atmo_chem.n_size;
+  const int nlayer_aer = _atmo_chem.n_layer;
+  const int size = n_aer*(1+nlayer_aer);
+
+  if (_atmo_chem.dlconc0 == nullptr)
+    BFT_MALLOC(_atmo_chem.dlconc0, size, cs_real_t);
+
+  *dlconc0 = _atmo_chem.dlconc0;
+}
+
+void
 cs_f_atmo_chem_finalize(void)
 {
   if (_atmo_chem.aerosol_model != CS_ATMO_AEROSOL_OFF)
@@ -2388,6 +2405,7 @@ cs_f_atmo_chem_finalize(void)
   BFT_FREE(_atmo_chem.t_conc_profiles);
   BFT_FREE(_atmo_chem.x_conc_profiles);
   BFT_FREE(_atmo_chem.y_conc_profiles);
+  BFT_FREE(_atmo_chem.dlconc0);
 }
 
 void

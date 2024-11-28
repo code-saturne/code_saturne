@@ -65,13 +65,23 @@ integer    jsp, jb
 integer    impmea
 character  label*80
 character  ficmea*80
+type(c_ptr) :: c_dlconc0
+
+interface
+  subroutine cs_f_atmo_chem_initialize_dlconc0(dlconc0) &
+    bind(C, name='cs_f_atmo_chem_initialize_dlconc0')
+    use, intrinsic :: iso_c_binding
+    implicit none
+    type(c_ptr), intent(out) ::dlconc0
+  end subroutine cs_f_atmo_chem_initialize_dlconc0
+
+end interface
 
 !================================================================================
 ! ALLOCATE
 !================================================================================
-
-if (allocated(dlconc0)) deallocate(dlconc0)
-allocate(dlconc0(n_aer*(1+nlayer_aer)))
+call cs_f_atmo_chem_initialize_dlconc0(c_dlconc0)
+call c_f_pointer(c_dlconc0, dlconc0, [n_aer*(1+nlayer_aer)])
 
 !================================================================================
 ! READINGS

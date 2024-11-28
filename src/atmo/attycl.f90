@@ -299,8 +299,8 @@ if (iaerosol.ne.CS_ATMO_AEROSOL_OFF) then
             rcodcl(ifac,isca(isc),1) = dlconc0(jsp)
       enddo
 
-      ! For other species zero dirichlet conditions are imposed,
-      ! unless they have already been treated earlier (eg, in usatcl)
+    ! For other species zero dirichlet conditions are imposed,
+    ! unless they have already been treated earlier (eg, in usatcl)
       do ii = 1, nlayer_aer*n_aer+n_aer
         isc = isca_chem(nespg + ii)
         if (rcodcl(ifac,isca(isc),1).gt.0.5d0*rinfin) &

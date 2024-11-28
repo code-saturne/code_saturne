@@ -548,7 +548,9 @@ typedef struct {
   int *chempoint;
   /*! kinetics constants */
   cs_real_t *reacnum;
-
+  /*! Initial gaseous and particulate concentrations
+    and aerosol number read in file */
+  cs_real_t *dlconc0;
   /*! Name of the file used to initialize the aerosol shared library */
   char *aero_file_name;
   /*! Name of the file used to initialize and to apply boundary

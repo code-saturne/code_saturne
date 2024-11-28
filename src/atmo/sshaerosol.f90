@@ -61,7 +61,7 @@ module sshaerosol
 
   !> Initial gaseous and particulate concentrations
   !> and aerosol number read in file
-  double precision, save, allocatable, dimension(:) :: dlconc0
+  double precision, save, dimension(:), pointer :: dlconc0
 
   !> \}
 
