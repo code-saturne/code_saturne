@@ -182,7 +182,6 @@ call field_build_bc_codes_all(icodcl, rcodcl) ! Get map
 
 ! Atmospheric flows
 if (ippmod(iatmos).ge.0) then
-  call attycl(itypfb, icodcl, rcodcl)
   call cs_atmo_bcond()
 endif
 

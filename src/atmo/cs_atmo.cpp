@@ -69,6 +69,7 @@
 #include "cs_mesh.h"
 #include "cs_mesh_location.h"
 #include "cs_mesh_quantities.h"
+#include "cs_measures_util.h"
 #include "cs_parall.h"
 #include "cs_equation_iterative_solve.h"
 #include "cs_physical_constants.h"
@@ -2707,16 +2708,6 @@ cs_atmo_fields_init0(void)
   if (f_met_potemp != nullptr)
     cpro_met_potemp = f_met_potemp->val;
 
-  cs_real_t *cpro_met_p = nullptr;
-  cs_field_t *f_met_p = cs_field_by_name_try("meteo_pressure");
-  if (f_met_p != nullptr)
-    cpro_met_p = f_met_p->val;
-
-  cs_real_t *cpro_met_rho = nullptr;
-  cs_field_t *f_met_rho = cs_field_by_name_try("meteo_density");
-  if (f_met_rho != nullptr)
-    cpro_met_rho = f_met_rho->val;
-
   cs_real_t *cpro_met_k = nullptr;
   cs_field_t *f_met_k = cs_field_by_name_try("meteo_tke");
   if (f_met_k != nullptr)
@@ -2756,10 +2747,6 @@ cs_atmo_fields_init0(void)
   cs_real_t *cvar_phi = nullptr;
   if (CS_F_(phi) != nullptr)
     cvar_phi = CS_F_(phi)->val;
-
-  cs_real_t *cvar_fb = nullptr;
-  if (CS_F_(f_bar) != nullptr)
-    cvar_fb = CS_F_(f_bar)->val;
 
   cs_real_t *cvar_omg = nullptr;
   if (CS_F_(omg) != nullptr)
@@ -2980,6 +2967,236 @@ cs_atmo_bcond(void)
   cs_real_t cp0 = phys_pro->cp0;
   cs_real_t rscp = rair/cp0;
 
+  cs_field_t *th_f = cs_thermal_model_field();
+  cs_field_t *ym_w = cs_field_by_name_try("ym_water");
+
+  /* Soil atmosphere boundary conditions
+   *------------------------------------ */
+
+  if (at_opt->soil_model > 0) {
+    const cs_zone_t *z = cs_boundary_zone_by_id(at_opt->soil_zone_id);
+    const cs_real_t *bvar_tempp = cs_field_by_name("soil_pot_temperature")->val;
+    const cs_real_t *bvar_total_water = cs_field_by_name("soil_total_water")->val;
+
+    for (cs_lnum_t ii = 0; ii < z->n_elts; ii++) {
+
+      const cs_lnum_t face_id = z->elt_ids[ii];
+
+      // Rough wall if no specified
+      // Note: roughness and thermal roughness are computed in solmoy
+      if (bc_type[face_id] == 0)
+        bc_type[face_id] = CS_ROUGHWALL;
+
+      if (th_f != nullptr) {
+        if (th_f->bc_coeffs->rcodcl1[face_id] > cs_math_infinite_r*0.5) {
+          // Dirichlet with wall function Expressed directly in term of
+          // potential temperature
+          th_f->bc_coeffs->icodcl[face_id]  = -6;
+          th_f->bc_coeffs->rcodcl1[face_id] = bvar_tempp[ii];
+        }
+      }
+      if (cs_glob_physical_model_flag[CS_ATMOSPHERIC] == CS_ATMO_HUMID) {
+        // If not yet specified
+        if (ym_w->bc_coeffs->rcodcl1[face_id] > cs_math_infinite_r*0.5) {
+          ym_w->bc_coeffs->icodcl[face_id]  = 6;
+          ym_w->bc_coeffs->rcodcl1[face_id] = bvar_total_water[ii];
+        }
+      }
+
+    }
+  }
+
+  /* Imbrication
+     ----------- */
+
+  if (_atmo_imbrication.imbrication_flag) {
+
+    const int id_type = 2; // interpolation on boundary faces
+    const cs_lnum_t n_b_faces_max
+      = (cs_lnum_t)cs_math_fmax(100.0, (cs_real_t)n_b_faces);
+
+    cs_summon_cressman(cs_glob_time_step->t_cur);
+
+    if (_atmo_imbrication.cressman_u) {
+      cs_real_t *rcodcl1 = CS_F_(vel)->bc_coeffs->rcodcl1;
+      cs_measures_set_t *ms = cs_measures_set_by_id(_atmo_imbrication.id_u);
+      cs_cressman_interpol(ms, rcodcl1, id_type);
+
+      if (_atmo_imbrication.imbrication_verbose)
+        for (cs_lnum_t face_id = 0; face_id < n_b_faces_max; face_id++)
+          bft_printf("cs_atmo_bcond:: xbord, ybord, zbord, ubord = %10.14e %10.14e"
+                     "%10.14e %10.14e\n",
+                     b_face_cog[face_id][0], b_face_cog[face_id][1],
+                     b_face_cog[face_id][2], rcodcl1[face_id]);
+    }
+
+    if (_atmo_imbrication.cressman_v) {
+      cs_real_t *rcodcl1 = CS_F_(vel)->bc_coeffs->rcodcl1 + n_b_faces;
+      cs_measures_set_t *ms = cs_measures_set_by_id(_atmo_imbrication.id_v);
+      cs_cressman_interpol(ms, rcodcl1, id_type);
+
+      if (_atmo_imbrication.imbrication_verbose)
+        for (cs_lnum_t face_id = 0; face_id < n_b_faces_max; face_id++)
+          bft_printf("cs_atmo_bcond:: xbord, ybord, zbord, vbord = %10.14e %10.14e"
+                     "%10.14e %10.14e\n",
+                     b_face_cog[face_id][0], b_face_cog[face_id][1],
+                     b_face_cog[face_id][2], rcodcl1[face_id]);
+    }
+
+    if (_atmo_imbrication.cressman_tke) {
+      cs_real_t *rcodcl1 = CS_F_(k)->bc_coeffs->rcodcl1;
+      cs_measures_set_t *ms = cs_measures_set_by_id(_atmo_imbrication.id_tke);
+      cs_cressman_interpol(ms, rcodcl1, id_type);
+
+      if (_atmo_imbrication.imbrication_verbose)
+        for (cs_lnum_t face_id = 0; face_id < n_b_faces_max; face_id++)
+          bft_printf("cs_atmo_bcond:: xbord, ybord, zbord, tkebord = %10.14e %10.14e"
+                     "%10.14e %10.14e\n",
+                     b_face_cog[face_id][0], b_face_cog[face_id][1],
+                     b_face_cog[face_id][2], rcodcl1[face_id]);
+
+    }
+
+    if (_atmo_imbrication.cressman_eps) {
+      cs_real_t *rcodcl1 = CS_F_(eps)->bc_coeffs->rcodcl1;
+      cs_measures_set_t *ms = cs_measures_set_by_id(_atmo_imbrication.id_eps);
+      cs_cressman_interpol(ms, rcodcl1, id_type);
+
+      if (_atmo_imbrication.imbrication_verbose)
+        for (cs_lnum_t face_id = 0; face_id < n_b_faces_max; face_id++)
+          bft_printf("cs_atmo_bcond:: xbord, ybord, zbord, epsbord = %10.14e %10.14e"
+                     "%10.14e %10.14e\n",
+                     b_face_cog[face_id][0], b_face_cog[face_id][1],
+                     b_face_cog[face_id][2], rcodcl1[face_id]);
+    }
+
+    if (   _atmo_imbrication.cressman_theta
+        && cs_glob_physical_model_flag[CS_ATMOSPHERIC] > CS_ATMO_CONSTANT_DENSITY) {
+      cs_real_t *rcodcl1 = th_f->bc_coeffs->rcodcl1;
+      cs_measures_set_t *ms = cs_measures_set_by_id(_atmo_imbrication.id_theta);
+      cs_cressman_interpol(ms, rcodcl1, id_type);
+
+      if (_atmo_imbrication.imbrication_verbose)
+        for (cs_lnum_t face_id = 0; face_id < n_b_faces_max; face_id++)
+          bft_printf("cs_atmo_bcond:: xbord, ybord, zbord, thetabord = %10.14e %10.14e"
+                     "%10.14e %10.14e\n",
+                     b_face_cog[face_id][0], b_face_cog[face_id][1],
+                     b_face_cog[face_id][2], rcodcl1[face_id]);
+    }
+
+    if (   _atmo_imbrication.cressman_qw
+        && cs_glob_physical_model_flag[CS_ATMOSPHERIC] == CS_ATMO_HUMID) {
+      cs_real_t *rcodcl1 = ym_w->bc_coeffs->rcodcl1;
+      cs_measures_set_t *ms = cs_measures_set_by_id(_atmo_imbrication.id_qw);
+      cs_cressman_interpol(ms, rcodcl1, id_type);
+
+      if (_atmo_imbrication.imbrication_verbose)
+        for (cs_lnum_t face_id = 0; face_id < n_b_faces_max; face_id++)
+          bft_printf("cs_atmo_bcond:: xbord, ybord, zbord, thetabord = %10.14e %10.14e"
+                     "%10.14e %10.14e\n",
+                     b_face_cog[face_id][0], b_face_cog[face_id][1],
+                     b_face_cog[face_id][2], rcodcl1[face_id]);
+    }
+
+    if (   _atmo_imbrication.cressman_nc
+        && cs_glob_physical_model_flag[CS_ATMOSPHERIC] == CS_ATMO_HUMID) {
+      cs_field_t *f = cs_field_by_name("number_of_droplets");
+      cs_real_t *rcodcl1 = f->bc_coeffs->rcodcl1;
+      cs_measures_set_t *ms = cs_measures_set_by_id(_atmo_imbrication.id_nc);
+      cs_cressman_interpol(ms, rcodcl1, id_type);
+
+      if (_atmo_imbrication.imbrication_verbose)
+        for (cs_lnum_t face_id = 0; face_id < n_b_faces_max; face_id++)
+          bft_printf("cs_atmo_bcond:: xbord, ybord, zbord, thetabord = %10.14e %10.14e"
+                     "%10.14e %10.14e\n",
+                     b_face_cog[face_id][0], b_face_cog[face_id][1],
+                     b_face_cog[face_id][2], rcodcl1[face_id]);
+    }
+
+  } //  imbrication_flag
+
+  /*  Atmospheric gaseous chemistry
+      ----------------------------- */
+  if (_atmo_chem.model > 0) {
+
+    for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++) {
+
+      if (bc_type[face_id] != CS_INLET)
+        continue;
+
+      /* For species present in the concentration profiles chemistry file,
+         profiles are used here as boundary conditions if boundary
+         conditions have not been treated earlier (eg, in cs_user_boundary_conditions) */
+      for (int ii = 0; ii < _atmo_chem.n_species_profiles; ii++) {
+        const int f_id =_atmo_chem.species_to_scalar_id[ii];
+        cs_field_t *f = cs_field_by_id(f_id);
+        if (f->bc_coeffs->rcodcl1[face_id] <= cs_math_infinite_r*0.5)
+          continue;
+        const cs_real_t xcent = cs_intprf(_atmo_chem.n_z_profiles,
+                                          _atmo_chem.nt_step_profiles,
+                                          _atmo_chem.z_conc_profiles,
+                                          _atmo_chem.t_conc_profiles,
+                                          _atmo_chem.conc_profiles,
+                                          b_face_cog[face_id][2],
+                                          cs_glob_time_step->t_cur);
+        f->bc_coeffs->rcodcl1[face_id] = xcent;
+      }
+
+      /* For other species zero Dirichlet conditions are imposed,
+       * unless they have already been treated earlier (eg, in cs_user_boundary_conditions) */
+      for (int ii = 0; ii < _atmo_chem.n_species; ii++) {
+        const int f_id =_atmo_chem.species_to_scalar_id[ii];
+        cs_field_t *f = cs_field_by_id(f_id);
+        if (f->bc_coeffs->rcodcl1[face_id] > cs_math_infinite_r*0.5)
+          f->bc_coeffs->rcodcl1[face_id] = 0.0;
+      }
+
+    }
+
+  }
+
+  // Atmospheric aerosol chemistry
+  if (_atmo_chem.aerosol_model != CS_ATMO_AEROSOL_OFF) {
+
+    const int n_aer = _atmo_chem.n_size;
+    const int nespg = _atmo_chem.n_species;
+    const int nlayer_aer = _atmo_chem.n_layer;
+
+    for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++) {
+
+      if (bc_type[face_id] != CS_INLET)
+        continue;
+
+      for (int ii = 0; ii < nlayer_aer*n_aer+n_aer; ii++) {
+        const int f_id =_atmo_chem.species_to_scalar_id[ii];
+        cs_field_t *f = cs_field_by_id(f_id);
+        if (f->bc_coeffs->rcodcl1[face_id] > cs_math_infinite_r*0.5)
+          f->bc_coeffs->rcodcl1[face_id] = _atmo_chem.dlconc0[ii];
+      }
+
+      /* For other species zero dirichlet conditions are imposed,
+         unless they have already been treated earlier */
+      for (int ii = 0; ii < nlayer_aer*n_aer+n_aer; ii++) {
+        const int f_id = _atmo_chem.species_to_scalar_id[ii];
+        cs_field_t *f = cs_field_by_id(f_id);
+        if (f->bc_coeffs->rcodcl1[face_id] > cs_math_infinite_r*0.5)
+          f->bc_coeffs->rcodcl1[face_id] = 0.0;
+      }
+
+      /* For gaseous species which have not been treated earlier
+         (for example species not present in the third gaseous scheme,
+         which can be treated in usatcl of with the file chemistry)
+         zero dirichlet conditions are imposed */
+      for (int ii = 0; ii < nespg; ii++) {
+        const int f_id =_atmo_chem.species_to_scalar_id[ii];
+        cs_field_t *f = cs_field_by_id(f_id);
+        if (f->bc_coeffs->rcodcl1[face_id] > cs_math_infinite_r*0.5)
+          f->bc_coeffs->rcodcl1[face_id] = 0.0;
+      }
+    }
+
+  }
+
   /* Boundary condition for rain phase */
   if (rain == true) {
     cs_field_t *yr= cs_field_by_name("ym_l_r");
@@ -2987,7 +3204,7 @@ cs_atmo_bcond(void)
     for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++) {
 
       if (   bc_type[face_id] == CS_SMOOTHWALL
-               || bc_type[face_id] == CS_ROUGHWALL) {
+          || bc_type[face_id] == CS_ROUGHWALL) {
 
         yr->bc_coeffs->icodcl[face_id] = 1;
         yr->bc_coeffs->rcodcl1[face_id] = 0.;
