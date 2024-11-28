@@ -64,8 +64,6 @@ class TurbulenceModel(Variables, Model):
         self.node_lagr   = self.case.xmlGetNode('lagrangian')
         self.node_coal   = self.node_models.xmlGetChildNode('solid_fuels',
                                                             'model')
-        self.node_joule  = self.node_models.xmlGetChildNode('joule_effect',
-                                                            'model')
         self.node_gas    = self.node_models.xmlGetChildNode('gas_combustion',
                                                             'model')
         self.node_turb   = self.node_models.xmlInitChildNode('turbulence',

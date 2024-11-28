@@ -60,11 +60,8 @@ class ElectricalModel(Variables, Model):
         self.case = case
 
         nModels         = self.case.xmlGetNode('thermophysical_models')
-        self.node_gas   = nModels.xmlInitNode('gas_combustion',    'model')
-        self.node_joule = nModels.xmlInitNode('joule_effect',      'model')
-        self.node_atmo  = nModels.xmlInitNode('atmospheric_flows', 'model')
-        self.node_coal  = nModels.xmlInitNode('solid_fuels',       'model')
         self.node_bc    = self.case.xmlGetNode('boundary_conditions')
+        self.node_joule = nModels.xmlGetNode('joule_effect', 'model')
 
         self.electricalModel = ('off', 'joule', 'arc')
         self.jouleModel = ('off', 'AC/DC', 'three-phase', 'AC/DC+Transformer', 'three-phase+Transformer')
@@ -113,18 +110,31 @@ class ElectricalModel(Variables, Model):
         self.isInList(model, self.electricalModel)
 
         if model == 'off':
-            self.node_joule['model']   = 'off'
             ThermalRadiationModel(self.case).setRadiativeModel('off')
             ThermalScalarModel(self.case).setThermalModel('off')
 
         else:
-            self.node_gas['model']   = 'off'
-            self.node_coal['model']  = 'off'
+            nModels = self.case.xmlGetNode('thermophysical_models')
+
+            for m in ('atmospheric_flows', 'gas_combustion'):
+                n = nModels.xmlGetNode(m, 'model')
+                if n:
+                    n['model'] = 'off'
+            for m in ('solid_fuels', 'joule_effectgas_combustion'):
+                n = nModels.xmlGetNode(m, 'model')
+                if n:
+                    n.xmlRemoveNode()
+
+            if not self.node_joule:
+                self.node_joule = nModels.xmlInitNode('joule_effect', 'model')
             self.node_joule['model'] = model
-            self.node_atmo['model']  = 'off'
             ThermalScalarModel(self.case).setThermalModel('enthalpy')
 
         self.__updateScalarAndProperty()
+
+        if model == 'off' and self.node_joule:
+            self.node_joule.xmlRemoveNode()
+            self.node_joule = None
 
         fcm = FluidCharacteristicsModel(self.case)
 
@@ -141,20 +151,15 @@ class ElectricalModel(Variables, Model):
                 if c == 'constant':
                     c = 'predefined_law'
                     fcm.setPropertyMode(tag, c)
-#
-#        from code_saturne.model.Boundary import Boundary
-#        for nodbc in self.node_bc.xmlGetChildNodeList('inlet'):
-#            model = Boundary('electric_inlet', nodbc['label'], self.case)
-#            model.getTurbulenceChoice()
-#
-#        del Boundary
-
 
     @Variables.noUndo
     def getElectricalModel(self):
         """
         Return the current electrical model.
         """
+        if not self.node_joule:
+            return 'off'
+
         model = self.node_joule['model']
         if model not in self.electricalModel:
             model = self.defaultElectricalValues()['model']

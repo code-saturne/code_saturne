@@ -541,16 +541,6 @@ class SolutionDomainModel(MeshModel, Model):
     @Variables.undoLocal
     def setMeshOrigin(self, choice):
 
-        node = self.node_ecs.xmlInitNode('mesh_origin', 'choice')
-        if choice not in ('mesh_import', 'mesh_input', 'mesh_cartesian'):
-            choice = 'mesh_import'
-
-        node['choice'] = choice
-
-        if choice != 'mesh_import':
-            for m in self.getMeshList():
-                self.delMesh(m)
-
         if choice != 'mesh_input':
             self.delMeshInput()
 
@@ -558,6 +548,20 @@ class SolutionDomainModel(MeshModel, Model):
             n = self.node_ecs.xmlGetNode('mesh_cartesian')
             if n:
                 n.xmlRemoveNode()
+
+        if choice != 'mesh_import':
+            for m in self.getMeshList():
+                self.delMesh(m)
+
+        if choice in ('mesh_input', 'mesh_cartesian'):
+            node = self.node_ecs.xmlInitNode('mesh_origin', 'choice')
+            node['choice'] = choice
+
+        else:
+            # choice = 'mesh_import'
+            node = self.node_ecs.xmlGetNode('mesh_origin', 'choice')
+            if node:
+                node.xmlRemoveNode()
 
 
 # Methods to manage the cartesian mesh

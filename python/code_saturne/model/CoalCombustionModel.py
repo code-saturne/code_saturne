@@ -66,7 +66,7 @@ class CoalCombustionModel(Variables, Model):
         self.node_models = self.case.xmlGetNode('thermophysical_models')
         self.node_lagr   = self.case.xmlGetNode('lagrangian', 'model')
         self.node_turb   = self.node_models.xmlGetNode('turbulence',   'model')
-        self.node_fuel   = self.node_models.xmlInitNode('solid_fuels', 'model')
+        self.node_fuel   = self.node_models.xmlGetNode('solid_fuels', 'model')
 
         self.coalCombustionModel = ('off', 'homogeneous_fuel', 'homogeneous_fuel_moisture')
 
@@ -360,7 +360,7 @@ class CoalCombustionModel(Variables, Model):
                 self.setNewProperty(self.node_fuel, name)
 
 
-    def createModel(self) :
+    def __createModel(self) :
         """
         Private method
         Create scalars and properties when coal combustion is selected
@@ -504,6 +504,12 @@ class CoalCombustionModel(Variables, Model):
         """
         self.isInList(model, self.__coalCombustionModelsList())
 
+        if self.node_fuel == None:
+            if model != 'off':
+                self.node_fuel = self.node_models.xmlInitNode('solid_fuels', 'model')
+            else:
+                return
+
         if self.node_fuel['model'] == model:
             return
 
@@ -542,7 +548,7 @@ class CoalCombustionModel(Variables, Model):
             self.node_ray.xmlRemoveChild('absorption_coefficient')
 
         else:
-            self.createModel()
+            self.__createModel()
             self.createCoal()
             self.createOxidant()
             self.createCoalModelScalarsAndProperties()
@@ -556,6 +562,9 @@ class CoalCombustionModel(Variables, Model):
         """
         Return the current coal combustion model.
         """
+        if not self.node_fuel:
+            return 'off'
+
         model = self.node_fuel['model']
 
         if model not in self.__coalCombustionModelsList():

@@ -67,8 +67,6 @@ class GasCombustionModel(Variables, Model):
         nModels          = self.case.xmlGetNode('thermophysical_models')
         self.node_turb   = nModels.xmlInitNode('turbulence',        'model')
         self.node_gas    = nModels.xmlInitNode('gas_combustion',    'model')
-        self.node_coal   = nModels.xmlInitNode('solid_fuels',       'model')
-        self.node_joule  = nModels.xmlInitNode('joule_effect',      'model')
         self.node_prop   = self.case.xmlGetNode('physical_properties')
         self.node_fluid  = self.node_prop.xmlInitNode('fluid_properties')
 
@@ -147,9 +145,14 @@ class GasCombustionModel(Variables, Model):
             node_fluid.xmlRemoveChild('property', name='dynamic_diffusion')
 
         else:
+            nModels = self.case.xmlGetNode('thermophysical_models')
+
+            for m in ('solid_fuels', 'joule_effect'):
+                n = nModels.xmlGetNode(m, 'model')
+                if n:
+                    n.xmlRemoveNode()
+
             self.node_gas['model'] = model
-            self.node_coal['model']  = 'off'
-            self.node_joule['model'] = 'off'
             self.setNewFluidProperty(node_fluid, 'dynamic_diffusion')
 
             if old_model != model:

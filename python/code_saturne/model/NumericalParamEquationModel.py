@@ -192,9 +192,9 @@ class NumericalParamEquationModel(Model):
         """ Private method: return list of pulverized coal scalar's nodes """
         nodList = []
         node = self.node_models.xmlGetNode('solid_fuels', 'model')
-        model = node['model']
-        if model != 'off':
-            nodList = node.xmlGetNodeList('variable')
+        if node:
+            if node['model'] != 'off':
+                nodList = node.xmlGetNodeList('variable')
         return nodList
 
 
@@ -202,9 +202,9 @@ class NumericalParamEquationModel(Model):
         """ Private method: return list of gas combustion scalar's nodes """
         nodList = []
         node = self.node_models.xmlGetNode('gas_combustion', 'model')
-        model = node['model']
-        if model != 'off':
-            nodList = node.xmlGetNodeList('variable')
+        if node:
+            if  node['model'] != 'off':
+                nodList = node.xmlGetNodeList('variable')
         return nodList
 
 
@@ -212,10 +212,9 @@ class NumericalParamEquationModel(Model):
         """ Private method: return list of meteo scalar's nodes """
         nodList = []
         node = self.node_models.xmlGetNode('atmospheric_flows', 'model')
-        if not node: return []
-        model = node['model']
-        if model != 'off':
-            nodList = node.xmlGetNodeList('variable')
+        if node:
+            if  node['model'] != 'off':
+                nodList = node.xmlGetNodeList('variable')
         return nodList
 
 
@@ -223,10 +222,9 @@ class NumericalParamEquationModel(Model):
         """ Private method: return list of electric scalar's nodes """
         nodList = []
         node = self.node_models.xmlGetNode('joule_effect', 'model')
-        if not node: return []
-        model = node['model']
-        if model != 'off':
-            nodList = node.xmlGetNodeList('variable')
+        if node:
+            if  node['model'] != 'off':
+                nodList = node.xmlGetNodeList('variable')
         return nodList
 
 
@@ -234,10 +232,9 @@ class NumericalParamEquationModel(Model):
         """ Private method: return list of compressible scalar's nodes """
         nodList = []
         node = self.node_models.xmlGetNode('compressible_model', 'model')
-        if not node: return []
-        model = node['model']
-        if model != 'off':
-            nodList = node.xmlGetNodeList('variable')
+        if node:
+            if  node['model'] != 'off':
+                nodList = node.xmlGetNodeList('variable')
         return nodList
 
 

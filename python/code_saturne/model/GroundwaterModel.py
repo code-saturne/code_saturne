@@ -62,7 +62,7 @@ class GroundwaterModel(Variables, Model):
         self.case = case
 
         self.node_models  = self.case.xmlGetNode('thermophysical_models')
-        self.node_darcy = self.node_models.xmlInitChildNode('groundwater_model', 'model')
+        self.node_darcy = self.node_models.xmlGetChildNode('groundwater_model', 'model')
 
         self.sca_mo       = DefineUserScalarsModel(self.case)
 
@@ -84,10 +84,9 @@ class GroundwaterModel(Variables, Model):
         """
         Get the Groundwater model
         """
-        mdl = self.node_darcy['model']
-        if mdl == "":
-            mdl = self.__defaultValues()['groundwater_model']
-            self.setGroundwaterModel(mdl)
+        mdl = 'off'
+        if self.node_darcy:
+            mdl = self.node_darcy['model']
         return mdl
 
 
@@ -98,8 +97,12 @@ class GroundwaterModel(Variables, Model):
         """
         self.isInList(choice, ['off', 'saturated',
                                'unsaturated_single_phase', 'unsaturated_two_phase'])
-        old_choice = self.node_darcy['model']
-        self.node_darcy['model'] = choice
+        if self.node_darcy:
+            old_choice = self.node_darcy['model']
+        else:
+            old_choice = 'off'
+            if choice != 'off':
+                self.node_darcy = self.node_models.xmlInitChildNode('groundwater_model', 'model')
 
         self.node_models = self.case.xmlInitNode('thermophysical_models')
 
@@ -107,6 +110,8 @@ class GroundwaterModel(Variables, Model):
             TurbulenceModel(self.case).setTurbulenceModel('off')
             FluidCharacteristicsModel(self.case).setPropertyMode('density', 'constant')
             FluidCharacteristicsModel(self.case).setInitialValue('density', 1.)
+
+            self.node_darcy['model'] = choice
 
             node = self.node_models.xmlInitNode('velocity_pressure')
             nn =  node.xmlGetNode('variable', name='pressure')

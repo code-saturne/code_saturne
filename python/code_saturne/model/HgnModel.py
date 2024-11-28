@@ -58,7 +58,7 @@ class HgnModel(Variables, Model):
         self.case = case
 
         self.node_thermo = self.case.xmlGetNode('thermophysical_models')
-        self.node_hgn   = self.node_thermo.xmlInitNode('hgn_model')
+        self.node_hgn    = self.node_thermo.xmlGetNode('hgn_model')
         self.node_np     = self.case.xmlInitNode('numerical_parameters')
         self.node_prop   = self.case.xmlGetNode('physical_properties')
         self.node_fluid  = self.node_prop.xmlInitNode('fluid_properties')
@@ -84,26 +84,36 @@ class HgnModel(Variables, Model):
         Add and remove the variables and properties associated
         """
         self.isInList(model, self.hgn_choice)
-        oldModel = self.node_hgn['model']
-        self.node_hgn['model'] = model
+
+        if self.node_hgn:
+            oldModel = self.node_hgn['model']
+        else:
+            oldModel = 'off'
 
         if model != 'off':
+            self.node_hgn  = self.node_thermo.xmlInitNode('hgn_model')
+            self.node_hgn['model'] = model
             for v in self.var_list:
                 self.setNewVariable(self.node_hgn, v, tpe="model", label=v)
         elif oldModel and oldModel != "off":
             self.__removeVariablesAndProperties()
             self.node_np.xmlRemoveChild('hydrostatic_pressure')
+            self.node_hgn.xmlRemoveNode()
+            self.node_hgn = None
 
     @Variables.noUndo
     def getHgnModel(self):
         """
         Return model
         """
-        node = self.node_thermo.xmlInitNode('hgn_model')
-        status = node['model']
-        if status not in self.hgn_choice:
-            status = self._defaultValues()['activation']
-            self.setHgnModel(status)
+        node = self.node_thermo.xmlGetNode('hgn_model')
+        if node:
+            status = node['model']
+            if status not in self.hgn_choice:
+                status = self._defaultValues()['activation']
+                self.setHgnModel(status)
+        else:
+            status = 'off'
         return status
 
 
@@ -112,10 +122,11 @@ class HgnModel(Variables, Model):
         """
         Get name for void fraction scalar
         """
-        name = ""
-        node = self.node_hgn.xmlGetNode('variable', type='model')
-        if node:
-            name = node['name']
+        name = 'off'
+        if self.node_hgn:
+            node = self.node_hgn.xmlGetNode('variable', type='model')
+            if node:
+                name = node['name']
 
         return name
 

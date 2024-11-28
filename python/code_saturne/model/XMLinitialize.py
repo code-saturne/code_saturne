@@ -2052,6 +2052,15 @@ class XMLinit(BaseXmlInit):
         mesh_origin = mdl.getMeshOrigin()
         mdl.setMeshOrigin(mesh_origin)
 
+        # Remove references to inactive models (cleanup of access to other
+        # models is needed before they can beadded here)
+        nModels = self.case.xmlGetNode('thermophysical_models')
+        for m in ('solid_fuels', 'joule_effect', 'groundwater_model', 'hgn_model'):
+            n = nModels.xmlGetNode(m, 'model')
+            if n:
+                if n['model'] == 'off':
+                    n.xmlRemoveNode()
+
         return
 
 #-------------------------------------------------------------------------------
