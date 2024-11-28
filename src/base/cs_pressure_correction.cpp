@@ -432,7 +432,7 @@ _hydrostatic_pressure_compute(const cs_mesh_t       *m,
   /* Free Memory and solver setup */
 
   cs_sles_free(sc);
-  cs_sles_default_release_matrix(&a);
+  cs_matrix_release_coefficients(a);
 
   CS_FREE_HD(viscce);
   CS_FREE_HD(rovsdt);
@@ -2640,7 +2640,7 @@ _pressure_correction_fv(int                   iterns,
      --------------------------------- */
 
   cs_sles_free(sc);
-  cs_sles_default_release_matrix(&a);
+  cs_matrix_release_coefficients(a);
 
   CS_FREE_HD(c2);
 

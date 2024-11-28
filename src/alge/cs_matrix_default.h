@@ -331,18 +331,6 @@ cs_matrix_set_coefficients_by_assembler(const cs_field_t  *f,
                                         const cs_real_t   *da,
                                         const cs_real_t   *xa);
 
-/*----------------------------------------------------------------------------
- * Release of destroy matrix depending on whether is is cached or not.
- *
- * Matrices built by assembler are destroyed.
- *
- * parameters:
- *   matrix <-> pointer to matrix structure pointer
- *----------------------------------------------------------------------------*/
-
-void
-cs_matrix_release(cs_matrix_t  **m);
-
 /*----------------------------------------------------------------------------*/
 
 END_C_DECLS
