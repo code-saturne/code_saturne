@@ -1257,8 +1257,6 @@ cs_mobile_structures_prediction(int  itrale,
         for (int i = 0; i < n_int_structs; i++) {
           /* Adams-Bashforth scheme of order 2 if aexxst = 1, bexxst = 0.5 */
           /* Euler explicit scheme of order 1 if aexxst = 1, bexxst = 0 */
-          cs_real_t dt_curr = ms->dtstr[i];
-          cs_real_t dt_prev = ms->dtsta[i];
           cs_real_t b_curr  = dt_curr * (aexxst + bexxst * dt_curr / dt_prev);
           cs_real_t b_prev  = -bexxst * dt_curr * dt_curr / dt_prev;
           for (int j = 0; j < 3; j++) {
@@ -1509,6 +1507,8 @@ cs_mobile_structures_displacement(int itrale, int italim, int *itrfin)
                                            ms->xkstru,
                                            ms->forstp);
 
+    /* All structures have the same value here */
+    const cs_real_t dt_calc = ms->dtstr[0];
     cs_user_fsi_structure_values(n_int_structs,
                                  ts,
                                  ms->xstreq,
@@ -1519,6 +1519,26 @@ cs_mobile_structures_displacement(int itrale, int italim, int *itrfin)
                                  ms->xkstru,
                                  ms->forstp,
                                  ms->dtstr);
+
+    for (int i = 0; i < n_int_structs; i++) {
+      if (CS_ABS(dt_calc - ms->dtstr[i]) / dt_calc > 1e-10) {
+        bft_error(__FILE__,
+                  __LINE__,
+                  0,
+                  _("@\n"
+                    "@ @@ Warning: ALE displacement of internal structures\n"
+                    "@    =======\n"
+                    "@  Structure: %d\n"
+                    "@  The time step of the strucutre: %14.5e \n"
+                    "@  is different of the time step of the fluid %14.5e \n"
+                    "@  This is currently not available. \n"
+                    "@\n"
+                    "@  Calculation abort\n"),
+                  i,
+                  ms->dtstr[i],
+                  dt_calc);
+      }
+    }
   }
 
   /* If the fluid is initializing, we do not read structures */
