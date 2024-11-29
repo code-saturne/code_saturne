@@ -1428,6 +1428,7 @@ class Studies(object):
         # build the list of the studies
 
         self.labels  = self.__parser.getStudiesLabel()
+        self.n_study = len(self.labels)
         self.studies = []
         for l in self.labels:
             self.studies.append( [l, Study(self.__pkg, self.__parser, l, \
@@ -2108,7 +2109,12 @@ class Studies(object):
         slurm_batch_file = open(slurm_batch_name, mode='w')
 
         # fill file with template
-        cmd = slurm_batch_template.format(1, 0, 10, cur_batch_id)
+        # we consider 5 minutes per study
+        hh, mm = divmod(self.n_study*5, 60)
+        cmd = slurm_batch_template.format(1,
+                                          math.ceil(hh),
+                                          math.ceil(mm), 
+                                          cur_batch_id)
 
         # add user defined options if needed
         if self.__slurm_batch_args:
