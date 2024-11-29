@@ -2480,7 +2480,7 @@ _velocity_prediction(const cs_mesh_t             *m,
     /* If we not extrapolate the ST. */
     else {
 
-      /* If we have many iterationss: trava initialize */
+      /* If we have many iterations: trava initialize */
       /* otherwise trava should not exist */
       if (vp_param->nterup > 1)
         ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
