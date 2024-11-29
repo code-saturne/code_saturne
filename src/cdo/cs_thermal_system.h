@@ -437,6 +437,15 @@ void
 cs_thermal_system_log_setup(void);
 
 /*----------------------------------------------------------------------------*/
+/*!
+ * \brief Initialize structures and/or boundary conditions used for CHT coupling
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_thermal_system_cht_boundary_conditions_setup(void);
+
+/*----------------------------------------------------------------------------*/
 
 END_C_DECLS
 

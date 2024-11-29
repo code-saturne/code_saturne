@@ -118,6 +118,7 @@
 #include "cs_syr_coupling.h"
 #include "cs_sys_coupling.h"
 #include "cs_system_info.h"
+#include "cs_thermal_system.h"
 #include "cs_time_moment.h"
 #include "cs_time_stepping.h"
 #include "cs_time_table.h"
@@ -345,7 +346,13 @@ _run(void)
      may have the option of assigning a name to this instance. */
 
 #if defined(HAVE_MPI)
-  cs_coupling_discover_mpi_apps(opts.app_name, nullptr);
+  if (cs_glob_param_cdo_mode == CS_PARAM_CDO_MODE_ONLY &&
+      cs_thermal_system_is_activated()) {
+    const char app_type[] = "Code_Saturne_CDO_THERMAL " CS_APP_VERSION;
+    cs_coupling_discover_mpi_apps(opts.app_name, app_type);
+  }
+  else
+    cs_coupling_discover_mpi_apps(opts.app_name, nullptr);
 #endif
 
   if (opts.app_name != nullptr)
@@ -467,6 +474,9 @@ _run(void)
           /* Only C language is called within CDO */
 
           cs_base_fortran_bft_printf_to_c();
+
+          /* CHT coupling */
+          cs_syr_coupling_init_meshes();
 
           /*----------------------------------------------
            * Call main calculation function (CDO Kernel)

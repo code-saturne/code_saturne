@@ -78,7 +78,9 @@
 #include "cs_parameters.h"
 #include "cs_prototypes.h"
 #include "cs_physical_model.h"
+#include "cs_selector.h"
 #include "cs_thermal_model.h"
+#include "cs_thermal_system.h"
 #include "cs_timer_stats.h"
 
 /*----------------------------------------------------------------------------
@@ -145,8 +147,8 @@ typedef struct {
 
   char                   *syr_name;        /* Application name */
 
-  int                     n_b_locations;   /* Numbero of boundary locations */
-  int                     n_v_locations;   /* Numbero of volume locations */
+  int                     n_b_locations;   /* Number of boundary locations */
+  int                     n_v_locations;   /* Number of volume locations */
   int                    *b_location_ids;  /* Boundary location ids */
   int                    *v_location_ids;  /* Volume location ids */
 
@@ -189,6 +191,8 @@ static int  _syr_post_mesh_ext[2] = {0, 1};
 
 static int  _syr_coupling_conservativity = 0; /* No forcing by default */
 static int  _syr_coupling_implicit = 1;
+
+static int _is_cdo_thermal = 0;
 
 /*============================================================================
  * Private function definitions
@@ -846,7 +850,7 @@ _create_coupled_ent(cs_syr_coupling_t  *syr_coupling,
 
   bool default_writer_is_active = false;
 
-  if (syr_coupling->visualization != 0) {
+  if (syr_coupling->visualization != 0 && _is_cdo_thermal == 0) {
 
     default_writer_is_active
       = cs_post_writer_is_active(CS_POST_WRITER_DEFAULT);
@@ -885,16 +889,31 @@ _create_coupled_ent(cs_syr_coupling_t  *syr_coupling,
 
     BFT_MALLOC(syr_to_cs_dist, n_dist_elts, float);
 
-    ple_locator_exchange_point_var(coupling_ent->locator,
-                                   syr_to_cs_dist,
-                                   nullptr,
-                                   nullptr,
-                                   sizeof(float),
-                                   1,
-                                   1);
+    // Handle direction based on whether solver is fluid or solid
+    if (_is_cdo_thermal == 1) {
+      // Solid (CDO)
+      ple_locator_exchange_point_var(coupling_ent->locator,
+                                     nullptr,
+                                     syr_to_cs_dist,
+                                     nullptr,
+                                     sizeof(float),
+                                     1,
+                                     1);
+    }
+    else {
+      // Fluid (legacy)
+      ple_locator_exchange_point_var(coupling_ent->locator,
+                                     syr_to_cs_dist,
+                                     nullptr,
+                                     nullptr,
+                                     sizeof(float),
+                                     1,
+                                     1);
+    }
 
     if (   syr_coupling->visualization != 0
-        && syr_coupling->allow_nearest == false) {
+        && syr_coupling->allow_nearest == false
+        && _is_cdo_thermal == 0 ) {
 
       cs_lnum_t i;
       int writer_ids[] = {CS_POST_WRITER_DEFAULT};
@@ -1959,11 +1978,22 @@ _init_all_mpi_syr(int  *n_unmatched,
 
   /* Loop on applications */
 
+  // Set possible options
+  if (cs_glob_param_cdo_mode == CS_PARAM_CDO_MODE_ONLY &&
+      cs_thermal_system_is_activated())
+    _is_cdo_thermal = 1;
+
+  const char *_sat_partner = _is_cdo_thermal
+    ? "Code_Saturne" : "Code_Saturne_CDO_THERMAL";
+
+  int _sat_len = _is_cdo_thermal ? 12 : 24;
+
   for (int i = 0; i < n_apps; i++) {
 
     ple_coupling_mpi_set_info_t ai = ple_coupling_mpi_set_get_info(mpi_apps, i);
 
-    if (strncmp(ai.app_type, "SYRTHES", 7) == 0) {
+    if (strncmp(ai.app_type, "SYRTHES", 7) == 0 ||
+        strncmp(ai.app_type, _sat_partner, _sat_len) == 0 ) {
 
       int  match_queue_id = -1;
       int  coupling_id = -1;
@@ -3153,6 +3183,7 @@ cs_syr_coupling_recv_tsolid(int        cpl_id,
 
   else
     _syr_coupling_recv_tsolid(syr_coupling, t_solid, mode);
+
 }
 
 /*----------------------------------------------------------------------------*/
@@ -3185,6 +3216,163 @@ cs_syr_coupling_send_tf_hf(int              cpl_id,
   else
     _syr_coupling_send_tf_hf(syr_coupling, elt_ids,
                              t_fluid, h_fluid, mode);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Receive coupling variables (Tf,hf) from code_saturne
+ * (called by CDO thermal solver).
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_syr_coupling_recv_tf_hf
+(
+  int              cpl_id,    /*!<[in] coupling id */
+  int              mode,      /*!<[in] 0 for boundary, 1 for volume */
+  const cs_lnum_t  elt_ids[], /*!<[in] ids of coupled elements */
+  cs_real_t        t_fluid[], /*!<[out] fluid temperature */
+  cs_real_t        h_fluid[]  /*!<[out] fluid exchange coefficient */
+)
+{
+  cs_syr_coupling_t *syr_coupling = _syr_coupling_by_id(cpl_id);
+
+  if (syr_coupling == nullptr)
+    bft_error(__FILE__, __LINE__, 0,
+              _("SYRTHES coupling id %d impossible; "
+                "there are %d couplings"),
+              cpl_id, _syr_n_couplings);
+
+  else {
+    /* Run-time sanity checks */
+    assert(mode == 0 || mode == 1);
+
+    /* Check coupling type and return if nothing to do... */
+    cs_syr_coupling_ent_t  *coupling_ent
+      = (mode == 0) ? syr_coupling->faces : syr_coupling->cells;
+
+    if (coupling_ent == nullptr)
+      return;
+
+    /* Exchange blcok */
+    constexpr int n_arrays = 2;
+
+    const cs_lnum_t n_cpl_elts = coupling_ent->n_elts;
+
+    double *_recv_array = nullptr;
+    BFT_MALLOC(_recv_array, n_arrays * n_cpl_elts, double);
+
+    ple_locator_exchange_point_var(coupling_ent->locator,
+                                   nullptr,
+                                   _recv_array,
+                                   nullptr,
+                                   sizeof(double),
+                                   n_arrays,
+                                   0);
+
+    if (elt_ids != nullptr) {
+      for (cs_lnum_t e_id = 0; e_id < n_cpl_elts; e_id++) {
+        cs_lnum_t face_id = elt_ids[e_id];
+        t_fluid[face_id] = _recv_array[e_id * n_arrays];
+        h_fluid[face_id] = _recv_array[e_id * n_arrays + 1];
+      }
+    }
+    else {
+      for (cs_lnum_t e_id = 0; e_id < n_cpl_elts; e_id++) {
+        t_fluid[e_id] = _recv_array[e_id * n_arrays];
+        h_fluid[e_id] = _recv_array[e_id * n_arrays + 1];
+      }
+    }
+
+    BFT_FREE(_recv_array);
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Send coupling variables (Ts) to code_saturne
+ * (called by CDO thermal solver).
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_syr_coupling_send_tsolid
+(
+  int              cpl_id,   /*!<[in] coupling id */
+  int              mode,     /*!<[in] 0 for boundary, 1 for volume */
+  const cs_real_t  t_solid[] /*!<[in] solid temperature */
+)
+{
+  cs_syr_coupling_t *syr_coupling = _syr_coupling_by_id(cpl_id);
+
+  if (syr_coupling == nullptr)
+    bft_error(__FILE__, __LINE__, 0,
+              _("SYRTHES coupling id %d impossible; "
+                "there are %d couplings"),
+              cpl_id, _syr_n_couplings);
+
+  else {
+    /* Run-time sanity checks */
+    assert(mode == 0 || mode == 1);
+
+    /* Check coupling type and return if nothing to do... */
+    cs_syr_coupling_ent_t  *coupling_ent
+      = (mode == 0) ? syr_coupling->faces : syr_coupling->cells;
+
+    if (coupling_ent == nullptr)
+      return;
+
+    const cs_lnum_t n_dist
+      = ple_locator_get_n_dist_points(coupling_ent->locator);
+    const cs_lnum_t *dist_loc
+      = ple_locator_get_dist_locations(coupling_ent->locator);
+
+    double *_send_array = nullptr;
+    BFT_MALLOC(_send_array, n_dist, double);
+
+    for (cs_lnum_t e_id = 0; e_id < n_dist; e_id++)
+      _send_array[e_id] = t_solid[dist_loc[e_id]];
+
+    ple_locator_exchange_point_var(coupling_ent->locator,
+                                   _send_array,
+                                   nullptr,
+                                   nullptr,
+                                   sizeof(double),
+                                   1,
+                                   0);
+
+    BFT_FREE(_send_array);
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Check if a boundary zone is coupled.
+ *
+ * \return 1 if coupled 0 if not.
+ */
+/*----------------------------------------------------------------------------*/
+
+int
+cs_syr_coupling_is_bnd_zone_coupled
+(
+  const cs_zone_t *z /*!<[in] boundary zone pointer */
+)
+{
+  int retval = 0;
+
+  for (int cpl_id = 0; cpl_id < cs_syr_coupling_n_couplings(); cpl_id++) {
+    cs_syr_coupling_t *syr_coupling = _syr_coupling_by_id(cpl_id);
+    for (int i_loc = 0; i_loc < syr_coupling->n_b_locations; i_loc++) {
+      if (syr_coupling->b_location_ids[i_loc] == z->location_id) {
+        retval = 1;
+        break;
+      }
+      if (retval) break;
+    }
+  }
+
+  return retval;
 }
 
 /*----------------------------------------------------------------------------*/

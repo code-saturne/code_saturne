@@ -711,6 +711,10 @@ cs_domain_finalize_user_setup(cs_domain_t         *domain)
 
   cs_user_boundary_conditions_setup(domain);
   cs_user_finalize_setup(domain);
+
+  /* Setup boundary conditions for CHT coupling if needed */
+  if (cs_thermal_system_is_activated())
+    cs_thermal_system_cht_boundary_conditions_setup();
 }
 
 /*----------------------------------------------------------------------------*/
@@ -802,6 +806,7 @@ cs_domain_initialize_systems(cs_domain_t   *domain)
                              domain->cdo_quantities,
                              domain->time_step,
                              false); /* operate current to previous ? */
+
 
   /* Set the initial state for the Navier-Stokes system */
 

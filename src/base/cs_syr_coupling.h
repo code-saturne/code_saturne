@@ -332,6 +332,52 @@ cs_syr_coupling_send_tf_hf(int              cpl_id,
                            cs_real_t        h_fluid[]);
 
 /*----------------------------------------------------------------------------*/
+/*
+ * \brief  Receive coupling variables (Tf,hf) from code_saturne
+ * (called by CDO thermal solver).
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_syr_coupling_recv_tf_hf
+(
+  int              cpl_id,
+  int              mode,
+  const cs_lnum_t  elt_ids[],
+  cs_real_t        t_fluid[],
+  cs_real_t        h_fluid[]
+);
+
+/*----------------------------------------------------------------------------*/
+/*
+ * \brief  Send coupling variables (Ts) to code_saturne
+ * (called by CDO thermal solver).
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_syr_coupling_send_tsolid
+(
+  int              cpl_id,
+  int              mode,
+  const cs_real_t  t_solid[]
+);
+
+/*----------------------------------------------------------------------------*/
+/*
+ * \brief Check if a boundary zone is coupled.
+ *
+ * \return 1 if coupled 0 if not.
+ */
+/*----------------------------------------------------------------------------*/
+
+int
+cs_syr_coupling_is_bnd_zone_coupled
+(
+  const cs_zone_t *z
+);
+
+/*----------------------------------------------------------------------------*/
 
 END_C_DECLS
 
