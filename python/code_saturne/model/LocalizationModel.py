@@ -473,12 +473,22 @@ class LocalizationModel(object):
         if newZone is None:
             newZone = Zone(self._typeZone, case=self.case)
 
+        has_default_zone = False
+
         if newZone.getLocalization() == newZone.defaultValues()['localization'] or newZone.getLabel() == newZone.defaultValues()['label'] or checkPresence == True:
           zones = self.getZones()
+          # Ensure that default zone is created if needed and it does not allready
+          # exist in xml
+          for zone in zones:
+            if zone.getLocalization() == zone.defaultValues()['localization'] and \
+                      zone.getLabel() == zone.defaultValues()['label']:
+              has_default_zone = True
+              break
 
         # Set localization
 
-        if newZone.getLocalization() == newZone.defaultValues()['localization']:
+        if newZone.getLocalization() == newZone.defaultValues()['localization'] \
+                and has_default_zone:
             oldLocalization = ""
             newLocalization = ""
             for zone in zones:
