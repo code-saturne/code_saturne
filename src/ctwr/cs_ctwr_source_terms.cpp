@@ -1045,11 +1045,11 @@ cs_ctwr_source_term(int              f_id,
           /* If humid atmosphere model, temperature is liquid potential
            * temperature theta_l */
           if (cs_glob_physical_model_flag[CS_ATMOSPHERIC] == CS_ATMO_HUMID) {
-            l_exp_st -= l_imp_st * coef * (hv0 / cp_d) * yw_liq->val[cell_id];
+           // l_exp_st -= l_imp_st * coef * (hv0 / cp_d) * yw_liq->val[cell_id];
           }
+
           imp_st[cell_id] += CS_MAX(l_imp_st, 0.);
           exp_st[cell_id] += l_exp_st;
-
         }
 
         /* Injected liquid enthalpy equation (solve in drift model form)
