@@ -3,6 +3,8 @@ Release 8.0.5 (unreleased)
 
 ### Bug fixes:
 
+- GUI/MEG: fix compilation with use of field in momentum source term.
+
 - Fix array access (indirection) error in `cs_post_anisotropy_invariant`.
 
 - Fix crash when combining ALE and cell to vertex interpolation,
