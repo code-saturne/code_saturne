@@ -233,7 +233,7 @@ def build_shared_library(linker,
     # this file (or the Python scripts in general), and later
     # removed from `config/cs_auto_flags.sh`.
 
-    cmd = [linker, "-o", output_v]
+    cmd = linker.split(' ') + ["-o", output_v]
 
     if stdlib != 'yes':
         cmd.append("-nostdlib")

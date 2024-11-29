@@ -130,7 +130,7 @@ libsaturne.${SHARED_LIB_EXT}: ${libsaturne_a_libs}
 	CS_TOP_BUILDDIR=$(top_builddir) \
 	$(PYTHON) -B $(top_srcdir)/build-aux/cs_compile_build.py \
 	 --lib-flags-only` ; \
-	$(PYTHON) -B $(top_srcdir)/build-aux/cs_link_library.py -o $@ --echo --linker ${CS_LD} --version ${cs_version_lib} --whole-archive-start ${libsaturne_a_libs} --whole-archive-end ${LDFLAGS_SHARED} ${CXXFLAGS_SHARED} ${LDFLAGS} ${AM_LDFLAGS} $${ldadd_saturne}
+	$(PYTHON) -B $(top_srcdir)/build-aux/cs_link_library.py -o $@ --echo --linker "${CS_LD}" --version ${cs_version_lib} --whole-archive-start ${libsaturne_a_libs} --whole-archive-end ${LDFLAGS_SHARED} ${CXXFLAGS_SHARED} ${LDFLAGS} ${AM_LDFLAGS} $${ldadd_saturne}
 
 libcs_solver.${SHARED_LIB_EXT}: libsaturne.${SHARED_LIB_EXT} cs_solver.$(OBJEXT)
 	rm -f $@ ; \
@@ -138,7 +138,7 @@ libcs_solver.${SHARED_LIB_EXT}: libsaturne.${SHARED_LIB_EXT} cs_solver.$(OBJEXT)
 	CS_TOP_BUILDDIR=$(top_builddir) \
 	$(PYTHON) -B $(top_srcdir)/build-aux/cs_compile_build.py \
 	 --lib-flags-only` ; \
-	$(PYTHON) -B $(top_srcdir)/build-aux/cs_link_library.py -o $@ --echo --linker ${CS_LD} --version ${cs_version_lib} ${LDFLAGS_SHARED} ${CXXFLAGS_SHARED} cs_solver.$(OBJEXT) ${LDFLAGS} -L. -lsaturne-${cs_version_lib} ${AM_LDFLAGS} $${ldadd_saturne}
+	$(PYTHON) -B $(top_srcdir)/build-aux/cs_link_library.py -o $@ --echo --linker "${CS_LD}" --version ${cs_version_lib} ${LDFLAGS_SHARED} ${CXXFLAGS_SHARED} cs_solver.$(OBJEXT) ${LDFLAGS} -L. -lsaturne-${cs_version_lib} ${AM_LDFLAGS} $${ldadd_saturne}
 
 local_libraries_v_add += \
 libsaturne-${cs_version_lib}.${SHARED_LIB_EXT} \
@@ -221,8 +221,8 @@ install-exec-hook: ${local_libraries_add}
 	  CS_TOP_BUILDDIR=$(top_builddir) \
 	  $(PYTHON) -B $(top_srcdir)/build-aux/cs_compile_build.py \
 	  --lib-flags-only --mode=install --dest "$(DESTDIR)"` ; \
-	  $(PYTHON) -B $(top_srcdir)/build-aux/cs_link_library.py -o "$(DESTDIR)$(libdir)/libsaturne.${SHARED_LIB_EXT}" --echo --linker ${CS_LD} --version ${cs_version_lib} --whole-archive-start ${libsaturne_a_libs} --whole-archive-end ${LDFLAGS_SHARED} ${CXXFLAGS_SHARED} ${LDFLAGS} ${AM_LDFLAGS} $${ldadd_saturne}; \
-	  $(PYTHON) -B $(top_srcdir)/build-aux/cs_link_library.py -o "$(DESTDIR)$(libdir)/libcs_solver.${SHARED_LIB_EXT}" --echo --linker ${CS_LD} --version ${cs_version_lib} ${LDFLAGS_SHARED} ${CXXFLAGS_SHARED} cs_solver.$(OBJEXT) ${LDFLAGS} -L"$(DESTDIR)$(libdir)" -lsaturne-${cs_version_lib} ${AM_LDFLAGS} $${ldadd_saturne}; \
+	  $(PYTHON) -B $(top_srcdir)/build-aux/cs_link_library.py -o "$(DESTDIR)$(libdir)/libsaturne.${SHARED_LIB_EXT}" --echo --linker "${CS_LD}" --version ${cs_version_lib} --whole-archive-start ${libsaturne_a_libs} --whole-archive-end ${LDFLAGS_SHARED} ${CXXFLAGS_SHARED} ${LDFLAGS} ${AM_LDFLAGS} $${ldadd_saturne}; \
+	  $(PYTHON) -B $(top_srcdir)/build-aux/cs_link_library.py -o "$(DESTDIR)$(libdir)/libcs_solver.${SHARED_LIB_EXT}" --echo --linker "${CS_LD}" --version ${cs_version_lib} ${LDFLAGS_SHARED} ${CXXFLAGS_SHARED} cs_solver.$(OBJEXT) ${LDFLAGS} -L"$(DESTDIR)$(libdir)" -lsaturne-${cs_version_lib} ${AM_LDFLAGS} $${ldadd_saturne}; \
 	}; \
 	PYTHONPATH=$(top_srcdir)/python/code_saturne/base \
 	CS_TOP_BUILDDIR=$(top_builddir) \
