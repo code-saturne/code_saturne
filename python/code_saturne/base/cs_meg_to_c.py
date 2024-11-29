@@ -780,7 +780,7 @@ class meg_to_c_interpreter:
             'const cs_real_t *%s_vals = cs_field_by_name("%s")->val;' \
             % (f, knf_name)
 
-            loop_tokens[f] = 'const %s = %s_vals[c_id];' % (f, f)
+            loop_tokens[f] = 'const cs_real_t %s = %s_vals[c_id];' % (f, f)
 
         # ------------------------
 
