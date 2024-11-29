@@ -3,6 +3,8 @@ release 8.2.2 (unreleased)
 
 ### Bug fixes:
 
+- GUI/MEG: fix compilation with use of field in momentum source term.
+
 - Fix array access (indirection) error in `cs_post_anisotropy_invariant`.
 
 - Rename postprocessing output files with ':' character to avoid issue
