@@ -642,6 +642,7 @@ cs_param_sles_set_solver(const char       *keyval,
     slesp->solver_class = CS_PARAM_SOLVER_CLASS_MUMPS;
     slesp->precond = CS_PARAM_PRECOND_NONE;
     slesp->amg_type = CS_PARAM_AMG_NONE;
+    slesp->precond_block_type = CS_PARAM_PRECOND_BLOCK_NONE;
     slesp->need_flexible      = false;
 
     /* By default, one considers the stand-alone MUMPS library
