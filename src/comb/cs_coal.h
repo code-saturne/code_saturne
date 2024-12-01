@@ -749,6 +749,15 @@ cs_coal_model_set_model(cs_coal_model_type_t  type);
 
 /*----------------------------------------------------------------------------*/
 /*
+ * \brief Compute mass transfer terms between the continous and dispersed phase.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_coal_mass_transfer(void);
+
+/*----------------------------------------------------------------------------*/
+/*
  * \brief Take in account the radiative source terms in the particle equation
  *        of a given class for pulverized coal flame.
  *

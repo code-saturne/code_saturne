@@ -85,7 +85,7 @@ cs_coal.cpp \
 cs_coal_boundary_conditions.cpp \
 cs_coal_bt2h.f90 \
 cs_coal_ht_convert.cpp \
-cs_coal_masstransfer.f90 \
+cs_coal_mass_transfer.cpp \
 cs_coal_noxst.cpp \
 cs_coal_param.f90 \
 cs_coal_physical_properties.cpp \

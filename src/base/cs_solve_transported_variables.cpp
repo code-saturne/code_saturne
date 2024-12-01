@@ -52,6 +52,7 @@
 #include "cs_boundary_conditions_set_coeffs.h"
 #include "cs_cf_energy.h"
 #include "cs_cf_model.h"
+#include "cs_coal.h"
 #include "cs_elec_model.h"
 #include "cs_field_default.h"
 #include "cs_field_pointer.h"
@@ -101,9 +102,6 @@ cs_f_kinetics_rates_compute(void);
 
 void
 cs_f_specific_physic_init(void);
-
-void
-cs_f_coal_masstransfer(void);
 
 void
 cs_f_max_mid_min_progvar(const cs_real_t  *zmo,
@@ -237,7 +235,7 @@ cs_solve_transported_variables(int iterns)
        GMDEV1, GMDEV2, GMHET, GMDCH */
 
     if (cs_glob_physical_model_flag[CS_COMBUSTION_COAL] != -1)
-      cs_f_coal_masstransfer();
+      cs_coal_mass_transfer();
 
     /* WARNING : For the clipping with ICLP = 1, scalars must be
        solved before their associated variance
