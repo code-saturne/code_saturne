@@ -264,9 +264,6 @@ const cs_cavitation_parameters_t *cs_glob_cavitation_parameters
  *============================================================================*/
 
 void
-cs_f_vof_get_pointers(unsigned **ivofmt);
-
-void
 cs_f_vof_compute_linear_rho_mu(void);
 
 void
@@ -275,22 +272,6 @@ cs_f_vof_deshpande_drift_flux(void);
 /*============================================================================
  * Fortran wrapper function definitions
  *============================================================================*/
-
-/*----------------------------------------------------------------------------
- * Get pointer to VOF model indicator and parameters
- *
- * This function is intended for use by Fortran wrappers, and
- * enables mapping to Fortran global pointers.
- *
- * parameters:
- *   ivofmt --> pointer to cs_glob_vof_parameters->vof_model
- *----------------------------------------------------------------------------*/
-
-void
-cs_f_vof_get_pointers(unsigned **ivofmt)
-{
-  *ivofmt  = &(_vof_parameters.vof_model);
-}
 
 /*----------------------------------------------------------------------------
  * wrapper vof functions, intended for use by Fortran wrapper only.

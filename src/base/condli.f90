@@ -216,6 +216,7 @@ subroutine set_dirichlet_vector_aniso &
 !===============================================================================
 
 use cstnum, only: rinfin
+use cs_c_bindings, only: csexit
 
 !===============================================================================
 
@@ -232,8 +233,6 @@ double precision hextv(3)
 ! Local variables
 
 integer          isou  , jsou
-
-procedure() :: csexit
 
 !===============================================================================
 

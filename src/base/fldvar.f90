@@ -212,7 +212,6 @@ endif
 
 if (iok.ne.0) then
   call csexit (1)
-  !==========
 endif
 
 return
@@ -618,13 +617,13 @@ use dimens
 use entsor
 use numvar
 use field
+use cs_c_bindings, only: csexit
 
 !===============================================================================
 
 implicit none
 
 procedure() :: fldvar_check_nvar, init_var_cal_opt
-procedure() :: csexit
 
 ! Arguments
 
@@ -688,13 +687,13 @@ use dimens
 use entsor
 use numvar
 use field
+use cs_c_bindings, only: csexit
 
 !===============================================================================
 
 implicit none
 
 procedure() :: fldvar_check_nvar, fldvar_check_nscapp, init_var_cal_opt
-procedure() :: csexit
 
 ! Arguments
 
@@ -822,12 +821,11 @@ use paramx
 use dimens
 use entsor
 use numvar
+use cs_c_bindings, only: csexit
 
 !===============================================================================
 
 implicit none
-
-procedure() :: csexit
 
 ! Arguments
 
@@ -946,12 +944,11 @@ use paramx
 use dimens
 use entsor
 use numvar
+use cs_c_bindings, only: csexit
 
 !===============================================================================
 
 implicit none
-
-procedure() :: csexit
 
 ! Arguments
 

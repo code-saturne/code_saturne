@@ -182,15 +182,6 @@ module numvar
   !> variable diffusivity field id key for scalars
   integer, save :: kivisl = -1
 
-  !> do scalars behave as a temperature (regarding multiplication by Cp) ?
-  integer, save :: kscacp = -1
-
-  !> source terms at previous time step for 2nd order
-  integer, save :: kstprv = -1
-
-  !> source terms at the current time step (used for limiters)
-  integer, save :: kst = -1
-
   !> turbulent schmidt key for scalars
   integer, save :: ksigmas = -1
 
@@ -207,19 +198,7 @@ module numvar
   integer, save :: itsrho = -1
 
   !> \}
-  !----------------------------------------------------------------------------
-  ! Numerical properties
-  !----------------------------------------------------------------------------
 
-  !> \defgroup numerical_prop Numerical properties
-
-  !> \addtogroup numerical_prop
-  !> \{
-
-  !> Weighting for gradient calculation on variables
-  integer, save :: kwgrec = -1
-
-  !> \}
   !----------------------------------------------------------------------------
   ! Mapping to field structures
   !----------------------------------------------------------------------------

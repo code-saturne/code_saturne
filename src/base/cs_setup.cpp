@@ -2524,8 +2524,10 @@ _read_specific_physics_data(void)
 
   /* Joule effect, electric arc or ionic conduction */
   if (   cs_glob_physical_model_flag[CS_JOULE_EFFECT] >= 1
-      || cs_glob_physical_model_flag[CS_ELECTRIC_ARCS] >= 1)
-    cs_electrical_model_param();
+      || cs_glob_physical_model_flag[CS_ELECTRIC_ARCS] >= 1) {
+    cs_electrical_model_initialize();
+    cs_electrical_properties_read();
+  }
 }
 
 /*----------------------------------------------------------------------------*/
@@ -2759,6 +2761,56 @@ _init_user
    * call by user to cs_mobile_structures_add_n_structures */
   if (cs_glob_ale != CS_ALE_NONE)
     cs_mobile_structures_setup();
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Initialize variable options based on the physical model type.
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_init_physical_models_1(void)
+{
+  const int *pm_flag = cs_glob_physical_model_flag;
+
+  /* Set "is_temperature" flag based on thermal model if not already done */
+
+  int t_f_id = -1;
+  if (cs_glob_thermal_model->thermal_variable == CS_THERMAL_MODEL_TEMPERATURE) {
+    const cs_field_t *f_th = cs_thermal_model_field();
+    if (f_th != nullptr)
+      t_f_id = f_th->id;
+  }
+
+  const int n_fld = cs_field_n_fields();
+  const int k_sca = cs_field_key_id("scalar_id");
+  const int kscacp  = cs_field_key_id("is_temperature");
+
+  for (int f_id = 0; f_id < n_fld; f_id++) {
+    cs_field_t *f = cs_field_by_id(f_id);
+
+    if (!(f->type & CS_FIELD_VARIABLE) || f->type & CS_FIELD_CDO)
+      continue;
+    if (cs_field_get_key_int(f, k_sca) < 1)
+      continue;
+
+    int iscacp = cs_field_get_key_int(f, kscacp);
+    if (iscacp < 0) {
+      iscacp = (f->id == t_f_id) ? 1 : 0;
+      cs_field_set_key_int(f, kscacp, iscacp);
+    }
+  }
+
+  cs_f_ppini1(); // Calls not converted to C++ yet.
+
+  /* Specific physical models initializations */
+
+  if (pm_flag[CS_COMPRESSIBLE] >= 0)
+    cs_cf_setup();
+
+  if (pm_flag[CS_JOULE_EFFECT] >= 1 || pm_flag[CS_ELECTRIC_ARCS] >= 1)
+    cs_electrical_model_specific_initialization();
 }
 
 /*----------------------------------------------------------------------------*/
@@ -3416,7 +3468,7 @@ cs_setup(void)
   /* User input, variable definitions */
   _init_user(&nmodpp);
 
-  cs_f_ppini1();
+  _init_physical_models_1();
 
   /* Map Fortran pointers to C global data */
   if (cs_glob_physical_model_flag[CS_ATMOSPHERIC] != -1)

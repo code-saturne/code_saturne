@@ -66,7 +66,6 @@ atmo/atsoil.f90 \
 atmo/atchem.f90 \
 atmo/atimbr.f90 \
 atmo/sshaerosol.f90 \
-cfbl/cfpoin.f90 \
 comb/cs_coal_incl.f90 \
 comb/cpincl.f90 \
 ctwr/ctincl.f90 \
@@ -75,13 +74,10 @@ pprt/ppincl.f90 \
 pprt/ppppar.f90 \
 pprt/ppthch.f90 \
 cogz/coincl.f90 \
-rayt/radiat.f90 \
-base/vof.f90
+rayt/radiat.f90
 
 # Module dependencies (handled manually, as Automake does
 # not yet handle Fortran module dependencies)
-
-base/vof.$(OBJEXT): base/optcal.$(OBJEXT)
 
 base/cstphy.$(OBJEXT): base/paramx.$(OBJEXT)
 

@@ -57,7 +57,6 @@ use ppthch
 use coincl
 use cpincl
 use ppincl
-use cfpoin
 use atincl
 use pointe, only: izfppp
 use cs_c_bindings

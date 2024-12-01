@@ -47,11 +47,8 @@ use ppincl
 use ppcpfu
 use mesh
 use field
-use vof
 use radiat
 use ctincl
-use cfpoin
-use vof
 use cs_c_bindings
 
 !===============================================================================
@@ -79,13 +76,6 @@ call field_get_key_id("boundary_mass_flux_id", kbmasf)
 
 call field_get_key_id("diffusivity_id", kivisl)
 call field_get_key_id("diffusivity_ref", kvisl0)
-
-call field_get_key_id("is_temperature", kscacp)
-
-call field_get_key_id("gradient_weighting_id", kwgrec)
-
-call field_get_key_id("source_term_prev_id", kstprv)
-call field_get_key_id("source_term_id", kst)
 
 call field_get_key_id("turbulent_schmidt", ksigmas)
 
@@ -115,8 +105,6 @@ call restart_auxiliary_options_init
 call turb_reference_values_init
 call radiat_init
 call ctwr_properties_init
-call cf_model_init
-call vof_model_init
 
 !===============================================================================
 ! Get mesh metadata.

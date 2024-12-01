@@ -53,8 +53,6 @@
 
 /*----------------------------------------------------------------------------*/
 
-BEGIN_C_DECLS
-
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
 
 /*=============================================================================
@@ -633,56 +631,6 @@ _cs_real_wsum_components_1d_iv(cs_lnum_t        n,
     }
 
   }
-}
-
-/*----------------------------------------------------------------------------
- * Compute the min./max. of a 1-dimensional array.
- *
- * The algorithm here is similar to that used for blas.
- *
- * parameters:
- *   n        <-- local number of elements
- *   v        <-- pointer to values (size: n)
- *   vmin     --> resulting min array (size: dim, or 4 if dim = 3)
- *   vmax     --> resulting max array (same size as vmin)
- *----------------------------------------------------------------------------*/
-
-static void
-_cs_real_minmax_1d(cs_lnum_t          n,
-                   const cs_real_t    v[],
-                   cs_real_t         *vmin,
-                   cs_real_t         *vmax)
-{
-  *vmin = HUGE_VAL;
-  *vmax = -HUGE_VAL;
-
-# pragma omp parallel if (n > CS_THR_MIN)
-  {
-    cs_lnum_t s_id, e_id;
-    cs_parall_thread_range(n, sizeof(cs_real_t), &s_id, &e_id);
-
-    const cs_lnum_t _n = e_id - s_id;
-    const cs_real_t *_v = v + s_id;
-
-    cs_real_t lmin = HUGE_VAL;
-    cs_real_t lmax = -HUGE_VAL;
-
-    for (cs_lnum_t i = 0; i < _n; i++) {
-      if (_v[i] < lmin)
-        lmin = _v[i];
-      if (_v[i] > lmax)
-        lmax = _v[i];
-    }
-
-#   pragma omp critical
-    {
-      if (lmin < *vmin)
-        *vmin = lmin;
-      if (lmax > *vmax)
-        *vmax = lmax;
-    }
-
-  } /* openMP block */
 }
 
 /*----------------------------------------------------------------------------
@@ -3243,6 +3191,59 @@ _cs_real_sstats_nd_w(cs_lnum_t         n,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Compute the min./max. of a 1-dimensional array.
+ *
+ * \param[in]   n        local number of elements
+ * \param[in]   v        pointer to values (size: n)
+ * \param[out]  vmin     minimum value
+ * \param[out]  vmax     maximum value
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_array_reduce_minmax(cs_lnum_t          n,
+                       const cs_real_t    v[],
+                       cs_real_t         &vmin,
+                       cs_real_t         &vmax)
+{
+  vmin = HUGE_VAL;
+  vmax = -HUGE_VAL;
+
+# pragma omp parallel if (n > CS_THR_MIN)
+  {
+    cs_lnum_t s_id, e_id;
+    cs_parall_thread_range(n, sizeof(cs_real_t), &s_id, &e_id);
+
+    const cs_lnum_t _n = e_id - s_id;
+    const cs_real_t *_v = v + s_id;
+
+    cs_real_t lmin = HUGE_VAL;
+    cs_real_t lmax = -HUGE_VAL;
+
+    for (cs_lnum_t i = 0; i < _n; i++) {
+      if (_v[i] < lmin)
+        lmin = _v[i];
+      if (_v[i] > lmax)
+        lmax = _v[i];
+    }
+
+#   pragma omp critical
+    {
+      if (lmin < vmin)
+        vmin = lmin;
+      if (lmax > vmax)
+        vmax = lmax;
+    }
+
+  } /* openMP block */
+}
+
+/*----------------------------------------------------------------------------*/
+
+BEGIN_C_DECLS
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Compute sums of an n-dimensional cs_real_t array's components.
  *
  * The maximum allowed dimension is 9 (allowing for a rank-2 tensor).
@@ -3491,7 +3492,7 @@ cs_array_reduce_minmax_l(cs_lnum_t         n_elts,
 
   if (v_elt_list == nullptr) {
     if (dim == 1)
-      _cs_real_minmax_1d(n_elts, v, vmin, vmax);
+      cs_array_reduce_minmax(n_elts, v, vmin[0], vmax[0]);
     else if (dim == 3)
       _cs_real_minmax_3d(n_elts, (const cs_real_3_t *)v, vmin, vmax);
     else
@@ -3504,7 +3505,7 @@ cs_array_reduce_minmax_l(cs_lnum_t         n_elts,
   else {
     if (dim == 1)
       bft_error(__FILE__, __LINE__, 0,
-                _("_cs_real_minmax_1d_iv not implemented yet\n"));
+                _("cs_array_reduce_minmax_iv not implemented yet\n"));
     else if (dim == 3)
       bft_error(__FILE__, __LINE__, 0,
                 _("_cs_real_minmax_3d_iv not implemented yet\n"));

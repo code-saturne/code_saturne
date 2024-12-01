@@ -33,7 +33,8 @@
 !______________________________________________________________________________!
 !-------------------------------------------------------------------------------
 
-subroutine ppiniv0
+subroutine ppiniv0() &
+  bind(C, name='cs_f_ppiniv0')
 
 !===============================================================================
 ! Module files
@@ -71,14 +72,7 @@ interface
     implicit none
   end subroutine cs_atmo_fields_init0
 
-  subroutine cs_ctwr_fields_init0()  &
-    bind(C, name='cs_ctwr_fields_init0')
-    use, intrinsic :: iso_c_binding
-    implicit none
-  end subroutine cs_ctwr_fields_init0
-
 end interface
-
 
 !===============================================================================
 
@@ -115,120 +109,6 @@ endif
 if (ippmod(iatmos).ge.0) then
   call atiniv0
   call cs_atmo_fields_init0
-endif
-
-! ---> Cooling towers
-
-if (ippmod(iaeros).ge.0) then
-  call cs_ctwr_fields_init0
-endif
-
-! Electric arcs, Joule effect or ionic conduction
-
-if (ippmod(ieljou).ge.1 .or. ippmod(ielarc).ge.1) then
-  call eliniv
-endif
-
-!----
-! Formats
-!----
-
-!----
-! End
-!----
-
-return
-end subroutine
-
-!-------------------------------------------------------------------------------
-!> \file ppiniv.f90
-!> \brief Initialisation of specific physic variables
-!>
-!>  Physical properties SHOULD not be modified here
-!>  Second stage after the GUI and user modifications.
-!-------------------------------------------------------------------------------
-! Arguments
-!______________________________________________________________________________.
-!  mode           name          role                                           !
-!______________________________________________________________________________!
-!-------------------------------------------------------------------------------
-
-subroutine ppiniv1
-
-!===============================================================================
-
-!===============================================================================
-! Module files
-!===============================================================================
-use, intrinsic :: iso_c_binding
-
-use paramx
-use numvar
-use optcal
-use cstphy
-use cstnum
-use entsor
-use parall
-use ppppar
-use ppthch
-use coincl
-use cpincl
-use ppincl
-use mesh
-
-!===============================================================================
-
-implicit none
-
-!===============================================================================
-! Interfaces
-!===============================================================================
-
-interface
-
-  subroutine cs_cf_initialize()  &
-    bind(C, name='cs_cf_initialize')
-    use, intrinsic :: iso_c_binding
-    implicit none
-  end subroutine cs_cf_initialize
-
-  subroutine cs_ctwr_fields_init1()  &
-    bind(C, name='cs_ctwr_fields_init1')
-    use, intrinsic :: iso_c_binding
-    implicit none
-  end subroutine cs_ctwr_fields_init1
-
-  subroutine cs_gas_mix_initialization()  &
-    bind(C, name='cs_gas_mix_initialization')
-    use, intrinsic :: iso_c_binding
-    implicit none
-  end subroutine cs_gas_mix_initialization
-
-end interface
-
-!===============================================================================
-
-! Local variables
-
-!===============================================================================
-
-! ---> Cooling towers
-if (ippmod(iaeros).ge.0) then
-  call cs_ctwr_fields_init1
-endif
-
-! Gas mixture modelling in presence of noncondensable gases and
-! condensable gas as stream.
-if (ippmod(igmix).ge.0) then
-  call cs_gas_mix_initialization
-endif
-
-! Compressible
-! Has to be called AFTER the gas mix initialization because the
-! mixture composition is taken into account in the thermodynamic
-! law, if gas mix specific physics is enabled.
-if (ippmod(icompf).ge.0) then
-  call cs_cf_initialize
 endif
 
 !----

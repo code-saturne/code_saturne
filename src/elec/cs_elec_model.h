@@ -141,20 +141,7 @@ extern const cs_real_t cs_elec_epszer;
  *============================================================================*/
 
 void
-CS_PROCF (elini1, ELINI1) (void);
-
-void
-cs_electrical_model_param(void);
-
-void
 CS_PROCF (elphyv, ELPHYV) (void);
-
-void
-CS_PROCF (eltssc, ELTSSC) (const int       *isca,
-                           cs_real_t       *smbrs);
-
-void
-CS_PROCF (eliniv, ELINIV) (void);
 
 /*=============================================================================
  * Public function prototypes

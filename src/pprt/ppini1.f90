@@ -59,7 +59,6 @@ use ppthch
 use coincl
 use cpincl
 use ppincl
-use field
 
 use, intrinsic :: iso_c_binding
 
@@ -67,43 +66,8 @@ use, intrinsic :: iso_c_binding
 
 implicit none
 
-! Local variables
-integer ii, iscacp
-
-!===============================================================================
-! Interfaces
-!===============================================================================
-
-interface
-
-  subroutine cs_cf_setup()  &
-    bind(C, name='cs_cf_setup')
-    use, intrinsic :: iso_c_binding
-    implicit none
-  end subroutine cs_cf_setup
-
-end interface
-
 !===============================================================================
 ! Initialization
-!===============================================================================
-
-if (nscal.gt.0) then
-  do ii = 1, nscal
-    call field_get_key_int(ivarfl(isca(ii)), kscacp, iscacp)
-    if (iscacp.eq.-1) then
-      if (ii.eq.iscalt .and. itherm.eq.1) then
-        iscacp = 1
-      else
-        iscacp = 0
-      endif
-      call field_set_key_int(ivarfl(isca(ii)), kscacp, iscacp)
-    endif
-  enddo
-endif
-
-!===============================================================================
-! 1. VARIABLES TRANSPORTEES
 !===============================================================================
 
 ! ---> Combustion gaz : Flamme de diffusion  (Chimie 3 points)
@@ -120,18 +84,6 @@ endif
 
 if (ippmod(iccoal).ge.0) then
   call cs_coal_param
-endif
-
-! ---> Physique particuliere : Compressible
-
-if (ippmod(icompf).ge.0) then
-  call cs_cf_setup
-endif
-
-! ---> Physique particuliere : Versions electriques
-
-if (ippmod(ieljou).ge.1.or.ippmod(ielarc).ge.1) then
-  call elini1
 endif
 
 ! Atmospheric module, second pass

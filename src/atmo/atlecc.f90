@@ -58,12 +58,13 @@ use atincl
 use numvar
 use atchem
 use sshaerosol, only : init_gas_with_lib, sshaerosol_get_gas
+use cs_c_bindings, only: csexit
 
 implicit none
 
 !===============================================================================
 
-procedure() :: csexit, comp_quantile
+procedure() :: comp_quantile
 
 ! Arguments
 

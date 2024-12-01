@@ -134,13 +134,6 @@ BEGIN_C_DECLS
 extern cs_real_t *cs_glob_ckupdc;
 
 /*============================================================================
- * Fortran function prototypes for subroutines from field.f90.
- *============================================================================*/
-
-void
-cs_f_navier_stokes_total_pressure(void);
-
-/*============================================================================
  * Private function definitions
  *============================================================================*/
 
@@ -3553,47 +3546,6 @@ _hydrostatic_pressure_prediction(cs_real_t        grdphd[][3],
   CS_FREE_HD(bc_coeffs_dp.bf);
 }
 
-/*============================================================================
- * Fortran wrapper function definitions
- *============================================================================*/
-
-void
-cs_f_navier_stokes_total_pressure(void)
-{
-  const cs_fluid_properties_t *fp = cs_glob_fluid_properties;
-  const cs_real_t *gxyz = cs_glob_physical_constants->gravity;
-  const cs_real_t *xyzp0 = fp->xyzp0;
-#if defined(HAVE_ACCEL)
-  cs_real_t *_gxyz = nullptr, *_xyzp0 = nullptr;
-  if (cs_get_device_id() > -1) {
-    CS_MALLOC_HD(_gxyz, 3, cs_real_t, cs_alloc_mode);
-    CS_MALLOC_HD(_xyzp0, 3, cs_real_t, cs_alloc_mode);
-    for (int i = 0; i < 3; i++) {
-      _gxyz[i] = cs_glob_physical_constants->gravity[i];
-      _xyzp0[i] = fp->xyzp0[i];
-    }
-
-    cs_mem_advise_set_read_mostly(_gxyz);
-    cs_mem_advise_set_read_mostly(_xyzp0);
-
-    xyzp0 = _xyzp0;
-    gxyz = _gxyz;
-  }
-#endif
-
-  cs_solve_navier_stokes_update_total_pressure(cs_glob_mesh,
-                                               cs_glob_mesh_quantities,
-                                               cs_glob_fluid_properties,
-                                               gxyz,
-                                               xyzp0);
-
-#if defined(HAVE_ACCEL)
-  CS_FREE_HD(_gxyz);
-  CS_FREE_HD(_xyzp0);
-#endif
-
-}
-
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
@@ -3614,8 +3566,6 @@ cs_f_navier_stokes_total_pressure(void)
  * \param[in]     mq     pointer to mesh quantities structure
  * \param[in]     fp     pointer to fluid properties structure
  * \param[in]     gxyz   gravity
- * \param[in]     xyzp0  indicator for filling of reference point for
- *                       total pressure
  */
 /*----------------------------------------------------------------------------*/
 
@@ -3624,8 +3574,7 @@ cs_solve_navier_stokes_update_total_pressure
   (const cs_mesh_t              *m,
    const cs_mesh_quantities_t   *mq,
    const cs_fluid_properties_t  *fp,
-   const cs_real_t               gxyz[3],
-   const cs_real_t               xyzp0[3])
+   const cs_real_t               gxyz[3])
 {
   /* TODO: use a function pointer here to adapt to different cases */
 
@@ -3637,6 +3586,7 @@ cs_solve_navier_stokes_update_total_pressure
   const cs_lnum_t n_cells = m->n_cells;
 
   const cs_real_3_t *cell_cen = (const cs_real_3_t *)mq->cell_cen;
+
   const cs_real_t p0 = fp->p0, pred0 = fp->pred0, ro0 = fp->ro0;
 
   cs_real_t *cpro_prtot = f->val;
@@ -3652,6 +3602,10 @@ cs_solve_navier_stokes_update_total_pressure
     cpro_momst
       = (const cs_real_3_t *)cs_field_by_name("momentum_source_terms")->val;
 
+  /* Copy global arrays to local ones to enable lambda capture for dispatch */
+  const cs_real_t g[3] = {gxyz[0], gxyz[1], gxyz[2]};
+  const cs_real_t xyzp0[3] = {fp->xyzp0[0], fp->xyzp0[1], fp->xyzp0[1]};
+
   cs_dispatch_context ctx;
 
   /* Update cell values */
@@ -3661,13 +3615,12 @@ cs_solve_navier_stokes_update_total_pressure
     && CS_F_(k) != nullptr
     && cs_glob_turb_rans_model->igrhok != 1;
 
-
   if (cpro_momst == nullptr) {
     ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
       cpro_prtot[c_id] =   cvar_pr[c_id]
                          + ro0 * cs_math_3_distance_dot_product(xyzp0,
                                                                 cell_cen[c_id],
-                                                                gxyz)
+                                                                g)
                          + p0 - pred0;
 
       /* For Eddy Viscosity Models, "2/3 rho k"
@@ -3681,7 +3634,7 @@ cs_solve_navier_stokes_update_total_pressure
       cpro_prtot[c_id] =   cvar_pr[c_id]
                          + ro0 * cs_math_3_distance_dot_product(xyzp0,
                                                                 cell_cen[c_id],
-                                                                gxyz)
+                                                                g)
                          + p0 - pred0
                          - cs_math_3_distance_dot_product(xyzp0,
                                                           cell_cen[c_id],
@@ -4731,8 +4684,7 @@ cs_solve_navier_stokes(const int        iterns,
    *         TKE might be included in the solved pressure. */
 
   if (cs_glob_physical_model_flag[CS_COMPRESSIBLE] < 0)
-    cs_solve_navier_stokes_update_total_pressure(m, mq, fluid_props,
-                                                 gxyz, xyzp0);
+    cs_solve_navier_stokes_update_total_pressure(m, mq, fluid_props, gxyz);
 
   if (eqp_u->verbosity > 0)
     _log_norm(m, mq,

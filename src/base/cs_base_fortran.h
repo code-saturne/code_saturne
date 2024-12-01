@@ -49,26 +49,6 @@ BEGIN_C_DECLS
  * Static global variables
  *============================================================================*/
 
-/*============================================================================
- *  Public function prototypes for Fortran API
- *============================================================================*/
-
-/*----------------------------------------------------------------------------
- * Call exit routine from Fortran code
- *
- * Fortran interface:
- *
- * subroutine csexit (status)
- * *****************
- *
- * integer          status      : <-- : 0 for success, 1+ for error
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF (csexit, CSEXIT)
-(
-  const int  *status
-);
-
 /*=============================================================================
  * Public function prototypes
  *============================================================================*/
@@ -115,22 +95,10 @@ cs_base_fortran_bft_printf_to_f(void);
  *----------------------------------------------------------------------------*/
 
 void
-cs_user_extra_operations_initialize_wrapper(void);
-
-void
 cs_user_boundary_conditions_wrapper(int  *itypcl);
 
 void
 cs_user_extra_operations_wrapper(void);
-
-void
-cs_user_initialization_wrapper(void);
-
-void
-cs_user_parameters_wrapper(void);
-
-void
-cs_user_finalize_setup_wrapper(void);
 
 /*----------------------------------------------------------------------------*/
 

@@ -62,6 +62,7 @@ use mesh
 use field
 use atchem
 use sshaerosol
+use cs_c_bindings, only: csexit
 
 implicit none
 

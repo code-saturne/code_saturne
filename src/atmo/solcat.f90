@@ -66,6 +66,7 @@ use paramx
 use entsor
 use atincl
 use atsoil
+use cs_c_bindings, only: csexit
 
 use, intrinsic :: iso_c_binding
 
@@ -86,8 +87,6 @@ interface
   end subroutine cs_f_atmo_soil_init_arrays
 
 end interface
-
-procedure() :: csexit
 
 ! Arguments
 

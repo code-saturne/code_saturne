@@ -680,28 +680,9 @@ _pot_arg_f(int               location_id,
 /*----------------------------------------------------------------------------*/
 
 void
-CS_PROCF (elini1, ELINI1) (void)
-{
-  cs_electrical_model_specific_initialization();
-}
-
-void
-cs_electrical_model_param(void)
-{
-  cs_electrical_model_initialize();
-  cs_electrical_properties_read();
-}
-
-void
 CS_PROCF (elphyv, ELPHYV) (void)
 {
   cs_elec_physical_properties(cs_glob_domain);
-}
-
-void
-CS_PROCF (eliniv, ELINIV) (void)
-{
-  cs_elec_fields_initialize(cs_glob_mesh);
 }
 
 /*=============================================================================

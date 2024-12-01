@@ -82,8 +82,6 @@ module cs_c_bindings
   parameter (VOLUME_ZONE_SOURCE_TERM=8)
   parameter (VOLUME_ZONE_MASS_SOURCE_TERM=16)
 
-  procedure() :: csexit
-
   !-----------------------------------------------------------------------------
 
   type, bind(c)  :: var_cal_opt
@@ -209,6 +207,17 @@ module cs_c_bindings
       type(c_ptr), value :: k_value
       type(c_ptr)        :: eqp
     end function equation_param_from_vcopt
+
+    !---------------------------------------------------------------------------
+
+    ! Interface to C exit routine function.
+
+    subroutine csexit(status) &
+      bind(C, name='cs_exit')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      integer(c_int), value :: status
+    end subroutine csexit
 
     !---------------------------------------------------------------------------
 
@@ -809,37 +818,6 @@ module cs_c_bindings
       character(kind=c_char, len=1), dimension(*), intent(in) :: scalar_name
       real(kind=c_double), dimension(3), intent(in) :: normal
     end subroutine cs_surface_balance
-
-    !---------------------------------------------------------------------------
-
-    ! Interface to C user function for boundary conditions
-
-    subroutine user_boundary_conditions(bc_type)  &
-      bind(C, name='cs_user_boundary_conditions_wrapper')
-      use, intrinsic :: iso_c_binding
-      implicit none
-      integer(kind=c_int), dimension(*), intent(inout) :: bc_type
-    end subroutine user_boundary_conditions
-
-    !---------------------------------------------------------------------------
-
-    ! Interface to C user function for extra operations
-
-    subroutine user_extra_operations_initialize()  &
-      bind(C, name='cs_user_extra_operations_initialize_wrapper')
-      use, intrinsic :: iso_c_binding
-      implicit none
-    end subroutine user_extra_operations_initialize
-
-    !---------------------------------------------------------------------------
-
-    ! Interface to C user function for initialization
-
-    subroutine user_initialization()  &
-      bind(C, name='cs_user_initialization_wrapper')
-      use, intrinsic :: iso_c_binding
-      implicit none
-    end subroutine user_initialization
 
     !---------------------------------------------------------------------------
 
@@ -1716,6 +1694,38 @@ contains
           (nvar, nscal, icodcl, c_null_ptr, itypfb, izfppp, dt, rcodcl)
 
   end subroutine user_f_boundary_conditions
+
+  !=============================================================================
+
+  !> \brief  Wrapper to Fortran user initialization definitions.
+
+  !> \param[in, out]  bc_type  boundary face types
+
+  subroutine user_f_initialization(dt)  &
+    bind(C, name='cs_f_user_initialization_wrapper')
+
+    use dimens
+    use, intrinsic :: iso_c_binding
+    implicit none
+
+    ! Arguments
+
+    real(c_double), dimension(*), intent(in) :: dt
+
+    ! Externals
+
+    procedure() :: cs_f_user_initialization
+
+    ! Local variables
+
+    integer, pointer, dimension(:,:) :: icodcl
+    double precision, pointer, dimension(:,:,:) :: rcodcl
+
+    call field_build_bc_codes_all(icodcl, rcodcl) ! Get map
+
+    call cs_user_f_initialization(nvar, nscal, dt)
+
+  end subroutine user_f_initialization
 
   !=============================================================================
 

@@ -21,7 +21,6 @@
 !-------------------------------------------------------------------------------
 
 subroutine cs_coal_param
-!=======================
 
 !===============================================================================
 !  FONCTION  :
@@ -70,7 +69,7 @@ use cs_c_bindings
 implicit none
 
 integer          ii , jj , iok
-integer          icha , isc, krvarfl
+integer          icha , isc, krvarfl, kscacp
 
 double precision wmolme, turb_schmidt
 
@@ -82,6 +81,8 @@ type(var_cal_opt) :: vcopt
 
 ! --> Nature des scalaires transportes
 
+call field_get_key_id("is_temperature", kscacp)
+
 do isc = 1, nscapp
   call field_set_key_int(ivarfl(isca(iscapp(isc))), kscacp, 0)
 enddo
@@ -90,7 +91,6 @@ enddo
 
 itherm = 2
 call field_set_key_int(ivarfl(isca(iscalt)), kscacp, 0)
-
 
 call field_get_key_id("variance_dissipation", krvarfl)
 

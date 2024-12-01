@@ -51,12 +51,13 @@ use ppincl
 use atincl
 use atsoil
 use mesh
+use cs_c_bindings, only: csexit
 
 !===============================================================================
 
 implicit none
 
-procedure() :: csexit, solmoy, soliva
+procedure() :: solmoy, soliva
 
 ! Arguments
 

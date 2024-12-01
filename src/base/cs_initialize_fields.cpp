@@ -46,22 +46,33 @@
 
 #include "cs_ale.h"
 #include "cs_array.h"
+#include "cs_array_reduce.h"
 #include "cs_assert.h"
+#include "cs_cf_model.h"
 #include "cs_cf_thermo.h"
+#include "cs_ctwr_initialize.h"
+#include "cs_dispatch.h"
+#include "cs_elec_model.h"
 #include "cs_field.h"
 #include "cs_field_default.h"
 #include "cs_field_pointer.h"
+#include "cs_gas_mix.h"
+#include "cs_gui.h"
 #include "cs_gui_mobile_mesh.h"
 #include "cs_ibm.h"
 #include "cs_math.h"
 #include "cs_mesh.h"
 #include "cs_mesh_quantities.h"
+#include "cs_parameters.h"
+#include "cs_parameters_check.h"
 #include "cs_parall.h"
 #include "cs_physical_constants.h"
 #include "cs_physical_model.h"
 #include "cs_porous_model.h"
 #include "cs_porosity_from_scan.h"
+#include "cs_prototypes.h"
 #include "cs_scalar_clipping.h"
+#include "cs_solve_navier_stokes.h"
 #include "cs_time_step.h"
 #include "cs_turbulence_init.h"
 #include "cs_velocity_pressure.h"
@@ -76,6 +87,18 @@
 /*----------------------------------------------------------------------------*/
 
 BEGIN_C_DECLS
+
+/*============================================================================
+ * External function prototypes
+ *============================================================================*/
+
+/* Bindings to Fortran routines */
+
+void
+cs_f_ppiniv0(void);
+
+void
+cs_f_user_initialization_wrapper(cs_real_t  dt[]);
 
 /*=============================================================================
  * Additional doxygen documentation
@@ -409,6 +432,388 @@ cs_initialize_fields_stage_0(void)
     for (int n_p = f->n_time_vals; n_p > 1; n_p--)
       cs_field_current_to_previous(f);
   }
+}
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Initialize variable, time step, and wall distance fields.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_initialize_fields_stage_1(void)
+{
+  const cs_mesh_t *m = cs_glob_mesh;
+  const cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
+  const cs_fluid_properties_t *fluid_props = cs_glob_fluid_properties;
+
+  const cs_lnum_t n_cells = m->n_cells;
+  const int n_fields = cs_field_n_fields();
+  const int *pm_flag = cs_glob_physical_model_flag;
+
+  const int keysca = cs_field_key_id("scalar_id");
+  const int kscavr = cs_field_key_id("first_moment_id");
+  const int kscmin = cs_field_key_id("min_scalar_clipping");
+  const int kscmax = cs_field_key_id("max_scalar_clipping");
+  const int kclvfl = cs_field_key_id("variance_clipping");
+  const int kwgrec = cs_field_key_id_try("gradient_weighting_id");
+
+  const bool have_restart_aux
+    = (    cs_restart_present()
+        && cs_glob_restart_auxiliary->read_auxiliary > 0);
+
+  /* Initialize gradient weighting fields
+     ------------------------------------ */
+
+  for (int f_id = 0; f_id < n_fields; f_id++) {
+    cs_field_t *f = cs_field_by_id(f_id);
+
+    if (   !(f->type & CS_FIELD_VARIABLE)
+        || f->type & CS_FIELD_CDO
+        || f->dim != 1)
+      continue;
+
+    const cs_equation_param_t *eqp = cs_field_get_equation_param_const(f);
+    if (eqp->idiff < 1 || eqp->iwgrec != 1)
+      continue;
+
+    const cs_field_t *f_wg = cs_field_by_id(cs_field_get_key_int(f, kwgrec));
+    if (f_wg->dim == 6) {
+      const cs_real_t  t_val[6] = {1., 1., 1., 0., 0., 0.};
+      cs_array_real_set_value(m->n_cells_with_ghosts,
+                              6,
+                              t_val,
+                              f_wg->val);
+    }
+    else if (f_wg->dim == 1) {
+      const cs_real_t  s_val[1] = {1.};
+      cs_array_real_set_value(m->n_cells_with_ghosts,
+                              1,
+                              s_val,
+                              f_wg->val);
+    }
+  }
+
+  /* Pre-initialization for specific physical models
+     ----------------------------------------------- */
+
+  if (pm_flag[CS_PHYSICAL_MODEL_FLAG] > 0) {
+    cs_f_ppiniv0();
+
+    if (pm_flag[CS_COOLING_TOWERS] >= 0)
+      cs_ctwr_fields_init0();
+
+    if (pm_flag[CS_JOULE_EFFECT] >= 1 || pm_flag[CS_ELECTRIC_ARCS] >= 1)
+      cs_elec_fields_initialize(m);
+  }
+
+  /* GUI and user initialization
+     --------------------------- */
+
+  cs_gui_initial_conditions();
+
+  {
+    cs_real_t *dt_val = nullptr;
+    if (CS_F_(dt) != nullptr)
+      dt_val = CS_F_(dt)->val;
+    cs_f_user_initialization_wrapper(dt_val);
+  }
+  cs_user_initialization(cs_glob_domain);
+
+  /* Second stage of initialization for specific physical models
+     -----------------------------------------------------------
+     (after the user function call) */
+
+  // Cooling towers
+  if (pm_flag[CS_COOLING_TOWERS] >= 0)
+    cs_ctwr_fields_init1();
+
+  // Gas mixture modelling in presence of noncondensable gases and
+  // condensable gas as stream.
+  if (pm_flag[CS_GAS_MIX] >= 0)
+    cs_gas_mix_initialization();
+
+  // Compressible
+  // Has to be called AFTER the gas mix initialization because the
+  // mixture composition is taken into account in the thermodynamic
+  // law, if gas mix specific physics is enabled.
+  if (pm_flag[CS_COMPRESSIBLE] >= 0)
+    cs_cf_initialize();
+
+  /* VoF model
+   ----------- */
+
+  if (cs_glob_vof_parameters->vof_model > 0) {
+    cs_vof_compute_linear_rho_mu(m);
+    // density is stored at the two previous time steps
+    for (int t_i = 0; t_i < 2; t_i++) {
+      cs_field_current_to_previous(CS_F_(rho));
+      cs_field_current_to_previous(CS_F_(rho_b));
+    }
+  }
+
+  /* Compressible model
+   -------------------- */
+
+  if (   pm_flag[CS_COMPRESSIBLE] >= 0
+      && have_restart_aux == false) {
+
+    const cs_cf_model_t *cf_model = cs_glob_cf_model;
+    const int ithvar = cf_model->ithvar;
+
+    if (   ithvar !=  60000 && ithvar != 100000
+        && ithvar != 140000 && ithvar != 150000 && ithvar != 210000) {
+      cs_parameters_error
+        (CS_ABORT_DELAYED,
+         _("in compressible thermodynamics at initialization"),
+         _("Unexpected value of the indicator ithvar (%d).\n\n"
+           "Two and only two independant variables among\n"
+           "P, rho, T and E (except T and E) should be imposed."),
+         ithvar);
+    }
+
+    cs_real_t wrk0[1], wrk1[1], wrk2[1], wrk3[3];
+    cs_cf_thermo(ithvar, -1, wrk0, wrk1, wrk2, &wrk3);
+
+  }
+
+  /* Pressure / Total pressure initialization
+   * ----------------------------------------
+   *
+   * Standard case:
+   * If the user has initialized the total pressure Ptot, P* is initialized
+   * accordingly, only if the user has speficied the reference point.
+   * (all values of the total pressure have to be initialized).
+   * Otherwise, the total pressure is initialized using P*,
+   * Ptot = P* + P0 + rho.g.r
+   *
+   * In case of restart without auxiliary, Ptot is recomputed with P*.
+   * (For EVM models, the shift by 2/3*rho*k is missing)
+   * In case of restart with auxiliary, nothing needs to be done.
+   *
+   * Compressible:
+   * The total pressure field does not need to be defined. The solved pressure is
+   * the total pressure. */
+
+  const cs_field_t *f_pr_tot = cs_field_by_name_try("total_pressure");
+  if (   f_pr_tot != nullptr && CS_F_(p) != nullptr
+      && pm_flag[CS_COMPRESSIBLE] < 0) {
+
+    const cs_fluid_properties_t *fp = cs_glob_fluid_properties;
+    const cs_real_t *gravity = cs_glob_physical_constants->gravity;
+    const cs_real_t *cpro_prtot = f_pr_tot->val;
+    cs_real_t *cvar_pr = CS_F_(p)->val;
+
+    int uprtot = 0;
+
+    if (   fluid_props->ixyzp0 > -1
+        && have_restart_aux == false) {
+
+      uprtot = 1;
+      cs_real_t valmin = HUGE_VALF, valmax = - HUGE_VALF;
+      cs_array_reduce_minmax(m->n_cells,
+                             cpro_prtot,
+                             valmin,
+                             valmax);
+      if (valmin <= -0.5*cs_math_infinite_r)
+        uprtot = 0;
+
+      cs_parall_min(1, CS_INT_TYPE, &uprtot);
+    }
+
+    if (uprtot > 0) {
+      const cs_real_3_t *cell_cen = (const cs_real_3_t *)mq->cell_cen;
+
+      /* Copy global arrays to local ones to enable lambda capture for dispatch */
+      const cs_real_t ro0 = fp->ro0;
+      const cs_real_t pred0_m_p0 = fp->pred0 - fp->p0;
+      const cs_real_t g[3] = {gravity[0], gravity[1], gravity[2]};
+      const cs_real_t xyzp0[3] = {fp->xyzp0[0], fp->xyzp0[1], fp->xyzp0[1]};
+
+      cs_dispatch_context ctx;
+      ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
+        cvar_pr[c_id] =    cpro_prtot[c_id]
+                         - ro0 * cs_math_3_distance_dot_product(xyzp0,
+                                                                cell_cen[c_id],
+                                                                g)
+                         + pred0_m_p0;
+      });
+    }
+
+    else if (have_restart_aux == false)
+      cs_solve_navier_stokes_update_total_pressure(m, mq, fp, gravity);
+
+  }
+
+  /* Clip turbulent quantities (initialized by user or restart)
+   * ---------------------------------------------------------- */
+
+  if (cs_turbulence_init_clip_and_verify() > 0) {
+    cs_parameters_error(CS_ABORT_DELAYED,
+                        _("in variables initialization"),
+                        _("Errors in turbulent quantities initialization"));
+  }
+
+  /* Clip scalars (initialized by user or restart)
+   * ---------------------------------------------
+   *
+   * If the user has modified values in `cs_user_initialization`:
+   * - If values are "correct" (i.e. within prescribed bounds), the
+   *   initialization is admissible, and is clipped to ensure it is
+   *   coherent relative to the code's clipping mode.
+   * - If values are outside of prescribed bounds, abort computation.
+   *
+   * The same logic is used in case of a computation restart, to ensure
+   * the same behavior between a computation where a user modifies a
+   * variable in `cs_user_initialization` an a computation where no
+   * modification occurs.
+   * Otherwise, values have already been clipped after default initialization.
+   *
+   * To summarize:
+   * - Abort if values are out of admissible bounds.
+   * - Clip when using admissible user-modified or restarted values.
+   * - Calues have already been clipped in other cases.
+   */
+
+  /* Clip scalars first, as they may be needed to clip variances */
+
+  for (int f_id = 0; f_id < n_fields; f_id++) {
+    cs_field_t *f = cs_field_by_id(f_id);
+
+    if (   !(f->type & CS_FIELD_VARIABLE)
+        || f->type & CS_FIELD_CDO
+        || f->dim != 1)
+      continue;
+    int scalar_id = cs_field_get_key_int(f, keysca) - 1;
+    if (scalar_id < 0)
+      continue;
+
+    if (cs_field_get_key_int(f, kscavr) >= 0)  /* is a variance */
+      continue;
+
+    /* Non-variance scalars */
+
+    cs_real_t scminp = cs_field_get_key_double(f, kscmin);
+    cs_real_t scmaxp = cs_field_get_key_double(f, kscmax);
+
+    if (scminp <= scmaxp) {
+
+      cs_real_t valmin = HUGE_VALF, valmax = - HUGE_VALF;
+      cs_array_reduce_minmax(m->n_cells,
+                             f->val,
+                             valmin,
+                             valmax);
+
+      cs_parall_min_scalars(valmin);
+      cs_parall_max_scalars(valmin);
+
+      // Check coherence for clippings of non-variance scalars.
+      if (valmin >= scminp && valmax <= scmaxp)
+        cs_scalar_clipping(f);
+
+      else {
+        cs_parameters_error(CS_ABORT_DELAYED,
+                            _("in variables initialization"),
+                            _("Scalar quantities out of bounds for \"%s\":\n"
+                              "  Minimum value       = %g\n"
+                              "  'min_scal_clipping' = %g\n"
+                              "  Maximum value       = %g\n"
+                              "  'max_scal_clipping' = %g"),
+                            f->name, valmin, scminp, valmax, scmaxp);
+
+      }
+    }
+
+  } // loop on fields
+
+  /* Now clip variances. */
+
+  for (int f_id = 0; f_id < n_fields; f_id++) {
+    cs_field_t *f = cs_field_by_id(f_id);
+
+    if (   !(f->type & CS_FIELD_VARIABLE)
+        || f->type & CS_FIELD_CDO)
+      continue;
+    int scalar_id = cs_field_get_key_int(f, keysca) - 1;
+    if (scalar_id < 0)
+      continue;
+
+    if (cs_field_get_key_int(f, kscavr) < 0)  /* not a variance */
+      continue;
+
+    /* Variance scalars */
+
+    cs_real_t scminp = cs_field_get_key_double(f, kscmin);
+    cs_real_t scmaxp = cs_field_get_key_double(f, kscmax);
+
+    if (scminp <= scmaxp) {
+      cs_real_t valmin = HUGE_VALF, valmax = - HUGE_VALF;
+      cs_array_reduce_minmax(m->n_cells,
+                             f->val,
+                             valmin,
+                             valmax);
+
+      cs_parall_min_scalars(valmin);
+      cs_parall_max_scalars(valmin);
+
+      int iclvfl = cs_field_get_key_int(f, kclvfl);
+
+      // Check coherence for variance clippings.
+      // For iclvfl = 1, only check positivity, otherwise it well be
+      // difficult do have a correct initialization.
+
+      if (valmin >= scminp && valmax <= scmaxp) {
+
+        if (iclvfl == 0) {
+          // We could clip if valmin >= 0, but by definition,
+          // this would not add anything.
+          if (valmin < 0)
+            cs_parameters_error(CS_ABORT_DELAYED,
+                                _("in variables initialization"),
+                                _("Negative variance for \"%s\":\n"
+                                  "  Minimum value = %g"),
+                                f->name, valmin);
+        }
+        else if (iclvfl == 1) {
+          // Here we clip to be coherent with the scalar's value.
+          if (valmin >= 0)
+            cs_scalar_clipping(f);
+          else
+            cs_parameters_error(CS_ABORT_DELAYED,
+                                _("in variables initialization"),
+                                _("Negative variance for \"%s\":\n"
+                                  "  Minimum value = %g"),
+                                f->name, valmin);
+        }
+        else if (iclvfl == 2) {
+          cs_real_t vfmin = fmax(scminp, 0);
+          cs_real_t vfmax = scmaxp;
+          // We could clip when valmin >= vfmin and valmax <= vfmax
+          // but by definition, this would add nothing.
+          if (valmin < vfmin || valmax > vfmax)
+            cs_parameters_error
+              (CS_ABORT_DELAYED,
+               _("in variables initialization"),
+               _("Variance out of bounds or negative for \"%s\":\n"
+                 "  Minimum value       = %g\n"
+                 "  'min_scal_clipping' = %g\n"
+                 "  Maximum value       = %g\n"
+                 "  'max_scal_clipping' = %g\n\n"
+                 "  Clipping mode       = %d"),
+               f->name, valmin, scminp, valmax, scmaxp, iclvfl);
+        }
+      }
+    }
+
+  } // loop on fields
+
+  cs_parameters_error_barrier();
+
+  cs_user_extra_operations_initialize(cs_glob_domain);
+
+  cs_log_printf(CS_LOG_DEFAULT,
+                _("\n"
+                  " ** VARIABLES INITIALIZATION\n"
+                  "    ------------------------\n\n"));
 }
 
 /*----------------------------------------------------------------------------*/

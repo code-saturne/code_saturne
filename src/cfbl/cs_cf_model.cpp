@@ -173,34 +173,6 @@ static cs_cf_model_t  _cf_model =
 
 const cs_cf_model_t  *cs_glob_cf_model = &_cf_model;
 
-/*============================================================================
- * Prototypes for functions intended for use only by Fortran wrappers.
- * (descriptions follow, with function bodies).
- *============================================================================*/
-
-void
-cs_f_cf_model_get_pointers(int    **ithvar);
-
-/*============================================================================
- * Fortran wrapper function definitions
- *============================================================================*/
-
-/*----------------------------------------------------------------------------
- * Get pointers to members of the global compressible model structure.
- *
- * This function is intended for use by Fortran wrappers, and
- * enables mapping to Fortran global pointers.
- *
- * parameters:
- *   ithvar           --> pointer to cs_glob_cf_model->ithvar
- *----------------------------------------------------------------------------*/
-
-void
-cs_f_cf_model_get_pointers(int    **ithvar)
-{
-  *ithvar = &(_cf_model.ithvar);
-}
-
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*=============================================================================

@@ -133,9 +133,6 @@ void
 cs_f_combustion_models_boundary_conditions_map(void);
 
 void
-cs_f_initialization_variables(void);
-
-void
 cs_f_atmsol(void);
 
 void
@@ -479,7 +476,7 @@ cs_time_stepping(void)
       || cs_glob_physical_model_flag[CS_COMBUSTION_LW] >= 0)
     cs_f_combustion_models_boundary_conditions_map();
 
-  cs_f_initialization_variables();
+  cs_initialize_fields_stage_1();
 
   if (cs_glob_param_cdo_mode >= CS_PARAM_CDO_MODE_OFF) {  // CDO mode
     assert(cs_glob_domain != nullptr);

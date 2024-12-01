@@ -220,25 +220,6 @@ _close_c_log_file(void)
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
- * Call exit routine from Fortran code
- *
- * Fortran interface:
- *
- * subroutine csexit (status)
- * *****************
- *
- * integer          status      : <-- : 0 for success, 1+ for error
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF (csexit, CSEXIT)
-(
-  const int  *status
-)
-{
-  cs_exit(*status);
-}
-
-/*----------------------------------------------------------------------------
  * Get log name file information.
  *
  * When log file output is suppressed, it returns the name of the
@@ -456,12 +437,6 @@ cs_base_fortran_bft_printf_to_f(void)
  *----------------------------------------------------------------------------*/
 
 void
-cs_user_extra_operations_initialize_wrapper(void)
-{
-  cs_user_extra_operations_initialize(cs_glob_domain);
-}
-
-void
 cs_user_boundary_conditions_wrapper(int  *itypcl)
 {
   cs_user_boundary_conditions(cs_glob_domain, itypcl);
@@ -487,24 +462,6 @@ cs_user_boundary_conditions_wrapper(int  *itypcl)
     }
 
   }
-}
-
-void
-cs_user_initialization_wrapper(void)
-{
-  cs_user_initialization(cs_glob_domain);
-}
-
-void
-cs_user_parameters_wrapper(void)
-{
-  cs_user_parameters(cs_glob_domain);
-}
-
-void
-cs_user_finalize_setup_wrapper(void)
-{
-  cs_user_finalize_setup(cs_glob_domain);
 }
 
 /*----------------------------------------------------------------------------*/
