@@ -135,7 +135,7 @@ BEGIN_C_DECLS
  */
 /*----------------------------------------------------------------------------*/
 
-CS_F_HOST_DEVICE void
+static CS_F_HOST_DEVICE void
 _sym_33_eigen(const cs_real_t  m[6],
               cs_real_t        eig_vals[3])
 {

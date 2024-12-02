@@ -296,6 +296,20 @@ void
 cs_user_1d_wall_thermal(int iappel);
 
 /*----------------------------------------------------------------------------
+ * Fill in vertical profiles of atmospheric properties prior to solving
+ * 1D radiative transfers.
+ *----------------------------------------------------------------------------*/
+
+void
+cs_user_atmo_1d_rad_prf(cs_real_t   preray[],
+                        cs_real_t   temray[],
+                        cs_real_t   romray[],
+                        cs_real_t   qvray[],
+                        cs_real_t   qlray[],
+                        cs_real_t   ncray[],
+                        cs_real_t   aeroso[]);
+
+/*----------------------------------------------------------------------------
  * Data Entry of the wall condensation module
  *----------------------------------------------------------------------------*/
 

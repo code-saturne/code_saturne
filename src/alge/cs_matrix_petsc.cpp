@@ -1236,7 +1236,6 @@ _set_coeffs(cs_matrix_t        *matrix,
   CS_UNUSED(copy);
 
   cs_lnum_t  n_rows = matrix->n_rows;
-  cs_lnum_t  n_cols_ext = matrix->n_cols_ext;
 
   const cs_gnum_t *g_id = cs_matrix_get_block_row_g_id(matrix);
   const bool have_diag = (xa != nullptr) ? true : false;
@@ -1271,7 +1270,6 @@ _set_coeffs(cs_matrix_t        *matrix,
     coeffs->l_range[1] = l_range[1];
 
     n_rows *= b_size;
-    n_cols_ext *= b_size;
 
     MatCreate(comm, &hm);
     MatSetType(hm, coeffs->matype_r);

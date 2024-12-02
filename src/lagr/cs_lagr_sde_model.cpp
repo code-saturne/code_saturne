@@ -1717,20 +1717,18 @@ _lewis_factor(const int        evap_model,
 static void
 _sde_i_ct(void)
 {
-  /* Adressing structures of the lagrangian modul */
+  /* Adressing structures of the lagrangian module */
   cs_lagr_particle_set_t        *p_set  = cs_glob_lagr_particle_set;
   const cs_lagr_attribute_map_t *p_am   = p_set->p_am;
   cs_lagr_extra_module_t        *extra  = cs_glob_lagr_extra_module;
 
-  /* Adressing structures of the cooling tower modul*/
+  /* Adressing structures of the cooling tower module */
   cs_ctwr_option_t              *ct_opt = cs_get_glob_ctwr_option();
   int                            evap_model= ct_opt->evap_model;
 
-  /* Adressing field values of the eulerian cooling tower model*/
+  /* Adressing field values of the eulerian cooling tower model */
   cs_real_t *x   = cs_field_by_name("humidity")->val;
   cs_real_t *x_s = cs_field_by_name("x_s")->val;
-  cs_real_t *t_h = cs_field_by_name("temperature")->val; /* humid air
-                                                            temperature */
 
   /* User defined air properties of the cooling tower model*/
   cs_air_fluid_props_t *air_prop = cs_glob_air_props;
@@ -1749,7 +1747,7 @@ _sde_i_ct(void)
   /* Constant local numerical parameters*/
   cs_real_t molmassrat = 0.622; //FIXME: parameter of ppincl ! How to include this in a C routine ?
   cs_real_t precis = 1e-15; /* clipping purposes */
-  cs_real_t R = 461.5; /* J /kg K */
+  // cs_real_t r = 461.5; /* J /kg K */
 
   for (cs_lnum_t ip = 0; ip < p_set->n_particles; ip++) {
 
@@ -1758,7 +1756,7 @@ _sde_i_ct(void)
                                                         CS_LAGR_CELL_ID);
     /* Caluclating the current particle surface */
     cs_real_t dia = cs_lagr_particle_get_real_n(particle, p_am, 1, CS_LAGR_DIAMETER);
-    cs_real_t surf_p = cs_math_pi*cs_math_pow2(dia) * 0.25;
+    // cs_real_t surf_p = cs_math_pi*cs_math_pow2(dia) * 0.25;
 
     /* Drop diameter based Reynolds number */
     const cs_real_t *vel_p

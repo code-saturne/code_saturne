@@ -1347,7 +1347,7 @@ _petsc_set_krylov_solver(cs_param_sles_t  *slesp,
     }
 #else
     bft_error(__FILE__, __LINE__, 0,
-              "%s: MUMPS inside PETSc is not available.\n",
+              "%s: MUMPS inside PETSc is not available.\n"
               " Please check your settings or your installation.", __func__);
 #endif
     break;

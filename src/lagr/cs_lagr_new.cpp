@@ -684,7 +684,6 @@ cs_lagr_new_particle_init(const cs_lnum_t                 particle_range[2],
   const cs_real_t  *xwatch = coal_model->xwatch;
   const cs_real_t  *rho0ch = coal_model->rho0ch;
 
-  const cs_real_t *vela = extra->vel->vals[time_id];//FIXME
   const cs_real_t *cval_h = nullptr, *cval_t = nullptr, *cval_t_l = nullptr;
   cs_real_t *_cval_t = nullptr;
 
