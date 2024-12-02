@@ -444,7 +444,8 @@ cs_blas_cuda_asum(cs_lnum_t        n,
   /* Need to synchronize stream in all cases so as to
      have up-to-date value in returned _r_reduce[0] */
 
-  cudaStreamSynchronize(_stream);
+  CS_CUDA_CHECK(cudaStreamSynchronize(_stream));
+  CS_CUDA_CHECK(cudaGetLastError());
 
   return _r_reduce[0];
 }
@@ -481,7 +482,8 @@ cs_blas_cuda_dot(cs_lnum_t        n,
   /* Need to synchronize stream in all cases so as to
      have up-to-date value in returned _r_reduce[0] */
 
-  cudaStreamSynchronize(_stream);
+  CS_CUDA_CHECK(cudaStreamSynchronize(_stream));
+  CS_CUDA_CHECK(cudaGetLastError());
 
   return _r_reduce[0];
 }

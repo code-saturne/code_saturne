@@ -719,8 +719,10 @@ _pre_vector_multiply_sync_x_start(const cs_matrix_t   *matrix,
 
   if (matrix->halo != nullptr) {
 
-    if (_stream != 0)
-      cudaStreamSynchronize(_stream);
+    if (_stream != 0) {
+      CS_CUDA_CHECK(cudaStreamSynchronize(_stream));
+      CS_CUDA_CHECK(cudaGetLastError());
+    }
 
     hs = cs_halo_state_get_default();
 
@@ -1240,7 +1242,8 @@ cs_matrix_spmv_cuda_native(const cs_matrix_t  *matrix,
   if (hs != nullptr)
     cs_halo_sync_wait(matrix->halo, d_x, hs);
 
-  cudaStreamSynchronize(_stream);
+  CS_CUDA_CHECK(cudaStreamSynchronize(_stream));
+  CS_CUDA_CHECK(cudaGetLastError());
 
   /* Non-diagonal terms */
 
@@ -1280,10 +1283,11 @@ cs_matrix_spmv_cuda_native(const cs_matrix_t  *matrix,
 #endif
   }
 
-  cudaStreamSynchronize(_stream);
+  CS_CUDA_CHECK(cudaStreamSynchronize(_stream));
+  CS_CUDA_CHECK(cudaGetLastError());
 
   if (_stream == 0) {
-    cudaStreamSynchronize(0);
+    CS_CUDA_CHECK(cudaStreamSynchronize(_stream));
     CS_CUDA_CHECK(cudaGetLastError());
   }
 }
@@ -1343,7 +1347,7 @@ cs_matrix_spmv_cuda_csr(cs_matrix_t  *matrix,
       (ms->n_rows, row_index, col_id, val, d_x, d_y);
 
   if (_stream == 0) {
-    cudaStreamSynchronize(0);
+    CS_CUDA_CHECK(cudaStreamSynchronize(_stream));
     CS_CUDA_CHECK(cudaGetLastError());
   }
 }
@@ -1494,7 +1498,7 @@ cs_matrix_spmv_cuda_csr_cusparse(cs_matrix_t  *matrix,
   }
 
   if (_stream == 0) {
-    cudaStreamSynchronize(0);
+    CS_CUDA_CHECK(cudaStreamSynchronize(_stream));
     CS_CUDA_CHECK(cudaGetLastError());
   }
 }
@@ -1560,7 +1564,7 @@ cs_matrix_spmv_cuda_msr(cs_matrix_t  *matrix,
       (ms->n_rows, row_index, col_id, x_val, d_x, d_y);
 
   if (_stream == 0) {
-    cudaStreamSynchronize(0);
+    CS_CUDA_CHECK(cudaStreamSynchronize(_stream));
     CS_CUDA_CHECK(cudaGetLastError());
   }
 }
@@ -1704,7 +1708,7 @@ cs_matrix_spmv_cuda_msr_cusparse(cs_matrix_t  *matrix,
 #endif
 
   if (_stream == 0) {
-    cudaStreamSynchronize(0);
+    CS_CUDA_CHECK(cudaStreamSynchronize(_stream));
     CS_CUDA_CHECK(cudaGetLastError());
   }
 }
@@ -1797,7 +1801,7 @@ cs_matrix_spmv_cuda_msr_b(cs_matrix_t  *matrix,
   }
 
   if (_stream == 0) {
-    CS_CUDA_CHECK(cudaStreamSynchronize(0));
+    CS_CUDA_CHECK(cudaStreamSynchronize(_stream));
     CS_CUDA_CHECK(cudaGetLastError());
   }
 }
@@ -1905,7 +1909,7 @@ cs_matrix_spmv_cuda_msr_b_cusparse(cs_matrix_t  *matrix,
               __func__, cusparseGetErrorString(status));
 
   if (_stream == 0) {
-    cudaStreamSynchronize(0);
+    CS_CUDA_CHECK(cudaStreamSynchronize(_stream));
     CS_CUDA_CHECK(cudaGetLastError());
   }
 }
@@ -2042,7 +2046,7 @@ cs_matrix_spmv_cuda_msr_bb_cusparse(cs_matrix_t  *matrix,
               __func__, (int)status);
 
   if (_stream == 0) {
-    cudaStreamSynchronize(0);
+    CS_CUDA_CHECK(cudaStreamSynchronize(_stream));
     CS_CUDA_CHECK(cudaGetLastError());
   }
 }

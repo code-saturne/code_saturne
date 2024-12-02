@@ -140,7 +140,8 @@ cs_arrays_set_value(cudaStream_t     stream,
   cuda_kernel_set_value<T, stride><<<grid_size_, block_size_, 0, stream>>>
     (n_elts, ref_val, size_arrs, array_ptrs);
 
-  cudaStreamSynchronize(stream);
+  CS_CUDA_CHECK(cudaStreamSynchronize(stream));
+  CS_CUDA_CHECK(cudaGetLastError());
 
   CS_FREE_HD(array_ptrs);
 }
@@ -186,7 +187,8 @@ cs_arrays_set_value(cudaStream_t     stream,
   cuda_kernel_set_value<T, stride><<<grid_size_, block_size_, 0, stream>>>
     (n_elts, ref_val, size_arrs, array_ptrs);
 
-  cudaStreamSynchronize(stream);
+  CS_CUDA_CHECK(cudaStreamSynchronize(stream));
+  CS_CUDA_CHECK(cudaGetLastError());
 
   CS_FREE_HD(array_ptrs);
 }

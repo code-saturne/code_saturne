@@ -255,6 +255,7 @@ cs_halo_cuda_pack_send_buffer(const cs_halo_t   *halo,
   }
 
   CS_CUDA_CHECK(cudaStreamSynchronize(stream));
+  CS_CUDA_CHECK(cudaGetLastError());
 }
 
 /*----------------------------------------------------------------------------*/

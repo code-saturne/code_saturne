@@ -1292,7 +1292,7 @@ cs_gradient_scalar_lsq_cuda(const cs_mesh_t              *m,
   const cs_real_t *restrict weight
     = cs_get_device_ptr_const_pf(fvq->weight);
 
-  cudaStreamSynchronize(0);
+  // cudaStreamSynchronize(0);
 
   _init_rhsv<<<gridsize_ext, blocksize, 0, stream>>>
     (n_cells_ext, rhsv, pvar_d);
@@ -1435,7 +1435,8 @@ cs_gradient_scalar_lsq_cuda(const cs_mesh_t              *m,
 
   cs_sync_scalar_gradient_halo_d(m, halo_type, grad_d);
 
-  cudaStreamSynchronize(stream);
+  CS_CUDA_CHECK(cudaStreamSynchronize(stream));
+  CS_CUDA_CHECK(cudaGetLastError());
 
   /* Sync to host */
   if (_grad_d != nullptr) {
@@ -1707,7 +1708,8 @@ cs_gradient_strided_lsq_cuda
     CS_CUDA_CHECK(cudaEventSynchronize(e_stop));
   }
 
-  cudaStreamSynchronize(stream);
+  CS_CUDA_CHECK(cudaStreamSynchronize(stream));
+  CS_CUDA_CHECK(cudaGetLastError());
 
   if (cs_glob_timer_kernels_flag > 0) {
     printf("%d: %s<%d>", cs_glob_rank_id, __func__, stride);
@@ -2017,7 +2019,8 @@ cs_gradient_strided_gg_r_cuda
     CS_CUDA_CHECK(cudaEventSynchronize(e_stop));
   }
 
-  cudaStreamSynchronize(stream);
+  CS_CUDA_CHECK(cudaStreamSynchronize(stream));
+  CS_CUDA_CHECK(cudaGetLastError());
 
   if (cs_glob_timer_kernels_flag > 0) {
     printf("%d: %s<%d>", cs_glob_rank_id, __func__, stride);

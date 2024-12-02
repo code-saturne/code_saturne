@@ -621,7 +621,8 @@ public:
       cs_assert(0);
     }
 
-    cudaStreamSynchronize(stream_);
+    CS_CUDA_CHECK(cudaStreamSynchronize(stream_));
+    CS_CUDA_CHECK(cudaGetLastError());
     sum = r_reduce_[0];
 
     return true;
@@ -630,8 +631,10 @@ public:
   //! Synchronize associated stream
   void
   wait(void) {
-    if (device_ > -1 && use_gpu_)
-      cudaStreamSynchronize(stream_);
+    if (device_ > -1 && use_gpu_) {
+      CS_CUDA_CHECK(cudaStreamSynchronize(stream_));
+      CS_CUDA_CHECK(cudaGetLastError());
+    }
   }
 
   // Get interior faces sum type associated with this context

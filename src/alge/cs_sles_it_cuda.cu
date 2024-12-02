@@ -1034,7 +1034,8 @@ _sync_reduction_sum(const cs_sles_it_t  *c,
                     cs_lnum_t            tuple_size,
                     double               res[])
 {
-  cudaStreamSynchronize(stream);
+  CS_CUDA_CHECK(cudaStreamSynchronize(stream));
+  CS_CUDA_CHECK(cudaGetLastError());
 
 #if defined(HAVE_MPI)
 
@@ -1166,7 +1167,8 @@ _dot_products_vr_vw_vq_rr(const cs_sles_it_t  *c,
 
   /* Alternatives (need to set option for this) */
 
-  cudaStreamSynchronize(stream);
+  CS_CUDA_CHECK(cudaStreamSynchronize(stream));
+  CS_CUDA_CHECK(cudaGetLastError());
 
   cs_lnum_t n = c->setup_data->n_rows;
 
@@ -1357,7 +1359,8 @@ cs_sles_it_cuda_jacobi(cs_sles_it_t              *c,
     else {
       _jacobi_compute_vx_ini0<blocksize><<<gridsize, blocksize, 0, stream>>>
         (n_rows, ad_inv, rhs, vx, rk);
-      cudaStreamSynchronize(stream);
+      CS_CUDA_CHECK(cudaStreamSynchronize(stream));
+      CS_CUDA_CHECK(cudaGetLastError());
     }
 
     /* Convergence test */
@@ -1438,8 +1441,10 @@ cs_sles_it_cuda_jacobi(cs_sles_it_t              *c,
       _sync_reduction_sum(c, stream, 1, res);
       residual = sqrt(*res); /* Actually, residual of previous iteration */
     }
-    else
-      cudaStreamSynchronize(stream);
+    else {
+      CS_CUDA_CHECK(cudaStreamSynchronize(stream));
+      CS_CUDA_CHECK(cudaGetLastError());
+    }
 
     /* Convergence test */
     if (n_iter == 1)
@@ -1602,8 +1607,10 @@ cs_sles_it_cuda_block_jacobi(cs_sles_it_t              *c,
       _sync_reduction_sum(c, stream, 1, res);
       residual = sqrt(*res); /* Actually, residual of previous iteration */
     }
-    else
-      cudaStreamSynchronize(stream);
+    else {
+      CS_CUDA_CHECK(cudaStreamSynchronize(stream));
+      CS_CUDA_CHECK(cudaGetLastError());
+    }
 
     /* Convergence test */
     if (n_iter == 1)
@@ -1691,8 +1698,10 @@ cs_sles_it_cuda_block_jacobi(cs_sles_it_t              *c,
       _sync_reduction_sum(c, stream, 1, res);
       residual = sqrt(*res); /* Actually, residual of previous iteration */
     }
-    else
-      cudaStreamSynchronize(stream);
+    else {
+      CS_CUDA_CHECK(cudaStreamSynchronize(stream));
+      CS_CUDA_CHECK(cudaGetLastError());
+    }
 
     /* Convergence test */
     if (n_iter == 1)
@@ -1852,7 +1861,8 @@ cs_sles_it_cuda_fcg(cs_sles_it_t              *c,
 
   while (cvg == CS_SLES_ITERATING) {
 
-    cudaStreamSynchronize(stream);
+    CS_CUDA_CHECK(cudaStreamSynchronize(stream));
+    CS_CUDA_CHECK(cudaGetLastError());
 
     /* Preconditioning */
 
