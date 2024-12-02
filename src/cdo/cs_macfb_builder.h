@@ -52,7 +52,6 @@ BEGIN_C_DECLS
 
 /* Cellwise builder for MAC-fb discretization */
 typedef struct {
-
   /* Cell informations */
 
   cs_lnum_t c_id; /*!< cell id  */
@@ -77,29 +76,29 @@ typedef struct {
   short int f_opp_idx[6]; /*!< opposite face index to the
                                face inside the cell */
 
-  short int f2f_idx[24]; /*!< cellwise face->face index with same
+  short int f2f_idx[6][4]; /*!< cellwise face->face index with same
                             direction and sharing an edge with the current face
                             Negative index means to skip entry
                             4 entries by face */
 
-  cs_lnum_t f2f_ids[24]; /*!< cellwise face->face ids with same
+  cs_lnum_t f2f_ids[6][4]; /*!< cellwise face->face ids with same
                              direction and sharing an edge with the current face
                              Negative index means to that is not a face
                              4 entries by face  */
 
-  short int f2fo_idx[48]; /*!< cellwise face->face index with orthornal
+  short int f2fo_idx[6][4][2]; /*!< cellwise face->face index with orthogonal
                           direction and sharing an edge with the current face
                           Negative index means to skip entry
                           8 = (4*2) entries by face */
 
-  cs_real_t f2f_h[24]; /*!< distance beetwen barycenter of each face->face
+  cs_real_t f2f_h[6][4]; /*!< distance beetwen barycenter of each face->face
                             4 entries by face */
-  cs_real_t f2f_surf_cv_c[24]; /*!< surface of each face of the controle
+  cs_real_t f2f_surf_cv_c[6][4]; /*!< surface of each face of the controle
                                 volume face->face (restricted to the cell) */
 
-  cs_lnum_t f2e_ids[24]; /*!< cellwise face->edges ids, same order as f2f */
+  cs_lnum_t f2e_ids[6][4]; /*!< cellwise face->edges ids, same order as f2f */
 
-  cs_real_t dir_values[24]; /*!< dirichlet values at edges */
+  cs_real_t dir_values[6][4]; /*!< dirichlet values at edges */
 
 } cs_macfb_builder_t;
 
@@ -121,7 +120,8 @@ extern cs_macfb_builder_t **cs_mac_builders;
  */
 /*----------------------------------------------------------------------------*/
 
-void cs_macfb_builder_initialize(void);
+void
+cs_macfb_builder_initialize(void);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -129,7 +129,8 @@ void cs_macfb_builder_initialize(void);
  */
 /*----------------------------------------------------------------------------*/
 
-void cs_macfb_builder_finalize(void);
+void
+cs_macfb_builder_finalize(void);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -141,7 +142,8 @@ void cs_macfb_builder_finalize(void);
  */
 /*----------------------------------------------------------------------------*/
 
-cs_macfb_builder_t *cs_macfb_get_builder(int id);
+cs_macfb_builder_t *
+cs_macfb_get_builder(int id);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -151,7 +153,8 @@ cs_macfb_builder_t *cs_macfb_get_builder(int id);
  */
 /*----------------------------------------------------------------------------*/
 
-cs_macfb_builder_t *cs_macfb_builder_create(void);
+cs_macfb_builder_t *
+cs_macfb_builder_create(void);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -161,7 +164,8 @@ cs_macfb_builder_t *cs_macfb_builder_create(void);
  */
 /*----------------------------------------------------------------------------*/
 
-void cs_macfb_builder_free(cs_macfb_builder_t **p_builder);
+void
+cs_macfb_builder_free(cs_macfb_builder_t **p_builder);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -171,7 +175,8 @@ void cs_macfb_builder_free(cs_macfb_builder_t **p_builder);
  */
 /*----------------------------------------------------------------------------*/
 
-void cs_macfb_builder_reset(cs_macfb_builder_t *macb);
+void
+cs_macfb_builder_reset(cs_macfb_builder_t *macb);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -184,10 +189,11 @@ void cs_macfb_builder_reset(cs_macfb_builder_t *macb);
  */
 /*----------------------------------------------------------------------------*/
 
-void cs_macfb_builder_cellwise_setup(const cs_cell_mesh_t      *cm,
-                                     const cs_cdo_connect_t    *connect,
-                                     const cs_cdo_quantities_t *quant,
-                                     cs_macfb_builder_t        *macb);
+void
+cs_macfb_builder_cellwise_setup(const cs_cell_mesh_t      *cm,
+                                const cs_cdo_connect_t    *connect,
+                                const cs_cdo_quantities_t *quant,
+                                cs_macfb_builder_t        *macb);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -197,7 +203,8 @@ void cs_macfb_builder_cellwise_setup(const cs_cell_mesh_t      *cm,
  */
 /*----------------------------------------------------------------------------*/
 
-void cs_macfb_builder_dump(const cs_macfb_builder_t *macb);
+void
+cs_macfb_builder_dump(const cs_macfb_builder_t *macb);
 
 /*----------------------------------------------------------------------------*/
 

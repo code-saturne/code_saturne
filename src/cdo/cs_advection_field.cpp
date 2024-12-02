@@ -3105,8 +3105,8 @@ cs_advection_field_macb_dface_flux(const cs_macfb_builder_t *macb,
         for (short int fj = 0; fj < 4; fj++) {
           const short int shift_j = 4 * fi + fj;
 
-          const short int f0 = macb->f2fo_idx[2 * shift_j + 0];
-          const short int f1 = macb->f2fo_idx[2 * shift_j + 1];
+          const short int f0 = macb->f2fo_idx[fi][fj][0];
+          const short int f1 = macb->f2fo_idx[fi][fj][1];
 
           assert(f0 >= 0 && f0 < 6);
 

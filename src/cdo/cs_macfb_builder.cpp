@@ -221,22 +221,23 @@ cs_macfb_builder_reset(cs_macfb_builder_t *macb)
     macb->f_vol_cv[f]   = -DBL_MAX;
     macb->f_h_cv[f]     = -DBL_MAX;
     macb->f_opp_idx[f]  = -1;
-  }
 
-  for (short int f = 0; f < 24; f++) {
-    macb->f2f_idx[f]       = -1;
-    macb->f2f_ids[f]       = -1;
-    macb->f2f_h[f]         = -DBL_MAX;
-    macb->f2f_surf_cv_c[f] = -DBL_MAX;
-    macb->dir_values[f]    = -DBL_MAX;
+    for (short int fj = 0; fj < 4; fj++) {
+      macb->f2f_idx[f][fj]       = -1;
+      macb->f2f_ids[f][fj]       = -1;
+      macb->f2f_h[f][fj]         = -DBL_MAX;
+      macb->f2f_surf_cv_c[f][fj] = -DBL_MAX;
+      macb->dir_values[f][fj]    = -DBL_MAX;
+      macb->f2fo_idx[f][fj][0]   = -1;
+      macb->f2fo_idx[f][fj][1]   = -1;
+      macb->f2e_ids[f][fj]       = -1;
+    }
   }
 
   for (short int f = 0; f < 30; f++) {
     macb->f_ids[f]   = -1;
     macb->dof_ids[f] = -1;
   }
-
-  memset(macb->f2fo_idx, -1, 48 * sizeof(short int));
 }
 
 /*----------------------------------------------------------------------------*/
@@ -303,6 +304,22 @@ cs_macfb_builder_cellwise_setup(const cs_cell_mesh_t      *cm,
   cs_adjacency_t *f2e = connect->f2e;
   assert(f2e != nullptr); /* Has to be build before */
 
+  const cs_adjacency_t *f2f = connect->f2f;
+  assert(f2f != nullptr); /* Has to be build before */
+
+  /* Lambda function */
+  auto find_edge_id = [f2e](const cs_lnum_t &f_id, const cs_lnum_t &fj_id) {
+    for (short int ej = 0; ej < 4; ej++) {
+      const cs_lnum_t ej_id = f2e->ids[f2e->idx[fj_id] + ej];
+      for (short int ei = 0; ei < 4; ei++) {
+        const cs_lnum_t ei_id = f2e->ids[f2e->idx[f_id] + ei];
+        if (ei_id == ej_id) {
+          return ei_id;
+        }
+      }
+    }
+  };
+
   /* loop on internal faces */
   for (short int f = 0; f < 6; f++) {
     const cs_lnum_t f_id = cm->f_ids[f];
@@ -341,8 +358,6 @@ cs_macfb_builder_cellwise_setup(const cs_cell_mesh_t      *cm,
 
     /* Physical face */
     for (short int fj = 0; fj < nb_f_outer; fj++) {
-      const short int shift_j = 4 * f + fj;
-
       const cs_lnum_t  fj_id = f2f_ed->ids[f2f_ed->idx[f_id] + fj];
       const cs_real_t *fj_c  = cs_quant_get_face_center(fj_id, quant);
 
@@ -350,26 +365,18 @@ cs_macfb_builder_cellwise_setup(const cs_cell_mesh_t      *cm,
       macb->f_axis[macb->n_fc]    = quant->face_axis[fj_id];
       macb->dof_ids[macb->n_dofs] = fj_id;
 
-      macb->f2f_idx[shift_j] = macb->n_dofs;
-      macb->f2f_ids[shift_j] = fj_id;
-      macb->f2f_h[shift_j]   = cs_math_3_distance(f_c, fj_c);
+      macb->f2f_idx[f][fj] = macb->n_dofs;
+      macb->f2f_ids[f][fj] = fj_id;
+      macb->f2f_h[f][fj]   = cs_math_3_distance(f_c, fj_c);
 
       /* Find common edge */
-      for (short int ej = 0; ej < 4; ej++) {
-        const cs_lnum_t ej_id = f2e->ids[f2e->idx[fj_id] + ej];
-        for (short int ei = 0; ei < 4; ei++) {
-          const cs_lnum_t ei_id = f2e->ids[f2e->idx[f_id] + ei];
-          if (ei_id == ej_id) {
-            macb->f2e_ids[shift_j] = ei_id;
-            break;
-          }
-        }
-      }
+      macb->f2e_ids[f][fj] = find_edge_id(f_id, fj_id);
+      assert(macb->f2e_ids[f][fj] >= 0);
 
-      const cs_quant_t ei_q
-        = cs_quant_get_edge_center(macb->f2e_ids[shift_j], connect, quant);
+      const cs_quant_t ei_q =
+        cs_quant_get_edge_center(macb->f2e_ids[f][fj], connect, quant);
       const cs_real_t length       = 2.0 * cs_math_3_distance(f_c, ei_q.center);
-      macb->f2f_surf_cv_c[shift_j] = f_vol_cv_c / length;
+      macb->f2f_surf_cv_c[f][fj]   = f_vol_cv_c / length;
 
       macb->n_dofs++;
       macb->n_fc++;
@@ -408,25 +415,38 @@ cs_macfb_builder_cellwise_setup(const cs_cell_mesh_t      *cm,
       short int n_ed_find = 0;
       for (short int ei = 0; ei < 4; ei++) {
         if (fe_id[ei] >= 0) {
-          n_ed_find++;
           const cs_lnum_t ei_id = fe_id[ei];
 
-          const short int shift_j = 4 * f + nb_f_outer - 1 + n_ed_find;
+          const short int fj = nb_f_outer + n_ed_find;
 
           const cs_quant_t ei_q
             = cs_quant_get_edge_center(ei_id, connect, quant);
 
-          macb->f2f_idx[shift_j] = -1;
-          macb->f2f_ids[shift_j] = -(ei_id + 1);
-          macb->f2e_ids[shift_j] = ei_id;
+          macb->f2f_idx[f][fj] = -1;
+          macb->f2f_ids[f][fj] = -(ei_id + 1);
+          macb->f2e_ids[f][fj] = ei_id;
 
-          macb->f2f_h[shift_j] = cs_math_3_distance(f_c, ei_q.center);
-          macb->f2f_surf_cv_c[shift_j]
-            = f_vol_cv_c / (2.0 * macb->f2f_h[shift_j]);
+          macb->f2f_h[f][fj]         = cs_math_3_distance(f_c, ei_q.center);
+          macb->f2f_surf_cv_c[f][fj] = f_vol_cv_c / (2.0 * macb->f2f_h[f][fj]);
+          n_ed_find++;
         }
       }
       assert(n_ed_find == 4 - nb_f_outer);
     }
+
+#if defined(DEBUG)
+    /* Check edges */
+    short int nb_edges_find = 0;
+    for (short int ei = 0; ei < 4; ei++) {
+      for (short int fj = 0; fj < 4; fj++) {
+        if (f2e->ids[f2e->idx[f_id] + ei] == macb->f2e_ids[f][fj]) {
+          nb_edges_find++;
+          break;
+        }
+      }
+    }
+    assert(nb_edges_find == 4);
+#endif
   }
 
   assert(macb->n_dofs <= macb->n_max_dofs);
@@ -445,9 +465,10 @@ cs_macfb_builder_cellwise_setup(const cs_cell_mesh_t      *cm,
 
     /* Loop on outer faces */
     for (short int fj = 0; fj < 4; fj++) {
-      const short int shift_j = 4 * f + fj;
+      const cs_lnum_t ej_id = macb->f2e_ids[f][fj];
+      assert(ej_id >= 0);
 
-      const cs_lnum_t ej_id = macb->f2e_ids[shift_j];
+      const cs_quant_t ei_q = cs_quant_get_edge_center(ej_id, connect, quant);
 
       short int n_e_find = 0;
       for (short int fk = 0; fk < macb->n_fc; fk++) {
@@ -460,8 +481,9 @@ cs_macfb_builder_cellwise_setup(const cs_cell_mesh_t      *cm,
 
           for (short int ek = 0; ek < 4; ek++) {
             cs_lnum_t ek_id = f2e->ids[f2e->idx[fk_id] + ek];
+
             if (ej_id == ek_id) {
-              macb->f2fo_idx[2 * shift_j + n_e_find] = fk;
+              macb->f2fo_idx[f][fj][n_e_find] = fk;
               n_e_find++;
               break;
             }
@@ -471,13 +493,12 @@ cs_macfb_builder_cellwise_setup(const cs_cell_mesh_t      *cm,
           break;
         }
       }
-      assert(n_e_find > 0);
+      assert(n_e_find > 0 && n_e_find < 3);
     }
   }
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_MAC_BUILDER_DBG > 2
-  if (macb->c_id == 0)
-    cs_macfb_builder_dump(macb);
+  cs_macfb_builder_dump(macb);
 #endif
 }
 
@@ -536,13 +557,13 @@ cs_macfb_builder_dump(const cs_macfb_builder_t *macb)
     for (short int fc = 0; fc < 4; fc++) {
       bft_printf("%2d | %6ld | %6ld | %6ld | %.3e | %.3e \n",
                  fc,
-                 (long)macb->f2f_ids[4 * f + fc],
-                 macb->f2f_idx[4 * f + fc] >= 0
-                   ? (long)macb->dof_ids[macb->f2f_idx[4 * f + fc]]
-                   : macb->f2f_idx[4 * f + fc],
-                 (long)macb->f2e_ids[4 * f + fc],
-                 macb->f2f_h[4 * f + fc],
-                 macb->f2f_surf_cv_c[4 * f + fc]);
+                 (long)macb->f2f_ids[f][fc],
+                 macb->f2f_idx[f][fc] >= 0
+                   ? (long)macb->dof_ids[macb->f2f_idx[f][fc]]
+                   : macb->f2f_idx[f][fc],
+                 (long)macb->f2e_ids[f][fc],
+                 macb->f2f_h[f][fc],
+                 macb->f2f_surf_cv_c[f][fc]);
     }
   }
 }

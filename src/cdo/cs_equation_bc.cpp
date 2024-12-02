@@ -38,6 +38,7 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
+#include "bft_printf.h"
 #include <bft_mem.h>
 
 #include "cs_array.h"
@@ -66,7 +67,7 @@ BEGIN_C_DECLS
  * Type definitions and macros
  *============================================================================*/
 
-#define CS_EQUATION_BC_DBG  0
+#define CS_EQUATION_BC_DBG 0
 
 /*============================================================================
  * Local private variables
@@ -142,6 +143,10 @@ _init_cell_sys_macfb_bc(const cs_cdo_bc_face_t   *face_bc,
       csys->_f_ids[csys->n_bc_faces] = f;
       csys->n_bc_faces++;
     }
+
+#if defined(DEBUG) && !defined(NDEBUG) && CS_EQUATION_BC_DBG > 1
+    bft_printf("Face %d with id=%d and bf_id=%d.\n", f, macb->f_ids[f], bf_id);
+#endif
 
   } /* Loop on cell faces */
 }
@@ -813,17 +818,29 @@ cs_equation_bc_set_cw_macfb(const cs_cell_mesh_t      *cm,
 
     /* Loop on outer faces */
     for (short int fj = 0; fj < 4; fj++) {
-      const short int shift_j = 4 * fi + fj;
-      const cs_lnum_t fj_id   = macb->f2f_ids[shift_j];
+      const cs_lnum_t fj_id = macb->f2f_ids[fi][fj];
 
       if (fj_id < 0) {
         /* To close gradient reconstruction */
-        const short int f1 = macb->f2fo_idx[2 * shift_j + 0];
-        const short int f2 = macb->f2fo_idx[2 * shift_j + 1];
+        const short int f1 = macb->f2fo_idx[fi][fj][0];
+        const short int f2 = macb->f2fo_idx[fi][fj][1];
+
+#if defined(DEBUG) && !defined(NDEBUG) && CS_EQUATION_BC_DBG > 1
+        bft_printf("Face %d, %d with tangential faces: %d and %d.\n",
+                   fi,
+                   fj_id,
+                   f1,
+                   f2);
+#endif
 
         assert(f1 >= 0 && f1 < 6);
 
         const cs_lnum_t bf1_id = csys->bf_ids[f1];
+
+#if defined(DEBUG) && !defined(NDEBUG) && CS_EQUATION_BC_DBG > 1
+        bft_printf("Tangential face %d has the boundary id %d.\n", f1, bf1_id);
+#endif
+
         assert(bf1_id > -1);
 
         cs_real_t vel_avg_bc = 0.0;
@@ -860,7 +877,7 @@ cs_equation_bc_set_cw_macfb(const cs_cell_mesh_t      *cm,
 
         /* Average velocity */
         vel_avg_bc /= h;
-        macb->dir_values[shift_j] = vel_avg_bc;
+        macb->dir_values[fi][fj] = vel_avg_bc;
 
         // cs_log_printf(CS_LOG_DEFAULT, ">> Vel: %d, %f \n", shift_j,
         // vel_avg_bc);

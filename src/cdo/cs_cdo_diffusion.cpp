@@ -3610,11 +3610,10 @@ cs_macfb_diffusion(const cs_cell_mesh_t     *cm,
 
     /* Loop on outer faces */
     for (short int fj = 0; fj < 4; fj++) {
-      const short int shift_j = 4 * fi + fj;
-      const short int fj_idx  = macb->f2f_idx[shift_j];
+      const short int fj_idx = macb->f2f_idx[fi][fj];
 
-      const cs_real_t val_fj = mu_fc * macb->f2f_surf_cv_c[shift_j]
-                               / (macb->f2f_h[shift_j] * vol_cv);
+      const cs_real_t val_fj =
+        mu_fc * macb->f2f_surf_cv_c[fi][fj] / (macb->f2f_h[fi][fj] * vol_cv);
 
       /* diagonal entry */
       assert(fi_shift + fi < cm->n_fc * macb->n_dofs);
@@ -3628,7 +3627,7 @@ cs_macfb_diffusion(const cs_cell_mesh_t     *cm,
       }
       else {
         /* To close gradient reconstruction */
-        rhs[fi] += val_fj * macb->dir_values[shift_j];
+        rhs[fi] += val_fj * macb->dir_values[fi][fj];
       }
     }
   }

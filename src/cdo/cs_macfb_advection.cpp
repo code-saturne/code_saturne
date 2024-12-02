@@ -419,9 +419,9 @@ cs_macfb_advection_upwnoc(const cs_cell_mesh_t     *cm,
     /* Loop on outer faces */
     for (short int fj = 0; fj < 4; fj++) {
       const short int shift_j = 4 * fi + fj;
-      const short int fj_idx  = macb->f2f_idx[shift_j];
+      const short int fj_idx  = macb->f2f_idx[fi][fj];
 
-      const short int f0 = macb->f2fo_idx[2 * shift_j + 0];
+      const short int f0 = macb->f2fo_idx[fi][fj][0];
       assert(f0 >= 0 && f0 < 6);
 
       const cs_real_t flux_fj = fluxes[6 + shift_j] * macb->f_sgn_axis[f0];
@@ -438,7 +438,7 @@ cs_macfb_advection_upwnoc(const cs_cell_mesh_t     *cm,
       }
       else {
         /* To close convection reconstruction */
-        rhs[fi] -= val_fj * macb->dir_values[shift_j];
+        rhs[fi] -= val_fj * macb->dir_values[fi][fj];
       }
     }
   }
@@ -501,9 +501,9 @@ cs_macfb_advection_upwcsv(const cs_cell_mesh_t     *cm,
     /* Loop on outer faces */
     for (short int fj = 0; fj < 4; fj++) {
       const short int shift_j = 4 * fi + fj;
-      const short int fj_idx  = macb->f2f_idx[shift_j];
+      const short int fj_idx  = macb->f2f_idx[fi][fj];
 
-      const short int f0 = macb->f2fo_idx[2 * shift_j + 0];
+      const short int f0 = macb->f2fo_idx[fi][fj][0];
       assert(f0 >= 0 && f0 < 6);
 
       const cs_real_t flux_fj = fluxes[6 + shift_j] * macb->f_sgn_axis[f0];
@@ -517,7 +517,7 @@ cs_macfb_advection_upwcsv(const cs_cell_mesh_t     *cm,
       }
       else {
         /* To close convection reconstruction */
-        rhs[fi] -= val_fj * macb->dir_values[shift_j];
+        rhs[fi] -= val_fj * macb->dir_values[fi][fj];
       }
     }
   }
@@ -581,9 +581,9 @@ cs_macfb_advection_cennoc(const cs_cell_mesh_t     *cm,
     /* Loop on outer faces */
     for (short int fj = 0; fj < 4; fj++) {
       const short int shift_j = 4 * fi + fj;
-      const short int fj_idx  = macb->f2f_idx[shift_j];
+      const short int fj_idx  = macb->f2f_idx[fi][fj];
 
-      const short int f0 = macb->f2fo_idx[2 * shift_j + 0];
+      const short int f0 = macb->f2fo_idx[fi][fj][0];
       assert(f0 >= 0 && f0 < 6);
 
       const cs_real_t flux_fj = fluxes[6 + shift_j] * macb->f_sgn_axis[f0];
@@ -598,7 +598,7 @@ cs_macfb_advection_cennoc(const cs_cell_mesh_t     *cm,
       }
       else {
         /* To close convection reconstruction */
-        rhs[fi] -= val_fj * macb->dir_values[shift_j];
+        rhs[fi] -= val_fj * macb->dir_values[fi][fj];
       }
     }
   }
@@ -662,9 +662,9 @@ cs_macfb_advection_cencsv(const cs_cell_mesh_t     *cm,
     /* Loop on outer faces */
     for (short int fj = 0; fj < 4; fj++) {
       const short int shift_j = 4 * fi + fj;
-      const short int fj_idx  = macb->f2f_idx[shift_j];
+      const short int fj_idx  = macb->f2f_idx[fi][fj];
 
-      const short int f0 = macb->f2fo_idx[2 * shift_j + 0];
+      const short int f0 = macb->f2fo_idx[fi][fj][0];
       assert(f0 >= 0 && f0 < 6);
 
       const cs_real_t flux_fj = fluxes[6 + shift_j] * macb->f_sgn_axis[f0];
@@ -679,7 +679,7 @@ cs_macfb_advection_cencsv(const cs_cell_mesh_t     *cm,
       }
       else {
         /* To close convection reconstruction */
-        rhs[fi] -= val_fj * macb->dir_values[shift_j];
+        rhs[fi] -= val_fj * macb->dir_values[fi][fj];
       }
     }
   }
