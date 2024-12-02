@@ -1260,6 +1260,7 @@ AC_CONFIG_FILES([Makefile
                  preprocessor/Makefile
                  preprocessor/appli/Makefile preprocessor/base/Makefile
                  preprocessor/pre-post/Makefile preprocessor/util/Makefile
+                 external/Makefile external/atmo/Makefile
                  src/Makefile      src/apps/Makefile src/gui/Makefile
                  src/bft/Makefile  src/fvm/Makefile
                  src/base/Makefile src/atmo/Makefile src/cdo/Makefile

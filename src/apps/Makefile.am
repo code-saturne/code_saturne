@@ -92,6 +92,7 @@ local_libraries_add = libsaturne.${LIB_EXT} libcs_solver.${LIB_EXT}
 local_libraries_v_add =
 
 libsaturne_a_libs = \
+$(top_builddir)/external/atmo/libextatmo.a \
 $(top_builddir)/src/fvm/libfvm_filters.a \
 $(top_builddir)/src/base/libcsbase.a \
 $(top_builddir)/src/base/libcscore.a \

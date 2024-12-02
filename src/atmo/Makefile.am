@@ -84,9 +84,6 @@ atmcls.f90 \
 atmsol.f90 \
 atr1vf.f90 \
 attssc.f90 \
-chem_luscheme1.f90 \
-chem_luscheme2.f90 \
-chem_luscheme3.f90 \
 chem_roschem.f90 \
 chem_solvelu.f90 \
 chem_source_terms.f90 \

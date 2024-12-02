@@ -35,7 +35,7 @@ if HAVE_INTERNAL_PLE
 PLE = libple
 endif
 
-SUBDIRS = . $(PLE) $(PREPRO) src python $(NEPTUNE_CFD) $(DOCS) $(TSTS)
+SUBDIRS = . $(PLE) $(PREPRO) external src python $(NEPTUNE_CFD) $(DOCS) $(TSTS)
 
 AUX_DIST =
 
@@ -320,7 +320,8 @@ install-data-local:
 
 uninstall-local:
 	rm -rf "$(DESTDIR)$(pkgdatadir)/data/thch/dp_radiat_MFS_FSCK"
-	rm -f"$(DESTDIR)$(libdir)"
+	rm -f "$(DESTDIR)$(libdir)/code_saturne/code_saturne_build.cfg"
+	rm -rf "$(DESTDIR)$(libdir)/code_saturne"
 	@$(NORMAL_UNINSTALL)
 
 install-shortcut:
