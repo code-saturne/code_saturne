@@ -3,6 +3,9 @@ Release 7.0.7 (not released yet)
 
 Bug fixes:
 
+- Fix incorrect weighting of Gauss-Seidel solver for block-diagonal
+  linear systems (i.e. Velocity and Rij).
+
 - Boundary layer insertion: limiter could reduce insertion at incorrect
   vertices due to incorrect indirection.
 
