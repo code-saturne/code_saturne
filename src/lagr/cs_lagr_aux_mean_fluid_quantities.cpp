@@ -251,10 +251,21 @@ cs_lagr_aux_mean_fluid_quantities(cs_field_t    *lagr_time,
       BFT_FREE(wpres);
 
     if (cs_glob_physical_model_flag[CS_COMPRESSIBLE] < 0) {
-      cs_real_t *romf = extra->cromf->val;
-      for (cs_lnum_t cell_id = 0; cell_id < cs_glob_mesh->n_cells; cell_id++) {
-        for (cs_lnum_t i = 0; i < 3; i++)
-          grad_pr[cell_id][i] += romf[cell_id] * grav[i];
+      if(cs_glob_velocity_pressure_model->idilat == 0) {
+        cs_real_t *romf = extra->cromf->val;
+        for (cs_lnum_t cell_id = 0; cell_id < cs_glob_mesh->n_cells; cell_id++)
+        {
+          for (cs_lnum_t i = 0; i < 3; i++)
+            grad_pr[cell_id][i] += romf[cell_id] * grav[i];
+        }
+      }
+      else {
+        cs_real_t ro0 = cs_glob_fluid_properties->ro0;
+        for (cs_lnum_t cell_id = 0; cell_id < cs_glob_mesh->n_cells; cell_id++)
+        {
+          for (cs_lnum_t i = 0; i < 3; i++)
+            grad_pr[cell_id][i] += ro0 * grav[i];
+        }
       }
     }
 
