@@ -73,6 +73,11 @@ Master (not on release branches yet)
 - Modify the python layer (CLI and GUI) installation process to now use
   setup.py instead of Makefile scripts.
 
+### Bug fixes:
+
+- Fix incorrect weighting of Gauss-Seidel solver for block-diagonal
+  linear systems (i.e. Velocity and Rij).
+
 Release 8.2.0 (2024-06-17)
 --------------------------
 
