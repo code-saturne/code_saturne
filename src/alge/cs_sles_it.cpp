@@ -3503,10 +3503,13 @@ _p_ordered_gauss_seidel_msr(cs_sles_it_t              *c,
                          vx0);
 
         double rr = 0;
-        for (cs_lnum_t kk = 0; kk < db_size; kk++) {
-          double r = ad[ii*db_size_2 + kk*db_size + kk] * (_vx[kk] - vxm1[kk]);
+        for (cs_lnum_t jj = 0; jj < db_size; jj++) {
+          double r = 0;
+          for (cs_lnum_t kk = 0; kk < db_size; kk++)
+            r +=   ad[ii*db_size_2 + jj*db_size + kk]
+                 * (_vx[kk] - vxm1[kk]);
           rr += (r*r);
-          vx[ii*db_size + kk] = _vx[kk];
+          vx[ii*db_size + jj] = _vx[jj];
         }
         res2 += rr;
 
@@ -3667,10 +3670,13 @@ _p_gauss_seidel_msr(cs_sles_it_t              *c,
                          vx0);
 
         double rr = 0;
-        for (cs_lnum_t kk = 0; kk < db_size; kk++) {
-          double r = ad[ii*db_size_2 + kk*db_size + kk] * (_vx[kk] - vxm1[kk]);
+        for (cs_lnum_t jj = 0; jj < db_size; jj++) {
+          double r = 0;
+          for (cs_lnum_t kk = 0; kk < db_size; kk++)
+            r +=   ad[ii*db_size_2 + jj*db_size + kk]
+                 * (_vx[kk] - vxm1[kk]);
           rr += (r*r);
-          vx[ii*db_size + kk] = _vx[kk];
+          vx[ii*db_size + jj] = _vx[jj];
         }
         res2 += rr;
 
@@ -3910,10 +3916,13 @@ _p_sym_gauss_seidel_msr(cs_sles_it_t              *c,
                          vx0);
 
         double rr = 0;
-        for (cs_lnum_t kk = 0; kk < db_size; kk++) {
-          double r = ad[ii*db_size_2 + kk*db_size + kk] * (_vx[kk] - vxm1[kk]);
+        for (cs_lnum_t jj = 0; jj < db_size; jj++) {
+          double r = 0;
+          for (cs_lnum_t kk = 0; kk < db_size; kk++)
+            r +=   ad[ii*db_size_2 + jj*db_size + kk]
+                 * (_vx[kk] - vxm1[kk]);
           rr += (r*r);
-          vx[ii*db_size + kk] = _vx[kk];
+          vx[ii*db_size + jj] = _vx[jj];
         }
         res2 += rr;
 
