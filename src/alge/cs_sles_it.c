@@ -5,7 +5,7 @@
 /*
   This file is part of code_saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2023 EDF S.A.
+  Copyright (C) 1998-2024 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -3192,7 +3192,8 @@ _p_ordered_gauss_seidel_msr(cs_sles_it_t              *c,
 
         double rr = 0;
         for (cs_lnum_t kk = 0; kk < db_size; kk++) {
-          register double r = ad[ii*db_size + kk] * (_vx[kk]-vxm1[kk]);
+          register double
+            r = ad[ii*db_size_2 + kk*db_size + kk] * (_vx[kk]-vxm1[kk]);
           rr += (r*r);
           vx[ii*db_size + kk] = _vx[kk];
         }
@@ -3346,7 +3347,8 @@ _p_gauss_seidel_msr(cs_sles_it_t              *c,
 
         double rr = 0;
         for (cs_lnum_t kk = 0; kk < db_size; kk++) {
-          register double r = ad[ii*db_size + kk] * (_vx[kk]-vxm1[kk]);
+          register double
+            r = ad[ii*db_size_2 + kk*db_size + kk] * (_vx[kk]-vxm1[kk]);
           rr += (r*r);
           vx[ii*db_size + kk] = _vx[kk];
         }
@@ -3579,7 +3581,8 @@ _p_sym_gauss_seidel_msr(cs_sles_it_t              *c,
 
         double rr = 0;
         for (cs_lnum_t kk = 0; kk < db_size; kk++) {
-          register double r = ad[ii*db_size + kk] * (_vx[kk]-vxm1[kk]);
+          register double
+            r = ad[ii*db_size_2 + kk*db_size + kk] * (_vx[kk] - vxm1[kk]);
           rr += (r*r);
           vx[ii*db_size + kk] = _vx[kk];
         }

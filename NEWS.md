@@ -1,3 +1,11 @@
+Release 8.1.3 (unreleased)
+--------------------------
+
+### Bug fixes:
+
+- Fix incorrect weighting of Gauss-Seidel solver for block-diagonal
+  linear systems (i.e. Velocity and Rij).
+
 Release 8.1.2 (2024-10-22)
 --------------------------
 
