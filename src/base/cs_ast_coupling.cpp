@@ -1129,7 +1129,6 @@ cs_ast_coupling_recv_displacement(void)
   /* Update values */
   const cs_lnum_t nb_dyn = cpl->n_vertices;
 
-  cs_array_copy(3 * nb_dyn, cpl->xast_curr[1], cpl->xast_curr[2]);
   cs_array_copy(3 * nb_dyn, cpl->xast_curr[0], cpl->xast_curr[1]);
 
   /* Received discplacement and velocity field */
