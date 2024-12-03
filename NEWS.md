@@ -3,6 +3,9 @@ release 8.2.2 (unreleased)
 
 ### Bug fixes:
 
+- Fix incorrect weighting of Gauss-Seidel solver for block-diagonal
+  linear systems (i.e. Velocity and Rij).
+
 - GUI/MEG: fix compilation with use of field in momentum source term.
 
 - Fix array access (indirection) error in `cs_post_anisotropy_invariant`.
