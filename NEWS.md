@@ -68,6 +68,10 @@ Master (not on release branches yet)
 
 ### Architectural changes:
 
+- GPU: add device memory pool to avoid costly memory frees.
+  This can be activated by exporting CS_DEVICE_MEM_POOL=1,
+  and further parametrized by additional calls in cs_mem.
+
 - Allow memory allocaton statistics using `CS_MEM_LOG=performance.log`.
 
 - Modify the python layer (CLI and GUI) installation process to now use

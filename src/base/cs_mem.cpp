@@ -41,12 +41,20 @@
 
 #include <map>
 
+#if defined(HAVE_ACCEL)
+
+#include <memory>
+#include <mutex>
+#include <unordered_map>
+#include <vector>
+
+#endif // defined(HAVE_ACCEL)
+
 #include <assert.h>
 #include <errno.h>
-#include <stdlib.h>
 #include <stdio.h>
-#include <string.h>
 #include <stdlib.h>
+#include <string.h>
 
 #if defined(SYCL_LANGUAGE_VERSION)
 #include <sycl/sycl.hpp>
@@ -142,12 +150,21 @@
 #define DIR_SEPARATOR '/'
 
 /*-------------------------------------------------------------------------------
+ * Local function prototypes needed for class definition
+ *-----------------------------------------------------------------------------*/
+
+static void
+_free_hd_device(void        *ptr,
+                const char  *var_name,
+                const char  *file_name,
+                int          line_num);
+
+/*-------------------------------------------------------------------------------
  * Local type definitions
  *-----------------------------------------------------------------------------*/
 
-/*
- * Structure defining an allocated memory block
- */
+/* Structure describing an allocated memory block
+   ---------------------------------------------- */
 
 typedef struct
 {
@@ -162,6 +179,204 @@ typedef struct
 #endif
 
 } cs_mem_block_t;
+
+#if defined(HAVE_ACCEL)
+
+/* Structure describing a memory block in pool
+   ------------------------------------------- */
+
+typedef struct
+{
+  void            *ptr;       //!< pointer
+  size_t           size;      //!< allocation size
+  short            n_tries;   //!< tries
+
+} cs_mem_pool_block_t;
+
+/*-----------------------------------------------------------------------------*/
+/*! \brief Free memory pool class
+ *
+ * Memory is initially allocated outside this type of pool,
+ * but memory that should be freed may be added to this pool
+ * instead, and requests for memory blocks can first check
+ * whether a matching block is available in this pool. */
+/*-----------------------------------------------------------------------------*/
+
+class cs_mem_pool {
+public:
+
+  /*! constructor */
+  cs_mem_pool()
+    : active_(false), current_capacity_(0), max_capacity_(0), peak_capacity_(0),
+      n_tries_max_(300)
+  {}
+
+  /*! destructor */
+  ~cs_mem_pool()
+  {
+  }
+
+  /*! Move memory block to memory pool if possible.
+   *
+   * Depending on the memory pool state and capacity,
+   * the memory block may be added to the pool or not.
+   *
+   * \param[in, out]  me  memory block
+   *
+   * \return  true if block moved to pool, false otherwise
+  */
+
+  bool
+  to_pool(cs_mem_block_t  &me)
+  {
+    bool moved_to_pool = false;
+
+    if (active_) {
+      if (max_capacity_ == 0 || current_capacity_ + me.size < max_capacity_) {
+
+        cs_mem_pool_block_t mpe = {.ptr   = me.device_ptr,
+                                   .size  = me.size,
+                                   .n_tries = 0};
+
+        free_blocks_[me.mode].push_back(mpe);
+        current_capacity_ += me.size;
+        if (current_capacity_ > peak_capacity_)
+          peak_capacity_ = current_capacity_;
+        moved_to_pool = true;
+      }
+    }
+
+    return moved_to_pool;
+  }
+
+  /*! Get memory block from free memory pool if available.
+   *
+   * Memory blocks which have been in the pool too long without being
+   * requested are eviected (freed) from the pool also.
+   *
+   * \param[in]    me_size  memory block size
+   * \param[mode]  me_size  allocation mode (shared or device)
+   *
+   * \return  pointer to block from memory pool, or nullptr if none found
+  */
+
+  void *
+  from_pool(size_t           me_size,
+            cs_alloc_mode_t  mode)
+  {
+    void *ptr = nullptr;
+
+    if (active_) {
+      std::lock_guard<std::mutex> lock(mutex_);
+
+      auto &free_blocks = free_blocks_[mode];
+
+      auto it = free_blocks.begin();
+      while (it != free_blocks.end()) {
+        it->n_tries += 1;
+        if (it->n_tries > n_tries_max_) {
+          current_capacity_ -= it->size;
+          _free_hd_device(it->ptr, "memory pool block", __FILE__, __LINE__);
+          it = free_blocks.erase(it);
+        }
+        else {
+          ++it;
+        }
+      }
+
+      for (it = free_blocks.begin(); it != free_blocks.end(); ++it) {
+        if (it->size == me_size) {
+          ptr = it->ptr;
+          current_capacity_ -= it->size;
+          free_blocks.erase(it);
+          break;
+        }
+      }
+    }
+
+    return ptr;
+  }
+
+  /*! Free all blocks in memory pool. */
+
+  void
+  clear(void)
+  {
+    cs_alloc_mode_t modes[] = {CS_ALLOC_HOST_DEVICE_SHARED,
+                               CS_ALLOC_DEVICE};
+
+    for (int i = 0; i < 2; i++) {
+      auto &free_blocks = free_blocks_[modes[i]];
+      for (auto it = free_blocks.begin(); it != free_blocks.end(); ++it) {
+        _free_hd_device(it->ptr, "memory pool block", __FILE__, __LINE__);
+      }
+      free_blocks_.clear();
+    }
+
+    free_blocks_.clear();
+    current_capacity_ = 0;
+  }
+
+  /*! Get memory pool peak capacity
+   *
+   * \return  peak pool capacity
+   */
+
+  size_t
+  get_peak_capacity(void)
+  {
+    return peak_capacity_;
+  }
+
+  /*! Set memory pool max capacity
+   *
+   * \param[in]  size  max pool capacity
+   */
+
+  /*! Activate or deactivate memory pool
+   *
+   * \param[in]  status  active or inactive
+   */
+
+  void
+  set_active(bool  status)
+  {
+    active_ = status;
+  }
+
+  void
+  set_max_capacity(size_t  size)
+  {
+    max_capacity_ = size;
+
+    if (max_capacity_ < current_capacity_)
+      clear();
+  }
+
+  /*! Set max tries before evicting memory pool blocks.
+   *
+   * \param[in]  max_tries  max tries
+   */
+
+  void
+  set_max_tries(short int  max_tries)
+  {
+    n_tries_max_ = max_tries;
+  }
+
+private:
+  bool active_;
+  std::mutex mutex_;
+  std::unordered_map<cs_alloc_mode_t,
+                     std::vector<cs_mem_pool_block_t>> free_blocks_;
+
+  size_t  current_capacity_;
+  size_t  max_capacity_;
+  size_t  peak_capacity_;
+  short   n_tries_max_;
+};
+
+#endif // defined(HAVE_ACCEL)
 
 /*-----------------------------------------------------------------------------
  * Local function prototypes
@@ -215,6 +430,7 @@ static omp_lock_t _cs_mem_lock;
 
 #if defined(HAVE_ACCEL)
 static bool _ignore_prefetch = false;
+static cs_mem_pool *_cs_mem_pool = nullptr;
 #endif
 
 /*! Default queue for SYCL */
@@ -315,7 +531,8 @@ _cs_mem_size_val(const size_t    counter,
  *----------------------------------------------------------------------------*/
 
 static void
-_cs_mem_summary(FILE  *f)
+_cs_mem_summary(FILE   *f,
+                size_t  device_mem_pool_peak_capacity = 0)
 {
   char unit;
   unsigned long value[2];
@@ -348,6 +565,12 @@ _cs_mem_summary(FILE  *f)
           (unsigned long)_cs_mem_global_n_allocs,
           (unsigned long)_cs_mem_global_n_reallocs,
           (unsigned long)_cs_mem_global_n_frees);
+
+  if (device_mem_pool_peak_capacity > 0) {
+    fprintf(f,
+            "Device memory pool peak capacity:   %lu kB\n\n",
+            (unsigned long)device_mem_pool_peak_capacity/1024);
+  }
 
   if (bft_mem_usage_initialized() == 1) {
 
@@ -470,15 +693,13 @@ _cs_mem_block_new(void          *p_new,
                    const size_t   size_new)
 {
 #if defined(HAVE_ACCEL)
-  cs_mem_block_t  mib = {
-    .host_ptr = p_new,
-    .device_ptr = nullptr,
-    .size = size_new,
-    .mode = CS_ALLOC_HOST};
+  cs_mem_block_t mib = {.host_ptr = p_new,
+                        .device_ptr = nullptr,
+                        .size = size_new,
+                        .mode = CS_ALLOC_HOST};
 #else
-  cs_mem_block_t  mib = {
-    .host_ptr = p_new,
-    .size = size_new};
+  cs_mem_block_t mib = { .host_ptr = p_new,
+                         .size = size_new};
 #endif
 
   return mib;
@@ -930,11 +1151,126 @@ _omp_target_mem_malloc_managed(size_t        n,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Free memory on host and device for a given host pointer
- *        for allocations with mode > CS_ALLOC_HOST
+ * \brief Allocate shared memory for ni elements of size bytes.
  *
- * If separate pointers are used on the host and device,
- * the host pointer should be used with this function.
+ * If a memory pool is present and active, it my be used
+ *
+ * \param [in]  me_size    allocation size
+ * \param [in]  var_name   allocated variable name string
+ * \param [in]  file_name  name of calling source file
+ * \param [in]  line_num   line number in calling source file
+ *
+ * \returns pointer to allocated memory.
+ */
+/*----------------------------------------------------------------------------*/
+
+static void *
+_malloc_shared(size_t            me_size,
+               const char       *var_name,
+               const char       *file_name,
+               int               line_num)
+{
+  if (me_size == 0)
+    return nullptr;
+
+  if (_cs_mem_pool != nullptr) {
+    void *ptr = _cs_mem_pool->from_pool(me_size, CS_ALLOC_HOST_DEVICE_SHARED);
+    if (ptr != nullptr)
+      return ptr;
+  }
+
+#if defined(HAVE_CUDA)
+
+  return cs_mem_cuda_malloc_managed(me_size,
+                                    var_name,
+                                    file_name,
+                                    line_num);
+
+#elif defined(SYCL_LANGUAGE_VERSION)
+
+  return _sycl_mem_malloc_shared(me_size,
+                                 var_name,
+                                 file_name,
+                                 line_num);
+
+#elif defined(HAVE_OPENMP_TARGET)
+
+  return _omp_target_mem_malloc_managed(me_size,
+                                        var_name,
+                                        file_name,
+                                        line_num);
+
+#else
+
+  assert(0);
+  return 0;
+
+#endif
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Allocate device-only memory for ni elements of size bytes.
+ *
+ * If a memory pool is present and active, it my be used
+ *
+ * \param [in]  me_size    allocation size
+ * \param [in]  var_name   allocated variable name string
+ * \param [in]  file_name  name of calling source file
+ * \param [in]  line_num   line number in calling source file
+ *
+ * \returns pointer to allocated memory.
+ */
+/*----------------------------------------------------------------------------*/
+
+static void *
+_malloc_device(size_t            me_size,
+               const char       *var_name,
+               const char       *file_name,
+               int               line_num)
+{
+  if (me_size == 0)
+    return nullptr;
+
+  if (_cs_mem_pool != nullptr) {
+    void *ptr = _cs_mem_pool->from_pool(me_size, CS_ALLOC_DEVICE);
+    if (ptr != nullptr)
+      return ptr;
+  }
+
+#if defined(HAVE_CUDA)
+
+  return cs_mem_cuda_malloc_device(me_size,
+                                   var_name,
+                                   file_name,
+                                   line_num);
+
+#elif defined(SYCL_LANGUAGE_VERSION)
+
+  return _sycl_mem_malloc_device(me_size,
+                                 var_name,
+                                 file_name,
+                                 line_num);
+
+#elif defined(HAVE_OPENMP_TARGET)
+
+  return _omp_target_mem_malloc_device(me_size,
+                                       var_name,
+                                       file_name,
+                                       line_num);
+
+#else
+
+  assert(0);
+  return nullptr;
+
+#endif
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Free memory on host only for a given
+ *        allocation with mode > CS_ALLOC_HOST
  *
  * \param [in]  ptr        pointer to free
  * \param [in]  var_name   allocated variable name string
@@ -944,45 +1280,69 @@ _omp_target_mem_malloc_managed(size_t        n,
 /*----------------------------------------------------------------------------*/
 
 static void
-_free_hd(cs_mem_block_t  &me,
-         const char      *var_name,
-         const char      *file_name,
-         int              line_num)
+_free_hd_host(cs_mem_block_t  &me,
+              const char      *var_name,
+              const char      *file_name,
+              int              line_num)
 {
   if (me.host_ptr != nullptr) {
 
+    if (me.mode < CS_ALLOC_HOST_DEVICE_PINNED) {
+      free(me.host_ptr);
+    }
+
+    else if (me.mode < CS_ALLOC_HOST_DEVICE_SHARED) {
+
 #if defined(HAVE_CUDA)
 
-    if (me.mode == CS_ALLOC_HOST_DEVICE_SHARED)
-      cs_mem_cuda_free(me.host_ptr, var_name, file_name, line_num);
-    else
       cs_mem_cuda_free_host(me.host_ptr, var_name, file_name, line_num);
 
 #elif defined(SYCL_LANGUAGE_VERSION)
 
-    sycl::free(me.host_ptr, cs_glob_sycl_queue);
+      sycl::free(me.host_ptr, cs_glob_sycl_queue);
 
 #elif defined(HAVE_OPENMP_TARGET)
 
-    omp_target_free(me.host_ptr, _omp_target_device_id);
+      omp_target_free(me.host_ptr, _omp_target_device_id);
 
 #endif
 
-  }
+    }
 
-  if (me.device_ptr != nullptr && me.device_ptr != me.host_ptr) {
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Free memory on device (or shared) for a given allocation
+ *        with mode > CS_ALLOC_HOST
+ *
+ * \param [in]  ptr        pointer to free
+ * \param [in]  var_name   allocated variable name string
+ * \param [in]  file_name  name of calling source file
+ * \param [in]  line_num   line number in calling source file
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_free_hd_device(void        *ptr,
+                const char  *var_name,
+                const char  *file_name,
+                int          line_num)
+{
+  if (ptr != nullptr) {
 
 #if defined(HAVE_CUDA)
 
-    cs_mem_cuda_free(me.device_ptr, var_name, file_name, line_num);
+    cs_mem_cuda_free(ptr, var_name, file_name, line_num);
 
 #elif defined(SYCL_LANGUAGE_VERSION)
 
-    sycl::free(me.device_ptr, cs_glob_sycl_queue);
+    sycl::free(ptr, cs_glob_sycl_queue);
 
 #elif defined(HAVE_OPENMP_TARGET)
 
-    omp_target_free(me.device_ptr, _omp_target_device_id);
+    omp_target_free(ptr, _omp_target_device_id);
 
 #endif
 
@@ -1149,9 +1509,16 @@ cs_mem_end(void)
 
   if (_cs_mem_global_file != nullptr) {
 
+    size_t device_mem_pool_peak_capacity = 0;
+#if defined(HAVE_ACCEL)
+    if (_cs_mem_pool != nullptr)
+      device_mem_pool_peak_capacity = _cs_mem_pool->get_peak_capacity();
+#endif
+
     /* Memory usage summary */
 
-    _cs_mem_summary(_cs_mem_global_file);
+    _cs_mem_summary(_cs_mem_global_file,
+                    device_mem_pool_peak_capacity);
 
     /* List of non-freed pointers */
 
@@ -1178,6 +1545,13 @@ cs_mem_end(void)
   }
 
   /* Reset defaults in case of later initialization */
+
+#if defined(HAVE_ACCEL)
+  if (_cs_mem_pool != nullptr) {
+    delete _cs_mem_pool;
+    _cs_mem_pool = nullptr;
+  }
+#endif
 
   _cs_alloc_map.clear();
 
@@ -1397,10 +1771,14 @@ cs_mem_free(void        *ptr,
     mib_old = _get_block_info_try(ptr);
 
 #if defined(HAVE_ACCEL)
-  if (mib_old.mode < CS_ALLOC_HOST_DEVICE_PINNED)
-    free(ptr);
-  else {
-    _free_hd(mib_old, var_name, file_name, line_num);
+  _free_hd_host(mib_old, var_name, file_name, line_num);
+
+  if (mib_old.device_ptr != nullptr) {
+    bool return_to_pool = false;
+    if (_cs_mem_pool != nullptr)
+      return_to_pool = _cs_mem_pool->to_pool(mib_old);
+    if (return_to_pool == false)
+      _free_hd_device(mib_old.device_ptr, var_name, file_name, line_num);
   }
 #else
   free(ptr);
@@ -1685,20 +2063,6 @@ cs_mem_malloc_hd(cs_alloc_mode_t   mode,
                                           file_name,
                                           line_num);
 
-  else if (mode == CS_ALLOC_HOST_DEVICE_SHARED) {
-    me.host_ptr = cs_mem_cuda_malloc_managed(me.size,
-                                             var_name,
-                                             file_name,
-                                             line_num);
-    me.device_ptr = me.host_ptr;
-  }
-
-  else if (mode == CS_ALLOC_DEVICE)
-    me.device_ptr = cs_mem_cuda_malloc_device(me.size,
-                                              var_name,
-                                              file_name,
-                                              line_num);
-
 #elif defined(SYCL_LANGUAGE_VERSION)
 
   else if (mode == CS_ALLOC_HOST_DEVICE_PINNED)
@@ -1706,20 +2070,6 @@ cs_mem_malloc_hd(cs_alloc_mode_t   mode,
                                         var_name,
                                         file_name,
                                         line_num);
-
-  else if (mode == CS_ALLOC_HOST_DEVICE_SHARED) {
-    me.host_ptr = _sycl_mem_malloc_shared(me.size,
-                                          var_name,
-                                          file_name,
-                                          line_num);
-    me.device_ptr = me.host_ptr;
-  }
-
-  else if (mode == CS_ALLOC_DEVICE)
-    me.device_ptr = _sycl_mem_malloc_device(me.size,
-                                            var_name,
-                                            file_name,
-                                            line_num);
 
 #elif defined(HAVE_OPENMP_TARGET)
 
@@ -1729,21 +2079,22 @@ cs_mem_malloc_hd(cs_alloc_mode_t   mode,
                                               file_name,
                                               line_num);
 
+#endif
+
   else if (mode == CS_ALLOC_HOST_DEVICE_SHARED) {
-    me.host_ptr = _omp_target_mem_malloc_managed(me.size,
-                                                 var_name,
-                                                 file_name,
-                                                 line_num);
+    me.host_ptr = _malloc_shared(me.size,
+                                 var_name,
+                                 file_name,
+                                 line_num);
     me.device_ptr = me.host_ptr;
   }
 
-  else if (mode == CS_ALLOC_DEVICE)
-    me.device_ptr = _omp_target_mem_malloc_device(me.size,
-                                                  var_name,
-                                                  file_name,
-                                                  line_num);
-
-#endif
+  else if (mode == CS_ALLOC_DEVICE) {
+    me.device_ptr = _malloc_device(me.size,
+                                   var_name,
+                                   file_name,
+                                   line_num);
+  }
 
   if (file_name != nullptr)
     _update_block_info(var_name, file_name, line_num,
@@ -1827,13 +2178,11 @@ cs_mem_realloc_hd(void            *ptr,
     ret_ptr = me.host_ptr;
 
     if (me.device_ptr != nullptr) {
-#if defined(HAVE_CUDA)
-      cs_mem_cuda_free(me.device_ptr, var_name, file_name, line_num);
-#elif defined(SYCL_LANGUAGE_VERSION)
-      sycl::free(me.device_ptr, cs_glob_sycl_queue);
-#elif defined(HAVE_OPENMP_TARGET)
-      omp_target_free(me.device_ptr, _omp_target_device_id);
-#endif
+      bool return_to_pool = false;
+      if (_cs_mem_pool != nullptr)
+        return_to_pool = _cs_mem_pool->to_pool(me_old);
+      if (return_to_pool == false)
+        _free_hd_device(me.device_ptr, var_name, file_name, line_num);
       me.device_ptr = nullptr;
     }
   }
@@ -1916,26 +2265,12 @@ cs_get_device_ptr(void  *ptr)
 
       cs_mem_block_t me_old = me;
 
-#if defined(HAVE_CUDA)
+      me.device_ptr = _malloc_device(me.size,
+                                     "me.device_ptr",
+                                     __FILE__,
+                                     __LINE__);
 
-      me.device_ptr = cs_mem_cuda_malloc_device(me.size,
-                                                "me.device_ptr",
-                                                __FILE__,
-                                                __LINE__);
-
-#elif defined(SYCL_LANGUAGE_VERSION)
-
-      me.device_ptr = _sycl_mem_malloc_device(me.size,
-                                              "me.device_ptr",
-                                              __FILE__,
-                                              __LINE__);
-
-#elif defined(HAVE_OPENMP_TARGET)
-
-      me.device_ptr = _omp_target_mem_malloc_device(me.size,
-                                                    "me.device_ptr",
-                                                    __FILE__,
-                                                    __LINE__);
+#if defined(HAVE_OPENMP_TARGET)
 
       if (omp_target_associate_ptr(me.host_ptr, me.device_ptr, me.size, 0,
                                    _omp_target_device_id))
@@ -1990,26 +2325,18 @@ cs_get_device_ptr_const(const void  *ptr)
 
       cs_mem_block_t me_old = me;
 
-#if defined(HAVE_CUDA)
+      me.device_ptr = _malloc_device(me.size,
+                                     "me.device_ptr",
+                                     __FILE__,
+                                     __LINE__);
 
-      me.device_ptr = cs_mem_cuda_malloc_device(me.size,
-                                                "me.device_ptr",
-                                                __FILE__,
-                                                __LINE__);
+#if defined(HAVE_OPENMP_TARGET)
 
-#elif defined(SYCL_LANGUAGE_VERSION)
-
-      me.device_ptr = _sycl_mem_malloc_device(me.size,
-                                              "me.device_ptr",
-                                              __FILE__,
-                                              __LINE__);
-
-#elif defined(HAVE_OPENMP_TARGET)
-
-      me.device_ptr = _omp_target_mem_malloc_device(me.size,
-                                                    "me.device_ptr",
-                                                    __FILE__,
-                                                    __LINE__);
+      if (omp_target_associate_ptr(me.host_ptr, me.device_ptr, me.size, 0,
+                                   _omp_target_device_id))
+        bft_error(__FILE__, __LINE__, 0,
+                  _("%s: Can't associate host pointer %p to device pointer %p."),
+                  "omp_target_associate_ptr", me.host_ptr, me.device_ptr);
 
 #endif
 
@@ -2061,27 +2388,18 @@ cs_get_device_ptr_const_pf(const void  *ptr)
 
       cs_mem_block_t me_old = me;
 
-#if defined(HAVE_CUDA)
+      me.device_ptr = _malloc_device(me.size,
+                                     "me.device_ptr",
+                                     __FILE__,
+                                     __LINE__);
 
-      me.device_ptr = cs_mem_cuda_malloc_device(me.size,
-                                                "me.device_ptr",
-                                                __FILE__,
-                                                __LINE__);
+#if defined(HAVE_OPENMP_TARGET)
 
-#elif defined(SYCL_LANGUAGE_VERSION)
-
-      me.device_ptr = _sycl_mem_malloc_device(me.size,
-                                              "me.device_ptr",
-                                              __FILE__,
-                                              __LINE__);
-
-#elif defined(HAVE_OPENMP_TARGET)
-
-      me.device_ptr = _omp_target_mem_malloc_device(me.size,
-                                                    "me.device_ptr",
-                                                    __FILE__,
-                                                    __LINE__);
-
+      if (omp_target_associate_ptr(me.host_ptr, me.device_ptr, me.size, 0,
+                                   _omp_target_device_id))
+        bft_error(__FILE__, __LINE__, 0,
+                  _("%s: Can't associate host pointer %p to device pointer %p."),
+                  "omp_target_associate_ptr", me.host_ptr, me.device_ptr);
 #endif
 
       _update_block_info("me.device_ptr", __FILE__, __LINE__,
@@ -2221,20 +2539,11 @@ cs_disassociate_device_ptr(void  *host_ptr)
 
     cs_mem_block_t me_old = me;
 
-#if defined(HAVE_CUDA)
-
-    cs_mem_cuda_free(me.device_ptr, "me.device_ptr", __FILE__, __LINE__);
-
-#elif defined(SYCL_LANGUAGE_VERSION)
-
-    sycl::free(me.device_ptr, cs_glob_sycl_queue);
-
-#elif defined(HAVE_OPENMP_TARGET)
-
+#if defined(HAVE_OPENMP_TARGET)
     omp_target_disassociate_ptr(me.host_ptr, _omp_target_device_id);
-    omp_target_free(me.device_ptr, _omp_target_device_id);
-
 #endif
+
+    _free_hd_device(me.device_ptr, "device_ptr", __FILE__, __LINE__);
 
     me.device_ptr = nullptr;
 
@@ -2813,6 +3122,78 @@ cs_copy_d2d(void        *dest,
                     _omp_target_device_id, _omp_target_device_id);
 
 #endif
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Activate device memory pool
+ *
+ * \param [in]  status  true to activate, false to deactivate
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_mem_device_pool_set_active(bool  status)
+{
+  if (_cs_mem_pool == nullptr && status)
+    _cs_mem_pool = new cs_mem_pool;
+
+  if (_cs_mem_pool != nullptr)
+    _cs_mem_pool->set_active(status);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Set maximum allocation size for free memory pool.
+ *
+ * When the memory pool is active, memory that should be freed is transferred
+ * to the memory pool instead, so it can be reused.
+ * If > 0, this size corresponds to the maximum total size the pool will
+ * manage before evicting blocks.
+ *
+ * \param [in]  size  maximum total allocation size in pool, or 0
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_mem_device_pool_set_max_capacity(size_t  size)
+{
+  if (_cs_mem_pool == nullptr)
+    _cs_mem_pool = new cs_mem_pool;
+
+  if (_cs_mem_pool != nullptr)
+    _cs_mem_pool->set_max_capacity(size);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Set maximum number of tries before a block in memory pool is evicted
+ *
+ * \param [in]  n_tries  number of tries
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_mem_device_pool_set_max_tries(short int  n_tries)
+{
+  if (_cs_mem_pool == nullptr)
+    _cs_mem_pool = new cs_mem_pool;
+
+  if (_cs_mem_pool != nullptr)
+    _cs_mem_pool->set_max_tries(n_tries);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Clear device memory pool if present
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_mem_device_pool_clear()
+{
+  if (_cs_mem_pool != nullptr)
+    _cs_mem_pool->clear();
 }
 
 #endif // defined(HAVE_ACCEL)

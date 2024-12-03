@@ -638,6 +638,19 @@ cs_time_stepping(void)
 
   }
 
+  /* GPU: activate device memory pool for time loop */
+
+#if defined(HAVE_ACCEL)
+  {
+    const char s[] = "CS_DEVICE_MEM_POOL";
+    if (getenv(s) != nullptr) {
+      int i = atoi(getenv(s));
+      if (i > 0)
+        cs_mem_device_pool_set_active(true);
+    }
+  }
+#endif
+
  /* Possible postprocessing of initialization values */
 
   cs_timer_stats_start(post_stats_id);
@@ -897,6 +910,14 @@ cs_time_stepping(void)
                         ts->nt_cur,
                         &(ts->nt_max),
                         &dt_cpl);
+
+
+  /* Free device memory pool */
+
+#if defined(HAVE_ACCEL)
+  cs_mem_device_pool_clear();
+  cs_mem_device_pool_set_active(false);
+#endif
 
   /* Free intermediate arrays */
 

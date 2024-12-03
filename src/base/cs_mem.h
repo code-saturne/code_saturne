@@ -1131,6 +1131,57 @@ cs_prefetch_d2h(void    *ptr,
 
 #endif
 
+#if defined(HAVE_ACCEL)
+
+/*----------------------------------------------------------------------------*/
+/*
+ * \brief Activate device memory pool
+ *
+ * \param [in]  status  true to activate, false to deactivate
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_mem_device_pool_set_active(bool  status);
+
+/*----------------------------------------------------------------------------*/
+/*
+ * \brief Set maximum allocation size for free memory pool.
+ *
+ * When the memory pool is active, memory that should be freed is transferred
+ * to the memory pool instead, so it can be reused.
+ * If > 0, this size corresponds to the maximum total size the pool will
+ * manage before evicting blocks.
+ *
+ * \param [in]  size  maximum total allocation size in pool, or 0
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_mem_device_pool_set_max_capacity(size_t  size);
+
+/*----------------------------------------------------------------------------*/
+/*
+ * \brief Set maximum number of tries before a block in memory pool is evicted
+ *
+ * \param [in]  n_tries  number of tries
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_mem_device_pool_set_max_tries(short int  n_tries);
+
+/*----------------------------------------------------------------------------*/
+/*
+ * \brief Clear device memory pool if present
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_mem_device_pool_clear();
+
+#endif // defined(HAVE_ACCEL)
+
 /*----------------------------------------------------------------------------*/
 
 END_C_DECLS
