@@ -214,7 +214,7 @@ _evap_packing(cs_ctwr_zone_t *ct, /*Cooling tower (packing) zone */
  * and its value divided by y_l_rain
  *----------------------------------------------------------------------------*/
 
-void
+static void
 _evap_rain(cs_air_fluid_props_t *air_prop,
            cs_real_t visc, /* Air viscosity */
            cs_real_t pref, /* Reference pressure */
