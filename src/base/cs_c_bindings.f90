@@ -221,19 +221,6 @@ module cs_c_bindings
 
     !---------------------------------------------------------------------------
 
-    !> \brief  Return the number of fans.
-
-    !> \return number of defined fans
-
-    function cs_fan_n_fans() result(n_fans)  &
-      bind(C, name='cs_fan_n_fans')
-      use, intrinsic :: iso_c_binding
-      implicit none
-      integer(c_int) :: n_fans
-    end function cs_fan_n_fans
-
-    !---------------------------------------------------------------------------
-
     !> \brief Convert enthalpy to temperature for gas combustion.
 
     function cs_gas_combustion_h_to_t(xespec, enthal) result(temper)  &
@@ -377,17 +364,6 @@ module cs_c_bindings
       real(kind=c_double), dimension(*) :: val
       real(kind=c_double), dimension(*), intent(out) :: f_val
     end subroutine les_filter
-
-    !---------------------------------------------------------------------------
-
-    ! Interface to C function returning number of SYRTHES couplingsg.
-
-    function cs_syr_coupling_n_couplings() result(n_couplings) &
-      bind(C, name='cs_syr_coupling_n_couplings')
-      use, intrinsic :: iso_c_binding
-      implicit none
-      integer(kind=c_int) :: n_couplings
-    end function cs_syr_coupling_n_couplings
 
     !---------------------------------------------------------------------------
 
@@ -774,19 +750,6 @@ module cs_c_bindings
     end function cs_variable_cdo_field_create
 
     !---------------------------------------------------------------------------
-
-    ! Add terms from backward differentiation in time.
-
-    subroutine cs_backward_differentiation_in_time(field_id,                  &
-                                                   exp_part, imp_part)        &
-      bind(C, name='cs_f_backward_differentiation_in_time')
-      use, intrinsic :: iso_c_binding
-      implicit none
-      integer(c_int), value :: field_id
-      real(kind=c_double), dimension(*), intent(inout) :: exp_part, imp_part
-    end subroutine cs_backward_differentiation_in_time
-
-    !---------------------------------------------------------------------------
     ! Interface to C function for balance computation
 
     subroutine cs_balance_by_zone(selection_crit, scalar_name)  &
@@ -818,18 +781,6 @@ module cs_c_bindings
       character(kind=c_char, len=1), dimension(*), intent(in) :: scalar_name
       real(kind=c_double), dimension(3), intent(in) :: normal
     end subroutine cs_surface_balance
-
-    !---------------------------------------------------------------------------
-
-    ! Interface to C function cs_clip_turbulent_fluxes
-
-    subroutine cs_clip_turbulent_fluxes(flux_id, variance_id) &
-      bind(C, name='cs_clip_turbulent_fluxes')
-      use, intrinsic :: iso_c_binding
-      implicit none
-      integer(c_int), value :: flux_id
-      integer(c_int), value :: variance_id
-    end subroutine cs_clip_turbulent_fluxes
 
     !---------------------------------------------------------------------------
 
@@ -951,27 +902,6 @@ module cs_c_bindings
 
     !---------------------------------------------------------------------------
 
-    ! Interface to C user function for cooling tower
-
-    subroutine cs_ctwr_field_pointer_map()  &
-      bind(C, name='cs_ctwr_field_pointer_map')
-      use, intrinsic :: iso_c_binding
-      implicit none
-    end subroutine cs_ctwr_field_pointer_map
-
-    !---------------------------------------------------------------------------
-
-    ! Interface to C function for cooling towers
-
-    subroutine cs_ctwr_phyvar_update(rho0, t0, p0)             &
-      bind(C, name='cs_ctwr_phyvar_update')
-      use, intrinsic :: iso_c_binding
-      implicit none
-      real(kind=c_double), value :: rho0, t0, p0
-    end subroutine cs_ctwr_phyvar_update
-
-    !---------------------------------------------------------------------------
-
     ! Interface to C function cs_math_3_normalize
 
     subroutine vector_normalize(vin, vout)                   &
@@ -1028,19 +958,6 @@ module cs_c_bindings
 
     !---------------------------------------------------------------------------
 
-    ! Binding to cs_ic_set_temp
-
-    subroutine cs_ic_set_temp(field_id, theipb,       &
-                             temp_neig)              &
-      bind(C, name='cs_ic_set_temp')
-      use, intrinsic :: iso_c_binding
-      implicit none
-      integer(kind=c_int), value :: field_id
-      real(kind=c_double), dimension(*), intent(in) :: theipb, temp_neig
-    end subroutine cs_ic_set_temp
-
-    !---------------------------------------------------------------------------
-
     ! Compute solid mesh quantities
 
     subroutine cs_f_mesh_quantities_solid_compute()   &
@@ -1048,27 +965,6 @@ module cs_c_bindings
       use, intrinsic :: iso_c_binding
       implicit none
     end subroutine cs_f_mesh_quantities_solid_compute
-
-
-    !---------------------------------------------------------------------------
-
-    ! Init fluid mesh quantities
-
-    subroutine cs_porous_model_init_fluid_quantities()   &
-      bind(C, name='cs_porous_model_init_fluid_quantities')
-      use, intrinsic :: iso_c_binding
-      implicit none
-    end subroutine cs_porous_model_init_fluid_quantities
-
-    !---------------------------------------------------------------------------
-
-    ! Initialize has_disable_flag
-
-    subroutine cs_porous_model_init_disable_flag()   &
-      bind(C, name='cs_porous_model_init_disable_flag')
-      use, intrinsic :: iso_c_binding
-      implicit none
-    end subroutine cs_porous_model_init_disable_flag
 
     !---------------------------------------------------------------------------
 
@@ -1175,33 +1071,6 @@ module cs_c_bindings
       implicit none
       real(kind=c_double), dimension(*), intent(inout) :: tinstk, smbrk, smbre
     end subroutine atprke
-
-    !---------------------------------------------------------------------------
-
-    ! Interface to C function solving the quadratic k-epsilon model.
-
-    subroutine cs_turbulence_ke_q(phase_id, rij) &
-      bind(C, name='cs_turbulence_ke_q')
-      use, intrinsic :: iso_c_binding
-      implicit none
-      integer(c_int), value :: phase_id
-      real(kind=c_double), dimension(6,*), intent(out) :: rij
-    end subroutine cs_turbulence_ke_q
-
-    !---------------------------------------------------------------------------
-    !> \brief Clipping of the turbulent Reynods stress tensor and the turbulent
-    !> dissipation (segregated version).
-    !>
-    !> \param[in]     ncel          number of cells
-    !> \param[in]     iclip         indicator = 0 if viscl0 is used
-    !>                              otherwise viscl is used.
-
-    subroutine cs_turbulence_rij_clip_sg(ncel, iclip) &
-      bind(C, name='cs_turbulence_rij_clip_sg')
-      use, intrinsic :: iso_c_binding
-      implicit none
-      integer(c_int), intent(in), value :: ncel, iclip
-    end subroutine cs_turbulence_rij_clip_sg
 
     !---------------------------------------------------------------------------
     ! Interface to C function to compute the number of aerosols

@@ -94,20 +94,6 @@ integer          mbrom
 
 ! Local variables
 
-interface
-
-  !---------------------------------------------------------------------------
-
-  subroutine cs_atmo_physical_properties_update()  &
-    bind(C, name='cs_atmo_physical_properties_update')
-    use, intrinsic :: iso_c_binding
-    implicit none
-  end subroutine cs_atmo_physical_properties_update
-
-  !---------------------------------------------------------------------------
-
-end interface
-
 !===============================================================================
 ! 1. Fill properties depending on the model
 !===============================================================================
@@ -140,30 +126,6 @@ endif
 
 if (ippmod(iccoal).ge.0) then
   call cs_coal_physprop(mbrom)
-endif
-
-! ---> Physique particuliere : Versions electriques
-!          Effet Joule
-!          Arc electrique
-!          Conduction ionique
-
-if ( ippmod(ieljou).ge.1 .or.                                     &
-     ippmod(ielarc).ge.1       ) then
-!     En Joule, on impose a l'utilisateur de programmer ses lois
-!        sur les proprietes (masse volumique , ...)
-!        Des exemples physiques sont fournis dans cs_user_physical_properties.
-!     En arc electrique, on lit un fichier de donnees et on interpole.
-  call elphyv
-endif
-
-! ---> Aerorefrigerants
-
-if (ippmod(iaeros).ge.0) then
-  call cs_ctwr_phyvar_update(ro0, t0, p0)
-
-! ---> Atmospheric Flows (except constant density: ippmod(iatmos) = 0)
-else if (ippmod(iatmos).ge.1) then
-  call cs_atmo_physical_properties_update()
 endif
 
 !----

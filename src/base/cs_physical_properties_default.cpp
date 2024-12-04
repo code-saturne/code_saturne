@@ -49,9 +49,12 @@
 
 #include "cs_array.h"
 #include "cs_ale.h"
+#include "cs_atmo_variables.h"
 #include "cs_boundary_conditions.h"
 #include "cs_cf_model.h"
+#include "cs_ctwr_physical_properties.h"
 #include "cs_domain.h"
+#include "cs_elec_model.h"
 #include "cs_equation.h"
 #include "cs_field.h"
 #include "cs_field_default.h"
@@ -851,6 +854,61 @@ _init_boundary_temperature(void)
   }
 }
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief First computation of physical properties for specific models.
+ *
+ * This is called before the user sets/modifies physical properties which
+ * are variable in time
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_physical_properties_update_models_stage_1(void)
+{
+  if (cs_glob_physical_model_flag[CS_PHYSICAL_MODEL_FLAG] <= 0)
+    return;
+
+  /* After this point, models considered are mutually exclusive */
+
+  if (   cs_glob_physical_model_flag[CS_JOULE_EFFECT] >= 1
+      || cs_glob_physical_model_flag[CS_ELECTRIC_ARCS] >= 1) {
+    /* - For Joule effect, the user must define property laws
+     *   (density, ...).
+     * - For electric arcs, properties are interpolated from tabulated data. */
+    cs_elec_physical_properties(cs_glob_domain);
+  }
+
+  else if (cs_glob_physical_model_flag[CS_COOLING_TOWERS] != -1) {
+    const cs_fluid_properties_t *fp = cs_glob_fluid_properties;
+    cs_ctwr_phyvar_update(fp->ro0, fp->t0, fp->p0);
+  }
+
+  /* Atmospheric Flows (except constant density) */
+  else if (cs_glob_physical_model_flag[CS_ATMOSPHERIC] >= 1) {
+    cs_atmo_physical_properties_update();
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief First computation of physical properties for specific models.
+ *
+ * This is called before the user sets/modifies physical properties which
+ * are variable in time
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_physical_properties_update_models_stage_2(void)
+{
+  if (cs_glob_physical_model_flag[CS_GAS_MIX] >= 0)
+    cs_gas_mix_physical_properties();
+
+  if (cs_glob_physical_model_flag[CS_COMPRESSIBLE] >= 0)
+    cs_cf_physical_properties();
+}
+
 /*=============================================================================
  * Public function definitions
  *============================================================================*/
@@ -889,6 +947,7 @@ cs_physical_properties_update(int   iterns)
   // BEFORE the user
   if (cs_glob_physical_model_flag[CS_PHYSICAL_MODEL_FLAG] > 0)
     cs_f_physical_properties1(&mbrom);
+  _physical_properties_update_models_stage_1();
 
   /* Interface code_saturne
      ---------------------- */
@@ -909,11 +968,7 @@ cs_physical_properties_update(int   iterns)
 
   // Finalization of physical properties for specific physics
   // AFTER the user
-  if (cs_glob_physical_model_flag[CS_GAS_MIX] >= 0)
-    cs_gas_mix_physical_properties();
-
-  if (cs_glob_physical_model_flag[CS_COMPRESSIBLE] >= 0)
-    cs_cf_physical_properties();
+  _physical_properties_update_models_stage_2();
 
   // Boundary density based on adjacent cell value if not explicitly set.
   if (mbrom == 0 && rho_b_f != nullptr) {
