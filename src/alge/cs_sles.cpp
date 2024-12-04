@@ -666,7 +666,7 @@ _residual(cs_lnum_t            n_vals,
  *   precision <-- solver precision
  *   r_norm    <-- residual normalization
  *   residual  <-> residual
- *   vx        <-- initial solution
+ *   vx_ini    <-- initial solution, or null
  *   rhs       <-- right hand side
  *
  * returns:
@@ -681,7 +681,7 @@ _needs_solving(const  char        *name,
                double              precision,
                double              r_norm,
                double             *residual,
-               const cs_real_t    *vx,
+               const cs_real_t    *vx_ini,
                const cs_real_t    *rhs)
 {
   int retval = 1;
@@ -691,10 +691,9 @@ _needs_solving(const  char        *name,
   const cs_lnum_t diag_block_size = cs_matrix_get_diag_block_size(a);
   const cs_lnum_t n_rows = cs_matrix_get_n_rows(a) * diag_block_size;
 
-  double r[2] = {
-    cs_dot_xx(n_rows, rhs),
-    cs_dot_xx(n_rows, vx)
-  };
+  double r[2] = {cs_dot_xx(n_rows, rhs), 0};
+  if (vx_ini != nullptr)
+    r[1] = cs_dot_xx(n_rows, vx_ini);
   cs_parall_sum(2, CS_DOUBLE, r);
 
   /* If the initial solution is "true" zero (increment mode), we can determine
@@ -1747,7 +1746,7 @@ cs_sles_solve(cs_sles_t           *sles,
                               precision,
                               r_norm,
                               residual,
-                              vx,
+                              vx_ini,
                               rhs);
 
     if (! do_solve) {
@@ -1768,7 +1767,7 @@ cs_sles_solve(cs_sles_t           *sles,
                              n_iter,
                              residual,
                              rhs,
-                             vx,
+                             vx_ini,
                              vx,
                              aux_size,
                              aux_vectors);
