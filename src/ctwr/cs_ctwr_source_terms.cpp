@@ -1083,10 +1083,11 @@ cs_ctwr_source_term(int              f_id,
           /* Over saturated */
           else {
             /* Explicit term */
-            l_exp_st += vol_beta_x_ai * (le_f * cp_h * (t_h[cell_id] - t_l_p[cell_id])
-                + (x_s_tl - x_s_th) / (1. + x[cell_id])
-                * (cp_l * t_h[cell_id]
-                  - (cp_v * t_l_p[cell_id] + hv0)));
+            l_exp_st += vol_beta_x_ai
+                        * (le_f * cp_h * (t_h[cell_id] - t_l_p[cell_id])
+                           + (x_s_tl - x_s_th) / (1. + x[cell_id])
+                             * (cp_l * t_h[cell_id]
+                                - (cp_v * t_l_p[cell_id] + hv0)));
           }
           /* Because we deal with an increment */
           exp_st[cell_id] += l_exp_st;
@@ -1146,7 +1147,7 @@ cs_ctwr_source_term(int              f_id,
            * cs_ctwr_volume_mass_injection_dof_func */
 
         /* Extra parameters for humid air thermal source term */
-          cs_real_t x_s_tl = cs_air_x_sat(t_l_p[cell_id], pphy);
+          cs_real_t x_s_tl = cs_air_x_sat(t_l_r[cell_id], pphy);
           cs_real_t x_s_th = cs_air_x_sat(t_h[cell_id], pphy);
           cs_real_t le_f = _lewis_factor(evap_model,
               molmassrat,
@@ -1211,7 +1212,7 @@ cs_ctwr_source_term(int              f_id,
             /* If humid atmosphere model, temperature is liquid potential
              * temperature theta_l */
             if (cs_glob_physical_model_flag[CS_ATMOSPHERIC] == CS_ATMO_HUMID) {
-              l_exp_st -= l_imp_st * coef * (hv0 / cp_d) * yw_liq->val[cell_id];
+              //l_exp_st -= l_imp_st * coef * (hv0 / cp_d) * yw_liq->val[cell_id];
             }
             imp_st[cell_id] += CS_MAX(l_imp_st, 0.);
             exp_st[cell_id] += l_exp_st;
@@ -1236,12 +1237,11 @@ cs_ctwr_source_term(int              f_id,
             }
             /* Over saturated */
             else {
-              cs_real_t coefh = le_f * cp_h;
               /* Explicit term */
-              l_exp_st +=   vol_beta_x_ai
-                          * (  coefh * (t_h[cell_id] - t_l_r[cell_id])
-                             +   (x_s_tl - x_s_th) / (1. + x[cell_id])
-                               * (  cp_l * t_h[cell_id]
+              l_exp_st += vol_beta_x_ai
+                          * (le_f * cp_h * (t_h[cell_id] - t_l_r[cell_id])
+                             + (x_s_tl - x_s_th) / (1. + x[cell_id])
+                               * (cp_l * t_h[cell_id]
                                   - (cp_v * t_l_r[cell_id] + hv0)));
             }
             /* Because we deal with an increment */
