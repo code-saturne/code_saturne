@@ -2020,6 +2020,9 @@ cs_sles_post_error_output_def(const char          *name,
     const cs_lnum_t n_cols = cs_matrix_get_n_columns(a);
     const cs_lnum_t n_rows = cs_matrix_get_n_rows(a);
     const cs_lnum_t diag_block_size = cs_matrix_get_diag_block_size(a);
+    cs_alloc_mode_t amode = CS_ALLOC_HOST;
+    if (cs_matrix_get_alloc_mode(a) > CS_ALLOC_HOST)
+      amode = CS_ALLOC_HOST_DEVICE_SHARED;
 
     /* Check for mesh location */
 
@@ -2041,7 +2044,7 @@ cs_sles_post_error_output_def(const char          *name,
     /* Now generate output */
 
     cs_real_t *val;
-    BFT_MALLOC(val, n_cols*diag_block_size, cs_real_t);
+    CS_MALLOC_HD(val, n_cols*diag_block_size, cs_real_t, amode);
 
     for (int val_id = 0; val_id < 5; val_id++) {
 
@@ -2096,7 +2099,7 @@ cs_sles_post_error_output_def(const char          *name,
                               val);
     }
 
-    BFT_FREE(val);
+    CS_FREE(val);
   }
 }
 
