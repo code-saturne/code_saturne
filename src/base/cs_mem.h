@@ -1178,7 +1178,7 @@ cs_mem_device_pool_set_max_tries(short int  n_tries);
 /*----------------------------------------------------------------------------*/
 
 void
-cs_mem_device_pool_clear();
+cs_mem_device_pool_clear(void);
 
 #endif // defined(HAVE_ACCEL)
 

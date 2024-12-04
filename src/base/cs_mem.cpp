@@ -3190,7 +3190,7 @@ cs_mem_device_pool_set_max_tries(short int  n_tries)
 /*----------------------------------------------------------------------------*/
 
 void
-cs_mem_device_pool_clear()
+cs_mem_device_pool_clear(void)
 {
   if (_cs_mem_pool != nullptr)
     _cs_mem_pool->clear();
