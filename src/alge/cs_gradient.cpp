@@ -3051,6 +3051,12 @@ _lsq_scalar_gradient_hyd_p(const cs_mesh_t                *m,
   const cs_rreal_3_t *restrict diipb = fvq->diipb;
   const cs_real_t *restrict weight = fvq->weight;
 
+  std::chrono::high_resolution_clock::time_point t_start, t_cocg, t_init, \
+    t_i_faces, t_ext_cells, t_b_faces, t_grad, t_stop;
+
+  if (cs_glob_timer_kernels_flag > 0)
+    t_start = std::chrono::high_resolution_clock::now();
+
   cs_dispatch_context ctx;
   cs_dispatch_context ctx_b;
 
@@ -3093,13 +3099,17 @@ _lsq_scalar_gradient_hyd_p(const cs_mesh_t                *m,
 
   /* Compute cocg and save contribution at boundaries */
 
-  if (recompute_cocg) {
+  if (recompute_cocg)
     _recompute_lsq_scalar_cocg(m,
                                fvq,
                                bc_coeffs,
                                ctx,
                                cocgb,
                                cocg);
+
+  if (cs_glob_timer_kernels_flag > 0) {
+    ctx.wait();
+    t_cocg = std::chrono::high_resolution_clock::now();
   }
 
   /* Compute Right-Hand Side */
@@ -3116,6 +3126,9 @@ _lsq_scalar_gradient_hyd_p(const cs_mesh_t                *m,
   });
 
   ctx.wait();
+
+  if (cs_glob_timer_kernels_flag > 0)
+    t_init = std::chrono::high_resolution_clock::now();
 
   /* Contribution from interior faces
      -------------------------------- */
@@ -3232,6 +3245,11 @@ _lsq_scalar_gradient_hyd_p(const cs_mesh_t                *m,
 
   }  /* End of test on weighting */
 
+  if (cs_glob_timer_kernels_flag > 0) {
+    ctx.wait();  // Using an event would be preferred here
+    t_i_faces = std::chrono::high_resolution_clock::now();
+  }
+
   /* Contribution from extended neighborhood;
      We assume that the middle of the segment joining cell centers
      may replace the center of gravity of a fictitious face. */
@@ -3275,8 +3293,14 @@ _lsq_scalar_gradient_hyd_p(const cs_mesh_t                *m,
 
   } /* End for extended neighborhood */
 
+  if (cs_glob_timer_kernels_flag > 0) {
+    ctx.wait();  // Using an event would be preferred here
+    t_ext_cells = std::chrono::high_resolution_clock::now();
+  }
+
   /* Contribution from boundary faces */
 
+  ctx_b.set_use_gpu(false);
   ctx_b.parallel_for_b_faces(m, [=] CS_F_HOST_DEVICE (cs_lnum_t  f_id) {
 
     cs_lnum_t ii = b_face_cells[f_id];
@@ -3312,6 +3336,9 @@ _lsq_scalar_gradient_hyd_p(const cs_mesh_t                *m,
 
   ctx_b.wait();
 
+  if (cs_glob_timer_kernels_flag > 0)
+    t_b_faces = std::chrono::high_resolution_clock::now();
+
   /* Compute gradient */
   /*------------------*/
 
@@ -3332,11 +3359,53 @@ _lsq_scalar_gradient_hyd_p(const cs_mesh_t                *m,
 
   ctx.wait();
 
+  if (cs_glob_timer_kernels_flag > 0)
+    t_grad = std::chrono::high_resolution_clock::now();
+
   CS_FREE(rhsv);
 
   /* Synchronize halos */
 
-  _sync_scalar_gradient_halo(m, CS_HALO_STANDARD, false, grad);
+  _sync_scalar_gradient_halo(m, CS_HALO_STANDARD, ctx.use_gpu(), grad);
+
+  if (cs_glob_timer_kernels_flag > 0) {
+    t_stop = std::chrono::high_resolution_clock::now();
+
+    std::chrono::microseconds elapsed;
+    printf("%d: %s", cs_glob_rank_id, __func__);
+
+    elapsed = std::chrono::duration_cast
+                <std::chrono::microseconds>(t_cocg - t_start);
+    printf(", cocg = %ld", elapsed.count());
+
+    elapsed = std::chrono::duration_cast
+                <std::chrono::microseconds>(t_init - t_cocg);
+    printf(", init = %ld", elapsed.count());
+
+    elapsed = std::chrono::duration_cast
+                <std::chrono::microseconds>(t_i_faces - t_init);
+    printf(", i_faces = %ld", elapsed.count());
+
+    elapsed = std::chrono::duration_cast
+                <std::chrono::microseconds>(t_ext_cells - t_i_faces);
+    printf(", ext_cells = %ld", elapsed.count());
+
+    elapsed = std::chrono::duration_cast
+                <std::chrono::microseconds>(t_b_faces - t_ext_cells);
+    printf(", b_faces = %ld", elapsed.count());
+
+    elapsed = std::chrono::duration_cast
+                <std::chrono::microseconds>(t_grad - t_b_faces);
+    printf(", gradient = %ld", elapsed.count());
+
+    elapsed = std::chrono::duration_cast
+                <std::chrono::microseconds>(t_stop - t_grad);
+    printf(", halo = %ld", elapsed.count());
+
+    elapsed = std::chrono::duration_cast
+                <std::chrono::microseconds>(t_stop - t_start);
+    printf(", total = %ld\n", elapsed.count());
+  }
 }
 
 /*----------------------------------------------------------------------------
@@ -3371,6 +3440,12 @@ _lsq_scalar_gradient_hyd_p_gather(const cs_mesh_t                *m,
                                   const cs_real_t       *restrict c_weight_s,
                                   cs_real_3_t           *restrict grad)
 {
+  std::chrono::high_resolution_clock::time_point t_start, t_cocg, t_cells, \
+    t_stop;
+
+  if (cs_glob_timer_kernels_flag > 0)
+    t_start = std::chrono::high_resolution_clock::now();
+
   const cs_real_t *coefap = bc_coeffs->a;
   const cs_real_t *coefbp = bc_coeffs->b;
 
@@ -3425,6 +3500,9 @@ _lsq_scalar_gradient_hyd_p_gather(const cs_mesh_t                *m,
                                cocg);
     ctx.wait();
   }
+
+  if (cs_glob_timer_kernels_flag > 0)
+    t_cocg = std::chrono::high_resolution_clock::now();
 
   /* Reconstruct gradients using least squares for non-orthogonal meshes */
   /*---------------------------------------------------------------------*/
@@ -3641,9 +3719,34 @@ _lsq_scalar_gradient_hyd_p_gather(const cs_mesh_t                *m,
   }); /* loop on cells */
   ctx.wait();
 
+  if (cs_glob_timer_kernels_flag > 0)
+    t_cells = std::chrono::high_resolution_clock::now();
+
   /* Synchronize halos */
 
   _sync_scalar_gradient_halo(m, CS_HALO_STANDARD, ctx.use_gpu(), grad);
+
+  if (cs_glob_timer_kernels_flag > 0) {
+    t_stop = std::chrono::high_resolution_clock::now();
+    std::chrono::microseconds elapsed;
+    printf("%d: %s", cs_glob_rank_id, __func__);
+
+    elapsed = std::chrono::duration_cast
+                <std::chrono::microseconds>(t_cocg - t_start);
+    printf(", cocgb = %ld", elapsed.count());
+
+    elapsed = std::chrono::duration_cast
+                <std::chrono::microseconds>(t_cells - t_cocg);
+    printf(", cells= %ld", elapsed.count());
+
+    elapsed = std::chrono::duration_cast
+                <std::chrono::microseconds>(t_stop - t_cells);
+    printf(", halo = %ld", elapsed.count());
+
+    elapsed = std::chrono::duration_cast
+                <std::chrono::microseconds>(t_stop - t_start);
+    printf(", total = %ld\n", elapsed.count());
+  }
 }
 
 /*----------------------------------------------------------------------------
@@ -3996,6 +4099,12 @@ _reconstruct_scalar_gradient(const cs_mesh_t                 *m,
   }
 #endif
 
+  std::chrono::high_resolution_clock::time_point t_start, t_init, t_i_faces, \
+    t_b_faces, t_rescale, t_stop;
+
+  if (cs_glob_timer_kernels_flag > 0)
+    t_start = std::chrono::high_resolution_clock::now();
+
   cs_dispatch_context ctx;
   cs_dispatch_context ctx_b;
   cs_dispatch_sum_type_t i_sum_type = ctx.get_parallel_for_i_faces_sum_type(m);
@@ -4015,6 +4124,9 @@ _reconstruct_scalar_gradient(const cs_mesh_t                 *m,
       grad[cell_id][j] = 0.0;
   });
   ctx.wait();
+
+  if (cs_glob_timer_kernels_flag > 0)
+    t_init = std::chrono::high_resolution_clock::now();
 
   /* Case with hydrostatic pressure */
   /*--------------------------------*/
@@ -4113,6 +4225,11 @@ _reconstruct_scalar_gradient(const cs_mesh_t                 *m,
       cs_dispatch_sum<3>(grad[c_id2], rhsv2, i_sum_type);
 
     }); /* loop on faces */
+
+    if (cs_glob_timer_kernels_flag > 0) {
+      ctx.wait();  // Using an event would be preferred here
+      t_i_faces = std::chrono::high_resolution_clock::now();
+    }
 
     /* Contribution from boundary faces */
 
@@ -4220,6 +4337,11 @@ _reconstruct_scalar_gradient(const cs_mesh_t                 *m,
 
     }); /* loop on faces */
 
+    if (cs_glob_timer_kernels_flag > 0) {
+      ctx.wait();  // Using an event would be preferred here
+      t_i_faces = std::chrono::high_resolution_clock::now();
+    }
+
     /* Contribution from boundary faces */
 
     ctx_b.parallel_for_b_faces(m, [=] CS_F_HOST_DEVICE (cs_lnum_t  f_id) {
@@ -4253,6 +4375,9 @@ _reconstruct_scalar_gradient(const cs_mesh_t                 *m,
 
   ctx_b.wait();
 
+  if (cs_glob_timer_kernels_flag > 0)
+    t_b_faces = std::chrono::high_resolution_clock::now();
+
   ctx.parallel_for(n_cells_ext, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
     cs_real_t dvol;
     /* Is the cell disabled (for solid or porous)? Not the case if coupled */
@@ -4279,9 +4404,45 @@ _reconstruct_scalar_gradient(const cs_mesh_t                 *m,
     }
   });
 
+  if (cs_glob_timer_kernels_flag > 0) {
+    ctx.wait();  // Using an event would be preferred here
+    t_rescale = std::chrono::high_resolution_clock::now();
+  }
+
   /* Synchronize halos */
 
   _sync_scalar_gradient_halo(m, CS_HALO_EXTENDED, ctx.use_gpu(), grad);
+
+  if (cs_glob_timer_kernels_flag > 0) {
+    t_stop = std::chrono::high_resolution_clock::now();
+
+    std::chrono::microseconds elapsed;
+    printf("%d: %s (hyd_p %d)", cs_glob_rank_id, __func__, hyd_p_flag);
+
+    elapsed = std::chrono::duration_cast
+                <std::chrono::microseconds>(t_init - t_start);
+    printf(", init = %ld", elapsed.count());
+
+    elapsed = std::chrono::duration_cast
+                <std::chrono::microseconds>(t_i_faces - t_init);
+    printf(", i_faces (hyd_p %d) = %ld", hyd_p_flag, elapsed.count());
+
+    elapsed = std::chrono::duration_cast
+                <std::chrono::microseconds>(t_b_faces - t_i_faces);
+    printf(", b_faces (hyd_p %d) = %ld", hyd_p_flag, elapsed.count());
+
+    elapsed = std::chrono::duration_cast
+                <std::chrono::microseconds>(t_rescale - t_b_faces);
+    printf(", rescale = %ld", elapsed.count());
+
+    elapsed = std::chrono::duration_cast
+                <std::chrono::microseconds>(t_stop - t_rescale);
+    printf(", halo = %ld", elapsed.count());
+
+    elapsed = std::chrono::duration_cast
+                <std::chrono::microseconds>(t_stop - t_start);
+    printf(", total = %ld\n", elapsed.count());
+  }
 }
 
 /*----------------------------------------------------------------------------
