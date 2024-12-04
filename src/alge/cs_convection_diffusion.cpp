@@ -591,43 +591,6 @@ _beta_limiter_num(cs_field_t                 *f,
 /*----------------------------------------------------------------------------
  * Synchronize strided gradient ghost cell values.
  *
- * parameters:
- *   m              <-- pointer to associated mesh structure
- *   on_device,     <-- is data on device (GPU) ?
- *   halo_type      <-- halo type (extended or not)
- *   grad           --> gradient of a variable
- *----------------------------------------------------------------------------*/
-
-static void
-_sync_gradient_halo(const cs_mesh_t         *m,
-                    [[maybe_unused]] bool    on_device,
-                    cs_halo_type_t           halo_type,
-                    cs_real_t (*restrict grad)[3])
-{
-#if defined(HAVE_ACCEL)
-  if (on_device)
-    cs_halo_sync_d(m->halo, halo_type, CS_REAL_TYPE, 3,
-                   (cs_real_t *)grad);
-  else
-#endif
-    cs_halo_sync_var_strided(m->halo, halo_type, (cs_real_t *)grad, 3);
-
-  if (m->have_rotation_perio) {
-#if defined(HAVE_ACCEL)
-    if (on_device)
-      cs_sync_d2h((void  *)grad);
-#endif
-    cs_halo_perio_sync_var_vect(m->halo, halo_type, (cs_real_t *)grad, 3);
-#if defined(HAVE_ACCEL)
-    if (on_device)
-      cs_sync_h2d((void  *)grad);
-#endif
-  }
-}
-
-/*----------------------------------------------------------------------------
- * Synchronize strided gradient ghost cell values.
- *
  * template parameters:
  *   stride        1 for scalars, 3 for vectors, 6 for symmetric tensors
  *
@@ -641,8 +604,8 @@ _sync_gradient_halo(const cs_mesh_t         *m,
 template <cs_lnum_t stride>
 static void
 _sync_strided_gradient_halo(const cs_mesh_t         *m,
-                            [[maybe_unused]] bool    on_device,
                             cs_halo_type_t           halo_type,
+                            [[maybe_unused]] bool    on_device,
                             cs_real_t (*restrict grad)[stride][3])
 {
 #if defined(HAVE_ACCEL)
@@ -670,38 +633,6 @@ _sync_strided_gradient_halo(const cs_mesh_t         *m,
     if (on_device)
       cs_sync_h2d((void  *)grad);
 #endif
-  }
-}
-
-/*----------------------------------------------------------------------------
- * Synchronize strided gradient ghost cell values.
- *
- * template parameters:
- *   stride        1 for scalars, 3 for vectors, 6 for symmetric tensors
- *
- * parameters:
- *   m              <-- pointer to associated mesh structure
- *   halo_type      <-- halo type (extended or not)
- *   grad           --> gradient of a variable
- *----------------------------------------------------------------------------*/
-
-template <cs_lnum_t stride>
-static void
-_sync_strided_gradient_halo(const cs_mesh_t         *m,
-                            cs_halo_type_t           halo_type,
-                            cs_real_t (*restrict grad)[stride][3])
-{
-  cs_halo_sync_var_strided(m->halo, halo_type, (cs_real_t *)grad, stride*3);
-
-  if (m->have_rotation_perio) {
-    if (stride == 1)
-      cs_halo_perio_sync_var_vect(m->halo, halo_type, (cs_real_t *)grad, 3);
-    else if (stride == 3)
-      cs_halo_perio_sync_var_tens(m->halo, halo_type, (cs_real_t *)grad);
-    else if (stride == 6)
-      cs_halo_perio_sync_var_sym_tens_grad(m->halo,
-                                           halo_type,
-                                           (cs_real_t *)grad);
   }
 }
 
@@ -1351,8 +1282,8 @@ _slope_test_gradient_strided
 
   if (m->halo != nullptr)
     _sync_strided_gradient_halo<stride>(m,
-                                        use_gpu,
                                         halo_type,
+                                        use_gpu,
                                         grdpa);
 
   if (cs_glob_timer_kernels_flag > 0) {
@@ -6525,20 +6456,10 @@ _convection_diffusion_unsteady_strided
      or current values are provided */
 
   if (pvar != nullptr && halo != nullptr) {
-#if defined(HAVE_ACCEL)
-    if (ctx.use_gpu())
-      cs_halo_sync_d(m->halo, halo_type, CS_REAL_TYPE, stride,
-                     (cs_real_t *)pvar);
-    else
-#endif
-      cs_halo_sync_var_strided(halo, halo_type, (cs_real_t *)pvar, stride);
-
-    if (cs_glob_mesh->have_rotation_perio) {
-      if (stride == 3)
-        cs_halo_perio_sync_var_vect(halo, halo_type, (cs_real_t *)pvar, stride);
-      else if (stride == 6)
-        cs_halo_perio_sync_var_sym_tens(halo, halo_type, (cs_real_t *)pvar);
-    }
+    const bool on_device = ctx.use_gpu();
+    cs_halo_sync(m->halo, halo_type, on_device, pvar);
+    if (cs_glob_mesh->have_rotation_perio)
+      cs_halo_perio_sync(halo, halo_type, on_device, pvar);
   }
   if (pvara == nullptr)
     pvara = (const var_t *)pvar;
@@ -7930,9 +7851,10 @@ cs_convection_diffusion_vector(int                         idtvar,
      or current values are provided */
 
   if (pvar != nullptr && m->halo != nullptr) {
-    cs_halo_sync(m->halo, halo_type, ctx.use_gpu(), pvar);
+    const bool on_device = ctx.use_gpu();
+    cs_halo_sync(m->halo, halo_type, on_device, pvar);
     if (cs_glob_mesh->n_init_perio > 0)
-      cs_halo_perio_sync_var_vect(m->halo, halo_type, (cs_real_t *)pvar, 3);
+      cs_halo_perio_sync(m->halo, halo_type, on_device, pvar);
   }
   if (pvara == nullptr)
     pvara = (const cs_real_3_t *)pvar;
@@ -8306,9 +8228,10 @@ cs_convection_diffusion_tensor(int                          idtvar,
      or current values are provided */
 
   if (pvar != nullptr && m->halo != nullptr) {
-    cs_halo_sync(m->halo, halo_type, ctx.use_gpu(), pvar);
+    const bool on_device = ctx.use_gpu();
+    cs_halo_sync(m->halo, halo_type, on_device, pvar);
     if (cs_glob_mesh->n_init_perio > 0)
-      cs_halo_perio_sync_var_sym_tens(m->halo, halo_type, (cs_real_t *)pvar);
+      cs_halo_perio_sync(m->halo, halo_type, on_device, pvar);
   }
   if (pvara == nullptr)
     pvara = (const cs_real_6_t *)pvar;
@@ -8694,9 +8617,10 @@ cs_anisotropic_diffusion_scalar(int                         idtvar,
 
   /* ---> Periodicity and parallelism treatment of symmetric tensors */
   if (halo != nullptr) {
-    cs_halo_sync_var_strided(halo, halo_type, (cs_real_t *)viscce, 6);
+    bool on_device = false;
+    cs_halo_sync(halo, halo_type, on_device, viscce);
     if (m->n_init_perio > 0)
-      cs_halo_perio_sync_var_sym_tens(halo, halo_type, (cs_real_t *)viscce);
+      cs_halo_perio_sync(halo, halo_type, on_device, viscce);
   }
 
   if (icoupl > 0) {
@@ -9363,9 +9287,10 @@ cs_anisotropic_left_diffusion_vector(int                         idtvar,
      or current values are provided */
 
   if (pvar != nullptr && halo != nullptr) {
-    cs_halo_sync_var_strided(halo, halo_type, (cs_real_t *)pvar, 3);
+    bool on_device = false;
+    cs_halo_sync(halo, halo_type, on_device, pvar);
     if (cs_glob_mesh->n_init_perio > 0)
-      cs_halo_perio_sync_var_vect(halo, halo_type, (cs_real_t *)pvar, 3);
+      cs_halo_perio_sync(halo, halo_type, on_device, pvar);
   }
   if (pvara == nullptr)
     pvara = (const cs_real_3_t *)pvar;
@@ -9700,7 +9625,7 @@ cs_anisotropic_left_diffusion_vector(int                         idtvar,
     }
 
     if (halo != nullptr)
-      cs_halo_sync_var(halo, halo_type, bndcel);
+      cs_halo_sync(halo, halo_type, false, bndcel);
 
     /* ---> Interior faces */
 
@@ -9908,9 +9833,10 @@ cs_anisotropic_right_diffusion_vector(int                          idtvar,
      or current values are provided */
 
   if (pvar != nullptr && halo != nullptr) {
-    cs_halo_sync_var_strided(halo, halo_type, (cs_real_t *)pvar, 3);
+    const bool on_device = false;
+    cs_halo_sync(halo, halo_type, on_device, pvar);
     if (cs_glob_mesh->n_init_perio > 0)
-      cs_halo_perio_sync_var_vect(halo, halo_type, (cs_real_t *)pvar, 3);
+      cs_halo_perio_sync(halo, halo_type, on_device, pvar);
   }
   if (pvara == nullptr)
     pvara = (const cs_real_3_t *)pvar;
@@ -10604,9 +10530,10 @@ cs_anisotropic_diffusion_tensor(int                          idtvar,
      or current values are provided */
 
   if (pvar != nullptr && m->halo != nullptr) {
-    cs_halo_sync_var_strided(m->halo, halo_type, (cs_real_t *)pvar, 6);
+    bool on_device = false;
+    cs_halo_sync(m->halo, halo_type, on_device, pvar);
     if (cs_glob_mesh->n_init_perio > 0)
-      cs_halo_perio_sync_var_sym_tens(m->halo, halo_type, (cs_real_t *)pvar);
+      cs_halo_perio_sync(m->halo, halo_type, on_device, pvar);
   }
   if (pvara == nullptr)
     pvara = (const cs_real_6_t *)pvar;
@@ -10673,9 +10600,10 @@ cs_anisotropic_diffusion_tensor(int                          idtvar,
 
   /* ---> Periodicity and parallelism treatment of symmetric tensors */
   if (halo != nullptr) {
-    cs_halo_sync_var_strided(halo, halo_type, (cs_real_t *)viscce, 6);
+    bool on_device = false;
+    cs_halo_sync(halo, halo_type, on_device, viscce);
     if (m->n_init_perio > 0)
-      cs_halo_perio_sync_var_sym_tens(halo, halo_type, (cs_real_t *)viscce);
+      cs_halo_perio_sync(halo, halo_type, on_device, viscce);
   }
 
   /* 2. Compute the diffusive part with reconstruction technics */
@@ -11169,6 +11097,8 @@ cs_face_diffusion_potential(const int                   f_id,
   cs_dispatch_sum_type_t i_sum_type = ctx_i.get_parallel_for_i_faces_sum_type(m);
   cs_dispatch_sum_type_t b_sum_type = ctx_b.get_parallel_for_b_faces_sum_type(m);
 
+  const bool on_device = ctx_i.use_gpu();
+
   /* Local variables */
 
   int w_stride = 1;
@@ -11222,7 +11152,7 @@ cs_face_diffusion_potential(const int                   f_id,
   /* Handle parallelism and periodicity */
 
   if (halo != nullptr)
-    cs_halo_sync(halo, halo_type, ctx_i.use_gpu(), pvar);
+    cs_halo_sync(halo, halo_type, on_device, pvar);
 
   /*==========================================================================
     2. Update mass flux without reconstruction
@@ -11270,7 +11200,7 @@ cs_face_diffusion_potential(const int                   f_id,
     if (iwgrp > 0) {
       gweight = visel;
       if (halo != nullptr)
-        cs_halo_sync_var(halo, halo_type, gweight);
+        cs_halo_sync(halo, halo_type, on_device, gweight);
     }
 
     else if (f_id > -1) {
@@ -11312,7 +11242,7 @@ cs_face_diffusion_potential(const int                   f_id,
     /* Handle parallelism and periodicity */
 
     if (halo != nullptr)
-      cs_halo_sync(halo, halo_type, ctx_i.use_gpu(), visel);
+      cs_halo_sync(halo, halo_type, on_device, visel);
 
     /* Mass flow through interior faces */
 
@@ -12605,8 +12535,6 @@ cs_anisotropic_diffusion_potential(const int                   f_id,
 
 END_C_DECLS
 
-#ifdef __cplusplus
-
 /*----------------------------------------------------------------------------
  * Compute the local cell Courant number as the maximum of all cell face based
  * Courant number at each cell.
@@ -12751,11 +12679,11 @@ cs_slope_test_gradient(int                         f_id,
 
   /* Synchronization for parallelism or periodicity */
 
-  if (m->halo != nullptr)
-    _sync_gradient_halo(m,
-                        use_gpu,
-                        halo_type,
-                        grdpa);
+  if (m->halo != nullptr) {
+    cs_halo_sync(m->halo, halo_type, use_gpu, grdpa);
+    if (m->have_rotation_perio)
+      cs_halo_perio_sync(m->halo, halo_type, use_gpu, grdpa);
+  }
 
   if (cs_glob_timer_kernels_flag > 0) {
     std::chrono::high_resolution_clock::time_point
@@ -12873,10 +12801,11 @@ cs_upwind_gradient(const int                     f_id,
   /* Synchronization for parallelism or periodicity */
 
   if (halo != nullptr) {
-    cs_halo_sync_var_strided(halo, halo_type, (cs_real_t *)grdpa, 3);
+    bool use_gpu = ctx.use_gpu();
+    cs_halo_sync(halo, halo_type, use_gpu, grdpa);
     if (cs_glob_mesh->n_init_perio > 0)
-      cs_halo_perio_sync_var_vect(halo, halo_type, (cs_real_t *)grdpa, 3);
+      cs_halo_perio_sync(halo, halo_type, use_gpu, grdpa);
   }
 }
 
-#endif /* cplusplus */
+/*----------------------------------------------------------------------------*/

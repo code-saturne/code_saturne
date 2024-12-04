@@ -794,6 +794,33 @@ cs_check_device_ptr(const void  *ptr)
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Check if a pointer is a device (or shared) pointer.
+ *
+ * \param [in]   ptr   pointer to device data
+ *
+ * \return  true if the pointer is usable from the device or null, false
+ *          if available on host only or if query failed.
+ */
+/*----------------------------------------------------------------------------*/
+
+#if defined(HAVE_ACCEL)
+
+bool
+cs_mem_is_device_ptr(const void  *ptr);
+
+#else
+
+inline static bool
+cs_mem_is_device_ptr(const void  *ptr)
+{
+  CS_UNUSED(ptr);
+  return false;
+}
+
+#endif
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Associate device memory with a given host memory pointer.
  *
  * If the host memory is already associated with the device, the existing

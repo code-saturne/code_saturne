@@ -277,35 +277,6 @@ cs_cuda_get_host_ptr(const void  *ptr)
   return host_ptr;
 }
 
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Check if a pointer is a device (or shared) pointer.
- *
- * \param [in]   ptr   pointer to device data
- *
- * \return  true if the pointer is usable from the device or null, false
- *          if available on host only or if query failed.
- */
-/*----------------------------------------------------------------------------*/
-
-bool
-cs_cuda_is_device_ptr(const void  *ptr)
-{
-  if (ptr == nullptr)
-    return true;
-
-  cudaPointerAttributes attributes;
-
-  int retcode = cudaPointerGetAttributes(&attributes, ptr);
-
-  if (retcode == cudaSuccess) {
-    if (ptr == attributes.devicePointer)
-      return true;
-  }
-
-  return false;
-}
-
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 END_C_DECLS

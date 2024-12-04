@@ -74,6 +74,7 @@
 #include "bft_error.h"
 
 #include "cs_base.h"
+#include "cs_dispatch.h"
 #include "cs_log.h"
 #include "cs_fp_exception.h"
 #include "cs_halo.h"
@@ -1512,10 +1513,13 @@ cs_sles_petsc_solve(void                *context,
   const PetscInt _n_rows = n_rows*db_size;
   cs_matrix_coeffs_petsc_t *coeffs = nullptr;
 
+  cs_dispatch_context ctx;
+
   if (vx_ini != vx) {
-#   pragma omp parallel for if(_n_rows > CS_THR_MIN)
-    for (PetscInt i = 0; i < _n_rows; i++)
+    ctx.parallel_for(_n_rows, [=] CS_F_HOST_DEVICE (PetscInt i) {
       vx[i] = 0;
+    });
+    ctx.wait();
   }
 
   if (sd->share_a) {
@@ -1530,11 +1534,11 @@ cs_sles_petsc_solve(void                *context,
     VecGetArray(x, &_x);
     VecGetArray(b, &_b);
 
-#   pragma omp parallel for if(_n_rows > CS_THR_MIN)
-    for (PetscInt i = 0; i < _n_rows; i++) {
+    ctx.parallel_for(_n_rows, [=] CS_F_HOST_DEVICE (PetscInt i) {
       _x[i] = vx[i];
       _b[i] = rhs[i];
-    }
+    });
+    ctx.wait();
 
     VecRestoreArray(x, &_x);
     VecRestoreArray(b, &_b);
@@ -1618,10 +1622,10 @@ cs_sles_petsc_solve(void                *context,
     VecGetArrayRead(x, &_x);
     PetscReal *x_w = const_cast<PetscReal *>(_x);
 
-#   pragma omp parallel for if(_n_rows > CS_THR_MIN)
-    for (PetscInt i = 0; i < _n_rows; i++) {
+    ctx.parallel_for(_n_rows, [=] CS_F_HOST_DEVICE (PetscInt i) {
       x_w[i] = vx[i];
-    }
+    });
+    ctx.wait();
 
     VecRestoreArrayRead(x, &_x);
 

@@ -2122,6 +2122,46 @@ cs_check_device_ptr(const void  *ptr)
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Check if a pointer is a device (or shared) pointer.
+ *
+ * \param [in]   ptr   pointer to device data
+ *
+ * \return  true if the pointer is usable from the device or null, false
+ *          if available on host only or if query failed.
+ */
+/*----------------------------------------------------------------------------*/
+
+#if defined(HAVE_ACCEL)
+
+bool
+cs_mem_is_device_ptr(const void  *ptr)
+{
+#if defined(HAVE_CUDA)
+
+  return cs_mem_cuda_is_device_ptr(ptr);
+
+#elif defined(SYCL_LANGUAGE_VERSION)
+
+  // Note: the current test only works with USM-allocated memory
+
+  if (   sycl::get_pointer_type(ptr, cs_glob_sycl_queue.get_context())
+      == sycl::usm::alloc::unknown)
+    return false;
+  else
+    return true;
+
+#elif defined(HAVE_OPENMP_TARGET)
+
+  assert(0);  // TODO check OpenMP doc and handle this
+
+#endif
+
+}
+
+#endif
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Associate device memory with a given host memory pointer.
  *
  * If the host memory is already associated with the device, the existing

@@ -414,9 +414,27 @@ static cs_fluid_properties_t  _fluid_properties = {
  * Global variables
  *============================================================================*/
 
-#if   !(defined(__NVCC__) && defined(__CUDA_ARCH__)) \
-   && !defined(SYCL_LANGUAGE_VERSION) \
-   && !defined(HAVE_OPENMP_TARGET)
+BEGIN_C_DECLS
+
+/* Ensure a local C version is always available */
+
+#if  (defined(__NVCC__) && defined(__CUDA_ARCH__)) \
+  || defined(SYCL_LANGUAGE_VERSION) \
+  || defined(HAVE_OPENMP_TARGET)
+
+#undef cs_physical_constants_r
+#undef cs_physical_constants_kb
+#undef cs_physical_constants_celsius_to_kelvin
+#undef cs_physical_constants_stephan
+#undef cs_physical_constants_avogadro
+
+extern const double cs_physical_constants_r;
+extern const double cs_physical_constants_kb;
+extern const double cs_physical_constants_celsius_to_kelvin;
+extern const double cs_physical_constants_stephan;
+extern const double cs_physical_constants_avogadro;
+
+#endif
 
 /*! Ideal gas constant (\f$J.mol^{-1}.K^{-1}\f$) */
 
@@ -439,14 +457,14 @@ const double cs_physical_constants_stephan = 5.6703e-8;
 
 const double cs_physical_constants_avogadro = 6.02214076e23;
 
-#endif // !defined(HAVE_OPENMP_TARGET)
-
 /* Other physical constants/properties */
 
 const cs_physical_constants_t  *cs_glob_physical_constants =
                                   &_physical_constants;
 
 const cs_fluid_properties_t  *cs_glob_fluid_properties = &_fluid_properties;
+
+END_C_DECLS
 
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
 

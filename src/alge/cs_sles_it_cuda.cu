@@ -72,6 +72,7 @@ namespace cg = cooperative_groups;
 #include "cs_matrix.h"
 #include "cs_matrix_priv.h"
 #include "cs_matrix_spmv_cuda.h"
+#include "cs_mem.h"
 #include "cs_sles_it.h"
 #include "cs_sles_pc.h"
 #include "cs_sles_it_priv.h"
@@ -1317,7 +1318,7 @@ cs_sles_it_cuda_jacobi(cs_sles_it_t              *c,
     const size_t wa_size = CS_SIMD_SIZE(n_cols);
 
     if (   aux_vectors == NULL
-        || cs_cuda_is_device_ptr(aux_vectors) == false
+        || cs_mem_is_device_ptr(aux_vectors) == false
         || aux_size/sizeof(cs_real_t) < (wa_size * n_wa)) {
 #if defined(MPIX_CUDA_AWARE_SUPPORT) && MPIX_CUDA_AWARE_SUPPORT
       cudaMalloc(&_aux_vectors, wa_size * n_wa *sizeof(cs_real_t));
@@ -1558,7 +1559,7 @@ cs_sles_it_cuda_block_jacobi(cs_sles_it_t              *c,
     const size_t wa_size = CS_SIMD_SIZE(n_cols);
 
     if (   aux_vectors == NULL
-        || cs_cuda_is_device_ptr(aux_vectors) == false
+        || cs_mem_is_device_ptr(aux_vectors) == false
         || aux_size/sizeof(cs_real_t) < (wa_size * n_wa)) {
 #if defined(MPIX_CUDA_AWARE_SUPPORT) && MPIX_CUDA_AWARE_SUPPORT
       cudaMalloc(&_aux_vectors, wa_size * n_wa *sizeof(cs_real_t));
@@ -1817,7 +1818,7 @@ cs_sles_it_cuda_fcg(cs_sles_it_t              *c,
     const size_t wa_size = CS_SIMD_SIZE(n_cols);
 
     if (   aux_vectors == nullptr
-        || cs_cuda_is_device_ptr(aux_vectors) == false
+        || cs_mem_is_device_ptr(aux_vectors) == false
         || aux_size/sizeof(cs_real_t) < (wa_size * n_wa))
        CS_MALLOC_HD(_aux_vectors, wa_size * n_wa, cs_real_t,
                     CS_ALLOC_HOST_DEVICE_SHARED);
@@ -2017,7 +2018,7 @@ cs_sles_it_cuda_gcr(cs_sles_it_t              *c,
     wa_size = CS_SIMD_SIZE(n_cols);
 
     if (   aux_vectors == nullptr
-        || cs_cuda_is_device_ptr(aux_vectors) == false
+        || cs_mem_is_device_ptr(aux_vectors) == false
         || aux_size/sizeof(cs_real_t) < (wa_size * n_wa))
       CS_MALLOC_HD(_aux_vectors, wa_size * n_wa, cs_real_t, CS_ALLOC_DEVICE);
     else

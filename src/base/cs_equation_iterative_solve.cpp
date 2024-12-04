@@ -693,18 +693,9 @@ _equation_iterative_solve_strided(int                   idtvar,
       ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
         for (cs_lnum_t isou = 0; isou < stride; isou++) {
           dpvarm1[c_id][isou] = dpvar[c_id][isou];
-          dpvar[c_id][isou] = 0.;
         }
       });
     }
-    else {
-      ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
-        for (cs_lnum_t isou = 0; isou < stride; isou++)
-          dpvar[c_id][isou] = 0.;
-      });
-    }
-
-    ctx.wait();
 
     /*  Solver residual */
     ressol = residu;
@@ -902,14 +893,14 @@ _equation_iterative_solve_strided(int                   idtvar,
 
     /* --> Handle parallelism and periodicity */
 
+    ctx.wait();
+
     if (cs_glob_rank_id >= 0 || cs_glob_mesh->n_init_perio > 0) {
       if (stride == 3)
         cs_mesh_sync_var_vect((cs_real_t *)pvar);
       else if (stride == 6)
         cs_mesh_sync_var_sym_tens((cs_real_6_t *)pvar);
     }
-
-    ctx.wait();
 
     /* Increment face value with theta * face_value at current time step
      * if needed
@@ -1574,12 +1565,6 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
     if (iswdyp >= 1) {
       ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t cell_id) {
         dpvarm1[cell_id] = dpvar[cell_id];
-        dpvar[cell_id] = 0.;
-      });
-    }
-    else {
-      ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t cell_id) {
-        dpvar[cell_id] = 0.;
       });
     }
 
@@ -1592,8 +1577,6 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
       cs_multigrid_setup_conv_diff(mg, var_name, a, true,
                                    cs_sles_get_verbosity(sc));
     }
-
-    ctx.wait(); /* We now need dpvar, computed by ctx */
 
     cs_sles_solve_ccc_fv(sc,
                          a,

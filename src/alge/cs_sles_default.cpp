@@ -942,6 +942,9 @@ cs_sles_setup_native_conv_diff(int                  f_id,
  * \brief Call sparse linear equation solver for general colocated
  *        cell-centered finite volume scheme.
  *
+ * The initial solution is assumed to be 0 (and does not need to
+ * be initialized before calling this function).
+ *
  * \param[in]       sc                     solver context
  * \param[in]       a                      matrix
  * \param[in]       precision              solver precision
@@ -949,7 +952,7 @@ cs_sles_setup_native_conv_diff(int                  f_id,
  * \param[out]      n_iter                 number of "equivalent" iterations
  * \param[out]      residual               residual
  * \param[in]       rhs                    right hand side
- * \param[in, out]  vx                     system solution
+ * \param[out]      vx                     system solution
  *
  * \return  convergence state
  */
@@ -990,9 +993,6 @@ cs_sles_solve_ccc_fv(cs_sles_t           *sc,
     assert(n_rows == m->n_cells);
     cs_lnum_t _n_rows = n_rows*db_size;
     CS_MALLOC_HD(_vx, n_cols_ext*db_size, cs_real_t, amode);
-    ctx.parallel_for(_n_rows, [=] CS_F_HOST_DEVICE (cs_lnum_t i) {
-      _vx[i] = vx[i];
-    });
 
     if (cs_matrix_get_type(a) == CS_MATRIX_NATIVE) {
       CS_MALLOC_HD(_rhs, n_cols_ext*db_size, cs_real_t, amode);
@@ -1016,6 +1016,7 @@ cs_sles_solve_ccc_fv(cs_sles_t           *sc,
                       a,
                       precision,
                       r_norm,
+                      true,
                       n_iter,
                       residual,
                       rhs_p,
@@ -1184,6 +1185,7 @@ cs_sles_solve_native(int                  f_id,
                       a,
                       precision,
                       r_norm,
+                      false,
                       n_iter,
                       residual,
                       rhs_p,
@@ -1242,8 +1244,8 @@ cs_sles_free_native(int          f_id,
     if (setup_id < _n_setups) {
       for (int i = 0; i < 2; i++) {
         _matrix_setup[setup_id][i] = _matrix_setup[_n_setups][i];
-      _sles_setup[setup_id] = _sles_setup[_n_setups];
       }
+      _sles_setup[setup_id] = _sles_setup[_n_setups];
     }
   }
 }

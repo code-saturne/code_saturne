@@ -72,6 +72,7 @@
 
 #include "cs_base.h"
 #include "cs_base_accel.h"
+#include "cs_dispatch.h"
 #include "cs_log.h"
 #include "cs_fp_exception.h"
 #include "cs_halo.h"
@@ -1024,11 +1025,14 @@ cs_sles_hypre_solve(void                *context,
 
   /* Set RHS and starting solution */
 
+  cs_dispatch_context ctx;
+
   if (sizeof(cs_real_t) == sizeof(HYPRE_Real) && amode == CS_ALLOC_HOST) {
     if (vx_ini == vx) {
-      for (HYPRE_BigInt ii = 0; ii < n_rows; ii++) {
+      ctx.parallel_for(n_rows, [=] CS_F_HOST_DEVICE (HYPRE_BigInt ii) {
         vx[ii] = 0;
-      }
+      });
+      ctx.wait();
     }
     HYPRE_IJVectorSetValues(sd->coeffs->hx, n_rows, nullptr, vx);
     HYPRE_IJVectorSetValues(sd->coeffs->hy, n_rows, nullptr, rhs);
@@ -1036,19 +1040,21 @@ cs_sles_hypre_solve(void                *context,
   else {
     CS_MALLOC_HD(_t, n_rows, HYPRE_Real, amode);
     if (vx_ini == vx) {
-      for (HYPRE_BigInt ii = 0; ii < n_rows; ii++) {
+      ctx.parallel_for(n_rows, [=] CS_F_HOST_DEVICE (HYPRE_BigInt ii) {
         _t[ii] = vx[ii];
-      }
+      });
     }
     else {
-      for (HYPRE_BigInt ii = 0; ii < n_rows; ii++) {
+      ctx.parallel_for(n_rows, [=] CS_F_HOST_DEVICE (HYPRE_BigInt ii) {
         _t[ii] = 0;
-      }
+      });
     }
+    ctx.wait();
     HYPRE_IJVectorSetValues(sd->coeffs->hx, n_rows, nullptr, _t);
-    for (HYPRE_BigInt ii = 0; ii < n_rows; ii++) {
+    ctx.parallel_for(n_rows, [=] CS_F_HOST_DEVICE (HYPRE_BigInt ii) {
       _t[ii] = rhs[ii];
-    }
+    });
+    ctx.wait();
     HYPRE_IJVectorSetValues(sd->coeffs->hy, n_rows, nullptr, _t);
   }
 
@@ -1220,10 +1226,11 @@ cs_sles_hypre_solve(void                *context,
   }
   else {
     HYPRE_IJVectorGetValues(sd->coeffs->hx, n_rows, nullptr, _t);
-    for (HYPRE_BigInt ii = 0; ii < n_rows; ii++) {
+    ctx.parallel_for(n_rows, [=] CS_F_HOST_DEVICE (HYPRE_BigInt ii) {
       vx[ii] = _t[ii];
-    }
-    CS_FREE_HD(_t);
+    });
+    ctx.wait();
+    CS_FREE(_t);
   }
 
   /* Set the convergence status. The feedback of HYPRE is quite minimal so that

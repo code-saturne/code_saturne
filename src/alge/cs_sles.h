@@ -119,7 +119,7 @@ typedef void
  *   residual      --> residual
  *   rhs           <-- right hand side
  *   vx_ini        <-- initial solution (vx if nonzero, nullptr if zero)
- *   vx            <-- system solution
+ *   vx            --> system solution
  *   aux_size      <-- number of elements in aux_vectors
  *   aux_vectors   <-- optional working area (internal allocation if NULL)
  *
@@ -666,6 +666,10 @@ cs_sles_setup(cs_sles_t          *sles,
  * two stages is intended to allow amortizing the cost of setup
  * over multiple solutions.
  *
+ * If the initial solution iz zero, setting vx_ini_0 to true may
+ * allow extra optimizations with some solvers, and avoids
+ * requiring an upstream initialization.
+ *
  * The system is considered to have converged when
  * residual/r_norm <= precision, residual being the L2 norm of a.vx-rhs.
  *
@@ -673,6 +677,7 @@ cs_sles_setup(cs_sles_t          *sles,
  * \param[in]       a              matrix
  * \param[in]       precision      solver precision
  * \param[in]       r_norm         residual normalization
+ * \param[in]       vx_ini_0       if true, initialize solution to 0
  * \param[out]      n_iter         number of "equivalent" iterations
  * \param[out]      residual       residual
  * \param[in]       rhs            right hand side
@@ -690,6 +695,7 @@ cs_sles_solve(cs_sles_t           *sles,
               const cs_matrix_t   *a,
               double               precision,
               double               r_norm,
+              bool                 vx_ini_0,
               int                 *n_iter,
               double              *residual,
               const cs_real_t     *rhs,

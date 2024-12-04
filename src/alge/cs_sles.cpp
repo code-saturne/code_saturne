@@ -1674,6 +1674,10 @@ cs_sles_setup(cs_sles_t          *sles,
  * two stages is intended to allow amortizing the cost of setup
  * over multiple solutions.
  *
+ * If the initial solution iz zero, setting vx_ini_0 to true may
+ * allow extra optimizations with some solvers, and avoids
+ * requiring an upstream initialization.
+ *
  * The system is considered to have converged when
  * residual/r_norm <= precision, residual being the L2 norm of a.vx-rhs.
  *
@@ -1681,10 +1685,12 @@ cs_sles_setup(cs_sles_t          *sles,
  * \param[in]       a              matrix
  * \param[in]       precision      solver precision
  * \param[in]       r_norm         residual normalization
+ * \param[in]       vx_ini_0       if true, initialize solution to 0
  * \param[out]      n_iter         number of "equivalent" iterations
  * \param[out]      residual       residual
  * \param[in]       rhs            right hand side
  * \param[in, out]  vx             system solution
+ * \param[out]      vx             system solution
  * \param[in]       aux_size       size of aux_vectors (in bytes)
  * \param           aux_vectors    optional working area
  *                                 (internal allocation if nullptr)
@@ -1698,6 +1704,7 @@ cs_sles_solve(cs_sles_t           *sles,
               const cs_matrix_t   *a,
               double               precision,
               double               r_norm,
+              bool                 vx_ini_0,
               int                 *n_iter,
               double              *residual,
               const cs_real_t     *rhs,
@@ -1725,6 +1732,8 @@ cs_sles_solve(cs_sles_t           *sles,
 
   cs_sles_convergence_state_t state;
   bool do_solve = true;
+
+  cs_real_t *vx_ini = (vx_ini_0) ? nullptr : vx;
 
   /* Even if we normally require at least entering the linear equation solver,
      if the residual normalization is really zero, we probably have zero initial

@@ -481,6 +481,35 @@ cs_mem_cuda_unset_advise_read_mostly(const void  *ptr,
                               _cs_glob_cuda_device_id))
 }
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Check if a pointer is a device (or shared) pointer.
+ *
+ * \param [in]   ptr   pointer to device data
+ *
+ * \return  true if the pointer is usable from the device or null, false
+ *          if available on host only or if query failed.
+ */
+/*----------------------------------------------------------------------------*/
+
+bool
+cs_mem_cuda_is_device_ptr(const void  *ptr)
+{
+  if (ptr == nullptr)
+    return true;
+
+  cudaPointerAttributes attributes;
+
+  int retcode = cudaPointerGetAttributes(&attributes, ptr);
+
+  if (retcode == cudaSuccess) {
+    if (ptr == attributes.devicePointer)
+      return true;
+  }
+
+  return false;
+}
+
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*----------------------------------------------------------------------------*/

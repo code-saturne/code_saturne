@@ -4866,10 +4866,10 @@ cs_sles_it_solve(void                *context,
 
     if (c->on_device) {
 
-#if defined(HAVE_CUDA)
-      if (cs_cuda_is_device_ptr(vx))
+#if defined(HAVE_ACCEL)
+      if (cs_mem_is_device_ptr(vx))
         amode_vx = CS_ALLOC_DEVICE;
-      if (cs_cuda_is_device_ptr(rhs))
+      if (cs_mem_is_device_ptr(rhs))
         amode_rhs = CS_ALLOC_DEVICE;
 #endif
 

@@ -149,7 +149,7 @@ static cs_pressure_correction_cdo_t *cs_pressure_correction_cdo = nullptr;
  * \param[in]      bflux            work array
  * \param[in,out]  i_visc           work array
  * \param[in,out]  b_visc           work array
- * \param[in,out]  dphi             work array
+ * \param[out]     dphi             work array
  * \param[in,out]  rhs              work array
  */
 /*----------------------------------------------------------------------------*/
@@ -255,7 +255,6 @@ _hydrostatic_pressure_compute(const cs_mesh_t       *m,
     const int c_act = 1 - (has_dc * c_disable_flag[has_dc * c_id]);
 
     rovsdt[c_id] = 0.0;
-    dphi[c_id] = 0.;
     viscce[c_id] = 1.0;
 
     for (cs_lnum_t ii = 0; ii < 3; ii++)
@@ -263,7 +262,11 @@ _hydrostatic_pressure_compute(const cs_mesh_t       *m,
   });
 
   ctx.wait();
-  cs_mesh_sync_var_vect((cs_real_t*)next_fext);
+
+  bool on_device = ctx.use_gpu();
+  cs_halo_sync(m->halo, CS_HALO_STANDARD, on_device, next_fext);
+  if (m->n_init_perio > 0)
+    cs_halo_perio_sync(m->halo, CS_HALO_STANDARD, on_device, next_fext);
 
   /* Prepare matrix and boundary conditions
      -------------------------------------- */
@@ -371,7 +374,6 @@ _hydrostatic_pressure_compute(const cs_mesh_t       *m,
 
     ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
       rhs[c_id] = -div_fext[c_id] - rhs[c_id];
-      dphi[c_id] = 0.;
     });
 
     ctx.wait();
@@ -548,6 +550,8 @@ _pressure_correction_fv(int                   iterns,
   ctx_c.set_cuda_stream(cs_cuda_get_stream(1));
 #endif
 
+  const bool on_device = ctx.use_gpu();
+
   cs_field_t *f_iddp = cs_field_by_name("pressure_increment");
   cs_real_t *phi = f_iddp->val;
 
@@ -614,7 +618,8 @@ _pressure_correction_fv(int                   iterns,
   cs_real_3_t *wrk2;
   CS_MALLOC_HD(wrk2, n_cells_ext, cs_real_3_t, cs_alloc_mode);
 
-  cs_real_t *adxk = nullptr, *adxkm1 = nullptr, *dphim1 = nullptr, *rhs0 = nullptr;
+  cs_real_t *adxk = nullptr, *adxkm1 = nullptr;
+  cs_real_t *dphim1 = nullptr, *rhs0 = nullptr;
   if (eqp_p->iswdyn > 0) {
     CS_MALLOC_HD(adxk, n_cells_ext, cs_real_t, cs_alloc_mode);
     CS_MALLOC_HD(adxkm1, n_cells_ext, cs_real_t, cs_alloc_mode);
@@ -754,7 +759,9 @@ _pressure_correction_fv(int                   iterns,
     });
     ctx.wait();
 
-    cs_mesh_sync_var_sym_tens(da_uu);
+    cs_halo_sync(m->halo, CS_HALO_STANDARD, on_device, da_uu);
+    if (m->n_init_perio > 0)
+      cs_halo_perio_sync(m->halo, CS_HALO_STANDARD, on_device, da_uu);
   }
 
   /* Calculation of dt/rho */
@@ -772,7 +779,7 @@ _pressure_correction_fv(int                   iterns,
       });
       ctx.wait();
 
-      cs_halo_sync_var(m->halo, CS_HALO_STANDARD, xdtsro);
+      cs_halo_sync(m->halo, CS_HALO_STANDARD, on_device, xdtsro);
     }
     else if (eqp_p->idften & CS_ANISOTROPIC_DIFFUSION) {
       CS_MALLOC_HD(tpusro, n_cells_ext, cs_real_6_t, cs_alloc_mode);
@@ -784,7 +791,9 @@ _pressure_correction_fv(int                   iterns,
       });
       ctx.wait();
 
-      cs_mesh_sync_var_sym_tens(tpusro);
+      cs_halo_sync(m->halo, CS_HALO_STANDARD, on_device, tpusro);
+      if (m->n_init_perio > 0)
+        cs_halo_perio_sync(m->halo, CS_HALO_STANDARD, on_device, tpusro);
 
       vitenp = tpusro;
     }
@@ -797,7 +806,7 @@ _pressure_correction_fv(int                   iterns,
 
   if (vp_param->staggered == 1) {
 
-    cs_halo_sync_var(m->halo, CS_HALO_STANDARD, dt);
+    cs_halo_sync(m->halo, CS_HALO_STANDARD, ctx.use_gpu(), dt);
 
     const cs_real_t *hli = cs_field_by_name("inner_face_head_loss")->val;
     const cs_real_t *hlb = cs_field_by_name("boundary_face_head_loss")->val;
@@ -1203,7 +1212,7 @@ _pressure_correction_fv(int                   iterns,
         });
         ctx.wait();
 
-        cs_halo_sync_var(m->halo, CS_HALO_STANDARD, weight);
+        cs_halo_sync(m->halo, CS_HALO_STANDARD, ctx.use_gpu(), weight);
       }
 
     }
@@ -1233,8 +1242,9 @@ _pressure_correction_fv(int                   iterns,
         });
         ctx.wait();
 
-        cs_mesh_sync_var_sym_tens((cs_real_6_t *)(f_weight->val));
-
+        cs_halo_sync(m->halo, CS_HALO_STANDARD, on_device, weight);
+        if (m->n_init_perio > 0)
+          cs_halo_perio_sync(m->halo, CS_HALO_STANDARD, on_device, weight);
       }
 
     }
@@ -1398,7 +1408,9 @@ _pressure_correction_fv(int                   iterns,
   ctx.wait();
 
   /* Sync for parallelism and periodicity */
-  cs_mesh_sync_var_vect((cs_real_t *)wrk);
+  cs_halo_sync(m->halo, CS_HALO_STANDARD, on_device, wrk);
+  if (m->n_init_perio > 0)
+    cs_halo_perio_sync(m->halo, CS_HALO_STANDARD, on_device, wrk);
 
   {
     /* BCs will be taken into account later if idilat >= 4 */
@@ -1993,7 +2005,9 @@ _pressure_correction_fv(int                   iterns,
   ctx.wait();
 
   /* Parallelism and periodicity */
-  cs_mesh_sync_var_vect((cs_real_t *)wrk);
+  cs_halo_sync(m->halo, CS_HALO_STANDARD, on_device, wrk);
+  if (m->n_init_perio > 0)
+    cs_halo_perio_sync(m->halo, CS_HALO_STANDARD, on_device, wrk);
 
   {
     int iflmb0 = (cs_glob_ale > CS_ALE_NONE) ? 0 : 1;
@@ -2188,16 +2202,9 @@ _pressure_correction_fv(int                   iterns,
     if (eqp_p->iswdyn >= 1) {
       ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
         dphim1[c_id] = dphi[c_id];
-        dphi[c_id] = 0.;
       });
+      ctx.wait();
     }
-    else {
-      ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
-        dphi[c_id] = 0.;
-      });
-    }
-
-    ctx.wait();
 
     cs_real_t ressol = residual;   /* solver residual */
 
@@ -3082,7 +3089,9 @@ _pressure_correction_fv(int                   iterns,
       ctx.wait();
 
       /* Parallelism and periodicity */
-      cs_mesh_sync_var_vect((cs_real_t *)wrk2);
+      cs_halo_sync(m->halo, CS_HALO_STANDARD, on_device, wrk2);
+      if (m->n_init_perio > 0)
+        cs_halo_perio_sync(m->halo, CS_HALO_STANDARD, on_device, wrk2);
 
       /* Call the function to compute the cfl condition related to the pressure
        * equation */
@@ -3290,8 +3299,10 @@ _pressure_correction_cdo(cs_real_t              vel[][3],
   }
 
   /* Sync for parallelism and periodicity */
-
-  cs_mesh_sync_var_vect((cs_real_t *)wrk);
+  bool on_device = false;
+  cs_halo_sync(m->halo, CS_HALO_STANDARD, on_device, wrk);
+  if (m->n_init_perio > 0)
+    cs_halo_perio_sync(m->halo, CS_HALO_STANDARD, on_device, wrk);
 
   {
     int inc = 1;

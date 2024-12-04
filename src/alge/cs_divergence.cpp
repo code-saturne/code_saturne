@@ -203,6 +203,8 @@ cs_mass_flux(const cs_mesh_t             *m,
     ctx_c.set_cuda_stream(cs_cuda_get_stream(1));
 #endif
 
+  const bool on_device = ctx.use_gpu();
+
   /* Local variables */
 
   /* Discontinuous porous treatment */
@@ -372,9 +374,9 @@ cs_mass_flux(const cs_mesh_t             *m,
   /* ---> Periodicity and parallelism treatment */
 
   if (halo != nullptr) {
-    cs_halo_sync_var_strided(halo, halo_type, (cs_real_t *)qdm, 3);
+    cs_halo_sync(halo, halo_type, on_device, qdm);
     if (cs_glob_mesh->n_init_perio > 0)
-      cs_halo_perio_sync_var_vect(halo, halo_type, (cs_real_t *)qdm, 3);
+      cs_halo_perio_sync(halo, halo_type, on_device, qdm);
   }
 
   /* Standard mass flux */
@@ -740,6 +742,8 @@ cs_tensor_face_flux(const cs_mesh_t             *m,
     ctx_c.set_cuda_stream(cs_cuda_get_stream(1));
 #endif
 
+  const bool on_device = ctx.use_gpu();
+
   cs_real_6_t *c_mass_var, *b_mass_var;
   CS_MALLOC_HD(c_mass_var, n_cells_ext, cs_real_6_t, amode);
   CS_MALLOC_HD(b_mass_var, m->n_b_faces, cs_real_6_t, amode);
@@ -871,9 +875,9 @@ cs_tensor_face_flux(const cs_mesh_t             *m,
   /* Periodicity and parallelism treatment */
 
   if (halo != nullptr) {
-    cs_halo_sync_var_strided(halo, halo_type, (cs_real_t *)c_mass_var, 6);
+    cs_halo_sync(halo, halo_type, on_device, c_mass_var);
     if (cs_glob_mesh->n_init_perio > 0)
-      cs_halo_perio_sync_var_sym_tens(halo, halo_type, (cs_real_t *)c_mass_var);
+      cs_halo_perio_sync(halo, halo_type, on_device, c_mass_var);
   }
 
   /* Standard mass flux */
@@ -1605,6 +1609,8 @@ cs_ext_force_anisotropic_flux(const cs_mesh_t          *m,
     ctx_c.set_cuda_stream(cs_cuda_get_stream(1));
 #endif
 
+  const bool on_device = ctx.use_gpu();
+
   /*==========================================================================
     1. Initialization
     ==========================================================================*/
@@ -1712,12 +1718,9 @@ cs_ext_force_anisotropic_flux(const cs_mesh_t          *m,
     /* ---> Periodicity and parallelism treatment of symmetric tensors */
 
     if (halo != nullptr) {
-      cs_halo_sync_var_strided(halo, CS_HALO_STANDARD, (cs_real_t *)viscce, 6);
-
+      cs_halo_sync(halo, CS_HALO_STANDARD, on_device, viscce);
       if (m->n_init_perio > 0)
-        cs_halo_perio_sync_var_sym_tens(halo,
-                                        CS_HALO_STANDARD,
-                                        (cs_real_t *)viscce);
+        cs_halo_perio_sync(halo, CS_HALO_STANDARD, on_device, viscce);
     }
 
     /* ---> Contribution from interior faces */

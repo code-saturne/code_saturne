@@ -706,8 +706,8 @@ _compute_ani_weighting_cocg(const cs_real_t  wi[],
 
 static void
 _sync_scalar_gradient_halo(const cs_mesh_t        *m,
-                           [[maybe_unused]] bool   on_device,
                            cs_halo_type_t          halo_type,
+                           [[maybe_unused]] bool   on_device,
                            cs_real_3_t             grad[])
 {
   if (m->halo != nullptr) {
@@ -719,18 +719,9 @@ _sync_scalar_gradient_halo(const cs_mesh_t        *m,
 #endif
       cs_halo_sync_var_strided
         (m->halo, halo_type, (cs_real_t *)grad, 3);
-    if (m->have_rotation_perio) {
-#if defined(HAVE_ACCEL)
-      if (on_device)
-        cs_sync_d2h((void  *)grad);
-#endif
-      cs_halo_perio_sync_var_vect
-        (m->halo, halo_type, (cs_real_t *)grad, 3);
-#if defined(HAVE_ACCEL)
-      if (on_device)
-        cs_sync_h2d((void  *)grad);
-#endif
-    }
+
+    if (m->have_rotation_perio)
+      cs_halo_perio_sync(m->halo, halo_type, on_device, grad);
   }
 }
 
@@ -1167,15 +1158,7 @@ _scalar_gradient_clipping(const cs_mesh_t              *m,
 
   /* Synchronize the updated Gradient */
 
-  if (m->halo != nullptr) {
-    cs_halo_sync_var_strided(m->halo, halo_type, (cs_real_t *)grad, 3);
-
-    if (cs_glob_mesh->have_rotation_perio)
-      cs_halo_perio_sync_var_vect(halo,
-                                  halo_type,
-                                  (cs_real_t *)grad,
-                                  3);
-  }
+  _sync_scalar_gradient_halo(m, halo_type, false, grad);
 
   BFT_FREE(_clip_factor);
 }
@@ -1541,7 +1524,7 @@ _initialize_scalar_gradient(const cs_mesh_t                *m,
 
   /* Synchronize halos */
 
-  _sync_scalar_gradient_halo(m, false, CS_HALO_EXTENDED, grad);
+  _sync_scalar_gradient_halo(m, CS_HALO_EXTENDED, false, grad);
 }
 
 /*----------------------------------------------------------------------------
@@ -1705,7 +1688,7 @@ _renormalize_scalar_gradient(const cs_mesh_t                *m,
   BFT_FREE(cor_mat);
 
   /* Synchronize halos */
-  _sync_scalar_gradient_halo(m, false, CS_HALO_EXTENDED, grad);
+  _sync_scalar_gradient_halo(m, CS_HALO_EXTENDED, false, grad);
 }
 
 /*----------------------------------------------------------------------------
@@ -2283,7 +2266,7 @@ _iterative_scalar_gradient(const cs_mesh_t                *m,
 
     /* Synchronize halos */
 
-    _sync_scalar_gradient_halo(m, false, CS_HALO_STANDARD, grad);
+    _sync_scalar_gradient_halo(m, CS_HALO_STANDARD, false, grad);
 
     /* Convergence test */
 
@@ -3003,7 +2986,7 @@ _lsq_scalar_gradient(const cs_mesh_t                *m,
 
   /* Synchronize halos */
 
-  _sync_scalar_gradient_halo(m, false, CS_HALO_STANDARD, grad);
+  _sync_scalar_gradient_halo(m, CS_HALO_STANDARD, false, grad);
 
   BFT_FREE(rhsv);
 }
@@ -3353,7 +3336,7 @@ _lsq_scalar_gradient_hyd_p(const cs_mesh_t                *m,
 
   /* Synchronize halos */
 
-  _sync_scalar_gradient_halo(m, false, CS_HALO_STANDARD, grad);
+  _sync_scalar_gradient_halo(m, CS_HALO_STANDARD, false, grad);
 }
 
 /*----------------------------------------------------------------------------
@@ -3660,7 +3643,7 @@ _lsq_scalar_gradient_hyd_p_gather(const cs_mesh_t                *m,
 
   /* Synchronize halos */
 
-  _sync_scalar_gradient_halo(m, ctx.use_gpu(), CS_HALO_STANDARD, grad);
+  _sync_scalar_gradient_halo(m, CS_HALO_STANDARD, ctx.use_gpu(), grad);
 }
 
 /*----------------------------------------------------------------------------
@@ -3886,7 +3869,7 @@ _lsq_scalar_gradient_ani(const cs_mesh_t               *m,
 
   /* Synchronize halos */
 
-  _sync_scalar_gradient_halo(m, false, CS_HALO_STANDARD, grad);
+  _sync_scalar_gradient_halo(m, CS_HALO_STANDARD, false, grad);
 
   BFT_FREE(cocg);
   BFT_FREE(rhsv);
@@ -4298,7 +4281,7 @@ _reconstruct_scalar_gradient(const cs_mesh_t                 *m,
 
   /* Synchronize halos */
 
-  _sync_scalar_gradient_halo(m, ctx.use_gpu(), CS_HALO_EXTENDED, grad);
+  _sync_scalar_gradient_halo(m, CS_HALO_EXTENDED, ctx.use_gpu(), grad);
 }
 
 /*----------------------------------------------------------------------------
@@ -5046,7 +5029,7 @@ _fv_vtx_based_scalar_gradient(const cs_mesh_t                *m,
 
   /* Synchronize halos */
 
-  _sync_scalar_gradient_halo(m, false, CS_HALO_EXTENDED, grad);
+  _sync_scalar_gradient_halo(m, CS_HALO_EXTENDED, false, grad);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -10114,7 +10097,7 @@ cs_gradient_scalar(const char                    *var_name,
                    cs_real_3_t                    f_ext[],
                    const cs_field_bc_coeffs_t    *bc_coeffs,
                    cs_real_t                      var[],
-                   cs_real_t            *restrict c_weight,
+                   cs_real_t                     *c_weight,
                    const cs_internal_coupling_t  *cpl,
                    cs_real_t           (*restrict grad)[3])
 {
@@ -10133,20 +10116,23 @@ cs_gradient_scalar(const char                    *var_name,
 
   if (mesh->halo != nullptr) {
 
-    cs_halo_sync_var(mesh->halo, halo_type, var);
+    bool on_device = cs_mem_is_device_ptr(var);
+
+    cs_halo_sync(mesh->halo, halo_type, on_device, var);
 
     if (c_weight != nullptr) {
       if (w_stride == 6) {
-        cs_halo_sync_var_strided(mesh->halo, halo_type, c_weight, 6);
-        cs_halo_perio_sync_var_sym_tens(mesh->halo, halo_type, c_weight);
+        cs_real_6_t *c_weight_t = (cs_real_6_t *)c_weight;
+        cs_halo_sync(mesh->halo, halo_type, on_device, c_weight_t);
+        cs_halo_perio_sync(mesh->halo, halo_type, on_device, c_weight_t);
       }
       else
         cs_halo_sync_var(mesh->halo, halo_type, c_weight);
     }
 
     if (hyd_p_flag == 1) {
-      cs_halo_sync_var_strided(mesh->halo, halo_type, (cs_real_t *)f_ext, 3);
-      cs_halo_perio_sync_var_vect(mesh->halo, halo_type, (cs_real_t *)f_ext, 3);
+      cs_halo_sync(mesh->halo, halo_type, on_device, f_ext);
+      cs_halo_perio_sync(mesh->halo, halo_type, on_device, f_ext);
     }
 
   }
@@ -10241,12 +10227,14 @@ cs_gradient_vector(const char                    *var_name,
 
   if (mesh->halo != nullptr) {
 
-    cs_halo_sync_var_strided(mesh->halo, halo_type, (cs_real_t *)var, 3);
+    bool on_device = cs_mem_is_device_ptr(var);
+
+    cs_halo_sync(mesh->halo, halo_type, on_device, var);
     if (cs_glob_mesh->have_rotation_perio)
-      cs_halo_perio_sync_var_vect(mesh->halo, halo_type, (cs_real_t *)var, 3);
+      cs_halo_perio_sync(mesh->halo, halo_type, on_device, var);
 
     if (c_weight != nullptr)
-      cs_halo_sync_var(mesh->halo, halo_type, c_weight);
+      cs_halo_sync(mesh->halo, halo_type, on_device, c_weight);
 
   }
 
@@ -10333,9 +10321,10 @@ cs_gradient_tensor(const char                  *var_name,
      (i.e. we assume it is the gradient of a vector field) */
 
   if (mesh->halo != nullptr) {
-    cs_halo_sync_var_strided(mesh->halo, halo_type, (cs_real_t *)var, 6);
+    bool on_device = cs_mem_is_device_ptr(var);
+    cs_halo_sync(mesh->halo, halo_type, on_device, var);
     if (mesh->have_rotation_perio)
-      cs_halo_perio_sync_var_sym_tens(mesh->halo, halo_type, (cs_real_t *)var);
+      cs_halo_perio_sync(mesh->halo, halo_type, on_device, var);
   }
 
   /* Compute gradient */

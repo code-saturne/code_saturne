@@ -227,20 +227,6 @@ cs_cuda_copy_d2d(void        *dst,
 void *
 cs_cuda_get_host_ptr(const void  *ptr);
 
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Check if a pointer is a device (or shared) pointer.
- *
- * \param [in]   ptr   pointer to device data
- *
- * \return  true if the pointer is usable from the device or null, false
- *          if available on host only or if query failed.
- */
-/*----------------------------------------------------------------------------*/
-
-bool
-cs_cuda_is_device_ptr(const void  *ptr);
-
 /*=============================================================================
  * Inline function prototypes
  *============================================================================*/

@@ -3000,6 +3000,7 @@ cs_equation_solve_deprecated(cs_equation_t *eq)
                                                    matrix,
                                                    slesp->cvg_param.rtol,
                                                    s_info.rhs_norm,
+                                                   false,
                                                    &(s_info.n_it),
                                                    &(s_info.res_norm),
                                                    sh->rhs,

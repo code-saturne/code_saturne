@@ -164,6 +164,9 @@ cs_sles_setup_native_conv_diff(int                  f_id,
  * \brief Call sparse linear equation solver for general colocated
  *        cell-centered finite volume scheme.
  *
+ * The initial solution is assumed to be 0 (and does not need to
+ * be initialized before calling this function).
+ *
  * \param[in]       sc                     solver context
  * \param[in]       a                      matrix
  * \param[in]       precision              solver precision
@@ -171,7 +174,7 @@ cs_sles_setup_native_conv_diff(int                  f_id,
  * \param[out]      n_iter                 number of "equivalent" iterations
  * \param[out]      residual               residual
  * \param[in]       rhs                    right hand side
- * \param[in, out]  vx                     system solution
+ * \param[out]      vx                     system solution
  *
  * \return  convergence state
  */

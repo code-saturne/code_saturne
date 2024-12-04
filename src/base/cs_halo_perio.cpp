@@ -378,7 +378,7 @@ cs_halo_perio_sync_coords(const cs_halo_t  *halo,
 
   cs_real_t  matrix[3][4];
 
-  const fvm_periodicity_t  *periodicity = cs_glob_mesh->periodicity;
+  const fvm_periodicity_t  *periodicity = halo->periodicity;
   const int  n_transforms = halo->n_transforms;
   const cs_lnum_t  n_elts = halo->n_local_elts;
 
@@ -438,8 +438,10 @@ cs_halo_perio_sync_var_vect(const cs_halo_t  *halo,
                             int               incvar)
 {
   if (   halo == nullptr
-      || sync_mode == CS_HALO_N_TYPES
-      || cs_glob_mesh->have_rotation_perio == 0)
+      || sync_mode == CS_HALO_N_TYPES)
+    return;
+
+  if (halo->n_rotations == 0)
     return;
 
   int  rank_id, t_id;
@@ -451,7 +453,7 @@ cs_halo_perio_sync_var_vect(const cs_halo_t  *halo,
 
   const int  n_transforms = halo->n_transforms;
   const cs_lnum_t  n_elts   = halo->n_local_elts;
-  const fvm_periodicity_t  *periodicity = cs_glob_mesh->periodicity;
+  const fvm_periodicity_t  *periodicity = halo->periodicity;
 
   assert(halo != nullptr);
   assert(incvar == 3);
@@ -705,3 +707,83 @@ cs_halo_perio_sync_var_sym_tens_grad(const cs_halo_t  *halo,
 /*----------------------------------------------------------------------------*/
 
 END_C_DECLS
+
+/*=============================================================================
+ * Public C++ functions
+ *============================================================================*/
+
+/*----------------------------------------------------------------------------*/
+/*
+ * Synchronize values for a real vector for rotation periodicity.
+ *
+ * parameters:
+ * \param[in]       halo       halo associated with variable to synchronize
+ * \param[in]       sync_mode  kind of halo treatment (standard or extended)
+ * \param[in]       on_device  is data on device (GPU) ?
+ * \param[in, out]  var        vector to update
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_halo_perio_sync(const cs_halo_t        *halo,
+                   cs_halo_type_t          sync_mode,
+                   [[maybe_unused]]bool    on_device,
+                   cs_real_t               var[][3])
+{
+  if (halo == nullptr)
+    return;
+  if (halo->n_rotations == 0)
+    return;
+
+  // TODO: implement this on GPU instead of syncing.
+#if defined(HAVE_ACCEL)
+  if (on_device)
+    cs_sync_d2h((void  *)var);
+#endif
+
+  cs_halo_perio_sync_var_vect(halo, sync_mode, (cs_real_t *)var, 3);
+
+#if defined(HAVE_ACCEL)
+  if (on_device)
+    cs_sync_h2d((void  *)var);
+#endif
+}
+
+/*----------------------------------------------------------------------------*/
+/*
+ * Synchronize values for a real symmetric tensor for rotation periodicity.
+ *
+ * parameters:
+ * \param[in]       halo       halo associated with variable to synchronize
+ * \param[in]       sync_mode  kind of halo treatment (standard or extended)
+ * \param[in]       on_device  is data on device (GPU) ?
+ * \param[in, out]  var        vector to update
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_halo_perio_sync(const cs_halo_t        *halo,
+                   cs_halo_type_t          sync_mode,
+                   [[maybe_unused]]bool    on_device,
+                   cs_real_t               var[][6])
+{
+  if (halo == nullptr)
+    return;
+  if (halo->n_rotations == 0)
+    return;
+
+  // TODO: implement this on GPU instead of syncing.
+#if defined(HAVE_ACCEL)
+  if (on_device)
+    cs_sync_d2h((void  *)var);
+#endif
+
+  cs_halo_perio_sync_var_sym_tens(halo, sync_mode, (cs_real_t *)var);
+
+#if defined(HAVE_ACCEL)
+  if (on_device)
+    cs_sync_h2d((void  *)var);
+#endif
+}
+
+/*----------------------------------------------------------------------------*/
