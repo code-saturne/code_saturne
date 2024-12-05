@@ -238,7 +238,7 @@ _compute_tensorial_time_step(const cs_mesh_t   *m,
   }
 
   if (m->halo != nullptr) {
-    cs_mesh_sync_var_sym_tens(dttens);
+    cs_halo_sync_r(m->halo, false, dttens);
   }
 }
 

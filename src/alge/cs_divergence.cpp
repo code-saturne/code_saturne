@@ -373,11 +373,8 @@ cs_mass_flux(const cs_mesh_t             *m,
 
   /* ---> Periodicity and parallelism treatment */
 
-  if (halo != nullptr) {
-    cs_halo_sync(halo, halo_type, on_device, qdm);
-    if (cs_glob_mesh->n_init_perio > 0)
-      cs_halo_perio_sync(halo, halo_type, on_device, qdm);
-  }
+  if (halo != nullptr)
+    cs_halo_sync_r(halo, halo_type, on_device, qdm);
 
   /* Standard mass flux */
   if (itypfl == 1) {
@@ -874,11 +871,8 @@ cs_tensor_face_flux(const cs_mesh_t             *m,
 
   /* Periodicity and parallelism treatment */
 
-  if (halo != nullptr) {
-    cs_halo_sync(halo, halo_type, on_device, c_mass_var);
-    if (cs_glob_mesh->n_init_perio > 0)
-      cs_halo_perio_sync(halo, halo_type, on_device, c_mass_var);
-  }
+  if (halo != nullptr)
+    cs_halo_sync_r(halo, halo_type, on_device, c_mass_var);
 
   /* Standard mass flux */
   if (itypfl == 1) {
@@ -1717,11 +1711,8 @@ cs_ext_force_anisotropic_flux(const cs_mesh_t          *m,
 
     /* ---> Periodicity and parallelism treatment of symmetric tensors */
 
-    if (halo != nullptr) {
-      cs_halo_sync(halo, CS_HALO_STANDARD, on_device, viscce);
-      if (m->n_init_perio > 0)
-        cs_halo_perio_sync(halo, CS_HALO_STANDARD, on_device, viscce);
-    }
+    if (halo != nullptr)
+      cs_halo_sync_r(halo, on_device, viscce);
 
     /* ---> Contribution from interior faces */
 

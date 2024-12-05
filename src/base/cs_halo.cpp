@@ -59,6 +59,7 @@
  *----------------------------------------------------------------------------*/
 
 #include "cs_halo.h"
+#include "cs_halo_perio.h"
 
 #if defined(HAVE_CUDA)
 #include "cs_halo_cuda.h"
@@ -2442,6 +2443,276 @@ cs_halo_sync(const cs_halo_t  *halo,
              cs_halo_type_t    sync_mode,
              bool              on_device,
              cs_real_t         val[][6]);
+
+/*----------------------------------------------------------------------------*/
+/*
+ * \brief Update array of values in case of parallelism or periodicity,
+ *        using the standard neighborhood.
+ *
+ * This function aims at copying main values from local elements
+ * (id between 1 and n_local_elements) to ghost elements on distant ranks
+ * (id between n_local_elements + 1 to n_local_elements_with_halo).
+ *
+ * \tparam[in]      Stride      number of (interlaced) values by entity
+ * \tparam[in]      T           value type
+ *
+ * \param[in]       halo        pointer to halo structure
+ * \param[in]       on_device   run on accelerated device if possible
+ * \param[in, out]  val         pointer to variable value array
+ */
+/*----------------------------------------------------------------------------*/
+
+template <typename T>
+void
+cs_halo_sync(const cs_halo_t  *halo,
+             bool              on_device,
+             T                 val[])
+{
+  cs_halo_sync(halo, CS_HALO_STANDARD, on_device, val);
+}
+
+// Force instanciation
+
+template void
+cs_halo_sync(const cs_halo_t  *halo,
+             bool              on_device,
+             cs_real_t         val[]);
+
+/*----------------------------------------------------------------------------*/
+
+template <int Stride, typename T>
+void
+cs_halo_sync(const cs_halo_t  *halo,
+             bool              on_device,
+             T                 val[][Stride])
+{
+  cs_halo_sync(halo, CS_HALO_STANDARD, on_device, val);
+}
+
+// Force instanciation
+
+template void
+cs_halo_sync(const cs_halo_t  *halo,
+             bool              on_device,
+             cs_real_t         val[][3]);
+
+template void
+cs_halo_sync(const cs_halo_t  *halo,
+             bool              on_device,
+             cs_real_t         val[][6]);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Update ghost cell values of a spatial vector field,
+ *        including rotational periodicity if present.
+ *
+ * This function aims at copying main values from local elements
+ * (id between 1 and n_local_elements) to ghost elements on distant ranks
+ * (id between n_local_elements + 1 to n_local_elements_with_halo).
+ *
+ * \tparam[in]      T           value type
+ *
+ * \param[in]       halo        pointer to halo structure
+ * \param[in]       sync_mode   synchronization mode (standard or extended)
+ * \param[in]       on_device   run on accelerated device if possible
+ * \param[in, out]  val         pointer to variable value array
+ */
+/*----------------------------------------------------------------------------*/
+
+template <typename T>
+void
+cs_halo_sync_r(const cs_halo_t       *halo,
+               cs_halo_type_t         sync_mode,
+               [[maybe_unused]]bool   on_device,
+               T                      val[][3])
+{
+  if (halo == nullptr)
+    return;
+
+  cs_datatype_t datatype = cs_datatype_from_type<T>();
+
+#if defined(HAVE_ACCEL)
+  if (on_device)
+    cs_halo_sync_pack_d(halo, sync_mode, datatype, 3, val,
+                        nullptr, nullptr);
+  else
+#endif
+    cs_halo_sync_pack(halo, sync_mode, datatype, 3, val,
+                      nullptr, nullptr);
+
+  cs_halo_sync_start(halo, val, nullptr);
+
+  cs_halo_sync_wait(halo, val, nullptr);
+
+  if (halo->n_rotations == 0)
+    return;
+
+  /* Rotation if needed */
+
+  // TODO: implement this on GPU instead of syncing.
+#if defined(HAVE_ACCEL)
+  if (on_device)
+    cs_sync_d2h((void  *)val);
+#endif
+
+  assert(datatype == CS_REAL_TYPE);  // TODO: use templated type below
+
+  cs_halo_perio_sync_var_vect(halo, sync_mode, (cs_real_t *)val, 3);
+
+#if defined(HAVE_ACCEL)
+  if (on_device)
+    cs_sync_h2d((void  *)val);
+#endif
+}
+
+// Force instanciation
+
+template void
+cs_halo_sync_r(const cs_halo_t  *halo,
+               cs_halo_type_t    sync_mode,
+               bool              on_device,
+               cs_real_t         val[][3]);
+
+/*----------------------------------------------------------------------------*/
+/*
+ * \brief Update ghost cell values of a spatial vector field,
+ *        including rotational periodicity if present,
+ *        using the standard neighborhood.
+ *
+ * This function aims at copying main values from local elements
+ * (id between 1 and n_local_elements) to ghost elements on distant ranks
+ * (id between n_local_elements + 1 to n_local_elements_with_halo).
+ *
+ * \tparam[in]      T           value type
+ *
+ * \param[in]       halo        pointer to halo structure
+ * \param[in]       on_device   run on accelerated device if possible
+ * \param[in, out]  val         pointer to variable value array
+ */
+/*----------------------------------------------------------------------------*/
+
+template <typename T>
+void
+cs_halo_sync_r(const cs_halo_t  *halo,
+               bool              on_device,
+               T                 val[][3])
+{
+  cs_halo_sync_r(halo, CS_HALO_STANDARD, on_device, val);
+}
+
+// Force instanciation
+
+template void
+cs_halo_sync_r(const cs_halo_t  *halo,
+               bool              on_device,
+               cs_real_t         val[][3]);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Update ghost cell values of a symmetric tensor field,
+ *        including rotational periodicity if present.
+ *
+ * This function aims at copying main values from local elements
+ * (id between 1 and n_local_elements) to ghost elements on distant ranks
+ * (id between n_local_elements + 1 to n_local_elements_with_halo).
+ *
+ * \tparam[in]      T           value type
+ *
+ * \param[in]       halo        pointer to halo structure
+ * \param[in]       sync_mode   synchronization mode (standard or extended)
+ * \param[in]       on_device   run on accelerated device if possible
+ * \param[in, out]  val         pointer to variable value array
+ */
+/*----------------------------------------------------------------------------*/
+
+template <typename T>
+void
+cs_halo_sync_r(const cs_halo_t       *halo,
+               cs_halo_type_t         sync_mode,
+               [[maybe_unused]]bool   on_device,
+               T                      val[][6])
+{
+  if (halo == nullptr)
+    return;
+
+  cs_datatype_t datatype = cs_datatype_from_type<T>();
+
+#if defined(HAVE_ACCEL)
+  if (on_device)
+    cs_halo_sync_pack_d(halo, sync_mode, datatype, 6, val,
+                        nullptr, nullptr);
+  else
+#endif
+    cs_halo_sync_pack(halo, sync_mode, datatype, 6, val,
+                      nullptr, nullptr);
+
+  cs_halo_sync_start(halo, val, nullptr);
+
+  cs_halo_sync_wait(halo, val, nullptr);
+
+  if (halo->n_rotations == 0)
+    return;
+
+  /* Rotation if needed */
+
+  // TODO: implement this on GPU instead of syncing.
+#if defined(HAVE_ACCEL)
+  if (on_device)
+    cs_sync_d2h((void  *)val);
+#endif
+
+  assert(datatype == CS_REAL_TYPE);  // TODO: use templated type below
+
+  cs_halo_perio_sync_var_sym_tens(halo, sync_mode, (cs_real_t *)val);
+
+#if defined(HAVE_ACCEL)
+  if (on_device)
+    cs_sync_h2d((void  *)val);
+#endif
+}
+
+// Force instanciation
+
+template void
+cs_halo_sync_r(const cs_halo_t  *halo,
+               cs_halo_type_t    sync_mode,
+               bool              on_device,
+               cs_real_t         val[][6]);
+
+/*----------------------------------------------------------------------------*/
+/*
+ * \brief Update ghost cell values of a symmetric tensor field,
+ *        including rotational periodicity if present,
+ *        using the standard neighborhood.
+ *
+ * This function aims at copying main values from local elements
+ * (id between 1 and n_local_elements) to ghost elements on distant ranks
+ * (id between n_local_elements + 1 to n_local_elements_with_halo).
+ *
+ * \tparam[in]      T           value type
+ *
+ * \param[in]       halo        pointer to halo structure
+ * \param[in]       sync_mode   synchronization mode (standard or extended)
+ * \param[in]       on_device   run on accelerated device if possible
+ * \param[in, out]  val         pointer to variable value array
+ */
+/*----------------------------------------------------------------------------*/
+
+template <typename T>
+void
+cs_halo_sync_r(const cs_halo_t  *halo,
+               bool              on_device,
+               T                 val[][6])
+{
+  cs_halo_sync_r(halo, CS_HALO_STANDARD, on_device, val);
+}
+
+// Force instanciation
+
+template void
+cs_halo_sync_r(const cs_halo_t  *halo,
+               bool              on_device,
+               cs_real_t         val[][6]);
 
 /*----------------------------------------------------------------------------*/
 

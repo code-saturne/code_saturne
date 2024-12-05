@@ -263,10 +263,7 @@ _hydrostatic_pressure_compute(const cs_mesh_t       *m,
 
   ctx.wait();
 
-  bool on_device = ctx.use_gpu();
-  cs_halo_sync(m->halo, CS_HALO_STANDARD, on_device, next_fext);
-  if (m->n_init_perio > 0)
-    cs_halo_perio_sync(m->halo, CS_HALO_STANDARD, on_device, next_fext);
+  cs_halo_sync_r(m->halo, ctx.use_gpu(), next_fext);
 
   /* Prepare matrix and boundary conditions
      -------------------------------------- */
@@ -759,9 +756,7 @@ _pressure_correction_fv(int                   iterns,
     });
     ctx.wait();
 
-    cs_halo_sync(m->halo, CS_HALO_STANDARD, on_device, da_uu);
-    if (m->n_init_perio > 0)
-      cs_halo_perio_sync(m->halo, CS_HALO_STANDARD, on_device, da_uu);
+    cs_halo_sync_r(m->halo, on_device, da_uu);
   }
 
   /* Calculation of dt/rho */
@@ -779,7 +774,7 @@ _pressure_correction_fv(int                   iterns,
       });
       ctx.wait();
 
-      cs_halo_sync(m->halo, CS_HALO_STANDARD, on_device, xdtsro);
+      cs_halo_sync(m->halo, on_device, xdtsro);
     }
     else if (eqp_p->idften & CS_ANISOTROPIC_DIFFUSION) {
       CS_MALLOC_HD(tpusro, n_cells_ext, cs_real_6_t, cs_alloc_mode);
@@ -791,9 +786,7 @@ _pressure_correction_fv(int                   iterns,
       });
       ctx.wait();
 
-      cs_halo_sync(m->halo, CS_HALO_STANDARD, on_device, tpusro);
-      if (m->n_init_perio > 0)
-        cs_halo_perio_sync(m->halo, CS_HALO_STANDARD, on_device, tpusro);
+      cs_halo_sync_r(m->halo, on_device, tpusro);
 
       vitenp = tpusro;
     }
@@ -806,7 +799,7 @@ _pressure_correction_fv(int                   iterns,
 
   if (vp_param->staggered == 1) {
 
-    cs_halo_sync(m->halo, CS_HALO_STANDARD, ctx.use_gpu(), dt);
+    cs_halo_sync(m->halo, ctx.use_gpu(), dt);
 
     const cs_real_t *hli = cs_field_by_name("inner_face_head_loss")->val;
     const cs_real_t *hlb = cs_field_by_name("boundary_face_head_loss")->val;
@@ -1212,7 +1205,7 @@ _pressure_correction_fv(int                   iterns,
         });
         ctx.wait();
 
-        cs_halo_sync(m->halo, CS_HALO_STANDARD, ctx.use_gpu(), weight);
+        cs_halo_sync(m->halo, ctx.use_gpu(), weight);
       }
 
     }
@@ -1242,9 +1235,7 @@ _pressure_correction_fv(int                   iterns,
         });
         ctx.wait();
 
-        cs_halo_sync(m->halo, CS_HALO_STANDARD, on_device, weight);
-        if (m->n_init_perio > 0)
-          cs_halo_perio_sync(m->halo, CS_HALO_STANDARD, on_device, weight);
+        cs_halo_sync_r(m->halo, on_device, weight);
       }
 
     }
@@ -1408,9 +1399,7 @@ _pressure_correction_fv(int                   iterns,
   ctx.wait();
 
   /* Sync for parallelism and periodicity */
-  cs_halo_sync(m->halo, CS_HALO_STANDARD, on_device, wrk);
-  if (m->n_init_perio > 0)
-    cs_halo_perio_sync(m->halo, CS_HALO_STANDARD, on_device, wrk);
+  cs_halo_sync_r(m->halo, on_device, wrk);
 
   {
     /* BCs will be taken into account later if idilat >= 4 */
@@ -2005,9 +1994,7 @@ _pressure_correction_fv(int                   iterns,
   ctx.wait();
 
   /* Parallelism and periodicity */
-  cs_halo_sync(m->halo, CS_HALO_STANDARD, on_device, wrk);
-  if (m->n_init_perio > 0)
-    cs_halo_perio_sync(m->halo, CS_HALO_STANDARD, on_device, wrk);
+  cs_halo_sync_r(m->halo, on_device, wrk);
 
   {
     int iflmb0 = (cs_glob_ale > CS_ALE_NONE) ? 0 : 1;
@@ -3089,9 +3076,7 @@ _pressure_correction_fv(int                   iterns,
       ctx.wait();
 
       /* Parallelism and periodicity */
-      cs_halo_sync(m->halo, CS_HALO_STANDARD, on_device, wrk2);
-      if (m->n_init_perio > 0)
-        cs_halo_perio_sync(m->halo, CS_HALO_STANDARD, on_device, wrk2);
+      cs_halo_sync_r(m->halo, on_device, wrk2);
 
       /* Call the function to compute the cfl condition related to the pressure
        * equation */
@@ -3300,9 +3285,7 @@ _pressure_correction_cdo(cs_real_t              vel[][3],
 
   /* Sync for parallelism and periodicity */
   bool on_device = false;
-  cs_halo_sync(m->halo, CS_HALO_STANDARD, on_device, wrk);
-  if (m->n_init_perio > 0)
-    cs_halo_perio_sync(m->halo, CS_HALO_STANDARD, on_device, wrk);
+  cs_halo_sync_r(m->halo, on_device, wrk);
 
   {
     int inc = 1;

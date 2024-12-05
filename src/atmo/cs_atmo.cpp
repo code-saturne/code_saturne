@@ -661,8 +661,8 @@ _hydrostatic_pressure_compute(cs_real_3_t  f_ext[],
   }
 
   /* --> Handle parallelism and periodicity */
-  if (cs_glob_rank_id  >= 0 || cs_glob_mesh->n_init_perio > 0)
-    cs_mesh_sync_var_vect((cs_real_t *)next_fext);
+  if (m->halo != nullptr)
+    cs_halo_sync(m->halo, false, next_fext);
 
   /* Boundary conditions
    *====================*/

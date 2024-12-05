@@ -248,7 +248,7 @@ cs_face_viscosity_secondary(cs_real_t  secvif[],
 
   if (mesh->halo != nullptr) {
     ctx.wait(); // needed for the next synchronization
-    cs_halo_sync_var(mesh->halo, CS_HALO_STANDARD, secvis);
+    cs_halo_sync(mesh->halo, CS_HALO_STANDARD, ctx.use_gpu(), secvis);
   }
 
   /* Interior faces
@@ -346,9 +346,9 @@ cs_face_viscosity(const cs_mesh_t               *m,
   const cs_lnum_t n_b_faces = m->n_b_faces;
   const cs_lnum_t n_i_faces = m->n_i_faces;
 
-  cs_dispatch_context ctx, ctx_c;
+  cs_dispatch_context ctx, ctx_b;
 #if defined(HAVE_CUDA)
-  ctx_c.set_cuda_stream(cs_cuda_get_stream(1));
+  ctx_b.set_cuda_stream(cs_cuda_get_stream(1));
 #endif
 
   /* Porosity field */
@@ -363,8 +363,10 @@ cs_face_viscosity(const cs_mesh_t               *m,
   /* ---> Periodicity and parallelism treatment */
   if (halo != nullptr) {
     cs_halo_type_t halo_type = CS_HALO_STANDARD;
-    cs_halo_sync_var(halo, halo_type, c_visc);
-    if (porosi != nullptr) cs_halo_sync_var(halo, halo_type, porosi);
+    const bool on_device = ctx.use_gpu();
+    cs_halo_sync(halo, halo_type, on_device, c_visc);
+    if (porosi != nullptr)
+      cs_halo_sync(halo, halo_type, on_device, porosi);
   }
 
   /* Without porosity */
@@ -372,7 +374,7 @@ cs_face_viscosity(const cs_mesh_t               *m,
 
     if (visc_mean_type == 0) {
 
-      ctx_c.parallel_for(n_i_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t f_id) {
+      ctx.parallel_for(n_i_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t f_id) {
 
         cs_lnum_t ii = i_face_cells[f_id][0];
         cs_lnum_t jj = i_face_cells[f_id][1];
@@ -387,7 +389,7 @@ cs_face_viscosity(const cs_mesh_t               *m,
     }
     else {
 
-      ctx_c.parallel_for(n_i_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t f_id) {
+      ctx.parallel_for(n_i_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t f_id) {
 
         cs_lnum_t ii = i_face_cells[f_id][0];
         cs_lnum_t jj = i_face_cells[f_id][1];
@@ -402,7 +404,7 @@ cs_face_viscosity(const cs_mesh_t               *m,
       });
     }
 
-    ctx.parallel_for(n_b_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t f_id) {
+    ctx_b.parallel_for(n_b_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t f_id) {
       b_visc[f_id] = b_f_face_surf[f_id];
     });
 
@@ -412,7 +414,7 @@ cs_face_viscosity(const cs_mesh_t               *m,
 
     if (visc_mean_type == 0) {
 
-      ctx_c.parallel_for(n_i_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t f_id) {
+      ctx.parallel_for(n_i_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t f_id) {
 
         cs_lnum_t ii = i_face_cells[f_id][0];
         cs_lnum_t jj = i_face_cells[f_id][1];
@@ -427,7 +429,7 @@ cs_face_viscosity(const cs_mesh_t               *m,
     }
     else {
 
-      ctx_c.parallel_for(n_i_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t f_id) {
+      ctx.parallel_for(n_i_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t f_id) {
 
         cs_lnum_t ii = i_face_cells[f_id][0];
         cs_lnum_t jj = i_face_cells[f_id][1];
@@ -443,7 +445,7 @@ cs_face_viscosity(const cs_mesh_t               *m,
       });
     }
 
-    ctx.parallel_for(n_b_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t f_id) {
+    ctx_b.parallel_for(n_b_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t f_id) {
       cs_lnum_t ii = b_face_cells[f_id];
       b_visc[f_id] = b_f_face_surf[f_id]*porosi[ii];
     });
@@ -459,7 +461,7 @@ cs_face_viscosity(const cs_mesh_t               *m,
 
     int *c_disable_flag = fvq->c_disable_flag;
 
-    ctx_c.parallel_for(n_i_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t f_id) {
+    ctx.parallel_for(n_i_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t f_id) {
       cs_lnum_t ii = i_face_cells[f_id][0];
       cs_lnum_t jj = i_face_cells[f_id][1];
 
@@ -470,8 +472,8 @@ cs_face_viscosity(const cs_mesh_t               *m,
   }
 
   // guaranteed results for the CPU outside functions
-  ctx_c.wait();
   ctx.wait();
+  ctx_b.wait();
 }
 
 /*----------------------------------------------------------------------------*/
@@ -575,14 +577,8 @@ cs_face_anisotropic_viscosity_vector(const cs_mesh_t             *m,
   }
 
   /* ---> Periodicity and parallelism treatment */
-  if (halo != nullptr) {
-    cs_halo_type_t halo_type = CS_HALO_STANDARD;
-    cs_halo_sync_var_strided(halo, halo_type, (cs_real_t *)c_poro_visc, 6);
-    if (m->n_init_perio > 0)
-      cs_halo_perio_sync_var_sym_tens(halo,
-                                      halo_type,
-                                      (cs_real_t *)c_poro_visc);
-  }
+  if (halo != nullptr)
+    cs_halo_sync_r(halo, ctx.use_gpu(), c_poro_visc);
 
   /* Arithmetic mean */
   if (visc_mean_type == 0) {
@@ -844,14 +840,8 @@ cs_face_anisotropic_viscosity_scalar(const cs_mesh_t               *m,
   }
 
   /* ---> Periodicity and parallelism treatment */
-  if (halo != nullptr) {
-    cs_halo_type_t halo_type = CS_HALO_STANDARD;
-    cs_halo_sync_var_strided(halo, halo_type, (cs_real_t *)c_poro_visc, 6);
-    if (m->n_init_perio > 0)
-      cs_halo_perio_sync_var_sym_tens(halo,
-                                      halo_type,
-                                      (cs_real_t *)c_poro_visc);
-  }
+  if (halo != nullptr)
+    cs_halo_sync_r(halo, ctx.use_gpu(), c_poro_visc);
 
   /* Always Harmonic mean */
   ctx.parallel_for(n_i_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t f_id) {

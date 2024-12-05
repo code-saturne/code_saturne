@@ -60,7 +60,6 @@
 #include "cs_dispatch.h"
 #include "cs_equation_param.h"
 #include "cs_halo.h"
-#include "cs_halo_perio.h"
 #include "cs_log.h"
 #include "cs_internal_coupling.h"
 #include "cs_math.h"
@@ -6456,10 +6455,7 @@ _convection_diffusion_unsteady_strided
      or current values are provided */
 
   if (pvar != nullptr && halo != nullptr) {
-    const bool on_device = ctx.use_gpu();
-    cs_halo_sync(m->halo, halo_type, on_device, pvar);
-    if (cs_glob_mesh->have_rotation_perio)
-      cs_halo_perio_sync(halo, halo_type, on_device, pvar);
+    cs_halo_sync_r(m->halo, halo_type, ctx.use_gpu(), pvar);
   }
   if (pvara == nullptr)
     pvara = (const var_t *)pvar;
@@ -7851,10 +7847,7 @@ cs_convection_diffusion_vector(int                         idtvar,
      or current values are provided */
 
   if (pvar != nullptr && m->halo != nullptr) {
-    const bool on_device = ctx.use_gpu();
-    cs_halo_sync(m->halo, halo_type, on_device, pvar);
-    if (cs_glob_mesh->n_init_perio > 0)
-      cs_halo_perio_sync(m->halo, halo_type, on_device, pvar);
+    cs_halo_sync_r(m->halo, halo_type, ctx.use_gpu(), pvar);
   }
   if (pvara == nullptr)
     pvara = (const cs_real_3_t *)pvar;
@@ -8228,10 +8221,7 @@ cs_convection_diffusion_tensor(int                          idtvar,
      or current values are provided */
 
   if (pvar != nullptr && m->halo != nullptr) {
-    const bool on_device = ctx.use_gpu();
-    cs_halo_sync(m->halo, halo_type, on_device, pvar);
-    if (cs_glob_mesh->n_init_perio > 0)
-      cs_halo_perio_sync(m->halo, halo_type, on_device, pvar);
+    cs_halo_sync_r(m->halo, halo_type, ctx.use_gpu(), pvar);
   }
   if (pvara == nullptr)
     pvara = (const cs_real_6_t *)pvar;
@@ -8617,10 +8607,7 @@ cs_anisotropic_diffusion_scalar(int                         idtvar,
 
   /* ---> Periodicity and parallelism treatment of symmetric tensors */
   if (halo != nullptr) {
-    bool on_device = false;
-    cs_halo_sync(halo, halo_type, on_device, viscce);
-    if (m->n_init_perio > 0)
-      cs_halo_perio_sync(halo, halo_type, on_device, viscce);
+    cs_halo_sync_r(halo, halo_type, false, viscce);
   }
 
   if (icoupl > 0) {
@@ -9287,10 +9274,7 @@ cs_anisotropic_left_diffusion_vector(int                         idtvar,
      or current values are provided */
 
   if (pvar != nullptr && halo != nullptr) {
-    bool on_device = false;
-    cs_halo_sync(halo, halo_type, on_device, pvar);
-    if (cs_glob_mesh->n_init_perio > 0)
-      cs_halo_perio_sync(halo, halo_type, on_device, pvar);
+    cs_halo_sync_r(halo, halo_type, false, pvar);
   }
   if (pvara == nullptr)
     pvara = (const cs_real_3_t *)pvar;
@@ -9833,10 +9817,7 @@ cs_anisotropic_right_diffusion_vector(int                          idtvar,
      or current values are provided */
 
   if (pvar != nullptr && halo != nullptr) {
-    const bool on_device = false;
-    cs_halo_sync(halo, halo_type, on_device, pvar);
-    if (cs_glob_mesh->n_init_perio > 0)
-      cs_halo_perio_sync(halo, halo_type, on_device, pvar);
+    cs_halo_sync_r(halo, halo_type, false, pvar);
   }
   if (pvara == nullptr)
     pvara = (const cs_real_3_t *)pvar;
@@ -10530,10 +10511,7 @@ cs_anisotropic_diffusion_tensor(int                          idtvar,
      or current values are provided */
 
   if (pvar != nullptr && m->halo != nullptr) {
-    bool on_device = false;
-    cs_halo_sync(m->halo, halo_type, on_device, pvar);
-    if (cs_glob_mesh->n_init_perio > 0)
-      cs_halo_perio_sync(m->halo, halo_type, on_device, pvar);
+    cs_halo_sync(m->halo, halo_type, false, pvar);
   }
   if (pvara == nullptr)
     pvara = (const cs_real_6_t *)pvar;
@@ -10600,10 +10578,7 @@ cs_anisotropic_diffusion_tensor(int                          idtvar,
 
   /* ---> Periodicity and parallelism treatment of symmetric tensors */
   if (halo != nullptr) {
-    bool on_device = false;
-    cs_halo_sync(halo, halo_type, on_device, viscce);
-    if (m->n_init_perio > 0)
-      cs_halo_perio_sync(halo, halo_type, on_device, viscce);
+    cs_halo_sync_r(halo, halo_type, false, viscce);
   }
 
   /* 2. Compute the diffusive part with reconstruction technics */
@@ -11546,14 +11521,8 @@ cs_face_anisotropic_diffusion_potential(const int                   f_id,
 
     /* Periodicity and parallelism treatment of symmetric tensors */
 
-    if (halo != nullptr) {
-      cs_halo_sync_var_strided(halo, CS_HALO_STANDARD, (cs_real_t *)viscce, 6);
-
-      if (m->n_init_perio > 0)
-        cs_halo_perio_sync_var_sym_tens(halo,
-                                        CS_HALO_STANDARD,
-                                        (cs_real_t *)viscce);
-    }
+    if (halo != nullptr)
+      cs_halo_sync_r(halo, false, viscce);
 
     /* Allocate a work array for the gradient calculation */
     cs_real_3_t *grad;
@@ -11563,9 +11532,7 @@ cs_face_anisotropic_diffusion_potential(const int                   f_id,
     if (iwgrp > 0) {
       gweight = (cs_real_t *)viscce;
       if (halo != nullptr) {
-        cs_halo_sync_var_strided(halo, halo_type, gweight, 6);
-        if (cs_glob_mesh->n_init_perio > 0)
-          cs_halo_perio_sync_var_sym_tens(halo, halo_type, gweight);
+        cs_halo_sync_r(halo, halo_type, false, viscce);
       }
     }
 
@@ -12680,9 +12647,7 @@ cs_slope_test_gradient(int                         f_id,
   /* Synchronization for parallelism or periodicity */
 
   if (m->halo != nullptr) {
-    cs_halo_sync(m->halo, halo_type, use_gpu, grdpa);
-    if (m->have_rotation_perio)
-      cs_halo_perio_sync(m->halo, halo_type, use_gpu, grdpa);
+    cs_halo_sync_r(m->halo, halo_type, use_gpu, grdpa);
   }
 
   if (cs_glob_timer_kernels_flag > 0) {
@@ -12800,12 +12765,8 @@ cs_upwind_gradient(const int                     f_id,
 
   /* Synchronization for parallelism or periodicity */
 
-  if (halo != nullptr) {
-    bool use_gpu = ctx.use_gpu();
-    cs_halo_sync(halo, halo_type, use_gpu, grdpa);
-    if (cs_glob_mesh->n_init_perio > 0)
-      cs_halo_perio_sync(halo, halo_type, use_gpu, grdpa);
-  }
+  if (halo != nullptr)
+    cs_halo_sync_r(halo, halo_type, ctx.use_gpu(), grdpa);
 }
 
 /*----------------------------------------------------------------------------*/

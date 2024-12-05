@@ -34,24 +34,16 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <math.h>
-#include <stdarg.h>
 #include <string.h>
 
 /*----------------------------------------------------------------------------
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft_mem.h"
-#include "bft_printf.h"
-
 #include "fvm_periodicity.h"
 
 #include "cs_base.h"
 #include "cs_halo.h"
-#include "cs_interface.h"
-#include "cs_mesh.h"
-#include "cs_prototypes.h"
-#include "cs_timer.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
@@ -72,25 +64,6 @@ BEGIN_C_DECLS
 /*=============================================================================
  * Local Structure definitions
  *============================================================================*/
-
-/* Structure used for building mesh structure */
-/* ------------------------------------------ */
-
-typedef struct {
-
-  /* Periodic features */
-
-  cs_lnum_t  *per_face_idx;    /* Index on periodicity for per_face_lst */
-
-  cs_lnum_t  *per_face_lst;    /* Periodic faces list. For each couple,
-                                  we have the local face number on local rank
-                                  and the local face number on distant rank */
-
-  cs_lnum_t  *per_rank_lst;    /* Remote ranks list. For each couple,
-                                  we have the distant rank number. Exists
-                                  only in case of parallelism. */
-
-} _perio_mesh_builder_t ;
 
 /*============================================================================
  * Static global variables
@@ -327,28 +300,6 @@ _apply_tensor3sym_rotation(cs_real_t   matrix[3][4],
 
 }
 
-/*----------------------------------------------------------------------------
- * Test if a halo seems compatible with the main mesh's periodic
- * transformations.
- *
- * If a halo is not compatible, abort with an error message.
- *
- * parameters:
- *   halo --> pointer to halo structure
- *----------------------------------------------------------------------------*/
-
-static void
-_test_halo_compatibility(const cs_halo_t  *halo)
-{
-  assert(halo != nullptr);
-
-  if (cs_glob_mesh->n_transforms != halo->n_transforms)
-    bft_error(__FILE__, __LINE__, 0,
-              _("The %d periodic transformations of the halo do not comply\n"
-                "with the main mesh transformations (numbering %d).\n"),
-              halo->n_transforms, (int)(cs_glob_mesh->n_transforms));
-}
-
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
@@ -383,8 +334,6 @@ cs_halo_perio_sync_coords(const cs_halo_t  *halo,
   const cs_lnum_t  n_elts = halo->n_local_elts;
 
   assert(halo != nullptr);
-
-  _test_halo_compatibility(halo);
 
   /* Compute the new cell centers through periodicity */
 
@@ -458,8 +407,6 @@ cs_halo_perio_sync_var_vect(const cs_halo_t  *halo,
   assert(halo != nullptr);
   assert(incvar == 3);
 
-  _test_halo_compatibility(halo);
-
   for (t_id = 0; t_id < n_transforms; t_id++) {
 
     shift = 4 * halo->n_c_domains * t_id;
@@ -510,8 +457,10 @@ cs_halo_perio_sync_var_tens(const cs_halo_t  *halo,
                             cs_real_t         var[])
 {
   if (   halo == nullptr
-      || sync_mode == CS_HALO_N_TYPES
-      || cs_glob_mesh->have_rotation_perio == 0)
+      || sync_mode == CS_HALO_N_TYPES)
+    return;
+
+  if (halo->n_rotations == 0)
     return;
 
   int  rank_id, t_id;
@@ -523,11 +472,9 @@ cs_halo_perio_sync_var_tens(const cs_halo_t  *halo,
 
   const int  n_transforms = halo->n_transforms;
   const cs_lnum_t  n_elts   = halo->n_local_elts;
-  const fvm_periodicity_t *periodicity = cs_glob_mesh->periodicity;
+  const fvm_periodicity_t *periodicity = halo->periodicity;
 
   assert(halo != nullptr);
-
-  _test_halo_compatibility(halo);
 
   for (t_id = 0; t_id < n_transforms; t_id++) {
 
@@ -580,8 +527,10 @@ cs_halo_perio_sync_var_sym_tens(const cs_halo_t  *halo,
                                 cs_real_t         var[])
 {
   if (   halo == nullptr
-      || sync_mode == CS_HALO_N_TYPES
-      || cs_glob_mesh->have_rotation_perio == 0)
+      || sync_mode == CS_HALO_N_TYPES)
+    return;
+
+  if (halo->n_rotations == 0)
     return;
 
   int  rank_id, t_id;
@@ -593,11 +542,9 @@ cs_halo_perio_sync_var_sym_tens(const cs_halo_t  *halo,
 
   const int  n_transforms = halo->n_transforms;
   const cs_lnum_t  n_elts   = halo->n_local_elts;
-  const fvm_periodicity_t *periodicity = cs_glob_mesh->periodicity;
+  const fvm_periodicity_t *periodicity = halo->periodicity;
 
   assert(halo != nullptr);
-
-  _test_halo_compatibility(halo);
 
   for (t_id = 0; t_id < n_transforms; t_id++) {
 
@@ -650,8 +597,10 @@ cs_halo_perio_sync_var_sym_tens_grad(const cs_halo_t  *halo,
                                      cs_real_t         var[])
 {
   if (   halo == nullptr
-      || sync_mode == CS_HALO_N_TYPES
-      || cs_glob_mesh->have_rotation_perio == 0)
+      || sync_mode == CS_HALO_N_TYPES)
+    return;
+
+  if (halo->n_rotations == 0)
     return;
 
   int  rank_id, t_id;
@@ -663,11 +612,9 @@ cs_halo_perio_sync_var_sym_tens_grad(const cs_halo_t  *halo,
 
   const int  n_transforms = halo->n_transforms;
   const cs_lnum_t  n_elts   = halo->n_local_elts;
-  const fvm_periodicity_t *periodicity = cs_glob_mesh->periodicity;
+  const fvm_periodicity_t *periodicity = halo->periodicity;
 
   assert(halo != nullptr);
-
-  _test_halo_compatibility(halo);
 
   for (t_id = 0; t_id < n_transforms; t_id++) {
 
@@ -707,83 +654,3 @@ cs_halo_perio_sync_var_sym_tens_grad(const cs_halo_t  *halo,
 /*----------------------------------------------------------------------------*/
 
 END_C_DECLS
-
-/*=============================================================================
- * Public C++ functions
- *============================================================================*/
-
-/*----------------------------------------------------------------------------*/
-/*
- * Synchronize values for a real vector for rotation periodicity.
- *
- * parameters:
- * \param[in]       halo       halo associated with variable to synchronize
- * \param[in]       sync_mode  kind of halo treatment (standard or extended)
- * \param[in]       on_device  is data on device (GPU) ?
- * \param[in, out]  var        vector to update
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_halo_perio_sync(const cs_halo_t        *halo,
-                   cs_halo_type_t          sync_mode,
-                   [[maybe_unused]]bool    on_device,
-                   cs_real_t               var[][3])
-{
-  if (halo == nullptr)
-    return;
-  if (halo->n_rotations == 0)
-    return;
-
-  // TODO: implement this on GPU instead of syncing.
-#if defined(HAVE_ACCEL)
-  if (on_device)
-    cs_sync_d2h((void  *)var);
-#endif
-
-  cs_halo_perio_sync_var_vect(halo, sync_mode, (cs_real_t *)var, 3);
-
-#if defined(HAVE_ACCEL)
-  if (on_device)
-    cs_sync_h2d((void  *)var);
-#endif
-}
-
-/*----------------------------------------------------------------------------*/
-/*
- * Synchronize values for a real symmetric tensor for rotation periodicity.
- *
- * parameters:
- * \param[in]       halo       halo associated with variable to synchronize
- * \param[in]       sync_mode  kind of halo treatment (standard or extended)
- * \param[in]       on_device  is data on device (GPU) ?
- * \param[in, out]  var        vector to update
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_halo_perio_sync(const cs_halo_t        *halo,
-                   cs_halo_type_t          sync_mode,
-                   [[maybe_unused]]bool    on_device,
-                   cs_real_t               var[][6])
-{
-  if (halo == nullptr)
-    return;
-  if (halo->n_rotations == 0)
-    return;
-
-  // TODO: implement this on GPU instead of syncing.
-#if defined(HAVE_ACCEL)
-  if (on_device)
-    cs_sync_d2h((void  *)var);
-#endif
-
-  cs_halo_perio_sync_var_sym_tens(halo, sync_mode, (cs_real_t *)var);
-
-#if defined(HAVE_ACCEL)
-  if (on_device)
-    cs_sync_h2d((void  *)var);
-#endif
-}
-
-/*----------------------------------------------------------------------------*/

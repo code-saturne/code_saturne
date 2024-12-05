@@ -1283,8 +1283,7 @@ _ext_forces(const cs_mesh_t                *m,
 
   ctx.wait(); // needed for the next synchronization
 
-  cs_mesh_sync_var_vect((cs_real_t *)dfrcxt);
-
+  cs_halo_sync_r(m->halo, CS_HALO_STANDARD, ctx.use_gpu(), dfrcxt);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1343,6 +1342,8 @@ _update_fluid_vel(const cs_mesh_t             *m,
   cs_dispatch_sum_type_t i_sum_type = ctx.get_parallel_for_i_faces_sum_type(m);
   cs_dispatch_sum_type_t b_sum_type = ctx.get_parallel_for_b_faces_sum_type(m);
 
+  const bool on_device = ctx.use_gpu();
+
   /* irevmc = 0: Update the velocity with the pressure gradient. */
 
   if (vp_param->irevmc == 0) {
@@ -1384,7 +1385,7 @@ _update_fluid_vel(const cs_mesh_t             *m,
         });
         ctx.wait(); // needed for the next synchronization
 
-        cs_mesh_sync_var_scal(cpro_wgrec_s);
+        cs_halo_sync(m->halo, CS_HALO_STANDARD, on_device, cpro_wgrec_s);
       }
       else if (f_g->dim == 6) {
         cpro_wgrec_v = (cs_real_6_t *)f_g->val;
@@ -1395,7 +1396,7 @@ _update_fluid_vel(const cs_mesh_t             *m,
         });
         ctx.wait(); // needed for the next synchronization
 
-        cs_mesh_sync_var_sym_tens(cpro_wgrec_v);
+        cs_halo_sync_r(m->halo, CS_HALO_STANDARD, on_device, cpro_wgrec_v);
       }
     }
 
@@ -1652,7 +1653,7 @@ _update_fluid_vel(const cs_mesh_t             *m,
 
   ctx.wait(); // needed for the following synchronization
 
-  cs_mesh_sync_var_vect((cs_real_t *)vel);
+  cs_halo_sync_r(m->halo, on_device, vel);
 
   if (vp_param->iphydr == 1) {
     ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
@@ -1665,10 +1666,8 @@ _update_fluid_vel(const cs_mesh_t             *m,
     });
     ctx.wait(); // needed for the following synchronization
 
-    cs_mesh_sync_var_vect((cs_real_t *)frcxt);
-
+    cs_halo_sync_r(m->halo, on_device, frcxt);
   }
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1781,7 +1780,7 @@ _log_norm(const cs_mesh_t                *m,
   /* With porosity */
   if (iporos > 0) {
     porosi = CS_F_(poro)->val;
-    cs_mesh_sync_var_scal(porosi);
+    cs_halo_sync(m->halo, false, porosi);
   }
 
   if (cs_glob_vof_parameters->vof_model > 0) {
@@ -2061,6 +2060,7 @@ _velocity_prediction(const cs_mesh_t             *m,
   }
 
   cs_dispatch_context ctx;
+  const bool on_device = ctx.use_gpu();
 
   /* Interpolation of rho^n-1/2 (stored in pcrom)
    * Interpolation of the mass flux at (n+1/2)
@@ -2297,7 +2297,8 @@ _velocity_prediction(const cs_mesh_t             *m,
           cpro_wgrec_v[c_id][ii] = 0;
       });
       ctx.wait();
-      cs_mesh_sync_var_sym_tens(cpro_wgrec_v);
+
+      cs_halo_sync_r(m->halo, on_device, cpro_wgrec_v);
     }
     else {
       cpro_wgrec_s = f_g->val;
@@ -2305,7 +2306,8 @@ _velocity_prediction(const cs_mesh_t             *m,
         cpro_wgrec_s[c_id] = dt[c_id] / wgrec_crom[c_id];
       });
       ctx.wait();
-      cs_mesh_sync_var_scal(cpro_wgrec_s);
+
+      cs_halo_sync(m->halo, on_device, cpro_wgrec_s);
     }
     CS_FREE_HD(cpro_rho_tc);
   }
@@ -3131,8 +3133,7 @@ _velocity_prediction(const cs_mesh_t             *m,
       });
 
       ctx.wait();
-
-      cs_mesh_sync_var_sym_tens(da_uu);
+      cs_halo_sync_r(m->halo, on_device, da_uu);
 
     }
 
@@ -3706,6 +3707,8 @@ cs_solve_navier_stokes(const int        iterns,
   ctx_c.set_cuda_stream(cs_cuda_get_stream(1));
 #endif
 
+  const bool on_device = ctx.use_gpu();
+
   const cs_real_t *xyzp0 = fluid_props->xyzp0;
   const cs_real_t *gxyz = cs_glob_physical_constants->gravity;
 #if defined(HAVE_ACCEL)
@@ -3784,8 +3787,9 @@ cs_solve_navier_stokes(const int        iterns,
 
     /* Handle parallelism or periodicity of uvwk and pressure */
     ctx.wait();
-    cs_mesh_sync_var_scal(cvar_pr);
-    cs_mesh_sync_var_vect((cs_real_t *)uvwk);
+
+    cs_halo_sync(m->halo, on_device, cvar_pr);
+    cs_halo_sync_r(m->halo, on_device, uvwk);
     velk = uvwk;
 
   }
@@ -4010,7 +4014,7 @@ cs_solve_navier_stokes(const int        iterns,
 
       ctx.wait(); // needed for the following synchronization
 
-      cs_mesh_sync_var_vect((cs_real_t *)dfrcxt);
+      cs_halo_sync_r(m->halo, on_device, dfrcxt);
     }
   }
 
@@ -4193,13 +4197,13 @@ cs_solve_navier_stokes(const int        iterns,
 
         /* Resize other arrays related to the velocity-pressure resolution */
         CS_REALLOC_HD(da_uu, n_cells_ext, cs_real_6_t, cs_alloc_mode);
-        cs_mesh_sync_var_sym_tens(da_uu);
+        cs_halo_sync_r(m->halo, on_device, da_uu);
 
         CS_REALLOC_HD(trav, n_cells_ext, cs_real_3_t, cs_alloc_mode);
-        cs_mesh_sync_var_vect((cs_real_t *)trav);
+        cs_halo_sync_r(m->halo, on_device, trav);
 
         CS_REALLOC_HD(dfrcxt, n_cells_ext, cs_real_3_t, cs_alloc_mode);
-        cs_mesh_sync_var_vect((cs_real_t *)dfrcxt);
+        cs_halo_sync_r(m->halo, on_device, dfrcxt);
 
         /* Resize other arrays, depending on user options */
 
@@ -4207,7 +4211,7 @@ cs_solve_navier_stokes(const int        iterns,
           frcxt = (cs_real_3_t *)cs_field_by_name("volume_forces")->val;
         else if (vp_param->iphydr == 2) {
           CS_REALLOC_HD(grdphd, n_cells_ext, cs_real_3_t, cs_alloc_mode);
-          cs_mesh_sync_var_vect((cs_real_t *)grdphd);
+          cs_halo_sync_r(m->halo, on_device, grdphd);
         }
 
         /* Update local pointers on "cells" fields */
@@ -4266,9 +4270,9 @@ cs_solve_navier_stokes(const int        iterns,
 
         if (vp_param->nterup > 1) {
           CS_REALLOC_HD(velk, n_cells_ext, cs_real_3_t, cs_alloc_mode);
-          cs_mesh_sync_var_vect((cs_real_t *)velk);
+          cs_halo_sync_r(m->halo, on_device, velk);
           CS_REALLOC_HD(trava, n_cells_ext, cs_real_3_t, cs_alloc_mode);
-          cs_mesh_sync_var_vect((cs_real_t *)trava);
+          cs_halo_sync_r(m->halo, on_device, trava);
         }
         else {
           velk = vela;
@@ -4403,7 +4407,7 @@ cs_solve_navier_stokes(const int        iterns,
 
       ctx.wait(); // needed for the following synchronization
 
-      cs_mesh_sync_var_scal(cpro_rho_tc);
+      cs_halo_sync(m->halo, CS_HALO_STANDARD, on_device, cpro_rho_tc);
 
       crom = cpro_rho_tc;
       cromk1 = cpro_rho_tc; /* rho at time n+1/2,k-1 */
@@ -4488,7 +4492,7 @@ cs_solve_navier_stokes(const int        iterns,
 
     /* Halo synchronization */
     cs_real_t *cvar_voidf = cs_field_by_name("void_fraction")->val;
-    cs_mesh_sync_var_scal(cvar_voidf);
+    cs_halo_sync(m->halo, on_device, cvar_voidf);
 
     /* Update mixture density/viscosity and mass flux */
     cs_vof_update_phys_prop(m);
@@ -4526,10 +4530,10 @@ cs_solve_navier_stokes(const int        iterns,
     CS_MALLOC_HD(esflum, n_i_faces, cs_real_t, cs_alloc_mode);
     CS_MALLOC_HD(esflub, n_b_faces, cs_real_t, cs_alloc_mode);
 
-    cs_mesh_sync_var_vect((cs_real_t *)vel);
+    cs_halo_sync_r(m->halo, on_device, vel);
 
     if (iestot != nullptr)
-      cs_mesh_sync_var_scal(cvar_pr);
+      cs_halo_sync(m->halo, on_device, cvar_pr);
 
     int iflmb0 = 1;
     if (cs_glob_ale > CS_ALE_NONE)

@@ -219,6 +219,7 @@ _equation_iterative_solve_strided(int                   idtvar,
 {
   /* Local variables */
   cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
+  const cs_halo_t *halo = cs_glob_mesh->halo;
 
   int iconvp = eqp->iconv;
   int idiffp = eqp->idiff;
@@ -895,12 +896,7 @@ _equation_iterative_solve_strided(int                   idtvar,
 
     ctx.wait();
 
-    if (cs_glob_rank_id >= 0 || cs_glob_mesh->n_init_perio > 0) {
-      if (stride == 3)
-        cs_mesh_sync_var_vect((cs_real_t *)pvar);
-      else if (stride == 6)
-        cs_mesh_sync_var_sym_tens((cs_real_6_t *)pvar);
-    }
+    cs_halo_sync_r(halo, ctx.use_gpu(), pvar);
 
     /* Increment face value with theta * face_value at current time step
      * if needed
@@ -1717,9 +1713,7 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
     ctx.wait();
 
     /*  ---> Handle parallelism and periodicity */
-    if (cs_glob_rank_id >= 0 || m->n_init_perio > 0) {
-      cs_mesh_sync_var_scal(pvar);
-    }
+    cs_halo_sync(m->halo, ctx.use_gpu(), pvar);
 
     /* Compute the beta (min/max) limiter */
     if (f_id > -1)

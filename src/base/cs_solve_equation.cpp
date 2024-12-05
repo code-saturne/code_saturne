@@ -643,7 +643,7 @@ _diffusion_terms_scalar(const cs_field_t           *f,
       cs_array_real_copy(n_cells*6,
                          (const cs_real_t *)_viscce,
                          (cs_real_t *)cpro_wgrec_v);
-      cs_mesh_sync_var_sym_tens(cpro_wgrec_v);
+      cs_halo_sync_r(m->halo, false, cpro_wgrec_v);
     }
 
     cs_face_anisotropic_viscosity_scalar(m,
@@ -804,7 +804,7 @@ _diffusion_terms_vector(const cs_field_t            *f,
       cs_array_real_copy(6*n_cells,
                          (cs_real_t *)_viscce,
                          (cs_real_t *)cpro_wgrec_v);
-      cs_mesh_sync_var_sym_tens(cpro_wgrec_v);
+      cs_halo_sync_r(m->halo, false, cpro_wgrec_v);
     }
 
     cs_face_anisotropic_viscosity_scalar(m,
@@ -1950,7 +1950,8 @@ cs_solve_equation_vector(cs_field_t       *f,
                        (const cs_real_t *)rhs,
                        (cs_real_t *)cpro_vect_st);
     /* Handle parallelism and periodicity */
-    cs_mesh_sync_var_vect((cs_real_t *)cpro_vect_st);
+    bool on_device = cs_mem_is_device_ptr(cpro_vect_st);
+    cs_halo_sync_r(m->halo, on_device, cpro_vect_st);
   }
 
   /* If we extrapolate source terms:

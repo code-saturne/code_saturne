@@ -122,53 +122,9 @@ cs_halo_perio_sync_var_sym_tens_grad(const cs_halo_t  *halo,
                                      cs_halo_type_t    sync_mode,
                                      cs_real_t         var[]);
 
+/*----------------------------------------------------------------------------*/
+
 END_C_DECLS
-
-/*=============================================================================
- * Public C++ prototypes
- *============================================================================*/
-
-#if defined(__cplusplus)
-
-/*----------------------------------------------------------------------------*/
-/*
- * Synchronize values for a real vector for rotation periodicity.
- *
- * parameters:
- * \param[in]       halo       halo associated with variable to synchronize
- * \param[in]       sync_mode  kind of halo treatment (standard or extended)
- * \param[in]       on_device  is data on device (GPU) ?
- * \param[in, out]  var        vector to update
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_halo_perio_sync(const cs_halo_t        *halo,
-                   cs_halo_type_t          sync_mode,
-                   [[maybe_unused]]bool    on_device,
-                   cs_real_t               var[][3]);
-
-/*----------------------------------------------------------------------------*/
-/*
- * Synchronize values for a real symmetric tensor for rotation periodicity.
- *
- * parameters:
- * \param[in]       halo       halo associated with variable to synchronize
- * \param[in]       sync_mode  kind of halo treatment (standard or extended)
- * \param[in]       on_device  is data on device (GPU) ?
- * \param[in, out]  var        vector to update
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_halo_perio_sync(const cs_halo_t        *halo,
-                   cs_halo_type_t          sync_mode,
-                   [[maybe_unused]]bool    on_device,
-                   cs_real_t               var[][6]);
-
-/*----------------------------------------------------------------------------*/
-
-#endif // __cplusplus
 
 #endif /* __CS_HALO_PERIO_H__ */
 
