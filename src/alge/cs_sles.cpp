@@ -51,6 +51,7 @@
 
 #include "cs_base.h"
 #include "cs_blas.h"
+#include "cs_dispatch.h"
 #include "cs_field.h"
 #include "cs_log.h"
 #include "cs_halo.h"
@@ -723,6 +724,36 @@ _needs_solving(const  char        *name,
                              and expect to have vx = 0 most of the time) */
 
   return retval;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Set solution to zero.
+ *
+ * TODO enable cs_array_functions on GPU and use that generic solution
+ * instead of this temporary local solution.
+ *
+ * \param[in]       a              matrix
+ * \param[out]      vx             system solution
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_zero_x(const cs_matrix_t   *a,
+        cs_real_t           *vx)
+{
+  cs_alloc_mode_t amode = cs_matrix_get_alloc_mode(a);
+
+  const cs_lnum_t db_size = cs_matrix_get_diag_block_size(a);
+  const cs_lnum_t _n_rows = cs_matrix_get_n_rows(a) * db_size;
+
+  cs_dispatch_context ctx;
+  ctx.set_use_gpu(amode >= CS_ALLOC_HOST_DEVICE_SHARED);
+
+  ctx.parallel_for(_n_rows, [=] CS_F_HOST_DEVICE (cs_lnum_t i) {
+    vx[i] = 0;
+  });
+  ctx.wait();
 }
 
 /*----------------------------------------------------------------------------
@@ -1689,7 +1720,6 @@ cs_sles_setup(cs_sles_t          *sles,
  * \param[out]      residual       residual
  * \param[in]       rhs            right hand side
  * \param[in, out]  vx             system solution
- * \param[out]      vx             system solution
  * \param[in]       aux_size       size of aux_vectors (in bytes)
  * \param           aux_vectors    optional working area
  *                                 (internal allocation if nullptr)
@@ -1753,6 +1783,10 @@ cs_sles_solve(cs_sles_t           *sles,
       sles->n_no_op += 1;
       *n_iter = 0;
       state = CS_SLES_CONVERGED;
+
+      /* Ensure output is set to 0 in this case */
+      if (vx_ini_0)
+        _zero_x(a, vx);
     }
   }
 
