@@ -8329,21 +8329,21 @@ cs_grid_coarsen(const cs_grid_t      *f,
     cs_gnum_t  _n_mean_g_rows = c->n_g_rows / _n_ranks;
     if (   _n_mean_g_rows < (cs_gnum_t)merge_rows_mean_threshold
         || c->n_g_rows < merge_rows_glob_threshold) {
+      cs_matrix_type_t cm_type = cs_matrix_get_type(c->matrix);
       if (c->_xa == nullptr && c->n_faces > 0)
         _native_from_msr(c);
       _merge_grids(c, merge_stride, verbosity);
       if (c->_matrix != nullptr) {
-        cs_matrix_type_t cm_type = cs_matrix_get_type(c->matrix);
         cs_matrix_destroy(&(c->_matrix));
         cs_matrix_structure_destroy(&(c->matrix_struct));
-        _matrix_from_native(cm_type, c);
       }
+      _matrix_from_native(cm_type, c);
     }
   }
 
 #endif
 
-  if (f->use_faces)
+  if (f->use_faces && c->_matrix != nullptr)
     cs_matrix_set_mesh_association(c->_matrix,
                                    nullptr,
                                    c->cell_face,
