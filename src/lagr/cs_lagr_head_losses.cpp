@@ -210,7 +210,7 @@ _porcel(cs_real_t         mdiam[],
 
   /* Paralellism and periodicity */
 
-  cs_mesh_sync_var_scal(porosi);
+  cs_halo_sync(m->halo, false, porosi);
   cs_parall_counter_max(&indic, 1);
 
   cs_lnum_t nn = 0;
@@ -251,18 +251,13 @@ _porcel(cs_real_t         mdiam[],
 
 
     /* Paralellism and periodicity    */
-    if (cs_glob_rank_id >= 0 || cs_glob_mesh->n_init_perio > 0) {
-      cs_mesh_sync_var_scal(porosi);
-      cs_mesh_sync_var_scal(mdiam);
-    }
+    cs_halo_sync(m->halo, false, porosi);
+    cs_halo_sync(m->halo, false, mdiam);
 
     for (cs_lnum_t cell_id = 0; cell_id < ncel; cell_id++) {
-
       if (porosi[cell_id] < cs_glob_lagr_clogging_model->mporos)
         indic = 1;
-
     }
-
     cs_parall_counter_max(&indic, 1);
 
     nn++;

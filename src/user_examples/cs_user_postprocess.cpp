@@ -748,7 +748,7 @@ cs_user_postprocess_values(const char            *mesh_name,
 
     /* Ensure variable is synchronized in parallel or periodic cases;
        should already have been done before, repeated for safety */
-    cs_mesh_sync_var_scal(cvar_p);
+    cs_field_synchronize(CS_F_(p), CS_HALO_STANDARD);
 
     const cs_mesh_t *m = cs_glob_mesh;
 

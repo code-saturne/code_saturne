@@ -442,27 +442,6 @@ void
 cs_mesh_sync_var_vect(cs_real_t  *var);
 
 /*----------------------------------------------------------------------------
- * Update a vector array in case of parallelism and/or periodicity,
- * using an extended halo.
- *
- * parameters:
- *   var  <->  interleaved vector (of dimension 3)
- *----------------------------------------------------------------------------*/
-
-void
-cs_mesh_sync_var_vect_ext(cs_real_t  *var);
-
-/*----------------------------------------------------------------------------
- * Update a tensor array in case of parallelism and/or periodicity.
- *
- * parameters:
- *   var  <->  interleaved tensor (of dimension 3x3)
- *----------------------------------------------------------------------------*/
-
-void
-cs_mesh_sync_var_tens(cs_real_t  *var);
-
-/*----------------------------------------------------------------------------
  * Update a symmetric tensor array in case of parallelism and/or periodicity.
  *
  * parameters:

@@ -886,6 +886,31 @@ cs_halo_sync_r(const cs_halo_t  *halo,
                T                 val[][6]);
 
 /*----------------------------------------------------------------------------*/
+/*!
+ * \brief Update ghost cell values of a non-symmetric tensor field,
+ *        including rotational periodicity if present.
+ *
+ * This function aims at copying main values from local elements
+ * (id between 1 and n_local_elements) to ghost elements on distant ranks
+ * (id between n_local_elements + 1 to n_local_elements_with_halo).
+ *
+ * \tparam[in]      T           value type
+ *
+ * \param[in]       halo        pointer to halo structure
+ * \param[in]       sync_mode   synchronization mode (standard or extended)
+ * \param[in]       on_device   run on accelerated device if possible
+ * \param[in, out]  val         pointer to variable value array
+ */
+/*----------------------------------------------------------------------------*/
+
+template <typename T>
+void
+cs_halo_sync_r(const cs_halo_t  *halo,
+               cs_halo_type_t    sync_mode,
+               bool              on_device,
+               T                 val[][3][3]);
+
+/*----------------------------------------------------------------------------*/
 
 #endif // __cplusplus
 

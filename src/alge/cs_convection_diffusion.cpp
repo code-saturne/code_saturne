@@ -613,7 +613,8 @@ _sync_strided_gradient_halo(const cs_mesh_t         *m,
                    (cs_real_t *)grad);
   else
 #endif
-    cs_halo_sync_var_strided(m->halo, halo_type, (cs_real_t *)grad, stride*3);
+    cs_halo_sync(m->halo, halo_type, CS_REAL_TYPE, stride*3,
+                 (cs_real_t *)grad);
 
   if (m->have_rotation_perio) {
 #if defined(HAVE_ACCEL)

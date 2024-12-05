@@ -3249,52 +3249,6 @@ cs_mesh_sync_var_vect(cs_real_t  *var)
 }
 
 /*----------------------------------------------------------------------------
- * Update a vector array in case of parallelism and/or periodicity,
- * using an extended halo.
- *
- * parameters:
- *   var  <->  interleaved vector (of dimension 3)
- *----------------------------------------------------------------------------*/
-
-void
-cs_mesh_sync_var_vect_ext(cs_real_t  *var)
-{
-  const cs_halo_t  *halo = cs_glob_mesh->halo;
-
-  if (halo == nullptr) return;
-
-  cs_halo_sync_var_strided(halo, CS_HALO_EXTENDED, var, 3);
-
-  if (cs_glob_mesh->n_init_perio > 0)
-    cs_halo_perio_sync_var_vect(halo,
-                                CS_HALO_EXTENDED,
-                                var,
-                                3);
-}
-
-/*----------------------------------------------------------------------------
- * Update a tensor array in case of parallelism and/or periodicity.
- *
- * parameters:
- *   var  <->  interleaved tensor (of dimension 3x3)
- *----------------------------------------------------------------------------*/
-
-void
-cs_mesh_sync_var_tens(cs_real_t  *var)
-{
-  const cs_halo_t  *halo = cs_glob_mesh->halo;
-
-  if (halo == nullptr) return;
-
-  cs_halo_sync_var_strided(halo, CS_HALO_STANDARD, var, 9);
-
-  if (cs_glob_mesh->n_init_perio > 0)
-    cs_halo_perio_sync_var_tens(halo,
-                                CS_HALO_STANDARD,
-                                var);
-}
-
-/*----------------------------------------------------------------------------
  * Update a symmetric tensor array in case of parallelism and/or periodicity.
  *
  * parameters:

@@ -1518,36 +1518,31 @@ cs_field_synchronize(cs_field_t      *f,
 
     if (halo != nullptr) {
 
-      if (f->dim == 1)
-        cs_halo_sync_var(halo, halo_type, f->val);
+      bool on_device = cs_mem_is_device_ptr(f->val);
 
-      else {
-
-        cs_halo_sync_var_strided(halo, halo_type, f->val, f->dim);
-
-        if (cs_glob_mesh->have_rotation_perio) {
-          switch(f->dim) {
-          case 1:
-            break;
-          case 3:
-            cs_halo_perio_sync_var_vect(halo, halo_type, f->val, 3);
-            break;
-          case 6:
-            cs_halo_perio_sync_var_sym_tens(halo, halo_type, f->val);
-            break;
-          case 9:
-            cs_halo_perio_sync_var_tens(halo, halo_type, f->val);
-            break;
-          default:
-            bft_error(__FILE__, __LINE__, 0,
-                      _("field %s of dimension %d\n"
-                        "cannot handle rotational periodicity\n"),
-                      f->name, f->dim);
-            break;
-          }
-
-        }
-
+      switch(f->dim) {
+      case 1:
+        cs_halo_sync(halo, halo_type, on_device, f->val);
+        break;
+      case 3:
+        cs_halo_sync_r(halo, halo_type, on_device,
+                       reinterpret_cast<cs_real_3_t *>(f->val));
+        break;
+      case 6:
+        cs_halo_sync_r(halo, halo_type, on_device,
+                       reinterpret_cast<cs_real_6_t *>(f->val));
+        break;
+      case 9:
+        cs_halo_sync_r(halo, halo_type, on_device,
+                       reinterpret_cast<cs_real_33_t *>(f->val));
+        break;
+      default:
+        if (halo->n_rotations > 0)
+          bft_error(__FILE__, __LINE__, 0,
+                    _("field %s of dimension %d\n"
+                      "cannot handle rotational periodicity\n"),
+                    f->name, f->dim);
+        break;
       }
 
     }

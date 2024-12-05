@@ -734,22 +734,6 @@ module cs_c_bindings
     end function cs_variable_field_create
 
     !---------------------------------------------------------------------------
-
-    ! Interface to C function creating a CDO variable field
-
-    function cs_variable_cdo_field_create(name, label, location_id,       &
-                                          dim, has_previous) result(id)   &
-      bind(C, name='cs_variable_cdo_field_create')
-      use, intrinsic :: iso_c_binding
-      implicit none
-      character(kind=c_char, len=1), dimension(*), intent(in)  :: name, label
-      integer(c_int), value                                    :: location_id
-      integer(c_int), value                                    :: has_previous
-      integer(c_int), value                                    :: dim
-      integer(c_int)                                           :: id
-    end function cs_variable_cdo_field_create
-
-    !---------------------------------------------------------------------------
     ! Interface to C function for balance computation
 
     subroutine cs_balance_by_zone(selection_crit, scalar_name)  &
@@ -1093,16 +1077,6 @@ module cs_c_bindings
     end subroutine cs_atmo_aerosol_ssh_set_t_p_h
 
     !---------------------------------------------------------------------------
-    ! Interface to C function for physical properties variable
-
-    subroutine cs_physical_properties_update(iterns) &
-      bind(C, name='cs_physical_properties_update')
-      use, intrinsic :: iso_c_binding
-      implicit none
-      integer(c_int), value :: iterns
-    end subroutine cs_physical_properties_update
-
-    !---------------------------------------------------------------------------
 
     ! Interface to C function updating scalar array ghost values.
 
@@ -1134,28 +1108,6 @@ module cs_c_bindings
       implicit none
       real(c_double), dimension(3, *) :: var
     end subroutine synvin
-
-    !---------------------------------------------------------------------------
-
-    ! Interface to C function updating vector array extended ghost values.
-
-    subroutine synvie(var)  &
-      bind(C, name='cs_mesh_sync_var_vect_ext')
-      use, intrinsic :: iso_c_binding
-      implicit none
-      real(c_double), dimension(3, *) :: var
-    end subroutine synvie
-
-    !---------------------------------------------------------------------------
-
-    ! Interface to C function updating tensor array ghost values.
-
-    subroutine syntin(var)  &
-      bind(C, name='cs_mesh_sync_var_tens')
-      use, intrinsic :: iso_c_binding
-      implicit none
-      real(c_double), dimension(3, 3, *) :: var
-    end subroutine syntin
 
     !---------------------------------------------------------------------------
 

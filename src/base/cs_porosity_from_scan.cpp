@@ -742,13 +742,15 @@ _prepare_porosity_from_scan(const cs_mesh_t             *m,
             vec_w_point[idim] = dist_coords[i*3 + idim]
                               - cen_points[c_id*3+idim];
           //TODO compute roughness incrementally
-          //w_point_dist = cs_math_3_dot_product(vec_w_point, c_w_face_normal[c_id]);
+          //w_point_dist = cs_math_3_dot_product(vec_w_point,
+          //                                     c_w_face_normal[c_id]);
 
           c_w_face_rough[c_id] += 2 * sqrt(w_point_dist * w_point_dist)
                                 / f_nb_scan->val[c_id];
         }
       }
-      //TODO compute the minimum distance between point to suggest a minimum resolution
+      //TODO compute the minimum distance between point
+      //     to suggest a minimum resolution
 
       /* Free memory */
       _locator = ple_locator_destroy(_locator);
@@ -802,7 +804,7 @@ _prepare_porosity_from_scan(const cs_mesh_t             *m,
   BFT_FREE(file_names);
 
   /* Parallel synchronisation */
-  cs_mesh_sync_var_scal(mq->cell_vol);
+  cs_halo_sync(m->halo, false, mq->cell_vol);
   if (m->halo != nullptr) {
     cs_halo_sync_var_strided(m->halo, CS_HALO_EXTENDED,
                              (cs_real_t *)cen_points, 3);
@@ -833,7 +835,7 @@ _prepare_porosity_from_scan(const cs_mesh_t             *m,
   }
 
   /* Parallel synchronisation */
-  cs_mesh_sync_var_scal(cell_f_vol);
+  cs_halo_sync(m->halo, false, cell_f_vol);
 
   cs_real_3_t *restrict i_face_normal
     =  (cs_real_3_t *)mq->i_face_normal;
@@ -1280,7 +1282,7 @@ cs_compute_porosity_from_scan(void)
       f->val[c_id] = CS_MAX(f->val[c_id], pvar[c_id]);
 
     /* Parallel synchronisation */
-    cs_mesh_sync_var_scal(f->val);
+    cs_halo_sync(m->halo, false, f->val);
 
   } /* End loop over sources */
 
