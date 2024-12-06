@@ -73,6 +73,13 @@ class ThermalScalarModel(DefineUserScalarsModel, Variables, Model):
         if case.module_name() == "neptune_cfd":
             self.node_models = None
             self.node_therm = None
+
+            self.node_coal  = None
+            self.node_joule = None
+            self.node_gas   = None
+            self.node_ray   = None
+            self.node_atmo  = None
+            self.node_comp  = None
             return
 
         DefineUserScalarsModel.__init__(self, case)
