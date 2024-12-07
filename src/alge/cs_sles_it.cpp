@@ -4598,7 +4598,8 @@ cs_sles_it_setup(void               *context,
       || (   c->type >= CS_SLES_P_GAUSS_SEIDEL
           && c->type <= CS_SLES_P_SYM_GAUSS_SEIDEL)) {
     /* Force to Jacobi in case matrix type is not adapted */
-    if (cs_matrix_get_type(a) != CS_MATRIX_MSR) {
+    const cs_lnum_t eb_size = cs_matrix_get_extra_diag_block_size(a);
+    if (cs_matrix_get_type(a) != CS_MATRIX_MSR || eb_size > 1) {
       c->type = CS_SLES_JACOBI;
     }
     block_nn_inverse = true;
