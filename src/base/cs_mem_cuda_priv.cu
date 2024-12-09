@@ -510,6 +510,29 @@ cs_mem_cuda_is_device_ptr(const void  *ptr)
   return false;
 }
 
+/*----------------------------------------------------------------------------*/
+/*
+ * \brief  Get memory usage on CUDA device (in kB)
+ *
+ * \return[in]  memory usage on current CUDA device
+ */
+/*----------------------------------------------------------------------------*/
+
+size_t
+cs_mem_cuda_get_device_memory_usage(void)
+{
+  size_t retval = 0;
+
+  size_t mem_free = 0, mem_total = 0;
+  int retcode = cudaMemGetInfo(&mem_free, &mem_total);
+  if (retcode == cudaSuccess) {
+    retval = mem_total - mem_free;
+    retval /= 1024;
+  }
+
+  return retval;
+}
+
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*----------------------------------------------------------------------------*/

@@ -129,6 +129,9 @@ cs_mem_cuda_unset_advise_read_mostly(const void  *ptr,
 bool
 cs_mem_cuda_is_device_ptr(const void  *ptr);
 
+size_t
+cs_mem_cuda_get_device_memory_usage(void);
+
 #endif  /* CS_HAVE_CUDA */
 
 /*----------------------------------------------------------------------------*/
