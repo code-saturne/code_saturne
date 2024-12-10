@@ -3846,7 +3846,8 @@ _automatic_aggregation_mx_msr(const cs_grid_t  *f,
  *
  * If n_f_threads > 1, it must be consistent with the value used for
  * coarsening, because in that case we assume that each coarse row is
- * assigned to a single thread.
+ * assigned to a single thread. This restriction could be removed
+ * using atomic operations.
  *
  * \param[in]   f_level        fine grid level
  * \param[in]   f_n_rows       number of rows in fine grid
