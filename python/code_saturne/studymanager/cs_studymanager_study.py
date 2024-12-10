@@ -532,14 +532,13 @@ class Case(object):
                 else:
                     fail_info = 'SKIPPED (already present)'
             log_lines += ['      * prepare run folder: {0} --> {1} ({2} s)'.format(self.title, fail_info, str(t))]
+
+            # we set to off all steps except in case of already prepared run
             if not have_status_prepared:
                 log_lines += ['        - see ' + log_path]
-
-            # TODO: we could allow run when the status is "prepared"
-            # (so simply indent the following lines)
-            self.compute = "off"
-            self.post = "off"
-            self.compare = "off"
+                self.compute = "off"
+                self.post = "off"
+                self.compare = "off"
 
         os.chdir(home)
         return log_lines
