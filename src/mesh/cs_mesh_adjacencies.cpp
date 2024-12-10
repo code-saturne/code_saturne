@@ -854,7 +854,7 @@ cs_mesh_adjacencies_update_device(cs_alloc_mode_t  alloc_mode)
 
   if (ma->cell_hb_faces_idx != nullptr) {
     CS_REALLOC_HD(ma->cell_hb_faces_idx, n_cells+1, cs_lnum_t, alloc_mode);
-    CS_REALLOC_HD(ma->cell_hb_faces, ma->cell_b_faces_idx[n_cells], cs_lnum_t,
+    CS_REALLOC_HD(ma->cell_hb_faces, ma->cell_hb_faces_idx[n_cells], cs_lnum_t,
                   alloc_mode);
     cs_mem_advise_set_read_mostly(ma->cell_hb_faces_idx);
     cs_mem_advise_set_read_mostly(ma->cell_hb_faces);
