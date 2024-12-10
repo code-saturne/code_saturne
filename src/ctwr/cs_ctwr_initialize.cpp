@@ -570,7 +570,7 @@ cs_ctwr_init_flow_vars(cs_real_t  liq_mass_flow[])
 
   const cs_lnum_t n_cells_with_ghosts = cs_glob_mesh->n_cells_with_ghosts;
   const cs_lnum_t n_i_faces = cs_glob_mesh->n_i_faces;
-
+  const cs_real_t *restrict i_face_surf = cs_glob_mesh_quantities->i_face_surf;
   const cs_halo_t *halo = cs_glob_mesh->halo;
   cs_lnum_t *packing_cell;
 
@@ -633,7 +633,8 @@ cs_ctwr_init_flow_vars(cs_real_t  liq_mass_flow[])
 
       /* Vertical (align with gravity) component of the surface vector */
       cs_real_t liq_surf = cs_math_3_dot_product(g_dir,
-                                                 i_face_u_normal[face_id]);
+                                                 i_face_u_normal[face_id])
+                           * i_face_surf[face_id];
 
       /* Face mass flux of the liquid */
       cs_lnum_t cell_id;

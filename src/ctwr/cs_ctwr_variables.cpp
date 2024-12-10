@@ -249,7 +249,7 @@ cs_ctwr_add_variable_fields(void)
     }
     else {
       f_id = cs_variable_field_create("ym_l_r",
-                                          "Mass rain / mass air",
+                                          "Rain to air mass ratio",
                                           CS_MESH_LOCATION_CELLS,
                                           1);
     }
