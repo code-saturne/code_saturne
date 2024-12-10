@@ -1283,7 +1283,7 @@ _ext_forces(const cs_mesh_t                *m,
 
   ctx.wait(); // needed for the next synchronization
 
-  cs_halo_sync_r(m->halo, CS_HALO_STANDARD, ctx.use_gpu(), dfrcxt);
+  cs_halo_sync_r(m->halo, CS_HALO_EXTENDED, ctx.use_gpu(), dfrcxt);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -4014,7 +4014,7 @@ cs_solve_navier_stokes(const int        iterns,
 
       ctx.wait(); // needed for the following synchronization
 
-      cs_halo_sync_r(m->halo, on_device, dfrcxt);
+      cs_halo_sync_r(m->halo, CS_HALO_EXTENDED, on_device, dfrcxt);
     }
   }
 
@@ -4203,7 +4203,7 @@ cs_solve_navier_stokes(const int        iterns,
         cs_halo_sync_r(m->halo, on_device, trav);
 
         CS_REALLOC_HD(dfrcxt, n_cells_ext, cs_real_3_t, cs_alloc_mode);
-        cs_halo_sync_r(m->halo, on_device, dfrcxt);
+        cs_halo_sync_r(m->halo, CS_HALO_EXTENDED, on_device, dfrcxt);
 
         /* Resize other arrays, depending on user options */
 
