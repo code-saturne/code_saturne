@@ -734,7 +734,10 @@ class Plotter(object):
             study_object.matplotlib_figures.append(f)
 
             # save the figure
-            self.__save(f, figure)
+            try:
+                self.__save(f, figure)
+            else:
+                print("    /!\ ERROR while saving figure " + f)
 
         # close current figure
         plt.close()
