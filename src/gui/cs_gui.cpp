@@ -55,6 +55,7 @@
 #include "cs_boundary.h"
 #include "cs_boundary_zone.h"
 #include "cs_cf_model.h"
+#include "cs_domain_setup.h"
 #include "cs_equation.h"
 #include "cs_equation_param.h"
 #include "cs_ext_neighborhood.h"
@@ -84,12 +85,14 @@
 #include "cs_param_sles.h"
 #include "cs_partition.h"
 #include "cs_physical_model.h"
+#include "cs_property.h"
 #include "cs_rotation.h"
 #include "cs_selector.h"
 #include "cs_timer.h"
 #include "cs_time_moment.h"
 #include "cs_time_table.h"
 #include "cs_thermal_model.h"
+#include "cs_thermal_system.h"
 #include "cs_physical_properties.h"
 #include "cs_time_step.h"
 #include "cs_turbomachinery.h"
@@ -1945,6 +1948,11 @@ cs_gui_hydrostatic_equ_param(void)
 void
 cs_gui_dt_param(void)
 {
+  /* If HTSolver & steady state exit */
+  if (   cs_glob_physical_model_flag[CS_HEAT_TRANSFER] > -1
+      && cs_glob_domain->time_options->idtvar == CS_TIME_STEP_LOCAL)
+    return;
+
   /* Default, forbidden values for time step factor */
   double cdtmin = -1., cdtmax = -1.;
 
@@ -1961,6 +1969,11 @@ cs_gui_dt_param(void)
   cs_gui_node_get_child_real(tn, "max_fourier_num", &(time_opt->foumax));
   cs_gui_node_get_child_real(tn, "time_step_var", &(time_opt->varrdt));
   cs_gui_node_get_child_real(tn, "relaxation_coefficient", &(time_opt->relxst));
+
+  /* Call CDO function for HT Solver */
+  if (   cs_glob_physical_model_flag[CS_HEAT_TRANSFER] > -1
+      && time_opt->idtvar == CS_TIME_STEP_CONSTANT)
+    cs_domain_def_time_step_by_value(cs_glob_domain, time_stp->dt_ref);
 
   if (cdtmin > 0)
     time_opt->dtmin = cdtmin * time_stp->dt_ref;
@@ -1983,6 +1996,8 @@ cs_gui_dt_param(void)
     if (_t_max >= 0)
       time_stp->t_max = time_stp->t_prev + _t_max;
   }
+  bft_printf("%s[L%d] : t_max = %f\n", __func__, __LINE__, time_stp->t_max);
+  bft_printf_flush();
 
   if (_t_max < 0) {
     int _nt_max = -1;
@@ -1995,6 +2010,9 @@ cs_gui_dt_param(void)
         time_stp->nt_max = time_stp->nt_prev + _nt_max;
     }
   }
+
+  bft_printf("%s[L%d] : nt_max = %d\n", __func__, __LINE__, time_stp->nt_max);
+  bft_printf_flush();
 
   cs_gui_node_get_child_status_int(tn,
                                    "thermal_time_step",
@@ -2790,6 +2808,15 @@ void cs_gui_initial_conditions(void)
   const cs_real_3_t *restrict cell_cen =
     (const cs_real_3_t *restrict)cs_glob_mesh_quantities->cell_cen;
 
+  /* For HT solver by default we set initialization at T0_ref on zone "all_cells" */
+  if (cs_glob_physical_model_flag[CS_HEAT_TRANSFER] > -1) {
+    cs_fluid_properties_t *phys_pp = cs_get_glob_fluid_properties();
+    cs_equation_param_t  *eqp = cs_equation_param_by_name(CS_THERMAL_EQNAME);
+    /* Convert to °C since T0 is stored in Kelvin */
+    cs_real_t _t0 = phys_pp->t0 - cs_physical_constants_celsius_to_kelvin;
+    cs_equation_add_ic_by_value(eqp, nullptr, &(_t0));
+  }
+
   for (int z_id = 0; z_id < n_zones; z_id++) {
     const cs_zone_t *z = cs_volume_zone_by_id(z_id);
 
@@ -2801,6 +2828,34 @@ void cs_gui_initial_conditions(void)
       snprintf(z_id_str, 31, "%d", z_id);
 
       if (restart == 0) {
+        /* First heat transfer solver, otherwise legacy thermal scalar */
+        if (cs_glob_physical_model_flag[CS_HEAT_TRANSFER] > -1) {
+          const char *formula_sca    = NULL;
+          cs_tree_node_t *tn_sca
+            = cs_tree_get_node(cs_glob_tree,
+                               "thermophysical_models/"
+                               "thermal_scalar/variable/formula");
+          tn_sca = _add_zone_id_test_attribute(tn_sca, z->id);
+          formula_sca = cs_tree_node_get_value_str(tn_sca);
+
+          if (formula_sca != nullptr) {
+            cs_equation_param_t  *eqp =
+              cs_equation_param_by_name(CS_THERMAL_EQNAME);
+
+            cs_meg_xdef_input_t *_input
+              = cs_meg_xdef_wrapper_add_input(CS_MEG_BOUNDARY_FUNC,
+                                              z_id,
+                                              1,
+                                              "temperature",
+                                              NULL);
+            cs_equation_add_ic_by_analytic(eqp,
+                                           z->name,
+                                           cs_meg_xdef_wrapper,
+                                           _input);
+
+          }
+          continue;
+        }
 
         cs_tree_node_t *tn_velocity
           = cs_tree_get_node(cs_glob_tree,
@@ -2811,7 +2866,7 @@ void cs_gui_initial_conditions(void)
 
         cs_field_t *c_vel = cs_field_by_name("velocity");
 
-        if (formula_uvw != NULL) {
+        if (c_vel != NULL && formula_uvw != NULL) {
           cs_real_t *ini_vals = NULL;
           BFT_MALLOC(ini_vals, c_vel->dim * n_cells, cs_real_t);
 
@@ -4123,6 +4178,83 @@ cs_gui_physical_properties(void)
       int cond_diff_id = cs_field_get_key_int(tf, k);
       if (cond_diff_id < 0)
         cs_field_set_key_int(tf, k, 0);
+    }
+  }
+
+  /* CDO HT Solver define physical properties */
+  if (cs_glob_physical_model_flag[CS_HEAT_TRANSFER] > -1) {
+    // density
+    cs_property_t  *rho = cs_property_by_name(CS_PROPERTY_MASS_DENSITY);
+    if (phys_pp->irovar == 0) {
+      cs_property_def_iso_by_value(rho, NULL, phys_pp->ro0);
+    }
+    else {
+      for (int z_id = 0; z_id < cs_volume_zone_n_zones(); z_id++) {
+        const cs_zone_t *z = cs_volume_zone_by_id(z_id);
+        if (z->type & CS_VOLUME_ZONE_PHYSICAL_PROPERTIES) {
+          cs_meg_xdef_input_t *_input
+            = cs_meg_xdef_wrapper_add_input(CS_MEG_VOLUME_FUNC,
+                                            z_id,
+                                            1,
+                                            "density",
+                                            NULL);
+          cs_property_def_by_analytic(rho,
+                                      z->name,
+                                      cs_meg_xdef_wrapper,
+                                      _input);
+
+        }
+      }
+    }
+
+    // Cp
+    cs_property_t  *cp = cs_property_by_name(CS_THERMAL_CP_NAME);
+    if (phys_pp->icp > 0) {
+      for (int z_id = 0; z_id < cs_volume_zone_n_zones(); z_id++) {
+        const cs_zone_t *z = cs_volume_zone_by_id(z_id);
+        if (z->type & CS_VOLUME_ZONE_PHYSICAL_PROPERTIES) {
+          cs_meg_xdef_input_t *_input
+            = cs_meg_xdef_wrapper_add_input(CS_MEG_VOLUME_FUNC,
+                                            z_id,
+                                            1,
+                                            "specific_heat",
+                                            NULL);
+          cs_property_def_by_analytic(cp,
+                                      z->name,
+                                      cs_meg_xdef_wrapper,
+                                      _input);
+
+        }
+      }
+    }
+    else {
+      cs_property_def_iso_by_value(cp, NULL, phys_pp->cp0);
+    }
+
+    // Lambda
+    cs_property_t  *lambda = cs_property_by_name(CS_THERMAL_LAMBDA_NAME);
+    int _lambda_choice = -1;
+    _properties_choice_id("thermal_conductivity", &_lambda_choice);
+    if (_properties_choice_id > 0) {
+      for (int z_id = 0; z_id < cs_volume_zone_n_zones(); z_id++) {
+        const cs_zone_t *z = cs_volume_zone_by_id(z_id);
+        if (z->type & CS_VOLUME_ZONE_PHYSICAL_PROPERTIES) {
+          cs_meg_xdef_input_t *_input
+            = cs_meg_xdef_wrapper_add_input(CS_MEG_VOLUME_FUNC,
+                                            z_id,
+                                            1,
+                                            "thermal_conductivity",
+                                            NULL);
+          cs_property_def_by_analytic(lambda,
+                                      z->name,
+                                      cs_meg_xdef_wrapper,
+                                      _input);
+
+        }
+      }
+    }
+    else {
+      cs_property_def_iso_by_value(lambda, NULL, phys_pp->lambda0);
     }
   }
 

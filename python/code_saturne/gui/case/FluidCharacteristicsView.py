@@ -56,6 +56,7 @@ from code_saturne.model.FluidCharacteristicsModel import FluidCharacteristicsMod
 from code_saturne.model.DefineUserScalarsModel import DefineUserScalarsModel
 from code_saturne.model.ThermalScalarModel import ThermalScalarModel
 from code_saturne.model.GroundwaterModel import GroundwaterModel
+from code_saturne.model.HTSModel import HTSModel
 from code_saturne.gui.case.QMegEditorView import QMegEditorView
 from code_saturne.model.NotebookModel import NotebookModel
 from code_saturne.model.InternalCouplingModel import InternalCouplingModel
@@ -223,6 +224,8 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
         self.m_th = ThermalScalarModel(self.case)
         s = self.m_th.getThermalScalarName()
         tsm = self.mdl.tsm
+
+        self.m_hts = HTSModel(self.case)
 
         # Particular Widget init. taking into account chosen fluid model
         mdl_atmo, mdl_joule, mdl_thermal, mdl_gas, mdl_coal, mdl_comp, mdl_hgn=\
@@ -691,6 +694,10 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
                     __combo.setEnabled(False)
                     __button.setEnabled(False)
                     __button.hide()
+
+            # HTS
+            if self.m_hts.getHTSModel() != 'off':
+                self.groupBoxMu.setVisible(False)
 
             # Compressible Flows
             if mdl_comp != 'off':

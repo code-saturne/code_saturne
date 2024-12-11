@@ -238,16 +238,7 @@ cs_domain_create(void)
 
   domain->time_step = cs_get_glob_time_step();
 
-  domain->time_options.iptlro = 0;
-  domain->time_options.idtvar
-    = CS_TIME_STEP_CONSTANT; /* constant time step by default */
-  domain->time_options.coumax = 1.;
-  domain->time_options.cflmmx = 0.99;
-  domain->time_options.foumax = 10.;
-  domain->time_options.varrdt = 0.1;
-  domain->time_options.dtmin  = -1.e13;
-  domain->time_options.dtmax  = -1.e13;
-  domain->time_options.relxst = 0.7; /* Not used in CDO schemes */
+  domain->time_options = cs_get_glob_time_step_options();
 
   /* Other options */
 

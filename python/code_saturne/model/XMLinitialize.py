@@ -60,6 +60,7 @@ from code_saturne.model.AtmosphericFlowsModel import AtmosphericFlowsModel
 from code_saturne.model.LagrangianModel import LagrangianModel
 from code_saturne.model.ThermalRadiationModel import ThermalRadiationModel
 from code_saturne.model.SolutionDomainModel import SolutionDomainModel
+from code_saturne.model.HTSModel import HTSModel
 
 #-------------------------------------------------------------------------------
 # class BaseXmlInit
@@ -197,25 +198,32 @@ class XMLinit(BaseXmlInit):
         OutputControlModel(self.case).addDefaultWriter()
         OutputControlModel(self.case).addDefaultMesh()
 
+        print("Calling initialize")
+
         if not prepro:
+            print("Calling not prepro!")
             self._backwardCompatibility()
 
             # Initialization (order is important)
 
             grdflow = GroundwaterModel(self.case).getGroundwaterModel()
+            hts = HTSModel(self.case).getHTSModel()
 
             self.node_models = self.case.xmlInitNode('thermophysical_models')
             node = self.node_models.xmlInitNode('velocity_pressure')
             if grdflow == 'groundwater':
                 self.setNewVariable(node, 'hydraulic_head')
-            else:
+            elif hts == 'off':
                 self.setNewVariable(node, 'pressure')
                 n = node.xmlGetNode('variable', name='pressure')
                 n['_convect'] = 'no'
-            self.setNewVariable(node, 'velocity', dim = '3')
-            self.setNewProperty(node, 'total_pressure')
 
-            if grdflow != 'groundwater':
+            if hts == 'off':
+                self.setNewVariable(node, 'velocity', dim = '3')
+                self.setNewProperty(node, 'total_pressure')
+            print(f"Found {hts=}")
+
+            if grdflow != 'groundwater' and hts == 'off':
                 n = self.setNewProperty(node, 'yplus')
                 n['support'] = 'boundary'
                 n['label'] = 'Yplus'

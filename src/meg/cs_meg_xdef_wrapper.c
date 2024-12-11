@@ -163,10 +163,7 @@ cs_meg_xdef_wrapper(cs_real_t         time,
   /* Volume function takes as an input arrays over the entire domain */
   if (_input->type == CS_MEG_VOLUME_FUNC) {
     if (dense_output)
-      bft_error
-        (__FILE__, __LINE__, 0,
-         _("%s: MEG Volume function cannot be used with a dense output."),
-         __func__);
+      CS_MALLOC(meg_vals, cs_glob_mesh->n_cells * _input->stride, cs_real_t);
     else
       meg_vals = retval;
   }
@@ -210,6 +207,15 @@ cs_meg_xdef_wrapper(cs_real_t         time,
                              _coords,
                              _input->name,
                              &(meg_vals));
+      if (dense_output) {
+        cs_array_real_copy_subset(n_elts,
+                                  _input->stride,
+                                  elt_ids,
+                                  CS_ARRAY_SUBSET_IN,
+                                  meg_vals,
+                                  retval);
+        CS_FREE(meg_vals);
+      }
     }
     break;
   case CS_MEG_INITIALIZATION_FUNC:

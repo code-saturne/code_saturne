@@ -60,6 +60,7 @@ from code_saturne.gui.case.ThermalRadiationAdvancedDialogForm import Ui_ThermalR
 from code_saturne.model.ThermalRadiationModel import ThermalRadiationModel
 from code_saturne.model.ThermalParticlesRadiationModel import ThermalParticlesRadiationModel
 from code_saturne.model.MainFieldsModel import MainFieldsModel
+from code_saturne.model.HTSModel import HTSModel
 
 #-------------------------------------------------------------------------------
 # log config
@@ -252,6 +253,10 @@ class ThermalView(QWidget, Ui_ThermalForm):
                 self.modelThermal.delItem(5)
                 self.modelThermal.delItem(4)
 
+            if HTSModel(self.case).getHTSModel() != 'off':
+                self.comboBoxThermal.setEnabled(False)
+                self.thermal.setThermalModel('temperature_celsius')
+
         # Select the thermal scalar model
 
         model = self.thermal.getThermalScalarModel()
@@ -319,7 +324,8 @@ class ThermalView(QWidget, Ui_ThermalForm):
         """
         Update for radiation model
         """
-        if self.case.module_name() == "code_saturne" and model == 'off':
+        if self.case.module_name() == "code_saturne" and model == 'off' \
+                or HTSModel(self.case).getHTSModel() != 'off':
             self.ThermalRadiationGroupBox.hide()
             return
 

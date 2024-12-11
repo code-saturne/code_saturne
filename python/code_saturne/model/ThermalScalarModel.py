@@ -47,6 +47,7 @@ from code_saturne.model.XMLvariables import Variables, Model
 from code_saturne.model.DefineUserScalarsModel import DefineUserScalarsModel
 from code_saturne.model.ThermalRadiationModel import ThermalRadiationModel
 from code_saturne.model.ConjugateHeatTransferModel import ConjugateHeatTransferModel
+from code_saturne.model.HTSModel import HTSModel
 
 #-------------------------------------------------------------------------------
 # Thermal scalar model class
@@ -166,12 +167,16 @@ class ThermalScalarModel(DefineUserScalarsModel, Variables, Model):
 
         self.node_therm['model'] = thermal_scalar
 
-        t_outputs = (("tplus", "Tplus", False),
+        t_outputs = [("tplus", "Tplus", False),
                      ("thermal_flux", "Thermal flux", True),
                      ("boundary_temperature", "Boundary temperature", True),
-                     ("boundary_layer_nusselt", "Dimensionless Thermal flux", False))
+                     ("boundary_layer_nusselt", "Dimensionless Thermal flux", False)]
 
         if thermal_scalar != 'off':
+            # if HTS is used, dont create fluid fields
+            if HTSModel(self.case).getHTSModel() != 'off':
+                t_outputs.pop(0)
+                t_outputs.pop()
             for v in t_outputs:
 
                 n = self.node_therm.xmlGetChildNode('property',

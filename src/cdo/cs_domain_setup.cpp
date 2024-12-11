@@ -393,7 +393,7 @@ cs_domain_def_time_step_by_function(cs_domain_t        *domain,
 
   /* Uniform in space but can change from one time step to the other */
 
-  domain->time_options.idtvar = CS_TIME_STEP_ADAPTIVE;
+  domain->time_options->idtvar = CS_TIME_STEP_ADAPTIVE;
 
   /* Set the property related to the time step if used for building a system */
 
@@ -414,8 +414,8 @@ cs_domain_def_time_step_by_function(cs_domain_t        *domain,
   domain->time_step->dt[1] = domain->time_step->t_max;
   domain->time_step->dt[2] = domain->time_step->t_max;
   domain->time_step->dt_ref = -1; // Updated at initialization
-  domain->time_options.dtmin = domain->time_step->t_max;
-  domain->time_options.dtmax = 0.;
+  domain->time_options->dtmin = domain->time_step->t_max;
+  domain->time_options->dtmax = 0.;
 
   return def;
 }
@@ -440,15 +440,15 @@ cs_domain_def_time_step_by_value(cs_domain_t   *domain,
 
   /* Constant time step by default */
 
-  domain->time_options.idtvar = CS_TIME_STEP_CONSTANT;
+  domain->time_options->idtvar = CS_TIME_STEP_CONSTANT;
 
   domain->time_step->dt[0] = dt;    /* time step n */
   domain->time_step->dt[1] = dt;    /* time step n-1 */
   domain->time_step->dt[2] = dt;    /* time step n-2 */
   domain->time_step->dt_ref = dt;
   domain->time_step->dt_next = dt;
-  domain->time_options.dtmin = dt;
-  domain->time_options.dtmax = dt;
+  domain->time_options->dtmin = dt;
+  domain->time_options->dtmax = dt;
 
   /* Set the property related to the time step if used for building a system */
 
@@ -923,9 +923,9 @@ cs_domain_setup_log(const cs_domain_t   *domain)
       cs_log_printf(CS_LOG_SETUP, "%-30s %9d\n",
                     " * Final time step:", domain->time_step->nt_max);
 
-    if (domain->time_options.idtvar == 0)
+    if (domain->time_options->idtvar == 0)
       cs_log_printf(CS_LOG_SETUP, " * Time step *constant*\n\n");
-    else if (domain->time_options.idtvar == 1)
+    else if (domain->time_options->idtvar == 1)
       cs_log_printf(CS_LOG_SETUP, " * Time step *variable in time*\n\n");
     else {
       if (cs_glob_param_cdo_mode != CS_PARAM_CDO_MODE_WITH_FV)

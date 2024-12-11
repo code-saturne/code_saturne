@@ -186,7 +186,10 @@ class FluidCharacteristicsModel(Variables, Model):
         self.node_comp   = self.node_models.xmlGetNode('compressible_model', 'model')
         self.node_gas    = self.node_models.xmlGetNode('gas_combustion', 'model')
         self.node_coal   = self.node_models.xmlGetNode('solid_fuels', 'model')
-        self.node_hgn    = self.node_models.xmlGetNode('hgn_model', 'model')
+        self.hgn_state   = self.__get_model_state('hgn_model')
+
+        # Get HTS state
+        self.hts_state   = self.__get_model_state('hts_model')
 
         # Info on available libraries
 
@@ -202,16 +205,16 @@ class FluidCharacteristicsModel(Variables, Model):
                                           output="Density",
                                           ref_tag="rho0",
                                           unit="kg/m^3")
-        self.properties_info.add_property(name="molecular_viscosity",
-                                          output="Molecular viscosity",
-                                          ref_tag="mu0",
-                                          unit="Pa.s")
-        if self.node_hgn:
-            if self.node_hgn['model'] not in [None, "off"]:
-                self.properties_info.add_property(name="surface_tension",
-                                                  output="Surface tension",
-                                                  ref_tag="sigma0",
-                                                  unit="N/m")
+        if self.hts_state == 'off':
+            self.properties_info.add_property(name="molecular_viscosity",
+                                              output="Molecular viscosity",
+                                              ref_tag="mu0",
+                                              unit="Pa.s")
+        if self.hgn_state != 'off':
+            self.properties_info.add_property(name="surface_tension",
+                                              output="Surface tension",
+                                              ref_tag="sigma0",
+                                              unit="N/m")
         self.properties_info.add_property(name="specific_heat",
                                           output="Sepcific heat",
                                           ref_tag="cp0",
@@ -260,14 +263,27 @@ class FluidCharacteristicsModel(Variables, Model):
             else:
                 self.lib_properties[fli] += self.mask_CoolProp
 
+        # Get thermal scalar and model
+
+        thm = ThermalScalarModel(self.case)
+        tsn = thm.getThermalScalarName()
+        self.tsm = thm.getThermalScalarModel()
+
         # Base model needs density and molecular viscosity
 
-        self.lst = [('density', 'Rho'),('molecular_viscosity', 'Mu')]
+        self.lst = [('density', 'Rho')]
         self.node_density   = self.setNewFluidProperty(self.node_fluid, \
                                                        'density')
-        self.node_viscosity = self.setNewFluidProperty(self.node_fluid, \
-                                                       'molecular_viscosity')
-        self.node_lst = [self.node_density, self.node_viscosity]
+        self.node_lst = [self.node_density]
+        if self.hts_state == 'off':
+            self.lst.append(('molecular_viscosity', 'Mu'))
+            self.node_viscosity = self.setNewFluidProperty(self.node_fluid, \
+                                                           'molecular_viscosity')
+            self.node_lst.append(self.node_viscosity)
+        else:
+            # Check if viscosity exists, then remove node
+            self.removePropertyDefinition('molecular_viscosity')
+            self.node_viscosity = None
 
         self.node_heat = None
         self.node_cond = None
@@ -276,22 +292,15 @@ class FluidCharacteristicsModel(Variables, Model):
 
         # Get surface tension for Vof model
 
-        if self.node_hgn:
-            if self.node_hgn['model'] not in [None, "off"]:
-                self.lst.append(('surface_tension', 'Sigma'))
-                self.node_surface_tension = self.setNewFluidProperty(self.node_fluid, \
-                                                                     'surface_tension')
-                self.node_lst.append(self.node_surface_tension)
-
-        # Get thermal scalar and model
-
-        thm = ThermalScalarModel(self.case)
-        tsn = thm.getThermalScalarName()
-        self.tsm = thm.getThermalScalarModel()
+        if self.hgn_state != 'off':
+            self.lst.append(('surface_tension', 'Sigma'))
+            self.node_surface_tension = self.setNewFluidProperty(self.node_fluid, \
+                                                                 'surface_tension')
+            self.node_lst.append(self.node_surface_tension)
 
         # If thermal model enabled, add thermal conductivity and specific heat
 
-        if self.tsm != "off":
+        if self.tsm != "off" or hts_state != 'off':
             self.lst.extend([('specific_heat', 'Cp'), \
                              ('thermal_conductivity', 'Al')])
             self.node_heat = self.setNewFluidProperty(self.node_fluid, \
@@ -320,21 +329,34 @@ class FluidCharacteristicsModel(Variables, Model):
 
         self.list_scalars = []
 
-        if self.tsm == "temperature_celsius":
-            self.list_scalars.append((tsn, self.tr("Thermal scalar: temperature (\xB0 C)")))
-        elif self.tsm == "temperature_kelvin":
-            self.list_scalars.append((tsn, self.tr("Thermal scalar: temperature (K)")))
-        elif self.tsm != "off":
-            self.list_scalars.append((tsn, self.tr("Thermal scalar")))
-
         self.m_sca = DefineUserScalarsModel(self.case)
-        for s in self.m_sca.getUserScalarNameList():
-            self.list_scalars.append((s, self.tr("Additional scalar")))
+        # Available only for non HTS mode currently
+        if self.hts_state == 'off':
+            if self.tsm == "temperature_celsius":
+                self.list_scalars.append((tsn, self.tr("Thermal scalar: temperature (\xB0 C)")))
+            elif self.tsm == "temperature_kelvin":
+                self.list_scalars.append((tsn, self.tr("Thermal scalar: temperature (K)")))
+            elif self.tsm != "off":
+                self.list_scalars.append((tsn, self.tr("Thermal scalar")))
+
+            for s in self.m_sca.getUserScalarNameList():
+                self.list_scalars.append((s, self.tr("Additional scalar")))
 
         # Notebook
 
         self.notebook = NotebookModel(self.case)
 
+    def __get_model_state(self, model_name):
+        """
+        Get state of a submodel
+        """
+        retval = 'off'
+        if self.node_models:
+            n = self.node_models.xmlGetNode(model_name, 'model')
+            if n:
+                retval = n['model']
+
+        return retval
 
     def __check_node_on(self, node):
         """
@@ -361,10 +383,12 @@ class FluidCharacteristicsModel(Variables, Model):
         as the first member of the list.
         """
 
-        l = ['density', 'molecular_viscosity']
+        l = ['density']
+        if self.hts_state == 'off':
+            l.append('molecular_viscosity')
 
         # Vof properties
-        if self.__check_node_on(self.node_hgn):
+        if self.hgn_state != 'off':
             l.append('surface_tension')
 
         # Thermal properties
@@ -770,6 +794,7 @@ class FluidCharacteristicsModel(Variables, Model):
                             'specific_heat', 'thermal_conductivity',
                             'volume_viscosity', 'dynamic_diffusion'))
         node = self.node_fluid.xmlGetNode('property', name=tag)
+        print(f"{tag=}")
         pp = node.xmlGetDouble('initial_value')
         if pp is None:
             pp = self.defaultFluidCharacteristicsValues()[tag]
@@ -1023,6 +1048,16 @@ class FluidCharacteristicsModel(Variables, Model):
                 node.xmlRemoveChild('listing_printing')
             if node.xmlGetNode('postprocessing_recording'):
                 node.xmlRemoveChild('postprocessing_recording')
+
+    def removePropertyDefinition(self, prop_name=None):
+        """
+        Remove a property from xml file.
+        """
+        if self.node_fluid:
+            n = self.node_fluid.xmlGetNode('property', name=prop_name)
+            if n:
+                n.xmlRemoveNode()
+
 
     # MEG Generation related functions
     def getFormulaComponents(self, tag, scalar=None, zone="1"):

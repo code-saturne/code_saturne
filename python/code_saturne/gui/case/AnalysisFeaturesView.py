@@ -66,11 +66,14 @@ from code_saturne.model.InterfacialAreaModel import InterfacialAreaModel
 from code_saturne.model.NeptuneWallTransferModel import NeptuneWallTransferModel
 from code_saturne.model.InterfacialEnthalpyModel import InterfacialEnthalpyModel
 from code_saturne.model.HgnModel import HgnModel
+from code_saturne.model.HTSModel import HTSModel
 
 from code_saturne.model.LagrangianModel import LagrangianModel
 from code_saturne.model.TurboMachineryModel import TurboMachineryModel
 from code_saturne.model.MobileMeshModel import MobileMeshModel
 from code_saturne.model.FansModel import FansStatus
+
+from code_saturne.model.TurbulenceModel import TurbulenceModel
 
 # -------------------------------------------------------------------------------
 # log config
@@ -124,6 +127,8 @@ class AnalysisFeaturesView(QWidget, Ui_AnalysisFeaturesForm):
 
         self.modelNeptuneCFD     = QtPage.ComboModel(self.comboBoxNeptuneCFD,2,1)
 
+        self.modelHTS            = QtPage.ComboModel(self.comboBoxHTS,1,1)
+
         self.modelSinglePhase.addItem(self.tr("Incompressible"), 'off')
         self.modelSinglePhase.addItem(self.tr("Compressible, perfect gas with constant gamma"),
                                       'constant_gamma')
@@ -173,6 +178,9 @@ class AnalysisFeaturesView(QWidget, Ui_AnalysisFeaturesForm):
         self.modelNeptuneCFD.addItem(self.tr("Particle-laden flow"), "particles_flow")
         self.modelNeptuneCFD.addItem(self.tr("Multiregime liquid/gas flow"), "multiregime")
 
+        # HTS combobox
+        self.modelHTS.addItem(self.tr("Heat conduction"), "hts_conduction")
+
         # Lagrangian combobox
 
         self.modelLagrangian = QtPage.ComboModel(self.comboBoxLagrangian, 4, 1)
@@ -203,6 +211,7 @@ class AnalysisFeaturesView(QWidget, Ui_AnalysisFeaturesForm):
         self.comboBoxSinglePhase.activated[str].connect(self.slotSinglePhase)
         self.comboBoxGroundwater.activated[str].connect(self.slotGroundwater)
         self.comboBoxHgn.activated[str].connect(self.slotHgn)
+        self.comboBoxHTS.activated[str].connect(self.slotHTS)
         self.comboBoxNeptuneCFD.currentTextChanged[str].connect(self.slotNeptuneCFD)
         self.checkBoxNeptuneHeatMass.stateChanged.connect(self.slotNeptuneHeatMass)
         self.checkBoxALE.stateChanged.connect(self.slotALE)
@@ -213,7 +222,7 @@ class AnalysisFeaturesView(QWidget, Ui_AnalysisFeaturesForm):
 
         for ind in ['SinglePhase', 'Atmospheric',
                     'JouleEffect', 'Groundwater', 'ReactiveFlows',
-                    'Hgn', 'NeptuneCFD']:
+                    'Hgn', 'NeptuneCFD', 'HTS']:
             eval('self.radioButton'+ind+'.toggled.connect(self.slotRadioButton)')
 
         # Initializations based on code
@@ -279,6 +288,7 @@ class AnalysisFeaturesView(QWidget, Ui_AnalysisFeaturesForm):
         self.comboBoxJouleEffect.hide()
         self.comboBoxGroundwater.hide()
         self.comboBoxHgn.hide()
+        self.comboBoxHTS.hide()
         self.comboBoxNeptuneCFD.hide()
 
         self.checkBoxNeptuneHeatMass.hide()
@@ -300,7 +310,8 @@ class AnalysisFeaturesView(QWidget, Ui_AnalysisFeaturesForm):
                         'Hgn',
                         'NeptuneCFD',
                         'Lagrangian',
-                        'TurboMachinery']:
+                        'TurboMachinery',
+                        'HTS']:
             log.debug("__stringModelFromCombo() Incorrect name for QComboBox name")
             string = ""
         else:
@@ -344,6 +355,7 @@ class AnalysisFeaturesView(QWidget, Ui_AnalysisFeaturesForm):
         self.comp  = CompressibleModel(self.case)
         self.darc  = GroundwaterModel(self.case)
         self.hgn   = HgnModel(self.case)
+        self.hts   = HTSModel(self.case)
 
         from code_saturne.model.TimeStepModel import TimeStepModel
 
@@ -354,6 +366,7 @@ class AnalysisFeaturesView(QWidget, Ui_AnalysisFeaturesForm):
         gas = self.gas.getGasCombustionModel()
         compressible = self.comp.getCompressibleModel()
         homogeneous = self.hgn.getHgnModel()
+        hts = self.hts.getHTSModel()
 
         # Set combobox values
 
@@ -387,6 +400,9 @@ class AnalysisFeaturesView(QWidget, Ui_AnalysisFeaturesForm):
         elif homogeneous != 'off':
             self.modelHgn.setItem(str_model=homogeneous)
 
+        elif hts != 'off':
+            self.modelHTS.setItem(str_model=hts)
+
         else:
             self.modelSinglePhase.setItem(str_model=compressible)
 
@@ -399,6 +415,7 @@ class AnalysisFeaturesView(QWidget, Ui_AnalysisFeaturesForm):
         ReactiveFlows = self.gas.getGasCombustionModel()  != 'off' \
                         or self.pcoal.getCoalCombustionModel() != 'off'
         Hgn = homogeneous != 'off'
+        HTS = hts != 'off'
 
         self.checkPrev = 'SinglePhase'
         combo = None
@@ -407,7 +424,8 @@ class AnalysisFeaturesView(QWidget, Ui_AnalysisFeaturesForm):
                     'JouleEffect',
                     'Groundwater',
                     'ReactiveFlows',
-                    'Hgn']:
+                    'Hgn',
+                    'HTS']:
 
             radioButton = eval('self.radioButton'+ind)
             model_on = eval(ind)
@@ -580,7 +598,8 @@ class AnalysisFeaturesView(QWidget, Ui_AnalysisFeaturesForm):
                     'JouleEffect',
                     'Groundwater',
                     'ReactiveFlows',
-                    'NeptuneCFD']:
+                    'NeptuneCFD',
+                    'HTS']:
 
             radioButton = eval('self.radioButton'+ind)
             combo = eval('self.comboBox'+ind)
@@ -663,6 +682,14 @@ class AnalysisFeaturesView(QWidget, Ui_AnalysisFeaturesForm):
                 self.checkBoxPther.hide()
 
                 self.modelLagrangian.enableItem(str_model='two_way')
+            if self.checkPrev == 'HTS':
+                self.hts.setHTSModel('off')
+                self.labelLagrangian.show()
+                self.comboBoxLagrangian.show()
+                self.labelTurboMachinery.show()
+                self.comboBoxTurboMachinery.show()
+                self.checkBoxALE.show()
+                self.checkBoxFans.show()
 
             if checkCur == 'ReactiveFlows':
                 if self.pcoal.getCoalCombustionModel() != 'off':
@@ -673,6 +700,14 @@ class AnalysisFeaturesView(QWidget, Ui_AnalysisFeaturesForm):
                     model = self.modelGasCombustion
                 combo.show()
                 model_expr = 'self.slotReactiveFlows(model)'
+
+            if checkCur == 'HTS':
+                self.labelLagrangian.hide()
+                self.comboBoxLagrangian.hide()
+                self.labelTurboMachinery.hide()
+                self.comboBoxTurboMachinery.hide()
+                self.checkBoxALE.hide()
+                self.checkBoxFans.hide()
 
             eval(model_expr)
 
@@ -875,6 +910,20 @@ class AnalysisFeaturesView(QWidget, Ui_AnalysisFeaturesForm):
 
         model = self.__stringModelFromCombo('Hgn')
         self.hgn.setHgnModel(model)
+
+        self.browser.configureTree(self.case)
+
+    @pyqtSlot(str)
+    def slotHTS(self, text):
+        """
+        Called when the comboBoxHTS changed
+        """
+        self.comboBoxHTS.show()
+
+        model = self.__stringModelFromCombo('HTS')
+        self.hts.setHTSModel(model)
+
+        TurbulenceModel(self.case).setTurbulenceModel('off')
 
         self.browser.configureTree(self.case)
 

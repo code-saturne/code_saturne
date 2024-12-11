@@ -2565,13 +2565,13 @@ _init_user
   cs_gui_user_arrays();
   cs_gui_calculator_functions();
 
-  /* Solid zones */
-  cs_velocity_pressure_set_solid();
-
-  /* Initialize parameters for specific physics */
-  cs_rad_transfer_options();
-
   if (cs_glob_param_cdo_mode != CS_PARAM_CDO_MODE_ONLY) {
+    /* Solid zones */
+    cs_velocity_pressure_set_solid();
+
+    /* Initialize parameters for specific physics */
+    cs_rad_transfer_options();
+
     _init_variable_fields();
     _create_variable_fields();
     cs_f_fldvar(nmodpp);
@@ -2587,16 +2587,20 @@ _init_user
   if (cs_glob_ale != CS_ALE_NONE)
     cs_gui_ale_diffusion_type();
 
-  cs_gui_laminar_viscosity();
+  if (cs_glob_physical_model_flag[CS_HEAT_TRANSFER] == -1) {
+    /* Dont run these functions if HTS mode is activated */
+    cs_gui_laminar_viscosity();
 
-  /* Compressible flows */
-  cs_gui_hydrostatic_equ_param();
-  const cs_field_t *f_id = cs_field_by_name_try("velocity");
-  if (f_id != NULL) {
-    if (cs_glob_physical_model_flag[CS_COMPRESSIBLE] != -1)
-      cs_runaway_check_define_field_max(f_id->id, 1.e5);
-    else
-      cs_runaway_check_define_field_max(f_id->id, 1.e4);
+    /* Compressible flows */
+    cs_gui_hydrostatic_equ_param();
+    const cs_field_t *f_id = cs_field_by_name_try("velocity");
+
+    if (f_id != NULL) {
+      if (cs_glob_physical_model_flag[CS_COMPRESSIBLE] != -1)
+        cs_runaway_check_define_field_max(f_id->id, 1.e5);
+      else
+        cs_runaway_check_define_field_max(f_id->id, 1.e4);
+    }
   }
 
   /* Initialization of global parameters */

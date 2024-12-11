@@ -54,6 +54,7 @@
 #include "cs_domain_setup.h"
 #include "cs_equation.h"
 #include "cs_equation_system.h"
+#include "cs_gui.h"
 #include "cs_gwf.h"
 #include "cs_log.h"
 #include "cs_log_iteration.h"
@@ -813,6 +814,9 @@ cs_cdo_initialize_structures(cs_domain_t           *domain,
 
   cs_domain_init_cdo_structures(domain);
 
+  /* GUI initial conditions */
+  cs_gui_initial_conditions();
+
   /* Last user setup stage */
 
   cs_domain_finalize_user_setup(domain);
@@ -1114,7 +1118,7 @@ cs_cdo_main(cs_domain_t   *domain)
   /*  Build high-level structures and create algebraic systems
       Set the initial values of the fields and properties. */
 
-  _initialize_time_step(domain->time_step, &(domain->time_options));
+  _initialize_time_step(domain->time_step, domain->time_options);
 
   cs_domain_initialize_systems(domain);
 
@@ -1154,7 +1158,7 @@ cs_cdo_main(cs_domain_t   *domain)
 
     /* Define the current time step */
 
-    _define_current_time_step(domain->time_step, &(domain->time_options));
+    _define_current_time_step(domain->time_step, domain->time_options);
 
     /* Read a control file if present */
 

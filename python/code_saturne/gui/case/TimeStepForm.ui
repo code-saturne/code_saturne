@@ -15,7 +15,7 @@
   </property>
   <layout class="QGridLayout">
    <item row="3" column="0">
-    <widget class="QGroupBox" name="groupBox">
+    <widget class="QGroupBox" name="groupBoxStopCriterion">
      <layout class="QHBoxLayout" name="horizontalLayout_3">
       <item>
        <widget class="QLabel" name="label_4">
@@ -353,7 +353,7 @@
     </widget>
    </item>
    <item row="0" column="0">
-    <widget class="QGroupBox" name="groupBox">
+    <widget class="QGroupBox" name="groupBoxTimeStepMode">
      <property name="toolTip">
       <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Define the time step options.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
      </property>

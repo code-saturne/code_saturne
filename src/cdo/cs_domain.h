@@ -158,7 +158,7 @@ typedef struct {
   bool                      is_last_iter;     /* true or false */
 
   cs_time_step_t           *time_step;        /* time step descriptor */
-  cs_time_step_options_t    time_options;     /* time step options */
+  cs_time_step_options_t   *time_options;     /* time step options */
 
   cs_domain_stage_t         stage;   /* Store the stage of the computation */
 

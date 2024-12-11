@@ -58,12 +58,14 @@
 #include "cs_mesh.h"
 #include "cs_field.h"
 #include "cs_field_pointer.h"
+#include "cs_param_cdo.h"
 #include "cs_parameters.h"
 #include "cs_physical_model.h"
 #include "cs_selector.h"
 #include "cs_physical_properties.h"
 #include "cs_physical_constants.h"
 #include "cs_rad_transfer.h"
+#include "cs_thermal_system.h"
 #include "cs_elec_model.h"
 #include "cs_vof.h"
 
@@ -668,7 +670,8 @@ _get_active_thermophysical_model(char  **model_name,
                           "atmospheric_flows",
                           "compressible_model",
                           "groundwater_model",
-                          "hgn_model"};
+                          "hgn_model",
+                          "hts_model"};
   const char *name_o[] = {"gas_combustion"};
 
   int n_names_m = sizeof(name_m) / sizeof(name_m[0]);
@@ -761,6 +764,9 @@ cs_gui_physical_model_select(void)
   isactiv = _get_active_thermophysical_model(&model_name, &model_value);
 
   if (isactiv)  {
+    bft_printf("%s[L%d] model : '%s' and value : '%s'\n",
+               __func__, __LINE__, model_name, model_value);
+    bft_printf_flush();
 
     if (cs_gui_strcmp(model_name, "solid_fuels")) {
       if (cs_gui_strcmp(model_value, "homogeneous_fuel"))
@@ -922,6 +928,11 @@ cs_gui_physical_model_select(void)
       } else {
         vof_param->vof_model = CS_VOF_ENABLED + CS_VOF_FREE_SURFACE;
       }
+    }
+    else if (cs_gui_strcmp(model_name, "hts_model")) {
+      // Activate CDO Heat Transfer Solver
+      cs_param_cdo_mode_set(CS_PARAM_CDO_MODE_ONLY);
+      cs_thermal_system_activate(0, 0, 0);
     }
   }
 

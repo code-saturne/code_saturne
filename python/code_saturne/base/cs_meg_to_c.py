@@ -550,7 +550,7 @@ class meg_to_c_interpreter:
         usr_blck += usr_defs
 
         usr_blck += 2*tab + 'for (cs_lnum_t e_id = 0; e_id < n_elts; e_id++) {\n'
-        usr_blck += 3*tab + '[[maybe_unused]] cs_lnum_t c_id = elt_ids[e_id];\n'
+        usr_blck += 3*tab + 'cs_lnum_t c_id = (elt_ids != nullptr) ? elt_ids[e_id] : e_id;\n'
 
         usr_blck += usr_code
 
@@ -662,7 +662,7 @@ class meg_to_c_interpreter:
 
         if need_for_loop:
             usr_blck += 2*tab + 'for (cs_lnum_t e_id = 0; e_id < n_elts; e_id++) {\n'
-            usr_blck += 3*tab + '[[maybe_unused]] cs_lnum_t b_e_id = elt_ids[e_id];\n'
+            usr_blck += 3*tab + 'cs_lnum_t b_e_id = (elt_ids != nullptr) ? elt_ids[e_id] : e_id;\n'
 
         usr_blck += usr_code
 

@@ -65,6 +65,7 @@
 #include "cs_gui_specific_physics.h"
 #include "cs_ht_convert.h"
 #include "cs_meg_prototypes.h"
+#include "cs_meg_xdef_wrapper.h"
 #include "cs_mesh.h"
 #include "cs_field.h"
 #include "cs_field_default.h"
@@ -72,6 +73,7 @@
 #include "cs_field_pointer.h"
 #include "cs_physical_model.h"
 #include "cs_thermal_model.h"
+#include "cs_thermal_system.h"
 #include "cs_timer.h"
 #include "cs_tree.h"
 #include "cs_turbulence_bc.h"
@@ -1396,6 +1398,49 @@ _dof_meg_exchange_coefficient_profile(cs_lnum_t         n_elts,
   BFT_FREE(v_loc);
 }
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief cs_analytic_func_t function to compute exchange coefficient and
+ * external temperature boundary condition.
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_analytic_meg_exchange_coefficient_hts_profile
+(
+  cs_real_t        time,         /*!<[in] time */
+  cs_lnum_t        n_elts,       /*!<[in] number of elements */
+  const cs_lnum_t *elt_ids,      /*!<[in] list of element ids */
+  const cs_real_t *coords,       /*!<[in] coordinates of elements */
+  bool             dense_output, /*!<[in] perform an indirection in retval or not */
+  void            *input,        /*!<[in] NULL or pointer to a structure cast on the fly */
+  cs_real_t       *retval        /*!<[out] resulting value(s). Must be allocated */
+)
+{
+  cs_real_t *v_loc = nullptr;
+  CS_MALLOC(v_loc, 2 * n_elts, cs_real_t);
+
+  cs_meg_xdef_wrapper(time, n_elts, elt_ids, coords, true, input, v_loc);
+
+  if (dense_output) {
+    for (cs_lnum_t e_id = 0; e_id < n_elts; e_id++) {
+      retval[e_id * 3]     = v_loc[n_elts + e_id]; // h_exch
+      retval[e_id * 3 + 1] = v_loc[e_id]; // T_ext
+      retval[e_id * 3 + 2] = 0.; // Phi_ext set to 0
+    }
+  }
+  else {
+    for (cs_lnum_t i = 0; i < n_elts; i++) {
+      cs_lnum_t elt_id = (elt_ids == NULL) ? i : elt_ids[i];
+      retval[elt_id * 3]     = v_loc[n_elts + i]; // h_exch
+      retval[elt_id * 3 + 1] = v_loc[i]; // T_ext
+      retval[elt_id * 3 + 2] = 0.; // Phi_ext set to 0
+    }
+  }
+
+  CS_FREE(v_loc);
+}
+
 /*-----------------------------------------------------------------------------
  * Handle specific scalar types for electric potential.
  *
@@ -1513,6 +1558,135 @@ _boundary_elec_potential(cs_tree_node_t       *tn_s,
     special_case = false;
 
   return special_case;
+}
+
+/*-----------------------------------------------------------------------------
+ * set boundary condition of temperature in the Heat Transfer solver
+ *
+ * parameters:
+ *   tn_bc <-- tree node associated with boundary condition
+ *   z     <-- associated zone
+ *----------------------------------------------------------------------------*/
+
+static void
+_boundary_hts_temperature
+(
+  cs_tree_node_t   *tn_bc,
+  const cs_zone_t  *z
+)
+{
+  cs_tree_node_t *tn_s = cs_tree_node_get_child(tn_bc, "scalar");
+  tn_s = cs_tree_node_get_sibling_with_tag(tn_s, "name", "temperature");
+
+  const char *choice = cs_tree_node_get_tag(tn_s, "choice");
+
+  if (choice == NULL)
+    return;
+
+  cs_equation_param_t *eqp = cs_equation_param_by_name(CS_THERMAL_EQNAME);
+
+  /* Now handle standard scalar BC types */
+
+  if (   strcmp(choice, "dirichlet") == 0
+      || strcmp(choice, "neumann") == 0) {
+
+    const cs_real_t *v = cs_tree_node_get_child_values_real(tn_s, choice);
+    cs_real_t _v = v[0];
+
+    cs_param_bc_type_t _bc_type = CS_PARAM_BC_NEUMANN;
+    if (strcmp(choice, "dirichlet") == 0)
+      _bc_type = CS_PARAM_BC_DIRICHLET;
+
+    cs_equation_add_bc_by_value(eqp,
+                                _bc_type,
+                                z->name,
+                                &_v);
+
+  }
+  else if (strcmp(choice, "dirichlet_formula") == 0) {
+    /* Check that formula is non null */
+    const char *s = cs_tree_node_get_child_value_str(tn_s, choice);
+    if (s != nullptr) {
+      cs_meg_xdef_input_t *_input
+        = cs_meg_xdef_wrapper_add_input(CS_MEG_BOUNDARY_FUNC,
+                                        z->id,
+                                        1,
+                                        "temperature",
+                                        choice);
+
+      cs_equation_add_bc_by_analytic(eqp,
+                                     CS_PARAM_BC_DIRICHLET,
+                                     z->name,
+                                     cs_meg_xdef_wrapper,
+                                     _input);
+    }
+  }
+  else if (! strcmp(choice, "neumann_formula")) {
+
+    const char *s = cs_tree_node_get_child_value_str(tn_s, choice);
+    if (s != NULL) {
+      cs_meg_xdef_input_t *_input
+        = cs_meg_xdef_wrapper_add_input(CS_MEG_BOUNDARY_FUNC,
+                                        z->id,
+                                        1,
+                                        "temperature",
+                                        choice);
+
+      cs_equation_add_bc_by_analytic(eqp,
+                                     CS_PARAM_BC_NEUMANN,
+                                     z->name,
+                                     cs_meg_xdef_wrapper,
+                                     _input);
+    }
+  }
+  else if (! strcmp(choice, "exchange_coefficient_formula")) {
+
+    const char *s = cs_tree_node_get_child_value_str(tn_s, choice);
+    if (s != NULL) {
+      cs_meg_xdef_input_t *_input
+        = cs_meg_xdef_wrapper_add_input(CS_MEG_BOUNDARY_FUNC,
+                                        z->id,
+                                        1,
+                                        "temperature",
+                                        choice);
+
+      cs_equation_add_bc_by_analytic(eqp,
+                                     CS_PARAM_BC_NEUMANN,
+                                     z->name,
+                                     _analytic_meg_exchange_coefficient_hts_profile,
+                                     _input);
+    }
+  }
+  else if (! strcmp(choice, "exchange_coefficient")) {
+    cs_tree_node_t *tn = NULL;
+    cs_real_t value[3] = {0.};
+
+    for (tn = cs_tree_node_get_child(tn_s, "dirichlet");
+         tn != NULL;
+         tn = cs_tree_node_get_next_of_name(tn)) {
+      int c_id = 0;
+      cs_gui_node_get_child_int(tn, "component", &c_id);
+      if (c_id == 0) {
+        const cs_real_t *v = cs_tree_node_get_values_real(tn);
+        if (v != nullptr)
+          value[1] = v[0];
+      }
+    }
+    tn = cs_tree_node_get_child(tn_s, choice);
+    if (tn != NULL) {
+      const cs_real_t *v = cs_tree_node_get_values_real(tn);
+      if (v != NULL)
+        value[0] = v[0];
+    }
+
+    cs_equation_add_bc_by_value(eqp,
+                                CS_BC_ROBIN,
+                                z->name,
+                                value);
+  }
+
+  /* For syrthes coupling it is handled outside of this function */
+
 }
 
 /*-----------------------------------------------------------------------------
@@ -2426,7 +2600,10 @@ _init_boundaries(void)
 
       cs_field_t *f_tm = cs_thermal_model_field();
 
-      if (f_tm != NULL) {
+      if (cs_glob_physical_model_flag[CS_HEAT_TRANSFER] > -1) {
+        _boundary_hts_temperature(tn, z);
+      }
+      else if (f_tm != NULL) {
         if (boundaries->meteo == NULL)
           _boundary_scalar(tn, z, f_tm);
         else if (boundaries->meteo[izone].read_data == 0)
@@ -3331,6 +3508,7 @@ cs_gui_boundary_conditions_define(cs_boundary_t  *bdy)
         }
 
       }
+
     }
 
     else if (cs_gui_strcmp(nature, "outlet")) {

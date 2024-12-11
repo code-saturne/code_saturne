@@ -49,6 +49,7 @@ from code_saturne.model.Common import GuiParam
 from code_saturne.gui.base.QtPage import ComboModel, IntValidator, DoubleValidator, from_qvariant
 from code_saturne.gui.case.TimeStepForm import Ui_TimeStepForm
 from code_saturne.model.TimeStepModel import TimeStepModel
+from code_saturne.model.HTSModel import HTSModel
 
 #-------------------------------------------------------------------------------
 # log config
@@ -79,6 +80,8 @@ class TimeStepView(QWidget, Ui_TimeStepForm):
         self.mdl = TimeStepModel(self.case)
         self.browser = tree
 
+        self.hts_activated = HTSModel(self.case).getHTSModel() != 'off'
+
         # Check if xml contains deprecated steady algorithme
         has_deprecated_steady = False
         if str(self.mdl.getTimePassing()) == '-1':
@@ -94,6 +97,10 @@ class TimeStepView(QWidget, Ui_TimeStepForm):
         self.modelTimeOptions.addItem(self.tr("Steady (local time step)"), '2')
         if has_deprecated_steady:
             self.modelTimeOptions.addItem(self.tr("Deprecated: steady (constant relaxation coefficient)"), '-1')
+
+        self.comboBoxNTERUP.setVisible(not self.hts_activated)
+        self.labelNTERUP.setVisible(not self.hts_activated)
+        self.spinBoxNTERUP.setVisible(not self.hts_activated)
 
         self.modelNTERUP = ComboModel(self.comboBoxNTERUP,3,1)
         self.modelNTERUP.addItem(self.tr("SIMPLE"), 'simple')
@@ -284,13 +291,14 @@ class TimeStepView(QWidget, Ui_TimeStepForm):
             self.spinBoxNTERUP.setValue(value)
 
         if idtvar == -1:
-            self.labelRELXST.show()
-            self.lineEditRELXST.show()
+            self.labelRELXST.setVisible(not self.hts_activated)
+            self.lineEditRELXST.setVisible(not self.hts_activated)
             self.labelDTREF.hide()
             self.labelDTREFunit.hide()
             self.lineEditDTREF.hide()
-            relax_coef = self.mdl.getRelaxCoefficient()
-            self.lineEditRELXST.setText(str(relax_coef))
+            if not self.hts_activated:
+                relax_coef = self.mdl.getRelaxCoefficient()
+                self.lineEditRELXST.setText(str(relax_coef))
 
         else:
             self.labelRELXST.hide()
@@ -302,28 +310,43 @@ class TimeStepView(QWidget, Ui_TimeStepForm):
             self.lineEditDTREF.setText(str(dtref))
 
         if idtvar in (1, 2):
-            courant_max   = self.mdl.getOptions('max_courant_num')
-            fourier_max   = self.mdl.getOptions('max_fourier_num')
-            time_step_min_factor = self.mdl.getOptions('time_step_min_factor')
-            time_step_max_factor = self.mdl.getOptions('time_step_max_factor')
-            time_step_var = self.mdl.getOptions('time_step_var')
+            if not self.hts_activated:
+                courant_max   = self.mdl.getOptions('max_courant_num')
+                time_step_min_factor = self.mdl.getOptions('time_step_min_factor')
+                time_step_max_factor = self.mdl.getOptions('time_step_max_factor')
+                time_step_var = self.mdl.getOptions('time_step_var')
 
-            self.lineEditCOUMAX.setText(str(courant_max))
-            self.lineEditFOUMAX.setText(str(fourier_max))
-            self.lineEditCDTMIN.setText(str(time_step_min_factor))
-            self.lineEditCDTMAX.setText(str(time_step_max_factor))
-            self.lineEditVARRDT.setText(str(time_step_var))
+                self.lineEditCOUMAX.setText(str(courant_max))
+                self.lineEditCDTMIN.setText(str(time_step_min_factor))
+                self.lineEditCDTMAX.setText(str(time_step_max_factor))
+                self.lineEditVARRDT.setText(str(time_step_var))
+            elif idtvar == 1:
+                # Fourier number only used in unsteady
+                fourier_max   = self.mdl.getOptions('max_fourier_num')
+                self.lineEditFOUMAX.setText(str(fourier_max))
 
-            self.labelCOUMAX.show()
-            self.lineEditCOUMAX.show()
-            self.labelFOUMAX.show()
-            self.lineEditFOUMAX.show()
-            self.labelCDTMIN.show()
-            self.lineEditCDTMIN.show()
-            self.labelCDTMAX.show()
-            self.lineEditCDTMAX.show()
-            self.labelVARRDT.show()
-            self.lineEditVARRDT.show()
+            _hide_dt_params = self.hts_activated and idtvar == 2
+            self.groupBoxTimeStep.setVisible(not _hide_dt_params)
+            self.groupBoxStopCriterion.setVisible(not _hide_dt_params)
+
+            # If HT solver and steady state, only steady state
+            self.lineEditDTREF.setVisible(not(self.hts_activated and idtvar == 2))
+            self.labelDTREF.setVisible(not(self.hts_activated and idtvar == 2))
+            self.labelDTREFunit.setVisible(not(self.hts_activated and idtvar == 2))
+
+            self.labelFOUMAX.setVisible((not self.hts_activated) or idtvar == 1)
+            self.lineEditFOUMAX.setVisible((not self.hts_activated) or idtvar == 1)
+
+            self.labelCOUMAX.setVisible(not self.hts_activated)
+            self.lineEditCOUMAX.setVisible(not self.hts_activated)
+
+
+            self.labelCDTMIN.setVisible(not self.hts_activated)
+            self.lineEditCDTMIN.setVisible(not self.hts_activated)
+            self.labelCDTMAX.setVisible(not self.hts_activated)
+            self.lineEditCDTMAX.setVisible(not self.hts_activated)
+            self.labelVARRDT.setVisible(not self.hts_activated)
+            self.lineEditVARRDT.setVisible(not self.hts_activated)
 
         else:
             self.labelCOUMAX.hide()
