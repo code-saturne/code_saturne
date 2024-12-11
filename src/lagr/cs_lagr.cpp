@@ -77,6 +77,8 @@
 #include "base/cs_post_default.h"
 #include "base/cs_prototypes.h"
 #include "rayt/cs_rad_transfer.h"
+#include "base/cs_random.h"
+#include "base/cs_velocity_pressure.h"
 
 #include "gui/cs_gui_particles.h"
 #include "gui/cs_gui_util.h"
@@ -106,7 +108,6 @@
 #include "lagr/cs_lagr_agglo.h"
 #include "lagr/cs_lagr_fragmentation.h"
 
-#include "base/cs_random.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
@@ -2036,8 +2037,42 @@ cs_lagr_solve_time_step(const int         itypfb[],
     }
 
     /* Compute the Lagrangian time */
-    /* Pressure fluid velocity and Lagrangian time  gradients
+    /* Pressure fluid velocity and Lagrangian time gradients
        ----------------------------------------------------- */
+
+    bool is_previous_active = false;
+    cs_velocity_pressure_param_t *vp_param
+      = cs_get_glob_velocity_pressure_param();
+    cs_time_control_t *vp_tc =
+      &(vp_param->time_control);
+
+    if (vp_tc->last_nt == ts->nt_cur -1)
+      is_previous_active = true;
+    else if (vp_tc->last_nt == ts->nt_cur) {
+      switch (vp_tc->type) {
+        case CS_TIME_CONTROL_TIME_STEP:
+          {
+            if (vp_tc->interval_nt == 1)
+              is_previous_active = true;
+          }
+          break;
+
+        case CS_TIME_CONTROL_TIME:
+          {
+            if (   ts->dt_ref >= vp_tc->interval_t*(1-1e-6)
+                && vp_tc->interval_t > 0)
+              is_previous_active = true;
+            if (vp_tc->start_t > ts->t_cur - ts->dt_ref )
+              is_previous_active = false;
+            if (vp_tc->end_t >= 0 && vp_tc->end_t < ts->t_cur - ts->dt_ref)
+              is_previous_active = false;
+          }
+          break;
+
+        case CS_TIME_CONTROL_FUNCTION:
+          is_previous_active = true; //FIXME previous time always assumed active
+      }
+    }
 
     /* At the first time step we initialize particles to
        values at current time step and not at previous time step, because
@@ -2108,8 +2143,9 @@ cs_lagr_solve_time_step(const int         itypfb[],
                                           extra_i[phase_id].grad_lagr_time_r_et,
                                           extra_i[phase_id].grad_lagr_time);
       }
-      else if (cs_glob_lagr_time_scheme->iilagr
-          != CS_LAGR_FROZEN_CONTINUOUS_PHASE) {
+      else if (   cs_glob_lagr_time_scheme->iilagr
+                    != CS_LAGR_FROZEN_CONTINUOUS_PHASE
+               && is_previous_active) {
 
         if (mesh->time_dep >= CS_MESH_TRANSIENT_CONNECT) {
           cs_lnum_t n_cells_ext = cs_glob_mesh->n_cells_with_ghosts;
