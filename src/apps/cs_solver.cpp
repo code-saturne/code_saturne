@@ -348,7 +348,7 @@ _run(void)
 #if defined(HAVE_MPI)
   if (cs_glob_param_cdo_mode == CS_PARAM_CDO_MODE_ONLY &&
       cs_thermal_system_is_activated()) {
-    const char app_type[] = "Code_Saturne_CDO_THERMAL " CS_APP_VERSION;
+    const char app_type[] = "Code_Saturne::CDO_THERMAL " CS_APP_VERSION;
     cs_coupling_discover_mpi_apps(opts.app_name, app_type);
   }
   else

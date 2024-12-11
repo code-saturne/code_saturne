@@ -1984,7 +1984,7 @@ _init_all_mpi_syr(int  *n_unmatched,
     _is_cdo_thermal = 1;
 
   const char *_sat_partner = _is_cdo_thermal
-    ? "Code_Saturne" : "Code_Saturne_CDO_THERMAL";
+    ? "Code_Saturne" : "Code_Saturne::CDO_THERMAL";
 
   int _sat_len = _is_cdo_thermal ? 12 : 24;
 
