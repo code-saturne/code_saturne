@@ -39,8 +39,13 @@
 #endif
 
 #include <bft_mem.h>
+#include <bft_printf.h>
 
+#include "cs_array.h"
+#include "cs_field_default.h"
 #include "cs_physical_model.h"
+#include "cs_reco.h"
+#include "cs_syr_coupling.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file
@@ -92,6 +97,8 @@ static const char _err_empty_thm[] =
   " empty.\n Please check your settings.\n";
 
 static cs_thermal_system_t *cs_thermal_system = nullptr;
+
+static cs_real_t *_cht_robin_vals = nullptr;
 
 /*============================================================================
  * Private function prototypes
@@ -458,6 +465,10 @@ cs_thermal_system_destroy(void)
 
   BFT_FREE(thm);
   cs_thermal_system = nullptr;
+
+  /* Deallocate array used for coupling if used */
+  if (_cht_robin_vals != nullptr)
+    BFT_FREE(_cht_robin_vals);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -684,6 +695,66 @@ cs_thermal_system_compute(bool                          cur2prev,
     bft_error(__FILE__, __LINE__, 0, _(_err_empty_thm));
   assert(cs_equation_uses_new_mechanism(thm->thermal_eq));
 
+  /* CHT code coupling (if needed) */
+  if (cs_syr_coupling_n_couplings() > 0) {
+
+    cs_lnum_t *cpl_ids = nullptr;
+    BFT_MALLOC(cpl_ids, mesh->n_b_faces, cs_lnum_t);
+
+    cs_real_t *t_bnd = nullptr;
+    cs_real_t *hf_bnd = nullptr;
+    cs_real_t *tf_bnd = nullptr;
+    BFT_MALLOC(t_bnd, mesh->n_b_faces, cs_real_t);
+    BFT_MALLOC(hf_bnd, mesh->n_b_faces, cs_real_t);
+    BFT_MALLOC(tf_bnd, mesh->n_b_faces, cs_real_t);
+
+    for (int icpl = 0; icpl < cs_syr_coupling_n_couplings(); icpl++) {
+      /* Get coupled elements for current coupling */
+      const cs_lnum_t n_cpl_elts = cs_syr_coupling_n_elts(icpl, 0);
+      cs_syr_coupling_elt_ids(icpl, 0, cpl_ids);
+
+      /* CDO numbering uses global numbering (interior, then boundary) */
+      for (cs_lnum_t e_id = 0; e_id < n_cpl_elts; e_id++)
+        cpl_ids[e_id] += mesh->n_i_faces;
+
+      /* Project vertex based values to face based values */
+      cs_real_t *t_vals = thm->temperature->val;
+      cs_reco_scalar_v2f(n_cpl_elts,
+                         cpl_ids,
+                         connect,
+                         quant,
+                         t_vals,
+                         true,
+                         t_bnd);
+
+      for (cs_lnum_t e_id = 0; e_id < n_cpl_elts; e_id++)
+        cpl_ids[e_id] -= mesh->n_i_faces;
+
+      // Send boundary temperature
+      cs_syr_coupling_send_tsolid(icpl, 0, t_bnd);
+
+      // Recieve Tf,Hf values
+      cs_syr_coupling_recv_tf_hf(icpl, 0, nullptr, tf_bnd, hf_bnd);
+
+
+      // Apply Tf, Hf to boundary condition defintion (xdef)
+      for (cs_lnum_t e_id = 0; e_id < n_cpl_elts; e_id++) {
+        cs_lnum_t face_id = cpl_ids[e_id];
+        cs_real_t *_face_vals = _cht_robin_vals + 3*face_id;
+        _face_vals[0] = hf_bnd[e_id];
+        _face_vals[1] = tf_bnd[e_id];
+        _face_vals[2] = 0.;
+      }
+
+    }
+
+    BFT_FREE(t_bnd);
+    BFT_FREE(tf_bnd);
+    BFT_FREE(hf_bnd);
+    BFT_FREE(cpl_ids);
+
+  }
+
   if (!(thm->model & CS_THERMAL_MODEL_STEADY))
     cs_equation_solve(cur2prev, mesh, thm->thermal_eq);
 
@@ -876,4 +947,45 @@ cs_thermal_system_log_setup(void)
 }
 
 /*----------------------------------------------------------------------------*/
+/*!
+ * \brief Initialize structures and/or boundary conditions used for CHT coupling
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_thermal_system_cht_boundary_conditions_setup(void)
+{
+  if (cs_syr_coupling_n_couplings() > 0) {
+
+    /* Initialize CHT array */
+    if (_cht_robin_vals != nullptr)
+      BFT_FREE(_cht_robin_vals);
+    BFT_MALLOC(_cht_robin_vals, 3 * cs_glob_mesh->n_b_faces, cs_real_t);
+    cs_array_real_set_scalar(3 * cs_glob_mesh->n_b_faces,
+                             1.e20,
+                             _cht_robin_vals);
+
+    /* Set boundary condition on zones */
+    cs_equation_param_t *eqp = cs_equation_param_by_name(CS_THERMAL_EQNAME);
+
+    for (int z_id = 0; z_id < cs_boundary_zone_n_zones(); z_id++) {
+      const cs_zone_t *z = cs_boundary_zone_by_id(z_id);
+      if (cs_syr_coupling_is_bnd_zone_coupled(z)) {
+        bft_printf("Setting a coupled (CHT) Robin boundary condition for zone %s.\n",
+                   z->name);
+        cs_equation_add_bc_by_array(eqp,
+                                    CS_PARAM_BC_ROBIN,
+                                    z->name,
+                                    cs_flag_boundary_face,
+                                    _cht_robin_vals,
+                                    false,  /* not owner */
+                                    true); /* not full length -> we use a subset of array */
+      }
+    }
+
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+
 END_C_DECLS
