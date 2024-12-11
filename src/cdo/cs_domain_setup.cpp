@@ -807,7 +807,6 @@ cs_domain_initialize_systems(cs_domain_t   *domain)
                              domain->time_step,
                              false); /* operate current to previous ? */
 
-
   /* Set the initial state for the Navier-Stokes system */
 
   if (cs_navsto_system_is_activated())

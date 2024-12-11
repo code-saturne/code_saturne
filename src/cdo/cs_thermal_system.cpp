@@ -731,10 +731,10 @@ cs_thermal_system_compute(bool                          cur2prev,
         cpl_ids[e_id] -= mesh->n_i_faces;
 
       // Send boundary temperature
-      cs_syr_coupling_send_tsolid(0, 0, t_bnd);
+      cs_syr_coupling_send_tsolid(icpl, 0, t_bnd);
 
       // Recieve Tf,Hf values
-      cs_syr_coupling_recv_tf_hf(0,0, nullptr, tf_bnd, hf_bnd);
+      cs_syr_coupling_recv_tf_hf(icpl, 0, nullptr, tf_bnd, hf_bnd);
 
 
       // Apply Tf, Hf to boundary condition defintion (xdef)
