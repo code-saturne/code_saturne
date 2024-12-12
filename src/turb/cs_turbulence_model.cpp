@@ -1346,77 +1346,6 @@ _turbulence_model_enum_name(cs_turb_model_type_t  id)
   return s;
 }
 
-/*----------------------------------------------------------------------------
- * Return associated with a turbulence model value
- *
- * parameters:
- *   id <-- model type
- *
- * returns:
- *   pointer to enum name.
- *----------------------------------------------------------------------------*/
-
-static const char *
-_turbulence_model_name(cs_turb_model_type_t  id)
-{
-  const char *s = nullptr;
-  switch(id) {
-  case CS_TURB_NONE:
-    s = _("no turbulence model");
-    break;
-  case CS_TURB_MIXING_LENGTH:
-    s = _("mixing length model");
-    break;
-  case CS_TURB_K_EPSILON:
-    s = _("standard k-epsilon model");
-    break;
-  case CS_TURB_K_EPSILON_LIN_PROD:
-    s = _("k-epsilon model with Linear Production (LP) correction");
-    break;
-  case CS_TURB_K_EPSILON_LS:
-    s = _("Launder-Sharma k-epsilon model");
-    break;
-  case CS_TURB_K_EPSILON_QUAD:
-    s = _("Baglietto et al. quadratic k-epsilon model");
-    break;
-  case CS_TURB_RIJ_EPSILON_LRR:
-    s = _("Rij-epsilon (LRR) model");
-    break;
-  case CS_TURB_RIJ_EPSILON_SSG:
-    s = _("Rij-epsilon (SSG)");
-    break;
-  case CS_TURB_RIJ_EPSILON_EBRSM:
-    s = _("Rij-epsilon (EBRSM))");
-    break;
-  case CS_TURB_LES_SMAGO_CONST:
-    s = _("LES (constant Smagorinsky model)");
-    break;
-  case CS_TURB_LES_SMAGO_DYN:
-    s = _("LES (classical dynamic Smagorisky model)");
-    break;
-  case CS_TURB_LES_WALE:
-    s = _("LES (WALE)");
-    break;
-  case CS_TURB_V2F_PHI:
-    s = _("v2f phi-model");
-    break;
-  case CS_TURB_V2F_BL_V2K:
-    s = _("v2f BL-v2-k)");
-    break;
-  case CS_TURB_K_OMEGA:
-    s = _("k-omega SST");
-    break;
-  case CS_TURB_SPALART_ALLMARAS:
-    s = _("Spalart-Allmaras model");
-    break;
-  default:
-    bft_error(__FILE__, __LINE__, 0,
-              _("Unknown cs_turb_model_type_t value: %d"), id);
-  }
-
-  return s;
-}
-
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*=============================================================================
@@ -1676,6 +1605,77 @@ cs_get_glob_turb_hybrid_model(void)
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Return name string associated with a turbulence model value
+ *
+ * \param[in]  id  model type
+ *
+ * \return pointer to turbulence models description name.
+ */
+/*----------------------------------------------------------------------------*/
+
+const char *
+cs_turbulence_model_name(cs_turb_model_type_t  id)
+{
+  const char *s = nullptr;
+  switch(id) {
+  case CS_TURB_NONE:
+    s = _("no turbulence model");
+    break;
+  case CS_TURB_MIXING_LENGTH:
+    s = _("mixing length model");
+    break;
+  case CS_TURB_K_EPSILON:
+    s = _("standard k-epsilon model");
+    break;
+  case CS_TURB_K_EPSILON_LIN_PROD:
+    s = _("k-epsilon model with Linear Production (LP) correction");
+    break;
+  case CS_TURB_K_EPSILON_LS:
+    s = _("Launder-Sharma k-epsilon model");
+    break;
+  case CS_TURB_K_EPSILON_QUAD:
+    s = _("Baglietto et al. quadratic k-epsilon model");
+    break;
+  case CS_TURB_RIJ_EPSILON_LRR:
+    s = _("Rij-epsilon (LRR) model");
+    break;
+  case CS_TURB_RIJ_EPSILON_SSG:
+    s = _("Rij-epsilon (SSG)");
+    break;
+  case CS_TURB_RIJ_EPSILON_EBRSM:
+    s = _("Rij-epsilon (EBRSM))");
+    break;
+  case CS_TURB_LES_SMAGO_CONST:
+    s = _("LES (constant Smagorinsky model)");
+    break;
+  case CS_TURB_LES_SMAGO_DYN:
+    s = _("LES (classical dynamic Smagorisky model)");
+    break;
+  case CS_TURB_LES_WALE:
+    s = _("LES (WALE)");
+    break;
+  case CS_TURB_V2F_PHI:
+    s = _("v2f phi-model");
+    break;
+  case CS_TURB_V2F_BL_V2K:
+    s = _("v2f BL-v2-k)");
+    break;
+  case CS_TURB_K_OMEGA:
+    s = _("k-omega SST");
+    break;
+  case CS_TURB_SPALART_ALLMARAS:
+    s = _("Spalart-Allmaras model");
+    break;
+  default:
+    bft_error(__FILE__, __LINE__, 0,
+              _("Unknown cs_turb_model_type_t value: %d"), id);
+  }
+
+  return s;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Print the turbulence model parameters to setup.log.
  */
 /*----------------------------------------------------------------------------*/
@@ -1715,7 +1715,7 @@ cs_turb_model_log_setup(void)
   cs_log_printf(CS_LOG_SETUP,
                 _("\n    %s\n"
                   "      (model = %s)\n\n"),
-                _turbulence_model_name(iturbm),
+                cs_turbulence_model_name(iturbm),
                 _turbulence_model_enum_name(iturbm));
 
   const char *iwallf_value_str[]
@@ -2017,7 +2017,7 @@ cs_turb_constants_log_setup(void)
   if (turb_model->model != CS_TURB_NONE)
     cs_log_printf(CS_LOG_SETUP,
                   _("  %s constants:\n"),
-                  _turbulence_model_name(
+                  cs_turbulence_model_name(
                     static_cast<cs_turb_model_type_t>(turb_model->model)));
 
   if (   turb_model->model == CS_TURB_K_EPSILON

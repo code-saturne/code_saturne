@@ -881,6 +881,8 @@ _additional_fields_stage_1(void)
   const int k_restart_id = cs_field_key_id("restart_file");
   const int key_buoyant_id = cs_field_key_id_try("coupled_with_vel_p");
 
+  const char *stage_desc = N_("initial data setup");
+
   cs_field_t *f_th = cs_thermal_model_field();
   const int n_fields = cs_field_n_fields();
 
@@ -991,7 +993,8 @@ _additional_fields_stage_1(void)
      For LES: 2nd order; 1st order otherwise
      (2nd order forbidden for "coupled" k-epsilon) */
   if (time_scheme->time_order == -1) {
-    if (turb_model->type == CS_TURB_LES || turb_model->hybrid_turb == CS_HYBRID_HTLES) {
+    if (   turb_model->type == CS_TURB_LES
+        || turb_model->hybrid_turb == CS_HYBRID_HTLES) {
       time_scheme->time_order = 2;
     }
     else {
@@ -1046,20 +1049,18 @@ _additional_fields_stage_1(void)
   else if (   turb_model->itytur == 2
            || turb_model->model == CS_TURB_V2F_PHI
            || turb_model->model != CS_TURB_K_OMEGA) {
-
-    bft_error(__FILE__, __LINE__, 0,
-              _("STOP AT THE INITIAL DATA\n\n"
-                "With the chosen turbulence model = %d\n"
-                "the value of ISTO2T (extrapolation of the source terms\n"
-                "for the turbulent variables) cannot be modified\n"
-                "yet ISTO2T has been forced to %d.\n"),
-              turb_model->model, time_scheme->isto2t);
+    cs_parameters_error
+      (CS_ABORT_IMMEDIATE, _(stage_desc),
+       _("With the chosen turbulence model (%s),\n"
+         "the value of isto2t (extrapolation of the source terms\n"
+         "for the turbulent variables) cannot be modified\n"
+         "yet isto2t has been forced to %d.\n"),
+       cs_turbulence_model_name((cs_turb_model_type_t)turb_model->model),
+       time_scheme->isto2t);
   }
 
   for (int ii = 0; ii < n_fields; ii++) {
-
     cs_field_t *f_scal = cs_field_by_id(ii);
-
     if (!(f_scal->type & CS_FIELD_VARIABLE))
       continue;
     if (cs_field_get_key_int(f_scal, keysca) <= 0)
@@ -1099,122 +1100,71 @@ _additional_fields_stage_1(void)
   /* Time schemes */
 
   /* Global time scheme */
-  if (time_scheme->time_order != 1 && time_scheme->time_order != 2) {
-    bft_error(__FILE__, __LINE__, 0,
-              _("STOP AT THE INITIAL DATA VERIFICATION\n\n"
-                "Time order (ISCHTP) must be an integer equal to 1 or 2\n"
-                "Here it is %d.\n\n"
-                "Check parameters.\n"),
-              time_scheme->time_order);
-  }
+  cs_parameters_is_in_range_int(CS_ABORT_IMMEDIATE,
+                                _(stage_desc),
+                                _("time order (ischtp)"),
+                                time_scheme->time_order,
+                                1, 3);
   if (time_scheme->time_order == 2 && cs_glob_time_step_options->idtvar != 0) {
-    bft_error(__FILE__, __LINE__, 0,
-              _("STOP AT THE INITIAL DATA\n\n"
-                "With a 2nd order scheme in time: TIME_ORDER = %d\n"
-                "It is necessary to use a constant and uniform time step\n"
-                "but IDTVAR = %d.\n\n"
-                "Check parameters.\n"),
-              time_scheme->time_order, cs_glob_time_step_options->idtvar);
+    cs_parameters_error
+      (CS_ABORT_IMMEDIATE, _(stage_desc),
+       _("With a 2nd order scheme in time: time_order = %d\n"
+         "It is necessary to use a constant and uniform time step\n"
+         "but idtvar = %d.\n"),
+       time_scheme->time_order, cs_glob_time_step_options->idtvar);
   }
-  if (time_scheme->time_order == 2 && turb_model->itytur == 2) {
-    bft_error(__FILE__, __LINE__, 0,
-              _("STOP AT THE INITIAL DATA\n\n"
-                "A 2nd order scheme has been selected (TIME_ORDER = %d)\n"
-                "with K-EPSILON (ITURB = %d).\n\n"
-                "The current version does not support the 2nd order with\n"
-                "coupling of the source terms of k-epsilon.\n\n"
-                "The calculation cannot be executed.\n\n"
-                "Check parameters.\n"),
-              time_scheme->time_order, turb_model->model);
+  if (time_scheme->time_order == 2) {
+    bool compatible = true;
+    if (   turb_model->itytur == 2
+        || turb_model->model == CS_TURB_V2F_PHI
+        || (   turb_model->model == CS_TURB_V2F_BL_V2K
+            && turb_model->hybrid_turb != CS_HYBRID_HTLES))
+      compatible = false;
+    else if (   turb_model->model == CS_TURB_K_OMEGA
+             && turb_model->hybrid_turb != CS_HYBRID_HTLES)
+      compatible = false;
+    else if (turb_model->model == CS_TURB_SPALART_ALLMARAS)
+      compatible = false;
+
+    if (compatible == false)
+      cs_parameters_error
+        (CS_ABORT_IMMEDIATE, _(stage_desc),
+         _("A 2nd order scheme has been selected (time_order = %d)\n"
+           "with the %s turbulence model.\n\n"
+           "The current version does not support the 2nd order with\n"
+           "coupling of the source terms of this model.\n"),
+         time_scheme->time_order,
+         cs_turbulence_model_name((cs_turb_model_type_t)turb_model->model));
   }
   if (time_scheme->time_order == 1 && turb_model->type == CS_TURB_LES) {
-    bft_error(__FILE__, __LINE__, 0,
-              _("STOP AT THE INITIAL DATA\n\n"
-                "A 1st order scheme has been selected (TIME_ORDER = %d)\n"
-                "for LES (ITURB = %d).\n\n"
-                "The calculation cannot be executed.\n\n"
-                "Check parameters.\n"),
-              time_scheme->time_order, turb_model->model);
+    cs_parameters_error
+      (CS_ABORT_IMMEDIATE, _(stage_desc),
+       _("A 1st order scheme has been selected (time_order = %d)\n"
+         "with the %s turbulence model.\n"),
+       time_scheme->time_order,
+       cs_turbulence_model_name((cs_turb_model_type_t)turb_model->model));
   }
-  if (time_scheme->time_order == 2 && turb_model->model == CS_TURB_V2F_PHI) {
-    bft_error(__FILE__, __LINE__, 0,
-              _("STOP AT THE INITIAL DATA\n\n"
-                "A 2nd ORDER SCHEME HAS BEEN SELECTED (TIME_ORDER = %d)\n"
-                "for PHI_FBAR (ITURB = %d).\n\n"
-                "The current version does not support the 2nd order with\n"
-                "coupling of the source terms of k-epsilon\n\n"
-                "The calculation cannot be executed.\n\n"
-                "Check parameters.\n"),
-              time_scheme->time_order, turb_model->model);
-  }
-  if (   time_scheme->time_order == 2 && turb_model->model == CS_TURB_V2F_BL_V2K
-      && turb_model->hybrid_turb != CS_HYBRID_HTLES) {
-    bft_error(__FILE__, __LINE__, 0,
-              _("STOP AT THE INITIAL DATA\n\n"
-                "A 2nd order scheme has been selected (TIME_ORDER = %d)\n"
-                "for BL-V2/K (ITURB = %d)\n\n"
-                "The current version does not support the 2nd order with\n"
-                "coupling of the source terms of k-epsilon.\n\n"
-                "The calculation cannot be executed\n\n"
-                "Check parameters.\n"),
-              time_scheme->time_order, turb_model->model);
-  }
-  if (   time_scheme->time_order == 2 && turb_model->model == CS_TURB_K_OMEGA
-      && turb_model->hybrid_turb != CS_HYBRID_HTLES) {
-    bft_error(__FILE__, __LINE__, 0,
-              _("STOP AT THE INITIAL DATA\n\n"
-                "A 2nd order scheme has been selected (TIME_ORDER = %d)\n"
-                "for K-OMEGA (ITURB = %d)\n\n"
-                "The current version does not support the 2nd order with\n"
-                "coupling of the source terms of k-omega.\n\n"
-                "The calculation cannot be executed.\n\n"
-                "Check parameters.\n"),
-              time_scheme->time_order, turb_model->model);
-  }
-  if (time_scheme->time_order == 2 && turb_model->model == CS_TURB_SPALART_ALLMARAS) {
-    bft_error(__FILE__, __LINE__, 0,
-              _("STOP AT THE INITIAL DATA\n\n"
-                "A 2nd order scheme has been selected (TIME_ORDER = %d)\n"
-                "for SPALART (ITURB = %d)\n\n"
-                "The current version does not support the 2nd order with\n"
-                "coupling of the source terms of Spalart-Allmaras.\n\n"
-                "The calculation cannot be executed.\n\n"
-                "Check parameters.\n"),
-              time_scheme->time_order, turb_model->model);
-  }
+
   /* Time scheme for mass flux */
-  if (   time_scheme->istmpf != 0 && time_scheme->istmpf != 1
-      && time_scheme->istmpf != 2) {
-    bft_error(__FILE__, __LINE__, 0,
-              _("STOP AT THE INITIAL DATA\n\n"
-                "ISTMPF must be an integer equal to 0, 1 or 2.\n"
-                "Here it is %d.\n\n"
-                "The calculation cannot be executed.\n\n"
-                "Check parameters.\n"),
-              time_scheme->istmpf);
-  }
+  cs_parameters_is_in_range_int(CS_ABORT_IMMEDIATE,
+                                _(stage_desc),
+                                "cs_glob_time_scheme->istmpf",
+                                time_scheme->istmpf,
+                                0, 3);
+
   /* Time scheme for NS source terms */
-  if (   time_scheme->isno2t != 0 && time_scheme->isno2t != 1
-      && time_scheme->isno2t != 2) {
-    bft_error(__FILE__, __LINE__, 0,
-              _("STOP AT THE INITIAL DATA\n\n"
-                "ISTMPF must be an integer equal to 0, 1 or 2.\n"
-                "Here it is %d.\n\n"
-                "The calculation cannot be executed.\n\n"
-                "Check parameters.\n"),
-              time_scheme->isno2t);
-  }
+  cs_parameters_is_in_range_int(CS_ABORT_IMMEDIATE,
+                                _(stage_desc),
+                                "cs_glob_time_scheme->isno2t",
+                                time_scheme->isno2t,
+                                0, 3);
+
   /* Time scheme for turbulent quantities source terms */
-  if (   time_scheme->isto2t != 0 && time_scheme->isto2t != 1
-      && time_scheme->isto2t != 2) {
-    bft_error(__FILE__, __LINE__, 0,
-              _("STOP AT THE INITIAL DATA\n\n"
-                "ISTMPF must be an integer equal to 0, 1 or 2.\n"
-                "Here it is %d.\n\n"
-                "The calculation cannot be executed.\n\n"
-                "Check parameters.\n"),
-              time_scheme->isto2t);
-  }
+  cs_parameters_is_in_range_int(CS_ABORT_IMMEDIATE,
+                                _(stage_desc),
+                                "cs_glob_time_scheme->isto2t",
+                                time_scheme->isto2t,
+                                0, 3);
 
   /* Time scheme for scalar source terms */
   for (int ii = 0; ii < n_fields; ii++) {
@@ -1227,12 +1177,12 @@ _additional_fields_stage_1(void)
 
     int isso2t = cs_field_get_key_int(f_scal, kisso2t);
     if (isso2t != 0 && isso2t != 1 && isso2t != 2) {
-      bft_error(__FILE__, __LINE__, 0,
-                _("STOP AT THE INITIAL DATA FOR THE SCALAR %s\n\n"
-                  "ISSO2T must be an integer equal to 0, 1 or 2.\n"
-                  "Here it is %d.\n\n"
-                  "Check parameters\n"),
-                f_scal->name, isso2t);
+      cs_parameters_error
+        (CS_ABORT_IMMEDIATE, _(stage_desc),
+         _("For the variable %s,\n"
+           "isso2t must be an integer equal to 0, 1 or 2.\n"
+           "Here it is %d.\n"),
+         f_scal->name, isso2t);
     }
   }
 

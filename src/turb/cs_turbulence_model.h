@@ -513,6 +513,19 @@ cs_get_glob_turb_les_model(void);
 cs_turb_hybrid_model_t *
 cs_get_glob_turb_hybrid_model(void);
 
+/*----------------------------------------------------------------------------*/
+/*
+ * \brief Return name string associated with a turbulence model value
+ *
+ * \param[in]  id  model type
+ *
+ * \return pointer to turbulence models description name.
+ */
+/*----------------------------------------------------------------------------*/
+
+const char *
+cs_turbulence_model_name(cs_turb_model_type_t  id);
+
 /*----------------------------------------------------------------------------*
  * Print the turbulence model parameters to setup.log.
  *----------------------------------------------------------------------------*/
