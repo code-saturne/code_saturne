@@ -619,7 +619,7 @@ _system_info(bool  log)
 
 #if defined(HAVE_CUDA)
   for (int log_id = 0; log_id < n_logs; log_id++) {
-    cs_base_cuda_device_info((cs_log_t)log_id);
+    cs_base_cuda_device_info(logs[log_id]);
     cs_base_cuda_version_info(logs[log_id]);
   }
 #elif defined(SYCL_LANGUAGE_VERSION)
