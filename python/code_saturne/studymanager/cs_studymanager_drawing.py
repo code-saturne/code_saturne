@@ -595,6 +595,9 @@ class Plotter(object):
         @param study_label: label of a study
 
         """
+        # initialization necessary in case of several studies
+        self.curves = []
+
         # disable tex in Matplotlib (use Mathtext instead)
         rcParams['text.usetex'] = not disable_tex
 

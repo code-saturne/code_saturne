@@ -226,11 +226,13 @@ class Case(object):
         self.is_plot       = "not done"
         self.is_compare    = "not done"
         self.disabled      = False
+        self.no_restart    = False
         self.threshold     = "default"
         self.diff_value    = [] # list of differences (in case of comparison)
         self.m_size_eq     = True # mesh sizes equal (in case of comparison)
         self.subdomains    = None
         self.level         = None # level of the node in the dependency graph
+        self.job_id        = None
 
         # Run_dir and Title are based on study, label and run_id
         self.resu = "RESU"
@@ -374,8 +376,10 @@ class Case(object):
 
     def __query_dependence__(self):
         """
-        Check for dependancy in DATA/setup.xml overwriten by dependancy in
+        Check for dependency in DATA/setup.xml overwriten by dependency in
         parametric arguments
+        Remark: we only take into account dependencies to a non existing run
+        folder as it is used to manage slurm submissions
         """
 
         depends = None
@@ -402,7 +406,7 @@ class Case(object):
                    if node != None:
                        path = str(node.getAttribute('path'))
 
-        # Convert path in smgr dependancy (STUDY/CASE/run_id)
+        # Convert path in smgr dependency (STUDY/CASE/run_id)
         if path:
             list_path = path.split(os.sep)
             if len(list_path) > 4:
@@ -422,10 +426,30 @@ class Case(object):
                     depends = os.path.join(self.study, self.label,
                                            self.resu, run_id_depends)
 
+        # check the existence of the dependency run folder
+        # remove dependency in case of sucessfull run
+        # disable run in case of problem
         if depends:
-            return os.path.normpath(depends)
+            run_tmp = os.path.join(self.__dest, ".." , depends)
+            run_folder = os.path.normpath(run_tmp)
+            if os.path.isdir(run_folder):
+                is_coupling = self.subdomains != None
+                state, info = get_case_state(run_folder,
+                                             coupling=is_coupling,
+                                             run_timeout=3600)
+
+                if state == case_state.FINALIZED:
+                    # no dependency as run already finished
+                    return None
+                else:
+                    # restart cannot be used
+                    self.no_restart = True
+                    return depends
+            else:
+                # keep dependency
+                return depends
         else:
-            return depends
+            return None
 
     #---------------------------------------------------------------------------
 
@@ -448,6 +472,12 @@ class Case(object):
                                 + "_" + self.run_id + ".log")
 
         log_run = open(log_path, mode='w')
+
+        if self.no_restart:
+            fail_info = 'CANCELLED due to unusable restart'
+            log_lines += ['      * prepare run folder: {0} --> {1}'.format(self.title, fail_info)]
+            log_lines += ['        - see ' + self.depends]
+            return log_lines
 
         if self.subdomains:
             if not os.path.isdir(self.label):
@@ -1928,7 +1958,7 @@ class Studies(object):
 #SBATCH --job-name=saturne_vnv_{3}
 """
         cur_batch_id = 0
-        job_id_list = []
+        tot_job_id_list = []
 
         # create folder in destination
         slurm_file_dir = os.path.join(self.__dest, "slurm_files")
@@ -1941,15 +1971,17 @@ class Studies(object):
         # loop on level (0 means without dependency)
         for level in range(self.graph.max_level+1):
 
-            # job id list for the current level
-            cur_job_id_list = []
-
             # loop on number of processes
             for nproc in range(self.graph.max_proc):
 
                 batch_cmd = ""
                 cur_batch_size = 0
                 batch_total_time = 0
+
+                # dependency job id list for the current batch
+                dep_job_id_list = []
+                # list of cases of the current batch
+                cases_list = []
 
                 # loop on cases of the sub graph
                 for case in self.graph.extract_sub_graph(level,nproc+1).graph_dict:
@@ -1969,6 +2001,11 @@ class Studies(object):
                                 batch_cmd += case.build_run_batch(mem_log=self.__mem_log)
                                 cur_batch_size += 1
                                 batch_total_time += float(case.expected_time)
+                                cases_list.append(case)
+                                if level > 0:
+                                    depend_id = self.graph.graph_dict[case].job_id
+                                    if depend_id not in dep_job_id_list:
+                                        dep_job_id_list.append(depend_id)
                             else:
                                 submit_prev = True
 
@@ -2011,7 +2048,7 @@ class Studies(object):
                                     # list of dependency id should be in the
                                     # :id1:id2:id3 format
                                     list_id = ""
-                                    for item in job_id_list:
+                                    for item in dep_job_id_list:
                                         list_id += ":" + str(item)
                                     if len(list_id) > 0:
                                         output = subprocess.check_output(['sbatch',
@@ -2026,13 +2063,17 @@ class Studies(object):
                                 msg = output.decode('utf-8').strip()
                                 match = re.search('\d{8}', msg)
                                 job_id = match.group()
-                                cur_job_id_list.append(job_id)
+                                tot_job_id_list.append(job_id)
                                 self.reporting('    - %s ...' % msg)
+                                for item in cases_list:
+                                    item.job_id = job_id
 
                                 batch_cmd = ""
                                 cur_batch_id += 1
                                 cur_batch_size = 0
                                 batch_total_time = 0
+                                dep_job_id_list = []
+                                cases_list = []
                                 slurm_batch_file.close()
 
                             # complete batch info as previous one was submitted
@@ -2041,6 +2082,11 @@ class Studies(object):
                                 batch_cmd += case.build_run_batch(mem_log=self.__mem_log)
                                 cur_batch_size += 1
                                 batch_total_time += float(case.expected_time)
+                                cases_list.append(case)
+                                if level > 0:
+                                    depend_id = self.graph.graph_dict[case].job_id
+                                    if depend_id not in cur_job_id_list:
+                                        cur_job_id_list.append(depend_id)
 
                 if cur_batch_size > 0:
                     slurm_batch_name = "slurm_batch_file_" + \
@@ -2077,7 +2123,7 @@ class Studies(object):
                         # list of dependency id should be in the
                         # :id1:id2:id3 format
                         list_id = ""
-                        for item in job_id_list:
+                        for item in dep_job_id_list:
                             list_id += ":" + str(item)
                         if len(list_id) > 0:
                             output = subprocess.check_output(['sbatch',
@@ -2092,16 +2138,18 @@ class Studies(object):
                     msg = output.decode('utf-8').strip()
                     match = re.search('\d{8}', msg)
                     job_id = match.group()
-                    cur_job_id_list.append(job_id)
+                    tot_job_id_list.append(job_id)
                     self.reporting('    - %s ...' % msg)
+                    for elem in cases_list:
+                        elem.job_id = job_id
 
                     batch_cmd = ""
                     cur_batch_id += 1
                     cur_batch_size = 0
                     batch_total_time = 0
+                    dep_job_id_list = []
+                    cases_list = []
                     slurm_batch_file.close()
-
-            job_id_list = cur_job_id_list
 
         # final submission for postprocessing, comparaison and state analysis
         slurm_batch_name = "slurm_batch_file_" + str(cur_batch_id) + ".sh"
@@ -2134,7 +2182,7 @@ class Studies(object):
         # list of dependency id should be in the
         # :id1:id2:id3 format
         list_id = ""
-        for item in job_id_list:
+        for item in tot_job_id_list:
             list_id += ":" + str(item)
         if len(list_id) > 0:
             output = subprocess.check_output(['sbatch',"--dependency=afterany"
@@ -2750,9 +2798,10 @@ class Studies(object):
             if d == '':
                 ff = os.path.join(fd, f)
                 if not os.path.isfile(ff):
-                    l = os.listdir(fd)
-                    if len(l) == 1:
-                        ff = os.path.join(fd, l[0], f)
+                    if os.path.isdir(fd):
+                        l = os.listdir(fd)
+                        if len(l) == 1:
+                            ff = os.path.join(fd, l[0], f)
             else:
                 ff = os.path.join(fd, d, f)
 
@@ -2925,11 +2974,13 @@ class dependency_graph(object):
         """ Defines dependency between two cases as an edge in the graph
         """
         (node1, node2) = dependency
-        # TODO: Add error message as only one dependency is possible
-        if node1 in self.graph_dict:
-            self.graph_dict[node1].append(node2)
+        # only one dependency is possible
+        if not self.graph_dict[node1]:
+            self.graph_dict[node1] = node2
         else:
-            self.graph_dict[node1] = [node2]
+            msg = "Error in dependency graph" + node1.title + " can only" \
+                + " have one dependency.\n"
+            return msg
 
     def add_node(self, case):
         """ Add a case in the graph if not already there.
@@ -2937,7 +2988,7 @@ class dependency_graph(object):
         """
         msg = None
         if case not in self.graph_dict:
-            self.graph_dict[case] = []
+            self.graph_dict[case] = None
 
             if case.depends:
                 for neighbor in self.graph_dict:

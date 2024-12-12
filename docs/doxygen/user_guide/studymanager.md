@@ -126,10 +126,6 @@ Most command-line options are detailed here:
 Examples
 --------
 
-- read `sample.xml`, create **destination** directory and exit;
-  ```
-  $ code_saturne smgr -f sample.xml
-  ```
 - copy all cases from the **repository** into the **destination**,
   compile all user files and run enabled cases:
   ```
@@ -188,8 +184,8 @@ involved in the SMGR process.
 ```{.xml}
 <?xml version="1.0"?>
 <studymanager>
-    <repository>/home/dupond/codesaturne/MyRepository</repository>
-    <destination>/home/dupond/codesaturne/MyDestination</destination>
+    <repository/>
+    <destination/>
 
     <study label="MyStudy1" status="on">
         <case label="Grid1" run_id="Grid1" status="on" compute="on" post="off"/>
@@ -202,9 +198,11 @@ involved in the SMGR process.
 </studymanager>
 ```
 The four first lines of the SMGR parameter file are mandatory. The third and
-fourth lines correspond to the definition of the **repository** and
-**destination** directories. Note that if the **destination** does not exist,
-the directory is created.
+fourth lines allow to specify the **repository** and **destination** directories.
+Note that users are advised not to do so as it is a deprecated approach to set
+**repository** and **destination** directories. One should use `--repo` or
+`--dest` SMGR command-line to set the path to these directories when it is
+required.
 
 When SMGR is launched, the parameters file is parsed in order to known which
 studies and cases from the **repository** should be copied in the
@@ -345,19 +343,37 @@ cs_parametric_setup.py filter to modify the case setup.
 Here are listed the main options available through the `<parametric>` node
 
 <table>
-<tr><th> Key                        <th> Usage
-<tr><td> `-m`, `--mesh`             <td> set the mesh name (a string) to use
-<tr><td> `--mi`, `--mesh_input`     <td> set the mesh input file (a string). This file results from a previous preprocessing stage
-<tr><td> `-a`, `--perio-angle`      <td> set the angle of rotation (a float) in case of periodicity
-<tr><td> `-r`, `--restart`          <td> set the restart directory (a string) to consider
-<tr><td> `--different-restart-mesh` <td> if set then one specifies that the restart directory corresponds to a run with a different mesh
-<tr><td> `-n`, `--iter-num`         <td> set the max. number of time iterations (an integer) to be done
-<tr><td> `--tmax`                   <td> set the final time (a float) of the simulation
-<tr><td> `--iter-dt`                <td> set the value of time step (a float)
-<tr><td> `--imrgra`                 <td> set the algorithm (an integer) for the gradient reconstruction. See the imrgra documentation in \ref cs_equation_param_t (part related to the legacy settings) for more details or the [theory guide](../../theory.pdf).
-<tr><td> `--blencv`                 <td> value (a float) between 0 and 1. Set the portion of centered scheme (0: induces an upwind scheme). This is done variable by variable `<var>:<val>`. See the blencv documentation in \ref cs_equation_param_t (part related to the legacy settings) or the [theory guide](../../theory.pdf).
+<tr><th> Key                             <th> Usage
+<tr><td> `-m`, `--mesh`                  <td> set the mesh name (a string) to use
+<tr><td> `--mi`, `--mesh_input`          <td> set the mesh input file (a string). This file results from a previous preprocessing stage
+<tr><td> `-a`, `--perio-angle`           <td> set the angle of rotation (a float) in case of periodicity
+<tr><td> `-r`, `--restart`               <td> set the restart directory (a string) to consider
+<tr><td> `--different-restart-mesh`      <td> if set then one specifies that the restart directory corresponds to a run with a different mesh. Will check for mesh in checkpoint folder.
+<tr><td> `--different-restart-mesh-path` <td> set original mesh path used for restart (if not in checkpoint folder).
+<tr><td> `-n`, `--iter-num`              <td> set the max. number of time iterations (an integer) to be done
+<tr><td> `--tmax`                        <td> set the final time (a float) of the simulation
+<tr><td> `--iter-dt`                     <td> set the value of time step (a float)
+<tr><td> `--imrgra`                      <td> set the algorithm (an integer) for the gradient reconstruction. See the imrgra documentation in \ref cs_equation_param_t (part related to the legacy settings) for more details or the [theory guide](../../theory.pdf).
+<tr><td> `--blencv`                      <td> value (a float) between 0 and 1. Set the portion of centered scheme (0: induces an upwind scheme). This is done variable by variable `<var>:<val>`. See the blencv documentation in \ref cs_equation_param_t (part related to the legacy settings) or the [theory guide](../../theory.pdf).
 </table>
 
+It is possible to restart from a run previously defined in the smgr xml file.
+Note that the `--different-restart-mesh` option should be used if the mesh is
+different. It will use the mesh\_input file in the checkpoint folder. One can
+also specify the path of the mesh with the `--different-restart-mesh-path`
+option when it is required.
+
+```{.xml}
+  <study label="STUDY" status="on">
+    <case label="CASE1" status="on" compute="on" post="on"/>
+    <case label="CASE2" status="on" compute="on" post="on">
+      <parametric args="--restart ../../CASE1/RESU/run1 --different-restart-mesh"/>
+    </case>
+    <case label="CASE3" status="on" compute="on" post="on">
+      <parametric args="--restart ../../CASE2/RESU/run1 --different-restart-mesh --different-restart-mesh-path ../CASE2/RESU/run1/mesh_output.csm"/>
+    </case>
+  </study>
+```
 
 ### Keywords arguments (cs_user_scripts.py)
 
@@ -384,7 +400,8 @@ grouped by blocks of cases of similar characteristics (to avoid submitting too
 many small jobs).
 
 Job-dependencies are defined automatically such that blocks of dependency level
-`M` will wait until all blocks of level `M-1` are successfully finished.
+`M` will wait until all required blocks of level `M-1` are successfully
+finished.
 
 This is activated by using the `--submit` command-line.
 

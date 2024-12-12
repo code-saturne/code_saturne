@@ -133,7 +133,8 @@ Dependency between cases
 ------------------------
 
 Job-dependencies are defined automatically such that blocks of dependency level
-`M` will wait until all blocks of level `M-1` are successfully finished.
+`M` will wait until all required blocks of level `M-1` are successfully
+finished.
 
 Three methods are available to define a dependency between cases:
 - Set a restart in the data settings of a case using the graphical user
@@ -188,9 +189,9 @@ Here are some explanations on cases allocation per batch :
   this batch would have exceeded 5 hours including the next case (CASE2/run1).
   Batch 3 only includes the last case at level 0. 
 - In level 1, batch 4 is limited by the maximum number of cases per batch (2).
-  Batch 5 only includes the last case at level 1. Batches 4 and 5 depends on all
-  batches from level 0.
-- In level 2, batch 6 only includes the last case of the level. It depends on all
-  batches from level 0 and 1.
+  Batch 5 only includes the last case at level 1. Batche 4 depends on batch 1
+  and batch 5 depends on batch 3.
+- In level 2, batch 6 only includes the last case of the level. It depends on
+  batch 6.
 - In level 3, batch 7 includes postprocessing and state analysis. The final
   batch depends on all cases from all steps.
