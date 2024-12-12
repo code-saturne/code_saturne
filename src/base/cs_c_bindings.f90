@@ -1533,10 +1533,6 @@ contains
 
     real(c_double), dimension(*), intent(in) :: dt
 
-    ! Externals
-
-    procedure() :: cs_f_user_initialization
-
     ! Local variables
 
     integer, pointer, dimension(:,:) :: icodcl
