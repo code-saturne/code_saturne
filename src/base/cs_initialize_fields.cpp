@@ -468,8 +468,7 @@ cs_initialize_fields_stage_1(void)
     cs_field_t *f = cs_field_by_id(f_id);
 
     if (   !(f->type & CS_FIELD_VARIABLE)
-        || f->type & CS_FIELD_CDO
-        || f->dim != 1)
+        || f->type & CS_FIELD_CDO)
       continue;
 
     const cs_equation_param_t *eqp = cs_field_get_equation_param_const(f);
