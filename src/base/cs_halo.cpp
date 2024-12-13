@@ -150,7 +150,12 @@ static int _n_halos = 0;
    We should run performance comparisons, but in the case of similar
    performance, going for the shared approach would be preferred for its
    other advantages (simplicity most of all, and pageable device memory). */
+
+#if defined(HAVE_ACCEL)
 static cs_alloc_mode_t _halo_buffer_alloc_mode = CS_ALLOC_HOST_DEVICE_PINNED;
+#else
+static cs_alloc_mode_t _halo_buffer_alloc_mode = CS_ALLOC_HOST;
+#endif
 
 /* Should we use barriers after posting receives ? */
 static int _halo_use_barrier = false;
@@ -1411,7 +1416,7 @@ cs_halo_sync_pack_init_state(const cs_halo_t  *halo,
     size_t send_buffer_size = cs_halo_pack_size(halo, data_type, stride);
 
     if (send_buffer_size > _hs->send_buffer_size) {
-      cs_alloc_mode_t alloc_mode = cs_check_device_ptr(halo->send_list);
+      cs_alloc_mode_t alloc_mode = _halo_buffer_alloc_mode;
 
       _hs->send_buffer_size = send_buffer_size;
 
@@ -1630,7 +1635,8 @@ cs_halo_sync_pack_d(const cs_halo_t  *halo,
 #if defined(HAVE_CUDA)
 
   void *val_host_ptr = cs_cuda_get_host_ptr(val);
-  void *_send_buf_d = cs_get_device_ptr(_send_buf);
+  void *_send_buf_d = (send_buf != nullptr) ?
+    send_buf : cs_get_device_ptr(_send_buf);
 
   cs_halo_cuda_pack_send_buffer(halo,
                                 sync_mode,
@@ -1674,7 +1680,6 @@ cs_halo_sync_pack_d(const cs_halo_t  *halo,
     _hs->var_location = CS_ALLOC_DEVICE;
 
 #endif
-
 }
 
 #endif /* defined(HAVE_ACCEL) */
