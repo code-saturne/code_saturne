@@ -1270,7 +1270,7 @@ cs_sles_it_cuda_jacobi(cs_sles_it_t              *c,
   stream = cs_matrix_spmv_cuda_get_stream();
   if (stream == 0) {
     local_stream = true;
-    cs_cuda_get_stream(0);
+    stream = cs_cuda_get_stream(0);
   }
 
   const cs_lnum_t n_cols = cs_matrix_get_n_columns(a) * diag_block_size;
@@ -1514,7 +1514,7 @@ cs_sles_it_cuda_block_jacobi(cs_sles_it_t              *c,
   stream = cs_matrix_spmv_cuda_get_stream();
   if (stream == 0) {
     local_stream = true;
-    cs_cuda_get_stream(0);
+    stream = cs_cuda_get_stream(0);
   }
 
   const cs_lnum_t n_cols = cs_matrix_get_n_columns(a) * diag_block_size;
@@ -1774,7 +1774,7 @@ cs_sles_it_cuda_fcg(cs_sles_it_t              *c,
   stream = cs_matrix_spmv_cuda_get_stream();
   if (stream == 0) {
     local_stream = true;
-    cs_cuda_get_stream(0);
+    stream = cs_cuda_get_stream(0);
   }
 
   assert(c->setup_data != NULL);
@@ -1972,7 +1972,7 @@ cs_sles_it_cuda_gcr(cs_sles_it_t              *c,
   stream = cs_matrix_spmv_cuda_get_stream();
   if (stream == 0) {
     local_stream = true;
-    cs_cuda_get_stream(0);
+    stream = cs_cuda_get_stream(0);
   }
 
   assert(c->setup_data != NULL);
