@@ -832,6 +832,21 @@ cs_sles_default_get_matrix(int          f_id,
   return a;
 }
 
+/*----------------------------------------------------------------------------
+ * Release of destroy matrix depending on whether is is cached or not.
+ *
+ * Matrices built by assembler are destroyed.
+ *
+ * parameters:
+ *   matrix <-> pointer to matrix structure pointer
+ *----------------------------------------------------------------------------*/
+
+void
+cs_sles_default_release_matrix(cs_matrix_t  **m)
+{
+  cs_matrix_release(m);
+}
+
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Call sparse linear equation solver setup for convection-diffusion

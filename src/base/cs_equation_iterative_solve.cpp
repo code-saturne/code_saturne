@@ -1066,7 +1066,7 @@ _equation_iterative_solve_strided(int                   idtvar,
    *==========================================================================*/
 
   cs_sles_free(sc);
-  cs_matrix_release_coefficients(a);
+  cs_matrix_release(&a);
 
   if (stride == 3) {
     /* Save diagonal in case we want to use it */
@@ -1967,7 +1967,7 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
    *==========================================================================*/
 
   cs_sles_free(sc);
-  cs_matrix_release_coefficients(a);
+  cs_sles_default_release_matrix(&a);
 
   ctx.wait();
 

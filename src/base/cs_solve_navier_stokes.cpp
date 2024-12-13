@@ -509,7 +509,7 @@ _cs_mass_flux_prediction(const cs_mesh_t       *m,
      ----------------- */
 
   cs_sles_free(sc);
-  cs_matrix_release_coefficients(a);
+  cs_sles_default_release_matrix(&a);
 
   CS_FREE_HD(divu);
   CS_FREE_HD(rhs);

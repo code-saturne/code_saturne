@@ -127,6 +127,18 @@ cs_sles_default_get_matrix(int          f_id,
                            bool         symmetric);
 
 /*----------------------------------------------------------------------------
+ * Release of destroy matrix depending on whether is is cached or not.
+ *
+ * Matrices built by assembler are destroyed.
+ *
+ * parameters:
+ *   matrix <-> pointer to matrix structure
+ *----------------------------------------------------------------------------*/
+
+void
+cs_sles_default_release_matrix(cs_matrix_t  **m);
+
+/*----------------------------------------------------------------------------
  * Default finalization for sparse linear equation solver API.
  *
  * This includes performance data logging output.
