@@ -6084,14 +6084,19 @@ cs_matrix_vector_multiply(const cs_matrix_t   *matrix,
                                                     true,
                                                     d_x,
                                                     d_y);
+
+      if (y != d_y) {
+        cs_lnum_t size = matrix->n_rows * matrix->db_size * sizeof(cs_real_t);
+        cs_copy_d2h(y, d_y, size);
+      }
     }
   }
-    else
-      matrix->vector_multiply[matrix->fill_type][0](nocst_matrix,
-                                                    false,
-                                                    true,
-                                                    x,
-                                                    y);
+  else
+    matrix->vector_multiply[matrix->fill_type][0](nocst_matrix,
+                                                  false,
+                                                  true,
+                                                  x,
+                                                  y);
 #else
   matrix->vector_multiply[matrix->fill_type][0](nocst_matrix,
                                                 false,

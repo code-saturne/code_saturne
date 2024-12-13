@@ -640,10 +640,6 @@ _residual(cs_lnum_t            n_vals,
 
   cs_matrix_vector_multiply(a, vx, res);
 
-# pragma omp parallel for if(n_vals > CS_THR_MIN)
-  for (cs_lnum_t ii = 0; ii < n_vals; ii++)
-    res[ii] = fabs(res[ii] - rhs[ii]);
-
 #if defined(HAVE_ACCEL)
 
   if (ddp_vx)
@@ -652,6 +648,14 @@ _residual(cs_lnum_t            n_vals,
     cs_disassociate_device_ptr(res);
 
 #endif
+  cs_dispatch_context ctx;
+  ctx.set_use_gpu(cs_mem_is_device_ptr(res) && cs_mem_is_device_ptr(rhs));
+
+  ctx.parallel_for(n_vals, [=] CS_F_HOST_DEVICE (cs_lnum_t ii) {
+    res[ii] = fabs(res[ii] - rhs[ii]);
+  });
+
+  ctx.wait();
 }
 
 /*----------------------------------------------------------------------------
@@ -1838,7 +1842,7 @@ cs_sles_solve(cs_sles_t           *sles,
     const cs_lnum_t n_vals = cs_matrix_get_n_rows(a) * block_size;
 
     cs_real_t *resr = nullptr;
-    BFT_MALLOC(resr, n_vals_ext, cs_real_t);
+    CS_MALLOC_HD(resr, n_vals_ext, cs_real_t, cs_alloc_mode);
 
     _residual(n_vals, a, rhs, vx, resr);
     cs_real_t rsd = sqrt(cs_gdot(n_vals, resr, resr));
@@ -1852,7 +1856,7 @@ cs_sles_solve(cs_sles_t           *sles,
         ("# residual[%s] = %g (precision %g, normalization %g)\n",
          sles_name, rsd, precision, r_norm);
 
-    BFT_FREE(resr);
+    CS_FREE(resr);
   }
 
   cs_timer_stats_switch(t_top_id);
