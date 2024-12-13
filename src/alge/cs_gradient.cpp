@@ -2312,6 +2312,7 @@ _add_hb_faces_cocg_lsq_cell(cs_lnum_t         c_id,
  *   m    <-- mesh
  *   fvq  <-- mesh quantities
  *   ma   <-- mesh adjacencies
+ *   ctx  <-- Reference to dispatch context
  *   cocg <-> cocg covariance matrix
  *----------------------------------------------------------------------------*/
 
@@ -2319,22 +2320,21 @@ static void
 _add_hb_faces_cell_cocg_lsq(const cs_mesh_t              *m,
                             const cs_mesh_quantities_t   *fvq,
                             const cs_mesh_adjacencies_t  *ma,
+                            cs_dispatch_context          &ctx,
                             cs_cocg_6_t                  *cocg)
 {
-  const int n_cells = m->n_cells;
   const cs_nreal_3_t *restrict b_face_u_normal = fvq->b_face_u_normal;
 
   const cs_lnum_t  *restrict cell_hb_faces_idx = ma->cell_hb_faces_idx;
   const cs_lnum_t  *restrict cell_hb_faces = ma->cell_hb_faces;
 
-# pragma omp parallel for
-  for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+  ctx.parallel_for(m->n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
     _add_hb_faces_cocg_lsq_cell(c_id,
                                 cell_hb_faces_idx,
                                 cell_hb_faces,
                                 b_face_u_normal,
                                 cocg[c_id]);
-  }
+  });
 }
 
 /*----------------------------------------------------------------------------
@@ -2352,30 +2352,22 @@ _compute_cell_cocg_lsq(const cs_mesh_t               *m,
                        bool                           extended,
                        const cs_mesh_quantities_t    *fvq,
                        cs_gradient_quantities_t      *gq)
-
 {
   const int n_cells = m->n_cells;
   const int n_cells_ext = m->n_cells_with_ghosts;
-  const int n_i_groups = m->i_face_numbering->n_groups;
-  const int n_i_threads = m->i_face_numbering->n_threads;
-  const int n_b_threads = m->b_face_numbering->n_threads;
-  const cs_lnum_t *restrict i_group_index = m->i_face_numbering->group_index;
-  const cs_lnum_t *restrict b_group_index = m->b_face_numbering->group_index;
 
-  const cs_lnum_2_t *restrict i_face_cells
-    = (const cs_lnum_2_t *)m->i_face_cells;
-  const cs_lnum_t *restrict b_face_cells
-    = (const cs_lnum_t *)m->b_face_cells;
-  const cs_lnum_t *restrict cell_cells_idx
-    = (const cs_lnum_t *)m->cell_cells_idx;
-  const cs_lnum_t *restrict cell_cells_lst
-    = (const cs_lnum_t *)m->cell_cells_lst;
+  const cs_mesh_adjacencies_t *ma = cs_glob_mesh_adjacencies;
+  const cs_lnum_t *restrict c2b_idx = ma->cell_b_faces_idx;
+  const cs_lnum_t *restrict c2b = ma->cell_b_faces;
 
-  const cs_real_3_t *restrict cell_f_cen
+  const cs_lnum_t *restrict b_cells = m->b_cells;
+  const cs_real_3_t *restrict cell_cen
     = (const cs_real_3_t *)fvq->cell_f_cen;
   const cs_nreal_3_t *restrict b_face_u_normal = fvq->b_face_u_normal;
 
   cs_cocg_6_t  *restrict cocgb = nullptr, *restrict cocg = nullptr;
+
+   cs_dispatch_context ctx;
 
   /* Map cocg/cocgb to correct structure, reallocate if needed */
 
@@ -2392,8 +2384,8 @@ _compute_cell_cocg_lsq(const cs_mesh_t               *m,
 
     assert(cocgb == nullptr);
 
-    BFT_MALLOC(cocg, n_cells_ext, cs_cocg_6_t);
-    BFT_MALLOC(cocgb, m->n_b_cells, cs_cocg_6_t);
+    CS_MALLOC_HD(cocg, n_cells_ext, cs_cocg_6_t, cs_alloc_mode);
+    CS_MALLOC_HD(cocgb, m->n_b_cells, cs_cocg_6_t, cs_alloc_mode);
 
     if (extended) {
       gq->cocg_lsq_ext = cocg;
@@ -2406,137 +2398,113 @@ _compute_cell_cocg_lsq(const cs_mesh_t               *m,
 
   }
 
-  /* Initialization */
+  /* Initialize cocg in ghost cells */
 
-# pragma omp parallel
-  for (cs_lnum_t c_id = 0; c_id < n_cells_ext; c_id++) {
-    for (cs_lnum_t ll = 0; ll < 6; ll++) {
-      cocg[c_id][ll] = 0.0;
-    }
+  cs_lnum_t n_halo_cells = n_cells_ext - n_cells;
+  if (n_halo_cells > 0) {
+    ctx.parallel_for(n_halo_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t idx) {
+      auto _cocg = cocg[n_cells + idx];
+      _cocg[0] = 0; _cocg[1] = 0; _cocg[2] = 0;
+      _cocg[3] = 0; _cocg[4] = 0; _cocg[5] = 0;
+    });
   }
 
-  /* Contribution from interior faces */
+  /* Add contributions from neighbor cells (standard and extended)
+     ------------------------------------------------------------- */
 
-  for (int g_id = 0; g_id < n_i_groups; g_id++) {
+  int n_steps = (extended) ? 2 : 1;
 
-#   pragma omp parallel for
-    for (int t_id = 0; t_id < n_i_threads; t_id++) {
+  for (int step_id = 0; step_id < n_steps; step_id++) {
 
-      for (cs_lnum_t f_id = i_group_index[(t_id*n_i_groups + g_id)*2];
-           f_id < i_group_index[(t_id*n_i_groups + g_id)*2 + 1];
-           f_id++) {
+    const cs_lnum_t *c2c_idx = ma->cell_cells_idx;
+    const cs_lnum_t *c2c = ma->cell_cells;
+    if (step_id == 1) {
+      c2c_idx = ma->cell_cells_e_idx;
+      c2c = ma->cell_cells_e;
+    }
 
-        cs_real_t dc[3];
-        cs_lnum_t ii = i_face_cells[f_id][0];
-        cs_lnum_t jj = i_face_cells[f_id][1];
+    ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
 
-        for (cs_lnum_t ll = 0; ll < 3; ll++)
-          dc[ll] = cell_f_cen[jj][ll] - cell_f_cen[ii][ll];
-        cs_real_t ddc = 1. / (dc[0]*dc[0] + dc[1]*dc[1] + dc[2]*dc[2]);
+      auto _cocg = cocg[c_id];
 
-        cocg[ii][0] += dc[0]*dc[0]*ddc;
-        cocg[ii][1] += dc[1]*dc[1]*ddc;
-        cocg[ii][2] += dc[2]*dc[2]*ddc;
-        cocg[ii][3] += dc[0]*dc[1]*ddc;
-        cocg[ii][4] += dc[1]*dc[2]*ddc;
-        cocg[ii][5] += dc[0]*dc[2]*ddc;
-
-        cocg[jj][0] += dc[0]*dc[0]*ddc;
-        cocg[jj][1] += dc[1]*dc[1]*ddc;
-        cocg[jj][2] += dc[2]*dc[2]*ddc;
-        cocg[jj][3] += dc[0]*dc[1]*ddc;
-        cocg[jj][4] += dc[1]*dc[2]*ddc;
-        cocg[jj][5] += dc[0]*dc[2]*ddc;
-
-      } /* loop on faces */
-
-    } /* loop on threads */
-
-  } /* loop on thread groups */
-
-  /* Contribution from extended neighborhood */
-
-  if (extended) {
-
-#   pragma omp parallel for
-    for (cs_lnum_t ii = 0; ii < n_cells; ii++) {
-      for (cs_lnum_t cidx = cell_cells_idx[ii];
-           cidx < cell_cells_idx[ii+1];
-           cidx++) {
-
-        cs_real_t dc[3];
-        cs_lnum_t jj = cell_cells_lst[cidx];
-
-        for (cs_lnum_t ll = 0; ll < 3; ll++)
-          dc[ll] = cell_f_cen[jj][ll] - cell_f_cen[ii][ll];
-        cs_real_t ddc = 1. / (dc[0]*dc[0] + dc[1]*dc[1] + dc[2]*dc[2]);
-
-        cocg[ii][0] += dc[0]*dc[0]*ddc;
-        cocg[ii][1] += dc[1]*dc[1]*ddc;
-        cocg[ii][2] += dc[2]*dc[2]*ddc;
-        cocg[ii][3] += dc[0]*dc[1]*ddc;
-        cocg[ii][4] += dc[1]*dc[2]*ddc;
-        cocg[ii][5] += dc[0]*dc[2]*ddc;
-
+      if (step_id == 0) {
+        _cocg[0] = 0; _cocg[1] = 0; _cocg[2] = 0;
+        _cocg[3] = 0; _cocg[4] = 0; _cocg[5] = 0;
       }
-    }
 
-  } /* End for extended neighborhood */
+      cs_lnum_t s_id = c2c_idx[c_id];
+      cs_lnum_t e_id = c2c_idx[c_id + 1];
+
+      for (cs_lnum_t i = s_id; i < e_id; i++) {
+        cs_lnum_t c_id1 = c2c[i];
+
+        cs_real_t dc[3] = {cell_cen[c_id1][0] - cell_cen[c_id][0],
+                           cell_cen[c_id1][1] - cell_cen[c_id][1],
+                           cell_cen[c_id1][2] - cell_cen[c_id][2]};
+
+        cs_real_t ddc = 1. / (dc[0]*dc[0] + dc[1]*dc[1] + dc[2]*dc[2]);
+
+        _cocg[0] += dc[0] * dc[0] * ddc;
+        _cocg[1] += dc[1] * dc[1] * ddc;
+        _cocg[2] += dc[2] * dc[2] * ddc;
+        _cocg[3] += dc[0] * dc[1] * ddc;
+        _cocg[4] += dc[1] * dc[2] * ddc;
+        _cocg[5] += dc[0] * dc[2] * ddc;
+      }
+
+    });
+
+  } /* Loop on standard/extended neighborhood */
 
   /* Contribution from hidden boundary faces, if present */
 
   if (m->n_b_faces_all > m->n_b_faces)
-    _add_hb_faces_cell_cocg_lsq(m, fvq, cs_glob_mesh_adjacencies, cocg);
+    _add_hb_faces_cell_cocg_lsq(m, fvq, ma, ctx, cocg);
 
-  /* Save partial cocg at interior faces of boundary cells */
+  /* Contribution from boundary faces
+     --------------------------------
 
-# pragma omp parallel for
-  for (cs_lnum_t ii = 0; ii < m->n_b_cells; ii++) {
-    cs_lnum_t c_id = m->b_cells[ii];
+     Assume symmetry everywhere so as to avoid obtaining
+     a non-invertible matrix in 2D cases. */
+
+  ctx.parallel_for(m->n_b_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t idx) {
+
+    cs_lnum_t c_id = b_cells[idx];
+
+    auto _cocg = cocg[c_id];
+
+    /* Save partial cocg at interior faces of boundary cells */
     for (cs_lnum_t ll = 0; ll < 6; ll++) {
-      cocgb[ii][ll] = cocg[c_id][ll];
+      cocgb[idx][ll] = _cocg[ll];
     }
-  }
 
-  /* Contribution from boundary faces, assuming symmetry everywhere
-     so as to avoid obtaining a non-invertible matrix in 2D cases. */
+    cs_lnum_t s_id = c2b_idx[c_id];
+    cs_lnum_t e_id = c2b_idx[c_id+1];
 
-# pragma omp parallel for
-  for (int t_id = 0; t_id < n_b_threads; t_id++) {
+    for (cs_lnum_t i = s_id; i < e_id; i++) { /* loop on boundary faces */
+      cs_lnum_t f_id = c2b[i];
+      const cs_nreal_t *u_normal = b_face_u_normal[f_id];
 
-    for (cs_lnum_t f_id = b_group_index[t_id*2];
-         f_id < b_group_index[t_id*2 + 1];
-         f_id++) {
+      _cocg[0] += u_normal[0] * u_normal[0];
+      _cocg[1] += u_normal[1] * u_normal[1];
+      _cocg[2] += u_normal[2] * u_normal[2];
+      _cocg[3] += u_normal[0] * u_normal[1];
+      _cocg[4] += u_normal[1] * u_normal[2];
+      _cocg[5] += u_normal[0] * u_normal[2];
+    }
 
-      cs_lnum_t ii = b_face_cells[f_id];
+  });
 
-      const cs_nreal_t *normal = b_face_u_normal[f_id];
-
-      cocg[ii][0] += normal[0] * normal[0];
-      cocg[ii][1] += normal[1] * normal[1];
-      cocg[ii][2] += normal[2] * normal[2];
-      cocg[ii][3] += normal[0] * normal[1];
-      cocg[ii][4] += normal[1] * normal[2];
-      cocg[ii][5] += normal[0] * normal[2];
-
-    } /* loop on faces */
-
-  } /* loop on threads */
-
-  /* Contribution from hidden boundary faces, if present */
-
-  if (m->n_b_faces_all > m->n_b_faces)
-    _add_hb_faces_cell_cocg_lsq(m, fvq, cs_glob_mesh_adjacencies, cocg);
-
-  /* Invert for all cells. */
-  /*-----------------------*/
+  /* Invert for all cells
+     -------------------- */
 
   /* The cocg term for interior cells only changes if the mesh does */
 
-# pragma omp parallel for
-  for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+  ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
     _math_6_inv_cramer_sym_in_place(cocg[c_id]);
-  }
+  });
+
+  ctx.wait();
 }
 
 /*----------------------------------------------------------------------------
