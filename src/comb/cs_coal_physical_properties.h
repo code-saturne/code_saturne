@@ -59,39 +59,14 @@ BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
 /*
- * \brief Compute physical properties in gaseous phase.
+ * \brief Compute \f$ \rho \f$ of the pulverized coal combustion mixture.
  *
- * \param[in]     f1m     mean of tracer 1 mvl [chx1m+co]
- * \param[in]     f2m     mean of tracer 2 mvl [chx2m+co]
- * \param[in]     f3m     mean of tracer 3 (oxydant 1)
- * \param[in]     f4m     mean of tracer 4 (oxydant 2)
- * \param[in]     f5m     mean of tracer 5 (oxydant 3)
- * \param[in]     f6m     mean of tracer 6 (humidity)
- * \param[in]     f7m     mean of tracer 7 (C + O2)
- * \param[in]     f8m     mean of tracer 8 (C + CO2)
- * \param[in]     f9m     mean of tracer 9 (C + H2O)
- * \param[in]     fvp2m   f1f2 variance
- * \param[in]     enth    enthalpy in \f$ j . kg^{-1} \f$  either of
- *                        the gas or of the mixture
- * \param[in]     enthox  oxydant enthalpy
- * \param[out]    rom1    gas density
+ * \param[in, out]   mbrom    filling indicator of romb
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_coal_physprop1(const  cs_real_t  f1m[],
-                  const  cs_real_t  f2m[],
-                  const  cs_real_t  f3m[],
-                  const  cs_real_t  f4m[],
-                  const  cs_real_t  f5m[],
-                  const  cs_real_t  f6m[],
-                  const  cs_real_t  f7m[],
-                  const  cs_real_t  f8m[],
-                  const  cs_real_t  f9m[],
-                  const  cs_real_t  fvp2m[],
-                  const  cs_real_t  enth[],
-                  const  cs_real_t  enthox[],
-                  cs_real_t         rom1[]);
+cs_coal_physprop(int  *mbrom);
 
 /*----------------------------------------------------------------------------*/
 

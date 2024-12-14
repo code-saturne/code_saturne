@@ -46,15 +46,24 @@
 #include "bft_printf.h"
 
 #include "cs_array.h"
+#include "cs_blas.h"
+#include "cs_boundary_conditions.h"
 #include "cs_coal.h"
+#include "cs_coal_boundary_conditions.h"
 #include "cs_coal_ht_convert.h"
 #include "cs_coal_source_terms.h"
+#include "cs_dispatch.h"
 #include "cs_field.h"
+#include "cs_field_pointer.h"
+#include "cs_halo.h"
 #include "cs_math.h"
 #include "cs_mesh.h"
 #include "cs_mesh_location.h"
+#include "cs_parameters.h"
 #include "cs_physical_constants.h"
 #include "cs_physical_model.h"
+#include "cs_restart.h"
+#include "cs_restart_default.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file
@@ -100,6 +109,12 @@ CS_PROCF(pppdfr, PPPDFR)(cs_lnum_t        *ncelet,
                          const cs_real_t  *pdfm1,
                          const cs_real_t  *pdfm2,
                          const cs_real_t  *hrec);
+
+void
+cs_coal_physprop2(cs_lnum_t n_cells);
+
+void
+cs_physical_properties_combustion_drift(void);
 
 /*============================================================================
  * Private function definitions
@@ -661,10 +676,6 @@ _gas_comb(cs_lnum_t        n_cells,
                 sommin, sommax);
 }
 
-/*============================================================================
- * Public function definitions
- *============================================================================*/
-
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Compute physical properties in gaseous phase.
@@ -716,25 +727,26 @@ _gas_comb(cs_lnum_t        n_cells,
  */
 /*----------------------------------------------------------------------------*/
 
-void
-cs_coal_physprop1(const  cs_real_t  f1m[],
-                  const  cs_real_t  f2m[],
-                  const  cs_real_t  f3m[],
-                  const  cs_real_t  f4m[],
-                  const  cs_real_t  f5m[],
-                  const  cs_real_t  f6m[],
-                  const  cs_real_t  f7m[],
-                  const  cs_real_t  f8m[],
-                  const  cs_real_t  f9m[],
-                  const  cs_real_t  fvp2m[],
-                  const  cs_real_t  enth[],
-                  const  cs_real_t  enthox[],
-                  cs_real_t         rom1[])
+static void
+_physprop1(const  cs_real_t  f1m[],
+           const  cs_real_t  f2m[],
+           const  cs_real_t  f3m[],
+           const  cs_real_t  f4m[],
+           const  cs_real_t  f5m[],
+           const  cs_real_t  f6m[],
+           const  cs_real_t  f7m[],
+           const  cs_real_t  f8m[],
+           const  cs_real_t  f9m[],
+           const  cs_real_t  fvp2m[],
+           const  cs_real_t  enth[],
+           const  cs_real_t  enthox[],
+           cs_real_t         rom1[])
 {
   static int ipass = 0;
 
-  const cs_lnum_t n_cells = cs_glob_mesh->n_cells;
-  const cs_lnum_t n_cells_ext = cs_glob_mesh->n_cells_with_ghosts;
+  const cs_mesh_t *mesh = cs_glob_mesh;
+  const cs_lnum_t n_cells = mesh->n_cells;
+  const cs_lnum_t n_cells_ext = mesh->n_cells_with_ghosts;
 
   const cs_coal_model_t *cm = cs_glob_coal_model;
 
@@ -1181,6 +1193,467 @@ cs_coal_physprop1(const  cs_real_t  f1m[],
     BFT_FREE(fs4no);
     BFT_FREE(yfs4no);
   }
+}
+
+/*============================================================================
+ * Public function definitions
+ *============================================================================*/
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Compute \f$ \rho \f$ of the pulverized coal combustion mixture.
+ *
+ * \param[in, out]   mbrom    filling indicator of romb
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_coal_physprop(int  *mbrom)
+{
+  static int ipass = 0; // call counter
+
+  const cs_mesh_t *mesh = cs_glob_mesh;
+  const cs_lnum_t n_cells = mesh->n_cells;
+  const cs_lnum_t n_cells_ext = mesh->n_cells_with_ghosts;
+
+  const cs_coal_model_t *cm = cs_glob_coal_model;
+
+  // Additional properties for drift
+
+  if (cm->idrift > 1)
+    cs_physical_properties_combustion_drift();
+
+  ipass++;
+
+  /* Initialization
+   * -------------- */
+
+  /* Aliases for simpler syntax */
+
+  const int n_c_classes = cm->nclacp;
+
+  const cs_real_t *cvar_hgas = cs_field_by_id(cm->ihgas)->val;
+
+  const cs_real_t *cpro_x2b[CS_COMBUSTION_COAL_MAX_CLASSES];
+  const cs_real_t *cpro_ro2[CS_COMBUSTION_COAL_MAX_CLASSES];
+  for (int class_id = 0; class_id < CS_COMBUSTION_COAL_MAX_CLASSES; class_id++) {
+    if (class_id < cm->nclacp) {
+      cpro_x2b[class_id] = cs_field_by_id(cm->ix2[class_id])->val;
+      cpro_ro2[class_id] = cs_field_by_id(cm->irom2[class_id])->val;
+    }
+    else {
+      cpro_x2b[class_id] = nullptr;
+      cpro_ro2[class_id] = nullptr;
+    }
+  }
+
+  /* Allocate arrays */
+
+  cs_real_t *f1m, *f2m;
+  CS_MALLOC(f1m, n_cells_ext, cs_real_t);
+  CS_MALLOC(f2m, n_cells_ext, cs_real_t);
+  cs_real_t *f3m, *f4m, *f5m, *f6m, *f7m, *f8m, *f9m;
+
+  CS_MALLOC(f3m, n_cells_ext, cs_real_t);
+  CS_MALLOC(f4m, n_cells_ext, cs_real_t);
+  CS_MALLOC(f5m, n_cells_ext, cs_real_t);
+  CS_MALLOC(f6m, n_cells_ext, cs_real_t);
+  CS_MALLOC(f7m, n_cells_ext, cs_real_t);
+  CS_MALLOC(f8m, n_cells_ext, cs_real_t);
+  CS_MALLOC(f9m, n_cells_ext, cs_real_t);
+
+  cs_real_t *enth1, *fvp2m;
+  CS_MALLOC(enth1, n_cells, cs_real_t);
+  CS_MALLOC(fvp2m, n_cells, cs_real_t);
+
+  /* Calculation of the physical properties of the dispersed phase
+   * -------------------------------------------------------------
+   *
+   * cell values
+   * -----------
+   *   Mass fraction of solid
+   *   Diameter
+   *   Mass density */
+
+  cs_coal_physprop2(n_cells);
+
+  /* Calculation of the physical properties of the gaseous phase
+   * -----------------------------------------------------------
+   *
+   * cell values
+   * -----------
+   *   Temperature
+   *   Mass density
+   *   Concentrations of the gaseous species */
+
+  cs_host_context ctx;
+
+  // Mass fraction of gas
+
+  cs_real_t *cpro_x1 = cs_field_by_name("x_c")->val;
+  cs_arrays_set_value<cs_real_t, 1>(n_cells, 1., cpro_x1);
+  for (int class_id = 0; class_id < cm->nclacp; class_id++) {
+    cs_axpy(n_cells, -1, cpro_x2b[class_id], cpro_x1);
+  }
+  cs_halo_sync(mesh->halo, false, cpro_x1);
+
+  // Calculation of the gas enthalpy  enth1
+  //   of F1M
+  //   of F2M
+  //   of F3M      in W3=1-F1M-F2M-F4M-F5M-F6M-F7M-F8M-F9M
+  //   of F4M
+  //   of F5M
+  //   of F6M
+  //   of F7M
+  //   of F8M
+  //   of F9M
+  //   of FVP2M
+
+  cs_arrays_set_value<cs_real_t, 1>(n_cells, 0., f1m, f2m);
+
+  for (int coal_id = 0; coal_id < cm->n_coals; coal_id++) {
+    const cs_real_t *cvar_f1m = cs_field_by_id(cm->if1m[coal_id])->val;
+    const cs_real_t *cvar_f2m = cs_field_by_id(cm->if2m[coal_id])->val;
+
+    ctx.parallel_for(n_cells, [=] CS_F_HOST (cs_lnum_t c_id) {
+      f1m[c_id] += cvar_f1m[c_id];
+      f2m[c_id] += cvar_f2m[c_id];
+    });
+  }
+
+  cs_real_t *enthox = nullptr;
+  if (cm->ieqnox == 1) {
+    const cs_real_t *cvar_hox = cs_field_by_id(cm->ihox)->val;
+    CS_MALLOC(enthox, n_cells, cs_real_t);
+
+    ctx.parallel_for(n_cells, [=] CS_F_HOST (cs_lnum_t c_id) {
+      const cs_real_t xoxyd = cpro_x1[c_id] - f1m[c_id] - f2m[c_id];
+      enthox[c_id] = cvar_hox[c_id] / xoxyd;
+    });
+  }
+
+  cs_array_real_copy(n_cells, cs_field_by_id(cm->if7m)->val, f7m);
+  cs_array_real_copy(n_cells, cs_field_by_id(cm->ifvp2m)->val, fvp2m);
+
+  cs_arrays_set_value<cs_real_t, 1>(n_cells, 0.,
+                                    f4m, f5m, f6m, f8m, f9m);
+
+  if (cm->noxyd >= 2) {
+    const cs_real_t *cvar_f4m = cs_field_by_id(cm->if4m)->val;
+    cs_array_real_copy(n_cells, cvar_f4m, f4m);
+    if (cm->noxyd == 3) {
+      const cs_real_t *cvar_f5m = cs_field_by_id(cm->if5m)->val;
+      cs_array_real_copy(n_cells, cvar_f5m, f5m);
+    }
+  }
+  if (cm->type == CS_COMBUSTION_COAL_WITH_DRYING) {
+    const cs_real_t *cvar_f6m = cs_field_by_id(cm->if6m)->val;
+    cs_array_real_copy(n_cells, cvar_f6m, f6m);
+  }
+
+  if (cm->ihtco2 == 1) {
+    const cs_real_t *cvar_f8m = cs_field_by_id(cm->if8m)->val;
+    cs_array_real_copy(n_cells, cvar_f8m, f8m);
+  }
+  if (cm->ihth2o == 1) {
+    const cs_real_t *cvar_f9m = cs_field_by_id(cm->if9m)->val;
+    cs_array_real_copy(n_cells, cvar_f9m, f9m);
+  }
+
+  ctx.parallel_for(n_cells, [=] CS_F_HOST (cs_lnum_t c_id) {
+    const cs_real_t uns1pw = 1. / cpro_x1[c_id];
+
+    // Units: [kg scalars / kg gas]
+    f1m[c_id]  *= uns1pw;
+    f2m[c_id]  *= uns1pw;
+    f4m[c_id]  *= uns1pw;
+    f5m[c_id]  *= uns1pw;
+    f6m[c_id]  *= uns1pw;
+    f7m[c_id]  *= uns1pw;
+    f8m[c_id]  *= uns1pw;
+    f9m[c_id]  *= uns1pw;
+
+    fvp2m[c_id ] *= uns1pw;
+
+    f3m[c_id] = 1. - (  f1m[c_id] + f2m[c_id] + f4m[c_id] + f5m[c_id]
+                      + f6m[c_id] + f7m[c_id] + f8m[c_id] + f9m[c_id]);
+  });
+
+  // Gas Enthalpy h1 (cpro_x1 h1 is transported)
+  ctx.parallel_for(n_cells, [=] CS_F_HOST (cs_lnum_t c_id) {
+    enth1[c_id] = cvar_hgas[c_id] / cpro_x1[c_id];
+  });
+
+  // ctx.wait();
+
+  /* Logging */
+
+  if (cs_log_default_is_active()) {
+    cs_real_t ff3min = HUGE_VAL, ff3max = -HUGE_VAL;
+
+    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+      ff3max = cs_math_fmax(ff3max, f3m[c_id]);
+      ff3min = cs_math_fmin(ff3min, f3m[c_id]);
+    }
+
+    cs_log_printf(CS_LOG_DEFAULT,
+                  _("\n Values of F3 min and max: %g %g\n"),
+                  ff3min, ff3max);
+  }
+
+  cs_real_t *cpro_rom1 = cs_field_by_id(cm->irom1)->val;
+
+  _physprop1(f1m, f2m, f3m, f4m, f5m, f6m, f7m, f8m, f9m,
+             fvp2m, enth1, enthox, cpro_rom1);
+
+  CS_FREE(f1m);
+  CS_FREE(f2m);
+  CS_FREE(f3m);
+  CS_FREE(f4m);
+  CS_FREE(f5m);
+  CS_FREE(f6m);
+  CS_FREE(f7m);
+  CS_FREE(f8m);
+  CS_FREE(f9m);
+
+  CS_FREE(fvp2m);
+  CS_FREE(enth1);
+  CS_FREE(enthox);
+
+  /* Calculation of the physical properties of the dispersed phase
+   * -------------------------------------------------------------
+   *
+   * cell values
+   * -----------
+   *   Temperature */
+
+  //Transport of H2
+
+  cs_coal_ht_convert_h_to_t_particles();
+
+  /* Calculation of the physical properties of the mixture
+   * -----------------------------------------------------
+   *
+   * cell values
+   * -----------
+   *   Mass density */
+
+  // Calculation of Rho of the mixture: 1/Rho = X1/Rho1 + Sum(X2/Rho2)
+  // We relax when we have a rho n available, ie
+  // from the second pass or
+  // from the first pass if we are in continuation of the calculation and
+  // that we have re-read the mass density in the restart file.
+
+  cs_real_t *crom = CS_F_(rho)->val;
+
+  cs_real_t srrom1 = cm->srrom;
+  if (ipass == 1) {
+    if (cs_restart_present()) {
+      if (   cs_restart_get_field_read_status(CS_F_(rho)->id) == 0
+          || cs_restart_get_field_read_status(CS_F_(rho_b)->id) == 0)
+        srrom1 = 0.;
+    }
+    else
+      srrom1 = 0.;
+  }
+
+  ctx.parallel_for(n_cells, [=] CS_F_HOST (cs_lnum_t c_id) {
+    cs_real_t x2sro2 = 0.;
+    for (int class_id = 0; class_id < n_c_classes; class_id++) {
+      x2sro2 += cpro_x2b[class_id][c_id] / cpro_ro2[class_id][c_id];
+    }
+    cs_real_t x1sro1 = cpro_x1[c_id] / cpro_rom1[c_id];
+    // Eventual relaxation
+    crom[c_id] = srrom1*crom[c_id] + (1.-srrom1)/(x1sro1+x2sro2);
+  });
+
+  /* Calculation of the physical properties of the mixture
+   * -----------------------------------------------------
+   *
+   * face values
+   * ----------- */
+
+  *mbrom = 1;
+
+  cs_coal_boundary_conditions_inlet_density();
+
+  /* Compute the drift velocity if needed
+   * ------------------------------------ */
+
+  cs_real_3_t *vdc = nullptr;
+
+  if (cm->idrift >= 1) {
+
+    int n_fields = cs_field_n_fields();
+
+    // Key id for drift scalar and coal scalar class
+    const int keydri = cs_field_key_id("drift_scalar_model");
+    const int keyccl = cs_field_key_id("scalar_class");
+
+    const cs_real_t gravity[3] = {cs_glob_physical_constants->gravity[0],
+                                  cs_glob_physical_constants->gravity[1],
+                                  cs_glob_physical_constants->gravity[2]};
+
+    /* Compute the limit velocity
+       -------------------------- */
+
+    // Loop over coal particle classes
+    // We only handle here coal class with a drift
+
+    for (int fld_id = 0; fld_id < n_fields; fld_id++) {
+
+      const cs_field_t *fld = cs_field_by_id(fld_id);
+
+      // Index of the scalar class (<0 if the scalar belongs to the gas phase)
+      int class_id = cs_field_get_key_int(fld, keyccl) - 1;
+      int isccdri = cs_field_get_key_int(fld, keydri);
+
+      // We only handle here one scalar with a drift per particle class
+      if (class_id < 0 || (isccdri & CS_DRIFT_SCALAR_ADD_DRIFT_FLUX) == 0)
+        continue;
+
+      // Position of variables, coefficients
+
+      // Corresponding relaxtion time
+      cs_real_t *cpro_taup
+        = cs_field_by_composite_name(fld->name, "drift_tau")->val;
+
+      char fld_name[32];
+      snprintf(fld_name, 31, "vg_lim_p_%02d", class_id+1);
+      fld_name[31] = '\0';
+      cs_real_3_t *vg_lim_pi = (cs_real_3_t *)(cs_field_by_name(fld_name)->val);
+
+      ctx.parallel_for(n_cells, [=] CS_F_HOST (cs_lnum_t c_id) {
+        vg_lim_pi[c_id][0] = cpro_taup[c_id] * gravity[0];
+        vg_lim_pi[c_id][1] = cpro_taup[c_id] * gravity[1];
+        vg_lim_pi[c_id][2] = cpro_taup[c_id] * gravity[2];
+      });
+
+    } // loop on fields
+
+    /* Init of the drift velocity of the continuous phase (gas)
+       -------------------------------------------------------- */
+
+    vdc = (cs_real_3_t *)(cs_field_by_name("vd_c")->val);
+
+    cs_array_real_fill_zero(n_cells*3, (cs_real_t *)vdc);
+  }
+
+  /* Transported particle velocity
+     ----------------------------- */
+
+  if (cm->idrift == 1) {
+
+    // Get all needed fields
+    const cs_real_3_t *cvar_vel = (const cs_real_3_t *)CS_F_(vel)->val;
+
+    for (int class_id = 0; class_id < cm->nclacp; class_id++) {
+      char class_name[4];
+      snprintf(class_name, 8, "%02d", class_id+1); class_name[3] = '\0';
+
+      cs_real_t *v_x_pi
+        = cs_field_by_composite_name("v_x_p", class_name)->val;
+      cs_real_t *v_y_pi
+        = cs_field_by_composite_name("v_y_p", class_name)->val;
+      cs_real_t *v_z_pi
+        = cs_field_by_composite_name("v_z_p", class_name)->val;
+      cs_real_3_t *vdp_i
+        = (cs_real_3_t *)(cs_field_by_composite_name("vd_p", class_name)->val);
+
+      cs_real_t *cpro_x2 = cs_field_by_id(cm->ix2[class_id])->val;
+
+      ctx.parallel_for(n_cells, [=] CS_F_HOST (cs_lnum_t c_id) {
+        // Vdi = Vpi-Vs
+        if (cpro_x2[c_id] > 1.e-7) {
+          vdp_i[c_id][0] = v_x_pi[c_id] - cvar_vel[c_id][0];
+          vdp_i[c_id][1] = v_y_pi[c_id] - cvar_vel[c_id][1];
+          vdp_i[c_id][2] = v_z_pi[c_id] - cvar_vel[c_id][2];
+        }
+        else {
+          vdp_i[c_id][0] = 0.;
+          vdp_i[c_id][1] = 0.;
+          vdp_i[c_id][2] = 0.;
+        }
+        vdc[c_id][0] -= cpro_x2[c_id] * vdp_i[c_id][0];
+        vdc[c_id][1] -= cpro_x2[c_id] * vdp_i[c_id][1];
+        vdc[c_id][2] -= cpro_x2[c_id] * vdp_i[c_id][2];
+      });
+    }
+
+    ctx.parallel_for(n_cells, [=] CS_F_HOST (cs_lnum_t c_id) {
+      cs_real_t x1_inv = 1. / cpro_x1[c_id];
+      vdc[c_id][0] *= x1_inv;
+      vdc[c_id][1] *= x1_inv;
+      vdc[c_id][2] *= x1_inv;
+    });
+
+    for (int class_id = 0; class_id < cm->nclacp; class_id++) {
+      char class_name[32];
+      snprintf(class_name, 31, "%02d", class_id+1); class_name[31] = '\0';
+
+      cs_real_3_t *vdp_i
+        = (cs_real_3_t *)(cs_field_by_composite_name("vd_p", class_name)->val);
+      cs_real_3_t *vg_pi
+        = (cs_real_3_t *)(cs_field_by_composite_name("vg_p", class_name)->val);
+
+      ctx.parallel_for(n_cells, [=] CS_F_HOST (cs_lnum_t c_id) {
+        vg_pi[c_id][0] = vdp_i[c_id][0] - vdc[c_id][0];
+        vg_pi[c_id][1] = vdp_i[c_id][1] - vdc[c_id][1];
+        vg_pi[c_id][2] = vdp_i[c_id][2] - vdc[c_id][2];
+      });
+    }
+
+  }
+
+  /* Prescribed drift
+     ---------------- */
+
+  else if (cm->idrift > 1) {
+
+    for (int class_id = 0; class_id < cm->nclacp; class_id++) {
+      char class_name[4];
+      snprintf(class_name, 8, "%02d", class_id+1); class_name[3] = '\0';
+
+      cs_real_3_t *vg_lim_pi
+        = (cs_real_3_t *)(cs_field_by_composite_name("vg_lim_p",
+                                                     class_name)->val);
+      cs_real_3_t *vg_pi
+        = (cs_real_3_t *)(cs_field_by_composite_name("vg_p",
+                                                     class_name)->val);
+      cs_real_t *cpro_x2 = cs_field_by_id(cm->ix2[class_id])->val;
+
+      ctx.parallel_for(n_cells, [=] CS_F_HOST (cs_lnum_t c_id) {
+        // FIXME vg_ is useless!
+        vg_pi[c_id][0] = vg_lim_pi[c_id][0];
+        vg_pi[c_id][1] = vg_lim_pi[c_id][1];
+        vg_pi[c_id][2] = vg_lim_pi[c_id][2];
+        vdc[c_id][0] = vdc[c_id][0] -cpro_x2[c_id] * vg_pi[c_id][0];
+        vdc[c_id][1] = vdc[c_id][1] -cpro_x2[c_id] * vg_pi[c_id][1];
+        vdc[c_id][2] = vdc[c_id][2] -cpro_x2[c_id] * vg_pi[c_id][2];
+      });
+    }
+
+    for (int class_id = 0; class_id < cm->nclacp; class_id++) {
+      char class_name[32];
+      snprintf(class_name, 31, "%02d", class_id+1); class_name[31] = '\0';
+
+      cs_real_3_t *vg_pi
+        = (cs_real_3_t *)(cs_field_by_composite_name("vg_p",
+                                                     class_name)->val);
+      cs_real_3_t *vdp_i
+        = (cs_real_3_t *)(cs_field_by_composite_name("vd_p",
+                                                     class_name)->val);
+
+      ctx.parallel_for(n_cells, [=] CS_F_HOST (cs_lnum_t c_id) {
+        vdp_i[c_id][0] = vdc[c_id][0] + vg_pi[c_id][0];
+        vdp_i[c_id][1] = vdc[c_id][1] + vg_pi[c_id][1];
+        vdp_i[c_id][2] = vdc[c_id][2] + vg_pi[c_id][2];
+      });
+    }
+
+  } // End for drift
+
+  // ctx.wait();
 }
 
 /*----------------------------------------------------------------------------*/

@@ -45,7 +45,8 @@
 !> \param[in]     ncel          number of cells
 !______________________________________________________________________________!
 
-subroutine cs_coal_physprop2(ncel)
+subroutine cs_coal_physprop2(ncel)  &
+  bind(C, name='cs_coal_physprop2')
 
 !===============================================================================
 ! Module files
@@ -73,7 +74,7 @@ implicit none
 
 ! Arguments
 
-integer          ncel
+integer(c_int), value ::  ncel
 
 ! Local variables
 character(len=80) :: name

@@ -38,7 +38,8 @@
 !______________________________________________________________________________!
 !_______________________________________________________________________________
 
-subroutine cs_physical_properties_combustion_drift()
+subroutine cs_physical_properties_combustion_drift()  &
+  bind(C, name='cs_physical_properties_combustion_drift')
 
 !===============================================================================
 

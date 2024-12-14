@@ -291,7 +291,7 @@ cs_get_glob_time_scheme(void);
  * \brief Set init state to 1. This is necessary for fortran mapping and
  * should be changed in the future.
  *
- * \param[in] idx id of variable. 0 is viscosity, 1 density, 2 heat capacity.
+ * \param[in] idx id of variable. 1 density.
  */
 /*----------------------------------------------------------------------------*/
 

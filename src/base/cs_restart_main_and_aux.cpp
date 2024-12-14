@@ -1069,19 +1069,6 @@ _read_auxiliary_checkpoint(cs_map_name_to_id_t *old_field_map)
 
     if (cs_restart_get_field_read_status(CS_F_(mu_t)->id) == 0)
       read_mu_t_ok = 0;
-
-    if (read_mu_t_ok == 1)
-      cs_parameters_set_init_state_on(0); // 0 is viscosity
-  }
-
-  /* Cp */
-  if (cgfp->icp > -1) {
-    if (cs_field_get_key_int(CS_F_(cp), key_t_ext_id) > 0 ||
-        cs_glob_physical_model_flag[CS_JOULE_EFFECT] >= 1) {
-
-      if (cs_restart_get_field_read_status(CS_F_(cp)->id) == 1)
-        cs_parameters_set_init_state_on(2); // 2 is cp id
-    }
   }
 
   /* Read diffusivities if needed */

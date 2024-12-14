@@ -52,6 +52,7 @@
 #include "cs_atmo_variables.h"
 #include "cs_boundary_conditions.h"
 #include "cs_cf_model.h"
+#include "cs_coal_physical_properties.h"
 #include "cs_ctwr_physical_properties.h"
 #include "cs_domain.h"
 #include "cs_elec_model.h"
@@ -860,32 +861,39 @@ _init_boundary_temperature(void)
  *
  * This is called before the user sets/modifies physical properties which
  * are variable in time
+ *
+ * \param[in, out]   mbrom   filling indicator of romb
  */
 /*----------------------------------------------------------------------------*/
 
 static void
-_physical_properties_update_models_stage_1(void)
+_physical_properties_update_models_stage_1(int  *mbrom)
 {
-  if (cs_glob_physical_model_flag[CS_PHYSICAL_MODEL_FLAG] <= 0)
+  const int *pm_flag = cs_glob_physical_model_flag;
+
+  if (pm_flag[CS_PHYSICAL_MODEL_FLAG] <= 0)
     return;
 
   /* After this point, models considered are mutually exclusive */
 
-  if (   cs_glob_physical_model_flag[CS_JOULE_EFFECT] >= 1
-      || cs_glob_physical_model_flag[CS_ELECTRIC_ARCS] >= 1) {
+  if (pm_flag[CS_COMBUSTION_COAL] >= 0)
+    cs_coal_physprop(mbrom);
+
+  else if (   pm_flag[CS_JOULE_EFFECT] >= 1
+           || pm_flag[CS_ELECTRIC_ARCS] >= 1) {
     /* - For Joule effect, the user must define property laws
      *   (density, ...).
      * - For electric arcs, properties are interpolated from tabulated data. */
     cs_elec_physical_properties(cs_glob_domain);
   }
 
-  else if (cs_glob_physical_model_flag[CS_COOLING_TOWERS] != -1) {
+  else if (pm_flag[CS_COOLING_TOWERS] != -1) {
     const cs_fluid_properties_t *fp = cs_glob_fluid_properties;
     cs_ctwr_phyvar_update(fp->ro0, fp->t0, fp->p0);
   }
 
   /* Atmospheric Flows (except constant density) */
-  else if (cs_glob_physical_model_flag[CS_ATMOSPHERIC] >= 1) {
+  else if (pm_flag[CS_ATMOSPHERIC] >= 1) {
     cs_atmo_physical_properties_update();
   }
 }
@@ -947,7 +955,7 @@ cs_physical_properties_update(int   iterns)
   // BEFORE the user
   if (cs_glob_physical_model_flag[CS_PHYSICAL_MODEL_FLAG] > 0)
     cs_f_physical_properties1(&mbrom);
-  _physical_properties_update_models_stage_1();
+  _physical_properties_update_models_stage_1(&mbrom);
 
   /* Interface code_saturne
      ---------------------- */

@@ -76,9 +76,7 @@ use pointe
 use ppppar
 use ppthch
 use coincl
-use cpincl
 use ppincl
-use ppcpfu
 use cs_c_bindings
 use mesh
 use, intrinsic :: iso_c_binding
@@ -90,7 +88,7 @@ implicit none
 
 ! Arguments
 
-integer          mbrom
+integer(c_int) ::  mbrom
 
 ! Local variables
 
@@ -120,12 +118,6 @@ endif
 
 if (ippmod(icolwc).ge.0) then
   call lwcphy(mbrom, izfppp)
-endif
-
-! ---> Flamme charbon pulverise
-
-if (ippmod(iccoal).ge.0) then
-  call cs_coal_physprop(mbrom)
 endif
 
 !----

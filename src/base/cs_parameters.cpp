@@ -523,11 +523,9 @@ static cs_time_scheme_t  _time_scheme =
 
 const cs_time_scheme_t  *cs_glob_time_scheme = &_time_scheme;
 
-/* Flags used for re-initializing rho, cp and mu during restart if needed */
+/* Flags used for re-initializing rho during restart if needed */
 
-static int _initvi = 0;
 static int _initro = 0;
-static int _initcp = 0;
 
 /* Auxiliary checkpoint/restart file parameters */
 
@@ -1002,21 +1000,17 @@ cs_get_glob_time_scheme(void)
  * \brief Set init state to 1. This is necessary for fortran mapping and
  * should be changed in the future.
  *
- * \param[in] idx id of variable. 0 is viscosity, 1 density, 2 heat capacity.
+ * \param[in] idx id of variable. 1 density.
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_parameters_set_init_state_on(int idx)
 {
-  assert(idx >= 0 && idx < 3);
+  assert(idx == 1);
 
-  if (idx == 0)
-    _initvi = 1;
-  else if (idx == 1)
+  if (idx == 1)
     _initro = 1;
-  else if (idx == 2)
-    _initcp = 1;
 }
 
 /*----------------------------------------------------------------------------*/
