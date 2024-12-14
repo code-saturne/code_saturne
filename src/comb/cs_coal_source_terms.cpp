@@ -132,7 +132,7 @@ _coal_fp2st(const cs_field_t  *fld_scal,
   const cs_real_t rvarfl = cs_field_get_key_double(fld_scal, krvarfl);
 
   cs_real_t *f1f2;
-  BFT_MALLOC(f1f2, n_cells_ext, cs_real_t);
+  CS_MALLOC(f1f2, n_cells_ext, cs_real_t);
   cs_array_real_fill_zero(n_cells, f1f2);
 
   // The variance is not associated to a scalar but to f1+f2
@@ -146,10 +146,10 @@ _coal_fp2st(const cs_field_t  *fld_scal,
 
   const cs_real_t *cpro_rom1 = cs_field_by_id(cm->irom1)->val;
 
-  const cs_real_t *cvara_k = NULL;
-  const cs_real_t *cvara_ep = NULL;
-  const cs_real_t *cvara_omg = NULL;
-  const cs_real_6_t *cvara_rij = NULL;
+  const cs_real_t *cvara_k = nullptr;
+  const cs_real_t *cvara_ep = nullptr;
+  const cs_real_t *cvara_omg = nullptr;
+  const cs_real_6_t *cvara_rij = nullptr;
 
   if (   cs_glob_turb_model->itytur == 2
       || cs_glob_turb_model->itytur == 5) {
@@ -181,7 +181,7 @@ _coal_fp2st(const cs_field_t  *fld_scal,
     // Compute x1
 
     cs_real_t *x1;
-    BFT_MALLOC(x1, n_cells_ext, cs_real_t);
+    CS_MALLOC(x1, n_cells_ext, cs_real_t);
     cs_array_real_set_scalar(n_cells_ext, 1.0, x1);
 
     for (int class_id = 0; class_id < cm->nclacp; class_id++) {
@@ -189,7 +189,7 @@ _coal_fp2st(const cs_field_t  *fld_scal,
       const cs_real_t *cvar_xchcl = cs_field_by_id(cm->ixch[class_id])->val;
       const cs_real_t *cvar_xckcl = cs_field_by_id(cm->ixck[class_id])->val;
       const cs_real_t *cvar_xnpcl = cs_field_by_id(cm->inp[class_id])->val;
-      const cs_real_t *cvar_xwtcl = NULL;
+      const cs_real_t *cvar_xwtcl = nullptr;
       if (cm->type == CS_COMBUSTION_COAL_WITH_DRYING)
         cvar_xwtcl = cs_field_by_id(cm->ixwt[class_id])->val;
 
@@ -197,7 +197,7 @@ _coal_fp2st(const cs_field_t  *fld_scal,
         x1[c_id] -= (  cvar_xchcl[c_id]
                      + cvar_xckcl[c_id]
                      + cvar_xnpcl[c_id]*xmash);
-        if (cvar_xwtcl != NULL)
+        if (cvar_xwtcl != nullptr)
           x1[c_id] -= cvar_xwtcl[c_id];
       }
     }
@@ -226,7 +226,7 @@ _coal_fp2st(const cs_field_t  *fld_scal,
                                &halo_type);
 
     cs_real_3_t *grad;
-    BFT_MALLOC(grad, n_cells_ext, cs_real_3_t);
+    CS_MALLOC(grad, n_cells_ext, cs_real_3_t);
 
     cs_gradient_scalar("f1f2",
                        gradient_type,
@@ -239,11 +239,11 @@ _coal_fp2st(const cs_field_t  *fld_scal,
                        (cs_gradient_limit_t)eqp->imligr,
                        eqp->epsrgr,
                        eqp->climgr,
-                       NULL,          /* f_ext */
-                       NULL,          /* bc_coeffs */
+                       nullptr,       /* f_ext */
+                       nullptr,       /* bc_coeffs */
                        f1f2,
-                       NULL,          /* c_weight */
-                       NULL,          /* cpl */
+                       nullptr,       /* c_weight */
+                       nullptr,       /* cpl */
                        grad);
 
     const int ksigmas = cs_field_key_id("turbulent_schmidt");
@@ -252,17 +252,17 @@ _coal_fp2st(const cs_field_t  *fld_scal,
     for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
 
       cs_real_t xk = 0, xe = 0;
-      if (cvara_rij != NULL) {
+      if (cvara_rij != nullptr) {
         xk = 0.5 * (  cvara_rij[c_id][0]
                     + cvara_rij[c_id][1]
                     + cvara_rij[c_id][2]);
         xe = cvara_ep[c_id];
       }
-      else if (cvara_ep != NULL) {
+      else if (cvara_ep != nullptr) {
         xk = cvara_k[c_id];
         xe = cvara_ep[c_id];
       }
-      else if (cvara_omg != NULL) {
+      else if (cvara_omg != nullptr) {
         xk = cvara_k[c_id];
         xe = cs_turb_cmu * xk * cvara_omg[c_id];
       }
@@ -275,8 +275,8 @@ _coal_fp2st(const cs_field_t  *fld_scal,
 
     }
 
-    BFT_FREE(grad);
-    BFT_FREE(x1);
+    CS_FREE(grad);
+    CS_FREE(x1);
 
   }
 
@@ -347,7 +347,7 @@ _coal_fp2st(const cs_field_t  *fld_scal,
   } /* Loop on classes */
 
   // Free memory
-  BFT_FREE(f1f2);
+  CS_FREE(f1f2);
 }
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
@@ -407,7 +407,7 @@ cs_coal_source_terms_scalar(int        fld_id,
   const int keyccl = cs_field_key_id("scalar_class");
 
   const cs_real_t *crom = CS_F_(rho)->val;
-  const cs_real_t *cpro_cp = NULL;
+  const cs_real_t *cpro_cp = nullptr;
 
   int icp = cs_glob_fluid_properties->icp;
   if (icp >= 0)
@@ -440,8 +440,8 @@ cs_coal_source_terms_scalar(int        fld_id,
   cs_real_t *smbrsh1 = cs_field_by_name("x_h_c_exp_st")->val;
   cs_real_t *rovsdth1 = cs_field_by_name("x_h_c_imp_st")->val;
 
-  const cs_real_t *cvar_yno = NULL, *cvara_yno = NULL;
-  const cs_real_t *cvara_yhcn = NULL, *cvara_ynh3 = NULL;
+  const cs_real_t *cvar_yno = nullptr, *cvara_yno = nullptr;
+  const cs_real_t *cvara_yhcn = nullptr, *cvara_ynh3 = nullptr;
 
   if (cm->ieqnox == 1 && cs_glob_time_step->nt_cur > 1) {
     cvar_yno = cs_field_by_id(cm->iyno)->val;
@@ -504,7 +504,7 @@ cs_coal_source_terms_scalar(int        fld_id,
     const cs_real_t *cpro_cgd1 = cs_field_by_id(cm->igmdv1[class_id])->val;
     const cs_real_t *cpro_cgd2 = cs_field_by_id(cm->igmdv2[class_id])->val;
     const cs_real_t *cpro_cght = cs_field_by_id(cm->igmhet[class_id])->val;
-    const cs_real_t *cpro_ghco2 = NULL, *cpro_ghh2o = NULL;
+    const cs_real_t *cpro_ghco2 = nullptr, *cpro_ghh2o = nullptr;
 
     if (cm->ihtco2 ==  1)
       cpro_ghco2 = cs_field_by_id(cm->ighco2[class_id])->val;
@@ -627,7 +627,7 @@ cs_coal_source_terms_scalar(int        fld_id,
 
     if (class_id >= 0) {
       const cs_real_t *cpro_cght = cs_field_by_id(cm->igmhet[class_id])->val;
-      const cs_real_t *cpro_ghco2 = NULL, *cpro_ghh2o = NULL;
+      const cs_real_t *cpro_ghco2 = nullptr, *cpro_ghh2o = nullptr;
 
       if (cm->ihtco2 == 1)
         cpro_ghco2 = cs_field_by_id(cm->ighco2[class_id])->val;
@@ -708,7 +708,7 @@ cs_coal_source_terms_scalar(int        fld_id,
    *--------------------------------------------------------------------------*/
 
   cs_real_t *w1;
-  BFT_MALLOC(w1, n_cells, cs_real_t);
+  CS_MALLOC(w1, n_cells, cs_real_t);
 
   if (fld_id >= cm->ih2[0] && fld_id <= cm->ih2[cm->nclacp -1]) {
 
@@ -730,7 +730,7 @@ cs_coal_source_terms_scalar(int        fld_id,
     const cs_real_t *cvar_xckcl = cs_field_by_id(cm->ixck[class_id])->val;
     const cs_real_t *cvara_xckcl = cs_field_by_id(cm->ixck[class_id])->val_pre;
 
-    const cs_real_t *cvar_xwtcl = NULL, *cvara_xwtcl = NULL;
+    const cs_real_t *cvar_xwtcl = nullptr, *cvara_xwtcl = nullptr;
 
     if (cm->type == CS_COMBUSTION_COAL_WITH_DRYING) {
       cvar_xwtcl = cs_field_by_id(cm->ixwt[class_id])->val;
@@ -742,7 +742,7 @@ cs_coal_source_terms_scalar(int        fld_id,
     const cs_real_t *cpro_diam2 = cs_field_by_id(cm->idiam2[class_id])->val;
     const cs_real_t *cpro_temp2 = cs_field_by_id(cm->itemp2[class_id])->val;
     const cs_real_t *cpro_cght = cs_field_by_id(cm->igmhet[class_id])->val;
-    const cs_real_t *cpro_ghco2 = NULL, *cpro_ghh2o = NULL;
+    const cs_real_t *cpro_ghco2 = nullptr, *cpro_ghh2o = nullptr;
 
     if (cm->ihtco2 == 1)
       cpro_ghco2 = cs_field_by_id(cm->ighco2[class_id])->val;
@@ -767,12 +767,12 @@ cs_coal_source_terms_scalar(int        fld_id,
     const cs_real_t cp0 = cs_glob_fluid_properties->cp0;
 
     const int ifcvsl = cs_field_get_key_int(fld_th, kivisl);
-    const cs_real_t *cpro_viscls = NULL;
+    const cs_real_t *cpro_viscls = nullptr;
     if (ifcvsl >= 0)
       cpro_viscls = cs_field_by_id(ifcvsl)->val;
 
-    if (cpro_viscls != NULL) {
-      if (cpro_cp != NULL) {
+    if (cpro_viscls != nullptr) {
+      if (cpro_cp != nullptr) {
         for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
           w1[c_id] = cpro_viscls[c_id] * cpro_cp[c_id];
       }
@@ -782,7 +782,7 @@ cs_coal_source_terms_scalar(int        fld_id,
       }
     }
     else {
-      if (cpro_cp != NULL) {
+      if (cpro_cp != nullptr) {
         for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
           w1[c_id] = visls_0 * cpro_cp[c_id];
       }
@@ -1337,7 +1337,7 @@ cs_coal_source_terms_scalar(int        fld_id,
     const cs_real_t *cvara_ep = cs_field_by_name("epsilon")->val_pre;
 
     cs_real_t **cpro_x2c;
-    BFT_MALLOC(cpro_x2c, cm->nclacp, cs_real_t *);
+    CS_MALLOC(cpro_x2c, cm->nclacp, cs_real_t *);
     for (int class_id = 0; class_id < cm->nclacp; class_id++) {
       cpro_x2c[class_id] = cs_field_by_id(cm->ix2[class_id])->val;
     }
@@ -1553,7 +1553,7 @@ cs_coal_source_terms_scalar(int        fld_id,
                     nbimax);
     }
 
-    BFT_FREE(cpro_x2c);
+    CS_FREE(cpro_x2c);
 
     /* Source term: heterogeneous combustion by CO2 */
 
@@ -1563,8 +1563,8 @@ cs_coal_source_terms_scalar(int        fld_id,
       // (loop on cells outside loop on classes)
 
       cs_real_t **cvara_xck, **cpro_ghco2a;
-      BFT_MALLOC(cvara_xck, cm->nclacp, cs_real_t *);
-      BFT_MALLOC(cpro_ghco2a, cm->nclacp, cs_real_t *);
+      CS_MALLOC(cvara_xck, cm->nclacp, cs_real_t *);
+      CS_MALLOC(cpro_ghco2a, cm->nclacp, cs_real_t *);
       for (int class_id = 0; class_id < cm->nclacp; class_id++) {
         cvara_xck[class_id] = cs_field_by_id(cm->ixck[class_id])->val_pre;
         cpro_ghco2a[class_id] = cs_field_by_id(cm->ighco2[class_id])->val;
@@ -1581,8 +1581,8 @@ cs_coal_source_terms_scalar(int        fld_id,
         rovsdt[c_id] -= aux*(wmole[ico2]/0.012);
       }
 
-      BFT_FREE(cvara_xck);
-      BFT_FREE(cpro_ghco2a);
+      CS_FREE(cvara_xck);
+      CS_FREE(cpro_ghco2a);
 
     }
 
@@ -1599,25 +1599,27 @@ cs_coal_source_terms_scalar(int        fld_id,
 
       /* Arrays of pointers to field value arrays for each class */
 
-      cs_real_t **cvar_xck = NULL, **cvara_xck = NULL, **cvar_xch = NULL;
-      cs_real_t **cvar_xnp = NULL, **cpro_t2 = NULL, **cpro_gmhet = NULL;
-      cs_real_t **cpro_ghco2a = NULL, **cpro_ghh2oa = NULL, **cvar_xwt = NULL;
+      cs_real_t **cvar_xck = nullptr, **cvara_xck = nullptr;
+      cs_real_t **cvar_xch = nullptr, **cvar_xnp = nullptr;
+      cs_real_t **cpro_t2 = nullptr, **cpro_gmhet = nullptr;
+      cs_real_t **cpro_ghco2a = nullptr, **cpro_ghh2oa = nullptr;
+      cs_real_t **cvar_xwt = nullptr;
 
-      BFT_MALLOC(cvar_xck, cm->nclacp, cs_real_t *);
-      BFT_MALLOC(cvara_xck, cm->nclacp, cs_real_t *);
-      BFT_MALLOC(cvar_xch, cm->nclacp, cs_real_t *);
-      BFT_MALLOC(cvar_xnp, cm->nclacp, cs_real_t *);
-      BFT_MALLOC(cpro_t2, cm->nclacp, cs_real_t *);
-      BFT_MALLOC(cpro_gmhet, cm->nclacp, cs_real_t *);
+      CS_MALLOC(cvar_xck, cm->nclacp, cs_real_t *);
+      CS_MALLOC(cvara_xck, cm->nclacp, cs_real_t *);
+      CS_MALLOC(cvar_xch, cm->nclacp, cs_real_t *);
+      CS_MALLOC(cvar_xnp, cm->nclacp, cs_real_t *);
+      CS_MALLOC(cpro_t2, cm->nclacp, cs_real_t *);
+      CS_MALLOC(cpro_gmhet, cm->nclacp, cs_real_t *);
 
       if (cm->ihtco2 == 1)
-        BFT_MALLOC(cpro_ghco2a, cm->nclacp, cs_real_t *);
+        CS_MALLOC(cpro_ghco2a, cm->nclacp, cs_real_t *);
 
       if (cm->ihth2o == 1)
-        BFT_MALLOC(cpro_ghh2oa, cm->nclacp, cs_real_t *);
+        CS_MALLOC(cpro_ghh2oa, cm->nclacp, cs_real_t *);
 
       if (cm->type == CS_COMBUSTION_COAL_WITH_DRYING)
-        BFT_MALLOC(cvar_xwt, cm->nclacp, cs_real_t *);
+        CS_MALLOC(cvar_xwt, cm->nclacp, cs_real_t *);
 
       for (int class_id = 0; class_id < cm->nclacp; class_id++) {
         cvar_xck[class_id] = cs_field_by_id(cm->ixck[class_id])->val;
@@ -1626,11 +1628,11 @@ cs_coal_source_terms_scalar(int        fld_id,
         cvar_xnp[class_id] = cs_field_by_id(cm->inp[class_id])->val;
         cpro_t2[class_id] = cs_field_by_id(cm->itemp2[class_id])->val;
         cpro_gmhet[class_id] = cs_field_by_id(cm->igmhet[class_id])->val;
-        if (cpro_ghco2a != NULL)
+        if (cpro_ghco2a != nullptr)
           cpro_ghco2a[class_id] = cs_field_by_id(cm->ighco2[class_id])->val;
-        if (cpro_ghh2oa != NULL)
+        if (cpro_ghh2oa != nullptr)
           cpro_ghh2oa[class_id] = cs_field_by_id(cm->ighh2o[class_id])->val;
-        if (cvar_xwt != NULL)
+        if (cvar_xwt != nullptr)
           cvar_xwt[class_id] = cs_field_by_id(cm->ixwt[class_id])->val;
       }
 
@@ -1640,7 +1642,7 @@ cs_coal_source_terms_scalar(int        fld_id,
       cs_real_t tfuelmax = -HUGE_VAL;
 
       cs_real_t *tfuel;
-      BFT_MALLOC(tfuel, n_cells, cs_real_t);
+      CS_MALLOC(tfuel, n_cells, cs_real_t);
 
       for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
 
@@ -1649,7 +1651,7 @@ cs_coal_source_terms_scalar(int        fld_id,
           xmx2 +=   cvar_xck[class_id][c_id]
                   + cvar_xch[class_id][c_id]
                   + cvar_xnp[class_id][c_id]*cm->xmash[class_id];
-          if (cvar_xwt != NULL)
+          if (cvar_xwt != nullptr)
             xmx2 += cvar_xwt[class_id][c_id];
         }
 
@@ -1660,7 +1662,7 @@ cs_coal_source_terms_scalar(int        fld_id,
                             + cvar_xch[class_id][c_id]
                             + cvar_xnp[class_id][c_id]*cm->xmash[class_id])
                           * cpro_t2[class_id][c_id];
-            if (cvar_xwt != NULL)
+            if (cvar_xwt != nullptr)
               tfuel[c_id] += cvar_xwt[class_id][c_id] * cpro_t2[class_id][c_id];
           }
 
@@ -1824,7 +1826,7 @@ cs_coal_source_terms_scalar(int        fld_id,
 
       } /* ihth2o */
 
-      BFT_FREE(tfuel);
+      CS_FREE(tfuel);
 
       /* Drying */
 
@@ -1872,19 +1874,19 @@ cs_coal_source_terms_scalar(int        fld_id,
 
       } /* drying */
 
-      BFT_FREE(cvar_xck);
-      BFT_FREE(cvara_xck);
-      BFT_FREE(cvar_xch);
-      BFT_FREE(cvar_xnp);
-      BFT_FREE(cpro_t2);
-      BFT_FREE(cpro_gmhet);
-      BFT_FREE(cpro_ghco2a);
-      BFT_FREE(cpro_ghh2oa);
-      BFT_FREE(cvar_xwt);
+      CS_FREE(cvar_xck);
+      CS_FREE(cvara_xck);
+      CS_FREE(cvar_xch);
+      CS_FREE(cvar_xnp);
+      CS_FREE(cpro_t2);
+      CS_FREE(cpro_gmhet);
+      CS_FREE(cpro_ghco2a);
+      CS_FREE(cpro_ghh2oa);
+      CS_FREE(cvar_xwt);
     }
   }
 
-  BFT_FREE(w1);  // Not needed after this point
+  CS_FREE(w1);  // Not needed after this point
 
   /* Source terms on Y_HCN and Y_NO */
 
@@ -1913,11 +1915,11 @@ cs_coal_source_terms_scalar(int        fld_id,
 
       cs_real_t **cvara_xck, **cvara_xch, **cpro_gmhet;
       cs_real_t **cpro_gmdv1, **cpro_gmdv2;
-      BFT_MALLOC(cvara_xck, cm->nclacp, cs_real_t *);
-      BFT_MALLOC(cvara_xch, cm->nclacp, cs_real_t *);
-      BFT_MALLOC(cpro_gmhet, cm->nclacp, cs_real_t *);
-      BFT_MALLOC(cpro_gmdv1, cm->nclacp, cs_real_t *);
-      BFT_MALLOC(cpro_gmdv2, cm->nclacp, cs_real_t *);
+      CS_MALLOC(cvara_xck, cm->nclacp, cs_real_t *);
+      CS_MALLOC(cvara_xch, cm->nclacp, cs_real_t *);
+      CS_MALLOC(cpro_gmhet, cm->nclacp, cs_real_t *);
+      CS_MALLOC(cpro_gmdv1, cm->nclacp, cs_real_t *);
+      CS_MALLOC(cpro_gmdv2, cm->nclacp, cs_real_t *);
 
       for (int class_id = 0; class_id < cm->nclacp; class_id++) {
         cvara_xck[class_id] = cs_field_by_id(cm->ixck[class_id])->val_pre;
@@ -1979,11 +1981,11 @@ cs_coal_source_terms_scalar(int        fld_id,
 
       } /* loop on cells */
 
-      BFT_FREE(cvara_xck);
-      BFT_FREE(cvara_xch);
-      BFT_FREE(cpro_gmhet);
-      BFT_FREE(cpro_gmdv1);
-      BFT_FREE(cpro_gmdv2);
+      CS_FREE(cvara_xck);
+      CS_FREE(cvara_xch);
+      CS_FREE(cpro_gmhet);
+      CS_FREE(cpro_gmdv1);
+      CS_FREE(cpro_gmdv2);
 
     } /* fld_id == iyhcn */
 
@@ -2024,12 +2026,12 @@ cs_coal_source_terms_scalar(int        fld_id,
 
     cs_real_t **cvara_xck, **cvara_xch, **cpro_t2, **cpro_gmhet;
     cs_real_t **cpro_gmdv1, **cpro_gmdv2;
-    BFT_MALLOC(cvara_xck, cm->nclacp, cs_real_t *);
-    BFT_MALLOC(cvara_xch, cm->nclacp, cs_real_t *);
-    BFT_MALLOC(cpro_t2, cm->nclacp, cs_real_t *);
-    BFT_MALLOC(cpro_gmhet, cm->nclacp, cs_real_t *);
-    BFT_MALLOC(cpro_gmdv1, cm->nclacp, cs_real_t *);
-    BFT_MALLOC(cpro_gmdv2, cm->nclacp, cs_real_t *);
+    CS_MALLOC(cvara_xck, cm->nclacp, cs_real_t *);
+    CS_MALLOC(cvara_xch, cm->nclacp, cs_real_t *);
+    CS_MALLOC(cpro_t2, cm->nclacp, cs_real_t *);
+    CS_MALLOC(cpro_gmhet, cm->nclacp, cs_real_t *);
+    CS_MALLOC(cpro_gmdv1, cm->nclacp, cs_real_t *);
+    CS_MALLOC(cpro_gmdv2, cm->nclacp, cs_real_t *);
 
     for (int class_id = 0; class_id < cm->nclacp; class_id++) {
       cvara_xck[class_id] = cs_field_by_id(cm->ixck[class_id])->val_pre;
@@ -2124,8 +2126,8 @@ cs_coal_source_terms_scalar(int        fld_id,
 
           for (int coal_id = 0; coal_id < cm->n_coals; coal_id++) {
 
-            const cs_real_t *chxi = NULL;
-            const cs_real_t *cpro_cyfi = NULL;
+            const cs_real_t *chxi = nullptr;
+            const cs_real_t *cpro_cyfi = nullptr;
             cs_real_t wmchxi = 0;
 
             // Reburning by CHx1 or CHx2
@@ -2140,7 +2142,7 @@ cs_coal_source_terms_scalar(int        fld_id,
               wmchxi = cm->wmchx2;
             }
 
-            if (chxi != NULL) {
+            if (chxi != nullptr) {
 
               cs_real_t core1 = 0, core2 = 0, para2 = 0;
 
@@ -2423,8 +2425,8 @@ cs_coal_source_terms_scalar(int        fld_id,
 
           for (int coal_id = 0; coal_id < cm->n_coals; coal_id++) {
 
-            const cs_real_t *chxi = NULL;
-            const cs_real_t *cpro_cyfi = NULL;
+            const cs_real_t *chxi = nullptr;
+            const cs_real_t *cpro_cyfi = nullptr;
             cs_real_t wmchxi = 0;
 
             // Reburning by CHx1 or CHx2
@@ -2439,7 +2441,7 @@ cs_coal_source_terms_scalar(int        fld_id,
               wmchxi = cm->wmchx2;
             }
 
-            if (chxi != NULL) {
+            if (chxi != nullptr) {
 
               cs_real_t core1 = 0, core2 = 0, core3 = 0, para2 = 0;
 
@@ -2567,12 +2569,12 @@ cs_coal_source_terms_scalar(int        fld_id,
 
     } /* fld_id == iyno */
 
-    BFT_FREE(cvara_xck);
-    BFT_FREE(cvara_xch);
-    BFT_FREE(cpro_t2);
-    BFT_FREE(cpro_gmhet);
-    BFT_FREE(cpro_gmdv1);
-    BFT_FREE(cpro_gmdv2);
+    CS_FREE(cvara_xck);
+    CS_FREE(cvara_xch);
+    CS_FREE(cpro_t2);
+    CS_FREE(cpro_gmhet);
+    CS_FREE(cpro_gmdv1);
+    CS_FREE(cpro_gmdv2);
 
   } /* (ieqnox == 1, imdnox == 1, nt_cur > 1)
        and (fld_id in (yhcn, iyno, iynh3)) */
