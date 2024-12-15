@@ -111,9 +111,6 @@ CS_PROCF(pppdfr, PPPDFR)(cs_lnum_t        *ncelet,
                          const cs_real_t  *hrec);
 
 void
-cs_coal_physprop2(cs_lnum_t n_cells);
-
-void
 cs_physical_properties_combustion_drift(void);
 
 /*============================================================================
@@ -1195,6 +1192,256 @@ _physprop1(const  cs_real_t  f1m[],
   }
 }
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Calculation of the physical properties of the dispersed phase
+ *        (classes of particules)
+ *
+ * Cell values
+ * -----------
+ * - Mass fraction of solid
+ *   and eventual clippings
+ * - Diameter
+ * - Mass density
+ *   and eventual clippings
+ *
+ * \param[in]  n_cells   number of cells in mesh
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_physprop2(cs_lnum_t  n_cells)
+{
+  constexpr cs_real_t c_1ov3 = 1./3.;
+
+  // Coefficient relating to the coke diameter
+  const cs_real_t coedmi = 1.2;
+
+  const cs_coal_model_t *cm = cs_glob_coal_model;
+
+  bool log_is_active = cs_log_default_is_active();
+
+  /* Calculation for each class
+     --------------------------
+      - of the solid mass fraction
+      - of the coke diameter
+      - of the coal mass density */
+
+  for (int class_id = 0; class_id < cm->nclacp; class_id++) {
+
+    cs_gnum_t n1 = 0, n2 = 0, n3 = 0, n4 = 0, n5 = 0,  n6 = 0, n7 = 0, n8 = 0;
+    cs_real_t x2min  = HUGE_VAL, x2max  = -HUGE_VAL;
+    cs_real_t dchmin = HUGE_VAL, dchmax = -HUGE_VAL;
+    cs_real_t dckmin = HUGE_VAL, dckmax = -HUGE_VAL;
+    cs_real_t romin  = HUGE_VAL, romax  = -HUGE_VAL;
+
+    const int coal_id = cm->ichcor[class_id] - 1;
+
+    char f_name[32];
+
+    const cs_real_t *nagcpi = nullptr;
+    cs_real_t *agecpi = nullptr;
+    if (cm->idrift >= 1) {
+      snprintf(f_name, 31, "n_p_age_%02d", class_id+1); f_name[31] = '\0';
+      nagcpi = cs_field_by_name(f_name)->val;
+
+      snprintf(f_name, 31, "age_p_%02d", class_id+1); f_name[31] = '\0';
+      agecpi = cs_field_by_name(f_name)->val;
+    }
+
+    const cs_real_t *cvar_xchcl = cs_field_by_id(cm->ixch[class_id])->val;
+    const cs_real_t *cvar_xckcl = cs_field_by_id(cm->ixck[class_id])->val;
+    const cs_real_t *cvar_xnpcl = cs_field_by_id(cm->inp[class_id])->val;
+    const cs_real_t *cvar_xwtcl = nullptr;
+    if (cm->type == CS_COMBUSTION_COAL_WITH_DRYING)
+      cvar_xwtcl = cs_field_by_id(cm->ixwt[class_id])->val;
+
+    const cs_real_t diam20  = cm->diam20[class_id];
+    const cs_real_t rho20  = cm->rho20[class_id];
+    const cs_real_t xmash = cm->xmash[class_id];
+    const cs_real_t xmp0  = cm->xmp0[class_id];
+
+    const cs_real_t rhock  = cm->rhock[coal_id];
+    const cs_real_t xashcl = cm->xashch[coal_id];
+    const cs_real_t pi = cs_math_pi;
+
+    cs_real_t *cpro_diam2 = cs_field_by_id(cm->idiam2[class_id])->val;
+    cs_real_t *cpro_rom2 = cs_field_by_id(cm->irom2[class_id])->val;
+
+    cs_real_t *cpro_x2 = cs_field_by_id(cm->ix2[class_id])->val;
+
+    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+
+      const cs_real_t xck    = cvar_xckcl[c_id];
+      const cs_real_t xch    = cvar_xchcl[c_id];
+      const cs_real_t xnp    = cvar_xnpcl[c_id];
+      const cs_real_t xuash = xnp*(1.-xashcl)*xmp0;
+
+      //  Calculation of the solid mass fraction
+      cpro_x2[c_id] = xch + xck + xnp*xmash;
+      // Taking into account the humidity
+      if (cvar_xwtcl != nullptr)
+        cpro_x2[c_id] += cvar_xwtcl[c_id];
+
+      // Eventual clipping for the solid mass fraction
+      if (cpro_x2[c_id] > (1. + cs_coal_epsilon)) {
+        n1++;
+        x2max = fmax(cpro_x2[c_id], x2max);
+        cpro_x2[c_id] = 1.;
+      }
+      else if (cpro_x2[c_id] < -cs_coal_epsilon) {
+        n2++;
+        x2min = fmin(cpro_x2[c_id], x2min);
+        cpro_x2[c_id] = 0.;
+      }
+
+      // Initialization
+
+      cpro_rom2[c_id] = rho20;
+      cpro_diam2[c_id] = diam20;
+
+      cs_real_t dch;
+
+      if (xuash > cs_coal_epsilon) {
+
+        // Calculation of the reactive coal diameter: Dch
+        dch = diam20 * pow(xch/xuash, c_1ov3);
+
+        // Eventual clipping for the reactive coal diameter
+        if (dch > (diam20 + cs_coal_epsilon)) {
+          n3++;
+          dchmax = fmax(dch, dchmax);
+          dch = diam20;
+        }
+        else if (dch < - cs_coal_epsilon) {
+          n4++;
+          dchmin = fmin(dch, dchmin);
+          dch = 0.;
+        }
+
+        // Calculation of the coke diameter: Dck stores in cpro_diam2[c_id]
+        cs_real_t dck = pow(  (xch/rho20 + xck/rhock)
+                            / ((1.-xashcl)*pi/6.0*xnp), c_1ov3);
+
+        // Eventual clipping for the coke diameter
+        if (dck >  coedmi*diam20) {
+          n5++;
+          dckmax = fmax(dck, dckmax);
+          dck = diam20*coedmi;
+        }
+        else if (dck < -cs_coal_epsilon) {
+          n6++;
+          dckmin = fmin(dck, dckmin);
+          dck = 0.;
+        }
+        cpro_diam2[c_id] = dck;
+
+        // Density
+
+        cs_real_t ro2ini = rho20;
+        // Taking into account the humidity
+        if (cvar_xwtcl != nullptr) {
+          // at the moment we asume that ROH2O is constant
+          constexpr cs_real_t roh2o = 998.203;
+          ro2ini += cvar_xwtcl[c_id] * roh2o;
+        }
+
+        const cs_real_t diam20_3 = cs_math_pow3(diam20);
+        const cs_real_t dch_3 = cs_math_pow3(dch);
+        const cs_real_t dck_3 = cs_math_pow3(dck);
+
+        cpro_rom2[c_id]
+          =   (      xashcl  * diam20_3 * rho20
+               + (1.-xashcl) * (dck_3 - dch_3) * rhock
+               + (1.-xashcl) * dch_3 * ro2ini)
+            / (      xashcl  * diam20_3
+               + (1.-xashcl) * dck_3);
+
+        // Clipping for density
+
+        if (cpro_rom2[c_id] > (ro2ini + cs_coal_epsilon)) {
+          n7++;
+          romax = fmax(cpro_rom2[c_id], romax);
+          cpro_rom2[c_id] = rho20;
+        }
+        if (cpro_rom2[c_id] < (rhock - cs_coal_epsilon)) {
+          n8++;
+          romin = fmin(cpro_rom2[c_id], romin);
+          cpro_rom2[c_id] = rhock;
+        }
+
+      } // (xuash > cs_coal_epsilon)
+
+      // Particles' age of each particle class
+      if (agecpi != nullptr) {
+        if (xnp >= cs_coal_epsilon)
+          agecpi[c_id] = nagcpi[c_id]/xnp;
+        else
+          agecpi[c_id] = 0.0;
+      }
+
+    } // Loop on cells
+
+    if (log_is_active) {
+
+      cs_parall_sum_scalars(n1, n2, n3, n4, n5, n6, n7, n8);
+      cs_parall_max_scalars(x2max, dchmax, dckmax, romax);
+      cs_parall_min_scalars(x2min, dchmin, dckmin, romin);
+
+      if (n1 > 0)
+        cs_log_printf(CS_LOG_DEFAULT,
+                      _(" clipping on max for solid mass frac. for class %d\n"
+                        "    number of points: %lu\n"
+                        "    max. value:       %g\n"),
+                      class_id+1, (unsigned long)n1, x2max);
+      if (n2 > 0)
+        cs_log_printf(CS_LOG_DEFAULT,
+                      _(" clipping on min for solid mass frac. for class %d\n"
+                        "    number of points: %lu\n"
+                        "    min. value:       %g\n"),
+                      class_id+1, (unsigned long)n2, x2min);
+      if (n3 > 0)
+        cs_log_printf(CS_LOG_DEFAULT,
+                      _(" clipping on max on coal diameter for class %d\n"
+                        "    number of points: %lu\n"
+                        "    max. value:       %g\n"),
+                      class_id+1, (unsigned long)n3, dchmax);
+      if (n4 > 0)
+        cs_log_printf(CS_LOG_DEFAULT,
+                      _(" clipping on min on coal diameter for class %d\n"
+                        "    number of points: %lu\n"
+                        "    min. value:       %g\n"),
+                      class_id+1, (unsigned long)n4, dchmin);
+      if (n5 > 0)
+        cs_log_printf(CS_LOG_DEFAULT,
+                      _(" clipping on max on coke diameter for class %d\n"
+                        "    number of points: %lu\n"
+                        "    max. value:       %g\n"),
+                      class_id+1, (unsigned long)n5, dckmax);
+      if (n6 > 0)
+        cs_log_printf(CS_LOG_DEFAULT,
+                      _(" clipping on min on coke diameter for class %d\n"
+                        "    number of points: %lu\n"
+                        "    min. value:       %g\n"),
+                      class_id+1, (unsigned long)n6, dckmin);
+      if (n7 > 0)
+        cs_log_printf(CS_LOG_DEFAULT,
+                      _(" clipping on max on mass density for class %d\n"
+                        "    number of points: %lu\n"
+                        "    max. value:       %g\n"),
+                      class_id+1, (unsigned long)n7, romax);
+      if (n8 > 0)
+        cs_log_printf(CS_LOG_DEFAULT,
+                      _(" clipping on min on mass density for class %d\n"
+                        "    number of points: %lu\n"
+                        "    max. value:       %g\n"),
+                      class_id+1, (unsigned long)n8, romin);
+
+    } // Log is active
+
+  } // Loop on classes
+}
+
 /*============================================================================
  * Public function definitions
  *============================================================================*/
@@ -1275,7 +1522,7 @@ cs_coal_physprop(int  *mbrom)
    *   Diameter
    *   Mass density */
 
-  cs_coal_physprop2(n_cells);
+  _physprop2(n_cells);
 
   /* Calculation of the physical properties of the gaseous phase
    * -----------------------------------------------------------

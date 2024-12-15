@@ -89,7 +89,6 @@ cs_coal_mass_transfer.cpp \
 cs_coal_noxst.cpp \
 cs_coal_param.f90 \
 cs_coal_physical_properties.cpp \
-cs_coal_physprop2.f90 \
 cs_coal_prop.f90 \
 cs_coal_read_data.cpp \
 cs_coal_source_terms.cpp \
