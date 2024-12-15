@@ -10,7 +10,7 @@ mkdir -p $RMBDIR || exit 1
 cd $PREFIX
 
 for file in src/*/*.[ch] src/*/*.f90 src/*/*.[ch]xx src/*/*.cu \
-            tests/*.c build-aux/*.py \
+            tests/*.c* build-aux/*.py \
             python/code_saturne/*/*.py python/code_saturne/*/*/*.py \
             libple/*/*.[ch] preprocessor/*/*.[ch] \
             NEWS.md
