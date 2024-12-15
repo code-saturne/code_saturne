@@ -153,24 +153,6 @@ void
 cs_summon_cressman(cs_real_t the_time);
 
 /*----------------------------------------------------------------------------*/
-/*
- * \brief Convert temperature to enthalpy at boundary for coal combustion.
- *
- * \param[in]   n_faces   number of faces in list
- * \param[in]   face_ids  list of boundary faces at which conversion
- *                        is requested (0-based numbering)
- * \param[in]   t_b       temperature at boundary
- * \param[out]  h_b       enthalpy at boundary
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_coal_bt2h(cs_lnum_t        n_faces,
-             const cs_lnum_t  face_ids[],
-             const cs_real_t  t[],
-             cs_real_t        h[]);
-
-/*----------------------------------------------------------------------------*/
 /*!
  * \brief Convert an enthalpy to temperature value for gas combustion.
  *

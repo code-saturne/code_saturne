@@ -83,7 +83,6 @@ noinst_LIBRARIES = libcscomb.a
 libcscomb_a_SOURCES = \
 cs_coal.cpp \
 cs_coal_boundary_conditions.cpp \
-cs_coal_bt2h.f90 \
 cs_coal_ht_convert.cpp \
 cs_coal_mass_transfer.cpp \
 cs_coal_noxst.cpp \

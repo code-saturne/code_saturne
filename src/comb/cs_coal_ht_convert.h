@@ -222,6 +222,24 @@ cs_coal_ht_convert_t_to_h_particles_by_yi(cs_real_t        temper,
                                           const cs_real_t  xsolid[]);
 
 /*----------------------------------------------------------------------------*/
+/*
+ * \brief Convert temperature to enthalpy at boundary for coal combustion.
+ *
+ * \param[in]   n_faces   number of faces in list
+ * \param[in]   face_ids  list of boundary faces at which conversion
+ *                        is requested (0-based numbering)
+ * \param[in]   t_b       temperature at boundary
+ * \param[out]  h_b       enthalpy at boundary
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_coal_ht_convert_t_to_h_faces(cs_lnum_t        n_faces,
+                                const cs_lnum_t  face_ids[],
+                                const cs_real_t  t_b[],
+                                cs_real_t        h_b[]);
+
+/*----------------------------------------------------------------------------*/
 
 END_C_DECLS
 

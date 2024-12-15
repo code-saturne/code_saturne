@@ -430,7 +430,7 @@ cs_ht_convert_t_to_h_faces_l(cs_lnum_t        n_faces,
 
   /* Pulverized coal combustion */
   else if (pm_flag[CS_COMBUSTION_COAL] >= 0)
-    cs_coal_bt2h(n_faces, face_ids, t, h);
+    cs_coal_ht_convert_t_to_h_faces(n_faces, face_ids, t, h);
 
   /* Electric arcs */
   else if (pm_flag[CS_JOULE_EFFECT] < 1 && pm_flag[CS_ELECTRIC_ARCS] >= 1)
@@ -574,7 +574,7 @@ cs_ht_convert_t_to_h_faces_z(const cs_zone_t *z,
 
   /* Pulverized coal combustion */
   else if (pm_flag[CS_COMBUSTION_COAL] >= 0)
-    cs_coal_bt2h(n_faces, face_ids, t_b, h_b);
+    cs_coal_ht_convert_t_to_h_faces(n_faces, face_ids, t_b, h_b);
 
   /* Electric arcs */
   else if (pm_flag[CS_JOULE_EFFECT] < 1 && pm_flag[CS_ELECTRIC_ARCS] >= 1)

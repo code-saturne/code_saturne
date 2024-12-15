@@ -48,6 +48,7 @@
 #include "cs_field.h"
 #include "cs_log.h"
 #include "cs_math.h"
+#include "cs_mesh.h"
 #include "cs_mesh_location.h"
 #include "cs_physical_constants.h"
 #include "cs_physical_model.h"
@@ -1147,6 +1148,150 @@ cs_coal_ht_convert_t_to_h_particles_by_yi(cs_real_t        temper,
   } /* loop on interpolation points */
 
   return enthal;
+}
+
+/*----------------------------------------------------------------------------*/
+/*
+ * \brief Convert temperature to enthalpy at boundary for coal combustion.
+ *
+ * \param[in]   n_faces   number of faces in list
+ * \param[in]   face_ids  list of boundary faces at which conversion
+ *                        is requested (0-based numbering)
+ * \param[in]   t_b       temperature at boundary
+ * \param[out]  h_b       enthalpy at boundary
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_coal_ht_convert_t_to_h_faces(cs_lnum_t        n_faces,
+                                const cs_lnum_t  face_ids[],
+                                const cs_real_t  t_b[],
+                                cs_real_t        h_b[])
+{
+  const cs_lnum_t *b_face_cells = cs_glob_mesh->b_face_cells;
+
+  const cs_coal_model_t  *cm = cs_glob_coal_model;
+
+  const int n_coals = cm->n_coals;
+  const int nclacp = cm->nclacp;
+  const int n_gas_species = cm->n_gas_species;
+
+  const int *ichcor = cm->ichcor;
+  const cs_real_t *xmash = cm->xmash;
+
+  int ich[CS_COMBUSTION_MAX_COALS];
+  int ick[CS_COMBUSTION_MAX_COALS];
+  int iash[CS_COMBUSTION_MAX_COALS];
+  int iwat[CS_COMBUSTION_MAX_COALS];
+
+  for (int i = 0; i < cm->n_coals; i++) {
+    ich[i] = cm->ich[i] - 1;
+    ick[i] = cm->ick[i] - 1;
+    iash[i] = cm->iash[i] - 1;
+    if (cm->type == CS_COMBUSTION_COAL_WITH_DRYING)
+      iwat[i] = cm->iwat[i] - 1;
+    else
+      iwat[i] = -1;
+  }
+
+  const cs_real_t *cvar_xch[CS_COMBUSTION_COAL_MAX_CLASSES];
+  const cs_real_t *cvar_xck[CS_COMBUSTION_COAL_MAX_CLASSES];
+  const cs_real_t *cvar_xnp[CS_COMBUSTION_COAL_MAX_CLASSES];
+  const cs_real_t *cvar_xwt[CS_COMBUSTION_COAL_MAX_CLASSES];
+  const cs_real_t *cpro_x2[CS_COMBUSTION_COAL_MAX_CLASSES];
+
+  for (int class_id = 0; class_id < nclacp; class_id++) {
+    cvar_xch[class_id] = cs_field_by_id(cm->ixch[class_id])->val;
+    cvar_xck[class_id] = cs_field_by_id(cm->ixck[class_id])->val;
+    cvar_xnp[class_id] = cs_field_by_id(cm->inp[class_id])->val;
+    if (cm->type == CS_COMBUSTION_COAL_WITH_DRYING)
+      cvar_xwt[class_id] = cs_field_by_id(cm->ixwt[class_id])->val;
+    else
+      cvar_xwt[class_id] = nullptr;
+    cpro_x2[class_id] = cs_field_by_id(cm->ix2[class_id])->val;
+  }
+
+  const cs_real_t *cvar_f1m[CS_COMBUSTION_MAX_COALS];
+  const cs_real_t *cvar_f2m[CS_COMBUSTION_MAX_COALS];
+
+  for (int icha = 0; icha < cm->n_coals; icha++) {
+    cvar_f1m[icha] = cs_field_by_id(cm->if1m[icha])->val;
+    cvar_f2m[icha] = cs_field_by_id(cm->if2m[icha])->val;
+  }
+
+  const cs_real_t *cpro_ym1[CS_COMBUSTION_COAL_MAX_ELEMENTARY_COMPONENTS];
+
+  for (int ige = 0; ige < n_gas_species; ige++) {
+    cpro_ym1[ige] = cs_field_by_id(cm->iym1[ige])->val;
+  }
+
+  // Now loop on faces
+
+  for (cs_lnum_t face_idx = 0; face_idx < n_faces; face_idx++) {
+
+    cs_real_t coefe[CS_COMBUSTION_COAL_MAX_ELEMENTARY_COMPONENTS];
+    cs_real_t xsolid[CS_COMBUSTION_COAL_MAX_SOLIDS];
+    cs_real_t f1mc[CS_COMBUSTION_MAX_COALS];
+    cs_real_t f2mc[CS_COMBUSTION_MAX_COALS];
+
+    cs_lnum_t f_id = face_ids[face_idx];
+    cs_lnum_t c_id = b_face_cells[f_id];
+
+    cs_real_t tbl = t_b[f_id];
+
+    cs_real_t x2t  = 0.;
+    cs_real_t x2h2 = 0.;
+
+    for (int class_id = 0; class_id < nclacp; class_id++) {
+
+      const int coal_id = ichcor[class_id] - 1;
+
+      x2t += cpro_x2[class_id][c_id];
+      cs_real_t h2 = 0.;
+
+      for (int isol = 0; isol < CS_COMBUSTION_COAL_MAX_SOLIDS; isol++)
+        xsolid[isol] = 0.;
+
+      if (cpro_x2[class_id][c_id] > cs_coal_epsilon) {
+        xsolid[ich[coal_id]] = cvar_xch[class_id][c_id] / cpro_x2[class_id][c_id];
+        xsolid[ick[coal_id]] = cvar_xck[class_id][c_id] / cpro_x2[class_id][c_id];
+        xsolid[iash[coal_id]] =   cvar_xnp[class_id][c_id]*xmash[class_id]
+                                / cpro_x2[class_id][c_id];
+        if (iwat[coal_id] > -1) {
+          xsolid[iwat[coal_id]] =   cvar_xwt[class_id][c_id]
+                                  / cpro_x2[class_id][c_id];
+        }
+
+        h2 = cs_coal_ht_convert_t_to_h_particles_by_yi(tbl, class_id, xsolid);
+      }
+
+      x2h2 += cpro_x2[class_id][c_id] * h2;
+
+    } // loop on classes
+
+    for (int coal_id = 0; coal_id < n_coals; coal_id++) {
+      f1mc[coal_id] = cvar_f1m[coal_id][c_id] / (1.0-x2t);
+      f2mc[coal_id] = cvar_f2m[coal_id][c_id] / (1.0-x2t);
+    }
+    for (int coal_id = n_coals; coal_id < CS_COMBUSTION_MAX_COALS; coal_id++) {
+      f1mc[coal_id] = 0.;
+      f2mc[coal_id] = 0;
+    }
+
+    for (int ige = 0; ige < n_gas_species; ige++)
+      coefe[ige] = cpro_ym1[ige][c_id];
+    for (int ige = n_gas_species;
+         ige < CS_COMBUSTION_COAL_MAX_ELEMENTARY_COMPONENTS;
+         ige++)
+      coefe[ige] = 0.;
+
+    cs_real_t hf
+      = cs_coal_ht_convert_t_to_h_gas_by_yi_f1f2(tbl, coefe, f1mc, f2mc);
+
+    h_b[f_id] = (1.-x2t) * hf + x2h2;
+
+  }
+
 }
 
 /*----------------------------------------------------------------------------*/
