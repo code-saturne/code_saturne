@@ -110,9 +110,6 @@ CS_PROCF(pppdfr, PPPDFR)(cs_lnum_t        *ncelet,
                          const cs_real_t  *pdfm2,
                          const cs_real_t  *hrec);
 
-void
-cs_physical_properties_combustion_drift(void);
-
 /*============================================================================
  * Private function definitions
  *============================================================================*/
@@ -1442,6 +1439,183 @@ _physprop2(cs_lnum_t  n_cells)
   } // Loop on classes
 }
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Definition of physical variable laws for combustion with a drift.
+ *
+ * \param[in]  n_cells   number of cells in mesh
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_physical_properties_combustion_drift(cs_lnum_t  n_cells)
+{
+  /* Initializations to keep
+     ----------------------- */
+
+  const cs_coal_model_t *cm = cs_glob_coal_model;
+
+  cs_real_t *visco;
+  CS_MALLOC(visco, n_cells, cs_real_t);
+
+  const cs_real_t *cpro_ym1_3 = cs_field_by_id(cm->iym1[3-1])->val;
+  const cs_real_t *cpro_ym1_5 = cs_field_by_id(cm->iym1[5-1])->val;
+  const cs_real_t *cpro_ym1_7 = cs_field_by_id(cm->iym1[7-1])->val;
+  const cs_real_t *cpro_ym1_8 = cs_field_by_id(cm->iym1[8-1])->val;
+  const cs_real_t *cpro_ym1_9 = cs_field_by_id(cm->iym1[9-1])->val;
+  const cs_real_t *cpro_ym1_11 = cs_field_by_id(cm->iym1[11-1])->val;
+  const cs_real_t *cpro_ym1_12 = cs_field_by_id(cm->iym1[12-1])->val;
+
+  // Key id for drift scalar and coal scalar class
+  const int keydri = cs_field_key_id("drift_scalar_model");
+  const int keyccl = cs_field_key_id("scalar_class");
+
+  const int n_fields = cs_field_n_fields();
+
+  const cs_real_t *cpro_temp = cs_field_by_name("temperature")->val;
+
+  // gas density
+  cs_real_t *cpro_rom1 = cs_field_by_id(cm->irom1)->val;
+
+  cs_host_context ctx;
+
+  // First initialization
+  if (cs_glob_time_step->nt_cur <= 1) {
+    const cs_real_t viscl0 = cs_glob_fluid_properties->viscl0;
+    const cs_real_t ro0 = cs_glob_fluid_properties->ro0;
+
+    cs_arrays_set_value<cs_real_t, 1>(n_cells, viscl0, visco);
+    cs_arrays_set_value<cs_real_t, 1>(n_cells, ro0, cpro_rom1);
+
+    for (int class_id = 0; class_id < cm->nclacp; class_id++) {
+      cs_real_t *cpro_diam2 = cs_field_by_id(cm->idiam2[class_id])->val;
+      cs_real_t *cpro_rom2 = cs_field_by_id(cm->irom2[class_id])->val;
+
+      cs_arrays_set_value<cs_real_t, 1>
+        (n_cells, cm->rho20[class_id], cpro_rom2);
+      cs_arrays_set_value<cs_real_t, 1>
+        (n_cells, cm->diam20[class_id], cpro_diam2);
+    }
+  }
+
+  /* Gas viscosity function of temperature
+     ------------------------------------- */
+
+  // 1-O2 2-CO 3-H2 4-N2 5-SO2 6-NH3 7-CO2
+
+  double aa1 = 4.0495e-6;
+  double bb1 = 6.22e-8;
+  double cc1 = -2.3032e-11;
+  double dd1 = 4.4077e-15;
+
+  double aa2 = 9.9987e-6;
+  double bb2 = 5.1578e-8;
+  double cc2 = -1.8383e-11;
+  double dd2 = 3.33307e-15;
+
+  double aa3 = 2.894e-6;
+  double bb3 = 2.22508e-8;
+  double cc3 = -8.041e-12;
+  double dd3 = 1.4619e-15;
+
+  double aa4 = 4.3093e-6;
+  double bb4 = 5.0516e-8;
+  double cc4 = -1.7869e-11;
+  double dd4 = 3.2136e-15;
+
+  double aa5 = -1.9889e-6;
+  double bb5 = 5.365e-8;
+  double cc5 = -1.4286e-11;
+  double dd5 = 2.1639e-15;
+
+  double aa6 = -1.293e-6;
+  double bb6 = 4.1194e-8;
+  double cc6 = -1.772e-11;
+  double dd6 = 1.8699e-15;
+
+  double aa7 = 4.4822e-7;
+  double bb7 = 5.4327e-8;
+  double cc7 = -1.7581e-11;
+  double dd7 = 2.9979e-15;
+
+  /*
+   *   law                 mu   = a + b T + c T**2 + d T**3
+   *   so      cpro_viscl[c_id] = a +b*xvart+c*xvart**2 + d*xvart**3
+   */
+
+  if (cs_glob_time_step->nt_cur <= 1) {
+
+    ctx.parallel_for(n_cells, [=] CS_F_HOST (cs_lnum_t c_id) {
+
+      cs_real_t xvart = cpro_temp[c_id];
+      cs_real_t xvart_2 = cs_math_pow2(xvart);
+      cs_real_t xvart_3 = cs_math_pow3(xvart);
+
+      cs_real_t visco_o2  = aa1 + xvart*bb1 + cc1*xvart_2 + dd1*xvart_3;
+      cs_real_t visco_co  = aa2 + xvart*bb2 + cc2*xvart_2 + dd2*xvart_3;
+      cs_real_t visco_h2  = aa3 + xvart*bb3 + cc3*xvart_2 + dd3*xvart_3;
+      cs_real_t visco_n2  = aa4 + xvart*bb4 + cc4*xvart_2 + dd4*xvart_3;
+      cs_real_t visco_so2 = aa5 + xvart*bb5 + cc5*xvart_2 + dd5*xvart_3;
+      cs_real_t visco_nh3 = aa6 + xvart*bb6 + cc6*xvart_2 + dd6*xvart_3;
+      cs_real_t visco_co2 = aa7 + xvart*bb7 + cc7*xvart_2 + dd7*xvart_3;
+
+      // Viscosity of the mixing
+      visco[c_id] =   (  cpro_ym1_8[c_id] * visco_o2
+                       + cpro_ym1_3[c_id] * visco_co
+                       + cpro_ym1_5[c_id] * visco_h2
+                       + cpro_ym1_12[c_id]* visco_n2
+                       + cpro_ym1_11[c_id]* visco_so2
+                       + cpro_ym1_7[c_id] * visco_nh3
+                       + cpro_ym1_9[c_id] * visco_co2)
+                    / (  cpro_ym1_8[c_id] + cpro_ym1_3[c_id]
+                       + cpro_ym1_5[c_id] + cpro_ym1_12[c_id]
+                       + cpro_ym1_11[c_id]+ cpro_ym1_7[c_id]
+                       + cpro_ym1_9[c_id] + 1.e-12);
+
+    });
+  }
+
+  /* Loop over coal particle classes
+   * We only handle here coal class with a drift
+   * ------------------------------------------- */
+
+  for (int fld_id = 0; fld_id < n_fields; fld_id++) {
+
+    const cs_field_t *fld = cs_field_by_id(fld_id);
+
+    // Index of the scalar class (<0 if the scalar belongs to the gas phase)
+    int class_id = cs_field_get_key_int(fld, keyccl) - 1;
+    int isccdri = cs_field_get_key_int(fld, keydri);
+
+    // We only handle here one scalar with a drift per particle class
+    if (class_id < 0 || (isccdri & CS_DRIFT_SCALAR_ADD_DRIFT_FLUX) == 0)
+      continue;
+
+    const cs_real_t *cpro_diam2 = cs_field_by_id(cm->idiam2[class_id])->val;
+    const cs_real_t *cpro_rom2 = cs_field_by_id(cm->irom2[class_id])->val;
+
+    cs_real_t *cpro_taup
+      = cs_field_by_composite_name(fld->name, "drift_tau")->val;
+
+    // Computation of the relaxation time of the particles
+    // the drift is therefore v_g = tau_p * g
+    // Here, it is possible to include differential thermo (or electro) phoresis
+    //----------------------------------------------------
+
+    ctx.parallel_for(n_cells, [=] CS_F_HOST (cs_lnum_t c_id) {
+      cpro_taup[c_id] = 0.;
+      if (visco[c_id] > 1e-17) {
+        // Simple model for Low Reynolds Numbers
+        cpro_taup[c_id] =   cpro_rom2[c_id] * cs_math_pow2(cpro_diam2[c_id])
+                          / (18.0 * visco[c_id]);
+      }
+    });
+
+  } // Loop on fields
+
+  CS_FREE(visco);
+}
+
 /*============================================================================
  * Public function definitions
  *============================================================================*/
@@ -1468,7 +1642,7 @@ cs_coal_physprop(int  *mbrom)
   // Additional properties for drift
 
   if (cm->idrift > 1)
-    cs_physical_properties_combustion_drift();
+    _physical_properties_combustion_drift(n_cells);
 
   ipass++;
 
@@ -1731,7 +1905,7 @@ cs_coal_physprop(int  *mbrom)
 
   if (cm->idrift >= 1) {
 
-    int n_fields = cs_field_n_fields();
+    const int n_fields = cs_field_n_fields();
 
     // Key id for drift scalar and coal scalar class
     const int keydri = cs_field_key_id("drift_scalar_model");

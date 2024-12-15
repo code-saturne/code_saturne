@@ -94,8 +94,7 @@ cs_coal_read_data.cpp \
 cs_coal_source_terms.cpp \
 cs_coal_varini.f90 \
 cs_coal_varpos.f90 \
-cs_coal_verify.f90 \
-cs_physical_properties_combustion_drift.f90
+cs_coal_verify.f90
 
 # Rules for CUDA (not known by Automake)
 
