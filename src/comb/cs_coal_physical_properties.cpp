@@ -605,8 +605,6 @@ _gas_comb(cs_lnum_t        n_cells,
 
     if (std::abs(somm-1.0) < epzero)
       n3 += 1;
-    else
-      assert(0);
 
     if (fuel1[c_id] < -epzero || fuel1[c_id] > (1.+epzero)) n4  += 1;
     if (fuel2[c_id] < -epzero || fuel2[c_id] > (1.+epzero)) n5  += 1;
