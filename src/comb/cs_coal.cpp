@@ -64,7 +64,7 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*!
-  \file cs_coal.c
+  \file cs_coal.cpp
 
   \brief Coal combustion model.
 */

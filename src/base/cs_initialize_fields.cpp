@@ -50,6 +50,7 @@
 #include "cs_assert.h"
 #include "cs_cf_model.h"
 #include "cs_cf_thermo.h"
+#include "cs_coal_initialize.h"
 #include "cs_ctwr_initialize.h"
 #include "cs_dispatch.h"
 #include "cs_elec_model.h"
@@ -497,6 +498,9 @@ cs_initialize_fields_stage_1(void)
 
   if (pm_flag[CS_PHYSICAL_MODEL_FLAG] > 0) {
     cs_f_ppiniv0();
+
+    if (pm_flag[CS_COMBUSTION_COAL] >= 0)
+      cs_coal_fields_initialize();
 
     if (pm_flag[CS_COOLING_TOWERS] >= 0)
       cs_ctwr_fields_init0();

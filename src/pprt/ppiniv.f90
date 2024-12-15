@@ -99,12 +99,6 @@ if (ippmod(icolwc).ge.0) then
   call lwcini
 endif
 
-! ---> Combustion charbon pulverise
-
-if (ippmod(iccoal).ge.0) then
-  call cs_coal_varini
-endif
-
 ! Atmospheric flows, first stage
 if (ippmod(iatmos).ge.0) then
   call atiniv0

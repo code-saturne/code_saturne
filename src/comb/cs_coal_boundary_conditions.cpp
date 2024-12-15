@@ -76,7 +76,7 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*!
-  \file cs_coal_boundary_conditions.c
+  \file cs_coal_boundary_conditions.cpp
 
   \brief Coal combustion model boundary conditions.
 */

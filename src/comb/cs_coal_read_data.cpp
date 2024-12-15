@@ -70,7 +70,7 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*!
-  \file cs_coal_read_data.c
+  \file cs_coal_read_data.cpp
 
   \brief Coal combustion model: setup data from input.
 */

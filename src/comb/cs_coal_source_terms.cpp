@@ -74,7 +74,7 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*!
-  \file cs_coal_source_terms.c
+  \file cs_coal_source_terms.cpp
 
   \brief Coal combustion model: source terms computation.
 */

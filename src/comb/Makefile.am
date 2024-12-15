@@ -72,6 +72,7 @@ pkginclude_HEADERS = \
 cs_coal.h \
 cs_coal_boundary_conditions.h \
 cs_coal_ht_convert.h \
+cs_coal_initialize.h \
 cs_coal_physical_properties.h \
 cs_coal_read_data.h \
 cs_coal_source_terms.h \
@@ -84,6 +85,7 @@ libcscomb_a_SOURCES = \
 cs_coal.cpp \
 cs_coal_boundary_conditions.cpp \
 cs_coal_ht_convert.cpp \
+cs_coal_initialize.cpp \
 cs_coal_mass_transfer.cpp \
 cs_coal_noxst.cpp \
 cs_coal_param.f90 \
@@ -91,7 +93,6 @@ cs_coal_physical_properties.cpp \
 cs_coal_prop.f90 \
 cs_coal_read_data.cpp \
 cs_coal_source_terms.cpp \
-cs_coal_varini.f90 \
 cs_coal_varpos.f90 \
 cs_coal_verify.f90
 

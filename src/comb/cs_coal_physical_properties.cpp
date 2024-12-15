@@ -80,7 +80,7 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*!
-  \file cs_coal_noxst.c
+  \file cs_coal_noxst.cpp
 
   \brief Coal combustion model: NOx source terms computation.
 */
