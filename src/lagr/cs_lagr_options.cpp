@@ -390,12 +390,20 @@ cs_lagr_options_definition(int         is_restart,
 
   if (lagr_time_scheme->isuila == 1 &&
       lagr_model->physical_model == CS_LAGR_PHYS_HEAT &&
-      cs_glob_lagr_specific_physics->itpvar == 1)
+      cs_glob_lagr_specific_physics->itpvar == 1) {
     cs_parameters_is_greater_double(CS_ABORT_DELAYED,
                                     _("in Lagrangian module"),
                                     "cs_glob_lagr_specific_physics->cppart",
                                     cs_glob_lagr_specific_physics->cppart,
                                     0);
+
+    cs_parameters_is_greater_double(CS_ABORT_DELAYED,
+                                    _("in Lagrangian module"),
+                                    "cs_glob_lagr_specific_physics->tpart",
+                                    cs_glob_lagr_specific_physics->tpart,
+                                    -273.15);
+
+  }
 
   cs_parameters_error_barrier();
 
@@ -452,6 +460,11 @@ cs_lagr_options_definition(int         is_restart,
       }
     }
 
+    cs_parameters_is_in_range_int(CS_ABORT_DELAYED,
+                                  _("in Lagrangian module"),
+                                  "const_dim->nlayer",
+                                  const_dim->nlayer,
+                                  1, 99);
   }
   else
     lagr_model->fouling = 0;
@@ -502,83 +515,7 @@ cs_lagr_options_definition(int         is_restart,
       cs_glob_lagr_stat_options->nstist = cs_glob_time_step->nt_prev + 1;
   }
 
-  cs_parameters_is_in_range_int(CS_ABORT_DELAYED,
-                                _("in Lagrangian module"),
-                                "lagr_model->physical_model",
-                                lagr_model->physical_model,
-                                0, 4);
-
   cs_parameters_error_barrier();
-
-  /* IDPVAR ITPVAR IMPVAR */
-
-  if (lagr_model->physical_model == CS_LAGR_PHYS_HEAT) {
-
-    cs_parameters_is_in_range_int(CS_ABORT_DELAYED,
-                                  _("in Lagrangian module"),
-                                  "cs_glob_lagr_specific_physics->idpvar",
-                                  cs_glob_lagr_specific_physics->idpvar,
-                                  0, 2);
-
-    cs_parameters_is_in_range_int(CS_ABORT_DELAYED,
-                                  _("in Lagrangian module"),
-                                  "cs_glob_lagr_specific_physics->itpvar",
-                                  cs_glob_lagr_specific_physics->itpvar,
-                                  0, 2);
-
-    cs_parameters_is_in_range_int(CS_ABORT_DELAYED,
-                                  _("in Lagrangian module"),
-                                  "cs_glob_lagr_specific_physics->impvar",
-                                  cs_glob_lagr_specific_physics->impvar,
-                                  0, 2);
-
-    if (   cs_glob_lagr_specific_physics->itpvar == 1
-        && have_thermal_model == 0)
-      cs_parameters_error
-        (CS_ABORT_DELAYED,
-         _("in Lagrangian module"),
-         _("The temperature model for particles is active\n"
-           "(cs_glob_lagr_specific_physics->itpvar = %d)\n"
-           "but no Eulerian thermal scalar is available\n"),
-         cs_glob_lagr_specific_physics->itpvar);
-
-  }
-  else {
-
-    cs_glob_lagr_specific_physics->itpvar = 0;
-    cs_glob_lagr_specific_physics->impvar = 0;
-    cs_glob_lagr_specific_physics->idpvar = 0;
-
-  }
-
-  if (   lagr_time_scheme->isuila == 1
-      && lagr_model->physical_model == CS_LAGR_PHYS_HEAT
-      && cs_glob_lagr_specific_physics->itpvar == 1) {
-
-    cs_parameters_is_greater_double
-      (CS_ABORT_DELAYED,
-       _("in Lagrangian module"),
-       "cs_glob_lagr_specific_physics->cppart",
-       cs_glob_lagr_specific_physics->cppart,
-       0);
-
-    cs_parameters_is_greater_double
-      (CS_ABORT_DELAYED,
-       _("in Lagrangian module"),
-       "cs_glob_lagr_specific_physics->tpart",
-       cs_glob_lagr_specific_physics->tpart,
-       -273.15);
-
-  }
-
-  cs_parameters_error_barrier();
-
-  if (lagr_model->physical_model == CS_LAGR_PHYS_COAL)
-    cs_parameters_is_in_range_int(CS_ABORT_DELAYED,
-                                  _("in Lagrangian module"),
-                                  "const_dim->nlayer",
-                                  const_dim->nlayer,
-                                  1, 99);
 
   /* ISTTIO NSTITS LTSDYN LTSMAS LTSTHE  */
 
