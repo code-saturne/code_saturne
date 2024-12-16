@@ -376,6 +376,7 @@ _injection_check(const cs_lagr_injection_set_t  *zis)
   /* temperature */
   if (   cs_glob_lagr_model->physical_model == CS_LAGR_PHYS_HEAT
       && (   cs_glob_lagr_specific_physics->itpvar == 1
+          || cs_glob_lagr_specific_physics->solve_temperature_seen == 1
           || cs_glob_lagr_specific_physics->idpvar == 1
           || cs_glob_lagr_specific_physics->impvar == 1)) {
     if (zis->temperature_profile < 0 || zis->temperature_profile > 1)
@@ -460,9 +461,10 @@ _injection_check(const cs_lagr_injection_set_t  *zis)
 
   /* temperature and Cp */
   if (   cs_glob_lagr_model->physical_model == CS_LAGR_PHYS_HEAT
-      && cs_glob_lagr_specific_physics->itpvar == 1) {
+      && (    cs_glob_lagr_specific_physics->itpvar == 1
+           || cs_glob_lagr_specific_physics->solve_temperature_seen)) {
     cs_real_t tkelvn = -cs_physical_constants_celsius_to_kelvin;
-    if (zis->cp < 0.0)
+    if (zis->cp < 0.0 && cs_glob_lagr_specific_physics->itpvar == 1)
       bft_error(__FILE__, __LINE__, 0,
                 _("Lagrangian %s zone %d, set %d:\n"
                   "  specific heat capacity (%g) is negative."),

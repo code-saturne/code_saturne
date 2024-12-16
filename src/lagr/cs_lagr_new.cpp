@@ -708,7 +708,8 @@ cs_lagr_new_particle_init(const cs_lnum_t                 particle_range[2],
   /* Initialize pointers (used to simplify future tests) */
 
   if (   (   cs_glob_lagr_model->physical_model == CS_LAGR_PHYS_HEAT
-          && cs_glob_lagr_specific_physics->itpvar == 1)
+          && (    cs_glob_lagr_specific_physics->solve_temperature_seen == 1
+               || cs_glob_lagr_specific_physics->itpvar == 1))
       || cs_glob_lagr_model->physical_model == CS_LAGR_PHYS_COAL
       || cs_glob_lagr_model->physical_model == CS_LAGR_PHYS_CTWR) {
 
@@ -740,7 +741,8 @@ cs_lagr_new_particle_init(const cs_lnum_t                 particle_range[2],
   /* Prepare enthalpy to temperature conversion if needed */
 
   if (   cs_glob_lagr_model->physical_model == CS_LAGR_PHYS_HEAT
-      && cs_glob_lagr_specific_physics->itpvar == 1
+      && (    cs_glob_lagr_specific_physics->solve_temperature_seen == 1
+           || cs_glob_lagr_specific_physics->itpvar == 1)
       && cval_t == nullptr
       && cval_h != nullptr) {
 
@@ -1290,33 +1292,36 @@ cs_lagr_new_particle_init(const cs_lnum_t                 particle_range[2],
                                   * pow(1.0-mporos, 3));
 
       if (   cs_glob_lagr_model->physical_model == CS_LAGR_PHYS_HEAT
-          && cs_glob_lagr_specific_physics->itpvar == 1) {
+          && cs_glob_lagr_specific_physics->solve_temperature_seen == 1
+          && cval_t != nullptr) {
 
         /* Set Seen temperature */
-        if (cval_t != nullptr) {
-          cs_real_t loc_fluid_temp = cval_t[c_id] + tscl_shift;
-          if (   cs_glob_lagr_time_scheme->interpol_field > 0
-              && extra->grad_tempf != nullptr) {
-            cs_real_t *part_coord
-              = cs_lagr_particle_attr_get_ptr<cs_real_t>(particle, p_am,
-                                                         CS_LAGR_COORDS);
-            for (int i = 0; i < 3; i++)
-              loc_fluid_temp += extra->grad_tempf[c_id][i]
-                * (part_coord[i] - cell_cen[c_id][i]);
-          }
-          cs_lagr_particle_set_real(particle, p_am,
-                                    CS_LAGR_FLUID_TEMPERATURE,
-                                    loc_fluid_temp);
-          /* Set particle temperature to fluid one if require */
-          if (zis->temperature_profile < 1) {
-            cs_lagr_particle_set_real(particle, p_am,
-                                      CS_LAGR_TEMPERATURE,
-                                      loc_fluid_temp);
-          }
+        cs_real_t loc_fluid_temp = cval_t[c_id] + tscl_shift;
+        if (   cs_glob_lagr_time_scheme->interpol_field > 0
+            && extra->grad_tempf != nullptr) {
+          cs_real_t *part_coord
+            = cs_lagr_particle_attr_get_ptr<cs_real_t>(particle, p_am,
+                                                       CS_LAGR_COORDS);
+          for (int i = 0; i < 3; i++)
+            loc_fluid_temp += extra->grad_tempf[c_id][i]
+              * (part_coord[i] - cell_cen[c_id][i]);
         }
+        cs_lagr_particle_set_real(particle, p_am,
+                                  CS_LAGR_FLUID_TEMPERATURE,
+                                  loc_fluid_temp);
+        /* Set particle temperature to fluid one if required */
+        if (   zis->temperature_profile < 1
+            && cs_glob_lagr_specific_physics->itpvar > 0)
+          cs_lagr_particle_set_real(particle, p_am,
+                                    CS_LAGR_TEMPERATURE,
+                                    loc_fluid_temp);
 
+      }
+
+      if (   cs_glob_lagr_model->physical_model == CS_LAGR_PHYS_HEAT
+          && cs_glob_lagr_specific_physics->itpvar == 1) {
         /* constant temperature set, may be modified later by user function */
-        else if (zis->temperature_profile == 1)
+        if (zis->temperature_profile == 1)
           cs_lagr_particle_set_real(particle, p_am, CS_LAGR_TEMPERATURE,
                                     zis->temperature);
 

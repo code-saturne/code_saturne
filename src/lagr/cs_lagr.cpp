@@ -213,7 +213,7 @@ static cs_lagr_particle_counter_t _lagr_particle_counter
 
 /* lagr specific physics structure and associated pointer */
 static cs_lagr_specific_physics_t _cs_glob_lagr_specific_physics
-  = {0, 0, 0, 0, 0};
+  = {0, 0, 0, 0, 0., 0.};
 cs_lagr_specific_physics_t *cs_glob_lagr_specific_physics
   = &_cs_glob_lagr_specific_physics;
 

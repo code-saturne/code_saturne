@@ -242,6 +242,8 @@ cs_lagr_options_definition(int         is_restart,
 
   cs_glob_lagr_specific_physics->idpvar = 0;
 
+  cs_glob_lagr_specific_physics->solve_temperature_seen = 0;
+
   cs_glob_lagr_specific_physics->itpvar = 0;
 
   cs_glob_lagr_specific_physics->impvar = 0;
@@ -349,14 +351,24 @@ cs_lagr_options_definition(int         is_restart,
   cs_parameters_error_barrier();
 
   /* idpvar itpvar impvar
-   * Return couplinh only towards continuous phase */
+   * Return coupling only towards continuous phase */
 
   if (lagr_model->physical_model == CS_LAGR_PHYS_HEAT) {
+    /* If the particle temperature is computed so does the temperature seen */
+    if (cs_glob_lagr_specific_physics->itpvar > 0)
+      cs_glob_lagr_specific_physics->solve_temperature_seen = 1;
 
     cs_parameters_is_in_range_int(CS_ABORT_DELAYED,
                                   _("in Lagrangian module"),
                                   "cs_glob_lagr_specific_physics->idpvar",
                                   cs_glob_lagr_specific_physics->idpvar,
+                                  0, 2);
+    int resol_temp_seen = cs_glob_lagr_specific_physics->solve_temperature_seen;
+    cs_parameters_is_in_range_int(CS_ABORT_DELAYED,
+                                  _("in Lagrangian module"),
+                                  "cs_glob_lagr_specific_physics->"
+                                    "solve_temperature_seen",
+                                  resol_temp_seen,
                                   0, 2);
     cs_parameters_is_in_range_int(CS_ABORT_DELAYED,
                                   _("in Lagrangian module"),
@@ -382,6 +394,7 @@ cs_lagr_options_definition(int         is_restart,
   }
   else {
 
+    cs_glob_lagr_specific_physics->solve_temperature_seen = 0;
     cs_glob_lagr_specific_physics->itpvar = 0;
     cs_glob_lagr_specific_physics->impvar = 0;
     cs_glob_lagr_specific_physics->idpvar = 0;

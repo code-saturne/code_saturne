@@ -415,6 +415,13 @@ typedef struct {
 typedef struct {
 
   /*  activation (=1) or not (=0) of an evolution equation on the particle
+      temperature seen (in degrees Celsius).
+      Useful if \ref physical_model=1 and if there is a thermal scalar
+      associated with the continuous phase.
+  */
+  int   solve_temperature_seen;
+
+  /*  activation (=1) or not (=0) of an evolution equation on the particle
       temperature (in degrees Celsius).
       Useful if \ref physical_model=1 and if there is a thermal scalar
       associated with the continuous phase.

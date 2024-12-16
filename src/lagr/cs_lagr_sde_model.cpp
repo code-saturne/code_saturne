@@ -1930,7 +1930,7 @@ cs_lagr_sde_model(const cs_real_t  tempct[],
 
   if (   cs_glob_lagr_model->physical_model == CS_LAGR_PHYS_COAL
       || (   cs_glob_lagr_model->physical_model == CS_LAGR_PHYS_HEAT
-          && cs_glob_lagr_specific_physics->itpvar == 1))
+          && cs_glob_lagr_specific_physics->solve_temperature_seen == 1))
     _lagitf(&fluid_temp);
 
   /* Integration of particles temperature */

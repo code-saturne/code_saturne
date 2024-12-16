@@ -283,7 +283,8 @@ _log_setup_injection(cs_log_t  log)
                         zis->fouling_index);
 
         if (   cs_glob_lagr_model->physical_model == CS_LAGR_PHYS_HEAT
-            && cs_glob_lagr_specific_physics->itpvar == 1) {
+            && (    cs_glob_lagr_specific_physics->solve_temperature_seen == 1
+                 || cs_glob_lagr_specific_physics->itpvar == 1)) {
           if (zis->temperature_profile == 0)
             cs_log_printf(log,
                           _("    temperature from fluid\n"));
@@ -291,13 +292,15 @@ _log_setup_injection(cs_log_t  log)
             cs_log_printf(log,
                           _("    temperature: %g\n"),
                           zis->temperature);
-          cs_log_printf(log,
-                        _("    Cp: %g\n"),
-                        zis->cp);
-          if (extra->radiative_model > 0)
+          if (cs_glob_lagr_specific_physics->itpvar == 1) {
             cs_log_printf(log,
-                          _("    emissivity: %g\n"),
-                          zis->emissivity);
+                          _("    Cp: %g\n"),
+                          zis->cp);
+            if (extra->radiative_model > 0)
+              cs_log_printf(log,
+                            _("    emissivity: %g\n"),
+                            zis->emissivity);
+          }
         }
         else if (cs_glob_lagr_model->physical_model == CS_LAGR_PHYS_COAL) {
           cs_log_printf(log,
@@ -393,8 +396,12 @@ cs_lagr_log_setup(void)
       = {N_("    0 (no evolution equation on particle diameter)"),
          N_("    1 (solve the particle diameter evolution)")};
 
+    const char *solve_temperature_seen_value_str[]
+      = {N_("    0 (no equation on the particle fluid temperature)"),
+         N_("    1 (solve the particle fluid temperature)")};
+
     const char *itpvar_value_str[]
-      = {N_("    0 (equation on the particle temperature)"),
+      = {N_("    0 (no equation on the particle temperature)"),
          N_("    1 (solve the particle temperature)")};
 
     const char *impvar_value_str[]
@@ -404,6 +411,11 @@ cs_lagr_log_setup(void)
     cs_log_printf(CS_LOG_SETUP,
                   _("    idpvar:    %s\n"),
                   _(idpvar_value_str[cs_glob_lagr_specific_physics->idpvar]));
+
+    int temp_seen_id = cs_glob_lagr_specific_physics->solve_temperature_seen;
+    cs_log_printf(CS_LOG_SETUP,
+                  _("    solve_temperature_seen:    %s\n"),
+                  _(solve_temperature_seen_value_str[temp_seen_id]));
 
     cs_log_printf(CS_LOG_SETUP,
                   _("    itpvar:    %s\n"),

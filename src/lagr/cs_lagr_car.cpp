@@ -859,9 +859,12 @@ cs_lagr_car(int              iprev,
   if (    (    cs_glob_lagr_model->physical_model == CS_LAGR_PHYS_COAL
             || cs_glob_lagr_model->physical_model == CS_LAGR_PHYS_CTWR
             || (   cs_glob_lagr_model->physical_model == CS_LAGR_PHYS_HEAT
-                && cs_glob_lagr_specific_physics->itpvar == 1))
+                && cs_glob_lagr_specific_physics->solve_temperature_seen == 1))
        && cs_field_by_name_try("thermal_expansion") != nullptr
+       && cs_field_by_name("thermal_expansion") != nullptr
+       && cs_glob_velocity_pressure_model->idilat == 0
        && cs_glob_lagr_model->cs_used == 1) {
+
     const cs_fluid_properties_t *phys_pro = cs_get_glob_fluid_properties();
     for (cs_lnum_t ip = 0; ip < p_set->n_particles; ip++) {
       cs_lnum_t      cell_id  = cs_lagr_particles_get_lnum(p_set, ip ,

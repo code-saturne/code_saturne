@@ -860,15 +860,17 @@ cs_lagr_particle_attr_initialize(void)
 
   if (lagr_model->physical_model == CS_LAGR_PHYS_HEAT) {
 
+    if (cs_glob_lagr_specific_physics->solve_temperature_seen == 1) {
+      attr_keys[CS_LAGR_FLUID_TEMPERATURE][0] = CS_LAGR_P_RVAR_TS;
+      attr_keys[CS_LAGR_FLUID_TEMPERATURE][1] = ++loc_count;
+    }
+
     if (cs_glob_lagr_specific_physics->itpvar == 1) {
 
       attr_keys[CS_LAGR_CP][1] = ++loc_count;
 
       attr_keys[CS_LAGR_TEMPERATURE][0] = CS_LAGR_P_RVAR_TS;
       attr_keys[CS_LAGR_TEMPERATURE][1] = ++loc_count;
-
-      attr_keys[CS_LAGR_FLUID_TEMPERATURE][0] = CS_LAGR_P_RVAR_TS;
-      attr_keys[CS_LAGR_FLUID_TEMPERATURE][1] = ++loc_count;
 
       if (extra->radiative_model > 0)
         attr_keys[CS_LAGR_EMISSIVITY][1] = ++loc_count;
