@@ -115,7 +115,7 @@ cs_user_extra_operations(cs_domain_t     *domain)
   {
     const cs_lnum_t n_b_faces = domain->mesh->n_b_faces;
     const cs_real_3_t *b_f_face_normal =
-      (cs_real_3_t *)domain->mesh_quantities->b_f_face_normal;
+      (cs_real_3_t *)domain->mesh_quantities->b_face_normal;
 
     cs_real_3_t total_b_p_forces = {0., 0., 0.};
 

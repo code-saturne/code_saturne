@@ -92,34 +92,24 @@ BEGIN_C_DECLS
 typedef struct {
 
   cs_real_t     *cell_cen;       /* Cell center coordinates  */
-  cs_real_t     *cell_f_cen;     /* Cell fluid center coordinates  */
   cs_real_t     *cell_s_cen;     /* Cell solid center coordinates  */
   cs_real_t     *cell_vol;       /* Cell volume */
-  cs_real_t     *cell_f_vol;     /* Cell fluid volume */
 
   cs_real_t     *i_face_normal;  /* Surface normal of interior faces.
                                     (L2 norm equals area of the face) */
   cs_real_t     *b_face_normal;  /* Surface normal of border faces.
-                                    (L2 norm equals area of the face) */
-  cs_real_t     *i_f_face_normal;/* Fluid surface normal of interior faces.
-                                    (L2 norm equals area of the face) */
-  cs_real_t     *b_f_face_normal;/* Fluid surface normal of border faces.
                                     (L2 norm equals area of the face) */
   cs_real_t     *c_w_face_normal;/* Solid surface normal immersed in the cells.
                                     (L2 norm equals area of the face) */
   cs_real_t     *i_face_cog;     /* Center of gravity of interior faces */
   cs_real_t     *b_face_cog;     /* Center of gravity of border faces */
 
-  cs_real_t     *i_f_face_cog;   /* Center of gravity of fluid interior faces */
-  cs_real_t     *b_f_face_cog;   /* Center of gravity of fluid border faces */
   cs_real_t     *c_w_face_cog;   /* Center of gravity of solid face
                                     immersed in the cells */
 
   cs_real_t     *i_face_surf;    /* Surface of interior faces. */
   cs_real_t     *b_face_surf;    /* Surface of boundary faces. */
 
-  cs_real_t     *i_f_face_surf;  /* Fluid surface of interior faces. */
-  cs_real_t     *b_f_face_surf;  /* Fluid surface of boundary faces. */
   cs_real_t     *c_w_face_surf;  /* Solid surface of cells. */
 
   cs_nreal_3_t  *i_face_u_normal;  /* Unit normal of interior faces. */
@@ -142,16 +132,10 @@ typedef struct {
                                     and the solid face */
 
   cs_real_t     *weight;         /* Interior faces weighting factor */
-  cs_real_t     *i_f_weight;     /* Interior faces weighting factor
-                                    with new cell center of gravity */
 
   cs_real_t      min_vol;        /* Minimum cell volume */
   cs_real_t      max_vol;        /* Maximum cell volume */
   cs_real_t      tot_vol;        /* Total volume */
-
-  cs_real_t      min_f_vol;      /* Minimum cell volume */
-  cs_real_t      max_f_vol;      /* Maximum cell volume */
-  cs_real_t      tot_f_vol;      /* Total volume */
 
   cs_real_t     *corr_grad_lin_det; /* Determinant of geometrical matrix
                                        linear gradient correction */
@@ -174,7 +158,12 @@ typedef struct {
 
 /* Pointer to mesh quantities structure associated to the main mesh */
 
-extern cs_mesh_quantities_t  *cs_glob_mesh_quantities;
+extern cs_mesh_quantities_t  *cs_glob_mesh_quantities_g; /*Pointer associated
+                                                           with geometrical quantities*/
+extern cs_mesh_quantities_t  *cs_glob_mesh_quantities_f;   /*Pointer associated
+                                                           with the fluid quantities*/
+extern cs_mesh_quantities_t  *cs_glob_mesh_quantities;   /*Pointer associated
+                                                           with either*/
 
 /* Flag (mask) to activate bad cells correction */
 extern unsigned cs_glob_mesh_quantities_flag;

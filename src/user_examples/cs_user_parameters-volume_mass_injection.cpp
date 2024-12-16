@@ -111,7 +111,7 @@ _define_injection(cs_real_t           time,
   if (f == CS_F_(p)) {
 
     const cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
-    const cs_real_t *cell_f_vol = mq->cell_f_vol;
+    const cs_real_t *cell_f_vol = mq->cell_vol;
 
     for (cs_lnum_t i = 0; i < n_elts; i++) {
       res[i] = xgamma;

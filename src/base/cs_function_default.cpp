@@ -34,6 +34,7 @@
 
 #include <assert.h>
 #include <ctype.h>
+#include <float.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -1261,7 +1262,7 @@ cs_function_boundary_stress(int               location_id,
   if (elt_ids != nullptr) {
     for (cs_lnum_t i = 0; i < n_elts; i++) {
       cs_lnum_t e_id = elt_ids[i];
-      cs_real_t s_mult = 1./b_face_surf[e_id];
+      cs_real_t s_mult = 1./CS_MAX(b_face_surf[e_id], DBL_MIN);
       for (cs_lnum_t j = 0; j < 3; j++)
         stress[i][j] = b_forces[e_id][j] * s_mult;
     }

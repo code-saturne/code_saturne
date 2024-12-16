@@ -728,8 +728,8 @@ cs_fan_compute_force(const cs_mesh_quantities_t  *mesh_quantities,
   cs_real_t  f_rot[3];
 
   const cs_real_3_t *restrict cell_cen
-    = (const cs_real_3_t *restrict)mesh_quantities->cell_cen;
-  const cs_real_t  *cell_f_vol = mesh_quantities->cell_f_vol;
+    = (const cs_real_3_t *restrict)cs_glob_mesh_quantities_g->cell_cen;
+  const cs_real_t  *cell_f_vol = mesh_quantities->cell_vol;
   const cs_real_t  pi = 4.*atan(1.);
 
   /* Compute the force induced by fans */

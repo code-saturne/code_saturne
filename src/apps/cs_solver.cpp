@@ -262,7 +262,9 @@ _run(void)
   cs_mesh_location_initialize();
   cs_glob_mesh = cs_mesh_create();
   cs_glob_mesh_builder = cs_mesh_builder_create();
-  cs_glob_mesh_quantities = cs_mesh_quantities_create();
+  cs_glob_mesh_quantities_f = nullptr;
+  cs_glob_mesh_quantities_g = cs_mesh_quantities_create();
+  cs_glob_mesh_quantities = cs_glob_mesh_quantities_g;
   cs_boundary_zone_initialize();
   cs_volume_zone_initialize();
 
@@ -674,7 +676,8 @@ _run(void)
   cs_boundary_zone_finalize();
   cs_volume_zone_finalize();
   cs_mesh_location_finalize();
-  cs_mesh_quantities_destroy(cs_glob_mesh_quantities);
+  cs_mesh_quantities_destroy(cs_glob_mesh_quantities_g);
+
   cs_mesh_destroy(cs_glob_mesh);
 
   /* Free parameters tree info */

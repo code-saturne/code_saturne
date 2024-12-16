@@ -137,7 +137,7 @@ cs_lagr_coupling(const cs_real_t  **taup,
 
   cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
 
-  cs_real_t *cell_f_vol = mq->cell_f_vol;
+  cs_real_t *cell_f_vol = mq->cell_vol;
 
   const int *restrict c_disable_flag = mq->c_disable_flag;
   cs_lnum_t has_dc = mq->has_disable_flag; /* Has cells disabled? */

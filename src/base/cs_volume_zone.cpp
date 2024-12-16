@@ -310,8 +310,8 @@ _volume_zone_compute_metadata(bool       mesh_modified,
    */
   if (z->time_varying || mesh_modified) {
 
-    cs_real_t *cell_vol   = cs_glob_mesh_quantities->cell_vol;
-    cs_real_t *cell_f_vol = cs_glob_mesh_quantities->cell_f_vol;
+    cs_real_t *cell_vol   = cs_glob_mesh_quantities_g->cell_vol;
+    cs_real_t *cell_f_vol = cs_glob_mesh_quantities->cell_vol;
     cs_real_3_t *cell_cen = (cs_real_3_t *)cs_glob_mesh_quantities->cell_cen;
 
     z->measure = 0.;
@@ -1074,10 +1074,10 @@ cs_volume_zone_print_info(void)
   bft_printf(" --- Information on volume zones\n");
 
   /* Cell volumes and fluid cell volume */
-  cs_real_t *cell_vol   = cs_glob_mesh_quantities->cell_vol;
-  cs_real_t *cell_f_vol = cs_glob_mesh_quantities->cell_f_vol;
-  cs_real_t *b_face_surf   = cs_glob_mesh_quantities->b_face_surf;
-  cs_real_t *b_f_face_surf = cs_glob_mesh_quantities->b_f_face_surf;
+  cs_real_t *cell_vol   = cs_glob_mesh_quantities_g->cell_vol;
+  cs_real_t *cell_f_vol = cs_glob_mesh_quantities->cell_vol;
+  cs_real_t *b_face_surf   = cs_glob_mesh_quantities_g->b_face_surf;
+  cs_real_t *b_f_face_surf = cs_glob_mesh_quantities->b_face_surf;
 
   for (int i = 0; i < _n_zones; i++) {
     cs_zone_t *z = _zones[i];

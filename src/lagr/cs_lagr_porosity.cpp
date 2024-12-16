@@ -108,6 +108,7 @@ cs_lagr_porosity(void)
 {
   const cs_mesh_t *mesh = cs_glob_mesh;
   const cs_mesh_quantities_t  *fvq = cs_glob_mesh_quantities;
+  const cs_mesh_quantities_t  *mq_g = cs_glob_mesh_quantities_g;
   const cs_lagr_model_t *lagr_model = cs_glob_lagr_model;
 
   cs_lagr_particle_set_t  *particles = cs_glob_lagr_particle_set;
@@ -132,7 +133,7 @@ cs_lagr_porosity(void)
     /* Internal face flagged as internal deposition */
     if (internal_conditions->i_face_zone_id[face_id] >= 0) {
       for (cs_lnum_t j = 0; j < 3; j++)
-        fvq->i_f_face_normal[3*face_id+j] = fvq->i_face_normal[3*face_id+j];
+        fvq->i_face_normal[3*face_id+j] = mq_g->i_face_normal[3*face_id+j];
     }
   }
 
@@ -171,22 +172,22 @@ cs_lagr_porosity(void)
       cs_lnum_t cell_id2 = mesh->i_face_cells[face_id][1];
       /* Remove from the particle area from fluid section */
       for (cs_lnum_t id = 0; id < 3; id++)
-        fvq->i_f_face_normal[3*face_id + id]
+        fvq->i_face_normal[3*face_id + id]
           -= (covered_surface[cell_id1] + covered_surface[cell_id2])
-             * fvq->i_face_normal[3*face_id + id]
+             * mq_g->i_face_normal[3*face_id + id]
              / fvq->i_face_surf[face_id];
 
       /* If S_fluid . S is negative, that means we removed too much surface
        * from fluid surface */
       cs_real_t temp
-        = cs_math_3_dot_product(fvq->i_f_face_normal + 3*face_id,
-                                fvq->i_face_normal + 3*face_id);
+        = cs_math_3_dot_product(fvq->i_face_normal + 3*face_id,
+                                mq_g->i_face_normal + 3*face_id);
       if (temp <= 0.) {
         for (cs_lnum_t j = 0; j < 3; j++)
-          fvq->i_f_face_normal[3*face_id+j] = 0.;
+          fvq->i_face_normal[3*face_id+j] = 0.;
       }
-      fvq->i_f_face_surf[face_id]
-        = cs_math_3_norm(fvq->i_f_face_normal + 3*face_id);
+      fvq->i_face_surf[face_id]
+        = cs_math_3_norm(fvq->i_face_normal + 3*face_id);
     }
   }
 

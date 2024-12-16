@@ -3574,7 +3574,7 @@ cs_gui_momentum_source_terms(const cs_real_3_t  *restrict vel,
                              cs_real_3_t        *restrict tsexp,
                              cs_real_33_t       *restrict tsimp)
 {
-  const cs_real_t *restrict cell_f_vol = cs_glob_mesh_quantities->cell_f_vol;
+  const cs_real_t *restrict cell_f_vol = cs_glob_mesh_quantities->cell_vol;
 
   double Su, Sv, Sw;
   double dSudu, dSudv, dSudw;
@@ -5520,7 +5520,7 @@ cs_gui_scalar_source_terms(cs_field_t        *f,
                            cs_real_t         *restrict tsexp,
                            cs_real_t         *restrict tsimp)
 {
-  const cs_real_t *restrict cell_f_vol = cs_glob_mesh_quantities->cell_f_vol;
+  const cs_real_t *restrict cell_f_vol = cs_glob_mesh_quantities->cell_vol;
   const cs_real_3_t *restrict cell_cen =
     (const cs_real_3_t *restrict)cs_glob_mesh_quantities->cell_cen;
 
@@ -5605,7 +5605,7 @@ cs_gui_thermal_source_terms(cs_field_t                 *f,
                             cs_real_t         *restrict tsimp)
 {
 
-  const cs_real_t *restrict cell_f_vol = cs_glob_mesh_quantities->cell_f_vol;
+  const cs_real_t *restrict cell_f_vol = cs_glob_mesh_quantities->cell_vol;
 
   const cs_real_3_t *restrict cell_cen =
     (const cs_real_3_t *restrict)cs_glob_mesh_quantities->cell_cen;

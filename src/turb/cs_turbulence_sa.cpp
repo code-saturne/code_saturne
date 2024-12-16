@@ -191,7 +191,7 @@ _src_terms(const cs_real_t    dt[],
   const cs_lnum_t n_b_faces = cs_glob_mesh->n_b_faces;
 
   const cs_real_t *b_dist = cs_glob_mesh_quantities->b_dist;
-  const cs_real_t *cell_f_vol = cs_glob_mesh_quantities->cell_f_vol;
+  const cs_real_t *cell_f_vol = cs_glob_mesh_quantities->cell_vol;
 
   const cs_real_t *w_dist = cs_field_by_name("wall_distance")->val;
   const cs_real_t *cvara_nusa = CS_F_(nusa)->val_pre;
@@ -416,7 +416,7 @@ cs_turbulence_sa(void)
   const cs_lnum_t n_b_faces = m->n_b_faces;
   const cs_lnum_t n_i_faces = m->n_i_faces;
 
-  const cs_real_t *cell_f_vol = fvq->cell_f_vol;
+  const cs_real_t *cell_f_vol = fvq->cell_vol;
 
   const cs_equation_param_t *eqp_nusa
     = cs_field_get_equation_param_const(CS_F_(nusa));

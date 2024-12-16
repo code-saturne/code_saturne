@@ -58,6 +58,15 @@ extern int cs_glob_porous_model;
  * Public function prototypes
  *============================================================================*/
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Map fluid mesh quantities
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_porous_map_mesh_quantites_f_and_compute(void);
+
 /*----------------------------------------------------------------------------
  * Compute fluid volumes and fluid surfaces in addition to cell volumes
  * and surfaces.

@@ -852,7 +852,7 @@ _sat_coupling_compute_data_at_cells
   }
   else {
     cs_real_t *cvar_rho = CS_F_(rho)->val;
-    cs_real_t *fluid_vol = cs_glob_mesh_quantities->cell_f_vol;
+    cs_real_t *fluid_vol = cs_glob_mesh_quantities->cell_vol;
     if (f->dim == 1) {
       for (cs_lnum_t e_id = 0; e_id < n_elts; e_id++) {
         cs_lnum_t c_id = elt_ids[e_id];
@@ -2685,7 +2685,7 @@ cs_sat_coupling_exchange_at_cells
 
       cs_real_t *cvar_rho = CS_F_(rho)->val;
       const cs_real_t one_ov_xtau = 1./(100.0 * cs_glob_time_step->dt_ref);
-      cs_real_t *cell_f_vol = cs_glob_mesh_quantities->cell_f_vol;
+      cs_real_t *cell_f_vol = cs_glob_mesh_quantities->cell_vol;
 
       /*  Compute source term (n_cells_loc contribution) */
       if (cpl->reverse == 0 && n_g_cells_loc > 0) {

@@ -127,9 +127,9 @@ _cf_div(cs_real_t div[])
   const cs_lnum_t *b_face_cells = mesh->b_face_cells;
   const cs_lnum_2_t *i_face_cells = (const cs_lnum_2_t *)mesh->i_face_cells;
   const cs_real_3_t *i_f_face_normal
-    = (const cs_real_3_t *)fvq->i_f_face_normal;
+    = (const cs_real_3_t *)fvq->i_face_normal;
   const cs_real_3_t *b_f_face_normal
-    = (const cs_real_3_t *)fvq->b_f_face_normal;
+    = (const cs_real_3_t *)fvq->b_face_normal;
 
   const int itytur = cs_glob_turb_model->itytur;
 
@@ -319,7 +319,7 @@ cs_cf_energy(int f_sc_id)
   const cs_real_t *b_dist = fvq->b_dist;
   const cs_real_3_t *cell_cen = (const cs_real_3_t *)fvq->cell_cen;
   const cs_real_3_t *i_face_cog = (const cs_real_3_t *)fvq->i_face_cog;
-  const cs_real_t *cell_f_vol = fvq->cell_f_vol;
+  const cs_real_t *cell_f_vol = fvq->cell_vol;
   const cs_rreal_3_t *restrict diipb = fvq->diipb;
   const cs_real_3_t *restrict dijpf = fvq->dijpf;
 

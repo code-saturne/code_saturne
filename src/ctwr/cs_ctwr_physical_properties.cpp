@@ -427,7 +427,7 @@ cs_ctwr_phyvar_update(cs_real_t  rho0,
 
   const int *bc_type = cs_glob_bc_type;
 
-  const cs_real_t *cell_f_vol = cs_glob_mesh_quantities->cell_f_vol;
+  const cs_real_t *cell_f_vol = cs_glob_mesh_quantities->cell_vol;
   cs_air_fluid_props_t *air_prop = cs_glob_air_props;
 
   cs_ctwr_option_t *ct_opt = cs_get_glob_ctwr_option();

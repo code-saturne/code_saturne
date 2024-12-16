@@ -182,7 +182,6 @@ void
 cs_time_stepping(void)
 {
   cs_mesh_t *m = cs_glob_mesh;
-  cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
 
   const cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
   cs_time_step_t *ts = cs_get_glob_time_step();
@@ -338,11 +337,8 @@ cs_time_stepping(void)
 
   cs_initialize_fields_stage_0();
 
-  if (cs_glob_porous_model >= 1) {
-    /* Make fluid surfaces of mesh quantity point to the created fields */
-    cs_porous_model_set_has_disable_flag(1);
-    cs_porous_model_init_fluid_quantities();
-  }
+  if (cs_glob_porous_model >= 1)
+    cs_porous_map_mesh_quantites_f_and_compute();
 
   /* Possible restart
      ---------------- */
@@ -419,6 +415,7 @@ cs_time_stepping(void)
       /* Save pre-process for restart */
       cs_porous_model_write();
       cs_porous_model_fluid_surfaces_preprocessing();
+
     }
     /* Note using porosity from scan: give the hand to the user */
     else if (cs_glob_porosity_ibm_opt->porosity_mode > 0) {
@@ -426,7 +423,7 @@ cs_time_stepping(void)
       cs_log_printf(CS_LOG_DEFAULT,
                     _(" Compute porosity field from immersed boundaries\n"));
 
-      cs_immersed_boundaries(m, mq);
+      cs_immersed_boundaries(m, cs_glob_mesh_quantities_f);
       cs_porous_model_fluid_surfaces_preprocessing();
     }
     else {
@@ -444,7 +441,7 @@ cs_time_stepping(void)
       }
     }
 
-    cs_mesh_quantities_fluid_vol_reductions(m, mq);
+    cs_mesh_quantities_fluid_vol_reductions(m, cs_glob_mesh_quantities_f);
   }
 
   /* Initialize wall condensation model */

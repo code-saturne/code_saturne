@@ -890,16 +890,16 @@ cs_vof_log_mass_budget(const cs_mesh_t             *m,
   const cs_lnum_2_t *i_face_cells = (const cs_lnum_2_t *)m->i_face_cells;
   const cs_lnum_t *b_face_cells = m->b_face_cells;
 
-  const cs_real_t *restrict cell_f_vol = mq->cell_f_vol;
+  const cs_real_t *restrict cell_f_vol = mq->cell_vol;
   const cs_real_3_t *restrict i_face_cog
     = (const cs_real_3_t *)mq->i_face_cog;
   const cs_real_3_t *restrict b_face_cog
     = (const cs_real_3_t *)mq->b_face_cog;
 
   const cs_real_3_t *restrict i_f_face_normal
-    = (const cs_real_3_t *)mq->i_f_face_normal;
+    = (const cs_real_3_t *)mq->i_face_normal;
   const cs_real_3_t *restrict b_f_face_normal
-    = (const cs_real_3_t *)mq->b_f_face_normal;
+    = (const cs_real_3_t *)mq->b_face_normal;
 
   const int kimasf = cs_field_key_id("inner_mass_flux_id");
   const int kbmasf = cs_field_key_id("boundary_mass_flux_id");
@@ -1571,7 +1571,7 @@ cs_vof_solve_void_fraction(int  iterns)
   const cs_lnum_t n_cells = mesh->n_cells;
   const cs_lnum_t n_i_faces = mesh->n_i_faces;
   const cs_lnum_t n_b_faces = mesh->n_b_faces;
-  const cs_real_t *cell_f_vol = fvq->cell_f_vol;
+  const cs_real_t *cell_f_vol = fvq->cell_vol;
 
   cs_real_t *dt = CS_F_(dt)->val;
 

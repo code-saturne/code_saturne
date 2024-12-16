@@ -585,7 +585,7 @@ _rij_echo(int              phase_id,
   const cs_lnum_t n_cells = cs_glob_mesh->n_cells;
   const cs_lnum_t n_cells_ext = cs_glob_mesh->n_cells_with_ghosts;
 
-  const cs_real_t *cell_f_vol = cs_glob_mesh_quantities->cell_f_vol;
+  const cs_real_t *cell_f_vol = cs_glob_mesh_quantities->cell_vol;
 
   cs_dispatch_context ctx;
 
@@ -742,11 +742,11 @@ _gravity_st_rij(const cs_field_t  *f_rij,
                 cs_real_6_t       *rhs)
 {
   const cs_mesh_t *m = cs_glob_mesh;
-  const cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
+  const cs_mesh_quantities_t *fvq = cs_glob_mesh_quantities;
   const cs_lnum_t n_cells = m->n_cells;
   const cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
 
-  const cs_real_t *cell_f_vol = mq->cell_f_vol;
+  const cs_real_t *cell_f_vol = fvq->cell_vol;
 
   const int coupled_components = cs_glob_turb_rans_model->irijco;
 
@@ -1081,7 +1081,7 @@ _pre_solve_lrr(const cs_field_t  *f_rij,
   const cs_lnum_t n_cells = m->n_cells;
   const cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
 
-  const cs_real_t *cell_f_vol = fvq->cell_f_vol;
+  const cs_real_t *cell_f_vol = fvq->cell_vol;
 
   cs_dispatch_context ctx;
 
@@ -1489,7 +1489,7 @@ _pre_solve_lrr_sg(const cs_field_t  *f_rij,
 
   cs_dispatch_context ctx;
 
-  const cs_real_t *cell_f_vol = fvq->cell_f_vol;
+  const cs_real_t *cell_f_vol = fvq->cell_vol;
 
   cs_field_t *f_eps = CS_F_(eps);
   cs_field_t *f_rho = CS_F_(rho);
@@ -1871,7 +1871,7 @@ _pre_solve_ssg(const cs_field_t  *f_rij,
   const cs_lnum_t n_cells = m->n_cells;
   const cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
 
-  const cs_real_t *cell_f_vol = fvq->cell_f_vol;
+  const cs_real_t *cell_f_vol = fvq->cell_vol;
 
   cs_dispatch_context ctx;
 
@@ -2459,7 +2459,7 @@ _solve_epsilon(int              phase_id,
 
   cs_dispatch_context ctx;
 
-  const cs_real_t *cell_f_vol = fvq->cell_f_vol;
+  const cs_real_t *cell_f_vol = fvq->cell_vol;
 
   cs_field_t *f_rij = CS_F_(rij);
   cs_field_t *f_eps = CS_F_(eps);
@@ -2943,7 +2943,7 @@ cs_turbulence_rij(int phase_id)
   }
 #endif
 
-  const cs_real_t *cell_f_vol = fvq->cell_f_vol;
+  const cs_real_t *cell_f_vol = fvq->cell_vol;
 
   cs_field_t *f_rij = CS_F_(rij);
   cs_field_t *f_eps = CS_F_(eps);
@@ -3577,7 +3577,7 @@ cs_turbulence_rij_solve_alpha(int        f_id,
   cs_dispatch_sum_type_t b_sum_type = ctx.get_parallel_for_b_faces_sum_type(m);
 
   const cs_real_t *distb = fvq->b_dist;
-  const cs_real_t *cell_f_vol = fvq->cell_f_vol;
+  const cs_real_t *cell_f_vol = fvq->cell_vol;
   const cs_lnum_t *b_face_cells = m->b_face_cells;
   const cs_lnum_2_t *i_face_cells = m->i_face_cells;
 

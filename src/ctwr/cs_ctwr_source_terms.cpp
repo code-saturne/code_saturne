@@ -626,7 +626,7 @@ cs_ctwr_volume_mass_injection_rain_dof_func(cs_lnum_t         n_elts,
   const cs_lnum_2_t *i_face_cells
     = (const cs_lnum_2_t *)(m->i_face_cells);
 
-  const cs_real_t *cell_f_vol = cs_glob_mesh_quantities->cell_f_vol;
+  const cs_real_t *cell_f_vol = cs_glob_mesh_quantities->cell_vol;
 
   const cs_ctwr_option_t *ct_opt = cs_get_glob_ctwr_option();
 
@@ -819,7 +819,7 @@ cs_ctwr_source_term(int              f_id,
     = (const cs_lnum_2_t *)(m->i_face_cells);
   const cs_lnum_t n_i_faces = m->n_i_faces;
 
-  const cs_real_t *cell_f_vol = cs_glob_mesh_quantities->cell_f_vol;
+  const cs_real_t *cell_f_vol = cs_glob_mesh_quantities->cell_vol;
 
   cs_fluid_properties_t *fp = cs_get_glob_fluid_properties();
   cs_air_fluid_props_t *air_prop = cs_glob_air_props;

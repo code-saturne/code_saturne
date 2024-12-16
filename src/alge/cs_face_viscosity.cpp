@@ -341,8 +341,8 @@ cs_face_viscosity(const cs_mesh_t               *m,
     = (const cs_lnum_t *)m->b_face_cells;
   const cs_real_t *restrict weight = fvq->weight;
   const cs_real_t *restrict i_dist = fvq->i_dist;
-  const cs_real_t *restrict i_f_face_surf = fvq->i_f_face_surf;
-  const cs_real_t *restrict b_f_face_surf = fvq->b_f_face_surf;
+  const cs_real_t *restrict i_f_face_surf = fvq->i_face_surf;
+  const cs_real_t *restrict b_f_face_surf = fvq->b_face_surf;
   const cs_lnum_t n_b_faces = m->n_b_faces;
   const cs_lnum_t n_i_faces = m->n_i_faces;
 
@@ -513,8 +513,8 @@ cs_face_anisotropic_viscosity_vector(const cs_mesh_t             *m,
     = (const cs_lnum_t *)m->b_face_cells;
   const cs_real_t *restrict weight = fvq->weight;
   const cs_real_t *restrict i_dist = fvq->i_dist;
-  const cs_real_t *restrict i_f_face_surf = fvq->i_f_face_surf;
-  const cs_real_t *restrict b_f_face_surf = fvq->b_f_face_surf;
+  const cs_real_t *restrict i_f_face_surf = fvq->i_face_surf;
+  const cs_real_t *restrict b_f_face_surf = fvq->b_face_surf;
   const cs_lnum_t n_b_faces = m->n_b_faces;
   const cs_lnum_t n_i_faces = m->n_i_faces;
 
@@ -734,6 +734,8 @@ cs_face_anisotropic_viscosity_scalar(const cs_mesh_t               *m,
 {
   const cs_halo_t  *halo = m->halo;
 
+  cs_mesh_quantities_t *mq_g = cs_glob_mesh_quantities_g;
+
   const cs_lnum_t n_cells = m->n_cells;
   const cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
 
@@ -741,24 +743,24 @@ cs_face_anisotropic_viscosity_scalar(const cs_mesh_t               *m,
     = (const cs_lnum_2_t *)m->i_face_cells;
   const cs_lnum_t *restrict b_face_cells
     = (const cs_lnum_t *)m->b_face_cells;
-  const cs_real_t *restrict weight = fvq->weight;
-  const cs_real_t *restrict i_dist = fvq->i_dist;
-  const cs_real_t *restrict b_dist = fvq->b_dist;
-  const cs_real_t *restrict b_f_face_surf = fvq->b_f_face_surf;
+  const cs_real_t *restrict weight = mq_g->weight;
+  const cs_real_t *restrict i_dist = mq_g->i_dist;
+  const cs_real_t *restrict b_dist = mq_g->b_dist;
+  const cs_real_t *restrict b_f_face_surf = mq_g->b_face_surf;
   const cs_real_3_t *restrict cell_cen
-    = (const cs_real_3_t *)fvq->cell_cen;
+    = (const cs_real_3_t *)mq_g->cell_cen;
   const cs_real_3_t *restrict i_face_normal
-    = (const cs_real_3_t *)fvq->i_face_normal;
+    = (const cs_real_3_t *)mq_g->i_face_normal;
   const cs_real_t *restrict i_face_surf
-    = (const cs_real_t *)fvq->i_face_surf;
+    = (const cs_real_t *)mq_g->i_face_surf;
   const cs_real_t *restrict i_f_face_surf
-    = (const cs_real_t *)fvq->i_f_face_surf;
+    = (const cs_real_t *)fvq->i_face_surf;
   const cs_real_3_t *restrict b_face_normal
-    = (const cs_real_3_t *)fvq->b_face_normal;
+    = (const cs_real_3_t *)mq_g->b_face_normal;
   const cs_real_3_t *restrict i_face_cog
-    = (const cs_real_3_t *)fvq->i_face_cog;
+    = (const cs_real_3_t *)mq_g->i_face_cog;
   const cs_real_3_t *restrict b_face_cog
-    = (const cs_real_3_t *)fvq->b_face_cog;
+    = (const cs_real_3_t *)mq_g->b_face_cog;
   const cs_lnum_t n_b_faces = m->n_b_faces;
   const cs_lnum_t n_i_faces = m->n_i_faces;
 

@@ -134,7 +134,7 @@ cs_turbulence_htles(void)
   const cs_turb_model_t *turb_model = cs_get_glob_turb_model();
 
   const cs_lnum_t n_cells = m->n_cells;
-  const cs_real_t *cell_f_vol = fvq->cell_f_vol;
+  const cs_real_t *cell_f_vol = fvq->cell_vol;
 
   cs_real_t *crom       = (cs_real_t *)CS_F_(rho)->val;
   cs_real_t *cpro_pcvlo = (cs_real_t *)CS_F_(mu)->val;

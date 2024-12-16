@@ -82,27 +82,28 @@ cs_user_porosity(cs_domain_t   *domain)
   /*!< [init_poro_mq] */
   cs_mesh_t *m = domain->mesh;
   cs_mesh_quantities_t *mq = domain->mesh_quantities;
+  cs_mesh_quantities_t *mq_g = cs_glob_mesh_quantities_g;
 
   const cs_lnum_2_t *i_face_cells
     = (const cs_lnum_2_t *)m->i_face_cells;
 
   const cs_real_3_t *restrict i_face_cog
-    = (const cs_real_3_t *)mq->i_face_cog;
+    = (const cs_real_3_t *)mq_g->i_face_cog;
   const cs_real_3_t *restrict b_face_cog
-    = (const cs_real_3_t *)mq->b_face_cog;
+    = (const cs_real_3_t *)mq_g->b_face_cog;
   const cs_real_3_t *restrict cell_cen
-    = (const cs_real_3_t *)mq->cell_cen;
+    = (const cs_real_3_t *)mq_g->cell_cen;
   const cs_real_3_t *restrict i_face_normal
-    = (const cs_real_3_t *)mq->i_face_normal;
+    = (const cs_real_3_t *)mq_g->i_face_normal;
   cs_real_3_t *restrict i_f_face_normal
-    = (cs_real_3_t *)mq->i_f_face_normal;
+    = (cs_real_3_t *)mq->i_face_normal;
   const cs_real_3_t *restrict b_face_normal
-    = (const cs_real_3_t *)mq->b_face_normal;
+    = (const cs_real_3_t *)mq_g->b_face_normal;
   cs_real_3_t *restrict b_f_face_normal
-    = (cs_real_3_t *)mq->b_f_face_normal;
+    = (cs_real_3_t *)mq->b_face_normal;
 
-  const cs_real_t *i_f_face_surf = mq->i_f_face_surf;
-  const cs_real_t *i_face_surf = mq->i_face_surf;
+  const cs_real_t *i_f_face_surf = mq->i_face_surf;
+  const cs_real_t *i_face_surf = mq_g->i_face_surf;
   /*!< [init_poro_mq] */
 
   /* Get the cell porosity field value */
@@ -145,7 +146,7 @@ cs_user_porosity(cs_domain_t   *domain)
     for (int i = 0; i < 3; i++)
       i_f_face_normal[face_id][i] = face_porosity * i_face_normal[face_id][i];
 
-    mq->i_f_face_surf[face_id] = cs_math_3_norm(i_f_face_normal[face_id]);
+    mq->i_face_surf[face_id] = cs_math_3_norm(i_f_face_normal[face_id]);
 
   }
   /*!< [set_poro_i_faces_1] */
@@ -164,7 +165,7 @@ cs_user_porosity(cs_domain_t   *domain)
     for (int i = 0; i < 3; i++)
       b_f_face_normal[face_id][i] = face_porosity * b_face_normal[face_id][i];
 
-    mq->b_f_face_surf[face_id] = cs_math_3_norm(b_f_face_normal[face_id]);
+    mq->b_face_surf[face_id] = cs_math_3_norm(b_f_face_normal[face_id]);
 
   }
   /*!< [set_poro_b_faces_1] */

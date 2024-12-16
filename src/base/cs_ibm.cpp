@@ -2089,8 +2089,9 @@ _compute_cell_cog(const cs_mesh_t            *mesh,
 
   cs_real_t *cell_vol = mesh_quantities->cell_vol;
 
-  const cs_real_3_t *cell_cen = (const cs_real_3_t *)mesh_quantities->cell_cen;
-  cs_real_3_t *cell_f_cen = (cs_real_3_t *)mesh_quantities->cell_f_cen;
+  const cs_real_3_t *cell_cen
+    = (const cs_real_3_t *)cs_glob_mesh_quantities_g->cell_cen;
+  cs_real_3_t *cell_f_cen = (cs_real_3_t *)mesh_quantities->cell_cen;
   cs_real_3_t *cell_s_cen = (cs_real_3_t *)mesh_quantities->cell_s_cen;
   const cs_real_3_t *i_face_cog
     = (const cs_real_3_t *)mesh_quantities->i_face_cog;
@@ -2785,8 +2786,8 @@ _compute_solid_porosity(const cs_mesh_t            *mesh,
   cs_lnum_t n_cells     = mesh->n_cells;
   cs_lnum_t n_cells_ext = mesh->n_cells_with_ghosts;
 
-  const cs_real_3_t *cell_cen = (const cs_real_3_t *)mesh_quantities->cell_cen;
-  cs_real_3_t *cell_f_cen = (cs_real_3_t *)mesh_quantities->cell_f_cen;
+  const cs_real_3_t *cell_cen = (const cs_real_3_t *)cs_glob_mesh_quantities_g->cell_cen;
+  cs_real_3_t *cell_f_cen = (cs_real_3_t *)mesh_quantities->cell_cen;
 
   cs_array_real_fill_zero(n_cells_ext, cs_ibm->solid_porosity);
 
@@ -2994,9 +2995,9 @@ _compute_solid_surface_cog(const cs_mesh_t            *mesh,
   const cs_lnum_t *c2f = ma->cell_i_faces;
 
   const cs_real_3_t *cell_cen
-    = (const cs_real_3_t *)mesh_quantities->cell_cen;
+    = (const cs_real_3_t *)cs_glob_mesh_quantities_g->cell_cen;
   const cs_real_3_t *cell_f_cen
-    = (const cs_real_3_t *)mesh_quantities->cell_f_cen;
+    = (const cs_real_3_t *)mesh_quantities->cell_cen;
   cs_real_3_t *cell_s_cen = (cs_real_3_t *)mesh_quantities->cell_s_cen;
   const cs_real_3_t *i_face_cog
     = (const cs_real_3_t *)mesh_quantities->i_face_cog;
@@ -3015,7 +3016,7 @@ _compute_solid_surface_cog(const cs_mesh_t            *mesh,
   cs_real_3_t *c_w_face_cog
     = (cs_real_3_t *)mesh_quantities->c_w_face_cog;
   cs_real_t *c_w_dist_inv = (cs_real_t *)mesh_quantities->c_w_dist_inv;
-  cs_real_t *i_f_weight = mesh_quantities->i_f_weight;
+  cs_real_t *i_f_weight = mesh_quantities->weight;
 
   const cs_lnum_t *i_face_vtx_idx = mesh->i_face_vtx_idx;
   const cs_lnum_t *i_face_vtx = mesh->i_face_vtx_lst;
@@ -3839,9 +3840,9 @@ void cs_immersed_boundaries(const cs_mesh_t *mesh,
   cs_lnum_t n_cells_ext = mesh->n_cells_with_ghosts;
 
   const cs_real_3_t *cell_f_cen
-    = (const cs_real_3_t *)mesh_quantities->cell_f_cen;
-  cs_real_t *cell_vol = mesh_quantities->cell_vol;
-  cs_real_t *cell_f_vol = mesh_quantities->cell_f_vol;
+    = (const cs_real_3_t *)mesh_quantities->cell_cen;
+  cs_real_t *cell_vol = cs_glob_mesh_quantities_g->cell_vol;
+  cs_real_t *cell_f_vol = mesh_quantities->cell_vol;
 
   static int ipass = 0;
   ipass++;

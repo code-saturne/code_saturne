@@ -103,7 +103,7 @@ void
 cs_coal_mass_transfer(void)
 {
   const cs_lnum_t n_cells = cs_glob_mesh->n_cells;
-  const cs_real_t *volume = cs_glob_mesh_quantities->cell_f_vol;
+  const cs_real_t *volume = cs_glob_mesh_quantities->cell_vol;
 
   const cs_real_t pi = cs_math_pi;
   const cs_real_t r = cs_physical_constants_r;

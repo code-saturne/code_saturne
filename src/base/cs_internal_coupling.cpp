@@ -1094,7 +1094,7 @@ cs_internal_coupling_initialize_scalar_gradient(
 
   const cs_mesh_quantities_t* fvq = cs_glob_mesh_quantities;
   const cs_real_3_t *restrict b_f_face_normal
-    = (const cs_real_3_t *)fvq->b_f_face_normal;
+    = (const cs_real_3_t *)fvq->b_face_normal;
 
   /* Exchange pvar */
   cs_real_t *pvar_local = nullptr;
@@ -1175,7 +1175,7 @@ cs_internal_coupling_initialize_vector_gradient(
 
   const cs_mesh_quantities_t* fvq = cs_glob_mesh_quantities;
   const cs_real_3_t *restrict b_f_face_normal
-    = (const cs_real_3_t *)fvq->b_f_face_normal;
+    = (const cs_real_3_t *)fvq->b_face_normal;
 
   /* Exchange pvar */
   cs_real_3_t *pvar_local = nullptr;
@@ -1261,7 +1261,7 @@ cs_internal_coupling_initialize_tensor_gradient(
 
   const cs_mesh_quantities_t* fvq = cs_glob_mesh_quantities;
   const cs_real_3_t *restrict b_f_face_normal
-    = (const cs_real_3_t *)fvq->b_f_face_normal;
+    = (const cs_real_3_t *)fvq->b_face_normal;
 
   /* Exchange pvar */
   cs_real_6_t *pvar_local = nullptr;
@@ -1351,7 +1351,7 @@ cs_internal_coupling_iterative_scalar_gradient(
 
   const cs_mesh_quantities_t* fvq = cs_glob_mesh_quantities;
   const cs_real_3_t *restrict b_f_face_normal
-    = (const cs_real_3_t *)fvq->b_f_face_normal;
+    = (const cs_real_3_t *)fvq->b_face_normal;
 
   /* Exchange grad and pvar */
   cs_real_3_t *grad_local = nullptr;
@@ -1455,7 +1455,7 @@ cs_internal_coupling_iterative_vector_gradient(
 
   const cs_mesh_quantities_t* fvq = cs_glob_mesh_quantities;
   const cs_real_3_t *restrict b_f_face_normal
-    = (const cs_real_3_t *)fvq->b_f_face_normal;
+    = (const cs_real_3_t *)fvq->b_face_normal;
 
   /* Exchange grad and pvar */
   cs_real_33_t *grad_local = nullptr;
@@ -1563,7 +1563,7 @@ cs_internal_coupling_iterative_tensor_gradient(
 
   const cs_mesh_quantities_t* fvq = cs_glob_mesh_quantities;
   const cs_real_3_t *restrict b_f_face_normal
-    = (const cs_real_3_t *)fvq->b_f_face_normal;
+    = (const cs_real_3_t *)fvq->b_face_normal;
 
   /* Exchange grad and pvar */
   cs_real_63_t *grad_local = nullptr;
@@ -1661,7 +1661,7 @@ cs_internal_coupling_reconstruct_scalar_gradient
 
   const cs_mesh_quantities_t* fvq = cs_glob_mesh_quantities;
   const cs_real_3_t *restrict b_f_face_normal
-    = (const cs_real_3_t *)fvq->b_f_face_normal;
+    = (const cs_real_3_t *)fvq->b_face_normal;
 
   /* Exchange r_grad */
 
@@ -1720,7 +1720,7 @@ cs_internal_coupling_reconstruct_vector_gradient(
 
   const cs_mesh_quantities_t* fvq = cs_glob_mesh_quantities;
   const cs_real_3_t *restrict b_f_face_normal
-    = (const cs_real_3_t *)fvq->b_f_face_normal;
+    = (const cs_real_3_t *)fvq->b_face_normal;
 
   /* Exchange r_grad */
 
@@ -1781,7 +1781,7 @@ cs_internal_coupling_reconstruct_tensor_gradient(
 
   const cs_mesh_quantities_t* fvq = cs_glob_mesh_quantities;
   const cs_real_3_t *restrict b_f_face_normal
-    = (const cs_real_3_t *)fvq->b_f_face_normal;
+    = (const cs_real_3_t *)fvq->b_face_normal;
 
   /* Exchange r_grad */
 
@@ -1837,7 +1837,7 @@ cs_internal_coupling_it_cocg_contribution(const cs_internal_coupling_t  *cpl,
     = (const cs_lnum_t *)m->b_face_cells;
   const cs_mesh_quantities_t* fvq = cs_glob_mesh_quantities;
   const cs_real_3_t *restrict b_f_face_normal
-    = (const cs_real_3_t *)fvq->b_f_face_normal;
+    = (const cs_real_3_t *)fvq->b_face_normal;
   const cs_real_t *restrict cell_vol = fvq->cell_vol;
 
   for (cs_lnum_t ii = 0; ii < n_local; ii++) {

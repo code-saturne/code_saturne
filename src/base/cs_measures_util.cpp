@@ -252,7 +252,7 @@ cs_interpol_field_on_grid(cs_interpol_grid_t *ig,
   const cs_mesh_t *mesh = cs_glob_mesh;
   const cs_mesh_quantities_t *mesh_quantities = cs_glob_mesh_quantities;
   const cs_real_3_t *cell_cen = (cs_real_3_t *)(mesh_quantities->cell_cen);
-  const cs_real_t *cell_f_vol = mesh_quantities->cell_f_vol;
+  const cs_real_t *cell_f_vol = mesh_quantities->cell_vol;
   cs_lnum_t n_elts = mesh->n_cells;
 
   const cs_real_3_t *g_coords = (cs_real_3_t *)(ig->coords);

@@ -310,7 +310,7 @@ _inlet_sum(const cs_field_t            *f,
 {
   const int dim = f->dim;
   const cs_lnum_t n_b_faces = m->n_b_faces;
-  const cs_real_t *f_surf = mq->b_f_face_surf;
+  const cs_real_t *f_surf = mq->b_face_surf;
 
   /* Get field's variable id */
 
@@ -1071,7 +1071,7 @@ _compute_mass_flow_rate(const cs_zone_t  *zone)
   const cs_lnum_t *elt_ids = zone->elt_ids;
 
   const cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
-  const cs_real_3_t *f_n = (const cs_real_3_t *)mq->b_f_face_normal;
+  const cs_real_3_t *f_n = (const cs_real_3_t *)mq->b_face_normal;
 
   cs_real_t *sf;
   BFT_MALLOC(sf, n_elts, cs_real_t);
@@ -1149,7 +1149,7 @@ _scale_vel_mass_flow_rate(int               location_id,
   if (fabs(q_m) > 0) {
 
     const cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
-    const cs_real_3_t *f_n = (const cs_real_3_t *)mq->b_f_face_normal;
+    const cs_real_3_t *f_n = (const cs_real_3_t *)mq->b_face_normal;
 
     cs_real_t *sf;
     BFT_MALLOC(sf, n_elts, cs_real_t);
@@ -1254,7 +1254,7 @@ _scale_vel_volume_flow_rate(int               location_id,
     r_step = 0;
 
   const cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
-  const cs_real_3_t *f_n = (const cs_real_3_t *)mq->b_f_face_normal;
+  const cs_real_3_t *f_n = (const cs_real_3_t *)mq->b_face_normal;
 
   cs_real_t *sf;
   BFT_MALLOC(sf, n_elts, cs_real_t);

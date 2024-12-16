@@ -121,7 +121,7 @@ _coal_fp2st(const cs_field_t  *fld_scal,
 {
   const cs_lnum_t n_cells = cs_glob_mesh->n_cells;
   const cs_lnum_t n_cells_ext = cs_glob_mesh->n_cells_with_ghosts;
-  const cs_real_t *cell_f_vol = cs_glob_mesh_quantities->cell_f_vol;
+  const cs_real_t *cell_f_vol = cs_glob_mesh_quantities->cell_vol;
 
   const cs_coal_model_t *cm = cs_glob_coal_model;
 
@@ -393,7 +393,7 @@ cs_coal_source_terms_scalar(int        fld_id,
                             cs_real_t  rovsdt[])
 {
   const cs_lnum_t n_cells = cs_glob_mesh->n_cells;
-  const cs_real_t *cell_f_vol = cs_glob_mesh_quantities->cell_f_vol;
+  const cs_real_t *cell_f_vol = cs_glob_mesh_quantities->cell_vol;
 
   const cs_coal_model_t *cm = cs_glob_coal_model;
 

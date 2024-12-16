@@ -318,7 +318,7 @@ cs_gradient_boundary_iprime_lsq_s(const cs_mesh_t               *m,
     = (const cs_lnum_t *) ma->cell_b_faces;
 
   const cs_real_3_t *restrict cell_cen
-    = (const cs_real_3_t *)fvq->cell_f_cen;
+    = (const cs_real_3_t *)fvq->cell_cen;
 
   const cs_nreal_3_t *restrict b_face_u_normal = fvq->b_face_u_normal;
   const cs_real_t *restrict b_dist
@@ -594,7 +594,7 @@ cs_gradient_boundary_iprime_lsq_s_ani(const cs_mesh_t               *m,
     = (const cs_lnum_t *) ma->cell_b_faces;
 
   const cs_real_3_t *restrict cell_cen
-    = (const cs_real_3_t *)fvq->cell_f_cen;
+    = (const cs_real_3_t *)fvq->cell_cen;
 
   const cs_nreal_3_t *restrict b_face_u_normal = fvq->b_face_u_normal;
   const cs_real_t *restrict b_dist = fvq->b_dist;

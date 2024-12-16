@@ -170,7 +170,7 @@ _cs_mass_flux_prediction(const cs_mesh_t       *m,
   const cs_lnum_t n_b_faces = m->n_b_faces;
   const cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
 
-  const cs_real_t *volume = mq->cell_f_vol;
+  const cs_real_t *volume = mq->cell_vol;
 
   int idtvar = cs_glob_time_step_options->idtvar;
 
@@ -547,7 +547,7 @@ _st_exp_head_loss(cs_lnum_t          ncepdc,
                   cs_real_3_t        trav[])
 {
   const cs_real_t *crom = CS_F_(rho)->val;
-  const cs_real_t *cell_f_vol = cs_glob_mesh_quantities->cell_f_vol;
+  const cs_real_t *cell_f_vol = cs_glob_mesh_quantities->cell_vol;
 
   cs_dispatch_context ctx;
 
@@ -937,7 +937,7 @@ _div_rij(const cs_mesh_t     *m,
   /* For post processing */
   int has_disable_flag = mq->has_disable_flag;
   int *c_disable_flag = mq->c_disable_flag;
-  const cs_real_t *cell_f_vol = mq->cell_f_vol;
+  const cs_real_t *cell_f_vol = mq->cell_vol;
 
   ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
     cs_real_t dvol = 0;
@@ -1141,7 +1141,7 @@ _ext_forces(const cs_mesh_t                *m,
             cs_real_3_t                    dfrcxt[])
 {
   const cs_lnum_t n_cells = m->n_cells;
-  const cs_real_t *cell_f_vol = mq->cell_f_vol;
+  const cs_real_t *cell_f_vol = mq->cell_vol;
   /* External forces at previous time step:
    * frcxt was initialized to 0
    * NB: frcxt was used in cs_boundary_conditions_type, and will be updated
@@ -1534,7 +1534,7 @@ _update_fluid_vel(const cs_mesh_t             *m,
     /* vel = 1 / (rho Vol) SUM mass_flux (X_f - X_i) */
     if (vof_param->vof_model == 0) {
 
-      const cs_real_t *cell_f_vol = mq->cell_f_vol;
+      const cs_real_t *cell_f_vol = mq->cell_vol;
 
       ctx.parallel_for_i_faces(m, [=] CS_F_HOST_DEVICE (cs_lnum_t  face_id) {
         const cs_lnum_t c_id1 = i_face_cells[face_id][0];
@@ -1588,7 +1588,7 @@ _update_fluid_vel(const cs_mesh_t             *m,
 
     else { /* if (vof_param->vof_model > 1) */
 
-      const cs_real_t *cell_f_vol = mq->cell_f_vol;
+      const cs_real_t *cell_f_vol = mq->cell_vol;
 
       /* Id of the volume flux */
       const int kimasf = cs_field_key_id("inner_mass_flux_id");
@@ -1699,6 +1699,8 @@ _log_norm(const cs_mesh_t                *m,
           const cs_real_t                 cvar_pr[],
           const cs_real_3_t               cvar_vel[])
 {
+  cs_mesh_quantities_t *mq_g = cs_glob_mesh_quantities_g;
+
   const cs_lnum_t n_cells = m->n_cells;
   const cs_lnum_t n_i_faces = m->n_i_faces;
   const cs_lnum_t n_b_faces = m->n_b_faces;
@@ -1708,11 +1710,11 @@ _log_norm(const cs_mesh_t                *m,
   const cs_lnum_t *restrict b_face_cells
     = (const cs_lnum_t *)m->b_face_cells;
 
-  const cs_real_3_t *cell_cen = (const cs_real_3_t *)mq->cell_cen;
-  const cs_real_t *i_face_surf = mq->i_face_surf;
-  const cs_real_t *i_f_face_surf = mq->i_f_face_surf;
-  const cs_real_t *b_face_surf = mq->b_face_surf;
-  const cs_real_t *b_f_face_surf = mq->b_f_face_surf;
+  const cs_real_3_t *cell_cen = (const cs_real_3_t *)mq_g->cell_cen;
+  const cs_real_t *i_face_surf = mq_g->i_face_surf;
+  const cs_real_t *i_f_face_surf = mq->i_face_surf;
+  const cs_real_t *b_face_surf = mq_g->b_face_surf;
+  const cs_real_t *b_f_face_surf = mq->b_face_surf;
 
   cs_log_printf(CS_LOG_DEFAULT,
                 _(" AFTER CONTINUITY PRESSURE\n"
@@ -1840,12 +1842,12 @@ _log_norm(const cs_mesh_t                *m,
       else {
       /* Deal with null fluid section */
         rnorm = 0;
-        if (mq->b_f_face_surf[face_id]/mq->b_face_surf[face_id] > cs_math_epzero)
-          rnorm = bmasfl[face_id]/(mq->b_f_face_surf[face_id]*brom[face_id]);
+        if (mq->b_face_surf[face_id]/mq_g->b_face_surf[face_id] > cs_math_epzero)
+          rnorm = bmasfl[face_id]/(mq->b_face_surf[face_id]*brom[face_id]);
       }
     }
-    rnorma = fmax(rnorma, rnorm);
-    rnormi = fmin(rnormi, rnorm);
+        rnorma = fmax(rnorma, rnorm);
+        rnormi = fmin(rnormi, rnorm);
   }
   cs_parall_min(1, CS_REAL_TYPE, &rnormi);
   cs_parall_max(1, CS_REAL_TYPE, &rnorma);
@@ -1964,7 +1966,7 @@ _velocity_prediction(const cs_mesh_t             *m,
 
   const cs_lnum_t *b_face_cells = m->b_face_cells;
 
-  const cs_real_t *cell_f_vol = mq->cell_f_vol;
+  const cs_real_t *cell_f_vol = mq->cell_vol;
   const cs_rreal_3_t *restrict diipb = mq->diipb;
 
   const cs_real_3_t  *restrict b_face_normal
@@ -3750,7 +3752,7 @@ cs_solve_navier_stokes(const int        iterns,
 
   if (vp_param->nterup > 1) {
 
-    const cs_real_t *cell_f_vol = mq->cell_f_vol;
+    const cs_real_t *cell_f_vol = mq->cell_vol;
 
     CS_MALLOC_HD(uvwk, n_cells_ext, cs_real_3_t, cs_alloc_mode);
 
@@ -4525,7 +4527,7 @@ cs_solve_navier_stokes(const int        iterns,
 
   if (iescor != nullptr || iestot != nullptr) {
 
-    const cs_real_t *cell_f_vol = mq->cell_f_vol;
+    const cs_real_t *cell_f_vol = mq->cell_vol;
 
     cs_real_t *esflum = nullptr, *esflub = nullptr;
     CS_MALLOC_HD(esflum, n_i_faces, cs_real_t, cs_alloc_mode);
@@ -4637,7 +4639,7 @@ cs_solve_navier_stokes(const int        iterns,
     /* Convergence test on U/P inner iterations, icvrge is 1 if converged */
     *icvrge = 1;
 
-    const cs_real_t *cell_f_vol = mq->cell_f_vol;
+    const cs_real_t *cell_f_vol = mq->cell_vol;
 
     cs_real_t xnrtmp = 0;
 #   pragma omp parallel for reduction(+:xnrtmp) if(n_cells > CS_THR_MIN)

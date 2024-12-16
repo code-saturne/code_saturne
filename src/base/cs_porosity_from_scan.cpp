@@ -326,7 +326,9 @@ _prepare_porosity_from_scan(const cs_mesh_t             *m,
                             const cs_mesh_quantities_t  *mq) {
   char line[512];
 
-  cs_real_t *restrict cell_f_vol = mq->cell_f_vol;
+  cs_mesh_quantities_t *mq_g = cs_glob_mesh_quantities_g;
+
+  cs_real_t *restrict cell_f_vol = mq->cell_vol;
 
   int n_headers = _porosity_from_scan_opt.n_headers;
   const char *default_headers[] = {"X", "Y", "Z", "Intensity",
@@ -712,7 +714,7 @@ _prepare_porosity_from_scan(const cs_mesh_t             *m,
         f_nb_scan->val[c_id] += 1.;
         for (cs_lnum_t idim = 0; idim < 3; idim++) {
           cen_points[c_id*3+idim]
-            += (dist_coords[i*3 + idim] - mq->cell_cen[c_id*3+idim]);
+            += (dist_coords[i*3 + idim] - mq_g->cell_cen[c_id*3+idim]);
 
           cell_color[c_id*3+idim] += dist_colors[i*3 + idim];
         }
@@ -722,7 +724,7 @@ _prepare_porosity_from_scan(const cs_mesh_t             *m,
                                            n_points_dist,
                                            dist_loc,
                                            (const cs_real_t   *)f_nb_scan->val,
-                                           (const cs_real_3_t *)mq->cell_cen,
+                                           (const cs_real_3_t *)mq_g->cell_cen,
                                            (const cs_real_3_t *)dist_coords,
                                            mom_mat);
 
@@ -793,7 +795,7 @@ _prepare_porosity_from_scan(const cs_mesh_t             *m,
     if (f_nb_scan->val[c_id] > 0) {
       for (cs_lnum_t idim = 0; idim < 3; idim++) {
         cen_points[c_id*3+idim] /= f_nb_scan->val[c_id];
-        cen_points[c_id*3+idim] += mq->cell_cen[c_id*3+idim];
+        cen_points[c_id*3+idim] += mq_g->cell_cen[c_id*3+idim];
         cell_color[c_id*3+idim] /= f_nb_scan->val[c_id];
       }
     }
@@ -804,7 +806,7 @@ _prepare_porosity_from_scan(const cs_mesh_t             *m,
   BFT_FREE(file_names);
 
   /* Parallel synchronisation */
-  cs_halo_sync(m->halo, false, mq->cell_vol);
+  cs_halo_sync(m->halo, false, mq_g->cell_vol);
   if (m->halo != nullptr) {
     cs_halo_sync_var_strided(m->halo, CS_HALO_EXTENDED,
                              (cs_real_t *)cen_points, 3);
@@ -827,7 +829,7 @@ _prepare_porosity_from_scan(const cs_mesh_t             *m,
 
   /* Solid cells should have enough points */
   for (cs_lnum_t c_id = 0; c_id < m->n_cells_with_ghosts; c_id++) {
-    cell_f_vol[c_id] = mq->cell_vol[c_id];
+    cell_f_vol[c_id] = mq_g->cell_vol[c_id];
     if (cs_math_3_norm(c_w_face_normal[c_id]) > 0.) {
       cell_f_vol[c_id] = 0.;
       mq->c_disable_flag[c_id] = 1;
@@ -838,22 +840,22 @@ _prepare_porosity_from_scan(const cs_mesh_t             *m,
   cs_halo_sync(m->halo, false, cell_f_vol);
 
   cs_real_3_t *restrict i_face_normal
-    =  (cs_real_3_t *)mq->i_face_normal;
+    =  (cs_real_3_t *)mq_g->i_face_normal;
   cs_real_3_t *restrict b_face_normal
-    =  (cs_real_3_t *)mq->b_face_normal;
+    =  (cs_real_3_t *)mq_g->b_face_normal;
   cs_real_t *restrict i_face_surf
-    = (cs_real_t *)mq->i_face_surf;
+    = (cs_real_t *)mq_g->i_face_surf;
   cs_real_t *restrict b_face_surf
-    = (cs_real_t *)mq->b_face_surf;
+    = (cs_real_t *)mq_g->b_face_surf;
 
   cs_real_3_t *restrict i_f_face_normal
-    = (cs_real_3_t *)mq->i_f_face_normal;
+    = (cs_real_3_t *)mq->i_face_normal;
   cs_real_3_t *restrict b_f_face_normal
-    = (cs_real_3_t *)mq->b_f_face_normal;
+    = (cs_real_3_t *)mq->b_face_normal;
   cs_real_t *restrict i_f_face_surf
-    = (cs_real_t *)mq->i_f_face_surf;
+    = (cs_real_t *)mq->i_face_surf;
   cs_real_t *restrict b_f_face_surf
-    = (cs_real_t *)mq->b_f_face_surf;
+    = (cs_real_t *)mq->b_face_surf;
 
   /* Penalization of cells with points */
 
@@ -1090,17 +1092,19 @@ cs_compute_porosity_from_scan(void)
   const cs_mesh_t *m = domain->mesh;
   const cs_mesh_quantities_t *mq = domain->mesh_quantities;
 
+  cs_mesh_quantities_t *mq_g = cs_glob_mesh_quantities_g;
+
   const cs_real_3_t *restrict cell_cen
-    = (const cs_real_3_t *)mq->cell_cen;
+    = (const cs_real_3_t *)mq_g->cell_cen;
   const cs_real_3_t *restrict i_face_cog
-    = (const cs_real_3_t *)mq->i_face_cog;
+    = (const cs_real_3_t *)mq_g->i_face_cog;
   const cs_real_3_t *restrict b_face_cog
-    = (const cs_real_3_t *)mq->b_face_cog;
+    = (const cs_real_3_t *)mq_g->b_face_cog;
 
   cs_real_3_t *restrict i_f_face_normal =
-     (cs_real_3_t *)mq->i_f_face_normal;
+     (cs_real_3_t *)mq->i_face_normal;
   cs_real_3_t *restrict b_f_face_normal =
-     (cs_real_3_t *)mq->b_f_face_normal;
+     (cs_real_3_t *)mq->b_face_normal;
 
   /* Pointer to porosity field */
   cs_field_t *f = cs_field_by_name_try("porosity");
@@ -1141,7 +1145,7 @@ cs_compute_porosity_from_scan(void)
 
     int rank_source;
     cs_geom_closest_point(m->n_cells,
-                          (const cs_real_3_t *)mq->cell_cen,
+                          (const cs_real_3_t *)mq_g->cell_cen,
                           _porosity_from_scan_opt.sources[s_id],
                           &(source_c_ids[s_id]),
                           &rank_source);
@@ -1188,7 +1192,7 @@ cs_compute_porosity_from_scan(void)
       if (b_massflux[face_id] <= 0.) {
 
        eqp->ndircl = 1;
-       cs_real_t hint = 1. / mq->b_dist[face_id];
+       cs_real_t hint = 1. / mq_g->b_dist[face_id];
        cs_real_t pimp = 0.;
 
        cs_boundary_conditions_set_dirichlet_scalar(face_id,
@@ -1199,7 +1203,7 @@ cs_compute_porosity_from_scan(void)
       }
       else {
 
-        cs_real_t hint = 1. / mq->b_dist[face_id];
+        cs_real_t hint = 1. / mq_g->b_dist[face_id];
         cs_real_t qimp = 0.;
 
         cs_boundary_conditions_set_neumann_scalar(face_id,
@@ -1220,7 +1224,7 @@ cs_compute_porosity_from_scan(void)
      * in parallel, only one rank takes that
      * */
     if (source_c_ids[s_id] > -1)
-      rovsdt[source_c_ids[s_id]] = mq->cell_vol[source_c_ids[s_id]];
+      rovsdt[source_c_ids[s_id]] = mq_g->cell_vol[source_c_ids[s_id]];
 
     /* Even if there is no Dirichlet, the system is well-posed
      * so no need of diagonal reinforcement */
@@ -1236,12 +1240,12 @@ cs_compute_porosity_from_scan(void)
 
     /* in parallel, only one rank takes that */
     if (source_c_ids[s_id] > -1)
-      rhs[source_c_ids[s_id]] = mq->cell_vol[source_c_ids[s_id]];
+      rhs[source_c_ids[s_id]] = mq_g->cell_vol[source_c_ids[s_id]];
 
     /* Norm
      *======*/
 
-    cs_real_t norm = mq->tot_vol;
+    cs_real_t norm = mq_g->tot_vol;
 
     /* Solving
      *=========*/

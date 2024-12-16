@@ -1479,8 +1479,8 @@ cs_field_set_volume_average(cs_field_t     *f,
   const cs_lnum_t n_cells = cs_glob_mesh->n_cells;
 
   cs_mesh_quantities_t  *mq = cs_glob_mesh_quantities;
-  const cs_real_t *cell_f_vol = mq->cell_f_vol;
-  const cs_real_t tot_f_vol = mq->tot_f_vol;
+  const cs_real_t *cell_f_vol = mq->cell_vol;
+  const cs_real_t tot_f_vol = mq->tot_vol;
 
   cs_real_t *restrict val = f->val;
   cs_real_t p_va = 0.;

@@ -113,7 +113,7 @@ cs_cf_boundary_analytical_flux(const cs_lnum_t    f_id,
                                const cs_real_3_t *val_ext_v)
 {
   cs_mesh_quantities_t *fvq = cs_glob_mesh_quantities;
-  const cs_real_t *b_f_face_surf = fvq->b_f_face_surf;
+  const cs_real_t *b_f_face_surf = fvq->b_face_surf;
   const cs_nreal_3_t *b_face_u_normal = fvq->b_face_u_normal;
 
   cs_real_3_t *cofacv = (cs_real_3_t *)CS_F_(vel)->bc_coeffs->ac;
@@ -176,7 +176,7 @@ cs_cf_boundary_rusanov(const cs_lnum_t  f_id,
   const cs_mesh_quantities_t *fvq = cs_glob_mesh_quantities;
 
   const cs_lnum_t *b_face_cells = mesh->b_face_cells;
-  const cs_real_t *restrict b_f_face_surf = fvq->b_f_face_surf;
+  const cs_real_t *restrict b_f_face_surf = fvq->b_face_surf;
   const cs_nreal_3_t *b_face_u_normal = fvq->b_face_u_normal;
 
   const cs_fluid_properties_t *fluid_props = cs_glob_fluid_properties;

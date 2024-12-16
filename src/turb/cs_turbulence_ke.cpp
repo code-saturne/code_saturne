@@ -286,6 +286,7 @@ cs_turbulence_ke(int              phase_id,
 {
   const cs_mesh_t  *m = cs_glob_mesh;
   cs_mesh_quantities_t  *fvq = cs_glob_mesh_quantities;
+  cs_mesh_quantities_t  *mq_g = cs_glob_mesh_quantities_g;
 
   cs_domain_t  *domain = cs_glob_domain;
 
@@ -293,8 +294,8 @@ cs_turbulence_ke(int              phase_id,
   const cs_lnum_t n_i_faces = m->n_i_faces;
   const cs_lnum_t n_cells = m->n_cells;
   const cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
-  const cs_real_t *volume  = fvq->cell_vol;
-  const cs_real_t *cell_f_vol = fvq->cell_f_vol;
+  const cs_real_t *volume  = mq_g->cell_vol;
+  const cs_real_t *cell_f_vol = fvq->cell_vol;
   const cs_real_t *distb = fvq->b_dist;
   const cs_lnum_t *b_face_cells = m->b_face_cells;
 

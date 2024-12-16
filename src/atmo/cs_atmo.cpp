@@ -2579,7 +2579,7 @@ cs_atmo_source_term(int              f_id,
 
   /* Mesh options */
   const cs_mesh_t *m = cs_glob_mesh;
-  const cs_real_t *cell_f_vol = cs_glob_mesh_quantities->cell_f_vol;
+  const cs_real_t *cell_f_vol = cs_glob_mesh_quantities->cell_vol;
 
   /* Physical properties */
   cs_real_t *rho_m = (cs_real_t *)CS_F_(rho)->val; /* Mixture density */

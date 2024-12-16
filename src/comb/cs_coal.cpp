@@ -1104,7 +1104,7 @@ cs_coal_rad_transfer_st(const cs_field_t  *f,
                         cs_real_t         *rovsdt)
 {
   const cs_lnum_t n_cells = cs_glob_mesh->n_cells;
-  const cs_real_t *cell_f_vol = cs_glob_mesh_quantities->cell_f_vol;
+  const cs_real_t *cell_f_vol = cs_glob_mesh_quantities->cell_vol;
 
   /* Initialization
    * -------------- */

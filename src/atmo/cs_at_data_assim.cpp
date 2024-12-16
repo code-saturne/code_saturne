@@ -510,7 +510,7 @@ cs_at_data_assim_source_term(int        f_id,
   const int n_cells = m->n_cells;
 
   const cs_mesh_quantities_t *fvq = cs_glob_mesh_quantities;
-  const cs_real_t *cell_f_vol = fvq->cell_f_vol;
+  const cs_real_t *cell_f_vol = fvq->cell_vol;
 
   /* time step */
   const cs_time_step_t *ts = cs_glob_time_step;

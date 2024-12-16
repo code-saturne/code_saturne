@@ -146,7 +146,7 @@ cs_wall_distance(int iterns)
   const int *bc_type = cs_glob_bc_type;
   const cs_halo_t *halo = mesh->halo;
   const cs_real_t *b_dist = mq->b_dist;
-  const cs_real_t *cell_f_vol = mq->cell_f_vol;
+  const cs_real_t *cell_f_vol = mq->cell_vol;
 
   /* Initialization
      -------------- */

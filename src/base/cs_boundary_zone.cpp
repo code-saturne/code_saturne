@@ -306,8 +306,8 @@ _boundary_zone_compute_metadata(bool       mesh_modified,
    */
   if (z->time_varying || mesh_modified) {
 
-    cs_real_t *b_face_surf   = cs_glob_mesh_quantities->b_face_surf;
-    cs_real_t *b_f_face_surf = cs_glob_mesh_quantities->b_f_face_surf;
+    cs_real_t *b_face_surf   = cs_glob_mesh_quantities_g->b_face_surf;
+    cs_real_t *b_f_face_surf = cs_glob_mesh_quantities->b_face_surf;
     cs_real_3_t *face_cen = (cs_real_3_t *)cs_glob_mesh_quantities->b_face_cog;
 
     z->measure = 0.;
@@ -1121,8 +1121,8 @@ cs_boundary_zone_print_info(void)
 
   bft_printf("\n");
   bft_printf(" --- Information on boundary zones\n");
-  cs_real_t *b_face_surf   = cs_glob_mesh_quantities->b_face_surf;
-  cs_real_t *b_f_face_surf = cs_glob_mesh_quantities->b_f_face_surf;
+  cs_real_t *b_face_surf   = cs_glob_mesh_quantities_g->b_face_surf;
+  cs_real_t *b_f_face_surf = cs_glob_mesh_quantities->b_face_surf;
 
   for (int i = 0; i < _n_zones; i++) {
     cs_zone_t *z = _zones[i];

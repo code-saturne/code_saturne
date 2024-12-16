@@ -2999,7 +2999,7 @@ cs_syr_coupling_volume_source_terms(int        field_id,
 {
   cs_field_t  *f = cs_field_by_id(field_id);
 
-  const cs_real_t *cell_f_vol = cs_glob_mesh_quantities->cell_f_vol;
+  const cs_real_t *cell_f_vol = cs_glob_mesh_quantities->cell_vol;
 
   /* Get number of coupling cases */
 

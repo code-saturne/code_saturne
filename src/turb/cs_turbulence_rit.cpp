@@ -138,7 +138,7 @@ _turb_flux_st(const char          *name,
               cs_real_33_t         fimp[],
               cs_real_3_t          rhs_ut[])
 {
-  const cs_real_t *cell_f_vol = cs_glob_mesh_quantities->cell_f_vol;
+  const cs_real_t *cell_f_vol = cs_glob_mesh_quantities->cell_vol;
 
   cs_field_t *f = cs_field_by_name(name);
 
@@ -423,7 +423,7 @@ _thermal_flux_and_diff(cs_field_t         *f,
                        cs_real_t           thflxb[],
                        cs_real_6_t         vistet[])
 {
-  const cs_real_t *cell_f_vol = cs_glob_mesh_quantities->cell_f_vol;
+  const cs_real_t *cell_f_vol = cs_glob_mesh_quantities->cell_vol;
 
   const cs_real_t *crom = CS_F_(rho)->val;
   const cs_real_t *viscl  = CS_F_(mu)->val;
@@ -777,7 +777,7 @@ _solve_rit(const cs_field_t     *f,
   const cs_lnum_t n_i_faces = m->n_i_faces;
   const cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
 
-  const cs_real_t *cell_f_vol = mq->cell_f_vol;
+  const cs_real_t *cell_f_vol = mq->cell_vol;
 
   const cs_real_t *dt = CS_F_(dt)->val;
   const cs_real_t *crom = CS_F_(rho)->val;
@@ -1305,7 +1305,7 @@ cs_turbulence_rij_transport_div_tf(const int        field_id,
     if (f_dut != nullptr) {
       int has_disable_flag = mq->has_disable_flag;
       int *c_disable_flag = mq->c_disable_flag;
-      const cs_real_t *cell_f_vol = mq->cell_f_vol;
+      const cs_real_t *cell_f_vol = mq->cell_vol;
 
       for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
         cs_real_t dvol = 0;

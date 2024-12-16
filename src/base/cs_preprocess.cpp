@@ -253,7 +253,7 @@ cs_preprocess_mesh(cs_halo_type_t   halo_type)
     allow_modify = false;
 
   cs_mesh_t *m = cs_glob_mesh;
-  cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
+  cs_mesh_quantities_t *mq = cs_glob_mesh_quantities_g;
 
   /* Disable all writers until explicitely enabled for this stage */
 
@@ -527,7 +527,7 @@ cs_preprocess_mesh_selected_b_faces_ignore(cs_mesh_t             *m,
 
 #if 0 && defined(DEBUG) && !defined(NDEBUG)
   cs_mesh_dump(cs_glob_mesh);
-  cs_mesh_quantities_dump(cs_glob_mesh, cs_glob_mesh_quantities);
+  cs_mesh_quantities_dump(cs_glob_mesh, mq);
 #endif
 
   cs_timer_stats_switch(t_top_id);
@@ -543,6 +543,7 @@ void
 cs_preprocess_mesh_update_fortran(void)
 {
   const cs_mesh_t *m = cs_glob_mesh;
+  const cs_mesh_quantities_t *mq_g = cs_glob_mesh_quantities_g;
   const cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
 
   cs_f_majgeo(&(m->n_cells),
@@ -551,28 +552,28 @@ cs_preprocess_mesh_update_fortran(void)
               &(m->n_b_faces),
               (const cs_lnum_2_t *)(m->i_face_cells),
               m->b_face_cells,
-              &(mq->min_vol),
-              &(mq->max_vol),
-              &(mq->tot_vol),
-              mq->cell_cen,
+              &(mq_g->min_vol),
+              &(mq_g->max_vol),
+              &(mq_g->tot_vol),
+              mq_g->cell_cen,
+              mq_g->i_face_normal,
+              mq_g->b_face_normal,
               mq->i_face_normal,
               mq->b_face_normal,
-              mq->i_f_face_normal,
-              mq->b_f_face_normal,
-              mq->i_face_cog,
-              mq->b_face_cog,
+              mq_g->i_face_cog,
+              mq_g->b_face_cog,
+              mq_g->cell_vol,
               mq->cell_vol,
-              mq->cell_f_vol,
+              mq_g->i_face_surf,
+              mq_g->b_face_surf,
               mq->i_face_surf,
               mq->b_face_surf,
-              mq->i_f_face_surf,
-              mq->b_f_face_surf,
-              mq->i_dist,
-              mq->b_dist,
-              mq->weight,
-              mq->dijpf,
-              mq->diipb,
-              mq->dofij);
+              mq_g->i_dist,
+              mq_g->b_dist,
+              mq_g->weight,
+              mq_g->dijpf,
+              mq_g->diipb,
+              mq_g->dofij);
 }
 
 /*----------------------------------------------------------------------------*/

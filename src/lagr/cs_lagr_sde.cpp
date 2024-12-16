@@ -1851,15 +1851,15 @@ _lagesd(cs_real_t             dtp,
 
             bound_stat[n_f_id + nfabor * cs_glob_lagr_boundary_interactions->iscovc]
               -=   cs_math_pi * cs_math_pow2(p_diam) * p_stat_w
-                 * 0.25 / mq->b_f_face_surf[n_f_id];
+                 * 0.25 / mq->b_face_surf[n_f_id];
 
             bound_stat[n_f_id + nfabor * cs_glob_lagr_boundary_interactions->ihdepm]
               -=   cs_math_pi * p_height * cs_math_pow2(p_diam) * p_stat_w
-                 * 0.25 / mq->b_f_face_surf[n_f_id];
+                 * 0.25 / mq->b_face_surf[n_f_id];
 
             bound_stat[n_f_id + nfabor * cs_glob_lagr_boundary_interactions->ihdepv]
               -=   cs_math_pow2(cs_math_pi * p_height * cs_math_pow2(p_diam) * p_stat_w
-                 * 0.25 / mq->b_f_face_surf[n_f_id]);
+                 * 0.25 / mq->b_face_surf[n_f_id]);
 
             bound_stat[n_f_id + nfabor * cs_glob_lagr_boundary_interactions->inclg]
               -= p_stat_w;
@@ -1946,16 +1946,16 @@ _lagesd(cs_real_t             dtp,
 
               bound_stat[n_f_id + nfabor * cs_glob_lagr_boundary_interactions->iscovc]
                 -=   cs_math_pi * cs_math_pow2(p_diam) * p_stat_w
-                   * 0.25 / mq->b_f_face_surf[n_f_id];
+                   * 0.25 / mq->b_face_surf[n_f_id];
 
               bound_stat[n_f_id + nfabor * cs_glob_lagr_boundary_interactions->ihdepm]
                 -=   cs_math_pi * p_height * cs_math_pow2(p_diam) * p_stat_w
-                   * 0.25 / mq->b_f_face_surf[n_f_id];
+                   * 0.25 / mq->b_face_surf[n_f_id];
 
               bound_stat[n_f_id + nfabor * cs_glob_lagr_boundary_interactions->ihdepv]
                 -=   cs_math_pow2(cs_math_pi * p_height
                    * cs_math_pow2(p_diam) * p_stat_w
-                   * 0.25 / mq->b_f_face_surf[n_f_id]);
+                   * 0.25 / mq->b_face_surf[n_f_id]);
 
               bound_stat[n_f_id + nfabor * cs_glob_lagr_boundary_interactions->inclg]
                 -= p_stat_w;
@@ -2265,15 +2265,15 @@ _lagesd(cs_real_t             dtp,
 
             bound_stat[n_f_id + nfabor * cs_glob_lagr_boundary_interactions->iscovc] -=
               cs_math_pi * cs_math_pow2(p_diam) * p_stat_w
-              * 0.25 / mq->b_f_face_surf[n_f_id];
+              * 0.25 / mq->b_face_surf[n_f_id];
 
             bound_stat[n_f_id + nfabor * cs_glob_lagr_boundary_interactions->ihdepm] -=
               cs_math_pi * p_height * cs_math_pow2(p_diam) * p_stat_w
-              * 0.25 / mq->b_f_face_surf[n_f_id];
+              * 0.25 / mq->b_face_surf[n_f_id];
 
             bound_stat[n_f_id + nfabor * cs_glob_lagr_boundary_interactions->ihdepv] -=
               cs_math_pow2(cs_math_pi * p_height * cs_math_pow2(p_diam) * p_stat_w
-                   * 0.25 / mq->b_f_face_surf[n_f_id]);
+                   * 0.25 / mq->b_face_surf[n_f_id]);
 
             bound_stat[n_f_id + nfabor * cs_glob_lagr_boundary_interactions->inclg] -=
               p_stat_w;
@@ -2460,15 +2460,15 @@ _lagesd(cs_real_t             dtp,
                 /* Update of surface covered and deposit height */
                 bound_stat[n_f_id + nfabor * cs_glob_lagr_boundary_interactions->iscovc] -=
                   cs_math_pi * cs_math_pow2(p_diam) * p_stat_w
-                  * 0.25 / mq->b_f_face_surf[n_f_id];
+                  * 0.25 / mq->b_face_surf[n_f_id];
 
                 bound_stat[n_f_id + nfabor * cs_glob_lagr_boundary_interactions->ihdepm] -=
                   cs_math_pi * p_height * cs_math_pow2(p_diam) * p_stat_w
-                  * 0.25 / mq->b_f_face_surf[n_f_id];
+                  * 0.25 / mq->b_face_surf[n_f_id];
 
                 bound_stat[n_f_id + nfabor * cs_glob_lagr_boundary_interactions->ihdepv] -=
                   cs_math_pow2(cs_math_pi * p_height * cs_math_pow2(p_diam) * p_stat_w
-                       * 0.25 / mq->b_f_face_surf[n_f_id]);
+                       * 0.25 / mq->b_face_surf[n_f_id]);
 
                 bound_stat[n_f_id + nfabor * cs_glob_lagr_boundary_interactions->inclg] -=
                   p_stat_w;
@@ -2543,11 +2543,11 @@ _lagesd(cs_real_t             dtp,
 
                 bound_stat[n_f_id + nfabor * cs_glob_lagr_boundary_interactions->ihdepm]
                   -= cs_math_pi * height_reent * cs_math_pow2(p_diam) * p_stat_w
-                     * 0.25 / mq->b_f_face_surf[n_f_id];
+                     * 0.25 / mq->b_face_surf[n_f_id];
 
                 bound_stat[n_f_id + nfabor * cs_glob_lagr_boundary_interactions->ihdepv]
                   -= cs_math_pow2(cs_math_pi * height_reent * cs_math_pow2(p_diam) * p_stat_w
-                    * 0.25 / mq->b_f_face_surf[n_f_id]);
+                    * 0.25 / mq->b_face_surf[n_f_id]);
 
                 cs_real_t nb_stay
                   =   cs_lagr_particle_get_real(particle, p_am,

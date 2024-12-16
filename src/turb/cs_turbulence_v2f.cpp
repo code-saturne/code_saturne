@@ -481,7 +481,7 @@ _solve_eq_fbr_al(const int         istprv,
   const cs_real_t *cvara_ep = CS_F_(eps)->val_pre;
   const cs_real_t *cvara_phi = CS_F_(phi)->val_pre;
 
-  const cs_real_t *cell_f_vol = fvq->cell_f_vol;
+  const cs_real_t *cell_f_vol = fvq->cell_vol;
 
   const cs_real_t d2s3 = 2.0/3.0;
 
@@ -677,7 +677,7 @@ _solve_eq_phi(const int           istprv,
   const cs_lnum_t  n_cells_ext = m->n_cells_with_ghosts;
 
   cs_mesh_quantities_t *fvq = cs_glob_mesh_quantities;
-  const cs_real_t *cell_f_vol = fvq->cell_f_vol;
+  const cs_real_t *cell_f_vol = fvq->cell_vol;
 
   const cs_real_t *dt = CS_F_(dt)->val;
 

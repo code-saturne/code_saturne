@@ -434,7 +434,7 @@ _les_balance_laplacian(cs_real_t   *wa,
   BFT_FREE(b_visc);
 
   for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
-    res[c_id] /= cs_glob_mesh_quantities->cell_f_vol[c_id];
+    res[c_id] /= cs_glob_mesh_quantities->cell_vol[c_id];
 }
 
 /*----------------------------------------------------------------------------

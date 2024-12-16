@@ -252,7 +252,7 @@ _production_and_dissipation_terms(const cs_field_t  *f,
   const cs_lnum_t n_b_faces = cs_glob_mesh->n_b_faces;
   const cs_lnum_t n_cells_ext = cs_glob_mesh->n_cells_with_ghosts;
 
-  const cs_real_t *cell_f_vol = cs_glob_mesh_quantities->cell_f_vol;
+  const cs_real_t *cell_f_vol = cs_glob_mesh_quantities->cell_vol;
 
   const cs_real_t *cvara_var = f->val_pre;
   cs_real_t *cvara_var_fm = f_fm->val_pre;
@@ -862,6 +862,7 @@ cs_solve_equation_scalar(cs_field_t        *f,
 {
   const cs_mesh_t *m = cs_glob_mesh;
   const cs_mesh_quantities_t *fvq = cs_glob_mesh_quantities;
+  const cs_mesh_quantities_t *mq_g = cs_glob_mesh_quantities_g;
   const cs_time_step_t *ts = cs_glob_time_step;
   const cs_fluid_properties_t *fluid_props = cs_glob_fluid_properties;
 
@@ -869,8 +870,8 @@ cs_solve_equation_scalar(cs_field_t        *f,
   const cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
   const cs_lnum_t n_b_faces = m->n_b_faces;
 
-  const cs_real_t *volume = fvq->cell_vol;
-  const cs_real_t *cell_f_vol = fvq->cell_f_vol;
+  const cs_real_t *volume = mq_g->cell_vol;
+  const cs_real_t *cell_f_vol = fvq->cell_vol;
   const cs_real_3_t *restrict cell_cen
     = (const cs_real_3_t *)fvq->cell_cen;
 
@@ -1865,7 +1866,7 @@ cs_solve_equation_vector(cs_field_t       *f,
   const cs_lnum_t n_b_faces = m->n_b_faces;
   const cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
 
-  const cs_real_t *cell_f_vol = fvq->cell_f_vol;
+  const cs_real_t *cell_f_vol = fvq->cell_vol;
 
   const cs_real_t *dt = CS_F_(dt)->val;
 

@@ -132,7 +132,7 @@ _compressible_pressure_mass_flux(int iterns, // cfmsfp en fortran
   const cs_lnum_t n_cells_ext = mesh->n_cells_with_ghosts;
   const cs_lnum_t n_b_faces   = mesh->n_b_faces;
   const cs_lnum_t n_i_faces   = mesh->n_i_faces;
-  const cs_real_t *cell_f_vol = fvq->cell_f_vol;
+  const cs_real_t *cell_f_vol = fvq->cell_vol;
 
   cs_real_t *dt = CS_F_(dt)->val;
 
@@ -503,7 +503,7 @@ cs_cf_convective_mass_flux(int  iterns)
   const cs_lnum_t *b_face_cells = mesh->b_face_cells;
   const cs_lnum_2_t *i_face_cells = (const cs_lnum_2_t *)mesh->i_face_cells;
   const cs_real_t *b_dist = fvq->b_dist;
-  const cs_real_t *cell_f_vol = fvq->cell_f_vol;
+  const cs_real_t *cell_f_vol = fvq->cell_vol;
 
   cs_real_t *dt = CS_F_(dt)->val;
   int idtvar = cs_glob_time_step_options->idtvar;
@@ -889,7 +889,7 @@ cs_cf_cfl_compute(cs_real_t wcf[]) // before : cfdttv
   const cs_lnum_t n_cells_ext = mesh->n_cells_with_ghosts;
   const cs_lnum_t n_b_faces   = mesh->n_b_faces;
   const cs_lnum_t n_i_faces   = mesh->n_i_faces;
-  const cs_real_t *cell_f_vol = fvq->cell_f_vol;
+  const cs_real_t *cell_f_vol = fvq->cell_vol;
 
   const int *c_disable_flag = fvq->c_disable_flag;
   cs_lnum_t has_dc = fvq->has_disable_flag;

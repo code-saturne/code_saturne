@@ -514,6 +514,7 @@ _pressure_correction_fv(int                   iterns,
 {
   const cs_mesh_t *m = cs_glob_mesh;
   cs_mesh_quantities_t *fvq = cs_glob_mesh_quantities;
+  cs_mesh_quantities_t *mq_g = cs_glob_mesh_quantities_g;
 
   const cs_lnum_t n_cells = m->n_cells;
   const cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
@@ -526,16 +527,16 @@ _pressure_correction_fv(int                   iterns,
     = (const cs_lnum_t *)m->b_face_cells;
 
   const cs_real_3_t *restrict cell_cen
-    = (const cs_real_3_t *)fvq->cell_cen;
+    = (const cs_real_3_t *)mq_g->cell_cen;
   const cs_real_3_t *restrict b_face_cog
-    = (const cs_real_3_t *)fvq->b_face_cog;
+    = (const cs_real_3_t *)mq_g->b_face_cog;
   const cs_real_3_t *restrict b_face_normal
-    = (const cs_real_3_t *)fvq->b_face_normal;
-  const cs_real_t *restrict b_dist = (const cs_real_t *)fvq->b_dist;
-  const cs_real_t *restrict b_face_surf = fvq->b_face_surf;
-  const cs_real_t *restrict i_f_face_surf = fvq->i_f_face_surf;
-  const cs_real_t *restrict b_f_face_surf = fvq->b_f_face_surf;
-  const cs_real_t *restrict cell_f_vol = fvq->cell_f_vol;
+    = (const cs_real_3_t *)mq_g->b_face_normal;
+  const cs_real_t *restrict b_dist = (const cs_real_t *)mq_g->b_dist;
+  const cs_real_t *restrict b_face_surf = mq_g->b_face_surf;
+  const cs_real_t *restrict i_f_face_surf = fvq->i_face_surf;
+  const cs_real_t *restrict b_f_face_surf = fvq->b_face_surf;
+  const cs_real_t *restrict cell_f_vol = fvq->cell_vol;
 
   const int *bc_type = cs_glob_bc_type;
 

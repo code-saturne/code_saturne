@@ -559,7 +559,7 @@ cs_thermal_model_kinetic_st_prepare(const cs_real_t  i_massflux[],
   const cs_mesh_t *m = cs_glob_mesh;
   const cs_lnum_t n_cells = m->n_cells;
   const cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
-  const cs_real_t *restrict cell_f_vol = mq->cell_f_vol;
+  const cs_real_t *restrict cell_f_vol = mq->cell_vol;
 
   /* Parallel or device dispatch */
   cs_dispatch_context ctx;
@@ -746,7 +746,7 @@ cs_thermal_model_cflp(const cs_real_t  croma[],
   const cs_real_t *alphafij = fvq->weight;
   const cs_real_t *restrict i_dist = fvq->i_dist;
 
-  const cs_real_t *restrict cell_f_vol = fvq->cell_f_vol;
+  const cs_real_t *restrict cell_f_vol = fvq->cell_vol;
   const cs_real_t *restrict i_face_surf = fvq->i_face_surf;
   const cs_real_t *restrict b_face_surf = fvq->b_face_surf;
   const cs_field_t *f_vel = CS_F_(vel);
@@ -912,7 +912,7 @@ cs_thermal_model_dissipation(const cs_real_t  vistot[],
 
     const cs_mesh_t *m = cs_glob_mesh;
     const cs_mesh_quantities_t *fvq = cs_glob_mesh_quantities;
-    const cs_real_t *restrict cell_f_vol = fvq->cell_f_vol;
+    const cs_real_t *restrict cell_f_vol = fvq->cell_vol;
 
     const cs_lnum_t n_cells = m->n_cells;
 
@@ -1209,7 +1209,7 @@ cs_thermal_model_pdivu(cs_real_t  smbrs[])
   const cs_mesh_quantities_t *fvq = cs_glob_mesh_quantities;
   const cs_lnum_t n_cells = m->n_cells;
   const cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
-  const cs_real_t *restrict cell_f_vol = fvq->cell_f_vol;
+  const cs_real_t *restrict cell_f_vol = fvq->cell_vol;
 
   const int kimasf = cs_field_key_id("inner_mass_flux_id");
   const int kbmasf = cs_field_key_id("boundary_mass_flux_id");
@@ -1431,7 +1431,7 @@ cs_thermal_model_cflt(const cs_real_t  croma[],
   const cs_lnum_t n_cells = m->n_cells;
   cs_real_t *restrict dt = CS_F_(dt)->val;
 
-  const cs_real_t *restrict cell_f_vol = fvq->cell_f_vol;
+  const cs_real_t *restrict cell_f_vol = fvq->cell_vol;
   const cs_field_t *f_vel = CS_F_(vel);
 
   const cs_mesh_adjacencies_t *ma = cs_glob_mesh_adjacencies;

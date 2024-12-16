@@ -118,8 +118,8 @@ cs_local_time_step_compute(int  itrale)
   const cs_lnum_t n_i_faces   = mesh->n_i_faces;
   const cs_lnum_t *b_face_cells = mesh->b_face_cells;
   const cs_real_t *b_dist = fvq->b_dist;
-  const cs_real_t *cell_f_vol = fvq->cell_f_vol;
-  const cs_real_3_t *cell_f_cen = (const cs_real_3_t *)fvq->cell_f_cen;
+  const cs_real_t *cell_f_vol = fvq->cell_vol;
+  const cs_real_3_t *cell_f_cen = (const cs_real_3_t *)fvq->cell_cen;
 
   cs_real_t *dt = CS_F_(dt)->val;
   const int nt_cur = cs_glob_time_step->nt_cur;
@@ -867,8 +867,8 @@ cs_courant_fourier_compute(void)
   const cs_lnum_t n_i_faces   = mesh->n_i_faces;
   const cs_real_t *b_dist = fvq->b_dist;
   const cs_lnum_t *b_face_cells = mesh->b_face_cells;
-  const cs_real_t *cell_f_vol = fvq->cell_f_vol;
-  const cs_real_3_t *cell_f_cen = (const cs_real_3_t *)fvq->cell_f_cen;
+  const cs_real_t *cell_f_vol = fvq->cell_vol;
+  const cs_real_3_t *cell_f_cen = (const cs_real_3_t *)fvq->cell_cen;
 
   const int idtvar = cs_glob_time_step_options->idtvar;
 
