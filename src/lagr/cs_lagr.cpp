@@ -2483,10 +2483,7 @@ cs_lagr_solve_time_step(const int         itypfb[],
         BFT_FREE(cpght);
       }
 
-      if (   (   lagr_model->physical_model == CS_LAGR_PHYS_HEAT
-              && cs_glob_lagr_specific_physics->itpvar == 1)
-          || lagr_model->physical_model == CS_LAGR_PHYS_COAL)
-        BFT_FREE(tempct);
+      BFT_FREE(tempct);
 
       if (cs_glob_lagr_brownian->lamvbr == 1)
         BFT_FREE(terbru);
