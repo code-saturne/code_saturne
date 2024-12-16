@@ -736,7 +736,7 @@ class Plotter(object):
             # save the figure
             try:
                 self.__save(f, figure)
-            else:
+            except Exception:
                 print("    /!\ ERROR while saving figure " + f)
 
         # close current figure
