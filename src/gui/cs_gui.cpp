@@ -5198,14 +5198,14 @@ cs_gui_define_fans(void)
 void
 cs_gui_error_estimator(void)
 {
-  const char *name[] = {"est_error_pre_2",
+  const char *name[] = {"est_error_cor_2",
                         "est_error_der_2",
-                        "est_error_cor_2",
+                        "est_error_pre_2",
                         "est_error_tot_2"};
 
-  const char *label[] = {"EsPre2",
+  const char *label[] = {"EsCor2",
                          "EsDer2",
-                         "EsCor",
+                         "EsPre2",
                          "EsTot2"};
 
   const char *node_name[] = {"Correction/model",
