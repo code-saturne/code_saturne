@@ -978,11 +978,14 @@ cs_atmo_physical_properties_update(void)
    * -------------------------------------
    * Computes the perfect gas constants according to the physics */
 
-  const cs_real_t rscp = fluid_props->r_pg_cnst/fluid_props->cp0;
+  const cs_real_t cp0 = fluid_props->cp0;
+  const cs_real_t rscp = fluid_props->r_pg_cnst/cp0;
+  const cs_real_t clatev = fluid_props->clatev;
   const cs_real_t tkelvi = cs_physical_constants_celsius_to_kelvin;
+  const cs_real_t ps = cs_glob_atmo_constants->ps;
   // Adiabatic (constant) potential temperature
-  const cs_real_t theta0
-    = fluid_props->t0 * pow(fluid_props->p0/cs_glob_atmo_constants->ps, rscp);
+  const cs_real_t theta0 = (fluid_props->t0 - clatev/cp0 * at_opt->meteo_ql0)
+                         * pow(ps/ fluid_props->p0, rscp);
 
   for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
 
@@ -1008,7 +1011,7 @@ cs_atmo_physical_properties_update(void)
 
     /* (liquid) temperature
      * law: T = theta * (p/ps) ** (Rair/Cp0) */
-    const cs_real_t tliq = xvart*pow(pp/cs_glob_atmo_constants->ps, rscp);
+    const cs_real_t tliq = xvart*pow(pp/ps, rscp);
 
     if (cvar_totwt != nullptr)
       qwt = cvar_totwt[c_id];
