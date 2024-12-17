@@ -34,6 +34,15 @@ Master (not on release branches yet)
 
 ### User changes:
 
+- The CDO based Heat Transfer solver is now usable through the GUI, allowing
+  an easier definition of CHT problems using only code_saturne functionnalities.
+  This functionnality is still experimental, some GUI options may be unavailable,
+  mainly for postprocessing, but will be extened in v9.0.
+
+- Conjugate Heat Transfer can now be conducted with the CDO based Heat transfer
+  solver of code_saturne. This is handled in the same manner as a syrthes coupling
+  in the GUI for the user.
+
 - Rename all cs_user_XXX.c functions to cs_user_XXX.cpp thus allowing calls
   to C++ functions within these functions.
 
