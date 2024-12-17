@@ -61,10 +61,12 @@
 #include "cs_parameters.h"
 #include "cs_physical_model.h"
 #include "cs_post.h"
+#include "cs_property.h"
 #include "cs_field.h"
 #include "cs_field_pointer.h"
 #include "cs_function_default.h"
 #include "cs_thermal_model.h"
+#include "cs_thermal_system.h"
 #include "cs_time_moment.h"
 #include "cs_volume_zone.h"
 
@@ -216,6 +218,53 @@ _field_post(const char  *field_type,
   const char *label = cs_tree_node_get_tag(tn, "label");
   if (label != NULL)
     cs_field_set_key_str(f, k_lbl, label);
+}
+
+/*-----------------------------------------------------------------------------
+ * Post-processing options for properties
+ *
+ * parameters:
+ *   f_id <-- field id
+ *----------------------------------------------------------------------------*/
+
+static void
+_property_post(const char          *field_type,
+               const char          *label,
+               const cs_property_t *ppty)
+{
+  cs_tree_node_t *tn = _get_node(field_type, label);
+
+  if (tn == NULL)
+    return;
+
+  cs_function_t *f = cs_function_by_name_try(ppty->name);
+  if (f == nullptr)
+    f = cs_function_define_property_cells(ppty->name);
+
+  f->log = 0;
+  f->post_vis = 0;
+
+  int f_post = -999, f_monitor = -999, f_log = -999;
+
+  /* Listing output */
+
+  cs_gui_node_get_status_int(cs_tree_node_get_child(tn, "listing_printing"),
+                             &f_log);
+  if (f_log != 0)
+    f->log = 1;
+
+  cs_gui_node_get_status_int(cs_tree_node_get_child
+                               (tn, "postprocessing_recording"),
+                             &f_post);
+  if (f_post != 0)
+    f->log |= CS_POST_ON_LOCATION;
+
+  cs_gui_node_get_status_int(cs_tree_node_get_child(tn, "probes_recording"),
+                             &f_monitor);
+
+  if (f_monitor != 0)
+    f->log |= CS_POST_MONITOR;
+
 }
 
 /*-----------------------------------------------------------------------------
@@ -773,6 +822,21 @@ cs_gui_output(void)
   /* User functions */
   for (int f_id = 0; f_id < cs_function_n_functions(); f_id++) {
     _function_post(f_id);
+  }
+
+  /* Heat Transfer solver physical properties */
+  if (cs_glob_physical_model_flag[CS_HEAT_TRANSFER] > -1) {
+    cs_property_t *ppty = cs_property_by_name(CS_PROPERTY_MASS_DENSITY);
+    if (ppty != nullptr)
+      _property_post("property", "density", ppty);
+
+    ppty = cs_property_by_name(CS_THERMAL_CP_NAME);
+    if (ppty != nullptr)
+      _property_post("property", "specific_heat", ppty);
+
+    ppty = cs_property_by_name(CS_THERMAL_LAMBDA_NAME);
+    if (ppty != nullptr)
+      _property_post("property", "thermal_conductivity", ppty);
   }
 
 #if _XML_DEBUG_

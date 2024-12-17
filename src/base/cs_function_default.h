@@ -372,6 +372,18 @@ cs_function_q_criterion(int               location_id,
                         void             *vals);
 
 /*----------------------------------------------------------------------------*/
+/*
+ * \brief Define output function of a property (which is not a field).
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_function_t *
+cs_function_define_property_cells
+(
+  char *property_name /*!<[in] name of the property */
+);
+
+/*----------------------------------------------------------------------------*/
 
 END_C_DECLS
 

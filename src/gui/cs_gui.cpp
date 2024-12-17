@@ -1996,8 +1996,6 @@ cs_gui_dt_param(void)
     if (_t_max >= 0)
       time_stp->t_max = time_stp->t_prev + _t_max;
   }
-  bft_printf("%s[L%d] : t_max = %f\n", __func__, __LINE__, time_stp->t_max);
-  bft_printf_flush();
 
   if (_t_max < 0) {
     int _nt_max = -1;
@@ -2010,9 +2008,6 @@ cs_gui_dt_param(void)
         time_stp->nt_max = time_stp->nt_prev + _nt_max;
     }
   }
-
-  bft_printf("%s[L%d] : nt_max = %d\n", __func__, __LINE__, time_stp->nt_max);
-  bft_printf_flush();
 
   cs_gui_node_get_child_status_int(tn,
                                    "thermal_time_step",

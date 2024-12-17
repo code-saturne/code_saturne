@@ -764,10 +764,6 @@ cs_gui_physical_model_select(void)
   isactiv = _get_active_thermophysical_model(&model_name, &model_value);
 
   if (isactiv)  {
-    bft_printf("%s[L%d] model : '%s' and value : '%s'\n",
-               __func__, __LINE__, model_name, model_value);
-    bft_printf_flush();
-
     if (cs_gui_strcmp(model_name, "solid_fuels")) {
       if (cs_gui_strcmp(model_value, "homogeneous_fuel"))
         cs_coal_model_set_model(CS_COMBUSTION_COAL_STANDARD);

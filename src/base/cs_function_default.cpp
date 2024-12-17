@@ -65,6 +65,7 @@
 #include "cs_parameters.h"
 #include "cs_physical_constants.h"
 #include "cs_physical_model.h"
+#include "cs_property.h"
 #include "cs_post.h"
 #include "cs_rotation.h"
 #include "cs_thermal_model.h"
@@ -571,6 +572,44 @@ _ensure_boundary_forces_are_present(void)
     bf = cs_field_create(name, type, location_id, 3, false);
     cs_field_set_key_int(bf, cs_field_key_id("log"), 0);
     cs_field_set_key_int(bf, cs_field_key_id("post_vis"), 0);
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Private function to output property values at cells.
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_output_cells_property
+(
+  int               location_id,
+  cs_lnum_t         n_elts,
+  const cs_lnum_t  *elt_ids,
+  void             *input,
+  void             *vals
+)
+{
+  assert(location_id == CS_MESH_LOCATION_CELLS);
+
+  const char *_ppty_name = static_cast<const char *>(input);
+
+  cs_real_t *_vals = static_cast<cs_real_t *>(vals);
+
+  cs_property_t *ppty = cs_property_by_name(_ppty_name);
+
+  cs_real_t _t_cur = cs_glob_time_step->t_cur;
+  if (elt_ids != nullptr) {
+    for (cs_lnum_t e_id = 0; e_id < n_elts; e_id++) {
+      cs_lnum_t c_id = elt_ids[e_id];
+      _vals[e_id] = cs_property_get_cell_value(c_id, _t_cur, ppty);
+    }
+  }
+  else {
+    cs_property_eval_at_cells(_t_cur,
+                              ppty,
+                              _vals);
   }
 }
 
@@ -1701,6 +1740,42 @@ cs_function_q_criterion(int               location_id,
   BFT_FREE(gradv);
 }
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Define output function of a property (which is not a field).
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_function_t *
+cs_function_define_property_cells
+(
+  char *property_name /*!<[in] name of the property */
+)
+{
+  /* sanity check */
+  cs_property_t *ppty = cs_property_by_name(property_name);
+  if (ppty == nullptr)
+    bft_error(__FILE__, __LINE__, 0,
+              "%s: property \"%s\" does not exist.\n",
+              __func__, property_name);
+
+  int _dim = cs_property_get_dim(ppty);
+  cs_function_t *f
+    = cs_function_define_by_func(property_name,
+                                 CS_MESH_LOCATION_CELLS,
+                                 _dim,
+                                 true,
+                                 CS_REAL_TYPE,
+                                 _output_cells_property,
+                                 property_name);
+
+  cs_function_set_label(f, property_name);
+  f->type = CS_FUNCTION_INTENSIVE;
+
+  f->post_vis = CS_POST_ON_LOCATION;
+
+  return f;
+}
 /*----------------------------------------------------------------------------*/
 
 END_C_DECLS
