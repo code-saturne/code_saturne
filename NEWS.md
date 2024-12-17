@@ -3,6 +3,9 @@ release 8.2.2 (unreleased)
 
 ### Bug fixes:
 
+- GUI: fix spurious reset of default log output frequency to 1
+  when postprocessing settings page is reopened.
+
 - Fix incorrect weighting of Gauss-Seidel solver for block-diagonal
   linear systems (i.e. Velocity and Rij).
 

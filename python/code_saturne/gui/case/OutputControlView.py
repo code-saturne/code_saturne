@@ -1730,13 +1730,13 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
         if listing == "None":
             ntlist = -1
             self.mdl.setListingFrequency(ntlist)
-            self.lineEditNTLIST.setText("1")
+            self.lineEditNTLIST.setText("-1")
             self.lineEditNTLIST.hide()
 
         elif listing == "Automatic":
             ntlist = 0
             self.mdl.setListingFrequency(ntlist)
-            self.lineEditNTLIST.setText("1")
+            self.lineEditNTLIST.setText("0")
             self.lineEditNTLIST.hide()
 
         elif listing == "Frequency_l":
