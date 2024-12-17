@@ -274,15 +274,15 @@ def get_case_state(run_dir, coupling=False, run_timeout=3600):
 
     # General case: try to analyze run directory
 
-    states = [('finished', case_state.COMPUTED),
+    states = [('exceeded_time_limit', case_state.EXCEEDED_TIME_LIMIT),
+              ('finished', case_state.COMPUTED),
               ('saving', case_state.FINALIZING),
               ('running', case_state.RUNNING),
               ('preparing', case_state.STAGING),
               ('prepared', case_state.STAGED),
               ('preprocessing', case_state.RUNNING),
               ('ready', case_state.PREPROCESSED),
-              ('failed', case_state.FAILED),
-              ('exceeded_time_limit', case_state.EXCEEDED_TIME_LIMIT)]
+              ('failed', case_state.FAILED)]
 
     for s in states:
         if os.path.isfile(os.path.join(run_dir, 'run_status.' + s[0])):
