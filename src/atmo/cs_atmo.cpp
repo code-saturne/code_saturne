@@ -4289,7 +4289,10 @@ cs_atmo_compute_meteo_profiles(void)
   cs_real_t rair = phys_pro->r_pg_cnst;
   cs_real_t cp0 = phys_pro->cp0;
   cs_real_t rscp = rair/cp0;
-  cs_real_t theta0 = aopt->meteo_t0 * pow(ps/ aopt->meteo_psea, rscp);
+  cs_real_t clatev = phys_pro->clatev;
+  cs_real_t theta0 = (aopt->meteo_t0 - clatev/cp0 * aopt->meteo_ql0)
+                   * pow(ps/ aopt->meteo_psea, rscp);
+
 
   /* LMO inverse, ustar at ground */
   cs_real_t dlmo = aopt->meteo_dlmo;
