@@ -5765,7 +5765,8 @@ cs_gui_time_tables(void)
         token = strtok(NULL, ",");
       }
 
-      cs_time_table_set_headers(new_table, n_headers, (const char **)headers);
+      cs_time_table_set_headers(new_table, n_headers,
+                                const_cast<const char **>(headers));
 
       /* Free */
       for (int i = 0; i < n_headers; i++)
