@@ -583,37 +583,24 @@ _aggregation_stats_log(const cs_grid_t  *f,
  * connectivity (also determining the number of coarse faces) from
  * fine grid and cell coarsening array.
  *
- * Also, it is the caller's responsibility to free arrays coarse_face[]
- * and coarse_face_cell_id[] when they are no longer used.
- *
  * parameters:
- *   fine             <-- Pointer to fine (parent) grid structure
- *   coarse_row       <-- Fine -> coarse row id
- *                        size: fine->n_cols_ext
- *   n_coarse_rows    <-- Number of coarse cells
- *   n_coarse_faces   --> Number of coarse faces
- *   coarse_face      --> Fine -> coarse face connectivity (1 to n, signed:
- *                        = 0 fine face inside coarse cell
- *                        > 0 orientation same as parent
- *                        < 0 orientation opposite as parent);
- *                        size: fine->n_faces
- *   coarse_face_cell --> coarse face -> cell connectivity
- *                        size: n_coarse_faces
+ *   fine        <-- Pointer to fine (parent) grid structure
+ *   coarse      <-> Pointer to coarse grid structure
  *----------------------------------------------------------------------------*/
 
 static void
-_coarsen_faces(const cs_grid_t    *fine,
-               const cs_lnum_t    *restrict coarse_row,
-               cs_lnum_t           n_coarse_rows,
-               cs_lnum_t          *n_coarse_faces,
-               cs_lnum_t         **coarse_face,
-               cs_lnum_2_t       **coarse_face_cell)
+_coarsen_face_cell(const cs_grid_t    *fine,
+                   cs_grid_t          *coarse)
 {
+  if (fine->face_cell == nullptr)
+    return;
+
   std::chrono::high_resolution_clock::time_point t_start;
   if (cs_glob_timer_kernels_flag > 0)
     t_start = std::chrono::high_resolution_clock::now();
 
-  cs_lnum_t  ii, jj, face_id, connect_size;
+  const cs_lnum_t    *restrict coarse_row = coarse->coarse_row;
+  cs_lnum_t           n_coarse_rows = coarse->n_rows;
 
   cs_lnum_t  *restrict c_cell_cell_cnt = nullptr;
   cs_lnum_t  *restrict c_cell_cell_idx = nullptr;
@@ -628,6 +615,8 @@ _coarsen_faces(const cs_grid_t    *fine,
   const cs_lnum_t c_n_cells = n_coarse_rows;
   const cs_lnum_t f_n_faces = fine->n_faces;
   const cs_lnum_2_t *restrict f_face_cell = fine->face_cell;
+
+  cs_lnum_t  ii, jj, face_id, connect_size;
 
   /* Pre-allocate return values
      (coarse face->cell connectivity is over-allocated) */
@@ -740,9 +729,10 @@ _coarsen_faces(const cs_grid_t    *fine,
 
   BFT_REALLOC(_c_face_cell, c_n_faces, cs_lnum_2_t);
 
-  *n_coarse_faces = c_n_faces;
-  *coarse_face = _coarse_face;
-  *coarse_face_cell = _c_face_cell;
+  coarse->n_faces = c_n_faces;
+  coarse->coarse_face = _coarse_face;
+  coarse->_face_cell = _c_face_cell;
+  coarse->face_cell = coarse->_face_cell;
 
   if (cs_glob_timer_kernels_flag > 0) {
     std::chrono::high_resolution_clock::time_point
@@ -1349,58 +1339,6 @@ _coarse_row_count_and_halo(const cs_grid_t   *f,
 
   c->n_elts_r[0] = c->n_rows;
   c->n_elts_r[1] = c->n_cols_ext;
-}
-
-/*----------------------------------------------------------------------------
- * Build coarse grid from fine grid
- *
- * The coarse grid must previously have been initialized with _coarse_init()
- * and its coarsening indicator determined (at least for the local cells;
- * it is extended to halo cells here if necessary).
- *
- * - Periodic faces are not handled yet
- *
- * parameters:
- *   f <-- Pointer to fine (parent) grid structure
- *   c <-> Pointer to coarse grid structure
- *----------------------------------------------------------------------------*/
-
-static void
-_coarsen_face_cell(const cs_grid_t   *f,
-                   cs_grid_t         *c)
-{
-  const cs_lnum_t f_n_faces = f->n_faces;
-  const cs_lnum_2_t *restrict f_face_cell = f->face_cell;
-
-  /* Sanity check */
-
-  if (f_face_cell != nullptr) {
-#   pragma omp parallel for if(f_n_faces > CS_THR_MIN)
-    for (cs_lnum_t face_id = 0; face_id < f_n_faces; face_id++) {
-      cs_lnum_t ii = f_face_cell[face_id][0];
-      cs_lnum_t jj = f_face_cell[face_id][1];
-      if (ii == jj)
-        bft_error(__FILE__, __LINE__, 0,
-                  _("Connectivity error:\n"
-                    "Face %d has same cell %d on both sides."),
-                  (int)(face_id+1), (int)(ii+1));
-    }
-  }
-
-  /* Build face coarsening and coarse grid face -> cells connectivity */
-
-  if (  f->face_cell != nullptr
-      && (   c->relaxation > 0
-          || cs_matrix_get_type(f->matrix) == CS_MATRIX_NATIVE)) {
-    _coarsen_faces(f,
-                   c->coarse_row,
-                   c->n_rows,
-                   &(c->n_faces),
-                   &(c->coarse_face),
-                   &(c->_face_cell));
-
-    c->face_cell = (const cs_lnum_2_t  *)(c->_face_cell);
-  }
 }
 
 #if defined(HAVE_MPI)
@@ -8280,6 +8218,14 @@ cs_grid_coarsen(const cs_grid_t      *f,
 
   if (recurse > 1) {
 
+    cs_matrix_set_mesh_association(c->_matrix,
+                                   nullptr,
+                                   c->cell_face,
+                                   c->cell_face_sgn,
+                                   (const cs_real_3_t *)c->cell_cen,
+                                   (const cs_real_t *)c->cell_vol,
+                                   (const cs_real_3_t *)c->_face_normal);
+
     /* Build coarser grid from coarse grid */
     cs_grid_t *cc = cs_grid_coarsen(c,
                                     c->alloc_mode,
@@ -8293,22 +8239,20 @@ cs_grid_coarsen(const cs_grid_t      *f,
 
     /* Project coarsening */
 
+    if (c->use_faces) {
+      BFT_FREE(cc->coarse_face);
+      BFT_FREE(cc->_face_cell);
+      cc->face_cell = nullptr;
+      if (msr_gather == false)
+        _coarsen_face_cell(f, cc);
+      else if (c->relaxation > 0)
+        _compute_coarse_quantities_msr_with_faces(f, c, verbosity);
+    }
+
     _project_coarse_row_to_parent(cc);
     CS_FREE_HD(cc->coarse_row);
     cc->coarse_row = c->coarse_row;
     c->coarse_row = nullptr;
-
-    if (c->use_faces) {
-      BFT_FREE(cc->coarse_face);
-      BFT_FREE(cc->_face_cell);
-      _coarsen_faces(f,
-                     cc->coarse_row,
-                     cc->n_rows,
-                     &(cc->n_faces),
-                     &(cc->coarse_face),
-                     &(cc->_face_cell));
-      cc->face_cell = (const cs_lnum_2_t  *)(cc->_face_cell);
-    }
 
     /* Keep coarsest grid only */
 
