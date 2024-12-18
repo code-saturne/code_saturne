@@ -300,7 +300,7 @@ class FluidCharacteristicsModel(Variables, Model):
 
         # If thermal model enabled, add thermal conductivity and specific heat
 
-        if self.tsm != "off" or hts_state != 'off':
+        if self.tsm != "off" or self.hts_state != 'off':
             self.lst.extend([('specific_heat', 'Cp'), \
                              ('thermal_conductivity', 'Al')])
             self.node_heat = self.setNewFluidProperty(self.node_fluid, \
