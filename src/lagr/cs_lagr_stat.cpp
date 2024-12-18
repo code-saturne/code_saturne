@@ -260,7 +260,7 @@ typedef struct {
  * Static global variables
  *============================================================================*/
 
-static  char *_base_stat_activate = nullptr;
+static  int *_base_stat_activate = nullptr;
 
 static  bool _restart_info_checked = false;
 static  cs_lagr_moment_restart_info_t *_restart_info = nullptr;
@@ -1993,28 +1993,48 @@ _cs_lagr_moment_restart_read(void)
 static void
 _init_vars_attribute(void)
 {
+  if (_base_stat_activate == nullptr) {
+    const int n_stat_types = _n_stat_types();
+    BFT_MALLOC(_base_stat_activate, n_stat_types, int);
+    for (int i = 0; i < n_stat_types; i++)
+      _base_stat_activate[i] = -1;
+  }
   if (cs_glob_lagr_model->physical_model == CS_LAGR_PHYS_HEAT) {
-    if (cs_glob_lagr_specific_physics->idpvar)
-      cs_lagr_stat_activate_attr(CS_LAGR_DIAMETER);
-    if (cs_glob_lagr_specific_physics->impvar)
-      cs_lagr_stat_activate_attr(CS_LAGR_MASS);
-    if (cs_glob_lagr_specific_physics->itpvar)
-      cs_lagr_stat_activate_attr(CS_LAGR_TEMPERATURE);
+    int attr_id = CS_LAGR_DIAMETER;
+    if (   cs_glob_lagr_specific_physics->idpvar
+        && _base_stat_activate[cs_lagr_stat_type_from_attr_id(attr_id)] != 0)
+      cs_lagr_stat_activate_attr(attr_id);
+
+    attr_id = CS_LAGR_MASS;
+    if (   cs_glob_lagr_specific_physics->impvar
+        && _base_stat_activate[cs_lagr_stat_type_from_attr_id(attr_id)] != 0)
+      cs_lagr_stat_activate_attr(attr_id);
+
+    attr_id = CS_LAGR_TEMPERATURE;
+    if (cs_glob_lagr_specific_physics->itpvar
+        && _base_stat_activate[cs_lagr_stat_type_from_attr_id(attr_id)] != 0)
+      cs_lagr_stat_activate_attr(attr_id);
   }
 
   else if (cs_glob_lagr_model->physical_model == CS_LAGR_PHYS_COAL) {
-    cs_lagr_stat_activate_attr(CS_LAGR_MASS);
-    cs_lagr_stat_activate_attr(CS_LAGR_WATER_MASS);
-    cs_lagr_stat_activate_attr(CS_LAGR_COAL_MASS);
-    cs_lagr_stat_activate_attr(CS_LAGR_COKE_MASS);
-    cs_lagr_stat_activate_attr(CS_LAGR_TEMPERATURE);
+    int l_attr[5] = {CS_LAGR_MASS,
+                     CS_LAGR_WATER_MASS,
+                     CS_LAGR_COAL_MASS,
+                     CS_LAGR_COKE_MASS,
+                     CS_LAGR_TEMPERATURE};
+    for (int i = 0; i < 5; i++) {
+      if (_base_stat_activate[cs_lagr_stat_type_from_attr_id(l_attr[i])] != 0)
+        cs_lagr_stat_activate_attr(l_attr[i]);
+    }
   }
 
   else if (cs_glob_lagr_model->physical_model == CS_LAGR_PHYS_CTWR) {
-    cs_lagr_stat_activate_attr(CS_LAGR_MASS);
-    cs_lagr_stat_activate_attr(CS_LAGR_TEMPERATURE);
+    int l_attr[2] = {CS_LAGR_MASS, CS_LAGR_TEMPERATURE};
+    for (int i = 0; i < 2; i++) {
+      if (_base_stat_activate[cs_lagr_stat_type_from_attr_id(l_attr[i])] != 0)
+        cs_lagr_stat_activate_attr(l_attr[i]);
+    }
   }
-
 }
 
 /*----------------------------------------------------------------------------
@@ -3642,7 +3662,7 @@ _event_stat_initialize(void)
         cs_lagr_stat_moment_t m_type =
           static_cast<cs_lagr_stat_moment_t>(i_m_type);
 
-        if ((int)(_base_stat_activate[stat_type]) < m_type + 2)
+        if (_base_stat_activate[stat_type] < i_m_type + 2)
           continue;
 
         cs_lagr_stat_time_moment_define
@@ -3683,7 +3703,7 @@ _event_stat_initialize(void)
         cs_lagr_stat_moment_t m_type =
           static_cast<cs_lagr_stat_moment_t>(i_m_type);
 
-        if ((int)(_base_stat_activate[stat_type]) < m_type + 2)
+        if (_base_stat_activate[stat_type] < i_m_type + 2)
           continue;
 
         int                        dim = 1;
@@ -4174,9 +4194,9 @@ cs_lagr_stat_activate(int  stat_type)
   /* Setup flag if not already done */
 
   if (_base_stat_activate == nullptr) {
-    BFT_MALLOC(_base_stat_activate, n_stat_types, char);
+    BFT_MALLOC(_base_stat_activate, n_stat_types, int);
     for (int i = 0; i < n_stat_types; i++)
-      _base_stat_activate[i] = 0;
+      _base_stat_activate[i] = -1;
   }
 
   int level = 3;
@@ -4229,7 +4249,7 @@ cs_lagr_stat_activate_time_moment(int                    stat_type,
 
   cs_lagr_stat_activate(stat_type);
 
-  char level = (moment >= CS_LAGR_MOMENT_VARIANCE) ? 3 : 2;
+  int level = (moment >= CS_LAGR_MOMENT_VARIANCE) ? 3 : 2;
   _base_stat_activate[stat_type] = CS_MAX(_base_stat_activate[stat_type],
                                           level);
 }
@@ -4459,7 +4479,7 @@ cs_lagr_stat_initialize(void)
 
       for (int stat_type = 0; stat_type < _n_stat_types(); stat_type++) {
 
-        if (_base_stat_activate[stat_type] == 0)
+        if (_base_stat_activate[stat_type] <= 0)
           continue;
 
         /* skip boundary statistics */
@@ -4510,7 +4530,7 @@ cs_lagr_stat_initialize(void)
           cs_lagr_stat_moment_t m_type =
             static_cast<cs_lagr_stat_moment_t>(i_m_type);
 
-          if ((int)(_base_stat_activate[stat_type]) < m_type + 2)
+          if (_base_stat_activate[stat_type] < i_m_type + 2)
             continue;
 
           if (stat_type == CS_LAGR_STAT_VOLUME_FRACTION) {
