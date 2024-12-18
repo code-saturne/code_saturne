@@ -749,6 +749,15 @@ cs_coal_model_set_model(cs_coal_model_type_t  type);
 
 /*----------------------------------------------------------------------------*/
 /*
+ * \brief Specific setup operations for pulverized coal combustion model.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_coal_setup(void);
+
+/*----------------------------------------------------------------------------*/
+/*
  * \brief Compute mass transfer terms between the continous and dispersed phase.
  */
 /*----------------------------------------------------------------------------*/

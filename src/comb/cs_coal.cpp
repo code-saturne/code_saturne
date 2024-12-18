@@ -43,11 +43,17 @@
 #include "bft_mem.h"
 #include "bft_printf.h"
 
+#include "cs_equation_param.h"
 #include "cs_field.h"
+#include "cs_field_default.h"
+#include "cs_parameters.h"
+#include "cs_parameters_check.h"
+#include "cs_physical_constants.h"
 #include "cs_math.h"
 #include "cs_mesh.h"
 #include "cs_mesh_quantities.h"
 #include "cs_physical_model.h"
+#include "cs_thermal_model.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file
@@ -1011,6 +1017,117 @@ cs_coal_model_set_model(cs_coal_model_type_t  type)
   cs_f_thch_models_init();
 
   return cm;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Specific setup operations for pulverized coal combustion model.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_coal_setup(void)
+{
+  cs_coal_model_t *cm = cs_glob_coal_model;
+
+  /* Transported variables
+     --------------------- */
+
+  cs_fluid_properties_t *fp = cs_get_glob_fluid_properties();
+
+  const int keysca = cs_field_key_id("scalar_id");
+  const int kscacp  = cs_field_key_id("is_temperature");
+  const int kscavr = cs_field_key_id("first_moment_id");
+  const int kvisl0 = cs_field_key_id("diffusivity_ref");
+  const int ksigmas = cs_field_key_id("turbulent_schmidt");
+
+  const int thm_f_id = cs_thermal_model_field()->id;
+
+  const int n_fields = cs_field_n_fields();
+
+  for (int f_id = 0; f_id < n_fields; f_id++) {
+    cs_field_t *f = cs_field_by_id(f_id);
+    if (!(f->type & CS_FIELD_VARIABLE))
+      continue;
+    if (f->type & CS_FIELD_CDO || f->type & CS_FIELD_USER)
+      continue;
+    if (cs_field_get_key_int(f, keysca) <= 0)
+      continue;
+
+    /* Field is a model variable (transported) */
+
+    cs_field_set_key_int(f, kscacp, 0);  /* Should already be set or default */
+
+    /* Solve on enthalpy with constant CP */
+
+    if (f_id != thm_f_id && cs_field_get_key_int(f, kscavr) < 0) {
+
+      /* For combustion, we consider that the turbulent viscosity dominates.
+         We avoid computing laminar flames with  Le =/= 1. */
+
+      cs_field_set_key_double(f, kvisl0, fp->viscl0);
+
+    }
+
+    /* Turbulent Schmidt or Prandtl */
+
+    const cs_real_t turb_schmidt = 0.7;
+    cs_field_set_key_double(f, ksigmas, turb_schmidt);
+
+    /* Equation parameter defaults */
+
+    cs_equation_param_t *eqp = cs_field_get_equation_param(f);
+
+    if (eqp->isstpc == -999) {
+      eqp->blencv = 0.;
+      eqp->ischcv = 1;
+      eqp->isstpc = 0;
+      eqp->ircflu = 0;
+    }
+
+  }
+
+  /* Additional information
+     ---------------------- */
+
+  /* Compute Ro0 based on T0 and P0
+     (perfect gas law applied to air).
+
+     Initialize RO0 with oxydant 1 which should be the dominant oxydant. */
+
+  const int ioxy = 0;
+  const int ico2 = cm->ico2 - 1;
+  const int ih2o = cm->ih2o - 1;
+  const int in2  = cm->in2 - 1;
+  const int io2  = cm->io2 - 1;
+
+  const cs_real_t wmolme =   (  cm->wmole[io2]  * cm->oxyo2[ioxy]
+                              + cm->wmole[in2]  * cm->oxyn2[ioxy]
+                              + cm->wmole[ih2o] * cm->oxyh2o[ioxy]
+                              + cm->wmole[ico2] * cm->oxyco2[ioxy])
+                           / (  cm->oxyo2[ioxy] + cm->oxyn2[ioxy]
+                              + cm->oxyh2o[ioxy] + cm->oxyco2[ioxy]);
+
+  fp->ro0 = fp->p0 * wmolme / (cs_physical_constants_r * fp->t0);
+
+  // Initialization for coke density
+
+  for (int coal_id = 0; coal_id < cm->n_coals; coal_id++) {
+    cm->rhock[coal_id] = cm->rho0ch[coal_id];
+  }
+
+  // Variable density and constant viscosity
+  fp->irovar = 1;
+  fp->ivivar = 0;
+
+  /* Verification of user settings
+     ----------------------------- */
+
+  cs_parameters_is_in_range_double(CS_ABORT_IMMEDIATE,
+                                   _("Pulverized coal combustion model setup"),
+                                   "srrom",
+                                   cm->srrom,
+                                   0., 1.);
 }
 
 /*----------------------------------------------------------------------------*/

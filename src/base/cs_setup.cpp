@@ -2758,6 +2758,9 @@ _init_physical_models_1(void)
 
   cs_f_ppini1(); // Calls not converted to C++ yet.
 
+  if (cs_glob_physical_model_flag[CS_COMBUSTION_COAL] >= 0)
+    cs_coal_setup();
+
   /* Specific physical models initializations */
 
   if (pm_flag[CS_COMPRESSIBLE] >= 0)

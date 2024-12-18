@@ -57,7 +57,6 @@ use cstnum
 use ppppar
 use ppthch
 use coincl
-use cpincl
 use ppincl
 
 use, intrinsic :: iso_c_binding
@@ -78,12 +77,6 @@ implicit none
 if ( ippmod(icod3p).ge.0 .or. ippmod(islfm ).ge.0 .or.            &
      ippmod(icoebu).ge.0 .or. ippmod(icolwc).ge.0 ) then
   call coini1
-endif
-
-! ---> Physique particuliere : Combustion Charbon Pulverise
-
-if (ippmod(iccoal).ge.0) then
-  call cs_coal_param
 endif
 
 ! Atmospheric module, second pass

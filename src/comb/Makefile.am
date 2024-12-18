@@ -88,13 +88,11 @@ cs_coal_ht_convert.cpp \
 cs_coal_initialize.cpp \
 cs_coal_mass_transfer.cpp \
 cs_coal_noxst.cpp \
-cs_coal_param.f90 \
 cs_coal_physical_properties.cpp \
 cs_coal_prop.f90 \
 cs_coal_read_data.cpp \
 cs_coal_source_terms.cpp \
-cs_coal_varpos.f90 \
-cs_coal_verify.f90
+cs_coal_varpos.f90
 
 # Rules for CUDA (not known by Automake)
 
