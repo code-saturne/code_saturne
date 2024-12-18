@@ -794,7 +794,6 @@ class FluidCharacteristicsModel(Variables, Model):
                             'specific_heat', 'thermal_conductivity',
                             'volume_viscosity', 'dynamic_diffusion'))
         node = self.node_fluid.xmlGetNode('property', name=tag)
-        print(f"{tag=}")
         pp = node.xmlGetDouble('initial_value')
         if pp is None:
             pp = self.defaultFluidCharacteristicsValues()[tag]

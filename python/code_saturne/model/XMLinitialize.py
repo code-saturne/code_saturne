@@ -221,7 +221,6 @@ class XMLinit(BaseXmlInit):
             if hts == 'off':
                 self.setNewVariable(node, 'velocity', dim = '3')
                 self.setNewProperty(node, 'total_pressure')
-            print(f"Found {hts=}")
 
             if grdflow != 'groundwater' and hts == 'off':
                 n = self.setNewProperty(node, 'yplus')

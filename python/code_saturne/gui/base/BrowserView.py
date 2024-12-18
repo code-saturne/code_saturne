@@ -973,7 +973,6 @@ class BrowserView(QWidget, Ui_BrowserForm):
 
         # Thermophysical Models
 
-        print(f"{m_hts=}")
         self.setRowShow(self.tr('Calculation features'), True)
         self.setRowShow(self.tr('Main fields'), (p_module == 'neptune_cfd'))
         self.setRowShow(self.tr('Body forces'), not m_hts)
