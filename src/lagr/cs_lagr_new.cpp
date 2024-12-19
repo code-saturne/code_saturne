@@ -773,11 +773,28 @@ cs_lagr_new_particle_init(const cs_lnum_t                 particle_range[2],
 
   cs_lnum_t  n = particle_range[1] - particle_range[0];
   cs_real_3_t  *vagaus;
+  cs_real_t  *temp_vagaus = nullptr;
 
   BFT_MALLOC(vagaus, n, cs_real_3_t);
 
+  cs_real_3_t *temp_vel_fluc_coef = nullptr;
+  cs_real_t *var_temp_corel_coef = nullptr;
+
   if (cs_glob_lagr_model->idistu == 1 && n > 0) {
     cs_random_normal(n*3, (cs_real_t *)vagaus);
+
+    if (    cs_glob_lagr_model->physical_model > CS_LAGR_PHYS_OFF
+        && (extra->temperature_turbulent_flux  != nullptr
+          || extra->temperature_variance != nullptr)
+        &&  extra->temperature != nullptr) {
+      if (extra->temperature_turbulent_flux  != nullptr)
+        BFT_MALLOC(temp_vel_fluc_coef, n_cells, cs_real_3_t);
+      if (extra->temperature_variance != nullptr)
+        BFT_MALLOC(var_temp_corel_coef, n_cells, cs_real_t);
+
+      BFT_MALLOC(temp_vagaus, n, cs_real_t);
+      cs_random_normal(n, temp_vagaus);
+    }
   }
 
   else {
@@ -793,6 +810,10 @@ cs_lagr_new_particle_init(const cs_lnum_t                 particle_range[2],
   cs_real_33_t *eig_vec;
   cs_real_3_t *eig_val;
 
+  /* If no new particles, no need of calculation */
+  if (n <= 0)
+    return;
+
   BFT_MALLOC(eig_vec, n_cells, cs_real_33_t);
   BFT_MALLOC(eig_val, n_cells, cs_real_3_t);
 
@@ -802,21 +823,20 @@ cs_lagr_new_particle_init(const cs_lnum_t                 particle_range[2],
 
   if (cs_glob_lagr_model->idistu == 1) {
 
-    cs_real_33_t *sym_rij;
-    BFT_MALLOC(sym_rij, n_cells, cs_real_33_t);
     cs_real_t tol_err = 1.0e-12;
 
     for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
+      cs_real_33_t sym_rij;
       if (cvar_rij != nullptr) {
-        sym_rij[cell_id][0][0] = cvar_rij[cell_id][0];
-        sym_rij[cell_id][1][1] = cvar_rij[cell_id][1];
-        sym_rij[cell_id][2][2] = cvar_rij[cell_id][2];
-        sym_rij[cell_id][0][1] = cvar_rij[cell_id][3];
-        sym_rij[cell_id][1][0] = cvar_rij[cell_id][3];
-        sym_rij[cell_id][1][2] = cvar_rij[cell_id][4];
-        sym_rij[cell_id][2][1] = cvar_rij[cell_id][4];
-        sym_rij[cell_id][0][2] = cvar_rij[cell_id][5];
-        sym_rij[cell_id][2][0] = cvar_rij[cell_id][5];
+        sym_rij[0][0] = cvar_rij[cell_id][0];
+        sym_rij[1][1] = cvar_rij[cell_id][1];
+        sym_rij[2][2] = cvar_rij[cell_id][2];
+        sym_rij[0][1] = cvar_rij[cell_id][3];
+        sym_rij[1][0] = cvar_rij[cell_id][3];
+        sym_rij[1][2] = cvar_rij[cell_id][4];
+        sym_rij[2][1] = cvar_rij[cell_id][4];
+        sym_rij[0][2] = cvar_rij[cell_id][5];
+        sym_rij[2][0] = cvar_rij[cell_id][5];
       }
       /* TODO do it better for EVM models */
       else {
@@ -825,15 +845,15 @@ cs_lagr_new_particle_init(const cs_lnum_t                 particle_range[2],
         if (cvar_k != nullptr)
           w = d2s3 * cvar_k[cell_id];
 
-        sym_rij[cell_id][0][0] = w;
-        sym_rij[cell_id][1][1] = w;
-        sym_rij[cell_id][2][2] = w;
-        sym_rij[cell_id][0][1] = 0.;
-        sym_rij[cell_id][1][0] = 0.;
-        sym_rij[cell_id][1][2] = 0.;
-        sym_rij[cell_id][2][1] = 0.;
-        sym_rij[cell_id][0][2] = 0.;
-        sym_rij[cell_id][2][0] = 0.;
+        sym_rij[0][0] = w;
+        sym_rij[1][1] = w;
+        sym_rij[2][2] = w;
+        sym_rij[0][1] = 0.;
+        sym_rij[1][0] = 0.;
+        sym_rij[1][2] = 0.;
+        sym_rij[2][1] = 0.;
+        sym_rij[0][2] = 0.;
+        sym_rij[2][0] = 0.;
       }
 
       eig_vec[cell_id][0][0] = 1;
@@ -846,11 +866,51 @@ cs_lagr_new_particle_init(const cs_lnum_t                 particle_range[2],
       eig_vec[cell_id][2][1] = 0;
       eig_vec[cell_id][2][2] = 1;
 
-      cs_math_33_eig_val_vec(sym_rij[cell_id], tol_err, eig_val[cell_id], eig_vec[cell_id]);
-    }
+      cs_math_33_eig_val_vec(sym_rij, tol_err, eig_val[cell_id], eig_vec[cell_id]);
 
-    BFT_FREE(sym_rij);
-  } else {
+    }
+    if (    cs_glob_lagr_model->physical_model > CS_LAGR_PHYS_OFF
+        && (extra->temperature_turbulent_flux  != nullptr
+          || extra->temperature_variance != nullptr)
+        &&  extra->temperature != nullptr) {
+      if (extra->temperature_turbulent_flux  != nullptr) {
+        for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
+          cs_real_33_t vel_fluct_coef;
+          for (int i = 0; i < 3; i++) {
+            for (int j = 0; j < 3; j++)
+            vel_fluct_coef[i][j] =
+              sqrt(eig_val[cell_id][j]) * eig_vec[cell_id][j][i];
+          }
+
+          cs_real_33_t inv_vel_fluct_coef;
+          cs_math_33_inv_cramer(vel_fluct_coef,
+                                inv_vel_fluct_coef);
+          cs_math_33_3_product(inv_vel_fluct_coef,
+                               &extra->temperature_turbulent_flux->val[3*cell_id],
+                               temp_vel_fluc_coef[cell_id]);
+        }
+      } // end turbulent heat fluxes
+      /* Fluctuations to obtain the proper velocity variance */
+      if(extra->temperature_variance != nullptr ) {
+        for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
+          var_temp_corel_coef[cell_id] = extra->temperature_variance->val[cell_id];
+          if (extra->temperature_turbulent_flux != nullptr) {
+            for (int i = 0; i < 3; i++)
+              var_temp_corel_coef[cell_id] -=
+                cs_math_sq(temp_vel_fluc_coef[cell_id][i]);
+          }
+          if (var_temp_corel_coef[cell_id] > 0.)
+            var_temp_corel_coef[cell_id] = sqrt(var_temp_corel_coef[cell_id]);
+          else {
+            /* FIXME should not be in this situation
+             * temperature variance might by overestimated*/
+            var_temp_corel_coef[cell_id] = 0.;
+          }
+        }
+      }
+    }
+  }
+  else {
     for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
 
       eig_vec[cell_id][0][0] = 1.;
@@ -1251,6 +1311,26 @@ cs_lagr_new_particle_init(const cs_lnum_t                 particle_range[2],
                                 cval_t[c_id]+tscl_shift);
     }
 
+    if (    cs_glob_lagr_model->physical_model > CS_LAGR_PHYS_OFF
+        && (extra->temperature_turbulent_flux  != nullptr || extra->temperature_variance != nullptr)
+        &&  extra->temperature != nullptr) {
+      /* Initialize temperature fluctuations */
+
+      cs_real_t temp_seen =
+        cs_lagr_particle_get_real(particle, p_am, CS_LAGR_FLUID_TEMPERATURE);
+
+      /* Fluctuations to obtain proper thermal turbulent fluxes */
+      if (extra->temperature_turbulent_flux != nullptr)
+        temp_seen +=
+          cs_math_3_dot_product(temp_vel_fluc_coef[c_id], vagaus[l_id]);
+
+      /* Fluctuations to obtain the proper temperature variance */
+      if(extra->temperature_variance != nullptr )
+        temp_seen += var_temp_corel_coef[c_id] * temp_vagaus[l_id];
+
+      cs_lagr_particle_set_real(particle, p_am, CS_LAGR_FLUID_TEMPERATURE,
+                                temp_seen);
+    }
     /* statistical weight */
     cs_lagr_particle_set_real(particle, p_am, CS_LAGR_STAT_WEIGHT,
                               zis->stat_weight);
@@ -1457,6 +1537,9 @@ cs_lagr_new_particle_init(const cs_lnum_t                 particle_range[2],
   BFT_FREE(vagaus);
   BFT_FREE(eig_vec);
   BFT_FREE(eig_val);
+  BFT_FREE(var_temp_corel_coef);
+  BFT_FREE(temp_vel_fluc_coef);
+  BFT_FREE(temp_vagaus);
 
 }
 
