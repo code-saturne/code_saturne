@@ -2679,6 +2679,7 @@ _pressure_correction_fv(int                   iterns,
     cs_real_t *coefa_rho = bc_coeffs_rho_loc.a;
     cs_real_t *coefb_rho = bc_coeffs_rho_loc.b;
 
+    int idften = eqp_p->idften;
     ctx.parallel_for(n_b_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t f_id) {
 
       /* Dirichlet Boundary Condition on rho */
@@ -2688,8 +2689,8 @@ _pressure_correction_fv(int                   iterns,
       coefa_dp2[f_id] = 0.;
       coefaf_dp2[f_id] = 0.;
 
-      if (   eqp_p->idften & CS_ISOTROPIC_DIFFUSION
-          || eqp_p->idften & CS_ANISOTROPIC_DIFFUSION) { // test inutile ?
+      if (   idften & CS_ISOTROPIC_DIFFUSION
+          || idften & CS_ANISOTROPIC_DIFFUSION) { // test inutile ?
 
         /* Neumann boundary Conditions for the convective flux (qimpv = 0) */
 

@@ -129,7 +129,7 @@ cs_dilatable_scalar_diff_st(int iterns)
 
   /* Memory allocation */
   cs_real_t *vistot, *i_visc, *b_visc, *xcpp;
-  BFT_MALLOC(vistot, n_cells_ext, cs_real_t);
+  CS_MALLOC_HD(vistot, n_cells_ext, cs_real_t, cs_alloc_mode);
 
   CS_MALLOC_HD(i_visc, n_i_faces, cs_real_t, cs_alloc_mode);
   CS_MALLOC_HD(b_visc, n_b_faces, cs_real_t, cs_alloc_mode);
@@ -307,7 +307,7 @@ cs_dilatable_scalar_diff_st(int iterns)
   CS_FREE_HD(b_visc);
   CS_FREE_HD(xcpp);
 
-  BFT_FREE(vistot);
+  CS_FREE_HD(vistot);
 
 }
 
