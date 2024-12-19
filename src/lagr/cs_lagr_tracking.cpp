@@ -72,6 +72,7 @@
 #include "cs_search.h"
 #include "cs_timer_stats.h"
 #include "cs_turbomachinery.h"
+#include "cs_turbulence_model.h"
 
 #include "cs_field.h"
 #include "cs_field_pointer.h"
@@ -1565,13 +1566,79 @@ _boundary_treatment(cs_lagr_particle_set_t    *particles,
       cs_real_t r_in[3];
       cs_math_sym_33_3_product(r_ij, face_norm, r_in);
 
+      /* Modify velocity seen */
       for (int k = 0; k < 3; k++)
         particle_velocity_seen[k] -=  r_in[k] / r_nn * tmp ;
+
+      /* Modify particle fluid temperature */
+      if (   cs_glob_lagr_model->physical_model != CS_LAGR_PHYS_OFF
+          && extra->temperature != nullptr
+          && extra->temperature_turbulent_flux != nullptr) {
+
+        cs_real_t temperature_out =
+          cs_lagr_particles_get_real(particles, p_id,
+                                     CS_LAGR_FLUID_TEMPERATURE);
+        /* Normal thermal turbulent flux */
+        cs_real_t r_tn =
+          cs_math_3_dot_product(&extra->temperature_turbulent_flux->val[3*cell_id], face_norm);
+        cs_lagr_particles_set_real(particles, p_id, CS_LAGR_FLUID_TEMPERATURE,
+            temperature_out -  r_tn / r_nn * tmp);
+      }
     }
     /* TODO else: for EVM u*^2 / r_nn */
     else {
       for (int k = 0; k < 3; k++)
         particle_velocity_seen[k] -= tmp * face_norm[k];
+      if (   cs_glob_lagr_model->physical_model != CS_LAGR_PHYS_OFF
+          && extra->temperature != nullptr
+          && extra->temperature_variance != nullptr
+          && (extra->tstar != nullptr || extra->grad_tempf != nullptr)
+          && extra->cvar_k != nullptr) {
+        cs_real_t temperature_out =
+          cs_lagr_particles_get_real(particles, p_id,
+                                     CS_LAGR_FLUID_TEMPERATURE);
+        /* Modify fluid temperature with algebraic solution from SLM--IEM model
+         * in the neutral limit (=close to walls, could be poor further away)*/
+        cs_real_t rnt_ov_rnn =
+          -sqrt(cs_turb_crij_ct * (1.5 * cs_turb_crij_c0 + 1.) /
+            (cs_turb_crij_c0 * (cs_turb_crij_ct + 0.75 * cs_turb_crij_c0 + 1.))
+              * extra->temperature_variance->val[cell_id]/extra->cvar_k->val[cell_id]);
+
+        /* Estimate the direction of the flux */
+        if (extra->grad_tempf != nullptr ) {
+          cs_real_t grad_n = cs_math_3_dot_product(extra->grad_tempf[cell_id],
+                                                   face_norm);
+          if (CS_ABS(grad_n) < cs_math_epzero)
+            rnt_ov_rnn = 0;
+          else if (grad_n < 0.)
+            rnt_ov_rnn *= -1.;
+        }
+        else if (extra->tstar != nullptr) { //define only at walls
+          if (CS_ABS(extra->tstar->val[face_id]) < cs_math_epzero)
+            rnt_ov_rnn = 0;
+          else if (extra->tstar->val[face_id] < 0.)
+            rnt_ov_rnn *= -1.;
+        }
+        else
+          rnt_ov_rnn = 0;
+
+        cs_lagr_particles_set_real(particles, p_id, CS_LAGR_FLUID_TEMPERATURE,
+                                   temperature_out -  rnt_ov_rnn * tmp);
+      }
+      else if (   cs_glob_lagr_model->physical_model != CS_LAGR_PHYS_OFF
+               && extra->temperature != nullptr
+               && extra->tstar != nullptr
+               && extra->ustar != nullptr) {
+        if (extra->ustar->val[face_id] > cs_math_epzero) {
+          cs_real_t temperature_out =
+            cs_lagr_particles_get_real(particles, p_id,
+                                       CS_LAGR_FLUID_TEMPERATURE);
+          cs_real_t rnt_ov_rnn = - extra->tstar->val[face_id] /
+            (sqrt(cs_turb_crij_c0) * extra->ustar->val[face_id]);
+          cs_lagr_particles_set_real(particles, p_id, CS_LAGR_FLUID_TEMPERATURE,
+                                     temperature_out -  rnt_ov_rnn * tmp);
+        }
+      }
     }
 
     event_flag = event_flag | CS_EVENT_REBOUND;

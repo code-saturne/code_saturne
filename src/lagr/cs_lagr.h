@@ -909,15 +909,24 @@ typedef struct {
   /* wall ustar */
   cs_field_t *ustar;
 
+  /* wall tstar */
+  cs_field_t *tstar;
+
   /* Fluid density */
   cs_field_t *cromf;
 
   /* Fluid pressure */
   cs_field_t *pressure;
 
-  /* Fluid temparature */
+  /* Fluid temperature */
   cs_field_t *scal_t;
   cs_field_t *temperature;
+
+  /* Fluid temperature variance */
+  cs_field_t *temperature_variance;
+
+  /* Turbulent heat flux */
+  cs_field_t *temperature_turbulent_flux;
 
   /* Fluid velocity */
   cs_field_t *vel;

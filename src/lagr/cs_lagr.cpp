@@ -343,10 +343,13 @@ static cs_lagr_extra_module_t _lagr_extra_module
      .cmu = 0,
      .visls0 = 0,
      .ustar = nullptr,
+     .tstar = nullptr,
      .cromf = nullptr,
      .pressure = nullptr,
      .scal_t = nullptr,
      .temperature = nullptr,
+     .temperature_variance = nullptr,
+     .temperature_turbulent_flux = nullptr,
      .vel = nullptr,
      .viscl = nullptr,
      .cpro_viscls = nullptr,
@@ -451,6 +454,8 @@ _lagr_map_fields_default(void)
                                        ("lagr_thermal_conductivity");
     _lagr_extra_module.cpro_cp     = cs_field_by_name_try("lagr_specific_heat");
     _lagr_extra_module.temperature = cs_field_by_name_try("lagr_temperature");
+    _lagr_extra_module.temperature_variance = nullptr;
+    _lagr_extra_module.temperature_turbulent_flux = nullptr;
     _lagr_extra_module.x_oxyd      = nullptr;
     _lagr_extra_module.x_eau       = nullptr;
     _lagr_extra_module.x_m         = nullptr;
@@ -460,6 +465,7 @@ _lagr_map_fields_default(void)
 
     _lagr_extra_module.ustar
       = cs_field_by_name_try("lagr_wall_friction_velocity");
+    _lagr_extra_module.tstar  = nullptr;
   }
   else {
     /* we use code_saturne */
@@ -484,6 +490,10 @@ _lagr_map_fields_default(void)
 
     _lagr_extra_module.cpro_cp     = cs_field_by_name_try("specific_heat");
     _lagr_extra_module.temperature = cs_field_by_name_try("temperature");
+    _lagr_extra_module.temperature_variance =
+      cs_field_by_name_try("temperature_variance");
+    _lagr_extra_module.temperature_turbulent_flux =
+      cs_field_by_name_try("temperature_turbulent_flux");
 
     _lagr_extra_module.x_oxyd      = cs_field_by_name_try("ym_o2");
     _lagr_extra_module.x_eau       = cs_field_by_name_try("ym_h2o");
@@ -492,6 +502,7 @@ _lagr_map_fields_default(void)
     _lagr_extra_module.ustar  = cs_field_by_name_try("boundary_ustar");
     if (_lagr_extra_module.ustar == nullptr)
       _lagr_extra_module.ustar  = cs_field_by_name_try("ustar");
+    _lagr_extra_module.tstar  = cs_field_by_name_try("tstar");
   }
 }
 
