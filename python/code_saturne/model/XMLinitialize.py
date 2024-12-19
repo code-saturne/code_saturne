@@ -198,10 +198,7 @@ class XMLinit(BaseXmlInit):
         OutputControlModel(self.case).addDefaultWriter()
         OutputControlModel(self.case).addDefaultMesh()
 
-        print("Calling initialize")
-
         if not prepro:
-            print("Calling not prepro!")
             self._backwardCompatibility()
 
             # Initialization (order is important)
