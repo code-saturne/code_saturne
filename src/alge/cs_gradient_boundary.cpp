@@ -375,17 +375,16 @@ _rc_var_b_faces_iprime_strided_lsq(const cs_mesh_t               *m,
        but if we go beyond that, recompute some values in loop */
 
     const cs_lnum_t n_coeff_b_contrib_buf_max = 12;
-
-    cs_lnum_t n_coeff_b_contrib = 0;
-    bool coeff_b_contrib_f[n_coeff_b_contrib_buf_max];
+    cs_real_t dif_sv[12][4];
 
     cs_lnum_t s_id = cell_b_faces_idx[c_id];
     cs_lnum_t e_id = cell_b_faces_idx[c_id+1];
 
+    cs_real_t b_sum = 0;  /* Sum to check contribution of b term */
+
     for (cs_lnum_t i = s_id; i < e_id; i++) {
 
-      bool coeff_b_contrib = false;
-
+      cs_lnum_t i_rel = i - s_id;
       cs_lnum_t c_f_id = cell_b_faces[i];
 
       cs_real_t dif[3];
@@ -396,6 +395,12 @@ _rc_var_b_faces_iprime_strided_lsq(const cs_mesh_t               *m,
 
       ddif = 1. / cs_math_3_square_norm(dif);
 
+      if (i_rel < n_coeff_b_contrib_buf_max) {
+        for (cs_lnum_t ll = 0; ll < 3; ll++)
+          dif_sv[i_rel][ll] = dif[ll];
+        dif_sv[i_rel][4] = ddif;
+      }
+
       cs_real_t var_f[9];
 
       const cs_real_t *a = bc_coeff_a + (c_f_id*var_dim);
@@ -405,14 +410,9 @@ _rc_var_b_faces_iprime_strided_lsq(const cs_mesh_t               *m,
         var_f[kk] = a[kk];
         for (cs_lnum_t ll = 0; ll < var_dim; ll++) {
           var_f[kk] += b[kk*var_dim + ll] * var_i[ll];
+          /* Using absolute value below safer but terms should be positive */
+          b_sum += b[kk*var_dim + ll];
         }
-      }
-
-      for (cs_lnum_t ll = 0; ll < var_dim; ll++) {
-        var_min[ll] = cs_math_fmin(var_min[ll], var_f[ll]);
-        var_max[ll] = cs_math_fmax(var_max[ll], var_f[ll]);
-        if (fabs(var_f[ll] - a[ll]) > 1e-24)
-          coeff_b_contrib = true;
       }
 
       for (cs_lnum_t kk = 0; kk < var_dim; kk++) {
@@ -420,13 +420,6 @@ _rc_var_b_faces_iprime_strided_lsq(const cs_mesh_t               *m,
         for (cs_lnum_t ll = 0; ll < 3; ll++)
           rhs[kk][ll] += dif[ll] * pfac;
       }
-
-      cs_lnum_t i_rel = i - s_id;
-      if (i_rel < n_coeff_b_contrib_buf_max)
-        coeff_b_contrib_f[i_rel] = coeff_b_contrib;
-
-      if (coeff_b_contrib)
-        n_coeff_b_contrib += 1;
 
       cocg[0] += dif[0]*dif[0]*ddif;
       cocg[1] += dif[1]*dif[1]*ddif;
@@ -488,7 +481,7 @@ _rc_var_b_faces_iprime_strided_lsq(const cs_mesh_t               *m,
 
    /* Refine boundary value estimation iteratively to account for bc_coeffs */
 
-    if (n_coeff_b_contrib > 0) {
+    if (cs_math_fabs(b_sum) > 0) {
 
       /* Compute norms for convergence testing. Note that we prefer to
          test convergence based on the variable at I' rather than of the
@@ -534,22 +527,24 @@ _rc_var_b_faces_iprime_strided_lsq(const cs_mesh_t               *m,
         for (cs_lnum_t i = s_id; i < e_id; i++) {
 
           cs_lnum_t i_rel = i - s_id;
-          if (i_rel < n_coeff_b_contrib_buf_max) {
-            if (coeff_b_contrib_f[i_rel] == false)
-              continue;
-          }
-
           cs_lnum_t c_f_id = cell_b_faces[i];
 
-          /* Remark: we could avoid recomputing dif and ddif in most cases by
+          /* Avoid recomputing dif and ddif in most cases by
              saving at least a few values from the previous step, in
              fixed-size buffers indexed by i_rel. */
 
-          cs_real_t dif[3];
-          for (cs_lnum_t ii = 0; ii < 3; ii++)
-            dif[ii] = b_face_cog[c_f_id][ii] - cell_cen[c_id][ii];
+          cs_real_t dif[3], ddif;
 
-          cs_real_t ddif = 1. / cs_math_3_square_norm(dif);
+          if (i_rel < n_coeff_b_contrib_buf_max) {
+            for (cs_lnum_t ll = 0; ll < 3; ll++)
+              dif[ll] = dif_sv[i_rel][ll];
+            ddif = dif_sv[i_rel][4];
+          }
+          else {
+            for (cs_lnum_t ii = 0; ii < 3; ii++)
+              dif[ii] = b_face_cog[c_f_id][ii] - cell_cen[c_id][ii];
+            ddif = 1. / cs_math_3_square_norm(dif);
+          }
 
           /* Note that the contribution to the right-hand side from
              bc_coeff_a[c_f_id] + (bc_coeff_b -1).var[c_id] has already been
