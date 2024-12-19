@@ -374,7 +374,7 @@ class cs_compile(object):
 
         return o_name
 
-    #-------------------------------------------------------------------------------
+    #---------------------------------------------------------------------------
 
     def compile_src(self, base_name=None, src_list=None,
                     opt_cflags=None, opt_cxxflags=None, opt_fcflags=None,

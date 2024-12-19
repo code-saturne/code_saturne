@@ -1067,7 +1067,7 @@ cs_boundary_conditions_set_coeffs(int        nvar,
   /* coefa and coefb are required to compute the cell gradients for the wall
      turbulent boundary conditions.
      so, their initial values are kept (note that at the first time step,
-     they are initialized to zero flux in inivar.f90) */
+     they are initialized to zero flux in cs_initialize_fields) */
 
   /* velipb stores the velocity in i' of boundary cells */
 
