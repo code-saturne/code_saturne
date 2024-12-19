@@ -182,7 +182,9 @@ class MainFieldsInitializationModel(Variables, Model):
         self.__verifyZone(zone)
         self.mainFieldsModel.isFieldIdValid(fieldId)
 
-        node = self.XMLNonCondvariables.xmlGetNode('variable', field_id=fieldId, name=var_name)
+        node = self.XMLNonCondvariables.xmlGetNode('variable',
+                                                   conv_field=fieldId,
+                                                   name=var_name)
         n = node.xmlInitChildNode('initial_value', zone_id=zone)
         n.xmlSetData('formula', str)
 
@@ -195,7 +197,9 @@ class MainFieldsInitializationModel(Variables, Model):
         self.__verifyZone(zone)
         self.mainFieldsModel.isFieldIdValid(fieldId, strict_check=False)
 
-        node = self.XMLNonCondvariables.xmlGetNode('variable', field_id=fieldId, name=var_name)
+        node = self.XMLNonCondvariables.xmlGetNode('variable',
+                                                   conv_field=fieldId,
+                                                   name=var_name)
         n = node.xmlInitChildNode('initial_value', zone_id=zone)
         return n.xmlGetString('formula')
 
@@ -225,7 +229,7 @@ class MainFieldsInitializationModel(Variables, Model):
         self.mainFieldsModel.isFieldIdValid(fieldId, strict_check=False)
 
         node = self.XMLScalar.xmlGetNode('variable',
-                                         field_id=fieldId,
+                                         conv_field=fieldId,
                                          name=var_name)
         n = node.xmlInitChildNode('initial_value', zone_id=zone)
         n.xmlSetData('formula', str)
@@ -240,7 +244,7 @@ class MainFieldsInitializationModel(Variables, Model):
         self.mainFieldsModel.isFieldIdValid(fieldId, strict_check=False)
 
         node = self.XMLScalar.xmlGetNode('variable',
-                                         field_id=fieldId,
+                                         conv_field=fieldId,
                                          name=var_name)
         n = node.xmlInitChildNode('initial_value', zone_id=zone)
         return n.xmlGetString('formula')

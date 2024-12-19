@@ -144,7 +144,9 @@ class NonCondensableModel(Model):
 
         name = "mass_fraction_non_condensable_gas_" + str(len(self.getNonCondensableNameList())+1)
 
-        self.variables.setNewVariableProperty("variable", "", self.XMLNodeNonCondensable, fieldId, name, label)
+        self.variables.setNewVariableProperty("variable", "", self.XMLNodeNonCondensable,
+                                              "none", name, label,
+                                              cv_field=fieldId)
 
         # for non condensable we need use cathare2 or cathare tables
         from code_saturne.model.ThermodynamicsModel import ThermodynamicsModel
@@ -196,7 +198,7 @@ class NonCondensableModel(Model):
             raise ValueError("Field '{0}' is not in the list of gas fields: {1}".format(field_name, gas_labels))
         for node in self.XMLNodeNonCondensable.xmlGetNodeList('variable'):
             if node['name'] == name :
-               node['field_id'] = fieldId
+               node['conv_field'] = fieldId
 
 
     @Variables.noUndo
@@ -207,7 +209,7 @@ class NonCondensableModel(Model):
         self.isInList(name,self.getNonCondensableNameList())
         for node in self.XMLNodeNonCondensable.xmlGetNodeList('variable'):
             if node['name'] == name :
-               return node['field_id']
+               return node['conv_field']
 
 
     @Variables.undoLocal

@@ -125,7 +125,9 @@ class SpeciesModel(Variables, Model):
 
         carrierfield = self.defaultValues()['carrierField']
 
-        self.setNewVariableProperty("variable", "", self.XMLScalar, carrierfield, name, label)
+        self.setNewVariableProperty("variable", "", self.XMLScalar, "none",
+                                    name, label,
+                                    cv_field=carrierfield)
 
         return label
 
@@ -248,8 +250,8 @@ class SpeciesModel(Variables, Model):
         self.isInList(name,self.getScalarNameList())
         node = self.XMLScalar.xmlGetNode('variable', name = name)
         if node:
-            old_f_id = node['field_id']
-            node['field_id'] = carrierfield
+            old_f_id = node['conv_field']
+            node['conv_field'] = carrierfield
 
             # Update boundary conditions to avoid unnecessary xml entries
             if old_f_id != carrierfield:
@@ -286,7 +288,7 @@ class SpeciesModel(Variables, Model):
         node = self.XMLScalar.xmlGetNode('variable', name = name)
         carrierField = self.defaultValues()['carrierField']
         if node:
-            carrierField = node['field_id']
+            carrierField = node['conv_field']
         return carrierField
 
 
@@ -298,7 +300,7 @@ class SpeciesModel(Variables, Model):
         node = self.XMLScalar.xmlGetNode('variable', name = name)
         carrierField = self.defaultValues()['carrierField']
         if node:
-            carrierField = node['field_id']
+            carrierField = node['conv_field']
         return carrierField
 
 

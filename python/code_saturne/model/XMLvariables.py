@@ -365,8 +365,18 @@ class Variables(object):
             variable.xmlInitChildNode('postprocessing_recording', status='off')
 
 
+    def __setConvectiveField__(self, variable, conv_field=None):
+        """
+        Set the convective field tag
+        """
+
+        if variable and conv_field not in (None, 'None'):
+            variable['conv_field'] = conv_field
+
+
     def setNewVariableProperty(self, type, choice, node, num, name, label,
-                               dim=None, support=None, post=False):
+                               dim=None, support=None, post=False,
+                               cv_field=None):
         id = str(num)
         label = label
         if not node.xmlGetNode(type, field_id=id,  name=name):
@@ -385,6 +395,8 @@ class Variables(object):
                 else:
                     n = node.xmlInitNode(type, field_id=id, choice=choice,
                                          name=name, label=label, dimension='1')
+
+            self.__setConvectiveField__(n, conv_field=cv_field)
             self.__setOutputControl__(n, post=post)
             self.updateLabel(n)
 

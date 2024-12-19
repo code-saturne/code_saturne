@@ -201,10 +201,10 @@ class XMLinitNeptune(BaseXmlInit):
                 self.__backwardCompatibilityFrom_6_3()
 
         if from_vers[:3] < "8.0":
-            if from_vers[:3] < "7.1":
-                self.__backwardCompatibilityFrom_7_0()
-            if from_vers[:3] < "7.2":
-                self.__backwardCompatibilityFrom_7_1()
+            self.__backwardCompatibilityTo_8_0()
+
+        if from_vers[:3] < "9.0":
+            self.__backwardCompatibilityTo_9_0()
 
 
     def __backwardCompatibilityFrom_2_0(self):
@@ -883,7 +883,7 @@ class XMLinitNeptune(BaseXmlInit):
                                                               "covariance_qfp_1_2")
 
 
-    def _backwardCompatibilityCurrentVersion(self):
+    def __backwardCompatibilityTo_8_0(self):
         """
         Change XML in order to ensure backward compatibility.
         """
@@ -900,6 +900,37 @@ class XMLinitNeptune(BaseXmlInit):
                 tm_node.xmlSetData('solid_elasticity_coefficient',
                                    elasticity_val)
                 particles_rad_node.xmlRemoveChild('elasticity')
+
+    def __backwardCompatibilityTo_9_0(self):
+        """
+        Change XML in order to ensure backward compatibility.
+        """
+
+        # Update field_id to conv_field for scalars and non-condensable
+        # gases
+        scalars_node = self.case.xmlGetNode("additional_scalars")
+        if scalars_node:
+            n1 = scalars_node.xmlGetNode("scalars")
+            if n1:
+                for node in n1.xmlGetChildNodeList("variable"):
+                    old_f_id = node["field_id"]
+                    node["field_id"] = "none"
+                    node["conv_field"] = old_f_id
+
+        XMLNodeNonCondens = self.case.xmlGetNode('non_condensable_list')
+        if XMLNodeNonCondens != None:
+            for node in XMLNodeNonCondens.xmlGetNodeList('variable'):
+                old_f_id = node["field_id"]
+                node["field_id"] = "none"
+                node["conv_field"] = old_f_id
+
+        return
+
+    def _backwardCompatibilityCurrentVersion(self):
+        """
+        Change XML in order to ensure backward compatibility.
+        """
+        return;
 
 #-------------------------------------------------------------------------------
 # XMLinit test case
