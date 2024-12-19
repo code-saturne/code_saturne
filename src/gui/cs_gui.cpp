@@ -2798,6 +2798,10 @@ void cs_gui_initial_conditions(void)
   bft_printf("==> %s\n", __func__);
 #endif
 
+  /* If neptune_cfd is used exit this function */
+  if (cs_glob_physical_model_flag[CS_NEPTUNE_CFD] > -1)
+    return;
+
   const int n_zones = cs_volume_zone_n_zones();
 
   const cs_real_3_t *restrict cell_cen =

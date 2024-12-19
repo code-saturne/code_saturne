@@ -123,7 +123,8 @@ int cs_glob_physical_model_flag[CS_N_PHYSICAL_MODEL_TYPES] = {
   -1,  /*    Gas mix model */
   -1,  /*    Groundwater flows */
   -1,  /*    Solidification process */
-  -1   /*    Heat transfer (in solids) */
+  -1,  /*    Heat transfer (in solids) */
+  -1   /*  NEPTUNE_CFD solver */
 };
 
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */

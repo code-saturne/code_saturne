@@ -69,6 +69,7 @@ typedef enum {
   CS_GROUNDWATER,                  /*!< Groundwater flows module */
   CS_SOLIDIFICATION,               /*!< Solidification process */
   CS_HEAT_TRANSFER,                /*!< Heat transfer (in solids) */
+  CS_NEPTUNE_CFD,                  /*!< Using neptune_cfd solver */
 
   CS_N_PHYSICAL_MODEL_TYPES        /*!< Number of physical model types */
 
