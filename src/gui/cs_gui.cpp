@@ -2863,9 +2863,9 @@ void cs_gui_initial_conditions(void)
         tn_velocity = _add_zone_id_test_attribute(tn_velocity, z->id);
         const char *formula_uvw = cs_tree_node_get_value_str(tn_velocity);
 
-        cs_field_t *c_vel = cs_field_by_name("velocity");
+        cs_field_t *c_vel = cs_field_by_name_try("velocity");
 
-        if (c_vel != NULL && formula_uvw != NULL) {
+        if (c_vel != nullptr && formula_uvw != NULL) {
           cs_real_t *ini_vals = NULL;
           BFT_MALLOC(ini_vals, c_vel->dim * n_cells, cs_real_t);
 
