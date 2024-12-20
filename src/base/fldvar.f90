@@ -29,10 +29,9 @@
 !------------------------------------------------------------------------------
 !   mode          name          role
 !------------------------------------------------------------------------------
-!> \param[out]    nmodpp        number of activated particle physic models
 !______________________________________________________________________________
 
-subroutine fldvar ( nmodpp ) &
+subroutine fldvar() &
  bind(C, name='cs_f_fldvar')
 
 !===============================================================================
@@ -63,12 +62,7 @@ implicit none
 
 ! Arguments
 
-integer(c_int), value ::  nmodpp
-
 ! Local variables
-
-integer       ipp
-integer       iok
 
 !===============================================================================
 ! Interfaces
@@ -81,8 +75,6 @@ procedure() :: init_var_cal_opt
 
 interface
 
-  ! Interface to C function returning number of user-defined variables
-
   function cs_parameters_n_added_variables() result(n) &
     bind(C, name='cs_parameters_n_added_variables')
     use, intrinsic :: iso_c_binding
@@ -91,17 +83,6 @@ interface
   end function cs_parameters_n_added_variables
 
 end interface
-
-!===============================================================================
-! 0. INITIALISATIONS
-!===============================================================================
-
-nmodpp = 0
-do ipp = 2, nmodmx
-  if (ippmod(ipp).ne.-1) then
-    nmodpp = nmodpp+1
-  endif
-enddo
 
 !===============================================================================
 ! Calcul de nscapp
@@ -175,42 +156,8 @@ endif
 
 nscaus = cs_parameters_n_added_variables()
 
-! Specific physics variables
-call ppvarp
-
-! Thermal model with no specific physics
-
-if (nmodpp.eq.0) then
-
-  if (itherm .eq. 1) then
-    call add_model_scalar_field('temperature', 'Temperature', iscalt)
-  else if (itherm .eq. 2) then
-    call add_model_scalar_field('enthalpy', 'Enthalpy', ihm)
-    iscalt = ihm
-  else if (itherm .eq. 4) then
-    call add_model_scalar_field('internal_energy', 'Eint', iscalt)
-  endif
-
-endif
-
-call add_user_scalar_fields
-
-! ---> Verifications
-
-iok = 0
-
-if (nscaus.gt.0 .or. nscapp.gt.0) then
-  if ((nscaus+nscapp).gt.nscamx) then
-    if (nscapp.le.0) then
-      write(nfecra,6011) nscaus, nscamx, nscamx, nscaus
-    else
-      write(nfecra,6012) nscaus,nscapp,nscamx,nscamx-nscapp,nscaus+nscapp
-    endif
-    iok = iok + 1
-  endif
-endif
-
-if (iok.ne.0) then
+if (nscaus.gt.nscamx) then
+  write(nfecra,6011) nscaus, nscamx, nscamx, nscaus
   call csexit (1)
 endif
 
@@ -235,32 +182,6 @@ return
 '@                                                            ',/,&
 '@  The maximmum value allowed of   NSCAUS                    ',/,&
 '@                          is in   NSCAMX        = ',I10      ,/,&
-'@                                                            ',/,&
-'@  The calculation will not be run.                          ',/,&
-'@                                                            ',/,&
-'@  Verify   NSCAUS.                                          ',/,&
-'@                                                            ',/,&
-'@  NSCAMX must be at least     ',I10                          ,/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
- 6012 format(                                                     &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ WARNING   : STOP AT THE INITIAL DATA VERIFICATION       ',/,&
-'@    =========                                               ',/,&
-'@     NUMBER OF SCALARS TOO LARGE                            ',/,&
-'@                                                            ',/,&
-'@  The number of users scalars                               ',/,&
-'@     requested                       is   NSCAUS = ',I10     ,/,&
-'@  The number of scalars necessary for the specific physics'  ,/,&
-'@    with the chosen model is              NSCAPP = ',I10     ,/,&
-'@  The total number of scalars                               ',/,&
-'@    allowed    in   paramx.h         is   NSCAMX = ',I10     ,/,&
-'@                                                            ',/,&
-'@  The maximum value allowed for  NSCAUS                     ',/,&
-'@    with the chosen model is       NSCAMX-NSCAPP = ',I10     ,/,&
 '@                                                            ',/,&
 '@  The calculation will not be run.                          ',/,&
 '@                                                            ',/,&
@@ -375,7 +296,8 @@ end subroutine add_variable_field
 !______________________________________________________________________________!
 !_______________________________________________________________________________
 
-subroutine add_user_scalar_fields
+subroutine add_user_scalar_fields() &
+ bind(C, name='cs_f_add_user_scalar_fields')
 
 !===============================================================================
 ! Module files
@@ -1080,6 +1002,7 @@ subroutine cs_c_add_model_thermal_field_indexes(f_id) &
 
   use, intrinsic :: iso_c_binding
   use optcal
+  use ppincl
   use cs_c_bindings
 
   implicit none
@@ -1099,6 +1022,8 @@ subroutine cs_c_add_model_thermal_field_indexes(f_id) &
   call add_model_field_indexes(f_id0, iscal0)
 
   iscalt = iscal0
+
+  if (itherm .eq. 2) ihm = iscal0
 
 end subroutine cs_c_add_model_thermal_field_indexes
 

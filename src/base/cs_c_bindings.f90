@@ -804,17 +804,6 @@ module cs_c_bindings
 
     !---------------------------------------------------------------------------
 
-    !> \brief  Add a species field to the gas mix (set of fields).
-
-    subroutine gas_mix_add_species(f_id)  &
-      bind(C, name='cs_gas_mix_add_species')
-      use, intrinsic :: iso_c_binding
-      implicit none
-      integer(c_int), value :: f_id
-    end subroutine gas_mix_add_species
-
-    !---------------------------------------------------------------------------
-
     !> \brief Get the aerosols concentrations and numbers from aerosol code
 
     subroutine cs_atmo_aerosol_get_aero(array) &

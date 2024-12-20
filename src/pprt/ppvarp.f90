@@ -27,7 +27,8 @@
 !------------------------------------------------------------------------------
 !______________________________________________________________________________
 
-subroutine ppvarp
+subroutine ppvarp() &
+ bind(C, name='cs_f_ppvarp')
 
 !===============================================================================
 !  FONCTION  :
@@ -70,46 +71,13 @@ implicit none
 
 ! Local variables
 
-integer          f_id, scal_id
-integer          kscmin, kscmax
-
-double precision scmaxp, scminp
+integer          f_id
 
 !===============================================================================
 ! Interfaces
 !===============================================================================
 
 interface
-
-  subroutine cs_cf_add_variable_fields() &
-    bind(C, name='cs_cf_add_variable_fields')
-    use, intrinsic :: iso_c_binding
-    implicit none
-  end subroutine cs_cf_add_variable_fields
-
-  subroutine cs_elec_add_variable_fields()  &
-    bind(C, name='cs_elec_add_variable_fields')
-    use, intrinsic :: iso_c_binding
-    implicit none
-  end subroutine cs_elec_add_variable_fields
-
-  subroutine cs_field_pointer_map_gas_mix()  &
-    bind(C, name='cs_field_pointer_map_gas_mix')
-    use, intrinsic :: iso_c_binding
-    implicit none
-  end subroutine cs_field_pointer_map_gas_mix
-
-  subroutine cs_ctwr_add_variable_fields()  &
-    bind(C, name='cs_ctwr_add_variable_fields')
-    use, intrinsic :: iso_c_binding
-    implicit none
-  end subroutine cs_ctwr_add_variable_fields
-
-  subroutine cs_rad_transfer_add_variable_fields()  &
-    bind(C, name='cs_rad_transfer_add_variable_fields')
-    use, intrinsic :: iso_c_binding
-    implicit none
-  end subroutine cs_rad_transfer_add_variable_fields
 
   subroutine cs_atmo_add_variable_fields() &
     bind(C, name='cs_atmo_add_variable_fields')
@@ -120,10 +88,6 @@ interface
 end interface
 
 !===============================================================================
-
-! Key ids for clipping
-call field_get_key_id("min_scalar_clipping", kscmin)
-call field_get_key_id("max_scalar_clipping", kscmax)
 
 ! 1. Gas combustion
 !------------------
@@ -157,22 +121,13 @@ if (ippmod(iccoal).ge.0) then
   call cs_coal_varpos
 endif
 
-! 3. Compressible model
+! 3. Compressible model (field mappings)
 !----------------------
 
 if (ippmod(icompf).ge.0) then
-  call cs_cf_add_variable_fields
-
   ! Fortran field mappings
   call map_variable_field_try('total_energy', ienerg)
   call map_variable_field_try('temperature', itempk)
-endif
-
-! 4. Electric arcs model
-!-----------------------
-
-if (ippmod(ieljou).ge.1 .or. ippmod(ielarc).ge.1) then
-  call cs_elec_add_variable_fields
 endif
 
 ! 6. Atmospheric model
@@ -191,89 +146,6 @@ if (ippmod(iatmos).ge.0) then
     call field_get_key_int_by_name(f_id, "scalar_id", intdrp)
   end if
 endif
-
-! 7. Cooling towers model
-!------------------------
-
-if (ippmod(iaeros).ge.0) then
-  call cs_ctwr_add_variable_fields
-endif
-
-! 8. Gas mixtures modelling
-!--------------------------
-
-if (ippmod(igmix).ge.0) then
-
-  if (ippmod(icompf).lt.0) then
-    itherm = 2
-    call add_model_scalar_field('enthalpy', 'Enthalpy', ihm)
-    iscalt = ihm
-  else
-    call field_set_key_int(ivarfl(isca(itempk)), kivisl, 0)
-  endif
-
-  call field_set_key_int(ivarfl(isca(iscalt)), kivisl, 0)
-
-  ! Clipping of mass fractions
-  scminp = 0.d0
-  scmaxp = 1.d0
-
-  if (ippmod(igmix).lt.5) then
-    call add_model_scalar_field('y_o2', 'Y_O2', scal_id)
-    f_id = ivarfl(isca(scal_id))
-    call gas_mix_add_species(f_id)
-    call field_set_key_int(f_id, kivisl, 0)
-    call field_set_key_double(f_id, kscmin, scminp)
-    call field_set_key_double(f_id, kscmax, scmaxp)
-
-    call add_model_scalar_field('y_n2', 'Y_N2', scal_id)
-    f_id = ivarfl(isca(scal_id))
-    call gas_mix_add_species(f_id)
-    call field_set_key_int(f_id, kivisl, 0)
-    call field_set_key_double(f_id, kscmin, scminp)
-    call field_set_key_double(f_id, kscmax, scmaxp)
-
-    if (ippmod(igmix).eq.3) then
-      call add_model_scalar_field('y_he', 'Y_He', scal_id)
-      f_id = ivarfl(isca(scal_id))
-      call gas_mix_add_species(f_id)
-      call field_set_key_int(f_id, kivisl, 0)
-      call field_set_key_double(f_id, kscmin, scminp)
-      call field_set_key_double(f_id, kscmax, scmaxp)
-
-    elseif (ippmod(igmix).eq.4) then
-      call add_model_scalar_field('y_h2', 'Y_H2', scal_id)
-      f_id = ivarfl(isca(scal_id))
-      call gas_mix_add_species(f_id)
-      call field_set_key_int(f_id, kivisl, 0)
-      call field_set_key_double(f_id, kscmin, scminp)
-      call field_set_key_double(f_id, kscmax, scmaxp)
-
-    endif
-  else ! ippmod(igmix).eq.5
-
-    call add_model_scalar_field('y_n2', 'Y_N2', scal_id)
-    f_id = ivarfl(isca(scal_id))
-    call gas_mix_add_species(f_id)
-    call field_set_key_int(f_id, kivisl, 0)
-    call field_set_key_double(f_id, kscmin, scminp)
-    call field_set_key_double(f_id, kscmax, scmaxp)
-
-    call add_model_scalar_field('y_he', 'Y_He', scal_id)
-    f_id = ivarfl(isca(scal_id))
-    call gas_mix_add_species(f_id)
-    call field_set_key_int(f_id, kivisl, 0)
-    call field_set_key_double(f_id, kscmin, scminp)
-    call field_set_key_double(f_id, kscmax, scmaxp)
-
-  endif
-
-  ! MAP to C API
-  call cs_field_pointer_map_gas_mix
-endif
-
-! Radiative transfer
-call cs_rad_transfer_add_variable_fields()
 
 return
 end subroutine

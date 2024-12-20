@@ -82,6 +82,7 @@
 #include "cs_pressure_correction.h"
 #include "cs_prototypes.h"
 #include "cs_rad_transfer.h"
+#include "cs_rad_transfer_fields.h"
 #include "cs_rad_transfer_options.h"
 #include "cs_restart.h"
 #include "cs_runaway_check.h"
@@ -135,7 +136,13 @@ void
 cs_f_usppmo(void);
 
 void
-cs_f_fldvar(int *nmodpp);
+cs_f_fldvar(void);
+
+void
+cs_f_ppvarp(void);
+
+void
+cs_f_add_user_scalar_fields(void);
 
 void
 cs_f_atini1(void);
@@ -494,6 +501,7 @@ _init_variable_fields(void)
 static void
 _create_variable_fields(void)
 {
+  const int *pm_flag = cs_glob_physical_model_flag;
   const int keycpl = cs_field_key_id("coupled");
 
   int dyn_field_id_start = cs_field_n_fields();
@@ -518,7 +526,7 @@ _create_variable_fields(void)
     eqp->iconv = 0;
 
     // compressible algorithm
-    if (cs_glob_physical_model_flag[CS_COMPRESSIBLE] >= 0
+    if (pm_flag[CS_COMPRESSIBLE] >= 0
         || (cs_glob_velocity_pressure_model->idilat == 2
             && cs_glob_cf_model->ieos != CS_EOS_NONE))
       eqp->istat = 1;
@@ -666,6 +674,79 @@ _create_variable_fields(void)
     cs_field_t *f = cs_field_by_id(i);
     cs_field_lock_key(f, keycdt);
   }
+
+  /* Fortran mappings and checks */
+
+  cs_f_fldvar();
+
+  /* Variable fields for specific physical models */
+
+  {
+    if (pm_flag[CS_COMPRESSIBLE] >= 0)
+      cs_cf_add_variable_fields();
+
+    cs_f_ppvarp();
+
+    if (pm_flag[CS_JOULE_EFFECT] >= 1 || pm_flag[CS_ELECTRIC_ARCS] >= 1)
+      cs_elec_add_variable_fields();
+
+    if (pm_flag[CS_COOLING_TOWERS] >= 0)
+      cs_ctwr_add_variable_fields();
+
+    if (pm_flag[CS_GAS_MIX] >= 0)
+      cs_gas_mix_add_variable_fields();
+  }
+
+  /* Add thermal variable if not already present, map pointers */
+
+  {
+    const char *tf_name[] = {"temperature", "enthalpy", "internal_energy"};
+    const char *tf_label[] = {"Temperature", "Enthalpy", "Eint"};
+
+    int name_idx = -1;
+    cs_field_pointer_id_t fp_id = CS_FIELD_N_POINTERS;
+
+    switch(cs_glob_thermal_model->thermal_variable) {
+    case CS_THERMAL_MODEL_TEMPERATURE:
+      name_idx = 0;
+      fp_id = CS_ENUMF_(t);
+      break;
+    case CS_THERMAL_MODEL_ENTHALPY:
+      name_idx = 1;
+      fp_id = CS_ENUMF_(h);
+      break;
+    case
+      CS_THERMAL_MODEL_INTERNAL_ENERGY:
+      name_idx = 2;
+      break;
+    default:
+      break;
+    }
+
+    if (name_idx > -1) {
+      cs_field_t *f = cs_field_by_name_try(tf_name[name_idx]);
+      if (f == nullptr) {
+        int f_id = cs_variable_field_create(tf_name[name_idx],
+                                            tf_label[name_idx],
+                                            CS_MESH_LOCATION_CELLS,
+                                            1);
+        f = cs_field_by_id(f_id);
+        cs_add_model_thermal_field_indexes(f->id);
+      }
+
+      if (fp_id != CS_FIELD_N_POINTERS)
+        cs_field_pointer_map(fp_id, f);
+    }
+  }
+
+  /* Radiative transfer fields can now be determined */
+
+  cs_rad_transfer_add_variable_fields();
+
+  /* Add user scalars last, so that if a field name is already used by the
+     model, the error report will blame the user field, not the model field. */
+
+  cs_f_add_user_scalar_fields();
 }
 
 /*----------------------------------------------------------------------------*/
@@ -680,6 +761,7 @@ _create_property_fields(void)
   const int keyvis = cs_field_key_id("post_vis");
   const int keylog = cs_field_key_id("log");
 
+  const int *pm_flag = cs_glob_physical_model_flag;
   const cs_turb_model_t *turb_model = cs_glob_turb_model;
 
   cs_field_t *f;
@@ -791,7 +873,7 @@ _create_property_fields(void)
   // if the compressible module is not enabled (otherwise Ptot=P*).
   // only used if the gravity is set.
 
-  if (cs_glob_physical_model_flag[CS_COMPRESSIBLE] < 0) {
+  if (pm_flag[CS_COMPRESSIBLE] < 0) {
     f = _add_property_field("total_pressure", "Total Pressure", 1, false);
 
     // Save total pressure in auxiliary restart file
@@ -810,26 +892,25 @@ _create_property_fields(void)
   cs_f_ppprop();
 
   // Compressible model
-  if (cs_glob_physical_model_flag[CS_COMPRESSIBLE] >= 0) {
+  if (pm_flag[CS_COMPRESSIBLE] >= 0) {
     cs_cf_set_thermo_options();
     cs_cf_add_property_fields();
   }
 
   // Electric models
-  if (   cs_glob_physical_model_flag[CS_JOULE_EFFECT] >= 1
-      || cs_glob_physical_model_flag[CS_ELECTRIC_ARCS] >= 1)
+  if (pm_flag[CS_JOULE_EFFECT] >= 1 || pm_flag[CS_ELECTRIC_ARCS] >= 1)
     cs_elec_add_property_fields();
 
   // Atmospheric modules
-  if (cs_glob_physical_model_flag[CS_ATMOSPHERIC] >= 0)
+  if (pm_flag[CS_ATMOSPHERIC] >= 0)
     cs_atmo_add_property_fields();
 
   // Cooling towers model
-  if (cs_glob_physical_model_flag[CS_COOLING_TOWERS] >= 0)
+  if (pm_flag[CS_COOLING_TOWERS] >= 0)
     cs_ctwr_add_property_fields();
 
   // Add the mixture molar mass fraction field
-  if (cs_glob_physical_model_flag[CS_GAS_MIX] >= 0)
+  if (pm_flag[CS_GAS_MIX] >= 0)
     cs_gas_mix_add_property_fields();
 
   if (cs_glob_vof_parameters->vof_model & CS_VOF_FREE_SURFACE) {
@@ -888,6 +969,7 @@ _additional_fields_stage_1(void)
 
   const int pflag = CS_POST_ON_LOCATION | CS_POST_MONITOR;
 
+  const int *pm_flag = cs_glob_physical_model_flag;
   const cs_turb_model_t *turb_model = cs_glob_turb_model;
   cs_turb_rans_model_t *turb_rans_model = cs_get_glob_turb_rans_model();
   cs_fluid_properties_t *fluid_props = cs_get_glob_fluid_properties();
@@ -1016,7 +1098,7 @@ _additional_fields_stage_1(void)
   /* Collocated time scheme for gaz combustion */
   if (vp_p->itpcol == -1) {
     if (   time_scheme->time_order == 2
-        && cs_glob_physical_model_flag[CS_COMBUSTION_SLFM] >= 0) {
+        && pm_flag[CS_COMBUSTION_SLFM] >= 0) {
       vp_p->itpcol = 1;
     }
     else {
@@ -1575,6 +1657,7 @@ _additional_fields_stage_1(void)
 static void
 _additional_fields_stage_2(void)
 {
+  const int *pm_flag = cs_glob_physical_model_flag;
   const int n_fields = cs_field_n_fields();
   cs_turb_les_model_t *turb_les_param = cs_get_glob_turb_les_model();
 
@@ -1773,8 +1856,8 @@ _additional_fields_stage_2(void)
       }
       /* Special case for electric arcs: real and imaginary electric
        * conductivity is the same (and ipotr < ipoti) */
-      if (   cs_glob_physical_model_flag[CS_JOULE_EFFECT] == 2
-          || cs_glob_physical_model_flag[CS_JOULE_EFFECT] == 4) {
+      if (   pm_flag[CS_JOULE_EFFECT] == 2
+          || pm_flag[CS_JOULE_EFFECT] == 4) {
         cs_field_t *f_elec_port_r = cs_field_by_name_try("elec_port_r");
         cs_field_t *f_elec_port_i = cs_field_by_name_try("elec_port_i");
         if (f == f_elec_port_r) {
@@ -1839,7 +1922,7 @@ _additional_fields_stage_2(void)
       s_name[127] = '\0';
       s_label[127] = '\0';
 
-      if (cs_glob_physical_model_flag[CS_COMBUSTION_SLFM] >= 0) {
+      if (pm_flag[CS_COMBUSTION_SLFM] >= 0) {
         int ifm_ifcdep = cs_field_get_key_int(CS_F_(fm), key_turb_diff);
         if (f != CS_F_(fm))
           cs_field_set_key_int(f, key_turb_diff, ifm_ifcdep);
@@ -1896,7 +1979,7 @@ _additional_fields_stage_2(void)
         s_name[127] = '\0';
         s_label[127] = '\0';
 
-        if (cs_glob_physical_model_flag[CS_COMBUSTION_SLFM] >= 0) {
+        if (pm_flag[CS_COMBUSTION_SLFM] >= 0) {
           int ifm_ifcdep = cs_field_get_key_int(CS_F_(fm), key_sgs_sca_coef);
           if (f != CS_F_(fm))
             cs_field_set_key_int(f, key_sgs_sca_coef, ifm_ifcdep);
@@ -2130,7 +2213,7 @@ _additional_fields_stage_2(void)
     }
   }
 
-  if (   cs_glob_physical_model_flag[CS_ATMOSPHERIC] >= 0
+  if (   pm_flag[CS_ATMOSPHERIC] >= 0
       && cs_glob_atmo_option->compute_z_ground > 0) {
     cs_field_t *f_ground = _add_variable_field("z_ground",
                                                "Z ground",
@@ -2189,7 +2272,7 @@ _additional_fields_stage_2(void)
                         1,
                         false);
 
-    if (cs_glob_physical_model_flag[CS_ATMOSPHERIC] == 2) {
+    if (pm_flag[CS_ATMOSPHERIC] == 2) {
       _add_property_field("meteo_humidity",
                           "Meteo humidity",
                           1,
@@ -2329,7 +2412,7 @@ _additional_fields_stage_2(void)
   cs_field_pointer_map_boundary();
 
   /* Cooling towers mapping */
-  if (cs_glob_physical_model_flag[CS_COOLING_TOWERS] >= 0) {
+  if (pm_flag[CS_COOLING_TOWERS] >= 0) {
     cs_ctwr_field_pointer_map();
   }
 
@@ -2354,7 +2437,7 @@ _additional_fields_stage_2(void)
   }
   else if (   cs_glob_velocity_pressure_param->icalhy > 0
            || cs_glob_fluid_properties->ipthrm == 1
-           || cs_glob_physical_model_flag[CS_COMPRESSIBLE] >= 0
+           || pm_flag[CS_COMPRESSIBLE] >= 0
            || cs_glob_velocity_pressure_model->idilat > 1) {
     cs_field_set_n_time_vals(CS_F_(rho), 2);
     cs_field_set_n_time_vals(CS_F_(rho_b), 2);
@@ -2454,27 +2537,29 @@ _additional_fields_stage_2(void)
 static void
 _read_specific_physics_data(void)
 {
+  const int *pm_flag = cs_glob_physical_model_flag;
+
   /* Diffusion flame - 3-point chemistry
    * premix flame    - EBU model
    * premix flame    - LWC model */
-  if (   cs_glob_physical_model_flag[CS_COMBUSTION_3PT] != -1
-      || cs_glob_physical_model_flag[CS_COMBUSTION_EBU] != -1
-      || cs_glob_physical_model_flag[CS_COMBUSTION_LW] != -1)
+  if (   pm_flag[CS_COMBUSTION_3PT] != -1
+      || pm_flag[CS_COMBUSTION_EBU] != -1
+      || pm_flag[CS_COMBUSTION_LW] != -1)
     cs_f_colecd();
 
   /* Diffusion flame - steady laminar flamelet approach */
-  if (cs_glob_physical_model_flag[CS_COMBUSTION_SLFM] != -1)
+  if (pm_flag[CS_COMBUSTION_SLFM] != -1)
     cs_f_steady_laminar_flamelet_read_base();
 
   /* Pulverized coal combustion */
-  if (cs_glob_physical_model_flag[CS_COMBUSTION_COAL] != -1) {
+  if (pm_flag[CS_COMBUSTION_COAL] != -1) {
     cs_gui_coal_model();
     cs_coal_read_data();
   }
 
   /* Joule effect, electric arc or ionic conduction */
-  if (   cs_glob_physical_model_flag[CS_JOULE_EFFECT] >= 1
-      || cs_glob_physical_model_flag[CS_ELECTRIC_ARCS] >= 1) {
+  if (   pm_flag[CS_JOULE_EFFECT] >= 1
+      || pm_flag[CS_ELECTRIC_ARCS] >= 1) {
     cs_electrical_model_initialize();
     cs_electrical_properties_read();
   }
@@ -2493,6 +2578,7 @@ _init_user
   int   *nmodpp
 )
 {
+  const int *pm_flag = cs_glob_physical_model_flag;
   cs_fluid_properties_t *fluid_props = cs_get_glob_fluid_properties();
 
   int icondb = cs_glob_wall_condensation->icondb;
@@ -2574,7 +2660,6 @@ _init_user
 
     _init_variable_fields();
     _create_variable_fields();
-    cs_f_fldvar(nmodpp);
 
     /* Map pointers */
     cs_field_pointer_map_base();
@@ -2587,7 +2672,7 @@ _init_user
   if (cs_glob_ale != CS_ALE_NONE)
     cs_gui_ale_diffusion_type();
 
-  if (cs_glob_physical_model_flag[CS_HEAT_TRANSFER] == -1) {
+  if (pm_flag[CS_HEAT_TRANSFER] == -1) {
     /* Dont run these functions if HTS mode is activated */
     cs_gui_laminar_viscosity();
 
@@ -2596,7 +2681,7 @@ _init_user
     const cs_field_t *f_id = cs_field_by_name_try("velocity");
 
     if (f_id != NULL) {
-      if (cs_glob_physical_model_flag[CS_COMPRESSIBLE] != -1)
+      if (pm_flag[CS_COMPRESSIBLE] != -1)
         cs_runaway_check_define_field_max(f_id->id, 1.e5);
       else
         cs_runaway_check_define_field_max(f_id->id, 1.e4);
@@ -2653,7 +2738,7 @@ _init_user
    * to modify default settings */
 
   /* Atmospheric flows */
-  if (cs_glob_physical_model_flag[CS_ATMOSPHERIC] != -1) {
+  if (pm_flag[CS_ATMOSPHERIC] != -1) {
     cs_f_atini1();
 
     if (cs_glob_atmo_option->meteo_profile == 2)
@@ -2681,7 +2766,7 @@ _init_user
   cs_f_indsui();
 
   /* Default value of physical properties for the compressible model */
-  if (cs_glob_physical_model_flag[CS_COMPRESSIBLE] != -1) {
+  if (pm_flag[CS_COMPRESSIBLE] != -1) {
     /* EOS has been set above with the GUI or in cs_user_model.
      * The variability of the thermal conductivity
      * (diffusivity_id for itempk) and the volume viscosity (iviscv) has

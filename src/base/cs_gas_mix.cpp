@@ -50,6 +50,7 @@
 
 #include "cs_array.h"
 #include "cs_field.h"
+#include "cs_field_default.h"
 #include "cs_field_pointer.h"
 #include "cs_math.h"
 #include "cs_mesh_quantities.h"
@@ -94,6 +95,14 @@ BEGIN_C_DECLS
 /*----------------------------------------------------------------------------*/
 
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
+
+/* Additional prototypes for Fortran bindings */
+
+int
+cs_add_model_field_indexes(int  f_id);
+
+void
+cs_add_model_thermal_field_indexes(int  f_id);
 
 /*=============================================================================
  * Macro definitions
@@ -378,6 +387,34 @@ _map_field(const cs_field_t *f)
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Add a species field to the gas mix (set of fields).
+ *
+ * The field'ss min an max clipping values are set to 0 and 1 respectively.
+ *
+ * \param[in]   name   field name
+ * \param[in]   label  field name
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_add_species_field(const char  *name,
+                   const char  *label)
+{
+  const int kscmin = cs_field_key_id("min_scalar_clipping");
+  const int kscmax = cs_field_key_id("max_scalar_clipping");
+
+  int f_id = cs_variable_field_create(name, label, CS_MESH_LOCATION_CELLS, 1);
+  cs_field_t *f = cs_field_by_id(f_id);
+
+  cs_add_model_field_indexes(f->id);
+  cs_gas_mix_add_species(f->id);
+
+  cs_field_set_key_double(f, kscmin, 0.);
+  cs_field_set_key_double(f, kscmax, 1.);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Set predefined gas properties for a field based on its name.
  *
  * This only applies to fields for which properties have not already been
@@ -633,6 +670,71 @@ cs_gas_mix_add_species_with_properties(int        f_id,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Add variable fields specific to a gas mix.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_gas_mix_add_variable_fields(void)
+{
+  // Key id for the diffusivity
+  const int kivisl = cs_field_key_id("diffusivity_id");
+
+  cs_field_t *f;
+  int f_id;
+
+  if (cs_glob_physical_model_flag[CS_COMPRESSIBLE] < 0) {
+    cs_thermal_model_t *thm = cs_get_glob_thermal_model();
+    thm->thermal_variable = CS_THERMAL_MODEL_ENTHALPY;
+
+    f_id = cs_variable_field_create("enthalpy",
+                                    "Enthalpy",
+                                    CS_MESH_LOCATION_CELLS,
+                                    1);
+
+    f = cs_field_by_id(f_id);
+    cs_add_model_thermal_field_indexes(f->id);
+  }
+
+  f = cs_thermal_model_field();
+  if (f != nullptr) {
+    cs_field_set_key_int(f, kivisl, 0);
+  }
+
+  cs_gas_mix_type_t mix_type
+    = (cs_gas_mix_type_t)cs_glob_physical_model_flag[CS_GAS_MIX];
+
+  switch(mix_type) {
+
+  case CS_GAS_MIX_AIR_HELIUM:
+    [[fallthrough]];
+  case CS_GAS_MIX_AIR_HYDROGEN:
+    [[fallthrough]];
+  case CS_GAS_MIX_AIR_STEAM:
+    [[fallthrough]];
+  case CS_GAS_MIX_AIR_HELIUM_STEAM:
+    [[fallthrough]];
+  case CS_GAS_MIX_AIR_HYDROGEN_STEAM:
+    _add_species_field("y_o2", "Y_O2");
+    _add_species_field("y_n2", "Y_N2");
+
+    if (mix_type == CS_GAS_MIX_AIR_HELIUM_STEAM)
+      _add_species_field("y_he", "Y_He");
+    else if (mix_type == CS_GAS_MIX_AIR_HYDROGEN_STEAM)
+      _add_species_field("y_h2", "Y_H2");
+    break;
+  case CS_GAS_MIX_HELIUM_AIR:
+    _add_species_field("y_n2", "Y_N2");
+    _add_species_field("y_he", "Y_He");
+    break;
+
+  default:
+    break;
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Add property fields specific to a gas mix.
  */
 /*----------------------------------------------------------------------------*/
@@ -737,6 +839,8 @@ cs_gas_mix_add_property_fields(void)
                       CS_MESH_LOCATION_CELLS,
                       1, /* dim */
                       false);
+  cs_field_pointer_map(CS_ENUMF_(mol_mass),
+                       cs_field_by_name_try("mix_mol_mas"));
 
   cs_field_set_key_int(f, keyvis, 0);
   cs_field_set_key_int(f, keylog, 1);

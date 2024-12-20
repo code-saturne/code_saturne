@@ -364,13 +364,6 @@ void
 cs_field_pointer_map_coal_combustion(int  n_coals,
                                      int  n_classes);
 
-/*----------------------------------------------------------------------------*
- * Map base fields to enumerated pointers for gas mix model
- *----------------------------------------------------------------------------*/
-
-void
-cs_field_pointer_map_gas_mix(void);
-
 /*----------------------------------------------------------------------------
  * Map base fields to enumerated pointers for gas combustion.
  *----------------------------------------------------------------------------*/

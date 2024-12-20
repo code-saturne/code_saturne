@@ -230,6 +230,8 @@ cs_thermal_model_field(void)
     th_f = nullptr;
   }
 
+  // FIXME: handle "internal_energy" here also ?
+
   return th_f;
 }
 

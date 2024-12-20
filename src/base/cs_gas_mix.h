@@ -109,7 +109,7 @@ extern const cs_gas_mix_t  *cs_glob_gas_mix;
  *============================================================================*/
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Get the field key for gas mix properties.
  *
  * \return  field key id for gas mix properties
@@ -120,7 +120,7 @@ int
 cs_gas_mix_get_field_key(void);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Add a species field to the gas mix (set of fields).
  *
  * \param[in]   f_id   field id of an already created scalar model field
@@ -131,7 +131,7 @@ void
 cs_gas_mix_add_species(int f_id);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Add a species field to the gas mix (set of fields).
  *
  * \param[in]  f_id         id of field representing species mixture fraction.
@@ -168,7 +168,16 @@ cs_gas_mix_add_species_with_properties(int        f_id,
                                        cs_real_t  s_lambda);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
+ * \brief Add variable fields specific to a gas mix.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_gas_mix_add_variable_fields(void);
+
+/*----------------------------------------------------------------------------*/
+/*
  * \brief Add property fields specific to a gas mix.
  */
 /*----------------------------------------------------------------------------*/
@@ -177,7 +186,7 @@ void
 cs_gas_mix_add_property_fields(void);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Free array mapping gas mix species ids to field ids.
  */
 /*----------------------------------------------------------------------------*/
@@ -186,7 +195,7 @@ void
 cs_gas_mix_finalize(void);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Initialization of calculation variables for gas mixture modelling
  *        in presence of the steam gas or another gas used as variable deduced
  *        and not solved.
@@ -197,7 +206,7 @@ void
 cs_gas_mix_initialization(void);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Fills physical properties which are variable in time
  *        for the gas mixtures modelling with or without steam
  *        inside the fluid domain. In presence of steam, this one
