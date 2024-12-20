@@ -715,7 +715,8 @@ cs_lagr_new_particle_init(const cs_lnum_t                 particle_range[2],
           == CS_THERMAL_MODEL_ENTHALPY)
         cval_h = cs_field_by_name("enthalpy")->val;
 
-      if (cs_glob_thermal_model->temperature_scale == CS_TEMPERATURE_SCALE_KELVIN)
+      if (   cs_glob_thermal_model->temperature_scale
+          == CS_TEMPERATURE_SCALE_KELVIN)
         tscl_shift = - cs_physical_constants_celsius_to_kelvin;
     }
 
@@ -873,7 +874,10 @@ cs_lagr_new_particle_init(const cs_lnum_t                 particle_range[2],
       eig_vec[cell_id][2][1] = 0;
       eig_vec[cell_id][2][2] = 1;
 
-      cs_math_33_eig_val_vec(sym_rij, tol_err, eig_val[cell_id], eig_vec[cell_id]);
+      cs_math_33_eig_val_vec(sym_rij,
+                             tol_err,
+                             eig_val[cell_id],
+                             eig_vec[cell_id]);
 
     }
     if (    cs_glob_lagr_model->physical_model > CS_LAGR_PHYS_OFF
@@ -892,15 +896,17 @@ cs_lagr_new_particle_init(const cs_lnum_t                 particle_range[2],
           cs_real_33_t inv_vel_fluct_coef;
           cs_math_33_inv_cramer(vel_fluct_coef,
                                 inv_vel_fluct_coef);
-          cs_math_33_3_product(inv_vel_fluct_coef,
-                               &extra->temperature_turbulent_flux->val[3*cell_id],
-                               temp_vel_fluc_coef[cell_id]);
+          cs_math_33_3_product
+            (inv_vel_fluct_coef,
+             &extra->temperature_turbulent_flux->val[3*cell_id],
+             temp_vel_fluc_coef[cell_id]);
         }
       } // end turbulent heat fluxes
       /* Fluctuations to obtain the proper velocity variance */
       if(extra->temperature_variance != nullptr ) {
         for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
-          var_temp_corel_coef[cell_id] = extra->temperature_variance->val[cell_id];
+          var_temp_corel_coef[cell_id]
+            = extra->temperature_variance->val[cell_id];
           if (extra->temperature_turbulent_flux != nullptr) {
             for (int i = 0; i < 3; i++)
               var_temp_corel_coef[cell_id] -=
@@ -963,10 +969,11 @@ cs_lagr_new_particle_init(const cs_lnum_t                 particle_range[2],
                                                  CS_LAGR_VELOCITY_SEEN);
 
     for (cs_lnum_t i = 0; i < 3; i++) {
-      vel_seen[i] = vel[c_id][i]
-                  + vagaus[l_id][0] * sqrt(eig_val[c_id][0]) * eig_vec[c_id][0][i]
-                  + vagaus[l_id][1] * sqrt(eig_val[c_id][1]) * eig_vec[c_id][1][i]
-                  + vagaus[l_id][2] * sqrt(eig_val[c_id][2]) * eig_vec[c_id][2][i];
+      vel_seen[i]
+        =   vel[c_id][i]
+          + vagaus[l_id][0] * sqrt(eig_val[c_id][0]) * eig_vec[c_id][0][i]
+          + vagaus[l_id][1] * sqrt(eig_val[c_id][1]) * eig_vec[c_id][1][i]
+          + vagaus[l_id][2] * sqrt(eig_val[c_id][2]) * eig_vec[c_id][2][i];
     }
 
     /* Diameter (always set base) */
@@ -1247,7 +1254,8 @@ cs_lagr_new_particle_init(const cs_lnum_t                 particle_range[2],
                                 cval_t[c_id] + tscl_shift);
 
       auto *particle_temp
-        = cs_lagr_particle_attr_get_ptr<cs_real_t>(particle, p_am, CS_LAGR_TEMPERATURE);
+        = cs_lagr_particle_attr_get_ptr<cs_real_t>(particle, p_am,
+                                                   CS_LAGR_TEMPERATURE);
       for (int ilayer = 0;
            ilayer < cs_glob_lagr_model->n_temperature_layers;
            ilayer++)
@@ -1319,7 +1327,8 @@ cs_lagr_new_particle_init(const cs_lnum_t                 particle_range[2],
     }
 
     if (    cs_glob_lagr_model->physical_model > CS_LAGR_PHYS_OFF
-        && (extra->temperature_turbulent_flux  != nullptr || extra->temperature_variance != nullptr)
+        && (   extra->temperature_turbulent_flux  != nullptr
+            || extra->temperature_variance != nullptr)
         &&  extra->temperature != nullptr) {
       /* Initialize temperature fluctuations */
 
@@ -1547,7 +1556,6 @@ cs_lagr_new_particle_init(const cs_lnum_t                 particle_range[2],
   BFT_FREE(var_temp_corel_coef);
   BFT_FREE(temp_vel_fluc_coef);
   BFT_FREE(temp_vagaus);
-
 }
 
 /*----------------------------------------------------------------------------*/
