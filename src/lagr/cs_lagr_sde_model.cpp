@@ -1709,7 +1709,7 @@ _sde_i_ct(void)
   cs_real_t dtp = cs_glob_lagr_time_step->dtp;
 
   /* Constant local numerical parameters*/
-  cs_real_t molmassrat = 0.622; //FIXME: parameter of ppincl ! How to include this in a C routine ?
+  cs_real_t molmassrat = air_prop->molmass_rat;
   cs_real_t precis = 1e-15; /* clipping purposes */
   // cs_real_t r = 461.5; /* J /kg K */
 

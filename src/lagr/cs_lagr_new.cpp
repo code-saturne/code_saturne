@@ -52,6 +52,7 @@
 #include "bft_error.h"
 #include "bft_mem.h"
 
+#include "cs_atmo.h"
 #include "cs_base.h"
 #include "cs_coal.h"
 #include "cs_halo.h"
@@ -702,20 +703,26 @@ cs_lagr_new_particle_init(const cs_lnum_t                 particle_range[2],
       || cs_glob_lagr_model->physical_model == CS_LAGR_PHYS_COAL
       || cs_glob_lagr_model->physical_model == CS_LAGR_PHYS_CTWR) {
 
-    const cs_field_t *f = cs_field_by_name_try("temperature");
-    if (f != nullptr)
-      cval_t = f->val;
-    else if (   cs_glob_thermal_model->thermal_variable
-             == CS_THERMAL_MODEL_ENTHALPY)
-      cval_h = cs_field_by_name("enthalpy")->val;
 
-    if (cs_glob_thermal_model->temperature_scale == CS_TEMPERATURE_SCALE_KELVIN)
-      tscl_shift = - cs_physical_constants_celsius_to_kelvin;
+    if (cs_glob_physical_model_flag[CS_ATMOSPHERIC] == CS_ATMO_HUMID)
+      cval_t = cs_field_by_name("real_temperature")->val; /* Humid air temp */
+
+    else {
+      const cs_field_t *f = cs_field_by_name_try("temperature");
+      if (f != nullptr)
+        cval_t = f->val;
+      else if (   cs_glob_thermal_model->thermal_variable
+          == CS_THERMAL_MODEL_ENTHALPY)
+        cval_h = cs_field_by_name("enthalpy")->val;
+
+      if (cs_glob_thermal_model->temperature_scale == CS_TEMPERATURE_SCALE_KELVIN)
+        tscl_shift = - cs_physical_constants_celsius_to_kelvin;
+    }
+
   }
 
-  if (cs_glob_lagr_model->physical_model == CS_LAGR_PHYS_CTWR) {
-    cval_t_l = cs_field_by_name("temp_l_r")->val;
-  }
+  if (cs_glob_lagr_model->physical_model == CS_LAGR_PHYS_CTWR)
+    cval_t_l = cs_field_by_name("temp_l_packing")->val;
 
   const cs_real_t pis6 = cs_math_pi / 6.0;
   const int shape = cs_glob_lagr_model->shape;
