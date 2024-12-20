@@ -913,16 +913,18 @@ class XMLinitNeptune(BaseXmlInit):
             n1 = scalars_node.xmlGetNode("scalars")
             if n1:
                 for node in n1.xmlGetChildNodeList("variable"):
-                    old_f_id = node["field_id"]
-                    node["field_id"] = "none"
-                    node["conv_field"] = old_f_id
+                    if node['conv_field'] == None:
+                        old_f_id = node["field_id"]
+                        node["conv_field"] = old_f_id
+                        node["field_id"] = "none"
 
         XMLNodeNonCondens = self.case.xmlGetNode('non_condensable_list')
         if XMLNodeNonCondens != None:
             for node in XMLNodeNonCondens.xmlGetNodeList('variable'):
-                old_f_id = node["field_id"]
-                node["field_id"] = "none"
-                node["conv_field"] = old_f_id
+                if node['conv_field'] == None:
+                    old_f_id = node["field_id"]
+                    node["conv_field"] = old_f_id
+                    node["field_id"] = "none"
 
         return
 
