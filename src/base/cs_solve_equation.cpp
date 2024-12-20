@@ -1280,9 +1280,12 @@ cs_solve_equation_scalar(cs_field_t        *f,
 
     /* Pulverized coal; order 2 not handled */
     if (cs_glob_coal_model != nullptr) {
-      const int nclacp = cs_glob_coal_model->nclacp;
-      const int isca_ih21 = cs_field_get_key_int(CS_FI_(h2, 0), keyvar);
-      const int isca_ih2nl = cs_field_get_key_int(CS_FI_(h2, nclacp-1), keyvar);
+      const cs_coal_model_t *cm = cs_glob_coal_model;
+      const int nclacp = cm->nclacp;
+      const int isca_ih21
+        = cs_field_get_key_int(cs_field_by_id(cm->ih2[0]), keyvar);
+      const int isca_ih2nl
+        = cs_field_get_key_int(cs_field_by_id(cm->ih2[nclacp-1]), keyvar);
       if ((isca_ih21 <= ivar) && (ivar <= isca_ih2nl))
         cs_coal_rad_transfer_st(f, rhs, fimp);
 

@@ -137,26 +137,6 @@ typedef enum {
   CS_ENUMF_(yfp2m),        /*!< mass fraction variance */
   CS_ENUMF_(coyfp),        /*!< mass fraction covariance */
 
-  CS_ENUMF_(np),           /*!< particles per kg for coal class */
-  CS_ENUMF_(xch),          /*!< reactive coal mass fraction for coal class */
-  CS_ENUMF_(xck),          /*!< coke mass fraction for coal class */
-  CS_ENUMF_(xwt),          /*!< water mass fraction for coal class */
-  CS_ENUMF_(h2),           /*!< mass enthalpy for coal class (permeatic case) */
-  CS_ENUMF_(f1m),          /*!< mean value light volatiles for coal class */
-  CS_ENUMF_(f2m),          /*!< mean value heavy volatiles for coal class */
-  CS_ENUMF_(f4m),          /*!< oxydant 2 mass fraction */
-  CS_ENUMF_(f5m),          /*!< oxydant 3 mass fraction */
-  CS_ENUMF_(f6m),          /*!< water from coal drying mass fraction */
-  CS_ENUMF_(f7m),          /*!< carbon from coal oxidyzed by O2 mass fraction */
-  CS_ENUMF_(f8m),          /*!< carbon from coal gasified by CO2 mass fraction */
-  CS_ENUMF_(f9m),          /*!< carbon from coal gasified by H2O mass fraction */
-  CS_ENUMF_(fvp2m),        /*!< f1f2 variance */
-  CS_ENUMF_(yco2),         /*!< CO2 fraction */
-  CS_ENUMF_(yhcn),         /*!< HCN fraction */
-  CS_ENUMF_(yno),          /*!< NO fraction */
-  CS_ENUMF_(ynh3),         /*!< NH3 enthalpy */
-  CS_ENUMF_(hox),          /*!< Ox enthalpy */
-
   CS_ENUMF_(potr),         /*!< Electric potential, real part */
   CS_ENUMF_(poti),         /*!< Electric potential, imaginary part */
   CS_ENUMF_(potva),        /*!< Vector potential */

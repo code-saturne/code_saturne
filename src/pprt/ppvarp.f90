@@ -57,7 +57,6 @@ use ppthch
 use coincl
 use cpincl
 use ppincl
-use cs_coal_incl
 use ppcpfu
 use atincl
 use field
@@ -112,13 +111,6 @@ else if (      ippmod(icolwc).eq.2  &
 else if (     ippmod(icolwc).eq.4  &
          .or. ippmod(icolwc).eq.5) then
   ndirac = 4
-endif
-
-! 2. Coal combustion
-!-------------------
-
-if (ippmod(iccoal).ge.0) then
-  call cs_coal_varpos
 endif
 
 ! 3. Compressible model (field mappings)

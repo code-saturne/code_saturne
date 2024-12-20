@@ -46,6 +46,7 @@
 #include "cs_equation_param.h"
 #include "cs_field.h"
 #include "cs_field_default.h"
+#include "cs_field_pointer.h"
 #include "cs_parameters.h"
 #include "cs_parameters_check.h"
 #include "cs_physical_constants.h"
@@ -337,6 +338,14 @@ cs_f_coal_radst(int         id,
                 cs_real_t  *smbrs,
                 cs_real_t  *rovsdt);
 
+/* Additional prototypes for Fortran mappings */
+
+int
+cs_add_model_field_indexes(int  f_id);
+
+void
+cs_add_model_thermal_field_indexes(int  f_id);
+
 /*============================================================================
  * Private function definitions
  *============================================================================*/
@@ -353,6 +362,58 @@ static void
 _coal_model_finalize(void)
 {
   BFT_FREE(cs_glob_coal_model);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Add a coal model field.
+ *
+ * \param[in]  base_name   field base name
+ * \param[in]  base_label  field base label
+ * \param[in]  cc_id       class or coal id, or -1 if ignored
+ * \param[in]  class_id    class or coal id
+ * \param[in]  drift_flag  drift flag
+ *
+ * \return  pointer to field;
+ */
+/*----------------------------------------------------------------------------*/
+
+static cs_field_t *
+_add_coal_field(const char  *base_name,
+                const char  *base_label,
+                int          cc_id,
+                int          class_id,
+                int          drift_flag)
+{
+  char name[64], label[64];
+  if (cc_id > -1) {
+    snprintf(name, 64, "%s_%02d", base_name, cc_id+1); name[63] = '\0';
+    snprintf(label, 64, "%s_%02d", base_label, cc_id+1); label[63] = '\0';
+  }
+  else {
+    strncpy(name, base_name, 64); name[63] = '\0';
+    strncpy(label, base_label, 64); label[63] = '\0';
+  }
+
+  int f_id = cs_variable_field_create(name, label, CS_MESH_LOCATION_CELLS, 1);
+  cs_field_t *f = cs_field_by_id(f_id);
+
+  cs_add_model_field_indexes(f->id);
+
+  // Set the index of the scalar class in the field structure
+  // TODO: we could probably leave the id at the default value
+  // (0, could be -1) when -1 is passed.
+
+  const int keyccl = cs_field_key_id("scalar_class");
+  int class_num = (class_id > -1) ? class_id + 1 : -1;
+  cs_field_set_key_int(f, keyccl, class_num);
+
+  if (drift_flag != 0) {
+    const int keydri = cs_field_key_id("drift_scalar_model");
+    cs_field_set_key_int(f, keydri, drift_flag);
+  }
+
+  return f;
 }
 
 /*============================================================================
@@ -1128,6 +1189,314 @@ cs_coal_setup(void)
                                    "srrom",
                                    cm->srrom,
                                    0., 1.);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Add variable fields for pulverized coal combustion model.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_coal_add_variable_fields(void)
+{
+  cs_coal_model_t *cm = cs_glob_coal_model;
+
+  // Key id for drift scalar
+  const int keydri = cs_field_key_id("drift_scalar_model");
+
+  // Key ids for clipping
+  const int kscmin = cs_field_key_id("min_scalar_clipping");
+  const int kscmax = cs_field_key_id("max_scalar_clipping");
+
+  // Key id for the diffusivity
+  const int kvisl0 = cs_field_key_id("diffusivity_ref");
+
+  // Drift flag
+  int iscdri = (cm->idrift >= 1) ? 1 : 0;
+
+  /* Definition of fields
+     -------------------- */
+
+  {
+    // FIXME enth_bulk?
+    int f_id = cs_variable_field_create("enthalpy", "Enthalpy",
+                                        CS_MESH_LOCATION_CELLS, 1);
+    cs_field_t *f = cs_field_by_id(f_id);
+    cs_field_pointer_map(CS_ENUMF_(h), f);
+    cs_add_model_thermal_field_indexes(f->id);
+
+    cs_field_set_key_double(f, kscmin, -cs_math_big_r);
+    cs_field_set_key_double(f, kscmax, cs_math_big_r);
+
+    cs_field_set_key_double(f, kvisl0, 4.24e-5);
+
+    /* set thermal model */
+    cs_thermal_model_t *thermal = cs_get_glob_thermal_model();
+    thermal->thermal_variable = CS_THERMAL_MODEL_ENTHALPY;
+  }
+
+  // Dispersed phase variables
+  //--------------------------
+
+  // NB: 'c' stands for continuous <> 'p' stands for particles
+
+  // Drift: create additional mass flux for first element of eah class.
+  if (iscdri != 0)
+    iscdri = iscdri | CS_DRIFT_SCALAR_ADD_DRIFT_FLUX;
+
+  // Number of particles of the class per kg of air-coal mixture (bulk)
+  for (int class_id = 0; class_id < cm->nclacp; class_id++) {
+    cs_field_t *f = _add_coal_field("n_p", "Np",
+                                    class_id, class_id, iscdri);
+    cm->inp[class_id] = f->id;
+    cs_field_set_key_double(f, kscmin, 0);
+    cs_field_set_key_double(f, kscmax, cs_math_infinite_r);
+  }
+
+  // Drift: do not create additional convective flux for
+  // following elements of eah class (but use the one of the class).
+  if (iscdri != 0)
+    iscdri = iscdri & (~(CS_DRIFT_SCALAR_ADD_DRIFT_FLUX));
+
+  // Mass fraction of reactive coal of the class icla per kg of bulk
+  for (int class_id = 0; class_id < cm->nclacp; class_id++) {
+    cs_field_t *f = _add_coal_field("x_p_coal", "Xp_Ch",
+                                    class_id, class_id, iscdri);
+    cm->ixch[class_id] = f->id;
+    cs_field_set_key_double(f, kscmin, 0);
+    cs_field_set_key_double(f, kscmax, 1);
+  }
+
+  // Mass fraction of char (coke in French) of the class per kg of bulk
+  for (int class_id = 0; class_id < cm->nclacp; class_id++) {
+    cs_field_t *f = _add_coal_field("x_p_char", "Xp_Ck",
+                                    class_id, class_id, iscdri);
+    cm->ixck[class_id] = f->id;
+    cs_field_set_key_double(f, kscmin, 0);
+    cs_field_set_key_double(f, kscmax, 1);
+  }
+
+  // Mass fraction of water (within the particle) of the class per kg of bulk
+  if (cm->type == CS_COMBUSTION_COAL_WITH_DRYING) {
+    for (int class_id = 0; class_id < cm->nclacp; class_id++) {
+      cs_field_t *f = _add_coal_field("x_p_wt", "Xp_wt",
+                                      class_id, class_id, iscdri);
+      cm->ixwt[class_id] = f->id;
+      cs_field_set_key_double(f, kscmin, 0);
+      cs_field_set_key_double(f, kscmax, 1);
+    }
+  }
+
+  // Enthalpy of the class per kg of bulk
+  // (product of the mass fraction of the class by massic enthalpy of the class).
+  for (int class_id = 0; class_id < cm->nclacp; class_id++) {
+    cs_field_t *f = _add_coal_field("x_p_h", "Xp_Ent",
+                                    class_id, class_id, iscdri);
+    cm->ih2[class_id] = f->id;
+    cs_field_set_key_double(f, kscmin, -cs_math_big_r);
+    cs_field_set_key_double(f, kscmax, cs_math_big_r);
+  }
+
+  // Age of the class icla time the Np (number of particle per kg of bulk)
+  if (cm->idrift >= 1) {
+    for (int class_id = 0; class_id < cm->nclacp; class_id++) {
+      cs_field_t *f = _add_coal_field("n_p_age", "Np_Age",
+                                      class_id, class_id, iscdri);
+      // TODO: test below used to reproduce previous behavior; is it desired ?
+      if (cm->type == CS_COMBUSTION_COAL_WITH_DRYING)
+        cs_field_set_key_double(f, kscmin, 0);
+      cs_field_set_key_double(f, kscmax, cs_math_big_r);
+    }
+  }
+
+  // Particle velocities (when they are transported)
+
+  if (cm->idrift >= 1) {
+    for (int class_id = 0; class_id < cm->nclacp; class_id++) {
+      _add_coal_field("v_x_p", "Vp_X", class_id, class_id, iscdri);
+      _add_coal_field("v_y_p", "Vp_Y", class_id, class_id, iscdri);
+      _add_coal_field("v_z_p", "Vp_Z", class_id, class_id, iscdri);
+    }
+  }
+
+  // Continuous phase variables
+  //---------------------------
+
+  // NB: 'c' stands for continuous <> 'p' stands for particles
+
+  // Field gas enthalpy
+
+  // Enthalpy of the gas phase per kg of bulk
+  // (The gas phase is a class with a negative icla, Enthalpy of the class
+  //  is the product of the mass fraction of the class
+  //  by massic enthalpy of the class).
+
+  {
+    cs_field_t *f = _add_coal_field("x_c_h", "Xc_Ent", -1, -1, iscdri);
+    cm->ihgas = f->id;
+
+    // The first gas scalar contains the drift flux
+    if (iscdri != 0) {
+      iscdri = iscdri | CS_DRIFT_SCALAR_ADD_DRIFT_FLUX;
+      cs_field_set_key_int(f, keydri, iscdri);
+    }
+  }
+
+  // Drift: do not create additional convective fluxes
+  if (iscdri != 0)
+    iscdri = iscdri & (~(CS_DRIFT_SCALAR_ADD_DRIFT_FLUX));
+
+  // Light (F8) and heavy (F9) volatile matter
+
+  // Mass of the mean value of the tracer 1 (representing the light
+  // volatiles released by the coal icha) divided by the mass of bulk
+  // NB: mixture fraction (fr) (unreactive) <> mass fraction (x) (reactive)
+
+  for (int coal_id = 0; coal_id < cm->n_coals; coal_id++) {
+    cs_field_t *f = _add_coal_field("fr_mv1", "Fr_mv1",
+                                    coal_id, -1, iscdri);
+    cm->if1m[coal_id] = f->id;
+    cs_field_set_key_double(f, kscmin, 0.);
+    cs_field_set_key_double(f, kscmax, 1.);
+  }
+
+  // Mass of the mean value of the tracer 2 (representing the heavy
+  // volatiles released by the coal icha) divided by the mass of bulk
+  // NB: mixture fraction (fr) (unreactive) <> mass fraction (x) (reactive)
+
+  for (int coal_id = 0; coal_id < cm->n_coals; coal_id++) {
+    cs_field_t *f = _add_coal_field("fr_mv2", "Fr_mv2",
+                                    coal_id, -1, iscdri);
+    cm->if2m[coal_id] = f->id;
+    cs_field_set_key_double(f, kscmin, 0.);
+    cs_field_set_key_double(f, kscmax, 1.);
+  }
+
+  // Mass of the Oxydant 2 divided by the mass of bulk
+  // NB: mixture fraction (fr) (unreactive) <> mass fraction (x) (reactive)
+  if (cm->noxyd >= 2) {
+    cs_field_t *f = _add_coal_field("fr_oxyd2", "FR_OXYD2", -1, -1, iscdri);
+    cm->if4m = f->id;
+    cs_field_set_key_double(f, kscmin, 0.);
+    cs_field_set_key_double(f, kscmax, 1.);
+  }
+
+  // Mass of the Oxydant 3 divided by the mass of bulk
+  // NB: mixture fraction (fr) (unreactive) <> mass fraction (x) (reactive)
+  if (cm->noxyd >= 3) {
+    cs_field_t *f = _add_coal_field("fr_oxyd3", "FR_OXYD3", -1, -1, iscdri);
+    cm->if5m = f->id;
+    cs_field_set_key_double(f, kscmin, 0.);
+    cs_field_set_key_double(f, kscmax, 1.);
+  }
+
+  // Mass of the water from coal drying divided by the mass of bulk
+  // NB: mixture fraction (fr) (unreactive) <> mass fraction (x) (reactive)
+  if (cm->type == CS_COMBUSTION_COAL_WITH_DRYING) {
+    cs_field_t *f = _add_coal_field("fr_h2o", "FR_H2O", -1, -1, iscdri);
+    cm->if6m = f->id;
+    cs_field_set_key_double(f, kscmin, 0.);
+    cs_field_set_key_double(f, kscmax, 1.);
+  }
+
+  // Mass of the Carbon from coal oxydized by O2 divided by the mass of bulk
+  // NB: mixture fraction (fr) (unreactive) <> mass fraction (x) (reactive)
+  {
+    cs_field_t *f = _add_coal_field("fr_het_o2", "FR_HET_O2", -1, -1, iscdri);
+    cm->if7m = f->id;
+    cs_field_set_key_double(f, kscmin, 0.);
+    cs_field_set_key_double(f, kscmax, 1.);
+  }
+
+  // Mass of the Carbon from coal gasified by CO2 divided by the mass of bulk
+  // NB: mixture fraction (fr) (unreactive) <> mass fraction (x) (reactive)
+  if (cm->ihtco2 == 1) {
+    cs_field_t *f = _add_coal_field("fr_het_co2", "FR_HET_CO2", -1, -1, iscdri);
+    cm->if8m = f->id;
+    cs_field_set_key_double(f, kscmin, 0.);
+    cs_field_set_key_double(f, kscmax, 1.);
+  }
+
+  // Mass of the Carbon from coal gasified by H2O divided by the mass of bulk
+  // NB: mixture fraction (fr) (unreactive) <> mass fraction (x) (reactive)
+  if (cm->ihth2o == 1) {
+    cs_field_t *f = _add_coal_field("fr_het_h2o", "FR_HET_H2O", -1, -1, iscdri);
+    cm->if9m = f->id;
+    cs_field_set_key_double(f, kscmin, 0.);
+    cs_field_set_key_double(f, kscmax, 1.);
+  }
+
+  // Variance
+  {
+    cs_field_t *f = _add_coal_field("f1f2_variance", "Var_F1F2", -1, -1, iscdri);
+    cm->ifvp2m = f->id;
+    cs_field_set_key_double(f, kscmin, 0.);
+    cs_field_set_key_double(f, kscmax, 0.25);
+  }
+
+  // Mass of the Carbon dioxyde (CO or CO2) divided by the mass of bulk
+  // NB: mixture fraction (fr) (unreactive) <> mass fraction (x) (reactive)
+  //FIXME check for the oxycombustion, it would be more relevant to track CO
+  if (cm->ieqco2 >= 1) {
+    cs_field_t *f = _add_coal_field("x_c_co2", "Xc_CO2", -1, -1, iscdri);
+    cm->iyco2 = f->id;
+    cs_field_set_key_double(f, kscmin, 0.);
+    cs_field_set_key_double(f, kscmax, 1.);
+  }
+
+  if (cm->ieqnox == 1) {
+    cs_field_t *f;
+
+    // Mass of the HCN divided by the mass of bulk
+    // NB: mixture fraction (fr) (unreactive) <> mass fraction (x) (reactive)
+    f = _add_coal_field("x_c_hcn", "Xc_HCN", -1, -1, iscdri);
+    cm->iyhcn = f->id;
+    cs_field_set_key_double(f, kscmin, 0.);
+    cs_field_set_key_double(f, kscmax, 1.);
+
+    // Mass of the NH3 divided by the mass of bulk
+    // NB: mixture fraction (fr) (unreactive) <> mass fraction (x) (reactive)
+    f = _add_coal_field("x_c_nh3", "Xc_NH3", -1, -1, iscdri);
+    cm->iynh3 = f->id;
+    cs_field_set_key_double(f, kscmin, 0.);
+    cs_field_set_key_double(f, kscmax, 1.);
+
+    // Mass of the NO divided by the mass of bulk
+    // NB: mixture fraction (fr) (unreactive) <> mass fraction (x) (reactive)
+    f = _add_coal_field("x_c_no", "Xc_NO", -1, -1, iscdri);
+    cm->iyno = f->id;
+    cs_field_set_key_double(f, kscmin, 0.);
+    cs_field_set_key_double(f, kscmax, 1.);
+
+    // Enthalpy of the oxydizer times the fraction of gas
+    // divided by the mass of bulk
+    // NB: mixture fraction (fr) (unreactive) <> mass fraction (x) (reactive)
+    f = _add_coal_field("x_c_h_ox", "Xc_Ent_Ox", -1, -1, iscdri);
+    cm->ihox = f->id;
+    cs_field_set_key_double(f, kscmin, -cs_math_big_r);
+    cs_field_set_key_double(f, kscmax, cs_math_big_r);
+  }
+
+  // Age of bulk
+  // FIXME give the possibility of having the age separately
+  if (iscdri != 0) {
+    int f_id = cs_variable_field_create("age", "Age",
+                                        CS_MESH_LOCATION_CELLS, 1);
+    cs_field_t *f = cs_field_by_id(f_id);
+    cs_add_model_field_indexes(f->id);
+
+    cs_field_set_key_double(f, kscmin, 0);
+    cs_field_set_key_double(f, kscmax, cs_math_big_r);
+  }
+
+  /* Physical properties
+     ------------------- */
+
+  // Although we are in enthalpy formulation, we keep Cp constant.
+
+  cs_fluid_properties_t *fluid_props = cs_get_glob_fluid_properties();
+  fluid_props->icp = -1;
 }
 
 /*----------------------------------------------------------------------------*/

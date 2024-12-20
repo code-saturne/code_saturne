@@ -389,7 +389,7 @@ _map_field(const cs_field_t *f)
 /*!
  * \brief Add a species field to the gas mix (set of fields).
  *
- * The field'ss min an max clipping values are set to 0 and 1 respectively.
+ * The field's min an max clipping values are set to 0 and 1 respectively.
  *
  * \param[in]   name   field name
  * \param[in]   label  field name
