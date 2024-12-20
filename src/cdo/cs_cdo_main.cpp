@@ -814,8 +814,9 @@ cs_cdo_initialize_structures(cs_domain_t           *domain,
 
   cs_domain_init_cdo_structures(domain);
 
-  /* GUI initial conditions */
-  cs_gui_initial_conditions();
+  /* GUI initial conditions - Only HTS for the moment */
+  if (cs_thermal_system_is_activated())
+    cs_gui_initial_conditions();
 
   /* Last user setup stage */
 
