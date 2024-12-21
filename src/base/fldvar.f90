@@ -75,8 +75,8 @@ integer       iok
 !===============================================================================
 
 procedure() :: add_variable_field
-procedure() :: ppvarp, add_model_scalar_field
-procedure() :: add_user_scalar_fields, fldvar_check_nvar
+procedure() :: add_model_scalar_field
+procedure() :: fldvar_check_nvar
 procedure() :: init_var_cal_opt
 
 interface

@@ -1,3 +1,10 @@
+Release 8.3.1 (unreleased)
+--------------------------
+
+### Bug fixes:
+
+- Fix build with older (pre LLVM) Intel compilers.
+
 Release 8.3.0 (2024-12-20)
 --------------------------
 
@@ -40,8 +47,8 @@ Release 8.3.0 (2024-12-20)
   mainly for postprocessing, but will be extened in v9.0.
 
 - Conjugate Heat Transfer can now be conducted with the CDO based Heat transfer
-  solver of code_saturne. This is handled in the same manner as a syrthes coupling
-  in the GUI for the user.
+  solver of code_saturne. This is handled in the same manner as a syrthes
+  coupling in the GUI for the user.
 
 - Rename all cs_user_XXX.c functions to cs_user_XXX.cpp thus allowing calls
   to C++ functions within these functions.
