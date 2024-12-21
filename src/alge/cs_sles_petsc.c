@@ -297,14 +297,14 @@ _shell_mat_mult(Mat  a,
                 Vec  y)
 {
   _mat_shell_t *sh;
-  const PetscScalar *ax;
+  PetscScalar *ax;
   PetscScalar *ay;
 
   assert(sizeof(PetscScalar) == sizeof(cs_real_t));
 
   MatShellGetContext(a, &sh);
 
-  VecGetArrayRead(x, &ax);
+  VecGetArrayRead(x, (const PetscScalar **)(&ax));
   VecGetArray(y, &ay);
 
   cs_matrix_vector_multiply(sh->a, ax, ay);
@@ -1082,7 +1082,7 @@ cs_sles_petsc_setup(void               *context,
   if (c->matype == NULL) {
     MatType matype;
     MatGetType(sd->a, &matype);
-    PetscStrallocpy(matype, &(c->matype));
+    PetscStrallocpy(matype, (char **)(&(c->matype)));
   }
 
   if (c->ksp_type == NULL) {
@@ -1268,14 +1268,14 @@ cs_sles_petsc_solve(void                *context,
   if (sd->share_a) {
 
     PetscReal *_x = NULL;
-    VecGetArrayRead(x, &_x);
+    VecGetArray(x, &_x);
 
 #   pragma omp parallel for if(_n_rows > CS_THR_MIN)
     for (PetscInt i = 0; i < _n_rows; i++) {
       _x[i] = vx[i];
     }
 
-    VecRestoreArrayRead(x, &_x);
+    VecRestoreArray(x, &_x);
 
   }
   else {
