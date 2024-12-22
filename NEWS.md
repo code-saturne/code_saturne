@@ -3,6 +3,9 @@ release 8.2.2 (unreleased)
 
 ### Bug fixes:
 
+- Fix build with GCC 14 (which has stricter type checking than
+  older GCC versions) when also using PETSc.
+
 - GUI: fix spurious reset of default log output frequency to 1
   when postprocessing settings page is reopened.
 
