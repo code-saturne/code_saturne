@@ -153,11 +153,15 @@
  * Local function prototypes needed for class definition
  *-----------------------------------------------------------------------------*/
 
+#if defined(HAVE_ACCEL)
+
 static void
 _free_hd_device(void        *ptr,
                 const char  *var_name,
                 const char  *file_name,
                 int          line_num);
+
+#endif
 
 /*-------------------------------------------------------------------------------
  * Local type definitions

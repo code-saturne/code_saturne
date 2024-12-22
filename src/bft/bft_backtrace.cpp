@@ -28,7 +28,7 @@
 
 /*-----------------------------------------------------------------------------*/
 
-#if defined(HAVE_GLIBC_BACKTRACE) && defined(__GNUC__)
+#if defined(HAVE_GLIBC_BACKTRACE) && defined(__GNUC__) && !defined(_GNU_SOURCE)
 #define _GNU_SOURCE
 #endif
 

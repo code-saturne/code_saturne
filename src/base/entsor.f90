@@ -175,8 +175,8 @@ contains
 
     ! Arguments
 
-    character      :: str(*)
-    integer(c_int) :: l
+    character(c_char) :: str(*)
+    integer(c_int)    :: l
 
     ! Local variables
 

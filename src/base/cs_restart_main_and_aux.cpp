@@ -1056,21 +1056,6 @@ _read_auxiliary_checkpoint(cs_map_name_to_id_t *old_field_map)
   else
     cs_parameters_set_init_state_on(1); // 1 is density
 
-
-  /* Viscosity */
-  int key_t_ext_id = cs_field_key_id_try("time_extrapolated");
-
-  if (cs_field_get_key_int(CS_F_(mu_t), key_t_ext_id) > 0 ||
-      (cs_glob_vof_parameters->vof_model & CS_VOF_ENABLED && vof_aux_id >= 0)) {
-    int read_mu_t_ok = 1;
-
-    if (cs_restart_get_field_read_status(CS_F_(mu)->id) == 0)
-      read_mu_t_ok = 0;
-
-    if (cs_restart_get_field_read_status(CS_F_(mu_t)->id) == 0)
-      read_mu_t_ok = 0;
-  }
-
   /* Read diffusivities if needed */
   cs_restart_read_linked_fields(r, old_field_map, "diffusivity_id", nullptr);
 

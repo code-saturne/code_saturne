@@ -1969,8 +1969,8 @@ cs_coal_physprop(int  *mbrom)
     const cs_real_3_t *cvar_vel = (const cs_real_3_t *)CS_F_(vel)->val;
 
     for (int class_id = 0; class_id < cm->nclacp; class_id++) {
-      char class_name[4];
-      snprintf(class_name, 8, "%02d", class_id+1); class_name[3] = '\0';
+      char class_name[8];
+      snprintf(class_name, 8, "%02d", class_id+1); class_name[7] = '\0';
 
       cs_real_t *v_x_pi
         = cs_field_by_composite_name("v_x_p", class_name)->val;
@@ -2032,8 +2032,8 @@ cs_coal_physprop(int  *mbrom)
   else if (cm->idrift > 1) {
 
     for (int class_id = 0; class_id < cm->nclacp; class_id++) {
-      char class_name[4];
-      snprintf(class_name, 8, "%02d", class_id+1); class_name[3] = '\0';
+      char class_name[8];
+      snprintf(class_name, 8, "%02d", class_id+1); class_name[7] = '\0';
 
       cs_real_3_t *vg_lim_pi
         = (cs_real_3_t *)(cs_field_by_composite_name("vg_lim_p",
