@@ -398,7 +398,7 @@ _rc_var_b_faces_iprime_strided_lsq(const cs_mesh_t               *m,
       if (i_rel < n_coeff_b_contrib_buf_max) {
         for (cs_lnum_t ll = 0; ll < 3; ll++)
           dif_sv[i_rel][ll] = dif[ll];
-        dif_sv[i_rel][4] = ddif;
+        dif_sv[i_rel][3] = ddif;
       }
 
       cs_real_t var_f[9];
@@ -538,7 +538,7 @@ _rc_var_b_faces_iprime_strided_lsq(const cs_mesh_t               *m,
           if (i_rel < n_coeff_b_contrib_buf_max) {
             for (cs_lnum_t ll = 0; ll < 3; ll++)
               dif[ll] = dif_sv[i_rel][ll];
-            ddif = dif_sv[i_rel][4];
+            ddif = dif_sv[i_rel][3];
           }
           else {
             for (cs_lnum_t ii = 0; ii < 3; ii++)
