@@ -1554,7 +1554,7 @@ cs_equation_iterative_solve_vector(int                   idtvar,
                                      var_name,
                                      db_size,
                                      eb_size,
-                                     dam,
+                                     (cs_real_t *)dam,
                                      xam,
                                      true);
 
@@ -2405,7 +2405,7 @@ cs_equation_iterative_solve_tensor(int                   idtvar,
                                      var_name,
                                      db_size,
                                      eb_size,
-                                     dam,
+                                     (cs_real_t *)dam,
                                      xam,
                                      true);
 

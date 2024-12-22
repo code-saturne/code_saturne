@@ -302,9 +302,12 @@ do iflid = 0, nfld-1
     ! set the mass flux index to all members of the class
     if (icla.ne.0) then
       do ii = 0, nfld-1
-        call field_get_key_int(ii, keyccl, iclap)
-        if (icla.eq.iclap) then
-          call field_set_key_int(ii, kimasf, f_id)
+        call field_get_type(f_id, f_type)
+        if (iand(f_type, FIELD_VARIABLE).eq.FIELD_VARIABLE) then
+          call field_get_key_int(ii, keyccl, iclap)
+          if (icla.eq.iclap) then
+            call field_set_key_int(ii, kimasf, f_id)
+          endif
         endif
       enddo
     endif
@@ -324,9 +327,12 @@ do iflid = 0, nfld-1
     ! set the mass flux index to all members of the class
     if (icla.ne.0) then
       do ii = 0, nfld-1
-        call field_get_key_int(ii, keyccl, iclap)
-        if (icla.eq.iclap) then
-          call field_set_key_int(ii, kbmasf, f_id)
+        call field_get_type(f_id, f_type)
+        if (iand(f_type, FIELD_VARIABLE).eq.FIELD_VARIABLE) then
+          call field_get_key_int(ii, keyccl, iclap)
+          if (icla.eq.iclap) then
+            call field_set_key_int(ii, kbmasf, f_id)
+          endif
         endif
       enddo
     endif
