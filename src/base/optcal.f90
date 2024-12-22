@@ -385,7 +385,6 @@ module optcal
   !>    - 0: false (default)
   integer(c_int), pointer, save :: reinit_turb
 
-
   !> Coupled solving of \f$ \tens{R} \f$
   !>    - 1: true
   !>    - 0: false (default)
@@ -576,42 +575,6 @@ module optcal
 
   !> \addtogroup scalar_params
   !> \{
-
-  !> flag for computing the drift mass flux:
-  !> (for coal classes for instance, only the first
-  !>  scalar of a class compute the drift flux of the class
-  !>  and the other scalars use it without recomputing it)
-  integer :: DRIFT_SCALAR_ADD_DRIFT_FLUX
-
-  !> flag for activating thermophoresis for drift scalars
-  integer :: DRIFT_SCALAR_THERMOPHORESIS
-
-  !> flag for activating turbophoresis for drift scalars
-  integer :: DRIFT_SCALAR_TURBOPHORESIS
-
-  ! flag for activating electrophoresis for drift scalars
-  integer :: DRIFT_SCALAR_ELECTROPHORESIS
-
-  !> flag for activating the centrifugal force for drift scalars
-  integer :: DRIFT_SCALAR_CENTRIFUGALFORCE
-
-  !> flag for activating imposed mass flux
-  integer :: DRIFT_SCALAR_IMPOSED_MASS_FLUX
-
-  !> flag for seting the mass flux to zero at all boundaries
-  integer :: DRIFT_SCALAR_ZERO_BNDY_FLUX
-
-  !> flag for seting the mass flux to zero at walls only
-  integer :: DRIFT_SCALAR_ZERO_BNDY_FLUX_AT_WALLS
-
-  parameter (DRIFT_SCALAR_ADD_DRIFT_FLUX=1)
-  parameter (DRIFT_SCALAR_THERMOPHORESIS=2)
-  parameter (DRIFT_SCALAR_TURBOPHORESIS=3)
-  parameter (DRIFT_SCALAR_ELECTROPHORESIS=4)
-  parameter (DRIFT_SCALAR_CENTRIFUGALFORCE=5)
-  parameter (DRIFT_SCALAR_IMPOSED_MASS_FLUX=6)
-  parameter (DRIFT_SCALAR_ZERO_BNDY_FLUX=7)
-  parameter (DRIFT_SCALAR_ZERO_BNDY_FLUX_AT_WALLS=8)
 
   !> flag for isotropic diffusion
   integer :: ISOTROPIC_DIFFUSION

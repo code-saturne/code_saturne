@@ -127,13 +127,6 @@ ncelet = ncele2
 nfac = nfac2
 nfabor = nfabo2
 
-! Now update ndimfb
-if (nfabor.eq.0) then
-  ndimfb = 1
-else
-  ndimfb = nfabor
-endif
-
 !===============================================================================
 ! 2. Define pointers on mesh structure
 !===============================================================================

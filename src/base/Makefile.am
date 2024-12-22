@@ -305,7 +305,6 @@ cs_mem_cuda_priv.cu
 endif
 
 libcsbase_a_SOURCES = \
-condli.f90 \
 cs_1d_wall_thermal.cpp \
 cs_1d_wall_thermal_check.cpp \
 cs_ale.cpp \
@@ -416,10 +415,7 @@ cs_wall_condensation_1d_thermal.cpp \
 cs_wall_distance.cpp \
 cs_wall_functions.cpp \
 cs_xdef_eval_at_zone.cpp \
-csclli.f90 \
 csinit.f90 \
-csopli.f90 \
-csprnt.f90 \
 findpt.f90 \
 fldprp.f90 \
 fldvar.f90 \

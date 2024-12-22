@@ -54,12 +54,7 @@ implicit none
   !> must be inferior or equal to \ref paramx::nscamx "nscamx".
   integer, save :: nscal = 0
 
-  !> fake dimension for some boundary face arrays
-  !> where \ref nfabor = 0 (to avoid issues with array bounds when
-  !> multidimensional arrays have size nfabor in one dimension)
-  integer, save :: ndimfb
   !> \}
-
 
   !=============================================================================
 

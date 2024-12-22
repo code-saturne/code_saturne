@@ -432,38 +432,6 @@ cs_base_fortran_bft_printf_to_f(void)
   ple_printf_function_set(_bft_printf_f);
 }
 
-/*----------------------------------------------------------------------------
- * Wrappers to cs_user_*
- *----------------------------------------------------------------------------*/
-
-void
-cs_user_boundary_conditions_wrapper(int  *itypcl)
-{
-  cs_user_boundary_conditions(cs_glob_domain, itypcl);
-
-  /* Ensure icodcl values are uniform for multidimensional fields */
-
-  const cs_lnum_t n_b_faces = cs_glob_domain->mesh->n_b_faces;
-  const int n_fields = cs_field_n_fields();
-
-  for (int f_id = 0; f_id < n_fields; f_id++) {
-
-    const cs_field_t  *f = cs_field_by_id(f_id);
-    if (f->dim > 1 && f->type & CS_FIELD_VARIABLE && f->bc_coeffs != NULL) {
-
-      int *icodcl = f->bc_coeffs->icodcl;
-
-      if (icodcl != NULL) {
-        for (cs_lnum_t i = 1; i < f->dim; i++) {
-          for (cs_lnum_t j = 0; j < n_b_faces; j++)
-            icodcl[n_b_faces*i + j] = icodcl[j];
-        }
-      }
-    }
-
-  }
-}
-
 /*----------------------------------------------------------------------------*/
 
 END_C_DECLS

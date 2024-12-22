@@ -150,6 +150,12 @@ BEGIN_C_DECLS
  * Public function prototypes
  *============================================================================*/
 
+/* Initialize Fortran base common block values */
+
+extern void
+cs_f_init(int  irgpar,   /* MPI Rank in parallel, -1 otherwise */
+          int  nrgpar);  /* Number of MPI processes, or 1 */
+
 /*============================================================================
  * Static global variables
  *============================================================================*/
@@ -297,15 +303,13 @@ _run(void)
 
   if ((opts.preprocess | opts.verif) == false && opts.benchmark <= 0) {
 
-    int _rank_id = cs_glob_rank_id, _n_ranks = cs_glob_n_ranks;
-
     cs_base_fortran_bft_printf_to_f();
 
     const char default_restart_mesh[] = "restart_mesh_input";
     if (cs_file_isreg(default_restart_mesh))
       cs_restart_map_set_mesh_input(default_restart_mesh);
 
-    CS_PROCF(csinit, CSINIT)(&_rank_id, &_n_ranks);
+    cs_f_init(cs_glob_rank_id, cs_glob_n_ranks);
 
     cs_setup();
 

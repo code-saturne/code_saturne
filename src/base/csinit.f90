@@ -20,8 +20,8 @@
 
 !-------------------------------------------------------------------------------
 
-subroutine csinit &
- ( irgpar , nrgpar )
+subroutine csinit(irgpar, nrgpar)  &
+ bind(C, name='cs_f_init')
 
 !===============================================================================
 !  Purpose:
@@ -51,9 +51,11 @@ use parall
 
 !===============================================================================
 
+use, intrinsic :: iso_c_binding
+
 implicit none
 
-integer  irgpar, nrgpar
+integer(c_int), value :: irgpar, nrgpar
 
 !===============================================================================
 
@@ -65,4 +67,4 @@ nrangp = nrgpar
 !----
 
 return
-end subroutine
+end subroutine csinit

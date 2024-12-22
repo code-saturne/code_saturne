@@ -90,16 +90,6 @@ cs_base_fortran_bft_printf_to_c(void);
 void
 cs_base_fortran_bft_printf_to_f(void);
 
-/*----------------------------------------------------------------------------
- * Wrappers for C functions
- *----------------------------------------------------------------------------*/
-
-void
-cs_user_boundary_conditions_wrapper(int  *itypcl);
-
-void
-cs_user_extra_operations_wrapper(void);
-
 /*----------------------------------------------------------------------------*/
 
 END_C_DECLS
