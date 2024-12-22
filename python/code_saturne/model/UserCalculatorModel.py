@@ -330,7 +330,7 @@ class UserCalculatorModel(Variables, Model):
 
         self.isOnOff(status)
 
-        if status is "off":
+        if status == "off":
             node.xmlInitChildNode(sub_node_name)['status'] = status
         else:
             if node.xmlGetChildNode(sub_node_name):
