@@ -66,8 +66,6 @@ atmo/atsoil.f90 \
 atmo/atchem.f90 \
 atmo/atimbr.f90 \
 atmo/sshaerosol.f90 \
-comb/cs_coal_incl.f90 \
-comb/cpincl.f90 \
 ctwr/ctincl.f90 \
 pprt/ppcpfu.f90 \
 pprt/ppincl.f90 \
@@ -113,10 +111,6 @@ atmo/sshaerosol.$(OBJEXT): pprt/ppppar.$(OBJEXT) base/cs_c_bindings.$(OBJEXT) \
 
 cogz/coincl.$(OBJEXT): base/paramx.$(OBJEXT) pprt/ppppar.$(OBJEXT) \
  pprt/ppincl.$(OBJEXT) rayt/radiat.$(OBJEXT)
-
-comb/cpincl.$(OBJEXT): pprt/ppppar.$(OBJEXT) pprt/ppthch.$(OBJEXT)
-
-comb/cs_coal_incl.$(OBJEXT): pprt/ppppar.$(OBJEXT) pprt/ppthch.$(OBJEXT)
 
 ctwr/ctincl.$(OBJEXT): base/cstphy.$(OBJEXT)
 

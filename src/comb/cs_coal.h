@@ -766,6 +766,15 @@ void
 cs_coal_add_variable_fields(void);
 
 /*----------------------------------------------------------------------------*/
+/*!
+ * \brief Add property fields for pulverized coal combustion model.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_coal_add_property_fields(void);
+
+/*----------------------------------------------------------------------------*/
 /*
  * \brief Compute mass transfer terms between the continous and dispersed phase.
  */

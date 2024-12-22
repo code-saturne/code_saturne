@@ -908,6 +908,9 @@ _create_property_fields(void)
   if (pm_flag[CS_ATMOSPHERIC] >= 0)
     cs_atmo_add_property_fields();
 
+  if (pm_flag[CS_COMBUSTION_COAL] >= 0)
+    cs_coal_add_property_fields();
+
   // Cooling towers model
   if (pm_flag[CS_COOLING_TOWERS] >= 0)
     cs_ctwr_add_property_fields();

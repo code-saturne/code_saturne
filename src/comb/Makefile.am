@@ -47,23 +47,6 @@ $(MPI_CPPFLAGS)
 
 AM_CXXFLAGS = $(CXXFLAGS_STD) $(CXXFLAGS_SYCL) $(CXXFLAGS_DBG) $(CXXFLAGS_OPT) $(CXXFLAGS_SHARED)
 
-AM_FCFLAGS = \
-$(FCMODINCLUDE)$(top_builddir)/src \
-$(FCMODINCLUDE)$(top_builddir)/src/alge \
-$(FCMODINCLUDE)$(top_builddir)/src/base \
-$(FCMODINCLUDE)$(top_builddir)/src/atmo \
-$(FCMODINCLUDE)$(top_builddir)/src/cfbl \
-$(FCMODINCLUDE)$(top_builddir)/src/cogz \
-$(FCMODINCLUDE)$(top_builddir)/src/comb \
-$(FCMODINCLUDE)$(top_builddir)/src/ctwr \
-$(FCMODINCLUDE)$(top_builddir)/src/elec \
-$(FCMODINCLUDE)$(top_builddir)/src/lagr \
-$(FCMODINCLUDE)$(top_builddir)/src/pprt \
-$(FCMODINCLUDE)$(top_builddir)/src/rayt \
-$(FCMODINCLUDE)$(top_builddir)/src/turb \
-$(FCMODINCLUDE)$(top_builddir)/src/user \
-$(FCFLAGS_DBG) $(FCFLAGS_OPT) $(FCFLAGS_SHARED)
-
 AM_LDFLAGS =
 
 # Public header files (to be installed)
@@ -89,7 +72,6 @@ cs_coal_initialize.cpp \
 cs_coal_mass_transfer.cpp \
 cs_coal_noxst.cpp \
 cs_coal_physical_properties.cpp \
-cs_coal_prop.f90 \
 cs_coal_read_data.cpp \
 cs_coal_source_terms.cpp
 
@@ -103,5 +85,4 @@ endif
 # Additional rules
 
 clean-local:
-	-rm -f *__genmod.f90 *.mod
 	-rm -rf .deps

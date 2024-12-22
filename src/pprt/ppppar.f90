@@ -41,21 +41,6 @@ module ppppar
   integer    nozppm
   parameter (nozppm=2000)
 
-  !--> Pointeurs variables combustion charbon pulverise cpincl, ppincl
-
-  !    ncharm --> nombre maximal de charbons
-  !    ncpcmx --> nombre maximal de classes par charbon
-  !    nclcpm --> Nombre total de classes
-
-  !> maximum number of coals
-  integer    ncharm
-  !> maximum number of coals classes
-  integer    ncpcmx
-
-  !> maximum number of coal classes for the pulverised coal combustion module
-  integer    nclcpm
-  parameter (ncharm=5, ncpcmx=20, nclcpm=ncharm*ncpcmx)
-
   !=============================================================================
 
   !> \}

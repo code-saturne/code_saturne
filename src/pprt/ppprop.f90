@@ -57,7 +57,6 @@ use cstnum
 use ppppar
 use ppthch
 use coincl
-use cpincl
 use ppincl
 use cs_c_bindings
 
@@ -74,12 +73,6 @@ implicit none
 if (ippmod(icod3p).ge.0 .or. ippmod(islfm ).ge.0 .or.            &
     ippmod(icoebu).ge.0 .or. ippmod(icolwc).ge.0) then
   call coprop
-endif
-
-! ---> Physique particuliere :  Combustion Charbon Pulverise
-
-if (ippmod(iccoal).ge.0) then
-  call cs_coal_prop
 endif
 
 end subroutine ppprop

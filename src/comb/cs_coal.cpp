@@ -50,10 +50,12 @@
 #include "cs_parameters.h"
 #include "cs_parameters_check.h"
 #include "cs_physical_constants.h"
+#include "cs_physical_properties.h"
 #include "cs_math.h"
 #include "cs_mesh.h"
 #include "cs_mesh_quantities.h"
 #include "cs_physical_model.h"
+#include "cs_post.h"
 #include "cs_thermal_model.h"
 
 /*----------------------------------------------------------------------------
@@ -127,216 +129,16 @@ const double cs_coal_epsilon = 1.e-8;
  *============================================================================*/
 
 void
-cs_f_cpincl_coal_get_pointers(int     **ncharb,
-                              int     **nclacp,
-                              int     **nclpch,
-                              int     **idrift,
-                              int     **nsolid,
-                              int     **ich,
-                              int     **ick,
-                              int     **iash,
-                              int     **iwat,
-                              double  **ehsoli,
-                              double  **wmols,
-                              double  **eh0sol,
-                              int     **ichcor,
-                              double  **diam20,
-                              double  **dia2mn,
-                              double  **rho20,
-                              double  **rho2mn,
-                              double  **xmp0,
-                              double  **xmash);
-
-void
-cs_f_cpincl_get_pointers_1(double  **cch,
-                           double  **hch ,
-                           double  **och,
-                           double  **sch,
-                           double  **nch,
-                           double  **pcich,
-                           double  **rho0ch,
-                           double  **thcdch,
-                           double  **cck,
-                           double  **hck,
-                           double  **ock,
-                           double  **sck,
-                           double  **nck,
-                           double  **rhock,
-                           double  **pcick,
-                           double  **cpashc,
-                           double  **h0ashc,
-                           double  **h02ch,
-                           double  **crepn1,
-                           double  **crepn2,
-                           double  **cp2ch,
-                           double  **xashsec,
-                           double  **xashch,
-                           double  **xwatch);
-
-void
-cs_f_cpincl_get_pointers_2(int     **iy1ch,
-                           int     **iy2ch,
-                           int     **iochet,
-                           int     **ioetc2,
-                           int     **ioetwt,
-                           double  **y1ch,
-                           double  **a1ch,
-                           double  **e1ch,
-                           double  **y2ch,
-                           double  **a2ch,
-                           double  **e2ch,
-                           double  **ahetch,
-                           double  **ehetch,
-                           double  **ahetc2,
-                           double  **ehetc2,
-                           double  **ahetwt,
-                           double  **ehetwt,
-                           double  **ehgaze);
-
-void
-cs_f_cpincl_get_pointers_3(int     **ico,
-                           int     **ico2,
-                           int     **ih2o,
-                           int     **io2,
-                           int     **in2,
-                           int     **ichx1c,
-                           int     **ichx2c,
-                           int     **ichx1,
-                           int     **ichx2,
-                           double  **chx1,
-                           double  **chx2,
-                           double  **a1,
-                           double  **b1,
-                           double  **c1,
-                           double  **d1,
-                           double  **e1,
-                           double  **f1,
-                           double  **a2,
-                           double  **b2,
-                           double  **c2,
-                           double  **d2,
-                           double  **e2,
-                           double  **f2);
-
-void
-cs_f_cpincl_get_pointers_4(int  **ihgas,
-                           int  **if1m,
-                           int  **if2m,
-                           int  **if4m,
-                           int  **if5m,
-                           int  **if6m,
-                           int  **if7m,
-                           int  **if8m,
-                           int  **if9m,
-                           int  **ifvp2m,
-                           int  **ixck,
-                           int  **ixch,
-                           int  **inp,
-                           int  **ih2,
-                           int  **ixwt,
-                           int  **iym1,
-                           int  **irom1,
-                           int  **immel,
-                           int  **itemp2,
-                           int  **irom2,
-                           int  **idiam2,
-                           int  **ix2,
-                           int  **igmdch,
-                           int  **igmhet,
-                           int  **igmtr,
-                           int  **ighco2,
-                           int  **igmdv1,
-                           int  **igmdv2,
-                           int  **igmsec,
-                           int  **ibcarbone,
-                           int  **iboxygen,
-                           int  **ibhydrogen);
-
-void
-cs_f_cpincl_get_pointers_5(double  **af3,
-                           double  **af4,
-                           double  **af5,
-                           double  **af6,
-                           double  **af7,
-                           double  **af8,
-                           double  **af9,
-                           int     **ihy,
-                           int     **ih2s,
-                           int     **iso2,
-                           int     **ihcn,
-                           int     **inh3,
-                           int     **ieqco2,
-                           int     **iyco2,
-                           int     **ihtco2,
-                           int     **ieqnox,
-                           int     **imdnox,
-                           int     **irb,
-                           int     **iyhcn,
-                           int     **iyno,
-                           int     **iynh3,
-                           int     **ihox,
-                           int     **igrb,
-                           int     **noxyd,
-                           int     **ighcn1,
-                           int     **ighcn2,
-                           int     **ignoth,
-                           int     **ignh31,
-                           int     **ignh32,
-                           int     **ifhcnd,
-                           int     **ifhcnc,
-                           int     **ifnh3d,
-                           int     **ifnh3c,
-                           int     **ifnohc,
-                           int     **ifnonh,
-                           int     **ifnoch,
-                           int     **ifnoth,
-                           int     **ifhcnr,
-                           int     **icnohc,
-                           int     **icnonh,
-                           int     **icnorb);
-
-void
-cs_f_coal_incl_get_pointers(int     **ihth2o,
-                            int     **ighh2o,
-                            int     **ipci,
-                            double  **qpr,
-                            double  **fn,
-                            double  **yhcnle,
-                            double  **yhcnlo,
-                            double  **ynh3le,
-                            double  **ynh3lo,
-                            double  **repnle,
-                            double  **repnlo,
-                            double  **repnck,
-                            double  **yhcnc1,
-                            double  **ynoch1,
-                            double  **yhcnc2,
-                            double  **ynoch2,
-                            double  **wmchx1,
-                            double  **wmchx2);
-
-void
 cs_f_co_models_init(void);
 
 void
 cs_f_ppincl_combustion_init(void);
 
 void
-cs_f_cp_model_map_coal(void);
-
-void
-cs_f_coal_incl_init(void);
-
-void
 cs_f_ppcpfu_models_init(void);
 
 void
 cs_f_thch_models_init(void);
-
-void
-cs_f_coal_radst(int         id,
-                cs_real_t  *smbrs,
-                cs_real_t  *rovsdt);
 
 /* Additional prototypes for Fortran mappings */
 
@@ -379,11 +181,11 @@ _coal_model_finalize(void)
 /*----------------------------------------------------------------------------*/
 
 static cs_field_t *
-_add_coal_field(const char  *base_name,
-                const char  *base_label,
-                int          cc_id,
-                int          class_id,
-                int          drift_flag)
+_add_coal_variable(const char  *base_name,
+                   const char  *base_label,
+                   int          cc_id,
+                   int          class_id,
+                   int          drift_flag)
 {
   char name[64], label[64];
   if (cc_id > -1) {
@@ -416,506 +218,63 @@ _add_coal_field(const char  *base_name,
   return f;
 }
 
-/*============================================================================
- * Fortran wrapper function definitions
- *============================================================================*/
-
-/*----------------------------------------------------------------------------
- * Get pointers to members of the global compbustion model (cpincl).
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Add a property field at cells.
  *
- * This function is intended for use by Fortran wrappers, and
- * enables mapping to Fortran global pointers.
- *----------------------------------------------------------------------------*/
+ * \param[in]  base_name   field base name
+ * \param[in]  base_label  field base label
+ * \param[in]  cc_id       class or coal id, or -1 if ignored
+ * \param[in]  dim         field dimension
+ *
+ * Note that for consistency with older behavior, no "_" is systematically
+ * added between parts of a composite name, so the caller can choose whether
+ * to use the character or not.
+ *
+ * \return  pointer to field
+ */
+/*----------------------------------------------------------------------------*/
 
-void
-cs_f_cpincl_coal_get_pointers(int     **ncharb,
-                              int     **nclacp,
-                              int     **nclpch,
-                              int     **idrift,
-                              int     **nsolid,
-                              int     **ich,
-                              int     **ick,
-                              int     **iash,
-                              int     **iwat,
-                              double  **ehsoli,
-                              double  **wmols,
-                              double  **eh0sol,
-                              int     **ichcor,
-                              double  **diam20,
-                              double  **dia2mn,
-                              double  **rho20,
-                              double  **rho2mn,
-                              double  **xmp0,
-                              double  **xmash)
+static cs_field_t *
+_add_coal_property(const char  *base_name,
+                   const char  *base_label,
+                   int          cc_id,
+                   int          dim)
 {
-  if (cs_glob_coal_model == NULL)
-    return;
+  const int keyvis = cs_field_key_id("post_vis");
+  const int keylog = cs_field_key_id("log");
+  const int keylbl = cs_field_key_id("label");
 
-  cs_coal_model_t  *cm = cs_glob_coal_model;
+  char name[64], label[64];
+  if (cc_id > -1) {
+    snprintf(name, 64, "%s%02d", base_name, cc_id+1); name[63] = '\0';
+    snprintf(label, 64, "%s%02d", base_label, cc_id+1); label[63] = '\0';
+  }
+  else {
+    strncpy(name, base_name, 64); name[63] = '\0';
+    strncpy(label, base_label, 64); label[63] = '\0';
+  }
 
-  *ncharb = &(cm->n_coals);
-  *nclacp = &(cm->nclacp);
-  *nclpch = cm->n_classes_per_coal;
-  *idrift = &(cm->idrift);
-  *nsolid = &(cm->nsolid);
+  if (cs_field_by_name_try(name) != NULL)
+    cs_parameters_error(CS_ABORT_IMMEDIATE,
+                        _("initial data setup"),
+                        _("Field %s has already been assigned.\n"),
+                        name);
 
-  *ich    = cm->ich;
-  *ick    = cm->ick;
-  *iash   = cm->iash;
-  *iwat   = cm->iwat;
-  *ehsoli = (double *)cm->ehsoli;
-  *wmols  = cm->wmols;
-  *eh0sol = cm->eh0sol;
+  cs_physical_property_define_from_field(name,
+                                         CS_FIELD_INTENSIVE | CS_FIELD_PROPERTY,
+                                         CS_MESH_LOCATION_CELLS,
+                                         dim,
+                                         false);  // has previous
 
-  *ichcor = cm->ichcor;
-  *diam20 = cm->diam20;
-  *dia2mn = cm->dia2mn;
-  *rho20  = cm->rho20;
-  *rho2mn = cm->rho2mn;
-  *xmp0   = cm->xmp0;
-  *xmash  = cm->xmash;
-}
+  int f_id = cs_physical_property_field_id_by_name(name);
+  cs_field_t *f = cs_field_by_id(f_id);
 
-/*----------------------------------------------------------------------------
- * Get pointers to members of the global compbustion model (cpincl).
- *
- * This function is intended for use by Fortran wrappers, and
- * enables mapping to Fortran global pointers.
- *----------------------------------------------------------------------------*/
+  cs_field_set_key_int(f, keyvis, 0);
+  cs_field_set_key_int(f, keylog, 1);
+  cs_field_set_key_str(f, keylbl, label);
 
-void
-cs_f_cpincl_get_pointers_1(double  **cch,
-                           double  **hch ,
-                           double  **och,
-                           double  **sch,
-                           double  **nch,
-                           double  **pcich,
-                           double  **rho0ch,
-                           double  **thcdch,
-                           double  **cck,
-                           double  **hck,
-                           double  **ock,
-                           double  **sck,
-                           double  **nck,
-                           double  **rhock,
-                           double  **pcick,
-                           double  **cpashc,
-                           double  **h0ashc,
-                           double  **h02ch,
-                           double  **crepn1,
-                           double  **crepn2,
-                           double  **cp2ch,
-                           double  **xashsec,
-                           double  **xashch,
-                           double  **xwatch)
-{
-  if (cs_glob_coal_model == NULL)
-    return;
-
-  cs_coal_model_t  *cm = cs_glob_coal_model;
-
-  *cch = cm->cch;
-  *hch  = cm->hch;
-  *och = cm->och;
-  *sch = cm->sch;
-  *nch = cm->nch;
-  *pcich = cm->pcich;
-  *rho0ch = cm->rho0ch;
-  *thcdch = cm->thcdch;
-  *cck = cm->cck;
-  *hck = cm->hck;
-  *ock = cm->ock;
-  *sck = cm->sck;
-  *nck = cm->nck;
-  *rhock = cm->rhock;
-  *pcick = cm->pcick;
-  *cpashc = cm->cpashc;
-  *h0ashc = cm->h0ashc;
-  *h02ch = cm->h02ch;
-  *crepn1 = (double *)cm->crepn1;
-  *crepn2 = (double *)cm->crepn2;
-  *cp2ch  = cm->cp2ch;
-  *xashsec = cm->xashsec;
-  *xashch = cm->xashch;
-  *xwatch = cm->xwatch;
-}
-
-/*----------------------------------------------------------------------------
- * Get pointers to members of the global compbustion model (cpincl).
- *
- * This function is intended for use by Fortran wrappers, and
- * enables mapping to Fortran global pointers.
- *----------------------------------------------------------------------------*/
-
-void
-cs_f_cpincl_get_pointers_2(int     **iy1ch,
-                           int     **iy2ch,
-                           int     **iochet,
-                           int     **ioetc2,
-                           int     **ioetwt,
-                           double  **y1ch,
-                           double  **a1ch,
-                           double  **e1ch,
-                           double  **y2ch,
-                           double  **a2ch,
-                           double  **e2ch,
-                           double  **ahetch,
-                           double  **ehetch,
-                           double  **ahetc2,
-                           double  **ehetc2,
-                           double  **ahetwt,
-                           double  **ehetwt,
-                           double  **ehgaze)
-{
-  if (cs_glob_coal_model == NULL)
-    return;
-
-  cs_coal_model_t  *cm = cs_glob_coal_model;
-
-  *iy1ch = cm->iy1ch;
-  *iy2ch = cm->iy2ch;
-  *iochet = cm->iochet;
-  *ioetc2 = cm->ioetc2;
-  *ioetwt = cm->ioetwt;
-  *y1ch = cm->y1ch;
-  *a1ch = cm->a1ch;
-  *e1ch = cm->e1ch;
-  *y2ch = cm->y2ch;
-  *a2ch = cm->a2ch;
-  *e2ch = cm->e2ch;
-  *ahetch = cm->ahetch;
-  *ehetch = cm->ehetch;
-  *ahetc2 = cm->ahetc2;
-  *ehetc2 = cm->ehetc2;
-  *ahetwt = cm->ahetwt;
-  *ehetwt = cm->ehetwt;
-  *ehgaze = (double *)cm->ehgaze;
-}
-
-/*----------------------------------------------------------------------------
- * Get pointers to members of the global combbustion model (cpincl).
- *
- * This function is intended for use by Fortran wrappers, and
- * enables mapping to Fortran global pointers.
- *
- * parameters:
- *   ico    --> pointer to cm->ico
- *   ico2   --> pointer to cm->ico2
- *   ih2o   --> pointer to cm->ih2o
- *   io2    --> pointer to cm->io2
- *   in2    --> pointer to cm->in2
- *----------------------------------------------------------------------------*/
-
-void
-cs_f_cpincl_get_pointers_3(int     **ico,
-                           int     **ico2,
-                           int     **ih2o,
-                           int     **io2,
-                           int     **in2,
-                           int     **ichx1c,
-                           int     **ichx2c,
-                           int     **ichx1,
-                           int     **ichx2,
-                           double  **chx1,
-                           double  **chx2,
-                           double  **a1,
-                           double  **b1,
-                           double  **c1,
-                           double  **d1,
-                           double  **e1,
-                           double  **f1,
-                           double  **a2,
-                           double  **b2,
-                           double  **c2,
-                           double  **d2,
-                           double  **e2,
-                           double  **f2)
-{
-  if (cs_glob_coal_model == NULL)
-    return;
-
-  cs_coal_model_t  *cm = cs_glob_coal_model;
-
-  *ico   = &(cm->ico);
-  *io2   = &(cm->io2);
-  *ico2   = &(cm->ico2);
-  *ih2o   = &(cm->ih2o);
-  *in2   = &(cm->in2);
-
-  *ichx1c = cm->ichx1c;
-  *ichx2c = cm->ichx2c;
-  *ichx1 = &(cm->ichx1);
-  *ichx2 = &(cm->ichx2);
-  *chx1 = cm->chx1;
-  *chx2 = cm->chx2;
-  *a1 = cm->a1;
-  *b1 = cm->b1;
-  *c1 = cm->c1;
-  *d1 = cm->d1;
-  *e1 = cm->e1;
-  *f1 = cm->f1;
-  *a2 = cm->a2;
-  *b2 = cm->b2;
-  *c2 = cm->c2;
-  *d2 = cm->d2;
-  *e2 = cm->e2;
-  *f2 = cm->f2;
-}
-
-/*----------------------------------------------------------------------------
- * Get pointers to members of the global combbustion model (cpincl).
- *
- * This function is intended for use by Fortran wrappers, and
- * enables mapping to Fortran global pointers.
- *----------------------------------------------------------------------------*/
-
-void
-cs_f_cpincl_get_pointers_4(int  **ihgas,
-                           int  **if1m,
-                           int  **if2m,
-                           int  **if4m,
-                           int  **if5m,
-                           int  **if6m,
-                           int  **if7m,
-                           int  **if8m,
-                           int  **if9m,
-                           int  **ifvp2m,
-                           int  **ixck,
-                           int  **ixch,
-                           int  **inp,
-                           int  **ih2,
-                           int  **ixwt,
-                           int  **iym1,
-                           int  **irom1,
-                           int  **immel,
-                           int  **itemp2,
-                           int  **irom2,
-                           int  **idiam2,
-                           int  **ix2,
-                           int  **igmdch,
-                           int  **igmhet,
-                           int  **igmtr,
-                           int  **ighco2,
-                           int  **igmdv1,
-                           int  **igmdv2,
-                           int  **igmsec,
-                           int  **ibcarbone,
-                           int  **iboxygen,
-                           int  **ibhydrogen)
-{
-  if (cs_glob_coal_model == NULL)
-    return;
-
-  cs_coal_model_t  *cm = cs_glob_coal_model;
-
-  *ihgas = &(cm->ihgas);
-  *if1m = cm->if1m;
-  *if2m = cm->if2m;
-  *if4m = &(cm->if4m);
-  *if5m = &(cm->if5m);
-  *if6m = &(cm->if6m);
-  *if7m = &(cm->if7m);
-  *if8m = &(cm->if8m);
-  *if9m = &(cm->if9m);
-  *ifvp2m = &(cm->ifvp2m);
-  *ixck = cm->ixck;
-  *ixch = cm->ixch;
-  *inp = cm->inp;
-  *ih2 = cm->ih2;
-  *ixwt = cm->ixwt;
-  *iym1 = cm->iym1;
-  *irom1 = &(cm->irom1);
-  *immel = &(cm->immel);
-  *itemp2 = cm->itemp2;
-  *irom2 = cm->irom2;
-  *idiam2 = cm->idiam2;
-  *ix2 = cm->ix2;
-  *igmdch = cm->igmdch;
-  *igmhet = cm->igmhet;
-  *igmtr = cm->igmtr;
-  *ighco2 = cm->ighco2;
-  *igmdv1 = cm->igmdv1;
-  *igmdv2 = cm->igmdv2;
-  *igmsec = cm->igmsec;
-  *ibcarbone = &(cm->ibcarbone);
-  *iboxygen = &(cm->iboxygen);
-  *ibhydrogen = &(cm->ibhydrogen);
-}
-
-/*----------------------------------------------------------------------------
- * Get pointers to members of the global compbustion model (cpincl).
- *
- * This function is intended for use by Fortran wrappers, and
- * enables mapping to Fortran global pointers.
- *----------------------------------------------------------------------------*/
-
-void
-cs_f_coal_incl_get_pointers(int     **ihth2o,
-                            int     **ighh2o,
-                            int     **ipci,
-                            double  **qpr,
-                            double  **fn,
-                            double  **yhcnle,
-                            double  **yhcnlo,
-                            double  **ynh3le,
-                            double  **ynh3lo,
-                            double  **repnle,
-                            double  **repnlo,
-                            double  **repnck,
-                            double  **yhcnc1,
-                            double  **ynoch1,
-                            double  **yhcnc2,
-                            double  **ynoch2,
-                            double  **wmchx1,
-                            double  **wmchx2)
-{
-  if (cs_glob_coal_model == NULL)
-    return;
-
-  cs_coal_model_t  *cm = cs_glob_coal_model;
-
-  *ihth2o = &(cm->ihth2o);
-  *ighh2o = cm->ighh2o;
-  *ipci = cm->ipci;
-
-  *qpr = cm->qpr;
-  *fn = cm->fn;
-  *yhcnle = cm->yhcnle;
-  *yhcnlo = cm->yhcnlo;
-  *ynh3le = cm->ynh3le;
-  *ynh3lo = cm->ynh3lo;
-  *repnle = cm->repnle;
-  *repnlo = cm->repnlo;
-  *repnck = cm->repnck;
-  *yhcnc1 = cm->yhcnc1;
-  *ynoch1 = cm->ynoch1;
-  *yhcnc2 = cm->yhcnc2;
-  *ynoch2 = cm->ynoch2;
-  *wmchx1 = &(cm->wmchx1);
-  *wmchx2 = &(cm->wmchx2);
-}
-
-/*----------------------------------------------------------------------------
- * Get pointers to members of combustion model (ppcpfu).
- *
- * This function is intended for use by Fortran wrappers, and
- * enables mapping to Fortran global pointers.
- *----------------------------------------------------------------------------*/
-
-void
-cs_f_cpincl_get_pointers_5(double  **af3,
-                           double  **af4,
-                           double  **af5,
-                           double  **af6,
-                           double  **af7,
-                           double  **af8,
-                           double  **af9,
-                           int     **ihy,
-                           int     **ih2s,
-                           int     **iso2,
-                           int     **ihcn,
-                           int     **inh3,
-                           int     **ihtco2,
-                           int     **ieqco2,
-                           int     **iyco2,
-                           int     **ieqnox,
-                           int     **imdnox,
-                           int     **irb,
-                           int     **iyhcn,
-                           int     **iyno,
-                           int     **iynh3,
-                           int     **ihox,
-                           int     **igrb,
-                           int     **noxyd,
-                           int     **ighcn1,
-                           int     **ighcn2,
-                           int     **ignoth,
-                           int     **ignh31,
-                           int     **ignh32,
-                           int     **ifhcnd,
-                           int     **ifhcnc,
-                           int     **ifnh3d,
-                           int     **ifnh3c,
-                           int     **ifnohc,
-                           int     **ifnonh,
-                           int     **ifnoch,
-                           int     **ifnoth,
-                           int     **ifhcnr,
-                           int     **icnohc,
-                           int     **icnonh,
-                           int     **icnorb)
-{
-  if (cs_glob_coal_model == NULL)
-    return;
-
-  cs_coal_model_t  *cm = cs_glob_coal_model;
-
-  *af3 = cm->af3;
-  *af4 = cm->af4;
-  *af5 = cm->af5;
-  *af6 = cm->af6;
-  *af7 = cm->af7;
-  *af8 = cm->af8;
-  *af9 = cm->af9;
-
-  *ihy = &(cm->ihy);
-  *ih2s = &(cm->ih2s);
-  *iso2 = &(cm->iso2);
-  *ihcn = &(cm->ihcn);
-  *inh3 = &(cm->inh3);
-  *ihtco2 = &(cm->ihtco2);
-  *ieqco2 = &(cm->ieqco2);
-  *iyco2 = &(cm->iyco2);
-  *ieqnox = &(cm->ieqnox);
-  *imdnox = &(cm->imdnox);
-  *irb = &(cm->irb);
-
-  *iyhcn = &(cm->iyhcn);
-  *iyno = &(cm->iyno);
-  *iynh3 = &(cm->iynh3);
-  *ihox = &(cm->ihox);
-  *igrb = &(cm->igrb);
-  *noxyd = &(cm->noxyd);
-
-  *ighcn1 = &(cm->ighcn1);
-  *ighcn2 = &(cm->ighcn2);
-  *ignoth = &(cm->ignoth);
-  *ignh31 = &(cm->ignh31);
-  *ignh32 = &(cm->ignh32);
-  *ifhcnd = &(cm->ifhcnd);
-  *ifhcnc = &(cm->ifhcnc);
-  *ifnh3d = &(cm->ifnh3d);
-  *ifnh3c = &(cm->ifnh3c);
-  *ifnohc = &(cm->ifnohc);
-  *ifnonh = &(cm->ifnonh);
-  *ifnoch = &(cm->ifnoch);
-  *ifnoth = &(cm->ifnoth);
-  *ifhcnr = &(cm->ifhcnr);
-  *icnohc = &(cm->icnohc);
-  *icnonh = &(cm->icnonh);
-  *icnorb = &(cm->icnorb);
-}
-
-/*----------------------------------------------------------------------------
- * Take in account the radiative source terms in the particle equation
- * of a given class for pulverized coal flame.
- *
- * This function is intended for use by Fortran wrappers.
- *
- * parameters:
- *   id      <-- field id
- *   smbrs   <-- right side of the system
- *   rovsdt  <-- system diagonal
- *----------------------------------------------------------------------------*/
-
-void
-cs_f_coal_radst(int         id,
-                cs_real_t  *smbrs,
-                cs_real_t  *rovsdt)
-{
-  const cs_field_t *f = cs_field_by_id(id);
-
-  cs_coal_rad_transfer_st(f, smbrs, rovsdt);
+  return f;
 }
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
@@ -1072,8 +431,6 @@ cs_coal_model_set_model(cs_coal_model_type_t  type)
 
   cs_f_ppincl_combustion_init();
   cs_f_co_models_init();
-  cs_f_cp_model_map_coal();
-  cs_f_coal_incl_init();
   cs_f_ppcpfu_models_init();
   cs_f_thch_models_init();
 
@@ -1247,8 +604,8 @@ cs_coal_add_variable_fields(void)
 
   // Number of particles of the class per kg of air-coal mixture (bulk)
   for (int class_id = 0; class_id < cm->nclacp; class_id++) {
-    cs_field_t *f = _add_coal_field("n_p", "Np",
-                                    class_id, class_id, iscdri);
+    cs_field_t *f = _add_coal_variable("n_p", "Np",
+                                       class_id, class_id, iscdri);
     cm->inp[class_id] = f->id;
     cs_field_set_key_double(f, kscmin, 0);
     cs_field_set_key_double(f, kscmax, cs_math_infinite_r);
@@ -1261,8 +618,8 @@ cs_coal_add_variable_fields(void)
 
   // Mass fraction of reactive coal of the class icla per kg of bulk
   for (int class_id = 0; class_id < cm->nclacp; class_id++) {
-    cs_field_t *f = _add_coal_field("x_p_coal", "Xp_Ch",
-                                    class_id, class_id, iscdri);
+    cs_field_t *f = _add_coal_variable("x_p_coal", "Xp_Ch",
+                                       class_id, class_id, iscdri);
     cm->ixch[class_id] = f->id;
     cs_field_set_key_double(f, kscmin, 0);
     cs_field_set_key_double(f, kscmax, 1);
@@ -1270,8 +627,8 @@ cs_coal_add_variable_fields(void)
 
   // Mass fraction of char (coke in French) of the class per kg of bulk
   for (int class_id = 0; class_id < cm->nclacp; class_id++) {
-    cs_field_t *f = _add_coal_field("x_p_char", "Xp_Ck",
-                                    class_id, class_id, iscdri);
+    cs_field_t *f = _add_coal_variable("x_p_char", "Xp_Ck",
+                                       class_id, class_id, iscdri);
     cm->ixck[class_id] = f->id;
     cs_field_set_key_double(f, kscmin, 0);
     cs_field_set_key_double(f, kscmax, 1);
@@ -1280,8 +637,8 @@ cs_coal_add_variable_fields(void)
   // Mass fraction of water (within the particle) of the class per kg of bulk
   if (cm->type == CS_COMBUSTION_COAL_WITH_DRYING) {
     for (int class_id = 0; class_id < cm->nclacp; class_id++) {
-      cs_field_t *f = _add_coal_field("x_p_wt", "Xp_wt",
-                                      class_id, class_id, iscdri);
+      cs_field_t *f = _add_coal_variable("x_p_wt", "Xp_wt",
+                                         class_id, class_id, iscdri);
       cm->ixwt[class_id] = f->id;
       cs_field_set_key_double(f, kscmin, 0);
       cs_field_set_key_double(f, kscmax, 1);
@@ -1291,8 +648,8 @@ cs_coal_add_variable_fields(void)
   // Enthalpy of the class per kg of bulk
   // (product of the mass fraction of the class by massic enthalpy of the class).
   for (int class_id = 0; class_id < cm->nclacp; class_id++) {
-    cs_field_t *f = _add_coal_field("x_p_h", "Xp_Ent",
-                                    class_id, class_id, iscdri);
+    cs_field_t *f = _add_coal_variable("x_p_h", "Xp_Ent",
+                                       class_id, class_id, iscdri);
     cm->ih2[class_id] = f->id;
     cs_field_set_key_double(f, kscmin, -cs_math_big_r);
     cs_field_set_key_double(f, kscmax, cs_math_big_r);
@@ -1301,8 +658,8 @@ cs_coal_add_variable_fields(void)
   // Age of the class icla time the Np (number of particle per kg of bulk)
   if (cm->idrift >= 1) {
     for (int class_id = 0; class_id < cm->nclacp; class_id++) {
-      cs_field_t *f = _add_coal_field("n_p_age", "Np_Age",
-                                      class_id, class_id, iscdri);
+      cs_field_t *f = _add_coal_variable("n_p_age", "Np_Age",
+                                         class_id, class_id, iscdri);
       // TODO: test below used to reproduce previous behavior; is it desired ?
       if (cm->type == CS_COMBUSTION_COAL_WITH_DRYING)
         cs_field_set_key_double(f, kscmin, 0);
@@ -1314,9 +671,9 @@ cs_coal_add_variable_fields(void)
 
   if (cm->idrift >= 1) {
     for (int class_id = 0; class_id < cm->nclacp; class_id++) {
-      _add_coal_field("v_x_p", "Vp_X", class_id, class_id, iscdri);
-      _add_coal_field("v_y_p", "Vp_Y", class_id, class_id, iscdri);
-      _add_coal_field("v_z_p", "Vp_Z", class_id, class_id, iscdri);
+      _add_coal_variable("v_x_p", "Vp_X", class_id, class_id, iscdri);
+      _add_coal_variable("v_y_p", "Vp_Y", class_id, class_id, iscdri);
+      _add_coal_variable("v_z_p", "Vp_Z", class_id, class_id, iscdri);
     }
   }
 
@@ -1333,7 +690,7 @@ cs_coal_add_variable_fields(void)
   //  by massic enthalpy of the class).
 
   {
-    cs_field_t *f = _add_coal_field("x_c_h", "Xc_Ent", -1, -1, iscdri);
+    cs_field_t *f = _add_coal_variable("x_c_h", "Xc_Ent", -1, -1, iscdri);
     cm->ihgas = f->id;
 
     // The first gas scalar contains the drift flux
@@ -1354,8 +711,8 @@ cs_coal_add_variable_fields(void)
   // NB: mixture fraction (fr) (unreactive) <> mass fraction (x) (reactive)
 
   for (int coal_id = 0; coal_id < cm->n_coals; coal_id++) {
-    cs_field_t *f = _add_coal_field("fr_mv1", "Fr_mv1",
-                                    coal_id, -1, iscdri);
+    cs_field_t *f = _add_coal_variable("fr_mv1", "Fr_mv1",
+                                       coal_id, -1, iscdri);
     cm->if1m[coal_id] = f->id;
     cs_field_set_key_double(f, kscmin, 0.);
     cs_field_set_key_double(f, kscmax, 1.);
@@ -1366,8 +723,8 @@ cs_coal_add_variable_fields(void)
   // NB: mixture fraction (fr) (unreactive) <> mass fraction (x) (reactive)
 
   for (int coal_id = 0; coal_id < cm->n_coals; coal_id++) {
-    cs_field_t *f = _add_coal_field("fr_mv2", "Fr_mv2",
-                                    coal_id, -1, iscdri);
+    cs_field_t *f = _add_coal_variable("fr_mv2", "Fr_mv2",
+                                       coal_id, -1, iscdri);
     cm->if2m[coal_id] = f->id;
     cs_field_set_key_double(f, kscmin, 0.);
     cs_field_set_key_double(f, kscmax, 1.);
@@ -1376,7 +733,7 @@ cs_coal_add_variable_fields(void)
   // Mass of the Oxydant 2 divided by the mass of bulk
   // NB: mixture fraction (fr) (unreactive) <> mass fraction (x) (reactive)
   if (cm->noxyd >= 2) {
-    cs_field_t *f = _add_coal_field("fr_oxyd2", "FR_OXYD2", -1, -1, iscdri);
+    cs_field_t *f = _add_coal_variable("fr_oxyd2", "FR_OXYD2", -1, -1, iscdri);
     cm->if4m = f->id;
     cs_field_set_key_double(f, kscmin, 0.);
     cs_field_set_key_double(f, kscmax, 1.);
@@ -1385,7 +742,7 @@ cs_coal_add_variable_fields(void)
   // Mass of the Oxydant 3 divided by the mass of bulk
   // NB: mixture fraction (fr) (unreactive) <> mass fraction (x) (reactive)
   if (cm->noxyd >= 3) {
-    cs_field_t *f = _add_coal_field("fr_oxyd3", "FR_OXYD3", -1, -1, iscdri);
+    cs_field_t *f = _add_coal_variable("fr_oxyd3", "FR_OXYD3", -1, -1, iscdri);
     cm->if5m = f->id;
     cs_field_set_key_double(f, kscmin, 0.);
     cs_field_set_key_double(f, kscmax, 1.);
@@ -1394,7 +751,7 @@ cs_coal_add_variable_fields(void)
   // Mass of the water from coal drying divided by the mass of bulk
   // NB: mixture fraction (fr) (unreactive) <> mass fraction (x) (reactive)
   if (cm->type == CS_COMBUSTION_COAL_WITH_DRYING) {
-    cs_field_t *f = _add_coal_field("fr_h2o", "FR_H2O", -1, -1, iscdri);
+    cs_field_t *f = _add_coal_variable("fr_h2o", "FR_H2O", -1, -1, iscdri);
     cm->if6m = f->id;
     cs_field_set_key_double(f, kscmin, 0.);
     cs_field_set_key_double(f, kscmax, 1.);
@@ -1403,7 +760,7 @@ cs_coal_add_variable_fields(void)
   // Mass of the Carbon from coal oxydized by O2 divided by the mass of bulk
   // NB: mixture fraction (fr) (unreactive) <> mass fraction (x) (reactive)
   {
-    cs_field_t *f = _add_coal_field("fr_het_o2", "FR_HET_O2", -1, -1, iscdri);
+    cs_field_t *f = _add_coal_variable("fr_het_o2", "FR_HET_O2", -1, -1, iscdri);
     cm->if7m = f->id;
     cs_field_set_key_double(f, kscmin, 0.);
     cs_field_set_key_double(f, kscmax, 1.);
@@ -1412,7 +769,7 @@ cs_coal_add_variable_fields(void)
   // Mass of the Carbon from coal gasified by CO2 divided by the mass of bulk
   // NB: mixture fraction (fr) (unreactive) <> mass fraction (x) (reactive)
   if (cm->ihtco2 == 1) {
-    cs_field_t *f = _add_coal_field("fr_het_co2", "FR_HET_CO2", -1, -1, iscdri);
+    cs_field_t *f = _add_coal_variable("fr_het_co2", "FR_HET_CO2", -1, -1, iscdri);
     cm->if8m = f->id;
     cs_field_set_key_double(f, kscmin, 0.);
     cs_field_set_key_double(f, kscmax, 1.);
@@ -1421,7 +778,7 @@ cs_coal_add_variable_fields(void)
   // Mass of the Carbon from coal gasified by H2O divided by the mass of bulk
   // NB: mixture fraction (fr) (unreactive) <> mass fraction (x) (reactive)
   if (cm->ihth2o == 1) {
-    cs_field_t *f = _add_coal_field("fr_het_h2o", "FR_HET_H2O", -1, -1, iscdri);
+    cs_field_t *f = _add_coal_variable("fr_het_h2o", "FR_HET_H2O", -1, -1, iscdri);
     cm->if9m = f->id;
     cs_field_set_key_double(f, kscmin, 0.);
     cs_field_set_key_double(f, kscmax, 1.);
@@ -1429,7 +786,7 @@ cs_coal_add_variable_fields(void)
 
   // Variance
   {
-    cs_field_t *f = _add_coal_field("f1f2_variance", "Var_F1F2", -1, -1, iscdri);
+    cs_field_t *f = _add_coal_variable("f1f2_variance", "Var_F1F2", -1, -1, iscdri);
     cm->ifvp2m = f->id;
     cs_field_set_key_double(f, kscmin, 0.);
     cs_field_set_key_double(f, kscmax, 0.25);
@@ -1439,7 +796,7 @@ cs_coal_add_variable_fields(void)
   // NB: mixture fraction (fr) (unreactive) <> mass fraction (x) (reactive)
   //FIXME check for the oxycombustion, it would be more relevant to track CO
   if (cm->ieqco2 >= 1) {
-    cs_field_t *f = _add_coal_field("x_c_co2", "Xc_CO2", -1, -1, iscdri);
+    cs_field_t *f = _add_coal_variable("x_c_co2", "Xc_CO2", -1, -1, iscdri);
     cm->iyco2 = f->id;
     cs_field_set_key_double(f, kscmin, 0.);
     cs_field_set_key_double(f, kscmax, 1.);
@@ -1450,21 +807,21 @@ cs_coal_add_variable_fields(void)
 
     // Mass of the HCN divided by the mass of bulk
     // NB: mixture fraction (fr) (unreactive) <> mass fraction (x) (reactive)
-    f = _add_coal_field("x_c_hcn", "Xc_HCN", -1, -1, iscdri);
+    f = _add_coal_variable("x_c_hcn", "Xc_HCN", -1, -1, iscdri);
     cm->iyhcn = f->id;
     cs_field_set_key_double(f, kscmin, 0.);
     cs_field_set_key_double(f, kscmax, 1.);
 
     // Mass of the NH3 divided by the mass of bulk
     // NB: mixture fraction (fr) (unreactive) <> mass fraction (x) (reactive)
-    f = _add_coal_field("x_c_nh3", "Xc_NH3", -1, -1, iscdri);
+    f = _add_coal_variable("x_c_nh3", "Xc_NH3", -1, -1, iscdri);
     cm->iynh3 = f->id;
     cs_field_set_key_double(f, kscmin, 0.);
     cs_field_set_key_double(f, kscmax, 1.);
 
     // Mass of the NO divided by the mass of bulk
     // NB: mixture fraction (fr) (unreactive) <> mass fraction (x) (reactive)
-    f = _add_coal_field("x_c_no", "Xc_NO", -1, -1, iscdri);
+    f = _add_coal_variable("x_c_no", "Xc_NO", -1, -1, iscdri);
     cm->iyno = f->id;
     cs_field_set_key_double(f, kscmin, 0.);
     cs_field_set_key_double(f, kscmax, 1.);
@@ -1472,7 +829,7 @@ cs_coal_add_variable_fields(void)
     // Enthalpy of the oxydizer times the fraction of gas
     // divided by the mass of bulk
     // NB: mixture fraction (fr) (unreactive) <> mass fraction (x) (reactive)
-    f = _add_coal_field("x_c_h_ox", "Xc_Ent_Ox", -1, -1, iscdri);
+    f = _add_coal_variable("x_c_h_ox", "Xc_Ent_Ox", -1, -1, iscdri);
     cm->ihox = f->id;
     cs_field_set_key_double(f, kscmin, -cs_math_big_r);
     cs_field_set_key_double(f, kscmax, cs_math_big_r);
@@ -1497,6 +854,211 @@ cs_coal_add_variable_fields(void)
 
   cs_fluid_properties_t *fluid_props = cs_get_glob_fluid_properties();
   fluid_props->icp = -1;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Add property fields for pulverized coal combustion model.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_coal_add_property_fields(void)
+{
+  const int keyvis = cs_field_key_id("post_vis");
+  const int keylog = cs_field_key_id("log");
+  const int keylbl = cs_field_key_id("label");
+  int iopchr = CS_POST_ON_LOCATION | CS_POST_MONITOR;
+  int field_type = CS_FIELD_INTENSIVE | CS_FIELD_PROPERTY;
+
+  cs_coal_model_t *cm = cs_glob_coal_model;
+
+  cs_field_t *f;
+
+  // Definition of pointers related to state variables
+
+  // Continuous phase (gaseous mix)
+  f = _add_coal_property("temperature", "T_Gas", -1, 1);
+  cs_field_pointer_map(CS_ENUMF_(t), f);
+  cm->irom1 = _add_coal_property("rho_gas", "Rho_Gas", -1, 1)->id;
+
+  // Gas mixture fractions
+  cm->iym1[0]  = _add_coal_property("ym_chx1m", "Ym_CHx1m", -1, 1)->id;
+  cm->iym1[1]  = _add_coal_property("ym_chx2m", "Ym_CHx2m", -1, 1)->id;
+  cm->iym1[2]  = _add_coal_property("ym_co",    "Ym_CO",    -1, 1)->id;
+  cm->iym1[3]  = _add_coal_property("ym_h2s",   "Ym_H2S",   -1, 1)->id;
+  cm->iym1[4]  = _add_coal_property("ym_h2",    "Ym_H2",    -1, 1)->id;
+  cm->iym1[5]  = _add_coal_property("ym_hcn",   "Ym_HCN",   -1, 1)->id;
+  cm->iym1[6]  = _add_coal_property("ym_nh3",   "Ym_NH3",   -1, 1)->id;
+  cm->iym1[7]  = _add_coal_property("ym_o2",    "Ym_O2",    -1, 1)->id;
+  cm->iym1[8]  = _add_coal_property("ym_co2",   "Ym_CO2",   -1, 1)->id;
+  cm->iym1[9]  = _add_coal_property("ym_h2o",   "Ym_H2O",   -1, 1)->id;
+  cm->iym1[10] = _add_coal_property("ym_so2",   "Ym_SO2",   -1, 1)->id;
+  cm->iym1[11] = _add_coal_property("ym_n2",    "Ym_N2",    -1, 1)->id;
+
+  // Algebraic variables specific to gas - particles suspension
+  f = _add_coal_property("xm", "Xm", -1, 1);
+  cm->immel = f->id;
+  cs_field_set_key_int(f, keylog, 0);
+  cs_field_set_key_int(f, keyvis, 0);
+
+  // Algebraic variables specific to continuous phase
+  if (cm->ieqnox == 1) {
+    cm->ighcn1 = _add_coal_property("exp1",      "EXP1",      -1, 1)->id;
+    cm->ighcn2 = _add_coal_property("exp2",      "EXP1",      -1, 1)->id;
+    cm->ignoth = _add_coal_property("exp3",      "EXP3",      -1, 1)->id;
+    cm->ignh31 = _add_coal_property("exp4",      "EXP4",      -1, 1)->id;
+    cm->ignh32 = _add_coal_property("exp5",      "EXP5",      -1, 1)->id;
+    cm->ifhcnd = _add_coal_property("f_hcn_dev", "F_HCN_DEV", -1, 1)->id;
+    cm->ifhcnc = _add_coal_property("f_hcn_het", "F_HCN_HET", -1, 1)->id;
+    cm->ifnh3d = _add_coal_property("f_nh3_dev", "F_NH3_DEV", -1, 1)->id;
+    cm->ifnh3c = _add_coal_property("f_nh3_het", "F_NH3_HET", -1, 1)->id;
+    cm->ifnohc = _add_coal_property("f_no_hcn",  "F_NO_HCN", -1, 1)->id;
+    cm->ifnonh = _add_coal_property("f_no_nh3",  "F_NO_NH3", -1, 1)->id;
+    cm->ifnoch = _add_coal_property("f_no_het",  "F_NO_HET", -1, 1)->id;
+    cm->ifnoth = _add_coal_property("f_no_the",  "F_NO_THE", -1, 1)->id;
+    cm->icnohc = _add_coal_property("c_no_hcn",  "C_NO_HCN", -1, 1)->id;
+    cm->icnonh = _add_coal_property("c_no_nh3",  "C_NO_NH3", -1, 1)->id;
+    cm->ifhcnr = _add_coal_property("f_hcn_rb",  "F_HCN_RB", -1, 1)->id;
+    cm->icnorb = _add_coal_property("c_no_rb",   "C_NO_RB",  -1, 1)->id;
+    cm->igrb   = _add_coal_property("exp_rb",    "Exp_RB",   -1, 1)->id;
+  }
+
+  // Dispersed phase (particle classes)
+
+  // NB: 'c' stands for continuous <> 'p' stands for particles
+
+  // Temperature of particle class icla
+  // NB: mixture fraction (fr) (unreactive) <> mass fraction (x) (reactive)
+  for (int class_id = 0; class_id < cm->nclacp; class_id++)
+    cm->itemp2[class_id] = _add_coal_property("t_p_", "Tp_", class_id, 1)->id;
+
+  for (int class_id = 0; class_id < cm->nclacp; class_id++)
+    cm->ix2[class_id] = _add_coal_property("x_p_", "Xp_", class_id, 1)->id;
+
+  for (int class_id = 0; class_id < cm->nclacp; class_id++)
+    cm->irom2[class_id] = _add_coal_property("rho_p_", "Rhop_", class_id, 1)->id;
+
+  for (int class_id = 0; class_id < cm->nclacp; class_id++) {
+    cm->idiam2[class_id]
+      = _add_coal_property("diam_p_", "Diamp_", class_id, 1)->id;
+  }
+
+  for (int class_id = 0; class_id < cm->nclacp; class_id++) {
+    cm->igmdch[class_id]
+      = _add_coal_property("dissapear_rate_p_", "D_Rate_Coal", class_id, 1)->id;
+  }
+
+  for (int class_id = 0; class_id < cm->nclacp; class_id++) {
+    cm->igmdv1[class_id]
+      = _add_coal_property("m_transfer_v1_p_", "D_V1_Coal", class_id, 1)->id;
+  }
+
+  for (int class_id = 0; class_id < cm->nclacp; class_id++) {
+    cm->igmdv2[class_id]
+      = _add_coal_property("m_transfer_v2_p_", "D_V2_Coal", class_id, 1)->id;
+  }
+
+  for (int class_id = 0; class_id < cm->nclacp; class_id++) {
+    cm->igmhet[class_id]
+      = _add_coal_property("het_ts_o2_p_", "Het_TS_O2_Coal", class_id, 1)->id;
+  }
+
+  for (int class_id = 0; class_id < cm->nclacp; class_id++) {
+    cm->igmtr[class_id]
+      = _add_coal_property("imp_m_transfer_to_g_p_", "Implicit_Mass_transfer",
+                           class_id, 1)->id;
+  }
+
+  if (cm->idrift >= 1) {
+    const int keyccl = cs_field_key_id("scalar_class");
+
+    for (int class_id = 0; class_id < cm->nclacp; class_id++) {
+      char name[64], label[64];
+      int class_num = class_id+1;
+
+      // Age of the particle class
+      snprintf(name, 64, "age_p_%02d", class_num); name[63] = '\0';
+      snprintf(label, 64, "Agep_%02d", class_num); label[63] = '\0';
+      f = cs_field_create(name, field_type, CS_MESH_LOCATION_CELLS, 1, false);
+      cs_field_set_key_str(f, keylbl, label);
+      cs_field_set_key_int(f, keyccl, class_num);
+      cs_field_set_key_int(f, keyvis, iopchr);
+
+      // Limit velocity
+      snprintf(name, 64, "vg_lim_p_%02d", class_num); name[63] = '\0';
+      f = cs_field_create(name, field_type, CS_MESH_LOCATION_CELLS, 3, false);
+      cs_field_set_key_int(f, keyccl, class_num);
+      cs_field_set_key_int(f, keyvis, iopchr);
+      cs_field_set_key_int(f, keylog, 1);
+
+      snprintf(name, 64, "vg_p_%02d", class_num); name[63] = '\0';
+      f = cs_field_create(name, field_type, CS_MESH_LOCATION_CELLS, 3, false);
+      cs_field_set_key_int(f, keyccl, class_num);
+      cs_field_set_key_int(f, keyvis, iopchr);
+      cs_field_set_key_int(f, keylog, 1);
+
+      // Additional drift velocity for the particle class
+      snprintf(name, 64, "vd_p_%02d", class_num); name[63] = '\0';
+      f = cs_field_create(name, field_type, CS_MESH_LOCATION_CELLS, 3, false);
+      cs_field_set_key_int(f, keyccl, class_num);
+      cs_field_set_key_int(f, keyvis, iopchr);
+      cs_field_set_key_int(f, keylog, 1);
+    }
+  }
+
+  if (cm->ihtco2 == 1) {
+    for (int class_id = 0; class_id < cm->nclacp; class_id++) {
+      cm->ighco2[class_id]
+        = _add_coal_property("het_ts_co2_p", "Het_TS_CO2_p", class_id, 1)->id;
+    }
+  }
+
+  if (cm->ihth2o == 1) {
+    for (int class_id = 0; class_id < cm->nclacp; class_id++) {
+      cm->ighh2o[class_id]
+        = _add_coal_property("het_ts_h2o_p", "Het_TS_H2O_p", class_id, 1)->id;
+    }
+  }
+
+  if (cm->type == CS_COMBUSTION_COAL_WITH_DRYING) {
+    for (int class_id = 0; class_id < cm->nclacp; class_id++) {
+      cm->igmsec[class_id]
+        = _add_coal_property("dry_ts_p", "Dry_TS_p", class_id, 1)->id;
+      // FIXME is it a Source term?
+    }
+  }
+
+  if (cm->idrift >= 1) {
+    // Additional fields for drift velocity for the gas
+    f = cs_field_create("vd_c",
+                        field_type,
+                        CS_MESH_LOCATION_CELLS,
+                        3,
+                        false);
+    cs_field_set_key_int(f, keyvis, iopchr);
+    cs_field_set_key_int(f, keylog, 1);
+  }
+
+  // Mass fraction of the continuous phase (X1)
+  cs_field_create("x_c", field_type, CS_MESH_LOCATION_CELLS, 1, false);
+
+  // Mass fraction of the continuous phase (X1) BOUNDARY VALUE
+  cs_field_create("b_x_c", field_type, CS_MESH_LOCATION_BOUNDARY_FACES,
+                  1, false);
+
+  // Explicit interfacial source terms for x1 h1 (deduced from thoses of x2 h2)
+  cs_field_create("x_h_c_exp_st", field_type, CS_MESH_LOCATION_CELLS, 1, false);
+
+  // Implicit interfacial source terms for x1 h1 (deduced from thoses of x2 h2)
+  cs_field_create("x_h_c_imp_st", field_type, CS_MESH_LOCATION_CELLS, 1, false);
+
+  /* Bulk
+     ---- */
+
+  cm->ibcarbone = _add_coal_property("x_carbon", "Z_Carbon", -1, 1)->id;
+  cm->iboxygen  = _add_coal_property("x_oxygen", "Z_Oxygen", -1, 1)->id;
+  cm->ibhydrogen = _add_coal_property("x_hydrogen", "Z_Hydrogen", -1, 1)->id;
 }
 
 /*----------------------------------------------------------------------------*/

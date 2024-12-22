@@ -140,7 +140,6 @@ use ppppar
 use ppthch
 use ppincl
 use coincl
-use cpincl
 use field
 use atincl
 use atsoil

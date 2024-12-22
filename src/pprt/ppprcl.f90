@@ -55,7 +55,6 @@ use entsor
 use ppppar
 use ppthch
 use coincl
-use cpincl
 use ppincl
 use atincl
 use pointe, only: izfppp

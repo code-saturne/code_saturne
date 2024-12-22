@@ -100,12 +100,10 @@ use period
 use ppppar
 use ppthch
 use coincl
-use cpincl
 use ppincl
 use atincl
 use ctincl
 use ppcpfu
-use cs_coal_incl
 use mesh
 use field
 

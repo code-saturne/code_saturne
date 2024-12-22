@@ -41,8 +41,6 @@ use cstphy
 use ppppar
 use ppthch
 use coincl
-use cpincl
-use cs_coal_incl
 use ppincl
 use ppcpfu
 use atincl
