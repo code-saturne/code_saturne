@@ -1,10 +1,3 @@
-Release 8.3.1 (unreleased)
---------------------------
-
-### Bug fixes:
-
-- Fix build with older (pre LLVM) Intel compilers.
-
 Release 8.3.0 (2024-12-20)
 --------------------------
 
