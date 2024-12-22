@@ -47,21 +47,16 @@
 #include "cs_air_props.h"
 #include "cs_atmo.h"
 #include "cs_base.h"
-#include "cs_boundary_conditions.h"
-#include "cs_boundary_zone.h"
 #include "cs_field.h"
 #include "cs_field_default.h"
 #include "cs_field_operator.h"
 #include "cs_field_pointer.h"
 #include "cs_halo.h"
-#include "cs_halo_perio.h"
 #include "cs_log.h"
 #include "cs_math.h"
 #include "cs_mesh.h"
 #include "cs_mesh_location.h"
-#include "cs_mesh_quantities.h"
 #include "cs_parameters.h"
-#include "cs_parall.h"
 #include "cs_physical_constants.h"
 #include "cs_physical_model.h"
 #include "cs_post.h"
@@ -81,7 +76,6 @@
 /*----------------------------------------------------------------------------*/
 
 BEGIN_C_DECLS
-
 
 /*----------------------------------------------------------------------------
  * Add variables fields
@@ -142,9 +136,9 @@ cs_ctwr_add_variable_fields(void)
       /* If not using the atmospheric module, we create the field */
       if (f == nullptr) {
         int f_id = cs_variable_field_create("ym_water",
-            "Mass frac water air",
-            CS_MESH_LOCATION_CELLS,
-            1);
+                                            "Mass frac water air",
+                                            CS_MESH_LOCATION_CELLS,
+                                            1);
         f = cs_field_by_id(f_id);
         cs_add_model_field_indexes(f->id);
       }
@@ -243,15 +237,15 @@ cs_ctwr_add_variable_fields(void)
     int f_id = 0;
     if (ct_opt->mixture_model) {
       f_id = cs_variable_field_create("x_p_01",
-                                          "Mass frac rain",
-                                          CS_MESH_LOCATION_CELLS,
-                                          1);
+                                      "Mass frac rain",
+                                      CS_MESH_LOCATION_CELLS,
+                                      1);
     }
     else {
       f_id = cs_variable_field_create("ym_l_r",
-                                          "Rain to air mass ratio",
-                                          CS_MESH_LOCATION_CELLS,
-                                          1);
+                                      "Rain to air mass ratio",
+                                      CS_MESH_LOCATION_CELLS,
+                                      1);
     }
 
     f = cs_field_by_id(f_id);
@@ -489,10 +483,10 @@ cs_ctwr_add_property_fields(void)
   if (ct_opt->mixture_model) {
     /* Continuous phase density (humid air) */
     f = cs_field_create("rho_humid_air",
-        field_type,
-        CS_MESH_LOCATION_CELLS,
-        1,
-        has_previous);
+                        field_type,
+                        CS_MESH_LOCATION_CELLS,
+                        1,
+                        has_previous);
     cs_field_set_key_int(f, keyvis, post_flag);
     cs_field_set_key_int(f, keylog, 1);
     cs_field_set_key_str(f, klbl, "Density humid air");
@@ -635,15 +629,15 @@ cs_ctwr_add_property_fields(void)
     cs_field_set_key_str(f, klbl, "Drift velocity gas phase");
 
     if (ct_opt->mixture_model) {
-    /* Continuous phase velocity only if mixture model is on */
-    f = cs_field_create("v_c",
-        field_type,
-        CS_MESH_LOCATION_CELLS,
-        3,
-        has_previous);
-    cs_field_set_key_int(f, keyvis, post_flag);
-    cs_field_set_key_int(f, keylog, 1);
-    cs_field_set_key_str(f, klbl, "Velocity continuous phase");
+      /* Continuous phase velocity only if mixture model is on */
+      f = cs_field_create("v_c",
+                          field_type,
+                          CS_MESH_LOCATION_CELLS,
+                          3,
+                          has_previous);
+      cs_field_set_key_int(f, keyvis, post_flag);
+      cs_field_set_key_int(f, keylog, 1);
+      cs_field_set_key_str(f, klbl, "Velocity continuous phase");
     }
 
     char f_name[80];

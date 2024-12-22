@@ -49,8 +49,6 @@
 #include "cs_atmo.h"
 #include "cs_atmo_profile_std.h"
 #include "cs_base.h"
-#include "cs_boundary_conditions.h"
-#include "cs_boundary_zone.h"
 #include "cs_field.h"
 #include "cs_field_default.h"
 #include "cs_field_operator.h"
@@ -67,10 +65,8 @@
 #include "cs_parall.h"
 #include "cs_physical_constants.h"
 #include "cs_physical_model.h"
-#include "cs_prototypes.h"
 #include "cs_restart.h"
 #include "cs_thermal_model.h"
-#include "cs_velocity_pressure.h"
 #include "cs_volume_zone.h"
 
 #include "cs_ctwr.h"
@@ -409,11 +405,11 @@ cs_ctwr_init_field_vars(cs_real_t  rho0,
       t_h_a[cell_id] = t_h[cell_id];
 
       rho_h[cell_id] = cs_air_rho_humidair(x[cell_id],
-                       rho0,
-                       p0,
-                       t0,
-                       molmassrat,
-                       t_h[cell_id]);
+                                           rho0,
+                                           p0,
+                                           t0,
+                                           molmassrat,
+                                           t_h[cell_id]);
     }
 
     if (ct_opt->mixture_model) {
@@ -433,9 +429,9 @@ cs_ctwr_init_field_vars(cs_real_t  rho0,
     cs_real_t cp_h = cs_air_cp_humidair(x[cell_id], x_s[cell_id]);
 
     h_h[cell_id] = cs_air_h_humidair(cp_h,
-                                      x[cell_id],
-                                      x_s[cell_id],
-                                      t_h[cell_id]);
+                                     x[cell_id],
+                                     x_s[cell_id],
+                                     t_h[cell_id]);
 
     /* Initialize the liquid vertical velocity component
      * this is correct for droplet and extended for other packing zones

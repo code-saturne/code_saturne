@@ -872,8 +872,7 @@ _lagitp(const cs_real_t  tempct[])
 static void
 _lagitf(cs_lagr_attribute_t  *iattr)
 {
-  cs_mesh_t *mesh = cs_glob_mesh;
-
+  cs_real_3_t *cell_cen = (cs_real_3_t*)cs_glob_mesh_quantities->cell_cen;
   cs_lagr_extra_module_t *extra = cs_glob_lagr_extra_module;
 
   /* Particles management */
@@ -925,7 +924,6 @@ _lagitf(cs_lagr_attribute_t  *iattr)
         cs_real_t *old_part_coords =
           cs_lagr_particle_attr_n_get_ptr<cs_real_t>(particle, p_am, 1,
                                                      CS_LAGR_COORDS);
-        cs_real_3_t *cell_cen = (cs_real_3_t*) cs_glob_mesh_quantities->cell_cen;
         /* linear interpolation */
         for (int i = 0; i < 3; i++)
           loc_tempf += extra->grad_tempf[cell_id][i]
@@ -979,7 +977,6 @@ _lagitf(cs_lagr_attribute_t  *iattr)
           cs_real_t *old_part_coords =
             cs_lagr_particle_attr_n_get_ptr<cs_real_t>(particle, p_am, 1,
                                                        CS_LAGR_COORDS);
-          cs_real_3_t *cell_cen = (cs_real_3_t*) cs_glob_mesh_quantities->cell_cen;
           /* linear interpolation */
           for (int i = 0; i < 3; i++)
             loc_tempf += extra->grad_tempf[cell_id][i]

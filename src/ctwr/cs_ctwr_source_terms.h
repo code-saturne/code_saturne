@@ -31,17 +31,11 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "fvm_nodal.h"
-
-#include "cs_base.h"
-#include "cs_halo.h"
-#include "cs_mesh.h"
-#include "cs_mesh_quantities.h"
+#include "cs_defs.h"
 
 /*----------------------------------------------------------------------------*/
 
 BEGIN_C_DECLS
-
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -75,10 +69,10 @@ cs_ctwr_source_term(int              f_id,
 
 void
 cs_ctwr_volume_mass_injection_packing_dof_func(cs_lnum_t         n_elts,
-                                       const cs_lnum_t  *elt_ids,
-                                       bool              dense_output,
-                                       void             *input,
-                                       cs_real_t        *retval);
+                                               const cs_lnum_t  *elt_ids,
+                                               bool              dense_output,
+                                               void             *input,
+                                               cs_real_t        *retval);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -95,11 +89,10 @@ cs_ctwr_volume_mass_injection_packing_dof_func(cs_lnum_t         n_elts,
 
 void
 cs_ctwr_volume_mass_injection_evap_rain_dof_func(cs_lnum_t         n_elts,
-                                       const cs_lnum_t  *elt_ids,
-                                       bool              dense_output,
-                                       void             *input,
-                                       cs_real_t        *retval);
-
+                                                 const cs_lnum_t  *elt_ids,
+                                                 bool              dense_output,
+                                                 void             *input,
+                                                 cs_real_t        *retval);
 
 /*----------------------------------------------------------------------------*/
 /*!

@@ -831,9 +831,11 @@ cs_ctwr_phyvar_update(cs_real_t  rho0,
       mf_rain_walls += ym_l_r[cell_id] * rain_b_mass_flow[face_id];
     }
   }
+
   bft_printf("TOTAL RAIN MASS N-1 : %12.5e kg \n", mass_rain_pre);
   bft_printf("TOTAL RAIN MASS N : %12.5e kg \n", mass_rain);
-  bft_printf("RATE OF CHANGE : %12.5e kg/s \n", (mass_rain - mass_rain_pre) / cs_glob_time_step->dt_ref);
+  bft_printf("RATE OF CHANGE : %12.5e kg/s \n",
+             (mass_rain - mass_rain_pre) / cs_glob_time_step->dt_ref);
   bft_printf("OUTGOING RAIN THROUGH WALLS : %12.5e kg/s \n", mf_rain_walls);
 }
 

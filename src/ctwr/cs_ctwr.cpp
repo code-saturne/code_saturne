@@ -53,8 +53,6 @@
 #include "cs_field_default.h"
 #include "cs_field_operator.h"
 #include "cs_field_pointer.h"
-#include "cs_halo.h"
-#include "cs_halo_perio.h"
 #include "cs_log.h"
 #include "cs_math.h"
 #include "cs_mesh.h"
@@ -67,7 +65,6 @@
 #include "cs_post.h"
 #include "cs_prototypes.h"
 #include "cs_thermal_model.h"
-#include "cs_velocity_pressure.h"
 #include "cs_volume_zone.h"
 
 /*----------------------------------------------------------------------------
