@@ -3,6 +3,9 @@ Release 8.0.5 (unreleased)
 
 ### Bug fixes:
 
+- Fix error at setup stage in case of drift, due to incorrect
+  test on field keyword.
+
 - Fix build with GCC 14 (which has stricter type checking than
   older GCC versions).
 
