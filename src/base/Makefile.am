@@ -328,7 +328,7 @@ cs_coupling.cpp \
 cs_dilatable_scalar_diff_st.cpp \
 cs_drift_convective_flux.cpp \
 cs_equation_iterative_solve.cpp \
-cs_ext_library_info.c \
+cs_ext_library_info.cpp \
 cs_ext_neighborhood.cpp \
 cs_fan.cpp \
 cs_field.cpp \

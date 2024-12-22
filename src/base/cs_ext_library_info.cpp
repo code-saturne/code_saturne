@@ -73,7 +73,7 @@
 #include "cs_sles_petsc.h"
 #else
 /* Duplicate prototype here to avoid requiring PETSc headers */
-void cs_sles_petsc_library_info(cs_log_t log_type);
+extern "C" void cs_sles_petsc_library_info(cs_log_t log_type);
 #endif
 #endif
 
