@@ -1,3 +1,11 @@
+Release 8.3.1 (unreleased)
+--------------------------
+
+### Bug fixes:
+
+- Fix incorrect index in vector and tensor boundary gradient used for
+  reconstruction in some boundary conditions and postprocessing functions.
+
 Release 8.3.0 (2024-12-20)
 --------------------------
 
