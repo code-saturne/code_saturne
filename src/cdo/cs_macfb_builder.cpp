@@ -36,6 +36,10 @@
 #include <float.h>
 #include <limits.h>
 
+#if defined(HAVE_MPI)
+#include <mpi.h>
+#endif
+
 /*----------------------------------------------------------------------------
  * Local headers
  *----------------------------------------------------------------------------*/
@@ -124,6 +128,23 @@ cs_macfb_builder_initialize(void)
   cs_mac_builders[0] = cs_macfb_builder_create();
 
 #endif /* openMP */
+
+#if defined(HAVE_MPI)
+  int size = 1;
+
+  if (cs_glob_mpi_comm != MPI_COMM_NULL) {
+    MPI_Comm_size(cs_glob_mpi_comm, &size);
+  }
+
+  if (size > 1) {
+    bft_error(__FILE__,
+              __LINE__,
+              0,
+              _("%s: MAC scheme is not compatble with MPI."),
+              __func__);
+  }
+
+#endif /* (HAVE_MPI) */
 }
 
 /*----------------------------------------------------------------------------*/
@@ -304,9 +325,6 @@ cs_macfb_builder_cellwise_setup(const cs_cell_mesh_t      *cm,
   cs_adjacency_t *f2e = connect->f2e;
   assert(f2e != nullptr); /* Has to be build before */
 
-  const cs_adjacency_t *f2f = connect->f2f;
-  assert(f2f != nullptr); /* Has to be build before */
-
   /* Lambda function */
   auto find_edge_id = [f2e](const cs_lnum_t &f_id, const cs_lnum_t &fj_id) {
     for (short int ej = 0; ej < 4; ej++) {
@@ -318,6 +336,8 @@ cs_macfb_builder_cellwise_setup(const cs_cell_mesh_t      *cm,
         }
       }
     }
+    assert(false);
+    return -1;
   };
 
   /* loop on internal faces */
@@ -467,8 +487,6 @@ cs_macfb_builder_cellwise_setup(const cs_cell_mesh_t      *cm,
     for (short int fj = 0; fj < 4; fj++) {
       const cs_lnum_t ej_id = macb->f2e_ids[f][fj];
       assert(ej_id >= 0);
-
-      const cs_quant_t ei_q = cs_quant_get_edge_center(ej_id, connect, quant);
 
       short int n_e_find = 0;
       for (short int fk = 0; fk < macb->n_fc; fk++) {
