@@ -54,7 +54,6 @@ use parall
 use period
 use pointe
 use ppppar
-use ppthch
 use ppincl
 use mesh
 use field

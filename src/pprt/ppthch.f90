@@ -40,20 +40,6 @@ module ppthch
   !> \addtogroup thermophysical
   !> \{
 
-  !> reference temperature for the specific physics, in K
-  double precision trefth
-
-  !> reference pressure for the specific physics, in Pa
-  double precision prefth
-
-  !> molar volume under normal pressure and temperature conditions
-  !>  (1 atmosphere, 0 \f$\text{\degresC}\f$) in \f$m^{-3}\f$
-  double precision volmol
-
-  parameter ( trefth = 25.d0 + tkelvi ,                             &
-              prefth = 1.01325d5      ,                             &
-              volmol = 22.41d-3       )
-
   !--> DONNEES
 
   !> maximal number of global species

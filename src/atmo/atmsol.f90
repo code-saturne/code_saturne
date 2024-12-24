@@ -46,7 +46,6 @@ use entsor
 use parall
 use period
 use ppppar
-use ppthch
 use ppincl
 use atincl
 use atsoil

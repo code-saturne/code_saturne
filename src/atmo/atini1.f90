@@ -39,7 +39,6 @@ use cstphy
 use entsor
 use cstnum
 use ppppar
-use ppthch
 use ppincl
 use atincl
 use atsoil
@@ -165,7 +164,6 @@ use cstphy
 use entsor
 use cstnum
 use ppppar
-use ppthch
 use ppincl
 use atincl
 use atsoil

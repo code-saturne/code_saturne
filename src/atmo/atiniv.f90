@@ -47,7 +47,6 @@ use cstphy
 use cstnum
 use entsor
 use ppppar
-use ppthch
 use ppincl
 use atincl
 use mesh

@@ -50,7 +50,6 @@ use entsor
 use atincl
 use parall
 use ppppar
-use ppthch
 use coincl
 use ppincl
 use radiat

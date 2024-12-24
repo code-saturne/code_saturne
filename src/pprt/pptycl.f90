@@ -61,7 +61,6 @@ use cstnum
 use entsor
 use parall
 use ppppar
-use ppthch
 use coincl
 use ppincl
 use atincl
