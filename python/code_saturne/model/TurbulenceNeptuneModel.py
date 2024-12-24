@@ -26,6 +26,7 @@ import sys, unittest
 from code_saturne.model.XMLvariables import Variables, Model
 from code_saturne.model.XMLengine import *
 from code_saturne.model.MainFieldsModel import *       # TODO change
+from code_saturne.model.NotebookModel import NotebookModel
 import copy
 
 #-------------------------------------------------------------------------------
@@ -108,12 +109,13 @@ class TurbulenceModel(Variables, Model):
         """
         #
         # XML file parameters
-        self.mainFieldsModel = MainFieldsModel(case)
+        self.mainFieldsModel  = MainFieldsModel(case)
         self.case = case
-        self.XMLClosure      = self.case.xmlGetNode('closure_modeling')
-        self.XMLturbulence   = self.XMLClosure.xmlInitNode('turbulence')
-        self.XMLNodeVariable = self.XMLturbulence.xmlInitNode('variables')
-        self.XMLNodeproperty = self.XMLturbulence.xmlInitNode('properties')
+        self.XMLClosure       = self.case.xmlGetNode('closure_modeling')
+        self.XMLturbulence    = self.XMLClosure.xmlInitNode('turbulence')
+        self.XMLNodeVariable  = self.XMLturbulence.xmlInitNode('variables')
+        self.XMLNodeproperty  = self.XMLturbulence.xmlInitNode('properties')
+        self.XMLturbVariables = self.XMLturbulence.xmlGetNode('variables')
 
 
     def defaultValues(self):
@@ -175,11 +177,11 @@ class TurbulenceModel(Variables, Model):
            for var in TurbulenceModelsDescription.turbulenceVariables[model]:
              if var == "reynolds_stress":
                  self.setNewVariableProperty("variable", "",
-                                                             self.XMLNodeVariable,
-                                                             fieldId,
-                                                             var,
-                                                             var+"_"+field_name,
-                                                             dim=6)
+                                             self.XMLNodeVariable,
+                                             fieldId,
+                                             var,
+                                             var+"_"+field_name,
+                                             dim=6)
              elif var == 'covariance_qfp':
                  if field.carrier_id == 'all':
                      _carr_lst = self.mainFieldsModel.getContinuousFieldList()
@@ -187,21 +189,20 @@ class TurbulenceModel(Variables, Model):
                      _carr_lst = [self.mainFieldsModel.getFieldFromId(field.carrier_id)]
 
                  for _f in _carr_lst:
-                     _vname = "_".join([var, _f.f_id])
                      _vlabel = "_".join([var, _f.label, field_name])
                      self.setNewVariableProperty("variable", "",
                                                  self.XMLNodeVariable,
                                                  fieldId,
-                                                 _vname,
+                                                 var,
                                                  _vlabel)
              else:
                  if var == 'covariance_qfp':
                      var += "_" + self.mainFieldsModel.getFieldLabelsList()[0]
                  self.setNewVariableProperty("variable", "",
-                                                             self.XMLNodeVariable,
-                                                             fieldId,
-                                                             var,
-                                                             var+"_"+field_name)
+                                             self.XMLNodeVariable,
+                                             fieldId,
+                                             var,
+                                             var+"_"+field_name)
 
            for var in TurbulenceModelsDescription.turbulenceProperties[model]:
                self.setNewVariableProperty("property", "", self.XMLNodeproperty, fieldId, var, var+"_"+field_name)
@@ -221,6 +222,30 @@ class TurbulenceModel(Variables, Model):
                                self.setTwoWayCouplingModel(fld.f_id, TurbulenceModelsDescription.continuousCouplingModels[0])
                            else:
                                self.setTwoWayCouplingModel(fld.f_id, TurbulenceModelsDescription.continuousCouplingModels[0])
+
+    @Variables.noUndo
+    def getInitialTurbulenceChoice(self, zone, fieldId):
+        """
+        get the initialization mode for the turbulence
+        """
+        node_init = self.XMLturbulence.xmlGetNode('init_choice', zone_id=zone, field_id=fieldId)
+        choice = ''
+        if not node_init:
+            init_mode = 'reference_value'
+            self.setInitialTurbulenceChoice(zone, fieldId, init_mode)
+            node_init = self.XMLturbulence.xmlGetNode('init_choice', zone_id=zone, field_id=fieldId)
+        choice = node_init['choice']
+
+        return choice
+
+
+    @Variables.undoLocal
+    def setInitialTurbulenceChoice(self, zone, fieldId, init_mode):
+        """
+        set the initialization mode for the turbulence
+        """
+        node_init = self.XMLturbulence.xmlInitNode('init_choice', zone_id=zone, field_id=fieldId)
+        node_init['choice'] = init_mode
 
 
     @Variables.noUndo
@@ -245,6 +270,147 @@ class TurbulenceModel(Variables, Model):
         model = node['model']
 
         return model
+
+    @Variables.undoLocal
+    def setFormula(self, zone, fieldId, turbModel, formula):
+        """
+        Gives a formula for initial values
+        """
+        self.mainFieldsModel.isFieldIdValid(fieldId, strict_check=True)
+
+        node = self.XMLturbVariables
+        n = node.xmlInitChildNode('initialization',
+                                  field_id=fieldId,
+                                  zone_id=zone).xmlInitChildNode('formula')
+        if formula != None:
+            n.xmlSetTextNode(formula)
+        else:
+            n.xmlRemoveNode()
+
+    @Variables.noUndo
+    def getFormula(self, zone, fieldId, turbModel):
+        """
+        Return a formula for initial values
+        """
+        self.mainFieldsModel.isFieldIdValid(fieldId)
+
+        node = self.XMLturbVariables
+        if not node:
+            msg = "There is an error: this node " + str(node) + " should be present"
+            raise ValueError(msg)
+
+        turbInit = node.xmlInitNode('initialization',
+                                    field_id=fieldId,
+                                    zone_id=zone)
+
+        formula = turbInit.xmlGetString('formula')
+        if not formula:
+                formula = self.getDefaultTurbFormula(zone, fieldId, turbModel)
+        return formula
+
+    @Variables.noUndo
+    def getFormulaComponents(self, zone, fieldId, turbModel):
+        exp = self.getFormula(zone, fieldId, turbModel)
+
+        sym = [('x', "X cell's gravity center"),
+               ('y', "Y cell's gravity center"),
+               ('z', "Z cell's gravity center")]
+
+        if 'k-epsilon' in turbModel:
+            req = [('k', 'turbulent kinetic energy'),
+                   ('eps', 'turbulent kinetic energy dissipation')]
+        elif 'k-omega' in turbModel:
+            req = [('k', 'turbulent kinetic energy'),
+                   ('omg', 'turbulent kinetic energy dissipation rate')]
+        elif 'rij-epsilon' in turbModel:
+            if 'ebrsm' not in turbModel:
+                req = [('RXX', 'XX Reynolds stress component'),
+                       ('RYY', 'YY Reynolds stress component'),
+                       ('RZZ', 'ZZ Reynolds stress component'),
+                       ('RXY', 'XY Reynolds stress component'),
+                       ('RXZ', 'XZ Reynolds stress component'),
+                       ('RYZ', 'YZ Reynolds stress component'),
+                       ('eps', 'turbulent kinetic energy dissipation')]
+            else:
+                req = [('RXX', 'XX Reynolds stress component'),
+                       ('RYY', 'YY Reynolds stress component'),
+                       ('RZZ', 'ZZ Reynolds stress component'),
+                       ('RXY', 'XY Reynolds stress component'),
+                       ('RXZ', 'XZ Reynolds stress component'),
+                       ('RYZ', 'YZ Reynolds stress component'),
+                       ('eps', 'turbulent kinetic energy dissipation'),
+                       ('alpha', 'Blending factor')]
+        elif 'q2' in turbModel:
+            req = [('qp', 'particle agitation energy'),
+                   ('qfp', 'fluid-particle velocity covariance')]
+        elif 'r2-q12' in turbModel:
+            req = [('RXX', 'XX Particle reynolds stress component'),
+                   ('RYY', 'YY Particle reynolds stress component'),
+                   ('RZZ', 'ZZ Particle reynolds stress component'),
+                   ('RXY', 'XY Particle reynolds stress component'),
+                   ('RXZ', 'XZ Particle reynolds stress component'),
+                   ('RYZ', 'YZ Particle reynolds stress component'),
+                   ('qfp', 'fluid-particle velocity covariance')]
+        elif 'r2-r12' in turbModel:
+            req = [('RXX', 'XX Particle reynolds stress component'),
+                   ('RYY', 'YY Particle reynolds stress component'),
+                   ('RZZ', 'ZZ Particle reynolds stress component'),
+                   ('RXY', 'XY Particle reynolds stress component'),
+                   ('RXZ', 'XZ Particle reynolds stress component'),
+                   ('RYZ', 'YZ Particle reynolds stress component'),
+                   ('R12XX', 'XX Fluid-Particle covariance'),
+                   ('R12YY', 'YY Fluid-Particle covariance'),
+                   ('R12ZZ', 'ZZ Fluid-Particle covariance'),
+                   ('R12XY', 'XY Fluid-Particle covariance'),
+                   ('R12XZ', 'XZ Fluid-Particle covariance'),
+                   ('R12YZ', 'YZ Fluid-Particle covariance')]
+
+        for (name, val) in NotebookModel(self.case).getNotebookList():
+            sym.append((name, 'value (notebook) = ' + str(val)))
+
+        return exp, req, sym
+
+    @Variables.noUndo
+    def getDefaultTurbFormula(self, zone, fieldId, turb_model):
+        """
+        set the default turbulence formula when needed (ref value init choice
+        for example). The expressions were previously defined in the function
+        nc_gui_initialize_setup in the routine nc_gui.cxx.
+        """
+        if 'k-epsilon' in turb_model:
+            formula = """k = 1e-5;\neps = 1e-4;"""
+        elif 'k-omega' in turb_model:
+            formula = """k = 1e-5;\nomg = 10;"""
+        elif 'rij' in turb_model:
+            if 'ebrsm' not in turb_model:
+                formula = (
+                "RXX = 1e-5; RYY = 1e-5; RZZ = 1e-5; RXY = 0; RXZ = 0; RYZ = 0;\n"
+                "eps = 1e-3;"
+                )
+            else:
+                formula = (
+                "RXX = 1e-5; RYY = 1e-5; RZZ = 1e-5; RXY = 0; RXZ = 0; RYZ = 0;\n"
+                "eps = 1e-3;\nalpha = 1;"
+                )
+        elif 'q2' in turb_model:
+            formula = """qp = 1e-5;\nqfp = 2e-5;"""
+        elif 'r2-q12' in turb_model:
+            formula = (
+            "RXX = 1e-5; RYY = 1e-5; RZZ = 1e-5; RXY = 0; RXZ = 0; RYZ = 0;\n"
+            "qfp = 2e-5;"
+            )
+        elif 'r2-r12' in turb_model:
+            formula = (
+            "RXX = 1e-5; RYY = 1e-5; RZZ = 1e-5; RXY = 0.; RXZ = 0.; RYZ = 0.;\n"
+            "R12XX = 1e-5; R12YY = 1e-5; R12ZZ = 1e-5; R12XY = 0; R12XZ = 0; R12YZ = 0"
+            )
+        else:
+            msg = "Reference value initialization for turbulence model "\
+                    + turb_model + " is not defined"
+            raise ValueError(msg)
+
+        return formula
+
 
     @Variables.undoLocal
     def setThermalTurbulentFlux(self, fieldId, model):

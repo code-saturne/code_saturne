@@ -56,6 +56,7 @@ from code_saturne.model.LocalizationModel import VolumicLocalizationModel, Local
 from code_saturne.model.NonCondensableModel import NonCondensableModel
 from code_saturne.model.SpeciesModel import SpeciesModel
 from code_saturne.model.ThermodynamicsModel import ThermodynamicsModel
+from code_saturne.model.TurbulenceNeptuneModel import TurbulenceModel
 
 from code_saturne.gui.case.QMegEditorView import QMegEditorView
 
@@ -100,11 +101,13 @@ class MainFieldsInitializationView(QWidget, Ui_MainFieldsInitialization):
     def defineConnections(self):
         self.comboBoxField.activated[str].connect(self.slotField)
         self.comboBoxEnergy.activated[str].connect(self.slotEnergyModel)
+        self.comboBoxTurbulence.activated[str].connect(self.slotTurbulenceModel)
         self.comboBoxNonCondensable.activated[str].connect(self.slotNonCondensableType)
         self.comboBoxScalar.activated[str].connect(self.slotScalarName)
         self.pushButtonPressure.clicked.connect(self.slotPressure)
         self.pushButtonVelocity.clicked.connect(self.slotVelocity)
         self.pushButtonFraction.clicked.connect(self.slotFraction)
+        self.pushButtonTurbulence.clicked.connect(self.slotTurbulence)
         self.pushButtonEnergy.clicked.connect(self.slotEnergy)
         self.pushButtonNonCondensable.clicked.connect(self.slotNonCondensable)
         self.pushButtonScalar.clicked.connect(self.slotScalar)
@@ -112,6 +115,7 @@ class MainFieldsInitializationView(QWidget, Ui_MainFieldsInitialization):
     def hideAllWidgets(self):
         self.labelEnergy.hide()
         self.comboBoxEnergy.hide()
+        self.comboBoxTurbulence.hide()
         self.pushButtonEnergy.hide()
         self.labelNonCondensable.hide()
         self.comboBoxNonCondensable.hide()
@@ -140,21 +144,26 @@ class MainFieldsInitializationView(QWidget, Ui_MainFieldsInitialization):
 
         need_none = (SpeciesModel(self.case).getScalarByFieldId("none")!=[])
         if need_none:
-            self.modelField.addItem(self.tr('Non-convected scalars'), 'none')
+            self.modelField.addItem(self.tr("Non-convected scalars"), 'none')
 
         self.currentid = -1
         if len(self.mdl.mainFieldsModel.getFieldIdList()) > 0:
             self.currentid = self.mdl.mainFieldsModel.getFieldIdList()[0]
             self.modelField.setItem(str_model = self.currentid)
         self.modelEnergy = ComboModel(self.comboBoxEnergy, 3, 1)
-        self.modelEnergy.addItem(self.tr("Enthalpy"), "enthalpy")
-        self.modelEnergy.addItem(self.tr("Temperature"), "temperature")
-        self.modelEnergy.addItem(self.tr("Saturation enthalpy"), "hsat_P")
+        self.modelEnergy.addItem(self.tr("Enthalpy"), 'enthalpy')
+        self.modelEnergy.addItem(self.tr("Temperature"), 'temperature')
+        self.modelEnergy.addItem(self.tr("Saturation enthalpy"), 'hsat_P')
 
         if int(self.currentid) > 0:
             if ThermodynamicsModel(self.case).getMaterials(self.currentid) == 'user_material' :
                 self.modelEnergy.disableItem(1)
                 self.modelEnergy.disableItem(2)
+
+        self.modelTurbulence = ComboModel(self.comboBoxTurbulence, 2, 1)
+        self.modelTurbulence.addItem(self.tr("Initialization by formula"), 'formula')
+        self.modelTurbulence.addItem(self.tr("Initialization by reference value(s)"),
+                                     'reference_value')
 
         self.modelNonCondensable = ComboModel(self.comboBoxNonCondensable, 1, 1)
         self.currentNonCond = ""
@@ -188,12 +197,21 @@ class MainFieldsInitializationView(QWidget, Ui_MainFieldsInitialization):
                 self.pushButtonVelocity.setToolTip(exp)
             else:
                 self.pushButtonVelocity.setStyleSheet("background-color: red")
+
             exp = self.mdl.getFormula(self.zone_id, self.currentid, 'volume_fraction')
             if exp:
                 self.pushButtonFraction.setStyleSheet("background-color: green")
                 self.pushButtonFraction.setToolTip(exp)
             else:
                 self.pushButtonFraction.setStyleSheet("background-color: red")
+
+            turbModel = TurbulenceModel(self.case).getTurbulenceModel(self.currentid)
+            exp = TurbulenceModel(self.case).getFormula(self.zone_id, self.currentid, turbModel)
+            if exp:
+                self.pushButtonTurbulence.setStyleSheet("background-color: green")
+                self.pushButtonTurbulence.setToolTip(exp)
+            else:
+                self.pushButtonTurbulence.setStyleSheet("background-color: red")
 
             if field.enthalpy_model != "off":
                 exp = self.mdl.getFormula(self.zone_id, self.currentid, 'enthalpy')
@@ -205,7 +223,9 @@ class MainFieldsInitializationView(QWidget, Ui_MainFieldsInitialization):
 
             lst = self.NonCondensable.getNonCondensableByFieldId(self.currentid)
             if len(lst) > 0:
-                exp = self.mdl.getFormulaNonCondensable(self.zone_id, self.currentid, self.currentNonCond)
+                exp = self.mdl.getFormulaNonCondensable(self.zone_id,
+                                                        self.currentid,
+                                                        self.currentNonCond)
                 if exp:
                     self.pushButtonNonCondensable.setStyleSheet("background-color: green")
                     self.pushButtonNonCondensable.setToolTip(exp)
@@ -233,6 +253,7 @@ class MainFieldsInitializationView(QWidget, Ui_MainFieldsInitialization):
 
         if self.currentid != 'none':
             field = self.mdl.mainFieldsModel.getFieldFromId(self.currentid)
+            turbModel = TurbulenceModel(self.case).getTurbulenceModel(self.currentid)
             # Velocity
             exp = self.mdl.getFormula(self.zone_id,
                                       self.currentid,
@@ -253,6 +274,16 @@ class MainFieldsInitializationView(QWidget, Ui_MainFieldsInitialization):
                 self.pushButtonFraction.setToolTip(exp)
             else:
                 self.pushButtonFraction.setStyleSheet("background-color: red")
+
+            # Turbulence
+            exp = TurbulenceModel(self.case).getFormula(self.zone_id,
+                                                        self.currentid,
+                                                        turbModel)
+            if exp:
+                self.pushButtonTurbulence.setStyleSheet("background-color: green")
+                self.pushButtonTurbulence.setToolTip(exp)
+            else:
+                self.pushButtonTurbulence.setStyleSheet("background-color: red")
 
             # Energy
             if field.enthalpy_model != "off":
@@ -288,6 +319,29 @@ class MainFieldsInitializationView(QWidget, Ui_MainFieldsInitialization):
                 self.pushButtonScalar.setToolTip(exp)
             else:
                 self.pushButtonScalar.setStyleSheet("background-color: red")
+
+
+    @pyqtSlot(str)
+    def slotTurbulenceModel(self, text):
+        """
+        INPUT label for choice of turbulence model
+        """
+        choice = self.modelTurbulence.dicoV2M[str(text)]
+        zoneId = str(self.zone.getCodeNumber())
+        fieldId = self.currentid
+        TurbulenceModel(self.case).setInitialTurbulenceChoice(zoneId, fieldId, choice)
+        turbModel = TurbulenceModel(self.case).getTurbulenceModel(fieldId)
+
+        if 'formula' in choice:
+            self.pushButtonTurbulence.setVisible(True)
+            turbFormula = TurbulenceModel(self.case).getFormula(zoneId, fieldId, turbModel)
+            if not turbFormula:
+                self.pushButtonTurbulence.setStyleSheet("background-color: red")
+            else:
+                self.pushButtonTurbulence.setStyleSheet("background-color: green")
+                TurbulenceModel(self.case).setFormula(zoneId, fieldId, turbModel, turbFormula)
+        else:
+            self.pushButtonTurbulence.hide()
 
 
     @pyqtSlot(str)
@@ -413,6 +467,97 @@ class MainFieldsInitializationView(QWidget, Ui_MainFieldsInitialization):
             self.mdl.setFormula(self.zone_id, self.currentid, 'volume_fraction', result)
             self.pushButtonFraction.setStyleSheet("background-color: green")
             self.pushButtonFraction.setToolTip(result)
+
+    @pyqtSlot()
+    def slotTurbulence(self):
+        """
+        Formula for turbulence
+        """
+        turbModel = TurbulenceModel(self.case).getTurbulenceModel(self.currentid)
+        exp, req, sym = TurbulenceModel(self.case).getFormulaComponents(self.zone_id,
+                                                                        self.currentid,
+                                                                        turbModel)
+
+        if '' in exp:
+            if 'k-epsilon' in turbModel:
+                exp = """k = 1e-5;\neps = 1e-4;"""
+            elif 'k-omega' in turbModel:
+                exp = """k = 1e-5;\nomg = 10.;"""
+            elif 'rij' in turbModel:
+                if 'ebrsm' not in turbModel:
+                    exp = (
+                    "RXX = 1e-5; RYY = 1e-5; RZZ = 1e-5; RXY = 0; RXZ = 0; RYZ = 0;\n"
+                    "eps = 1e-3;"
+                    )
+                else:
+                    exp = (
+                    "RXX = 1e-5; RYY = 1e-5; RZZ = 1e-5; RXY = 0; RXZ = 0; RYZ = 0;\n"
+                    "eps = 1e-3;\nalpha = 1;"
+                    )
+            elif 'q2' in turbModel:
+                exp = """qp = 1e-5;\nqfp = 2e-5;"""
+            elif 'r2-q12' in turbModel:
+                exp = (
+                "RXX = 1e-5; RYY = 1e-5; RZZ = 1e-5; RXY = 0; RXZ = 0; RYZ = 0;\n"
+                "qfp = 2e-5;"
+                )
+            elif 'r2-r12' in turbModel:
+                exp = (
+                "RXX = 1e-5; RYY = 1e-5; RZZ = 1e-5; RXY = 0.; RXZ = 0.; RYZ = 0.;\n"
+                "R12XX = 1e-5; R12YY = 1e-5; R12ZZ = 1e-5; R12XY = 0; R12XZ = 0; R12YZ = 0"
+                )
+            else:
+                msg = "Reference value initialization for turbulence model "\
+                        + turbModel + " is not defined"
+                raise ValueError(msg)
+
+        if 'k-epsilon' in turbModel:
+            exa = """k = 1.0e-5;\neps = 1.0e-3;"""
+        elif 'k-omega' in turbModel:
+            exa = """k = 1.0e-5;\nomg = 10.;"""
+        elif 'rij' in turbModel:
+            if 'ebrsm' not in turbModel:
+                exa = (
+                "RXX = 1e-5; RYY = 1e-5; RZZ = 1e-5; RXY = 0.; RXZ = 0.; RYZ = 0.;\n"
+                "eps = 1e-3;"
+                )
+            else:
+                exa = (
+                "RXX = 1e-5; RYY = 1e-5; RZZ = 1e-5; RXY = 0.; RXZ = 0.; RYZ = 0.;\n"
+                "eps = 1e-3;\n"
+                "alpha = 1;"
+                )
+        elif 'q2' in turbModel:
+            exa = """qp = 1e-4; qfp = 2e-4;"""
+        elif 'r2-q12' in turbModel:
+            exa = (
+            "RXX = 1e-5; RYY = 1e-5; RZZ = 1e-5; RXY = 0.; RXZ = 0.; RYZ = 0.;\n"
+            "qfp = 2e-5;"
+            )
+        elif 'r2-r12' in turbModel:
+            exa = (
+            "RXX = 1e-5; RYY = 1e-5; RZZ = 1e-5; RXY = 0.; RXZ = 0.; RYZ = 0.;\n"
+            "R12XX = 1e-5; R12YY = 1e-5; R12ZZ = 1e-5; R12XY = 0; R12XZ = 0; R12YZ = 0;"
+            )
+
+        name = 'turbulence_%s' % (str(self.currentid))
+        zone_name = self.zone.getLabel()
+
+        dialog = QMegEditorView(parent        = self,
+                                function_type = 'ini',
+                                zone_name     = zone_name,
+                                variable_name = name,
+                                expression    = exp,
+                                required      = req,
+                                symbols       = sym,
+                                examples      = exa)
+
+        if dialog.exec_():
+            result = dialog.get_result()
+            log.debug("slotFormulaRho -> %s" % str(result))
+            TurbulenceModel(self.case).setFormula(self.zone_id, self.currentid, turbModel, result)
+            self.pushButtonTurbulence.setStyleSheet("background-color: green")
+            self.pushButtonTurbulence.setToolTip(result)
 
 
     @pyqtSlot()
@@ -572,10 +717,30 @@ pressure = P0 + rho0 * g * (zmax - z);"""
         self.comboBoxEnergy.hide()
         self.pushButtonEnergy.hide()
 
+        # Velocity and volume fraction initialization
         self.labelVelocity.setVisible(fieldId!='none')
         self.pushButtonVelocity.setVisible(fieldId!='none')
         self.labelFraction.setVisible(fieldId!='none')
         self.pushButtonFraction.setVisible(fieldId!='none')
+
+        # Turbulence initialization
+        self.labelTurbulence.hide()
+        self.pushButtonTurbulence.hide()
+        self.comboBoxTurbulence.hide()
+        turbModel = TurbulenceModel(self.case).getTurbulenceModel(fieldId)
+        if turbModel != 'none':
+            self.labelTurbulence.setVisible(fieldId!='none')
+            self.pushButtonTurbulence.setVisible(fieldId!='none')
+            self.comboBoxTurbulence.setVisible(fieldId!='none')
+            turbInitChoice = \
+                    TurbulenceModel(self.case).getInitialTurbulenceChoice(zone, fieldId)
+            self.modelTurbulence.setItem(str_model=turbInitChoice)
+
+            if turbInitChoice != 'formula':
+                turbFormula = \
+                        TurbulenceModel(self.case).getDefaultTurbFormula(zone, fieldId, turbModel)
+                TurbulenceModel(self.case).setFormula(zone, fieldId, turbModel, turbFormula)
+                self.pushButtonTurbulence.hide()
 
         field = self.mdl.mainFieldsModel.getFieldFromId(fieldId)
         if fieldId != 'none' and field.enthalpy_model != "off":

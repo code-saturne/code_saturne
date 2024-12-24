@@ -942,7 +942,6 @@ class meg_to_c_interpreter:
             'const cs_real_t %s = cs_notebook_parameter_value_by_name("%s");' % (kn, kn)
 
         # fluid properties
-
         for kp in _pkg_fluid_prop_dict[self.module_name].keys():
             if len(name.split("_")) > 1:
                 try:
@@ -957,7 +956,6 @@ class meg_to_c_interpreter:
             glob_tokens[kp] = 'const cs_real_t %s = %s->%s;' %(kp, gs, pn)
 
         # known fields
-
         for f in known_fields:
             glob_tokens[f[0]] = \
             'const cs_real_t *%s_vals = cs_field_by_name("%s")->val;' % (f[0], f[1])
@@ -2447,6 +2445,8 @@ class meg_to_c_interpreter:
             from code_saturne.model.MainFieldsInitializationModel import MainFieldsInitializationModel
             from code_saturne.model.NonCondensableModel import NonCondensableModel
             from code_saturne.model.SpeciesModel import SpeciesModel
+            from code_saturne.model.TurbulenceNeptuneModel import TurbulenceModelsDescription
+            from code_saturne.model.TurbulenceNeptuneModel import TurbulenceModel
 
             mfm = MainFieldsModel(self.case)
             mfi = MainFieldsInitializationModel(self.case)
@@ -2480,6 +2480,24 @@ class meg_to_c_interpreter:
                         self.init_block('ini', zone_name,
                                         'volume_fraction_'+str(fId),
                                         exp, req, sym, [])
+
+                        # Turbulence get turbModel here before
+                        turbModel = \
+                                TurbulenceModel(self.case).getTurbulenceModel(fId)
+                        if turbModel != 'none':
+                            exp, req, sym = \
+                                    TurbulenceModel(self.case).getFormulaComponents(z_id,
+                                                                                    fId,
+                                                                                    turbModel)
+
+                            # Play with variablesDim to find the start and end index for the
+                            # required variables
+                            self.init_block('ini', zone_name,
+                                            'turbulence_'+str(fId),
+                                            exp,
+                                            req,
+                                            sym,
+                                            [])
 
                         # Enthalpy (only if energy resolution is activated)
                         if mfm.getFieldFromId(fId).enthalpy_model != 'off':

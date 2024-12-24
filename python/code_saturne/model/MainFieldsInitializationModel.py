@@ -126,7 +126,6 @@ class MainFieldsInitializationModel(Variables, Model):
         n = node.xmlInitChildNode('initial_value', zone_id=zone)
         n.xmlSetData('formula', str)
 
-
     @Variables.noUndo
     def getFormula(self, zone, fieldId, var_name):
         """
@@ -136,6 +135,9 @@ class MainFieldsInitializationModel(Variables, Model):
         self.mainFieldsModel.isFieldIdValid(fieldId)
 
         node = self.XMLvariables.xmlGetNode('variable', field_id=fieldId, name=var_name)
+        if not node:
+            msg = "There is an error: this node " + str(node) + "should be present"
+            raise ValueError(msg)
         n = node.xmlInitChildNode('initial_value', zone_id=zone)
         return n.xmlGetString('formula')
 
@@ -144,29 +146,21 @@ class MainFieldsInitializationModel(Variables, Model):
     def getFormulaComponents(self, zone, fieldId, var_name):
         exp = self.getFormula(zone, fieldId, var_name)
 
+        sym = [('x', "X cell's gravity center"),
+               ('y', "Y cell's gravity center"),
+               ('z', "Z cell's gravity center")]
+
         if var_name == 'velocity':
             req = [('u', 'Velocity along X'),
                    ('v', 'Velocity along Y'),
                    ('w', 'Velocity along Z')]
 
-            sym = [('x', "X cell's gravity center"),
-                   ('y', "Y cell's gravity center"),
-                   ('z', "Z cell's gravity center")]
-
         elif var_name == 'volume_fraction':
             req = [('vol_f', 'volume fraction')]
-
-            sym = [('x', "X cell's gravity center"),
-                   ('y', "Y cell's gravity center"),
-                   ('z', "Z cell's gravity center")]
 
         elif var_name == 'enthalpy':
             th_sca_label = self.getEnergyModel(zone, fieldId)
             req = [(th_sca_label, str(th_sca_label))]
-
-            sym = [('x', "X cell's gravity center"),
-                   ('y', "Y cell's gravity center"),
-                   ('z', "Z cell's gravity center")]
 
         for (name, val) in NotebookModel(self.case).getNotebookList():
             sym.append((name, 'value (notebook) = ' + str(val)))
