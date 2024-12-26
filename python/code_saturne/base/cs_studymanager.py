@@ -65,7 +65,8 @@ def process_cmd_line(argv, pkg):
     parser = OptionParser(usage=usage)
 
     parser.add_option("-f", "--file", dest="filename", type="string",
-                      metavar="FILE", help="xml FILE of parameters")
+                      metavar="FILE", default="smgr.xml",
+                      help="xml FILE of parameters")
 
     parser.add_option("-q", "--quiet",
                       action="store_true", dest="quiet", default=False,

@@ -73,7 +73,7 @@ Most command-line options are detailed here:
 
 - `-h, --help`: show the help message and exit
 - `-f FILE, --file=FILE`: give the parameters file for SMGR.
-   This file is mandatory, and therefore this option must be completed
+   Only required if the name is different from smgr.xml
 - `-q, --quiet`: do not print status messages to `stdout`
 - `-u, --update-smgr`: update the studymanager file smgr.xml in the
   **repository**
@@ -129,28 +129,29 @@ Examples
 - copy all cases from the **repository** into the **destination**,
   compile all user files and run enabled cases:
   ```
-  $ code_saturne smgr -f sample.xml -r
+  $ code_saturne smgr -r
   ```
 - as above, and compare all new checkpoint files with those from the
-  **repository** if defined in `sample.xml`
+  **repository** if defined in `smgr.xml`
   ```
-  $ code_saturne smgr -f sample.xml -r -c
+  $ code_saturne smgr -r -c
   ```
-- as above, and plots results if defined in `sample.xml`
+- as above, and plots results if defined in `smgr.xml`
   ```
-  $ code_saturne smgr -f sample.xml -rcp
+  $ code_saturne smgr -rcp
   ```
 - as above, and send the two reports:
   ```
-  $ code_saturne smgr -f sample.xml -r -c -p -m "dt@moulinsart.be dd@moulinsart.be"
+  $ code_saturne smgr -rcp -m "dt@moulinsart.be dd@moulinsart.be"
   ```
 - compare and plot results in the **destination** already computed
+  if defined in `sample.xml`
   ```
-  $ code_saturne smgr -f sample.xml -c -p
+  $ code_saturne smgr -f sample.xml -cp
   ```
 - run, plot results and generate report in **destination**
   ```
-  $ code_saturne smgr -f sample.xml -rp --report
+  $ code_saturne smgr -rp --report
   ```
 - run cases tagged "coarse" (standing for coarse mesh for example) _and_ "hr"
   (standing for high Reynolds for example) only for 2 time iterations in
@@ -163,7 +164,7 @@ Examples
   ```
 - submit "coarse" cases on cluster per block of 4 using SLURM batch mode:
   ```
-  $ code_saturne smgr -f smgr.xml --submit -r --with-tags=coarse --slurm-batch-size=4
+  $ code_saturne smgr --submit -r --with-tags=coarse --slurm-batch-size=4
   ```
 
 ### Note
@@ -179,7 +180,7 @@ SMGR parameter file
 ===================
 
 The SMGR parameter file is an XML (text) file that describes studies and cases
-involved in the SMGR process.
+involved in the SMGR process. The default name is `smgr.xml`.
 
 ```{.xml}
 <?xml version="1.0"?>
@@ -445,7 +446,7 @@ The attributes for the comparison are:
     step in the **destination** directory (see section about [restart](@ref
     sec_smgr_output));
   * if SMGR is restarted without the run step (with the command line
-    `code_saturne smgr -f sample.xml -c` for example), the id of the results
+    `code_saturne smgr -c` for example), the id of the results
     directory in the **destination** must be given (for example
     `dest="20110706-1523"`), but if there is a single results directory in the
     `RESU` directory of the case, the id can be omitted: with `dest=""`, the id
@@ -846,7 +847,7 @@ The attributes are:
     run step in the **destination** directory (see [output](@ref
     sec_smgr_output) section).
   * If SMGR is restarted without the run step (with the command line
-    `code_saturne smgr -f sample.xml -c` for example), the id of the results
+    `code_saturne smgr -c` for example), the id of the results
     directory in the **destination** must be given (for example
     `dest="20110706-1523"`), but if there is a single results directory in the
     `RESU` directory of the case, the id can be omitted: with `dest=""`, the id
@@ -938,8 +939,8 @@ Output files {#sec_smgr_output}
 SMGR produces several files in the **destination** directory:
 
 - `studymanager.log`: standard output of SMGR;
-- `smgr_<name>.xml`: udpated SMGR parameters file, useful to restart the script
-  if an error occurs;
+- `smgr.xml` or name given in FILE (-f) option: udpated SMGR parameters file,
+  useful to restart the script if an error occurs;
 
 Only available with option `-r, --run`:
 - `run_case.log`: generated in all `STUDY/CASE/RESU/run_id` folders, summary of
@@ -956,8 +957,8 @@ Only available with option`--report`:
 
 SMGR can produce or modify several files in the **repository** directory:
 
-- `smgr_<name>.xml`: update file with `-u, --update-smgr` option;
-- `setup_<name>.xml`: update all xml files in `STUDY/CASE/DATA/` with `-x,
+- `smgr.xml`: update file with `-u, --update-smgr` option;
+- `setup.xml`: update all xml files in `STUDY/CASE/DATA/` with `-x,
   --update-setup` option;
 - `smgr_compilation.log`: summary of the compilation with `-t,
   --test-compilation` option.

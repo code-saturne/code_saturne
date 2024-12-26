@@ -1318,7 +1318,8 @@ class Studies(object):
 
         if not os.path.isfile(filename):
             msg = "Error: specified XML parameter file for studymanager does" \
-                + " not exist."
+                + " not exist.\n" \
+                + "File name should be smgr.xml or speficied with '-f' option"
             self.reporting(msg, stdout=False, report=False, exit=True)
 
         # call smgr xml backward compatibility

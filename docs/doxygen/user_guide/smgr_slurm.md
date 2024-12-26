@@ -42,16 +42,22 @@ single case per batch, the total number of cases with an expected time lower
 than 5 minutes is counted. If this number is greater than 50,
 `--slurm-batch-size` is set to 50.
 
-For instance, the following command
+For instance, the following commands
   ```
-  $ code_saturne smgr -f smgr.xml --submit -r --with-tags=coarse --slurm-batch-size=20 --slurm-batch-wtime=5
+  $ code_saturne smgr --submit -r
   ```
-will submit batch of cases with a maximum of 20 cases per batch and a maximum
-total computation time of 5 hours. All cases are automatically sorted by number
-of required processes so that the number of tasks per batch is the same. The
-number of cases per batch could then be inferior to 20 if the total computation
-time exceeds 5h or if the number of cases with the same configuration (i.e.
-number of tasks) is limiting.
+will submit one case per batch. The total number of submissions will be the
+number of cases defined in `smgr.xml` plus the final analysis.
+
+  ```
+  $ code_saturne smgr -f sample.xml --submit -r --with-tags=coarse --slurm-batch-size=20 --slurm-batch-wtime=5
+  ```
+will submit batch of cases defined in `sample.xml` with a maximum of 20 cases
+per batch and a maximum total computation time of 5 hours. All cases are
+automatically sorted by number of required processes so that the number of tasks
+per batch is the same. The number of cases per batch could then be inferior to
+20 if the total computation time exceeds 5h or if the number of cases with the
+same configuration (i.e. number of tasks) is limiting.
 
 Expected time
 -------------
@@ -178,7 +184,7 @@ Example
 In the following example, a list of 8 cases is launched in SLURM batch mode:
 
 ```
-$ code_saturne smgr -f smgr.xml --submit -rp --slurm-batch-size=2 --slurm-batch-wtime=5
+$ code_saturne smgr --submit -rp --slurm-batch-size=2 --slurm-batch-wtime=5
 ```
 
 \image html smgr_dependency.png "Exemple of cases allocation per batch"
