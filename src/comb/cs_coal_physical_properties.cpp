@@ -92,27 +92,294 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*============================================================================
- * Prototypes for Fortran functions
- *============================================================================*/
-
-void
-CS_PROCF(pppdfr, PPPDFR)(cs_lnum_t        *ncelet,
-                         cs_lnum_t        *ncel,
-                         int              *intpdf,
-                         cs_real_t        *tpdf,
-                         const cs_real_t  *ffuel,
-                         const cs_real_t  *fvp2m,
-                         const cs_real_t  *fmini,
-                         const cs_real_t  *fmaxi,
-                         const cs_real_t  *doxyd,
-                         const cs_real_t  *dfuel,
-                         const cs_real_t  *pdfm1,
-                         const cs_real_t  *pdfm2,
-                         const cs_real_t  *hrec);
-
-/*============================================================================
  * Private function definitions
  *============================================================================*/
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Compute rectangle-Dirac pdf parameters.
+ *
+ * From P. Plion & A. Escaich
+ *
+ * \param[in]       n_cells       number of cells
+ * \param[in]       indpdf        indicator for pdf integration or mean value
+ * \param[out]      tpdf          indicator for pdf shape:
+ *                               - 0: Dirac at mean value
+ *                               - 1: rectangle
+ *                               - 2: Dirac's peak at \f$ f_{min} \f$
+ *                               - 3: Dirac's peak at \f$ f_{max} \f$
+ *                               - 4: rectangle and 2 Dirac's pics
+ * \param[in]       fm            mean mixture fraction at cell centers
+ * \param[in, out]  fp2m          mean mixture fraction variance at cell centers
+ * \param[in, out]  fmini         mixture fraction low boundary
+ * \param[in]       fmaxi         mixture fraction high boundary
+ * \param[out]      dirmin        Dirac's peak value at \f$ f_{min} \f$
+ * \param[out]      dirmax        Dirac's peak value at \f$ f_{max} \f$
+ * \param[out]      fdeb          abscissa of rectangle low boundary
+ * \param[out]      ffin          abscissa of rectangle high boundary
+ * \param[out]      hrec          rectangle height
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_pppdfr(cs_lnum_t         n_cells,
+        int              *indpdf,
+        cs_real_t        *tpdf,
+        const cs_real_t  *fm,
+        cs_real_t        *fp2m,
+        const cs_real_t  *fmini,
+        const cs_real_t  *fmaxi,
+        cs_real_t        *dirmin,
+        cs_real_t        *dirmax,
+        cs_real_t        *fdeb,
+        cs_real_t        *ffin,
+        cs_real_t        *hrec)
+{
+  /* Initialization
+   * -------------- */
+
+  bool log_active = cs_log_default_is_active();
+
+  // Parameter relative to variance
+  cs_real_t t1 = 1.e-08;
+  // Parameter relative to mean
+  cs_real_t t2 = 5.e-07;
+
+  cs_real_t epzero = cs_math_epzero;
+
+  cs_host_context ctx;
+
+  /* Preliminary computations
+   * ------------------------ */
+
+  ctx.parallel_for(n_cells, [=] CS_F_HOST (cs_lnum_t c_id) {
+
+    tpdf  [c_id] = 0.0;
+    dirmin[c_id] = 0.0;
+    dirmax[c_id] = 0.0;
+    fdeb  [c_id] = 0.0;
+    ffin  [c_id] = 0.0;
+    hrec  [c_id] = 0.0;
+
+    // Change parameters T1 and T2 to acccount for fact that
+    // FMINI < FM < FMAXI
+    cs_real_t delta_t = fmaxi[c_id]-fmini[c_id];
+    cs_real_t t1mod = t1 * (delta_t * delta_t);
+    cs_real_t t2mod = t2 * delta_t;
+
+    if (   (fp2m[c_id] > t1mod)
+        && (fm[c_id] >= (fmini[c_id] + t2mod))
+        && (fm[c_id] <= (fmaxi[c_id] - t2mod)))
+      indpdf[c_id] = 1;
+    else
+      indpdf[c_id] = 0;
+
+  });
+
+  // Clip variance
+
+  cs_real_t fp2mmin1 = HUGE_VALF, fp2mmax1 = -HUGE_VALF;
+  cs_gnum_t nfp2 = 0;
+
+  if (log_active) {
+    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+      fp2mmin1 = cs_math_fmin(fp2mmin1, fp2m[c_id]);
+      fp2mmax1 = cs_math_fmax(fp2mmax1, fp2m[c_id]);
+    }
+  }
+
+  for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+    cs_real_t fp2max = (fmaxi[c_id]-fm[c_id]) * (fm[c_id]-fmini[c_id]);
+    if (fp2m[c_id] > fp2max+1.e-20) {
+      fp2m[c_id] = fp2max;
+      nfp2 += 1;
+    }
+  }
+
+  if (log_active) {
+    cs_parall_counter(&nfp2, 1);
+
+    cs_real_t fp2mmin2 = HUGE_VALF, fp2mmax2 = -HUGE_VALF;
+    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+      fp2mmin2 = cs_math_fmin(fp2mmin2, fp2m[c_id]);
+      fp2mmax2 = cs_math_fmax(fp2mmax2, fp2m[c_id]);
+    }
+    cs_real_t rval[4] = {-fp2mmin1, fp2mmax1, -fp2mmin2, fp2mmax2};
+    cs_parall_max(4, CS_REAL_TYPE, rval);
+    fp2mmin1 = -rval[0]; fp2mmax1 = rval[1];
+    fp2mmin2 = -rval[2]; fp2mmax2 = rval[3];
+
+    cs_log_printf
+      (CS_LOG_DEFAULT,
+       _("  pppdfr: variance clipping points: %llu\n"),
+       (unsigned long long)nfp2);
+
+    if (nfp2 > 0) {
+      cs_log_printf
+        (CS_LOG_DEFAULT,
+         _("     Variance before clipping min and max: %g %g\n"
+           "     Variance after  clipping min and max: %g %g\n"),
+         fp2mmin1, fp2mmax1, fp2mmin2, fp2mmax2);
+    }
+  }
+
+  /* Compute parameters of probability density function
+   * -------------------------------------------------- */
+
+  ctx.parallel_for(n_cells, [=] CS_F_HOST (cs_lnum_t c_id) {
+
+    if (indpdf[c_id] == 1) {
+      cs_real_t f_mid = (fmini[c_id] + fmaxi[c_id])*0.5;
+      cs_real_t fm_m_fmini = fm[c_id] - fmini[c_id];
+
+      if (   (   (fm[c_id] <= f_mid)
+              && (fp2m[c_id] <= cs_math_pow2(fm_m_fmini)/3.))
+          || (   (fm[c_id] > f_mid)
+              && (fp2m[c_id] <= cs_math_pow2(fmaxi[c_id] -fm[c_id])/3.))) {
+        // Rectangle only
+
+        tpdf[c_id] = 1.0;
+
+        hrec[c_id]   = sqrt(3.0*fp2m[c_id]);
+        dirmin[c_id] = 0.0;
+        dirmax[c_id] = 0.0;
+        fdeb[c_id] = fm[c_id] - hrec[c_id];
+        ffin[c_id] = fm[c_id] + hrec[c_id];
+      }
+      else if (   (fm[c_id] <= f_mid)
+               && (fp2m[c_id] <= (  fm_m_fmini
+                                  * (2.0*fmaxi[c_id] + fmini[c_id] - 3.0*fm[c_id])
+                                  / 3.0))) {
+        // Rectangle and Dirac at FMINI
+
+        tpdf[c_id] = 2.0;
+
+        fdeb[c_id]   = fmini[c_id];
+        dirmax[c_id] = 0.0;
+        ffin[c_id]   =   fmini[c_id]
+                       + 1.5*(cs_math_pow2(fm_m_fmini) + fp2m[c_id])
+                            /(fm_m_fmini);
+        dirmin[c_id] =   (3.0*fp2m[c_id] - cs_math_pow2(fm_m_fmini))
+                       / (3.*(cs_math_pow2(fm_m_fmini) + fp2m[c_id]));
+      }
+
+      else if (   (fm[c_id]  > f_mid)
+               && (fp2m[c_id] <= (  (fmaxi[c_id] - fm[c_id])
+                                  * (3.0*fm[c_id]-fmaxi[c_id]-2.0*fmini[c_id])
+                                  / 3.0))) {
+
+        // Rectangle and Dirac at FMAXI
+        // (correct: HI/81/02/03/A has an error p 12).
+
+        tpdf[c_id] = 3.0;
+
+        ffin[c_id]   = fmaxi[c_id];
+        dirmin[c_id] = 0.;
+        fdeb[c_id]   =   fmini[c_id]
+                       + 3.0*(  (cs_math_pow2(fm_m_fmini) + fp2m[c_id])
+                              +  cs_math_pow2(fmaxi[c_id] - fmini[c_id])
+                          - 4.0 * fm_m_fmini * (fmaxi[c_id] - fmini[c_id]))
+                         / (2.0*(fm[c_id] - fmaxi[c_id]));
+        dirmax[c_id] =   (3.0*fp2m[c_id] - cs_math_pow2(fm[c_id] - fmaxi[c_id]))
+                       / (3.0*(cs_math_pow2(fm[c_id] - fmaxi[c_id]) +fp2m[c_id]));
+      }
+      else {
+        // Rectangle and 2 Diracs
+
+        tpdf  [c_id] = 4.0;
+
+        fdeb[c_id]   = fmini[c_id];
+        ffin[c_id]   = fmaxi[c_id];
+        dirmax[c_id] =   3.0*(cs_math_pow2(fm_m_fmini) +fp2m[c_id])
+                       / cs_math_pow2(fmaxi[c_id] - fmini[c_id])
+                       -2.0 * (fm_m_fmini)
+                            / (fmaxi[c_id] - fmini[c_id]);
+        dirmin[c_id] =  dirmax[c_id] + 1.0
+                       - 2.0*(fm[c_id]-fmini[c_id])/(fmaxi[c_id]-fmini[c_id]);
+      }
+
+      if (fabs(ffin[c_id] - fdeb[c_id]) > epzero) {
+        hrec[c_id] = (1.0-dirmin[c_id]-dirmax[c_id]) / (ffin[c_id]-fdeb[c_id]);
+      }
+      else {
+        cs_real_t t3 = sqrt(3.*t1*cs_math_pow2(fmaxi[c_id]-fmini[c_id]));
+        fdeb[c_id] = fmin(fmaxi[c_id], fmax(fmini[c_id], fm[c_id] - t3));
+        ffin[c_id] = fmin(fmaxi[c_id], fmax(fmini[c_id], fm[c_id] + t3));
+        if (fabs(ffin[c_id] - fdeb[c_id]) > epzero)
+          hrec[c_id] = (1.0-dirmin[c_id]-dirmax[c_id]) / (ffin[c_id] - fdeb[c_id]);
+        else
+          hrec[c_id] = 0.0;
+      }
+    }
+    else  {
+      tpdf[c_id] = 0.;
+
+      dirmin[c_id] = 0.;
+      dirmax[c_id] = 0.;
+      fdeb[c_id]   = 0.;
+      ffin[c_id]   = 0.;
+      hrec[c_id]   = 0.;
+    }
+
+  });
+
+  // Check: if Hrec <= 0 we pass without the PDF
+
+  cs_gnum_t nbspdf = 0;
+  for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+    if (hrec[c_id] <= epzero && indpdf[c_id] == 1) {
+      indpdf[c_id] = 0;
+      nbspdf += 1;
+    }
+  }
+
+  if (log_active) {
+    cs_parall_counter(&nbspdf, 1);
+
+    cs_log_printf
+      (CS_LOG_DEFAULT,
+       _("  pppdfr: switch off PDF %llu\n\n"),
+       (unsigned long long)nbspdf);
+
+    /* Logging
+     * ------- */
+
+    cs_gnum_t n1 = 0, n2 = 0, n3 = 0, n4 = 0, n5 = 0, n6 = n_cells;
+
+    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+      if (indpdf[c_id] == 1) {
+        n1 += 1;
+        if (dirmin[c_id] > epzero && dirmax[c_id] < epzero)
+          n2 += 1;
+        else if (dirmin[c_id] < epzero && dirmax[c_id] > epzero)
+          n3 += 1;
+        else if (dirmin[c_id] > epzero && dirmax[c_id] > epzero)
+          n4 += 1;
+        else if (dirmin[c_id] < epzero && dirmax[c_id] < epzero)
+          n5 += 1;
+      }
+    }
+
+    cs_parall_sum_scalars(n1, n2, n3, n4, n5, n6);
+
+    cs_log_printf
+      (CS_LOG_DEFAULT,
+       _("Rectangle PDF - Dirac peaks\n"
+         "Mean, variance of transported tracer\n"
+         "Number of turbulent points (using the PDFs)   = %lu\n"
+         "Number of computation points                  = %lu\n"),
+       (unsigned long)n1, (unsigned long)n6);
+
+    cs_log_printf
+      (CS_LOG_DEFAULT,
+       _(" Nb points with rectangle PDF without Dirac              = %lu\n"
+         " - - - - - - - - - -- - - - and Dirac in FMINI           = %lu\n"
+         " - - - - - - - - - -- - - - - - - - - -  FMAXI           = %lu\n"
+         " - - - - - - - - - - - - - - - Diracs in FMINI and FMAXI = %lu\n"),
+       (unsigned long)n5, (unsigned long)n2,
+       (unsigned long)n3, (unsigned long)n4);
+  }
+}
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -704,20 +971,20 @@ _gas_comb(cs_lnum_t        n_cells,
  *
  * Joint PDF degenerated into a 1D PDF of type RECTANGLE - DIRAC
  *
- * \param[in]     f1m     mean of tracer 1 mvl [chx1m+co]
- * \param[in]     f2m     mean of tracer 2 mvl [chx2m+co]
- * \param[in]     f3m     mean of tracer 3 (oxydant 1)
- * \param[in]     f4m     mean of tracer 4 (oxydant 2)
- * \param[in]     f5m     mean of tracer 5 (oxydant 3)
- * \param[in]     f6m     mean of tracer 6 (humidity)
- * \param[in]     f7m     mean of tracer 7 (C + O2)
- * \param[in]     f8m     mean of tracer 8 (C + CO2)
- * \param[in]     f9m     mean of tracer 9 (C + H2O)
- * \param[in]     fvp2m   f1f2 variance
- * \param[in]     enth    enthalpy in \f$ j . kg^{-1} \f$  either of
- *                        the gas or of the mixture
- * \param[in]     enthox  oxydant enthalpy
- * \param[out]    rom1    gas density
+ * \param[in]       f1m     mean of tracer 1 mvl [chx1m+co]
+ * \param[in]       f2m     mean of tracer 2 mvl [chx2m+co]
+ * \param[in]       f3m     mean of tracer 3 (oxydant 1)
+ * \param[in]       f4m     mean of tracer 4 (oxydant 2)
+ * \param[in]       f5m     mean of tracer 5 (oxydant 3)
+ * \param[in]       f6m     mean of tracer 6 (humidity)
+ * \param[in]       f7m     mean of tracer 7 (C + O2)
+ * \param[in]       f8m     mean of tracer 8 (C + CO2)
+ * \param[in]       f9m     mean of tracer 9 (C + H2O)
+ * \param[in, out]  fvp2m   f1f2 variance
+ * \param[in]       enth    enthalpy in \f$ j . kg^{-1} \f$  either of
+ *                          the gas or of the mixture
+ * \param[in]       enthox  oxydant enthalpy
+ * \param[out]      rom1    gas density
  */
 /*----------------------------------------------------------------------------*/
 
@@ -731,7 +998,7 @@ _physprop1(const  cs_real_t  f1m[],
            const  cs_real_t  f7m[],
            const  cs_real_t  f8m[],
            const  cs_real_t  f9m[],
-           const  cs_real_t  fvp2m[],
+           cs_real_t         fvp2m[],
            const  cs_real_t  enth[],
            const  cs_real_t  enthox[],
            cs_real_t         rom1[])
@@ -829,11 +1096,8 @@ _physprop1(const  cs_real_t  f1m[],
     ffuel[c_id] = f1m[c_id] + f2m[c_id];
   }
 
-  cs_lnum_t ncelet = n_cells_ext;
-  cs_lnum_t ncel = n_cells;
-
-  CS_PROCF(pppdfr, PPPDFR)(&ncelet, &ncel, intpdf, tpdf, ffuel, fvp2m,
-                           fmini, fmaxi, doxyd, dfuel, pdfm1, pdfm2, hrec);
+  _pppdfr(n_cells, intpdf, tpdf, ffuel, fvp2m, fmini, fmaxi,
+          doxyd, dfuel, pdfm1, pdfm2, hrec);
 
   BFT_FREE(tpdf);
   BFT_FREE(fmini);
