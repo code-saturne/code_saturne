@@ -3409,6 +3409,7 @@ cs_saddle_solver_context_simple_clean(cs_saddle_solver_context_simple_t *ctx)
   /* Remove the setup data in SLES. The pointer to the following SLES will be
      still valid */
 
+  cs_sles_free(ctx->schur_sles);
   cs_sles_free(ctx->xtra_sles);
   cs_sles_free(ctx->init_sles);
 
@@ -4940,8 +4941,6 @@ cs_saddle_solver_simple(cs_saddle_solver_t  *solver,
   const cs_range_set_t  *rset = ctx->b11_range_set;
   const cs_matrix_t  *m11 = ctx->m11;
 
-  const cs_real_t alpha = 1;
-
   cs_real_t  *rhs1 = sh->rhs_array[0];
   cs_real_t  *rhs2 = sh->rhs_array[1];
   cs_real_t  *dx = nullptr, *r = nullptr;
@@ -4978,18 +4977,18 @@ cs_saddle_solver_simple(cs_saddle_solver_t  *solver,
   for (cs_lnum_t i1 = 0; i1 < n1_dofs; i1++)
     ctx->rhs[i1] = rhs1[i1] - m12x2[i1];
 
-  /* Initial normalization from the newly computed rhs */
-
-  double  normalization = ctx->square_norm_b11(ctx->rhs);
-
-  normalization = (fabs(normalization) > FLT_MIN) ? sqrt(normalization) : 1.0;
-
-  /* Compute the residual in Incremental formulation */
+    /* Compute the residual in Incremental formulation */
   _m11_vector_multiply_allocated(rset, m11, x1, r);
 
 # pragma omp parallel for if (n1_dofs > CS_THR_MIN)
   for (cs_lnum_t i1 = 0; i1 < n1_dofs; i1++)
     ctx->rhs[i1] -= r[i1];
+
+/* Initial normalization from the newly computed rhs */
+
+  double  normalization = ctx->square_norm_b11(ctx->rhs);
+
+  normalization = (fabs(normalization) > FLT_MIN) ? sqrt(normalization) : 1.0;
 
   /* Compute the first velocity guess
    * Modify the tolerance in order to be more accurate on this step */
