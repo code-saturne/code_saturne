@@ -962,10 +962,6 @@ SMGR can produce or modify several files in the **repository** directory:
 - `smgr_compilation.log`: summary of the compilation with `-t,
   --test-compilation` option.
 
-After the computation of a case, if no error occurs, the attribute `compute` is
-set to `"off"` in the copy of the parameters file in the **destination**. It
-allows a restart of SMGR without re-run successful previous computations.
-
 Tricks {#sec_smgr_tricks}
 ======
 

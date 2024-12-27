@@ -1877,9 +1877,6 @@ class Studies(object):
                     if not error:
                         self.reporting('    - run %s --> OK (%s)' \
                                        % (case.title, is_time))
-                        self.__parser.setAttribute(case.node,
-                                                   "compute",
-                                                   "off")
 
                         # update dest="" attribute
                         n1 = self.__parser.getChildren(case.node, "compare")
