@@ -74,6 +74,7 @@ AM_LDFLAGS =
 # Public header files (to be installed)
 
 pkginclude_HEADERS = \
+cs_combustion_boundary_conditions.h \
 cs_combustion_gas.h \
 cs_combustion_bsh.h \
 cs_soot_model.h \
@@ -84,8 +85,9 @@ cs_cogz_headers.h
 
 noinst_LIBRARIES = libcscogz.a
 libcscogz_a_SOURCES = \
-cs_combustion_gas.c \
+cs_combustion_boundary_conditions.cpp \
 cs_combustion_bsh.c \
+cs_combustion_gas.c \
 cs_soot_model.c \
 cs_steady_laminar_flamelet_source_terms.c \
 coini1.f90 \
@@ -97,7 +99,6 @@ d3phst.f90 \
 d3pini.f90 \
 d3pint.f90 \
 d3pphy.f90 \
-d3ptcl.f90 \
 d3pver.f90 \
 ebuini.f90 \
 ebuphy.f90 \

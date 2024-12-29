@@ -624,7 +624,7 @@ _write_auxiliary_checkpoint(void)
     dummy_real = cm->tinoxy;
     _WRITE_REAL_VAL("tinoxy_cod3p");
 
-    // numéro des zones
+    // Zone numbers
     cs_restart_write_section(r,
                              "num_zone_fb_cod3p",
                              3,
@@ -632,7 +632,7 @@ _write_auxiliary_checkpoint(void)
                              CS_TYPE_cs_real_t,
                              cs_glob_bc_pm_info->izfppp);
 
-    // Entree Fuel (si ce n'est pas NOZPPM, erreur)
+    // Fuel inlet (if not NOZPPM, error)
     cs_restart_write_section(r,
                              "ientfu_zone_bord_cod3p",
                              0,
@@ -640,7 +640,7 @@ _write_auxiliary_checkpoint(void)
                              CS_TYPE_int,
                              cs_glob_bc_pm_info->ientfu + 1);
 
-    // Entree oxydant (si ce n'est pas NOZPPM, erreur)
+    // Oxydant inlet (if not NOZPPM, error)
     cs_restart_write_section(r,
                              "ientox_zone_bord_cod3p",
                              0,

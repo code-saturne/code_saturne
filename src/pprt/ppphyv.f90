@@ -100,6 +100,7 @@ integer(c_int) ::  mbrom
 
 if (ippmod(icod3p).ge.0) then
   call d3pphy()
+  mbrom = 1
 endif
 
 ! ---> Diffusion flame steady laminar flamelet approach

@@ -57,6 +57,7 @@
 #include "cs_boundary_zone.h"
 #include "cs_cf_thermo.h"
 #include "cs_coal_boundary_conditions.h"
+#include "cs_combustion_boundary_conditions.h"
 #include "cs_combustion_model.h"
 #include "cs_equation_param.h"
 #include "cs_parameters.h"
@@ -91,8 +92,6 @@
 #include "cs_gui_boundary_conditions.h"
 
 /*----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
 
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
 
@@ -2017,6 +2016,47 @@ _inlet_coal(cs_tree_node_t   *tn_vp,
  *
  * parameters:
  *   tn_vp <-- tree node associated with velocity and pressure
+ *   z     <-- pointer to associated zone
+ *----------------------------------------------------------------------------*/
+
+static void
+_inlet_gas(cs_tree_node_t  *tn_vp,
+           const cs_zone_t  *z)
+{
+  cs_tree_node_t *tn = cs_tree_get_node(tn_vp, "gas_type");
+  const char *choice = cs_gui_node_get_tag(tn, "choice");
+
+  cs_combustion_bc_inlet_t *ci = cs_combustion_boundary_conditions_get_inlet(z);
+
+  if (cs_gui_strcmp(choice, "oxydant"))
+    ci->ientox = 1;
+
+  else if (cs_gui_strcmp(choice, "fuel"))
+    ci->ientfu = 1;
+
+  else if (cs_gui_strcmp(choice, "unburned")) {
+    ci->ientgf = 1;
+
+    cs_gui_node_get_child_real(tn_vp, "temperature", &ci->tkent);
+    cs_gui_node_get_child_real(tn_vp, "fraction", &ci->fment);
+  }
+  else if (cs_gui_strcmp(choice, "burned")) {
+
+    ci->ientgb = 1;
+
+    cs_gui_node_get_child_real(tn_vp, "temperature", &ci->tkent);
+    cs_gui_node_get_child_real(tn_vp, "fraction", &ci->fment);
+  }
+}
+
+/*-----------------------------------------------------------------------------
+ * Get gas combustion's data for inlet.
+ *
+ * Check if the current zone is an inlet only for an oxydant,
+ * or for oxydant and coal.
+ *
+ * parameters:
+ *   tn_vp <-- tree node associated with velocity and pressure
  *   izone <-- associated zone id
  *----------------------------------------------------------------------------*/
 
@@ -2528,8 +2568,10 @@ _init_boundaries(void)
         _inlet_coal(tn_vp, z);
 
       /* Inlet: data for gas combustion */
-      if (gas_combustion)
+      if (gas_combustion) {
         _inlet_gas(tn_vp, izone);
+        _inlet_gas(tn_vp, z);
+      }
 
       /* Inlet: complete data for compressible model */
       if (cs_glob_physical_model_flag[CS_COMPRESSIBLE] > -1)
@@ -2705,6 +2747,8 @@ _init_zones(const cs_lnum_t   n_b_faces,
 }
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
+
+BEGIN_C_DECLS
 
 /*============================================================================
  * Public function definitions

@@ -262,7 +262,7 @@ cs_soot_production(int        f_id,
     const cs_real_t lsp_c2h4 = 0.106, af_c2h4 = 4.e-5;
     cs_real_t fst = cm->fs[0];
     cs_real_t a0 = 120., as = 160.e3;
-    cs_real_t gama = 2.25, tact = 2000., yft = 1., rcto0 = 0.6;
+    cs_real_t gama = 2.25, tact = 2000., yft = 1.;
 
     /* lsp_fuel set by the user */
     const cs_real_t lsp_fuel = cm->lsp_fuel;

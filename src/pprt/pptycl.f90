@@ -99,6 +99,13 @@ interface
     integer(c_int), dimension(*) :: bc_type
   end subroutine cs_coal_boundary_conditions
 
+  subroutine cs_combustion_boundary_conditions(bc_type)  &
+    bind(C, name='cs_combustion_boundary_conditions')
+    use, intrinsic :: iso_c_binding
+    implicit none
+    integer(c_int), dimension(*) :: bc_type
+  end subroutine cs_combustion_boundary_conditions
+
   subroutine cs_ctwr_bcond()  &
     bind(C, name='cs_ctwr_bcond')
     use, intrinsic :: iso_c_binding
@@ -193,7 +200,7 @@ if (init .eqv. .true.) return
 ! ---> Chimie 3 points : USD3PC
 
 if (ippmod(icod3p).ge.0) then
-  call d3ptcl(itypfb, izfppp, icodcl, rcodcl)
+  call cs_combustion_boundary_conditions(itypfb)
 
 ! ---> Steady laminar flamelet
 

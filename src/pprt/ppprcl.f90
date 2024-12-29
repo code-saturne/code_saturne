@@ -117,24 +117,6 @@ elseif ( ippmod(icoebu).ge.0 ) then
     izfppp(ifac) = 0
   enddo
 
-! ---> Compressible
-
-elseif (ippmod(icompf).ge.0) then
-
-  do ifac = 1, nfabor
-    izfppp(ifac) = 0
-  enddo
-
-! ---> Version electrique
-!      Effet Joule
-!      Conduction ionique
-
-elseif (ippmod(ieljou).ge.1 .or. ippmod(ielarc).ge.1) then
-
-  do ifac = 1, nfabor
-    izfppp(ifac) = 0
-  enddo
-
 endif
 
 !----

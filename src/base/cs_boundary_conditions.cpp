@@ -3264,7 +3264,7 @@ cs_boundary_conditions_open_set_mass_flow_rate_by_value(const  cs_zone_t  *z,
   c->scale_func = _scale_vel_mass_flow_rate;
   c->scale_func_input = c;
 
-  for (int i = CS_COMBUSTION_3PT; i < CS_COMBUSTION_COAL; i++) {
+  for (int i = CS_COMBUSTION_SLFM; i < CS_COMBUSTION_COAL; i++) {
     if (cs_glob_physical_model_flag[i] >= 0) {
       c->scale_func = nullptr;
       c->scale_func_input = nullptr;
@@ -3362,7 +3362,7 @@ cs_boundary_conditions_open_set_mass_flow_rate_by_func
   c->scale_func = _scale_vel_mass_flow_rate;
   c->scale_func_input = c;
 
-  for (int i = CS_COMBUSTION_3PT; i < CS_COMBUSTION_COAL; i++) {
+  for (int i = CS_COMBUSTION_SLFM; i < CS_COMBUSTION_COAL; i++) {
     if (cs_glob_physical_model_flag[i] >= 0) {
       c->scale_func = nullptr;
       c->scale_func_input = nullptr;

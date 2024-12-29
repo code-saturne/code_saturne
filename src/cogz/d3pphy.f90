@@ -76,7 +76,16 @@ integer       ipass
 data          ipass /0/
 save          ipass
 
-!===============================================================================
+interface
+
+  subroutine cs_combustion_boundary_conditions_inlet_density()  &
+    bind(C, name='cs_combustion_boundary_conditions_inlet_density')
+    use, intrinsic :: iso_c_binding
+    implicit none
+  end subroutine cs_combustion_boundary_conditions_inlet_density
+
+end interface
+
 !===============================================================================
 ! 0. ON COMPTE LES PASSAGES
 !===============================================================================
@@ -138,6 +147,8 @@ enddo
 
 ! Free memory
 deallocate(kir)
+
+call cs_combustion_boundary_conditions_inlet_density
 
 !----
 ! END
