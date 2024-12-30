@@ -101,16 +101,16 @@ _compute_temperature
   cs_real_t yspece[N_Z][CS_COMBUSTION_GAS_MAX_ELEMENTARY_COMPONENTS]
 )
 {
-  cs_lnum_t iz, ixr, iter, ie, k, icp;
-  cs_real_t deltat, som1, som2, dvar, var1, var;
+  cs_lnum_t iter, ie, k, icp;
+  cs_real_t som1, som2, dvar, var1, var;
 
   cs_combustion_gas_model_t *cm    = cs_glob_combustion_gas_model;
   const cs_lnum_t            ngaze = cm->n_gas_el_comp;
 
-  deltat = 1.0e-7;
+  cs_real_t deltat = 1.0e-7;
 
-  for (ixr = 0; ixr < N_XR; ixr++) {
-    for (iz = 0; iz < N_Z; iz++) {
+  for (int ixr = 0; ixr < N_XR; ixr++) {
+    for (int iz = 0; iz < N_Z; iz++) {
 
       var  = t[iz][ixr];
       iter = 0;
@@ -554,7 +554,10 @@ cs_burke_schumann(void)
   const cs_real_t q         = 0.5;
 
   cs_real_t hunburnt, had;
-  cs_real_t yspecg[N_Z][ngazgm], yspece[N_Z][ngazem], yspec[ngazem], ytot;
+  cs_real_t yspecg[N_Z][CS_COMBUSTION_GAS_MAX_GLOBAL_SPECIES];
+  cs_real_t yspece[N_Z][CS_COMBUSTION_GAS_MAX_ELEMENTARY_COMPONENTS];
+  cs_real_t yspec[CS_COMBUSTION_GAS_MAX_ELEMENTARY_COMPONENTS];
+  cs_real_t ytot;
   cs_real_t xr[N_Z][N_XR], h[N_Z][N_XR], t[N_Z][N_XR], rho[N_Z][N_XR];
 
   // Space discretization of the mixture fraction
@@ -606,6 +609,10 @@ cs_burke_schumann(void)
   }
 
   // Calculation of the enthalpy
+
+  for (ii = 0; ii < ngazem; ii++)
+    yspec[ii] = 0;
+
   yspec[0]   = yspece[N_Z - 1][0];
   cm->hinfue = cs_compute_burke_schumann_enthalpy(cm->tinfue, yspec);
 
@@ -761,22 +768,19 @@ cs_compute_burke_schumann_enthalpy
  cs_real_t yspec[CS_COMBUSTION_GAS_MAX_ELEMENTARY_COMPONENTS]
 )
 {
-  cs_lnum_t ne, i, icp;
-  cs_real_t h, he;
-
   cs_combustion_gas_model_t *cm    = cs_glob_combustion_gas_model;
-  const cs_lnum_t            ngaze = cm->n_gas_el_comp;
+  const int                  ngaze = cm->n_gas_el_comp;
 
   // Determination of the set of coefficients used
-  icp = 1;
+  int icp = 1;
   if (t > 1000.0)
     icp = 0;
 
-  h = 0.0;
+  cs_real_t h = 0.0;
 
-  for (ne = 0; ne < ngaze; ne++) {
-    he = coeff_therm[5][icp][ne];
-    for (i = 0; i < 5; i++) {
+  for (int ne = 0; ne < ngaze; ne++) {
+    cs_real_t he = coeff_therm[5][icp][ne];
+    for (int i = 0; i < 5; i++) {
       he += coeff_therm[i][icp][ne] / (i + 1) * pow(t, i + 1);
     }
     h += he * yspec[ne];

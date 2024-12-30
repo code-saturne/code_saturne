@@ -83,7 +83,8 @@ cs_burke_schumann(void);
  */
 /*----------------------------------------------------------------------------*/
 
-cs_real_t cs_compute_burke_schumann_enthalpy
+cs_real_t
+cs_compute_burke_schumann_enthalpy
 (
   cs_real_t t,
   cs_real_t yspec[CS_COMBUSTION_GAS_MAX_ELEMENTARY_COMPONENTS]
