@@ -167,7 +167,7 @@ cs_coal_boundary_conditions_inlet_set_air_mass_flow_rate_by_func
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Automatic boundary condition for pulverized coal combution.
+ * \brief Automatic boundary condition for pulverized coal combustion.
  *
  * \param[in]  bc_type  type of boundary for each face
  */
