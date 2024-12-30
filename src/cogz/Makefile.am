@@ -49,7 +49,6 @@ AM_CPPFLAGS = \
 $(CPPFLAGS_PLE) \
 $(MPI_CPPFLAGS)
 
-AM_CFLAGS = $(CFLAGS_DBG) $(CFLAGS_OPT) $(CFLAGS_SHARED)
 AM_CXXFLAGS = $(CXXFLAGS_STD) $(CXXFLAGS_SYCL) $(CXXFLAGS_DBG) $(CXXFLAGS_OPT) $(CXXFLAGS_SHARED)
 
 AM_FCFLAGS = \
@@ -86,10 +85,10 @@ cs_cogz_headers.h
 noinst_LIBRARIES = libcscogz.a
 libcscogz_a_SOURCES = \
 cs_combustion_boundary_conditions.cpp \
-cs_combustion_bsh.c \
-cs_combustion_gas.c \
-cs_soot_model.c \
-cs_steady_laminar_flamelet_source_terms.c \
+cs_combustion_bsh.cpp \
+cs_combustion_gas.cpp \
+cs_soot_model.cpp \
+cs_steady_laminar_flamelet_source_terms.cpp \
 coini1.f90 \
 colecd.f90 \
 coprop.f90 \
