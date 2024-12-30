@@ -1259,7 +1259,7 @@ _read_auxiliary_checkpoint(cs_map_name_to_id_t *old_field_map)
                                        "num_zone_fb_cod3p",
                                        3,
                                        1,
-                                       CS_TYPE_cs_real_t,
+                                       CS_TYPE_int,
                                        cs_glob_bc_pm_info->izfppp);
 
       // Entree Fuel (si ce n'est pas NOZPPM, erreur)
@@ -1315,7 +1315,7 @@ _read_auxiliary_checkpoint(cs_map_name_to_id_t *old_field_map)
                                        "num_zone_fb_slfm",
                                        3,
                                        1,
-                                       CS_TYPE_cs_real_t,
+                                       CS_TYPE_int,
                                        cs_glob_bc_pm_info->izfppp);
 
       // Entree Fuel (si ce n'est pas NOZPPM, erreur)
@@ -1361,7 +1361,7 @@ _read_auxiliary_checkpoint(cs_map_name_to_id_t *old_field_map)
                                        "num_zone_fb_ebu",
                                        3,
                                        1,
-                                       CS_TYPE_cs_real_t,
+                                       CS_TYPE_int,
                                        cs_glob_bc_pm_info->izfppp);
 
       // Entree gas brule
