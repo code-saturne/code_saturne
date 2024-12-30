@@ -28,6 +28,7 @@
  * Standard C library headers
  *----------------------------------------------------------------------------*/
 
+#include <assert.h>
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -399,14 +400,13 @@ cs_compute_burke_schumann_properties(cs_real_t z_m_0,
                                      cs_real_t xr_m_0,
                                      cs_real_t phi_t[NVAR_TURB])
 {
-  cs_real_t *xdata;
+  cs_real_t  xdata[N_Z];  // largest of NZ, N_ZVAR, N_XR;
+  assert(N_Z >= N_ZVAR && N_Z >= N_XR);
+
   cs_real_t  phi_4[NVAR_TURB][N_XR][N_ZVAR];
   cs_real_t  phi_3[NVAR_TURB][N_XR];
   cs_real_t  weight_z_m, weight_z_var, weight_xr_m;
   cs_lnum_t  i, j, k, dataindex;
-
-  // Allocate memory for xdata
-  BFT_MALLOC(xdata, N_Z, cs_real_t);
 
   // Start with z_m
   for (i = 0; i < N_Z; i++) {
@@ -414,7 +414,7 @@ cs_compute_burke_schumann_properties(cs_real_t z_m_0,
   }
   dataindex = 0;
 
-  while (xdata[dataindex] < z_m_0 && dataindex < N_Z) {
+  while (xdata[dataindex] < z_m_0 && dataindex < N_Z-1) {
     dataindex++;
   }
 
@@ -453,9 +453,6 @@ cs_compute_burke_schumann_properties(cs_real_t z_m_0,
     }
   }
 
-  BFT_FREE(xdata);
-  BFT_MALLOC(xdata, N_ZVAR, cs_real_t);
-
   // Then interpolate over z_var
   for (i = 0; i < N_ZVAR; i++) {
     xdata[i] = phi_4[1][0][i];
@@ -493,16 +490,13 @@ cs_compute_burke_schumann_properties(cs_real_t z_m_0,
     }
   }
 
-  BFT_FREE(xdata);
-  BFT_MALLOC(xdata, N_XR, cs_real_t);
-
   // Then interpolate over XR_m
   for (i = 0; i < N_XR; i++) {
     xdata[i] = phi_3[2][i];
   }
   dataindex = 0;
 
-  while (xdata[dataindex] < xr_m_0 && dataindex < N_XR) {
+  while (xdata[dataindex] < xr_m_0 && dataindex < N_XR-1) {
     dataindex++;
   }
 
@@ -526,8 +520,6 @@ cs_compute_burke_schumann_properties(cs_real_t z_m_0,
       phi_t[i] = phi_3[i][N_XR - 1];
     }
   }
-
-  BFT_FREE(xdata);
 }
 
 /*----------------------------------------------------------------------------*/
