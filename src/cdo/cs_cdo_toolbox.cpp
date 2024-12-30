@@ -244,8 +244,9 @@ cs_cdo_toolbox_init(const cs_cdo_connect_t *connect,
   BFT_MALLOC(cs_cdo_toolbox_work_buffer, wb_size, double);
 
   /* Allocate MAC builder */
-
-  cs_macfb_builder_initialize();
+  if (mac_flag > 0) {
+    cs_macfb_builder_initialize();
+  }
 }
 
 /*----------------------------------------------------------------------------*/
