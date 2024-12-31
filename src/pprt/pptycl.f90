@@ -113,6 +113,13 @@ interface
     integer(c_int), dimension(*) :: bc_type
   end subroutine cs_combustion_boundary_conditions_ebu
 
+  subroutine cs_combustion_boundary_conditions_lw(bc_type)  &
+    bind(C, name='cs_combustion_boundary_conditions_lw')
+    use, intrinsic :: iso_c_binding
+    implicit none
+    integer(c_int), dimension(*) :: bc_type
+  end subroutine cs_combustion_boundary_conditions_lw
+
   subroutine cs_ctwr_bcond()  &
     bind(C, name='cs_ctwr_bcond')
     use, intrinsic :: iso_c_binding
@@ -219,7 +226,7 @@ elseif (ippmod(icoebu).ge.0) then
 !      Flamme de premelange modele LWC
 
 elseif (ippmod(icolwc).ge.0) then
-  call lwctcl(itypfb, izfppp, rcodcl)
+  call cs_combustion_boundary_conditions_lw(itypfb)
 
 ! ---> Combustion charbon pulverise
 

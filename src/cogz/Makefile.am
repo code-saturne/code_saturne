@@ -107,7 +107,6 @@ gauss.f90 \
 lwcgfu.f90 \
 lwcini.f90 \
 lwcphy.f90 \
-lwctcl.f90 \
 lwctss.f90 \
 lwcurl.f90 \
 lwcver.f90 \

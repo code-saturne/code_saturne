@@ -390,7 +390,7 @@ cs_combustion_boundary_conditions_ebu(int  bc_type[])
     for (int i = 0; i < CS_COMBUSTION_GAS_MAX_GLOBAL_SPECIES; i++)
       coefg[0] = 0;
 
-    cs_real_t ygfm_in = 0, h_in = 0;
+    cs_real_t ygfm_in = 0, h_in = 0, fm_in = ci->fment;
 
     /* Cold premix or dilution */
     if (ci->ientgf == 1) {
@@ -414,8 +414,6 @@ cs_combustion_boundary_conditions_ebu(int  bc_type[])
       ygfm_in = 0.;
     }
 
-    cs_real_t fm_in = ci->fment;
-
     for (cs_lnum_t elt_idx = 0; elt_idx < n_elts; elt_idx++) {
       cs_lnum_t elt_id = elt_ids[elt_idx];
       if (   bc_type[elt_id] == CS_INLET
@@ -434,6 +432,151 @@ cs_combustion_boundary_conditions_ebu(int  bc_type[])
     } /* loop on zone faces */
 
   } /* loop on zones */
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Automatic boundary condition for gas combustion with Libby-Williams
+ *        model.
+ *
+ * \param[in]  bc_type  type of boundary for each face
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_combustion_boundary_conditions_lw(int  bc_type[])
+{
+  /* Initialization
+   * ============== */
+
+  const int lw_model = cs_glob_physical_model_flag[CS_COMBUSTION_LW];
+  assert(lw_model > -1);
+
+  cs_combustion_gas_model_t *cm = cs_glob_combustion_gas_model;
+
+  /* Boundary conditions of mass fraction of fuel */
+  cs_real_t *rcodcl1_yfm
+    = cs_field_by_name("mass_fraction")->bc_coeffs->rcodcl1;
+
+  /* Boundary conditions of mass fraction variance of fuel */
+  cs_real_t *rcodcl1_yfp2m
+    = cs_field_by_name("mass_fraction_variance")->bc_coeffs->rcodcl1;
+
+  /* Boundary conditions of mixture fraction */
+  cs_real_t *rcodcl1_fm
+    = cs_field_by_name("mixture_fraction")->bc_coeffs->rcodcl1;
+
+  /* Boundary conditions of mixture fraction variance */
+  cs_real_t *rcodcl1_fp2m
+    = cs_field_by_name("mixture_fraction_variance")->bc_coeffs->rcodcl1;
+
+  /* Boundary conditions for H */
+  cs_real_t *rcodcl1_coyfp = nullptr;
+  if (lw_model >= 2) {
+    rcodcl1_coyfp
+      = cs_field_by_name("mass_fraction_covariance")->bc_coeffs->rcodcl1;
+  }
+
+  /* Boundary conditions for H */
+  cs_real_t *rcodcl1_h = nullptr;
+
+  if (lw_model == 1 || lw_model == 3 || lw_model == 5) {
+    if (CS_F_(h) != nullptr)
+      rcodcl1_h = CS_F_(h)->bc_coeffs->rcodcl1;
+  }
+
+  /* Min and max values at inlets */
+
+  cs_real_t fm_min = HUGE_VALF, h_min = HUGE_VALF;
+  cs_real_t fm_max = -HUGE_VALF, h_max = -HUGE_VALF;
+
+  /* Loop on inlet boundaries
+     ======================== */
+
+  assert(cs_glob_boundaries != NULL);
+
+  const cs_boundary_t *bdy = cs_glob_boundaries;
+
+  for (int bdy_idx = 0; bdy_idx < bdy->n_boundaries; bdy_idx += 1) {
+
+    if (! (bdy->types[bdy_idx] & CS_BOUNDARY_INLET))
+      continue;
+
+    const cs_zone_t *z = cs_boundary_zone_by_id(bdy->zone_ids[bdy_idx]);
+
+    const cs_lnum_t n_elts = z->n_elts;
+    const cs_lnum_t *elt_ids = z->elt_ids;
+
+    auto ci = reinterpret_cast<cs_combustion_bc_inlet_t *>
+                (cs_boundary_conditions_get_model_inlet(z));
+
+    cs_real_t coefg[CS_COMBUSTION_GAS_MAX_GLOBAL_SPECIES];
+    for (int i = 0; i < CS_COMBUSTION_GAS_MAX_GLOBAL_SPECIES; i++)
+      coefg[0] = 0;
+
+    cs_real_t yfm_in = 0, h_in = 0;
+
+    /* Enthlapy of gas mix. Assumes inlet is either ientgf = 1 or ientgf = 1 */
+
+    if (ci->ientgf == 1) {       /* Fresh gas inlet */
+      coefg[0] = ci->fment;
+      coefg[1] = 1. - ci->fment;
+      cs_real_t tgazf = ci->tkent;
+      cs_real_t hgazf = cs_gas_combustion_t_to_h(coefg, tgazf);
+      h_in = hgazf;
+      yfm_in = ci->fment;
+    }
+    else if (ci->ientgb == 1) {  /* Burned gas inlet */
+      coefg[0] = ci->fment;
+      coefg[1] = 1. - ci->fment;
+      cs_real_t tgazb = ci->tkent;
+      cs_real_t hgazb = cs_gas_combustion_t_to_h(coefg, tgazb);
+      h_in = hgazb;
+      yfm_in = 0;
+    }
+
+    cs_real_t fm_in = ci->fment;
+
+    for (cs_lnum_t elt_idx = 0; elt_idx < n_elts; elt_idx++) {
+      cs_lnum_t elt_id = elt_ids[elt_idx];
+      if (   bc_type[elt_id] == CS_INLET
+          || bc_type[elt_id] == CS_CONVECTIVE_INLET) {
+
+        rcodcl1_yfm[elt_id]   = yfm_in;     // fuel mass fraction
+        rcodcl1_yfp2m[elt_id] = 0.;         // mass fraction variance
+        rcodcl1_fm[elt_id]    = fm_in;      // mixture fraction
+        rcodcl1_fp2m[elt_id]  = 0.;         // mixture fraction variance
+
+        if (rcodcl1_coyfp != nullptr)
+          rcodcl1_coyfp[elt_id] = 0.;       // mass fraction covariance
+
+        if (rcodcl1_h != nullptr)
+          rcodcl1_h[elt_id] = h_in;         // mixture enthalpy
+
+      }
+
+    } /* loop on zone faces */
+
+    /* Update min/max */
+
+    if (fm_in < fm_min) {
+      fm_min = fm_in;
+      h_min = h_in;
+    }
+    if (fm_in > fm_max) {
+      fm_max = fm_in;
+      h_max = h_in;
+    }
+
+  } /* loop on zones */
+
+  cs_parall_min_loc_vals(1, &fm_min, & h_min);
+  cs_parall_max_loc_vals(1, &fm_max, & h_max);
+
+  cm->fmin_lwc = fm_min;
+  cm->fmax_lwc = fm_max;
+  cm->hmin_lwc = h_min;
+  cm->hmax_lwc = h_max;
 }
 
 /*----------------------------------------------------------------------------*/
