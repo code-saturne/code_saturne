@@ -31,6 +31,7 @@
 
 #include "cs_combustion_gas.h"
 #include "cs_combustion_boundary_conditions.h"
+#include "cs_combustion_ht_convert.h"
 #include "cs_soot_model.h"
 
 /*----------------------------------------------------------------------------*/

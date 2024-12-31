@@ -45,6 +45,7 @@
 #include "bft_error.h"
 
 #include "cs_coal_ht_convert.h"
+#include "cs_combustion_ht_convert.h"
 #include "cs_elec_model.h"
 #include "cs_field.h"
 #include "cs_field_pointer.h"
@@ -83,24 +84,6 @@ BEGIN_C_DECLS
 */
 
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
-
-/*============================================================================
- * Prototypes for Fortran subroutines
- *============================================================================*/
-
-extern void CS_PROCF(coh2tb, COH2TB)
-(
-  const cs_real_t  *h,
-  cs_real_t        *t
-);
-
-extern void CS_PROCF(cot2hb, COT2HB)
-(
-  const cs_lnum_t  *n_faces,
-  const cs_lnum_t  *face_ids,
-  const cs_real_t  *t,
-  cs_real_t        *h
-);
 
 /*=============================================================================
  * Local macro definitions
@@ -316,7 +299,7 @@ cs_ht_convert_h_to_t_faces(const cs_real_t  h[],
   if (   pm_flag[CS_COMBUSTION_EBU] >= 0
       || pm_flag[CS_COMBUSTION_3PT] >= 0
       || pm_flag[CS_COMBUSTION_SLFM]>= 0)
-    CS_PROCF(coh2tb, COH2TB)(h, t);
+    cs_combustion_ht_convert_h_to_t_faces(h, t);
 
   /* Pulverized coal combustion */
   else if (pm_flag[CS_COMBUSTION_COAL] >= 0)
@@ -426,7 +409,7 @@ cs_ht_convert_t_to_h_faces_l(cs_lnum_t        n_faces,
   if (   pm_flag[CS_COMBUSTION_EBU] >= 0
       || pm_flag[CS_COMBUSTION_3PT] >= 0
       || pm_flag[CS_COMBUSTION_SLFM] >= 0)
-    CS_PROCF(cot2hb, COT2HB)(&n_faces, face_ids, t, h);
+    cs_combustion_ht_convert_t_to_h_faces_l(n_faces, face_ids, t, h);
 
   /* Pulverized coal combustion */
   else if (pm_flag[CS_COMBUSTION_COAL] >= 0)
@@ -434,7 +417,7 @@ cs_ht_convert_t_to_h_faces_l(cs_lnum_t        n_faces,
 
   /* Electric arcs */
   else if (pm_flag[CS_JOULE_EFFECT] < 1 && pm_flag[CS_ELECTRIC_ARCS] >= 1)
-    cs_elec_convert_t_to_h_faces(n_faces,  face_ids, t, h);
+    cs_elec_convert_t_to_h_faces(n_faces, face_ids, t, h);
 
   /* Default for other cases
      ----------------------- */
@@ -570,7 +553,7 @@ cs_ht_convert_t_to_h_faces_z(const cs_zone_t *z,
   if (   pm_flag[CS_COMBUSTION_EBU] >= 0
       || pm_flag[CS_COMBUSTION_3PT] >= 0
       || pm_flag[CS_COMBUSTION_SLFM] >= 0)
-    CS_PROCF(cot2hb, COT2HB)(&n_faces, face_ids, t_b, h_b);
+    cs_combustion_ht_convert_t_to_h_faces_z(z, t, h);
 
   /* Pulverized coal combustion */
   else if (pm_flag[CS_COMBUSTION_COAL] >= 0)

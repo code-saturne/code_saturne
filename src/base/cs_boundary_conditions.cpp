@@ -2797,6 +2797,38 @@ cs_boundary_conditions_get_model_inlet(const cs_zone_t  *zone)
 }
 
 /*----------------------------------------------------------------------------*/
+/*!
+ * \brief Return pointer to model inlet structure associated with a given
+ *        boundary zone, if associated, or null otherwise.
+ *
+ * The returned pointer is of type void * as it should be cast to the
+ * appropriate (model-dependent) type.
+
+ * If the zone is not and inlet or no matching parent open boundary has
+ * been created yet, it is created, null is returned.
+ *
+ * \param[in]  zone  pointer to associated zone
+ *
+ * \return: pointer to structure associated with zone, or null
+ */
+/*----------------------------------------------------------------------------*/
+
+void *
+cs_boundary_conditions_get_model_inlet_try(const cs_zone_t  *zone)
+{
+  assert(zone != nullptr);
+
+  assert(zone != nullptr);
+
+  for (int i = 0; i < _n_bc_open; i++) {
+    if (_bc_open[i]->zone->id == zone->id)
+      return _bc_open[i];
+  }
+
+  return nullptr;
+}
+
+/*----------------------------------------------------------------------------*/
 /*
  * \brief Return legacy zone number related to a given zone, if available.
  *

@@ -74,8 +74,9 @@ AM_LDFLAGS =
 
 pkginclude_HEADERS = \
 cs_combustion_boundary_conditions.h \
-cs_combustion_gas.h \
 cs_combustion_bsh.h \
+cs_combustion_gas.h \
+cs_combustion_ht_convert.h \
 cs_soot_model.h \
 cs_steady_laminar_flamelet_source_terms.h \
 cs_cogz_headers.h
@@ -87,6 +88,7 @@ libcscogz_a_SOURCES = \
 cs_combustion_boundary_conditions.cpp \
 cs_combustion_bsh.cpp \
 cs_combustion_gas.cpp \
+cs_combustion_ht_convert.cpp \
 cs_soot_model.cpp \
 cs_steady_laminar_flamelet_source_terms.cpp \
 coini1.f90 \
