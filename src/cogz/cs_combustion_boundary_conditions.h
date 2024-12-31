@@ -106,6 +106,17 @@ cs_combustion_boundary_conditions(int  bc_type[]);
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Automatic boundary condition for gas combustion with EBU model.
+ *
+ * \param[in]  bc_type  type of boundary for each face
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_combustion_boundary_conditions_ebu(int  bc_type[]);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Compute density at boundary for pulverized combustion combustion.
  *
  * This is based on boundary condition definitions, but is called at an

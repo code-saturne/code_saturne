@@ -182,24 +182,29 @@ typedef struct {
 
   cs_combustion_gas_model_type_t  type;  /*!< combustion model type */
 
-  char   *data_file_name;          /* Name of thermochemistry data file */
+  char   *data_file_name;       /* Name of thermochemistry data file */
 
-  bool    use_janaf;               /*! use NIST-JANAF tables for
-                                     enthalpy/temperature conversion */
+  bool    use_janaf;            /*! use NIST-JANAF tables for
+                                    enthalpy/temperature conversion */
 
-  int     iic;                     /*!< rank of C in gas composition (base 1) */
-  int     iico2;                   /*!< rank of CO2 in gas composition (base 1) */
-  int     iio2;                    /*!< rank of O2 in gas composition  (base 1) */
-  int     isoot;                   /*!< soot production modeling flag */
+  int     iic;                  /*!< rank of C in gas composition (base 1) */
+  int     iico2;                /*!< rank of CO2 in gas composition (base 1) */
+  int     iio2;                 /*!< rank of O2 in gas composition  (base 1) */
+  int     isoot;                /*!< soot production modeling flag */
+  int     ientgf;               /*!< fresh gas indicator (EBU and LW only) */
+  int     ientgb;               /*!< burned gas indicator (EBU and LW only) */
 
-  double  hinfue;                  /*!< input mass enthalpy for fuel */
-  double  tinfue;                  /*!< input temperature for fuel en K */
-  double  tinoxy;                  /*!< input temperature for oxydant */
-  double  hinoxy;                  /*!< input mass enthalpy for the oxidant */
+  double  hinfue;               /*!< input mass enthalpy for fuel */
+  double  tinfue;               /*!< input temperature for fuel en K */
+  double  tinoxy;               /*!< input temperature for oxydant */
+  double  hinoxy;               /*!< input mass enthalpy for the oxidant */
 
-  double  xsoot;                   /*!< soot fraction production (isoot = 0) */
-  double  rosoot;                  /*!< soot density */
-  double  lsp_fuel;                /*!< Laminar smoke point length */
+  double  xsoot;                /*!< soot fraction production (isoot = 0) */
+  double  rosoot;               /*!< soot density */
+  double  lsp_fuel;             /*!< laminar smoke point length */
+
+  double  frmel;                /*!< constant mixture fraction (EBU only) */
+  double  tgf;                  /*!< fresh gas temperature (EBU and LW only) */
 
   /*! molar mass of global species */
   double  wmolg[CS_COMBUSTION_GAS_MAX_GLOBAL_SPECIES];

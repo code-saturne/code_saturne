@@ -190,9 +190,7 @@ cs_f_boundary_conditions_get_coincl_pointers(int     **ientfu,
                                              int     **ientgf,
                                              double  **tkent,
                                              double  **fment,
-                                             double  **qimp,
-                                             double  **tgf,
-                                             double  **frmel);
+                                             double  **qimp);
 
 /*============================================================================
  * Private function definitions
@@ -1569,9 +1567,7 @@ cs_f_boundary_conditions_get_coincl_pointers(int     **ientfu,
                                              int     **ientgf,
                                              double  **tkent,
                                              double  **fment,
-                                             double  **qimp,
-                                             double  **tgf,
-                                             double  **frmel)
+                                             double  **qimp)
 {
   /* Shift 1d-arrays by 1 to compensate for Fortran 1-based access */
 
@@ -1582,9 +1578,6 @@ cs_f_boundary_conditions_get_coincl_pointers(int     **ientfu,
   *tkent  = cs_glob_bc_pm_info->tkent  + 1;
   *fment  = cs_glob_bc_pm_info->fment  + 1;
   *qimp   = cs_glob_bc_pm_info->qimp   + 1;
-
-  *tgf    = &(cs_glob_bc_pm_info->tgf);
-  *frmel  = &(cs_glob_bc_pm_info->frmel);
 }
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
@@ -2329,10 +2322,6 @@ cs_boundary_conditions_create_legacy_zone_data(void)
     bc_pm_info->fment[i]  = 0.;
   }
 
-  /* Initialization for tgf and frmel */
-  bc_pm_info->tgf   = 300.;
-  bc_pm_info->frmel = 0.;
-
   bc_pm_info->iautom = nullptr;
 }
 
@@ -2671,117 +2660,6 @@ cs_boundary_conditions_compute(int  bc_type[])
 
   BFT_FREE(eval_buf);
 
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Define automatic turbulence values for specific physical modules.
- *
- * The definitions are similar to those of the standard case, though wall
- * shear direction is not computed for second-order models, and determination
- * of face BC types is done using the legacy physical model zone info
- * (cs_glob_bc_pm_info->izfpp, ...).
- *
- * \deprecated  Code should migrate to the "per zone" open boundary condition
- * definitions.
- *
- * \param[in]  bc_type  type of boundary for each face
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_boundary_conditions_legacy_turbulence(int  bc_type[])
-{
-  const cs_mesh_t *m = cs_glob_mesh;
-  const cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
-  const cs_lnum_t n_b_faces = m->n_b_faces;
-  const cs_lnum_t *b_face_cells = m->b_face_cells;
-
-  const cs_real_3_t *f_n = (const cs_real_3_t *)mq->b_face_u_normal;
-
-  const cs_real_t *b_rho = CS_F_(rho_b)->val;
-  const cs_real_t *c_mu = CS_F_(mu)->val;
-
-  const cs_real_t  *_rcodcl_v[3];
-  for (cs_lnum_t coo_id = 0; coo_id < 3; coo_id++)
-    _rcodcl_v[coo_id] = CS_F_(vel)->bc_coeffs->rcodcl1 + coo_id*n_b_faces;
-
-  const int *izfpp = cs_glob_bc_pm_info->izfppp;
-  const int *icalke = cs_glob_bc_pm_info->icalke;
-  const cs_real_t *dh = cs_glob_bc_pm_info->dh;
-  const cs_real_t *xintur = cs_glob_bc_pm_info->xintur;
-
-  for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++) {
-
-    int f_face_type = bc_type[face_id];
-
-    if (   f_face_type != CS_INLET
-        && f_face_type != CS_FREE_INLET
-        && f_face_type != CS_CONVECTIVE_INLET)
-      continue;
-
-    int zone_id = izfpp[face_id];
-    if (zone_id < 1)
-      continue;
-
-    cs_real_t vel[3] = {_rcodcl_v[0][face_id],
-                        _rcodcl_v[1][face_id],
-                        _rcodcl_v[2][face_id]};
-
-    if (cs_math_3_dot_product(vel, f_n[face_id]) > 0) {
-      cs_turbulence_bc_set_hmg_neumann(face_id);
-      continue;
-    }
-
-    if (icalke[zone_id] == 1) {
-      cs_real_t uref2 = fmax(cs_math_3_square_norm(vel), cs_math_epzero);
-      cs_lnum_t cell_id = b_face_cells[face_id];
-
-      cs_turbulence_bc_inlet_hyd_diam(face_id,
-                                      uref2,
-                                      dh[zone_id],
-                                      b_rho[face_id],
-                                      c_mu[cell_id]);
-    }
-
-    else if (icalke[zone_id] == 2) {
-      cs_real_t uref2 = fmax(cs_math_3_square_norm(vel), cs_math_epzero);
-
-      cs_turbulence_bc_inlet_turb_intensity(face_id,
-                                            uref2,
-                                            xintur[zone_id],
-                                            dh[zone_id]);
-    }
-
-  }
-
-  /* Automatic wall condition for alpha */
-
-  if (cs_glob_turb_model->iturb == CS_TURB_RIJ_EPSILON_EBRSM) {
-
-    if (CS_F_(alp_bl)->bc_coeffs != nullptr) {
-      cs_real_t *_rcodcl_alp = CS_F_(alp_bl)->bc_coeffs->rcodcl1;
-
-      const cs_boundary_t *boundaries = cs_glob_boundaries;
-
-      for (int b_id = 0; b_id < boundaries->n_boundaries; b_id++) {
-
-        cs_boundary_type_t type = boundaries->types[b_id];
-
-        if (type & CS_BOUNDARY_WALL) {
-          const cs_zone_t *z
-            = cs_boundary_zone_by_id(boundaries->zone_ids[b_id]);
-
-          for (cs_lnum_t i = 0; i < z->n_elts; i++) {
-            cs_lnum_t face_id = z->elt_ids[i];
-            _rcodcl_alp[face_id] = 0.;
-          }
-
-        }
-      }
-    }
-
-  }
 }
 
 /*----------------------------------------------------------------------------*/
@@ -3261,11 +3139,9 @@ cs_boundary_conditions_open_set_mass_flow_rate_by_value(const  cs_zone_t  *z,
   c->scale_func = _scale_vel_mass_flow_rate;
   c->scale_func_input = c;
 
-  for (int i = CS_COMBUSTION_EBU; i < CS_COMBUSTION_COAL; i++) {
-    if (cs_glob_physical_model_flag[i] >= 0) {
-      c->scale_func = nullptr;
-      c->scale_func_input = nullptr;
-    }
+  if (cs_glob_physical_model_flag[CS_COMBUSTION_LW] >= 0) {
+    c->scale_func = nullptr;
+    c->scale_func_input = nullptr;
   }
 
   /* Set equation parameters */

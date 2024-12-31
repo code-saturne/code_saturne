@@ -212,8 +212,8 @@ cs_combustion_boundary_conditions(int  bc_type[])
   }
 
   /* Boundary conditions mixture fraction and its variance */
-  cs_real_t *rcodcl1_ifm = nullptr, *rcodcl1_ifp2m_ifsqm = nullptr;
-  cs_real_t *rcodcl1_ipvm = nullptr;
+  cs_real_t *rcodcl1_fm = nullptr, *rcodcl1_fp2m_fsqm = nullptr;
+  cs_real_t *rcodcl1_pvm = nullptr;
 
   /* Soot model */
   cs_real_t *rcodcl1_ifsm = nullptr, *rcodcl1_inpm = nullptr;
@@ -222,7 +222,7 @@ cs_combustion_boundary_conditions(int  bc_type[])
 
   f = cs_field_by_name_try("mixture_fraction");
   if (f != nullptr)
-    rcodcl1_ifm = f->bc_coeffs->rcodcl1;
+    rcodcl1_fm = f->bc_coeffs->rcodcl1;
 
   /* Remark of SLFM model: a priori, 2nd moment of mixture fraction and
      progress variable are unknown until mixture fraction is solved.
@@ -237,18 +237,18 @@ cs_combustion_boundary_conditions(int  bc_type[])
   if (mode_fp2m == 0) {
     f = cs_field_by_name_try("mixture_fraction_variance");
     if (f != nullptr)
-      rcodcl1_ifp2m_ifsqm = f->bc_coeffs->rcodcl1;
+      rcodcl1_fp2m_fsqm = f->bc_coeffs->rcodcl1;
   }
   else if (mode_fp2m == 1) {
     f = cs_field_by_name_try("mixture_fraction_2nd_moment");
     if (f != nullptr)
-        rcodcl1_ifp2m_ifsqm = f->bc_coeffs->rcodcl1;
+        rcodcl1_fp2m_fsqm = f->bc_coeffs->rcodcl1;
   }
 
   if (pm_flag[CS_COMBUSTION_SLFM] >= 2) {
     f = cs_field_by_name_try("progress_variable");
     if (f != nullptr)
-      rcodcl1_ipvm = f->bc_coeffs->rcodcl1;
+      rcodcl1_pvm = f->bc_coeffs->rcodcl1;
   }
 
   if (cm->isoot == 1) {
@@ -280,55 +280,158 @@ cs_combustion_boundary_conditions(int  bc_type[])
     cs_real_t qimp = cs_boundary_conditions_open_get_mass_flow_rate(z);
 
     cs_real_t h_in = -HUGE_VALF;
-    cs_real_t ifm_in = 0, ifp2m_ifsqm_in = 0, ipvm_in = 0;
+    cs_real_t fm_in = 0, fp2m_fsqm_in = 0, pvm_in = 0;
+
+    if ((ci->ientfu != 1 && ci->ientox != 1) || qimp < 0)
+      continue;
 
     /* Fuel inlet at tinfue */
     if (ci->ientfu == 1) {
       h_in = cm->hinfue;
-      ifm_in = 1.;
+      fm_in = 1.;
       if (mode_fp2m == 1)
-        ifp2m_ifsqm_in = 1.;
-      ipvm_in = 1.;
+        fp2m_fsqm_in = 1.;
+      pvm_in = 1.;
     }
 
     /* Oxydant inlet at tinoxy */
     if (ci->ientox == 1) {
       h_in = cm->hinoxy;
-      ifm_in = 0.;
+      fm_in = 0.;
     }
 
-    if (ci->ientfu == 1 || ci->ientox == 1) {
+    for (cs_lnum_t elt_idx = 0; elt_idx < n_elts; elt_idx++) {
+      cs_lnum_t elt_id = elt_ids[elt_idx];
+      if (   bc_type[elt_id] == CS_INLET
+          || bc_type[elt_id] == CS_CONVECTIVE_INLET) {
 
-      if (qimp < 0)
-        continue;
+        rcodcl1_fm[elt_id] = fm_in;      // mean mixture fraction
 
-      for (cs_lnum_t elt_idx = 0; elt_idx < n_elts; elt_idx++) {
-        cs_lnum_t elt_id = elt_ids[elt_idx];
-        if (   bc_type[elt_id] == CS_INLET
-            || bc_type[elt_id] == CS_CONVECTIVE_INLET) {
+        // mean mixture fraction variance or 2nd moment of mixture fraction
+        if (rcodcl1_fp2m_fsqm != nullptr)
+          rcodcl1_fp2m_fsqm[elt_id] = fp2m_fsqm_in;
 
-          rcodcl1_ifm[elt_id] = ifm_in;      // mean mixture fraction
+        if (rcodcl1_pvm != nullptr)
+          rcodcl1_pvm[elt_id] = pvm_in;  // progress variable
 
-          // mean mixture fraction variance or 2nd moment of mixture fraction
-          if (rcodcl1_ifp2m_ifsqm != nullptr)
-            rcodcl1_ifp2m_ifsqm[elt_id] = ifp2m_ifsqm_in;
+        if (rcodcl1_h != nullptr)
+          rcodcl1_h[elt_id] = h_in;        // mixture enthalpy
 
-          if (rcodcl1_ipvm != nullptr)
-            rcodcl1_ipvm[elt_id] = ipvm_in;  // progress variable
-
-          if (rcodcl1_h != nullptr)
-            rcodcl1_h[elt_id] = h_in;        // mixture enthalpy
-
-          if (rcodcl1_ifsm != nullptr) {     // soot model
-            rcodcl1_ifsm[elt_id] = 0;
-            rcodcl1_inpm[elt_id] = 0;
-          }
-
+        if (rcodcl1_ifsm != nullptr) {     // soot model
+          rcodcl1_ifsm[elt_id] = 0;
+          rcodcl1_inpm[elt_id] = 0;
         }
 
-      } /* loop on zone faces */
+      }
 
-    } /* Test on zone type */
+    } /* loop on zone faces */
+
+  } /* loop on zones */
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Automatic boundary condition for gas combustion with EBU model.
+ *
+ * \param[in]  bc_type  type of boundary for each face
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_combustion_boundary_conditions_ebu(int  bc_type[])
+{
+  /* Initialization
+   * ============== */
+
+  const int ebu_model = cs_glob_physical_model_flag[CS_COMBUSTION_EBU];
+  assert(ebu_model > -1);
+
+  const cs_combustion_gas_model_t *cm = cs_glob_combustion_gas_model;
+
+  /* Boundary conditions mass fraction of fresh gas */
+  cs_real_t *rcodcl1_ygfm = nullptr;
+  rcodcl1_ygfm = cs_field_by_name("fresh_gas_fraction")->bc_coeffs->rcodcl1;
+
+  /* Boundary conditions for H */
+  cs_real_t *rcodcl1_h = nullptr;
+
+  if (ebu_model == 1 || ebu_model == 3) {
+    if (CS_F_(h) != nullptr)
+      rcodcl1_h = CS_F_(h)->bc_coeffs->rcodcl1;
+  }
+
+  /* Boundary conditions for mixture fraction  */
+  cs_real_t *rcodcl1_fm = nullptr;
+
+  if (ebu_model == 2 || ebu_model == 3)
+    rcodcl1_fm = cs_field_by_name("mixture_fraction")->bc_coeffs->rcodcl1;
+
+  /* Loop on inlet boundaries
+     ======================== */
+
+  assert(cs_glob_boundaries != NULL);
+
+  const cs_boundary_t *bdy = cs_glob_boundaries;
+
+  for (int bdy_idx = 0; bdy_idx < bdy->n_boundaries; bdy_idx += 1) {
+
+    if (! (bdy->types[bdy_idx] & CS_BOUNDARY_INLET))
+      continue;
+
+    const cs_zone_t *z = cs_boundary_zone_by_id(bdy->zone_ids[bdy_idx]);
+
+    const cs_lnum_t n_elts = z->n_elts;
+    const cs_lnum_t *elt_ids = z->elt_ids;
+
+    auto ci = reinterpret_cast<cs_combustion_bc_inlet_t *>
+                (cs_boundary_conditions_get_model_inlet(z));
+
+    cs_real_t coefg[CS_COMBUSTION_GAS_MAX_GLOBAL_SPECIES];
+    for (int i = 0; i < CS_COMBUSTION_GAS_MAX_GLOBAL_SPECIES; i++)
+      coefg[0] = 0;
+
+    cs_real_t ygfm_in = 0, h_in = 0;
+
+    /* Cold premix or dilution */
+    if (ci->ientgf == 1) {
+      coefg[0] = ci->fment;
+      coefg[1] = 1. - ci->fment;
+      cs_real_t tgazf = ci->tkent;
+      cs_real_t hgazf = cs_gas_combustion_t_to_h(coefg, tgazf);
+      h_in = hgazf;
+      ygfm_in = 1.;
+    }
+
+    /* Burned gas inlet (pilot flame) */
+    else if (ci->ientgb == 1) {
+      cs_real_t fs_1 = cm->fs[0];
+      coefg[0] = fmax(0, (ci->fment-fs_1)/(1.-fs_1));
+      coefg[2] = (ci->fment - coefg[0])/fs_1;
+      coefg[1] = 1.0 - coefg[0] - coefg[2];
+      cs_real_t tgazb = ci->tkent;
+      cs_real_t hgazb = cs_gas_combustion_t_to_h(coefg, tgazb);
+      h_in = hgazb;
+      ygfm_in = 0.;
+    }
+
+    cs_real_t fm_in = ci->fment;
+
+    for (cs_lnum_t elt_idx = 0; elt_idx < n_elts; elt_idx++) {
+      cs_lnum_t elt_id = elt_ids[elt_idx];
+      if (   bc_type[elt_id] == CS_INLET
+          || bc_type[elt_id] == CS_CONVECTIVE_INLET) {
+
+        rcodcl1_ygfm[elt_id] = ygfm_in;     // fresh gas fraction
+
+        if (rcodcl1_fm != nullptr)
+          rcodcl1_fm[elt_id] = fm_in;       // mixture fraction
+
+        if (rcodcl1_h != nullptr)
+          rcodcl1_h[elt_id] = h_in;         // mixture enthalpy
+
+      }
+
+    } /* loop on zone faces */
 
   } /* loop on zones */
 }

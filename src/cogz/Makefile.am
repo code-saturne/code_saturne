@@ -101,7 +101,6 @@ d3pphy.f90 \
 d3pver.f90 \
 ebuini.f90 \
 ebuphy.f90 \
-ebutcl.f90 \
 ebutss.f90 \
 ebuver.f90 \
 gauss.f90 \

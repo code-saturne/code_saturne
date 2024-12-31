@@ -247,24 +247,6 @@ module cs_c_bindings
 
     !---------------------------------------------------------------------------
 
-    !> \brief Define automatic turbulence values for specific physical modules.
-
-    !> The definitions are similar to those of the standard case, though wall
-    !> shear direction is not computed for second-order models, and determination
-    !> of face BC types is done using the legacy physical model zone info
-    !> (izfpp, ...).
-
-    !> \param[in]  bc_type  type of boundary for each face
-
-    subroutine cs_boundary_conditions_legacy_turbulence(bc_type) &
-      bind(C, name='cs_boundary_conditions_legacy_turbulence')
-      use, intrinsic :: iso_c_binding
-      implicit none
-      integer(c_int), dimension(*) :: bc_type
-    end subroutine cs_boundary_conditions_legacy_turbulence
-
-    !---------------------------------------------------------------------------
-
     ! Interface to C function activating default log.
 
     subroutine cs_log_default_activate(activate)  &

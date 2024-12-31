@@ -303,7 +303,10 @@ cs_combustion_gas_set_model(cs_combustion_gas_model_type_t  type)
   cm->use_janaf = true;
 
   cm->iic = 0;
+  cm->iico2 = 0;
+  cm->iio2 = 0;
   cm->isoot = -1;
+
   cm->hinfue = cs_math_big_r;
   cm->tinfue = 0;
   cm->tinoxy = 0;
@@ -311,6 +314,10 @@ cs_combustion_gas_set_model(cs_combustion_gas_model_type_t  type)
 
   cm->xsoot = 0.;
   cm->rosoot = 0.;
+  cm->lsp_fuel = 0.;
+
+  cm->frmel = 0.;
+  cm->tgf = 300.;
 
   for (int i = 0; i < CS_COMBUSTION_GAS_MAX_GLOBAL_SPECIES; i++) {
     cm->wmolg[i] = 0;

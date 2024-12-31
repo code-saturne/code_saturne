@@ -700,10 +700,12 @@ _write_auxiliary_checkpoint(void)
   /* EBU model */
 
   if (cs_glob_physical_model_flag[CS_COMBUSTION_EBU] >= 0) {
-    cs_real_t dummy_real = cs_glob_bc_pm_info->tgf;
+    const cs_combustion_gas_model_t *cm = cs_glob_combustion_gas_model;
+
+    cs_real_t dummy_real = cm->tgf;
     _WRITE_REAL_VAL("temperature_gaz_frais_ebu");
 
-    dummy_real = cs_glob_bc_pm_info->frmel;
+    dummy_real = cm->frmel;
     _WRITE_REAL_VAL("frmel_ebu");
 
     // numéro des zones
@@ -1347,13 +1349,15 @@ _read_auxiliary_checkpoint(cs_map_name_to_id_t *old_field_map)
   /* EBU Model */
 
   if (cs_glob_physical_model_flag[CS_COMBUSTION_EBU] >= 0) {
+    cs_combustion_gas_model_t *cm = cs_glob_combustion_gas_model;
+
     retval = _READ_REAL_VAL("temperature_gaz_frais_ebu");
     if (retval == CS_RESTART_SUCCESS)
-      cs_glob_bc_pm_info->tgf = dummy_real;
+      cm->tgf = dummy_real;
 
     retval = _READ_REAL_VAL("frmel_ebu");
     if (retval == CS_RESTART_SUCCESS)
-      cs_glob_bc_pm_info->frmel = dummy_real;
+      cm->frmel = dummy_real;
 
     if (match_b_face) {
       // numéro des zones

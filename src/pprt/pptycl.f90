@@ -106,6 +106,13 @@ interface
     integer(c_int), dimension(*) :: bc_type
   end subroutine cs_combustion_boundary_conditions
 
+  subroutine cs_combustion_boundary_conditions_ebu(bc_type)  &
+    bind(C, name='cs_combustion_boundary_conditions_ebu')
+    use, intrinsic :: iso_c_binding
+    implicit none
+    integer(c_int), dimension(*) :: bc_type
+  end subroutine cs_combustion_boundary_conditions_ebu
+
   subroutine cs_ctwr_bcond()  &
     bind(C, name='cs_ctwr_bcond')
     use, intrinsic :: iso_c_binding
@@ -206,7 +213,7 @@ if (ippmod(icod3p).ge.0 .or. ippmod(islfm).ge.0) then
 !      Flamme de premelange modele EBU
 
 elseif (ippmod(icoebu).ge.0) then
-  call ebutcl(itypfb, izfppp, rcodcl)
+  call cs_combustion_boundary_conditions_ebu(itypfb)
 
 ! ---> Combustion gaz USLWCC
 !      Flamme de premelange modele LWC

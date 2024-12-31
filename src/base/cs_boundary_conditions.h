@@ -151,13 +151,7 @@ typedef struct {
   /*! Mean Mixture Fraction at Inlet (gas combustion) */
   double fment[CS_MAX_BC_PM_ZONE_NUM+1];
 
-  /*! EBU combustion model parameters (legacy) */
-  double tgf;
-
-  double frmel;
-
-  /*! atmo */
-  /* atmospheric flows: auto inlet/outlet flag */
+  /*! atmospheric flows: auto inlet/outlet flag */
   int *iautom;
 
 } cs_boundary_condition_pm_info_t;
@@ -360,25 +354,6 @@ cs_boundary_conditions_get_bc_type(void);
 
 void
 cs_boundary_conditions_compute(int  bc_type[]);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Define automatic turbulence values for specific physical modules.
- *
- * The definitions are similar to those of the standard case, though wall
- * shear direction is not computed for second-order models, and determination
- * of face BC types is done using the legacy physical model zone info
- * (cs_glob_bc_pm_info->izfpp, ...).
- *
- * \deprecated  Code should migrate to the "per zone" open boundary condition
- * definitions.
- *
- * \param[in]  bc_type  type of boundary for each face
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_boundary_conditions_legacy_turbulence(int  bc_type[]);
 
 /*----------------------------------------------------------------------------*/
 /*!

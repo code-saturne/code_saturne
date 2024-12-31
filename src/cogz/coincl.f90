@@ -329,7 +329,8 @@ module coincl
                                         p_pcigas, p_tinfue,    &
                                         p_tinoxy,              &
                                         p_fmin, p_fmax,        &
-                                        p_hmin, p_hmax)        &
+                                        p_hmin, p_hmax,        &
+                                        p_tgf, p_frmel)        &
       bind(C, name='cs_f_coincl_get_pointers')
       use, intrinsic :: iso_c_binding
       implicit none
@@ -340,6 +341,7 @@ module coincl
       type(c_ptr), intent(out) :: p_hinfue, p_hinoxy, p_pcigas, p_tinfue
       type(c_ptr), intent(out) :: p_tinoxy
       type(c_ptr), intent(out) :: p_fmin, p_fmax, p_hmin, p_hmax
+      type(c_ptr), intent(out) :: p_tgf, p_frmel
     end subroutine cs_f_coincl_get_pointers
 
     !---------------------------------------------------------------------------
@@ -349,14 +351,12 @@ module coincl
     subroutine cs_f_boundary_conditions_get_coincl_pointers(p_ientfu, p_ientox, &
                                                             p_ientgb, p_ientgf, &
                                                             p_tkent,  p_fment,  &
-                                                            p_qimp, &
-                                                            p_tgf, p_frmel ) &
+                                                            p_qimp) &
       bind(C, name='cs_f_boundary_conditions_get_coincl_pointers')
       use, intrinsic :: iso_c_binding
       implicit none
       type(c_ptr), intent(out) :: p_ientfu, p_ientox, p_ientgb, p_ientgf
       type(c_ptr), intent(out) :: p_tkent,  p_fment, p_qimp
-      type(c_ptr), intent(out) :: p_tgf, p_frmel
     end subroutine cs_f_boundary_conditions_get_coincl_pointers
 
     !---------------------------------------------------------------------------
@@ -401,18 +401,20 @@ contains
                    c_use_janaf, c_coefeg, c_compog, c_xsoot,   &
                    c_rosoot, c_lsp_fuel, c_hinfue, c_hinoxy,   &
                    c_pcigas, c_tinfue, c_tinoxy,               &
-                   c_fmin, c_fmax, c_hmin, c_hmax
+                   c_fmin, c_fmax, c_hmin, c_hmax,             &
+                   c_tgf, c_frmel
 
-    call cs_f_coincl_get_pointers(c_isoot, c_ngazfl, c_nki,     &
-                                  c_nxr, c_nzm, c_nzvar,        &
-                                  c_nlibvar, c_ikimid,          &
-                                  c_mode_fp2m, c_use_janaf,     &
-                                  c_coefeg, c_compog,           &
-                                  c_xsoot,  c_rosoot,           &
-                                  c_lsp_fuel,                   &
-                                  c_hinfue, c_hinoxy,           &
-                                  c_pcigas, c_tinfue, c_tinoxy, &
-                                  c_fmin, c_fmax, c_hmin, c_hmax)
+    call cs_f_coincl_get_pointers(c_isoot, c_ngazfl, c_nki,       &
+                                  c_nxr, c_nzm, c_nzvar,          &
+                                  c_nlibvar, c_ikimid,            &
+                                  c_mode_fp2m, c_use_janaf,       &
+                                  c_coefeg, c_compog,             &
+                                  c_xsoot,  c_rosoot,             &
+                                  c_lsp_fuel,                     &
+                                  c_hinfue, c_hinoxy,             &
+                                  c_pcigas, c_tinfue, c_tinoxy,   &
+                                  c_fmin, c_fmax, c_hmin, c_hmax, &
+                                  c_tgf, c_frmel)
 
     call c_f_pointer(c_isoot, isoot)
     call c_f_pointer(c_ngazfl, ngazfl)
@@ -438,6 +440,8 @@ contains
     call c_f_pointer(c_fmax, fmax)
     call c_f_pointer(c_hmin, hmin)
     call c_f_pointer(c_hmax, hmax)
+    call c_f_pointer(c_tgf, tgf);
+    call c_f_pointer(c_frmel, frmel);
 
   end subroutine co_models_init
 
@@ -454,13 +458,11 @@ contains
 
     type(c_ptr) :: p_ientfu, p_ientox, p_ientgb, p_ientgf
     type(c_ptr) :: p_tkent,  p_fment,  p_qimp
-    type(c_ptr) :: p_tgf, p_frmel
 
     call cs_f_boundary_conditions_get_coincl_pointers(p_ientfu, p_ientox, &
                                                       p_ientgb, p_ientgf, &
                                                       p_tkent,  p_fment,  &
-                                                      p_qimp, &
-                                                      p_tgf, p_frmel)
+                                                      p_qimp)
     call c_f_pointer(p_ientfu, ientfu, [nozppm])
     call c_f_pointer(p_ientox, ientox, [nozppm])
     call c_f_pointer(p_ientgb, ientgb, [nozppm])
@@ -468,8 +470,6 @@ contains
     call c_f_pointer(p_tkent,  tkent,  [nozppm])
     call c_f_pointer(p_fment,  fment,  [nozppm])
     call c_f_pointer(p_qimp,   qimp,   [nozppm])
-    call c_f_pointer(p_tgf, tgf);
-    call c_f_pointer(p_frmel, frmel);
 
   end subroutine co_models_bc_map
 
