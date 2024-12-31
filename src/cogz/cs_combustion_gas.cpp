@@ -122,6 +122,41 @@ cs_f_combustion_gas_get_data_file_name(int           name_max,
                                        const char  **name,
                                        int          *name_len);
 
+void
+cs_f_init_steady_laminar_flamelet_library(double  **flamelet_library_p);
+
+/*----------------------------------------------------------------------------
+ * Initialize steady flamelet library
+ *
+ * This function is intended for use by Fortran wrappers, and
+ * enables mapping to Fortran global pointers.
+ *
+ * TODO: when Fortran bindings are removed, this function can be simplified,
+ * so as to keep only C/C++ part (instead of being removed).
+ *----------------------------------------------------------------------------*/
+
+void
+cs_f_init_steady_laminar_flamelet_library(double  **flamelet_library_p)
+{
+  *flamelet_library_p = nullptr;
+
+  if (cs_glob_combustion_gas_model != NULL) {
+
+    cs_combustion_gas_model_t *cm = cs_glob_combustion_gas_model;
+
+    size_t n = cm->nlibvar * cm->nxr * cm->nki * cm->nzvar * cm->nzm;
+
+    CS_FREE(cm->flamelet_library_p);
+    CS_MALLOC(cm->flamelet_library_p, n, cs_real_t);
+
+    cs_real_t *_flamelet_library = cm->flamelet_library_p;
+    for (size_t i = 0; i < n; i++)
+      _flamelet_library[i] = 0;
+
+    *flamelet_library_p = cm->flamelet_library_p;
+  }
+}
+
 /*============================================================================
  * Private function definitions
  *============================================================================*/
@@ -139,8 +174,9 @@ _combustion_gas_finalize(void)
 
     cs_combustion_gas_model_t *cm = cs_glob_combustion_gas_model;
 
-    BFT_FREE(cm->data_file_name);
-    BFT_FREE(cm);
+    CS_FREE(cm->data_file_name);
+    CS_FREE(cm->flamelet_library_p);
+    CS_FREE(cm);
 
     cs_glob_combustion_gas_model = cm;
 
@@ -309,6 +345,19 @@ cs_combustion_gas_set_model(cs_combustion_gas_model_type_t  type)
   cm->fmax_lwc = 1.;
   cm->hmin_lwc = 0.;
   cm->hmax_lwc = 0.;
+
+  /*! Steady flamelet model */
+
+  cm->ngazfl = -1;
+  cm->nki = -1;
+  cm->nxr = -1;
+  cm->nzm = -1;
+  cm->nzvar = -1;
+  cm->nlibvar = -1;
+  cm->ikimid = 1;
+  cm->mode_fp2m = 1;
+
+  cm->flamelet_library_p = nullptr;
 
   /* Set finalization callback */
 

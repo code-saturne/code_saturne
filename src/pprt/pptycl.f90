@@ -197,15 +197,10 @@ endif
 
 if (init .eqv. .true.) return
 
-! ---> Chimie 3 points : USD3PC
+! 3-point chemistry or steady laminar flamelet
 
-if (ippmod(icod3p).ge.0) then
+if (ippmod(icod3p).ge.0 .or. ippmod(islfm).ge.0) then
   call cs_combustion_boundary_conditions(itypfb)
-
-! ---> Steady laminar flamelet
-
-elseif (ippmod(islfm).ge.0) then
-  call cs_steady_laminar_flamelet_bcond(itypfb, izfppp, icodcl, rcodcl)
 
 ! ---> Combustion gaz USEBUC
 !      Flamme de premelange modele EBU

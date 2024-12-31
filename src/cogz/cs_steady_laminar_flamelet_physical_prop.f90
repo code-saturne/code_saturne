@@ -36,13 +36,9 @@
 !______________________________________________________________________________.
 !  mode           name          role
 !______________________________________________________________________________!
-!> \param[in]     mbrom         indicator of prescribed density at the boundary
-!> \param[in]     izfppp        area number of the edge face
-!>                               for the specific physic module
 !______________________________________________________________________________!
 
-subroutine cs_steady_laminar_flamelet_physical_prop &
- ( mbrom  , izfppp )
+subroutine cs_steady_laminar_flamelet_physical_prop
 
 !===============================================================================
 ! Module files
@@ -72,12 +68,9 @@ implicit none
 
 ! Arguments
 
-integer          mbrom
-integer          izfppp(nfabor)
-
 ! Local variables
 
-integer           iel, ifac, izone, ifcvsl, isc, iscal, iesp, ig, iprev
+integer           iel, ifcvsl, isc, iscal, iesp, ig, iprev
 integer           viscls_counter, viscls_number
 
 double precision  had, cmin, cmid, cmax
@@ -85,7 +78,7 @@ double precision  had, cmin, cmid, cmax
 double precision, dimension(:), pointer :: cvar_fm, fp2m, cvar_progvar
 double precision, dimension(:), pointer :: cpro_temp, cpro_progvar, cpro_omegac
 double precision, dimension(:), pointer :: cvar_scalt, cpro_xr, cpro_totki
-double precision, dimension(:), pointer :: cpro_rho, bpro_rho, cpro_hrr
+double precision, dimension(:), pointer :: cpro_rho, cpro_hrr
 double precision, dimension(:), pointer :: cpro_viscl
 double precision, dimension(:), pointer :: cpro_tem2
 
@@ -118,6 +111,12 @@ interface
     implicit none
     integer(c_int) :: iprev
   end subroutine combustion_reconstruct_variance
+
+  subroutine cs_combustion_boundary_conditions_density()  &
+    bind(C, name='cs_combustion_boundary_conditions_density')
+    use, intrinsic :: iso_c_binding
+    implicit none
+  end subroutine cs_combustion_boundary_conditions_density
 
 end interface
 
@@ -180,9 +179,9 @@ call field_get_val_s(iym(ngazgm), cpro_progvar)
 call field_get_val_s(ihrr, cpro_hrr)
 
 if (iirayo.eq.1 .and. mod(ntcabs, nt_rad_prp).eq.0) then
-  update_rad = .TRUE.
+  update_rad = .true.
 else
-  update_rad = .FALSE.
+  update_rad = .false.
 endif
 
 !==============================================================================
@@ -259,31 +258,31 @@ if (is_vploop .eqv. .false.) then ! Outside the rho(Y)-v-p coupling
     ! Affectation des variables dans les tableaux appropries
 
     ! Temperature : cpro_temp
-    cpro_temp(iel) = phim(FLAMELET_TEMP)
+    cpro_temp(iel) = phim(flamelet_temp)
 
     ! viscosite laminaire: cpro_viscl
-    cpro_viscl(iel) = phim(FLAMELET_VIS)
+    cpro_viscl(iel) = phim(flamelet_vis)
 
     ! Fraction of species
     if (ngazfl.ge.1) then
       do iesp = 1, ngazfl
-        cpro_species(iesp)%p(iel) = phim(FLAMELET_SPECIES(iesp))
+        cpro_species(iesp)%p(iel) = phim(flamelet_species(iesp))
       enddo
     endif
 
     ! Diffusivite scalaire: cpro_viscls
     if (viscls_number .ge. 1) then
       do viscls_counter = 1, viscls_number
-        cpro_viscls(viscls_counter)%p(iel) = phim(FLAMELET_DT)*phim(FLAMELET_RHO)
+        cpro_viscls(viscls_counter)%p(iel) = phim(flamelet_dt)*phim(flamelet_rho)
       enddo
     endif
 
-    if (FLAMELET_C.ne.-1) cpro_progvar(iel) = phim(FLAMELET_C)
-    if (FLAMELET_HRR.ne.-1) cpro_hrr(iel) = phim(FLAMELET_HRR)
-    if (FLAMELET_TEMP2.ne.-1) cpro_tem2(iel) = phim(FLAMELET_TEMP2)
+    if (flamelet_c.ne.-1) cpro_progvar(iel) = phim(flamelet_c)
+    if (flamelet_hrr.ne.-1) cpro_hrr(iel) = phim(flamelet_hrr)
+    if (flamelet_temp2.ne.-1) cpro_tem2(iel) = phim(flamelet_temp2)
 
     if (ippmod(islfm).ge.2) then
-      cpro_omegac(iel) = phim(FLAMELET_OMG_C)
+      cpro_omegac(iel) = phim(flamelet_omg_c)
     endif
 
     if (update_rad.eqv..TRUE.) then
@@ -336,20 +335,7 @@ else  ! Inside the rho(Y)-v-p coupling
 
   deallocate(rom_eos)
 
-  mbrom = 1
-  call field_get_val_s(ibrom, bpro_rho)
-
-  do ifac = 1, nfabor
-    izone = izfppp(ifac)
-    if (ientfu(izone).eq.1) then
-      bpro_rho(ifac) =  flamelet_library(FLAMELET_RHO, 1, 1, 1, nzm)
-    else if (ientox(izone).eq.1) then
-      bpro_rho(ifac) =  flamelet_library(FLAMELET_RHO, 1, 1, 1, 1)
-    else
-      iel = ifabor(ifac)
-      bpro_rho(ifac) = cpro_rho(iel)
-    endif
-  enddo
+  call cs_combustion_boundary_conditions_density
 
 endif
 
@@ -362,8 +348,6 @@ end subroutine
 ! Function:
 ! ---------
 
-!> \file cs_steady_laminar_flamelet_physical_prop.f90
-!>
 !> \brief Specific physic subroutine: diffusion flame.
 !>
 !> Interpolation of mean thermophysic properties as a
@@ -412,7 +396,7 @@ endif
 
 ! Start with z_m
 allocate(xData(nzm))
-xData(:) = flamelet_library(FLAMELET_ZM,1,1,1,:)
+xData(:) = flamelet_library(flamelet_zm, 1, 1, 1, :)
 
 if(xData(1).ge.zm0) then
   phi_4(:,:,:,:) = flamelet_library(:,:,:,:,1)
@@ -445,7 +429,7 @@ deallocate(xData)
 
 ! Then interpolate over z_var
 allocate(xData(nzvar))
-xData(:) = phi_4(FLAMELET_ZVAR,1,1,:)
+xData(:) = phi_4(flamelet_zvar,1,1,:)
 
 if(xData(1).ge.zvar0) then
   phi_3(:,:,:) = phi_4(:,:,:,1)
@@ -477,14 +461,14 @@ deallocate(xData)
 
 ! Then interpolate over Ki_m
 allocate(xData(nki))
-xData(:) = phi_3(FLAMELET_KI,1,:)
+xData(:) = phi_3(flamelet_ki,1,:)
 
 if(xData(1).ge.kim0) then
   phi_2(:,:) = phi_3(:,:,1)
-  if (update_rad.eqv..TRUE.) rad_work2(:,:,:) = rad_work3(:,:,:,1)
+  if (update_rad.eqv..true.) rad_work2(:,:,:) = rad_work3(:,:,:,1)
 elseif(xData(size(xData)).le.kim0) then
   phi_2(:,:) = phi_3(:,:,nki)
-  if (update_rad.eqv..TRUE.) rad_work2(:,:,:) = rad_work3(:,:,:,nki)
+  if (update_rad.eqv..true.) rad_work2(:,:,:) = rad_work3(:,:,:,nki)
 else
 
   dataIndex = 1
@@ -509,7 +493,7 @@ deallocate(xData)
 
 ! Then interpolate over XR_m
 allocate(xData(nxr))
-xData(:) = phi_2(FLAMELET_XR,:)
+xData(:) = phi_2(flamelet_xr,:)
 
 if(xData(1).ge.xrm0) then
   phim(:) = phi_2(:,1)
@@ -546,8 +530,6 @@ end subroutine
 ! Function:
 ! ---------
 
-!> \file cs_steady_laminar_flamelet_physical_prop.f90
-!>
 !> \brief Specific physic subroutine: diffusion flame.
 !>
 !> Interpolation of mean density as a function of
@@ -575,8 +557,8 @@ double precision, dimension(:), allocatable :: xData
 integer :: dataIndex, n_var_local = 5
 integer :: var_sel(5)
 
-var_sel = (/FLAMELET_ZM, FLAMELET_ZVAR, FLAMELET_XR,          &
-            FLAMELET_RHO, FLAMELET_KI/)
+var_sel = (/flamelet_zm, flamelet_zvar, flamelet_xr,          &
+            flamelet_rho, flamelet_ki/)
 
 allocate(phi_4(n_var_local,nxr,nki,nzvar))
 allocate(phi_3(n_var_local,nxr,nki))
@@ -584,7 +566,7 @@ allocate(phi_2(n_var_local,nxr))
 
 ! Start with z_m
 allocate(xData(nzm))
-xData(:) = flamelet_library(FLAMELET_ZM,1,1,1,:)
+xData(:) = flamelet_library(flamelet_zm,1,1,1,:)
 
 if(xData(1).ge.zm0) then
   phi_4(:,:,:,:) = flamelet_library(var_sel,:,:,:,1)
@@ -689,8 +671,6 @@ end subroutine
 ! Function:
 ! ---------
 
-!> \file cs_steady_laminar_flamelet_physical_prop.f90
-!>
 !> \brief Specific physic subroutine: diffusion flame.
 !>
 !> Interpolation of mean thermophysic properties as a
@@ -739,7 +719,7 @@ endif
 
 ! Start with z_m
 allocate(xData(nzm))
-xData(:) = flamelet_library(FLAMELET_ZM,1,1,1,:)
+xData(:) = flamelet_library(flamelet_zm,1,1,1,:)
 
 if(xData(1).ge.zm0) then
   phi_4(:,:,:,:) = flamelet_library(:,:,:,:,1)
@@ -773,7 +753,7 @@ deallocate(xData)
 
 ! Then interpolate over z_var
 allocate(xData(nzvar))
-xData(:) = phi_4(FLAMELET_ZVAR,1,1,:)
+xData(:) = phi_4(flamelet_zvar,1,1,:)
 
 if(xData(1).ge.zvar0) then
   phi_3(:,:,:) = phi_4(:,:,:,1)
@@ -843,15 +823,15 @@ deallocate(xData2D)
 
 ! Then interpolate over c_m
 allocate(xData(nki))
-xData(:) = phi_2(FLAMELET_C,:)
+xData(:) = phi_2(flamelet_c,:)
 
 if(xData(1).ge.cm0) then
   phim(:) = phi_2(:,1)
-  if (update_rad.eqv..TRUE.) rad_work(:,:) = rad_work2(:,:,1)
+  if (update_rad.eqv..true.) rad_work(:,:) = rad_work2(:,:,1)
 elseif(xData(size(xData)).le.cm0) then
   phim(:) = phi_2(:,nki)
-  phim(FLAMELET_OMG_C) = 0.0d0
-  if (update_rad.eqv..TRUE.) rad_work(:,:) = rad_work2(:,:,nki)
+  phim(flamelet_omg_c) = 0.0d0
+  if (update_rad.eqv..true.) rad_work(:,:) = rad_work2(:,:,nki)
 else
 
   dataIndex = 1
@@ -883,8 +863,6 @@ end subroutine
 ! Function:
 ! ---------
 
-!> \file cs_steady_laminar_flamelet_physical_prop.f90
-!>
 !> \brief Specific physic subroutine: diffusion flame.
 !>
 !> Interpolation of mean density as a function of
@@ -912,8 +890,8 @@ double precision :: weight_zm, weight_zvar, weight_cm, weight_xrm(nki)
 integer :: dataIndex, i_ki, n_var_local = 5
 integer :: var_sel(5)
 
-var_sel = (/FLAMELET_ZM, FLAMELET_ZVAR, FLAMELET_XR,          &
-            FLAMELET_RHO, FLAMELET_KI/)
+var_sel = (/flamelet_zm, flamelet_zvar, flamelet_xr,          &
+            flamelet_rho, flamelet_ki/)
 
 allocate(phi_4(n_var_local,nki,nxr,nzvar))
 allocate(phi_3(n_var_local,nki,nxr))
@@ -921,7 +899,7 @@ allocate(phi_2(n_var_local,nki))
 
 ! Start with z_m
 allocate(xData(nzm))
-xData(:) = flamelet_library(FLAMELET_ZM,1,1,1,:)
+xData(:) = flamelet_library(flamelet_zm,1,1,1,:)
 
 if(xData(1).ge.zm0) then
   phi_4(:,:,:,:) = flamelet_library(var_sel,:,:,:,1)
@@ -1032,8 +1010,6 @@ end subroutine
 ! Function:
 ! ---------
 
-!> \file cs_steady_laminar_flamelet_physical_prop.f90
-!>
 !> \brief Specific physic subroutine: diffusion flame.
 !>
 !> Calculation of total scalar dissipation rate
@@ -1117,8 +1093,6 @@ end subroutine
 ! Function:
 ! ---------
 
-!> \file cs_steady_laminar_flamelet_physical_prop.f90
-!>
 !> \brief Specific physic subroutine: diffusion flame.
 !>
 !> Calculation of reconstructed variance of mixture fraction
@@ -1196,13 +1170,13 @@ allocate(xData(nzm))
 xData(:) = flamelet_library(1,1,1,1,:)
 
 if(xData(1).ge.zm0) then
-  cmax = flamelet_library(FLAMELET_C,nki,1,1,1)
-  cmid = flamelet_library(FLAMELET_C,ikimid,1,1,1)
-  cmin = flamelet_library(FLAMELET_C,1,1,1,1)
+  cmax = flamelet_library(flamelet_c,nki,1,1,1)
+  cmid = flamelet_library(flamelet_c,ikimid,1,1,1)
+  cmin = flamelet_library(flamelet_c,1,1,1,1)
 elseif(xData(size(xData)).le.zm0) then
-  cmax = flamelet_library(FLAMELET_C,nki,1,1,nzm)
-  cmid = flamelet_library(FLAMELET_C,ikimid,1,1,nzm)
-  cmin = flamelet_library(FLAMELET_C,1,1,1,nzm)
+  cmax = flamelet_library(flamelet_c,nki,1,1,nzm)
+  cmid = flamelet_library(flamelet_c,ikimid,1,1,nzm)
+  cmin = flamelet_library(flamelet_c,1,1,1,nzm)
 else
 
   dataIndex = 1
@@ -1212,14 +1186,14 @@ else
   enddo
   if(dataIndex .gt.1 ) then
     weight_zm = (zm0 - xData(dataIndex-1))/(xData(dataIndex)-xData(dataIndex-1))
-    cmax = (1.0d0-weight_zm)*flamelet_library(FLAMELET_C,nki,1,1,dataIndex-1) &
-      + weight_zm*flamelet_library(FLAMELET_C,nki,1,1,dataIndex)
+    cmax = (1.0d0-weight_zm)*flamelet_library(flamelet_c,nki,1,1,dataIndex-1) &
+      + weight_zm*flamelet_library(flamelet_c,nki,1,1,dataIndex)
 
-    cmid = (1.0d0-weight_zm)*flamelet_library(FLAMELET_C,ikimid,1,1,dataIndex-1) &
-      + weight_zm*flamelet_library(FLAMELET_C,ikimid,1,1,dataIndex)
+    cmid = (1.0d0-weight_zm)*flamelet_library(flamelet_c,ikimid,1,1,dataIndex-1) &
+      + weight_zm*flamelet_library(flamelet_c,ikimid,1,1,dataIndex)
 
-    cmin = (1.0d0-weight_zm)*flamelet_library(FLAMELET_C,1,1,1,dataIndex-1) &
-      + weight_zm*flamelet_library(FLAMELET_C,1,1,1,dataIndex)
+    cmin = (1.0d0-weight_zm)*flamelet_library(flamelet_c,1,1,1,dataIndex-1) &
+      + weight_zm*flamelet_library(flamelet_c,1,1,1,dataIndex)
 
   endif
 endif

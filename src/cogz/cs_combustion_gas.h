@@ -235,6 +235,24 @@ typedef struct {
   double hmin_lwc;
   double hmax_lwc;
 
+  /*! Steady flamelet model parameters */
+
+  int ngazfl;    /*!< number of species in flamelet library
+                      YFUE YOXY YCO2 YH2O YCO YH2 */
+  int nki;       /*!< number of flamelets (strain rate) */
+  int nxr;       /*!< discretization of enthalpy defect */
+  int nzm;       /*!< discretization of mixture fraction */
+  int nzvar;     /*!< discretization of variance */
+  int nlibvar;   /*!< number of variables in library */
+  int ikimid;    /*!< Index (1-based) for flamelet on middle branch */
+
+  /*! Mixture fraction variance computation mode:
+    - 0: variance transport equation (VTE)
+    - 1: 2nd moment of mixture fraction transport equation (STE) */
+  int mode_fp2m;
+
+  cs_real_t  *flamelet_library_p;  /*!< pointer to flamelet library */
+
 } cs_combustion_gas_model_t;
 
 /*============================================================================

@@ -99,31 +99,31 @@ module coincl
   ! nlibvar: Nombre des variables stockés dans la librairie
   ! ikimid : Indice pour la flammelette sur la branche middle
 
-  integer, save :: ngazfl  ! ngazfl <= ngazgm - 1
-  integer, save :: nki, nxr, nzm, nzvar, nlibvar
-  integer, save :: ikimid = 1
+  integer(c_int), pointer, save :: ngazfl  ! ngazfl <= ngazgm - 1
+  integer(c_int), pointer, save :: nki, nxr, nzm, nzvar, nlibvar
+  integer(c_int), pointer, save :: ikimid
 
   ! Manière de calculer la variance de fraction de mélange
   ! mode_fp2m 0: Variance transport equation(VTE)
   ! mode_fp2m 1: 2nd moment of mixture fraction transport equation (STE)
-  integer, save :: mode_fp2m = 1
+  integer(c_int), pointer, save :: mode_fp2m
 
   ! Coef. of SGS kinetic energy used for the variance dissipation calculation
   double precision, save :: coef_k = 7.d-2
 
   ! Column index for each variable in the look-up table
-  integer, save :: FLAMELET_ZM,    FLAMELET_ZVAR,  FLAMELET_KI,  FLAMELET_XR
-  integer, save :: FLAMELET_TEMP,  FLAMELET_RHO,   FLAMELET_VIS, FLAMELET_DT
-  integer, save :: FLAMELET_TEMP2, FLAMELET_HRR
-  integer, save :: FLAMELET_SPECIES(ngazgm)
-  integer, save :: FLAMELET_C,     FLAMELET_OMG_C
+  integer, save :: flamelet_zm,    flamelet_zvar,  flamelet_ki,  flamelet_xr
+  integer, save :: flamelet_temp,  flamelet_rho,   flamelet_vis, flamelet_dt
+  integer, save :: flamelet_temp2, flamelet_hrr
+  integer, save :: flamelet_species(ngazgm)
+  integer, save :: flamelet_c,     flamelet_omg_C
 
-  character(len=12) :: FLAMELET_SPECIES_NAME(ngazgm)
+  character(len=12) :: flamelet_species_name(ngazgm)
 
   !========================================================================
 
   !> Library for thermochemical properties in SLFM
-  double precision, allocatable, dimension(:,:,:,:,:) :: flamelet_library
+  real(c_double), pointer, save :: flamelet_library(:,:,:,:,:) => null()
 
   !========================================================================
   ! Rayonnement
@@ -153,10 +153,8 @@ module coincl
   !                        pour premelange frais et dilution
   !       TGBAD        --> Temperature adiabatique gaz brules en K
 
-  !integer, save ::          ientgf(nozppm), ientgb(nozppm)
   integer(c_int), pointer, save :: ientgf(:), ientgb(:)
   real(c_double), pointer, save :: qimp(:), fment(:), tkent(:)
-  !double precision, save :: fment(nozppm), tkent(nozppm)
   real(c_double), pointer, save :: frmel, tgf
   double precision, save :: cebu, hgf, tgbad
 
@@ -307,8 +305,6 @@ module coincl
 
   !=============================================================================
 
-  !=============================================================================
-
   interface
 
     !---------------------------------------------------------------------------
@@ -320,19 +316,26 @@ module coincl
     ! Interface to C function retrieving pointers to members of the
     ! global combustion model flags
 
-    subroutine cs_f_coincl_get_pointers(p_isoot, p_use_janaf, &
-                                        p_coefeg, p_compog,   &
-                                        p_xsoot, p_rosoot,    &
-                                        p_lsp_fuel,           &
-                                        p_hinfue, p_hinoxy,   &
-                                        p_pcigas, p_tinfue,   &
-                                        p_tinoxy,             &
-                                        p_fmin, p_fmax,       &
-                                        p_hmin, p_hmax)       &
+    subroutine cs_f_coincl_get_pointers(p_isoot,               &
+                                        p_ngazfl, p_nki,       &
+                                        p_nxr, p_nzm,          &
+                                        p_nzvar, p_nlibvar,    &
+                                        p_ikimid, p_mode_fp2m, &
+                                        p_use_janaf,           &
+                                        p_coefeg, p_compog,    &
+                                        p_xsoot, p_rosoot,     &
+                                        p_lsp_fuel,            &
+                                        p_hinfue, p_hinoxy,    &
+                                        p_pcigas, p_tinfue,    &
+                                        p_tinoxy,              &
+                                        p_fmin, p_fmax,        &
+                                        p_hmin, p_hmax)        &
       bind(C, name='cs_f_coincl_get_pointers')
       use, intrinsic :: iso_c_binding
       implicit none
-      type(c_ptr), intent(out) :: p_isoot, p_use_janaf
+      type(c_ptr), intent(out) :: p_isoot, p_ngazfl, p_nki, p_nxr, p_nzm
+      type(c_ptr), intent(out) :: p_nzvar, p_nlibvar, p_ikimid, p_mode_fp2m
+      type(c_ptr), intent(out) :: p_use_janaf
       type(c_ptr), intent(out) :: p_coefeg, p_compog, p_xsoot, p_rosoot, p_lsp_fuel
       type(c_ptr), intent(out) :: p_hinfue, p_hinoxy, p_pcigas, p_tinfue
       type(c_ptr), intent(out) :: p_tinoxy
@@ -355,6 +358,18 @@ module coincl
       type(c_ptr), intent(out) :: p_tkent,  p_fment, p_qimp
       type(c_ptr), intent(out) :: p_tgf, p_frmel
     end subroutine cs_f_boundary_conditions_get_coincl_pointers
+
+    !---------------------------------------------------------------------------
+
+    ! Interface to C function retrieving pointers to members of the
+    ! global combustion model flags
+
+    subroutine cs_f_init_steady_laminar_flamelet_library(p_radiation_library)  &
+      bind(C, name='cs_f_init_steady_laminar_flamelet_library')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      type(c_ptr), intent(out) :: p_radiation_library
+    end subroutine cs_f_init_steady_laminar_flamelet_library
 
     !---------------------------------------------------------------------------
 
@@ -381,13 +396,17 @@ contains
 
     ! Local variables
 
-    type(c_ptr) :: c_isoot, c_use_janaf,                     &
-                   c_coefeg, c_compog, c_xsoot,              &
-                   c_rosoot, c_lsp_fuel, c_hinfue, c_hinoxy, &
-                   c_pcigas, c_tinfue, c_tinoxy,             &
+    type(c_ptr) :: c_isoot, c_ngazfl, c_nki, c_nxr, c_nzm,     &
+                   c_nzvar, c_nlibvar, c_ikimid, c_mode_fp2m,  &
+                   c_use_janaf, c_coefeg, c_compog, c_xsoot,   &
+                   c_rosoot, c_lsp_fuel, c_hinfue, c_hinoxy,   &
+                   c_pcigas, c_tinfue, c_tinoxy,               &
                    c_fmin, c_fmax, c_hmin, c_hmax
 
-    call cs_f_coincl_get_pointers(c_isoot, c_use_janaf,         &
+    call cs_f_coincl_get_pointers(c_isoot, c_ngazfl, c_nki,     &
+                                  c_nxr, c_nzm, c_nzvar,        &
+                                  c_nlibvar, c_ikimid,          &
+                                  c_mode_fp2m, c_use_janaf,     &
                                   c_coefeg, c_compog,           &
                                   c_xsoot,  c_rosoot,           &
                                   c_lsp_fuel,                   &
@@ -396,6 +415,14 @@ contains
                                   c_fmin, c_fmax, c_hmin, c_hmax)
 
     call c_f_pointer(c_isoot, isoot)
+    call c_f_pointer(c_ngazfl, ngazfl)
+    call c_f_pointer(c_nki, nki)
+    call c_f_pointer(c_nxr, nxr)
+    call c_f_pointer(c_nzm, nzm)
+    call c_f_pointer(c_nzvar, nzvar)
+    call c_f_pointer(c_nlibvar, nlibvar)
+    call c_f_pointer(c_ikimid, ikimid)
+    call c_f_pointer(c_mode_fp2m, mode_fp2m)
     call c_f_pointer(c_use_janaf, use_janaf)
     call c_f_pointer(c_coefeg, coefeg, [ngazem, ngazgm])
     call c_f_pointer(c_compog, compog, [ngazem, ngazgm])
@@ -453,10 +480,12 @@ contains
     use radiat
     implicit none
 
-    if(.not.allocated(flamelet_library)) then
-      allocate(flamelet_library(nlibvar, nxr, nki, nzvar, nzm))
-      flamelet_library = 0.d0
-    endif
+    type(c_ptr) :: p_flamelet_library
+
+    call cs_f_init_steady_laminar_flamelet_library(p_flamelet_library)
+
+    call c_f_pointer(p_flamelet_library, flamelet_library, &
+                     [nlibvar, nxr, nki, nzvar, nzm])
 
     if (iirayo.eq.1) then
       if(.not.allocated(radiation_library)) then
@@ -477,11 +506,25 @@ contains
 
     implicit none
 
-    if(allocated(flamelet_library)) deallocate(flamelet_library)
+    flamelet_library => null()
     if(allocated(radiation_library)) deallocate(radiation_library)
 
     return
 
   end subroutine finalize_steady_laminar_flamelet_library
+
+  !=============================================================================
+
+  !> \brief Initialize Fortran combustion models properties API.
+  !> This maps Fortran pointers to global C variables.
+
+  function cs_f_flamelet_rho_idx() result(idx)  &
+    bind(C, name='cs_f_flamelet_rho_idx')
+    use, intrinsic :: iso_c_binding
+    implicit none
+    integer(c_int) :: idx
+
+    idx = flamelet_rho - 1  ! C index is zero-based, so shift by 1
+  end function cs_f_flamelet_rho_idx
 
 end module coincl

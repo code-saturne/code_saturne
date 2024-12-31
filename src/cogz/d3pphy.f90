@@ -78,11 +78,11 @@ save          ipass
 
 interface
 
-  subroutine cs_combustion_boundary_conditions_inlet_density()  &
-    bind(C, name='cs_combustion_boundary_conditions_inlet_density')
+  subroutine cs_combustion_boundary_conditions_density()  &
+    bind(C, name='cs_combustion_boundary_conditions_density')
     use, intrinsic :: iso_c_binding
     implicit none
-  end subroutine cs_combustion_boundary_conditions_inlet_density
+  end subroutine cs_combustion_boundary_conditions_density
 
 end interface
 
@@ -148,7 +148,7 @@ enddo
 ! Free memory
 deallocate(kir)
 
-call cs_combustion_boundary_conditions_inlet_density
+call cs_combustion_boundary_conditions_density
 
 !----
 ! END

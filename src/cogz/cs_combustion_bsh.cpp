@@ -540,7 +540,7 @@ cs_burke_schumann(void)
   cs_real_t       z[N_Z], dz_left, dz_right;
 
   // Space discretization of the defect enthalpy
-  const cs_lnum_t ngazgm    = CS_COMBUSTION_GAS_MAX_GLOBAL_SPECIES;
+  // const cs_lnum_t ngazgm    = CS_COMBUSTION_GAS_MAX_GLOBAL_SPECIES;
   const cs_lnum_t ngazem    = CS_COMBUSTION_GAS_MAX_ELEMENTARY_COMPONENTS;
   const cs_real_t xr1[N_XR] = { 0.0, 0.2, 0.4, 0.6, 0.8 };
   const cs_real_t q         = 0.5;

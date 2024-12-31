@@ -162,13 +162,6 @@ enddo
 
 ! ---> Modele de la flamme de diffusion Steady laminar flamelet
 
-nki     = -1
-nxr     = -1
-nzm     = -1
-nzvar   = -1
-nlibvar = -1
-ngazfl  = -1
-
 flamelet_zm    = -1
 flamelet_zvar  = -1
 flamelet_ki    = -1
@@ -200,10 +193,6 @@ tstar = zero
 hgf   = zero
 tgbad = zero
 
-!fmin = zero
-!fmax = 1.d0
-!hmin = zero
-!hmax = zero
 coeff1 = zero
 coeff2 = zero
 coeff3 = zero

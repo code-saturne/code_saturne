@@ -3259,12 +3259,12 @@ cs_boundary_conditions_open_set_mass_flow_rate_by_value(const  cs_zone_t  *z,
   }
 
   /* For most models, apply scaling to convert from mass flow
-     to velocity; For combustion models, scaling is done later. */
+     to velocity; For some combustion models, scaling is done later. */
 
   c->scale_func = _scale_vel_mass_flow_rate;
   c->scale_func_input = c;
 
-  for (int i = CS_COMBUSTION_SLFM; i < CS_COMBUSTION_COAL; i++) {
+  for (int i = CS_COMBUSTION_EBU; i < CS_COMBUSTION_COAL; i++) {
     if (cs_glob_physical_model_flag[i] >= 0) {
       c->scale_func = nullptr;
       c->scale_func_input = nullptr;

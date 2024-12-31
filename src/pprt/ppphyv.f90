@@ -106,7 +106,8 @@ endif
 ! ---> Diffusion flame steady laminar flamelet approach
 ! ---> Obtain physical property values from the preprocessed look-up table
 if (ippmod(islfm).ge.0) then
-  call cs_steady_laminar_flamelet_physical_prop(mbrom, izfppp)
+  call cs_steady_laminar_flamelet_physical_prop()
+  mbrom = 1
 endif
 
 ! ---> Flamme de premelange : Modele EBU

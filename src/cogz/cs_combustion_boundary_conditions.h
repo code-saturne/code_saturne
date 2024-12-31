@@ -106,7 +106,7 @@ cs_combustion_boundary_conditions(int  bc_type[]);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Compute density at inlets for pulverized combustion combustion.
+ * \brief Compute density at boundary for pulverized combustion combustion.
  *
  * This is based on boundary condition definitions, but is called at an
  * earlier stage in the time step.
@@ -114,7 +114,7 @@ cs_combustion_boundary_conditions(int  bc_type[]);
 /*----------------------------------------------------------------------------*/
 
 void
-cs_combustion_boundary_conditions_inlet_density(void);
+cs_combustion_boundary_conditions_density(void);
 
 /*----------------------------------------------------------------------------*/
 

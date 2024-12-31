@@ -113,29 +113,29 @@ if (ngazfl.gt.ngazgm - 1) then
   iok = iok + 1
 endif
 
-if (    FLAMELET_ZM  .eq.-1.or.FLAMELET_ZVAR.eq.-1  &
-    .or.FLAMELET_XR  .eq.-1.or.FLAMELET_TEMP.eq.-1  &
-    .or.FLAMELET_RHO .eq.-1.or.FLAMELET_VIS .eq.-1  &
-    .or.FLAMELET_DT  .eq.-1 ) then
-    write(nfecra,3002) 'FLAMELET_ZM'  , FLAMELET_ZM   ,  &
-                       'FLAMELET_ZVAR', FLAMELET_ZVAR ,  &
-                       'FLAMELET_XR'  , FLAMELET_XR   ,  &
-                       'FLAMELET_TEMP', FLAMELET_TEMP ,  &
-                       'FLAMELET_RHO' , FLAMELET_RHO  ,  &
-                       'FLAMELET_VIS' , FLAMELET_VIS  ,  &
-                       'FLAMELET_DT'  , FLAMELET_DT
+if (    flamelet_zm  .eq.-1 .or. flamelet_zvar.eq.-1  &
+    .or.flamelet_xr  .eq.-1 .or. flamelet_temp.eq.-1  &
+    .or.flamelet_rho .eq.-1 .or. flamelet_vis .eq.-1  &
+    .or.flamelet_dt  .eq.-1 ) then
+    write(nfecra,3002) 'flamelet_zm'  , flamelet_zm   ,  &
+                       'flamelet_zvar', flamelet_zvar ,  &
+                       'flamelet_xr'  , flamelet_xr   ,  &
+                       'flamelet_temp', flamelet_temp ,  &
+                       'flamelet_rho' , flamelet_rho  ,  &
+                       'flamelet_vis' , flamelet_vis  ,  &
+                       'flamelet_dt'  , flamelet_dt
     iok = iok + 1
 endif
 
 if (ippmod(islfm).lt.2) then
-  if (FLAMELET_KI.eq.-1) then
-    write(nfecra,3003) 'FLAMELET_KI', FLAMELET_KI
+  if (flamelet_ki.eq.-1) then
+    write(nfecra,3003) 'flamelet_ki', flamelet_ki
     iok = iok + 1
   endif
 else
-  if (FLAMELET_C.eq.-1.or.FLAMELET_OMG_C.eq.-1) then
-    write(nfecra,3004) 'FLAMELET_C'    , FLAMELET_C    , &
-                       'FLAMELET_OMG_C', FLAMELET_OMG_C
+  if (flamelet_c.eq.-1.or.flamelet_omg_c.eq.-1) then
+    write(nfecra,3004) 'flamelet_c'    , flamelet_c    , &
+                       'flamelet_omg_c', flamelet_omg_c
     iok = iok + 1
   endif
 endif

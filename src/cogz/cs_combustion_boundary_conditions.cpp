@@ -60,6 +60,11 @@
 #include "cs_physical_model.h"
 #include "cs_prototypes.h"
 
+/* Prototypes for Fortran functions */
+
+extern "C" int
+cs_f_flamelet_rho_idx(void);
+
 /*----------------------------------------------------------------------------
  * Header for the current file
  *----------------------------------------------------------------------------*/
@@ -193,33 +198,63 @@ cs_combustion_boundary_conditions(int  bc_type[])
   /* Initialization
    * ============== */
 
-  cs_combustion_gas_model_t *cm = cs_glob_combustion_gas_model;
+  const int *pm_flag = cs_glob_physical_model_flag;
+  const cs_combustion_gas_model_t *cm = cs_glob_combustion_gas_model;
 
   /* Boundary conditions for H */
   cs_real_t *rcodcl1_h = nullptr;
-  if (CS_F_(h) != nullptr)
-    rcodcl1_h = CS_F_(h)->bc_coeffs->rcodcl1;
+
+  if (   pm_flag[CS_COMBUSTION_3PT] > -1
+      || pm_flag[CS_COMBUSTION_SLFM] == 1
+      || pm_flag[CS_COMBUSTION_SLFM] == 3) {
+    if (CS_F_(h) != nullptr)
+      rcodcl1_h = CS_F_(h)->bc_coeffs->rcodcl1;
+  }
 
   /* Boundary conditions mixture fraction and its variance */
-  cs_real_t *rcodcl1_ifm = nullptr, *rcodcl1_ifp2m = nullptr;
+  cs_real_t *rcodcl1_ifm = nullptr, *rcodcl1_ifp2m_ifsqm = nullptr;
+  cs_real_t *rcodcl1_ipvm = nullptr;
 
   /* Soot model */
   cs_real_t *rcodcl1_ifsm = nullptr, *rcodcl1_inpm = nullptr;
 
-  const int icod3p_type = cs_glob_physical_model_flag[CS_COMBUSTION_3PT];
+  cs_field_t *f;
 
-  if (icod3p_type > -1) {
+  f = cs_field_by_name_try("mixture_fraction");
+  if (f != nullptr)
+    rcodcl1_ifm = f->bc_coeffs->rcodcl1;
 
-    rcodcl1_ifm = cs_field_by_name("mixture_fraction")->bc_coeffs->rcodcl1;
-    rcodcl1_ifp2m
-      = cs_field_by_name("mixture_fraction_variance")->bc_coeffs->rcodcl1;
+  /* Remark of SLFM model: a priori, 2nd moment of mixture fraction and
+     progress variable are unknown until mixture fraction is solved.
+     Particular treatment needed in cs_solve_transported_variables, not here */
 
-    if (cm->isoot == 1) {
-      rcodcl1_ifsm = cs_field_by_name("soot_mass_fraction")->bc_coeffs->rcodcl1;
-      rcodcl1_inpm
-        = cs_field_by_name("soot_precursor_number")->bc_coeffs->rcodcl1;
-    }
+  int mode_fp2m = 0;
+  if (pm_flag[CS_COMBUSTION_SLFM] >= 0) {
+    if (cm->mode_fp2m == 1)
+      mode_fp2m = 1;
+  }
 
+  if (mode_fp2m == 0) {
+    f = cs_field_by_name_try("mixture_fraction_variance");
+    if (f != nullptr)
+      rcodcl1_ifp2m_ifsqm = f->bc_coeffs->rcodcl1;
+  }
+  else if (mode_fp2m == 1) {
+    f = cs_field_by_name_try("mixture_fraction_2nd_moment");
+    if (f != nullptr)
+        rcodcl1_ifp2m_ifsqm = f->bc_coeffs->rcodcl1;
+  }
+
+  if (pm_flag[CS_COMBUSTION_SLFM] >= 2) {
+    f = cs_field_by_name_try("progress_variable");
+    if (f != nullptr)
+      rcodcl1_ipvm = f->bc_coeffs->rcodcl1;
+  }
+
+  if (cm->isoot == 1) {
+    rcodcl1_ifsm = cs_field_by_name("soot_mass_fraction")->bc_coeffs->rcodcl1;
+    rcodcl1_inpm
+      = cs_field_by_name("soot_precursor_number")->bc_coeffs->rcodcl1;
   }
 
   /* Loop on inlet boundaries
@@ -245,12 +280,15 @@ cs_combustion_boundary_conditions(int  bc_type[])
     cs_real_t qimp = cs_boundary_conditions_open_get_mass_flow_rate(z);
 
     cs_real_t h_in = -HUGE_VALF;
-    cs_real_t ifm_in = 0;
+    cs_real_t ifm_in = 0, ifp2m_ifsqm_in = 0, ipvm_in = 0;
 
     /* Fuel inlet at tinfue */
     if (ci->ientfu == 1) {
       h_in = cm->hinfue;
       ifm_in = 1.;
+      if (mode_fp2m == 1)
+        ifp2m_ifsqm_in = 1.;
+      ipvm_in = 1.;
     }
 
     /* Oxydant inlet at tinoxy */
@@ -269,13 +307,19 @@ cs_combustion_boundary_conditions(int  bc_type[])
         if (   bc_type[elt_id] == CS_INLET
             || bc_type[elt_id] == CS_CONVECTIVE_INLET) {
 
-          rcodcl1_ifm[elt_id] = ifm_in;   // mean mixture fraction
-          rcodcl1_ifp2m[elt_id] = 0;      // mean mixture fraction variance
+          rcodcl1_ifm[elt_id] = ifm_in;      // mean mixture fraction
+
+          // mean mixture fraction variance or 2nd moment of mixture fraction
+          if (rcodcl1_ifp2m_ifsqm != nullptr)
+            rcodcl1_ifp2m_ifsqm[elt_id] = ifp2m_ifsqm_in;
+
+          if (rcodcl1_ipvm != nullptr)
+            rcodcl1_ipvm[elt_id] = ipvm_in;  // progress variable
 
           if (rcodcl1_h != nullptr)
-            rcodcl1_h[elt_id] = h_in;     // mixture enthalpy
+            rcodcl1_h[elt_id] = h_in;        // mixture enthalpy
 
-          if (rcodcl1_ifsm != nullptr) {  // soot model
+          if (rcodcl1_ifsm != nullptr) {     // soot model
             rcodcl1_ifsm[elt_id] = 0;
             rcodcl1_inpm[elt_id] = 0;
           }
@@ -291,7 +335,7 @@ cs_combustion_boundary_conditions(int  bc_type[])
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Compute density at inlets for pulverized coal combustion.
+ * \brief Compute density at boundary for pulverized coal combustion.
  *
  * This is based on boundary condition definitions, but is called at an
  * earlier stage in the time step.
@@ -299,7 +343,7 @@ cs_combustion_boundary_conditions(int  bc_type[])
 /*----------------------------------------------------------------------------*/
 
 void
-cs_combustion_boundary_conditions_inlet_density(void)
+cs_combustion_boundary_conditions_density(void)
 {
   /* Initialization
    * ============== */
@@ -349,10 +393,37 @@ cs_combustion_boundary_conditions_inlet_density(void)
     if (ci->ientfu == 1 || ci->ientox == 1) {
 
       cs_real_t rho_b_in = 0;
-      if (ci->ientfu == 1)
-        rho_b_in = pther/(cs_physical_constants_r*cm->tinfue/cm->wmolg[0]);
-      else if (ci->ientox ==1)
-        rho_b_in = pther/(cs_physical_constants_r*cm->tinoxy/cm->wmolg[1]);
+
+      if (cs_glob_physical_model_flag[CS_COMBUSTION_3PT] > -1) {
+
+        if (ci->ientfu == 1)
+          rho_b_in = pther/(cs_physical_constants_r*cm->tinfue/cm->wmolg[0]);
+        else if (ci->ientox ==1)
+          rho_b_in = pther/(cs_physical_constants_r*cm->tinoxy/cm->wmolg[1]);
+
+      }
+      else if (cs_glob_physical_model_flag[CS_COMBUSTION_SLFM] > -1) {
+
+        /* Fortran index:
+         * - if (ci->ientfu == 1)
+         *   flamelet_library(flamelet_rho, 1, 1, 1, nzm)
+         * - if (ci->ientox == 1)
+         *   flamelet_library(flamelet_rho, 1, 1, 1, 1)
+         *
+         *  TODO: to complete C/C++ migration,
+         *        replace call to cs_f_flamelet_rho_idx()
+         *        with "cm->flamelet_rho_idx", or
+         *        add cs_flamelet_library_idx function handling all indexes.
+        */
+
+        int flamelet_rho_idx = cs_f_flamelet_rho_idx();
+
+        if (ci->ientfu == 1)
+          flamelet_rho_idx += (cm->nzm - 1)*(cm->nzvar)*(cm->nki)*(cm->nxr);
+
+        rho_b_in = cm->flamelet_library_p[flamelet_rho_idx];
+
+      }
 
       for (cs_lnum_t elt_idx = 0; elt_idx < n_elts; elt_idx++) {
         cs_lnum_t face_id = elt_ids[elt_idx];
@@ -363,7 +434,8 @@ cs_combustion_boundary_conditions_inlet_density(void)
         if (vs < 0) // inflow
           brom[face_id] = rho_b_in;
       }
-    }
+
+    } /* Test on zone type */
 
   } /* loop on boundary zones */
 }

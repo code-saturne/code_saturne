@@ -182,7 +182,7 @@ if (ippmod(icod3p).ne.-1 .or.                                   &
   ro0 = pther*wmolme / (cs_physical_constants_r*t0)
   roref = ro0
 else if (ippmod(islfm).ne.-1) then
-  ro0 = flamelet_library(FLAMELET_RHO, 1, 1, 1, 1)
+  ro0 = flamelet_library(flamelet_rho, 1, 1, 1, 1)
   roref = ro0
 endif
 

@@ -127,6 +127,14 @@ cs_f_ppthch_get_pointers(int     **ngaze,
 
 void
 cs_f_coincl_get_pointers(int     **isoot,
+                         int     **ngazfl,
+                         int     **nki,
+                         int     **nxr,
+                         int     **nzm,
+                         int     **nzvar,
+                         int     **nlibvar,
+                         int     **ikimid,
+                         int     **mode_fp2m,
                          bool    **use_janaf,
                          double  **coefeg,
                          double  **compog,
@@ -254,6 +262,14 @@ cs_f_ppthch_get_pointers(int     **ngaze,
 
 void
 cs_f_coincl_get_pointers(int     **isoot,
+                         int     **ngazfl,
+                         int     **nki,
+                         int     **nxr,
+                         int     **nzm,
+                         int     **nzvar,
+                         int     **nlibvar,
+                         int     **ikimid,
+                         int     **mode_fp2m,
                          bool    **use_janaf,
                          double  **coefeg,
                          double  **compog,
@@ -271,6 +287,14 @@ cs_f_coincl_get_pointers(int     **isoot,
                          double  **hmax_lwc)
 {
   *isoot  = NULL;
+  *ngazfl = NULL;
+  *nki = NULL;
+  *nxr = NULL;
+  *nzm = NULL;
+  *nzvar = NULL;
+  *nlibvar = NULL;
+  *ikimid = NULL;
+  *mode_fp2m = NULL;
   *use_janaf = NULL;
   *coefeg = NULL;
   *compog = NULL;
@@ -292,6 +316,14 @@ cs_f_coincl_get_pointers(int     **isoot,
     cs_combustion_gas_model_t *cm = cs_glob_combustion_gas_model;
 
     *isoot  = &(cm->isoot);
+    *ngazfl = &(cm->ngazfl);
+    *nki = &(cm->nki);
+    *nxr = &(cm->nxr);
+    *nzm = &(cm->nzm);
+    *nzvar = &(cm->nzvar);
+    *nlibvar = &(cm->nlibvar);
+    *ikimid = &(cm->ikimid);
+    *mode_fp2m = &(cm->mode_fp2m);
     *use_janaf = &(cm->use_janaf);
     *coefeg = &(cm->coefeg[0][0]);
     *compog = &(cm->compog[0][0]);
