@@ -87,6 +87,12 @@ interface
     implicit none
   end subroutine cs_gui_combustion_gas_model
 
+  subroutine cs_gui_combustion_gas_model_temperatures()     &
+    bind(C, name='cs_gui_combustion_gas_model_temperatures')
+    use, intrinsic :: iso_c_binding
+    implicit none
+  end subroutine cs_gui_combustion_gas_model_temperatures
+
 end interface
 
 !===============================================================================
@@ -218,7 +224,7 @@ call cs_gui_combustion_gas_model
 if (ippmod(icoebu).ge.0) then
   cebu   = 2.5d0
 else if (ippmod(icod3p).ge.0) then
-  call uicpi2(tinoxy, tinfue)
+  call cs_gui_combustion_gas_model_temperatures
 endif
 
 !===============================================================================

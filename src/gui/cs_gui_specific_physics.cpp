@@ -718,32 +718,6 @@ _get_active_thermophysical_model(char  **model_name,
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
- * Public Fortran function definitions
- *============================================================================*/
-
-/*----------------------------------------------------------------------------
- * Temperature for D3P Gas Combustion
- *
- * Fortran Interface:
- *
- * Toxy   <--   Oxidant temperature
- * Tfuel  <--   Fuel temperature
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF (uicpi2, UICPI2) (double *const toxy,
-                                double *const tfuel)
-{
-  cs_gui_fluid_properties_value("reference_oxydant_temperature", toxy);
-  cs_gui_fluid_properties_value("reference_fuel_temperature", tfuel);
-
-#if _XML_DEBUG_
-  bft_printf("==> %s\n", __func__);
-  bft_printf("--toxy  = %f\n", *toxy);
-  bft_printf("--tfuel  = %f\n", *tfuel);
-#endif
-}
-
-/*============================================================================
  * Public function definitions
  *============================================================================*/
 
@@ -1378,6 +1352,31 @@ cs_gui_combustion_gas_model(void)
     bft_printf("--srrom  = %f\n", cm->srrom);
 #endif
   }
+}
+
+/*----------------------------------------------------------------------------
+ * Temperatures for D3P Gas Combustion
+ *----------------------------------------------------------------------------*/
+
+void
+cs_gui_combustion_gas_model_temperatures(void)
+{
+  cs_combustion_gas_model_t *cm = cs_glob_combustion_gas_model;
+  assert(cm != NULL);
+
+  double toxy = cm->tinoxy, tfuel = cm->tinfue;
+
+  cs_gui_fluid_properties_value("reference_oxydant_temperature", &toxy);
+  cs_gui_fluid_properties_value("reference_fuel_temperature", &tfuel);
+
+#if _XML_DEBUG_
+  bft_printf("==> %s\n", __func__);
+  bft_printf("--toxy  = %f\n", toxy);
+  bft_printf("--tfuel  = %f\n", tfuel);
+#endif
+
+  cm->tinoxy = toxy;
+  cm->tinfue = tfuel;
 }
 
 /*----------------------------------------------------------------------------

@@ -107,13 +107,19 @@ character(kind=c_char, len=1), dimension(:), pointer :: c_name
       integer(c_int), intent(out) :: f_name_len
     end subroutine cs_f_combustion_gas_get_data_file_name
 
+    subroutine cs_gui_combustion_gas_model_temperatures()     &
+      bind(C, name='cs_gui_combustion_gas_model_temperatures')
+      use, intrinsic :: iso_c_binding
+      implicit none
+    end subroutine cs_gui_combustion_gas_model_temperatures
+
   end interface
 
 !===============================================================================
 ! -0. INITIALISATION et VERIFICATIONS
 !===============================================================================
 
-call uicpi2(tinoxy, tinfue)
+call cs_gui_combustion_gas_model_temperatures
 
 ! Initialize variables to avoid compiler warnings
 
