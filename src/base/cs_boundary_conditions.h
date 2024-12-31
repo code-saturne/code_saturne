@@ -160,9 +160,6 @@ typedef struct {
   /* atmospheric flows: auto inlet/outlet flag */
   int *iautom;
 
-  /* atmospheric flows: on/off for profile from data */
-  int iprofm[CS_MAX_BC_PM_ZONE_NUM+1];
-
 } cs_boundary_condition_pm_info_t;
 
 extern cs_boundary_condition_pm_info_t  *cs_glob_bc_pm_info;

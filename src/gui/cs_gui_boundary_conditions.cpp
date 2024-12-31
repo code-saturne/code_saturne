@@ -2822,9 +2822,7 @@ cs_gui_boundary_conditions_processing(int  *itypfb)
 
       /* data by zone */
 
-      if (cs_glob_physical_model_flag[CS_ATMOSPHERIC] > -1)
-        bc_pm_info->iprofm[zone_nbr] = boundaries->meteo[izone].read_data;
-      else if (gas_combustion) {
+      if (gas_combustion) {
         bc_pm_info->ientfu[zone_nbr] = boundaries->ientfu[izone];
         bc_pm_info->ientox[zone_nbr] = boundaries->ientox[izone];
         bc_pm_info->ientgb[zone_nbr] = boundaries->ientgb[izone];
@@ -2885,7 +2883,6 @@ cs_gui_boundary_conditions_processing(int  *itypfb)
       }
 
       if (cs_glob_physical_model_flag[CS_ATMOSPHERIC] > -1) {
-         bc_pm_info->iprofm[zone_nbr] = boundaries->meteo[izone].read_data;
         if (boundaries->meteo[izone].automatic) {
           for (cs_lnum_t elt_id = 0; elt_id < bz->n_elts; elt_id++) {
             cs_lnum_t face_id = bz->elt_ids[elt_id];
@@ -3154,8 +3151,7 @@ cs_gui_boundary_conditions_processing(int  *itypfb)
       }
 
       if (cs_glob_physical_model_flag[CS_ATMOSPHERIC] > -1) {
-        bft_printf("-----iprofm=%i, automatic=%i \n",
-                   bc_pm_info->iprofm[zone_nbr],
+        bft_printf("-----automatic=%i \n",
                    boundaries->meteo[izone].automatic);
       }
 #endif
@@ -3203,7 +3199,6 @@ cs_gui_boundary_conditions_processing(int  *itypfb)
       }
 
       if (cs_glob_physical_model_flag[CS_ATMOSPHERIC] > -1) {
-         bc_pm_info->iprofm[zone_nbr] = boundaries->meteo[izone].read_data;
         if (boundaries->meteo[izone].automatic) {
           for (cs_lnum_t elt_id = 0; elt_id < bz->n_elts; elt_id++) {
             cs_lnum_t face_id = bz->elt_ids[elt_id];

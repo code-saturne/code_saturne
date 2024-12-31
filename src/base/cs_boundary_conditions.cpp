@@ -2327,9 +2327,6 @@ cs_boundary_conditions_create_legacy_zone_data(void)
     bc_pm_info->ientgf[i] = 0;
     bc_pm_info->tkent[i]  = 0.;
     bc_pm_info->fment[i]  = 0.;
-
-    /* atmospheric flows, GUI meteo profiles */
-    bc_pm_info->iprofm[i] = 0;
   }
 
   /* Initialization for tgf and frmel */
