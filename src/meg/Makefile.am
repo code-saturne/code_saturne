@@ -82,7 +82,7 @@ cs_meg_post_output.cxx \
 cs_meg_post_profile.cxx \
 cs_meg_source_terms.cxx \
 cs_meg_volume_function.cxx \
-cs_meg_xdef_wrapper.c
+cs_meg_xdef_wrapper.cxx
 
 noinst_LIBRARIES = libcsmeg.a
 libcsmeg_a_SOURCES = $(megfiles)

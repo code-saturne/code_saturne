@@ -48,7 +48,6 @@ AM_CPPFLAGS = \
 $(CPPFLAGS_PLE) \
 $(MPI_CPPFLAGS)
 
-AM_CFLAGS = $(CFLAGS_DBG) $(CFLAGS_OPT) $(CFLAGS_SHARED)
 AM_CXXFLAGS = $(CXXFLAGS_STD) $(CXXFLAGS_DBG) $(CXXFLAGS_OPT) $(CXXFLAGS_SHARED)
 
 AM_FCFLAGS = \
@@ -81,8 +80,8 @@ cs_physical_model.h
 
 noinst_LIBRARIES = libcspprt.a
 libcspprt_a_SOURCES = \
-cs_combustion_model.c \
-cs_physical_model.c \
+cs_combustion_model.cpp \
+cs_physical_model.cpp \
 ppini1.f90 \
 ppinii.f90 \
 ppiniv.f90 \
