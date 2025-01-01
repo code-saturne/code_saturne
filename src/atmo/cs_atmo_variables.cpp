@@ -193,7 +193,10 @@ _gaussian(const cs_mesh_t             *m,
     cs_real_t pp = 0.0, dum = 0.0;
     const cs_real_t zent = cell_cen[c_id][2];
     if (at_opt->meteo_profile == 0)
-      cs_atmo_profile_std(zent, &pp, &dum, &dum);
+      cs_atmo_profile_std(0., /* z_ref */
+                          fluid_props->p0,
+                          fluid_props->t0,
+                          zent, &pp, &dum, &dum);
     else if (at_opt->meteo_profile == 1)
       pp = cs_intprf(at_opt->met_1d_nlevels_t,
                      at_opt->met_1d_ntimes,
@@ -993,7 +996,10 @@ cs_atmo_physical_properties_update(void)
     const cs_real_t zent = cell_cen[c_id][2];
 
     if (at_opt->meteo_profile == 0)
-      cs_atmo_profile_std(zent, &pp, &dum, &dum);
+      cs_atmo_profile_std(0., /* z_ref */
+                          fluid_props->p0,
+                          fluid_props->t0,
+                          zent, &pp, &dum, &dum);
     else if (at_opt->meteo_profile == 1)
       pp = cs_intprf(at_opt->met_1d_nlevels_t,
                      at_opt->met_1d_ntimes,

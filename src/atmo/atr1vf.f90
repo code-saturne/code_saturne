@@ -378,14 +378,20 @@ if (mod(ntcabs,nfatr1).eq.0.or.ideb.eq.0) then
       endif
 
       if (imeteo.eq.0) then
-        call atmstd(zray(k), preray(k), dum, dum)
+        call atmstd(0.d0, &
+                    p0,   &
+                    t0,   &
+                    zray(k), preray(k), dum, dum)
       else if (imeteo.eq.1) then
         call intprf(nbmetd, nbmetm, ztmet, tmmet, phmet, zray(k), ttcabs, &
                     preray(k))
       else
         !TODO would be more coherent with an averaging of "meteo_pressure"
         ! Field
-        call atmstd(zray(k), preray(k), dum, dum)
+        call atmstd(0.d0, &
+                    p0,   &
+                    t0,   &
+                    zray(k), preray(k), dum, dum)
       endif
     enddo
 
@@ -398,8 +404,10 @@ if (mod(ntcabs,nfatr1).eq.0.or.ideb.eq.0) then
       ncray(k) = 0.d0
       aeroso(k) = aevert(k, ii)
 
-      ! initialize with standard atmosphere
-      call atmstd(zray(k), preray(k), temray(k), romray(k))
+      ! Initialize with standard atmosphere
+      ! above the domain
+      call atmstd(zray(kvert), preray(kvert), temray(kvert), &
+                  zray(k), preray(k), temray(k), romray(k))
       ! Conversion Kelvin to Celsius
       temray(k) = temray(k) - tkelvi
     enddo

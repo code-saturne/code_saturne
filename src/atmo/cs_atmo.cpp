@@ -3531,7 +3531,11 @@ cs_atmo_bcond(void)
         cs_real_t dum1;
         cs_real_t dum2;
         if (cs_glob_atmo_option->meteo_profile == 0)
-          cs_atmo_profile_std(z_in, &pp, &dum1, &dum2);
+          cs_atmo_profile_std(0., /* z_ref */
+                              phys_pro->p0,
+                              phys_pro->t0,
+                              z_in,
+                              &pp, &dum1, &dum2);
 
         /* Pressure profile from meteo file: */
         else if (cs_glob_atmo_option->meteo_profile == 1)
@@ -3743,7 +3747,10 @@ cs_soil_model(void)
       f_foir[soil_id] = foir;
 
       if (cs_glob_atmo_option->meteo_profile == 0) {
-        cs_atmo_profile_std(cell_cen[cell_id][2], &pphy, &dum, &dum);
+        cs_atmo_profile_std(0., /* z_ref */
+                            phys_pro->p0,
+                            phys_pro->t0,
+                            cell_cen[cell_id][2], &pphy, &dum, &dum);
       }
       else if (cs_glob_atmo_option->meteo_profile == 1) {
         int nbmett = cs_glob_atmo_option->met_1d_nlevels_t;

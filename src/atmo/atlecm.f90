@@ -250,6 +250,8 @@ if (imode.eq.0) then
 
   do ii = 1, nbmett
     read (impmet,*,err=999,end=999) zzmax, temp, qv
+
+    ! Initialize p0, rho0 and theta0 at the first level
     if (ii.eq.1 .and. itp.eq.1) then
       t0 = temp + tkelvi
       rhum = rair*(1.d0+(rvsra-1.d0)*qv*ih2o)
@@ -288,6 +290,14 @@ else
            ttmet(ii,itp),qvmet(ii,itp)
     endif
 
+    ! Initialize p0, rho0 and theta0 at the first level
+    if (ii.eq.1 .and. itp.eq.1) then
+      qv = qvmet(ii,itp)
+      t0 = temp + tkelvi
+      rhum = rair*(1.d0+(rvsra-1.d0)*qv*ih2o)
+      ro0 = p0 / t0 /rhum
+    endif
+
     !--> Check the unity of the specific humidity (kg/kg) when used
 
     if (qvmet(ii,itp).gt.0.1 .or. qvmet(ii,itp).lt.0.) then
@@ -314,7 +324,9 @@ else
       zzmax = zzmax + 1000.d0
       ii = ii + 1
       ztmet(ii) = zzmax
-      call atmstd(ztmet(ii), dum, tlkelv, dum) ! standard temperature profile
+      ! standard temperature profile above the domaine
+      call atmstd(ztmet(nbmett), p0, ttmet(nbmett,itp)+tkelvi, &
+                  ztmet(ii), dum, tlkelv, dum)
       ttmet(ii,itp) = tlkelv - tkelvi
       if (iqv0.eq.0) then
         qvmet(ii,itp) = 0.d0   ! standard atmosphere: q=0
@@ -330,20 +342,13 @@ else
 
 endif
 
-! Initialize p0, rho0 and theta0 at the first level
-if (imode.eq.1.and.itp.eq.1) then
-  p0 = xyp_met(3, itp)
-  t0 = ttmet(1,itp)+tkelvi
-  rhum = rair*(1.d0+(rvsra-1.d0)*qvmet(1,itp)*ih2o)
-  ro0 = p0 / t0 /rhum
-endif
-
 !===============================================================================
 ! 6. Compute hydro pressure profile  (Laplace integration)
 !===============================================================================
 ! If ihpm = 0 (default): bottom to top Laplace integration based on pressure at
 ! sea level (pmer(itp))
-! If ihpm = 1 (usipsu): top to bottom Laplace integration based on pressure at
+! If ihpm = 1 (hydrostatic_pressure_model in cs_user_parameters):
+! top to bottom Laplace integration based on pressure at
 ! the top of the domain (ztmet(nbmaxt)) for the standard atmosphere
 
 if (imode.eq.1) then
@@ -374,7 +379,9 @@ if (imode.eq.1) then
       phmet(k,itp) = phmet(k-1,itp)*exp(rap)
     enddo
   else
-    call atmstd (ztmet(nbmaxt), pptop, dum, dum) ! standard profile temperature
+    ! Standard pressure profile above the domain
+    call atmstd (0.d0, p0, t0, &
+                 ztmet(nbmaxt), pptop, dum, dum)
     phmet(nbmaxt,itp) = pptop
     do k = nbmaxt-1, 1, -1
       tmoy = 0.5d0*(ttmet(k+1,itp) + ttmet(k,itp)) + tkelvi

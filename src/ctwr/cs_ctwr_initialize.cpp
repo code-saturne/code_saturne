@@ -248,6 +248,8 @@ cs_ctwr_init_field_vars(cs_real_t  rho0,
   const cs_mesh_quantities_t *fvq   = cs_glob_mesh_quantities;
   const cs_real_3_t *cell_cen = (const cs_real_3_t *)fvq->cell_cen;
 
+  const cs_fluid_properties_t *fluid_props = cs_glob_fluid_properties;
+
   cs_ctwr_option_t *ct_opt = cs_get_glob_ctwr_option();
   /* Fields necessary for humid atmosphere model */
   cs_field_t *meteo_pressure = cs_field_by_name_try("meteo_pressure");
@@ -373,7 +375,10 @@ cs_ctwr_init_field_vars(cs_real_t  rho0,
       cs_real_t pphy = 0;
       cs_real_t dum = 0;
       if (cs_glob_atmo_option->meteo_profile == 0)
-        cs_atmo_profile_std(cell_cen[cell_id][2], &pphy, &dum, &dum);
+        cs_atmo_profile_std(0., /* z_ref */
+                            fluid_props->p0,
+                            fluid_props->t0,
+                            cell_cen[cell_id][2], &pphy, &dum, &dum);
 
       else if (cs_glob_atmo_option->meteo_profile == 1) {
         int nbmett = cs_glob_atmo_option->met_1d_nlevels_t;

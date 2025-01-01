@@ -209,7 +209,8 @@ if (ippmod(iatmos).eq.2.and.modsedi.eq.1) then ! for humid atmo. physics only
     if (qliqmax.gt.1d-8) then
       do iel = 1, ncel
         if (imeteo.eq.0) then
-          call atmstd(xyzcen(3,iel),pp,dum,dum)
+          call atmstd(0.d0, p0, t0, &
+                      xyzcen(3,iel),pp,dum,dum)
         else if (imeteo.eq.1) then
           call intprf &
             ( nbmett, nbmetm,                                        &
@@ -384,7 +385,8 @@ contains
 
       do iel = 1, ncel
         if (imeteo.eq.0) then
-          call atmstd(xyzcen(3,iel),pres(iel),dum,dum)
+          call atmstd(0.d0, p0, t0, &
+                      xyzcen(3,iel),pres(iel),dum,dum)
         else if (imeteo.eq.1) then
           call intprf                                                      &
               ( nbmett, nbmetm,                                            &

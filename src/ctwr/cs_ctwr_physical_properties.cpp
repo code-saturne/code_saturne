@@ -113,8 +113,12 @@ cs_ctwr_compute_reference_pressure(cs_lnum_t  cell_id,
   else {
     cs_real_t pphy = 0;
     cs_real_t dum = 0;
+    const cs_fluid_properties_t *fluid_props = cs_glob_fluid_properties;
     if (cs_glob_atmo_option->meteo_profile == 0) {
-      cs_atmo_profile_std(cell_cen[cell_id][2], &pphy, &dum, &dum);
+      cs_atmo_profile_std(0., /* z_ref */
+                          fluid_props->p0,
+                          fluid_props->t0,
+                          cell_cen[cell_id][2], &pphy, &dum, &dum);
     }
     else if (cs_glob_atmo_option->meteo_profile == 1) {
       int nbmett = cs_glob_atmo_option->met_1d_nlevels_t;

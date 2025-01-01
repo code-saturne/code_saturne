@@ -45,15 +45,21 @@ BEGIN_C_DECLS
 /*!
  * \brief compute standard atmospheric profile (Holton p 374)
  *
+ * \param[in]       z_ref      reference altitude in m
+ * \param[in]       p_ref      reference pressure
+ * \param[in]       t_ref      reference temperature
  * \param[in]       z          absolute altitude in m
- * \param[out]      p          pressure in pa
- * \param[out]      t          temperature in k
+ * \param[out]      p          pressure in Pa
+ * \param[out]      t          temperature in K
  * \param[out]      r          density in kg/m3
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_atmo_profile_std(cs_real_t   z,
+cs_atmo_profile_std(cs_real_t   z_ref,
+                    cs_real_t   p_ref,
+                    cs_real_t   t_ref,
+                    cs_real_t   z,
                     cs_real_t  *p,
                     cs_real_t  *t,
                     cs_real_t  *r);

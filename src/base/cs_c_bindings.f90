@@ -987,11 +987,11 @@ module cs_c_bindings
 
     ! Interface to C function computing standard atmospheric profile
 
-    subroutine atmstd(z, p, t, r) &
+    subroutine atmstd(z_ref, p_ref, t_ref, z, p, t, r) &
       bind(C, name='cs_atmo_profile_std')
       use, intrinsic :: iso_c_binding
       implicit none
-      real(kind=c_double), intent(in), value :: z
+      real(kind=c_double), intent(in), value :: z_ref, p_ref, t_ref, z
       real(kind=c_double), intent(out) :: p, t, r
     end subroutine atmstd
 

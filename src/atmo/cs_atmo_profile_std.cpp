@@ -89,6 +89,9 @@ BEGIN_C_DECLS
 /*!
  * \brief compute standard atmospheric profile (Holton p 374)
  *
+ * \param[in]       z_ref      reference altitude in m
+ * \param[in]       p_ref      reference pressure
+ * \param[in]       t_ref      reference temperature
  * \param[in]       z          absolute altitude in m
  * \param[out]      p          pressure in Pa
  * \param[out]      t          temperature in K
@@ -97,26 +100,27 @@ BEGIN_C_DECLS
 /*----------------------------------------------------------------------------*/
 
 void
-cs_atmo_profile_std(cs_real_t   z,
+cs_atmo_profile_std(cs_real_t   z_ref,
+                    cs_real_t   p_ref,
+                    cs_real_t   t_ref,
+                    cs_real_t   z,
                     cs_real_t  *p,
                     cs_real_t  *t,
                     cs_real_t  *r)
 {
   cs_real_t rair = cs_glob_fluid_properties->r_pg_cnst;
-  cs_real_t p0 = cs_glob_fluid_properties->p0;
-  cs_real_t t0 = cs_glob_fluid_properties->t0;
   cs_real_t zt = 11000.;
   cs_real_t g = cs_math_3_norm(cs_glob_physical_constants->gravity);
   cs_real_t a = -6.5e-3;
 
-  if (z <= zt){
-    *t = t0 + a*z;
-    *p = p0*pow((*t)/t0, -g/rair/a);
+  if (z <= zt) {
+    *t = t_ref + a*(z-z_ref);
+    *p = p_ref*pow((*t)/t_ref, -g/rair/a);
     *r = (*p)/rair/(*t);
   }
   else {
-    cs_real_t t11 = t0 + a*zt;
-    cs_real_t p11 = p0*pow(t11/t0,-g/rair/a);
+    cs_real_t t11 = t_ref + a*(zt - z_ref);
+    cs_real_t p11 = p_ref*pow(t11/t_ref,-g/rair/a);
     *t = t11;
     *p = p11*exp(-g/rair/t11*(z - zt));
     *r = (*p)/rair/(*t);

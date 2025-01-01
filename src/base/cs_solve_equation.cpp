@@ -1719,7 +1719,10 @@ cs_solve_equation_scalar(cs_field_t        *f,
       if (cs_glob_atmo_option->meteo_profile == 0) {
         cs_real_t _pphy, dum;
         for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-          cs_atmo_profile_std(cell_cen[c_id][2], &_pphy, &dum, &dum);
+          cs_atmo_profile_std(0., /* z_ref */
+                              fluid_props->p0,
+                              fluid_props->t0,
+                              cell_cen[c_id][2], &_pphy, &dum, &dum);
           pphy[c_id] = _pphy;
         }
       }

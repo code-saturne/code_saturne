@@ -342,6 +342,7 @@ _humid_atmosphere(const cs_real_t  cromo[],
   const cs_real_3_t *cell_cen = (const cs_real_3_t *)fvq->cell_cen;
 
   const cs_real_t *grav = cs_glob_physical_constants->gravity;
+  const cs_fluid_properties_t *fluid_props = cs_glob_fluid_properties;
 
   cs_field_t *f_thm = cs_thermal_model_field();
 
@@ -397,7 +398,10 @@ _humid_atmosphere(const cs_real_t  cromo[],
     /* calculate the physical pressure 'pphy' */
 
     if (cs_glob_atmo_option->meteo_profile == 0) {
-      cs_atmo_profile_std(cell_cen[c_id][2], &pphy, &dum, &dum);
+      cs_atmo_profile_std(0., /* z_ref */
+                          fluid_props->p0,
+                          fluid_props->t0,
+                          cell_cen[c_id][2], &pphy, &dum, &dum);
     }
     else if (cs_glob_atmo_option->meteo_profile == 1) {
       int nbmett = cs_glob_atmo_option->met_1d_nlevels_t;
