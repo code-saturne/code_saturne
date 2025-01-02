@@ -155,7 +155,8 @@ cs_meg_xdef_wrapper(cs_real_t         time,
 {
   CS_UNUSED(time);
 
-  const cs_meg_xdef_input_t *_input = input;
+  const cs_meg_xdef_input_t *_input
+    = reinterpret_cast<const cs_meg_xdef_input_t *>(input);
 
   const cs_real_3_t *_coords = (const cs_real_3_t *)coords;
 
