@@ -9,7 +9,7 @@
   This file is part of the code_saturne Kernel, element of the
   code_saturne CFD tool.
 
-  Copyright (C) 1998-2024 EDF S.A., France
+  Copyright (C) 1998-2025 EDF S.A., France
 
   contact: saturne-support@edf.fr
 
