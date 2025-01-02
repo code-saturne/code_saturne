@@ -51,7 +51,7 @@ BEGIN_C_DECLS
  * Local type definitions
  *============================================================================*/
 
-/*! \brief Inlet definition for pulverized combustion combustion */
+/*! \brief Inlet definition for gas combustion */
 
 typedef struct {
 
@@ -129,7 +129,7 @@ cs_combustion_boundary_conditions_lw(int  bc_type[]);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Compute density at boundary for pulverized combustion combustion.
+ * \brief Compute density at boundary for gas combustion.
  *
  * This is based on boundary condition definitions, but is called at an
  * earlier stage in the time step.
@@ -138,6 +138,19 @@ cs_combustion_boundary_conditions_lw(int  bc_type[]);
 
 void
 cs_combustion_boundary_conditions_density(void);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Compute density at boundary for gas combustion, using
+ *        EBU or Libby-Williams models.
+ *
+ * This is based on boundary condition definitions, but is called at an
+ * earlier stage in the time step.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_combustion_boundary_conditions_density_ebu_lw(void);
 
 /*----------------------------------------------------------------------------*/
 

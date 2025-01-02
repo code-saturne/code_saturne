@@ -46,19 +46,21 @@
 #include "base/cs_boundary.h"
 #include "base/cs_boundary_conditions.h"
 #include "base/cs_boundary_zone.h"
-#include "cogz/cs_combustion_gas.h"
-#include "pprt/cs_combustion_model.h"
 #include "base/cs_field.h"
 #include "base/cs_field_pointer.h"
 #include "base/cs_log.h"
 #include "base/cs_math.h"
-#include "mesh/cs_mesh.h"
-#include "mesh/cs_mesh_quantities.h"
 #include "base/cs_parameters.h"
 #include "base/cs_parameters_check.h"
 #include "base/cs_physical_constants.h"
-#include "pprt/cs_physical_model.h"
 #include "base/cs_prototypes.h"
+#include "base/cs_time_step.h"
+#include "mesh/cs_mesh.h"
+#include "mesh/cs_mesh_quantities.h"
+
+#include "cogz/cs_combustion_gas.h"
+#include "pprt/cs_combustion_model.h"
+#include "pprt/cs_physical_model.h"
 
 /* Prototypes for Fortran functions */
 
@@ -581,7 +583,7 @@ cs_combustion_boundary_conditions_lw(int  bc_type[])
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Compute density at boundary for pulverized coal combustion.
+ * \brief Compute density at boundary for gas combustion.
  *
  * This is based on boundary condition definitions, but is called at an
  * earlier stage in the time step.
@@ -670,6 +672,101 @@ cs_combustion_boundary_conditions_density(void)
         rho_b_in = cm->flamelet_library_p[flamelet_rho_idx];
 
       }
+
+      for (cs_lnum_t elt_idx = 0; elt_idx < n_elts; elt_idx++) {
+        cs_lnum_t face_id = elt_ids[elt_idx];
+        cs_lnum_t cell_id = b_face_cells[face_id];
+        const cs_real_t vs = cs_math_3_dot_product(cvar_vel[cell_id],
+                                                   f_n[face_id]);
+
+        if (vs < 0) // inflow
+          brom[face_id] = rho_b_in;
+      }
+
+    } /* Test on zone type */
+
+  } /* loop on boundary zones */
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Compute density at boundary for gas combustion, using
+ *        EBU or Libby-Williams models.
+ *
+ * This is based on boundary condition definitions, but is called at an
+ * earlier stage in the time step.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_combustion_boundary_conditions_density_ebu_lw(void)
+{
+  /* Initialization
+   * ============== */
+
+  const cs_lnum_t n_b_faces = cs_glob_mesh->n_b_faces;
+  const cs_lnum_t *b_face_cells = cs_glob_mesh->b_face_cells;
+
+  const cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
+  const cs_nreal_3_t *f_n = (const cs_real_3_t *)mq->b_face_u_normal;
+  const cs_real_3_t *cvar_vel = (cs_real_3_t *)CS_F_(vel)->val;
+
+  const cs_combustion_gas_model_t *cm = cs_glob_combustion_gas_model;
+
+  const cs_real_t p0 = cs_glob_fluid_properties->p0;
+
+  const cs_real_t *crom = CS_F_(rho)->val;
+  cs_real_t *brom = CS_F_(rho_b)->val;
+
+  /* Mass density on edges for all faces */
+
+  for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++) {
+    cs_lnum_t cell_id = b_face_cells[face_id];
+    brom[face_id] = crom[cell_id];
+  }
+
+  if (cs_glob_time_step->nt_cur <= 1)
+    return;
+
+  /* Recompute density at inlets */
+
+  assert(cs_glob_boundaries != NULL);
+
+  const cs_boundary_t *bdy = cs_glob_boundaries;
+
+  /* loop on boundary zones, ignore non-inlet zones */
+
+  for (int bdy_idx = 0; bdy_idx < bdy->n_boundaries; bdy_idx += 1) {
+
+    if (! (bdy->types[bdy_idx] & CS_BOUNDARY_INLET))
+      continue;
+
+    const cs_zone_t *z = cs_boundary_zone_by_id(bdy->zone_ids[bdy_idx]);
+
+    const cs_lnum_t n_elts = z->n_elts;
+    const cs_lnum_t *elt_ids = z->elt_ids;
+
+    auto ci = reinterpret_cast<cs_combustion_bc_inlet_t *>
+                (cs_boundary_conditions_get_model_inlet(z));
+
+    if (ci->ientgb == 1 || ci->ientgf == 1) {
+
+      cs_real_t coefg[3] = {ci->fment, 1.-ci->fment, 0};
+      if (ci->ientgb == 1) {
+        cs_real_t fs_1 = cm->fs[0];
+        coefg[0] = fmax(0, (ci->fment-fs_1) / (1.-fs_1));
+        coefg[2] = (ci->fment-coefg[0]) / fs_1;
+        coefg[1] = 1. - coefg[0] - coefg[2];
+      }
+      assert(cm->n_gas_species <= 3);
+
+      cs_real_t nbmol = 0;
+      for (int igg = 0; igg < cm->n_gas_species; igg++)
+        nbmol += coefg[igg]/cm->wmolg[igg];
+      cs_real_t masmg = 1./ nbmol;
+      cs_real_t temsmm = ci->tkent / masmg;
+
+      cs_real_t rho_b_in = p0 / (cs_physical_constants_r*temsmm);
 
       for (cs_lnum_t elt_idx = 0; elt_idx < n_elts; elt_idx++) {
         cs_lnum_t face_id = elt_ids[elt_idx];

@@ -123,13 +123,15 @@ endif
 ! ---> Flamme de premelange : Modele EBU
 
 if (ippmod(icoebu).ge.0) then
-  call ebuphy(mbrom, izfppp)
+  call ebuphy
+  mbrom = 1
 endif
 
 ! ---> Flamme de premelange : Modele LWC
 
 if (ippmod(icolwc).ge.0) then
-  call lwcphy(mbrom, izfppp)
+  call lwcphy
+  mbrom = 1
 endif
 
 !----

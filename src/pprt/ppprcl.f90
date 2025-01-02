@@ -88,8 +88,6 @@ if (ippmod(icod3p).ge.0 .or. ippmod(islfm).ge.0) then
   do izone = 1, nozppm
     qimp(izone)   = zero
     iqimp(izone)  = 0
-    ientox(izone) = 0
-    ientfu(izone) = 0
   enddo
 
   do ifac = 1, nfabor
@@ -109,8 +107,6 @@ elseif ( ippmod(icoebu).ge.0 ) then
     xintur(izone) = zero
     fment(izone)  = zero
     tkent(izone)  = zero
-    ientgf(izone) = 0
-    ientgb(izone) = 0
   enddo
 
   do ifac = 1, nfabor

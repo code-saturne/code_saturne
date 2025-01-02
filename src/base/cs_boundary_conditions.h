@@ -136,15 +136,6 @@ typedef struct {
   /*! turbulent intensity */
   cs_real_t  xintur[CS_MAX_BC_PM_ZONE_NUM+1];
 
-  /*! gas combustion (cogz) */
-  int ientfu[CS_MAX_BC_PM_ZONE_NUM+1]; // <-- 1 for fuel flow inlet
-
-  int ientox[CS_MAX_BC_PM_ZONE_NUM+1]; // <-- 1 for an air fow inlet
-
-  int ientgb[CS_MAX_BC_PM_ZONE_NUM+1]; // <-- 1 for burned gas inlet
-
-  int ientgf[CS_MAX_BC_PM_ZONE_NUM+1]; // <-- 1 for unburned gas inlet
-
   /*! inlet temperature (gas combustion) */
   double tkent[CS_MAX_BC_PM_ZONE_NUM+1];
 

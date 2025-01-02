@@ -624,30 +624,6 @@ _write_auxiliary_checkpoint(void)
     dummy_real = cm->tinoxy;
     _WRITE_REAL_VAL("tinoxy_cod3p");
 
-    // Zone numbers
-    cs_restart_write_section(r,
-                             "num_zone_fb_cod3p",
-                             3,
-                             1,
-                             CS_TYPE_cs_real_t,
-                             cs_glob_bc_pm_info->izfppp);
-
-    // Fuel inlet (if not NOZPPM, error)
-    cs_restart_write_section(r,
-                             "ientfu_zone_bord_cod3p",
-                             0,
-                             CS_MAX_BC_PM_ZONE_NUM,
-                             CS_TYPE_int,
-                             cs_glob_bc_pm_info->ientfu + 1);
-
-    // Oxydant inlet (if not NOZPPM, error)
-    cs_restart_write_section(r,
-                             "ientox_zone_bord_cod3p",
-                             0,
-                             CS_MAX_BC_PM_ZONE_NUM,
-                             CS_TYPE_int,
-                             cs_glob_bc_pm_info->ientox + 1);
-
     cs_log_printf(CS_LOG_DEFAULT,
                   " End writing combustion information (COD3P)\n");
   }
@@ -677,22 +653,6 @@ _write_auxiliary_checkpoint(void)
                              CS_TYPE_cs_real_t,
                              cs_glob_bc_pm_info->izfppp);
 
-    // Entree Fuel (si ce n'est pas NOZPPM, erreur)
-    cs_restart_write_section(r,
-                             "ientfu_zone_bord_slfm",
-                             0,
-                             CS_MAX_BC_PM_ZONE_NUM,
-                             CS_TYPE_int,
-                             cs_glob_bc_pm_info->ientfu + 1);
-
-    // Entree oxydant (si ce n'est pas NOZPPM, erreur)
-    cs_restart_write_section(r,
-                             "ientox_zone_bord_slfm",
-                             0,
-                             CS_MAX_BC_PM_ZONE_NUM,
-                             CS_TYPE_int,
-                             cs_glob_bc_pm_info->ientox + 1);
-
     cs_log_printf(CS_LOG_DEFAULT,
                   " End writing combustion information (SLFM)\n");
   }
@@ -715,22 +675,6 @@ _write_auxiliary_checkpoint(void)
                              1,
                              CS_TYPE_cs_real_t,
                              cs_glob_bc_pm_info->izfppp);
-
-    // Entree Gaz brule(si ce n'est pas NOZPPM, erreur)
-    cs_restart_write_section(r,
-                             "ientgb_zone_bord_ebu",
-                             0,
-                             CS_MAX_BC_PM_ZONE_NUM,
-                             CS_TYPE_int,
-                             cs_glob_bc_pm_info->ientgb + 1);
-
-    // Entree gaz frais (si ce n'est pas NOZPPM, erreur)
-    cs_restart_write_section(r,
-                             "ientgf_zone_bord_ebu",
-                             0,
-                             CS_MAX_BC_PM_ZONE_NUM,
-                             CS_TYPE_int,
-                             cs_glob_bc_pm_info->ientgf + 1);
 
     // FMENT (si ce n'est pas NOZPPM, erreur)
     cs_restart_write_section(r,
@@ -775,22 +719,6 @@ _write_auxiliary_checkpoint(void)
                              1,
                              CS_TYPE_cs_real_t,
                              cs_glob_bc_pm_info->izfppp);
-
-    // Entree Gaz brule(si ce n'est pas NOZPPM, erreur)
-    cs_restart_write_section(r,
-                             "ientgb_zone_bord_lwc",
-                             0,
-                             CS_MAX_BC_PM_ZONE_NUM,
-                             CS_TYPE_int,
-                             cs_glob_bc_pm_info->ientgb + 1);
-
-    // Entree gaz frais (si ce n'est pas NOZPPM, erreur)
-    cs_restart_write_section(r,
-                             "ientgf_zone_bord_lwc",
-                             0,
-                             CS_MAX_BC_PM_ZONE_NUM,
-                             CS_TYPE_int,
-                             cs_glob_bc_pm_info->ientgf + 1);
 
     // FMENT (si ce n'est pas NOZPPM, erreur)
     cs_restart_write_section(r,
@@ -1264,22 +1192,6 @@ _read_auxiliary_checkpoint(cs_map_name_to_id_t *old_field_map)
                                        CS_TYPE_int,
                                        cs_glob_bc_pm_info->izfppp);
 
-      // Entree Fuel (si ce n'est pas NOZPPM, erreur)
-      retval = cs_restart_read_section(r,
-                                       "ientfu_zone_bord_cod3p",
-                                       0,
-                                       CS_MAX_BC_PM_ZONE_NUM,
-                                       CS_TYPE_int,
-                                       cs_glob_bc_pm_info->ientfu + 1);
-
-      // Entree oxydant (si ce n'est pas NOZPPM, erreur)
-      retval += cs_restart_read_section(r,
-                                        "ientox_zone_bord_cod3p",
-                                        0,
-                                        CS_MAX_BC_PM_ZONE_NUM,
-                                        CS_TYPE_int,
-                                        cs_glob_bc_pm_info->ientox + 1);
-
       /* We check that reading call worked for both ientfu and ientox.
        * if not, izfppp is reinitialized.
        */
@@ -1310,40 +1222,6 @@ _read_auxiliary_checkpoint(cs_map_name_to_id_t *old_field_map)
     retval = _READ_REAL_VAL("tinoxy_slfm");
     if (retval == CS_RESTART_SUCCESS)
       cm->tinoxy = dummy_real;
-
-    if (match_b_face) {
-      // numéro des zones
-      retval = cs_restart_read_section(r,
-                                       "num_zone_fb_slfm",
-                                       3,
-                                       1,
-                                       CS_TYPE_int,
-                                       cs_glob_bc_pm_info->izfppp);
-
-      // Entree Fuel (si ce n'est pas NOZPPM, erreur)
-      retval = cs_restart_read_section(r,
-                                       "ientfu_zone_bord_cod3p",
-                                       0,
-                                       CS_MAX_BC_PM_ZONE_NUM,
-                                       CS_TYPE_int,
-                                       cs_glob_bc_pm_info->ientfu + 1);
-
-      // Entree oxydant (si ce n'est pas NOZPPM, erreur)
-      retval += cs_restart_read_section(r,
-                                        "ientox_zone_bord_cod3p",
-                                        0,
-                                        CS_MAX_BC_PM_ZONE_NUM,
-                                        CS_TYPE_int,
-                                        cs_glob_bc_pm_info->ientox + 1);
-
-      /* We check that reading call worked for both ientfu and ientox.
-       * if not, izfppp is reinitialized.
-       */
-      if (retval != CS_RESTART_SUCCESS) {
-        for (cs_lnum_t f_id = 0; f_id < cs_glob_mesh->n_b_faces; f_id++)
-          cs_glob_bc_pm_info->izfppp[f_id] = 0;
-      }
-    }
   }
 
   /* EBU Model */
@@ -1367,22 +1245,6 @@ _read_auxiliary_checkpoint(cs_map_name_to_id_t *old_field_map)
                                        1,
                                        CS_TYPE_int,
                                        cs_glob_bc_pm_info->izfppp);
-
-      // Entree gas brule
-      retval = cs_restart_read_section(r,
-                                       "ientgb_zone_bord_ebu",
-                                       0,
-                                       CS_MAX_BC_PM_ZONE_NUM,
-                                       CS_TYPE_int,
-                                       cs_glob_bc_pm_info->ientgb + 1);
-
-      // Entree gas frais
-      retval += cs_restart_read_section(r,
-                                        "ientgf_zone_bord_ebu",
-                                        0,
-                                        CS_MAX_BC_PM_ZONE_NUM,
-                                        CS_TYPE_int,
-                                        cs_glob_bc_pm_info->ientgf + 1);
 
       // fment
       retval += cs_restart_read_section(r,
@@ -1434,22 +1296,6 @@ _read_auxiliary_checkpoint(cs_map_name_to_id_t *old_field_map)
                                        1,
                                        CS_TYPE_cs_real_t,
                                        cs_glob_bc_pm_info->izfppp);
-
-      // Entree gas brule
-      retval = cs_restart_read_section(r,
-                                       "ientgb_zone_bord_lwc",
-                                       0,
-                                       CS_MAX_BC_PM_ZONE_NUM,
-                                       CS_TYPE_int,
-                                       cs_glob_bc_pm_info->ientgb + 1);
-
-      // Entree gas frais
-      retval += cs_restart_read_section(r,
-                                        "ientgf_zone_bord_lwc",
-                                        0,
-                                        CS_MAX_BC_PM_ZONE_NUM,
-                                        CS_TYPE_int,
-                                        cs_glob_bc_pm_info->ientgf + 1);
 
       // fment
       retval += cs_restart_read_section(r,

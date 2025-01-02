@@ -184,11 +184,7 @@ cs_f_boundary_conditions_get_ppincl_pointers(int     **iqimp,
                                              double  **dh);
 
 void
-cs_f_boundary_conditions_get_coincl_pointers(int     **ientfu,
-                                             int     **ientox,
-                                             int     **ientgb,
-                                             int     **ientgf,
-                                             double  **tkent,
+cs_f_boundary_conditions_get_coincl_pointers(double  **tkent,
                                              double  **fment,
                                              double  **qimp);
 
@@ -1561,20 +1557,12 @@ cs_f_boundary_conditions_get_ppincl_pointers(int     **iqimp,
 }
 
 void
-cs_f_boundary_conditions_get_coincl_pointers(int     **ientfu,
-                                             int     **ientox,
-                                             int     **ientgb,
-                                             int     **ientgf,
-                                             double  **tkent,
+cs_f_boundary_conditions_get_coincl_pointers(double  **tkent,
                                              double  **fment,
                                              double  **qimp)
 {
   /* Shift 1d-arrays by 1 to compensate for Fortran 1-based access */
 
-  *ientfu = cs_glob_bc_pm_info->ientfu + 1;
-  *ientox = cs_glob_bc_pm_info->ientox + 1;
-  *ientgb = cs_glob_bc_pm_info->ientgb + 1;
-  *ientgf = cs_glob_bc_pm_info->ientgf + 1;
   *tkent  = cs_glob_bc_pm_info->tkent  + 1;
   *fment  = cs_glob_bc_pm_info->fment  + 1;
   *qimp   = cs_glob_bc_pm_info->qimp   + 1;
@@ -2314,10 +2302,6 @@ cs_boundary_conditions_create_legacy_zone_data(void)
     bc_pm_info->xintur[i] = 0.;
 
     /* Gas combustion */
-    bc_pm_info->ientfu[i] = 0;
-    bc_pm_info->ientox[i] = 0;
-    bc_pm_info->ientgb[i] = 0;
-    bc_pm_info->ientgf[i] = 0;
     bc_pm_info->tkent[i]  = 0.;
     bc_pm_info->fment[i]  = 0.;
   }

@@ -122,10 +122,6 @@ typedef struct {
   const char   **nature;   /* nature for each boundary zone */
   int           *bc_num;   /* associated number */
 
-  int           *ientfu;   /* 1 for a fuel flow inlet (gas combustion - D3P) */
-  int           *ientox;   /* 1 for an air flow inlet (gas combustion - D3P) */
-  int           *ientgb;   /* 1 for burned gas inlet (gas combustion) */
-  int           *ientgf;   /* 1 for unburned gas inlet (gas combustion) */
   double        *tkent;    /* inlet temperature (gas combustion) */
   double        *fment;    /* Mean Mixture Fraction at Inlet (gas combustion) */
   int           *itype;    /* type of inlet/outlet (compressible model) */
@@ -2020,7 +2016,7 @@ _inlet_coal(cs_tree_node_t   *tn_vp,
  *----------------------------------------------------------------------------*/
 
 static void
-_inlet_gas(cs_tree_node_t  *tn_vp,
+_inlet_gas(cs_tree_node_t   *tn_vp,
            const cs_zone_t  *z)
 {
   cs_tree_node_t *tn = cs_tree_get_node(tn_vp, "gas_type");
@@ -2047,6 +2043,15 @@ _inlet_gas(cs_tree_node_t  *tn_vp,
     cs_gui_node_get_child_real(tn_vp, "temperature", &ci->tkent);
     cs_gui_node_get_child_real(tn_vp, "fraction", &ci->fment);
   }
+
+#if _XML_DEBUG_
+  bft_printf("-----ientox=%i, ientfu=%i, ientgf=%i, ientgb=%i \n",
+             ci->ientox,
+             ci->ientfu,
+             ci->ientgf,
+             ci->ientgb);
+      }
+#endif
 }
 
 /*-----------------------------------------------------------------------------
@@ -2067,15 +2072,7 @@ _inlet_gas(cs_tree_node_t  *tn_vp,
   cs_tree_node_t *tn = cs_tree_get_node(tn_vp, "gas_type");
   const char *choice = cs_gui_node_get_tag(tn, "choice");
 
-  if (cs_gui_strcmp(choice, "oxydant"))
-    boundaries->ientox[izone] = 1;
-
-  else if (cs_gui_strcmp(choice, "fuel"))
-    boundaries->ientfu[izone] = 1;
-
-  else if (cs_gui_strcmp(choice, "unburned")) {
-
-    boundaries->ientgf[izone] = 1;
+  if (cs_gui_strcmp(choice, "unburned")) {
 
     cs_gui_node_get_child_real(tn_vp, "temperature",
                                &boundaries->tkent[izone]);
@@ -2084,8 +2081,6 @@ _inlet_gas(cs_tree_node_t  *tn_vp,
 
   }
   else if (cs_gui_strcmp(choice, "burned")) {
-
-    boundaries->ientgb[izone] = 1;
 
     cs_gui_node_get_child_real(tn_vp, "temperature",
                                &boundaries->tkent[izone]);
@@ -2372,11 +2367,6 @@ _init_boundaries(void)
   BFT_MALLOC(boundaries->nature,    n_zones,    const char *);
   BFT_MALLOC(boundaries->bc_num,    n_zones,    int);
 
-  boundaries->ientfu = NULL;
-  boundaries->ientox = NULL;
-  boundaries->ientgb = NULL;
-  boundaries->ientgf = NULL;
-
   boundaries->tkent  = NULL;
   boundaries->fment  = NULL;
   boundaries->itype = NULL;
@@ -2393,10 +2383,6 @@ _init_boundaries(void)
   boundaries->meteo = NULL;
 
   if (gas_combustion) {
-    BFT_MALLOC(boundaries->ientfu,  n_zones, int);
-    BFT_MALLOC(boundaries->ientox,  n_zones, int);
-    BFT_MALLOC(boundaries->ientgb,  n_zones, int);
-    BFT_MALLOC(boundaries->ientgf,  n_zones, int);
     BFT_MALLOC(boundaries->tkent,   n_zones, double);
     BFT_MALLOC(boundaries->fment,   n_zones, double);
   }
@@ -2426,10 +2412,6 @@ _init_boundaries(void)
     boundaries->head_loss_e[izone] = false;
 
     if (gas_combustion) {
-      boundaries->ientfu[izone]  = 0;
-      boundaries->ientox[izone]  = 0;
-      boundaries->ientgb[izone]  = 0;
-      boundaries->ientgf[izone]  = 0;
       boundaries->tkent[izone]   = 0;
       boundaries->fment[izone]   = 0;
     }
@@ -2823,10 +2805,6 @@ cs_gui_boundary_conditions_processing(int  *itypfb)
       /* data by zone */
 
       if (gas_combustion) {
-        bc_pm_info->ientfu[zone_nbr] = boundaries->ientfu[izone];
-        bc_pm_info->ientox[zone_nbr] = boundaries->ientox[izone];
-        bc_pm_info->ientgb[zone_nbr] = boundaries->ientgb[izone];
-        bc_pm_info->ientgf[zone_nbr] = boundaries->ientgf[izone];
         bc_pm_info->tkent [zone_nbr] = boundaries->tkent[izone];
         bc_pm_info->fment [zone_nbr] = boundaries->fment[izone];
       }
@@ -3123,16 +3101,7 @@ cs_gui_boundary_conditions_processing(int  *itypfb)
       }
 
 #if _XML_DEBUG_
-      if (gas_combustion) {
-        bft_printf("-----iqimp=%i \n",
-                   bc_pm_info->iqimp[zone_nbr]);
-        bft_printf("-----ientox=%i, ientfu=%i, ientgf=%i, ientgb=%i \n",
-                   bc_pm_info->ientox[zone_nbr],
-                   bc_pm_info->ientfu[zone_nbr],
-                   bc_pm_info->ientgf[zone_nbr],
-                   bc_pm_info->ientgb[zone_nbr]);
-      }
-      else if (cs_glob_physical_model_flag[CS_COMPRESSIBLE] > -1) {
+      if (cs_glob_physical_model_flag[CS_COMPRESSIBLE] > -1) {
         if (boundaries->itype[izone] == CS_ESICF) {
           bft_printf("-----imposed_inlet\n");
           bft_printf("-----premin=%g \n",boundaries->prein[zone_nbr-1]);
@@ -3613,10 +3582,6 @@ cs_gui_boundary_conditions_free_memory(void)
     }
 
     /* Gas combustion */
-    BFT_FREE(boundaries->ientfu);
-    BFT_FREE(boundaries->ientox);
-    BFT_FREE(boundaries->ientgb);
-    BFT_FREE(boundaries->ientgf);
     BFT_FREE(boundaries->tkent);
     BFT_FREE(boundaries->fment);
 

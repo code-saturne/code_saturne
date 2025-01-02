@@ -167,9 +167,11 @@ cs_user_boundary_conditions(cs_domain_t  *domain,
   /*! [inlet] */
   {
     const cs_zone_t *z = cs_boundary_zone_by_name("inlet");
+    cs_combustion_bc_inlet_t *ci
+      = cs_combustion_boundary_conditions_get_inlet(z);
 
     /* Fuel flow inlet type */
-    cs_glob_bc_pm_info->ientfu[z->id] = 1;
+    ci->ientfu = 1;
 
     /* Inlet Temperature in K */
     cm->tinfue = fp->t0;

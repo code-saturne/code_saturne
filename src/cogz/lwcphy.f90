@@ -20,10 +20,7 @@
 
 !-------------------------------------------------------------------------------
 
-subroutine lwcphy &
-!================
-
- ( mbrom  , izfppp )
+subroutine lwcphy
 
 !===============================================================================
 ! FONCTION :
@@ -71,33 +68,28 @@ implicit none
 
 ! Arguments
 
-integer          mbrom
-integer          izfppp(nfabor)
-
 ! Local variables
 
 integer          igg, iel
-integer          izone , ifac
+integer          ifac
 double precision coefg(ngazgm)
-double precision nbmol , temsmm
-double precision masmg
 double precision, dimension(:), pointer :: brom,  crom
 double precision, dimension(:), pointer :: bsval
 double precision, dimension(:), pointer :: cvar_yfm, cvar_yfp2m
 double precision, dimension(:), pointer :: cvar_fm, cvar_fp2m
 double precision, dimension(:), pointer :: cvar_coyfp, cpro_ymgg
 
-integer       ipass
-data          ipass /0/
-save          ipass
-
 !===============================================================================
 
-!===============================================================================
-! 0. ON COMPTE LES PASSAGES
-!===============================================================================
+interface
 
-ipass = ipass + 1
+  subroutine cs_combustion_boundary_conditions_density_ebu_lw()  &
+    bind(C, name='cs_combustion_boundary_conditions_density_ebu_lw')
+    use, intrinsic :: iso_c_binding
+    implicit none
+  end subroutine cs_combustion_boundary_conditions_density_ebu_lw
+
+end interface
 
 !===============================================================================
 ! 1. INITIALISATIONS A CONSERVER
@@ -128,35 +120,21 @@ if (ippmod(icolwc).ge.2) call field_get_val_s(ivarfl(isca(icoyfp)), cvar_coyfp)
 !===============================================================================
 
 
-if ( (ippmod(icolwc).eq.0) .or. (ippmod(icolwc).eq.1) ) then
+if ((ippmod(icolwc).eq.0) .or. (ippmod(icolwc).eq.1)) then
 
-  call pdflwc                                                     &
-  !==========
-   ( ncelet        , ncel          ,                              &
-     cvar_fm       , cvar_fp2m     ,                              &
-     cvar_yfm      , cvar_yfp2m )
+  call pdflwc(ncelet, ncel, cvar_fm, cvar_fp2m, cvar_yfm, cvar_yfp2m)
 
 endif
 
-if ( (ippmod(icolwc).eq.2) .or. (ippmod(icolwc).eq.3) ) then
+if ((ippmod(icolwc).eq.2) .or. (ippmod(icolwc).eq.3)) then
 
-  call pdfpp3                                                     &
-  !==========
-   ( ncelet        , ncel          ,                              &
-     cvar_fm       , cvar_fp2m     ,                              &
-     cvar_yfm      , cvar_yfp2m    ,                              &
-     cvar_coyfp )
+  call pdfpp3(ncelet, ncel, cvar_fm, cvar_fp2m, cvar_yfm, cvar_yfp2m, cvar_coyfp)
 
 endif
 
-if ( (ippmod(icolwc).eq.4).or.(ippmod(icolwc).eq.5) ) then
+if ((ippmod(icolwc).eq.4).or.(ippmod(icolwc).eq.5)) then
 
-  call pdfpp4                                                     &
-  !==========
-   ( ncelet        , ncel          ,                              &
-     cvar_fm       , cvar_fp2m     ,                              &
-     cvar_yfm      , cvar_yfp2m    ,                              &
-     cvar_coyfp )
+  call pdfpp4(ncelet, ncel, cvar_fm, cvar_fp2m, cvar_yfm, cvar_yfp2m, cvar_coyfp)
 
 endif
 
@@ -167,43 +145,7 @@ endif
 
 ! --> Masse volumique au bord
 
-mbrom = 1
-
-! ---- Masse volumique au bord pour toutes les facettes
-!      Les facettes d'entree seront recalculees.
-
-do ifac = 1, nfabor
-iel = ifabor(ifac)
-  brom(ifac) = crom(iel)
-enddo
-
-! ---- Masse volumique au bord pour les facettes d'entree UNIQUEMENT
-!      Le test sur IZONE sert pour les reprises de calcul
-
-if ( ipass.gt.1 .or. isuite.eq.1 ) then
-  do ifac = 1, nfabor
-    izone = izfppp(ifac)
-    if(izone.gt.0) then
-      if ( ientgb(izone).eq.1 .or. ientgf(izone).eq. 1) then
-        coefg(1) = fment(izone)
-        coefg(2) = 1.d0-fment(izone)
-        coefg(3) = zero
-        if ( ientgb(izone).eq.1 ) then
-          coefg(1) = max(zero,(fment(izone)-fs(1))/(1.d0-fs(1)))
-          coefg(3) = (fment(izone)-coefg(1))/fs(1)
-          coefg(2) = 1.d0 - coefg(1) - coefg(3)
-        endif
-        nbmol = 0.d0
-        do igg = 1, ngazg
-          nbmol = nbmol + coefg(igg)/wmolg(igg)
-        enddo
-       masmg = 1.d0/nbmol
-       temsmm = tkent(izone)/masmg
-       brom(ifac) = p0/(cs_physical_constants_r*temsmm)
-      endif
-    endif
-  enddo
-endif
+call cs_combustion_boundary_conditions_density_ebu_lw()
 
 ! --> Fractions massiques des especes globales au bord
 do igg = 1, ngazg

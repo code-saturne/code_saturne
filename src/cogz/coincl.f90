@@ -61,8 +61,6 @@ module coincl
 
   !       TINOXY       --> Temperature d'entree pour l'oxydant en K
   !       TINFUE       --> Temperature d'entree pour le fuel en K
-  !       IENTOX       --> indicateur oxydant par type de facette d'entree
-  !       IENTFU       --> indicateur fuel    par type de facette d'entree
 
   ! ---- Grandeurs deduites
 
@@ -79,8 +77,6 @@ module coincl
 
   integer    nmaxf, nmaxfm, nmaxh, nmaxhm
   parameter( nmaxfm = 15 , nmaxhm = 15)
-
-  integer(c_int), pointer, save :: ientox(:), ientfu(:)
 
   double precision, save :: hstoea
   double precision, save :: hh(nmaxhm), ff(nmaxfm), tfh(nmaxfm,nmaxhm)
@@ -137,8 +133,6 @@ module coincl
 
   ! ---- Grandeurs fournies par l'utilisateur dans usebuc.f90
 
-  !       IENTGF       --> indicateur gaz frais  par type de facette d'entree
-  !       IENTGB       --> indicateur gaz brules par type de facette d'entree
   !       QIMP         --> Debit impose en kg/s
   !       FMENT        --> Taux de melange par type de facette d'entree
   !       TKENT        --> Temperature en K par type de facette d'entree
@@ -153,7 +147,6 @@ module coincl
   !                        pour premelange frais et dilution
   !       TGBAD        --> Temperature adiabatique gaz brules en K
 
-  integer(c_int), pointer, save :: ientgf(:), ientgb(:)
   real(c_double), pointer, save :: qimp(:), fment(:), tkent(:)
   real(c_double), pointer, save :: frmel, tgf
   double precision, save :: cebu, hgf, tgbad
@@ -348,14 +341,11 @@ module coincl
 
     ! Interface to C function retrieving BC zone array pointers
 
-    subroutine cs_f_boundary_conditions_get_coincl_pointers(p_ientfu, p_ientox, &
-                                                            p_ientgb, p_ientgf, &
-                                                            p_tkent,  p_fment,  &
+    subroutine cs_f_boundary_conditions_get_coincl_pointers(p_tkent,  p_fment,  &
                                                             p_qimp) &
       bind(C, name='cs_f_boundary_conditions_get_coincl_pointers')
       use, intrinsic :: iso_c_binding
       implicit none
-      type(c_ptr), intent(out) :: p_ientfu, p_ientox, p_ientgb, p_ientgf
       type(c_ptr), intent(out) :: p_tkent,  p_fment, p_qimp
     end subroutine cs_f_boundary_conditions_get_coincl_pointers
 
@@ -456,17 +446,10 @@ contains
 
     ! Local variables
 
-    type(c_ptr) :: p_ientfu, p_ientox, p_ientgb, p_ientgf
     type(c_ptr) :: p_tkent,  p_fment,  p_qimp
 
-    call cs_f_boundary_conditions_get_coincl_pointers(p_ientfu, p_ientox, &
-                                                      p_ientgb, p_ientgf, &
-                                                      p_tkent,  p_fment,  &
+    call cs_f_boundary_conditions_get_coincl_pointers(p_tkent,  p_fment,  &
                                                       p_qimp)
-    call c_f_pointer(p_ientfu, ientfu, [nozppm])
-    call c_f_pointer(p_ientox, ientox, [nozppm])
-    call c_f_pointer(p_ientgb, ientgb, [nozppm])
-    call c_f_pointer(p_ientgf, ientgf, [nozppm])
     call c_f_pointer(p_tkent,  tkent,  [nozppm])
     call c_f_pointer(p_fment,  fment,  [nozppm])
     call c_f_pointer(p_qimp,   qimp,   [nozppm])

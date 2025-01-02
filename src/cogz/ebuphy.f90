@@ -20,10 +20,7 @@
 
 !-------------------------------------------------------------------------------
 
-subroutine ebuphy &
-!================
-
- ( mbrom  , izfppp )
+subroutine ebuphy
 
 !===============================================================================
 ! FONCTION :
@@ -37,9 +34,6 @@ subroutine ebuphy &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! mbrom            ! te ! <-- ! indicateur de remplissage de romb              !
-! izfppp           ! te ! <-- ! numero de zone de la face de bord              !
-! (nfabor)         !    !     !  pour le module phys. part.                    !
 !__________________!____!_____!________________________________________________!
 
 !     Type: i (integer), r (real), s (string), a (array), l (logical),
@@ -72,16 +66,13 @@ implicit none
 
 ! Arguments
 
-integer          mbrom
-integer          izfppp(nfabor)
-
 ! Local variables
 
 integer          igg, iel
-integer          ifac, izone
+integer          ifac
 double precision coefg(ngazgm), ygfm, ygbm, epsi
 double precision nbmol , temsmm , fmel , ckabgf, ckabgb
-double precision masmgb, hgb, tgb, masmgf, masmg
+double precision masmgb, hgb, tgb, masmgf
 
 double precision, allocatable, dimension(:) :: yfuegf, yoxygf, yprogf
 double precision, allocatable, dimension(:) :: yfuegb, yoxygb, yprogb
@@ -93,9 +84,22 @@ double precision, dimension(:), pointer :: cvar_scalt
 double precision, dimension(:), pointer :: cpro_temp,cpro_ymgg
 double precision, dimension(:), pointer :: cpro_ym1, cpro_ym2, cpro_ym3
 double precision, dimension(:), pointer :: cpro_ckabs, cpro_t4m, cpro_t3m
+
 integer       ipass
 data          ipass /0/
 save          ipass
+
+!===============================================================================
+
+interface
+
+  subroutine cs_combustion_boundary_conditions_density_ebu_lw()  &
+    bind(C, name='cs_combustion_boundary_conditions_density_ebu_lw')
+    use, intrinsic :: iso_c_binding
+    implicit none
+  end subroutine cs_combustion_boundary_conditions_density_ebu_lw
+
+end interface
 
 !===============================================================================
 ! 0. ON COMPTE LES PASSAGES
@@ -309,7 +313,6 @@ do iel = 1, ncel
 
 enddo
 
-
 !===============================================================================
 ! 3. CALCUL DE RHO ET DES FRACTIONS MASSIQUES DES ESPECES GLOBALES
 !    SUR LES BORDS
@@ -317,59 +320,7 @@ enddo
 
 ! --> Masse volumique au bord
 
-mbrom = 1
-
-! ---- Masse volumique au bord pour toutes les facettes
-!      Les facettes d'entree seront recalculees apres
-!      a partir des CL (si IPASS > 2).
-
-! ---- Au premier passage sans suite ou si on n'a pas relu la
-!      masse volumique dans le fichier suite, on n'a pas recalcule la
-!      masse volumique ci-dessus, pas la peine de la reprojeter aux
-!      faces.
-
-if (ipass.gt.1.or.(isuite.eq.1.and.initro.eq.1)) then
-
-  do ifac = 1, nfabor
-    iel = ifabor(ifac)
-    brom(ifac) = crom(iel)
-  enddo
-
-endif
-
-
-! ---- Masse volumique au bord pour les facettes d'entree UNIQUEMENT
-!      Le test sur IZONE sert pour les reprises de calcul
-!      On suppose implicitement que les elements ci-dessus ont ete relus
-!      dans le fichier suite (i.e. pas de suite en combustion d'un calcul
-!      a froid) -> sera pris en compte eventuellement dans les versions
-!      suivantes
-
-if ( ipass.gt.1 .or. isuite.eq.1 ) then
-  do ifac = 1, nfabor
-    izone = izfppp(ifac)
-    if(izone.gt.0) then
-      if ( ientgb(izone).eq.1 .or. ientgf(izone).eq.1 ) then
-        coefg(1) = fment(izone)
-        coefg(2) = 1.d0-fment(izone)
-        coefg(3) = zero
-        if ( ientgb(izone).eq.1 ) then
-          coefg(1) = max(zero,(fment(izone)-fs(1))/(1.d0-fs(1)))
-          coefg(3) = (fment(izone)-coefg(1))/fs(1)
-          coefg(2) = 1.d0 - coefg(1) - coefg(3)
-        endif
-        nbmol = 0.d0
-        do igg = 1, ngazg
-          nbmol = nbmol + coefg(igg)/wmolg(igg)
-        enddo
-       masmg = 1.d0/nbmol
-       temsmm = tkent(izone)/masmg
-       brom(ifac) = p0/(cs_physical_constants_r*temsmm)
-      endif
-    endif
-  enddo
-endif
-
+call cs_combustion_boundary_conditions_density_ebu_lw()
 
 ! --> Fractions massiques des especes globales au bord
 !     Uniquement si transport de H
